@@ -1,6 +1,6 @@
 # Signing up and signing in
 
-This guide is for people who use a mycroblog server, a server that runs `my`. Each server is run by its own operators, so what a server
+How to create an account on a mycroblog server, a server that runs `my`, and sign in to it. Each server is run by its own operators, so what a server
 offers (who may sign up, which timelines visitors can read, whether voice chat is on) is up to them. The server's
 "About" page and the documents it links at sign-up tell you its rules; this guide only describes how `my` behaves.
 

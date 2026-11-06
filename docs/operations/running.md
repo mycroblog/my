@@ -1,6 +1,6 @@
 # Running the server: start, stop and health checks
 
-A guide for operators. The [configuration reference](../reference/configuration.md) lists every setting.
+How to start and stop the server, get its image, and watch it while it runs: metrics, traces, the job queue, and health checks.
 
 ## Start the server
 

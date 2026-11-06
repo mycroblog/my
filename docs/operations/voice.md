@@ -1,9 +1,8 @@
 # Run voice chat
 
-A guide for operators. Every setting named here is described in the [configuration reference](../reference/configuration.md#voice).
-
 Voice chat lets signed-in users open a room, invite others and talk. It is off until you choose how the audio travels.
 This guide covers that choice, the STUN and TURN servers or the media server each choice needs, and what to know about deployment, privacy and moderation.
+Every setting named here is described in the [configuration reference](../reference/configuration.md#voice).
 
 ## Choose how the audio travels
 

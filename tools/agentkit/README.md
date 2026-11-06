@@ -81,6 +81,8 @@ than a document that every change of a wide area flags.
   repository's issues and pull requests, nor cite `ADR-NNNN`, `FR-NNN`, or `#NNN` outside code;
 - the files of `maintainer-terms.files` use none of its `terms`, the words of the development of the project, in prose or
   in code;
+- the opening of each file of `openings.files`, its first line below the title outside code and HTML, matches none of
+  the `openings.reject` patterns, the sentences that only say whom the document is for ("A guide for operators.");
 - the index (`index.file`, `docs/README.md`) links every file of `index.files` (`docs/operations/`, `docs/reference/`);
 - each `ADR-NNNN` and `ADR-NNNN §k` of the repository resolves and is not a number retired in `docs/adr/aliases.yaml`, a
   `§k` inside an ADR that names no other document is a heading of that ADR, and an ADR has the sections of the template

@@ -1,6 +1,6 @@
 # Privacy policy template
 
-A template for operators: a privacy policy that describes what this server keeps, why, for how long, and who receives it.
+A privacy policy to adapt for your server: it describes what this server keeps, why, for how long, and who receives it.
 
 **This is a template and not legal advice.** It describes what the software does with its default settings. It cannot know how you run your instance, and it does not decide which laws apply to you. What a policy must say depends on your jurisdiction and on your users' (for example the GDPR in the EU, the UK GDPR, or Japan's Act on the Protection of Personal Information). Have it checked for your jurisdiction before you publish it, and treat the legal bases and the transfer statement below as questions to settle, not as answers.
 

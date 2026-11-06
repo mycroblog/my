@@ -1,6 +1,6 @@
 # Full-text search of posts
 
-A guide for operators: what the full-text search of posts holds, how to turn it on and change it, how to rebuild its index, and what it asks of your logs and backups.
+What the full-text search of posts holds, how to turn it on and change it, how to rebuild its index, and what it asks of your logs and backups.
 
 ## Nothing to enable yet
 

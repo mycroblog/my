@@ -1,8 +1,6 @@
 # CAPTCHA bot protection (Turnstile / hCaptcha / reCAPTCHA)
 
-This guide is for operators. The configuration keys are listed in the [configuration reference](../reference/configuration.md#captcha).
-
-CAPTCHA is off by default (`captcha = none`). The sign-in, sign-up and password-reset pages then work without JavaScript and send nothing to third parties.
+CAPTCHA is off by default: the setting [`captcha`](../reference/configuration.md#captcha) is `none`. The sign-in, sign-up and password-reset pages then work without JavaScript and send nothing to third parties.
 When you pick a CAPTCHA service, the service's widget appears on three forms: sign-in (`/auth/sign_in`), sign-up (`/auth/sign_up`) and the request for a password-reset link
 (`/auth/forgot_password`, only on servers that send mail). The server verifies the token the widget produces with the service's siteverify API.
 You cannot protect only some of the forms.

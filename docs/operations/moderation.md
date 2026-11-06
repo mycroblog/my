@@ -1,7 +1,6 @@
 # Account and domain actions, and handling reports
 
-This guide is for operators and moderators.
-
+How operators and moderators act on accounts and domains, decide appeals, handle reports, and read the audit log.
 Everything here except account management (admin API only) can be done through the admin API (`/api/v1/admin/...`, scopes `admin:read` / `admin:write`) and the CLI (`my admin account action` / `my admin domain` / `my admin report` / `my admin appeal`).
 The admin API requires role permissions: account management, actions and appeals need `manage_accounts`, domain actions need `manage_domains`, and reports need `manage_reports`.
 The CLI connects to the DB directly with the same configuration as the server (`-config` or environment variables) and does not record which user operated it (`issued_by_user_id` and similar fields are NULL, and the actor in the [audit log](#audit-log) is `cli`).

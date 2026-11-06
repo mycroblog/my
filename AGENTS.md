@@ -116,6 +116,10 @@ Follow [docs/agents/workflow.md](docs/agents/workflow.md). Summary:
 - **User and operator documents hold nothing only a developer of `my` needs**: how the project releases, CI jobs, pull
   requests, repository tasks, and how to add to the code go in a contributor document (`CONTRIBUTING.md`, `docs/agents/`,
   `docs/reference/commands.md`). `maintainer-terms` in [docs/lint.yaml](docs/lint.yaml) lists the words that give it away.
+- **A published document opens with what it is about**: what the feature does or what the reader will do, never a
+  sentence that only names its audience ("A guide for operators.", "This page is for operators."), which the section
+  it sits in already says. State a reader the section does not imply (moderators who do not run the server) inside that
+  first sentence. `openings` in [docs/lint.yaml](docs/lint.yaml) rejects the audience-only forms.
 - `scripts/task.sh docs:rules` (`agentkit docs lint`, part of `docs:check`) enforces these rules, that relative links and
   their `#anchors` resolve, and that `docs/README.md` links every file of `docs/operations/` and `docs/reference/`.
   [docs/lint.yaml](docs/lint.yaml) names the files each rule covers and the files not yet converted; that list only

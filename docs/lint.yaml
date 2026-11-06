@@ -78,6 +78,23 @@ maintainer-terms:
     - "slow-suite.yml"
     - "orchestrator"
 
+# The section a published document sits in (Operation, Using mycroblog, Developers, Reference) already says whom it
+# is for, so its opening, the first line below the title outside code and HTML, says what the page is about instead.
+# An opening that matches one of these regular expressions (whatever its case) states only its audience.
+openings:
+  files:
+    - "docs/operations/**"
+    - "docs/guide/**"
+    - "docs/reference/**"
+    - "docs/developers/**"
+  reject:
+    # "A guide for operators.", "An explanation and verification guide for operators.", "A template for operators: ..."
+    - '^an? [^.:]*\b(guide|reference|explanation|template|page|document)s? for\b'
+    # "This page is for operators.", "This guide is for operators and moderators."
+    - '^this (page|guide|document|reference|template) is (meant |written )?for\b'
+    # "This page explains link previews to operators ..."
+    - '^this (page|guide|document) (explains|describes) [^.]* to (operators|administrators|moderators|users|developers)\b'
+
 # The index of the documents for users and operators: it links every file of the list.
 index:
   file: docs/README.md

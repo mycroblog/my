@@ -1,6 +1,6 @@
 # Search engines and AI crawlers
 
-An explanation and verification guide for operators.
+What the server tells search engines and AI crawlers, the settings that change it, and how to verify what it serves.
 
 robots.txt and meta tags are statements that crawlers may or may not honor; they are not a technical block. If you need to block, use a WAF or rate limiting.
 

@@ -1,6 +1,6 @@
 # User registration (registration modes, invites, approval, email confirmation)
 
-This guide is for operators.
+How users sign up and confirm their email address, the registration modes, invite codes, approval of requests, password resets, and sign-up blocks.
 
 ## The sign-up page
 

@@ -3,7 +3,8 @@
 // Package docslint checks the repository's documents against the rules of AGENTS.md that a machine can check:
 // relative links and their #anchors resolve, the English-only documents contain no Japanese outside code, and the
 // documents for users and operators neither link to nor cite the design records (ADRs, requirements, architecture)
-// and GitHub issues or pull requests, and the index (docs/README.md) links every one of those documents.
+// and GitHub issues or pull requests, the published documents do not open with a sentence that only names their
+// audience, and the index (docs/README.md) links every one of those documents.
 // docs/lint.yaml says which files each rule covers and lists the files that do not follow a rule yet; an entry
 // there must be removed once its file follows the rule, so the lists only shrink.
 //
@@ -45,6 +46,12 @@ type Config struct {
 		Files []string `yaml:"files"` // the documents the rule reads
 		Terms []string `yaml:"terms"` // the words, whatever their case, also inside code
 	} `yaml:"maintainer-terms"`
+	// Openings rejects an opening sentence that only states the audience of the document ("A guide for operators."):
+	// the section a document sits in already says whom it is for, so the first line says what the page is about.
+	Openings struct {
+		Files  []string `yaml:"files"`  // the documents the rule reads
+		Reject []string `yaml:"reject"` // regular expressions an opening sentence must not match, whatever its case
+	} `yaml:"openings"`
 	// Index is the document that links every user and operator document, so that a reader finds each.
 	Index struct {
 		File  string   `yaml:"file"`  // the index
@@ -102,8 +109,10 @@ const (
 	RuleDesignLink = "design-link"
 	// RuleMaintainerTerm is an operator document using a word of the project's own development.
 	RuleMaintainerTerm = "maintainer-term"
-	RulePending        = "pending"
-	RuleIndex          = "index"
+	// RuleOpening is a document that opens with a sentence stating only its audience.
+	RuleOpening = "opening"
+	RulePending = "pending"
+	RuleIndex   = "index"
 )
 
 // matchAny reports whether p matches one of patterns and none of the exclusions among them: a pattern that starts
@@ -143,6 +152,10 @@ func Lint(root string, files []string, c *Config) ([]Finding, error) {
 		pendingDL[p] = 0
 	}
 	terms := maintainerTerms(c.MaintainerTerms.Terms)
+	openings, err := openingPatterns(c.Openings.Reject)
+	if err != nil {
+		return nil, err
+	}
 	var out []Finding
 	for _, p := range sorted {
 		if matchAny(c.Skip, p) {
@@ -172,6 +185,9 @@ func Lint(root string, files []string, c *Config) ([]Finding, error) {
 		}
 		if md && matchAny(c.MaintainerTerms.Files, p) {
 			out = append(out, maintainerTermsOf(doc, terms)...)
+		}
+		if md && matchAny(c.Openings.Files, p) {
+			out = append(out, openingOf(doc, openings)...)
 		}
 		if operator {
 			fs := designLinks(doc)
@@ -244,6 +260,7 @@ type line struct {
 	shown string   // the text a reader sees: everything outside HTML comments, code and link destinations included
 	dests []string // the link destinations outside code and HTML comments
 	allow bool     // AllowJapanese on this line or the line before
+	fence bool     // inside a fenced code block
 }
 
 type document struct {
@@ -291,7 +308,7 @@ func parse(p, src string, md bool) *document {
 			continue
 		}
 		if fence != "" {
-			d.lines = append(d.lines, line{n: i + 1, allow: allow, shown: s})
+			d.lines = append(d.lines, line{n: i + 1, allow: allow, shown: s, fence: true})
 			continue
 		}
 		visible, comment := splitComments(s, &inComment)
@@ -504,6 +521,36 @@ func japanese(d *document) []Finding {
 		}
 	}
 	return out
+}
+
+// openingPatterns compiles the patterns of Openings.Reject, which match whatever the case.
+func openingPatterns(pats []string) ([]*regexp.Regexp, error) {
+	out := make([]*regexp.Regexp, 0, len(pats))
+	for _, p := range pats {
+		re, err := regexp.Compile(`(?i)` + p)
+		if err != nil {
+			return nil, fmt.Errorf("%s: openings.reject: %w", File, err)
+		}
+		out = append(out, re)
+	}
+	return out, nil
+}
+
+// openingOf reports the opening of d, its first line outside code and HTML that is not a heading, when it matches one of pats.
+func openingOf(d *document, pats []*regexp.Regexp) []Finding {
+	for _, ln := range d.lines {
+		s := strings.TrimSpace(reTag.ReplaceAllString(ln.shown, ""))
+		if ln.fence || s == "" || reHeading.MatchString(s) {
+			continue
+		}
+		for _, re := range pats {
+			if re.MatchString(s) {
+				return []Finding{{d.path, ln.n, RuleOpening, "the opening only says whom the document is for, which its section already says: open with what the page is about"}}
+			}
+		}
+		return nil
+	}
+	return nil
 }
 
 // maintainerTerms compiles the terms into patterns that match whole words, whatever their case.

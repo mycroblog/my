@@ -1,6 +1,6 @@
 # Overview of a mycroblog server
 
-A guide for operators, and the first page to read before running a server. mycroblog is a microblog that federates
+The first page to read before running a server. mycroblog is a microblog that federates
 with the rest of the fediverse over ActivityPub; `my` is its server software, one binary that holds the server, the job
 worker, the web client, and the commands that look after them. This page shows what a server is made of, what you
 choose by configuration, how a small server grows into a large one, and where to read next.

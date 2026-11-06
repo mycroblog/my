@@ -1,6 +1,6 @@
 # Error reporting
 
-A guide for operators: how the server tells you about its own bugs and failures, where to read the reports on each platform, and how to send them to an error tracker.
+How the server tells you about its own bugs and failures, where to read the reports on each platform, and how to send them to an error tracker.
 Metrics tell you that something is wrong; an error report tells you what failed, with its stack. The [configuration reference](../reference/configuration.md) lists every setting.
 
 Three things happen to every report, whatever you configure:

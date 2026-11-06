@@ -1,7 +1,5 @@
 # Federation relays
 
-A guide for operators.
-
 A relay is a server that passes the public posts of the servers that join it on to the other joined servers. Even a small instance with few follows gets a filled federated timeline and hashtag timelines,
 and its own public posts reach further. An instance that does not join a relay gains no rows and no jobs.
 
