@@ -1,8 +1,9 @@
 # SPDX-License-Identifier: MIT
 description: |
   The decision hook that filed the report; omitted for a report that a person or another server
-  filed. Such a report has the instance actor as its reporter, is not forwarded, and nobody is
-  notified when it is resolved.
+  filed. Such a report has the instance actor as its reporter, is not forwarded when it is
+  filed (a moderator may forward it later, without the plugin's note), and nobody is notified
+  when it is resolved.
 type: object
 required: [hook, decision_id]
 properties:
@@ -10,6 +11,7 @@ properties:
     $ref: ./HookName.yaml
   decision_id:
     description: The decision that filed the report, which can be gone after its retention.
-    type: string
+    allOf:
+      - $ref: ./Id.yaml
   reason:
     $ref: ./HookReason.yaml

@@ -392,6 +392,7 @@ ActivityPub の配送は順序を保証しません。ハンドラは、どの�
 | `account.moved`（ローカルのアカウントが自分で移転したとき。`initiated_by = self`。ADR-0089） | `movedTo` 付きの `Update`（Actor の文書）、続けて `Move`（`object_type = move`、`object_id` は `account_moves.id`。`actor` と `object` はこちらの Actor、`target` は移転先の Actor、`to` はこちらの `followers`、`id` は `/ap/activities/{uuid}`） | リモートフォロワーの inbox（shared inbox に集約） |
 | `account.move_cancelled`（ローカルのアカウントの移転の取り消し） | `Update`（Actor の文書。`movedTo` なし） | リモートフォロワーの inbox |
 | `moderation.report_filed`（`forwarded` の通報だけ。§11） | `Flag`（主体はインスタンス Actor） | 通報されたアカウントの inbox |
+| `moderation.report_forwarded`（モデレーターの後からの転送。§11） | `Flag`（主体はインスタンス Actor。`content` はモデレーターの文） | 通報されたアカウントの inbox |
 | `content.quote_recorded`（ローカルの投稿の、引用の許可を宣言したリモートの投稿の `fep_044f` の引用。ADR-0069 §3） | `QuoteRequest`（`id` は `{引用元の IRI}/quote_request`、`object` は引用先、`instrument` は引用元。本文は projector が組み立てて保存する） | 引用先の作者の inbox |
 | `content.quote_changed`（ローカルの投稿の引用が、リモートの `QuoteAuthorization` で承認されたとき）、`content.quote_policy_changed` | 現在の版の `Update`（`quoteAuthorization` と `interactionPolicy` が新しくなる。版が増えないので `updated` は版の時刻のまま） | 元の `Create` の `deliveries` の inbox（`public` / `unlisted` は加えてその時点のフォロワー） |
 | `content.quote_authorization_revoked`（引用元の作者がリモートのとき） | `Delete`（`object` は `QuoteAuthorization` の IRI。`to` は引用元の作者、`cc` は自分の followers。本文は projector が組み立てて保存する） | 引用元の作者の inbox + 引用先の作者のリモートフォロワーの inbox |
@@ -677,8 +678,9 @@ ADR-0005 の方針（既定はキャッシュしない）に従います。
 - `moderation.FederationPolicy` は、呼ばれるたびに期限内の制限を読みます（`DomainPolicy`・`AccountPolicy`・`content.MediaFetchPolicy` と、`Flag` の `RejectsReports`）。処分は `moderation.Service` の `IssueDomainAction` / `LiftDomainAction` と、アカウントへの `IssueAccountAction`（リモートのアカウントには制限だけを生む `limit` / `suspend` / `force_sensitive`）/ `LiftAccountAction` が記録します。
   ドメイン単位の処分の発行・解除・一覧と、通報の一覧・担当・解決は、管理 API（`/api/v1/admin/domain_actions`・`/api/v1/admin/reports`、権限 `manage_domains` / `manage_reports`）と CLI（`my admin domain` / `my admin report`）から行います（[運用手順](../operations/moderation.md)）。入力されたドメインは `CanonicalHost` で正規化してから渡します。
 - `Block` / `Undo Block` の送信（§7.1）は、ローカルのアカウントがリモートのアカウントをブロック・解除したときだけです。`Block` の `id` はブロックの URI（`/ap/activities/{block_id}`）、宛先はブロックした相手だけで、相手の個人の inbox に送ります（shared inbox に集約しない。Mastodon と同じ）。
-- 通報の転送（FR-709）は、ローカルの通報者が転送を選んだリモートのアカウントへの通報を、受け付けのトランザクションで outbox に積みます。受け付けで転送しなかったこのサーバーの通報（判定フックの通報を含む）は、モデレーターが後から転送でき（ADR-0147 §7、`moderation.report_forwarded`）、そのトランザクションで同じ `Flag` を積みます。転送は通報ごとに 1 回です。
-  `Flag` の主体はインスタンス Actor、`object` は対象の Actor の `id` と通報した投稿の URI、`content` はコメント、宛先は対象のアカウントの inbox だけです。通報者・IP・メールアドレスは載せません。
+- 通報の転送（FR-709）は、ローカルの通報者が転送を選んだリモートのアカウントへの通報を、受け付けのトランザクションで outbox に積みます。受け付けで転送しなかったこのサーバーの通報（判定フックの通報を含む）は、モデレーターが後から転送でき（ADR-0058 §6、`moderation.report_forwarded`）、そのトランザクションで同じ形の `Flag` を積みます。転送は通報ごとに 1 回です。
+  `Flag` の主体はインスタンス Actor、`object` は対象の Actor の `id` と通報した投稿の URI、宛先は対象のアカウントの inbox だけです。通報者・IP・メールアドレスは載せません。
+  `content` は、起票時の転送では通報者のコメント、後からの転送ではモデレーターが転送するときに書いた文（`report_forwards.comment`。既定は空）です。後からの転送は通報者のコメントも判定フックのメモも載せません（`moderation.Report.FlagComment`）。
   `Flag` の `id` は `/ap/activities/{id}`（`outbound_activities` の ID）で、Mastodon と同じく `to` / `cc` を持ちません。文書は展開ジョブが組み立てるので、それまでに消えた投稿の URI は入りません。
   返信先の第三者のサーバーへは転送しません（[ADR-0058](../adr/0058-moderation-admin-separation.md)）。
 

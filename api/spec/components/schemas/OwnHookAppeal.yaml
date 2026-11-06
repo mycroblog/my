@@ -4,10 +4,11 @@ type: object
 required: [id, hook_decision_id, state, submitted_at]
 properties:
   id:
-    type: string
+    $ref: ./Id.yaml
   hook_decision_id:
     description: The decision appealed.
-    type: string
+    allOf:
+      - $ref: ./Id.yaml
   state:
     $ref: ./HookAppealState.yaml
   submitted_at:

@@ -126,8 +126,8 @@ const (
 	SettingHookSignupCheckOnFailure   SettingKey = "hook_signup_check_on_failure"
 	SettingHookMediaCheckOnFailure    SettingKey = "hook_media_check_on_failure"
 	// SettingHookSignupCheckReject lets a reject of the hook signup.check refuse a sign-up (ADR-0147 §2).
-	SettingHookSignupCheckReject  SettingKey = "hook_signup_check_reject"
-	SettingRetentionHookDecisions SettingKey = "retention_hook_decisions"
+	SettingHookSignupCheckReject      SettingKey = "hook_signup_check_reject"
+	SettingHookDecisionsRetentionDays SettingKey = "hook_decisions_retention_days"
 	// SettingHookLocalStatusAccountAgeDays limits the hook local.status to the posts of accounts
 	// created recently (ADR-0147 §2).
 	SettingHookLocalStatusAccountAgeDays SettingKey = "hook_local_status_account_age_days"
@@ -174,8 +174,8 @@ const (
 	SettingTranslationProviderVisibilities SettingKey = "translation_provider_visibilities"
 	SettingTranslationBrowser              SettingKey = "translation_browser"
 	// SettingTranslationUserMonthlyCharacters and SettingTranslationServerMonthlyCharacters bound
-	// the characters sent to providers in a UTC month. 0 sends nothing, and no value means
-	// unlimited (ADR-0148 §11).
+	// the characters sent to providers in a UTC month. 0 sends nothing, and no value is
+	// unlimited: an operator sets a large number (ADR-0148 §11).
 	SettingTranslationUserMonthlyCharacters   SettingKey = "translation_user_monthly_characters"
 	SettingTranslationServerMonthlyCharacters SettingKey = "translation_server_monthly_characters"
 	// SettingTranslationRetentionDays is how many days a translation is kept after it was made
@@ -375,9 +375,9 @@ const (
 	// The records of the participants of voice chat rooms (ADR-0100 §13).
 	MinRetentionVoiceParticipants     = 30
 	DefaultRetentionVoiceParticipants = 90
-	// The bounds and default of SettingRetentionHookDecisions, in days (ADR-0147 §6).
-	MinRetentionHookDecisions     = 30
-	DefaultRetentionHookDecisions = 90
+	// The bounds and default of SettingHookDecisionsRetentionDays, in days (ADR-0147 §6).
+	MinHookDecisionsRetentionDays     = 30
+	DefaultHookDecisionsRetentionDays = 90
 	// DefaultHookLocalStatusAccountAgeDays is the default of SettingHookLocalStatusAccountAgeDays.
 	DefaultHookLocalStatusAccountAgeDays = 7
 )
@@ -656,7 +656,7 @@ var definitions = []Definition{
 		Doc: "How many days after its creation an account's posts go to the decision hook local.status; 0 sends the posts of every account. Private and direct posts never go, nor those of an account whose appeal a moderator overturned (ADR-0147 §2, §9).",
 	},
 	{
-		Key: SettingRetentionHookDecisions, Kind: KindInt, Default: strconv.Itoa(DefaultRetentionHookDecisions), Min: MinRetentionHookDecisions, Max: MaxRetention,
+		Key: SettingHookDecisionsRetentionDays, Kind: KindInt, Default: strconv.Itoa(DefaultHookDecisionsRetentionDays), Min: MinHookDecisionsRetentionDays, Max: MaxRetention,
 		Doc: "How many days the records of the decisions of the decision hooks are kept. A decision stays longer while a post's sensitive mark rests on it, a retention hold preserves its account, or its author can still appeal it (ADR-0147 §6).",
 	},
 	{
@@ -1116,7 +1116,7 @@ func (s Settings) AppealWindow() time.Duration {
 // Retention returns the value of a retention setting (SettingSessionOriginsRetentionDays,
 // SettingRegistrationOriginsRetentionDays, SettingReportsRetentionDays,
 // SettingModerationActionsRetentionDays, SettingAuditLogRetentionDays,
-// SettingVoiceParticipantsRetentionDays, SettingRetentionHookDecisions) as a duration.
+// SettingVoiceParticipantsRetentionDays, SettingHookDecisionsRetentionDays) as a duration.
 func (s Settings) Retention(key SettingKey) time.Duration {
 	return time.Duration(s.intValue(key)) * 24 * time.Hour
 }

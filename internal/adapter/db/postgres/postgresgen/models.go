@@ -1009,6 +1009,7 @@ type ReportAssignment struct {
 type ReportForward struct {
 	ID                string
 	ReportID          string
+	Comment           string
 	ForwardedByUserID *string
 	ForwardedAt       time.Time
 }

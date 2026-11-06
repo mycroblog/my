@@ -60,7 +60,8 @@ What each answer does to a post:
 - `flag` files one report per decision, with your instance actor as the reporter, the reason's category (`spam` and
   `malware` as Spam, `illegal` as Legal, `harassment`, `sexual`, and `violence` as Violation, and anything else as Other), and
   the plugin's note as the comment. The report says that a review filed it. It is not forwarded to the author's server
-  unless a moderator [forwards it](moderation.md#reports), and resolving it notifies nobody. Each decision files its own
+  unless a moderator [forwards it](moderation.md#reports), and a forward never sends the note: only the text the moderator
+  writes then. Resolving it notifies nobody. Each decision files its own
   report, so a wave of spam can fill the queue.
 - `mark_sensitive` marks the post, not the revision: the mark stays on later revisions, whatever they are answered, until a
   moderator cancels the decision. It shows attachments as sensitive and leaves the text alone, so a post with no attachment
@@ -234,7 +235,7 @@ An automated effect goes in the audit log, with the system as the actor, only wh
 filed `flag`, and `require_approval` (`hook_decision_applied`). `drop` and `reject` store nothing, so they stay in the
 decisions alone.
 
-The job `hook.purge_decisions` removes decisions after `retention_hook_decisions` days (default 90, at least 30). It keeps
+The job `hook.purge_decisions` removes decisions after `hook_decisions_retention_days` days (default 90, at least 30). It keeps
 those that a sensitive mark on an existing post rests on, those of an account under a
 [retention hold](moderation.md#record-retention-and-holds), and each `reject` of `local.status` its author can still appeal or
 whose appeal waits for review. An appeal goes with its decision. Deleting an account removes its decisions, its appeals, and

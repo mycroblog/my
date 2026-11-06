@@ -4,7 +4,7 @@ type: object
 required: [id, hook, subject_key, mode, outcome, latency_ms, decided_at, overridable]
 properties:
   id:
-    type: string
+    $ref: ./Id.yaml
   hook:
     $ref: ./HookName.yaml
   subject_key:
@@ -12,7 +12,8 @@ properties:
     type: string
   account_id:
     description: The account the subject belongs to; absent when there is none.
-    type: string
+    allOf:
+      - $ref: ./Id.yaml
   mode:
     $ref: ./HookDecisionMode.yaml
   outcome:

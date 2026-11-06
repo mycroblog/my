@@ -50,12 +50,7 @@ post:
   security:
     - oauth2: ["write:statuses"]
   parameters:
-    - name: id
-      in: path
-      required: true
-      description: The ID of the decision, `hook_decision_id` of the refusal.
-      schema:
-        $ref: ../components/schemas/Id.yaml
+    - $ref: ../components/parameters/HookDecisionId.yaml
   requestBody:
     required: true
     content:

@@ -16,7 +16,7 @@ func (r *StatusRepository) InsertSensitivityOverride(ctx context.Context, tx uow
 		return err
 	}
 	return wrap(q.InsertStatusSensitivityOverride(ctx, sqlitegen.InsertStatusSensitivityOverrideParams{
-		StatusID: statusID, SourceActionID: toNullString(actionID),
+		StatusID: statusID, SourceID: actionID,
 	}), "insert status sensitivity override")
 }
 
@@ -26,7 +26,7 @@ func (r *StatusRepository) DeleteSensitivityOverridesOf(ctx context.Context, tx 
 	if err != nil {
 		return err
 	}
-	return wrap(q.DeleteStatusSensitivityOverridesOfAction(ctx, toNullString(actionID)), "delete status sensitivity overrides")
+	return wrap(q.DeleteStatusSensitivityOverridesOfAction(ctx, actionID), "delete status sensitivity overrides")
 }
 
 // InsertSensitivityOverrideOfHookDecision implements content.Repository.
@@ -36,7 +36,7 @@ func (r *StatusRepository) InsertSensitivityOverrideOfHookDecision(ctx context.C
 		return err
 	}
 	return wrap(q.InsertStatusSensitivityOverrideOfHookDecision(ctx, sqlitegen.InsertStatusSensitivityOverrideOfHookDecisionParams{
-		StatusID: statusID, SourceHookDecisionID: toNullString(decisionID),
+		StatusID: statusID, SourceID: decisionID,
 	}), "insert status sensitivity override of a hook decision")
 }
 
@@ -46,7 +46,7 @@ func (r *StatusRepository) DeleteSensitivityOverridesOfHookDecision(ctx context.
 	if err != nil {
 		return err
 	}
-	return wrap(q.DeleteStatusSensitivityOverridesOfHookDecision(ctx, toNullString(decisionID)), "delete status sensitivity overrides of a hook decision")
+	return wrap(q.DeleteStatusSensitivityOverridesOfHookDecision(ctx, decisionID), "delete status sensitivity overrides of a hook decision")
 }
 
 // SensitivityOverridden implements content.Repository.

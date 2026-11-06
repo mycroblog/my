@@ -11,7 +11,7 @@
 | `hook_decision_appeal_decisions` | イベント | `appeal_id`（PK）, `decision`（`enum(upheld, overturned)`）, `decided_by_user_id?`（NULL = CLI）, `decided_at` | 審査は 1 回。同じ結果の再審査は何もせず、反対の結果は拒否する。`overturned` は同じトランザクションで `hook_decision_overrides` と `hook_account_exemptions` を書く。審査はプラグインを呼ばない |
 | `hook_account_exemptions` | 現在値 | `hook`（`enum(local.status)`）, `account_id`, `exempted_at` | PK `(hook, account_id)`。行の存在が現在値で（規約 5）、判定や申し立てから導かない。行のあるアカウントはそのフックに送らない |
 
-保持: 定期ジョブ `hook.purge_decisions` が、`retention_hook_decisions`（既定 90 日、下限 30 日）を過ぎた判定を子の行ごと消します。次は残します（ADR-0147 §6）。
+保持: 定期ジョブ `hook.purge_decisions` が、`hook_decisions_retention_days`（既定 90 日、下限 30 日）を過ぎた判定を子の行ごと消します。次は残します（ADR-0147 §6）。
 
 - `enforce` の `mark_sensitive` で取り消しのない判定のうち、`statuses` に行のある投稿を指すもの
 - `retention_holds` が保全するアカウントの判定（`moderation.HeldAccountIDs`）

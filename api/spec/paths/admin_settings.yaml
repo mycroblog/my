@@ -24,7 +24,9 @@ patch:
     each change is kept as a revision and audited (`setting_changed`). Setting the current
     value again still records a revision, so clients send only the settings they change.
     The changes take effect on the next request. An unknown key, or a value its key
-    rejects, is a 422 naming the key, and nothing is changed. Needs the `manage_settings`
+    rejects, is a 422 naming the key, and nothing is changed. A value can also depend on the
+    current one: the mode of a decision hook (`hook_*_mode`) goes from `off` to `enforce` only
+    through `observe`, so `enforce` while it is `off` is a 422. Needs the `manage_settings`
     permission.
   tags: [admin-server]
   security:
