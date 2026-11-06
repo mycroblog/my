@@ -47,6 +47,7 @@ userdocs:
     - "docs/operations/*.md"
     - "docs/reference/*.md"
     - "docs/guide/*.md"
+    - "docs/developers/*.md"
   # Changed paths that no document describes, which `agentkit docs impact` passes over: tests, their fixtures and
   # stories, and the test-only deployments.
   skip:
@@ -134,6 +135,12 @@ entries:
     notes:
       - "docs/reference/configuration.md is generated: `scripts/task.sh go:config-docs`."
       - "English only, and no links to or citations of ADRs, docs/requirements, docs/architecture, or issues and PRs (AGENTS.md#documentation)."
+  - name: developers-docs
+    paths: ["docs/developers/**"]
+    docs: ["docs/adr/0150-documentation-site.md#5-api-を使う開発者向けの文書", "AGENTS.md#documentation"]
+    checks: [docs]
+    notes:
+      - "Guides for people who build clients and bots against the client API. English only, and no links to or citations of ADRs, docs/requirements, docs/architecture, or issues and PRs (AGENTS.md#documentation). A new file is linked from docs/README.md and named in the userdocs of the entries whose paths it describes."
   - name: doc-rules
     paths: ["docs/lint.yaml", "tools/agentkit/internal/docslint/**", "tools/agentkit/internal/docsync/**"]
     docs: ["AGENTS.md#documentation", "tools/agentkit/README.md#documentation-rules"]
@@ -516,6 +523,7 @@ entries:
   - name: client-api
     paths: ["internal/interface/clientapi/**", "api/**"]
     docs: ["docs/architecture/client-api.md#3-エンドポイントを追加する手順", "docs/architecture/client-api.md#2-規約"]
+    userdocs: ["docs/developers/paging.md", "docs/developers/errors.md", "docs/developers/streaming.md", "docs/developers/rate-limits.md", "docs/developers/stability.md"]
     checks: [api, go, web, mykit]
     shared: true
     notes:
@@ -525,7 +533,7 @@ entries:
     docs: ["docs/architecture/client-api.md#4-認可oauth-20", "docs/architecture/web-client/08-server-rendered-pages.md#8-サーバーが描画する画面"]
   - name: third-party-apps
     paths: ["internal/interface/oauth/**", "internal/domain/identity/oauth.go", "internal/interface/clientapi/ratelimit.go"]
-    userdocs: ["docs/reference/third-party-apps.md"]
+    userdocs: ["docs/developers/authentication.md", "docs/developers/rate-limits.md", "docs/developers/stability.md"]
   - name: activitypub
     paths: ["internal/interface/activitypub/**"]
     docs: ["docs/architecture/federation.md#3-受信inbox", "docs/architecture/federation.md#10-コレクションとオブジェクトの-get"]
@@ -576,6 +584,7 @@ entries:
   - name: mykit
     paths: ["pkg/mykit/**", "scripts/mykit-mod-check.sh", "internal/platform/platformtest/**"]
     docs: ["docs/adr/0093-api-client-library-mykit.md", "docs/architecture/client-api.md#4-認可oauth-20"]
+    userdocs: ["docs/developers/libraries.md"]
     checks: [mykit]
     notes:
       - "pkg/mykit is a Go module of its own under MIT (`// SPDX-License-Identifier: MIT`): it never imports or requires the server module, and its dependencies are permissive only (`scripts/task.sh mykit:check`)."
@@ -592,6 +601,7 @@ entries:
   - name: mybot
     paths: ["pkg/mybot/**"]
     docs: ["docs/adr/0093-api-client-library-mykit.md", "docs/adr/0093-api-client-library-mykit.md"]
+    userdocs: ["docs/developers/libraries.md"]
     checks: [mykit]
     notes:
       - "pkg/mybot is a Go module of its own under MIT (`// SPDX-License-Identifier: MIT`) that requires pkg/mykit alone, replaced with ../mykit, and never the server module; the mykit context checks it (`scripts/task.sh mykit:check`, the mybot-* tasks)."
