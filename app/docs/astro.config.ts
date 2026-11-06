@@ -5,11 +5,15 @@
 // Search is Starlight's built-in Pagefind; the site loads no analytics and no external service (ADR-0150 §7).
 import starlight from "@astrojs/starlight";
 import { defineConfig } from "astro/config";
-
+import starlightLinksValidator from "starlight-links-validator";
+import { base, sitePageLinks } from "./src/published";
+import { docsSidebar } from "./src/sidebar";
 import { apiReferencePlugin, apiReferenceSidebar } from "./src/api-reference";
 
 export default defineConfig({
   site: "https://mycroblog.dev",
+  // The path prefix of the version being built (DOCS_SITE_BASE: /latest/, /next/, ...; ADR-0150 §6), "/" by default.
+  base,
   // The toolbar of `astro dev` is a development aid the site does not need.
   devToolbar: { enabled: false },
   integrations: [
@@ -30,8 +34,10 @@ export default defineConfig({
       },
       // Starlight's own lastUpdated reads the git history of the copied files, which says nothing about the documents.
       lastUpdated: false,
-      plugins: [apiReferencePlugin],
-      sidebar: [apiReferenceSidebar],
+      // The groups and order of docs/README.md (src/sidebar.ts), with the client API reference after the guides.
+      sidebar: docsSidebar({ Developers: [apiReferenceSidebar] }),
+      // A broken link or #anchor between pages fails the build; the validator cannot see the generated reference.
+      plugins: [starlightLinksValidator({ exclude: sitePageLinks }), apiReferencePlugin],
     }),
   ],
 });

@@ -37,6 +37,10 @@ coverage/
 # Claude Code local settings
 .claude/settings.local.json
 
+# The documents app/docs/scripts/import-docs.ts copies into the documentation site; only its landing page is written there.
+/app/docs/src/content/docs/*
+!/app/docs/src/content/docs/index.md
+
 # Playwright output (app/web)
 test-results/
 playwright-report/
