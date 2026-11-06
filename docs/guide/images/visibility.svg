@@ -10,7 +10,7 @@
     .b { font-weight: 600; }
     .m { fill: #59636e; font-size: 15px; }
     .h { fill: #1f2328; font-size: 17px; font-weight: 600; }
-    .danger { fill: #cf222e; font-size: 15px; }
+    .danger-text { fill: #cf222e; font-size: 15px; }
     .group { fill: #f6f8fa; stroke: #d1d9e0; stroke-width: 1.5; }
     .proc { fill: #ddf4ff; stroke: #0969da; stroke-width: 2; }
     .port { fill: #ffffff; stroke: #8c959f; stroke-width: 1.5; }
@@ -18,7 +18,7 @@
       .bg { fill: #0d1117; }
       .t, .h { fill: #e6edf3; }
       .m { fill: #9198a1; }
-      .danger { fill: #f85149; }
+      .danger-text { fill: #f85149; }
       .group { fill: #151b23; stroke: #3d444d; }
       .proc { fill: #0c2d6b; stroke: #4493f8; }
       .port { fill: #0d1117; stroke: #656c76; }
@@ -49,7 +49,7 @@
   <rect class="port" x="478" y="152" width="258" height="84" rx="8"/>
   <text class="t" x="494" y="180">Your followers only</text>
   <text class="m" x="494" y="202">shown as Followers</text>
-  <text class="danger" x="494" y="222">not sent to anyone else</text>
+  <text class="danger-text" x="494" y="222">not sent to anyone else</text>
 
   <rect class="proc" x="16" y="244" width="160" height="84" rx="8"/>
   <text class="t b" x="96" y="292" text-anchor="middle">Unlisted</text>

@@ -16,7 +16,7 @@
     .proc { fill: #ddf4ff; stroke: #0969da; stroke-width: 2; }
     .port { fill: #ffffff; stroke: #8c959f; stroke-width: 1.5; }
     .svc { fill: #fbefff; stroke: #8250df; stroke-width: 1.5; }
-    .lost { fill: #ffebe9; stroke: #cf222e; stroke-width: 1.5; }
+    .danger { fill: #ffebe9; stroke: #cf222e; stroke-width: 1.5; }
     .arrow { stroke: #59636e; stroke-width: 2; fill: none; }
     .head { fill: #59636e; }
     @media (prefers-color-scheme: dark) {
@@ -29,7 +29,7 @@
       .proc { fill: #0c2d6b; stroke: #4493f8; }
       .port { fill: #0d1117; stroke: #656c76; }
       .svc { fill: #2a1650; stroke: #ab7df8; }
-      .lost { fill: #3c0d12; stroke: #f85149; }
+      .danger { fill: #3c0d12; stroke: #f85149; }
       .arrow { stroke: #9198a1; }
       .head { fill: #9198a1; }
     }
@@ -43,7 +43,7 @@
   <rect class="port" x="20" y="16" width="350" height="80" rx="8"/>
   <text class="t b" x="195.0" y="50.0" text-anchor="middle">Database backup</text>
   <text class="m" x="195.0" y="72.0" text-anchor="middle">restored</text>
-  <rect class="lost" x="390" y="16" width="350" height="80" rx="8"/>
+  <rect class="danger" x="390" y="16" width="350" height="80" rx="8"/>
   <text class="t b" x="565.0" y="50.0" text-anchor="middle">The KEK that wrapped its secrets</text>
   <text class="m" x="565.0" y="72.0" text-anchor="middle">lost, or another one set in its place</text>
   <path class="arrow" d="M 195 96 L 195 132" marker-end="url(#arrowhead)"/>
@@ -54,7 +54,7 @@
   <text class="t" x="40" y="190" text-anchor="start">posts, accounts, follows,</text>
   <text class="t" x="40" y="214" text-anchor="start">and the rest of the database</text>
   <text class="t" x="40" y="262" text-anchor="start">media files in storage</text>
-  <rect class="lost" x="390" y="136" width="350" height="202" rx="12"/>
+  <rect class="danger" x="390" y="136" width="350" height="202" rx="12"/>
   <text class="h" x="410" y="166" text-anchor="start">Sealed: cannot be decrypted</text>
   <text class="m" x="410" y="190" text-anchor="start">error: unknown key-encryption key</text>
   <text class="t" x="410" y="226" text-anchor="start">actors' private keys</text>
@@ -63,7 +63,7 @@
   <text class="t" x="410" y="298" text-anchor="start">webhook signing secrets</text>
   <text class="t" x="410" y="322" text-anchor="start">the media proxy signing key</text>
   <path class="arrow" d="M 565 338 L 565 374" marker-end="url(#arrowhead)"/>
-  <rect class="lost" x="390" y="378" width="350" height="80" rx="8"/>
+  <rect class="danger" x="390" y="378" width="350" height="80" rx="8"/>
   <text class="t b" x="565.0" y="401.0" text-anchor="middle">Actors' identity is broken</text>
   <text class="m" x="565.0" y="423.0" text-anchor="middle">other servers can no longer</text>
   <text class="m" x="565.0" y="445.0" text-anchor="middle">verify the actors' signatures</text>

@@ -25,7 +25,7 @@
       .client { fill: #0f2d1b; stroke: #3fb950; }
       .proc { fill: #0c2d6b; stroke: #4493f8; }
       .port { fill: #0d1117; stroke: #656c76; }
-      .danger { fill: #3d1214; stroke: #f85149; }
+      .danger { fill: #3c0d12; stroke: #f85149; }
       .arrow { stroke: #9198a1; }
       .head { fill: #9198a1; }
     }

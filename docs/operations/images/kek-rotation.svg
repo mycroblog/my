@@ -16,7 +16,7 @@
     .proc { fill: #ddf4ff; stroke: #0969da; stroke-width: 2; }
     .port { fill: #ffffff; stroke: #8c959f; stroke-width: 1.5; }
     .svc { fill: #fbefff; stroke: #8250df; stroke-width: 1.5; }
-    .lost { fill: #ffebe9; stroke: #cf222e; stroke-width: 1.5; }
+    .danger { fill: #ffebe9; stroke: #cf222e; stroke-width: 1.5; }
     .arrow { stroke: #59636e; stroke-width: 2; fill: none; }
     .head { fill: #59636e; }
     @media (prefers-color-scheme: dark) {
@@ -29,7 +29,7 @@
       .proc { fill: #0c2d6b; stroke: #4493f8; }
       .port { fill: #0d1117; stroke: #656c76; }
       .svc { fill: #2a1650; stroke: #ab7df8; }
-      .lost { fill: #3c0d12; stroke: #f85149; }
+      .danger { fill: #3c0d12; stroke: #f85149; }
       .arrow { stroke: #9198a1; }
       .head { fill: #9198a1; }
     }
@@ -93,7 +93,7 @@
   <text class="t b" x="632" y="591" text-anchor="middle">new KEK</text>
   <text class="t" x="530" y="627" text-anchor="end">kek_previous</text>
   <text class="m" x="545" y="627" text-anchor="start">not set</text>
-  <rect class="lost" x="20" y="668" width="720" height="74" rx="8"/>
+  <rect class="danger" x="20" y="668" width="720" height="74" rx="8"/>
   <text class="t b" x="380.0" y="699.0" text-anchor="middle">Keep the backup of the old KEK</text>
   <text class="m" x="380.0" y="721.0" text-anchor="middle">for as long as you keep database backups taken before step 4</text>
 </svg>

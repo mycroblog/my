@@ -10,13 +10,13 @@
     .m { fill: #59636e; font-size: 20px; }
     .h { fill: #1f2328; font-size: 20px; font-weight: 600; }
     .lh { fill: #1f2328; font-size: 22px; font-weight: 600; }
-    .x { fill: #d1242f; }
+    .danger-text { fill: #cf222e; }
     .halo { paint-order: stroke; stroke: #f6f8fa; stroke-width: 8px; stroke-linejoin: round; }
     .group { fill: #f6f8fa; stroke: #d1d9e0; stroke-width: 1.5; }
     .client { fill: #dafbe1; stroke: #1a7f37; stroke-width: 1.5; }
     .proc { fill: #ddf4ff; stroke: #0969da; stroke-width: 2; }
     .port { fill: #ffffff; stroke: #8c959f; stroke-width: 1.5; }
-    .danger-box { fill: #ffebe9; stroke: #cf222e; stroke-width: 1.5; }
+    .danger { fill: #ffebe9; stroke: #cf222e; stroke-width: 1.5; }
     .life { stroke: #8c959f; stroke-width: 1.5; stroke-dasharray: 4 6; fill: none; }
     .arrow { stroke: #59636e; stroke-width: 2; fill: none; }
     .reply { stroke: #59636e; stroke-width: 2; stroke-dasharray: 8 5; fill: none; }
@@ -25,19 +25,19 @@
     .signal-head { fill: #0969da; }
     .data { stroke: #1a7f37; stroke-width: 3; fill: none; }
     .data-head { fill: #1a7f37; }
-    .danger { stroke: #cf222e; stroke-width: 2; fill: none; }
-    .danger-head { fill: #cf222e; }
+    .arrow.danger { fill: none; stroke: #cf222e; stroke-width: 2; }
+    .head.danger { fill: #cf222e; stroke: none; }
     @media (prefers-color-scheme: dark) {
       .bg { fill: #0d1117; }
       .t, .h, .lh { fill: #e6edf3; }
       .m { fill: #9198a1; }
-      .x { fill: #ff7b72; }
+      .danger-text { fill: #f85149; }
       .halo { stroke: #151b23; }
       .group { fill: #151b23; stroke: #3d444d; }
       .client { fill: #0f2d1b; stroke: #3fb950; }
       .proc { fill: #0c2d6b; stroke: #4493f8; }
       .port { fill: #0d1117; stroke: #656c76; }
-      .danger-box { fill: #25171c; stroke: #f85149; }
+      .danger { fill: #3c0d12; stroke: #f85149; }
       .life { stroke: #656c76; }
       .arrow, .reply { stroke: #9198a1; }
       .head { fill: #9198a1; }
@@ -45,8 +45,8 @@
       .signal-head { fill: #4493f8; }
       .data { stroke: #3fb950; }
       .data-head { fill: #3fb950; }
-      .danger { stroke: #f85149; }
-      .danger-head { fill: #f85149; }
+      .arrow.danger { stroke: #f85149; }
+      .head.danger { fill: #f85149; }
     }
   </style>
   <defs>
@@ -60,7 +60,7 @@
       <path class="data-head" d="M 0 0 L 10 5 L 0 10 z"/>
     </marker>
     <marker id="dangerhead" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-      <path class="danger-head" d="M 0 0 L 10 5 L 0 10 z"/>
+      <path class="head danger" d="M 0 0 L 10 5 L 0 10 z"/>
     </marker>
   </defs>
   <rect class="bg" x="0" y="0" width="760" height="1310" rx="12"/>
@@ -80,9 +80,9 @@
   <text class="t halo" x="380" y="164" text-anchor="middle">GET /api/v1/streaming</text>
   <text class="m halo" x="380" y="190" text-anchor="middle">Authorization: Bearer access_token</text>
   <path class="arrow" d="M 153 200 L 606 200" marker-end="url(#arrowhead)"/>
-  <text class="t x halo" x="380" y="238" text-anchor="middle">refused: 429 too-many-streams</text>
-  <text class="m x halo" x="380" y="264" text-anchor="middle">or 503 with Retry-After</text>
-  <path class="danger" d="M 607 274 L 154 274" marker-end="url(#dangerhead)"/>
+  <text class="t danger-text halo" x="380" y="238" text-anchor="middle">refused: 429 too-many-streams</text>
+  <text class="m danger-text halo" x="380" y="264" text-anchor="middle">or 503 with Retry-After</text>
+  <path class="arrow danger" d="M 607 274 L 154 274" marker-end="url(#dangerhead)"/>
   <text class="t halo" x="380" y="312" text-anchor="middle">200 text/event-stream</text>
   <text class="m halo" x="380" y="338" text-anchor="middle">: connected</text>
   <path class="reply" d="M 607 348 L 154 348" marker-end="url(#arrowhead)"/>
@@ -96,13 +96,13 @@
   <text class="t halo" x="380" y="604" text-anchor="middle">: heartbeat</text>
   <path class="signal" d="M 607 614 L 154 614" marker-end="url(#signalhead)"/>
   <text class="h halo" x="28" y="682">3. The stream ends</text>
-  <rect class="danger-box" x="492" y="696" width="236" height="118" rx="8"/>
-  <text class="t x" x="610" y="723" text-anchor="middle">token not valid,</text>
-  <text class="t x" x="610" y="749" text-anchor="middle">client fell behind,</text>
-  <text class="t x" x="610" y="775" text-anchor="middle">server shuts down,</text>
-  <text class="t x" x="610" y="801" text-anchor="middle">or missed updates</text>
-  <text class="t x halo" x="380" y="848" text-anchor="middle">the stream ends</text>
-  <path class="danger" d="M 607 858 L 154 858" marker-end="url(#dangerhead)"/>
+  <rect class="danger" x="492" y="696" width="236" height="118" rx="8"/>
+  <text class="t danger-text" x="610" y="723" text-anchor="middle">token not valid,</text>
+  <text class="t danger-text" x="610" y="749" text-anchor="middle">client fell behind,</text>
+  <text class="t danger-text" x="610" y="775" text-anchor="middle">server shuts down,</text>
+  <text class="t danger-text" x="610" y="801" text-anchor="middle">or missed updates</text>
+  <text class="t danger-text halo" x="380" y="848" text-anchor="middle">the stream ends</text>
+  <path class="arrow danger" d="M 607 858 L 154 858" marker-end="url(#dangerhead)"/>
   <rect class="port" x="32" y="882" width="236" height="66" rx="8"/>
   <text class="t" x="150" y="909" text-anchor="middle">back off; refresh</text>
   <text class="t" x="150" y="935" text-anchor="middle">the token if expired</text>

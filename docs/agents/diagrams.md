@@ -31,7 +31,7 @@ the image, a search engine, and the plain Markdown copy of the page lose nothing
 - **A clear flow.** Read it top to bottom or left to right, with arrows pointing the way data or control goes, and no
   crossing lines where a different layout avoids them. Group related boxes in a labeled container.
 - **English labels at a readable size.** Use 15px for a note, 16px for a box label, and 17px for a group heading, with
-  a `viewBox` about 760 wide so the image is not scaled below those sizes in the content column. Keep labels short; put
+  a `viewBox` exactly 760 wide (see [Width](#width)) so the image is not scaled below those sizes in the content column. Keep labels short; put
   the detail in the prose.
 - **Fonts that need no download.** Use the system stack of the examples
   (`-apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif`). An SVG shown as an
@@ -42,6 +42,31 @@ the image, a search engine, and the plain Markdown copy of the page lose nothing
   2. The alt text of the Markdown image: one or two sentences about what the diagram shows and where the details are.
   3. Prose right after the diagram that says everything in it, as a list that follows the flow of the picture.
 - **No script and no external references**: no `<script>`, no link to another file or URL, no embedded raster image.
+
+## Width
+
+Every diagram is 760 wide: `viewBox="0 0 760 <height>"` and `width="760"`. The font sizes stay as written above (15, 16
+and 17px); a diagram that needs more room grows taller, never wider and never smaller in type. Red for a failure is
+always `danger` (a box) or `danger-text` (text), with the colors of the table below; do not add another red, and do not
+name it after the case (`refused`, `lost`). A red arrow is `class="arrow danger"` with a head of `class="head danger"`.
+
+## Line styles
+
+Lines that carry different things look different, in every diagram that needs more than the plain `arrow`. The class
+sets the stroke; copy the values.
+
+| Class (head) | Use | Style | Light | Dark |
+| --- | --- | --- | --- | --- |
+| `arrow` (`head`) | the usual flow | solid, 2px | `#59636e` | `#9198a1` |
+| `signal` (`signal-head`) | a signal or control message | dashed `6 4`, 2px | `#0969da` | `#4493f8` |
+| `data` (`data-head`) | data that flows | solid, 3px | `#1a7f37` | `#3fb950` |
+| `reply` (uses `head`) | a reply to a request | dashed `8 5`, 2px | `#59636e` | `#9198a1` |
+| `arrow danger` (`head danger`) | a failure | solid, 2px | `#cf222e` | `#f85149` |
+
+The examples are [`voice-methods.svg`](../operations/images/voice-methods.svg) and
+[`supporter-flow.svg`](../operations/images/supporter-flow.svg) (signal, data) and
+[`token-flow.svg`](../developers/images/token-flow.svg) (reply). Give each style its own arrowhead marker with the
+matching fill, and say in the prose what the styles mean when a diagram uses more than one.
 
 ## Embedding
 
@@ -70,7 +95,8 @@ adding a color.
 | `proc` | the `my` processes | `#ddf4ff` / `#0969da` | `#0c2d6b` / `#4493f8` |
 | `port` | a part chosen by configuration | `#ffffff` / `#8c959f` | `#0d1117` / `#656c76` |
 | `svc` | an outside service | `#fbefff` / `#8250df` | `#2a1650` / `#ab7df8` |
-| `danger` | a failure and what follows it | `#ffebe9` / `#cf222e` | `#3c0d12` / `#f85149` |
+| `danger` | a failure, a refusal, a loss, and what follows it | `#ffebe9` / `#cf222e` | `#3c0d12` / `#f85149` |
+| `danger-text` | text that is red without a box | `#cf222e` | `#f85149` |
 | `arrow`, `head` | arrows and heads | `#59636e` | `#9198a1` |
 
 ```svg

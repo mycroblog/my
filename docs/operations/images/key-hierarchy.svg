@@ -16,7 +16,6 @@
     .proc { fill: #ddf4ff; stroke: #0969da; stroke-width: 2; }
     .port { fill: #ffffff; stroke: #8c959f; stroke-width: 1.5; }
     .svc { fill: #fbefff; stroke: #8250df; stroke-width: 1.5; }
-    .lost { fill: #ffebe9; stroke: #cf222e; stroke-width: 1.5; }
     .arrow { stroke: #59636e; stroke-width: 2; fill: none; }
     .head { fill: #59636e; }
     @media (prefers-color-scheme: dark) {
@@ -29,7 +28,6 @@
       .proc { fill: #0c2d6b; stroke: #4493f8; }
       .port { fill: #0d1117; stroke: #656c76; }
       .svc { fill: #2a1650; stroke: #ab7df8; }
-      .lost { fill: #3c0d12; stroke: #f85149; }
       .arrow { stroke: #9198a1; }
       .head { fill: #9198a1; }
     }

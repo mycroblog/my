@@ -16,7 +16,7 @@
     .proc { fill: #ddf4ff; stroke: #0969da; stroke-width: 2; }
     .port { fill: #ffffff; stroke: #8c959f; stroke-width: 1.5; }
     .svc { fill: #fbefff; stroke: #8250df; stroke-width: 1.5; }
-    .refused { fill: #ffebe9; stroke: #cf222e; stroke-width: 1.5; }
+    .danger { fill: #ffebe9; stroke: #cf222e; stroke-width: 1.5; }
     .arrow { stroke: #59636e; stroke-width: 2; fill: none; }
     .head { fill: #59636e; }
     @media (prefers-color-scheme: dark) {
@@ -29,7 +29,7 @@
       .proc { fill: #0c2d6b; stroke: #4493f8; }
       .port { fill: #0d1117; stroke: #656c76; }
       .svc { fill: #2a1650; stroke: #ab7df8; }
-      .refused { fill: #3c1618; stroke: #f85149; }
+      .danger { fill: #3c0d12; stroke: #f85149; }
       .arrow { stroke: #9198a1; }
       .head { fill: #9198a1; }
     }
@@ -90,7 +90,7 @@
   <text class="t b" x="395.0" y="536.0" text-anchor="middle">/media/, /media/proxy/</text>
   <text class="m" x="395.0" y="558.0" text-anchor="middle">Cache-Control: public,</text>
   <text class="m" x="395.0" y="580.0" text-anchor="middle">cached by the CDN</text>
-  <rect class="refused" x="520" y="508" width="200" height="96" rx="8"/>
+  <rect class="danger" x="520" y="508" width="200" height="96" rx="8"/>
   <text class="t b" x="620.0" y="536.0" text-anchor="middle">403 Forbidden</text>
   <text class="m" x="620.0" y="558.0" text-anchor="middle">Cache-Control: no-store</text>
   <text class="m" x="620.0" y="580.0" text-anchor="middle">my.http.origin_refused</text>
