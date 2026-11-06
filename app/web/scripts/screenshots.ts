@@ -8,6 +8,7 @@
 //
 //   bun scripts/screenshots.ts [<name> ...]    every shot, or only the named ones (home, post, ...)
 import { mkdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { extname, join, normalize } from "node:path";
 import { fileURLToPath } from "node:url";
 import { chromium, type Page } from "playwright";
@@ -45,16 +46,18 @@ const contentTypes: Record<string, string> = {
 };
 
 /** Serves a file of the static Storybook; MSW's Service Worker answers the API inside the page. */
-function serve(request: Request): Response {
-  const path = normalize(join(site, decodeURIComponent(new URL(request.url).pathname)));
-  if (!path.startsWith(site)) return new Response("forbidden", { status: 403 });
+function serve(request: IncomingMessage, response: ServerResponse): void {
+  const path = normalize(join(site, decodeURIComponent(new URL(request.url ?? "/", "http://localhost").pathname)));
+  if (!path.startsWith(site)) {
+    response.writeHead(403).end();
+    return;
+  }
   try {
     const file = statSync(path).isDirectory() ? join(path, "index.html") : path;
-    return new Response(readFileSync(file), {
-      headers: { "content-type": contentTypes[extname(file)] ?? "application/octet-stream" },
-    });
+    const body = readFileSync(file);
+    response.writeHead(200, { "content-type": contentTypes[extname(file)] ?? "application/octet-stream" }).end(body);
   } catch {
-    return new Response("not found", { status: 404 });
+    response.writeHead(404).end();
   }
 }
 
@@ -72,6 +75,19 @@ async function storyDone(page: Page): Promise<void> {
   );
   const result = await phase.jsonValue();
   if (result !== "finished") throw new Error(`the story ended ${result}`);
+}
+
+/** Waits until the fonts and every picture in the viewport have loaded; the pictures below it may load lazily. */
+async function picturesDrawn(page: Page): Promise<void> {
+  await page.evaluate(() => document.fonts.ready);
+  await page.waitForFunction(
+    () =>
+      [...document.images]
+        .filter((image) => image.checkVisibility() && image.getBoundingClientRect().top < window.innerHeight)
+        .every((image) => image.complete && image.naturalWidth > 0),
+    undefined,
+    { timeout: 30_000 },
+  );
 }
 
 /** Encodes a PNG as WebP with the browser's own encoder, so that the image needs no other tool. */
@@ -99,7 +115,11 @@ try {
   throw new Error(`no Storybook build in ${site}: run scripts/task.sh web:storybook-build`);
 }
 
-const server = Bun.serve({ port: 0, fetch: serve });
+const server = createServer(serve);
+await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
+const address = server.address();
+if (address === null || typeof address === "string") throw new Error("the Storybook server has no port");
+const origin = `http://127.0.0.1:${address.port}/`;
 mkdirSync(out, { recursive: true });
 const browser = await chromium.launch();
 try {
@@ -108,9 +128,9 @@ try {
     if (only.size > 0 && !only.has(shot.name)) continue;
     for (const theme of themes) {
       const page = await browser.newPage({ viewport, colorScheme: theme, reducedMotion: "reduce" });
-      await page.goto(`${server.url}iframe.html?id=${shot.story}&viewMode=story&globals=theme:${theme};locale:en`);
+      await page.goto(`${origin}iframe.html?id=${shot.story}&viewMode=story&globals=theme:${theme};locale:en`);
       await storyDone(page);
-      await page.evaluate(() => document.fonts.ready);
+      await picturesDrawn(page);
       const png = await page.screenshot({ animations: "disabled", caret: "hide" });
       const path = join(out, `${shot.name}-${theme}.webp`);
       writeFileSync(path, await toWebP(encoder, png));
@@ -120,5 +140,5 @@ try {
   }
 } finally {
   await browser.close();
-  await server.stop(true);
+  server.close();
 }

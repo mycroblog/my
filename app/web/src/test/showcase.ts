@@ -5,10 +5,8 @@
 // and right-to-left names, missing pictures); these show the everyday. Every person, server, and picture is made up:
 // the avatars, photos, and custom emoji are drawn here as SVG, and the servers use the reserved `.example` domains.
 import { http, HttpResponse } from "msw";
-import { waitFor } from "storybook/test";
 import { accountFixture, imageFixture, instanceFixture, type Schemas, viewerFixture } from "./fixtures";
 import { pictureHandlers, post } from "./postStories";
-import { type ScreenPlayContext, settled } from "./stories";
 
 type Account = Schemas["Account"];
 type Status = Schemas["Status"];
@@ -85,21 +83,6 @@ export const showcasePictures = [
   ...pictureHandlers,
 ];
 
-/**
- * Waits until the screen settles and every picture in the viewport has been drawn, so that a screenshot shows them
- * all; the pictures below it may load lazily.
- */
-export async function showcaseSettled(context: ScreenPlayContext): Promise<void> {
-  await settled(context);
-  await waitFor(() => {
-    const images = [...context.canvasElement.querySelectorAll("img")].filter(
-      (image) => image.getBoundingClientRect().top < window.innerHeight,
-    );
-    const pending = images.filter((image) => !image.complete || image.naturalWidth === 0);
-    if (pending.length > 0) throw new Error(`${pending.length} pictures are still loading`);
-  });
-}
-
 /** The avatar `name` of the showcase. */
 function avatar(name: string): Schemas["MediaVariants"] {
   return imageFixture(`${media}/avatars/${name}`);
@@ -125,20 +108,26 @@ export const showcaseViewer: Partial<Schemas["CredentialAccount"]> = {
 export const minori = { ...person(81, "minori", "佐藤みのり"), badges: [supporterBadge] };
 export const lena = person(82, "lena", "Lena Fischer", "social.example");
 export const tomas = person(83, "tomas", "Tomás Rivera");
-export const priya = person(84, "priya", "Priya Nair", "photos.example");
+const priya = person(84, "priya", "Priya Nair", "photos.example");
 export const kofi = { ...person(85, "kofi", "Kofi Mensah"), badges: [supporterBadge] };
-export const yuto = person(86, "yuto", "山田ゆうと", "mstdn.example.jp");
-export const sofia = person(87, "sofia", "Sofia Lindqvist");
+const yuto = person(86, "yuto", "山田ゆうと", "mstdn.example.jp");
+const sofia = person(87, "sofia", "Sofia Lindqvist");
 export const hana = person(89, "hana", "Hana Kobayashi");
-export const omar = person(90, "omar", "Omar Haddad");
-export const ren = person(92, "ren", "鈴木れん");
-export const ava = person(93, "ava", "Ava Thompson");
+const omar = person(90, "omar", "Omar Haddad");
+const ren = person(92, "ren", "鈴木れん");
+const ava = person(93, "ava", "Ava Thompson");
 export const alice: Account = { ...viewerFixture, ...showcaseViewer };
 
 /** A photo of `scene` (sunset, lake, bread, city), described as `description`; `n` makes its ID unique. */
 function photo(n: number, scene: string, description: string): Schemas["MediaAttachment"] {
   const id = `0192f0c4-7a8e-7000-8000-0000000e${String(n).padStart(4, "0")}`;
-  const variant = { url: `${media}/photos/${scene}.svg`, content_type: "image/svg+xml", width: 640, height: 360, size: 1000 };
+  const variant = {
+    url: `${media}/photos/${scene}.svg`,
+    content_type: "image/svg+xml",
+    width: 640,
+    height: 360,
+    size: 1000,
+  };
   return {
     id,
     type: "image",
@@ -202,7 +191,7 @@ export const quoteOfLake = showcasePost(2, kofi, {
 });
 
 /** Minori's bread, in Japanese, with a custom emoji in the text. */
-export const breadPost = showcasePost(3, minori, {
+const breadPost = showcasePost(3, minori, {
   content: `<p>週末に焼いたカンパーニュ、やっとクープがきれいに開きました :fresh_bread: ${hashtag("パン")}</p>`,
   language: "ja",
   emojis: [customEmoji("fresh_bread")],
@@ -219,7 +208,7 @@ export const breadPost = showcasePost(3, minori, {
 });
 
 /** Lena's poll. */
-export const pollOfLena = showcasePost(4, lena, {
+const pollOfLena = showcasePost(4, lena, {
   content: "<p>Planning the next community meetup. Which evening works best for you?</p>",
   poll: {
     id: "0192f0c4-7a8e-7000-8000-0000000e0101",
@@ -242,7 +231,7 @@ export const pollOfLena = showcasePost(4, lena, {
 });
 
 /** Tomás's post behind a content warning. */
-export const warnedOfTomas = showcasePost(5, tomas, {
+const warnedOfTomas = showcasePost(5, tomas, {
   content: "<p>I did not see that ending coming. The whole last episode was one long held breath.</p>",
   spoiler_text: "Season finale spoilers",
   replies_count: 7,
@@ -251,7 +240,7 @@ export const warnedOfTomas = showcasePost(5, tomas, {
 });
 
 /** Yuto's city at night, from another server, in Japanese. */
-export const cityPost = showcasePost(6, yuto, {
+const cityPost = showcasePost(6, yuto, {
   content: "<p>残業帰りの夜景。今日もおつかれさまでした。</p>",
   language: "ja",
   media_attachments: [photo(4, "city", "Office towers with a few lit windows under a crescent moon")],

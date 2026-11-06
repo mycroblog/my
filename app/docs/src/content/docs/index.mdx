@@ -1,0 +1,140 @@
+---
+title: mycroblog
+description: A microblog for the fediverse that starts small and grows with your community.
+template: splash
+hero:
+  tagline: |
+    <p><strong>mycroblog</strong> — a microblog for the fediverse that starts small and grows with your community.</p>
+    <p><code>my</code>, the mycroblog server, speaks ActivityPub and is written in Go. Start on one small machine or a scale-to-zero container with SQLite. When your community grows, move to PostgreSQL, a job queue, a stream broker and separate web and worker processes: same code, same data.</p>
+  image:
+    light: ../../assets/wordmark-light.svg
+    dark: ../../assets/wordmark-dark.svg
+    alt: mycroblog
+  actions:
+    # A document is named by its repository path; src/routeData.ts makes it the page's URL under the base path.
+    - text: Run a server
+      link: docs/operations/running.md
+      icon: right-arrow
+      variant: primary
+    - text: Source on GitHub
+      link: https://github.com/mycroblog/my
+      icon: github
+      variant: minimal
+---
+
+{/* SPDX-License-Identifier: AGPL-3.0-only */}
+
+import { Card, CardGrid } from "@astrojs/starlight/components";
+import DocLinks from "../../components/DocLinks.astro";
+import Screenshot from "../../components/Screenshot.astro";
+
+<Screenshot
+  name="home"
+  alt="The home timeline of mycroblog: a post quoting two photos of a lake and a sunset, with custom emoji reactions, then a post in Japanese about bread, beside the navigation, the latest notifications and the server's information."
+  eager
+/>
+
+## What it does
+
+<CardGrid>
+  <Card title="Start small, scale out" icon="rocket">
+    One binary and SQLite on a $5 VM, or a container that scales to zero. Grow into PostgreSQL, Cloud Tasks, Valkey,
+    Pub/Sub or SNS, S3 or GCS behind a CDN, and as many web and worker processes as you need.
+  </Card>
+  <Card title="Federates" icon="random">
+    Follows, posts, quote posts and custom emoji reactions travel to and from Mastodon, Misskey, GoToSocial and more.
+    The "This server" visibility keeps a post within your server and your followers.
+  </Card>
+  <Card title="Supporters and open books" icon="heart">
+    Paid plans through Stripe or PAY.JP that grant roles, badges and the right to add custom emoji. Record what the
+    server costs, import AWS and Google Cloud bills automatically, and publish costs and income to your community.
+  </Card>
+  <Card title="Voice rooms" icon="comment">
+    Live audio rooms for the people of your server, with hosts, speakers, invitations and reactions. Peer to peer for
+    small rooms, LiveKit or Sora for large ones.
+  </Card>
+  <Card title="A web app for everyone" icon="laptop">
+    An installable web app with push notifications and passkeys, translated from day one.
+  </Card>
+  <Card title="Moderation built in" icon="approve-check-circle">
+    Reports with appeals, domain blocks, an audit log, and decision hooks that let your own program review posts and
+    sign-ups before they are accepted.
+  </Card>
+  <Card title="Extend it" icon="puzzle">
+    Plugins over a versioned protocol, server webhooks, OAuth apps, and client and bot libraries for Go and TypeScript.
+    Translation of posts runs through a plugin of your choice.
+  </Card>
+</CardGrid>
+
+<CardGrid>
+  <Screenshot
+    name="post"
+    caption="Federates"
+    alt="A post quoting a post of another server with two photos, with its replies, boosts, favourites and custom emoji reactions."
+  />
+  <Screenshot
+    name="supporters"
+    caption="Supporters and open books"
+    alt="The supporters page of a server: the members of each paid plan, Coffee and A whole loaf of sourdough every month, with their avatars."
+  />
+  <Screenshot
+    name="voice-room"
+    caption="Voice rooms"
+    alt="A live voice room, Sunday baking club, open for 47 minutes: the host, a co-host and two speakers on the stage, and four listeners, one with a raised hand."
+  />
+  <Screenshot
+    name="reports"
+    caption="Moderation built in"
+    alt="The report queue of the moderators: five open reports with their category, who reported them, who handles them, and how long they have waited."
+  />
+</CardGrid>
+
+## Documentation
+
+<CardGrid>
+  <DocLinks
+    title="Run a server"
+    icon="setting"
+    links={[
+      { path: "docs/operations/running.md", label: "Running the server" },
+      { path: "docs/operations/deploy-cloud-run.md", label: "Deploying on Cloud Run" },
+      { path: "docs/operations/production-checklist.md", label: "Production checklist" },
+    ]}
+  />
+  <DocLinks
+    title="Use mycroblog"
+    icon="open-book"
+    links={[
+      { path: "docs/guide/signing-in.md", label: "Signing up and signing in" },
+      { path: "docs/guide/posting.md", label: "Posting and choosing who sees a post" },
+      { path: "docs/guide/following.md", label: "Following people and reading timelines" },
+      { path: "docs/guide/voice-chat.md", label: "Voice chat" },
+    ]}
+  />
+  <DocLinks
+    title="Build on mycroblog"
+    icon="pencil"
+    links={[
+      { path: "docs/developers/client-api.md", label: "The client API" },
+      { path: "api/openapi.yaml", label: "API reference" },
+      { path: "docs/developers/libraries.md", label: "Client libraries" },
+    ]}
+  />
+  <DocLinks
+    title="Reference"
+    icon="list-format"
+    links={[
+      { path: "docs/reference/configuration.md", label: "Configuration reference" },
+      { path: "docs/operations/admin-cli.md", label: "Administrators and roles from the command line" },
+      { path: "docs/reference/jobs.md", label: "Jobs" },
+    ]}
+  />
+</CardGrid>
+
+**Status: in development, before the first release (v0).** Data may not survive an upgrade before `v0.1.0`: the
+database may have to be recreated. From `v0.1.0` on, every upgrade between releases keeps your data.
+
+## License
+
+`my` is free software under the GNU Affero General Public License, version 3 only (AGPL-3.0-only). The client
+libraries for its API are under the MIT License.

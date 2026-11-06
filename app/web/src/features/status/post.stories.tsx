@@ -26,7 +26,7 @@ import {
   viewerPost,
   warnedPost,
 } from "../../test/postStories";
-import { lakePost, quoteOfLake, quoteReplies, showcasePictures, showcaseSettled, showcaseViewer } from "../../test/showcase";
+import { lakePost, quoteOfLake, quoteReplies, showcasePictures, showcaseViewer } from "../../test/showcase";
 import {
   answeringWithErrorPage,
   failingOn,
@@ -157,7 +157,6 @@ export const Showcase: Story = {
       ],
     },
   },
-  play: showcaseSettled,
 };
 
 /** To someone who is not signed in. */

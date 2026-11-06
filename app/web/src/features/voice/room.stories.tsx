@@ -7,7 +7,6 @@ import type { Schemas } from "../../test/fixtures";
 import { apiBase, problem, withViewer } from "../../test/msw/http";
 import {
   showcasePictures,
-  showcaseSettled,
   showcaseViewer,
   voiceCohost,
   voiceHost,
@@ -58,28 +57,25 @@ export const Normal: Story = {
  * A busy room as a visitor would picture one (test/showcase.ts): the host, a co-host and two speakers on the stage,
  * and four listening, one with a hand raised, opened 47 minutes ago. The documentation site's screenshots show it.
  */
-export const Showcase: Story = {
-  ...answering(
-    viewerWith(showcaseViewer),
-    ...showcasePictures,
-    ...openRoom(
-      voiceRoomFixture({
-        name: "Sunday baking club",
-        description: "Sharing this week's loaves, failures included. Questions welcome!",
-        hashtags: ["baking", "sourdough"],
-        host: voiceHost,
-        opened_at: new Date(Date.now() - 47 * 60_000).toISOString(),
-        participants: [
-          participantFixture(voiceHost, { role: "speaker", hosting: true }),
-          participantFixture(voiceCohost, { role: "speaker", cohosting: true }),
-          ...voiceSpeakers.map((account) => participantFixture(account, { role: "speaker" })),
-          ...voiceListeners.map((account, i) => participantFixture(account, { hand_raised: i === 1 })),
-        ],
-      }),
-    ),
+export const Showcase: Story = answering(
+  viewerWith(showcaseViewer),
+  ...showcasePictures,
+  ...openRoom(
+    voiceRoomFixture({
+      name: "Sunday baking club",
+      description: "Sharing this week's loaves, failures included. Questions welcome!",
+      hashtags: ["baking", "sourdough"],
+      host: voiceHost,
+      opened_at: new Date(Date.now() - 47 * 60_000).toISOString(),
+      participants: [
+        participantFixture(voiceHost, { role: "speaker", hosting: true }),
+        participantFixture(voiceCohost, { role: "speaker", cohosting: true }),
+        ...voiceSpeakers.map((account) => participantFixture(account, { role: "speaker" })),
+        ...voiceListeners.map((account, i) => participantFixture(account, { hand_raised: i === 1 })),
+      ],
+    }),
   ),
-  play: showcaseSettled,
-};
+);
 
 /** The room has not arrived yet: the shape of its stage, without a spinner. */
 export const Loading: Story = {

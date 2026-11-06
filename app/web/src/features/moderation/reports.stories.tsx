@@ -13,7 +13,7 @@ import {
   settled,
 } from "../../test/stories";
 import { accountFixture, type Schemas } from "../../test/fixtures";
-import { alice, hana, kofi, lena, minori, showcaseSettled, tomas } from "../../test/showcase";
+import { alice, hana, kofi, lena, minori, tomas } from "../../test/showcase";
 import { reportFixture } from "./test/handlers";
 import { reportsApi, storyReports } from "./test/reportStories";
 import {
@@ -103,10 +103,7 @@ type Story = StoryObj<typeof meta>;
 export const Normal: Story = showing(/@maximiliana/);
 
 /** The queue of a busy server, without the edge cases of Normal. The documentation site's screenshots show it. */
-export const Showcase: Story = {
-  ...answering(moderatorViewer, storyAccountsHandler, ...reportsApi(showcaseReports)),
-  play: showcaseSettled,
-};
+export const Showcase: Story = answering(moderatorViewer, storyAccountsHandler, ...reportsApi(showcaseReports));
 
 /** The resolved tab: one report handled by an action, one dismissed. */
 export const Resolved: Story = { parameters: { screen: { path: "/moderation/reports?state=resolved" } } };
