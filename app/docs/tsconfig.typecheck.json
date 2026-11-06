@@ -1,0 +1,9 @@
+{
+  "extends": "./tsconfig.json",
+  "//": "What `bun run typecheck` checks: tsconfig.json, with starlight-openapi mapped to a declaration of the part the site uses, since its shipped TypeScript sources fail the strict options (src/starlight-openapi.d.ts). The mapping stays out of tsconfig.json, whose paths Astro's Vite also resolves.",
+  "compilerOptions": {
+    "paths": {
+      "starlight-openapi": ["./src/starlight-openapi.d.ts"]
+    }
+  }
+}
