@@ -93,9 +93,10 @@ Redis / NATS / RabbitMQ 等はコミュニティアダプタとして受け入�
 - 権限は `manage_jobs`（読み取りは `admin:read`、再実行・削除は `admin:write`）
 - `GET /admin/queue`: 状態 × 型の件数、最も古い実行可能なジョブの待ち、アダプタが読めるもの
 - `GET /admin/jobs?state=&type=`: ジョブのページ（`state=dead` は `dead_jobs` の一覧を兼ねる）
+- `GET /admin/jobs/{id}`: 1 つの未完了か失敗したジョブ（完了したジョブと知らない ID は 404）
 - `GET /admin/jobs/{id}/attempts`: ジョブの試行の記録（新しい順）
 - 失敗したジョブの再実行・削除もこの名前空間に置く
-- 管理画面は `/admin/jobs` に 1 つのダッシュボードを置き、失敗したジョブはその「失敗」の絞り込みにまとめる
+- 管理画面は `/admin/jobs` を 1 つの画面とし、キューの状態（`/admin/jobs`）・ジョブの一覧（`/admin/jobs/list`）・ジョブ（`/admin/jobs/{id}`）のページに分ける。失敗したジョブは一覧の「失敗」の絞り込みにまとめる
 
 ### 9. 外部のキュー: 合図（wake-up signal）
 

@@ -24,7 +24,7 @@
 
 - 新しい権限 `manage_supporters` を足す。区分は `server`（ADR-0058 §4）で、組み込みのロールでは `admin` だけが持つ。課金の有効化と無効化、プランの作成・変更・廃止、加入者と加入の状態の一覧、加入の解約（§10）に要る。
   個人ごとの支払いの額と収入は ADR-0067 のとおり `manage_finance` で見る。`manage_supporters` の画面は加入者・プラン・状態・期間の終わりを出し、金額の履歴を出さない。
-- 管理画面は ADR-0058 §1 の表に「サーバー管理 | サポーター（`/admin/supporters`。課金の有効化、プランの一覧とフォーム、加入者の一覧） | `manage_supporters`」を足す。
+- 管理画面は ADR-0058 §1 の表に「サーバー管理 | サポーター（`/admin/supporters`。課金の有効化、プランの一覧・作成・プランごとのページ、加入の一覧と加入ごとのページ） | `manage_supporters`」を足す。
 - 課金は既定で無効。有効にする条件:
   - デプロイの設定で事業者が設定されている（ADR-0074。webhook の秘密を含む）
   - メールを送る構成である（`mail` が `none` でない。`none` ではメールの確認が済んだ人がいないため、加入の条件を誰も満たさない）
@@ -286,7 +286,7 @@ ADR-0070 との契約:
   `POST /supporter/subscription/change`（`{plan_id, interval}`）、`POST /supporter/subscription/cancel`、`POST /supporter/subscription/resume`、`POST /supporter/portal`（ポータルの URL）
 - 公開（タグ `instance`、`security: []`）: `GET /instance/supporter_plans`（公開のプラン: 名前・説明・月額・年額・順位）。無効なら `404`。`GET /instance` に `supporters_enabled` を足す。
 - 管理（タグ `admin-server`、`admin:read` / `admin:write` と `manage_supporters`）: `GET/PUT /admin/supporter_program`、`GET/POST /admin/supporter_plans`、`PATCH /admin/supporter_plans/{id}`（ロールの権限と位置を含む）、`POST /admin/supporter_plans/{id}/retire`、
-  `GET /admin/supporter_subscriptions`（状態とプランで絞り込む。キーセットページング）、`POST /admin/supporter_subscriptions/{id}/end`
+  `GET /admin/supporter_subscriptions`（状態とプランで絞り込む。キーセットページング）、`GET /admin/supporter_subscriptions/{id}`、`POST /admin/supporter_subscriptions/{id}/end`
 - CLI: `my admin supporters`（有効化・無効化・プランの一覧・加入の一覧と解約）。
 
 ### この決定を覆す条件
