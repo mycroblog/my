@@ -163,6 +163,11 @@ describe("the picker of the post form", () => {
       expect(screen.queryByRole("dialog", { name: "Emoji" })).not.toBeInTheDocument();
     });
     expect(text).toHaveValue("👋🏽");
+    // Focus moves back to the field a frame after the popover has closed; opening the picker again before that would
+    // have the late focus move land in the new popover and close it.
+    await waitFor(() => {
+      expect(text).toHaveFocus();
+    });
     // It is counted without its skin tone.
     expect(frequentEmojisKey.read().map((use) => use.emoji)).toEqual(["👋"]);
 
