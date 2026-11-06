@@ -1,0 +1,135 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 584" width="760" height="584" role="img" aria-labelledby="title desc">
+<!-- SPDX-License-Identifier: AGPL-3.0-only -->
+  <title id="title">How the audio travels with voice = p2p, livekit, and sora</title>
+  <desc id="desc">Three methods side by side. With voice = p2p, the my serve process holds the rooms, the sessions, and the grants, carries no audio, and relays the signals between the browsers; the browsers send audio straight to each other, and the TURN server relays it when no direct path exists; the STUN and TURN servers come from voice_stun_urls and voice_turn (coturn or cloudflare). With voice = livekit, the browsers get grants from my serve and send their signals and audio to the LiveKit server at voice_livekit_url, which brings its own STUN and TURN; my serve creates the LiveKit rooms through LiveKit's API and receives its webhooks, and carries no audio. With voice = sora, the browsers get grants from my serve and send their signals and audio to the Sora server at voice_sora_signaling_urls, which brings its own STUN and TURN; my serve answers the auth webhook that Sora calls before every connection, and carries no audio.</desc>
+
+  <style>
+    svg { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif; }
+    .bg { fill: #ffffff; }
+    .t { fill: #1f2328; font-size: 16px; }
+    .b { font-weight: 600; }
+    .m { fill: #59636e; font-size: 15px; }
+    .h { fill: #1f2328; font-size: 17px; font-weight: 600; }
+    .group { fill: #f6f8fa; stroke: #d1d9e0; stroke-width: 1.5; }
+    .client { fill: #dafbe1; stroke: #1a7f37; stroke-width: 1.5; }
+    .proc { fill: #ddf4ff; stroke: #0969da; stroke-width: 2; }
+    .port { fill: #ffffff; stroke: #8c959f; stroke-width: 1.5; }
+    .svc { fill: #fbefff; stroke: #8250df; stroke-width: 1.5; }
+    .arrow { stroke: #59636e; stroke-width: 2; fill: none; }
+    .head { fill: #59636e; }
+    .signal { stroke: #0969da; stroke-width: 2; stroke-dasharray: 6 4; fill: none; }
+    .signal-head { fill: #0969da; }
+    .audio { stroke: #1a7f37; stroke-width: 3; fill: none; }
+    .audio-head { fill: #1a7f37; }
+    @media (prefers-color-scheme: dark) {
+      .bg { fill: #0d1117; }
+      .t, .h { fill: #e6edf3; }
+      .m { fill: #9198a1; }
+      .group { fill: #151b23; stroke: #3d444d; }
+      .client { fill: #0f2d1b; stroke: #3fb950; }
+      .proc { fill: #0c2d6b; stroke: #4493f8; }
+      .port { fill: #0d1117; stroke: #656c76; }
+      .svc { fill: #2a1650; stroke: #ab7df8; }
+      .arrow { stroke: #9198a1; }
+      .head { fill: #9198a1; }
+      .signal { stroke: #4493f8; }
+      .signal-head { fill: #4493f8; }
+      .audio { stroke: #3fb950; }
+      .audio-head { fill: #3fb950; }
+    }
+  </style>
+  <defs>
+    <marker id="arrowhead" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path class="head" d="M 0 0 L 10 5 L 0 10 z"/>
+    </marker>
+    <marker id="signalhead" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path class="signal-head" d="M 0 0 L 10 5 L 0 10 z"/>
+    </marker>
+    <marker id="audiohead" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+      <path class="audio-head" d="M 0 0 L 10 5 L 0 10 z"/>
+    </marker>
+  </defs>
+  <rect class="bg" x="0" y="0" width="760" height="584" rx="12"/>
+  <rect class="group" x="20" y="16" width="234" height="518" rx="12"/>
+  <text class="h" x="34" y="46" text-anchor="start">voice = p2p</text>
+  <rect class="proc" x="30" y="62" width="214" height="118" rx="8"/>
+  <text class="t b" x="137.0" y="92" text-anchor="middle">my serve</text>
+  <text class="m" x="137.0" y="114" text-anchor="middle">rooms, sessions, grants</text>
+  <text class="m" x="137.0" y="136" text-anchor="middle">relays the signals</text>
+  <text class="m" x="137.0" y="158" text-anchor="middle">carries no audio</text>
+  <rect class="client" x="30" y="260" width="82" height="60" rx="8"/>
+  <rect class="client" x="162" y="260" width="82" height="60" rx="8"/>
+  <text class="t b" x="71" y="295" text-anchor="middle">Browser</text>
+  <path class="signal" d="M 71 184 L 71 256" marker-start="url(#signalhead)" marker-end="url(#signalhead)"/>
+  <path class="audio" d="M 71 324 L 71 396" marker-start="url(#audiohead)" marker-end="url(#audiohead)"/>
+  <text class="t b" x="203" y="295" text-anchor="middle">Browser</text>
+  <path class="signal" d="M 203 184 L 203 256" marker-start="url(#signalhead)" marker-end="url(#signalhead)"/>
+  <path class="audio" d="M 203 324 L 203 396" marker-start="url(#audiohead)" marker-end="url(#audiohead)"/>
+  <text class="m" x="137" y="225" text-anchor="middle">signals</text>
+  <path class="audio" d="M 117 290 L 157 290" marker-start="url(#audiohead)" marker-end="url(#audiohead)"/>
+  <text class="m" x="137" y="355" text-anchor="middle">TURN relays it</text>
+  <text class="m" x="137" y="375" text-anchor="middle">if no direct path</text>
+  <rect class="port" x="30" y="400" width="214" height="118" rx="8"/>
+  <text class="t b" x="137.0" y="430" text-anchor="middle">STUN and TURN</text>
+  <text class="m" x="137.0" y="452" text-anchor="middle">voice_stun_urls</text>
+  <text class="m" x="137.0" y="474" text-anchor="middle">voice_turn: coturn</text>
+  <text class="m" x="137.0" y="496" text-anchor="middle">or cloudflare</text>
+  <rect class="group" x="263" y="16" width="234" height="518" rx="12"/>
+  <text class="h" x="277" y="46" text-anchor="start">voice = livekit</text>
+  <rect class="proc" x="273" y="62" width="214" height="118" rx="8"/>
+  <text class="t b" x="380.0" y="92" text-anchor="middle">my serve</text>
+  <text class="m" x="380.0" y="114" text-anchor="middle">rooms, sessions, grants</text>
+  <text class="m" x="380.0" y="136" text-anchor="middle">creates LiveKit rooms</text>
+  <text class="m" x="380.0" y="158" text-anchor="middle">carries no audio</text>
+  <rect class="client" x="273" y="260" width="80" height="60" rx="8"/>
+  <rect class="client" x="375" y="260" width="80" height="60" rx="8"/>
+  <text class="t b" x="313" y="295" text-anchor="middle">Browser</text>
+  <path class="arrow" d="M 313 184 L 313 256" marker-start="url(#arrowhead)" marker-end="url(#arrowhead)"/>
+  <path class="signal" d="M 304 324 L 304 396" marker-start="url(#signalhead)" marker-end="url(#signalhead)"/>
+  <path class="audio" d="M 322 324 L 322 396" marker-start="url(#audiohead)" marker-end="url(#audiohead)"/>
+  <text class="t b" x="415" y="295" text-anchor="middle">Browser</text>
+  <path class="arrow" d="M 415 184 L 415 256" marker-start="url(#arrowhead)" marker-end="url(#arrowhead)"/>
+  <path class="signal" d="M 406 324 L 406 396" marker-start="url(#signalhead)" marker-end="url(#signalhead)"/>
+  <path class="audio" d="M 424 324 L 424 396" marker-start="url(#audiohead)" marker-end="url(#audiohead)"/>
+  <text class="m" x="364.0" y="225" text-anchor="middle">grants</text>
+  <text class="m" x="364.0" y="355" text-anchor="middle">signals</text>
+  <text class="m" x="364.0" y="375" text-anchor="middle">and audio</text>
+  <path class="arrow" d="M 475 184 L 475 396" marker-start="url(#arrowhead)" marker-end="url(#arrowhead)"/>
+  <rect class="svc" x="273" y="400" width="214" height="118" rx="8"/>
+  <text class="t b" x="380.0" y="430" text-anchor="middle">LiveKit server</text>
+  <text class="m" x="380.0" y="452" text-anchor="middle">the SFU, with its own</text>
+  <text class="m" x="380.0" y="474" text-anchor="middle">STUN and TURN</text>
+  <text class="m" x="380.0" y="496" text-anchor="middle">voice_livekit_url</text>
+  <rect class="group" x="506" y="16" width="234" height="518" rx="12"/>
+  <text class="h" x="520" y="46" text-anchor="start">voice = sora</text>
+  <rect class="proc" x="516" y="62" width="214" height="118" rx="8"/>
+  <text class="t b" x="623.0" y="92" text-anchor="middle">my serve</text>
+  <text class="m" x="623.0" y="114" text-anchor="middle">rooms, sessions, grants</text>
+  <text class="m" x="623.0" y="136" text-anchor="middle">answers the auth webhook</text>
+  <text class="m" x="623.0" y="158" text-anchor="middle">carries no audio</text>
+  <rect class="client" x="516" y="260" width="80" height="60" rx="8"/>
+  <rect class="client" x="618" y="260" width="80" height="60" rx="8"/>
+  <text class="t b" x="556" y="295" text-anchor="middle">Browser</text>
+  <path class="arrow" d="M 556 184 L 556 256" marker-start="url(#arrowhead)" marker-end="url(#arrowhead)"/>
+  <path class="signal" d="M 547 324 L 547 396" marker-start="url(#signalhead)" marker-end="url(#signalhead)"/>
+  <path class="audio" d="M 565 324 L 565 396" marker-start="url(#audiohead)" marker-end="url(#audiohead)"/>
+  <text class="t b" x="658" y="295" text-anchor="middle">Browser</text>
+  <path class="arrow" d="M 658 184 L 658 256" marker-start="url(#arrowhead)" marker-end="url(#arrowhead)"/>
+  <path class="signal" d="M 649 324 L 649 396" marker-start="url(#signalhead)" marker-end="url(#signalhead)"/>
+  <path class="audio" d="M 667 324 L 667 396" marker-start="url(#audiohead)" marker-end="url(#audiohead)"/>
+  <text class="m" x="607.0" y="225" text-anchor="middle">grants</text>
+  <text class="m" x="607.0" y="355" text-anchor="middle">signals</text>
+  <text class="m" x="607.0" y="375" text-anchor="middle">and audio</text>
+  <path class="arrow" d="M 718 184 L 718 396" marker-start="url(#arrowhead)" marker-end="url(#arrowhead)"/>
+  <rect class="svc" x="516" y="400" width="214" height="118" rx="8"/>
+  <text class="t b" x="623.0" y="430" text-anchor="middle">Sora server</text>
+  <text class="m" x="623.0" y="452" text-anchor="middle">the SFU, with its own</text>
+  <text class="m" x="623.0" y="474" text-anchor="middle">STUN and TURN</text>
+  <text class="m" x="623.0" y="496" text-anchor="middle">voice_sora_signaling_urls</text>
+  <path class="audio" d="M 40 555 L 84 555"/>
+  <text class="m" x="94" y="560" text-anchor="start">audio</text>
+  <path class="signal" d="M 190 555 L 234 555"/>
+  <text class="m" x="244" y="560" text-anchor="start">signaling</text>
+  <path class="arrow" d="M 370 555 L 414 555"/>
+  <text class="m" x="424" y="560" text-anchor="start">API calls, grants, and webhooks</text>
+</svg>

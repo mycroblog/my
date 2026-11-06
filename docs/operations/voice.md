@@ -16,6 +16,26 @@ This guide covers that choice, the STUN and TURN servers or the media server eac
 | `livekit` | A LiveKit server, self-hosted or LiveKit Cloud. | Larger rooms, and strict control over who can speak. |
 | `sora` | A Sora server, self-hosted or Sora Cloud. | The same, if you already run Sora. |
 
+![The three methods side by side. With p2p, the server relays the signals and the browsers send audio to each other, or through a TURN server. With livekit and sora, the browsers send signals and audio to the media server, and the server talks to that media server through its API and webhooks. The list below describes each method.](images/voice-methods.svg)
+
+In every method the server (`my serve`) holds the rooms, who takes part in them and their sessions, and hands each
+participant a grant: what the browser needs to connect. It never carries the audio. What differs is where the signaling
+(the messages that set up a connection) and the audio go:
+
+- **`p2p`.** A browser sends its signals (offers, answers and ICE candidates) to the server, which passes them to the
+  other browser over the room's event stream; a signal waits in the key-value store for at most 30 seconds. The audio
+  goes straight from browser to browser. The grant lists the STUN servers of `voice_stun_urls` and the TURN server of
+  `voice_turn` (`coturn` or `cloudflare`) with short-lived credentials. A browser learns its public address from STUN,
+  and the TURN server relays the audio when the two browsers find no direct path.
+- **`livekit`.** The grant holds `voice_livekit_url` and a 60-second access token. The browser sends its signals and its
+  audio to the LiveKit server, which brings its own STUN and TURN and forwards the audio to the other participants (a selective forwarding unit,
+  or SFU).
+  The server creates the LiveKit rooms and changes who may speak through LiveKit's API, and LiveKit reports joins and
+  leaves to the server with webhooks.
+- **`sora`.** The grant holds `voice_sora_signaling_urls` and a signed join value. The browser sends its signals and its
+  audio to the Sora server, which brings its own STUN and TURN. Sora asks the server's auth webhook before every
+  connection, the server controls the rooms through Sora's API, and Sora reports connections with webhooks.
+
 Notes on the choice:
 
 - With `p2p` the audio never passes through this server (it passes through the TURN server when one is used). The server's load is only the room messages, heartbeats and streams.
