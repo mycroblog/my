@@ -9,6 +9,26 @@ the records, the modes, and the admin screens described here. Of the intake path
 `inbound.status`, follows from other servers ask `inbound.follow`, sign-ups ask `signup.check`, uploads ask
 `media.check`, and posts of local accounts ask `local.status`; the other hooks are not called yet.
 
+![The path of a decision hook: a remote post, a remote follow, a sign-up, an upload, or a local post goes through the hook's mode to your plugin, whose verdict or failure leads to one recorded decision. The list below describes each step.](images/decision-hooks.svg)
+
+From the top of the diagram down:
+
+1. **What is reviewed, and who waits.** A post from another server (`inbound.status`), a follow from another server
+   (`inbound.follow`), and an upload (`media.check`) are reviewed in a job. A sign-up (`signup.check`) is reviewed while
+   the applicant waits, and a post of a local account (`local.status`) while its author waits.
+2. **The mode**, `hook_<hook>_mode`: `off` makes no call, `observe` records the verdict and acts on nothing, and `enforce`
+   acts on it ([Modes](#modes)).
+3. **Your plugin** gets `POST /my.plugin.hook.v1.HookService/Check`. The server waits up to `plugin_<hook>_timeout`, makes
+   at most 8 calls at once, and after 5 failures in a row skips the plugin for 30 seconds (`breaker_open`).
+4. **A verdict**: `allow` accepts the subject, `flag` accepts it and files a report, `mark_sensitive` accepts it marked as
+   sensitive, `require_approval` holds a sign-up, and `drop` and `reject` stop it and keep nothing (a sign-up's `reject` only with
+   [`hook_signup_check_reject`](#sign-ups)). **A failure** is a `timeout`, an `error`, an `invalid` answer, or `breaker_open`, and an answer the hook does not take
+   counts as one. When the hook enforces, `hook_<hook>_on_failure` decides: `pass` accepts the subject unreviewed, `retry`
+   records no decision and runs the job again, and `require_approval` holds a sign-up
+   ([When the plugin fails](#when-the-plugin-fails)).
+5. **One decision per hook and subject** is recorded, and a job that runs again reads it instead of calling the plugin
+   ([The decisions](#the-decisions)).
+
 ## The hooks
 
 | Hook | What it reviews | What it can answer | When the plugin fails |
