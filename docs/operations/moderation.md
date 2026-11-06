@@ -233,6 +233,10 @@ my admin domain lift <action id>
 In the admin API: `POST /api/v1/admin/domain_actions` (the body has `domain`, `kind`, `public_comment`, `private_note`, `obfuscate` and `expires_in` in seconds),
 `GET /api/v1/admin/domain_actions` (filter with `domain` and `active`), `GET .../{id}`, and `POST .../{id}/lift`.
 
+In the web client, open Moderation → Domain actions (`/moderation/domain-actions`). The list shows each action's domain, kind, state and end, in effect or all;
+"New action" opens the form (`/moderation/domain-actions/new`), and choosing a domain opens the action's page with its comments and dates, where "Lift" ends it.
+The "Domain actions" link on a remote server's page lists only that domain's actions, and "New action" there starts the form with the domain filled in.
+
 - Domains are recorded normalized to the IDNA A-label (lower case, no trailing dot). `例え.jp` and `xn--r8jz45g.jp` are the same domain.
 - An action also applies to subdomains (an action on `spam.example` applies to `a.spam.example` too).
 - An action is applied to the restriction projection (`domain_restrictions`) and to the timeline restrictions in the transaction that records it, and takes effect from the next delivery, fetch or receipt.
@@ -253,7 +257,7 @@ my admin domain import -apply -only spam.example,bad.example domain_blocks.csv
 
 In the admin API: `GET /api/v1/admin/domain_actions/export` (`text/csv`), `POST .../import/preview` (the body has `csv`), and `POST .../import` (the body has `blocks`, the chosen rows, and `private_note`).
 A row for this server's own domain is skipped (`own_domain`), and a domain action on it is refused.
-In the web client, use "Import a CSV" and "Export CSV" on the Domain actions screen (`/moderation/domain-actions`).
+In the web client, open Moderation → Domain actions and choose "Mastodon's CSV" (`/moderation/domain-actions/import`): "Export CSV" saves the file, and the import previews a pasted or chosen file before it imports the rows you keep.
 
 | CSV row | Action on this server |
 | --- | --- |

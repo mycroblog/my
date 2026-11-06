@@ -139,7 +139,8 @@ my invite revoke <code>
 - Besides the CLI, you can create, list and revoke invites in the web client's Moderation screens ("Invites", `/moderation/invites`) and through the client API
   (`GET` / `POST /api/v1/admin/invites` and `POST /api/v1/admin/invites/{id}/revoke`). Both need the role permission `manage_invites`
   (the built-in `moderator` does not have it, so to delegate this, create a role with that permission and grant it).
-  The screen shows the code and the sign-up link of a new invite, and lets you copy the link of a usable invite.
+  "Create an invite" on the list opens the form (`/moderation/invites/new`), which shows the code and the sign-up link of the new invite.
+  The list lets you copy the link of a usable invite and revoke it.
 - The list shows every invite, the staff's and the members', with who created it (`created_by`) and how (`creator_kind`: `staff` or `member`). The holders of `manage_invites` can revoke any of them.
 - The account's Review page of the moderation screens (`GET /api/v1/admin/accounts/{id}`, permission `manage_accounts`) shows the invite the account signed up with and who created it, the person who invited the user.
 - Creating and revoking an invite is recorded in the audit log (`invite_created`, `invite_revoked`) from the screen, the API and the CLI alike. The target name is the first 4 characters of the code (`ABCD…`); the full code is not copied to the audit log.
@@ -233,6 +234,9 @@ my admin signup-block import -kind email_domain -comment "disposable email" disp
 - The software ships no list and does not fetch one from a URL periodically. You fetch and update public lists (such as disposable-email-domains on GitHub) yourself and import the updated list again.
 
 The same operations are available from the admin screens (the client API). All of them need the `manage_accounts` permission.
+In the web client, open Moderation → Sign-up blocks (`/moderation/signup-blocks`). The list shows each block's value, kind, state and end, in effect or all;
+"Add a block" opens the form (`/moderation/signup-blocks/new`), "Add from a list" imports a list and shows the lines it skipped (`/moderation/signup-blocks/import`),
+and choosing a value opens the block's page with its effect and comment, where "Lift" ends it.
 
 | Operation | What it does |
 | --- | --- |
