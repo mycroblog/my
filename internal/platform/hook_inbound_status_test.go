@@ -363,6 +363,16 @@ func TestInboundStatusDrop(t *testing.T) {
 		t.Fatalf("decision of the Update = %s", got)
 	}
 
+	// An Update of a dropped post is taken as its Create and asked about again: the answer about the
+	// Create does not carry over to the new revision.
+	edited := h.note("VERDICT_DROP before the edit", now)
+	h.create(edited)
+	calls = h.plugin.calls()
+	again := h.update(edited, "after the edit", now.Add(time.Minute))
+	if h.plugin.calls() != calls+1 || !h.stored(edited) || h.decision(again).Decision.Outcome != hook.Allow {
+		t.Fatalf("Update of a dropped post: calls %d, want %d; stored %t", h.plugin.calls(), calls+1, h.stored(edited))
+	}
+
 	// Past the retention of the received document, cancelling brings nothing back.
 	gone := h.note("VERDICT_DROP too late", now)
 	late := h.create(gone)

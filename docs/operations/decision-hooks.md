@@ -56,7 +56,9 @@ revision is its own subject with its own decision.
 What each answer does to a post:
 
 - `drop` on a `Create` stores nothing and creates no notification or timeline entry, and a redelivery is ignored as a
-  duplicate. `drop` on an `Update` makes no revision and keeps the previous one.
+  duplicate. `drop` on an `Update` makes no revision and keeps the previous one. A dropped post is not stored, so an
+  `Update` of it published within the last day is taken as a new post: the plugin is asked again about that revision, as about
+  any other one, and its answer to the earlier `Create` does not carry over.
 - `flag` files one report per decision, with your instance actor as the reporter, the reason's category (`spam` and
   `malware` as Spam, `illegal` as Legal, `harassment`, `sexual`, and `violence` as Violation, and anything else as Other), and
   the plugin's note as the comment. The report says that a review filed it. It is not forwarded to the author's server
@@ -212,10 +214,12 @@ Cancelling a `drop` of `inbound.follow` runs the follow again, without calling t
 the activity it received (7 days). After that the follow cannot come back and the cancellation only goes on record; the
 other server has to send a new follow.
 
-A follow only asks the hook when it would be recorded. Taking a follow back (`Undo`) never asks, and neither does a follow that
-the server refuses anyway: one that the federation mode refuses, one of a moved or deactivated account, or one of the instance
-actor. A dropped follow gets no answer, so the other server keeps showing it as requested. Sending the same activity again is
-ignored as a duplicate.
+A follow only asks the hook when it would be recorded as a new follow or follow request. Taking a follow back (`Undo`) never
+asks, and neither does a follow that the server refuses anyway: one that the federation mode refuses, one of a moved or
+deactivated account, one of the instance actor, or one between accounts that block each other, which gets its rejection as
+usual. A follow sent again for a follow or request that already exists does not ask either: the server answers it as usual,
+and accepts it again when the follow is already accepted. A dropped follow gets no answer, so the other server keeps showing
+it as requested. Sending the same activity again is ignored as a duplicate.
 
 An automated effect goes in the audit log, with the system as the actor, only when it leaves state: `mark_sensitive`, a
 filed `flag`, and `require_approval` (`hook_decision_applied`). `drop` and `reject` store nothing, so they stay in the
