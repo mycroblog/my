@@ -1,0 +1,57 @@
+---
+// SPDX-License-Identifier: AGPL-3.0-only
+// The version switcher (ADR-0150 §6): latest, each released minor version, and next (src/versions.ts). Choosing a
+// version opens the same page in it when that version has the page, else the version's landing page.
+import Select from "@astrojs/starlight/components/Select.astro";
+import { base } from "../published";
+import { versionOptions } from "../versions";
+
+const options = versionOptions().map((option) => ({
+  value: option.base,
+  label: option.label,
+  selected: option.selected,
+}));
+---
+
+{
+  options.length > 1 && (
+    <docs-version-select data-base={base}>
+      <Select icon="list-format" label="Documentation version" options={options} width="9em" />
+    </docs-version-select>
+  )
+}
+
+<script>
+  class DocsVersionSelect extends HTMLElement {
+    connectedCallback(): void {
+      const select = this.querySelector("select");
+      const base = this.dataset["base"] ?? "/";
+      if (select === null) {
+        return;
+      }
+      select.addEventListener("change", () => {
+        void this.open(select.value, base);
+      });
+      // A page restored from the back-forward cache keeps the choice made before leaving it.
+      window.addEventListener("pageshow", (event) => {
+        if (event.persisted) {
+          select.selectedIndex = select.querySelector<HTMLOptionElement>("option[selected]")?.index ?? 0;
+        }
+      });
+    }
+
+    /** Opens the current page under the version's path `target` if it exists there, else the version's landing page. */
+    async open(target: string, base: string): Promise<void> {
+      const path = window.location.pathname;
+      const page = `${target}${path.startsWith(base) ? path.slice(base.length) : ""}`;
+      let exists = false;
+      try {
+        exists = (await fetch(page, { method: "HEAD" })).ok;
+      } catch {
+        exists = false;
+      }
+      window.location.assign(exists ? `${page}${window.location.hash}` : target);
+    }
+  }
+  customElements.define("docs-version-select", DocsVersionSelect);
+</script>

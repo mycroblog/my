@@ -31,6 +31,9 @@ only when every job passes, tags that commit, drafts a GitHub Release, publishes
    scripts/tofu-examples.sh bump v0.1.0
    ```
 
+   For the first stable version of a minor version (`vX.Y.0`), add the minor version to the top of `app/docs/versions.json` in the same change,
+   and mark a minor version whose support ends with it as `ended` ([The documentation site](#the-documentation-site)). Every deploy of the site fails while a published release's minor version is not listed.
+
 3. Run `release.yml` on `main`. The head commit of `main` at that moment is the commit that is checked and tagged.
 
    ```sh
@@ -47,10 +50,12 @@ only when every job passes, tags that commit, drafts a GitHub Release, publishes
 5. When it passes, open the draft Release (`gh release view v0.1.0 -R mycroblog/my`, or the Releases page) and read its [notes](#release-notes):
    the prose is a draft from a model, and the facts after it come from the repository. Fill in what the draft's comments ask for.
 6. [Review the image](#review-the-image-in-the-draft): run its digest and read the `image-scan` report.
-7. Publish the draft. A prerelease is drafted as a prerelease. `release-image.yml` then gives the image its tags within minutes; check that its run passed.
+7. Publish the draft. A prerelease is drafted as a prerelease. `release-image.yml` then gives the image its tags within minutes,
+   and `docs-site-deploy.yml` publishes the version's documentation under `/latest/` and `/vX.Y/` for a stable version; check that both runs passed.
 
    ```sh
    gh run list -R mycroblog/my --workflow release-image.yml --limit 1
+   gh run list -R mycroblog/my --workflow docs-site-deploy.yml --limit 1
    ```
 
 ## The upgrade test
@@ -325,6 +330,39 @@ The workflows cannot do these; each is a setting of the repository or of the pac
 3. Publish the draft. If `release-image.yml` ran before the package was public, it failed at the anonymous pull with its tags made: run it again.
 4. In the repository's settings, turn on **Immutable releases**, under General. It freezes the tag and the assets of a published Release, so `image-digest.txt` cannot change and the tag that `source_url` names cannot disappear. Nothing freezes a draft. Under this setting the tag of a published `v0.0.0-test.N` stays too, so give each trial a new number.
 
+## The documentation site
+
+The documentation site (`app/docs`) is served by the Cloudflare Worker `my-docs` at the root of `mycroblog.dev`, with one path per version:
+
+| Path | Built from |
+| --- | --- |
+| `/next/` | `main` |
+| `/latest/` | the tag of the newest published stable release of the first minor version of `app/docs/versions.json` that has one |
+| `/vX.Y/` | the tag of the newest published stable release of `vX.Y`, for each minor version of `app/docs/versions.json` that has one |
+| `/` | the landing page and the 404 page of `/latest/` |
+
+Each version is built from its own tag's tree, so the documents of a version are those of its tag; nothing keeps copies of old documents on `main`.
+Before the first stable release, `/` is the landing page of `/next/` and `/latest/` redirects to `/next/`.
+
+- `docs-site-deploy.yml` runs on a push to `main` that changes the published documents or `app/docs/`, when a stable release is published, and by hand
+  (`gh workflow run docs-site-deploy.yml -R mycroblog/my --ref main`). A deploy replaces every asset of the Worker,
+  so every run builds every version from its tag and combines them (`scripts/docs-site.sh build`): a push to `main` changes `/next/` only,
+  and a release changes `/latest/` and its minor version. Drafts and prereleases are never published.
+- Every build reads the list of `main`'s `app/docs/versions.json`, resolved against the published releases, so the version switcher in the header
+  and the support status of old versions follow `main`. The switcher opens the same page in the chosen version when that version has it, and the version's landing page otherwise.
+- `app/docs/versions.json` lists the released minor versions, newest first, each `supported` or `ended`. A minor version whose support ends stays on the site:
+  set it to `ended`, and every page of it carries an end-of-support banner with a link to the same page under `/latest/`. Its tags are never deleted, since its pages are built from them.
+- The deploy job runs in the environment `doc-site` (deployment refs `main` and the tags `v*`), which holds the secret `CLOUDFLARE_API_TOKEN` (Workers Scripts: Edit) and the variable `CLOUDFLARE_ACCOUNT_ID`.
+  The Worker config (`scripts/docs-site/wrangler.jsonc`) declares no routes and no custom domain: `mycroblog.dev` is bound to the Worker, with its DNS records, in the infrastructure repository `mycroblog/infra`,
+  after the Worker exists from a first deploy on `workers.dev`.
+- To build the combined site locally, list the releases in a file (an empty file before the first release) and run the build; `DRY_RUN=1` checks the deploy without an account:
+
+  ```sh
+  : > .tmp/releases
+  DOCS_SITE_RELEASES=.tmp/releases scripts/docs-site.sh build .tmp/docs-site/site
+  DRY_RUN=1 scripts/docs-site.sh deploy .tmp/docs-site/site
+  ```
+
 ## Trying the gate on a branch
 
 A change to `release.yml` can be tried on a branch with a prerelease version, without tagging a real version.
@@ -376,5 +414,6 @@ gh workflow run release.yml -R mycroblog/my --ref <branch> -f version=v0.0.0-tes
 | After the tags | `release.yml` | The prose of [the notes](#release-notes) in the draft, or the facts alone when it fails |
 | The slow suite passed | `release.yml` | The [container image](#the-container-image) by digest, with no tag, its signed provenance and SBOM, and `image-digest.txt` on the draft |
 | The decider published the draft | `release-image.yml` | The image's tags `X.Y.Z` and, for the latest patch of a minor version, `X.Y` |
+| The decider published a stable release | `docs-site-deploy.yml` | The version's documentation under `/latest/` and `/vX.Y/` of [the documentation site](#the-documentation-site) |
 
 A draft that is deleted still uses up its version number, on npm as on Git; the digest stays on the registry with no tag.

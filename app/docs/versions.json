@@ -1,0 +1,4 @@
+{
+  "//": "The released versions the documentation site publishes, newest first: one entry per minor version (vX.Y), served under /vX.Y/ and built from the newest published stable release of that minor version. supported or ended; an ended version stays, with an end-of-support banner. /latest/ is the newest entry that has a release, /next/ is main. Read by scripts/docs-site.sh (the deploy) and src/versions.ts (the version switcher and the banner); docs/agents/releasing.md says when to edit it.",
+  "versions": []
+}

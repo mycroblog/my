@@ -27,6 +27,11 @@ export default defineConfig({
       },
       favicon: "/favicon.svg",
       social: [{ icon: "github", label: "GitHub", href: "https://github.com/mycroblog/my" }],
+      // The version switcher before the social links, and the end-of-support banner of an ended version (src/versions.ts).
+      components: {
+        SocialIcons: "./src/components/SocialIcons.astro",
+        Banner: "./src/components/Banner.astro",
+      },
       // English only during v0, at the root of the URL space, so that translations added later keep every URL (ADR-0150 §9).
       defaultLocale: "root",
       locales: {
