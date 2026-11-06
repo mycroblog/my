@@ -4,7 +4,7 @@ The documents for users, operators, and developers are published at [mycroblog.d
 one version per release (`/latest/` for the newest, `/v0.1/` and the like) and `/next/` for `main`; the client API
 reference is there too. The contributing and design documents below are read here.
 
-## Using my
+## Using mycroblog
 
 - [Signing up and signing in](guide/signing-in.md)
 - [Posting and choosing who sees a post](guide/posting.md) (public, this server, unlisted, followers, and mentioned people)
@@ -23,7 +23,7 @@ Read the groups in order: start with the overview, then configure the instance b
 - [Overview of a mycroblog server (the processes, the parts you choose, and how a server grows)](operations/overview.md)
 - [Running the server: starting, stopping, and health checks](operations/running.md)
 - [Deploying on Cloud Run](operations/deploy-cloud-run.md)
-- [Production checklist (what to verify before going live, and what my config check checks)](operations/production-checklist.md)
+- [Production checklist (what to verify before going live, and what `my config check` checks)](operations/production-checklist.md)
 
 ### Configure the instance
 

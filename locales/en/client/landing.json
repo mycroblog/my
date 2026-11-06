@@ -144,7 +144,7 @@
     "description": "Note under the step of searching on one's own server."
   },
   "landing.powered_by": {
-    "defaultMessage": "Powered by my, free software under the AGPL-3.0",
+    "defaultMessage": "Powered by mycroblog, free software under the AGPL-3.0",
     "description": "Line in the footer of the landing page that names the software the server runs and its license, before the link to its source code."
   }
 }

@@ -250,7 +250,7 @@ describe("the landing page", () => {
     await renderApp({ path: "/" });
     const view = await screen.findByRole("link", { name: newTabName("View the source code") });
     expect(view).toHaveAttribute("href", "https://git.example.org/fork/my");
-    const powered = screen.getByText("Powered by my, free software under the AGPL-3.0");
+    const powered = screen.getByText("Powered by mycroblog, free software under the AGPL-3.0");
     const about = screen.getByRole("link", { name: "More about this server" });
     expect(about).toHaveAttribute("href", "/about");
     const documents = screen.getByRole("navigation", { name: "Terms and policies" });

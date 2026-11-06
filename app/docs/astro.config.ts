@@ -19,8 +19,9 @@ export default defineConfig({
   devToolbar: { enabled: false },
   integrations: [
     starlight({
-      title: "my",
-      description: "Documentation of my, an ActivityPub-compatible microblog server.",
+      title: "mycroblog",
+      description:
+        "Documentation of mycroblog, a microblog for the fediverse that starts small and grows with your community, and of my, its server software.",
       logo: {
         light: "./src/assets/wordmark-light.svg",
         dark: "./src/assets/wordmark-dark.svg",

@@ -12,7 +12,7 @@
     "description": "Error under the background color field when it is not #rrggbb."
   },
   "admin.brand.built_in": {
-    "defaultMessage": "The built-in one of my is in use.",
+    "defaultMessage": "The built-in mycroblog one is in use.",
     "description": "Text in place of the preview while a brand image is not set."
   },
   "admin.brand.check_failed": {
@@ -36,7 +36,7 @@
     "description": "Error beside the button that clears a brand image. {reason} is the server's localized reason."
   },
   "admin.brand.description": {
-    "defaultMessage": "Your server's own pictures in place of the built-in ones of my. Choose an SVG file: the server checks it and removes anything that could run or load other files, and this browser draws the PNG images that apps and emails need from it.",
+    "defaultMessage": "Your server's own pictures in place of the built-in mycroblog ones. Choose an SVG file: the server checks it and removes anything that could run or load other files, and this browser draws the PNG images that apps and emails need from it.",
     "description": "Explanation above the forms of the server's icon and logos."
   },
   "admin.brand.dropped": {
