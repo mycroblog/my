@@ -7,7 +7,7 @@ import { userEvent } from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { instanceFixture, type Schemas, statusFixture } from "../../test/fixtures";
-import { apiBase, oauthPaths, tokenResponse } from "../../test/msw/http";
+import { apiBase, oauthPaths, problem, tokenResponse } from "../../test/msw/http";
 import { server } from "../../test/msw/server";
 import { renderApp } from "../../test/render";
 import type { Status, Visibility } from "./api/status";
@@ -73,10 +73,36 @@ function brands(...names: string[]) {
   });
 }
 
-/** Serves `status` and the instance, and counts what reaches POST /statuses/{id}/translation. */
+/** A provider that receives the posts that a provider receives by default. */
+const provider: Schemas["InstanceTranslationProvider"] = {
+  id: "fake",
+  name: "Fake",
+  visibilities: ["public", "local", "unlisted"],
+};
+
+/** What the provider answers for `french`. */
+const providerAnswer: Schemas["StatusTranslation"] = {
+  language: "en",
+  source_language: "fr",
+  content: "<p>Hello everyone</p>",
+  spoiler_text: "",
+  media_attachments: [],
+  poll_options: [],
+  provider: { id: "fake", name: "Fake" },
+};
+
+/** Serves `status` and the instance, and counts what reaches POST /statuses/{id}/translation, which `respond` answers. */
 function serve(
   status: Status,
-  { browser = true, providers = [] }: { browser?: boolean; providers?: Schemas["InstanceTranslationProvider"][] } = {},
+  {
+    browser = true,
+    providers = [],
+    respond = () => HttpResponse.json({}, { status: 500 }),
+  }: {
+    browser?: boolean;
+    providers?: Schemas["InstanceTranslationProvider"][];
+    respond?: () => Response;
+  } = {},
 ) {
   const requests: unknown[] = [];
   server.use(
@@ -87,7 +113,7 @@ function serve(
     http.get(`${apiBase}/statuses/:id`, () => HttpResponse.json(status)),
     http.post(`${apiBase}/statuses/:id/translation`, async ({ request }) => {
       requests.push(await request.text());
-      return HttpResponse.json({}, { status: 500 });
+      return respond();
     }),
   );
   return requests;
@@ -172,28 +198,23 @@ describe("the action", () => {
     },
   );
 
-  test("leaves a post to the provider that may receive it, as the operator chose", async () => {
+  test("leaves a post to the provider that may receive it first, as the operator chose", async () => {
     const { pairs } = browserApis();
-    const requests = serve(french, {
-      providers: [{ id: "fake", name: "Fake", visibilities: ["public", "local", "unlisted"] }],
-    });
+    const requests = serve(french, { providers: [provider], respond: () => HttpResponse.json(providerAnswer) });
     const user = userEvent.setup();
     const post = await openedPost();
 
     await user.click(await within(post).findByRole("button", { name: "Translate" }));
 
-    await waitFor(() => {
-      expect(requests).toHaveLength(1);
-    });
+    expect(await within(post).findByText("Hello everyone")).toBeInTheDocument();
+    expect(requests).toHaveLength(1);
     expect(pairs).toEqual([]);
   });
 
   test("takes over a followers-only post that the provider may not receive", async () => {
     const { pairs } = browserApis();
     const status: Status = { ...french, visibility: "private" };
-    const requests = serve(status, {
-      providers: [{ id: "fake", name: "Fake", visibilities: ["public", "local", "unlisted"] }],
-    });
+    const requests = serve(status, { providers: [provider] });
     const user = userEvent.setup();
     const post = await openedPost(status);
 
@@ -202,6 +223,89 @@ describe("the action", () => {
     expect(await within(post).findByText("EN Bonjour tout le monde")).toBeInTheDocument();
     expect(pairs).toEqual([["fr", "en"]]);
     expect(requests).toEqual([]);
+  });
+});
+
+describe("after the server refuses", () => {
+  test.each<[string, () => Response]>([
+    [
+      "a post that no provider may receive, such as a public post of an author limited to followers",
+      () => problem(422, "/api/v1/problems/translation-unavailable", "Unavailable"),
+    ],
+    [
+      "a language that no provider translates",
+      () => problem(422, "/api/v1/problems/translation-unsupported-language", "Unsupported"),
+    ],
+    ["the monthly limit", () => problem(429, "/api/v1/problems/translation-limit", "Too many")],
+    ["a provider without a usable answer", () => problem(503, "/api/v1/problems/translation-failed", "Failed")],
+    ["a failure of the server", () => problem(500, "about:blank", "It broke")],
+  ])("the browser translates the post, for %s", async (_, respond) => {
+    const { pairs } = browserApis();
+    brands("Google Chrome");
+    const requests = serve(french, { providers: [provider], respond });
+    const user = userEvent.setup();
+    const post = await openedPost();
+
+    await user.click(await within(post).findByRole("button", { name: "Translate" }));
+
+    expect(await within(post).findByText("EN Bonjour tout le monde")).toBeInTheDocument();
+    expect(within(post).getByText("Machine translated by your browser (Google Chrome)")).toBeInTheDocument();
+    expect(within(post).queryByRole("alert")).not.toBeInTheDocument();
+    expect(requests).toHaveLength(1);
+    expect(pairs).toEqual([["fr", "en"]]);
+  });
+
+  test("the browser does not take over a post that the server does not show the reader", async () => {
+    const { pairs } = browserApis();
+    serve(french, { providers: [provider], respond: () => problem(404, "about:blank", "Not found") });
+    const user = userEvent.setup();
+    const post = await openedPost();
+
+    await user.click(await within(post).findByRole("button", { name: "Translate" }));
+
+    expect(await within(post).findByRole("alert")).toHaveTextContent(/couldn't be translated/);
+    expect(pairs).toEqual([]);
+  });
+
+  test("a browser without the API says the server's refusal", async () => {
+    serve(french, {
+      providers: [provider],
+      respond: () => problem(422, "/api/v1/problems/translation-unavailable", "Unavailable"),
+    });
+    const user = userEvent.setup();
+    const post = await openedPost();
+
+    await user.click(await within(post).findByRole("button", { name: "Translate" }));
+
+    expect(await within(post).findByRole("alert")).toHaveTextContent("This server can't translate this post.");
+  });
+
+  test("the next press goes to the browser directly, with the press that the model's download needs", async () => {
+    let creates = 0;
+    browserApis({
+      availability: "downloadable",
+      create: () => {
+        creates += 1;
+        // The wait for the server used up the first press.
+        return creates === 1
+          ? Promise.reject(new DOMException("Requires a user gesture", "NotAllowedError"))
+          : Promise.resolve();
+      },
+    });
+    const requests = serve(french, {
+      providers: [provider],
+      respond: () => problem(429, "/api/v1/problems/translation-limit", "Too many"),
+    });
+    const user = userEvent.setup();
+    const post = await openedPost();
+    const button = await within(post).findByRole("button", { name: "Translate" });
+
+    await user.click(button);
+    expect(await within(post).findByRole("alert")).toHaveTextContent(/didn't allow this translation/);
+    await user.click(button);
+
+    expect(await within(post).findByText("EN Bonjour tout le monde")).toBeInTheDocument();
+    expect(requests).toHaveLength(1);
   });
 });
 
