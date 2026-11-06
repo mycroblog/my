@@ -306,3 +306,55 @@ func TestADRs(t *testing.T) {
 		t.Errorf("got\n%s\nwant\n%s", strings.Join(got, "\n"), strings.Join(want, "\n"))
 	}
 }
+
+func TestOpenings(t *testing.T) {
+	// The patterns of the repository's docs/lint.yaml, so that the test proves the rule the documents follow.
+	repo, err := Load(filepath.Join("..", "..", "..", ".."))
+	if err != nil {
+		t.Fatal(err)
+	}
+	c := &Config{}
+	c.Openings.Files = []string{"docs/operations/**", "docs/guide/**"}
+	c.Openings.Reject = repo.Openings.Reject
+	if len(c.Openings.Reject) == 0 {
+		t.Fatal("docs/lint.yaml has no openings.reject")
+	}
+	bad := []string{
+		"A guide for operators.",
+		"A guide for operators: how to create the first administrator.",
+		"An explanation and verification guide for operators.",
+		"A template for operators: a privacy policy.",
+		"This page is for operators. It covers the settings.",
+		"This guide is for operators and moderators.",
+		"This guide is for people who use a server that runs `my`.",
+		"This page explains link previews to operators and lists the steps to check them.",
+		"A reference for developers of third-party apps.",
+		"This document is for administrators.",
+	}
+	good := []string{
+		"How to take the server down for work on the database.",
+		"A relay is a server that passes public posts on.",
+		"A plugin is a separate program or service that you run.",
+		"Voice chat lets people on a server talk in rooms.",
+		"Every error of the client API is a problem document.",
+		"Moderators who are not operators read this page too.",
+	}
+	files := map[string]string{}
+	var want []string
+	for i, s := range bad {
+		p := "docs/operations/bad" + strconv.Itoa(i) + ".md"
+		files[p] = "# Title\n\n<!-- a comment -->\n" + s + "\n\nMore.\n"
+		want = append(want, p+":4:"+RuleOpening)
+	}
+	for i, s := range good {
+		files["docs/guide/good"+strconv.Itoa(i)+".md"] = "# Title\n\n" + s + "\n\nThis page is for operators.\n"
+	}
+	// Outside the listed files, and below the opening, the sentence is not the rule's business.
+	files["docs/agents/x.md"] = "# X\n\nA guide for agents.\n"
+	files["docs/guide/later.md"] = "# Later\n\n## Section\n\n```text\nA guide for operators.\n```\n\nYou read timelines.\n\nA guide for operators.\n"
+	got := lint(t, c, files)
+	sort.Strings(want)
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("findings = %v, want %v", got, want)
+	}
+}
