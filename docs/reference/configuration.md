@@ -1758,7 +1758,7 @@ File of the key of that client certificate of the `translator` plugin.
 
 ### `plugin_translator_timeout`
 
-Deadline of one call of the `translator` plugin, less than `5m0s`.
+Deadline of one call of the `translator` plugin, less than `30s`.
 
 - Environment variable: `MY_PLUGIN_TRANSLATOR_TIMEOUT`
 - Default: `10s`
@@ -2029,7 +2029,7 @@ File of the key of that client certificate of the `key_manager` plugin.
 
 ### `plugin_key_manager_timeout`
 
-Deadline of one call of the `key_manager` plugin, less than `5m0s`.
+Deadline of one call of the `key_manager` plugin, less than `30s`.
 
 - Environment variable: `MY_PLUGIN_KEY_MANAGER_TIMEOUT`
 - Default: `5s`
@@ -2215,7 +2215,7 @@ File of the key of that client certificate of the `signup.check` plugin.
 
 ### `plugin_signup_check_timeout`
 
-Deadline of one call of the `signup.check` plugin, less than `5m0s`.
+Deadline of one call of the `signup.check` plugin, less than `30s`.
 
 - Environment variable: `MY_PLUGIN_SIGNUP_CHECK_TIMEOUT`
 - Default: `2s`
@@ -2277,7 +2277,7 @@ File of the key of that client certificate of the `media.check` plugin.
 
 ### `plugin_media_check_timeout`
 
-Deadline of one call of the `media.check` plugin, less than `5m0s`.
+Deadline of one call of the `media.check` plugin, less than `30s`.
 
 - Environment variable: `MY_PLUGIN_MEDIA_CHECK_TIMEOUT`
 - Default: `10s`
@@ -2339,7 +2339,7 @@ File of the key of that client certificate of the `local.status` plugin.
 
 ### `plugin_local_status_timeout`
 
-Deadline of one call of the `local.status` plugin, less than `5m0s`.
+Deadline of one call of the `local.status` plugin, less than `30s`.
 
 - Environment variable: `MY_PLUGIN_LOCAL_STATUS_TIMEOUT`
 - Default: `1s`

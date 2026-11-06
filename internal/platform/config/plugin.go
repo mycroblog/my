@@ -154,7 +154,7 @@ func pluginFieldsOf(k kind.Kind) []field {
 		},
 		{
 			key:    k.Key(kind.SuffixTimeout),
-			doc:    "Deadline of one call of the `" + k.Name + "` plugin, less than `" + kind.MaxTimeout.String() + "`.",
+			doc:    "Deadline of one call of the `" + k.Name + "` plugin, less than `" + k.TimeoutBound().String() + "`.",
 			defDoc: "`" + k.Timeout.String() + "`",
 			check: func(v string) error {
 				d, err := time.ParseDuration(v)

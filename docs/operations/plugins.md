@@ -57,6 +57,14 @@ Choose one:
 An `https://` address with neither a token nor a client certificate starts with a warning, since the plugin cannot tell
 the server from anyone else who reaches it.
 
+The server reads the files of `plugin_<kind>_tls_ca_file`, `plugin_<kind>_tls_cert_file`, and
+`plugin_<kind>_tls_key_file` at start, where a missing or unreadable file stops it. After that it looks at them again
+for a change at most every 5 seconds, when it opens a new connection, so a short-lived certificate or a CA that a
+certificate manager such as Vault, cert-manager, or SPIFFE renews in place works with no restart. Connections already
+open keep the certificate they started with until they close. While a renewal is half written, such as a new
+certificate whose key is not in place yet, the server keeps the files it read last and tries again on the next
+connection. The token is read at start only.
+
 ### Plain TCP
 
 `mailer`, `key_manager`, `translator`, `inbound.status`, `local.status`, and `signup.check` refuse `http://`: the server does not start. That holds on
@@ -81,7 +89,7 @@ A plugin answers the wrong protocol with `415`. `media` streams both ways, which
 `grpc` and `json` is a configuration error.
 
 The protocol's definitions are the `.proto` files under `api/plugin/` of the repository. There is one package for each
-kind, and they share no types.
+kind of port, and they share no types; the decision hooks all share one package, `my.plugin.hook.v1`.
 
 ## When a call fails
 
@@ -93,8 +101,10 @@ does not retry a call itself: the job that made it does, so a plugin must cope w
 A plugin that is down when the server starts stops nothing, except `key_manager`: the server does not start without it, and
 [what stops without it](key-management.md#when-the-plugin-is-unreachable) is a part of its setup to read first.
 
-A call has the deadline of `plugin_<kind>_timeout`, below 5 minutes, and a plugin receives it as `Connect-Timeout-Ms`
-(`grpc-timeout` on gRPC). A plugin may ignore that header: the server stops waiting anyway.
+A call has the deadline of `plugin_<kind>_timeout`, and a plugin receives it as `Connect-Timeout-Ms` (`grpc-timeout` on
+gRPC). A plugin may ignore that header: the server stops waiting anyway. The deadline must stay below 30 seconds for the
+kinds that a request can wait for (`key_manager`, `translator`, `signup.check`, `media.check`, and `local.status`), and
+below 5 minutes, how long a job may run, for the others.
 
 ## Test a plugin
 

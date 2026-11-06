@@ -44,7 +44,7 @@ pkg/mykit/
 
 - `pkg/mykit/`・`pkg/mybot/` と、生成元の `api/spec/` とそのバンドル `api/openapi.yaml` を **MIT** にする。生成物は仕様から機械的に作るので、仕様が AGPL のままだと生成物の扱いが曖昧になる。仕様を同じライセンスにしてそれを避ける。
   サーバーの実装（`internal/`・`cmd/`・`app/web` など）は AGPL-3.0-only のまま。MIT は AGPL-3.0 と両立するので、サーバーと Web クライアントが MIT のコードを使うことに問題はない。
-- `api/plugin/`（外部プラグインの proto。ADR-0146 §8）も **MIT** にする。プラグインの作者がそこから自分のコードを生成するので、同じ理由である。サーバーが使う Go の生成物は `internal/adapter/plugin/gen` に置き、`internal/` のほかのコードと同じ AGPL-3.0-only にする。AGPL のポートをなぞる proto を MIT で出すことの法務の確認は、ADR-0146 §17 のとおり `v0.1.0` のタグの条件である。
+- `api/plugin/`（外部プラグインの proto。ADR-0146 §8）も **MIT** にする。プラグインの作者がそこから自分のコードを生成するので、同じ理由である。サーバーが使う Go の生成物は `internal/adapter/plugin/gen` に置き、`internal/` のほかのコードと同じ AGPL-3.0-only にする。プラグインは別プロセスでプロトコルだけを使うので、`my` の AGPL はプラグインに及ばない（ADR-0146 §17）。
 - **ADR-0011 との関係**: 上の範囲は ADR-0011 の「リポジトリは AGPL-3.0 とする」の例外である。AGPL 第 13 条のソースの提示などその他の決定は変えない。
 - 置き方: それぞれのディレクトリに MIT の `LICENSE` を置き、ルートの `README.md` のライセンスの節に例外の範囲を書く。
   SPDX ヘッダは `MIT`（`// SPDX-License-Identifier: MIT`、YAML は `# SPDX-License-Identifier: MIT`）。`pkg/mykit/`・`pkg/mybot/` の生成物の見出しも `MIT` にする。

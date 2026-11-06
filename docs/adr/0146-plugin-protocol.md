@@ -31,6 +31,9 @@
 | `media` | `media.Processor`（`AVProcessor` を含む） | #2220 |
 | `key_manager` | `kernel.KeyManager` | #2221 |
 | フック | [ADR-0147](0147-decision-hooks.md) の各フック | #2222〜#2227 |
+| `probe` | なし。何も委譲しない | #2216 |
+
+`probe` は宛先の設定を持たず、`my plugin test --kind probe` だけが呼ぶ。`Echo` の 1 つの RPC で、どの kind のプラグインも自分の kind を作る前に輸送・プロトコル・認証を確かめられる。秘密も本文も運ばないので平文の TCP を許す（§6）。proto は他の kind と同じく `v0.1.0` のタグで凍る。
 
 委譲の基準は、トランザクションの外で呼ぶこと、遅延を許すこと、既存の標準プロトコルがないこと、インターフェイスが小さく安定していること、失敗しても機能が縮退で済むこと、セキュリティの境界でないこと。`KeyManager` はこの最後の基準の意図的な例外で、理由は §14 に書く。DB とトランザクションに結びつくポートは委譲しない。
 
@@ -115,7 +118,9 @@ voice との違いが 2 つある。
 api/plugin/
   LICENSE                                     # MIT
   buf.yaml, buf.gen.yaml                      # SPDX は MIT
-  my/plugin/<kind>/v1/<kind>.proto            # package my.plugin.<kind>.v1
+  my/plugin/<kind>/v1/<kind>.proto            # package my.plugin.<kind>.v1（ポートの kind ごと）
+  my/plugin/hook/v1/hook.proto                # package my.plugin.hook.v1（判定フックのすべてが共有する）
+  my/plugin/probe/v1/probe.proto              # package my.plugin.probe.v1（`my plugin test` だけが呼ぶ。§2）
 internal/adapter/plugin/gen/...               # 生成物（Go、AGPL-3.0-only、コミットする。ADR-0081）
 internal/adapter/plugin/client/               # 接続・認証・上限の共通の部分
 internal/adapter/<port>/plugin/               # 各ポートの adapter（translator・billing・mail・media・keymanager）
@@ -123,7 +128,8 @@ internal/adapter/hook/connect/                # フックの adapter（#2222）
 ```
 
 - 既存の `api/*` は `scripts/changed-contexts.sh` で `api` の文脈に入り、`tools/agentkit/context-map.yaml` の `api/**` にも含まれる
-- パッケージは kind ごとに分け、共有の型を置かない。ある kind の `v2` がほかの kind に波及しない
+- パッケージはポートの kind ごとに分け、パッケージのあいだで型を共有しない。ある kind の `v2` がほかの kind に波及しない
+- 判定フックは例外で、ADR-0147 のフックはどれも 1 つの `HookService/Check` を宛先ごとに呼ぶので、すべてのフックが `my.plugin.hook.v1` を共有する。フックの `v2` は §9 のとおりフックのすべてに及ぶ
 - 生成は `buf`（Apache-2.0）と `protoc-gen-go`・`protoc-gen-connect-go`。`protoc` は要らない。`scripts/task.sh generate` の依存に `api:plugin-generate` を足し、`api:check` に生成物の鮮度・`buf lint`・§9 の `buf breaking` を足す
 - `buf` は `go tool` で固定するが、`tools/go.mod` に足すと `google.golang.org/protobuf` が `v1.37.0-rc.1` へ上がる（2026-11-05 に `tools/go.mod` の複製で確認。`buf` v1.75.0、`go.mod` は 56 行増）。`protoc-gen-go` の版は製品の `protobuf` に揃えるので、`buf` だけ `tools/buf/go.mod` に分ける
 - `go_package` は proto に書かず、`buf.gen.yaml` の managed mode で与える。プラグインの作者に `my` の内部のパスを見せない（2026-11-05 に確認）
@@ -139,7 +145,7 @@ proto は well-known types も使わず（時間は `int64` のミリ秒）、�
 
 ### 9. 版
 
-proto の版は kind ごとの `v1` で、`my` の Go のインターフェイスとは別に動く。内部のインターフェイスを変えても adapter の写像で吸収する（AGENTS.md は v0.x で内部のインターフェイスの変更を許す）。
+proto の版はパッケージごとの `v1` で、`my` の Go のインターフェイスとは別に動く。内部のインターフェイスを変えても adapter の写像で吸収する（AGENTS.md は v0.x で内部のインターフェイスの変更を許す）。
 
 `v0.1.0` のタグより前は `v1` を自由に変えてよい。タグの後の `v1` で **許すのは、昨日のプラグインが無視しても正しく動き続ける変更だけ** である。
 
@@ -155,8 +161,9 @@ proto の版は kind ごとの `v1` で、`my` の Go のインターフェイ�
 | 同じ値の意味の変更、`my` が課す上限を狭める変更 | 禁止（`v2`） |
 
 - 検査は `buf breaking` の `FILE` の規則で、タグ `v0.1.0` 以降の最新のタグと比べる。2026-11-05 にディレクトリとの比較で、追加が通り、フィールドの改名と列挙の値の削除が落ちることを確かめた。意味の変更は機械で見つからないのでレビューで止める
-- **`v2` の共存:** `api/plugin/my/plugin/<kind>/v2/` に新しいパッケージを足す。パス（`/my.plugin.mailer.v2.MailerService/Send`）が違うので、1 つのプラグインのサーバーが `v1` と `v2` を同時に出せる
+- **`v2` の共存:** `api/plugin/my/plugin/<package>/v2/` に新しいパッケージを足す。パス（`/my.plugin.mailer.v2.MailerService/Send`）が違うので、1 つのプラグインのサーバーが `v1` と `v2` を同時に出せる
   - `my` は版ごとに adapter を持ち、`plugin_<kind>_version` で選ぶ。既定は古い版のままで、`my` の新しい版が来ても黙って切り替わらない
+  - 版の規則はパッケージに対して働く。判定フックは `my.plugin.hook.v1` を共有するので（§8）、`hook.v2` は 5 つのフックをまとめて動かし、`v1` を残す期間と警告もフックのすべてに同じく働く。フックごとの `plugin_<kind>_version` は、それぞれの宛先がどちらの版を話すかを選ぶ
   - 自動の検出はしない。`unimplemented` への自動のフォールバックは、障害と古いプラグインの区別がつかず、`key_manager` で黙って版が下がる
   - `v2` を出したら `v1` は少なくとも 2 つのマイナー版のあいだ残し、使っているあいだ起動時に警告し、リリースノートで消す版を告げる
 
@@ -165,7 +172,7 @@ proto の版は kind ごとの `v1` で、`my` の Go のインターフェイ�
 - **ポートの結果はメッセージの `outcome` の列挙で返す。** Connect のエラーは運搬の失敗だけを表す。JSON だけのプラグインが Connect のエラーの詳細を組み立てずに済み、`BillingSource` の「失敗しても使った要求の数を返す」も表せる
 - **列挙の 0 は `*_UNSPECIFIED` で、成功にしない。** 空の JSON の `{}` と、知らない列挙の名前は 0 に、知らない数値はそのまま届く（2026-11-05 に確認）。どれも成功と読まず、そのポートの一時的な失敗か不正な応答として扱う
 - Connect のエラーは、ポートの一時的な失敗に写す（`my` のジョブが再試行する）。例外は §14
-- **プラグインの自由文を受け取らない。** proto の応答に自由文のフィールドを置かず、Connect のエラーの `message` は捨てて `code` だけをログに出す。`Mailer` の「エラーとログに宛先・本文・相手の応答の文を出さない」はこれで構造的に守られる
+- **プラグインの自由文を受け取らない。** proto の応答に自由文のフィールドを置かず、Connect のエラーの `message` は捨てて `code` だけをログに出す。唯一の例外は判定フックの `CheckResponse.note` で、ADR-0147 §1(2) のモデレーター向けの短い平文のメモである。`my` は `hook.CleanNote` で制御文字を除いて 200 文字に切り、判定の記録と通報のコメントにだけ残し、ログには出さない。`Mailer` の「エラーとログに宛先・本文・相手の応答の文を出さない」はこれで構造的に守られる
 - `my` の adapter は再試行しない。再試行は呼び出す側（ジョブ）の責務で、配送は at-least-once なので、プラグインは同じ呼び出しの重複に耐える（[ADR-0004](0004-job-queue-abstraction.md)）
 - **プラグインの出力は信頼しない。** adapter はポートの契約を満たすことを確かめてから返す（翻訳のサニタイズ、請求の値の検査、§13 のメディアの検査）
 
@@ -215,7 +222,7 @@ proto の版は kind ごとの `v1` で、`my` の Go のインターフェイ�
 
 **本体はストリームのチャンクで運ぶ。** 画像は 16 MiB、動画と音声は 100 MiB まであり（ADR-0019 §8）、1 つのメッセージにも、grpc-go の既定の 4 MiB にも収まらない。
 
-- **RPC:** `Process` と `Remux` を双方向ストリームにする。使い方は半二重で、`my` は `head`（操作の引数）とチャンクを送りきってから `CloseSend` し、プラグインは `head`（`outcome`・寸法・再生時間・blurhash）のあとに、出力ごとの `part`（どの出力か・形式・寸法・バイト数）とチャンクを返す
+- **RPC:** `Process` と `Remux` を双方向ストリームにする。使い方は半二重で、`my` は `head`（操作の引数）とチャンクを送りきってから `CloseSend` し、プラグインは `head` のあとに、出力ごとの `part`（どの出力か・形式・寸法・バイト数）とチャンクを返す。`Process` の `head` は `outcome`・寸法・再生時間・blurhash を持つ。`Remux` の `head` は `outcome` だけで、再生時間・寸法・コーデックは `my` が出力から自分で読み直す（下の出力の検査）
 - **HTTP/2 が要る。** Connect の双方向は HTTP/2 だけで、HTTP/1.1 では送信が `EOF` で失敗する。したがって `media` は `proto` か `grpc` だけを受け、`json` は設定のエラーにする。TLS は ALPN の h2、Unix ソケットと平文の TCP は h2c
 - **上限:** チャンクは 1 MiB。入力の合計は `Limits.MaxBytes`・`AVLimits.MaxBytes` で、ポートが呼ばれる時点で守られている。`my` は受信を出力ごとと全体で数え、`part` の宣言か次の上限を超えたら読むのをやめて `ErrTooLarge` にする: `Process` の全体は `Limits.MaxBytes` の 2 倍、`Remux` は本体が `AVLimits.MaxBytes`、カバーが `Limits.MaxBytes`
 - **メモリ:** ポートは今も `data []byte` を受けて `[]byte` を返すので、ストリームにしても `my` のメモリは減らない。増えもしない。ポートを `io.Reader` にする変更は別の課題とする
@@ -249,7 +256,9 @@ proto の版は kind ごとの `v1` で、`my` の Go のインターフェイ�
 
 - **鍵 ID:** `plugin:` + プラグインの ID で、全体で 255 バイトまで。`kernel.KeyIDKind` は `plugin` を返すので、`NewKeyRouter` の移行（ADR-0019 §14）がそのまま使える。`local` からの移行も `local` への移行も同じ手順で、ほかの KMS との直接の移行は作らない
 - **`UnwrapKey` の結果:** `outcome` の `UNKNOWN_KEY` は `ErrUnknownKey`、`DECRYPT` は `ErrDecrypt` に写す
-- **止まるもの**（#2221 の運用文書に書く）: キャッシュの有効期間（既定 10 分）を超える障害では `Sealer` を使うものが失敗する。連合の配送と署名付きの取得（アクターの秘密鍵）、新しいアカウントの作成、TOTP・パスキー・外部ログインの処理の一部、webhook の配送と登録、`my kek rewrap`、再起動（起動が失敗する）。連合の配送はジョブの再試行で追いつく
+- **止まるもの**（#2221 の運用文書に書く）: 包む操作（`WrapKey`）はキャッシュせず、`Sealer` は封をするたびに呼ぶ。DEK のキャッシュ（既定 10 分、`kms_dek_cache_ttl`）が効くのは開く操作（`UnwrapKey`）だけである
+  - プラグインが落ちるとすぐ失敗するもの: 新しいアカウントの作成（アクターの鍵を生成して封をする）、TOTP の設定とパスキーの登録・パスキーでのログイン（儀式の状態を封をして保つ）、外部ログインとプロバイダのクライアントシークレットの保存、webhook の登録、`my kek rewrap`、再起動（起動が失敗する）
+  - キャッシュの有効期間のあいだだけ続き、超えると失敗するもの: 保存した秘密を開くもの。連合の配送と署名付きの取得（アクターの秘密鍵）、ログインでの TOTP の確認、webhook の配送。プロセスがまだ開いていない秘密は最初から失敗する。連合の配送はジョブの再試行で追いつく
 - **ログ:** DEK・AAD・`wrapped` は出さない。`slog.LogValuer` の `[REDACTED]` に従う
 
 ### 15. 失敗したときの共通の動作
@@ -292,7 +301,7 @@ proto の版は kind ごとの `v1` で、`my` の Go のインターフェイ�
 
 運営者の環境に合わせた翻訳エンジン・費用の取り込み元・メールの事業者・重い変換・鍵の置き場を、`my` の本体に足さずに差し替えたい。判定フックも同じ輸送に乗せる。FR の番号はまだなく、エピック #2228 の範囲がこの ADR の起点である（関連: ADR-0002、ADR-0019、NFR-SEC-1、NFR-SEC-7）。
 
-プロプライエタリのプラグインを認めること、DB とトランザクションのポートを委譲しないこと、マイルストーン External Plugins を `v0.1.0` の前に全部作ること、法務の確認をタグの条件にして先に実装することは決定者の判断である。全部を前に作るのは、後からの追加が互換の破れ目になるからで、エピックの順序は作る順として読む。#2214 の推奨（Connect、接続だけのモデル、設定だけの宛先、3 つの認証と、`key_manager`・`mailer`・本文を送るフックでの平文の TCP の拒否、MIT の `v1`、黒箱の CLI）を起点に、Go のインターフェイスと依存を読んで具体化した。
+プロプライエタリのプラグインを認めること、DB とトランザクションのポートを委譲しないこと、マイルストーン External Plugins を `v0.1.0` の前に全部作ることは決定者の判断である。全部を前に作るのは、後からの追加が互換の破れ目になるからで、エピックの順序は作る順として読む。#2214 の推奨（Connect、接続だけのモデル、設定だけの宛先、3 つの認証と、`key_manager`・`mailer`・本文を送るフックでの平文の TCP の拒否、MIT の `v1`、黒箱の CLI）を起点に、Go のインターフェイスと依存を読んで具体化した。
 
 形が決まった転機は 3 つある。
 

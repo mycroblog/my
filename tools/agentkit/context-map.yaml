@@ -322,7 +322,7 @@ entries:
     notes:
       - "`my` is only a client of a plugin. internal/adapter/plugin/client holds the transport of every kind (protocol, authentication, deadline, limits, concurrency, failures); internal/adapter/plugin/kind holds the table of the kinds and the rules of a destination, with the standard library alone so that the configuration reads it in a no_plugins build."
       - "Destinations are settings of the configuration file and the environment only (ADR-0146 §5). A new kind is one row of kind.Delegated, which adds the keys; plain TCP is refused only for key_manager, mailer, translator, inbound.status, local.status, and signup.check (§6)."
-      - "api/plugin/ is MIT and holds one package per kind with no shared types, imports, or well-known types (§8). `scripts/task.sh api:plugin-generate` writes internal/adapter/plugin/gen as AGPL-3.0-only; buf is pinned in tools/buf/go.mod apart from tools/go.mod."
+      - "api/plugin/ is MIT and holds one package per port kind with no shared types, imports, or well-known types; all decision hooks share my.plugin.hook.v1 (§8). `scripts/task.sh api:plugin-generate` writes internal/adapter/plugin/gen as AGPL-3.0-only; buf is pinned in tools/buf/go.mod apart from tools/go.mod."
       - "A port's adapter goes in internal/adapter/<port>/plugin, takes a *client.Conn from platform.NewPluginConn in a !no_plugins file of internal/platform, and reads the `outcome` of the response; its contract cases go in a file of internal/adapter/plugin/contract and one entry of its table, and fakeplugin gains the kind."
     userdocs: ["docs/operations/plugins.md", "docs/reference/build-tags.md", "docs/operations/running.md"]
   - name: module-voice
