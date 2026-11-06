@@ -5,8 +5,17 @@ import { http, HttpResponse, type RequestHandler } from "msw";
 import { expect } from "storybook/test";
 import type { Schemas } from "../../test/fixtures";
 import { apiBase, problem, withViewer } from "../../test/msw/http";
-import { answering, narrow, renderScreen, screenLoader, settled } from "../../test/stories";
-import { roomId, voiceRoomFixture } from "./test/handlers";
+import {
+  showcasePictures,
+  showcaseSettled,
+  showcaseViewer,
+  voiceCohost,
+  voiceHost,
+  voiceListeners,
+  voiceSpeakers,
+} from "../../test/showcase";
+import { answering, narrow, renderScreen, screenLoader, settled, viewerWith } from "../../test/stories";
+import { participantFixture, roomId, voiceRoomFixture } from "./test/handlers";
 import { failing, neverAnswering, showsSkeleton, voiceOn } from "./test/stories";
 
 /** The server with voice chat on, answering the room with `room`. */
@@ -43,6 +52,33 @@ export const Normal: Story = {
     await settled(context);
     await expect(context.canvas.getByRole("heading", { level: 1, name: "Friday night radio" })).toBeInTheDocument();
   },
+};
+
+/**
+ * A busy room as a visitor would picture one (test/showcase.ts): the host, a co-host and two speakers on the stage,
+ * and four listening, one with a hand raised, opened 47 minutes ago. The documentation site's screenshots show it.
+ */
+export const Showcase: Story = {
+  ...answering(
+    viewerWith(showcaseViewer),
+    ...showcasePictures,
+    ...openRoom(
+      voiceRoomFixture({
+        name: "Sunday baking club",
+        description: "Sharing this week's loaves, failures included. Questions welcome!",
+        hashtags: ["baking", "sourdough"],
+        host: voiceHost,
+        opened_at: new Date(Date.now() - 47 * 60_000).toISOString(),
+        participants: [
+          participantFixture(voiceHost, { role: "speaker", hosting: true }),
+          participantFixture(voiceCohost, { role: "speaker", cohosting: true }),
+          ...voiceSpeakers.map((account) => participantFixture(account, { role: "speaker" })),
+          ...voiceListeners.map((account, i) => participantFixture(account, { hand_raised: i === 1 })),
+        ],
+      }),
+    ),
+  ),
+  play: showcaseSettled,
 };
 
 /** The room has not arrived yet: the shape of its stage, without a spinner. */
