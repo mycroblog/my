@@ -6,19 +6,21 @@ Each command is described in more detail in [administrators and roles](admin-cli
 
 ## The sequence
 
-```text
-Announce ──notice period──▶ Closing date ──Close──▶ Delivery complete ──export deadline──▶ Static page ──▶ Discard DB, blobs and backups
-```
+![The stages of closing the service from top to bottom: what the operator does on the left, and the state of the server on the right, with the closing date and the export deadline between them. The table below describes each stage.](images/service-closure.svg)
+
+The table follows the diagram from the top down; the Server column starts with the state that `my admin closure status` shows.
+The closing date (`-closes-at`) ends the notice period, and the export deadline (`-export-until`, 30 days after the closing date
+unless set) ends stage 5.
 
 | Stage | Server | What the operator does |
 | --- | --- | --- |
-| 1. Announce | Runs as usual. Sign-ups, invites and new supporter subscriptions stop | `my admin closure announce`, post a notice on the status page |
-| 2. Notice period | Runs as usual. Users can export their data and move to another server | Refund annual supporters, check migrations and retention holds |
-| 3. Close (after the closing date) | Users can only sign in and export. The server delivers a `Delete` for every account | `my admin closure check` and `close` |
+| 1. Announce | `announced`. Runs as usual. Sign-ups, invites and new supporter subscriptions stop | `my admin closure announce`, post a notice on the status page |
+| 2. Notice period | `announced`. Runs as usual. Users can export their data and move to another server | Refund annual supporters, check migrations and retention holds |
+| 3. Close (after the closing date) | `closed`. Users can only sign in and export. The server delivers a `Delete` for every account | `my admin closure check` and `close` |
 | 4. Delivery complete | Records `delivery_completed`; local Actors also return `410` | Confirm with `my admin closure status`. Do not stop the workers |
-| 5. Until the export deadline | Stays closed and keeps offering the export | Export the records under retention holds |
-| 6. Static page | Stopped | `my admin closure export-html`, switch the front end, stop `my serve` |
-| 7. Discard | None | Discard the DB, blobs and backups. Keep the domain for about a year |
+| 5. Until the export deadline | `delivery_completed`. Stays closed and keeps offering the export | Export the records under retention holds |
+| 6. Static page | Stopped. The front end serves the static page, and `410` for federation | `my admin closure export-html`, switch the front end, stop `my serve` |
+| 7. Discard | None. Keep serving the static page and `410` for about a year | Discard the DB, blobs and backups. Keep the domain for about a year |
 
 You can combine any stage with maintenance mode ([Maintenance](maintenance.md)). During maintenance, exports and the delivery of `Delete` activities stop.
 
