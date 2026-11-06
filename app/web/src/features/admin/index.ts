@@ -22,7 +22,7 @@ export { DocumentSettings } from "./components/DocumentSettings";
 export { instanceQueryOptions as ownInstanceQueryOptions } from "./api/documents";
 export { brandsQueryOptions } from "./api/brand";
 export { instanceSettingsQueryOptions } from "./api/settings";
-export { ServerSettings, type ServerSettingsPage } from "./components/ServerSettings";
+export { ServerSettings } from "./components/ServerSettings";
 // The server's rules (FR-705), for manage_rules: their list, a new rule, and one rule's page.
 export { ruleQueryOptions, rulesQueryOptions } from "./api/rules";
 export { type RuleFilter, ruleFilters, RuleSettings } from "./components/RuleSettings";
@@ -63,7 +63,6 @@ export {
   type AnnouncementFilter,
   adminAnnouncementQueryOptions,
   adminAnnouncementsQueryOptions,
-  announcementFilters,
 } from "./api/announcements";
 export { AnnouncementDetail } from "./components/AnnouncementDetail";
 export { AnnouncementList } from "./components/AnnouncementList";
@@ -108,13 +107,20 @@ export { FinanceTotals } from "./components/FinanceTotals";
 export { NewCostItem } from "./components/NewCostItem";
 // The supporter program: enabling it, its plans and their subscriptions (ADR-0072), for manage_supporters.
 export {
+  supporterPlanStates,
   type SupporterSubscriptionFilter,
   supporterPlansQueryOptions,
   supporterProgramQueryOptions,
+  supporterSubscriptionQueryOptions,
   supporterSubscriptionStates,
   supporterSubscriptionsQueryOptions,
 } from "./api/supporters";
-export { SupporterSettings } from "./components/SupporterSettings";
+export { SupporterPlanDetail } from "./components/SupporterPlanDetail";
+export { NewSupporterPlan } from "./components/SupporterPlanForm";
+export { SupporterPlans } from "./components/SupporterPlans";
+export { SupporterProgram } from "./components/SupporterProgram";
+export { SupporterSubscriptionDetail } from "./components/SupporterSubscriptionDetail";
+export { SupporterSubscriptions } from "./components/SupporterSubscriptions";
 // The service closure: announcing it, changing and withdrawing the announcement, checking and confirming the closing,
 // and the progress of its deliveries (ADR-0088), for manage_service_closure.
 export { adminClosureCheckQueryOptions, adminClosureQueryOptions } from "./api/closure";

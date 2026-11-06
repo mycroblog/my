@@ -204,12 +204,14 @@ export function auditTargetHref(
       return "/admin/finance/imports";
     case "cost_item":
       return `/admin/finance/costs/${id}`;
-    case "supporter_program":
     case "supporter_plan":
+      // Every plan has its page, retired ones too.
+      return `/admin/supporters/plans/${id}`;
     case "supporter_subscription":
+      return `/admin/supporters/subscriptions/${id}`;
+    case "supporter_program":
     case "payment_provider":
-      // The supporters screen shows the program, every plan (retired ones too), the subscriptions and the
-      // state of the payment provider.
+      // The first page of the supporters screen shows the program and the state of the payment provider.
       return "/admin/supporters";
     case "login_provider":
       // A provider has no screen of its own: the list of providers shows it.

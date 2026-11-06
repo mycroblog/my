@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The publication settings as forms next to the screens whose data they publish (audit A8 of #1638): the costs and
-// the income on the costs screen, the supporter list on the supporters screen. They are server settings, so only a
-// viewer with manage_settings gets the form; the screens say the current values to the others. Each form has one
-// FormActionBar with the result of its last save (ADR-0110 §5).
+// The publication settings as a form next to the screen whose data they publish (audit A8 of #1638): the costs and
+// the income on the costs screen (the supporter list's is in the program's form of the supporters screen). They are
+// server settings, so only a viewer with manage_settings gets the form; the screen says the current values to the
+// others. The form has one FormActionBar with the result of its last save (ADR-0110 §5).
 import {
   Button,
   Checkbox,
@@ -16,12 +16,7 @@ import {
 } from "@my/ui";
 import { type ReactNode, useId } from "react";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
-import {
-  financePublicationKeys,
-  type PublicationKey,
-  supporterPublicationKeys,
-  usePublicationSettings,
-} from "../hooks/usePublicationSettings";
+import { financePublicationKeys, type PublicationKey, usePublicationSettings } from "../hooks/usePublicationSettings";
 
 type Choice = { value: string; label: ClientMessageKey; description: ClientMessageKey };
 
@@ -71,23 +66,6 @@ const choices = {
       value: "plans",
       label: "client:admin.settings.income.plans",
       description: "client:admin.settings.income.plans.description",
-    },
-  ],
-  supporter_list_visibility: [
-    {
-      value: "off",
-      label: "client:admin.settings.supporter_list.off",
-      description: "client:admin.settings.supporter_list.off.description",
-    },
-    {
-      value: "everyone",
-      label: "client:admin.settings.supporter_list.everyone",
-      description: "client:admin.settings.supporter_list.everyone.description",
-    },
-    {
-      value: "signed_in",
-      label: "client:admin.settings.supporter_list.signed_in",
-      description: "client:admin.settings.supporter_list.signed_in.description",
     },
   ],
 } as const satisfies Partial<Record<PublicationKey, readonly Choice[]>>;
@@ -200,24 +178,6 @@ export function FinancePublicationForm() {
         <Hint size="inherit">{t("client:admin.settings.income.description")}</Hint>
         <Radios form={form} setting="income_visibility" label={t("client:admin.settings.income.visibility")} />
       </Part>
-      <ActionBar form={form} />
-    </Stack>
-  );
-}
-
-/** Who may read the supporter list on the about page (supporter_list_visibility). */
-export function SupporterListPublicationForm() {
-  const t = useT();
-  const form = usePublicationSettings(supporterPublicationKeys);
-  if (!form.ready) return null;
-  return (
-    <Stack as="form" gap="6" onSubmit={form.submit}>
-      <Hint size="inherit">{t("client:admin.settings.supporter_list.description")}</Hint>
-      <Radios
-        form={form}
-        setting="supporter_list_visibility"
-        label={t("client:admin.settings.supporter_list.visibility")}
-      />
       <ActionBar form={form} />
     </Stack>
   );

@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The supporters screen through the whole app (web-client/README.md T4, ADR-0072): an administrator with manage_supporters
-// sees the program, the plans and the subscriptions; enables the program or sees why the server refuses; creates a
-// plan or sees the field the server refuses; retires a plan and ends a subscription after asking; narrows the
-// subscriptions by state in the URL; sees the payment provider's state with how to fix its failure and its warnings,
-// reconciles now or sees why it is too soon, and sees no provider section without a configured provider. A viewer without the permission has neither the screen nor its menu entry; with
-// MSW playing the API.
+// The pages of the supporters screen through the whole app (web-client/README.md T4, ADR-0072): an administrator with
+// manage_supporters moves between the program, the plans and the subscriptions with the screen's LocalNav; on the
+// program's page enables the program and sets who may read the supporter list in one save, or sees why the server
+// refuses, and sees the payment provider's state with how to fix its failure and its warnings, reconciles now or sees
+// why it is too soon, and sees no provider section without a configured provider; lists the plans narrowed to a state,
+// creates a plan on its page or sees the field the server refuses, and changes and retires a plan on the plan's page;
+// lists the subscriptions narrowed by state in the URL and ends one at once on its page after asking. A viewer without
+// the permission has neither the screen nor its menu entry; with MSW playing the API.
 import { screen, waitFor, within } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
 import { beforeEach, describe, expect, test } from "vitest";
@@ -35,20 +37,28 @@ function refusal(status: number, type: string, title: string, detail: string, ex
 }
 
 const planId = "0199f0e0-0000-7000-8000-0000000000c1";
+const subscriptionId = "0199f0e0-0000-7000-8000-0000000000e1";
 
-describe("the supporters screen", () => {
+/** The plans of a server: Supporter, Gold (preparing its prices) and Old (retired). */
+const threePlans = (): Schemas["AdminSupporterPlanList"] => ({
+  items: [
+    supporterPlanFixture(planId, { members: 2 }),
+    supporterPlanFixture("0199f0e0-0000-7000-8000-0000000000c2", { name: "Gold", rank: 2, prices_ready: false }),
+    supporterPlanFixture("0199f0e0-0000-7000-8000-0000000000c3", {
+      name: "Old",
+      rank: 0,
+      retired: true,
+      retired_at: "2026-10-21T00:00:00Z",
+    }),
+  ],
+});
+
+describe("the program page of the supporters screen", () => {
   beforeEach(() => {
     server.use(signedInHandler, operatorHandler(["manage_supporters"]));
   });
 
-  test("shows the program, the plans by rank with the retired ones apart, and the subscriptions", async () => {
-    const {
-      account_id: _account,
-      username: _username,
-      ...erasedSubscription
-    } = supporterSubscriptionFixture("0199f0e0-0000-7000-8000-0000000000e2", {
-      state: "expired",
-    });
+  test("shows the program and the payment provider, under the screen's pages", async () => {
     server.use(
       http.get(`${apiBase}/admin/supporter_program`, () =>
         HttpResponse.json(
@@ -61,74 +71,30 @@ describe("the supporters screen", () => {
           }),
         ),
       ),
-      http.get(`${apiBase}/admin/supporter_plans`, () =>
-        HttpResponse.json({
-          items: [
-            supporterPlanFixture(planId, { members: 2 }),
-            supporterPlanFixture("0199f0e0-0000-7000-8000-0000000000c2", {
-              name: "Gold",
-              rank: 2,
-              prices_ready: false,
-            }),
-            supporterPlanFixture("0199f0e0-0000-7000-8000-0000000000c3", {
-              name: "Old",
-              rank: 0,
-              retired: true,
-              retired_at: "2026-10-21T00:00:00Z",
-            }),
-          ],
-        } satisfies Schemas["AdminSupporterPlanList"]),
-      ),
-      http.get(`${apiBase}/admin/supporter_subscriptions`, () =>
-        HttpResponse.json({
-          items: [supporterSubscriptionFixture("0199f0e0-0000-7000-8000-0000000000e1"), erasedSubscription],
-        }),
-      ),
     );
     await renderApp({ path: "/admin/supporters" });
 
     expect(await screen.findByRole("heading", { level: 1, name: "Supporters" })).toBeInTheDocument();
+    const pages = screen.getByRole("navigation", { name: "Supporter pages" });
+    expect(within(pages).getByRole("link", { name: "Program" })).toHaveAttribute("aria-current", "page");
+    expect(within(pages).getByRole("link", { name: "Plans" })).toHaveAttribute("href", "/admin/supporters/plans");
+    expect(within(pages).getByRole("link", { name: "Subscriptions" })).toHaveAttribute(
+      "href",
+      "/admin/supporters/subscriptions",
+    );
+    // docs/architecture/web-client/screens/admin-supporters.md §3
+    expect(sectionHeadings()).toEqual(["Supporter program", "Payment provider"]);
     const program = screen.getByRole("region", { name: "Supporter program" });
-    expect(within(program).getByRole("switch", { name: "Enable the supporter program" })).toBeChecked();
+    expect(within(program).getByRole("checkbox", { name: "Enable the supporter program" })).toBeChecked();
     expect(within(program).getByText("2 subscriptions")).toBeInTheDocument();
     expect(within(program).getByRole("link", { name: "Write them in the terms and policies" })).toHaveAttribute(
       "href",
       "/admin/documents/commerce-disclosure",
     );
-
-    // docs/architecture/web-client/screens/admin-supporters.md §3
-    expect(sectionHeadings()).toEqual([
-      "Supporter program",
-      "Payment provider",
-      "Plans",
-      "Retired plans",
-      "Subscriptions",
-      "Supporter list",
-    ]);
-    const plans = screen.getByRole("region", { name: "Plans" });
-    expect(within(plans).getByText("2 plans")).toBeInTheDocument();
-    expect(within(plans).getAllByRole("button", { name: "Create a plan" })).toHaveLength(1);
-    const [supporter, gold] = within(plans).getAllByRole("listitem");
-    if (supporter === undefined || gold === undefined) throw new Error("two plans expected");
-    expect(within(supporter).getByRole("heading", { level: 3, name: "Supporter" })).toBeInTheDocument();
-    expect(within(supporter).getByText("¥500")).toBeInTheDocument();
-    expect(within(supporter).getByText("¥5,400 (10% off)")).toBeInTheDocument();
-    expect(within(gold).getByText("Preparing prices")).toBeInTheDocument();
-    const retired = screen.getByRole("region", { name: "Retired plans" });
-    expect(within(retired).getByRole("heading", { level: 3, name: "Old" })).toBeInTheDocument();
-    expect(within(retired).queryByRole("button", { name: /Retire/u })).not.toBeInTheDocument();
-
-    const subscriptions = screen.getByRole("region", { name: "Subscriptions" });
-    const [active, ended] = within(subscriptions).getAllByRole("row").slice(1);
-    if (active === undefined || ended === undefined) throw new Error("two subscriptions expected");
-    expect(within(active).getByRole("rowheader", { name: "@bob" })).toBeInTheDocument();
-    expect(within(active).getByText("¥500 a month")).toBeInTheDocument();
-    expect(within(active).getByRole("button", { name: "End now: ⁦@bob⁩" })).toBeInTheDocument();
-    expect(within(ended).getByRole("rowheader", { name: "Deleted account" })).toBeInTheDocument();
-    expect(within(ended).queryByRole("button")).not.toBeInTheDocument();
+    expect(within(program).getAllByRole("button", { name: "Save" })).toHaveLength(1);
   });
 
-  test("enables the program, and shows why the server refuses it", async () => {
+  test("enables the program with the form's save, and shows why the server refuses it", async () => {
     const { user } = await renderApp({ path: "/admin/supporters" });
     const program = await screen.findByRole("region", { name: "Supporter program" });
 
@@ -142,10 +108,10 @@ describe("the supporters screen", () => {
         ),
       ),
     );
-    await user.click(within(program).getByRole("switch", { name: "Enable the supporter program" }));
-    expect(await within(program).findByRole("alert")).toHaveTextContent(
-      "Could not change the supporter program: Configure a payment provider first.",
-    );
+    await user.click(within(program).getByRole("checkbox", { name: "Enable the supporter program" }));
+    await user.click(within(program).getByRole("button", { name: "Save" }));
+    expect(await within(program).findByText("Could not save: Configure a payment provider first.")).toBeInTheDocument();
+    expect(within(program).getByRole("checkbox", { name: "Enable the supporter program" })).toBeChecked();
 
     let enabled = false;
     server.use(
@@ -157,12 +123,13 @@ describe("the supporters screen", () => {
         HttpResponse.json(supporterProgramFixture(enabled ? { enabled: true, provider: "stripe" } : {})),
       ),
     );
-    await user.click(within(program).getByRole("switch", { name: "Enable the supporter program" }));
-    expect(await within(program).findByRole("status")).toHaveTextContent("The supporter program is enabled.");
-    expect(within(program).getByRole("switch", { name: "Enable the supporter program" })).toBeChecked();
+    await user.click(within(program).getByRole("button", { name: "Save" }));
+    expect(await within(program).findByText(/^Saved\./u)).toBeInTheDocument();
+    expect(enabled).toBe(true);
+    expect(within(program).getByRole("checkbox", { name: "Enable the supporter program" })).toBeChecked();
   });
 
-  test("keeps the switch off when the program cannot be enabled", async () => {
+  test("keeps the checkbox off when the program cannot be enabled", async () => {
     const { configured_provider: _provider, ...noProvider } = supporterProgramFixture({
       can_enable: false,
       warnings: ["no_provider"],
@@ -171,7 +138,7 @@ describe("the supporters screen", () => {
     await renderApp({ path: "/admin/supporters" });
     const program = await screen.findByRole("region", { name: "Supporter program" });
 
-    expect(within(program).getByRole("switch", { name: "Enable the supporter program" })).toBeDisabled();
+    expect(within(program).getByRole("checkbox", { name: "Enable the supporter program" })).toBeDisabled();
     expect(
       within(program).getByText("No payment provider is configured, so the program cannot be enabled."),
     ).toBeInTheDocument();
@@ -269,12 +236,101 @@ describe("the supporters screen", () => {
     const { user } = await renderApp({ path: "/admin/supporters" });
     const program = await screen.findByRole("region", { name: "Supporter program" });
 
-    await user.click(within(program).getByRole("switch", { name: "Enable the supporter program" }));
-    expect(await within(program).findByRole("alert")).toHaveTextContent("Retire the plans first.");
+    await user.click(within(program).getByRole("checkbox", { name: "Enable the supporter program" }));
+    await user.click(within(program).getByRole("button", { name: "Save" }));
+    expect(await within(program).findByText(/Retire the plans first\./u)).toBeInTheDocument();
+  });
+});
+
+describe("the supporter list in the program's form", () => {
+  test("publishes the supporter list with the same save, to nobody by default", async () => {
+    server.use(signedInHandler, operatorHandler(["manage_supporters", "manage_settings"]));
+    const patches: Schemas["UpdateInstanceSettingsRequest"][] = [];
+    let programPuts = 0;
+    server.use(
+      http.patch(`${apiBase}/admin/settings`, async ({ request }) => {
+        const body = (await request.json()) as Schemas["UpdateInstanceSettingsRequest"];
+        patches.push(body);
+        return HttpResponse.json(instanceSettingsFixture(body.values));
+      }),
+      http.put(`${apiBase}/admin/supporter_program`, () => {
+        programPuts += 1;
+        return HttpResponse.json(supporterProgramFixture());
+      }),
+    );
+    const { user } = await renderApp({ path: "/admin/supporters" });
+    const program = await screen.findByRole("region", { name: "Supporter program" });
+    const list = within(program).getByRole("region", { name: "Supporter list" });
+    const choice = await within(list).findByRole("radiogroup", { name: "Who may read the supporter list" });
+    expect(within(choice).getByRole("radio", { name: "Nobody" })).toBeChecked();
+    const signedIn = within(choice).getByRole("radio", { name: "Signed-in users" });
+    expect(signedIn).toHaveAccessibleDescription(/Only people signed in to this server/u);
+
+    await user.click(signedIn);
+    await user.click(within(program).getByRole("button", { name: "Save" }));
+
+    expect(await within(program).findByText(/^Saved\./u)).toBeInTheDocument();
+    expect(patches).toEqual([{ values: { supporter_list_visibility: "signed_in" } }]);
+    // The program did not change, so it is not sent.
+    expect(programPuts).toBe(0);
   });
 
-  test("creates a plan, and keeps the server's refusal next to its field", async () => {
+  test("says who may read the list, without its choices, to a viewer who may not change it", async () => {
+    server.use(signedInHandler, operatorHandler(["manage_supporters"]));
+    await renderApp({ path: "/admin/supporters" });
+    const list = await screen.findByRole("region", { name: "Supporter list" });
+
+    expect(await within(list).findByText(/may read the supporter list\./u)).toBeInTheDocument();
+    expect(within(list).queryByRole("radiogroup")).not.toBeInTheDocument();
+  });
+});
+
+describe("the plans of the supporters screen", () => {
+  beforeEach(() => {
+    server.use(signedInHandler, operatorHandler(["manage_supporters"]));
+  });
+
+  test("lists the plans in effect by rank, then the retired ones, and narrows them to a state", async () => {
+    server.use(http.get(`${apiBase}/admin/supporter_plans`, () => HttpResponse.json(threePlans())));
+    const { user, router } = await renderApp({ path: "/admin/supporters/plans" });
+
+    expect(await screen.findByRole("heading", { level: 1, name: "Supporter plans" })).toBeInTheDocument();
+    expect(
+      within(screen.getByRole("navigation", { name: "Supporter pages" })).getByRole("link", { name: "Plans" }),
+    ).toHaveAttribute("aria-current", "page");
+    expect(screen.getAllByRole("link", { name: "Create a plan" })).toHaveLength(1);
+    expect(screen.getByRole("link", { name: "Create a plan" })).toHaveAttribute("href", "/admin/supporters/plans/new");
+    const table = screen.getByRole("table", { name: "Plans" });
+    expect(
+      within(table)
+        .getAllByRole("columnheader")
+        .map((header) => header.textContent),
+    ).toEqual(["Name", "State", "Created"]);
+    const [supporter, gold, old] = within(table).getAllByRole("row").slice(1);
+    if (supporter === undefined || gold === undefined || old === undefined) throw new Error("three plans expected");
+    expect(within(supporter).getByRole("link", { name: "Supporter" })).toHaveAttribute(
+      "href",
+      `/admin/supporters/plans/${planId}`,
+    );
+    expect(within(supporter).getByText("In effect")).toBeInTheDocument();
+    expect(within(gold).getByText("Preparing prices")).toBeInTheDocument();
+    expect(within(old).getByText("Retired")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /State/u }));
+    await user.click(await screen.findByRole("option", { name: "Retired" }));
+    await waitFor(() => {
+      expect(router.state.location.search).toEqual({ state: "retired" });
+    });
+    const retired = await screen.findByRole("table", { name: "Plans" });
+    await waitFor(() => {
+      expect(within(retired).getAllByRole("row")).toHaveLength(2);
+    });
+    expect(within(retired).getByRole("link", { name: "Old" })).toBeInTheDocument();
+  });
+
+  test("creates a plan on its page, keeps the server's refusal next to its field, and opens the plan", async () => {
     const sent: Schemas["AdminSupporterPlanCreateRequest"][] = [];
+    let created = false;
     server.use(
       http.post(`${apiBase}/admin/supporter_plans`, async ({ request }) => {
         const body = (await request.json()) as Schemas["AdminSupporterPlanCreateRequest"];
@@ -285,30 +341,29 @@ describe("the supporters screen", () => {
             "/api/v1/problems/invalid-supporter-plan",
             "The supporter plan cannot be saved.",
             "Choose a role that nobody holds.",
-            {
-              reason: "role_held",
-            },
+            { reason: "role_held" },
           );
         }
+        created = true;
         return HttpResponse.json(supporterPlanFixture(planId, { name: body.name }));
       }),
+      http.get(`${apiBase}/admin/supporter_plans`, () =>
+        HttpResponse.json({ items: created ? [supporterPlanFixture(planId)] : [] }),
+      ),
     );
-    const { user } = await renderApp({ path: "/admin/supporters" });
-    const plans = await screen.findByRole("region", { name: "Plans" });
-    await user.click(within(plans).getByRole("button", { name: "Create a plan" }));
-    const form = within(plans).getByRole("region", { name: "Create a plan" });
-    expect(within(form).getByRole("textbox", { name: "Role" })).toHaveFocus();
+    const { user, router } = await renderApp({ path: "/admin/supporters/plans/new" });
+    expect(await screen.findByRole("heading", { level: 1, name: "Create a plan" })).toBeInTheDocument();
 
-    await user.click(within(form).getByRole("button", { name: "Create the plan" }));
-    expect(within(form).getByText("Enter the key of a role.")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Create the plan" }));
+    expect(screen.getByText("Enter the key of a role.")).toBeInTheDocument();
     expect(sent).toEqual([]);
 
-    await user.type(within(form).getByRole("textbox", { name: "Role" }), "fan");
-    await user.type(within(form).getByRole("textbox", { name: "Name" }), "Supporter");
-    await user.type(within(form).getByRole("textbox", { name: "Monthly price" }), "500");
-    await user.click(within(form).getByRole("button", { name: "Create the plan" }));
-    expect(await within(form).findByText("Choose a role that nobody holds.")).toBeInTheDocument();
-    expect(within(form).getByRole("textbox", { name: "Role" })).toBeInvalid();
+    await user.type(screen.getByRole("textbox", { name: "Role" }), "fan");
+    await user.type(screen.getByRole("textbox", { name: "Name" }), "Supporter");
+    await user.type(screen.getByRole("textbox", { name: "Monthly price" }), "500");
+    await user.click(screen.getByRole("button", { name: "Create the plan" }));
+    expect(await screen.findByText("Choose a role that nobody holds.")).toBeInTheDocument();
+    expect(screen.getByRole("textbox", { name: "Role" })).toBeInvalid();
     expect(sent[0]).toEqual({
       role: "fan",
       name: "Supporter",
@@ -319,16 +374,48 @@ describe("the supporters screen", () => {
       visibility: "public",
     });
 
-    await user.click(within(form).getByRole("button", { name: "Create the plan" }));
-    // The panel closes; the result shows above the plans and focus is back on the button.
-    expect(await within(plans).findByRole("status")).toHaveTextContent(/Created the plan ⁨Supporter⁩\./u);
-    expect(within(plans).queryByRole("region", { name: "Create a plan" })).not.toBeInTheDocument();
-    expect(within(plans).getByRole("button", { name: "Create a plan" })).toHaveFocus();
-    await user.click(within(plans).getByRole("button", { name: "Create a plan" }));
-    expect(within(plans).getByRole("textbox", { name: "Name" })).toHaveValue("");
+    await user.click(screen.getByRole("button", { name: "Create the plan" }));
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe(`/admin/supporters/plans/${planId}`);
+    });
+    expect(await screen.findByRole("heading", { level: 1, name: "Supporter plan" })).toBeInTheDocument();
+    expect(await screen.findByText(/Created the plan ⁨Supporter⁩\./u)).toBeInTheDocument();
   });
 
-  test("retires a plan after asking", async () => {
+  test("shows a plan's facts and saves a change of its terms", async () => {
+    const patches: Schemas["AdminSupporterPlanUpdateRequest"][] = [];
+    server.use(
+      http.get(`${apiBase}/admin/supporter_plans`, () => HttpResponse.json(threePlans())),
+      http.patch(`${apiBase}/admin/supporter_plans/:id`, async ({ request }) => {
+        const change = (await request.json()) as Schemas["AdminSupporterPlanUpdateRequest"];
+        patches.push(change);
+        return HttpResponse.json(supporterPlanFixture(planId, { name: change.name ?? "Supporter" }));
+      }),
+    );
+    const { user } = await renderApp({ path: `/admin/supporters/plans/${planId}` });
+
+    expect(await screen.findByRole("heading", { level: 1, name: "Supporter plan" })).toBeInTheDocument();
+    // docs/architecture/web-client/screens/admin-supporters-plan.md §3
+    expect(sectionHeadings()).toEqual(["Supporter", "Edit the plan", "Retire the plan"]);
+    const facts = screen.getByRole("region", { name: "Supporter" });
+    expect(within(facts).getByText("¥500")).toBeInTheDocument();
+    expect(within(facts).getByText("¥5,400 (10% off)")).toBeInTheDocument();
+    expect(within(facts).getByText("2 subscriptions")).toBeInTheDocument();
+
+    const edit = screen.getByRole("region", { name: "Edit the plan" });
+    await user.click(within(edit).getByRole("button", { name: "Save" }));
+    expect(await within(edit).findByText("Nothing has changed.")).toBeInTheDocument();
+    expect(patches).toEqual([]);
+
+    const name = within(edit).getByRole("textbox", { name: "Name" });
+    await user.clear(name);
+    await user.type(name, "Fan");
+    await user.click(within(edit).getByRole("button", { name: "Save" }));
+    expect(await within(edit).findByText(/Saved the plan ⁨Fan⁩\./u)).toBeInTheDocument();
+    expect(patches).toEqual([{ name: "Fan" }]);
+  });
+
+  test("retires a plan on its page after asking", async () => {
     let retired = false;
     server.use(
       http.get(`${apiBase}/admin/supporter_plans`, () =>
@@ -341,48 +428,60 @@ describe("the supporters screen", () => {
         return new HttpResponse(null, { status: 204 });
       }),
     );
-    const { user } = await renderApp({ path: "/admin/supporters" });
-    const plans = await screen.findByRole("region", { name: "Plans" });
+    const { user } = await renderApp({ path: `/admin/supporters/plans/${planId}` });
+    const section = await screen.findByRole("region", { name: "Retire the plan" });
 
-    await user.click(within(plans).getByRole("button", { name: "Retire ⁨Supporter⁩" }));
+    await user.click(within(section).getByRole("button", { name: "Retire" }));
     const dialog = await screen.findByRole("alertdialog", { name: "Retire ⁨Supporter⁩?" });
     expect(dialog).toHaveTextContent("every subscription of it ends at the end of its period");
     await user.click(within(dialog).getByRole("button", { name: "Retire" }));
 
-    expect(await within(plans).findByRole("status")).toHaveTextContent("Retired the plan ⁨Supporter⁩.");
-    expect(await screen.findByRole("region", { name: "Retired plans" })).toBeInTheDocument();
+    const facts = screen.getByRole("region", { name: "Supporter" });
+    expect(await within(facts).findByRole("status")).toHaveTextContent("Retired the plan ⁨Supporter⁩.");
+    expect(within(facts).getByText(/This plan is retired/u)).toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: "Edit the plan" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: "Retire the plan" })).not.toBeInTheDocument();
+  });
+});
+
+describe("the subscriptions of the supporters screen", () => {
+  beforeEach(() => {
+    server.use(signedInHandler, operatorHandler(["manage_supporters"]));
   });
 
-  test("ends a subscription at once after asking, and narrows the list by state", async () => {
+  test("lists the subscriptions in four columns, and narrows them by state in the URL", async () => {
     const queries: string[] = [];
-    let canceled = false;
+    const {
+      account_id: _account,
+      username: _username,
+      ...erasedSubscription
+    } = supporterSubscriptionFixture("0199f0e0-0000-7000-8000-0000000000e2", { state: "expired" });
     server.use(
       http.get(`${apiBase}/admin/supporter_subscriptions`, ({ request }) => {
         queries.push(new URL(request.url).search);
-        return HttpResponse.json({
-          items: [
-            supporterSubscriptionFixture("0199f0e0-0000-7000-8000-0000000000e1", canceled ? { state: "expired" } : {}),
-          ],
-        });
-      }),
-      http.post(`${apiBase}/admin/supporter_subscriptions/:id/end`, ({ params }) => {
-        canceled = true;
-        return HttpResponse.json(supporterSubscriptionFixture(String(params["id"]), { state: "expired" }));
+        return HttpResponse.json({ items: [supporterSubscriptionFixture(subscriptionId), erasedSubscription] });
       }),
     );
-    const { user, router } = await renderApp({ path: "/admin/supporters" });
-    const list = await screen.findByRole("region", { name: "Subscriptions" });
+    const { user, router } = await renderApp({ path: "/admin/supporters/subscriptions" });
 
-    await user.click(within(list).getByRole("button", { name: "End now: ⁦@bob⁩" }));
-    const dialog = await screen.findByRole("alertdialog", { name: "End the subscription of ⁦@bob⁩ now?" });
-    expect(dialog).toHaveTextContent("Nothing is refunded");
-    await user.click(within(dialog).getByRole("button", { name: "End now" }));
-    expect(await within(list).findByRole("status")).toHaveTextContent("Ended a subscription to ⁨Supporter⁩.");
-    await waitFor(() => {
-      expect(within(list).queryByRole("button", { name: /End the subscription/u })).not.toBeInTheDocument();
-    });
+    expect(await screen.findByRole("heading", { level: 1, name: "Supporter subscriptions" })).toBeInTheDocument();
+    const table = screen.getByRole("table", { name: "Subscriptions" });
+    expect(
+      within(table)
+        .getAllByRole("columnheader")
+        .map((header) => header.textContent),
+    ).toEqual(["Account", "Plan", "State", "Period ends"]);
+    const [active, ended] = within(table).getAllByRole("row").slice(1);
+    if (active === undefined || ended === undefined) throw new Error("two subscriptions expected");
+    expect(within(active).getByRole("link", { name: "@bob" })).toHaveAttribute(
+      "href",
+      `/admin/supporters/subscriptions/${subscriptionId}`,
+    );
+    expect(within(active).getByText("Active")).toBeInTheDocument();
+    expect(within(ended).getByRole("link", { name: "Deleted account" })).toBeInTheDocument();
+    expect(within(table).queryByRole("button")).not.toBeInTheDocument();
 
-    await user.click(within(list).getByRole("button", { name: /State/u }));
+    await user.click(screen.getByRole("button", { name: /State/u }));
     await user.click(await screen.findByRole("option", { name: "Payment failed" }));
     await waitFor(() => {
       expect(router.state.location.search).toEqual({ state: "past_due" });
@@ -391,40 +490,38 @@ describe("the supporters screen", () => {
       expect(queries.at(-1)).toContain("state=past_due");
     });
   });
-});
 
-describe("the publication of the supporter list on the supporters screen", () => {
-  test("publishes the supporter list to everyone or to signed-in users, to nobody by default", async () => {
-    server.use(signedInHandler, operatorHandler(["manage_supporters", "manage_settings"]));
-    const patches: Schemas["UpdateInstanceSettingsRequest"][] = [];
+  test("shows a subscription and ends it at once after asking", async () => {
+    let canceled = false;
     server.use(
-      http.patch(`${apiBase}/admin/settings`, async ({ request }) => {
-        const body = (await request.json()) as Schemas["UpdateInstanceSettingsRequest"];
-        patches.push(body);
-        return HttpResponse.json(instanceSettingsFixture(body.values));
+      http.get(`${apiBase}/admin/supporter_subscriptions/:id`, ({ params }) =>
+        HttpResponse.json(supporterSubscriptionFixture(String(params["id"]), canceled ? { state: "expired" } : {})),
+      ),
+      http.post(`${apiBase}/admin/supporter_subscriptions/:id/end`, ({ params }) => {
+        canceled = true;
+        return HttpResponse.json(supporterSubscriptionFixture(String(params["id"]), { state: "expired" }));
       }),
     );
-    const { user } = await renderApp({ path: "/admin/supporters" });
-    const list = await screen.findByRole("region", { name: "Supporter list" });
-    const choice = await within(list).findByRole("radiogroup", { name: "Who may read the supporter list" });
-    expect(within(choice).getByRole("radio", { name: "Nobody" })).toBeChecked();
-    const signedIn = within(choice).getByRole("radio", { name: "Signed-in users" });
-    expect(signedIn).toHaveAccessibleDescription(/Only people signed in to this server/u);
+    const { user } = await renderApp({ path: `/admin/supporters/subscriptions/${subscriptionId}` });
 
-    await user.click(signedIn);
-    await user.click(within(list).getByRole("button", { name: "Save the publication" }));
+    expect(await screen.findByRole("heading", { level: 1, name: "Supporter subscription" })).toBeInTheDocument();
+    const facts = screen.getByRole("region", { name: "@bob" });
+    expect(within(facts).getByText("¥500 a month")).toBeInTheDocument();
+    expect(within(facts).getByRole("link", { name: "Supporter" })).toHaveAttribute(
+      "href",
+      `/admin/supporters/plans/${planId}`,
+    );
 
-    expect(await within(list).findByText("Saved the publication.")).toBeInTheDocument();
-    expect(patches).toEqual([{ values: { supporter_list_visibility: "signed_in" } }]);
-  });
-
-  test("says who may read the list, without the form, to a viewer who may not change it", async () => {
-    server.use(signedInHandler, operatorHandler(["manage_supporters"]));
-    await renderApp({ path: "/admin/supporters" });
-    const list = await screen.findByRole("region", { name: "Supporter list" });
-
-    expect(await within(list).findByText(/may read the supporter list\./u)).toBeInTheDocument();
-    expect(within(list).queryByRole("radiogroup")).not.toBeInTheDocument();
+    const end = screen.getByRole("region", { name: "End the subscription" });
+    await user.click(within(end).getByRole("button", { name: "End now" }));
+    const dialog = await screen.findByRole("alertdialog", { name: "End the subscription of ⁦@bob⁩ now?" });
+    expect(dialog).toHaveTextContent("Nothing is refunded");
+    await user.click(within(dialog).getByRole("button", { name: "End now" }));
+    expect(await within(facts).findByRole("status")).toHaveTextContent("Ended a subscription to ⁨Supporter⁩.");
+    await waitFor(() => {
+      expect(screen.queryByRole("region", { name: "End the subscription" })).not.toBeInTheDocument();
+    });
+    expect(within(facts).getByText("Ended")).toBeInTheDocument();
   });
 });
 
@@ -435,6 +532,7 @@ describe("the supporters screen without the permission", () => {
 
     expect(await screen.findByRole("heading", { level: 2, name: "You cannot use this screen" })).toBeInTheDocument();
     expect(screen.queryByRole("region", { name: "Supporter program" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("navigation", { name: "Supporter pages" })).not.toBeInTheDocument();
   });
 
   test("the administration menu has no entry for a viewer without manage_supporters", async () => {

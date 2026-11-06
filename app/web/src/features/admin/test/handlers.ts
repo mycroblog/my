@@ -1016,7 +1016,8 @@ export const handlers = [
     withViewer(request, () => new HttpResponse(null, { status: 204 })),
   ),
   // operationIds getSupporterProgram, setSupporterProgram, listAdminSupporterPlans, createSupporterPlan,
-  // updateSupporterPlan, retireSupporterPlan, listSupporterSubscriptions, endSupporterSubscription, getPaymentStatus,
+  // updateSupporterPlan, retireSupporterPlan, listSupporterSubscriptions, getSupporterSubscription,
+  // endSupporterSubscription, getPaymentStatus,
   // runPaymentReconciliation: a disabled program without plans or subscriptions, and Stripe in test mode; a change is
   // answered as sent.
   http.get(`${apiBase}/admin/supporter_program`, ({ request }) =>
@@ -1052,6 +1053,9 @@ export const handlers = [
   ),
   http.get(`${apiBase}/admin/supporter_subscriptions`, ({ request }) =>
     withViewer(request, () => HttpResponse.json({ items: [] } satisfies Schemas["AdminSupporterSubscriptionPage"])),
+  ),
+  http.get(`${apiBase}/admin/supporter_subscriptions/:id`, ({ request, params }) =>
+    withViewer(request, () => HttpResponse.json(supporterSubscriptionFixture(String(params["id"])))),
   ),
   http.post(`${apiBase}/admin/supporter_subscriptions/:id/end`, ({ request, params }) =>
     withViewer(request, () =>

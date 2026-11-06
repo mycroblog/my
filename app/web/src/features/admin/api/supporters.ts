@@ -2,7 +2,7 @@
 // The queries and mutations of the supporters screen (ADR-0072 §2, §3, §9, §10, manage_supporters, web-client/README.md S1):
 // the supporter program (GET / PUT /admin/supporter_program), every plan, retired ones too (GET /admin/supporter_plans),
 // creating, changing and retiring one, and the subscriptions (GET /admin/supporter_subscriptions, newest first, as an
-// infinite query narrowed to a plan and a state) with cancelling one at once, and the state of the payment provider
+// infinite query narrowed to a plan and a state, and GET /admin/supporter_subscriptions/{id}) with cancelling one at once, and the state of the payment provider
 // (GET /admin/payment_status, ADR-0074 §4) with reconciling with it now (POST /admin/payment_reconciliation/runs, once an hour). A
 // plan that breaks a rule is a 422 `invalid-supporter-plan` problem whose `reason` says which. Every change is recorded
 // in the audit log.
@@ -121,6 +121,17 @@ export function supporterSubscriptionsQueryOptions(api: Api, filter: SupporterSu
   });
 }
 
+/** One subscription (GET /admin/supporter_subscriptions/{id}); an unknown one is a 404. */
+export function supporterSubscriptionQueryOptions(api: Api, id: string) {
+  return api.query.queryOptions("get", "/admin/supporter_subscriptions/{id}", { params: { path: { id } } });
+}
+
+/** Which plans the plans page shows: those in effect, the retired ones, or every one (undefined). */
+export type SupporterPlanState = "in_effect" | "retired";
+
+/** The states of a plan, in the order of the filter. */
+export const supporterPlanStates = ["in_effect", "retired"] as const satisfies readonly SupporterPlanState[];
+
 /** Enables or disables the program (PUT /admin/supporter_program), as the options of useMutation. */
 export function setSupporterProgramMutation(api: Api) {
   return {
@@ -211,6 +222,7 @@ export async function refreshSupporters(api: Api, queryClient: QueryClient): Pro
     queryClient.invalidateQueries({ queryKey: ["get", "/admin/supporter_program"] }),
     queryClient.invalidateQueries({ queryKey: ["get", "/admin/supporter_plans"] }),
     queryClient.invalidateQueries({ queryKey: ["get", "/admin/supporter_subscriptions"] }),
+    queryClient.invalidateQueries({ queryKey: ["get", "/admin/supporter_subscriptions/{id}"] }),
     queryClient.invalidateQueries({ queryKey: rolesQueryOptions(api).queryKey }),
     queryClient.invalidateQueries({ queryKey: ["get", "/instance"] }),
     refreshAuditLog(queryClient),

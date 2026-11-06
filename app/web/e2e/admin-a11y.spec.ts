@@ -821,6 +821,8 @@ async function moderatorServer(page: Page) {
     if (key === "GET /admin/payment_status") return json(route, paymentStatus);
     if (key === "GET /admin/supporter_plans") return json(route, { items: [supporterPlan] });
     if (key === "GET /admin/supporter_subscriptions") return json(route, { items: [supporterSubscription] });
+    if (key === `GET /admin/supporter_subscriptions/${supporterSubscription.id}`)
+      return json(route, supporterSubscription);
     if (key === "GET /admin/billing_imports") return json(route, { items: [billingImport] });
     if (key === "GET /admin/income_totals") return json(route, incomeTotals);
     if (key === "GET /admin/income_movements") return json(route, { items: [incomeMovement] });
@@ -1131,7 +1133,15 @@ const adminPages: Readonly<Record<string, { path: string; ready: string | { valu
   "admin.finance_.costs_.$id": { path: `/admin/finance/costs/${costItem.id}`, ready: costItem.provider },
   "admin.finance_.imports": { path: "/admin/finance/imports", ready: billingImport.provider },
   "admin.finance_.publication": { path: "/admin/finance/publication", ready: "" },
-  "admin.supporters": { path: "/admin/supporters", ready: supporterSubscription.plan_name },
+  "admin.supporters": { path: "/admin/supporters", ready: supporterProgram.configured_provider ?? "" },
+  "admin.supporters_.plans": { path: "/admin/supporters/plans", ready: supporterPlan.name },
+  "admin.supporters_.plans_.new": { path: "/admin/supporters/plans/new", ready: "" },
+  "admin.supporters_.plans_.$id": { path: `/admin/supporters/plans/${supporterPlan.id}`, ready: supporterPlan.name },
+  "admin.supporters_.subscriptions": { path: "/admin/supporters/subscriptions", ready: supporterPlan.name },
+  "admin.supporters_.subscriptions_.$id": {
+    path: `/admin/supporters/subscriptions/${supporterSubscription.id}`,
+    ready: supporterPlan.name,
+  },
   "moderation.invites": { path: "/moderation/invites", ready: invite.code },
   "moderation.hook-decisions": { path: "/moderation/hook-decisions", ready: hookDecision.subject_key },
   "moderation.hook-decisions_.$id": {

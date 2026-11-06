@@ -1,7 +1,7 @@
 {
   "admin.publication.save": {
     "defaultMessage": "Save the publication",
-    "description": "Button that saves the publication settings on the costs screen or the supporters screen."
+    "description": "Button that saves the publication settings on the costs screen."
   },
   "admin.publication.save_failed": {
     "defaultMessage": "Could not save the publication: {reason}",

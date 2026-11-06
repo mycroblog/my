@@ -1,7 +1,7 @@
 {
   "admin.publication.save": {
     "defaultMessage": "公開範囲を保存",
-    "description": "Button that saves the publication settings on the costs screen or the supporters screen."
+    "description": "Button that saves the publication settings on the costs screen."
   },
   "admin.publication.save_failed": {
     "defaultMessage": "公開範囲を保存できませんでした: {reason}",
