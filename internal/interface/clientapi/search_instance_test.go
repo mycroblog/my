@@ -28,12 +28,12 @@ func TestInstanceFullTextSearch(t *testing.T) {
 		name      string
 		search    clientapi.FullTextSearch
 		available bool
-		want      []clientapi.InstanceFullTextSearchVisibilities
+		want      []clientapi.Visibility
 	}{
-		{"none", nil, false, []clientapi.InstanceFullTextSearchVisibilities{}},
-		{"public", fakeFullTextSearch{search.VisibilityPublic}, true, []clientapi.InstanceFullTextSearchVisibilities{clientapi.InstanceFullTextSearchVisibilitiesPublic}},
-		{"public and local", fakeFullTextSearch{search.VisibilityPublic, search.VisibilityLocal}, true, []clientapi.InstanceFullTextSearchVisibilities{
-			clientapi.InstanceFullTextSearchVisibilitiesPublic, clientapi.InstanceFullTextSearchVisibilitiesLocal,
+		{"none", nil, false, []clientapi.Visibility{}},
+		{"public", fakeFullTextSearch{search.VisibilityPublic}, true, []clientapi.Visibility{clientapi.VisibilityPublic}},
+		{"public and local", fakeFullTextSearch{search.VisibilityPublic, search.VisibilityLocal}, true, []clientapi.Visibility{
+			clientapi.VisibilityPublic, clientapi.VisibilityLocal,
 		}},
 	} {
 		t.Run(tc.name, func(t *testing.T) {

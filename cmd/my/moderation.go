@@ -201,8 +201,8 @@ func runAdminReport(args []string, stdout, stderr io.Writer) int {
 		return code
 	}
 	var (
-		state, before, outcome string
-		limit                  = 50
+		state, before, outcome, comment string
+		limit                           = 50
 	)
 	nargs := 1
 	switch sub {
@@ -219,6 +219,8 @@ func runAdminReport(args []string, stdout, stderr io.Writer) int {
 			fs.IntVar(&limit, "limit", limit, "number of reports to show, newest first")
 		case "resolve":
 			fs.StringVar(&outcome, "outcome", "", "actioned or dismissed (required)")
+		case "forward":
+			fs.StringVar(&comment, "comment", "", "text for the moderators of the target's server, up to 1,000 characters")
 		}
 	})
 	if code >= 0 {
@@ -272,9 +274,12 @@ func runAdminReport(args []string, stdout, stderr io.Writer) int {
 		}
 	case "forward":
 		var rec moderation.ReportRecord
-		rec, err = app.Moderation.ForwardReport(ctx, c.fs.Arg(0), "")
+		rec, err = app.Moderation.ForwardReport(ctx, c.fs.Arg(0), comment, "")
 		if errors.Is(err, appmoderation.ErrReportNotForwardable) {
 			err = fmt.Errorf("report %s cannot be forwarded: only a report filed on this server about a remote account, of no voice chat room, can be", c.fs.Arg(0))
+		}
+		if errors.Is(err, moderation.ErrInvalidReportForward) {
+			err = fmt.Errorf("-comment must be text of at most %d characters", moderation.MaxReportForwardComment)
 		}
 		if err == nil {
 			_, _ = fmt.Fprintf(stdout, "report %s is forwarded to the server of its target\n", rec.Report.ID)
@@ -431,7 +436,7 @@ func adminReportUsage(w io.Writer) {
   my admin report resolve -outcome actioned|dismissed [-config <file>] <report id>
   my admin report note [-config <file>] <report id> <text>
   my admin report reopen [-config <file>] <report id>
-  my admin report forward [-config <file>] <report id>
+  my admin report forward [-comment <text>] [-config <file>] <report id>
 
 The reports in the moderators' queue, including those received from
 other servers. list shows them newest first; show adds the moderators' notes
@@ -441,7 +446,9 @@ nobody. resolve closes an open report with its outcome; resolving a resolved
 report changes nothing. note adds an internal note (up to 2,000 characters)
 that only the moderators see. reopen puts a resolved report back in the queue.
 forward sends a report filed on this server about a remote account to that
-account's server, as your server's report, with its posts and comment and
-nothing of the reporter; a report forwarded already stays as it is.
+account's server, as your server's report, with the account and its posts.
+The only text sent is -comment, written for that server's moderators (none
+by default): the reporter's comment and the note of an automated review stay
+here. A report forwarded already stays as it is.
 `)
 }

@@ -20,7 +20,8 @@ post:
     is enabled, or none is allowed its visibility. A 422
     `/api/v1/problems/translation-unsupported-language` when the providers do not translate the
     language, and a 422 without a type for a `target_language` that is not a language tag. A 429
-    `/api/v1/problems/translation-limit` over a monthly limit, until the next month in UTC. A 503
+    `/api/v1/problems/translation-limit` over a monthly limit, until the next month in UTC, with
+    `Retry-After` the seconds until then. A 503
     `/api/v1/problems/translation-failed` when no provider returned a usable translation, which
     may pass.
   tags: [statuses]

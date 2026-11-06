@@ -194,6 +194,49 @@ func TestReportValidateLocal(t *testing.T) {
 	}
 }
 
+func TestFlagCommentOfAForward(t *testing.T) {
+	now := time.Date(2026, 11, 6, 12, 0, 0, 0, time.UTC)
+	r := Report{ID: testID(1), Comment: "the reporter's words"}
+	if got := r.FlagComment(); got != "" {
+		t.Errorf("FlagComment(not forwarded) = %q, want none", got)
+	}
+	filed := r
+	filed.Forwarded = true
+	if got := filed.FlagComment(); got != "the reporter's words" {
+		t.Errorf("FlagComment(forwarded when filed) = %q, want the reporter's comment", got)
+	}
+	later := r
+	later.Forward = &ReportForward{ID: testID(2), ReportID: r.ID, ForwardedAt: now}
+	if got := later.FlagComment(); got != "" {
+		t.Errorf("FlagComment(forwarded later, no text) = %q, want empty", got)
+	}
+	later.Forward.Comment = "the moderator's words"
+	if got := later.FlagComment(); got != "the moderator's words" {
+		t.Errorf("FlagComment(forwarded later) = %q, want the moderator's text", got)
+	}
+}
+
+func TestReportForwardValidate(t *testing.T) {
+	now := time.Date(2026, 11, 6, 12, 0, 0, 0, time.UTC)
+	ok := ReportForward{ID: testID(1), ReportID: testID(2), ForwardedAt: now}
+	if err := ok.Validate(); err != nil {
+		t.Errorf("Validate(no text) = %v", err)
+	}
+	ok.Comment = strings.Repeat("あ", MaxReportForwardComment)
+	if err := ok.Validate(); err != nil {
+		t.Errorf("Validate(%d characters) = %v", MaxReportForwardComment, err)
+	}
+	long := ok
+	long.Comment += "a"
+	var te *TextError
+	if err := long.Validate(); !errors.Is(err, ErrInvalidReportForward) || !errors.As(err, &te) || te.Max != MaxReportForwardComment {
+		t.Errorf("Validate(too long) = %v, want a TextError of ErrInvalidReportForward", err)
+	}
+	if err := (ReportForward{ID: testID(1)}).Validate(); !errors.Is(err, ErrInvalidReportForward) {
+		t.Errorf("Validate(empty fields) = %v, want ErrInvalidReportForward", err)
+	}
+}
+
 func TestTextsOfActionsAndLifts(t *testing.T) {
 	now := time.Unix(1, 0)
 	action := Action{ID: testID(1), TargetAccountID: testID(12), Kind: ActionLimit, ReasonCategory: CategorySpam, Issuer: IssuerModerator, IssuedAt: now}

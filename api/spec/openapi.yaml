@@ -832,6 +832,8 @@ components:
       $ref: ./components/parameters/ErrorGroupId.yaml
     DomainActionId:
       $ref: ./components/parameters/DomainActionId.yaml
+    HookDecisionId:
+      $ref: ./components/parameters/HookDecisionId.yaml
     IdempotencyKey:
       $ref: ./components/parameters/IdempotencyKey.yaml
     InstanceDocumentKind:
@@ -1572,6 +1574,8 @@ components:
       $ref: ./components/schemas/FinanceVisibility.yaml
     FollowAccountRequest:
       $ref: ./components/schemas/FollowAccountRequest.yaml
+    ForwardReportRequest:
+      $ref: ./components/schemas/ForwardReportRequest.yaml
     Id:
       $ref: ./components/schemas/Id.yaml
     ImportDomainBlocksRequest:

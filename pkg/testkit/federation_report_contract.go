@@ -139,10 +139,11 @@ func fedForwardsReports(t *testing.T, e *fedEnv) {
 		}
 	}
 
-	// A moderator's forward after filing sends the same Flag, to the same inbox.
+	// A moderator's forward after filing sends the same Flag, to the same inbox, with the
+	// moderator's text and never the reporter's comment.
 	later := e.report(t, alice, bob, false, spam.ID)
 	e.clock.Advance(time.Second)
-	later.Forward = &moderation.ReportForward{ID: e.ids.NewID(), ReportID: later.ID, ForwardedAt: e.clock.Now()}
+	later.Forward = &moderation.ReportForward{ID: e.ids.NewID(), ReportID: later.ID, Comment: "Forwarded by the moderators", ForwardedAt: e.clock.Now()}
 	e.reports.mu.Lock()
 	e.reports.reports[later.ID] = later
 	e.reports.mu.Unlock()
@@ -154,6 +155,33 @@ func fedForwardsReports(t *testing.T, e *fedEnv) {
 	}
 	if got, want := e.inboxes(t, act.ID), []string{e.uri(bob) + "/inbox"}; !slices.Equal(got, want) {
 		t.Errorf("Flag inboxes of a forward = %v, want %v", got, want)
+	}
+	doc = e.document(t, act.ID)
+	if doc["content"] != "Forwarded by the moderators" {
+		t.Errorf("Flag content of a forward = %v, want the moderator's text", doc["content"])
+	}
+	if raw, err := e.h.Federation.FindOutboundDocument(ctx, act.ID); err != nil || strings.Contains(string(raw), later.Comment) {
+		t.Errorf("Flag of a forward = %s, %v; want no reporter's comment %q", raw, err, later.Comment)
+	}
+
+	// A later forward of a hook's report without the moderator's text sends an empty content,
+	// not the plugin's note.
+	silent := e.report(t, alice, bob, false, spam.ID)
+	e.clock.Advance(time.Second)
+	silent.Comment = "classifier spam-v2 score 0.98"
+	silent.HookOrigin = &moderation.ReportHookOrigin{DecisionID: e.ids.NewID(), Hook: "inbound.status", ReasonCode: "spam"}
+	silent.Forward = &moderation.ReportForward{ID: e.ids.NewID(), ReportID: silent.ID, ForwardedAt: e.clock.Now()}
+	e.reports.mu.Lock()
+	e.reports.reports[silent.ID] = silent
+	e.reports.mu.Unlock()
+	e.emit(t, appmoderation.ReportForwarded{Report: silent})
+	e.drain(t)
+	act = e.activity(t, federation.OutboundReport, silent.ID, federation.ActivityFlag)
+	if doc := e.document(t, act.ID); doc["content"] != "" {
+		t.Errorf("Flag content of a forward without text = %v, want empty", doc["content"])
+	}
+	if raw, err := e.h.Federation.FindOutboundDocument(ctx, act.ID); err != nil || strings.Contains(string(raw), "classifier") {
+		t.Errorf("Flag of a hook's report = %s, %v; want no plugin note", raw, err)
 	}
 
 	// A suspended server gets no Flag.

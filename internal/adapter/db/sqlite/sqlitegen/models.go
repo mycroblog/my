@@ -1006,6 +1006,7 @@ type ReportAssignment struct {
 type ReportForward struct {
 	ID                string
 	ReportID          string
+	Comment           string
 	ForwardedByUserID sql.NullString
 	ForwardedAt       int64
 }

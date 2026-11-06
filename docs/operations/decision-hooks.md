@@ -60,7 +60,8 @@ What each answer does to a post:
 - `flag` files one report per decision, with your instance actor as the reporter, the reason's category (`spam` and
   `malware` as Spam, `illegal` as Legal, `harassment`, `sexual`, and `violence` as Violation, and anything else as Other), and
   the plugin's note as the comment. The report says that a review filed it. It is not forwarded to the author's server
-  unless a moderator [forwards it](moderation.md#reports), and resolving it notifies nobody. Each decision files its own
+  unless a moderator [forwards it](moderation.md#reports), and a forward never sends the note: only the text the moderator
+  writes then. Resolving it notifies nobody. Each decision files its own
   report, so a wave of spam can fill the queue.
 - `mark_sensitive` marks the post, not the revision: the mark stays on later revisions, whatever they are answered, until a
   moderator cancels the decision. It shows attachments as sensitive and leaves the text alone, so a post with no attachment

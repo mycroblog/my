@@ -96,8 +96,11 @@ function reportsServer(initial: Report[]) {
     http.post(`${apiBase}/admin/reports/:id/:operation`, async ({ request, params }) => {
       const operation = String(params["operation"]);
       const body =
-        operation === "resolve" || operation === "notes" ? ((await request.json()) as Record<string, string>) : {};
-      changes.push(`${operation}${body["outcome"] === undefined ? "" : ` ${body["outcome"]}`}`);
+        operation === "resolve" || operation === "notes" || operation === "forward"
+          ? ((await request.json()) as Record<string, string>)
+          : {};
+      const detail = body["outcome"] ?? body["comment"];
+      changes.push(`${operation}${detail === undefined ? "" : ` ${detail}`}`);
       const next = update(String(params["id"]), (report) => {
         switch (operation) {
           case "assign_to_self":
@@ -760,7 +763,22 @@ describe("a report's page", () => {
     });
     expect(within(summary).getByText("To the account's server")).toBeInTheDocument();
     expect(within(summary).queryByRole("button", { name: "Forward to their server" })).not.toBeInTheDocument();
+    // Without a text the forward sends none: never the reporter's comment.
     expect(api.changes).toEqual(["forward"]);
+  });
+
+  test("forwards a report with the moderator's text for their server", async () => {
+    const unsent: Report = { ...spam, forwarded: false, forwardable: true };
+    const api = reportsServer([unsent]);
+    const { user } = await renderApp({ path: `/moderation/reports/${unsent.id}` });
+
+    const field = await screen.findByRole("textbox", { name: "Text for their moderators" });
+    await user.type(field, "Spam account");
+    await user.click(screen.getByRole("button", { name: "Forward to their server" }));
+    expect(
+      await within(region("Report")).findByText("The report is forwarded to the server of the account."),
+    ).toBeInTheDocument();
+    expect(api.changes).toEqual(["forward Spam account"]);
   });
 
   test("a report that cannot be forwarded offers no forward", async () => {

@@ -2,7 +2,6 @@
 description: What to translate a post into.
 type: object
 required: [target_language]
-additionalProperties: false
 properties:
   target_language:
     description: The language to translate into, as a BCP 47 tag.

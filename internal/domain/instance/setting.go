@@ -174,8 +174,8 @@ const (
 	SettingTranslationProviderVisibilities SettingKey = "translation_provider_visibilities"
 	SettingTranslationBrowser              SettingKey = "translation_browser"
 	// SettingTranslationUserMonthlyCharacters and SettingTranslationServerMonthlyCharacters bound
-	// the characters sent to providers in a UTC month. 0 sends nothing, and no value means
-	// unlimited (ADR-0148 §11).
+	// the characters sent to providers in a UTC month. 0 sends nothing, and no value is
+	// unlimited: an operator sets a large number (ADR-0148 §11).
 	SettingTranslationUserMonthlyCharacters   SettingKey = "translation_user_monthly_characters"
 	SettingTranslationServerMonthlyCharacters SettingKey = "translation_server_monthly_characters"
 	// SettingTranslationRetentionDays is how many days a translation is kept after it was made

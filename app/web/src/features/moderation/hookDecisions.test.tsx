@@ -186,7 +186,7 @@ function appealsServer(initial: HookAppeal[]) {
   decisionsServer([]);
   server.use(
     http.get(`${apiBase}/admin/hook_appeals`, ({ request }) => {
-      const pending = new URL(request.url).searchParams.get("pending") === "true";
+      const pending = new URL(request.url).searchParams.get("state") === "pending";
       lists.push(pending ? "pending" : "all");
       return HttpResponse.json({ items: appeals.filter((item) => !pending || item.state === "pending") });
     }),

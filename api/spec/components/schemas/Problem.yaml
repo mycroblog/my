@@ -213,8 +213,10 @@ description: |
   - `/api/v1/problems/email-already-verified` (409): the primary email address is already
     confirmed, so no confirmation mail is sent.
   - `/api/v1/problems/hook-decision-not-overridable` (409): the decision of a decision hook
-    had no effect, is already cancelled, or is a `reject` of `local.status`, which goes through
-    its appeal.
+    had no effect, or is a `reject` of `local.status`, which goes through its appeal.
+  - `/api/v1/problems/report-not-forwardable` (409): the report cannot be forwarded to the
+    target's server: it came from another server, is about a local account or a voice chat
+    room, or its target is gone.
   - `/api/v1/problems/status-rejected` (422): the server's automated review refused the post
     and nothing was posted. The problem carries `hook_decision_id` and `appeal_deadline`; the
     user may appeal (`POST /hook_decisions/{id}/appeal`).

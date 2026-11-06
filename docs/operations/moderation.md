@@ -296,18 +296,18 @@ my admin report unassign <report id>
 my admin report resolve -outcome dismissed <report id>
 my admin report note <report id> "Same person as an earlier report"
 my admin report reopen <report id>
-my admin report forward <report id>
+my admin report forward -comment "Spam account, see the linked posts" <report id>
 ```
 
 In the admin API: `GET /api/v1/admin/reports` (filter with `state`, `category`, and `assignee`: `me`, `none`, or a local account's ID; `order=oldest` lists the longest-waiting report first instead of the newest), `GET .../{id}`, `POST .../{id}/assign_to_self`, `POST .../{id}/unassign`,
-`POST .../{id}/resolve` (body `{"outcome": "actioned" | "dismissed"}`), `POST .../{id}/notes` (body `{"body": "..."}`), `POST .../{id}/reopen` and `POST .../{id}/forward`.
+`POST .../{id}/resolve` (body `{"outcome": "actioned" | "dismissed"}`), `POST .../{id}/notes` (body `{"body": "..."}`), `POST .../{id}/reopen` and `POST .../{id}/forward` (body `{"comment": "..."}`, optional).
 
 - An assignment (`assign`) can go only to a local user whose role has `manage_reports`. In the admin API you assign yourself.
 - The outcome of a resolution (`resolve`) is `actioned` (an action was taken against the target) or `dismissed` (no action was needed). Resolving a resolved report again does not change the outcome.
 - When you issue an action from a report (`report_id` / `-report` of the action), the report is resolved as `actioned` in the same operation.
 - A note (`note`) is an internal note that only moderators see, up to 2,000 characters. It is shown neither to the target nor to the reporter. It cannot be edited or deleted.
 - Reopening (`reopen`) puts a resolved report back to `open` (the assignment stays). An open report cannot be reopened (`409` in the admin API).
-- Forwarding (`forward`, the button **Forward to their server** of the report details) sends a report about an account on another server to that server, as a `Flag` of your instance actor with the reported posts that still exist and the comment, and nothing of the reporter. It works on a report filed on this server, by a person or by an [external review](#reports-that-an-external-review-filed), open or resolved, that was not forwarded yet; a report received from another server or about a voice chat room cannot be forwarded (`409` in the admin API, and the report details show no button). A report is sent once: forwarding it again, or forwarding one that its reporter had forwarded when filing it, changes nothing. `forwarded` in the admin API says whether it was sent, `forwardable` whether you can send it now.
+- Forwarding (`forward`, the button **Forward to their server** of the report details) sends a report about an account on another server to that server, as a `Flag` of your instance actor with the account and the reported posts that still exist. The only text it carries is what you write for that server's moderators when you forward it (`-comment`, `comment` in the admin API, or **Text for their moderators** on the report's page; up to 1,000 characters, none by default). The reporter's comment and the note of an [external review](#reports-that-an-external-review-filed) never leave your server this way, and nothing of the reporter is sent. A report that its reporter chose to forward when filing it went out at once, with the reporter's comment. Forwarding works on a report filed on this server, by a person or by an [external review](#reports-that-an-external-review-filed), open or resolved, that was not forwarded yet; a report received from another server or about a voice chat room cannot be forwarded (`409` `report-not-forwardable` in the admin API, and the report details show no button). A report is sent once: forwarding it again, with any text, or forwarding one that its reporter had forwarded when filing it, changes nothing. `forwarded` in the admin API says whether it was sent, `forwardable` whether you can send it now.
 - The report details (`show`, `GET .../{id}`) return the notes, oldest first, with the number of other reports about the target and the number of actions against the target (lifted and expired ones included). The list does not return notes.
 - Assignments, resolutions, reopenings, notes and forwards are kept as events (`report_assignments`, `report_resolutions`, `report_reopenings`, `report_notes`, `report_forwards`), and `report_states` holds the current state.
 - Moderators can translate the reported posts and the reporter's comment on the report's page, or with `POST .../{id}/statuses/{status_id}/translation` and `POST .../{id}/comment/translation` (body `{"target_language": "en"}`).
@@ -323,7 +323,8 @@ A [decision hook](decision-hooks.md) that answers `flag` files a report with you
 says so: `hook_origin` in the admin API and the `report.created` webhook, a line in the report details, and `automated` in
 `my admin report show`. Its comment is the plugin's note, and its category comes from the reason. It is not forwarded when it
 is filed, and resolving it notifies nobody. When the target is on another server, you can forward it
-yourself (`forward`), and the plugin's note goes out as the comment. Cancelling the decision leaves the report as it is.
+yourself (`forward`): the plugin's note stays on your server, and only the text you write goes out. Cancelling the decision
+leaves the report as it is.
 
 ### Voice chat rooms
 

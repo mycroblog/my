@@ -89,7 +89,7 @@ ADR-0020 の分類で次を足す。`schema/<dialect>/16-hook.sql` に置き、`
 
 - `reporter_account_id` は**インスタンス Actor** にする。`accounts` に行があり（`Service.EnsureInstanceActor`、`InstanceActorTx`）、`NOT NULL` を変えずに済む。
 - 出所は `hook_decision_id` で記録する。`report_voice_rooms` と同じく通報の子のリソース `report_hook_origins`（`report_id` PK、`hook_decision_id` 一意、`hook`、`reason_code`）に置く。一意制約が再実行での二重の起票を防ぐ。フックと理由は不変の事実なので写す（ADR-0020 規約 4）。判定が先に消えても、通報は自動のものと分かり、理由が読める。
-- **1 つの判定に 1 件の通報** で、まとめない。リモートのサーバーへ自動で転送しない。`uri` は NULL、`forwarded` は偽にする。転送するかはモデレーターが通常の操作で決める。カテゴリは理由コードから決め、`comment` はメモ（なければ空）にする。投稿と同じトランザクションで書くので、`moderation` にトランザクションの中で起票する入口を足す。`FileRemoteReport` は URI を要し、`LocalReports.File` は閲覧者の確認をするので、どちらも使えない。
+- **1 つの判定に 1 件の通報** で、まとめない。リモートのサーバーへ自動で転送しない。`uri` は NULL、`forwarded` は偽にする。転送するかはモデレーターが通常の後からの転送（ADR-0058 §6）で決め、その `Flag` はメモを運ばない。`content` はモデレーターが転送するときに書く文（既定は空）だけにする。メモはこのサーバーのモデレーター向けのプラグインの出力だから。カテゴリは理由コードから決め、`comment` はメモ（なければ空）にする。投稿と同じトランザクションで書くので、`moderation` にトランザクションの中で起票する入口を足す。`FileRemoteReport` は URI を要し、`LocalReports.File` は閲覧者の確認をするので、どちらも使えない。
 - `EventReportResolved` の通知の宛先は `reporter_account_id` で、インスタンス Actor はローカルなので、今のままでは通知の行を作りに行く。自動の通報は通知しない。
 - 管理 API の通報と webhook `report.created`（管理 API の表現を写す）に、自動の起票であることを足す。
 
