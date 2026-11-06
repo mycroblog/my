@@ -787,6 +787,10 @@ async function moderatorServer(page: Page) {
     if (key === "GET /admin/login_providers") return json(route, { items: [loginProvider] });
     if (key === "GET /admin/link_card_domains") return json(route, { items: [linkCardDomainRule] });
     if (key === "GET /admin/roles") return json(route, { items: roles });
+    if (key === "GET /admin/hook_decisions") return json(route, { items: [hookDecision] });
+    if (key === "GET /admin/hook_decisions/summary") return json(route, hookSummary);
+    if (key === "GET /admin/hook_appeals") return json(route, { items: [hookAppeal] });
+    if (key === "GET /admin/translation") return json(route, translationOverview);
     if (key === "GET /admin/cost_items") return json(route, { items: [costItem] });
     if (key === "GET /admin/cost_totals") return json(route, costTotals);
     if (key === "GET /finance/cost_totals") {
@@ -937,6 +941,75 @@ const supporterProgram: Schemas["AdminSupporterProgram"] = {
 
 const paymentStatus: Schemas["PaymentStatus"] = { provider: "stripe", mode: "test", time_zone: "UTC", warnings: [] };
 
+/**
+ * A remote post that the external review of posts from other servers dropped, as GET /admin/hook_decisions lists it:
+ * its subject is a long URI without a break, which must wrap rather than scroll the page sideways.
+ */
+const hookDecision: Schemas["AdminHookDecision"] = {
+  id: "0192f0c4-7a8e-7000-8000-0000000002a1",
+  hook: "inbound.status",
+  subject_key: `https://${longDomain}/users/spammer/statuses/0192f0c4-7a8e-7000-8000-0000000002a1/activity`,
+  mode: "enforce",
+  outcome: "drop",
+  reason: "spam",
+  note: "Same link posted to many accounts",
+  latency_ms: 25,
+  decided_at: "2026-10-16T08:00:00Z",
+  overridable: true,
+};
+
+/** The counts of the last week, as GET /admin/hook_decisions/summary answers: only posts from other servers are reviewed. */
+const hookSummary: Schemas["AdminHookSummary"] = {
+  since: "2026-10-10T00:00:00Z",
+  hooks: [
+    {
+      hook: "inbound.status",
+      configured: true,
+      mode: "enforce",
+      on_failure: "pass",
+      outcomes: [{ mode: "enforce", outcome: "drop", count: 3, average_latency_ms: 25, max_latency_ms: 40 }],
+    },
+    { hook: "inbound.follow", configured: false, mode: "observe", on_failure: "pass", outcomes: [] },
+    { hook: "signup.check", configured: false, mode: "observe", on_failure: "pass", outcomes: [] },
+    { hook: "media.check", configured: false, mode: "observe", on_failure: "pass", outcomes: [] },
+    { hook: "local.status", configured: false, mode: "observe", on_failure: "pass", outcomes: [] },
+  ],
+};
+
+/** The target's appeal of a local post that the review refused, awaiting a moderator, as GET /admin/hook_appeals lists it. */
+const hookAppeal: Schemas["AdminHookAppeal"] = {
+  id: "0192f0c4-7a8e-7000-8000-0000000003a1",
+  decision: {
+    id: "0192f0c4-7a8e-7000-8000-0000000002c1",
+    hook: "local.status",
+    subject_key: "local-status:0192f0c4-7a8e-7000-8000-0000000002c1",
+    mode: "enforce",
+    outcome: "reject",
+    reason: "spam",
+    latency_ms: 30,
+    decided_at: "2026-10-16T09:00:00Z",
+    overridable: false,
+  },
+  account_id: target.id,
+  status_text: "Come to my bake sale on Saturday!",
+  comment: "It is a local event, not an advert.",
+  state: "pending",
+  submitted_at: "2026-10-16T09:10:00Z",
+};
+
+/** The month's translation, as GET /admin/translation answers: two providers, one with a long name, and some use. */
+const translationOverview: Schemas["AdminTranslationOverview"] = {
+  month: "2026-10",
+  characters: 123_456,
+  cache_hits: 300,
+  cache_misses: 100,
+  cache_hit_rate: 0.75,
+  providers: [
+    { id: "one", name: "Provider One" },
+    { id: "two", name: "the-translation-provider-with-a-very-long-name-that-does-not-wrap.example" },
+  ],
+};
+
 /** The terms of service, as GET /admin/instance_texts lists them. */
 const documentText: Schemas["AdminInstanceText"] = {
   key: "terms",
@@ -998,6 +1071,8 @@ const adminPages: Readonly<Record<string, { path: string; ready: string | { valu
   "admin.finance": { path: "/admin/finance?tab=records", ready: costItem.provider },
   "admin.supporters": { path: "/admin/supporters", ready: supporterSubscription.plan_name },
   "moderation.invites": { path: "/moderation/invites", ready: invite.code },
+  "moderation.hook-decisions": { path: "/moderation/hook-decisions", ready: hookDecision.subject_key },
+  "admin.translation": { path: "/admin/translation", ready: translationOverview.providers[0]?.name ?? "" },
 };
 
 test("the suite lists every moderation and admin route", () => {
