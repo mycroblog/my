@@ -96,6 +96,7 @@ Guides for people who build clients and bots against the client API.
 - [Working on an issue (playbook)](agents/workflow.md)
 - [Writing an ADR (playbook)](agents/writing-adrs.md)
 - [Releasing (playbook)](agents/releasing.md)
+- [Drawing a diagram (playbook)](agents/diagrams.md)
 - [Commands](reference/commands.md) (the development tasks and the pinned toolchain)
 
 ## Design (in Japanese)
