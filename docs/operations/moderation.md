@@ -6,6 +6,33 @@ Everything here except account management (admin API only) can be done through t
 The admin API requires role permissions: account management, actions and appeals need `manage_accounts`, domain actions need `manage_domains`, and reports need `manage_reports`.
 The CLI connects to the DB directly with the same configuration as the server (`-config` or environment variables) and does not record which user operated it (`issued_by_user_id` and similar fields are NULL, and the actor in the [audit log](#audit-log) is `cli`).
 
+## From a report to an action and an appeal
+
+![The path of a report: it comes in, a moderator reviews it, an action may follow with a notice to the user, and the user may appeal; the right column shows what each step sends to other servers. The list below describes each step.](images/moderation-lifecycle.svg)
+
+From the top of the diagram down:
+
+1. **A report comes in.** A local user files one, another server sends a `Flag` (dropped when its domain has
+   `reject_reports`, see [domain actions](#domain-actions)), or a [decision hook](decision-hooks.md) answers `flag`
+   ([reports that an external review filed](#reports-that-an-external-review-filed)). A local user who reports an
+   account on another server can choose to forward the report, which sends a `Flag` to that server at once.
+2. **Review.** The report is `open`, and the moderators get an `admin_report` notification. Resolving it makes it
+   `resolved` with the outcome `actioned` or `dismissed`, and a local reporter gets a `report_resolved` notification.
+   Reopening puts it back to `open`. Forwarding a report about an account on another server sends a `Flag` to that
+   server ([reports](#reports)).
+3. **Action.** A moderator issues an [account action](#account-actions) from the report, which resolves the report as
+   `actioned`; an action can also be issued without a report. The action has a kind, a reason, and an end time, and
+   ends when it is lifted or expires. With `notify_target`, the user gets a `moderation_notice` notification
+   ([what the user sees](#what-the-user-sees)). Other servers receive a `Delete` of the posts for `delete_statuses`, an
+   `Update` of the actor when a local account's `suspend` or `ban` starts or ends, and a `Reject` / `Undo` of the
+   follows that a remote account's `suspend` cuts.
+4. **Appeal.** The local user appeals the action. The appeal is `pending`, and the moderators get an `admin_appeal`
+   notification. The decision is `upheld` or `overturned`, and the user gets an `appeal_decided` notification.
+   Overturning lifts the action and cancels the deletion of a `ban`, so an overturned `suspend` or `ban` of a local
+   account sends an `Update` of the actor ([appeals](#appeals)).
+
+Assignments, notes, notices, and appeals stay on this server; only the activities in the right column leave it.
+
 ## Moderation and server administration in the web client
 
 The web client splits the staff screens in two.

@@ -1,0 +1,133 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 844" width="760" height="844" role="img" aria-labelledby="title desc">
+<!-- SPDX-License-Identifier: AGPL-3.0-only -->
+  <title id="title">From a report to an action and an appeal</title>
+  <desc id="desc">Four steps from top to bottom, with what each step sends to other servers on the right. 1, a report comes in: a local user files one, another server sends a Flag, or a decision hook answers flag. A local reporter can choose to forward a report about a remote account, which sends a Flag to its server. 2, review: the report is open and notifies the moderators with admin_report; resolving it makes it resolved as actioned or dismissed and notifies a local reporter with report_resolved, and reopening puts it back to open. Forwarding a report sends a Flag to the target's server. 3, action: a moderator issues an account action from the report, with a kind, a reason and an end time, and lifting it or its expiry ends it. With notify_target, the user gets a moderation_notice. delete_statuses sends a Delete of the posts, a suspend or ban of a local account sends an Update of the actor, and a suspend of a remote account sends a Reject or Undo of the follows. 4, appeal: the user appeals the action, the appeal is pending and notifies the moderators with admin_appeal; the decision upholds or overturns it and notifies the user with appeal_decided. Overturning lifts the action and cancels the deletion of a ban, and an overturned suspend or ban of a local account sends an Update of the actor.</desc>
+
+  <style>
+    svg { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif; }
+    .bg { fill: #ffffff; }
+    .t { fill: #1f2328; font-size: 16px; }
+    .b { font-weight: 600; }
+    .m { fill: #59636e; font-size: 15px; }
+    .h { fill: #1f2328; font-size: 17px; font-weight: 600; }
+    .group { fill: #f6f8fa; stroke: #d1d9e0; stroke-width: 1.5; }
+    .client { fill: #dafbe1; stroke: #1a7f37; stroke-width: 1.5; }
+    .proc { fill: #ddf4ff; stroke: #0969da; stroke-width: 2; }
+    .svc { fill: #fbefff; stroke: #8250df; stroke-width: 1.5; }
+    .arrow { stroke: #59636e; stroke-width: 2; fill: none; }
+    .head { fill: #59636e; }
+    @media (prefers-color-scheme: dark) {
+      .bg { fill: #0d1117; }
+      .t, .h { fill: #e6edf3; }
+      .m { fill: #9198a1; }
+      .group { fill: #151b23; stroke: #3d444d; }
+      .client { fill: #0f2d1b; stroke: #3fb950; }
+      .proc { fill: #0c2d6b; stroke: #4493f8; }
+      .svc { fill: #2a1650; stroke: #ab7df8; }
+      .arrow { stroke: #9198a1; }
+      .head { fill: #9198a1; }
+    }
+  </style>
+  <defs>
+    <marker id="arrowhead" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path class="head" d="M 0 0 L 10 5 L 0 10 z"/>
+    </marker>
+  </defs>
+  <rect class="bg" x="0" y="0" width="760" height="844" rx="12"/>
+
+  <!-- Groups first, so that the arrows between them are drawn on top -->
+  <rect class="group" x="20" y="16" width="470" height="150" rx="12"/>
+  <rect class="group" x="20" y="186" width="470" height="158" rx="12"/>
+  <rect class="group" x="20" y="364" width="470" height="262" rx="12"/>
+  <rect class="group" x="20" y="646" width="470" height="182" rx="12"/>
+
+  <!-- Sent to other servers -->
+  <rect class="group" x="510" y="16" width="230" height="812" rx="12"/>
+  <text class="h" x="524" y="46" text-anchor="start">Sent to other servers</text>
+
+  <!-- 1. A report comes in -->
+  <text class="h" x="34" y="46" text-anchor="start">1. A report comes in</text>
+  <rect class="client" x="30" y="62" width="143" height="74" rx="8"/>
+  <text class="t b" x="101.5" y="93" text-anchor="middle">Local user</text>
+  <text class="m" x="101.5" y="115" text-anchor="middle">files a report</text>
+  <rect class="client" x="183.5" y="62" width="143" height="74" rx="8"/>
+  <text class="t b" x="255" y="93" text-anchor="middle">Other server</text>
+  <text class="m" x="255" y="115" text-anchor="middle">sends a Flag</text>
+  <rect class="svc" x="337" y="62" width="143" height="74" rx="8"/>
+  <text class="t b" x="408.5" y="93" text-anchor="middle">Decision hook</text>
+  <text class="m" x="408.5" y="115" text-anchor="middle">answers flag</text>
+  <path class="arrow" d="M 492 99 L 516 99" marker-end="url(#arrowhead)"/>
+  <rect class="svc" x="520" y="62" width="210" height="74" rx="8"/>
+  <text class="t b" x="625" y="93" text-anchor="middle">Flag</text>
+  <text class="m" x="625" y="115" text-anchor="middle">if the reporter forwards</text>
+
+  <path class="arrow" d="M 101.5 136 V 176 H 408.5 V 136 M 255 136 V 176"/>
+  <path class="arrow" d="M 160 176 V 228" marker-end="url(#arrowhead)"/>
+
+  <!-- 2. Review -->
+  <text class="h" x="34" y="216" text-anchor="start">2. Review</text>
+  <rect class="proc" x="30" y="232" width="190" height="96" rx="8"/>
+  <text class="t b" x="125" y="262" text-anchor="middle">Open report</text>
+  <text class="m" x="125" y="284" text-anchor="middle">state = open</text>
+  <text class="m" x="125" y="306" text-anchor="middle">notifies admin_report</text>
+  <text class="m" x="255" y="254" text-anchor="middle">resolve</text>
+  <path class="arrow" d="M 220 262 L 286 262" marker-end="url(#arrowhead)"/>
+  <path class="arrow" d="M 290 298 L 224 298" marker-end="url(#arrowhead)"/>
+  <text class="m" x="255" y="318" text-anchor="middle">reopen</text>
+  <rect class="proc" x="290" y="232" width="190" height="96" rx="8"/>
+  <text class="t b" x="385" y="262" text-anchor="middle">Resolved report</text>
+  <text class="m" x="385" y="284" text-anchor="middle">actioned or dismissed</text>
+  <text class="m" x="385" y="306" text-anchor="middle">notifies report_resolved</text>
+  <path class="arrow" d="M 492 269 L 516 269" marker-end="url(#arrowhead)"/>
+  <rect class="svc" x="520" y="232" width="210" height="74" rx="8"/>
+  <text class="t b" x="625" y="263" text-anchor="middle">Flag</text>
+  <text class="m" x="625" y="285" text-anchor="middle">forward to their server</text>
+
+  <path class="arrow" d="M 125 328 V 406" marker-end="url(#arrowhead)"/>
+  <text class="m" x="135" y="360" text-anchor="start">issue an action</text>
+
+  <!-- 3. Action -->
+  <text class="h" x="34" y="394" text-anchor="start">3. Action</text>
+  <rect class="proc" x="30" y="410" width="190" height="96" rx="8"/>
+  <text class="t b" x="125" y="440" text-anchor="middle">Account action</text>
+  <text class="m" x="125" y="462" text-anchor="middle">kind, reason, end time</text>
+  <text class="m" x="125" y="484" text-anchor="middle">ended by lift or expiry</text>
+  <path class="arrow" d="M 220 458 L 286 458" marker-end="url(#arrowhead)"/>
+  <rect class="client" x="290" y="410" width="190" height="96" rx="8"/>
+  <text class="t b" x="385" y="440" text-anchor="middle">Notice to the user</text>
+  <text class="m" x="385" y="462" text-anchor="middle">moderation_notice</text>
+  <text class="m" x="385" y="484" text-anchor="middle">with notify_target</text>
+  <path class="arrow" d="M 492 441 L 516 441" marker-end="url(#arrowhead)"/>
+  <rect class="svc" x="520" y="410" width="210" height="62" rx="8"/>
+  <text class="t b" x="625" y="436" text-anchor="middle">Delete of the posts</text>
+  <text class="m" x="625" y="458" text-anchor="middle">delete_statuses</text>
+  <path class="arrow" d="M 492 511 L 516 511" marker-end="url(#arrowhead)"/>
+  <rect class="svc" x="520" y="480" width="210" height="62" rx="8"/>
+  <text class="t b" x="625" y="506" text-anchor="middle">Update of the actor</text>
+  <text class="m" x="625" y="528" text-anchor="middle">local suspend or ban</text>
+  <path class="arrow" d="M 492 581 L 516 581" marker-end="url(#arrowhead)"/>
+  <rect class="svc" x="520" y="550" width="210" height="62" rx="8"/>
+  <text class="t b" x="625" y="576" text-anchor="middle">Reject / Undo</text>
+  <text class="m" x="625" y="598" text-anchor="middle">follows, remote suspend</text>
+
+  <path class="arrow" d="M 125 506 V 688" marker-end="url(#arrowhead)"/>
+  <text class="m" x="135" y="566" text-anchor="start">the user appeals</text>
+
+  <!-- 4. Appeal -->
+  <text class="h" x="34" y="676" text-anchor="start">4. Appeal</text>
+  <rect class="proc" x="30" y="692" width="190" height="96" rx="8"/>
+  <text class="t b" x="125" y="722" text-anchor="middle">Appeal</text>
+  <text class="m" x="125" y="744" text-anchor="middle">state = pending</text>
+  <text class="m" x="125" y="766" text-anchor="middle">notifies admin_appeal</text>
+  <text class="m" x="255" y="732" text-anchor="middle">review</text>
+  <path class="arrow" d="M 220 740 L 286 740" marker-end="url(#arrowhead)"/>
+  <rect class="proc" x="290" y="692" width="190" height="96" rx="8"/>
+  <text class="t b" x="385" y="722" text-anchor="middle">Decision</text>
+  <text class="m" x="385" y="744" text-anchor="middle">upheld or overturned</text>
+  <text class="m" x="385" y="766" text-anchor="middle">notifies appeal_decided</text>
+  <text class="m" x="34" y="812" text-anchor="start">Overturning lifts the action and cancels a ban's deletion.</text>
+  <path class="arrow" d="M 492 729 L 516 729" marker-end="url(#arrowhead)"/>
+  <rect class="svc" x="520" y="692" width="210" height="74" rx="8"/>
+  <text class="t b" x="625" y="723" text-anchor="middle">Update of the actor</text>
+  <text class="m" x="625" y="745" text-anchor="middle">overturned suspend or ban</text>
+</svg>
