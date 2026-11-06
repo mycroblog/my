@@ -227,6 +227,36 @@ export async function expectNoHorizontalScroll(page: Page): Promise<void> {
 }
 
 /**
+ * Asserts that a toast hides no control at the end of the page (web-client/16-look-states-and-wording.md G4): with a
+ * toast showing, scrolled to the end, every visible control of `main` ends above the toasts. The shell pads the end of
+ * the page by the measured height of the toasts, so this polls until the padding has taken it.
+ */
+export async function expectPageEndClearOfToasts(page: Page): Promise<void> {
+  await expect(page.locator("[data-toast-id]").first()).toBeVisible();
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        const scroller = document.scrollingElement ?? document.documentElement;
+        scroller.scrollTo({ top: scroller.scrollHeight, behavior: "instant" });
+        const toastTop = Math.min(
+          ...[...document.querySelectorAll("[data-toast-id]")].map((toast) => toast.getBoundingClientRect().top),
+        );
+        const covered = [
+          ...document.querySelectorAll("main a[href], main button, main input, main select, main textarea"),
+        ].filter((control) => {
+          const box = control.getBoundingClientRect();
+          return box.width > 0 && box.height > 0 && box.top < window.innerHeight && box.bottom > toastTop;
+        });
+        return covered.map(
+          (control) =>
+            `${control.tagName.toLowerCase()} "${(control.getAttribute("aria-label") ?? control.textContent).trim().slice(0, 40)}"`,
+        );
+      }),
+    )
+    .toEqual([]);
+}
+
+/**
  * The list of records of an admin screen (`RecordTable`, @my/ui's `ListTable`) inside `scope`: a table, or at narrow
  * widths (below 40rem of its container, the 320 and 390 px projects) a list of cards. Its `data-list-table` says which.
  */

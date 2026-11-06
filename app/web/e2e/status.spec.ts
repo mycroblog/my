@@ -6,7 +6,7 @@
 // finds the same elements in every locale.
 import type { Page, Route } from "@playwright/test";
 import type { components } from "@mycroblog/mykit";
-import { expect, expectNoAxeViolations, expectNoHorizontalScroll, test } from "./fixtures";
+import { expect, expectNoAxeViolations, expectNoHorizontalScroll, expectPageEndClearOfToasts, test } from "./fixtures";
 import { readCatalog } from "./catalog.ts";
 
 type Status = components["schemas"]["Status"];
@@ -311,4 +311,6 @@ test("the viewer's own post asks before it is deleted", async ({ page, makeAxeBu
   await expect(
     page.getByRole("region", { name: message("shell.toast.region") }).getByText(message("status.delete.done")),
   ).toBeVisible();
+  // Back on the list, the toast leaves the end of the page reachable.
+  await expectPageEndClearOfToasts(page);
 });
