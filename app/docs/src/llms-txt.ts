@@ -3,9 +3,7 @@
 // index, https://llmstxt.org/), llms-full.txt (every page) and llms-small.txt (a shortened form) under the base path of
 // each version (/next/llms.txt, /latest/llms.txt, ...). Their links start with that base, so each version describes itself.
 import starlightLlmsTxt from "starlight-llms-txt";
-import { base } from "./published";
-
-const site = "https://mycroblog.dev";
+import { base, site } from "./published";
 
 export const llmsTxtPlugin = starlightLlmsTxt({
   // The brand; `my` is the name of the server software.

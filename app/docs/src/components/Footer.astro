@@ -1,13 +1,19 @@
 ---
 // SPDX-License-Identifier: AGPL-3.0-only
-// Starlight's Footer with the plain-text forms of this version of the site for LLMs (src/llms-txt.ts).
+// Starlight's Footer with the plain-text forms for LLMs: this page as Markdown (src/page-markdown.ts) and this version
+// of the site (src/llms-txt.ts).
 import Default from "@astrojs/starlight/components/Footer.astro";
+import { markdownURL } from "../page-markdown";
 import { base } from "../published";
+
+const markdown = markdownURL(Astro.locals.starlightRoute.id);
 ---
 
 <Default />
 <p class="docs-llms" data-pagefind-ignore>
-  For LLMs and coding agents: <a href={`${base}llms.txt`}>llms.txt</a>,
+  For LLMs and coding agents:
+  {markdown !== undefined && <><a href={markdown} type="text/markdown">this page as Markdown</a>, </>}
+  <a href={`${base}llms.txt`}>llms.txt</a>,
   <a href={`${base}llms-full.txt`}>llms-full.txt</a>, <a href={`${base}llms-small.txt`}>llms-small.txt</a>
 </p>
 
