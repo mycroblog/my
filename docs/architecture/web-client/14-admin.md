@@ -52,20 +52,31 @@ API の経路はどちらも `/admin/*` で（[client-api.md](../client-api.md) 
     サーバーの失敗はフォームの下（`role="alert"`）に出して入力を残す。成功したら種類・効果・期間を残して一覧とメモを空にし、拒否の一覧と監査ログを取り直してから、追加した件数と追加しなかった行の数をフォームの `StatusMessage` に出す。
     追加しなかった行は、見出し（`h3`「追加しなかった行」）・理由ごとの行数の説明リスト・その見出しが名前を与える表（行番号・一覧に書かれたままの値（`dir="auto"`）・理由（`invalid`・`duplicate`・`already_blocked` を文言にしたもの））で、行の順に出す。
     表は最初の 100 行だけを出し、残りは「すべて表示する」で出す。ボタンは消えるので、フォーカスを表の見出しに移す。次の追加では表を最初の 100 行に戻す（`key`、R10）。
-- **カスタム絵文字**（`/admin/custom-emojis`、`manage_custom_emojis`、FR-111、[ADR-0051](../../adr/0051-custom-emoji.md)・[ADR-0070](../../adr/0070-permission-split-emoji-finance.md)、[画面の要件](screens/admin-custom-emojis.md)）: 「絵文字」と「申請」のタブ（`?tab=requests`、URL に置く。S3）。
-  「絵文字」は「登録されたカスタム絵文字」の 1 つの区画（一覧と追加の部品 `ListSection`。見出しの隣に件数、見出しの行の終わりに主な操作の「カスタム絵文字を登録する」）、「申請」は「カスタム絵文字の申請」の区画で、タブの名前に審査中の申請の数（`Badge`。最初のページより多ければ「N+」）を付ける（ADR-0070 §9。ナビゲーションの「管理」には付けない）。
-  - **登録**: 「カスタム絵文字を登録する」で、そのボタンの場所に開く追加の区画（`h3`）の、画像（React Aria の `FileTrigger`、PNG・GIF・WebP）・shortcode（必須、`[A-Za-z0-9_]{2,30}` をブラウザの制約検証で確かめる）・カテゴリ（64 文字まで）・別名（空白かカンマで区切り、10 個まで）・ピッカーに出すか（`Checkbox`、既定は出す）のフォームと、「登録する」と「キャンセル」の送信の帯（`FormActionBar`）。
+- **カスタム絵文字**（`/admin/custom-emojis`・`/admin/custom-emojis/new`・`/admin/custom-emojis/{id}`・`/admin/custom-emojis/requests`、`manage_custom_emojis`、FR-111、[ADR-0051](../../adr/0051-custom-emoji.md)・[ADR-0070](../../adr/0070-permission-split-emoji-finance.md)、画面の要件は[一覧](screens/admin-custom-emojis.md)・[登録](screens/admin-custom-emojis-new.md)・[詳細](screens/admin-custom-emoji.md)・[申請](screens/admin-custom-emoji-requests.md)）: 一覧 → 詳細で組み、見出しの下の `LocalNav`（「絵文字」と「申請」）で一覧と申請のページを行き来する。
+  「申請」のリンクに審査中の申請の数（`Badge` は装飾にし、数を `VisuallyHidden` の文で読ませる。最初のページより多ければ「N+」）を付ける（ADR-0070 §9。ナビゲーションの「管理」には付けない）。登録と詳細のページは `LocalNav` の代わりに「カスタム絵文字の一覧」へのリンクを見出しの下に置く。
+  - **一覧**（`/admin/custom-emojis`）: 「登録されたカスタム絵文字」の 1 つの区画。主な操作は登録のページへのリンク（`ButtonLink`）の「カスタム絵文字を登録する」で、このサーバーの絵文字を出しているときだけ置く。ほかのサーバーの絵文字を出すあいだは、代わりに、投稿と一緒に届くことと、使うには複製することを書く。
+    `ListToolbar` の「このサーバー」と「ほかのサーバー」の `Select`（`?origin=remote`、URL に置く。S3）と、shortcode（ほかのサーバーはドメインも）の検索（`?shortcode=`・`?domain=`、送ると URL を変える）で、新しい順の `RecordTable`（前へ / 次へ。絞り込みで key して最初のページに戻す）。
+    列は、絵文字（画像と `:shortcode:`（`dir="ltr"`）の詳細へのリンク、ほかのサーバーはドメイン、メディアを拒否したサーバーの絵文字は画像がない旨）・状態（無効は「無効（文字で表示）」を文字の太さと色で）・画像を設定した日時・操作の 4 つ。
+    行の操作は「無効にする」「有効にする」の 1 つだけ（押すとすぐ送る）。応答で行を置き換え、ボタンは残るのでフォーカスも残る。結果は表の上（`role="status"`）、失敗も同じ場所（`role="alert"`）に出す。
+  - **登録**（`/admin/custom-emojis/new`）: 画像（React Aria の `FileTrigger`、PNG・GIF・WebP）・shortcode（必須、`[A-Za-z0-9_]{2,30}` をブラウザの制約検証で確かめる）・カテゴリ（64 文字まで）・別名（空白かカンマで区切り、10 個まで）・ピッカーに出すか（`Checkbox`、既定は出す）のフォームと、「登録する」の送信の帯（`FormActionBar`）。
     100 KB を超える画像には、GoToSocial などが表示しないことがある旨を出す（ADR-0051 §2。登録は止めない）。送ると、画像を `POST /media`（`purpose=emoji`）で送って処理が終わるまで `GET /media/{id}` をポーリングし、`POST /admin/custom_emojis` で登録する。
-    サーバーの拒否（422 `invalid-custom-emoji`、`reason` に理由）は `detail` を送信の帯（`role="alert"`）に出して入力を残す。成功したら入力を空にし、一覧・ピッカーの絵文字（`GET /custom_emojis`）・監査ログに無効化の印を付けてから、追加の区画を閉じてフォーカスをボタンに戻し、結果を一覧の上に出す。
-  - **一覧**: 見出しの下の `ListToolbar` の「このサーバー」と「ほかのサーバー」の `Select`（`?origin=remote`、URL に置く。S3）と、shortcode（ほかのサーバーはドメインも）の検索（`?shortcode=`・`?domain=`、送ると URL を変える）で、新しい順（「さらに表示」）。ほかのサーバーの絵文字を出すあいだは、登録のボタンの代わりに、投稿と一緒に届くことと、使うにはコピーすることを書く。各絵文字は画像と見出し（`h3`、`:shortcode:`、`dir="ltr"`）と、ドメイン・状態・ピッカー・カテゴリ・別名・画像を設定した日時の説明リストにする。
-    どの絵文字も「無効にする」「有効にする」（押すとすぐに送る）を持ち、このサーバーの絵文字は加えて「編集する」（カテゴリ・別名・ピッカーに出すかのダイアログ。保存したら閉じ、失敗はダイアログの中に出す）・「画像を差し替える」（`FileTrigger` で選ぶとすぐに送る）・「削除する」（元に戻せないので `ConfirmDialog` で確かめる）を持つ。
-    ボタンのアクセシブルネームは絵文字（`:shortcode:`、ほかのサーバーは `@domain` を付け、U+2066 / U+2069 で囲む）を含める。変えた絵文字は応答で行を置き換え、消した絵文字は一覧から除いてフォーカスを次の行のボタンに移す（`lib/useFocusAfterRemoval.ts`）。
-    結果は登録の結果と同じ一覧の上（`role="status"`）に出し、失敗は同じ場所（`role="alert"`）に出す。どの変更も、ピッカーの絵文字と監査ログに無効化の印を付ける。
-    このサーバーの絵文字の説明リストには、作った人（`created_by` のプロフィールへのリンク。アカウントが消えていれば「削除されたアカウント」、CLI で登録した絵文字は「コマンドライン」）も出す。
-  - **申請**（`GET /admin/custom_emoji_requests`）: 状態（`Select`。既定は審査中、ほかは `?state=` に置く）の申請を新しい順に出す。各申請は画像と見出し（`:shortcode:`、`dir="ltr"`）と、内容・状態・申請者（プロフィールへのリンク、消えていれば「削除されたアカウント」）・申請した日時・終わった日時・却下の理由の説明リスト。
+    サーバーの拒否（422 `invalid-custom-emoji`、`reason` に理由）は `detail` を送信の帯（`role="alert"`）に出して入力を残す。成功したら一覧・ピッカーの絵文字（`GET /custom_emojis`）・監査ログに無効化の印を付け、応答を詳細のキャッシュに入れて、登録した絵文字の詳細のページへ移る（G24 の画面の遷移）。
+  - **詳細**（`/admin/custom-emojis/{id}`、`GET /admin/custom_emojis/{id}`）: 区画（`h2` の `Section`）を、「この絵文字について」（画像と `:shortcode:`、ドメイン・状態・ピッカー・カテゴリ・別名・作った人・登録した日時・画像を設定した日時の説明リスト）、
+    このサーバーの絵文字は「設定」「画像」「有効と無効」「この絵文字を削除する」、ほかのサーバーの絵文字は「このサーバーに複製」「有効と無効」の順に置く。作った人は `created_by` のプロフィールへのリンク（アカウントが消えていれば「削除されたアカウント」、CLI で登録した絵文字は「コマンドライン」）。
+    「設定」はカテゴリ・別名・ピッカーに出すかのフォームで、「保存する」（このページの主な操作）で `PATCH` し、結果と失敗を送信の帯に出す。「画像」は「画像を差し替える」（`FileTrigger` で選ぶとすぐに `PUT .../image`）、「有効と無効」は無効の効き目の説明と「無効にする」「有効にする」で、どちらも結果をその区画の `StatusMessage`、失敗を同じ区画（`role="alert"`）に出す。
+    「このサーバーに複製」は shortcode（このサーバーの規則に合わない元の shortcode は空にして入れ直させる）と「複製する」（ほかのサーバーの絵文字のページの主な操作）で `POST .../copy` し、成功したら複製した絵文字の詳細へ移る。拒否は送信の帯に出して入力を残す。
+    「削除する」は元に戻せないので `ConfirmDialog` で確かめ、成功したら一覧へ移ってから一覧と詳細のキャッシュから除き、結果をトーストで出す（移った先に置き場がないため）。失敗はダイアログの中に出す。
+    ボタンのアクセシブルネームは絵文字（`:shortcode:`、ほかのサーバーは `@domain` を付け、U+2066 / U+2069 で囲む）を含める。どの変更も、応答で詳細と一覧の行を置き換え、ピッカーの絵文字と監査ログに無効化の印を付ける。
+  - **申請**（`/admin/custom-emojis/requests`、`GET /admin/custom_emoji_requests`）: 「カスタム絵文字の申請」の区画。状態（`Select`。既定は審査中、ほかは `?state=` に置く）の申請を新しい順の `RecordTable` に出す。
+    列は、申請（画像と見出し（`:shortcode:`、`dir="ltr"`）、その下に内容と申請者（プロフィールへのリンク、消えていれば「削除されたアカウント」））・状態（終わった日時と却下の理由）・申請した日時・操作の 4 つ。
     審査中の申請は「承認する」（確かめずに `POST .../approve`）と「却下する」（申請者に見える任意の理由（500 文字まで、`ReasonField`）を入れる `ConfirmDialog` で `POST .../reject`）を持ち、ボタンのアクセシブルネームは申請の `:shortcode:`（U+2066 / U+2069 で囲む）を含める。
-    決めた申請は審査中の一覧から除いてフォーカスを次の行に移し、ほかの状態の一覧と監査ログ（承認なら絵文字の一覧とピッカーの絵文字も）に無効化の印を付けてから、結果を一覧の上の `StatusMessage` に出す。
+    決めた申請は審査中の一覧から除いてフォーカスを次の行に移し、ほかの状態の一覧と監査ログ（承認なら絵文字の一覧とピッカーの絵文字も）に無効化の印を付けてから、結果を表の上の `StatusMessage` に出す。
     決められない申請（409 `custom-emoji-request-conflict`。申請者が権限を失った・shortcode が使われている・すでに決まった）はサーバーの `detail` を同じ場所（`role="alert"`）に出し、行を残す。
+- **OAuth のアプリ**（`/admin/oauth-apps`・`/admin/oauth-apps/hosts`、`manage_oauth_apps`、[ADR-0090](../../adr/0090-third-party-oauth-apps.md) §1、画面の要件は[アプリ](screens/admin-oauth-apps.md)・[拒否したホスト](screens/admin-oauth-apps-hosts.md)）: 見出しの下の `LocalNav`（「アプリ」と「拒否したホスト」）で 2 つのページを行き来する。どのページも 1 つの区画（`h2` の `Section`）で、変更の結果を表の上の `StatusMessage`、失敗を同じ場所（`role="alert"`）に出す。どの変更も監査ログに残り、一覧と監査ログに無効化の印を付ける。
+  - **アプリ**（`/admin/oauth-apps`、`GET /admin/oauth_clients`）: 削除されていないクライアントを新しい順の `RecordTable`（前へ / 次へ）に出し、登録の経路の `Select`（`?registration=`、URL に置く。絞り込みで key して最初のページに戻す）で 1 つの経路に絞る。主な操作は持たない。
+    列は、アプリ（名前（`dir="auto"`）と無効の印、クライアント ID・ウェブサイト・登録した人・付与できる上限のスコープ。アプリの詳細のページはないので、ほかの事実は名前の下に置く）・登録の経路（秘密を持つか）・登録日時・操作の 4 つ。
+    操作は「無効にする」（トークンをすぐに失効させるので `ConfirmDialog` で確かめる）か「有効にする」（すぐ送る）で、このサーバー自身のクライアントは「無効にできません」と書いてボタンを持たない。メタデータ文書で登録したアプリは、その `client_id` のホストの「ホストを拒否」（`ConfirmDialog`）も持つ。ボタンのアクセシブルネームはアプリの名前（U+2066 / U+2069 で囲む）かホストを含める。
+  - **拒否したホスト**（`/admin/oauth-apps/hosts`、`GET /admin/oauth_client_host_denials`）: 説明と、主な操作の「ホストを拒否する」（ホスト名（253 文字まで）の欄を最初に置いた `ConfirmDialog` で `POST`。失敗はダイアログの中に出す）、拒否した新しい順のホストの `RecordTable`（ホスト・拒否した日時・「許可する」の 3 列。「許可する」はすぐ `DELETE`）。
 - **お知らせ**（`/admin/announcements`、`manage_announcements`、FR-726）: 「お知らせを書く」と「すべてのお知らせ」の 2 つの区画（`h2` の `section`）。変更はすべて監査ログに残り、一覧・利用者のお知らせ・監査ログに無効化の印を付ける。
   - **書く**: 本文（Markdown、5,000 文字まで、`TextArea` の文字数）・掲載する期間（`DurationSelect`。1・3・7・14・30 日と「取り下げるまで」。送った時から数え、`ends_at` にする）・「すぐに公開する」（`Checkbox`、既定で選ぶ。外すと下書き）のフォーム。
     送信のボタンの名前は、公開するか下書きかで変える。本文が空か長すぎるときは送らずに項目のエラーを出す。結果はフォームの `StatusMessage` に出し、本文を空にする。
@@ -196,7 +207,7 @@ API の経路はどちらも `/admin/*` で（[client-api.md](../client-api.md) 
     ルートの loader は TanStack Query の `infiniteQuery` の `pages` で、そのページ数を新しい方から順に読む。キャッシュに読み込み済みのページはそのまま使う。絞り込みを変えると 1 ページ目からになる。
     次のページの失敗は、一覧の下に `RegionError` で理由を出し、読み込み済みの行を残す。もう一度「さらに表示」を押すと読み直す。
   - **操作者**: アカウントの表示名（`dir="auto"`）とハンドル。アカウントが消えた利用者は「削除されたアカウント」、CLI・サーバー自身・ほかのサーバーはそれぞれの名前にする。
-  - **対象**: 項目名を対象の種類にし、値は記録時の `target_label` にする。対象の種類に管理画面があるものはそこへリンクする（アカウントは `/moderation/accounts/{id}`、通報は `/moderation/reports/{id}`、ドメインは `/moderation/domain-actions?filter=all&domain=…`、登録の拒否は `/moderation/signup-blocks?filter=all`、カスタム絵文字は `target_label`（`:shortcode:` か `:shortcode:@domain`）の shortcode とドメインで検索した `/admin/custom-emojis`、webhook は `/admin/webhooks`、リレーは `/admin/relays`、リンクのカードのドメインは `/admin/link-card-domains`、外部ログインのプロバイダーは `/admin/login-providers`、ドメインは `DomainName` で 2 つの形を出す）。
+  - **対象**: 項目名を対象の種類にし、値は記録時の `target_label` にする。対象の種類に管理画面があるものはそこへリンクする（アカウントは `/moderation/accounts/{id}`、通報は `/moderation/reports/{id}`、ドメインは `/moderation/domain-actions?filter=all&domain=…`、登録の拒否は `/moderation/signup-blocks?filter=all`、カスタム絵文字は `/admin/custom-emojis/{id}`、カスタム絵文字の申請は `/admin/custom-emojis/requests`、webhook は `/admin/webhooks`、リレーは `/admin/relays`、リンクのカードのドメインは `/admin/link-card-domains`、外部ログインのプロバイダーは `/admin/login-providers`、ドメインは `DomainName` で 2 つの形を出す）。
     設定・ルール・登録など画面のない種類と、消えた対象（API の `target_exists` が `false`）は、リンクにせず `target_label` だけを出す。
 - **招待**（`/moderation/invites`、`manage_invites`、FR-001）: 「招待を作成する」と「招待の一覧」の区画。登録モードが `invite` でない（`GET /instance` の `registrations.mode`）ときは、招待では誰も登録できず、登録モードは管理者がサーバーの設定で変えることを、区画の前に書く。
   - **作成**: 登録できる人数（`Select`、1・5・10・25・50・100 人と制限なし。既定は 1 人）と有効期間（`DurationSelect`、30 分〜30 日と無期限。既定は 7 日）。CLI の `my invite create` と同じ既定値にする。確かめずに送り、成功したら一覧を取り直してから、
@@ -411,7 +422,7 @@ API の経路はどちらも `/admin/*` で（[client-api.md](../client-api.md) 
 - **サーバーからの通知**（`features/notifications`）: 行為者のいない通知とモデレーターへの通知は、行の操作の列に、その後を確かめる画面へのリンクを置く。
   `moderation_notice` と `appeal_decided` は処分の種類と理由の区分（サーバーが訳した `kind_label` / `reason_category_label`）・モデレーターの説明（`dir="auto"`）・終わる日時（`appeal_decided` は異議申し立てへの決定とその理由も）を本文に出し、アカウントの状態の画面（`/settings/account-status`、FR-715）へ、
   `report_resolved` は通報したアカウントの名前（そのプロフィールへのリンク、アバターなし）を文に入れ、`admin_report` は通報（`/moderation/reports/{id}`）へ、`admin_sign_up` は登録の審査（`/moderation/registrations`）へ、`admin_appeal` は異議申し立て（`/moderation/appeals/{id}`）へ、
-  `admin_custom_emoji_request` は申請の `:shortcode:`（`dir="ltr"`）と内容を文に入れてカスタム絵文字の画面の申請のタブ（`/admin/custom-emojis?tab=requests`）へ、`custom_emoji_request_decided` は承認か却下かと `:shortcode:` を文に、却下の理由（`dir="auto"`）を本文に出して自分のカスタム絵文字の画面（`/settings/custom-emojis`）へリンクし、
+  `admin_custom_emoji_request` は申請の `:shortcode:`（`dir="ltr"`）と内容を文に入れてカスタム絵文字の画面の申請のページ（`/admin/custom-emojis/requests`）へ、`custom_emoji_request_decided` は承認か却下かと `:shortcode:` を文に、却下の理由（`dir="auto"`）を本文に出して自分のカスタム絵文字の画面（`/settings/custom-emojis`）へリンクし、
   サポーターの通知（`supporter_payment_failed`・`supporter_subscription_ended`・`supporter_plan_retired`）はプランの名前（管理者の文章なので `dir="auto"`・`lang=""`）と、支払いの失敗には猶予の終わりの日時（加入がまだ `past_due` のとき）、加入の終わりには理由、廃止には加入が更新されないことを本文に出し、加入の画面（`/settings/supporter`）へリンクする。
   Tauri のアプリではこのリンクを出さず、通知の設定（§9）にもサポーターの行を出さない（ADR-0072 §14）。
   `relationships_severed` は自分のフォロワーとフォローの一覧へリンクする。
