@@ -2,7 +2,7 @@
 // Fails when an installed npm package has a license outside an allowlist: one compatible with AGPL-3.0-only
 // (ADR-0011), or a permissive one for the MIT libraries (ADR-0093 §2).
 //
-//   bun run src/licenses.ts MIT,Apache-2.0,... [node_modules ...]
+//   bun run src/licenses.ts MIT,Apache-2.0,... [--exempt NAME=LICENSE,...] [node_modules ...]
 //   bun run src/licenses.ts MIT,Apache-2.0,... --deps-of PACKAGE_DIR
 //
 // The first argument is the allowed SPDX identifiers (i18n:licenses and web:licenses pass
@@ -16,14 +16,42 @@
 // optional and peer dependencies of PACKAGE_DIR's package.json, and theirs, resolved as Node.js does
 // (through the symlinks of the isolated layout), but not its devDependencies.
 //
+// --exempt admits a license outside the allowlist for the named packages only: NAME is a package name, or a prefix of
+// one ending in `*`, and LICENSE the exact license field it may have (web:licenses passes NPM_LICENSE_EXEMPTIONS of
+// tasks/web.yml). Any other package with that license still fails.
+//
 // SPDX expressions are evaluated: "A OR B" needs one allowed side, "A AND B" needs both.
 import { existsSync, readdirSync, readFileSync, realpathSync } from "node:fs";
 import { basename, dirname, join, resolve } from "node:path";
 
 const allowed = new Set((process.argv[2] ?? "").split(",").filter(Boolean));
+const args = process.argv.slice(3);
+/** The --exempt entries: a package name (or a prefix ending in `*`) and the one license it may have. */
+const exemptions: { name: string; license: string }[] = [];
+if (args[0] === "--exempt") {
+  for (const entry of (args[1] ?? "").split(",").filter(Boolean)) {
+    const at = entry.lastIndexOf("=");
+    if (at <= 0 || at === entry.length - 1) {
+      console.error(`error: --exempt needs NAME=LICENSE entries, got ${JSON.stringify(entry)}`);
+      process.exit(2);
+    }
+    exemptions.push({ name: entry.slice(0, at), license: entry.slice(at + 1) });
+  }
+  args.splice(0, 2);
+}
 if (allowed.size === 0) {
-  console.error("usage: bun run src/licenses.ts <comma-separated SPDX identifiers> [node_modules ... | --deps-of DIR]");
+  console.error(
+    "usage: bun run src/licenses.ts <comma-separated SPDX identifiers> [--exempt NAME=LICENSE,...] [node_modules ... | --deps-of DIR]",
+  );
   process.exit(2);
+}
+
+/** Whether an --exempt entry admits this package with this license. */
+function exempted(name: string | undefined, license: string): boolean {
+  if (name === undefined) return false;
+  return exemptions.some(
+    (e) => e.license === license && (e.name.endsWith("*") ? name.startsWith(e.name.slice(0, -1)) : name === e.name),
+  );
 }
 
 /**
@@ -89,7 +117,7 @@ function check(m: Manifest): boolean {
   if (seen.has(id)) return false;
   seen.add(id);
   const license = licenseOf(m);
-  const ok = license !== undefined && (permitted(license) || reviewed[id] === license);
+  const ok = license !== undefined && (permitted(license) || reviewed[id] === license || exempted(m.name, license));
   if (!ok) failures.push(`${id}: ${license ?? "no license"}`);
   return true;
 }
@@ -141,20 +169,15 @@ function walk(dir: string) {
   }
 }
 
-if (process.argv[3] === "--deps-of") {
-  const dir = process.argv[4];
+if (args[0] === "--deps-of") {
+  const dir = args[1];
   if (dir === undefined || !existsSync(join(dir, "package.json"))) {
     console.error("error: --deps-of needs a package directory; install the dependencies first");
     process.exit(2);
   }
   walkDeps(realpathSync(dir));
 }
-const roots =
-  process.argv[3] === "--deps-of"
-    ? []
-    : process.argv.length > 3
-      ? process.argv.slice(3)
-      : [join(import.meta.dir, "..", "node_modules")];
+const roots = args[0] === "--deps-of" ? [] : args.length > 0 ? args : [join(import.meta.dir, "..", "node_modules")];
 for (const root of roots) {
   if (!existsSync(root)) {
     console.error(`error: ${root} does not exist; install the dependencies first`);
