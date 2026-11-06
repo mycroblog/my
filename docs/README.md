@@ -1,5 +1,15 @@
 # Documentation
 
+## Using my
+
+- [Signing up and signing in](guide/signing-in.md)
+- [Posting and choosing who sees a post](guide/posting.md) (public, this server, unlisted, followers, and mentioned people)
+- [Following people and reading timelines](guide/following.md)
+- [Notifications](guide/notifications.md)
+- [Blocking, muting, and reporting](guide/safety.md)
+- [Moving your account](guide/moving-your-account.md)
+- [Voice chat](guide/voice-chat.md)
+
 ## Operation
 
 - [Administrators and roles](operations/admin-cli.md)

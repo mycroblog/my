@@ -20,6 +20,7 @@ english:
   - "docs/README.md"
   - "docs/agents/**"
   - "docs/operations/**"
+  - "docs/guide/**"
   - "docs/reference/**"
   - "docs/developers/**"
   - "schema/README.md"
@@ -41,6 +42,7 @@ operator:
   - "README.md"
   - "SECURITY.md"
   - "docs/operations/**"
+  - "docs/guide/**"
   - "docs/reference/**"
   - "docs/developers/**"
   # The development tasks, for contributors: it may cite the ADR a task's rule comes from.
@@ -52,6 +54,7 @@ maintainer-terms:
   files:
     - "README.md"
     - "docs/operations/**"
+    - "docs/guide/**"
     - "docs/reference/**"
     - "docs/developers/**"
     # The development tasks, for contributors.
@@ -76,6 +79,7 @@ index:
   file: docs/README.md
   files:
     - "docs/operations/*.md"
+    - "docs/guide/*.md"
     - "docs/reference/*.md"
     - "docs/developers/*.md"
 
