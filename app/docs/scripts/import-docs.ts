@@ -4,12 +4,13 @@
 // git-ignored; the hand-written landing page src/content/docs/index.md stays. Each copy differs from its source in:
 //   - the first `# Heading`, which becomes the `title` of the frontmatter (Starlight renders it as the page heading);
 //   - relative links to published documents, which become site URLs under the base path, #anchors kept;
+//   - relative links to a file with a page of its own (sitePages), which become that page;
 //   - relative links to any other file of the repository, which become GitHub URLs at DOCS_SITE_REF.
 // The sources stay readable on GitHub as they are; `agentkit docs lint` checks their links and anchors, and the build
 // checks the links of the pages (starlight-links-validator).
 import { existsSync, mkdirSync, readdirSync, rmSync, statSync, writeFileSync, readFileSync } from "node:fs";
 import { dirname, join, posix } from "node:path";
-import { githubURL, isPublished, pageURL, publishedDirs, repoRoot, slugOf } from "../src/published";
+import { base, githubURL, isPublished, pageURL, publishedDirs, repoRoot, sitePages, slugOf } from "../src/published";
 
 const contentDir = join(repoRoot, "app/docs/src/content/docs");
 const handWritten = new Set(["index.md"]);
@@ -36,6 +37,10 @@ function rewrite(from: string, dest: string): string | undefined {
   const target = posix.normalize(posix.join(posix.dirname(from), decodeURIComponent(file.split("?")[0] ?? "")));
   if (target.startsWith("../")) {
     throw new Error(`${from}: the link ${dest} leaves the repository`);
+  }
+  const sitePage = sitePages[target];
+  if (sitePage !== undefined) {
+    return `${base}${sitePage}/${anchor}`;
   }
   if (isPublished(target)) {
     return pageURL(target) + anchor;

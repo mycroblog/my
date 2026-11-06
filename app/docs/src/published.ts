@@ -25,6 +25,12 @@ export function isPublished(path: string): boolean {
   return publishedDirs.some((dir) => path.startsWith(`docs/${dir}/`));
 }
 
+/**
+ * Files that are not Markdown documents but have a page of their own on the site (a page a plugin generates), by
+ * repository path and page slug. Links to them go to that page instead of GitHub.
+ */
+export const sitePages: Record<string, string> = {};
+
 /** The page slug of a published document: docs/operations/running.md is operations/running. */
 export function slugOf(path: string): string {
   return path
