@@ -177,13 +177,14 @@ ActivityPub の配送は順序を保証しません。ハンドラは、どの�
 - `Create` と未知の投稿の `Update`（`ingest`）は、`inScope` が真で、公開範囲が決まり、宛先が無効なアカウントだけの `direct` を落とした後に尋ねます。`relayed` の経路では尋ねません。
 - 既知の投稿の `Update` は、作者本人の版であり、`inScope` が真のときに尋ね、範囲外なら尋ねずに版を保存します。遅れて届いて版を作らない `Update` では、判定に基づいて何もしません。
 - 判定の鍵は受信したアクティビティの URI で、版ごとに別の判定です。ローカルの誰もフォローしていない作者の `direct` は、`hook_inbound_status_unfollowed_direct` がオンのときだけ送ります。
+- `drop` した `Create` の投稿は保存しないので、後から届く同じ投稿の `Update` は未知の投稿の `Update` として `ingest` に入り、その版について改めて尋ねます。先の `Create` の判定は引き継ぎません。どの版も自分の判定を持つという規則のままで、同じ投稿の以前の判定を引く経路は作りません。
 - `drop` は `ErrDropActivity` を包んで返します。`flag` は `moderation.FileHookReport`、`mark_sensitive` は `content.MarkSensitiveByHook` を取り込みか改訂のトランザクションで呼び、`hook.LinkStatus` と `hook.Applied` を続けます。`apphook.ErrRetryLater` は包まずに返し、ジョブのリトライに任せます。
-- 判定の取り消しは `StatusHandlers.UndoReview` が同じトランザクションで受け、`drop` なら `received_activity_documents` が残っている間だけ `federation.inbox` を積み直します。再実行は取り消しのある判定を `allow` と読みます。
+- 判定の取り消しは同じトランザクションで二つの効果を走らせます。`StatusHandlers.UndoReview` が `mark_sensitive` の印を外し、`federation.RequeueDropped` が `drop` なら `received_activity_documents` が残っている間だけ `federation.inbox` を積み直します。再実行は取り消しのある判定を `allow` と読みます。
 
 | アクティビティ | 対象 | 処理 |
 | --- | --- | --- |
 | `Follow` | インスタンス Actor | 参加中のリレーの Actor からのものは `Accept` を、それ以外は `Reject` をインスタンス Actor が送る。フォローとしては記録しない（§13） |
-| `Follow` | ローカルの Actor | トランザクションの前に判定フック `inbound.follow`（ADR-0147。プラグインがなければ呼ばない）に尋ね、`drop` なら捨てる。続けて `graph.ReceiveFollow`。`flag` なら、フォローを記録した後の別のトランザクションでフォロワーへの通報を起票し（`moderation.FileHookReport`、判定ごとに 1 件）、`hook_decision_applied` を残す。鍵アカウントでなければ承認し、`Accept` を配送する。鍵アカウントなら承認待ち + 通知。ブロック関係があれば `Reject` を配送する。承認済みのフォローがあれば `follow_resends` に記録して `Accept` を送り直す。移転したアカウントへの `Follow` は記録せず、`Reject`（`object_type = refusal`）を返す（ADR-0089） |
+| `Follow` | ローカルの Actor | トランザクションの前に判定フック `inbound.follow`（ADR-0147。プラグインがなければ呼ばない）に尋ね、`drop` なら捨てる。尋ねるのは新しいフォローかフォローリクエストになる `Follow` だけで、承認済みか承認待ちのフォローがあるとき、ブロック関係があるときは尋ねない（`graph.ReceiveFollow` がいつも通り `Accept` の再送、無視、`Reject` で答える）。`drop` の取り消しは `federation.RequeueDropped` が受信した文書が残っている間だけ `federation.inbox` を積み直す。続けて `graph.ReceiveFollow`。`flag` なら、フォローを記録した後の別のトランザクションでフォロワーへの通報を起票し（`moderation.FileHookReport`、判定ごとに 1 件）、`hook_decision_applied` を残す。鍵アカウントでなければ承認し、`Accept` を配送する。鍵アカウントなら承認待ち + 通知。ブロック関係があれば `Reject` を配送する。承認済みのフォローがあれば `follow_resends` に記録して `Accept` を送り直す。移転したアカウントへの `Follow` は記録せず、`Reject`（`object_type = refusal`）を返す（ADR-0089） |
 | `Accept` / `Reject` | リレーへの `Follow`（`object` の `id` がリレーの現在の `Follow`） | リレーの状態を `accepted`（主体を記録）/ `rejected` にする（§13）。リレーの Actor でない主体のものは捨てる |
 | `Accept` | 自分が送った `Follow`（URI か埋め込み） | `graph.AcceptRemote`（`follow_acceptances`、`accepted_by = remote`）。`object` の `id` が主体をフォローされる側とするフォローに無ければ、埋め込みの `object.actor`（ローカル）と `actor`（相手）の承認待ち・承認済みのフォローで照合する。埋め込みが `Follow` 以外（GoToSocial の返信の承認など）なら捨てる |
 | `Reject` | 自分が送った `Follow`、または承認済みのフォロー | `graph.RejectRemote`。照合は `Accept` と同じ。承認待ちなら `follow_rejections`（`rejected_by = remote`）、承認済みなら `follow_terminations`（`removed_by_followee`） |

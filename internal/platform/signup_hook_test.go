@@ -193,8 +193,14 @@ func TestSignupCheck(t *testing.T) {
 	t.Run("reject has no effect unless enabled", func(t *testing.T) {
 		e.p.verdict.Store("VERDICT_REJECT")
 		got := wantState(t, domainidentity.RegistrationApproved)
-		if _, ok := e.decisionOf(got.AccountID, hook.Reject); !ok {
-			t.Error("the reject was not recorded")
+		// It is recorded in observe: it refused nothing, so no moderator can cancel it, and the list
+		// does not show it as a refusal.
+		rec, ok := e.decisionOf(got.AccountID, hook.Reject)
+		if !ok {
+			t.Fatal("the reject was not recorded")
+		}
+		if rec.Decision.Mode != hook.ModeObserve || rec.Overridable() {
+			t.Errorf("a reject while the switch is off = mode %s, overridable %v; want observe, not overridable", rec.Decision.Mode, rec.Overridable())
 		}
 	})
 
@@ -376,11 +382,16 @@ func TestSignupCheckAfterCaptcha(t *testing.T) {
 }
 
 // TestSignupCheckExternalPage checks the hook on a sign-up through a login provider, from the
-// registration form: a reject shows the fixed text, with nothing of the plugin's answer.
+// registration form: a reject shows the fixed text, with nothing of the plugin's answer, a
+// require_approval holds the registration for approval, and an allow lets it through.
 func TestSignupCheckExternalPage(t *testing.T) {
 	t.Parallel()
 	p, addr := newSignupPlugin(t, "VERDICT_REJECT")
-	e := newExternalEnvWith(t, map[string]string{"MY_DATABASE_URL": newDatabase(t, true), "MY_PLUGIN_SIGNUP_CHECK_ADDRESS": addr, "MY_PLUGIN_SIGNUP_CHECK_TIMEOUT": "20s"})
+	// Mail makes an open sign-up approved at once unless something holds it, as in newSignupHookEnv.
+	e := newExternalEnvWith(t, map[string]string{
+		"MY_DATABASE_URL": newDatabase(t, true), "MY_PLUGIN_SIGNUP_CHECK_ADDRESS": addr, "MY_PLUGIN_SIGNUP_CHECK_TIMEOUT": "20s",
+		"MY_MAIL": "smtp", "MY_MAIL_FROM": "noreply@example.test", "MY_MAIL_SMTP_HOST": "smtp.example.test",
+	})
 	ctx := t.Context()
 	for _, s := range []appinstance.SetSettingInput{
 		{Key: instance.SettingHookSignupCheckMode, Value: string(hook.ModeEnforce)},
@@ -392,19 +403,54 @@ func TestSignupCheckExternalPage(t *testing.T) {
 	}
 	e.setMode(instance.RegistrationOpen)
 	id := e.provider("IdP", true)
-	c := e.client()
-	resp, body := e.signInWith(c, id, map[string]any{"sub": "subject"})
-	m := ticketField.FindStringSubmatch(body)
-	if resp.StatusCode != http.StatusOK || m == nil {
-		t.Fatalf("callback = %d\n%s", resp.StatusCode, body)
+	signUp := func(name string) (*authClient, *http.Response, string) {
+		t.Helper()
+		c := e.client()
+		resp, body := e.signInWith(c, id, map[string]any{"sub": "subject-" + name, "email": name + "@example.com", "email_verified": true})
+		m := ticketField.FindStringSubmatch(body)
+		if resp.StatusCode != http.StatusOK || m == nil {
+			t.Fatalf("callback = %d\n%s", resp.StatusCode, body)
+		}
+		resp, body = c.do(http.MethodPost, authpages.PathExternalSignUp, url.Values{
+			"csrf_token": {c.cookies[authpages.CookieCSRF]}, "ticket": {m[1]}, "username": {name}, "email": {name + "@example.com"},
+		}, nil)
+		return c, resp, body
 	}
-	resp, body = c.do(http.MethodPost, authpages.PathExternalSignUp, url.Values{
-		"csrf_token": {c.cookies[authpages.CookieCSRF]}, "ticket": {m[1]}, "username": {"applicant"}, "email": {"applicant@example.com"},
-	}, nil)
+	registration := func(c *authClient) domainidentity.RegistrationState {
+		t.Helper()
+		access, err := e.s.app.Identity.UserAccess(ctx, e.sessionUser(c))
+		if err != nil {
+			t.Fatal(err)
+		}
+		return access.Registration
+	}
+
+	_, resp, body := signUp("rejected")
 	if resp.StatusCode != http.StatusForbidden || !strings.Contains(body, "This server cannot accept this sign-up.") || strings.Contains(body, pluginNote) {
 		t.Errorf("sign-up = %d\n%s", resp.StatusCode, body)
 	}
-	if p.calls() != 1 || p.last().Signup.Email != "applicant@example.com" {
+	if p.calls() != 1 || p.last().Signup.Email != "rejected@example.com" {
 		t.Errorf("plugin calls = %d", p.calls())
+	}
+
+	p.verdict.Store("VERDICT_REQUIRE_APPROVAL")
+	c, resp, body := signUp("held")
+	if resp.StatusCode != http.StatusSeeOther {
+		t.Fatalf("sign-up under require_approval = %d\n%s", resp.StatusCode, body)
+	}
+	if got := registration(c); got != domainidentity.RegistrationPending {
+		t.Errorf("registration under require_approval = %q, want pending", got)
+	}
+
+	p.verdict.Store("VERDICT_ALLOW")
+	c, resp, body = signUp("allowed")
+	if resp.StatusCode != http.StatusSeeOther {
+		t.Fatalf("sign-up under allow = %d\n%s", resp.StatusCode, body)
+	}
+	if got := registration(c); got != domainidentity.RegistrationApproved {
+		t.Errorf("registration under allow = %q, want approved", got)
+	}
+	if p.calls() != 3 {
+		t.Errorf("plugin calls = %d, want 3", p.calls())
 	}
 }

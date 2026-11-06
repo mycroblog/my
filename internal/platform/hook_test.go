@@ -97,6 +97,18 @@ func TestDecisionHookThroughTheServer(t *testing.T) {
 		got.Note == nil || *got.Note != "from the plugin" {
 		t.Errorf("the newest decision = %+v", got)
 	}
+	// An outcome narrows the list; allow is listed only when asked for.
+	for outcome, want := range map[string]int{"allow": 1, "drop": 2} {
+		var narrowed clientapi.AdminHookDecisionPage
+		if res := c.do("carol", http.MethodGet, "/admin/hook_decisions?outcome="+outcome, nil, &narrowed); res.StatusCode != http.StatusOK || len(narrowed.Items) != want {
+			t.Errorf("GET /admin/hook_decisions?outcome=%s = %d, %d items", outcome, res.StatusCode, len(narrowed.Items))
+		}
+		for _, item := range narrowed.Items {
+			if string(item.Outcome) != outcome {
+				t.Errorf("outcome=%s lists %s", outcome, item.Outcome)
+			}
+		}
+	}
 	var summary clientapi.AdminHookSummary
 	if res := c.do("carol", http.MethodGet, "/admin/hook_decisions/summary", nil, &summary); res.StatusCode != http.StatusOK || len(summary.Hooks) != len(hook.Names()) {
 		t.Fatalf("GET summary = %d, %+v", res.StatusCode, summary)

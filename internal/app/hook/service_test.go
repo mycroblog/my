@@ -6,6 +6,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
+	"strings"
 	"testing"
 	"time"
 
@@ -151,18 +153,25 @@ func (m *memory) Summarize(context.Context, time.Time) ([]apphook.SummaryRow, er
 }
 
 func (m *memory) ListExpired(_ context.Context, q apphook.ExpiredQuery) ([]hook.Expired, error) {
-	if q.AfterID != "" {
-		return nil, nil
-	}
 	var out []hook.Expired
 	for _, r := range m.records {
 		d := r.Decision
-		if d.DecidedAt.Before(q.Before) {
+		after := q.AfterID == "" || d.DecidedAt.After(q.AfterAt) || (d.DecidedAt.Equal(q.AfterAt) && d.ID > q.AfterID)
+		if d.DecidedAt.Before(q.Before) && after {
 			out = append(out, hook.Expired{
 				ID: d.ID, Hook: d.Hook, AccountID: d.AccountID, Mode: d.Mode, Outcome: d.Outcome,
 				DecidedAt: d.DecidedAt, Overridden: r.Override != nil, StatusIDs: m.statuses[d.ID], AppealPending: m.appealPending(d.ID),
 			})
 		}
+	}
+	slices.SortFunc(out, func(a, b hook.Expired) int {
+		if c := a.DecidedAt.Compare(b.DecidedAt); c != 0 {
+			return c
+		}
+		return strings.Compare(a.ID, b.ID)
+	})
+	if q.Limit > 0 && len(out) > q.Limit {
+		out = out[:q.Limit]
 	}
 	return out, nil
 }
@@ -549,6 +558,52 @@ func TestPurgeKeepsWhatTheDecisionLists(t *testing.T) {
 	}
 	for _, id := range []string{"plain", "marks-a-gone-status"} {
 		if mem.records[id] != nil {
+			t.Errorf("%s stayed", id)
+		}
+	}
+}
+
+// More kept decisions than one run used to read sit ahead of purgeable ones: every run must still
+// reach them, and the next run must remove what the bound of one run left.
+func TestPurgeWalksPastKeptDecisions(t *testing.T) {
+	mem := newMemory()
+	now := time.Date(2026, 11, 6, 0, 0, 0, 0, time.UTC)
+	oldest := now.Add(-200 * 24 * time.Hour)
+	const kept, purgeable = 2500, 2050
+	for i := range kept + purgeable {
+		id := fmt.Sprintf("d-%05d", i)
+		d := hook.Decision{
+			ID: id, SubjectKey: id, Hook: hook.InboundStatus, Mode: hook.ModeEnforce, Outcome: hook.Drop,
+			DecidedAt: oldest.Add(time.Duration(i) * time.Second),
+		}
+		if i < kept {
+			d.AccountID = "held-account"
+		}
+		mem.records[id] = &hook.Record{Decision: d}
+	}
+	s := apphook.NewService(apphook.Deps{
+		UnitOfWork: mem, Repository: mem, Settings: &settings{}, Clock: &clock{now: now}, IDs: &ids{},
+		Holds: heldAccounts{"held-account"},
+	})
+	n, err := s.PurgeDecisions(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if n != 2000 {
+		t.Fatalf("the first run removed %d", n)
+	}
+	n, err = s.PurgeDecisions(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if n != purgeable-2000 {
+		t.Fatalf("the second run removed %d", n)
+	}
+	if len(mem.records) != kept {
+		t.Fatalf("%d decisions left", len(mem.records))
+	}
+	for id, r := range mem.records {
+		if r.Decision.AccountID != "held-account" {
 			t.Errorf("%s stayed", id)
 		}
 	}

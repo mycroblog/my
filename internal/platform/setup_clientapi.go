@@ -111,6 +111,8 @@ func (a *App) setUpClientAPI(cfg *config.Config, version string, accountLimit ke
 		// The decisions of the decision hooks (ADR-0147 §9).
 		HookDecisions: a.Hooks,
 		HookAppeals:   a.Hooks,
+		// A drop can be run again while the inbox keeps the document it received.
+		DroppedActivities: a.Inbox,
 		// The error groups (ADR-0103 §8).
 		ErrorGroups: a.Diagnostics,
 		// The relays the instance joins (ADR-0006).

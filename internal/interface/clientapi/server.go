@@ -239,6 +239,9 @@ type Options struct {
 	// HookDecisions runs the decisions of /admin/hook_decisions and says which hooks GET /instance
 	// states (admin_hook_decisions.go); nil answers 404 to those operations.
 	HookDecisions HookDecisions
+	// DroppedActivities says until when cancelling a drop of an inbound hook runs the activity
+	// again (admin_hook_decisions.go); nil counts from the time of the decision.
+	DroppedActivities DroppedActivities
 	// HookAppeals runs the appeals of the posts that the decision hook local.status refused, and
 	// the deadline that the refusal states (hook_appeals.go); nil answers 404 to the appeals.
 	HookAppeals HookAppeals
