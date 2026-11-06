@@ -5,6 +5,24 @@ before you need one. Upgrades take a backup too; [Upgrading](database.md#upgradi
 
 ## What to back up
 
+![What to back up and the order to restore it: the database and the media are backed up together, the KEK apart from them, and a restore puts back the database, the media, and the configuration with the same KEK before the server starts. The list below says the same.](images/backup-restore.svg)
+
+From the top of the diagram down:
+
+- **The database** (`database_url`: SQLite or PostgreSQL) is backed up first, with `my db backup` or `pg_dump`, every day and before every upgrade.
+- **The media** (`blob_fs_dir`, or the bucket of the `s3` or `gcs` blob store) is backed up right after it, as a copy, the bucket's versions, or a replica.
+  The two backups are one generation, kept together, away from the server and encrypted.
+- **The KEK** (`MY_KEK` or `MY_KEK_FILE`) is backed up once and after each rotation, with `kek_previous`, and never in the same place as the database backups.
+  With `key_manager = gcpkms` or `awskms` the KEK stays in the KMS: keep the key of `kms_key` enabled for as long as you keep backups that need it
+  ([Retire an AWS KMS key](key-management.md#retire-an-aws-kms-key)).
+- **The configuration** (the environment, `MY_CONFIG`, `.env`, and the secrets) is copied with the deployment files when it changes, without the KEK.
+- **A restore** goes into an empty environment, in this order: the database, then the media with the same keys before the server starts,
+  then the configuration with the same KEK, `kek_previous`, and `host`; then the server starts and you check `/readyz`, `my projection verify`, and the actors' public keys
+  ([Restoring](#restoring)). Without the KEK the server does not start, and with another one reading a secret fails with `unknown key-encryption key`
+  ([Without the right KEK](#without-the-right-kek)).
+- **No backup is needed** for the key-value store with `kv = memory` or `valkey` (caches and rate limits), the jobs (they are in the database),
+  logs and metrics, and the index of a search engine, which `my search rebuild` makes again.
+
 | What | Where it lives | Back up | Lost without a backup |
 | --- | --- | --- | --- |
 | The database | the SQLite file (`database_url`) or the PostgreSQL database | [SQLite](#sqlite) or [PostgreSQL](#postgresql) | everything: accounts, posts, follows, settings |
