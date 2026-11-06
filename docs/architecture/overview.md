@@ -35,7 +35,7 @@ Remote servers ──AP──►│                               │
         │ Blob: fs │ s3-compatible(S3/R2/GCS/MinIO)                             │
         │ KV/Cache: db │ memory │ valkey(任意。Redis 互換)                        │
         │ Mail: none │ smtp │ ses │ http-api   Push: webpush                    │
-        │ Media: none │ native(pure Go) │ vips(cgo, 任意)                       │
+        │ Media: native(pure Go) │ plugin                                       │
         └──────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -248,7 +248,7 @@ internal/
     db/{sqlite,postgres}/
     queue/{db,inline,cloudtasks}/
     blob/{fs,s3}/
-    media/{native,vips,none}/
+    media/{native,plugin}/
     kv/{db,memory,valkey}/
     stream/postgres/ # stream.Bus の PostgreSQL LISTEN / NOTIFY（送信はプール、listener は専用の接続。ADR-0050）
     stream/valkey/   # stream.Bus の Valkey Pub/Sub（1 チャネルに PUBLISH、listener は専用の接続で SUBSCRIBE。ADR-0050）
