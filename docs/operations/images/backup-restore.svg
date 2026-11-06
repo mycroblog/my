@@ -1,0 +1,110 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 838" width="760" height="838" role="img" aria-labelledby="title desc">
+<!-- SPDX-License-Identifier: AGPL-3.0-only -->
+  <title id="title">What to back up and the order to restore it</title>
+  <desc id="desc">Four parts of a server need a backup. The database (database_url: SQLite or PostgreSQL) is backed up first, with my db backup or pg_dump, every day and before every upgrade. The media (blob_fs_dir, or the bucket of the s3 or gcs blob store) is backed up right after it, as a copy, the bucket's versions, or a replica. The two backups are kept together as one generation, away from the server and encrypted. The KEK (MY_KEK or MY_KEK_FILE) is backed up once and after each rotation, together with kek_previous, and never in the same place as the database backups. The configuration (the environment, MY_CONFIG, .env, and the secrets) is copied with the deployment files when it changes, without the KEK. A restore goes into an empty environment, in this order: 1, the database; 2, the media, with the same keys, before the server starts; 3, the configuration with the same KEK, kek_previous, and host; 4, start the server and check /readyz, my projection verify, and the actors' public keys. Without the same KEK, the server does not start (no KEK) or reading a secret fails with unknown key-encryption key (another KEK). No backup is needed for the key-value store with kv = memory or valkey (caches and rate limits), the jobs (they are in the database), logs and metrics, and the index of a search engine, which my search rebuild makes again.</desc>
+
+  <style>
+    svg { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif; }
+    .bg { fill: #ffffff; }
+    .t { fill: #1f2328; font-size: 16px; }
+    .b { font-weight: 600; }
+    .m { fill: #59636e; font-size: 15px; }
+    .h { fill: #1f2328; font-size: 17px; font-weight: 600; }
+    .group { fill: #f6f8fa; stroke: #d1d9e0; stroke-width: 1.5; }
+    .proc { fill: #ddf4ff; stroke: #0969da; stroke-width: 2; }
+    .port { fill: #ffffff; stroke: #8c959f; stroke-width: 1.5; }
+    .danger { fill: #ffebe9; stroke: #cf222e; stroke-width: 1.5; }
+    .arrow { stroke: #59636e; stroke-width: 2; fill: none; }
+    .head { fill: #59636e; }
+    @media (prefers-color-scheme: dark) {
+      .bg { fill: #0d1117; }
+      .t, .h { fill: #e6edf3; }
+      .m { fill: #9198a1; }
+      .group { fill: #151b23; stroke: #3d444d; }
+      .proc { fill: #0c2d6b; stroke: #4493f8; }
+      .port { fill: #0d1117; stroke: #656c76; }
+      .danger { fill: #3c0d12; stroke: #f85149; }
+      .arrow { stroke: #9198a1; }
+      .head { fill: #9198a1; }
+    }
+  </style>
+  <defs>
+    <marker id="arrowhead" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path class="head" d="M 0 0 L 10 5 L 0 10 z"/>
+    </marker>
+  </defs>
+  <rect class="bg" x="0" y="0" width="760" height="838" rx="12"/>
+
+  <text class="h" x="20" y="40" text-anchor="start">On the server</text>
+  <text class="h" x="400" y="40" text-anchor="start">Its backup</text>
+
+  <rect class="group" x="400" y="56" width="340" height="196" rx="12"/>
+  <text class="h" x="416" y="82" text-anchor="start">Together, as one generation</text>
+
+  <rect class="port" x="20" y="96" width="330" height="64" rx="8"/>
+  <text class="t b" x="185.0" y="124.0" text-anchor="middle">Database</text>
+  <text class="m" x="185.0" y="146.0" text-anchor="middle">database_url: SQLite or PostgreSQL</text>
+  <path class="arrow" d="M 350 128 L 412 128" marker-end="url(#arrowhead)"/>
+  <rect class="proc" x="416" y="96" width="308" height="64" rx="8"/>
+  <text class="t b" x="570.0" y="124.0" text-anchor="middle">1. my db backup · pg_dump</text>
+  <text class="m" x="570.0" y="146.0" text-anchor="middle">daily, and before every upgrade</text>
+
+  <rect class="port" x="20" y="172" width="330" height="64" rx="8"/>
+  <text class="t b" x="185.0" y="200.0" text-anchor="middle">Media</text>
+  <text class="m" x="185.0" y="222.0" text-anchor="middle">blob_fs_dir, or the bucket of s3 · gcs</text>
+  <path class="arrow" d="M 350 204 L 412 204" marker-end="url(#arrowhead)"/>
+  <rect class="proc" x="416" y="172" width="308" height="64" rx="8"/>
+  <text class="t b" x="570.0" y="200.0" text-anchor="middle">2. Media, right after</text>
+  <text class="m" x="570.0" y="222.0" text-anchor="middle">a copy, versions, or a replica</text>
+
+  <rect class="danger" x="400" y="264" width="340" height="40" rx="8"/>
+  <text class="t b" x="570.0" y="289.0" text-anchor="middle">Never keep the KEK with them</text>
+
+  <rect class="port" x="20" y="316" width="330" height="64" rx="8"/>
+  <text class="t b" x="185.0" y="344.0" text-anchor="middle">KEK</text>
+  <text class="m" x="185.0" y="366.0" text-anchor="middle">MY_KEK or MY_KEK_FILE</text>
+  <path class="arrow" d="M 350 348 L 396 348" marker-end="url(#arrowhead)"/>
+  <rect class="proc" x="400" y="316" width="340" height="64" rx="8"/>
+  <text class="t b" x="570.0" y="344.0" text-anchor="middle">Once, and after each rotation</text>
+  <text class="m" x="570.0" y="366.0" text-anchor="middle">with kek_previous, somewhere else</text>
+
+  <rect class="port" x="20" y="392" width="330" height="64" rx="8"/>
+  <text class="t b" x="185.0" y="420.0" text-anchor="middle">Configuration</text>
+  <text class="m" x="185.0" y="442.0" text-anchor="middle">environment, MY_CONFIG, .env, secrets</text>
+  <path class="arrow" d="M 350 424 L 396 424" marker-end="url(#arrowhead)"/>
+  <rect class="proc" x="400" y="392" width="340" height="64" rx="8"/>
+  <text class="t b" x="570.0" y="420.0" text-anchor="middle">When it changes</text>
+  <text class="m" x="570.0" y="442.0" text-anchor="middle">with the deployment files, no KEK</text>
+
+  <rect class="group" x="20" y="476" width="720" height="238" rx="12"/>
+  <text class="h" x="40" y="504" text-anchor="start">Restore into an empty environment, in this order</text>
+
+  <rect class="proc" x="36" y="520" width="145" height="98" rx="8"/>
+  <text class="t b" x="108.5" y="550.0" text-anchor="middle">1. Database</text>
+  <text class="m" x="108.5" y="574.0" text-anchor="middle">the backup file,</text>
+  <text class="m" x="108.5" y="596.0" text-anchor="middle">or pg_restore</text>
+  <path class="arrow" d="M 181 569 L 197 569" marker-end="url(#arrowhead)"/>
+  <rect class="proc" x="201" y="520" width="145" height="98" rx="8"/>
+  <text class="t b" x="273.5" y="550.0" text-anchor="middle">2. Media</text>
+  <text class="m" x="273.5" y="574.0" text-anchor="middle">the same keys,</text>
+  <text class="m" x="273.5" y="596.0" text-anchor="middle">before the start</text>
+  <path class="arrow" d="M 346 569 L 362 569" marker-end="url(#arrowhead)"/>
+  <rect class="proc" x="366" y="520" width="160" height="98" rx="8"/>
+  <text class="t b" x="446.0" y="550.0" text-anchor="middle">3. Configuration</text>
+  <text class="m" x="446.0" y="574.0" text-anchor="middle">the same KEK,</text>
+  <text class="m" x="446.0" y="596.0" text-anchor="middle">kek_previous, host</text>
+  <path class="arrow" d="M 526 569 L 542 569" marker-end="url(#arrowhead)"/>
+  <rect class="proc" x="546" y="520" width="178" height="98" rx="8"/>
+  <text class="t b" x="635.0" y="550.0" text-anchor="middle">4. Start, check</text>
+  <text class="m" x="635.0" y="574.0" text-anchor="middle">/readyz, public keys,</text>
+  <text class="m" x="635.0" y="596.0" text-anchor="middle">my projection verify</text>
+
+  <rect class="danger" x="36" y="634" width="688" height="64" rx="8"/>
+  <text class="t b" x="380.0" y="662.0" text-anchor="middle">Without the same KEK</text>
+  <text class="m" x="380.0" y="684.0" text-anchor="middle">no KEK: the server does not start · another KEK: unknown key-encryption key</text>
+
+  <rect class="port" x="20" y="730" width="720" height="92" rx="8"/>
+  <text class="t b" x="380.0" y="758.0" text-anchor="middle">No backup needed</text>
+  <text class="m" x="380.0" y="780.0" text-anchor="middle">kv = memory or valkey: caches, rate limits · jobs: in the database</text>
+  <text class="m" x="380.0" y="802.0" text-anchor="middle">logs and metrics · the search index: my search rebuild</text>
+</svg>
