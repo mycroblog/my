@@ -437,6 +437,8 @@ mark an ADR `Accepted`.
 - Documents for users and operators (`README.md`, `docs/operations/`, `docs/reference/` except `commands.md`, the
   development tasks for contributors) explain the behaviour themselves. They do not link to or cite ADRs, `docs/requirements/`, `docs/architecture/`, or GitHub issues and pull
   requests; link only the other user and operator documents a reader needs.
+- A diagram in a document follows [docs/agents/diagrams.md](docs/agents/diagrams.md): hand-written SVG that switches
+  between light and dark itself, with text alternatives.
 - Every document describes the present state. Write why something changed in the commit message and the pull request.
 - `scripts/task.sh docs:rules` (part of `docs:check`) checks these rules and that relative links and their `#anchors`
   resolve; [docs/lint.yaml](docs/lint.yaml) lists the files each rule covers.
