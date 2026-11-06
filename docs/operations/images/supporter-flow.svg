@@ -1,0 +1,126 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 820" width="760" height="820" role="img" aria-labelledby="title desc">
+<!-- SPDX-License-Identifier: AGPL-3.0-only -->
+  <title id="title">How a supporter subscription flows between the user, the payment provider, and the server</title>
+  <desc id="desc">From the top down. The user picks a plan and an interval at /settings/supporter and subscribes. The my serve process starts the checkout: after the final confirmation it creates the payment page at the payment provider (payments = stripe or payjp), and the user pays on that page. The provider sends events to the webhook endpoint POST /payments/webhooks/{provider}, which records each event once and queues a job. The events are only a signal: the job supporters.apply_payment_event, and the reconciliation supporters.reconcile_payments every payments_reconcile_interval, read the state and the money movements back from the provider. The state of the subscription is derived from what they read and from each passed deadline, and the plan's role is granted or removed with it. The money movements become the income records (gross, fee, and net of each movement), and their totals are shown on /finance and /about/costs.</desc>
+
+  <style>
+    svg { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif; }
+    .bg { fill: #ffffff; }
+    .t { fill: #1f2328; font-size: 16px; }
+    .b { font-weight: 600; }
+    .m { fill: #59636e; font-size: 15px; }
+    .h { fill: #1f2328; font-size: 17px; font-weight: 600; }
+    .group { fill: #f6f8fa; stroke: #d1d9e0; stroke-width: 1.5; }
+    .client { fill: #dafbe1; stroke: #1a7f37; stroke-width: 1.5; }
+    .proc { fill: #ddf4ff; stroke: #0969da; stroke-width: 2; }
+    .svc { fill: #fbefff; stroke: #8250df; stroke-width: 1.5; }
+    .arrow { stroke: #59636e; stroke-width: 2; fill: none; }
+    .head { fill: #59636e; }
+    .signal { stroke: #0969da; stroke-width: 2; stroke-dasharray: 6 4; fill: none; }
+    .signal-head { fill: #0969da; }
+    .data { stroke: #1a7f37; stroke-width: 3; fill: none; }
+    .data-head { fill: #1a7f37; }
+    @media (prefers-color-scheme: dark) {
+      .bg { fill: #0d1117; }
+      .t, .h { fill: #e6edf3; }
+      .m { fill: #9198a1; }
+      .group { fill: #151b23; stroke: #3d444d; }
+      .client { fill: #0f2d1b; stroke: #3fb950; }
+      .proc { fill: #0c2d6b; stroke: #4493f8; }
+      .svc { fill: #2a1650; stroke: #ab7df8; }
+      .arrow { stroke: #9198a1; }
+      .head { fill: #9198a1; }
+      .signal { stroke: #4493f8; }
+      .signal-head { fill: #4493f8; }
+      .data { stroke: #3fb950; }
+      .data-head { fill: #3fb950; }
+    }
+  </style>
+  <defs>
+    <marker id="arrowhead" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path class="head" d="M 0 0 L 10 5 L 0 10 z"/>
+    </marker>
+    <marker id="signalhead" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path class="signal-head" d="M 0 0 L 10 5 L 0 10 z"/>
+    </marker>
+    <marker id="datahead" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+      <path class="data-head" d="M 0 0 L 10 5 L 0 10 z"/>
+    </marker>
+  </defs>
+  <rect class="bg" x="0" y="0" width="760" height="820" rx="12"/>
+
+  <rect class="client" x="20" y="20" width="300" height="96" rx="8"/>
+  <text class="t b" x="170" y="48" text-anchor="middle">User</text>
+  <text class="m" x="170" y="70" text-anchor="middle">/settings/supporter</text>
+  <text class="m" x="170" y="92" text-anchor="middle">picks a plan and interval</text>
+
+  <rect class="svc" x="540" y="20" width="200" height="498" rx="8"/>
+  <text class="t b" x="640" y="48" text-anchor="middle">Payment provider</text>
+  <text class="m" x="640" y="70" text-anchor="middle">payments = stripe</text>
+  <text class="m" x="640" y="92" text-anchor="middle">or payjp</text>
+
+  <path class="arrow" d="M 320 68 L 536 68" marker-end="url(#arrowhead)"/>
+  <text class="m" x="428" y="58" text-anchor="middle">pays on the payment page</text>
+
+  <rect class="group" x="20" y="136" width="440" height="634" rx="12"/>
+  <text class="h" x="34" y="164" text-anchor="start">my serve</text>
+
+  <path class="arrow" d="M 170 116 L 170 186" marker-end="url(#arrowhead)"/>
+  <text class="m" x="180" y="164" text-anchor="start">subscribes</text>
+
+  <rect class="proc" x="36" y="190" width="396" height="74" rx="8"/>
+  <text class="t b" x="234" y="221" text-anchor="middle">Start the checkout</text>
+  <text class="m" x="234" y="243" text-anchor="middle">final confirmation, then the payment page</text>
+  <path class="arrow" d="M 432 227 L 536 227" marker-end="url(#arrowhead)"/>
+  <text class="m" x="486" y="217" text-anchor="middle">creates</text>
+
+  <rect class="proc" x="36" y="290" width="396" height="74" rx="8"/>
+  <text class="t b" x="234" y="321" text-anchor="middle">Webhook endpoint</text>
+  <text class="m" x="234" y="343" text-anchor="middle">POST /payments/webhooks/{provider}</text>
+  <path class="signal" d="M 540 327 L 436 327" marker-end="url(#signalhead)"/>
+  <text class="m" x="486" y="317" text-anchor="middle">events</text>
+
+  <path class="arrow" d="M 234 364 L 234 396" marker-end="url(#arrowhead)"/>
+  <text class="m" x="244" y="386" text-anchor="start">records once, queues a job</text>
+
+  <rect class="proc" x="36" y="400" width="396" height="118" rx="8"/>
+  <text class="t b" x="234" y="430" text-anchor="middle">Re-read the provider</text>
+  <text class="m" x="234" y="452" text-anchor="middle">supporters.apply_payment_event</text>
+  <text class="m" x="234" y="474" text-anchor="middle">supporters.reconcile_payments,</text>
+  <text class="m" x="234" y="496" text-anchor="middle">every payments_reconcile_interval</text>
+  <path class="data" d="M 540 459 L 438 459" marker-end="url(#datahead)"/>
+  <text class="m" x="486" y="447" text-anchor="middle">state and</text>
+  <text class="m" x="486" y="481" text-anchor="middle">money</text>
+
+  <path class="arrow" d="M 131 518 L 131 546" marker-end="url(#arrowhead)"/>
+  <path class="arrow" d="M 337 518 L 337 546" marker-end="url(#arrowhead)"/>
+
+  <rect class="proc" x="36" y="550" width="190" height="96" rx="8"/>
+  <text class="t b" x="131" y="580" text-anchor="middle">Derive the state</text>
+  <text class="m" x="131" y="602" text-anchor="middle">on each re-read and</text>
+  <text class="m" x="131" y="624" text-anchor="middle">each passed deadline</text>
+
+  <rect class="proc" x="242" y="550" width="190" height="96" rx="8"/>
+  <text class="t b" x="337" y="580" text-anchor="middle">Income records</text>
+  <text class="m" x="337" y="602" text-anchor="middle">gross, fee, net</text>
+  <text class="m" x="337" y="624" text-anchor="middle">of each movement</text>
+
+  <rect class="client" x="540" y="550" width="200" height="96" rx="8"/>
+  <text class="t b" x="640" y="580" text-anchor="middle">Income totals</text>
+  <text class="m" x="640" y="602" text-anchor="middle">/finance</text>
+  <text class="m" x="640" y="624" text-anchor="middle">/about/costs</text>
+  <path class="arrow" d="M 432 598 L 536 598" marker-end="url(#arrowhead)"/>
+  <text class="m" x="486" y="588" text-anchor="middle">shown on</text>
+
+  <path class="arrow" d="M 131 646 L 131 676" marker-end="url(#arrowhead)"/>
+  <rect class="proc" x="36" y="680" width="190" height="74" rx="8"/>
+  <text class="t b" x="131" y="711" text-anchor="middle">Plan's role</text>
+  <text class="m" x="131" y="733" text-anchor="middle">granted or removed</text>
+
+  <path class="arrow" d="M 20 796 L 56 796" marker-end="url(#arrowhead)"/>
+  <text class="m" x="66" y="801" text-anchor="start">the flow</text>
+  <path class="signal" d="M 160 796 L 196 796" marker-end="url(#signalhead)"/>
+  <text class="m" x="206" y="801" text-anchor="start">an event, a signal only</text>
+  <path class="data" d="M 400 796 L 436 796" marker-end="url(#datahead)"/>
+  <text class="m" x="446" y="801" text-anchor="start">read back from the provider's API</text>
+</svg>

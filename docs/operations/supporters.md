@@ -6,6 +6,29 @@ Only when an administrator enables it, local users can subscribe to a paid plan 
 
 **mycroblog does not guarantee compliance with any law, including Japan's Act on Specified Commercial Transactions.** Operators must check the content of the disclosure, the final confirmation screen, and the handling of consumption tax and invoices against the laws of their own country (see "What operators must check" below).
 
+## How a subscription works
+
+![How a subscription flows: the user pays at the payment provider, the provider's events make the server read the state back, and the server grants or removes the plan's role and records the income. The steps are listed below.](images/supporter-flow.svg)
+
+From the top of the diagram down:
+
+- **Subscribing.** The user picks a plan and an interval (month or year) at `/settings/supporter`. After the final confirmation, the server (`my serve`) creates the payment page at the provider set by `payments` (`stripe` or `payjp`), and the user pays on that page.
+- **Events.** The provider sends its events to the webhook endpoint `POST /payments/webhooks/{provider}`, which records each event once and queues a job. An event is only a signal: the server never takes the state from its contents.
+- **Reading back.** The job `supporters.apply_payment_event`, and the reconciliation `supporters.reconcile_payments` every `payments_reconcile_interval`, read the subscription and the money movements back from the provider's API. The reconciliation repairs any event that did not arrive.
+- **The state and the role.** The server derives the state of the subscription from what it read and from each deadline that has passed (the 7-day grace period, for example), and grants or removes the plan's role with it.
+- **Income.** The money movements become the income records (gross amount, fee, and net of each payment, refund, chargeback, and fee). Their totals are shown on the finance screen (`/finance`, to people with `view_finance`) and, as far as `income_visibility` allows, on `/about/costs` (see [instance-settings.md](instance-settings.md)).
+
+![The states of a subscription: active, canceling, and past_due hold the plan's role; pending, lapsed, expired, revoked, and abandoned do not. The transitions are listed below.](images/supporter-states.svg)
+
+The states of a subscription, as the administration and `my admin supporters subscriptions` show them:
+
+- `pending`: started, not paid yet. No role. The first payment makes it `active`, and a subscription that ends before its first payment becomes `abandoned`.
+- `active`: paid. It holds the plan's role, which each renewal keeps.
+- `past_due`: a payment failed. It keeps the role for 7 days from the failure; a payment in that time makes it `active` again.
+- `lapsed`: 7 days passed after the failure. The role is removed. A payment after that makes it `active` again, and the role comes back.
+- `canceling`: canceled at the end of the period. It keeps the role until then, and becomes `expired`.
+- `expired`, `revoked` (a full refund or a chargeback), and `abandoned` are final and hold no role.
+
 ## Enabling the program
 
 1. Set the deployment key `payments` to your payment provider and pass the provider's keys and webhook secret. Provider-specific steps are in [payments-stripe.md](payments-stripe.md) and [payments-payjp.md](payments-payjp.md). The program cannot be enabled while the key is `none`.
