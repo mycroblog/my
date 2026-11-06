@@ -156,7 +156,7 @@ provider stays enabled. A user who has none of these can no longer sign in at al
 many linked users lose the provider, and the web client shows the number in the confirmation. `enable` restores the
 users of a disabled provider; a deleted provider cannot come back.
 
-To recover such a user, issue a password reset link for the account on its page of the admin screens, or with
+To recover such a user, issue a password reset link on the account's Management page of the admin screens, or with
 `my admin account password-reset-link @alice`, and give it to the user ([registration](registration.md#password-reset-and-change)).
 The user then signs in with the new password.
 

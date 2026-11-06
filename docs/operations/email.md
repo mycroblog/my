@@ -350,7 +350,7 @@ complaints are recorded from the SES notifications
 | `hard_bounce` | Everything except the confirmation email. The password reset email is stopped too |
 | `complaint` (reported as spam) | Notification and announcement emails. Transactional emails are still sent |
 
-- Moderators see the kind and origin of a suppression on the account page of the admin screen (`email_suppression` in
+- Moderators see the kind and origin of a suppression on the account's Management page of the admin screens (`email_suppression` in
   `GET /api/v1/admin/accounts/{id}`).
 - There are two ways to **lift** it. When the user asks for a confirmation email and confirms the address again, the hard-bounce
   suppression is lifted (the confirmation email is sent even while the address is suppressed). The user asks for it through the

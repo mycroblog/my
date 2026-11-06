@@ -113,7 +113,7 @@ While the instance setting `login_providers_only` applies, reset links and setti
 - `mail = smtp`: when a user enters an email address under "Forgot your password?" on the sign-in page, the server sends a link for setting a new password to the user whose primary address it is.
   The page's answer is the same whether or not an account exists. The link is valid for 1 hour and works once, and it stops working if the password changes by another route in the meantime.
   Requests are limited to 5 per 30 minutes per client IP address, and mail to 3 per hour per address (a request over a limit sends nothing and gets the same answer). When CAPTCHA is enabled, this form is verified too.
-- `mail = none`: the page says that it cannot send a link and tells the user to ask an administrator. The administrator issues a link on the account page of the admin screens, or with `my admin account password-reset-link @alice`, and gives it to the user ([moderation](moderation.md)).
+- `mail = none`: the page says that it cannot send a link and tells the user to ask an administrator. The administrator issues a link on the account's Management page of the admin screens, or with `my admin account password-reset-link @alice`, and gives it to the user ([moderation](moderation.md)).
 - A signed-in user can change the password under "Password" in settings by entering the current password (wrong entries are limited to 5 per hour per user).
 - A reset or a change revokes the user's other sessions and app tokens (a change from settings keeps only the app that made the change). Passkeys and two-factor authentication stay.
   A sign-in that waits for its two-factor code, and an app authorization not yet completed, stop working too: the user starts them again.
@@ -141,7 +141,7 @@ my invite revoke <code>
   (the built-in `moderator` does not have it, so to delegate this, create a role with that permission and grant it).
   The screen shows the code and the sign-up link of a new invite, and lets you copy the link of a usable invite.
 - The list shows every invite, the staff's and the members', with who created it (`created_by`) and how (`creator_kind`: `staff` or `member`). The holders of `manage_invites` can revoke any of them.
-- The account page of the moderation screens (`GET /api/v1/admin/accounts/{id}`, permission `manage_accounts`) shows the invite the account signed up with and who created it, the person who invited the user.
+- The account's Review page of the moderation screens (`GET /api/v1/admin/accounts/{id}`, permission `manage_accounts`) shows the invite the account signed up with and who created it, the person who invited the user.
 - Creating and revoking an invite is recorded in the audit log (`invite_created`, `invite_revoked`) from the screen, the API and the CLI alike. The target name is the first 4 characters of the code (`ABCD…`); the full code is not copied to the audit log.
   Revoking an already revoked invite changes nothing, so it is not recorded.
 
