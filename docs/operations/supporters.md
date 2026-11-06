@@ -37,11 +37,11 @@ The states of a subscription, as the administration and `my admin supporters sub
 4. In "Roles" in the administration, create the role to tie to the plan. It must have no holders, only member permissions (group `member`), and a `position` lower than that of every staff role, `moderator` included.
    The member permissions are the benefits a plan can give: `create_custom_emojis` (requesting custom emoji), `view_finance` (reading the server's finances), `start_voice_rooms` (opening voice chat rooms while only permitted users may), and `create_invites` (inviting people while only permitted users may, within the limits of [member invites](registration.md#member-invites)).
    When the subscription ends, the role goes, and so do the benefits: the invites the supporter made stop working until they subscribe again.
-5. In "Supporters" in the administration (`/admin/supporters`, permission `manage_supporters`), create the plan. Set the name, description, monthly price, discount for yearly payment, monthly limit on custom emoji creation (it resets on the first day of each month, UTC; see [custom emoji](instance-settings.md#custom-emoji)), order, and visibility, and choose the role.
+5. In "Supporters" in the administration (permission `manage_supporters`), open the "Plans" page (`/admin/supporters/plans`) and choose "Create a plan". Set the name, description, monthly price, discount for yearly payment, monthly limit on custom emoji creation (it resets on the first day of each month, UTC; see [custom emoji](instance-settings.md#custom-emoji)), order, and visibility, and choose the role.
    The server creates the monthly and yearly prices at the provider (do not create prices in the provider's dashboard). Until the prices exist, the plan is "preparing" and accepts no subscriptions.
-6. Enable the program in "Supporters".
+6. On the "Program" page of "Supporters" (`/admin/supporters`), check "Enable the supporter program" and choose "Save". The same form sets who may read the supporter list.
 
-Once a plan exists, its role can no longer be granted or revoked by hand, and you change its permissions and position from the plan's form. A higher plan (a larger order) sits above the roles of the lower plans, has all of their permissions, and has an emoji limit at least as high as theirs.
+Once a plan exists, its role can no longer be granted or revoked by hand, and you change its permissions and position on the plan's page (choose the plan on the "Plans" page). A higher plan (a larger order) sits above the roles of the lower plans, has all of their permissions, and has an emoji limit at least as high as theirs.
 
 ## Setup at the provider
 
@@ -97,7 +97,7 @@ Enabling, disabling, and cancelling are written to the audit log as CLI operatio
 
 - Deleting an account and banning it (which schedules deletion) cancel its subscriptions at once, without a refund (a payment for a subscription still pending bought nothing, and is refunded). Reversing a ban does not restore the subscriptions.
 - Suspending an account schedules cancellation at the end of the period. Lifting the suspension does not restore it automatically; the user cancels the cancellation before the end of the period or subscribes again.
-- From the list of subscribers in "Supporters", an administrator can cancel one subscription at once (no refund, except a payment for a pending subscription, which bought nothing; it is written to the audit log).
+- On the "Subscriptions" page of "Supporters" (`/admin/supporters/subscriptions`), an administrator can open one subscription and end it at once with "End now" (no refund, except a payment for a pending subscription, which bought nothing; it is written to the audit log).
 
 ## Disabling the program and changing providers
 

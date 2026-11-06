@@ -151,22 +151,30 @@ API の経路はどちらも `/admin/*` で（[client-api.md](../client-api.md) 
   - **推移**: 費用と収入の期間ごとの棒の `TrendChart`（古い期間が先。見込みを含む期間は軸と表の期間の名前に「（見込み）」）と、今の期間の費用と収入・費用が最も多かった期間の文。グラフと表は切り替えられ、選んだ形はこのブラウザのすべてのグラフで共通に残す（`my:display:chart-view`）。
   - **通貨**: 金額は換算しないので、グラフは 1 つの通貨のときだけ描く。通貨が 2 つ以上のときは、タイルの値をそれぞれの通貨の和の形（「¥12,300 + $45.67」）にして変化と収支を出さず、グラフの代わりに費用と収入の区画の表（新しい期間が先）を出す。
   - **内訳**: 今の期間の内訳は、1 つの通貨のときは事業者ごとに合わせた `BreakdownBar`（大きい順に 3 つと「その他」。作業「何にいちばんかかっているか」）、通貨が 2 つ以上のときは事業者・区分・額の一覧にする。
-- **サポーター**（`/admin/supporters`、`manage_supporters`、FR-910〜FR-912、[ADR-0072](../../adr/0072-supporter-plans-and-roles.md)、[画面の要件](screens/admin-supporters.md)）: 「課金」「決済の事業者」「プラン」「廃止したプラン」「加入者」「サポーターの一覧」の区画（`h2` の `section`）。
-  「プラン」は一覧と追加の部品（`ListSection`）で、見出しの隣に件数、見出しの行の終わりに主な操作の「プランを作成する」を置く。
-  - **課金**（`GET`・`PUT /admin/supporter_program`）: 有効か、有効にしたときの事業者と設定の事業者、続いている加入の数、警告（事業者がない・メールを送らない・事業者が違う・特商法の表記がない。表記の警告は `/admin/documents/commerce-disclosure` へリンクする）。
-    有効と無効の切り替えは `can_enable` が偽のとき有効にできない。サーバーの拒否（409 `supporters-unavailable`・`live-subscriptions`）はその `detail` を区画の中（`role="alert"`）に出す。
+- **サポーター**（`/admin/supporters`、`manage_supporters`、FR-910〜FR-912、[ADR-0072](../../adr/0072-supporter-plans-and-roles.md)）: 「課金」「プラン」「加入」の 3 つのページを `h1` の下の `LocalNav`（「サポーターのページ」）でつなぐ（上の「画面の分け方」）。
+  プランと加入は一覧 → 詳細で、プランの作成は自分のページに置く。メニューの項目は「サポーター」の 1 つで、どのページでもその項目が今いる場所になる。ページの部品は `features/admin/components/Supporter*.tsx`、ページの間で共有するもの（`LocalNav` と状態の言葉）は `supporterParts.tsx`。
+  - **課金**（`/admin/supporters`、[画面の要件](screens/admin-supporters.md)）: 「課金」「決済の事業者」の区画（`h2` の `section`）。
+    「課金」は 1 つのフォーム（`GET`・`PUT /admin/supporter_program`）: 有効か、有効にしたときの事業者と設定の事業者、続いている加入の数、警告（事業者がない・メールを送らない・事業者が違う・特商法の表記がない。表記の警告は `/admin/documents/commerce-disclosure` へリンクする）、「課金の機能を有効にする」の `Checkbox`（`can_enable` が偽のとき有効にできない）と、
+    その下の「サポーターの一覧」（`h3`。一覧を見られる人、`supporter_list_visibility`、`RadioGroup`、誰にも見せない・誰でも・ログインした人。説明に、一覧はアバター・名前・ハンドルだけで金額や日付を出さず、いつも検索エンジンに索引しないよう求めることを書く。ADR-0070 §13。サーバーの設定なので `manage_settings` を持つ閲覧者にだけ選択肢を出し、ほかの閲覧者には `GET /instance` から読んだいまの値を文で書く）。
+    保存は「保存する」の 1 つで、変えたものだけを、課金（`PUT /admin/supporter_program`）、一覧の公開（`PATCH /admin/settings`）の順に送る。結果と、サーバーの拒否（409 `supporters-unavailable`・`live-subscriptions`）の `detail` は `FormActionBar` に出し、入力を残す。何も変えずに保存したら、変更がないことを出す。
   - **決済の事業者**（`GET /admin/payment_status`、[ADR-0074](../../adr/0074-payment-provider-port.md) §4）: 課金の `configured_provider` があるときだけ出す（ないとき API は 404）。事業者・モード（テストは請求が起きないことを添える）・レポートのタイムゾーン・最後に webhook を受けた時刻（記録がなければ 45 日以内にないこと）・最後の照合の時刻と結果・要求の数・読み直した加入と直した加入の数の説明リスト。
     最後の照合の失敗の種類（`error_kind`）ごとに直し方を `client*` のメッセージで出し、`warnings`（`no_webhook`・`reconciliation_corrected`）は webhook の設定の誤りとして確かめることを警告で出す。
-    「今すぐ照合する」は `POST /admin/payment_reconciliation/runs` で、成功したら状態と監査ログを取り直して `StatusMessage` に出し、`429`（同じ UTC の 1 時間の 2 回目）は次の 1 時間に試すよう `role="alert"` で案内する。
-  - **プラン**（`GET /admin/supporter_plans`）: 順位の順。各プランは名前の見出し（`h3`、`dir="auto"`）と、月額と年額（その通貨の `Intl.NumberFormat`）・割引率・絵文字の上限・順位・公開・ロールのキーと位置と権限・加入中の数・「準備中」（`prices_ready` が偽）の説明リスト。
-    「編集」（条件とロールの位置のダイアログ。ロールの権限は区分 `member` の権限ができるまで表示だけ）と「廃止」（元に戻せず、加入が期間の終わりに解約されるので `ConfirmDialog`（`danger`）で確かめる）を出す。廃止したプランは別の区画に並べ、操作を出さない。
-  - **作成**: 「プランを作成する」で、そのボタンの場所に開く追加の区画（`h3`）の、ロールのキー（`manage_supporters` だけの閲覧者はロールの一覧を読めないので選択でなく入力）・名前・説明・月額と通貨・割引率・絵文字の上限・順位・公開のフォームと、「プランを作成する」と「キャンセル」の送信の帯（`FormActionBar`）。サーバーの拒否（422 `invalid-supporter-plan`）は `reason` の項目に `detail` を出し、入力を残す。
-    成功したら通貨を残して入力を空にし、追加の区画を閉じてフォーカスをボタンに戻し、結果をプランの一覧の上に出す。編集と廃止の結果も同じ場所に出す。
-  - **加入者**（`GET /admin/supporter_subscriptions`）: 新しい順（「さらに表示」）、プランと状態で絞り込み（URL の `?plan=`・`?state=`）。各加入は状態・プラン・間隔・金額・期間の終わり・猶予の終わり・利用者名（消去したアカウントは「削除されたアカウント」）で、「すぐ解約」は返金せず元に戻せないので `ConfirmDialog`（`danger`）で確かめる。
-  - **サポーターの一覧**: 一覧を見られる人（`supporter_list_visibility`、`RadioGroup`、誰にも見せない・誰でも・サインインした人。説明に、一覧はアバター・名前・ハンドルだけで金額や日付を出さず、いつも検索エンジンに索引しないよう求めることを書く。ADR-0070 §13）を、加入者の隣で決める（監査の A8）。
-    `manage_settings` を持つ閲覧者にだけ、費用の公開範囲と同じ形のフォーム（「公開範囲を保存」と `FormActionBar`）を出し、ほかの閲覧者には `GET /instance` から読んだいまの値を文で書く。
+    「今すぐ照合する」は `POST /admin/payment_reconciliation/runs` で、成功したら状態と監査ログを取り直して `StatusMessage` に出し、`429`（同じ UTC の 1 時間の 2 回目）は次の 1 時間に試すよう `role="alert"` で案内する。保存ではない補助の操作で、主な操作はフォームの「保存する」。
+  - **プラン**（`/admin/supporters/plans`、[画面の要件](screens/admin-supporters-plans.md)）: `GET /admin/supporter_plans` はすべてのプランを返すので、`wholeList` でページングした `RecordTable`。提供中のプランを順位の順に、そのあとに廃止したプラン。
+    列は名前（プランのページへのリンク、`dir="auto"`）・状態（提供中・提供中 (非公開)・価格を準備中・廃止）・作成の 3 つ。絞り込みは `ListToolbar` の状態の `Select`（すべて・提供中・廃止、URL の `?state=`）で、絞り込みで `RecordTable` を key する。主な操作は作成のページへの `ButtonLink`「プランを作成する」。
+  - **プランの作成**（`/admin/supporters/plans/new`、[画面の要件](screens/admin-supporters-plan-new.md)）: ロールのキー（`manage_supporters` だけの閲覧者はロールの一覧を読めないので選択でなく入力）・名前・説明・月額と通貨・割引率・絵文字の上限・順位・公開のフォームと、「プランを作成する」と「キャンセル」（プランの一覧へのリンク）の `FormActionBar`。
+    サーバーの拒否（422 `invalid-supporter-plan`）は `reason` の項目に `detail` を出し、入力を残す。成功したら作ったプランのページへ移り（フォームがなくなるので、結果はトースト）、`h1` にフォーカスが移る。
+  - **プラン**（`/admin/supporters/plans/$id`、[画面の要件](screens/admin-supporters-plan.md)）: 1 つのプランを読む API はないので、ルートの loader がプランの一覧を読み、ない ID は見つからないページにする。
+    「プラン」の区画（見出しはプランの名前、`dir="auto"`）は、状態・月額と年額（その通貨の `Intl.NumberFormat`）・割引率・順位・公開・絵文字の上限・ロールのキーと位置と権限・加入中の数・作成と廃止の日時の説明リストと、価格を準備中（`prices_ready` が偽）と廃止したことの説明。
+    提供中のプランだけに「プランを編集する」（条件とロールの位置のフォーム。ロールの権限は区分 `member` の権限ができるまで表示だけ。「保存する」は変えた項目だけを `PATCH /admin/supporter_plans/{id}` で送り、結果と拒否は `FormActionBar` と欄に出す）と
+    「プランを廃止する」（元に戻せず、加入が期間の終わりに解約されるので `ConfirmDialog`（`danger`）で確かめる。成功したら結果を「プラン」の区画の `StatusMessage` に出し、編集と廃止の区画が消えるので、フォーカスを「プラン」の見出しへ移す）の区画を置く。
+  - **加入**（`/admin/supporters/subscriptions`、[画面の要件](screens/admin-supporters-subscriptions.md)）: `GET /admin/supporter_subscriptions`（カーソルで送る）の `RecordTable`。新しい順、プランと状態で絞り込み（URL の `?plan=`・`?state=`）。
+    列はアカウント（加入のページへのリンク。消去したアカウントは「削除されたアカウント」）・プラン（`dir="auto"`）・状態・期間の終わりの 4 つで、ほかの事実と操作は加入のページに置く。
+  - **加入**（`/admin/supporters/subscriptions/$id`、[画面の要件](screens/admin-supporters-subscription.md)）: `GET /admin/supporter_subscriptions/{id}`。区画の見出しは利用者名で、状態・プラン（プランのページへのリンク）・金額と間隔・開始・期間の終わり・猶予の終わり・予定している間隔の変更の説明リスト。
+    続いている加入だけに「加入を終わらせる」の区画を置き、「すぐに解約」は返金せず元に戻せないので `ConfirmDialog`（`danger`）で確かめる。成功したら結果を加入の区画の `StatusMessage` に出し、フォーカスを加入の見出しへ移す。
   - 加入の操作（加入・変更・解約）と利用者の画面は #922 が作り、この画面は出さない。
-  `features/admin/supporters.test.tsx` は、課金の状態とプランと廃止したプランと加入者、有効化とその拒否、有効にできないときの切り替え、加入が続くときの無効化の拒否、作成とその拒否の項目、確認を経た廃止、確認を経たすぐの解約と状態の絞り込み、事業者の状態と失敗の直し方と警告、今すぐの照合とその `429` の案内、設定の事業者がないときに区画を出さず状態を読まないこと、何も出せないときの理由、`manage_supporters` の有無によるメニューの出し分けを検査する。
+  `features/admin/supporters.test.tsx` は、ページの `LocalNav`、課金の状態と 1 つの保存での有効化とその拒否、有効にできないときのチェックボックス、加入が続くときの無効化の拒否、同じ保存でのサポーターの一覧の公開と権限のない人への文、事業者の状態と失敗の直し方と警告、今すぐの照合とその `429` の案内、設定の事業者がないときに区画を出さず状態を読まないこと、
+  プランの表と状態の絞り込み、作成のページでの作成とその拒否の項目とプランのページへの移動、プランのページでの事実と保存、確認を経た廃止、加入の 4 列の表と状態の絞り込み、加入のページと確認を経たすぐの解約、何も出せないときの理由、`manage_supporters` の有無によるメニューの出し分けを検査する。
 - **ロール**（`/admin/roles`・`/admin/roles/new`・`/admin/roles/{key}`、`manage_roles`、FR-720、[一覧](screens/admin-roles.md)・[作成](screens/admin-role-new.md)・[詳細](screens/admin-role.md)）: 一覧 → 詳細で組む（上の「画面の分け方」）。閲覧者のいちばん高いロールは `GET /admin/accounts/{閲覧者の ID}/roles` で読む。
   - **一覧**（`/admin/roles`）: ロールの説明と、`/admin/roles/new` へ行く「ロールを作成する」（`ButtonLink`。ロールを持たない閲覧者には、代わりに作れない理由）。その下に位置の高い順のロールの `RecordTable`（`wholeList`）。
     列はキー（ロールのページへのリンク、`dir="ltr"`）・位置・権限（区分ごとの数「モデレーション: 3」を 1 行ずつ）・バッジ（`RoleBadge` の見本か「バッジなし」）の 4 つで、操作の列は持たない。
