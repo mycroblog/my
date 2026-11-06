@@ -16,47 +16,63 @@ reference is there too. The contributing and design documents below are read her
 
 ## Operation
 
-- [Administrators and roles](operations/admin-cli.md)
+Read the groups in order: start with the overview, then configure the instance before opening it to users.
+
+### Get started
+
+- [Overview of a mycroblog server (the processes, the parts you choose, and how a server grows)](operations/overview.md)
+- [Running the server: starting, stopping, and health checks](operations/running.md)
+- [Deploying on Cloud Run](operations/deploy-cloud-run.md)
+- [Production checklist (what to verify before going live, and what my config check checks)](operations/production-checklist.md)
+
+### Configure the instance
+
 - [Instance settings](operations/instance-settings.md)
 - [Registration (registration modes, invitations, approval, email verification)](operations/registration.md)
 - [External login providers (OpenID Connect, GitHub, Mastodon)](operations/login-providers.md)
 - [Sending email (SMTP settings, SPF/DKIM/DMARC, failures and suppressions, unsubscribing)](operations/email.md)
 - [CAPTCHA against bots (Turnstile / hCaptcha / reCAPTCHA)](operations/captcha.md)
-- [Domain blocks and handling reports](operations/moderation.md)
-- [Managing the key encryption key (KEK)](operations/key-management.md)
-- [Database: initializing, upgrading, and recreating](operations/database.md)
-- [Backup and restore (database, media, KEK, configuration, and the recovery drill)](operations/backup.md)
-- [Running the server: starting, stopping, and health checks](operations/running.md)
-- [Deploying on Cloud Run](operations/deploy-cloud-run.md)
 - [Serving media through a CDN, and refusing requests that did not come through it (media_origin, origin pull, caching and purging, origin_secret)](operations/cdn.md)
-- [Maintenance (the maintenance mode and the exported maintenance page)](operations/maintenance.md)
-- [Production checklist (what to verify before going live, and what my config check checks)](operations/production-checklist.md)
-- [Closing the service (announcement, closure, the static closure page, deleting the data)](operations/service-closure.md)
-- [Privacy policy template (what the server keeps, why, for how long, and who receives it)](operations/privacy-policy-template.md)
-- [Record of processing activities template (GDPR Article 30)](operations/processing-record-template.md)
+- [Link previews (OGP / X Cards / fediverse:creator)](operations/link-previews.md)
+- [Search engines and AI crawlers (robots.txt, noindex, opting out of AI)](operations/crawlers.md)
+
+### Features
+
+- [Domain blocks and handling reports](operations/moderation.md)
+- [Federation relays](operations/relays.md)
+- [Server webhooks](operations/webhooks.md)
+- [Plugins (destinations, authentication, protocols, `my plugin test`, a plugin with no library)](operations/plugins.md)
+- [Decision hooks](operations/decision-hooks.md): ask a plugin of yours before accepting posts, follows, sign-ups, and media
+- [Voice chat (choosing P2P, LiveKit or Sora, STUN and TURN, deployment, moderation)](operations/voice.md)
+- [Full-text search of posts (what the index holds, rebuilding it, the query in URLs and logs, its backups)](operations/search.md)
+- [Supporters (paid plans)](operations/supporters.md)
+- [Supporter payments with Stripe](operations/payments-stripe.md)
+- [Supporter payments with PAY.JP](operations/payments-payjp.md)
+- [Importing cloud usage costs (AWS Cost Explorer, Google Cloud's BigQuery export, a plugin)](operations/billing-import.md)
+
+### Day-to-day operation
+
 - [External monitoring and status pages (UptimeRobot, Better Stack, Gatus, Uptime Kuma, Upptime)](operations/monitoring.md)
 - [Alerts and runbook (Prometheus alerting rules, what to do when an alert fires, telling users about an incident)](operations/alerts.md)
 - [Error reporting (the error report log line, error groups and notifications, sending reports to Sentry, GlitchTip, Datadog or OpenTelemetry, scrubbing)](operations/error-reporting.md)
-- [Link previews (OGP / X Cards / fediverse:creator)](operations/link-previews.md)
-- [Search engines and AI crawlers (robots.txt, noindex, opting out of AI)](operations/crawlers.md)
-- [Full-text search of posts (what the index holds, rebuilding it, the query in URLs and logs, its backups)](operations/search.md)
-- [Server webhooks](operations/webhooks.md)
-- [Federation relays](operations/relays.md)
-- [Importing cloud usage costs (AWS Cost Explorer, Google Cloud's BigQuery export, a plugin)](operations/billing-import.md)
-- [Supporter payments with Stripe](operations/payments-stripe.md)
-- [Supporter payments with PAY.JP](operations/payments-payjp.md)
-- [Supporters (paid plans)](operations/supporters.md)
-- [Voice chat (choosing P2P, LiveKit or Sora, STUN and TURN, deployment, moderation)](operations/voice.md)
-- [Plugins (destinations, authentication, protocols, `my plugin test`, a plugin with no library)](operations/plugins.md)
-- [Decision hooks](operations/decision-hooks.md): ask a plugin of yours before accepting posts, follows, sign-ups, and media
+- [Maintenance (the maintenance mode and the exported maintenance page)](operations/maintenance.md)
+- [Backup and restore (database, media, KEK, configuration, and the recovery drill)](operations/backup.md)
+- [Database: initializing, upgrading, and recreating](operations/database.md)
+- [Managing the key encryption key (KEK)](operations/key-management.md)
+- [Administrators and roles](operations/admin-cli.md)
+
+### Legal and closing
+
+- [Privacy policy template (what the server keeps, why, for how long, and who receives it)](operations/privacy-policy-template.md)
+- [Record of processing activities template (GDPR Article 30)](operations/processing-record-template.md)
+- [Closing the service (announcement, closure, the static closure page, deleting the data)](operations/service-closure.md)
 
 ## Reference
 
 - [Configuration reference](reference/configuration.md) (generated from the configuration schema)
-- [Build tags](reference/build-tags.md) (the tags that leave adapters out of the binary, and the sets that are checked)
 - [Jobs](reference/jobs.md) (every job type and periodic job: what it does, what starts it, how it retries, and whether to run it again by hand)
-- [Commands](reference/commands.md) (the go-task tasks and the pinned toolchain)
 - [Webhook reference](reference/webhooks.md) (the headers, signatures, events, and bodies a receiver gets)
+- [Build tags](reference/build-tags.md) (the tags that leave adapters out of the binary, and the sets that are checked)
 
 ## Developers
 
@@ -78,6 +94,7 @@ Guides for people who build clients and bots against the client API.
 - [Working on an issue (playbook)](agents/workflow.md)
 - [Writing an ADR (playbook)](agents/writing-adrs.md)
 - [Releasing (playbook)](agents/releasing.md)
+- [Commands](reference/commands.md) (the development tasks and the pinned toolchain)
 
 ## Design (in Japanese)
 

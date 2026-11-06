@@ -5,25 +5,44 @@
 //   - the first `# Heading`, which becomes the `title` of the frontmatter (Starlight renders it as the page heading);
 //   - relative links to published documents, which become site URLs under the base path, #anchors kept;
 //   - relative links to a file with a page of its own (sitePages), which become that page;
+//   - relative links to an image of a published directory (docs/operations/images/architecture.svg), which is copied
+//     to the same place beside the page so that Astro serves it, and stay relative;
 //   - relative links to any other file of the repository, which become GitHub URLs at DOCS_SITE_REF.
 // The sources stay readable on GitHub as they are; `agentkit docs lint` checks their links and anchors, and the build
 // checks the links of the pages (starlight-links-validator).
-import { existsSync, mkdirSync, readdirSync, rmSync, statSync, writeFileSync, readFileSync } from "node:fs";
+import {
+  copyFileSync,
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  rmSync,
+  statSync,
+  writeFileSync,
+  readFileSync,
+} from "node:fs";
 import { dirname, join, posix } from "node:path";
 import { base, githubURL, isPublished, pageURL, publishedDirs, repoRoot, sitePages, slugOf } from "../src/published";
 
 const contentDir = join(repoRoot, "app/docs/src/content/docs");
 const handWritten = new Set(["index.md"]);
 
-function markdownFiles(dir: string): string[] {
+function filesIn(dir: string, suffix: RegExp = /\.md$/): string[] {
   const absolute = join(repoRoot, dir);
   if (!existsSync(absolute)) {
     return [];
   }
   return readdirSync(absolute, { recursive: true, encoding: "utf8" })
     .map((name) => posix.join(dir, name.split("\\").join("/")))
-    .filter((path) => path.endsWith(".md") && statSync(join(repoRoot, path)).isFile())
+    .filter((path) => suffix.test(path) && statSync(join(repoRoot, path)).isFile())
     .sort();
+}
+
+/** The images a published document may show, copied beside the pages. */
+const reImage = /\.(svg|png|jpe?g|webp)$/;
+
+/** Whether a repository path is an image of a published directory. */
+function isPublishedImage(path: string): boolean {
+  return reImage.test(path) && publishedDirs.some((dir) => path.startsWith(`docs/${dir}/`));
 }
 
 /** The new destination of a link written in the document at `from`, or undefined to leave it as it is. */
@@ -44,6 +63,11 @@ function rewrite(from: string, dest: string): string | undefined {
   }
   if (isPublished(target)) {
     return pageURL(target) + anchor;
+  }
+  if (isPublishedImage(target) && existsSync(join(repoRoot, target))) {
+    // Astro resolves an image of a page only from a path that starts with ./ or ../.
+    const relative = posix.relative(posix.dirname(from), target);
+    return relative.startsWith("../") ? relative : `./${relative}`;
   }
   const absolute = join(repoRoot, target);
   if (!existsSync(absolute)) {
@@ -107,10 +131,16 @@ for (const name of readdirSync(contentDir)) {
     rmSync(join(contentDir, name), { recursive: true, force: true });
   }
 }
-const published = publishedDirs.flatMap((dir) => markdownFiles(`docs/${dir}`)).filter(isPublished);
+const published = publishedDirs.flatMap((dir) => filesIn(`docs/${dir}`)).filter(isPublished);
 for (const path of published) {
   const out = join(contentDir, `${slugOf(path)}.md`);
   mkdirSync(dirname(out), { recursive: true });
   writeFileSync(out, transform(path, readFileSync(join(repoRoot, path), "utf8")));
 }
-console.log(`import-docs: copied ${published.length} documents into src/content/docs/`);
+const images = publishedDirs.flatMap((dir) => filesIn(`docs/${dir}`, reImage));
+for (const path of images) {
+  const out = join(contentDir, path.slice("docs/".length));
+  mkdirSync(dirname(out), { recursive: true });
+  copyFileSync(join(repoRoot, path), out);
+}
+console.log(`import-docs: copied ${published.length} documents and ${images.length} images into src/content/docs/`);
