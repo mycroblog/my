@@ -56,7 +56,7 @@ function useBrowserTranslates(asked: boolean, language: string, target: string):
  * limit, a post or a language that no provider takes, a provider that gave no usable answer, or any other failure of the
  * server. A post that the reader may not see, or a reader who may not ask, is not: the browser takes over neither.
  */
-export function refusedByServer(error: unknown): boolean {
+function refusedByServer(error: unknown): boolean {
   if (!(error instanceof ApiError)) return false;
   switch (error.type) {
     case translationLimitType:
