@@ -174,7 +174,7 @@ A renamed or removed setting is a problem that names its replacement. An
 environment variable that starts with MY_ but sets nothing is ignored with a
 warning.
 In the production profile it then checks that the valid settings suit a
-production instance (docs/operations/production-checklist.md). Errors, such as
+production instance. Errors, such as
 a host that other servers cannot reach or a key-encryption key that is not
 random, exit 1; warnings, such as mail = none, do not. my serve logs them at
 start without refusing to start.
@@ -186,7 +186,7 @@ leaving the adapters' settings unread.
 
 vapid-key generates a key pair for Web Push and prints the private key, the
 value of MY_VAPID_PRIVATE_KEY, and the public key that browsers subscribe with.
-`)
+`+docsLine("docs/operations/production-checklist.md"))
 }
 
 // runVAPIDKey implements `my config vapid-key`: it prints a new VAPID key pair (RFC 8292).

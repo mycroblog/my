@@ -143,9 +143,9 @@ func instanceRuleUsage(w io.Writer) {
   my instance rule move [-config <file>] <rule> <position>
   my instance rule retire [-config <file>] <rule>
 
-Manages the instance rules (docs/operations/instance-settings.md), which
-GET /api/v1/instance lists and reports cite. A rule has one line of text and an
-optional hint, written in any language and shown as they are in every locale.
+Manages the instance rules, which GET /api/v1/instance lists and reports cite.
+A rule has one line of text and an optional hint, written in any language and
+shown as they are in every locale.
 Every change is kept as a revision, and a rule keeps its ID for life.
 
 create appends a rule after the rules in effect. edit changes the text of a rule;
@@ -153,5 +153,5 @@ the hint stays unless -hint is given. move puts a rule at a position among the
 rules in effect, from 1, and numbers them again. retire removes a rule from the
 rules in effect for good; reports that cite it still refer to it. list shows
 the rules in effect, and with -all the retired ones after them.
-`)
+`+docsLine("docs/operations/instance-settings.md"))
 }

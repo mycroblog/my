@@ -1,5 +1,9 @@
 # Documentation
 
+The documents for users, operators, and developers are published at [mycroblog.dev](https://mycroblog.dev/latest/),
+one version per release (`/latest/` for the newest, `/v0.1/` and the like) and `/next/` for `main`; the client API
+reference is there too. The contributing and design documents below are read here.
+
 ## Using my
 
 - [Signing up and signing in](guide/signing-in.md)

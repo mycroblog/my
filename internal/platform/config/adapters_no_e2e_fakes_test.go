@@ -19,7 +19,7 @@ func TestLoadRejectsFakePaymentsWithoutTheTag(t *testing.T) {
 		if !errors.As(err, &ve) || len(ve.Issues) != 1 {
 			t.Fatalf("Load() with payments = fake, profile = %s: %v, want one issue", profile, err)
 		}
-		want := `payments (MY_PAYMENTS): "fake" is only in test builds: the build tag e2e_fakes adds its adapter, and released binaries never have it (docs/reference/build-tags.md)`
+		want := `payments (MY_PAYMENTS): "fake" is only in test builds: the build tag e2e_fakes adds its adapter, and released binaries never have it (https://mycroblog.dev/next/reference/build-tags/)`
 		if got := ve.Issues[0].String(); got != want {
 			t.Errorf("issue = %q, want %q", got, want)
 		}
@@ -39,7 +39,7 @@ func TestLoadRejectsFakeSearchWithoutTheTag(t *testing.T) {
 		if !errors.As(err, &ve) || len(ve.Issues) != 1 {
 			t.Fatalf("Load() with search = fake, profile = %s: %v, want one issue", profile, err)
 		}
-		want := `search (MY_SEARCH): "fake" is only in test builds: the build tag e2e_fakes adds its adapter, and released binaries never have it (docs/reference/build-tags.md)`
+		want := `search (MY_SEARCH): "fake" is only in test builds: the build tag e2e_fakes adds its adapter, and released binaries never have it (https://mycroblog.dev/next/reference/build-tags/)`
 		if got := ve.Issues[0].String(); got != want {
 			t.Errorf("issue = %q, want %q", got, want)
 		}

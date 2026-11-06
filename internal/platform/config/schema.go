@@ -122,7 +122,7 @@ var schema = []field{
 	},
 	{
 		key:   "source_url",
-		doc:   "Where users get the source code of the running server, as an `https` URL or a `mailto:` address to request it from. AGPL-3.0 section 13 requires offering the source to everyone who uses the server over the network; `GET /instance`, the information page (`/about`), the landing page, and NodeInfo (`metadata.sourceCode`, and `software.repository` for an `https` URL) publish it. At the default, a release's `GET /instance`, and so the information and landing pages, link to the source at the release's tag (`https://github.com/mycroblog/my/tree/v0.1.0`), and NodeInfo to the repository. Point it at your own source when you run a fork or a modified version (docs/operations/running.md).",
+		doc:   "Where users get the source code of the running server, as an `https` URL or a `mailto:` address to request it from. AGPL-3.0 section 13 requires offering the source to everyone who uses the server over the network; `GET /instance`, the information page (`/about`), the landing page, and NodeInfo (`metadata.sourceCode`, and `software.repository` for an `https` URL) publish it. At the default, a release's `GET /instance`, and so the information and landing pages, link to the source at the release's tag (`https://github.com/mycroblog/my/tree/v0.1.0`), and NodeInfo to the repository. Point it at your own source when you run a fork or a modified version ([running the server](../operations/running.md)).",
 		def:   DefaultSourceURL,
 		check: checkSourceURL,
 		set:   func(c *Config, v string) { c.SourceURL = v },
@@ -135,7 +135,7 @@ var schema = []field{
 	},
 	{
 		key: "maintenance",
-		doc: "Starts `my serve` in the maintenance mode, also set by `my serve -maintenance`. The process then opens no adapter and reads only the settings marked for it (the listen address, the host and origins, the proxies, `status_page_url`, and the `maintenance_*` settings), so that it starts while the database, the KV, or the queue is out of reach. Whatever the `role`, it serves HTTP only and answers every request with a `503` that says the server is under maintenance; `/healthz` and `/readyz` answer `200` with `{\"status\":\"maintenance\"}`. Switch it by redeploying (docs/operations/maintenance.md).",
+		doc: "Starts `my serve` in the maintenance mode, also set by `my serve -maintenance`. The process then opens no adapter and reads only the settings marked for it (the listen address, the host and origins, the proxies, `status_page_url`, and the `maintenance_*` settings), so that it starts while the database, the KV, or the queue is out of reach. Whatever the `role`, it serves HTTP only and answers every request with a `503` that says the server is under maintenance; `/healthz` and `/readyz` answer `200` with `{\"status\":\"maintenance\"}`. Switch it by redeploying ([maintenance](../operations/maintenance.md)).",
 		def: "false",
 		choices: []choice{
 			{value: "false", doc: "Normal operation."},
@@ -185,19 +185,19 @@ var schema = []field{
 		choices: []choice{
 			{value: string(RoleAll), doc: "HTTP server and job worker in one process."},
 			{value: string(RoleWeb), doc: "HTTP server only."},
-			{value: string(RoleWorker), doc: "Job worker only; the HTTP server answers only the health checks (docs/operations/running.md)."},
+			{value: string(RoleWorker), doc: "Job worker only; the HTTP server answers only the health checks ([running the server](../operations/running.md))."},
 		},
 		set: func(c *Config, v string) { c.Role = Role(v) },
 	},
 	{
 		key:   "worker_job_types",
-		doc:   "Comma-separated job types that this process runs, each a name such as `federation.deliver` or a prefix such as `federation.*`; the others wait for another worker. A name or prefix that matches no job type fails the start. Needs `queue = db` and `role = all` or `worker`, and excludes `worker_job_types_except`. Empty runs every type (docs/operations/running.md).",
+		doc:   "Comma-separated job types that this process runs, each a name such as `federation.deliver` or a prefix such as `federation.*`; the others wait for another worker. A name or prefix that matches no job type fails the start. Needs `queue = db` and `role = all` or `worker`, and excludes `worker_job_types_except`. Empty runs every type ([running the server](../operations/running.md)).",
 		check: checkJobTypePatterns,
 		set:   func(c *Config, v string) { c.WorkerJobTypes = splitJobTypePatterns(v) },
 	},
 	{
 		key:   "worker_job_types_except",
-		doc:   "Comma-separated job types that this process does not run, written like `worker_job_types`. Types that a later release adds are run. Needs `queue = db` and `role = all` or `worker`, and excludes `worker_job_types`. Empty runs every type (docs/operations/running.md).",
+		doc:   "Comma-separated job types that this process does not run, written like `worker_job_types`. Types that a later release adds are run. Needs `queue = db` and `role = all` or `worker`, and excludes `worker_job_types`. Empty runs every type ([running the server](../operations/running.md)).",
 		check: checkJobTypePatterns,
 		set:   func(c *Config, v string) { c.WorkerJobTypesExcept = splitJobTypePatterns(v) },
 	},
@@ -233,14 +233,14 @@ var schema = []field{
 	},
 	{
 		key:    "origin_secret",
-		doc:    "Refuses the requests that did not come through your CDN: a request gets `403` unless it carries the header `origin_secret_header` with this value, which the CDN adds to every request it forwards. Only the health checks and the calls of the platform's queue pass without it. Empty checks nothing. A wrong setup refuses everyone while the health checks stay fine, so read docs/operations/cdn.md first. A random string of at least 32 bytes of visible ASCII without spaces, such as the output of `openssl rand -hex 32`. It does nothing for a platform feature that adds no header, such as a Cloud Run domain mapping.",
+		doc:    "Refuses the requests that did not come through your CDN: a request gets `403` unless it carries the header `origin_secret_header` with this value, which the CDN adds to every request it forwards. Only the health checks and the calls of the platform's queue pass without it. Empty checks nothing. A wrong setup refuses everyone while the health checks stay fine, so read [serving media through a CDN](../operations/cdn.md) first. A random string of at least 32 bytes of visible ASCII without spaces, such as the output of `openssl rand -hex 32`. It does nothing for a platform feature that adds no header, such as a Cloud Run domain mapping.",
 		secret: true,
 		check:  checkOriginSecret,
 		set:    func(c *Config, v string) { c.OriginSecret = v },
 	},
 	{
 		key:    "origin_secret_previous",
-		doc:    "A second value that the check accepts while you rotate `origin_secret`, in the same format, since the CDN and the server cannot change at the same moment. Remove it once the CDN sends the new value (docs/operations/cdn.md).",
+		doc:    "A second value that the check accepts while you rotate `origin_secret`, in the same format, since the CDN and the server cannot change at the same moment. Remove it once the CDN sends the new value ([serving media through a CDN](../operations/cdn.md)).",
 		secret: true,
 		check:  checkOriginSecret,
 		set:    func(c *Config, v string) { c.OriginSecretPrevious = v },
@@ -290,7 +290,7 @@ var schema = []field{
 		choices: []choice{
 			{value: "db", doc: "Queue table in the database."},
 			{value: "inline", doc: "Runs jobs synchronously in the enqueuing process; for tests and development. Requires `role = all`."},
-			{value: "cloudtasks", doc: "The queue table in the database (`database = postgres`), with Google Cloud Tasks carrying a wake-up signal for each job to `POST /_internal/jobs` (`queue_cloudtasks_` settings). Cloud Scheduler calls `POST /_internal/tick` every minute for the periodic jobs instead of a scheduler in the process, and no process polls the table. Requires `kv = db` or `valkey`. Application Default Credentials. The build tag `no_cloudtasks` leaves it out (docs/operations/running.md)."},
+			{value: "cloudtasks", doc: "The queue table in the database (`database = postgres`), with Google Cloud Tasks carrying a wake-up signal for each job to `POST /_internal/jobs` (`queue_cloudtasks_` settings). Cloud Scheduler calls `POST /_internal/tick` every minute for the periodic jobs instead of a scheduler in the process, and no process polls the table. Requires `kv = db` or `valkey`. Application Default Credentials. The build tag `no_cloudtasks` leaves it out ([running the server](../operations/running.md))."},
 		},
 		set: func(c *Config, v string) { c.Queue = v },
 	},
@@ -354,7 +354,7 @@ var schema = []field{
 			{value: "native", doc: "Pure Go image processing."},
 			{value: "vips", doc: "libvips; needs a cgo build with the adapter's build tag."},
 			{value: "none", doc: "No processing except EXIF removal."},
-			{value: "plugin", doc: "A plugin of yours (`plugin_media_address`) re-encodes images and remuxes video and audio, so that heavy conversion runs on another machine; the server still checks uploads and every output itself, and removing metadata is left to the plugin (docs/operations/plugins.md). The build tag `no_plugins` leaves it out."},
+			{value: "plugin", doc: "A plugin of yours (`plugin_media_address`) re-encodes images and remuxes video and audio, so that heavy conversion runs on another machine; the server still checks uploads and every output itself, and removing metadata is left to the plugin ([plugins](../operations/plugins.md)). The build tag `no_plugins` leaves it out."},
 		},
 		set: func(c *Config, v string) { c.Media = v },
 	},
@@ -367,7 +367,7 @@ var schema = []field{
 	},
 	{
 		key:          "blob_s3_bucket",
-		doc:          "Bucket of the `s3` blob store. It holds the uploads as received (private) and the processed media, which the server reads from the bucket and serves under `/media/`, so the bucket stays private. Share it between the web and worker processes, and back it up with the database (docs/operations/backup.md).",
+		doc:          "Bucket of the `s3` blob store. It holds the uploads as received (private) and the processed media, which the server reads from the bucket and serves under `/media/`, so the bucket stays private. Share it between the web and worker processes, and back it up with the database ([backup and restore](../operations/backup.md)).",
 		requiredWhen: "when `blob = s3`",
 		check:        checkS3Bucket,
 		set:          func(c *Config, v string) { c.BlobS3Bucket = v },
@@ -409,7 +409,7 @@ var schema = []field{
 	},
 	{
 		key:          "blob_gcs_bucket",
-		doc:          "Bucket of the `gcs` blob store. It holds the uploads as received (private) and the processed media, which the server reads from the bucket and serves under `/media/`, so the bucket stays private. The credentials are Application Default Credentials: the service account of Cloud Run or of the instance, or the key file of `GOOGLE_APPLICATION_CREDENTIALS`; the service account needs `roles/storage.objectUser` on the bucket. Signed URLs are signed with the private key of a key file, or without one with the IAM `signBlob` method as the service account itself, which needs `roles/iam.serviceAccountTokenCreator` on that service account. Share it between the web and worker processes, and back it up with the database (docs/operations/backup.md).",
+		doc:          "Bucket of the `gcs` blob store. It holds the uploads as received (private) and the processed media, which the server reads from the bucket and serves under `/media/`, so the bucket stays private. The credentials are Application Default Credentials: the service account of Cloud Run or of the instance, or the key file of `GOOGLE_APPLICATION_CREDENTIALS`; the service account needs `roles/storage.objectUser` on the bucket. Signed URLs are signed with the private key of a key file, or without one with the IAM `signBlob` method as the service account itself, which needs `roles/iam.serviceAccountTokenCreator` on that service account. Share it between the web and worker processes, and back it up with the database ([backup and restore](../operations/backup.md)).",
 		requiredWhen: "when `blob = gcs`",
 		check:        checkS3Bucket,
 		set:          func(c *Config, v string) { c.BlobGCSBucket = v },
@@ -417,7 +417,7 @@ var schema = []field{
 	{
 		key:    "media_origin",
 		defDoc: "the server's own origin (`https://{host}`)",
-		doc:    "Origin (`scheme://host[:port]`, no path) at which the media files are served, for a CDN in front of the server's `/media/`. It is the origin of the URLs of the local media files (`/media/...`) and of the remote media proxy (`/media/proxy/...`) in the client API, ActivityPub and link previews, and the web client's Content-Security-Policy allows images and media from it. `https` is required; `http` is accepted only for a loopback host (`localhost`, `127.0.0.1`, `[::1]`). Unset, the media is served from the server's own origin. The URLs are built when they are read, so a change applies to the media that already exists. ActivityPub ids never use it (docs/operations/cdn.md).",
+		doc:    "Origin (`scheme://host[:port]`, no path) at which the media files are served, for a CDN in front of the server's `/media/`. It is the origin of the URLs of the local media files (`/media/...`) and of the remote media proxy (`/media/proxy/...`) in the client API, ActivityPub and link previews, and the web client's Content-Security-Policy allows images and media from it. `https` is required; `http` is accepted only for a loopback host (`localhost`, `127.0.0.1`, `[::1]`). Unset, the media is served from the server's own origin. The URLs are built when they are read, so a change applies to the media that already exists. ActivityPub ids never use it ([serving media through a CDN](../operations/cdn.md)).",
 		check:  checkMediaOrigin,
 		set:    func(c *Config, v string) { c.MediaOrigin = v },
 	},
@@ -577,15 +577,15 @@ var schema = []field{
 		def: "local",
 		choices: []choice{
 			{value: "local", doc: "Uses the key-encryption key from `kek`. With `plugin_key_manager_address` set, the plugin only decrypts the secrets it still holds, while they move to `kek`."},
-			{value: "gcpkms", doc: "Google Cloud KMS: the symmetric CryptoKey of `kms_key` encrypts the data-encryption keys, with Application Default Credentials. The build tag `no_gcpkms` leaves it out (docs/operations/key-management.md)."},
-			{value: "awskms", doc: "AWS KMS: the symmetric key of `kms_key` encrypts the data-encryption keys, with the credentials and region of the AWS SDK's default chain. The build tag `no_awskms` leaves it out (docs/operations/key-management.md)."},
-			{value: "plugin", doc: "A plugin of yours at `plugin_key_manager_address`, such as one before Vault or an HSM. It sees the data-encryption keys, so it is in the same trust boundary as the key-encryption key. The server does not start without its answer or when it fails a self-test, and nothing falls back to another key. The build tag `no_plugins` leaves it out (docs/operations/key-management.md)."},
+			{value: "gcpkms", doc: "Google Cloud KMS: the symmetric CryptoKey of `kms_key` encrypts the data-encryption keys, with Application Default Credentials. The build tag `no_gcpkms` leaves it out ([key management](../operations/key-management.md))."},
+			{value: "awskms", doc: "AWS KMS: the symmetric key of `kms_key` encrypts the data-encryption keys, with the credentials and region of the AWS SDK's default chain. The build tag `no_awskms` leaves it out ([key management](../operations/key-management.md))."},
+			{value: "plugin", doc: "A plugin of yours at `plugin_key_manager_address`, such as one before Vault or an HSM. It sees the data-encryption keys, so it is in the same trust boundary as the key-encryption key. The server does not start without its answer or when it fails a self-test, and nothing falls back to another key. The build tag `no_plugins` leaves it out ([key management](../operations/key-management.md))."},
 		},
 		set: func(c *Config, v string) { c.KeyManager = v },
 	},
 	{
 		key:          "kek",
-		doc:          "Key-encryption key for actor private keys and the other secrets in the database: 32 random bytes in standard base64 (for example `openssl rand -base64 32`). Required when `key_manager = local`; with another `key_manager` it only decrypts, while the secrets move to the KMS or plugin. Back it up separately from the database; losing it loses every actor key (docs/operations/key-management.md).",
+		doc:          "Key-encryption key for actor private keys and the other secrets in the database: 32 random bytes in standard base64 (for example `openssl rand -base64 32`). Required when `key_manager = local`; with another `key_manager` it only decrypts, while the secrets move to the KMS or plugin. Back it up separately from the database; losing it loses every actor key ([key management](../operations/key-management.md)).",
 		secret:       true,
 		requiredWhen: "when `key_manager = local`",
 		check:        checkKEK,
@@ -595,7 +595,7 @@ var schema = []field{
 	},
 	{
 		key:    "kek_previous",
-		doc:    "Previous key-encryption keys, comma-separated, each in the format of `kek`. They only decrypt; new secrets are always encrypted with `kek`, or with the KMS or plugin when `key_manager` is not `local`. Set the replaced key here while rotating `kek` (docs/operations/key-management.md).",
+		doc:    "Previous key-encryption keys, comma-separated, each in the format of `kek`. They only decrypt; new secrets are always encrypted with `kek`, or with the KMS or plugin when `key_manager` is not `local`. Set the replaced key here while rotating `kek` ([key management](../operations/key-management.md)).",
 		secret: true,
 		check:  checkPreviousKEKs,
 		set: func(c *Config, v string) {
@@ -614,7 +614,7 @@ var schema = []field{
 	},
 	{
 		key:   "kms_key_previous",
-		doc:   "Previous keys of the same KMS, comma-separated, each in the format of `kms_key`. They only decrypt; set the replaced key here while moving to another `kms_key`. With `key_manager = local`, `kms_key` and these keys only decrypt the secrets still encrypted with the KMS, while they move to `kek` (docs/operations/key-management.md).",
+		doc:   "Previous keys of the same KMS, comma-separated, each in the format of `kms_key`. They only decrypt; set the replaced key here while moving to another `kms_key`. With `key_manager = local`, `kms_key` and these keys only decrypt the secrets still encrypted with the KMS, while they move to `kek` ([key management](../operations/key-management.md)).",
 		check: checkPreviousKMSKeys,
 		set: func(c *Config, v string) {
 			for k := range strings.SplitSeq(v, ",") {
@@ -644,7 +644,7 @@ var schema = []field{
 			{value: "none", doc: "Sends nothing and logs each message's category; for instances without email. With `profile = development` it logs the whole message, including its links."},
 			{value: "smtp", doc: "SMTP submission with mandatory STARTTLS (`mail_smtp_host`, `mail_smtp_port`, `mail_smtp_username`, `mail_smtp_password`)."},
 			{value: "ses", doc: "The Amazon SES v2 API (`mail_ses_region`, `mail_ses_configuration_set`); credentials from the AWS SDK's default chain, such as the execution role, so no SMTP password. The build tag `no_ses` leaves it out."},
-			{value: "plugin", doc: "A plugin of yours (`plugin_mailer_address`), for a mail service that offers only an HTTP API. It gets the parts of each message and adds `Message-ID`, `Date`, and `Auto-Submitted` itself (docs/operations/email.md). The build tag `no_plugins` leaves it out."},
+			{value: "plugin", doc: "A plugin of yours (`plugin_mailer_address`), for a mail service that offers only an HTTP API. It gets the parts of each message and adds `Message-ID`, `Date`, and `Auto-Submitted` itself ([sending email](../operations/email.md)). The build tag `no_plugins` leaves it out."},
 		},
 		set: func(c *Config, v string) { c.Mail = v },
 	},
@@ -690,13 +690,13 @@ var schema = []field{
 	},
 	{
 		key:   "mail_ses_configuration_set",
-		doc:   "Name of the SES configuration set that `mail = ses` applies to every message, for its event destinations such as the SNS topic of the bounces and complaints (docs/operations/email.md). Empty sends without one.",
+		doc:   "Name of the SES configuration set that `mail = ses` applies to every message, for its event destinations such as the SNS topic of the bounces and complaints ([sending email](../operations/email.md)). Empty sends without one.",
 		check: checkSESConfigurationSet,
 		set:   func(c *Config, v string) { c.SESConfigurationSet = v },
 	},
 	{
 		key: "mail_ses_sns_topic_arn",
-		doc: "ARN of the SNS topic that SES publishes the bounces and complaints to, `arn:aws:sns:<region>:<account>:<topic>`, with the topic attribute `SignatureVersion` set to `2` (docs/operations/email.md). " +
+		doc: "ARN of the SNS topic that SES publishes the bounces and complaints to, `arn:aws:sns:<region>:<account>:<topic>`, with the topic attribute `SignatureVersion` set to `2` ([sending email](../operations/email.md)). " +
 			"Setting it opens `POST /mail/events/ses` for the topic's HTTPS subscription, which records the permanent bounces and the complaints as suppressions; empty answers `404` there.",
 		check: checkSESSNSTopicARN,
 		set:   func(c *Config, v string) { c.SESSNSTopicARN = v },
@@ -730,7 +730,7 @@ var schema = []field{
 	},
 	{
 		key:    "vapid_private_key",
-		doc:    "VAPID private key of the server's Web Push notifications (RFC 8292): a P-256 private key, 32 bytes in base64url. Generate one with `my config vapid-key`. Without it, the server sends no Web Push and clients do not offer it. Changing it ends every subscription, since browsers subscribe with its public key (docs/operations/key-management.md).",
+		doc:    "VAPID private key of the server's Web Push notifications (RFC 8292): a P-256 private key, 32 bytes in base64url. Generate one with `my config vapid-key`. Without it, the server sends no Web Push and clients do not offer it. Changing it ends every subscription, since browsers subscribe with its public key ([key management](../operations/key-management.md)).",
 		secret: true,
 		check: func(v string) error {
 			_, err := webpush.ParsePrivateKey(v)
@@ -791,7 +791,7 @@ var schema = []field{
 	},
 	{
 		key:   "billing_sources",
-		doc:   "Cloud providers whose usage charges are imported into the instance's costs every 24 hours, comma-separated: `aws` (AWS Cost Explorer, about $0.01 per billed request), `gcp` (the Cloud Billing export to BigQuery, or the Pub/Sub notifications of a budget: `billing_gcp_method`), and `plugin` (a plugin of yours that aggregates any other providers: `plugin_billing_address`). Each import records the charges of the current billing month and of the previous one (through the 15th, or until it is final) by service and charge type, as estimates until the provider closes the month, then final, then corrections; `GET /api/v1/admin/billing_imports` shows the state of the imports. A provider whose adapter is not in this build is refused at start. Credentials come from the SDK's default chain of each provider (docs/operations/billing-import.md). The build tags `no_billing_aws`, `no_billing_gcp`, and `no_plugins` leave `aws`, `gcp`, and `plugin` out. Empty imports nothing.",
+		doc:   "Cloud providers whose usage charges are imported into the instance's costs every 24 hours, comma-separated: `aws` (AWS Cost Explorer, about $0.01 per billed request), `gcp` (the Cloud Billing export to BigQuery, or the Pub/Sub notifications of a budget: `billing_gcp_method`), and `plugin` (a plugin of yours that aggregates any other providers: `plugin_billing_address`). Each import records the charges of the current billing month and of the previous one (through the 15th, or until it is final) by service and charge type, as estimates until the provider closes the month, then final, then corrections; `GET /api/v1/admin/billing_imports` shows the state of the imports. A provider whose adapter is not in this build is refused at start. Credentials come from the SDK's default chain of each provider ([importing cloud costs](../operations/billing-import.md)). The build tags `no_billing_aws`, `no_billing_gcp`, and `no_plugins` leave `aws`, `gcp`, and `plugin` out. Empty imports nothing.",
 		check: checkBillingSources,
 		set: func(c *Config, v string) {
 			for s := range strings.SplitSeq(v, ",") {
@@ -825,7 +825,7 @@ var schema = []field{
 	},
 	{
 		key: "billing_aws_filter",
-		doc: "Which costs of the AWS account the imports of `billing_sources = aws` take. The most accurate is an AWS account that serves this instance alone, with `none`: the taxes and the support fees carry no tag and may fall out of a tag filter (docs/operations/billing-import.md).",
+		doc: "Which costs of the AWS account the imports of `billing_sources = aws` take. The most accurate is an AWS account that serves this instance alone, with `none`: the taxes and the support fees carry no tag and may fall out of a tag filter ([importing cloud costs](../operations/billing-import.md)).",
 		def: "none",
 		choices: []choice{
 			{value: "none", doc: "Every cost that the credentials can see: the account's own, or, from the management account of an organization, every member account's."},
@@ -836,7 +836,7 @@ var schema = []field{
 	},
 	{
 		key:          "billing_aws_tag",
-		doc:          "The activated cost allocation tag of `billing_aws_filter = tag`, `key=value` such as `app=my`. A tag shows in the billing data from its activation on, up to 24 hours after it is activated; older costs need a backfill in the Billing console (docs/operations/billing-import.md).",
+		doc:          "The activated cost allocation tag of `billing_aws_filter = tag`, `key=value` such as `app=my`. A tag shows in the billing data from its activation on, up to 24 hours after it is activated; older costs need a backfill in the Billing console ([importing cloud costs](../operations/billing-import.md)).",
 		requiredWhen: "when `billing_aws_filter = tag`",
 		check:        checkBillingAWSTag,
 		set:          func(c *Config, v string) { c.BillingAWSTag = strings.TrimSpace(v) },
@@ -856,7 +856,7 @@ var schema = []field{
 	},
 	{
 		key:   "billing_aws_role_arn",
-		doc:   "ARN of an IAM role that the imports of `billing_sources = aws` assume with the Google ID token of the instance's service account (`AssumeRoleWithWebIdentity`, audience: this ARN), for a server on Google Cloud (Cloud Run) without AWS keys. The role trusts the identity provider `accounts.google.com` for the service account (docs/operations/billing-import.md). Empty uses the AWS SDK's default chain (the execution role, `AWS_ACCESS_KEY_ID`, the shared files).",
+		doc:   "ARN of an IAM role that the imports of `billing_sources = aws` assume with the Google ID token of the instance's service account (`AssumeRoleWithWebIdentity`, audience: this ARN), for a server on Google Cloud (Cloud Run) without AWS keys. The role trusts the identity provider `accounts.google.com` for the service account ([importing cloud costs](../operations/billing-import.md)). Empty uses the AWS SDK's default chain (the execution role, `AWS_ACCESS_KEY_ID`, the shared files).",
 		check: checkBillingAWSRoleARN,
 		set:   func(c *Config, v string) { c.BillingAWSRoleARN = v },
 	},
@@ -865,14 +865,14 @@ var schema = []field{
 		doc: "How the imports of `billing_sources = gcp` read the Google Cloud usage charges. The billing months are the invoice months of Cloud Billing, US Pacific calendar months; a month is final from the 5th of the next month on (Pacific time).",
 		def: "bigquery",
 		choices: []choice{
-			{value: "bigquery", doc: "Sum the standard usage cost export of Cloud Billing to BigQuery (`billing_gcp_table`) with one query a day, within the free tier of BigQuery (docs/operations/billing-import.md)."},
-			{value: "budget", doc: "Read the notifications of a monthly Cloud Billing budget from a Pub/Sub pull subscription (`billing_gcp_budget_subscription`) once a day: the budget's estimated total of each month, one line named after the budget, without the services, the charge types, or the export's days (docs/operations/billing-import.md). A simple way for an operator without the BigQuery export; free within the free tier of Pub/Sub."},
+			{value: "bigquery", doc: "Sum the standard usage cost export of Cloud Billing to BigQuery (`billing_gcp_table`) with one query a day, within the free tier of BigQuery ([importing cloud costs](../operations/billing-import.md))."},
+			{value: "budget", doc: "Read the notifications of a monthly Cloud Billing budget from a Pub/Sub pull subscription (`billing_gcp_budget_subscription`) once a day: the budget's estimated total of each month, one line named after the budget, without the services, the charge types, or the export's days ([importing cloud costs](../operations/billing-import.md)). A simple way for an operator without the BigQuery export; free within the free tier of Pub/Sub."},
 		},
 		set: func(c *Config, v string) { c.BillingGCPMethod = v },
 	},
 	{
 		key:          "billing_gcp_table",
-		doc:          "The table of the standard usage cost export of Cloud Billing to BigQuery, `project.dataset.table` such as `my-project.billing_export.gcp_billing_export_v1_012345_6789AB_CDEF01`. The service account of the server needs `roles/bigquery.dataViewer` on its dataset (docs/operations/billing-import.md).",
+		doc:          "The table of the standard usage cost export of Cloud Billing to BigQuery, `project.dataset.table` such as `my-project.billing_export.gcp_billing_export_v1_012345_6789AB_CDEF01`. The service account of the server needs `roles/bigquery.dataViewer` on its dataset ([importing cloud costs](../operations/billing-import.md)).",
 		requiredWhen: "when `billing_sources` includes `gcp` and `billing_gcp_method = bigquery`",
 		check:        checkBillingGCPTable,
 		set:          func(c *Config, v string) { c.BillingGCPTable = strings.TrimSpace(v) },
@@ -885,7 +885,7 @@ var schema = []field{
 	},
 	{
 		key:   "billing_gcp_projects",
-		doc:   "Google Cloud project IDs, comma-separated, whose costs the imports of `billing_gcp_method = bigquery` take (`project.id` of the export). Empty takes every cost of the billing account. The taxes and the other charges of the invoice that carry no project may fall out of this filter (docs/operations/billing-import.md).",
+		doc:   "Google Cloud project IDs, comma-separated, whose costs the imports of `billing_gcp_method = bigquery` take (`project.id` of the export). Empty takes every cost of the billing account. The taxes and the other charges of the invoice that carry no project may fall out of this filter ([importing cloud costs](../operations/billing-import.md)).",
 		check: checkBillingGCPProjects,
 		set: func(c *Config, v string) {
 			for s := range strings.SplitSeq(v, ",") {
@@ -910,7 +910,7 @@ var schema = []field{
 	},
 	{
 		key:          "billing_gcp_budget_subscription",
-		doc:          "The pull subscription of the Pub/Sub topic of a monthly Cloud Billing budget that `billing_gcp_method = budget` reads, `projects/{project}/subscriptions/{subscription}`. The imports acknowledge a notification once a later one of its budget and month replaces it or once its month is final and no longer imported, and keep the latest of each month imported, so the subscription needs a message retention of at least 14 days (31 recommended) and must not be read by anything else. The service account of the server needs `roles/pubsub.subscriber` on it (docs/operations/billing-import.md).",
+		doc:          "The pull subscription of the Pub/Sub topic of a monthly Cloud Billing budget that `billing_gcp_method = budget` reads, `projects/{project}/subscriptions/{subscription}`. The imports acknowledge a notification once a later one of its budget and month replaces it or once its month is final and no longer imported, and keep the latest of each month imported, so the subscription needs a message retention of at least 14 days (31 recommended) and must not be read by anything else. The service account of the server needs `roles/pubsub.subscriber` on it ([importing cloud costs](../operations/billing-import.md)).",
 		requiredWhen: "when `billing_sources` includes `gcp` and `billing_gcp_method = budget`",
 		check:        checkBillingGCPSubscription,
 		set:          func(c *Config, v string) { c.BillingGCPBudgetSubscription = strings.TrimSpace(v) },
@@ -921,15 +921,15 @@ var schema = []field{
 		def: "none",
 		choices: []choice{
 			{value: "none", doc: "No payments: the webhook endpoint and the reconciliation do not run."},
-			{value: "stripe", doc: "Stripe Billing: Checkout in subscription mode and the customer portal, with `payments_stripe_secret_key` and `payments_stripe_webhook_secret` (docs/operations/payments-stripe.md). The build tag `no_payments_stripe` leaves it out."},
-			{value: "payjp", doc: "PAY.JP on its API v1: plans and subscriptions of PAY.JP, with the server's own checkout and card pages that load payjp.js, with `payments_payjp_secret_key`, `payments_payjp_public_key`, and `payments_payjp_webhook_token` (docs/operations/payments-payjp.md). JPY only. The build tag `no_payments_payjp` leaves it out."},
-			{value: "fake", doc: "Test builds only: a stand-in provider for end-to-end tests and demonstrations that keeps its side in the server's memory and serves its own checkout page, where paying records the subscription as paid without any money moving. Only a binary built with the build tag `e2e_fakes` has it, and that binary refuses it unless `profile = development`; released binaries and images never have it (docs/reference/build-tags.md). It needs no other setting."},
+			{value: "stripe", doc: "Stripe Billing: Checkout in subscription mode and the customer portal, with `payments_stripe_secret_key` and `payments_stripe_webhook_secret` ([payments with Stripe](../operations/payments-stripe.md)). The build tag `no_payments_stripe` leaves it out."},
+			{value: "payjp", doc: "PAY.JP on its API v1: plans and subscriptions of PAY.JP, with the server's own checkout and card pages that load payjp.js, with `payments_payjp_secret_key`, `payments_payjp_public_key`, and `payments_payjp_webhook_token` ([payments with PAY.JP](../operations/payments-payjp.md)). JPY only. The build tag `no_payments_payjp` leaves it out."},
+			{value: "fake", doc: "Test builds only: a stand-in provider for end-to-end tests and demonstrations that keeps its side in the server's memory and serves its own checkout page, where paying records the subscription as paid without any money moving. Only a binary built with the build tag `e2e_fakes` has it, and that binary refuses it unless `profile = development`; released binaries and images never have it ([build tags](build-tags.md)). It needs no other setting."},
 		},
 		set: func(c *Config, v string) { c.PaymentsProvider = v },
 	},
 	{
 		key:          "payments_stripe_secret_key",
-		doc:          "The API key of the Stripe account of `payments = stripe`: a restricted key (`rk_test_` / `rk_live_`) with the permissions of docs/operations/payments-stripe.md, or a secret key (`sk_test_` / `sk_live_`). Its prefix sets the mode: a test key charges nothing, and the webhook endpoint refuses live events with it (and test events with a live key).",
+		doc:          "The API key of the Stripe account of `payments = stripe`: a restricted key (`rk_test_` / `rk_live_`) with the permissions of [payments with Stripe](../operations/payments-stripe.md), or a secret key (`sk_test_` / `sk_live_`). Its prefix sets the mode: a test key charges nothing, and the webhook endpoint refuses live events with it (and test events with a live key).",
 		secret:       true,
 		requiredWhen: "when `payments = stripe`",
 		check:        checkStripeSecretKey,
@@ -986,7 +986,7 @@ var schema = []field{
 		def: "none",
 		choices: []choice{
 			{value: "none", doc: "No full-text search: the server connects to no engine and enqueues no search job, and `GET /api/v1/instance` tells clients that the search is not available."},
-			{value: "fake", doc: "Test builds only: a stand-in index in the server's memory, for end-to-end tests and demonstrations. Only a binary built with the build tag `e2e_fakes` has it, and that binary refuses it unless `profile = development`; released binaries and images never have it (docs/reference/build-tags.md). It needs no other setting."},
+			{value: "fake", doc: "Test builds only: a stand-in index in the server's memory, for end-to-end tests and demonstrations. Only a binary built with the build tag `e2e_fakes` has it, and that binary refuses it unless `profile = development`; released binaries and images never have it ([build tags](build-tags.md)). It needs no other setting."},
 		},
 		set: func(c *Config, v string) { c.Search = v },
 	},
@@ -1269,7 +1269,7 @@ var schema = []field{
 		def: "none",
 		choices: []choice{
 			{value: "none", doc: "No spans; tracing costs next to nothing. The log lines still carry `trace_id` and `span_id` of a `traceparent` from `trusted_proxies`, which correlates them with the platform's traces (Cloud Run)."},
-			{value: "otlp", doc: "OTLP over HTTP (protobuf, gzip) to an OpenTelemetry Collector or another receiver, configured by the standard environment variables `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` or `OTEL_EXPORTER_OTLP_ENDPOINT` (default `http://localhost:4318`) and `OTEL_EXPORTER_OTLP_HEADERS`. The server does not authenticate to Cloud Trace or X-Ray itself: send to a collector next to it, which does (docs/operations/running.md). The build tag `no_otel` leaves it out."},
+			{value: "otlp", doc: "OTLP over HTTP (protobuf, gzip) to an OpenTelemetry Collector or another receiver, configured by the standard environment variables `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` or `OTEL_EXPORTER_OTLP_ENDPOINT` (default `http://localhost:4318`) and `OTEL_EXPORTER_OTLP_HEADERS`. The server does not authenticate to Cloud Trace or X-Ray itself: send to a collector next to it, which does ([running the server](../operations/running.md)). The build tag `no_otel` leaves it out."},
 		},
 		set: func(c *Config, v string) { c.TracesExporter = v },
 	},

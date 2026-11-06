@@ -24,7 +24,7 @@ groups:
         annotations:
           summary: Jobs wait more than 5 minutes for a worker
           description: The oldest ready job of the database queue has waited {{ $value | humanizeDuration }}.
-          runbook_url: https://github.com/mycroblog/my/blob/main/docs/operations/alerts.md#myqueuebacklog
+          runbook_url: https://mycroblog.dev/latest/operations/alerts/#myqueuebacklog
       - alert: MyQueueStalled
         expr: max(my_queue_oldest_ready_age_seconds) > 1800
         for: 5m
@@ -35,7 +35,7 @@ groups:
           description: >-
             The oldest ready job of the database queue has waited {{ $value | humanizeDuration }}; deliveries,
             notifications, and emails are late.
-          runbook_url: https://github.com/mycroblog/my/blob/main/docs/operations/alerts.md#myqueuestalled
+          runbook_url: https://mycroblog.dev/latest/operations/alerts/#myqueuestalled
       - alert: MyDeadJobsIncreasing
         expr: max(delta(my_queue_dead[1h])) > 10
         for: 15m
@@ -44,7 +44,7 @@ groups:
         annotations:
           summary: More than 10 jobs failed for good in the last hour
           description: The number of failed jobs grew by {{ $value | humanize }} in the last hour.
-          runbook_url: https://github.com/mycroblog/my/blob/main/docs/operations/alerts.md#mydeadjobsincreasing
+          runbook_url: https://mycroblog.dev/latest/operations/alerts/#mydeadjobsincreasing
       - alert: MyMetricsSnapshotStale
         expr: >-
           max by (my_metrics_snapshot_part) (my_metrics_snapshot_age_seconds{my_metrics_snapshot_part="queue"}) > 300
@@ -58,7 +58,7 @@ groups:
           description: >-
             The {{ $labels.my_metrics_snapshot_part }} part of the metrics snapshot is
             {{ $value | humanizeDuration }} old, so the queue and storage alerts see old values.
-          runbook_url: https://github.com/mycroblog/my/blob/main/docs/operations/alerts.md#mymetricssnapshotstale
+          runbook_url: https://mycroblog.dev/latest/operations/alerts/#mymetricssnapshotstale
 
   - name: my-federation
     rules:
@@ -73,7 +73,7 @@ groups:
         annotations:
           summary: More than half of the delivery attempts fail
           description: '{{ $value | humanizePercentage }} of the delivery attempts failed in the last 15 minutes.'
-          runbook_url: https://github.com/mycroblog/my/blob/main/docs/operations/alerts.md#mydeliveryfailureshigh
+          runbook_url: https://mycroblog.dev/latest/operations/alerts/#mydeliveryfailureshigh
       - alert: MyDeliveryAllFailing
         expr: >-
           sum(rate(my_delivery_attempts_total{my_outcome=~"retry|failed"}[15m]))
@@ -87,7 +87,7 @@ groups:
           description: >-
             {{ $value | humanizePercentage }} of the delivery attempts failed in the last 15 minutes; the cause is
             most likely on this server's side.
-          runbook_url: https://github.com/mycroblog/my/blob/main/docs/operations/alerts.md#mydeliveryallfailing
+          runbook_url: https://mycroblog.dev/latest/operations/alerts/#mydeliveryallfailing
       - alert: MyInboxRejectionsHigh
         expr: >-
           sum(rate(my_inbox_activities_total{my_outcome="rejected"}[15m]))
@@ -99,7 +99,7 @@ groups:
         annotations:
           summary: The inbox refuses more than a quarter of the activities it receives
           description: '{{ $value | humanizePercentage }} of the POSTs to the inboxes were refused in the last 15 minutes.'
-          runbook_url: https://github.com/mycroblog/my/blob/main/docs/operations/alerts.md#myinboxrejectionshigh
+          runbook_url: https://mycroblog.dev/latest/operations/alerts/#myinboxrejectionshigh
       - alert: MyInboxSignatureFailures
         expr: >-
           sum(rate(my_inbox_activities_total{my_outcome="rejected", my_inbox_rejection="signature"}[15m]))
@@ -113,7 +113,7 @@ groups:
           description: >-
             {{ $value | humanizePercentage }} of the POSTs to the inboxes failed the signature check in the last
             15 minutes.
-          runbook_url: https://github.com/mycroblog/my/blob/main/docs/operations/alerts.md#myinboxsignaturefailures
+          runbook_url: https://mycroblog.dev/latest/operations/alerts/#myinboxsignaturefailures
       - alert: MyRemoteServersPaused
         # 5 is a starting point; a server with followers on many servers sees a few pauses every week.
         expr: >-
@@ -124,7 +124,7 @@ groups:
         annotations:
           summary: Deliveries to 5 or more servers were paused in a day
           description: Deliveries to {{ $value | humanize }} more servers were paused in the last day.
-          runbook_url: https://github.com/mycroblog/my/blob/main/docs/operations/alerts.md#myremoteserverspaused
+          runbook_url: https://mycroblog.dev/latest/operations/alerts/#myremoteserverspaused
       - alert: MyInboxErrors
         expr: >-
           sum(rate(my_inbox_activities_total{my_outcome="error"}[15m]))
@@ -135,7 +135,7 @@ groups:
         annotations:
           summary: The inbox fails on more than 5% of the activities it receives
           description: '{{ $value | humanizePercentage }} of the POSTs to the inboxes ended in an internal error.'
-          runbook_url: https://github.com/mycroblog/my/blob/main/docs/operations/alerts.md#myinboxerrors
+          runbook_url: https://mycroblog.dev/latest/operations/alerts/#myinboxerrors
 
   - name: my-errors
     rules:
@@ -154,7 +154,7 @@ groups:
           description: >-
             {{ $value | humanize }} errors were reported in the last 15 minutes, more than three times the average of
             the day before.
-          runbook_url: https://github.com/mycroblog/my/blob/main/docs/operations/alerts.md#myerrorreportsincreasing
+          runbook_url: https://mycroblog.dev/latest/operations/alerts/#myerrorreportsincreasing
 
   - name: my-http
     rules:
@@ -169,7 +169,7 @@ groups:
         annotations:
           summary: More than 5% of the requests fail with a 5xx
           description: '{{ $value | humanizePercentage }} of the HTTP requests answered 5xx in the last 5 minutes.'
-          runbook_url: https://github.com/mycroblog/my/blob/main/docs/operations/alerts.md#myhttperrorshigh
+          runbook_url: https://mycroblog.dev/latest/operations/alerts/#myhttperrorshigh
       - alert: MyHTTPErrorsElevated
         expr: >-
           sum(rate(http_server_request_duration_seconds_count{http_response_status_code=~"5.."}[30m]))
@@ -181,7 +181,7 @@ groups:
         annotations:
           summary: More than 1% of the requests fail with a 5xx
           description: '{{ $value | humanizePercentage }} of the HTTP requests answered 5xx in the last 30 minutes.'
-          runbook_url: https://github.com/mycroblog/my/blob/main/docs/operations/alerts.md#myhttperrorselevated
+          runbook_url: https://mycroblog.dev/latest/operations/alerts/#myhttperrorselevated
       - alert: MyAPILatencyHigh
         # The streaming endpoint holds its request open for the life of the stream, so it is left out.
         expr: >-
@@ -194,7 +194,7 @@ groups:
         annotations:
           summary: The client API's 95th percentile is over 300 ms
           description: The 95th percentile of the client API requests is {{ $value | humanizeDuration }}.
-          runbook_url: https://github.com/mycroblog/my/blob/main/docs/operations/alerts.md#myapilatencyhigh
+          runbook_url: https://mycroblog.dev/latest/operations/alerts/#myapilatencyhigh
 
   - name: my-resources
     rules:
@@ -206,7 +206,7 @@ groups:
         annotations:
           summary: Prometheus cannot scrape {{ $labels.instance }}
           description: The metrics listener of {{ $labels.instance }} has not answered for 5 minutes.
-          runbook_url: https://github.com/mycroblog/my/blob/main/docs/operations/alerts.md#mytargetdown
+          runbook_url: https://mycroblog.dev/latest/operations/alerts/#mytargetdown
       - alert: MyNotReady
         expr: increase(my_readiness_failures_total[5m]) > 0
         for: 5m
@@ -215,7 +215,7 @@ groups:
         annotations:
           summary: '{{ $labels.instance }} fails its readiness checks'
           description: The readiness check of {{ $labels.instance }} keeps failing; the database is out of reach or the schema is not applied.
-          runbook_url: https://github.com/mycroblog/my/blob/main/docs/operations/alerts.md#mynotready
+          runbook_url: https://mycroblog.dev/latest/operations/alerts/#mynotready
       - alert: MyProcessRestarting
         # process_uptime_seconds goes down only when the process starts again.
         expr: resets(process_uptime_seconds[1h]) >= 3
@@ -224,7 +224,7 @@ groups:
         annotations:
           summary: '{{ $labels.instance }} restarted {{ $value }} times in an hour'
           description: The process behind {{ $labels.instance }} keeps restarting.
-          runbook_url: https://github.com/mycroblog/my/blob/main/docs/operations/alerts.md#myprocessrestarting
+          runbook_url: https://mycroblog.dev/latest/operations/alerts/#myprocessrestarting
       - alert: MyMemoryNearLimit
         # go_memory_limit_bytes is there only when GOMEMLIMIT is set.
         expr: >-
@@ -236,7 +236,7 @@ groups:
         annotations:
           summary: '{{ $labels.instance }} uses more than 90% of GOMEMLIMIT'
           description: The Go runtime of {{ $labels.instance }} uses {{ $value | humanizePercentage }} of its memory limit.
-          runbook_url: https://github.com/mycroblog/my/blob/main/docs/operations/alerts.md#mymemorynearlimit
+          runbook_url: https://mycroblog.dev/latest/operations/alerts/#mymemorynearlimit
       - alert: MyDBPoolSaturated
         expr: >-
           sum by (job, instance, db_client_connection_pool_name) (db_client_connection_count{db_client_connection_state="used"})
@@ -247,7 +247,7 @@ groups:
         annotations:
           summary: '{{ $labels.instance }} uses more than 90% of its database connections'
           description: '{{ $value | humanizePercentage }} of the {{ $labels.db_client_connection_pool_name }} pool is in use.'
-          runbook_url: https://github.com/mycroblog/my/blob/main/docs/operations/alerts.md#mydbpoolsaturated
+          runbook_url: https://mycroblog.dev/latest/operations/alerts/#mydbpoolsaturated
       - alert: MyDBPoolWaiting
         expr: >-
           rate(db_client_connection_wait_time_seconds_total[5m]) > 0.5
@@ -258,7 +258,7 @@ groups:
         annotations:
           summary: Requests on {{ $labels.instance }} wait for a database connection
           description: Work on {{ $labels.instance }} waits for a free connection of the {{ $labels.db_client_connection_pool_name }} pool.
-          runbook_url: https://github.com/mycroblog/my/blob/main/docs/operations/alerts.md#mydbpoolwaiting
+          runbook_url: https://mycroblog.dev/latest/operations/alerts/#mydbpoolwaiting
       - alert: MyFileDescriptorsNearLimit
         expr: process_unix_file_descriptor_count / my_process_file_descriptor_limit > 0.8
         for: 15m
@@ -267,7 +267,7 @@ groups:
         annotations:
           summary: '{{ $labels.instance }} uses more than 80% of its file descriptors'
           description: '{{ $labels.instance }} has {{ $value | humanizePercentage }} of its file descriptor limit open.'
-          runbook_url: https://github.com/mycroblog/my/blob/main/docs/operations/alerts.md#myfiledescriptorsnearlimit
+          runbook_url: https://mycroblog.dev/latest/operations/alerts/#myfiledescriptorsnearlimit
       - alert: MyAdapterErrors
         expr: >-
           sum by (job, instance, my_adapter) (rate(my_adapter_operation_duration_seconds_count{my_outcome="error"}[5m]))
@@ -278,7 +278,7 @@ groups:
         annotations:
           summary: More than 5% of the {{ $labels.my_adapter }} operations fail on {{ $labels.instance }}
           description: '{{ $value | humanizePercentage }} of the operations of the {{ $labels.my_adapter }} adapter failed.'
-          runbook_url: https://github.com/mycroblog/my/blob/main/docs/operations/alerts.md#myadaptererrors
+          runbook_url: https://mycroblog.dev/latest/operations/alerts/#myadaptererrors
       - alert: MyRemoteMediaCacheOverLimit
         # 1073741824 is the default remote_media_cache_max_bytes; use your value.
         expr: max(my_media_stored_bytes{my_media_origin="remote_cache"}) > 1.2 * 1073741824
@@ -288,7 +288,7 @@ groups:
         annotations:
           summary: The remote media cache stays over its size limit
           description: The copies of remote media take {{ $value | humanize1024 }}B, over the limit the hourly cleanup keeps.
-          runbook_url: https://github.com/mycroblog/my/blob/main/docs/operations/alerts.md#myremotemediacacheoverlimit
+          runbook_url: https://mycroblog.dev/latest/operations/alerts/#myremotemediacacheoverlimit
       - alert: MyMediaStorageLarge
         # 50 GiB is an example; set it below what your storage plan or budget allows.
         expr: sum(max by (my_media_origin) (my_media_stored_bytes)) > 50 * 1024 * 1024 * 1024
@@ -298,7 +298,7 @@ groups:
         annotations:
           summary: The media files take more than the planned storage
           description: The media files in blob storage take {{ $value | humanize1024 }}B.
-          runbook_url: https://github.com/mycroblog/my/blob/main/docs/operations/alerts.md#mymediastoragelarge
+          runbook_url: https://mycroblog.dev/latest/operations/alerts/#mymediastoragelarge
       - alert: MyDatabaseStorageLarge
         # 8 GiB is an example; set it below the storage limit of your database plan or volume.
         expr: max(my_db_size_bytes) > 8 * 1024 * 1024 * 1024
@@ -308,7 +308,7 @@ groups:
         annotations:
           summary: The database takes more than the planned storage
           description: The database takes {{ $value | humanize1024 }}B.
-          runbook_url: https://github.com/mycroblog/my/blob/main/docs/operations/alerts.md#mydatabasestoragelarge
+          runbook_url: https://mycroblog.dev/latest/operations/alerts/#mydatabasestoragelarge
 
   - name: my-cost
     rules:
@@ -323,7 +323,7 @@ groups:
           description: >-
             The newest import of the usage charges of {{ $labels.my_billing_source }} failed, and none has succeeded
             in the 6 hours since; the costs screen shows older figures.
-          runbook_url: https://github.com/mycroblog/my/blob/main/docs/operations/alerts.md#mybillingimportfailing
+          runbook_url: https://mycroblog.dev/latest/operations/alerts/#mybillingimportfailing
 
   - name: my-email
     rules:
@@ -334,7 +334,7 @@ groups:
         annotations:
           summary: Emails failed for good in the last hour
           description: 'Email jobs that ran out of retries or were refused for good in the last hour: {{ $value | humanize }}.'
-          runbook_url: https://github.com/mycroblog/my/blob/main/docs/operations/alerts.md#myemailfailing
+          runbook_url: https://mycroblog.dev/latest/operations/alerts/#myemailfailing
       - alert: MyEmailRetrying
         expr: >-
           sum(rate(my_job_duration_seconds_count{my_job_type=~".*[._]email.*", my_outcome="retry"}[15m]))
@@ -345,4 +345,4 @@ groups:
         annotations:
           summary: Most email sends fail and wait for a retry
           description: '{{ $value | humanizePercentage }} of the email job runs failed and will be retried.'
-          runbook_url: https://github.com/mycroblog/my/blob/main/docs/operations/alerts.md#myemailretrying
+          runbook_url: https://mycroblog.dev/latest/operations/alerts/#myemailretrying

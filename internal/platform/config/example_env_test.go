@@ -5,6 +5,7 @@ package config
 import (
 	"fmt"
 	"os"
+	"path"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -106,6 +107,9 @@ var exampleEnvValues = map[string]string{
 	"blob_fs_dir":  "# MY_BLOB_FS_DIR=/data/blobs",
 }
 
+// markdownLink is a Markdown link of a description, [text](target), with the target relative to the reference.
+var markdownLink = regexp.MustCompile(`\[[^\]]*\]\(([^)#\s]+)\)`)
+
 // firstSentence ends at the first period that a new sentence follows.
 var firstSentence = regexp.MustCompile(`^.*?[.:](\s|$)`)
 
@@ -141,6 +145,11 @@ func exampleEnvNote(f *field) string {
 		return "MY_KEK is not set here: the file secrets/kek holds the key-encryption key (see the top of this file)."
 	}
 	note := strings.TrimRight(strings.TrimSpace(firstSentence.FindString(f.doc)), ":")
+	// The links of the description lead from docs/reference/configuration.md to the other documents; the template sits
+	// in deploy/docker of a checkout, so it names the document by its path in the repository instead.
+	note = markdownLink.ReplaceAllStringFunc(note, func(link string) string {
+		return path.Join(path.Dir(ReferencePath), markdownLink.FindStringSubmatch(link)[1])
+	})
 	if !strings.HasSuffix(note, ".") {
 		note += "."
 	}

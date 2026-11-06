@@ -213,14 +213,14 @@ func inviteUsage(w io.Writer) {
 
 Manages the staff's invite codes, which let people sign up while the
 registration_mode instance setting is "open", "approval" (approved at once), or
-"invite"; no invite is created or works while it is "closed"
-(docs/operations/registration.md). list also shows the invites that members
-created; one whose creator can no longer invite does not work. create prints
-the new code and a sign-up link that fills it in; by default an invite allows
-1 sign-up and expires after 7 days (-max-uses 0 and -expires-in 0 lift the
-limits). Concurrent sign-ups never use an invite more often than it allows.
+"invite"; no invite is created or works while it is "closed". list also shows
+the invites that members created; one whose creator can no longer invite does
+not work. create prints the new code and a sign-up link that fills it in; by
+default an invite allows 1 sign-up and expires after 7 days (-max-uses 0 and
+-expires-in 0 lift the limits). Concurrent sign-ups never use an invite more
+often than it allows.
 revoke stops a code from working; revoking it again changes nothing.
-`)
+`+docsLine("docs/operations/registration.md"))
 }
 
 // runRegistration implements `my registration <subcommand>`.
@@ -324,12 +324,12 @@ func registrationUsage(w io.Writer) {
   my registration approve [-note <text>] [-config <file>] <username>
   my registration reject [-note <text>] [-config <file>] <username>
 
-Reviews the sign-ups from the registration page (docs/operations/registration.md).
+Reviews the sign-ups from the registration page.
 In the "approval" registration mode, and in "open" mode while mail = none, new
 users wait for a moderator: they can sign in, but cannot use the app until
 their registration is approved. list shows the pending registrations by
 default, longest waiting first, with the reason the applicant gave. approve and
 reject decide one pending registration; a decided registration cannot be
 decided again.
-`)
+`+docsLine("docs/operations/registration.md"))
 }

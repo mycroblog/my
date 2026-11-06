@@ -188,6 +188,13 @@ entries:
       - "The documentation site (@my/docs): Astro Starlight, built by `scripts/task.sh docs:site-build`, previewed by `docs:site-dev`. It imports nothing from app/web or app/ui (copy an asset instead) and adds no analytics or external service; search is Starlight's Pagefind."
       - "The site holds no hand-written documents: scripts/import-docs.ts copies the published directories of src/published.ts (docs/operations, docs/reference but commands.md, docs/guide, docs/developers) into the git-ignored src/content/docs/, except the landing page src/content/docs/index.md. English only, with the root locale `en`."
       - "The sidebar is built from the sections of docs/README.md (src/sidebar.ts): add a page there, not here. Links in the pages start with the base path (DOCS_SITE_BASE), and starlight-links-validator fails the build on a broken link or #anchor."
+  - name: docs-site-links
+    paths: ["internal/platform/docsite/**", "tools/agentkit/cmd/releasenotes/render.go"]
+    docs: ["docs/adr/0150-documentation-site.md"]
+    userdocs: ["docs/reference/build-tags.md"]
+    checks: [go]
+    notes:
+      - "What the server prints for operators (command help, configuration errors) links the documentation site, never a repository path or a GitHub blob URL: internal/platform/docsite builds the page URL of a document path at the version of the binary (/vX.Y/ for a stable release, /next/ otherwise; cmd/my sets it at start), with the page paths of app/docs/src/published.ts. The schema's docs render only into docs/reference/configuration.md, so they link the sibling documents relatively (`[backup and restore](../operations/backup.md)`), which the site rewrites. The release notes (scripts/release-notes.sh) link the release's version, and the alerting rules and the monitoring modules /latest/."
   - name: mail-preview
     paths: ["internal/platform/mailpreview/**", "scripts/mail-preview/**", "internal/app/identity/mail_drafts.go", "internal/app/notification/mail_drafts.go"]
     docs: ["docs/adr/0086-email-delivery.md#2-組み立てテンプレートと外枠"]

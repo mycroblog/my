@@ -239,7 +239,7 @@ locals {
   channels      = concat([for channel in google_monitoring_notification_channel.email : channel.id], var.notification_channels)
   page_channels = concat(local.channels, var.page_notification_channels)
   period        = tonumber(trimsuffix(var.uptime_period, "s"))
-  runbook       = "https://github.com/mycroblog/my/blob/main/docs/operations/alerts.md"
+  runbook       = "https://mycroblog.dev/latest/operations/alerts/"
 }
 
 resource "google_monitoring_notification_channel" "email" {
