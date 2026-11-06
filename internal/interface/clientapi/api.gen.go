@@ -16173,6 +16173,9 @@ type ServerInterface interface {
 	// ListSupporterSubscriptions List the subscriptions
 	// (GET /admin/supporter_subscriptions)
 	ListSupporterSubscriptions(w http.ResponseWriter, r *http.Request, params ListSupporterSubscriptionsParams)
+	// GetSupporterSubscription Get a subscription
+	// (GET /admin/supporter_subscriptions/{id})
+	GetSupporterSubscription(w http.ResponseWriter, r *http.Request, id SupporterSubscriptionId)
 	// EndSupporterSubscription End a subscription at once
 	// (POST /admin/supporter_subscriptions/{id}/end)
 	EndSupporterSubscription(w http.ResponseWriter, r *http.Request, id SupporterSubscriptionId)
@@ -22392,6 +22395,32 @@ func (siw *ServerInterfaceWrapper) ListSupporterSubscriptions(w http.ResponseWri
 	handler.ServeHTTP(w, r)
 }
 
+// GetSupporterSubscription operation middleware
+func (siw *ServerInterfaceWrapper) GetSupporterSubscription(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id SupporterSubscriptionId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetSupporterSubscription(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // EndSupporterSubscription operation middleware
 func (siw *ServerInterfaceWrapper) EndSupporterSubscription(w http.ResponseWriter, r *http.Request) {
 
@@ -28011,6 +28040,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPatch+" "+options.BaseURL+"/admin/supporter_plans/{id}", wrapper.UpdateSupporterPlan)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/supporter_plans/{id}/retire", wrapper.RetireSupporterPlan)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/supporter_subscriptions", wrapper.ListSupporterSubscriptions)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/supporter_subscriptions/{id}", wrapper.GetSupporterSubscription)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/supporter_subscriptions/{id}/end", wrapper.EndSupporterSubscription)
 
 	return m
@@ -39713,6 +39743,68 @@ func (response ListSupporterSubscriptionsdefaultApplicationProblemPlusJSONRespon
 	return err
 }
 
+type GetSupporterSubscriptionRequestObject struct {
+	Id SupporterSubscriptionId `json:"id"`
+}
+
+type GetSupporterSubscriptionResponseObject interface {
+	VisitGetSupporterSubscriptionResponse(w http.ResponseWriter) error
+}
+
+type GetSupporterSubscription200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type GetSupporterSubscription200JSONResponse struct {
+	Body    AdminSupporterSubscription
+	Headers GetSupporterSubscription200ResponseHeaders
+}
+
+func (response GetSupporterSubscription200JSONResponse) VisitGetSupporterSubscriptionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetSupporterSubscriptiondefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response GetSupporterSubscriptiondefaultApplicationProblemPlusJSONResponse) VisitGetSupporterSubscriptionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type EndSupporterSubscriptionRequestObject struct {
 	Id SupporterSubscriptionId `json:"id"`
 }
@@ -51326,6 +51418,9 @@ type StrictServerInterface interface {
 	// ListSupporterSubscriptions List the subscriptions
 	// (GET /admin/supporter_subscriptions)
 	ListSupporterSubscriptions(ctx context.Context, request ListSupporterSubscriptionsRequestObject) (ListSupporterSubscriptionsResponseObject, error)
+	// GetSupporterSubscription Get a subscription
+	// (GET /admin/supporter_subscriptions/{id})
+	GetSupporterSubscription(ctx context.Context, request GetSupporterSubscriptionRequestObject) (GetSupporterSubscriptionResponseObject, error)
 	// EndSupporterSubscription End a subscription at once
 	// (POST /admin/supporter_subscriptions/{id}/end)
 	EndSupporterSubscription(ctx context.Context, request EndSupporterSubscriptionRequestObject) (EndSupporterSubscriptionResponseObject, error)
@@ -57169,6 +57264,32 @@ func (sh *strictHandler) ListSupporterSubscriptions(w http.ResponseWriter, r *ht
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(ListSupporterSubscriptionsResponseObject); ok {
 		if err := validResponse.VisitListSupporterSubscriptionsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetSupporterSubscription operation middleware
+func (sh *strictHandler) GetSupporterSubscription(w http.ResponseWriter, r *http.Request, id SupporterSubscriptionId) {
+	var request GetSupporterSubscriptionRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetSupporterSubscription(ctx, request.(GetSupporterSubscriptionRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetSupporterSubscription")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetSupporterSubscriptionResponseObject); ok {
+		if err := validResponse.VisitGetSupporterSubscriptionResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

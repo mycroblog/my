@@ -11052,6 +11052,32 @@ paths:
                 $ref: '#/components/schemas/AdminSupporterSubscriptionPage'
         default:
           $ref: '#/components/responses/Problem'
+  /admin/supporter_subscriptions/{id}:
+    get:
+      operationId: getSupporterSubscription
+      summary: Get a subscription
+      description: |
+        One subscription to a supporter plan, as the list shows it. An unknown subscription is a 404.
+        Needs the `manage_supporters` permission.
+      tags:
+        - admin-server
+      security:
+        - oauth2:
+            - admin:read
+      parameters:
+        - $ref: '#/components/parameters/SupporterSubscriptionId'
+      responses:
+        '200':
+          description: The subscription.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminSupporterSubscription'
+        default:
+          $ref: '#/components/responses/Problem'
   /admin/supporter_subscriptions/{id}/end:
     post:
       operationId: endSupporterSubscription

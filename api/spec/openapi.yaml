@@ -718,6 +718,8 @@ paths:
     $ref: ./paths/admin_supporter_plans_{id}_retire.yaml
   /admin/supporter_subscriptions:
     $ref: ./paths/admin_supporter_subscriptions.yaml
+  /admin/supporter_subscriptions/{id}:
+    $ref: ./paths/admin_supporter_subscriptions_{id}.yaml
   /admin/supporter_subscriptions/{id}/end:
     $ref: ./paths/admin_supporter_subscriptions_{id}_end.yaml
 components:

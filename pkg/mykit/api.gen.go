@@ -20379,6 +20379,14 @@ type ClientInterface interface {
 	// Corresponds with GET /admin/supporter_subscriptions (the `ListSupporterSubscriptions` operationId).
 	ListSupporterSubscriptions(ctx context.Context, params *ListSupporterSubscriptionsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// GetSupporterSubscription Get a subscription
+	//
+	// One subscription to a supporter plan, as the list shows it. An unknown subscription is a 404.
+	// Needs the `manage_supporters` permission.
+	//
+	// Corresponds with GET /admin/supporter_subscriptions/{id} (the `GetSupporterSubscription` operationId).
+	GetSupporterSubscription(ctx context.Context, id SupporterSubscriptionId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// EndSupporterSubscription End a subscription at once
 	//
 	// Ends a subscription at once, without a refund: the role goes now, and the
@@ -28817,6 +28825,24 @@ func (c *Client) SetSupporterProgram(ctx context.Context, body SetSupporterProgr
 // Corresponds with GET /admin/supporter_subscriptions (the `ListSupporterSubscriptions` operationId).
 func (c *Client) ListSupporterSubscriptions(ctx context.Context, params *ListSupporterSubscriptionsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewListSupporterSubscriptionsRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// GetSupporterSubscription Get a subscription
+//
+// One subscription to a supporter plan, as the list shows it. An unknown subscription is a 404.
+// Needs the `manage_supporters` permission.
+//
+// Corresponds with GET /admin/supporter_subscriptions/{id} (the `GetSupporterSubscription` operationId).
+func (c *Client) GetSupporterSubscription(ctx context.Context, id SupporterSubscriptionId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetSupporterSubscriptionRequest(c.Server, id)
 	if err != nil {
 		return nil, err
 	}
@@ -42502,6 +42528,40 @@ func NewListSupporterSubscriptionsRequest(server string, params *ListSupporterSu
 	return req, nil
 }
 
+// NewGetSupporterSubscriptionRequest constructs an http.Request for the GetSupporterSubscription method
+func NewGetSupporterSubscriptionRequest(server string, id SupporterSubscriptionId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/admin/supporter_subscriptions/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewEndSupporterSubscriptionRequest constructs an http.Request for the EndSupporterSubscription method
 func NewEndSupporterSubscriptionRequest(server string, id SupporterSubscriptionId) (*http.Request, error) {
 	var err error
@@ -53809,6 +53869,16 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with GET /admin/supporter_subscriptions (the `ListSupporterSubscriptions` operationId).
 	ListSupporterSubscriptionsWithResponse(ctx context.Context, params *ListSupporterSubscriptionsParams, reqEditors ...RequestEditorFn) (*ListSupporterSubscriptionsResponse, error)
+
+	// GetSupporterSubscriptionWithResponse Get a subscription
+	//
+	// One subscription to a supporter plan, as the list shows it. An unknown subscription is a 404.
+	// Needs the `manage_supporters` permission.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /admin/supporter_subscriptions/{id} (the `GetSupporterSubscription` operationId).
+	GetSupporterSubscriptionWithResponse(ctx context.Context, id SupporterSubscriptionId, reqEditors ...RequestEditorFn) (*GetSupporterSubscriptionResponse, error)
 
 	// EndSupporterSubscriptionWithResponse End a subscription at once
 	//
@@ -69252,6 +69322,71 @@ func (r ListSupporterSubscriptionsResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r ListSupporterSubscriptionsResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// GetSupporterSubscriptionResponse200Headers the declared response headers of an HTTP 200 response for GetSupporterSubscription
+type GetSupporterSubscriptionResponse200Headers struct {
+	CacheControl *string
+}
+
+// GetSupporterSubscriptionResponseDefaultHeaders the declared response headers of an HTTP default response for GetSupporterSubscription
+type GetSupporterSubscriptionResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type GetSupporterSubscriptionResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *AdminSupporterSubscription
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *GetSupporterSubscriptionResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *GetSupporterSubscriptionResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r GetSupporterSubscriptionResponse) GetJSON200() *AdminSupporterSubscription {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r GetSupporterSubscriptionResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r GetSupporterSubscriptionResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r GetSupporterSubscriptionResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetSupporterSubscriptionResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r GetSupporterSubscriptionResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -85940,6 +86075,22 @@ func (c *ClientWithResponses) ListSupporterSubscriptionsWithResponse(ctx context
 		return nil, err
 	}
 	return ParseListSupporterSubscriptionsResponse(rsp)
+}
+
+// GetSupporterSubscriptionWithResponse Get a subscription
+//
+// One subscription to a supporter plan, as the list shows it. An unknown subscription is a 404.
+// Needs the `manage_supporters` permission.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /admin/supporter_subscriptions/{id} (the `GetSupporterSubscription` operationId).
+func (c *ClientWithResponses) GetSupporterSubscriptionWithResponse(ctx context.Context, id SupporterSubscriptionId, reqEditors ...RequestEditorFn) (*GetSupporterSubscriptionResponse, error) {
+	rsp, err := c.GetSupporterSubscription(ctx, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetSupporterSubscriptionResponse(rsp)
 }
 
 // EndSupporterSubscriptionWithResponse End a subscription at once
@@ -105249,6 +105400,83 @@ func ParseListSupporterSubscriptionsResponse(rsp *http.Response) (*ListSupporter
 		response.Headers200 = &headers
 	case true:
 		var headers ListSupporterSubscriptionsResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseGetSupporterSubscriptionResponse parses an HTTP response from a GetSupporterSubscriptionWithResponse call
+func ParseGetSupporterSubscriptionResponse(rsp *http.Response) (*GetSupporterSubscriptionResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetSupporterSubscriptionResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest AdminSupporterSubscription
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers GetSupporterSubscriptionResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers GetSupporterSubscriptionResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {

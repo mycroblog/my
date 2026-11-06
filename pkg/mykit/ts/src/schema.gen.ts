@@ -8029,6 +8029,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/supporter_subscriptions/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get a subscription
+         * @description One subscription to a supporter plan, as the list shows it. An unknown subscription is a 404.
+         *     Needs the `manage_supporters` permission.
+         */
+        get: operations["getSupporterSubscription"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/supporter_subscriptions/{id}/end": {
         parameters: {
             query?: never;
@@ -24777,6 +24798,31 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AdminSupporterSubscriptionPage"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    getSupporterSubscription: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the subscription. */
+                id: components["parameters"]["SupporterSubscriptionId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The subscription. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminSupporterSubscription"];
                 };
             };
             default: components["responses"]["Problem"];

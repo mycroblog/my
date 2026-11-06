@@ -127,6 +127,7 @@ var operationSecurity = map[string]operationAccess{
 	"GET /api/v1/admin/supporter_plans":                                             {Operation: "listAdminSupporterPlans", Scopes: []string{"admin:read"}},
 	"GET /api/v1/admin/supporter_program":                                           {Operation: "getSupporterProgram", Scopes: []string{"admin:read"}},
 	"GET /api/v1/admin/supporter_subscriptions":                                     {Operation: "listSupporterSubscriptions", Scopes: []string{"admin:read"}},
+	"GET /api/v1/admin/supporter_subscriptions/{id}":                                {Operation: "getSupporterSubscription", Scopes: []string{"admin:read"}},
 	"GET /api/v1/admin/theme":                                                       {Operation: "getAdminTheme", Scopes: []string{"admin:read"}},
 	"GET /api/v1/admin/translation":                                                 {Operation: "getAdminTranslationOverview", Scopes: []string{"admin:read"}},
 	"GET /api/v1/admin/webhooks":                                                    {Operation: "listAdminWebhooks", Scopes: []string{"admin:read"}},

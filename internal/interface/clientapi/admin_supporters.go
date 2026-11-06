@@ -470,6 +470,30 @@ func (s *Server) ListSupporterSubscriptions(ctx context.Context, req ListSupport
 	return ListSupporterSubscriptions200JSONResponse{Body: page, Headers: ListSupporterSubscriptions200ResponseHeaders{CacheControl: &cache}}, nil
 }
 
+// GetSupporterSubscription serves GET /api/v1/admin/supporter_subscriptions/{id}.
+func (s *Server) GetSupporterSubscription(ctx context.Context, req GetSupporterSubscriptionRequestObject) (GetSupporterSubscriptionResponseObject, error) {
+	_, p, err := s.requireSupporters(ctx)
+	if err != nil || p != nil {
+		if err != nil {
+			return nil, err
+		}
+		return GetSupporterSubscriptiondefaultApplicationProblemPlusJSONResponse(*p), nil
+	}
+	sv, err := s.o.Supporters.Subscription(ctx, req.Id)
+	if pr, ok := s.supporterProblem(ctx, err); ok {
+		return GetSupporterSubscriptiondefaultApplicationProblemPlusJSONResponse(pr), nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("clientapi: subscription %s: %w", req.Id, err)
+	}
+	out, err := s.newAdminSupporterSubscription(ctx, sv)
+	if err != nil {
+		return nil, err
+	}
+	cache := cacheNoStore
+	return GetSupporterSubscription200JSONResponse{Body: out, Headers: GetSupporterSubscription200ResponseHeaders{CacheControl: &cache}}, nil
+}
+
 // EndSupporterSubscription serves POST /api/v1/admin/supporter_subscriptions/{id}/end.
 func (s *Server) EndSupporterSubscription(ctx context.Context, req EndSupporterSubscriptionRequestObject) (EndSupporterSubscriptionResponseObject, error) {
 	v, p, err := s.requireSupporters(ctx)
