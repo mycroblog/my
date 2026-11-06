@@ -16,8 +16,10 @@ on:
   push:
     branches: [main]
     paths:
-      # The published documents (app/docs/src/published.ts) and the table of contents of the sidebar.
+      # What the site publishes (the paths of the site context of scripts/changed-contexts.sh): the documents
+      # (app/docs/src/published.ts), the table of contents of the sidebar, and the bundle of the API spec.
       - "docs/README.md"
+      - "api/openapi.yaml"
       - "docs/operations/**"
       - "docs/reference/**"
       - "docs/guide/**"

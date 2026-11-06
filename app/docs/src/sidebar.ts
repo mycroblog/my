@@ -18,12 +18,20 @@ function shortLabel(label: string): string {
   return label.replace(/\s*\([^)]*\)\s*$/, "").replaceAll("`", "") || label;
 }
 
-export function docsSidebar(): SidebarGroup[] {
-  return readIndex().map((section) => ({
-    label: section.heading,
-    items: section.items.map((item) => ({
-      label: shortLabel(item.label),
-      slug: slugOf(item.path),
-    })),
-  }));
+/**
+ * The groups of the sidebar. `after` places groups that do not come from docs/README.md (such as the API reference
+ * that a plugin fills) right after the section with that heading, or at the end when docs/README.md has no such section.
+ */
+export function docsSidebar<T>(after: Record<string, T[]> = {}): (SidebarGroup | T)[] {
+  const placed = new Set<string>();
+  const groups = readIndex().flatMap((section): (SidebarGroup | T)[] => {
+    const group = {
+      label: section.heading,
+      items: section.items.map((item) => ({ label: shortLabel(item.label), slug: slugOf(item.path) })),
+    };
+    placed.add(section.heading);
+    return [group, ...(after[section.heading] ?? [])];
+  });
+  const rest = Object.entries(after).flatMap(([heading, extra]) => (placed.has(heading) ? [] : extra));
+  return [...groups, ...rest];
 }

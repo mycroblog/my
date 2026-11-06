@@ -1,5 +1,15 @@
 # Documentation
 
+## Using my
+
+- [Signing up and signing in](guide/signing-in.md)
+- [Posting and choosing who sees a post](guide/posting.md) (public, this server, unlisted, followers, and mentioned people)
+- [Following people and reading timelines](guide/following.md)
+- [Notifications](guide/notifications.md)
+- [Blocking, muting, and reporting](guide/safety.md)
+- [Moving your account](guide/moving-your-account.md)
+- [Voice chat](guide/voice-chat.md)
+
 ## Operation
 
 - [Administrators and roles](operations/admin-cli.md)
@@ -43,8 +53,18 @@
 - [Jobs](reference/jobs.md) (every job type and periodic job: what it does, what starts it, how it retries, and whether to run it again by hand)
 - [Commands](reference/commands.md) (the go-task tasks and the pinned toolchain)
 - [Webhook reference](reference/webhooks.md) (the headers, signatures, events, and bodies a receiver gets)
-- [Building third-party apps](reference/third-party-apps.md) (registering an app, the authorization flow, scopes,
-  rate limits, API stability)
+
+## Developers
+
+Guides for people who build clients and bots against the client API.
+
+- [Getting a token](developers/authentication.md) (registering an app, the authorization flow, tokens, redirect URIs, scopes)
+- [Paging](developers/paging.md) (cursors and limits)
+- [Errors](developers/errors.md) (problem documents and the problem types to handle)
+- [Rate limits](developers/rate-limits.md) (what to read and how to back off)
+- [The event stream](developers/streaming.md) (Server-Sent Events, reconnecting, catching up)
+- [Client libraries](developers/libraries.md) (getting started with mykit and mybot in Go and TypeScript)
+- [Stability of the API](developers/stability.md) (what changes without notice and what is announced)
 
 ## Contributing
 
