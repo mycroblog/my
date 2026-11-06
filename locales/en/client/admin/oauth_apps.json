@@ -19,10 +19,6 @@
     "defaultMessage": "Registered by",
     "description": "Column header of the registration route."
   },
-  "admin.oauth_apps.column.scope": {
-    "defaultMessage": "Most it may be granted",
-    "description": "Column header of the scopes an app may be granted at most."
-  },
   "admin.oauth_apps.confidential": {
     "defaultMessage": "Has a secret",
     "description": "An app that is a confidential client."
@@ -175,6 +171,18 @@
     "defaultMessage": "Registered by a deleted account",
     "description": "Who registered an app, when the account of the user who did is gone."
   },
+  "admin.oauth_apps.pages": {
+    "defaultMessage": "OAuth apps pages",
+    "description": "Name of the local navigation between the pages of the OAuth apps screen."
+  },
+  "admin.oauth_apps.pages.apps": {
+    "defaultMessage": "Apps",
+    "description": "Link of the local navigation to the list of apps."
+  },
+  "admin.oauth_apps.pages.hosts": {
+    "defaultMessage": "Denied hosts",
+    "description": "Link of the local navigation to the denied hosts of app metadata documents."
+  },
   "admin.oauth_apps.public": {
     "defaultMessage": "No secret",
     "description": "An app that is a public client."
@@ -195,21 +203,13 @@
     "defaultMessage": "A user",
     "description": "Registration route of an app that a signed-in user registered."
   },
+  "admin.oauth_apps.scope": {
+    "defaultMessage": "Most it may be granted: {scope}",
+    "description": "Under an app's name: the scopes it may be granted at most. {scope} is the space-separated scopes."
+  },
   "admin.oauth_apps.summary": {
     "defaultMessage": "See every app that can sign in to this server, disable one, and deny hosts of app metadata documents.",
     "description": "Description of the OAuth apps screen in the administration menu."
-  },
-  "admin.oauth_apps.tabs.apps": {
-    "defaultMessage": "Apps",
-    "description": "Tab that lists the OAuth apps."
-  },
-  "admin.oauth_apps.tabs.hosts": {
-    "defaultMessage": "Denied hosts",
-    "description": "Tab that lists the denied hosts of app metadata documents."
-  },
-  "admin.oauth_apps.tabs.label": {
-    "defaultMessage": "OAuth apps sections",
-    "description": "Accessible name of the tabs of the OAuth apps screen."
   },
   "admin.oauth_apps.title": {
     "defaultMessage": "OAuth apps",

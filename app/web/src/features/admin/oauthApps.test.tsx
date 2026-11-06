@@ -51,7 +51,7 @@ describe("the OAuth apps screen", () => {
     if (appRow === undefined || ownRow === undefined) throw new Error("two apps expected");
     expect(within(appRow).getByRole("rowheader", { name: /^Tootle/u })).toBeInTheDocument();
     expect(within(appRow).getByText("A user")).toBeInTheDocument();
-    expect(within(appRow).getByText("read write")).toBeInTheDocument();
+    expect(within(appRow).getByText("Most it may be granted: ⁦read write⁩")).toBeInTheDocument();
     expect(within(appRow).getByRole("button", { name: `Disable ${name}` })).toBeInTheDocument();
     expect(within(ownRow).getByText("This server")).toBeInTheDocument();
     expect(within(ownRow).queryByRole("button")).not.toBeInTheDocument();
@@ -190,7 +190,7 @@ describe("the denied hosts", () => {
         });
       }),
     );
-    const { user } = await renderApp({ path: "/admin/oauth-apps?tab=hosts" });
+    const { user } = await renderApp({ path: "/admin/oauth-apps/hosts" });
     await screen.findByRole("heading", { level: 3, name: "No denied hosts" });
     await user.click(screen.getByRole("button", { name: "Deny a host" }));
     const dialog = await screen.findByRole("alertdialog", { name: "Deny a host" });
@@ -218,7 +218,7 @@ describe("the denied hosts", () => {
         return new HttpResponse(null, { status: 204 });
       }),
     );
-    const { user } = await renderApp({ path: "/admin/oauth-apps?tab=hosts" });
+    const { user } = await renderApp({ path: "/admin/oauth-apps/hosts" });
     expect(await screen.findByRole("rowheader", { name: "spam.example" })).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Allow the host spam.example" }));
 

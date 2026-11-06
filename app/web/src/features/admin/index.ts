@@ -30,9 +30,16 @@ export { themeQueryOptions } from "./api/theme";
 export { ThemeSettings } from "./components/ThemeSettings";
 // The custom emoji: registering this server's and managing those of other servers (ADR-0051), and deciding the
 // requests of the holders of create_custom_emojis (ADR-0070), for manage_custom_emojis.
-export { adminCustomEmojisQueryOptions, type CustomEmojiFilter } from "./api/customEmojis";
+export {
+  adminCustomEmojiQueryOptions,
+  adminCustomEmojisQueryOptions,
+  type CustomEmojiFilter,
+} from "./api/customEmojis";
 export { adminCustomEmojiRequestsQueryOptions, type CustomEmojiRequestState } from "./api/customEmojiRequests";
-export { CustomEmojiSettings, type CustomEmojiTab } from "./components/CustomEmojiSettings";
+export { CustomEmojiDetail } from "./components/CustomEmojiDetail";
+export { CustomEmojiList } from "./components/CustomEmojiList";
+export { CustomEmojiRequestsPage } from "./components/CustomEmojiRequests";
+export { NewCustomEmoji } from "./components/NewCustomEmoji";
 // What the user's page of their own custom emoji (features/custom-emojis) shares with the screen: the rules of an
 // emoji, how a sentence names one, and the names of the states of a request.
 export {
@@ -47,7 +54,7 @@ export { parseAliases } from "./hooks/useCustomEmojis";
 // The OAuth apps: every client by registration route, disabling them, and denying the hosts of Client ID Metadata
 // Documents (ADR-0090 §1), for manage_oauth_apps.
 export { hostDenialsQueryOptions, type OAuthClientFilter, oauthClientsQueryOptions } from "./api/oauthApps";
-export { OAuthAppSettings, type OAuthAppTab } from "./components/OAuthAppSettings";
+export { OAuthAppList, OAuthHostDenials } from "./components/OAuthAppSettings";
 // The server's announcements to every local user (FR-726), for manage_announcements.
 export { adminAnnouncementsQueryOptions } from "./api/announcements";
 export { AnnouncementSettings } from "./components/AnnouncementSettings";

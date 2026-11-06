@@ -349,6 +349,14 @@ const oauthClient: Schemas["AdminOAuthClient"] = {
   created_at: "2026-10-22T00:00:00Z",
 };
 
+/** A denied host with a long name, as GET /admin/oauth_client_host_denials lists it. */
+const hostDenial: Schemas["AdminOAuthClientHostDenial"] = {
+  id: "0192f0c4-7a8e-7000-8000-0000000000a3",
+  host: "a-very-long-host-name-of-app-metadata-documents-that-wraps.example",
+  denied_by_deleted: false,
+  denied_at: "2026-10-23T00:00:00Z",
+};
+
 /** An OIDC login provider with a long name and issuer, as GET /admin/login_providers lists it. */
 const linkCardDomainRule: Schemas["LinkCardDomainRule"] = {
   domain: "cards.example",
@@ -777,6 +785,7 @@ async function moderatorServer(page: Page) {
     if (key === "GET /admin/invites") return json(route, { items: [invite] });
     if (key === "GET /admin/custom_emojis")
       return json(route, { items: url.searchParams.get("local") === "false" ? [] : [customEmoji] });
+    if (key === `GET /admin/custom_emojis/${customEmoji.id}`) return json(route, customEmoji);
     if (key === "GET /admin/custom_emoji_requests") return json(route, { items: [] });
     if (key === "GET /admin/webhooks") return json(route, { items: [webhook] });
     if (key === "GET /admin/announcements") return json(route, { items: [announcement] });
@@ -786,6 +795,7 @@ async function moderatorServer(page: Page) {
     if (key === `GET /admin/webhooks/${webhook.id}/deliveries`) return json(route, { items: [webhookDelivery] });
     if (key === "GET /admin/relays") return json(route, { items: [relay] });
     if (key === "GET /admin/oauth_clients") return json(route, { items: [oauthClient] });
+    if (key === "GET /admin/oauth_client_host_denials") return json(route, { items: [hostDenial] });
     if (key === "GET /admin/login_providers") return json(route, { items: [loginProvider] });
     if (key === "GET /admin/link_card_domains") return json(route, { items: [linkCardDomainRule] });
     if (key === "GET /admin/roles") return json(route, { items: roles });
@@ -1053,7 +1063,10 @@ const adminPages: Readonly<Record<string, { path: string; ready: string | { valu
   "moderation.audit-log": { path: "/moderation/audit-log", ready: auditEntry.target_label },
   "moderation.instances": { path: "/moderation/instances", ready: longDomain },
   "moderation.instances_.$domain": { path: `/moderation/instances/${longDomain}`, ready: longDomain },
-  "admin.custom-emojis": { path: "/admin/custom-emojis", ready: customEmoji.category ?? "" },
+  "admin.custom-emojis": { path: "/admin/custom-emojis", ready: `:${customEmoji.shortcode}:` },
+  "admin.custom-emojis_.new": { path: "/admin/custom-emojis/new", ready: "" },
+  "admin.custom-emojis_.$id": { path: `/admin/custom-emojis/${customEmoji.id}`, ready: customEmoji.category ?? "" },
+  "admin.custom-emojis_.requests": { path: "/admin/custom-emojis/requests", ready: "" },
   "admin.jobs": { path: "/admin/jobs", ready: deadJob.type },
   "admin.jobs_.list": { path: "/admin/jobs/list?state=dead", ready: deadJob.type },
   "admin.jobs_.$id": { path: `/admin/jobs/${deadJob.id}`, ready: deadJob.last_error },
@@ -1065,6 +1078,7 @@ const adminPages: Readonly<Record<string, { path: string; ready: string | { valu
   "admin.announcements": { path: "/admin/announcements", ready: "the status page" },
   "admin.relays": { path: "/admin/relays", ready: relay.inbox_url },
   "admin.oauth-apps": { path: "/admin/oauth-apps", ready: oauthClient.name },
+  "admin.oauth-apps_.hosts": { path: "/admin/oauth-apps/hosts", ready: hostDenial.host },
   "admin.login-providers": { path: "/admin/login-providers", ready: loginProvider.display_name },
   "admin.link-card-domains": { path: "/admin/link-card-domains", ready: linkCardDomainRule.domain },
   "admin.documents": { path: "/admin/documents", ready: { value: documentText.body } },

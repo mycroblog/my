@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The custom emoji (/admin/custom-emojis; web-client/screens/admin-custom-emojis.md) in the states of ADR-0079 §13:
-// this server's emoji, those of other servers, and the requests for new ones.
+// The custom emoji screen (/admin/custom-emojis and its pages; web-client/screens/admin-custom-emojis.md and the files
+// next to it) in the states of ADR-0079 §13: this server's emoji, those of other servers, the form that registers one,
+// the page of one emoji, and the requests for new ones.
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { http, HttpResponse } from "msw";
 import { expect } from "storybook/test";
@@ -92,6 +93,16 @@ function emojiListing(local: Schemas["AdminCustomEmoji"][], remote: Schemas["Adm
   });
 }
 
+/** Each emoji's page, by its id. */
+function emojiPages(emoji: Schemas["AdminCustomEmoji"][]) {
+  return http.get(`${apiBase}/admin/custom_emojis/:id`, ({ request, params }) => {
+    const found = emoji.find((item) => item.id === params["id"]);
+    return withViewer(request, () =>
+      found === undefined ? HttpResponse.json({ status: 404 }, { status: 404 }) : HttpResponse.json(found),
+    );
+  });
+}
+
 /** The pending requests; those of the other states are none. */
 function requestListing(pending: Schemas["AdminCustomEmojiRequest"][]) {
   return http.get(`${apiBase}/admin/custom_emoji_requests`, ({ request }) => {
@@ -102,50 +113,67 @@ function requestListing(pending: Schemas["AdminCustomEmojiRequest"][]) {
 
 const meta = {
   title: "Screens/Admin/CustomEmojis",
-  ...adminScreen("/admin/custom-emojis", [emojiListing(localEmoji, remoteEmoji), requestListing(pendingRequests)]),
+  ...adminScreen("/admin/custom-emojis", [
+    emojiListing(localEmoji, remoteEmoji),
+    emojiPages([...localEmoji, ...remoteEmoji]),
+    requestListing(pendingRequests),
+  ]),
 } satisfies Meta;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
 /**
- * This server's emoji, in categories, with aliases, a hidden one and a disabled one, with their count and the one button
- * that registers another; three requests pending.
+ * This server's emoji, one page of the table: a hidden one and a disabled one, with the one link that registers
+ * another; three requests pending, counted on the link to the requests page.
  */
 export const Normal: Story = {
   play: async (context) => {
     await settled(context);
-    await expect(context.canvas.getByText("12 custom emoji")).toBeInTheDocument();
-    await expect(context.canvas.getAllByRole("button", { name: "Register a custom emoji" })).toHaveLength(1);
+    await expect(context.canvas.getAllByRole("link", { name: "Register a custom emoji" })).toHaveLength(1);
+    await expect(await context.canvas.findByText("3 requests await review")).toBeInTheDocument();
   },
 };
 
-/**
- * The form that registers an emoji, open in place of the button with focus on choosing its image. (The unit tests
- * submit it: the submit button leaves with the panel, and React Aria's announcement of its pending state would name a
- * gone element.)
- */
-export const Adding: Story = {
+/** The page of the form that registers an emoji. */
+export const Registering: Story = {
+  parameters: { screen: { path: "/admin/custom-emojis/new" } },
   play: async (context) => {
     const { canvas, userEvent } = context;
     await settled(context);
-    await userEvent.click(canvas.getByRole("button", { name: "Register a custom emoji" }));
-    await expect(canvas.getByRole("button", { name: "Choose an image" })).toHaveFocus();
     await userEvent.type(canvas.getByRole("textbox", { name: "Shortcode" }), "blobcat_wave");
   },
 };
 
-/** The emoji of other servers: copying one stands where the button that registers would. */
+/** The page of one emoji of this server: its facts, settings, image, state and deletion. */
+export const LocalEmoji: Story = {
+  parameters: { screen: { path: `/admin/custom-emojis/${localEmoji[0]?.id ?? ""}` } },
+  play: async (context) => {
+    await settled(context);
+    await expect(context.canvas.getByRole("button", { name: "Save" })).toBeInTheDocument();
+  },
+};
+
+/** The page of one emoji of another server: its facts, copying it here and its state. */
+export const RemoteEmoji: Story = {
+  parameters: { screen: { path: `/admin/custom-emojis/${remoteEmoji[0]?.id ?? ""}` } },
+  play: async (context) => {
+    await settled(context);
+    await expect(context.canvas.getByRole("button", { name: "Copy" })).toBeInTheDocument();
+  },
+};
+
+/** The emoji of other servers: why to copy one stands where the link that registers would. */
 export const OtherServers: Story = {
   parameters: { screen: { path: "/admin/custom-emojis?origin=remote" } },
   play: async (context) => {
     await settled(context);
-    await expect(context.canvas.queryByRole("button", { name: "Register a custom emoji" })).not.toBeInTheDocument();
+    await expect(context.canvas.queryByRole("link", { name: "Register a custom emoji" })).not.toBeInTheDocument();
   },
 };
 
 /** The pending requests for new emoji and new images. */
-export const Requests: Story = { parameters: { screen: { path: "/admin/custom-emojis?tab=requests" } } };
+export const Requests: Story = { parameters: { screen: { path: "/admin/custom-emojis/requests" } } };
 
 /** A server without custom emoji or requests. */
 export const Empty: Story = adminAnswering();
@@ -154,7 +182,7 @@ export const Empty: Story = adminAnswering();
 export const NoRequests: Story = {
   parameters: {
     screen: {
-      path: "/admin/custom-emojis?tab=requests",
+      path: "/admin/custom-emojis/requests",
       handlers: [administrator, emojiListing(localEmoji, remoteEmoji)],
     },
   },

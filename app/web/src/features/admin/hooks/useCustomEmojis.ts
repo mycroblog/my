@@ -1,9 +1,12 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The custom emoji of the admin screen (ADR-0051, manage_custom_emojis): the list under a filter, registering a local
-// emoji with an image file, changing its settings, replacing its image, deleting it, and enabling, disabling or
-// copying a remote one. What each change did is announced and kept in a StatusMessage; a failure stays next to its cause.
+// The custom emoji of the admin screen (ADR-0051, manage_custom_emojis): the list under a filter, one emoji, registering
+// a local emoji with an image file, changing its settings, replacing its image, deleting it, enabling and disabling any
+// emoji, and copying a remote one. A change that keeps its page says what it did in a StatusMessage next to its control
+// and announces it; registering and copying open the new emoji's page, and deleting goes back to the list with a toast.
+// A failure stays next to its cause.
 import { useNotice } from "@my/ui";
-import { useMutation, useQueryClient, useSuspenseInfiniteQuery } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useSuspenseInfiniteQuery, useSuspenseQuery } from "@tanstack/react-query";
+import { useNavigate } from "@tanstack/react-router";
 import { type SyntheticEvent, useState } from "react";
 import { useApi } from "../../../lib/auth/SessionProvider";
 import { errorMessage } from "../../../lib/errors";
@@ -12,6 +15,7 @@ import { type PagedPages, toPagedList } from "../../moderation";
 import { MediaProcessingError } from "../../settings";
 import {
   type AdminCustomEmoji,
+  adminCustomEmojiQueryOptions,
   adminCustomEmojisQueryOptions,
   cacheChangedCustomEmoji,
   cacheCreatedCustomEmoji,
@@ -50,19 +54,34 @@ export function useAdminCustomEmojis(filter: CustomEmojiFilter): PagedPages<Admi
   return toPagedList(useSuspenseInfiniteQuery(adminCustomEmojisQueryOptions(api, filter)));
 }
 
-/** The form of a new local emoji, filled in by the administrator. */
-type Draft = { file: File | null; shortcode: string; category: string; aliases: string; visibleInPicker: boolean };
+/** One emoji, which its route has loaded. */
+export function useAdminCustomEmoji(id: string): AdminCustomEmoji {
+  const api = useApi();
+  return useSuspenseQuery(adminCustomEmojiQueryOptions(api, id)).data;
+}
 
-const emptyDraft: Draft = { file: null, shortcode: "", category: "", aliases: "", visibleInPicker: true };
+/** The form of a new local emoji, filled in by the administrator. */
+type Draft = {
+  file: File | null;
+  shortcode: string;
+  category: string;
+  aliases: string;
+  visibleInPicker: boolean;
+};
+
+const emptyDraft: Draft = {
+  file: null,
+  shortcode: "",
+  category: "",
+  aliases: "",
+  visibleInPicker: true,
+};
 
 export type CustomEmojiForm = {
   draft: Draft;
   change: (change: Partial<Draft>) => void;
-  /**
-   * Uploads the image and registers the emoji, once the browser has checked the fields and an image is chosen;
-   * `onAdded` runs once it is registered (to close the add panel).
-   */
-  submit: (event: SyntheticEvent<HTMLFormElement>, onAdded?: () => void) => void;
+  /** Uploads the image and registers the emoji, once the browser has checked the fields and an image is chosen. */
+  submit: (event: SyntheticEvent<HTMLFormElement>) => void;
   isPending: boolean;
   /** That no image is chosen, after a submit without one. */
   missingImage: boolean;
@@ -71,21 +90,21 @@ export type CustomEmojiForm = {
 };
 
 /**
- * The form of a new local emoji. A success empties it and gives what it did to `onCreated` (the list's result) once the
- * lists and the audit log are fetched again.
+ * The form of a new local emoji. A success opens the new emoji's page, whose heading shows what it did
+ * (web-client/16-look-states-and-wording.md G24), once the lists and the audit log are marked stale.
  */
-export function useCustomEmojiForm(onCreated: (message: string) => void): CustomEmojiForm {
+export function useCustomEmojiForm(): CustomEmojiForm {
   const api = useApi();
   const t = useT();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [draft, setDraft] = useState<Draft>(emptyDraft);
   const [missingImage, setMissingImage] = useState(false);
   const mutation = useMutation({
     ...createCustomEmojiMutation(api),
     onSuccess: async (emoji) => {
-      await cacheCreatedCustomEmoji(queryClient);
-      setDraft(emptyDraft);
-      onCreated(t("client:admin.custom_emojis.created", { emoji: emojiInText(emoji) }));
+      await cacheCreatedCustomEmoji(queryClient, emoji);
+      await navigate({ to: "/admin/custom-emojis/$id", params: { id: emoji.id } });
     },
   });
   return {
@@ -94,7 +113,7 @@ export function useCustomEmojiForm(onCreated: (message: string) => void): Custom
       setDraft((previous) => ({ ...previous, ...change }));
       if (change.file !== undefined) setMissingImage(false);
     },
-    submit: (event, onAdded) => {
+    submit: (event) => {
       event.preventDefault();
       if (mutation.isPending) return;
       if (draft.file === null) {
@@ -102,16 +121,13 @@ export function useCustomEmojiForm(onCreated: (message: string) => void): Custom
         return;
       }
       const category = draft.category.trim();
-      mutation.mutate(
-        {
-          file: draft.file,
-          shortcode: draft.shortcode.trim(),
-          aliases: parseAliases(draft.aliases),
-          visible_in_picker: draft.visibleInPicker,
-          ...(category === "" ? {} : { category }),
-        },
-        { onSuccess: () => onAdded?.() },
-      );
+      mutation.mutate({
+        file: draft.file,
+        shortcode: draft.shortcode.trim(),
+        aliases: parseAliases(draft.aliases),
+        visible_in_picker: draft.visibleInPicker,
+        ...(category === "" ? {} : { category }),
+      });
     },
     isPending: mutation.isPending,
     missingImage,
@@ -119,142 +135,211 @@ export function useCustomEmojiForm(onCreated: (message: string) => void): Custom
   };
 }
 
-export type CustomEmojiActions = {
-  /** Changes an emoji's settings; resolves with whether it succeeded, the failure in `error`. */
-  update: (emoji: AdminCustomEmoji, change: CustomEmojiChange) => Promise<boolean>;
-  /** Enables or disables an emoji (a remote one has nothing else to change). */
-  setEnabled: (emoji: AdminCustomEmoji, enabled: boolean) => void;
-  /** Uploads a new image of a local emoji and makes it its image. */
-  replaceImage: (emoji: AdminCustomEmoji, file: File) => void;
-  /** Deletes a local emoji; resolves with whether it succeeded. */
-  remove: (emoji: AdminCustomEmoji) => Promise<boolean>;
-  /** Copies a remote emoji into a local one named `shortcode`; resolves with whether it succeeded. */
-  copy: (emoji: AdminCustomEmoji, shortcode: string) => Promise<boolean>;
-  /** The emoji being changed. */
-  pendingId: string | undefined;
+/** The result of a change that keeps its page: what it did, or why it failed, next to its control. */
+type CustomEmojiChangeResult = {
+  /** What the last change did, for the StatusMessage next to the control. */
+  status: string | undefined;
   /** Why the last change failed, localized, until the next change. */
   error: string | undefined;
-  /** What the last change did, for the list's result. */
-  status: string | undefined;
-  /** Shows and announces what a change made elsewhere (registering in the add panel) did, as the list's result. */
-  report: (message: string) => void;
 };
 
-/**
- * Changing the emoji of the list. `onDeleted(id)` is called once a deleted emoji is about to leave the list (to keep
- * focus, lib/useFocusAfterRemoval); a changed emoji keeps its row, which shows the answer.
- */
-export function useCustomEmojiActions(onDeleted: (id: string) => void): CustomEmojiActions {
+export type CustomEmojiEnabling = CustomEmojiChangeResult & {
+  /** Enables or disables an emoji (a remote one has nothing else to change). */
+  setEnabled: (emoji: AdminCustomEmoji, enabled: boolean) => void;
+  /** The emoji being enabled or disabled. */
+  pendingId: string | undefined;
+};
+
+/** Enabling and disabling emoji, from a row of the list or from an emoji's page; the emoji shows the answer at once. */
+export function useCustomEmojiEnabling(): CustomEmojiEnabling {
   const api = useApi();
   const t = useT();
   const queryClient = useQueryClient();
   const notice = useNotice();
   const [status, setStatus] = useState<string | undefined>(undefined);
-  const report = (message: string) => {
-    setStatus(message);
-    notice.inPlace(message);
+  const toggle = useMutation({
+    ...setCustomEmojiEnabledMutation(api),
+    // Awaited by the mutation: a failure here leaves it in its error state, which the control shows.
+    onSuccess: async (saved, { enabled }) => {
+      await cacheChangedCustomEmoji(queryClient, saved);
+      const message = t(
+        enabled ? "client:admin.custom_emojis.enabled_status" : "client:admin.custom_emojis.disabled_status",
+        { emoji: emojiInText(saved) },
+      );
+      setStatus(message);
+      notice.inPlace(message);
+    },
+  });
+  return {
+    setEnabled: (emoji, enabled) => {
+      setStatus(undefined);
+      toggle.mutate({ id: emoji.id, enabled });
+    },
+    pendingId: toggle.isPending ? toggle.variables.id : undefined,
+    status,
+    error: toggle.isError ? failure(t, toggle.error) : undefined,
   };
-  const update = useMutation(updateCustomEmojiMutation(api));
-  const toggle = useMutation(setCustomEmojiEnabledMutation(api));
-  const replace = useMutation(replaceCustomEmojiImageMutation(api));
-  const remove = useMutation(deleteCustomEmojiMutation(api));
-  const copy = useMutation(copyCustomEmojiMutation(api));
-  const pending = [update, toggle, replace, copy].find((mutation) => mutation.isPending);
-  const pendingId = remove.isPending ? remove.variables : pending?.variables.id;
-  const failed = [update, toggle, replace, remove, copy].find((mutation) => mutation.isError);
-  const changed = async (emoji: AdminCustomEmoji, message: string) => {
-    await cacheChangedCustomEmoji(queryClient, emoji);
-    report(message);
+}
+
+export type CustomEmojiSettingsForm = {
+  category: string;
+  aliases: string;
+  visibleInPicker: boolean;
+  change: (change: Partial<Pick<CustomEmojiSettingsForm, "category" | "aliases" | "visibleInPicker">>) => void;
+  /** Saves the settings, once the browser has checked the fields. */
+  submit: (event: SyntheticEvent<HTMLFormElement>) => void;
+  isPending: boolean;
+  /** What saving did, or why it failed, for the form's action bar. */
+  result: CustomEmojiChangeResult;
+};
+
+/** The settings of a local emoji on its page: its category, its other names and whether the picker shows it. */
+export function useCustomEmojiSettingsForm(emoji: AdminCustomEmoji): CustomEmojiSettingsForm {
+  const api = useApi();
+  const t = useT();
+  const queryClient = useQueryClient();
+  const notice = useNotice();
+  const [draft, setDraft] = useState(() => ({
+    category: emoji.category ?? "",
+    aliases: emoji.aliases.join(" "),
+    visibleInPicker: emoji.visible_in_picker,
+  }));
+  const [status, setStatus] = useState<string | undefined>(undefined);
+  const update = useMutation({
+    ...updateCustomEmojiMutation(api),
+    // Awaited by the mutation: a failure here leaves it in its error state, which the control shows.
+    onSuccess: async (saved) => {
+      await cacheChangedCustomEmoji(queryClient, saved);
+      const message = t("client:admin.custom_emojis.updated", {
+        emoji: emojiInText(saved),
+      });
+      setStatus(message);
+      notice.inPlace(message);
+    },
+  });
+  const change: CustomEmojiChange = {
+    category: draft.category.trim(),
+    aliases: parseAliases(draft.aliases),
+    visible_in_picker: draft.visibleInPicker,
   };
   return {
-    update: async (emoji, change) => {
-      toggle.reset();
-      replace.reset();
-      remove.reset();
-      copy.reset();
-      try {
-        const saved = await update.mutateAsync({ id: emoji.id, change });
-        await changed(saved, t("client:admin.custom_emojis.updated", { emoji: emojiInText(saved) }));
-        return true;
-      } catch {
-        return false;
-      }
+    ...draft,
+    change: (next) => {
+      setDraft((previous) => ({ ...previous, ...next }));
+      setStatus(undefined);
     },
-    setEnabled: (emoji, enabled) => {
-      update.reset();
-      replace.reset();
-      remove.reset();
-      copy.reset();
-      toggle.mutate(
-        { id: emoji.id, enabled },
-        {
-          onSuccess: (saved) => {
-            void changed(
-              saved,
-              t(enabled ? "client:admin.custom_emojis.enabled_status" : "client:admin.custom_emojis.disabled_status", {
-                emoji: emojiInText(saved),
-              }),
-            );
-          },
-        },
-      );
+    submit: (event) => {
+      event.preventDefault();
+      if (update.isPending) return;
+      setStatus(undefined);
+      update.mutate({ id: emoji.id, change });
     },
-    replaceImage: (emoji, file) => {
-      toggle.reset();
-      update.reset();
-      remove.reset();
-      copy.reset();
-      replace.mutate(
-        { id: emoji.id, file },
-        {
-          onSuccess: (saved) => {
-            void changed(saved, t("client:admin.custom_emojis.image_replaced", { emoji: emojiInText(saved) }));
-          },
-        },
-      );
+    isPending: update.isPending,
+    result: { status, error: update.isError ? failure(t, update.error) : undefined },
+  };
+}
+
+export type CustomEmojiImageReplacement = CustomEmojiChangeResult & {
+  /** Uploads a new image of a local emoji and makes it its image. */
+  replace: (file: File) => void;
+  isPending: boolean;
+};
+
+/** Replacing the image of a local emoji on its page. */
+export function useCustomEmojiImageReplacement(emoji: AdminCustomEmoji): CustomEmojiImageReplacement {
+  const api = useApi();
+  const t = useT();
+  const queryClient = useQueryClient();
+  const notice = useNotice();
+  const [status, setStatus] = useState<string | undefined>(undefined);
+  const replace = useMutation({
+    ...replaceCustomEmojiImageMutation(api),
+    // Awaited by the mutation: a failure here leaves it in its error state, which the control shows.
+    onSuccess: async (saved) => {
+      await cacheChangedCustomEmoji(queryClient, saved);
+      const message = t("client:admin.custom_emojis.image_replaced", {
+        emoji: emojiInText(saved),
+      });
+      setStatus(message);
+      notice.inPlace(message);
     },
-    remove: async (emoji) => {
-      toggle.reset();
-      update.reset();
-      replace.reset();
-      copy.reset();
+  });
+  return {
+    replace: (file) => {
+      setStatus(undefined);
+      replace.mutate({ id: emoji.id, file });
+    },
+    isPending: replace.isPending,
+    status,
+    error: replace.isError ? failure(t, replace.error) : undefined,
+  };
+}
+
+/**
+ * Deleting a local emoji from its page; resolves with whether it succeeded. A success goes back to the list, which
+ * the emoji has left, and says what it did in a toast: the page it was on is gone (G24).
+ */
+export function useDeleteCustomEmoji(emoji: AdminCustomEmoji): {
+  remove: () => Promise<boolean>;
+  error: string | undefined;
+} {
+  const api = useApi();
+  const t = useT();
+  const queryClient = useQueryClient();
+  const notice = useNotice();
+  const navigate = useNavigate();
+  const remove = useMutation({
+    ...deleteCustomEmojiMutation(api),
+    // Awaited by the mutation: a failure here leaves it in its error state, which the dialog shows.
+    onSuccess: async () => {
+      await navigate({ to: "/admin/custom-emojis" });
+      await cacheDeletedCustomEmoji(queryClient, emoji.id);
+      notice.toast({
+        tone: "success",
+        message: t("client:admin.custom_emojis.deleted", { emoji: emojiInText(emoji) }),
+      });
+    },
+  });
+  return {
+    remove: async () => {
       try {
         await remove.mutateAsync(emoji.id);
       } catch {
         return false;
       }
-      onDeleted(emoji.id);
-      await cacheDeletedCustomEmoji(queryClient, emoji.id);
-      report(t("client:admin.custom_emojis.deleted", { emoji: emojiInText(emoji) }));
       return true;
     },
-    copy: async (emoji, shortcode) => {
-      toggle.reset();
-      update.reset();
-      replace.reset();
-      remove.reset();
+    error: remove.isError ? failure(t, remove.error) : undefined,
+  };
+}
+
+/** Copying a remote emoji into a local one from its page; a success opens the copy's page, whose heading shows it. */
+export function useCopyCustomEmoji(emoji: AdminCustomEmoji): {
+  copy: (event: SyntheticEvent<HTMLFormElement>, shortcode: string) => void;
+  isPending: boolean;
+  error: string | undefined;
+} {
+  const api = useApi();
+  const t = useT();
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
+  const copy = useMutation({
+    ...copyCustomEmojiMutation(api),
+    // Awaited by the mutation: a failure here leaves it in its error state, which the control shows.
+    onSuccess: async (created) => {
+      await cacheCreatedCustomEmoji(queryClient, created);
+      await navigate({ to: "/admin/custom-emojis/$id", params: { id: created.id } });
+    },
+  });
+  return {
+    copy: (event, shortcode) => {
+      event.preventDefault();
+      if (copy.isPending) return;
       // The remote one's shortcode is the server's default; another one is sent.
       const named = shortcode === emoji.shortcode ? undefined : shortcode;
-      let created: AdminCustomEmoji;
-      try {
-        created = await copy.mutateAsync({ id: emoji.id, shortcode: named });
-      } catch {
-        return false;
-      }
-      await cacheCreatedCustomEmoji(queryClient);
-      report(t("client:admin.custom_emojis.copied", { emoji: emojiInText(emoji), copy: emojiInText(created) }));
-      return true;
+      copy.mutate({ id: emoji.id, shortcode: named });
     },
-    pendingId,
-    error: failed === undefined ? undefined : failure(t, failed.error),
-    status,
-    report: (message) => {
-      toggle.reset();
-      update.reset();
-      replace.reset();
-      remove.reset();
-      copy.reset();
-      report(message);
-    },
+    isPending: copy.isPending,
+    error: copy.isError ? failure(t, copy.error) : undefined,
   };
 }

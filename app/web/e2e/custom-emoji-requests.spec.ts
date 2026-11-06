@@ -9,6 +9,7 @@
 import type { Page, Route } from "@playwright/test";
 import type { components } from "@mycroblog/mykit";
 import {
+  escapeRegExp,
   expect,
   expectNoAxeViolations,
   expectNoHorizontalScroll,
@@ -49,7 +50,10 @@ function account(permissions: Schemas["Permission"][]) {
     discoverable: true,
     indexable: true,
     source: { note: "", fields: [] },
-    posting: { visibility_ceiling: "public", visibilities: ["public", "local", "unlisted", "private", "direct"] },
+    posting: {
+      visibility_ceiling: "public",
+      visibilities: ["public", "local", "unlisted", "private", "direct"],
+    },
     permissions,
   };
 }
@@ -142,7 +146,13 @@ async function serveApi(page: Page, permissions: Schemas["Permission"][]) {
     if (key === "GET /custom_emojis") return json(route, { items: [] });
     if (key === "GET /custom_emojis/mine") {
       const pending = requests.filter((r) => r.state === "pending").length;
-      return json(route, { items: [], used: pending, pending, limit: 5, resets_at: "2026-11-01T00:00:00Z" });
+      return json(route, {
+        items: [],
+        used: pending,
+        pending,
+        limit: 5,
+        resets_at: "2026-11-01T00:00:00Z",
+      });
     }
     if (key === "GET /custom_emoji_requests") return json(route, { items: requests });
     // The image is processed at once.
@@ -173,7 +183,12 @@ async function serveApi(page: Page, permissions: Schemas["Permission"][]) {
           .filter((r) => r.state === state)
           .map((r) => ({
             ...r,
-            requester: { ...account([]), id: "0192f0c4-7a8e-7000-8000-000000000002", username: "bob", acct: "bob" },
+            requester: {
+              ...account([]),
+              id: "0192f0c4-7a8e-7000-8000-000000000002",
+              username: "bob",
+              acct: "bob",
+            },
           })),
       });
     }
@@ -211,22 +226,32 @@ test.describe("custom emoji requests", () => {
     await main.locator('a[href="/settings/custom-emojis"]').click();
 
     await expect(page).toHaveURL(/\/settings\/custom-emojis$/u);
-    const form = main.getByRole("region", { name: message("custom_emojis.new.title"), exact: true });
+    const form = main.getByRole("region", {
+      name: message("custom_emojis.new.title"),
+      exact: true,
+    });
     await expect(form).toBeVisible();
     await expectNoAxeViolations(makeAxeBuilder);
     await expectNoHorizontalScroll(page);
 
-    await form
-      .locator('input[type="file"]')
-      .setInputFiles({ name: "blobfox.png", mimeType: "image/png", buffer: Buffer.from("iVBORw0KGgo=", "base64") });
+    await form.locator('input[type="file"]').setInputFiles({
+      name: "blobfox.png",
+      mimeType: "image/png",
+      buffer: Buffer.from("iVBORw0KGgo=", "base64"),
+    });
     await form.getByRole("textbox", { name: message("custom_emojis.shortcode") }).fill("blobfox");
     await form.getByRole("button", { name: message("custom_emojis.submit"), exact: true }).click();
     await expect(form.getByRole("status")).not.toBeEmpty();
 
-    const requests = main.getByRole("region", { name: message("custom_emojis.requests.title"), exact: true });
+    const requests = main.getByRole("region", {
+      name: message("custom_emojis.requests.title"),
+      exact: true,
+    });
     await expect(requests.getByRole("heading", { level: 3, name: ":blobfox:" })).toBeVisible();
     await requests
-      .getByRole("button", { name: message("custom_emojis.withdraw_request", { emoji: "⁦:blobfox:⁩" }) })
+      .getByRole("button", {
+        name: message("custom_emojis.withdraw_request", { emoji: "⁦:blobfox:⁩" }),
+      })
       .click();
     await expect(requests.getByText(message("custom_emoji_requests.state.withdrawn"), { exact: true })).toBeVisible();
     await expectNoAxeViolations(makeAxeBuilder);
@@ -234,18 +259,29 @@ test.describe("custom emoji requests", () => {
     expect(adminRequests).toEqual([]);
   });
 
-  test("an administrator rejects a request with a reason from the requests tab", async ({ page, makeAxeBuilder }) => {
+  test("an administrator rejects a request with a reason on the requests page", async ({ page, makeAxeBuilder }) => {
     await serveApi(page, ["manage_custom_emojis"]);
-    await page.goto("/admin/custom-emojis?tab=requests");
+    await page.goto("/admin/custom-emojis/requests");
     const main = page.getByRole("main");
-    const region = main.getByRole("region", { name: message("admin.custom_emoji_requests.title"), exact: true });
+    const pages = main.getByRole("navigation", { name: message("admin.custom_emojis.pages") });
+    await expect(
+      pages.getByRole("link", {
+        name: new RegExp(`^${escapeRegExp(message("admin.custom_emojis.pages.requests"))}`, "u"),
+      }),
+    ).toHaveAttribute("aria-current", "page");
+    const region = main.getByRole("region", {
+      name: message("admin.custom_emoji_requests.title"),
+      exact: true,
+    });
     await expect(recordRowHeaders(region).filter({ hasText: `:${longShortcode}:` })).toBeVisible();
     await expectNoAxeViolations(makeAxeBuilder);
     await expectNoHorizontalScroll(page);
 
     const name = `⁦:${longShortcode}:⁩`;
     await region
-      .getByRole("button", { name: message("admin.custom_emoji_requests.reject_request", { emoji: name }) })
+      .getByRole("button", {
+        name: message("admin.custom_emoji_requests.reject_request", { emoji: name }),
+      })
       .click();
     const dialog = page.getByRole("alertdialog");
     await dialog

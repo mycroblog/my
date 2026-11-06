@@ -185,8 +185,7 @@ export function auditTargetHref(
       // The screen lists every block, lifted and ended ones too; a block has no screen of its own.
       return "/moderation/signup-blocks?filter=all";
     case "custom_emoji":
-      // An emoji has no screen of its own: the list searched by its shortcode, of this server or of its domain.
-      return customEmojiHref(entry.target_label);
+      return `/admin/custom-emojis/${id}`;
     case "role":
       // A role has no screen of its own: the list of roles shows it.
       return "/admin/roles";
@@ -219,20 +218,11 @@ export function auditTargetHref(
       // A rule has no screen of its own: the list of rules, which a removed rule has left.
       return "/admin/link-card-domains";
     case "custom_emoji_request":
-      // A request has no screen of its own: the requests of the custom emoji screen, in every state.
-      return "/admin/custom-emojis?tab=requests";
+      // A request has no screen of its own: the requests page of the custom emoji screen, in every state.
+      return "/admin/custom-emojis/requests";
     default:
       return undefined;
   }
-}
-
-/** The custom emoji screen searched by the emoji of a label, `:shortcode:` or `:shortcode:@domain`; undefined for another label. */
-function customEmojiHref(label: string): string | undefined {
-  const match = /^:([A-Za-z0-9_]+):(?:@(.+))?$/u.exec(label);
-  if (match === null) return undefined;
-  const [, shortcode = "", domain] = match;
-  const search = new URLSearchParams(domain === undefined ? { shortcode } : { origin: "remote", shortcode, domain });
-  return `/admin/custom-emojis?${search.toString()}`;
 }
 
 export type AuditLog = PagedPages<AuditEntry> & {

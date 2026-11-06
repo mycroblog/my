@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The queries and mutations of the custom emoji screen (web-client/README.md S1, ADR-0051 §4, manage_custom_emojis): the
-// emoji, local or remote, newest first (GET /admin/custom_emojis), registering a local one with an uploaded image
+// emoji, local or remote, newest first (GET /admin/custom_emojis), one of them (GET .../{id}), registering a local one with an uploaded image
 // (POST), changing its settings or enabling a remote one (PATCH), replacing its image (PUT .../image), deleting
 // it (DELETE) and copying a remote one into a local one (POST .../copy). An emoji that breaks a rule is a 422 `invalid-custom-emoji` problem whose detail says why. Every
 // change is recorded in the audit log and changes what the picker offers (GET /custom_emojis).
@@ -60,6 +60,16 @@ export function adminCustomEmojisQueryOptions(api: Api, filter: CustomEmojiFilte
   });
 }
 
+/** One emoji, local or remote (GET /admin/custom_emojis/{id}): its page. */
+export function adminCustomEmojiQueryOptions(api: Api, id: string) {
+  return api.query.queryOptions("get", "/admin/custom_emojis/{id}", { params: { path: { id } } });
+}
+
+/** The cache key of one emoji's page, for the changes that answer with the emoji. */
+function emojiKey(id: string) {
+  return ["get", "/admin/custom_emojis/{id}", { params: { path: { id } } }] as const;
+}
+
 /** A new local emoji with the image file to upload for it. */
 export type CustomEmojiRegistration = Omit<NewCustomEmoji, "media_id"> & { file: File };
 
@@ -69,7 +79,9 @@ export function createCustomEmojiMutation(api: Api) {
     mutationKey: ["post", "/admin/custom_emojis"] as const,
     mutationFn: async ({ file, ...emoji }: CustomEmojiRegistration): Promise<AdminCustomEmoji> => {
       const media = await uploadImage(api, file, "emoji");
-      const { data, error } = await api.fetch.POST("/admin/custom_emojis", { body: { ...emoji, media_id: media.id } });
+      const { data, error } = await api.fetch.POST("/admin/custom_emojis", {
+        body: { ...emoji, media_id: media.id },
+      });
       if (data === undefined) throw new ApiError(error);
       return data;
     },
@@ -164,16 +176,21 @@ async function refreshAfterChange(queryClient: QueryClient): Promise<void> {
   ]);
 }
 
-/** A new emoji: the lists gain it (newest first), so they are fetched again, with the picker and the audit log. */
-export async function cacheCreatedCustomEmoji(queryClient: QueryClient): Promise<void> {
+/**
+ * A new emoji (registered, or copied from another server): its page shows it at once, and the lists gain it (newest
+ * first), so they are fetched again, with the picker and the audit log.
+ */
+export async function cacheCreatedCustomEmoji(queryClient: QueryClient, emoji: AdminCustomEmoji): Promise<void> {
+  queryClient.setQueryData(emojiKey(emoji.id), emoji);
   await Promise.all([
     queryClient.invalidateQueries({ queryKey: ["get", "/admin/custom_emojis"] }),
     refreshAfterChange(queryClient),
   ]);
 }
 
-/** A changed emoji: its rows show the answer at once (ADR-0028). */
+/** A changed emoji: its page and its rows show the answer at once (ADR-0028). */
 export async function cacheChangedCustomEmoji(queryClient: QueryClient, emoji: AdminCustomEmoji): Promise<void> {
+  queryClient.setQueryData(emojiKey(emoji.id), emoji);
   queryClient.setQueriesData<EmojiPages>(
     { queryKey: ["get", "/admin/custom_emojis"] },
     (data) =>
@@ -188,15 +205,19 @@ export async function cacheChangedCustomEmoji(queryClient: QueryClient, emoji: A
   await refreshAfterChange(queryClient);
 }
 
-/** A deleted emoji: it leaves the cached lists. */
+/** A deleted emoji: it leaves the cached lists, and its page is forgotten. */
 export async function cacheDeletedCustomEmoji(queryClient: QueryClient, id: string): Promise<void> {
   await refreshAfterChange(queryClient);
+  queryClient.removeQueries({ queryKey: emojiKey(id), exact: true });
   queryClient.setQueriesData<EmojiPages>(
     { queryKey: ["get", "/admin/custom_emojis"] },
     (data) =>
       data && {
         ...data,
-        pages: data.pages.map((page) => ({ ...page, items: page.items.filter((item) => item.id !== id) })),
+        pages: data.pages.map((page) => ({
+          ...page,
+          items: page.items.filter((item) => item.id !== id),
+        })),
       },
   );
 }

@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The custom emoji screen through the whole app (web-client/README.md T4, ADR-0051): an administrator with
-// manage_custom_emojis registers an emoji with an image, changes, replaces and deletes it, and disables another
-// server's; with MSW playing the API.
-import { screen, waitFor, within } from "@testing-library/react";
+// manage_custom_emojis registers an emoji with an image on its form's page, changes and deletes it on its own page,
+// and disables and copies another server's; with MSW playing the API.
+import { screen, within } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
 import { beforeEach, describe, expect, test } from "vitest";
 import { mediaFixture, type Schemas } from "../../test/fixtures";
@@ -53,39 +53,58 @@ describe("the custom emoji screen", () => {
     expect(await screen.findByRole("heading", { level: 2, name: "You cannot use this screen" })).toBeInTheDocument();
   });
 
-  test("registers an emoji with an uploaded image, its category and other names", async () => {
+  test("lists the emoji with the pages of the screen, and links each row to its page", async () => {
+    server.use(
+      http.get(`${apiBase}/admin/custom_emojis`, () =>
+        HttpResponse.json({ items: [adminCustomEmojiFixture("e1", "blobcat")] }),
+      ),
+    );
+    await renderApp({ path: "/admin/custom-emojis" });
+    // docs/architecture/web-client/screens/admin-custom-emojis.md §3: one region, its one primary action a link.
+    const list = await screen.findByRole("region", { name: "Registered custom emoji" });
+    expect(sectionHeadings()).toEqual(["Registered custom emoji"]);
+    const pages = screen.getByRole("navigation", { name: "Custom emoji pages" });
+    expect(within(pages).getByRole("link", { name: "Emoji" })).toHaveAttribute("aria-current", "page");
+    expect(within(pages).getByRole("link", { name: "Requests" })).toHaveAttribute(
+      "href",
+      "/admin/custom-emojis/requests",
+    );
+    expect(within(list).getByRole("link", { name: "Register a custom emoji" })).toHaveAttribute(
+      "href",
+      "/admin/custom-emojis/new",
+    );
+    expect(within(list).getByRole("link", { name: ":blobcat:" })).toHaveAttribute("href", "/admin/custom-emojis/e1");
+  });
+
+  test("registers an emoji with an uploaded image, its category and other names, and opens its page", async () => {
     const purposes = acceptUploads();
     let sent: Schemas["CreateCustomEmojiRequest"] | undefined;
+    const created = () => adminCustomEmojiFixture("e1", "blobcat", { category: "Blobs", aliases: ["cat", "kitty"] });
     server.use(
       http.post(`${apiBase}/admin/custom_emojis`, async ({ request }) => {
         sent = (await request.json()) as Schemas["CreateCustomEmojiRequest"];
-        return HttpResponse.json(
-          adminCustomEmojiFixture("e1", sent.shortcode, { category: "Blobs", aliases: ["cat"] }),
-        );
+        return HttpResponse.json(created());
       }),
+      http.get(`${apiBase}/admin/custom_emojis/e1`, () => HttpResponse.json(created())),
     );
-    const { user } = await renderApp({ path: "/admin/custom-emojis" });
-    // docs/architecture/web-client/screens/admin-custom-emojis.md §3: the list first, adding is its one primary action.
-    const list = await screen.findByRole("region", { name: "Registered custom emoji" });
-    expect(sectionHeadings()).toEqual(["Registered custom emoji"]);
-    await user.click(within(list).getByRole("button", { name: "Register a custom emoji" }));
-    const form = within(list).getByRole("region", { name: "Register a custom emoji" });
-    expect(within(form).getByRole("button", { name: "Choose an image" })).toHaveFocus();
+    const { user } = await renderApp({ path: "/admin/custom-emojis/new" });
+    expect(await screen.findByRole("heading", { level: 1, name: "Register a custom emoji" })).toBeInTheDocument();
 
-    await user.type(within(form).getByRole("textbox", { name: "Shortcode" }), "blobcat");
-    await user.click(within(form).getByRole("button", { name: "Register" }));
-    expect(within(form).getByText("Choose an image.")).toBeInTheDocument();
+    await user.type(screen.getByRole("textbox", { name: "Shortcode" }), "blobcat");
+    await user.click(screen.getByRole("button", { name: "Register" }));
+    expect(screen.getByText("Choose an image.")).toBeInTheDocument();
 
-    await user.upload(fileInput(form), nodeUploadFile("png", "blobcat.png", "image/png"));
-    expect(within(form).getByText("Chosen: blobcat.png")).toBeInTheDocument();
-    expect(within(form).queryByText("Choose an image.")).not.toBeInTheDocument();
-    await user.type(within(form).getByRole("textbox", { name: "Category" }), "Blobs");
-    await user.type(within(form).getByRole("textbox", { name: "Other names" }), "cat, kitty");
-    await user.click(within(form).getByRole("button", { name: "Register" }));
+    const main = screen.getByRole("main");
+    await user.upload(fileInput(main), nodeUploadFile("png", "blobcat.png", "image/png"));
+    expect(screen.getByText("Chosen: blobcat.png")).toBeInTheDocument();
+    expect(screen.queryByText("Choose an image.")).not.toBeInTheDocument();
+    await user.type(screen.getByRole("textbox", { name: "Category" }), "Blobs");
+    await user.type(screen.getByRole("textbox", { name: "Other names" }), "cat, kitty");
+    await user.click(screen.getByRole("button", { name: "Register" }));
 
-    // The panel closes; the result shows above the list and focus is back on the button.
-    expect(await within(list).findByRole("status")).toHaveTextContent(/is registered\./);
-    expect(within(list).queryByRole("region", { name: "Register a custom emoji" })).not.toBeInTheDocument();
+    // The new emoji's page opens; its heading shows what was done.
+    expect(await screen.findByRole("heading", { level: 1, name: "Custom emoji details" })).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "About this emoji" })).toHaveTextContent(":blobcat:");
     expect(purposes).toEqual(["emoji"]);
     expect(sent).toEqual({
       shortcode: "blobcat",
@@ -94,8 +113,6 @@ describe("the custom emoji screen", () => {
       aliases: ["cat", "kitty"],
       visible_in_picker: true,
     });
-    await user.click(within(list).getByRole("button", { name: "Register a custom emoji" }));
-    expect(within(list).getByRole("textbox", { name: "Shortcode" })).toHaveValue("");
   });
 
   test("shows why the server refuses an emoji, and keeps the form", async () => {
@@ -114,72 +131,67 @@ describe("the custom emoji screen", () => {
         ),
       ),
     );
-    const { user } = await renderApp({ path: "/admin/custom-emojis" });
-    await user.click(await screen.findByRole("button", { name: "Register a custom emoji" }));
-    const form = screen.getByRole("region", { name: "Register a custom emoji" });
-    await user.upload(fileInput(form), nodeUploadFile("png", "blobcat.png", "image/png"));
-    await user.type(within(form).getByRole("textbox", { name: "Shortcode" }), "blobcat");
-    await user.click(within(form).getByRole("button", { name: "Register" }));
+    const { user } = await renderApp({ path: "/admin/custom-emojis/new" });
+    const shortcode = await screen.findByRole("textbox", { name: "Shortcode" });
+    await user.upload(fileInput(screen.getByRole("main")), nodeUploadFile("png", "blobcat.png", "image/png"));
+    await user.type(shortcode, "blobcat");
+    await user.click(screen.getByRole("button", { name: "Register" }));
 
     expect(
-      await within(form).findByText(
+      await screen.findByText(
         "Could not register the custom emoji: A custom emoji of this server already has this shortcode.",
       ),
     ).toBeInTheDocument();
-    expect(within(form).getByRole("textbox", { name: "Shortcode" })).toHaveValue("blobcat");
+    expect(shortcode).toHaveValue("blobcat");
   });
 
-  test("changes the settings of an emoji in a dialog", async () => {
+  test("saves the settings of an emoji on its page, which shows the answer", async () => {
     let change: Schemas["UpdateCustomEmojiRequest"] | undefined;
     server.use(
-      http.get(`${apiBase}/admin/custom_emojis`, () =>
-        HttpResponse.json({ items: [adminCustomEmojiFixture("e1", "blobcat")] }),
-      ),
+      http.get(`${apiBase}/admin/custom_emojis/e1`, () => HttpResponse.json(adminCustomEmojiFixture("e1", "blobcat"))),
       http.patch(`${apiBase}/admin/custom_emojis/:id`, async ({ request }) => {
         change = (await request.json()) as Schemas["UpdateCustomEmojiRequest"];
         return HttpResponse.json(adminCustomEmojiFixture("e1", "blobcat", { ...change, category: "Blobs" }));
       }),
     );
-    const { user } = await renderApp({ path: "/admin/custom-emojis" });
-    await user.click(await screen.findByRole("button", { name: "Edit ⁦:blobcat:⁩" }));
-    const dialog = await screen.findByRole("dialog", { name: "Edit ⁦:blobcat:⁩" });
-    await user.type(within(dialog).getByRole("textbox", { name: "Category" }), "Blobs");
-    await user.click(within(dialog).getByRole("checkbox", { name: "Show in the picker" }));
-    await user.click(within(dialog).getByRole("button", { name: "Save" }));
+    const { user } = await renderApp({ path: "/admin/custom-emojis/e1" });
+    const settings = await screen.findByRole("region", { name: "Settings" });
+    expect(sectionHeadings()).toEqual([
+      "About this emoji",
+      "Settings",
+      "Image",
+      "Enable or disable",
+      "Delete this emoji",
+    ]);
+    await user.type(within(settings).getByRole("textbox", { name: "Category" }), "Blobs");
+    await user.click(within(settings).getByRole("checkbox", { name: "Show in the picker" }));
+    await user.click(within(settings).getByRole("button", { name: "Save" }));
 
-    await waitFor(() => {
-      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-    });
+    expect(await within(settings).findByRole("status")).toHaveTextContent("is saved.");
     expect(change).toEqual({ category: "Blobs", aliases: [], visible_in_picker: false });
-    const list = screen.getByRole("region", { name: "Registered custom emoji" });
-    expect(await within(list).findByText("Hidden")).toBeInTheDocument();
-    expect(within(list).getByRole("status")).toHaveTextContent("is saved.");
+    expect(within(screen.getByRole("region", { name: "About this emoji" })).getByText("Hidden")).toBeInTheDocument();
   });
 
-  test("deletes an emoji after asking, and moves focus on", async () => {
+  test("deletes an emoji after asking, and goes back to the list", async () => {
     let deleted = "";
     server.use(
+      http.get(`${apiBase}/admin/custom_emojis/e1`, () => HttpResponse.json(adminCustomEmojiFixture("e1", "blobcat"))),
       http.get(`${apiBase}/admin/custom_emojis`, () =>
-        HttpResponse.json({
-          items: [adminCustomEmojiFixture("e1", "blobcat"), adminCustomEmojiFixture("e2", "blobfox")],
-        }),
+        HttpResponse.json({ items: deleted === "" ? [adminCustomEmojiFixture("e1", "blobcat")] : [] }),
       ),
       http.delete(`${apiBase}/admin/custom_emojis/:id`, ({ params }) => {
         deleted = String(params["id"]);
         return new HttpResponse(null, { status: 204 });
       }),
     );
-    const { user } = await renderApp({ path: "/admin/custom-emojis" });
+    const { user } = await renderApp({ path: "/admin/custom-emojis/e1" });
     await user.click(await screen.findByRole("button", { name: "Delete ⁦:blobcat:⁩" }));
     const dialog = await screen.findByRole("alertdialog", { name: "Delete ⁦:blobcat:⁩?" });
     await user.click(within(dialog).getByRole("button", { name: "Delete" }));
 
-    await waitFor(() => {
-      expect(screen.queryByRole("heading", { level: 3, name: ":blobcat:" })).not.toBeInTheDocument();
-    });
+    expect(await screen.findByRole("region", { name: "Registered custom emoji" })).toBeInTheDocument();
     expect(deleted).toBe("e1");
-    expect(screen.getByRole("heading", { level: 3, name: ":blobfox:" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Disable ⁦:blobfox:⁩" })).toHaveFocus();
+    expect(await screen.findByText("⁦:blobcat:⁩ is deleted.")).toBeInTheDocument();
   });
 
   test("shows the emoji of other servers from the toolbar, where the reason to copy stands for adding", async () => {
@@ -191,11 +203,11 @@ describe("the custom emoji screen", () => {
     expect(
       await screen.findByRole("heading", { level: 3, name: "No custom emoji of other servers" }),
     ).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Register a custom emoji" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Register a custom emoji" })).not.toBeInTheDocument();
     expect(screen.getByText(/Copy one to use it on this server\./)).toBeInTheDocument();
   });
 
-  test("disables an emoji of another server", async () => {
+  test("disables an emoji of another server from its row", async () => {
     const remote = adminCustomEmojiFixture("e3", "partyparrot", {
       local: false,
       domain: "remote.example",
@@ -212,26 +224,28 @@ describe("the custom emoji screen", () => {
     const { user } = await renderApp({ path: "/admin/custom-emojis?origin=remote" });
     await user.click(await screen.findByRole("button", { name: "Disable ⁦:partyparrot:@remote.example⁩" }));
 
-    expect(await screen.findByRole("button", { name: "Enable ⁦:partyparrot:@remote.example⁩" })).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: "Enable ⁦:partyparrot:@remote.example⁩" })).toHaveFocus();
     expect(screen.getByText("Disabled: shown as text")).toBeInTheDocument();
   });
 
-  test("disables and enables an emoji of this server with one press", async () => {
+  test("disables and enables an emoji of this server on its page with one press", async () => {
     const emoji = adminCustomEmojiFixture("e1", "blobcat");
     server.use(
-      http.get(`${apiBase}/admin/custom_emojis`, () => HttpResponse.json({ items: [emoji] })),
+      http.get(`${apiBase}/admin/custom_emojis/e1`, () => HttpResponse.json(emoji)),
       http.post(`${apiBase}/admin/custom_emojis/:id/disable`, () => HttpResponse.json({ ...emoji, state: "disabled" })),
       http.post(`${apiBase}/admin/custom_emojis/:id/enable`, () => HttpResponse.json(emoji)),
     );
-    const { user } = await renderApp({ path: "/admin/custom-emojis" });
-    await user.click(await screen.findByRole("button", { name: "Disable ⁦:blobcat:⁩" }));
+    const { user } = await renderApp({ path: "/admin/custom-emojis/e1" });
+    const state = await screen.findByRole("region", { name: "Enable or disable" });
+    await user.click(within(state).getByRole("button", { name: "Disable ⁦:blobcat:⁩" }));
+    expect(await within(state).findByRole("status")).toHaveTextContent("⁦:blobcat:⁩ is disabled.");
 
-    await user.click(await screen.findByRole("button", { name: "Enable ⁦:blobcat:⁩" }));
+    await user.click(await within(state).findByRole("button", { name: "Enable ⁦:blobcat:⁩" }));
 
-    expect(await screen.findByRole("button", { name: "Disable ⁦:blobcat:⁩" })).toBeInTheDocument();
+    expect(await within(state).findByRole("button", { name: "Disable ⁦:blobcat:⁩" })).toBeInTheDocument();
   });
 
-  test("copies an emoji of another server under a new shortcode, and keeps a refusal in the dialog", async () => {
+  test("copies an emoji of another server under a new shortcode, keeps a refusal, and opens the copy", async () => {
     const remote = adminCustomEmojiFixture("e3", "party-parrot", {
       local: false,
       domain: "remote.example",
@@ -239,8 +253,9 @@ describe("the custom emoji screen", () => {
     });
     const sent: { id: string; body: Schemas["CopyCustomEmojiRequest"] }[] = [];
     server.use(
-      http.get(`${apiBase}/admin/custom_emojis`, ({ request }) =>
-        HttpResponse.json({ items: new URL(request.url).searchParams.get("local") === "false" ? [remote] : [] }),
+      http.get(`${apiBase}/admin/custom_emojis/e3`, () => HttpResponse.json(remote)),
+      http.get(`${apiBase}/admin/custom_emojis/e4`, () =>
+        HttpResponse.json(adminCustomEmojiFixture("e4", "party_parrot")),
       ),
       http.post(`${apiBase}/admin/custom_emojis/:id/copy`, async ({ params, request }) => {
         const body = (await request.json()) as Schemas["CopyCustomEmojiRequest"];
@@ -260,32 +275,27 @@ describe("the custom emoji screen", () => {
         return HttpResponse.json(adminCustomEmojiFixture("e4", body.shortcode ?? remote.shortcode));
       }),
     );
-    const { user } = await renderApp({ path: "/admin/custom-emojis?origin=remote" });
-    await user.click(
-      await screen.findByRole("button", { name: "Copy to this server: ⁦:party-parrot:@remote.example⁩" }),
-    );
-    const dialog = await screen.findByRole("dialog", { name: "Copy ⁦:party-parrot:@remote.example⁩ to this server" });
+    const { user } = await renderApp({ path: "/admin/custom-emojis/e3" });
+    const copy = await screen.findByRole("region", { name: "Copy to this server" });
+    expect(sectionHeadings()).toEqual(["About this emoji", "Copy to this server", "Enable or disable"]);
     // The remote shortcode breaks the rules of a local one, so a new one is asked for.
-    const shortcode = within(dialog).getByRole("textbox", { name: "Shortcode" });
+    const shortcode = within(copy).getByRole("textbox", { name: "Shortcode" });
     expect(shortcode).toHaveValue("");
     await user.type(shortcode, "parrot");
-    await user.click(within(dialog).getByRole("button", { name: "Copy" }));
-    expect(await within(dialog).findByRole("alert")).toHaveTextContent(
+    await user.click(within(copy).getByRole("button", { name: "Copy" }));
+    expect(await within(copy).findByRole("alert")).toHaveTextContent(
       "A custom emoji of this server already has this shortcode.",
     );
 
     await user.clear(shortcode);
     await user.type(shortcode, "party_parrot");
-    await user.click(within(dialog).getByRole("button", { name: "Copy" }));
-    await waitFor(() => {
-      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-    });
+    await user.click(within(copy).getByRole("button", { name: "Copy" }));
+    expect(await screen.findByRole("region", { name: "Settings" })).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "About this emoji" })).toHaveTextContent(":party_parrot:");
     expect(sent).toEqual([
       { id: "e3", body: { shortcode: "parrot" } },
       { id: "e3", body: { shortcode: "party_parrot" } },
     ]);
-    const list = screen.getByRole("region", { name: "Registered custom emoji" });
-    expect(within(list).getByRole("status")).toHaveTextContent("is copied as ⁦:party_parrot:⁩.");
   });
 
   test("shows a failure to list the emoji as the screen's error", async () => {

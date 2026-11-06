@@ -485,7 +485,7 @@ function linksOf(notification: Notification, ownAcct: string | null): Notificati
         : [{ href: adminErrorGroupPath(groupId), label: "client:notifications.link.error_group" }];
     }
     case "admin_custom_emoji_request":
-      return [{ href: "/admin/custom-emojis?tab=requests", label: "client:notifications.link.custom_emoji_requests" }];
+      return [{ href: "/admin/custom-emojis/requests", label: "client:notifications.link.custom_emoji_requests" }];
     case "custom_emoji_request_decided":
       return [{ href: "/settings/custom-emojis", label: "client:notifications.link.own_custom_emojis" }];
     // The Tauri app shows no way to subscribe or to pay, and no link to the supporter page (ADR-0072 §14).

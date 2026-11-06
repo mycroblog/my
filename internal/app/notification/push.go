@@ -588,7 +588,7 @@ func DescribeNotification(l *i18n.Localizer, n Wording, instance string) PushPay
 		// The author has no page of refused posts: the notification itself says how it ended.
 		p.Title = l.ServerPushHookAppealDecided(instance)
 	case notification.TypeAdminCustomEmojiRequest:
-		p.Title, p.Path = l.ServerPushAdminCustomEmojiRequest(instance), "/admin/custom-emojis?tab=requests"
+		p.Title, p.Path = l.ServerPushAdminCustomEmojiRequest(instance), "/admin/custom-emojis/requests"
 	case notification.TypeCustomEmojiRequestDecided:
 		p.Title, p.Path = l.ServerPushCustomEmojiRequestDecided(instance), "/settings/custom-emojis"
 	case notification.TypeSupporterPaymentFailed:

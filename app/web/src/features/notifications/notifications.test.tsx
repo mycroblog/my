@@ -486,7 +486,7 @@ describe("the notifications page", () => {
     const submitted = within(feed).getByRole("article", { name: /A user requested the custom emoji :blobcat:/ });
     expect(within(submitted).getByRole("link", { name: "Review the requests" })).toHaveAttribute(
       "href",
-      "/admin/custom-emojis?tab=requests",
+      "/admin/custom-emojis/requests",
     );
     const rejected = within(feed).getByRole("article", {
       name: /Your request for a new image of :blobcat: was rejected/,

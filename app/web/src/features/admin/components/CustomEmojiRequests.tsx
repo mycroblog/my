@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The requests tab of the custom emoji screen (ADR-0070 §2, manage_custom_emojis): the requests of the holders of
-// create_custom_emojis in one state (the pending ones by default, the state kept in the URL by the route,
-// web-client/README.md S3), newest first. Each shows the requested image, its shortcode, what it asks for and who asked; a
-// pending one is approved at once, or rejected after an alert dialog with an optional reason that the requester
+// The requests page of the custom emoji screen (/admin/custom-emojis/requests; ADR-0070 §2, manage_custom_emojis;
+// web-client/screens/admin-custom-emoji-requests.md): the requests of the holders of create_custom_emojis in one state
+// (the pending ones by default, the state kept in the URL by the route, web-client/README.md S3), newest first, one
+// page at a time. A row shows the requested image and shortcode with what it asks for and who asked, its state, when
+// it was made, and the decisions; a pending one is approved at once, or rejected after an alert dialog with an optional reason that the requester
 // sees. What a decision did stays above the list in a StatusMessage, and a failure (a request that cannot be decided
 // says why) stays there too (role="alert").
 import {
@@ -27,7 +28,7 @@ import { useRef, useState } from "react";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
 import { profilePath } from "../../../lib/paths";
 import { useFocusAfterRemoval } from "../../../lib/useFocusAfterRemoval";
-import { DateTime, type RecordColumns, RecordTable } from "../../moderation";
+import { DateTime, type RecordColumns, RecordTable, RequirePermission, Section } from "../../moderation";
 import {
   type AdminCustomEmojiRequest,
   type CustomEmojiRequestState,
@@ -40,6 +41,7 @@ import {
   useAdminCustomEmojiRequests,
   useCustomEmojiRequestActions,
 } from "../hooks/useCustomEmojiRequests";
+import { CustomEmojiNav } from "./CustomEmojiNav";
 
 /** The name of each state of a request, shared with the user's page of their requests. */
 export const requestStateLabels: Readonly<Record<CustomEmojiRequestState, ClientMessageKey>> = {
@@ -67,7 +69,22 @@ export type CustomEmojiRequestsProps = {
   onStateChange: (state: CustomEmojiRequestState) => void;
 };
 
-export function CustomEmojiRequests({ state, onStateChange }: CustomEmojiRequestsProps) {
+/** The requests page: the screen's local navigation, and the requests in one region. */
+export function CustomEmojiRequestsPage(props: CustomEmojiRequestsProps) {
+  const t = useT();
+  return (
+    <RequirePermission permission="manage_custom_emojis">
+      <Stack gap="6">
+        <CustomEmojiNav current="requests" />
+        <Section surface="card" title={t("client:admin.custom_emoji_requests.title")}>
+          <CustomEmojiRequests {...props} />
+        </Section>
+      </Stack>
+    </RequirePermission>
+  );
+}
+
+function CustomEmojiRequests({ state, onStateChange }: CustomEmojiRequestsProps) {
   const t = useT();
   return (
     <Stack gap="4">
@@ -117,11 +134,6 @@ function RequestList({ state }: { state: CustomEmojiRequestState }) {
       cell: (request) => <RequestName request={request} />,
     },
     {
-      id: "kind",
-      header: t("client:custom_emoji_requests.kind"),
-      cell: (request) => t(kindLabels[request.kind]),
-    },
-    {
       id: "state",
       header: t("client:custom_emoji_requests.state"),
       cell: (request) => (
@@ -139,17 +151,6 @@ function RequestList({ state }: { state: CustomEmojiRequestState }) {
           )}
         </Stack>
       ),
-    },
-    {
-      id: "requester",
-      header: t("client:admin.custom_emoji_requests.requester"),
-      wrap: "anywhere",
-      cell: (request) =>
-        request.requester === undefined ? (
-          t("client:admin.custom_emoji_requests.requester.deleted")
-        ) : (
-          <AccountLink acct={request.requester.acct} />
-        ),
     },
     {
       id: "created_at",
@@ -189,7 +190,8 @@ function RequestName({ request }: { request: AdminCustomEmojiRequest }) {
   const heading = `:${request.shortcode}:`;
   return (
     <Cluster gap="3" align="center" wrap={false}>
-      {/* The name of the emoji; the image beside it shows what was requested. */}
+      {/* The name of the emoji; the image beside it shows what was requested. What the request asks for and who asked
+          go under it, so that the table keeps four columns (web-client §14). */}
       <EmojiTile
         emoji={
           request.url !== undefined && request.static_url !== undefined
@@ -205,6 +207,23 @@ function RequestName({ request }: { request: AdminCustomEmojiRequest }) {
           <Text size="sm" tone="muted">
             {t("client:custom_emoji_requests.no_image")}
           </Text>
+        )}
+        <Text size="sm" tone="muted">
+          {t(kindLabels[request.kind])}
+        </Text>
+        {request.requester === undefined ? (
+          <Text size="sm" tone="muted">
+            {t("client:admin.custom_emoji_requests.requester.deleted")}
+          </Text>
+        ) : (
+          <Cluster as="span" gap="1" align="baseline">
+            <Text size="sm" tone="muted">
+              {t("client:admin.custom_emoji_requests.requester")}
+            </Text>
+            <Text size="sm" wrap="anywhere">
+              <AccountLink acct={request.requester.acct} />
+            </Text>
+          </Cluster>
         )}
       </Stack>
     </Cluster>

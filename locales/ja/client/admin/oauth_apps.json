@@ -19,10 +19,6 @@
     "defaultMessage": "登録の経路",
     "description": "Column header of the registration route."
   },
-  "admin.oauth_apps.column.scope": {
-    "defaultMessage": "付与できる上限",
-    "description": "Column header of the scopes an app may be granted at most."
-  },
   "admin.oauth_apps.confidential": {
     "defaultMessage": "シークレットあり",
     "description": "An app that is a confidential client."
@@ -175,6 +171,18 @@
     "defaultMessage": "登録した人: 削除されたアカウント",
     "description": "Who registered an app, when the account of the user who did is gone."
   },
+  "admin.oauth_apps.pages": {
+    "defaultMessage": "OAuth のアプリのページ",
+    "description": "Name of the local navigation between the pages of the OAuth apps screen."
+  },
+  "admin.oauth_apps.pages.apps": {
+    "defaultMessage": "アプリ",
+    "description": "Link of the local navigation to the list of apps."
+  },
+  "admin.oauth_apps.pages.hosts": {
+    "defaultMessage": "拒否したホスト",
+    "description": "Link of the local navigation to the denied hosts of app metadata documents."
+  },
   "admin.oauth_apps.public": {
     "defaultMessage": "シークレットなし",
     "description": "An app that is a public client."
@@ -195,21 +203,13 @@
     "defaultMessage": "利用者",
     "description": "Registration route of an app that a signed-in user registered."
   },
+  "admin.oauth_apps.scope": {
+    "defaultMessage": "付与できる上限: {scope}",
+    "description": "Under an app's name: the scopes it may be granted at most. {scope} is the space-separated scopes."
+  },
   "admin.oauth_apps.summary": {
     "defaultMessage": "このサーバーにログインできるアプリを一覧し、無効にしたり、アプリのメタデータ文書のホストを拒否したりします。",
     "description": "Description of the OAuth apps screen in the administration menu."
-  },
-  "admin.oauth_apps.tabs.apps": {
-    "defaultMessage": "アプリ",
-    "description": "Tab that lists the OAuth apps."
-  },
-  "admin.oauth_apps.tabs.hosts": {
-    "defaultMessage": "拒否したホスト",
-    "description": "Tab that lists the denied hosts of app metadata documents."
-  },
-  "admin.oauth_apps.tabs.label": {
-    "defaultMessage": "OAuth のアプリの区分",
-    "description": "Accessible name of the tabs of the OAuth apps screen."
   },
   "admin.oauth_apps.title": {
     "defaultMessage": "OAuth のアプリ",

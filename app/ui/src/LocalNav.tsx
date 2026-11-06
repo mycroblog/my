@@ -4,6 +4,7 @@
 // each page is a route of its own, with its own address, loader and primary action, and the menu of the admin mode
 // keeps one item for the whole screen. The current page differs by shape, not by color alone (WCAG 1.4.1): a bar under
 // its label. The links wrap onto more lines rather than scroll, so that every page is in sight at 320 px.
+import type { ReactNode } from "react";
 import { Link } from "react-aria-components";
 import { tv } from "tailwind-variants";
 
@@ -15,7 +16,7 @@ const localNav = tv({
       "inline-flex min-h-10 cursor-pointer items-center border-b-3 border-transparent px-3 text-sm font-bold text-fg-muted",
       "rounded-t-md outline-none data-hovered:text-fg data-current:border-accent data-current:text-accent",
       "data-focus-visible:outline-2 data-focus-visible:-outline-offset-2 data-focus-visible:outline-focus",
-      "pointer-coarse:min-h-11 wrap-anywhere motion-safe:transition-colors",
+      "pointer-coarse:min-h-11 wrap-anywhere motion-safe:transition-colors gap-2",
     ],
   },
 });
@@ -28,6 +29,11 @@ export type LocalNavItem = {
   label: string;
   /** Whether it is the page on screen: `aria-current="page"`. */
   current?: boolean;
+  /**
+   * What waits on the page, after the label inside the link: a decorative `Badge` with the count in words for
+   * assistive technology beside it (`VisuallyHidden`), such as the requests awaiting review.
+   */
+  badge?: ReactNode;
 };
 
 export type LocalNavProps = {
@@ -51,6 +57,7 @@ export function LocalNav({ label, items }: LocalNavProps) {
               {...(item.current === true && { "aria-current": "page" as const })}
             >
               {item.label}
+              {item.badge}
             </Link>
           </li>
         ))}
