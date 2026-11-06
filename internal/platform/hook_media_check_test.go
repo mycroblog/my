@@ -229,6 +229,67 @@ func TestMediaCheckMarkSensitive(t *testing.T) {
 	}
 }
 
+// A post that both the hook and a moderator's mark_statuses_sensitive marked keeps the mark of the
+// one source when the other goes: lifting the action leaves the hook's mark, and cancelling the
+// decision leaves the action's. The projection rebuilds to the same rows after each step.
+func TestMediaCheckMarkAndModerationMarkOnOnePost(t *testing.T) {
+	t.Parallel()
+	h := newMediaHook(t, "enforce", "pass")
+	ctx := t.Context()
+	h.plugin.answer("VERDICT_MARK_SENSITIVE", false)
+	marks := func(statusID string) (byHook, byAction int64) {
+		t.Helper()
+		where := "SELECT COUNT(*) FROM status_sensitivity_overrides WHERE status_id = '" + statusID + "' AND "
+		return h.count(where + "source_hook_decision_id IS NOT NULL"), h.count(where + "source_action_id IS NOT NULL")
+	}
+	verify := func() {
+		t.Helper()
+		for _, p := range h.c.app.Projections.List() {
+			r, err := h.c.app.Projections.Verify(ctx, p)
+			if err != nil {
+				t.Fatalf("Verify(%s) = %v", p.Name, err)
+			}
+			if r.Drifted() {
+				t.Errorf("Verify(%s) drifted: %+v", p.Name, r)
+			}
+		}
+	}
+	both := func() (statusID, decisionID, actionID string) {
+		t.Helper()
+		m, _ := h.upload(testkit.FixturePNG(64, 48, false), domcontent.PurposeAttachment)
+		p := h.post(m.File.ID)
+		act, err := h.c.app.Moderation.IssueAccountAction(ctx, appmoderation.AccountActionInput{
+			TargetAccountID: h.alice, Kind: moderation.ActionMarkStatusesSensitive, ReasonCategory: moderation.CategoryOther,
+			StatusIDs: []string{p.Status.ID},
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if byHook, byAction := marks(p.Status.ID); byHook != 1 || byAction != 1 {
+			t.Fatalf("marks of a post both marked = hook %d, action %d", byHook, byAction)
+		}
+		return p.Status.ID, h.decision(m.File.ID).DecisionID, act.ID
+	}
+
+	liftedPost, _, action := both()
+	if err := h.c.app.Moderation.LiftAccountAction(ctx, action, "", ""); err != nil {
+		t.Fatal(err)
+	}
+	if byHook, byAction := marks(liftedPost); byHook != 1 || byAction != 0 {
+		t.Errorf("after lifting the action: hook %d, action %d; want the hook's mark alone", byHook, byAction)
+	}
+	verify()
+
+	cancelledPost, decision, _ := both()
+	if _, err := h.c.app.Hooks.Override(ctx, decision, ""); err != nil {
+		t.Fatal(err)
+	}
+	if byHook, byAction := marks(cancelledPost); byHook != 0 || byAction != 1 {
+		t.Errorf("after cancelling the decision: hook %d, action %d; want the action's mark alone", byHook, byAction)
+	}
+	verify()
+}
+
 // flag files one report: when the file is processed for an avatar, a header, or an emoji, and in
 // the transaction of the post for an attachment, which the report points at.
 func TestMediaCheckFlag(t *testing.T) {
