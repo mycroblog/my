@@ -24,7 +24,7 @@
       .proc { fill: #0c2d6b; stroke: #4493f8; }
       .port { fill: #0d1117; stroke: #656c76; }
       .svc { fill: #2a1650; stroke: #ab7df8; }
-      .danger { fill: #3c1618; stroke: #f85149; }
+      .danger { fill: #3c0d12; stroke: #f85149; }
       .arrow { stroke: #9198a1; }
       .head { fill: #9198a1; }
     }

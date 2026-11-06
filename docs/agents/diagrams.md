@@ -70,6 +70,7 @@ adding a color.
 | `proc` | the `my` processes | `#ddf4ff` / `#0969da` | `#0c2d6b` / `#4493f8` |
 | `port` | a part chosen by configuration | `#ffffff` / `#8c959f` | `#0d1117` / `#656c76` |
 | `svc` | an outside service | `#fbefff` / `#8250df` | `#2a1650` / `#ab7df8` |
+| `danger` | a failure and what follows it | `#ffebe9` / `#cf222e` | `#3c0d12` / `#f85149` |
 | `arrow`, `head` | arrows and heads | `#59636e` | `#9198a1` |
 
 ```svg
