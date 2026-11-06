@@ -38,8 +38,8 @@ tasks:
     deps: [static, fmt-check, lint-css, licenses, tokens, test, playwright-image-check]
 
   static:
-    desc: Run tsc (app/web and the documentation site app/docs), Oxlint, knip, and the Vite build in parallel (without web:lint-rules, which must not run beside them)
-    deps: [typecheck, ":docs:site-typecheck", oxlint, knip, dist]
+    desc: Run tsc on app/web, Oxlint, knip, and the Vite build in parallel (without web:lint-rules, which must not run beside them)
+    deps: [typecheck, oxlint, knip, dist]
 
   # It skips while app/node_modules exists and the manifests are unchanged, so that the tasks of several processes (the
   # parallel steps of a CI job, ADR-0079) never install at once after the job's first install.

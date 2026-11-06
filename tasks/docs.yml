@@ -75,8 +75,24 @@ tasks:
       - scripts/docs-screenshots.sh {{.CLI_ARGS}}
 
   site-typecheck:
-    desc: Type-check the configuration of the documentation site (app/docs) with tsc (web:static runs it)
+    desc: Type-check the configuration of the documentation site (app/docs) with tsc (site:check runs it)
     deps: [":web:install"]
     dir: app/docs
     cmds:
       - bun run typecheck
+
+  # web:oxlint and web:knip cover app/docs too, as part of the whole workspace; these two let the site context check
+  # it without the client's generated files.
+  site-lint:
+    desc: Run Oxlint on the documentation site (app/docs) with the client workspace's configuration (app/.oxlintrc.json; site:check runs it)
+    deps: [":web:install"]
+    dir: app
+    cmds:
+      - bun run lint docs
+
+  site-knip:
+    desc: Find unused files, exports, and dependencies of the documentation site (app/docs) with knip (its workspace of app/knip.json; site:check runs it)
+    deps: [":web:install"]
+    dir: app
+    cmds:
+      - bun run knip --workspace docs
