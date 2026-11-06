@@ -219,7 +219,7 @@ ECS accepts `load-balancer`, and refuses the others. An ingress may also be left
 service's own URL or has something else in front. Remove the block and that line: `MY_TRUSTED_PROXIES` is then only what the platform puts in front, or what `env` of the app says. Setting
 it in `env` beside an ingress that names proxies fails the plan, and so do two ingresses that both name them.
 
-An ingress closes the origin in one of three ways: on the platform (`ingress-gcp-load-balancer`, `ingress-aws-alb`), with a header that the server checks (`ingress-cloudflare-app`), or not at all (`ingress-gcp-domain-mapping`). A module that sets the header returns `MY_ORIGIN_SECRET_HEADER` in `env` and `MY_ORIGIN_SECRET` by reference in `secret_env`, and takes the value as a sensitive input.
+An ingress closes the origin in one of three ways: on the platform (`ingress-gcp-load-balancer`, `ingress-aws-alb`), with a header that the server checks (`ingress-cloudflare-app`, `ingress-aws-cloudfront`), or not at all (`ingress-gcp-domain-mapping`). A module that sets the header returns `MY_ORIGIN_SECRET_HEADER` in `env` and `MY_ORIGIN_SECRET` by reference in `secret_env`, and takes the value as a sensitive input.
 **That value lands in the state**: the provider has no write-only form of it. So this is the one place that breaks the rule below that no secret value reaches the state, and the state must be kept private. Two modules must not name those settings twice, so `ingress-cloudflare-media` beside `ingress-cloudflare-app` leaves them out and comes through `extra_rules`.
 
 ## The network contract
@@ -442,7 +442,7 @@ The modules for AWS test whether this contract holds on a second platform. **Non
 | `mail-aws-ses` | Beside `mail-smtp`, which works unchanged |
 | `secrets-aws-secrets-manager` | `secrets-gcp-secret-manager` |
 | `kek-aws-secrets-manager`, `kek-aws-kms` | `kek-gcp-secret-manager`, `kek-gcp-kms` |
-| `ingress-aws-alb` | `ingress-gcp-domain-mapping`, `ingress-gcp-load-balancer` |
+| `ingress-aws-alb`, `ingress-aws-cloudfront` | `ingress-gcp-domain-mapping`, `ingress-gcp-load-balancer` |
 | `billing-aws` | `billing-gcp`, and it also runs on Google Cloud's app: read [The billing modules](#the-billing-modules) |
 | `monitoring-aws` | `monitoring-gcp` |
 

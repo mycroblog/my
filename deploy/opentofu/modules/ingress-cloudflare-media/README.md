@@ -70,6 +70,7 @@ A server with `MY_ORIGIN_SECRET` refuses `/media/` like everything else unless t
 | Beside | `origin_secret` | `origin_secret_id` | What happens |
 | --- | --- | --- | --- |
 | `ingress-cloudflare-app` in the zone, `manage_rulesets = false` | Null | Null | That module's one rule covers this host through `extra_rules`, and it names the settings |
+| `ingress-aws-cloudfront` | The same value | Null | This module sends the header, and CloudFront's module names the settings |
 | `ingress-gcp-load-balancer` or `ingress-gcp-domain-mapping` | Null | Null | No header: the server must have no such check, since its other traffic does not carry one |
 
 The provider has no write-only form of a rule's header value, so **a value given here lands in the state**. Keep the state private.
