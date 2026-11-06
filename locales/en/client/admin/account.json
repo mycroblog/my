@@ -494,5 +494,53 @@
   "admin.account.registration.invited_by": {
     "defaultMessage": "Invited by",
     "description": "Term of a local account that registered with an invite: who created the invite."
+  },
+  "admin.account.pages": {
+    "defaultMessage": "Account pages",
+    "description": "Accessible name of the navigation between the pages of an account's moderation screen."
+  },
+  "admin.account.pages.review": {
+    "defaultMessage": "Review",
+    "description": "Link of the navigation of an account's pages to its review page, with its summary, the form of an action and the evidence."
+  },
+  "admin.account.pages.actions": {
+    "defaultMessage": "Actions",
+    "description": "Link of the navigation of an account's pages to the list of every moderation action on it."
+  },
+  "admin.account.pages.manage": {
+    "defaultMessage": "Management",
+    "description": "Link of the navigation of an account's pages to the management of a local account: roles, sign-in recovery, email and IP addresses."
+  },
+  "admin.account.manage.title": {
+    "defaultMessage": "Account management",
+    "description": "Title of the page of a local account with its roles, sign-in recovery, and email and IP addresses."
+  },
+  "admin.account.manage.remote": {
+    "defaultMessage": "Nothing to manage on an account of another server",
+    "description": "Heading on the management page of a remote account, which has none of its regions."
+  },
+  "admin.account.manage.remote.description": {
+    "defaultMessage": "Roles, sign-in recovery, and email and IP addresses are for the users of this server.",
+    "description": "Text under the heading on the management page of a remote account."
+  },
+  "admin.account.actions.all": {
+    "defaultMessage": "All actions on the account",
+    "description": "Link under the newest actions on an account's review page to the list of every action on it."
+  },
+  "admin.account.actions.column.kind": {
+    "defaultMessage": "Action",
+    "description": "Header of the column of the table of an account's actions with the kind of each, linking to its page."
+  },
+  "admin.account.action_page.title": {
+    "defaultMessage": "Action details",
+    "description": "Title of the page of one moderation action on an account."
+  },
+  "admin.account.action_page.back": {
+    "defaultMessage": "Back to the actions",
+    "description": "Link from the page of one action to the list of the actions on its account."
+  },
+  "admin.account.reports.cap": {
+    "defaultMessage": "{count, plural, one {The newest report on the account.} other {The newest # reports on the account.}}",
+    "description": "Text above the reports on an account's review page: the API gives only the newest ones; count is how many at most."
   }
 }

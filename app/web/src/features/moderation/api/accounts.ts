@@ -11,7 +11,12 @@ import { ApiError } from "../../../lib/errors";
 import type { components } from "@mycroblog/mykit";
 import { isPostListQuery } from "../../../lib/query";
 import { pageQuery, refreshAuditLog } from "./staff";
-import { type AccountAction, accountActionsQueryOptions, refreshReportLists } from "./reports";
+import {
+  type AccountAction,
+  accountActionQueryOptions,
+  accountActionsQueryOptions,
+  refreshReportLists,
+} from "./reports";
 
 type Schemas = components["schemas"];
 
@@ -299,7 +304,7 @@ export async function refreshLiftedAccountAction(
   ]);
 }
 
-/** Writes the lifted action from the answer into the cached actions of account `accountId` (ADR-0028). */
+/** Writes the lifted action from the answer into the cached actions of account `accountId` and its own page (ADR-0028). */
 export function cacheLiftedAccountAction(
   api: Api,
   queryClient: QueryClient,
@@ -317,4 +322,5 @@ export function cacheLiftedAccountAction(
         })),
       },
   );
+  queryClient.setQueryData(accountActionQueryOptions(api, lifted.id).queryKey, lifted);
 }

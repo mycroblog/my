@@ -39,7 +39,7 @@ import {
   storeReport,
   storeReportNote,
 } from "../api/reports";
-import { type PagedList, type PagedPages, toPagedList } from "./pagedList";
+import { type PagedPages, toPagedList } from "./pagedList";
 
 export const reportCategoryLabels: Readonly<Record<ReportCategory, ClientMessageKey>> = {
   spam: "client:admin.reports.category.spam",
@@ -150,13 +150,14 @@ export function reportedStatuses(report: Pick<ReportDetail, "status_ids" | "stat
 /** The moderation actions on the target of a report, newest first; only for a viewer with manage_accounts. */
 export function useTargetActions(
   accountId: string,
-): PagedList<AccountAction> & { error: string | undefined; isLoading: boolean } {
+): PagedPages<AccountAction> & { error: string | undefined; isLoading: boolean } {
   const api = useApi();
   const query = useInfiniteQuery(accountActionsQueryOptions(api, accountId));
   // An infinite query's data before its first page is undefined; the list shows a spinner or the reason meanwhile.
   const pages = query.data?.pages ?? [];
   return {
     items: pages.flatMap((page) => page.items),
+    pages: pages.map((page) => page.items).filter((items) => items.length > 0),
     hasMore: query.hasNextPage,
     isLoadingMore: query.isFetchingNextPage,
     loadMore: () => {

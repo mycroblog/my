@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-import { Card, Link, Stack } from "@my/ui";
+import { Link, Stack } from "@my/ui";
 import { createFileRoute, type ErrorComponentProps } from "@tanstack/react-router";
 import { z } from "zod";
 import { AccountDetailView, adminAccountQueryOptions } from "../features/moderation";
@@ -14,7 +14,10 @@ const paramsSchema = z.object({ id: z.string().min(1).max(64) });
 /** `status`: the post of the account that the page starts from (a post's menu leads here with it). Anything else is dropped. */
 const searchSchema = z.object({ status: z.string().min(1).max(64).optional().catch(undefined) });
 
-/** One account as the moderators see it, and the moderation actions on it (FR-714, FR-703, FR-713), for manage_accounts. */
+/**
+ * The review page of one account as the moderators see it: its summary, the moderation action to take on it and the
+ * evidence (FR-714, FR-703, FR-713), for manage_accounts. Its other pages are /actions and /manage.
+ */
 export const Route = createFileRoute("/moderation/accounts_/$id")({
   staticData: { title: "client:admin.account.title" },
   params: { parse: (params) => paramsSchema.parse(params) },
@@ -47,9 +50,7 @@ function AccountPage() {
     <>
       <AccountHeading />
       {/* Another account is another page: nothing of the previous one carries over, its private data least of all (web-client/README.md R10). */}
-      <Card>
-        <AccountDetailView key={id} id={id} statusId={status} />
-      </Card>
+      <AccountDetailView key={id} id={id} statusId={status} />
     </>
   );
 }

@@ -718,6 +718,10 @@ async function moderatorServer(page: Page) {
       });
     if (key === `GET /admin/accounts/${target.id}`) return json(route, adminAccount());
     if (key === `GET /admin/accounts/${target.id}/actions`) return json(route, { items: actions });
+    if (key.startsWith("GET /admin/account_actions/")) {
+      const found = actions.find((action) => key === `GET /admin/account_actions/${action.id}`);
+      if (found !== undefined) return json(route, found);
+    }
     if (key === `POST /admin/accounts/${target.id}/actions`) {
       const body = request.postDataJSON() as Schemas["CreateAccountActionRequest"];
       issued.push(`${body.kind} ${body.report_id ?? ""}`);
@@ -1081,6 +1085,15 @@ const adminPages: Readonly<Record<string, { path: string; ready: string | { valu
   "moderation.reports_.$id": { path: `/moderation/reports/${reportId}`, ready: "Same as last week." },
   "moderation.accounts": { path: "/moderation/accounts", ready: target.display_name },
   "moderation.accounts_.$id": { path: `/moderation/accounts/${target.id}`, ready: target.display_name },
+  "moderation.accounts_.$id_.actions": {
+    path: `/moderation/accounts/${target.id}/actions`,
+    ready: target.display_name,
+  },
+  "moderation.accounts_.$id_.actions_.$actionId": {
+    path: `/moderation/accounts/${target.id}/actions/${warning.id}`,
+    ready: warning.public_reason ?? "",
+  },
+  "moderation.accounts_.$id_.manage": { path: `/moderation/accounts/${target.id}/manage`, ready: target.display_name },
   "moderation.appeals": { path: "/moderation/appeals", ready: target.display_name },
   "moderation.appeals_.$id": { path: `/moderation/appeals/${appealId}`, ready: target.display_name },
   "moderation.registrations": { path: "/moderation/registrations", ready: registration.email },

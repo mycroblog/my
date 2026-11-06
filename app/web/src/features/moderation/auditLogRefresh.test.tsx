@@ -105,7 +105,7 @@ const writes: Write[] = [
     action: "revealed_private_data",
     method: "post",
     path: "/admin/accounts/:id/reveal",
-    page: `/moderation/accounts/${otherAccountFixture.id}`,
+    page: `/moderation/accounts/${otherAccountFixture.id}/manage`,
     write: async (user) => {
       const privateData = await screen.findByRole("region", { name: "Email and IP addresses" });
       await user.click(within(privateData).getByRole("button", { name: "Show email and IP addresses" }));

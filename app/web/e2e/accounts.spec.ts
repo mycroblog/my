@@ -234,6 +234,10 @@ async function moderatorServer(
     if (key === `GET /admin/accounts/${remote.id}`) return json(route, detail(remoteAccount));
     if (key === `GET /admin/accounts/${local.id}/actions`) return json(route, { items: actions });
     if (key === `GET /admin/accounts/${remote.id}/actions`) return json(route, { items: [] });
+    if (key.startsWith("GET /admin/account_actions/")) {
+      const found = actions.find((action) => key === `GET /admin/account_actions/${action.id}`);
+      if (found !== undefined) return json(route, found);
+    }
     if (key === `POST /admin/accounts/${local.id}/reveal`) return json(route, privateData);
     if (key === `POST /admin/accounts/${local.id}/email_suppression/lift`) {
       suppression = undefined;
@@ -315,6 +319,33 @@ test.describe("page /moderation/accounts/{id}", () => {
   });
 });
 
+/** The account's other pages: every action as a table, one action, and the account management. */
+const accountPages = [
+  { name: "actions", path: `/moderation/accounts/${local.id}/actions`, table: true },
+  { name: "action", path: `/moderation/accounts/${local.id}/actions/${limit.id}`, table: false },
+  { name: "management", path: `/moderation/accounts/${local.id}/manage`, table: false },
+] as const;
+
+for (const { name, path, table } of accountPages) {
+  test.describe(`the account's ${name} page ${path}`, () => {
+    test.beforeEach(async ({ page }) => {
+      await moderatorServer(page);
+      await page.goto(path);
+      const main = page.getByRole("main");
+      await expect(main.getByRole("heading", { level: 1 })).toBeVisible();
+      await expect(table ? recordRows(recordTable(main)).first() : main.getByRole("region").first()).toBeVisible();
+    });
+
+    test("has no axe violations", async ({ makeAxeBuilder }) => {
+      await expectNoAxeViolations(makeAxeBuilder);
+    });
+
+    test("does not scroll horizontally", async ({ page }) => {
+      await expectNoHorizontalScroll(page);
+    });
+  });
+}
+
 test.describe("accounts", () => {
   test("opens an account from the search, shows its email and IP addresses only when asked, and lifts an action after its confirmation", async ({
     page,
@@ -346,6 +377,12 @@ test.describe("accounts", () => {
     expect(requests.filter((request) => request.endsWith("/reveal"))).toEqual([]);
     await expect(page.getByText(privateData.email ?? "")).toHaveCount(0);
 
+    // The email and IP addresses are on the account management page, one of the account's pages.
+    await page.locator(`main nav a[href="/moderation/accounts/${local.id}/manage"]`).click();
+    await expect(page).toHaveURL(new RegExp(`/moderation/accounts/${local.id}/manage$`));
+    await expect(main.getByRole("heading", { level: 1 })).toBeFocused();
+    expect(requests.filter((request) => request.endsWith("/reveal"))).toEqual([]);
+
     // The email and IP addresses, by keyboard: the region's heading takes focus once they show.
     const privateRegion = main.getByRole("region", { name: message("admin.account.private.title"), exact: true });
     await privateRegion.getByRole("button").focus();
@@ -363,7 +400,10 @@ test.describe("accounts", () => {
     await expectNoAxeViolations(makeAxeBuilder);
     await expectNoHorizontalScroll(page);
 
-    // The lift of the limit asks first, with the reason's field focused.
+    // Back on the review page: the lift of the limit asks first, with the reason's field focused.
+    await page.locator(`main nav a[href="/moderation/accounts/${local.id}"]`).click();
+    await expect(page).toHaveURL(new RegExp(`/moderation/accounts/${local.id}$`));
+    await expect(main.getByRole("heading", { level: 3 }).first()).toBeVisible();
     const history = main.getByRole("region", { name: message("admin.account.actions.title"), exact: true });
     await history.getByRole("button").click();
     const dialog = page.getByRole("alertdialog");
@@ -457,7 +497,7 @@ test.describe("accounts", () => {
     makeAxeBuilder,
   }) => {
     const requests = await moderatorServer(page, moderator.permissions, { suppressed: true });
-    await page.goto(`/moderation/accounts/${local.id}`);
+    await page.goto(`/moderation/accounts/${local.id}/manage`);
     const main = page.getByRole("main");
     const region = main.getByRole("region", { name: message("admin.account.email_suppression.title"), exact: true });
     await expect(region).toBeVisible();
@@ -483,7 +523,7 @@ test.describe("accounts", () => {
 
     // Lifted: the page opened again shows no such region.
     await page.reload();
-    await expect(main.getByRole("heading", { level: 3 }).first()).toBeVisible();
+    await expect(main.getByRole("region", { name: message("admin.account.private.title"), exact: true })).toBeVisible();
     await expect(
       main.getByRole("region", { name: message("admin.account.email_suppression.title"), exact: true }),
     ).toHaveCount(0);
@@ -494,9 +534,10 @@ test.describe("accounts", () => {
     makeAxeBuilder,
   }) => {
     const requests = await moderatorServer(page, [...moderator.permissions, "manage_login_recovery"]);
-    await page.goto(`/moderation/accounts/${local.id}`);
+    await page.goto(`/moderation/accounts/${local.id}/manage`);
     const main = page.getByRole("main");
-    await expect(main.getByRole("heading", { level: 3 }).first()).toBeVisible();
+    const privateRegion = main.getByRole("region", { name: message("admin.account.private.title"), exact: true });
+    await expect(privateRegion).toBeVisible();
     await expect(page.getByText(resetLink)).toHaveCount(0);
 
     const reset = main.getByRole("region", { name: message("admin.account.password_reset.title"), exact: true });
@@ -523,7 +564,7 @@ test.describe("accounts", () => {
 
     // The link is not kept anywhere: the page opened again does not show it.
     await page.reload();
-    await expect(main.getByRole("heading", { level: 3 }).first()).toBeVisible();
+    await expect(privateRegion).toBeVisible();
     await expect(page.getByText(resetLink)).toHaveCount(0);
   });
 });

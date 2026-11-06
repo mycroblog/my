@@ -108,7 +108,10 @@ export {
   adminAccountsQueryOptions,
   adminAccountStates,
 } from "./api/accounts";
+export { accountActionQueryOptions } from "./api/reports";
 export { AccountDetailView } from "./components/AccountDetail";
+export { AccountActionDetailView, AccountActionsView } from "./components/AccountActions";
+export { AccountManageView } from "./components/AccountManage";
 export { AccountSearch } from "./components/AccountSearch";
 // The review of appeals of moderation actions (FR-707), for manage_accounts.
 export { type AppealFilter, appealQueryOptions, appealsQueryOptions } from "./api/appeals";

@@ -32,7 +32,9 @@ function rolesServer(held: Role[], own: Role[] = [adminRoleFixture]) {
   let bobRoles = held;
   const changes: string[] = [];
   const answer = () =>
-    HttpResponse.json({ items: rolesFixture.filter((role) => bobRoles.some((other) => other.id === role.id)) });
+    HttpResponse.json({
+      items: rolesFixture.filter((role) => bobRoles.some((other) => other.id === role.id)),
+    });
   server.use(
     http.get(`${apiBase}/admin/accounts/:id`, () =>
       HttpResponse.json(adminAccountDetailFixture(otherAccountFixture, { roles: bobRoles.map((role) => role.key) })),
@@ -64,7 +66,9 @@ function roleRow(roles: HTMLElement, key: string) {
 }
 
 async function openRoles() {
-  const { user } = await renderApp({ path: `/moderation/accounts/${otherAccountFixture.id}` });
+  const { user } = await renderApp({
+    path: `/moderation/accounts/${otherAccountFixture.id}/manage`,
+  });
   const roles = await screen.findByRole("region", { name: "Roles" });
   await within(roles).findByRole("heading", { level: 3, name: "admin" });
   return { user, roles };
@@ -89,8 +93,14 @@ describe("an account's roles", () => {
     const changes = rolesServer([]);
     const { user, roles } = await openRoles();
 
-    await user.click(within(roleRow(roles, "moderator")).getByRole("button", { name: `Grant ${ltr("moderator")}` }));
-    const dialog = await screen.findByRole("alertdialog", { name: `Grant ${ltr("moderator")} to ${handle}?` });
+    await user.click(
+      within(roleRow(roles, "moderator")).getByRole("button", {
+        name: `Grant ${ltr("moderator")}`,
+      }),
+    );
+    const dialog = await screen.findByRole("alertdialog", {
+      name: `Grant ${ltr("moderator")} to ${handle}?`,
+    });
     await waitFor(() => {
       expect(within(dialog).getByRole("button", { name: "Cancel" })).toHaveFocus();
     });
@@ -106,13 +116,22 @@ describe("an account's roles", () => {
     );
     expect(within(roleRow(roles, "moderator")).getByText("Has the role")).toBeInTheDocument();
     expect(
-      within(roleRow(roles, "moderator")).getByRole("button", { name: `Revoke ${ltr("moderator")}` }),
+      within(roleRow(roles, "moderator")).getByRole("button", {
+        name: `Revoke ${ltr("moderator")}`,
+      }),
     ).toBeInTheDocument();
     await waitFor(() => {
       expect(within(roles).getByRole("heading", { level: 2, name: "Roles" })).toHaveFocus();
     });
-    // The account is read again: its summary lists the role.
-    expect(await within(screen.getByRole("region", { name: "Account" })).findByText("moderator")).toBeInTheDocument();
+    // The account is read again: the summary of its review page lists the role.
+    await user.click(
+      within(screen.getByRole("navigation", { name: "Account pages" })).getByRole("link", {
+        name: "Review",
+      }),
+    );
+    expect(
+      await within(await screen.findByRole("region", { name: "Account" })).findByText("moderator"),
+    ).toBeInTheDocument();
   });
 
   // #471: the audit log, shown from its cache as the route loads it, must not show the operations as they were
@@ -142,7 +161,10 @@ describe("an account's roles", () => {
     const { user, router } = await renderApp({ path: "/moderation/audit-log" });
     expect(await screen.findByRole("heading", { level: 2, name: "No operations yet" })).toBeInTheDocument();
     expect(screen.queryByRole("table")).not.toBeInTheDocument();
-    await router.navigate({ to: "/moderation/accounts/$id", params: { id: otherAccountFixture.id } });
+    await router.navigate({
+      to: "/moderation/accounts/$id/manage",
+      params: { id: otherAccountFixture.id },
+    });
     const roles = await screen.findByRole("region", { name: "Roles" });
     await user.click(await within(roles).findByRole("button", { name: `Grant ${ltr("moderator")}` }));
     // From now on the audit log takes a while; the handler falls through to the one above.
@@ -166,10 +188,14 @@ describe("an account's roles", () => {
     const changes = rolesServer([moderatorRoleFixture]);
     const { user, roles } = await openRoles();
 
-    const revoke = within(roleRow(roles, "moderator")).getByRole("button", { name: `Revoke ${ltr("moderator")}` });
+    const revoke = within(roleRow(roles, "moderator")).getByRole("button", {
+      name: `Revoke ${ltr("moderator")}`,
+    });
     await user.click(revoke);
     expect(
-      await screen.findByRole("alertdialog", { name: `Revoke ${ltr("moderator")} from ${handle}?` }),
+      await screen.findByRole("alertdialog", {
+        name: `Revoke ${ltr("moderator")} from ${handle}?`,
+      }),
     ).toBeInTheDocument();
     await user.keyboard("{Escape}");
     await waitFor(() => {
@@ -181,7 +207,9 @@ describe("an account's roles", () => {
     expect(changes).toEqual([]);
 
     await user.click(revoke);
-    const dialog = await screen.findByRole("alertdialog", { name: `Revoke ${ltr("moderator")} from ${handle}?` });
+    const dialog = await screen.findByRole("alertdialog", {
+      name: `Revoke ${ltr("moderator")} from ${handle}?`,
+    });
     await user.click(within(dialog).getByRole("button", { name: "Revoke" }));
 
     expect(
@@ -206,7 +234,9 @@ describe("an account's roles", () => {
       admin.getByText(`This role is above your highest role, ${ltr("moderator")}, so you cannot grant or revoke it.`),
     ).toBeInTheDocument();
     expect(
-      within(roleRow(roles, "moderator")).getByRole("button", { name: `Grant ${ltr("moderator")}` }),
+      within(roleRow(roles, "moderator")).getByRole("button", {
+        name: `Grant ${ltr("moderator")}`,
+      }),
     ).toBeInTheDocument();
   });
 
@@ -286,11 +316,16 @@ describe("an account's roles", () => {
         failing ? problem(503, "about:blank", "Service Unavailable") : HttpResponse.json({ items: rolesFixture }),
       ),
     );
-    const { user } = await renderApp({ path: `/moderation/accounts/${otherAccountFixture.id}` });
+    const { user } = await renderApp({
+      path: `/moderation/accounts/${otherAccountFixture.id}/manage`,
+    });
 
     const roles = await screen.findByRole("region", { name: "Roles" });
     expect(
-      await within(roles).findByRole("heading", { level: 3, name: "The roles could not be loaded" }),
+      await within(roles).findByRole("heading", {
+        level: 3,
+        name: "The roles could not be loaded",
+      }),
     ).toBeInTheDocument();
     failing = false;
     await user.click(within(roles).getByRole("button", { name: "Try again" }));
@@ -303,9 +338,9 @@ describe("an account's roles", () => {
     server.events.on("request:start", ({ request }) => {
       if (request.url.includes("/roles")) requests.push(request.url);
     });
-    await renderApp({ path: `/moderation/accounts/${otherAccountFixture.id}` });
+    await renderApp({ path: `/moderation/accounts/${otherAccountFixture.id}/manage` });
 
-    expect(await screen.findByRole("region", { name: "Account" })).toBeInTheDocument();
+    expect(await screen.findByRole("region", { name: "Email and IP addresses" })).toBeInTheDocument();
     expect(screen.queryByRole("region", { name: "Roles" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /^Grant |^Revoke / })).not.toBeInTheDocument();
     expect(requests).toEqual([]);

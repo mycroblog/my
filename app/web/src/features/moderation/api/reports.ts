@@ -99,6 +99,11 @@ export function instanceInfoQueryOptions(api: Api) {
   return api.query.queryOptions("get", "/instance");
 }
 
+/** One moderation action on an account (GET /admin/account_actions/{id}), for its page. */
+export function accountActionQueryOptions(api: Api, id: string) {
+  return api.query.queryOptions("get", "/admin/account_actions/{id}", { params: { path: { id } } });
+}
+
 /** The moderation actions on an account, newest first, ended ones included (GET /admin/accounts/{id}/actions). */
 export function accountActionsQueryOptions(api: Api, accountId: string) {
   return infiniteQueryOptions({
