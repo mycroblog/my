@@ -45,13 +45,27 @@ get:
     - oauth2: ["read:voice"]
   responses:
     "200":
-      description: The event stream. It stays open until the client or the server ends it.
+      description: |
+        The event stream. It stays open until the client or the server ends it. The body is
+        text: each event is an `event:` line with its name and a `data:` line with a JSON
+        document. The schema is the one of those documents, by the name of the event.
       headers:
         Cache-Control:
           $ref: ../components/headers/CacheControl.yaml
       content:
         text/event-stream:
           schema:
-            type: string
+            # The title of each schema names its events: the documentation site labels its tab with it.
+            oneOf:
+              - title: state
+                description: The data of a `state` event of a voice chat room stream.
+                allOf:
+                  - $ref: ../components/schemas/VoiceRoom.yaml
+              - $ref: ../components/schemas/VoiceStreamMic.yaml
+              - $ref: ../components/schemas/VoiceStreamReaction.yaml
+              - $ref: ../components/schemas/VoiceStreamSignal.yaml
+              - $ref: ../components/schemas/VoiceStreamMuted.yaml
+              - $ref: ../components/schemas/VoiceStreamGrant.yaml
+              - $ref: ../components/schemas/VoiceStreamEnd.yaml
     default:
       $ref: ../components/responses/Problem.yaml

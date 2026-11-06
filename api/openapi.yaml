@@ -5864,14 +5864,27 @@ paths:
             - read:voice
       responses:
         '200':
-          description: The event stream. It stays open until the client or the server ends it.
+          description: |
+            The event stream. It stays open until the client or the server ends it. The body is
+            text: each event is an `event:` line with its name and a `data:` line with a JSON
+            document. The schema is the one of those documents, by the name of the event.
           headers:
             Cache-Control:
               $ref: '#/components/headers/CacheControl'
           content:
             text/event-stream:
               schema:
-                type: string
+                oneOf:
+                  - title: state
+                    description: The data of a `state` event of a voice chat room stream.
+                    allOf:
+                      - $ref: '#/components/schemas/VoiceRoom'
+                  - $ref: '#/components/schemas/VoiceStreamMic'
+                  - $ref: '#/components/schemas/VoiceStreamReaction'
+                  - $ref: '#/components/schemas/VoiceStreamSignal'
+                  - $ref: '#/components/schemas/VoiceStreamMuted'
+                  - $ref: '#/components/schemas/VoiceStreamGrant'
+                  - $ref: '#/components/schemas/VoiceStreamEnd'
         default:
           $ref: '#/components/responses/Problem'
   /voice/rooms/{id}/signals:
@@ -24039,6 +24052,7 @@ components:
         - candidate
         - restart
     VoiceStreamEnd:
+      title: removed, replaced, ended
       description: |
         The data of the `removed`, `replaced`, and `ended` events of a voice chat room stream, after
         which the stream ends. The `reason` of `removed` is why the session left the room (`left`,
@@ -24068,6 +24082,7 @@ components:
             - time_limit
             - disabled
     VoiceStreamGrant:
+      title: grant
       description: The data of a `grant` event of a voice chat room stream.
       type: object
       required:
@@ -24080,6 +24095,7 @@ components:
           description: Whether the client connects to the audio again with the new grant.
           type: boolean
     VoiceStreamMic:
+      title: mic
       description: The data of a `mic` event of a voice chat room stream.
       type: object
       required:
@@ -24093,6 +24109,7 @@ components:
           description: Whether the microphone is on.
           type: boolean
     VoiceStreamMuted:
+      title: muted
       description: The data of a `muted` event of a voice chat room stream.
       type: object
       required:
@@ -24102,6 +24119,7 @@ components:
           description: The account ID of the host or co-host who muted the session.
           type: string
     VoiceStreamReaction:
+      title: reaction
       description: The data of a `reaction` event of a voice chat room stream.
       type: object
       required:
@@ -24115,6 +24133,7 @@ components:
           description: A Unicode emoji, or the `:shortcode:` of a custom emoji of this server.
           type: string
     VoiceStreamSignal:
+      title: signal
       description: The data of a `signal` event of a voice chat room stream.
       type: object
       required:

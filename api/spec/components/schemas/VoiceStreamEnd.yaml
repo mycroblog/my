@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: MIT
+title: removed, replaced, ended
 description: |
   The data of the `removed`, `replaced`, and `ended` events of a voice chat room stream, after
   which the stream ends. The `reason` of `removed` is why the session left the room (`left`,
