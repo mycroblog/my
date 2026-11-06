@@ -4,7 +4,7 @@ A guide for operators. The deployment key `payments` is described in the [config
 
 Only when an administrator enables it, local users can subscribe to a paid plan on the web and hold the role tied to the plan for as long as they keep paying. The program is off by default, and no plan or subscription entry point appears anywhere until it is enabled.
 
-**`my` does not guarantee compliance with any law, including Japan's Act on Specified Commercial Transactions.** Operators must check the content of the disclosure, the final confirmation screen, and the handling of consumption tax and invoices against the laws of their own country (see "What operators must check" below).
+**mycroblog does not guarantee compliance with any law, including Japan's Act on Specified Commercial Transactions.** Operators must check the content of the disclosure, the final confirmation screen, and the handling of consumption tax and invoices against the laws of their own country (see "What operators must check" below).
 
 ## Enabling the program
 
@@ -84,7 +84,7 @@ Enabling, disabling, and cancelling are written to the audit log as CLI operatio
 
 ## What operators must check (not yet verified)
 
-`my` does not judge any of these. Check them against the laws of your country and the terms of your provider.
+mycroblog does not judge any of these. Check them against the laws of your country and the terms of your provider.
 
 - The items that the commerce disclosure must contain (the seller's name, address, and phone number, the price, when and how to pay, when the service is provided, how to cancel, and so on) and how it must be published.
 - That the final confirmation screen (Article 12-6 of the Act on Specified Commercial Transactions) shows the quantity, the price, the payment timing, the delivery timing, and the way to cancel and its effect, taking the provider's payment page and the confirmation screen of `my` together.
