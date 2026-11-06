@@ -153,7 +153,18 @@ func (s *Server) ListHookAppeals(ctx context.Context, req ListHookAppealsRequest
 	if pq.problem != nil {
 		return ListHookAppealsdefaultApplicationProblemPlusJSONResponse(*pq.problem), nil
 	}
-	appeals, err := s.o.HookAppeals.ListAppeals(ctx, apphook.AppealQuery{Pending: deref(req.Params.Pending), Before: pq.before, Limit: pq.limit + 1})
+	aq := apphook.AppealQuery{Before: pq.before, Limit: pq.limit + 1}
+	if st := req.Params.State; st != nil {
+		switch *st {
+		case HookAppealStatePending:
+			aq.Pending = true
+		case HookAppealStateUpheld, HookAppealStateOverturned:
+			aq.Outcome = hook.AppealOutcome(*st)
+		default:
+			return ListHookAppealsdefaultApplicationProblemPlusJSONResponse(s.invalidParameterResponse(ctx, "state")), nil
+		}
+	}
+	appeals, err := s.o.HookAppeals.ListAppeals(ctx, aq)
 	if err != nil {
 		return nil, fmt.Errorf("clientapi: list hook appeals: %w", err)
 	}

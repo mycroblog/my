@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	// JobPurgeDecisions removes the decisions past retention_hook_decisions; no payload.
+	// JobPurgeDecisions removes the decisions past hook_decisions_retention_days; no payload.
 	JobPurgeDecisions = "hook.purge_decisions"
 	// PurgeInterval is the period of its schedule.
 	PurgeInterval = time.Hour
@@ -312,24 +312,33 @@ func (s *Service) Applied(ctx context.Context, tx uow.Tx, r Result) error {
 // decisionLabel is the target label of a decision in the audit log.
 func decisionLabel(n hook.Name, subjectKey string) string { return string(n) + " " + subjectKey }
 
-// Override cancels a decision from the list. byUserID is the moderator, "" for the CLI.
+// Override cancels a decision from the list. A decision cancelled already changes nothing and
+// returns it with its cancellation, so a request sent again succeeds. byUserID is the moderator,
+// "" for the CLI.
 func (s *Service) Override(ctx context.Context, id, byUserID string) (hook.Record, error) {
 	var rec hook.Record
 	err := s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
 		var err error
 		rec, err = s.d.Repository.RecordTx(ctx, tx, id)
-		if err != nil {
+		switch {
+		case err != nil:
 			return err
-		}
-		if rec.Override != nil {
-			return ErrAlreadyOverridden
-		}
-		if !rec.Overridable() {
+		case rec.Override != nil:
+			return nil
+		case !rec.Overridable():
 			return ErrNotOverridable
 		}
 		rec, err = s.OverrideTx(ctx, tx, rec, byUserID)
 		return err
 	})
+	if errors.Is(err, ErrAlreadyOverridden) {
+		// A request at the same time cancelled it: read it with that cancellation.
+		err = s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+			var err error
+			rec, err = s.d.Repository.RecordTx(ctx, tx, id)
+			return err
+		})
+	}
 	if err != nil {
 		return hook.Record{}, err
 	}

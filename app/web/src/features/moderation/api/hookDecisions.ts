@@ -93,7 +93,7 @@ export function hookAppealsQueryOptions(api: Api, filter: HookAppealFilter) {
   return infiniteQueryOptions({
     queryKey: ["get", "/admin/hook_appeals", { pending }, "pages"] as const,
     queryFn: async ({ pageParam, signal }) => {
-      const query = { ...pageQuery(pageParam), ...(pending ? { pending: true } : {}) };
+      const query = { ...pageQuery(pageParam), ...(pending ? { state: "pending" as const } : {}) };
       const { data, error } = await api.fetch.GET("/admin/hook_appeals", { params: { query }, signal });
       if (data === undefined) throw new ApiError(error);
       return data;

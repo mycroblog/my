@@ -53,6 +53,9 @@ export const reportCategories = ["spam", "legal", "violation", "other"] as const
 /** The most characters of a note on a report (CreateReportNoteRequest). */
 export const reportNoteLimit = 2000;
 
+/** The most characters of the text a moderator sends with a report forwarded to the target's server (`ForwardReportRequest`). */
+export const reportForwardCommentLimit = 1000;
+
 /** The most characters of an account action's public reason and private note (CreateAccountActionRequest). */
 export const accountActionTextLimit = 5000;
 
@@ -145,11 +148,16 @@ export async function storeReportNote(queryClient: QueryClient, api: Api, report
 }
 
 /** What can be done to a report that takes no input. */
-type ReportOperation = "assign_to_self" | "unassign" | "reopen" | "forward";
+type ReportOperation = "assign_to_self" | "unassign" | "reopen";
 
-/** One change of a report: the operation and the report. */
+/**
+ * One change of a report: the operation and the report. A forward carries the moderator's text for the target's server,
+ * "" for none: the only text it sends, never the reporter's comment.
+ */
 export type ChangeReport =
-  { id: string; operation: ReportOperation } | { id: string; operation: "resolve"; outcome: ReportOutcome };
+  | { id: string; operation: ReportOperation }
+  | { id: string; operation: "forward"; comment: string }
+  | { id: string; operation: "resolve"; outcome: ReportOutcome };
 
 /**
  * Takes a report, leaves it, reopens it, forwards it, or resolves it (POST /admin/reports/{id}/assign_to_self | unassign |
@@ -169,7 +177,10 @@ export function changeReportMutation(api: Api) {
           case "reopen":
             return api.fetch.POST("/admin/reports/{id}/reopen", init);
           case "forward":
-            return api.fetch.POST("/admin/reports/{id}/forward", init);
+            return api.fetch.POST("/admin/reports/{id}/forward", {
+              ...init,
+              body: change.comment === "" ? {} : { comment: change.comment },
+            });
           case "resolve":
             return api.fetch.POST("/admin/reports/{id}/resolve", { ...init, body: { outcome: change.outcome } });
         }

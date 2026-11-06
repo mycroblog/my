@@ -17,8 +17,8 @@ headers:
       type: string
   Retry-After:
     description: |
-      The seconds to wait before retrying, on a 429 and on a 503 of the streaming
-      endpoint.
+      The seconds to wait before retrying, on a 429 (for `translation-limit`, until the next
+      month in UTC) and on a 503 of the streaming endpoint.
     schema:
       type: integer
       minimum: 1

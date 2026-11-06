@@ -116,7 +116,8 @@ LEFT JOIN hook_decision_appeal_decisions r ON r.appeal_id = a.id
 LEFT JOIN hook_decision_overrides o ON o.decision_id = d.id
 WHERE a.decision_id = $1;
 
--- The appeals newest first; pending keeps those that no moderator has decided.
+-- The appeals newest first; pending keeps those that no moderator has decided, and outcome those
+-- decided with it ('' keeps every one).
 -- name: ListHookDecisionAppeals :many
 SELECT a.id AS appeal_id, a.decision_id AS appeal_decision_id, a.account_id AS appeal_account_id, a.status_text, a.comment, a.submitted_at,
   r.decision AS review, r.decided_by_user_id AS reviewed_by_user_id, r.decided_at AS reviewed_at,
@@ -128,6 +129,7 @@ LEFT JOIN hook_decision_appeal_decisions r ON r.appeal_id = a.id
 LEFT JOIN hook_decision_overrides o ON o.decision_id = d.id
 WHERE (sqlc.narg(before)::uuid IS NULL OR a.id < sqlc.narg(before)::uuid)
   AND (NOT sqlc.arg(pending)::boolean OR r.appeal_id IS NULL)
+  AND (sqlc.arg(outcome)::text = '' OR r.decision = sqlc.arg(outcome)::text)
 ORDER BY a.id DESC
 LIMIT sqlc.arg(row_limit);
 

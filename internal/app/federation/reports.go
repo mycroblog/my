@@ -126,8 +126,10 @@ func (f *FanOut) reportedInbox(ctx context.Context, s subject) ([]target, error)
 }
 
 // flagDocument builds the Flag of a forwarded report: the instance actor's, about the reported
-// actor and the URIs of the reported statuses that still exist, with the comment. It carries
-// nothing of the reporter: not their account, address, or email.
+// actor and the URIs of the reported statuses that still exist. Its content is the reporter's
+// comment for a report forwarded when it was filed, and the moderator's text for a later forward,
+// which never sends the reporter's comment or a hook's note (ADR-0058 §6). It carries nothing of
+// the reporter: not their account, address, or email.
 func (f *FanOut) flagDocument(ctx context.Context, act federation.OutboundActivity, s subject) ([]byte, error) {
 	reported, err := f.actorIRI(ctx, s.report.TargetAccountID)
 	if err != nil {
@@ -146,5 +148,5 @@ func (f *FanOut) flagDocument(ctx context.Context, act federation.OutboundActivi
 			statuses = append(statuses, federation.IRI(st.URI))
 		}
 	}
-	return federation.NewFlagDocument(act.ActivityURI, federation.IRI(s.actor.Account.URI), reported, statuses, s.report.Comment).Marshal()
+	return federation.NewFlagDocument(act.ActivityURI, federation.IRI(s.actor.Account.URI), reported, statuses, s.report.FlagComment()).Marshal()
 }

@@ -17,7 +17,7 @@ func (r *ModerationRepository) InsertReportForward(ctx context.Context, tx uow.T
 		return false, err
 	}
 	n, err := q.InsertReportForward(ctx, sqlitegen.InsertReportForwardParams{
-		ID: f.ID, ReportID: f.ReportID, ForwardedByUserID: toNullString(f.ForwardedByUserID), ForwardedAt: toMillis(f.ForwardedAt),
+		ID: f.ID, ReportID: f.ReportID, Comment: f.Comment, ForwardedByUserID: toNullString(f.ForwardedByUserID), ForwardedAt: toMillis(f.ForwardedAt),
 	})
 	return n > 0, wrap(err, "insert report forward")
 }
@@ -30,6 +30,6 @@ func (r *ModerationRepository) reportForward(ctx context.Context, reportID strin
 	}
 	row := rows[0]
 	return &moderation.ReportForward{
-		ID: row.ID, ReportID: row.ReportID, ForwardedByUserID: row.ForwardedByUserID.String, ForwardedAt: fromMillis(row.ForwardedAt),
+		ID: row.ID, ReportID: row.ReportID, Comment: row.Comment, ForwardedByUserID: row.ForwardedByUserID.String, ForwardedAt: fromMillis(row.ForwardedAt),
 	}, nil
 }

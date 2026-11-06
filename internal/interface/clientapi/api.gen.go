@@ -2443,24 +2443,6 @@ func (e InstanceFederationMode) Valid() bool {
 	}
 }
 
-// Defines values for InstanceFullTextSearchVisibilities.
-const (
-	InstanceFullTextSearchVisibilitiesLocal  InstanceFullTextSearchVisibilities = "local"
-	InstanceFullTextSearchVisibilitiesPublic InstanceFullTextSearchVisibilities = "public"
-)
-
-// Valid indicates whether the value is a known member of the InstanceFullTextSearchVisibilities enum.
-func (e InstanceFullTextSearchVisibilities) Valid() bool {
-	switch e {
-	case InstanceFullTextSearchVisibilitiesLocal:
-		return true
-	case InstanceFullTextSearchVisibilitiesPublic:
-		return true
-	default:
-		return false
-	}
-}
-
 // Defines values for InstanceRegistrationsMode.
 const (
 	InstanceRegistrationsModeApproval InstanceRegistrationsMode = "approval"
@@ -2504,6 +2486,7 @@ const (
 	InstanceSettingKeyFinanceViewerItemMemos             InstanceSettingKey = "finance_viewer_item_memos"
 	InstanceSettingKeyFinanceViewerItemNames             InstanceSettingKey = "finance_viewer_item_names"
 	InstanceSettingKeyFinanceVisibility                  InstanceSettingKey = "finance_visibility"
+	InstanceSettingKeyHookDecisionsRetentionDays         InstanceSettingKey = "hook_decisions_retention_days"
 	InstanceSettingKeyHookInboundFollowMode              InstanceSettingKey = "hook_inbound_follow_mode"
 	InstanceSettingKeyHookInboundFollowOnFailure         InstanceSettingKey = "hook_inbound_follow_on_failure"
 	InstanceSettingKeyHookInboundStatusMode              InstanceSettingKey = "hook_inbound_status_mode"
@@ -2542,7 +2525,6 @@ const (
 	InstanceSettingKeyRemoteStatusRetentionDays          InstanceSettingKey = "remote_status_retention_days"
 	InstanceSettingKeyReportsRetentionDays               InstanceSettingKey = "reports_retention_days"
 	InstanceSettingKeyRequireMediaDescription            InstanceSettingKey = "require_media_description"
-	InstanceSettingKeyRetentionHookDecisions             InstanceSettingKey = "retention_hook_decisions"
 	InstanceSettingKeySearchIndexing                     InstanceSettingKey = "search_indexing"
 	InstanceSettingKeySearchVisibilities                 InstanceSettingKey = "search_visibilities"
 	InstanceSettingKeySecurityContact                    InstanceSettingKey = "security_contact"
@@ -2598,6 +2580,8 @@ func (e InstanceSettingKey) Valid() bool {
 	case InstanceSettingKeyFinanceViewerItemNames:
 		return true
 	case InstanceSettingKeyFinanceVisibility:
+		return true
+	case InstanceSettingKeyHookDecisionsRetentionDays:
 		return true
 	case InstanceSettingKeyHookInboundFollowMode:
 		return true
@@ -2674,8 +2658,6 @@ func (e InstanceSettingKey) Valid() bool {
 	case InstanceSettingKeyReportsRetentionDays:
 		return true
 	case InstanceSettingKeyRequireMediaDescription:
-		return true
-	case InstanceSettingKeyRetentionHookDecisions:
 		return true
 	case InstanceSettingKeySearchIndexing:
 		return true
@@ -5694,7 +5676,7 @@ type AdminHook struct {
 // Deciding it never calls the plugin.
 type AdminHookAppeal struct {
 	// AccountId The author.
-	AccountId string `json:"account_id"`
+	AccountId Id `json:"account_id"`
 
 	// Comment What the author adds for the moderators, as plain text; absent when there is none.
 	Comment *string `json:"comment,omitempty"`
@@ -5704,7 +5686,11 @@ type AdminHookAppeal struct {
 
 	// Decision What a decision hook answered about one subject. It holds no text of a post.
 	Decision AdminHookDecision `json:"decision"`
-	Id       string            `json:"id"`
+
+	// Id The ID of a resource, a UUIDv7 in its canonical string form.
+	//
+	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+	Id Id `json:"id"`
 
 	// State Where an appeal of a refused post stands: `pending` until a moderator decides it,
 	// `upheld` when the refusal stays, `overturned` when the moderator cancelled it. After
@@ -5728,14 +5714,18 @@ type AdminHookAppealPage struct {
 // AdminHookDecision What a decision hook answered about one subject. It holds no text of a post.
 type AdminHookDecision struct {
 	// AccountId The account the subject belongs to; absent when there is none.
-	AccountId *string   `json:"account_id,omitempty"`
+	AccountId *Id       `json:"account_id,omitempty"`
 	DecidedAt time.Time `json:"decided_at"`
 
 	// Hook A decision hook, where the server asks an external review before it accepts something:
 	// `inbound.status` (posts from other servers), `inbound.follow` (follows from other servers),
 	// `signup.check` (sign-ups), `media.check` (uploaded media), `local.status` (local posts).
 	Hook HookName `json:"hook"`
-	Id   string   `json:"id"`
+
+	// Id The ID of a resource, a UUIDv7 in its canonical string form.
+	//
+	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+	Id Id `json:"id"`
 
 	// LatencyMs How long the call took, in milliseconds.
 	LatencyMs int64 `json:"latency_ms"`
@@ -6364,8 +6354,9 @@ type AdminReport struct {
 	Forwarded bool `json:"forwarded"`
 
 	// HookOrigin The decision hook that filed the report; omitted for a report that a person or another server
-	// filed. Such a report has the instance actor as its reporter, is not forwarded, and nobody is
-	// notified when it is resolved.
+	// filed. Such a report has the instance actor as its reporter, is not forwarded when it is
+	// filed (a moderator may forward it later, without the plugin's note), and nobody is notified
+	// when it is resolved.
 	HookOrigin *AdminReportHookOrigin `json:"hook_origin,omitempty"`
 
 	// Id The ID of a resource, a UUIDv7 in its canonical string form.
@@ -6441,8 +6432,9 @@ type AdminReportDetail struct {
 	Forwarded bool `json:"forwarded"`
 
 	// HookOrigin The decision hook that filed the report; omitted for a report that a person or another server
-	// filed. Such a report has the instance actor as its reporter, is not forwarded, and nobody is
-	// notified when it is resolved.
+	// filed. Such a report has the instance actor as its reporter, is not forwarded when it is
+	// filed (a moderator may forward it later, without the plugin's note), and nobody is notified
+	// when it is resolved.
 	HookOrigin *AdminReportHookOrigin `json:"hook_origin,omitempty"`
 
 	// Id The ID of a resource, a UUIDv7 in its canonical string form.
@@ -6511,11 +6503,12 @@ type AdminReportDetail struct {
 }
 
 // AdminReportHookOrigin The decision hook that filed the report; omitted for a report that a person or another server
-// filed. Such a report has the instance actor as its reporter, is not forwarded, and nobody is
-// notified when it is resolved.
+// filed. Such a report has the instance actor as its reporter, is not forwarded when it is
+// filed (a moderator may forward it later, without the plugin's note), and nobody is notified
+// when it is resolved.
 type AdminReportHookOrigin struct {
 	// DecisionId The decision that filed the report, which can be gone after its retention.
-	DecisionId string `json:"decision_id"`
+	DecisionId Id `json:"decision_id"`
 
 	// Hook A decision hook, where the server asks an external review before it accepts something:
 	// `inbound.status` (posts from other servers), `inbound.follow` (follows from other servers),
@@ -9394,6 +9387,14 @@ type FollowAccountRequest struct {
 	ShowBoosts *bool `json:"show_boosts,omitempty"`
 }
 
+// ForwardReportRequest What a moderator sends with a report forwarded to the target's server.
+type ForwardReportRequest struct {
+	// Comment Text for the moderators of the target's server, as plain text, up to 1,000 characters:
+	// the `content` of the `Flag`. Omitted or empty sends none. The reporter's comment is never
+	// sent by a forward after filing.
+	Comment *string `json:"comment,omitempty"`
+}
+
 // HookAppealState Where an appeal of a refused post stands: `pending` until a moderator decides it,
 // `upheld` when the refusal stays, `overturned` when the moderator cancelled it. After
 // `overturned` the user's posts are no longer reviewed, and the user posts again: the refused
@@ -9989,12 +9990,10 @@ type InstanceFullTextSearch struct {
 	// Available Whether the server has a search engine, so that statuses can be searched.
 	Available bool `json:"available"`
 
-	// Visibilities The visibilities of the statuses that the search covers; empty while it is not available.
-	Visibilities []InstanceFullTextSearchVisibilities `json:"visibilities"`
+	// Visibilities The visibilities of the statuses that the search covers, only `public` and `local`; empty
+	// while it is not available.
+	Visibilities []Visibility `json:"visibilities"`
 }
-
-// InstanceFullTextSearchVisibilities defines model for InstanceFullTextSearch.Visibilities.
-type InstanceFullTextSearchVisibilities string
 
 // InstanceLimits Limits that clients check before sending a request.
 type InstanceLimits struct {
@@ -11349,8 +11348,12 @@ type OwnCustomEmojiPage struct {
 // OwnHookAppeal The user's appeal of a post that the automated review refused.
 type OwnHookAppeal struct {
 	// HookDecisionId The decision appealed.
-	HookDecisionId string `json:"hook_decision_id"`
-	Id             string `json:"id"`
+	HookDecisionId Id `json:"hook_decision_id"`
+
+	// Id The ID of a resource, a UUIDv7 in its canonical string form.
+	//
+	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+	Id Id `json:"id"`
 
 	// State Where an appeal of a refused post stands: `pending` until a moderator decides it,
 	// `upheld` when the refusal stays, `overturned` when the moderator cancelled it. After
@@ -11986,8 +11989,10 @@ type PreviewDomainBlockImportRequest struct {
 //   - `/api/v1/problems/email-already-verified` (409): the primary email address is already
 //     confirmed, so no confirmation mail is sent.
 //   - `/api/v1/problems/hook-decision-not-overridable` (409): the decision of a decision hook
-//     had no effect, is already cancelled, or is a `reject` of `local.status`, which goes through
-//     its appeal.
+//     had no effect, or is a `reject` of `local.status`, which goes through its appeal.
+//   - `/api/v1/problems/report-not-forwardable` (409): the report cannot be forwarded to the
+//     target's server: it came from another server, is about a local account or a voice chat
+//     room, or its target is gone.
 //   - `/api/v1/problems/status-rejected` (422): the server's automated review refused the post
 //     and nothing was posted. The problem carries `hook_decision_id` and `appeal_deadline`; the
 //     user may appeal (`POST /hook_decisions/{id}/appeal`).
@@ -12897,7 +12902,7 @@ type StatusRejectedProblem struct {
 	Detail *string `json:"detail,omitempty"`
 
 	// HookDecisionId The decision to appeal.
-	HookDecisionId *string `json:"hook_decision_id,omitempty"`
+	HookDecisionId *Id `json:"hook_decision_id,omitempty"`
 
 	// RequestId The request ID (the `X-Request-Id` response header), for reporting the problem.
 	RequestId *string `json:"request_id,omitempty"`
@@ -14243,6 +14248,11 @@ type DomainActionId = Id
 // Examples: 01890a5d-ac96-774b-bcce-b302099a8057
 type ErrorGroupId = Id
 
+// HookDecisionId The ID of a resource, a UUIDv7 in its canonical string form.
+//
+// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+type HookDecisionId = Id
+
 // IdempotencyKey defines model for IdempotencyKey.
 type IdempotencyKey = string
 
@@ -14600,8 +14610,8 @@ type ListErrorGroupsParams struct {
 
 // ListHookAppealsParams defines parameters for ListHookAppeals.
 type ListHookAppealsParams struct {
-	// Pending Keep the appeals that no moderator has decided.
-	Pending *bool `form:"pending,omitempty" json:"pending,omitempty"`
+	// State Keep only the appeals in this state; omitted keeps every state.
+	State *HookAppealState `form:"state,omitempty" json:"state,omitempty"`
 
 	// Cursor The `next_cursor` of the previous page; omitted for the first page.
 	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
@@ -15294,6 +15304,9 @@ type CreateRelayJSONRequestBody = CreateRelayRequest
 // TranslateReportCommentJSONRequestBody defines body for TranslateReportComment for application/json ContentType.
 type TranslateReportCommentJSONRequestBody = StatusTranslationRequest
 
+// ForwardReportJSONRequestBody defines body for ForwardReport for application/json ContentType.
+type ForwardReportJSONRequestBody = ForwardReportRequest
+
 // AddReportNoteJSONRequestBody defines body for AddReportNote for application/json ContentType.
 type AddReportNoteJSONRequestBody = CreateReportNoteRequest
 
@@ -15802,7 +15815,7 @@ type ServerInterface interface {
 	GetHookSummary(w http.ResponseWriter, r *http.Request)
 	// OverrideHookDecision Cancel a decision
 	// (POST /admin/hook_decisions/{id}/override)
-	OverrideHookDecision(w http.ResponseWriter, r *http.Request, id string)
+	OverrideHookDecision(w http.ResponseWriter, r *http.Request, id HookDecisionId)
 	// ListIncomeMovements List the money movements of the income
 	// (GET /admin/income_movements)
 	ListIncomeMovements(w http.ResponseWriter, r *http.Request, params ListIncomeMovementsParams)
@@ -16183,7 +16196,7 @@ type ServerInterface interface {
 	RejectFollowRequest(w http.ResponseWriter, r *http.Request, id AccountId)
 	// AppealHookDecision Appeal a post that the automated review refused
 	// (POST /hook_decisions/{id}/appeal)
-	AppealHookDecision(w http.ResponseWriter, r *http.Request, id Id)
+	AppealHookDecision(w http.ResponseWriter, r *http.Request, id HookDecisionId)
 	// ListDataImports List the authenticated user's imports
 	// (GET /imports)
 	ListDataImports(w http.ResponseWriter, r *http.Request)
@@ -19526,15 +19539,15 @@ func (siw *ServerInterfaceWrapper) ListHookAppeals(w http.ResponseWriter, r *htt
 	// Parameter object where we will unmarshal all parameters from the context
 	var params ListHookAppealsParams
 
-	// ------------- Optional query parameter "pending" -------------
+	// ------------- Optional query parameter "state" -------------
 
-	err = runtime.BindQueryParameterWithOptions("form", true, false, "pending", r.URL.Query(), &params.Pending, runtime.BindQueryParameterOptions{Type: "boolean", Format: ""})
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "state", r.URL.Query(), &params.State, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
 	if err != nil {
 		var requiredError *runtime.RequiredParameterError
 		if errors.As(err, &requiredError) {
-			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "pending"})
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "state"})
 		} else {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "pending", Err: err})
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "state", Err: err})
 		}
 		return
 	}
@@ -19734,9 +19747,9 @@ func (siw *ServerInterfaceWrapper) OverrideHookDecision(w http.ResponseWriter, r
 	_ = err
 
 	// ------------- Path parameter "id" -------------
-	var id string
+	var id HookDecisionId
 
-	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
 	if err != nil {
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
 		return
@@ -23396,7 +23409,7 @@ func (siw *ServerInterfaceWrapper) AppealHookDecision(w http.ResponseWriter, r *
 	_ = err
 
 	// ------------- Path parameter "id" -------------
-	var id Id
+	var id HookDecisionId
 
 	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
 	if err != nil {
@@ -34156,22 +34169,32 @@ func (response GetHookSummarydefaultApplicationProblemPlusJSONResponse) VisitGet
 }
 
 type OverrideHookDecisionRequestObject struct {
-	Id string `json:"id"`
+	Id HookDecisionId `json:"id"`
 }
 
 type OverrideHookDecisionResponseObject interface {
 	VisitOverrideHookDecisionResponse(w http.ResponseWriter) error
 }
 
-type OverrideHookDecision200JSONResponse AdminHookDecision
+type OverrideHookDecision200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type OverrideHookDecision200JSONResponse struct {
+	Body    AdminHookDecision
+	Headers OverrideHookDecision200ResponseHeaders
+}
 
 func (response OverrideHookDecision200JSONResponse) VisitOverrideHookDecisionResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
 		return err
 	}
 	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
 	w.WriteHeader(200)
 	_, err := buf.WriteTo(w)
 	return err
@@ -37337,7 +37360,8 @@ func (response TranslateReportCommentdefaultApplicationProblemPlusJSONResponse) 
 }
 
 type ForwardReportRequestObject struct {
-	Id ReportId `json:"id"`
+	Id   ReportId `json:"id"`
+	Body *ForwardReportJSONRequestBody
 }
 
 type ForwardReportResponseObject interface {
@@ -41882,7 +41906,7 @@ func (response RejectFollowRequestdefaultApplicationProblemPlusJSONResponse) Vis
 }
 
 type AppealHookDecisionRequestObject struct {
-	Id   Id `json:"id"`
+	Id   HookDecisionId `json:"id"`
 	Body *AppealHookDecisionJSONRequestBody
 }
 
@@ -54208,7 +54232,7 @@ func (sh *strictHandler) GetHookSummary(w http.ResponseWriter, r *http.Request) 
 }
 
 // OverrideHookDecision operation middleware
-func (sh *strictHandler) OverrideHookDecision(w http.ResponseWriter, r *http.Request, id string) {
+func (sh *strictHandler) OverrideHookDecision(w http.ResponseWriter, r *http.Request, id HookDecisionId) {
 	var request OverrideHookDecisionRequestObject
 
 	request.Id = id
@@ -55640,6 +55664,16 @@ func (sh *strictHandler) ForwardReport(w http.ResponseWriter, r *http.Request, i
 	var request ForwardReportRequestObject
 
 	request.Id = id
+
+	var body ForwardReportJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		if !errors.Is(err, io.EOF) {
+			sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+			return
+		}
+	} else {
+		request.Body = &body
+	}
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.ForwardReport(ctx, request.(ForwardReportRequestObject))
@@ -57693,7 +57727,7 @@ func (sh *strictHandler) RejectFollowRequest(w http.ResponseWriter, r *http.Requ
 }
 
 // AppealHookDecision operation middleware
-func (sh *strictHandler) AppealHookDecision(w http.ResponseWriter, r *http.Request, id Id) {
+func (sh *strictHandler) AppealHookDecision(w http.ResponseWriter, r *http.Request, id HookDecisionId) {
 	var request AppealHookDecisionRequestObject
 
 	request.Id = id

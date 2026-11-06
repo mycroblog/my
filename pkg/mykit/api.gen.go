@@ -2441,24 +2441,6 @@ func (e InstanceFederationMode) Valid() bool {
 	}
 }
 
-// Defines values for InstanceFullTextSearchVisibilities.
-const (
-	InstanceFullTextSearchVisibilitiesLocal  InstanceFullTextSearchVisibilities = "local"
-	InstanceFullTextSearchVisibilitiesPublic InstanceFullTextSearchVisibilities = "public"
-)
-
-// Valid indicates whether the value is a known member of the InstanceFullTextSearchVisibilities enum.
-func (e InstanceFullTextSearchVisibilities) Valid() bool {
-	switch e {
-	case InstanceFullTextSearchVisibilitiesLocal:
-		return true
-	case InstanceFullTextSearchVisibilitiesPublic:
-		return true
-	default:
-		return false
-	}
-}
-
 // Defines values for InstanceRegistrationsMode.
 const (
 	InstanceRegistrationsModeApproval InstanceRegistrationsMode = "approval"
@@ -2502,6 +2484,7 @@ const (
 	InstanceSettingKeyFinanceViewerItemMemos             InstanceSettingKey = "finance_viewer_item_memos"
 	InstanceSettingKeyFinanceViewerItemNames             InstanceSettingKey = "finance_viewer_item_names"
 	InstanceSettingKeyFinanceVisibility                  InstanceSettingKey = "finance_visibility"
+	InstanceSettingKeyHookDecisionsRetentionDays         InstanceSettingKey = "hook_decisions_retention_days"
 	InstanceSettingKeyHookInboundFollowMode              InstanceSettingKey = "hook_inbound_follow_mode"
 	InstanceSettingKeyHookInboundFollowOnFailure         InstanceSettingKey = "hook_inbound_follow_on_failure"
 	InstanceSettingKeyHookInboundStatusMode              InstanceSettingKey = "hook_inbound_status_mode"
@@ -2540,7 +2523,6 @@ const (
 	InstanceSettingKeyRemoteStatusRetentionDays          InstanceSettingKey = "remote_status_retention_days"
 	InstanceSettingKeyReportsRetentionDays               InstanceSettingKey = "reports_retention_days"
 	InstanceSettingKeyRequireMediaDescription            InstanceSettingKey = "require_media_description"
-	InstanceSettingKeyRetentionHookDecisions             InstanceSettingKey = "retention_hook_decisions"
 	InstanceSettingKeySearchIndexing                     InstanceSettingKey = "search_indexing"
 	InstanceSettingKeySearchVisibilities                 InstanceSettingKey = "search_visibilities"
 	InstanceSettingKeySecurityContact                    InstanceSettingKey = "security_contact"
@@ -2596,6 +2578,8 @@ func (e InstanceSettingKey) Valid() bool {
 	case InstanceSettingKeyFinanceViewerItemNames:
 		return true
 	case InstanceSettingKeyFinanceVisibility:
+		return true
+	case InstanceSettingKeyHookDecisionsRetentionDays:
 		return true
 	case InstanceSettingKeyHookInboundFollowMode:
 		return true
@@ -2672,8 +2656,6 @@ func (e InstanceSettingKey) Valid() bool {
 	case InstanceSettingKeyReportsRetentionDays:
 		return true
 	case InstanceSettingKeyRequireMediaDescription:
-		return true
-	case InstanceSettingKeyRetentionHookDecisions:
 		return true
 	case InstanceSettingKeySearchIndexing:
 		return true
@@ -5692,7 +5674,7 @@ type AdminHook struct {
 // Deciding it never calls the plugin.
 type AdminHookAppeal struct {
 	// AccountId The author.
-	AccountId string `json:"account_id"`
+	AccountId Id `json:"account_id"`
 
 	// Comment What the author adds for the moderators, as plain text; absent when there is none.
 	Comment *string `json:"comment,omitempty"`
@@ -5702,7 +5684,11 @@ type AdminHookAppeal struct {
 
 	// Decision What a decision hook answered about one subject. It holds no text of a post.
 	Decision AdminHookDecision `json:"decision"`
-	Id       string            `json:"id"`
+
+	// Id The ID of a resource, a UUIDv7 in its canonical string form.
+	//
+	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+	Id Id `json:"id"`
 
 	// State Where an appeal of a refused post stands: `pending` until a moderator decides it,
 	// `upheld` when the refusal stays, `overturned` when the moderator cancelled it. After
@@ -5726,14 +5712,18 @@ type AdminHookAppealPage struct {
 // AdminHookDecision What a decision hook answered about one subject. It holds no text of a post.
 type AdminHookDecision struct {
 	// AccountId The account the subject belongs to; absent when there is none.
-	AccountId *string   `json:"account_id,omitempty"`
+	AccountId *Id       `json:"account_id,omitempty"`
 	DecidedAt time.Time `json:"decided_at"`
 
 	// Hook A decision hook, where the server asks an external review before it accepts something:
 	// `inbound.status` (posts from other servers), `inbound.follow` (follows from other servers),
 	// `signup.check` (sign-ups), `media.check` (uploaded media), `local.status` (local posts).
 	Hook HookName `json:"hook"`
-	Id   string   `json:"id"`
+
+	// Id The ID of a resource, a UUIDv7 in its canonical string form.
+	//
+	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+	Id Id `json:"id"`
 
 	// LatencyMs How long the call took, in milliseconds.
 	LatencyMs int64 `json:"latency_ms"`
@@ -6362,8 +6352,9 @@ type AdminReport struct {
 	Forwarded bool `json:"forwarded"`
 
 	// HookOrigin The decision hook that filed the report; omitted for a report that a person or another server
-	// filed. Such a report has the instance actor as its reporter, is not forwarded, and nobody is
-	// notified when it is resolved.
+	// filed. Such a report has the instance actor as its reporter, is not forwarded when it is
+	// filed (a moderator may forward it later, without the plugin's note), and nobody is notified
+	// when it is resolved.
 	HookOrigin *AdminReportHookOrigin `json:"hook_origin,omitempty"`
 
 	// Id The ID of a resource, a UUIDv7 in its canonical string form.
@@ -6439,8 +6430,9 @@ type AdminReportDetail struct {
 	Forwarded bool `json:"forwarded"`
 
 	// HookOrigin The decision hook that filed the report; omitted for a report that a person or another server
-	// filed. Such a report has the instance actor as its reporter, is not forwarded, and nobody is
-	// notified when it is resolved.
+	// filed. Such a report has the instance actor as its reporter, is not forwarded when it is
+	// filed (a moderator may forward it later, without the plugin's note), and nobody is notified
+	// when it is resolved.
 	HookOrigin *AdminReportHookOrigin `json:"hook_origin,omitempty"`
 
 	// Id The ID of a resource, a UUIDv7 in its canonical string form.
@@ -6509,11 +6501,12 @@ type AdminReportDetail struct {
 }
 
 // AdminReportHookOrigin The decision hook that filed the report; omitted for a report that a person or another server
-// filed. Such a report has the instance actor as its reporter, is not forwarded, and nobody is
-// notified when it is resolved.
+// filed. Such a report has the instance actor as its reporter, is not forwarded when it is
+// filed (a moderator may forward it later, without the plugin's note), and nobody is notified
+// when it is resolved.
 type AdminReportHookOrigin struct {
 	// DecisionId The decision that filed the report, which can be gone after its retention.
-	DecisionId string `json:"decision_id"`
+	DecisionId Id `json:"decision_id"`
 
 	// Hook A decision hook, where the server asks an external review before it accepts something:
 	// `inbound.status` (posts from other servers), `inbound.follow` (follows from other servers),
@@ -9395,6 +9388,14 @@ type FollowAccountRequest struct {
 	ShowBoosts *bool `json:"show_boosts,omitempty"`
 }
 
+// ForwardReportRequest What a moderator sends with a report forwarded to the target's server.
+type ForwardReportRequest struct {
+	// Comment Text for the moderators of the target's server, as plain text, up to 1,000 characters:
+	// the `content` of the `Flag`. Omitted or empty sends none. The reporter's comment is never
+	// sent by a forward after filing.
+	Comment *string `json:"comment,omitempty"`
+}
+
 // HookAppealState Where an appeal of a refused post stands: `pending` until a moderator decides it,
 // `upheld` when the refusal stays, `overturned` when the moderator cancelled it. After
 // `overturned` the user's posts are no longer reviewed, and the user posts again: the refused
@@ -9990,12 +9991,10 @@ type InstanceFullTextSearch struct {
 	// Available Whether the server has a search engine, so that statuses can be searched.
 	Available bool `json:"available"`
 
-	// Visibilities The visibilities of the statuses that the search covers; empty while it is not available.
-	Visibilities []InstanceFullTextSearchVisibilities `json:"visibilities"`
+	// Visibilities The visibilities of the statuses that the search covers, only `public` and `local`; empty
+	// while it is not available.
+	Visibilities []Visibility `json:"visibilities"`
 }
-
-// InstanceFullTextSearchVisibilities defines model for InstanceFullTextSearch.Visibilities.
-type InstanceFullTextSearchVisibilities string
 
 // InstanceLimits Limits that clients check before sending a request.
 type InstanceLimits struct {
@@ -11351,8 +11350,12 @@ type OwnCustomEmojiPage struct {
 // OwnHookAppeal The user's appeal of a post that the automated review refused.
 type OwnHookAppeal struct {
 	// HookDecisionId The decision appealed.
-	HookDecisionId string `json:"hook_decision_id"`
-	Id             string `json:"id"`
+	HookDecisionId Id `json:"hook_decision_id"`
+
+	// Id The ID of a resource, a UUIDv7 in its canonical string form.
+	//
+	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+	Id Id `json:"id"`
 
 	// State Where an appeal of a refused post stands: `pending` until a moderator decides it,
 	// `upheld` when the refusal stays, `overturned` when the moderator cancelled it. After
@@ -11988,8 +11991,10 @@ type PreviewDomainBlockImportRequest struct {
 //   - `/api/v1/problems/email-already-verified` (409): the primary email address is already
 //     confirmed, so no confirmation mail is sent.
 //   - `/api/v1/problems/hook-decision-not-overridable` (409): the decision of a decision hook
-//     had no effect, is already cancelled, or is a `reject` of `local.status`, which goes through
-//     its appeal.
+//     had no effect, or is a `reject` of `local.status`, which goes through its appeal.
+//   - `/api/v1/problems/report-not-forwardable` (409): the report cannot be forwarded to the
+//     target's server: it came from another server, is about a local account or a voice chat
+//     room, or its target is gone.
 //   - `/api/v1/problems/status-rejected` (422): the server's automated review refused the post
 //     and nothing was posted. The problem carries `hook_decision_id` and `appeal_deadline`; the
 //     user may appeal (`POST /hook_decisions/{id}/appeal`).
@@ -12902,7 +12907,7 @@ type StatusRejectedProblem struct {
 	Detail *string `json:"detail,omitempty"`
 
 	// HookDecisionId The decision to appeal.
-	HookDecisionId *string `json:"hook_decision_id,omitempty"`
+	HookDecisionId *Id `json:"hook_decision_id,omitempty"`
 
 	// RequestId The request ID (the `X-Request-Id` response header), for reporting the problem.
 	RequestId *string `json:"request_id,omitempty"`
@@ -14252,6 +14257,11 @@ type DomainActionId = Id
 // Examples: 01890a5d-ac96-774b-bcce-b302099a8057
 type ErrorGroupId = Id
 
+// HookDecisionId The ID of a resource, a UUIDv7 in its canonical string form.
+//
+// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+type HookDecisionId = Id
+
 // IdempotencyKey defines model for IdempotencyKey.
 type IdempotencyKey = string
 
@@ -14609,8 +14619,8 @@ type ListErrorGroupsParams struct {
 
 // ListHookAppealsParams defines parameters for ListHookAppeals.
 type ListHookAppealsParams struct {
-	// Pending Keep the appeals that no moderator has decided.
-	Pending *bool `form:"pending,omitempty" json:"pending,omitempty"`
+	// State Keep only the appeals in this state; omitted keeps every state.
+	State *HookAppealState `form:"state,omitempty" json:"state,omitempty"`
 
 	// Cursor The `next_cursor` of the previous page; omitted for the first page.
 	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
@@ -15302,6 +15312,9 @@ type CreateRelayJSONRequestBody = CreateRelayRequest
 
 // TranslateReportCommentJSONRequestBody defines body for TranslateReportComment for application/json ContentType.
 type TranslateReportCommentJSONRequestBody = StatusTranslationRequest
+
+// ForwardReportJSONRequestBody defines body for ForwardReport for application/json ContentType.
+type ForwardReportJSONRequestBody = ForwardReportRequest
 
 // AddReportNoteJSONRequestBody defines body for AddReportNote for application/json ContentType.
 type AddReportNoteJSONRequestBody = CreateReportNoteRequest
@@ -18886,12 +18899,13 @@ type ClientInterface interface {
 	// OverrideHookDecision Cancel a decision
 	//
 	// Records the cancellation as its own event and in the audit log, and undoes what the hook
-	// can: what happens depends on the verdict. An unknown ID is a 404. A decision that had no
-	// effect, that is already cancelled, or a `reject` of `local.status`, which goes through its
-	// appeal, is a 409. Needs the `manage_reports` permission.
+	// can: what happens depends on the verdict. Cancelling a cancelled decision again changes
+	// nothing and answers the decision. An unknown ID is a 404. A decision that had no effect, or
+	// a `reject` of `local.status`, which goes through its appeal, is a 409
+	// `/api/v1/problems/hook-decision-not-overridable`. Needs the `manage_reports` permission.
 	//
 	// Corresponds with POST /admin/hook_decisions/{id}/override (the `OverrideHookDecision` operationId).
-	OverrideHookDecision(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*http.Response, error)
+	OverrideHookDecision(ctx context.Context, id HookDecisionId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListIncomeMovements List the money movements of the income
 	//
@@ -19641,18 +19655,39 @@ type ClientInterface interface {
 	// Corresponds with POST /admin/reports/{id}/comment/translation (the `TranslateReportComment` operationId).
 	TranslateReportComment(ctx context.Context, id ReportId, body TranslateReportCommentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// ForwardReportWithBody Forward a report to the target's server
+	//
+	// Sends the report to the server of its remote target as a `Flag` of the instance actor,
+	// with the account and the posts it points at, and `comment` as its text. Nothing of the
+	// reporter is sent: not their account, and not their comment, nor the note of an automated
+	// review that filed it. Works on an open or a resolved report that `forwardable` allows:
+	// one filed on this server (by a person or by an automated review) about a remote account,
+	// of no voice chat room. A report forwarded already, when it was filed or later, changes
+	// nothing, whatever `comment` says. A report that cannot be forwarded is a 409
+	// `/api/v1/problems/report-not-forwardable`, an unknown ID a 404, and a `comment` that is too
+	// long or contains U+0000 a 422 naming it. Needs the `manage_reports` permission.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with POST /admin/reports/{id}/forward (the `ForwardReport` operationId).
+	ForwardReportWithBody(ctx context.Context, id ReportId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// ForwardReport Forward a report to the target's server
 	//
 	// Sends the report to the server of its remote target as a `Flag` of the instance actor,
-	// with the posts it points at and its comment, and nothing of the reporter. Works on an
-	// open or a resolved report that `forwardable` allows: one filed on this server (by a
-	// person or by an automated review) about a remote account, of no voice chat room. A
-	// report forwarded already, when it was filed or later, changes nothing. A report that
-	// cannot be forwarded is a 409, an unknown ID a 404. Needs the `manage_reports`
-	// permission.
+	// with the account and the posts it points at, and `comment` as its text. Nothing of the
+	// reporter is sent: not their account, and not their comment, nor the note of an automated
+	// review that filed it. Works on an open or a resolved report that `forwardable` allows:
+	// one filed on this server (by a person or by an automated review) about a remote account,
+	// of no voice chat room. A report forwarded already, when it was filed or later, changes
+	// nothing, whatever `comment` says. A report that cannot be forwarded is a 409
+	// `/api/v1/problems/report-not-forwardable`, an unknown ID a 404, and a `comment` that is too
+	// long or contains U+0000 a 422 naming it. Needs the `manage_reports` permission.
+	//
+	// Takes a body of the `application/json` content type.
 	//
 	// Corresponds with POST /admin/reports/{id}/forward (the `ForwardReport` operationId).
-	ForwardReport(ctx context.Context, id ReportId, reqEditors ...RequestEditorFn) (*http.Response, error)
+	ForwardReport(ctx context.Context, id ReportId, body ForwardReportJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// AddReportNoteWithBody Write a note on a report
 	//
@@ -19959,7 +19994,9 @@ type ClientInterface interface {
 	// each change is kept as a revision and audited (`setting_changed`). Setting the current
 	// value again still records a revision, so clients send only the settings they change.
 	// The changes take effect on the next request. An unknown key, or a value its key
-	// rejects, is a 422 naming the key, and nothing is changed. Needs the `manage_settings`
+	// rejects, is a 422 naming the key, and nothing is changed. A value can also depend on the
+	// current one: the mode of a decision hook (`hook_*_mode`) goes from `off` to `enforce` only
+	// through `observe`, so `enforce` while it is `off` is a 422. Needs the `manage_settings`
 	// permission.
 	//
 	// Takes any type of body and a specified content type.
@@ -19974,7 +20011,9 @@ type ClientInterface interface {
 	// each change is kept as a revision and audited (`setting_changed`). Setting the current
 	// value again still records a revision, so clients send only the settings they change.
 	// The changes take effect on the next request. An unknown key, or a value its key
-	// rejects, is a 422 naming the key, and nothing is changed. Needs the `manage_settings`
+	// rejects, is a 422 naming the key, and nothing is changed. A value can also depend on the
+	// current one: the mode of a decision hook (`hook_*_mode`) goes from `off` to `enforce` only
+	// through `observe`, so `enforce` while it is `off` is a 422. Needs the `manage_settings`
 	// permission.
 	//
 	// Takes a body of the `application/json` content type.
@@ -20815,7 +20854,7 @@ type ClientInterface interface {
 	// Takes any type of body and a specified content type.
 	//
 	// Corresponds with POST /hook_decisions/{id}/appeal (the `AppealHookDecision` operationId).
-	AppealHookDecisionWithBody(ctx context.Context, id Id, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	AppealHookDecisionWithBody(ctx context.Context, id HookDecisionId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// AppealHookDecision Appeal a post that the automated review refused
 	//
@@ -20833,7 +20872,7 @@ type ClientInterface interface {
 	// Takes a body of the `application/json` content type.
 	//
 	// Corresponds with POST /hook_decisions/{id}/appeal (the `AppealHookDecision` operationId).
-	AppealHookDecision(ctx context.Context, id Id, body AppealHookDecisionJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	AppealHookDecision(ctx context.Context, id HookDecisionId, body AppealHookDecisionJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListDataImports List the authenticated user's imports
 	//
@@ -22321,7 +22360,8 @@ type ClientInterface interface {
 	// is enabled, or none is allowed its visibility. A 422
 	// `/api/v1/problems/translation-unsupported-language` when the providers do not translate the
 	// language, and a 422 without a type for a `target_language` that is not a language tag. A 429
-	// `/api/v1/problems/translation-limit` over a monthly limit, until the next month in UTC. A 503
+	// `/api/v1/problems/translation-limit` over a monthly limit, until the next month in UTC, with
+	// `Retry-After` the seconds until then. A 503
 	// `/api/v1/problems/translation-failed` when no provider returned a usable translation, which
 	// may pass.
 	//
@@ -22347,7 +22387,8 @@ type ClientInterface interface {
 	// is enabled, or none is allowed its visibility. A 422
 	// `/api/v1/problems/translation-unsupported-language` when the providers do not translate the
 	// language, and a 422 without a type for a `target_language` that is not a language tag. A 429
-	// `/api/v1/problems/translation-limit` over a monthly limit, until the next month in UTC. A 503
+	// `/api/v1/problems/translation-limit` over a monthly limit, until the next month in UTC, with
+	// `Retry-After` the seconds until then. A 503
 	// `/api/v1/problems/translation-failed` when no provider returned a usable translation, which
 	// may pass.
 	//
@@ -26135,12 +26176,13 @@ func (c *Client) GetHookSummary(ctx context.Context, reqEditors ...RequestEditor
 // OverrideHookDecision Cancel a decision
 //
 // Records the cancellation as its own event and in the audit log, and undoes what the hook
-// can: what happens depends on the verdict. An unknown ID is a 404. A decision that had no
-// effect, that is already cancelled, or a `reject` of `local.status`, which goes through its
-// appeal, is a 409. Needs the `manage_reports` permission.
+// can: what happens depends on the verdict. Cancelling a cancelled decision again changes
+// nothing and answers the decision. An unknown ID is a 404. A decision that had no effect, or
+// a `reject` of `local.status`, which goes through its appeal, is a 409
+// `/api/v1/problems/hook-decision-not-overridable`. Needs the `manage_reports` permission.
 //
 // Corresponds with POST /admin/hook_decisions/{id}/override (the `OverrideHookDecision` operationId).
-func (c *Client) OverrideHookDecision(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (c *Client) OverrideHookDecision(ctx context.Context, id HookDecisionId, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewOverrideHookDecisionRequest(c.Server, id)
 	if err != nil {
 		return nil, err
@@ -27520,19 +27562,50 @@ func (c *Client) TranslateReportComment(ctx context.Context, id ReportId, body T
 	return c.Client.Do(req)
 }
 
+// ForwardReportWithBody Forward a report to the target's server
+//
+// Sends the report to the server of its remote target as a `Flag` of the instance actor,
+// with the account and the posts it points at, and `comment` as its text. Nothing of the
+// reporter is sent: not their account, and not their comment, nor the note of an automated
+// review that filed it. Works on an open or a resolved report that `forwardable` allows:
+// one filed on this server (by a person or by an automated review) about a remote account,
+// of no voice chat room. A report forwarded already, when it was filed or later, changes
+// nothing, whatever `comment` says. A report that cannot be forwarded is a 409
+// `/api/v1/problems/report-not-forwardable`, an unknown ID a 404, and a `comment` that is too
+// long or contains U+0000 a 422 naming it. Needs the `manage_reports` permission.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with POST /admin/reports/{id}/forward (the `ForwardReport` operationId).
+func (c *Client) ForwardReportWithBody(ctx context.Context, id ReportId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewForwardReportRequestWithBody(c.Server, id, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 // ForwardReport Forward a report to the target's server
 //
 // Sends the report to the server of its remote target as a `Flag` of the instance actor,
-// with the posts it points at and its comment, and nothing of the reporter. Works on an
-// open or a resolved report that `forwardable` allows: one filed on this server (by a
-// person or by an automated review) about a remote account, of no voice chat room. A
-// report forwarded already, when it was filed or later, changes nothing. A report that
-// cannot be forwarded is a 409, an unknown ID a 404. Needs the `manage_reports`
-// permission.
+// with the account and the posts it points at, and `comment` as its text. Nothing of the
+// reporter is sent: not their account, and not their comment, nor the note of an automated
+// review that filed it. Works on an open or a resolved report that `forwardable` allows:
+// one filed on this server (by a person or by an automated review) about a remote account,
+// of no voice chat room. A report forwarded already, when it was filed or later, changes
+// nothing, whatever `comment` says. A report that cannot be forwarded is a 409
+// `/api/v1/problems/report-not-forwardable`, an unknown ID a 404, and a `comment` that is too
+// long or contains U+0000 a 422 naming it. Needs the `manage_reports` permission.
+//
+// Takes a body of the `application/json` content type.
 //
 // Corresponds with POST /admin/reports/{id}/forward (the `ForwardReport` operationId).
-func (c *Client) ForwardReport(ctx context.Context, id ReportId, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewForwardReportRequest(c.Server, id)
+func (c *Client) ForwardReport(ctx context.Context, id ReportId, body ForwardReportJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewForwardReportRequest(c.Server, id, body)
 	if err != nil {
 		return nil, err
 	}
@@ -28088,7 +28161,9 @@ func (c *Client) ListInstanceSettings(ctx context.Context, reqEditors ...Request
 // each change is kept as a revision and audited (`setting_changed`). Setting the current
 // value again still records a revision, so clients send only the settings they change.
 // The changes take effect on the next request. An unknown key, or a value its key
-// rejects, is a 422 naming the key, and nothing is changed. Needs the `manage_settings`
+// rejects, is a 422 naming the key, and nothing is changed. A value can also depend on the
+// current one: the mode of a decision hook (`hook_*_mode`) goes from `off` to `enforce` only
+// through `observe`, so `enforce` while it is `off` is a 422. Needs the `manage_settings`
 // permission.
 //
 // Takes any type of body and a specified content type.
@@ -28113,7 +28188,9 @@ func (c *Client) UpdateInstanceSettingsWithBody(ctx context.Context, contentType
 // each change is kept as a revision and audited (`setting_changed`). Setting the current
 // value again still records a revision, so clients send only the settings they change.
 // The changes take effect on the next request. An unknown key, or a value its key
-// rejects, is a 422 naming the key, and nothing is changed. Needs the `manage_settings`
+// rejects, is a 422 naming the key, and nothing is changed. A value can also depend on the
+// current one: the mode of a decision hook (`hook_*_mode`) goes from `off` to `enforce` only
+// through `observe`, so `enforce` while it is `off` is a 422. Needs the `manage_settings`
 // permission.
 //
 // Takes a body of the `application/json` content type.
@@ -29654,7 +29731,7 @@ func (c *Client) RejectFollowRequest(ctx context.Context, id AccountId, reqEdito
 // Takes any type of body and a specified content type.
 //
 // Corresponds with POST /hook_decisions/{id}/appeal (the `AppealHookDecision` operationId).
-func (c *Client) AppealHookDecisionWithBody(ctx context.Context, id Id, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (c *Client) AppealHookDecisionWithBody(ctx context.Context, id HookDecisionId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewAppealHookDecisionRequestWithBody(c.Server, id, contentType, body)
 	if err != nil {
 		return nil, err
@@ -29682,7 +29759,7 @@ func (c *Client) AppealHookDecisionWithBody(ctx context.Context, id Id, contentT
 // Takes a body of the `application/json` content type.
 //
 // Corresponds with POST /hook_decisions/{id}/appeal (the `AppealHookDecision` operationId).
-func (c *Client) AppealHookDecision(ctx context.Context, id Id, body AppealHookDecisionJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (c *Client) AppealHookDecision(ctx context.Context, id HookDecisionId, body AppealHookDecisionJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewAppealHookDecisionRequest(c.Server, id, body)
 	if err != nil {
 		return nil, err
@@ -32370,7 +32447,8 @@ func (c *Client) GetStatusSource(ctx context.Context, id StatusId, reqEditors ..
 // is enabled, or none is allowed its visibility. A 422
 // `/api/v1/problems/translation-unsupported-language` when the providers do not translate the
 // language, and a 422 without a type for a `target_language` that is not a language tag. A 429
-// `/api/v1/problems/translation-limit` over a monthly limit, until the next month in UTC. A 503
+// `/api/v1/problems/translation-limit` over a monthly limit, until the next month in UTC, with
+// `Retry-After` the seconds until then. A 503
 // `/api/v1/problems/translation-failed` when no provider returned a usable translation, which
 // may pass.
 //
@@ -32406,7 +32484,8 @@ func (c *Client) TranslateStatusWithBody(ctx context.Context, id StatusId, conte
 // is enabled, or none is allowed its visibility. A 422
 // `/api/v1/problems/translation-unsupported-language` when the providers do not translate the
 // language, and a 422 without a type for a `target_language` that is not a language tag. A 429
-// `/api/v1/problems/translation-limit` over a monthly limit, until the next month in UTC. A 503
+// `/api/v1/problems/translation-limit` over a monthly limit, until the next month in UTC, with
+// `Retry-After` the seconds until then. A 503
 // `/api/v1/problems/translation-failed` when no provider returned a usable translation, which
 // may pass.
 //
@@ -38103,9 +38182,9 @@ func NewListHookAppealsRequest(server string, params *ListHookAppealsParams) (*h
 		// per the OpenAPI spec (e.g. "color=blue,black,brown").
 		var rawQueryFragments []string
 
-		if params.Pending != nil {
+		if params.State != nil {
 
-			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "pending", *params.Pending, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "boolean", Format: ""}); err != nil {
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "state", *params.State, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
 				return nil, err
 			} else {
 				for _, qp := range strings.Split(queryFrag, "&") {
@@ -38351,12 +38430,12 @@ func NewGetHookSummaryRequest(server string) (*http.Request, error) {
 }
 
 // NewOverrideHookDecisionRequest constructs an http.Request for the OverrideHookDecision method
-func NewOverrideHookDecisionRequest(server string, id string) (*http.Request, error) {
+func NewOverrideHookDecisionRequest(server string, id HookDecisionId) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
 	if err != nil {
 		return nil, err
 	}
@@ -40684,8 +40763,19 @@ func NewTranslateReportCommentRequestWithBody(server string, id ReportId, conten
 	return req, nil
 }
 
-// NewForwardReportRequest constructs an http.Request for the ForwardReport method
-func NewForwardReportRequest(server string, id ReportId) (*http.Request, error) {
+// NewForwardReportRequest calls the generic ForwardReport builder with application/json body
+func NewForwardReportRequest(server string, id ReportId, body ForwardReportJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewForwardReportRequestWithBody(server, id, "application/json", bodyReader)
+}
+
+// NewForwardReportRequestWithBody constructs an http.Request for the ForwardReport method, with any body, and a specified content type
+func NewForwardReportRequestWithBody(server string, id ReportId, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -40710,10 +40800,12 @@ func NewForwardReportRequest(server string, id ReportId) (*http.Request, error) 
 		return nil, err
 	}
 
-	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
 	if err != nil {
 		return nil, err
 	}
+
+	req.Header.Add("Content-Type", contentType)
 
 	return req, nil
 }
@@ -43864,7 +43956,7 @@ func NewRejectFollowRequestRequest(server string, id AccountId) (*http.Request, 
 }
 
 // NewAppealHookDecisionRequest calls the generic AppealHookDecision builder with application/json body
-func NewAppealHookDecisionRequest(server string, id Id, body AppealHookDecisionJSONRequestBody) (*http.Request, error) {
+func NewAppealHookDecisionRequest(server string, id HookDecisionId, body AppealHookDecisionJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
@@ -43875,7 +43967,7 @@ func NewAppealHookDecisionRequest(server string, id Id, body AppealHookDecisionJ
 }
 
 // NewAppealHookDecisionRequestWithBody constructs an http.Request for the AppealHookDecision method, with any body, and a specified content type
-func NewAppealHookDecisionRequestWithBody(server string, id Id, contentType string, body io.Reader) (*http.Request, error) {
+func NewAppealHookDecisionRequestWithBody(server string, id HookDecisionId, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -51811,14 +51903,15 @@ type ClientWithResponsesInterface interface {
 	// OverrideHookDecisionWithResponse Cancel a decision
 	//
 	// Records the cancellation as its own event and in the audit log, and undoes what the hook
-	// can: what happens depends on the verdict. An unknown ID is a 404. A decision that had no
-	// effect, that is already cancelled, or a `reject` of `local.status`, which goes through its
-	// appeal, is a 409. Needs the `manage_reports` permission.
+	// can: what happens depends on the verdict. Cancelling a cancelled decision again changes
+	// nothing and answers the decision. An unknown ID is a 404. A decision that had no effect, or
+	// a `reject` of `local.status`, which goes through its appeal, is a 409
+	// `/api/v1/problems/hook-decision-not-overridable`. Needs the `manage_reports` permission.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
 	// Corresponds with POST /admin/hook_decisions/{id}/override (the `OverrideHookDecision` operationId).
-	OverrideHookDecisionWithResponse(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*OverrideHookDecisionResponse, error)
+	OverrideHookDecisionWithResponse(ctx context.Context, id HookDecisionId, reqEditors ...RequestEditorFn) (*OverrideHookDecisionResponse, error)
 
 	// ListIncomeMovementsWithResponse List the money movements of the income
 	//
@@ -52644,20 +52737,39 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with POST /admin/reports/{id}/comment/translation (the `TranslateReportComment` operationId).
 	TranslateReportCommentWithResponse(ctx context.Context, id ReportId, body TranslateReportCommentJSONRequestBody, reqEditors ...RequestEditorFn) (*TranslateReportCommentResponse, error)
 
+	// ForwardReportWithBodyWithResponse Forward a report to the target's server
+	//
+	// Sends the report to the server of its remote target as a `Flag` of the instance actor,
+	// with the account and the posts it points at, and `comment` as its text. Nothing of the
+	// reporter is sent: not their account, and not their comment, nor the note of an automated
+	// review that filed it. Works on an open or a resolved report that `forwardable` allows:
+	// one filed on this server (by a person or by an automated review) about a remote account,
+	// of no voice chat room. A report forwarded already, when it was filed or later, changes
+	// nothing, whatever `comment` says. A report that cannot be forwarded is a 409
+	// `/api/v1/problems/report-not-forwardable`, an unknown ID a 404, and a `comment` that is too
+	// long or contains U+0000 a 422 naming it. Needs the `manage_reports` permission.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /admin/reports/{id}/forward (the `ForwardReport` operationId).
+	ForwardReportWithBodyWithResponse(ctx context.Context, id ReportId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ForwardReportResponse, error)
+
 	// ForwardReportWithResponse Forward a report to the target's server
 	//
 	// Sends the report to the server of its remote target as a `Flag` of the instance actor,
-	// with the posts it points at and its comment, and nothing of the reporter. Works on an
-	// open or a resolved report that `forwardable` allows: one filed on this server (by a
-	// person or by an automated review) about a remote account, of no voice chat room. A
-	// report forwarded already, when it was filed or later, changes nothing. A report that
-	// cannot be forwarded is a 409, an unknown ID a 404. Needs the `manage_reports`
-	// permission.
+	// with the account and the posts it points at, and `comment` as its text. Nothing of the
+	// reporter is sent: not their account, and not their comment, nor the note of an automated
+	// review that filed it. Works on an open or a resolved report that `forwardable` allows:
+	// one filed on this server (by a person or by an automated review) about a remote account,
+	// of no voice chat room. A report forwarded already, when it was filed or later, changes
+	// nothing, whatever `comment` says. A report that cannot be forwarded is a 409
+	// `/api/v1/problems/report-not-forwardable`, an unknown ID a 404, and a `comment` that is too
+	// long or contains U+0000 a 422 naming it. Needs the `manage_reports` permission.
 	//
-	// Returns a wrapper object for the known response body format(s).
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 	//
 	// Corresponds with POST /admin/reports/{id}/forward (the `ForwardReport` operationId).
-	ForwardReportWithResponse(ctx context.Context, id ReportId, reqEditors ...RequestEditorFn) (*ForwardReportResponse, error)
+	ForwardReportWithResponse(ctx context.Context, id ReportId, body ForwardReportJSONRequestBody, reqEditors ...RequestEditorFn) (*ForwardReportResponse, error)
 
 	// AddReportNoteWithBodyWithResponse Write a note on a report
 	//
@@ -52980,7 +53092,9 @@ type ClientWithResponsesInterface interface {
 	// each change is kept as a revision and audited (`setting_changed`). Setting the current
 	// value again still records a revision, so clients send only the settings they change.
 	// The changes take effect on the next request. An unknown key, or a value its key
-	// rejects, is a 422 naming the key, and nothing is changed. Needs the `manage_settings`
+	// rejects, is a 422 naming the key, and nothing is changed. A value can also depend on the
+	// current one: the mode of a decision hook (`hook_*_mode`) goes from `off` to `enforce` only
+	// through `observe`, so `enforce` while it is `off` is a 422. Needs the `manage_settings`
 	// permission.
 	//
 	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
@@ -52995,7 +53109,9 @@ type ClientWithResponsesInterface interface {
 	// each change is kept as a revision and audited (`setting_changed`). Setting the current
 	// value again still records a revision, so clients send only the settings they change.
 	// The changes take effect on the next request. An unknown key, or a value its key
-	// rejects, is a 422 naming the key, and nothing is changed. Needs the `manage_settings`
+	// rejects, is a 422 naming the key, and nothing is changed. A value can also depend on the
+	// current one: the mode of a decision hook (`hook_*_mode`) goes from `off` to `enforce` only
+	// through `observe`, so `enforce` while it is `off` is a 422. Needs the `manage_settings`
 	// permission.
 	//
 	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
@@ -53926,7 +54042,7 @@ type ClientWithResponsesInterface interface {
 	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 	//
 	// Corresponds with POST /hook_decisions/{id}/appeal (the `AppealHookDecision` operationId).
-	AppealHookDecisionWithBodyWithResponse(ctx context.Context, id Id, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AppealHookDecisionResponse, error)
+	AppealHookDecisionWithBodyWithResponse(ctx context.Context, id HookDecisionId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AppealHookDecisionResponse, error)
 
 	// AppealHookDecisionWithResponse Appeal a post that the automated review refused
 	//
@@ -53944,7 +54060,7 @@ type ClientWithResponsesInterface interface {
 	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 	//
 	// Corresponds with POST /hook_decisions/{id}/appeal (the `AppealHookDecision` operationId).
-	AppealHookDecisionWithResponse(ctx context.Context, id Id, body AppealHookDecisionJSONRequestBody, reqEditors ...RequestEditorFn) (*AppealHookDecisionResponse, error)
+	AppealHookDecisionWithResponse(ctx context.Context, id HookDecisionId, body AppealHookDecisionJSONRequestBody, reqEditors ...RequestEditorFn) (*AppealHookDecisionResponse, error)
 
 	// ListDataImportsWithResponse List the authenticated user's imports
 	//
@@ -55556,7 +55672,8 @@ type ClientWithResponsesInterface interface {
 	// is enabled, or none is allowed its visibility. A 422
 	// `/api/v1/problems/translation-unsupported-language` when the providers do not translate the
 	// language, and a 422 without a type for a `target_language` that is not a language tag. A 429
-	// `/api/v1/problems/translation-limit` over a monthly limit, until the next month in UTC. A 503
+	// `/api/v1/problems/translation-limit` over a monthly limit, until the next month in UTC, with
+	// `Retry-After` the seconds until then. A 503
 	// `/api/v1/problems/translation-failed` when no provider returned a usable translation, which
 	// may pass.
 	//
@@ -55582,7 +55699,8 @@ type ClientWithResponsesInterface interface {
 	// is enabled, or none is allowed its visibility. A 422
 	// `/api/v1/problems/translation-unsupported-language` when the providers do not translate the
 	// language, and a 422 without a type for a `target_language` that is not a language tag. A 429
-	// `/api/v1/problems/translation-limit` over a monthly limit, until the next month in UTC. A 503
+	// `/api/v1/problems/translation-limit` over a monthly limit, until the next month in UTC, with
+	// `Retry-After` the seconds until then. A 503
 	// `/api/v1/problems/translation-failed` when no provider returned a usable translation, which
 	// may pass.
 	//
@@ -62944,6 +63062,11 @@ func (r GetHookSummaryResponse) ContentType() string {
 	return ""
 }
 
+// OverrideHookDecisionResponse200Headers the declared response headers of an HTTP 200 response for OverrideHookDecision
+type OverrideHookDecisionResponse200Headers struct {
+	CacheControl *string
+}
+
 // OverrideHookDecisionResponseDefaultHeaders the declared response headers of an HTTP default response for OverrideHookDecision
 type OverrideHookDecisionResponseDefaultHeaders struct {
 	CacheControl    *string
@@ -62959,6 +63082,8 @@ type OverrideHookDecisionResponse struct {
 	JSON200 *AdminHookDecision
 	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
 	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *OverrideHookDecisionResponse200Headers
 	// HeadersDefault the parsed response headers for an HTTP default response
 	HeadersDefault *OverrideHookDecisionResponseDefaultHeaders
 }
@@ -82923,14 +83048,15 @@ func (c *ClientWithResponses) GetHookSummaryWithResponse(ctx context.Context, re
 // OverrideHookDecisionWithResponse Cancel a decision
 //
 // Records the cancellation as its own event and in the audit log, and undoes what the hook
-// can: what happens depends on the verdict. An unknown ID is a 404. A decision that had no
-// effect, that is already cancelled, or a `reject` of `local.status`, which goes through its
-// appeal, is a 409. Needs the `manage_reports` permission.
+// can: what happens depends on the verdict. Cancelling a cancelled decision again changes
+// nothing and answers the decision. An unknown ID is a 404. A decision that had no effect, or
+// a `reject` of `local.status`, which goes through its appeal, is a 409
+// `/api/v1/problems/hook-decision-not-overridable`. Needs the `manage_reports` permission.
 //
 // Returns a wrapper object for the known response body format(s).
 //
 // Corresponds with POST /admin/hook_decisions/{id}/override (the `OverrideHookDecision` operationId).
-func (c *ClientWithResponses) OverrideHookDecisionWithResponse(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*OverrideHookDecisionResponse, error) {
+func (c *ClientWithResponses) OverrideHookDecisionWithResponse(ctx context.Context, id HookDecisionId, reqEditors ...RequestEditorFn) (*OverrideHookDecisionResponse, error) {
 	rsp, err := c.OverrideHookDecision(ctx, id, reqEditors...)
 	if err != nil {
 		return nil, err
@@ -84134,21 +84260,46 @@ func (c *ClientWithResponses) TranslateReportCommentWithResponse(ctx context.Con
 	return ParseTranslateReportCommentResponse(rsp)
 }
 
+// ForwardReportWithBodyWithResponse Forward a report to the target's server
+//
+// Sends the report to the server of its remote target as a `Flag` of the instance actor,
+// with the account and the posts it points at, and `comment` as its text. Nothing of the
+// reporter is sent: not their account, and not their comment, nor the note of an automated
+// review that filed it. Works on an open or a resolved report that `forwardable` allows:
+// one filed on this server (by a person or by an automated review) about a remote account,
+// of no voice chat room. A report forwarded already, when it was filed or later, changes
+// nothing, whatever `comment` says. A report that cannot be forwarded is a 409
+// `/api/v1/problems/report-not-forwardable`, an unknown ID a 404, and a `comment` that is too
+// long or contains U+0000 a 422 naming it. Needs the `manage_reports` permission.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /admin/reports/{id}/forward (the `ForwardReport` operationId).
+func (c *ClientWithResponses) ForwardReportWithBodyWithResponse(ctx context.Context, id ReportId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ForwardReportResponse, error) {
+	rsp, err := c.ForwardReportWithBody(ctx, id, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseForwardReportResponse(rsp)
+}
+
 // ForwardReportWithResponse Forward a report to the target's server
 //
 // Sends the report to the server of its remote target as a `Flag` of the instance actor,
-// with the posts it points at and its comment, and nothing of the reporter. Works on an
-// open or a resolved report that `forwardable` allows: one filed on this server (by a
-// person or by an automated review) about a remote account, of no voice chat room. A
-// report forwarded already, when it was filed or later, changes nothing. A report that
-// cannot be forwarded is a 409, an unknown ID a 404. Needs the `manage_reports`
-// permission.
+// with the account and the posts it points at, and `comment` as its text. Nothing of the
+// reporter is sent: not their account, and not their comment, nor the note of an automated
+// review that filed it. Works on an open or a resolved report that `forwardable` allows:
+// one filed on this server (by a person or by an automated review) about a remote account,
+// of no voice chat room. A report forwarded already, when it was filed or later, changes
+// nothing, whatever `comment` says. A report that cannot be forwarded is a 409
+// `/api/v1/problems/report-not-forwardable`, an unknown ID a 404, and a `comment` that is too
+// long or contains U+0000 a 422 naming it. Needs the `manage_reports` permission.
 //
-// Returns a wrapper object for the known response body format(s).
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 //
 // Corresponds with POST /admin/reports/{id}/forward (the `ForwardReport` operationId).
-func (c *ClientWithResponses) ForwardReportWithResponse(ctx context.Context, id ReportId, reqEditors ...RequestEditorFn) (*ForwardReportResponse, error) {
-	rsp, err := c.ForwardReport(ctx, id, reqEditors...)
+func (c *ClientWithResponses) ForwardReportWithResponse(ctx context.Context, id ReportId, body ForwardReportJSONRequestBody, reqEditors ...RequestEditorFn) (*ForwardReportResponse, error) {
+	rsp, err := c.ForwardReport(ctx, id, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -84620,7 +84771,9 @@ func (c *ClientWithResponses) ListInstanceSettingsWithResponse(ctx context.Conte
 // each change is kept as a revision and audited (`setting_changed`). Setting the current
 // value again still records a revision, so clients send only the settings they change.
 // The changes take effect on the next request. An unknown key, or a value its key
-// rejects, is a 422 naming the key, and nothing is changed. Needs the `manage_settings`
+// rejects, is a 422 naming the key, and nothing is changed. A value can also depend on the
+// current one: the mode of a decision hook (`hook_*_mode`) goes from `off` to `enforce` only
+// through `observe`, so `enforce` while it is `off` is a 422. Needs the `manage_settings`
 // permission.
 //
 // Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
@@ -84641,7 +84794,9 @@ func (c *ClientWithResponses) UpdateInstanceSettingsWithBodyWithResponse(ctx con
 // each change is kept as a revision and audited (`setting_changed`). Setting the current
 // value again still records a revision, so clients send only the settings they change.
 // The changes take effect on the next request. An unknown key, or a value its key
-// rejects, is a 422 naming the key, and nothing is changed. Needs the `manage_settings`
+// rejects, is a 422 naming the key, and nothing is changed. A value can also depend on the
+// current one: the mode of a decision hook (`hook_*_mode`) goes from `off` to `enforce` only
+// through `observe`, so `enforce` while it is `off` is a 422. Needs the `manage_settings`
 // permission.
 //
 // Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
@@ -85992,7 +86147,7 @@ func (c *ClientWithResponses) RejectFollowRequestWithResponse(ctx context.Contex
 // Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 //
 // Corresponds with POST /hook_decisions/{id}/appeal (the `AppealHookDecision` operationId).
-func (c *ClientWithResponses) AppealHookDecisionWithBodyWithResponse(ctx context.Context, id Id, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AppealHookDecisionResponse, error) {
+func (c *ClientWithResponses) AppealHookDecisionWithBodyWithResponse(ctx context.Context, id HookDecisionId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AppealHookDecisionResponse, error) {
 	rsp, err := c.AppealHookDecisionWithBody(ctx, id, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
@@ -86016,7 +86171,7 @@ func (c *ClientWithResponses) AppealHookDecisionWithBodyWithResponse(ctx context
 // Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 //
 // Corresponds with POST /hook_decisions/{id}/appeal (the `AppealHookDecision` operationId).
-func (c *ClientWithResponses) AppealHookDecisionWithResponse(ctx context.Context, id Id, body AppealHookDecisionJSONRequestBody, reqEditors ...RequestEditorFn) (*AppealHookDecisionResponse, error) {
+func (c *ClientWithResponses) AppealHookDecisionWithResponse(ctx context.Context, id HookDecisionId, body AppealHookDecisionJSONRequestBody, reqEditors ...RequestEditorFn) (*AppealHookDecisionResponse, error) {
 	rsp, err := c.AppealHookDecision(ctx, id, body, reqEditors...)
 	if err != nil {
 		return nil, err
@@ -88348,7 +88503,8 @@ func (c *ClientWithResponses) GetStatusSourceWithResponse(ctx context.Context, i
 // is enabled, or none is allowed its visibility. A 422
 // `/api/v1/problems/translation-unsupported-language` when the providers do not translate the
 // language, and a 422 without a type for a `target_language` that is not a language tag. A 429
-// `/api/v1/problems/translation-limit` over a monthly limit, until the next month in UTC. A 503
+// `/api/v1/problems/translation-limit` over a monthly limit, until the next month in UTC, with
+// `Retry-After` the seconds until then. A 503
 // `/api/v1/problems/translation-failed` when no provider returned a usable translation, which
 // may pass.
 //
@@ -88380,7 +88536,8 @@ func (c *ClientWithResponses) TranslateStatusWithBodyWithResponse(ctx context.Co
 // is enabled, or none is allowed its visibility. A 422
 // `/api/v1/problems/translation-unsupported-language` when the providers do not translate the
 // language, and a 422 without a type for a `target_language` that is not a language tag. A 429
-// `/api/v1/problems/translation-limit` over a monthly limit, until the next month in UTC. A 503
+// `/api/v1/problems/translation-limit` over a monthly limit, until the next month in UTC, with
+// `Retry-After` the seconds until then. A 503
 // `/api/v1/problems/translation-failed` when no provider returned a usable translation, which
 // may pass.
 //
@@ -97455,6 +97612,16 @@ func ParseOverrideHookDecisionResponse(rsp *http.Response) (*OverrideHookDecisio
 	}
 
 	switch {
+	case rsp.StatusCode == 200:
+		var headers OverrideHookDecisionResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
 	case true:
 		var headers OverrideHookDecisionResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {

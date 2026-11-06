@@ -316,7 +316,7 @@ const settingDefaults: readonly Omit<Schemas["AdminSetting"], "value" | "stored"
   { key: "hook_signup_check_reject", kind: "bool", default: "false" },
   { key: "hook_local_status_account_age_days", kind: "int", default: "7", minimum: 0, maximum: 3650 },
   { key: "hook_media_check_on_failure", kind: "enum", default: "pass", choices: ["pass", "retry"] },
-  { key: "retention_hook_decisions", kind: "int", default: "90", minimum: 30, maximum: 3650 },
+  { key: "hook_decisions_retention_days", kind: "int", default: "90", minimum: 30, maximum: 3650 },
   { key: "invite_creators", kind: "enum", default: "permitted", choices: ["everyone", "permitted"] },
   { key: "member_invite_max_active", kind: "int", default: "5", minimum: 0, maximum: 100 },
   { key: "member_invite_max_uses", kind: "int", default: "10", minimum: 1, maximum: 1000 },

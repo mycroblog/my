@@ -73,7 +73,7 @@ func (s hookSettings) HookRetention(ctx context.Context) (decisions, appealWindo
 	if err != nil {
 		return 0, 0, err
 	}
-	return settings.Retention(instance.SettingRetentionHookDecisions), settings.AppealWindow(), nil
+	return settings.Retention(instance.SettingHookDecisionsRetentionDays), settings.AppealWindow(), nil
 }
 
 // heldAccountsOf reads the holds on the moderation module.

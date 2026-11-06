@@ -57,7 +57,7 @@ enum:
   - hook_signup_check_reject
   - hook_local_status_account_age_days
   - hook_media_check_on_failure
-  - retention_hook_decisions
+  - hook_decisions_retention_days
   - invite_creators
   - member_invite_max_active
   - member_invite_max_uses
