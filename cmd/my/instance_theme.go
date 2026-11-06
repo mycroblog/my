@@ -37,23 +37,12 @@ type themeTokenDocument struct {
 
 // runInstanceTheme implements `my instance theme <get|set>` (ADR-0059).
 func runInstanceTheme(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
-	if len(args) == 0 {
-		instanceThemeUsage(stderr)
-		return 2
-	}
-	sub := args[0]
-	switch sub {
-	case "-h", "-help", "--help":
-		instanceThemeUsage(stderr)
-		return 0
-	case "get", "set":
-	default:
-		_, _ = fmt.Fprintf(stderr, "my instance theme: unknown subcommand %q\n\n", sub)
-		instanceThemeUsage(stderr)
-		return 2
+	sub, code := dispatch("instance theme", args, []string{"get", "set"}, stderr, instanceThemeUsage)
+	if code >= 0 {
+		return code
 	}
 	name := "my instance theme " + sub
-	fs := flag.NewFlagSet(name, flag.ContinueOnError)
+	fs := newFlagSet(name)
 	fs.SetOutput(stderr)
 	fs.Usage = func() { instanceThemeUsage(stderr) }
 	file := fs.String("config", "", "TOML config file (default: $"+config.EnvConfigFile+")")

@@ -134,6 +134,13 @@ tasks:
     cmds:
       - go test ./internal/platform/config -run '^Test(Reference|ExampleEnv)UpToDate$' -update
 
+  cli-docs:
+    desc: Regenerate docs/reference/cli.md from the commands of cmd/my (go:test fails when it is stale)
+    sources: ["cmd/my/*.go", "internal/platform/docsite/*.go"]
+    generates: [docs/reference/cli.md]
+    cmds:
+      - go test ./cmd/my -run '^TestCLIReferenceUpToDate$' -update
+
   sqlc:
     desc: Regenerate Go code from sqlc.yaml with the pinned sqlc (ADR-0003)
     sources:

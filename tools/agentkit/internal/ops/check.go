@@ -87,6 +87,7 @@ var generators = []struct {
 	{"app/ui/src/theme.css", "web:tokens-gen"},
 	{"app/ui/src/tokens.ts", "web:tokens-gen"},
 	{"internal/platform/config/", "go:config-docs"},
+	{"cmd/my/", "go:cli-docs"},
 }
 
 // Regen runs the generators the files changed since base need, in a stable order, and returns one line each.

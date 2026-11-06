@@ -36,12 +36,12 @@ func runAdminEmoji(args []string, stdout, stderr io.Writer) int {
 		adminEmojiUsage(stderr)
 		return 2
 	}
-	if args[0] == "requests" {
-		return runAdminEmojiRequests(args[1:], stdout, stderr)
-	}
-	sub, code := dispatch("admin emoji", args, []string{"create", "list", "update", "replace-image", "enable", "disable", "copy", "delete"}, stderr, adminEmojiUsage)
+	sub, code := dispatch("admin emoji", args, []string{"create", "list", "update", "replace-image", "enable", "disable", "copy", "delete", "requests"}, stderr, adminEmojiUsage)
 	if code >= 0 {
 		return code
+	}
+	if sub == "requests" {
+		return runAdminEmojiRequests(args[1:], stdout, stderr)
 	}
 	var (
 		shortcode, category, domain, before string

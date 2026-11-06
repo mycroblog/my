@@ -91,6 +91,7 @@ tasks:
       - api:plugin-generate
       - go:sqlc
       - go:config-docs
+      - go:cli-docs
       - i18n:gen
       - mail:gen
       - web:tokens-gen

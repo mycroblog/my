@@ -10,6 +10,7 @@ import (
 	"io"
 	"os"
 	"runtime/debug"
+	"slices"
 
 	"github.com/mycroblog/my/internal/platform/docsite"
 
@@ -31,7 +32,10 @@ func main() {
 func run(args []string, stdout, stderr io.Writer) int {
 	// The help and the errors link the documentation of this version.
 	docsite.SetBuildVersion(resolveVersion(version, debug.ReadBuildInfo))
-	fs := flag.NewFlagSet("my", flag.ContinueOnError)
+	if traceSubcommands != nil {
+		traceSubcommands("", commands)
+	}
+	fs := newFlagSet("my")
 	fs.SetOutput(stderr)
 	fs.Usage = func() { usage(stderr) }
 	if err := fs.Parse(args); err != nil {
@@ -41,9 +45,20 @@ func run(args []string, stdout, stderr io.Writer) int {
 		return 2
 	}
 
-	switch cmd := fs.Arg(0); cmd {
+	cmd := fs.Arg(0)
+	if !slices.Contains(commands, cmd) {
+		if c, ok := testBuildCommands[cmd]; ok {
+			return c(fs.Args()[1:], stdout, stderr)
+		}
+		if cmd != "" {
+			_, _ = fmt.Fprintf(stderr, "my: unknown command %q\n\n", cmd)
+		}
+		usage(stderr)
+		return 2
+	}
+	switch cmd {
 	case "version":
-		vfs := flag.NewFlagSet("my version", flag.ContinueOnError)
+		vfs := newFlagSet("my version")
 		vfs.SetOutput(stderr)
 		if err := vfs.Parse(fs.Args()[1:]); err != nil {
 			if errors.Is(err, flag.ErrHelp) {
@@ -87,17 +102,15 @@ func run(args []string, stdout, stderr io.Writer) int {
 		return runSearch(fs.Args()[1:], stdout, stderr)
 	case "serve":
 		return runServe(fs.Args()[1:], stderr)
-	case "":
-		usage(stderr)
-		return 2
-	default:
-		if c, ok := testBuildCommands[cmd]; ok {
-			return c(fs.Args()[1:], stdout, stderr)
-		}
-		_, _ = fmt.Fprintf(stderr, "my: unknown command %q\n\n", cmd)
-		usage(stderr)
-		return 2
 	}
+	return 2 // every name of commands has a case
+}
+
+// commands are the commands of my. A command missing here is unknown even with a case in run, and
+// docs/reference/cli.md lists these.
+var commands = []string{
+	"admin", "config", "db", "instance", "invite", "job", "kek", "login-provider", "maintenance", "plugin",
+	"projection", "registration", "schema", "search", "serve", "version",
 }
 
 // testBuildCommands are the commands that only the test builds (build tag e2e_fakes) add, by

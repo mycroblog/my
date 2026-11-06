@@ -24,8 +24,17 @@ func runJob(args []string, stdout, stderr io.Writer) int {
 		return code
 	}
 	if sub == "types" {
-		if len(args) > 1 {
-			_, _ = fmt.Fprintf(stderr, "my job types: want 0 arguments, got %d\n\n", len(args)-1)
+		fs := newFlagSet("my job types")
+		fs.SetOutput(stderr)
+		fs.Usage = func() { jobUsage(stderr) }
+		if err := fs.Parse(args[1:]); err != nil {
+			if errors.Is(err, flag.ErrHelp) {
+				return 0
+			}
+			return 2
+		}
+		if fs.NArg() > 0 {
+			_, _ = fmt.Fprintf(stderr, "my job types: want 0 arguments, got %d\n\n", fs.NArg())
 			jobUsage(stderr)
 			return 2
 		}
@@ -35,7 +44,7 @@ func runJob(args []string, stdout, stderr io.Writer) int {
 		return 0
 	}
 	name := "my job " + sub
-	fs := flag.NewFlagSet(name, flag.ContinueOnError)
+	fs := newFlagSet(name)
 	fs.SetOutput(stderr)
 	fs.Usage = func() { jobUsage(stderr) }
 	c := subcommand{name: name, fs: fs, file: fs.String("config", "", "TOML config file (default: $"+config.EnvConfigFile+")")}

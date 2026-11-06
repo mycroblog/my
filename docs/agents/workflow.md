@@ -151,13 +151,13 @@ of `main` and of the PRs queued ahead of it) and the queue merges the group when
   branch, regenerate the generated files instead of resolving their conflicts by hand, and push; the owner fixes it
   while the rest of the queue proceeds;
   the orchestrator or the decider queues it again. Only the generated files Go reads are committed (the client API
-  bundle and Go code, sqlc output, the Go side of i18n, the theme token list, the configuration reference); the ones
+  bundle and Go code, sqlc output, the Go side of i18n, the theme token list, the configuration and command references); the ones
   only the TypeScript clients read are not, so they never conflict ([ADR-0081](../adr/0081-generated-files-policy.md)):
 
 ```sh
 git fetch origin && git merge origin/main
 scripts/agentkit.sh regen              # runs the generators whose sources changed: api:generate, go:sqlc, i18n:gen,
-                                       # web:tokens-gen, go:config-docs
+                                       # web:tokens-gen, go:config-docs, go:cli-docs
 scripts/task.sh web:fmt                # when a TypeScript or JavaScript file conflicted
 scripts/agentkit.sh check
 ```

@@ -25,7 +25,7 @@ var newApp = platform.NewApp
 // runServe implements `my serve`: it runs the server in the configured role until SIGTERM or
 // SIGINT, then shuts down gracefully. Logs go to stderr as JSON lines.
 func runServe(args []string, stderr io.Writer) int {
-	sfs := flag.NewFlagSet("my serve", flag.ContinueOnError)
+	sfs := newFlagSet("my serve")
 	sfs.SetOutput(stderr)
 	sfs.Usage = func() { serveUsage(stderr) }
 	file := sfs.String("config", "", "TOML config file (default: $"+config.EnvConfigFile+")")

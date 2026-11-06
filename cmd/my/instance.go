@@ -27,35 +27,25 @@ const maxTextInput = 400 * 1024
 
 // runInstance implements `my instance <subcommand>`. stdin supplies a value given as "-".
 func runInstance(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
-	if len(args) == 0 {
-		instanceUsage(stderr)
-		return 2
+	sub, code := dispatch("instance", args, []string{"list", "get", "set", "history", "rule", "theme", "brand"}, stderr, instanceUsage)
+	if code >= 0 {
+		return code
 	}
-	sub := args[0]
 	var nargs int
 	switch sub {
-	case "-h", "-help", "--help":
-		instanceUsage(stderr)
-		return 0
 	case "rule":
 		return runInstanceRule(args[1:], stdout, stderr)
 	case "theme":
 		return runInstanceTheme(args[1:], stdin, stdout, stderr)
 	case "brand":
 		return runInstanceBrand(args[1:], stdout, stderr)
-	case "list":
-		nargs = 0
 	case "get", "history":
 		nargs = 1
 	case "set":
 		nargs = 2
-	default:
-		_, _ = fmt.Fprintf(stderr, "my instance: unknown subcommand %q\n\n", sub)
-		instanceUsage(stderr)
-		return 2
 	}
 	name := "my instance " + sub
-	fs := flag.NewFlagSet(name, flag.ContinueOnError)
+	fs := newFlagSet(name)
 	fs.SetOutput(stderr)
 	fs.Usage = func() { instanceUsage(stderr) }
 	file := fs.String("config", "", "TOML config file (default: $"+config.EnvConfigFile+")")
