@@ -50,7 +50,7 @@
   - サイトに載せない文書へのリンクは、`blob/<ref>/...` の GitHub の URL へ書き換える
 - サイドバーは `docs/README.md` の一覧の順と見出しから作る。目次を二か所に持たない
 - 写しの手順は `app/docs` の中の小さなスクリプトに置く。Starlight の `docsLoader` は `src/content/docs/` を読む前提であり（要検証）、
-  Astro の `glob()` ローダーで `docs/` を直接読む方法は Starlight のルーティングとサイドバーで動くか確かめていないためである（§11）
+  Astro の `glob()` ローダーで `docs/` を直接読む方法は Starlight のルーティングとサイドバーで動くか確かめていないためである（Open Questions）
 
 ### 5. API を使う開発者向けの文書
 
@@ -67,13 +67,15 @@
 - 版ごとのビルドは、そのタグの作業ツリーからビルドする。古い版の原稿の写しをリポジトリに置かない（「ファイルは現在を書く」原則、ADR-0000）。そのため `starlight-versions` は使わない（採らなかった案）
 - 配信のたびに、載せる版をそれぞれのタグからビルドして束ねる。静的アセットの配信は 1 回の配信で全体を置き換えるためである（要検証）。載せる版は少数なので、毎回のビルドで足りる
 - 版の切り替えはサイトのヘッダーの小さな選択肢で行う。載せる版の一覧は `app/docs` の中の 1 ファイルに置き、配信の手順とヘッダーが同じものを読む
-- 載せる版は、サポート中のマイナー版と `next` に限る。サポートを終えた版は「サポート終了」の帯を付けて残すか消すかを §11 で決める
+- サポート中のマイナー版、サポートを終えたマイナー版、`next` を載せる。サポートを終えた版は消さず、全ページに「サポート終了」の帯と `/latest/` の同じページへのリンクを付けて残す。
+  古い版を動かし続ける運営者が、手元の版の文書を読めるようにするためである
 
 ### 7. 配信
 
 - 配信先は Cloudflare Workers の静的アセットとする。UI Preview（`ui-preview-deploy.yml`、ADR-0079 §14〜§16）がすでに同じアカウントと仕組みを使っており、
   シークレットと運用の手順を増やさない。PR ごとの Preview も同じ仕組みで出せる。サーバーの配信先として Cloudflare Workers を対象にしないこと（AGENTS.md）とは別の話である
 - PR が §3 の原稿か `app/docs` を変えたとき、UI Preview と同じ形で `/next/` だけのビルドを PR の Preview に置く。PR のビルドは信頼しないデータとして扱い、配信の側では実行しない（`ui-preview-deploy.yml` と同じ）
+- 独自ドメインは §11 の `mycroblog.dev` とする
 - `main` への push で `/next/` を更新し、リリース（`release.yml`）で `/latest/` とそのマイナー版を更新する。リリースの手順は `docs/agents/releasing.md` に足す
 - Merge Queue の `check` は、`app/docs` か §3 の原稿が変わったときにサイトをビルドし、ビルドが通ることを検査する（ADR-0079 の変更の文脈に足す）
 - 検索は Starlight の組み込み（Pagefind）を使い、外部の検索サービスを使わない
@@ -87,9 +89,9 @@
 
 ### 9. 言語
 
-- 最初の版は英語だけで公開する。英語の文書だけを置き日本語の写しを置かない規則（AGENTS.md の Documentation）に従う
-- Starlight の i18n は、ルートのロケールを `en` として最初から設定しておく。翻訳を足すときに URL を変えないためである
-- 翻訳を入れるかどうか、入れるならどの区分（利用者向けガイドだけか）と、その翻訳の管理（ADR-0009 の翻訳のプラットフォームに載せるか）は §11 で決める
+- v0 の間は英語だけで公開する。英語の文書だけを置き日本語の写しを置かない規則（AGENTS.md の Documentation）に従い、利用者向けガイドも例外にしない
+- Starlight の i18n は、ルートのロケールを `en` として最初から設定しておく。v0 の後に翻訳を足すときに URL を変えないためである
+- v0 の後に翻訳を入れるときは、どの区分を訳すかと翻訳の管理（ADR-0009 の翻訳のプラットフォームに載せるか）をこの節で決める
 
 ### 10. 覆す条件
 
@@ -97,11 +99,10 @@
 - Cloudflare Workers の静的アセットの無料枠や条件が変わり、費用がかかるようになったとき。GitHub Pages に移す
 - `starlight-openapi` が `api/openapi.yaml` の OpenAPI 3.1 の部分集合を描画できないとき。Redocly か Scalar の静的出力を別のページとして置く
 
-### 11. 未決のこと
+### 11. 公開の場所と v0.1.0 との関係
 
-- ドメイン（`docs.<project domain>` など）
-- 翻訳（§9）
-- サポートを終えた版の扱い（§6）
+- サイトは `mycroblog.dev` の根に置く。トップページがプロジェクトの紹介を兼ね、版は `https://mycroblog.dev/latest/`・`/v0.1/`・`/next/` のように道の先頭で分ける
+- このサイトの作業はすべて `v0.1.0` のタグの前提条件とする。運営者が v0.1.0 で実運用を始めるとき（`00-vision.md` の M5）、版の合った文書を公開の場で読めるようにするためである
 
 ## 経緯
 
@@ -150,5 +151,4 @@ API の仕様は `api/openapi.yaml` として公開できる形にあるが、�
 - Starlight の `docsLoader` が `src/content/docs/` の外を読めるか、Astro の `glob()` ローダーで Starlight のルーティングとサイドバーが動くか
   （[Starlight Manual Setup](https://starlight.astro.build/manual-setup/)、[Astro Content Loader API](https://docs.astro.build/en/reference/content-loader-reference/)。2026-11-06 時点で未確認）。動くなら §4 の写しの手順を省ける
 - `starlight-openapi` が、`api/openapi.yaml` の OpenAPI 3.1 の部分集合（`api/redocly.yaml`）を崩れずに描画できるか（[starlight-openapi](https://github.com/HiDeoo/starlight-openapi)。OpenAPI 3.1 に対応とあるが、この仕様では未確認）
-- Cloudflare Workers の静的アセットの無料枠のファイル数とサイズの上限が、版を重ねたサイトに足りるか（要検証）
-- §11 の未決のこと
+- Cloudflare Workers の静的アセットの無料枠のファイル数とサイズの上限が、サポートを終えた版も残すサイトに足りるか（要検証）
