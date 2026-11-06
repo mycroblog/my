@@ -8,7 +8,14 @@
 // the names in the project's locale catalog.
 import type { Page, Route } from "@playwright/test";
 import type { components } from "@mycroblog/mykit";
-import { expect, expectNoAxeViolations, expectNoHorizontalScroll, servedImage, test } from "./fixtures";
+import {
+  expect,
+  expectNoAxeViolations,
+  expectNoHorizontalScroll,
+  recordRowHeaders,
+  servedImage,
+  test,
+} from "./fixtures";
 import { readCatalog } from "./catalog.ts";
 
 type Schemas = components["schemas"];
@@ -232,7 +239,7 @@ test.describe("custom emoji requests", () => {
     await page.goto("/admin/custom-emojis?tab=requests");
     const main = page.getByRole("main");
     const region = main.getByRole("region", { name: message("admin.custom_emoji_requests.title"), exact: true });
-    await expect(region.getByRole("rowheader", { name: `:${longShortcode}:` })).toBeVisible();
+    await expect(recordRowHeaders(region).filter({ hasText: `:${longShortcode}:` })).toBeVisible();
     await expectNoAxeViolations(makeAxeBuilder);
     await expectNoHorizontalScroll(page);
 
@@ -247,7 +254,7 @@ test.describe("custom emoji requests", () => {
     await expectNoAxeViolations(makeAxeBuilder);
     await dialog.getByRole("button", { name: message("admin.custom_emoji_requests.reject"), exact: true }).click();
     await expect(dialog).toBeHidden();
-    await expect(region.getByRole("rowheader", { name: `:${longShortcode}:` })).toHaveCount(0);
+    await expect(recordRowHeaders(region).filter({ hasText: `:${longShortcode}:` })).toHaveCount(0);
     await expectNoAxeViolations(makeAxeBuilder);
     await expectNoHorizontalScroll(page);
   });

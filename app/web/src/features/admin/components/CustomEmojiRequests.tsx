@@ -21,17 +21,13 @@ import {
   SelectItem,
   Stack,
   StatusMessage,
-  TableCell,
-  TableColumnHeader,
-  TableRow,
-  TableRowHeader,
   Text,
 } from "@my/ui";
 import { useRef, useState } from "react";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
 import { profilePath } from "../../../lib/paths";
 import { useFocusAfterRemoval } from "../../../lib/useFocusAfterRemoval";
-import { DateTime, RecordTable } from "../../moderation";
+import { DateTime, type RecordColumns, RecordTable } from "../../moderation";
 import {
   type AdminCustomEmojiRequest,
   type CustomEmojiRequestState,
@@ -100,10 +96,10 @@ export function CustomEmojiRequests({ state, onStateChange }: CustomEmojiRequest
 
 function RequestList({ state }: { state: CustomEmojiRequestState }) {
   const t = useT();
-  const tableRef = useRef<HTMLTableElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
   const list = useAdminCustomEmojiRequests(state);
   const removed = useFocusAfterRemoval(
-    tableRef,
+    listRef,
     list.items.map((request) => request.id),
   );
   const actions = useCustomEmojiRequestActions(removed);
@@ -113,69 +109,22 @@ function RequestList({ state }: { state: CustomEmojiRequestState }) {
     ) : (
       <EmptyState headingLevel={3} heading={t("client:admin.custom_emoji_requests.empty")} />
     );
-  return (
-    <Stack gap="3">
-      <StatusMessage>{actions.status}</StatusMessage>
-      {actions.error !== undefined && (
-        <InlineError size="inherit" alert>
-          {t("client:admin.custom_emoji_requests.decide_failed", { reason: actions.error })}
-        </InlineError>
-      )}
-      <RecordTable
-        list={list}
-        caption={t("client:admin.custom_emoji_requests.title")}
-        getId={(request) => request.id}
-        tableRef={tableRef}
-        empty={empty}
-        head={
-          <>
-            <TableColumnHeader>{t("client:admin.custom_emojis.shortcode")}</TableColumnHeader>
-            <TableColumnHeader>{t("client:custom_emoji_requests.kind")}</TableColumnHeader>
-            <TableColumnHeader>{t("client:custom_emoji_requests.state")}</TableColumnHeader>
-            <TableColumnHeader>{t("client:admin.custom_emoji_requests.requester")}</TableColumnHeader>
-            <TableColumnHeader>{t("client:custom_emoji_requests.created_at")}</TableColumnHeader>
-            <TableColumnHeader>{t("client:admin.list.column.actions")}</TableColumnHeader>
-          </>
-        }
-      >
-        {(request) => <RequestRow request={request} actions={actions} />}
-      </RecordTable>
-    </Stack>
-  );
-}
-
-function RequestRow({ request, actions }: { request: AdminCustomEmojiRequest; actions: CustomEmojiRequestActions }) {
-  const t = useT();
-  const name = requestInText(request);
-  const heading = `:${request.shortcode}:`;
-  const isPending = actions.pendingId === request.id;
-  const { requester } = request;
-  return (
-    <TableRow data-row-id={request.id}>
-      <TableRowHeader wrap="anywhere">
-        <Cluster gap="3" align="center" wrap={false}>
-          {/* The name of the emoji; the image beside it shows what was requested. */}
-          <EmojiTile
-            emoji={
-              request.url !== undefined && request.static_url !== undefined
-                ? { shortcode: request.shortcode, url: request.url, static_url: request.static_url }
-                : undefined
-            }
-          />
-          <Stack gap="1">
-            <Text weight="semibold" mono wrap="anywhere" dir="ltr">
-              {heading}
-            </Text>
-            {request.url === undefined && (
-              <Text size="sm" tone="muted">
-                {t("client:custom_emoji_requests.no_image")}
-              </Text>
-            )}
-          </Stack>
-        </Cluster>
-      </TableRowHeader>
-      <TableCell>{t(kindLabels[request.kind])}</TableCell>
-      <TableCell>
+  const columns: RecordColumns<AdminCustomEmojiRequest> = [
+    {
+      id: "shortcode",
+      header: t("client:admin.custom_emojis.shortcode"),
+      wrap: "anywhere",
+      cell: (request) => <RequestName request={request} />,
+    },
+    {
+      id: "kind",
+      header: t("client:custom_emoji_requests.kind"),
+      cell: (request) => t(kindLabels[request.kind]),
+    },
+    {
+      id: "state",
+      header: t("client:custom_emoji_requests.state"),
+      cell: (request) => (
         <Stack gap="1">
           <span>{t(requestStateLabels[request.state])}</span>
           {request.decided_at !== undefined && (
@@ -189,36 +138,104 @@ function RequestRow({ request, actions }: { request: AdminCustomEmojiRequest; ac
             </Text>
           )}
         </Stack>
-      </TableCell>
-      <TableCell wrap="anywhere">
-        {requester === undefined ? (
+      ),
+    },
+    {
+      id: "requester",
+      header: t("client:admin.custom_emoji_requests.requester"),
+      wrap: "anywhere",
+      cell: (request) =>
+        request.requester === undefined ? (
           t("client:admin.custom_emoji_requests.requester.deleted")
         ) : (
-          <AccountLink acct={requester.acct} />
+          <AccountLink acct={request.requester.acct} />
+        ),
+    },
+    {
+      id: "created_at",
+      header: t("client:custom_emoji_requests.created_at"),
+      cell: (request) => <DateTime value={request.created_at} />,
+    },
+    {
+      id: "actions",
+      kind: "actions",
+      header: t("client:admin.list.column.actions"),
+      cell: (request) => <RequestActions request={request} actions={actions} />,
+    },
+  ];
+  return (
+    <Stack gap="3">
+      <StatusMessage>{actions.status}</StatusMessage>
+      {actions.error !== undefined && (
+        <InlineError size="inherit" alert>
+          {t("client:admin.custom_emoji_requests.decide_failed", { reason: actions.error })}
+        </InlineError>
+      )}
+      <RecordTable
+        list={list}
+        caption={t("client:admin.custom_emoji_requests.title")}
+        columns={columns}
+        getId={(request) => request.id}
+        headingLevel={3}
+        listRef={listRef}
+        empty={empty}
+      />
+    </Stack>
+  );
+}
+
+function RequestName({ request }: { request: AdminCustomEmojiRequest }) {
+  const t = useT();
+  const heading = `:${request.shortcode}:`;
+  return (
+    <Cluster gap="3" align="center" wrap={false}>
+      {/* The name of the emoji; the image beside it shows what was requested. */}
+      <EmojiTile
+        emoji={
+          request.url !== undefined && request.static_url !== undefined
+            ? { shortcode: request.shortcode, url: request.url, static_url: request.static_url }
+            : undefined
+        }
+      />
+      <Stack gap="1">
+        <Text weight="semibold" mono wrap="anywhere" dir="ltr">
+          {heading}
+        </Text>
+        {request.url === undefined && (
+          <Text size="sm" tone="muted">
+            {t("client:custom_emoji_requests.no_image")}
+          </Text>
         )}
-      </TableCell>
-      <TableCell>
-        <DateTime value={request.created_at} />
-      </TableCell>
-      <TableCell>
-        {request.state === "pending" && (
-          <Cluster gap="2">
-            <Button
-              size="sm"
-              variant="primary"
-              isPending={isPending}
-              aria-label={t("client:admin.custom_emoji_requests.approve_request", { emoji: name })}
-              onPress={() => {
-                void actions.approve(request);
-              }}
-            >
-              {t("client:admin.custom_emoji_requests.approve")}
-            </Button>
-            <RejectRequest request={request} actions={actions} isPending={isPending} />
-          </Cluster>
-        )}
-      </TableCell>
-    </TableRow>
+      </Stack>
+    </Cluster>
+  );
+}
+
+function RequestActions({
+  request,
+  actions,
+}: {
+  request: AdminCustomEmojiRequest;
+  actions: CustomEmojiRequestActions;
+}) {
+  const t = useT();
+  if (request.state !== "pending") return null;
+  const isPending = actions.pendingId === request.id;
+  return (
+    <Cluster gap="2">
+      <Button
+        size="sm"
+        variant="primary"
+        isPending={isPending}
+        aria-label={t("client:admin.custom_emoji_requests.approve_request", { emoji: requestInText(request) })}
+        onPress={() => {
+          void actions.approve(request);
+        }}
+      >
+        {t("client:admin.custom_emoji_requests.approve")}
+      </Button>
+      <RejectRequest request={request} actions={actions} isPending={isPending} />
+    </Cluster>
   );
 }
 

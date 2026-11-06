@@ -5,19 +5,7 @@
 // previous / next. Each row's first cell links to the report's page, where it is handled. An open report shows its
 // category, how long it has waited and who handles it as badges (ADR-0110 P3), so that the grave and the old ones
 // stand out.
-import {
-  EmptyState,
-  Link,
-  ListToolbar,
-  Select,
-  SelectItem,
-  Stack,
-  TableCell,
-  TableColumnHeader,
-  TableRow,
-  TableRowHeader,
-  Text,
-} from "@my/ui";
+import { EmptyState, Link, ListToolbar, Select, SelectItem, Stack, Text } from "@my/ui";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
 import {
   type Report,
@@ -32,7 +20,7 @@ import {
   reportOrders,
 } from "../api/reports";
 import { handleOf, isolate, reportCategoryLabels, reportOutcomeLabels, useReports } from "../hooks/useReports";
-import { DateTime, RecordTable, RequirePermission } from "./parts";
+import { DateTime, type RecordColumns, RecordTable, RequirePermission } from "./parts";
 import { AccountLabel, ReportAssigneeBadge, ReportCategoryBadge, ReportWaitBadge } from "./reportParts";
 
 const filterLabels: Readonly<Record<ReportFilter, ClientMessageKey>> = {
@@ -170,61 +158,30 @@ function ReportList({ query }: { query: ReportListQuery }) {
       description={t("client:admin.reports.empty.open.description")}
     />
   );
-  return (
-    <RecordTable
-      list={list}
-      caption={t(filterLabels[query.state])}
-      getId={(report) => report.id}
-      empty={empty}
-      head={
-        <>
-          <TableColumnHeader>{t("client:admin.reports.column.report")}</TableColumnHeader>
-          <TableColumnHeader>{t("client:admin.report.category")}</TableColumnHeader>
-          <TableColumnHeader>{t("client:admin.report.reporter")}</TableColumnHeader>
-          <TableColumnHeader>
-            {t(resolved ? "client:admin.report.outcome" : "client:admin.report.assignee")}
-          </TableColumnHeader>
-          <TableColumnHeader>
-            {t(resolved ? "client:admin.report.resolved_at" : "client:admin.reports.column.waiting")}
-          </TableColumnHeader>
-        </>
-      }
-    >
-      {(report) => <ReportRow report={report} />}
-    </RecordTable>
-  );
-}
-
-function ReportRow({ report }: { report: Report }) {
-  const t = useT();
-  return (
-    <TableRow data-row-id={report.id}>
-      <TableRowHeader wrap="anywhere">
-        <Stack gap="1">
-          <Link href={`/moderation/reports/${encodeURIComponent(report.id)}`} variant="standalone" wrap="anywhere">
-            {report.target_account === undefined
-              ? t("client:admin.report.of_deleted")
-              : t("client:admin.report.of", { target: isolate(handleOf(report.target_account)) })}
-          </Link>
-          <Text size="sm" tone="muted" numeric>
-            {t("client:admin.report.posts.count", { count: report.status_ids.length })}
-          </Text>
-          {report.comment !== "" && (
-            // Written by the reporter, in any language; the report's page shows it whole.
-            <Text as="p" size="sm" dir="auto" lineClamp={2} align="start" wrap="anywhere" whitespace="preWrap">
-              {report.comment}
-            </Text>
-          )}
-        </Stack>
-      </TableRowHeader>
-      <TableCell>
-        <ReportCategoryBadge category={report.category} />
-      </TableCell>
-      <TableCell wrap="anywhere">
-        <AccountLabel account={report.reporter_account} />
-      </TableCell>
-      <TableCell wrap="anywhere">
-        {report.state === "resolved" ? (
+  const columns: RecordColumns<Report> = [
+    {
+      id: "report",
+      header: t("client:admin.reports.column.report"),
+      wrap: "anywhere",
+      cell: (report) => <ReportName report={report} />,
+    },
+    {
+      id: "category",
+      header: t("client:admin.report.category"),
+      cell: (report) => <ReportCategoryBadge category={report.category} />,
+    },
+    {
+      id: "reporter",
+      header: t("client:admin.report.reporter"),
+      wrap: "anywhere",
+      cell: (report) => <AccountLabel account={report.reporter_account} />,
+    },
+    {
+      id: "handling",
+      header: t(resolved ? "client:admin.report.outcome" : "client:admin.report.assignee"),
+      wrap: "anywhere",
+      cell: (report) =>
+        report.state === "resolved" ? (
           report.outcome === undefined ? (
             t("client:admin.reports.filter.resolved")
           ) : (
@@ -232,15 +189,50 @@ function ReportRow({ report }: { report: Report }) {
           )
         ) : (
           <ReportAssigneeBadge id={report.assignee_account_id} />
-        )}
-      </TableCell>
-      <TableCell>
-        {report.state === "resolved" ? (
+        ),
+    },
+    {
+      id: "date",
+      header: t(resolved ? "client:admin.report.resolved_at" : "client:admin.reports.column.waiting"),
+      cell: (report) =>
+        report.state === "resolved" ? (
           <DateTime value={report.state_changed_at} />
         ) : (
           <ReportWaitBadge filedAt={report.filed_at} />
-        )}
-      </TableCell>
-    </TableRow>
+        ),
+    },
+  ];
+  return (
+    <RecordTable
+      list={list}
+      caption={t(filterLabels[query.state])}
+      columns={columns}
+      getId={(report) => report.id}
+      headingLevel={2}
+      empty={empty}
+    />
+  );
+}
+
+/** The name of a report: a link to its page, the number of its posts and the start of the reporter's comment. */
+function ReportName({ report }: { report: Report }) {
+  const t = useT();
+  return (
+    <Stack as="span" gap="1">
+      <Link href={`/moderation/reports/${encodeURIComponent(report.id)}`} variant="standalone" wrap="anywhere">
+        {report.target_account === undefined
+          ? t("client:admin.report.of_deleted")
+          : t("client:admin.report.of", { target: isolate(handleOf(report.target_account)) })}
+      </Link>
+      <Text size="sm" tone="muted" numeric>
+        {t("client:admin.report.posts.count", { count: report.status_ids.length })}
+      </Text>
+      {report.comment !== "" && (
+        // Written by the reporter, in any language; the report's page shows it whole.
+        <Text size="sm" dir="auto" lineClamp={2} align="start" wrap="anywhere" whitespace="preWrap">
+          {report.comment}
+        </Text>
+      )}
+    </Stack>
   );
 }

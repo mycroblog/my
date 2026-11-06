@@ -3,22 +3,19 @@
 // with the state filter, kept in the URL by the route (web-client/README.md S3), and one page of the servers of the
 // selected filter at a time, previous / next, each with its state, since when, and its failures, linking to
 // the server's page with the reasons.
-import {
-  EmptyState,
-  Link,
-  ListToolbar,
-  Select,
-  SelectItem,
-  Stack,
-  TableCell,
-  TableColumnHeader,
-  TableRow,
-  TableRowHeader,
-} from "@my/ui";
+import { EmptyState, Link, ListToolbar, Select, SelectItem, Stack } from "@my/ui";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
 import { type InstanceFilter, instanceFilters, type InstanceHealth } from "../api/staff";
 import { useInstances } from "../hooks/useInstances";
-import { Day, DateTime, DomainName, InstanceStateLabel, RecordTable, RequirePermission } from "./parts";
+import {
+  Day,
+  DateTime,
+  DomainName,
+  InstanceStateLabel,
+  type RecordColumns,
+  RecordTable,
+  RequirePermission,
+} from "./parts";
 
 const filterLabels: Readonly<Record<InstanceFilter, ClientMessageKey>> = {
   all: "client:admin.instances.filter.all",
@@ -79,11 +76,56 @@ function InstanceTabs({ filter, onFilterChange }: InstanceListProps) {
 function Instances({ filter }: { filter: InstanceFilter }) {
   const t = useT();
   const list = useInstances(filter);
+  const columns: RecordColumns<InstanceHealth> = [
+    {
+      id: "server",
+      header: t("client:admin.instances.column.server"),
+      wrap: "anywhere",
+      cell: (health) => (
+        <Link href={instancePath(health.domain)} variant="standalone" wrap="anywhere">
+          <DomainName domain={health.domain} />
+        </Link>
+      ),
+    },
+    {
+      id: "state",
+      header: t("client:admin.instance.state"),
+      cell: (health) => <InstanceStateLabel state={health.state} />,
+    },
+    {
+      id: "since",
+      header: t("client:admin.instance.since"),
+      cell: (health) =>
+        health.state_changed_at === undefined ? (
+          t("client:admin.instance.none")
+        ) : (
+          <DateTime value={health.state_changed_at} />
+        ),
+    },
+    {
+      id: "failure_days",
+      header: t("client:admin.instance.failure_days"),
+      numeric: true,
+      cell: (health) => t("client:admin.instance.failure_days.value", { count: health.failure_days }),
+    },
+    {
+      id: "last_failure",
+      header: t("client:admin.instance.last_failure"),
+      cell: (health) =>
+        health.last_failure_day === undefined ? (
+          t("client:admin.instance.none")
+        ) : (
+          <Day value={health.last_failure_day} />
+        ),
+    },
+  ];
   return (
     <RecordTable
       list={list}
       caption={t(filterLabels[filter])}
+      columns={columns}
       getId={(health) => health.domain}
+      headingLevel={2}
       empty={
         <EmptyState
           headingLevel={2}
@@ -91,48 +133,6 @@ function Instances({ filter }: { filter: InstanceFilter }) {
           description={t("client:admin.instances.empty.description")}
         />
       }
-      head={
-        <>
-          <TableColumnHeader>{t("client:admin.instances.column.server")}</TableColumnHeader>
-          <TableColumnHeader>{t("client:admin.instance.state")}</TableColumnHeader>
-          <TableColumnHeader>{t("client:admin.instance.since")}</TableColumnHeader>
-          <TableColumnHeader>{t("client:admin.instance.failure_days")}</TableColumnHeader>
-          <TableColumnHeader>{t("client:admin.instance.last_failure")}</TableColumnHeader>
-        </>
-      }
-    >
-      {(health) => <InstanceRow health={health} />}
-    </RecordTable>
-  );
-}
-
-function InstanceRow({ health }: { health: InstanceHealth }) {
-  const t = useT();
-  return (
-    <TableRow data-row-id={health.domain}>
-      <TableRowHeader wrap="anywhere">
-        <Link href={instancePath(health.domain)} variant="standalone" wrap="anywhere">
-          <DomainName domain={health.domain} />
-        </Link>
-      </TableRowHeader>
-      <TableCell>
-        <InstanceStateLabel state={health.state} />
-      </TableCell>
-      <TableCell>
-        {health.state_changed_at === undefined ? (
-          t("client:admin.instance.none")
-        ) : (
-          <DateTime value={health.state_changed_at} />
-        )}
-      </TableCell>
-      <TableCell numeric>{t("client:admin.instance.failure_days.value", { count: health.failure_days })}</TableCell>
-      <TableCell>
-        {health.last_failure_day === undefined ? (
-          t("client:admin.instance.none")
-        ) : (
-          <Day value={health.last_failure_day} />
-        )}
-      </TableCell>
-    </TableRow>
+    />
   );
 }

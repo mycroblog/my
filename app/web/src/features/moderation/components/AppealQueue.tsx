@@ -3,24 +3,12 @@
 // first, in the admin mode's list form: a toolbar with the state filter (kept in the URL by the route,
 // web-client/README.md S3), a table of one page, and previous / next. Each row's first cell links to the appeal's page,
 // where it is decided.
-import {
-  EmptyState,
-  Link,
-  ListToolbar,
-  Select,
-  SelectItem,
-  Stack,
-  TableCell,
-  TableColumnHeader,
-  TableRow,
-  TableRowHeader,
-  Text,
-} from "@my/ui";
+import { EmptyState, Link, ListToolbar, Select, SelectItem, Stack, Text } from "@my/ui";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
 import { type Appeal, type AppealFilter, appealFilters } from "../api/appeals";
 import { appealStateLabels, appealTitle, useAppeals } from "../hooks/useAppeals";
 import { accountActionStateLabels } from "../hooks/useReports";
-import { DateTime, RecordTable, RequirePermission } from "./parts";
+import { DateTime, type RecordColumns, RecordTable, RequirePermission } from "./parts";
 import { AccountByIdLabel } from "./reportParts";
 
 const filterLabels: Readonly<Record<AppealFilter, ClientMessageKey>> = {
@@ -91,60 +79,68 @@ function AppealList({ filter }: { filter: AppealFilter }) {
       description={t("client:admin.appeals.empty.pending.description")}
     />
   );
+  const columns: RecordColumns<Appeal> = [
+    {
+      id: "appeal",
+      header: t("client:admin.appeals.column.appeal"),
+      wrap: "anywhere",
+      cell: (appeal) => <AppealName appeal={appeal} />,
+    },
+    {
+      id: "account",
+      header: t("client:admin.appeal.account"),
+      wrap: "anywhere",
+      cell: (appeal) => <AccountByIdLabel id={appeal.account_id} />,
+    },
+    {
+      id: "action_state",
+      header: t("client:admin.appeal.action_state"),
+      cell: (appeal) => t(accountActionStateLabels[appeal.action.state]),
+    },
+    {
+      id: "decision",
+      header: t(decided ? "client:admin.appeal.decision" : "client:admin.appeal.submitted_at"),
+      cell: (appeal) =>
+        appeal.state === "pending" ? (
+          <DateTime value={appeal.submitted_at} />
+        ) : (
+          <Text weight="semibold">{t(appealStateLabels[appeal.state])}</Text>
+        ),
+    },
+    ...(decided
+      ? [
+          {
+            id: "decided_at",
+            header: t("client:admin.appeal.decided_at"),
+            cell: (appeal: Appeal) => appeal.decided_at !== undefined && <DateTime value={appeal.decided_at} />,
+          },
+        ]
+      : []),
+  ];
   return (
     <RecordTable
       list={list}
       caption={t(filterLabels[filter])}
+      columns={columns}
       getId={(appeal) => appeal.id}
+      headingLevel={2}
       empty={empty}
-      head={
-        <>
-          <TableColumnHeader>{t("client:admin.appeals.column.appeal")}</TableColumnHeader>
-          <TableColumnHeader>{t("client:admin.appeal.account")}</TableColumnHeader>
-          <TableColumnHeader>{t("client:admin.appeal.action_state")}</TableColumnHeader>
-          <TableColumnHeader>
-            {t(decided ? "client:admin.appeal.decision" : "client:admin.appeal.submitted_at")}
-          </TableColumnHeader>
-          {decided && <TableColumnHeader>{t("client:admin.appeal.decided_at")}</TableColumnHeader>}
-        </>
-      }
-    >
-      {(appeal) => <AppealRow appeal={appeal} />}
-    </RecordTable>
+    />
   );
 }
 
-function AppealRow({ appeal }: { appeal: Appeal }) {
+/** The name of an appeal: a link to its page and the start of its text. */
+function AppealName({ appeal }: { appeal: Appeal }) {
   const t = useT();
   return (
-    <TableRow data-row-id={appeal.id}>
-      <TableRowHeader wrap="anywhere">
-        <Stack gap="1">
-          <Link href={appealPath(appeal.id)} variant="standalone" wrap="anywhere">
-            {appealTitle(t, appeal)}
-          </Link>
-          {/* Written by the user who appealed, in any language; the appeal's page shows it whole (Y10). */}
-          <Text as="p" size="sm" dir="auto" lineClamp={2} align="start" wrap="anywhere" whitespace="preWrap">
-            {appeal.text}
-          </Text>
-        </Stack>
-      </TableRowHeader>
-      <TableCell wrap="anywhere">
-        <AccountByIdLabel id={appeal.account_id} />
-      </TableCell>
-      <TableCell>{t(accountActionStateLabels[appeal.action.state])}</TableCell>
-      {appeal.state === "pending" ? (
-        <TableCell>
-          <DateTime value={appeal.submitted_at} />
-        </TableCell>
-      ) : (
-        <>
-          <TableCell>
-            <Text weight="semibold">{t(appealStateLabels[appeal.state])}</Text>
-          </TableCell>
-          <TableCell>{appeal.decided_at !== undefined && <DateTime value={appeal.decided_at} />}</TableCell>
-        </>
-      )}
-    </TableRow>
+    <Stack as="span" gap="1">
+      <Link href={appealPath(appeal.id)} variant="standalone" wrap="anywhere">
+        {appealTitle(t, appeal)}
+      </Link>
+      {/* Written by the user who appealed, in any language; the appeal's page shows it whole (Y10). */}
+      <Text size="sm" dir="auto" lineClamp={2} align="start" wrap="anywhere" whitespace="preWrap">
+        {appeal.text}
+      </Text>
+    </Stack>
   );
 }

@@ -6,7 +6,15 @@
 // preview` has no API, so each test plays the server of a signed-in moderator with page.route; names change
 // with the locale, so the structure is checked by role and the values the server sends.
 import type { Page, Route } from "@playwright/test";
-import { expect, expectNoAxeViolations, expectNoHorizontalScroll, test } from "./fixtures";
+import {
+  expect,
+  expectNoAxeViolations,
+  expectNoHorizontalScroll,
+  recordRowHeaders,
+  recordRows,
+  recordTable,
+  test,
+} from "./fixtures";
 
 /** The signed-in moderator's account, as GET /accounts/verify_credentials answers, with manage_accounts. */
 const moderator = {
@@ -182,7 +190,7 @@ test.describe("page /moderation/signup-blocks", () => {
   test.beforeEach(async ({ page }) => {
     await moderatorServer(page);
     await page.goto("/moderation/signup-blocks");
-    await expect(page.getByRole("main").getByRole("table", { name: /./ })).toBeVisible();
+    await expect(recordRows(recordTable(page.getByRole("main")))).not.toHaveCount(0);
   });
 
   test("has no axe violations", async ({ makeAxeBuilder }) => {
@@ -202,18 +210,18 @@ test.describe("sign-up blocks", () => {
     const requests = await moderatorServer(page);
     await page.goto("/moderation/signup-blocks");
     const main = page.getByRole("main");
-    const list = main.getByRole("table").last();
-    await expect(list.getByRole("rowheader")).toHaveCount(2);
+    const list = recordTable(main);
+    await expect(recordRowHeaders(list)).toHaveCount(2);
 
     // The first row names the domain in both forms and keeps its details: the source and the comment.
-    const first = list.getByRole("row").nth(1);
-    await expect(first.getByRole("rowheader")).toHaveText(
+    const first = recordRows(list).first();
+    await expect(recordRowHeaders(first)).toHaveText(
       new RegExp(`${unicodeDomain.replaceAll(".", "\\.")}.*${asciiDomain.replaceAll(".", "\\.")}`),
     );
     await expect(first).toContainText(longComment);
     await expect(first.getByRole("button")).toHaveCount(1);
-    await expect(list.getByRole("row").nth(2).getByRole("rowheader")).toHaveText(hash);
-    await expect(list.getByRole("row").nth(2).getByRole("button")).toHaveCount(1);
+    await expect(recordRowHeaders(recordRows(list).nth(1))).toHaveText(hash);
+    await expect(recordRows(list).nth(1).getByRole("button")).toHaveCount(1);
 
     // The form with the keyboard: the kind is the email domain already; type the domain, then Tab to the first
     // effect of its radio group, which none is chosen in yet, and choose it with Space.
@@ -227,16 +235,16 @@ test.describe("sign-up blocks", () => {
     await main.locator('form button[type="submit"]').first().focus();
     await page.keyboard.press("Enter");
     await expect(main.getByRole("status").filter({ hasText: "spam.example" })).toBeVisible();
-    await expect(list.getByRole("rowheader", { name: "spam.example" })).toBeVisible();
+    await expect(recordRowHeaders(list).filter({ hasText: "spam.example" })).toBeVisible();
     await expect(domain).toHaveValue("");
     expect(requests).toEqual(["POST /admin/signup_blocks email_domain spam.example require_approval"]);
     await expectNoAxeViolations(makeAxeBuilder);
     await expectNoHorizontalScroll(page);
 
-    await list.getByRole("row").filter({ hasText: unicodeDomain }).getByRole("button").click();
-    await expect(list.getByRole("rowheader")).toHaveCount(2);
+    await recordRows(list).filter({ hasText: unicodeDomain }).getByRole("button").click();
+    await expect(recordRowHeaders(list)).toHaveCount(2);
     // Focus moves to the button of the row that took the lifted one's place.
-    await expect(list.getByRole("row").filter({ hasText: hash }).getByRole("button")).toBeFocused();
+    await expect(recordRows(list).filter({ hasText: hash }).getByRole("button")).toBeFocused();
     expect(requests).toEqual([
       "POST /admin/signup_blocks email_domain spam.example require_approval",
       "POST /admin/signup_blocks/0192f0c4-7a8e-7000-8000-0000000001a2/lift",
@@ -251,7 +259,7 @@ test.describe("an import of a list of sign-up blocks", () => {
     const requests = await moderatorServer(page);
     await page.goto("/moderation/signup-blocks");
     const main = page.getByRole("main");
-    await expect(main.getByRole("table").getByRole("rowheader")).toHaveCount(2);
+    await expect(recordRowHeaders(recordTable(main))).toHaveCount(2);
     // The import is the second section; its kind is the email domain already.
     const section = main.getByRole("region").nth(1);
     const listField = section.getByRole("textbox").first();
@@ -292,7 +300,7 @@ test.describe("an import of a list of sign-up blocks", () => {
             - cell "not-a-domain"
             - cell
     `);
-    await expect(main.getByRole("table").last().getByRole("rowheader", { name: "mailinator.example" })).toBeVisible();
+    await expect(recordRowHeaders(recordTable(main)).filter({ hasText: "mailinator.example" })).toBeVisible();
     await expectNoAxeViolations(makeAxeBuilder);
     await expectNoHorizontalScroll(page);
   });

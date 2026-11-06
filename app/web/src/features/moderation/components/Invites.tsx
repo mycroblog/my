@@ -16,12 +16,7 @@ import {
   SelectItem,
   Stack,
   StatusMessage,
-  TableCell,
-  TableColumnHeader,
-  TableRow,
-  TableRowHeader,
   Text,
-  VisuallyHidden,
 } from "@my/ui";
 import { useRef, useState } from "react";
 import { useIntl } from "react-intl";
@@ -39,7 +34,7 @@ import {
   useRevokeInvite,
 } from "../hooks/useInvites";
 import { InviteCreator, inviteCreatorKindLabels } from "./inviteParts";
-import { DateTime, Section, RecordTable, RequirePermission } from "./parts";
+import { DateTime, Section, type RecordColumns, RecordTable, RequirePermission } from "./parts";
 
 const stateLabels: Readonly<Record<InviteState, ClientMessageKey>> = {
   usable: "client:admin.invites.state.usable",
@@ -151,109 +146,119 @@ function InviteList() {
     keepFocus(invite.id);
     setStatus(t("client:admin.invites.revoked", { code: invite.code }));
   });
-  return (
-    <Stack gap="3">
-      <Heading level={2}>{t("client:admin.invites.list.title")}</Heading>
-      <StatusMessage>{status}</StatusMessage>
-      <Box ref={listRef}>
-        <RecordTable
-          list={list}
-          caption={t("client:admin.invites.list.title")}
-          getId={(invite) => invite.id}
-          empty={
-            <EmptyState
-              headingLevel={3}
-              heading={t("client:admin.invites.empty")}
-              description={t("client:admin.invites.empty.description")}
-            />
-          }
-          head={
-            <>
-              <TableColumnHeader>{t("client:admin.invites.column.invite")}</TableColumnHeader>
-              <TableColumnHeader>{t("client:admin.invites.state")}</TableColumnHeader>
-              <TableColumnHeader>{t("client:admin.invites.created_by")}</TableColumnHeader>
-              <TableColumnHeader>{t("client:admin.invites.used")}</TableColumnHeader>
-              <TableColumnHeader>{t("client:admin.invites.expires_at")}</TableColumnHeader>
-              <TableColumnHeader>{t("client:admin.invites.created_at")}</TableColumnHeader>
-              <TableColumnHeader>
-                <VisuallyHidden>{t("client:admin.list.column.actions")}</VisuallyHidden>
-              </TableColumnHeader>
-            </>
-          }
-        >
-          {(invite) => <InviteRow invite={invite} revoke={revoke} />}
-        </RecordTable>
-      </Box>
-    </Stack>
-  );
-}
-
-function InviteRow({ invite, revoke }: { invite: Invite; revoke: RevokeInvite }) {
-  const t = useT();
-  const intl = useIntl();
-  const copy = useCopyInviteLink();
-  const created = intl.formatDate(invite.created_at, { dateStyle: "medium", timeStyle: "short" });
-  return (
-    <TableRow data-row-id={invite.id}>
-      {/* Focusable from script: it takes focus when the revoke button goes away (useFocusHeadingAfterLift). */}
-      <TableRowHeader tabIndex={-1} wrap="anywhere">
+  const columns: RecordColumns<Invite> = [
+    {
+      id: "invite",
+      header: t("client:admin.invites.column.invite"),
+      wrap: "anywhere",
+      cell: (invite) => (
         <Text dir="ltr" mono wrap="anywhere">
           {invite.code}
         </Text>
-      </TableRowHeader>
-      <TableCell>
+      ),
+    },
+    {
+      id: "state",
+      header: t("client:admin.invites.state"),
+      cell: (invite) => (
         <Text {...(invite.state === "usable" ? { weight: "semibold" as const } : {})}>
           {t(stateLabels[invite.state])}
         </Text>
-      </TableCell>
-      <TableCell>
+      ),
+    },
+    {
+      id: "created_by",
+      header: t("client:admin.invites.created_by"),
+      cell: (invite) => (
         <Stack as="span" shrink>
           <InviteCreator invite={invite} />
           <Text size="sm" tone="muted">
             {t(inviteCreatorKindLabels[invite.creator_kind])}
           </Text>
         </Stack>
-      </TableCell>
-      <TableCell>
-        {invite.max_uses === undefined
+      ),
+    },
+    {
+      id: "used",
+      header: t("client:admin.invites.used"),
+      cell: (invite) =>
+        invite.max_uses === undefined
           ? t("client:admin.invites.used.unlimited", { uses: invite.uses })
-          : t("client:admin.invites.used.limited", { uses: invite.uses, max: invite.max_uses })}
-      </TableCell>
-      <TableCell>
-        {invite.expires_at === undefined ? t("client:admin.invites.never") : <DateTime value={invite.expires_at} />}
-      </TableCell>
-      <TableCell>
-        <DateTime value={invite.created_at} />
-      </TableCell>
-      <TableCell>
-        {invite.state === "usable" && (
-          <Cluster gap="2">
-            <Button
-              size="sm"
-              aria-label={t("client:admin.invites.copy_invite", {
-                action: t("client:admin.invites.copy"),
-                code: invite.code,
-              })}
-              onPress={() => {
-                copy(invite);
-              }}
-            >
-              {t("client:admin.invites.copy")}
-            </Button>
-            <Button
-              size="sm"
-              variant="danger"
-              isPending={revoke.pendingIds.includes(invite.id)}
-              aria-label={t("client:admin.invites.revoke_invite", { code: invite.code, date: created })}
-              onPress={() => {
-                revoke.revoke(invite);
-              }}
-            >
-              {t("client:admin.invites.revoke")}
-            </Button>
-          </Cluster>
-        )}
-      </TableCell>
-    </TableRow>
+          : t("client:admin.invites.used.limited", { uses: invite.uses, max: invite.max_uses }),
+    },
+    {
+      id: "expires_at",
+      header: t("client:admin.invites.expires_at"),
+      cell: (invite) =>
+        invite.expires_at === undefined ? t("client:admin.invites.never") : <DateTime value={invite.expires_at} />,
+    },
+    {
+      id: "created_at",
+      header: t("client:admin.invites.created_at"),
+      cell: (invite) => <DateTime value={invite.created_at} />,
+    },
+    {
+      id: "actions",
+      kind: "actions",
+      header: t("client:admin.list.column.actions"),
+      cell: (invite) => <InviteActions invite={invite} revoke={revoke} />,
+    },
+  ];
+  return (
+    <Stack gap="3">
+      <Heading level={2}>{t("client:admin.invites.list.title")}</Heading>
+      <StatusMessage>{status}</StatusMessage>
+      <RecordTable
+        listRef={listRef}
+        list={list}
+        caption={t("client:admin.invites.list.title")}
+        columns={columns}
+        getId={(invite) => invite.id}
+        headingLevel={3}
+        empty={
+          <EmptyState
+            headingLevel={3}
+            heading={t("client:admin.invites.empty")}
+            description={t("client:admin.invites.empty.description")}
+          />
+        }
+      />
+    </Stack>
+  );
+}
+
+/** Copies and revokes a usable invite; the row's header takes focus when the buttons go away (useFocusHeadingAfterLift). */
+function InviteActions({ invite, revoke }: { invite: Invite; revoke: RevokeInvite }) {
+  const t = useT();
+  const intl = useIntl();
+  const copy = useCopyInviteLink();
+  if (invite.state !== "usable") return null;
+  const created = intl.formatDate(invite.created_at, { dateStyle: "medium", timeStyle: "short" });
+  return (
+    <Cluster gap="2">
+      <Button
+        size="sm"
+        aria-label={t("client:admin.invites.copy_invite", {
+          action: t("client:admin.invites.copy"),
+          code: invite.code,
+        })}
+        onPress={() => {
+          copy(invite);
+        }}
+      >
+        {t("client:admin.invites.copy")}
+      </Button>
+      <Button
+        size="sm"
+        variant="danger"
+        isPending={revoke.pendingIds.includes(invite.id)}
+        aria-label={t("client:admin.invites.revoke_invite", { code: invite.code, date: created })}
+        onPress={() => {
+          revoke.revoke(invite);
+        }}
+      >
+        {t("client:admin.invites.revoke")}
+      </Button>
+    </Cluster>
   );
 }

@@ -4,7 +4,14 @@
 // sideways. `vite preview` has no API, so the test plays the server of a signed-in operator with page.route; names
 // change with the locale, so they come from the project's locale catalog.
 import type { Page, Route } from "@playwright/test";
-import { expect, expectNoAxeViolations, expectNoHorizontalScroll, test } from "./fixtures";
+import {
+  expect,
+  expectNoAxeViolations,
+  expectNoHorizontalScroll,
+  recordRowHeaders,
+  recordTable,
+  test,
+} from "./fixtures";
 import { readCatalog } from "./catalog.ts";
 
 /** The client message `key` in the project's locale. */
@@ -133,8 +140,9 @@ test.describe("OAuth apps", () => {
     const actions = await operatorServer(page);
     await page.goto("/admin/oauth-apps");
     const main = page.getByRole("main");
-    const table = main.getByRole("table");
-    await expect(table.getByRole("rowheader")).toContainText(appName);
+    // A table, or a list of cards at narrow widths.
+    const table = recordTable(main);
+    await expect(recordRowHeaders(table)).toContainText(appName);
     await expectNoAxeViolations(makeAxeBuilder);
     await expectNoHorizontalScroll(page);
 
@@ -165,7 +173,7 @@ test.describe("OAuth apps", () => {
     test("the alert dialog fades in to rest and fades out on its action", async ({ page }) => {
       const actions = await operatorServer(page);
       await page.goto("/admin/oauth-apps");
-      const table = page.getByRole("main").getByRole("table");
+      const table = recordTable(page.getByRole("main"));
       await table.getByRole("button", { name: appButtonName("admin.oauth_apps.disable_app") }).click();
       const dialog = page.getByRole("alertdialog");
       await expect(dialog).toBeVisible();

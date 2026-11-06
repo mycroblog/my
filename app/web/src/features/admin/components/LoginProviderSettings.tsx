@@ -19,16 +19,12 @@ import {
   RadioGroup,
   Stack,
   StatusMessage,
-  TableCell,
-  TableColumnHeader,
-  TableRow,
-  TableRowHeader,
   Text,
 } from "@my/ui";
 import { type SubmitEvent, useRef, useState } from "react";
 import { useT } from "../../../lib/i18n";
 import { useFocusAfterRemoval } from "../../../lib/useFocusAfterRemoval";
-import { Section, RecordTable, RequirePermission, wholeList } from "../../moderation";
+import { Section, type RecordColumns, RecordTable, RequirePermission, wholeList } from "../../moderation";
 import { type LoginProvider, loginProviderKinds } from "../api/loginProviders";
 import {
   draftOf,
@@ -115,13 +111,42 @@ function NewLoginProviderForm() {
 
 function LoginProviderList() {
   const t = useT();
-  const tableRef = useRef<HTMLTableElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
   const providers = useLoginProviders();
   const removed = useFocusAfterRemoval(
-    tableRef,
+    listRef,
     providers.map((provider) => provider.id),
   );
   const actions = useLoginProviderActions(removed);
+  const columns: RecordColumns<LoginProvider> = [
+    {
+      id: "provider",
+      header: t("client:admin.login_providers.provider"),
+      wrap: "anywhere",
+      cell: (provider) => <LoginProviderName provider={provider} />,
+    },
+    {
+      id: "kind",
+      header: t("client:admin.login_providers.kind"),
+      cell: (provider) => t(loginProviderKindLabels[provider.kind]),
+    },
+    {
+      id: "state",
+      header: t("client:admin.login_providers.state"),
+      cell: (provider) => <LoginProviderState provider={provider} />,
+    },
+    {
+      id: "linked_users",
+      header: t("client:admin.login_providers.linked_users"),
+      cell: (provider) => t("client:admin.login_providers.linked_users.count", { count: provider.linked_users }),
+    },
+    {
+      id: "actions",
+      kind: "actions",
+      header: t("client:admin.list.column.actions"),
+      cell: (provider) => <LoginProviderRowActions provider={provider} actions={actions} />,
+    },
+  ];
   return (
     <Stack gap="3">
       <StatusMessage>{actions.status}</StatusMessage>
@@ -133,8 +158,10 @@ function LoginProviderList() {
       <RecordTable
         list={wholeList(providers)}
         caption={t("client:admin.login_providers.list.title")}
+        columns={columns}
         getId={(provider) => provider.id}
-        tableRef={tableRef}
+        headingLevel={3}
+        listRef={listRef}
         empty={
           <EmptyState
             headingLevel={3}
@@ -142,73 +169,64 @@ function LoginProviderList() {
             description={t("client:admin.login_providers.empty.description")}
           />
         }
-        head={
-          <>
-            <TableColumnHeader>{t("client:admin.login_providers.provider")}</TableColumnHeader>
-            <TableColumnHeader>{t("client:admin.login_providers.kind")}</TableColumnHeader>
-            <TableColumnHeader>{t("client:admin.login_providers.state")}</TableColumnHeader>
-            <TableColumnHeader>{t("client:admin.login_providers.linked_users")}</TableColumnHeader>
-            <TableColumnHeader>{t("client:admin.list.column.actions")}</TableColumnHeader>
-          </>
-        }
-      >
-        {(provider) => <LoginProviderRow provider={provider} actions={actions} />}
-      </RecordTable>
+      />
     </Stack>
   );
 }
 
-function LoginProviderRow({ provider, actions }: { provider: LoginProvider; actions: LoginProviderActions }) {
-  const t = useT();
-  const name = loginProviderName(provider);
-  const isPending = actions.pendingId === provider.id;
-  const enabled = provider.state === "enabled";
+function LoginProviderName({ provider }: { provider: LoginProvider }) {
   return (
-    <TableRow data-row-id={provider.id}>
-      <TableRowHeader wrap="anywhere">
-        <Stack gap="2">
-          <Stack gap="1">
-            <Text weight="semibold" wrap="anywhere" dir="auto">
-              {provider.display_name}
-            </Text>
-            {provider.issuer !== undefined && (
-              <Text size="sm" tone="muted" mono wrap="anywhere" dir="ltr">
-                {provider.issuer}
-              </Text>
-            )}
-          </Stack>
-          <CallbackUrl url={provider.callback_url} name={name} />
-        </Stack>
-      </TableRowHeader>
-      <TableCell>{t(loginProviderKindLabels[provider.kind])}</TableCell>
-      <TableCell>
-        <Stack gap="1">
-          <span>
-            {t(enabled ? "client:admin.login_providers.state.enabled" : "client:admin.login_providers.state.disabled")}
-          </span>
-          <Text size="sm" tone="muted">
-            {t(
-              provider.allow_signup
-                ? "client:admin.login_providers.state.signup_allowed"
-                : "client:admin.login_providers.state.signup_closed",
-            )}
+    <Stack gap="2">
+      <Stack gap="1">
+        <Text weight="semibold" wrap="anywhere" dir="auto">
+          {provider.display_name}
+        </Text>
+        {provider.issuer !== undefined && (
+          <Text size="sm" tone="muted" mono wrap="anywhere" dir="ltr">
+            {provider.issuer}
           </Text>
-        </Stack>
-      </TableCell>
-      <TableCell>{t("client:admin.login_providers.linked_users.count", { count: provider.linked_users })}</TableCell>
-      <TableCell>
-        <Cluster gap="2" align="center">
-          <EditLoginProvider provider={provider} actions={actions} isPending={isPending} />
-          <RotateSecret provider={provider} actions={actions} isPending={isPending} />
-          {enabled ? (
-            <DisableLoginProvider provider={provider} actions={actions} isPending={isPending} />
-          ) : (
-            <EnableLoginProvider provider={provider} actions={actions} isPending={isPending} />
-          )}
-          <DeleteLoginProvider provider={provider} actions={actions} isPending={isPending} />
-        </Cluster>
-      </TableCell>
-    </TableRow>
+        )}
+      </Stack>
+      <CallbackUrl url={provider.callback_url} name={loginProviderName(provider)} />
+    </Stack>
+  );
+}
+
+function LoginProviderState({ provider }: { provider: LoginProvider }) {
+  const t = useT();
+  return (
+    <Stack gap="1">
+      <span>
+        {t(
+          provider.state === "enabled"
+            ? "client:admin.login_providers.state.enabled"
+            : "client:admin.login_providers.state.disabled",
+        )}
+      </span>
+      <Text size="sm" tone="muted">
+        {t(
+          provider.allow_signup
+            ? "client:admin.login_providers.state.signup_allowed"
+            : "client:admin.login_providers.state.signup_closed",
+        )}
+      </Text>
+    </Stack>
+  );
+}
+
+function LoginProviderRowActions({ provider, actions }: { provider: LoginProvider; actions: LoginProviderActions }) {
+  const isPending = actions.pendingId === provider.id;
+  return (
+    <Cluster gap="2" align="center">
+      <EditLoginProvider provider={provider} actions={actions} isPending={isPending} />
+      <RotateSecret provider={provider} actions={actions} isPending={isPending} />
+      {provider.state === "enabled" ? (
+        <DisableLoginProvider provider={provider} actions={actions} isPending={isPending} />
+      ) : (
+        <EnableLoginProvider provider={provider} actions={actions} isPending={isPending} />
+      )}
+      <DeleteLoginProvider provider={provider} actions={actions} isPending={isPending} />
+    </Cluster>
   );
 }
 

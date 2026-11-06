@@ -6,7 +6,7 @@
 // the project's locale catalog and by what the server sends.
 import type { Page, Route } from "@playwright/test";
 import type { components } from "@mycroblog/mykit";
-import { expect, expectNoAxeViolations, expectNoHorizontalScroll, test } from "./fixtures";
+import { expect, expectNoAxeViolations, expectNoHorizontalScroll, recordRowHeaders, test } from "./fixtures";
 import { readCatalog } from "./catalog.ts";
 
 type Schemas = components["schemas"];
@@ -165,7 +165,7 @@ test.describe("webhooks", () => {
     await expect(form.getByText(secret, { exact: true })).toBeVisible();
     expect(sent).toEqual(["create https://hooks.example/in report.created"]);
     const list = main.getByRole("region", { name: message("admin.webhooks.list.title"), exact: true });
-    await expect(list.getByRole("rowheader", { name: description })).toBeVisible();
+    await expect(recordRowHeaders(list).filter({ hasText: description })).toBeVisible();
     await expectNoAxeViolations(makeAxeBuilder);
     await expectNoHorizontalScroll(page);
 

@@ -16,12 +16,7 @@ import {
   Select,
   SelectItem,
   Stack,
-  TableCell,
-  TableColumnHeader,
-  TableRow,
-  TableRowHeader,
   Text,
-  VisuallyHidden,
 } from "@my/ui";
 import { type RefObject, useEffect, useRef } from "react";
 import { useT } from "../../../lib/i18n";
@@ -214,99 +209,115 @@ function AuditLogView({ filter, onFilterChange, filterHref, onPagesLoaded }: Aud
             <RegionError heading={t("client:admin.audit_log.more_failed")} reason={log.loadMoreError} />
           )
         }
-        head={
-          <>
-            <TableColumnHeader>{t("client:admin.audit_log.filter.action")}</TableColumnHeader>
-            <TableColumnHeader>{t("client:admin.audit_log.actor")}</TableColumnHeader>
-            <TableColumnHeader>{t("client:admin.audit_log.filter.target_kind")}</TableColumnHeader>
-            <TableColumnHeader>{t("client:admin.audit_log.occurred_at")}</TableColumnHeader>
-            <TableColumnHeader>
-              <VisuallyHidden>{t("client:admin.list.filters")}</VisuallyHidden>
-            </TableColumnHeader>
-          </>
-        }
-      >
-        {(entry) => <AuditEntryRow entry={entry} filter={filter} filterHref={filterHref} />}
-      </RecordTable>
+        columns={[
+          {
+            id: "action",
+            header: t("client:admin.audit_log.filter.action"),
+            wrap: "anywhere",
+            cell: (entry) => t(auditActionLabels[entry.action]),
+          },
+          {
+            id: "actor",
+            header: t("client:admin.audit_log.actor"),
+            wrap: "anywhere",
+            cell: (entry) => <AuditActor entry={entry} />,
+          },
+          {
+            id: "target",
+            header: t("client:admin.audit_log.filter.target_kind"),
+            wrap: "anywhere",
+            cell: (entry) => (
+              <Stack>
+                <Text size="sm" tone="muted">
+                  {t(auditTargetKindLabels[entry.target_kind])}
+                </Text>
+                <AuditTarget entry={entry} />
+              </Stack>
+            ),
+          },
+          {
+            id: "occurred_at",
+            header: t("client:admin.audit_log.occurred_at"),
+            cell: (entry) => <DateTime value={entry.occurred_at} />,
+          },
+          {
+            id: "filters",
+            kind: "actions",
+            header: t("client:admin.list.filters"),
+            cell: (entry) => <AuditEntryFilters entry={entry} filter={filter} filterHref={filterHref} />,
+          },
+        ]}
+        headingLevel={2}
+      />
     </Stack>
   );
 }
 
-type AuditEntryRowProps = { entry: AuditEntry; filter: AuditLogFilter; filterHref: (filter: AuditLogFilter) => string };
+/** Who did it: the account's name and handle, or the kind of actor without one. */
+function AuditActor({ entry }: { entry: AuditEntry }) {
+  const t = useT();
+  const actor = entry.actor_account;
+  if (actor === undefined) return t(auditActorKindLabels[entry.actor_kind]);
+  return (
+    <Stack>
+      {/* A name the user chose, in any language. */}
+      <Text dir="auto" align="start">
+        {accountName(actor)}
+      </Text>
+      <Text dir="ltr" align="start" size="sm" tone="muted">
+        {handleOf(actor)}
+      </Text>
+    </Stack>
+  );
+}
 
-function AuditEntryRow({ entry, filter, filterHref }: AuditEntryRowProps) {
+type AuditEntryFiltersProps = {
+  entry: AuditEntry;
+  filter: AuditLogFilter;
+  filterHref: (filter: AuditLogFilter) => string;
+};
+
+/** The links that narrow the log to the entry's actor or target, or let go of that filter. */
+function AuditEntryFilters({ entry, filter, filterHref }: AuditEntryFiltersProps) {
   const t = useT();
   const actor = entry.actor_account;
   const actorName = actor === undefined ? t(auditActorKindLabels[entry.actor_kind]) : accountName(actor);
   const actorId = entry.actor_account_id;
   const isActorFilter = actorId !== undefined && actorId === filter.actor;
   const isTargetFilter = filter.targetKind === entry.target_kind && filter.target === entry.target_id;
+  // The row stays in the list under the filter its links choose, and so do the links, which then let go of it:
+  // focus stays on the link that was pressed.
   return (
-    <TableRow data-row-id={entry.id}>
-      <TableRowHeader wrap="anywhere">{t(auditActionLabels[entry.action])}</TableRowHeader>
-      <TableCell wrap="anywhere">
-        {actor === undefined ? (
-          actorName
-        ) : (
-          <Stack>
-            {/* A name the user chose, in any language. */}
-            <Text dir="auto" align="start">
-              {actorName}
-            </Text>
-            <Text dir="ltr" align="start" size="sm" tone="muted">
-              {handleOf(actor)}
-            </Text>
-          </Stack>
-        )}
-      </TableCell>
-      <TableCell wrap="anywhere">
-        <Stack>
-          <Text size="sm" tone="muted">
-            {t(auditTargetKindLabels[entry.target_kind])}
-          </Text>
-          <AuditTarget entry={entry} />
-        </Stack>
-      </TableCell>
-      <TableCell>
-        <DateTime value={entry.occurred_at} />
-      </TableCell>
-      <TableCell>
-        {/*
-          The row stays in the list under the filter its links choose, and so do the links, which then let go of it:
-          focus stays on the link that was pressed.
-        */}
-        <Stack as="ul" gap="1">
-          {actorId !== undefined && (
-            <li>
-              <Link
-                href={filterHref({ ...filter, actor: isActorFilter ? undefined : actorId })}
-                variant="standalone"
-                wrap="anywhere"
-              >
-                {isActorFilter
-                  ? t("client:admin.audit_log.every_actor")
-                  : t("client:admin.audit_log.only_actor", { name: isolate(actorName) })}
-              </Link>
-            </li>
+    <Stack as="ul" gap="1">
+      {actorId !== undefined && (
+        <li>
+          <Link
+            href={filterHref({ ...filter, actor: isActorFilter ? undefined : actorId })}
+            variant="standalone"
+            wrap="anywhere"
+          >
+            {isActorFilter
+              ? t("client:admin.audit_log.every_actor")
+              : t("client:admin.audit_log.only_actor", { name: isolate(actorName) })}
+          </Link>
+        </li>
+      )}
+      <li>
+        <Link
+          href={filterHref(
+            isTargetFilter
+              ? { ...filter, target: undefined }
+              : { ...filter, targetKind: entry.target_kind, target: entry.target_id },
           )}
-          <li>
-            <Link
-              href={filterHref(
-                isTargetFilter
-                  ? { ...filter, target: undefined }
-                  : { ...filter, targetKind: entry.target_kind, target: entry.target_id },
-              )}
-              variant="standalone"
-              wrap="anywhere"
-            >
-              {isTargetFilter
-                ? t("client:admin.audit_log.every_target")
-                : t("client:admin.audit_log.only_target", { target: isolate(entry.target_label) })}
-            </Link>
-          </li>
-        </Stack>
-      </TableCell>
-    </TableRow>
+          variant="standalone"
+          wrap="anywhere"
+        >
+          {isTargetFilter
+            ? t("client:admin.audit_log.every_target")
+            : t("client:admin.audit_log.only_target", { target: isolate(entry.target_label) })}
+        </Link>
+      </li>
+    </Stack>
   );
 }
 

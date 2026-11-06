@@ -18,12 +18,7 @@ import {
   SelectItem,
   Stack,
   StatusMessage,
-  TableCell,
-  TableColumnHeader,
-  TableRow,
-  TableRowHeader,
   Text,
-  VisuallyHidden,
 } from "@my/ui";
 import { useRef, useState } from "react";
 import { useIntl } from "react-intl";
@@ -42,7 +37,7 @@ import {
   useHookAppealReview,
   useHookAppeals,
 } from "../hooks/useHookDecisions";
-import { DateTime, RecordTable, Section, useFocusAfterChange } from "./parts";
+import { DateTime, type RecordColumns, RecordTable, Section, useFocusAfterChange } from "./parts";
 import { AccountByIdLabel } from "./reportParts";
 
 const filterLabels: Readonly<Record<HookAppealFilter, ClientMessageKey>> = {
@@ -104,31 +99,56 @@ export function HookAppeals({ filter, onFilterChange }: HookAppealsProps) {
 function HookAppealList({ filter, review }: { filter: HookAppealFilter; review: HookAppealReview }) {
   const t = useT();
   const list = useHookAppeals(filter);
+  const columns: RecordColumns<HookAppeal> = [
+    {
+      id: "account",
+      header: t("client:admin.hook_appeals.column.account"),
+      wrap: "anywhere",
+      cell: (appeal) => <AccountByIdLabel id={appeal.account_id} />,
+    },
+    {
+      id: "decision",
+      header: t("client:admin.hook_appeals.column.decision"),
+      wrap: "anywhere",
+      cell: (appeal) => <AppealedDecision appeal={appeal} />,
+    },
+    {
+      id: "appeal",
+      header: t("client:admin.hook_appeals.column.appeal"),
+      wrap: "anywhere",
+      cell: (appeal) => <AppealTexts appeal={appeal} />,
+    },
+    {
+      id: "state",
+      header: t("client:admin.hook_appeals.column.state"),
+      cell: (appeal) => (
+        <Stack gap="1">
+          <Text weight="semibold">{t(hookAppealStateLabels[appeal.state])}</Text>
+          {appeal.decided_at !== undefined && <DateTime value={appeal.decided_at} />}
+        </Stack>
+      ),
+    },
+    {
+      id: "actions",
+      kind: "actions",
+      header: t("client:admin.list.column.actions"),
+      cell: (appeal) => <DecisionButtons appeal={appeal} review={review} />,
+    },
+  ];
   return (
     <RecordTable
       list={list}
       caption={t("client:admin.hook_appeals.title")}
+      columns={columns}
       getId={(appeal) => appeal.id}
+      headingLevel={3}
       empty={
         <EmptyState
           headingLevel={3}
           heading={t(filter === "pending" ? "client:admin.hook_appeals.empty" : "client:admin.hook_appeals.empty_all")}
         />
       }
-      head={
-        <>
-          <TableColumnHeader>{t("client:admin.hook_appeals.column.account")}</TableColumnHeader>
-          <TableColumnHeader>{t("client:admin.hook_appeals.column.decision")}</TableColumnHeader>
-          <TableColumnHeader>{t("client:admin.hook_appeals.column.appeal")}</TableColumnHeader>
-          <TableColumnHeader>{t("client:admin.hook_appeals.column.state")}</TableColumnHeader>
-          <TableColumnHeader>
-            <VisuallyHidden>{t("client:admin.list.column.actions")}</VisuallyHidden>
-          </TableColumnHeader>
-        </>
-      }
-    >
-      {(appeal) => <HookAppealRow appeal={appeal} review={review} />}
-    </RecordTable>
+    />
   );
 }
 
@@ -143,79 +163,76 @@ function AuthorText({ text }: { text: string | undefined }) {
   );
 }
 
-function HookAppealRow({ appeal, review }: { appeal: HookAppeal; review: HookAppealReview }) {
+/** The decision an appeal is about: its hook, reason, note and date. */
+function AppealedDecision({ appeal }: { appeal: HookAppeal }) {
+  const t = useT();
+  const { decision } = appeal;
+  return (
+    <DescriptionList>
+      <DescriptionItem term={t("client:admin.hook_decisions.column.hook")}>
+        {t(hookNameLabels[decision.hook])}
+      </DescriptionItem>
+      {decision.reason !== undefined && (
+        <DescriptionItem term={t("client:admin.hook_decisions.reason")}>
+          {t(hookReasonLabels[decision.reason])}
+        </DescriptionItem>
+      )}
+      {decision.note !== undefined && (
+        <DescriptionItem term={t("client:admin.hook_decisions.note")}>
+          {/* Written by the plugin, in any language. */}
+          <Text dir="auto">{decision.note}</Text>
+        </DescriptionItem>
+      )}
+      <DescriptionItem term={t("client:admin.hook_decisions.column.decided_at")}>
+        <DateTime value={decision.decided_at} />
+      </DescriptionItem>
+    </DescriptionList>
+  );
+}
+
+/** What the author sent with the appeal. */
+function AppealTexts({ appeal }: { appeal: HookAppeal }) {
+  const t = useT();
+  return (
+    <DescriptionList>
+      <DescriptionItem term={t("client:admin.hook_appeals.submitted_at")}>
+        <DateTime value={appeal.submitted_at} />
+      </DescriptionItem>
+      <DescriptionItem term={t("client:admin.hook_appeals.status_text")}>
+        <AuthorText text={appeal.status_text} />
+      </DescriptionItem>
+      <DescriptionItem term={t("client:admin.hook_appeals.comment")}>
+        <AuthorText text={appeal.comment} />
+      </DescriptionItem>
+    </DescriptionList>
+  );
+}
+
+/** Upholds or overturns a pending appeal, after a confirmation. */
+function DecisionButtons({ appeal, review }: { appeal: HookAppeal; review: HookAppealReview }) {
   const t = useT();
   const intl = useIntl();
-  const { decision } = appeal;
+  if (appeal.state !== "pending") return null;
   const date = intl.formatDate(appeal.submitted_at, { dateStyle: "medium", timeStyle: "short" });
   return (
-    <TableRow data-row-id={appeal.id}>
-      <TableRowHeader wrap="anywhere">
-        <AccountByIdLabel id={appeal.account_id} />
-      </TableRowHeader>
-      <TableCell wrap="anywhere">
-        <DescriptionList>
-          <DescriptionItem term={t("client:admin.hook_decisions.column.hook")}>
-            {t(hookNameLabels[decision.hook])}
-          </DescriptionItem>
-          {decision.reason !== undefined && (
-            <DescriptionItem term={t("client:admin.hook_decisions.reason")}>
-              {t(hookReasonLabels[decision.reason])}
-            </DescriptionItem>
+    <Cluster gap="2">
+      {decisions.map((item) => (
+        <Button
+          key={item}
+          size="sm"
+          variant={item === "uphold" ? "primary" : "secondary"}
+          aria-label={t(
+            item === "uphold" ? "client:admin.hook_appeals.uphold_of" : "client:admin.hook_appeals.overturn_of",
+            { date },
           )}
-          {decision.note !== undefined && (
-            <DescriptionItem term={t("client:admin.hook_decisions.note")}>
-              {/* Written by the plugin, in any language. */}
-              <Text dir="auto">{decision.note}</Text>
-            </DescriptionItem>
-          )}
-          <DescriptionItem term={t("client:admin.hook_decisions.column.decided_at")}>
-            <DateTime value={decision.decided_at} />
-          </DescriptionItem>
-        </DescriptionList>
-      </TableCell>
-      <TableCell wrap="anywhere">
-        <DescriptionList>
-          <DescriptionItem term={t("client:admin.hook_appeals.submitted_at")}>
-            <DateTime value={appeal.submitted_at} />
-          </DescriptionItem>
-          <DescriptionItem term={t("client:admin.hook_appeals.status_text")}>
-            <AuthorText text={appeal.status_text} />
-          </DescriptionItem>
-          <DescriptionItem term={t("client:admin.hook_appeals.comment")}>
-            <AuthorText text={appeal.comment} />
-          </DescriptionItem>
-        </DescriptionList>
-      </TableCell>
-      <TableCell>
-        <Stack gap="1">
-          <Text weight="semibold">{t(hookAppealStateLabels[appeal.state])}</Text>
-          {appeal.decided_at !== undefined && <DateTime value={appeal.decided_at} />}
-        </Stack>
-      </TableCell>
-      <TableCell>
-        {appeal.state === "pending" && (
-          <Cluster gap="2">
-            {decisions.map((item) => (
-              <Button
-                key={item}
-                size="sm"
-                variant={item === "uphold" ? "primary" : "secondary"}
-                aria-label={t(
-                  item === "uphold" ? "client:admin.hook_appeals.uphold_of" : "client:admin.hook_appeals.overturn_of",
-                  { date },
-                )}
-                onPress={() => {
-                  review.open(appeal, item);
-                }}
-              >
-                {t(item === "uphold" ? "client:admin.hook_appeals.uphold" : "client:admin.hook_appeals.overturn")}
-              </Button>
-            ))}
-          </Cluster>
-        )}
-      </TableCell>
-    </TableRow>
+          onPress={() => {
+            review.open(appeal, item);
+          }}
+        >
+          {t(item === "uphold" ? "client:admin.hook_appeals.uphold" : "client:admin.hook_appeals.overturn")}
+        </Button>
+      ))}
+    </Cluster>
   );
 }
 

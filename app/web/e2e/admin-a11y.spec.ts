@@ -10,7 +10,7 @@
 import { readdirSync } from "node:fs";
 import type { Locator, Page, Route } from "@playwright/test";
 import type { components } from "@mycroblog/mykit";
-import { expect, expectNoAxeViolations, expectNoHorizontalScroll, servedImage, test } from "./fixtures";
+import { expect, expectNoAxeViolations, expectNoHorizontalScroll, recordTable, servedImage, test } from "./fixtures";
 
 type Schemas = components["schemas"];
 
@@ -1153,7 +1153,7 @@ test.describe("handling a report with the keyboard alone", () => {
     await tabTo(page, main.locator('a[href="/moderation/reports"]').first());
     await page.keyboard.press("Enter");
     await expect(page).toHaveURL(/\/moderation\/reports$/);
-    const queue = main.getByRole("table");
+    const queue = recordTable(main);
     await expect(queue.locator(`a[href="/moderation/reports/${reportId}"]`)).toBeVisible();
     await expectPageReached(page, makeAxeBuilder);
 

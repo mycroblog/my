@@ -22,13 +22,8 @@ import {
   SelectItem,
   Stack,
   StatusMessage,
-  TableCell,
-  TableColumnHeader,
-  TableRow,
-  TableRowHeader,
   Text,
   TextField,
-  VisuallyHidden,
 } from "@my/ui";
 import { useRef, useState } from "react";
 import { useIntl } from "react-intl";
@@ -54,7 +49,7 @@ import {
   useSignupBlockForm,
   useSignupBlocks,
 } from "../hooks/useSignupBlocks";
-import { DateTime, Section, DomainName, RecordTable, RequirePermission } from "./parts";
+import { DateTime, Section, DomainName, type RecordColumns, RecordTable, RequirePermission } from "./parts";
 import { SignupBlockImportForm } from "./SignupBlockImport";
 import {
   day,
@@ -280,31 +275,66 @@ function SignupBlockList({ filter, onLifted }: { filter: SignupBlockFilter; onLi
     ) : (
       <EmptyState headingLevel={3} heading={t("client:admin.signup_blocks.empty.all")} />
     );
+  const columns: RecordColumns<SignupBlock> = [
+    {
+      id: "value",
+      header: t("client:admin.signup_blocks.column.value"),
+      wrap: "anywhere",
+      cell: (block) => <SignupBlockValue block={block} />,
+    },
+    { id: "kind", header: t("client:admin.signup_blocks.kind"), cell: (block) => t(signupBlockKindLabels[block.kind]) },
+    {
+      id: "severity",
+      header: t("client:admin.signup_blocks.severity"),
+      cell: (block) => t(signupBlockSeverityLabels[block.severity]),
+    },
+    {
+      id: "state",
+      header: t("client:admin.signup_blocks.state"),
+      cell: (block) => (
+        <Text {...(block.state === "active" ? { weight: "semibold" as const } : {})}>
+          {t(stateLabels[block.state])}
+        </Text>
+      ),
+    },
+    {
+      id: "created_at",
+      header: t("client:admin.signup_blocks.created_at"),
+      cell: (block) => <DateTime value={block.created_at} />,
+    },
+    {
+      id: "expires_at",
+      header: t("client:admin.signup_blocks.expires_at"),
+      cell: (block) =>
+        block.expires_at === undefined ? (
+          t("client:admin.signup_blocks.duration.indefinite")
+        ) : (
+          <DateTime value={block.expires_at} />
+        ),
+    },
+    {
+      id: "details",
+      header: t("client:admin.signup_blocks.column.details"),
+      wrap: "anywhere",
+      cell: (block) => <SignupBlockDetails block={block} />,
+    },
+    {
+      id: "actions",
+      kind: "actions",
+      header: t("client:admin.list.column.actions"),
+      cell: (block) => <LiftButton block={block} lift={lift} />,
+    },
+  ];
   return (
-    <Box ref={listRef}>
-      <RecordTable
-        list={list}
-        caption={t(filterLabels[filter])}
-        getId={(block) => block.id}
-        empty={empty}
-        head={
-          <>
-            <TableColumnHeader>{t("client:admin.signup_blocks.column.value")}</TableColumnHeader>
-            <TableColumnHeader>{t("client:admin.signup_blocks.kind")}</TableColumnHeader>
-            <TableColumnHeader>{t("client:admin.signup_blocks.severity")}</TableColumnHeader>
-            <TableColumnHeader>{t("client:admin.signup_blocks.state")}</TableColumnHeader>
-            <TableColumnHeader>{t("client:admin.signup_blocks.created_at")}</TableColumnHeader>
-            <TableColumnHeader>{t("client:admin.signup_blocks.expires_at")}</TableColumnHeader>
-            <TableColumnHeader>{t("client:admin.signup_blocks.column.details")}</TableColumnHeader>
-            <TableColumnHeader>
-              <VisuallyHidden>{t("client:admin.list.column.actions")}</VisuallyHidden>
-            </TableColumnHeader>
-          </>
-        }
-      >
-        {(block) => <SignupBlockRow block={block} lift={lift} />}
-      </RecordTable>
-    </Box>
+    <RecordTable
+      listRef={listRef}
+      list={list}
+      caption={t(filterLabels[filter])}
+      columns={columns}
+      getId={(block) => block.id}
+      headingLevel={3}
+      empty={empty}
+    />
   );
 }
 
@@ -314,73 +344,51 @@ function SignupBlockValue({ block }: { block: SignupBlock }) {
   return <span dir="ltr">{block.value}</span>;
 }
 
-function SignupBlockRow({ block, lift }: { block: SignupBlock; lift: LiftSignupBlock }) {
+function SignupBlockDetails({ block }: { block: SignupBlock }) {
+  const t = useT();
+  return (
+    <DescriptionList>
+      {block.lifted_at !== undefined && (
+        <DescriptionItem term={t("client:admin.signup_blocks.lifted_at")}>
+          <DateTime value={block.lifted_at} />
+        </DescriptionItem>
+      )}
+      <DescriptionItem term={t("client:admin.signup_blocks.source")}>
+        {block.moderation_action_id === undefined
+          ? t("client:admin.signup_blocks.source.manual")
+          : t("client:admin.signup_blocks.source.ban")}
+      </DescriptionItem>
+      {block.comment !== undefined && (
+        <DescriptionItem term={t("client:admin.signup_blocks.comment")}>
+          {/* Written by a moderator, in any language. */}
+          <Text dir="auto" whitespace="preWrap">
+            {block.comment}
+          </Text>
+        </DescriptionItem>
+      )}
+    </DescriptionList>
+  );
+}
+
+/** Lifts a block in effect; the row's header takes focus when the button goes away (useFocusHeadingAfterLift). */
+function LiftButton({ block, lift }: { block: SignupBlock; lift: LiftSignupBlock }) {
   const t = useT();
   const intl = useIntl();
-  const kind = t(signupBlockKindLabels[block.kind]);
+  if (block.state !== "active") return null;
   return (
-    <TableRow data-row-id={block.id}>
-      {/* Focusable from script: it takes focus when the lift button goes away (useFocusHeadingAfterLift). */}
-      <TableRowHeader tabIndex={-1} wrap="anywhere">
-        <SignupBlockValue block={block} />
-      </TableRowHeader>
-      <TableCell>{kind}</TableCell>
-      <TableCell>{t(signupBlockSeverityLabels[block.severity])}</TableCell>
-      <TableCell>
-        <Text {...(block.state === "active" ? { weight: "semibold" as const } : {})}>
-          {t(stateLabels[block.state])}
-        </Text>
-      </TableCell>
-      <TableCell>
-        <DateTime value={block.created_at} />
-      </TableCell>
-      <TableCell>
-        {block.expires_at === undefined ? (
-          t("client:admin.signup_blocks.duration.indefinite")
-        ) : (
-          <DateTime value={block.expires_at} />
-        )}
-      </TableCell>
-      <TableCell wrap="anywhere">
-        <DescriptionList>
-          {block.lifted_at !== undefined && (
-            <DescriptionItem term={t("client:admin.signup_blocks.lifted_at")}>
-              <DateTime value={block.lifted_at} />
-            </DescriptionItem>
-          )}
-          <DescriptionItem term={t("client:admin.signup_blocks.source")}>
-            {block.moderation_action_id === undefined
-              ? t("client:admin.signup_blocks.source.manual")
-              : t("client:admin.signup_blocks.source.ban")}
-          </DescriptionItem>
-          {block.comment !== undefined && (
-            <DescriptionItem term={t("client:admin.signup_blocks.comment")}>
-              {/* Written by a moderator, in any language. */}
-              <Text dir="auto" whitespace="preWrap">
-                {block.comment}
-              </Text>
-            </DescriptionItem>
-          )}
-        </DescriptionList>
-      </TableCell>
-      <TableCell>
-        {block.state === "active" && (
-          <Button
-            size="sm"
-            isPending={lift.pendingIds.includes(block.id)}
-            aria-label={t("client:admin.signup_blocks.lift_action", {
-              kind,
-              value: signupBlockValueInText(t, block),
-              date: intl.formatDate(block.created_at, { dateStyle: "medium", timeStyle: "short" }),
-            })}
-            onPress={() => {
-              lift.lift(block);
-            }}
-          >
-            {t("client:admin.signup_blocks.lift")}
-          </Button>
-        )}
-      </TableCell>
-    </TableRow>
+    <Button
+      size="sm"
+      isPending={lift.pendingIds.includes(block.id)}
+      aria-label={t("client:admin.signup_blocks.lift_action", {
+        kind: t(signupBlockKindLabels[block.kind]),
+        value: signupBlockValueInText(t, block),
+        date: intl.formatDate(block.created_at, { dateStyle: "medium", timeStyle: "short" }),
+      })}
+      onPress={() => {
+        lift.lift(block);
+      }}
+    >
+      {t("client:admin.signup_blocks.lift")}
+    </Button>
   );
 }

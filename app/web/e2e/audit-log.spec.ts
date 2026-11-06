@@ -5,7 +5,15 @@
 // has no API, so each test plays the server of a signed-in operator with page.route; names change with the
 // locale, so the structure is checked by role and by what the server sends (names, handles, domains).
 import type { Page, Route } from "@playwright/test";
-import { expect, expectNoAxeViolations, expectNoHorizontalScroll, test } from "./fixtures";
+import {
+  expect,
+  expectNoAxeViolations,
+  expectNoHorizontalScroll,
+  recordRowHeaders,
+  recordRows,
+  recordTable,
+  test,
+} from "./fixtures";
 import { readCatalog } from "./catalog.ts";
 
 /** The client message `key` in the project's locale (only messages without arguments). */
@@ -215,13 +223,9 @@ async function operatorServer(page: Page, { domains = false }: { domains?: boole
   return requests;
 }
 
-/** The rows of the table of operations, without its header row. */
+/** The rows of the table of operations (its cards at narrow widths). */
 function rows(page: Page) {
-  return page
-    .getByRole("main")
-    .getByRole("table")
-    .getByRole("row")
-    .filter({ has: page.getByRole("rowheader") });
+  return recordRows(recordTable(page.getByRole("main")));
 }
 
 test.describe("page /moderation/audit-log", () => {
@@ -251,7 +255,7 @@ test.describe("audit log", () => {
 
     // The row: the operation, who did it, on what, when, and the links that keep one actor or one target.
     const first = rows(page).first();
-    await expect(first.getByRole("rowheader")).not.toBeEmpty();
+    await expect(recordRowHeaders(first)).not.toBeEmpty();
     await expect(first).toContainText(new RegExp(`${moderator.display_name}.*@${moderator.acct}`));
     await expect(first.locator("time")).toHaveCount(1);
     await expect(first.getByRole("listitem")).toHaveCount(2);
@@ -337,7 +341,7 @@ test.describe("audit log", () => {
     await page.goBack();
     await expect(page).toHaveURL(/\/moderation\/audit-log$/);
     await expect(rows(page)).toHaveCount(2);
-    expect(await rows(page).first().getByRole("rowheader").textContent()).toBe(
+    expect(await recordRowHeaders(rows(page).first()).textContent()).toBe(
       message("admin.audit_log.action.domain_action_lifted"),
     );
     await expectNoAxeViolations(makeAxeBuilder);

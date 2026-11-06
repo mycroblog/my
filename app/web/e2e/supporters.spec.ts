@@ -7,7 +7,7 @@
 // names change with the locale, so the elements are found by role and by the names in the project's locale catalog.
 import type { Page, Route } from "@playwright/test";
 import type { components } from "@mycroblog/mykit";
-import { expect, expectNoAxeViolations, expectNoHorizontalScroll, test } from "./fixtures";
+import { expect, expectNoAxeViolations, expectNoHorizontalScroll, recordRows, recordTable, test } from "./fixtures";
 import { readCatalog } from "./catalog.ts";
 
 type Schemas = components["schemas"];
@@ -302,7 +302,9 @@ test.describe("supporters", () => {
       .getByRole("button", { name: message("admin.supporters.subscription.cancel"), exact: true })
       .click();
     await expect(
-      subscriptionsRegion.getByRole("cell", { name: message("admin.supporters.state.expired"), exact: true }),
+      recordRows(recordTable(subscriptionsRegion)).getByText(message("admin.supporters.state.expired"), {
+        exact: true,
+      }),
     ).toBeVisible();
     expect(sent).toContain("cancel");
     await expectNoAxeViolations(makeAxeBuilder);

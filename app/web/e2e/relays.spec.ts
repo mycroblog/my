@@ -6,7 +6,7 @@
 // the names in the project's locale catalog and by what the server sends.
 import type { Page, Route } from "@playwright/test";
 import type { components } from "@mycroblog/mykit";
-import { expect, expectNoAxeViolations, expectNoHorizontalScroll, test } from "./fixtures";
+import { expect, expectNoAxeViolations, expectNoHorizontalScroll, recordRowHeaders, test } from "./fixtures";
 import { readCatalog } from "./catalog.ts";
 
 type Schemas = components["schemas"];
@@ -157,7 +157,7 @@ test.describe("relays", () => {
     await form.getByRole("button", { name: message("admin.relays.submit"), exact: true }).click();
 
     const list = main.getByRole("region", { name: message("admin.relays.list.title"), exact: true });
-    await expect(list.getByRole("rowheader", { name: /^relay\.example/u })).toBeVisible();
+    await expect(recordRowHeaders(list).filter({ hasText: "relay.example" })).toBeVisible();
     await expect(list.getByText(message("admin.relays.state.pending"), { exact: true })).toBeVisible();
     expect(sent).toEqual([`create ${relayUrl} auto true`]);
     await expectNoAxeViolations(makeAxeBuilder);

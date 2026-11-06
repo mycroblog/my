@@ -60,13 +60,14 @@ export function useFocusHeadingAfterMove(list: RefObject<HTMLElement | null>): (
 
 /**
  * Keeps focus when a lifted action stays in the list without its lift button: once the row has rendered
- * without the button, focus moves to the row's heading (`h3`), or to its row header (`th`, with `tabIndex={-1}`) in a table;
+ * without the button, focus moves to the row's heading (`h3`), or to the element that names a row of a `RecordTable`
+ * (`[data-row-header]`: its row header `th`, or its card's heading in a narrow container);
  * `heading` selects another heading for rows that have one (the `h2` of the list of a page). Returns `lifted(id)`, to
  * call when the action is lifted.
  */
 export function useFocusHeadingAfterLift(
   list: RefObject<HTMLElement | null>,
-  heading = "h3, th",
+  heading = "h3, [data-row-header]",
 ): (id: string) => void {
   const pendingRef = useRef<string | null>(null);
   // Runs after every render: focus is moved in the DOM, outside React, once the button is gone.

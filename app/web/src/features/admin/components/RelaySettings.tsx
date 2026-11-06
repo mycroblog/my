@@ -19,17 +19,13 @@ import {
   SelectItem,
   Stack,
   StatusMessage,
-  TableCell,
-  TableColumnHeader,
-  TableRow,
-  TableRowHeader,
   Text,
   TextField,
 } from "@my/ui";
 import { useRef, useState } from "react";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
 import { useFocusAfterRemoval } from "../../../lib/useFocusAfterRemoval";
-import { DateTime, Section, RecordTable, RequirePermission, wholeList } from "../../moderation";
+import { DateTime, Section, type RecordColumns, RecordTable, RequirePermission, wholeList } from "../../moderation";
 import { type Relay, type RelayProtocol, relayProtocols, type RelayState, relayUrlLimit } from "../api/relays";
 import {
   type RelayActions,
@@ -142,13 +138,56 @@ function NewRelayForm() {
 
 function RelayList() {
   const t = useT();
-  const tableRef = useRef<HTMLTableElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
   const relays = useRelays();
   const removed = useFocusAfterRemoval(
-    tableRef,
+    listRef,
     relays.map((relay) => relay.id),
   );
   const actions = useRelayActions(removed);
+  const columns: RecordColumns<Relay> = [
+    { id: "url", header: t("client:admin.relays.url"), wrap: "anywhere", cell: (relay) => <RelayName relay={relay} /> },
+    { id: "protocol", header: t("client:admin.relays.protocol"), cell: (relay) => t(protocolLabels[relay.protocol]) },
+    {
+      id: "state",
+      header: t("client:admin.relays.state"),
+      cell: (relay) => (
+        <Stack gap="1">
+          <span>{t(stateLabels[relay.state])}</span>
+          <Text size="sm" tone="muted">
+            <DateTime value={relay.state_changed_at} />
+          </Text>
+        </Stack>
+      ),
+    },
+    {
+      id: "receive",
+      header: t("client:admin.relays.receive.term"),
+      cell: (relay) => t(relay.receive ? "client:admin.relays.receive.yes" : "client:admin.relays.receive.no"),
+    },
+    {
+      id: "taken",
+      header: t("client:admin.relays.taken"),
+      numeric: true,
+      cell: (relay) => t("client:admin.relays.activities", { count: relay.taken_last_day }),
+    },
+    {
+      id: "dropped",
+      header: t("client:admin.relays.dropped"),
+      numeric: true,
+      cell: (relay) => (
+        <Text {...(relay.dropped_last_day > 0 && { tone: "warning" as const })}>
+          {t("client:admin.relays.activities", { count: relay.dropped_last_day })}
+        </Text>
+      ),
+    },
+    {
+      id: "actions",
+      kind: "actions",
+      header: t("client:admin.list.column.actions"),
+      cell: (relay) => <RelayRowActions relay={relay} actions={actions} />,
+    },
+  ];
   return (
     <Stack gap="3">
       <StatusMessage>{actions.status}</StatusMessage>
@@ -160,8 +199,10 @@ function RelayList() {
       <RecordTable
         list={wholeList(relays)}
         caption={t("client:admin.relays.list.title")}
+        columns={columns}
         getId={(relay) => relay.id}
-        tableRef={tableRef}
+        headingLevel={3}
+        listRef={listRef}
         empty={
           <EmptyState
             headingLevel={3}
@@ -169,89 +210,60 @@ function RelayList() {
             description={t("client:admin.relays.empty.description")}
           />
         }
-        head={
-          <>
-            <TableColumnHeader>{t("client:admin.relays.url")}</TableColumnHeader>
-            <TableColumnHeader>{t("client:admin.relays.protocol")}</TableColumnHeader>
-            <TableColumnHeader>{t("client:admin.relays.state")}</TableColumnHeader>
-            <TableColumnHeader>{t("client:admin.relays.receive.term")}</TableColumnHeader>
-            <TableColumnHeader>{t("client:admin.relays.taken")}</TableColumnHeader>
-            <TableColumnHeader>{t("client:admin.relays.dropped")}</TableColumnHeader>
-            <TableColumnHeader>{t("client:admin.list.column.actions")}</TableColumnHeader>
-          </>
-        }
-      >
-        {(relay) => <RelayRow relay={relay} actions={actions} />}
-      </RecordTable>
+      />
     </Stack>
   );
 }
 
-function RelayRow({ relay, actions }: { relay: Relay; actions: RelayActions }) {
+function RelayName({ relay }: { relay: Relay }) {
+  const t = useT();
+  return (
+    <Stack gap="1">
+      <Text weight="semibold" wrap="anywhere" dir="ltr">
+        {relayHeading(relay)}
+      </Text>
+      {relay.domain_suspended && (
+        <Text as="p" size="sm" tone="warning">
+          {t("client:admin.relays.domain_suspended")}
+        </Text>
+      )}
+      <Text size="sm" tone="muted" mono wrap="anywhere" dir="ltr">
+        {relay.url}
+      </Text>
+      {relay.inbox_url !== relay.url && (
+        <Text size="sm" tone="muted" mono wrap="anywhere" dir="ltr">
+          {relay.inbox_url}
+        </Text>
+      )}
+      {relay.actor_uri !== undefined && (
+        <Text size="sm" tone="muted" mono wrap="anywhere" dir="ltr">
+          {relay.actor_uri}
+        </Text>
+      )}
+    </Stack>
+  );
+}
+
+function RelayRowActions({ relay, actions }: { relay: Relay; actions: RelayActions }) {
   const t = useT();
   const name = relayName(relay);
   const isPending = actions.pendingId === relay.id;
   const joined = isJoined(relay);
   return (
-    <TableRow data-row-id={relay.id}>
-      <TableRowHeader wrap="anywhere">
-        <Stack gap="1">
-          <Text weight="semibold" wrap="anywhere" dir="ltr">
-            {relayHeading(relay)}
-          </Text>
-          {relay.domain_suspended && (
-            <Text as="p" size="sm" tone="warning">
-              {t("client:admin.relays.domain_suspended")}
-            </Text>
-          )}
-          <Text size="sm" tone="muted" mono wrap="anywhere" dir="ltr">
-            {relay.url}
-          </Text>
-          {relay.inbox_url !== relay.url && (
-            <Text size="sm" tone="muted" mono wrap="anywhere" dir="ltr">
-              {relay.inbox_url}
-            </Text>
-          )}
-          {relay.actor_uri !== undefined && (
-            <Text size="sm" tone="muted" mono wrap="anywhere" dir="ltr">
-              {relay.actor_uri}
-            </Text>
-          )}
-        </Stack>
-      </TableRowHeader>
-      <TableCell>{t(protocolLabels[relay.protocol])}</TableCell>
-      <TableCell>
-        <Stack gap="1">
-          <span>{t(stateLabels[relay.state])}</span>
-          <Text size="sm" tone="muted">
-            <DateTime value={relay.state_changed_at} />
-          </Text>
-        </Stack>
-      </TableCell>
-      <TableCell>{t(relay.receive ? "client:admin.relays.receive.yes" : "client:admin.relays.receive.no")}</TableCell>
-      <TableCell numeric>{t("client:admin.relays.activities", { count: relay.taken_last_day })}</TableCell>
-      <TableCell numeric>
-        <Text {...(relay.dropped_last_day > 0 && { tone: "warning" as const })}>
-          {t("client:admin.relays.activities", { count: relay.dropped_last_day })}
-        </Text>
-      </TableCell>
-      <TableCell>
-        <Cluster gap="2" align="center">
-          {/* One button that leaves or joins again, so that focus stays on it when the state changes. */}
-          <Button
-            size="sm"
-            isPending={isPending}
-            aria-label={t(joined ? "client:admin.relays.unfollow_relay" : "client:admin.relays.follow_relay", { name })}
-            onPress={() => {
-              actions.setJoined(relay, !joined);
-            }}
-          >
-            {t(joined ? "client:admin.relays.unfollow" : "client:admin.relays.follow")}
-          </Button>
-          {!joined && <DeleteRelay relay={relay} actions={actions} isPending={isPending} />}
-        </Cluster>
-      </TableCell>
-    </TableRow>
+    <Cluster gap="2" align="center">
+      {/* One button that leaves or joins again, so that focus stays on it when the state changes. */}
+      <Button
+        size="sm"
+        isPending={isPending}
+        aria-label={t(joined ? "client:admin.relays.unfollow_relay" : "client:admin.relays.follow_relay", { name })}
+        onPress={() => {
+          actions.setJoined(relay, !joined);
+        }}
+      >
+        {t(joined ? "client:admin.relays.unfollow" : "client:admin.relays.follow")}
+      </Button>
+      {!joined && <DeleteRelay relay={relay} actions={actions} isPending={isPending} />}
+    </Cluster>
   );
 }
 

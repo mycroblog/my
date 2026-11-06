@@ -23,10 +23,6 @@ import {
   Spinner,
   Stack,
   StatusMessage,
-  TableCell,
-  TableColumnHeader,
-  TableRow,
-  TableRowHeader,
   Text,
   TextField,
 } from "@my/ui";
@@ -37,6 +33,7 @@ import {
   DateTime,
   domainInText,
   DomainName,
+  type RecordColumns,
   RecordTable,
   RequirePermission,
   Section,
@@ -184,12 +181,47 @@ function LinkCardDomainList() {
 
 function LinkCardDomainTable({ rules }: { rules: LinkCardDomainRule[] }) {
   const t = useT();
-  const tableRef = useRef<HTMLTableElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
   const removed = useFocusAfterRemoval(
-    tableRef,
+    listRef,
     rules.map((rule) => rule.domain),
   );
   const removal = useLinkCardDomainRemoval(removed);
+  const columns: RecordColumns<LinkCardDomainRule> = [
+    {
+      id: "domain",
+      header: t("client:admin.link_card_domains.domain"),
+      wrap: "anywhere",
+      cell: (rule) => (
+        <Stack gap="1">
+          <Text weight="semibold" wrap="anywhere">
+            <DomainName domain={rule.domain} />
+          </Text>
+          {rule.note !== "" && (
+            <Text size="sm" tone="muted" wrap="anywhere" dir="auto">
+              {rule.note}
+            </Text>
+          )}
+        </Stack>
+      ),
+    },
+    {
+      id: "mode",
+      header: t("client:admin.link_card_domains.mode"),
+      cell: (rule) => <RuleMode rule={rule} />,
+    },
+    {
+      id: "updated",
+      header: t("client:admin.link_card_domains.updated"),
+      cell: (rule) => <DateTime value={rule.updated_at} />,
+    },
+    {
+      id: "actions",
+      kind: "actions",
+      header: t("client:admin.list.column.actions"),
+      cell: (rule) => <RemoveRule rule={rule} removal={removal} />,
+    },
+  ];
   return (
     <Stack gap="3">
       <StatusMessage>{removal.status}</StatusMessage>
@@ -201,8 +233,10 @@ function LinkCardDomainTable({ rules }: { rules: LinkCardDomainRule[] }) {
       <RecordTable
         list={wholeList(rules)}
         caption={t("client:admin.link_card_domains.list.title")}
+        columns={columns}
         getId={(rule) => rule.domain}
-        tableRef={tableRef}
+        headingLevel={3}
+        listRef={listRef}
         empty={
           <EmptyState
             headingLevel={3}
@@ -210,72 +244,41 @@ function LinkCardDomainTable({ rules }: { rules: LinkCardDomainRule[] }) {
             description={t("client:admin.link_card_domains.empty.description")}
           />
         }
-        head={
-          <>
-            <TableColumnHeader>{t("client:admin.link_card_domains.domain")}</TableColumnHeader>
-            <TableColumnHeader>{t("client:admin.link_card_domains.mode")}</TableColumnHeader>
-            <TableColumnHeader>{t("client:admin.link_card_domains.updated")}</TableColumnHeader>
-            <TableColumnHeader>{t("client:admin.list.column.actions")}</TableColumnHeader>
-          </>
-        }
-      >
-        {(rule) => <LinkCardDomainRow rule={rule} removal={removal} />}
-      </RecordTable>
+      />
     </Stack>
   );
 }
 
-function LinkCardDomainRow({ rule, removal }: { rule: LinkCardDomainRule; removal: LinkCardDomainRemoval }) {
+/** The rule's mode, saved as soon as it is chosen. */
+function RuleMode({ rule }: { rule: LinkCardDomainRule }) {
   const t = useT();
   const labels = useSaveLabels();
   const mode = useLinkCardDomainMode(rule);
   return (
-    <TableRow data-row-id={rule.domain}>
-      <TableRowHeader wrap="anywhere">
-        <Stack gap="1">
-          <Text weight="semibold" wrap="anywhere">
-            <DomainName domain={rule.domain} />
-          </Text>
-          {rule.note !== "" && (
-            <Text size="sm" tone="muted" wrap="anywhere" dir="auto">
-              {rule.note}
-            </Text>
-          )}
-        </Stack>
-      </TableRowHeader>
-      <TableCell>
-        <Stack gap="1">
-          <Cluster gap="2" align="center">
-            <Select
-              aria-label={t("client:admin.link_card_domains.mode_of", { domain: domainInText(t, rule.domain) })}
-              value={mode.mode}
-              onChange={(key) => {
-                const choice = linkCardDomainModes.find((m) => m === key);
-                if (choice !== undefined) mode.change(choice);
-              }}
-            >
-              {linkCardDomainModes.map((choice) => (
-                <SelectItem key={choice} id={choice} textValue={t(modeLabels[choice])}>
-                  {t(modeLabels[choice])}
-                </SelectItem>
-              ))}
-            </Select>
-            <SaveIndicator state={mode.saveState} labels={labels} display="icon" />
-          </Cluster>
-          {mode.error !== undefined && (
-            <InlineError size="sm" alert>
-              {t("client:admin.link_card_domains.change_failed", { reason: mode.error })}
-            </InlineError>
-          )}
-        </Stack>
-      </TableCell>
-      <TableCell>
-        <DateTime value={rule.updated_at} />
-      </TableCell>
-      <TableCell>
-        <RemoveRule rule={rule} removal={removal} />
-      </TableCell>
-    </TableRow>
+    <Stack gap="1">
+      <Cluster gap="2" align="center">
+        <Select
+          aria-label={t("client:admin.link_card_domains.mode_of", { domain: domainInText(t, rule.domain) })}
+          value={mode.mode}
+          onChange={(key) => {
+            const choice = linkCardDomainModes.find((m) => m === key);
+            if (choice !== undefined) mode.change(choice);
+          }}
+        >
+          {linkCardDomainModes.map((choice) => (
+            <SelectItem key={choice} id={choice} textValue={t(modeLabels[choice])}>
+              {t(modeLabels[choice])}
+            </SelectItem>
+          ))}
+        </Select>
+        <SaveIndicator state={mode.saveState} labels={labels} display="icon" />
+      </Cluster>
+      {mode.error !== undefined && (
+        <InlineError size="sm" alert>
+          {t("client:admin.link_card_domains.change_failed", { reason: mode.error })}
+        </InlineError>
+      )}
+    </Stack>
   );
 }
 

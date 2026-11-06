@@ -36,10 +36,6 @@ import {
   Stack,
   StatusMessage,
   Tab,
-  TableCell,
-  TableColumnHeader,
-  TableRow,
-  TableRowHeader,
   TabList,
   TabPanel,
   Tabs,
@@ -70,7 +66,14 @@ import {
   useFormatTotals,
   utcDate,
 } from "../../costs";
-import { DateTime, Section, RecordTable, RequirePermission, useHasPermission } from "../../moderation";
+import {
+  DateTime,
+  Section,
+  type RecordColumns,
+  RecordTable,
+  RequirePermission,
+  useHasPermission,
+} from "../../moderation";
 import { instanceQueryOptions } from "../api/documents";
 import { FinancePublicationForm } from "./PublicationSettings";
 import {
@@ -1016,8 +1019,92 @@ function IncomeMovements({
   onFilterChange: (filter: IncomeMovementFilter) => void;
 }) {
   const t = useT();
+  const intl = useIntl();
+  const format = useFormatMoney();
+  const formatDay = useFormatDay();
   const list = useIncomeMovements(filter);
   const dates = useMovementDates(filter, onFilterChange);
+  const columns: RecordColumns<IncomeMovement> = [
+    {
+      id: "kind",
+      header: t("client:admin.finance.movements.filter.kind"),
+      wrap: "anywhere",
+      cell: (movement) => (
+        <Stack gap="1">
+          <span>{t(incomeKindLabels[movement.kind])}</span>
+          {movement.covers_starts_on !== undefined && movement.covers_ends_on !== undefined && (
+            <Cluster as="span" gap="1" rowGap="0">
+              <Text size="sm" tone="muted">
+                {t("client:admin.finance.movements.covers")}
+              </Text>
+              <Text size="sm" tone="muted">
+                {intl.formatDateTimeRange(utcDate(movement.covers_starts_on), utcDate(movement.covers_ends_on), {
+                  dateStyle: "medium",
+                  timeZone: "UTC",
+                })}
+              </Text>
+            </Cluster>
+          )}
+        </Stack>
+      ),
+    },
+    {
+      id: "occurred_at",
+      header: t("client:admin.finance.movements.occurred_at"),
+      cell: (movement) => (
+        <Stack gap="1">
+          <DateTime value={movement.occurred_at} />
+          <Text size="sm" tone="muted">
+            {formatDay(movement.occurred_on)}
+          </Text>
+        </Stack>
+      ),
+    },
+    {
+      id: "gross",
+      header: t("client:income.totals.gross"),
+      numeric: true,
+      wrap: "anywhere",
+      cell: (movement) => format(movement.gross),
+    },
+    {
+      id: "fee",
+      header: t("client:income.totals.fee"),
+      numeric: true,
+      wrap: "anywhere",
+      cell: (movement) => format(movement.fee),
+    },
+    {
+      id: "net",
+      header: t("client:income.totals.net"),
+      numeric: true,
+      wrap: "anywhere",
+      cell: (movement) => format(movement.net),
+    },
+    {
+      id: "subscriber",
+      header: t("client:admin.finance.movements.subscriber"),
+      wrap: "anywhere",
+      cell: (movement) => <Subscriber movement={movement} />,
+    },
+    {
+      id: "provider_id",
+      header: t("client:admin.finance.movements.provider_id.header"),
+      wrap: "anywhere",
+      cell: (movement) => (
+        <Stack gap="1">
+          <Text size="sm" mono wrap="anywhere" dir="ltr">
+            {movement.provider_id}
+          </Text>
+          {movement.parent_provider_id !== undefined && (
+            <Text size="sm" tone="muted" mono wrap="anywhere" dir="ltr">
+              {t("client:admin.finance.movements.parent")} {movement.parent_provider_id}
+            </Text>
+          )}
+        </Stack>
+      ),
+    },
+  ];
   const filtersRef = useRef<HTMLDivElement>(null);
   const filtered = filter.kind !== undefined || filter.from !== undefined || filter.to !== undefined;
   const kinds = [
@@ -1080,18 +1167,9 @@ function IncomeMovements({
         key={`${filter.kind ?? anyKind}:${filter.from ?? ""}:${filter.to ?? ""}`}
         list={list}
         caption={t("client:admin.finance.movements.title")}
+        columns={columns}
         getId={(movement) => movement.id}
-        head={
-          <>
-            <TableColumnHeader>{t("client:admin.finance.movements.filter.kind")}</TableColumnHeader>
-            <TableColumnHeader>{t("client:admin.finance.movements.occurred_at")}</TableColumnHeader>
-            <TableColumnHeader>{t("client:income.totals.gross")}</TableColumnHeader>
-            <TableColumnHeader>{t("client:income.totals.fee")}</TableColumnHeader>
-            <TableColumnHeader>{t("client:income.totals.net")}</TableColumnHeader>
-            <TableColumnHeader>{t("client:admin.finance.movements.subscriber")}</TableColumnHeader>
-            <TableColumnHeader>{t("client:admin.finance.movements.provider_id.header")}</TableColumnHeader>
-          </>
-        }
+        headingLevel={3}
         empty={
           filtered ? (
             <EmptyState
@@ -1108,9 +1186,7 @@ function IncomeMovements({
             />
           )
         }
-      >
-        {(movement) => <IncomeMovementRow movement={movement} />}
-      </RecordTable>
+      />
     </Stack>
   );
 }
@@ -1141,66 +1217,5 @@ function Subscriber({ movement }: { movement: IncomeMovement }) {
     <Text wrap="anywhere" dir="ltr">
       {handle}
     </Text>
-  );
-}
-
-function IncomeMovementRow({ movement }: { movement: IncomeMovement }) {
-  const t = useT();
-  const intl = useIntl();
-  const format = useFormatMoney();
-  const formatDay = useFormatDay();
-  return (
-    <TableRow data-row-id={movement.id}>
-      <TableRowHeader wrap="anywhere">
-        <Stack gap="1">
-          <span>{t(incomeKindLabels[movement.kind])}</span>
-          {movement.covers_starts_on !== undefined && movement.covers_ends_on !== undefined && (
-            <Cluster as="span" gap="1" rowGap="0">
-              <Text size="sm" tone="muted">
-                {t("client:admin.finance.movements.covers")}
-              </Text>
-              <Text size="sm" tone="muted">
-                {intl.formatDateTimeRange(utcDate(movement.covers_starts_on), utcDate(movement.covers_ends_on), {
-                  dateStyle: "medium",
-                  timeZone: "UTC",
-                })}
-              </Text>
-            </Cluster>
-          )}
-        </Stack>
-      </TableRowHeader>
-      <TableCell>
-        <Stack gap="1">
-          <DateTime value={movement.occurred_at} />
-          <Text size="sm" tone="muted">
-            {formatDay(movement.occurred_on)}
-          </Text>
-        </Stack>
-      </TableCell>
-      <TableCell numeric wrap="anywhere">
-        {format(movement.gross)}
-      </TableCell>
-      <TableCell numeric wrap="anywhere">
-        {format(movement.fee)}
-      </TableCell>
-      <TableCell numeric wrap="anywhere">
-        {format(movement.net)}
-      </TableCell>
-      <TableCell wrap="anywhere">
-        <Subscriber movement={movement} />
-      </TableCell>
-      <TableCell wrap="anywhere">
-        <Stack gap="1">
-          <Text size="sm" mono wrap="anywhere" dir="ltr">
-            {movement.provider_id}
-          </Text>
-          {movement.parent_provider_id !== undefined && (
-            <Text size="sm" tone="muted" mono wrap="anywhere" dir="ltr">
-              {t("client:admin.finance.movements.parent")} {movement.parent_provider_id}
-            </Text>
-          )}
-        </Stack>
-      </TableCell>
-    </TableRow>
   );
 }

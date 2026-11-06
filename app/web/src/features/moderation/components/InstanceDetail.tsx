@@ -2,26 +2,20 @@
 // A remote server's page below its heading (federation.md §7.3): its health, why it is in its state, when
 // deliveries last resumed, the button that resumes them, the way to its moderation actions (FR-702), the refetch
 // of its accounts' posts (FR-407), and the history of its availability, newest first.
-import {
-  Button,
-  Card,
-  DescriptionItem,
-  DescriptionList,
-  EmptyState,
-  Heading,
-  Hint,
-  Link,
-  Stack,
-  TableCell,
-  TableColumnHeader,
-  TableRow,
-  TableRowHeader,
-} from "@my/ui";
+import { Button, Card, DescriptionItem, DescriptionList, EmptyState, Heading, Hint, Link, Stack } from "@my/ui";
 import { useId } from "react";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
 import type { AvailabilityEvent } from "../api/staff";
 import { useInstance } from "../hooks/useInstances";
-import { Day, DateTime, Section, InstanceStateLabel, RecordTable, RequirePermission } from "./parts";
+import {
+  Day,
+  DateTime,
+  Section,
+  InstanceStateLabel,
+  type RecordColumns,
+  RecordTable,
+  RequirePermission,
+} from "./parts";
 import { RefetchStatusesSection } from "./RefetchStatuses";
 
 const eventLabels: Readonly<Record<AvailabilityEvent["kind"], ClientMessageKey>> = {
@@ -57,6 +51,15 @@ function InstanceView({ domain }: InstanceDetailProps) {
   // last resumed. Both are among the loaded events only if the server has any.
   const latest = events.items[0];
   const resumed = events.items.find((event) => event.kind === "marked_available");
+  const historyColumns: RecordColumns<AvailabilityEvent> = [
+    { id: "event", header: t("client:admin.instance.column.event"), cell: (event) => t(eventLabels[event.kind]) },
+    {
+      id: "occurred_at",
+      header: t("client:admin.instance.column.occurred_at"),
+      cell: (event) => <DateTime value={event.occurred_at} />,
+    },
+    { id: "reason", header: t("client:admin.instance.reason"), cell: (event) => t(reasonLabels[event.reason]) },
+  ];
   return (
     <Stack gap="6">
       <Card>
@@ -122,26 +125,11 @@ function InstanceView({ domain }: InstanceDetailProps) {
         <RecordTable
           list={events}
           caption={t("client:admin.instance.history.title")}
+          columns={historyColumns}
           getId={(event) => event.id}
+          headingLevel={3}
           empty={<EmptyState headingLevel={3} heading={t("client:admin.instance.history.empty")} />}
-          head={
-            <>
-              <TableColumnHeader>{t("client:admin.instance.column.event")}</TableColumnHeader>
-              <TableColumnHeader>{t("client:admin.instance.column.occurred_at")}</TableColumnHeader>
-              <TableColumnHeader>{t("client:admin.instance.reason")}</TableColumnHeader>
-            </>
-          }
-        >
-          {(event) => (
-            <TableRow data-row-id={event.id}>
-              <TableRowHeader>{t(eventLabels[event.kind])}</TableRowHeader>
-              <TableCell>
-                <DateTime value={event.occurred_at} />
-              </TableCell>
-              <TableCell>{t(reasonLabels[event.reason])}</TableCell>
-            </TableRow>
-          )}
-        </RecordTable>
+        />
       </Stack>
     </Stack>
   );

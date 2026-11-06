@@ -7,7 +7,6 @@
 // The authors' appeals of the posts that the review of local posts refused come first, as they await a moderator
 // (HookAppeals.tsx).
 import {
-  Box,
   Button,
   Card,
   DescriptionItem,
@@ -26,7 +25,6 @@ import {
   TableRow,
   TableRowHeader,
   Text,
-  VisuallyHidden,
 } from "@my/ui";
 import { useState } from "react";
 import { useIntl } from "react-intl";
@@ -50,7 +48,7 @@ import {
   useOverrideHookDecision,
 } from "../hooks/useHookDecisions";
 import { HookAppeals } from "./HookAppeals";
-import { DateTime, RecordTable, RequirePermission, Section } from "./parts";
+import { DateTime, type RecordColumns, RecordTable, RequirePermission, Section } from "./parts";
 import { AccountByIdLabel } from "./reportParts";
 
 type HookRow = HookSummary["hooks"][number];
@@ -189,106 +187,120 @@ function HookDecisionList({
   const t = useT();
   const list = useHookDecisions(filter);
   const override = useOverrideHookDecision(onOverridden);
+  const columns: RecordColumns<HookDecision> = [
+    {
+      id: "subject",
+      header: t("client:admin.hook_decisions.column.subject"),
+      wrap: "anywhere",
+      // A URI or another key, which reads left to right in every locale.
+      cell: (decision) => <span dir="ltr">{decision.subject_key}</span>,
+    },
+    {
+      id: "hook",
+      header: t("client:admin.hook_decisions.column.hook"),
+      cell: (decision) => t(hookNameLabels[decision.hook]),
+    },
+    {
+      id: "outcome",
+      header: t("client:admin.hook_decisions.column.outcome"),
+      cell: (decision) => t(hookOutcomeLabels[decision.outcome]),
+    },
+    {
+      id: "mode",
+      header: t("client:admin.hook_decisions.column.mode"),
+      cell: (decision) => t(hookModeLabels[decision.mode]),
+    },
+    {
+      id: "decided_at",
+      header: t("client:admin.hook_decisions.column.decided_at"),
+      cell: (decision) => <DateTime value={decision.decided_at} />,
+    },
+    {
+      id: "details",
+      header: t("client:admin.hook_decisions.column.details"),
+      wrap: "anywhere",
+      cell: (decision) => <HookDecisionDetails decision={decision} />,
+    },
+    {
+      id: "actions",
+      kind: "actions",
+      header: t("client:admin.list.column.actions"),
+      cell: (decision) => <OverrideButton decision={decision} override={override} />,
+    },
+  ];
   return (
-    <Box>
-      <RecordTable
-        list={list}
-        caption={t("client:admin.hook_decisions.list.title")}
-        getId={(decision) => decision.id}
-        empty={<EmptyState headingLevel={3} heading={t("client:admin.hook_decisions.empty")} />}
-        head={
-          <>
-            <TableColumnHeader>{t("client:admin.hook_decisions.column.subject")}</TableColumnHeader>
-            <TableColumnHeader>{t("client:admin.hook_decisions.column.hook")}</TableColumnHeader>
-            <TableColumnHeader>{t("client:admin.hook_decisions.column.outcome")}</TableColumnHeader>
-            <TableColumnHeader>{t("client:admin.hook_decisions.column.mode")}</TableColumnHeader>
-            <TableColumnHeader>{t("client:admin.hook_decisions.column.decided_at")}</TableColumnHeader>
-            <TableColumnHeader>{t("client:admin.hook_decisions.column.details")}</TableColumnHeader>
-            <TableColumnHeader>
-              <VisuallyHidden>{t("client:admin.list.column.actions")}</VisuallyHidden>
-            </TableColumnHeader>
-          </>
-        }
-      >
-        {(decision) => <HookDecisionRow decision={decision} override={override} />}
-      </RecordTable>
-    </Box>
+    <RecordTable
+      list={list}
+      caption={t("client:admin.hook_decisions.list.title")}
+      columns={columns}
+      getId={(decision) => decision.id}
+      headingLevel={3}
+      empty={<EmptyState headingLevel={3} heading={t("client:admin.hook_decisions.empty")} />}
+    />
   );
 }
 
-function HookDecisionRow({ decision, override }: { decision: HookDecision; override: OverrideHookDecision }) {
+function HookDecisionDetails({ decision }: { decision: HookDecision }) {
   const t = useT();
   const intl = useIntl();
   const now = useNow();
-  const hook = t(hookNameLabels[decision.hook]);
-  const outcome = t(hookOutcomeLabels[decision.outcome]);
   return (
-    <TableRow data-row-id={decision.id}>
-      <TableRowHeader wrap="anywhere">
-        {/* A URI or another key, which reads left to right in every locale. */}
-        <span dir="ltr">{decision.subject_key}</span>
-      </TableRowHeader>
-      <TableCell>{hook}</TableCell>
-      <TableCell>{outcome}</TableCell>
-      <TableCell>{t(hookModeLabels[decision.mode])}</TableCell>
-      <TableCell>
-        <DateTime value={decision.decided_at} />
-      </TableCell>
-      <TableCell wrap="anywhere">
-        <DescriptionList>
-          {decision.account_id !== undefined && (
-            <DescriptionItem term={t("client:admin.hook_decisions.account")}>
-              <AccountByIdLabel id={decision.account_id} />
-            </DescriptionItem>
+    <DescriptionList>
+      {decision.account_id !== undefined && (
+        <DescriptionItem term={t("client:admin.hook_decisions.account")}>
+          <AccountByIdLabel id={decision.account_id} />
+        </DescriptionItem>
+      )}
+      <DescriptionItem term={t("client:admin.hook_decisions.latency")}>
+        {t("client:admin.hook_decisions.latency.value", { value: intl.formatNumber(decision.latency_ms) })}
+      </DescriptionItem>
+      {decision.reason !== undefined && (
+        <DescriptionItem term={t("client:admin.hook_decisions.reason")}>
+          {t(hookReasonLabels[decision.reason])}
+        </DescriptionItem>
+      )}
+      {decision.note !== undefined && (
+        <DescriptionItem term={t("client:admin.hook_decisions.note")}>
+          {/* Written by the plugin, in any language. */}
+          <Text dir="auto">{decision.note}</Text>
+        </DescriptionItem>
+      )}
+      {decision.overridden_at !== undefined && (
+        <DescriptionItem term={t("client:admin.hook_decisions.overridden_at")}>
+          <DateTime value={decision.overridden_at} />
+        </DescriptionItem>
+      )}
+      {decision.overridable && decision.restorable_until !== undefined && (
+        <DescriptionItem term={t("client:admin.hook_decisions.restorable_until")}>
+          {Date.parse(decision.restorable_until) > now ? (
+            <DateTime value={decision.restorable_until} />
+          ) : (
+            t("client:admin.hook_decisions.restorable_gone")
           )}
-          <DescriptionItem term={t("client:admin.hook_decisions.latency")}>
-            {t("client:admin.hook_decisions.latency.value", { value: intl.formatNumber(decision.latency_ms) })}
-          </DescriptionItem>
-          {decision.reason !== undefined && (
-            <DescriptionItem term={t("client:admin.hook_decisions.reason")}>
-              {t(hookReasonLabels[decision.reason])}
-            </DescriptionItem>
-          )}
-          {decision.note !== undefined && (
-            <DescriptionItem term={t("client:admin.hook_decisions.note")}>
-              {/* Written by the plugin, in any language. */}
-              <Text dir="auto">{decision.note}</Text>
-            </DescriptionItem>
-          )}
-          {decision.overridden_at !== undefined && (
-            <DescriptionItem term={t("client:admin.hook_decisions.overridden_at")}>
-              <DateTime value={decision.overridden_at} />
-            </DescriptionItem>
-          )}
-          {decision.overridable && decision.restorable_until !== undefined && (
-            <DescriptionItem term={t("client:admin.hook_decisions.restorable_until")}>
-              {Date.parse(decision.restorable_until) > now ? (
-                <DateTime value={decision.restorable_until} />
-              ) : (
-                t("client:admin.hook_decisions.restorable_gone")
-              )}
-            </DescriptionItem>
-          )}
-        </DescriptionList>
-      </TableCell>
-      <TableCell>
-        {decision.overridable && (
-          <Button
-            size="sm"
-            isPending={override.pendingIds.includes(decision.id)}
-            aria-label={t("client:admin.hook_decisions.override_action", {
-              hook,
-              outcome,
-              date: intl.formatDate(decision.decided_at, { dateStyle: "medium", timeStyle: "short" }),
-            })}
-            onPress={() => {
-              override.override(decision);
-            }}
-          >
-            {t("client:admin.hook_decisions.override")}
-          </Button>
-        )}
-      </TableCell>
-    </TableRow>
+        </DescriptionItem>
+      )}
+    </DescriptionList>
+  );
+}
+
+function OverrideButton({ decision, override }: { decision: HookDecision; override: OverrideHookDecision }) {
+  const t = useT();
+  const intl = useIntl();
+  if (!decision.overridable) return null;
+  return (
+    <Button
+      size="sm"
+      isPending={override.pendingIds.includes(decision.id)}
+      aria-label={t("client:admin.hook_decisions.override_action", {
+        hook: t(hookNameLabels[decision.hook]),
+        outcome: t(hookOutcomeLabels[decision.outcome]),
+        date: intl.formatDate(decision.decided_at, { dateStyle: "medium", timeStyle: "short" }),
+      })}
+      onPress={() => {
+        override.override(decision);
+      }}
+    >
+      {t("client:admin.hook_decisions.override")}
+    </Button>
   );
 }

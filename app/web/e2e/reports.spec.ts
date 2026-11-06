@@ -7,7 +7,16 @@
 // server sends (names, handles, texts).
 import type { Page, Route } from "@playwright/test";
 import type { components } from "@mycroblog/mykit";
-import { expect, expectNoAxeViolations, expectNoHorizontalScroll, test } from "./fixtures";
+import {
+  expect,
+  expectNoAxeViolations,
+  expectNoHorizontalScroll,
+  isCardForm,
+  recordRowHeaders,
+  recordRows,
+  recordTable,
+  test,
+} from "./fixtures";
 
 type Schemas = components["schemas"];
 type Report = Schemas["AdminReportDetail"];
@@ -229,12 +238,9 @@ async function moderatorServer(page: Page) {
   return actions;
 }
 
-/** The rows of the queue: the table's body rows, each headed by its report's link. */
+/** The rows of the queue: the table's body rows (its cards at narrow widths), each headed by its report's link. */
 function rows(page: Page) {
-  return page
-    .getByRole("main")
-    .getByRole("row")
-    .filter({ has: page.getByRole("rowheader") });
+  return recordRows(recordTable(page.getByRole("main")));
 }
 
 test.describe("page /moderation/reports", () => {
@@ -278,17 +284,29 @@ test.describe("reports", () => {
     await page.goto("/moderation/reports");
     await expect(rows(page)).toHaveCount(2);
 
-    await expect(rows(page).first()).toMatchAriaSnapshot(`
-      - row:
-        - rowheader:
-          - link /@maximiliana/
-          - paragraph: ${comment}
-        - cell
-        - cell /@instance\\.actor@${longDomain.replaceAll(".", "\\.")}/
-        - cell
-        - cell:
-          - time
-    `);
+    // The name of the report (its link, the number of posts and the start of the comment), then its facts.
+    const first = rows(page).first();
+    await expect(recordRowHeaders(first).getByRole("link")).toHaveAccessibleName(/@maximiliana/);
+    await expect(recordRowHeaders(first)).toContainText(comment);
+    if (await isCardForm(recordTable(page.getByRole("main")))) {
+      await expect(first.getByRole("heading", { level: 2 })).toBeVisible();
+      await expect(first.getByRole("definition")).toHaveCount(4);
+      await expect(first.getByRole("definition").nth(1)).toHaveText(
+        new RegExp(`@instance\\.actor@${longDomain.replaceAll(".", "\\.")}`),
+      );
+      await expect(first.getByRole("definition").last().getByRole("time")).toBeVisible();
+    } else {
+      await expect(first).toMatchAriaSnapshot(`
+        - row:
+          - rowheader:
+            - link /@maximiliana/
+          - cell
+          - cell /@instance\\.actor@${longDomain.replaceAll(".", "\\.")}/
+          - cell
+          - cell:
+            - time
+      `);
+    }
 
     // By keyboard: the row's link opens the report's page, whose heading takes focus.
     await rows(page).first().getByRole("link").focus();

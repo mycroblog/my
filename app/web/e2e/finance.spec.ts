@@ -7,7 +7,7 @@
 // with the locale, so the elements are found by role and by the names in the project's locale catalog.
 import type { Page, Route } from "@playwright/test";
 import type { components } from "@mycroblog/mykit";
-import { expect, expectNoAxeViolations, expectNoHorizontalScroll, test } from "./fixtures";
+import { expect, expectNoAxeViolations, expectNoHorizontalScroll, recordRows, recordTable, test } from "./fixtures";
 import { readCatalog } from "./catalog.ts";
 
 type Schemas = components["schemas"];
@@ -362,7 +362,8 @@ test("the income on the costs screen, with its money movements", async ({ page, 
     income.getByText("A plan with a rather long name that has to wrap on the narrowest screens"),
   ).toHaveAttribute("dir", "auto");
   const movementsRegion = main.getByRole("region", { name: message("admin.finance.movements.title"), exact: true });
-  await expect(movementsRegion.getByRole("row")).toHaveCount(3);
+  // The rows of the movements, a table or (at narrow widths) cards.
+  await expect(recordRows(recordTable(movementsRegion))).toHaveCount(2);
   await expect(movementsRegion.getByText("txn_1PaymentWithARatherLongIdentifierThatDoesNotWrap")).toHaveAttribute(
     "dir",
     "ltr",
@@ -378,7 +379,7 @@ test("the income on the costs screen, with its money movements", async ({ page, 
   await page.keyboard.press("Enter");
   await page.getByRole("option", { name: message("admin.finance.movements.kind.fee"), exact: true }).press("Enter");
   await expect(page).toHaveURL(/kind=fee/u);
-  await expect(movementsRegion.getByRole("row")).toHaveCount(2);
+  await expect(recordRows(recordTable(movementsRegion))).toHaveCount(1);
   await expect(
     movementsRegion.getByRole("button", { name: message("admin.finance.movements.filter.clear"), exact: true }),
   ).toBeVisible();

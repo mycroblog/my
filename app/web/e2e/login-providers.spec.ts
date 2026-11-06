@@ -6,7 +6,7 @@
 // by role, by the names in the project's locale catalog and by what the server sends.
 import type { Page, Route } from "@playwright/test";
 import type { components } from "@mycroblog/mykit";
-import { expect, expectNoAxeViolations, expectNoHorizontalScroll, test } from "./fixtures";
+import { expect, expectNoAxeViolations, expectNoHorizontalScroll, recordRowHeaders, test } from "./fixtures";
 import { readCatalog } from "./catalog.ts";
 
 type Schemas = components["schemas"];
@@ -183,7 +183,7 @@ test.describe("login providers", () => {
     await expect(form.getByText(callbackUrl, { exact: true })).toBeVisible();
     expect(sent).toEqual(["create oidc https://sso.example my-client"]);
     const list = main.getByRole("region", { name: message("admin.login_providers.list.title"), exact: true });
-    await expect(list.getByRole("rowheader", { name: new RegExp(`^${displayName}`, "u") })).toBeVisible();
+    await expect(recordRowHeaders(list).filter({ hasText: displayName })).toBeVisible();
     await expectNoAxeViolations(makeAxeBuilder);
     await expectNoHorizontalScroll(page);
 

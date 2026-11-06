@@ -6,7 +6,15 @@
 // locale, so the structure is checked by role, the names in the project's locale catalog and the identifiers the
 // server sends (domains, job types).
 import type { Page, Route } from "@playwright/test";
-import { expect, expectNoAxeViolations, expectNoHorizontalScroll, test } from "./fixtures";
+import {
+  expect,
+  expectNoAxeViolations,
+  expectNoHorizontalScroll,
+  recordRowHeaders,
+  recordRows,
+  recordTable,
+  test,
+} from "./fixtures";
 import { readCatalog } from "./catalog.ts";
 
 /** The client message `key` in the project's locale. */
@@ -249,10 +257,11 @@ test.describe("remote servers", () => {
     await page.goto("/moderation/instances");
     const main = page.getByRole("main");
 
-    const servers = main.getByRole("table");
-    await expect(servers.getByRole("rowheader")).toHaveText([longDomain, "flaky.example"]);
-    await expect(servers.getByRole("row").nth(1).getByRole("link", { name: longDomain })).toBeVisible();
-    await expect(servers.getByRole("row").nth(2).getByRole("link", { name: "flaky.example" })).toBeVisible();
+    // A table, or cards at narrow widths: either way one row per server, named by its link.
+    const servers = recordTable(main);
+    await expect(recordRowHeaders(servers)).toHaveText([longDomain, "flaky.example"]);
+    await expect(recordRows(servers).nth(0).getByRole("link", { name: longDomain })).toBeVisible();
+    await expect(recordRows(servers).nth(1).getByRole("link", { name: "flaky.example" })).toBeVisible();
     // The first server's state change and the last failure day of each.
     await expect(servers.locator("time")).toHaveCount(3);
 
@@ -261,9 +270,8 @@ test.describe("remote servers", () => {
     const resume = main.getByRole("button", { name: message("admin.instance.mark_available"), exact: true });
     await resume.click();
     await expect(resume).toBeHidden();
-    await expect(
-      main.getByRole("table", { name: message("admin.instance.history.title"), exact: true }).getByRole("rowheader"),
-    ).toHaveCount(2);
+    // The history is the page's one list of records.
+    await expect(recordRowHeaders(recordTable(main))).toHaveCount(2);
     expect(actions).toEqual([`POST /admin/instances/${longDomain}/mark_available`]);
     await expectNoAxeViolations(makeAxeBuilder);
     await expectNoHorizontalScroll(page);

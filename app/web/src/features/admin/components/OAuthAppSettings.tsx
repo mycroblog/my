@@ -18,10 +18,6 @@ import {
   Stack,
   StatusMessage,
   Tab,
-  TableCell,
-  TableColumnHeader,
-  TableRow,
-  TableRowHeader,
   TabList,
   TabPanel,
   Tabs,
@@ -30,7 +26,7 @@ import {
 } from "@my/ui";
 import { useState } from "react";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
-import { DateTime, Section, RecordTable, RequirePermission } from "../../moderation";
+import { DateTime, Section, type RecordColumns, RecordTable, RequirePermission } from "../../moderation";
 import {
   hostLimit,
   type HostDenial,
@@ -159,11 +155,54 @@ function ClientsTab({ filter, onFilterChange }: Pick<OAuthAppSettingsProps, "fil
 function ClientList({ filter, actions }: { filter: OAuthClientFilter; actions: OAuthAppActions }) {
   const t = useT();
   const clients = useOAuthClients(filter);
+  const columns: RecordColumns<OAuthClient> = [
+    {
+      id: "app",
+      header: t("client:admin.oauth_apps.column.app"),
+      wrap: "anywhere",
+      cell: (client) => <ClientName client={client} />,
+    },
+    {
+      id: "registration",
+      header: t("client:admin.oauth_apps.column.registration"),
+      cell: (client) => (
+        <Stack gap="1">
+          <span>{t(registrationLabels[client.registration])}</span>
+          <Text size="sm" tone="muted">
+            {t(client.confidential ? "client:admin.oauth_apps.confidential" : "client:admin.oauth_apps.public")}
+          </Text>
+        </Stack>
+      ),
+    },
+    {
+      id: "scope",
+      header: t("client:admin.oauth_apps.column.scope"),
+      wrap: "anywhere",
+      cell: (client) => (
+        <Text size="sm" mono dir="ltr">
+          {client.scopes.join(" ")}
+        </Text>
+      ),
+    },
+    {
+      id: "created",
+      header: t("client:admin.oauth_apps.column.created"),
+      cell: (client) => <DateTime value={client.created_at} />,
+    },
+    {
+      id: "actions",
+      kind: "actions",
+      header: t("client:admin.list.column.actions"),
+      cell: (client) => <ClientActions client={client} actions={actions} />,
+    },
+  ];
   return (
     <RecordTable
       list={clients}
       caption={t("client:admin.oauth_apps.list.title")}
+      columns={columns}
       getId={(client) => client.id}
+      headingLevel={3}
       empty={
         <EmptyState
           headingLevel={3}
@@ -171,99 +210,74 @@ function ClientList({ filter, actions }: { filter: OAuthClientFilter; actions: O
           description={t("client:admin.oauth_apps.empty.description")}
         />
       }
-      head={
-        <>
-          <TableColumnHeader>{t("client:admin.oauth_apps.column.app")}</TableColumnHeader>
-          <TableColumnHeader>{t("client:admin.oauth_apps.column.registration")}</TableColumnHeader>
-          <TableColumnHeader>{t("client:admin.oauth_apps.column.scope")}</TableColumnHeader>
-          <TableColumnHeader>{t("client:admin.oauth_apps.column.created")}</TableColumnHeader>
-          <TableColumnHeader>{t("client:admin.list.column.actions")}</TableColumnHeader>
-        </>
-      }
-    >
-      {(client) => <ClientRow client={client} actions={actions} />}
-    </RecordTable>
+    />
   );
 }
 
-function ClientRow({ client, actions }: { client: OAuthClient; actions: OAuthAppActions }) {
+/** The app's name and state, its client ID, its website and who registered it. */
+function ClientName({ client }: { client: OAuthClient }) {
+  const t = useT();
+  return (
+    <Stack gap="1">
+      <Cluster gap="2" align="center">
+        <Text weight="semibold" wrap="anywhere" dir="auto">
+          {client.name}
+        </Text>
+        {client.state === "disabled" && (
+          <Text size="sm" tone="danger" weight="semibold">
+            {t("client:admin.oauth_apps.disabled")}
+          </Text>
+        )}
+      </Cluster>
+      <Text size="sm" tone="muted" mono wrap="anywhere" dir="ltr">
+        {client.client_id}
+      </Text>
+      {client.website !== undefined && (
+        <Text size="sm" tone="muted" wrap="anywhere" dir="ltr">
+          {client.website}
+        </Text>
+      )}
+      {client.owner !== undefined && (
+        <Text size="sm" tone="muted" wrap="anywhere">
+          {t("client:admin.oauth_apps.owner", { handle: `\u2068@${client.owner.acct}\u2069` })}
+        </Text>
+      )}
+      {client.owner_deleted && (
+        <Text size="sm" tone="muted" wrap="anywhere">
+          {t("client:admin.oauth_apps.owner.deleted")}
+        </Text>
+      )}
+    </Stack>
+  );
+}
+
+/** Enabling or disabling the app, and denying the host of its metadata document. */
+function ClientActions({ client, actions }: { client: OAuthClient; actions: OAuthAppActions }) {
   const t = useT();
   const isPending = actions.pendingId === client.id;
   const host = metadataHost(client);
   return (
-    <TableRow data-row-id={client.id}>
-      <TableRowHeader wrap="anywhere">
-        <Stack gap="1">
-          <Cluster gap="2" align="center">
-            <Text weight="semibold" wrap="anywhere" dir="auto">
-              {client.name}
-            </Text>
-            {client.state === "disabled" && (
-              <Text size="sm" tone="danger" weight="semibold">
-                {t("client:admin.oauth_apps.disabled")}
-              </Text>
-            )}
-          </Cluster>
-          <Text size="sm" tone="muted" mono wrap="anywhere" dir="ltr">
-            {client.client_id}
-          </Text>
-          {client.website !== undefined && (
-            <Text size="sm" tone="muted" wrap="anywhere" dir="ltr">
-              {client.website}
-            </Text>
-          )}
-          {client.owner !== undefined && (
-            <Text size="sm" tone="muted" wrap="anywhere">
-              {t("client:admin.oauth_apps.owner", { handle: `\u2068@${client.owner.acct}\u2069` })}
-            </Text>
-          )}
-          {client.owner_deleted && (
-            <Text size="sm" tone="muted" wrap="anywhere">
-              {t("client:admin.oauth_apps.owner.deleted")}
-            </Text>
-          )}
-        </Stack>
-      </TableRowHeader>
-      <TableCell>
-        <Stack gap="1">
-          <span>{t(registrationLabels[client.registration])}</span>
-          <Text size="sm" tone="muted">
-            {t(client.confidential ? "client:admin.oauth_apps.confidential" : "client:admin.oauth_apps.public")}
-          </Text>
-        </Stack>
-      </TableCell>
-      <TableCell wrap="anywhere">
-        <Text size="sm" mono dir="ltr">
-          {client.scopes.join(" ")}
+    <Cluster gap="2" align="center">
+      {client.registration === "first_party" ? (
+        <Text size="sm" tone="muted">
+          {t("client:admin.oauth_apps.first_party_note")}
         </Text>
-      </TableCell>
-      <TableCell>
-        <DateTime value={client.created_at} />
-      </TableCell>
-      <TableCell>
-        <Cluster gap="2" align="center">
-          {client.registration === "first_party" ? (
-            <Text size="sm" tone="muted">
-              {t("client:admin.oauth_apps.first_party_note")}
-            </Text>
-          ) : client.state === "disabled" ? (
-            <Button
-              size="sm"
-              isPending={isPending}
-              aria-label={t("client:admin.oauth_apps.enable_app", { name: appName(client) })}
-              onPress={() => {
-                actions.setDisabled(client, false);
-              }}
-            >
-              {t("client:admin.oauth_apps.enable")}
-            </Button>
-          ) : (
-            <DisableApp client={client} actions={actions} />
-          )}
-          {host !== undefined && <DenyAppHost host={host} actions={actions} />}
-        </Cluster>
-      </TableCell>
-    </TableRow>
+      ) : client.state === "disabled" ? (
+        <Button
+          size="sm"
+          isPending={isPending}
+          aria-label={t("client:admin.oauth_apps.enable_app", { name: appName(client) })}
+          onPress={() => {
+            actions.setDisabled(client, false);
+          }}
+        >
+          {t("client:admin.oauth_apps.enable")}
+        </Button>
+      ) : (
+        <DisableApp client={client} actions={actions} />
+      )}
+      {host !== undefined && <DenyAppHost host={host} actions={actions} />}
+    </Cluster>
   );
 }
 
@@ -328,51 +342,27 @@ function HostsTab() {
   const t = useT();
   const actions = useOAuthAppActions();
   const denials = useHostDenials();
-  return (
-    <Stack gap="4">
-      <Hint size="inherit">{t("client:admin.oauth_apps.hosts.description")}</Hint>
-      <div>
-        <DenyHostByName actions={actions} />
-      </div>
-      <ActionResult actions={actions} />
-      <RecordTable
-        list={denials}
-        caption={t("client:admin.oauth_apps.hosts.title")}
-        getId={(denial) => denial.id}
-        empty={
-          <EmptyState
-            headingLevel={3}
-            heading={t("client:admin.oauth_apps.hosts.empty")}
-            description={t("client:admin.oauth_apps.hosts.empty.description")}
-          />
-        }
-        head={
-          <>
-            <TableColumnHeader>{t("client:admin.oauth_apps.hosts.column.host")}</TableColumnHeader>
-            <TableColumnHeader>{t("client:admin.oauth_apps.hosts.column.denied")}</TableColumnHeader>
-            <TableColumnHeader>{t("client:admin.list.column.actions")}</TableColumnHeader>
-          </>
-        }
-      >
-        {(denial) => <DenialRow denial={denial} actions={actions} />}
-      </RecordTable>
-    </Stack>
-  );
-}
-
-function DenialRow({ denial, actions }: { denial: HostDenial; actions: OAuthAppActions }) {
-  const t = useT();
-  return (
-    <TableRow data-row-id={denial.id}>
-      <TableRowHeader wrap="anywhere">
+  const columns: RecordColumns<HostDenial> = [
+    {
+      id: "host",
+      header: t("client:admin.oauth_apps.hosts.column.host"),
+      wrap: "anywhere",
+      cell: (denial) => (
         <Text weight="semibold" mono wrap="anywhere" dir="ltr">
           {denial.host}
         </Text>
-      </TableRowHeader>
-      <TableCell>
-        <DateTime value={denial.denied_at} />
-      </TableCell>
-      <TableCell>
+      ),
+    },
+    {
+      id: "denied",
+      header: t("client:admin.oauth_apps.hosts.column.denied"),
+      cell: (denial) => <DateTime value={denial.denied_at} />,
+    },
+    {
+      id: "actions",
+      kind: "actions",
+      header: t("client:admin.list.column.actions"),
+      cell: (denial) => (
         <Button
           size="sm"
           isPending={actions.pendingId === denial.host}
@@ -383,8 +373,31 @@ function DenialRow({ denial, actions }: { denial: HostDenial; actions: OAuthAppA
         >
           {t("client:admin.oauth_apps.hosts.allow")}
         </Button>
-      </TableCell>
-    </TableRow>
+      ),
+    },
+  ];
+  return (
+    <Stack gap="4">
+      <Hint size="inherit">{t("client:admin.oauth_apps.hosts.description")}</Hint>
+      <div>
+        <DenyHostByName actions={actions} />
+      </div>
+      <ActionResult actions={actions} />
+      <RecordTable
+        list={denials}
+        caption={t("client:admin.oauth_apps.hosts.title")}
+        columns={columns}
+        getId={(denial) => denial.id}
+        headingLevel={3}
+        empty={
+          <EmptyState
+            headingLevel={3}
+            heading={t("client:admin.oauth_apps.hosts.empty")}
+            description={t("client:admin.oauth_apps.hosts.empty.description")}
+          />
+        }
+      />
+    </Stack>
   );
 }
 

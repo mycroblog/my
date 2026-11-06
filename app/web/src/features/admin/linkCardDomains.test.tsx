@@ -57,6 +57,28 @@ describe("the link card domains screen", () => {
     expect(within(stop).getAllByText("Stop fetching").length).toBeGreaterThan(0);
   });
 
+  test("shows a long list one page of 40 rules at a time", async () => {
+    server.use(
+      answering(
+        Array.from({ length: 1000 }, (_, index) =>
+          linkCardDomainRuleFixture(`site-${String(index).padStart(4, "0")}.example`),
+        ),
+      ),
+    );
+    const { user } = await renderApp({ path });
+    const list = await screen.findByRole("region", { name: "Rules" });
+
+    // The header row and one page of rules.
+    expect(await within(list).findAllByRole("row")).toHaveLength(41);
+    expect(within(list).getByRole("rowheader", { name: /^site-0000\.example/u })).toBeInTheDocument();
+    expect(within(list).queryByRole("rowheader", { name: /^site-0040\.example/u })).not.toBeInTheDocument();
+
+    await user.click(within(list).getByRole("button", { name: "Next" }));
+    expect(await within(list).findByRole("rowheader", { name: /^site-0040\.example/u })).toBeInTheDocument();
+    expect(within(list).getAllByRole("row")).toHaveLength(41);
+    expect(within(list).queryByRole("rowheader", { name: /^site-0000\.example/u })).not.toBeInTheDocument();
+  });
+
   test("shows a failure of the first load in place, and tries again", async () => {
     let fail = true;
     server.use(

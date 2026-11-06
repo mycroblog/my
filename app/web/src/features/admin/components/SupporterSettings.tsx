@@ -33,10 +33,6 @@ import {
   Stack,
   StatusMessage,
   Switch,
-  TableCell,
-  TableColumnHeader,
-  TableRow,
-  TableRowHeader,
   Text,
   TextArea,
   TextField,
@@ -53,6 +49,7 @@ import {
   Section,
   type Permission,
   RecordList,
+  type RecordColumns,
   RecordTable,
   RequirePermission,
   useHasPermission,
@@ -754,6 +751,54 @@ function Subscriptions({ filter, onFilterChange }: SupporterSettingsProps) {
   const { active, retired } = useSupporterPlans();
   const list = useSupporterSubscriptions(filter);
   const actions = useSubscriptionActions();
+  const columns: RecordColumns<SupporterSubscription> = [
+    {
+      id: "account",
+      header: t("client:admin.supporters.subscription.account"),
+      wrap: "anywhere",
+      cell: (subscription) => <span dir="ltr">{subscriberName(t, subscription)}</span>,
+    },
+    {
+      id: "state",
+      header: t("client:admin.supporters.subscription.state"),
+      cell: (subscription) => t(stateLabels[subscription.state]),
+    },
+    {
+      id: "plan",
+      header: t("client:admin.supporters.subscription.plan"),
+      wrap: "anywhere",
+      cell: (subscription) => (
+        <span dir="auto" lang="">
+          {subscription.plan_name}
+        </span>
+      ),
+    },
+    {
+      id: "price",
+      header: t("client:admin.supporters.subscription.price"),
+      numeric: true,
+      cell: (subscription) => <SubscriptionPrice subscription={subscription} />,
+    },
+    {
+      id: "started_at",
+      header: t("client:admin.supporters.subscription.started_at"),
+      cell: (subscription) => <DateTime value={subscription.started_at} />,
+    },
+    {
+      id: "period",
+      header: t("client:admin.supporters.subscription.period"),
+      cell: (subscription) => <SubscriptionPeriod subscription={subscription} />,
+    },
+    {
+      id: "actions",
+      kind: "actions",
+      header: t("client:admin.list.column.actions"),
+      cell: (subscription) =>
+        isLive(subscription.state) && (
+          <CancelSubscription subscription={subscription} who={subscriberName(t, subscription)} actions={actions} />
+        ),
+    },
+  ];
   const plans = [
     { id: anyChoice, name: t("client:admin.supporters.filter.any_plan") },
     ...[...active, ...retired].map((plan) => ({ id: plan.id, name: plan.name })),
@@ -803,22 +848,11 @@ function Subscriptions({ filter, onFilterChange }: SupporterSettingsProps) {
         key={`${filter.planId ?? anyChoice}:${filter.state ?? anyChoice}`}
         list={list}
         caption={t("client:admin.supporters.subscriptions.title")}
+        columns={columns}
         getId={(subscription) => subscription.id}
+        headingLevel={3}
         empty={<EmptyState headingLevel={3} heading={t("client:admin.supporters.subscriptions.empty")} />}
-        head={
-          <>
-            <TableColumnHeader>{t("client:admin.supporters.subscription.account")}</TableColumnHeader>
-            <TableColumnHeader>{t("client:admin.supporters.subscription.state")}</TableColumnHeader>
-            <TableColumnHeader>{t("client:admin.supporters.subscription.plan")}</TableColumnHeader>
-            <TableColumnHeader>{t("client:admin.supporters.subscription.price")}</TableColumnHeader>
-            <TableColumnHeader>{t("client:admin.supporters.subscription.started_at")}</TableColumnHeader>
-            <TableColumnHeader>{t("client:admin.supporters.subscription.period")}</TableColumnHeader>
-            <TableColumnHeader>{t("client:admin.list.column.actions")}</TableColumnHeader>
-          </>
-        }
-      >
-        {(subscription) => <SubscriptionRow subscription={subscription} actions={actions} />}
-      </RecordTable>
+      />
     </Stack>
   );
 }
@@ -832,75 +866,55 @@ function LabeledDate({ label, value }: { label: string; value: string }) {
   );
 }
 
-function SubscriptionRow({
-  subscription,
-  actions,
-}: {
-  subscription: SupporterSubscription;
-  actions: SubscriptionActions;
-}) {
+/** Who a subscription is of: the subscriber's username, or "deleted account". */
+function subscriberName(t: ReturnType<typeof useT>, subscription: SupporterSubscription): string {
+  return subscription.username === undefined
+    ? t("client:admin.supporters.subscription.deleted_account")
+    : `@${subscription.username}`;
+}
+
+/** The price of a subscription a month or a year. */
+function SubscriptionPrice({ subscription }: { subscription: SupporterSubscription }) {
   const t = useT();
   const format = useFormatMoney();
-  const who =
-    subscription.username === undefined
-      ? t("client:admin.supporters.subscription.deleted_account")
-      : `@${subscription.username}`;
+  return t(
+    subscription.interval === "year"
+      ? "client:admin.supporters.subscription.per_year"
+      : "client:admin.supporters.subscription.per_month",
+    { amount: format(subscription.price) },
+  );
+}
+
+/** The end of the period paid for, of the grace period, and a change of interval scheduled for the next period. */
+function SubscriptionPeriod({ subscription }: { subscription: SupporterSubscription }) {
+  const t = useT();
   return (
-    <TableRow data-row-id={subscription.id}>
-      <TableRowHeader wrap="anywhere">
-        <span dir="ltr">{who}</span>
-      </TableRowHeader>
-      <TableCell>{t(stateLabels[subscription.state])}</TableCell>
-      <TableCell wrap="anywhere">
-        <span dir="auto" lang="">
-          {subscription.plan_name}
-        </span>
-      </TableCell>
-      <TableCell numeric>
-        {t(
-          subscription.interval === "year"
-            ? "client:admin.supporters.subscription.per_year"
-            : "client:admin.supporters.subscription.per_month",
-          {
-            amount: format(subscription.price),
-          },
-        )}
-      </TableCell>
-      <TableCell>
-        <DateTime value={subscription.started_at} />
-      </TableCell>
-      <TableCell>
-        <Stack gap="1">
-          {subscription.period_ends_at !== undefined && (
-            <LabeledDate
-              label={t("client:admin.supporters.subscription.period_ends_at")}
-              value={subscription.period_ends_at}
-            />
-          )}
-          {subscription.grace_ends_at !== undefined && (
-            <LabeledDate
-              label={t("client:admin.supporters.subscription.grace_ends_at")}
-              value={subscription.grace_ends_at}
-            />
-          )}
-          {subscription.scheduled_interval !== undefined && (
-            <Cluster as="span" gap="1" rowGap="0">
-              <span>{t("client:admin.supporters.subscription.scheduled")}</span>
-              <span>
-                {t(
-                  subscription.scheduled_interval === "year"
-                    ? "client:admin.supporters.subscription.scheduled_year"
-                    : "client:admin.supporters.subscription.scheduled_month",
-                )}
-              </span>
-            </Cluster>
-          )}
-        </Stack>
-      </TableCell>
-      <TableCell>
-        {isLive(subscription.state) && <CancelSubscription subscription={subscription} who={who} actions={actions} />}
-      </TableCell>
-    </TableRow>
+    <Stack gap="1">
+      {subscription.period_ends_at !== undefined && (
+        <LabeledDate
+          label={t("client:admin.supporters.subscription.period_ends_at")}
+          value={subscription.period_ends_at}
+        />
+      )}
+      {subscription.grace_ends_at !== undefined && (
+        <LabeledDate
+          label={t("client:admin.supporters.subscription.grace_ends_at")}
+          value={subscription.grace_ends_at}
+        />
+      )}
+      {subscription.scheduled_interval !== undefined && (
+        <Cluster as="span" gap="1" rowGap="0">
+          <span>{t("client:admin.supporters.subscription.scheduled")}</span>
+          <span>
+            {t(
+              subscription.scheduled_interval === "year"
+                ? "client:admin.supporters.subscription.scheduled_year"
+                : "client:admin.supporters.subscription.scheduled_month",
+            )}
+          </span>
+        </Cluster>
+      )}
+    </Stack>
   );
 }
 

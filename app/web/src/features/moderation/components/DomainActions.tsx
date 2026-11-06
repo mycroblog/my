@@ -26,13 +26,8 @@ import {
   SelectItem,
   Stack,
   StatusMessage,
-  TableCell,
-  TableColumnHeader,
-  TableRow,
-  TableRowHeader,
   Text,
   TextField,
-  VisuallyHidden,
 } from "@my/ui";
 import { useRef, useState } from "react";
 import { useIntl } from "react-intl";
@@ -56,7 +51,7 @@ import {
   useLiftDomainAction,
 } from "../hooks/useDomainActions";
 import { DomainBlockCsv } from "./DomainBlockCsv";
-import { DateTime, Section, DomainName, RecordTable, RequirePermission } from "./parts";
+import { DateTime, Section, DomainName, type RecordColumns, RecordTable, RequirePermission } from "./parts";
 
 const kindDescriptions: Readonly<Record<DomainActionKind, ClientMessageKey>> = {
   limit: "client:admin.domain_actions.kind.limit.description",
@@ -314,106 +309,120 @@ function DomainActionList({ filter, domain, onLifted }: DomainActionListProps) {
     ) : (
       <EmptyState headingLevel={3} heading={t("client:admin.domain_actions.empty.all")} />
     );
-  return (
-    <Box ref={listRef}>
-      <RecordTable
-        list={list}
-        caption={t(filterLabels[filter])}
-        getId={(action) => action.id}
-        empty={empty}
-        head={
-          <>
-            <TableColumnHeader>{t("client:admin.domain_actions.column.domain")}</TableColumnHeader>
-            <TableColumnHeader>{t("client:admin.domain_actions.kind")}</TableColumnHeader>
-            <TableColumnHeader>{t("client:admin.domain_actions.state")}</TableColumnHeader>
-            <TableColumnHeader>{t("client:admin.domain_actions.issued_at")}</TableColumnHeader>
-            <TableColumnHeader>{t("client:admin.domain_actions.expires_at")}</TableColumnHeader>
-            <TableColumnHeader>{t("client:admin.domain_actions.column.details")}</TableColumnHeader>
-            <TableColumnHeader>
-              <VisuallyHidden>{t("client:admin.list.column.actions")}</VisuallyHidden>
-            </TableColumnHeader>
-          </>
-        }
-      >
-        {(action) => <DomainActionRow action={action} lift={lift} />}
-      </RecordTable>
-    </Box>
-  );
-}
-
-function DomainActionRow({ action, lift }: { action: DomainAction; lift: LiftDomainAction }) {
-  const t = useT();
-  const intl = useIntl();
-  const kind = t(domainActionKindLabels[action.kind]);
-  return (
-    <TableRow data-row-id={action.id}>
-      {/* Focusable from script: it takes focus when the lift button goes away (useFocusHeadingAfterLift). */}
-      <TableRowHeader tabIndex={-1} wrap="anywhere">
-        <DomainName domain={action.domain} />
-      </TableRowHeader>
-      <TableCell>{kind}</TableCell>
-      <TableCell>
+  const columns: RecordColumns<DomainAction> = [
+    {
+      id: "domain",
+      header: t("client:admin.domain_actions.column.domain"),
+      wrap: "anywhere",
+      cell: (action) => <DomainName domain={action.domain} />,
+    },
+    {
+      id: "kind",
+      header: t("client:admin.domain_actions.kind"),
+      cell: (action) => t(domainActionKindLabels[action.kind]),
+    },
+    {
+      id: "state",
+      header: t("client:admin.domain_actions.state"),
+      cell: (action) => (
         <Text {...(action.state === "active" ? { weight: "semibold" as const } : {})}>
           {t(stateLabels[action.state])}
         </Text>
-      </TableCell>
-      <TableCell>
-        <DateTime value={action.issued_at} />
-      </TableCell>
-      <TableCell>
-        {action.expires_at === undefined ? (
+      ),
+    },
+    {
+      id: "issued_at",
+      header: t("client:admin.domain_actions.issued_at"),
+      cell: (action) => <DateTime value={action.issued_at} />,
+    },
+    {
+      id: "expires_at",
+      header: t("client:admin.domain_actions.expires_at"),
+      cell: (action) =>
+        action.expires_at === undefined ? (
           t("client:admin.domain_actions.duration.indefinite")
         ) : (
           <DateTime value={action.expires_at} />
-        )}
-      </TableCell>
-      <TableCell wrap="anywhere">
-        <DescriptionList>
-          {action.lifted_at !== undefined && (
-            <DescriptionItem term={t("client:admin.domain_actions.lifted_at")}>
-              <DateTime value={action.lifted_at} />
-            </DescriptionItem>
-          )}
-          <DescriptionItem term={t("client:admin.domain_actions.obfuscate.term")}>
-            {action.obfuscate
-              ? t("client:admin.domain_actions.obfuscate.yes")
-              : t("client:admin.domain_actions.obfuscate.no")}
-          </DescriptionItem>
-          {action.public_comment !== undefined && (
-            <DescriptionItem term={t("client:admin.domain_actions.public_comment")}>
-              {/* Written by a moderator, in any language. */}
-              <Text dir="auto" whitespace="preWrap">
-                {action.public_comment}
-              </Text>
-            </DescriptionItem>
-          )}
-          {action.private_note !== undefined && (
-            <DescriptionItem term={t("client:admin.domain_actions.private_note")}>
-              <Text dir="auto" whitespace="preWrap">
-                {action.private_note}
-              </Text>
-            </DescriptionItem>
-          )}
-        </DescriptionList>
-      </TableCell>
-      <TableCell>
-        {action.state === "active" && (
-          <Button
-            size="sm"
-            isPending={lift.pendingIds.includes(action.id)}
-            aria-label={t("client:admin.domain_actions.lift_action", {
-              kind,
-              domain: domainInText(t, action.domain),
-              date: intl.formatDate(action.issued_at, { dateStyle: "medium", timeStyle: "short" }),
-            })}
-            onPress={() => {
-              lift.lift(action);
-            }}
-          >
-            {t("client:admin.domain_actions.lift")}
-          </Button>
-        )}
-      </TableCell>
-    </TableRow>
+        ),
+    },
+    {
+      id: "details",
+      header: t("client:admin.domain_actions.column.details"),
+      wrap: "anywhere",
+      cell: (action) => <DomainActionDetails action={action} />,
+    },
+    {
+      id: "actions",
+      kind: "actions",
+      header: t("client:admin.list.column.actions"),
+      cell: (action) => <LiftButton action={action} lift={lift} />,
+    },
+  ];
+  return (
+    <RecordTable
+      listRef={listRef}
+      list={list}
+      caption={t(filterLabels[filter])}
+      columns={columns}
+      getId={(action) => action.id}
+      headingLevel={3}
+      empty={empty}
+    />
+  );
+}
+
+function DomainActionDetails({ action }: { action: DomainAction }) {
+  const t = useT();
+  return (
+    <DescriptionList>
+      {action.lifted_at !== undefined && (
+        <DescriptionItem term={t("client:admin.domain_actions.lifted_at")}>
+          <DateTime value={action.lifted_at} />
+        </DescriptionItem>
+      )}
+      <DescriptionItem term={t("client:admin.domain_actions.obfuscate.term")}>
+        {action.obfuscate
+          ? t("client:admin.domain_actions.obfuscate.yes")
+          : t("client:admin.domain_actions.obfuscate.no")}
+      </DescriptionItem>
+      {action.public_comment !== undefined && (
+        <DescriptionItem term={t("client:admin.domain_actions.public_comment")}>
+          {/* Written by a moderator, in any language. */}
+          <Text dir="auto" whitespace="preWrap">
+            {action.public_comment}
+          </Text>
+        </DescriptionItem>
+      )}
+      {action.private_note !== undefined && (
+        <DescriptionItem term={t("client:admin.domain_actions.private_note")}>
+          <Text dir="auto" whitespace="preWrap">
+            {action.private_note}
+          </Text>
+        </DescriptionItem>
+      )}
+    </DescriptionList>
+  );
+}
+
+/** Lifts an action in effect; the row's header takes focus when the button goes away (useFocusHeadingAfterLift). */
+function LiftButton({ action, lift }: { action: DomainAction; lift: LiftDomainAction }) {
+  const t = useT();
+  const intl = useIntl();
+  if (action.state !== "active") return null;
+  return (
+    <Button
+      size="sm"
+      isPending={lift.pendingIds.includes(action.id)}
+      aria-label={t("client:admin.domain_actions.lift_action", {
+        kind: t(domainActionKindLabels[action.kind]),
+        domain: domainInText(t, action.domain),
+        date: intl.formatDate(action.issued_at, { dateStyle: "medium", timeStyle: "short" }),
+      })}
+      onPress={() => {
+        lift.lift(action);
+      }}
+    >
+      {t("client:admin.domain_actions.lift")}
+    </Button>
   );
 }

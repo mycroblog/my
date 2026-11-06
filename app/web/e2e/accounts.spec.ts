@@ -9,7 +9,16 @@
 import type { Page, Route } from "@playwright/test";
 import type { components } from "@mycroblog/mykit";
 import { readCatalog } from "./catalog.ts";
-import { expect, expectNoAxeViolations, expectNoHorizontalScroll, test } from "./fixtures";
+import {
+  expect,
+  expectNoAxeViolations,
+  expectNoHorizontalScroll,
+  isCardForm,
+  recordRowHeaders,
+  recordRows,
+  recordTable,
+  test,
+} from "./fixtures";
 
 type Schemas = components["schemas"];
 
@@ -269,14 +278,9 @@ async function moderatorServer(
   return requests;
 }
 
-/** The rows of the results table: its rows with a link, which leaves out the header row. */
+/** The rows of the results table (its cards at narrow widths). */
 function rows(page: Page) {
-  return page
-    .getByRole("main")
-    .getByRole("region")
-    .last()
-    .getByRole("row")
-    .filter({ has: page.getByRole("link") });
+  return recordRows(recordTable(page.getByRole("main").getByRole("region").last()));
 }
 
 test.describe("page /moderation/accounts", () => {
@@ -321,11 +325,15 @@ test.describe("accounts", () => {
     await expect(rows(page)).toHaveCount(2);
     const limitedRow = await rows(page).first().textContent();
 
-    await expect(rows(page).first().getByRole("rowheader").getByRole("link")).toHaveAccessibleName(
+    await expect(recordRowHeaders(rows(page).first()).getByRole("link")).toHaveAccessibleName(
       /Maximiliana Theodora Wolfharte.*@maximiliana/,
     );
-    await expect(rows(page).first().getByRole("cell")).toHaveCount(3);
-    await expect(rows(page).first().getByRole("cell").last().getByRole("time")).toBeVisible();
+    // The values of the row: its cells, or the definitions of its card at narrow widths.
+    const values = rows(page)
+      .first()
+      .getByRole((await isCardForm(recordTable(page.getByRole("main")))) ? "definition" : "cell");
+    await expect(values).toHaveCount(3);
+    await expect(values.last().getByRole("time")).toBeVisible();
     await expect(rows(page).last().getByText(`@carol@${longDomain}`)).toBeVisible();
 
     // By keyboard: the row's link opens the account's page, whose heading takes focus.
@@ -439,7 +447,7 @@ test.describe("accounts", () => {
     expect(requests).toContain(`POST /admin/accounts/${local.id}/actions ban block_email`);
 
     await page.goto("/moderation/signup-blocks");
-    await expect(page.getByRole("main").getByRole("table").getByRole("rowheader", { name: emailHash })).toBeVisible();
+    await expect(recordRowHeaders(recordTable(page.getByRole("main"))).filter({ hasText: emailHash })).toBeVisible();
     await expectNoAxeViolations(makeAxeBuilder);
     await expectNoHorizontalScroll(page);
   });

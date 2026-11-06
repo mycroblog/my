@@ -31,6 +31,7 @@ export {
   DomainName,
   MissingPermission,
   RecordList,
+  type RecordColumns,
   RecordTable,
   RequirePermission,
   useFocusAfterChange,
