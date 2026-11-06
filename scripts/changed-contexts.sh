@@ -24,14 +24,16 @@
 #   agentkit tools/agentkit and its context map, which covers every path (agentkit:check)
 #   mykit   pkg/mykit and pkg/mybot, the client libraries, Go modules of their own, and their integration tests (mykit:check)
 #   tofu the OpenTofu modules of deploy/opentofu          (tofu:check)
+#   site    the documentation site app/docs and what it publishes: docs/operations, docs/reference, docs/guide,
+#           docs/developers, docs/README.md (its sidebar), and api/openapi.yaml   (site:check, the build of docs:site-build)
 #
 # A change to shared configuration (Taskfile.yml and tasks/, .tool-versions, tools/go.mod, the workflows and their
 # actions) selects every context, and so does any path no rule below knows: a new kind of file runs everything until a
 # rule is added for it. A dependency update selects the contexts of its toolchain only (go.mod: go and mykit; app/bun.lock: ui,
-# web, and mail), so a Dependabot pull request runs the jobs that use the dependency.
+# web, mail, and site), so a Dependabot pull request runs the jobs that use the dependency.
 set -euo pipefail
 
-ALL=(docs go i18n mail api ui web docker shell schema agentkit mykit tofu)
+ALL=(docs go i18n mail api ui web docker shell schema agentkit mykit tofu site)
 
 root="$(cd "$(dirname "$0")/.." && pwd)"
 
@@ -99,7 +101,12 @@ classify() {
       return
       ;;
     app/bun.lock | app/bunfig.toml | app/package.json)
-      select_contexts ui web mail
+      select_contexts ui web mail site
+      return
+      ;;
+    # The bundle of the spec, which the documentation site publishes too (ADR-0150 §5).
+    api/openapi.yaml)
+      select_contexts api site
       return
       ;;
     # The spec; its dependents (go, web) are added below.
@@ -172,6 +179,14 @@ classify() {
   case "$path" in
     *.md | .markdownlint-cli2.jsonc | docs/* | scripts/adr-new.sh | scripts/adr-numbers.sh)
       select_contexts docs
+      known=1
+      ;;
+  esac
+  case "$path" in
+    # The documentation site (ADR-0150 §7): its workspace and the documents it copies in and builds. app/docs is a
+    # package of the client workspace too (web, below).
+    app/docs/* | docs/operations/* | docs/reference/* | docs/guide/* | docs/developers/* | docs/README.md)
+      select_contexts site
       known=1
       ;;
   esac
