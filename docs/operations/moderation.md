@@ -435,7 +435,7 @@ You can change the periods in the instance settings, but not below the lower lim
 | Audit log | `audit_log_retention_days` | 730 days | 365 days | The record |
 | Sign-up blocks | None (cannot be changed) | 30 days | n/a | The earlier of lifting and expiry |
 | Who took part in a voice chat room (participations, speakers and listeners, raised hands, invitations, removals) | `voice_participants_retention_days` | 90 days | 30 days | The end of the room |
-| The decisions of the [decision hooks](decision-hooks.md#the-decisions) | `retention_hook_decisions` | 90 days | 30 days | The decision |
+| The decisions of the [decision hooks](decision-hooks.md#the-decisions) | `hook_decisions_retention_days` | 90 days | 30 days | The decision |
 
 - Open reports are never removed. A report that an action refers to (`report_id` of the action) stays until that action is removed.
 - The end of an action is the earlier of lifting and expiry. For an action that was appealed, if the review comes later than that, the end is the time of the review, and the action is kept while the appeal waits for review.

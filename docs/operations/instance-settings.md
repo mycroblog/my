@@ -94,7 +94,7 @@ default locale, who can see the timelines, the instance name, description, terms
 | `hook_signup_check_on_failure` | `pass`, `require_approval` | `pass` | What `signup.check` does when it enforces and its plugin fails. |
 | `hook_signup_check_reject` | boolean | `false` | Whether a `reject` of `signup.check` [refuses the sign-up](decision-hooks.md#sign-ups) while it enforces. When off, the answer is only recorded. |
 | `hook_local_status_account_age_days` | integer 0-3650 (days) | `7` | `local.status` [reviews the posts](decision-hooks.md#local-posts) of accounts younger than this; `0` reviews every account. |
-| `retention_hook_decisions` | integer 30-3650 (days) | `90` | How many days to keep the [decisions of the hooks](decision-hooks.md#the-decisions). |
+| `hook_decisions_retention_days` | integer 30-3650 (days) | `90` | How many days to keep the [decisions of the hooks](decision-hooks.md#the-decisions). |
 
 - Values are normalized before they are stored (`TRUE` becomes `true`, `0750` becomes `750`, `ja_jp` becomes `ja-JP`, media IDs are lowercased).
   An invalid value is rejected and nothing is written.

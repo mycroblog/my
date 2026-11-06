@@ -4,19 +4,19 @@
 
 -- InsertStatusSensitivityOverride inserts nothing when the action already marks the status.
 -- name: InsertStatusSensitivityOverride :exec
-INSERT INTO status_sensitivity_overrides (status_id, source_action_id) VALUES (@status_id, @source_action_id)
-ON CONFLICT (status_id, source_action_id) DO NOTHING;
+INSERT INTO status_sensitivity_overrides (status_id, source_kind, source_id) VALUES (@status_id, 'action', @source_id)
+ON CONFLICT (status_id, source_kind, source_id) DO NOTHING;
 
 -- InsertStatusSensitivityOverrideOfHookDecision inserts nothing when the decision already marks the status.
 -- name: InsertStatusSensitivityOverrideOfHookDecision :exec
-INSERT INTO status_sensitivity_overrides (status_id, source_hook_decision_id) VALUES (@status_id, @source_hook_decision_id)
-ON CONFLICT (status_id, source_hook_decision_id) DO NOTHING;
+INSERT INTO status_sensitivity_overrides (status_id, source_kind, source_id) VALUES (@status_id, 'hook_decision', @source_id)
+ON CONFLICT (status_id, source_kind, source_id) DO NOTHING;
 
 -- name: DeleteStatusSensitivityOverridesOfAction :exec
-DELETE FROM status_sensitivity_overrides WHERE source_action_id = ?;
+DELETE FROM status_sensitivity_overrides WHERE source_kind = 'action' AND source_id = ?;
 
 -- name: DeleteStatusSensitivityOverridesOfHookDecision :exec
-DELETE FROM status_sensitivity_overrides WHERE source_hook_decision_id = ?;
+DELETE FROM status_sensitivity_overrides WHERE source_kind = 'hook_decision' AND source_id = ?;
 
 -- name: StatusSensitivityOverridden :one
 SELECT EXISTS (SELECT 1 FROM status_sensitivity_overrides WHERE status_id = ?);
