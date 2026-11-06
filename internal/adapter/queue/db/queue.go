@@ -53,11 +53,13 @@ type store interface {
 	release(ctx context.Context, tx uow.Tx, id, worker string, attempt, newAttempt int, runAt time.Time, lastErr string) (int64, error)
 	insertDeadFromClaim(ctx context.Context, tx uow.Tx, id, worker string, attempt int, lastErr string, failedAt time.Time) (int64, error)
 	listDead(ctx context.Context, tx uow.Tx, jobType string, after queue.DeadJobPosition, limit int) ([]queue.DeadJob, error)
+	getDead(ctx context.Context, tx uow.Tx, id string) (queue.DeadJob, bool, error)
 	requeueDead(ctx context.Context, tx uow.Tx, id string, runAt time.Time) error
 	deleteDead(ctx context.Context, tx uow.Tx, id string) (int64, error)
 	deleteDeadBefore(ctx context.Context, tx uow.Tx, before time.Time, limit int) (int64, error)
 	backlog(ctx context.Context, tx uow.Tx, now time.Time) (queue.Backlog, error)
 	listPending(ctx context.Context, tx uow.Tx, now time.Time, f queue.JobFilter, after queue.JobPosition, limit int) ([]queue.PendingJob, error)
+	getPending(ctx context.Context, tx uow.Tx, now time.Time, id string) (queue.PendingJob, bool, error)
 	summarize(ctx context.Context, tx uow.Tx, now time.Time) (queue.JobSummary, error)
 	insertAttempt(ctx context.Context, tx uow.Tx, a queue.Attempt) error
 	listAttempts(ctx context.Context, tx uow.Tx, jobID string, after queue.AttemptPosition, limit int) ([]queue.Attempt, error)
@@ -433,6 +435,26 @@ func (q *Queue) ListDeadJobs(ctx context.Context, jobType string, after queue.De
 	return out, nil
 }
 
+// GetDeadJob implements queue.DeadJobs.
+func (q *Queue) GetDeadJob(ctx context.Context, id string) (queue.DeadJob, error) {
+	var (
+		out   queue.DeadJob
+		found bool
+	)
+	err := q.db.Tx(ctx, func(tx uow.Tx) error {
+		var err error
+		out, found, err = q.st.getDead(ctx, tx, id)
+		return err
+	})
+	switch {
+	case err != nil:
+		return queue.DeadJob{}, fmt.Errorf("queue/db: get dead job: %w", err)
+	case !found:
+		return queue.DeadJob{}, queue.ErrDeadJobNotFound
+	}
+	return out, nil
+}
+
 // RequeueDeadJob implements queue.DeadJobs.
 func (q *Queue) RequeueDeadJob(ctx context.Context, id string) error {
 	now := q.opts.Clock.Now()
@@ -523,6 +545,26 @@ func (q *Queue) ListJobs(ctx context.Context, now time.Time, f queue.JobFilter, 
 	})
 	if err != nil {
 		return nil, fmt.Errorf("queue/db: list jobs: %w", err)
+	}
+	return out, nil
+}
+
+// GetJob implements queue.JobInspector.
+func (q *Queue) GetJob(ctx context.Context, now time.Time, id string) (queue.PendingJob, error) {
+	var (
+		out   queue.PendingJob
+		found bool
+	)
+	err := q.db.Tx(ctx, func(tx uow.Tx) error {
+		var err error
+		out, found, err = q.st.getPending(ctx, tx, kernel.Normalize(now), id)
+		return err
+	})
+	switch {
+	case err != nil:
+		return queue.PendingJob{}, fmt.Errorf("queue/db: get job: %w", err)
+	case !found:
+		return queue.PendingJob{}, queue.ErrJobNotFound
 	}
 	return out, nil
 }

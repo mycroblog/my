@@ -1,0 +1,30 @@
+# SPDX-License-Identifier: MIT
+get:
+  operationId: getAdminJob
+  summary: Get a job of the job queue
+  description: |
+    One job, pending or dead, with its state at the time of the request. A completed job, an
+    unknown ID, or a pending job on a queue that cannot list them (`pending_listing` of
+    `GET /admin/queue` is `false`) is a 404. Needs the `manage_jobs` permission.
+  tags: [admin-server]
+  security:
+    - oauth2: ["admin:read"]
+  parameters:
+    - name: id
+      in: path
+      required: true
+      description: The ID of the job.
+      schema:
+        $ref: ../components/schemas/Id.yaml
+  responses:
+    "200":
+      description: The job.
+      headers:
+        Cache-Control:
+          $ref: ../components/headers/CacheControl.yaml
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/AdminJob.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml

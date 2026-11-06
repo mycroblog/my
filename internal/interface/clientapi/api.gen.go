@@ -15919,6 +15919,9 @@ type ServerInterface interface {
 	// ListAdminJobs List the jobs of the job queue
 	// (GET /admin/jobs)
 	ListAdminJobs(w http.ResponseWriter, r *http.Request, params ListAdminJobsParams)
+	// GetAdminJob Get a job of the job queue
+	// (GET /admin/jobs/{id})
+	GetAdminJob(w http.ResponseWriter, r *http.Request, id Id)
 	// ListAdminJobAttempts List the attempts of a job that did not succeed
 	// (GET /admin/jobs/{id}/attempts)
 	ListAdminJobAttempts(w http.ResponseWriter, r *http.Request, id Id, params ListAdminJobAttemptsParams)
@@ -20439,6 +20442,32 @@ func (siw *ServerInterfaceWrapper) ListAdminJobs(w http.ResponseWriter, r *http.
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.ListAdminJobs(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetAdminJob operation middleware
+func (siw *ServerInterfaceWrapper) GetAdminJob(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id Id
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetAdminJob(w, r, id)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -27659,6 +27688,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/voice/history", wrapper.ListVoiceHistory)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/queue", wrapper.GetAdminQueue)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/jobs", wrapper.ListAdminJobs)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/jobs/{id}", wrapper.GetAdminJob)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/jobs/{id}/attempts", wrapper.ListAdminJobAttempts)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/jobs/{id}/retry", wrapper.RetryAdminJob)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/instances", wrapper.ListInstanceHealth)
@@ -35332,6 +35362,68 @@ type ListAdminJobsdefaultApplicationProblemPlusJSONResponse struct {
 }
 
 func (response ListAdminJobsdefaultApplicationProblemPlusJSONResponse) VisitListAdminJobsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetAdminJobRequestObject struct {
+	Id Id `json:"id"`
+}
+
+type GetAdminJobResponseObject interface {
+	VisitGetAdminJobResponse(w http.ResponseWriter) error
+}
+
+type GetAdminJob200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type GetAdminJob200JSONResponse struct {
+	Body    AdminJob
+	Headers GetAdminJob200ResponseHeaders
+}
+
+func (response GetAdminJob200JSONResponse) VisitGetAdminJobResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetAdminJobdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response GetAdminJobdefaultApplicationProblemPlusJSONResponse) VisitGetAdminJobResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -50757,6 +50849,9 @@ type StrictServerInterface interface {
 	// ListAdminJobs List the jobs of the job queue
 	// (GET /admin/jobs)
 	ListAdminJobs(ctx context.Context, request ListAdminJobsRequestObject) (ListAdminJobsResponseObject, error)
+	// GetAdminJob Get a job of the job queue
+	// (GET /admin/jobs/{id})
+	GetAdminJob(ctx context.Context, request GetAdminJobRequestObject) (GetAdminJobResponseObject, error)
 	// ListAdminJobAttempts List the attempts of a job that did not succeed
 	// (GET /admin/jobs/{id}/attempts)
 	ListAdminJobAttempts(ctx context.Context, request ListAdminJobAttemptsRequestObject) (ListAdminJobAttemptsResponseObject, error)
@@ -54863,6 +54958,32 @@ func (sh *strictHandler) ListAdminJobs(w http.ResponseWriter, r *http.Request, p
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(ListAdminJobsResponseObject); ok {
 		if err := validResponse.VisitListAdminJobsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetAdminJob operation middleware
+func (sh *strictHandler) GetAdminJob(w http.ResponseWriter, r *http.Request, id Id) {
+	var request GetAdminJobRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetAdminJob(ctx, request.(GetAdminJobRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetAdminJob")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetAdminJobResponseObject); ok {
+		if err := validResponse.VisitGetAdminJobResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

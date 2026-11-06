@@ -440,6 +440,8 @@ paths:
     $ref: ./paths/admin_queue.yaml
   /admin/jobs:
     $ref: ./paths/admin_jobs.yaml
+  /admin/jobs/{id}:
+    $ref: ./paths/admin_jobs_{id}.yaml
   /admin/jobs/{id}/attempts:
     $ref: ./paths/admin_jobs_{id}_attempts.yaml
   /admin/jobs/{id}/retry:

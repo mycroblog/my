@@ -207,20 +207,39 @@ func (s postgresStore) listDead(ctx context.Context, tx uow.Tx, jobType string, 
 	}
 	out := make([]queue.DeadJob, len(rows))
 	for i, r := range rows {
-		out[i] = queue.DeadJob{
-			ID:             r.ID,
-			Type:           r.Type,
-			Payload:        json.RawMessage(r.Payload),
-			IdempotencyKey: deref(r.IdempotencyKey),
-			OrderingKey:    deref(r.OrderingKey),
-			TraceParent:    deref(r.TraceParent),
-			Attempt:        int(r.Attempt),
-			LastError:      r.LastError,
-			CreatedAt:      kernel.Normalize(r.CreatedAt),
-			FailedAt:       kernel.Normalize(r.FailedAt),
-		}
+		out[i] = postgresDeadJob(r)
 	}
 	return out, nil
+}
+
+func (s postgresStore) getDead(ctx context.Context, tx uow.Tx, id string) (queue.DeadJob, bool, error) {
+	q, err := s.queries(tx)
+	if err != nil {
+		return queue.DeadJob{}, false, err
+	}
+	r, err := q.GetDeadJob(ctx, id)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return queue.DeadJob{}, false, nil
+	}
+	if err != nil {
+		return queue.DeadJob{}, false, err
+	}
+	return postgresDeadJob(r), true, nil
+}
+
+func postgresDeadJob(r postgresqueue.DeadJob) queue.DeadJob {
+	return queue.DeadJob{
+		ID:             r.ID,
+		Type:           r.Type,
+		Payload:        json.RawMessage(r.Payload),
+		IdempotencyKey: deref(r.IdempotencyKey),
+		OrderingKey:    deref(r.OrderingKey),
+		TraceParent:    deref(r.TraceParent),
+		Attempt:        int(r.Attempt),
+		LastError:      r.LastError,
+		CreatedAt:      kernel.Normalize(r.CreatedAt),
+		FailedAt:       kernel.Normalize(r.FailedAt),
+	}
 }
 
 func (s postgresStore) requeueDead(ctx context.Context, tx uow.Tx, id string, runAt time.Time) error {
@@ -283,25 +302,44 @@ func (s postgresStore) listPending(ctx context.Context, tx uow.Tx, now time.Time
 	}
 	out := make([]queue.PendingJob, len(rows))
 	for i, r := range rows {
-		var lockedUntil time.Time
-		if r.LockedUntil.Valid {
-			lockedUntil = kernel.Normalize(r.LockedUntil.Time)
-		}
-		out[i] = pendingJob(now, queue.PendingJob{
-			ID:             r.ID,
-			Type:           r.Type,
-			Payload:        json.RawMessage(r.Payload),
-			IdempotencyKey: deref(r.IdempotencyKey),
-			OrderingKey:    deref(r.OrderingKey),
-			Attempt:        int(r.Attempt),
-			RunAt:          kernel.Normalize(r.RunAt),
-			LastError:      deref(r.LastError),
-			Worker:         deref(r.LockedBy),
-			LockedUntil:    lockedUntil,
-			CreatedAt:      kernel.Normalize(r.CreatedAt),
-		})
+		out[i] = postgresPendingJob(now, r)
 	}
 	return out, nil
+}
+
+func (s postgresStore) getPending(ctx context.Context, tx uow.Tx, now time.Time, id string) (queue.PendingJob, bool, error) {
+	q, err := s.queries(tx)
+	if err != nil {
+		return queue.PendingJob{}, false, err
+	}
+	r, err := q.GetPendingJob(ctx, id)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return queue.PendingJob{}, false, nil
+	}
+	if err != nil {
+		return queue.PendingJob{}, false, err
+	}
+	return postgresPendingJob(now, postgresqueue.ListPendingJobsRow(r)), true, nil
+}
+
+func postgresPendingJob(now time.Time, r postgresqueue.ListPendingJobsRow) queue.PendingJob {
+	var lockedUntil time.Time
+	if r.LockedUntil.Valid {
+		lockedUntil = kernel.Normalize(r.LockedUntil.Time)
+	}
+	return pendingJob(now, queue.PendingJob{
+		ID:             r.ID,
+		Type:           r.Type,
+		Payload:        json.RawMessage(r.Payload),
+		IdempotencyKey: deref(r.IdempotencyKey),
+		OrderingKey:    deref(r.OrderingKey),
+		Attempt:        int(r.Attempt),
+		RunAt:          kernel.Normalize(r.RunAt),
+		LastError:      deref(r.LastError),
+		Worker:         deref(r.LockedBy),
+		LockedUntil:    lockedUntil,
+		CreatedAt:      kernel.Normalize(r.CreatedAt),
+	})
 }
 
 func (s postgresStore) summarize(ctx context.Context, tx uow.Tx, now time.Time) (queue.JobSummary, error) {

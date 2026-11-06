@@ -102,6 +102,7 @@ var operationSecurity = map[string]operationAccess{
 	"GET /api/v1/admin/instances/{domain}/availability_events":                      {Operation: "listInstanceAvailabilityEvents", Scopes: []string{"admin:read"}},
 	"GET /api/v1/admin/invites":                                                     {Operation: "listInvites", Scopes: []string{"admin:read"}},
 	"GET /api/v1/admin/jobs":                                                        {Operation: "listAdminJobs", Scopes: []string{"admin:read"}},
+	"GET /api/v1/admin/jobs/{id}":                                                   {Operation: "getAdminJob", Scopes: []string{"admin:read"}},
 	"GET /api/v1/admin/jobs/{id}/attempts":                                          {Operation: "listAdminJobAttempts", Scopes: []string{"admin:read"}},
 	"GET /api/v1/admin/link_card_domains":                                           {Operation: "listLinkCardDomainRules", Scopes: []string{"admin:read"}},
 	"GET /api/v1/admin/login_providers":                                             {Operation: "listAdminLoginProviders", Scopes: []string{"admin:read"}},

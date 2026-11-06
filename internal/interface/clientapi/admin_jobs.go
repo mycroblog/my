@@ -148,12 +148,7 @@ func (s *Server) deadJobPage(ctx context.Context, jobType string, after queue.De
 	jobs, last := trim(jobs, limit)
 	page := AdminJobPage{Items: make([]AdminJob, 0, len(jobs))}
 	for _, j := range jobs {
-		failedAt := j.FailedAt.UTC()
-		page.Items = append(page.Items, AdminJob{
-			Id: j.ID, Type: j.Type, State: AdminJobStateDead, Payload: string(j.Payload), Attempts: j.Attempt,
-			IdempotencyKey: optionalString(j.IdempotencyKey), OrderingKey: optionalString(j.OrderingKey),
-			LastError: optionalString(j.LastError), CreatedAt: j.CreatedAt.UTC(), FailedAt: &failedAt,
-		})
+		page.Items = append(page.Items, deadAdminJob(j))
 	}
 	if last >= 0 {
 		page.NextCursor = encodeTimeCursor(jobs[last].FailedAt, jobs[last].ID)
@@ -172,22 +167,69 @@ func (s *Server) pendingJobPage(ctx context.Context, f queue.JobFilter, after qu
 	}
 	jobs, last := trim(jobs, limit)
 	for _, j := range jobs {
-		runAt := j.RunAt.UTC()
-		item := AdminJob{
-			Id: j.ID, Type: j.Type, State: AdminJobState(j.State), Payload: string(j.Payload), Attempts: j.Attempt,
-			IdempotencyKey: optionalString(j.IdempotencyKey), OrderingKey: optionalString(j.OrderingKey),
-			LastError: optionalString(j.LastError), RunAt: &runAt, Worker: optionalString(j.Worker), CreatedAt: j.CreatedAt.UTC(),
-		}
-		if !j.LockedUntil.IsZero() {
-			until := j.LockedUntil.UTC()
-			item.LockedUntil = &until
-		}
-		page.Items = append(page.Items, item)
+		page.Items = append(page.Items, pendingAdminJob(j))
 	}
 	if last >= 0 {
 		page.NextCursor = encodeTimeCursor(jobs[last].RunAt, jobs[last].ID)
 	}
 	return page, nil
+}
+
+func deadAdminJob(j queue.DeadJob) AdminJob {
+	failedAt := j.FailedAt.UTC()
+	return AdminJob{
+		Id: j.ID, Type: j.Type, State: AdminJobStateDead, Payload: string(j.Payload), Attempts: j.Attempt,
+		IdempotencyKey: optionalString(j.IdempotencyKey), OrderingKey: optionalString(j.OrderingKey),
+		LastError: optionalString(j.LastError), CreatedAt: j.CreatedAt.UTC(), FailedAt: &failedAt,
+	}
+}
+
+func pendingAdminJob(j queue.PendingJob) AdminJob {
+	runAt := j.RunAt.UTC()
+	item := AdminJob{
+		Id: j.ID, Type: j.Type, State: AdminJobState(j.State), Payload: string(j.Payload), Attempts: j.Attempt,
+		IdempotencyKey: optionalString(j.IdempotencyKey), OrderingKey: optionalString(j.OrderingKey),
+		LastError: optionalString(j.LastError), RunAt: &runAt, Worker: optionalString(j.Worker), CreatedAt: j.CreatedAt.UTC(),
+	}
+	if !j.LockedUntil.IsZero() {
+		until := j.LockedUntil.UTC()
+		item.LockedUntil = &until
+	}
+	return item
+}
+
+// GetAdminJob serves GET /api/v1/admin/jobs/{id}: the pending job of the ID with its state now,
+// or else the dead job of the ID.
+func (s *Server) GetAdminJob(ctx context.Context, req GetAdminJobRequestObject) (GetAdminJobResponseObject, error) {
+	if p, err := s.requirePermission(ctx, identity.PermManageJobs); err != nil {
+		return nil, err
+	} else if p != nil {
+		return GetAdminJobdefaultApplicationProblemPlusJSONResponse(*p), nil
+	}
+	if !kernel.ValidID(req.Id) {
+		return GetAdminJobdefaultApplicationProblemPlusJSONResponse(s.notFoundResponse(ctx)), nil
+	}
+	cache := cacheNoStore
+	found := func(job AdminJob) GetAdminJobResponseObject {
+		return GetAdminJob200JSONResponse{Body: job, Headers: GetAdminJob200ResponseHeaders{CacheControl: &cache}}
+	}
+	if s.o.Queue.Inspector != nil {
+		j, err := s.o.Queue.Inspector.GetJob(ctx, s.o.Queue.now(), req.Id)
+		if err == nil {
+			return found(pendingAdminJob(j)), nil
+		}
+		if !errors.Is(err, queue.ErrJobNotFound) {
+			return nil, fmt.Errorf("clientapi: get job %s: %w", req.Id, err)
+		}
+	}
+	j, err := s.o.DeadJobs.GetDeadJob(ctx, req.Id)
+	if errors.Is(err, queue.ErrDeadJobNotFound) {
+		return GetAdminJobdefaultApplicationProblemPlusJSONResponse(s.notFoundResponse(ctx)), nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("clientapi: get dead job %s: %w", req.Id, err)
+	}
+	return found(deadAdminJob(j)), nil
 }
 
 // ListAdminJobAttempts serves GET /api/v1/admin/jobs/{id}/attempts: the records of the runs of

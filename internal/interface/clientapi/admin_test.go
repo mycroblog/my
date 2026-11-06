@@ -111,6 +111,14 @@ func (f *fakeDeadJobs) ListDeadJobs(_ context.Context, jobType string, after que
 	return out, nil
 }
 
+func (f *fakeDeadJobs) GetDeadJob(_ context.Context, id string) (queue.DeadJob, error) {
+	i := slices.IndexFunc(f.dead, func(d queue.DeadJob) bool { return d.ID == id })
+	if i < 0 {
+		return queue.DeadJob{}, queue.ErrDeadJobNotFound
+	}
+	return f.dead[i], nil
+}
+
 func (f *fakeDeadJobs) RequeueDeadJob(_ context.Context, id string) error {
 	i := slices.IndexFunc(f.dead, func(d queue.DeadJob) bool { return d.ID == id })
 	if i < 0 {
@@ -148,6 +156,15 @@ func (f *fakeInspector) ListJobs(_ context.Context, now time.Time, filter queue.
 		}
 	}
 	return out, nil
+}
+
+func (f *fakeInspector) GetJob(_ context.Context, now time.Time, id string) (queue.PendingJob, error) {
+	f.nows = append(f.nows, now)
+	i := slices.IndexFunc(f.jobs, func(j queue.PendingJob) bool { return j.ID == id })
+	if i < 0 {
+		return queue.PendingJob{}, queue.ErrJobNotFound
+	}
+	return f.jobs[i], nil
 }
 
 func (f *fakeInspector) SummarizeJobs(_ context.Context, now time.Time) (queue.JobSummary, error) {
@@ -296,6 +313,7 @@ var adminOperations = []struct{ method, path string }{
 	{http.MethodPost, "/admin/instances/a.example/mark_available"},
 	{http.MethodGet, "/admin/queue"},
 	{http.MethodGet, "/admin/jobs"},
+	{http.MethodGet, "/admin/jobs/" + jobTwo},
 	{http.MethodGet, "/admin/jobs/" + jobTwo + "/attempts"},
 	{http.MethodPost, "/admin/jobs/" + deadJobA + "/retry"},
 }
@@ -560,6 +578,34 @@ func TestListDeadJobs(t *testing.T) {
 	res = e.admin(t, http.MethodGet, "/admin/jobs?state=dead&type=kv.purge_expired", "admin-read", nil)
 	if got := decodeJSON[clientapi.AdminJobPage](t, res); len(got.Items) != 1 || got.Items[0].Id != deadJobA {
 		t.Errorf("dead kv.purge_expired jobs = %+v", got)
+	}
+}
+
+func TestGetAdminJob(t *testing.T) {
+	e, _, _, inspector := newAdminEnvWithQueue(t)
+	res := e.admin(t, http.MethodGet, "/admin/jobs/"+jobOne, "admin-read", nil)
+	job := decodeJSON[clientapi.AdminJob](t, res)
+	if res.StatusCode != http.StatusOK || job.Id != jobOne || job.State != clientapi.AdminJobStateRunning || job.Worker == nil ||
+		*job.Worker != "worker-1" || job.RunAt == nil || job.FailedAt != nil || job.Payload != `{"delivery_id":"y"}` {
+		t.Errorf("pending job = %d %+v", res.StatusCode, job)
+	}
+	if got := res.Header.Get("Cache-Control"); got != "no-store" {
+		t.Errorf("Cache-Control = %q, want no-store", got)
+	}
+	if last := inspector.nows[len(inspector.nows)-1]; !last.Equal(adminNow) {
+		t.Errorf("state read at %v, want %v", last, adminNow)
+	}
+	res = e.admin(t, http.MethodGet, "/admin/jobs/"+deadJobC, "admin-read", nil)
+	job = decodeJSON[clientapi.AdminJob](t, res)
+	if res.StatusCode != http.StatusOK || job.State != clientapi.AdminJobStateDead || job.FailedAt == nil || job.RunAt != nil ||
+		job.LastError == nil || *job.LastError != "502" || job.Attempts != 9 {
+		t.Errorf("dead job = %d %+v", res.StatusCode, job)
+	}
+	for _, id := range []string{"01890a5d-ac96-774b-bcce-b302099a9999", "not-an-id"} {
+		res := e.admin(t, http.MethodGet, "/admin/jobs/"+id, "admin-read", nil)
+		if p := decodeProblem(t, res); res.StatusCode != http.StatusNotFound || p.Type != clientapi.ProblemTypeBlank {
+			t.Errorf("job %s = %d %+v, want 404", id, res.StatusCode, p)
+		}
 	}
 }
 

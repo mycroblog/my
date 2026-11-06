@@ -402,6 +402,30 @@ func (q *Queries) DeleteJobAttemptsBefore(ctx context.Context, arg DeleteJobAtte
 	return result.RowsAffected()
 }
 
+const getDeadJob = `-- name: GetDeadJob :one
+SELECT id, type, payload, idempotency_key, ordering_key, trace_parent, attempt, last_error, created_at, failed_at
+FROM dead_jobs
+WHERE id = ?
+`
+
+func (q *Queries) GetDeadJob(ctx context.Context, id string) (DeadJob, error) {
+	row := q.db.QueryRowContext(ctx, getDeadJob, id)
+	var i DeadJob
+	err := row.Scan(
+		&i.ID,
+		&i.Type,
+		&i.Payload,
+		&i.IdempotencyKey,
+		&i.OrderingKey,
+		&i.TraceParent,
+		&i.Attempt,
+		&i.LastError,
+		&i.CreatedAt,
+		&i.FailedAt,
+	)
+	return i, err
+}
+
 const getDeadJobType = `-- name: GetDeadJobType :one
 SELECT type FROM dead_jobs WHERE id = ?1
 `
@@ -432,6 +456,45 @@ func (q *Queries) GetJobLease(ctx context.Context, id string) (GetJobLeaseRow, e
 		&i.OrderingKey,
 		&i.RunAt,
 		&i.LockedUntil,
+	)
+	return i, err
+}
+
+const getPendingJob = `-- name: GetPendingJob :one
+SELECT id, type, payload, idempotency_key, ordering_key, attempt, run_at, locked_by, locked_until, last_error, created_at
+FROM jobs
+WHERE id = ?
+`
+
+type GetPendingJobRow struct {
+	ID             string
+	Type           string
+	Payload        []byte
+	IdempotencyKey sql.NullString
+	OrderingKey    sql.NullString
+	Attempt        int64
+	RunAt          int64
+	LockedBy       sql.NullString
+	LockedUntil    sql.NullInt64
+	LastError      sql.NullString
+	CreatedAt      int64
+}
+
+func (q *Queries) GetPendingJob(ctx context.Context, id string) (GetPendingJobRow, error) {
+	row := q.db.QueryRowContext(ctx, getPendingJob, id)
+	var i GetPendingJobRow
+	err := row.Scan(
+		&i.ID,
+		&i.Type,
+		&i.Payload,
+		&i.IdempotencyKey,
+		&i.OrderingKey,
+		&i.Attempt,
+		&i.RunAt,
+		&i.LockedBy,
+		&i.LockedUntil,
+		&i.LastError,
+		&i.CreatedAt,
 	)
 	return i, err
 }

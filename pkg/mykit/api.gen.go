@@ -19202,6 +19202,15 @@ type ClientInterface interface {
 	// Corresponds with GET /admin/jobs (the `ListAdminJobs` operationId).
 	ListAdminJobs(ctx context.Context, params *ListAdminJobsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// GetAdminJob Get a job of the job queue
+	//
+	// One job, pending or dead, with its state at the time of the request. A completed job, an
+	// unknown ID, or a pending job on a queue that cannot list them (`pending_listing` of
+	// `GET /admin/queue` is `false`) is a 404. Needs the `manage_jobs` permission.
+	//
+	// Corresponds with GET /admin/jobs/{id} (the `GetAdminJob` operationId).
+	GetAdminJob(ctx context.Context, id Id, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// ListAdminJobAttempts List the attempts of a job that did not succeed
 	//
 	// The records of the runs of the job that did not succeed (a retry, or the run that made
@@ -26684,6 +26693,25 @@ func (c *Client) RevokeInvite(ctx context.Context, id InviteId, reqEditors ...Re
 // Corresponds with GET /admin/jobs (the `ListAdminJobs` operationId).
 func (c *Client) ListAdminJobs(ctx context.Context, params *ListAdminJobsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewListAdminJobsRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// GetAdminJob Get a job of the job queue
+//
+// One job, pending or dead, with its state at the time of the request. A completed job, an
+// unknown ID, or a pending job on a queue that cannot list them (`pending_listing` of
+// `GET /admin/queue` is `false`) is a 404. Needs the `manage_jobs` permission.
+//
+// Corresponds with GET /admin/jobs/{id} (the `GetAdminJob` operationId).
+func (c *Client) GetAdminJob(ctx context.Context, id Id, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetAdminJobRequest(c.Server, id)
 	if err != nil {
 		return nil, err
 	}
@@ -39408,6 +39436,40 @@ func NewListAdminJobsRequest(server string, params *ListAdminJobsParams) (*http.
 			rawQueryFragments = append(rawQueryFragments, encoded)
 		}
 		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetAdminJobRequest constructs an http.Request for the GetAdminJob method
+func NewGetAdminJobRequest(server string, id Id) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/admin/jobs/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
 	}
 
 	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
@@ -52308,6 +52370,17 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with GET /admin/jobs (the `ListAdminJobs` operationId).
 	ListAdminJobsWithResponse(ctx context.Context, params *ListAdminJobsParams, reqEditors ...RequestEditorFn) (*ListAdminJobsResponse, error)
 
+	// GetAdminJobWithResponse Get a job of the job queue
+	//
+	// One job, pending or dead, with its state at the time of the request. A completed job, an
+	// unknown ID, or a pending job on a queue that cannot list them (`pending_listing` of
+	// `GET /admin/queue` is `false`) is a 404. Needs the `manage_jobs` permission.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /admin/jobs/{id} (the `GetAdminJob` operationId).
+	GetAdminJobWithResponse(ctx context.Context, id Id, reqEditors ...RequestEditorFn) (*GetAdminJobResponse, error)
+
 	// ListAdminJobAttemptsWithResponse List the attempts of a job that did not succeed
 	//
 	// The records of the runs of the job that did not succeed (a retry, or the run that made
@@ -64371,6 +64444,71 @@ func (r ListAdminJobsResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r ListAdminJobsResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// GetAdminJobResponse200Headers the declared response headers of an HTTP 200 response for GetAdminJob
+type GetAdminJobResponse200Headers struct {
+	CacheControl *string
+}
+
+// GetAdminJobResponseDefaultHeaders the declared response headers of an HTTP default response for GetAdminJob
+type GetAdminJobResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type GetAdminJobResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *AdminJob
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *GetAdminJobResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *GetAdminJobResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r GetAdminJobResponse) GetJSON200() *AdminJob {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r GetAdminJobResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r GetAdminJobResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r GetAdminJobResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetAdminJobResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r GetAdminJobResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -83655,6 +83793,23 @@ func (c *ClientWithResponses) ListAdminJobsWithResponse(ctx context.Context, par
 	return ParseListAdminJobsResponse(rsp)
 }
 
+// GetAdminJobWithResponse Get a job of the job queue
+//
+// One job, pending or dead, with its state at the time of the request. A completed job, an
+// unknown ID, or a pending job on a queue that cannot list them (`pending_listing` of
+// `GET /admin/queue` is `false`) is a 404. Needs the `manage_jobs` permission.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /admin/jobs/{id} (the `GetAdminJob` operationId).
+func (c *ClientWithResponses) GetAdminJobWithResponse(ctx context.Context, id Id, reqEditors ...RequestEditorFn) (*GetAdminJobResponse, error) {
+	rsp, err := c.GetAdminJob(ctx, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetAdminJobResponse(rsp)
+}
+
 // ListAdminJobAttemptsWithResponse List the attempts of a job that did not succeed
 //
 // The records of the runs of the job that did not succeed (a retry, or the run that made
@@ -99184,6 +99339,83 @@ func ParseListAdminJobsResponse(rsp *http.Response) (*ListAdminJobsResponse, err
 		response.Headers200 = &headers
 	case true:
 		var headers ListAdminJobsResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseGetAdminJobResponse parses an HTTP response from a GetAdminJobWithResponse call
+func ParseGetAdminJobResponse(rsp *http.Response) (*GetAdminJobResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetAdminJobResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest AdminJob
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers GetAdminJobResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers GetAdminJobResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {

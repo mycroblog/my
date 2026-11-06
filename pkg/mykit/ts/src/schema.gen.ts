@@ -4389,6 +4389,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/jobs/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get a job of the job queue
+         * @description One job, pending or dead, with its state at the time of the request. A completed job, an
+         *     unknown ID, or a pending job on a queue that cannot list them (`pending_listing` of
+         *     `GET /admin/queue` is `false`) is a 404. Needs the `manage_jobs` permission.
+         */
+        get: operations["getAdminJob"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/jobs/{id}/attempts": {
         parameters: {
             query?: never;
@@ -20959,6 +20981,31 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AdminJobPage"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    getAdminJob: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the job. */
+                id: components["schemas"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The job. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminJob"];
                 };
             };
             default: components["responses"]["Problem"];

@@ -345,6 +345,19 @@ func (q *Queue) ListDeadJobs(_ context.Context, jobType string, after queue.Dead
 	return out, nil
 }
 
+// GetDeadJob implements queue.DeadJobs.
+func (q *Queue) GetDeadJob(_ context.Context, id string) (queue.DeadJob, error) {
+	q.mu.Lock()
+	defer q.mu.Unlock()
+	i := slices.IndexFunc(q.dead, func(d queue.DeadJob) bool { return d.ID == id })
+	if i < 0 {
+		return queue.DeadJob{}, queue.ErrDeadJobNotFound
+	}
+	d := q.dead[i]
+	d.Payload = slices.Clone(d.Payload)
+	return d, nil
+}
+
 // DeleteDeadJob implements queue.DeadJobs.
 func (q *Queue) DeleteDeadJob(_ context.Context, id string) error {
 	q.mu.Lock()
@@ -470,6 +483,17 @@ func (q *Queue) ListJobs(_ context.Context, now time.Time, f queue.JobFilter, af
 		out = out[:limit]
 	}
 	return out, nil
+}
+
+// GetJob implements queue.JobInspector.
+func (q *Queue) GetJob(_ context.Context, now time.Time, id string) (queue.PendingJob, error) {
+	q.mu.Lock()
+	defer q.mu.Unlock()
+	e, ok := q.jobs[id]
+	if !ok {
+		return queue.PendingJob{}, queue.ErrJobNotFound
+	}
+	return e.pending(now), nil
 }
 
 // SummarizeJobs implements queue.JobInspector.
