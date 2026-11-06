@@ -511,6 +511,10 @@
     "defaultMessage": "Automated review cancelled",
     "description": "Heading of an audit log entry: a moderator cancelled a decision of an external review."
   },
+  "admin.audit_log.action.hook_appeal_upheld": {
+    "defaultMessage": "Appeal of a refused post upheld",
+    "description": "Heading of an audit log entry: a moderator upheld a user's appeal of a post that the automated review refused, so the refusal stays."
+  },
   "admin.audit_log.target_kind.custom_emoji_request": {
     "defaultMessage": "Custom emoji request",
     "description": "Kind of target of an audited operation: a request for a custom emoji or a new image of one, shown as the :shortcode: of the emoji."

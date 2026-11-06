@@ -168,6 +168,42 @@ func TestLocalStatusHook(t *testing.T) {
 	if res := appeal("alice", observed.Id); res.StatusCode != http.StatusNotFound {
 		t.Errorf("an appeal of no decision = %d", res.StatusCode)
 	}
+	// The author reads where it stands; nobody else can.
+	readAppeal := func(user, decisionID string) (clientapi.OwnHookAppeal, int) {
+		t.Helper()
+		var got clientapi.OwnHookAppeal
+		res := c.do(user, http.MethodGet, "/hook_decisions/"+decisionID+"/appeal", nil, &got)
+		return got, res.StatusCode
+	}
+	if got, code := readAppeal("alice", upheldID); code != http.StatusOK || got.Id != own.Id || got.State != clientapi.HookAppealStatePending || got.DecidedAt != nil {
+		t.Errorf("GET the appeal = %d %+v", code, got)
+	}
+	for _, read := range []struct{ user, id string }{{"bob", upheldID}, {"alice", observed.Id}} {
+		if _, code := readAppeal(read.user, read.id); code != http.StatusNotFound {
+			t.Errorf("GET the appeal of %s as %s = %d", read.id, read.user, code)
+		}
+	}
+	// The moderators are told of it, the author is not.
+	notified := func(user string, typ clientapi.NotificationType) []clientapi.Notification {
+		t.Helper()
+		var page clientapi.NotificationPage
+		if res := c.do(user, http.MethodGet, "/notifications", nil, &page); res.StatusCode != http.StatusOK {
+			t.Fatalf("GET /notifications as %s = %d", user, res.StatusCode)
+		}
+		var out []clientapi.Notification
+		for _, n := range page.Items {
+			if n.Type == typ {
+				out = append(out, n)
+			}
+		}
+		return out
+	}
+	if got := notified("bob", clientapi.NotificationTypeAdminHookAppeal); len(got) != 1 || got[0].HookAppealId == nil || *got[0].HookAppealId != own.Id {
+		t.Errorf("the moderator's notifications = %+v", got)
+	}
+	if got := notified("alice", clientapi.NotificationTypeAdminHookAppeal); len(got) != 0 {
+		t.Errorf("the author was told of their own appeal: %+v", got)
+	}
 
 	// A moderator upholds it: the decision stays and the author is still reviewed.
 	var page clientapi.AdminHookAppealPage
@@ -182,6 +218,21 @@ func TestLocalStatusHook(t *testing.T) {
 	}
 	if res := c.do("bob", http.MethodPost, "/admin/hook_appeals/"+own.Id+"/overturn", nil, nil); res.StatusCode != http.StatusConflict {
 		t.Errorf("overturning an upheld appeal = %d", res.StatusCode)
+	}
+	// The author is told, reads the outcome, and the review is audited.
+	if got := notified("alice", clientapi.NotificationTypeHookAppealDecided); len(got) != 1 || got[0].HookAppeal == nil ||
+		got[0].HookAppeal.Id != own.Id || got[0].HookAppeal.State != clientapi.HookAppealStateUpheld || got[0].Account != nil {
+		t.Errorf("the author's notifications = %+v", got)
+	}
+	if got, code := readAppeal("alice", upheldID); code != http.StatusOK || got.State != clientapi.HookAppealStateUpheld || got.DecidedAt == nil {
+		t.Errorf("GET the upheld appeal = %d %+v", code, got)
+	}
+	audit, err := c.app.Moderation.AuditLog(ctx, appmoderation.AuditQuery{TargetKind: moderation.AuditTargetHookDecision}, 10)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(audit) != 1 || audit[0].Action != moderation.AuditHookAppealUpheld || audit[0].ActorUserID != c.userIDs["bob"] || audit[0].TargetID != upheldID {
+		t.Errorf("the audit log = %+v", audit)
 	}
 	if got := plugin.calls.Load(); got != calls {
 		t.Errorf("the appeal and its review called the plugin %d times", got-calls)
@@ -212,6 +263,10 @@ func TestLocalStatusHook(t *testing.T) {
 	}
 	if d := decisionOf(*second.HookDecisionId); d.Override == nil || d.Override.ByUserID != c.userIDs["bob"] {
 		t.Errorf("the overturned decision = %+v", d)
+	}
+	if got := notified("alice", clientapi.NotificationTypeHookAppealDecided); len(got) != 2 || got[0].HookAppeal == nil ||
+		got[0].HookAppeal.State != clientapi.HookAppealStateOverturned {
+		t.Errorf("the author's notifications after overturning = %+v", got)
 	}
 	// The list keeps the appeals of one state.
 	for state, want := range map[string]string{"upheld": own.Id, "overturned": decided.Id} {
@@ -260,6 +315,49 @@ func TestLocalStatusHook(t *testing.T) {
 	}
 	if o := report.HookOrigin; o == nil || o.DecisionID != flags[0].Decision.ID || o.Hook != "local.status" || o.ReasonCode != "spam" {
 		t.Errorf("the origin = %+v", report.HookOrigin)
+	}
+
+	// An edit is reviewed too, each as its own subject: a reject refuses that edit alone, with no
+	// appeal, and leaves the post as it was; a flag stores the edit and files a report.
+	edit := func(body string) *http.Response {
+		return c.do("bob", http.MethodPut, "/statuses/"+flagged.Id, map[string]any{"text": body}, nil)
+	}
+	res := edit("edited into spam")
+	var refused clientapi.Problem
+	if err := json.NewDecoder(res.Body).Decode(&refused); err != nil {
+		t.Fatal(err)
+	}
+	if res.StatusCode != http.StatusUnprocessableEntity || refused.Type != clientapi.ProblemTypeStatusRejected || refused.Title != "This edit was not saved." {
+		t.Fatalf("the refused edit = %d %+v", res.StatusCode, refused)
+	}
+	var shown clientapi.Status
+	if res := c.do("bob", http.MethodGet, "/statuses/"+flagged.Id, nil, &shown); res.StatusCode != http.StatusOK || !bytes.Contains([]byte(shown.Content), []byte("maybe spam from bob")) {
+		t.Errorf("the post after a refused edit = %d %q", res.StatusCode, shown.Content)
+	}
+	editRejects, err := c.app.Hooks.List(ctx, apphook.ListQuery{Hook: hook.LocalStatus, Outcome: hook.Reject, Limit: 50})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var editReject hook.Record
+	for _, r := range editRejects {
+		if hook.IsEditSubject(r.Decision.SubjectKey) {
+			editReject = r
+		}
+	}
+	if editReject.Decision.SubjectKey == "" || editReject.Decision.SubjectKey[:len(flagged.Id)+1] != flagged.Id+"#" {
+		t.Fatalf("the decision of the edit = %+v", editReject)
+	}
+	if res := c.do("bob", http.MethodPost, "/hook_decisions/"+editReject.Decision.ID+"/appeal",
+		map[string]any{"status_text": "edited into spam"}, nil); res.StatusCode != http.StatusUnprocessableEntity {
+		t.Errorf("an appeal of a refused edit = %d", res.StatusCode)
+	}
+	plugin.verdict.Store("VERDICT_FLAG")
+	if res := edit("edited, maybe spam"); res.StatusCode != http.StatusOK {
+		t.Fatalf("the flagged edit = %d", res.StatusCode)
+	}
+	plugin.verdict.Store("VERDICT_REJECT")
+	if reports, err := c.app.Moderation.Reports(ctx, appmoderation.ReportQuery{}, 50); err != nil || len(reports) != 2 {
+		t.Errorf("reports after a flagged edit = %d, %v", len(reports), err)
 	}
 
 	// Established accounts are not sent by default.

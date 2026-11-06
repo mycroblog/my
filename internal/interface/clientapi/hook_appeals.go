@@ -13,6 +13,7 @@ import (
 	apphook "github.com/mycroblog/my/internal/app/hook"
 	"github.com/mycroblog/my/internal/app/kernel"
 	"github.com/mycroblog/my/internal/domain/hook"
+	"github.com/mycroblog/my/internal/domain/notification"
 	"github.com/mycroblog/my/internal/i18n"
 )
 
@@ -27,6 +28,11 @@ const ProblemTypeStatusRejected = "/api/v1/problems/status-rejected"
 // HookAppeals runs the use cases of the appeals of refused posts. *apphook.Service implements it.
 type HookAppeals interface {
 	FileAppeal(ctx context.Context, in apphook.AppealInput) (hook.AppealRecord, error)
+	// OwnAppeal returns the author's appeal of a decision; apphook.ErrAppealNotFound when there
+	// is none or the decision is another account's.
+	OwnAppeal(ctx context.Context, accountID, decisionID string) (hook.AppealRecord, error)
+	// OwnAppealByID returns the author's appeal by its ID, for the notification of its review.
+	OwnAppealByID(ctx context.Context, accountID, appealID string) (hook.AppealRecord, error)
 	// AppealDeadline returns the last moment a decision made at decidedAt can be appealed.
 	AppealDeadline(ctx context.Context, decidedAt time.Time) (time.Time, error)
 	ListAppeals(ctx context.Context, q apphook.AppealQuery) ([]hook.AppealRecord, error)
@@ -108,11 +114,70 @@ func (s *Server) AppealHookDecision(ctx context.Context, req AppealHookDecisionR
 	}
 	cache := cacheNoStore
 	return AppealHookDecision200JSONResponse{
-		Body: OwnHookAppeal{
-			Id: a.Appeal.ID, HookDecisionId: a.Appeal.DecisionID, State: hookAppealState(a), SubmittedAt: a.Appeal.SubmittedAt.UTC(),
-		},
-		Headers: AppealHookDecision200ResponseHeaders{CacheControl: &cache},
+		Body: newOwnHookAppeal(a), Headers: AppealHookDecision200ResponseHeaders{CacheControl: &cache},
 	}, nil
+}
+
+// newOwnHookAppeal presents an appeal to its author: where it stands, never the decision's reason
+// or note (ADR-0147 §12).
+func newOwnHookAppeal(r hook.AppealRecord) OwnHookAppeal {
+	out := OwnHookAppeal{
+		Id: r.Appeal.ID, HookDecisionId: r.Appeal.DecisionID, State: hookAppealState(r), SubmittedAt: r.Appeal.SubmittedAt.UTC(),
+	}
+	if r.Review != nil {
+		at := r.Review.DecidedAt.UTC()
+		out.DecidedAt = &at
+	}
+	return out
+}
+
+// GetOwnHookAppeal serves GET /api/v1/hook_decisions/{id}/appeal: where the user's appeal of a
+// refused post stands (ADR-0147 §9).
+func (s *Server) GetOwnHookAppeal(ctx context.Context, req GetOwnHookAppealRequestObject) (GetOwnHookAppealResponseObject, error) {
+	v, err := requireViewer(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if s.o.HookAppeals == nil || !kernel.ValidID(req.Id) {
+		return GetOwnHookAppealdefaultApplicationProblemPlusJSONResponse(s.notFoundResponse(ctx)), nil
+	}
+	a, err := s.o.HookAppeals.OwnAppeal(ctx, v.AccountID, req.Id)
+	switch {
+	case errors.Is(err, apphook.ErrAppealNotFound):
+		return GetOwnHookAppealdefaultApplicationProblemPlusJSONResponse(s.notFoundResponse(ctx)), nil
+	case err != nil:
+		return nil, fmt.Errorf("clientapi: the appeal of hook decision %s of account %s: %w", req.Id, v.AccountID, err)
+	}
+	cache := cacheNoStore
+	return GetOwnHookAppeal200JSONResponse{
+		Body: newOwnHookAppeal(a), Headers: GetOwnHookAppeal200ResponseHeaders{CacheControl: &cache},
+	}, nil
+}
+
+// notifiedHookAppeals presents, by appeal ID, the user's appeals of refused posts that the
+// hook_appeal_decided notifications of ns tell of; an appeal that is gone is left out.
+func (s *Server) notifiedHookAppeals(ctx context.Context, accountID string, ns []notification.Notification) (map[string]OwnHookAppeal, error) {
+	out := map[string]OwnHookAppeal{}
+	if s.o.HookAppeals == nil {
+		return out, nil
+	}
+	for _, n := range ns {
+		if n.Type != notification.TypeHookAppealDecided || n.HookAppealID == "" {
+			continue
+		}
+		if _, ok := out[n.HookAppealID]; ok {
+			continue
+		}
+		a, err := s.o.HookAppeals.OwnAppealByID(ctx, accountID, n.HookAppealID)
+		switch {
+		case errors.Is(err, apphook.ErrAppealNotFound):
+			continue
+		case err != nil:
+			return nil, fmt.Errorf("clientapi: the appeal of notification %s: %w", n.ID, err)
+		}
+		out[n.HookAppealID] = newOwnHookAppeal(a)
+	}
+	return out, nil
 }
 
 func newAdminHookAppeal(r hook.AppealRecord) AdminHookAppeal {

@@ -34,6 +34,15 @@ properties:
     description: The appeal that an `admin_appeal` is about.
     allOf:
       - $ref: ./Id.yaml
+  hook_appeal_id:
+    description: The appeal of a refused post that an `admin_hook_appeal` is about.
+    allOf:
+      - $ref: ./Id.yaml
+  hook_appeal:
+    description: |
+      The user's appeal of a refused post that a `hook_appeal_decided` tells of, with its state;
+      first-party clients only, and absent once the appeal is no longer kept.
+    $ref: ./OwnHookAppeal.yaml
   custom_emoji_request:
     description: |
       The custom emoji request that an `admin_custom_emoji_request` or a

@@ -464,8 +464,16 @@
     "description": "Button of the appeal dialog of a refused post that sends the appeal."
   },
   "compose.rejected.appeal.sent": {
-    "defaultMessage": "Your appeal was sent. A moderator will review it; if they cancel the decision, you can post again.",
+    "defaultMessage": "Your appeal was sent. A moderator will review it, and you will be notified; if they cancel the decision, you can post again.",
     "description": "Shown in the notice of a refused post after the appeal was sent."
+  },
+  "compose.rejected.appeal.upheld": {
+    "defaultMessage": "A moderator upheld the decision on {date}. This post stays unpublished.",
+    "description": "Notice of the composer after the author appealed a refused post: a moderator reviewed the appeal and kept the refusal. {date} is the date and time of the review."
+  },
+  "compose.rejected.appeal.overturned": {
+    "defaultMessage": "A moderator cancelled the decision on {date}. You can post again.",
+    "description": "Notice of the composer after the author appealed a refused post: a moderator overturned the refusal. The post is not restored; the author posts again. {date} is the date and time of the review."
   },
   "compose.rejected.appeal.text.description": {
     "defaultMessage": "The text you tried to post. The moderators read it as plain text.",

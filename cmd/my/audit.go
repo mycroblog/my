@@ -121,7 +121,7 @@ rule_moved, rule_retired (rule); link_card_domain_fetch_stopped,
 link_card_domain_images_stopped, link_card_domain_rule_removed (link_card_domain); role_granted, role_revoked, role_created,
 role_updated, role_deleted (role); appeal_upheld, appeal_overturned (appeal);
 signup_block_added, signup_block_lifted (signup_block);
-hook_decision_applied, hook_decision_overridden (hook_decision);
+hook_decision_applied, hook_decision_overridden, hook_appeal_upheld (hook_decision);
 custom_emoji_created, custom_emoji_image_replaced, custom_emoji_copied,
 custom_emoji_updated, custom_emoji_enabled, custom_emoji_disabled,
 custom_emoji_deleted (custom_emoji); webhook_created, webhook_updated, webhook_deleted,

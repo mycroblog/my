@@ -691,6 +691,7 @@ type Notification struct {
 	ErrorGroupID            sql.NullString
 	ErrorGroupHour          sql.NullInt64
 	AnnouncementID          sql.NullString
+	HookAppealID            sql.NullString
 	DedupeKey               string
 	CreatedAt               int64
 }

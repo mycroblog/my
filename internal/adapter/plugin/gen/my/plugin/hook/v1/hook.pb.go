@@ -569,11 +569,12 @@ func (x *SignupSubject) GetIp() string {
 	return ""
 }
 
-// A post of an account on this server, before the server creates it, for local.status. The
-// subject_key of the call is the ID the post would get, which identifies this attempt alone: an
-// author who posts again is a new subject. Only public, local, and unlisted posts are sent, by default
-// only those of accounts created recently, and never those of an account whose appeal a moderator
-// granted.
+// A post of an account on this server, before the server creates it or stores an edit of it, for
+// local.status. For a new post, the subject_key of the call is the ID the post would get, which
+// identifies this attempt alone: an author who posts again is a new subject. For an edit, it is the
+// post's ID, "#", and the ID of the new revision, and the fields hold the post as edited; a reject
+// refuses the edit alone. Only public, local, and unlisted posts are sent, by default only those of
+// accounts created recently, and never those of an account whose appeal a moderator granted.
 type LocalStatus struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The ActivityPub id the post would get.

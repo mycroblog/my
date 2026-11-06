@@ -407,9 +407,29 @@
     "defaultMessage": "自動審査の記録を開く",
     "description": "Link in a notification to the page of decisions of the external review of submissions."
   },
+  "notifications.link.hook_appeals": {
+    "defaultMessage": "異議申し立てを開く",
+    "description": "Link of an admin_hook_appeal notification to the screen of the automated reviews, which lists the appeals of refused posts that await review."
+  },
   "notifications.type.admin_hook_failing": {
     "defaultMessage": "外部の審査の呼び出しが失敗し続けています",
     "description": "Notification sentence to a moderator: calls of the external review of submissions keep failing, so submissions go through unreviewed or wait."
+  },
+  "notifications.type.admin_hook_appeal": {
+    "defaultMessage": "自動の審査に拒否された投稿に、異議が申し立てられました",
+    "description": "Notification to a moderator: a user appealed a post that the server's automated review refused, and the appeal awaits review. Names neither the user nor the post."
+  },
+  "notifications.type.hook_appeal_decided": {
+    "defaultMessage": "拒否された投稿へのあなたの異議申し立てが審査されました",
+    "description": "Notification: the moderators upheld or overturned the user's appeal of a post that the automated review refused; shown when the appeal is no longer available to say which."
+  },
+  "notifications.type.hook_appeal_upheld": {
+    "defaultMessage": "モデレーターが、あなたの投稿の拒否を維持しました。投稿は公開されません。",
+    "description": "Notification: a moderator reviewed the user's appeal of a post that the automated review refused, and kept the refusal."
+  },
+  "notifications.type.hook_appeal_overturned": {
+    "defaultMessage": "モデレーターが、あなたの投稿の拒否を取り消しました。もう一度投稿できます。",
+    "description": "Notification: a moderator overturned the automated review's refusal of the user's post. The post is not restored; the user posts it again, and their posts are no longer reviewed."
   },
   "notifications.unknown": {
     "defaultMessage": "新しい通知があります。",

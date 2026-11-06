@@ -308,6 +308,7 @@ export const auditActions = [
   "signup_block_lifted",
   "hook_decision_applied",
   "hook_decision_overridden",
+  "hook_appeal_upheld",
   "custom_emoji_created",
   "custom_emoji_image_replaced",
   "custom_emoji_copied",

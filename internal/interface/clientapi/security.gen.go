@@ -145,6 +145,7 @@ var operationSecurity = map[string]operationAccess{
 	"GET /api/v1/finance/cost_totals":                                               {Operation: "getFinanceCostTotals", Scopes: []string{"read:finance"}},
 	"GET /api/v1/finance/income_totals":                                             {Operation: "getFinanceIncomeTotals", Scopes: []string{"read:finance"}},
 	"GET /api/v1/follow_requests":                                                   {Operation: "listFollowRequests", Scopes: []string{"read:follows"}},
+	"GET /api/v1/hook_decisions/{id}/appeal":                                        {Operation: "getOwnHookAppeal", FirstPartyOnly: true, Scopes: []string{"read:statuses"}},
 	"GET /api/v1/imports":                                                           {Operation: "listDataImports", FirstPartyOnly: true, Scopes: []string{"read:accounts"}},
 	"GET /api/v1/instance":                                                          {Operation: "getInstance", Anonymous: true},
 	"GET /api/v1/instance/cost_totals":                                              {Operation: "getInstanceCostTotals", Anonymous: true},

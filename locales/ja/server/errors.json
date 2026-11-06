@@ -791,6 +791,14 @@
     "defaultMessage": "このサーバーの自動の審査が、この投稿を受け付けませんでした。誤りだと思うときは、異議を申し立てられます。",
     "description": "API error detail for HTTP 422 when the server's automated review of posts refused a post; says that the author may appeal."
   },
+  "errors.status.edit_rejected": {
+    "defaultMessage": "この編集は保存されませんでした。",
+    "description": "API error title for HTTP 422 when the server's automated review of posts refused an edit of a post. Fixed text: it never says why."
+  },
+  "errors.status.edit_rejected.detail": {
+    "defaultMessage": "このサーバーの自動の審査が、この編集を受け付けませんでした。投稿は編集前のままです。",
+    "description": "API error detail for HTTP 422 when the server's automated review refused an edit; the post keeps its previous version, and an edit cannot be appealed."
+  },
   "errors.hook_appeal.already_appealed": {
     "defaultMessage": "この判定にはすでに異議を申し立てています。",
     "description": "API error title for HTTP 422 when the user appeals the refusal of a post a second time; a refusal is appealed once."

@@ -2331,7 +2331,15 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /**
+         * Show the user's appeal of a post that the automated review refused
+         * @description Where the user's appeal of a refused post stands: `pending` until a moderator reviews it,
+         *     then `upheld` (the refusal stays) or `overturned` (the user's posts are no longer reviewed,
+         *     and the user posts again). A `hook_appeal_decided` notification tells the user when it is
+         *     reviewed. A decision that the user has not appealed, or that is not about the user's post,
+         *     is a 404, as is an appeal no longer kept.
+         */
+        get: operations["getOwnHookAppeal"];
         put?: never;
         /**
          * Appeal a post that the automated review refused
@@ -2367,7 +2375,7 @@ export interface paths {
          *     mutes with notifications hidden are left out, also those that came before the block or
          *     mute. The moderator notifications (`admin_report`, `admin_sign_up`, `admin_appeal`,
          *     `admin_account_moved`, `admin_webhook_disabled`, `admin_custom_emoji_request`,
-         *     `admin_service_closure_due`, `admin_error_group`, `admin_hook_failing`) are left out once
+         *     `admin_service_closure_due`, `admin_error_group`, `admin_hook_failing`, `admin_hook_appeal`) are left out once
          *     the user's roles no longer grant the permission they need.
          */
         get: operations["listNotifications"];
@@ -2573,7 +2581,9 @@ export interface paths {
          *     previous content stays in the edit history. The visibility and reply target never
          *     change. Attached media must be the user's own uploads that finished processing (422
          *     otherwise). A status with a poll cannot be edited (422): its votes belong to its poll.
-         *     Another account's status is a 403 when the user may see it and a 404 otherwise. A `direct`
+         *     When the server's automated review refuses the edit, the answer is a 422
+         *     `/api/v1/problems/status-rejected` with fixed text and no decision to appeal, and the
+         *     status stays as it was. Another account's status is a 403 when the user may see it and a 404 otherwise. A `direct`
          *     status is a 404 to a token without `read:direct`, the user's own included.
          */
         put: operations["editStatus"];
@@ -8766,7 +8776,8 @@ export interface components {
          *     `account`). On a `signup_block`: `signup_block_added`, `signup_block_lifted`. On a
          *     `hook_decision`: `hook_decision_applied` (the server acted on a decision hook's verdict
          *     and left state; the actor is the system), `hook_decision_overridden` (a moderator
-         *     cancelled the decision). On a
+         *     cancelled the decision, also when overturning its appeal), `hook_appeal_upheld` (a
+         *     moderator upheld the appeal of a refused post, and the decision stays). On a
          *     `custom_emoji`: `custom_emoji_created`, `custom_emoji_image_replaced`,
          *     `custom_emoji_copied` (a new local emoji copied from a remote one),
          *     `custom_emoji_updated` (its category, aliases, or place in the picker),
@@ -8812,7 +8823,7 @@ export interface components {
          *     name.
          * @enum {string}
          */
-        AdminAuditAction: "account_action_issued" | "account_action_lifted" | "domain_action_issued" | "domain_action_lifted" | "report_assigned" | "report_unassigned" | "report_resolved" | "report_reopened" | "report_note_added" | "report_forwarded" | "registration_approved" | "registration_rejected" | "setting_changed" | "text_changed" | "rule_added" | "rule_revised" | "rule_moved" | "rule_retired" | "role_granted" | "role_revoked" | "role_created" | "role_updated" | "role_deleted" | "appeal_upheld" | "appeal_overturned" | "account_deletion_canceled" | "revealed_private_data" | "signup_block_added" | "signup_block_lifted" | "hook_decision_applied" | "hook_decision_overridden" | "two_factor_disabled" | "password_reset_link_issued" | "email_suppression_lifted" | "account_moved" | "custom_emoji_created" | "custom_emoji_image_replaced" | "custom_emoji_copied" | "custom_emoji_updated" | "custom_emoji_enabled" | "custom_emoji_disabled" | "custom_emoji_deleted" | "webhook_created" | "webhook_updated" | "webhook_deleted" | "webhook_enabled" | "webhook_disabled" | "webhook_secret_rotated" | "announcement_created" | "announcement_updated" | "announcement_published" | "announcement_withdrawn" | "invite_created" | "invite_revoked" | "relay_added" | "relay_followed" | "relay_unfollowed" | "relay_removed" | "relay_accepted" | "relay_rejected" | "status_refetch_queued" | "account_statuses_refetch_queued" | "domain_statuses_refetch_queued" | "billing_import_queued" | "cost_item_created" | "cost_item_relabeled" | "cost_item_price_revised" | "cost_item_end_changed" | "cost_item_deleted" | "supporter_program_enabled" | "supporter_program_disabled" | "supporter_plan_created" | "supporter_plan_revised" | "supporter_plan_retired" | "supporter_subscription_ended" | "custom_emoji_request_submitted" | "custom_emoji_request_withdrawn" | "custom_emoji_request_approved" | "custom_emoji_request_rejected" | "payment_reconcile_queued" | "oauth_client_disabled" | "oauth_client_enabled" | "oauth_client_host_denied" | "oauth_client_host_allowed" | "service_closure_announced" | "service_closure_withdrawn" | "service_closure_closed" | "service_closure_delivery_completed" | "voice_room_ended" | "login_provider_created" | "login_provider_updated" | "login_provider_deleted" | "login_provider_enabled" | "login_provider_disabled" | "login_provider_secret_rotated" | "link_card_domain_fetch_stopped" | "link_card_domain_images_stopped" | "link_card_domain_rule_removed" | "instance_marked_available";
+        AdminAuditAction: "account_action_issued" | "account_action_lifted" | "domain_action_issued" | "domain_action_lifted" | "report_assigned" | "report_unassigned" | "report_resolved" | "report_reopened" | "report_note_added" | "report_forwarded" | "registration_approved" | "registration_rejected" | "setting_changed" | "text_changed" | "rule_added" | "rule_revised" | "rule_moved" | "rule_retired" | "role_granted" | "role_revoked" | "role_created" | "role_updated" | "role_deleted" | "appeal_upheld" | "appeal_overturned" | "account_deletion_canceled" | "revealed_private_data" | "signup_block_added" | "signup_block_lifted" | "hook_decision_applied" | "hook_decision_overridden" | "hook_appeal_upheld" | "two_factor_disabled" | "password_reset_link_issued" | "email_suppression_lifted" | "account_moved" | "custom_emoji_created" | "custom_emoji_image_replaced" | "custom_emoji_copied" | "custom_emoji_updated" | "custom_emoji_enabled" | "custom_emoji_disabled" | "custom_emoji_deleted" | "webhook_created" | "webhook_updated" | "webhook_deleted" | "webhook_enabled" | "webhook_disabled" | "webhook_secret_rotated" | "announcement_created" | "announcement_updated" | "announcement_published" | "announcement_withdrawn" | "invite_created" | "invite_revoked" | "relay_added" | "relay_followed" | "relay_unfollowed" | "relay_removed" | "relay_accepted" | "relay_rejected" | "status_refetch_queued" | "account_statuses_refetch_queued" | "domain_statuses_refetch_queued" | "billing_import_queued" | "cost_item_created" | "cost_item_relabeled" | "cost_item_price_revised" | "cost_item_end_changed" | "cost_item_deleted" | "supporter_program_enabled" | "supporter_program_disabled" | "supporter_plan_created" | "supporter_plan_revised" | "supporter_plan_retired" | "supporter_subscription_ended" | "custom_emoji_request_submitted" | "custom_emoji_request_withdrawn" | "custom_emoji_request_approved" | "custom_emoji_request_rejected" | "payment_reconcile_queued" | "oauth_client_disabled" | "oauth_client_enabled" | "oauth_client_host_denied" | "oauth_client_host_allowed" | "service_closure_announced" | "service_closure_withdrawn" | "service_closure_closed" | "service_closure_delivery_completed" | "voice_room_ended" | "login_provider_created" | "login_provider_updated" | "login_provider_deleted" | "login_provider_enabled" | "login_provider_disabled" | "login_provider_secret_rotated" | "link_card_domain_fetch_stopped" | "link_card_domain_images_stopped" | "link_card_domain_rule_removed" | "instance_marked_available";
         /**
          * @description Who performed the operation. `user`: a signed-in moderator or administrator.
          *     `cli`: the `my` command line, which acts as no user. `system`: the server itself.
@@ -10076,6 +10087,11 @@ export interface components {
             state: components["schemas"]["HookAppealState"];
             /** Format: date-time */
             submitted_at: string;
+            /**
+             * Format: date-time
+             * @description When a moderator upheld or overturned it; absent while it is `pending`.
+             */
+            decided_at?: string;
         };
         /**
          * @description The problem of a post that the server's automated review refused (422,
@@ -12935,6 +12951,13 @@ export interface components {
             report_id?: components["schemas"]["Id"];
             /** @description The appeal that an `admin_appeal` is about. */
             appeal_id?: components["schemas"]["Id"];
+            /** @description The appeal of a refused post that an `admin_hook_appeal` is about. */
+            hook_appeal_id?: components["schemas"]["Id"];
+            /**
+             * @description The user's appeal of a refused post that a `hook_appeal_decided` tells of, with its state;
+             *     first-party clients only, and absent once the appeal is no longer kept.
+             */
+            hook_appeal?: components["schemas"]["OwnHookAppeal"];
             /**
              * @description The custom emoji request that an `admin_custom_emoji_request` or a
              *     `custom_emoji_request_decided` is about, as it is now; absent when it no longer exists,
@@ -12972,14 +12995,15 @@ export interface components {
          *     `poll_closed`, `account_moved`, `status`), except `voice`, which is `voice_room_started` and
          *     `voice_room_invited`. `status` has no `email` channel. The moderator notifications are one row per type (`admin_report`,
          *     `admin_sign_up`, `admin_appeal`, `admin_webhook_disabled`, `admin_custom_emoji_request`,
-         *     `admin_account_moved`, `admin_service_closure_due`, `admin_error_group`, `admin_hook_failing`). The instance's
+         *     `admin_account_moved`, `admin_service_closure_due`, `admin_error_group`, `admin_hook_failing`, `admin_hook_appeal`). The instance's
          *     notices to the user are `moderation` (`moderation_notice`, `report_resolved`,
-         *     `appeal_decided`, `relationships_severed`, `custom_emoji_request_decided`),
+         *     `appeal_decided`, `relationships_severed`, `custom_emoji_request_decided`,
+         *     `hook_appeal_decided`),
          *     `service_closure`, `supporter` (the `supporter_*` types), and `announcement`, the only one of
          *     them that the user turns off in the app (on by default); it has no `email` channel.
          * @enum {string}
          */
-        NotificationGroup: "mention" | "follow" | "follow_request" | "follow_accepted" | "boost" | "favourite" | "reaction" | "quote" | "poll_closed" | "account_moved" | "voice" | "status" | "admin_report" | "admin_sign_up" | "admin_appeal" | "admin_webhook_disabled" | "admin_hook_failing" | "admin_custom_emoji_request" | "admin_account_moved" | "admin_service_closure_due" | "admin_error_group" | "moderation" | "service_closure" | "supporter" | "announcement";
+        NotificationGroup: "mention" | "follow" | "follow_request" | "follow_accepted" | "boost" | "favourite" | "reaction" | "quote" | "poll_closed" | "account_moved" | "voice" | "status" | "admin_report" | "admin_sign_up" | "admin_appeal" | "admin_webhook_disabled" | "admin_hook_failing" | "admin_hook_appeal" | "admin_custom_emoji_request" | "admin_account_moved" | "admin_service_closure_due" | "admin_error_group" | "moderation" | "service_closure" | "supporter" | "announcement";
         /** @description How far the authenticated user has read the notifications, across all clients. */
         NotificationMarker: {
             /** @description The newest notification read; omitted when the user has read none. */
@@ -13074,7 +13098,10 @@ export interface components {
          *     the moderators resolved, without how they resolved it. It is sent once per report, even
          *     when the report is reopened and resolved again. `appeal_decided` also comes from the
          *     instance: the moderators decided the user's appeal, and its `moderation_action` is the
-         *     action with the appeal and the decision.
+         *     action with the appeal and the decision. `hook_appeal_decided` also comes from the
+         *     instance: a moderator upheld or overturned the user's appeal of a post that the automated
+         *     review refused, and its `hook_appeal` is the appeal with its state; first-party clients only,
+         *     as the appeal is. It is sent once per appeal.
          *     `relationships_severed` also comes from the instance: its `relationship_severance` tells
          *     how many follows the user lost when the moderators suspended a server or a remote
          *     account, whose `account` it carries for an account. It is sent once per suspension.
@@ -13085,8 +13112,9 @@ export interface components {
          *     `admin_appeal` (a user appealed an action; `appeal_id` is the appeal) to those with
          *     `manage_accounts`, and `admin_webhook_disabled` (the server disabled a webhook that
          *     answered 410 Gone or kept failing; it names none) to those with `manage_webhooks`, and
-         *     `admin_hook_failing` (calls of an external review keep failing; it names none) to those
-         *     with `manage_reports`, and
+         *     `admin_hook_failing` (calls of an external review keep failing; it names none) and
+         *     `admin_hook_appeal` (a user appealed a post that the automated review refused;
+         *     `hook_appeal_id` is the appeal) to those with `manage_reports`, and
          *     `admin_custom_emoji_request` (a user requested a custom emoji or a new image of one;
          *     `custom_emoji_request` is the request) to those with `manage_custom_emojis`.
          *     `custom_emoji_request_decided` also comes from the instance: an administrator approved
@@ -13129,7 +13157,7 @@ export interface components {
          *     announcement is withdrawn or its window ends.
          * @enum {string}
          */
-        NotificationType: "follow" | "follow_request" | "follow_accepted" | "mention" | "boost" | "favourite" | "reaction" | "quote" | "poll_closed" | "moderation_notice" | "report_resolved" | "admin_report" | "admin_sign_up" | "relationships_severed" | "appeal_decided" | "admin_appeal" | "admin_webhook_disabled" | "admin_hook_failing" | "admin_custom_emoji_request" | "custom_emoji_request_decided" | "supporter_payment_failed" | "supporter_subscription_ended" | "supporter_plan_retired" | "account_moved" | "admin_account_moved" | "service_closure" | "admin_service_closure_due" | "supporter_service_closure" | "voice_room_started" | "voice_room_invited" | "admin_error_group" | "status" | "announcement";
+        NotificationType: "follow" | "follow_request" | "follow_accepted" | "mention" | "boost" | "favourite" | "reaction" | "quote" | "poll_closed" | "moderation_notice" | "report_resolved" | "admin_report" | "admin_sign_up" | "relationships_severed" | "appeal_decided" | "admin_appeal" | "admin_webhook_disabled" | "admin_hook_failing" | "admin_custom_emoji_request" | "custom_emoji_request_decided" | "supporter_payment_failed" | "supporter_subscription_ended" | "supporter_plan_retired" | "account_moved" | "admin_account_moved" | "service_closure" | "admin_service_closure_due" | "supporter_service_closure" | "voice_room_started" | "voice_room_invited" | "admin_error_group" | "status" | "announcement" | "admin_hook_appeal" | "hook_appeal_decided";
         /**
          * @description An OAuth app that the authenticated user registered. Like every third-party app,
          *     it gets no first-party-only scope and calls no account security operation.
@@ -18675,6 +18703,31 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ModerationAction"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    getOwnHookAppeal: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the decision, `hook_decision_id` of the refusal. */
+                id: components["schemas"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The appeal. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OwnHookAppeal"];
                 };
             };
             default: components["responses"]["Problem"];

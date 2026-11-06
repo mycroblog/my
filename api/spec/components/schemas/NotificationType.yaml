@@ -13,7 +13,10 @@ description: |
   the moderators resolved, without how they resolved it. It is sent once per report, even
   when the report is reopened and resolved again. `appeal_decided` also comes from the
   instance: the moderators decided the user's appeal, and its `moderation_action` is the
-  action with the appeal and the decision.
+  action with the appeal and the decision. `hook_appeal_decided` also comes from the
+  instance: a moderator upheld or overturned the user's appeal of a post that the automated
+  review refused, and its `hook_appeal` is the appeal with its state; first-party clients only,
+  as the appeal is. It is sent once per appeal.
   `relationships_severed` also comes from the instance: its `relationship_severance` tells
   how many follows the user lost when the moderators suspended a server or a remote
   account, whose `account` it carries for an account. It is sent once per suspension.
@@ -24,8 +27,9 @@ description: |
   `admin_appeal` (a user appealed an action; `appeal_id` is the appeal) to those with
   `manage_accounts`, and `admin_webhook_disabled` (the server disabled a webhook that
   answered 410 Gone or kept failing; it names none) to those with `manage_webhooks`, and
-  `admin_hook_failing` (calls of an external review keep failing; it names none) to those
-  with `manage_reports`, and
+  `admin_hook_failing` (calls of an external review keep failing; it names none) and
+  `admin_hook_appeal` (a user appealed a post that the automated review refused;
+  `hook_appeal_id` is the appeal) to those with `manage_reports`, and
   `admin_custom_emoji_request` (a user requested a custom emoji or a new image of one;
   `custom_emoji_request` is the request) to those with `manage_custom_emojis`.
   `custom_emoji_request_decided` also comes from the instance: an administrator approved
@@ -101,3 +105,5 @@ enum:
   - admin_error_group
   - status
   - announcement
+  - admin_hook_appeal
+  - hook_appeal_decided

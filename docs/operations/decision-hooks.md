@@ -17,7 +17,7 @@ the records, the modes, and the admin screens described here. Of the intake path
 | `inbound.follow` | Follows from other servers | `allow`, `drop`, `flag` | `pass` (default) or `retry` |
 | `signup.check` | Sign-ups, after the CAPTCHA and the block list | `allow`, `require_approval`, `reject` | `pass` (default) or `require_approval` |
 | `media.check` | Uploaded media, before anyone can use them | `allow`, `mark_sensitive`, `flag`, `reject` | `pass` (default) or `retry` |
-| `local.status` | Posts of local accounts | `allow`, `flag`, `reject` | `pass` |
+| `local.status` | Posts of local accounts, and their edits | `allow`, `flag`, `reject` | `pass` |
 
 Set `plugin_<hook>_address` to give a hook a plugin, with a dot in the name becoming `_`
 (`plugin_inbound_status_address`). [Plugins](plugins.md) covers the destination, its authentication, and how to test a
@@ -120,7 +120,8 @@ username, keeps its decision until the retention removes it.
 
 ## Local posts
 
-`local.status` reviews a post of an account on your server before the server creates it. The author waits for the plugin, so
+`local.status` reviews a post of an account on your server before the server creates it, and each edit of one before the
+server stores it. The author waits for the plugin, so
 the wait is short: `plugin_local_status_timeout` (1 second by default). A failure, a timeout, or an open breaker always lets the
 post through (`pass` is its only failure behaviour), and the wait is not part of a database transaction.
 
@@ -136,11 +137,18 @@ What it sends and when:
   created. No media is sent.
 - The key of the subject is the ID the post would get. Sending a post again with the same `Idempotency-Key` returns the post
   that was created, without calling the plugin; a new attempt is a new subject.
+- An edit is sent the same way, with the post as edited, to the same accounts: those inside
+  `hook_local_status_account_age_days`. Its key is the post's ID, `#`, and the ID of the new revision, so each edit is a
+  subject of its own.
 - Starting a voice chat room posts its first post without this hook.
 
 When it enforces, `reject` refuses the post and nothing is stored. The author sees fixed text ("This post was not published.")
 and a way to appeal; never the reason or the note. `flag` lets the post through and files one report of it, against its
 author.
+
+On an edit, `reject` refuses that edit alone: the post stays as it was, and the author sees fixed text ("This edit was not
+saved."). An edit cannot be appealed, since the post is still there for your moderators to act on as usual. `flag` stores the
+edit and files a report of the post, and `allow` lets it through.
 
 ### Appeals
 
@@ -148,11 +156,16 @@ The author of a refused post can appeal it within `appeal_window_days` (the same
 decision. The appeal carries the text of the post, since the server stored nothing of it, and an optional comment for your
 moderators. No plugin is called.
 
-Your moderators (`manage_reports`) review appeals under **Moderation** > **Automated reviews**:
+Your moderators (`manage_reports`) are notified of each new appeal (**Appeals of refused posts** in their notification
+settings, which they can also get by email), and review appeals under **Moderation** > **Automated reviews**:
 
-- **Uphold** leaves the decision as it is.
+- **Uphold** leaves the decision as it is, and goes in the audit log as `hook_appeal_upheld`.
 - **Overturn** cancels the decision, which goes in the audit log as `hook_decision_overridden`, and stops sending the
   account's posts to `local.status`, in one transaction. The refused post is not restored: the author posts it again.
+
+Either way the author is notified of the outcome, among the notices from the moderators, and the post form shows it under
+the refusal. The notification and the form say only whether the decision stays or was cancelled, never the reason or the
+note. A first-party client reads where an appeal stands with `GET /api/v1/hook_decisions/{id}/appeal`.
 
 An account that an overturned appeal took out of the hook stays out of it until the account is deleted. If it is later taken
 over, `local.status` no longer reviews it.

@@ -3402,6 +3402,40 @@ paths:
         default:
           $ref: '#/components/responses/Problem'
   /hook_decisions/{id}/appeal:
+    get:
+      operationId: getOwnHookAppeal
+      x-first-party-only: true
+      summary: Show the user's appeal of a post that the automated review refused
+      description: |
+        Where the user's appeal of a refused post stands: `pending` until a moderator reviews it,
+        then `upheld` (the refusal stays) or `overturned` (the user's posts are no longer reviewed,
+        and the user posts again). A `hook_appeal_decided` notification tells the user when it is
+        reviewed. A decision that the user has not appealed, or that is not about the user's post,
+        is a 404, as is an appeal no longer kept.
+      tags:
+        - statuses
+      security:
+        - oauth2:
+            - read:statuses
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The ID of the decision, `hook_decision_id` of the refusal.
+          schema:
+            $ref: '#/components/schemas/Id'
+      responses:
+        '200':
+          description: The appeal.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OwnHookAppeal'
+        default:
+          $ref: '#/components/responses/Problem'
     post:
       operationId: appealHookDecision
       x-first-party-only: true
@@ -3452,7 +3486,7 @@ paths:
         mutes with notifications hidden are left out, also those that came before the block or
         mute. The moderator notifications (`admin_report`, `admin_sign_up`, `admin_appeal`,
         `admin_account_moved`, `admin_webhook_disabled`, `admin_custom_emoji_request`,
-        `admin_service_closure_due`, `admin_error_group`, `admin_hook_failing`) are left out once
+        `admin_service_closure_due`, `admin_error_group`, `admin_hook_failing`, `admin_hook_appeal`) are left out once
         the user's roles no longer grant the permission they need.
       tags:
         - notifications
@@ -3788,7 +3822,9 @@ paths:
         previous content stays in the edit history. The visibility and reply target never
         change. Attached media must be the user's own uploads that finished processing (422
         otherwise). A status with a poll cannot be edited (422): its votes belong to its poll.
-        Another account's status is a 403 when the user may see it and a 404 otherwise. A `direct`
+        When the server's automated review refuses the edit, the answer is a 422
+        `/api/v1/problems/status-rejected` with fixed text and no decision to appeal, and the
+        status stays as it was. Another account's status is a 403 when the user may see it and a 404 otherwise. A `direct`
         status is a 404 to a token without `read:direct`, the user's own included.
       tags:
         - statuses
@@ -13118,7 +13154,8 @@ components:
         `account`). On a `signup_block`: `signup_block_added`, `signup_block_lifted`. On a
         `hook_decision`: `hook_decision_applied` (the server acted on a decision hook's verdict
         and left state; the actor is the system), `hook_decision_overridden` (a moderator
-        cancelled the decision). On a
+        cancelled the decision, also when overturning its appeal), `hook_appeal_upheld` (a
+        moderator upheld the appeal of a refused post, and the decision stays). On a
         `custom_emoji`: `custom_emoji_created`, `custom_emoji_image_replaced`,
         `custom_emoji_copied` (a new local emoji copied from a remote one),
         `custom_emoji_updated` (its category, aliases, or place in the picker),
@@ -13195,6 +13232,7 @@ components:
         - signup_block_lifted
         - hook_decision_applied
         - hook_decision_overridden
+        - hook_appeal_upheld
         - two_factor_disabled
         - password_reset_link_issued
         - email_suppression_lifted
@@ -15412,6 +15450,10 @@ components:
         state:
           $ref: '#/components/schemas/HookAppealState'
         submitted_at:
+          type: string
+          format: date-time
+        decided_at:
+          description: When a moderator upheld or overturned it; absent while it is `pending`.
           type: string
           format: date-time
     StatusRejectedProblem:
@@ -20186,6 +20228,15 @@ components:
           description: The appeal that an `admin_appeal` is about.
           allOf:
             - $ref: '#/components/schemas/Id'
+        hook_appeal_id:
+          description: The appeal of a refused post that an `admin_hook_appeal` is about.
+          allOf:
+            - $ref: '#/components/schemas/Id'
+        hook_appeal:
+          description: |
+            The user's appeal of a refused post that a `hook_appeal_decided` tells of, with its state;
+            first-party clients only, and absent once the appeal is no longer kept.
+          $ref: '#/components/schemas/OwnHookAppeal'
         custom_emoji_request:
           description: |
             The custom emoji request that an `admin_custom_emoji_request` or a
@@ -20231,9 +20282,10 @@ components:
         `poll_closed`, `account_moved`, `status`), except `voice`, which is `voice_room_started` and
         `voice_room_invited`. `status` has no `email` channel. The moderator notifications are one row per type (`admin_report`,
         `admin_sign_up`, `admin_appeal`, `admin_webhook_disabled`, `admin_custom_emoji_request`,
-        `admin_account_moved`, `admin_service_closure_due`, `admin_error_group`, `admin_hook_failing`). The instance's
+        `admin_account_moved`, `admin_service_closure_due`, `admin_error_group`, `admin_hook_failing`, `admin_hook_appeal`). The instance's
         notices to the user are `moderation` (`moderation_notice`, `report_resolved`,
-        `appeal_decided`, `relationships_severed`, `custom_emoji_request_decided`),
+        `appeal_decided`, `relationships_severed`, `custom_emoji_request_decided`,
+        `hook_appeal_decided`),
         `service_closure`, `supporter` (the `supporter_*` types), and `announcement`, the only one of
         them that the user turns off in the app (on by default); it has no `email` channel.
       type: string
@@ -20255,6 +20307,7 @@ components:
         - admin_appeal
         - admin_webhook_disabled
         - admin_hook_failing
+        - admin_hook_appeal
         - admin_custom_emoji_request
         - admin_account_moved
         - admin_service_closure_due
@@ -20411,7 +20464,10 @@ components:
         the moderators resolved, without how they resolved it. It is sent once per report, even
         when the report is reopened and resolved again. `appeal_decided` also comes from the
         instance: the moderators decided the user's appeal, and its `moderation_action` is the
-        action with the appeal and the decision.
+        action with the appeal and the decision. `hook_appeal_decided` also comes from the
+        instance: a moderator upheld or overturned the user's appeal of a post that the automated
+        review refused, and its `hook_appeal` is the appeal with its state; first-party clients only,
+        as the appeal is. It is sent once per appeal.
         `relationships_severed` also comes from the instance: its `relationship_severance` tells
         how many follows the user lost when the moderators suspended a server or a remote
         account, whose `account` it carries for an account. It is sent once per suspension.
@@ -20422,8 +20478,9 @@ components:
         `admin_appeal` (a user appealed an action; `appeal_id` is the appeal) to those with
         `manage_accounts`, and `admin_webhook_disabled` (the server disabled a webhook that
         answered 410 Gone or kept failing; it names none) to those with `manage_webhooks`, and
-        `admin_hook_failing` (calls of an external review keep failing; it names none) to those
-        with `manage_reports`, and
+        `admin_hook_failing` (calls of an external review keep failing; it names none) and
+        `admin_hook_appeal` (a user appealed a post that the automated review refused;
+        `hook_appeal_id` is the appeal) to those with `manage_reports`, and
         `admin_custom_emoji_request` (a user requested a custom emoji or a new image of one;
         `custom_emoji_request` is the request) to those with `manage_custom_emojis`.
         `custom_emoji_request_decided` also comes from the instance: an administrator approved
@@ -20499,6 +20556,8 @@ components:
         - admin_error_group
         - status
         - announcement
+        - admin_hook_appeal
+        - hook_appeal_decided
     OAuthApp:
       description: |
         An OAuth app that the authenticated user registered. Like every third-party app,
