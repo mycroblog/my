@@ -7,6 +7,28 @@ or on another machine.
 Nothing is delegated by default. A server without a plugin address opens no connection and starts no process.
 The build tag [`no_plugins`](../reference/build-tags.md) takes the plugin client out of the binary.
 
+![Where plugins sit: the my process hands five ports to a plugin and asks five decision hooks, all through one plugin client that connects to the plugins you run; the bottom of the diagram shows what each does when a call fails. The list below describes each part.](images/plugins.svg)
+
+From the top of the diagram down:
+
+- **The my process**, with any `role`, makes two kinds of calls to a plugin.
+  - **Ports it hands over**: a plugin does a job in place of a built-in part, and each is on only when a setting names
+    `plugin`: `translator` (the instance setting `translation_providers = plugin`), `billing` (`billing_sources` includes
+    `plugin`), `mailer` (`mail = plugin`), `media` (`media = plugin`), and `key_manager` (`key_manager = plugin`).
+  - **[Decision hooks](decision-hooks.md)**: a plugin answers whether to accept something, and is asked unless the hook's
+    mode `hook_<hook>_mode` is `off`: `inbound.status` for posts from other servers, `inbound.follow` for follows from
+    other servers, `signup.check` for sign-ups, `media.check` for uploads, and `local.status` for posts of local accounts.
+- **The plugin client** makes every call. Each kind has one destination, `plugin_<kind>_address`, and a deadline,
+  `plugin_<kind>_timeout`, and runs at most 8 calls at once (2 for `media`). It connects over a Unix socket, `https://`, or,
+  for [some kinds](#plain-tcp) only, `http://`.
+- **Your plugins** are separate programs that you run, as a sidecar, under systemd, or on another machine. The server only
+  connects to them.
+- **When a call fails or times out** ([details](#when-a-call-fails)):
+  - `billing`, `mailer`, and `media`: the job that made the call runs again later.
+  - `translator`: the server asks the next provider, and when none is left the reader sees that the translation failed.
+  - `key_manager` fails closed: whatever needs a key fails, and the server does not start without the plugin.
+  - A decision hook does what `hook_<hook>_on_failure` says: `pass`, `retry`, or, for sign-ups, `require_approval`.
+
 ## Kinds
 
 Each kind has its own destination, under the settings `plugin_<kind>_*`. A dot in the name of a kind becomes `_` in the

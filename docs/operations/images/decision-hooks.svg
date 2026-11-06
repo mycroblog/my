@@ -1,0 +1,105 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 702" width="760" height="702" role="img" aria-labelledby="title desc">
+<!-- SPDX-License-Identifier: AGPL-3.0-only -->
+  <title id="title">The path of a decision hook</title>
+  <desc id="desc">Five things can be reviewed: a remote post by inbound.status and a remote follow by inbound.follow, both in a job; a sign-up by signup.check, while the applicant waits; an upload by media.check, in a job; and a local post by local.status, while the author waits. Each goes first through the mode, hook_&lt;hook&gt;_mode: off makes no call, observe records the verdict, and enforce acts on it. In observe or enforce, the server calls your plugin with POST /my.plugin.hook.v1.HookService/Check. It waits up to plugin_&lt;hook&gt;_timeout, with at most 8 calls at once, and after 5 failures in a row it skips the plugin for 30 seconds (breaker_open). An answer is a verdict: allow accepts it; flag accepts it with a report; mark_sensitive accepts it marked sensitive; require_approval holds a sign-up; drop and reject stop it and keep nothing. An answer the hook does not take is a failure, as are timeout, error, invalid, and breaker_open; then hook_&lt;hook&gt;_on_failure decides: pass accepts it unreviewed, retry records no decision and the job runs again, and require_approval holds a sign-up. The server records one decision per hook and subject, and a job that runs again reads it instead of calling the plugin.</desc>
+
+  <style>
+    svg { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif; }
+    .bg { fill: #ffffff; }
+    .t { fill: #1f2328; font-size: 16px; }
+    .b { font-weight: 600; }
+    .m { fill: #59636e; font-size: 15px; }
+    .client { fill: #dafbe1; stroke: #1a7f37; stroke-width: 1.5; }
+    .proc { fill: #ddf4ff; stroke: #0969da; stroke-width: 2; }
+    .port { fill: #ffffff; stroke: #8c959f; stroke-width: 1.5; }
+    .svc { fill: #fbefff; stroke: #8250df; stroke-width: 1.5; }
+    .danger { fill: #ffebe9; stroke: #cf222e; stroke-width: 1.5; }
+    .arrow { stroke: #59636e; stroke-width: 2; fill: none; }
+    .head { fill: #59636e; }
+    @media (prefers-color-scheme: dark) {
+      .bg { fill: #0d1117; }
+      .t { fill: #e6edf3; }
+      .m { fill: #9198a1; }
+      .client { fill: #0f2d1b; stroke: #3fb950; }
+      .proc { fill: #0c2d6b; stroke: #4493f8; }
+      .port { fill: #0d1117; stroke: #656c76; }
+      .svc { fill: #2a1650; stroke: #ab7df8; }
+      .danger { fill: #3c1618; stroke: #f85149; }
+      .arrow { stroke: #9198a1; }
+      .head { fill: #9198a1; }
+    }
+  </style>
+  <defs>
+    <marker id="arrowhead" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path class="head" d="M 0 0 L 10 5 L 0 10 z"/>
+    </marker>
+  </defs>
+  <rect class="bg" x="0" y="0" width="760" height="702" rx="12"/>
+
+  <rect class="client" x="20" y="16" width="136" height="94" rx="8"/>
+  <text class="t b" x="88" y="46" text-anchor="middle">Remote post</text>
+  <text class="m" x="88" y="68" text-anchor="middle">inbound.status</text>
+  <text class="m" x="88" y="90" text-anchor="middle">in a job</text>
+  <rect class="client" x="166" y="16" width="136" height="94" rx="8"/>
+  <text class="t b" x="234" y="46" text-anchor="middle">Remote follow</text>
+  <text class="m" x="234" y="68" text-anchor="middle">inbound.follow</text>
+  <text class="m" x="234" y="90" text-anchor="middle">in a job</text>
+  <rect class="client" x="312" y="16" width="136" height="94" rx="8"/>
+  <text class="t b" x="380" y="46" text-anchor="middle">Sign-up</text>
+  <text class="m" x="380" y="68" text-anchor="middle">signup.check</text>
+  <text class="m" x="380" y="90" text-anchor="middle">applicant waits</text>
+  <rect class="client" x="458" y="16" width="136" height="94" rx="8"/>
+  <text class="t b" x="526" y="46" text-anchor="middle">Upload</text>
+  <text class="m" x="526" y="68" text-anchor="middle">media.check</text>
+  <text class="m" x="526" y="90" text-anchor="middle">in a job</text>
+  <rect class="client" x="604" y="16" width="136" height="94" rx="8"/>
+  <text class="t b" x="672" y="46" text-anchor="middle">Local post</text>
+  <text class="m" x="672" y="68" text-anchor="middle">local.status</text>
+  <text class="m" x="672" y="90" text-anchor="middle">author waits</text>
+
+  <path class="arrow" d="M 88 110 L 88 146" marker-end="url(#arrowhead)"/>
+  <path class="arrow" d="M 234 110 L 234 146" marker-end="url(#arrowhead)"/>
+  <path class="arrow" d="M 380 110 L 380 146" marker-end="url(#arrowhead)"/>
+  <path class="arrow" d="M 526 110 L 526 146" marker-end="url(#arrowhead)"/>
+  <path class="arrow" d="M 672 110 L 672 146" marker-end="url(#arrowhead)"/>
+
+  <rect class="proc" x="20" y="150" width="720" height="78" rx="8"/>
+  <text class="t b" x="380" y="183" text-anchor="middle">Mode: hook_&lt;hook&gt;_mode</text>
+  <text class="m" x="380" y="205" text-anchor="middle">off: no call · observe: record the verdict · enforce: act on it</text>
+
+  <path class="arrow" d="M 380 228 L 380 264" marker-end="url(#arrowhead)"/>
+  <text class="m" x="396" y="251" text-anchor="start">observe or enforce</text>
+
+  <rect class="svc" x="20" y="268" width="720" height="100" rx="8"/>
+  <text class="t b" x="380" y="301" text-anchor="middle">Your plugin: POST /my.plugin.hook.v1.HookService/Check</text>
+  <text class="m" x="380" y="323" text-anchor="middle">waits up to plugin_&lt;hook&gt;_timeout, with at most 8 calls at once</text>
+  <text class="m" x="380" y="345" text-anchor="middle">after 5 failures in a row, skipped for 30 s (breaker_open)</text>
+
+  <path class="arrow" d="M 195 368 L 195 404" marker-end="url(#arrowhead)"/>
+  <text class="m" x="211" y="391" text-anchor="start">an answer</text>
+  <path class="arrow" d="M 565 368 L 565 404" marker-end="url(#arrowhead)"/>
+  <text class="m" x="581" y="391" text-anchor="start">no answer it takes</text>
+
+  <rect class="port" x="20" y="408" width="350" height="160" rx="8"/>
+  <text class="t b" x="40" y="438" text-anchor="start">A verdict</text>
+  <text class="m" x="40" y="460" text-anchor="start">allow: accepted</text>
+  <text class="m" x="40" y="482" text-anchor="start">flag: accepted, with a report</text>
+  <text class="m" x="40" y="504" text-anchor="start">mark_sensitive: accepted, marked sensitive</text>
+  <text class="m" x="40" y="526" text-anchor="start">require_approval: held (sign-ups)</text>
+  <text class="m" x="40" y="548" text-anchor="start">drop · reject: stopped, nothing kept</text>
+
+  <rect class="danger" x="390" y="408" width="350" height="160" rx="8"/>
+  <text class="t b" x="410" y="438" text-anchor="start">A failure</text>
+  <text class="m" x="410" y="460" text-anchor="start">timeout · error · invalid · breaker_open</text>
+  <text class="m" x="410" y="482" text-anchor="start">then hook_&lt;hook&gt;_on_failure:</text>
+  <text class="m" x="410" y="504" text-anchor="start">pass: accepted unreviewed</text>
+  <text class="m" x="410" y="526" text-anchor="start">retry: no decision; the job runs again</text>
+  <text class="m" x="410" y="548" text-anchor="start">require_approval: held (sign-ups)</text>
+
+  <path class="arrow" d="M 195 568 L 195 604" marker-end="url(#arrowhead)"/>
+  <path class="arrow" d="M 565 568 L 565 604" marker-end="url(#arrowhead)"/>
+
+  <rect class="proc" x="20" y="608" width="720" height="78" rx="8"/>
+  <text class="t b" x="380" y="641" text-anchor="middle">One decision per hook and subject</text>
+  <text class="m" x="380" y="663" text-anchor="middle">a job that runs again reads it instead of calling the plugin</text>
+</svg>

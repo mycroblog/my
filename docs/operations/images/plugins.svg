@@ -1,0 +1,109 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 1000" width="760" height="1000" role="img" aria-labelledby="title desc">
+<!-- SPDX-License-Identifier: AGPL-3.0-only -->
+  <title id="title">Where plugins sit</title>
+  <desc id="desc">The my process, with role web, worker, or all, holds two kinds of plugin calls. Ports it hands over, each on when a setting names plugin: translator (translation_providers = plugin), billing (billing_sources includes plugin), mailer (mail = plugin), media (media = plugin), and key_manager (key_manager = plugin). Decision hooks, asked unless hook_&lt;hook&gt;_mode is off: inbound.status for posts from other servers, inbound.follow for follows from other servers, signup.check for sign-ups, media.check for uploads, and local.status for posts of local accounts. Every call goes through the plugin client, which has one destination per kind (plugin_&lt;kind&gt;_address), a deadline (plugin_&lt;kind&gt;_timeout), and 8 calls at once (2 for media). It connects over unix://, https://, or, for some kinds only, http:// to your plugins: separate programs that you run as a sidecar, under systemd, or on another machine; the server only connects. When a call fails or times out: for billing, mailer, and media, the job that made the call runs again later; for translator, the next provider is asked, and with none left the reader sees it fail; key_manager fails closed, so what needs a key fails, and the server does not start without it; a decision hook does what hook_&lt;hook&gt;_on_failure says: pass, retry, or require_approval.</desc>
+
+  <style>
+    svg { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif; }
+    .bg { fill: #ffffff; }
+    .t { fill: #1f2328; font-size: 16px; }
+    .b { font-weight: 600; }
+    .m { fill: #59636e; font-size: 15px; }
+    .h { fill: #1f2328; font-size: 17px; font-weight: 600; }
+    .group { fill: #f6f8fa; stroke: #d1d9e0; stroke-width: 1.5; }
+    .proc { fill: #ddf4ff; stroke: #0969da; stroke-width: 2; }
+    .port { fill: #ffffff; stroke: #8c959f; stroke-width: 1.5; }
+    .svc { fill: #fbefff; stroke: #8250df; stroke-width: 1.5; }
+    .danger { fill: #ffebe9; stroke: #cf222e; stroke-width: 1.5; }
+    .arrow { stroke: #59636e; stroke-width: 2; fill: none; }
+    .head { fill: #59636e; }
+    @media (prefers-color-scheme: dark) {
+      .bg { fill: #0d1117; }
+      .t, .h { fill: #e6edf3; }
+      .m { fill: #9198a1; }
+      .group { fill: #151b23; stroke: #3d444d; }
+      .proc { fill: #0c2d6b; stroke: #4493f8; }
+      .port { fill: #0d1117; stroke: #656c76; }
+      .svc { fill: #2a1650; stroke: #ab7df8; }
+      .danger { fill: #3c1618; stroke: #f85149; }
+      .arrow { stroke: #9198a1; }
+      .head { fill: #9198a1; }
+    }
+  </style>
+  <defs>
+    <marker id="arrowhead" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path class="head" d="M 0 0 L 10 5 L 0 10 z"/>
+    </marker>
+  </defs>
+  <rect class="bg" x="0" y="0" width="760" height="1000" rx="12"/>
+
+  <rect class="group" x="20" y="16" width="720" height="434" rx="12"/>
+  <text class="h" x="40" y="44" text-anchor="start">The my process</text>
+  <text class="m" x="720" y="44" text-anchor="end">role = web, worker, or all</text>
+  <text class="h" x="40" y="78" text-anchor="start">Ports it hands over</text>
+  <text class="m" x="40" y="100" text-anchor="start">on when a setting names plugin</text>
+  <text class="h" x="390" y="78" text-anchor="start">Decision hooks</text>
+  <text class="m" x="390" y="100" text-anchor="start">asked unless hook_&lt;hook&gt;_mode = off</text>
+
+  <rect class="port" x="40" y="114" width="330" height="56" rx="8"/>
+  <text class="t b" x="205" y="136" text-anchor="middle">translator</text>
+  <text class="m" x="205" y="158" text-anchor="middle">translation_providers = plugin</text>
+  <rect class="port" x="40" y="180" width="330" height="56" rx="8"/>
+  <text class="t b" x="205" y="202" text-anchor="middle">billing</text>
+  <text class="m" x="205" y="224" text-anchor="middle">billing_sources includes plugin</text>
+  <rect class="port" x="40" y="246" width="330" height="56" rx="8"/>
+  <text class="t b" x="205" y="268" text-anchor="middle">mailer</text>
+  <text class="m" x="205" y="290" text-anchor="middle">mail = plugin</text>
+  <rect class="port" x="40" y="312" width="330" height="56" rx="8"/>
+  <text class="t b" x="205" y="334" text-anchor="middle">media</text>
+  <text class="m" x="205" y="356" text-anchor="middle">media = plugin</text>
+  <rect class="port" x="40" y="378" width="330" height="56" rx="8"/>
+  <text class="t b" x="205" y="400" text-anchor="middle">key_manager</text>
+  <text class="m" x="205" y="422" text-anchor="middle">key_manager = plugin</text>
+
+  <rect class="port" x="390" y="114" width="330" height="56" rx="8"/>
+  <text class="t b" x="555" y="136" text-anchor="middle">inbound.status</text>
+  <text class="m" x="555" y="158" text-anchor="middle">posts from other servers</text>
+  <rect class="port" x="390" y="180" width="330" height="56" rx="8"/>
+  <text class="t b" x="555" y="202" text-anchor="middle">inbound.follow</text>
+  <text class="m" x="555" y="224" text-anchor="middle">follows from other servers</text>
+  <rect class="port" x="390" y="246" width="330" height="56" rx="8"/>
+  <text class="t b" x="555" y="268" text-anchor="middle">signup.check</text>
+  <text class="m" x="555" y="290" text-anchor="middle">sign-ups</text>
+  <rect class="port" x="390" y="312" width="330" height="56" rx="8"/>
+  <text class="t b" x="555" y="334" text-anchor="middle">media.check</text>
+  <text class="m" x="555" y="356" text-anchor="middle">uploads</text>
+  <rect class="port" x="390" y="378" width="330" height="56" rx="8"/>
+  <text class="t b" x="555" y="400" text-anchor="middle">local.status</text>
+  <text class="m" x="555" y="422" text-anchor="middle">posts of local accounts</text>
+
+  <path class="arrow" d="M 380 450 L 380 486" marker-end="url(#arrowhead)"/>
+  <rect class="proc" x="20" y="490" width="720" height="78" rx="8"/>
+  <text class="t b" x="380" y="523" text-anchor="middle">The plugin client: one destination per kind</text>
+  <text class="m" x="380" y="545" text-anchor="middle">plugin_&lt;kind&gt;_address · plugin_&lt;kind&gt;_timeout · 8 calls at once (media: 2)</text>
+
+  <path class="arrow" d="M 380 568 L 380 620" marker-end="url(#arrowhead)"/>
+  <text class="m" x="396" y="599" text-anchor="start">unix:// · https:// · http:// (some kinds only)</text>
+  <rect class="svc" x="20" y="624" width="720" height="78" rx="8"/>
+  <text class="t b" x="380" y="657" text-anchor="middle">Your plugins: separate programs that you run</text>
+  <text class="m" x="380" y="679" text-anchor="middle">a sidecar, under systemd, or on another machine; the server only connects</text>
+
+  <rect class="group" x="20" y="722" width="720" height="262" rx="12"/>
+  <text class="h" x="40" y="750" text-anchor="start">When a call fails or times out</text>
+  <rect class="danger" x="40" y="766" width="330" height="96" rx="8"/>
+  <text class="t b" x="205" y="797" text-anchor="middle">billing · mailer · media</text>
+  <text class="m" x="205" y="819" text-anchor="middle">the job that made the call</text>
+  <text class="m" x="205" y="841" text-anchor="middle">runs again later</text>
+  <rect class="danger" x="390" y="766" width="330" height="96" rx="8"/>
+  <text class="t b" x="555" y="797" text-anchor="middle">translator</text>
+  <text class="m" x="555" y="819" text-anchor="middle">the next provider is asked;</text>
+  <text class="m" x="555" y="841" text-anchor="middle">with none left, the reader sees it fail</text>
+  <rect class="danger" x="40" y="872" width="330" height="96" rx="8"/>
+  <text class="t b" x="205" y="903" text-anchor="middle">key_manager</text>
+  <text class="m" x="205" y="925" text-anchor="middle">fails closed: what needs a key fails,</text>
+  <text class="m" x="205" y="947" text-anchor="middle">and the server does not start without it</text>
+  <rect class="danger" x="390" y="872" width="330" height="96" rx="8"/>
+  <text class="t b" x="555" y="903" text-anchor="middle">Decision hooks</text>
+  <text class="m" x="555" y="925" text-anchor="middle">hook_&lt;hook&gt;_on_failure:</text>
+  <text class="m" x="555" y="947" text-anchor="middle">pass, retry, or require_approval</text>
+</svg>
