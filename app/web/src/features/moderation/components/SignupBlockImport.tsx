@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The import of a list of sign-up blocks (FR-719), a section of the sign-up blocks screen: the kind, the list
+// The import of a list of sign-up blocks (FR-719), the page /moderation/signup-blocks/import: the kind, the list
 // (pasted into a text area, or read from a text file with React Aria's FileTrigger behind a Button), the
 // effect, the duration and the comment, then what the import added and the lines it skipped with why. The form
 // follows the browser's constraint validation (React Aria's native validation, with `validate` for the count of
-// values); blocks take effect at once and are lifted from the list below, so the import does not ask first.
+// values); blocks take effect at once and are lifted from their pages, so the import does not ask first.
 // What the import did stays on the page in a StatusMessage (role="status"); the skipped lines are a plain
 // table (the APG table pattern recommends the native element) named by its heading.
 import {
@@ -46,7 +46,7 @@ import {
   validateSignupBlockList,
 } from "../hooks/useSignupBlockImport";
 import { signupBlockKindLabels, signupBlockSeverityLabels } from "../hooks/useSignupBlocks";
-import { useFocusAfterChange } from "./parts";
+import { RequirePermission, Section, useFocusAfterChange } from "./parts";
 import {
   day,
   signupBlockDurations,
@@ -66,7 +66,19 @@ const skipReasonLabels: Readonly<Record<SignupBlockImportSkipReason, ClientMessa
 /** The skipped lines the table shows at first; the rest follow on request, as a long list is slow to lay out. */
 const skippedShownAtFirst = 100;
 
-export function SignupBlockImportForm() {
+/** The page of the import below the screen's heading and local navigation, for manage_accounts. */
+export function SignupBlockImportPage() {
+  const t = useT();
+  return (
+    <RequirePermission permission="manage_accounts">
+      <Section surface="card" title={t("client:admin.signup_blocks.import.title")}>
+        <SignupBlockImportForm />
+      </Section>
+    </RequirePermission>
+  );
+}
+
+function SignupBlockImportForm() {
   const t = useT();
   const form = useSignupBlockImportForm();
   const { draft } = form;
@@ -93,7 +105,9 @@ export function SignupBlockImportForm() {
         <Stack gap="3">
           <TextArea
             label={t("client:admin.signup_blocks.import.list")}
-            description={t("client:admin.signup_blocks.import.list.description", { max: signupBlockImportValueLimit })}
+            description={t("client:admin.signup_blocks.import.list.description", {
+              max: signupBlockImportValueLimit,
+            })}
             value={draft.text}
             onChange={(text) => {
               form.change({ text });

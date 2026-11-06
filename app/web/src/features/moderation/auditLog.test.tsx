@@ -377,7 +377,7 @@ describe("the link of an entry's target", () => {
         target_label: "0192f0c4-7a8e-7000-8000-0000000001a1",
         target_exists: true,
       }),
-    ).toBe("/moderation/signup-blocks?filter=all");
+    ).toBe("/moderation/signup-blocks/0192f0c4-7a8e-7000-8000-0000000001a1");
     expect(
       auditTargetHref({
         target_kind: "setting",

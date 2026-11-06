@@ -5,6 +5,7 @@ import {
   type DomainActionFilter,
   domainActionFilters,
   DomainActions,
+  DomainActionsNav,
   domainActionsQueryOptions,
 } from "../features/moderation";
 import { requireSignIn } from "../lib/auth/requireSignIn";
@@ -13,9 +14,9 @@ import { AdminError, loadWithPermission } from "./-admin/adminRoute";
 import { PageHeading } from "./-layout/PageHeading";
 
 /**
- * `filter`: the tab of the list; omitted, or anything unknown, shows the actions in effect. `domain`: the one
- * domain whose actions to list and to fill in the form (the link from a remote server's page); omitted, or
- * anything that is not a domain's length, lists every domain (web-client/README.md S3).
+ * `filter`: the filter of the list; omitted, or anything unknown, shows the actions in effect. `domain`: the one
+ * domain whose actions to list and to fill in the form of a new action (the link from a remote server's page);
+ * omitted, or anything that is not a domain's length, lists every domain (web-client/README.md S3).
  */
 const searchSchema = z.object({
   filter: z.enum(domainActionFilters).exclude(["active"]).optional().catch(undefined),
@@ -27,9 +28,10 @@ function listHref(filter: DomainActionFilter): string {
   return filter === "active" ? "/moderation/domain-actions" : `/moderation/domain-actions?filter=${filter}`;
 }
 
-/** The moderation actions on remote domains, and taking and lifting them (FR-702), for manage_domains. */
+/** The list of the moderation actions on remote domains (FR-702), for manage_domains; each row links to its page. */
 export const Route = createFileRoute("/moderation/domain-actions")({
   validateSearch: searchSchema,
+  staticData: { title: "client:admin.domain_actions.title" },
   loaderDeps: ({ search: { filter, domain } }): { filter: DomainActionFilter; domain: string | undefined } => ({
     filter: filter ?? "active",
     domain,
@@ -53,6 +55,7 @@ function DomainActionsPage() {
   return (
     <>
       <PageHeading>{t("client:admin.domain_actions.title")}</PageHeading>
+      <DomainActionsNav current="list" />
       <DomainActions filter={filter} domain={domain} onFilterChange={changeFilter} everyDomainHref={listHref(filter)} />
     </>
   );

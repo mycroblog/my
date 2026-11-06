@@ -34,7 +34,10 @@ const moderator = {
   indexable: true,
   ai_opt_out: false,
   source: { note: "", fields: [] },
-  posting: { visibility_ceiling: "public", visibilities: ["public", "local", "unlisted", "private", "direct"] },
+  posting: {
+    visibility_ceiling: "public",
+    visibilities: ["public", "local", "unlisted", "private", "direct"],
+  },
   permissions: [
     "manage_reports",
     "manage_accounts",
@@ -331,7 +334,12 @@ const webhookDelivery: Schemas["AdminWebhookDelivery"] = {
   event_type: "report.created",
   status: "failing",
   attempts: 8,
-  last_attempt: { outcome: "http_error", status_code: 503, duration_ms: 120, attempted_at: "2026-10-20T00:00:00Z" },
+  last_attempt: {
+    outcome: "http_error",
+    status_code: 503,
+    duration_ms: 120,
+    attempted_at: "2026-10-20T00:00:00Z",
+  },
   created_at: "2026-10-19T00:00:00Z",
 };
 
@@ -499,7 +507,14 @@ const instanceSettings: Schemas["AdminSettingList"] = {
       stored: false,
       choices: ["off", "signed_in", "everyone"],
     },
-    { key: "search_indexing", kind: "enum", value: "deny", default: "deny", stored: false, choices: ["allow", "deny"] },
+    {
+      key: "search_indexing",
+      kind: "enum",
+      value: "deny",
+      default: "deny",
+      stored: false,
+      choices: ["allow", "deny"],
+    },
     {
       key: "ai_usage",
       kind: "enum",
@@ -511,7 +526,13 @@ const instanceSettings: Schemas["AdminSettingList"] = {
     { key: "indexable_default", kind: "bool", value: "false", default: "false", stored: false },
     { key: "security_contact", kind: "uri", value: "", default: "", stored: false },
     { key: "link_cards", kind: "bool", value: "true", default: "true", stored: false },
-    { key: "link_cards_ignore_robots_txt", kind: "bool", value: "false", default: "false", stored: false },
+    {
+      key: "link_cards_ignore_robots_txt",
+      kind: "bool",
+      value: "false",
+      default: "false",
+      stored: false,
+    },
     {
       key: "invite_creators",
       kind: "enum",
@@ -520,7 +541,15 @@ const instanceSettings: Schemas["AdminSettingList"] = {
       stored: false,
       choices: ["everyone", "permitted"],
     },
-    { key: "member_invite_max_active", kind: "int", value: "5", default: "5", stored: false, minimum: 0, maximum: 100 },
+    {
+      key: "member_invite_max_active",
+      kind: "int",
+      value: "5",
+      default: "5",
+      stored: false,
+      minimum: 0,
+      maximum: 100,
+    },
     {
       key: "member_invite_max_uses",
       kind: "int",
@@ -635,7 +664,12 @@ async function moderatorServer(page: Page) {
       submitted_at: "2026-10-01T00:00:00Z",
       state_changed_at: "2026-10-01T01:00:00Z",
       invite_id: invite.id,
-      invite: { id: invite.id, creator_kind: "member", created_by: moderator, created_by_deleted: false },
+      invite: {
+        id: invite.id,
+        creator_kind: "member",
+        created_by: moderator,
+        created_by_deleted: false,
+      },
     },
     email_verified: true,
     roles: [],
@@ -695,7 +729,9 @@ async function moderatorServer(page: Page) {
     if (key === "GET /admin/reports") {
       if (slowLists) await new Promise((resolve) => setTimeout(resolve, slowListMs));
       const state = url.searchParams.get("state");
-      return json(route, { items: reports.filter((item) => state === null || item.state === state) });
+      return json(route, {
+        items: reports.filter((item) => state === null || item.state === state),
+      });
     }
     const report = /^GET \/admin\/reports\/([^/]+)$/.exec(key);
     if (report) {
@@ -741,7 +777,12 @@ async function moderatorServer(page: Page) {
       actions = [action, ...actions];
       reports = reports.map((item) =>
         item.id === body.report_id
-          ? { ...item, state: "resolved", outcome: "actioned", state_changed_at: "2026-10-17T00:00:00Z" }
+          ? {
+              ...item,
+              state: "resolved",
+              outcome: "actioned",
+              state_changed_at: "2026-10-17T00:00:00Z",
+            }
           : item,
       );
       slowLists = true;
@@ -754,7 +795,9 @@ async function moderatorServer(page: Page) {
     if (key === `GET /admin/appeals/${appealId}`) return json(route, appeal);
     if (key === "GET /admin/registrations") return json(route, { items: [registration] });
     if (key === "GET /admin/domain_actions") return json(route, { items: [domainAction] });
+    if (key === `GET /admin/domain_actions/${domainAction.id}`) return json(route, domainAction);
     if (key === "GET /admin/signup_blocks") return json(route, { items: [signupBlock] });
+    if (key === `GET /admin/signup_blocks/${signupBlock.id}`) return json(route, signupBlock);
     if (key === "GET /admin/audit_log") return json(route, { items: [auditEntry] });
     if (key === "GET /admin/instances") return json(route, { items: [instance] });
     if (key === `GET /admin/instances/${longDomain}`) return json(route, instance);
@@ -850,7 +893,11 @@ const costItem: Schemas["CostItem"] = {
   category: "domain",
   memo: "",
   prices: [
-    { effective_on: "2026-04-10", price: { amount: "1650", currency: "JPY" }, revised_at: "2026-04-10T00:00:00Z" },
+    {
+      effective_on: "2026-04-10",
+      price: { amount: "1650", currency: "JPY" },
+      revised_at: "2026-04-10T00:00:00Z",
+    },
   ],
   created_at: "2026-04-10T00:00:00Z",
 };
@@ -979,7 +1026,12 @@ const supporterProgram: Schemas["AdminSupporterProgram"] = {
   warnings: [],
 };
 
-const paymentStatus: Schemas["PaymentStatus"] = { provider: "stripe", mode: "test", time_zone: "UTC", warnings: [] };
+const paymentStatus: Schemas["PaymentStatus"] = {
+  provider: "stripe",
+  mode: "test",
+  time_zone: "UTC",
+  warnings: [],
+};
 
 /**
  * A remote post that the external review of posts from other servers dropped, as GET /admin/hook_decisions lists it and
@@ -1010,7 +1062,13 @@ const hookSummary: Schemas["AdminHookSummary"] = {
       on_failure: "pass",
       outcomes: [{ mode: "enforce", outcome: "drop", count: 3, average_latency_ms: 25, max_latency_ms: 40 }],
     },
-    { hook: "inbound.follow", configured: false, mode: "observe", on_failure: "pass", outcomes: [] },
+    {
+      hook: "inbound.follow",
+      configured: false,
+      mode: "observe",
+      on_failure: "pass",
+      outcomes: [],
+    },
     { hook: "signup.check", configured: false, mode: "observe", on_failure: "pass", outcomes: [] },
     { hook: "media.check", configured: false, mode: "observe", on_failure: "pass", outcomes: [] },
     { hook: "local.status", configured: false, mode: "observe", on_failure: "pass", outcomes: [] },
@@ -1050,7 +1108,10 @@ const translationOverview: Schemas["AdminTranslationOverview"] = {
   cache_hit_rate: 0.75,
   providers: [
     { id: "one", name: "Provider One" },
-    { id: "two", name: "the-translation-provider-with-a-very-long-name-that-does-not-wrap.example" },
+    {
+      id: "two",
+      name: "the-translation-provider-with-a-very-long-name-that-does-not-wrap.example",
+    },
   ],
 };
 
@@ -1061,7 +1122,11 @@ const documentText: Schemas["AdminInstanceText"] = {
   revised_at: "2026-10-12T08:00:00Z",
 };
 /** The server's name, written in Arabic (a language without a catalog), which reads right to left in every project. */
-const instanceName: Schemas["AdminInstanceText"] = { key: "name", body: "مثال", revised_at: "2026-10-16T00:00:00Z" };
+const instanceName: Schemas["AdminInstanceText"] = {
+  key: "name",
+  body: "مثال",
+  revised_at: "2026-10-16T00:00:00Z",
+};
 
 /** The server's theme, as GET /admin/theme answers: a color, a radius, and a custom CSS. */
 const adminTheme: Schemas["AdminTheme"] = {
@@ -1084,9 +1149,15 @@ const adminPages: Readonly<Record<string, { path: string; ready: string | { valu
   "moderation.index": { path: "/moderation", ready: "" },
   "admin.index": { path: "/admin", ready: "" },
   "moderation.reports": { path: "/moderation/reports", ready: `@${target.acct}` },
-  "moderation.reports_.$id": { path: `/moderation/reports/${reportId}`, ready: "Same as last week." },
+  "moderation.reports_.$id": {
+    path: `/moderation/reports/${reportId}`,
+    ready: "Same as last week.",
+  },
   "moderation.accounts": { path: "/moderation/accounts", ready: target.display_name },
-  "moderation.accounts_.$id": { path: `/moderation/accounts/${target.id}`, ready: target.display_name },
+  "moderation.accounts_.$id": {
+    path: `/moderation/accounts/${target.id}`,
+    ready: target.display_name,
+  },
   "moderation.accounts_.$id_.actions": {
     path: `/moderation/accounts/${target.id}/actions`,
     ready: target.display_name,
@@ -1095,18 +1166,45 @@ const adminPages: Readonly<Record<string, { path: string; ready: string | { valu
     path: `/moderation/accounts/${target.id}/actions/${warning.id}`,
     ready: warning.public_reason ?? "",
   },
-  "moderation.accounts_.$id_.manage": { path: `/moderation/accounts/${target.id}/manage`, ready: target.display_name },
+  "moderation.accounts_.$id_.manage": {
+    path: `/moderation/accounts/${target.id}/manage`,
+    ready: target.display_name,
+  },
   "moderation.appeals": { path: "/moderation/appeals", ready: target.display_name },
-  "moderation.appeals_.$id": { path: `/moderation/appeals/${appealId}`, ready: target.display_name },
+  "moderation.appeals_.$id": {
+    path: `/moderation/appeals/${appealId}`,
+    ready: target.display_name,
+  },
   "moderation.registrations": { path: "/moderation/registrations", ready: registration.email },
-  "moderation.domain-actions": { path: "/moderation/domain-actions", ready: domainAction.public_comment },
-  "moderation.signup-blocks": { path: "/moderation/signup-blocks", ready: signupBlock.comment },
+  "moderation.domain-actions": { path: "/moderation/domain-actions", ready: longDomain },
+  "moderation.domain-actions_.new": {
+    path: `/moderation/domain-actions/new?domain=${longDomain}`,
+    ready: { value: longDomain },
+  },
+  "moderation.domain-actions_.import": { path: "/moderation/domain-actions/import", ready: "" },
+  "moderation.domain-actions_.$id": {
+    path: `/moderation/domain-actions/${domainAction.id}`,
+    ready: domainAction.public_comment,
+  },
+  "moderation.signup-blocks": { path: "/moderation/signup-blocks", ready: "例え.jp" },
+  "moderation.signup-blocks_.new": { path: "/moderation/signup-blocks/new", ready: "" },
+  "moderation.signup-blocks_.import": { path: "/moderation/signup-blocks/import", ready: "" },
+  "moderation.signup-blocks_.$id": {
+    path: `/moderation/signup-blocks/${signupBlock.id}`,
+    ready: signupBlock.comment,
+  },
   "moderation.audit-log": { path: "/moderation/audit-log", ready: auditEntry.target_label },
   "moderation.instances": { path: "/moderation/instances", ready: longDomain },
-  "moderation.instances_.$domain": { path: `/moderation/instances/${longDomain}`, ready: longDomain },
+  "moderation.instances_.$domain": {
+    path: `/moderation/instances/${longDomain}`,
+    ready: longDomain,
+  },
   "admin.custom-emojis": { path: "/admin/custom-emojis", ready: `:${customEmoji.shortcode}:` },
   "admin.custom-emojis_.new": { path: "/admin/custom-emojis/new", ready: "" },
-  "admin.custom-emojis_.$id": { path: `/admin/custom-emojis/${customEmoji.id}`, ready: customEmoji.category ?? "" },
+  "admin.custom-emojis_.$id": {
+    path: `/admin/custom-emojis/${customEmoji.id}`,
+    ready: customEmoji.category ?? "",
+  },
   "admin.custom-emojis_.requests": { path: "/admin/custom-emojis/requests", ready: "" },
   "admin.jobs": { path: "/admin/jobs", ready: deadJob.type },
   "admin.jobs_.list": { path: "/admin/jobs/list?state=dead", ready: deadJob.type },
@@ -1114,12 +1212,18 @@ const adminPages: Readonly<Record<string, { path: string; ready: string | { valu
   "admin.errors": { path: "/admin/errors", ready: errorGroup.where },
   "admin.errors_.$id": { path: `/admin/errors/${errorGroup.id}`, ready: errorRequestId },
   "admin.webhooks": { path: "/admin/webhooks", ready: webhook.description ?? "" },
-  "admin.webhooks_.$id": { path: `/admin/webhooks/${webhook.id}`, ready: webhookDelivery.message_id },
+  "admin.webhooks_.$id": {
+    path: `/admin/webhooks/${webhook.id}`,
+    ready: webhookDelivery.message_id,
+  },
   "admin.webhooks_.new": { path: "/admin/webhooks/new", ready: "" },
   "admin.closure": { path: "/admin/closure", ready: announcedClosure.message ?? "" },
   "admin.announcements": { path: "/admin/announcements", ready: announcement.title },
   "admin.announcements_.new": { path: "/admin/announcements/new", ready: "" },
-  "admin.announcements_.$id": { path: `/admin/announcements/${announcement.id}`, ready: "the status page" },
+  "admin.announcements_.$id": {
+    path: `/admin/announcements/${announcement.id}`,
+    ready: "the status page",
+  },
   "admin.relays": { path: "/admin/relays", ready: `relay.${longDomain}` },
   "admin.relays_.new": { path: "/admin/relays/new", ready: "" },
   "admin.relays_.$id": { path: `/admin/relays/${relay.id}`, ready: relay.inbox_url },
@@ -1138,11 +1242,18 @@ const adminPages: Readonly<Record<string, { path: string; ready: string | { valu
     ready: linkCardDomainRule.domain,
   },
   "admin.documents": { path: "/admin/documents", ready: { value: documentText.body } },
-  "admin.documents_.privacy-policy": { path: "/admin/documents/privacy-policy", ready: { value: "" } },
-  "admin.documents_.commerce-disclosure": { path: "/admin/documents/commerce-disclosure", ready: { value: "" } },
+  "admin.documents_.privacy-policy": {
+    path: "/admin/documents/privacy-policy",
+    ready: { value: "" },
+  },
+  "admin.documents_.commerce-disclosure": {
+    path: "/admin/documents/commerce-disclosure",
+    ready: { value: "" },
+  },
   "admin.settings": { path: "/admin/settings", ready: "my.example" },
   "admin.settings_.branding": { path: "/admin/settings/branding", ready: "" },
-  "admin.settings_.registration": { path: "/admin/settings/registration", ready: { value: "" } },
+  // The first field is the usable invites per person, member_invite_max_active of instanceSettings.
+  "admin.settings_.registration": { path: "/admin/settings/registration", ready: { value: "5" } },
   "admin.settings_.content": { path: "/admin/settings/content", ready: { value: "" } },
   "admin.settings_.federation": { path: "/admin/settings/federation", ready: { value: "" } },
   "admin.settings_.discovery": { path: "/admin/settings/discovery", ready: { value: "" } },
@@ -1155,33 +1266,58 @@ const adminPages: Readonly<Record<string, { path: string; ready: string | { valu
   "admin.roles_.new": { path: "/admin/roles/new", ready: { value: "" } },
   "admin.roles_.$key": { path: `/admin/roles/${roles[2]?.key ?? ""}`, ready: roles[2]?.key ?? "" },
   "admin.finance": { path: "/admin/finance", ready: "registrar" },
-  "admin.finance_.income": { path: "/admin/finance/income", ready: `@${incomeMovement.username ?? ""}` },
+  "admin.finance_.income": {
+    path: "/admin/finance/income",
+    ready: `@${incomeMovement.username ?? ""}`,
+  },
   "admin.finance_.costs": { path: "/admin/finance/costs", ready: costItem.name },
   "admin.finance_.costs_.new": { path: "/admin/finance/costs/new", ready: "" },
-  "admin.finance_.costs_.$id": { path: `/admin/finance/costs/${costItem.id}`, ready: costItem.provider },
+  "admin.finance_.costs_.$id": {
+    path: `/admin/finance/costs/${costItem.id}`,
+    ready: costItem.provider,
+  },
   "admin.finance_.imports": { path: "/admin/finance/imports", ready: billingImport.provider },
   "admin.finance_.publication": { path: "/admin/finance/publication", ready: "" },
-  "admin.supporters": { path: "/admin/supporters", ready: supporterProgram.configured_provider ?? "" },
+  "admin.supporters": {
+    path: "/admin/supporters",
+    ready: supporterProgram.configured_provider ?? "",
+  },
   "admin.supporters_.plans": { path: "/admin/supporters/plans", ready: supporterPlan.name },
   "admin.supporters_.plans_.new": { path: "/admin/supporters/plans/new", ready: "" },
-  "admin.supporters_.plans_.$id": { path: `/admin/supporters/plans/${supporterPlan.id}`, ready: supporterPlan.name },
-  "admin.supporters_.subscriptions": { path: "/admin/supporters/subscriptions", ready: supporterPlan.name },
+  "admin.supporters_.plans_.$id": {
+    path: `/admin/supporters/plans/${supporterPlan.id}`,
+    ready: supporterPlan.name,
+  },
+  "admin.supporters_.subscriptions": {
+    path: "/admin/supporters/subscriptions",
+    ready: `@${supporterSubscription.username ?? ""}`,
+  },
   "admin.supporters_.subscriptions_.$id": {
     path: `/admin/supporters/subscriptions/${supporterSubscription.id}`,
     ready: supporterPlan.name,
   },
   "moderation.invites": { path: "/moderation/invites", ready: invite.code },
-  "moderation.hook-decisions": { path: "/moderation/hook-decisions", ready: hookDecision.subject_key },
+  "moderation.invites_.new": { path: "/moderation/invites/new", ready: "" },
+  "moderation.hook-decisions": {
+    path: "/moderation/hook-decisions",
+    ready: hookDecision.subject_key,
+  },
   "moderation.hook-decisions_.$id": {
     path: `/moderation/hook-decisions/${hookDecision.id}`,
     ready: hookDecision.note ?? "",
   },
-  "moderation.hook-decisions_.appeals": { path: "/moderation/hook-decisions/appeals", ready: hookAppeal.status_text },
+  "moderation.hook-decisions_.appeals": {
+    path: "/moderation/hook-decisions/appeals",
+    ready: hookAppeal.status_text,
+  },
   "moderation.hook-decisions_.appeals_.$id": {
     path: `/moderation/hook-decisions/appeals/${hookAppeal.id}`,
     ready: hookAppeal.comment ?? "",
   },
-  "admin.translation": { path: "/admin/translation", ready: translationOverview.providers[0]?.name ?? "" },
+  "admin.translation": {
+    path: "/admin/translation",
+    ready: translationOverview.providers[0]?.name ?? "",
+  },
 };
 
 test("the suite lists every moderation and admin route", () => {

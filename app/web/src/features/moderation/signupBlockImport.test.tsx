@@ -91,7 +91,7 @@ describe("an import of a list of sign-up blocks", () => {
       }
       return reasonOf(value);
     });
-    const { user } = await renderApp({ path: "/moderation/signup-blocks" });
+    const { user, router } = await renderApp({ path: "/moderation/signup-blocks/import" });
     const section = within(await screen.findByRole("region", { name: "Add from a list" }));
 
     expect(section.getByRole("radio", { name: "Email domain" })).toBeChecked();
@@ -147,19 +147,23 @@ describe("an import of a list of sign-up blocks", () => {
       "1 line",
     ]);
 
-    // The blocks are in the list below.
-    expect(
-      await within(screen.getByRole("table", { name: "In effect" })).findByRole("rowheader", { name: "mail.example" }),
-    ).toBeInTheDocument();
     // The form is ready for the next list with the same settings.
     expect(section.getByRole("textbox", { name: "List" })).toHaveValue("");
     expect(section.getByRole("textbox", { name: "Comment" })).toHaveValue("");
     expect(section.getByRole("radio", { name: "Refuse" })).toBeChecked();
+
+    // The blocks are in the list.
+    await router.navigate({ to: "/moderation/signup-blocks" });
+    expect(
+      await within(await screen.findByRole("table", { name: "In effect" })).findByRole("rowheader", {
+        name: "mail.example",
+      }),
+    ).toBeInTheDocument();
   });
 
   test("reads the list from a text file of IP ranges", async () => {
     const api = importServer();
-    const { user } = await renderApp({ path: "/moderation/signup-blocks" });
+    const { user } = await renderApp({ path: "/moderation/signup-blocks/import" });
     const section = within(await screen.findByRole("region", { name: "Add from a list" }));
 
     await user.click(section.getByRole("radio", { name: "IP range" }));
@@ -187,7 +191,7 @@ describe("an import of a list of sign-up blocks", () => {
 
   test("refuses a file too large to send without reading it", async () => {
     const api = importServer();
-    const { user } = await renderApp({ path: "/moderation/signup-blocks" });
+    const { user } = await renderApp({ path: "/moderation/signup-blocks/import" });
     const section = within(await screen.findByRole("region", { name: "Add from a list" }));
 
     const button = section.getByRole("button", { name: "Choose a text file" });
@@ -205,7 +209,7 @@ describe("an import of a list of sign-up blocks", () => {
 
   test("needs a list with a value, and an effect, before anything is sent", async () => {
     const api = importServer();
-    const { user } = await renderApp({ path: "/moderation/signup-blocks" });
+    const { user } = await renderApp({ path: "/moderation/signup-blocks/import" });
     const section = within(await screen.findByRole("region", { name: "Add from a list" }));
 
     await user.click(section.getByRole("textbox", { name: "List" }));
@@ -220,7 +224,7 @@ describe("an import of a list of sign-up blocks", () => {
 
   test("a list of more values than one import holds is not sent", async () => {
     const api = importServer();
-    const { user } = await renderApp({ path: "/moderation/signup-blocks" });
+    const { user } = await renderApp({ path: "/moderation/signup-blocks/import" });
     const section = within(await screen.findByRole("region", { name: "Add from a list" }));
 
     await user.click(section.getByRole("textbox", { name: "List" }));
@@ -236,7 +240,7 @@ describe("an import of a list of sign-up blocks", () => {
 
   test("shows the first skipped lines of a long list, and the rest on request with focus on the table's heading", async () => {
     importServer(() => "already_blocked");
-    const { user } = await renderApp({ path: "/moderation/signup-blocks" });
+    const { user } = await renderApp({ path: "/moderation/signup-blocks/import" });
     const section = within(await screen.findByRole("region", { name: "Add from a list" }));
 
     await user.click(section.getByRole("textbox", { name: "List" }));
@@ -265,7 +269,7 @@ describe("an import of a list of sign-up blocks", () => {
     server.use(
       http.post(`${apiBase}/admin/signup_blocks/import`, () => problem(503, "about:blank", "Service Unavailable")),
     );
-    const { user } = await renderApp({ path: "/moderation/signup-blocks" });
+    const { user } = await renderApp({ path: "/moderation/signup-blocks/import" });
     const section = within(await screen.findByRole("region", { name: "Add from a list" }));
 
     await user.click(section.getByRole("textbox", { name: "List" }));

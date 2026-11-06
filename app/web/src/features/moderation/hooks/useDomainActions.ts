@@ -3,7 +3,13 @@
 // after its confirmation, NFR-MOD-7), and lifting one. The server keeps domains in IDNA A-labels; the UI shows
 // them with the U-labels they stand for (lib/idn).
 import { useToast } from "@my/ui";
-import { useMutation, useMutationState, useQueryClient, useSuspenseInfiniteQuery } from "@tanstack/react-query";
+import {
+  useMutation,
+  useMutationState,
+  useQueryClient,
+  useSuspenseInfiniteQuery,
+  useSuspenseQuery,
+} from "@tanstack/react-query";
 import { type SyntheticEvent, useState } from "react";
 import { useApi } from "../../../lib/auth/SessionProvider";
 import { errorMessage } from "../../../lib/errors";
@@ -15,6 +21,7 @@ import {
   createDomainActionMutation,
   type DomainAction,
   type DomainActionKind,
+  domainActionQueryOptions,
   domainActionsQueryOptions,
   type DomainActionScope,
   liftDomainActionMutation,
@@ -43,6 +50,12 @@ export function domainInText(t: Translate, domain: string): string {
 export function useDomainActions(scope: DomainActionScope): PagedPages<DomainAction> {
   const api = useApi();
   return toPagedList(useSuspenseInfiniteQuery(domainActionsQueryOptions(api, scope)));
+}
+
+/** One domain action, by its ID. */
+export function useDomainAction(id: string): DomainAction {
+  const api = useApi();
+  return useSuspenseQuery(domainActionQueryOptions(api, id)).data;
 }
 
 export type LiftDomainAction = {

@@ -53,6 +53,7 @@ export {
   availabilityEventsQueryOptions,
   type DomainActionFilter,
   domainActionFilters,
+  domainActionQueryOptions,
   domainActionsQueryOptions,
   type InstanceFilter,
   instanceFilters,
@@ -60,14 +61,25 @@ export {
   instancesQueryOptions,
 } from "./api/staff";
 export { AuditLog } from "./components/AuditLog";
-export { DomainActions } from "./components/DomainActions";
+export { DomainActionDetail, DomainActionTitle } from "./components/DomainActionDetail";
+export { DomainActions, DomainActionsNav } from "./components/DomainActions";
+export { DomainBlockCsvPage } from "./components/DomainBlockCsv";
+export { NewDomainAction } from "./components/NewDomainAction";
 export { InstanceDetail } from "./components/InstanceDetail";
 export { InstanceList } from "./components/InstanceList";
 // The review of registrations and the blocks on sign-ups, for manage_accounts.
 export { registrationsQueryOptions } from "./api/registrations";
 export { RegistrationList } from "./components/RegistrationList";
-export { type SignupBlockFilter, signupBlockFilters, signupBlocksQueryOptions } from "./api/signupBlocks";
-export { SignupBlocks } from "./components/SignupBlocks";
+export {
+  type SignupBlockFilter,
+  signupBlockFilters,
+  signupBlockQueryOptions,
+  signupBlocksQueryOptions,
+} from "./api/signupBlocks";
+export { NewSignupBlock } from "./components/NewSignupBlock";
+export { SignupBlockDetail, SignupBlockTitle } from "./components/SignupBlockDetail";
+export { SignupBlockImportPage } from "./components/SignupBlockImport";
+export { SignupBlocks, SignupBlocksNav } from "./components/SignupBlocks";
 export {
   type HookAppealFilter,
   hookAppealFilters,
@@ -88,6 +100,7 @@ export { HookReviewPages } from "./components/hookDecisionParts";
 export { invitesQueryOptions } from "./api/invites";
 export { instanceInfoQueryOptions as moderationInstanceQueryOptions } from "./api/reports";
 export { Invites } from "./components/Invites";
+export { NewInvite } from "./components/NewInvite";
 // The report queue and a report's page (FR-701, FR-710, NFR-MOD-4), for manage_reports.
 export {
   reportAssigneeFilters,

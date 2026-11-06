@@ -27,10 +27,6 @@
     "defaultMessage": "Created the invite {code}.",
     "description": "Status after an invite was created. {code} is its code."
   },
-  "admin.invites.created_at": {
-    "defaultMessage": "Created",
-    "description": "Term of when an invite was created."
-  },
   "admin.invites.duration.minutes": {
     "defaultMessage": "{count, plural, one {# minute} other {# minutes}}",
     "description": "An option of how long an invite works, in minutes."
@@ -77,7 +73,7 @@
   },
   "admin.invites.new.title": {
     "defaultMessage": "Create an invite",
-    "description": "Heading of the form of a new invite."
+    "description": "Button on the list of invites that opens the form of a new one, and the heading of that page."
   },
   "admin.invites.revoke": {
     "defaultMessage": "Revoke",
@@ -151,10 +147,6 @@
     "defaultMessage": "Invite code",
     "description": "Header of the column of the invites table that holds the invite's code."
   },
-  "admin.invites.created_by": {
-    "defaultMessage": "Created by",
-    "description": "Column of the invites table: who created the invite, and whether as a moderator or as a member."
-  },
   "admin.invites.created_by.cli": {
     "defaultMessage": "Command line",
     "description": "Who created an invite: an administrator with the command line."
@@ -170,5 +162,13 @@
   "admin.invites.creator_kind.member": {
     "defaultMessage": "Member invite",
     "description": "Kind of an invite that a member created on their settings page, which works only while they may create invites."
+  },
+  "admin.invites.new.form": {
+    "defaultMessage": "The invite",
+    "description": "Heading of the form on the page of a new invite."
+  },
+  "admin.invites.back": {
+    "defaultMessage": "Back to invites",
+    "description": "Link under the heading of the page of a new invite to the list of invites."
   }
 }

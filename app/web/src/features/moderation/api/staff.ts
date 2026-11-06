@@ -5,7 +5,7 @@
 // the lists. The lists follow the API's keyset pagination (each page's `next_cursor` is the `cursor` of the next) as TanStack
 // Query infinite queries on the same client; their keys start like the client's own `[method, path]` and end
 // with "pages", so that they never collide with a plain query of the same operation (web-client/10-api-client-and-auth.md §10).
-import { type InfiniteData, infiniteQueryOptions, type QueryClient } from "@tanstack/react-query";
+import { type InfiniteData, infiniteQueryOptions, queryOptions, type QueryClient } from "@tanstack/react-query";
 import type { Api } from "../../../lib/api/client";
 import { ApiError } from "../../../lib/errors";
 import { isPostListQuery } from "../../../lib/query";
@@ -165,6 +165,19 @@ export function domainActionsQueryOptions(api: Api, { filter, domain }: DomainAc
   });
 }
 
+/** One moderation action on a domain (GET /admin/domain_actions/{id}). */
+export function domainActionQueryOptions(api: Api, id: string) {
+  return queryOptions({
+    queryKey: ["get", "/admin/domain_actions/{id}", { id }] as const,
+    queryFn: async ({ signal }) => {
+      const { data, error } = await api.fetch.GET("/admin/domain_actions/{id}", { params: { path: { id } }, signal });
+      // The middleware throws an ApiError for every error status; this narrows the type.
+      if (data === undefined) throw new ApiError(error);
+      return data;
+    },
+  });
+}
+
 /** Whether a query is one of the lists of domain actions, of any filter or domain. */
 function isDomainActionsQuery(queryKey: readonly unknown[]): boolean {
   return queryKey[1] === "/admin/domain_actions";
@@ -244,10 +257,11 @@ export async function refreshLiftedDomainAction(queryClient: QueryClient, lifted
 }
 
 /**
- * Writes the lifted action from the answer into the cached lists of domain actions, which show it right
- * (ADR-0028): those of the actions in effect drop it, the others show it lifted.
+ * Writes the lifted action from the answer into its cached page and the cached lists of domain actions, which show
+ * it right (ADR-0028): those of the actions in effect drop it, the others show it lifted.
  */
 export function cacheLiftedDomainAction(queryClient: QueryClient, lifted: DomainAction): void {
+  queryClient.setQueryData(["get", "/admin/domain_actions/{id}", { id: lifted.id }], lifted);
   for (const query of queryClient
     .getQueryCache()
     .findAll({ predicate: (query) => isDomainActionsQuery(query.queryKey) })) {

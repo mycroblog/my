@@ -182,8 +182,7 @@ export function auditTargetHref(
       // A decision has no screen of its own, and its record may have passed its retention.
       return "/moderation/hook-decisions";
     case "signup_block":
-      // The screen lists every block, lifted and ended ones too; a block has no screen of its own.
-      return "/moderation/signup-blocks?filter=all";
+      return `/moderation/signup-blocks/${id}`;
     case "custom_emoji":
       return `/admin/custom-emojis/${id}`;
     case "role":

@@ -55,7 +55,7 @@ const csv = [
 ].join("\n");
 
 async function openSection() {
-  const view = await renderApp({ path: "/moderation/domain-actions" });
+  const view = await renderApp({ path: "/moderation/domain-actions/import" });
   const section = within(await screen.findByRole("region", { name: "Mastodon's CSV" }));
   return { ...view, section };
 }

@@ -211,10 +211,6 @@
     "defaultMessage": "解除",
     "description": "Button that lifts a sign-up block."
   },
-  "admin.signup_blocks.lift_action": {
-    "defaultMessage": "解除: {kind} {value} の拒否 ({date} に追加)",
-    "description": "Accessible name of the lift button of a sign-up block. {kind} is its kind, such as Email domain; {value} what it matches; {date} when it was added, formatted."
-  },
   "admin.signup_blocks.lift_failed": {
     "defaultMessage": "拒否を解除できませんでした: {reason}",
     "description": "Toast when lifting a sign-up block failed. {reason} is why."
@@ -233,7 +229,7 @@
   },
   "admin.signup_blocks.new.title": {
     "defaultMessage": "拒否を追加する",
-    "description": "Heading of the section with the form of a new sign-up block."
+    "description": "Button on the list of sign-up blocks that opens the form of a new one, and the heading of that page."
   },
   "admin.signup_blocks.severity": {
     "defaultMessage": "効果",
@@ -343,8 +339,36 @@
     "defaultMessage": "ブロック対象",
     "description": "Header of the column of the sign-up blocks table that holds what the block matches."
   },
-  "admin.signup_blocks.column.details": {
+  "admin.signup_blocks.pages": {
+    "defaultMessage": "登録の拒否リストのページ",
+    "description": "Accessible name of the navigation between the pages of the sign-up blocks screen: the list and the import from a list."
+  },
+  "admin.signup_blocks.new.form": {
+    "defaultMessage": "拒否の内容",
+    "description": "Heading of the form on the page of a new sign-up block."
+  },
+  "admin.signup_blocks.back": {
+    "defaultMessage": "登録の拒否リストに戻る",
+    "description": "Link under the heading of a page of one sign-up block, or of the form of a new one, to the list of sign-up blocks."
+  },
+  "admin.signup_blocks.detail.title": {
+    "defaultMessage": "登録の拒否",
+    "description": "Title of the page of one sign-up block, before the block has loaded or when the viewer may not see it."
+  },
+  "admin.signup_blocks.detail.heading": {
+    "defaultMessage": "{kind} {value} の拒否",
+    "description": "Heading of the page of one sign-up block. {kind} is the kind, such as Email domain; {value} what it matches."
+  },
+  "admin.signup_blocks.detail.details": {
     "defaultMessage": "詳細",
-    "description": "Header of the column of the sign-up blocks table that holds the source, comment and other facts of a block."
+    "description": "Heading of the region of a sign-up block's page with what it matches, its effect, and its comment."
+  },
+  "admin.signup_blocks.detail.no_comment": {
+    "defaultMessage": "なし",
+    "description": "The comment of a sign-up block that has none."
+  },
+  "admin.signup_blocks.lift.description": {
+    "defaultMessage": "これまで拒否していた登録を、今から受け付けます。記録は解除したものとして残ります。",
+    "description": "Help text under the button that lifts a sign-up block."
   }
 }
