@@ -50,6 +50,21 @@ func TestDecisionHookThroughTheServer(t *testing.T) {
 		info.ExternalReviews == nil || len(*info.ExternalReviews) != 1 || (*info.ExternalReviews)[0] != clientapi.HookNameInboundStatus {
 		t.Fatalf("GET /instance = %d, external_reviews %v", res.StatusCode, info.ExternalReviews)
 	}
+	// The scope states the setting of the hook in use alone: direct posts of unfollowed authors stay
+	// out by default, and local.status, which is not in use, says nothing.
+	if s := info.ExternalReviewScope; s == nil || s.InboundStatusUnfollowedDirect == nil || *s.InboundStatusUnfollowedDirect ||
+		s.LocalStatusAccountAgeDays != nil {
+		t.Errorf("GET /instance external_review_scope = %+v", s)
+	}
+	if _, err := c.app.Instance.SetSetting(ctx, appinstance.SetSettingInput{Key: instance.SettingHookInboundStatusUnfollowedDirect, Value: "true"}); err != nil {
+		t.Fatal(err)
+	}
+	var withDirect clientapi.Instance
+	if res := c.do("carol", http.MethodGet, "/instance", nil, &withDirect); res.StatusCode != http.StatusOK ||
+		withDirect.ExternalReviewScope == nil || withDirect.ExternalReviewScope.InboundStatusUnfollowedDirect == nil ||
+		!*withDirect.ExternalReviewScope.InboundStatusUnfollowedDirect {
+		t.Errorf("GET /instance with unfollowed direct posts sent = %d, %+v", res.StatusCode, withDirect.ExternalReviewScope)
+	}
 
 	// observe is the default: the verdict is recorded and has no effect.
 	observed, err := c.app.Hooks.Decide(ctx, apphook.Call{Hook: hook.InboundStatus, SubjectKey: "https://remote.example/observed"})
@@ -184,7 +199,8 @@ func TestDecisionHookThroughTheServer(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(settings) != 2 || settings[0].Action != moderation.AuditSettingChanged || settings[0].TargetID != string(instance.SettingHookInboundStatusMode) {
+	// The two mode changes, after the change of hook_inbound_status_unfollowed_direct above.
+	if len(settings) != 3 || settings[0].Action != moderation.AuditSettingChanged || settings[0].TargetID != string(instance.SettingHookInboundStatusMode) {
 		t.Errorf("the audit of the settings = %+v", settings)
 	}
 	before = calls.Load()
@@ -193,7 +209,7 @@ func TestDecisionHookThroughTheServer(t *testing.T) {
 		t.Errorf("off = %+v, %v, after %d more calls", off, err, calls.Load()-before)
 	}
 	var withOff clientapi.Instance
-	if res := c.do("carol", http.MethodGet, "/instance", nil, &withOff); res.StatusCode != http.StatusOK || withOff.ExternalReviews != nil {
+	if res := c.do("carol", http.MethodGet, "/instance", nil, &withOff); res.StatusCode != http.StatusOK || withOff.ExternalReviews != nil || withOff.ExternalReviewScope != nil {
 		t.Errorf("GET /instance with the hook off: %v", withOff.ExternalReviews)
 	}
 }

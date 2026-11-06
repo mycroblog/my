@@ -20,12 +20,14 @@
 | モデレーション | 異議申し立て（`/moderation/appeals`） | `manage_accounts` |
 | モデレーション | アカウントの検索と管理画面・処分（`/moderation/accounts`） | `manage_accounts` |
 | モデレーション | 登録の審査（`/moderation/registrations`） | `manage_accounts` |
+| モデレーション | 自動審査の記録（`/moderation/hook-decisions`。判定フックの判定の一覧と取り消し、`local.status` の異議申し立ての審査、[ADR-0147](0147-decision-hooks.md)） | `manage_reports` |
 | モデレーション | 登録の拒否リスト（`/moderation/signup-blocks`、#626 の BAN からの作成を含む） | `manage_accounts` |
 | モデレーション | ドメインへの処分（`/moderation/domain-actions`、#641 のインポートとエクスポートを含む） | `manage_domains` |
 | モデレーション | 連合先（`/moderation/instances`。サーバーごとの配送の状態と再開、そのドメインへの処分への入口） | `manage_domains` |
 | モデレーション | 招待（`/moderation/invites`、#624） | `manage_invites` |
 | モデレーション | 監査ログ（`/moderation/audit-log`） | `view_audit` |
-| サーバー管理 | サーバーの設定（`/admin/settings`。名前・説明・登録モード・既定の言語・タイムライン・連合の設定・処分したドメインの公開、#624） | `manage_settings` |
+| サーバー管理 | サーバーの設定（`/admin/settings`。名前・説明・登録モード・既定の言語・タイムライン・連合の設定・処分したドメインの公開・全文検索の対象（[ADR-0149](0149-full-text-search.md)）・判定フックのモード（ADR-0147）、#624） | `manage_settings` |
+| サーバー管理 | 翻訳（`/admin/translation`。翻訳のプロバイダー、それぞれに送る公開範囲、上限、月の使用量、[ADR-0148](0148-post-translation.md)） | `manage_settings` |
 | サーバー管理 | 規約とポリシー（`/admin/documents`） | `manage_settings` |
 | サーバー管理 | ルール（`/admin/rules`、#624） | `manage_rules` |
 | サーバー管理 | ロール（`/admin/roles`。ロールと権限の一覧） | `manage_roles` |
@@ -116,7 +118,7 @@ Mastodon と同じ形にする。凍結は `Update(Actor)` に `suspended: true`
 処分のイベントとは別の、追記専用の記録にする。
 
 - `audit_log_entries` は `moderation` が持つ【イベント】で、カラムは `id`, `actor_kind`（`enum(user, cli, system, remote)`）, `actor_user_id`（NULL 可）, `action`（操作の enum）, `target_kind`, `target_id`, `target_label`（記録時の対象の表示名の写し。`@user@host`・ドメイン・設定のキーなど）, `source_event_id`（元のイベントの行の ID）, `occurred_at`。
-- `target_kind` は `enum(account, status, domain, report, appeal, user, role, setting, rule, signup_block)` に、機能が足す値を加えたものである（ADR-0051 の `custom_emoji`、ADR-0060 の `webhook`、ADR-0006 の `relay`、ADR-0067 の `cost_item`、ADR-0070 の `custom_emoji_request`、ADR-0072 の `supporter_program`・`supporter_plan`・`supporter_subscription`、ADR-0088 の `instance`、ほかに `announcement`・`invite`・`billing_source`・`payment_provider`・`oauth_client`・`oauth_client_host`・`voice_room`・`login_provider`・`link_card_domain`）。全部の値は `schema/<dialect>/03-moderation.sql` にある。
+- `target_kind` は `enum(account, status, domain, report, appeal, user, role, setting, rule, signup_block)` に、機能が足す値を加えたものである（ADR-0051 の `custom_emoji`、ADR-0060 の `webhook`、ADR-0006 の `relay`、ADR-0067 の `cost_item`、ADR-0070 の `custom_emoji_request`、ADR-0072 の `supporter_program`・`supporter_plan`・`supporter_subscription`、ADR-0088 の `instance`、ADR-0147 の `hook_decision`、ほかに `announcement`・`invite`・`billing_source`・`payment_provider`・`oauth_client`・`oauth_client_host`・`voice_room`・`login_provider`・`link_card_domain`）。全部の値は `schema/<dialect>/03-moderation.sql` にある。
 - 各モジュールのユースケースは、元のイベントと同じトランザクションで `AuditRecorded` のドメインイベントを発行し、`moderation` の購読者がそれを書く（`uow.Event`。他のモジュールの `internal/app` を呼ぶ既存の経路だけを使う）。
 - 理由・メモの本文は写さず、`source_event_id` で元のイベントから引く。監査ログ自体には IP アドレスを残さない。
 - 更新・削除の API と CLI を持たない。消去は §8 の保持期間を過ぎた行を消す定期ジョブだけが行う。

@@ -15,7 +15,7 @@ import {
   Stack,
   Text,
 } from "@my/ui";
-import { type ClientMessageKey, useT } from "../../../lib/i18n";
+import { type ClientMessageKey, type Translate, useT } from "../../../lib/i18n";
 import { handleOf } from "../../../lib/handle";
 import { domainToUnicode } from "../../../lib/idn";
 import { imageSources } from "../../../lib/images";
@@ -54,7 +54,9 @@ export function About() {
       <DocumentsSection />
       {/* Who runs it, for someone who considers joining (web-client/screens/about.md). */}
       {about.contact !== undefined && <Contact contact={about.contact} />}
-      {about.externalReviews.length > 0 && <ExternalReview hooks={about.externalReviews} />}
+      {about.externalReviews.length > 0 && (
+        <ExternalReview hooks={about.externalReviews} scope={about.externalReviewScope} />
+      )}
       {/* How the server treats other servers and crawlers. */}
       <ModeratedDomainsSection />
       {about.crawlers !== undefined && (
@@ -171,23 +173,39 @@ export function ContactDetails({ contact }: { contact: NonNullable<Instance["con
   );
 }
 
-const externalReviewLabels = {
-  "inbound.status": "client:about.external_review.inbound_status",
-  "inbound.follow": "client:about.external_review.inbound_follow",
-  "signup.check": "client:about.external_review.signup_check",
-  "media.check": "client:about.external_review.media_check",
-  "local.status": "client:about.external_review.local_status",
-} as const;
+type ExternalReviewHook = NonNullable<Instance["external_reviews"]>[number];
+type ExternalReviewScope = Instance["external_review_scope"];
+
+/**
+ * What one review covers and what is sent to it, narrowed by its settings. A setting the server did not state reads as
+ * the widest choice, so the page never says less is sent than may be.
+ */
+function externalReviewText(t: Translate, hook: ExternalReviewHook, scope: ExternalReviewScope): string {
+  switch (hook) {
+    case "inbound.status":
+      return t("client:about.external_review.inbound_status", {
+        unfollowedDirect: String(scope?.inbound_status_unfollowed_direct ?? true),
+      });
+    case "inbound.follow":
+      return t("client:about.external_review.inbound_follow");
+    case "signup.check":
+      return t("client:about.external_review.signup_check");
+    case "media.check":
+      return t("client:about.external_review.media_check");
+    case "local.status":
+      return t("client:about.external_review.local_status", { days: scope?.local_status_account_age_days ?? 0 });
+  }
+}
 
 /** That an external review is in use, what it covers, and what is sent to it (ADR-0147 §12), from the settings. */
-function ExternalReview({ hooks }: { hooks: readonly (keyof typeof externalReviewLabels)[] }) {
+function ExternalReview({ hooks, scope }: { hooks: readonly ExternalReviewHook[]; scope: ExternalReviewScope }) {
   const t = useT();
   return (
     <Section title={t("client:about.external_review.title")}>
       <p>{t("client:about.external_review.intro")}</p>
       <ul>
         {hooks.map((hook) => (
-          <li key={hook}>{t(externalReviewLabels[hook])}</li>
+          <li key={hook}>{externalReviewText(t, hook, scope)}</li>
         ))}
       </ul>
     </Section>

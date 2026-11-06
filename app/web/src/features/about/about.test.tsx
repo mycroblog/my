@@ -345,6 +345,38 @@ describe("the external review", () => {
     expect(screen.queryByText(/Uploaded media: /u)).not.toBeInTheDocument();
   });
 
+  test("states the settings that narrow what is sent", async () => {
+    server.use(
+      http.get(`${apiBase}/instance`, () =>
+        HttpResponse.json({
+          ...instanceFixture,
+          external_reviews: ["inbound.status", "local.status"],
+          external_review_scope: { local_status_account_age_days: 7, inbound_status_unfollowed_direct: false },
+        }),
+      ),
+    );
+    await renderApp({ path: "/about" });
+    expect(await screen.findByText(/Posts by accounts of this server created in the last 7 days/u)).toBeVisible();
+    expect(
+      screen.getByText(/Posts for mentioned people are sent only when someone here follows the sender/u),
+    ).toBeVisible();
+  });
+
+  test("says every account and every post for mentioned people when the settings send them", async () => {
+    server.use(
+      http.get(`${apiBase}/instance`, () =>
+        HttpResponse.json({
+          ...instanceFixture,
+          external_reviews: ["inbound.status", "local.status"],
+          external_review_scope: { local_status_account_age_days: 0, inbound_status_unfollowed_direct: true },
+        }),
+      ),
+    );
+    await renderApp({ path: "/about" });
+    expect(await screen.findByText(/Posts by every account of this server/u)).toBeVisible();
+    expect(screen.getByText(/posts for followers and for mentioned people included/u)).toBeVisible();
+  });
+
   test("says nothing when none is", async () => {
     await renderApp({ path: "/about" });
     await screen.findByRole("heading", { level: 1 });

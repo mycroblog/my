@@ -28,6 +28,7 @@ import {
   type HookMode,
   type HookName,
   type HookOutcome,
+  type HookReason,
   hookSummaryQueryOptions,
   overrideHookDecisionMutation,
   refreshHookAppeals,
@@ -55,6 +56,16 @@ export const hookOutcomeLabels: Readonly<Record<HookOutcome, ClientMessageKey>> 
   error: "client:admin.hook_decisions.outcome.error",
   invalid: "client:admin.hook_decisions.outcome.invalid",
   breaker_open: "client:admin.hook_decisions.outcome.breaker_open",
+};
+
+export const hookReasonLabels: Readonly<Record<HookReason, ClientMessageKey>> = {
+  spam: "client:admin.hook_decisions.reason.spam",
+  harassment: "client:admin.hook_decisions.reason.harassment",
+  sexual: "client:admin.hook_decisions.reason.sexual",
+  violence: "client:admin.hook_decisions.reason.violence",
+  illegal: "client:admin.hook_decisions.reason.illegal",
+  malware: "client:admin.hook_decisions.reason.malware",
+  other: "client:admin.hook_decisions.reason.other",
 };
 
 export const hookModeLabels: Readonly<Record<HookMode | HookDecisionMode, ClientMessageKey>> = {

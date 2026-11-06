@@ -28,6 +28,8 @@ export type About = {
   crawlers: { searchIndexing: Instance["search_indexing"]; aiUsage: Instance["ai_usage"] } | undefined;
   /** The external reviews in use, which the page states (ADR-0147 §12); empty when there is none. */
   externalReviews: NonNullable<Instance["external_reviews"]>;
+  /** The settings that narrow what is sent to the reviews in use; undefined when none of them has one. */
+  externalReviewScope: Instance["external_review_scope"];
   /**
    * How much of its running costs the instance publishes (FR-903, ADR-0067 §8); undefined while the instance has not
    * loaded.
@@ -73,6 +75,7 @@ export function useAbout(): About {
     thumbnail: instance?.thumbnail,
     contact: instance?.contact,
     externalReviews: instance?.external_reviews ?? [],
+    externalReviewScope: instance?.external_review_scope,
     crawlers:
       instance === undefined ? undefined : { searchIndexing: instance.search_indexing, aiUsage: instance.ai_usage },
     finance: instance?.finance_visibility,

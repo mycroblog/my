@@ -348,16 +348,16 @@
     "description": "What the external review of follows covers and what is sent to it."
   },
   "about.external_review.inbound_status": {
-    "defaultMessage": "このサーバーが受け取る、ほかのサーバーからの投稿: 本文と送信者。",
-    "description": "What the external review of posts from other servers covers and what is sent to it."
+    "defaultMessage": "{unfollowedDirect, select, true {このサーバーが受け取る、ほかのサーバーからの投稿 (フォロワー向けとメンションした人向けの投稿を含む): 本文、送信者、送信者をこのサーバーの誰かがフォローしているか。} other {このサーバーが受け取る、ほかのサーバーからの投稿 (フォロワー向けの投稿を含む): 本文、送信者、送信者をこのサーバーの誰かがフォローしているか。メンションした人向けの投稿は、送信者をこのサーバーの誰かがフォローしているときだけ送ります。}}",
+    "description": "What the external review of posts from other servers covers and what is sent to it. {unfollowedDirect} is true when posts for mentioned people are sent also from senders no one on this server follows."
   },
   "about.external_review.intro": {
     "defaultMessage": "このサーバーは、次のものを受け付ける前に、外部のサービスに審査を求めています。審査にできるのは審査の対象を止めるか印を付けることまでで、アカウントへの処分は人が決めます。",
     "description": "Introduction of the section of the information page about the external review."
   },
   "about.external_review.local_status": {
-    "defaultMessage": "このサーバーのアカウントの投稿とその編集: 本文。非公開とダイレクトの投稿は送りません。",
-    "description": "What the external review of local posts covers and what is sent to it."
+    "defaultMessage": "{days, plural, =0 {このサーバーのすべてのアカウントの投稿とその編集: 本文と投稿者のユーザー名。フォロワー向けとメンションした人向けの投稿は送りません。} other {このサーバーの、作成から # 日以内のアカウントの投稿とその編集: 本文と投稿者のユーザー名。フォロワー向けとメンションした人向けの投稿は送りません。}}",
+    "description": "What the external review of local posts and their edits covers and what is sent to it. {days} is how many days after its creation an account's posts and edits are sent; 0 means the posts of every account are."
   },
   "about.external_review.media_check": {
     "defaultMessage": "アップロードされたメディア: 処理後の小さな版。原本は送りません。",

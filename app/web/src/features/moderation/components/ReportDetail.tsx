@@ -38,7 +38,7 @@ import { useIntl } from "react-intl";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
 import { ReportCommentText, StatusCard } from "../../status";
 import { type AccountAction, type ReportDetail, reportForwardCommentLimit, reportNoteLimit } from "../api/reports";
-import { hookNameLabels } from "../hooks/useHookDecisions";
+import { hookNameLabels, hookReasonLabels } from "../hooks/useHookDecisions";
 import { useHasPermission } from "../hooks/usePermissions";
 import { useRefetch } from "../hooks/useRefetch";
 import {
@@ -316,7 +316,11 @@ function ReportSummary({ report }: { report: ReportDetail }) {
                 {t("client:admin.report.hook_origin.value", { hook: t(hookNameLabels[report.hook_origin.hook]) })}
               </span>
               {report.hook_origin.reason !== undefined && (
-                <span>{t("client:admin.report.hook_origin.reason", { reason: report.hook_origin.reason })}</span>
+                <span>
+                  {t("client:admin.report.hook_origin.reason", {
+                    reason: t(hookReasonLabels[report.hook_origin.reason]),
+                  })}
+                </span>
               )}
             </Stack>
           </DescriptionItem>

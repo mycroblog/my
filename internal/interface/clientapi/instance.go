@@ -6,12 +6,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	appaccount "github.com/mycroblog/my/internal/app/account"
 	appcontent "github.com/mycroblog/my/internal/app/content"
 	appinstance "github.com/mycroblog/my/internal/app/instance"
 	"github.com/mycroblog/my/internal/app/search"
 	"github.com/mycroblog/my/internal/domain/account"
+	"github.com/mycroblog/my/internal/domain/hook"
 	"github.com/mycroblog/my/internal/domain/identity"
 	"github.com/mycroblog/my/internal/domain/instance"
 )
@@ -133,6 +135,7 @@ func (s *Server) GetInstance(ctx context.Context, _ GetInstanceRequestObject) (G
 				reviews[i] = HookName(n)
 			}
 			out.ExternalReviews = &reviews
+			out.ExternalReviewScope = externalReviewScope(used, settings)
 		}
 	}
 	// Whether the voice chat rooms are on and who may open them (ADR-0100 §2), so that clients
@@ -203,6 +206,28 @@ func (s *Server) GetInstance(ctx context.Context, _ GetInstanceRequestObject) (G
 		cache = cachePrivate
 	}
 	return GetInstance200JSONResponse{Body: out, Headers: GetInstance200ResponseHeaders{CacheControl: &cache}}, nil
+}
+
+// externalReviewScope presents the settings that narrow what the hooks in use send (ADR-0147
+// §12): the account age of local.status and whether inbound.status sends the direct posts of
+// unfollowed authors, each only while its hook is in use; nil when neither is.
+func externalReviewScope(used []hook.Name, settings instance.Settings) *InstanceExternalReviewScope {
+	var out InstanceExternalReviewScope
+	for _, n := range used {
+		switch n {
+		case hook.LocalStatus:
+			days := int64(settings.HookLocalStatusAccountAge() / (24 * time.Hour))
+			out.LocalStatusAccountAgeDays = &days
+		case hook.InboundStatus:
+			value, _ := settings.Value(instance.SettingHookInboundStatusUnfollowedDirect)
+			unfollowed := value == "true"
+			out.InboundStatusUnfollowedDirect = &unfollowed
+		}
+	}
+	if out.LocalStatusAccountAgeDays == nil && out.InboundStatusUnfollowedDirect == nil {
+		return nil
+	}
+	return &out
 }
 
 // instanceContact presents the contact_account and contact_email settings, nil when the

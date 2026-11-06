@@ -133,9 +133,10 @@ What it sends and when:
   7 days by default; `0` sends the posts of every account). New accounts are where most spam comes from, and established
   accounts are not sent.
 - Only `public`, `local`, and `unlisted` posts. `private` and `direct` posts are never sent.
-- The text as the author typed it and as the server renders it, the content warning, the language, the image descriptions, the
-  poll options, the hashtags, how many accounts it mentions, the post it replies to or quotes (by address only), the author's
-  username, and when the account was created. No media is sent.
+- The text as the author typed it and as the server renders it, the content warning, the language, whether it is marked
+  sensitive, the image descriptions, the poll options, the hashtags, how many accounts it mentions, the address the post would
+  get, the post it replies to or quotes (by address only), the author's address and username, and when the account was
+  created. No media is sent.
 - The key of the subject is the ID the post would get. Sending a post again with the same `Idempotency-Key` returns the post
   that was created, without calling the plugin; a new attempt is a new subject.
 - An edit is sent the same way, with the post as edited, to the same accounts: those inside
@@ -249,7 +250,9 @@ its exemption from `local.status`.
 ## What you tell your users
 
 While a hook has a plugin and is not `off`, your information page (`/about`) states that an external review is in use, what
-it covers, and what is sent to it. The server writes this from your settings.
+it covers, and what is sent to it. The server writes this from your settings, including the account age of
+`hook_local_status_account_age_days` (or that the posts of every account go, at `0`) and whether
+`hook_inbound_status_unfollowed_direct` sends the direct posts of authors nobody here follows.
 
 ## What is sent, and what it costs
 
@@ -257,9 +260,13 @@ Calls, their cost, and sent data grow with the volume the server receives, on `i
 is one call, and every revision another. Review what you send before you turn a hook on:
 
 - `inbound.status` and `local.status` send the text of posts, and refuse plain TCP, on loopback too. `inbound.status` sends
-  what the remote server sent: the text, the content warning, the addresses and descriptions of attachments (no media), poll
-  options, hashtags, the author, the visibility, and how many accounts the post names and how many of them are local.
-  It sends nothing of the post it replies to. The message `InboundStatus` of the `HookService` protocol has the fields.
+  what the remote server sent: the text in each of its languages, the content warning, whether it is marked sensitive, when
+  it was published, the post's address and URL, the address of the post it replies to, the addresses and descriptions of
+  attachments (no media), poll options, hashtags, the author and the author's server, the visibility, and how many accounts
+  the post names and how many of them are local. It also sends whether a local account follows the author
+  (`any_local_follower`), which is data about your users. Followers-only (`private`) posts are sent like public ones, and
+  direct posts as [above](#what-inboundstatus-reviews). It sends nothing of the post it replies to but its address.
+  `local.status` sends the fields listed under [Local posts](#local-posts). The message `InboundStatus` of the `HookService` protocol has the fields.
 - `signup.check` sends the email address and the IP address of each applicant, and refuses plain TCP.
 - `inbound.follow` sends the two parties of a follow.
 - `media.check` sends the smallest processed image of each upload, never the original, with what the file is for, its
