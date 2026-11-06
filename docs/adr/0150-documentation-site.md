@@ -1,13 +1,13 @@
 # ADR-0150: ドキュメントサイト（運営者・利用者・開発者向けの公開文書）
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-11-06
 - Deciders: @rosylilly
 - Issue: #2321, #2331
 
 ## Decision（決定）
 
-推奨案である。覆る条件は §10 に書く。
+覆る条件は §10 に書く。
 
 ### 1. 結論
 
@@ -111,7 +111,7 @@ API の仕様は `api/openapi.yaml` として公開できる形にあるが、�
 
 このリポジトリにはすでに、文書をコードと同じ PR で直す仕組み（ADR-0000、`agentkit docs`）がある。足りないのは公開の場であって原稿の管理ではない、という整理から、
 原稿をリポジトリに残してビルドと配信だけを足す形にした。生成器は、i18n の組み込み・OpenAPI のプラグイン・静的な検索があり、
-クライアントと同じ Bun と TypeScript で動く Astro Starlight を推す。
+クライアントと同じ Bun と TypeScript で動く Astro Starlight を選んだ。
 
 ## 採らなかった案
 
