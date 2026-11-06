@@ -9,6 +9,21 @@ The server pushes new posts, notifications, and announcements as [Server-Sent Ev
 
 Open a stream with `fetch` and the `Authorization: Bearer` header, like any other call. The browser's `EventSource` cannot send the header, so it cannot be used.
 
+![A sequence diagram of the event stream: the client opens a stream, receives events and a heartbeat every 30 seconds, sees the stream end, and catches up with ordinary requests after opening a new one. The steps are listed below.](images/event-stream.svg)
+
+From the top of the diagram down, between the client and the server:
+
+1. **Opening a stream.** The client sends `GET /api/v1/streaming` with `Authorization: Bearer <access_token>`. The server
+   refuses with `429` (`/api/v1/problems/too-many-streams`) or with `503` and `Retry-After`, or answers `200` with
+   `text/event-stream` and the comment line `: connected`.
+2. **While it is open.** The server sends events (`update`, `list_update`, `notification`, `announcement`, ...). Every 30
+   seconds it checks the access token again and sends the comment line `: heartbeat`.
+3. **The stream ends** when the token is no longer valid, the client fell behind, the server shuts down, or the server may
+   have missed updates. The client backs off, and refreshes the token if it expired.
+4. **Catching up.** The client opens a new stream with `GET /api/v1/streaming`, then reads what the stream missed from the
+   first pages of `GET /api/v1/timelines/home`, `GET /api/v1/timelines/list/{id}` and `GET /api/v1/notifications`: the server
+   replays nothing.
+
 ## Events of `/api/v1/streaming`
 
 | Event | `data` |
