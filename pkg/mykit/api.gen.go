@@ -242,6 +242,33 @@ func (e AdminAccountState) Valid() bool {
 	}
 }
 
+// Defines values for AdminAnnouncementFilter.
+const (
+	AdminAnnouncementFilterDraft     AdminAnnouncementFilter = "draft"
+	AdminAnnouncementFilterEnded     AdminAnnouncementFilter = "ended"
+	AdminAnnouncementFilterScheduled AdminAnnouncementFilter = "scheduled"
+	AdminAnnouncementFilterShowing   AdminAnnouncementFilter = "showing"
+	AdminAnnouncementFilterWithdrawn AdminAnnouncementFilter = "withdrawn"
+)
+
+// Valid indicates whether the value is a known member of the AdminAnnouncementFilter enum.
+func (e AdminAnnouncementFilter) Valid() bool {
+	switch e {
+	case AdminAnnouncementFilterDraft:
+		return true
+	case AdminAnnouncementFilterEnded:
+		return true
+	case AdminAnnouncementFilterScheduled:
+		return true
+	case AdminAnnouncementFilterShowing:
+		return true
+	case AdminAnnouncementFilterWithdrawn:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for AdminAnnouncementState.
 const (
 	AdminAnnouncementStateDraft     AdminAnnouncementState = "draft"
@@ -5135,6 +5162,11 @@ type AdminAnnouncementCreateRequest struct {
 	Title string `json:"title"`
 }
 
+// AdminAnnouncementFilter Which announcements the administrators' list keeps. `draft` and `withdrawn` keep that state.
+// Of the published ones, `scheduled` keeps those whose window starts later, `showing` those every
+// local user sees now, and `ended` those whose window has ended.
+type AdminAnnouncementFilter string
+
 // AdminAnnouncementInput The title, the text, and the window of an announcement.
 type AdminAnnouncementInput struct {
 	// EndsAt When it stops showing, after `starts_at`; omitted to show it until it is withdrawn.
@@ -5151,9 +5183,12 @@ type AdminAnnouncementInput struct {
 	Title string `json:"title"`
 }
 
-// AdminAnnouncementList The announcements, newest first.
-type AdminAnnouncementList struct {
+// AdminAnnouncementPage A page of announcements, newest first.
+type AdminAnnouncementPage struct {
 	Items []AdminAnnouncement `json:"items"`
+
+	// NextCursor An opaque pagination cursor. Clients pass it back unchanged and never parse it.
+	NextCursor *Cursor `json:"next_cursor,omitempty"`
 }
 
 // AdminAnnouncementState `draft`: no user sees it. `published`: every local user sees it within its window.
@@ -14551,6 +14586,18 @@ type ListAccountActionsParams struct {
 	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
+// ListAdminAnnouncementsParams defines parameters for ListAdminAnnouncements.
+type ListAdminAnnouncementsParams struct {
+	// State Keep only these announcements; omitted keeps every one.
+	State *AdminAnnouncementFilter `form:"state,omitempty" json:"state,omitempty"`
+
+	// Cursor The `next_cursor` of the previous page; omitted for the first page.
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+
+	// Limit The maximum number of items in the page.
+	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
 // ListAppealsParams defines parameters for ListAppeals.
 type ListAppealsParams struct {
 	// State Keep only the appeals in this state; omitted keeps every state.
@@ -18059,11 +18106,12 @@ type ClientInterface interface {
 
 	// ListAdminAnnouncements List the announcements
 	//
-	// Every announcement, drafts and withdrawn ones included, newest first. The
-	// list is not paginated. Needs the `manage_announcements` permission.
+	// The announcements, drafts and withdrawn ones included, newest first, a page at a time.
+	// `state` keeps only some of them; an unknown one is a 400 naming `state`. Needs the
+	// `manage_announcements` permission.
 	//
 	// Corresponds with GET /admin/announcements (the `ListAdminAnnouncements` operationId).
-	ListAdminAnnouncements(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+	ListAdminAnnouncements(ctx context.Context, params *ListAdminAnnouncementsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// CreateAdminAnnouncementWithBody Write an announcement
 	//
@@ -24636,12 +24684,13 @@ func (c *Client) DisableAdminAccountTwoFactor(ctx context.Context, id AdminAccou
 
 // ListAdminAnnouncements List the announcements
 //
-// Every announcement, drafts and withdrawn ones included, newest first. The
-// list is not paginated. Needs the `manage_announcements` permission.
+// The announcements, drafts and withdrawn ones included, newest first, a page at a time.
+// `state` keeps only some of them; an unknown one is a 400 naming `state`. Needs the
+// `manage_announcements` permission.
 //
 // Corresponds with GET /admin/announcements (the `ListAdminAnnouncements` operationId).
-func (c *Client) ListAdminAnnouncements(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewListAdminAnnouncementsRequest(c.Server)
+func (c *Client) ListAdminAnnouncements(ctx context.Context, params *ListAdminAnnouncementsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListAdminAnnouncementsRequest(c.Server, params)
 	if err != nil {
 		return nil, err
 	}
@@ -36040,7 +36089,7 @@ func NewDisableAdminAccountTwoFactorRequest(server string, id AdminAccountId) (*
 }
 
 // NewListAdminAnnouncementsRequest constructs an http.Request for the ListAdminAnnouncements method
-func NewListAdminAnnouncementsRequest(server string) (*http.Request, error) {
+func NewListAdminAnnouncementsRequest(server string, params *ListAdminAnnouncementsParams) (*http.Request, error) {
 	var err error
 
 	serverURL, err := url.Parse(server)
@@ -36056,6 +36105,57 @@ func NewListAdminAnnouncementsRequest(server string) (*http.Request, error) {
 	queryURL, err := serverURL.Parse(operationPath)
 	if err != nil {
 		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if params.State != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "state", *params.State, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Cursor != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "cursor", *params.Cursor, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "limit", *params.Limit, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
 	}
 
 	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
@@ -51243,13 +51343,14 @@ type ClientWithResponsesInterface interface {
 
 	// ListAdminAnnouncementsWithResponse List the announcements
 	//
-	// Every announcement, drafts and withdrawn ones included, newest first. The
-	// list is not paginated. Needs the `manage_announcements` permission.
+	// The announcements, drafts and withdrawn ones included, newest first, a page at a time.
+	// `state` keeps only some of them; an unknown one is a 400 naming `state`. Needs the
+	// `manage_announcements` permission.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
 	// Corresponds with GET /admin/announcements (the `ListAdminAnnouncements` operationId).
-	ListAdminAnnouncementsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ListAdminAnnouncementsResponse, error)
+	ListAdminAnnouncementsWithResponse(ctx context.Context, params *ListAdminAnnouncementsParams, reqEditors ...RequestEditorFn) (*ListAdminAnnouncementsResponse, error)
 
 	// CreateAdminAnnouncementWithBodyWithResponse Write an announcement
 	//
@@ -59708,7 +59809,7 @@ type ListAdminAnnouncementsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	// JSON200 the response for an HTTP 200 `application/json` response
-	JSON200 *AdminAnnouncementList
+	JSON200 *AdminAnnouncementPage
 	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
 	ApplicationproblemJSONDefault *Problem
 	// Headers200 the parsed response headers for an HTTP 200 response
@@ -59718,7 +59819,7 @@ type ListAdminAnnouncementsResponse struct {
 }
 
 // GetJSON200 returns the response for an HTTP 200 `application/json` response
-func (r ListAdminAnnouncementsResponse) GetJSON200() *AdminAnnouncementList {
+func (r ListAdminAnnouncementsResponse) GetJSON200() *AdminAnnouncementPage {
 	return r.JSON200
 }
 
@@ -82252,14 +82353,15 @@ func (c *ClientWithResponses) DisableAdminAccountTwoFactorWithResponse(ctx conte
 
 // ListAdminAnnouncementsWithResponse List the announcements
 //
-// Every announcement, drafts and withdrawn ones included, newest first. The
-// list is not paginated. Needs the `manage_announcements` permission.
+// The announcements, drafts and withdrawn ones included, newest first, a page at a time.
+// `state` keeps only some of them; an unknown one is a 400 naming `state`. Needs the
+// `manage_announcements` permission.
 //
 // Returns a wrapper object for the known response body format(s).
 //
 // Corresponds with GET /admin/announcements (the `ListAdminAnnouncements` operationId).
-func (c *ClientWithResponses) ListAdminAnnouncementsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ListAdminAnnouncementsResponse, error) {
-	rsp, err := c.ListAdminAnnouncements(ctx, reqEditors...)
+func (c *ClientWithResponses) ListAdminAnnouncementsWithResponse(ctx context.Context, params *ListAdminAnnouncementsParams, reqEditors ...RequestEditorFn) (*ListAdminAnnouncementsResponse, error) {
+	rsp, err := c.ListAdminAnnouncements(ctx, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -93798,7 +93900,7 @@ func ParseListAdminAnnouncementsResponse(rsp *http.Response) (*ListAdminAnnounce
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest AdminAnnouncementList
+		var dest AdminAnnouncementPage
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}

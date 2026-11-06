@@ -47,6 +47,28 @@ JOIN announcement_heads h ON h.announcement_id = a.id
 JOIN announcement_revisions v ON v.id = h.revision_id
 ORDER BY a.id DESC;
 
+-- ListAnnouncementPage returns a page of the announcements for the administrators, newest first:
+-- those before @before_id (none for the first page), at most @row_limit. An empty @filter keeps
+-- every announcement; 'draft' and 'withdrawn' keep that state, and of the published ones
+-- 'scheduled' keeps those whose window starts after @now, 'showing' those the users see at @now,
+-- and 'ended' those whose window has ended by @now.
+-- name: ListAnnouncementPage :many
+SELECT a.id, a.created_at, h.state, h.published_at, v.id AS revision_id, v.title, v.body, v.starts_at, v.ends_at,
+  v.revised_by_user_id, v.revised_at
+FROM announcements a
+JOIN announcement_heads h ON h.announcement_id = a.id
+JOIN announcement_revisions v ON v.id = h.revision_id
+WHERE (sqlc.narg(before_id)::uuid IS NULL OR a.id < sqlc.narg(before_id)::uuid)
+  AND (@filter::text = ''
+    OR (h.state <> 'published' AND h.state = @filter::text)
+    OR (h.state = 'published' AND (
+      (@filter::text = 'scheduled' AND v.starts_at > @now::timestamptz)
+      OR (@filter::text = 'showing' AND (v.starts_at IS NULL OR v.starts_at <= @now::timestamptz)
+        AND (v.ends_at IS NULL OR v.ends_at > @now::timestamptz))
+      OR (@filter::text = 'ended' AND v.ends_at <= @now::timestamptz))))
+ORDER BY a.id DESC
+LIMIT @row_limit;
+
 -- The published announcements, newest first.
 -- name: ListPublishedAnnouncements :many
 SELECT a.id, a.created_at, h.state, h.published_at, v.id AS revision_id, v.title, v.body, v.starts_at, v.ends_at,

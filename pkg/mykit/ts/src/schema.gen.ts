@@ -5652,8 +5652,9 @@ export interface paths {
         };
         /**
          * List the announcements
-         * @description Every announcement, drafts and withdrawn ones included, newest first. The
-         *     list is not paginated. Needs the `manage_announcements` permission.
+         * @description The announcements, drafts and withdrawn ones included, newest first, a page at a time.
+         *     `state` keeps only some of them; an unknown one is a 400 naming `state`. Needs the
+         *     `manage_announcements` permission.
          */
         get: operations["listAdminAnnouncements"];
         put?: never;
@@ -8752,6 +8753,13 @@ export interface components {
              */
             publish: boolean;
         };
+        /**
+         * @description Which announcements the administrators' list keeps. `draft` and `withdrawn` keep that state.
+         *     Of the published ones, `scheduled` keeps those whose window starts later, `showing` those every
+         *     local user sees now, and `ended` those whose window has ended.
+         * @enum {string}
+         */
+        AdminAnnouncementFilter: "draft" | "scheduled" | "showing" | "ended" | "withdrawn";
         /** @description The title, the text, and the window of an announcement. */
         AdminAnnouncementInput: {
             /**
@@ -8772,8 +8780,8 @@ export interface components {
              */
             ends_at?: string;
         };
-        /** @description The announcements, newest first. */
-        AdminAnnouncementList: {
+        /** @description A page of announcements, newest first. */
+        AdminAnnouncementPage: components["schemas"]["PageInfo"] & {
             items: components["schemas"]["AdminAnnouncement"][];
         };
         /**
@@ -22347,21 +22355,28 @@ export interface operations {
     };
     listAdminAnnouncements: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Keep only these announcements; omitted keeps every one. */
+                state?: components["schemas"]["AdminAnnouncementFilter"];
+                /** @description The `next_cursor` of the previous page; omitted for the first page. */
+                cursor?: components["parameters"]["Cursor"];
+                /** @description The maximum number of items in the page. */
+                limit?: components["parameters"]["Limit"];
+            };
             header?: never;
             path?: never;
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description The announcements. */
+            /** @description A page of announcements. */
             200: {
                 headers: {
                     "Cache-Control": components["headers"]["CacheControl"];
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AdminAnnouncementList"];
+                    "application/json": components["schemas"]["AdminAnnouncementPage"];
                 };
             };
             default: components["responses"]["Problem"];

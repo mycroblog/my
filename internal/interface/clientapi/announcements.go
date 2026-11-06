@@ -28,7 +28,7 @@ type Announcements interface {
 	PastAnnouncement(ctx context.Context, userID, id string) (appinstance.ReaderAnnouncement, bool, error)
 	MarkAnnouncementRead(ctx context.Context, userID, id string) (appinstance.ReaderAnnouncement, error)
 
-	Announcements(ctx context.Context) ([]instance.Announcement, error)
+	Announcements(ctx context.Context, filter appinstance.AnnouncementFilter, before string, limit int) ([]instance.Announcement, error)
 	Announcement(ctx context.Context, id string) (instance.Announcement, error)
 	CreateAnnouncement(ctx context.Context, in appinstance.CreateAnnouncementInput) (instance.Announcement, error)
 	UpdateAnnouncement(ctx context.Context, in appinstance.UpdateAnnouncementInput) (instance.Announcement, error)
@@ -205,23 +205,39 @@ func (s *Server) announcementProblem(ctx context.Context, err error) (problem, b
 	return problem{}, false
 }
 
-// ListAdminAnnouncements serves GET /api/v1/admin/announcements.
-func (s *Server) ListAdminAnnouncements(ctx context.Context, _ ListAdminAnnouncementsRequestObject) (ListAdminAnnouncementsResponseObject, error) {
+// ListAdminAnnouncements serves GET /api/v1/admin/announcements, newest first. The cursor is
+// the ID of the last announcement of the previous page.
+func (s *Server) ListAdminAnnouncements(ctx context.Context, req ListAdminAnnouncementsRequestObject) (ListAdminAnnouncementsResponseObject, error) {
 	if p, err := s.requireAnnouncements(ctx); err != nil {
 		return nil, err
 	} else if p != nil {
 		return ListAdminAnnouncementsdefaultApplicationProblemPlusJSONResponse(*p), nil
 	}
-	all, err := s.o.Announcements.Announcements(ctx)
+	q := s.parsePage(ctx, req.Params.Cursor, req.Params.Limit)
+	if q.problem != nil {
+		return ListAdminAnnouncementsdefaultApplicationProblemPlusJSONResponse(*q.problem), nil
+	}
+	var filter appinstance.AnnouncementFilter
+	if req.Params.State != nil {
+		filter = appinstance.AnnouncementFilter(*req.Params.State)
+	}
+	all, err := s.o.Announcements.Announcements(ctx, filter, q.before, q.limit+1)
+	if errors.Is(err, instance.ErrInvalidValue) {
+		return ListAdminAnnouncementsdefaultApplicationProblemPlusJSONResponse(s.invalidParameterResponse(ctx, "state")), nil
+	}
 	if err != nil {
 		return nil, fmt.Errorf("clientapi: list announcements: %w", err)
 	}
-	list := AdminAnnouncementList{Items: make([]AdminAnnouncement, 0, len(all))}
+	all, last := trim(all, q.limit)
+	page := AdminAnnouncementPage{Items: make([]AdminAnnouncement, 0, len(all))}
 	for _, a := range all {
-		list.Items = append(list.Items, s.newAdminAnnouncement(a))
+		page.Items = append(page.Items, s.newAdminAnnouncement(a))
+	}
+	if last >= 0 {
+		page.NextCursor = encodeCursor(all[last].ID)
 	}
 	cache := cacheNoStore
-	return ListAdminAnnouncements200JSONResponse{Body: list, Headers: ListAdminAnnouncements200ResponseHeaders{CacheControl: &cache}}, nil
+	return ListAdminAnnouncements200JSONResponse{Body: page, Headers: ListAdminAnnouncements200ResponseHeaders{CacheControl: &cache}}, nil
 }
 
 // CreateAdminAnnouncement serves POST /api/v1/admin/announcements.

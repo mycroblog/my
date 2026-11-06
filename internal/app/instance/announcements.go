@@ -57,6 +57,10 @@ type AnnouncementRepository interface {
 	// ListAnnouncements returns every announcement, newest first; only the published ones when
 	// publishedOnly is set.
 	ListAnnouncements(ctx context.Context, publishedOnly bool) ([]instance.Announcement, error)
+	// ListAnnouncementPage returns a page of the announcements in any state, newest first (by
+	// ID): those that q.Filter keeps at q.Now, before q.Before (from the newest when empty), at
+	// most limit.
+	ListAnnouncementPage(ctx context.Context, q AnnouncementQuery, limit int) ([]instance.Announcement, error)
 	// ListReadAnnouncementIDs returns which of announcementIDs the user has read.
 	ListReadAnnouncementIDs(ctx context.Context, userID string, announcementIDs []string) ([]string, error)
 }
@@ -381,9 +385,49 @@ func (s *Service) Announcement(ctx context.Context, id string) (instance.Announc
 	return s.d.Repository.FindAnnouncement(ctx, id)
 }
 
-// Announcements returns every announcement in any state, newest first, for the administrators.
-func (s *Service) Announcements(ctx context.Context) ([]instance.Announcement, error) {
-	return s.d.Repository.ListAnnouncements(ctx, false)
+// AnnouncementFilter selects the announcements of the administrators' list by where they are in
+// their life; the zero value keeps every one.
+type AnnouncementFilter string
+
+// The values of AnnouncementFilter. Scheduled, Showing, and Ended split the published
+// announcements by their window at the time of the query.
+const (
+	AnnouncementFilterAll       AnnouncementFilter = ""
+	AnnouncementFilterDraft     AnnouncementFilter = "draft"
+	AnnouncementFilterScheduled AnnouncementFilter = "scheduled"
+	AnnouncementFilterShowing   AnnouncementFilter = "showing"
+	AnnouncementFilterEnded     AnnouncementFilter = "ended"
+	AnnouncementFilterWithdrawn AnnouncementFilter = "withdrawn"
+)
+
+// Valid reports whether f is one of the values of AnnouncementFilter.
+func (f AnnouncementFilter) Valid() bool {
+	switch f {
+	case AnnouncementFilterAll, AnnouncementFilterDraft, AnnouncementFilterScheduled, AnnouncementFilterShowing,
+		AnnouncementFilterEnded, AnnouncementFilterWithdrawn:
+		return true
+	}
+	return false
+}
+
+// AnnouncementQuery is what AnnouncementRepository.ListAnnouncementPage lists.
+type AnnouncementQuery struct {
+	Filter AnnouncementFilter
+	// Now is the time the published announcements are split at.
+	Now time.Time
+	// Before is the ID of the last announcement of the previous page; empty for the first page.
+	Before string
+}
+
+// Announcements returns a page of the announcements in any state, newest first, for the
+// administrators: those that filter keeps now, before the announcement before (the ID of the last
+// one of the previous page; empty for the first page), at most limit. An unknown filter fails
+// with an error wrapping ErrInvalidValue.
+func (s *Service) Announcements(ctx context.Context, filter AnnouncementFilter, before string, limit int) ([]instance.Announcement, error) {
+	if !filter.Valid() {
+		return nil, fmt.Errorf("%w: announcement filter %q", instance.ErrInvalidValue, filter)
+	}
+	return s.d.Repository.ListAnnouncementPage(ctx, AnnouncementQuery{Filter: filter, Now: s.d.Clock.Now(), Before: before}, limit)
 }
 
 // RenderAnnouncement returns the body of an announcement as an HTML fragment, sanitized with the

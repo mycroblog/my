@@ -244,6 +244,33 @@ func (e AdminAccountState) Valid() bool {
 	}
 }
 
+// Defines values for AdminAnnouncementFilter.
+const (
+	AdminAnnouncementFilterDraft     AdminAnnouncementFilter = "draft"
+	AdminAnnouncementFilterEnded     AdminAnnouncementFilter = "ended"
+	AdminAnnouncementFilterScheduled AdminAnnouncementFilter = "scheduled"
+	AdminAnnouncementFilterShowing   AdminAnnouncementFilter = "showing"
+	AdminAnnouncementFilterWithdrawn AdminAnnouncementFilter = "withdrawn"
+)
+
+// Valid indicates whether the value is a known member of the AdminAnnouncementFilter enum.
+func (e AdminAnnouncementFilter) Valid() bool {
+	switch e {
+	case AdminAnnouncementFilterDraft:
+		return true
+	case AdminAnnouncementFilterEnded:
+		return true
+	case AdminAnnouncementFilterScheduled:
+		return true
+	case AdminAnnouncementFilterShowing:
+		return true
+	case AdminAnnouncementFilterWithdrawn:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for AdminAnnouncementState.
 const (
 	AdminAnnouncementStateDraft     AdminAnnouncementState = "draft"
@@ -5137,6 +5164,11 @@ type AdminAnnouncementCreateRequest struct {
 	Title string `json:"title"`
 }
 
+// AdminAnnouncementFilter Which announcements the administrators' list keeps. `draft` and `withdrawn` keep that state.
+// Of the published ones, `scheduled` keeps those whose window starts later, `showing` those every
+// local user sees now, and `ended` those whose window has ended.
+type AdminAnnouncementFilter string
+
 // AdminAnnouncementInput The title, the text, and the window of an announcement.
 type AdminAnnouncementInput struct {
 	// EndsAt When it stops showing, after `starts_at`; omitted to show it until it is withdrawn.
@@ -5153,9 +5185,12 @@ type AdminAnnouncementInput struct {
 	Title string `json:"title"`
 }
 
-// AdminAnnouncementList The announcements, newest first.
-type AdminAnnouncementList struct {
+// AdminAnnouncementPage A page of announcements, newest first.
+type AdminAnnouncementPage struct {
 	Items []AdminAnnouncement `json:"items"`
+
+	// NextCursor An opaque pagination cursor. Clients pass it back unchanged and never parse it.
+	NextCursor *Cursor `json:"next_cursor,omitempty"`
 }
 
 // AdminAnnouncementState `draft`: no user sees it. `published`: every local user sees it within its window.
@@ -14542,6 +14577,18 @@ type ListAccountActionsParams struct {
 	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
+// ListAdminAnnouncementsParams defines parameters for ListAdminAnnouncements.
+type ListAdminAnnouncementsParams struct {
+	// State Keep only these announcements; omitted keeps every one.
+	State *AdminAnnouncementFilter `form:"state,omitempty" json:"state,omitempty"`
+
+	// Cursor The `next_cursor` of the previous page; omitted for the first page.
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+
+	// Limit The maximum number of items in the page.
+	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
 // ListAppealsParams defines parameters for ListAppeals.
 type ListAppealsParams struct {
 	// State Keep only the appeals in this state; omitted keeps every state.
@@ -15699,7 +15746,7 @@ type ServerInterface interface {
 	DisableAdminAccountTwoFactor(w http.ResponseWriter, r *http.Request, id AdminAccountId)
 	// ListAdminAnnouncements List the announcements
 	// (GET /admin/announcements)
-	ListAdminAnnouncements(w http.ResponseWriter, r *http.Request)
+	ListAdminAnnouncements(w http.ResponseWriter, r *http.Request, params ListAdminAnnouncementsParams)
 	// CreateAdminAnnouncement Write an announcement
 	// (POST /admin/announcements)
 	CreateAdminAnnouncement(w http.ResponseWriter, r *http.Request)
@@ -18096,8 +18143,53 @@ func (siw *ServerInterfaceWrapper) DisableAdminAccountTwoFactor(w http.ResponseW
 // ListAdminAnnouncements operation middleware
 func (siw *ServerInterfaceWrapper) ListAdminAnnouncements(w http.ResponseWriter, r *http.Request) {
 
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListAdminAnnouncementsParams
+
+	// ------------- Optional query parameter "state" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "state", r.URL.Query(), &params.State, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "state"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "state", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.ListAdminAnnouncements(w, r)
+		siw.Handler.ListAdminAnnouncements(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -30940,6 +31032,7 @@ func (response DisableAdminAccountTwoFactordefaultApplicationProblemPlusJSONResp
 }
 
 type ListAdminAnnouncementsRequestObject struct {
+	Params ListAdminAnnouncementsParams
 }
 
 type ListAdminAnnouncementsResponseObject interface {
@@ -30951,7 +31044,7 @@ type ListAdminAnnouncements200ResponseHeaders struct {
 }
 
 type ListAdminAnnouncements200JSONResponse struct {
-	Body    AdminAnnouncementList
+	Body    AdminAnnouncementPage
 	Headers ListAdminAnnouncements200ResponseHeaders
 }
 
@@ -53095,8 +53188,10 @@ func (sh *strictHandler) DisableAdminAccountTwoFactor(w http.ResponseWriter, r *
 }
 
 // ListAdminAnnouncements operation middleware
-func (sh *strictHandler) ListAdminAnnouncements(w http.ResponseWriter, r *http.Request) {
+func (sh *strictHandler) ListAdminAnnouncements(w http.ResponseWriter, r *http.Request, params ListAdminAnnouncementsParams) {
 	var request ListAdminAnnouncementsRequestObject
+
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.ListAdminAnnouncements(ctx, request.(ListAdminAnnouncementsRequestObject))

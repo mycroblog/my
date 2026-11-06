@@ -186,6 +186,25 @@ func (r *InstanceRepository) ListAnnouncements(ctx context.Context, publishedOnl
 	return out, nil
 }
 
+// ListAnnouncementPage implements appinstance.AnnouncementRepository.
+func (r *InstanceRepository) ListAnnouncementPage(ctx context.Context, q appinstance.AnnouncementQuery, limit int) ([]instance.Announcement, error) {
+	n, err := toInt32(limit, "limit")
+	if err != nil {
+		return nil, err
+	}
+	rows, err := r.db.reader().ListAnnouncementPage(ctx, postgresgen.ListAnnouncementPageParams{
+		BeforeID: toNullString(q.Before), Filter: string(q.Filter), Now: q.Now, RowLimit: n,
+	})
+	if err != nil {
+		return nil, wrap(err, "list a page of announcements")
+	}
+	out := make([]instance.Announcement, len(rows))
+	for i, row := range rows {
+		out[i] = announcementOf(postgresgen.ListAnnouncementsRow(row))
+	}
+	return out, nil
+}
+
 func announcementOf(row postgresgen.ListAnnouncementsRow) instance.Announcement {
 	return instance.Announcement{
 		ID: row.ID, CreatedAt: utc(row.CreatedAt),

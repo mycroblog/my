@@ -1086,10 +1086,12 @@ components:
       $ref: ./components/schemas/AdminAnnouncement.yaml
     AdminAnnouncementCreateRequest:
       $ref: ./components/schemas/AdminAnnouncementCreateRequest.yaml
+    AdminAnnouncementFilter:
+      $ref: ./components/schemas/AdminAnnouncementFilter.yaml
     AdminAnnouncementInput:
       $ref: ./components/schemas/AdminAnnouncementInput.yaml
-    AdminAnnouncementList:
-      $ref: ./components/schemas/AdminAnnouncementList.yaml
+    AdminAnnouncementPage:
+      $ref: ./components/schemas/AdminAnnouncementPage.yaml
     AdminAnnouncementState:
       $ref: ./components/schemas/AdminAnnouncementState.yaml
     AdminAppeal:

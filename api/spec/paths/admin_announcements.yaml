@@ -3,21 +3,31 @@ get:
   operationId: listAdminAnnouncements
   summary: List the announcements
   description: |
-    Every announcement, drafts and withdrawn ones included, newest first. The
-    list is not paginated. Needs the `manage_announcements` permission.
+    The announcements, drafts and withdrawn ones included, newest first, a page at a time.
+    `state` keeps only some of them; an unknown one is a 400 naming `state`. Needs the
+    `manage_announcements` permission.
   tags: [admin-server]
   security:
     - oauth2: ["admin:read"]
+  parameters:
+    - name: state
+      in: query
+      required: false
+      description: Keep only these announcements; omitted keeps every one.
+      schema:
+        $ref: ../components/schemas/AdminAnnouncementFilter.yaml
+    - $ref: ../components/parameters/Cursor.yaml
+    - $ref: ../components/parameters/Limit.yaml
   responses:
     "200":
-      description: The announcements.
+      description: A page of announcements.
       headers:
         Cache-Control:
           $ref: ../components/headers/CacheControl.yaml
       content:
         application/json:
           schema:
-            $ref: ../components/schemas/AdminAnnouncementList.yaml
+            $ref: ../components/schemas/AdminAnnouncementPage.yaml
     default:
       $ref: ../components/responses/Problem.yaml
 post:
