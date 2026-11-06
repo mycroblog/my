@@ -19,7 +19,8 @@
     },
     "docs": {
       "entry": ["scripts/*.ts"],
-      "project": ["*.config.ts", "src/**/*.{ts,astro,mdx}", "scripts/**/*.ts"]
+      "project": ["*.config.ts", "src/**/*.{ts,astro,mdx}", "scripts/**/*.ts"],
+      "ignoreDependencies": ["satteri"]
     },
     "../pkg/mykit/ts": {
       "entry": ["src/**/*.test.ts", "examples/*.ts"],

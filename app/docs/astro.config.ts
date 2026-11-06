@@ -6,8 +6,9 @@
 import starlight from "@astrojs/starlight";
 import { defineConfig } from "astro/config";
 import starlightLinksValidator from "starlight-links-validator";
-import { base } from "./src/published";
+import { base, sitePageLinks } from "./src/published";
 import { docsSidebar } from "./src/sidebar";
+import { apiReferencePlugin, apiReferenceSidebar } from "./src/api-reference";
 
 export default defineConfig({
   site: "https://mycroblog.dev",
@@ -38,10 +39,10 @@ export default defineConfig({
       },
       // Starlight's own lastUpdated reads the git history of the copied files, which says nothing about the documents.
       lastUpdated: false,
-      // The groups and order of docs/README.md (src/sidebar.ts).
-      sidebar: docsSidebar(),
-      // A broken link or #anchor between pages fails the build.
-      plugins: [starlightLinksValidator()],
+      // The groups and order of docs/README.md (src/sidebar.ts), with the client API reference after the guides.
+      sidebar: docsSidebar({ Developers: [apiReferenceSidebar] }),
+      // A broken link or #anchor between pages fails the build; the validator cannot see the generated reference.
+      plugins: [starlightLinksValidator({ exclude: sitePageLinks }), apiReferencePlugin],
     }),
   ],
 });

@@ -58,6 +58,7 @@
 
 Guides for people who build clients and bots against the client API.
 
+- [The client API](developers/client-api.md) (what it is, its reference, and where to start)
 - [Getting a token](developers/authentication.md) (registering an app, the authorization flow, tokens, redirect URIs, scopes)
 - [Paging](developers/paging.md) (cursors and limits)
 - [Errors](developers/errors.md) (problem documents and the problem types to handle)
