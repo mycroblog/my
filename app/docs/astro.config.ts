@@ -43,6 +43,7 @@ export default defineConfig({
       lastUpdated: false,
       // The groups and order of docs/README.md (src/sidebar.ts), with the client API reference after the guides.
       sidebar: docsSidebar({ Developers: [apiReferenceSidebar] }),
+      routeMiddleware: "./src/route-middleware.ts",
       // A broken link or #anchor between pages fails the build; the validator cannot see the generated reference.
       plugins: [starlightLinksValidator({ exclude: sitePageLinks }), apiReferencePlugin, llmsTxtPlugin],
     }),

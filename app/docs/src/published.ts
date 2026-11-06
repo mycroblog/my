@@ -48,6 +48,14 @@ export function slugOf(path: string): string {
  */
 export const base = normalizeBase(process.env["DOCS_SITE_BASE"] ?? "/");
 
+/** The origin of the site; the Markdown forms of the pages (public/<slug>.md) link with it, as they are read away from the site. */
+export const site = "https://mycroblog.dev";
+
+/** The path, relative to the site's public/ directory, of the Markdown form of the page `slug`: operations/running.md. */
+export function markdownPath(slug: string): string {
+  return `${slug}.md`;
+}
+
 /** The git ref the links to unpublished files point at on GitHub, set by DOCS_SITE_REF (a branch or tag; main by default). */
 const ref = process.env["DOCS_SITE_REF"] || "main";
 
