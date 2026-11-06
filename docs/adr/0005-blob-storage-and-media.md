@@ -16,8 +16,7 @@
 ### 2. MediaProcessor ポート
 
 - 責務: 画像の EXIF 除去・リサイズ・blurhash 生成・形式検証、§4〜§6 の S / M / L とアニメーションの静止版・動く版、§9 の動画・音声の検証とメタデータの除去（remux）
-- アダプタ: `media/native`（pure Go: `golang.org/x/image` 等。既定）、`media/vips`（libvips、cgo。ビルドタグで任意）、
-  `media/none`（無加工。ただし EXIF 除去だけは軽量実装で必須）
+- アダプタ: `media/native`（pure Go: `golang.org/x/image` 等。既定）
 - 自前クライアント（Web / モバイル）は **アップロード前にクライアント側でリサイズ・EXIF 除去** する。サーバー側処理は保険。
 
 ### 3. リモートメディア方針（FR-409, NFR-COST-4）

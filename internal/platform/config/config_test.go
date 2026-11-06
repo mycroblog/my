@@ -470,6 +470,17 @@ func TestLoadInvalid(t *testing.T) {
 			want: []string{"blob_gcs_bucket (MY_BLOB_GCS_BUCKET): must be a bucket name: 3 to 222 lower-case letters, digits, dots, hyphens, and underscores"},
 		},
 		{
+			// The media processors that no build of my has are not values of media.
+			name: "media vips without an adapter",
+			env:  with(minimal(), "MY_MEDIA", "vips"),
+			want: []string{`media (MY_MEDIA): unknown value "vips"`},
+		},
+		{
+			name: "media none without an adapter",
+			env:  with(minimal(), "MY_MEDIA", "none"),
+			want: []string{`media (MY_MEDIA): unknown value "none"`},
+		},
+		{
 			name: "sentry exporter without a DSN",
 			env:  with(minimal(), "MY_ERRORS_EXPORTER", "sentry"),
 			want: []string{"errors_sentry_dsn (MY_ERRORS_SENTRY_DSN): required when errors_exporter is sentry"},
