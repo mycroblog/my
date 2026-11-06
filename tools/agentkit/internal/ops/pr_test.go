@@ -35,6 +35,11 @@ func TestTransitions(t *testing.T) {
 }
 
 func run(workflow, name, conclusion string, job int) check {
+	return runOf(1, workflow, name, conclusion, job)
+}
+
+// runOf is a check of the job in the Actions run id.
+func runOf(id int, workflow, name, conclusion string, job int) check {
 	status := "COMPLETED"
 	if conclusion == "" {
 		status = "IN_PROGRESS"
@@ -45,7 +50,7 @@ func run(workflow, name, conclusion string, job int) check {
 		WorkflowName: workflow,
 		Status:       status,
 		Conclusion:   conclusion,
-		DetailsURL:   "https://github.com/mycroblog/my/actions/runs/1/job/" + strconv.Itoa(job),
+		DetailsURL:   "https://github.com/mycroblog/my/actions/runs/" + strconv.Itoa(id) + "/job/" + strconv.Itoa(job),
 	}
 }
 
@@ -97,6 +102,28 @@ func TestSummarize(t *testing.T) {
 		}, "pending", nil, true},
 		{"the gate passed", []check{
 			run("CI", "lint", "SUCCESS", 20), run("CI", "check", "SUCCESS", 22),
+		}, "passed", nil, false},
+		// A label starts a second run of CI on the same head; its concurrency group cancels the first, whose
+		// gate fails while the newer run has not reached its gate yet (#2383).
+		{"failed gate of a cancelled run, the newer run is running", []check{
+			runOf(100, "CI", "changes", "SUCCESS", 10), runOf(100, "CI", "lint", "CANCELLED", 11),
+			runOf(100, "CI", "client-test", "SKIPPED", 12), runOf(100, "CI", "check", "FAILURE", 30),
+			runOf(200, "CI", "changes", "SUCCESS", 20), runOf(200, "CI", "lint", "", 21),
+			runOf(9, "UI preview", "build", "SUCCESS", 5),
+		}, "pending", nil, true},
+		{"failed gate of a cancelled run, the newer run passed", []check{
+			runOf(100, "CI", "lint", "CANCELLED", 11), runOf(100, "CI", "client-test", "SKIPPED", 12),
+			runOf(100, "CI", "check", "FAILURE", 30),
+			runOf(200, "CI", "lint", "SUCCESS", 21), runOf(200, "CI", "client-test (1/2)", "SUCCESS", 22),
+			runOf(200, "CI", "check", "SUCCESS", 40),
+		}, "passed", nil, false},
+		{"failure of the newest run after a cancelled one", []check{
+			runOf(100, "CI", "lint", "CANCELLED", 11), runOf(100, "CI", "check", "FAILURE", 30),
+			runOf(200, "CI", "lint", "FAILURE", 21), runOf(200, "CI", "test", "", 22),
+		}, "failed", []string{"lint"}, true},
+		{"rerun of a failed job in the newest run", []check{
+			runOf(200, "CI", "lint", "FAILURE", 21), runOf(200, "CI", "check", "FAILURE", 23),
+			runOf(200, "CI", "lint", "SUCCESS", 31), runOf(200, "CI", "check", "SUCCESS", 33),
 		}, "passed", nil, false},
 	}
 	for _, c := range cases {

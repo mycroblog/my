@@ -240,13 +240,35 @@ func (c check) result() string {
 	return "passed"
 }
 
-// latest keeps, for each workflow and check name, only the check of the newest run. A push or a label starts
-// the workflow again on the same head, and its concurrency group cancels the older run, whose checks stay in
-// the rollup next to the newer ones.
+// runID is the Actions run of the check, or 0 for a check that is not an Actions job. Run IDs grow with time,
+// so a larger one is a newer run.
+func (c check) runID() int64 {
+	m := reRun.FindStringSubmatch(c.DetailsURL + c.TargetURL)
+	if m == nil {
+		return 0
+	}
+	id, _ := strconv.ParseInt(m[1], 10, 64)
+	return id
+}
+
+// latest keeps only the checks of the newest run of each workflow and, of those, the newest check of each name.
+// A push or a label starts the workflow again on the same head, and its concurrency group cancels the older run,
+// whose checks stay in the rollup next to the newer ones. The cancelled run's gate fails, and the newer run has
+// no check of that name until its gate starts, so the older run's checks are dropped as a whole, not name by
+// name. A rerun keeps its run ID and gives each job a new job ID.
 func latest(cs []check) []check {
+	newest := map[string]int64{}
+	for _, c := range cs {
+		if id := c.runID(); id > newest[c.WorkflowName] {
+			newest[c.WorkflowName] = id
+		}
+	}
 	idx := map[string]int{}
 	var out []check
 	for _, c := range cs {
+		if id := c.runID(); id != 0 && id < newest[c.WorkflowName] {
+			continue
+		}
 		key := c.WorkflowName + "\x00" + c.name()
 		i, ok := idx[key]
 		if !ok {
@@ -343,7 +365,10 @@ type WaitResult struct {
 	Lines []string
 }
 
-var reJob = regexp.MustCompile(`/actions/runs/\d+/job/(\d+)`)
+var (
+	reJob = regexp.MustCompile(`/actions/runs/\d+/job/(\d+)`)
+	reRun = regexp.MustCompile(`/actions/runs/(\d+)`)
+)
 
 // Wait polls a pull request until its CI ends, it conflicts, it merges, or the timeout passes. With all false
 // it returns at the first failed check instead of waiting for the others. A failure comes with the failing
