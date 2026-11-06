@@ -99,24 +99,34 @@ export function siteLink(path: string): string {
 
 export interface IndexSection {
   heading: string;
-  /** The published documents the section lists, in order: their repository path and the text of the link. */
-  items: { path: string; label: string }[];
+  /**
+   * The published documents the section lists, in order: their repository path, the text of the link, and the
+   * `### Heading` of the section it is under, if any.
+   */
+  items: { path: string; label: string; group?: string }[];
 }
 
 /**
- * The sections of docs/README.md, the table of contents of the documents, in order. Each `## Heading` is a section
- * and each list item that starts with a link to a published document is one of its items; a section that lists no
- * published document (Contributing, Design) is left out.
+ * The sections of docs/README.md, the table of contents of the documents, in order. Each `## Heading` is a section,
+ * each `### Heading` in it a group, and each list item that starts with a link to a published document is one of its
+ * items; a section that lists no published document (Contributing, Design) is left out.
  */
 export function readIndex(): IndexSection[] {
   const source = readFileSync(`${repoRoot}docs/README.md`, "utf8");
   const sections: IndexSection[] = [];
   let current: IndexSection | undefined;
+  let group: string | undefined;
   for (const line of source.split("\n")) {
     const heading = /^## +(.+?)\s*$/.exec(line);
     if (heading?.[1] !== undefined) {
       current = { heading: heading[1], items: [] };
       sections.push(current);
+      group = undefined;
+      continue;
+    }
+    const subheading = /^### +(.+?)\s*$/.exec(line);
+    if (subheading?.[1] !== undefined) {
+      group = subheading[1];
       continue;
     }
     const item = /^\s*[-*] +\[([^\]]+)\]\(([^)#\s]+)/.exec(line);
@@ -125,7 +135,7 @@ export function readIndex(): IndexSection[] {
     }
     const path = new URL(item[2], "file:///docs/README.md").pathname.slice(1);
     if (isPublished(path)) {
-      current.items.push({ path, label: item[1] });
+      current.items.push(group === undefined ? { path, label: item[1] } : { path, label: item[1], group });
     }
   }
   return sections.filter((section) => section.items.length > 0);

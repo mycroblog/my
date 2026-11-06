@@ -13,7 +13,7 @@ hero:
   actions:
     # A document is named by its repository path; src/routeData.ts makes it the page's URL under the base path.
     - text: Run a server
-      link: docs/operations/running.md
+      link: docs/operations/overview.md
       icon: right-arrow
       variant: primary
     - text: Source on GitHub
@@ -98,6 +98,7 @@ import Screenshot from "../../components/Screenshot.astro";
     title="Run a server"
     icon="setting"
     links={[
+      { path: "docs/operations/overview.md", label: "Overview of a mycroblog server" },
       { path: "docs/operations/running.md", label: "Running the server" },
       { path: "docs/operations/deploy-cloud-run.md", label: "Deploying on Cloud Run" },
       { path: "docs/operations/production-checklist.md", label: "Production checklist" },

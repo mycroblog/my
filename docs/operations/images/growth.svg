@@ -1,0 +1,89 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 532" width="760" height="532" role="img" aria-labelledby="title desc">
+<!-- SPDX-License-Identifier: AGPL-3.0-only -->
+  <title id="title">From a small mycroblog server to a scaled one</title>
+  <desc id="desc">Three steps from left to right. 1, start small: one my serve process with role all, SQLite for the database, queue, and key-value store, media on the file system, and the in-process stream. 2, move data out: the same single process with PostgreSQL, media in S3 or GCS object storage, and a CDN in front of the media. 3, scale out: web processes and worker processes, PostgreSQL with the queue in it or in Cloud Tasks, a stream broker (Valkey, SNS, Pub/Sub, or PostgreSQL), and object storage behind a CDN.</desc>
+
+  <style>
+    svg { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif; }
+    .bg { fill: #ffffff; }
+    .t { fill: #1f2328; font-size: 16px; }
+    .b { font-weight: 600; }
+    .m { fill: #59636e; font-size: 15px; }
+    .h { fill: #1f2328; font-size: 17px; font-weight: 600; }
+    .group { fill: #f6f8fa; stroke: #d1d9e0; stroke-width: 1.5; }
+    .client { fill: #dafbe1; stroke: #1a7f37; stroke-width: 1.5; }
+    .proxy { fill: #ffffff; stroke: #59636e; stroke-width: 1.5; }
+    .proc { fill: #ddf4ff; stroke: #0969da; stroke-width: 2; }
+    .port { fill: #ffffff; stroke: #8c959f; stroke-width: 1.5; }
+    .svc { fill: #fbefff; stroke: #8250df; stroke-width: 1.5; }
+    .arrow { stroke: #59636e; stroke-width: 2; fill: none; }
+    .head { fill: #59636e; }
+    @media (prefers-color-scheme: dark) {
+      .bg { fill: #0d1117; }
+      .t, .h { fill: #e6edf3; }
+      .m { fill: #9198a1; }
+      .group { fill: #151b23; stroke: #3d444d; }
+      .client { fill: #0f2d1b; stroke: #3fb950; }
+      .proxy { fill: #0d1117; stroke: #9198a1; }
+      .proc { fill: #0c2d6b; stroke: #4493f8; }
+      .port { fill: #0d1117; stroke: #656c76; }
+      .svc { fill: #2a1650; stroke: #ab7df8; }
+      .arrow { stroke: #9198a1; }
+      .head { fill: #9198a1; }
+    }
+  </style>
+  <defs>
+    <marker id="arrowhead" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path class="head" d="M 0 0 L 10 5 L 0 10 z"/>
+    </marker>
+  </defs>
+  <rect class="bg" x="0" y="0" width="760" height="532" rx="12"/>
+  <rect class="group" x="20" y="16" width="220" height="500" rx="12"/>
+  <text class="h" x="34" y="46" text-anchor="start">1. Start small</text>
+  <rect class="proc" x="30" y="62" width="200" height="74" rx="8"/>
+  <text class="t b" x="130.0" y="93.0" text-anchor="middle">my serve</text>
+  <text class="m" x="130.0" y="115.0" text-anchor="middle">role = all</text>
+  <rect class="port" x="30" y="146" width="200" height="74" rx="8"/>
+  <text class="t b" x="130.0" y="177.0" text-anchor="middle">SQLite</text>
+  <text class="m" x="130.0" y="199.0" text-anchor="middle">database, queue, KV</text>
+  <rect class="port" x="30" y="230" width="200" height="74" rx="8"/>
+  <text class="t b" x="130.0" y="261.0" text-anchor="middle">File system</text>
+  <text class="m" x="130.0" y="283.0" text-anchor="middle">media</text>
+  <rect class="port" x="30" y="314" width="200" height="74" rx="8"/>
+  <text class="t b" x="130.0" y="345.0" text-anchor="middle">In-process stream</text>
+  <text class="m" x="130.0" y="367.0" text-anchor="middle">stream = hub</text>
+  <path class="arrow" d="M 243 266 L 267 266" marker-end="url(#arrowhead)"/>
+  <rect class="group" x="270" y="16" width="220" height="500" rx="12"/>
+  <text class="h" x="284" y="46" text-anchor="start">2. Move data out</text>
+  <rect class="proc" x="280" y="62" width="200" height="74" rx="8"/>
+  <text class="t b" x="380.0" y="93.0" text-anchor="middle">my serve</text>
+  <text class="m" x="380.0" y="115.0" text-anchor="middle">role = all</text>
+  <rect class="port" x="280" y="146" width="200" height="74" rx="8"/>
+  <text class="t b" x="380.0" y="177.0" text-anchor="middle">PostgreSQL</text>
+  <text class="m" x="380.0" y="199.0" text-anchor="middle">database, queue, KV</text>
+  <rect class="port" x="280" y="230" width="200" height="74" rx="8"/>
+  <text class="t b" x="380.0" y="261.0" text-anchor="middle">Object storage</text>
+  <text class="m" x="380.0" y="283.0" text-anchor="middle">S3 or GCS</text>
+  <rect class="svc" x="280" y="314" width="200" height="74" rx="8"/>
+  <text class="t b" x="380.0" y="345.0" text-anchor="middle">CDN</text>
+  <text class="m" x="380.0" y="367.0" text-anchor="middle">in front of /media/</text>
+  <path class="arrow" d="M 493 266 L 517 266" marker-end="url(#arrowhead)"/>
+  <rect class="group" x="520" y="16" width="220" height="500" rx="12"/>
+  <text class="h" x="534" y="46" text-anchor="start">3. Scale out</text>
+  <rect class="proc" x="530" y="62" width="200" height="74" rx="8"/>
+  <text class="t b" x="630.0" y="93.0" text-anchor="middle">Web processes</text>
+  <text class="m" x="630.0" y="115.0" text-anchor="middle">role = web</text>
+  <rect class="proc" x="530" y="146" width="200" height="74" rx="8"/>
+  <text class="t b" x="630.0" y="177.0" text-anchor="middle">Worker processes</text>
+  <text class="m" x="630.0" y="199.0" text-anchor="middle">role = worker</text>
+  <rect class="port" x="530" y="230" width="200" height="74" rx="8"/>
+  <text class="t b" x="630.0" y="261.0" text-anchor="middle">PostgreSQL</text>
+  <text class="m" x="630.0" y="283.0" text-anchor="middle">queue: db or Cloud Tasks</text>
+  <rect class="port" x="530" y="314" width="200" height="90" rx="8"/>
+  <text class="t b" x="630.0" y="342.0" text-anchor="middle">Stream broker</text>
+  <text class="m" x="630.0" y="364.0" text-anchor="middle">Valkey · SNS · Pub/Sub</text>
+  <text class="m" x="630.0" y="386.0" text-anchor="middle">or PostgreSQL</text>
+  <rect class="svc" x="530" y="414" width="200" height="74" rx="8"/>
+  <text class="t b" x="630.0" y="445.0" text-anchor="middle">Object storage + CDN</text>
+  <text class="m" x="630.0" y="467.0" text-anchor="middle">S3 or GCS</text>
+</svg>
