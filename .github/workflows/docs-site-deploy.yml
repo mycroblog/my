@@ -1,0 +1,107 @@
+name: Docs site deploy
+
+# Publishes the documentation site (ADR-0150 §6, §7) on the Cloudflare Worker my-docs of scripts/docs-site/wrangler.jsonc.
+# One deploy replaces every asset of the Worker, so each run builds every published version and combines them
+# (scripts/docs-site.sh build): /next/ from main, and /latest/ and each minor version of app/docs/versions.json from the
+# tag of its newest published release. A push to main therefore changes /next/ only, and a published release changes
+# /latest/ and its minor version; the other versions are rebuilt from the same tags as before.
+#
+# Both jobs run main's checkout of this script and the Worker config, whatever the event. The build job holds no
+# secret; the deploy job runs in the environment `doc-site` (deployment refs: main and the tags v*), the only holder of
+# the secret CLOUDFLARE_API_TOKEN (Workers Scripts: Edit) and the variable CLOUDFLARE_ACCOUNT_ID. The domain
+# mycroblog.dev is bound to the Worker outside this repository; nothing here declares routes or domains.
+# docs/agents/releasing.md describes the steps of a release.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      # The published documents (app/docs/src/published.ts) and the table of contents of the sidebar.
+      - "docs/README.md"
+      - "docs/operations/**"
+      - "docs/reference/**"
+      - "docs/guide/**"
+      - "docs/developers/**"
+      - "app/docs/**"
+      - "app/package.json"
+      - "app/bun.lock"
+      - "tasks/docs.yml"
+      - "tasks/web.yml"
+      - "scripts/docs-site.sh"
+      - "scripts/docs-site/**"
+      - ".github/workflows/docs-site-deploy.yml"
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions: {}
+
+# One deploy at a time, in order; each one builds every version, so the newest waiting run carries every change.
+concurrency:
+  group: docs-site-deploy
+  cancel-in-progress: false
+
+jobs:
+  build:
+    # A prerelease is not published on the site.
+    if: github.event_name != 'release' || !github.event.release.prerelease
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - name: Check out main
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          # The tags of the published versions, which the build checks out as worktrees.
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Set up go-task
+        uses: ./.github/actions/setup-task
+      - name: Set up Bun
+        uses: ./.github/actions/setup-bun
+      - name: Build every version
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DOCS_SITE_WORK: ${{ runner.temp }}/docs-site
+        run: scripts/docs-site.sh build "$RUNNER_TEMP/docs-site/site"
+      - name: Upload the site
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: docs-site
+          path: ${{ runner.temp }}/docs-site/site/
+          if-no-files-found: error
+          include-hidden-files: false
+          retention-days: 3
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: doc-site
+    permissions:
+      contents: read
+    steps:
+      - name: Check out main
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          persist-credentials: false
+      - name: Download the site
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: docs-site
+          path: ${{ runner.temp }}/site
+      - name: Set up Node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .tool-versions
+      - name: Install wrangler
+        run: scripts/docs-site.sh install
+      - name: Deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          DOCS_SITE_WORK: ${{ runner.temp }}/docs-site
+        run: scripts/docs-site.sh deploy "$RUNNER_TEMP/site"

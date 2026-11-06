@@ -164,11 +164,12 @@ entries:
       - "Edit app/mail/frame.mjml, never mail_frame.gen.html; then `scripts/task.sh mail:gen` and commit the generated template."
       - "Every value goes through html/template; the HTML links to https URLs only and loads no external font, image or style sheet."
   - name: docs-site
-    paths: ["app/docs/**"]
-    docs: ["docs/adr/0150-documentation-site.md"]
+    paths: ["app/docs/**", ".github/workflows/docs-site-deploy.yml", "scripts/docs-site.sh", "scripts/docs-site-test.sh", "scripts/docs-site/**"]
+    docs: ["docs/adr/0150-documentation-site.md", "docs/agents/releasing.md#the-documentation-site"]
     userdocs: ["docs/reference/commands.md"]
     checks: [web, docs]
     notes:
+      - "Versions (ADR-0150 §6): docs-site-deploy.yml builds /next/ from main and /latest/ and /vX.Y/ from the tags of app/docs/versions.json with scripts/docs-site.sh, combines them, and deploys the Worker my-docs in the environment doc-site. Each build reads main's resolved list (DOCS_SITE_VERSIONS) through src/versions.ts, so keep the DOCS_SITE_* variables and the resolved format backward compatible: old tags are built with them. The Worker config declares no routes or domains (mycroblog.dev is bound in mycroblog/infra)."
       - "The documentation site (@my/docs): Astro Starlight, built by `scripts/task.sh docs:site-build`, previewed by `docs:site-dev`. It imports nothing from app/web or app/ui (copy an asset instead) and adds no analytics or external service; search is Starlight's Pagefind."
       - "The site holds no hand-written documents: scripts/import-docs.ts copies the published directories of src/published.ts (docs/operations, docs/reference but commands.md, docs/guide, docs/developers) into the git-ignored src/content/docs/, except the landing page src/content/docs/index.md. English only, with the root locale `en`."
       - "The sidebar is built from the sections of docs/README.md (src/sidebar.ts): add a page there, not here. Links in the pages start with the base path (DOCS_SITE_BASE), and starlight-links-validator fails the build on a broken link or #anchor."
