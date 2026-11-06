@@ -8,6 +8,8 @@ One server can use only one provider. To switch to another provider later, ask t
 
 ## What the server does at Stripe
 
+[How a subscription works](supporters.md#how-a-subscription-works) shows in a diagram how the payment page, the webhook, the reconciliation, the plan's role, and the income fit together.
+
 - **Plans and prices**: For each plan the server creates a Product through the API (ID `my_plan_<plan ID>`, with `metadata.my_plan_id`) and one Price per interval and currency (`lookup_key` is `my_<plan ID>_<month|year>_<currency>`).
   A Stripe Price cannot change its amount, so changing the amount creates a new Price and archives the old one. Subscriptions on the old Price renew at its amount. The discount for yearly payment is expressed in the amount of the yearly Price; no coupons are used.
   Do not edit or delete these Products and Prices in the dashboard.

@@ -10,6 +10,8 @@ One server can use only one provider. To switch from Stripe to PAY.JP (or the re
 
 PAY.JP has API v1 and v2. v2 has no recurring-billing API yet, so the server uses the recurring billing of **API v1** (Plan and Subscription). v1 has neither a hosted payment page nor a customer portal, so this server serves pages in their place.
 
+[How a subscription works](supporters.md#how-a-subscription-works) shows in a diagram how the payment page, the webhook, the reconciliation, the plan's role, and the income fit together.
+
 - **Plans**: For each price the server creates a Plan whose ID is `my_<plan ID>_<month|year>_<amount>` (`metadata.my_plan_id`). A PAY.JP Plan cannot change its amount, so changing the amount creates a new Plan, and the old Plan is not deleted but gets `metadata.my_archived=1`. Subscriptions on the old Plan renew at its amount.
   Do not edit or delete these Plans in the administration of PAY.JP. The only currency is the Japanese yen, and amounts are 50 to 9,999,999 yen.
 - **Subscribing**: The server sends the user's browser to its own payment page (`/payments/pages/payjp/checkout`). The page shows the card fields of payjp.js (PAY.JP's iframe) and runs 3-D Secure authentication when it creates the token (the iframe type).
