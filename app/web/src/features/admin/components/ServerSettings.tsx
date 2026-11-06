@@ -861,7 +861,7 @@ function PoliciesForm() {
         />
         <NumberPolicyField
           form={form}
-          setting="retention_hook_decisions"
+          setting="hook_decisions_retention_days"
           label={t("client:admin.settings.hooks.retention")}
           description={(range) => t("client:admin.settings.hooks.retention.description", range)}
         />
