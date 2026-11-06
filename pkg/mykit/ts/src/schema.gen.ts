@@ -15360,6 +15360,7 @@ export interface components {
          */
         VoiceSignalKind: "offer" | "answer" | "candidate" | "restart";
         /**
+         * removed, replaced, ended
          * @description The data of the `removed`, `replaced`, and `ended` events of a voice chat room stream, after
          *     which the stream ends. The `reason` of `removed` is why the session left the room (`left`,
          *     `moved`, `disconnected`, `removed`, `blocked`, `suspended`, `room_ended`), the one of `replaced` is
@@ -15370,32 +15371,47 @@ export interface components {
             /** @enum {string} */
             reason: "left" | "moved" | "disconnected" | "removed" | "blocked" | "suspended" | "room_ended" | "replaced" | "host" | "empty" | "host_disconnected" | "host_ineligible" | "moderator" | "time_limit" | "disabled";
         };
-        /** @description The data of a `grant` event of a voice chat room stream. */
+        /**
+         * grant
+         * @description The data of a `grant` event of a voice chat room stream.
+         */
         VoiceStreamGrant: {
             grant: components["schemas"]["VoiceGrant"];
             /** @description Whether the client connects to the audio again with the new grant. */
             reconnect: boolean;
         };
-        /** @description The data of a `mic` event of a voice chat room stream. */
+        /**
+         * mic
+         * @description The data of a `mic` event of a voice chat room stream.
+         */
         VoiceStreamMic: {
             /** @description The account ID of the participant. */
             participant: string;
             /** @description Whether the microphone is on. */
             on: boolean;
         };
-        /** @description The data of a `muted` event of a voice chat room stream. */
+        /**
+         * muted
+         * @description The data of a `muted` event of a voice chat room stream.
+         */
         VoiceStreamMuted: {
             /** @description The account ID of the host or co-host who muted the session. */
             by: string;
         };
-        /** @description The data of a `reaction` event of a voice chat room stream. */
+        /**
+         * reaction
+         * @description The data of a `reaction` event of a voice chat room stream.
+         */
         VoiceStreamReaction: {
             /** @description The account ID of the participant who reacted. */
             participant: string;
             /** @description A Unicode emoji, or the `:shortcode:` of a custom emoji of this server. */
             emoji: string;
         };
-        /** @description The data of a `signal` event of a voice chat room stream. */
+        /**
+         * signal
+         * @description The data of a `signal` event of a voice chat room stream.
+         */
         VoiceStreamSignal: {
             /** @description The session that sent the signal. */
             from: string;
@@ -20696,14 +20712,18 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description The event stream. It stays open until the client or the server ends it. */
+            /**
+             * @description The event stream. It stays open until the client or the server ends it. The body is
+             *     text: each event is an `event:` line with its name and a `data:` line with a JSON
+             *     document. The schema is the one of those documents, by the name of the event.
+             */
             200: {
                 headers: {
                     "Cache-Control": components["headers"]["CacheControl"];
                     [name: string]: unknown;
                 };
                 content: {
-                    "text/event-stream": string;
+                    "text/event-stream": components["schemas"]["VoiceRoom"] | components["schemas"]["VoiceStreamMic"] | components["schemas"]["VoiceStreamReaction"] | components["schemas"]["VoiceStreamSignal"] | components["schemas"]["VoiceStreamMuted"] | components["schemas"]["VoiceStreamGrant"] | components["schemas"]["VoiceStreamEnd"];
                 };
             };
             default: components["responses"]["Problem"];

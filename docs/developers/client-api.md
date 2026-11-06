@@ -2,7 +2,7 @@
 
 Clients and bots talk to a mycroblog server through its client API: JSON over HTTPS under `/api/v1`, with OAuth 2.0 access tokens. It is not compatible with the Mastodon client API, so Mastodon client libraries do not work with it.
 
-The [API reference](../../api/openapi.yaml) lists every operation with its parameters, request body, answers, and the scopes it needs. It is made from the OpenAPI 3.1 document of the API, which every server also serves at `GET /api/v1/openapi.yaml` without a token; generate a client from it, or use one of the [client libraries](libraries.md).
+The [API reference](../../api/openapi.yaml) lists every operation with its parameters, request body, answers, and the scopes it needs. It is made from the OpenAPI 3.1 document of the API, which every server also serves at `GET /api/v1/openapi.yaml` without a token; generate a client from it, or use one of the [client libraries](libraries.md). The messages that the server posts to a webhook are not answers of an operation, so the reference does not list them: the [webhook reference](../reference/webhooks.md) describes their bodies, field by field.
 
 The documentation site also publishes its pages as plain text for LLMs and coding agents: `llms.txt` (an index), `llms-full.txt` (every guide), and `llms-small.txt` (a shortened form), at the root of each version of the site, for example `/latest/llms.txt`. They hold the guides below but not the reference of every operation: read that on its own page, or fetch the OpenAPI document.
 

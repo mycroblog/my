@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: MIT
+title: signal
 description: The data of a `signal` event of a voice chat room stream.
 type: object
 required: [from, kind]

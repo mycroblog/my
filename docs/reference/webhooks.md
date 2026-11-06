@@ -28,8 +28,10 @@ The body is:
 - `type` is one of the events below, or `webhook.test`.
 - `timestamp` is when the event happened, in RFC 3339 with milliseconds.
 - `data` is what the admin API (`/api/v1/admin/...`) answers for the object of the event, as it is when the event happens:
-  the server presents it with the same code as the admin API, in the transaction of the event. Its schema for each type is in
-  the table below and in `api/openapi.yaml`, where `WebhookMessage` describes the body. A field without a value is left out.
+  the server presents it with the same code as the admin API, in the transaction of the event. The table below names its schema
+  for each type: the admin types are those of the [client API reference](../../api/openapi.yaml), and the three types that only
+  webhooks send are under [Message data](#message-data). A field without a value is left out. The OpenAPI document names the
+  body `WebhookMessage`.
 - v0 keeps no version of the body: `data` follows the admin API of `/api/v1`, which may change in a v0 minor release.
 
 The secret is `whsec_` and the base64 of 32 random bytes, as the Standard Webhooks libraries take it. It is shown once, when the
@@ -76,6 +78,38 @@ An endpoint subscribes to some of these events. Setting up the subscription need
   carries the applicant's email address, and a report the reporter's comment: the messages are kept 14 days (below).
 - The permissions are checked when a webhook is set up or changed. A webhook keeps its events when the person who set it up later
   loses a permission; someone with `manage_webhooks` disables it when it should stop.
+
+## Message data
+
+No admin operation answers the `data` of `status.created`, `custom_emoji.*`, and `webhook.test`, so their fields are here.
+
+`WebhookStatus`, the post of `status.created`:
+
+| Field | Type | Value |
+| --- | --- | --- |
+| `id` | string | The ID of the post. |
+| `uri` | string | The ActivityPub `id` of the post. |
+| `account_id` | string | The ID of the local account that posted it. |
+| `visibility` | string | Always `public`. |
+| `in_reply_to_uri` | string | The ActivityPub `id` of the post it replies to; left out when it is not a reply. |
+| `spoiler_text` | string | The content warning, or an empty string. |
+| `sensitive` | boolean | Whether the media of the post is marked sensitive. |
+| `language` | string | The language of the post. |
+| `content` | string | The sanitized HTML of the post in its language. |
+| `created_at` | string | When the post was published, in RFC 3339 with milliseconds. |
+
+`WebhookCustomEmoji`, the emoji of `custom_emoji.*`, is `AdminCustomEmoji` of the
+[client API reference](../../api/openapi.yaml) with one more field:
+
+| Field | Type | Value |
+| --- | --- | --- |
+| `operation` | string | What the administrator did, named as in the audit log: `custom_emoji_created`, `custom_emoji_image_replaced`, `custom_emoji_copied`, `custom_emoji_updated`, `custom_emoji_enabled`, `custom_emoji_disabled`, or `custom_emoji_deleted`. |
+
+`WebhookTest`, the data of `webhook.test`:
+
+| Field | Type | Value |
+| --- | --- | --- |
+| `endpoint_id` | string | The ID of the webhook the test message was sent to. |
 
 ## Answers, retries, and disabling
 

@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: MIT
+title: muted
 description: The data of a `muted` event of a voice chat room stream.
 type: object
 required: [by]
