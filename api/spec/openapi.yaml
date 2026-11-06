@@ -1610,6 +1610,8 @@ components:
       $ref: ./components/schemas/InstanceDomainActionPage.yaml
     InstanceFederation:
       $ref: ./components/schemas/InstanceFederation.yaml
+    InstanceExternalReviewScope:
+      $ref: ./components/schemas/InstanceExternalReviewScope.yaml
     InstanceClosure:
       $ref: ./components/schemas/InstanceClosure.yaml
     InstanceLimits:

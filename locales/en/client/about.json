@@ -348,16 +348,16 @@
     "description": "What the external review of follows covers and what is sent to it."
   },
   "about.external_review.inbound_status": {
-    "defaultMessage": "Posts from other servers that this server takes in: their text and who sent them.",
-    "description": "What the external review of posts from other servers covers and what is sent to it."
+    "defaultMessage": "{unfollowedDirect, select, true {Posts from other servers that this server takes in, posts for followers and for mentioned people included: their text, who sent them, and whether someone here follows the sender.} other {Posts from other servers that this server takes in, posts for followers included: their text, who sent them, and whether someone here follows the sender. Posts for mentioned people are sent only when someone here follows the sender.}}",
+    "description": "What the external review of posts from other servers covers and what is sent to it. {unfollowedDirect} is true when posts for mentioned people are sent also from senders no one on this server follows."
   },
   "about.external_review.intro": {
     "defaultMessage": "This server asks an external service to review the following before it accepts them. The review can only stop or mark what it reviews, and people decide on any action against an account.",
     "description": "Introduction of the section of the information page about the external review."
   },
   "about.external_review.local_status": {
-    "defaultMessage": "Posts by accounts of this server: their text. Private and direct posts are not sent.",
-    "description": "What the external review of local posts covers and what is sent to it."
+    "defaultMessage": "{days, plural, =0 {Posts by every account of this server: their text and the author's username. Posts for followers and for mentioned people are not sent.} one {Posts by accounts of this server created in the last day: their text and the author's username. Posts for followers and for mentioned people are not sent.} other {Posts by accounts of this server created in the last # days: their text and the author's username. Posts for followers and for mentioned people are not sent.}}",
+    "description": "What the external review of local posts covers and what is sent to it. {days} is how many days after its creation an account's posts are sent; 0 means the posts of every account are."
   },
   "about.external_review.media_check": {
     "defaultMessage": "Uploaded media: a small processed version, never the original.",

@@ -9657,6 +9657,10 @@ type Instance struct {
 	// Domain The domain that serves the instance.
 	Domain string `json:"domain"`
 
+	// ExternalReviewScope The settings that narrow what the decision hooks in use send to the external review, which the
+	// information page states. Each field is present only while its hook is in use.
+	ExternalReviewScope *InstanceExternalReviewScope `json:"external_review_scope,omitempty"`
+
 	// ExternalReviews The decision hooks in use: what the server sends to an external review before it accepts it.
 	// Absent when there is none. The information page states this.
 	ExternalReviews *[]HookName `json:"external_reviews,omitempty"`
@@ -9947,6 +9951,19 @@ type InstanceDomainActionPage struct {
 
 	// NextCursor An opaque pagination cursor. Clients pass it back unchanged and never parse it.
 	NextCursor *Cursor `json:"next_cursor,omitempty"`
+}
+
+// InstanceExternalReviewScope The settings that narrow what the decision hooks in use send to the external review, which the
+// information page states. Each field is present only while its hook is in use.
+type InstanceExternalReviewScope struct {
+	// InboundStatusUnfollowedDirect For `inbound.status`: whether the direct posts of remote authors that no local account
+	// follows are sent too (the instance setting `hook_inbound_status_unfollowed_direct`). The direct
+	// posts of followed authors are always sent.
+	InboundStatusUnfollowedDirect *bool `json:"inbound_status_unfollowed_direct,omitempty"`
+
+	// LocalStatusAccountAgeDays For `local.status`: the posts of local accounts created at most this many days ago are sent
+	// (the instance setting `hook_local_status_account_age_days`); `0` sends those of every account.
+	LocalStatusAccountAgeDays *int64 `json:"local_status_account_age_days,omitempty"`
 }
 
 // InstanceFederation How the instance federates with other servers, so that clients offer only the

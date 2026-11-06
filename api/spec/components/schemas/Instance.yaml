@@ -94,6 +94,8 @@ properties:
     type: array
     items:
       $ref: ./HookName.yaml
+  external_review_scope:
+    $ref: ./InstanceExternalReviewScope.yaml
   voice_enabled:
     description: |
       Whether the voice chat rooms are on: the voice operations (`/voice/...`) answer 404 while

@@ -12141,6 +12141,7 @@ export interface components {
              *     Absent when there is none. The information page states this.
              */
             external_reviews?: components["schemas"]["HookName"][];
+            external_review_scope?: components["schemas"]["InstanceExternalReviewScope"];
             /**
              * @description Whether the voice chat rooms are on: the voice operations (`/voice/...`) answer 404 while
              *     they are off, and clients then show no entry to them.
@@ -12264,6 +12265,24 @@ export interface components {
              * @enum {string}
              */
             mode: "off" | "inbound" | "outbound" | "both";
+        };
+        /**
+         * @description The settings that narrow what the decision hooks in use send to the external review, which the
+         *     information page states. Each field is present only while its hook is in use.
+         */
+        InstanceExternalReviewScope: {
+            /**
+             * Format: int64
+             * @description For `local.status`: the posts of local accounts created at most this many days ago are sent
+             *     (the instance setting `hook_local_status_account_age_days`); `0` sends those of every account.
+             */
+            local_status_account_age_days?: number;
+            /**
+             * @description For `inbound.status`: whether the direct posts of remote authors that no local account
+             *     follows are sent too (the instance setting `hook_inbound_status_unfollowed_direct`). The direct
+             *     posts of followed authors are always sent.
+             */
+            inbound_status_unfollowed_direct?: boolean;
         };
         /**
          * @description The closure of the service, present while a closure is announced and after

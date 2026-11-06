@@ -77,6 +77,14 @@ func TestLocalStatusHook(t *testing.T) {
 		return p
 	}
 
+	// The information page states the account age the posts are sent for, the default 7 days.
+	var info clientapi.Instance
+	if res := c.do("alice", http.MethodGet, "/instance", nil, &info); res.StatusCode != http.StatusOK || info.ExternalReviewScope == nil ||
+		info.ExternalReviewScope.LocalStatusAccountAgeDays == nil || *info.ExternalReviewScope.LocalStatusAccountAgeDays != 7 ||
+		info.ExternalReviewScope.InboundStatusUnfollowedDirect != nil {
+		t.Errorf("GET /instance = %d, external_review_scope %+v", res.StatusCode, info.ExternalReviewScope)
+	}
+
 	// observe is the default: the verdict is recorded under the ID the post got, and the post goes on.
 	observed := c.post("alice", text("buy now"))
 	if d := decisionOf(observed.Id).Decision; d.Mode != hook.ModeObserve || d.AccountID != c.ids["alice"] {
