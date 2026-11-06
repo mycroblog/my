@@ -1,45 +1,36 @@
 // SPDX-License-Identifier: AGPL-3.0-only
+import { Stack } from "@my/ui";
 import { createFileRoute, type ErrorComponentProps } from "@tanstack/react-router";
-import { z } from "zod";
-import { type JobFilter, jobFilters, JobDashboard, jobQueueQueryOptions, jobsQueryOptions } from "../features/admin";
+import { JobPagesNav, JobQueueSummary, jobQueueQueryOptions } from "../features/admin";
 import { requireSignIn } from "../lib/auth/requireSignIn";
 import { useT } from "../lib/i18n";
 import { AdminError, loadWithPermission } from "./-admin/adminRoute";
 import { PageHeading } from "./-layout/PageHeading";
 
-/** `state`: the state filter of the job list; omitted, or anything unknown, shows the pending jobs (web-client/README.md S3). */
-const searchSchema = z.object({
-  state: z.enum(jobFilters).exclude(["pending"]).optional().catch(undefined),
-});
-
-/** The queue dashboard (ADR-0004): the job queue's state, its jobs by state with their attempts, and running failed ones again, for manage_jobs. */
+/**
+ * The first page of the queue dashboard (ADR-0004): the state of the job queue, its jobs by state and type and how
+ * long they wait, for manage_jobs. The job list is the next page (`/admin/jobs/list`).
+ */
 export const Route = createFileRoute("/admin/jobs")({
   staticData: { title: "client:admin.jobs.title" },
-  validateSearch: searchSchema,
-  loaderDeps: ({ search: { state } }): { filter: JobFilter } => ({ filter: state ?? "pending" }),
   beforeLoad: requireSignIn,
-  loader: ({ context, deps: { filter } }) =>
+  loader: ({ context }) =>
     loadWithPermission(context, "manage_jobs", () =>
-      Promise.all([
-        context.queryClient.query({ ...jobQueueQueryOptions(context.api), staleTime: Infinity }),
-        context.queryClient.infiniteQuery({ ...jobsQueryOptions(context.api, filter), staleTime: Infinity }),
-      ]),
+      context.queryClient.query({ ...jobQueueQueryOptions(context.api), staleTime: Infinity }),
     ),
-  component: JobsPage,
+  component: JobQueuePage,
   errorComponent: JobsError,
 });
 
-function JobsPage() {
+function JobQueuePage() {
   const t = useT();
-  const { filter } = Route.useLoaderDeps();
-  const navigate = Route.useNavigate();
-  const changeFilter = (next: JobFilter) => {
-    void navigate({ search: next === "pending" ? {} : { state: next } });
-  };
   return (
     <>
-      <PageHeading>{t("client:admin.jobs.title")}</PageHeading>
-      <JobDashboard filter={filter} onFilterChange={changeFilter} />
+      <Stack gap="3">
+        <PageHeading>{t("client:admin.jobs.title")}</PageHeading>
+        <JobPagesNav current="queue" />
+      </Stack>
+      <JobQueueSummary />
     </>
   );
 }

@@ -45,7 +45,10 @@ describe("the administration overview", () => {
     const [failed, wait, errors] = tiles as [HTMLElement, HTMLElement, HTMLElement];
     expect(within(failed).getByText("3")).toBeInTheDocument();
     expect(within(failed).getByText("Needs a retry")).toBeInTheDocument();
-    expect(within(failed).getByRole("link", { name: "Failed jobs" })).toHaveAttribute("href", "/admin/jobs?state=dead");
+    expect(within(failed).getByRole("link", { name: "Failed jobs" })).toHaveAttribute(
+      "href",
+      "/admin/jobs/list?state=dead",
+    );
     expect(within(wait).getByText(/^(19|20) min\.$/u)).toBeInTheDocument();
     expect(within(wait).getByText("Backed up")).toBeInTheDocument();
     expect(within(errors).getByText("2+")).toBeInTheDocument();

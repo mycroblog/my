@@ -7,9 +7,13 @@
 // Routes and other features use it through this file only (web-client/README.md A3).
 export { adminPages, useAdminEntry } from "./components/AdminMenu";
 export { AdminOverview } from "./components/AdminOverview";
-// The queue dashboard: the jobs of the job queue by state, their attempts, and running failed ones again (ADR-0004), for manage_jobs.
-export { type JobFilter, jobFilters, jobQueueQueryOptions, jobsQueryOptions } from "./api/jobs";
-export { JobDashboard } from "./components/JobDashboard";
+// The queue dashboard: the state of the job queue, its jobs by state, one job with its attempts, and running failed
+// ones again (ADR-0004), for manage_jobs.
+export { type JobFilter, jobFilters, jobQueryOptions, jobQueueQueryOptions, jobsQueryOptions } from "./api/jobs";
+export { JobDetail } from "./components/JobDetail";
+export { JobList } from "./components/JobList";
+export { JobQueueSummary } from "./components/JobQueueSummary";
+export { JobPagesNav } from "./components/jobParts";
 // The terms of service and the privacy policy (#489), for manage_settings.
 export { instanceTextsQueryOptions } from "./api/documents";
 export { DocumentSettings } from "./components/DocumentSettings";

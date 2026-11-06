@@ -765,6 +765,8 @@ async function moderatorServer(page: Page) {
         waits: [],
       });
     if (key === "GET /admin/jobs") return json(route, { items: [deadJob] });
+    if (key === `GET /admin/jobs/${deadJob.id}`) return json(route, deadJob);
+    if (key === `GET /admin/jobs/${deadJob.id}/attempts`) return json(route, { items: [] });
     if (key === "GET /admin/error_groups") return json(route, { items: [errorGroup] });
     if (key === `GET /admin/error_groups/${errorGroup.id}`) return json(route, errorGroupDetail);
     if (key === "GET /admin/instance_texts") return json(route, { items: [documentText, instanceName] });
@@ -1052,7 +1054,9 @@ const adminPages: Readonly<Record<string, { path: string; ready: string | { valu
   "moderation.instances": { path: "/moderation/instances", ready: longDomain },
   "moderation.instances_.$domain": { path: `/moderation/instances/${longDomain}`, ready: longDomain },
   "admin.custom-emojis": { path: "/admin/custom-emojis", ready: customEmoji.category ?? "" },
-  "admin.jobs": { path: "/admin/jobs?state=dead", ready: deadJob.type },
+  "admin.jobs": { path: "/admin/jobs", ready: deadJob.type },
+  "admin.jobs_.list": { path: "/admin/jobs/list?state=dead", ready: deadJob.type },
+  "admin.jobs_.$id": { path: `/admin/jobs/${deadJob.id}`, ready: deadJob.last_error },
   "admin.errors": { path: "/admin/errors", ready: errorGroup.where },
   "admin.errors_.$id": { path: `/admin/errors/${errorGroup.id}`, ready: errorRequestId },
   "admin.webhooks": { path: "/admin/webhooks", ready: webhook.description ?? "" },

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The queue dashboard (ADR-0004): the state of the job queue, its jobs under a state filter, the records of a job's
-// runs that did not succeed, and running dead jobs again. A job that is enqueued again leaves the dead jobs on the
+// The queue dashboard (ADR-0004): the state of the job queue, its jobs under a state filter, one job, the records of a
+// job's runs that did not succeed, and running dead jobs again. A job that is enqueued again leaves the dead jobs on the
 // server, so it leaves the cached pages at once.
 import { useNotice, useToast } from "@my/ui";
 import {
@@ -20,13 +20,14 @@ import {
   type Job,
   type JobAttempt,
   jobAttemptsQueryOptions,
+  jobQueryOptions,
   type JobFilter,
   type JobQueue,
   jobQueueQueryOptions,
   jobsQueryOptions,
   retryJobMutation,
 } from "../api/jobs";
-import { type PagedList, toPagedList } from "../../moderation";
+import { type PagedPages, toPagedList } from "../../moderation";
 import { shellQueryRetry } from "../../../lib/query";
 
 /** The state of the queue. */
@@ -36,12 +37,18 @@ export function useJobQueue(): JobQueue {
 }
 
 /** The jobs under `filter`. */
-export function useJobs(filter: JobFilter): PagedList<Job> {
+export function useJobs(filter: JobFilter): PagedPages<Job> {
   const api = useApi();
   return toPagedList(useSuspenseInfiniteQuery(jobsQueryOptions(api, filter)));
 }
 
-/** The records of a job's runs that did not succeed, read when the history is opened. */
+/** One job, as the route loaded it. */
+export function useJob(id: string): Job {
+  const api = useApi();
+  return useSuspenseQuery(jobQueryOptions(api, id)).data;
+}
+
+/** The records of a job's runs that did not succeed, read when the job's page shows them. */
 export type JobAttempts =
   | { status: "loading" }
   | { status: "error"; reason: string; retry: () => void; isRetrying: boolean }

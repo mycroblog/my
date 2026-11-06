@@ -51,7 +51,7 @@ function FailedJobsTile() {
       as="li"
       label={t("client:admin.overview.health.failed_jobs")}
       value={intl.formatNumber(dead)}
-      href="/admin/jobs?state=dead"
+      href="/admin/jobs/list?state=dead"
       {...(dead > 0 && { status: "danger", statusLabel: t("client:admin.overview.health.failed_jobs.status") })}
     />
   );

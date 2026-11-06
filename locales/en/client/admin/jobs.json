@@ -3,9 +3,25 @@
     "defaultMessage": "Attempts",
     "description": "Term in a job's details: how many times the job ran."
   },
+  "admin.jobs.back": {
+    "defaultMessage": "Back to the job list",
+    "description": "Link from the page of one job back to the job list."
+  },
+  "admin.jobs.column.type": {
+    "defaultMessage": "Type",
+    "description": "Column header of the job list, and term in a job's details: the job type, such as federation.deliver."
+  },
   "admin.jobs.created_at": {
     "defaultMessage": "Created",
     "description": "Term in a job's details: when the job was enqueued first."
+  },
+  "admin.jobs.detail.details": {
+    "defaultMessage": "Details",
+    "description": "Heading of the section of a job's page with its type, creation time, worker, lease and keys, and its last error."
+  },
+  "admin.jobs.detail_title": {
+    "defaultMessage": "Job",
+    "description": "Title and heading of the page of one job of the job queue."
   },
   "admin.jobs.empty": {
     "defaultMessage": "No jobs",
@@ -19,13 +35,9 @@
     "defaultMessage": "Failed",
     "description": "Term in a failed job's details: when the job failed for good."
   },
-  "admin.jobs.filter.count": {
-    "defaultMessage": ", {count, plural, one {# job} other {# jobs}}",
-    "description": "Accessible text of the count beside a tab of the job list, read right after the tab's name (so it starts with a comma): how many jobs the tab lists."
-  },
   "admin.jobs.filter.label": {
     "defaultMessage": "Job state",
-    "description": "Accessible name of the tabs that filter the jobs by state."
+    "description": "Accessible name of the select of the job list that filters the jobs by state."
   },
   "admin.jobs.filter.pending": {
     "defaultMessage": "Pending",
@@ -55,6 +67,10 @@
     "defaultMessage": "Finished",
     "description": "Term in a record of a job's attempt: when the run ended."
   },
+  "admin.jobs.history.heading": {
+    "defaultMessage": "Attempt history",
+    "description": "Heading of the section of a job's page with the records of its runs that did not succeed."
+  },
   "admin.jobs.history.loading": {
     "defaultMessage": "Loading the attempts",
     "description": "Accessible name of the spinner while the records of a job's attempts load."
@@ -71,14 +87,6 @@
     "defaultMessage": "Started",
     "description": "Term in a record of a job's attempt: when the run started."
   },
-  "admin.jobs.history.toggle": {
-    "defaultMessage": "Attempt history",
-    "description": "Button of a job that shows or hides the records of its runs that failed."
-  },
-  "admin.jobs.history.toggle_job": {
-    "defaultMessage": "Attempt history: {type}",
-    "description": "Accessible name of the attempt history button of a job, which names the job. {type} is the job type."
-  },
   "admin.jobs.idempotency_key": {
     "defaultMessage": "Idempotency key",
     "description": "Term in a job's details: the key that keeps the job from being enqueued twice."
@@ -87,9 +95,9 @@
     "defaultMessage": "Last error",
     "description": "Term in a job's details: why the job's last run failed."
   },
-  "admin.jobs.list.heading": {
-    "defaultMessage": "Jobs",
-    "description": "Heading of the region of the jobs screen with the list of jobs."
+  "admin.jobs.list.caption": {
+    "defaultMessage": "Jobs: {filter}",
+    "description": "Visually hidden caption of the job table. {filter} is the selected state filter, such as admin.jobs.state.dead."
   },
   "admin.jobs.locked_until": {
     "defaultMessage": "Lease ends",
@@ -106,6 +114,18 @@
   "admin.jobs.outcome.retry": {
     "defaultMessage": "retried",
     "description": "Outcome of a failed run of a job that runs again, in the heading of its record."
+  },
+  "admin.jobs.page.list": {
+    "defaultMessage": "Job list",
+    "description": "Link of the local navigation of the jobs screen to the table of the jobs of one state; also the title of that page."
+  },
+  "admin.jobs.page.queue": {
+    "defaultMessage": "Queue state",
+    "description": "Link of the local navigation of the jobs screen to its first page: the state of the job queue."
+  },
+  "admin.jobs.pages": {
+    "defaultMessage": "Job pages",
+    "description": "Name of the local navigation between the pages of the jobs screen (the queue's state and the job list)."
   },
   "admin.jobs.payload": {
     "defaultMessage": "Payload",
@@ -135,10 +155,6 @@
     "defaultMessage": "The job {type} is queued to run again.",
     "description": "Announcement after an operator ran a failed job again. {type} is the job type, such as federation.deliver."
   },
-  "admin.jobs.run_again": {
-    "defaultMessage": "Run again",
-    "description": "Button of a failed job that runs it again."
-  },
   "admin.jobs.retry_failed": {
     "defaultMessage": "Could not run the job again: {reason}",
     "description": "Error toast when a failed job could not be run again. {reason} is the server's localized reason."
@@ -146,6 +162,10 @@
   "admin.jobs.retry_job": {
     "defaultMessage": "Run again: {type}, failed {date}",
     "description": "Accessible name of the run-again button of a failed job, which names the job. {type} is the job type; {date} is when it failed, formatted."
+  },
+  "admin.jobs.run_again": {
+    "defaultMessage": "Run again",
+    "description": "Button of a failed job that runs it again."
   },
   "admin.jobs.run_at": {
     "defaultMessage": "Due",

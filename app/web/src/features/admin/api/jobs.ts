@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The queries and mutations of the queue dashboard (ADR-0004, web-client/README.md S1): the state of the job queue, its
-// jobs by state, the records of a job's runs that did not succeed, and running a dead job again. The lists follow
+// jobs by state, one job, the records of a job's runs that did not succeed, and running a dead job again. The lists follow
 // the API's keyset pagination as TanStack Query infinite queries, keyed like the client's own `[method, path]` with
 // "pages" at the end (web-client/10-api-client-and-auth.md §10).
 import { infiniteQueryOptions, type QueryClient, queryOptions } from "@tanstack/react-query";
@@ -18,6 +18,16 @@ export type JobQueue = components["schemas"]["AdminQueue"];
 export const jobFilters = ["pending", "queued", "running", "retrying", "dead"] as const;
 
 export type JobFilter = (typeof jobFilters)[number];
+
+/** The page of the job list under `filter`; the pending jobs are its default. */
+export function jobListPath(filter: JobFilter): string {
+  return filter === "pending" ? "/admin/jobs/list" : `/admin/jobs/list?state=${filter}`;
+}
+
+/** The page of one job, which the list leads to. */
+export function jobPath(id: string): string {
+  return `/admin/jobs/${encodeURIComponent(id)}`;
+}
 
 /** The states of the jobs, in the order the dashboard counts them. */
 export const jobStates = ["queued", "running", "retrying", "dead"] as const satisfies readonly JobState[];
@@ -51,6 +61,18 @@ export function jobsQueryOptions(api: Api, filter: JobFilter) {
   });
 }
 
+/** One job, pending or dead (GET /admin/jobs/{id}); a completed job is a 404. */
+export function jobQueryOptions(api: Api, id: string) {
+  return queryOptions({
+    queryKey: ["get", "/admin/jobs/{id}", { id }] as const,
+    queryFn: async ({ signal }) => {
+      const { data, error } = await api.fetch.GET("/admin/jobs/{id}", { params: { path: { id } }, signal });
+      if (data === undefined) throw new ApiError(error);
+      return data;
+    },
+  });
+}
+
 /** The records of the runs of the job `id` that did not succeed, the most recently finished first (GET /admin/jobs/{id}/attempts). */
 export function jobAttemptsQueryOptions(api: Api, id: string) {
   return infiniteQueryOptions({
@@ -80,15 +102,19 @@ export function retryJobMutation(api: Api) {
 }
 
 /**
- * Takes the dead job `id`, enqueued again, off the cached list of dead jobs (ADR-0028) and returns it as the list had
- * it. The job is pending now, so the counts of the queue and the lists of pending jobs are marked stale (S1).
+ * Takes the dead job `id`, enqueued again, off the cached list of dead jobs (ADR-0028) and returns it as the list or
+ * its page had it. The job is pending now, so the counts of the queue, the lists of pending jobs and its page are
+ * marked stale (S1).
  */
 export function cacheRetriedJob(api: Api, queryClient: QueryClient, id: string): Job | undefined {
   const listKey = jobsQueryOptions(api, "dead").queryKey;
-  const job = queryClient
-    .getQueryData(listKey)
-    ?.pages.flatMap((page) => page.items)
-    .find((item) => item.id === id);
+  const detailKey = jobQueryOptions(api, id).queryKey;
+  const job =
+    queryClient.getQueryData(detailKey) ??
+    queryClient
+      .getQueryData(listKey)
+      ?.pages.flatMap((page) => page.items)
+      .find((item) => item.id === id);
   queryClient.setQueryData(
     listKey,
     (data) =>
@@ -98,6 +124,7 @@ export function cacheRetriedJob(api: Api, queryClient: QueryClient, id: string):
       },
   );
   void queryClient.invalidateQueries({ queryKey: jobQueueQueryOptions(api).queryKey });
+  void queryClient.invalidateQueries({ queryKey: detailKey });
   void queryClient.invalidateQueries({
     predicate: (query) => query.queryKey[1] === "/admin/jobs" && !isDeadList(query.queryKey[2]),
   });
