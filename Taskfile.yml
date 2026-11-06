@@ -26,7 +26,7 @@ vars:
   # playwright packages in app/; web:playwright-image-check also keeps the workflows on this exact reference.
   PLAYWRIGHT_IMAGE: mcr.microsoft.com/playwright:v1.64.1-noble@sha256:47b510dd9230bf0b9bfc9b20102241e577ea7a99334ab4c3ca19f19770e9b8ea
   # The contexts of `check` (scripts/changed-contexts.sh), each with a `<context>:check` task.
-  CHECKS: '{{.CHECKS | default "docs go i18n mail api ui web docker agentkit mykit"}}'
+  CHECKS: '{{.CHECKS | default "docs go i18n mail api ui web docker agentkit mykit site"}}'
 
 includes:
   agentkit: ./tasks/agentkit.yml
@@ -73,6 +73,12 @@ tasks:
       - task: check
         vars: { CHECKS: "{{.SELECTED}}" }
         if: '[ -n "{{trim .SELECTED}}" ]'
+
+  # The check of the site context. The tasks of the documentation site live in tasks/docs.yml (ADR-0150 §2), so the
+  # context has no namespace of its own in which `check` could find a `site:check`.
+  site:check:
+    desc: "Build the documentation site (app/docs), which fails on a broken link or #anchor between its pages or on a page that does not render"
+    deps: [docs:site-build]
 
   # The generated files Go reads are committed; the ones only the TS clients read are not, and the tasks that read
   # them generate them first (ADR-0081). Run this once after a clone for an editor's type checks.
