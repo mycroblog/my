@@ -12,7 +12,7 @@
     "description": "Error under the background color field when it is not #rrggbb."
   },
   "admin.brand.built_in": {
-    "defaultMessage": "my の組み込みのものを使っています。",
+    "defaultMessage": "mycroblog の組み込みのものを使っています。",
     "description": "Text in place of the preview while a brand image is not set."
   },
   "admin.brand.check_failed": {
@@ -36,7 +36,7 @@
     "description": "Error beside the button that clears a brand image. {reason} is the server's localized reason."
   },
   "admin.brand.description": {
-    "defaultMessage": "my の組み込みの絵の代わりに使う、このサーバーの絵です。SVG のファイルを選んでください。サーバーがファイルを確かめ、動くものやほかのファイルを読むものを取り除き、このブラウザーがアプリやメールに要る PNG の画像を描きます。",
+    "defaultMessage": "mycroblog の組み込みの絵の代わりに使う、このサーバーの絵です。SVG のファイルを選んでください。サーバーがファイルを確かめ、動くものやほかのファイルを読むものを取り除き、このブラウザーがアプリやメールに要る PNG の画像を描きます。",
     "description": "Explanation above the forms of the server's icon and logos."
   },
   "admin.brand.dropped": {

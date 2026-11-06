@@ -122,7 +122,7 @@ describe("the server's icon and logo", () => {
     const { user } = await renderApp({ path: "/admin/settings" });
     const section = await screen.findByRole("region", { name: "Icon and logo" });
     const form = within(section).getByRole("form", { name: "Icon" });
-    expect(within(form).getByText("The built-in one of my is in use.")).toBeInTheDocument();
+    expect(within(form).getByText("The built-in mycroblog one is in use.")).toBeInTheDocument();
     expect(within(form).queryByRole("button", { name: "Use the built-in icon" })).not.toBeInTheDocument();
 
     await user.upload(fileInput(form), nodeUploadFile(svg, "icon.svg", "image/svg+xml"));
@@ -170,7 +170,7 @@ describe("the server's icon and logo", () => {
       await within(form).findByText("The built-in icon is in use again. The audit log records the change."),
     ).toBeInTheDocument();
     expect(brand.cleared).toEqual(["icon"]);
-    expect(within(form).getByText("The built-in one of my is in use.")).toBeInTheDocument();
+    expect(within(form).getByText("The built-in mycroblog one is in use.")).toBeInTheDocument();
   });
 
   test("saves a logo with its mail and link preview images, and no background", async () => {

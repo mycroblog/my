@@ -9,7 +9,7 @@ export const llmsTxtPlugin = starlightLlmsTxt({
   // The brand; `my` is the name of the server software.
   projectName: "mycroblog",
   description:
-    "mycroblog is an ActivityPub-compatible microblog server (the software is called `my`) that runs on Google Cloud, AWS, or a self-hosted VM, with its own client API and a web client.",
+    "mycroblog is a microblog for the fediverse that starts small and grows with your community. Its server software, `my`, speaks ActivityPub and starts on one small machine or a scale-to-zero container with SQLite, then moves to PostgreSQL, a job queue, and separate web and worker processes as the community grows, on Google Cloud, AWS, or a self-hosted VM, with the same code and data. It has its own client API and a web client.",
   details:
     "The pages cover using the service, operating a server, the configuration and jobs reference, and building clients and bots against the client API. The client API reference is made from its OpenAPI document, which every server serves at `GET /api/v1/openapi.yaml`.",
   // Pages are sorted to the top by slug. A page that does not exist (yet) is skipped, so the list can name the overview

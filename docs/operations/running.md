@@ -172,14 +172,14 @@ The first command fails unless the image was built by the release workflow of th
 
 ## Publish the source code (AGPL-3.0)
 
-my is licensed under AGPL-3.0-only. Section 13 of the AGPL-3.0 requires anyone who runs the server and lets users interact with it over a network
+`my` is licensed under AGPL-3.0-only. Section 13 of the AGPL-3.0 requires anyone who runs the server and lets users interact with it over a network
 to offer those users a way to get the corresponding source code of the program that is running. This applies to everyone who interacts with the server, not only to people with an account.
 
 Point to where the source is published with the setting `source_url` (environment variable `MY_SOURCE_URL`; see the [configuration reference](../reference/configuration.md#source_url)).
 
 | Value | Meaning |
 | --- | --- |
-| Not set | The default, `https://github.com/mycroblog/my`. Use it when you run my unmodified: a release's `GET /instance` then names the source of that version, `https://github.com/mycroblog/my/tree/v0.1.0`, and NodeInfo the repository |
+| Not set | The default, `https://github.com/mycroblog/my`. Use it when you run `my` unmodified: a release's `GET /instance` then names the source of that version, `https://github.com/mycroblog/my/tree/v0.1.0`, and NodeInfo the repository |
 | An `https:` URL | A place where the source can be read (the repository of a fork, the tag or archive of a particular version, and so on) |
 | A `mailto:` URI | An email address to request the source from (for example `mailto:source@example.org`; `?subject=...` is allowed) |
 
@@ -192,9 +192,9 @@ The value appears in these places:
 - `metadata.sourceCode` in NodeInfo (`/nodeinfo/2.1`). An `https:` URL is also published as `software.repository`
   (the NodeInfo 2.1 schema allows only an `http(s)` URL in `software.repository`, so a `mailto:` value appears only in `metadata.sourceCode`)
 
-### When you fork or modify my
+### When you fork or modify `my`
 
-If you run a modified my (you apply patches, build a fork, or swap dependencies), the default URL no longer points to the source of what is running.
+If you run a modified `my` (you apply patches, build a fork, or swap dependencies), the default URL no longer points to the source of what is running.
 Change `source_url` to where the source of the running version, with your modifications, can be found. Pointing to the commit, tag or archive that matches the running version, rather than the latest state of a repository, lets users reliably get the same source.
 If you run an unmodified official release, keep the default.
 

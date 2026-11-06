@@ -164,7 +164,7 @@
     "description": "How to fix a reconciliation that failed for a missing object."
   },
   "admin.supporters.payment.error.invalid_request": {
-    "defaultMessage": "事業者がサーバーの要求を拒みました。サーバーのログと事業者のダッシュボードでその要求を確かめ、続くようなら my の開発者に報告してください。",
+    "defaultMessage": "事業者がサーバーの要求を拒みました。サーバーのログと事業者のダッシュボードでその要求を確かめ、続くようなら mycroblog の開発者に報告してください。",
     "description": "How to fix a reconciliation that failed for an invalid request."
   },
   "admin.supporters.payment.error.throttled": {
@@ -188,7 +188,7 @@
     "description": "How to fix a failure for a mode mismatch."
   },
   "admin.supporters.payment.error.invalid_response": {
-    "defaultMessage": "事業者がサーバーの読めない形で答えました。次の照合で再び試します。続くようなら my の開発者に報告してください。",
+    "defaultMessage": "事業者がサーバーの読めない形で答えました。次の照合で再び試します。続くようなら mycroblog の開発者に報告してください。",
     "description": "How to fix a failure for an unreadable response."
   },
   "admin.supporters.payment.warning.duplicate_charge": {

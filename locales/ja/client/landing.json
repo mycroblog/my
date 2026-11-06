@@ -144,7 +144,7 @@
     "description": "Note under the step of searching on one's own server."
   },
   "landing.powered_by": {
-    "defaultMessage": "my で動いています (AGPL-3.0 のフリーソフトウェア)",
+    "defaultMessage": "mycroblog で動いています (AGPL-3.0 のフリーソフトウェア)",
     "description": "Line in the footer of the landing page that names the software the server runs and its license, before the link to its source code."
   }
 }

@@ -5,9 +5,15 @@ Human contributors should read [CONTRIBUTING.md](CONTRIBUTING.md); the rules are
 
 ## Project in one paragraph
 
-An ActivityPub-compatible microblog server written in Go, which can run cheaply with care on Google Cloud, AWS,
-or a self-hosted VM (Docker / microk8s), with swappable RDB / queue / storage adapters, its own client API (no Mastodon client API compatibility),
+**mycroblog** is the brand of the project, the service, and the set of related software: a microblog for the fediverse
+that starts small and grows with your community — a small, cheap start *and* real scalability, not cheapness alone.
+This repository builds **`my`**, its ActivityPub-compatible server written in Go, which can run cheaply with care on Google Cloud, AWS,
+or a self-hosted VM (Docker / microk8s) and grow to PostgreSQL, a job queue, and separate web and worker processes,
+with swappable RDB / queue / storage adapters, its own client API (no Mastodon client API compatibility),
 a PWA web client (no mobile app in v0), and i18n from day one. Distributed as OSS.
+Prose that people read says mycroblog for the project and the service, and `my` for the server software; the technical names
+keep `my` (the command, the repository `mycroblog/my`, the image `ghcr.io/mycroblog/my`, the `MY_` environment variables,
+NodeInfo's software name and every name on the federation wire, Go module paths, the `@my/*` packages, the Worker `my-docs`).
 
 ## Current phase: M5 — v0 Release
 

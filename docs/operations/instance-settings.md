@@ -392,7 +392,7 @@ echo '{"tokens":[],"custom_css":""}' | my instance theme set   # back to the def
 ## Logo and icon
 
 Besides the thumbnail and the preview image, the instance can have its own icon, logo, and dark logo, each uploaded as one SVG.
-Until one is set, the built-in images of my are used, and clearing one brings the built-in image back.
+Until one is set, the built-in mycroblog images are used, and clearing one brings the built-in image back.
 
 | Image | Shape | Where it appears |
 | --- | --- | --- |

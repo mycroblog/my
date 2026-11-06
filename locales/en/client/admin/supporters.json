@@ -164,7 +164,7 @@
     "description": "How to fix a reconciliation that failed for a missing object."
   },
   "admin.supporters.payment.error.invalid_request": {
-    "defaultMessage": "The provider refused a request of the server. Look for the request in the server's log and in the provider's dashboard; if it goes on, report it to the developers of my.",
+    "defaultMessage": "The provider refused a request of the server. Look for the request in the server's log and in the provider's dashboard; if it goes on, report it to the developers of mycroblog.",
     "description": "How to fix a reconciliation that failed for an invalid request."
   },
   "admin.supporters.payment.error.throttled": {
@@ -188,7 +188,7 @@
     "description": "How to fix a failure for a mode mismatch."
   },
   "admin.supporters.payment.error.invalid_response": {
-    "defaultMessage": "The provider answered in a form the server cannot read. The next reconciliation tries again; if it goes on, report it to the developers of my.",
+    "defaultMessage": "The provider answered in a form the server cannot read. The next reconciliation tries again; if it goes on, report it to the developers of mycroblog.",
     "description": "How to fix a failure for an unreadable response."
   },
   "admin.supporters.payment.warning.duplicate_charge": {
