@@ -373,6 +373,27 @@ func TestInboundStatusDrop(t *testing.T) {
 		t.Fatalf("Update of a dropped post: calls %d, want %d; stored %t", h.plugin.calls(), calls+1, h.stored(edited))
 	}
 
+	// Until when a drop can bring its post back counts from when the activity arrived, not from
+	// when the plugin answered: an activity received 8 days ago is past it, whatever its decision.
+	early := h.note("VERDICT_DROP received long ago", now)
+	earlyActivity := h.create(early)
+	h.exec("UPDATE received_activities SET received_at = received_at - " + strconv.FormatInt((8*24*time.Hour).Milliseconds(), 10) +
+		" WHERE activity_uri = '" + earlyActivity + "'")
+	var drops clientapi.AdminHookDecisionPage
+	if res := h.c.do("alice", http.MethodGet, "/admin/hook_decisions?hook=inbound.status&outcome=drop", nil, &drops); res.StatusCode != http.StatusOK {
+		t.Fatalf("GET /admin/hook_decisions = %d", res.StatusCode)
+	}
+	restorable := map[string]*time.Time{}
+	for _, d := range drops.Items {
+		restorable[d.SubjectKey] = d.RestorableUntil
+	}
+	if until := restorable[earlyActivity]; until == nil || !until.Before(time.Now()) {
+		t.Errorf("restorable_until of an activity received 8 days ago = %v, want past", until)
+	}
+	if until := restorable[update]; until == nil || !until.After(time.Now().Add(6*24*time.Hour)) {
+		t.Errorf("restorable_until of an activity received now = %v, want 7 days ahead", until)
+	}
+
 	// Past the retention of the received document, cancelling brings nothing back.
 	gone := h.note("VERDICT_DROP too late", now)
 	late := h.create(gone)
