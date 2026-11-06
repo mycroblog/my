@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 552 596" width="552" height="596" role="img" aria-labelledby="title desc">
+<!-- SPDX-License-Identifier: AGPL-3.0-only -->
+  <title id="title">Moving your account: what moves and what stays</title>
+  <desc id="desc">Two accounts side by side, the old account you move from on the left and the new account you move to on the right. Step 1: on the new account, add the old account under Aliases. Step 2: on the old account, choose Move account. What moves: your followers follow the new account. The old account then shows Your account has moved; you can still sign in, read, and export your data. What stays here, on the old account: your posts, the accounts you follow, and your blocks, mutes, and bookmarks. Your posts stay. You carry your follows, blocks, mutes, and bookmarks yourself with Import and export: export them as CSV files from the old account and import them on the new one.</desc>
+
+  <style>
+    svg { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif; }
+    .bg { fill: #ffffff; }
+    .t { fill: #1f2328; font-size: 16px; }
+    .b { font-weight: 600; }
+    .m { fill: #59636e; font-size: 15px; }
+    .h { fill: #1f2328; font-size: 17px; font-weight: 600; }
+    .group { fill: #f6f8fa; stroke: #d1d9e0; stroke-width: 1.5; }
+    .client { fill: #dafbe1; stroke: #1a7f37; stroke-width: 1.5; }
+    .proc { fill: #ddf4ff; stroke: #0969da; stroke-width: 2; }
+    .port { fill: #ffffff; stroke: #8c959f; stroke-width: 1.5; }
+    .life { stroke: #8c959f; stroke-width: 1.5; stroke-dasharray: 4 4; fill: none; }
+    .arrow { stroke: #59636e; stroke-width: 2; fill: none; }
+    .dashed { stroke-dasharray: 6 4; }
+    .head { fill: #59636e; }
+    @media (prefers-color-scheme: dark) {
+      .bg { fill: #0d1117; }
+      .t, .h { fill: #e6edf3; }
+      .m { fill: #9198a1; }
+      .group { fill: #151b23; stroke: #3d444d; }
+      .client { fill: #0f2d1b; stroke: #3fb950; }
+      .proc { fill: #0c2d6b; stroke: #4493f8; }
+      .port { fill: #0d1117; stroke: #656c76; }
+      .life { stroke: #656c76; }
+      .arrow { stroke: #9198a1; }
+      .head { fill: #9198a1; }
+    }
+  </style>
+  <defs>
+    <marker id="arrowhead" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path class="head" d="M 0 0 L 10 5 L 0 10 z"/>
+    </marker>
+  </defs>
+  <rect class="bg" x="0" y="0" width="552" height="596" rx="12"/>
+
+  <rect class="proc" x="12" y="16" width="220" height="68" rx="8"/>
+  <text class="t b" x="122" y="45" text-anchor="middle">Old account</text>
+  <text class="m" x="122" y="67" text-anchor="middle">you move from</text>
+  <rect class="proc" x="320" y="16" width="220" height="68" rx="8"/>
+  <text class="t b" x="430" y="45" text-anchor="middle">New account</text>
+  <text class="m" x="430" y="67" text-anchor="middle">you move to</text>
+  <path class="life" d="M 122 84 L 122 326"/>
+  <path class="life" d="M 430 84 L 430 326"/>
+
+  <text class="t b" x="276" y="118" text-anchor="middle">1. Add an alias</text>
+  <text class="m" x="276" y="138" text-anchor="middle">under Aliases on the new account</text>
+  <path class="arrow" d="M 430 154 L 126 154" marker-end="url(#arrowhead)"/>
+
+  <text class="t b" x="276" y="190" text-anchor="middle">2. Move account</text>
+  <text class="m" x="276" y="210" text-anchor="middle">on the old account</text>
+  <path class="arrow" d="M 122 226 L 426 226" marker-end="url(#arrowhead)"/>
+
+  <text class="h" x="276" y="262" text-anchor="middle">What moves</text>
+  <path class="arrow" d="M 122 298 L 186 298"/>
+  <rect class="client" x="186" y="276" width="180" height="44" rx="8"/>
+  <text class="t b" x="276" y="304" text-anchor="middle">Your followers</text>
+  <path class="arrow" d="M 366 298 L 426 298" marker-end="url(#arrowhead)"/>
+
+  <rect class="port" x="12" y="326" width="220" height="68" rx="8"/>
+  <text class="t b" x="122" y="355" text-anchor="middle">Your account has moved</text>
+  <text class="m" x="122" y="377" text-anchor="middle">sign in, read, export</text>
+  <rect class="proc" x="320" y="326" width="220" height="68" rx="8"/>
+  <text class="t b" x="430" y="355" text-anchor="middle">New account</text>
+  <text class="m" x="430" y="377" text-anchor="middle">with your followers</text>
+
+  <rect class="group" x="12" y="414" width="220" height="166" rx="12"/>
+  <text class="h" x="28" y="444">What stays here</text>
+  <text class="t" x="28" y="474">Your posts</text>
+  <text class="t" x="28" y="500">The accounts you follow</text>
+  <text class="t" x="28" y="526">Your blocks, mutes,</text>
+  <text class="t" x="28" y="548">and bookmarks</text>
+  <path class="arrow dashed" d="M 232 510 L 316 510" marker-end="url(#arrowhead)"/>
+  <text class="m" x="274" y="500" text-anchor="middle">CSV</text>
+  <rect class="port" x="320" y="462" width="220" height="96" rx="8"/>
+  <text class="t b" x="430" y="494" text-anchor="middle">Import and export</text>
+  <text class="m" x="430" y="516" text-anchor="middle">follows, blocks, mutes,</text>
+  <text class="m" x="430" y="536" text-anchor="middle">and bookmarks</text>
+</svg>
