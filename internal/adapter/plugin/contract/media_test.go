@@ -17,7 +17,16 @@ import (
 
 func runMedia(t *testing.T, o fakeplugin.Options) map[string]contract.Result {
 	t.Helper()
-	k, _ := kind.ByName(kind.Media)
+	out := runMediaKind(t, kind.MediaImage, o)
+	for name, r := range runMediaKind(t, kind.MediaAudio, o) {
+		out[name] = r
+	}
+	return out
+}
+
+func runMediaKind(t *testing.T, name string, o fakeplugin.Options) map[string]contract.Result {
+	t.Helper()
+	k, _ := kind.ByName(name)
 	h, _ := fakeplugin.Connect(o)
 	conn, err := client.New(client.Options{Kind: k, Destination: kind.Destination{Address: fakeplugin.ServeTCP(t, h)}, KeepDetail: true})
 	if err != nil {

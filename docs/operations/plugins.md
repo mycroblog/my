@@ -14,17 +14,18 @@ From the top of the diagram down:
 - **The my process**, with any `role`, makes two kinds of calls to a plugin.
   - **Ports it hands over**: a plugin does a job in place of a built-in part, and each is on only when a setting names
     `plugin`: `translator` (the instance setting `translation_providers = plugin`), `billing` (`billing_sources` includes
-    `plugin`), `mailer` (`mail = plugin`), `media` (`media = plugin`), and `key_manager` (`key_manager = plugin`).
+    `plugin`), `mailer` (`mail = plugin`), `media_image`, `media_video`, and `media_audio` (`media_image = plugin` and so
+    on), and `key_manager` (`key_manager = plugin`).
   - **[Decision hooks](decision-hooks.md)**: a plugin answers whether to accept something, and is asked unless the hook's
     mode `hook_<hook>_mode` is `off`: `inbound.status` for posts from other servers, `inbound.follow` for follows from
     other servers, `signup.check` for sign-ups, `media.check` for uploads, and `local.status` for posts of local accounts.
 - **The plugin client** makes every call. Each kind has one destination, `plugin_<kind>_address`, and a deadline,
-  `plugin_<kind>_timeout`, and runs at most 8 calls at once (2 for `media`). It connects over a Unix socket, `https://`, or,
+  `plugin_<kind>_timeout`, and runs at most 8 calls at once (2 for each media kind). It connects over a Unix socket, `https://`, or,
   for [some kinds](#plain-tcp) only, `http://`.
 - **Your plugins** are separate programs that you run, as a sidecar, under systemd, or on another machine. The server only
   connects to them.
 - **When a call fails or times out** ([details](#when-a-call-fails)):
-  - `billing`, `mailer`, and `media`: the job that made the call runs again later.
+  - `billing`, `mailer`, and the media kinds: the job that made the call runs again later.
   - `translator`: the server asks the next provider, and when none is left the reader sees that the translation failed.
   - `key_manager` fails closed: whatever needs a key fails, and the server does not start without the plugin.
   - A decision hook does what `hook_<hook>_on_failure` says: `pass`, `retry`, or, for sign-ups, `require_approval`.
@@ -39,7 +40,9 @@ key, so `inbound.status` has `plugin_inbound_status_address`.
 | `translator` | The text of a post that a reader asked to translate | **Refused** | `json` | 10 s |
 | `billing` | The costs of the instance | Allowed | `json` | 2 min |
 | `mailer` | Addresses and secrets such as confirmation links | **Refused** | `json` | 30 s |
-| `media` | Uploads, with their metadata, which may hold a location | Allowed | `proto` | 4 min |
+| `media_image` | Uploaded images, with their metadata, which may hold a location | Allowed | `proto` | 4 min |
+| `media_video` | Uploaded videos, with their metadata, which may hold a location | Allowed | `proto` | 4 min |
+| `media_audio` | Uploaded audio files, with their metadata | Allowed | `proto` | 4 min |
 | `key_manager` | Data-encryption keys in plaintext | **Refused** | `json` | 5 s |
 | `inbound.status` | The text of incoming posts | **Refused** | `json` | 3 s |
 | `local.status` | The text of local posts | **Refused** | `json` | 1 s |
@@ -107,8 +110,8 @@ responsibility: what the table above lists crosses it in the clear.
 | `proto` | Connect's protocol with `application/proto` | A plugin built on a Connect library |
 | `grpc` | gRPC over HTTP/2 | A plugin that speaks only gRPC |
 
-A plugin answers the wrong protocol with `415`. `media` streams both ways, which needs HTTP/2, so it takes `proto` or
-`grpc` and `json` is a configuration error.
+A plugin answers the wrong protocol with `415`. The media kinds stream both ways, which needs HTTP/2, so they take `proto`
+or `grpc` and `json` is a configuration error.
 
 The protocol's definitions are the `.proto` files under `api/plugin/` of the repository. There is one package for each
 kind of port, and they share no types; the decision hooks all share one package, `my.plugin.hook.v1`.
@@ -165,9 +168,10 @@ about 200 characters. It checks the form of the answers, and that the plugin ref
 leaves for private use. It cannot judge the words, so read a translation of the plugin yourself.
 [Translating posts](#translating-posts) has the contract of the kind.
 
-`--kind media` sends only small test files that it makes itself: a photo, an emoji, an animated GIF, and an MP3. Each one
-hides a location or a title in its metadata, and a case fails when that comes back in an output. It checks every output as
-the server does. [Converting media](#converting-media) has the contract of the kind.
+`--kind media_image` and `--kind media_audio` send only small test files that they make themselves: a photo, an emoji, and
+an animated GIF, or an MP3. Each one hides a location or a title in its metadata, and a case fails when that comes back in
+an output. They check every output as the server does. `--kind media_video` has no cases of its own yet; it checks only
+that the plugin answers. [Converting media](#converting-media) has the contract of the kinds.
 
 `--kind key_manager` runs the checks the server runs at each start, and checks that the plugin refuses a changed value and a
 KEK it does not hold. It sends only keys it makes up and throws away, so it is safe against a real key store, which may bill
@@ -270,24 +274,32 @@ failed call, and the same fragments can come again for another reader.
 
 ## Converting media
 
-A plugin of the kind `media` does the heavy part of processing uploads, so that it can run on another machine: it
-re-encodes images into their variants and remuxes video and audio files. The server still does the rest itself. It
-detects the format of each upload, checks it against the limits when the upload arrives, and makes the previews of remote
-media.
+A media plugin does the heavy part of processing uploads, so that it can run on another machine. There are three kinds,
+and you choose each one on its own:
+
+- `media_image` re-encodes images into their variants.
+- `media_video` remuxes videos: files with a video track, with or without sound.
+- `media_audio` remuxes audio-only files.
+
+The server still does the rest itself. It detects the format of each upload, tells videos from audio files, checks each
+upload against the limits when it arrives, and makes the previews of remote media. A kind whose setting stays `native` is
+processed in the server.
 
 ```sh
-MY_MEDIA=plugin
-MY_PLUGIN_MEDIA_ADDRESS=unix:///run/my/media.sock
+# Only videos go to a plugin, on a machine of its own; images and audio stay in the server.
+MY_MEDIA_VIDEO=plugin
+MY_PLUGIN_MEDIA_VIDEO_ADDRESS=https://media.internal:9000
 ```
 
-Set `media = plugin` and `plugin_media_address`, and restart. Two calls run at once at most, and each lasts
-`plugin_media_timeout` (4 minutes by default) at most.
+Set `media_<kind> = plugin` and `plugin_media_<kind>_address` for each kind you hand over, and restart. One plugin may
+take more than one kind: give it the same address for each. Each kind runs two calls at once at most, and each call lasts
+`plugin_media_<kind>_timeout` (4 minutes by default) at most, so a slow video does not hold up the images.
 
 - **Removing metadata is the plugin's job.** The uploads reach the plugin as they were sent, with their EXIF data and
   tags, which may hold where a photo was taken. The server checks the format and the size of every output, but it cannot
-  tell that every trace of metadata is gone. `my plugin test --kind media` checks that the location of its test files does
-  not come back; check the rest in the plugin.
-- **Plain TCP sends the uploads unencrypted.** The kind accepts `http://`, with a warning at start. Uploads, with their
+  tell that every trace of metadata is gone. `my plugin test --kind media_image` checks that the location of its test files
+  does not come back; check the rest in the plugin.
+- **Plain TCP sends the uploads unencrypted.** The media kinds accept `http://`, with a warning at start. Uploads, with their
   metadata, then cross the network in the clear, and nothing authenticates either end: anyone on that network can read
   them or answer for the plugin. Use a Unix socket or `https://` unless the network is yours alone.
 - **The server does not trust the output.** It detects the format of each output from its content, never from what the

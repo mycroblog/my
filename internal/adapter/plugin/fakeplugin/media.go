@@ -150,10 +150,15 @@ func (s *mediaServer) Remux(ctx context.Context, stream mediav1connect.MediaServ
 		return err
 	}
 	l := head.GetLimits()
-	out, err := s.o.Media.Remux(ctx, data, media.AVLimits{
+	limits := media.AVLimits{
 		MaxBytes: l.GetMaxBytes(), MaxVideoDuration: time.Duration(l.GetMaxVideoDurationMs()) * time.Millisecond,
 		MaxAudioDuration: time.Duration(l.GetMaxAudioDurationMs()) * time.Millisecond, MaxPixels: l.GetMaxPixels(), MaxFrameRate: l.GetMaxFrameRate(),
-	})
+	}
+	// The head says whether the file is a video or audio only, as the processor reads it.
+	if probe, err := s.o.Media.InspectAV(ctx, data, limits); err == nil && head.GetKind() != avKinds[probe.Kind] {
+		return connect.NewError(connect.CodeInvalidArgument, "the kind of the head is "+head.GetKind().String()+", and the file is "+string(probe.Kind))
+	}
+	out, err := s.o.Media.Remux(ctx, data, limits)
 	if err != nil {
 		return stream.Send(&mediav1.RemuxResponse{Message: &mediav1.RemuxResponse_Head{Head: &mediav1.RemuxResult{Outcome: mediaOutcome(err)}}})
 	}
@@ -229,6 +234,11 @@ func sendOutput(part *mediav1.Part, data []byte, sendPart func(*mediav1.Part) er
 		}
 	}
 	return nil
+}
+
+var avKinds = map[media.AVKind]mediav1.AVKind{
+	media.AVVideo: mediav1.AVKind_AV_KIND_VIDEO,
+	media.AVAudio: mediav1.AVKind_AV_KIND_AUDIO,
 }
 
 var mediaPurposes = map[mediav1.Purpose]media.Purpose{

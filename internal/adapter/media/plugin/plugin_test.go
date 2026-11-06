@@ -22,13 +22,24 @@ import (
 	"github.com/mycroblog/my/pkg/testkit"
 )
 
-func mediaKind(t *testing.T) kind.Kind {
+func mediaKind(t *testing.T, name string) kind.Kind {
 	t.Helper()
-	k, ok := kind.ByName(kind.Media)
+	k, ok := kind.ByName(name)
 	if !ok {
-		t.Fatal("no media kind")
+		t.Fatalf("no kind %s", name)
 	}
 	return k
+}
+
+// newConn returns the Conn of the kind name to d.
+func newConn(t *testing.T, name string, d kind.Destination) *client.Conn {
+	t.Helper()
+	conn, err := client.New(client.Options{Kind: mediaKind(t, name), Destination: d})
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(conn.Close)
+	return conn
 }
 
 // counting is the built-in processor, counting the calls the adapter makes of it.
@@ -48,14 +59,13 @@ func (c *counting) Preview(ctx context.Context, data []byte, limits media.Limits
 	return c.Processor.Preview(ctx, data, limits, sizes, req)
 }
 
+// newProcessor returns the Processor that sends every kind of media to the one plugin at d.
 func newProcessor(t *testing.T, d kind.Destination, builtin media.Processor) *mediaplugin.Processor {
 	t.Helper()
-	conn, err := client.New(client.Options{Kind: mediaKind(t), Destination: d})
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(conn.Close)
-	p, err := mediaplugin.New(conn, mediaplugin.Options{Builtin: builtin})
+	p, err := mediaplugin.New(mediaplugin.Options{
+		Builtin: builtin,
+		Image:   newConn(t, kind.MediaImage, d), Video: newConn(t, kind.MediaVideo, d), Audio: newConn(t, kind.MediaAudio, d),
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -472,15 +482,72 @@ func TestA100MiBBodyRoundTrips(t *testing.T) {
 	}
 }
 
-// The adapter needs the built-in processor.
-func TestNewNeedsTheBuiltIn(t *testing.T) {
+// The adapter needs the built-in processor and at least one plugin.
+func TestNewNeedsTheBuiltInAndAPlugin(t *testing.T) {
 	t.Parallel()
-	conn, err := client.New(client.Options{Kind: mediaKind(t), Destination: kind.Destination{Address: "unix:///run/media.sock"}})
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer conn.Close()
-	if _, err := mediaplugin.New(conn, mediaplugin.Options{}); err == nil || !strings.Contains(err.Error(), "built-in") {
+	conn := newConn(t, kind.MediaImage, kind.Destination{Address: "unix:///run/media.sock"})
+	if _, err := mediaplugin.New(mediaplugin.Options{Image: conn}); err == nil || !strings.Contains(err.Error(), "built-in") {
 		t.Errorf("New without the built-in = %v", err)
+	}
+	if _, err := mediaplugin.New(mediaplugin.Options{Builtin: native.New(native.Options{})}); err == nil || !strings.Contains(err.Error(), "plugin") {
+		t.Errorf("New without a plugin = %v", err)
+	}
+}
+
+// Each kind of media goes to its own plugin, with the kind of a video or audio file in the head, and a kind without a
+// plugin stays on the built-in processor.
+func TestEachKindGoesToItsPlugin(t *testing.T) {
+	t.Parallel()
+	behind := native.New(native.Options{Concurrency: 2})
+	serve := func() (string, *fakeplugin.Recorder) {
+		h, rec := fakeplugin.Connect(fakeplugin.Options{Media: behind})
+		return fakeplugin.ServeUnix(t, h), rec
+	}
+	video := testkit.MP4File(testkit.MP4Options{VideoCodec: "avc1", AudioCodec: "mp4a", Width: 64, Height: 48, Frames: 10, Seconds: 1})
+	audio := testkit.MP4File(testkit.MP4Options{AudioCodec: "mp4a", Seconds: 1})
+	image := testkit.FixtureJPEG(64, 48, 1)
+	for _, tc := range []struct {
+		name                string
+		image, video, audio bool
+	}{
+		{"images only", true, false, false},
+		{"videos only", false, true, false},
+		{"audio only", false, false, true},
+		{"every kind", true, true, true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			o := mediaplugin.Options{Builtin: behind}
+			recs := map[string]*fakeplugin.Recorder{}
+			for _, k := range []struct {
+				on   bool
+				name string
+				conn **client.Conn
+			}{{tc.image, kind.MediaImage, &o.Image}, {tc.video, kind.MediaVideo, &o.Video}, {tc.audio, kind.MediaAudio, &o.Audio}} {
+				if k.on {
+					address, rec := serve()
+					*k.conn, recs[k.name] = newConn(t, k.name, kind.Destination{Address: address}), rec
+				}
+			}
+			p, err := mediaplugin.New(o)
+			if err != nil {
+				t.Fatal(err)
+			}
+			ctx := t.Context()
+			if _, err := p.Process(ctx, image, media.Limits{}, media.Sizes{}, media.Request{}); err != nil {
+				t.Fatalf("Process: %v", err)
+			}
+			if _, err := p.Remux(ctx, video, media.AVLimits{}); err != nil {
+				t.Fatalf("Remux of a video: %v", err)
+			}
+			if _, err := p.Remux(ctx, audio, media.AVLimits{}); err != nil {
+				t.Fatalf("Remux of an audio file: %v", err)
+			}
+			for name, rec := range recs {
+				if rec.Calls() != 1 {
+					t.Errorf("the %s plugin got %d calls, want 1", name, rec.Calls())
+				}
+			}
+		})
 	}
 }

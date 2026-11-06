@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-// Package plugin is the media.Processor that delegates Process and Remux to an operator's plugin, so that heavy
-// conversion runs on another machine (ADR-0146 §11, §13). Inspect, InspectAV, and Preview stay on the server's built-in
+// Package plugin is the media.Processor that delegates Process and Remux to an operator's plugins, so that heavy
+// conversion runs on another machine (ADR-0146 §11, §13). Each kind of file has its own plugin: Process of an image goes to
+// the media_image plugin, and Remux to the media_video or the media_audio plugin as the built-in processor reads the file.
+// A kind without a plugin stays on the built-in processor. Inspect, InspectAV, and Preview always stay on the built-in
 // processor: they run in the request of an upload and on the read path of the media proxy, which take no plugin's delay.
 //
 // The bodies travel in a stream of chunks both ways, half-duplex: the server sends the head and the file, closes its side,
@@ -40,26 +42,44 @@ type Options struct {
 	// CoverMaxBytes bounds the cover picture of Remux, which the server later processes as an image: the image limit of
 	// the settings. Zero or less is media.DefaultMaxBytes.
 	CoverMaxBytes int64
+	// Image, Video, and Audio reach the plugins of images, of videos, and of audio-only files. A nil one leaves that
+	// kind to Builtin. At least one is required.
+	Image, Video, Audio *client.Conn
 }
 
-// Processor is the media.Processor of a plugin. It is safe for concurrent use.
+// Processor is the media.Processor of the plugins. It is safe for concurrent use.
 type Processor struct {
-	client   mediav1connect.MediaServiceClient
-	builtin  media.Processor
-	coverMax int64
+	// image, video, and audio are nil for a kind that builtin processes.
+	image, video, audio mediav1connect.MediaServiceClient
+	builtin             media.Processor
+	coverMax            int64
 }
 
 var _ media.Processor = (*Processor)(nil)
 
-// New returns the Processor that reaches its plugin through conn. It makes no call.
-func New(conn *client.Conn, o Options) (*Processor, error) {
+// New returns the Processor that reaches the plugins through the Conns of o. It makes no call.
+func New(o Options) (*Processor, error) {
 	if o.Builtin == nil {
 		return nil, errors.New("media plugin: the built-in processor is required")
+	}
+	if o.Image == nil && o.Video == nil && o.Audio == nil {
+		return nil, errors.New("media plugin: a plugin of images, videos, or audio files is required")
 	}
 	if o.CoverMaxBytes <= 0 {
 		o.CoverMaxBytes = media.DefaultMaxBytes
 	}
-	return &Processor{client: mediav1connect.NewMediaServiceClient(conn.RPC), builtin: o.Builtin, coverMax: o.CoverMaxBytes}, nil
+	return &Processor{
+		image: serviceOf(o.Image), video: serviceOf(o.Video), audio: serviceOf(o.Audio),
+		builtin: o.Builtin, coverMax: o.CoverMaxBytes,
+	}, nil
+}
+
+// serviceOf returns the client of the media service on conn, or nil without conn.
+func serviceOf(conn *client.Conn) mediav1connect.MediaServiceClient {
+	if conn == nil {
+		return nil
+	}
+	return mediav1connect.NewMediaServiceClient(conn.RPC)
 }
 
 // Inspect implements media.Processor with the built-in processor.
@@ -84,9 +104,12 @@ var purposes = map[media.Purpose]mediav1.Purpose{
 	media.PurposeEmoji:      mediav1.Purpose_PURPOSE_EMOJI,
 }
 
-// Process implements media.Processor: the built-in processor inspects data, the plugin makes the variants, and the
-// server checks them.
+// Process implements media.Processor: the built-in processor inspects data, the plugin of images makes the variants, and
+// the server checks them. Without a plugin of images, the built-in processor does all of it.
 func (p *Processor) Process(ctx context.Context, data []byte, limits media.Limits, sizes media.Sizes, req media.Request) (media.Output, error) {
+	if p.image == nil {
+		return p.builtin.Process(ctx, data, limits, sizes, req)
+	}
 	limits, sizes = limits.WithDefaults(), sizes.WithDefaults()
 	if !req.Purpose.Valid() {
 		req.Purpose = media.PurposeAttachment
@@ -97,7 +120,7 @@ func (p *Processor) Process(ctx context.Context, data []byte, limits media.Limit
 	}
 	boxes := sizes.For(req.Purpose)
 
-	stream, err := p.client.Process(ctx)
+	stream, err := p.image.Process(ctx)
 	if err != nil {
 		return media.Output{}, failed(err)
 	}
@@ -240,15 +263,23 @@ func (p *Processor) variant(ctx context.Context, parts map[mediav1.Output]receiv
 	return media.Variant{Data: r.data, ContentType: f.ContentType(), Extension: extension(f), Width: probe.Width, Height: probe.Height}, nil
 }
 
-// Remux implements media.AVProcessor: the built-in processor inspects data, the plugin remuxes it, and the built-in
-// processor reads the output again, which gives the probe of the result.
+// Remux implements media.AVProcessor: the built-in processor inspects data, the plugin of its kind (video or audio)
+// remuxes it, and the built-in processor reads the output again, which gives the probe of the result. Without a plugin of
+// its kind, the built-in processor does all of it.
 func (p *Processor) Remux(ctx context.Context, data []byte, limits media.AVLimits) (media.AVOutput, error) {
 	limits = limits.WithDefaults()
 	in, err := p.builtin.InspectAV(ctx, data, limits)
 	if err != nil {
 		return media.AVOutput{}, err
 	}
-	stream, err := p.client.Remux(ctx)
+	service, avKind := p.audio, mediav1.AVKind_AV_KIND_AUDIO
+	if in.Kind == media.AVVideo {
+		service, avKind = p.video, mediav1.AVKind_AV_KIND_VIDEO
+	}
+	if service == nil {
+		return p.builtin.Remux(ctx, data, limits)
+	}
+	stream, err := service.Remux(ctx)
 	if err != nil {
 		return media.AVOutput{}, failed(err)
 	}
@@ -259,6 +290,7 @@ func (p *Processor) Remux(ctx context.Context, data []byte, limits media.AVLimit
 			MaxAudioDurationMs: limits.MaxAudioDuration.Milliseconds(), MaxPixels: limits.MaxPixels, MaxFrameRate: limits.MaxFrameRate,
 		},
 		Size: int64(len(data)),
+		Kind: avKind,
 	}
 	err = send(data,
 		func() error {

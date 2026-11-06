@@ -42,10 +42,12 @@ func TestNoPluginsRejectsTheBillingSource(t *testing.T) {
 	}
 }
 
-func TestNoPluginsRejectsTheMediaProcessor(t *testing.T) {
-	_, _, err := Load(source(with(minimal(), "MY_MEDIA", "plugin"), nil))
-	var ve *ValidationError
-	if !errors.As(err, &ve) || len(ve.Issues) != 1 || ve.Issues[0].Key != "media" || !strings.Contains(ve.Issues[0].Message, "no_plugins") {
-		t.Fatalf("err = %v", err)
+func TestNoPluginsRejectsTheMediaProcessors(t *testing.T) {
+	for _, key := range []string{"media_image", "media_video", "media_audio"} {
+		_, _, err := Load(source(with(minimal(), "MY_"+strings.ToUpper(key), "plugin"), nil))
+		var ve *ValidationError
+		if !errors.As(err, &ve) || len(ve.Issues) != 1 || ve.Issues[0].Key != key || !strings.Contains(ve.Issues[0].Message, "no_plugins") {
+			t.Errorf("%s: err = %v", key, err)
+		}
 	}
 }

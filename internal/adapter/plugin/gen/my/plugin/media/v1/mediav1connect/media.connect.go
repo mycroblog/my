@@ -66,7 +66,7 @@ var (
 // MediaServiceClient is a client for the my.plugin.media.v1.MediaService service.
 type MediaServiceClient interface {
 	// Process re-encodes an image into its variants, as the server's own processor does. The same input and head give the
-	// same output, and the same call may come again after a failure. It lasts plugin_media_timeout at most.
+	// same output, and the same call may come again after a failure. It lasts plugin_media_image_timeout at most.
 	//
 	// The server sends ProcessRequest.head first, then the image in chunks, then closes its side. The plugin answers
 	// ProcessResponse.head; with OUTCOME_OK, it then sends one part per output, each followed by its chunks, in any
@@ -75,7 +75,7 @@ type MediaServiceClient interface {
 	Process(context.Context) (MediaServiceProcessClientStream, error)
 	// Remux writes the streams of a video or audio file again, in the same container, without metadata: tags, titles,
 	// dates, locations, embedded pictures, and tracks other than the video and audio. It never transcodes. The same input
-	// gives the same output. It lasts plugin_media_timeout at most.
+	// gives the same output. It lasts plugin_media_video_timeout or plugin_media_audio_timeout at most, as head.kind says.
 	//
 	// The server sends RemuxRequest.head first, then the file in chunks, then closes its side. The plugin answers
 	// RemuxResponse.head; with OUTCOME_OK, it then sends the part OUTPUT_AV_BODY and its chunks, and the part
@@ -165,7 +165,7 @@ func (s MediaServiceRemuxClientStream) Close() error {
 // MediaServiceHandler is an implementation of the my.plugin.media.v1.MediaService service.
 type MediaServiceHandler interface {
 	// Process re-encodes an image into its variants, as the server's own processor does. The same input and head give the
-	// same output, and the same call may come again after a failure. It lasts plugin_media_timeout at most.
+	// same output, and the same call may come again after a failure. It lasts plugin_media_image_timeout at most.
 	//
 	// The server sends ProcessRequest.head first, then the image in chunks, then closes its side. The plugin answers
 	// ProcessResponse.head; with OUTCOME_OK, it then sends one part per output, each followed by its chunks, in any
@@ -174,7 +174,7 @@ type MediaServiceHandler interface {
 	Process(context.Context, MediaServiceProcessServerStream) error
 	// Remux writes the streams of a video or audio file again, in the same container, without metadata: tags, titles,
 	// dates, locations, embedded pictures, and tracks other than the video and audio. It never transcodes. The same input
-	// gives the same output. It lasts plugin_media_timeout at most.
+	// gives the same output. It lasts plugin_media_video_timeout or plugin_media_audio_timeout at most, as head.kind says.
 	//
 	// The server sends RemuxRequest.head first, then the file in chunks, then closes its side. The plugin answers
 	// RemuxResponse.head; with OUTCOME_OK, it then sends the part OUTPUT_AV_BODY and its chunks, and the part

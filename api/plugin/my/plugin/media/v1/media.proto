@@ -20,7 +20,7 @@ package my.plugin.media.v1;
 
 service MediaService {
   // Process re-encodes an image into its variants, as the server's own processor does. The same input and head give the
-  // same output, and the same call may come again after a failure. It lasts plugin_media_timeout at most.
+  // same output, and the same call may come again after a failure. It lasts plugin_media_image_timeout at most.
   //
   // The server sends ProcessRequest.head first, then the image in chunks, then closes its side. The plugin answers
   // ProcessResponse.head; with OUTCOME_OK, it then sends one part per output, each followed by its chunks, in any
@@ -29,7 +29,7 @@ service MediaService {
   rpc Process(stream ProcessRequest) returns (stream ProcessResponse);
   // Remux writes the streams of a video or audio file again, in the same container, without metadata: tags, titles,
   // dates, locations, embedded pictures, and tracks other than the video and audio. It never transcodes. The same input
-  // gives the same output. It lasts plugin_media_timeout at most.
+  // gives the same output. It lasts plugin_media_video_timeout or plugin_media_audio_timeout at most, as head.kind says.
   //
   // The server sends RemuxRequest.head first, then the file in chunks, then closes its side. The plugin answers
   // RemuxResponse.head; with OUTCOME_OK, it then sends the part OUTPUT_AV_BODY and its chunks, and the part
@@ -132,6 +132,18 @@ message RemuxHead {
   AVLimits limits = 1;
   // The length of the file, which the chunks add up to.
   int64 size = 2;
+  // Whether the file is a video or an audio-only file, as the server read it. The server sends a video to
+  // plugin_media_video_address and an audio file to plugin_media_audio_address, which may be the same plugin.
+  AVKind kind = 3;
+}
+
+// What a video or audio file holds.
+enum AVKind {
+  AV_KIND_UNSPECIFIED = 0;
+  // A file with a video track, with or without sound.
+  AV_KIND_VIDEO = 1;
+  // A file with sound only.
+  AV_KIND_AUDIO = 2;
 }
 
 // The limits of a video or audio file, as the server's settings set them.

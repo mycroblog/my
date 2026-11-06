@@ -8,6 +8,8 @@ func init() {
 	pluginsLeftOutTag = "no_plugins"
 	exclude("no_plugins", "billing_sources", "plugin")
 	exclude("no_plugins", "mail", "plugin")
-	exclude("no_plugins", "media", "plugin")
+	exclude("no_plugins", "media_image", "plugin")
+	exclude("no_plugins", "media_video", "plugin")
+	exclude("no_plugins", "media_audio", "plugin")
 	exclude("no_plugins", "key_manager", "plugin")
 }

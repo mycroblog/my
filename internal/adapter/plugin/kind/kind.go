@@ -48,7 +48,9 @@ const (
 	Translator    = "translator"
 	Billing       = "billing"
 	Mailer        = "mailer"
-	Media         = "media"
+	MediaImage    = "media_image"
+	MediaVideo    = "media_video"
+	MediaAudio    = "media_audio"
 	KeyManager    = "key_manager"
 	InboundStatus = "inbound.status"
 	InboundFollow = "inbound.follow"
@@ -85,7 +87,9 @@ var delegated = []Kind{
 	{Name: Translator, Protocol: ProtocolJSON, InRequests: true, Timeout: 10 * time.Second, MaxSend: mib, MaxReceive: mib, Concurrency: DefaultConcurrency},
 	{Name: Billing, Protocol: ProtocolJSON, PlainTCP: true, Timeout: 2 * time.Minute, MaxSend: 64 * kib, MaxReceive: 4 * mib, Concurrency: DefaultConcurrency},
 	{Name: Mailer, Protocol: ProtocolJSON, Timeout: 30 * time.Second, MaxSend: 2 * mib, MaxReceive: 64 * kib, Concurrency: DefaultConcurrency},
-	{Name: Media, Protocol: ProtocolProto, Streaming: true, PlainTCP: true, Timeout: 4 * time.Minute, MaxSend: 2 * mib, MaxReceive: 2 * mib, Concurrency: 2},
+	{Name: MediaImage, Protocol: ProtocolProto, Streaming: true, PlainTCP: true, Timeout: 4 * time.Minute, MaxSend: 2 * mib, MaxReceive: 2 * mib, Concurrency: 2},
+	{Name: MediaVideo, Protocol: ProtocolProto, Streaming: true, PlainTCP: true, Timeout: 4 * time.Minute, MaxSend: 2 * mib, MaxReceive: 2 * mib, Concurrency: 2},
+	{Name: MediaAudio, Protocol: ProtocolProto, Streaming: true, PlainTCP: true, Timeout: 4 * time.Minute, MaxSend: 2 * mib, MaxReceive: 2 * mib, Concurrency: 2},
 	{Name: KeyManager, Protocol: ProtocolJSON, InRequests: true, Timeout: 5 * time.Second, MaxSend: 128 * kib, MaxReceive: 128 * kib, Concurrency: DefaultConcurrency},
 	{Name: InboundStatus, Protocol: ProtocolJSON, Timeout: 3 * time.Second, MaxSend: mib, MaxReceive: 64 * kib, Concurrency: DefaultConcurrency},
 	{Name: InboundFollow, Protocol: ProtocolJSON, PlainTCP: true, Timeout: 3 * time.Second, MaxSend: mib, MaxReceive: 64 * kib, Concurrency: DefaultConcurrency},

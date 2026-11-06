@@ -77,7 +77,7 @@ func TestLoadValid(t *testing.T) {
 			env:  minimal(),
 			want: Config{
 				Host: "social.example.org", AccountDomain: "social.example.org", SourceURL: DefaultSourceURL, WebOrigin: "https://social.example.org", Role: RoleAll, Listen: ":8080", MaintenanceRetryAfter: 10 * time.Minute,
-				DB: "sqlite", DatabaseURL: "file:my.db", Queue: "db", Blob: "fs", Media: "native", KV: "db", ValkeyKeyPrefix: "my:", Stream: "hub",
+				DB: "sqlite", DatabaseURL: "file:my.db", Queue: "db", Blob: "fs", MediaImage: "native", MediaVideo: "native", MediaAudio: "native", KV: "db", ValkeyKeyPrefix: "my:", Stream: "hub",
 				BlobFSDir: "blobs", MediaMaxImageBytes: 16 << 20, MediaMaxImageSide: 8192, MediaMaxImagePixels: 7680 * 4320, MediaUnattachedTTL: 24 * time.Hour, MediaReplacedRetention: 720 * time.Hour,
 				MediaMaxAVBytes: 100 << 20, MediaMaxVideoDuration: 5 * time.Minute, MediaMaxAudioDuration: 10 * time.Minute, CustomEmojiMaxBytes: 256 << 10, RemoteCustomEmojiMaxBytes: 1 << 20, RelayIngestHourlyLimit: 1000, BillingAWSMaxRequestsPerDay: 4, BillingAWSMaxRequestsPerMonth: 120, BillingAWSMetric: "NetUnblendedCost", BillingAWSFilter: "none", BillingGCPMethod: "bigquery", BillingGCPMaxBytesBilled: 1 << 30, PaymentsProvider: "none", PaymentsReconcileInterval: 6 * time.Hour, PaymentsReconcileMaxRequests: 1000, Search: "none", Voice: "off", VoiceP2PMaxParticipants: 10, VoiceMaxParticipants: 10, VoiceMaxRoomDuration: 4 * time.Hour, VoiceMaxOpenRooms: 10, VoiceTURN: "none", VoiceTURNCredentialTTL: 6 * time.Hour, VoiceICETransportPolicy: "all", DeadJobRetention: 30 * 24 * time.Hour, JobAttemptRetention: 30 * 24 * time.Hour, DynamicClientUnredeemedTTL: 24 * time.Hour, DynamicClientIdleTTL: 90 * 24 * time.Hour,
 				KeyManager: "local", KEK: kek, DEKCacheTTL: 10 * time.Minute, DEKCacheEntries: 1024, Mail: "none", SMTPPort: 587, Captcha: "none", Profile: "production", TrustedProxyHeader: "x-forwarded-for",
@@ -100,7 +100,7 @@ listen = "127.0.0.1:9000"
 `},
 			want: Config{
 				Host: "social.example.org", AccountDomain: "example.org", SourceURL: "https://git.example.org/fork/my", WebOrigin: "http://localhost:5173", Role: RoleWeb, Listen: "127.0.0.1:9000", MaintenanceRetryAfter: 10 * time.Minute,
-				DB: "postgres", DatabaseURL: "file:my.db", DatabaseAcquireTimeout: DefaultDatabaseAcquireTimeout, Queue: "cloudtasks", QueueCloudTasksQueue: "projects/p/locations/asia-northeast1/queues/my-jobs", QueueCloudTasksServiceAccount: "tasks@p.iam.gserviceaccount.com", QueueCloudTasksURL: "https://social.example.org", QueueCloudTasksDispatchDeadline: DefaultCloudTasksDispatchDeadline, Blob: "fs", Media: "native", KV: "db", ValkeyKeyPrefix: "my:", Stream: "hub",
+				DB: "postgres", DatabaseURL: "file:my.db", DatabaseAcquireTimeout: DefaultDatabaseAcquireTimeout, Queue: "cloudtasks", QueueCloudTasksQueue: "projects/p/locations/asia-northeast1/queues/my-jobs", QueueCloudTasksServiceAccount: "tasks@p.iam.gserviceaccount.com", QueueCloudTasksURL: "https://social.example.org", QueueCloudTasksDispatchDeadline: DefaultCloudTasksDispatchDeadline, Blob: "fs", MediaImage: "native", MediaVideo: "native", MediaAudio: "native", KV: "db", ValkeyKeyPrefix: "my:", Stream: "hub",
 				BlobFSDir: "blobs", MediaMaxImageBytes: 16 << 20, MediaMaxImageSide: 8192, MediaMaxImagePixels: 7680 * 4320, MediaUnattachedTTL: 24 * time.Hour, MediaReplacedRetention: 720 * time.Hour,
 				MediaMaxAVBytes: 100 << 20, MediaMaxVideoDuration: 5 * time.Minute, MediaMaxAudioDuration: 10 * time.Minute, CustomEmojiMaxBytes: 256 << 10, RemoteCustomEmojiMaxBytes: 1 << 20, RelayIngestHourlyLimit: 1000, BillingAWSMaxRequestsPerDay: 4, BillingAWSMaxRequestsPerMonth: 120, BillingAWSMetric: "NetUnblendedCost", BillingAWSFilter: "none", BillingGCPMethod: "bigquery", BillingGCPMaxBytesBilled: 1 << 30, PaymentsProvider: "none", PaymentsReconcileInterval: 6 * time.Hour, PaymentsReconcileMaxRequests: 1000, Search: "none", Voice: "off", VoiceP2PMaxParticipants: 10, VoiceMaxParticipants: 10, VoiceMaxRoomDuration: 4 * time.Hour, VoiceMaxOpenRooms: 10, VoiceTURN: "none", VoiceTURNCredentialTTL: 6 * time.Hour, VoiceICETransportPolicy: "all", DeadJobRetention: 30 * 24 * time.Hour, JobAttemptRetention: 30 * 24 * time.Hour, DynamicClientUnredeemedTTL: 24 * time.Hour, DynamicClientIdleTTL: 90 * 24 * time.Hour,
 				KeyManager: "local", KEK: kek, DEKCacheTTL: 10 * time.Minute, DEKCacheEntries: 1024, Mail: "none", SMTPPort: 587, Captcha: "none", Profile: "production", TrustedProxyHeader: "x-forwarded-for",
@@ -115,7 +115,7 @@ listen = "127.0.0.1:9000"
 			files: map[string]string{"/mnt/db-url": "postgres://db/my\n", "/mnt/kek": testKEK + "\n"},
 			want: Config{
 				Host: "social.example.org", AccountDomain: "social.example.org", SourceURL: DefaultSourceURL, WebOrigin: "https://social.example.org", Role: RoleAll, Listen: ":8080", MaintenanceRetryAfter: 10 * time.Minute,
-				DB: "sqlite", DatabaseURL: "postgres://db/my", Queue: "db", Blob: "fs", Media: "native", KV: "db", ValkeyKeyPrefix: "my:", Stream: "hub",
+				DB: "sqlite", DatabaseURL: "postgres://db/my", Queue: "db", Blob: "fs", MediaImage: "native", MediaVideo: "native", MediaAudio: "native", KV: "db", ValkeyKeyPrefix: "my:", Stream: "hub",
 				BlobFSDir: "blobs", MediaMaxImageBytes: 16 << 20, MediaMaxImageSide: 8192, MediaMaxImagePixels: 7680 * 4320, MediaUnattachedTTL: 24 * time.Hour, MediaReplacedRetention: 720 * time.Hour,
 				MediaMaxAVBytes: 100 << 20, MediaMaxVideoDuration: 5 * time.Minute, MediaMaxAudioDuration: 10 * time.Minute, CustomEmojiMaxBytes: 256 << 10, RemoteCustomEmojiMaxBytes: 1 << 20, RelayIngestHourlyLimit: 1000, BillingAWSMaxRequestsPerDay: 4, BillingAWSMaxRequestsPerMonth: 120, BillingAWSMetric: "NetUnblendedCost", BillingAWSFilter: "none", BillingGCPMethod: "bigquery", BillingGCPMaxBytesBilled: 1 << 30, PaymentsProvider: "none", PaymentsReconcileInterval: 6 * time.Hour, PaymentsReconcileMaxRequests: 1000, Search: "none", Voice: "off", VoiceP2PMaxParticipants: 10, VoiceMaxParticipants: 10, VoiceMaxRoomDuration: 4 * time.Hour, VoiceMaxOpenRooms: 10, VoiceTURN: "none", VoiceTURNCredentialTTL: 6 * time.Hour, VoiceICETransportPolicy: "all", DeadJobRetention: 30 * 24 * time.Hour, JobAttemptRetention: 30 * 24 * time.Hour, DynamicClientUnredeemedTTL: 24 * time.Hour, DynamicClientIdleTTL: 90 * 24 * time.Hour,
 				KeyManager: "local", KEK: kek, DEKCacheTTL: 10 * time.Minute, DEKCacheEntries: 1024, Mail: "none", SMTPPort: 587, Captcha: "none", Profile: "production", TrustedProxyHeader: "x-forwarded-for",
@@ -129,7 +129,7 @@ listen = "127.0.0.1:9000"
 			env:  with(minimal(), "MY_KEK_PREVIOUS", testKEK1+", "+testKEK2),
 			want: Config{
 				Host: "social.example.org", AccountDomain: "social.example.org", SourceURL: DefaultSourceURL, WebOrigin: "https://social.example.org", Role: RoleAll, Listen: ":8080", MaintenanceRetryAfter: 10 * time.Minute,
-				DB: "sqlite", DatabaseURL: "file:my.db", Queue: "db", Blob: "fs", Media: "native", KV: "db", ValkeyKeyPrefix: "my:", Stream: "hub",
+				DB: "sqlite", DatabaseURL: "file:my.db", Queue: "db", Blob: "fs", MediaImage: "native", MediaVideo: "native", MediaAudio: "native", KV: "db", ValkeyKeyPrefix: "my:", Stream: "hub",
 				BlobFSDir: "blobs", MediaMaxImageBytes: 16 << 20, MediaMaxImageSide: 8192, MediaMaxImagePixels: 7680 * 4320, MediaUnattachedTTL: 24 * time.Hour, MediaReplacedRetention: 720 * time.Hour,
 				MediaMaxAVBytes: 100 << 20, MediaMaxVideoDuration: 5 * time.Minute, MediaMaxAudioDuration: 10 * time.Minute, CustomEmojiMaxBytes: 256 << 10, RemoteCustomEmojiMaxBytes: 1 << 20, RelayIngestHourlyLimit: 1000, BillingAWSMaxRequestsPerDay: 4, BillingAWSMaxRequestsPerMonth: 120, BillingAWSMetric: "NetUnblendedCost", BillingAWSFilter: "none", BillingGCPMethod: "bigquery", BillingGCPMaxBytesBilled: 1 << 30, PaymentsProvider: "none", PaymentsReconcileInterval: 6 * time.Hour, PaymentsReconcileMaxRequests: 1000, Search: "none", Voice: "off", VoiceP2PMaxParticipants: 10, VoiceMaxParticipants: 10, VoiceMaxRoomDuration: 4 * time.Hour, VoiceMaxOpenRooms: 10, VoiceTURN: "none", VoiceTURNCredentialTTL: 6 * time.Hour, VoiceICETransportPolicy: "all", DeadJobRetention: 30 * 24 * time.Hour, JobAttemptRetention: 30 * 24 * time.Hour, DynamicClientUnredeemedTTL: 24 * time.Hour, DynamicClientIdleTTL: 90 * 24 * time.Hour,
 				KeyManager: "local", KEK: kek, DEKCacheTTL: 10 * time.Minute, DEKCacheEntries: 1024, Mail: "none", SMTPPort: 587, Captcha: "none", Profile: "production", TrustedProxyHeader: "x-forwarded-for",
@@ -145,7 +145,7 @@ listen = "127.0.0.1:9000"
 				"MY_KEK", unset, "MY_KEK_PREVIOUS", testKEK1),
 			want: Config{
 				Host: "social.example.org", AccountDomain: "social.example.org", SourceURL: DefaultSourceURL, WebOrigin: "https://social.example.org", Role: RoleAll, Listen: ":8080", MaintenanceRetryAfter: 10 * time.Minute,
-				DB: "sqlite", DatabaseURL: "file:my.db", Queue: "db", Blob: "fs", Media: "native", KV: "db", ValkeyKeyPrefix: "my:", Stream: "hub",
+				DB: "sqlite", DatabaseURL: "file:my.db", Queue: "db", Blob: "fs", MediaImage: "native", MediaVideo: "native", MediaAudio: "native", KV: "db", ValkeyKeyPrefix: "my:", Stream: "hub",
 				BlobFSDir: "blobs", MediaMaxImageBytes: 16 << 20, MediaMaxImageSide: 8192, MediaMaxImagePixels: 7680 * 4320, MediaUnattachedTTL: 24 * time.Hour, MediaReplacedRetention: 720 * time.Hour,
 				MediaMaxAVBytes: 100 << 20, MediaMaxVideoDuration: 5 * time.Minute, MediaMaxAudioDuration: 10 * time.Minute, CustomEmojiMaxBytes: 256 << 10, RemoteCustomEmojiMaxBytes: 1 << 20, RelayIngestHourlyLimit: 1000, BillingAWSMaxRequestsPerDay: 4, BillingAWSMaxRequestsPerMonth: 120, BillingAWSMetric: "NetUnblendedCost", BillingAWSFilter: "none", BillingGCPMethod: "bigquery", BillingGCPMaxBytesBilled: 1 << 30, PaymentsProvider: "none", PaymentsReconcileInterval: 6 * time.Hour, PaymentsReconcileMaxRequests: 1000, Search: "none", Voice: "off", VoiceP2PMaxParticipants: 10, VoiceMaxParticipants: 10, VoiceMaxRoomDuration: 4 * time.Hour, VoiceMaxOpenRooms: 10, VoiceTURN: "none", VoiceTURNCredentialTTL: 6 * time.Hour, VoiceICETransportPolicy: "all", DeadJobRetention: 30 * 24 * time.Hour, JobAttemptRetention: 30 * 24 * time.Hour, DynamicClientUnredeemedTTL: 24 * time.Hour, DynamicClientIdleTTL: 90 * 24 * time.Hour,
 				KeyManager: "gcpkms", KMSKey: testGCPKMSKey + "-2", PreviousKMSKeys: []string{testGCPKMSKey}, DEKCacheTTL: 10 * time.Minute, DEKCacheEntries: 1024, Mail: "none", SMTPPort: 587, Captcha: "none", Profile: "production", TrustedProxyHeader: "x-forwarded-for",
@@ -161,7 +161,7 @@ listen = "127.0.0.1:9000"
 				"MY_KEK", unset, "MY_KEK_PREVIOUS", testKEK1),
 			want: Config{
 				Host: "social.example.org", AccountDomain: "social.example.org", SourceURL: DefaultSourceURL, WebOrigin: "https://social.example.org", Role: RoleAll, Listen: ":8080", MaintenanceRetryAfter: 10 * time.Minute,
-				DB: "sqlite", DatabaseURL: "file:my.db", Queue: "db", Blob: "fs", Media: "native", KV: "db", ValkeyKeyPrefix: "my:", Stream: "hub",
+				DB: "sqlite", DatabaseURL: "file:my.db", Queue: "db", Blob: "fs", MediaImage: "native", MediaVideo: "native", MediaAudio: "native", KV: "db", ValkeyKeyPrefix: "my:", Stream: "hub",
 				BlobFSDir: "blobs", MediaMaxImageBytes: 16 << 20, MediaMaxImageSide: 8192, MediaMaxImagePixels: 7680 * 4320, MediaUnattachedTTL: 24 * time.Hour, MediaReplacedRetention: 720 * time.Hour,
 				MediaMaxAVBytes: 100 << 20, MediaMaxVideoDuration: 5 * time.Minute, MediaMaxAudioDuration: 10 * time.Minute, CustomEmojiMaxBytes: 256 << 10, RemoteCustomEmojiMaxBytes: 1 << 20, RelayIngestHourlyLimit: 1000, BillingAWSMaxRequestsPerDay: 4, BillingAWSMaxRequestsPerMonth: 120, BillingAWSMetric: "NetUnblendedCost", BillingAWSFilter: "none", BillingGCPMethod: "bigquery", BillingGCPMaxBytesBilled: 1 << 30, PaymentsProvider: "none", PaymentsReconcileInterval: 6 * time.Hour, PaymentsReconcileMaxRequests: 1000, Search: "none", Voice: "off", VoiceP2PMaxParticipants: 10, VoiceMaxParticipants: 10, VoiceMaxRoomDuration: 4 * time.Hour, VoiceMaxOpenRooms: 10, VoiceTURN: "none", VoiceTURNCredentialTTL: 6 * time.Hour, VoiceICETransportPolicy: "all", DeadJobRetention: 30 * 24 * time.Hour, JobAttemptRetention: 30 * 24 * time.Hour, DynamicClientUnredeemedTTL: 24 * time.Hour, DynamicClientIdleTTL: 90 * 24 * time.Hour,
 				KeyManager: "awskms", KMSKey: "alias/my-kek", PreviousKMSKeys: []string{testAWSKMSKey}, DEKCacheTTL: 10 * time.Minute, DEKCacheEntries: 1024, Mail: "none", SMTPPort: 587, Captcha: "none", Profile: "production", TrustedProxyHeader: "x-forwarded-for",
@@ -177,7 +177,7 @@ listen = "127.0.0.1:9000"
 				"MY_MAIL_SMTP_PORT", "2525", "MY_MAIL_SMTP_USERNAME", "mailer", "MY_MAIL_SMTP_PASSWORD", "hunter3"),
 			want: Config{
 				Host: "social.example.org", AccountDomain: "social.example.org", SourceURL: DefaultSourceURL, WebOrigin: "https://social.example.org", Role: RoleAll, Listen: ":8080", MaintenanceRetryAfter: 10 * time.Minute,
-				DB: "sqlite", DatabaseURL: "file:my.db", Queue: "db", Blob: "fs", Media: "native", KV: "db", ValkeyKeyPrefix: "my:", Stream: "hub",
+				DB: "sqlite", DatabaseURL: "file:my.db", Queue: "db", Blob: "fs", MediaImage: "native", MediaVideo: "native", MediaAudio: "native", KV: "db", ValkeyKeyPrefix: "my:", Stream: "hub",
 				BlobFSDir: "blobs", MediaMaxImageBytes: 16 << 20, MediaMaxImageSide: 8192, MediaMaxImagePixels: 7680 * 4320, MediaUnattachedTTL: 24 * time.Hour, MediaReplacedRetention: 720 * time.Hour,
 				MediaMaxAVBytes: 100 << 20, MediaMaxVideoDuration: 5 * time.Minute, MediaMaxAudioDuration: 10 * time.Minute, CustomEmojiMaxBytes: 256 << 10, RemoteCustomEmojiMaxBytes: 1 << 20, RelayIngestHourlyLimit: 1000, BillingAWSMaxRequestsPerDay: 4, BillingAWSMaxRequestsPerMonth: 120, BillingAWSMetric: "NetUnblendedCost", BillingAWSFilter: "none", BillingGCPMethod: "bigquery", BillingGCPMaxBytesBilled: 1 << 30, PaymentsProvider: "none", PaymentsReconcileInterval: 6 * time.Hour, PaymentsReconcileMaxRequests: 1000, Search: "none", Voice: "off", VoiceP2PMaxParticipants: 10, VoiceMaxParticipants: 10, VoiceMaxRoomDuration: 4 * time.Hour, VoiceMaxOpenRooms: 10, VoiceTURN: "none", VoiceTURNCredentialTTL: 6 * time.Hour, VoiceICETransportPolicy: "all", DeadJobRetention: 30 * 24 * time.Hour, JobAttemptRetention: 30 * 24 * time.Hour, DynamicClientUnredeemedTTL: 24 * time.Hour, DynamicClientIdleTTL: 90 * 24 * time.Hour,
 				KeyManager: "local", KEK: kek, DEKCacheTTL: 10 * time.Minute, DEKCacheEntries: 1024, Mail: "smtp", MailFrom: "noreply@social.example.org", SMTPHost: "smtp.example.org",
@@ -193,7 +193,7 @@ listen = "127.0.0.1:9000"
 			files: map[string]string{"/mnt/captcha": "0x4AAA-secret\n"},
 			want: Config{
 				Host: "social.example.org", AccountDomain: "social.example.org", SourceURL: DefaultSourceURL, WebOrigin: "https://social.example.org", Role: RoleAll, Listen: ":8080", MaintenanceRetryAfter: 10 * time.Minute,
-				DB: "sqlite", DatabaseURL: "file:my.db", Queue: "db", Blob: "fs", Media: "native", KV: "db", ValkeyKeyPrefix: "my:", Stream: "hub",
+				DB: "sqlite", DatabaseURL: "file:my.db", Queue: "db", Blob: "fs", MediaImage: "native", MediaVideo: "native", MediaAudio: "native", KV: "db", ValkeyKeyPrefix: "my:", Stream: "hub",
 				BlobFSDir: "blobs", MediaMaxImageBytes: 16 << 20, MediaMaxImageSide: 8192, MediaMaxImagePixels: 7680 * 4320, MediaUnattachedTTL: 24 * time.Hour, MediaReplacedRetention: 720 * time.Hour,
 				MediaMaxAVBytes: 100 << 20, MediaMaxVideoDuration: 5 * time.Minute, MediaMaxAudioDuration: 10 * time.Minute, CustomEmojiMaxBytes: 256 << 10, RemoteCustomEmojiMaxBytes: 1 << 20, RelayIngestHourlyLimit: 1000, BillingAWSMaxRequestsPerDay: 4, BillingAWSMaxRequestsPerMonth: 120, BillingAWSMetric: "NetUnblendedCost", BillingAWSFilter: "none", BillingGCPMethod: "bigquery", BillingGCPMaxBytesBilled: 1 << 30, PaymentsProvider: "none", PaymentsReconcileInterval: 6 * time.Hour, PaymentsReconcileMaxRequests: 1000, Search: "none", Voice: "off", VoiceP2PMaxParticipants: 10, VoiceMaxParticipants: 10, VoiceMaxRoomDuration: 4 * time.Hour, VoiceMaxOpenRooms: 10, VoiceTURN: "none", VoiceTURNCredentialTTL: 6 * time.Hour, VoiceICETransportPolicy: "all", DeadJobRetention: 30 * 24 * time.Hour, JobAttemptRetention: 30 * 24 * time.Hour, DynamicClientUnredeemedTTL: 24 * time.Hour, DynamicClientIdleTTL: 90 * 24 * time.Hour,
 				KeyManager: "local", KEK: kek, DEKCacheTTL: 10 * time.Minute, DEKCacheEntries: 1024, Mail: "none", SMTPPort: 587,
@@ -208,7 +208,7 @@ listen = "127.0.0.1:9000"
 			env:  with(minimal(), "MY_HOST", "localhost:3000"),
 			want: Config{
 				Host: "localhost:3000", AccountDomain: "localhost:3000", SourceURL: DefaultSourceURL, WebOrigin: "https://localhost:3000", Role: RoleAll, Listen: ":8080", MaintenanceRetryAfter: 10 * time.Minute,
-				DB: "sqlite", DatabaseURL: "file:my.db", Queue: "db", Blob: "fs", Media: "native", KV: "db", ValkeyKeyPrefix: "my:", Stream: "hub",
+				DB: "sqlite", DatabaseURL: "file:my.db", Queue: "db", Blob: "fs", MediaImage: "native", MediaVideo: "native", MediaAudio: "native", KV: "db", ValkeyKeyPrefix: "my:", Stream: "hub",
 				BlobFSDir: "blobs", MediaMaxImageBytes: 16 << 20, MediaMaxImageSide: 8192, MediaMaxImagePixels: 7680 * 4320, MediaUnattachedTTL: 24 * time.Hour, MediaReplacedRetention: 720 * time.Hour,
 				MediaMaxAVBytes: 100 << 20, MediaMaxVideoDuration: 5 * time.Minute, MediaMaxAudioDuration: 10 * time.Minute, CustomEmojiMaxBytes: 256 << 10, RemoteCustomEmojiMaxBytes: 1 << 20, RelayIngestHourlyLimit: 1000, BillingAWSMaxRequestsPerDay: 4, BillingAWSMaxRequestsPerMonth: 120, BillingAWSMetric: "NetUnblendedCost", BillingAWSFilter: "none", BillingGCPMethod: "bigquery", BillingGCPMaxBytesBilled: 1 << 30, PaymentsProvider: "none", PaymentsReconcileInterval: 6 * time.Hour, PaymentsReconcileMaxRequests: 1000, Search: "none", Voice: "off", VoiceP2PMaxParticipants: 10, VoiceMaxParticipants: 10, VoiceMaxRoomDuration: 4 * time.Hour, VoiceMaxOpenRooms: 10, VoiceTURN: "none", VoiceTURNCredentialTTL: 6 * time.Hour, VoiceICETransportPolicy: "all", DeadJobRetention: 30 * 24 * time.Hour, JobAttemptRetention: 30 * 24 * time.Hour, DynamicClientUnredeemedTTL: 24 * time.Hour, DynamicClientIdleTTL: 90 * 24 * time.Hour,
 				KeyManager: "local", KEK: kek, DEKCacheTTL: 10 * time.Minute, DEKCacheEntries: 1024, Mail: "none", SMTPPort: 587, Captcha: "none", Profile: "production", TrustedProxyHeader: "x-forwarded-for",
@@ -223,7 +223,7 @@ listen = "127.0.0.1:9000"
 				"MY_TRUSTED_PROXY_HEADER", "forwarded"),
 			want: Config{
 				Host: "social.example.org", AccountDomain: "social.example.org", SourceURL: DefaultSourceURL, WebOrigin: "https://social.example.org", Role: RoleAll, Listen: ":8080", MaintenanceRetryAfter: 10 * time.Minute,
-				DB: "sqlite", DatabaseURL: "file:my.db", Queue: "db", Blob: "fs", Media: "native", KV: "db", ValkeyKeyPrefix: "my:", Stream: "hub",
+				DB: "sqlite", DatabaseURL: "file:my.db", Queue: "db", Blob: "fs", MediaImage: "native", MediaVideo: "native", MediaAudio: "native", KV: "db", ValkeyKeyPrefix: "my:", Stream: "hub",
 				BlobFSDir: "blobs", MediaMaxImageBytes: 16 << 20, MediaMaxImageSide: 8192, MediaMaxImagePixels: 7680 * 4320, MediaUnattachedTTL: 24 * time.Hour, MediaReplacedRetention: 720 * time.Hour,
 				MediaMaxAVBytes: 100 << 20, MediaMaxVideoDuration: 5 * time.Minute, MediaMaxAudioDuration: 10 * time.Minute, CustomEmojiMaxBytes: 256 << 10, RemoteCustomEmojiMaxBytes: 1 << 20, RelayIngestHourlyLimit: 1000, BillingAWSMaxRequestsPerDay: 4, BillingAWSMaxRequestsPerMonth: 120, BillingAWSMetric: "NetUnblendedCost", BillingAWSFilter: "none", BillingGCPMethod: "bigquery", BillingGCPMaxBytesBilled: 1 << 30, PaymentsProvider: "none", PaymentsReconcileInterval: 6 * time.Hour, PaymentsReconcileMaxRequests: 1000, Search: "none", Voice: "off", VoiceP2PMaxParticipants: 10, VoiceMaxParticipants: 10, VoiceMaxRoomDuration: 4 * time.Hour, VoiceMaxOpenRooms: 10, VoiceTURN: "none", VoiceTURNCredentialTTL: 6 * time.Hour, VoiceICETransportPolicy: "all", DeadJobRetention: 30 * 24 * time.Hour, JobAttemptRetention: 30 * 24 * time.Hour, DynamicClientUnredeemedTTL: 24 * time.Hour, DynamicClientIdleTTL: 90 * 24 * time.Hour,
 				KeyManager: "local", KEK: kek, DEKCacheTTL: 10 * time.Minute, DEKCacheEntries: 1024, Mail: "none", SMTPPort: 587, Captcha: "none", Profile: "production",
@@ -243,7 +243,7 @@ listen = "127.0.0.1:9000"
 				"MY_LOGIN_PROVIDER_ALLOWED_DESTINATIONS", "keycloak.internal, 172.16.0.0/12"),
 			want: Config{
 				Host: "social.example.org", AccountDomain: "social.example.org", SourceURL: DefaultSourceURL, WebOrigin: "https://social.example.org", Role: RoleAll, Listen: ":8080", MaintenanceRetryAfter: 10 * time.Minute,
-				DB: "sqlite", DatabaseURL: "file:my.db", Queue: "db", Blob: "fs", Media: "native", KV: "db", ValkeyKeyPrefix: "my:", Stream: "hub",
+				DB: "sqlite", DatabaseURL: "file:my.db", Queue: "db", Blob: "fs", MediaImage: "native", MediaVideo: "native", MediaAudio: "native", KV: "db", ValkeyKeyPrefix: "my:", Stream: "hub",
 				BlobFSDir: "blobs", MediaMaxImageBytes: 16 << 20, MediaMaxImageSide: 8192, MediaMaxImagePixels: 7680 * 4320, MediaUnattachedTTL: 24 * time.Hour, MediaReplacedRetention: 720 * time.Hour,
 				MediaMaxAVBytes: 100 << 20, MediaMaxVideoDuration: 5 * time.Minute, MediaMaxAudioDuration: 10 * time.Minute, CustomEmojiMaxBytes: 256 << 10, RemoteCustomEmojiMaxBytes: 1 << 20, RelayIngestHourlyLimit: 1000, BillingAWSMaxRequestsPerDay: 4, BillingAWSMaxRequestsPerMonth: 120, BillingAWSMetric: "NetUnblendedCost", BillingAWSFilter: "none", BillingGCPMethod: "bigquery", BillingGCPMaxBytesBilled: 1 << 30, PaymentsProvider: "none", PaymentsReconcileInterval: 6 * time.Hour, PaymentsReconcileMaxRequests: 1000, Search: "none", Voice: "off", VoiceP2PMaxParticipants: 10, VoiceMaxParticipants: 10, VoiceMaxRoomDuration: 4 * time.Hour, VoiceMaxOpenRooms: 10, VoiceTURN: "none", VoiceTURNCredentialTTL: 6 * time.Hour, VoiceICETransportPolicy: "all", DeadJobRetention: 30 * 24 * time.Hour, JobAttemptRetention: 30 * 24 * time.Hour, DynamicClientUnredeemedTTL: 24 * time.Hour, DynamicClientIdleTTL: 90 * 24 * time.Hour,
 				KeyManager: "local", KEK: kek, DEKCacheTTL: 10 * time.Minute, DEKCacheEntries: 1024, Mail: "none", SMTPPort: 587, Captcha: "none", Profile: "production", TrustedProxyHeader: "x-forwarded-for",
@@ -261,7 +261,7 @@ listen = "127.0.0.1:9000"
 			env:  with(minimal(), "MY_PROFILE", "development", "MY_PUSH_ALLOWED_DESTINATIONS", "localhost, 127.0.0.0/8"),
 			want: Config{
 				Host: "social.example.org", AccountDomain: "social.example.org", SourceURL: DefaultSourceURL, WebOrigin: "https://social.example.org", Role: RoleAll, Listen: ":8080", MaintenanceRetryAfter: 10 * time.Minute,
-				DB: "sqlite", DatabaseURL: "file:my.db", Queue: "db", Blob: "fs", Media: "native", KV: "db", ValkeyKeyPrefix: "my:", Stream: "hub",
+				DB: "sqlite", DatabaseURL: "file:my.db", Queue: "db", Blob: "fs", MediaImage: "native", MediaVideo: "native", MediaAudio: "native", KV: "db", ValkeyKeyPrefix: "my:", Stream: "hub",
 				BlobFSDir: "blobs", MediaMaxImageBytes: 16 << 20, MediaMaxImageSide: 8192, MediaMaxImagePixels: 7680 * 4320, MediaUnattachedTTL: 24 * time.Hour, MediaReplacedRetention: 720 * time.Hour,
 				MediaMaxAVBytes: 100 << 20, MediaMaxVideoDuration: 5 * time.Minute, MediaMaxAudioDuration: 10 * time.Minute, CustomEmojiMaxBytes: 256 << 10, RemoteCustomEmojiMaxBytes: 1 << 20, RelayIngestHourlyLimit: 1000, BillingAWSMaxRequestsPerDay: 4, BillingAWSMaxRequestsPerMonth: 120, BillingAWSMetric: "NetUnblendedCost", BillingAWSFilter: "none", BillingGCPMethod: "bigquery", BillingGCPMaxBytesBilled: 1 << 30, PaymentsProvider: "none", PaymentsReconcileInterval: 6 * time.Hour, PaymentsReconcileMaxRequests: 1000, Search: "none", Voice: "off", VoiceP2PMaxParticipants: 10, VoiceMaxParticipants: 10, VoiceMaxRoomDuration: 4 * time.Hour, VoiceMaxOpenRooms: 10, VoiceTURN: "none", VoiceTURNCredentialTTL: 6 * time.Hour, VoiceICETransportPolicy: "all", DeadJobRetention: 30 * 24 * time.Hour, JobAttemptRetention: 30 * 24 * time.Hour, DynamicClientUnredeemedTTL: 24 * time.Hour, DynamicClientIdleTTL: 90 * 24 * time.Hour,
 				KeyManager: "local", KEK: kek, DEKCacheTTL: 10 * time.Minute, DEKCacheEntries: 1024, Mail: "none", SMTPPort: 587, Captcha: "none", Profile: "development", TrustedProxyHeader: "x-forwarded-for",
@@ -281,7 +281,7 @@ listen = "127.0.0.1:9000"
 				"MY_BILLING_GCP_LABEL", "app=my", "MY_BILLING_GCP_MAX_BYTES_BILLED", "5368709120"),
 			want: Config{
 				Host: "social.example.org", AccountDomain: "social.example.org", SourceURL: DefaultSourceURL, WebOrigin: "https://social.example.org", Role: RoleAll, Listen: ":8080", MaintenanceRetryAfter: 10 * time.Minute,
-				DB: "sqlite", DatabaseURL: "file:my.db", Queue: "db", Blob: "fs", Media: "native", KV: "db", ValkeyKeyPrefix: "my:", Stream: "hub",
+				DB: "sqlite", DatabaseURL: "file:my.db", Queue: "db", Blob: "fs", MediaImage: "native", MediaVideo: "native", MediaAudio: "native", KV: "db", ValkeyKeyPrefix: "my:", Stream: "hub",
 				BlobFSDir: "blobs", MediaMaxImageBytes: 16 << 20, MediaMaxImageSide: 8192, MediaMaxImagePixels: 7680 * 4320, MediaUnattachedTTL: 24 * time.Hour, MediaReplacedRetention: 720 * time.Hour,
 				MediaMaxAVBytes: 100 << 20, MediaMaxVideoDuration: 5 * time.Minute, MediaMaxAudioDuration: 10 * time.Minute, CustomEmojiMaxBytes: 256 << 10, RemoteCustomEmojiMaxBytes: 1 << 20, RelayIngestHourlyLimit: 1000, PaymentsProvider: "none", PaymentsReconcileInterval: 6 * time.Hour, PaymentsReconcileMaxRequests: 1000, Search: "none", Voice: "off", VoiceP2PMaxParticipants: 10, VoiceMaxParticipants: 10, VoiceMaxRoomDuration: 4 * time.Hour, VoiceMaxOpenRooms: 10, VoiceTURN: "none", VoiceTURNCredentialTTL: 6 * time.Hour, VoiceICETransportPolicy: "all", DeadJobRetention: 30 * 24 * time.Hour, JobAttemptRetention: 30 * 24 * time.Hour, DynamicClientUnredeemedTTL: 24 * time.Hour, DynamicClientIdleTTL: 90 * 24 * time.Hour,
 				BillingSources: []string{"gcp", "aws"}, BillingAWSMaxRequestsPerDay: 2, BillingAWSMaxRequestsPerMonth: 40, BillingAWSMetric: "NetUnblendedCost", BillingAWSFilter: "none",
@@ -301,7 +301,7 @@ listen = "127.0.0.1:9000"
 				"MY_BILLING_AWS_TAG", "app = my", "MY_BILLING_AWS_ROLE_ARN", "arn:aws:iam::123456789012:role/my-billing"),
 			want: Config{
 				Host: "social.example.org", AccountDomain: "social.example.org", SourceURL: DefaultSourceURL, WebOrigin: "https://social.example.org", Role: RoleAll, Listen: ":8080", MaintenanceRetryAfter: 10 * time.Minute,
-				DB: "sqlite", DatabaseURL: "file:my.db", Queue: "db", Blob: "fs", Media: "native", KV: "db", ValkeyKeyPrefix: "my:", Stream: "hub",
+				DB: "sqlite", DatabaseURL: "file:my.db", Queue: "db", Blob: "fs", MediaImage: "native", MediaVideo: "native", MediaAudio: "native", KV: "db", ValkeyKeyPrefix: "my:", Stream: "hub",
 				BlobFSDir: "blobs", MediaMaxImageBytes: 16 << 20, MediaMaxImageSide: 8192, MediaMaxImagePixels: 7680 * 4320, MediaUnattachedTTL: 24 * time.Hour, MediaReplacedRetention: 720 * time.Hour,
 				MediaMaxAVBytes: 100 << 20, MediaMaxVideoDuration: 5 * time.Minute, MediaMaxAudioDuration: 10 * time.Minute, CustomEmojiMaxBytes: 256 << 10, RemoteCustomEmojiMaxBytes: 1 << 20, RelayIngestHourlyLimit: 1000, PaymentsProvider: "none", PaymentsReconcileInterval: 6 * time.Hour, PaymentsReconcileMaxRequests: 1000, Search: "none", Voice: "off", VoiceP2PMaxParticipants: 10, VoiceMaxParticipants: 10, VoiceMaxRoomDuration: 4 * time.Hour, VoiceMaxOpenRooms: 10, VoiceTURN: "none", VoiceTURNCredentialTTL: 6 * time.Hour, VoiceICETransportPolicy: "all", DeadJobRetention: 30 * 24 * time.Hour, JobAttemptRetention: 30 * 24 * time.Hour, DynamicClientUnredeemedTTL: 24 * time.Hour, DynamicClientIdleTTL: 90 * 24 * time.Hour,
 				BillingSources: []string{"aws"}, BillingAWSMaxRequestsPerDay: 4, BillingAWSMaxRequestsPerMonth: 120, BillingAWSMetric: "UnblendedCost",
@@ -319,7 +319,7 @@ listen = "127.0.0.1:9000"
 				"MY_BILLING_GCP_BUDGET_SUBSCRIPTION", " projects/my-billing/subscriptions/my-billing-budget "),
 			want: Config{
 				Host: "social.example.org", AccountDomain: "social.example.org", SourceURL: DefaultSourceURL, WebOrigin: "https://social.example.org", Role: RoleAll, Listen: ":8080", MaintenanceRetryAfter: 10 * time.Minute,
-				DB: "sqlite", DatabaseURL: "file:my.db", Queue: "db", Blob: "fs", Media: "native", KV: "db", ValkeyKeyPrefix: "my:", Stream: "hub",
+				DB: "sqlite", DatabaseURL: "file:my.db", Queue: "db", Blob: "fs", MediaImage: "native", MediaVideo: "native", MediaAudio: "native", KV: "db", ValkeyKeyPrefix: "my:", Stream: "hub",
 				BlobFSDir: "blobs", MediaMaxImageBytes: 16 << 20, MediaMaxImageSide: 8192, MediaMaxImagePixels: 7680 * 4320, MediaUnattachedTTL: 24 * time.Hour, MediaReplacedRetention: 720 * time.Hour,
 				MediaMaxAVBytes: 100 << 20, MediaMaxVideoDuration: 5 * time.Minute, MediaMaxAudioDuration: 10 * time.Minute, CustomEmojiMaxBytes: 256 << 10, RemoteCustomEmojiMaxBytes: 1 << 20, RelayIngestHourlyLimit: 1000, PaymentsProvider: "none", PaymentsReconcileInterval: 6 * time.Hour, PaymentsReconcileMaxRequests: 1000, Search: "none", Voice: "off", VoiceP2PMaxParticipants: 10, VoiceMaxParticipants: 10, VoiceMaxRoomDuration: 4 * time.Hour, VoiceMaxOpenRooms: 10, VoiceTURN: "none", VoiceTURNCredentialTTL: 6 * time.Hour, VoiceICETransportPolicy: "all", DeadJobRetention: 30 * 24 * time.Hour, JobAttemptRetention: 30 * 24 * time.Hour, DynamicClientUnredeemedTTL: 24 * time.Hour, DynamicClientIdleTTL: 90 * 24 * time.Hour,
 				BillingSources: []string{"gcp"}, BillingAWSMaxRequestsPerDay: 4, BillingAWSMaxRequestsPerMonth: 120, BillingAWSMetric: "NetUnblendedCost", BillingAWSFilter: "none",
@@ -336,7 +336,7 @@ listen = "127.0.0.1:9000"
 				"MY_STREAM_SNS_TOPIC_ARN", "arn:aws:sns:us-east-1:123456789012:my-stream", "MY_STREAM_SNS_QUEUE_PREFIX", "my-stream"),
 			want: Config{
 				Host: "social.example.org", AccountDomain: "social.example.org", SourceURL: DefaultSourceURL, WebOrigin: "https://social.example.org", Role: RoleWeb, Listen: ":8080", MaintenanceRetryAfter: 10 * time.Minute,
-				DB: "sqlite", DatabaseURL: "file:my.db", Queue: "db", Blob: "fs", Media: "native", KV: "db", ValkeyKeyPrefix: "my:",
+				DB: "sqlite", DatabaseURL: "file:my.db", Queue: "db", Blob: "fs", MediaImage: "native", MediaVideo: "native", MediaAudio: "native", KV: "db", ValkeyKeyPrefix: "my:",
 				Stream: "sns", StreamSNSTopicARN: "arn:aws:sns:us-east-1:123456789012:my-stream", StreamSQSQueuePrefix: "my-stream",
 				BlobFSDir: "blobs", MediaMaxImageBytes: 16 << 20, MediaMaxImageSide: 8192, MediaMaxImagePixels: 7680 * 4320, MediaUnattachedTTL: 24 * time.Hour, MediaReplacedRetention: 720 * time.Hour,
 				MediaMaxAVBytes: 100 << 20, MediaMaxVideoDuration: 5 * time.Minute, MediaMaxAudioDuration: 10 * time.Minute, CustomEmojiMaxBytes: 256 << 10, RemoteCustomEmojiMaxBytes: 1 << 20, RelayIngestHourlyLimit: 1000, BillingAWSMaxRequestsPerDay: 4, BillingAWSMaxRequestsPerMonth: 120, BillingAWSMetric: "NetUnblendedCost", BillingAWSFilter: "none", BillingGCPMethod: "bigquery", BillingGCPMaxBytesBilled: 1 << 30, PaymentsProvider: "none", PaymentsReconcileInterval: 6 * time.Hour, PaymentsReconcileMaxRequests: 1000, Search: "none", Voice: "off", VoiceP2PMaxParticipants: 10, VoiceMaxParticipants: 10, VoiceMaxRoomDuration: 4 * time.Hour, VoiceMaxOpenRooms: 10, VoiceTURN: "none", VoiceTURNCredentialTTL: 6 * time.Hour, VoiceICETransportPolicy: "all", DeadJobRetention: 30 * 24 * time.Hour, JobAttemptRetention: 30 * 24 * time.Hour, DynamicClientUnredeemedTTL: 24 * time.Hour, DynamicClientIdleTTL: 90 * 24 * time.Hour,
@@ -352,7 +352,7 @@ listen = "127.0.0.1:9000"
 				"MY_STREAM_PUBSUB_TOPIC", "projects/my-project/topics/my-stream", "MY_STREAM_PUBSUB_SUBSCRIPTION_PREFIX", "my-stream"),
 			want: Config{
 				Host: "social.example.org", AccountDomain: "social.example.org", SourceURL: DefaultSourceURL, WebOrigin: "https://social.example.org", Role: RoleWeb, Listen: ":8080", MaintenanceRetryAfter: 10 * time.Minute,
-				DB: "sqlite", DatabaseURL: "file:my.db", Queue: "db", Blob: "fs", Media: "native", KV: "db", ValkeyKeyPrefix: "my:",
+				DB: "sqlite", DatabaseURL: "file:my.db", Queue: "db", Blob: "fs", MediaImage: "native", MediaVideo: "native", MediaAudio: "native", KV: "db", ValkeyKeyPrefix: "my:",
 				Stream: "pubsub", StreamPubSubTopic: "projects/my-project/topics/my-stream", StreamPubSubSubscriptionPrefix: "my-stream",
 				BlobFSDir: "blobs", MediaMaxImageBytes: 16 << 20, MediaMaxImageSide: 8192, MediaMaxImagePixels: 7680 * 4320, MediaUnattachedTTL: 24 * time.Hour, MediaReplacedRetention: 720 * time.Hour,
 				MediaMaxAVBytes: 100 << 20, MediaMaxVideoDuration: 5 * time.Minute, MediaMaxAudioDuration: 10 * time.Minute, CustomEmojiMaxBytes: 256 << 10, RemoteCustomEmojiMaxBytes: 1 << 20, RelayIngestHourlyLimit: 1000, BillingAWSMaxRequestsPerDay: 4, BillingAWSMaxRequestsPerMonth: 120, BillingAWSMetric: "NetUnblendedCost", BillingAWSFilter: "none", BillingGCPMethod: "bigquery", BillingGCPMaxBytesBilled: 1 << 30, PaymentsProvider: "none", PaymentsReconcileInterval: 6 * time.Hour, PaymentsReconcileMaxRequests: 1000, Search: "none", Voice: "off", VoiceP2PMaxParticipants: 10, VoiceMaxParticipants: 10, VoiceMaxRoomDuration: 4 * time.Hour, VoiceMaxOpenRooms: 10, VoiceTURN: "none", VoiceTURNCredentialTTL: 6 * time.Hour, VoiceICETransportPolicy: "all", DeadJobRetention: 30 * 24 * time.Hour, JobAttemptRetention: 30 * 24 * time.Hour, DynamicClientUnredeemedTTL: 24 * time.Hour, DynamicClientIdleTTL: 90 * 24 * time.Hour,
@@ -369,7 +369,7 @@ listen = "127.0.0.1:9000"
 				"MY_QUEUE_CLOUDTASKS_SERVICE_ACCOUNT", "my-tasks@my-project.iam.gserviceaccount.com"),
 			want: Config{
 				Host: "social.example.org", AccountDomain: "social.example.org", SourceURL: DefaultSourceURL, WebOrigin: "https://social.example.org", Role: RoleAll, Listen: ":8080", MaintenanceRetryAfter: 10 * time.Minute,
-				DB: "postgres", DatabaseURL: "postgres://db:5432/my", DatabaseAcquireTimeout: DefaultDatabaseAcquireTimeout, Queue: "cloudtasks", Blob: "fs", Media: "native", KV: "db", ValkeyKeyPrefix: "my:",
+				DB: "postgres", DatabaseURL: "postgres://db:5432/my", DatabaseAcquireTimeout: DefaultDatabaseAcquireTimeout, Queue: "cloudtasks", Blob: "fs", MediaImage: "native", MediaVideo: "native", MediaAudio: "native", KV: "db", ValkeyKeyPrefix: "my:",
 				QueueCloudTasksQueue: "projects/my-project/locations/asia-northeast1/queues/my-jobs", QueueCloudTasksURL: "https://social.example.org",
 				QueueCloudTasksServiceAccount: "my-tasks@my-project.iam.gserviceaccount.com", QueueCloudTasksDispatchDeadline: 10 * time.Minute,
 				Stream:    "hub",
@@ -387,7 +387,7 @@ listen = "127.0.0.1:9000"
 				"MY_STREAM_POSTGRES_URL", "postgres://db:5432/my"),
 			want: Config{
 				Host: "social.example.org", AccountDomain: "social.example.org", SourceURL: DefaultSourceURL, WebOrigin: "https://social.example.org", Role: RoleAll, Listen: ":8080", MaintenanceRetryAfter: 10 * time.Minute,
-				DB: "postgres", DatabaseURL: "postgres://pooler:6543/my", DatabaseAcquireTimeout: DefaultDatabaseAcquireTimeout, Queue: "db", Blob: "fs", Media: "native", KV: "db", ValkeyKeyPrefix: "my:",
+				DB: "postgres", DatabaseURL: "postgres://pooler:6543/my", DatabaseAcquireTimeout: DefaultDatabaseAcquireTimeout, Queue: "db", Blob: "fs", MediaImage: "native", MediaVideo: "native", MediaAudio: "native", KV: "db", ValkeyKeyPrefix: "my:",
 				Stream: "postgres", StreamPostgresURL: "postgres://db:5432/my",
 				BlobFSDir: "blobs", MediaMaxImageBytes: 16 << 20, MediaMaxImageSide: 8192, MediaMaxImagePixels: 7680 * 4320, MediaUnattachedTTL: 24 * time.Hour, MediaReplacedRetention: 720 * time.Hour,
 				MediaMaxAVBytes: 100 << 20, MediaMaxVideoDuration: 5 * time.Minute, MediaMaxAudioDuration: 10 * time.Minute, CustomEmojiMaxBytes: 256 << 10, RemoteCustomEmojiMaxBytes: 1 << 20, RelayIngestHourlyLimit: 1000, BillingAWSMaxRequestsPerDay: 4, BillingAWSMaxRequestsPerMonth: 120, BillingAWSMetric: "NetUnblendedCost", BillingAWSFilter: "none", BillingGCPMethod: "bigquery", BillingGCPMaxBytesBilled: 1 << 30, PaymentsProvider: "none", PaymentsReconcileInterval: 6 * time.Hour, PaymentsReconcileMaxRequests: 1000, Search: "none", Voice: "off", VoiceP2PMaxParticipants: 10, VoiceMaxParticipants: 10, VoiceMaxRoomDuration: 4 * time.Hour, VoiceMaxOpenRooms: 10, VoiceTURN: "none", VoiceTURNCredentialTTL: 6 * time.Hour, VoiceICETransportPolicy: "all", DeadJobRetention: 30 * 24 * time.Hour, JobAttemptRetention: 30 * 24 * time.Hour, DynamicClientUnredeemedTTL: 24 * time.Hour, DynamicClientIdleTTL: 90 * 24 * time.Hour,
@@ -470,15 +470,15 @@ func TestLoadInvalid(t *testing.T) {
 			want: []string{"blob_gcs_bucket (MY_BLOB_GCS_BUCKET): must be a bucket name: 3 to 222 lower-case letters, digits, dots, hyphens, and underscores"},
 		},
 		{
-			// The media processors that no build of my has are not values of media.
-			name: "media vips without an adapter",
-			env:  with(minimal(), "MY_MEDIA", "vips"),
-			want: []string{`media (MY_MEDIA): unknown value "vips"`},
+			// The media processors that no build of my has are not values of the media settings.
+			name: "media_image vips without an adapter",
+			env:  with(minimal(), "MY_MEDIA_IMAGE", "vips"),
+			want: []string{`media_image (MY_MEDIA_IMAGE): unknown value "vips"`},
 		},
 		{
-			name: "media none without an adapter",
-			env:  with(minimal(), "MY_MEDIA", "none"),
-			want: []string{`media (MY_MEDIA): unknown value "none"`},
+			name: "media_video none without an adapter",
+			env:  with(minimal(), "MY_MEDIA_VIDEO", "none"),
+			want: []string{`media_video (MY_MEDIA_VIDEO): unknown value "none"`},
 		},
 		{
 			name: "sentry exporter without a DSN",

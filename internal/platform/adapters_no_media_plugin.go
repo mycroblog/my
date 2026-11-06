@@ -11,6 +11,14 @@ import (
 )
 
 // newPluginMediaProcessor reports that the build tag no_plugins left the plugins out.
-func newPluginMediaProcessor(*config.Config, media.Processor, kernel.Meter) (media.Processor, error) {
-	return nil, config.ExcludedError("media", "plugin", "no_plugins")
+func newPluginMediaProcessor(cfg *config.Config, _ media.Processor, _ kernel.Meter) (media.Processor, error) {
+	key := "media_image"
+	switch {
+	case cfg.MediaImage == "plugin":
+	case cfg.MediaVideo == "plugin":
+		key = "media_video"
+	case cfg.MediaAudio == "plugin":
+		key = "media_audio"
+	}
+	return nil, config.ExcludedError(key, "plugin", "no_plugins")
 }
