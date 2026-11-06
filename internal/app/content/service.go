@@ -508,7 +508,9 @@ type EditInput struct {
 }
 
 // Edit records a new revision of a local status with new content (FR-109), checking the text
-// and the attached media as Create does. The visibility,
+// and the attached media as Create does, and asking local.status about the edit as Create asks
+// about a post: a reject fails with ErrRejectedByReview and leaves the post as it was, with no
+// decision to appeal (ADR-0147 §2). The visibility,
 // author, and reply target never change. The new revision becomes the head. A status that does
 // not exist or is deleted fails with ErrNotFound; another account's status with ErrNotAuthor;
 // a status with a poll with ErrPollNotEditable.
@@ -544,6 +546,17 @@ func (s *Service) Edit(ctx context.Context, in EditInput) (Post, error) {
 	if err != nil {
 		return Post{}, err
 	}
+	review, err := s.reviewEdit(ctx, author, st, rev, tags, in.DetachQuote)
+	if err != nil {
+		return Post{}, err
+	}
+	if review.Effect == apphook.Reject {
+		return Post{}, fmt.Errorf("status %s: %w", st.ID, ErrRejectedByReview)
+	}
+	verdict, err := s.verdict(ctx, review)
+	if err != nil {
+		return Post{}, err
+	}
 
 	repo := s.d.Repository
 	err = s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
@@ -574,6 +587,9 @@ func (s *Service) Edit(ctx context.Context, in EditInput) (Post, error) {
 			return err
 		}
 		if err := s.applyAttachmentVerdicts(ctx, tx, st.ID, verdicts); err != nil {
+			return err
+		}
+		if err := s.reviewed(ctx, tx, verdict, Post{Status: st, Revision: rev}); err != nil {
 			return err
 		}
 		if in.DetachQuote {

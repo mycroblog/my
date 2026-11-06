@@ -19,6 +19,35 @@ import (
 // Overturning cancels the decision and exempts the account from the hook in one transaction, and the
 // author posts again: the post is not restored.
 
+// Events of the appeals. The notification module tells the holders of manage_reports of a new
+// appeal (admin_hook_appeal) and the author of its review (hook_appeal_decided), and the audit log
+// records an upheld appeal (hook_appeal_upheld); an overturned one is recorded as the cancellation
+// of its decision (hook_decision_overridden).
+const (
+	// EventAppealFiled follows a new appeal, in its transaction.
+	EventAppealFiled = "hook.appeal_filed"
+	// EventAppealDecided follows the review of an appeal, in its transaction.
+	EventAppealDecided = "hook.appeal_decided"
+)
+
+// AppealFiled carries a new appeal.
+type AppealFiled struct{ Appeal hook.Appeal }
+
+// EventType implements uow.Event.
+func (AppealFiled) EventType() string { return EventAppealFiled }
+
+// AppealDecided carries an appeal and its review. AuditID identifies the audit log entry of an
+// upheld appeal; Label is the target label of that entry, the decision's.
+type AppealDecided struct {
+	Appeal  hook.Appeal
+	Review  hook.AppealDecision
+	Label   string
+	AuditID string
+}
+
+// EventType implements uow.Event.
+func (AppealDecided) EventType() string { return EventAppealDecided }
+
 // AppealInput is an author's appeal.
 type AppealInput struct {
 	// AccountID is the author; a decision on another account is not found.
@@ -69,7 +98,7 @@ func (s *Service) FileAppeal(ctx context.Context, in AppealInput) (hook.AppealRe
 			return ErrAlreadyAppealed
 		}
 		out = hook.AppealRecord{Appeal: a, Decision: rec}
-		return nil
+		return tx.Emit(ctx, AppealFiled{Appeal: a})
 	})
 	if err != nil {
 		return hook.AppealRecord{}, err
@@ -81,6 +110,19 @@ func (s *Service) FileAppeal(ctx context.Context, in AppealInput) (hook.AppealRe
 // appeal, or ErrAppealNotFound when it has none. A decision of another account is not found.
 func (s *Service) OwnAppeal(ctx context.Context, accountID, decisionID string) (hook.AppealRecord, error) {
 	rec, err := s.d.Repository.AppealOfDecision(ctx, decisionID)
+	if err != nil {
+		return hook.AppealRecord{}, err
+	}
+	if rec.Appeal.AccountID != accountID {
+		return hook.AppealRecord{}, ErrAppealNotFound
+	}
+	return rec, nil
+}
+
+// OwnAppealByID returns an author's appeal by its ID, for the notification of its review, or
+// ErrAppealNotFound when it is gone or not the author's.
+func (s *Service) OwnAppealByID(ctx context.Context, accountID, appealID string) (hook.AppealRecord, error) {
+	rec, err := s.d.Repository.Appeal(ctx, appealID)
 	if err != nil {
 		return hook.AppealRecord{}, err
 	}
@@ -105,8 +147,9 @@ func (s *Service) ListAppeals(ctx context.Context, q AppealQuery) ([]hook.Appeal
 	return s.d.Repository.ListAppeals(ctx, q)
 }
 
-// DecideAppeal records a moderator's review of an appeal. byUserID is the moderator, "" for the
-// CLI. Overturning cancels the decision (hook_decision_overrides, with its audit log entry) and
+// DecideAppeal records a moderator's review of an appeal and tells its author (AppealDecided).
+// byUserID is the moderator, "" for the CLI. Upholding writes the audit log entry
+// hook_appeal_upheld. Overturning cancels the decision (hook_decision_overrides, with its audit log entry) and
 // exempts the account from the hook in the same transaction. A review is made once: the same
 // outcome again changes nothing, and the other one fails with ErrAppealDecided. It fails with
 // ErrAppealNotFound for an unknown appeal.
@@ -152,7 +195,10 @@ func (s *Service) DecideAppeal(ctx context.Context, appealID string, outcome hoo
 			}
 		}
 		out = rec
-		return nil
+		return tx.Emit(ctx, AppealDecided{
+			Appeal: rec.Appeal, Review: review, Label: decisionLabel(rec.Decision.Decision.Hook, rec.Decision.Decision.SubjectKey),
+			AuditID: s.d.IDs.NewID(),
+		})
 	})
 	if err != nil {
 		return hook.AppealRecord{}, err

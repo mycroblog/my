@@ -67,9 +67,10 @@ const (
 	GroupAdminServiceClosureDue  Group = "admin_service_closure_due"
 	GroupAdminErrorGroup         Group = "admin_error_group"
 	GroupAdminHookFailing        Group = "admin_hook_failing"
+	GroupAdminHookAppeal         Group = "admin_hook_appeal"
 
 	// GroupModeration is moderation_notice, report_resolved, appeal_decided,
-	// relationships_severed, and custom_emoji_request_decided.
+	// relationships_severed, custom_emoji_request_decided, and hook_appeal_decided.
 	GroupModeration     Group = "moderation"
 	GroupServiceClosure Group = "service_closure"
 	// GroupSupporter is the supporter notifications (Type.Supporter).
@@ -182,10 +183,13 @@ var Groups = []GroupSpec{
 	{Group: GroupStatus, Section: SectionOrdinary, Types: []Type{TypeStatus}, InApp: ordinaryRules[0], Email: Rule{Absent: true}},
 	moderator(TypeAdminReport), moderator(TypeAdminSignUp), moderator(TypeAdminAppeal), moderator(TypeAdminWebhookDisabled),
 	moderator(TypeAdminCustomEmojiRequest), moderator(TypeAdminAccountMoved), moderator(TypeAdminServiceClosureDue),
-	moderator(TypeAdminErrorGroup), moderator(TypeAdminHookFailing),
+	moderator(TypeAdminErrorGroup), moderator(TypeAdminHookFailing), moderator(TypeAdminHookAppeal),
 	{
 		Group: GroupModeration, Section: SectionInstance,
-		Types: []Type{TypeModerationNotice, TypeReportResolved, TypeAppealDecided, TypeRelationshipsSevered, TypeCustomEmojiRequestDecided},
+		Types: []Type{
+			TypeModerationNotice, TypeReportResolved, TypeAppealDecided, TypeRelationshipsSevered, TypeCustomEmojiRequestDecided,
+			TypeHookAppealDecided,
+		},
 		InApp: Rule{Default: true, Fixed: true}, Email: Rule{Default: false},
 	},
 	{

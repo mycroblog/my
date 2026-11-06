@@ -331,6 +331,14 @@ func (p RetentionPolicy) Keeps(e Expired) bool {
 	return false
 }
 
+// EditSubjectKey is the subject key of local.status for an edit of a local post: the post and the
+// new revision, so that each edit is its own subject (ADR-0147 §2). A post's own key is its ID.
+func EditSubjectKey(statusID, revisionID string) string { return statusID + "#" + revisionID }
+
+// IsEditSubject reports whether a subject key of local.status is that of an edit
+// (EditSubjectKey). A reject of an edit refuses that edit only and cannot be appealed.
+func IsEditSubject(key string) bool { return strings.Contains(key, "#") }
+
 // Appealable reports whether the author of a subject can appeal a reject of the hook: only
 // local.status, whose author is a local account and whose reject no moderator sees otherwise
 // (ADR-0147 §9). An overturned appeal exempts the account from the hook.
@@ -345,8 +353,8 @@ const (
 
 // The failures of an appeal.
 var (
-	// ErrNotAppealable reports a decision that its author cannot appeal: not a reject of
-	// local.status in force, or already cancelled.
+	// ErrNotAppealable reports a decision that its author cannot appeal: not a reject of a new
+	// post by local.status in force (a reject of an edit is not appealed), or already cancelled.
 	ErrNotAppealable = errors.New("hook: the decision cannot be appealed")
 	// ErrAppealWindowClosed reports an appeal after the appeal window.
 	ErrAppealWindowClosed = errors.New("hook: the appeal window is closed")
@@ -362,7 +370,7 @@ func AppealDeadline(d Decision, window time.Duration) time.Time { return d.Decid
 func (r Record) CheckAppealable(now time.Time, window time.Duration) error {
 	d := r.Decision
 	switch {
-	case !d.Hook.Appealable() || d.Mode != ModeEnforce || d.Outcome != Reject || r.Override != nil:
+	case !d.Hook.Appealable() || d.Mode != ModeEnforce || d.Outcome != Reject || r.Override != nil || IsEditSubject(d.SubjectKey):
 		return ErrNotAppealable
 	case now.After(AppealDeadline(d, window)):
 		return ErrAppealWindowClosed

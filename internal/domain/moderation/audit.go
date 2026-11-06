@@ -201,6 +201,9 @@ const (
 	AuditHookDecisionApplied AuditAction = "hook_decision_applied"
 	// AuditHookDecisionOverridden: a moderator cancelled a decision (hook_decision_overrides).
 	AuditHookDecisionOverridden AuditAction = "hook_decision_overridden"
+	// AuditHookAppealUpheld: a moderator upheld the appeal of a reject of local.status, and the
+	// decision stays (hook_decision_appeal_decisions); its target is the decision.
+	AuditHookAppealUpheld AuditAction = "hook_appeal_upheld"
 	// AuditSignupBlockLifted: a sign-up block was lifted (signup_block_lifts).
 	AuditSignupBlockLifted AuditAction = "signup_block_lifted"
 	// AuditTwoFactorDisabled: an administrator removed the two-factor authentication of a local
@@ -404,6 +407,7 @@ var auditActions = []struct {
 	{AuditSignupBlockLifted, AuditTargetSignupBlock},
 	{AuditHookDecisionApplied, AuditTargetHookDecision},
 	{AuditHookDecisionOverridden, AuditTargetHookDecision},
+	{AuditHookAppealUpheld, AuditTargetHookDecision},
 	{AuditTwoFactorDisabled, AuditTargetAccount},
 	{AuditPasswordResetLinkIssued, AuditTargetAccount},
 	{AuditEmailSuppressionLifted, AuditTargetAccount},

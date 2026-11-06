@@ -183,6 +183,8 @@ const kinds: Readonly<Record<NotificationType, NotificationKind>> = {
   admin_appeal: "staff",
   admin_webhook_disabled: "staff",
   admin_hook_failing: "staff",
+  admin_hook_appeal: "staff",
+  hook_appeal_decided: "staff",
   admin_custom_emoji_request: "staff",
   custom_emoji_request_decided: "staff",
   supporter_payment_failed: "notice",
@@ -219,6 +221,8 @@ const sentences: Readonly<Record<NotificationType, ClientMessageKey>> = {
   admin_appeal: "client:notifications.type.admin_appeal",
   admin_webhook_disabled: "client:notifications.type.admin_webhook_disabled",
   admin_hook_failing: "client:notifications.type.admin_hook_failing",
+  admin_hook_appeal: "client:notifications.type.admin_hook_appeal",
+  hook_appeal_decided: "client:notifications.type.hook_appeal_decided",
   admin_custom_emoji_request: "client:notifications.type.admin_custom_emoji_request",
   custom_emoji_request_decided: "client:notifications.type.custom_emoji_request_decided",
   supporter_payment_failed: "client:notifications.type.supporter_payment_failed",
@@ -246,6 +250,21 @@ const closureSentences: Readonly<Record<string, ClientMessageKey>> = {
 function closureSentenceOf(notification: Notification): ClientMessageKey | null {
   const change = notification.type === "service_closure" ? notification.service_closure?.change : undefined;
   return change === undefined ? null : (closureSentences[change] ?? null);
+}
+
+/** The sentences of a `hook_appeal_decided` by how the moderators reviewed the appeal of a refused post (ADR-0147 §9). */
+const hookAppealSentences: Readonly<Record<string, ClientMessageKey>> = {
+  upheld: "client:notifications.type.hook_appeal_upheld",
+  overturned: "client:notifications.type.hook_appeal_overturned",
+};
+
+/**
+ * The sentence of a `hook_appeal_decided` by its appeal's state; null for the other types, and without the appeal,
+ * which keeps the type's own sentence.
+ */
+function hookAppealSentenceOf(notification: Notification): ClientMessageKey | null {
+  const state = notification.type === "hook_appeal_decided" ? notification.hook_appeal?.state : undefined;
+  return state === undefined ? null : (hookAppealSentences[state] ?? null);
 }
 
 /** The sentences of an `admin_error_group` by what it tells of (ADR-0103 §8). */
@@ -455,6 +474,9 @@ function linksOf(notification: Notification, ownAcct: string | null): Notificati
       return [{ href: "/admin/webhooks", label: "client:notifications.link.webhooks" }];
     case "admin_hook_failing":
       return [{ href: "/moderation/hook-decisions", label: "client:notifications.link.hook_decisions" }];
+    // The pending appeals of refused posts are on the screen of the automated reviews.
+    case "admin_hook_appeal":
+      return [{ href: "/moderation/hook-decisions", label: "client:notifications.link.hook_appeals" }];
     // A new or regressed group leads to its page; the groups beyond the hour's limit, to the list.
     case "admin_error_group": {
       const groupId = notification.error_group?.group_id;
@@ -549,6 +571,7 @@ export function useNotificationView(group: NotificationGroup): NotificationView 
       requested.sentence ??
       closureSentenceOf(notification) ??
       errorGroupSentenceOf(notification) ??
+      hookAppealSentenceOf(notification) ??
       (announcement === null ? null : "client:notifications.announcement.titled") ??
       (target === undefined ? null : "client:notifications.report_resolved.account") ??
       (others.length > 0 && groupSentence !== undefined

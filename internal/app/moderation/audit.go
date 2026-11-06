@@ -180,7 +180,8 @@ type AuditQuery struct {
 
 // RegisterAuditProjector registers the projector that writes the audit log entry of every
 // AuditRecorded, of every appcontent.CustomEmojiAdministered,
-// appcontent.CustomEmojiRequestRecorded, apphook.DecisionApplied, and apphook.DecisionOverridden,
+// appcontent.CustomEmojiRequestRecorded, apphook.DecisionApplied, apphook.DecisionOverridden, and
+// the upheld apphook.AppealDecided,
 // and of the appaccount.Moved that carry an audit ID, into
 // the transaction that
 // emits it. An invalid entry fails the operation: an operation that cannot be audited does not
@@ -217,6 +218,20 @@ func RegisterAuditProjector(r *uow.Projectors, repo AuditRepository) {
 			TargetID: ev.DecisionID, TargetLabel: ev.Label, SourceEventID: ev.DecisionID, OccurredAt: ev.At,
 		}
 		entry.ActorKind, entry.ActorUserID = moderation.AuditActor(ev.ByUserID)
+		return r.Project(ctx, tx, AuditRecorded{Entry: entry})
+	})
+	// Upholding an appeal of a refused post leaves the decision and records the review; overturning
+	// one is recorded as the cancellation of its decision (ADR-0147 §9).
+	r.Register(apphook.EventAppealDecided, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
+		ev := e.(apphook.AppealDecided)
+		if ev.Review.Outcome != apphook.AppealUpheld {
+			return nil
+		}
+		entry := AuditEntry{
+			ID: ev.AuditID, Action: moderation.AuditHookAppealUpheld, TargetKind: moderation.AuditTargetHookDecision,
+			TargetID: ev.Appeal.DecisionID, TargetLabel: ev.Label, SourceEventID: ev.Appeal.ID, OccurredAt: ev.Review.DecidedAt,
+		}
+		entry.ActorKind, entry.ActorUserID = moderation.AuditActor(ev.Review.ByUserID)
 		return r.Project(ctx, tx, AuditRecorded{Entry: entry})
 	})
 	// The account module cannot emit AuditRecorded either: the local move of a limited account to

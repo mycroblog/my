@@ -2338,6 +2338,20 @@ func (l *Localizer) ServerErrorsStatusAlreadyDeleted() string {
 	return l.format("server:errors.status.already_deleted", nil)
 }
 
+// ServerErrorsStatusEditRejected formats "server:errors.status.edit_rejected". API error title for HTTP 422 when the server's automated review of posts refused an edit of a post. Fixed text: it never says why.
+//
+//	en: This edit was not saved.
+func (l *Localizer) ServerErrorsStatusEditRejected() string {
+	return l.format("server:errors.status.edit_rejected", nil)
+}
+
+// ServerErrorsStatusEditRejectedDetail formats "server:errors.status.edit_rejected.detail". API error detail for HTTP 422 when the server's automated review refused an edit; the post keeps its previous version, and an edit cannot be appealed.
+//
+//	en: This server's automated review did not accept this edit. The post stays as it was.
+func (l *Localizer) ServerErrorsStatusEditRejectedDetail() string {
+	return l.format("server:errors.status.edit_rejected.detail", nil)
+}
+
 // ServerErrorsStatusEmptyText formats "server:errors.status.empty_text". Detail of the HTTP 422 API error when a post's text is empty or only spaces.
 //
 //	en: The post has no text.
@@ -3096,6 +3110,20 @@ func (l *Localizer) ServerMailAdminErrorGroupSubject(instance string) string {
 	return l.format("server:mail.admin_error_group.subject", map[string]any{"instance": instance})
 }
 
+// ServerMailAdminHookAppealBody formats "server:mail.admin_hook_appeal.body". Paragraph of the email to a moderator about a new appeal of a post that the automated review refused. It never names the user or the post. {instance} is the server's display name, or its domain name when it has none.
+//
+//	en: A user of {instance} appealed a post that the automated review refused, and the appeal awaits the moderators.
+func (l *Localizer) ServerMailAdminHookAppealBody(instance string) string {
+	return l.format("server:mail.admin_hook_appeal.body", map[string]any{"instance": instance})
+}
+
+// ServerMailAdminHookAppealSubject formats "server:mail.admin_hook_appeal.subject". Subject of the email to a moderator who chose to get moderator notifications by email: a user appealed a post that the automated review refused. {instance} is the server's display name, or its domain name when it has none.
+//
+//	en: An appeal of a refused post awaits the moderators of {instance}
+func (l *Localizer) ServerMailAdminHookAppealSubject(instance string) string {
+	return l.format("server:mail.admin_hook_appeal.subject", map[string]any{"instance": instance})
+}
+
 // ServerMailAdminHookFailingBody formats "server:mail.admin_hook_failing.body". First paragraph of the email to a moderator about an external review that keeps failing. {instance} is the server's display name, or its domain name when it has none.
 //
 //	en: Calls of an external review on the server {instance} keep failing. Until it works again, what it reviews follows its failure behaviour: by default it goes through unreviewed.
@@ -3213,6 +3241,13 @@ func (l *Localizer) ServerMailGroupAdminCustomEmojiRequest() string {
 //	en: New and recurring errors
 func (l *Localizer) ServerMailGroupAdminErrorGroup() string {
 	return l.format("server:mail.group.admin_error_group", nil)
+}
+
+// ServerMailGroupAdminHookAppeal formats "server:mail.group.admin_hook_appeal". Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings.
+//
+//	en: Appeals of refused posts
+func (l *Localizer) ServerMailGroupAdminHookAppeal() string {
+	return l.format("server:mail.group.admin_hook_appeal", nil)
 }
 
 // ServerMailGroupAdminHookFailing formats "server:mail.group.admin_hook_failing". Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings.
@@ -4357,6 +4392,13 @@ func (l *Localizer) ServerPushAdminErrorGroupRegressed(instance string) string {
 	return l.format("server:push.admin_error_group.regressed", map[string]any{"instance": instance})
 }
 
+// ServerPushAdminHookAppeal formats "server:push.admin_hook_appeal". Web Push notification to a moderator: a user appealed a post that the server's automated review refused, and the appeal awaits review. {instance} is the server's display name, or its domain name when it has none.
+//
+//	en: A refused post was appealed to the moderators of {instance}
+func (l *Localizer) ServerPushAdminHookAppeal(instance string) string {
+	return l.format("server:push.admin_hook_appeal", map[string]any{"instance": instance})
+}
+
 // ServerPushAdminHookFailing formats "server:push.admin_hook_failing". Web Push notification to a moderator: calls of the external review of submissions keep failing. {instance} is the server's display name, or its domain name when it has none.
 //
 //	en: An external review of {instance} keeps failing
@@ -4455,6 +4497,13 @@ func (l *Localizer) ServerPushFollowAccepted(name string) string {
 //	en: {name} requested to follow you
 func (l *Localizer) ServerPushFollowRequest(name string) string {
 	return l.format("server:push.follow_request", map[string]any{"name": name})
+}
+
+// ServerPushHookAppealDecided formats "server:push.hook_appeal_decided". Web Push notification: the moderators upheld or overturned the user's appeal of a post that the automated review refused. {instance} is the server's display name, or its domain name when it has none.
+//
+//	en: The moderators of {instance} reviewed your appeal of a refused post
+func (l *Localizer) ServerPushHookAppealDecided(instance string) string {
+	return l.format("server:push.hook_appeal_decided", map[string]any{"instance": instance})
 }
 
 // ServerPushMention formats "server:push.mention". Web Push notification. {name} is the display name, or the @handle, of the account that wrote a post that mentions the user.

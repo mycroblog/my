@@ -2,7 +2,8 @@
 // The server data of the compose feature (web-client/README.md S1): the limits and preferences a new post
 // follows, the post being replied to, the uploaded media while the server processes them, the accounts
 // that mentions name and the viewer's relationships with them, and the writes (uploading a file,
-// posting, appealing a post the server's automated review refused). Types come from the spec (S9).
+// posting, appealing a post the server's automated review refused, and how the appeal ended). Types come from the
+// spec (S9).
 import type { QueryClient } from "@tanstack/react-query";
 import type { Api } from "../../../lib/api/client";
 import type { components } from "@mycroblog/mykit";
@@ -189,6 +190,14 @@ type OwnHookAppeal = components["schemas"]["OwnHookAppeal"];
 /** The longest text and comment an appeal of a refused post takes (the AppealHookDecisionRequest schema). */
 export const hookAppealTextLimit = 100_000;
 export const hookAppealCommentLimit = 2000;
+
+/**
+ * The author's appeal of the decision that refused a post: pending, or how a moderator reviewed it and when. A 404
+ * means there is none (or it is no longer kept).
+ */
+export function ownHookAppealQueryOptions(api: Api, id: string) {
+  return api.query.queryOptions("get", "/hook_decisions/{id}/appeal", { params: { path: { id } } });
+}
 
 /** Appeals the decision that refused a post, with the text the author tried to post and an optional comment. */
 export async function appealHookDecision(

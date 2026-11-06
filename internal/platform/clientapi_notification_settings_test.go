@@ -37,7 +37,7 @@ func TestNotificationSettingsThroughTheAPI(t *testing.T) {
 	if r := alice["mention"]; r.Section != clientapi.NotificationSettingRowSectionOrdinary || !r.InApp.Enabled || r.Email.Enabled || r.InApp.Fixed || r.Email.Fixed {
 		t.Errorf("alice's mention row = %+v, want in the app and not by email, both chosen", r)
 	}
-	if r := alice["moderation"]; !r.InApp.Fixed || !r.InApp.Enabled || r.Email.Fixed || r.Email.Enabled || len(r.Types) != 5 {
+	if r := alice["moderation"]; !r.InApp.Fixed || !r.InApp.Enabled || r.Email.Fixed || r.Email.Enabled || len(r.Types) != 6 {
 		t.Errorf("alice's moderation row = %+v, want always in the app and not by email", r)
 	}
 	// Every user of this server is an administrator, who gets the moderator rows; the supporter

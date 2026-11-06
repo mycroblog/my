@@ -120,9 +120,11 @@ type ModeratorDeps struct {
 //   - diagnostics.error_group_created, _confirmed, and _regressed: admin_error_group, to the
 //     holders of manage_errors, with the hourly cap of errors.go (ADR-0103 §8).
 //   - hook.failing: admin_hook_failing, to the holders of manage_reports (ADR-0147).
+//   - hook.appeal_filed: admin_hook_appeal, to the holders of manage_reports other than the
+//     author who appealed (ADR-0147 §9).
 //
 // The dedupe keys (notification.AdminReportKey, AdminSignUpKey, AdminAppealKey,
-// AdminWebhookDisabledKey, AdminCustomEmojiRequestKey, AdminAccountMovedKey, AdminHookFailingKey, AdminErrorGroupKey,
+// AdminWebhookDisabledKey, AdminCustomEmojiRequestKey, AdminAccountMovedKey, AdminHookFailingKey, AdminHookAppealKey, AdminErrorGroupKey,
 // AdminErrorGroupOthersKey) make projecting an event again
 // create nothing more. A recipient who turned the type off in the app gets nothing. For each
 // recipient who gets the type by email and whose notification is new, the projector enqueues
@@ -162,6 +164,12 @@ func RegisterModeratorProjectors(r *uow.Projectors, d ModeratorDeps) {
 		return p.notify(ctx, tx, notification.Notification{
 			Type: notification.TypeAdminHookFailing, DedupeKey: notification.AdminHookFailingKey(string(ev.Hook), ev.At), CreatedAt: ev.At,
 		})
+	})
+	r.Register(apphook.EventAppealFiled, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
+		a := e.(apphook.AppealFiled).Appeal
+		return p.notify(ctx, tx, notification.Notification{
+			Type: notification.TypeAdminHookAppeal, HookAppealID: a.ID, DedupeKey: notification.AdminHookAppealKey(a.ID), CreatedAt: a.SubmittedAt,
+		}, a.AccountID)
 	})
 	r.Register(appaccount.EventAccountMoved, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
 		ev := e.(appaccount.Moved)

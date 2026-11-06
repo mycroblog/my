@@ -278,6 +278,15 @@ func (r *HookRepository) AppealTx(ctx context.Context, tx uow.Tx, id string) (ho
 	return hookAppealRecord(row), nil
 }
 
+// Appeal implements apphook.Repository.
+func (r *HookRepository) Appeal(ctx context.Context, id string) (hook.AppealRecord, error) {
+	row, err := r.db.reader().GetHookDecisionAppeal(ctx, id)
+	if err != nil {
+		return hook.AppealRecord{}, hookAppealNotFound(err, id)
+	}
+	return hookAppealRecord(row), nil
+}
+
 // AppealOfDecision implements apphook.Repository.
 func (r *HookRepository) AppealOfDecision(ctx context.Context, decisionID string) (hook.AppealRecord, error) {
 	row, err := r.db.reader().GetHookDecisionAppealOfDecision(ctx, decisionID)
