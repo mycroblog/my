@@ -1,9 +1,9 @@
 {
   "extends": "../tsconfig.base.json",
-  "//": "The configuration of the documentation site (astro.config.ts, src/content.config.ts). astro/client declares the astro:* modules.",
+  "//": "The configuration of the documentation site (astro.config.ts, src/content.config.ts). astro/client declares the astro:* modules; scripts/ runs on Bun with the node: modules.",
   "compilerOptions": {
     "lib": ["ES2023"],
-    "types": ["astro/client"]
+    "types": ["astro/client", "node"]
   },
-  "include": ["*.config.ts", "src/**/*.ts"]
+  "include": ["*.config.ts", "src/**/*.ts", "scripts/**/*.ts"]
 }

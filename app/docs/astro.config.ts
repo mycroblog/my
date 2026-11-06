@@ -5,9 +5,14 @@
 // Search is Starlight's built-in Pagefind; the site loads no analytics and no external service (ADR-0150 §7).
 import starlight from "@astrojs/starlight";
 import { defineConfig } from "astro/config";
+import starlightLinksValidator from "starlight-links-validator";
+import { base } from "./src/published";
+import { docsSidebar } from "./src/sidebar";
 
 export default defineConfig({
   site: "https://mycroblog.dev",
+  // The path prefix of the version being built (DOCS_SITE_BASE: /latest/, /next/, ...; ADR-0150 §6), "/" by default.
+  base,
   // The toolbar of `astro dev` is a development aid the site does not need.
   devToolbar: { enabled: false },
   integrations: [
@@ -28,6 +33,10 @@ export default defineConfig({
       },
       // Starlight's own lastUpdated reads the git history of the copied files, which says nothing about the documents.
       lastUpdated: false,
+      // The groups and order of docs/README.md (src/sidebar.ts).
+      sidebar: docsSidebar(),
+      // A broken link or #anchor between pages fails the build.
+      plugins: [starlightLinksValidator()],
     }),
   ],
 });

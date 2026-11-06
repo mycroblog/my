@@ -4,15 +4,18 @@
   "type": "module",
   "license": "AGPL-3.0-only",
   "scripts": {
-    "dev": "ASTRO_TELEMETRY_DISABLED=1 astro dev",
-    "build": "ASTRO_TELEMETRY_DISABLED=1 astro build",
+    "import": "bun scripts/import-docs.ts",
+    "dev": "bun run import && ASTRO_TELEMETRY_DISABLED=1 astro dev",
+    "build": "bun run import && ASTRO_TELEMETRY_DISABLED=1 astro build",
     "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {
     "@astrojs/starlight": "0.42.8",
-    "astro": "7.4.5"
+    "astro": "7.4.5",
+    "starlight-links-validator": "0.27.0"
   },
   "devDependencies": {
+    "@types/node": "26.6.6",
     "@typescript/native": "npm:typescript@7.0.2",
     "typescript": "npm:@typescript/typescript6@6.0.2"
   }

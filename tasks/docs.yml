@@ -53,14 +53,14 @@ tasks:
   # The documentation site (app/docs, @my/docs; ADR-0150): Astro Starlight in the client workspace. Its package.json
   # scripts turn Astro's telemetry off, so the build needs no network beyond the package install.
   site-build:
-    desc: Build the documentation site (app/docs) into app/docs/dist as static files, with its Pagefind search index
+    desc: Copy the published documents into the documentation site (app/docs) and build it into app/docs/dist as static files, with its Pagefind search index (DOCS_SITE_BASE sets the path prefix)
     deps: [":web:install"]
     dir: app/docs
     cmds:
       - bun run build
 
   site-dev:
-    desc: Start the Astro dev server of the documentation site (app/docs) on http://localhost:4321
+    desc: Copy the published documents into the documentation site (app/docs) and start its Astro dev server on http://localhost:4321
     deps: [":web:install"]
     dir: app/docs
     cmds:
