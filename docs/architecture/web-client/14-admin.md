@@ -194,7 +194,7 @@ API の経路はどちらも `/admin/*` で（[client-api.md](../client-api.md) 
 - **ロール**（`/admin/roles`・`/admin/roles/new`・`/admin/roles/{key}`、`manage_roles`、FR-720、[一覧](screens/admin-roles.md)・[作成](screens/admin-role-new.md)・[詳細](screens/admin-role.md)）: 一覧 → 詳細で組む（上の「画面の分け方」）。閲覧者のいちばん高いロールは `GET /admin/accounts/{閲覧者の ID}/roles` で読む。
   - **一覧**（`/admin/roles`）: ロールの説明と、`/admin/roles/new` へ行く「ロールを作成する」（`ButtonLink`。ロールを持たない閲覧者には、代わりに作れない理由）。その下に位置の高い順のロールの `RecordTable`（`wholeList`）。
     列はキー（ロールのページへのリンク、`dir="ltr"`）・位置・権限（区分ごとの数「モデレーション: 3」を 1 行ずつ）・バッジ（`RoleBadge` の見本か「バッジなし」）の 4 つで、操作の列は持たない。
-  - **作成**（`/admin/roles/new`）: キー（必須、64 文字までの英小文字・数字・`_`・`-`）・位置（必須、0 から閲覧者のいちばん高いロールの位置（999 まで）の整数）・権限（区分ごとの `role="group"` の中の `Checkbox`。閲覧者のロールにない権限は選べない）の 1 つのフォームと `FormActionBar`。
+  - **作成**（`/admin/roles/new`）: キー（必須、64 文字までの英小文字・数字・`_`・`-`。作成のページの経路と重なる `new` は使えない）・位置（必須、0 から閲覧者のいちばん高いロールの位置（999 まで）の整数）・権限（区分ごとの `role="group"` の中の `Checkbox`。閲覧者のロールにない権限は選べない）の 1 つのフォームと `FormActionBar`。
     キーと位置は送る前に確かめて欄のエラーにする。サーバーの拒否（422 `invalid-role`）は `reason` の項目（キー・位置・権限）に `detail` を出し、`missing_permission` では足りない権限（`missing_permissions`）も並べて、入力を残す。項目のない拒否は `FormActionBar` に出す。
     成功したらロールの一覧・アカウントのロール・閲覧者・監査ログに無効化の印を付け、作ったロールのページへ移ってトーストで知らせる（G24 の画面の遷移）。作ったロールはアカウントの管理画面（下の「アカウントの管理画面」の「ロール」）で付与するので、アカウントの検索へリンクする。
   - **詳細**（`/admin/roles/{key}`）: 1 つのロールを返す API はないので、`GET /admin/roles`（短い一覧）から読み、キーのロールがなければ loader が見つからないページにする。見出しは「ロール」で、その下に一覧へ戻る「すべてのロール」。

@@ -17489,7 +17489,7 @@ components:
         - permissions
       properties:
         key:
-          description: The name of the role, 1 to 64 lowercase ASCII letters, digits, `_`, and `-`.
+          description: The name of the role, 1 to 64 lowercase ASCII letters, digits, `_`, and `-`, other than `new`.
           type: string
           minLength: 1
           maxLength: 64

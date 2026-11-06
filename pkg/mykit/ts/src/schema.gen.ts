@@ -11270,7 +11270,7 @@ export interface components {
         };
         /** @description A new role. */
         CreateRoleRequest: {
-            /** @description The name of the role, 1 to 64 lowercase ASCII letters, digits, `_`, and `-`. */
+            /** @description The name of the role, 1 to 64 lowercase ASCII letters, digits, `_`, and `-`, other than `new`. */
             key: string;
             /** @description The rank of the role, from 0 to 999 (below `admin`). */
             position: number;

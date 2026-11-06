@@ -8367,7 +8367,7 @@ type CreateReportRequest struct {
 
 // CreateRoleRequest A new role.
 type CreateRoleRequest struct {
-	// Key The name of the role, 1 to 64 lowercase ASCII letters, digits, `_`, and `-`.
+	// Key The name of the role, 1 to 64 lowercase ASCII letters, digits, `_`, and `-`, other than `new`.
 	Key string `json:"key"`
 
 	// Permissions The permissions that the role grants, each once.

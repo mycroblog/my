@@ -56,12 +56,16 @@
     "description": "Label of the field of a new role's key, its name."
   },
   "admin.roles.key.description": {
-    "defaultMessage": "{max} 文字までの英小文字・数字・アンダースコア・ハイフン。後から変えられません。",
+    "defaultMessage": "{max} 文字までの英小文字・数字・アンダースコア・ハイフン (「new」を除く)。後から変えられません。",
     "description": "Description of the key field. {max} is the length limit."
   },
   "admin.roles.key.invalid": {
     "defaultMessage": "{max} 文字までの英小文字・数字・アンダースコア・ハイフンで入力してください。",
     "description": "Error of the key field when the key is empty or has other characters. {max} is the length limit."
+  },
+  "admin.roles.key.reserved": {
+    "defaultMessage": "「new」はロールのキーにできません。ほかのキーにしてください。",
+    "description": "Error of the key field when the key is \"new\", which the address of the page that creates a role uses."
   },
   "admin.roles.list.title": {
     "defaultMessage": "このサーバーのロール",

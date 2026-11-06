@@ -25,6 +25,7 @@ import {
   refreshRoles,
   type RoleChange,
   roleKeyLimit,
+  reservedRoleKey,
   roleKeyPattern,
   roleProblem,
   updateRoleMutation,
@@ -166,6 +167,9 @@ function checkDraft(draft: RoleDraft, rights: RoleRights, t: Translate, isNew: b
       message: t("client:admin.roles.key.invalid", { max: String(roleKeyLimit) }),
       missing: [],
     };
+  }
+  if (isNew && key === reservedRoleKey) {
+    return { field: "key", message: t("client:admin.roles.key.reserved"), missing: [] };
   }
   if (parsePosition(draft.position, rights.maxPosition) === undefined) {
     return {

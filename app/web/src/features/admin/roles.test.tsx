@@ -211,6 +211,12 @@ describe("the roles screen", () => {
     expect(key).toHaveAccessibleDescription(/Enter up to 64 lowercase letters/);
     expect(key).toBeInvalid();
 
+    // "new" is the address of this page, so no role can have it as its key.
+    await user.clear(key);
+    await user.type(key, "new");
+    await user.click(screen.getByRole("button", { name: "Create role" }));
+    expect(key).toHaveAccessibleDescription(/"new" cannot be a role key/);
+
     await user.clear(key);
     await user.type(key, "triage");
     await user.clear(position);

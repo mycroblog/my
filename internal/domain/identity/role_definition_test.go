@@ -14,7 +14,7 @@ import (
 func TestValidateRoleKey(t *testing.T) {
 	for key, ok := range map[string]bool{
 		"helper": true, "a": true, "triage_2-b": true, strings.Repeat("a", 64): true,
-		"": false, "Helper": false, "help me": false, "ヘルパー": false, strings.Repeat("a", 65): false,
+		"": false, "Helper": false, "new": false, "news": true, "help me": false, "ヘルパー": false, strings.Repeat("a", 65): false,
 	} {
 		if err := identity.ValidateRoleKey(key); (err == nil) != ok || (err != nil && !errors.Is(err, identity.ErrInvalidRoleKey)) {
 			t.Errorf("ValidateRoleKey(%q) = %v, want ok %v", key, err, ok)

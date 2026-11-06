@@ -25,9 +25,13 @@ const MaxRolePosition = AdminPosition - 1
 // MaxRoleKeyLength is the length limit of a role's key.
 const MaxRoleKeyLength = 64
 
+// ReservedRoleKey is the one key a role cannot have: the web client's page that creates a role is
+// /admin/roles/new, beside the page of each role at /admin/roles/{key}.
+const ReservedRoleKey = "new"
+
 // ErrInvalidRoleKey reports a key that is not 1 to MaxRoleKeyLength lowercase ASCII letters,
-// digits, underscores, and hyphens.
-var ErrInvalidRoleKey = errors.New("identity: a role key is 1 to 64 lowercase letters, digits, underscores, or hyphens")
+// digits, underscores, and hyphens, or that is ReservedRoleKey.
+var ErrInvalidRoleKey = errors.New(`identity: a role key is 1 to 64 lowercase letters, digits, underscores, or hyphens, other than "new"`)
 
 // ErrInvalidRolePosition reports a position outside 0 to MaxRolePosition.
 var ErrInvalidRolePosition = errors.New("identity: a role's position is from 0 to 999")
@@ -66,7 +70,7 @@ func IsBuiltinRole(key string) bool {
 
 // ValidateRoleKey checks the key of a new role.
 func ValidateRoleKey(key string) error {
-	if key == "" || len(key) > MaxRoleKeyLength {
+	if key == "" || len(key) > MaxRoleKeyLength || key == ReservedRoleKey {
 		return ErrInvalidRoleKey
 	}
 	for _, c := range key {

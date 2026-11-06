@@ -56,12 +56,16 @@
     "description": "Label of the field of a new role's key, its name."
   },
   "admin.roles.key.description": {
-    "defaultMessage": "Up to {max} lowercase letters, digits, underscores, or hyphens. It cannot be changed later.",
+    "defaultMessage": "Up to {max} lowercase letters, digits, underscores, or hyphens, other than \"new\". It cannot be changed later.",
     "description": "Description of the key field. {max} is the length limit."
   },
   "admin.roles.key.invalid": {
     "defaultMessage": "Enter up to {max} lowercase letters, digits, underscores, or hyphens.",
     "description": "Error of the key field when the key is empty or has other characters. {max} is the length limit."
+  },
+  "admin.roles.key.reserved": {
+    "defaultMessage": "\"new\" cannot be a role key. Choose another key.",
+    "description": "Error of the key field when the key is \"new\", which the address of the page that creates a role uses."
   },
   "admin.roles.list.title": {
     "defaultMessage": "Roles of this server",
