@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: MIT
+description: |
+  Which announcements the administrators' list keeps. `draft` and `withdrawn` keep that state.
+  Of the published ones, `scheduled` keeps those whose window starts later, `showing` those every
+  local user sees now, and `ended` those whose window has ended.
+type: string
+enum: [draft, scheduled, showing, ended, withdrawn]

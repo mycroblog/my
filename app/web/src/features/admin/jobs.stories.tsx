@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The queue dashboard (/admin/jobs; web-client/screens/admin-jobs.md) in the states of ADR-0079 §13
+// The queue dashboard (/admin/jobs, /admin/jobs/list and /admin/jobs/$id; web-client/screens/admin-jobs*.md) in the
+// states of ADR-0079 §13
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { http, HttpResponse } from "msw";
 import { expect } from "storybook/test";
@@ -90,6 +91,13 @@ const busy = [
     const items = new URL(request.url).searchParams.get("state") === "dead" ? jobs.dead : jobs.pending;
     return withViewer(request, () => HttpResponse.json({ items }));
   }),
+  http.get(`${apiBase}/admin/jobs/:id`, ({ request, params }) => {
+    const jobs = jobsFixture();
+    const job = [...jobs.pending, ...jobs.dead].find((item) => item.id === params["id"]);
+    return withViewer(request, () =>
+      job === undefined ? HttpResponse.json({}, { status: 404 }) : HttpResponse.json(job),
+    );
+  }),
   http.get(`${apiBase}/admin/jobs/:id/attempts`, ({ request }) =>
     withViewer(request, () =>
       HttpResponse.json({
@@ -126,9 +134,27 @@ type Story = StoryObj<typeof meta>;
 /** A busy queue: deliveries retrying, a job running, and failures waiting to run again. */
 export const Normal: Story = {};
 
-/** The failed jobs, each with its last error. */
+/** The pending jobs, a page of the table. */
+export const List: Story = {
+  parameters: { screen: { path: "/admin/jobs/list" } },
+  play: async (context) => {
+    await settled(context);
+    await expect(await context.canvas.findByRole("link", { name: "media.process" })).toBeInTheDocument();
+  },
+};
+
+/** The failed jobs, each with "Run again". */
 export const Failed: Story = {
-  parameters: { screen: { path: "/admin/jobs?state=dead" } },
+  parameters: { screen: { path: "/admin/jobs/list?state=dead" } },
+  play: async (context) => {
+    await settled(context);
+    await expect(await context.canvas.findByRole("link", { name: "kv.purge_expired" })).toBeInTheDocument();
+  },
+};
+
+/** A failed job's page: its facts, its long last error, its payload and its attempts. */
+export const Detail: Story = {
+  parameters: { screen: { path: "/admin/jobs/0192f0c4-7a8e-7000-8000-0000000000d1" } },
   play: async (context) => {
     await settled(context);
     await expect(await context.canvas.findByText(/502 Bad Gateway/u)).toBeInTheDocument();
@@ -155,8 +181,8 @@ export const WithoutListing: Story = adminAnswering(
 /** A moderator without manage_jobs. */
 export const MissingPermission: Story = withoutPermission;
 
-/** The jobs have not arrived yet. */
-export const Loading: Story = adminLoadingOn("get", "/admin/jobs");
+/** The state of the queue has not arrived yet. */
+export const Loading: Story = adminLoadingOn("get", "/admin/queue");
 
 /** The server failed to answer the queue. */
 export const ServerError: Story = adminFailingOn("get", "/admin/queue");
@@ -167,5 +193,5 @@ export const Japanese: Story = inLocale("ja");
 /** Right to left, in the pseudo-locale ar-XB. */
 export const RightToLeft: Story = inLocale("ar-XB");
 
-/** At 320 CSS px, where the long inbox addresses wrap. */
+/** At 320 CSS px. */
 export const Narrow: Story = narrow;

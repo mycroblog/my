@@ -408,8 +408,8 @@
     "description": "Link in a notification to the page of decisions of the external review of submissions."
   },
   "notifications.link.hook_appeals": {
-    "defaultMessage": "Open the appeals",
-    "description": "Link of an admin_hook_appeal notification to the screen of the automated reviews, which lists the appeals of refused posts that await review."
+    "defaultMessage": "Open the appeal",
+    "description": "Link of an admin_hook_appeal notification to the page of the appeal of a refused post that awaits review."
   },
   "notifications.type.admin_hook_failing": {
     "defaultMessage": "Calls of an external review keep failing",

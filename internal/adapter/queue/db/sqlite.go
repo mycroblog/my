@@ -176,20 +176,39 @@ func (s sqliteStore) listDead(ctx context.Context, tx uow.Tx, jobType string, af
 	}
 	out := make([]queue.DeadJob, len(rows))
 	for i, r := range rows {
-		out[i] = queue.DeadJob{
-			ID:             r.ID,
-			Type:           r.Type,
-			Payload:        json.RawMessage(r.Payload),
-			IdempotencyKey: r.IdempotencyKey.String,
-			OrderingKey:    r.OrderingKey.String,
-			TraceParent:    r.TraceParent.String,
-			Attempt:        int(r.Attempt),
-			LastError:      r.LastError,
-			CreatedAt:      fromMillis(r.CreatedAt),
-			FailedAt:       fromMillis(r.FailedAt),
-		}
+		out[i] = sqliteDeadJob(r)
 	}
 	return out, nil
+}
+
+func (s sqliteStore) getDead(ctx context.Context, tx uow.Tx, id string) (queue.DeadJob, bool, error) {
+	q, err := s.queries(tx)
+	if err != nil {
+		return queue.DeadJob{}, false, err
+	}
+	r, err := q.GetDeadJob(ctx, id)
+	if errors.Is(err, sql.ErrNoRows) {
+		return queue.DeadJob{}, false, nil
+	}
+	if err != nil {
+		return queue.DeadJob{}, false, err
+	}
+	return sqliteDeadJob(r), true, nil
+}
+
+func sqliteDeadJob(r sqlitequeue.DeadJob) queue.DeadJob {
+	return queue.DeadJob{
+		ID:             r.ID,
+		Type:           r.Type,
+		Payload:        json.RawMessage(r.Payload),
+		IdempotencyKey: r.IdempotencyKey.String,
+		OrderingKey:    r.OrderingKey.String,
+		TraceParent:    r.TraceParent.String,
+		Attempt:        int(r.Attempt),
+		LastError:      r.LastError,
+		CreatedAt:      fromMillis(r.CreatedAt),
+		FailedAt:       fromMillis(r.FailedAt),
+	}
 }
 
 func (s sqliteStore) requeueDead(ctx context.Context, tx uow.Tx, id string, runAt time.Time) error {
@@ -256,25 +275,44 @@ func (s sqliteStore) listPending(ctx context.Context, tx uow.Tx, now time.Time, 
 	}
 	out := make([]queue.PendingJob, len(rows))
 	for i, r := range rows {
-		var lockedUntil time.Time
-		if r.LockedUntil.Valid {
-			lockedUntil = fromMillis(r.LockedUntil.Int64)
-		}
-		out[i] = pendingJob(now, queue.PendingJob{
-			ID:             r.ID,
-			Type:           r.Type,
-			Payload:        json.RawMessage(r.Payload),
-			IdempotencyKey: r.IdempotencyKey.String,
-			OrderingKey:    r.OrderingKey.String,
-			Attempt:        int(r.Attempt),
-			RunAt:          fromMillis(r.RunAt),
-			LastError:      r.LastError.String,
-			Worker:         r.LockedBy.String,
-			LockedUntil:    lockedUntil,
-			CreatedAt:      fromMillis(r.CreatedAt),
-		})
+		out[i] = sqlitePendingJob(now, r)
 	}
 	return out, nil
+}
+
+func (s sqliteStore) getPending(ctx context.Context, tx uow.Tx, now time.Time, id string) (queue.PendingJob, bool, error) {
+	q, err := s.queries(tx)
+	if err != nil {
+		return queue.PendingJob{}, false, err
+	}
+	r, err := q.GetPendingJob(ctx, id)
+	if errors.Is(err, sql.ErrNoRows) {
+		return queue.PendingJob{}, false, nil
+	}
+	if err != nil {
+		return queue.PendingJob{}, false, err
+	}
+	return sqlitePendingJob(now, sqlitequeue.ListPendingJobsRow(r)), true, nil
+}
+
+func sqlitePendingJob(now time.Time, r sqlitequeue.ListPendingJobsRow) queue.PendingJob {
+	var lockedUntil time.Time
+	if r.LockedUntil.Valid {
+		lockedUntil = fromMillis(r.LockedUntil.Int64)
+	}
+	return pendingJob(now, queue.PendingJob{
+		ID:             r.ID,
+		Type:           r.Type,
+		Payload:        json.RawMessage(r.Payload),
+		IdempotencyKey: r.IdempotencyKey.String,
+		OrderingKey:    r.OrderingKey.String,
+		Attempt:        int(r.Attempt),
+		RunAt:          fromMillis(r.RunAt),
+		LastError:      r.LastError.String,
+		Worker:         r.LockedBy.String,
+		LockedUntil:    lockedUntil,
+		CreatedAt:      fromMillis(r.CreatedAt),
+	})
 }
 
 func (s sqliteStore) summarize(ctx context.Context, tx uow.Tx, now time.Time) (queue.JobSummary, error) {

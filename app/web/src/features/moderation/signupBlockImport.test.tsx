@@ -91,7 +91,10 @@ describe("an import of a list of sign-up blocks", () => {
       }
       return reasonOf(value);
     });
-    const { user } = await renderApp({ path: "/moderation/signup-blocks" });
+    // The list of blocks is read first, and kept in the cache while the import page is open.
+    const { user, router } = await renderApp({ path: "/moderation/signup-blocks" });
+    expect(await screen.findByRole("heading", { level: 2, name: "No sign-up blocks in effect" })).toBeInTheDocument();
+    await user.click(screen.getByRole("link", { name: "Add from a list" }));
     const section = within(await screen.findByRole("region", { name: "Add from a list" }));
 
     expect(section.getByRole("radio", { name: "Email domain" })).toBeChecked();
@@ -116,8 +119,6 @@ describe("an import of a list of sign-up blocks", () => {
         expires_in: 90 * 86_400,
       },
     ]);
-    // The list of blocks was fetched again before the result was shown.
-    expect(api.fetches).toContain("signup_blocks");
 
     const table = section.getByRole("table", { name: "Lines not added" });
     const rows = within(table).getAllByRole("row");
@@ -147,19 +148,25 @@ describe("an import of a list of sign-up blocks", () => {
       "1 line",
     ]);
 
-    // The blocks are in the list below.
-    expect(
-      await within(screen.getByRole("table", { name: "In effect" })).findByRole("rowheader", { name: "mail.example" }),
-    ).toBeInTheDocument();
     // The form is ready for the next list with the same settings.
     expect(section.getByRole("textbox", { name: "List" })).toHaveValue("");
     expect(section.getByRole("textbox", { name: "Comment" })).toHaveValue("");
     expect(section.getByRole("radio", { name: "Refuse" })).toBeChecked();
+
+    // The cached list of blocks is stale: going back shows the imported blocks.
+    api.fetches.length = 0;
+    await router.navigate({ to: "/moderation/signup-blocks" });
+    expect(
+      await within(await screen.findByRole("table", { name: "In effect" })).findByRole("rowheader", {
+        name: "mail.example",
+      }),
+    ).toBeInTheDocument();
+    expect(api.fetches).toContain("signup_blocks");
   });
 
   test("reads the list from a text file of IP ranges", async () => {
     const api = importServer();
-    const { user } = await renderApp({ path: "/moderation/signup-blocks" });
+    const { user } = await renderApp({ path: "/moderation/signup-blocks/import" });
     const section = within(await screen.findByRole("region", { name: "Add from a list" }));
 
     await user.click(section.getByRole("radio", { name: "IP range" }));
@@ -180,14 +187,18 @@ describe("an import of a list of sign-up blocks", () => {
       await section.findByText("2 blocks were added: IP range, Require approval. No line was skipped."),
     ).toBeInTheDocument();
     expect(api.imports).toEqual([
-      { kind: "ip_range", text: "192.0.2.0/24\n198.51.100.7,abuse\n", severity: "require_approval" },
+      {
+        kind: "ip_range",
+        text: "192.0.2.0/24\n198.51.100.7,abuse\n",
+        severity: "require_approval",
+      },
     ]);
     expect(section.queryByRole("table")).not.toBeInTheDocument();
   });
 
   test("refuses a file too large to send without reading it", async () => {
     const api = importServer();
-    const { user } = await renderApp({ path: "/moderation/signup-blocks" });
+    const { user } = await renderApp({ path: "/moderation/signup-blocks/import" });
     const section = within(await screen.findByRole("region", { name: "Add from a list" }));
 
     const button = section.getByRole("button", { name: "Choose a text file" });
@@ -205,7 +216,7 @@ describe("an import of a list of sign-up blocks", () => {
 
   test("needs a list with a value, and an effect, before anything is sent", async () => {
     const api = importServer();
-    const { user } = await renderApp({ path: "/moderation/signup-blocks" });
+    const { user } = await renderApp({ path: "/moderation/signup-blocks/import" });
     const section = within(await screen.findByRole("region", { name: "Add from a list" }));
 
     await user.click(section.getByRole("textbox", { name: "List" }));
@@ -220,7 +231,7 @@ describe("an import of a list of sign-up blocks", () => {
 
   test("a list of more values than one import holds is not sent", async () => {
     const api = importServer();
-    const { user } = await renderApp({ path: "/moderation/signup-blocks" });
+    const { user } = await renderApp({ path: "/moderation/signup-blocks/import" });
     const section = within(await screen.findByRole("region", { name: "Add from a list" }));
 
     await user.click(section.getByRole("textbox", { name: "List" }));
@@ -236,7 +247,7 @@ describe("an import of a list of sign-up blocks", () => {
 
   test("shows the first skipped lines of a long list, and the rest on request with focus on the table's heading", async () => {
     importServer(() => "already_blocked");
-    const { user } = await renderApp({ path: "/moderation/signup-blocks" });
+    const { user } = await renderApp({ path: "/moderation/signup-blocks/import" });
     const section = within(await screen.findByRole("region", { name: "Add from a list" }));
 
     await user.click(section.getByRole("textbox", { name: "List" }));
@@ -265,7 +276,7 @@ describe("an import of a list of sign-up blocks", () => {
     server.use(
       http.post(`${apiBase}/admin/signup_blocks/import`, () => problem(503, "about:blank", "Service Unavailable")),
     );
-    const { user } = await renderApp({ path: "/moderation/signup-blocks" });
+    const { user } = await renderApp({ path: "/moderation/signup-blocks/import" });
     const section = within(await screen.findByRole("region", { name: "Add from a list" }));
 
     await user.click(section.getByRole("textbox", { name: "List" }));

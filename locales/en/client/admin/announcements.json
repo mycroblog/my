@@ -7,13 +7,25 @@
     "defaultMessage": "Plain text, the heading in the list, the notifications and the side column. {count, plural, one {# character left} other {# characters left}}",
     "description": "Description of the field of an announcement's title. {count} is how many characters may still be added, out of 100."
   },
+  "admin.announcements.back": {
+    "defaultMessage": "Back to announcements",
+    "description": "Link from the page of an announcement, or the page that writes one, back to the list of announcements."
+  },
   "admin.announcements.cancel": {
     "defaultMessage": "Cancel",
-    "description": "Button that leaves a dialog of the announcements screen without changing anything."
+    "description": "Button that leaves the dialog that withdraws an announcement without changing anything."
   },
   "admin.announcements.change_failed": {
     "defaultMessage": "The announcement could not be changed: {reason}",
     "description": "Error after a change of an announcement failed. {reason} is why."
+  },
+  "admin.announcements.column.announcement": {
+    "defaultMessage": "Announcement",
+    "description": "Column header of the table of announcements: the title of each, a link to its page."
+  },
+  "admin.announcements.column.period": {
+    "defaultMessage": "Shows",
+    "description": "Column header of the table of announcements: when each shows."
   },
   "admin.announcements.create_draft": {
     "defaultMessage": "Save as a draft",
@@ -27,13 +39,17 @@
     "defaultMessage": "Publish the announcement",
     "description": "Button that writes a new announcement and publishes it."
   },
+  "admin.announcements.created_at": {
+    "defaultMessage": "Written",
+    "description": "Term of when an announcement was written."
+  },
   "admin.announcements.description": {
     "defaultMessage": "Announcements show to everyone on this server, who are notified when you publish one or when its time to show starts, whichever is later. The audit log records every change.",
     "description": "Description at the top of the admin screen of the announcements."
   },
-  "admin.announcements.drafted": {
-    "defaultMessage": "Saved the announcement as a draft. The audit log records the change.",
-    "description": "Status after a new announcement was saved as a draft."
+  "admin.announcements.detail.title": {
+    "defaultMessage": "Announcement",
+    "description": "Title of the page of one announcement in the admin screens."
   },
   "admin.announcements.duration": {
     "defaultMessage": "Show for",
@@ -43,53 +59,105 @@
     "defaultMessage": "From when you write it. It stops showing after that.",
     "description": "Description of how long a new announcement shows."
   },
-  "admin.announcements.edit": {
-    "defaultMessage": "Edit",
-    "description": "Button that opens the dialog that edits the text of an announcement."
-  },
-  "admin.announcements.edit.close": {
-    "defaultMessage": "Close",
-    "description": "Accessible name of the button that closes the dialog that edits an announcement."
-  },
   "admin.announcements.edit.description": {
     "defaultMessage": "Changing a published announcement does not notify anyone again.",
-    "description": "Note at the top of the dialog that edits an announcement."
+    "description": "Note on the region of an announcement's page that edits its title and text."
   },
   "admin.announcements.edit.title": {
     "defaultMessage": "Edit the announcement",
-    "description": "Title of the dialog that edits the text of an announcement."
-  },
-  "admin.announcements.edit_one": {
-    "defaultMessage": "Edit: {announcement}",
-    "description": "Accessible name of the button that edits an announcement. {announcement} is the first line of its text."
+    "description": "Heading of the region of an announcement's page that edits its title and text."
   },
   "admin.announcements.empty": {
     "defaultMessage": "No announcements",
-    "description": "Heading of the list of announcements when there are none."
+    "description": "Heading of the table of every announcement when there are none."
   },
   "admin.announcements.empty.description": {
     "defaultMessage": "Announcements you write appear here.",
-    "description": "Description of the list of announcements when there are none."
+    "description": "Description of the table of every announcement when there are none."
+  },
+  "admin.announcements.empty.filtered": {
+    "defaultMessage": "No announcements in this list",
+    "description": "Heading of the table of announcements when none is in the selected state."
   },
   "admin.announcements.ends_at": {
     "defaultMessage": "Shows until",
     "description": "Term of when an announcement stops showing."
   },
-  "admin.announcements.heading": {
-    "defaultMessage": "{announcement} ({state})",
-    "description": "Heading of an announcement in the list. {announcement} is the first line of its text; {state} its state (draft, published, withdrawn)."
-  },
-  "admin.announcements.list.title": {
+  "admin.announcements.filter.all": {
     "defaultMessage": "All announcements",
-    "description": "Heading of the list of announcements, newest first."
+    "description": "Filter of the announcements: every one, in any state."
+  },
+  "admin.announcements.filter.draft": {
+    "defaultMessage": "Drafts",
+    "description": "Filter of the announcements: the drafts."
+  },
+  "admin.announcements.filter.ended": {
+    "defaultMessage": "Ended",
+    "description": "Filter of the announcements: the published ones whose time to show has ended."
+  },
+  "admin.announcements.filter.label": {
+    "defaultMessage": "Announcements by state",
+    "description": "Accessible name of the list that selects which announcements the table shows."
+  },
+  "admin.announcements.filter.scheduled": {
+    "defaultMessage": "Scheduled",
+    "description": "Filter of the announcements: the published ones whose time to show has not started yet."
+  },
+  "admin.announcements.filter.showing": {
+    "defaultMessage": "Showing",
+    "description": "Filter of the announcements: the published ones everyone sees now."
+  },
+  "admin.announcements.filter.withdrawn": {
+    "defaultMessage": "Withdrawn",
+    "description": "Filter of the announcements: the withdrawn ones."
   },
   "admin.announcements.new.title": {
     "defaultMessage": "Write an announcement",
-    "description": "Heading of the form of a new announcement."
+    "description": "Title of the page that writes a new announcement, and of the link to it from the list."
+  },
+  "admin.announcements.period.from": {
+    "defaultMessage": "From {date}",
+    "description": "When an announcement starts to show, in the table of announcements. {date} is a date and time."
+  },
+  "admin.announcements.period.on_publication": {
+    "defaultMessage": "From when it is published",
+    "description": "When a draft announcement will start to show: as soon as it is published."
+  },
+  "admin.announcements.period.until": {
+    "defaultMessage": "Until {date}",
+    "description": "When an announcement stops showing, in the table of announcements. {date} is a date and time."
+  },
+  "admin.announcements.phase.draft": {
+    "defaultMessage": "Draft",
+    "description": "State of an announcement that is a draft, which only the administrators see."
+  },
+  "admin.announcements.phase.ended": {
+    "defaultMessage": "Ended",
+    "description": "State of a published announcement whose time to show has ended."
+  },
+  "admin.announcements.phase.scheduled": {
+    "defaultMessage": "Scheduled",
+    "description": "State of a published announcement whose time to show has not started yet."
+  },
+  "admin.announcements.phase.showing": {
+    "defaultMessage": "Showing",
+    "description": "State of a published announcement that everyone sees now."
+  },
+  "admin.announcements.phase.withdrawn": {
+    "defaultMessage": "Withdrawn",
+    "description": "State of an announcement withdrawn for good."
+  },
+  "admin.announcements.preview": {
+    "defaultMessage": "As everyone sees it",
+    "description": "Heading of the region of an announcement's page with its title and text as the users see them."
+  },
+  "admin.announcements.preview.description": {
+    "defaultMessage": "The title and the text as they show to everyone on this server.",
+    "description": "Description of the region of an announcement's page with its title and text as the users see them."
   },
   "admin.announcements.publish": {
     "defaultMessage": "Publish",
-    "description": "Button that publishes a draft announcement."
+    "description": "Button on the page of a draft announcement that publishes it."
   },
   "admin.announcements.publish_now": {
     "defaultMessage": "Publish now",
@@ -99,10 +167,6 @@
     "defaultMessage": "Without it, the announcement stays a draft that only the administrators see.",
     "description": "Description of the checkbox that publishes a new announcement at once."
   },
-  "admin.announcements.publish_one": {
-    "defaultMessage": "Publish: {announcement}",
-    "description": "Accessible name of the button that publishes an announcement. {announcement} is the first line of its text."
-  },
   "admin.announcements.published_at": {
     "defaultMessage": "Published",
     "description": "Term of when an announcement was published."
@@ -110,6 +174,10 @@
   "admin.announcements.published_one": {
     "defaultMessage": "Published {announcement}. The audit log records the change.",
     "description": "Status after a draft announcement was published. {announcement} is the first line of its text."
+  },
+  "admin.announcements.revised_at": {
+    "defaultMessage": "Last changed",
+    "description": "Term of when the title, the text or the time to show of an announcement last changed."
   },
   "admin.announcements.save": {
     "defaultMessage": "Save",
@@ -121,19 +189,7 @@
   },
   "admin.announcements.state": {
     "defaultMessage": "State",
-    "description": "Term of the state of an announcement."
-  },
-  "admin.announcements.state.draft": {
-    "defaultMessage": "Draft",
-    "description": "State of an announcement that no user sees yet."
-  },
-  "admin.announcements.state.published": {
-    "defaultMessage": "Published",
-    "description": "State of an announcement that the users see."
-  },
-  "admin.announcements.state.withdrawn": {
-    "defaultMessage": "Withdrawn",
-    "description": "State of an announcement taken down for good."
+    "description": "Term and column header of where an announcement is in its life (draft, scheduled, showing, ended, withdrawn)."
   },
   "admin.announcements.summary": {
     "defaultMessage": "Tell everyone on this server about maintenance and changes.",
@@ -179,16 +235,20 @@
     "defaultMessage": "Nobody sees the announcement again, and it cannot be published or changed any more.",
     "description": "Description of the dialog that confirms withdrawing an announcement."
   },
+  "admin.announcements.withdraw.section": {
+    "defaultMessage": "Withdraw the announcement",
+    "description": "Heading of the region of an announcement's page that withdraws it for good."
+  },
   "admin.announcements.withdraw.title": {
     "defaultMessage": "Withdraw {announcement}?",
     "description": "Title of the dialog that confirms withdrawing an announcement. {announcement} is the first line of its text."
   },
-  "admin.announcements.withdraw_one": {
-    "defaultMessage": "Withdraw: {announcement}",
-    "description": "Accessible name of the button that withdraws an announcement. {announcement} is the first line of its text."
-  },
   "admin.announcements.withdrawn": {
     "defaultMessage": "Withdrew {announcement}. The audit log records the change.",
     "description": "Status after an announcement was withdrawn. {announcement} is the first line of its text."
+  },
+  "admin.announcements.withdrawn.description": {
+    "defaultMessage": "A withdrawn announcement can no longer be published or changed.",
+    "description": "Note on the page of a withdrawn announcement."
   }
 }

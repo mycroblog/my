@@ -23,21 +23,9 @@
     "defaultMessage": "{name} を削除しますか？",
     "description": "Title of the dialog that confirms deleting a webhook."
   },
-  "admin.webhooks.delete_webhook": {
-    "defaultMessage": "{name} を削除",
-    "description": "Accessible name of the button that deletes a webhook."
-  },
   "admin.webhooks.deleted": {
     "defaultMessage": "{name} を削除しました。",
     "description": "Status after deleting a webhook."
-  },
-  "admin.webhooks.deliveries": {
-    "defaultMessage": "送信履歴",
-    "description": "Link to the page of a webhook's deliveries."
-  },
-  "admin.webhooks.deliveries.attempts": {
-    "defaultMessage": "試行回数",
-    "description": "Term in a delivery's details: how many times it was sent."
   },
   "admin.webhooks.deliveries.attempts.count": {
     "defaultMessage": "{count, plural, other {# 回}}",
@@ -54,10 +42,6 @@
   "admin.webhooks.deliveries.empty": {
     "defaultMessage": "過去 14 日の送信はありません",
     "description": "Heading of the empty list of a webhook's deliveries."
-  },
-  "admin.webhooks.deliveries.last_attempt": {
-    "defaultMessage": "最後の試行",
-    "description": "Term in a delivery's details: the outcome and time of its last attempt."
   },
   "admin.webhooks.deliveries.outcome.connection_error": {
     "defaultMessage": "接続できませんでした",
@@ -119,10 +103,6 @@
     "defaultMessage": "送信履歴",
     "description": "Heading of the deliveries of a webhook on its page."
   },
-  "admin.webhooks.deliveries_of": {
-    "defaultMessage": "{name} の送信履歴",
-    "description": "Accessible name of the link to a webhook's deliveries. {name} is its description or host name."
-  },
   "admin.webhooks.description": {
     "defaultMessage": "説明",
     "description": "Label of the description of a webhook: what it is for."
@@ -139,29 +119,9 @@
     "defaultMessage": "無効にする",
     "description": "Button that disables a webhook."
   },
-  "admin.webhooks.disable_webhook": {
-    "defaultMessage": "{name} を無効にする",
-    "description": "Accessible name of the button that disables a webhook."
-  },
   "admin.webhooks.disabled_status": {
     "defaultMessage": "{name} を無効にしました。",
     "description": "Status after disabling a webhook."
-  },
-  "admin.webhooks.edit": {
-    "defaultMessage": "編集",
-    "description": "Button that opens the dialog to change a webhook."
-  },
-  "admin.webhooks.edit.close": {
-    "defaultMessage": "閉じる",
-    "description": "Button that closes the dialog that changes a webhook."
-  },
-  "admin.webhooks.edit.title": {
-    "defaultMessage": "{name} を編集",
-    "description": "Title of the dialog that changes a webhook."
-  },
-  "admin.webhooks.edit_webhook": {
-    "defaultMessage": "{name} を編集",
-    "description": "Accessible name of the button that changes a webhook. {name} is its description or host name."
   },
   "admin.webhooks.empty": {
     "defaultMessage": "webhook はまだありません",
@@ -174,10 +134,6 @@
   "admin.webhooks.enable": {
     "defaultMessage": "有効にする",
     "description": "Button that enables a webhook."
-  },
-  "admin.webhooks.enable_webhook": {
-    "defaultMessage": "{name} を有効にする",
-    "description": "Accessible name of the button that enables a webhook."
   },
   "admin.webhooks.enabled_status": {
     "defaultMessage": "{name} を有効にしました。",
@@ -207,14 +163,6 @@
     "defaultMessage": "カスタム絵文字が変更された",
     "description": "Name of a webhook event: an administrator changed a custom emoji."
   },
-  "admin.webhooks.event.error_group_created": {
-    "defaultMessage": "新しいエラーが報告された",
-    "description": "Name of a webhook event: the server or the web client reported an error of a new kind."
-  },
-  "admin.webhooks.event.error_group_regressed": {
-    "defaultMessage": "解決したエラーが再び起きた",
-    "description": "Name of a webhook event: an error that an administrator marked resolved happened again with a newer version of the server."
-  },
   "admin.webhooks.event.domain_moderation_action_created": {
     "defaultMessage": "ドメインが処分された",
     "description": "Name of a webhook event: a moderation action on a domain was issued."
@@ -222,6 +170,14 @@
   "admin.webhooks.event.domain_moderation_action_lifted": {
     "defaultMessage": "ドメインの処分が解除された",
     "description": "Name of a webhook event: a moderation action on a domain was lifted."
+  },
+  "admin.webhooks.event.error_group_created": {
+    "defaultMessage": "新しいエラーが報告された",
+    "description": "Name of a webhook event: the server or the web client reported an error of a new kind."
+  },
+  "admin.webhooks.event.error_group_regressed": {
+    "defaultMessage": "解決したエラーが再び起きた",
+    "description": "Name of a webhook event: an error that an administrator marked resolved happened again with a newer version of the server."
   },
   "admin.webhooks.event.moderation_action_created": {
     "defaultMessage": "アカウントが処分された",
@@ -283,13 +239,21 @@
     "defaultMessage": "このサーバーの webhook",
     "description": "Heading of the list of the webhooks."
   },
+  "admin.webhooks.manage.title": {
+    "defaultMessage": "状態・テスト・秘密",
+    "description": "Heading of the section of a webhook's page that enables, disables, tests, gives a new secret to or deletes it."
+  },
   "admin.webhooks.missing_permissions": {
     "defaultMessage": "足りない権限: {permissions}",
     "description": "Line under the refusal of a webhook's events: the permissions the user lacks. {permissions} is a list of permission names such as manage_accounts."
   },
   "admin.webhooks.new.title": {
-    "defaultMessage": "Webhook を設定する",
-    "description": "Heading of the form that sets up a new webhook."
+    "defaultMessage": "Webhook を追加",
+    "description": "Heading of the page with the form that sets up a webhook, and the link to it."
+  },
+  "admin.webhooks.open": {
+    "defaultMessage": "Webhook を開く",
+    "description": "Link from the secret of a new webhook to the webhook's page."
   },
   "admin.webhooks.reason.admin": {
     "defaultMessage": "スタッフが変更",
@@ -314,10 +278,6 @@
   "admin.webhooks.rotate.title": {
     "defaultMessage": "{name} の秘密を作り直しますか？",
     "description": "Title of the dialog that confirms giving a webhook a new secret."
-  },
-  "admin.webhooks.rotate_webhook": {
-    "defaultMessage": "{name} の秘密を作り直す",
-    "description": "Accessible name of the button that gives a webhook a new secret."
   },
   "admin.webhooks.rotated": {
     "defaultMessage": "{name} の秘密を作り直しました。",
@@ -375,10 +335,6 @@
     "defaultMessage": "テスト送信",
     "description": "Button that sends a test message to a webhook."
   },
-  "admin.webhooks.test_webhook": {
-    "defaultMessage": "{name} にテスト送信",
-    "description": "Accessible name of the button that sends a test message to a webhook."
-  },
   "admin.webhooks.tested": {
     "defaultMessage": "{name} へのテストメッセージを送信待ちにしました。結果は送信履歴で確認できます。",
     "description": "Status after sending a test message to a webhook."
@@ -402,5 +358,9 @@
   "admin.webhooks.url.description": {
     "defaultMessage": "メッセージを送る先の https の URL。このサーバーの内部ネットワークの宛先は、運営者が設定で許可したときだけ届きます。",
     "description": "Help of the URL of a webhook."
+  },
+  "admin.webhooks.webhook": {
+    "defaultMessage": "Webhook",
+    "description": "Column of the list of webhooks: its description or host name, linking to its page."
   }
 }

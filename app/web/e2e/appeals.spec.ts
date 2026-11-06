@@ -6,7 +6,16 @@
 // names change with the locale, so the structure is checked by role and by what the server sends.
 import type { Page, Route } from "@playwright/test";
 import type { components } from "@mycroblog/mykit";
-import { expect, expectNoAxeViolations, expectNoHorizontalScroll, test } from "./fixtures";
+import {
+  expect,
+  expectNoAxeViolations,
+  expectNoHorizontalScroll,
+  isCardForm,
+  recordRowHeaders,
+  recordRows,
+  recordTable,
+  test,
+} from "./fixtures";
 
 type Schemas = components["schemas"];
 type Appeal = Schemas["AdminAppeal"];
@@ -210,12 +219,14 @@ test.describe("appeals", () => {
     const decisions = await moderatorServer(page);
     await page.goto("/moderation/appeals");
     const main = page.getByRole("main");
-    const table = main.getByRole("table");
-    const firstRow = table.getByRole("row").nth(1);
-    await expect(firstRow.getByRole("cell").filter({ hasText: appellant.display_name })).toBeVisible();
-    await expect(firstRow.getByRole("rowheader")).toContainText(longText);
-    await expect(firstRow.getByRole("cell")).toHaveCount(3);
-    await expect(firstRow.getByRole("cell").last().getByRole("time")).toBeVisible();
+    const table = recordTable(main);
+    const firstRow = recordRows(table).first();
+    // The values of the row: its cells, or the definitions of its card at narrow widths.
+    const values = firstRow.getByRole((await isCardForm(table)) ? "definition" : "cell");
+    await expect(values.filter({ hasText: appellant.display_name })).toBeVisible();
+    await expect(recordRowHeaders(firstRow)).toContainText(longText);
+    await expect(values).toHaveCount(3);
+    await expect(values.last().getByRole("time")).toBeVisible();
     await expect(table.getByText(arabicText)).toHaveAttribute("dir", "auto");
 
     // Open the first appeal from the keyboard.
@@ -270,8 +281,8 @@ test.describe("appeals", () => {
     // server answers the lists slowly now: the list is not shown from a cache older than the decision.
     await main.locator('a[href="/moderation/appeals"]').click();
     await expect(page).toHaveURL(/\/moderation\/appeals$/);
-    await expect(main.getByRole("table").locator(`a[href="/moderation/appeals/${otherAppealId}"]`)).toBeVisible();
-    expect(await main.getByRole("table").locator(`a[href="/moderation/appeals/${appealId}"]`).count()).toBe(0);
-    await expect(main.getByRole("table").locator('a[href^="/moderation/appeals/"]')).toHaveCount(1);
+    await expect(recordTable(main).locator(`a[href="/moderation/appeals/${otherAppealId}"]`)).toBeVisible();
+    expect(await recordTable(main).locator(`a[href="/moderation/appeals/${appealId}"]`).count()).toBe(0);
+    await expect(recordTable(main).locator('a[href^="/moderation/appeals/"]')).toHaveCount(1);
   });
 });

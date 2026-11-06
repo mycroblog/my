@@ -4389,6 +4389,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/jobs/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get a job of the job queue
+         * @description One job, pending or dead, with its state at the time of the request. A completed job, an
+         *     unknown ID, or a pending job on a queue that cannot list them (`pending_listing` of
+         *     `GET /admin/queue` is `false`) is a 404. Needs the `manage_jobs` permission.
+         */
+        get: operations["getAdminJob"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/jobs/{id}/attempts": {
         parameters: {
             query?: never;
@@ -4876,6 +4898,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/hook_decisions/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get a decision
+         * @description One decision of a decision hook, with its cancellation. An unknown ID is a 404. Needs the
+         *     `manage_reports` permission.
+         */
+        get: operations["getHookDecision"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/hook_decisions/{id}/override": {
         parameters: {
             query?: never;
@@ -4913,6 +4956,27 @@ export interface paths {
          *     author tried to post. Needs the `manage_reports` permission.
          */
         get: operations["listHookAppeals"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/hook_appeals/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get an appeal of a refused post
+         * @description One author's appeal of a `reject` of `local.status`, with its decision and the text the author
+         *     tried to post. An unknown ID is a 404. Needs the `manage_reports` permission.
+         */
+        get: operations["getHookAppeal"];
         put?: never;
         post?: never;
         delete?: never;
@@ -5588,8 +5652,9 @@ export interface paths {
         };
         /**
          * List the announcements
-         * @description Every announcement, drafts and withdrawn ones included, newest first. The
-         *     list is not paginated. Needs the `manage_announcements` permission.
+         * @description The announcements, drafts and withdrawn ones included, newest first, a page at a time.
+         *     `state` keeps only some of them; an unknown one is a 400 naming `state`. Needs the
+         *     `manage_announcements` permission.
          */
         get: operations["listAdminAnnouncements"];
         put?: never;
@@ -7964,6 +8029,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/supporter_subscriptions/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get a subscription
+         * @description One subscription to a supporter plan, as the list shows it. An unknown subscription is a 404.
+         *     Needs the `manage_supporters` permission.
+         */
+        get: operations["getSupporterSubscription"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/supporter_subscriptions/{id}/end": {
         parameters: {
             query?: never;
@@ -8688,6 +8774,13 @@ export interface components {
              */
             publish: boolean;
         };
+        /**
+         * @description Which announcements the administrators' list keeps. `draft` and `withdrawn` keep that state.
+         *     Of the published ones, `scheduled` keeps those whose window starts later, `showing` those every
+         *     local user sees now, and `ended` those whose window has ended.
+         * @enum {string}
+         */
+        AdminAnnouncementFilter: "draft" | "scheduled" | "showing" | "ended" | "withdrawn";
         /** @description The title, the text, and the window of an announcement. */
         AdminAnnouncementInput: {
             /**
@@ -8708,8 +8801,8 @@ export interface components {
              */
             ends_at?: string;
         };
-        /** @description The announcements, newest first. */
-        AdminAnnouncementList: {
+        /** @description A page of announcements, newest first. */
+        AdminAnnouncementPage: components["schemas"]["PageInfo"] & {
             items: components["schemas"]["AdminAnnouncement"][];
         };
         /**
@@ -11177,7 +11270,7 @@ export interface components {
         };
         /** @description A new role. */
         CreateRoleRequest: {
-            /** @description The name of the role, 1 to 64 lowercase ASCII letters, digits, `_`, and `-`. */
+            /** @description The name of the role, 1 to 64 lowercase ASCII letters, digits, `_`, and `-`, other than `new`. */
             key: string;
             /** @description The rank of the role, from 0 to 999 (below `admin`). */
             position: number;
@@ -20964,6 +21057,31 @@ export interface operations {
             default: components["responses"]["Problem"];
         };
     };
+    getAdminJob: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the job. */
+                id: components["schemas"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The job. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminJob"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
     listAdminJobAttempts: {
         parameters: {
             query?: {
@@ -21555,6 +21673,31 @@ export interface operations {
             default: components["responses"]["Problem"];
         };
     };
+    getHookDecision: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the decision. */
+                id: components["parameters"]["HookDecisionId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The decision. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminHookDecision"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
     overrideHookDecision: {
         parameters: {
             query?: never;
@@ -21606,6 +21749,22 @@ export interface operations {
                     "application/json": components["schemas"]["AdminHookAppealPage"];
                 };
             };
+            default: components["responses"]["Problem"];
+        };
+    };
+    getHookAppeal: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the appeal. */
+                id: components["parameters"]["AppealId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["AdminHookAppeal"];
             default: components["responses"]["Problem"];
         };
     };
@@ -22217,21 +22376,28 @@ export interface operations {
     };
     listAdminAnnouncements: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Keep only these announcements; omitted keeps every one. */
+                state?: components["schemas"]["AdminAnnouncementFilter"];
+                /** @description The `next_cursor` of the previous page; omitted for the first page. */
+                cursor?: components["parameters"]["Cursor"];
+                /** @description The maximum number of items in the page. */
+                limit?: components["parameters"]["Limit"];
+            };
             header?: never;
             path?: never;
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description The announcements. */
+            /** @description A page of announcements. */
             200: {
                 headers: {
                     "Cache-Control": components["headers"]["CacheControl"];
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AdminAnnouncementList"];
+                    "application/json": components["schemas"]["AdminAnnouncementPage"];
                 };
             };
             default: components["responses"]["Problem"];
@@ -24632,6 +24798,31 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AdminSupporterSubscriptionPage"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    getSupporterSubscription: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the subscription. */
+                id: components["parameters"]["SupporterSubscriptionId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The subscription. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminSupporterSubscription"];
                 };
             };
             default: components["responses"]["Problem"];

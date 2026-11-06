@@ -1,13 +1,14 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The supporters screen in every width × locale project (ADR-0072, ADR-0110): an administrator with
-// manage_supporters sees the program and its warning, the payment provider's state with how to fix its last
-// reconciliation, the plans with a name in Arabic (dir="auto") and the subscriptions, reconciles now and sees why a
-// second one is too soon, enables the program, creates a plan, retires one and ends a subscription after their dialogs. Each
-// step passes axe without scrolling sideways. `vite preview` has no API, so the test plays the server with page.route;
+// The pages of the supporters screen in every width × locale project (ADR-0072, ADR-0110): an administrator with
+// manage_supporters sees the program and its warning and the payment provider's state with how to fix its last
+// reconciliation, reconciles now and sees why a second one is too soon, and enables the program with the form's save;
+// lists the plans with a name in Arabic (dir="auto"), creates a plan on its page and retires it on the plan's page after
+// its dialog; and opens a subscription from the list and ends it after its dialog. Each step passes axe without
+// scrolling sideways. `vite preview` has no API, so the test plays the server with page.route;
 // names change with the locale, so the elements are found by role and by the names in the project's locale catalog.
 import type { Page, Route } from "@playwright/test";
 import type { components } from "@mycroblog/mykit";
-import { expect, expectNoAxeViolations, expectNoHorizontalScroll, test } from "./fixtures";
+import { expect, expectNoAxeViolations, expectNoHorizontalScroll, recordRows, recordTable, test } from "./fixtures";
 import { readCatalog } from "./catalog.ts";
 
 type Schemas = components["schemas"];
@@ -36,7 +37,10 @@ const account = {
   discoverable: true,
   indexable: true,
   source: { note: "", fields: [] },
-  posting: { visibility_ceiling: "public", visibilities: ["public", "local", "unlisted", "private", "direct"] },
+  posting: {
+    visibility_ceiling: "public",
+    visibilities: ["public", "local", "unlisted", "private", "direct"],
+  },
   permissions: ["manage_supporters"],
 };
 
@@ -193,6 +197,10 @@ async function serveApi(page: Page) {
       return route.fulfill({ status: 204 });
     }
     if (key === "GET /admin/supporter_subscriptions") return json(route, { items: subscriptions });
+    if (/^GET \/admin\/supporter_subscriptions\/[^/]+$/.test(key)) {
+      const found = subscriptions.find((s) => path.endsWith(`/${s.id}`));
+      if (found !== undefined) return json(route, found);
+    }
     if (/^POST \/admin\/supporter_subscriptions\/[^/]+\/end$/.test(key)) {
       sent.push("cancel");
       subscriptions = subscriptions.map((s) => ({ ...s, state: "expired" }));
@@ -233,77 +241,117 @@ test.describe("supporters", () => {
     await expectNoHorizontalScroll(page);
   });
 
-  test("enables the program, creates and retires a plan, and ends a subscription after their dialogs", async ({
+  test("enables the program with the form's one save", async ({ page, makeAxeBuilder }) => {
+    const sent = await serveApi(page);
+    await page.goto("/admin/supporters");
+    const main = page.getByRole("main");
+    await expect(main.getByRole("navigation", { name: message("admin.supporters.pages"), exact: true })).toBeVisible();
+    const programRegion = main.getByRole("region", {
+      name: message("admin.supporters.program.title"),
+      exact: true,
+    });
+    await expect(
+      programRegion.getByText(message("admin.supporters.warning.no_commerce_disclosure"), {
+        exact: false,
+      }),
+    ).toBeVisible();
+    await expectNoAxeViolations(makeAxeBuilder);
+    await expectNoHorizontalScroll(page);
+
+    // React Aria hides the native checkbox under its drawing; the label is what the user presses.
+    await programRegion.getByText(message("admin.supporters.program.switch"), { exact: true }).click();
+    await programRegion.getByRole("button", { name: message("admin.supporters.save"), exact: true }).click();
+    await expect(programRegion.getByText(message("admin.supporters.program.saved"), { exact: true })).toBeVisible();
+    await expect(
+      programRegion.getByRole("checkbox", {
+        name: message("admin.supporters.program.switch"),
+        exact: true,
+      }),
+    ).toBeChecked();
+    expect(sent).toEqual(["program true"]);
+    await expectNoAxeViolations(makeAxeBuilder);
+    await expectNoHorizontalScroll(page);
+  });
+
+  test("creates a plan on its page and retires it on the plan's page after its dialog", async ({
     page,
     makeAxeBuilder,
   }) => {
     const sent = await serveApi(page);
-    await page.goto("/admin/supporters");
+    await page.goto("/admin/supporters/plans");
     const main = page.getByRole("main");
-    const programRegion = main.getByRole("region", { name: message("admin.supporters.program.title"), exact: true });
-    await expect(
-      programRegion.getByText(message("admin.supporters.warning.no_commerce_disclosure"), { exact: false }),
-    ).toBeVisible();
-    const plansRegion = main.getByRole("region", { name: message("admin.supporters.plans.title"), exact: true });
-    await expect(plansRegion.getByText("داعم ذهبي")).toHaveAttribute("dir", "auto");
+    const plans = recordTable(main);
+    await expect(plans.getByText("داعم ذهبي")).toHaveAttribute("dir", "auto");
     await expectNoAxeViolations(makeAxeBuilder);
     await expectNoHorizontalScroll(page);
 
-    // React Aria hides the native switch under its drawing; the label is what the user presses.
-    await programRegion.getByText(message("admin.supporters.program.switch"), { exact: true }).click();
-    await expect(
-      programRegion.getByRole("switch", { name: message("admin.supporters.program.switch"), exact: true }),
-    ).toBeChecked();
-    expect(sent).toContain("program true");
+    await main.getByRole("link", { name: message("admin.supporters.new.title"), exact: true }).click();
+    await expect(page).toHaveURL(/\/admin\/supporters\/plans\/new$/);
+    await main.getByRole("textbox", { name: message("admin.supporters.plan.role"), exact: true }).fill("fan");
+    await main.getByRole("textbox", { name: message("admin.supporters.plan.name"), exact: true }).fill("Fan");
+    await main.getByRole("textbox", { name: message("admin.supporters.plan.amount"), exact: true }).fill("300");
+    await main.getByRole("textbox", { name: message("admin.supporters.plan.rank"), exact: true }).fill("3");
+    await expectNoAxeViolations(makeAxeBuilder);
+    await expectNoHorizontalScroll(page);
+    await main.getByRole("button", { name: message("admin.supporters.new.submit"), exact: true }).click();
 
-    // The plans' add button opens the form in its place, a region named by the same words.
-    await plansRegion.getByRole("button", { name: message("admin.supporters.new.title"), exact: true }).click();
-    const form = main.getByRole("region", { name: message("admin.supporters.new.title"), exact: true });
-    await form.getByRole("textbox", { name: message("admin.supporters.plan.role"), exact: true }).fill("fan");
-    await form.getByRole("textbox", { name: message("admin.supporters.plan.name"), exact: true }).fill("Fan");
-    await form.getByRole("textbox", { name: message("admin.supporters.plan.amount"), exact: true }).fill("300");
-    await form.getByRole("textbox", { name: message("admin.supporters.plan.rank"), exact: true }).fill("3");
-    await form.getByRole("button", { name: message("admin.supporters.new.submit"), exact: true }).click();
-    await expect(plansRegion.getByRole("heading", { level: 3, name: "Fan" })).toBeVisible();
-    await expect(plansRegion.getByText(message("admin.supporters.plan.preparing"), { exact: true })).toBeVisible();
+    await expect(page).toHaveURL(/\/admin\/supporters\/plans\/0192f0c4-7a8e-7000-8000-0000000000c3$/);
+    const facts = main.getByRole("region", { name: "Fan", exact: true });
+    await expect(facts.getByText(message("admin.supporters.plan.preparing"), { exact: true })).toBeVisible();
     expect(sent).toContain("create fan 300 JPY");
+    // The form is gone, so the result is a toast; dismissing it uncovers the end of the page at 320 px.
+    const toasts = page.getByRole("region", { name: message("shell.toast.region"), exact: true });
+    await expect(toasts.getByText(message("admin.supporters.plan.created", { name: "⁨Fan⁩" }))).toBeVisible();
+    await toasts.getByRole("button", { name: message("shell.toast.dismiss"), exact: true }).click();
+    await expect(toasts.getByRole("listitem")).toHaveCount(0);
     await expectNoAxeViolations(makeAxeBuilder);
     await expectNoHorizontalScroll(page);
 
-    await plansRegion
-      .getByRole("button", { name: message("admin.supporters.plan.retire_plan", { name: "⁨Fan⁩" }), exact: true })
-      .click();
+    const retire = main.getByRole("region", {
+      name: message("admin.supporters.plan.retire.section"),
+      exact: true,
+    });
+    await retire.getByRole("button", { name: message("admin.supporters.plan.retire"), exact: true }).click();
     const retireDialog = page.getByRole("alertdialog");
     await expect(retireDialog).toBeVisible();
     await expectNoAxeViolations(makeAxeBuilder);
     await retireDialog.getByRole("button", { name: message("admin.supporters.plan.retire"), exact: true }).click();
-    await expect(
-      main.getByRole("region", { name: message("admin.supporters.retired.title"), exact: true }),
-    ).toBeVisible();
+    await expect(facts.getByText(message("admin.supporters.plan.retired_note"), { exact: true })).toBeVisible();
+    await expect(retire).toHaveCount(0);
     expect(sent).toContain("retire");
+    await expectNoAxeViolations(makeAxeBuilder);
+    await expectNoHorizontalScroll(page);
+  });
 
-    const subscriptionsRegion = main.getByRole("region", {
-      name: message("admin.supporters.subscriptions.title"),
+  test("opens a subscription from the list and ends it after its dialog", async ({ page, makeAxeBuilder }) => {
+    const sent = await serveApi(page);
+    await page.goto("/admin/supporters/subscriptions");
+    const main = page.getByRole("main");
+    const list = recordTable(main);
+    await expect(recordRows(list)).toHaveCount(1);
+    await expectNoAxeViolations(makeAxeBuilder);
+    await expectNoHorizontalScroll(page);
+
+    await list.getByRole("link", { name: "@bob", exact: true }).click();
+    await expect(page).toHaveURL(new RegExp(`/admin/supporters/subscriptions/${subscription.id}$`));
+    const facts = main.getByRole("region", { name: "@bob", exact: true });
+    await expect(facts.getByText(message("admin.supporters.state.active"), { exact: true })).toBeVisible();
+    await expectNoAxeViolations(makeAxeBuilder);
+    await expectNoHorizontalScroll(page);
+
+    const end = main.getByRole("region", {
+      name: message("admin.supporters.subscription.end.section"),
       exact: true,
     });
-    await subscriptionsRegion
-      .getByRole("button", {
-        name: message("admin.supporters.subscription.cancel_of", {
-          action: message("admin.supporters.subscription.cancel"),
-          name: "⁦@bob⁩",
-        }),
-        exact: true,
-      })
-      .click();
+    await end.getByRole("button", { name: message("admin.supporters.subscription.cancel"), exact: true }).click();
     const cancelDialog = page.getByRole("alertdialog");
     await expect(cancelDialog).toBeVisible();
     await expectNoAxeViolations(makeAxeBuilder);
     await cancelDialog
       .getByRole("button", { name: message("admin.supporters.subscription.cancel"), exact: true })
       .click();
-    await expect(
-      subscriptionsRegion.getByRole("cell", { name: message("admin.supporters.state.expired"), exact: true }),
-    ).toBeVisible();
+    await expect(facts.getByText(message("admin.supporters.state.expired"), { exact: true })).toBeVisible();
+    await expect(end).toHaveCount(0);
     expect(sent).toContain("cancel");
     await expectNoAxeViolations(makeAxeBuilder);
     await expectNoHorizontalScroll(page);

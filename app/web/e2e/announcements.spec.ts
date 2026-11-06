@@ -2,12 +2,21 @@
 // The server's announcements in every width × locale project (FR-726, ADR-0125, ADR-0110): below xl a user sees the
 // published ones above the home timeline with the unread one marked in words, and marks it read; from xl they are in
 // the third column by their titles instead; the list page has the ended ones; the page of one, opened from its
-// notification, marks it read; an administrator writes an announcement with its title and withdraws it after its dialog. Each step passes axe without scrolling sideways. `vite preview`
+// notification, marks it read; an administrator writes an announcement with its title on its own page, finds it in the
+// list by its title, and withdraws it on its page after its dialog. Each step passes axe without scrolling sideways. `vite preview`
 // has no API, so each test plays the server with page.route; names change with the locale, so the elements are
 // found by role and by the names in the project's locale catalog.
 import type { Page, Route } from "@playwright/test";
 import type { components } from "@mycroblog/mykit";
-import { expect, expectNoAxeViolations, expectNoHorizontalScroll, test } from "./fixtures";
+import {
+  expect,
+  expectNoAxeViolations,
+  expectNoHorizontalScroll,
+  recordRowHeaders,
+  recordRows,
+  recordTable,
+  test,
+} from "./fixtures";
 import { readCatalog } from "./catalog.ts";
 
 type Schemas = components["schemas"];
@@ -240,31 +249,36 @@ test.describe("announcements", () => {
     await expectNoAxeViolations(makeAxeBuilder);
   });
 
-  test("writes an announcement and withdraws it after its dialog", async ({ page, makeAxeBuilder }) => {
+  test("writes an announcement on its own page, lists it, and withdraws it on its page after its dialog", async ({
+    page,
+    makeAxeBuilder,
+  }) => {
     const sent: string[] = [];
+    const id = "0192f0c4-7a8e-7000-8000-0000000000f3";
     let announcements: Schemas["AdminAnnouncement"][] = [];
     await serveApi(page, ["manage_announcements"], (key, route) => {
       if (key === "GET /announcements") return json(route, { items: [] });
       if (key === "GET /admin/announcements") return json(route, { items: announcements });
+      if (key === `GET /admin/announcements/${id}`) return json(route, announcements[0]);
       if (key === "POST /admin/announcements") {
         const body = route.request().postDataJSON() as Schemas["AdminAnnouncementCreateRequest"];
         sent.push(`create ${String(body.publish)} ${body.title}`);
         announcements = [
           {
-            id: "0192f0c4-7a8e-7000-8000-0000000000f3",
+            id,
             title: body.title,
             text: body.text,
             content: `<p>${body.text}</p>`,
             state: body.publish ? "published" : "draft",
             ...(body.ends_at === undefined ? {} : { ends_at: body.ends_at }),
-            ...(body.publish ? { published_at: "2026-10-21T00:00:00Z" } : {}),
+            ...(body.publish ? { published_at: new Date().toISOString() } : {}),
             created_at: "2026-10-21T00:00:00Z",
             revised_at: "2026-10-21T00:00:00Z",
           },
         ];
-        return json(route, announcements[0]);
+        return json(route, announcements[0], 201);
       }
-      if (/^POST \/admin\/announcements\/[^/]+\/withdraw$/.test(key)) {
+      if (key === `POST /admin/announcements/${id}/withdraw`) {
         sent.push("withdraw");
         announcements = announcements.map((item) => ({ ...item, state: "withdrawn" }));
         return json(route, announcements[0]);
@@ -273,34 +287,62 @@ test.describe("announcements", () => {
     });
     await page.goto("/admin/announcements");
     const main = page.getByRole("main");
-    const form = main.getByRole("region", { name: message("admin.announcements.new.title"), exact: true });
-    await expect(form).toBeVisible();
+    await expect(
+      main.getByRole("heading", { level: 2, name: message("admin.announcements.empty"), exact: true }),
+    ).toBeVisible();
     await expectNoAxeViolations(makeAxeBuilder);
     await expectNoHorizontalScroll(page);
 
-    await form
+    // The list's link opens the page that writes one.
+    await main.getByRole("link", { name: message("admin.announcements.new.title"), exact: true }).click();
+    await expect(
+      main.getByRole("heading", { level: 1, name: message("admin.announcements.new.title"), exact: true }),
+    ).toBeVisible();
+    await expectNoAxeViolations(makeAxeBuilder);
+    await expectNoHorizontalScroll(page);
+    await main
       .getByRole("textbox", { name: message("admin.announcements.announcement_title"), exact: true })
       .fill("Maintenance tonight");
-    await form
+    await main
       .getByRole("textbox", { name: message("admin.announcements.text"), exact: true })
       .fill("The server is read-only from 02:00.");
-    await form.getByRole("button", { name: message("admin.announcements.create_published"), exact: true }).click();
-    const list = main.getByRole("region", { name: message("admin.announcements.list.title"), exact: true });
-    const withdraw = list.getByRole("button", {
-      name: message("admin.announcements.withdraw_one", { announcement: "Maintenance tonight" }),
-      exact: true,
-    });
-    await expect(withdraw).toBeVisible();
+    await main.getByRole("button", { name: message("admin.announcements.create_published"), exact: true }).click();
+
+    // Writing it opens its page.
+    await expect(
+      main.getByRole("heading", { level: 1, name: message("admin.announcements.detail.title"), exact: true }),
+    ).toBeVisible();
     expect(sent).toEqual(["create true Maintenance tonight"]);
+    const state = main.getByRole("region", { name: message("admin.announcements.state"), exact: true });
+    await expect(state.getByText(message("admin.announcements.phase.showing"), { exact: true })).toBeVisible();
+    await expect(
+      main
+        .getByRole("region", { name: message("admin.announcements.preview"), exact: true })
+        .getByText("The server is read-only from 02:00."),
+    ).toBeVisible();
     await expectNoAxeViolations(makeAxeBuilder);
     await expectNoHorizontalScroll(page);
 
-    await withdraw.click();
+    // The list has it by its title, without its text, in a table or in cards by the width.
+    await main.getByRole("link", { name: message("admin.announcements.back"), exact: true }).click();
+    const list = recordTable(main);
+    await expect(recordRowHeaders(list)).toHaveText(["Maintenance tonight"]);
+    await expect(main.getByText("The server is read-only from 02:00.")).toHaveCount(0);
+    await expectNoAxeViolations(makeAxeBuilder);
+    await expectNoHorizontalScroll(page);
+
+    await recordRows(list).getByRole("link", { name: "Maintenance tonight", exact: true }).click();
+    const withdrawSection = main.getByRole("region", {
+      name: message("admin.announcements.withdraw.section"),
+      exact: true,
+    });
+    await withdrawSection.getByRole("button", { name: message("admin.announcements.withdraw"), exact: true }).click();
     const dialog = page.getByRole("alertdialog");
     await expect(dialog).toBeVisible();
     await expectNoAxeViolations(makeAxeBuilder);
     await dialog.getByRole("button", { name: message("admin.announcements.withdraw"), exact: true }).click();
-    await expect(withdraw).toBeHidden();
+    await expect(withdrawSection).toBeHidden();
+    await expect(state.getByText(message("admin.announcements.phase.withdrawn"), { exact: true })).toBeVisible();
     expect(sent).toEqual(["create true Maintenance tonight", "withdraw"]);
     await expectNoAxeViolations(makeAxeBuilder);
   });

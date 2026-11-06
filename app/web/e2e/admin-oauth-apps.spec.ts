@@ -1,10 +1,17 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The OAuth apps admin screen in every width × locale project (ADR-0110, ADR-0090 §1): an administrator with
-// manage_oauth_apps disables an app after the alert dialog and enables it again, passing axe without scrolling
-// sideways. `vite preview` has no API, so the test plays the server of a signed-in operator with page.route; names
+// manage_oauth_apps disables an app after the alert dialog and enables it again, and moves to the denied hosts page by
+// the screen's local navigation, passing axe without scrolling sideways. `vite preview` has no API, so the test plays the server of a signed-in operator with page.route; names
 // change with the locale, so they come from the project's locale catalog.
 import type { Page, Route } from "@playwright/test";
-import { expect, expectNoAxeViolations, expectNoHorizontalScroll, test } from "./fixtures";
+import {
+  expect,
+  expectNoAxeViolations,
+  expectNoHorizontalScroll,
+  recordRowHeaders,
+  recordTable,
+  test,
+} from "./fixtures";
 import { readCatalog } from "./catalog.ts";
 
 /** The client message `key` in the project's locale. */
@@ -44,6 +51,7 @@ const operator = {
 
 const appId = "0192f0c4-7a8e-7000-8000-0000000000a1";
 const appName = "A-very-long-named-app-for-testing-that-wraps-at-320-pixels";
+const deniedHost = "a-very-long-host-name-of-app-metadata-documents-that-wraps.example";
 
 function json(route: Route, body: unknown, status = 200) {
   return route.fulfill({
@@ -122,7 +130,18 @@ async function operatorServer(page: Page) {
       disabled = false;
       return json(route, client());
     }
-    if (key === "GET /admin/oauth_client_host_denials") return json(route, { items: [] });
+    if (key === "GET /admin/oauth_client_host_denials") {
+      return json(route, {
+        items: [
+          {
+            id: "0192f0c4-7a8e-7000-8000-0000000000a3",
+            host: deniedHost,
+            denied_by_deleted: false,
+            denied_at: "2026-10-23T00:00:00Z",
+          },
+        ],
+      });
+    }
     return json(route, { type: "about:blank", title: "Not Found", status: 404 }, 404);
   });
   return actions;
@@ -133,8 +152,9 @@ test.describe("OAuth apps", () => {
     const actions = await operatorServer(page);
     await page.goto("/admin/oauth-apps");
     const main = page.getByRole("main");
-    const table = main.getByRole("table");
-    await expect(table.getByRole("rowheader")).toContainText(appName);
+    // A table, or a list of cards at narrow widths.
+    const table = recordTable(main);
+    await expect(recordRowHeaders(table)).toContainText(appName);
     await expectNoAxeViolations(makeAxeBuilder);
     await expectNoHorizontalScroll(page);
 
@@ -157,6 +177,33 @@ test.describe("OAuth apps", () => {
     await expectNoHorizontalScroll(page);
   });
 
+  test("opens the denied hosts by the local navigation, which marks the page on screen", async ({
+    page,
+    makeAxeBuilder,
+  }) => {
+    await operatorServer(page);
+    await page.goto("/admin/oauth-apps");
+    const main = page.getByRole("main");
+    const pages = main.getByRole("navigation", { name: message("admin.oauth_apps.pages") });
+    await expect(pages.getByRole("link", { name: message("admin.oauth_apps.pages.apps") })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+    await pages.getByRole("link", { name: message("admin.oauth_apps.pages.hosts") }).click();
+    await expect(page).toHaveURL(/\/admin\/oauth-apps\/hosts$/u);
+    await expect(pages.getByRole("link", { name: message("admin.oauth_apps.pages.hosts") })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+    await expect(recordRowHeaders(recordTable(main))).toContainText(deniedHost);
+    // The page's one primary action.
+    await expect(
+      main.getByRole("button", { name: message("admin.oauth_apps.hosts.deny_new"), exact: true }),
+    ).toBeVisible();
+    await expectNoAxeViolations(makeAxeBuilder);
+    await expectNoHorizontalScroll(page);
+  });
+
   // The specs run without motion (playwright.config.ts); this one keeps the animated path of an alert dialog: with
   // motion, the panel fades in over a transition, comes to rest opaque, and fades out before it unmounts.
   test.describe("with motion", () => {
@@ -165,7 +212,7 @@ test.describe("OAuth apps", () => {
     test("the alert dialog fades in to rest and fades out on its action", async ({ page }) => {
       const actions = await operatorServer(page);
       await page.goto("/admin/oauth-apps");
-      const table = page.getByRole("main").getByRole("table");
+      const table = recordTable(page.getByRole("main"));
       await table.getByRole("button", { name: appButtonName("admin.oauth_apps.disable_app") }).click();
       const dialog = page.getByRole("alertdialog");
       await expect(dialog).toBeVisible();

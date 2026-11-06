@@ -17,10 +17,6 @@ import {
   SelectItem,
   Spinner,
   Stack,
-  TableCell,
-  TableColumnHeader,
-  TableRow,
-  TableRowHeader,
   Text,
   TextField,
 } from "@my/ui";
@@ -249,17 +245,32 @@ function Results({ search }: { search: AdminAccountSearch }) {
               <RegionError heading={t("client:admin.accounts.results.more_failed")} reason={results.moreError} />
             )
           }
-          head={
-            <>
-              <TableColumnHeader>{t("client:admin.accounts.column.account")}</TableColumnHeader>
-              <TableColumnHeader>{t("client:admin.accounts.state")}</TableColumnHeader>
-              <TableColumnHeader>{t("client:admin.accounts.origin")}</TableColumnHeader>
-              <TableColumnHeader>{t("client:admin.accounts.created_at")}</TableColumnHeader>
-            </>
-          }
-        >
-          {(account) => <AccountRow account={account} />}
-        </RecordTable>
+          columns={[
+            {
+              id: "account",
+              header: t("client:admin.accounts.column.account"),
+              wrap: "anywhere",
+              cell: (account) => <AccountName account={account} />,
+            },
+            {
+              id: "state",
+              header: t("client:admin.accounts.state"),
+              cell: (account) => <AccountState account={account} />,
+            },
+            {
+              id: "origin",
+              header: t("client:admin.accounts.origin"),
+              wrap: "anywhere",
+              cell: (account) => <AccountOrigin account={account} />,
+            },
+            {
+              id: "created_at",
+              header: t("client:admin.accounts.created_at"),
+              cell: (account) => <DateTime value={account.account.created_at} />,
+            },
+          ]}
+          headingLevel={3}
+        />
       );
     }
   }
@@ -271,44 +282,42 @@ export function AccountOrigin({ account }: { account: AdminAccount }) {
   return account.local ? t("client:admin.accounts.origin.local") : <DomainName domain={account.account.domain} />;
 }
 
-function AccountRow({ account }: { account: AdminAccount }) {
+/** The account: its avatar, name and handle (a link to its page), and its restrictions. */
+function AccountName({ account }: { account: AdminAccount }) {
   const t = useT();
   const intl = useIntl();
   return (
-    <TableRow data-row-id={account.id}>
-      <TableRowHeader wrap="anywhere">
-        <Stack gap="1">
-          <AccountItem
-            name={accountName(account.account)}
-            handle={account.account.display_name === "" ? undefined : handleOf(account.account)}
-            avatar={imageSources(account.account.avatar)}
-            avatarSeed={account.account.id}
-            href={`/moderation/accounts/${encodeURIComponent(account.id)}`}
-          />
-          {account.restrictions.length > 0 && (
-            <Text size="sm" tone="muted">
-              {intl.formatList(
-                account.restrictions.map((restriction) => t(adminAccountRestrictionLabels[restriction])),
-                { type: "conjunction" },
-              )}
-            </Text>
+    <Stack as="span" gap="1">
+      <AccountItem
+        name={accountName(account.account)}
+        handle={account.account.display_name === "" ? undefined : handleOf(account.account)}
+        avatar={imageSources(account.account.avatar)}
+        avatarSeed={account.account.id}
+        href={`/moderation/accounts/${encodeURIComponent(account.id)}`}
+      />
+      {account.restrictions.length > 0 && (
+        <Text size="sm" tone="muted">
+          {intl.formatList(
+            account.restrictions.map((restriction) => t(adminAccountRestrictionLabels[restriction])),
+            { type: "conjunction" },
           )}
-        </Stack>
-      </TableRowHeader>
-      <TableCell>
-        <Text weight="semibold">{t(adminAccountStateLabels[account.state])}</Text>
-        {account.registration_state !== undefined && (
-          <Text as="p" size="sm" tone="muted">
-            {t(adminAccountRegistrationStateLabels[account.registration_state])}
-          </Text>
-        )}
-      </TableCell>
-      <TableCell wrap="anywhere">
-        <AccountOrigin account={account} />
-      </TableCell>
-      <TableCell>
-        <DateTime value={account.account.created_at} />
-      </TableCell>
-    </TableRow>
+        </Text>
+      )}
+    </Stack>
+  );
+}
+
+/** The account's state, and the state of its registration while it has one. */
+function AccountState({ account }: { account: AdminAccount }) {
+  const t = useT();
+  return (
+    <>
+      <Text weight="semibold">{t(adminAccountStateLabels[account.state])}</Text>
+      {account.registration_state !== undefined && (
+        <Text as="p" size="sm" tone="muted">
+          {t(adminAccountRegistrationStateLabels[account.registration_state])}
+        </Text>
+      )}
+    </>
   );
 }

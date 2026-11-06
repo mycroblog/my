@@ -9,7 +9,6 @@ import type { Schemas } from "../../test/fixtures";
 import { apiBase, operatorHandler, problem, signedInHandler } from "../../test/msw/http";
 import { server } from "../../test/msw/server";
 import { renderApp } from "../../test/render";
-import { expectSelectedTabControlsPanel } from "../../test/tabs";
 
 beforeEach(() => {
   server.use(signedInHandler);
@@ -66,7 +65,10 @@ describe("the staff's entry on the settings page and the mode's menu", () => {
     });
     // The overview says how the server runs, each number a link to its screen; it is not a copy of the menu.
     const health = within(await screen.findByRole("region", { name: "Server health" }));
-    expect(await health.findByRole("link", { name: "Failed jobs" })).toHaveAttribute("href", "/admin/jobs?state=dead");
+    expect(await health.findByRole("link", { name: "Failed jobs" })).toHaveAttribute(
+      "href",
+      "/admin/jobs/list?state=dead",
+    );
     expect(health.getByRole("link", { name: "Longest job wait" })).toHaveAttribute("href", "/admin/jobs");
     expect(within(screen.getByRole("main")).queryByRole("link", { name: "Jobs" })).not.toBeInTheDocument();
     expect(screen.queryByRole("group", { name: "Moderation" })).not.toBeInTheDocument();
@@ -207,98 +209,74 @@ describe("the queue dashboard", () => {
     oldest_ready_at: "2026-10-17T09:30:00Z",
   };
 
-  test("shows the queue's counts and its pending jobs, and the attempt history of a job when it is opened", async () => {
+  test("shows the queue's counts, each state a link to its jobs on the list page", async () => {
     const requests = recordAdminRequests();
     server.use(
       operatorHandler(["manage_jobs"]),
       http.get(`${apiBase}/admin/queue`, () => HttpResponse.json(queue)),
-      http.get(`${apiBase}/admin/jobs`, ({ request }) =>
-        HttpResponse.json({
-          items: new URL(request.url).searchParams.get("state") === "dead" ? [deliver, cleanup] : [running, retrying],
-        }),
-      ),
-      http.get(`${apiBase}/admin/jobs/:id/attempts`, () =>
-        HttpResponse.json({
-          items: [
-            {
-              attempt: 2,
-              type: "federation.deliver",
-              outcome: "retry",
-              error: "503 Service Unavailable",
-              worker: "worker-1",
-              started_at: "2026-10-17T10:00:00Z",
-              finished_at: "2026-10-17T10:00:01Z",
-            },
-            {
-              attempt: 1,
-              type: "federation.deliver",
-              outcome: "retry",
-              error: "connection refused",
-              worker: "worker-2",
-              started_at: "2026-10-17T09:00:00Z",
-              finished_at: "2026-10-17T09:00:01Z",
-            },
-          ],
-        }),
-      ),
     );
-    const { user } = await renderApp({ path: "/admin/jobs" });
+    await renderApp({ path: "/admin/jobs" });
 
     expect(await screen.findByRole("heading", { level: 1, name: "Jobs" })).toBeInTheDocument();
+    const pages = screen.getByRole("navigation", { name: "Job pages" });
+    expect(within(pages).getByRole("link", { name: "Queue state" })).toHaveAttribute("aria-current", "page");
+    expect(within(pages).getByRole("link", { name: "Job list" })).toHaveAttribute("href", "/admin/jobs/list");
     const summary = screen.getByRole("region", { name: "Queue" });
     expect(within(summary).getByText("db")).toBeInTheDocument();
-    // The wait and the jobs of each state as tiles, the failed ones marked, each state a link to its tab.
+    // The wait and the jobs of each state as tiles, the failed ones marked, each state a link to its list.
     const tiles = within(summary).getByRole("list", { name: "Jobs by state" });
     const [wait, ...states] = within(tiles).getAllByRole("listitem");
     expect(wait).toHaveTextContent(/^Longest job wait/);
-    // Each type says how long it keeps a job waiting: a type that no worker runs shows here.
-    const byType = within(summary).getByRole("list", { name: "Jobs by type" });
-    const [media, deliveries] = within(byType).getAllByRole("listitem");
-    expect(media).toHaveTextContent("media.process");
-    expect(media).toHaveTextContent("Longest job waitNo wait");
-    expect(deliveries).toHaveTextContent("federation.deliver");
-    expect(deliveries).toHaveTextContent("Longest job wait");
-    expect(deliveries).not.toHaveTextContent("No wait");
     expect(states.map((tile) => tile.textContent)).toEqual([
       "Waiting0",
       "Running1",
       "Retrying1",
       "FailedNeeds a retry2",
     ]);
-    expect(within(tiles).getByRole("link", { name: "Failed" })).toHaveAttribute("href", "/admin/jobs?state=dead");
-    const types = within(summary).getByRole("list", { name: "Jobs by type" });
+    expect(within(tiles).getByRole("link", { name: "Failed" })).toHaveAttribute("href", "/admin/jobs/list?state=dead");
+    // Each type says how long it keeps a job waiting: a type that no worker runs shows here.
+    const byType = within(summary).getByRole("list", { name: "Jobs by type" });
+    const [media, deliveries] = within(byType).getAllByRole("listitem");
+    expect(media).toHaveTextContent("media.process");
+    expect(media).toHaveTextContent("Longest job waitNo wait");
+    expect(deliveries).toHaveTextContent("federation.deliver");
+    expect(deliveries).not.toHaveTextContent("No wait");
     expect(
-      within(types)
+      within(byType)
         .getAllByRole("heading", { level: 3 })
         .map((heading) => heading.textContent),
     ).toEqual(["media.process", "federation.deliver", "kv.purge_expired"]);
-    // Each tab says how many jobs it lists.
-    expect(screen.getByRole("tab", { name: "Pending, 2 jobs", selected: true })).toBeInTheDocument();
-    expect(screen.getByRole("tab", { name: "Failed, 2 jobs" })).toBeInTheDocument();
-
-    const jobs = screen.getByRole("tabpanel", { name: "Pending, 2 jobs" });
-    expect(within(jobs).getByRole("heading", { level: 3, name: "media.process" })).toBeInTheDocument();
-    expect(within(jobs).getByText("worker-7f3a")).toBeInTheDocument();
-    expect(within(jobs).getByText("503 Service Unavailable")).toBeInTheDocument();
-    expect(within(jobs).queryByRole("button", { name: /^Run again/ })).not.toBeInTheDocument();
-    expect(requests.filter((request) => request.includes("/attempts"))).toEqual([]);
-
-    const history = within(jobs).getByRole("button", { name: "Attempt history: federation.deliver" });
-    expect(history).toHaveAttribute("aria-expanded", "false");
-    await user.click(history);
-    expect(history).toHaveAttribute("aria-expanded", "true");
-    expect(await within(jobs).findByRole("heading", { level: 4, name: "Attempt 2: retried" })).toBeInTheDocument();
-    expect(within(jobs).getByText("connection refused")).toBeInTheDocument();
-    expect(requests.filter((request) => request.includes("/attempts"))).toEqual([
-      `GET /admin/jobs/${retrying.id}/attempts?limit=40`,
-    ]);
-
-    await user.click(history);
-    expect(history).toHaveAttribute("aria-expanded", "false");
-    expect(within(jobs).queryByText("connection refused")).not.toBeInTheDocument();
+    // The summary lists no jobs.
+    expect(requests.filter((request) => request.startsWith("GET /admin/jobs"))).toEqual([]);
   });
 
-  test("runs failed jobs again: each leaves the list, focus moves to the next one, and the result is announced", async () => {
+  test("lists the pending jobs as a table with no payload, each type a link to its page", async () => {
+    server.use(
+      operatorHandler(["manage_jobs"]),
+      http.get(`${apiBase}/admin/queue`, () => HttpResponse.json(queue)),
+      http.get(`${apiBase}/admin/jobs`, () => HttpResponse.json({ items: [running, retrying] })),
+    );
+    await renderApp({ path: "/admin/jobs/list" });
+
+    const pages = await screen.findByRole("navigation", { name: "Job pages" });
+    expect(within(pages).getByRole("link", { name: "Job list" })).toHaveAttribute("aria-current", "page");
+    const table = screen.getByRole("table", { name: "Jobs: Pending" });
+    expect(
+      within(table)
+        .getAllByRole("columnheader")
+        .map((header) => header.textContent),
+    ).toEqual(["Type", "State", "Due"]);
+    const rows = within(table).getAllByRole("row").slice(1);
+    expect(rows).toHaveLength(2);
+    const first = within(rows[0] as HTMLElement);
+    expect(first.getByRole("link", { name: "media.process" })).toHaveAttribute("href", `/admin/jobs/${running.id}`);
+    expect(first.getByText("Running")).toBeInTheDocument();
+    expect(screen.queryByText('{"media_id":"m"}')).not.toBeInTheDocument();
+    expect(screen.queryByText("503 Service Unavailable")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /^Run again/ })).not.toBeInTheDocument();
+  });
+
+  test("runs failed jobs again from the list: each leaves it, focus moves to the next one, and the result is announced", async () => {
     let dead = [deliver, cleanup];
     const retried: string[] = [];
     server.use(
@@ -312,27 +290,22 @@ describe("the queue dashboard", () => {
         return new HttpResponse(null, { status: 204 });
       }),
     );
-    const { user } = await renderApp({ path: "/admin/jobs?state=dead" });
+    const { user } = await renderApp({ path: "/admin/jobs/list?state=dead" });
 
-    expect(await screen.findByRole("tab", { name: /^Failed/, selected: true })).toBeInTheDocument();
-    const jobs = screen.getByRole("tabpanel", { name: /^Failed/ });
-    expect(within(jobs).getByRole("heading", { level: 3, name: "federation.deliver" })).toBeInTheDocument();
-    expect(within(jobs).getByText("502 Bad Gateway")).toBeInTheDocument();
-    expect(within(jobs).getByText("deliver:x")).toBeInTheDocument();
-    expect(within(jobs).getByText('{"delivery_id":"x"}')).toBeInTheDocument();
-
+    const table = await screen.findByRole("table", { name: "Jobs: Failed" });
+    expect(within(table).getByRole("columnheader", { name: "Failed" })).toBeInTheDocument();
     await user.click(
-      within(jobs).getByRole("button", { name: /^Run again: federation\.deliver, failed Oct 17, 2026/ }),
+      within(table).getByRole("button", { name: /^Run again: federation\.deliver, failed Oct 17, 2026/ }),
     );
 
     await waitFor(() => {
-      expect(within(jobs).queryByRole("heading", { level: 3, name: "federation.deliver" })).not.toBeInTheDocument();
+      expect(screen.queryByRole("link", { name: "federation.deliver" })).not.toBeInTheDocument();
     });
-    expect(within(jobs).getByRole("button", { name: /^Run again: kv\.purge_expired/ })).toHaveFocus();
+    expect(screen.getByRole("button", { name: /^Run again: kv\.purge_expired/ })).toHaveFocus();
     expect(await screen.findByText("The job federation.deliver is queued to run again.")).toBeInTheDocument();
 
-    await user.click(within(jobs).getByRole("button", { name: /^Run again: kv\.purge_expired/ }));
-    expect(await screen.findByRole("heading", { level: 3, name: "No failed jobs" })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /^Run again: kv\.purge_expired/ }));
+    expect(await screen.findByRole("heading", { level: 2, name: "No failed jobs" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { level: 1 })).toHaveFocus();
     expect(retried).toEqual([deliver.id, cleanup.id]);
   });
@@ -343,23 +316,24 @@ describe("the queue dashboard", () => {
       http.get(`${apiBase}/admin/jobs`, () => HttpResponse.json({ items: [deliver] })),
       http.post(`${apiBase}/admin/jobs/:id/retry`, () => problem(404, "about:blank", "Not Found")),
     );
-    const { user } = await renderApp({ path: "/admin/jobs?state=dead" });
+    const { user } = await renderApp({ path: "/admin/jobs/list?state=dead" });
 
     await user.click(await screen.findByRole("button", { name: /^Run again: federation\.deliver/ }));
 
     expect(await screen.findByText("Could not run the job again: Not Found")).toBeInTheDocument();
-    expect(screen.getByRole("heading", { level: 3, name: "federation.deliver" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "federation.deliver" })).toBeInTheDocument();
   });
 
-  test("the tabs put the state into the URL", async () => {
+  test("the state filter goes into the URL", async () => {
     const requests = recordAdminRequests();
     server.use(operatorHandler(["manage_jobs"]));
-    const { user, router } = await renderApp({ path: "/admin/jobs" });
+    const { user, router } = await renderApp({ path: "/admin/jobs/list" });
 
-    await user.click(await screen.findByRole("tab", { name: /^Retrying/ }));
-    expect(await screen.findByRole("tabpanel", { name: /^Retrying/ })).toBeInTheDocument();
-    expectSelectedTabControlsPanel(/^Retrying/);
-    expect(router.state.location.search).toEqual({ state: "retrying" });
+    await user.click(await screen.findByRole("button", { name: /Job state/u }));
+    await user.click(await screen.findByRole("option", { name: "Retrying" }));
+    await waitFor(() => {
+      expect(router.state.location.search).toEqual({ state: "retrying" });
+    });
     expect(requests).toContain("GET /admin/jobs?limit=40&state=retrying");
   });
 
@@ -367,22 +341,95 @@ describe("the queue dashboard", () => {
     server.use(
       operatorHandler(["manage_jobs"]),
       http.get(`${apiBase}/admin/queue`, () =>
-        HttpResponse.json({ adapter: "cloudtasks", pending_listing: false, counts: [] }),
+        HttpResponse.json({ adapter: "cloudtasks", pending_listing: false, counts: [], waits: [] }),
       ),
       http.get(`${apiBase}/admin/jobs`, () => HttpResponse.json({ items: [deliver] })),
     );
-    const { user } = await renderApp({ path: "/admin/jobs" });
+    const { user } = await renderApp({ path: "/admin/jobs/list" });
 
     expect(
-      await screen.findByRole("heading", { level: 3, name: "This queue cannot list these jobs" }),
+      await screen.findByRole("heading", { level: 2, name: "This queue cannot list these jobs" }),
     ).toBeInTheDocument();
-    expect(screen.getByText(/This queue cannot list its waiting, running and retrying jobs/)).toBeInTheDocument();
-    // Only the failed jobs are counted: the queue cannot count the others.
-    expect(screen.getByRole("tab", { name: "Pending", selected: true })).toBeInTheDocument();
 
-    await user.click(screen.getByRole("tab", { name: "Failed, 0 jobs" }));
-    const jobs = await screen.findByRole("tabpanel", { name: "Failed, 0 jobs" });
-    expect(await within(jobs).findByRole("heading", { level: 3, name: "federation.deliver" })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /Job state/u }));
+    await user.click(await screen.findByRole("option", { name: "Failed" }));
+    expect(await screen.findByRole("link", { name: "federation.deliver" })).toBeInTheDocument();
+  });
+
+  test("a job's page shows its facts, payload and attempts, and runs it again", async () => {
+    let job: Schemas["AdminJob"] = deliver;
+    const requests = recordAdminRequests();
+    server.use(
+      operatorHandler(["manage_jobs"]),
+      http.get(`${apiBase}/admin/jobs/:id`, () => HttpResponse.json(job)),
+      http.get(`${apiBase}/admin/jobs/:id/attempts`, () =>
+        HttpResponse.json({
+          items: [
+            {
+              attempt: 9,
+              type: "federation.deliver",
+              outcome: "dead",
+              error: "502 Bad Gateway",
+              worker: "worker-1",
+              started_at: "2026-10-17T10:00:00Z",
+              finished_at: "2026-10-17T10:00:01Z",
+            },
+            {
+              attempt: 8,
+              type: "federation.deliver",
+              outcome: "retry",
+              error: "connection refused",
+              worker: "worker-2",
+              started_at: "2026-10-17T09:00:00Z",
+              finished_at: "2026-10-17T09:00:01Z",
+            },
+          ],
+        }),
+      ),
+      http.post(`${apiBase}/admin/jobs/:id/retry`, () => {
+        const { failed_at: _failedAt, ...rest } = deliver;
+        job = { ...rest, state: "queued", attempts: 0, run_at: "2026-10-17T11:00:00Z" };
+        return new HttpResponse(null, { status: 204 });
+      }),
+    );
+    const { user } = await renderApp({ path: `/admin/jobs/${deliver.id}` });
+
+    expect(await screen.findByRole("heading", { level: 1, name: "Job" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Back to the job list" })).toHaveAttribute("href", "/admin/jobs/list");
+    const state = screen.getByRole("region", { name: "State" });
+    expect(within(state).getByText("Failed", { selector: "dd" })).toBeInTheDocument();
+    const details = screen.getByRole("region", { name: "Details" });
+    expect(within(details).getByText("federation.deliver")).toHaveAttribute("dir", "ltr");
+    expect(within(details).getByText("deliver:x")).toBeInTheDocument();
+    expect(within(details).getByText("502 Bad Gateway")).toBeInTheDocument();
+    expect(
+      within(screen.getByRole("region", { name: "Payload" })).getByText('{"delivery_id":"x"}'),
+    ).toBeInTheDocument();
+    // The attempts are read with the page, with no button to open them.
+    const history = screen.getByRole("region", { name: "Attempt history" });
+    expect(
+      await within(history).findByRole("heading", { level: 3, name: "Attempt 9: failed for good" }),
+    ).toBeInTheDocument();
+    expect(within(history).getByText("connection refused")).toBeInTheDocument();
+    expect(requests).toContain(`GET /admin/jobs/${deliver.id}/attempts?limit=40`);
+
+    await user.click(within(state).getByRole("button", { name: /^Run again: federation\.deliver/ }));
+
+    expect(await within(state).findByText("Waiting", { selector: "dd" })).toBeInTheDocument();
+    expect(within(state).queryByRole("button", { name: /^Run again/ })).not.toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 2, name: "State" })).toHaveFocus();
+    expect(await screen.findByText("The job federation.deliver is queued to run again.")).toBeInTheDocument();
+  });
+
+  test("a job that is not in the queue any more is not found", async () => {
+    server.use(
+      operatorHandler(["manage_jobs"]),
+      http.get(`${apiBase}/admin/jobs/:id`, () => problem(404, "about:blank", "Not Found")),
+    );
+    await renderApp({ path: `/admin/jobs/${deliver.id}` });
+
+    expect(await screen.findByRole("heading", { level: 1, name: "Job" })).toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: "State" })).not.toBeInTheDocument();
   });
 });
 

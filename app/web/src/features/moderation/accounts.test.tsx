@@ -223,6 +223,10 @@ function accountServer(initial: Detail, actions: Schemas["AdminAccountAction"][]
       params["id"] === detail.id ? HttpResponse.json(detail) : problem(404, "about:blank", "Not Found"),
     ),
     http.get(`${apiBase}/admin/accounts/:id/actions`, () => HttpResponse.json({ items: list })),
+    http.get(`${apiBase}/admin/account_actions/:id`, ({ params }) => {
+      const found = list.find((action) => action.id === params["id"]);
+      return found === undefined ? problem(404, "about:blank", "Not Found") : HttpResponse.json(found);
+    }),
     // The search finds the account as it is now.
     http.get(`${apiBase}/admin/accounts`, () =>
       HttpResponse.json({
@@ -288,7 +292,7 @@ const ban = accountActionFixture({
 });
 
 describe("an account's admin page", () => {
-  test("shows the account, its restrictions, its actions and its reports, without asking for its email or IP addresses", async () => {
+  test("shows the account, its restrictions, its newest actions and its reports, with the account's other pages, and no email or IP addresses", async () => {
     const requests = recordAccountRequests();
     accountServer(bobDetail, [limit]);
     await renderApp({ path: `/moderation/accounts/${bobDetail.id}` });
@@ -312,14 +316,35 @@ describe("an account's admin page", () => {
     const history = region("Actions on the account");
     expect(await within(history).findByRole("heading", { level: 3, name: "Limit" })).toBeInTheDocument();
     expect(within(history).getByText("Spam links.")).toHaveAttribute("dir", "auto");
+    expect(within(history).getByRole("link", { name: "Limit" })).toHaveAttribute(
+      "href",
+      `/moderation/accounts/${bobDetail.id}/actions/${limit.id}`,
+    );
+    expect(within(history).getByRole("link", { name: "All actions on the account" })).toHaveAttribute(
+      "href",
+      `/moderation/accounts/${bobDetail.id}/actions`,
+    );
+    expect(within(history).queryByRole("button", { name: "Show more" })).not.toBeInTheDocument();
     const reports = region("Reports on the account");
+    expect(within(reports).getByText("The newest 20 reports on the account.")).toBeInTheDocument();
     expect(within(reports).getByRole("link", { name: /^Report of / })).toHaveAttribute(
       "href",
       "/moderation/reports/0192f0c4-7a8e-7000-8000-0000000c0007",
     );
 
-    const privateData = region("Email and IP addresses");
-    expect(within(privateData).getByRole("button", { name: "Show email and IP addresses" })).toBeInTheDocument();
+    // Roles, sign-in recovery and the email and IP addresses are on the account management page.
+    const pages = screen.getByRole("navigation", { name: "Account pages" });
+    expect(within(pages).getByRole("link", { name: "Review" })).toHaveAttribute("aria-current", "page");
+    expect(within(pages).getByRole("link", { name: "Actions" })).toHaveAttribute(
+      "href",
+      `/moderation/accounts/${bobDetail.id}/actions`,
+    );
+    expect(within(pages).getByRole("link", { name: "Management" })).toHaveAttribute(
+      "href",
+      `/moderation/accounts/${bobDetail.id}/manage`,
+    );
+    expect(screen.queryByRole("region", { name: "Email and IP addresses" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: "Two-factor authentication" })).not.toBeInTheDocument();
     expect(screen.queryByText("bob@example.com")).not.toBeInTheDocument();
     expect(requests.filter((request) => request.includes("/reveal"))).toEqual([]);
   });
@@ -406,7 +431,7 @@ describe("an account's admin page", () => {
         }),
       ),
     );
-    const { user } = await renderApp({ path: `/moderation/accounts/${bobDetail.id}` });
+    const { user } = await renderApp({ path: `/moderation/accounts/${bobDetail.id}/manage` });
 
     const privateData = await screen.findByRole("region", { name: "Email and IP addresses" });
     await user.click(within(privateData).getByRole("button", { name: "Show email and IP addresses" }));
@@ -444,7 +469,7 @@ describe("an account's admin page", () => {
     server.use(
       http.post(`${apiBase}/admin/accounts/:id/reveal`, () => problem(503, "about:blank", "Service Unavailable")),
     );
-    const { user } = await renderApp({ path: `/moderation/accounts/${bobDetail.id}` });
+    const { user } = await renderApp({ path: `/moderation/accounts/${bobDetail.id}/manage` });
 
     const privateData = await screen.findByRole("region", { name: "Email and IP addresses" });
     await user.click(within(privateData).getByRole("button", { name: "Show email and IP addresses" }));
@@ -462,6 +487,10 @@ describe("an account's admin page", () => {
 
     expect(await screen.findByRole("heading", { level: 1, name: "Account" })).toBeInTheDocument();
     expect(screen.queryByRole("region", { name: "Email and IP addresses" })).not.toBeInTheDocument();
+    // An account of another server has no management page.
+    expect(
+      within(screen.getByRole("navigation", { name: "Account pages" })).queryByRole("link", { name: "Management" }),
+    ).not.toBeInTheDocument();
     const action = region("Take action");
     expect(within(action).getAllByRole("radio")).toHaveLength(3);
     expect(within(action).getByRole("radio", { name: "Mark media sensitive" })).toBeInTheDocument();
@@ -523,7 +552,7 @@ describe("an account's admin page", () => {
     // The list is read once before the ban, and kept fresh for a while (staleTime).
     const { user, router } = await renderApp({ path: "/moderation/signup-blocks" });
     expect(await screen.findByRole("heading", { level: 1, name: "Sign-up blocks" })).toBeInTheDocument();
-    expect(await screen.findByRole("heading", { level: 3, name: "No sign-up blocks in effect" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { level: 2, name: "No sign-up blocks in effect" })).toBeInTheDocument();
     await router.navigate({ to: "/moderation/accounts/$id", params: { id: bobDetail.id } });
 
     const action = await screen.findByRole("region", { name: "Take action" });
@@ -619,6 +648,58 @@ describe("an account's admin page", () => {
     });
   });
 
+  test("the actions page lists every action in a table, a page at a time, and lifts one in effect", async () => {
+    const api = accountServer(bobDetail, [limit, ban]);
+    const { user } = await renderApp({ path: `/moderation/accounts/${bobDetail.id}/actions` });
+
+    expect(await screen.findByRole("heading", { level: 1, name: "Actions on the account" })).toBeInTheDocument();
+    expect(
+      within(screen.getByRole("navigation", { name: "Account pages" })).getByRole("link", { name: "Actions" }),
+    ).toHaveAttribute("aria-current", "page");
+    const table = await screen.findByRole("table", { name: "Actions on the account" });
+    expect(within(table).getByRole("link", { name: "Limit" })).toHaveAttribute(
+      "href",
+      `/moderation/accounts/${bobDetail.id}/actions/${limit.id}`,
+    );
+    // The reasons are on the action's page, not in the table.
+    expect(within(table).queryByText("Spam links.")).not.toBeInTheDocument();
+    // A ban has no lift.
+    expect(within(table).getAllByRole("button", { name: /^Lift / })).toHaveLength(1);
+
+    await user.click(within(table).getByRole("button", { name: /^Lift Limit, taken / }));
+    const dialog = await screen.findByRole("alertdialog", { name: `Lift Limit on ${isolated("@bob")}?` });
+    await user.click(within(dialog).getByRole("button", { name: "Lift" }));
+    await waitFor(() => {
+      expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+    });
+    expect(api.lifts).toEqual([{ id: limit.id, body: {} }]);
+    expect(await screen.findByText("Limit is lifted.")).toBeInTheDocument();
+    expect(within(table).queryAllByRole("button", { name: /^Lift / })).toHaveLength(0);
+  });
+
+  test("an action's page has every fact of it and lifts it, keeping focus in its region", async () => {
+    const api = accountServer(bobDetail, [limit]);
+    const { user } = await renderApp({ path: `/moderation/accounts/${bobDetail.id}/actions/${limit.id}` });
+
+    expect(await screen.findByRole("heading", { level: 1, name: "Action details" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Back to the actions" })).toHaveAttribute(
+      "href",
+      `/moderation/accounts/${bobDetail.id}/actions`,
+    );
+    const action = await screen.findByRole("region", { name: "Limit" });
+    expect(within(action).getByText("Spam links.")).toHaveAttribute("dir", "auto");
+    await user.click(within(action).getByRole("button", { name: "Lift" }));
+    const dialog = await screen.findByRole("alertdialog", { name: `Lift Limit on ${isolated("@bob")}?` });
+    await user.click(within(dialog).getByRole("button", { name: "Lift" }));
+
+    expect(await within(action).findByRole("status")).toHaveTextContent("Limit is lifted.");
+    expect(within(action).queryByRole("button", { name: "Lift" })).not.toBeInTheDocument();
+    await waitFor(() => {
+      expect(within(action).getByRole("heading", { level: 2 })).toHaveFocus();
+    });
+    expect(api.lifts).toEqual([{ id: limit.id, body: {} }]);
+  });
+
   // #471: the search, shown from its cache as the route loads it, must not show the account as it was before
   // the action or the lift while a slow server answers the search again.
   test("back on the search after an action, the account shows its new state at once, however slowly the search comes", async () => {
@@ -676,7 +757,7 @@ describe("an account's admin page", () => {
         return new HttpResponse(null, { status: 204 });
       }),
     );
-    const { user } = await renderApp({ path: `/moderation/accounts/${bobDetail.id}` });
+    const { user } = await renderApp({ path: `/moderation/accounts/${bobDetail.id}/manage` });
 
     const twoFactor = await screen.findByRole("region", { name: "Two-factor authentication" });
     expect(
@@ -718,7 +799,7 @@ describe("an account's admin page", () => {
         return new HttpResponse(null, { status: 204 });
       }),
     );
-    const { user } = await renderApp({ path: `/moderation/accounts/${bobDetail.id}` });
+    const { user } = await renderApp({ path: `/moderation/accounts/${bobDetail.id}/manage` });
 
     const region = await screen.findByRole("region", { name: "Email delivery" });
     expect(within(region).getByText(/an email to it bounced/)).toBeInTheDocument();
@@ -744,31 +825,31 @@ describe("an account's admin page", () => {
 
   test("an account without an email suppression shows no such region", async () => {
     accountServer(bobDetail);
-    await renderApp({ path: `/moderation/accounts/${bobDetail.id}` });
+    await renderApp({ path: `/moderation/accounts/${bobDetail.id}/manage` });
 
-    expect(await screen.findByRole("region", { name: "Two-factor authentication" })).toBeInTheDocument();
+    expect(await screen.findByRole("region", { name: "Email and IP addresses" })).toBeInTheDocument();
     expect(screen.queryByRole("region", { name: "Email delivery" })).not.toBeInTheDocument();
   });
 
-  test("a moderator sees the two-factor authentication but cannot remove it", async () => {
+  test("a moderator without manage_login_recovery has no two-factor authentication region", async () => {
     accountServer({ ...bobDetail, two_factor_enabled: true });
-    await renderApp({ path: `/moderation/accounts/${bobDetail.id}` });
+    await renderApp({ path: `/moderation/accounts/${bobDetail.id}/manage` });
 
-    const twoFactor = await screen.findByRole("region", { name: "Two-factor authentication" });
-    expect(
-      within(twoFactor).getByText("On: signing in asks for a code from an authenticator app."),
-    ).toBeInTheDocument();
-    expect(
-      within(twoFactor).queryByRole("button", { name: "Remove two-factor authentication" }),
-    ).not.toBeInTheDocument();
+    expect(await screen.findByRole("region", { name: "Email and IP addresses" })).toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: "Two-factor authentication" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Remove two-factor authentication" })).not.toBeInTheDocument();
   });
 
-  test("a remote account has no two-factor authentication region", async () => {
+  test("the management page of a remote account says it has nothing to manage", async () => {
     accountServer(adminAccountDetailFixture(remoteAccountFixture));
-    await renderApp({ path: `/moderation/accounts/${remoteAccountFixture.id}` });
+    await renderApp({ path: `/moderation/accounts/${remoteAccountFixture.id}/manage` });
 
-    expect(await screen.findByRole("region", { name: "Actions on the account" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { level: 1, name: "Account management" })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("heading", { name: "Nothing to manage on an account of another server" }),
+    ).toBeInTheDocument();
     expect(screen.queryByRole("region", { name: "Two-factor authentication" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: "Email and IP addresses" })).not.toBeInTheDocument();
   });
 
   test("says that a password reset link does not work while sign-in is limited to login providers", async () => {
@@ -786,7 +867,7 @@ describe("an account's admin page", () => {
         ),
       ),
     );
-    const { user } = await renderApp({ path: `/moderation/accounts/${bobDetail.id}` });
+    const { user } = await renderApp({ path: `/moderation/accounts/${bobDetail.id}/manage` });
     const reset = await screen.findByRole("region", { name: "Password reset" });
     await user.click(within(reset).getByRole("button", { name: "Issue password reset link" }));
     await user.click(
@@ -805,7 +886,7 @@ describe("an account's admin page", () => {
         HttpResponse.json({ url, expires_at: "2026-10-17T01:00:00Z" }, { status: 201 }),
       ),
     );
-    const { user } = await renderApp({ path: `/moderation/accounts/${bobDetail.id}` });
+    const { user } = await renderApp({ path: `/moderation/accounts/${bobDetail.id}/manage` });
 
     const reset = await screen.findByRole("region", { name: "Password reset" });
     expect(within(reset).queryByText(url)).not.toBeInTheDocument();
@@ -846,7 +927,7 @@ describe("an account's admin page", () => {
         problem(503, "about:blank", "Service Unavailable"),
       ),
     );
-    const { user } = await renderApp({ path: `/moderation/accounts/${bobDetail.id}` });
+    const { user } = await renderApp({ path: `/moderation/accounts/${bobDetail.id}/manage` });
 
     const reset = await screen.findByRole("region", { name: "Password reset" });
     await user.click(within(reset).getByRole("button", { name: "Issue password reset link" }));
@@ -860,9 +941,9 @@ describe("an account's admin page", () => {
   test("a moderator without manage_login_recovery cannot issue a password reset link", async () => {
     const requests = recordAccountRequests();
     accountServer({ ...bobDetail, two_factor_enabled: false });
-    await renderApp({ path: `/moderation/accounts/${bobDetail.id}` });
+    await renderApp({ path: `/moderation/accounts/${bobDetail.id}/manage` });
 
-    expect(await screen.findByRole("region", { name: "Two-factor authentication" })).toBeInTheDocument();
+    expect(await screen.findByRole("region", { name: "Email and IP addresses" })).toBeInTheDocument();
     expect(screen.queryByRole("region", { name: "Password reset" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Issue password reset link" })).not.toBeInTheDocument();
     expect(requests.filter((request) => request.includes("password_reset_link"))).toEqual([]);

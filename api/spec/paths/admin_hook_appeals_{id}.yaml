@@ -1,0 +1,17 @@
+# SPDX-License-Identifier: MIT
+get:
+  operationId: getHookAppeal
+  summary: Get an appeal of a refused post
+  description: |
+    One author's appeal of a `reject` of `local.status`, with its decision and the text the author
+    tried to post. An unknown ID is a 404. Needs the `manage_reports` permission.
+  tags: [admin-moderation]
+  security:
+    - oauth2: ["admin:read"]
+  parameters:
+    - $ref: ../components/parameters/AppealId.yaml
+  responses:
+    "200":
+      $ref: ../components/responses/AdminHookAppeal.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml

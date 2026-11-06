@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The server settings screen through the whole app (web-client/README.md T4): an administrator with manage_settings
 // names the server once, in any language, the app then calls the server by that name instead of its domain, and
-// a name that the server would refuse is caught in the form; the descriptions are saved one by one, and the
-// policies (registration, language, timelines, federation, domain actions) together; with MSW playing the API.
+// a name that the server would refuse is caught in the form; the general page saves the name, the descriptions, the
+// contact and the thumbnail together, and each page of the policies (registration, content, federation, discovery,
+// voice) saves only its own settings; with MSW playing the API.
 import { screen, waitFor, within } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
 import { beforeEach, describe, expect, test } from "vitest";
@@ -85,7 +86,7 @@ describe("the server's name", () => {
     await user.type(field, "例のソーシャル");
     await user.click(screen.getByRole("button", { name: "Save" }));
 
-    expect(await screen.findByText("Saved the name.")).toBeInTheDocument();
+    expect(await screen.findByText("Saved. The audit log records the change.")).toBeInTheDocument();
     expect(names.changes).toEqual(["例のソーシャル"]);
     // The tab title and the sidebar take the new name without a reload, whatever the app's language.
     await waitFor(() => {
@@ -96,7 +97,7 @@ describe("the server's name", () => {
 
     // Saving again without a change sends nothing.
     await user.click(screen.getByRole("button", { name: "Save" }));
-    expect(await screen.findByText("The name is already saved.")).toBeInTheDocument();
+    expect(await screen.findByText("Everything on this page is already saved.")).toBeInTheDocument();
     expect(names.changes).toHaveLength(1);
   });
 
@@ -106,7 +107,7 @@ describe("the server's name", () => {
     await user.clear(await screen.findByRole("textbox", { name: "Name" }));
     await user.click(screen.getByRole("button", { name: "Save" }));
 
-    expect(await screen.findByText("Saved the name.")).toBeInTheDocument();
+    expect(await screen.findByText("Saved. The audit log records the change.")).toBeInTheDocument();
     await waitFor(() => {
       expect(document.title).toBe("Server settings – my.example");
     });
@@ -149,10 +150,10 @@ describe("the server's name", () => {
     await user.click(screen.getByRole("button", { name: "Save" }));
 
     // The failure is beside the save button, in the form's action bar's alert region.
-    expect(await screen.findByText("Could not save the name: body is invalid")).toBeInTheDocument();
+    expect(await screen.findByText("Could not save: body is invalid")).toBeInTheDocument();
     expect(screen.getAllByRole("alert").filter((alert) => alert.textContent !== "")).toEqual([expect.anything()]);
     expect(screen.getAllByRole("alert").find((alert) => alert.textContent !== "")).toHaveTextContent(
-      "Could not save the name: body is invalid",
+      "Could not save: body is invalid",
     );
     expect(english).toHaveValue("Example Social");
   });
@@ -214,11 +215,9 @@ describe("the server's descriptions", () => {
     expect(within(section).getByRole("textbox", { name: "Short description" })).toHaveValue("A small server.");
 
     await user.type(within(section).getByRole("textbox", { name: "Description" }), "小さなサーバーです。");
-    await user.click(within(section).getByRole("button", { name: "Save the descriptions" }));
+    await user.click(screen.getByRole("button", { name: "Save" }));
 
-    expect(
-      await within(section).findByText("Saved the descriptions. The audit log records the change."),
-    ).toBeInTheDocument();
+    expect(await screen.findByText("Saved. The audit log records the change.")).toBeInTheDocument();
     expect(changes).toEqual([{ key: "description", body: "小さなサーバーです。" }]);
   });
 });
@@ -246,42 +245,24 @@ describe("the server's policies", () => {
     return { patches, instanceReads: () => instanceReads };
   }
 
-  test("shows the saved settings and sends the changed ones together", async () => {
+  test("shows the saved settings of the page and sends the changed ones together", async () => {
     const settings = settingsServer();
-    const { user } = await renderApp({ path: "/admin/settings" });
+    const { user } = await renderApp({ path: "/admin/settings/registration" });
     const registration = await screen.findByRole("region", { name: "Registration" });
     expect(within(registration).getByRole("radio", { name: "With approval" })).toBeChecked();
-    const timelines = screen.getByRole("region", { name: "Timelines" });
-    const local = within(timelines).getByRole("radiogroup", { name: "Local timeline" });
-    expect(within(local).getByRole("radio", { name: "Everyone" })).toBeChecked();
-    expect(within(timelines).getByRole("radiogroup", { name: "Federated timeline" })).toBeInTheDocument();
 
     await user.click(within(registration).getByRole("radio", { name: "With an invite" }));
-    await user.click(within(local).getByRole("radio", { name: "Signed-in users" }));
     await user.click(
-      within(screen.getByRole("region", { name: "Federation" })).getByRole("checkbox", {
-        name: "Require signed requests (authorized fetch)",
-      }),
+      within(screen.getByRole("region", { name: "Apps" })).getByRole("checkbox", { name: "Users register apps" }),
     );
-    const domainActions = screen.getByRole("radiogroup", { name: "Who may read the list" });
-    await user.click(within(domainActions).getByRole("radio", { name: "Signed-in users" }));
     const reads = settings.instanceReads();
     await user.click(screen.getByRole("button", { name: "Save the settings" }));
 
     expect(
       await screen.findByText("Saved the settings. They take effect at once, and the audit log records each change."),
     ).toBeInTheDocument();
-    expect(settings.patches).toEqual([
-      {
-        values: {
-          registration_mode: "invite",
-          local_timeline_visibility: "signed_in",
-          authorized_fetch: "true",
-          domain_actions_visibility: "signed_in",
-        },
-      },
-    ]);
-    // The navigation's timelines and the registration mode come from GET /instance, read again before the status.
+    expect(settings.patches).toEqual([{ values: { registration_mode: "invite", user_app_registration: "false" } }]);
+    // The registration mode comes from GET /instance, read again before the status.
     expect(settings.instanceReads()).toBeGreaterThan(reads);
     expect(within(registration).getByRole("radio", { name: "With an invite" })).toBeChecked();
 
@@ -291,9 +272,45 @@ describe("the server's policies", () => {
     expect(settings.patches).toHaveLength(1);
   });
 
+  test("keeps each topic on a page of its own, linked under the heading, with one save each", async () => {
+    const settings = settingsServer();
+    const { user } = await renderApp({ path: "/admin/settings/content" });
+    const pages = await screen.findByRole("navigation", { name: "Server settings pages" });
+    expect(
+      within(pages)
+        .getAllByRole("link")
+        .map((link) => link.textContent),
+    ).toEqual(["General", "Icon and logo", "Registration", "Content", "Federation", "Search and crawlers"]);
+    expect(within(pages).getByRole("link", { name: "Content" })).toHaveAttribute("aria-current", "page");
+    expect(screen.getAllByRole("button", { name: /^Save/ })).toHaveLength(1);
+    expect(screen.queryByRole("region", { name: "Registration" })).not.toBeInTheDocument();
+
+    const timelines = screen.getByRole("region", { name: "Timelines" });
+    const local = within(timelines).getByRole("radiogroup", { name: "Local timeline" });
+    expect(within(local).getByRole("radio", { name: "Everyone" })).toBeChecked();
+    await user.click(within(local).getByRole("radio", { name: "Signed-in users" }));
+    await user.click(screen.getByRole("button", { name: "Save the settings" }));
+    expect(await screen.findByText(/^Saved the settings\./)).toBeInTheDocument();
+    expect(settings.patches).toEqual([{ values: { local_timeline_visibility: "signed_in" } }]);
+
+    await user.click(within(pages).getByRole("link", { name: "Federation" }));
+    const federation = await screen.findByRole("region", { name: "Federation" });
+    expect(screen.getByRole("navigation", { name: "Server settings pages" })).toBeInTheDocument();
+    await user.click(within(federation).getByRole("checkbox", { name: "Require signed requests (authorized fetch)" }));
+    const domainActions = screen.getByRole("radiogroup", { name: "Who may read the list" });
+    await user.click(within(domainActions).getByRole("radio", { name: "Signed-in users" }));
+    await user.click(screen.getByRole("button", { name: "Save the settings" }));
+    await waitFor(() => {
+      expect(settings.patches).toHaveLength(2);
+    });
+    expect(settings.patches[1]).toEqual({
+      values: { authorized_fetch: "true", domain_actions_visibility: "signed_in" },
+    });
+  });
+
   test("turns the check of robots.txt for link cards off and back on, off by default", async () => {
     const settings = settingsServer();
-    const { user } = await renderApp({ path: "/admin/settings" });
+    const { user } = await renderApp({ path: "/admin/settings/federation" });
     const federation = await screen.findByRole("region", { name: "Federation" });
     const ignore = within(federation).getByRole("checkbox", { name: "Fetch link cards without checking robots.txt" });
     expect(ignore).not.toBeChecked();
@@ -315,7 +332,7 @@ describe("the server's policies", () => {
 
   test("switches the three routes by which apps register, all on by default", async () => {
     const settings = settingsServer();
-    const { user } = await renderApp({ path: "/admin/settings" });
+    const { user } = await renderApp({ path: "/admin/settings/registration" });
     const apps = await screen.findByRole("region", { name: "Apps" });
     for (const label of ["Users register apps", "Client ID Metadata Documents", "Dynamic client registration"]) {
       expect(within(apps).getByRole("checkbox", { name: label })).toBeChecked();
@@ -337,7 +354,7 @@ describe("the server's policies", () => {
 
   test("hides the counts on the landing page, shown by default", async () => {
     const settings = settingsServer();
-    const { user } = await renderApp({ path: "/admin/settings" });
+    const { user } = await renderApp({ path: "/admin/settings/content" });
     const landing = await screen.findByRole("region", { name: "Landing page" });
     const counts = within(landing).getByRole("checkbox", { name: "Show the numbers of the server" });
     expect(counts).toBeChecked();
@@ -353,7 +370,7 @@ describe("the server's policies", () => {
 
   test("features accounts in the suggestions, in their own section", async () => {
     const settings = settingsServer();
-    const { user } = await renderApp({ path: "/admin/settings" });
+    const { user } = await renderApp({ path: "/admin/settings/content" });
     const featured = await screen.findByRole("region", { name: "Suggested accounts" });
     const field = within(featured).getByRole("textbox", { name: "Accounts to suggest first" });
     expect(field).toHaveValue("");
@@ -369,7 +386,7 @@ describe("the server's policies", () => {
 
   test("requires a description of every image", async () => {
     const settings = settingsServer();
-    const { user } = await renderApp({ path: "/admin/settings" });
+    const { user } = await renderApp({ path: "/admin/settings/content" });
     const posts = await screen.findByRole("region", { name: "Posts" });
     const required = within(posts).getByRole("checkbox", { name: "Require a description of every image" });
     expect(required).not.toBeChecked();
@@ -389,7 +406,7 @@ describe("the server's policies", () => {
 
   test("sends what the server states to search engines and AI, and its security contact", async () => {
     const settings = settingsServer();
-    const { user } = await renderApp({ path: "/admin/settings" });
+    const { user } = await renderApp({ path: "/admin/settings/discovery" });
     const crawlers = await screen.findByRole("region", { name: "Search engines and AI" });
     // Unset, the server denies both.
     expect(within(crawlers).getByRole("radio", { name: "Deny indexing" })).toBeChecked();
@@ -416,7 +433,7 @@ describe("the server's policies", () => {
 
   test("on a server without a post search, shows nothing of it", async () => {
     settingsServer();
-    await renderApp({ path: "/admin/settings" });
+    await renderApp({ path: "/admin/settings/discovery" });
     await screen.findByRole("region", { name: "Search engines and AI" });
     expect(screen.queryByRole("region", { name: "Post search" })).not.toBeInTheDocument();
   });
@@ -428,7 +445,7 @@ describe("the server's policies", () => {
         HttpResponse.json({ ...instanceFixture, full_text_search: { available: true, visibilities: ["public"] } }),
       ),
     );
-    const { user } = await renderApp({ path: "/admin/settings" });
+    const { user } = await renderApp({ path: "/admin/settings/discovery" });
     const search = await screen.findByRole("region", { name: "Post search" });
     const group = within(search).getByRole("radiogroup", { name: "Posts covered" });
     expect(
@@ -447,7 +464,7 @@ describe("the server's policies", () => {
 
   test("sends the default language picked from the app's languages", async () => {
     const settings = settingsServer();
-    const { user } = await renderApp({ path: "/admin/settings" });
+    const { user } = await renderApp({ path: "/admin/settings/content" });
     const language = await screen.findByRole("region", { name: "Language" });
     await user.click(within(language).getByRole("button", { name: /Default language/ }));
     await user.click(await screen.findByRole("option", { name: "Japanese" }));
@@ -459,7 +476,7 @@ describe("the server's policies", () => {
 
   test("offers the four federation directions, both ways by default", async () => {
     settingsServer();
-    await renderApp({ path: "/admin/settings" });
+    await renderApp({ path: "/admin/settings/federation" });
     const direction = await screen.findByRole("radiogroup", { name: "Federation direction" });
     expect(
       within(direction)
@@ -489,7 +506,7 @@ describe("the server's policies", () => {
     test("says how many users could not sign in, warns and does not refuse, and saves once confirmed", async () => {
       const settings = settingsServer();
       impactServer({ users_without_provider: 3 });
-      const { user } = await renderApp({ path: "/admin/settings" });
+      const { user } = await renderApp({ path: "/admin/settings/registration" });
       await user.click(await screen.findByRole("checkbox", { name: label }));
       await user.click(screen.getByRole("button", { name: "Save the settings" }));
 
@@ -514,7 +531,7 @@ describe("the server's policies", () => {
     test("says plainly when the administrator is one of them", async () => {
       settingsServer();
       impactServer({ users_without_provider: 1, includes_viewer: true });
-      const { user } = await renderApp({ path: "/admin/settings" });
+      const { user } = await renderApp({ path: "/admin/settings/registration" });
       await user.click(await screen.findByRole("checkbox", { name: label }));
       await user.click(screen.getByRole("button", { name: "Save the settings" }));
       const dialog = await screen.findByRole("alertdialog");
@@ -525,7 +542,7 @@ describe("the server's policies", () => {
     test("says that nothing changes while no provider is enabled", async () => {
       settingsServer();
       impactServer({ enabled_providers: 0, users_without_provider: 0 });
-      const { user } = await renderApp({ path: "/admin/settings" });
+      const { user } = await renderApp({ path: "/admin/settings/registration" });
       await user.click(await screen.findByRole("checkbox", { name: label }));
       await user.click(screen.getByRole("button", { name: "Save the settings" }));
       const dialog = await screen.findByRole("alertdialog");
@@ -539,7 +556,7 @@ describe("the server's policies", () => {
           HttpResponse.json(instanceSettingsFixture({ login_providers_only: "true" })),
         ),
       );
-      const { user } = await renderApp({ path: "/admin/settings" });
+      const { user } = await renderApp({ path: "/admin/settings/registration" });
       const box = await screen.findByRole("checkbox", { name: label });
       expect(box).toBeChecked();
       await user.click(box);
@@ -552,7 +569,7 @@ describe("the server's policies", () => {
 
   test("asks before narrowing the federation direction, saying what stops, and saves once confirmed", async () => {
     const settings = settingsServer();
-    const { user } = await renderApp({ path: "/admin/settings" });
+    const { user } = await renderApp({ path: "/admin/settings/federation" });
     const direction = await screen.findByRole("radiogroup", { name: "Federation direction" });
     await user.click(within(direction).getByRole("radio", { name: "Receive only" }));
     await user.click(screen.getByRole("button", { name: "Save the settings" }));
@@ -586,7 +603,7 @@ describe("the server's policies", () => {
 
   test("turning federation off says that deletions meanwhile do not reach other servers", async () => {
     settingsServer();
-    const { user } = await renderApp({ path: "/admin/settings" });
+    const { user } = await renderApp({ path: "/admin/settings/federation" });
     const direction = await screen.findByRole("radiogroup", { name: "Federation direction" });
     await user.click(within(direction).getByRole("radio", { name: "Off" }));
     await user.click(screen.getByRole("button", { name: "Save the settings" }));
@@ -607,7 +624,7 @@ describe("the server's policies", () => {
         HttpResponse.json(instanceSettingsFixture({ federation_mode: "inbound" })),
       ),
     );
-    const { user } = await renderApp({ path: "/admin/settings" });
+    const { user } = await renderApp({ path: "/admin/settings/federation" });
     const direction = await screen.findByRole("radiogroup", { name: "Federation direction" });
     expect(within(direction).getByRole("radio", { name: "Receive only" })).toBeChecked();
     await user.click(within(direction).getByRole("radio", { name: "Both ways" }));
@@ -632,7 +649,7 @@ describe("the server's policies", () => {
         HttpResponse.json(refusal, { status: 422, headers: { "Content-Type": "application/problem+json" } }),
       ),
     );
-    const { user } = await renderApp({ path: "/admin/settings" });
+    const { user } = await renderApp({ path: "/admin/settings/registration" });
     const registration = await screen.findByRole("region", { name: "Registration" });
     await user.click(within(registration).getByRole("radio", { name: "Nobody" }));
     await user.click(screen.getByRole("button", { name: "Save the settings" }));
@@ -647,17 +664,26 @@ describe("the server's policies", () => {
     expect(within(registration).getByRole("radio", { name: "Nobody" })).toBeChecked();
   });
 
-  test("has no voice chat section while the server does not offer voice chat", async () => {
+  test("has no voice chat page while the server does not offer voice chat", async () => {
     settingsServer();
-    await renderApp({ path: "/admin/settings" });
+    await renderApp({ path: "/admin/settings/registration" });
     expect(await screen.findByRole("region", { name: "Registration" })).toBeInTheDocument();
+    const pages = screen.getByRole("navigation", { name: "Server settings pages" });
+    expect(within(pages).queryByRole("link", { name: "Voice chat" })).not.toBeInTheDocument();
+  });
+
+  test("says on the voice chat page that the server does not offer it, with nothing to save", async () => {
+    settingsServer();
+    await renderApp({ path: "/admin/settings/voice" });
+    expect(await screen.findByText(/This server does not offer voice chat/)).toBeInTheDocument();
     expect(screen.queryByRole("region", { name: "Voice chat" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /^Save/ })).not.toBeInTheDocument();
   });
 
   test("chooses who starts voice chat rooms, the visitors' summary, and the days the records are kept, checking the days", async () => {
     const settings = settingsServer();
     voiceOn();
-    const { user } = await renderApp({ path: "/admin/settings" });
+    const { user } = await renderApp({ path: "/admin/settings/voice" });
     const voice = await screen.findByRole("region", { name: "Voice chat" });
     const starters = within(voice).getByRole("radiogroup", { name: "Who can start rooms" });
     expect(within(starters).getByRole("radio", { name: "Only people with the permission" })).toBeChecked();
@@ -697,7 +723,7 @@ describe("the server's policies", () => {
 
   test("chooses who creates invites and the caps of the members' invites, checking the numbers", async () => {
     const settings = settingsServer();
-    const { user } = await renderApp({ path: "/admin/settings" });
+    const { user } = await renderApp({ path: "/admin/settings/registration" });
     const invites = await screen.findByRole("region", { name: "Member invites" });
     const creators = within(invites).getByRole("radiogroup", { name: "Who can create invites" });
     expect(within(creators).getByRole("radio", { name: "Only people with the permission" })).toBeChecked();
@@ -808,11 +834,9 @@ describe("the server's contact and thumbnail", () => {
     await user.upload(input, nodeUploadFile("png", "beach.png", "image/png"));
     expect(await within(section).findByRole("button", { name: "Remove the image" })).toBeInTheDocument();
     await user.type(within(section).getByRole("textbox", { name: "Description of the image" }), "A beach at dawn");
-    await user.click(within(section).getByRole("button", { name: "Save the contact and thumbnail" }));
+    await user.click(screen.getByRole("button", { name: "Save" }));
 
-    expect(
-      await within(section).findByText("Saved the contact and thumbnail. The audit log records the change."),
-    ).toBeInTheDocument();
+    expect(await screen.findByText("Saved. The audit log records the change.")).toBeInTheDocument();
     expect(contact.purposes).toEqual(["attachment"]);
     // The @ that people type before a username is not part of it.
     expect(contact.patches).toEqual([
@@ -821,8 +845,8 @@ describe("the server's contact and thumbnail", () => {
     expect(contact.alts).toEqual(["A beach at dawn"]);
 
     // Saving again without a change sends nothing.
-    await user.click(within(section).getByRole("button", { name: "Save the contact and thumbnail" }));
-    expect(await within(section).findByText("The contact and thumbnail are already saved.")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Save" }));
+    expect(await screen.findByText("Everything on this page is already saved.")).toBeInTheDocument();
     expect(contact.patches).toHaveLength(1);
   });
 
@@ -831,11 +855,9 @@ describe("the server's contact and thumbnail", () => {
     const { user } = await renderApp({ path: "/admin/settings" });
     const section = await screen.findByRole("region", { name: "Contact and thumbnail" });
     await user.click(await within(section).findByRole("button", { name: "Remove the image" }));
-    await user.click(within(section).getByRole("button", { name: "Save the contact and thumbnail" }));
+    await user.click(screen.getByRole("button", { name: "Save" }));
 
-    expect(
-      await within(section).findByText("Saved the contact and thumbnail. The audit log records the change."),
-    ).toBeInTheDocument();
+    expect(await screen.findByText("Saved. The audit log records the change.")).toBeInTheDocument();
     expect(contact.patches).toEqual([{ values: { thumbnail: "" } }]);
   });
 });

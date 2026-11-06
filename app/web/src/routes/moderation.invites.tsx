@@ -6,7 +6,7 @@ import { useT } from "../lib/i18n";
 import { AdminError, loadWithPermission } from "./-admin/adminRoute";
 import { PageHeading } from "./-layout/PageHeading";
 
-/** The invites that let people sign up in the invite registration mode (FR-001): creating and revoking them, for manage_invites. */
+/** The list of the invites that let people sign up (FR-001): copying and revoking them, for manage_invites. */
 export const Route = createFileRoute("/moderation/invites")({
   staticData: { title: "client:admin.invites.title" },
   beforeLoad: requireSignIn,

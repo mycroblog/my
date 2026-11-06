@@ -40,7 +40,7 @@ The navigation shows "Moderation" and "Administration" only to people whose role
 | Group | Permissions | Screens |
 | --- | --- | --- |
 | Moderation (`/moderation`) | `manage_reports`, `manage_accounts`, `manage_domains`, `manage_invites`, `view_audit` | Reports (`/moderation/reports`), Appeals (`/moderation/appeals`), Accounts (`/moderation/accounts`), Registrations (`/moderation/registrations`), Sign-up blocks (`/moderation/signup-blocks`), Invites (`/moderation/invites`), Domain actions (`/moderation/domain-actions`), Remote servers (`/moderation/instances`), Audit log (`/moderation/audit-log`) |
-| Server administration (`/admin`) | `manage_settings`, `manage_rules`, `manage_roles`, `manage_jobs`, `manage_login_recovery`, `manage_custom_emojis`, `manage_webhooks`, `manage_announcements`, `manage_finance`, `manage_oauth_apps`, `manage_service_closure`, `manage_errors`, `manage_login_providers` | Server settings (`/admin/settings`), Rules (`/admin/rules`), Terms and policies (`/admin/documents`), the job queue and failed jobs (`/admin/jobs`), Custom emoji (`/admin/custom-emojis`), Announcements (`/admin/announcements`), Webhooks (`/admin/webhooks`), costs and billing import (`/admin/finance`, `manage_finance`). `manage_login_recovery` (login recovery: removing two-factor authentication and issuing a password-reset link) appears in a section of the account page (`/moderation/accounts/{id}`, which also needs `manage_accounts`) |
+| Server administration (`/admin`) | `manage_settings`, `manage_rules`, `manage_roles`, `manage_jobs`, `manage_login_recovery`, `manage_custom_emojis`, `manage_webhooks`, `manage_announcements`, `manage_finance`, `manage_oauth_apps`, `manage_service_closure`, `manage_errors`, `manage_login_providers` | Server settings (`/admin/settings`), Rules (`/admin/rules`), Terms and policies (`/admin/documents`), the job queue and failed jobs (`/admin/jobs`), Custom emoji (`/admin/custom-emojis`), Announcements (`/admin/announcements`), Webhooks (`/admin/webhooks`), costs and billing import (`/admin/finance`, `manage_finance`). `manage_login_recovery` (login recovery: removing two-factor authentication and issuing a password-reset link) and `manage_roles` (granting and revoking an account's roles) appear as sections of an account's Management page (`/moderation/accounts/{id}/manage`, which also needs `manage_accounts`) |
 
 - The badge on "Moderation" is the total of open reports, registrations waiting for approval and appeals waiting for review ([notifications for moderators and the pending counts](#notifications-for-moderators-and-the-pending-counts)). "Administration" shows no count.
 - Each group opens on an overview; the screens themselves are in the menu beside it. The Moderation overview has a tile for each queue your role counts (open reports, registrations awaiting approval, appeals awaiting a decision), each a link to its queue, a tile with how long the oldest open report has waited (a link to the report list, oldest first), and lists the open reports to handle first from the whole queue: illegal content first, then the ones that have waited longest, with how long each has waited and who handles it.
@@ -174,6 +174,12 @@ In the admin API: `GET /api/v1/admin/appeals` (filter with `state`), `GET .../{i
 
 Searching accounts, viewing their details and revealing IP addresses and email addresses are done through the admin API and need the `manage_accounts` permission.
 
+In the web client, an account has three pages, with links between them under the page title:
+
+- **Review** (`/moderation/accounts/{id}`): the account's state and restrictions, the form for a new action, the newest actions on it with their reasons, and its newest 20 reports. Older reports are only in the report list (`/moderation/reports`), which has no filter by account.
+- **Actions** (`/moderation/accounts/{id}/actions`): every action on the account, a page at a time, with "Lift" for those in effect. Each action opens its own page (`/moderation/accounts/{id}/actions/{action id}`) with all its details.
+- **Management** (`/moderation/accounts/{id}/manage`, local accounts only): the account's roles (`manage_roles`), its email suppression, removing two-factor authentication and issuing a password reset link (`manage_login_recovery`), and its email and IP addresses. Each section appears only to people with its permission.
+
 Staff act only on lower ranks: issuing or lifting an action, deciding an appeal, lifting an email suppression, revealing private data, issuing a password reset link, and removing two-factor authentication need the highest `position` among your roles to be above that of every role of the target.
 A higher or equal rank, your own account included, returns `403` with the problem type `/api/v1/problems/target-outranks-actor`, so a moderator cannot ban an administrator and one administrator cannot ban another. The `my admin` commands have no such limit.
 An action that keeps the only administrator who can sign in from signing in (`disable_login`, `suspend`, `ban`) is refused whoever issues it, and that administrator cannot delete their own account (`409` with `/api/v1/problems/last-administrator`). See [admin-cli.md](admin-cli.md) for the roles.
@@ -188,12 +194,12 @@ An action that keeps the only administrator who can sign in from signing in (`di
   Every call records `revealed_private_data` in the audit log, and the data is returned only if the record could be written. IP addresses are removed after the retention period (180 days by default), so sign-in origins older than that cannot be shown.
 - `two_factor_enabled` in `GET /api/v1/admin/accounts/{id}` shows whether the user of a local account uses two-factor authentication (TOTP).
   A user who lost both the authenticator app and the recovery codes can sign in with the password alone once you remove two-factor authentication with `POST /api/v1/admin/accounts/{id}/two_factor/disable`.
-  Only users with the permission `manage_login_recovery` can do this, and by default only the built-in administrator role has it (moderators can see the state but cannot remove it; it belongs to server administration).
+  Only users with the permission `manage_login_recovery` can do this, and by default only the built-in administrator role has it (it belongs to server administration; the web client shows the section only to them).
   Removal records `two_factor_disabled` in the audit log. Verify that the person is the account's owner by another route, such as email, before you remove it.
   When an administrator with no other administrator lost it, the operator removes it with the CLI command `my admin account disable-two-factor @alice` (the audit log actor is the CLI).
 - On a server that sends mail, a user who forgot the password gets an emailed link for setting a new one from "Forgot your password?" on the sign-in page.
   For a server that does not send mail (`mail = none`), or a user the mail does not reach, an administrator issues the link and hands it over.
-  In the admin screens, issue it with "Password reset" on the account page (`POST /api/v1/admin/accounts/{id}/password_reset_link`).
+  In the admin screens, issue it with "Password reset" on the account's Management page (`/moderation/accounts/{id}/manage`, `POST /api/v1/admin/accounts/{id}/password_reset_link`).
   Only users with the same permission as removing two-factor authentication, `manage_login_recovery`, can issue it, and by default only the built-in administrator role has it (whoever holds the link can get into the account, so a moderator's `manage_accounts` is not enough).
   The issued link is shown once on the spot and can be copied. The server stores only a hash of the link, so you cannot see it later; issue it again if you need to.
   When no administrator is available or the admin screens are not, the operator issues it with the CLI command `my admin account password-reset-link @alice` (the audit log actor is the CLI).
@@ -227,6 +233,10 @@ my admin domain lift <action id>
 In the admin API: `POST /api/v1/admin/domain_actions` (the body has `domain`, `kind`, `public_comment`, `private_note`, `obfuscate` and `expires_in` in seconds),
 `GET /api/v1/admin/domain_actions` (filter with `domain` and `active`), `GET .../{id}`, and `POST .../{id}/lift`.
 
+In the web client, open Moderation → Domain actions (`/moderation/domain-actions`). The list shows each action's domain, kind, state and end, in effect or all;
+"New action" opens the form (`/moderation/domain-actions/new`), and choosing a domain opens the action's page with its comments and dates, where "Lift" ends it.
+The "Domain actions" link on a remote server's page lists only that domain's actions, and "New action" there starts the form with the domain filled in.
+
 - Domains are recorded normalized to the IDNA A-label (lower case, no trailing dot). `例え.jp` and `xn--r8jz45g.jp` are the same domain.
 - An action also applies to subdomains (an action on `spam.example` applies to `a.spam.example` too).
 - An action is applied to the restriction projection (`domain_restrictions`) and to the timeline restrictions in the transaction that records it, and takes effect from the next delivery, fetch or receipt.
@@ -247,7 +257,7 @@ my admin domain import -apply -only spam.example,bad.example domain_blocks.csv
 
 In the admin API: `GET /api/v1/admin/domain_actions/export` (`text/csv`), `POST .../import/preview` (the body has `csv`), and `POST .../import` (the body has `blocks`, the chosen rows, and `private_note`).
 A row for this server's own domain is skipped (`own_domain`), and a domain action on it is refused.
-In the web client, use "Import a CSV" and "Export CSV" on the Domain actions screen (`/moderation/domain-actions`).
+In the web client, open Moderation → Domain actions and choose "Mastodon's CSV" (`/moderation/domain-actions/import`): "Export CSV" saves the file, and the import previews a pasted or chosen file before it imports the rows you keep.
 
 | CSV row | Action on this server |
 | --- | --- |
@@ -302,7 +312,7 @@ my admin refetch domain remote.example
 ```
 
 In the admin API: `POST /api/v1/admin/statuses/{id}/refetch`, `POST /api/v1/admin/accounts/{id}/refetch_statuses` and `POST /api/v1/admin/instances/{domain}/refetch_statuses`. They need the `manage_domains` permission.
-In the web client, use "Refetch posts" on the account screen (`/moderation/accounts/{id}`, remote accounts) and the remote server screen (`/moderation/instances/{domain}`).
+In the web client, use "Refetch posts" on the account's Review page (`/moderation/accounts/{id}`, remote accounts) and the remote server screen (`/moderation/instances/{domain}`).
 
 - A post is handled like a received `Update`. If there is a newer version, the server adds a version; it updates poll vote counts; and it does nothing if nothing changed. A post for which the other server returns 410 Gone or a `Tombstone` is deleted. A post that cannot be fetched (404 included) is left as it is.
 - For an account, the server refetches up to 1,000 of its newest undeleted stored posts, 100 at a time, one minute apart.

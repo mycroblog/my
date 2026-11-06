@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The relays screen in every width × locale project (ADR-0006, ADR-0110): an administrator registers and joins a
-// relay, sees it listed awaiting its answer, leaves it, joins it again, leaves it and deletes it after its dialog,
-// each step passing axe without scrolling sideways. `vite preview` has no API, so each test plays the server of a
+// The relays screen in every width × locale project (ADR-0006, ADR-0110): an administrator opens the form from the
+// list, registers and joins a relay, lands on its page, sees it listed awaiting its answer, and on its page leaves it,
+// joins it again, leaves it and deletes it after its dialog, back on the list; each step passing axe without
+// scrolling sideways. `vite preview` has no API, so each test plays the server of a
 // signed-in administrator with page.route; names change with the locale, so the structure is checked by role, by
 // the names in the project's locale catalog and by what the server sends.
 import type { Page, Route } from "@playwright/test";
 import type { components } from "@mycroblog/mykit";
-import { expect, expectNoAxeViolations, expectNoHorizontalScroll, test } from "./fixtures";
+import { expect, expectNoAxeViolations, expectNoHorizontalScroll, recordRowHeaders, test } from "./fixtures";
 import { readCatalog } from "./catalog.ts";
 
 type Schemas = components["schemas"];
@@ -147,37 +148,60 @@ test.describe("relays", () => {
     const sent = await administratorServer(page);
     await page.goto("/admin/relays");
     const main = page.getByRole("main");
-    const form = main.getByRole("region", { name: message("admin.relays.new.title"), exact: true });
-    await expect(form).toBeVisible();
+    const list = main.getByRole("region", { name: message("admin.relays.list.title"), exact: true });
+    await expect(
+      list.getByRole("heading", { level: 3, name: message("admin.relays.empty"), exact: true }),
+    ).toBeVisible();
     await expectNoAxeViolations(makeAxeBuilder);
     await expectNoHorizontalScroll(page);
 
-    await form.getByRole("textbox", { name: message("admin.relays.url"), exact: true }).fill(relayUrl);
-    await expect(form.getByRole("checkbox", { name: message("admin.relays.receive"), exact: true })).toBeChecked();
-    await form.getByRole("button", { name: message("admin.relays.submit"), exact: true }).click();
+    // The list holds no form: "Join a relay" opens its page.
+    await main.getByRole("link", { name: message("admin.relays.new.title"), exact: true }).click();
+    await expect(page).toHaveURL(/\/admin\/relays\/new$/);
+    await expect(main.getByRole("heading", { level: 1, name: message("admin.relays.new.title") })).toBeVisible();
+    await expectNoAxeViolations(makeAxeBuilder);
+    await expectNoHorizontalScroll(page);
+    await main.getByRole("textbox", { name: message("admin.relays.url"), exact: true }).fill(relayUrl);
+    await expect(main.getByRole("checkbox", { name: message("admin.relays.receive"), exact: true })).toBeChecked();
+    await main.getByRole("button", { name: message("admin.relays.submit"), exact: true }).click();
 
-    const list = main.getByRole("region", { name: message("admin.relays.list.title"), exact: true });
-    await expect(list.getByRole("rowheader", { name: /^relay\.example/u })).toBeVisible();
-    await expect(list.getByText(message("admin.relays.state.pending"), { exact: true })).toBeVisible();
+    // Joining opens the relay's page, whose facts hold the last 24 hours.
+    await expect(page).toHaveURL(/\/admin\/relays\/0192f0c4-7a8e-7000-8000-0000000000d1$/);
+    await expect(main.getByRole("heading", { level: 1, name: message("admin.relays.detail.title") })).toBeVisible();
+    await expect(main.getByRole("heading", { level: 2, name: "relay.example", exact: true })).toBeVisible();
+    await expect(main.getByText(message("admin.relays.state.pending"), { exact: true })).toBeVisible();
+    await expect(main.getByText(message("admin.relays.taken"), { exact: true })).toBeVisible();
     expect(sent).toEqual([`create ${relayUrl} auto true`]);
     await expectNoAxeViolations(makeAxeBuilder);
     await expectNoHorizontalScroll(page);
 
-    await list.getByRole("button", { name: message("admin.relays.unfollow_relay", name), exact: true }).click();
-    await expect(
-      list.getByRole("button", { name: message("admin.relays.follow_relay", name), exact: true }),
-    ).toBeVisible();
-    await list.getByRole("button", { name: message("admin.relays.follow_relay", name), exact: true }).click();
-    await expect(
-      list.getByRole("button", { name: message("admin.relays.unfollow_relay", name), exact: true }),
-    ).toBeVisible();
-    await list.getByRole("button", { name: message("admin.relays.unfollow_relay", name), exact: true }).click();
+    // The list shows it with its state, and leads back to its page.
+    await main.getByRole("link", { name: message("admin.relays.back"), exact: true }).click();
+    await expect(recordRowHeaders(list).filter({ hasText: "relay.example" })).toBeVisible();
+    await expect(list.getByText(message("admin.relays.state.pending"), { exact: true })).toBeVisible();
+    await expectNoAxeViolations(makeAxeBuilder);
+    await expectNoHorizontalScroll(page);
+    await list.getByRole("link", { name: "relay.example", exact: true }).click();
 
-    await list.getByRole("button", { name: message("admin.relays.delete_relay", name), exact: true }).click();
+    const membership = main.getByRole("region", { name: message("admin.relays.membership.title"), exact: true });
+    await membership.getByRole("button", { name: message("admin.relays.unfollow_relay", name), exact: true }).click();
+    await expect(
+      membership.getByRole("button", { name: message("admin.relays.follow_relay", name), exact: true }),
+    ).toBeVisible();
+    await membership.getByRole("button", { name: message("admin.relays.follow_relay", name), exact: true }).click();
+    await expect(
+      membership.getByRole("button", { name: message("admin.relays.unfollow_relay", name), exact: true }),
+    ).toBeVisible();
+    await membership.getByRole("button", { name: message("admin.relays.unfollow_relay", name), exact: true }).click();
+
+    await membership.getByRole("button", { name: message("admin.relays.delete_relay", name), exact: true }).click();
     const dialog = page.getByRole("alertdialog");
     await expect(dialog).toBeVisible();
     await expectNoAxeViolations(makeAxeBuilder);
     await dialog.getByRole("button", { name: message("admin.relays.delete"), exact: true }).click();
+
+    // Deleting goes back to the list.
+    await expect(page).toHaveURL(/\/admin\/relays$/);
     await expect(
       list.getByRole("heading", { level: 3, name: message("admin.relays.empty"), exact: true }),
     ).toBeVisible();

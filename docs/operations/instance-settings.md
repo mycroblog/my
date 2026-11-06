@@ -64,7 +64,7 @@ default locale, who can see the timelines, the instance name, description, terms
 | `link_cards` | `true` / `false` | `true` | Whether to show cards for links in posts. When `true`, the server fetches the linked page to build a card. When `false`, it stops fetching and also hides cards already built. To stop it only on some domains, see [link card domains](#link-card-domains) |
 | `link_cards_ignore_robots_txt` | `true` / `false` | `false` | Whether the fetches of link cards skip `robots.txt`. When `false`, the server obeys the `robots.txt` of the linked sites, so a site that disallows `my-linkcard` or `*` gets no card ([link previews](link-previews.md#cards-of-links-in-posts)). `/about/crawler` tells linked sites which it is. When `true`, the server neither fetches nor uses `robots.txt`, and a linked site can no longer refuse these fetches with it; the server still names itself `my-linkcard`. Turn it on only when too many cards are missing. Cards built while it was on are checked at their next refetch after it is off. The directives of a page and the link card domains apply either way |
 | `oauth_metadata_document_clients` | `true` / `false` | `true` | Whether to accept Client ID Metadata Document clients. When `true`, for an authorization request whose `client_id` is an `https` URL, the server fetches the metadata at that URL and treats it as the client (no prior registration). The fetch follows no redirects, reads at most 5 KB, and reuses the response for at most 24 hours following its cache directives. When `false`, it stops fetching and refuses authorization requests, token exchanges, and refreshes of these clients |
-| `finance_visibility` | `private` / `totals` / `breakdown` | `private` | How much of the running costs (recorded on `/admin/finance`) to publish. `private`: nothing is published (`GET /api/v1/instance/cost_totals` is 404). `totals`: only the total per period and currency. `breakdown`: the totals and a breakdown by provider and category, shown to everyone on the information pages (`/about` and `/about/costs`) and in the API. `breakdown` reveals which provider (for example, which cloud) you run on. At every level, item names, memos, and individual payments stay private. Periods up to and including the one containing today (UTC) are published |
+| `finance_visibility` | `private` / `totals` / `breakdown` | `private` | How much of the running costs (recorded on `/admin/finance/costs`, and set on `/admin/finance/publication`) to publish. `private`: nothing is published (`GET /api/v1/instance/cost_totals` is 404). `totals`: only the total per period and currency. `breakdown`: the totals and a breakdown by provider and category, shown to everyone on the information pages (`/about` and `/about/costs`) and in the API. `breakdown` reveals which provider (for example, which cloud) you run on. At every level, item names, memos, and individual payments stay private. Periods up to and including the one containing today (UTC) are published |
 | `finance_viewer_item_names` | `true` / `false` | `false` | Whether users with the permission `view_finance` see cost item names and the service names of imported costs on the finance screen (`/finance`, `GET /api/v1/finance/cost_totals`). Totals and the breakdown by provider and category are always shown, whatever this setting is |
 | `finance_viewer_item_memos` | `true` / `false` | `false` | Whether users with `view_finance` see the memos of cost items on the finance screen. If either the name or the memo setting is `true`, each period shows item rows (provider, category, and the amount of that period, plus the name and memo where enabled). People with `manage_finance` see everything regardless |
 | `finance_viewer_income` | `totals` / `plans` | `totals` | Whether users with `view_finance` see only the income totals (`totals`) or also the number of subscribers per plan (`plans`). The amount per plan and who paid are never shown. If `income_visibility` is `plans`, the published counts are shown whatever this value is. Income is read on the finance screen of the web client (`/finance`) and in `GET /api/v1/finance/income_totals` |
@@ -137,9 +137,10 @@ whole username, or for the people who follow it.
 - The server does not know the language of a text, so the web client and the screens rendered by the server output texts with
   `dir="auto"` and `lang=""` (the HTML value for an unknown language) instead of inheriting the language of the screen.
 - Setting an empty text deletes it.
-- Besides the CLI, texts can be changed on the admin screens of the web client (name, short description, and description in
-  "Server settings", `/admin/settings`; terms, privacy policy, the commerce disclosure, and the like in "Terms and policies",
-  `/admin/documents`) and with the client API (`GET /api/v1/admin/instance_texts`, `PUT /api/v1/admin/instance_texts/{key}`).
+- Besides the CLI, texts can be changed on the admin screens of the web client (name, short description, and description on
+  the General page of "Server settings", `/admin/settings`; the terms on the first page of "Terms and policies",
+  `/admin/documents`, the privacy policy on `/admin/documents/privacy-policy`, and the commerce disclosure and the like on
+  `/admin/documents/commerce-disclosure`) and with the client API (`GET /api/v1/admin/instance_texts`, `PUT /api/v1/admin/instance_texts/{key}`).
   Both need the role permission `manage_settings`, and changes are recorded in the audit log (`text_changed`).
 
 ### Terms and privacy policy
@@ -185,7 +186,7 @@ and the text `thumbnail_alt`) appear in the places below. Whatever is unset does
   the contact account), `thumbnail` (`url` and `alt`), and `nodeDescription` from the short description `short_description`.
 
 When the contact account is suspended or deleted, the account is not shown and only the email address is.
-Change them on the admin screen of the web client ("Server settings", `/admin/settings`), or with the CLI or the client API.
+Change them on the General page of the admin screen of the web client ("Server settings", `/admin/settings`), or with the CLI or the client API.
 
 ## Usage
 
@@ -249,28 +250,22 @@ the role permission `manage_settings` (only the built-in `admin` role has it). A
 and recorded per key in the audit log (`setting_changed`, the target is the setting and the actor is that user). Look at the
 audit log on the moderation screen ("Audit log", `/moderation/audit-log`).
 
-- **Web client** ("Server settings", `/admin/settings`): you can change the name and description, and the settings below.
-  The settings are saved together in one form, and only what you changed is sent.
+- **Web client** ("Server settings", `/admin/settings`): the screen has one page per topic, linked under its heading. Each
+  page has one form and one save button, and saving sends only what you changed on that page; settings on the other pages
+  stay as they are.
 
-  | Section | Settings |
+  | Page | Sections and settings |
   | --- | --- |
-  | Registration | `registration_mode`, `login_providers_only` |
-  | Language | `default_locale` (chosen from the languages the app has) |
-  | Timelines | `local_timeline_visibility`, `federated_timeline_visibility` |
-  | Posts | `require_media_description` |
-  | Federation | `authorized_fetch`, `remote_media_policy`, `remote_media_cache_ttl_seconds` (choose from 1 hour, 1 day, 7 days, 30 days, or 365 days), `link_cards`, `link_cards_ignore_robots_txt` |
-  | Limited and suspended servers | `domain_actions_visibility`, `domain_actions_rationale_visibility` |
-  | Running costs | `finance_visibility` (the `breakdown` option says that the provider and category become known), `finance_viewer_item_names`, `finance_viewer_item_memos`, `finance_viewer_income` (how much people who can view finance see) |
-  | Income | `income_visibility` (the `plans` option says that, for a plan with few subscribers, people may guess who subscribes) |
-  | Supporter list | `supporter_list_visibility` |
-  | Landing page | `public_counts` |
-  | Suggested accounts | `featured_accounts` |
-  | Search engines and AI | `search_indexing`, `indexable_default`, `ai_usage`, `security_contact` |
-  | Apps | `user_app_registration`, `oauth_metadata_document_clients`, `dynamic_client_registration` |
+  | General (`/admin/settings`) | Name, Descriptions (`name`, `short_description`, `description`); Contact and thumbnail (`contact_account`, `contact_email`, `thumbnail`, and the text `thumbnail_alt`) |
+  | Icon and logo (`/admin/settings/branding`) | The icon, the logo, and the logo for dark backgrounds, each saved with its own button ([Logo and icon](#logo-and-icon)) |
+  | Registration (`/admin/settings/registration`) | Registration (`registration_mode`, `login_providers_only`); Member invites (`invite_creators`, `member_invite_max_active`, `member_invite_max_uses`, `member_invite_max_lifetime_seconds`); Apps (`user_app_registration`, `oauth_metadata_document_clients`, `dynamic_client_registration`) |
+  | Content (`/admin/settings/content`) | Language (`default_locale`, chosen from the languages the app has); Timelines (`local_timeline_visibility`, `federated_timeline_visibility`); Posts (`require_media_description`); Landing page (`public_counts`); Suggested accounts (`featured_accounts`) |
+  | Federation (`/admin/settings/federation`) | Federation (`federation_mode`, `authorized_fetch`, `remote_media_policy`, `remote_media_cache_ttl_seconds` (choose from 1 hour, 1 day, 7 days, 30 days, or 365 days), `link_cards`, `link_cards_ignore_robots_txt`); Limited and suspended servers (`domain_actions_visibility`, `domain_actions_rationale_visibility`); External review (the `hook_*` settings, see [Decision hooks](decision-hooks.md)) |
+  | Search and crawlers (`/admin/settings/discovery`) | Search engines and AI (`search_indexing`, `indexable_default`, `ai_usage`, `security_contact`); Post search (`search_visibilities`, only while the server has full-text search) |
+  | Voice chat (`/admin/settings/voice`) | `voice_room_starters`, `voice_public_summary`, `voice_participants_retention_days`; the page is listed only while the server offers voice chat |
 
-  Contact and thumbnail (`contact_account`, `contact_email`, `thumbnail`, and the text `thumbnail_alt`) are changed in the
-  "Contact and thumbnail" section below the name and description. An image is uploaded when you choose it and becomes the
-  thumbnail when you save.
+  On the General page, an image is uploaded when you choose it and becomes the thumbnail when you save. Who may see the
+  running costs, the income, and the supporter list is set on the "Finance" and "Supporters" screens.
 
   `max_status_length`, `preview_image`, `appeal_window_days`, and the retention periods (`*_retention_days`), `remote_media_cache_max_bytes`, and `oauth_client_rate_limits` do not appear on the screen;
   change them with the CLI or the client API. The settings of translation have a screen of their own, below.
@@ -316,9 +311,11 @@ my instance rule list                                  # active rules (-all incl
 ```
 
 - The admin API is `/api/v1/admin/rules` (list, add, get, revise, move, retire) and needs the role permission `manage_rules`.
-- On the admin screen of the web client ("Rules", `/admin/rules`, `manage_rules`) you can add a rule with a sentence and a
-  supplement, edit it, reorder it with "Move up" and "Move down", and retire it (after a confirmation dialog). Every change
-  is recorded in the audit log (`rule_added`, `rule_revised`, `rule_moved`, `rule_retired`).
+- On the admin screen of the web client ("Rules", `/admin/rules`, `manage_rules`), the list shows the rules in effect in
+  order, and "Move up" and "Move down" reorder them; the filter above the list shows the retired rules instead. "Add a
+  rule" opens a page with a sentence and a supplement. Choose a rule's sentence to open its page, where you edit it and
+  retire it (after a confirmation dialog). Every change is recorded in the audit log (`rule_added`, `rule_revised`,
+  `rule_moved`, `rule_retired`).
 - The exit codes are the same as for settings (0 for success, 1 for a rejected value or a database error, 2 for wrong arguments).
 
 ## Link card domains
@@ -339,7 +336,7 @@ modes. A rule is the operator's choice, and it applies besides what the linked s
 - A change takes effect at once, also on the cards the server already has, and the proxied images of those cards stop being served while images are stopped.
 - Removing a rule brings the cards the server already has back as they were. A link that was skipped gets its card the next time a post needs it; nothing is fetched again in bulk.
   A card fetched again while images were stopped stays without an image until its next refetch.
-- On the admin screen of the web client ("Link card domains", `/admin/link-card-domains`, `manage_settings`) you can set a rule with a note, change its mode in the list, and remove it (after a confirmation dialog).
+- On the admin screen of the web client ("Link card domains", `/admin/link-card-domains`, `manage_settings`), "Add a rule" sets a rule with a note. The list shows 40 rules a page and can be searched by domain; choosing a domain opens its rule's page, where you change its mode and note, and remove it (after a confirmation dialog).
 - The admin API is `/api/v1/admin/link_card_domains` (list, set; a `DELETE` with the domain removes it) and needs the role permission `manage_settings`. A server keeps at most 1,000 rules, each with a note of up to 5,000 characters.
 - Every change is recorded in the audit log (`link_card_domain_fetch_stopped`, `link_card_domain_images_stopped`, `link_card_domain_rule_removed`).
 
@@ -429,7 +426,7 @@ Until one is set, the built-in mycroblog images are used, and clearing one bring
   on desktops the app keeps its old icon until it is installed again.
 - `GET /api/v1/instance` returns `icon`, `logo`, and `logo_dark` with the URL of the SVG, the URL and size of each PNG version,
   and the revision; each is left out while the built-in image is in use.
-- Set them in the web client under **Server settings** > **Icon and logo** (role permission `manage_settings`). Choose an SVG
+- Set them in the web client under **Server settings** > **Icon and logo** (`/admin/settings/branding`, role permission `manage_settings`). Choose an SVG
   file for the icon, the logo, or the logo for dark backgrounds: the server checks it, the browser draws the PNG versions, and the
   form previews them (a browser tab, the home screen, the app icon, an email on a light and a dark background, and the link
   preview) with the list of what the server removed. If the server refuses the file, the reason shows under the button with how
@@ -470,7 +467,9 @@ Notes and actors you send.
 - Deletion cannot be undone. Emoji in past posts turn back into text too, and registering the same shortcode again makes a
   different emoji. Images that federated servers copied cannot be deleted.
 - The admin screen ("Custom emoji", `/admin/custom-emojis`), the client API (`/api/v1/admin/custom_emojis`), and the CLI do the
-  same things. The admin screen and the client API need the role permission `manage_custom_emojis` (only the built-in `admin`
+  same things. On the screen, "Register a custom emoji" opens the registration form (`/admin/custom-emojis/new`), and choosing
+  an emoji in the list opens its page (`/admin/custom-emojis/{id}`), where you change its settings, replace its image, enable or
+  disable it, delete it, or copy one of another server; the list itself enables and disables an emoji with one press. The admin screen and the client API need the role permission `manage_custom_emojis` (only the built-in `admin`
   has it). Registering, copying, replacing the image, changing settings and aliases, enabling and disabling, and deleting are
   recorded in the audit log (target `custom_emoji`) whichever way they are done (an operation from the CLI is recorded as a CLI
   operation).
@@ -494,8 +493,8 @@ my admin emoji requests reject [-reason <text>] <request id>                    
 - A user with the role permission `create_custom_emojis` (a user feature) can request the creation of an emoji from "Custom
   emoji" in the settings (`/settings/custom-emojis`), change the aliases, category, and picker visibility of emoji they
   created, and delete them. Replacing an image is also a request. A request appears nowhere (picker, posts, reactions,
-  federation) until someone with `manage_custom_emojis` approves it. Approve or reject it on the "Requests" tab of "Custom
-  emoji" on the admin screen, with the client API (`/api/v1/admin/custom_emoji_requests`), or with the CLI above. People with
+  federation) until someone with `manage_custom_emojis` approves it. Approve or reject it on the "Requests" page of "Custom
+  emoji" on the admin screen (`/admin/custom-emojis/requests`), with the client API (`/api/v1/admin/custom_emoji_requests`), or with the CLI above. People with
   `manage_custom_emojis` are notified of a request (`admin_custom_emoji_request`), and the requester is notified of the
   approval or rejection. Requesting, withdrawing, approving, and rejecting are recorded in the audit log (target
   `custom_emoji_request`).

@@ -1,34 +1,44 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The login providers screen below its heading (ADR-0106, manage_login_providers): the form that sets up an
-// external login provider of a kind, then the providers, newest first. A new provider's callback URL is shown with a
-// copy button to register at the provider. Each provider shows its kind, display name, state, number of linked users
-// and callback URL; it is changed in a dialog, given a new client secret in a dialog, enabled, and disabled or
-// deleted after an alert dialog that says how many linked users can no longer sign in with it. Setting one up or
-// enabling one asks first when that would start the limit of sign-in to login providers. What a change did
-// stays above the list in a StatusMessage (role="status"), and a failure stays there too (role="alert").
+// The login providers screen below its heading (ADR-0106, manage_login_providers), in three pages
+// (web-client/14-admin.md 画面の分け方):
+// - the list (`LoginProviderSettings`): the providers, newest first, each with its display name linking to its page,
+//   its kind, its state and when it was set up; above it "Add a provider" opens the form.
+// - the form (`NewLoginProvider`): the kind and the fields of that kind; setting one up opens its page. It asks first
+//   when that would start the limit of sign-in to login providers.
+// - the page of one provider (`LoginProviderDetail`): its facts and the callback URL to register at the provider (with
+//   a copy button), the form of its settings (its kind stays; saved together, the result next to the button), and its
+//   actions: a new client secret in a dialog, enabling it (after the same warning), and disabling or deleting it after an
+//   alert dialog that says how many linked users can no longer sign in with it. Deleting goes back to the list with a
+//   toast.
+// What an action did stays next to the actions in a StatusMessage (role="status"), and a failure stays there too
+// (role="alert").
 import {
   Button,
+  ButtonLink,
   Card,
   Cluster,
   ConfirmDialog,
+  DescriptionItem,
+  DescriptionList,
   Dialog,
   DialogTrigger,
   EmptyState,
+  FormActionBar,
+  type FormActionResult,
+  Hint,
   InlineError,
+  Link,
   Radio,
   RadioGroup,
   Stack,
   StatusMessage,
-  TableCell,
-  TableColumnHeader,
-  TableRow,
-  TableRowHeader,
   Text,
+  useToast,
 } from "@my/ui";
-import { type SubmitEvent, useRef, useState } from "react";
+import { useNavigate } from "@tanstack/react-router";
+import { type SubmitEvent, useState } from "react";
 import { useT } from "../../../lib/i18n";
-import { useFocusAfterRemoval } from "../../../lib/useFocusAfterRemoval";
-import { Section, RecordTable, RequirePermission, wholeList } from "../../moderation";
+import { DateTime, Section, type RecordColumns, RecordTable, RequirePermission, wholeList } from "../../moderation";
 import { type LoginProvider, loginProviderKinds } from "../api/loginProviders";
 import {
   draftOf,
@@ -38,22 +48,24 @@ import {
   type LoginProviderFieldError,
   loginProviderName,
   useEnableLoginProvider,
+  useLoginProvider,
   useLoginProviderActions,
   useLoginProviderForm,
   useLoginProviders,
 } from "../hooks/useLoginProviders";
 import { CallbackUrl, loginProviderKindLabels, LoginProviderFields, SecretField } from "./loginProviderParts";
 
+/** The list of the providers, with the link to the form that adds one. */
 export function LoginProviderSettings() {
   const t = useT();
   return (
     <RequirePermission permission="manage_login_providers">
-      <Stack gap="8">
-        <Section surface="card" title={t("client:admin.login_providers.new.title")}>
-          <Card>
-            <NewLoginProviderForm />
-          </Card>
-        </Section>
+      <Stack gap="6">
+        <div>
+          <ButtonLink href="/admin/login-providers/new" variant="primary">
+            {t("client:admin.login_providers.new.title")}
+          </ButtonLink>
+        </div>
         <Section surface="card" title={t("client:admin.login_providers.list.title")}>
           <LoginProviderList />
         </Section>
@@ -62,235 +74,312 @@ export function LoginProviderSettings() {
   );
 }
 
-function NewLoginProviderForm() {
-  const t = useT();
-  const form = useLoginProviderForm();
-  return (
-    <Stack as="form" container gap="6" onSubmit={form.submit}>
-      <RadioGroup
-        label={t("client:admin.login_providers.kind")}
-        orientation="horizontal"
-        value={form.draft.kind}
-        onChange={(value) => {
-          const kind = loginProviderKinds.find((k) => k === value);
-          if (kind !== undefined) form.change({ kind });
-        }}
-        isRequired
-      >
-        {loginProviderKinds.map((kind) => (
-          <Radio key={kind} value={kind}>
-            {t(loginProviderKindLabels[kind])}
-          </Radio>
-        ))}
-      </RadioGroup>
-      <LoginProviderFields draft={form.draft} change={form.change} error={form.error} withSecret />
-      <div>
-        <Button type="submit" variant="primary" isPending={form.isPending}>
-          {t("client:admin.login_providers.submit")}
-        </Button>
-      </div>
-      <LimitStartDialog
-        limitStart={form.limitStart}
-        confirmLabel={
-          form.limitStart?.impact === undefined
-            ? t("client:admin.login_providers.submit")
-            : t("client:admin.login_providers.limit_start.confirm_add")
-        }
-        onConfirm={(close) => {
-          form.confirmLimitStart();
-          close();
-        }}
-        onCancel={form.cancelLimitStart}
-      />
-      <StatusMessage>{form.status}</StatusMessage>
-      {form.created !== undefined && (
-        <Stack gap="2" border="md" padding="3">
-          <Text as="p">{t("client:admin.login_providers.callback.notice")}</Text>
-          <CallbackUrl url={form.created.callback_url} name={loginProviderName(form.created)} />
-        </Stack>
-      )}
-    </Stack>
-  );
-}
-
 function LoginProviderList() {
   const t = useT();
-  const tableRef = useRef<HTMLTableElement>(null);
   const providers = useLoginProviders();
-  const removed = useFocusAfterRemoval(
-    tableRef,
-    providers.map((provider) => provider.id),
-  );
-  const actions = useLoginProviderActions(removed);
+  const columns: RecordColumns<LoginProvider> = [
+    {
+      id: "provider",
+      header: t("client:admin.login_providers.provider"),
+      wrap: "anywhere",
+      cell: (provider) => (
+        <Link href={`/admin/login-providers/${encodeURIComponent(provider.id)}`} wrap="anywhere">
+          <span dir="auto">{provider.display_name}</span>
+        </Link>
+      ),
+    },
+    {
+      id: "kind",
+      header: t("client:admin.login_providers.kind"),
+      cell: (provider) => t(loginProviderKindLabels[provider.kind]),
+    },
+    {
+      id: "state",
+      header: t("client:admin.login_providers.state"),
+      cell: (provider) => <LoginProviderState provider={provider} />,
+    },
+    {
+      id: "created_at",
+      header: t("client:admin.login_providers.created_at"),
+      cell: (provider) => <DateTime value={provider.created_at} />,
+    },
+  ];
   return (
-    <Stack gap="3">
-      <StatusMessage>{actions.status}</StatusMessage>
-      {actions.error !== undefined && (
-        <InlineError size="inherit" alert>
-          {t("client:admin.login_providers.change_failed", { reason: actions.error })}
-        </InlineError>
-      )}
-      <RecordTable
-        list={wholeList(providers)}
-        caption={t("client:admin.login_providers.list.title")}
-        getId={(provider) => provider.id}
-        tableRef={tableRef}
-        empty={
-          <EmptyState
-            headingLevel={3}
-            heading={t("client:admin.login_providers.empty")}
-            description={t("client:admin.login_providers.empty.description")}
-          />
-        }
-        head={
-          <>
-            <TableColumnHeader>{t("client:admin.login_providers.provider")}</TableColumnHeader>
-            <TableColumnHeader>{t("client:admin.login_providers.kind")}</TableColumnHeader>
-            <TableColumnHeader>{t("client:admin.login_providers.state")}</TableColumnHeader>
-            <TableColumnHeader>{t("client:admin.login_providers.linked_users")}</TableColumnHeader>
-            <TableColumnHeader>{t("client:admin.list.column.actions")}</TableColumnHeader>
-          </>
-        }
-      >
-        {(provider) => <LoginProviderRow provider={provider} actions={actions} />}
-      </RecordTable>
+    <RecordTable
+      list={wholeList(providers)}
+      caption={t("client:admin.login_providers.list.title")}
+      columns={columns}
+      getId={(provider) => provider.id}
+      headingLevel={3}
+      empty={
+        <EmptyState
+          headingLevel={3}
+          heading={t("client:admin.login_providers.empty")}
+          description={t("client:admin.login_providers.empty.description")}
+        />
+      }
+    />
+  );
+}
+
+function LoginProviderState({ provider }: { provider: LoginProvider }) {
+  const t = useT();
+  return (
+    <Stack gap="1">
+      <span>
+        {t(
+          provider.state === "enabled"
+            ? "client:admin.login_providers.state.enabled"
+            : "client:admin.login_providers.state.disabled",
+        )}
+      </span>
+      <Text size="sm" tone="muted">
+        {t(
+          provider.allow_signup
+            ? "client:admin.login_providers.state.signup_allowed"
+            : "client:admin.login_providers.state.signup_closed",
+        )}
+      </Text>
     </Stack>
   );
 }
 
-function LoginProviderRow({ provider, actions }: { provider: LoginProvider; actions: LoginProviderActions }) {
-  const t = useT();
-  const name = loginProviderName(provider);
-  const isPending = actions.pendingId === provider.id;
-  const enabled = provider.state === "enabled";
+/** The form that sets up a provider; setting it up opens its page. */
+export function NewLoginProvider() {
   return (
-    <TableRow data-row-id={provider.id}>
-      <TableRowHeader wrap="anywhere">
-        <Stack gap="2">
-          <Stack gap="1">
-            <Text weight="semibold" wrap="anywhere" dir="auto">
-              {provider.display_name}
-            </Text>
-            {provider.issuer !== undefined && (
-              <Text size="sm" tone="muted" mono wrap="anywhere" dir="ltr">
-                {provider.issuer}
-              </Text>
-            )}
+    <RequirePermission permission="manage_login_providers">
+      <NewLoginProviderForm />
+    </RequirePermission>
+  );
+}
+
+function NewLoginProviderForm() {
+  const t = useT();
+  const navigate = useNavigate();
+  const form = useLoginProviderForm((provider) => {
+    void navigate({ to: "/admin/login-providers/$id", params: { id: provider.id } });
+  });
+  return (
+    <Card>
+      <Stack as="form" container gap="6" onSubmit={form.submit}>
+        <RadioGroup
+          label={t("client:admin.login_providers.kind")}
+          orientation="horizontal"
+          value={form.draft.kind}
+          onChange={(value) => {
+            const kind = loginProviderKinds.find((k) => k === value);
+            if (kind !== undefined) form.change({ kind });
+          }}
+          isRequired
+        >
+          {loginProviderKinds.map((kind) => (
+            <Radio key={kind} value={kind}>
+              {t(loginProviderKindLabels[kind])}
+            </Radio>
+          ))}
+        </RadioGroup>
+        <LoginProviderFields draft={form.draft} change={form.change} error={form.error} withSecret />
+        <FormActionBar>
+          <Button type="submit" variant="primary" isPending={form.isPending}>
+            {t("client:admin.login_providers.submit")}
+          </Button>
+        </FormActionBar>
+        <LimitStartDialog
+          limitStart={form.limitStart}
+          confirmLabel={
+            form.limitStart?.impact === undefined
+              ? t("client:admin.login_providers.submit")
+              : t("client:admin.login_providers.limit_start.confirm_add")
+          }
+          onConfirm={(close) => {
+            form.confirmLimitStart();
+            close();
+          }}
+          onCancel={form.cancelLimitStart}
+        />
+      </Stack>
+    </Card>
+  );
+}
+
+/** The page of one provider: its facts and callback URL, its settings, and its actions. */
+export function LoginProviderDetail({ id }: { id: string }) {
+  return (
+    <RequirePermission permission="manage_login_providers">
+      <LoginProviderPage id={id} />
+    </RequirePermission>
+  );
+}
+
+function LoginProviderPage({ id }: { id: string }) {
+  const t = useT();
+  const provider = useLoginProvider(id);
+  const navigate = useNavigate();
+  const toast = useToast();
+  const actions = useLoginProviderActions((deleted) => {
+    void navigate({ to: "/admin/login-providers" });
+    // The toast is announced too.
+    toast.show({
+      message: t("client:admin.login_providers.deleted", { name: loginProviderName(deleted) }),
+      tone: "success",
+    });
+  });
+  return (
+    <Stack gap="8">
+      <Section surface="card" title={<span dir="auto">{provider.display_name}</span>}>
+        <Card>
+          <Stack gap="6">
+            <LoginProviderFacts provider={provider} />
+            <Stack gap="2">
+              <Text as="p">{t("client:admin.login_providers.callback.notice")}</Text>
+              <CallbackUrl url={provider.callback_url} name={loginProviderName(provider)} />
+            </Stack>
           </Stack>
-          <CallbackUrl url={provider.callback_url} name={name} />
-        </Stack>
-      </TableRowHeader>
-      <TableCell>{t(loginProviderKindLabels[provider.kind])}</TableCell>
-      <TableCell>
-        <Stack gap="1">
-          <span>
-            {t(enabled ? "client:admin.login_providers.state.enabled" : "client:admin.login_providers.state.disabled")}
-          </span>
-          <Text size="sm" tone="muted">
-            {t(
-              provider.allow_signup
-                ? "client:admin.login_providers.state.signup_allowed"
-                : "client:admin.login_providers.state.signup_closed",
+        </Card>
+      </Section>
+      <Section surface="card" title={t("client:admin.login_providers.settings.title")}>
+        <Card>
+          <EditLoginProviderForm provider={provider} actions={actions} />
+        </Card>
+      </Section>
+      <Section surface="card" title={t("client:admin.login_providers.manage.title")}>
+        <Card>
+          <Stack gap="4">
+            <StatusMessage>{actions.status}</StatusMessage>
+            {actions.error !== undefined && (
+              <InlineError size="inherit" alert>
+                {t("client:admin.login_providers.change_failed", { reason: actions.error })}
+              </InlineError>
             )}
-          </Text>
-        </Stack>
-      </TableCell>
-      <TableCell>{t("client:admin.login_providers.linked_users.count", { count: provider.linked_users })}</TableCell>
-      <TableCell>
-        <Cluster gap="2" align="center">
-          <EditLoginProvider provider={provider} actions={actions} isPending={isPending} />
-          <RotateSecret provider={provider} actions={actions} isPending={isPending} />
-          {enabled ? (
-            <DisableLoginProvider provider={provider} actions={actions} isPending={isPending} />
-          ) : (
-            <EnableLoginProvider provider={provider} actions={actions} isPending={isPending} />
-          )}
-          <DeleteLoginProvider provider={provider} actions={actions} isPending={isPending} />
-        </Cluster>
-      </TableCell>
-    </TableRow>
+            <Cluster gap="2" align="center">
+              <RotateSecret provider={provider} actions={actions} />
+              {provider.state === "enabled" ? (
+                <DisableLoginProvider provider={provider} actions={actions} />
+              ) : (
+                <EnableLoginProvider provider={provider} actions={actions} />
+              )}
+              <DeleteLoginProvider provider={provider} actions={actions} />
+            </Cluster>
+          </Stack>
+        </Card>
+      </Section>
+    </Stack>
   );
 }
 
-type RowActionProps = { provider: LoginProvider; actions: LoginProviderActions; isPending: boolean };
-
-/** The settings of a provider in a dialog (its kind stays); it closes once they are saved, and keeps a refusal on its field. */
-function EditLoginProvider({ provider, actions, isPending }: RowActionProps) {
+/** The facts of a provider: its kind, issuer, state, what it allows, and its linked users. */
+function LoginProviderFacts({ provider }: { provider: LoginProvider }) {
   const t = useT();
-  const name = loginProviderName(provider);
   return (
-    <DialogTrigger>
-      <Button size="sm" isDisabled={isPending} aria-label={t("client:admin.login_providers.edit_provider", { name })}>
-        {t("client:admin.login_providers.edit")}
-      </Button>
-      <Dialog
-        title={t("client:admin.login_providers.edit.title", { name })}
-        closeLabel={t("client:admin.login_providers.close")}
-        isDismissable={false}
-        size="md"
-      >
-        {({ close }) => <EditLoginProviderForm provider={provider} actions={actions} close={close} />}
-      </Dialog>
-    </DialogTrigger>
+    <DescriptionList columns={2}>
+      <DescriptionItem term={t("client:admin.login_providers.kind")}>
+        {t(loginProviderKindLabels[provider.kind])}
+      </DescriptionItem>
+      {provider.issuer !== undefined && (
+        <DescriptionItem
+          term={t(
+            provider.kind === "mastodon"
+              ? "client:admin.login_providers.server"
+              : "client:admin.login_providers.issuer",
+          )}
+        >
+          <Text mono wrap="anywhere" dir="ltr">
+            {provider.issuer}
+          </Text>
+        </DescriptionItem>
+      )}
+      <DescriptionItem term={t("client:admin.login_providers.state")}>
+        <Cluster as="span" gap="1" rowGap="0">
+          <span>
+            {t(
+              provider.state === "enabled"
+                ? "client:admin.login_providers.state.enabled"
+                : "client:admin.login_providers.state.disabled",
+            )}
+          </span>
+          <DateTime value={provider.state_changed_at} />
+        </Cluster>
+      </DescriptionItem>
+      <DescriptionItem term={t("client:admin.login_providers.signup")}>
+        {t(
+          provider.allow_signup
+            ? "client:admin.login_providers.state.signup_allowed"
+            : "client:admin.login_providers.state.signup_closed",
+        )}
+      </DescriptionItem>
+      <DescriptionItem term={t("client:admin.login_providers.linked_users")}>
+        {t("client:admin.login_providers.linked_users.count", { count: provider.linked_users })}
+      </DescriptionItem>
+      <DescriptionItem term={t("client:admin.login_providers.created_at")}>
+        <DateTime value={provider.created_at} />
+      </DescriptionItem>
+    </DescriptionList>
   );
 }
 
-function EditLoginProviderForm({
-  provider,
-  actions,
-  close,
-}: {
-  provider: LoginProvider;
-  actions: LoginProviderActions;
-  close: () => void;
-}) {
+/** The settings of a provider (its kind stays), saved together; a refusal stays on its field. */
+function EditLoginProviderForm({ provider, actions }: { provider: LoginProvider; actions: LoginProviderActions }) {
   const t = useT();
   const [draft, setDraft] = useState<LoginProviderDraft>(() => draftOf(provider));
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<LoginProviderFieldError | undefined>(undefined);
+  const [result, setResult] = useState<FormActionResult | undefined>(undefined);
   const onSubmit = (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (isSaving) return;
     setIsSaving(true);
     setError(undefined);
+    setResult(undefined);
     void actions.update(provider, draft).then((refused) => {
       setIsSaving(false);
-      if (refused === undefined) close();
-      else setError(refused);
+      if (refused === undefined) {
+        setResult({
+          tone: "success",
+          message: t("client:admin.login_providers.updated", { name: loginProviderName(provider) }),
+        });
+        return;
+      }
+      setError(refused);
+      if (refused.field === "form") {
+        setResult({
+          tone: "danger",
+          message: t("client:admin.login_providers.save_failed", { reason: refused.message }),
+        });
+      }
     });
   };
   return (
-    <Stack as="form" container gap="4" onSubmit={onSubmit}>
-      <Text as="p" size="sm" tone="muted">
+    <Stack as="form" container gap="6" onSubmit={onSubmit}>
+      <Hint size="inherit">
         {t("client:admin.login_providers.edit.kind", { kind: t(loginProviderKindLabels[provider.kind]) })}
-      </Text>
+      </Hint>
       <LoginProviderFields
         draft={draft}
         change={(change) => {
+          setResult(undefined);
           setDraft((previous) => ({ ...previous, ...change }));
         }}
         error={error}
         withSecret={false}
-        autoFocus
       />
-      <Cluster gap="2" justify="end">
-        <Button onPress={close}>{t("client:admin.login_providers.cancel")}</Button>
+      <FormActionBar result={result}>
         <Button type="submit" variant="primary" isPending={isSaving}>
           {t("client:admin.login_providers.save")}
         </Button>
-      </Cluster>
+      </FormActionBar>
     </Stack>
   );
 }
 
+type ActionProps = { provider: LoginProvider; actions: LoginProviderActions };
+
 /** Giving a provider the new client secret that it issued, in a dialog; the old one is no longer used. */
-function RotateSecret({ provider, actions, isPending }: RowActionProps) {
+function RotateSecret({ provider, actions }: ActionProps) {
   const t = useT();
   const name = loginProviderName(provider);
   return (
     <DialogTrigger>
-      <Button size="sm" isDisabled={isPending} aria-label={t("client:admin.login_providers.rotate_provider", { name })}>
-        {t("client:admin.login_providers.rotate")}
-      </Button>
+      <Button isDisabled={actions.pendingId === provider.id}>{t("client:admin.login_providers.rotate")}</Button>
       <Dialog
         title={t("client:admin.login_providers.rotate.title", { name })}
         closeLabel={t("client:admin.login_providers.close")}
@@ -303,15 +392,7 @@ function RotateSecret({ provider, actions, isPending }: RowActionProps) {
   );
 }
 
-function RotateSecretForm({
-  provider,
-  actions,
-  close,
-}: {
-  provider: LoginProvider;
-  actions: LoginProviderActions;
-  close: () => void;
-}) {
+function RotateSecretForm({ provider, actions, close }: ActionProps & { close: () => void }) {
   const t = useT();
   const [secret, setSecret] = useState("");
   const [isSaving, setIsSaving] = useState(false);
@@ -400,18 +481,12 @@ function LimitStartDialog({
 }
 
 /** Enabling a provider: at once, or after the warning when that starts the limit of sign-in to login providers. */
-function EnableLoginProvider({ provider, actions, isPending }: RowActionProps) {
+function EnableLoginProvider({ provider, actions }: ActionProps) {
   const t = useT();
-  const name = loginProviderName(provider);
   const enable = useEnableLoginProvider(provider, actions);
   return (
     <>
-      <Button
-        size="sm"
-        isPending={isPending || enable.isChecking}
-        aria-label={t("client:admin.login_providers.enable_provider", { name })}
-        onPress={enable.press}
-      >
+      <Button isPending={actions.pendingId === provider.id || enable.isChecking} onPress={enable.press}>
         {t("client:admin.login_providers.enable")}
       </Button>
       <LimitStartDialog
@@ -435,20 +510,14 @@ function EnableLoginProvider({ provider, actions, isPending }: RowActionProps) {
 }
 
 /** Disabling a provider, after an alert dialog that says how many linked users can no longer sign in with it. */
-function DisableLoginProvider({ provider, actions, isPending }: RowActionProps) {
+function DisableLoginProvider({ provider, actions }: ActionProps) {
   const t = useT();
   const name = loginProviderName(provider);
   const [isDisabling, setIsDisabling] = useState(false);
   const [failed, setFailed] = useState(false);
   return (
     <DialogTrigger>
-      <Button
-        size="sm"
-        isDisabled={isPending}
-        aria-label={t("client:admin.login_providers.disable_provider", { name })}
-      >
-        {t("client:admin.login_providers.disable")}
-      </Button>
+      <Button isDisabled={actions.pendingId === provider.id}>{t("client:admin.login_providers.disable")}</Button>
       <ConfirmDialog
         title={t("client:admin.login_providers.disable.title", { name })}
         description={t("client:admin.login_providers.disable.description", { count: provider.linked_users })}
@@ -474,19 +543,14 @@ function DisableLoginProvider({ provider, actions, isPending }: RowActionProps) 
 }
 
 /** Deleting a provider, after an alert dialog: it cannot be undone, and its linked users can no longer sign in with it. */
-function DeleteLoginProvider({ provider, actions, isPending }: RowActionProps) {
+function DeleteLoginProvider({ provider, actions }: ActionProps) {
   const t = useT();
   const name = loginProviderName(provider);
   const [isDeleting, setIsDeleting] = useState(false);
   const [failed, setFailed] = useState(false);
   return (
     <DialogTrigger>
-      <Button
-        size="sm"
-        variant="danger"
-        isDisabled={isPending}
-        aria-label={t("client:admin.login_providers.delete_provider", { name })}
-      >
+      <Button variant="danger" isDisabled={actions.pendingId === provider.id}>
         {t("client:admin.login_providers.delete")}
       </Button>
       <ConfirmDialog

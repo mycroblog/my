@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The domain block list in Mastodon's CSV (FR-706), a section of the domain actions screen: "Export CSV" saves
+// The domain block list in Mastodon's CSV (FR-706), the page /moderation/domain-actions/import: "Export CSV" saves
 // the actions in effect as the file Mastodon imports; the import form takes a CSV (pasted into a text area, or read
 // from a file with React Aria's FileTrigger behind a Button) and previews it. The preview lists the rows in file
 // order: each row that takes actions is a checkbox (chosen at first) named by its domain and described by its line
@@ -38,7 +38,7 @@ import {
   validateDomainBlockCsv,
 } from "../hooks/useDomainBlockCsv";
 import { domainActionKindLabels } from "../hooks/useDomainActions";
-import { DomainName, useFocusAfterChange } from "./parts";
+import { DomainName, RequirePermission, Section, useFocusAfterChange } from "./parts";
 
 /** The file types the file button offers: Mastodon's export is a CSV. */
 const csvFileTypes = ["text/csv", "text/plain", ".csv"];
@@ -51,7 +51,19 @@ const skipReasonLabels: Readonly<Record<Exclude<DomainBlockImportStatus, "import
   invalid: "client:admin.domain_actions.csv.status.invalid",
 };
 
-export function DomainBlockCsv() {
+/** The page of the CSV below the screen's heading and local navigation, for manage_domains. */
+export function DomainBlockCsvPage() {
+  const t = useT();
+  return (
+    <RequirePermission permission="manage_domains">
+      <Section surface="card" title={t("client:admin.domain_actions.csv.title")}>
+        <DomainBlockCsv />
+      </Section>
+    </RequirePermission>
+  );
+}
+
+function DomainBlockCsv() {
   const t = useT();
   return (
     <Stack gap="6">
@@ -95,7 +107,9 @@ function DomainBlockImport() {
       <Stack as="form" onSubmit={form.submitPreview} gap="4">
         <TextArea
           label={t("client:admin.domain_actions.csv.csv")}
-          description={t("client:admin.domain_actions.csv.csv.description", { max: domainBlockImportRowLimit })}
+          description={t("client:admin.domain_actions.csv.csv.description", {
+            max: domainBlockImportRowLimit,
+          })}
           value={form.text}
           onChange={form.changeText}
           rows={6}
@@ -164,7 +178,9 @@ function DomainBlockImport() {
         onOpenChange={(isOpen) => {
           if (!isOpen) form.confirmation?.cancel();
         }}
-        title={t("client:admin.domain_actions.csv.confirm.title", { count: form.confirmation?.count ?? 0 })}
+        title={t("client:admin.domain_actions.csv.confirm.title", {
+          count: form.confirmation?.count ?? 0,
+        })}
         description={t("client:admin.domain_actions.confirm_suspend.description")}
         confirmLabel={t("client:admin.domain_actions.csv.confirm.confirm")}
         cancelLabel={t("client:admin.domain_actions.confirm_suspend.cancel")}
@@ -173,7 +189,11 @@ function DomainBlockImport() {
         }}
         isPending={form.isImporting}
         {...(form.confirmation !== null && form.importError !== undefined
-          ? { errorMessage: t("client:admin.domain_actions.csv.import.failed", { reason: form.importError }) }
+          ? {
+              errorMessage: t("client:admin.domain_actions.csv.import.failed", {
+                reason: form.importError,
+              }),
+            }
           : {})}
       />
     </Stack>

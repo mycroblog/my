@@ -22,6 +22,10 @@ func (f *fakeDeadJobs) ListDeadJobs(context.Context, string, queue.DeadJobPositi
 	return nil, nil
 }
 
+func (f *fakeDeadJobs) GetDeadJob(context.Context, string) (queue.DeadJob, error) {
+	return queue.DeadJob{}, queue.ErrDeadJobNotFound
+}
+
 func (f *fakeDeadJobs) RequeueDeadJob(context.Context, string) error { return nil }
 
 func (f *fakeDeadJobs) DeleteDeadJob(context.Context, string) error { return nil }

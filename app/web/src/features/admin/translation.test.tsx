@@ -91,7 +91,7 @@ describe("the translation screen", () => {
     ).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Open the terms and policies" })).toHaveAttribute(
       "href",
-      "/admin/documents",
+      "/admin/documents/privacy-policy",
     );
   });
 

@@ -8,7 +8,7 @@ import { useT } from "../lib/i18n";
 import { AdminError, loadWithPermission } from "./-admin/adminRoute";
 import { PageHeading } from "./-layout/PageHeading";
 
-/** The roles (FR-720): creating them and changing their positions and permissions, for manage_roles. */
+/** The roles (FR-720): their list, highest first, with links to each role and to a new one, for manage_roles. */
 export const Route = createFileRoute("/admin/roles")({
   staticData: { title: "client:admin.roles.title" },
   beforeLoad: requireSignIn,

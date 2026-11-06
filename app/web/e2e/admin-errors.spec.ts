@@ -167,7 +167,9 @@ test.describe("errors", () => {
     const sent = await administratorServer(page);
     await page.goto("/admin/errors");
     const main = page.getByRole("main");
-    const table = main.getByRole("table", { name: message("admin.errors.list"), exact: true });
+    // A table, or a list of cards at narrow widths, named by the same caption.
+    const errorsName = { name: message("admin.errors.list"), exact: true };
+    const table = main.getByRole("table", errorsName).or(main.getByRole("list", errorsName));
     await expect(table).toBeVisible();
     await expectNoAxeViolations(makeAxeBuilder);
     await expectNoHorizontalScroll(page);
@@ -180,7 +182,8 @@ test.describe("errors", () => {
     await expect(state).toBeVisible();
     const sample = main.getByRole("region", { name: message("admin.errors.sample"), exact: true });
     await expect(sample.getByText("4bf92f3577b34da6a3ce929d0e0e4736", { exact: true })).toBeVisible();
-    await expect(main.getByRole("table", { name: message("admin.errors.hourly"), exact: true })).toBeVisible();
+    const hourlyName = { name: message("admin.errors.hourly"), exact: true };
+    await expect(main.getByRole("table", hourlyName).or(main.getByRole("list", hourlyName))).toBeVisible();
     await expectNoAxeViolations(makeAxeBuilder);
     await expectNoHorizontalScroll(page);
 

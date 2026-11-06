@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The server settings screen in every width × locale project (ADR-0110): an administrator names the server once,
-// in any language, and the tab title and the sidebar call the server by that name instead of its domain at once, and
-// changes the registration mode with the keyboard, each step passing axe without scrolling sideways. `vite preview` has no API, so each test plays the server of
+// in any language, on the general page, and the tab title and the sidebar call the server by that name instead of its
+// domain at once; goes to the registration page by the pages' navigation and changes the registration mode with the
+// keyboard; and narrows the federation on its page; each step passing axe without scrolling sideways. `vite preview` has no API, so each test plays the server of
 // a signed-in administrator with page.route; names change with the locale, so the structure is checked by role,
 // by the names in the project's locale catalog and by what the server sends.
 import type { Page, Route } from "@playwright/test";
@@ -202,13 +203,15 @@ test.describe("server settings", () => {
         - paragraph: /my\\.example/
         - text: /.+/
         - textbox: my example
-        - button
-        - status
     `);
 
     await field.fill(longName);
-    await section.getByRole("button").click();
-    await expect(section.getByRole("status")).not.toBeEmpty();
+    // The page has one save, for the name, the descriptions, the contact and the thumbnail together.
+    await expect(main.getByRole("button", { name: message("admin.settings.general.save"), exact: true })).toHaveCount(
+      1,
+    );
+    await main.getByRole("button", { name: message("admin.settings.general.save"), exact: true }).click();
+    await expect(main.getByRole("status").last()).not.toBeEmpty();
     expect(changes).toEqual([`name ${longName}`]);
     await expect(page).toHaveTitle(new RegExp(longName));
     if ((page.viewportSize()?.width ?? 0) >= 1024) {
@@ -226,6 +229,13 @@ test.describe("server policies", () => {
     await page.goto("/admin/settings");
     const main = page.getByRole("main");
     await expect(main.getByRole("textbox").first()).toHaveValue("my example");
+    // The pages of the screen are links under its heading; the menu keeps one item for all of them.
+    const pages = main.getByRole("navigation", { name: message("admin.settings.pages"), exact: true });
+    await pages.getByRole("link", { name: message("admin.settings.page.registration"), exact: true }).click();
+    await expect(page).toHaveURL(/\/admin\/settings\/registration$/);
+    await expect(
+      pages.getByRole("link", { name: message("admin.settings.page.registration"), exact: true }),
+    ).toHaveAttribute("aria-current", "page");
     const registration = main.getByRole("radiogroup", {
       name: message("admin.settings.registration.mode"),
       exact: true,
@@ -248,9 +258,8 @@ test.describe("server policies", () => {
     makeAxeBuilder,
   }) => {
     const changes = await administratorServer(page);
-    await page.goto("/admin/settings");
+    await page.goto("/admin/settings/federation");
     const main = page.getByRole("main");
-    await expect(main.getByRole("textbox").first()).toHaveValue("my example");
     const direction = main.getByRole("radiogroup", { name: message("admin.settings.federation.mode"), exact: true });
     await expect(
       direction.getByRole("radio", { name: message("admin.settings.federation.mode.both"), exact: true }),

@@ -12,7 +12,7 @@ The record of processing activities that goes with it is in [Record of processin
 2. Replace every `{{...}}`. A value in the braces, such as `{{180 days}}`, is the default of the software: confirm it against your instance ([The periods and their settings](#the-periods-and-their-settings)) and remove the braces.
 3. A row or a sentence that starts with `{{IF ...}}` applies only to that setup ([The services you choose](#the-services-you-choose)). Delete it when it does not apply. When it does, remove the marker.
 4. Check that nothing is left: `grep -n '{{' privacy-policy.md` prints no line.
-5. Publish it with `my instance set privacy_policy - < privacy-policy.md`, or under "Terms and policies" (`/admin/documents`) in the administration. Readers find it at `/about/privacy` ([instance settings](instance-settings.md#terms-and-privacy-policy)).
+5. Publish it with `my instance set privacy_policy - < privacy-policy.md`, or on the "Privacy policy" page of "Terms and policies" (`/admin/documents/privacy-policy`) in the administration. Readers find it at `/about/privacy` ([instance settings](instance-settings.md#terms-and-privacy-policy)).
 
 A written privacy policy adds a required agreement checkbox to the registration screen. That checkbox shows that someone read the document. Do not assume that it is consent to processing where your law asks for consent.
 

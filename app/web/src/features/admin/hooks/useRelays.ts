@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The relays of the admin screens (ADR-0006, manage_settings): the list, registering and joining one, leaving it,
-// joining it again and deleting its registration. What each change did is announced and kept in a StatusMessage;
-// a refusal is said in the client's words for its reason, next to the field or the list.
+// The relays of the admin screens (ADR-0006, manage_settings): the list and one relay of it, registering and joining
+// one (which then opens its page), leaving it, joining it again and deleting its registration (which leaves its page).
+// What a change did is announced and kept in a StatusMessage; a refusal is said in the client's words for its reason,
+// next to the field or the actions.
 import { useNotice } from "@my/ui";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { type SyntheticEvent, useState } from "react";
@@ -62,6 +63,11 @@ export function useRelays(): Relay[] {
   return useSuspenseQuery(relaysQueryOptions(api)).data.items;
 }
 
+/** One relay of the list, or undefined when none has this ID (the API has no endpoint for one relay). */
+export function useRelay(id: string): Relay | undefined {
+  return useRelays().find((relay) => relay.id === id);
+}
+
 /** How the form joins a relay: detected by the server from its URL, or one of the protocols. */
 export type RelayProtocolChoice = "auto" | RelayProtocol;
 
@@ -73,23 +79,20 @@ const emptyDraft: RelayDraft = { url: "", protocol: "auto", receive: true };
 /** Why registering a relay failed: on the URL when its reason is about the URL, else under the form. */
 export type RelayFormError = { field: "url" | "form"; message: string };
 
-/** The form of a new relay. A success empties it and says which relay was registered. */
-export function useRelayForm() {
+/**
+ * The form of a new relay. A success calls `onCreated` with the relay once the list has it, to open its page (the
+ * page's heading is the result, web-client/16-look-states-and-wording.md G24).
+ */
+export function useRelayForm(onCreated: (relay: Relay) => void) {
   const api = useApi();
-  const t = useT();
   const queryClient = useQueryClient();
   const refusal = useRefusal();
   const [draft, setDraft] = useState<RelayDraft>(emptyDraft);
-  const [created, setCreated] = useState<Relay | undefined>(undefined);
   const mutation = useMutation({
     ...createRelayMutation(api),
-    onMutate: () => {
-      setCreated(undefined);
-    },
     onSuccess: async (relay) => {
       await refreshRelays(queryClient);
-      setDraft(emptyDraft);
-      setCreated(relay);
+      onCreated(relay);
     },
   });
   const error = (): RelayFormError | undefined => {
@@ -114,8 +117,6 @@ export function useRelayForm() {
     isPending: mutation.isPending,
     /** Why registering failed; the draft stays. */
     error: error(),
-    /** What the last submit did, for the form's StatusMessage. */
-    status: created === undefined ? undefined : t("client:admin.relays.created", { name: relayName(created) }),
   };
 }
 
@@ -133,10 +134,11 @@ export type RelayActions = {
 };
 
 /**
- * Changing the relays of the list. `onDeleted(id)` is called once a deleted relay is about to leave the list (to
- * keep focus, lib/useFocusAfterRemoval); a relay that is left or joined again keeps its row, which shows the answer.
+ * Changing relays. A relay that is left or joined again keeps its row and its page, which show the answer. A deleted
+ * relay calls `onDeleted(relay)` before the list is fetched again, so that its page can leave for the list and say
+ * what happened there (a toast: the page that would show it is gone); no status is kept for it.
  */
-export function useRelayActions(onDeleted: (id: string) => void): RelayActions {
+export function useRelayActions(onDeleted: (relay: Relay) => void = () => undefined): RelayActions {
   const api = useApi();
   const t = useT();
   const queryClient = useQueryClient();
@@ -178,9 +180,8 @@ export function useRelayActions(onDeleted: (id: string) => void): RelayActions {
       } catch {
         return false;
       }
-      onDeleted(relay.id);
+      onDeleted(relay);
       await refreshRelays(queryClient);
-      report(t("client:admin.relays.deleted", { name: relayName(relay) }));
       return true;
     },
     pendingId,

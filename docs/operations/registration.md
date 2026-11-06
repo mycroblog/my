@@ -35,7 +35,7 @@ After registering, that browser is signed in right away.
 The page works without JavaScript and, like the sign-in page, is protected by a CSRF token and by rejecting cross-origin requests.
 When you choose CAPTCHA for bot protection, the sign-up and sign-in pages show its widget and need JavaScript ([CAPTCHA](captcha.md)).
 
-The registration mode is the instance setting `registration_mode`. Choose it with the CLI or in the web client under "Server settings" (`/admin/settings`) ([instance settings](instance-settings.md)). A change applies from the next registration.
+The registration mode is the instance setting `registration_mode`. Choose it with the CLI or in the web client on the "Registration" page of "Server settings" (`/admin/settings/registration`) ([instance settings](instance-settings.md)). A change applies from the next registration.
 While the server announces its closure and after it closes, registration is treated as `closed` whatever the setting says ([admin CLI](admin-cli.md#announcing-the-end-of-the-service)).
 
 ```sh
@@ -113,7 +113,7 @@ While the instance setting `login_providers_only` applies, reset links and setti
 - `mail = smtp`: when a user enters an email address under "Forgot your password?" on the sign-in page, the server sends a link for setting a new password to the user whose primary address it is.
   The page's answer is the same whether or not an account exists. The link is valid for 1 hour and works once, and it stops working if the password changes by another route in the meantime.
   Requests are limited to 5 per 30 minutes per client IP address, and mail to 3 per hour per address (a request over a limit sends nothing and gets the same answer). When CAPTCHA is enabled, this form is verified too.
-- `mail = none`: the page says that it cannot send a link and tells the user to ask an administrator. The administrator issues a link on the account page of the admin screens, or with `my admin account password-reset-link @alice`, and gives it to the user ([moderation](moderation.md)).
+- `mail = none`: the page says that it cannot send a link and tells the user to ask an administrator. The administrator issues a link on the account's Management page of the admin screens, or with `my admin account password-reset-link @alice`, and gives it to the user ([moderation](moderation.md)).
 - A signed-in user can change the password under "Password" in settings by entering the current password (wrong entries are limited to 5 per hour per user).
 - A reset or a change revokes the user's other sessions and app tokens (a change from settings keeps only the app that made the change). Passkeys and two-factor authentication stay.
   A sign-in that waits for its two-factor code, and an app authorization not yet completed, stop working too: the user starts them again.
@@ -139,9 +139,10 @@ my invite revoke <code>
 - Besides the CLI, you can create, list and revoke invites in the web client's Moderation screens ("Invites", `/moderation/invites`) and through the client API
   (`GET` / `POST /api/v1/admin/invites` and `POST /api/v1/admin/invites/{id}/revoke`). Both need the role permission `manage_invites`
   (the built-in `moderator` does not have it, so to delegate this, create a role with that permission and grant it).
-  The screen shows the code and the sign-up link of a new invite, and lets you copy the link of a usable invite.
+  "Create an invite" on the list opens the form (`/moderation/invites/new`), which shows the code and the sign-up link of the new invite.
+  The list lets you copy the link of a usable invite and revoke it.
 - The list shows every invite, the staff's and the members', with who created it (`created_by`) and how (`creator_kind`: `staff` or `member`). The holders of `manage_invites` can revoke any of them.
-- The account page of the moderation screens (`GET /api/v1/admin/accounts/{id}`, permission `manage_accounts`) shows the invite the account signed up with and who created it, the person who invited the user.
+- The account's Review page of the moderation screens (`GET /api/v1/admin/accounts/{id}`, permission `manage_accounts`) shows the invite the account signed up with and who created it, the person who invited the user.
 - Creating and revoking an invite is recorded in the audit log (`invite_created`, `invite_revoked`) from the screen, the API and the CLI alike. The target name is the first 4 characters of the code (`ABCD…`); the full code is not copied to the audit log.
   Revoking an already revoked invite changes nothing, so it is not recorded.
 
@@ -161,7 +162,7 @@ The settings list the page only for a user who can create invites now; a user wh
 The list says, for each invite, whether it is usable, revoked, expired, used up, or unusable because its creator can no longer invite.
 
 Limits, also instance settings, apply to member invites only.
-Administrators change them, and `invite_creators`, under "Member invites" on the server settings screen (`/admin/settings`):
+Administrators change them, and `invite_creators`, under "Member invites" on the "Registration" page of the server settings (`/admin/settings/registration`):
 
 | Setting | Meaning | Default | Range |
 | --- | --- | --- | --- |
@@ -233,6 +234,9 @@ my admin signup-block import -kind email_domain -comment "disposable email" disp
 - The software ships no list and does not fetch one from a URL periodically. You fetch and update public lists (such as disposable-email-domains on GitHub) yourself and import the updated list again.
 
 The same operations are available from the admin screens (the client API). All of them need the `manage_accounts` permission.
+In the web client, open Moderation → Sign-up blocks (`/moderation/signup-blocks`). The list shows each block's value, kind, state and end, in effect or all;
+"Add a block" opens the form (`/moderation/signup-blocks/new`), "Add from a list" imports a list and shows the lines it skipped (`/moderation/signup-blocks/import`),
+and choosing a value opens the block's page with its effect and comment, where "Lift" ends it.
 
 | Operation | What it does |
 | --- | --- |

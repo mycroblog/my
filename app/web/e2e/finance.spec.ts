@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The costs screen in every width × locale project (ADR-0067, ADR-0068, ADR-0110): an administrator with
-// manage_finance sees the totals by month amortized by default, switches to weeks and to payment dates, records a cost
-// paid every year, and deletes one after its dialog; the billing imports show their state; the money movements show
-// their subscribers by username and narrow to a kind with the keyboard, into the URL. Each step passes axe
-// without scrolling sideways. `vite preview` has no API, so the test plays the server with page.route; names change
+// The pages of the costs screen in every width × locale project (ADR-0067, ADR-0068, ADR-0110): an administrator with
+// manage_finance sees the totals by month amortized by default on the overview, switches to weeks and to payment dates,
+// goes to the recorded costs by the screen's links, records a cost paid every year on the new item's page, and deletes
+// it on its page after its dialog; the billing imports show their state; the money movements show their subscribers by
+// username and narrow to a kind with the keyboard, into the URL. Each step passes axe without scrolling sideways. `vite preview` has no API, so the test plays the server with page.route; names change
 // with the locale, so the elements are found by role and by the names in the project's locale catalog.
 import type { Page, Route } from "@playwright/test";
 import type { components } from "@mycroblog/mykit";
-import { expect, expectNoAxeViolations, expectNoHorizontalScroll, test } from "./fixtures";
+import { expect, expectNoAxeViolations, expectNoHorizontalScroll, recordRows, recordTable, test } from "./fixtures";
 import { readCatalog } from "./catalog.ts";
 
 type Schemas = components["schemas"];
@@ -36,7 +36,10 @@ const account = {
   discoverable: true,
   indexable: true,
   source: { note: "", fields: [] },
-  posting: { visibility_ceiling: "public", visibilities: ["public", "local", "unlisted", "private", "direct"] },
+  posting: {
+    visibility_ceiling: "public",
+    visibilities: ["public", "local", "unlisted", "private", "direct"],
+  },
   permissions: ["manage_finance"],
 };
 
@@ -51,7 +54,11 @@ const server: Schemas["CostItem"] = {
   category: "compute",
   memo: "الخادم الرئيسي",
   prices: [
-    { effective_on: "2026-01-31", price: { amount: "12.34", currency: "USD" }, revised_at: "2026-01-31T00:00:00Z" },
+    {
+      effective_on: "2026-01-31",
+      price: { amount: "12.34", currency: "USD" },
+      revised_at: "2026-01-31T00:00:00Z",
+    },
   ],
   created_at: "2026-01-31T00:00:00Z",
 };
@@ -80,7 +87,10 @@ function totals(url: URL): Schemas["CostTotals"] {
         estimated: true,
       },
     ],
-    rules: { week_start: "monday", sources: [{ source: "aws", provider: "AWS", time_zone: "UTC" }] },
+    rules: {
+      week_start: "monday",
+      sources: [{ source: "aws", provider: "AWS", time_zone: "UTC" }],
+    },
   };
 }
 
@@ -230,7 +240,11 @@ async function serveApi(page: Page) {
       return json(route, totals(url));
     }
     if (key === "GET /finance/cost_totals") {
-      const viewer: Schemas["FinanceViewerSettings"] = { item_names: true, item_memos: false, income: "totals" };
+      const viewer: Schemas["FinanceViewerSettings"] = {
+        item_names: true,
+        item_memos: false,
+        income: "totals",
+      };
       return json(route, {
         ...totals(url),
         periods: totals(url).periods.map((period) => ({ ...period, items: [] })),
@@ -238,11 +252,19 @@ async function serveApi(page: Page) {
       });
     }
     if (key === "GET /admin/cost_items") return json(route, { items });
+    if (/^GET \/admin\/cost_items\/[^/]+$/.test(key)) {
+      const item = items.find((candidate) => path.endsWith(`/${candidate.id}`));
+      return item === undefined
+        ? json(route, { type: "about:blank", title: "Not Found", status: 404 }, 404)
+        : json(route, item);
+    }
     if (key === "GET /admin/billing_imports") return json(route, { items: [awsImport] });
     if (key === "GET /admin/income_totals") return json(route, incomeTotals(url));
     if (key === "GET /admin/income_movements") {
       const kind = url.searchParams.get("kind");
-      return json(route, { items: movements.filter((movement) => kind === null || movement.kind === kind) });
+      return json(route, {
+        items: movements.filter((movement) => kind === null || movement.kind === kind),
+      });
     }
     if (key === "POST /admin/cost_items") {
       const { price, memo, ends_on, ...body } = request.postDataJSON() as Schemas["CostItemCreateRequest"];
@@ -276,10 +298,16 @@ test.describe("costs", () => {
     const sent = await serveApi(page);
     await page.goto("/admin/finance");
     const main = page.getByRole("main");
-    const totalsRegion = main.getByRole("region", { name: message("admin.finance.totals.title"), exact: true });
+    const totalsRegion = main.getByRole("region", {
+      name: message("admin.finance.totals.title"),
+      exact: true,
+    });
     // The costs' table, then the income's.
     await expect(totalsRegion.getByRole("table")).toHaveCount(2);
-    const basis = totalsRegion.getByRole("radiogroup", { name: message("costs.basis"), exact: true });
+    const basis = totalsRegion.getByRole("radiogroup", {
+      name: message("costs.basis"),
+      exact: true,
+    });
     await expect(basis.getByRole("radio", { name: message("costs.basis.amortized"), exact: true })).toBeChecked();
     await expect(totalsRegion.getByText(message("costs.totals.estimated"), { exact: true })).toBeVisible();
     await expect(totalsRegion.getByText(message("costs.rules.week_start"), { exact: true })).toBeVisible();
@@ -308,43 +336,77 @@ test.describe("costs", () => {
     await expectNoAxeViolations(makeAxeBuilder);
     await expectNoHorizontalScroll(page);
 
-    // Recording is the other tab; its one primary action opens the form in place of the button.
-    await main.getByRole("tab", { name: message("admin.finance.tabs.records"), exact: true }).click();
-    await expect(page).toHaveURL(/tab=records/u);
-    const list = main.getByRole("region", { name: message("admin.finance.list.title"), exact: true });
-    // The memo, written right to left, keeps its own direction.
-    await expect(list.getByText("الخادم الرئيسي")).toHaveAttribute("dir", "auto");
-    await list.getByRole("button", { name: message("admin.finance.new.title"), exact: true }).click();
-    const form = list.getByRole("region", { name: message("admin.finance.new.title"), exact: true });
-    await form.getByRole("textbox", { name: message("admin.finance.name"), exact: true }).fill("example.com");
-    await form.getByRole("textbox", { name: message("admin.finance.provider"), exact: true }).fill("Registrar");
-    const schedule = form.getByRole("radiogroup", { name: message("admin.finance.schedule"), exact: true });
+    // Recording is another page of the screen, linked under its heading; the list's one primary action leads to the
+    // new item's page.
+    const pages = main.getByRole("navigation", {
+      name: message("admin.finance.pages"),
+      exact: true,
+    });
+    await pages.getByRole("link", { name: message("admin.finance.pages.costs"), exact: true }).click();
+    await expect(page).toHaveURL(/\/admin\/finance\/costs$/u);
+    const list = main.getByRole("region", {
+      name: message("admin.finance.list.title"),
+      exact: true,
+    });
+    await expect(recordRows(recordTable(list))).toHaveCount(1);
+    await expectNoAxeViolations(makeAxeBuilder);
+    await expectNoHorizontalScroll(page);
+    await list.getByRole("link", { name: message("admin.finance.new.title"), exact: true }).click();
+    await expect(page).toHaveURL(/\/admin\/finance\/costs\/new$/u);
+    await main.getByRole("textbox", { name: message("admin.finance.name"), exact: true }).fill("example.com");
+    await main.getByRole("textbox", { name: message("admin.finance.provider"), exact: true }).fill("Registrar");
+    const schedule = main.getByRole("radiogroup", {
+      name: message("admin.finance.schedule"),
+      exact: true,
+    });
     await schedule.getByText(message("admin.finance.schedule.years"), { exact: true }).click();
     await expect(
       schedule.getByRole("radio", { name: message("admin.finance.schedule.years"), exact: true }),
     ).toBeChecked();
-    await form.getByLabel(message("admin.finance.starts_on"), { exact: true }).fill("2026-04-10");
-    await form.getByRole("textbox", { name: message("admin.finance.amount"), exact: true }).fill("1650");
-    await form.getByRole("textbox", { name: message("admin.finance.currency"), exact: true }).fill("JPY");
-    await form.getByRole("button", { name: message("admin.finance.create"), exact: true }).click();
-    await expect(list.getByRole("heading", { level: 3, name: "example.com" })).toBeVisible();
-    await expect(form).toBeHidden();
+    await main.getByLabel(message("admin.finance.starts_on"), { exact: true }).fill("2026-04-10");
+    await main.getByRole("textbox", { name: message("admin.finance.amount"), exact: true }).fill("1650");
+    await main.getByRole("textbox", { name: message("admin.finance.currency"), exact: true }).fill("JPY");
+    await expectNoAxeViolations(makeAxeBuilder);
+    await expectNoHorizontalScroll(page);
+    await main.getByRole("button", { name: message("admin.finance.create"), exact: true }).click();
+    // The item's page shows what was recorded.
+    await expect(page).toHaveURL(/\/admin\/finance\/costs\/0192f0c4-7a8e-7000-8000-0000000000a2$/u);
+    await expect(main.getByRole("heading", { level: 2, name: "example.com", exact: true })).toBeVisible();
     expect(sent).toContain("create years 1650 JPY");
     await expectNoAxeViolations(makeAxeBuilder);
     await expectNoHorizontalScroll(page);
 
-    await list
-      .getByRole("button", { name: message("admin.finance.cancel_one", { name: "example.com" }), exact: true })
-      .click();
+    const remove = main.getByRole("region", {
+      name: message("admin.finance.item.delete"),
+      exact: true,
+    });
+    await remove.getByRole("button", { name: message("admin.finance.cancel_item"), exact: true }).click();
     const dialog = page.getByRole("alertdialog");
     await expect(dialog).toBeVisible();
     await expectNoAxeViolations(makeAxeBuilder);
     await dialog.getByRole("button", { name: message("admin.finance.cancel_item"), exact: true }).click();
-    await expect(list.getByRole("heading", { level: 3, name: "example.com" })).toBeHidden();
+    await expect(page).toHaveURL(/\/admin\/finance\/costs$/u);
+    await expect(list.getByRole("link", { name: "example.com" })).toBeHidden();
     expect(sent).toContain("cancel");
 
-    const imports = main.getByRole("region", { name: message("admin.finance.imports.title"), exact: true });
+    await pages.getByRole("link", { name: message("admin.finance.pages.imports"), exact: true }).click();
+    const imports = main.getByRole("region", {
+      name: message("admin.finance.imports.title"),
+      exact: true,
+    });
     await expect(imports.getByRole("heading", { level: 3, name: "AWS" })).toBeVisible();
+    await expectNoAxeViolations(makeAxeBuilder);
+    await expectNoHorizontalScroll(page);
+  });
+
+  test("an item's page with its forms", async ({ page, makeAxeBuilder }) => {
+    await serveApi(page);
+    await page.goto(`/admin/finance/costs/${server.id}`);
+    const main = page.getByRole("main");
+    await expect(main.getByRole("heading", { level: 2, name: server.name, exact: true })).toBeVisible();
+    // The memo, written right to left, keeps its own direction.
+    await expect(main.getByText("الخادم الرئيسي").first()).toHaveAttribute("dir", "auto");
+    await expect(main.getByRole("region", { name: message("admin.finance.edit.title"), exact: true })).toBeVisible();
     await expectNoAxeViolations(makeAxeBuilder);
     await expectNoHorizontalScroll(page);
   });
@@ -354,15 +416,29 @@ test("the income on the costs screen, with its money movements", async ({ page, 
   await serveApi(page);
   await page.goto("/admin/finance");
   const main = page.getByRole("main");
-  const totalsRegion = main.getByRole("region", { name: message("admin.finance.totals.title"), exact: true });
+  const totalsRegion = main.getByRole("region", {
+    name: message("admin.finance.totals.title"),
+    exact: true,
+  });
   const income = totalsRegion.getByRole("region", { name: message("income.title"), exact: true });
   // The period, the gross, the fees, the income after fees and the balance.
   await expect(income.getByRole("table").getByRole("columnheader")).toHaveCount(5);
   await expect(
     income.getByText("A plan with a rather long name that has to wrap on the narrowest screens"),
   ).toHaveAttribute("dir", "auto");
-  const movementsRegion = main.getByRole("region", { name: message("admin.finance.movements.title"), exact: true });
-  await expect(movementsRegion.getByRole("row")).toHaveCount(3);
+
+  // The money movements are a page of their own.
+  await main
+    .getByRole("navigation", { name: message("admin.finance.pages"), exact: true })
+    .getByRole("link", { name: message("admin.finance.pages.income"), exact: true })
+    .click();
+  await expect(page).toHaveURL(/\/admin\/finance\/income$/u);
+  const movementsRegion = main.getByRole("region", {
+    name: message("admin.finance.movements.title"),
+    exact: true,
+  });
+  // The rows of the movements, a table or (at narrow widths) cards.
+  await expect(recordRows(recordTable(movementsRegion))).toHaveCount(2);
   await expect(movementsRegion.getByText("txn_1PaymentWithARatherLongIdentifierThatDoesNotWrap")).toHaveAttribute(
     "dir",
     "ltr",
@@ -378,9 +454,12 @@ test("the income on the costs screen, with its money movements", async ({ page, 
   await page.keyboard.press("Enter");
   await page.getByRole("option", { name: message("admin.finance.movements.kind.fee"), exact: true }).press("Enter");
   await expect(page).toHaveURL(/kind=fee/u);
-  await expect(movementsRegion.getByRole("row")).toHaveCount(2);
+  await expect(recordRows(recordTable(movementsRegion))).toHaveCount(1);
   await expect(
-    movementsRegion.getByRole("button", { name: message("admin.finance.movements.filter.clear"), exact: true }),
+    movementsRegion.getByRole("button", {
+      name: message("admin.finance.movements.filter.clear"),
+      exact: true,
+    }),
   ).toBeVisible();
   await expectNoAxeViolations(makeAxeBuilder);
   await expectNoHorizontalScroll(page);

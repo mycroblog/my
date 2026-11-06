@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// An account's page (/moderation/accounts/{id}; web-client/screens/moderation.md): the account with its state and
-// registration, the actions on it, the reports about it, and the action form, in the states of ADR-0079 §13
+// An account's pages (/moderation/accounts/{id}, …/actions, …/actions/{actionId}, …/manage;
+// web-client/screens/moderation-account*.md): the account with its state and registration, the actions on it, the
+// reports about it, and the action form; every action as a table, one action; and the account management, in the
+// states of ADR-0079 §13
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { http, HttpResponse } from "msw";
 import { otherAccountFixture, rtlNameAccountFixture, type Schemas, statusFixture } from "../../test/fixtures";
@@ -76,10 +78,19 @@ const bob = adminAccountDetailFixture(otherAccountFixture, {
 const remote = adminAccountDetailFixture(rtlNameAccountFixture, {
   state: "suspended",
   restrictions: ["federation", "profile_view"],
-  actions: [accountActionFixture({ id: storyId("d0", 21), account_id: rtlNameAccountFixture.id, kind: "suspend" })],
+  actions: [
+    accountActionFixture({
+      id: storyId("d0", 21),
+      account_id: rtlNameAccountFixture.id,
+      kind: "suspend",
+    }),
+  ],
 });
 
-/** GET /admin/accounts/{id} answering `details` by their ID, and GET /admin/accounts/{id}/actions their actions. */
+/**
+ * GET /admin/accounts/{id} answering `details` by their ID, GET /admin/accounts/{id}/actions their actions, and
+ * GET /admin/account_actions/{id} one of those actions.
+ */
 function accountsApi(details: Schemas["AdminAccountDetail"][]) {
   const find = (id: unknown) => details.find((detail) => detail.id === id);
   return [
@@ -92,6 +103,12 @@ function accountsApi(details: Schemas["AdminAccountDetail"][]) {
     http.get(`${apiBase}/admin/accounts/:id/actions`, ({ request, params }) =>
       withViewer(request, () => HttpResponse.json({ items: find(params["id"])?.actions ?? [] })),
     ),
+    http.get(`${apiBase}/admin/account_actions/:id`, ({ request, params }) => {
+      const found = details.flatMap((detail) => detail.actions).find((action) => action.id === params["id"]);
+      return withViewer(request, () =>
+        found === undefined ? problem(404, "/api/v1/problems/not-found", "Not Found") : HttpResponse.json(found),
+      );
+    }),
   ];
 }
 
@@ -119,7 +136,29 @@ type Story = StoryObj<typeof meta>;
 export const Normal: Story = showing("Repeated insults in replies to people who asked to be left alone.");
 
 /** A suspended account of another server. */
-export const Remote: Story = { parameters: { screen: { path: `/moderation/accounts/${remote.id}` } } };
+export const Remote: Story = {
+  parameters: { screen: { path: `/moderation/accounts/${remote.id}` } },
+};
+
+/** Every action on the account, as a table (/moderation/accounts/{id}/actions). */
+export const Actions: Story = {
+  parameters: { screen: { path: `/moderation/accounts/${bob.id}/actions` } },
+};
+
+/** One action on the account, with every fact of it (/moderation/accounts/{id}/actions/{actionId}). */
+export const Action: Story = {
+  parameters: { screen: { path: `/moderation/accounts/${bob.id}/actions/${storyId("d0", 11)}` } },
+};
+
+/** The account management of a local account (/moderation/accounts/{id}/manage), for a moderator. */
+export const Management: Story = {
+  parameters: { screen: { path: `/moderation/accounts/${bob.id}/manage` } },
+};
+
+/** The management page of an account of another server, which has nothing to manage. */
+export const RemoteManagement: Story = {
+  parameters: { screen: { path: `/moderation/accounts/${remote.id}/manage` } },
+};
 
 /** Opened from a post's menu: the page starts from that post. */
 export const FromPost: Story = {
@@ -140,7 +179,9 @@ export const Clean: Story = answering(...accountsApi([adminAccountDetailFixture(
 
 /** An account that does not exist. */
 export const NotFound: Story = {
-  parameters: { screen: { path: `/moderation/accounts/${storyId("aa", 404)}`, errorPage: "request" } },
+  parameters: {
+    screen: { path: `/moderation/accounts/${storyId("aa", 404)}`, errorPage: "request" },
+  },
 };
 
 /** The account has not arrived yet. */

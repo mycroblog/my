@@ -9,7 +9,16 @@
 import type { Page, Route } from "@playwright/test";
 import type { components } from "@mycroblog/mykit";
 import { readCatalog } from "./catalog.ts";
-import { expect, expectNoAxeViolations, expectNoHorizontalScroll, test } from "./fixtures";
+import {
+  expect,
+  expectNoAxeViolations,
+  expectNoHorizontalScroll,
+  isCardForm,
+  recordRowHeaders,
+  recordRows,
+  recordTable,
+  test,
+} from "./fixtures";
 
 type Schemas = components["schemas"];
 
@@ -225,6 +234,10 @@ async function moderatorServer(
     if (key === `GET /admin/accounts/${remote.id}`) return json(route, detail(remoteAccount));
     if (key === `GET /admin/accounts/${local.id}/actions`) return json(route, { items: actions });
     if (key === `GET /admin/accounts/${remote.id}/actions`) return json(route, { items: [] });
+    if (key.startsWith("GET /admin/account_actions/")) {
+      const found = actions.find((action) => key === `GET /admin/account_actions/${action.id}`);
+      if (found !== undefined) return json(route, found);
+    }
     if (key === `POST /admin/accounts/${local.id}/reveal`) return json(route, privateData);
     if (key === `POST /admin/accounts/${local.id}/email_suppression/lift`) {
       suppression = undefined;
@@ -269,14 +282,9 @@ async function moderatorServer(
   return requests;
 }
 
-/** The rows of the results table: its rows with a link, which leaves out the header row. */
+/** The rows of the results table (its cards at narrow widths). */
 function rows(page: Page) {
-  return page
-    .getByRole("main")
-    .getByRole("region")
-    .last()
-    .getByRole("row")
-    .filter({ has: page.getByRole("link") });
+  return recordRows(recordTable(page.getByRole("main").getByRole("region").last()));
 }
 
 test.describe("page /moderation/accounts", () => {
@@ -311,6 +319,33 @@ test.describe("page /moderation/accounts/{id}", () => {
   });
 });
 
+/** The account's other pages: every action as a table, one action, and the account management. */
+const accountPages = [
+  { name: "actions", path: `/moderation/accounts/${local.id}/actions`, table: true },
+  { name: "action", path: `/moderation/accounts/${local.id}/actions/${limit.id}`, table: false },
+  { name: "management", path: `/moderation/accounts/${local.id}/manage`, table: false },
+] as const;
+
+for (const { name, path, table } of accountPages) {
+  test.describe(`the account's ${name} page ${path}`, () => {
+    test.beforeEach(async ({ page }) => {
+      await moderatorServer(page);
+      await page.goto(path);
+      const main = page.getByRole("main");
+      await expect(main.getByRole("heading", { level: 1 })).toBeVisible();
+      await expect(table ? recordRows(recordTable(main)).first() : main.getByRole("region").first()).toBeVisible();
+    });
+
+    test("has no axe violations", async ({ makeAxeBuilder }) => {
+      await expectNoAxeViolations(makeAxeBuilder);
+    });
+
+    test("does not scroll horizontally", async ({ page }) => {
+      await expectNoHorizontalScroll(page);
+    });
+  });
+}
+
 test.describe("accounts", () => {
   test("opens an account from the search, shows its email and IP addresses only when asked, and lifts an action after its confirmation", async ({
     page,
@@ -321,11 +356,15 @@ test.describe("accounts", () => {
     await expect(rows(page)).toHaveCount(2);
     const limitedRow = await rows(page).first().textContent();
 
-    await expect(rows(page).first().getByRole("rowheader").getByRole("link")).toHaveAccessibleName(
+    await expect(recordRowHeaders(rows(page).first()).getByRole("link")).toHaveAccessibleName(
       /Maximiliana Theodora Wolfharte.*@maximiliana/,
     );
-    await expect(rows(page).first().getByRole("cell")).toHaveCount(3);
-    await expect(rows(page).first().getByRole("cell").last().getByRole("time")).toBeVisible();
+    // The values of the row: its cells, or the definitions of its card at narrow widths.
+    const values = rows(page)
+      .first()
+      .getByRole((await isCardForm(recordTable(page.getByRole("main")))) ? "definition" : "cell");
+    await expect(values).toHaveCount(3);
+    await expect(values.last().getByRole("time")).toBeVisible();
     await expect(rows(page).last().getByText(`@carol@${longDomain}`)).toBeVisible();
 
     // By keyboard: the row's link opens the account's page, whose heading takes focus.
@@ -337,6 +376,12 @@ test.describe("accounts", () => {
     await expect(main.getByRole("heading", { level: 3 }).first()).toBeVisible();
     expect(requests.filter((request) => request.endsWith("/reveal"))).toEqual([]);
     await expect(page.getByText(privateData.email ?? "")).toHaveCount(0);
+
+    // The email and IP addresses are on the account management page, one of the account's pages.
+    await page.locator(`main nav a[href="/moderation/accounts/${local.id}/manage"]`).click();
+    await expect(page).toHaveURL(new RegExp(`/moderation/accounts/${local.id}/manage$`));
+    await expect(main.getByRole("heading", { level: 1 })).toBeFocused();
+    expect(requests.filter((request) => request.endsWith("/reveal"))).toEqual([]);
 
     // The email and IP addresses, by keyboard: the region's heading takes focus once they show.
     const privateRegion = main.getByRole("region", { name: message("admin.account.private.title"), exact: true });
@@ -355,7 +400,10 @@ test.describe("accounts", () => {
     await expectNoAxeViolations(makeAxeBuilder);
     await expectNoHorizontalScroll(page);
 
-    // The lift of the limit asks first, with the reason's field focused.
+    // Back on the review page: the lift of the limit asks first, with the reason's field focused.
+    await page.locator(`main nav a[href="/moderation/accounts/${local.id}"]`).click();
+    await expect(page).toHaveURL(new RegExp(`/moderation/accounts/${local.id}$`));
+    await expect(main.getByRole("heading", { level: 3 }).first()).toBeVisible();
     const history = main.getByRole("region", { name: message("admin.account.actions.title"), exact: true });
     await history.getByRole("button").click();
     const dialog = page.getByRole("alertdialog");
@@ -439,7 +487,7 @@ test.describe("accounts", () => {
     expect(requests).toContain(`POST /admin/accounts/${local.id}/actions ban block_email`);
 
     await page.goto("/moderation/signup-blocks");
-    await expect(page.getByRole("main").getByRole("table").getByRole("rowheader", { name: emailHash })).toBeVisible();
+    await expect(recordRowHeaders(recordTable(page.getByRole("main"))).filter({ hasText: emailHash })).toBeVisible();
     await expectNoAxeViolations(makeAxeBuilder);
     await expectNoHorizontalScroll(page);
   });
@@ -449,7 +497,7 @@ test.describe("accounts", () => {
     makeAxeBuilder,
   }) => {
     const requests = await moderatorServer(page, moderator.permissions, { suppressed: true });
-    await page.goto(`/moderation/accounts/${local.id}`);
+    await page.goto(`/moderation/accounts/${local.id}/manage`);
     const main = page.getByRole("main");
     const region = main.getByRole("region", { name: message("admin.account.email_suppression.title"), exact: true });
     await expect(region).toBeVisible();
@@ -475,7 +523,7 @@ test.describe("accounts", () => {
 
     // Lifted: the page opened again shows no such region.
     await page.reload();
-    await expect(main.getByRole("heading", { level: 3 }).first()).toBeVisible();
+    await expect(main.getByRole("region", { name: message("admin.account.private.title"), exact: true })).toBeVisible();
     await expect(
       main.getByRole("region", { name: message("admin.account.email_suppression.title"), exact: true }),
     ).toHaveCount(0);
@@ -486,9 +534,10 @@ test.describe("accounts", () => {
     makeAxeBuilder,
   }) => {
     const requests = await moderatorServer(page, [...moderator.permissions, "manage_login_recovery"]);
-    await page.goto(`/moderation/accounts/${local.id}`);
+    await page.goto(`/moderation/accounts/${local.id}/manage`);
     const main = page.getByRole("main");
-    await expect(main.getByRole("heading", { level: 3 }).first()).toBeVisible();
+    const privateRegion = main.getByRole("region", { name: message("admin.account.private.title"), exact: true });
+    await expect(privateRegion).toBeVisible();
     await expect(page.getByText(resetLink)).toHaveCount(0);
 
     const reset = main.getByRole("region", { name: message("admin.account.password_reset.title"), exact: true });
@@ -515,7 +564,7 @@ test.describe("accounts", () => {
 
     // The link is not kept anywhere: the page opened again does not show it.
     await page.reload();
-    await expect(main.getByRole("heading", { level: 3 }).first()).toBeVisible();
+    await expect(privateRegion).toBeVisible();
     await expect(page.getByText(resetLink)).toHaveCount(0);
   });
 });

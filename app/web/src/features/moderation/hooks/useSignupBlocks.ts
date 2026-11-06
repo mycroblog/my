@@ -3,7 +3,13 @@
 // email domain in IDNA A-labels; the UI shows it with the U-labels it stands for (lib/idn), like the domain
 // actions.
 import { useToast } from "@my/ui";
-import { useMutation, useMutationState, useQueryClient, useSuspenseInfiniteQuery } from "@tanstack/react-query";
+import {
+  useMutation,
+  useMutationState,
+  useQueryClient,
+  useSuspenseInfiniteQuery,
+  useSuspenseQuery,
+} from "@tanstack/react-query";
 import { type SyntheticEvent, useState } from "react";
 import { useApi } from "../../../lib/auth/SessionProvider";
 import { errorMessage } from "../../../lib/errors";
@@ -19,6 +25,7 @@ import {
   type SignupBlockFilter,
   type SignupBlockKind,
   type SignupBlockSeverity,
+  signupBlockQueryOptions,
   signupBlocksQueryOptions,
 } from "../api/signupBlocks";
 import { domainInText } from "./useDomainActions";
@@ -48,6 +55,12 @@ export function signupBlockValueInText(t: Translate, block: Pick<SignupBlock, "k
 export function useSignupBlocks(filter: SignupBlockFilter): PagedPages<SignupBlock> {
   const api = useApi();
   return toPagedList(useSuspenseInfiniteQuery(signupBlocksQueryOptions(api, filter)));
+}
+
+/** One sign-up block, by its ID. */
+export function useSignupBlock(id: string): SignupBlock {
+  const api = useApi();
+  return useSuspenseQuery(signupBlockQueryOptions(api, id)).data;
 }
 
 export type LiftSignupBlock = {

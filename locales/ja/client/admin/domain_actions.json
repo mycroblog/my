@@ -143,10 +143,6 @@
     "defaultMessage": "解除",
     "description": "Button of a domain action in effect that lifts it."
   },
-  "admin.domain_actions.lift_action": {
-    "defaultMessage": "解除: {domain} の「{kind}」({date} に処分)",
-    "description": "Accessible name of the lift button of a domain action, which names the action. {kind} is its kind; {domain} its domain; {date} when it was taken, formatted."
-  },
   "admin.domain_actions.lift_failed": {
     "defaultMessage": "処分を解除できませんでした: {reason}",
     "description": "Error toast when a domain action could not be lifted. {reason} is the server's localized reason."
@@ -173,7 +169,7 @@
   },
   "admin.domain_actions.new.title": {
     "defaultMessage": "新しい処分",
-    "description": "Heading of the form that takes a new domain action."
+    "description": "Button on the list of domain actions that opens the form of a new one, and the heading of that page."
   },
   "admin.domain_actions.obfuscate": {
     "defaultMessage": "公開の一覧ではドメインを一部伏せ字にする",
@@ -379,8 +375,40 @@
     "defaultMessage": "ドメイン",
     "description": "Header of the column of the domain actions table that names the domain."
   },
-  "admin.domain_actions.column.details": {
+  "admin.domain_actions.pages": {
+    "defaultMessage": "ドメインへの処分のページ",
+    "description": "Accessible name of the navigation between the pages of the domain actions screen: the list and the CSV."
+  },
+  "admin.domain_actions.new.form": {
+    "defaultMessage": "処分の内容",
+    "description": "Heading of the form on the page of a new domain action."
+  },
+  "admin.domain_actions.back": {
+    "defaultMessage": "ドメインへの処分に戻る",
+    "description": "Link under the heading of a page of one domain action, or of the form of a new one, to the list of domain actions."
+  },
+  "admin.domain_actions.detail.title": {
+    "defaultMessage": "ドメインへの処分",
+    "description": "Title of the page of one domain action, before the action has loaded or when the viewer may not see it."
+  },
+  "admin.domain_actions.detail.heading": {
+    "defaultMessage": "{domain} の「{kind}」",
+    "description": "Heading of the page of one domain action. {kind} is the kind of action, such as Suspend; {domain} is the domain."
+  },
+  "admin.domain_actions.detail.details": {
     "defaultMessage": "詳細",
-    "description": "Header of the column of the domain actions table that holds the notes and other facts of an action."
+    "description": "Heading of the region of a domain action's page with its domain, kind, and comments."
+  },
+  "admin.domain_actions.detail.of_domain": {
+    "defaultMessage": "このドメインへのすべての処分",
+    "description": "Link on a domain action's page to the list of every action on its domain, lifted and ended ones too."
+  },
+  "admin.domain_actions.detail.no_text": {
+    "defaultMessage": "なし",
+    "description": "The public comment or private note of a domain action that has none."
+  },
+  "admin.domain_actions.lift.description": {
+    "defaultMessage": "処分を今すぐ終えます。記録は解除したものとして残ります。",
+    "description": "Help text under the button that lifts a domain action."
   }
 }

@@ -178,6 +178,87 @@ func (q *Queries) InsertAnnouncementStateChange(ctx context.Context, arg InsertA
 	return err
 }
 
+const listAnnouncementPage = `-- name: ListAnnouncementPage :many
+SELECT a.id, a.created_at, h.state, h.published_at, v.id AS revision_id, v.title, v.body, v.starts_at, v.ends_at,
+  v.revised_by_user_id, v.revised_at
+FROM announcements a
+JOIN announcement_heads h ON h.announcement_id = a.id
+JOIN announcement_revisions v ON v.id = h.revision_id
+WHERE ($1::uuid IS NULL OR a.id < $1::uuid)
+  AND ($2::text = ''
+    OR (h.state <> 'published' AND h.state = $2::text)
+    OR (h.state = 'published' AND (
+      ($2::text = 'scheduled' AND v.starts_at > $3::timestamptz)
+      OR ($2::text = 'showing' AND (v.starts_at IS NULL OR v.starts_at <= $3::timestamptz)
+        AND (v.ends_at IS NULL OR v.ends_at > $3::timestamptz))
+      OR ($2::text = 'ended' AND v.ends_at <= $3::timestamptz))))
+ORDER BY a.id DESC
+LIMIT $4
+`
+
+type ListAnnouncementPageParams struct {
+	BeforeID *string
+	Filter   string
+	Now      time.Time
+	RowLimit int32
+}
+
+type ListAnnouncementPageRow struct {
+	ID              string
+	CreatedAt       time.Time
+	State           string
+	PublishedAt     *time.Time
+	RevisionID      string
+	Title           string
+	Body            string
+	StartsAt        *time.Time
+	EndsAt          *time.Time
+	RevisedByUserID *string
+	RevisedAt       time.Time
+}
+
+// ListAnnouncementPage returns a page of the announcements for the administrators, newest first:
+// those before @before_id (none for the first page), at most @row_limit. An empty @filter keeps
+// every announcement; 'draft' and 'withdrawn' keep that state, and of the published ones
+// 'scheduled' keeps those whose window starts after @now, 'showing' those the users see at @now,
+// and 'ended' those whose window has ended by @now.
+func (q *Queries) ListAnnouncementPage(ctx context.Context, arg ListAnnouncementPageParams) ([]ListAnnouncementPageRow, error) {
+	rows, err := q.db.Query(ctx, listAnnouncementPage,
+		arg.BeforeID,
+		arg.Filter,
+		arg.Now,
+		arg.RowLimit,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListAnnouncementPageRow{}
+	for rows.Next() {
+		var i ListAnnouncementPageRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.CreatedAt,
+			&i.State,
+			&i.PublishedAt,
+			&i.RevisionID,
+			&i.Title,
+			&i.Body,
+			&i.StartsAt,
+			&i.EndsAt,
+			&i.RevisedByUserID,
+			&i.RevisedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listAnnouncementRevisionIDs = `-- name: ListAnnouncementRevisionIDs :many
 SELECT announcement_id, id FROM announcement_revisions ORDER BY id
 `

@@ -43,18 +43,6 @@
     "defaultMessage": "admin@example.com のようなメールアドレスを入力してください。",
     "description": "Error under the field of the contact email address when it is not an email address."
   },
-  "admin.settings.contact.save": {
-    "defaultMessage": "連絡先とサムネイルを保存する",
-    "description": "Button that saves the server's contact and thumbnail."
-  },
-  "admin.settings.contact.save_failed": {
-    "defaultMessage": "連絡先とサムネイルを保存できませんでした: {reason}",
-    "description": "Error when saving the server's contact and thumbnail failed. {reason} is the server's localized reason."
-  },
-  "admin.settings.contact.saved": {
-    "defaultMessage": "連絡先とサムネイルを保存しました。変更は監査ログに記録されます。",
-    "description": "Status after the server's contact and thumbnail were saved."
-  },
   "admin.settings.contact.thumbnail": {
     "defaultMessage": "サムネイル",
     "description": "Heading of the part of the form with the image that represents the server."
@@ -83,10 +71,6 @@
     "defaultMessage": "連絡先とサムネイル",
     "description": "Heading of the section of the server's contact and thumbnail on the server settings screen."
   },
-  "admin.settings.contact.unchanged": {
-    "defaultMessage": "連絡先とサムネイルはすでに保存されています。",
-    "description": "Status after pressing the save button of the contact and thumbnail without changing anything."
-  },
   "admin.settings.descriptions.description": {
     "defaultMessage": "短い説明は、このサーバーについてのページやほかのアプリがサーバーの名前と並べて表示する 1 段落の文です。説明は、このサーバーについてのページで詳しく伝えます。どの言語で書いてもよく、アプリの言語にかかわらず全員にそのまま表示されます。",
     "description": "Description of the server's descriptions."
@@ -95,18 +79,6 @@
     "defaultMessage": "説明",
     "description": "Label of the server's full description."
   },
-  "admin.settings.descriptions.save": {
-    "defaultMessage": "説明を保存する",
-    "description": "Button that saves the server's descriptions."
-  },
-  "admin.settings.descriptions.save_failed": {
-    "defaultMessage": "説明を保存できませんでした: {reason}",
-    "description": "Error when saving the server's descriptions failed. {reason} is the server's localized reason."
-  },
-  "admin.settings.descriptions.saved": {
-    "defaultMessage": "説明を保存しました。変更は監査ログに記録されます。",
-    "description": "Status after the server's descriptions were saved."
-  },
   "admin.settings.descriptions.short": {
     "defaultMessage": "短い説明",
     "description": "Label of the server's short description."
@@ -114,10 +86,6 @@
   "admin.settings.descriptions.title": {
     "defaultMessage": "説明",
     "description": "Heading of the section of the server's descriptions on the server settings screen."
-  },
-  "admin.settings.descriptions.unchanged": {
-    "defaultMessage": "説明はすでに保存されています。",
-    "description": "Status after pressing the save button of the descriptions without changing one."
   },
   "admin.settings.domain_actions.comments": {
     "defaultMessage": "公開コメントを見られる人",
@@ -519,18 +487,6 @@
     "defaultMessage": "名前",
     "description": "Label of the server's name."
   },
-  "admin.settings.name.save": {
-    "defaultMessage": "保存する",
-    "description": "Button that saves the server's names on the server settings screen."
-  },
-  "admin.settings.name.save_failed": {
-    "defaultMessage": "名前を保存できませんでした: {reason}",
-    "description": "Error when saving the server's name failed. {reason} is the server's localized reason, which names the field at fault."
-  },
-  "admin.settings.name.saved": {
-    "defaultMessage": "名前を保存しました。",
-    "description": "Status after the server's names were saved; the sidebar and the browser tab show the new name."
-  },
   "admin.settings.name.title": {
     "defaultMessage": "名前",
     "description": "Heading of the section of the server's name on the server settings screen."
@@ -538,10 +494,6 @@
   "admin.settings.name.too_long": {
     "defaultMessage": "{max} 文字以内にしてください。",
     "description": "Error of a field of the server's name whose text is longer than its limit. {max} is the limit."
-  },
-  "admin.settings.name.unchanged": {
-    "defaultMessage": "名前はすでに保存されています。",
-    "description": "Status after pressing Save on the server settings screen without changing a name."
   },
   "admin.settings.policies.save": {
     "defaultMessage": "設定を保存する",
@@ -1086,5 +1038,57 @@
   "admin.settings.search.public_local.description": {
     "defaultMessage": "公開投稿と、公開範囲が「このサーバー」の投稿。すでに許可しているアカウントには確認し直さないので、先に利用者へ知らせてください。",
     "description": "Description of covering public posts and posts with the visibility 'This server'."
+  },
+  "admin.settings.pages": {
+    "defaultMessage": "サーバーの設定のページ",
+    "description": "Name of the navigation of the pages of the server settings screen, under its heading."
+  },
+  "admin.settings.page.general": {
+    "defaultMessage": "全般",
+    "description": "Link to the page of the server settings with the server's name, descriptions, contact and thumbnail."
+  },
+  "admin.settings.page.branding": {
+    "defaultMessage": "アイコンとロゴ",
+    "description": "Link to the page of the server settings with the server's icon and logos."
+  },
+  "admin.settings.page.registration": {
+    "defaultMessage": "登録",
+    "description": "Link to the page of the server settings with who may sign up, the members' invites and the registration of apps."
+  },
+  "admin.settings.page.content": {
+    "defaultMessage": "コンテンツ",
+    "description": "Link to the page of the server settings with the default language, the public timelines, the posts, the landing page and the featured accounts."
+  },
+  "admin.settings.page.federation": {
+    "defaultMessage": "連合",
+    "description": "Link to the page of the server settings with the federation, the list of domain actions and the external review."
+  },
+  "admin.settings.page.discovery": {
+    "defaultMessage": "検索とクローラー",
+    "description": "Link to the page of the server settings with what the server states to search engines and AI, and the post search."
+  },
+  "admin.settings.page.voice": {
+    "defaultMessage": "通話",
+    "description": "Link to the page of the server settings with the voice chat settings."
+  },
+  "admin.settings.general.save": {
+    "defaultMessage": "保存する",
+    "description": "Button that saves the name, the descriptions, the contact and the thumbnail of the server together."
+  },
+  "admin.settings.general.saved": {
+    "defaultMessage": "保存しました。変更は監査ログに記録されます。",
+    "description": "Result beside the save button of the general page of the server settings after a save."
+  },
+  "admin.settings.general.unchanged": {
+    "defaultMessage": "このページの内容はすでに保存されています。",
+    "description": "Result beside the save button of the general page of the server settings when nothing changed."
+  },
+  "admin.settings.general.save_failed": {
+    "defaultMessage": "保存できませんでした: {reason}",
+    "description": "Result beside the save button of the general page of the server settings when the save failed; the reason follows."
+  },
+  "admin.settings.voice.unavailable": {
+    "defaultMessage": "このサーバーは通話を出していないので、ここで決めることはありません。",
+    "description": "Text of the voice chat page of the server settings while the server does not offer voice chat."
   }
 }

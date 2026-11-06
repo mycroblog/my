@@ -16,6 +16,7 @@ import {
   adminErrorGroupPath,
   adminErrorsPath,
   moderationAppealPath,
+  moderationHookAppealPath,
   moderationReportPath,
   followListPath,
   profilePath,
@@ -474,9 +475,17 @@ function linksOf(notification: Notification, ownAcct: string | null): Notificati
       return [{ href: "/admin/webhooks", label: "client:notifications.link.webhooks" }];
     case "admin_hook_failing":
       return [{ href: "/moderation/hook-decisions", label: "client:notifications.link.hook_decisions" }];
-    // The pending appeals of refused posts are on the screen of the automated reviews.
+    // An appeal of a refused post leads to its page; without its ID, to the appeals awaiting a moderator.
     case "admin_hook_appeal":
-      return [{ href: "/moderation/hook-decisions", label: "client:notifications.link.hook_appeals" }];
+      return [
+        {
+          href:
+            notification.hook_appeal_id === undefined
+              ? "/moderation/hook-decisions/appeals"
+              : moderationHookAppealPath(notification.hook_appeal_id),
+          label: "client:notifications.link.hook_appeals",
+        },
+      ];
     // A new or regressed group leads to its page; the groups beyond the hour's limit, to the list.
     case "admin_error_group": {
       const groupId = notification.error_group?.group_id;
@@ -485,7 +494,7 @@ function linksOf(notification: Notification, ownAcct: string | null): Notificati
         : [{ href: adminErrorGroupPath(groupId), label: "client:notifications.link.error_group" }];
     }
     case "admin_custom_emoji_request":
-      return [{ href: "/admin/custom-emojis?tab=requests", label: "client:notifications.link.custom_emoji_requests" }];
+      return [{ href: "/admin/custom-emojis/requests", label: "client:notifications.link.custom_emoji_requests" }];
     case "custom_emoji_request_decided":
       return [{ href: "/settings/custom-emojis", label: "client:notifications.link.own_custom_emojis" }];
     // The Tauri app shows no way to subscribe or to pay, and no link to the supporter page (ADR-0072 §14).

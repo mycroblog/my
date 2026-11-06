@@ -45,23 +45,15 @@
   },
   "admin.supporters.program.switch": {
     "defaultMessage": "課金の機能を有効にする",
-    "description": "Label of the switch that enables or disables the supporter program."
+    "description": "Label of the checkbox of the program's form that enables or disables the supporter program."
   },
   "admin.supporters.program.switch.description": {
     "defaultMessage": "加入が続いている間は無効にできません。先にプランを廃止し、加入が終わるのを待ってください。",
-    "description": "Description of the switch of the supporter program."
-  },
-  "admin.supporters.program.enabled_done": {
-    "defaultMessage": "課金の機能を有効にしました。監査ログに記録しました。",
-    "description": "Status message after enabling the supporter program."
-  },
-  "admin.supporters.program.disabled_done": {
-    "defaultMessage": "課金の機能を無効にしました。監査ログに記録しました。",
-    "description": "Status message after disabling the supporter program."
+    "description": "Description of the checkbox that enables or disables the supporter program."
   },
   "admin.supporters.program.failed": {
-    "defaultMessage": "課金の機能を切り替えられませんでした: {reason}",
-    "description": "Error of enabling or disabling the program, with the server's reason."
+    "defaultMessage": "保存できませんでした: {reason}",
+    "description": "Shown beside the save button of the program's form when the program or the supporter list's setting could not be saved, with the server's reason."
   },
   "admin.supporters.warning.no_provider": {
     "defaultMessage": "決済の事業者が設定されていないため、有効にできません。",
@@ -225,7 +217,7 @@
   },
   "admin.supporters.new.title": {
     "defaultMessage": "プランを作成する",
-    "description": "Heading of the section of the supporters screen with the form of a new plan."
+    "description": "Link to the page that creates a plan, and the title of that page."
   },
   "admin.supporters.new.description": {
     "defaultMessage": "プランは、まだ誰も持っていないロールを加入者に付けます。ロールは利用者の権限だけを持ち、スタッフのどのロールよりも下に置きます。順位が大きいほど上位のプランで、下位のプランの特典をすべて含みます。価格は保存のあとに決済の事業者に作られ、準備ができると加入を受け付けます。",
@@ -377,11 +369,7 @@
   },
   "admin.supporters.plans.title": {
     "defaultMessage": "プラン",
-    "description": "Heading of the list of the plans that are not retired."
-  },
-  "admin.supporters.plans.count": {
-    "defaultMessage": "{count, plural, other {プラン # 件}}",
-    "description": "Read for the count beside the heading of the list of plans that are not retired. {count} is the number of plans."
+    "description": "Caption of the table of plans."
   },
   "admin.supporters.plans.empty": {
     "defaultMessage": "まだプランがありません",
@@ -389,15 +377,11 @@
   },
   "admin.supporters.plans.empty.description": {
     "defaultMessage": "作成すると、加入を受け付けられます。",
-    "description": "Description of the empty list of plans, above the button that creates one."
-  },
-  "admin.supporters.retired.title": {
-    "defaultMessage": "廃止したプラン",
-    "description": "Heading of the list of the retired plans."
+    "description": "Description of the empty list of plans; the button that creates one is above the list."
   },
   "admin.supporters.plan.preparing": {
     "defaultMessage": "価格を準備中",
-    "description": "Badge of a plan whose prices the payment provider has not made yet; it takes no subscriptions until then."
+    "description": "State of a plan whose prices the payment provider has not made yet; it takes no subscriptions until then."
   },
   "admin.supporters.plan.monthly": {
     "defaultMessage": "月額",
@@ -419,17 +403,9 @@
     "defaultMessage": "廃止した日時",
     "description": "Term of when a plan was retired."
   },
-  "admin.supporters.plan.edit": {
-    "defaultMessage": "編集",
-    "description": "Button that opens the dialog that changes a plan."
-  },
-  "admin.supporters.plan.edit_plan": {
-    "defaultMessage": "{name} を編集",
-    "description": "Accessible name of the button that changes a plan."
-  },
   "admin.supporters.plan.edit.title": {
-    "defaultMessage": "{name} を編集",
-    "description": "Title of the dialog that changes a plan."
+    "defaultMessage": "プランを編集する",
+    "description": "Heading of the section of a plan's page with the form that changes it."
   },
   "admin.supporters.plan.edit.description": {
     "defaultMessage": "新しい価格は新しい加入とプランの変更から使います。いまの加入者はもとの価格のままです。",
@@ -437,11 +413,7 @@
   },
   "admin.supporters.plan.retire": {
     "defaultMessage": "廃止",
-    "description": "Button that retires a plan, and the confirm button of its dialog."
-  },
-  "admin.supporters.plan.retire_plan": {
-    "defaultMessage": "{name} を廃止",
-    "description": "Accessible name of the button that retires a plan."
+    "description": "Button that retires a plan on its page, and the confirm button of its dialog."
   },
   "admin.supporters.plan.retire.title": {
     "defaultMessage": "{name} を廃止しますか？",
@@ -453,19 +425,15 @@
   },
   "admin.supporters.cancel": {
     "defaultMessage": "キャンセル",
-    "description": "Button that closes a dialog or the add panel of the supporters screen without doing anything."
-  },
-  "admin.supporters.close": {
-    "defaultMessage": "閉じる",
-    "description": "Accessible name of the close button of a dialog of the supporters screen."
+    "description": "Button that closes a dialog of the supporters screen, or leaves the page of a new plan, without doing anything."
   },
   "admin.supporters.save": {
     "defaultMessage": "保存する",
-    "description": "Submit button of the dialog that changes a plan."
+    "description": "Submit button of the program's form and of the form that changes a plan."
   },
   "admin.supporters.subscriptions.title": {
     "defaultMessage": "加入",
-    "description": "Heading of the list of subscriptions."
+    "description": "Caption of the table of subscriptions."
   },
   "admin.supporters.subscriptions.empty": {
     "defaultMessage": "加入はありません",
@@ -531,10 +499,6 @@
     "defaultMessage": "アカウント",
     "description": "Header of the account column in the table of supporter subscriptions."
   },
-  "admin.supporters.subscription.period": {
-    "defaultMessage": "期間",
-    "description": "Header of the period column in the table of supporter subscriptions."
-  },
   "admin.supporters.subscription.plan": {
     "defaultMessage": "プラン",
     "description": "Term of the plan of a subscription."
@@ -557,7 +521,7 @@
   },
   "admin.supporters.subscription.period_ends_at": {
     "defaultMessage": "期間の終わり",
-    "description": "Term of the end of the current period of a subscription."
+    "description": "Column header and term of the end of the current period of a subscription."
   },
   "admin.supporters.subscription.grace_ends_at": {
     "defaultMessage": "ロールが残る期限",
@@ -577,11 +541,7 @@
   },
   "admin.supporters.subscription.cancel": {
     "defaultMessage": "すぐに解約",
-    "description": "Button that ends a subscription at once, and the confirm button of its dialog."
-  },
-  "admin.supporters.subscription.cancel_of": {
-    "defaultMessage": "{action}: {name}",
-    "description": "Accessible name of the button that ends a subscription at once: it starts with the button's visible text, so that the visible label is in the name. {action} is the button's visible text ('End now') and {name} the supporter."
+    "description": "Button that ends a subscription at once on its page, and the confirm button of its dialog."
   },
   "admin.supporters.subscription.cancel.title": {
     "defaultMessage": "{name} の加入をすぐに解約しますか？",
@@ -602,5 +562,101 @@
   "admin.supporters.list_visibility": {
     "defaultMessage": "{visibility, select, everyone {サポーターの一覧は誰でも読めます。} signed_in {サポーターの一覧はログインした人が読めます。} other {サポーターの一覧は誰も読めません。}}",
     "description": "Who may read the supporter list, on the supporters screen, by the server setting supporter_list_visibility (off, signed_in, or everyone); shown to viewers who may not change the server settings."
+  },
+  "admin.supporters.pages": {
+    "defaultMessage": "サポーターのページ",
+    "description": "Name of the navigation between the pages of the supporters screen, under its heading."
+  },
+  "admin.supporters.pages.program": {
+    "defaultMessage": "課金",
+    "description": "Link to the first page of the supporters screen: the program and the payment provider."
+  },
+  "admin.supporters.pages.plans": {
+    "defaultMessage": "プラン",
+    "description": "Link to the page of the supporters screen with the plans."
+  },
+  "admin.supporters.pages.subscriptions": {
+    "defaultMessage": "加入",
+    "description": "Link to the page of the supporters screen with the subscriptions."
+  },
+  "admin.supporters.plans.page_title": {
+    "defaultMessage": "サポーターのプラン",
+    "description": "Title of the page of the supporters screen with the list of plans."
+  },
+  "admin.supporters.subscriptions.page_title": {
+    "defaultMessage": "サポーターの加入",
+    "description": "Title of the page of the supporters screen with the list of subscriptions."
+  },
+  "admin.supporters.plan.page_title": {
+    "defaultMessage": "サポーターのプラン",
+    "description": "Title of the page of one supporter plan."
+  },
+  "admin.supporters.plan.back": {
+    "defaultMessage": "プランの一覧へ戻る",
+    "description": "Link from the page of one plan, or of a new plan, to the list of plans."
+  },
+  "admin.supporters.subscription.page_title": {
+    "defaultMessage": "サポーターの加入",
+    "description": "Title of the page of one subscription."
+  },
+  "admin.supporters.subscription.back": {
+    "defaultMessage": "加入の一覧へ戻る",
+    "description": "Link from the page of one subscription to the list of subscriptions."
+  },
+  "admin.supporters.program.saved": {
+    "defaultMessage": "保存しました。変更はそれぞれ監査ログに記録されます。",
+    "description": "Shown beside the save button of the program's form after it is saved."
+  },
+  "admin.supporters.program.unchanged": {
+    "defaultMessage": "変更はありません。",
+    "description": "Shown beside the save button of the program's form when it is saved without a change."
+  },
+  "admin.supporters.plan.unchanged": {
+    "defaultMessage": "変更はありません。",
+    "description": "Shown beside the save button of a plan's form when it is saved without a change."
+  },
+  "admin.supporters.plan.state": {
+    "defaultMessage": "状態",
+    "description": "Column header and term of the state of a plan: in effect, preparing its prices, hidden or retired."
+  },
+  "admin.supporters.plan.state.in_effect": {
+    "defaultMessage": "提供中",
+    "description": "State of a plan that takes subscriptions, and the choice of the plans' filter for the plans that are not retired."
+  },
+  "admin.supporters.plan.state.hidden": {
+    "defaultMessage": "提供中 (非公開)",
+    "description": "State of a plan that takes subscriptions but is not listed to users."
+  },
+  "admin.supporters.plan.state.retired": {
+    "defaultMessage": "廃止",
+    "description": "State of a retired plan, and the choice of the plans' filter for the retired plans."
+  },
+  "admin.supporters.plan.created_at": {
+    "defaultMessage": "作成",
+    "description": "Column header and term of when a plan was created."
+  },
+  "admin.supporters.plans.none_in_state": {
+    "defaultMessage": "この状態のプランはありません",
+    "description": "Shown instead of the list of plans when the filter leaves none."
+  },
+  "admin.supporters.plan.preparing.description": {
+    "defaultMessage": "決済の事業者が価格を作っています。価格ができるとプランに加入できるようになります。",
+    "description": "Shown on the page of a plan whose prices the payment provider has not made yet."
+  },
+  "admin.supporters.plan.retired_note": {
+    "defaultMessage": "このプランは廃止しました。加入できず、変更もできません。",
+    "description": "Shown on the page of a retired plan."
+  },
+  "admin.supporters.plan.retire.section": {
+    "defaultMessage": "プランを廃止する",
+    "description": "Heading of the section of a plan's page that retires it."
+  },
+  "admin.supporters.subscription.end.section": {
+    "defaultMessage": "加入を終わらせる",
+    "description": "Heading of the section of a subscription's page that ends it at once."
+  },
+  "admin.supporters.subscription.no_period": {
+    "defaultMessage": "なし",
+    "description": "Shown for the end of the period of a subscription that has no paid period yet."
   }
 }

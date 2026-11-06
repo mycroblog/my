@@ -615,11 +615,26 @@ export const handlers = [
   http.delete(`${apiBase}/admin/roles/:role`, ({ request }) =>
     withViewer(request, () => new HttpResponse(null, { status: 204 })),
   ),
-  // operationIds getAdminQueue, listAdminJobs, listAdminJobAttempts, retryAdminJob: a database queue without jobs.
+  // operationIds getAdminQueue, listAdminJobs, getAdminJob, listAdminJobAttempts, retryAdminJob: a database queue
+  // without pending jobs; a job asked for by its ID is a failed one.
   http.get(`${apiBase}/admin/queue`, ({ request }) =>
     withViewer(request, () => HttpResponse.json({ adapter: "db", pending_listing: true, counts: [], waits: [] })),
   ),
   http.get(`${apiBase}/admin/jobs`, ({ request }) => withViewer(request, () => HttpResponse.json({ items: [] }))),
+  http.get(`${apiBase}/admin/jobs/:id`, ({ request, params }) =>
+    withViewer(request, () =>
+      HttpResponse.json({
+        id: String(params["id"]),
+        type: "federation.deliver",
+        state: "dead",
+        payload: "{}",
+        attempts: 9,
+        last_error: "502 Bad Gateway",
+        created_at: "2026-10-01T00:00:00Z",
+        failed_at: "2026-10-05T00:00:00Z",
+      }),
+    ),
+  ),
   http.get(`${apiBase}/admin/jobs/:id/attempts`, ({ request }) =>
     withViewer(request, () => HttpResponse.json({ items: [] })),
   ),
@@ -916,7 +931,7 @@ export const handlers = [
   // operationIds listAdminAnnouncements, createAdminAnnouncement, getAdminAnnouncement, updateAdminAnnouncement,
   // publishAdminAnnouncement, withdrawAdminAnnouncement: no announcements; a new or changed one is answered as sent.
   http.get(`${apiBase}/admin/announcements`, ({ request }) =>
-    withViewer(request, () => HttpResponse.json({ items: [] } satisfies Schemas["AdminAnnouncementList"])),
+    withViewer(request, () => HttpResponse.json({ items: [] } satisfies Schemas["AdminAnnouncementPage"])),
   ),
   http.post(`${apiBase}/admin/announcements`, async ({ request }) => {
     const { publish, ...body } = (await request.clone().json()) as Schemas["AdminAnnouncementCreateRequest"];
@@ -1001,7 +1016,8 @@ export const handlers = [
     withViewer(request, () => new HttpResponse(null, { status: 204 })),
   ),
   // operationIds getSupporterProgram, setSupporterProgram, listAdminSupporterPlans, createSupporterPlan,
-  // updateSupporterPlan, retireSupporterPlan, listSupporterSubscriptions, endSupporterSubscription, getPaymentStatus,
+  // updateSupporterPlan, retireSupporterPlan, listSupporterSubscriptions, getSupporterSubscription,
+  // endSupporterSubscription, getPaymentStatus,
   // runPaymentReconciliation: a disabled program without plans or subscriptions, and Stripe in test mode; a change is
   // answered as sent.
   http.get(`${apiBase}/admin/supporter_program`, ({ request }) =>
@@ -1037,6 +1053,9 @@ export const handlers = [
   ),
   http.get(`${apiBase}/admin/supporter_subscriptions`, ({ request }) =>
     withViewer(request, () => HttpResponse.json({ items: [] } satisfies Schemas["AdminSupporterSubscriptionPage"])),
+  ),
+  http.get(`${apiBase}/admin/supporter_subscriptions/:id`, ({ request, params }) =>
+    withViewer(request, () => HttpResponse.json(supporterSubscriptionFixture(String(params["id"])))),
   ),
   http.post(`${apiBase}/admin/supporter_subscriptions/:id/end`, ({ request, params }) =>
     withViewer(request, () =>

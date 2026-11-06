@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The server settings (/admin/settings; web-client/screens/admin-settings.md) in the states of ADR-0079 §13
+// The server settings (/admin/settings and its pages; web-client/screens/admin-settings*.md) in the states of ADR-0079 §13
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { http, HttpResponse } from "msw";
 import { instanceFixture, type Schemas } from "../../test/fixtures";
@@ -77,8 +77,23 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** A server set up by its administrator, with a long name, both descriptions, its own logo and changed policies. */
+/** The general page of a server set up by its administrator, with a long name and both descriptions. */
 export const Normal: Story = {};
+
+/** The page of the icon and logos, with a logo of the server's own. */
+export const Branding: Story = { parameters: { screen: { path: "/admin/settings/branding" } } };
+
+/** The page of the registration, with the invite mode. */
+export const Registration: Story = { parameters: { screen: { path: "/admin/settings/registration" } } };
+
+/** The page of the content, with Japanese as the default language. */
+export const Content: Story = { parameters: { screen: { path: "/admin/settings/content" } } };
+
+/** The page of the federation, the longest: the federation, the list of the domain actions and the external review. */
+export const Federation: Story = { parameters: { screen: { path: "/admin/settings/federation" } } };
+
+/** The page of the search engines and AI. */
+export const Discovery: Story = { parameters: { screen: { path: "/admin/settings/discovery" } } };
 
 /** A new server: no name, no descriptions, the built-in images and every setting at its default. */
 export const Defaults: Story = adminAnswering();

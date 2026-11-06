@@ -105,6 +105,9 @@ type JobInspector interface {
 	// starting after the position after; none when limit <= 0 or f.State is JobStateDead (list
 	// dead jobs with DeadJobs).
 	ListJobs(ctx context.Context, now time.Time, f JobFilter, after JobPosition, limit int) ([]PendingJob, error)
+	// GetJob returns the pending job id with its state at now. It returns ErrJobNotFound when
+	// no pending job has the ID (a completed job, a dead one, or an unknown ID).
+	GetJob(ctx context.Context, now time.Time, id string) (PendingJob, error)
 	// SummarizeJobs counts the jobs by state and type at now.
 	SummarizeJobs(ctx context.Context, now time.Time) (JobSummary, error)
 }

@@ -45,23 +45,15 @@
   },
   "admin.supporters.program.switch": {
     "defaultMessage": "Enable the supporter program",
-    "description": "Label of the switch that enables or disables the supporter program."
+    "description": "Label of the checkbox of the program's form that enables or disables the supporter program."
   },
   "admin.supporters.program.switch.description": {
     "defaultMessage": "Disabling is refused while subscriptions go on: retire the plans first and wait for their subscriptions to end.",
-    "description": "Description of the switch of the supporter program."
-  },
-  "admin.supporters.program.enabled_done": {
-    "defaultMessage": "The supporter program is enabled. The audit log records it.",
-    "description": "Status message after enabling the supporter program."
-  },
-  "admin.supporters.program.disabled_done": {
-    "defaultMessage": "The supporter program is disabled. The audit log records it.",
-    "description": "Status message after disabling the supporter program."
+    "description": "Description of the checkbox that enables or disables the supporter program."
   },
   "admin.supporters.program.failed": {
-    "defaultMessage": "Could not change the supporter program: {reason}",
-    "description": "Error of enabling or disabling the program, with the server's reason."
+    "defaultMessage": "Could not save: {reason}",
+    "description": "Shown beside the save button of the program's form when the program or the supporter list's setting could not be saved, with the server's reason."
   },
   "admin.supporters.warning.no_provider": {
     "defaultMessage": "No payment provider is configured, so the program cannot be enabled.",
@@ -225,7 +217,7 @@
   },
   "admin.supporters.new.title": {
     "defaultMessage": "Create a plan",
-    "description": "Heading of the section of the supporters screen with the form of a new plan."
+    "description": "Link to the page that creates a plan, and the title of that page."
   },
   "admin.supporters.new.description": {
     "defaultMessage": "A plan gives its subscribers a role that nobody holds yet, with member permissions only, below every staff role. A higher rank is a higher plan, which must include everything of the lower ones. The prices are made at the payment provider after saving; the plan takes subscriptions once they are ready.",
@@ -377,11 +369,7 @@
   },
   "admin.supporters.plans.title": {
     "defaultMessage": "Plans",
-    "description": "Heading of the list of the plans that are not retired."
-  },
-  "admin.supporters.plans.count": {
-    "defaultMessage": "{count, plural, one {# plan} other {# plans}}",
-    "description": "Read for the count beside the heading of the list of plans that are not retired. {count} is the number of plans."
+    "description": "Caption of the table of plans."
   },
   "admin.supporters.plans.empty": {
     "defaultMessage": "No plans yet",
@@ -389,15 +377,11 @@
   },
   "admin.supporters.plans.empty.description": {
     "defaultMessage": "Create one to take subscriptions.",
-    "description": "Description of the empty list of plans, above the button that creates one."
-  },
-  "admin.supporters.retired.title": {
-    "defaultMessage": "Retired plans",
-    "description": "Heading of the list of the retired plans."
+    "description": "Description of the empty list of plans; the button that creates one is above the list."
   },
   "admin.supporters.plan.preparing": {
     "defaultMessage": "Preparing prices",
-    "description": "Badge of a plan whose prices the payment provider has not made yet; it takes no subscriptions until then."
+    "description": "State of a plan whose prices the payment provider has not made yet; it takes no subscriptions until then."
   },
   "admin.supporters.plan.monthly": {
     "defaultMessage": "Monthly",
@@ -419,17 +403,9 @@
     "defaultMessage": "Retired",
     "description": "Term of when a plan was retired."
   },
-  "admin.supporters.plan.edit": {
-    "defaultMessage": "Edit",
-    "description": "Button that opens the dialog that changes a plan."
-  },
-  "admin.supporters.plan.edit_plan": {
-    "defaultMessage": "Edit {name}",
-    "description": "Accessible name of the button that changes a plan."
-  },
   "admin.supporters.plan.edit.title": {
-    "defaultMessage": "Edit {name}",
-    "description": "Title of the dialog that changes a plan."
+    "defaultMessage": "Edit the plan",
+    "description": "Heading of the section of a plan's page with the form that changes it."
   },
   "admin.supporters.plan.edit.description": {
     "defaultMessage": "A new price applies to new subscriptions and changes of plan; the current subscribers keep theirs.",
@@ -437,11 +413,7 @@
   },
   "admin.supporters.plan.retire": {
     "defaultMessage": "Retire",
-    "description": "Button that retires a plan, and the confirm button of its dialog."
-  },
-  "admin.supporters.plan.retire_plan": {
-    "defaultMessage": "Retire {name}",
-    "description": "Accessible name of the button that retires a plan."
+    "description": "Button that retires a plan on its page, and the confirm button of its dialog."
   },
   "admin.supporters.plan.retire.title": {
     "defaultMessage": "Retire {name}?",
@@ -453,19 +425,15 @@
   },
   "admin.supporters.cancel": {
     "defaultMessage": "Cancel",
-    "description": "Button that closes a dialog or the add panel of the supporters screen without doing anything."
-  },
-  "admin.supporters.close": {
-    "defaultMessage": "Close",
-    "description": "Accessible name of the close button of a dialog of the supporters screen."
+    "description": "Button that closes a dialog of the supporters screen, or leaves the page of a new plan, without doing anything."
   },
   "admin.supporters.save": {
     "defaultMessage": "Save",
-    "description": "Submit button of the dialog that changes a plan."
+    "description": "Submit button of the program's form and of the form that changes a plan."
   },
   "admin.supporters.subscriptions.title": {
     "defaultMessage": "Subscriptions",
-    "description": "Heading of the list of subscriptions."
+    "description": "Caption of the table of subscriptions."
   },
   "admin.supporters.subscriptions.empty": {
     "defaultMessage": "No subscriptions",
@@ -531,10 +499,6 @@
     "defaultMessage": "Account",
     "description": "Header of the account column in the table of supporter subscriptions."
   },
-  "admin.supporters.subscription.period": {
-    "defaultMessage": "Period",
-    "description": "Header of the period column in the table of supporter subscriptions."
-  },
   "admin.supporters.subscription.plan": {
     "defaultMessage": "Plan",
     "description": "Term of the plan of a subscription."
@@ -557,7 +521,7 @@
   },
   "admin.supporters.subscription.period_ends_at": {
     "defaultMessage": "Period ends",
-    "description": "Term of the end of the current period of a subscription."
+    "description": "Column header and term of the end of the current period of a subscription."
   },
   "admin.supporters.subscription.grace_ends_at": {
     "defaultMessage": "Role kept until",
@@ -577,11 +541,7 @@
   },
   "admin.supporters.subscription.cancel": {
     "defaultMessage": "End now",
-    "description": "Button that ends a subscription at once, and the confirm button of its dialog."
-  },
-  "admin.supporters.subscription.cancel_of": {
-    "defaultMessage": "{action}: {name}",
-    "description": "Accessible name of the button that ends a subscription at once: it starts with the button's visible text, so that the visible label is in the name. {action} is the button's visible text ('End now') and {name} the supporter."
+    "description": "Button that ends a subscription at once on its page, and the confirm button of its dialog."
   },
   "admin.supporters.subscription.cancel.title": {
     "defaultMessage": "End the subscription of {name} now?",
@@ -602,5 +562,101 @@
   "admin.supporters.list_visibility": {
     "defaultMessage": "{visibility, select, everyone {Everyone may read the supporter list.} signed_in {Signed-in users may read the supporter list.} other {Nobody may read the supporter list.}}",
     "description": "Who may read the supporter list, on the supporters screen, by the server setting supporter_list_visibility (off, signed_in, or everyone); shown to viewers who may not change the server settings."
+  },
+  "admin.supporters.pages": {
+    "defaultMessage": "Supporter pages",
+    "description": "Name of the navigation between the pages of the supporters screen, under its heading."
+  },
+  "admin.supporters.pages.program": {
+    "defaultMessage": "Program",
+    "description": "Link to the first page of the supporters screen: the program and the payment provider."
+  },
+  "admin.supporters.pages.plans": {
+    "defaultMessage": "Plans",
+    "description": "Link to the page of the supporters screen with the plans."
+  },
+  "admin.supporters.pages.subscriptions": {
+    "defaultMessage": "Subscriptions",
+    "description": "Link to the page of the supporters screen with the subscriptions."
+  },
+  "admin.supporters.plans.page_title": {
+    "defaultMessage": "Supporter plans",
+    "description": "Title of the page of the supporters screen with the list of plans."
+  },
+  "admin.supporters.subscriptions.page_title": {
+    "defaultMessage": "Supporter subscriptions",
+    "description": "Title of the page of the supporters screen with the list of subscriptions."
+  },
+  "admin.supporters.plan.page_title": {
+    "defaultMessage": "Supporter plan",
+    "description": "Title of the page of one supporter plan."
+  },
+  "admin.supporters.plan.back": {
+    "defaultMessage": "Back to the plans",
+    "description": "Link from the page of one plan, or of a new plan, to the list of plans."
+  },
+  "admin.supporters.subscription.page_title": {
+    "defaultMessage": "Supporter subscription",
+    "description": "Title of the page of one subscription."
+  },
+  "admin.supporters.subscription.back": {
+    "defaultMessage": "Back to the subscriptions",
+    "description": "Link from the page of one subscription to the list of subscriptions."
+  },
+  "admin.supporters.program.saved": {
+    "defaultMessage": "Saved. The audit log records each change.",
+    "description": "Shown beside the save button of the program's form after it is saved."
+  },
+  "admin.supporters.program.unchanged": {
+    "defaultMessage": "Nothing has changed.",
+    "description": "Shown beside the save button of the program's form when it is saved without a change."
+  },
+  "admin.supporters.plan.unchanged": {
+    "defaultMessage": "Nothing has changed.",
+    "description": "Shown beside the save button of a plan's form when it is saved without a change."
+  },
+  "admin.supporters.plan.state": {
+    "defaultMessage": "State",
+    "description": "Column header and term of the state of a plan: in effect, preparing its prices, hidden or retired."
+  },
+  "admin.supporters.plan.state.in_effect": {
+    "defaultMessage": "In effect",
+    "description": "State of a plan that takes subscriptions, and the choice of the plans' filter for the plans that are not retired."
+  },
+  "admin.supporters.plan.state.hidden": {
+    "defaultMessage": "In effect, hidden",
+    "description": "State of a plan that takes subscriptions but is not listed to users."
+  },
+  "admin.supporters.plan.state.retired": {
+    "defaultMessage": "Retired",
+    "description": "State of a retired plan, and the choice of the plans' filter for the retired plans."
+  },
+  "admin.supporters.plan.created_at": {
+    "defaultMessage": "Created",
+    "description": "Column header and term of when a plan was created."
+  },
+  "admin.supporters.plans.none_in_state": {
+    "defaultMessage": "No plans in this state",
+    "description": "Shown instead of the list of plans when the filter leaves none."
+  },
+  "admin.supporters.plan.preparing.description": {
+    "defaultMessage": "The payment provider is making the prices. The plan takes subscriptions once they are ready.",
+    "description": "Shown on the page of a plan whose prices the payment provider has not made yet."
+  },
+  "admin.supporters.plan.retired_note": {
+    "defaultMessage": "This plan is retired: it takes no subscriptions and cannot be changed.",
+    "description": "Shown on the page of a retired plan."
+  },
+  "admin.supporters.plan.retire.section": {
+    "defaultMessage": "Retire the plan",
+    "description": "Heading of the section of a plan's page that retires it."
+  },
+  "admin.supporters.subscription.end.section": {
+    "defaultMessage": "End the subscription",
+    "description": "Heading of the section of a subscription's page that ends it at once."
+  },
+  "admin.supporters.subscription.no_period": {
+    "defaultMessage": "None",
+    "description": "Shown for the end of the period of a subscription that has no paid period yet."
   }
 }

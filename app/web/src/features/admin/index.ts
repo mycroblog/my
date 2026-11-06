@@ -7,28 +7,42 @@
 // Routes and other features use it through this file only (web-client/README.md A3).
 export { adminPages, useAdminEntry } from "./components/AdminMenu";
 export { AdminOverview } from "./components/AdminOverview";
-// The queue dashboard: the jobs of the job queue by state, their attempts, and running failed ones again (ADR-0004), for manage_jobs.
-export { type JobFilter, jobFilters, jobQueueQueryOptions, jobsQueryOptions } from "./api/jobs";
-export { JobDashboard } from "./components/JobDashboard";
-// The terms of service and the privacy policy (#489), for manage_settings.
+// The queue dashboard: the state of the job queue, its jobs by state, one job with its attempts, and running failed
+// ones again (ADR-0004), for manage_jobs.
+export { type JobFilter, jobFilters, jobQueryOptions, jobQueueQueryOptions, jobsQueryOptions } from "./api/jobs";
+export { JobDetail } from "./components/JobDetail";
+export { JobList } from "./components/JobList";
+export { JobQueueSummary } from "./components/JobQueueSummary";
+export { JobPagesNav } from "./components/jobParts";
+// The terms of service, the privacy policy and the commerce disclosures (#489), one page each, for manage_settings.
 export { instanceTextsQueryOptions } from "./api/documents";
 export { DocumentSettings } from "./components/DocumentSettings";
-// The server's settings: its name and descriptions in each language, and its policies, for manage_settings.
+// The server's settings: its name and descriptions, its icon and logos, and its policies, one page per topic, for
+// manage_settings.
 export { instanceQueryOptions as ownInstanceQueryOptions } from "./api/documents";
 export { brandsQueryOptions } from "./api/brand";
 export { instanceSettingsQueryOptions } from "./api/settings";
 export { ServerSettings } from "./components/ServerSettings";
-// The server's rules (FR-705), for manage_rules.
-export { rulesQueryOptions } from "./api/rules";
-export { RuleSettings } from "./components/RuleSettings";
+// The server's rules (FR-705), for manage_rules: their list, a new rule, and one rule's page.
+export { ruleQueryOptions, rulesQueryOptions } from "./api/rules";
+export { type RuleFilter, ruleFilters, RuleSettings } from "./components/RuleSettings";
+export { NewRule } from "./components/NewRule";
+export { RuleDetail } from "./components/RuleDetail";
 // The server's theme: overrides of the design tokens and a custom CSS (ADR-0059), for manage_settings.
 export { themeQueryOptions } from "./api/theme";
 export { ThemeSettings } from "./components/ThemeSettings";
 // The custom emoji: registering this server's and managing those of other servers (ADR-0051), and deciding the
 // requests of the holders of create_custom_emojis (ADR-0070), for manage_custom_emojis.
-export { adminCustomEmojisQueryOptions, type CustomEmojiFilter } from "./api/customEmojis";
+export {
+  adminCustomEmojiQueryOptions,
+  adminCustomEmojisQueryOptions,
+  type CustomEmojiFilter,
+} from "./api/customEmojis";
 export { adminCustomEmojiRequestsQueryOptions, type CustomEmojiRequestState } from "./api/customEmojiRequests";
-export { CustomEmojiSettings, type CustomEmojiTab } from "./components/CustomEmojiSettings";
+export { CustomEmojiDetail } from "./components/CustomEmojiDetail";
+export { CustomEmojiList } from "./components/CustomEmojiList";
+export { CustomEmojiRequestsPage } from "./components/CustomEmojiRequests";
+export { NewCustomEmoji } from "./components/NewCustomEmoji";
 // What the user's page of their own custom emoji (features/custom-emojis) shares with the screen: the rules of an
 // emoji, how a sentence names one, and the names of the states of a request.
 export {
@@ -43,47 +57,73 @@ export { parseAliases } from "./hooks/useCustomEmojis";
 // The OAuth apps: every client by registration route, disabling them, and denying the hosts of Client ID Metadata
 // Documents (ADR-0090 §1), for manage_oauth_apps.
 export { hostDenialsQueryOptions, type OAuthClientFilter, oauthClientsQueryOptions } from "./api/oauthApps";
-export { OAuthAppSettings, type OAuthAppTab } from "./components/OAuthAppSettings";
+export { OAuthAppList, OAuthHostDenials } from "./components/OAuthAppSettings";
 // The server's announcements to every local user (FR-726), for manage_announcements.
-export { adminAnnouncementsQueryOptions } from "./api/announcements";
-export { AnnouncementSettings } from "./components/AnnouncementSettings";
+export {
+  type AnnouncementFilter,
+  adminAnnouncementQueryOptions,
+  adminAnnouncementsQueryOptions,
+} from "./api/announcements";
+export { AnnouncementDetail } from "./components/AnnouncementDetail";
+export { AnnouncementList } from "./components/AnnouncementList";
+export { NewAnnouncement } from "./components/NewAnnouncement";
 // The external login providers: setting them up, changing, disabling and deleting them (ADR-0106), for manage_login_providers.
-export { loginProvidersQueryOptions } from "./api/loginProviders";
-export { LoginProviderSettings } from "./components/LoginProviderSettings";
+export { loginProviderQueryOptions, loginProvidersQueryOptions } from "./api/loginProviders";
+export { LoginProviderDetail, LoginProviderSettings, NewLoginProvider } from "./components/LoginProviderSettings";
 // The webhooks: setting them up, their deliveries and sending one again (ADR-0060), for manage_webhooks.
 export { webhookDeliveriesQueryOptions, webhookQueryOptions, webhooksQueryOptions } from "./api/webhooks";
-export { WebhookDeliveries } from "./components/WebhookDeliveries";
-export { WebhookSettings } from "./components/WebhookSettings";
+export { NewWebhook, WebhookDetail, WebhookSettings } from "./components/WebhookSettings";
 // The federation relays: registering, joining, leaving and deleting them (ADR-0006), for manage_settings.
 export { relaysQueryOptions } from "./api/relays";
-export { RelaySettings } from "./components/RelaySettings";
+export { NewRelay, RelayDetail, RelaySettings } from "./components/RelaySettings";
 // The rules of the link card crawler per domain, for manage_settings.
-export { LinkCardDomainSettings } from "./components/LinkCardDomainSettings";
+export {
+  LinkCardDomainDetail,
+  LinkCardDomainSettings,
+  NewLinkCardDomainRule,
+} from "./components/LinkCardDomainSettings";
 export { TranslationSettings } from "./components/TranslationSettings";
-// The roles: creating them and changing their positions and permissions (FR-720), for manage_roles. Their queries
-// are those of the moderation feature, which shows an account's roles.
+// The roles: their list, creating one, and one role's page with its position, permissions and badge (FR-720), for
+// manage_roles. Their queries are those of the moderation feature, which shows an account's roles.
 export { RoleSettings } from "./components/RoleSettings";
-// The instance's costs: recording them, their totals by week, month and year, and the state of the billing imports
-// (ADR-0067, ADR-0068), for manage_finance.
+export { NewRole } from "./components/NewRole";
+export { RoleDetail } from "./components/RoleDetail";
+// The instance's costs, in the pages of one screen: their totals by week, month and year, the income's money
+// movements, the recorded items with recording, changing and deleting one, the state of the billing imports, and
+// what is published of them (ADR-0067, ADR-0068), for manage_finance.
 export {
   adminIncomeTotalsQueryOptions,
   billingImportsQueryOptions,
+  costItemQueryOptions,
   costItemsQueryOptions,
   costTotalsQueryOptions,
   type IncomeMovementFilter,
   incomeKinds,
   incomeMovementsQueryOptions,
 } from "./api/finance";
-export { FinanceSettings, type FinanceTab } from "./components/FinanceSettings";
+export { BillingImports } from "./components/BillingImports";
+export { CostItemDetail } from "./components/CostItemDetail";
+export { CostItems } from "./components/CostItems";
+export { FinanceIncome } from "./components/FinanceIncome";
+export { FinancePublication } from "./components/FinancePublication";
+export { FinanceTotals } from "./components/FinanceTotals";
+export { NewCostItem } from "./components/NewCostItem";
 // The supporter program: enabling it, its plans and their subscriptions (ADR-0072), for manage_supporters.
 export {
+  supporterPlanStates,
   type SupporterSubscriptionFilter,
   supporterPlansQueryOptions,
   supporterProgramQueryOptions,
+  supporterSubscriptionQueryOptions,
   supporterSubscriptionStates,
   supporterSubscriptionsQueryOptions,
 } from "./api/supporters";
-export { SupporterSettings } from "./components/SupporterSettings";
+export { SupporterPlanDetail } from "./components/SupporterPlanDetail";
+export { NewSupporterPlan } from "./components/SupporterPlanForm";
+export { SupporterPlans } from "./components/SupporterPlans";
+export { SupporterProgram } from "./components/SupporterProgram";
+export { SupporterSubscriptionDetail } from "./components/SupporterSubscriptionDetail";
+export { SupporterSubscriptions } from "./components/SupporterSubscriptions";
 // The service closure: announcing it, changing and withdrawing the announcement, checking and confirming the closing,
 // and the progress of its deliveries (ADR-0088), for manage_service_closure.
 export { adminClosureCheckQueryOptions, adminClosureQueryOptions } from "./api/closure";

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The server's announcements (/admin/announcements; web-client/screens/admin-announcements.md) in the states of
-// ADR-0079 §13
+// The list of the server's announcements (/admin/announcements; web-client/screens/admin-announcements.md) in the
+// states of ADR-0079 §13; the page of one and the page that writes one have their own stories
+// (announcementDetail.stories.tsx, newAnnouncement.stories.tsx).
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { http, HttpResponse } from "msw";
 import type { Schemas } from "../../test/fixtures";
@@ -45,7 +46,7 @@ const announcements: Schemas["AdminAnnouncement"][] = [
 
 function listing(items: Schemas["AdminAnnouncement"][]) {
   return http.get(`${apiBase}/admin/announcements`, ({ request }) =>
-    withViewer(request, () => HttpResponse.json({ items } satisfies Schemas["AdminAnnouncementList"])),
+    withViewer(request, () => HttpResponse.json({ items } satisfies Schemas["AdminAnnouncementPage"])),
   );
 }
 
@@ -59,6 +60,23 @@ type Story = StoryObj<typeof meta>;
 
 /** A published maintenance notice with a window, a draft, a withdrawn one and an older published one. */
 export const Normal: Story = {};
+
+/** The drafts only (`?state=draft`). */
+export const Drafts: Story = {
+  ...adminScreen("/admin/announcements?state=draft", [listing(announcements.filter((item) => item.state === "draft"))]),
+};
+
+/** A list with a next page. */
+export const Paged: Story = adminAnswering(
+  http.get(`${apiBase}/admin/announcements`, ({ request }) =>
+    withViewer(request, () =>
+      HttpResponse.json({
+        items: announcements,
+        next_cursor: "0199f0e0-0000-7000-8000-00000000a004",
+      } satisfies Schemas["AdminAnnouncementPage"]),
+    ),
+  ),
+);
 
 /** A server without announcements. */
 export const Empty: Story = adminAnswering();
@@ -78,6 +96,7 @@ export const Japanese: Story = {
   ...adminAnswering(
     listing([
       adminAnnouncementFixture("0199f0e0-0000-7000-8000-00000000a011", {
+        title: "定期メンテナンスのお知らせ",
         text: "**定期メンテナンス**のお知らせ：11月2日（日）2時から4時（UTC）まで、投稿と連合が一時的に止まります。",
         content:
           "<p><strong>定期メンテナンス</strong>のお知らせ：11月2日（日）2時から4時（UTC）まで、投稿と連合が一時的に止まります。</p>",

@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The rules screen through the whole app (web-client/README.md T4): an administrator with manage_rules adds a rule (one text
-// and an optional hint, written in any language), edits it in a dialog, moves rules up and down with the keyboard-reachable buttons (focus follows the
-// moved rule), and retires one after an alert dialog; a viewer without the permission sees why; with MSW playing
-// the API.
+// The rules screen through the whole app (web-client/README.md T4): an administrator with manage_rules lists the rules
+// in effect and the retired ones, moves rules up and down with the keyboard-reachable buttons of the list (focus follows
+// the moved rule), adds a rule on its page (one text and an optional hint, written in any language), and edits and
+// retires one on the rule's page; a viewer without the permission sees why; with MSW playing the API.
 import { screen, waitFor, within } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
 import { beforeEach, describe, expect, test } from "vitest";
@@ -19,14 +19,10 @@ beforeEach(() => {
 
 type Rule = Schemas["AdminRule"];
 
-/** U+2068 FIRST STRONG ISOLATE … U+2069 POP DIRECTIONAL ISOLATE: a rule inside a heading. */
-function isolated(text: string): string {
-  return `⁨${text}⁩`;
-}
-
 /** Plays the rules of the server: GET lists them in order, and each write changes them; records the writes. */
-function rulesServer(initial: readonly Rule[]) {
+function rulesServer(initial: readonly Rule[], initialRetired: readonly Rule[] = []) {
   let rules = [...initial];
+  let retired = [...initialRetired];
   const writes: { method: string; path: string; body: unknown }[] = [];
   const record = async (request: Request) => {
     const body: unknown =
@@ -34,7 +30,15 @@ function rulesServer(initial: readonly Rule[]) {
     writes.push({ method: request.method, path: new URL(request.url).pathname.replace("/api/v1", ""), body });
   };
   server.use(
-    http.get(`${apiBase}/admin/rules`, () => HttpResponse.json({ items: rules })),
+    http.get(`${apiBase}/admin/rules`, ({ request }) =>
+      HttpResponse.json({
+        items: new URL(request.url).searchParams.get("include_retired") === "true" ? [...rules, ...retired] : rules,
+      }),
+    ),
+    http.get(`${apiBase}/admin/rules/:id`, ({ params }) => {
+      const rule = [...rules, ...retired].find((other) => other.id === params["id"]);
+      return rule === undefined ? new HttpResponse(null, { status: 404 }) : HttpResponse.json(rule);
+    }),
     http.post(`${apiBase}/admin/rules`, async ({ request }) => {
       await record(request);
       const input = (await request.json()) as Schemas["InstanceRuleInput"];
@@ -73,9 +77,12 @@ function rulesServer(initial: readonly Rule[]) {
     }),
     http.post(`${apiBase}/admin/rules/:id/retire`, async ({ request, params }) => {
       await record(request);
-      const retired = rules.find((rule) => rule.id === params["id"]);
-      rules = rules.filter((rule) => rule.id !== params["id"]);
-      return HttpResponse.json({ ...retired, retired_at: "2026-10-17T00:00:00Z" });
+      const rule = rules.find((other) => other.id === params["id"]);
+      if (rule === undefined) return new HttpResponse(null, { status: 404 });
+      const done = { ...rule, retired_at: "2026-10-17T00:00:00Z" };
+      rules = rules.filter((other) => other.id !== rule.id);
+      retired = [...retired, done];
+      return HttpResponse.json(done);
     }),
   );
   return { writes };
@@ -89,63 +96,45 @@ describe("the rules", () => {
     server.use(signedInHandler, operatorHandler(["manage_rules"]));
   });
 
-  test("lists the rules in order with their hints", async () => {
+  test("lists the rules in effect in order, each a link to its page", async () => {
     rulesServer([first, second]);
     await renderApp({ path: "/admin/rules" });
 
     expect(await screen.findByRole("heading", { level: 1, name: "Rules" })).toBeInTheDocument();
-    const list = screen.getByRole("region", { name: "Rules in effect" });
-    const headings = within(list).getAllByRole("heading", { level: 3 });
-    expect(headings.map((heading) => heading.textContent)).toEqual([
-      `Rule 1: ${isolated("Be kind")}`,
-      `Rule 2: ${isolated("No spam")}`,
-    ]);
-    // The administrator's hint, in a language the app does not know.
-    const hint = within(list).getByText("No harassment.");
-    expect(hint).toHaveAttribute("dir", "auto");
-    expect(hint).toHaveAttribute("lang", "");
+    const table = screen.getByRole("table", { name: "Rules in effect" });
+    const names = within(table).getAllByRole("rowheader");
+    expect(names.map((name) => name.textContent)).toEqual(["Be kind", "No spam"]);
+    const link = within(names[0] as HTMLElement).getByRole("link", { name: "Be kind" });
+    expect(link).toHaveAttribute("href", `/admin/rules/${first.id}`);
+    // The administrator's text, in a language the app does not know.
+    expect(within(link).getByText("Be kind")).toHaveAttribute("lang", "");
     // The first rule cannot move up nor the last down.
-    expect(within(list).getByRole("button", { name: "Move up: Be kind" })).toBeDisabled();
-    expect(within(list).getByRole("button", { name: "Move down: Be kind" })).toBeEnabled();
-    expect(within(list).getByRole("button", { name: "Move down: No spam" })).toBeDisabled();
+    expect(within(table).getByRole("button", { name: "Move up: Be kind" })).toBeDisabled();
+    expect(within(table).getByRole("button", { name: "Move down: Be kind" })).toBeEnabled();
+    expect(within(table).getByRole("button", { name: "Move down: No spam" })).toBeDisabled();
+    // No form and no dialog on the list: adding is its own page.
+    expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Add a rule" })).toHaveAttribute("href", "/admin/rules/new");
   });
 
-  test("adds a rule with a hint, one field each", async () => {
-    const rules = rulesServer([first]);
-    const { user } = await renderApp({ path: "/admin/rules" });
-    const form = await screen.findByRole("region", { name: "Add a rule" });
+  test("lists the retired rules under their filter, in the URL", async () => {
+    const retired = ruleFixture("0199f0e0-0000-7000-8000-0000000000a3", 3, {
+      text: "No ads",
+      retired_at: "2026-10-17T00:00:00Z",
+    });
+    rulesServer([first], [retired]);
+    const { user, router } = await renderApp({ path: "/admin/rules" });
 
-    await user.type(within(form).getByRole("textbox", { name: "Rule" }), "作者を明記する");
-    await user.type(within(form).getByRole("textbox", { name: "Hint" }), "Link the source.");
-    await user.click(within(form).getByRole("button", { name: "Add the rule" }));
+    await user.click(await screen.findByRole("button", { name: /Rules to show/ }));
+    await user.click(await screen.findByRole("option", { name: "Retired" }));
 
+    const table = await screen.findByRole("table", { name: "Retired rules" });
     expect(
-      await within(form).findByText("Added the rule after the others. The audit log records the change."),
-    ).toBeInTheDocument();
-    expect(rules.writes).toEqual([
-      { method: "POST", path: "/admin/rules", body: { text: "作者を明記する", hint: "Link the source." } },
-    ]);
-    expect(
-      within(screen.getByRole("region", { name: "Rules in effect" })).getByRole("heading", {
-        name: `Rule 2: ${isolated("作者を明記する")}`,
-      }),
-    ).toBeInTheDocument();
-    expect(within(form).getByRole("textbox", { name: "Rule" })).toHaveValue("");
-  });
-
-  test("asks for a rule's text before sending it", async () => {
-    const rules = rulesServer([]);
-    const { user } = await renderApp({ path: "/admin/rules" });
-    const form = await screen.findByRole("region", { name: "Add a rule" });
-    expect(screen.getByText("No rules yet")).toBeInTheDocument();
-
-    await user.click(within(form).getByRole("button", { name: "Add the rule" }));
-    expect(await within(form).findByRole("textbox", { name: "Rule" })).toHaveAccessibleDescription(/Enter the rule\./);
-
-    await user.type(within(form).getByRole("textbox", { name: "Hint" }), "Only a hint");
-    await user.click(within(form).getByRole("button", { name: "Add the rule" }));
-    expect(within(form).getByRole("textbox", { name: "Rule" })).toHaveAccessibleDescription(/Enter the rule\./);
-    expect(rules.writes).toEqual([]);
+      within(table)
+        .getAllByRole("rowheader")
+        .map((name) => name.textContent),
+    ).toEqual(["No ads"]);
+    expect(router.state.location.search).toEqual({ filter: "retired" });
   });
 
   test("moves a rule down, and focus follows it", async () => {
@@ -153,49 +142,99 @@ describe("the rules", () => {
     const { user } = await renderApp({ path: "/admin/rules" });
     await user.click(await screen.findByRole("button", { name: "Move down: Be kind" }));
 
-    const moved = await screen.findByRole("heading", { level: 3, name: `Rule 2: ${isolated("Be kind")}` });
     await waitFor(() => {
-      expect(moved).toHaveFocus();
+      const names = within(screen.getByRole("table", { name: "Rules in effect" })).getAllByRole("rowheader");
+      expect(names.map((name) => name.textContent)).toEqual(["No spam", "Be kind"]);
+      expect(names[1]).toHaveFocus();
     });
     expect(screen.getByText(/^Moved “Be kind” to place 2\./)).toBeInTheDocument();
     expect(rules.writes).toEqual([{ method: "POST", path: `/admin/rules/${first.id}/move`, body: { position: 2 } }]);
   });
 
-  test("edits a rule's text in a dialog", async () => {
-    const rules = rulesServer([first, second]);
-    const { user } = await renderApp({ path: "/admin/rules" });
-    await user.click(await screen.findByRole("button", { name: "Edit: No spam" }));
-    const dialog = await screen.findByRole("dialog", { name: "Edit the rule" });
-    const text = within(dialog).getByRole("textbox", { name: "Rule" });
-    expect(text).toHaveValue("No spam");
+  test("adds a rule with a hint on its page, then opens the rule's page", async () => {
+    const rules = rulesServer([first]);
+    const { user, router } = await renderApp({ path: "/admin/rules/new" });
 
-    await user.clear(text);
-    await user.type(text, "No spam or ads");
-    await user.click(within(dialog).getByRole("button", { name: "Save" }));
+    expect(await screen.findByRole("heading", { level: 1, name: "Add a rule" })).toBeInTheDocument();
+    await user.type(screen.getByRole("textbox", { name: "Rule" }), "作者を明記する");
+    await user.type(screen.getByRole("textbox", { name: "Hint" }), "Link the source.");
+    await user.click(screen.getByRole("button", { name: "Add the rule" }));
 
-    expect(await screen.findByText("Saved “No spam or ads”. The audit log records the change.")).toBeInTheDocument();
-    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(await screen.findByRole("heading", { level: 1, name: "Rule" })).toBeInTheDocument();
+    expect(router.state.location.pathname).toBe("/admin/rules/0199f0e0-0000-7000-8000-0000000000f9");
+    expect(
+      await screen.findByText("Added the rule “作者を明記する”. The audit log records the change."),
+    ).toBeInTheDocument();
     expect(rules.writes).toEqual([
-      { method: "PUT", path: `/admin/rules/${second.id}`, body: { text: "No spam or ads" } },
+      { method: "POST", path: "/admin/rules", body: { text: "作者を明記する", hint: "Link the source." } },
     ]);
   });
 
-  test("retires a rule after asking", async () => {
+  test("asks for a rule's text before sending it", async () => {
+    const rules = rulesServer([]);
+    const { user } = await renderApp({ path: "/admin/rules/new" });
+    const text = await screen.findByRole("textbox", { name: "Rule" });
+
+    await user.click(screen.getByRole("button", { name: "Add the rule" }));
+    expect(text).toHaveAccessibleDescription(/Enter the rule\./);
+
+    await user.type(screen.getByRole("textbox", { name: "Hint" }), "Only a hint");
+    await user.click(screen.getByRole("button", { name: "Add the rule" }));
+    expect(text).toHaveAccessibleDescription(/Enter the rule\./);
+    expect(rules.writes).toEqual([]);
+  });
+
+  test("shows that there are no rules yet", async () => {
+    rulesServer([]);
+    await renderApp({ path: "/admin/rules" });
+
+    expect(await screen.findByText("No rules yet")).toBeInTheDocument();
+  });
+
+  test("edits a rule's text on its page, with one save", async () => {
     const rules = rulesServer([first, second]);
-    const { user } = await renderApp({ path: "/admin/rules" });
-    await user.click(await screen.findByRole("button", { name: "Retire: Be kind" }));
+    const { user } = await renderApp({ path: `/admin/rules/${second.id}` });
+    const facts = await screen.findByRole("region", { name: "About this rule" });
+    expect(within(facts).getByText("No hint")).toBeInTheDocument();
+    const form = screen.getByRole("region", { name: "Edit the rule" });
+    const text = within(form).getByRole("textbox", { name: "Rule" });
+    expect(text).toHaveValue("No spam");
+    expect(screen.getAllByRole("button", { name: "Save" })).toHaveLength(1);
+
+    await user.clear(text);
+    await user.type(text, "No spam or ads");
+    await user.click(within(form).getByRole("button", { name: "Save" }));
+
+    expect(
+      await within(form).findByText("Saved “No spam or ads”. The audit log records the change."),
+    ).toBeInTheDocument();
+    expect(rules.writes).toEqual([
+      { method: "PUT", path: `/admin/rules/${second.id}`, body: { text: "No spam or ads" } },
+    ]);
+    expect(await within(facts).findByText("No spam or ads")).toBeInTheDocument();
+  });
+
+  test("retires a rule on its page after asking, and focus moves to its facts", async () => {
+    const rules = rulesServer([first, second]);
+    const { user } = await renderApp({ path: `/admin/rules/${first.id}` });
+    const region = await screen.findByRole("region", { name: "Retire the rule" });
+    await user.click(within(region).getByRole("button", { name: "Retire" }));
     const dialog = await screen.findByRole("alertdialog", { name: "Retire “Be kind”?" });
 
     await user.click(within(dialog).getByRole("button", { name: "Cancel" }));
     expect(rules.writes).toEqual([]);
 
-    await user.click(screen.getByRole("button", { name: "Retire: Be kind" }));
+    await user.click(within(region).getByRole("button", { name: "Retire" }));
     await user.click(within(await screen.findByRole("alertdialog")).getByRole("button", { name: "Retire" }));
 
-    expect(await screen.findByText("Retired “Be kind”.")).toBeInTheDocument();
+    const facts = screen.getByRole("region", { name: "About this rule" });
+    expect(await within(facts).findByText("Retired “Be kind”.")).toBeInTheDocument();
     await waitFor(() => {
-      expect(screen.queryByRole("heading", { name: `Rule 1: ${isolated("Be kind")}` })).not.toBeInTheDocument();
+      expect(within(facts).getByRole("heading", { name: "About this rule" })).toHaveFocus();
     });
+    // A retired rule can no longer change.
+    expect(screen.queryByRole("region", { name: "Edit the rule" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: "Retire the rule" })).not.toBeInTheDocument();
     expect(rules.writes).toEqual([{ method: "POST", path: `/admin/rules/${first.id}/retire`, body: undefined }]);
   });
 

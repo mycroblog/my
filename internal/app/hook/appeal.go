@@ -142,6 +142,11 @@ func (s *Service) AppealDeadline(ctx context.Context, decidedAt time.Time) (time
 	return hook.AppealDeadline(hook.Decision{DecidedAt: decidedAt}, window), nil
 }
 
+// Appeal returns an appeal with its decision and review, for a moderator, or ErrAppealNotFound.
+func (s *Service) Appeal(ctx context.Context, appealID string) (hook.AppealRecord, error) {
+	return s.d.Repository.Appeal(ctx, appealID)
+}
+
 // ListAppeals returns the appeals that q selects, newest first.
 func (s *Service) ListAppeals(ctx context.Context, q AppealQuery) ([]hook.AppealRecord, error) {
 	return s.d.Repository.ListAppeals(ctx, q)

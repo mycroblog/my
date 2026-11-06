@@ -1,12 +1,21 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The admin screens in every width × locale project (ADR-0110): the remote servers and their history, resuming
-// deliveries, and the queue dashboard with a job's attempt history and running a failed job again, each passing axe
+// deliveries, and the queue dashboard with its job list, a job's page with its attempt history, and running a failed
+// job again from both, each passing axe
 // without scrolling sideways. `vite preview` has
 // no API, so each test plays the server of a signed-in operator with page.route; names change with the
 // locale, so the structure is checked by role, the names in the project's locale catalog and the identifiers the
 // server sends (domains, job types).
 import type { Page, Route } from "@playwright/test";
-import { expect, expectNoAxeViolations, expectNoHorizontalScroll, test } from "./fixtures";
+import {
+  expect,
+  expectNoAxeViolations,
+  expectNoHorizontalScroll,
+  recordRowHeaders,
+  recordRows,
+  recordTable,
+  test,
+} from "./fixtures";
 import { readCatalog } from "./catalog.ts";
 
 /** The client message `key` in the project's locale. */
@@ -119,6 +128,8 @@ async function operatorServer(page: Page) {
       finished_at: "2026-10-17T10:00:01Z",
     },
   ];
+  /** The failed jobs run again, as pending jobs the page of a job reads. */
+  const requeued = new Map<string, unknown>();
   const actions: string[] = [];
   await page.route("**/oauth/token/refresh", (route) =>
     json(route, {
@@ -198,11 +209,21 @@ async function operatorServer(page: Page) {
     }
     if (key === "GET /admin/jobs")
       return json(route, { items: new URL(request.url()).searchParams.get("state") === "dead" ? dead : pending });
+    const one = /^GET \/admin\/jobs\/([^/]+)$/.exec(key);
+    if (one) {
+      const job = requeued.get(one[1] ?? "") ?? [...pending, ...dead].find((item) => item.id === one[1]);
+      if (job !== undefined) return json(route, job);
+    }
     if (/^GET \/admin\/jobs\/[^/]+\/attempts$/.test(key)) return json(route, { items: attempts });
     const retry = /^POST \/admin\/jobs\/([^/]+)\/retry$/.exec(key);
     if (retry) {
       actions.push(key);
-      dead = dead.filter((job) => job.id !== retry[1]);
+      const job = dead.find((item) => item.id === retry[1]);
+      if (job !== undefined) {
+        const { failed_at: _failedAt, ...rest } = job;
+        requeued.set(job.id, { ...rest, state: "queued", attempts: 0, run_at: "2026-10-17T11:00:00Z" });
+      }
+      dead = dead.filter((item) => item.id !== retry[1]);
       return route.fulfill({ status: 204, headers: { "Cache-Control": "no-store" } });
     }
     return json(route, { type: "about:blank", title: "Not Found", status: 404 }, 404);
@@ -215,7 +236,9 @@ const pages = [
   "/moderation/instances",
   `/moderation/instances/${longDomain}`,
   "/admin/jobs",
-  "/admin/jobs?state=dead",
+  "/admin/jobs/list",
+  "/admin/jobs/list?state=dead",
+  "/admin/jobs/0192f0c4-7a8e-7000-8000-0000000000d1",
 ] as const;
 
 for (const path of pages) {
@@ -249,10 +272,11 @@ test.describe("remote servers", () => {
     await page.goto("/moderation/instances");
     const main = page.getByRole("main");
 
-    const servers = main.getByRole("table");
-    await expect(servers.getByRole("rowheader")).toHaveText([longDomain, "flaky.example"]);
-    await expect(servers.getByRole("row").nth(1).getByRole("link", { name: longDomain })).toBeVisible();
-    await expect(servers.getByRole("row").nth(2).getByRole("link", { name: "flaky.example" })).toBeVisible();
+    // A table, or cards at narrow widths: either way one row per server, named by its link.
+    const servers = recordTable(main);
+    await expect(recordRowHeaders(servers)).toHaveText([longDomain, "flaky.example"]);
+    await expect(recordRows(servers).nth(0).getByRole("link", { name: longDomain })).toBeVisible();
+    await expect(recordRows(servers).nth(1).getByRole("link", { name: "flaky.example" })).toBeVisible();
     // The first server's state change and the last failure day of each.
     await expect(servers.locator("time")).toHaveCount(3);
 
@@ -261,9 +285,8 @@ test.describe("remote servers", () => {
     const resume = main.getByRole("button", { name: message("admin.instance.mark_available"), exact: true });
     await resume.click();
     await expect(resume).toBeHidden();
-    await expect(
-      main.getByRole("table", { name: message("admin.instance.history.title"), exact: true }).getByRole("rowheader"),
-    ).toHaveCount(2);
+    // The history is the page's one list of records.
+    await expect(recordRowHeaders(recordTable(main))).toHaveCount(2);
     expect(actions).toEqual([`POST /admin/instances/${longDomain}/mark_available`]);
     await expectNoAxeViolations(makeAxeBuilder);
     await expectNoHorizontalScroll(page);
@@ -271,51 +294,50 @@ test.describe("remote servers", () => {
 });
 
 test.describe("queue dashboard", () => {
-  test("opens a job's attempt history", async ({ page, makeAxeBuilder }) => {
+  test("opens a job's page from the list, with its attempt history", async ({ page, makeAxeBuilder }) => {
     await operatorServer(page);
-    await page.goto("/admin/jobs");
-    const panel = page.getByRole("main").getByRole("tabpanel");
-    const job = panel
-      .getByRole("listitem")
-      .filter({ has: page.getByRole("heading", { level: 3, name: "federation.deliver" }) });
-    await expect(job).toBeVisible();
+    await page.goto("/admin/jobs/list");
+    const main = page.getByRole("main");
+    const list = recordTable(main);
+    await expect(recordRowHeaders(list)).toHaveCount(1);
 
-    const history = job.getByRole("button", {
-      name: message("admin.jobs.history.toggle_job").replace("{type}", "federation.deliver"),
-      exact: true,
-    });
-    await expect(history).toHaveAttribute("aria-expanded", "false");
-    await history.click();
-    await expect(history).toHaveAttribute("aria-expanded", "true");
-    await expect(job.getByRole("heading", { level: 4 })).toHaveCount(1);
+    await list.getByRole("link", { name: "federation.deliver", exact: true }).click();
+    await expect(page).toHaveURL(/\/admin\/jobs\/0192f0c4-7a8e-7000-8000-0000000000c1$/);
+    const history = main.getByRole("region", { name: message("admin.jobs.history.heading"), exact: true });
+    await expect(history.getByRole("heading", { level: 3 })).toHaveCount(1);
     await expectNoAxeViolations(makeAxeBuilder);
     await expectNoHorizontalScroll(page);
   });
 
-  test("runs a failed job again: it leaves the list and focus moves to the next job", async ({
+  test("runs a failed job again from the list: it leaves the list and focus moves to the next job", async ({
     page,
     makeAxeBuilder,
   }) => {
     const actions = await operatorServer(page);
-    await page.goto("/admin/jobs?state=dead");
-    const panel = page.getByRole("main").getByRole("tabpanel");
-    await expect(panel.getByRole("heading", { level: 3, name: "federation.deliver" })).toBeVisible();
+    await page.goto("/admin/jobs/list?state=dead");
+    const list = recordTable(page.getByRole("main"));
+    await expect(recordRowHeaders(list)).toHaveText(["federation.deliver", "kv.purge_expired"]);
 
-    await expect(panel.getByRole("list").first()).toMatchAriaSnapshot(`
-      - list:
-        - listitem:
-          - heading "federation.deliver" [level=3]
-          - button
-        - listitem:
-          - heading "kv.purge_expired" [level=3]
-          - button
-    `);
-
-    const row = (type: string) =>
-      panel.getByRole("listitem").filter({ has: page.getByRole("heading", { level: 3, name: type }) });
+    const row = (type: string) => recordRows(list).filter({ has: page.getByRole("link", { name: type, exact: true }) });
     await row("federation.deliver").getByRole("button").first().click();
-    await expect(panel.getByRole("heading", { level: 3, name: "federation.deliver" })).toBeHidden();
+    await expect(recordRowHeaders(list)).toHaveText(["kv.purge_expired"]);
     await expect(row("kv.purge_expired").getByRole("button").first()).toBeFocused();
+    expect(actions).toEqual(["POST /admin/jobs/0192f0c4-7a8e-7000-8000-0000000000d1/retry"]);
+    await expectNoAxeViolations(makeAxeBuilder);
+  });
+
+  test("runs a failed job again from its page: the button goes and focus moves to the state's heading", async ({
+    page,
+    makeAxeBuilder,
+  }) => {
+    const actions = await operatorServer(page);
+    await page.goto("/admin/jobs/0192f0c4-7a8e-7000-8000-0000000000d1");
+    const state = page.getByRole("main").getByRole("region", { name: message("admin.jobs.state"), exact: true });
+    const retry = state.getByRole("button");
+    await expect(retry).toBeVisible();
+
+    await retry.click();
+    await expect(state.getByRole("heading", { level: 2 })).toBeFocused();
     expect(actions).toEqual(["POST /admin/jobs/0192f0c4-7a8e-7000-8000-0000000000d1/retry"]);
     await expectNoAxeViolations(makeAxeBuilder);
   });

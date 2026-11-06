@@ -71,7 +71,7 @@ test("does not search during an IME composition", async ({ page }) => {
 test("offers the administrator only what the common rule allows", async ({ page }) => {
   const hana = persona("hana");
   await signIn(page, hana.email, hana.password);
-  await page.goto("/admin/settings");
+  await page.goto("/admin/settings/discovery");
 
   // The only administrator's app is in Japanese.
   const ja = readCatalog("ja");

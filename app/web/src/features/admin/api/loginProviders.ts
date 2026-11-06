@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The queries and mutations of the login providers screen (web-client/README.md S1, ADR-0106, manage_login_providers):
-// the external login providers (GET /admin/login_providers), newest first; setting one up, changing, enabling,
+// the external login providers (GET /admin/login_providers), newest first, and one of them; setting one up, changing, enabling,
 // disabling and deleting it, and giving it a new client secret. A provider that breaks a rule is a 422
 // `invalid-login-provider` problem whose `reason` names the field. The client secret is sent on setup and rotation
 // only and never answered. Every change is recorded in the audit log.
@@ -57,6 +57,11 @@ export function loginProviderLimitQueryOptions(api: Api, providerId?: string) {
 /** The login providers that are not deleted, newest first. */
 export function loginProvidersQueryOptions(api: Api) {
   return api.query.queryOptions("get", "/admin/login_providers");
+}
+
+/** One login provider; a deleted one is a 404. */
+export function loginProviderQueryOptions(api: Api, id: string) {
+  return api.query.queryOptions("get", "/admin/login_providers/{id}", { params: { path: { id } } });
 }
 
 /** The reason of an `invalid-login-provider` problem, or undefined for another error. */
@@ -134,12 +139,13 @@ export function rotateLoginProviderSecretMutation(api: Api) {
 }
 
 /**
- * Marks what a change of a login provider changes (ADR-0028): the list, whose row the answer shows, and the audit
- * log; the queries shown now are fetched again and awaited.
+ * Marks what a change of a login provider changes (ADR-0028): the list, whose row the answer shows, the provider's
+ * page and the audit log; the queries shown now are fetched again and awaited.
  */
 export async function refreshLoginProviders(queryClient: QueryClient): Promise<void> {
   await Promise.all([
     queryClient.invalidateQueries({ queryKey: ["get", "/admin/login_providers"] }),
+    queryClient.invalidateQueries({ queryKey: ["get", "/admin/login_providers/{id}"] }),
     refreshAuditLog(queryClient),
   ]);
 }

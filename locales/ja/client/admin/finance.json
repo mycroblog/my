@@ -8,20 +8,8 @@
     "description": "Description of the costs screen in the administration menu of the settings."
   },
   "admin.finance.description": {
-    "defaultMessage": "このサーバーの運営にかかる費用と収入の合計を見て、費用 (単発の支払いと定期的な支払い) を記録します。項目とその名前・メモは公開されません。",
-    "description": "Description of the costs screen, above its tabs."
-  },
-  "admin.finance.tabs.label": {
-    "defaultMessage": "費用",
-    "description": "Accessible name of the tabs of the costs screen: reading the costs and recording them."
-  },
-  "admin.finance.tabs.overview": {
-    "defaultMessage": "概要",
-    "description": "Tab of the costs screen with the totals of the costs and the income, what is published of them, and the payments and refunds."
-  },
-  "admin.finance.tabs.records": {
-    "defaultMessage": "記録",
-    "description": "Tab of the costs screen with the recorded costs, recording a new one, and the billing imports."
+    "defaultMessage": "このサーバーの運営にかかる費用と収入の合計を見ます。ほかのページで、支払いと返金を見て、費用を登録し、利用料金の取り込みを確かめ、公開範囲を決めます。登録した項目とその名前・メモは公開されません。",
+    "description": "Description of the costs screen, on its overview page under the links to its pages."
   },
   "admin.finance.visibility": {
     "defaultMessage": "{visibility, select, totals {情報ページはこの費用の合計を、内訳なしで公開しています。} breakdown {情報ページはこの費用の合計と、事業者・区分ごとの内訳を公開しています。} other {この費用は公開していません。}}",
@@ -41,7 +29,7 @@
   },
   "admin.finance.movements.title": {
     "defaultMessage": "支払いと返金",
-    "description": "Heading of the section of the payment provider's money movements of the income on the costs screen."
+    "description": "Heading of the list of the payment provider's money movements of the income on its page of the costs screen."
   },
   "admin.finance.movements.description": {
     "defaultMessage": "決済の事業者が記録したお金の動きを新しい順に示します。会計を管理する人だけが見られ、公開しません。",
@@ -135,17 +123,9 @@
     "defaultMessage": "絞り込みを外す",
     "description": "Button that removes the kind and dates filters of the money movements."
   },
-  "admin.finance.movements.provider_id": {
-    "defaultMessage": "{provider} での ID",
-    "description": "Term of the payment provider's ID of a money movement. {provider} is the provider, such as stripe."
-  },
-  "admin.finance.movements.provider_id.header": {
-    "defaultMessage": "決済事業者の ID",
-    "description": "Header of the column of the payment provider's ids in the table of income movements."
-  },
   "admin.finance.new.title": {
     "defaultMessage": "費用を登録する",
-    "description": "Heading of the form of a new cost on the costs screen."
+    "description": "Heading of the page of the form of a new cost, and the button on the list of recorded costs that leads to it."
   },
   "admin.finance.name": {
     "defaultMessage": "名前",
@@ -277,7 +257,7 @@
   },
   "admin.finance.cancel": {
     "defaultMessage": "キャンセル",
-    "description": "Button that closes the panel that records a cost without recording it."
+    "description": "Link from the form of a new cost back to the list of recorded costs, without recording it."
   },
   "admin.finance.create_failed": {
     "defaultMessage": "費用を登録できませんでした: {reason}",
@@ -289,15 +269,7 @@
   },
   "admin.finance.list.title": {
     "defaultMessage": "登録した費用",
-    "description": "Heading of the list of recorded costs on the costs screen."
-  },
-  "admin.finance.count": {
-    "defaultMessage": "{count, plural, other {登録した費用 # 件}}",
-    "description": "Read for the count beside the heading of the list of recorded costs. {count} is the number of items."
-  },
-  "admin.finance.count_at_least": {
-    "defaultMessage": "{count, plural, other {登録した費用 # 件以上}}",
-    "description": "Read for the count beside the heading of the list of recorded costs while more of them can be loaded. {count} is the number loaded."
+    "description": "Heading of the list of recorded costs on its page of the costs screen."
   },
   "admin.finance.empty": {
     "defaultMessage": "費用はまだありません",
@@ -339,29 +311,17 @@
     "defaultMessage": "登録日時",
     "description": "Term of when a cost was recorded on the costs screen."
   },
-  "admin.finance.edit": {
-    "defaultMessage": "編集",
-    "description": "Button that opens the dialog that changes the name, provider, category, and memo of a cost on the costs screen."
-  },
-  "admin.finance.edit_one": {
-    "defaultMessage": "編集: {name}",
-    "description": "Accessible name of the edit button of a cost on the costs screen."
-  },
   "admin.finance.edit.title": {
     "defaultMessage": "費用を編集する",
-    "description": "Title of the dialog that changes the label of a cost on the costs screen."
+    "description": "Heading of the section of the page of one cost that changes its name, provider, category, and memo."
   },
   "admin.finance.revise": {
     "defaultMessage": "金額を改定",
-    "description": "Button that opens the dialog of a new price from a date on on the costs screen."
-  },
-  "admin.finance.revise_one": {
-    "defaultMessage": "金額を改定: {name}",
-    "description": "Accessible name of the price button of a cost on the costs screen."
+    "description": "Submit button of the form of a new price on the page of one cost."
   },
   "admin.finance.revise.title": {
     "defaultMessage": "{name}の金額を改定する",
-    "description": "Title of the dialog of a new price on the costs screen."
+    "description": "Heading of the section of the page of one cost that sets a new price from a date on."
   },
   "admin.finance.effective_on": {
     "defaultMessage": "改定日",
@@ -377,19 +337,15 @@
   },
   "admin.finance.end": {
     "defaultMessage": "終了日を設定",
-    "description": "Button that opens the dialog of the end of a regular cost on the costs screen."
-  },
-  "admin.finance.end_one": {
-    "defaultMessage": "終了日を設定: {name}",
-    "description": "Accessible name of the end button of a cost on the costs screen."
+    "description": "Submit button of the form of the end of a regular cost on the page of one cost."
   },
   "admin.finance.end.title": {
     "defaultMessage": "{name}の終了日",
-    "description": "Title of the dialog of the end of a cost on the costs screen."
+    "description": "Heading of the section of the page of one regular cost that sets its last payment date."
   },
   "admin.finance.end.description": {
     "defaultMessage": "この日より後の支払いがなくなり、過去の支払いは集計に残ります。払い続けるときは空にします。",
-    "description": "Explanation of the end in its dialog on the costs screen."
+    "description": "Explanation of the end in its form on the page of one cost."
   },
   "admin.finance.ended": {
     "defaultMessage": "{name}の終了日を設定しました。監査ログに記録しました。",
@@ -411,10 +367,6 @@
     "defaultMessage": "取り消す",
     "description": "Button that removes a cost recorded by mistake from every period on the costs screen."
   },
-  "admin.finance.cancel_one": {
-    "defaultMessage": "取り消す: {name}",
-    "description": "Accessible name of the delete button of a cost on the costs screen."
-  },
   "admin.finance.cancel.title": {
     "defaultMessage": "{name}を取り消しますか？",
     "description": "Title of the confirmation of deleting a cost on the costs screen."
@@ -433,19 +385,15 @@
   },
   "admin.finance.cancel_dialog": {
     "defaultMessage": "キャンセル",
-    "description": "Button that closes a dialog without saving on the costs screen."
-  },
-  "admin.finance.close": {
-    "defaultMessage": "閉じる",
-    "description": "Accessible name of the close button of a dialog on the costs screen."
+    "description": "Button that closes the confirmation of deleting a cost without deleting it."
   },
   "admin.finance.save": {
     "defaultMessage": "保存する",
-    "description": "Button that saves a dialog on the costs screen."
+    "description": "Submit button of the form that changes the name, provider, category, and memo on the page of one cost."
   },
   "admin.finance.imports.title": {
     "defaultMessage": "利用料金の取り込み",
-    "description": "Heading of the section with the state of the imports of the cloud providers' usage charges on the costs screen."
+    "description": "Heading of the state of the billing imports on its page of the costs screen."
   },
   "admin.finance.imports.none": {
     "defaultMessage": "利用料金を取り込んでいません",
@@ -565,6 +513,46 @@
   },
   "admin.finance.publication.title": {
     "defaultMessage": "公開範囲",
-    "description": "Heading of the region of the costs screen with what the server publishes of the costs and the income, and what the holders of view_finance see."
+    "description": "Heading of the page of the costs screen with what the server publishes of the costs and the income, and what the holders of view_finance see."
+  },
+  "admin.finance.pages": {
+    "defaultMessage": "費用のページ",
+    "description": "Accessible name of the navigation between the pages of the costs screen."
+  },
+  "admin.finance.pages.overview": {
+    "defaultMessage": "概要",
+    "description": "Link to the page of the costs screen with the totals of the costs and the income."
+  },
+  "admin.finance.pages.income": {
+    "defaultMessage": "支払いと返金",
+    "description": "Link to the page of the costs screen with the payment provider's money movements of the income."
+  },
+  "admin.finance.pages.costs": {
+    "defaultMessage": "登録した費用",
+    "description": "Link to the page of the costs screen with the list of recorded costs."
+  },
+  "admin.finance.pages.imports": {
+    "defaultMessage": "利用料金の取り込み",
+    "description": "Link to the page of the costs screen with the state of the billing imports."
+  },
+  "admin.finance.pages.publication": {
+    "defaultMessage": "公開範囲",
+    "description": "Link to the page of the costs screen with what the server publishes of the costs and the income."
+  },
+  "admin.finance.item.title": {
+    "defaultMessage": "登録した費用",
+    "description": "Heading of the page of one recorded cost."
+  },
+  "admin.finance.item.back": {
+    "defaultMessage": "登録した費用に戻る",
+    "description": "Link from the page of one cost, or of a new one, back to the list of recorded costs."
+  },
+  "admin.finance.item.delete": {
+    "defaultMessage": "費用を取り消す",
+    "description": "Heading of the section of the page of one cost that deletes it for good."
+  },
+  "admin.finance.movements.gross_fee": {
+    "defaultMessage": "総額 {gross}、手数料 {fee}",
+    "description": "Under the net amount of a money movement on the payments and refunds page. {gross} and {fee} are formatted amounts."
   }
 }

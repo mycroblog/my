@@ -23,21 +23,9 @@
     "defaultMessage": "Delete {name}?",
     "description": "Title of the dialog that confirms deleting a webhook."
   },
-  "admin.webhooks.delete_webhook": {
-    "defaultMessage": "Delete {name}",
-    "description": "Accessible name of the button that deletes a webhook."
-  },
   "admin.webhooks.deleted": {
     "defaultMessage": "{name} is deleted.",
     "description": "Status after deleting a webhook."
-  },
-  "admin.webhooks.deliveries": {
-    "defaultMessage": "Deliveries",
-    "description": "Link to the page of a webhook's deliveries."
-  },
-  "admin.webhooks.deliveries.attempts": {
-    "defaultMessage": "Attempts",
-    "description": "Term in a delivery's details: how many times it was sent."
   },
   "admin.webhooks.deliveries.attempts.count": {
     "defaultMessage": "{count, plural, one {# time} other {# times}}",
@@ -54,10 +42,6 @@
   "admin.webhooks.deliveries.empty": {
     "defaultMessage": "No deliveries in the last 14 days",
     "description": "Heading of the empty list of a webhook's deliveries."
-  },
-  "admin.webhooks.deliveries.last_attempt": {
-    "defaultMessage": "Last attempt",
-    "description": "Term in a delivery's details: the outcome and time of its last attempt."
   },
   "admin.webhooks.deliveries.outcome.connection_error": {
     "defaultMessage": "Could not connect",
@@ -119,10 +103,6 @@
     "defaultMessage": "Deliveries",
     "description": "Heading of the deliveries of a webhook on its page."
   },
-  "admin.webhooks.deliveries_of": {
-    "defaultMessage": "Deliveries of {name}",
-    "description": "Accessible name of the link to a webhook's deliveries. {name} is its description or host name."
-  },
   "admin.webhooks.description": {
     "defaultMessage": "Description",
     "description": "Label of the description of a webhook: what it is for."
@@ -139,29 +119,9 @@
     "defaultMessage": "Disable",
     "description": "Button that disables a webhook."
   },
-  "admin.webhooks.disable_webhook": {
-    "defaultMessage": "Disable {name}",
-    "description": "Accessible name of the button that disables a webhook."
-  },
   "admin.webhooks.disabled_status": {
     "defaultMessage": "{name} is disabled.",
     "description": "Status after disabling a webhook."
-  },
-  "admin.webhooks.edit": {
-    "defaultMessage": "Edit",
-    "description": "Button that opens the dialog to change a webhook."
-  },
-  "admin.webhooks.edit.close": {
-    "defaultMessage": "Close",
-    "description": "Button that closes the dialog that changes a webhook."
-  },
-  "admin.webhooks.edit.title": {
-    "defaultMessage": "Edit {name}",
-    "description": "Title of the dialog that changes a webhook."
-  },
-  "admin.webhooks.edit_webhook": {
-    "defaultMessage": "Edit {name}",
-    "description": "Accessible name of the button that changes a webhook. {name} is its description or host name."
   },
   "admin.webhooks.empty": {
     "defaultMessage": "No webhooks yet",
@@ -174,10 +134,6 @@
   "admin.webhooks.enable": {
     "defaultMessage": "Enable",
     "description": "Button that enables a webhook."
-  },
-  "admin.webhooks.enable_webhook": {
-    "defaultMessage": "Enable {name}",
-    "description": "Accessible name of the button that enables a webhook."
   },
   "admin.webhooks.enabled_status": {
     "defaultMessage": "{name} is enabled.",
@@ -207,14 +163,6 @@
     "defaultMessage": "A custom emoji is changed",
     "description": "Name of a webhook event: an administrator changed a custom emoji."
   },
-  "admin.webhooks.event.error_group_created": {
-    "defaultMessage": "A new error is reported",
-    "description": "Name of a webhook event: the server or the web client reported an error of a new kind."
-  },
-  "admin.webhooks.event.error_group_regressed": {
-    "defaultMessage": "A resolved error happens again",
-    "description": "Name of a webhook event: an error that an administrator marked resolved happened again with a newer version of the server."
-  },
   "admin.webhooks.event.domain_moderation_action_created": {
     "defaultMessage": "A domain action is taken",
     "description": "Name of a webhook event: a moderation action on a domain was issued."
@@ -222,6 +170,14 @@
   "admin.webhooks.event.domain_moderation_action_lifted": {
     "defaultMessage": "A domain action is lifted",
     "description": "Name of a webhook event: a moderation action on a domain was lifted."
+  },
+  "admin.webhooks.event.error_group_created": {
+    "defaultMessage": "A new error is reported",
+    "description": "Name of a webhook event: the server or the web client reported an error of a new kind."
+  },
+  "admin.webhooks.event.error_group_regressed": {
+    "defaultMessage": "A resolved error happens again",
+    "description": "Name of a webhook event: an error that an administrator marked resolved happened again with a newer version of the server."
   },
   "admin.webhooks.event.moderation_action_created": {
     "defaultMessage": "An account action is taken",
@@ -283,13 +239,21 @@
     "defaultMessage": "Webhooks of this server",
     "description": "Heading of the list of the webhooks."
   },
+  "admin.webhooks.manage.title": {
+    "defaultMessage": "State, test and secret",
+    "description": "Heading of the section of a webhook's page that enables, disables, tests, gives a new secret to or deletes it."
+  },
   "admin.webhooks.missing_permissions": {
     "defaultMessage": "Missing permissions: {permissions}",
     "description": "Line under the refusal of a webhook's events: the permissions the user lacks. {permissions} is a list of permission names such as manage_accounts."
   },
   "admin.webhooks.new.title": {
-    "defaultMessage": "Set up a webhook",
-    "description": "Heading of the form that sets up a new webhook."
+    "defaultMessage": "Add a webhook",
+    "description": "Heading of the page with the form that sets up a webhook, and the link to it."
+  },
+  "admin.webhooks.open": {
+    "defaultMessage": "Open the webhook",
+    "description": "Link from the secret of a new webhook to the webhook's page."
   },
   "admin.webhooks.reason.admin": {
     "defaultMessage": "by a staff member",
@@ -314,10 +278,6 @@
   "admin.webhooks.rotate.title": {
     "defaultMessage": "Make a new secret for {name}?",
     "description": "Title of the dialog that confirms giving a webhook a new secret."
-  },
-  "admin.webhooks.rotate_webhook": {
-    "defaultMessage": "New secret for {name}",
-    "description": "Accessible name of the button that gives a webhook a new secret."
   },
   "admin.webhooks.rotated": {
     "defaultMessage": "{name} has a new secret.",
@@ -375,10 +335,6 @@
     "defaultMessage": "Send a test",
     "description": "Button that sends a test message to a webhook."
   },
-  "admin.webhooks.test_webhook": {
-    "defaultMessage": "Send a test to {name}",
-    "description": "Accessible name of the button that sends a test message to a webhook."
-  },
   "admin.webhooks.tested": {
     "defaultMessage": "A test message to {name} is on its way. Its deliveries show how it went.",
     "description": "Status after sending a test message to a webhook."
@@ -402,5 +358,9 @@
   "admin.webhooks.url.description": {
     "defaultMessage": "Where the messages are posted, an https URL. A destination on this server's own network works only when the operator allows it in the configuration.",
     "description": "Help of the URL of a webhook."
+  },
+  "admin.webhooks.webhook": {
+    "defaultMessage": "Webhook",
+    "description": "Column of the list of webhooks: its description or host name, linking to its page."
   }
 }

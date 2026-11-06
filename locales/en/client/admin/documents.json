@@ -80,7 +80,7 @@
     "description": "Error of the text area of a document when the text is too long."
   },
   "admin.documents.unsaved.description": {
-    "defaultMessage": "Your changes to the terms of service and the privacy policy will be lost.",
+    "defaultMessage": "Your changes to this text will be lost.",
     "description": "Body of the dialog that asks before leaving the terms and policies screen with unsaved texts."
   },
   "admin.documents.unsaved.leave": {
@@ -92,7 +92,7 @@
     "description": "Button that stays on the terms and policies screen with the unsaved texts."
   },
   "admin.documents.unsaved.title": {
-    "defaultMessage": "Leave without saving the texts?",
+    "defaultMessage": "Leave without saving the text?",
     "description": "Title of the dialog that asks before leaving the terms and policies screen with unsaved texts."
   },
   "admin.documents.view_privacy_policy": {
@@ -118,5 +118,9 @@
   "admin.documents.view_terms": {
     "defaultMessage": "Open the terms of service page",
     "description": "Link from the terms and policies screen to the public page of the terms of service."
+  },
+  "admin.documents.pages": {
+    "defaultMessage": "Terms and policies pages",
+    "description": "Name of the navigation of the pages of the terms and policies screen, one per document, under its heading."
   }
 }

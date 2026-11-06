@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The webhooks screen in every width × locale project (ADR-0060, ADR-0110): an administrator sets up a webhook and
-// sees its secret once, sees it listed, disables and enables it, and deletes it after its dialog, each step passing
-// axe without scrolling sideways. `vite preview` has no API, so each test plays the server of a signed-in
+// The webhooks screen in every width × locale project (ADR-0060, ADR-0110): an administrator opens the form from the
+// list, sets up a webhook and sees its secret once, opens its page, disables and enables it, and deletes it after its
+// dialog, back on the list; each step passing axe without scrolling sideways. `vite preview` has no API, so each test plays the server of a signed-in
 // administrator with page.route; names change with the locale, so the structure is checked by role, by the names in
 // the project's locale catalog and by what the server sends.
 import type { Page, Route } from "@playwright/test";
@@ -10,13 +10,13 @@ import { expect, expectNoAxeViolations, expectNoHorizontalScroll, test } from ".
 import { readCatalog } from "./catalog.ts";
 
 type Schemas = components["schemas"];
-/** The client message `key` in the project's locale, with `{name}` replaced by `name`. */
-function message(key: string, name = ""): string {
+/** The client message `key` in the project's locale. */
+function message(key: string): string {
   const locale = test.info().project.use.locale ?? "en";
   const catalog = readCatalog(locale);
   const text = catalog[key]?.defaultMessage;
   if (text === undefined) throw new Error(`no message ${key} in ${locale}`);
-  return text.replace("{name}", name);
+  return text;
 }
 
 /** The signed-in administrator's account, as GET /accounts/verify_credentials answers, with manage_webhooks. */
@@ -42,8 +42,6 @@ const administrator = {
 
 const secret = "whsec_c2VjcmV0c2VjcmV0c2VjcmV0c2VjcmV0c2VjcmU=";
 const description = "Moderation chat";
-/** The webhook in sentences: its description, isolated (useWebhooks.webhookName). */
-const name = `⁨${description}⁩`;
 
 function json(route: Route, body: unknown, status = 200) {
   return route.fulfill({
@@ -121,6 +119,11 @@ async function administratorServer(page: Page) {
       webhooks = [webhook];
       return json(route, { webhook, secret });
     }
+    if (/^GET \/admin\/webhooks\/[^/]+\/deliveries$/.test(key)) return json(route, { items: [] });
+    if (/^GET \/admin\/webhooks\/[^/]+$/.test(key)) {
+      const webhook = webhooks.find((one) => path.endsWith(`/${one.id}`));
+      if (webhook !== undefined) return json(route, webhook);
+    }
     const state = /^POST \/admin\/webhooks\/([^/]+)\/(enable|disable)$/.exec(key);
     if (state) {
       sent.push(state[2] ?? "");
@@ -145,44 +148,56 @@ test.describe("webhooks", () => {
     const sent = await administratorServer(page);
     await page.goto("/admin/webhooks");
     const main = page.getByRole("main");
-    const form = main.getByRole("region", { name: message("admin.webhooks.new.title"), exact: true });
-    await expect(form).toBeVisible();
+    const list = main.getByRole("region", { name: message("admin.webhooks.list.title"), exact: true });
+    await expect(
+      list.getByRole("heading", { level: 3, name: message("admin.webhooks.empty"), exact: true }),
+    ).toBeVisible();
     await expectNoAxeViolations(makeAxeBuilder);
     await expectNoHorizontalScroll(page);
 
-    await form
+    // The list holds no form: "Add a webhook" opens its page.
+    await main.getByRole("link", { name: message("admin.webhooks.new.title"), exact: true }).click();
+    await expect(page).toHaveURL(/\/admin\/webhooks\/new$/);
+    await expectNoAxeViolations(makeAxeBuilder);
+    await expectNoHorizontalScroll(page);
+    await main
       .getByRole("textbox", { name: message("admin.webhooks.url"), exact: true })
       .fill("https://hooks.example/in");
-    await form.getByRole("textbox", { name: message("admin.webhooks.description"), exact: true }).fill(description);
+    await main.getByRole("textbox", { name: message("admin.webhooks.description"), exact: true }).fill(description);
     // The checkbox is visually hidden behind its box; its label is what a pointer presses.
-    const events = form.getByRole("group", { name: message("admin.webhooks.events"), exact: true });
+    const events = main.getByRole("group", { name: message("admin.webhooks.events"), exact: true });
     await events.getByText(message("admin.webhooks.event.report_created"), { exact: true }).click();
     await expect(
       events.getByRole("checkbox", { name: message("admin.webhooks.event.report_created"), exact: true }),
     ).toBeChecked();
-    await form.getByRole("button", { name: message("admin.webhooks.submit"), exact: true }).click();
+    await main.getByRole("button", { name: message("admin.webhooks.submit"), exact: true }).click();
 
-    await expect(form.getByText(secret, { exact: true })).toBeVisible();
+    // The secret is shown once, in place of the form, with the link to the webhook's page.
+    await expect(main.getByText(secret, { exact: true })).toBeVisible();
     expect(sent).toEqual(["create https://hooks.example/in report.created"]);
-    const list = main.getByRole("region", { name: message("admin.webhooks.list.title"), exact: true });
-    await expect(list.getByRole("rowheader", { name: description })).toBeVisible();
+    await expectNoAxeViolations(makeAxeBuilder);
+    await expectNoHorizontalScroll(page);
+    await main.getByRole("link", { name: message("admin.webhooks.open"), exact: true }).click();
+
+    await expect(page).toHaveURL(/\/admin\/webhooks\/0192f0c4-7a8e-7000-8000-0000000000b1$/);
+    await expect(main.getByRole("heading", { level: 2, name: description, exact: true })).toBeVisible();
     await expectNoAxeViolations(makeAxeBuilder);
     await expectNoHorizontalScroll(page);
 
-    await list.getByRole("button", { name: message("admin.webhooks.disable_webhook", name), exact: true }).click();
-    await expect(
-      list.getByRole("button", { name: message("admin.webhooks.enable_webhook", name), exact: true }),
-    ).toBeVisible();
-    await list.getByRole("button", { name: message("admin.webhooks.enable_webhook", name), exact: true }).click();
-    await expect(
-      list.getByRole("button", { name: message("admin.webhooks.disable_webhook", name), exact: true }),
-    ).toBeVisible();
+    const actions = main.getByRole("region", { name: message("admin.webhooks.manage.title"), exact: true });
+    await actions.getByRole("button", { name: message("admin.webhooks.disable"), exact: true }).click();
+    await expect(actions.getByRole("button", { name: message("admin.webhooks.enable"), exact: true })).toBeVisible();
+    await actions.getByRole("button", { name: message("admin.webhooks.enable"), exact: true }).click();
+    await expect(actions.getByRole("button", { name: message("admin.webhooks.disable"), exact: true })).toBeVisible();
 
-    await list.getByRole("button", { name: message("admin.webhooks.delete_webhook", name), exact: true }).click();
+    await actions.getByRole("button", { name: message("admin.webhooks.delete"), exact: true }).click();
     const dialog = page.getByRole("alertdialog");
     await expect(dialog).toBeVisible();
     await expectNoAxeViolations(makeAxeBuilder);
     await dialog.getByRole("button", { name: message("admin.webhooks.delete"), exact: true }).click();
+
+    // Deleting goes back to the list.
+    await expect(page).toHaveURL(/\/admin\/webhooks$/);
     await expect(
       list.getByRole("heading", { level: 3, name: message("admin.webhooks.empty"), exact: true }),
     ).toBeVisible();

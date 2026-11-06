@@ -621,7 +621,11 @@ class Seeder {
 
   async announce(): Promise<void> {
     const api = await this.api(admin);
-    const existing = body((await api.GET("/admin/announcements")).data).items.map((a) => a.text);
+    const existing: string[] = [];
+    for await (const a of all(async (cursor) =>
+      body((await api.GET("/admin/announcements", { params: { query: at(cursor) } })).data),
+    ))
+      existing.push(a.text);
     for (const a of announcements) {
       if (existing.includes(a.text)) continue;
       await api.POST("/admin/announcements", {
@@ -707,7 +711,9 @@ export async function census(o: SeedOptions): Promise<Record<string, number>> {
   );
   out["rules"] = body((await api.GET("/admin/rules")).data).items.length;
   out["roles"] = body((await api.GET("/admin/roles")).data).items.length;
-  out["announcements"] = body((await api.GET("/admin/announcements")).data).items.length;
+  out["announcements"] = await count(async (cursor) =>
+    body((await api.GET("/admin/announcements", { params: { query: at(cursor) } })).data),
+  );
   out["cost_items"] = body((await api.GET("/admin/cost_items")).data).items.length;
   out["supporter_plans"] = body((await api.GET("/admin/supporter_plans")).data).items.length;
   out["invites"] = body((await api.GET("/admin/invites")).data).items.length;

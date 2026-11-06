@@ -31,6 +31,7 @@ export {
   DomainName,
   MissingPermission,
   RecordList,
+  type RecordColumns,
   RecordTable,
   RequirePermission,
   useFocusAfterChange,
@@ -52,6 +53,7 @@ export {
   availabilityEventsQueryOptions,
   type DomainActionFilter,
   domainActionFilters,
+  domainActionQueryOptions,
   domainActionsQueryOptions,
   type InstanceFilter,
   instanceFilters,
@@ -59,28 +61,46 @@ export {
   instancesQueryOptions,
 } from "./api/staff";
 export { AuditLog } from "./components/AuditLog";
-export { DomainActions } from "./components/DomainActions";
+export { DomainActionDetail, DomainActionTitle } from "./components/DomainActionDetail";
+export { DomainActions, DomainActionsNav } from "./components/DomainActions";
+export { DomainBlockCsvPage } from "./components/DomainBlockCsv";
+export { NewDomainAction } from "./components/NewDomainAction";
 export { InstanceDetail } from "./components/InstanceDetail";
 export { InstanceList } from "./components/InstanceList";
 // The review of registrations and the blocks on sign-ups, for manage_accounts.
 export { registrationsQueryOptions } from "./api/registrations";
 export { RegistrationList } from "./components/RegistrationList";
-export { type SignupBlockFilter, signupBlockFilters, signupBlocksQueryOptions } from "./api/signupBlocks";
-export { SignupBlocks } from "./components/SignupBlocks";
+export {
+  type SignupBlockFilter,
+  signupBlockFilters,
+  signupBlockQueryOptions,
+  signupBlocksQueryOptions,
+} from "./api/signupBlocks";
+export { NewSignupBlock } from "./components/NewSignupBlock";
+export { SignupBlockDetail, SignupBlockTitle } from "./components/SignupBlockDetail";
+export { SignupBlockImportPage } from "./components/SignupBlockImport";
+export { SignupBlocks, SignupBlocksNav } from "./components/SignupBlocks";
 export {
   type HookAppealFilter,
   hookAppealFilters,
+  hookAppealQueryOptions,
   hookAppealsQueryOptions,
   type HookDecisionFilter,
   hookDecisionFilters,
+  hookDecisionQueryOptions,
   hookDecisionsQueryOptions,
   hookSummaryQueryOptions,
 } from "./api/hookDecisions";
+export { HookAppealDetailView } from "./components/HookAppealDetail";
+export { HookAppeals } from "./components/HookAppeals";
+export { HookDecisionDetailView } from "./components/HookDecisionDetail";
 export { HookDecisions } from "./components/HookDecisions";
+export { HookReviewPages } from "./components/hookDecisionParts";
 // The invites that let people sign up in the invite registration mode (FR-001), for manage_invites.
 export { invitesQueryOptions } from "./api/invites";
 export { instanceInfoQueryOptions as moderationInstanceQueryOptions } from "./api/reports";
 export { Invites } from "./components/Invites";
+export { NewInvite } from "./components/NewInvite";
 // The report queue and a report's page (FR-701, FR-710, NFR-MOD-4), for manage_reports.
 export {
   reportAssigneeFilters,
@@ -101,7 +121,10 @@ export {
   adminAccountsQueryOptions,
   adminAccountStates,
 } from "./api/accounts";
+export { accountActionQueryOptions } from "./api/reports";
 export { AccountDetailView } from "./components/AccountDetail";
+export { AccountActionDetailView, AccountActionsView } from "./components/AccountActions";
+export { AccountManageView } from "./components/AccountManage";
 export { AccountSearch } from "./components/AccountSearch";
 // The review of appeals of moderation actions (FR-707), for manage_accounts.
 export { type AppealFilter, appealQueryOptions, appealsQueryOptions } from "./api/appeals";

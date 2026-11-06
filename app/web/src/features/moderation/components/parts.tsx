@@ -3,8 +3,19 @@
 // same shape: the permission gate and its message, the paged list of records (rows with dividers, the empty
 // state and "show more"), the titled section of a detail page, a server's state in words, a domain in both
 // of its forms, and dates in the viewer's locale and time zone. The facts of a record are @my/ui's DescriptionList.
-import { Box, Button, Card, Section, EmptyState, Pagination, Stack, Table, TableBody, TableHead, Text } from "@my/ui";
-import { Fragment, type ReactNode, type Ref, type RefObject, useEffect, useRef } from "react";
+import {
+  Box,
+  Button,
+  Card,
+  EmptyState,
+  ListTable,
+  type ListTableColumns,
+  Pagination,
+  Section,
+  Stack,
+  Text,
+} from "@my/ui";
+import { type ReactNode, type Ref, type RefObject, useEffect, useRef } from "react";
 import { useIntl } from "react-intl";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
 import { domainToUnicode } from "../../../lib/idn";
@@ -133,40 +144,46 @@ export function RecordList<T>({ list, getId, children, empty, listRef, moreError
   );
 }
 
+/** The columns of a `RecordTable`: @my/ui's `ListTableColumns`, the record's name first. */
+export type RecordColumns<T> = ListTableColumns<T>;
+
 export type RecordTableProps<T> = {
-  /** The records loaded so far and loading more. */
+  /** The records loaded so far and loading more (`toPagedList`, or `wholeList` for a list the API returns whole). */
   list: PagedPages<T>;
   /** What the table holds; visually hidden, as the heading and the toolbar around it already say it. */
   caption: string;
-  /** The `TableColumnHeader`s of the one header row. */
-  head: ReactNode;
-  /** A stable id of a record: the row's key. */
+  /**
+   * The columns, at most four: the record's name (a link to its detail page), its state, one date, and the actions
+   * (`kind: "actions"`). Every other fact belongs on the detail page (web-client §14).
+   */
+  columns: RecordColumns<T>;
+  /** A stable id of a record: the row's key and its `data-row-id` (lib/useFocusAfterRemoval.ts). */
   getId: (item: T) => string;
-  /** One row: a `TableRow` (with `data-row-id`, lib/useFocusAfterRemoval.ts) whose `TableRowHeader` names the record. */
-  children: (item: T) => ReactNode;
+  /** The level of a row's heading in the card form of a narrow screen: the level of the `empty` state's heading. */
+  headingLevel: 2 | 3 | 4 | 5 | 6;
   /** What an empty list shows, an `EmptyState`. */
   empty: ReactNode;
   /** Why the next page failed to load (a `RegionError` without a retry of its own), above the pagination, whose next tries again. */
   moreError?: ReactNode;
-  /** The `<table>`, for lists whose rows go away (useFocusAfterRemoval). */
-  tableRef?: Ref<HTMLTableElement>;
+  /** The element around the rows, for lists whose rows go away (useFocusAfterRemoval, useFocusHeadingAfterLift). */
+  listRef?: Ref<HTMLDivElement>;
 };
 
 /**
- * The list of an admin screen in the admin mode's form: a `Table` in a
- * `Card`, one page of it at a time, with `Pagination` below. The API pages by cursor, so the pagination has
+ * The list of an admin screen in the admin mode's form: a `ListTable` in a `Card` (a table, or cards in a narrow
+ * container), one page of it at a time, with `Pagination` below. The API pages by cursor, so the pagination has
  * previous and next only; next past the loaded pages loads one more (useListPages). Key the component by whatever
  * the list is of (the filter), so that another list starts at its first page.
  */
 export function RecordTable<T>({
   list,
   caption,
-  head,
+  columns,
   getId,
-  children,
+  headingLevel,
   empty,
   moreError,
-  tableRef,
+  listRef,
 }: RecordTableProps<T>) {
   const t = useT();
   const pages = useListPages(list);
@@ -174,14 +191,14 @@ export function RecordTable<T>({
   return (
     <Stack gap="4">
       <Card padding="0">
-        <Table ref={tableRef} caption={caption}>
-          <TableHead>{head}</TableHead>
-          <TableBody>
-            {pages.items.map((item) => (
-              <Fragment key={getId(item)}>{children(item)}</Fragment>
-            ))}
-          </TableBody>
-        </Table>
+        <ListTable
+          {...(listRef !== undefined && { ref: listRef })}
+          items={pages.items}
+          columns={columns}
+          getId={getId}
+          caption={caption}
+          headingLevel={headingLevel}
+        />
       </Card>
       {moreError}
       {(pages.previous !== undefined || pages.next !== undefined) && (

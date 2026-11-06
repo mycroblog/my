@@ -1,8 +1,11 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The domain actions (/moderation/domain-actions; web-client/screens/moderation.md): the actions on remote servers,
-// the form that takes one, and the import and export of domain blocks, in the states of ADR-0079 §13
+// The domain actions (/moderation/domain-actions; web-client/screens/moderation-domain-actions.md): the list of the
+// actions on remote servers, an action's page, the form that takes one, and the import and export of domain blocks,
+// in the states of ADR-0079 §13
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import { http, HttpResponse } from "msw";
 import { longDomainAccountFixture } from "../../test/fixtures";
+import { apiBase, withViewer } from "../../test/msw/http";
 import {
   answering,
   failingOn,
@@ -17,7 +20,7 @@ import { domainActionFixture } from "./test/handlers";
 import { hoursAgo, hoursFromNow, listing, moderatorViewer, showing, storyId, withoutPermission } from "./test/stories";
 
 /** Actions of every kind, a few with comments, one hidden by obfuscation, one expiring, and two that ended. */
-const actions = listing("/admin/domain_actions", [
+const storyActions = [
   domainActionFixture({
     id: storyId("a0", 1),
     domain: "spam.example",
@@ -64,13 +67,24 @@ const actions = listing("/admin/domain_actions", [
     issued_at: hoursAgo(900),
     expires_at: hoursAgo(700),
   }),
-]);
+];
+
+const actions = listing("/admin/domain_actions", storyActions);
+
+/** GET /admin/domain_actions/{id} answering the stories' actions. */
+const action = http.get(`${apiBase}/admin/domain_actions/:id`, ({ request, params }) => {
+  const found = storyActions.find((item) => item.id === String(params["id"]));
+  if (found === undefined) return undefined;
+  return withViewer(request, () => HttpResponse.json(found));
+});
 
 const meta = {
   title: "Screens/Moderation/DomainActions",
   render: renderScreen,
   loaders: [screenLoader],
-  parameters: { screen: { path: "/moderation/domain-actions", signedIn: true, handlers: [moderatorViewer, actions] } },
+  parameters: {
+    screen: { path: "/moderation/domain-actions", signedIn: true, handlers: [moderatorViewer, actions, action] },
+  },
   play: settled,
 } satisfies Meta;
 
@@ -78,10 +92,24 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 /** The actions in effect: a suspension, a limit on a long domain, rejections and forced sensitivity. */
-export const Normal: Story = showing("Spam and advertising from every account.");
+export const Normal: Story = showing("media-heavy.example");
 
 /** Every action, those lifted and expired too. */
 export const All: Story = { parameters: { screen: { path: "/moderation/domain-actions?filter=all" } } };
+
+/** A suspension's page, with its public comment and private note. */
+export const Detail: Story = {
+  ...showing("Spam and advertising from every account."),
+  parameters: { screen: { path: `/moderation/domain-actions/${storyId("a0", 1)}` } },
+};
+
+/** The form of a new action, filled in with the domain from the list of one domain. */
+export const NewAction: Story = {
+  parameters: { screen: { path: "/moderation/domain-actions/new?domain=spam.example" } },
+};
+
+/** The import and export of Mastodon's domain block CSV. */
+export const Csv: Story = { parameters: { screen: { path: "/moderation/domain-actions/import" } } };
 
 /** No action on any server. */
 export const Empty: Story = answering(listing("/admin/domain_actions", []));

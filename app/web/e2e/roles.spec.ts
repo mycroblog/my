@@ -184,7 +184,7 @@ test.describe("roles", () => {
     makeAxeBuilder,
   }) => {
     const changes = await rolesServer(page);
-    await page.goto(`/moderation/accounts/${local.id}`);
+    await page.goto(`/moderation/accounts/${local.id}/manage`);
     const region = rolesRegion(page);
     await expect(region.getByRole("listitem")).toHaveCount(3);
     await expect(region).toMatchAriaSnapshot(`

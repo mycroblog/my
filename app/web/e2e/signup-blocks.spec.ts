@@ -1,12 +1,20 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The sign-up blocks screen in every width × locale project (ADR-0110, FR-719): the blocks in effect with an
-// email domain in non-Latin letters shown in both of its forms and a long hash that wraps, adding a block on an
-// email domain with the keyboard, importing a list with the keyboard and reading the lines it skipped, and
-// lifting a block, each passing axe without scrolling sideways. `vite
-// preview` has no API, so each test plays the server of a signed-in moderator with page.route; names change
-// with the locale, so the structure is checked by role and the values the server sends.
+// The sign-up blocks screen in every width × locale project (ADR-0110, FR-719): the list of the blocks in effect with
+// an email domain in non-Latin letters shown in both of its forms, a long hash that wraps, and no free text; a block's
+// page with its comment and the lift; adding a block on an email domain with the keyboard on the page of a new block;
+// and importing a list with the keyboard and reading the lines it skipped on the import page, each passing axe without
+// scrolling sideways. `vite preview` has no API, so each test plays the server of a signed-in moderator with
+// page.route; names change with the locale, so the structure is checked by role and the values the server sends.
 import type { Page, Route } from "@playwright/test";
-import { expect, expectNoAxeViolations, expectNoHorizontalScroll, test } from "./fixtures";
+import {
+  expect,
+  expectNoAxeViolations,
+  expectNoHorizontalScroll,
+  recordRowHeaders,
+  recordRows,
+  recordTable,
+  test,
+} from "./fixtures";
 
 /** The signed-in moderator's account, as GET /accounts/verify_credentials answers, with manage_accounts. */
 const moderator = {
@@ -118,6 +126,9 @@ async function moderatorServer(page: Page) {
       const active = url.searchParams.get("active") === "true";
       return json(route, { items: blocks.filter((block) => !active || block.state === "active") });
     }
+    const one = /^GET \/admin\/signup_blocks\/([^/]+)$/.exec(key);
+    const found = one && blocks.find((block) => block.id === one[1]);
+    if (found) return json(route, found);
     if (key === "POST /admin/signup_blocks") {
       const body = request.postDataJSON() as { kind: string; value: string; severity: string };
       requests.push(`${key} ${body.kind} ${body.value} ${body.severity}`);
@@ -178,45 +189,93 @@ async function moderatorServer(page: Page) {
   return requests;
 }
 
-test.describe("page /moderation/signup-blocks", () => {
-  test.beforeEach(async ({ page }) => {
-    await moderatorServer(page);
-    await page.goto("/moderation/signup-blocks");
-    await expect(page.getByRole("main").getByRole("table", { name: /./ })).toBeVisible();
-  });
+const blockId = "0192f0c4-7a8e-7000-8000-0000000001a2";
 
-  test("has no axe violations", async ({ makeAxeBuilder }) => {
-    await expectNoAxeViolations(makeAxeBuilder);
-  });
+/** A pattern of the domain shown in both of its forms, its U-labels first. */
+const bothForms = new RegExp(`${unicodeDomain.replaceAll(".", "\\.")}.*${asciiDomain.replaceAll(".", "\\.")}`);
 
-  test("does not scroll horizontally", async ({ page }) => {
-    await expectNoHorizontalScroll(page);
+for (const path of [
+  "/moderation/signup-blocks",
+  `/moderation/signup-blocks/${blockId}`,
+  "/moderation/signup-blocks/new",
+  "/moderation/signup-blocks/import",
+]) {
+  test.describe(`page ${path}`, () => {
+    test.beforeEach(async ({ page }) => {
+      await moderatorServer(page);
+      await page.goto(path);
+      await expect(page.getByRole("main").getByRole("heading", { level: 1 })).toBeVisible();
+      await expect(page.getByRole("main").getByRole("link").first()).toBeVisible();
+    });
+
+    test("has no axe violations", async ({ makeAxeBuilder }) => {
+      await expectNoAxeViolations(makeAxeBuilder);
+    });
+
+    test("does not scroll horizontally", async ({ page }) => {
+      await expectNoHorizontalScroll(page);
+    });
   });
-});
+}
 
 test.describe("sign-up blocks", () => {
-  test("lists a block in both forms of its domain, adds a block on an email domain with the keyboard, and lifts a block", async ({
+  test("lists a block in both forms of its domain without its comment, and lifts it on its page", async ({
     page,
     makeAxeBuilder,
   }) => {
     const requests = await moderatorServer(page);
     await page.goto("/moderation/signup-blocks");
     const main = page.getByRole("main");
-    const list = main.getByRole("table").last();
-    await expect(list.getByRole("rowheader")).toHaveCount(2);
+    const list = recordTable(main);
+    await expect(recordRowHeaders(list)).toHaveCount(2);
 
-    // The first row names the domain in both forms and keeps its details: the source and the comment.
-    const first = list.getByRole("row").nth(1);
-    await expect(first.getByRole("rowheader")).toHaveText(
-      new RegExp(`${unicodeDomain.replaceAll(".", "\\.")}.*${asciiDomain.replaceAll(".", "\\.")}`),
-    );
-    await expect(first).toContainText(longComment);
-    await expect(first.getByRole("button")).toHaveCount(1);
-    await expect(list.getByRole("row").nth(2).getByRole("rowheader")).toHaveText(hash);
-    await expect(list.getByRole("row").nth(2).getByRole("button")).toHaveCount(1);
+    // The first row names the domain in both forms; the comment is on the block's page only.
+    const first = recordRows(list).first();
+    await expect(recordRowHeaders(first)).toHaveText(bothForms);
+    await expect(list).not.toContainText(longComment);
+    await expect(list.getByRole("button")).toHaveCount(0);
+    await expect(recordRowHeaders(recordRows(list).nth(1))).toHaveText(hash);
 
-    // The form with the keyboard: the kind is the email domain already; type the domain, then Tab to the first
-    // effect of its radio group, which none is chosen in yet, and choose it with Space.
+    // By keyboard: the row's link opens the block's page.
+    await recordRowHeaders(first).getByRole("link").focus();
+    await page.keyboard.press("Enter");
+    await expect(page).toHaveURL(new RegExp(`/moderation/signup-blocks/${blockId}$`));
+    await expect(main.getByRole("heading", { level: 1 })).toHaveText(bothForms);
+    await expect(main).toContainText(longComment);
+    await expectNoAxeViolations(makeAxeBuilder);
+    await expectNoHorizontalScroll(page);
+
+    // The lift asks nothing first; its button goes away, and focus moves to the heading of its region.
+    const state = main.getByRole("region").first();
+    await state.getByRole("button").click();
+    await expect(state.getByRole("button")).toHaveCount(0);
+    await expect(state.getByRole("heading", { level: 2 })).toBeFocused();
+    await expect(state.getByRole("status")).toContainText(unicodeDomain);
+    expect(requests).toEqual([`POST /admin/signup_blocks/${blockId}/lift`]);
+    await expectNoAxeViolations(makeAxeBuilder);
+    await expectNoHorizontalScroll(page);
+
+    // The list of the blocks in effect keeps only the other one.
+    await main.locator('a[href="/moderation/signup-blocks"]').first().click();
+    await expect(recordRowHeaders(recordTable(main))).toHaveText([hash]);
+  });
+
+  test("adds a block on an email domain with the keyboard on the page of a new block", async ({
+    page,
+    makeAxeBuilder,
+  }) => {
+    const requests = await moderatorServer(page);
+    await page.goto("/moderation/signup-blocks");
+    const main = page.getByRole("main");
+    await expect(recordRowHeaders(recordTable(main))).toHaveCount(2);
+
+    // The link-button of the list opens the form; the list page has no form.
+    await expect(main.getByRole("textbox")).toHaveCount(0);
+    await main.locator('a[href="/moderation/signup-blocks/new"]').click();
+    await expect(page).toHaveURL(/\/moderation\/signup-blocks\/new$/);
+
+    // The kind is the email domain already; type the domain, then Tab to the first effect of its radio group, which
+    // none is chosen in yet, and choose it with Space.
     const domain = main.getByRole("textbox").first();
     await domain.focus();
     await page.keyboard.type("spam.example");
@@ -224,36 +283,27 @@ test.describe("sign-up blocks", () => {
     await page.keyboard.press("Space");
     const effect = main.getByRole("radiogroup").nth(1).getByRole("radio").first();
     await expect(effect).toBeChecked();
-    await main.locator('form button[type="submit"]').first().focus();
+    await main.locator('form button[type="submit"]').focus();
     await page.keyboard.press("Enter");
     await expect(main.getByRole("status").filter({ hasText: "spam.example" })).toBeVisible();
-    await expect(list.getByRole("rowheader", { name: "spam.example" })).toBeVisible();
     await expect(domain).toHaveValue("");
     expect(requests).toEqual(["POST /admin/signup_blocks email_domain spam.example require_approval"]);
     await expectNoAxeViolations(makeAxeBuilder);
     await expectNoHorizontalScroll(page);
 
-    await list.getByRole("row").filter({ hasText: unicodeDomain }).getByRole("button").click();
-    await expect(list.getByRole("rowheader")).toHaveCount(2);
-    // Focus moves to the button of the row that took the lifted one's place.
-    await expect(list.getByRole("row").filter({ hasText: hash }).getByRole("button")).toBeFocused();
-    expect(requests).toEqual([
-      "POST /admin/signup_blocks email_domain spam.example require_approval",
-      "POST /admin/signup_blocks/0192f0c4-7a8e-7000-8000-0000000001a2/lift",
-    ]);
-    await expectNoAxeViolations(makeAxeBuilder);
-    await expectNoHorizontalScroll(page);
+    // The way back leads to the list, which shows the new block.
+    await main.locator('a[href="/moderation/signup-blocks"]').first().click();
+    await expect(recordRowHeaders(recordTable(main)).filter({ hasText: "spam.example" })).toBeVisible();
   });
 });
 
 test.describe("an import of a list of sign-up blocks", () => {
   test("adds a list with the keyboard and shows the lines it skipped and why", async ({ page, makeAxeBuilder }) => {
     const requests = await moderatorServer(page);
-    await page.goto("/moderation/signup-blocks");
+    await page.goto("/moderation/signup-blocks/import");
     const main = page.getByRole("main");
-    await expect(main.getByRole("table").getByRole("rowheader")).toHaveCount(2);
-    // The import is the second section; its kind is the email domain already.
-    const section = main.getByRole("region").nth(1);
+    // The import is the region of the page; its kind is the email domain already.
+    const section = main.getByRole("region").first();
     const listField = section.getByRole("textbox").first();
     await listField.focus();
     await page.keyboard.insertText(
@@ -292,8 +342,11 @@ test.describe("an import of a list of sign-up blocks", () => {
             - cell "not-a-domain"
             - cell
     `);
-    await expect(main.getByRole("table").last().getByRole("rowheader", { name: "mailinator.example" })).toBeVisible();
     await expectNoAxeViolations(makeAxeBuilder);
     await expectNoHorizontalScroll(page);
+
+    // The list page shows the blocks the import added.
+    await main.getByRole("navigation").locator('a[href="/moderation/signup-blocks"]').click();
+    await expect(recordRowHeaders(recordTable(main)).filter({ hasText: "mailinator.example" })).toBeVisible();
   });
 });

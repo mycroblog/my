@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The automated reviews screen through the whole app (web-client/README.md T4): a moderator with manage_reports reads what
-// the external reviews said and cancels a decision, and upholds or overturns the authors' appeals of refused posts, with
-// MSW playing the admin API.
+// the external reviews said on the first page and a decision's page and cancels a decision, and on the appeals page and an
+// appeal's page upholds or overturns the authors' appeals of refused posts, with MSW playing the admin API.
 import { screen, waitFor, within } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
 import { beforeEach, describe, expect, test } from "vitest";
@@ -46,6 +46,10 @@ function decisionsServer(initial: Decision[]) {
   const lists: string[] = [];
   server.use(
     http.get(`${apiBase}/admin/hook_decisions/summary`, () => HttpResponse.json(hookSummaryFixture())),
+    http.get(`${apiBase}/admin/hook_decisions/:id`, ({ params }) => {
+      const found = decisions.find((d) => d.id === params["id"]);
+      return found === undefined ? problem(404, "about:blank", "Not Found") : HttpResponse.json(found);
+    }),
     http.get(`${apiBase}/admin/hook_decisions`, ({ request }) => {
       const query = new URL(request.url).searchParams;
       lists.push(query.toString());
@@ -72,16 +76,59 @@ describe("automated reviews", () => {
     expect(within(row).getByText(/3 decisions, 25 ms on average, 40 ms at most/u)).toBeVisible();
     expect(within(reviews).getByRole("row", { name: /Sign-ups/u })).toHaveTextContent("Not set up");
 
+    // A row names its subject, which links to the decision's page, and says where it stands; the rest is on that page.
     const list = screen.getByRole("table", { name: "Decisions" });
-    expect(within(list).getByRole("rowheader", { name: dropped.subject_key })).toBeVisible();
-    expect(within(list).getByText("Looks like a campaign")).toHaveAttribute("dir", "auto");
-    // A decision with an account names it, and its reason code reads as a label; one without an account names none.
-    const droppedRow = within(list).getByRole("row", { name: /activities\/1/u });
-    expect(await within(droppedRow).findByText("Bob")).toBeVisible();
-    expect(within(droppedRow).getByText("Spam")).toBeVisible();
+    expect(within(list).getByRole("link", { name: dropped.subject_key })).toHaveAttribute(
+      "href",
+      `/moderation/hook-decisions/${dropped.id}`,
+    );
     const observedRow = within(list).getByRole("row", { name: /activities\/2/u });
-    expect(within(observedRow).queryByText("Account")).not.toBeInTheDocument();
-    expect(within(list).getByText("Timed out")).toBeVisible();
+    expect(within(observedRow).getByText("Timed out (Observe)")).toBeVisible();
+    expect(within(list).queryByText("Looks like a campaign")).not.toBeInTheDocument();
+    // The screen's pages are links, the one on screen marked as the current page.
+    const pages = screen.getByRole("navigation", { name: "Automated review pages" });
+    expect(within(pages).getByRole("link", { name: "Decisions" })).toHaveAttribute("aria-current", "page");
+    expect(within(pages).getByRole("link", { name: "Appeals of refused posts" })).not.toHaveAttribute("aria-current");
+  });
+
+  test("a decision's page shows every fact of it, the account and the note in its own direction", async () => {
+    decisionsServer([dropped, observed]);
+    await renderApp({ path: `/moderation/hook-decisions/${dropped.id}` });
+    expect(await screen.findByRole("heading", { level: 1, name: "Decision of an automated review" })).toBeVisible();
+    expect(screen.getByText(dropped.subject_key)).toHaveAttribute("dir", "ltr");
+    expect(screen.getByText("Looks like a campaign")).toHaveAttribute("dir", "auto");
+    expect(await screen.findByText("Bob")).toBeVisible();
+    expect(screen.getByText("Spam")).toBeVisible();
+    expect(screen.getByRole("link", { name: "Back to automated reviews" })).toHaveAttribute(
+      "href",
+      "/moderation/hook-decisions",
+    );
+  });
+
+  test("a decision's page cancels it, says so and moves focus to the cancellation", async () => {
+    decisionsServer([dropped]);
+    const { user } = await renderApp({ path: `/moderation/hook-decisions/${dropped.id}` });
+    await user.click(await screen.findByRole("button", { name: "Cancel decision" }));
+    expect(await screen.findByText("Cancelled the decision of Posts from other servers: Dropped.")).toBeVisible();
+    expect(await screen.findByText("A moderator cancelled this decision.")).toBeVisible();
+    expect(screen.queryByRole("button", { name: "Cancel decision" })).not.toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByRole("heading", { name: "Cancellation" })).toHaveFocus();
+    });
+  });
+
+  test("a decision that had no effect has nothing to cancel, and says so", async () => {
+    decisionsServer([observed]);
+    await renderApp({ path: `/moderation/hook-decisions/${observed.id}` });
+    expect(await screen.findByText("This decision had no effect, so there is nothing to cancel.")).toBeVisible();
+    expect(screen.queryByRole("button", { name: "Cancel decision" })).not.toBeInTheDocument();
+  });
+
+  test("a refused local post is cancelled through its appeal, and its page says so", async () => {
+    const refused = hookAppealFixture().decision;
+    decisionsServer([refused]);
+    await renderApp({ path: `/moderation/hook-decisions/${refused.id}` });
+    expect(await screen.findByText(/A refused local post is not cancelled here/u)).toBeVisible();
   });
 
   test("cancels a decision and says so", async () => {
@@ -99,7 +146,7 @@ describe("automated reviews", () => {
     });
   });
 
-  test("a drop says until when cancelling brings the post back, and when it no longer does", async () => {
+  test("a drop's page says until when cancelling brings the post back", async () => {
     const restorable = hookDecisionFixture({
       id: "0192f0c4-7a8e-7000-8000-00000000d101",
       subject_key: "https://remote.example/activities/restorable",
@@ -108,6 +155,15 @@ describe("automated reviews", () => {
       overridable: true,
       restorable_until: "2999-01-01T00:00:00Z",
     });
+    decisionsServer([restorable]);
+    await renderApp({ path: `/moderation/hook-decisions/${restorable.id}` });
+    expect(await screen.findByText("Can be brought back until")).toBeVisible();
+    expect(
+      screen.queryByText("Its received copy is gone, so cancelling records the cancellation and brings nothing back."),
+    ).not.toBeInTheDocument();
+  });
+
+  test("a drop's page says when cancelling no longer brings the post back", async () => {
     const gone = hookDecisionFixture({
       id: "0192f0c4-7a8e-7000-8000-00000000d102",
       subject_key: "https://remote.example/activities/gone",
@@ -116,14 +172,10 @@ describe("automated reviews", () => {
       overridable: true,
       restorable_until: "2001-01-01T00:00:00Z",
     });
-    decisionsServer([restorable, gone]);
-    await renderApp({ path: "/moderation/hook-decisions" });
-    const list = await screen.findByRole("table", { name: "Decisions" });
-    const row = (key: string) => within(list).getByRole("row", { name: new RegExp(key, "u") });
-    expect(await within(list).findByRole("rowheader", { name: restorable.subject_key })).toBeVisible();
-    expect(within(row("restorable")).getByText("Can be brought back until")).toBeVisible();
+    decisionsServer([gone]);
+    await renderApp({ path: `/moderation/hook-decisions/${gone.id}` });
     expect(
-      within(row("activities/gone")).getByText(
+      await screen.findByText(
         "Its received copy is gone, so cancelling records the cancellation and brings nothing back.",
       ),
     ).toBeVisible();
@@ -197,6 +249,10 @@ function appealsServer(initial: HookAppeal[]) {
       lists.push(pending ? "pending" : "all");
       return HttpResponse.json({ items: appeals.filter((item) => !pending || item.state === "pending") });
     }),
+    http.get(`${apiBase}/admin/hook_appeals/:id`, ({ params }) => {
+      const found = appeals.find((item) => item.id === params["id"]);
+      return found === undefined ? problem(404, "about:blank", "Not Found") : HttpResponse.json(found);
+    }),
     ...(["uphold", "overturn"] as const).map((decision) =>
       http.post(`${apiBase}/admin/hook_appeals/:id/${decision}`, ({ params }) => {
         const found = appeals.find((item) => item.id === params["id"]);
@@ -219,29 +275,51 @@ async function confirmDecision(user: Awaited<ReturnType<typeof renderApp>>["user
 }
 
 describe("appeals of refused posts", () => {
-  test("lists those awaiting review with the author, the decision, the text and the comment in their own direction", async () => {
+  test("lists those awaiting review by author, with the start of the text in its own direction", async () => {
     const api = appealsServer([appeal, arabic, upheld]);
-    await renderApp({ path: "/moderation/hook-decisions" });
+    await renderApp({ path: "/moderation/hook-decisions/appeals" });
 
-    const table = await screen.findByRole("table", { name: "Appeals of refused posts" });
+    const table = await screen.findByRole("table", { name: "Awaiting review" });
     const rows = within(table).getAllByRole("row").slice(1);
     expect(rows).toHaveLength(2);
     const [first] = rows;
     if (first === undefined) throw new Error("an appeal is missing");
-    expect(await within(first).findByText("Bob")).toBeVisible();
-    expect(within(first).getByText("Local posts")).toBeVisible();
-    expect(within(first).getByText("Spam")).toBeVisible();
+    expect(await within(first).findByRole("link", { name: /Bob/u })).toHaveAttribute(
+      "href",
+      `/moderation/hook-decisions/appeals/${appeal.id}`,
+    );
     expect(within(first).getByText(appeal.status_text)).toHaveAttribute("dir", "auto");
-    expect(within(first).getByText(appeal.comment ?? "")).toHaveAttribute("dir", "auto");
     expect(within(table).getByText(arabic.status_text)).toHaveAttribute("dir", "auto");
+    // Deciding is on the appeal's page, where the appeal is read whole.
+    expect(within(table).queryByRole("button")).not.toBeInTheDocument();
     expect(api.lists).toEqual(["pending"]);
+    const pages = screen.getByRole("navigation", { name: "Automated review pages" });
+    expect(within(pages).getByRole("link", { name: "Appeals of refused posts" })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
   });
 
-  test("upholds an appeal after confirming, and says so", async () => {
-    const api = appealsServer([appeal]);
-    const { user } = await renderApp({ path: "/moderation/hook-decisions" });
+  test("an appeal's page shows the texts, the comment and the decision", async () => {
+    appealsServer([appeal]);
+    await renderApp({ path: `/moderation/hook-decisions/appeals/${appeal.id}` });
 
-    await user.click(await screen.findByRole("button", { name: /^Uphold the appeal of Nov 6, 2026/u }));
+    expect(await screen.findByRole("heading", { level: 1, name: "Appeal of a refused post" })).toBeVisible();
+    expect(screen.getByText(appeal.status_text)).toHaveAttribute("dir", "auto");
+    expect(screen.getByText(appeal.comment ?? "")).toHaveAttribute("dir", "auto");
+    expect(screen.getByText("Local posts")).toBeVisible();
+    expect(screen.getByText("Spam")).toBeVisible();
+    expect(screen.getByRole("link", { name: "Open the decision" })).toHaveAttribute(
+      "href",
+      `/moderation/hook-decisions/${appeal.decision.id}`,
+    );
+  });
+
+  test("upholds an appeal after confirming, says so and moves focus to the review", async () => {
+    const api = appealsServer([appeal]);
+    const { user } = await renderApp({ path: `/moderation/hook-decisions/appeals/${appeal.id}` });
+
+    await user.click(await screen.findByRole("button", { name: "Uphold" }));
     expect(await screen.findByRole("alertdialog", { name: "Uphold this appeal?" })).toHaveTextContent(
       "The post stays refused",
     );
@@ -249,17 +327,18 @@ describe("appeals of refused posts", () => {
 
     expect(await screen.findByText("Upheld the appeal. The post stays refused.")).toBeVisible();
     expect(api.decisions).toEqual([`uphold ${appeal.id}`]);
-    expect(await screen.findByText("No appeals await review")).toBeVisible();
+    expect(await screen.findByText("Result")).toBeVisible();
+    expect(screen.queryByRole("button", { name: "Uphold" })).not.toBeInTheDocument();
     await waitFor(() => {
-      expect(screen.getByRole("heading", { name: "Appeals of refused posts" })).toHaveFocus();
+      expect(screen.getByRole("heading", { name: "Moderator's review" })).toHaveFocus();
     });
   });
 
   test("overturns an appeal after confirming, which cancels the decision", async () => {
     const api = appealsServer([appeal]);
-    const { user } = await renderApp({ path: "/moderation/hook-decisions" });
+    const { user } = await renderApp({ path: `/moderation/hook-decisions/appeals/${appeal.id}` });
 
-    await user.click(await screen.findByRole("button", { name: /^Overturn the appeal of/u }));
+    await user.click(await screen.findByRole("button", { name: "Overturn" }));
     const dialog = await screen.findByRole("alertdialog", { name: "Overturn this appeal?" });
     expect(dialog).toHaveTextContent("The refused post is not restored");
     // Cancelling decides nothing.
@@ -269,7 +348,7 @@ describe("appeals of refused posts", () => {
     });
     expect(api.decisions).toEqual([]);
 
-    await user.click(screen.getByRole("button", { name: /^Overturn the appeal of/u }));
+    await user.click(screen.getByRole("button", { name: "Overturn" }));
     await confirmDecision(user, "Overturn this appeal?", "Overturn");
 
     expect(
@@ -287,9 +366,9 @@ describe("appeals of refused posts", () => {
         problem(409, "/api/v1/problems/appeal-decided", "Decided already"),
       ),
     );
-    const { user } = await renderApp({ path: "/moderation/hook-decisions" });
+    const { user } = await renderApp({ path: `/moderation/hook-decisions/appeals/${appeal.id}` });
 
-    await user.click(await screen.findByRole("button", { name: /^Overturn the appeal of/u }));
+    await user.click(await screen.findByRole("button", { name: "Overturn" }));
     await confirmDecision(user, "Overturn this appeal?", "Overturn");
 
     expect(
@@ -302,15 +381,14 @@ describe("appeals of refused posts", () => {
 
   test("the appeal filter shows every appeal and stays in the URL", async () => {
     const api = appealsServer([upheld]);
-    const { user, router } = await renderApp({ path: "/moderation/hook-decisions" });
+    const { user, router } = await renderApp({ path: "/moderation/hook-decisions/appeals" });
 
     expect(await screen.findByText("No appeals await review")).toBeVisible();
     await user.click(screen.getByRole("button", { name: /Appeals by state/u }));
     await user.click(await screen.findByRole("option", { name: "All appeals" }));
 
     expect(await screen.findByText("Upheld")).toBeVisible();
-    expect(screen.queryByRole("button", { name: /^Uphold the appeal of/u })).not.toBeInTheDocument();
-    expect(router.state.location.search).toEqual({ appeals: "all" });
+    expect(router.state.location.search).toEqual({ state: "all" });
     expect(api.lists.at(-1)).toBe("all");
   });
 });

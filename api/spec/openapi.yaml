@@ -440,6 +440,8 @@ paths:
     $ref: ./paths/admin_queue.yaml
   /admin/jobs:
     $ref: ./paths/admin_jobs.yaml
+  /admin/jobs/{id}:
+    $ref: ./paths/admin_jobs_{id}.yaml
   /admin/jobs/{id}/attempts:
     $ref: ./paths/admin_jobs_{id}_attempts.yaml
   /admin/jobs/{id}/retry:
@@ -480,10 +482,14 @@ paths:
     $ref: ./paths/admin_hook_decisions.yaml
   /admin/hook_decisions/summary:
     $ref: ./paths/admin_hook_decisions_summary.yaml
+  /admin/hook_decisions/{id}:
+    $ref: ./paths/admin_hook_decisions_{id}.yaml
   /admin/hook_decisions/{id}/override:
     $ref: ./paths/admin_hook_decisions_{id}_override.yaml
   /admin/hook_appeals:
     $ref: ./paths/admin_hook_appeals.yaml
+  /admin/hook_appeals/{id}:
+    $ref: ./paths/admin_hook_appeals_{id}.yaml
   /admin/hook_appeals/{id}/uphold:
     $ref: ./paths/admin_hook_appeals_{id}_uphold.yaml
   /admin/hook_appeals/{id}/overturn:
@@ -712,6 +718,8 @@ paths:
     $ref: ./paths/admin_supporter_plans_{id}_retire.yaml
   /admin/supporter_subscriptions:
     $ref: ./paths/admin_supporter_subscriptions.yaml
+  /admin/supporter_subscriptions/{id}:
+    $ref: ./paths/admin_supporter_subscriptions_{id}.yaml
   /admin/supporter_subscriptions/{id}/end:
     $ref: ./paths/admin_supporter_subscriptions_{id}_end.yaml
 components:
@@ -1080,10 +1088,12 @@ components:
       $ref: ./components/schemas/AdminAnnouncement.yaml
     AdminAnnouncementCreateRequest:
       $ref: ./components/schemas/AdminAnnouncementCreateRequest.yaml
+    AdminAnnouncementFilter:
+      $ref: ./components/schemas/AdminAnnouncementFilter.yaml
     AdminAnnouncementInput:
       $ref: ./components/schemas/AdminAnnouncementInput.yaml
-    AdminAnnouncementList:
-      $ref: ./components/schemas/AdminAnnouncementList.yaml
+    AdminAnnouncementPage:
+      $ref: ./components/schemas/AdminAnnouncementPage.yaml
     AdminAnnouncementState:
       $ref: ./components/schemas/AdminAnnouncementState.yaml
     AdminAppeal:

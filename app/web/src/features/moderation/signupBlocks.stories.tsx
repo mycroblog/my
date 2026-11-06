@@ -1,7 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The sign-up blocks (/moderation/signup-blocks; web-client/screens/moderation.md): the blocks on email domains,
-// email addresses and IP ranges, the form that adds one, and the import, in the states of ADR-0079 §13
+// The sign-up blocks (/moderation/signup-blocks; web-client/screens/moderation-signup-blocks.md): the list of the
+// blocks on email domains, email addresses and IP ranges, a block's page, the form that adds one, and the import, in
+// the states of ADR-0079 §13
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import { http, HttpResponse } from "msw";
+import { apiBase, withViewer } from "../../test/msw/http";
 import {
   answering,
   failingOn,
@@ -16,7 +19,7 @@ import { signupBlockFixture } from "./test/handlers";
 import { hoursAgo, hoursFromNow, listing, moderatorViewer, showing, storyId, withoutPermission } from "./test/stories";
 
 /** Blocks of every kind and severity, a few with comments or an expiry, two that ended. */
-const blocks = listing("/admin/signup_blocks", [
+const storyBlocks = [
   signupBlockFixture({
     id: storyId("a1", 1),
     value: "disposable-mail.example",
@@ -60,13 +63,24 @@ const blocks = listing("/admin/signup_blocks", [
     created_at: hoursAgo(1200),
     expires_at: hoursAgo(500),
   }),
-]);
+];
+
+const blocks = listing("/admin/signup_blocks", storyBlocks);
+
+/** GET /admin/signup_blocks/{id} answering the stories' blocks. */
+const block = http.get(`${apiBase}/admin/signup_blocks/:id`, ({ request, params }) => {
+  const found = storyBlocks.find((item) => item.id === String(params["id"]));
+  if (found === undefined) return undefined;
+  return withViewer(request, () => HttpResponse.json(found));
+});
 
 const meta = {
   title: "Screens/Moderation/SignupBlocks",
   render: renderScreen,
   loaders: [screenLoader],
-  parameters: { screen: { path: "/moderation/signup-blocks", signedIn: true, handlers: [moderatorViewer, blocks] } },
+  parameters: {
+    screen: { path: "/moderation/signup-blocks", signedIn: true, handlers: [moderatorViewer, blocks, block] },
+  },
   play: settled,
 } satisfies Meta;
 
@@ -78,6 +92,18 @@ export const Normal: Story = showing("disposable-mail.example");
 
 /** Every block, those lifted and expired too. */
 export const All: Story = { parameters: { screen: { path: "/moderation/signup-blocks?filter=all" } } };
+
+/** A block's page, with its comment. */
+export const Detail: Story = {
+  ...showing("Throwaway addresses used by spam sign-ups."),
+  parameters: { screen: { path: `/moderation/signup-blocks/${storyId("a1", 1)}` } },
+};
+
+/** The form of a new block. */
+export const NewBlock: Story = { parameters: { screen: { path: "/moderation/signup-blocks/new" } } };
+
+/** The import of a list of values. */
+export const Import: Story = { parameters: { screen: { path: "/moderation/signup-blocks/import" } } };
 
 /** No sign-up is blocked. */
 export const Empty: Story = answering(listing("/admin/signup_blocks", []));

@@ -1,12 +1,21 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The domain actions screen in every width × locale project (ADR-0110, NFR-MOD-7): the actions in effect with a
-// domain in non-Latin letters shown in both of its forms, a suspension taken through its alert dialog, and
-// lifting an action, each passing axe without scrolling sideways. `vite preview` has no API, so each test plays
-// the server of a signed-in operator with page.route; names change with the locale, so the structure is checked
-// by role and the identifiers the server sends (domains). The import of Mastodon's domain block CSV is previewed,
-// a row cleared by keyboard, and the rest imported.
+// The domain actions screen in every width × locale project (ADR-0110, NFR-MOD-7): the list of the actions in effect
+// with a domain in non-Latin letters shown in both of its forms and no free text, an action's page with its comments
+// and the lift, and the page of a new action with a suspension taken through its alert dialog, each passing axe
+// without scrolling sideways. `vite preview` has no API, so each test plays the server of a signed-in operator with
+// page.route; names change with the locale, so the structure is checked by role and the identifiers the server sends
+// (domains). On the CSV page, the import of Mastodon's domain block CSV is previewed, a row cleared by keyboard, and
+// the rest imported.
 import type { Page, Route } from "@playwright/test";
-import { expect, expectNoAxeViolations, expectNoHorizontalScroll, test } from "./fixtures";
+import {
+  expect,
+  expectNoAxeViolations,
+  expectNoHorizontalScroll,
+  recordRowHeaders,
+  recordRows,
+  recordTable,
+  test,
+} from "./fixtures";
 
 /** The signed-in operator's account, as GET /accounts/verify_credentials answers, with manage_domains. */
 const operator = {
@@ -108,6 +117,9 @@ async function operatorServer(page: Page) {
       const active = url.searchParams.get("active") === "true";
       return json(route, { items: actions.filter((action) => !active || action.state === "active") });
     }
+    const one = /^GET \/admin\/domain_actions\/([^/]+)$/.exec(key);
+    const found = one && actions.find((action) => action.id === one[1]);
+    if (found) return json(route, found);
     if (key === "POST /admin/domain_actions") {
       const body = request.postDataJSON() as { domain: string; kind: string; obfuscate?: boolean };
       requests.push(`${key} ${body.kind} ${body.domain}`);
@@ -188,49 +200,99 @@ async function operatorServer(page: Page) {
   return requests;
 }
 
-test.describe("page /moderation/domain-actions", () => {
-  test.beforeEach(async ({ page }) => {
-    await operatorServer(page);
-    await page.goto("/moderation/domain-actions");
-    await expect(page.getByRole("main").getByRole("table")).toBeVisible();
-  });
+const actionId = "0192f0c4-7a8e-7000-8000-0000000000a2";
 
-  test("has no axe violations", async ({ makeAxeBuilder }) => {
-    await expectNoAxeViolations(makeAxeBuilder);
-  });
+/** A pattern of a domain shown in both of its forms, its U-labels first. */
+const bothForms = new RegExp(`${unicodeDomain.replaceAll(".", "\\.")}.*${asciiDomain.replaceAll(".", "\\.")}`);
 
-  test("does not scroll horizontally", async ({ page }) => {
-    await expectNoHorizontalScroll(page);
+for (const path of [
+  "/moderation/domain-actions",
+  `/moderation/domain-actions/${actionId}`,
+  "/moderation/domain-actions/new",
+  "/moderation/domain-actions/import",
+]) {
+  test.describe(`page ${path}`, () => {
+    test.beforeEach(async ({ page }) => {
+      await operatorServer(page);
+      await page.goto(path);
+      await expect(page.getByRole("main").getByRole("heading", { level: 1 })).toBeVisible();
+      await expect(page.getByRole("main").getByRole("link").first()).toBeVisible();
+    });
+
+    test("has no axe violations", async ({ makeAxeBuilder }) => {
+      await expectNoAxeViolations(makeAxeBuilder);
+    });
+
+    test("does not scroll horizontally", async ({ page }) => {
+      await expectNoHorizontalScroll(page);
+    });
   });
-});
+}
 
 test.describe("domain actions", () => {
-  test("lists an action in both forms of its domain, suspends a domain after confirming, and lifts an action", async ({
+  test("lists an action in both forms of its domain without its comments, and lifts it on its page", async ({
     page,
     makeAxeBuilder,
   }) => {
     const requests = await operatorServer(page);
     await page.goto("/moderation/domain-actions");
     const main = page.getByRole("main");
-    const list = main.getByRole("table");
-    await expect(list.getByRole("rowheader")).toHaveCount(1);
+    const list = recordTable(main);
+    await expect(recordRows(list)).toHaveCount(1);
 
-    // The row names the domain in both forms and keeps its details: the comment and the private note.
-    const action = list.getByRole("row").nth(1);
-    await expect(action.getByRole("rowheader")).toHaveText(
-      new RegExp(`${unicodeDomain.replaceAll(".", "\\.")}.*${asciiDomain.replaceAll(".", "\\.")}`),
-    );
-    await expect(action).toContainText(longComment);
-    await expect(action).toContainText("See the reports.");
-    await expect(action.getByRole("button")).toHaveCount(1);
+    // The row names the domain in both forms; the comment and the private note are on the action's page only.
+    await expect(recordRowHeaders(list)).toHaveText(bothForms);
+    await expect(list).not.toContainText(longComment);
+    await expect(list).not.toContainText("See the reports.");
+    await expect(list.getByRole("button")).toHaveCount(0);
 
-    // The form: a domain, then the last kind (suspend), whose confirmation sends nothing yet.
-    await main.getByRole("textbox").first().fill("spam.example");
-    // By keyboard: the radio's input is visually hidden under its drawn circle.
+    // By keyboard: the row's link opens the action's page.
+    await recordRowHeaders(list).getByRole("link").focus();
+    await page.keyboard.press("Enter");
+    await expect(page).toHaveURL(new RegExp(`/moderation/domain-actions/${actionId}$`));
+    await expect(main.getByRole("heading", { level: 1 })).toHaveText(bothForms);
+    await expect(main).toContainText(longComment);
+    await expect(main).toContainText("See the reports.");
+    await expectNoAxeViolations(makeAxeBuilder);
+    await expectNoHorizontalScroll(page);
+
+    // The lift asks nothing first; its button goes away, and focus moves to the heading of its region.
+    const state = main.getByRole("region").first();
+    await state.getByRole("button").click();
+    await expect(state.getByRole("button")).toHaveCount(0);
+    await expect(state.getByRole("heading", { level: 2 })).toBeFocused();
+    await expect(state.getByRole("status")).toContainText(unicodeDomain);
+    expect(requests).toEqual([`POST /admin/domain_actions/${actionId}/lift`]);
+    await expectNoAxeViolations(makeAxeBuilder);
+    await expectNoHorizontalScroll(page);
+
+    // The list of the actions in effect has no more rows.
+    await main.getByRole("link").first().click();
+    await expect(page).toHaveURL(/\/moderation\/domain-actions$/);
+    await expect(recordRows(recordTable(main))).toHaveCount(0);
+  });
+
+  test("opens the form of a new action filled in with the domain of the list, and suspends it after confirming", async ({
+    page,
+    makeAxeBuilder,
+  }) => {
+    const requests = await operatorServer(page);
+    await page.goto("/moderation/domain-actions?domain=spam.example");
+    const main = page.getByRole("main");
+    await expect(recordTable(main)).toBeVisible();
+
+    // The first link-button of the list page opens the form, which keeps the domain.
+    await main.locator('a[href^="/moderation/domain-actions/new"]').click();
+    await expect(page).toHaveURL(/\/moderation\/domain-actions\/new\?domain=spam\.example$/);
+    await expect(main.getByRole("textbox").first()).toHaveValue("spam.example");
+    await expect(main.getByRole("table")).toHaveCount(0);
+
+    // The last kind (suspend), whose confirmation sends nothing yet. By keyboard: the radio's input is visually
+    // hidden under its drawn circle.
     await main.getByRole("radio").last().focus();
     await page.keyboard.press("Space");
     await expect(main.getByRole("radio").last()).toBeChecked();
-    await main.locator('form button[type="submit"]').first().click();
+    await main.locator('form button[type="submit"]').click();
     const dialog = page.getByRole("alertdialog");
     await expect(dialog).toBeVisible();
     await expect(dialog.getByRole("button").first()).toBeFocused();
@@ -248,18 +310,13 @@ test.describe("domain actions", () => {
     await dialog.getByRole("button").last().click();
     await expect(dialog).toBeHidden();
     await expect(main.getByRole("status").filter({ hasText: "spam.example" })).toBeVisible();
-    await expect(list.getByRole("rowheader", { name: "spam.example" })).toBeVisible();
     expect(requests).toEqual(["POST /admin/domain_actions suspend spam.example"]);
-
-    await list.getByRole("row").filter({ hasText: unicodeDomain }).getByRole("button").click();
-    await expect(list.getByRole("rowheader")).toHaveCount(1);
-    await expect(list.getByRole("button")).toBeFocused();
-    expect(requests).toEqual([
-      "POST /admin/domain_actions suspend spam.example",
-      "POST /admin/domain_actions/0192f0c4-7a8e-7000-8000-0000000000a2/lift",
-    ]);
     await expectNoAxeViolations(makeAxeBuilder);
     await expectNoHorizontalScroll(page);
+
+    // The way back leads to the list, which shows the new action.
+    await main.locator('a[href="/moderation/domain-actions"]').first().click();
+    await expect(recordRowHeaders(recordTable(main)).filter({ hasText: "spam.example" })).toBeVisible();
   });
 });
 
@@ -269,15 +326,17 @@ test.describe("Mastodon's domain block CSV", () => {
     makeAxeBuilder,
   }) => {
     const requests = await operatorServer(page);
-    await page.goto("/moderation/domain-actions");
+    await page.goto("/moderation/domain-actions/import");
     const main = page.getByRole("main");
-    await expect(main.getByRole("table").getByRole("rowheader")).toHaveCount(1);
+    // The page of the CSV is the current page of the screen's navigation.
+    await expect(main.getByRole("navigation").locator('[aria-current="page"]')).toHaveAttribute(
+      "href",
+      "/moderation/domain-actions/import",
+    );
 
-    // The CSV's text area is the last text box of the page; the preview is the submit button of the last form.
     await main.getByRole("textbox").last().fill("#domain,#severity\nspam.example,silence\n");
     await main.locator('form button[type="submit"]').last().click();
-    // The preview's rows are the list of checkboxes; once the import replaces the preview, the list of the domain
-    // actions above it is the last list of the page, so `.last()` would find that one.
+    // The preview's rows are the list of checkboxes.
     const rows = main.getByRole("list").filter({ has: page.getByRole("checkbox") });
     // Each row that takes actions is a checkbox named by its domain, chosen at first; the invalid row is text.
     await expect(rows.getByRole("listitem")).toHaveCount(3);

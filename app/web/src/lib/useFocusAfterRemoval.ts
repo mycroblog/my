@@ -41,7 +41,8 @@ export function useFocusAfterRemoval(
 
 /**
  * Keeps focus on a row that moved to another place in the list (reordering the rules): after the next render,
- * focus moves to the row's heading (`h3`), so that it is where the row is now. Returns `moved(id)`, to call once
+ * focus moves to the row's heading (`h3`), or to the element that names a row of a `RecordTable` (`[data-row-header]`),
+ * so that it is where the row is now. Returns `moved(id)`, to call once
  * the list has the new order.
  */
 export function useFocusHeadingAfterMove(list: RefObject<HTMLElement | null>): (id: string) => void {
@@ -51,7 +52,10 @@ export function useFocusHeadingAfterMove(list: RefObject<HTMLElement | null>): (
     const id = pendingRef.current;
     if (id === null) return;
     pendingRef.current = null;
-    list.current?.querySelector<HTMLElement>(`[data-row-id="${id}"] h3`)?.focus();
+    list.current
+      ?.querySelector<HTMLElement>(`[data-row-id="${id}"]`)
+      ?.querySelector<HTMLElement>("h3, [data-row-header]")
+      ?.focus();
   });
   return (id) => {
     pendingRef.current = id;
@@ -60,13 +64,14 @@ export function useFocusHeadingAfterMove(list: RefObject<HTMLElement | null>): (
 
 /**
  * Keeps focus when a lifted action stays in the list without its lift button: once the row has rendered
- * without the button, focus moves to the row's heading (`h3`), or to its row header (`th`, with `tabIndex={-1}`) in a table;
+ * without the button, focus moves to the row's heading (`h3`), or to the element that names a row of a `RecordTable`
+ * (`[data-row-header]`: its row header `th`, or its card's heading in a narrow container);
  * `heading` selects another heading for rows that have one (the `h2` of the list of a page). Returns `lifted(id)`, to
  * call when the action is lifted.
  */
 export function useFocusHeadingAfterLift(
   list: RefObject<HTMLElement | null>,
-  heading = "h3, th",
+  heading = "h3, [data-row-header]",
 ): (id: string) => void {
   const pendingRef = useRef<string | null>(null);
   // Runs after every render: focus is moved in the DOM, outside React, once the button is gone.

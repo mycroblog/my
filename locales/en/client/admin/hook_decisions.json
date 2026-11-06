@@ -1,11 +1,11 @@
 {
+  "admin.hook_decisions.cancelled": {
+    "defaultMessage": "Cancelled",
+    "description": "State of a decision in the list of decisions: a moderator cancelled it."
+  },
   "admin.hook_decisions.column.decided_at": {
     "defaultMessage": "Decided",
     "description": "Column of the list of decisions: when the review answered."
-  },
-  "admin.hook_decisions.column.details": {
-    "defaultMessage": "Details",
-    "description": "Column of the list of decisions: the account, wait, reason, note, and cancellation."
   },
   "admin.hook_decisions.column.hook": {
     "defaultMessage": "Review",
@@ -98,6 +98,18 @@
   "admin.hook_decisions.note": {
     "defaultMessage": "Note from the review",
     "description": "Term of a decision: the short plain-text note the review left for moderators."
+  },
+  "admin.hook_decisions.pages": {
+    "defaultMessage": "Automated review pages",
+    "description": "Accessible name of the navigation between the pages of the automated reviews screen: the decisions and the appeals of refused posts."
+  },
+  "admin.hook_decisions.pages.appeals": {
+    "defaultMessage": "Appeals of refused posts",
+    "description": "Link of the navigation of the automated reviews screen to the page of the authors' appeals of refused local posts."
+  },
+  "admin.hook_decisions.pages.decisions": {
+    "defaultMessage": "Decisions",
+    "description": "Link of the navigation of the automated reviews screen to its first page: the counts per review and the list of decisions."
   },
   "admin.hook_decisions.outcome.allow": {
     "defaultMessage": "Allowed",

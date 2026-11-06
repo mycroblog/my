@@ -203,6 +203,13 @@ func TestEndSupporterSubscription(t *testing.T) {
 	bob := e.user("bob")
 	subID := subscribeOnFake(t, e.app, prov, bob.id, plan.Id, "sub_1")
 
+	var one clientapi.AdminSupporterSubscription
+	e.want(e.do(http.MethodGet, "/admin/supporter_subscriptions/"+subID, admin.token, nil, &one), http.StatusOK, "GET the subscription")
+	if one.Id != subID || one.PlanId != plan.Id || one.Username == nil || *one.Username != "bob" {
+		t.Errorf("the subscription = %+v", one)
+	}
+	e.want(e.do(http.MethodGet, "/admin/supporter_subscriptions/unknown", admin.token, nil, nil), http.StatusNotFound, "GET an unknown subscription")
+
 	path := "/admin/supporter_subscriptions/" + subID + "/end"
 	var ended clientapi.AdminSupporterSubscription
 	e.want(e.do(http.MethodPost, path, admin.token, nil, &ended), http.StatusOK, "POST end")

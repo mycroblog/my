@@ -242,6 +242,33 @@ func (e AdminAccountState) Valid() bool {
 	}
 }
 
+// Defines values for AdminAnnouncementFilter.
+const (
+	AdminAnnouncementFilterDraft     AdminAnnouncementFilter = "draft"
+	AdminAnnouncementFilterEnded     AdminAnnouncementFilter = "ended"
+	AdminAnnouncementFilterScheduled AdminAnnouncementFilter = "scheduled"
+	AdminAnnouncementFilterShowing   AdminAnnouncementFilter = "showing"
+	AdminAnnouncementFilterWithdrawn AdminAnnouncementFilter = "withdrawn"
+)
+
+// Valid indicates whether the value is a known member of the AdminAnnouncementFilter enum.
+func (e AdminAnnouncementFilter) Valid() bool {
+	switch e {
+	case AdminAnnouncementFilterDraft:
+		return true
+	case AdminAnnouncementFilterEnded:
+		return true
+	case AdminAnnouncementFilterScheduled:
+		return true
+	case AdminAnnouncementFilterShowing:
+		return true
+	case AdminAnnouncementFilterWithdrawn:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for AdminAnnouncementState.
 const (
 	AdminAnnouncementStateDraft     AdminAnnouncementState = "draft"
@@ -5135,6 +5162,11 @@ type AdminAnnouncementCreateRequest struct {
 	Title string `json:"title"`
 }
 
+// AdminAnnouncementFilter Which announcements the administrators' list keeps. `draft` and `withdrawn` keep that state.
+// Of the published ones, `scheduled` keeps those whose window starts later, `showing` those every
+// local user sees now, and `ended` those whose window has ended.
+type AdminAnnouncementFilter string
+
 // AdminAnnouncementInput The title, the text, and the window of an announcement.
 type AdminAnnouncementInput struct {
 	// EndsAt When it stops showing, after `starts_at`; omitted to show it until it is withdrawn.
@@ -5151,9 +5183,12 @@ type AdminAnnouncementInput struct {
 	Title string `json:"title"`
 }
 
-// AdminAnnouncementList The announcements, newest first.
-type AdminAnnouncementList struct {
+// AdminAnnouncementPage A page of announcements, newest first.
+type AdminAnnouncementPage struct {
 	Items []AdminAnnouncement `json:"items"`
+
+	// NextCursor An opaque pagination cursor. Clients pass it back unchanged and never parse it.
+	NextCursor *Cursor `json:"next_cursor,omitempty"`
 }
 
 // AdminAnnouncementState `draft`: no user sees it. `published`: every local user sees it within its window.
@@ -8332,7 +8367,7 @@ type CreateReportRequest struct {
 
 // CreateRoleRequest A new role.
 type CreateRoleRequest struct {
-	// Key The name of the role, 1 to 64 lowercase ASCII letters, digits, `_`, and `-`.
+	// Key The name of the role, 1 to 64 lowercase ASCII letters, digits, `_`, and `-`, other than `new`.
 	Key string `json:"key"`
 
 	// Permissions The permissions that the role grants, each once.
@@ -14551,6 +14586,18 @@ type ListAccountActionsParams struct {
 	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
+// ListAdminAnnouncementsParams defines parameters for ListAdminAnnouncements.
+type ListAdminAnnouncementsParams struct {
+	// State Keep only these announcements; omitted keeps every one.
+	State *AdminAnnouncementFilter `form:"state,omitempty" json:"state,omitempty"`
+
+	// Cursor The `next_cursor` of the previous page; omitted for the first page.
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+
+	// Limit The maximum number of items in the page.
+	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
 // ListAppealsParams defines parameters for ListAppeals.
 type ListAppealsParams struct {
 	// State Keep only the appeals in this state; omitted keeps every state.
@@ -18059,11 +18106,12 @@ type ClientInterface interface {
 
 	// ListAdminAnnouncements List the announcements
 	//
-	// Every announcement, drafts and withdrawn ones included, newest first. The
-	// list is not paginated. Needs the `manage_announcements` permission.
+	// The announcements, drafts and withdrawn ones included, newest first, a page at a time.
+	// `state` keeps only some of them; an unknown one is a 400 naming `state`. Needs the
+	// `manage_announcements` permission.
 	//
 	// Corresponds with GET /admin/announcements (the `ListAdminAnnouncements` operationId).
-	ListAdminAnnouncements(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+	ListAdminAnnouncements(ctx context.Context, params *ListAdminAnnouncementsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// CreateAdminAnnouncementWithBody Write an announcement
 	//
@@ -18910,6 +18958,14 @@ type ClientInterface interface {
 	// Corresponds with GET /admin/hook_appeals (the `ListHookAppeals` operationId).
 	ListHookAppeals(ctx context.Context, params *ListHookAppealsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// GetHookAppeal Get an appeal of a refused post
+	//
+	// One author's appeal of a `reject` of `local.status`, with its decision and the text the author
+	// tried to post. An unknown ID is a 404. Needs the `manage_reports` permission.
+	//
+	// Corresponds with GET /admin/hook_appeals/{id} (the `GetHookAppeal` operationId).
+	GetHookAppeal(ctx context.Context, id AppealId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// OverturnHookAppeal Overturn an appeal of a refused post
 	//
 	// Cancels the decision, which goes in the audit log as `hook_decision_overridden`, and stops
@@ -18947,6 +19003,14 @@ type ClientInterface interface {
 	//
 	// Corresponds with GET /admin/hook_decisions/summary (the `GetHookSummary` operationId).
 	GetHookSummary(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetHookDecision Get a decision
+	//
+	// One decision of a decision hook, with its cancellation. An unknown ID is a 404. Needs the
+	// `manage_reports` permission.
+	//
+	// Corresponds with GET /admin/hook_decisions/{id} (the `GetHookDecision` operationId).
+	GetHookDecision(ctx context.Context, id HookDecisionId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// OverrideHookDecision Cancel a decision
 	//
@@ -19201,6 +19265,15 @@ type ClientInterface interface {
 	//
 	// Corresponds with GET /admin/jobs (the `ListAdminJobs` operationId).
 	ListAdminJobs(ctx context.Context, params *ListAdminJobsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetAdminJob Get a job of the job queue
+	//
+	// One job, pending or dead, with its state at the time of the request. A completed job, an
+	// unknown ID, or a pending job on a queue that cannot list them (`pending_listing` of
+	// `GET /admin/queue` is `false`) is a 404. Needs the `manage_jobs` permission.
+	//
+	// Corresponds with GET /admin/jobs/{id} (the `GetAdminJob` operationId).
+	GetAdminJob(ctx context.Context, id Id, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListAdminJobAttempts List the attempts of a job that did not succeed
 	//
@@ -20305,6 +20378,14 @@ type ClientInterface interface {
 	//
 	// Corresponds with GET /admin/supporter_subscriptions (the `ListSupporterSubscriptions` operationId).
 	ListSupporterSubscriptions(ctx context.Context, params *ListSupporterSubscriptionsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetSupporterSubscription Get a subscription
+	//
+	// One subscription to a supporter plan, as the list shows it. An unknown subscription is a 404.
+	// Needs the `manage_supporters` permission.
+	//
+	// Corresponds with GET /admin/supporter_subscriptions/{id} (the `GetSupporterSubscription` operationId).
+	GetSupporterSubscription(ctx context.Context, id SupporterSubscriptionId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// EndSupporterSubscription End a subscription at once
 	//
@@ -24611,12 +24692,13 @@ func (c *Client) DisableAdminAccountTwoFactor(ctx context.Context, id AdminAccou
 
 // ListAdminAnnouncements List the announcements
 //
-// Every announcement, drafts and withdrawn ones included, newest first. The
-// list is not paginated. Needs the `manage_announcements` permission.
+// The announcements, drafts and withdrawn ones included, newest first, a page at a time.
+// `state` keeps only some of them; an unknown one is a 400 naming `state`. Needs the
+// `manage_announcements` permission.
 //
 // Corresponds with GET /admin/announcements (the `ListAdminAnnouncements` operationId).
-func (c *Client) ListAdminAnnouncements(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewListAdminAnnouncementsRequest(c.Server)
+func (c *Client) ListAdminAnnouncements(ctx context.Context, params *ListAdminAnnouncementsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListAdminAnnouncementsRequest(c.Server, params)
 	if err != nil {
 		return nil, err
 	}
@@ -26162,6 +26244,24 @@ func (c *Client) ListHookAppeals(ctx context.Context, params *ListHookAppealsPar
 	return c.Client.Do(req)
 }
 
+// GetHookAppeal Get an appeal of a refused post
+//
+// One author's appeal of a `reject` of `local.status`, with its decision and the text the author
+// tried to post. An unknown ID is a 404. Needs the `manage_reports` permission.
+//
+// Corresponds with GET /admin/hook_appeals/{id} (the `GetHookAppeal` operationId).
+func (c *Client) GetHookAppeal(ctx context.Context, id AppealId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetHookAppealRequest(c.Server, id)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 // OverturnHookAppeal Overturn an appeal of a refused post
 //
 // Cancels the decision, which goes in the audit log as `hook_decision_overridden`, and stops
@@ -26230,6 +26330,24 @@ func (c *Client) ListHookDecisions(ctx context.Context, params *ListHookDecision
 // Corresponds with GET /admin/hook_decisions/summary (the `GetHookSummary` operationId).
 func (c *Client) GetHookSummary(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetHookSummaryRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// GetHookDecision Get a decision
+//
+// One decision of a decision hook, with its cancellation. An unknown ID is a 404. Needs the
+// `manage_reports` permission.
+//
+// Corresponds with GET /admin/hook_decisions/{id} (the `GetHookDecision` operationId).
+func (c *Client) GetHookDecision(ctx context.Context, id HookDecisionId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetHookDecisionRequest(c.Server, id)
 	if err != nil {
 		return nil, err
 	}
@@ -26684,6 +26802,25 @@ func (c *Client) RevokeInvite(ctx context.Context, id InviteId, reqEditors ...Re
 // Corresponds with GET /admin/jobs (the `ListAdminJobs` operationId).
 func (c *Client) ListAdminJobs(ctx context.Context, params *ListAdminJobsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewListAdminJobsRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// GetAdminJob Get a job of the job queue
+//
+// One job, pending or dead, with its state at the time of the request. A completed job, an
+// unknown ID, or a pending job on a queue that cannot list them (`pending_listing` of
+// `GET /admin/queue` is `false`) is a 404. Needs the `manage_jobs` permission.
+//
+// Corresponds with GET /admin/jobs/{id} (the `GetAdminJob` operationId).
+func (c *Client) GetAdminJob(ctx context.Context, id Id, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetAdminJobRequest(c.Server, id)
 	if err != nil {
 		return nil, err
 	}
@@ -28688,6 +28825,24 @@ func (c *Client) SetSupporterProgram(ctx context.Context, body SetSupporterProgr
 // Corresponds with GET /admin/supporter_subscriptions (the `ListSupporterSubscriptions` operationId).
 func (c *Client) ListSupporterSubscriptions(ctx context.Context, params *ListSupporterSubscriptionsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewListSupporterSubscriptionsRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// GetSupporterSubscription Get a subscription
+//
+// One subscription to a supporter plan, as the list shows it. An unknown subscription is a 404.
+// Needs the `manage_supporters` permission.
+//
+// Corresponds with GET /admin/supporter_subscriptions/{id} (the `GetSupporterSubscription` operationId).
+func (c *Client) GetSupporterSubscription(ctx context.Context, id SupporterSubscriptionId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetSupporterSubscriptionRequest(c.Server, id)
 	if err != nil {
 		return nil, err
 	}
@@ -35960,7 +36115,7 @@ func NewDisableAdminAccountTwoFactorRequest(server string, id AdminAccountId) (*
 }
 
 // NewListAdminAnnouncementsRequest constructs an http.Request for the ListAdminAnnouncements method
-func NewListAdminAnnouncementsRequest(server string) (*http.Request, error) {
+func NewListAdminAnnouncementsRequest(server string, params *ListAdminAnnouncementsParams) (*http.Request, error) {
 	var err error
 
 	serverURL, err := url.Parse(server)
@@ -35976,6 +36131,57 @@ func NewListAdminAnnouncementsRequest(server string) (*http.Request, error) {
 	queryURL, err := serverURL.Parse(operationPath)
 	if err != nil {
 		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if params.State != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "state", *params.State, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Cursor != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "cursor", *params.Cursor, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "limit", *params.Limit, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
 	}
 
 	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
@@ -38324,6 +38530,40 @@ func NewListHookAppealsRequest(server string, params *ListHookAppealsParams) (*h
 	return req, nil
 }
 
+// NewGetHookAppealRequest constructs an http.Request for the GetHookAppeal method
+func NewGetHookAppealRequest(server string, id AppealId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/admin/hook_appeals/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewOverturnHookAppealRequest constructs an http.Request for the OverturnHookAppeal method
 func NewOverturnHookAppealRequest(server string, id AppealId) (*http.Request, error) {
 	var err error
@@ -38504,6 +38744,40 @@ func NewGetHookSummaryRequest(server string) (*http.Request, error) {
 	}
 
 	operationPath := fmt.Sprintf("/admin/hook_decisions/summary")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetHookDecisionRequest constructs an http.Request for the GetHookDecision method
+func NewGetHookDecisionRequest(server string, id HookDecisionId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/admin/hook_decisions/%s", pathParam0)
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -39408,6 +39682,40 @@ func NewListAdminJobsRequest(server string, params *ListAdminJobsParams) (*http.
 			rawQueryFragments = append(rawQueryFragments, encoded)
 		}
 		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetAdminJobRequest constructs an http.Request for the GetAdminJob method
+func NewGetAdminJobRequest(server string, id Id) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/admin/jobs/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
 	}
 
 	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
@@ -42210,6 +42518,40 @@ func NewListSupporterSubscriptionsRequest(server string, params *ListSupporterSu
 			rawQueryFragments = append(rawQueryFragments, encoded)
 		}
 		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetSupporterSubscriptionRequest constructs an http.Request for the GetSupporterSubscription method
+func NewGetSupporterSubscriptionRequest(server string, id SupporterSubscriptionId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/admin/supporter_subscriptions/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
 	}
 
 	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
@@ -51061,13 +51403,14 @@ type ClientWithResponsesInterface interface {
 
 	// ListAdminAnnouncementsWithResponse List the announcements
 	//
-	// Every announcement, drafts and withdrawn ones included, newest first. The
-	// list is not paginated. Needs the `manage_announcements` permission.
+	// The announcements, drafts and withdrawn ones included, newest first, a page at a time.
+	// `state` keeps only some of them; an unknown one is a 400 naming `state`. Needs the
+	// `manage_announcements` permission.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
 	// Corresponds with GET /admin/announcements (the `ListAdminAnnouncements` operationId).
-	ListAdminAnnouncementsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ListAdminAnnouncementsResponse, error)
+	ListAdminAnnouncementsWithResponse(ctx context.Context, params *ListAdminAnnouncementsParams, reqEditors ...RequestEditorFn) (*ListAdminAnnouncementsResponse, error)
 
 	// CreateAdminAnnouncementWithBodyWithResponse Write an announcement
 	//
@@ -51980,6 +52323,16 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with GET /admin/hook_appeals (the `ListHookAppeals` operationId).
 	ListHookAppealsWithResponse(ctx context.Context, params *ListHookAppealsParams, reqEditors ...RequestEditorFn) (*ListHookAppealsResponse, error)
 
+	// GetHookAppealWithResponse Get an appeal of a refused post
+	//
+	// One author's appeal of a `reject` of `local.status`, with its decision and the text the author
+	// tried to post. An unknown ID is a 404. Needs the `manage_reports` permission.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /admin/hook_appeals/{id} (the `GetHookAppeal` operationId).
+	GetHookAppealWithResponse(ctx context.Context, id AppealId, reqEditors ...RequestEditorFn) (*GetHookAppealResponse, error)
+
 	// OverturnHookAppealWithResponse Overturn an appeal of a refused post
 	//
 	// Cancels the decision, which goes in the audit log as `hook_decision_overridden`, and stops
@@ -52025,6 +52378,16 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with GET /admin/hook_decisions/summary (the `GetHookSummary` operationId).
 	GetHookSummaryWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetHookSummaryResponse, error)
+
+	// GetHookDecisionWithResponse Get a decision
+	//
+	// One decision of a decision hook, with its cancellation. An unknown ID is a 404. Needs the
+	// `manage_reports` permission.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /admin/hook_decisions/{id} (the `GetHookDecision` operationId).
+	GetHookDecisionWithResponse(ctx context.Context, id HookDecisionId, reqEditors ...RequestEditorFn) (*GetHookDecisionResponse, error)
 
 	// OverrideHookDecisionWithResponse Cancel a decision
 	//
@@ -52307,6 +52670,17 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with GET /admin/jobs (the `ListAdminJobs` operationId).
 	ListAdminJobsWithResponse(ctx context.Context, params *ListAdminJobsParams, reqEditors ...RequestEditorFn) (*ListAdminJobsResponse, error)
+
+	// GetAdminJobWithResponse Get a job of the job queue
+	//
+	// One job, pending or dead, with its state at the time of the request. A completed job, an
+	// unknown ID, or a pending job on a queue that cannot list them (`pending_listing` of
+	// `GET /admin/queue` is `false`) is a 404. Needs the `manage_jobs` permission.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /admin/jobs/{id} (the `GetAdminJob` operationId).
+	GetAdminJobWithResponse(ctx context.Context, id Id, reqEditors ...RequestEditorFn) (*GetAdminJobResponse, error)
 
 	// ListAdminJobAttemptsWithResponse List the attempts of a job that did not succeed
 	//
@@ -53495,6 +53869,16 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with GET /admin/supporter_subscriptions (the `ListSupporterSubscriptions` operationId).
 	ListSupporterSubscriptionsWithResponse(ctx context.Context, params *ListSupporterSubscriptionsParams, reqEditors ...RequestEditorFn) (*ListSupporterSubscriptionsResponse, error)
+
+	// GetSupporterSubscriptionWithResponse Get a subscription
+	//
+	// One subscription to a supporter plan, as the list shows it. An unknown subscription is a 404.
+	// Needs the `manage_supporters` permission.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /admin/supporter_subscriptions/{id} (the `GetSupporterSubscription` operationId).
+	GetSupporterSubscriptionWithResponse(ctx context.Context, id SupporterSubscriptionId, reqEditors ...RequestEditorFn) (*GetSupporterSubscriptionResponse, error)
 
 	// EndSupporterSubscriptionWithResponse End a subscription at once
 	//
@@ -59495,7 +59879,7 @@ type ListAdminAnnouncementsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	// JSON200 the response for an HTTP 200 `application/json` response
-	JSON200 *AdminAnnouncementList
+	JSON200 *AdminAnnouncementPage
 	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
 	ApplicationproblemJSONDefault *Problem
 	// Headers200 the parsed response headers for an HTTP 200 response
@@ -59505,7 +59889,7 @@ type ListAdminAnnouncementsResponse struct {
 }
 
 // GetJSON200 returns the response for an HTTP 200 `application/json` response
-func (r ListAdminAnnouncementsResponse) GetJSON200() *AdminAnnouncementList {
+func (r ListAdminAnnouncementsResponse) GetJSON200() *AdminAnnouncementPage {
 	return r.JSON200
 }
 
@@ -62945,6 +63329,71 @@ func (r ListHookAppealsResponse) ContentType() string {
 	return ""
 }
 
+// GetHookAppealResponse200Headers the declared response headers of an HTTP 200 response for GetHookAppeal
+type GetHookAppealResponse200Headers struct {
+	CacheControl *string
+}
+
+// GetHookAppealResponseDefaultHeaders the declared response headers of an HTTP default response for GetHookAppeal
+type GetHookAppealResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type GetHookAppealResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *AdminHookAppeal
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *GetHookAppealResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *GetHookAppealResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r GetHookAppealResponse) GetJSON200() *AdminHookAppeal {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r GetHookAppealResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r GetHookAppealResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r GetHookAppealResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetHookAppealResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r GetHookAppealResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 // OverturnHookAppealResponse200Headers the declared response headers of an HTTP 200 response for OverturnHookAppeal
 type OverturnHookAppealResponse200Headers struct {
 	CacheControl *string
@@ -63199,6 +63648,71 @@ func (r GetHookSummaryResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r GetHookSummaryResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// GetHookDecisionResponse200Headers the declared response headers of an HTTP 200 response for GetHookDecision
+type GetHookDecisionResponse200Headers struct {
+	CacheControl *string
+}
+
+// GetHookDecisionResponseDefaultHeaders the declared response headers of an HTTP default response for GetHookDecision
+type GetHookDecisionResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type GetHookDecisionResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *AdminHookDecision
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *GetHookDecisionResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *GetHookDecisionResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r GetHookDecisionResponse) GetJSON200() *AdminHookDecision {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r GetHookDecisionResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r GetHookDecisionResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r GetHookDecisionResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetHookDecisionResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r GetHookDecisionResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -64371,6 +64885,71 @@ func (r ListAdminJobsResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r ListAdminJobsResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// GetAdminJobResponse200Headers the declared response headers of an HTTP 200 response for GetAdminJob
+type GetAdminJobResponse200Headers struct {
+	CacheControl *string
+}
+
+// GetAdminJobResponseDefaultHeaders the declared response headers of an HTTP default response for GetAdminJob
+type GetAdminJobResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type GetAdminJobResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *AdminJob
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *GetAdminJobResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *GetAdminJobResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r GetAdminJobResponse) GetJSON200() *AdminJob {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r GetAdminJobResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r GetAdminJobResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r GetAdminJobResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetAdminJobResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r GetAdminJobResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -68743,6 +69322,71 @@ func (r ListSupporterSubscriptionsResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r ListSupporterSubscriptionsResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// GetSupporterSubscriptionResponse200Headers the declared response headers of an HTTP 200 response for GetSupporterSubscription
+type GetSupporterSubscriptionResponse200Headers struct {
+	CacheControl *string
+}
+
+// GetSupporterSubscriptionResponseDefaultHeaders the declared response headers of an HTTP default response for GetSupporterSubscription
+type GetSupporterSubscriptionResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type GetSupporterSubscriptionResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *AdminSupporterSubscription
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *GetSupporterSubscriptionResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *GetSupporterSubscriptionResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r GetSupporterSubscriptionResponse) GetJSON200() *AdminSupporterSubscription {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r GetSupporterSubscriptionResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r GetSupporterSubscriptionResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r GetSupporterSubscriptionResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetSupporterSubscriptionResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r GetSupporterSubscriptionResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -81844,14 +82488,15 @@ func (c *ClientWithResponses) DisableAdminAccountTwoFactorWithResponse(ctx conte
 
 // ListAdminAnnouncementsWithResponse List the announcements
 //
-// Every announcement, drafts and withdrawn ones included, newest first. The
-// list is not paginated. Needs the `manage_announcements` permission.
+// The announcements, drafts and withdrawn ones included, newest first, a page at a time.
+// `state` keeps only some of them; an unknown one is a 400 naming `state`. Needs the
+// `manage_announcements` permission.
 //
 // Returns a wrapper object for the known response body format(s).
 //
 // Corresponds with GET /admin/announcements (the `ListAdminAnnouncements` operationId).
-func (c *ClientWithResponses) ListAdminAnnouncementsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ListAdminAnnouncementsResponse, error) {
-	rsp, err := c.ListAdminAnnouncements(ctx, reqEditors...)
+func (c *ClientWithResponses) ListAdminAnnouncementsWithResponse(ctx context.Context, params *ListAdminAnnouncementsParams, reqEditors ...RequestEditorFn) (*ListAdminAnnouncementsResponse, error) {
+	rsp, err := c.ListAdminAnnouncements(ctx, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -83183,6 +83828,22 @@ func (c *ClientWithResponses) ListHookAppealsWithResponse(ctx context.Context, p
 	return ParseListHookAppealsResponse(rsp)
 }
 
+// GetHookAppealWithResponse Get an appeal of a refused post
+//
+// One author's appeal of a `reject` of `local.status`, with its decision and the text the author
+// tried to post. An unknown ID is a 404. Needs the `manage_reports` permission.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /admin/hook_appeals/{id} (the `GetHookAppeal` operationId).
+func (c *ClientWithResponses) GetHookAppealWithResponse(ctx context.Context, id AppealId, reqEditors ...RequestEditorFn) (*GetHookAppealResponse, error) {
+	rsp, err := c.GetHookAppeal(ctx, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetHookAppealResponse(rsp)
+}
+
 // OverturnHookAppealWithResponse Overturn an appeal of a refused post
 //
 // Cancels the decision, which goes in the audit log as `hook_decision_overridden`, and stops
@@ -83251,6 +83912,22 @@ func (c *ClientWithResponses) GetHookSummaryWithResponse(ctx context.Context, re
 		return nil, err
 	}
 	return ParseGetHookSummaryResponse(rsp)
+}
+
+// GetHookDecisionWithResponse Get a decision
+//
+// One decision of a decision hook, with its cancellation. An unknown ID is a 404. Needs the
+// `manage_reports` permission.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /admin/hook_decisions/{id} (the `GetHookDecision` operationId).
+func (c *ClientWithResponses) GetHookDecisionWithResponse(ctx context.Context, id HookDecisionId, reqEditors ...RequestEditorFn) (*GetHookDecisionResponse, error) {
+	rsp, err := c.GetHookDecision(ctx, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetHookDecisionResponse(rsp)
 }
 
 // OverrideHookDecisionWithResponse Cancel a decision
@@ -83653,6 +84330,23 @@ func (c *ClientWithResponses) ListAdminJobsWithResponse(ctx context.Context, par
 		return nil, err
 	}
 	return ParseListAdminJobsResponse(rsp)
+}
+
+// GetAdminJobWithResponse Get a job of the job queue
+//
+// One job, pending or dead, with its state at the time of the request. A completed job, an
+// unknown ID, or a pending job on a queue that cannot list them (`pending_listing` of
+// `GET /admin/queue` is `false`) is a 404. Needs the `manage_jobs` permission.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /admin/jobs/{id} (the `GetAdminJob` operationId).
+func (c *ClientWithResponses) GetAdminJobWithResponse(ctx context.Context, id Id, reqEditors ...RequestEditorFn) (*GetAdminJobResponse, error) {
+	rsp, err := c.GetAdminJob(ctx, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetAdminJobResponse(rsp)
 }
 
 // ListAdminJobAttemptsWithResponse List the attempts of a job that did not succeed
@@ -85381,6 +86075,22 @@ func (c *ClientWithResponses) ListSupporterSubscriptionsWithResponse(ctx context
 		return nil, err
 	}
 	return ParseListSupporterSubscriptionsResponse(rsp)
+}
+
+// GetSupporterSubscriptionWithResponse Get a subscription
+//
+// One subscription to a supporter plan, as the list shows it. An unknown subscription is a 404.
+// Needs the `manage_supporters` permission.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /admin/supporter_subscriptions/{id} (the `GetSupporterSubscription` operationId).
+func (c *ClientWithResponses) GetSupporterSubscriptionWithResponse(ctx context.Context, id SupporterSubscriptionId, reqEditors ...RequestEditorFn) (*GetSupporterSubscriptionResponse, error) {
+	rsp, err := c.GetSupporterSubscription(ctx, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetSupporterSubscriptionResponse(rsp)
 }
 
 // EndSupporterSubscriptionWithResponse End a subscription at once
@@ -93341,7 +94051,7 @@ func ParseListAdminAnnouncementsResponse(rsp *http.Response) (*ListAdminAnnounce
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest AdminAnnouncementList
+		var dest AdminAnnouncementPage
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -97504,6 +98214,83 @@ func ParseListHookAppealsResponse(rsp *http.Response) (*ListHookAppealsResponse,
 	return response, nil
 }
 
+// ParseGetHookAppealResponse parses an HTTP response from a GetHookAppealWithResponse call
+func ParseGetHookAppealResponse(rsp *http.Response) (*GetHookAppealResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetHookAppealResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest AdminHookAppeal
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers GetHookAppealResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers GetHookAppealResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
 // ParseOverturnHookAppealResponse parses an HTTP response from a OverturnHookAppealWithResponse call
 func ParseOverturnHookAppealResponse(rsp *http.Response) (*OverturnHookAppealResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -97778,6 +98565,83 @@ func ParseGetHookSummaryResponse(rsp *http.Response) (*GetHookSummaryResponse, e
 		response.Headers200 = &headers
 	case true:
 		var headers GetHookSummaryResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseGetHookDecisionResponse parses an HTTP response from a GetHookDecisionWithResponse call
+func ParseGetHookDecisionResponse(rsp *http.Response) (*GetHookDecisionResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetHookDecisionResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest AdminHookDecision
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers GetHookDecisionResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers GetHookDecisionResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
@@ -99184,6 +100048,83 @@ func ParseListAdminJobsResponse(rsp *http.Response) (*ListAdminJobsResponse, err
 		response.Headers200 = &headers
 	case true:
 		var headers ListAdminJobsResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseGetAdminJobResponse parses an HTTP response from a GetAdminJobWithResponse call
+func ParseGetAdminJobResponse(rsp *http.Response) (*GetAdminJobResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetAdminJobResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest AdminJob
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers GetAdminJobResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers GetAdminJobResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
@@ -104459,6 +105400,83 @@ func ParseListSupporterSubscriptionsResponse(rsp *http.Response) (*ListSupporter
 		response.Headers200 = &headers
 	case true:
 		var headers ListSupporterSubscriptionsResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseGetSupporterSubscriptionResponse parses an HTTP response from a GetSupporterSubscriptionWithResponse call
+func ParseGetSupporterSubscriptionResponse(rsp *http.Response) (*GetSupporterSubscriptionResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetSupporterSubscriptionResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest AdminSupporterSubscription
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers GetSupporterSubscriptionResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers GetSupporterSubscriptionResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {

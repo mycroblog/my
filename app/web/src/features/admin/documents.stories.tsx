@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The terms and policies (/admin/documents; web-client/screens/admin-documents.md) in the states of ADR-0079 §13
+// The terms and policies (/admin/documents and its pages; web-client/screens/admin-documents*.md) in the states of ADR-0079 §13
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { http, HttpResponse } from "msw";
 import { instanceFixture, type Schemas } from "../../test/fixtures";
@@ -50,8 +50,14 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** Long terms of service and a privacy policy, each with when it was saved and its page. */
+/** The page of long terms of service, with when they were saved and their page. */
 export const Normal: Story = {};
+
+/** The page of the privacy policy. */
+export const PrivacyPolicy: Story = { parameters: { screen: { path: "/admin/documents/privacy-policy" } } };
+
+/** The page of the commerce disclosures, not written yet. */
+export const CommerceDisclosure: Story = { parameters: { screen: { path: "/admin/documents/commerce-disclosure" } } };
 
 /** A new server, which has published neither document. */
 export const Empty: Story = adminAnswering();

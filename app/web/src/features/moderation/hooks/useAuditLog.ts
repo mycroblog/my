@@ -182,19 +182,16 @@ export function auditTargetHref(
       // A decision has no screen of its own, and its record may have passed its retention.
       return "/moderation/hook-decisions";
     case "signup_block":
-      // The screen lists every block, lifted and ended ones too; a block has no screen of its own.
-      return "/moderation/signup-blocks?filter=all";
+      return `/moderation/signup-blocks/${id}`;
     case "custom_emoji":
-      // An emoji has no screen of its own: the list searched by its shortcode, of this server or of its domain.
-      return customEmojiHref(entry.target_label);
+      return `/admin/custom-emojis/${id}`;
     case "role":
       // A role has no screen of its own: the list of roles shows it.
       return "/admin/roles";
     case "webhook":
       return `/admin/webhooks/${id}`;
     case "announcement":
-      // An announcement has no screen of its own: the list, which keeps every announcement.
-      return "/admin/announcements";
+      return `/admin/announcements/${id}`;
     case "invite":
       // An invite has no screen of its own: the list of invites shows it.
       return "/moderation/invites";
@@ -202,15 +199,18 @@ export function auditTargetHref(
       // The list, which a deleted relay has left; a relay has no screen of its own.
       return "/admin/relays";
     case "billing_source":
+      // The billing imports page of the costs screen shows the state of every billing source.
+      return "/admin/finance/imports";
     case "cost_item":
-      // The costs screen lists the items that are not canceled and the state of every billing source.
-      return "/admin/finance";
-    case "supporter_program":
+      return `/admin/finance/costs/${id}`;
     case "supporter_plan":
+      // Every plan has its page, retired ones too.
+      return `/admin/supporters/plans/${id}`;
     case "supporter_subscription":
+      return `/admin/supporters/subscriptions/${id}`;
+    case "supporter_program":
     case "payment_provider":
-      // The supporters screen shows the program, every plan (retired ones too), the subscriptions and the
-      // state of the payment provider.
+      // The first page of the supporters screen shows the program and the state of the payment provider.
       return "/admin/supporters";
     case "login_provider":
       // A provider has no screen of its own: the list of providers shows it.
@@ -219,20 +219,11 @@ export function auditTargetHref(
       // A rule has no screen of its own: the list of rules, which a removed rule has left.
       return "/admin/link-card-domains";
     case "custom_emoji_request":
-      // A request has no screen of its own: the requests of the custom emoji screen, in every state.
-      return "/admin/custom-emojis?tab=requests";
+      // A request has no screen of its own: the requests page of the custom emoji screen, in every state.
+      return "/admin/custom-emojis/requests";
     default:
       return undefined;
   }
-}
-
-/** The custom emoji screen searched by the emoji of a label, `:shortcode:` or `:shortcode:@domain`; undefined for another label. */
-function customEmojiHref(label: string): string | undefined {
-  const match = /^:([A-Za-z0-9_]+):(?:@(.+))?$/u.exec(label);
-  if (match === null) return undefined;
-  const [, shortcode = "", domain] = match;
-  const search = new URLSearchParams(domain === undefined ? { shortcode } : { origin: "remote", shortcode, domain });
-  return `/admin/custom-emojis?${search.toString()}`;
 }
 
 export type AuditLog = PagedPages<AuditEntry> & {

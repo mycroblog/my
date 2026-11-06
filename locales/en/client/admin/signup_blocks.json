@@ -211,10 +211,6 @@
     "defaultMessage": "Lift",
     "description": "Button that lifts a sign-up block."
   },
-  "admin.signup_blocks.lift_action": {
-    "defaultMessage": "Lift the block on the {kind} {value}, added {date}",
-    "description": "Accessible name of the lift button of a sign-up block. {kind} is its kind, such as Email domain; {value} what it matches; {date} when it was added, formatted."
-  },
   "admin.signup_blocks.lift_failed": {
     "defaultMessage": "Could not lift the block: {reason}",
     "description": "Toast when lifting a sign-up block failed. {reason} is why."
@@ -233,7 +229,7 @@
   },
   "admin.signup_blocks.new.title": {
     "defaultMessage": "Add a block",
-    "description": "Heading of the section with the form of a new sign-up block."
+    "description": "Button on the list of sign-up blocks that opens the form of a new one, and the heading of that page."
   },
   "admin.signup_blocks.severity": {
     "defaultMessage": "Effect",
@@ -343,8 +339,36 @@
     "defaultMessage": "Blocked",
     "description": "Header of the column of the sign-up blocks table that holds what the block matches."
   },
-  "admin.signup_blocks.column.details": {
+  "admin.signup_blocks.pages": {
+    "defaultMessage": "Sign-up block pages",
+    "description": "Accessible name of the navigation between the pages of the sign-up blocks screen: the list and the import from a list."
+  },
+  "admin.signup_blocks.new.form": {
+    "defaultMessage": "The block",
+    "description": "Heading of the form on the page of a new sign-up block."
+  },
+  "admin.signup_blocks.back": {
+    "defaultMessage": "Back to sign-up blocks",
+    "description": "Link under the heading of a page of one sign-up block, or of the form of a new one, to the list of sign-up blocks."
+  },
+  "admin.signup_blocks.detail.title": {
+    "defaultMessage": "Sign-up block",
+    "description": "Title of the page of one sign-up block, before the block has loaded or when the viewer may not see it."
+  },
+  "admin.signup_blocks.detail.heading": {
+    "defaultMessage": "Block on the {kind} {value}",
+    "description": "Heading of the page of one sign-up block. {kind} is the kind, such as Email domain; {value} what it matches."
+  },
+  "admin.signup_blocks.detail.details": {
     "defaultMessage": "Details",
-    "description": "Header of the column of the sign-up blocks table that holds the source, comment and other facts of a block."
+    "description": "Heading of the region of a sign-up block's page with what it matches, its effect, and its comment."
+  },
+  "admin.signup_blocks.detail.no_comment": {
+    "defaultMessage": "None",
+    "description": "The comment of a sign-up block that has none."
+  },
+  "admin.signup_blocks.lift.description": {
+    "defaultMessage": "Sign-ups that the block stopped are allowed again from now on. Its record stays, shown as lifted.",
+    "description": "Help text under the button that lifts a sign-up block."
   }
 }

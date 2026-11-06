@@ -94,7 +94,7 @@ describe("a limit of a domain", () => {
     const feed = await screen.findByRole("feed", { name: "Federated timeline" });
     expect(await within(feed).findByText("Cats")).toBeInTheDocument();
 
-    await router.navigate({ to: "/moderation/domain-actions" });
+    await router.navigate({ to: "/moderation/domain-actions/new" });
     await user.type(await screen.findByRole("textbox", { name: "Domain" }), "remote.example");
     await user.click(screen.getByRole("radio", { name: "Limit" }));
     await user.click(screen.getByRole("button", { name: "Take action" }));

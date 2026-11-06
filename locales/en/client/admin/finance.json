@@ -8,20 +8,8 @@
     "description": "Description of the costs screen in the administration menu of the settings."
   },
   "admin.finance.description": {
-    "defaultMessage": "See the totals of the costs of running this server and of its income, and record the costs, paid once or regularly. The items, their names and memos are never published.",
-    "description": "Description of the costs screen, above its tabs."
-  },
-  "admin.finance.tabs.label": {
-    "defaultMessage": "Costs",
-    "description": "Accessible name of the tabs of the costs screen: reading the costs and recording them."
-  },
-  "admin.finance.tabs.overview": {
-    "defaultMessage": "Overview",
-    "description": "Tab of the costs screen with the totals of the costs and the income, what is published of them, and the payments and refunds."
-  },
-  "admin.finance.tabs.records": {
-    "defaultMessage": "Records",
-    "description": "Tab of the costs screen with the recorded costs, recording a new one, and the billing imports."
+    "defaultMessage": "See the totals of the costs of running this server and of its income. The other pages list the payments and refunds, record the costs, show the billing imports, and set what is published. The recorded items, their names and memos are never published.",
+    "description": "Description of the costs screen, on its overview page under the links to its pages."
   },
   "admin.finance.visibility": {
     "defaultMessage": "{visibility, select, totals {The about page publishes the totals of these costs, without their breakdown.} breakdown {The about page publishes the totals of these costs and their breakdown by provider and category.} other {These costs are not published.}}",
@@ -41,7 +29,7 @@
   },
   "admin.finance.movements.title": {
     "defaultMessage": "Payments and refunds",
-    "description": "Heading of the section of the payment provider's money movements of the income on the costs screen."
+    "description": "Heading of the list of the payment provider's money movements of the income on its page of the costs screen."
   },
   "admin.finance.movements.description": {
     "defaultMessage": "The money movements that the payment provider recorded, newest first. Only the people who manage the finances see them; they are never published.",
@@ -135,17 +123,9 @@
     "defaultMessage": "Clear the filters",
     "description": "Button that removes the kind and dates filters of the money movements."
   },
-  "admin.finance.movements.provider_id": {
-    "defaultMessage": "ID at {provider}",
-    "description": "Term of the payment provider's ID of a money movement. {provider} is the provider, such as stripe."
-  },
-  "admin.finance.movements.provider_id.header": {
-    "defaultMessage": "Payment provider ID",
-    "description": "Header of the column of the payment provider's ids in the table of income movements."
-  },
   "admin.finance.new.title": {
     "defaultMessage": "Record a cost",
-    "description": "Heading of the form of a new cost on the costs screen."
+    "description": "Heading of the page of the form of a new cost, and the button on the list of recorded costs that leads to it."
   },
   "admin.finance.name": {
     "defaultMessage": "Name",
@@ -277,7 +257,7 @@
   },
   "admin.finance.cancel": {
     "defaultMessage": "Cancel",
-    "description": "Button that closes the panel that records a cost without recording it."
+    "description": "Link from the form of a new cost back to the list of recorded costs, without recording it."
   },
   "admin.finance.create_failed": {
     "defaultMessage": "Could not record the cost: {reason}",
@@ -289,15 +269,7 @@
   },
   "admin.finance.list.title": {
     "defaultMessage": "Recorded costs",
-    "description": "Heading of the list of recorded costs on the costs screen."
-  },
-  "admin.finance.count": {
-    "defaultMessage": "{count, plural, one {# recorded cost} other {# recorded costs}}",
-    "description": "Read for the count beside the heading of the list of recorded costs. {count} is the number of items."
-  },
-  "admin.finance.count_at_least": {
-    "defaultMessage": "{count, plural, one {At least # recorded cost} other {At least # recorded costs}}",
-    "description": "Read for the count beside the heading of the list of recorded costs while more of them can be loaded. {count} is the number loaded."
+    "description": "Heading of the list of recorded costs on its page of the costs screen."
   },
   "admin.finance.empty": {
     "defaultMessage": "No costs yet",
@@ -339,29 +311,17 @@
     "defaultMessage": "Recorded",
     "description": "Term of when a cost was recorded on the costs screen."
   },
-  "admin.finance.edit": {
-    "defaultMessage": "Edit",
-    "description": "Button that opens the dialog that changes the name, provider, category, and memo of a cost on the costs screen."
-  },
-  "admin.finance.edit_one": {
-    "defaultMessage": "Edit: {name}",
-    "description": "Accessible name of the edit button of a cost on the costs screen."
-  },
   "admin.finance.edit.title": {
     "defaultMessage": "Edit the cost",
-    "description": "Title of the dialog that changes the label of a cost on the costs screen."
+    "description": "Heading of the section of the page of one cost that changes its name, provider, category, and memo."
   },
   "admin.finance.revise": {
     "defaultMessage": "Change the price",
-    "description": "Button that opens the dialog of a new price from a date on on the costs screen."
-  },
-  "admin.finance.revise_one": {
-    "defaultMessage": "Change the price: {name}",
-    "description": "Accessible name of the price button of a cost on the costs screen."
+    "description": "Submit button of the form of a new price on the page of one cost."
   },
   "admin.finance.revise.title": {
     "defaultMessage": "Change the price of {name}",
-    "description": "Title of the dialog of a new price on the costs screen."
+    "description": "Heading of the section of the page of one cost that sets a new price from a date on."
   },
   "admin.finance.effective_on": {
     "defaultMessage": "From",
@@ -377,19 +337,15 @@
   },
   "admin.finance.end": {
     "defaultMessage": "Set the end",
-    "description": "Button that opens the dialog of the end of a regular cost on the costs screen."
-  },
-  "admin.finance.end_one": {
-    "defaultMessage": "Set the end: {name}",
-    "description": "Accessible name of the end button of a cost on the costs screen."
+    "description": "Submit button of the form of the end of a regular cost on the page of one cost."
   },
   "admin.finance.end.title": {
     "defaultMessage": "End {name}",
-    "description": "Title of the dialog of the end of a cost on the costs screen."
+    "description": "Heading of the section of the page of one regular cost that sets its last payment date."
   },
   "admin.finance.end.description": {
     "defaultMessage": "Payments after this date stop; the past ones stay in the totals. Leave it empty to keep paying.",
-    "description": "Explanation of the end in its dialog on the costs screen."
+    "description": "Explanation of the end in its form on the page of one cost."
   },
   "admin.finance.ended": {
     "defaultMessage": "Set the end of {name}. The audit log records the change.",
@@ -411,10 +367,6 @@
     "defaultMessage": "Delete",
     "description": "Button that removes a cost recorded by mistake from every period on the costs screen."
   },
-  "admin.finance.cancel_one": {
-    "defaultMessage": "Delete: {name}",
-    "description": "Accessible name of the delete button of a cost on the costs screen."
-  },
   "admin.finance.cancel.title": {
     "defaultMessage": "Delete {name}?",
     "description": "Title of the confirmation of deleting a cost on the costs screen."
@@ -433,19 +385,15 @@
   },
   "admin.finance.cancel_dialog": {
     "defaultMessage": "Cancel",
-    "description": "Button that closes a dialog without saving on the costs screen."
-  },
-  "admin.finance.close": {
-    "defaultMessage": "Close",
-    "description": "Accessible name of the close button of a dialog on the costs screen."
+    "description": "Button that closes the confirmation of deleting a cost without deleting it."
   },
   "admin.finance.save": {
     "defaultMessage": "Save",
-    "description": "Button that saves a dialog on the costs screen."
+    "description": "Submit button of the form that changes the name, provider, category, and memo on the page of one cost."
   },
   "admin.finance.imports.title": {
     "defaultMessage": "Billing imports",
-    "description": "Heading of the section with the state of the imports of the cloud providers' usage charges on the costs screen."
+    "description": "Heading of the state of the billing imports on its page of the costs screen."
   },
   "admin.finance.imports.none": {
     "defaultMessage": "No billing imports",
@@ -565,6 +513,46 @@
   },
   "admin.finance.publication.title": {
     "defaultMessage": "Publication",
-    "description": "Heading of the region of the costs screen with what the server publishes of the costs and the income, and what the holders of view_finance see."
+    "description": "Heading of the page of the costs screen with what the server publishes of the costs and the income, and what the holders of view_finance see."
+  },
+  "admin.finance.pages": {
+    "defaultMessage": "Costs pages",
+    "description": "Accessible name of the navigation between the pages of the costs screen."
+  },
+  "admin.finance.pages.overview": {
+    "defaultMessage": "Overview",
+    "description": "Link to the page of the costs screen with the totals of the costs and the income."
+  },
+  "admin.finance.pages.income": {
+    "defaultMessage": "Payments and refunds",
+    "description": "Link to the page of the costs screen with the payment provider's money movements of the income."
+  },
+  "admin.finance.pages.costs": {
+    "defaultMessage": "Recorded costs",
+    "description": "Link to the page of the costs screen with the list of recorded costs."
+  },
+  "admin.finance.pages.imports": {
+    "defaultMessage": "Billing imports",
+    "description": "Link to the page of the costs screen with the state of the billing imports."
+  },
+  "admin.finance.pages.publication": {
+    "defaultMessage": "Publication",
+    "description": "Link to the page of the costs screen with what the server publishes of the costs and the income."
+  },
+  "admin.finance.item.title": {
+    "defaultMessage": "Recorded cost",
+    "description": "Heading of the page of one recorded cost."
+  },
+  "admin.finance.item.back": {
+    "defaultMessage": "Back to recorded costs",
+    "description": "Link from the page of one cost, or of a new one, back to the list of recorded costs."
+  },
+  "admin.finance.item.delete": {
+    "defaultMessage": "Delete the cost",
+    "description": "Heading of the section of the page of one cost that deletes it for good."
+  },
+  "admin.finance.movements.gross_fee": {
+    "defaultMessage": "Gross {gross}, fee {fee}",
+    "description": "Under the net amount of a money movement on the payments and refunds page. {gross} and {fee} are formatted amounts."
   }
 }

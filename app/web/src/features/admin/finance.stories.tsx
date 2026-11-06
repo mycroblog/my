@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The instance's costs and income (/admin/finance; web-client/screens/admin-finance.md) in the states of ADR-0079 §13:
-// the overview (the totals of the costs and the income by week, month or year as charts, what the instance publishes
-// of them, and the money movements) and the records (the cost items with recording one, and the billing imports).
+// The instance's costs and income (/admin/finance and its pages; web-client/screens/admin-finance*.md) in the states of
+// ADR-0079 §13: the overview (the totals of the costs and the income by week, month or year as charts), the payments
+// and refunds, the recorded costs with the page of a new one and of one item, the billing imports, and what the
+// instance publishes of them.
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { http, HttpResponse } from "msw";
 import { expect } from "storybook/test";
@@ -293,6 +294,14 @@ const finance = [
   http.get(`${apiBase}/admin/cost_items`, ({ request }) =>
     withViewer(request, () => HttpResponse.json({ items: costItems } satisfies Schemas["CostItemPage"])),
   ),
+  http.get(`${apiBase}/admin/cost_items/:id`, ({ request, params }) =>
+    withViewer(request, () => {
+      const item = costItems.find((candidate) => candidate.id === params["id"]);
+      return item === undefined
+        ? HttpResponse.json({ type: "about:blank", title: "Not Found", status: 404 }, { status: 404 })
+        : HttpResponse.json(item);
+    }),
+  ),
   http.get(`${apiBase}/admin/billing_imports`, ({ request }) =>
     withViewer(request, () => HttpResponse.json(billingImports)),
   ),
@@ -308,44 +317,52 @@ const meta = { title: "Screens/Admin/Finance", ...adminScreen("/admin/finance", 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** The overview: a year of costs and income by month, amortized, what is published, and the money movements. */
+/** The overview: a year of costs and income by month, amortized. */
 export const Normal: Story = {};
 
-/** The records: the recorded items with their count and the one button that records another, and the billing import. */
+/** The recorded costs: one page of the items with the one link that records another. */
 export const Records: Story = {
-  parameters: { screen: { path: "/admin/finance?tab=records" } },
+  parameters: { screen: { path: "/admin/finance/costs" } },
   play: async (context) => {
     await settled(context);
     const list = context.canvas.getByRole("region", { name: "Recorded costs" });
-    await expect(context.canvas.getAllByRole("button", { name: "Record a cost" })).toHaveLength(1);
+    await expect(context.canvas.getAllByRole("link", { name: "Record a cost" })).toHaveLength(1);
     await expect(list).toBeInTheDocument();
   },
 };
 
-/**
- * The form that records a cost, open in place of the button with focus in its first field. (The unit tests submit it:
- * the submit button leaves with the panel, and React Aria's announcement of its pending state would name a gone element.)
- */
+/** The page of a new cost, with a name typed. (The unit tests submit it.) */
 export const Adding: Story = {
-  parameters: { screen: { path: "/admin/finance?tab=records" } },
+  parameters: { screen: { path: "/admin/finance/costs/new" } },
   play: async (context) => {
     const { canvas, userEvent } = context;
     await settled(context);
-    await userEvent.click(canvas.getByRole("button", { name: "Record a cost" }));
-    const name = canvas.getByRole("textbox", { name: "Name" });
-    await expect(name).toHaveFocus();
-    await userEvent.type(name, "Object storage");
+    await userEvent.type(canvas.getByRole("textbox", { name: "Name" }), "Object storage");
   },
 };
 
-/** The records of a server that recorded nothing yet: the empty state leads to recording a cost. */
+/** The page of one item with a price change: its facts and the forms that change it. */
+export const Item: Story = {
+  parameters: { screen: { path: "/admin/finance/costs/0199f0e0-0000-7000-8000-0000000000a2" } },
+};
+
+/** The recorded costs of a server that recorded nothing yet: the empty state leads to recording a cost. */
 export const RecordsEmpty: Story = {
-  parameters: { screen: { path: "/admin/finance?tab=records", handlers: [administrator] } },
+  parameters: { screen: { path: "/admin/finance/costs", handlers: [administrator] } },
   play: async (context) => {
     await settled(context);
-    await expect(context.canvas.getByRole("button", { name: "Record a cost" })).toBeInTheDocument();
+    await expect(context.canvas.getByRole("link", { name: "Record a cost" })).toBeInTheDocument();
   },
 };
+
+/** The payments and refunds. */
+export const Income: Story = { parameters: { screen: { path: "/admin/finance/income" } } };
+
+/** The billing imports, the last run of AWS hitting the day's cap. */
+export const Imports: Story = { parameters: { screen: { path: "/admin/finance/imports" } } };
+
+/** What the instance publishes of the costs and the income, as the form of an administrator. */
+export const Publication: Story = { parameters: { screen: { path: "/admin/finance/publication" } } };
 
 /** The totals by week. */
 export const Weekly: Story = { parameters: { screen: { path: "/admin/finance?granularity=week" } } };
@@ -354,7 +371,7 @@ export const Weekly: Story = { parameters: { screen: { path: "/admin/finance?gra
 export const YearlyCash: Story = { parameters: { screen: { path: "/admin/finance?granularity=year&basis=cash" } } };
 
 /** The movements narrowed to the refunds. */
-export const Refunds: Story = { parameters: { screen: { path: "/admin/finance?kind=refund" } } };
+export const Refunds: Story = { parameters: { screen: { path: "/admin/finance/income?kind=refund" } } };
 
 /** A server that recorded nothing yet (the default handlers). */
 export const Empty: Story = adminAnswering();

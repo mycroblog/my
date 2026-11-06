@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The login providers screen through the whole app (web-client/README.md T4, ADR-0106): an administrator with
-// manage_login_providers sets up a provider of each kind and copies its callback URL, sees a refused field and an
-// incomplete condition, changes a provider in a dialog without its secret, gives it a new secret, and disables and
-// deletes it after a warning with the number of linked users; with MSW playing the API.
+// manage_login_providers sees the providers in the list, sets up a provider of each kind on the form's page and lands on
+// its page with its callback URL, sees a refused field and an incomplete condition, and on the page of a provider
+// changes it without its secret, gives it a new secret, and disables and deletes it after a warning with the number of
+// linked users; with MSW playing the API.
 import { screen, waitFor, within } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
 import { beforeEach, describe, expect, test } from "vitest";
@@ -14,6 +15,20 @@ import { loginProviderFixture } from "./test/handlers";
 
 const providerId = "0199f0e0-0000-7000-8000-0000000000c9";
 const name = "⁨Example SSO⁩";
+const newPath = "/admin/login-providers/new";
+const providerPath = `/admin/login-providers/${providerId}`;
+
+/** The form of a new provider, once its page has loaded. */
+async function newForm(): Promise<HTMLElement> {
+  const main = await screen.findByRole("main");
+  await within(main).findByRole("radiogroup", { name: "Kind" });
+  return main;
+}
+
+/** Answers GET /admin/login_providers/{id} with what `provider` gives at each request. */
+function providerHandler(provider: () => Schemas["AdminLoginProvider"]) {
+  return http.get(`${apiBase}/admin/login_providers/:id`, () => HttpResponse.json(provider()));
+}
 
 beforeEach(() => {
   document.documentElement.lang = "en";
@@ -60,7 +75,7 @@ describe("the login providers screen", () => {
     expect(await screen.findByRole("heading", { level: 2, name: "You cannot use this screen" })).toBeInTheDocument();
   });
 
-  test("lists the providers with their kind, state, linked users and callback URL", async () => {
+  test("lists the providers with their kind and state, linking to their page", async () => {
     server.use(
       http.get(`${apiBase}/admin/login_providers`, () =>
         HttpResponse.json({
@@ -80,15 +95,27 @@ describe("the login providers screen", () => {
     const list = await screen.findByRole("region", { name: "Login providers of this server" });
 
     const sso = within(list).getByRole("row", { name: /^Example SSO/u });
+    expect(within(sso).getByRole("link", { name: "Example SSO" })).toHaveAttribute("href", providerPath);
     expect(within(sso).getByText("OpenID Connect")).toBeInTheDocument();
     expect(within(sso).getByText("Enabled")).toBeInTheDocument();
     expect(within(sso).getByText("Sign-up allowed")).toBeInTheDocument();
-    expect(within(sso).getByText("3 users")).toBeInTheDocument();
-    expect(within(sso).getByText(`https://my.example/auth/external/${providerId}/callback`)).toBeInTheDocument();
-    expect(within(sso).getByRole("button", { name: `Copy the callback URL of ${name}` })).toBeInTheDocument();
     const github = within(list).getByRole("row", { name: /^GitHub/u });
     expect(within(github).getByText("Disabled")).toBeInTheDocument();
-    expect(within(github).getByRole("button", { name: "Enable ⁨GitHub⁩" })).toBeInTheDocument();
+    // Every action is on the provider's page.
+    expect(within(list).queryByRole("button")).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Add a provider" })).toHaveAttribute("href", newPath);
+  });
+
+  test("shows a provider's facts and callback URL on its page", async () => {
+    server.use(providerHandler(() => loginProviderFixture(providerId, { linked_users: 3, allow_signup: true })));
+    await renderApp({ path: providerPath });
+    const provider = await screen.findByRole("region", { name: "Example SSO" });
+
+    expect(within(provider).getByText("OpenID Connect")).toBeInTheDocument();
+    expect(within(provider).getByText("Sign-up allowed")).toBeInTheDocument();
+    expect(within(provider).getByText("3 users")).toBeInTheDocument();
+    expect(within(provider).getByText(`https://my.example/auth/external/${providerId}/callback`)).toBeInTheDocument();
+    expect(within(provider).getByRole("button", { name: `Copy the callback URL of ${name}` })).toBeInTheDocument();
   });
 
   test("sets up an OpenID Connect provider with a condition and shows its callback URL", async () => {
@@ -102,8 +129,8 @@ describe("the login providers screen", () => {
         return HttpResponse.json(loginProviderFixture(providerId));
       }),
     );
-    const { user } = await renderApp({ path: "/admin/login-providers" });
-    const form = await screen.findByRole("region", { name: "Set up a login provider" });
+    const { user } = await renderApp({ path: newPath });
+    const form = await newForm();
 
     expect(within(form).getByRole("radio", { name: "OpenID Connect" })).toBeChecked();
     await user.type(within(form).getByRole("textbox", { name: "Display name" }), "Example SSO");
@@ -123,10 +150,9 @@ describe("the login providers screen", () => {
     );
     await user.click(within(form).getByRole("button", { name: "Set up" }));
 
-    expect(
-      await within(form).findByText(`https://my.example/auth/external/${providerId}/callback`),
-    ).toBeInTheDocument();
-    expect(within(form).getByRole("status")).toHaveTextContent("is set up.");
+    // Setting it up opens its page, with the callback URL to register.
+    expect(await screen.findByRole("heading", { level: 1, name: "Login provider" })).toBeInTheDocument();
+    expect(await screen.findByText(`https://my.example/auth/external/${providerId}/callback`)).toBeInTheDocument();
     expect(sent).toEqual({
       kind: "oidc",
       display_name: "Example SSO",
@@ -138,8 +164,9 @@ describe("the login providers screen", () => {
       allow_link: true,
       claims: [{ claim: "hd", values: ["example.com", "example.org"] }],
     });
-    expect(within(form).getByRole("textbox", { name: "Display name" })).toHaveValue("");
-    expect(within(form).getByLabelText(/^Client secret/u)).toHaveValue("");
+    // The form's page is left behind, and the secret with it.
+    expect(within(form).queryByRole("radiogroup", { name: "Kind" })).not.toBeInTheDocument();
+    expect(screen.queryByDisplayValue("s3cret")).not.toBeInTheDocument();
   });
 
   test("sends only what a GitHub provider takes", async () => {
@@ -150,8 +177,8 @@ describe("the login providers screen", () => {
         return HttpResponse.json(loginProviderFixture(providerId, { kind: "github", display_name: "GitHub" }));
       }),
     );
-    const { user } = await renderApp({ path: "/admin/login-providers" });
-    const form = await screen.findByRole("region", { name: "Set up a login provider" });
+    const { user } = await renderApp({ path: newPath });
+    const form = await newForm();
 
     await user.click(within(form).getByRole("radio", { name: "GitHub" }));
     expect(within(form).queryByRole("textbox", { name: "Issuer" })).not.toBeInTheDocument();
@@ -162,7 +189,7 @@ describe("the login providers screen", () => {
     await user.type(within(form).getByRole("textbox", { name: "Organizations" }), "my-org, other-org");
     await user.click(within(form).getByRole("button", { name: "Set up" }));
 
-    expect(await within(form).findByRole("status")).toHaveTextContent("is set up.");
+    expect(await screen.findByRole("heading", { level: 1, name: "Login provider" })).toBeInTheDocument();
     expect(sent).toEqual({
       kind: "github",
       display_name: "GitHub",
@@ -183,8 +210,8 @@ describe("the login providers screen", () => {
         return HttpResponse.json(loginProviderFixture(providerId, { kind: "discord", display_name: "Discord" }));
       }),
     );
-    const { user } = await renderApp({ path: "/admin/login-providers" });
-    const form = await screen.findByRole("region", { name: "Set up a login provider" });
+    const { user } = await renderApp({ path: newPath });
+    const form = await newForm();
 
     await user.click(within(form).getByRole("radio", { name: "Discord" }));
     expect(within(form).queryByRole("textbox", { name: "Issuer" })).not.toBeInTheDocument();
@@ -195,7 +222,7 @@ describe("the login providers screen", () => {
     await user.type(within(form).getByRole("textbox", { name: "Discord servers" }), "1234567890, 987654321");
     await user.click(within(form).getByRole("button", { name: "Set up" }));
 
-    expect(await within(form).findByRole("status")).toHaveTextContent("is set up.");
+    expect(await screen.findByRole("heading", { level: 1, name: "Login provider" })).toBeInTheDocument();
     expect(sent).toEqual({
       kind: "discord",
       display_name: "Discord",
@@ -216,8 +243,8 @@ describe("the login providers screen", () => {
         return HttpResponse.json(loginProviderFixture(providerId, { kind: "discord" }));
       }),
     );
-    const { user } = await renderApp({ path: "/admin/login-providers" });
-    const form = await screen.findByRole("region", { name: "Set up a login provider" });
+    const { user } = await renderApp({ path: newPath });
+    const form = await newForm();
     await user.click(within(form).getByRole("radio", { name: "Discord" }));
     await user.type(within(form).getByRole("textbox", { name: "Display name" }), "Discord");
     await user.type(within(form).getByRole("textbox", { name: "Client ID" }), "1234");
@@ -238,8 +265,8 @@ describe("the login providers screen", () => {
     server.use(
       http.post(`${apiBase}/admin/login_providers`, () => problem("conditions", "The server IDs are not valid.")),
     );
-    const { user } = await renderApp({ path: "/admin/login-providers" });
-    const form = await screen.findByRole("region", { name: "Set up a login provider" });
+    const { user } = await renderApp({ path: newPath });
+    const form = await newForm();
     await user.click(within(form).getByRole("radio", { name: "Discord" }));
     await user.type(within(form).getByRole("textbox", { name: "Display name" }), "Discord");
     await user.type(within(form).getByRole("textbox", { name: "Client ID" }), "1234");
@@ -254,21 +281,15 @@ describe("the login providers screen", () => {
     expect(guilds).toHaveAccessibleDescription(/The server IDs are not valid\./u);
   });
 
-  test("keeps the secret of a Discord provider out of its edit form", async () => {
+  test("keeps the secret of a Discord provider out of its settings", async () => {
     server.use(
-      http.get(`${apiBase}/admin/login_providers`, () =>
-        HttpResponse.json({
-          items: [loginProviderFixture("p3", { kind: "discord", display_name: "Discord", guilds: ["42"] })],
-        }),
-      ),
+      providerHandler(() => loginProviderFixture("p3", { kind: "discord", display_name: "Discord", guilds: ["42"] })),
     );
-    const { user } = await renderApp({ path: "/admin/login-providers" });
-    const list = await screen.findByRole("region", { name: "Login providers of this server" });
-    await user.click(within(list).getByRole("button", { name: /^Edit/u }));
-    const dialog = await screen.findByRole("dialog");
-    expect(within(dialog).getByRole("textbox", { name: "Discord servers" })).toHaveValue("42");
-    expect(within(dialog).queryByLabelText(/^Client secret/u)).not.toBeInTheDocument();
-    expect(within(dialog).queryByRole("textbox", { name: "Issuer" })).not.toBeInTheDocument();
+    await renderApp({ path: "/admin/login-providers/p3" });
+    const settings = await screen.findByRole("region", { name: "Settings" });
+    expect(within(settings).getByRole("textbox", { name: "Discord servers" })).toHaveValue("42");
+    expect(within(settings).queryByLabelText(/^Client secret/u)).not.toBeInTheDocument();
+    expect(within(settings).queryByRole("textbox", { name: "Issuer" })).not.toBeInTheDocument();
   });
 
   test("asks a Mastodon provider for its server, and lets the server register its client", async () => {
@@ -285,8 +306,8 @@ describe("the login providers screen", () => {
         );
       }),
     );
-    const { user } = await renderApp({ path: "/admin/login-providers" });
-    const form = await screen.findByRole("region", { name: "Set up a login provider" });
+    const { user } = await renderApp({ path: newPath });
+    const form = await newForm();
 
     await user.click(within(form).getByRole("radio", { name: "Mastodon" }));
     expect(within(form).getByRole("textbox", { name: "Server" })).toBeRequired();
@@ -298,7 +319,7 @@ describe("the login providers screen", () => {
     await user.type(within(form).getByRole("textbox", { name: "Server" }), "social.example");
     await user.click(within(form).getByRole("button", { name: "Set up" }));
 
-    expect(await within(form).findByRole("status")).toHaveTextContent("is set up.");
+    expect(await screen.findByRole("heading", { level: 1, name: "Login provider" })).toBeInTheDocument();
     expect(sent).toEqual({
       kind: "mastodon",
       display_name: "Social",
@@ -312,8 +333,8 @@ describe("the login providers screen", () => {
     server.use(
       http.post(`${apiBase}/admin/login_providers`, () => problem("issuer", "The issuer must be an https URL.")),
     );
-    const { user } = await renderApp({ path: "/admin/login-providers" });
-    const form = await screen.findByRole("region", { name: "Set up a login provider" });
+    const { user } = await renderApp({ path: newPath });
+    const form = await newForm();
     await user.type(within(form).getByRole("textbox", { name: "Display name" }), "Example SSO");
     await user.type(within(form).getByRole("textbox", { name: "Issuer" }), "http://sso.example");
     await user.type(within(form).getByRole("textbox", { name: "Client ID" }), "my-client");
@@ -332,8 +353,8 @@ describe("the login providers screen", () => {
     server.use(
       http.post(`${apiBase}/admin/login_providers`, () => problem("client_secret", "The client secret is too long.")),
     );
-    const { user } = await renderApp({ path: "/admin/login-providers" });
-    const form = await screen.findByRole("region", { name: "Set up a login provider" });
+    const { user } = await renderApp({ path: newPath });
+    const form = await newForm();
     await user.type(within(form).getByRole("textbox", { name: "Display name" }), "Example SSO");
     await user.type(within(form).getByRole("textbox", { name: "Issuer" }), "https://sso.example");
     await user.type(within(form).getByRole("textbox", { name: "Client ID" }), "my-client");
@@ -355,8 +376,8 @@ describe("the login providers screen", () => {
         return HttpResponse.json(loginProviderFixture(providerId));
       }),
     );
-    const { user } = await renderApp({ path: "/admin/login-providers" });
-    const form = await screen.findByRole("region", { name: "Set up a login provider" });
+    const { user } = await renderApp({ path: newPath });
+    const form = await newForm();
     await user.type(within(form).getByRole("textbox", { name: "Display name" }), "Example SSO");
     await user.type(within(form).getByRole("textbox", { name: "Issuer" }), "https://sso.example");
     await user.type(within(form).getByRole("textbox", { name: "Client ID" }), "my-client");
@@ -375,29 +396,24 @@ describe("the login providers screen", () => {
     expect(within(conditions).getByRole("button", { name: "Add a condition" })).toHaveFocus();
   });
 
-  test("changes a provider in a dialog without its secret", async () => {
+  test("changes a provider on its page without its secret, and says so next to the button", async () => {
     let change: Schemas["UpdateLoginProviderRequest"] | undefined;
     server.use(
-      http.get(`${apiBase}/admin/login_providers`, () =>
-        HttpResponse.json({ items: [loginProviderFixture(providerId, change)] }),
-      ),
+      providerHandler(() => loginProviderFixture(providerId, change)),
       http.patch(`${apiBase}/admin/login_providers/:id`, async ({ request }) => {
         change = (await request.json()) as Schemas["UpdateLoginProviderRequest"];
         return HttpResponse.json(loginProviderFixture(providerId, change));
       }),
     );
-    const { user } = await renderApp({ path: "/admin/login-providers" });
-    await user.click(await screen.findByRole("button", { name: `Edit ${name}` }));
-    const dialog = await screen.findByRole("dialog", { name: `Edit ${name}` });
+    const { user } = await renderApp({ path: providerPath });
+    const settings = await screen.findByRole("region", { name: "Settings" });
 
-    expect(within(dialog).queryByLabelText(/^Client secret/u)).not.toBeInTheDocument();
-    expect(within(dialog).queryByRole("radio")).not.toBeInTheDocument();
-    await user.click(within(dialog).getByRole("checkbox", { name: "Users may link their accounts" }));
-    await user.click(within(dialog).getByRole("button", { name: "Save" }));
+    expect(within(settings).queryByLabelText(/^Client secret/u)).not.toBeInTheDocument();
+    expect(within(settings).queryByRole("radio")).not.toBeInTheDocument();
+    await user.click(within(settings).getByRole("checkbox", { name: "Users may link their accounts" }));
+    await user.click(within(settings).getByRole("button", { name: "Save" }));
 
-    await waitFor(() => {
-      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-    });
+    expect(await within(settings).findByRole("status")).toHaveTextContent("is saved.");
     expect(change).toEqual({
       display_name: "Example SSO",
       issuer: "https://sso.example",
@@ -407,23 +423,20 @@ describe("the login providers screen", () => {
       allow_link: false,
       claims: [],
     });
-    const list = screen.getByRole("region", { name: "Login providers of this server" });
-    expect(within(list).getByRole("status")).toHaveTextContent("is saved.");
   });
 
   test("gives a provider a new client secret in a dialog", async () => {
     let rotated: Schemas["RotateLoginProviderSecretRequest"] | undefined;
     server.use(
-      http.get(`${apiBase}/admin/login_providers`, () =>
-        HttpResponse.json({ items: [loginProviderFixture(providerId)] }),
-      ),
+      providerHandler(() => loginProviderFixture(providerId)),
       http.post(`${apiBase}/admin/login_providers/:id/rotate_secret`, async ({ request }) => {
         rotated = (await request.json()) as Schemas["RotateLoginProviderSecretRequest"];
         return HttpResponse.json(loginProviderFixture(providerId));
       }),
     );
-    const { user } = await renderApp({ path: "/admin/login-providers" });
-    await user.click(await screen.findByRole("button", { name: `New secret for ${name}` }));
+    const { user } = await renderApp({ path: providerPath });
+    const actions = await screen.findByRole("region", { name: "Secret and state" });
+    await user.click(within(actions).getByRole("button", { name: "New secret" }));
     const dialog = await screen.findByRole("dialog", { name: `New client secret for ${name}` });
     const secret = within(dialog).getByLabelText(/^Client secret/u);
     expect(secret).toHaveFocus();
@@ -440,9 +453,7 @@ describe("the login providers screen", () => {
   test("disables a provider after a warning with its linked users, and enables it", async () => {
     let state: Schemas["AdminLoginProviderState"] = "enabled";
     server.use(
-      http.get(`${apiBase}/admin/login_providers`, () =>
-        HttpResponse.json({ items: [loginProviderFixture(providerId, { state, linked_users: 2 })] }),
-      ),
+      providerHandler(() => loginProviderFixture(providerId, { state, linked_users: 2 })),
       http.post(`${apiBase}/admin/login_providers/:id/disable`, () => {
         state = "disabled";
         return HttpResponse.json(loginProviderFixture(providerId, { state, linked_users: 2 }));
@@ -452,24 +463,26 @@ describe("the login providers screen", () => {
         return HttpResponse.json(loginProviderFixture(providerId, { state, linked_users: 2 }));
       }),
     );
-    const { user } = await renderApp({ path: "/admin/login-providers" });
-    await user.click(await screen.findByRole("button", { name: `Disable ${name}` }));
+    const { user } = await renderApp({ path: providerPath });
+    await user.click(
+      within(await screen.findByRole("region", { name: "Secret and state" })).getByRole("button", {
+        name: "Disable",
+      }),
+    );
     const dialog = await screen.findByRole("alertdialog", { name: `Disable ${name}?` });
     expect(dialog).toHaveAccessibleDescription(/2 linked users can no longer sign in with it/u);
     await user.click(within(dialog).getByRole("button", { name: "Disable" }));
 
     // The page is hidden from assistive technology until the dialog has closed.
-    const list = await screen.findByRole("region", { name: "Login providers of this server" });
-    await user.click(await within(list).findByRole("button", { name: `Enable ${name}` }));
-    expect(await within(list).findByRole("button", { name: `Disable ${name}` })).toBeInTheDocument();
-    expect(within(list).getByRole("status")).toHaveTextContent("is enabled.");
+    const actions = await screen.findByRole("region", { name: "Secret and state" });
+    await user.click(await within(actions).findByRole("button", { name: "Enable" }));
+    expect(await within(actions).findByRole("button", { name: "Disable" })).toBeInTheDocument();
+    expect(within(actions).getByRole("status")).toHaveTextContent("is enabled.");
   });
 
   describe("when the action would start the limit of sign-in to login providers", () => {
     const disabledList = () =>
-      http.get(`${apiBase}/admin/login_providers`, () =>
-        HttpResponse.json({ items: [loginProviderFixture(providerId, { state: enabledState, linked_users: 1 })] }),
-      );
+      providerHandler(() => loginProviderFixture(providerId, { state: enabledState, linked_users: 1 }));
     let enabledState: Schemas["AdminLoginProviderState"] = "disabled";
     function enableServer() {
       enabledState = "disabled";
@@ -490,8 +503,8 @@ describe("the login providers screen", () => {
       const enables = enableServer();
       const seen: (string | null)[] = [];
       server.use(impactHandler({ setting_on: true, starts_limit: true, users_without_provider: 3 }, seen));
-      const { user } = await renderApp({ path: "/admin/login-providers" });
-      await user.click(await screen.findByRole("button", { name: `Enable ${name}` }));
+      const { user } = await renderApp({ path: providerPath });
+      await user.click(await screen.findByRole("button", { name: "Enable" }));
 
       const dialog = await screen.findByRole("alertdialog", { name: title });
       expect(seen).toEqual([providerId]);
@@ -506,7 +519,7 @@ describe("the login providers screen", () => {
       });
       expect(enables).toEqual([]);
 
-      await user.click(screen.getByRole("button", { name: `Enable ${name}` }));
+      await user.click(screen.getByRole("button", { name: "Enable" }));
       const again = await screen.findByRole("alertdialog", { name: title });
       await user.click(within(again).getByRole("button", { name: "Enable and start the limit" }));
       await waitFor(() => {
@@ -517,10 +530,15 @@ describe("the login providers screen", () => {
     test("says plainly when the count includes the administrator", async () => {
       enableServer();
       server.use(
-        impactHandler({ setting_on: true, starts_limit: true, users_without_provider: 1, includes_viewer: true }),
+        impactHandler({
+          setting_on: true,
+          starts_limit: true,
+          users_without_provider: 1,
+          includes_viewer: true,
+        }),
       );
-      const { user } = await renderApp({ path: "/admin/login-providers" });
-      await user.click(await screen.findByRole("button", { name: `Enable ${name}` }));
+      const { user } = await renderApp({ path: providerPath });
+      await user.click(await screen.findByRole("button", { name: "Enable" }));
       const dialog = await screen.findByRole("alertdialog", { name: title });
       expect(dialog).toHaveAccessibleDescription(/1 active user has no link to this provider/u);
       expect(dialog).toHaveAccessibleDescription(/You are one of them/u);
@@ -530,10 +548,15 @@ describe("the login providers screen", () => {
       const enables = enableServer();
       // Neither case starts anything: the server says so with starts_limit.
       server.use(
-        impactHandler({ setting_on: true, enabled_providers: 1, users_without_provider: 3, includes_viewer: true }),
+        impactHandler({
+          setting_on: true,
+          enabled_providers: 1,
+          users_without_provider: 3,
+          includes_viewer: true,
+        }),
       );
-      const { user } = await renderApp({ path: "/admin/login-providers" });
-      await user.click(await screen.findByRole("button", { name: `Enable ${name}` }));
+      const { user } = await renderApp({ path: providerPath });
+      await user.click(await screen.findByRole("button", { name: "Enable" }));
       await waitFor(() => {
         expect(enables).toEqual([providerId]);
       });
@@ -550,8 +573,8 @@ describe("the login providers screen", () => {
           ),
         ),
       );
-      const { user } = await renderApp({ path: "/admin/login-providers" });
-      await user.click(await screen.findByRole("button", { name: `Enable ${name}` }));
+      const { user } = await renderApp({ path: providerPath });
+      await user.click(await screen.findByRole("button", { name: "Enable" }));
       const dialog = await screen.findByRole("alertdialog", { name: title });
       expect(dialog).toHaveAccessibleDescription(/could not say whether this starts the limit/u);
       expect(enables).toEqual([]);
@@ -563,7 +586,7 @@ describe("the login providers screen", () => {
 
     /** Fills in the form of a GitHub provider. */
     async function fillGitHub(user: Awaited<ReturnType<typeof renderApp>>["user"]) {
-      const form = await screen.findByRole("region", { name: "Set up a login provider" });
+      const form = await newForm();
       await user.click(within(form).getByRole("radio", { name: "GitHub" }));
       await user.type(within(form).getByRole("textbox", { name: "Display name" }), "GitHub");
       await user.type(within(form).getByRole("textbox", { name: "Client ID" }), "my-client");
@@ -588,9 +611,17 @@ describe("the login providers screen", () => {
       const creates = createServer();
       const seen: (string | null)[] = [];
       server.use(
-        impactHandler({ setting_on: true, starts_limit: true, users_without_provider: 4, includes_viewer: true }, seen),
+        impactHandler(
+          {
+            setting_on: true,
+            starts_limit: true,
+            users_without_provider: 4,
+            includes_viewer: true,
+          },
+          seen,
+        ),
       );
-      const { user } = await renderApp({ path: "/admin/login-providers" });
+      const { user } = await renderApp({ path: newPath });
       await fillGitHub(user);
 
       const dialog = await screen.findByRole("alertdialog", { name: title });
@@ -602,7 +633,7 @@ describe("the login providers screen", () => {
         expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
       });
       expect(creates).toEqual([]);
-      const form = screen.getByRole("region", { name: "Set up a login provider" });
+      const form = screen.getByRole("main");
       expect(within(form).getByRole("textbox", { name: "Display name" })).toHaveValue("GitHub");
 
       await user.click(within(form).getByRole("button", { name: "Set up" }));
@@ -619,7 +650,7 @@ describe("the login providers screen", () => {
     test("sets up a provider with no dialog when that starts nothing", async () => {
       const creates = createServer();
       server.use(impactHandler({ setting_on: true, enabled_providers: 2 }));
-      const { user } = await renderApp({ path: "/admin/login-providers" });
+      const { user } = await renderApp({ path: newPath });
       await fillGitHub(user);
       await waitFor(() => {
         expect(creates).toHaveLength(1);
@@ -628,24 +659,32 @@ describe("the login providers screen", () => {
     });
   });
 
-  test("deletes a provider after a warning", async () => {
+  test("deletes a provider after a warning, and goes back to the list", async () => {
     let deleted = "";
     server.use(
+      providerHandler(() => loginProviderFixture(providerId, { linked_users: 1 })),
       http.get(`${apiBase}/admin/login_providers`, () =>
-        HttpResponse.json({ items: deleted === "" ? [loginProviderFixture(providerId, { linked_users: 1 })] : [] }),
+        HttpResponse.json({
+          items: deleted === "" ? [loginProviderFixture(providerId, { linked_users: 1 })] : [],
+        }),
       ),
       http.delete(`${apiBase}/admin/login_providers/:id`, ({ params }) => {
         deleted = String(params["id"]);
         return new HttpResponse(null, { status: 204 });
       }),
     );
-    const { user } = await renderApp({ path: "/admin/login-providers" });
-    await user.click(await screen.findByRole("button", { name: `Delete ${name}` }));
+    const { user, router } = await renderApp({ path: providerPath });
+    await user.click(
+      within(await screen.findByRole("region", { name: "Secret and state" })).getByRole("button", {
+        name: "Delete",
+      }),
+    );
     const dialog = await screen.findByRole("alertdialog", { name: `Delete ${name}?` });
     expect(dialog).toHaveAccessibleDescription(/1 linked user can no longer sign in with it/u);
     await user.click(within(dialog).getByRole("button", { name: "Delete" }));
 
     expect(await screen.findByRole("heading", { level: 3, name: "No login providers yet" })).toBeInTheDocument();
+    expect(router.state.location.pathname).toBe("/admin/login-providers");
     expect(deleted).toBe(providerId);
   });
 });

@@ -10,7 +10,7 @@
 import { readdirSync } from "node:fs";
 import type { Locator, Page, Route } from "@playwright/test";
 import type { components } from "@mycroblog/mykit";
-import { expect, expectNoAxeViolations, expectNoHorizontalScroll, servedImage, test } from "./fixtures";
+import { expect, expectNoAxeViolations, expectNoHorizontalScroll, recordTable, servedImage, test } from "./fixtures";
 
 type Schemas = components["schemas"];
 
@@ -34,7 +34,10 @@ const moderator = {
   indexable: true,
   ai_opt_out: false,
   source: { note: "", fields: [] },
-  posting: { visibility_ceiling: "public", visibilities: ["public", "local", "unlisted", "private", "direct"] },
+  posting: {
+    visibility_ceiling: "public",
+    visibilities: ["public", "local", "unlisted", "private", "direct"],
+  },
   permissions: [
     "manage_reports",
     "manage_accounts",
@@ -311,7 +314,7 @@ const closureCheck: Schemas["AdminServiceClosureCheck"] = {
   retention_holds: 1,
 };
 
-/** A published announcement with a long first line and a link, as GET /admin/announcements lists it. */
+/** A published announcement with a long title and a link, as GET /admin/announcements lists it and GET /admin/announcements/{id} answers. */
 const announcement: Schemas["AdminAnnouncement"] = {
   id: "0192f0c4-7a8e-7000-8000-0000000000e6",
   title: `Scheduled maintenance of the database ${"and of the media storage ".repeat(2)}`.trim(),
@@ -331,7 +334,12 @@ const webhookDelivery: Schemas["AdminWebhookDelivery"] = {
   event_type: "report.created",
   status: "failing",
   attempts: 8,
-  last_attempt: { outcome: "http_error", status_code: 503, duration_ms: 120, attempted_at: "2026-10-20T00:00:00Z" },
+  last_attempt: {
+    outcome: "http_error",
+    status_code: 503,
+    duration_ms: 120,
+    attempted_at: "2026-10-20T00:00:00Z",
+  },
   created_at: "2026-10-19T00:00:00Z",
 };
 
@@ -349,7 +357,15 @@ const oauthClient: Schemas["AdminOAuthClient"] = {
   created_at: "2026-10-22T00:00:00Z",
 };
 
-/** An OIDC login provider with a long name and issuer, as GET /admin/login_providers lists it. */
+/** A denied host with a long name, as GET /admin/oauth_client_host_denials lists it. */
+const hostDenial: Schemas["AdminOAuthClientHostDenial"] = {
+  id: "0192f0c4-7a8e-7000-8000-0000000000a3",
+  host: "a-very-long-host-name-of-app-metadata-documents-that-wraps.example",
+  denied_by_deleted: false,
+  denied_at: "2026-10-23T00:00:00Z",
+};
+
+/** A rule of the link card crawler, as GET /admin/link_card_domains lists it. */
 const linkCardDomainRule: Schemas["LinkCardDomainRule"] = {
   domain: "cards.example",
   mode: "no_images",
@@ -357,6 +373,7 @@ const linkCardDomainRule: Schemas["LinkCardDomainRule"] = {
   updated_at: "2026-10-01T00:00:00Z",
 };
 
+/** An OIDC login provider with a long name and issuer, as GET /admin/login_providers lists it. */
 const loginProvider: Schemas["AdminLoginProvider"] = {
   id: "0192f0c4-7a8e-7000-8000-0000000000f2",
   kind: "oidc",
@@ -490,7 +507,14 @@ const instanceSettings: Schemas["AdminSettingList"] = {
       stored: false,
       choices: ["off", "signed_in", "everyone"],
     },
-    { key: "search_indexing", kind: "enum", value: "deny", default: "deny", stored: false, choices: ["allow", "deny"] },
+    {
+      key: "search_indexing",
+      kind: "enum",
+      value: "deny",
+      default: "deny",
+      stored: false,
+      choices: ["allow", "deny"],
+    },
     {
       key: "ai_usage",
       kind: "enum",
@@ -502,7 +526,13 @@ const instanceSettings: Schemas["AdminSettingList"] = {
     { key: "indexable_default", kind: "bool", value: "false", default: "false", stored: false },
     { key: "security_contact", kind: "uri", value: "", default: "", stored: false },
     { key: "link_cards", kind: "bool", value: "true", default: "true", stored: false },
-    { key: "link_cards_ignore_robots_txt", kind: "bool", value: "false", default: "false", stored: false },
+    {
+      key: "link_cards_ignore_robots_txt",
+      kind: "bool",
+      value: "false",
+      default: "false",
+      stored: false,
+    },
     {
       key: "invite_creators",
       kind: "enum",
@@ -511,7 +541,15 @@ const instanceSettings: Schemas["AdminSettingList"] = {
       stored: false,
       choices: ["everyone", "permitted"],
     },
-    { key: "member_invite_max_active", kind: "int", value: "5", default: "5", stored: false, minimum: 0, maximum: 100 },
+    {
+      key: "member_invite_max_active",
+      kind: "int",
+      value: "5",
+      default: "5",
+      stored: false,
+      minimum: 0,
+      maximum: 100,
+    },
     {
       key: "member_invite_max_uses",
       kind: "int",
@@ -626,7 +664,12 @@ async function moderatorServer(page: Page) {
       submitted_at: "2026-10-01T00:00:00Z",
       state_changed_at: "2026-10-01T01:00:00Z",
       invite_id: invite.id,
-      invite: { id: invite.id, creator_kind: "member", created_by: moderator, created_by_deleted: false },
+      invite: {
+        id: invite.id,
+        creator_kind: "member",
+        created_by: moderator,
+        created_by_deleted: false,
+      },
     },
     email_verified: true,
     roles: [],
@@ -686,7 +729,9 @@ async function moderatorServer(page: Page) {
     if (key === "GET /admin/reports") {
       if (slowLists) await new Promise((resolve) => setTimeout(resolve, slowListMs));
       const state = url.searchParams.get("state");
-      return json(route, { items: reports.filter((item) => state === null || item.state === state) });
+      return json(route, {
+        items: reports.filter((item) => state === null || item.state === state),
+      });
     }
     const report = /^GET \/admin\/reports\/([^/]+)$/.exec(key);
     if (report) {
@@ -710,6 +755,10 @@ async function moderatorServer(page: Page) {
       });
     if (key === `GET /admin/accounts/${target.id}`) return json(route, adminAccount());
     if (key === `GET /admin/accounts/${target.id}/actions`) return json(route, { items: actions });
+    if (key.startsWith("GET /admin/account_actions/")) {
+      const found = actions.find((action) => key === `GET /admin/account_actions/${action.id}`);
+      if (found !== undefined) return json(route, found);
+    }
     if (key === `POST /admin/accounts/${target.id}/actions`) {
       const body = request.postDataJSON() as Schemas["CreateAccountActionRequest"];
       issued.push(`${body.kind} ${body.report_id ?? ""}`);
@@ -728,7 +777,12 @@ async function moderatorServer(page: Page) {
       actions = [action, ...actions];
       reports = reports.map((item) =>
         item.id === body.report_id
-          ? { ...item, state: "resolved", outcome: "actioned", state_changed_at: "2026-10-17T00:00:00Z" }
+          ? {
+              ...item,
+              state: "resolved",
+              outcome: "actioned",
+              state_changed_at: "2026-10-17T00:00:00Z",
+            }
           : item,
       );
       slowLists = true;
@@ -741,7 +795,9 @@ async function moderatorServer(page: Page) {
     if (key === `GET /admin/appeals/${appealId}`) return json(route, appeal);
     if (key === "GET /admin/registrations") return json(route, { items: [registration] });
     if (key === "GET /admin/domain_actions") return json(route, { items: [domainAction] });
+    if (key === `GET /admin/domain_actions/${domainAction.id}`) return json(route, domainAction);
     if (key === "GET /admin/signup_blocks") return json(route, { items: [signupBlock] });
+    if (key === `GET /admin/signup_blocks/${signupBlock.id}`) return json(route, signupBlock);
     if (key === "GET /admin/audit_log") return json(route, { items: [auditEntry] });
     if (key === "GET /admin/instances") return json(route, { items: [instance] });
     if (key === `GET /admin/instances/${longDomain}`) return json(route, instance);
@@ -765,6 +821,8 @@ async function moderatorServer(page: Page) {
         waits: [],
       });
     if (key === "GET /admin/jobs") return json(route, { items: [deadJob] });
+    if (key === `GET /admin/jobs/${deadJob.id}`) return json(route, deadJob);
+    if (key === `GET /admin/jobs/${deadJob.id}/attempts`) return json(route, { items: [] });
     if (key === "GET /admin/error_groups") return json(route, { items: [errorGroup] });
     if (key === `GET /admin/error_groups/${errorGroup.id}`) return json(route, errorGroupDetail);
     if (key === "GET /admin/instance_texts") return json(route, { items: [documentText, instanceName] });
@@ -772,26 +830,34 @@ async function moderatorServer(page: Page) {
     if (key === "GET /admin/settings") return json(route, instanceSettings);
     if (key === "GET /admin/instance/brand") return json(route, {});
     if (key === "GET /admin/rules") return json(route, { items: [rule] });
+    if (key === `GET /admin/rules/${rule.id}`) return json(route, rule);
     if (key === "GET /admin/invites") return json(route, { items: [invite] });
     if (key === "GET /admin/custom_emojis")
       return json(route, { items: url.searchParams.get("local") === "false" ? [] : [customEmoji] });
+    if (key === `GET /admin/custom_emojis/${customEmoji.id}`) return json(route, customEmoji);
     if (key === "GET /admin/custom_emoji_requests") return json(route, { items: [] });
     if (key === "GET /admin/webhooks") return json(route, { items: [webhook] });
     if (key === "GET /admin/announcements") return json(route, { items: [announcement] });
+    if (key === `GET /admin/announcements/${announcement.id}`) return json(route, announcement);
     if (key === "GET /admin/closure") return json(route, announcedClosure);
     if (key === "GET /admin/closure/check") return json(route, closureCheck);
     if (key === `GET /admin/webhooks/${webhook.id}`) return json(route, webhook);
     if (key === `GET /admin/webhooks/${webhook.id}/deliveries`) return json(route, { items: [webhookDelivery] });
     if (key === "GET /admin/relays") return json(route, { items: [relay] });
     if (key === "GET /admin/oauth_clients") return json(route, { items: [oauthClient] });
+    if (key === "GET /admin/oauth_client_host_denials") return json(route, { items: [hostDenial] });
     if (key === "GET /admin/login_providers") return json(route, { items: [loginProvider] });
+    if (key === `GET /admin/login_providers/${loginProvider.id}`) return json(route, loginProvider);
     if (key === "GET /admin/link_card_domains") return json(route, { items: [linkCardDomainRule] });
     if (key === "GET /admin/roles") return json(route, { items: roles });
     if (key === "GET /admin/hook_decisions") return json(route, { items: [hookDecision] });
     if (key === "GET /admin/hook_decisions/summary") return json(route, hookSummary);
+    if (key === `GET /admin/hook_decisions/${hookDecision.id}`) return json(route, hookDecision);
     if (key === "GET /admin/hook_appeals") return json(route, { items: [hookAppeal] });
+    if (key === `GET /admin/hook_appeals/${hookAppeal.id}`) return json(route, hookAppeal);
     if (key === "GET /admin/translation") return json(route, translationOverview);
     if (key === "GET /admin/cost_items") return json(route, { items: [costItem] });
+    if (key === `GET /admin/cost_items/${costItem.id}`) return json(route, costItem);
     if (key === "GET /admin/cost_totals") return json(route, costTotals);
     if (key === "GET /finance/cost_totals") {
       return json(route, {
@@ -804,7 +870,9 @@ async function moderatorServer(page: Page) {
     if (key === "GET /admin/payment_status") return json(route, paymentStatus);
     if (key === "GET /admin/supporter_plans") return json(route, { items: [supporterPlan] });
     if (key === "GET /admin/supporter_subscriptions") return json(route, { items: [supporterSubscription] });
-    if (key === "GET /admin/billing_imports") return json(route, { items: [] });
+    if (key === `GET /admin/supporter_subscriptions/${supporterSubscription.id}`)
+      return json(route, supporterSubscription);
+    if (key === "GET /admin/billing_imports") return json(route, { items: [billingImport] });
     if (key === "GET /admin/income_totals") return json(route, incomeTotals);
     if (key === "GET /admin/income_movements") return json(route, { items: [incomeMovement] });
     if (/^GET \/admin\/accounts\/[^/]+\/roles$/.test(key))
@@ -825,9 +893,28 @@ const costItem: Schemas["CostItem"] = {
   category: "domain",
   memo: "",
   prices: [
-    { effective_on: "2026-04-10", price: { amount: "1650", currency: "JPY" }, revised_at: "2026-04-10T00:00:00Z" },
+    {
+      effective_on: "2026-04-10",
+      price: { amount: "1650", currency: "JPY" },
+      revised_at: "2026-04-10T00:00:00Z",
+    },
   ],
   created_at: "2026-04-10T00:00:00Z",
+};
+
+/** The import of a billing source with a long provider name, as GET /admin/billing_imports lists it. */
+const billingImport: Schemas["BillingImport"] = {
+  source: "aws",
+  provider: "Amazon Web Services of a rather long account name that has to wrap",
+  time_zone: "UTC",
+  method: "cost_explorer",
+  last_success_at: "2026-10-21T01:00:00Z",
+  requests_today: 1,
+  requests_this_month: 21,
+  max_requests_per_day: 4,
+  max_requests_per_month: 120,
+  bytes_billed_this_month: 0,
+  months: [{ month: "2026-10", kind: "estimate", totals: [{ amount: "31.24", currency: "USD" }] }],
 };
 
 /** The totals of the costs screen: one month in two currencies with an estimate. */
@@ -939,10 +1026,16 @@ const supporterProgram: Schemas["AdminSupporterProgram"] = {
   warnings: [],
 };
 
-const paymentStatus: Schemas["PaymentStatus"] = { provider: "stripe", mode: "test", time_zone: "UTC", warnings: [] };
+const paymentStatus: Schemas["PaymentStatus"] = {
+  provider: "stripe",
+  mode: "test",
+  time_zone: "UTC",
+  warnings: [],
+};
 
 /**
- * A remote post that the external review of posts from other servers dropped, as GET /admin/hook_decisions lists it:
+ * A remote post that the external review of posts from other servers dropped, as GET /admin/hook_decisions lists it and
+ * GET /admin/hook_decisions/{id} answers it:
  * its subject is a long URI without a break, which must wrap rather than scroll the page sideways.
  */
 const hookDecision: Schemas["AdminHookDecision"] = {
@@ -969,14 +1062,23 @@ const hookSummary: Schemas["AdminHookSummary"] = {
       on_failure: "pass",
       outcomes: [{ mode: "enforce", outcome: "drop", count: 3, average_latency_ms: 25, max_latency_ms: 40 }],
     },
-    { hook: "inbound.follow", configured: false, mode: "observe", on_failure: "pass", outcomes: [] },
+    {
+      hook: "inbound.follow",
+      configured: false,
+      mode: "observe",
+      on_failure: "pass",
+      outcomes: [],
+    },
     { hook: "signup.check", configured: false, mode: "observe", on_failure: "pass", outcomes: [] },
     { hook: "media.check", configured: false, mode: "observe", on_failure: "pass", outcomes: [] },
     { hook: "local.status", configured: false, mode: "observe", on_failure: "pass", outcomes: [] },
   ],
 };
 
-/** The target's appeal of a local post that the review refused, awaiting a moderator, as GET /admin/hook_appeals lists it. */
+/**
+ * The target's appeal of a local post that the review refused, awaiting a moderator, as GET /admin/hook_appeals lists it
+ * and GET /admin/hook_appeals/{id} answers it.
+ */
 const hookAppeal: Schemas["AdminHookAppeal"] = {
   id: "0192f0c4-7a8e-7000-8000-0000000003a1",
   decision: {
@@ -1006,7 +1108,10 @@ const translationOverview: Schemas["AdminTranslationOverview"] = {
   cache_hit_rate: 0.75,
   providers: [
     { id: "one", name: "Provider One" },
-    { id: "two", name: "the-translation-provider-with-a-very-long-name-that-does-not-wrap.example" },
+    {
+      id: "two",
+      name: "the-translation-provider-with-a-very-long-name-that-does-not-wrap.example",
+    },
   ],
 };
 
@@ -1017,7 +1122,11 @@ const documentText: Schemas["AdminInstanceText"] = {
   revised_at: "2026-10-12T08:00:00Z",
 };
 /** The server's name, written in Arabic (a language without a catalog), which reads right to left in every project. */
-const instanceName: Schemas["AdminInstanceText"] = { key: "name", body: "مثال", revised_at: "2026-10-16T00:00:00Z" };
+const instanceName: Schemas["AdminInstanceText"] = {
+  key: "name",
+  body: "مثال",
+  revised_at: "2026-10-16T00:00:00Z",
+};
 
 /** The server's theme, as GET /admin/theme answers: a color, a radius, and a custom CSS. */
 const adminTheme: Schemas["AdminTheme"] = {
@@ -1040,39 +1149,175 @@ const adminPages: Readonly<Record<string, { path: string; ready: string | { valu
   "moderation.index": { path: "/moderation", ready: "" },
   "admin.index": { path: "/admin", ready: "" },
   "moderation.reports": { path: "/moderation/reports", ready: `@${target.acct}` },
-  "moderation.reports_.$id": { path: `/moderation/reports/${reportId}`, ready: "Same as last week." },
+  "moderation.reports_.$id": {
+    path: `/moderation/reports/${reportId}`,
+    ready: "Same as last week.",
+  },
   "moderation.accounts": { path: "/moderation/accounts", ready: target.display_name },
-  "moderation.accounts_.$id": { path: `/moderation/accounts/${target.id}`, ready: target.display_name },
+  "moderation.accounts_.$id": {
+    path: `/moderation/accounts/${target.id}`,
+    ready: target.display_name,
+  },
+  "moderation.accounts_.$id_.actions": {
+    path: `/moderation/accounts/${target.id}/actions`,
+    ready: target.display_name,
+  },
+  "moderation.accounts_.$id_.actions_.$actionId": {
+    path: `/moderation/accounts/${target.id}/actions/${warning.id}`,
+    ready: warning.public_reason ?? "",
+  },
+  "moderation.accounts_.$id_.manage": {
+    path: `/moderation/accounts/${target.id}/manage`,
+    ready: target.display_name,
+  },
   "moderation.appeals": { path: "/moderation/appeals", ready: target.display_name },
-  "moderation.appeals_.$id": { path: `/moderation/appeals/${appealId}`, ready: target.display_name },
+  "moderation.appeals_.$id": {
+    path: `/moderation/appeals/${appealId}`,
+    ready: target.display_name,
+  },
   "moderation.registrations": { path: "/moderation/registrations", ready: registration.email },
-  "moderation.domain-actions": { path: "/moderation/domain-actions", ready: domainAction.public_comment },
-  "moderation.signup-blocks": { path: "/moderation/signup-blocks", ready: signupBlock.comment },
+  "moderation.domain-actions": { path: "/moderation/domain-actions", ready: longDomain },
+  "moderation.domain-actions_.new": {
+    path: `/moderation/domain-actions/new?domain=${longDomain}`,
+    ready: { value: longDomain },
+  },
+  "moderation.domain-actions_.import": { path: "/moderation/domain-actions/import", ready: "" },
+  "moderation.domain-actions_.$id": {
+    path: `/moderation/domain-actions/${domainAction.id}`,
+    ready: domainAction.public_comment,
+  },
+  "moderation.signup-blocks": { path: "/moderation/signup-blocks", ready: "例え.jp" },
+  "moderation.signup-blocks_.new": { path: "/moderation/signup-blocks/new", ready: "" },
+  "moderation.signup-blocks_.import": { path: "/moderation/signup-blocks/import", ready: "" },
+  "moderation.signup-blocks_.$id": {
+    path: `/moderation/signup-blocks/${signupBlock.id}`,
+    ready: signupBlock.comment,
+  },
   "moderation.audit-log": { path: "/moderation/audit-log", ready: auditEntry.target_label },
   "moderation.instances": { path: "/moderation/instances", ready: longDomain },
-  "moderation.instances_.$domain": { path: `/moderation/instances/${longDomain}`, ready: longDomain },
-  "admin.custom-emojis": { path: "/admin/custom-emojis", ready: customEmoji.category ?? "" },
-  "admin.jobs": { path: "/admin/jobs?state=dead", ready: deadJob.type },
+  "moderation.instances_.$domain": {
+    path: `/moderation/instances/${longDomain}`,
+    ready: longDomain,
+  },
+  "admin.custom-emojis": { path: "/admin/custom-emojis", ready: `:${customEmoji.shortcode}:` },
+  "admin.custom-emojis_.new": { path: "/admin/custom-emojis/new", ready: "" },
+  "admin.custom-emojis_.$id": {
+    path: `/admin/custom-emojis/${customEmoji.id}`,
+    ready: customEmoji.category ?? "",
+  },
+  "admin.custom-emojis_.requests": { path: "/admin/custom-emojis/requests", ready: "" },
+  "admin.jobs": { path: "/admin/jobs", ready: deadJob.type },
+  "admin.jobs_.list": { path: "/admin/jobs/list?state=dead", ready: deadJob.type },
+  "admin.jobs_.$id": { path: `/admin/jobs/${deadJob.id}`, ready: deadJob.last_error },
   "admin.errors": { path: "/admin/errors", ready: errorGroup.where },
   "admin.errors_.$id": { path: `/admin/errors/${errorGroup.id}`, ready: errorRequestId },
   "admin.webhooks": { path: "/admin/webhooks", ready: webhook.description ?? "" },
-  "admin.webhooks_.$id": { path: `/admin/webhooks/${webhook.id}`, ready: webhookDelivery.message_id },
+  "admin.webhooks_.$id": {
+    path: `/admin/webhooks/${webhook.id}`,
+    ready: webhookDelivery.message_id,
+  },
+  "admin.webhooks_.new": { path: "/admin/webhooks/new", ready: "" },
   "admin.closure": { path: "/admin/closure", ready: announcedClosure.message ?? "" },
-  "admin.announcements": { path: "/admin/announcements", ready: "the status page" },
-  "admin.relays": { path: "/admin/relays", ready: relay.inbox_url },
+  "admin.announcements": { path: "/admin/announcements", ready: announcement.title },
+  "admin.announcements_.new": { path: "/admin/announcements/new", ready: "" },
+  "admin.announcements_.$id": {
+    path: `/admin/announcements/${announcement.id}`,
+    ready: "the status page",
+  },
+  "admin.relays": { path: "/admin/relays", ready: `relay.${longDomain}` },
+  "admin.relays_.new": { path: "/admin/relays/new", ready: "" },
+  "admin.relays_.$id": { path: `/admin/relays/${relay.id}`, ready: relay.inbox_url },
   "admin.oauth-apps": { path: "/admin/oauth-apps", ready: oauthClient.name },
+  "admin.oauth-apps_.hosts": { path: "/admin/oauth-apps/hosts", ready: hostDenial.host },
   "admin.login-providers": { path: "/admin/login-providers", ready: loginProvider.display_name },
+  "admin.login-providers_.new": { path: "/admin/login-providers/new", ready: "" },
+  "admin.login-providers_.$id": {
+    path: `/admin/login-providers/${loginProvider.id}`,
+    ready: loginProvider.callback_url,
+  },
   "admin.link-card-domains": { path: "/admin/link-card-domains", ready: linkCardDomainRule.domain },
+  "admin.link-card-domains_.new": { path: "/admin/link-card-domains/new", ready: "" },
+  "admin.link-card-domains_.$domain": {
+    path: `/admin/link-card-domains/${linkCardDomainRule.domain}`,
+    ready: linkCardDomainRule.domain,
+  },
   "admin.documents": { path: "/admin/documents", ready: { value: documentText.body } },
+  "admin.documents_.privacy-policy": {
+    path: "/admin/documents/privacy-policy",
+    ready: { value: "" },
+  },
+  "admin.documents_.commerce-disclosure": {
+    path: "/admin/documents/commerce-disclosure",
+    ready: { value: "" },
+  },
   "admin.settings": { path: "/admin/settings", ready: "my.example" },
+  "admin.settings_.branding": { path: "/admin/settings/branding", ready: "" },
+  // The first field is the usable invites per person, member_invite_max_active of instanceSettings.
+  "admin.settings_.registration": { path: "/admin/settings/registration", ready: { value: "5" } },
+  "admin.settings_.content": { path: "/admin/settings/content", ready: { value: "" } },
+  "admin.settings_.federation": { path: "/admin/settings/federation", ready: { value: "" } },
+  "admin.settings_.discovery": { path: "/admin/settings/discovery", ready: { value: "" } },
+  "admin.settings_.voice": { path: "/admin/settings/voice", ready: "" },
   "admin.theme": { path: "/admin/theme", ready: { value: "#fdfdf6" } },
-  "admin.rules": { path: "/admin/rules", ready: rule.hint ?? "" },
+  "admin.rules": { path: "/admin/rules", ready: rule.text },
+  "admin.rules_.new": { path: "/admin/rules/new", ready: { value: "" } },
+  "admin.rules_.$id": { path: `/admin/rules/${rule.id}`, ready: { value: rule.text } },
   "admin.roles": { path: "/admin/roles", ready: roles[2]?.key ?? "" },
-  "admin.finance": { path: "/admin/finance?tab=records", ready: costItem.provider },
-  "admin.supporters": { path: "/admin/supporters", ready: supporterSubscription.plan_name },
+  "admin.roles_.new": { path: "/admin/roles/new", ready: { value: "" } },
+  "admin.roles_.$key": { path: `/admin/roles/${roles[2]?.key ?? ""}`, ready: roles[2]?.key ?? "" },
+  "admin.finance": { path: "/admin/finance", ready: "registrar" },
+  "admin.finance_.income": {
+    path: "/admin/finance/income",
+    ready: `@${incomeMovement.username ?? ""}`,
+  },
+  "admin.finance_.costs": { path: "/admin/finance/costs", ready: costItem.name },
+  "admin.finance_.costs_.new": { path: "/admin/finance/costs/new", ready: "" },
+  "admin.finance_.costs_.$id": {
+    path: `/admin/finance/costs/${costItem.id}`,
+    ready: costItem.provider,
+  },
+  "admin.finance_.imports": { path: "/admin/finance/imports", ready: billingImport.provider },
+  "admin.finance_.publication": { path: "/admin/finance/publication", ready: "" },
+  "admin.supporters": {
+    path: "/admin/supporters",
+    ready: supporterProgram.configured_provider ?? "",
+  },
+  "admin.supporters_.plans": { path: "/admin/supporters/plans", ready: supporterPlan.name },
+  "admin.supporters_.plans_.new": { path: "/admin/supporters/plans/new", ready: "" },
+  "admin.supporters_.plans_.$id": {
+    path: `/admin/supporters/plans/${supporterPlan.id}`,
+    ready: supporterPlan.name,
+  },
+  "admin.supporters_.subscriptions": {
+    path: "/admin/supporters/subscriptions",
+    ready: `@${supporterSubscription.username ?? ""}`,
+  },
+  "admin.supporters_.subscriptions_.$id": {
+    path: `/admin/supporters/subscriptions/${supporterSubscription.id}`,
+    ready: supporterPlan.name,
+  },
   "moderation.invites": { path: "/moderation/invites", ready: invite.code },
-  "moderation.hook-decisions": { path: "/moderation/hook-decisions", ready: hookDecision.subject_key },
-  "admin.translation": { path: "/admin/translation", ready: translationOverview.providers[0]?.name ?? "" },
+  "moderation.invites_.new": { path: "/moderation/invites/new", ready: "" },
+  "moderation.hook-decisions": {
+    path: "/moderation/hook-decisions",
+    ready: hookDecision.subject_key,
+  },
+  "moderation.hook-decisions_.$id": {
+    path: `/moderation/hook-decisions/${hookDecision.id}`,
+    ready: hookDecision.note ?? "",
+  },
+  "moderation.hook-decisions_.appeals": {
+    path: "/moderation/hook-decisions/appeals",
+    ready: hookAppeal.status_text,
+  },
+  "moderation.hook-decisions_.appeals_.$id": {
+    path: `/moderation/hook-decisions/appeals/${hookAppeal.id}`,
+    ready: hookAppeal.comment ?? "",
+  },
+  "admin.translation": {
+    path: "/admin/translation",
+    ready: translationOverview.providers[0]?.name ?? "",
+  },
 };
 
 test("the suite lists every moderation and admin route", () => {
@@ -1153,7 +1398,7 @@ test.describe("handling a report with the keyboard alone", () => {
     await tabTo(page, main.locator('a[href="/moderation/reports"]').first());
     await page.keyboard.press("Enter");
     await expect(page).toHaveURL(/\/moderation\/reports$/);
-    const queue = main.getByRole("table");
+    const queue = recordTable(main);
     await expect(queue.locator(`a[href="/moderation/reports/${reportId}"]`)).toBeVisible();
     await expectPageReached(page, makeAxeBuilder);
 

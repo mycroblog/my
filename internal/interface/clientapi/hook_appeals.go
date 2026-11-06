@@ -35,6 +35,8 @@ type HookAppeals interface {
 	OwnAppealByID(ctx context.Context, accountID, appealID string) (hook.AppealRecord, error)
 	// AppealDeadline returns the last moment a decision made at decidedAt can be appealed.
 	AppealDeadline(ctx context.Context, decidedAt time.Time) (time.Time, error)
+	// Appeal returns an appeal for a moderator; apphook.ErrAppealNotFound when there is none.
+	Appeal(ctx context.Context, appealID string) (hook.AppealRecord, error)
 	ListAppeals(ctx context.Context, q apphook.AppealQuery) ([]hook.AppealRecord, error)
 	DecideAppeal(ctx context.Context, appealID string, outcome hook.AppealOutcome, byUserID string) (hook.AppealRecord, error)
 }
@@ -243,6 +245,29 @@ func (s *Server) ListHookAppeals(ctx context.Context, req ListHookAppealsRequest
 	}
 	cache := cacheNoStore
 	return ListHookAppeals200JSONResponse{Body: page, Headers: ListHookAppeals200ResponseHeaders{CacheControl: &cache}}, nil
+}
+
+// GetHookAppeal serves GET /api/v1/admin/hook_appeals/{id}.
+func (s *Server) GetHookAppeal(ctx context.Context, req GetHookAppealRequestObject) (GetHookAppealResponseObject, error) {
+	if p, err := s.requireHookAppeals(ctx); err != nil {
+		return nil, err
+	} else if p != nil {
+		return GetHookAppealdefaultApplicationProblemPlusJSONResponse(*p), nil
+	}
+	if !kernel.ValidID(req.Id) {
+		return GetHookAppealdefaultApplicationProblemPlusJSONResponse(s.notFoundResponse(ctx)), nil
+	}
+	rec, err := s.o.HookAppeals.Appeal(ctx, req.Id)
+	switch {
+	case errors.Is(err, apphook.ErrAppealNotFound):
+		return GetHookAppealdefaultApplicationProblemPlusJSONResponse(s.notFoundResponse(ctx)), nil
+	case err != nil:
+		return nil, fmt.Errorf("clientapi: hook appeal %s: %w", req.Id, err)
+	}
+	cache := cacheNoStore
+	return GetHookAppeal200JSONResponse{AdminHookAppealJSONResponse{
+		Body: newAdminHookAppeal(rec), Headers: AdminHookAppealResponseHeaders{CacheControl: &cache},
+	}}, nil
 }
 
 // decideHookAppeal runs the review of an appeal, or returns the problem that answers it.

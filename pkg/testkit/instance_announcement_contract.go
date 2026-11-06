@@ -20,7 +20,7 @@ import (
 
 // instanceAnnouncementCases are the cases of InstanceRepositoryContract about the server-wide
 // announcements (FR-726): drafts, publication, revisions, and withdrawal, the window in which
-// the users see one, the list with the past ones, the times at which their notifications are
+// the users see one, the list with the past ones, the administrators' pages of them by state, the times at which their notifications are
 // scheduled, each user's reads and their erasure, invalid input that writes nothing, and the
 // announcement_heads projection that equals a rebuild.
 var instanceAnnouncementCases = []struct {
@@ -30,6 +30,7 @@ var instanceAnnouncementCases = []struct {
 	{"AnnouncementLifecycle", instanceAnnouncementLifecycle},
 	{"AnnouncementWindow", instanceAnnouncementWindow},
 	{"PastAnnouncements", instancePastAnnouncements},
+	{"AnnouncementPages", instanceAnnouncementPages},
 	{"SchedulesAnnouncements", instanceSchedulesAnnouncements},
 	{"RejectsInvalidAnnouncements", instanceRejectsInvalidAnnouncements},
 	{"ErasesAnnouncementReads", instanceErasesAnnouncementReads},
@@ -164,7 +165,7 @@ func instanceAnnouncementLifecycle(t *testing.T, e *instanceEnv) {
 	if _, err := e.service.PublishAnnouncement(ctx, unknown, ""); !errors.Is(err, appinstance.ErrNotFound) {
 		t.Errorf("PublishAnnouncement(unknown) = %v, want ErrNotFound", err)
 	}
-	if all, err := e.service.Announcements(ctx); err != nil || len(all) != 1 || all[0].ID != draft.ID {
+	if all, err := e.service.Announcements(ctx, appinstance.AnnouncementFilterAll, "", 1000); err != nil || len(all) != 1 || all[0].ID != draft.ID {
 		t.Errorf("Announcements = %+v, %v; want the withdrawn one", all, err)
 	}
 }
@@ -270,6 +271,73 @@ func instancePastAnnouncements(t *testing.T, e *instanceEnv) {
 	}
 }
 
+// instanceAnnouncementPages checks the administrators' list (GET /admin/announcements): every
+// announcement in any state, newest first, page by page by the ID of the last one, and each
+// filter keeping the drafts, the published ones whose window has not started, those shown now,
+// those whose window has ended, or the withdrawn ones, at the time of the query; an unknown
+// filter is ErrInvalidValue.
+func instanceAnnouncementPages(t *testing.T, e *instanceEnv) {
+	ctx := t.Context()
+	now := e.clock.Now()
+	e.createAnnouncement(t, "ended", true, time.Time{}, now.Add(30*time.Minute))
+	e.createAnnouncement(t, "draft", false, time.Time{}, time.Time{})
+	e.createAnnouncement(t, "scheduled", true, now.Add(48*time.Hour), time.Time{})
+	withdrawn := e.createAnnouncement(t, "withdrawn", true, time.Time{}, time.Time{})
+	if _, err := e.service.WithdrawAnnouncement(ctx, withdrawn.ID, announcementAdmin); err != nil {
+		t.Fatal(err)
+	}
+	e.createAnnouncement(t, "current", true, time.Time{}, now.Add(72*time.Hour))
+	e.clock.Advance(time.Hour)
+
+	bodies := func(list []instance.Announcement) []string {
+		out := []string{}
+		for _, a := range list {
+			out = append(out, a.Revision.Body)
+		}
+		return out
+	}
+	var got []string
+	before := ""
+	for range 10 {
+		page, err := e.service.Announcements(ctx, appinstance.AnnouncementFilterAll, before, 2)
+		if err != nil {
+			t.Fatal(err)
+		}
+		got = append(got, bodies(page)...)
+		if len(page) < 2 {
+			break
+		}
+		before = page[len(page)-1].ID
+	}
+	if want := []string{"current", "withdrawn", "scheduled", "draft", "ended"}; !reflect.DeepEqual(got, want) {
+		t.Errorf("pages of every announcement = %q, want %q", got, want)
+	}
+	for filter, want := range map[appinstance.AnnouncementFilter][]string{
+		appinstance.AnnouncementFilterDraft:     {"draft"},
+		appinstance.AnnouncementFilterScheduled: {"scheduled"},
+		appinstance.AnnouncementFilterShowing:   {"current"},
+		appinstance.AnnouncementFilterEnded:     {"ended"},
+		appinstance.AnnouncementFilterWithdrawn: {"withdrawn"},
+	} {
+		if list, err := e.service.Announcements(ctx, filter, "", 10); err != nil || !reflect.DeepEqual(bodies(list), want) {
+			t.Errorf("Announcements(%s) = %q, %v; want %q", filter, bodies(list), err, want)
+		}
+	}
+	e.clock.Advance(48 * time.Hour)
+	if list, err := e.service.Announcements(ctx, appinstance.AnnouncementFilterShowing, "", 10); err != nil ||
+		!reflect.DeepEqual(bodies(list), []string{"current", "scheduled"}) {
+		t.Errorf("Announcements(showing) once the window started = %q, %v; want current and scheduled", bodies(list), err)
+	}
+	e.clock.Advance(24 * time.Hour)
+	if list, err := e.service.Announcements(ctx, appinstance.AnnouncementFilterEnded, "", 10); err != nil ||
+		!reflect.DeepEqual(bodies(list), []string{"current", "ended"}) {
+		t.Errorf("Announcements(ended) once current ended = %q, %v; want current and ended", bodies(list), err)
+	}
+	if _, err := e.service.Announcements(ctx, "unknown", "", 10); !errors.Is(err, instance.ErrInvalidValue) {
+		t.Errorf("Announcements(unknown) = %v, want ErrInvalidValue", err)
+	}
+}
+
 // instanceSchedulesAnnouncements checks when an announcement is scheduled for its notifications
 // (ADR-0125 §2): at its publication, at ShowsFrom, and again when a revision moves the start of
 // the window before it has shown; not for a draft, nor for a revision after it has shown.
@@ -347,7 +415,7 @@ func instanceRejectsInvalidAnnouncements(t *testing.T, e *instanceEnv) {
 			t.Errorf("CreateAnnouncement(%s) = %v, want ErrInvalidValue", name, err)
 		}
 	}
-	if all, err := e.service.Announcements(ctx); err != nil || len(all) != 0 {
+	if all, err := e.service.Announcements(ctx, appinstance.AnnouncementFilterAll, "", 1000); err != nil || len(all) != 0 {
 		t.Errorf("Announcements after invalid input = %+v, %v; want none", all, err)
 	}
 	a := e.createAnnouncement(t, "ok", false, time.Time{}, time.Time{})
@@ -406,14 +474,14 @@ func instanceAnnouncementProjectionEqualsRebuild(t *testing.T, e *instanceEnv) {
 				t.Fatalf("round %d step %d: %v", round, step, err)
 			}
 		}
-		incremental, err := e.service.Announcements(ctx)
+		incremental, err := e.service.Announcements(ctx, appinstance.AnnouncementFilterAll, "", 1000)
 		if err != nil || len(incremental) == 0 {
 			t.Fatalf("round %d: Announcements = %d, %v", round, len(incremental), err)
 		}
 		if err := appinstance.RebuildProjections(ctx, e.h.UnitOfWork, e.h.Instance); err != nil {
 			t.Fatalf("RebuildProjections = %v", err)
 		}
-		if rebuilt, err := e.service.Announcements(ctx); err != nil || !reflect.DeepEqual(incremental, rebuilt) {
+		if rebuilt, err := e.service.Announcements(ctx, appinstance.AnnouncementFilterAll, "", 1000); err != nil || !reflect.DeepEqual(incremental, rebuilt) {
 			t.Fatalf("round %d: incremental announcements differ from a rebuild (%v):\nincremental %+v\nrebuilt     %+v", round, err, incremental, rebuilt)
 		}
 	}

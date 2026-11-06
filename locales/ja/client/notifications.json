@@ -409,7 +409,7 @@
   },
   "notifications.link.hook_appeals": {
     "defaultMessage": "異議申し立てを開く",
-    "description": "Link of an admin_hook_appeal notification to the screen of the automated reviews, which lists the appeals of refused posts that await review."
+    "description": "Link of an admin_hook_appeal notification to the page of the appeal of a refused post that awaits review."
   },
   "notifications.type.admin_hook_failing": {
     "defaultMessage": "外部の審査の呼び出しが失敗し続けています",

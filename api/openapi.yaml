@@ -6177,6 +6177,38 @@ paths:
                 $ref: '#/components/schemas/AdminJobPage'
         default:
           $ref: '#/components/responses/Problem'
+  /admin/jobs/{id}:
+    get:
+      operationId: getAdminJob
+      summary: Get a job of the job queue
+      description: |
+        One job, pending or dead, with its state at the time of the request. A completed job, an
+        unknown ID, or a pending job on a queue that cannot list them (`pending_listing` of
+        `GET /admin/queue` is `false`) is a 404. Needs the `manage_jobs` permission.
+      tags:
+        - admin-server
+      security:
+        - oauth2:
+            - admin:read
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The ID of the job.
+          schema:
+            $ref: '#/components/schemas/Id'
+      responses:
+        '200':
+          description: The job.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminJob'
+        default:
+          $ref: '#/components/responses/Problem'
   /admin/jobs/{id}/attempts:
     get:
       operationId: listAdminJobAttempts
@@ -6932,6 +6964,32 @@ paths:
                 $ref: '#/components/schemas/AdminHookSummary'
         default:
           $ref: '#/components/responses/Problem'
+  /admin/hook_decisions/{id}:
+    get:
+      operationId: getHookDecision
+      summary: Get a decision
+      description: |
+        One decision of a decision hook, with its cancellation. An unknown ID is a 404. Needs the
+        `manage_reports` permission.
+      tags:
+        - admin-moderation
+      security:
+        - oauth2:
+            - admin:read
+      parameters:
+        - $ref: '#/components/parameters/HookDecisionId'
+      responses:
+        '200':
+          description: The decision.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminHookDecision'
+        default:
+          $ref: '#/components/responses/Problem'
   /admin/hook_decisions/{id}/override:
     post:
       operationId: overrideHookDecision
@@ -6992,6 +7050,25 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/AdminHookAppealPage'
+        default:
+          $ref: '#/components/responses/Problem'
+  /admin/hook_appeals/{id}:
+    get:
+      operationId: getHookAppeal
+      summary: Get an appeal of a refused post
+      description: |
+        One author's appeal of a `reject` of `local.status`, with its decision and the text the author
+        tried to post. An unknown ID is a 404. Needs the `manage_reports` permission.
+      tags:
+        - admin-moderation
+      security:
+        - oauth2:
+            - admin:read
+      parameters:
+        - $ref: '#/components/parameters/AppealId'
+      responses:
+        '200':
+          $ref: '#/components/responses/AdminHookAppeal'
         default:
           $ref: '#/components/responses/Problem'
   /admin/hook_appeals/{id}/uphold:
@@ -7803,23 +7880,33 @@ paths:
       operationId: listAdminAnnouncements
       summary: List the announcements
       description: |
-        Every announcement, drafts and withdrawn ones included, newest first. The
-        list is not paginated. Needs the `manage_announcements` permission.
+        The announcements, drafts and withdrawn ones included, newest first, a page at a time.
+        `state` keeps only some of them; an unknown one is a 400 naming `state`. Needs the
+        `manage_announcements` permission.
       tags:
         - admin-server
       security:
         - oauth2:
             - admin:read
+      parameters:
+        - name: state
+          in: query
+          required: false
+          description: Keep only these announcements; omitted keeps every one.
+          schema:
+            $ref: '#/components/schemas/AdminAnnouncementFilter'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
       responses:
         '200':
-          description: The announcements.
+          description: A page of announcements.
           headers:
             Cache-Control:
               $ref: '#/components/headers/CacheControl'
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AdminAnnouncementList'
+                $ref: '#/components/schemas/AdminAnnouncementPage'
         default:
           $ref: '#/components/responses/Problem'
     post:
@@ -10965,6 +11052,32 @@ paths:
                 $ref: '#/components/schemas/AdminSupporterSubscriptionPage'
         default:
           $ref: '#/components/responses/Problem'
+  /admin/supporter_subscriptions/{id}:
+    get:
+      operationId: getSupporterSubscription
+      summary: Get a subscription
+      description: |
+        One subscription to a supporter plan, as the list shows it. An unknown subscription is a 404.
+        Needs the `manage_supporters` permission.
+      tags:
+        - admin-server
+      security:
+        - oauth2:
+            - admin:read
+      parameters:
+        - $ref: '#/components/parameters/SupporterSubscriptionId'
+      responses:
+        '200':
+          description: The subscription.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminSupporterSubscription'
+        default:
+          $ref: '#/components/responses/Problem'
   /admin/supporter_subscriptions/{id}/end:
     post:
       operationId: endSupporterSubscription
@@ -13040,6 +13153,18 @@ components:
           description: Publish it at once instead of keeping it a draft.
           type: boolean
           default: false
+    AdminAnnouncementFilter:
+      description: |
+        Which announcements the administrators' list keeps. `draft` and `withdrawn` keep that state.
+        Of the published ones, `scheduled` keeps those whose window starts later, `showing` those every
+        local user sees now, and `ended` those whose window has ended.
+      type: string
+      enum:
+        - draft
+        - scheduled
+        - showing
+        - ended
+        - withdrawn
     AdminAnnouncementInput:
       description: The title, the text, and the window of an announcement.
       type: object
@@ -13066,16 +13191,18 @@ components:
           description: When it stops showing, after `starts_at`; omitted to show it until it is withdrawn.
           type: string
           format: date-time
-    AdminAnnouncementList:
-      description: The announcements, newest first.
-      type: object
-      required:
-        - items
-      properties:
-        items:
-          type: array
-          items:
-            $ref: '#/components/schemas/AdminAnnouncement'
+    AdminAnnouncementPage:
+      description: A page of announcements, newest first.
+      allOf:
+        - $ref: '#/components/schemas/PageInfo'
+        - type: object
+          required:
+            - items
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/AdminAnnouncement'
     AdminAnnouncementState:
       description: |
         `draft`: no user sees it. `published`: every local user sees it within its window.
@@ -17362,7 +17489,7 @@ components:
         - permissions
       properties:
         key:
-          description: The name of the role, 1 to 64 lowercase ASCII letters, digits, `_`, and `-`.
+          description: The name of the role, 1 to 64 lowercase ASCII letters, digits, `_`, and `-`, other than `new`.
           type: string
           minLength: 1
           maxLength: 64

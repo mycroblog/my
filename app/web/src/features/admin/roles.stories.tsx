@@ -109,5 +109,5 @@ export const Japanese: Story = {
 /** Right to left, in the pseudo-locale ar-XB. */
 export const RightToLeft: Story = inLocale("ar-XB");
 
-/** At 320 CSS px, where the long key and the permissions wrap. */
+/** At 320 CSS px, where the table becomes a card per role. */
 export const Narrow: Story = narrow;

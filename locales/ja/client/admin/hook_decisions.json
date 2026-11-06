@@ -1,11 +1,11 @@
 {
+  "admin.hook_decisions.cancelled": {
+    "defaultMessage": "取り消し済み",
+    "description": "State of a decision in the list of decisions: a moderator cancelled it."
+  },
   "admin.hook_decisions.column.decided_at": {
     "defaultMessage": "判定した日時",
     "description": "Column of the list of decisions: when the review answered."
-  },
-  "admin.hook_decisions.column.details": {
-    "defaultMessage": "詳細",
-    "description": "Column of the list of decisions: the account, wait, reason, note, and cancellation."
   },
   "admin.hook_decisions.column.hook": {
     "defaultMessage": "審査",
@@ -98,6 +98,18 @@
   "admin.hook_decisions.note": {
     "defaultMessage": "審査のメモ",
     "description": "Term of a decision: the short plain-text note the review left for moderators."
+  },
+  "admin.hook_decisions.pages": {
+    "defaultMessage": "自動審査の記録のページ",
+    "description": "Accessible name of the navigation between the pages of the automated reviews screen: the decisions and the appeals of refused posts."
+  },
+  "admin.hook_decisions.pages.appeals": {
+    "defaultMessage": "止められた投稿への異議申し立て",
+    "description": "Link of the navigation of the automated reviews screen to the page of the authors' appeals of refused local posts."
+  },
+  "admin.hook_decisions.pages.decisions": {
+    "defaultMessage": "判定",
+    "description": "Link of the navigation of the automated reviews screen to its first page: the counts per review and the list of decisions."
   },
   "admin.hook_decisions.outcome.allow": {
     "defaultMessage": "許可",

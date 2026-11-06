@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The invites (/moderation/invites; web-client/screens/moderation.md): the form that creates one and the invites
-// of the staff and the members, in every state, in the states of ADR-0079 §13
+// The invites (/moderation/invites; web-client/screens/moderation-invites.md): the invites of the staff and the
+// members, in every state, and the form that creates one, in the states of ADR-0079 §13
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { longNameAccountFixture, otherAccountFixture } from "../../test/fixtures";
 import {
@@ -97,6 +97,9 @@ type Story = StoryObj<typeof meta>;
 
 /** Invites of the staff and of members, in every state. */
 export const Normal: Story = showing(/BAKERYCLUB2026AB/);
+
+/** The form of a new invite. */
+export const NewInvite: Story = { parameters: { screen: { path: "/moderation/invites/new" } } };
 
 /** No invite has been created. */
 export const Empty: Story = answering(listing("/admin/invites", []));

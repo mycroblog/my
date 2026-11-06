@@ -4,24 +4,10 @@
 // The groups are the most recently seen first; each row's first cell links to the group's page, where it is resolved
 // or muted. The occurrences say the counts of the last day and week in words, beside a Sparkline of the week by the day
 // (ADR-0110), which repeats them. Types, places and messages are the server's own text, in English, read left to right.
-import {
-  EmptyState,
-  Hint,
-  Link,
-  ListToolbar,
-  Select,
-  SelectItem,
-  Sparkline,
-  Stack,
-  TableCell,
-  TableColumnHeader,
-  TableRow,
-  TableRowHeader,
-  Text,
-} from "@my/ui";
+import { EmptyState, Hint, Link, ListToolbar, Select, SelectItem, Sparkline, Stack, Text } from "@my/ui";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
 import { adminErrorGroupPath } from "../../../lib/paths";
-import { DateTime, RecordTable, RequirePermission } from "../../moderation";
+import { DateTime, type RecordColumns, RecordTable, RequirePermission } from "../../moderation";
 import {
   type ErrorFilter,
   type ErrorGroup,
@@ -146,39 +132,12 @@ function ErrorGroupList({ filter }: { filter: ErrorFilter }) {
   const t = useT();
   const list = useErrorGroups(filter);
   const filtered = filter.state !== "open" || filter.source !== "all";
-  return (
-    <RecordTable
-      list={list}
-      caption={t("client:admin.errors.list")}
-      getId={(group) => group.id}
-      empty={
-        <EmptyState
-          headingLevel={2}
-          heading={t(filtered ? "client:admin.errors.empty.filtered" : "client:admin.errors.empty")}
-          description={t("client:admin.errors.empty.description")}
-        />
-      }
-      head={
-        <>
-          <TableColumnHeader>{t("client:admin.errors.column.error")}</TableColumnHeader>
-          <TableColumnHeader>{t("client:admin.errors.state")}</TableColumnHeader>
-          <TableColumnHeader>{t("client:admin.errors.source")}</TableColumnHeader>
-          <TableColumnHeader>{t("client:admin.errors.column.counts")}</TableColumnHeader>
-          <TableColumnHeader>{t("client:admin.errors.last_seen")}</TableColumnHeader>
-          <TableColumnHeader>{t("client:admin.errors.first_seen")}</TableColumnHeader>
-        </>
-      }
-    >
-      {(group) => <ErrorGroupRow group={group} />}
-    </RecordTable>
-  );
-}
-
-function ErrorGroupRow({ group }: { group: ErrorGroup }) {
-  const t = useT();
-  return (
-    <TableRow data-row-id={group.id}>
-      <TableRowHeader wrap="anywhere">
+  const columns: RecordColumns<ErrorGroup> = [
+    {
+      id: "error",
+      header: t("client:admin.errors.column.error"),
+      wrap: "anywhere",
+      cell: (group) => (
         <Stack gap="1">
           <Link href={adminErrorGroupPath(group.id)} variant="standalone" wrap="anywhere">
             <span dir="ltr">{group.type}</span>
@@ -190,25 +149,47 @@ function ErrorGroupRow({ group }: { group: ErrorGroup }) {
             {group.message}
           </Text>
         </Stack>
-      </TableRowHeader>
-      <TableCell>
-        <ErrorStateLabel state={group.state} />
-      </TableCell>
-      <TableCell>{t(errorSourceLabels[group.source])}</TableCell>
-      <TableCell>
+      ),
+    },
+    { id: "state", header: t("client:admin.errors.state"), cell: (group) => <ErrorStateLabel state={group.state} /> },
+    { id: "source", header: t("client:admin.errors.source"), cell: (group) => t(errorSourceLabels[group.source]) },
+    {
+      id: "counts",
+      header: t("client:admin.errors.column.counts"),
+      cell: (group) => (
         <Stack gap="1">
           <span>{t("client:admin.errors.count_24h.value", { count: group.count_24h })}</span>
           <span>{t("client:admin.errors.count_7d.value", { count: group.count_7d })}</span>
           {group.daily_counts !== undefined && <Sparkline values={group.daily_counts} />}
         </Stack>
-      </TableCell>
-      <TableCell>
-        <SeenAt at={group.last_seen_at} version={group.last_version} />
-      </TableCell>
-      <TableCell>
-        <SeenAt at={group.first_seen_at} version={group.first_version} />
-      </TableCell>
-    </TableRow>
+      ),
+    },
+    {
+      id: "last_seen",
+      header: t("client:admin.errors.last_seen"),
+      cell: (group) => <SeenAt at={group.last_seen_at} version={group.last_version} />,
+    },
+    {
+      id: "first_seen",
+      header: t("client:admin.errors.first_seen"),
+      cell: (group) => <SeenAt at={group.first_seen_at} version={group.first_version} />,
+    },
+  ];
+  return (
+    <RecordTable
+      list={list}
+      caption={t("client:admin.errors.list")}
+      columns={columns}
+      getId={(group) => group.id}
+      headingLevel={2}
+      empty={
+        <EmptyState
+          headingLevel={2}
+          heading={t(filtered ? "client:admin.errors.empty.filtered" : "client:admin.errors.empty")}
+          description={t("client:admin.errors.empty.description")}
+        />
+      }
+    />
   );
 }
 

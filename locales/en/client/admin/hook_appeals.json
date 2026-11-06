@@ -11,14 +11,6 @@
     "defaultMessage": "Author",
     "description": "Column of the list of appeals of refused posts: the account that tried to post and appealed."
   },
-  "admin.hook_appeals.column.appeal": {
-    "defaultMessage": "Appeal",
-    "description": "Column of the list of appeals of refused posts: when it was sent, the text of the post and the author's comment."
-  },
-  "admin.hook_appeals.column.decision": {
-    "defaultMessage": "Decision",
-    "description": "Column of the list of appeals of refused posts: the automated review's decision that refused the post."
-  },
   "admin.hook_appeals.column.state": {
     "defaultMessage": "State",
     "description": "Column of the list of appeals of refused posts: awaiting review, upheld, or overturned."
@@ -75,10 +67,6 @@
     "defaultMessage": "Overturn",
     "description": "Button of a pending appeal of a refused post that opens the confirmation of overturning it, and the confirmation's button that overturns it."
   },
-  "admin.hook_appeals.overturn_of": {
-    "defaultMessage": "Overturn the appeal of {date}",
-    "description": "Accessible name of the button that overturns an appeal of a refused post. {date} is when the appeal was sent."
-  },
   "admin.hook_appeals.overturned": {
     "defaultMessage": "Overturned the appeal. The decision is cancelled, and this author's posts are no longer reviewed.",
     "description": "Status message after a moderator overturned an appeal of a refused post."
@@ -114,9 +102,5 @@
   "admin.hook_appeals.uphold": {
     "defaultMessage": "Uphold",
     "description": "Button of a pending appeal of a refused post that opens the confirmation of upholding it, and the confirmation's button that upholds it."
-  },
-  "admin.hook_appeals.uphold_of": {
-    "defaultMessage": "Uphold the appeal of {date}",
-    "description": "Accessible name of the button that upholds an appeal of a refused post. {date} is when the appeal was sent."
   }
 }

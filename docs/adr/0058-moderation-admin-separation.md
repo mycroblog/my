@@ -18,32 +18,32 @@
 | --- | --- | --- |
 | モデレーション | 通報（`/moderation/reports`） | `manage_reports` |
 | モデレーション | 異議申し立て（`/moderation/appeals`） | `manage_accounts` |
-| モデレーション | アカウントの検索と管理画面・処分（`/moderation/accounts`） | `manage_accounts` |
+| モデレーション | アカウントの検索と管理画面・処分（`/moderation/accounts`。アカウントごとに、審査（`/moderation/accounts/{id}`。要約・処分のフォーム・処分の履歴の新しい 1 ページ・通報）・処分の履歴（`/moderation/accounts/{id}/actions`、処分ごとの `/moderation/accounts/{id}/actions/{actionId}`）・管理（`/moderation/accounts/{id}/manage`）のページ） | `manage_accounts` |
 | モデレーション | 登録の審査（`/moderation/registrations`） | `manage_accounts` |
-| モデレーション | 自動審査の記録（`/moderation/hook-decisions`。判定フックの判定の一覧と取り消し、`local.status` の異議申し立ての審査、[ADR-0147](0147-decision-hooks.md)） | `manage_reports` |
-| モデレーション | 登録の拒否リスト（`/moderation/signup-blocks`、#626 の BAN からの作成を含む） | `manage_accounts` |
-| モデレーション | ドメインへの処分（`/moderation/domain-actions`、#641 のインポートとエクスポートを含む） | `manage_domains` |
+| モデレーション | 自動審査の記録（`/moderation/hook-decisions`。判定フックの判定の一覧と取り消し（判定ごとの `/moderation/hook-decisions/{id}`）、`local.status` の異議申し立ての審査（`/moderation/hook-decisions/appeals`、異議ごとの `/moderation/hook-decisions/appeals/{id}`）、[ADR-0147](0147-decision-hooks.md)） | `manage_reports` |
+| モデレーション | 登録の拒否リスト（`/moderation/signup-blocks`、`/new`・一覧からの追加の `/import`・拒否ごとの `/{id}`、#626 の BAN からの作成を含む） | `manage_accounts` |
+| モデレーション | ドメインへの処分（`/moderation/domain-actions`、`/new`・#641 のインポートとエクスポートの `/import`・処分ごとの `/{id}`） | `manage_domains` |
 | モデレーション | 連合先（`/moderation/instances`。サーバーごとの配送の状態と再開、そのドメインへの処分への入口） | `manage_domains` |
-| モデレーション | 招待（`/moderation/invites`、#624） | `manage_invites` |
+| モデレーション | 招待（`/moderation/invites`・作成の `/moderation/invites/new`、#624） | `manage_invites` |
 | モデレーション | 監査ログ（`/moderation/audit-log`） | `view_audit` |
-| サーバー管理 | サーバーの設定（`/admin/settings`。名前・説明・登録モード・既定の言語・タイムライン・連合の設定・処分したドメインの公開・全文検索の対象（[ADR-0149](0149-full-text-search.md)）・判定フックのモード（ADR-0147）、#624） | `manage_settings` |
+| サーバー管理 | サーバーの設定（`/admin/settings`。話題ごとのページ: 全般（名前・説明・連絡先）・`/branding`（アイコンとロゴ）・`/registration`（登録モード・招待・OAuth のアプリの登録）・`/content`（既定の言語・タイムライン・投稿・トップページ）・`/federation`（連合の設定・処分したドメインの公開・判定フックのモード（ADR-0147））・`/discovery`（クローラー・全文検索の対象（[ADR-0149](0149-full-text-search.md)））・`/voice`、#624） | `manage_settings` |
 | サーバー管理 | 翻訳（`/admin/translation`。翻訳のプロバイダー、それぞれに送る公開範囲、上限、月の使用量、[ADR-0148](0148-post-translation.md)） | `manage_settings` |
-| サーバー管理 | 規約とポリシー（`/admin/documents`） | `manage_settings` |
-| サーバー管理 | ルール（`/admin/rules`、#624） | `manage_rules` |
-| サーバー管理 | ロール（`/admin/roles`。ロールと権限の一覧） | `manage_roles` |
+| サーバー管理 | 規約とポリシー（`/admin/documents`。利用規約・`/privacy-policy`・`/commerce-disclosure` の文書ごとのページ） | `manage_settings` |
+| サーバー管理 | ルール（`/admin/rules`・`/new`・ルールごとの `/{id}`、#624） | `manage_rules` |
+| サーバー管理 | ロール（`/admin/roles`。ロールと権限の一覧、`/new`・ロールごとの `/{key}`） | `manage_roles` |
 | サーバー管理 | テーマ（`/admin/theme`、ADR-0059） | `manage_settings` |
-| サーバー管理 | お知らせ（`/admin/announcements`、#665） | `manage_announcements` |
-| サーバー管理 | カスタム絵文字（`/admin/custom-emojis`、ADR-0051） | `manage_custom_emojis` |
-| サーバー管理 | webhook（`/admin/webhooks`、[ADR-0060](0060-instance-webhooks.md)） | `manage_webhooks` |
-| サーバー管理 | リレー（`/admin/relays`、ADR-0006） | `manage_settings` |
-| サーバー管理 | リンクのカードのドメイン（`/admin/link-card-domains`。カードを取得しないドメインと画像だけを取得しないドメイン、[ADR-0062](0062-link-preview-cards.md)） | `manage_settings` |
-| サーバー管理 | ログインプロバイダー（`/admin/login-providers`。外部のログインの設定・変更・無効化・削除、[ADR-0106](0106-external-login-providers.md)） | `manage_login_providers` |
-| サーバー管理 | OAuth のアプリ（`/admin/oauth-apps`。ログインできるアプリの一覧と無効化、アプリのメタデータ文書のホストの拒否、[ADR-0090](0090-third-party-oauth-apps.md)） | `manage_oauth_apps` |
-| サーバー管理 | ジョブ（`/admin/jobs`。待機・実行中・リトライ待ち・失敗のジョブと失敗の理由、失敗したジョブの再実行、ADR-0004） | `manage_jobs` |
+| サーバー管理 | お知らせ（`/admin/announcements`・`/new`・お知らせごとの `/{id}`、#665） | `manage_announcements` |
+| サーバー管理 | カスタム絵文字（`/admin/custom-emojis`・`/new`・絵文字ごとの `/{id}`・申請の `/requests`、ADR-0051） | `manage_custom_emojis` |
+| サーバー管理 | webhook（`/admin/webhooks`・`/new`・webhook ごとの `/{id}`、[ADR-0060](0060-instance-webhooks.md)） | `manage_webhooks` |
+| サーバー管理 | リレー（`/admin/relays`・`/new`・リレーごとの `/{id}`、ADR-0006） | `manage_settings` |
+| サーバー管理 | リンクのカードのドメイン（`/admin/link-card-domains`・`/new`・ドメインごとの `/{domain}`。カードを取得しないドメインと画像だけを取得しないドメイン、[ADR-0062](0062-link-preview-cards.md)） | `manage_settings` |
+| サーバー管理 | ログインプロバイダー（`/admin/login-providers`・`/new`・プロバイダーごとの `/{id}`。外部のログインの設定・変更・無効化・削除、[ADR-0106](0106-external-login-providers.md)） | `manage_login_providers` |
+| サーバー管理 | OAuth のアプリ（`/admin/oauth-apps`。ログインできるアプリの一覧と無効化、アプリのメタデータ文書のホストの拒否（`/admin/oauth-apps/hosts`）、[ADR-0090](0090-third-party-oauth-apps.md)） | `manage_oauth_apps` |
+| サーバー管理 | ジョブ（`/admin/jobs`。キューの状態、待機・実行中・リトライ待ち・失敗のジョブの一覧（`/admin/jobs/list`）、ジョブごとの失敗の理由と試行（`/admin/jobs/{id}`）、失敗したジョブの再実行、ADR-0004） | `manage_jobs` |
 | サーバー管理 | エラー（`/admin/errors`。サーバーと Web クライアントが報告したエラーのグループと、その解決・ミュート、[ADR-0103](0103-error-reporting.md)） | `manage_errors` |
 | サーバー管理 | サービスの終了（`/admin/closure`。終了の予告と確認、クローズ、配送の進み具合、[ADR-0088](0088-service-shutdown-modes.md)） | `manage_service_closure` |
-| サーバー管理 | 費用（`/admin/finance`。費用の項目の一覧とフォーム、週・月・年の集計、請求の取り込みの状態、[ADR-0067](0067-finance-cost-records.md)） | `manage_finance` |
-| サーバー管理 | サポーター（`/admin/supporters`。課金の機能の有効化、プランと加入、[ADR-0072](0072-supporter-plans-and-roles.md)） | `manage_supporters` |
+| サーバー管理 | 費用（`/admin/finance`。週・月・年の集計の概要、支払いと返金（`/income`）、費用の項目の一覧・登録・項目ごとのページ（`/costs`・`/costs/new`・`/costs/{id}`）、請求の取り込みの状態（`/imports`）、公開の範囲（`/publication`）、[ADR-0067](0067-finance-cost-records.md)） | `manage_finance` |
+| サーバー管理 | サポーター（`/admin/supporters`。課金の機能の有効化、プラン（`/plans`・`/plans/new`・`/plans/{id}`）と加入（`/subscriptions`・`/subscriptions/{id}`）、[ADR-0072](0072-supporter-plans-and-roles.md)） | `manage_supporters` |
 
 どちらにも関わるものの置き場所:
 
@@ -51,7 +51,8 @@
 - **ドメインへの処分**はモデレーションに置く（FR-702 の処分であり、通報からも出す）。サーバーの全員に効くので、既定のモデレーターは `manage_domains` を持たない（§4）。
 - **連合先**（federation.md §7.3 の配送の状態）はモデレーションに置き、`manage_domains` で出す。ドメインへの処分を決める人がそのサーバーの様子を見る画面で、詳細の「モデレーション」の区画からそのドメインへの処分（`/moderation/domain-actions?domain=…`）にリンクする。Mastodon も連合先をモデレーションに置き、配送の再開をそこに持つ。
 - **招待**はモデレーションに置く。誰がサーバーに参加できるかを個別に決める点で、登録の審査と登録の拒否リストと同じ仕事である。登録モード（承認制・招待制）の切り替えはサーバーの設定に残る。
-- **アカウントのロールの付与と剥奪**（FR-720）は、アカウントの管理画面（`/moderation/accounts/{id}`）の「ロール」の区画に置き、`manage_roles` を持つ閲覧者にだけ出す。ロールそのものの一覧（`/admin/roles`）はサーバー管理に置く。
+- **アカウントのロールの付与と剥奪**（FR-720）は、アカウントの管理画面の「管理」のページ（`/moderation/accounts/{id}/manage`）の「ロール」の区画に置き、`manage_roles` を持つ閲覧者にだけ出す。ロールそのものの一覧（`/admin/roles`）はサーバー管理に置く。
+- **サインインの回復**（二要素認証の解除とパスワードのリセットのリンクの発行、`manage_login_recovery`）はサーバー管理の権限だが、1 つのアカウントへの操作なので、ロールと同じ「管理」のページの区画に置き、`manage_login_recovery` を持つ閲覧者にだけ出す。メールの配信の抑止の解除とメールアドレスと IP アドレスの開示（`manage_accounts`）も同じページに置く。審査のページ（`/moderation/accounts/{id}`）は処分の判断とその証拠だけを持つ（NFR-MOD-4）。
 - **リモートのカスタム絵文字の無効化**は、ADR-0051 §5 のとおり `manage_custom_emojis` で行い、カスタム絵文字の管理としてサーバー管理に置く。
 
 ### 2. Web の情報設計

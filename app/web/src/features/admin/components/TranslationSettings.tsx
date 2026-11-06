@@ -170,7 +170,7 @@ function TranslationForm() {
           <Callout>
             <Stack gap="2">
               <span>{t("client:admin.translation.providers.privacy")}</span>
-              <Link href="/admin/documents" variant="standalone">
+              <Link href="/admin/documents/privacy-policy" variant="standalone">
                 {t("client:admin.translation.providers.privacy.link")}
               </Link>
             </Stack>

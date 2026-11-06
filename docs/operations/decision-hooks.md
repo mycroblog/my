@@ -129,7 +129,7 @@ The answers act as the block list's do when the hook enforces:
 
 - `require_approval` leaves the sign-up waiting under **Moderation** > **Registrations**, as a block with the same severity
   does, in every registration mode. Approve or reject it there: cancelling the decision does not change the registration.
-- `reject` does nothing until you turn on `hook_signup_check_reject` (**Server settings** > **External review**, off by
+- `reject` does nothing until you turn on `hook_signup_check_reject` (**Server settings** > **Federation** > **External review**, off by
   default). While it is off, a `reject` is recorded in `observe`, since it stops nothing, and the sign-up goes on. While it
   is on, the applicant sees the same fixed text as for a block ("This server cannot accept this sign-up."). No account is
   written, so cancelling such a decision only changes its record, and the applicant signs up again.
@@ -149,8 +149,8 @@ post through (`pass` is its only failure behaviour), and the wait is not part of
 
 What it sends and when:
 
-- Only the posts of accounts younger than `hook_local_status_account_age_days` (**Server settings** > **External review**,
-  7 days by default; `0` sends the posts of every account). New accounts are where most spam comes from, and established
+- Only the posts of accounts younger than `hook_local_status_account_age_days` (**Server settings** > **Federation** >
+  **External review**, 7 days by default; `0` sends the posts of every account). New accounts are where most spam comes from, and established
   accounts are not sent.
 - Only `public`, `local`, and `unlisted` posts. `private` and `direct` posts are never sent.
 - The text as the author typed it and as the server renders it, the content warning, the language, whether it is marked
@@ -179,7 +179,8 @@ decision. The appeal carries the text of the post, since the server stored nothi
 moderators. No plugin is called.
 
 Your moderators (`manage_reports`) are notified of each new appeal (**Appeals of refused posts** in their notification
-settings, which they can also get by email), and review appeals under **Moderation** > **Automated reviews**:
+settings, which they can also get by email; the notification opens the appeal), and review appeals under **Moderation** >
+**Automated reviews** > **Appeals of refused posts**. Each appeal opens on its own page, with the text the author sent:
 
 - **Uphold** leaves the decision as it is, and goes in the audit log as `hook_appeal_upheld`.
 - **Overturn** cancels the decision, which goes in the audit log as `hook_decision_overridden`, and stops sending the
@@ -195,7 +196,7 @@ over, `local.status` no longer reviews it.
 ## Modes
 
 Each hook has a mode, an [instance setting](instance-settings.md) (`hook_inbound_status_mode` and so on) you change under
-**Server settings** > **External review**. Changes go in the audit log as `setting_changed`.
+**Server settings** > **Federation** > **External review**. Changes go in the audit log as `setting_changed`.
 
 | Mode | What it does |
 | --- | --- |
@@ -237,8 +238,8 @@ A decision holds the hook, the key of the subject, the mode, the outcome, the re
 holds no text of a post, no email address, and no IP address.
 
 **Moderation** > **Automated reviews** (`manage_reports`) shows the counts and waits of the last 7 days, and what the hooks
-stopped, would have stopped in `observe`, or could not check. Cancelling a decision there goes in the audit log as
-`hook_decision_overridden`. A `reject` of `local.status` is not cancelled there: its author [appeals it](#appeals).
+stopped, would have stopped in `observe`, or could not check. Each decision opens on its own page with its reason, note, and
+wait. Cancelling a decision, from the list or its page, goes in the audit log as `hook_decision_overridden`. A `reject` of `local.status` is not cancelled there: its author [appeals it](#appeals).
 
 What cancelling does depends on the answer. A `mark_sensitive` loses its mark, and a mark from a moderation action on the same
 post stays. A `flag` keeps its report, which you resolve as usual. A `drop` of `inbound.status` processes the received post

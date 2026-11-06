@@ -66,7 +66,7 @@ type Story = StoryObj<typeof meta>;
 export const Normal: Story = {};
 
 /** The hosts whose metadata documents the server refuses. */
-export const DeniedHosts: Story = { parameters: { screen: { path: "/admin/oauth-apps?tab=hosts" } } };
+export const DeniedHosts: Story = { parameters: { screen: { path: "/admin/oauth-apps/hosts" } } };
 
 /** No app (the default handlers). */
 export const Empty: Story = adminAnswering();

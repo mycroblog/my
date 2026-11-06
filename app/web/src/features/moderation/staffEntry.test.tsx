@@ -203,7 +203,7 @@ describe("the navigation's Administration", () => {
     // The overview says how the server runs, not a copy of the menu: with manage_jobs, the queue's tiles.
     const health = within(await screen.findByRole("region", { name: "Server health" }));
     expect(health.getAllByRole("link").map((link) => link.getAttribute("href"))).toEqual([
-      "/admin/jobs?state=dead",
+      "/admin/jobs/list?state=dead",
       "/admin/jobs",
     ]);
   });

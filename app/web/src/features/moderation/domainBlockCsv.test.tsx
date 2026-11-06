@@ -55,7 +55,7 @@ const csv = [
 ].join("\n");
 
 async function openSection() {
-  const view = await renderApp({ path: "/moderation/domain-actions" });
+  const view = await renderApp({ path: "/moderation/domain-actions/import" });
   const section = within(await screen.findByRole("region", { name: "Mastodon's CSV" }));
   return { ...view, section };
 }
@@ -63,7 +63,11 @@ async function openSection() {
 describe("an import of a domain block CSV", () => {
   test("previews the rows, imports the chosen ones with a note, and says what it did", async () => {
     const api = csvServer();
-    const { user, section } = await openSection();
+    // The list of actions is read first, and kept in the cache while the import page is open.
+    const { user, router } = await renderApp({ path: "/moderation/domain-actions" });
+    expect(await screen.findByRole("heading", { level: 2, name: "No domain actions in effect" })).toBeInTheDocument();
+    await user.click(screen.getByRole("link", { name: "Mastodon's CSV" }));
+    const section = within(await screen.findByRole("region", { name: "Mastodon's CSV" }));
 
     await user.click(section.getByRole("textbox", { name: "CSV" }));
     await user.paste(csv);
@@ -106,14 +110,18 @@ describe("an import of a domain block CSV", () => {
         private_note: "From mastodon.example.",
       },
     ]);
-    // The list of actions was fetched again before the result was shown.
-    expect(api.lists).toContain("domain_actions");
     // The preview gives way to the result, with focus on the heading of the import.
     expect(section.queryByRole("list", { name: "Rows of the CSV" })).not.toBeInTheDocument();
     await waitFor(() => {
       expect(section.getByRole("heading", { level: 3, name: "Import a CSV" })).toHaveFocus();
     });
     expect(section.getByRole("textbox", { name: "CSV" })).toHaveValue("");
+    // The cached list of actions is stale: going back shows the imported action.
+    api.lists.length = 0;
+    await router.navigate({ to: "/moderation/domain-actions" });
+    // The row takes two actions (limit and reject_media), one row of the list each.
+    expect(await screen.findAllByRole("rowheader", { name: "noisy.example" })).toHaveLength(2);
+    expect(api.lists).toContain("domain_actions");
   });
 
   test("asks before importing rows that suspend a domain", async () => {
@@ -136,7 +144,9 @@ describe("an import of a domain block CSV", () => {
 
     await user.click(section.getByRole("button", { name: "Import 2 rows" }));
     await user.click(
-      within(await screen.findByRole("alertdialog")).getByRole("button", { name: "Import and suspend" }),
+      within(await screen.findByRole("alertdialog")).getByRole("button", {
+        name: "Import and suspend",
+      }),
     );
 
     expect(await section.findByText("3 actions were taken. No row was skipped.")).toBeInTheDocument();

@@ -244,6 +244,33 @@ func (e AdminAccountState) Valid() bool {
 	}
 }
 
+// Defines values for AdminAnnouncementFilter.
+const (
+	AdminAnnouncementFilterDraft     AdminAnnouncementFilter = "draft"
+	AdminAnnouncementFilterEnded     AdminAnnouncementFilter = "ended"
+	AdminAnnouncementFilterScheduled AdminAnnouncementFilter = "scheduled"
+	AdminAnnouncementFilterShowing   AdminAnnouncementFilter = "showing"
+	AdminAnnouncementFilterWithdrawn AdminAnnouncementFilter = "withdrawn"
+)
+
+// Valid indicates whether the value is a known member of the AdminAnnouncementFilter enum.
+func (e AdminAnnouncementFilter) Valid() bool {
+	switch e {
+	case AdminAnnouncementFilterDraft:
+		return true
+	case AdminAnnouncementFilterEnded:
+		return true
+	case AdminAnnouncementFilterScheduled:
+		return true
+	case AdminAnnouncementFilterShowing:
+		return true
+	case AdminAnnouncementFilterWithdrawn:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for AdminAnnouncementState.
 const (
 	AdminAnnouncementStateDraft     AdminAnnouncementState = "draft"
@@ -5137,6 +5164,11 @@ type AdminAnnouncementCreateRequest struct {
 	Title string `json:"title"`
 }
 
+// AdminAnnouncementFilter Which announcements the administrators' list keeps. `draft` and `withdrawn` keep that state.
+// Of the published ones, `scheduled` keeps those whose window starts later, `showing` those every
+// local user sees now, and `ended` those whose window has ended.
+type AdminAnnouncementFilter string
+
 // AdminAnnouncementInput The title, the text, and the window of an announcement.
 type AdminAnnouncementInput struct {
 	// EndsAt When it stops showing, after `starts_at`; omitted to show it until it is withdrawn.
@@ -5153,9 +5185,12 @@ type AdminAnnouncementInput struct {
 	Title string `json:"title"`
 }
 
-// AdminAnnouncementList The announcements, newest first.
-type AdminAnnouncementList struct {
+// AdminAnnouncementPage A page of announcements, newest first.
+type AdminAnnouncementPage struct {
 	Items []AdminAnnouncement `json:"items"`
+
+	// NextCursor An opaque pagination cursor. Clients pass it back unchanged and never parse it.
+	NextCursor *Cursor `json:"next_cursor,omitempty"`
 }
 
 // AdminAnnouncementState `draft`: no user sees it. `published`: every local user sees it within its window.
@@ -8333,7 +8368,7 @@ type CreateReportRequest struct {
 
 // CreateRoleRequest A new role.
 type CreateRoleRequest struct {
-	// Key The name of the role, 1 to 64 lowercase ASCII letters, digits, `_`, and `-`.
+	// Key The name of the role, 1 to 64 lowercase ASCII letters, digits, `_`, and `-`, other than `new`.
 	Key string `json:"key"`
 
 	// Permissions The permissions that the role grants, each once.
@@ -14542,6 +14577,18 @@ type ListAccountActionsParams struct {
 	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
+// ListAdminAnnouncementsParams defines parameters for ListAdminAnnouncements.
+type ListAdminAnnouncementsParams struct {
+	// State Keep only these announcements; omitted keeps every one.
+	State *AdminAnnouncementFilter `form:"state,omitempty" json:"state,omitempty"`
+
+	// Cursor The `next_cursor` of the previous page; omitted for the first page.
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+
+	// Limit The maximum number of items in the page.
+	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
 // ListAppealsParams defines parameters for ListAppeals.
 type ListAppealsParams struct {
 	// State Keep only the appeals in this state; omitted keeps every state.
@@ -15699,7 +15746,7 @@ type ServerInterface interface {
 	DisableAdminAccountTwoFactor(w http.ResponseWriter, r *http.Request, id AdminAccountId)
 	// ListAdminAnnouncements List the announcements
 	// (GET /admin/announcements)
-	ListAdminAnnouncements(w http.ResponseWriter, r *http.Request)
+	ListAdminAnnouncements(w http.ResponseWriter, r *http.Request, params ListAdminAnnouncementsParams)
 	// CreateAdminAnnouncement Write an announcement
 	// (POST /admin/announcements)
 	CreateAdminAnnouncement(w http.ResponseWriter, r *http.Request)
@@ -15853,6 +15900,9 @@ type ServerInterface interface {
 	// ListHookAppeals List the appeals of refused posts
 	// (GET /admin/hook_appeals)
 	ListHookAppeals(w http.ResponseWriter, r *http.Request, params ListHookAppealsParams)
+	// GetHookAppeal Get an appeal of a refused post
+	// (GET /admin/hook_appeals/{id})
+	GetHookAppeal(w http.ResponseWriter, r *http.Request, id AppealId)
 	// OverturnHookAppeal Overturn an appeal of a refused post
 	// (POST /admin/hook_appeals/{id}/overturn)
 	OverturnHookAppeal(w http.ResponseWriter, r *http.Request, id AppealId)
@@ -15865,6 +15915,9 @@ type ServerInterface interface {
 	// GetHookSummary Summarize the decision hooks
 	// (GET /admin/hook_decisions/summary)
 	GetHookSummary(w http.ResponseWriter, r *http.Request)
+	// GetHookDecision Get a decision
+	// (GET /admin/hook_decisions/{id})
+	GetHookDecision(w http.ResponseWriter, r *http.Request, id HookDecisionId)
 	// OverrideHookDecision Cancel a decision
 	// (POST /admin/hook_decisions/{id}/override)
 	OverrideHookDecision(w http.ResponseWriter, r *http.Request, id HookDecisionId)
@@ -15919,6 +15972,9 @@ type ServerInterface interface {
 	// ListAdminJobs List the jobs of the job queue
 	// (GET /admin/jobs)
 	ListAdminJobs(w http.ResponseWriter, r *http.Request, params ListAdminJobsParams)
+	// GetAdminJob Get a job of the job queue
+	// (GET /admin/jobs/{id})
+	GetAdminJob(w http.ResponseWriter, r *http.Request, id Id)
 	// ListAdminJobAttempts List the attempts of a job that did not succeed
 	// (GET /admin/jobs/{id}/attempts)
 	ListAdminJobAttempts(w http.ResponseWriter, r *http.Request, id Id, params ListAdminJobAttemptsParams)
@@ -16117,6 +16173,9 @@ type ServerInterface interface {
 	// ListSupporterSubscriptions List the subscriptions
 	// (GET /admin/supporter_subscriptions)
 	ListSupporterSubscriptions(w http.ResponseWriter, r *http.Request, params ListSupporterSubscriptionsParams)
+	// GetSupporterSubscription Get a subscription
+	// (GET /admin/supporter_subscriptions/{id})
+	GetSupporterSubscription(w http.ResponseWriter, r *http.Request, id SupporterSubscriptionId)
 	// EndSupporterSubscription End a subscription at once
 	// (POST /admin/supporter_subscriptions/{id}/end)
 	EndSupporterSubscription(w http.ResponseWriter, r *http.Request, id SupporterSubscriptionId)
@@ -18087,8 +18146,53 @@ func (siw *ServerInterfaceWrapper) DisableAdminAccountTwoFactor(w http.ResponseW
 // ListAdminAnnouncements operation middleware
 func (siw *ServerInterfaceWrapper) ListAdminAnnouncements(w http.ResponseWriter, r *http.Request) {
 
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListAdminAnnouncementsParams
+
+	// ------------- Optional query parameter "state" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "state", r.URL.Query(), &params.State, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "state"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "state", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.ListAdminAnnouncements(w, r)
+		siw.Handler.ListAdminAnnouncements(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -19644,6 +19748,32 @@ func (siw *ServerInterfaceWrapper) ListHookAppeals(w http.ResponseWriter, r *htt
 	handler.ServeHTTP(w, r)
 }
 
+// GetHookAppeal operation middleware
+func (siw *ServerInterfaceWrapper) GetHookAppeal(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id AppealId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetHookAppeal(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // OverturnHookAppeal operation middleware
 func (siw *ServerInterfaceWrapper) OverturnHookAppeal(w http.ResponseWriter, r *http.Request) {
 
@@ -19786,6 +19916,32 @@ func (siw *ServerInterfaceWrapper) GetHookSummary(w http.ResponseWriter, r *http
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetHookSummary(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetHookDecision operation middleware
+func (siw *ServerInterfaceWrapper) GetHookDecision(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id HookDecisionId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetHookDecision(w, r, id)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -20439,6 +20595,32 @@ func (siw *ServerInterfaceWrapper) ListAdminJobs(w http.ResponseWriter, r *http.
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.ListAdminJobs(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetAdminJob operation middleware
+func (siw *ServerInterfaceWrapper) GetAdminJob(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id Id
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetAdminJob(w, r, id)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -22204,6 +22386,32 @@ func (siw *ServerInterfaceWrapper) ListSupporterSubscriptions(w http.ResponseWri
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.ListSupporterSubscriptions(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetSupporterSubscription operation middleware
+func (siw *ServerInterfaceWrapper) GetSupporterSubscription(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id SupporterSubscriptionId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetSupporterSubscription(w, r, id)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -27659,6 +27867,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/voice/history", wrapper.ListVoiceHistory)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/queue", wrapper.GetAdminQueue)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/jobs", wrapper.ListAdminJobs)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/jobs/{id}", wrapper.GetAdminJob)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/jobs/{id}/attempts", wrapper.ListAdminJobAttempts)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/jobs/{id}/retry", wrapper.RetryAdminJob)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/instances", wrapper.ListInstanceHealth)
@@ -27683,8 +27892,10 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/domain_actions/{id}", wrapper.GetDomainAction)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/hook_decisions", wrapper.ListHookDecisions)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/hook_decisions/summary", wrapper.GetHookSummary)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/hook_decisions/{id}", wrapper.GetHookDecision)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/hook_decisions/{id}/override", wrapper.OverrideHookDecision)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/hook_appeals", wrapper.ListHookAppeals)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/hook_appeals/{id}", wrapper.GetHookAppeal)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/hook_appeals/{id}/uphold", wrapper.UpholdHookAppeal)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/hook_appeals/{id}/overturn", wrapper.OverturnHookAppeal)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/error_groups", wrapper.ListErrorGroups)
@@ -27829,6 +28040,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPatch+" "+options.BaseURL+"/admin/supporter_plans/{id}", wrapper.UpdateSupporterPlan)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/supporter_plans/{id}/retire", wrapper.RetireSupporterPlan)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/supporter_subscriptions", wrapper.ListSupporterSubscriptions)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/supporter_subscriptions/{id}", wrapper.GetSupporterSubscription)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/supporter_subscriptions/{id}/end", wrapper.EndSupporterSubscription)
 
 	return m
@@ -30850,6 +31062,7 @@ func (response DisableAdminAccountTwoFactordefaultApplicationProblemPlusJSONResp
 }
 
 type ListAdminAnnouncementsRequestObject struct {
+	Params ListAdminAnnouncementsParams
 }
 
 type ListAdminAnnouncementsResponseObject interface {
@@ -30861,7 +31074,7 @@ type ListAdminAnnouncements200ResponseHeaders struct {
 }
 
 type ListAdminAnnouncements200JSONResponse struct {
-	Body    AdminAnnouncementList
+	Body    AdminAnnouncementPage
 	Headers ListAdminAnnouncements200ResponseHeaders
 }
 
@@ -34017,6 +34230,61 @@ func (response ListHookAppealsdefaultApplicationProblemPlusJSONResponse) VisitLi
 	return err
 }
 
+type GetHookAppealRequestObject struct {
+	Id AppealId `json:"id"`
+}
+
+type GetHookAppealResponseObject interface {
+	VisitGetHookAppealResponse(w http.ResponseWriter) error
+}
+
+type GetHookAppeal200JSONResponse struct{ AdminHookAppealJSONResponse }
+
+func (response GetHookAppeal200JSONResponse) VisitGetHookAppealResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetHookAppealdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response GetHookAppealdefaultApplicationProblemPlusJSONResponse) VisitGetHookAppealResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type OverturnHookAppealRequestObject struct {
 	Id AppealId `json:"id"`
 }
@@ -34227,6 +34495,68 @@ type GetHookSummarydefaultApplicationProblemPlusJSONResponse struct {
 }
 
 func (response GetHookSummarydefaultApplicationProblemPlusJSONResponse) VisitGetHookSummaryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetHookDecisionRequestObject struct {
+	Id HookDecisionId `json:"id"`
+}
+
+type GetHookDecisionResponseObject interface {
+	VisitGetHookDecisionResponse(w http.ResponseWriter) error
+}
+
+type GetHookDecision200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type GetHookDecision200JSONResponse struct {
+	Body    AdminHookDecision
+	Headers GetHookDecision200ResponseHeaders
+}
+
+func (response GetHookDecision200JSONResponse) VisitGetHookDecisionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetHookDecisiondefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response GetHookDecisiondefaultApplicationProblemPlusJSONResponse) VisitGetHookDecisionResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -35332,6 +35662,68 @@ type ListAdminJobsdefaultApplicationProblemPlusJSONResponse struct {
 }
 
 func (response ListAdminJobsdefaultApplicationProblemPlusJSONResponse) VisitListAdminJobsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetAdminJobRequestObject struct {
+	Id Id `json:"id"`
+}
+
+type GetAdminJobResponseObject interface {
+	VisitGetAdminJobResponse(w http.ResponseWriter) error
+}
+
+type GetAdminJob200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type GetAdminJob200JSONResponse struct {
+	Body    AdminJob
+	Headers GetAdminJob200ResponseHeaders
+}
+
+func (response GetAdminJob200JSONResponse) VisitGetAdminJobResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetAdminJobdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response GetAdminJobdefaultApplicationProblemPlusJSONResponse) VisitGetAdminJobResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -39328,6 +39720,68 @@ type ListSupporterSubscriptionsdefaultApplicationProblemPlusJSONResponse struct 
 }
 
 func (response ListSupporterSubscriptionsdefaultApplicationProblemPlusJSONResponse) VisitListSupporterSubscriptionsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetSupporterSubscriptionRequestObject struct {
+	Id SupporterSubscriptionId `json:"id"`
+}
+
+type GetSupporterSubscriptionResponseObject interface {
+	VisitGetSupporterSubscriptionResponse(w http.ResponseWriter) error
+}
+
+type GetSupporterSubscription200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type GetSupporterSubscription200JSONResponse struct {
+	Body    AdminSupporterSubscription
+	Headers GetSupporterSubscription200ResponseHeaders
+}
+
+func (response GetSupporterSubscription200JSONResponse) VisitGetSupporterSubscriptionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetSupporterSubscriptiondefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response GetSupporterSubscriptiondefaultApplicationProblemPlusJSONResponse) VisitGetSupporterSubscriptionResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -50691,6 +51145,9 @@ type StrictServerInterface interface {
 	// ListHookAppeals List the appeals of refused posts
 	// (GET /admin/hook_appeals)
 	ListHookAppeals(ctx context.Context, request ListHookAppealsRequestObject) (ListHookAppealsResponseObject, error)
+	// GetHookAppeal Get an appeal of a refused post
+	// (GET /admin/hook_appeals/{id})
+	GetHookAppeal(ctx context.Context, request GetHookAppealRequestObject) (GetHookAppealResponseObject, error)
 	// OverturnHookAppeal Overturn an appeal of a refused post
 	// (POST /admin/hook_appeals/{id}/overturn)
 	OverturnHookAppeal(ctx context.Context, request OverturnHookAppealRequestObject) (OverturnHookAppealResponseObject, error)
@@ -50703,6 +51160,9 @@ type StrictServerInterface interface {
 	// GetHookSummary Summarize the decision hooks
 	// (GET /admin/hook_decisions/summary)
 	GetHookSummary(ctx context.Context, request GetHookSummaryRequestObject) (GetHookSummaryResponseObject, error)
+	// GetHookDecision Get a decision
+	// (GET /admin/hook_decisions/{id})
+	GetHookDecision(ctx context.Context, request GetHookDecisionRequestObject) (GetHookDecisionResponseObject, error)
 	// OverrideHookDecision Cancel a decision
 	// (POST /admin/hook_decisions/{id}/override)
 	OverrideHookDecision(ctx context.Context, request OverrideHookDecisionRequestObject) (OverrideHookDecisionResponseObject, error)
@@ -50757,6 +51217,9 @@ type StrictServerInterface interface {
 	// ListAdminJobs List the jobs of the job queue
 	// (GET /admin/jobs)
 	ListAdminJobs(ctx context.Context, request ListAdminJobsRequestObject) (ListAdminJobsResponseObject, error)
+	// GetAdminJob Get a job of the job queue
+	// (GET /admin/jobs/{id})
+	GetAdminJob(ctx context.Context, request GetAdminJobRequestObject) (GetAdminJobResponseObject, error)
 	// ListAdminJobAttempts List the attempts of a job that did not succeed
 	// (GET /admin/jobs/{id}/attempts)
 	ListAdminJobAttempts(ctx context.Context, request ListAdminJobAttemptsRequestObject) (ListAdminJobAttemptsResponseObject, error)
@@ -50955,6 +51418,9 @@ type StrictServerInterface interface {
 	// ListSupporterSubscriptions List the subscriptions
 	// (GET /admin/supporter_subscriptions)
 	ListSupporterSubscriptions(ctx context.Context, request ListSupporterSubscriptionsRequestObject) (ListSupporterSubscriptionsResponseObject, error)
+	// GetSupporterSubscription Get a subscription
+	// (GET /admin/supporter_subscriptions/{id})
+	GetSupporterSubscription(ctx context.Context, request GetSupporterSubscriptionRequestObject) (GetSupporterSubscriptionResponseObject, error)
 	// EndSupporterSubscription End a subscription at once
 	// (POST /admin/supporter_subscriptions/{id}/end)
 	EndSupporterSubscription(ctx context.Context, request EndSupporterSubscriptionRequestObject) (EndSupporterSubscriptionResponseObject, error)
@@ -52817,8 +53283,10 @@ func (sh *strictHandler) DisableAdminAccountTwoFactor(w http.ResponseWriter, r *
 }
 
 // ListAdminAnnouncements operation middleware
-func (sh *strictHandler) ListAdminAnnouncements(w http.ResponseWriter, r *http.Request) {
+func (sh *strictHandler) ListAdminAnnouncements(w http.ResponseWriter, r *http.Request, params ListAdminAnnouncementsParams) {
 	var request ListAdminAnnouncementsRequestObject
+
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.ListAdminAnnouncements(ctx, request.(ListAdminAnnouncementsRequestObject))
@@ -54276,6 +54744,32 @@ func (sh *strictHandler) ListHookAppeals(w http.ResponseWriter, r *http.Request,
 	}
 }
 
+// GetHookAppeal operation middleware
+func (sh *strictHandler) GetHookAppeal(w http.ResponseWriter, r *http.Request, id AppealId) {
+	var request GetHookAppealRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetHookAppeal(ctx, request.(GetHookAppealRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetHookAppeal")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetHookAppealResponseObject); ok {
+		if err := validResponse.VisitGetHookAppealResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // OverturnHookAppeal operation middleware
 func (sh *strictHandler) OverturnHookAppeal(w http.ResponseWriter, r *http.Request, id AppealId) {
 	var request OverturnHookAppealRequestObject
@@ -54371,6 +54865,32 @@ func (sh *strictHandler) GetHookSummary(w http.ResponseWriter, r *http.Request) 
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(GetHookSummaryResponseObject); ok {
 		if err := validResponse.VisitGetHookSummaryResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetHookDecision operation middleware
+func (sh *strictHandler) GetHookDecision(w http.ResponseWriter, r *http.Request, id HookDecisionId) {
+	var request GetHookDecisionRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetHookDecision(ctx, request.(GetHookDecisionRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetHookDecision")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetHookDecisionResponseObject); ok {
+		if err := validResponse.VisitGetHookDecisionResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -54863,6 +55383,32 @@ func (sh *strictHandler) ListAdminJobs(w http.ResponseWriter, r *http.Request, p
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(ListAdminJobsResponseObject); ok {
 		if err := validResponse.VisitListAdminJobsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetAdminJob operation middleware
+func (sh *strictHandler) GetAdminJob(w http.ResponseWriter, r *http.Request, id Id) {
+	var request GetAdminJobRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetAdminJob(ctx, request.(GetAdminJobRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetAdminJob")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetAdminJobResponseObject); ok {
+		if err := validResponse.VisitGetAdminJobResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -56718,6 +57264,32 @@ func (sh *strictHandler) ListSupporterSubscriptions(w http.ResponseWriter, r *ht
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(ListSupporterSubscriptionsResponseObject); ok {
 		if err := validResponse.VisitListSupporterSubscriptionsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetSupporterSubscription operation middleware
+func (sh *strictHandler) GetSupporterSubscription(w http.ResponseWriter, r *http.Request, id SupporterSubscriptionId) {
+	var request GetSupporterSubscriptionRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetSupporterSubscription(ctx, request.(GetSupporterSubscriptionRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetSupporterSubscription")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetSupporterSubscriptionResponseObject); ok {
+		if err := validResponse.VisitGetSupporterSubscriptionResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

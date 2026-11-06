@@ -1,11 +1,11 @@
 {
+  "admin.link_card_domains.back": {
+    "defaultMessage": "ルールの一覧へ戻る",
+    "description": "Link from the page of a rule, or of the form of a new one, back to the list."
+  },
   "admin.link_card_domains.cancel": {
     "defaultMessage": "キャンセル",
     "description": "Button that closes the dialog of removing a rule of the link card crawler without removing it."
-  },
-  "admin.link_card_domains.change_failed": {
-    "defaultMessage": "ルールを変更できませんでした: {reason}",
-    "description": "Error of changing the mode of a rule in its row. {reason} says why."
   },
   "admin.link_card_domains.characters_left": {
     "defaultMessage": "{count, plural, other {あと # 文字}}",
@@ -14,6 +14,10 @@
   "admin.link_card_domains.characters_over": {
     "defaultMessage": "{count, plural, other {# 文字オーバー}}",
     "description": "How many characters the note of a rule is over its limit."
+  },
+  "admin.link_card_domains.detail.title": {
+    "defaultMessage": "リンクのカードのルール",
+    "description": "Heading of the page of one rule of the link card crawler."
   },
   "admin.link_card_domains.domain": {
     "defaultMessage": "ドメイン",
@@ -67,17 +71,21 @@
     "defaultMessage": "このドメインからページは取得しますが、画像は取得しません。カードは、取得済みのものも画像なしで表示します。",
     "description": "What the mode that stops only images does."
   },
-  "admin.link_card_domains.mode_of": {
-    "defaultMessage": "{domain} で止めるもの",
-    "description": "Accessible name of the select of the mode in the row of a rule. {domain} is the domain of the rule."
-  },
   "admin.link_card_domains.new.description": {
     "defaultMessage": "このルールが効くのは投稿中のリンクのカードだけです。ドメインとの連合は続き、投稿のメディアもこれまでどおり取得します。サーバーとのつながりを断つには、ドメインへの処分を使います。",
     "description": "Introduction of the form of a rule of the link card crawler, which sets it apart from a domain action."
   },
   "admin.link_card_domains.new.title": {
-    "defaultMessage": "ルールを設定",
-    "description": "Heading of the section with the form of a rule of the link card crawler."
+    "defaultMessage": "ルールを追加",
+    "description": "Heading of the page with the form of a new rule of the link card crawler, and the link to it."
+  },
+  "admin.link_card_domains.not_found": {
+    "defaultMessage": "{domain} にはルールがありません",
+    "description": "Heading of the page of a rule that does not exist, such as a removed one. {domain} is the domain of the address."
+  },
+  "admin.link_card_domains.not_found.description": {
+    "defaultMessage": "このドメインのリンクのカードは、ふだんどおり取得します。止めるにはルールを追加します。",
+    "description": "Description of the page of a domain that has no rule."
   },
   "admin.link_card_domains.note": {
     "defaultMessage": "メモ",
@@ -94,6 +102,10 @@
   "admin.link_card_domains.remove.description": {
     "defaultMessage": "このドメインの取得済みのカードは元どおり表示します。取得しなかったリンクは、次に投稿で必要になったときにカードを作ります。メモは失われます。",
     "description": "Description of the dialog that confirms removing a rule of the link card crawler."
+  },
+  "admin.link_card_domains.remove.section": {
+    "defaultMessage": "ルールを削除",
+    "description": "Heading of the section of a rule's page that removes it."
   },
   "admin.link_card_domains.remove.title": {
     "defaultMessage": "{domain} のルールを削除しますか？",
@@ -115,6 +127,10 @@
     "defaultMessage": "もう一度試す",
     "description": "Button that loads the rules of the link card crawler again after a failure."
   },
+  "admin.link_card_domains.save": {
+    "defaultMessage": "保存",
+    "description": "Button that saves what a rule stops and its note, on the rule's page."
+  },
   "admin.link_card_domains.save_failed": {
     "defaultMessage": "ルールを保存できませんでした: {reason}",
     "description": "Error of the form of a rule, for another reason than its values. {reason} says why."
@@ -122,6 +138,26 @@
   "admin.link_card_domains.saved": {
     "defaultMessage": "{domain} のルールを保存しました。",
     "description": "Status after saving a rule of the link card crawler. {domain} is its domain."
+  },
+  "admin.link_card_domains.search.clear": {
+    "defaultMessage": "検索を解除",
+    "description": "Button that clears the search of the rules."
+  },
+  "admin.link_card_domains.search.domain": {
+    "defaultMessage": "ドメインに含む文字",
+    "description": "Label of the search field of the rules: a part of the domain."
+  },
+  "admin.link_card_domains.search.empty": {
+    "defaultMessage": "{search} を含むドメインのルールはありません",
+    "description": "Heading of the list of rules when the search finds none. {search} is what was searched."
+  },
+  "admin.link_card_domains.search.label": {
+    "defaultMessage": "ルールを検索",
+    "description": "Accessible name of the search form above the list of the rules of the link card crawler."
+  },
+  "admin.link_card_domains.search.submit": {
+    "defaultMessage": "検索",
+    "description": "Button that searches the rules by domain."
   },
   "admin.link_card_domains.submit": {
     "defaultMessage": "ルールを保存",

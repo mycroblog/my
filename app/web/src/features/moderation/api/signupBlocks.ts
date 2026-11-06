@@ -3,7 +3,7 @@
 // address, one email address (by its hash) or a range of client addresses, listed newest first, added and
 // lifted by a viewer with manage_accounts. The list follows the API's keyset pagination as a TanStack Query
 // infinite query whose key ends with "pages" (web-client/10-api-client-and-auth.md §10).
-import { type InfiniteData, infiniteQueryOptions, type QueryClient } from "@tanstack/react-query";
+import { type InfiniteData, infiniteQueryOptions, queryOptions, type QueryClient } from "@tanstack/react-query";
 import type { Api } from "../../../lib/api/client";
 import { ApiError } from "../../../lib/errors";
 import type { components } from "@mycroblog/mykit";
@@ -107,6 +107,19 @@ export function refreshSignupBlockLists(queryClient: QueryClient): Promise<void>
   return queryClient.invalidateQueries({ predicate: (query) => isSignupBlocksQuery(query.queryKey) });
 }
 
+/** One sign-up block (GET /admin/signup_blocks/{id}). */
+export function signupBlockQueryOptions(api: Api, id: string) {
+  return queryOptions({
+    queryKey: ["get", "/admin/signup_blocks/{id}", { id }] as const,
+    queryFn: async ({ signal }) => {
+      const { data, error } = await api.fetch.GET("/admin/signup_blocks/{id}", { params: { path: { id } }, signal });
+      // The middleware throws an ApiError for every error status; this narrows the type.
+      if (data === undefined) throw new ApiError(error);
+      return data;
+    },
+  });
+}
+
 /** Adds a sign-up block (POST /admin/signup_blocks), as the options of useMutation. */
 export function createSignupBlockMutation(api: Api) {
   return {
@@ -134,10 +147,11 @@ export function liftSignupBlockMutation(api: Api) {
 }
 
 /**
- * Writes the lifted block from the answer into the cached lists of sign-up blocks, which show it right
- * (ADR-0028): those of the blocks in effect drop it, the others show it lifted.
+ * Writes the lifted block from the answer into its cached page and the cached lists of sign-up blocks, which show
+ * it right (ADR-0028): those of the blocks in effect drop it, the others show it lifted.
  */
 export function cacheLiftedSignupBlock(queryClient: QueryClient, lifted: SignupBlock): void {
+  queryClient.setQueryData(["get", "/admin/signup_blocks/{id}", { id: lifted.id }], lifted);
   for (const query of queryClient
     .getQueryCache()
     .findAll({ predicate: (query) => isSignupBlocksQuery(query.queryKey) })) {

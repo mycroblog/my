@@ -377,7 +377,7 @@ describe("the link of an entry's target", () => {
         target_label: "0192f0c4-7a8e-7000-8000-0000000001a1",
         target_exists: true,
       }),
-    ).toBe("/moderation/signup-blocks?filter=all");
+    ).toBe("/moderation/signup-blocks/0192f0c4-7a8e-7000-8000-0000000001a1");
     expect(
       auditTargetHref({
         target_kind: "setting",
@@ -388,10 +388,10 @@ describe("the link of an entry's target", () => {
     ).toBeUndefined();
   });
 
-  test("goes to the custom emoji screen searched by the emoji's shortcode, of this server or of its domain", () => {
+  test("goes to the page of a custom emoji, of this server or of another, and to the requests page", () => {
     expect(
       auditTargetHref({ target_kind: "custom_emoji", target_id: "e1", target_label: ":blobcat:", target_exists: true }),
-    ).toBe("/admin/custom-emojis?shortcode=blobcat");
+    ).toBe("/admin/custom-emojis/e1");
     expect(
       auditTargetHref({
         target_kind: "custom_emoji",
@@ -399,7 +399,15 @@ describe("the link of an entry's target", () => {
         target_label: ":blobfox:@remote.example",
         target_exists: true,
       }),
-    ).toBe("/admin/custom-emojis?origin=remote&shortcode=blobfox&domain=remote.example");
+    ).toBe("/admin/custom-emojis/e2");
+    expect(
+      auditTargetHref({
+        target_kind: "custom_emoji_request",
+        target_id: "r1",
+        target_label: ":blobcat:",
+        target_exists: true,
+      }),
+    ).toBe("/admin/custom-emojis/requests");
   });
 
   test("goes to the list of roles or invites, and to the page of a webhook", () => {

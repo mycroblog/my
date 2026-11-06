@@ -203,6 +203,9 @@ type DeadJobs interface {
 	// most recently failed first, starting after the position after (the zero value for the
 	// first); none when limit <= 0.
 	ListDeadJobs(ctx context.Context, jobType string, after DeadJobPosition, limit int) ([]DeadJob, error)
+	// GetDeadJob returns the dead job id. It returns ErrDeadJobNotFound when there is no such
+	// dead job.
+	GetDeadJob(ctx context.Context, id string) (DeadJob, error)
 	// RequeueDeadJob enqueues the dead job id again with a fresh attempt count, to run now,
 	// and removes it from the dead jobs. When a job with the same IdempotencyKey is pending,
 	// that job stands in for it. It returns ErrDeadJobNotFound when there is no such dead job.
@@ -216,9 +219,11 @@ type DeadJobs interface {
 }
 
 var (
-	// ErrDeadJobNotFound is returned by DeadJobs.RequeueDeadJob and DeadJobs.DeleteDeadJob
-	// for an unknown ID.
+	// ErrDeadJobNotFound is returned by DeadJobs.GetDeadJob, DeadJobs.RequeueDeadJob and
+	// DeadJobs.DeleteDeadJob for an unknown ID.
 	ErrDeadJobNotFound = errors.New("queue: dead job not found")
+	// ErrJobNotFound is returned by JobInspector.GetJob when no pending job has the ID.
+	ErrJobNotFound = errors.New("queue: job not found")
 	// ErrLeaseLost is returned by Source methods when the worker no longer holds the job:
 	// its lease expired and another worker claimed it. The other worker's result wins.
 	ErrLeaseLost = errors.New("queue: job lease lost")

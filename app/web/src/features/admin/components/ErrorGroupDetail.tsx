@@ -17,10 +17,6 @@ import {
   Hint,
   Stack,
   StatusMessage,
-  TableCell,
-  TableColumnHeader,
-  TableRow,
-  TableRowHeader,
   Text,
   TrendChart,
   type TrendPeriod,
@@ -33,10 +29,11 @@ import { type ClientMessageKey, useT } from "../../../lib/i18n";
 import {
   DateTime,
   Section,
-  type PagedPages,
+  type RecordColumns,
   RecordTable,
   RequirePermission,
   useFocusAfterChange,
+  wholeList,
 } from "../../moderation";
 import type { ErrorGroupDetail as Detail, ErrorGroupEvent, ErrorGroupHourCount, ErrorGroupSample } from "../api/errors";
 import { type ErrorGroupActions, useCopyErrorValue, useErrorGroup, useErrorGroupActions } from "../hooks/useErrors";
@@ -310,14 +307,6 @@ function CopyableItem({ term, copyLabel, value }: { term: string; copyLabel: str
   );
 }
 
-/** The hourly counts, newest first, a day to a page; the API answers them oldest first, and all at once. */
-function hourPages(counts: readonly ErrorGroupHourCount[]): PagedPages<ErrorGroupHourCount> {
-  const items = [...counts].reverse();
-  const pages: ErrorGroupHourCount[][] = [];
-  for (let start = 0; start < items.length; start += hoursPerPage) pages.push(items.slice(start, start + hoursPerPage));
-  return { items, pages, hasMore: false, isLoadingMore: false, loadMore: () => undefined };
-}
-
 /**
  * The occurrences of each of the last 48 hours, the current one last, as bars (ADR-0110): the hours without any count
  * zero. The summary says the total and the busiest hour.
@@ -373,79 +362,69 @@ function HourlyChart({ counts }: { counts: readonly ErrorGroupHourCount[] }) {
 function HourlyCounts({ counts }: { counts: readonly ErrorGroupHourCount[] }) {
   const t = useT();
   const intl = useIntl();
+  const columns: RecordColumns<ErrorGroupHourCount> = [
+    { id: "hour", header: t("client:admin.errors.hourly.hour"), cell: (count) => <DateTime value={count.hour} /> },
+    {
+      id: "count",
+      header: t("client:admin.errors.hourly.count"),
+      numeric: true,
+      cell: (count) => intl.formatNumber(count.count),
+    },
+    {
+      id: "version",
+      header: t("client:admin.errors.hourly.version"),
+      wrap: "anywhere",
+      cell: (count) => <span dir="ltr">{count.last_version}</span>,
+    },
+  ];
   return (
     <Stack gap="3">
       <HourlyChart counts={counts} />
       <Heading level={3}>{t("client:admin.errors.hourly.all")}</Heading>
       <Hint size="inherit">{t("client:admin.errors.hourly.description")}</Hint>
+      {/* The hourly counts, newest first, a day to a page; the API answers them oldest first, and all at once. */}
       <RecordTable
-        list={hourPages(counts)}
+        list={wholeList([...counts].reverse(), hoursPerPage)}
         caption={t("client:admin.errors.hourly")}
+        columns={columns}
         getId={(count) => count.hour}
+        headingLevel={4}
         empty={<EmptyState headingLevel={3} heading={t("client:admin.errors.hourly.empty")} />}
-        head={
-          <>
-            <TableColumnHeader>{t("client:admin.errors.hourly.hour")}</TableColumnHeader>
-            <TableColumnHeader>{t("client:admin.errors.hourly.count")}</TableColumnHeader>
-            <TableColumnHeader>{t("client:admin.errors.hourly.version")}</TableColumnHeader>
-          </>
-        }
-      >
-        {(count) => (
-          <TableRow data-row-id={count.hour}>
-            <TableRowHeader>
-              <DateTime value={count.hour} />
-            </TableRowHeader>
-            <TableCell numeric>{intl.formatNumber(count.count)}</TableCell>
-            <TableCell wrap="anywhere">
-              <span dir="ltr">{count.last_version}</span>
-            </TableCell>
-          </TableRow>
-        )}
-      </RecordTable>
+      />
     </Stack>
   );
 }
 
 function History({ events }: { events: readonly ErrorGroupEvent[] }) {
   const t = useT();
-  const items = [...events].reverse();
+  const columns: RecordColumns<ErrorGroupEvent> = [
+    {
+      id: "change",
+      header: t("client:admin.errors.history.change"),
+      wrap: "anywhere",
+      cell: (event) =>
+        event.version === undefined
+          ? t(eventLabels[event.kind])
+          : t("client:admin.errors.event.with_version", {
+              change: t(eventLabels[event.kind]),
+              version: isolatedVersion(event.version),
+            }),
+    },
+    { id: "by", header: t("client:admin.errors.history.by"), cell: (event) => t(actorLabels[event.actor]) },
+    {
+      id: "at",
+      header: t("client:admin.errors.history.at"),
+      cell: (event) => <DateTime value={event.occurred_at} />,
+    },
+  ];
   return (
     <RecordTable
-      list={{
-        items,
-        pages: items.length > 0 ? [items] : [],
-        hasMore: false,
-        isLoadingMore: false,
-        loadMore: () => undefined,
-      }}
+      list={wholeList([...events].reverse())}
       caption={t("client:admin.errors.history")}
+      columns={columns}
       getId={(event) => `${event.occurred_at} ${event.kind}`}
+      headingLevel={3}
       empty={<EmptyState headingLevel={3} heading={t("client:admin.errors.history.empty")} />}
-      head={
-        <>
-          <TableColumnHeader>{t("client:admin.errors.history.change")}</TableColumnHeader>
-          <TableColumnHeader>{t("client:admin.errors.history.by")}</TableColumnHeader>
-          <TableColumnHeader>{t("client:admin.errors.history.at")}</TableColumnHeader>
-        </>
-      }
-    >
-      {(event) => (
-        <TableRow data-row-id={`${event.occurred_at} ${event.kind}`}>
-          <TableRowHeader wrap="anywhere">
-            {event.version === undefined
-              ? t(eventLabels[event.kind])
-              : t("client:admin.errors.event.with_version", {
-                  change: t(eventLabels[event.kind]),
-                  version: isolatedVersion(event.version),
-                })}
-          </TableRowHeader>
-          <TableCell>{t(actorLabels[event.actor])}</TableCell>
-          <TableCell>
-            <DateTime value={event.occurred_at} />
-          </TableCell>
-        </TableRow>
-      )}
-    </RecordTable>
+    />
   );
 }

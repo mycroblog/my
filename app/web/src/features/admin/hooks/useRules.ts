@@ -1,8 +1,11 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The server's rules (FR-705, manage_rules): the rules in effect in order; the text and the hint of a new or
-// changed rule, written once in any language and shown as they are in every language; moving a rule up or down
-// among the others; and retiring one, which reports keep citing. Every change goes to the audit log.
+// The server's rules (FR-705, manage_rules): the rules in effect in order and the retired ones; the text and the hint
+// of a new or changed rule, written once in any language and shown as they are in every language; moving a rule up
+// or down among the others (on the list); and changing or retiring one (on its page), which reports keep citing.
+// Every change goes to the audit log.
+import { type FormActionResult, useNotice } from "@my/ui";
 import { useMutation, useMutationState, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
+import { useNavigate } from "@tanstack/react-router";
 import { type SyntheticEvent, useState } from "react";
 import { useApi } from "../../../lib/auth/SessionProvider";
 import { errorMessage } from "../../../lib/errors";
@@ -15,6 +18,7 @@ import {
   type Rule,
   type RuleInput,
   ruleHintLimit,
+  ruleQueryOptions,
   ruleTextLimit,
   rulesQueryOptions,
   updateRuleMutation,
@@ -25,6 +29,27 @@ import { characterCount } from "./languages";
 export function useRuleList(): Rule[] {
   const api = useApi();
   return useSuspenseQuery(rulesQueryOptions(api)).data.items;
+}
+
+/** The retired rules; the route's loader has loaded them. */
+export function useRetiredRules(): Rule[] {
+  const api = useApi();
+  return useSuspenseQuery(rulesQueryOptions(api, { includeRetired: true })).data.items.filter(
+    (rule) => rule.retired_at !== undefined,
+  );
+}
+
+/** One rule, and its place among the rules in effect (from 1; undefined once it is retired). */
+export function useRule(id: string): { rule: Rule; place: number | undefined } {
+  const api = useApi();
+  const rule = useSuspenseQuery(ruleQueryOptions(api, id)).data;
+  const index = useRuleList().findIndex((other) => other.id === id);
+  return { rule, place: rule.retired_at === undefined && index >= 0 ? index + 1 : undefined };
+}
+
+/** The address of a rule's page. */
+export function rulePath(id: string): string {
+  return `/admin/rules/${encodeURIComponent(id)}`;
 }
 
 /** The fields of a rule: its text and its hint, as typed. */
@@ -40,7 +65,7 @@ export type RuleFields = {
 };
 
 /** The text and the hint of a rule, from `rule` when it is given. The text is needed; the hint is optional. */
-export function useRuleDraft(rule?: Rule) {
+function useRuleDraft(rule?: Rule) {
   const t = useT();
   const [text, setText] = useState(rule?.text ?? "");
   const [hint, setHint] = useState(rule?.hint ?? "");
@@ -76,31 +101,29 @@ export function useRuleDraft(rule?: Rule) {
       if (text.trim() === "" || textError !== undefined || hintError !== undefined) return null;
       return { text: text.trim(), ...(hint.trim() === "" ? {} : { hint: hint.trim() }) };
     },
-    /** Empties the fields, for the next rule. */
-    reset: () => {
-      setText("");
-      setHint("");
-      setSubmitted(false);
-    },
   };
 }
 
-/** The form of a new rule: it is added after the others, and the form empties once the list shows it. */
+/**
+ * The form of a new rule: it is added after the others, then the rule's page opens (web-client §16 G24, the result
+ * is the page it moves to) and a toast says it was added.
+ */
 export function useNewRuleForm() {
   const api = useApi();
   const t = useT();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
+  const notice = useNotice();
   const draft = useRuleDraft();
-  const [status, setStatus] = useState<string | undefined>(undefined);
   const create = useMutation({
     ...createRuleMutation(api),
-    onMutate: () => {
-      setStatus(undefined);
-    },
-    onSuccess: async () => {
+    onSuccess: async (rule) => {
       await refreshRules(queryClient);
-      draft.reset();
-      setStatus(t("client:admin.rules.added"));
+      await navigate({ to: "/admin/rules/$id", params: { id: rule.id } });
+      notice.toast({
+        tone: "success",
+        message: t("client:admin.rules.added", { rule: rule.text }),
+      });
     },
   });
   return {
@@ -112,40 +135,35 @@ export function useNewRuleForm() {
       if (input !== null) create.mutate(input);
     },
     isPending: create.isPending,
-    /** Why adding failed, localized; the draft stays. */
-    error: create.isError ? errorMessage(create.error) : undefined,
-    status,
+    /** Why adding failed, localized, for the form's FormActionBar; the draft stays. */
+    result: create.isError
+      ? ({
+          tone: "danger",
+          message: t("client:admin.rules.add_failed", { reason: errorMessage(create.error) }),
+        } satisfies FormActionResult)
+      : undefined,
   };
 }
 
-/** What the list of rules does to a rule. */
-export type RuleActions = {
-  /** Replaces the rule's text and hint; resolves whether that worked (the dialog stays open with the error if not). */
-  update: (rule: Rule, input: RuleInput) => Promise<boolean>;
+/** Moving the rules of the list up and down. */
+export type RuleMoves = {
   /** Moves the rule to a place among the rules in effect, from 1. */
   move: (rule: Rule, position: number) => void;
-  /** Retires the rule; resolves whether that worked. */
-  retire: (rule: Rule) => Promise<boolean>;
   /** The IDs of the rules being moved. */
   movingIds: readonly string[];
-  /** Why the last change failed, localized. */
+  /** Why the last move failed, localized. */
   error: string | undefined;
 };
 
 /**
- * The changes of the rules in the list. Each says what it did through `onDone(rule, status)` once the list shows
- * it (the rules are fetched again first), so that the screen can move focus and keep the status next to the list.
+ * Moving a rule of the list. `onMoved(rule, status)` is called once the list shows the new order (the rules are fetched
+ * again first), so that the list can move focus to the rule and keep the status next to it.
  */
-export function useRuleActions(
-  onDone: (rule: Rule, status: string, change: "updated" | "moved" | "retired") => void,
-): RuleActions {
+export function useRuleMoves(onMoved: (rule: Rule, status: string) => void): RuleMoves {
   const api = useApi();
   const t = useT();
   const queryClient = useQueryClient();
   const [error, setError] = useState<string | undefined>(undefined);
-  const nameOf = (rule: Rule) => rule.text;
-  const update = useMutation({ ...updateRuleMutation(api) });
-  const retire = useMutation({ ...retireRuleMutation(api) });
   const moveOptions = moveRuleMutation(api);
   const move = useMutation({
     ...moveOptions,
@@ -154,7 +172,7 @@ export function useRuleActions(
     },
     onSuccess: async (rule, { position }) => {
       await refreshRules(queryClient);
-      onDone(rule, t("client:admin.rules.moved", { rule: nameOf(rule), position: String(position) }), "moved");
+      onMoved(rule, t("client:admin.rules.moved", { rule: rule.text, position: String(position) }));
     },
     onError: (failure) => {
       setError(errorMessage(failure));
@@ -165,35 +183,73 @@ export function useRuleActions(
     select: (pending) => (pending.state.variables as { id: string }).id,
   });
   return {
-    update: async (rule, input) => {
-      setError(undefined);
-      try {
-        const saved = await update.mutateAsync({ id: rule.id, input });
-        await refreshRules(queryClient);
-        onDone(saved, t("client:admin.rules.updated", { rule: nameOf(saved) }), "updated");
-        return true;
-      } catch (failure) {
-        setError(errorMessage(failure));
-        return false;
-      }
-    },
     move: (rule, position) => {
       move.mutate({ id: rule.id, position });
     },
-    retire: async (rule) => {
-      setError(undefined);
-      try {
-        const retired = await retire.mutateAsync(rule.id);
-        // The rule leaves the list once it is fetched again: focus moves before that (useFocusAfterRemoval).
-        onDone(retired, t("client:admin.rules.retired", { rule: nameOf(retired) }), "retired");
-        await refreshRules(queryClient);
-        return true;
-      } catch (failure) {
-        setError(errorMessage(failure));
-        return false;
-      }
-    },
     movingIds,
     error,
+  };
+}
+
+/** The form of a rule's page: its text and hint, saved with one button, the result beside it (FormActionBar). */
+export function useRuleForm(rule: Rule) {
+  const api = useApi();
+  const t = useT();
+  const queryClient = useQueryClient();
+  const draft = useRuleDraft(rule);
+  const [result, setResult] = useState<FormActionResult | undefined>(undefined);
+  const update = useMutation({
+    ...updateRuleMutation(api),
+    onMutate: () => {
+      setResult(undefined);
+    },
+    onSuccess: async (saved) => {
+      await refreshRules(queryClient);
+      setResult({
+        tone: "success",
+        message: t("client:admin.rules.updated", { rule: saved.text }),
+      });
+    },
+    onError: (failure) => {
+      setResult({
+        tone: "danger",
+        message: t("client:admin.rules.change_failed", { reason: errorMessage(failure) }),
+      });
+    },
+  });
+  return {
+    draft,
+    submit: (event: SyntheticEvent<HTMLFormElement>) => {
+      event.preventDefault();
+      if (update.isPending) return;
+      const input = draft.input();
+      if (input !== null) update.mutate({ id: rule.id, input });
+    },
+    isPending: update.isPending,
+    result,
+  };
+}
+
+/**
+ * Retiring a rule from its page. Resolves with why it failed (the alert dialog stays open with it), or undefined once
+ * the page shows the rule as retired; `onRetired(status)` is called then, to say so and move focus.
+ */
+export function useRetireRule(rule: Rule, onRetired: (status: string) => void) {
+  const api = useApi();
+  const t = useT();
+  const queryClient = useQueryClient();
+  const retire = useMutation(retireRuleMutation(api));
+  return {
+    retire: async (): Promise<string | undefined> => {
+      try {
+        const retired = await retire.mutateAsync(rule.id);
+        await refreshRules(queryClient);
+        onRetired(t("client:admin.rules.retired", { rule: retired.text }));
+        return undefined;
+      } catch (failure) {
+        return t("client:admin.rules.change_failed", { reason: errorMessage(failure) });
+      }
+    },
+    isPending: retire.isPending,
   };
 }

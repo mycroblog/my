@@ -151,6 +151,11 @@ WHERE (CAST(sqlc.arg(job_type) AS TEXT) = '' OR type = CAST(sqlc.arg(job_type) A
 ORDER BY failed_at DESC, id DESC
 LIMIT sqlc.arg(batch_limit);
 
+-- name: GetDeadJob :one
+SELECT id, type, payload, idempotency_key, ordering_key, trace_parent, attempt, last_error, created_at, failed_at
+FROM dead_jobs
+WHERE id = ?;
+
 -- name: RequeueDeadJob :execrows
 INSERT INTO jobs (id, type, payload, idempotency_key, ordering_key, trace_parent, attempt, run_at, created_at)
 SELECT d.id, d.type, d.payload, d.idempotency_key, d.ordering_key, d.trace_parent, 0, @run_at, d.created_at
@@ -200,6 +205,11 @@ WHERE (CAST(sqlc.arg(job_type) AS TEXT) = '' OR type = CAST(sqlc.arg(job_type) A
     OR (run_at = CAST(sqlc.arg(after_run_at) AS INTEGER) AND id > CAST(sqlc.arg(after_id) AS TEXT)))
 ORDER BY run_at, id
 LIMIT sqlc.arg(batch_limit);
+
+-- name: GetPendingJob :one
+SELECT id, type, payload, idempotency_key, ordering_key, attempt, run_at, locked_by, locked_until, last_error, created_at
+FROM jobs
+WHERE id = ?;
 
 -- CountJobsByState counts the jobs by type and by their state at @now, as ListPendingJobs
 -- derives it.

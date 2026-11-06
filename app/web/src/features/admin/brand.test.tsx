@@ -119,7 +119,7 @@ const svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><script
 describe("the server's icon and logo", () => {
   test("checks an icon, previews it with what was removed, saves it with every rendition, and clears it", async () => {
     const brand = brandServer();
-    const { user } = await renderApp({ path: "/admin/settings" });
+    const { user } = await renderApp({ path: "/admin/settings/branding" });
     const section = await screen.findByRole("region", { name: "Icon and logo" });
     const form = within(section).getByRole("form", { name: "Icon" });
     expect(within(form).getByText("The built-in mycroblog one is in use.")).toBeInTheDocument();
@@ -175,7 +175,7 @@ describe("the server's icon and logo", () => {
 
   test("saves a logo with its mail and link preview images, and no background", async () => {
     const brand = brandServer();
-    const { user } = await renderApp({ path: "/admin/settings" });
+    const { user } = await renderApp({ path: "/admin/settings/branding" });
     const form = await screen.findByRole("form", { name: "Logo" });
 
     await user.upload(fileInput(form), nodeUploadFile(svg, "logo.svg", "image/svg+xml"));
@@ -202,7 +202,7 @@ describe("the server's icon and logo", () => {
         ),
       ),
     );
-    const { user } = await renderApp({ path: "/admin/settings" });
+    const { user } = await renderApp({ path: "/admin/settings/branding" });
     const form = await screen.findByRole("form", { name: "Logo" });
 
     await user.upload(fileInput(form), nodeUploadFile(svg, "logo.svg", "image/svg+xml"));
@@ -217,7 +217,7 @@ describe("the server's icon and logo", () => {
 
   test("asks for a file when the save button is pressed without one", async () => {
     const brand = brandServer();
-    const { user } = await renderApp({ path: "/admin/settings" });
+    const { user } = await renderApp({ path: "/admin/settings/branding" });
     const form = await screen.findByRole("form", { name: "Logo for dark backgrounds" });
 
     await user.click(within(form).getByRole("button", { name: "Save the logo for dark backgrounds" }));
@@ -232,7 +232,7 @@ describe("the server's icon and logo", () => {
     brandServer({
       logo: adminBrandImageFixture("logo", "0199f0e0-0000-7000-8000-00000000b003"),
     });
-    await renderApp({ path: "/admin/settings" });
+    await renderApp({ path: "/admin/settings/branding" });
     const logo = await screen.findByRole("form", { name: "Logo" });
     expect(within(logo).getByText("Now in use")).toBeInTheDocument();
     expect(within(logo).getByRole("button", { name: "Use the built-in logo" })).toBeInTheDocument();

@@ -27,10 +27,6 @@
     "defaultMessage": "招待 {code} を作成しました。",
     "description": "Status after an invite was created. {code} is its code."
   },
-  "admin.invites.created_at": {
-    "defaultMessage": "作成日時",
-    "description": "Term of when an invite was created."
-  },
   "admin.invites.duration.minutes": {
     "defaultMessage": "{count, plural, other {# 分}}",
     "description": "An option of how long an invite works, in minutes."
@@ -68,7 +64,7 @@
     "description": "Help of the number of sign-ups of an invite."
   },
   "admin.invites.mode_notice": {
-    "defaultMessage": "いまサーバーは新しいアカウントを受け付けていないので、招待では誰も登録できません。登録できる人は、管理者がサーバーの設定で変えます。",
+    "defaultMessage": "いまサーバーは新しいアカウントを受け付けていないので、招待では誰も登録できません。登録できる人は、管理者がサーバーの設定の「登録」のページで変えます。",
     "description": "Notice on the invites screen when the registration mode is closed: invites work in the open, approval, and invite modes."
   },
   "admin.invites.never": {
@@ -77,7 +73,7 @@
   },
   "admin.invites.new.title": {
     "defaultMessage": "招待を作成する",
-    "description": "Heading of the form of a new invite."
+    "description": "Button on the list of invites that opens the form of a new one, and the heading of that page."
   },
   "admin.invites.revoke": {
     "defaultMessage": "失効",
@@ -131,17 +127,13 @@
     "defaultMessage": "制限なし",
     "description": "Option of an invite that any number of people may use."
   },
-  "admin.invites.used": {
-    "defaultMessage": "登録した人数",
-    "description": "Term of how many people signed up with an invite."
-  },
   "admin.invites.used.limited": {
-    "defaultMessage": "{max, number} 人中 {uses, number} 人",
-    "description": "How many people signed up with an invite, and how many it allows."
+    "defaultMessage": "{max, number} 人中 {uses, number} 人が登録",
+    "description": "How many people signed up with an invite, and how many it allows, under the invite's state. {uses} is the number; {max} the limit."
   },
   "admin.invites.used.unlimited": {
-    "defaultMessage": "{uses, number} 人 (制限なし)",
-    "description": "How many people signed up with an invite without a limit. {uses} is the number."
+    "defaultMessage": "{uses, number} 人が登録 (制限なし)",
+    "description": "How many people signed up with an invite without a limit, under the invite's state. {uses} is the number."
   },
   "admin.invites.uses": {
     "defaultMessage": "{count, plural, other {# 人}}",
@@ -150,10 +142,6 @@
   "admin.invites.column.invite": {
     "defaultMessage": "招待コード",
     "description": "Header of the column of the invites table that holds the invite's code."
-  },
-  "admin.invites.created_by": {
-    "defaultMessage": "作成者",
-    "description": "Column of the invites table: who created the invite, and whether as a moderator or as a member."
   },
   "admin.invites.created_by.cli": {
     "defaultMessage": "コマンドライン",
@@ -170,5 +158,13 @@
   "admin.invites.creator_kind.member": {
     "defaultMessage": "利用者の招待",
     "description": "Kind of an invite that a member created on their settings page, which works only while they may create invites."
+  },
+  "admin.invites.new.form": {
+    "defaultMessage": "招待の内容",
+    "description": "Heading of the form on the page of a new invite."
+  },
+  "admin.invites.back": {
+    "defaultMessage": "招待に戻る",
+    "description": "Link under the heading of the page of a new invite to the list of invites."
   }
 }

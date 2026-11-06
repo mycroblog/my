@@ -219,6 +219,17 @@ func TestLocalStatusHook(t *testing.T) {
 	if res := c.do("bob", http.MethodPost, "/admin/hook_appeals/"+own.Id+"/overturn", nil, nil); res.StatusCode != http.StatusConflict {
 		t.Errorf("overturning an upheld appeal = %d", res.StatusCode)
 	}
+	// The moderator reads the appeal and its decision on their own pages.
+	var one clientapi.AdminHookAppeal
+	if res := c.do("bob", http.MethodGet, "/admin/hook_appeals/"+own.Id, nil, &one); res.StatusCode != http.StatusOK ||
+		one.State != clientapi.HookAppealStateUpheld || one.StatusText != "buy now, really" || one.Decision.Id != upheldID {
+		t.Errorf("GET the appeal = %d %+v", res.StatusCode, one)
+	}
+	var decision clientapi.AdminHookDecision
+	if res := c.do("bob", http.MethodGet, "/admin/hook_decisions/"+upheldID, nil, &decision); res.StatusCode != http.StatusOK ||
+		decision.Id != upheldID || decision.Outcome != clientapi.HookOutcomeReject || decision.Overridable {
+		t.Errorf("GET the decision = %d %+v", res.StatusCode, decision)
+	}
 	// The author is told, reads the outcome, and the review is audited.
 	if got := notified("alice", clientapi.NotificationTypeHookAppealDecided); len(got) != 1 || got[0].HookAppeal == nil ||
 		got[0].HookAppeal.Id != own.Id || got[0].HookAppeal.State != clientapi.HookAppealStateUpheld || got[0].Account != nil {
@@ -241,6 +252,11 @@ func TestLocalStatusHook(t *testing.T) {
 	for _, path := range []string{"/admin/hook_appeals/x/uphold", "/admin/hook_decisions/x/override"} {
 		if res := c.do("bob", http.MethodPost, path, nil, nil); res.StatusCode != http.StatusNotFound {
 			t.Errorf("POST %s = %d", path, res.StatusCode)
+		}
+	}
+	for _, path := range []string{"/admin/hook_appeals/x", "/admin/hook_decisions/x"} {
+		if res := c.do("bob", http.MethodGet, path, nil, nil); res.StatusCode != http.StatusNotFound {
+			t.Errorf("GET %s = %d", path, res.StatusCode)
 		}
 	}
 	for _, path := range []string{"/admin/hook_appeals?cursor=eA", "/admin/hook_decisions?cursor=eA"} {

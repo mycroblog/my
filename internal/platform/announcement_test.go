@@ -272,9 +272,35 @@ func TestAnnouncements(t *testing.T) {
 		t.Errorf("POST publish of a withdrawn announcement = %d, want 409", code)
 	}
 
-	var all clientapi.AdminAnnouncementList
-	if code := api(adminToken, http.MethodGet, "/admin/announcements", nil, &all); code != http.StatusOK || len(all.Items) != 1 {
+	var all clientapi.AdminAnnouncementPage
+	if code := api(adminToken, http.MethodGet, "/admin/announcements", nil, &all); code != http.StatusOK || len(all.Items) != 1 || all.NextCursor != nil {
 		t.Errorf("GET /admin/announcements = %d %+v", code, all)
+	}
+	// The administrators' list pages by cursor, newest first, and keeps the announcements of a state.
+	var drafts []string
+	for _, title := range []string{"Draft one", "Draft two"} {
+		var a clientapi.AdminAnnouncement
+		if code := api(adminToken, http.MethodPost, "/admin/announcements", map[string]any{"title": title, "text": title}, &a); code != http.StatusCreated {
+			t.Fatalf("POST /admin/announcements (%s) = %d", title, code)
+		}
+		drafts = append(drafts, a.Id)
+	}
+	var first, second clientapi.AdminAnnouncementPage
+	if code := api(adminToken, http.MethodGet, "/admin/announcements?limit=2", nil, &first); code != http.StatusOK ||
+		len(first.Items) != 2 || first.Items[0].Id != drafts[1] || first.Items[1].Id != drafts[0] || first.NextCursor == nil {
+		t.Fatalf("GET /admin/announcements?limit=2 = %d %+v", code, first)
+	}
+	if code := api(adminToken, http.MethodGet, "/admin/announcements?limit=2&cursor="+*first.NextCursor, nil, &second); code != http.StatusOK ||
+		len(second.Items) != 1 || second.Items[0].Id != draft.Id || second.NextCursor != nil {
+		t.Errorf("GET /admin/announcements, the second page = %d %+v", code, second)
+	}
+	var withdrawnOnly, draftsOnly clientapi.AdminAnnouncementPage
+	if code := api(adminToken, http.MethodGet, "/admin/announcements?state=withdrawn", nil, &withdrawnOnly); code != http.StatusOK ||
+		len(withdrawnOnly.Items) != 1 || withdrawnOnly.Items[0].Id != draft.Id {
+		t.Errorf("GET /admin/announcements?state=withdrawn = %d %+v", code, withdrawnOnly)
+	}
+	if code := api(adminToken, http.MethodGet, "/admin/announcements?state=draft", nil, &draftsOnly); code != http.StatusOK || len(draftsOnly.Items) != 2 {
+		t.Errorf("GET /admin/announcements?state=draft = %d %+v", code, draftsOnly)
 	}
 	var audit clientapi.AdminAuditEntryPage
 	if code := api(adminToken, http.MethodGet, "/admin/audit_log?target_kind=announcement&target_id="+draft.Id, nil, &audit); code != http.StatusOK || len(audit.Items) != 4 ||

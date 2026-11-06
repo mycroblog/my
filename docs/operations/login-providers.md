@@ -5,9 +5,10 @@ An external login provider lets users sign in with an account they have elsewher
 You set providers up with the `my login-provider` command on a host that has the server's configuration, or through the
 admin API (`/api/v1/admin/login_providers`) with the `manage_login_providers` permission, which only the built-in
 `admin` role has. The command works before any administrator can sign in, so you can use it for the first setup.
-In the web client, administrators with that permission use "Login providers" in the administration menu: "Set up a
-login provider" creates one (and shows its callback URL), and the list below it shows each provider's state, whether
-sign-up is allowed, and how many users are linked, with buttons to edit, enable, disable, and delete it.
+In the web client, administrators with that permission use "Login providers" in the administration menu. The list
+shows each provider's kind, state and whether sign-up is allowed; "Add a provider" opens the form that creates one.
+Choosing a provider opens its page, which shows its callback URL with a button that copies it and how many users are
+linked, and where you change its settings, give it a new client secret, enable, disable, and delete it.
 
 ## What external sign-in does
 
@@ -156,7 +157,7 @@ provider stays enabled. A user who has none of these can no longer sign in at al
 many linked users lose the provider, and the web client shows the number in the confirmation. `enable` restores the
 users of a disabled provider; a deleted provider cannot come back.
 
-To recover such a user, issue a password reset link for the account on its page of the admin screens, or with
+To recover such a user, issue a password reset link on the account's Management page of the admin screens, or with
 `my admin account password-reset-link @alice`, and give it to the user ([registration](registration.md#password-reset-and-change)).
 The user then signs in with the new password.
 
@@ -166,7 +167,7 @@ it through the admin API.
 ## Limit sign-in to login providers
 
 The instance setting `login_providers_only` (off by default) makes the providers the only way to sign in and register,
-while at least one provider is enabled. Turn it on under "Server settings" in the web client, or with the CLI:
+while at least one provider is enabled. Turn it on on the "Registration" page of "Server settings" in the web client, or with the CLI:
 
 ```sh
 my instance set login_providers_only true

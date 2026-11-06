@@ -5,8 +5,9 @@
 // list of the domain actions, whether the landing page shows the server's numbers and who runs it,
 // what the server states to search engines and AI crawlers, which posts its search covers (ADR-0149 §5), and voice chat (ADR-0100 §2, §9, §13: who may start a
 // room, whether visitors see a room's summary, and how many days the participants' records are kept). They are
-// instance settings that used to change only from the CLI (`my instance set`); the form sends the ones that
-// changed together, all or none, and each change goes to the audit log (FR-704).
+// instance settings that used to change only from the CLI (`my instance set`). Each page of the server settings has one
+// form of the settings of its topic (policyPages); the form sends the ones of its page that changed together, all or
+// none, and each change goes to the audit log (FR-704).
 import { useMutation, useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { type SyntheticEvent, useState } from "react";
 import { useApi } from "../../../lib/auth/SessionProvider";
@@ -22,7 +23,7 @@ import {
 } from "../api/settings";
 import { languageName, selectableLocales } from "./languages";
 
-/** The settings of the form, in the order of its sections. */
+/** The settings of the forms of the policies. */
 const policyKeys = [
   "registration_mode",
   "login_providers_only",
@@ -72,6 +73,60 @@ const policyKeys = [
 ] as const satisfies readonly InstanceSettingKey[];
 
 export type PolicyKey = (typeof policyKeys)[number];
+
+/**
+ * The settings of each page of the server settings that holds policies, in the order of its sections: the pages save
+ * only their own settings (PATCH /admin/settings sets only the keys sent).
+ */
+const policyPages = {
+  registration: [
+    "registration_mode",
+    "login_providers_only",
+    "invite_creators",
+    "member_invite_max_active",
+    "member_invite_max_uses",
+    "member_invite_max_lifetime_seconds",
+    "user_app_registration",
+    "oauth_metadata_document_clients",
+    "dynamic_client_registration",
+  ],
+  content: [
+    "default_locale",
+    "local_timeline_visibility",
+    "federated_timeline_visibility",
+    "require_media_description",
+    "public_counts",
+    "featured_accounts",
+  ],
+  federation: [
+    "federation_mode",
+    "authorized_fetch",
+    "remote_media_policy",
+    "remote_media_cache_ttl_seconds",
+    "link_cards",
+    "link_cards_ignore_robots_txt",
+    "domain_actions_visibility",
+    "domain_actions_rationale_visibility",
+    "hook_inbound_status_mode",
+    "hook_inbound_status_on_failure",
+    "hook_inbound_status_unfollowed_direct",
+    "hook_inbound_follow_mode",
+    "hook_inbound_follow_on_failure",
+    "hook_signup_check_mode",
+    "hook_signup_check_on_failure",
+    "hook_signup_check_reject",
+    "hook_media_check_mode",
+    "hook_media_check_on_failure",
+    "hook_local_status_mode",
+    "hook_local_status_account_age_days",
+    "hook_decisions_retention_days",
+  ],
+  discovery: ["search_indexing", "indexable_default", "ai_usage", "security_contact", "search_visibilities"],
+  voice: ["voice_room_starters", "voice_public_summary", "voice_participants_retention_days"],
+} as const satisfies Record<string, readonly PolicyKey[]>;
+
+/** A page of the server settings that holds policies. */
+export type PolicyPage = keyof typeof policyPages;
 
 /** The lengths of time offered for how long remote media may be kept, in seconds: an hour to a year. */
 const cacheTtlChoices: readonly number[] = [3600, 86_400, 7 * 86_400, 30 * 86_400, 365 * 86_400];
@@ -151,7 +206,9 @@ function federationNarrowing(from: FederationMode, to: FederationMode): Federati
   return { from, to, stopsSending, stopsReceiving, stopsAll: to === "off" };
 }
 
-export function useServerPolicies() {
+/** The form of the policies of one page of the server settings: only its settings are checked and sent. */
+export function useServerPolicies(page: PolicyPage) {
+  const keys: readonly PolicyKey[] = policyPages[page];
   const api = useApi();
   const queryClient = useQueryClient();
   const t = useT();
@@ -168,7 +225,7 @@ export function useServerPolicies() {
   // A typed number is sent without the spaces around it.
   const sentValue = (key: PolicyKey) => (isNumberField(key) ? valueOf(key).trim() : valueOf(key));
   const changes = Object.fromEntries(
-    policyKeys.filter((key) => sentValue(key) !== savedValue(key)).map((key) => [key, sentValue(key)]),
+    keys.filter((key) => sentValue(key) !== savedValue(key)).map((key) => [key, sentValue(key)]),
   );
 
   const save = useMutation({
@@ -195,7 +252,10 @@ export function useServerPolicies() {
   // the server's.
   const numberField = (key: NumberPolicyKey): NumberField => {
     const setting = saved.get(key);
-    const bounds = { min: setting?.minimum ?? numberFields[key].min, max: setting?.maximum ?? numberFields[key].max };
+    const bounds = {
+      min: setting?.minimum ?? numberFields[key].min,
+      max: setting?.maximum ?? numberFields[key].max,
+    };
     const text = valueOf(key).trim();
     const value = /^\d+$/u.test(text) ? Number(text) : Number.NaN;
     const valid = drafts[key] === undefined || (value >= bounds.min && value <= bounds.max);
@@ -211,7 +271,7 @@ export function useServerPolicies() {
             : t("client:admin.settings.invites.number.invalid", range),
     };
   };
-  const numberErrors = numberKeys.map((key) => numberField(key).error);
+  const numberErrors = numberKeys.filter((key) => keys.includes(key)).map((key) => numberField(key).error);
   const ttlChoices = [
     ...new Set([...cacheTtlChoices, ...(Number.isInteger(currentTtl) && currentTtl > 0 ? [currentTtl] : [])]),
   ].toSorted((a, b) => a - b);

@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The costs screen through the whole app (web-client/README.md T4, ADR-0067, ADR-0068): an administrator with
-// manage_finance sees the totals by month amortized by default and switches to weeks, years and cash, with the rules
-// next to them; records a cost paid every few months; edits, revises, ends and cancels one; and imports a provider's
-// charges now; reads the income with its gross, fees and balance under the same tabs, the members of each plan, and the
-// money movements with their subscribers by username, narrowed to a kind and a range of dates kept in the URL. A viewer
-// without the permission sees why; with MSW playing the API.
+// The pages of the costs screen through the whole app (web-client/README.md T4, ADR-0067, ADR-0068): an administrator
+// with manage_finance sees on the overview the totals by month amortized by default and switches to weeks, years and
+// cash, with the rules next to them, and the income with its gross, fees and balance under the same tabs and the members
+// of each plan; goes between the pages by their links; records a cost paid every few months on the new item's page;
+// edits, revises, ends and deletes one on its page; imports a provider's charges now; and reads the money movements with
+// their subscribers by username, narrowed to a kind and a range of dates kept in the URL. A viewer without the
+// permission sees why; with MSW playing the API.
 import { screen, waitFor, within } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
 import { beforeEach, describe, expect, test } from "vitest";
@@ -103,6 +104,10 @@ function itemsServer(initial: readonly Schemas["CostItem"][]) {
   };
   server.use(
     http.get(`${apiBase}/admin/cost_items`, () => HttpResponse.json({ items })),
+    http.get(`${apiBase}/admin/cost_items/:id`, ({ params }) => {
+      const item = items.find((candidate) => candidate.id === params["id"]);
+      return item === undefined ? problem(404, "about:blank", "Not Found") : HttpResponse.json(item);
+    }),
     http.post(`${apiBase}/admin/cost_items`, async ({ request }) => {
       await record(request);
       const { price, memo, ends_on, ...body } = (await request.json()) as Schemas["CostItemCreateRequest"];
@@ -155,7 +160,11 @@ const vm = costItemFixture("0199f0e0-0000-7000-8000-0000000000a2", {
   category: "compute",
   memo: "the main server",
   prices: [
-    { effective_on: "2026-01-31", price: { amount: "12.34", currency: "USD" }, revised_at: "2026-01-31T00:00:00Z" },
+    {
+      effective_on: "2026-01-31",
+      price: { amount: "12.34", currency: "USD" },
+      revised_at: "2026-01-31T00:00:00Z",
+    },
   ],
 });
 
@@ -170,13 +179,16 @@ describe("the costs screen", () => {
     const { user, router } = await renderApp({ path: "/admin/finance" });
 
     expect(await screen.findByRole("heading", { level: 1, name: "Costs" })).toBeInTheDocument();
-    // docs/architecture/web-client/screens/admin-finance.md §3: reading first, recording in the other tab.
-    expect(screen.getByRole("tab", { name: "Overview", selected: true })).toBeInTheDocument();
-    expect(sectionHeadings()).toEqual(["Totals", "Publication", "Payments and refunds"]);
+    // docs/architecture/web-client/screens/admin-finance.md §3: the totals only; the other pages are links.
+    const pages = screen.getByRole("navigation", { name: "Costs pages" });
+    expect(within(pages).getByRole("link", { name: "Overview" })).toHaveAttribute("aria-current", "page");
+    expect(sectionHeadings()).toEqual(["Totals"]);
     const region = screen.getByRole("region", { name: "Totals" });
     expect(within(region).getByRole("radio", { name: /Spread over the period paid for/u })).toBeChecked();
     expect(within(region).getByRole("tab", { name: "Months", selected: true })).toBeInTheDocument();
-    const table = within(region).getByRole("table", { name: "Totals by Months, Spread over the period paid for" });
+    const table = within(region).getByRole("table", {
+      name: "Totals by Months, Spread over the period paid for",
+    });
     const rows = within(table).getAllByRole("row");
     // The newest period first; currencies are never converted.
     expect(rows[1]).toHaveTextContent("October 2026");
@@ -223,33 +235,57 @@ describe("the costs screen", () => {
     });
   });
 
-  test("records the costs in the other tab, kept in the URL with the overview's search", async () => {
+  test("goes to the recorded costs by the screen's links, leaving the totals' search on the overview", async () => {
     totalsServer();
     itemsServer([]);
     const { user, router } = await renderApp({ path: "/admin/finance?granularity=week" });
-    await user.click(await screen.findByRole("tab", { name: "Records" }));
+    const pages = await screen.findByRole("navigation", { name: "Costs pages" });
+    await user.click(within(pages).getByRole("link", { name: "Recorded costs" }));
 
     const list = await screen.findByRole("region", { name: "Recorded costs" });
-    expect(router.state.location.search).toEqual({ tab: "records", granularity: "week" });
-    expect(sectionHeadings()).toEqual(["Recorded costs", "Billing imports"]);
-    // An empty list leads to recording with the one button.
+    expect(router.state.location.pathname).toBe("/admin/finance/costs");
+    expect(router.state.location.search).toEqual({});
+    expect(
+      within(screen.getByRole("navigation", { name: "Costs pages" })).getByRole("link", {
+        name: "Recorded costs",
+      }),
+    ).toHaveAttribute("aria-current", "page");
+    expect(sectionHeadings()).toEqual(["Recorded costs"]);
+    // An empty list leads to recording with the one link.
     expect(within(list).getByRole("heading", { level: 3, name: "No costs yet" })).toBeInTheDocument();
-    expect(screen.getAllByRole("button", { name: "Record a cost" })).toHaveLength(1);
-
-    await user.click(screen.getByRole("tab", { name: "Overview" }));
-    expect(await screen.findByRole("region", { name: "Totals" })).toBeInTheDocument();
-    expect(router.state.location.search).toEqual({ granularity: "week" });
+    expect(screen.getAllByRole("link", { name: "Record a cost" })).toHaveLength(1);
   });
 
-  test("records a cost paid every three months after checking the form", async () => {
+  test("lists the recorded costs in a table of four columns, each name linking to its page", async () => {
+    totalsServer();
+    itemsServer([vm, domain]);
+    await renderApp({ path: "/admin/finance/costs" });
+    const list = await screen.findByRole("region", { name: "Recorded costs" });
+
+    const table = within(list).getByRole("table", { name: "Recorded costs" });
+    expect(
+      within(table)
+        .getAllByRole("columnheader")
+        .map((cell) => cell.textContent),
+    ).toEqual(["Name", "Payment", "Current price", "First payment"]);
+    const rows = within(table).getAllByRole("row").slice(1);
+    expect(within(rows[0] as HTMLElement).getByRole("link", { name: "Main VM" })).toHaveAttribute(
+      "href",
+      `/admin/finance/costs/${vm.id}`,
+    );
+    expect(rows[0]).toHaveTextContent("Every 3 months");
+    expect(rows[0]).toHaveTextContent("$12.34");
+    expect(within(list).getAllByRole("link", { name: "Record a cost" })).toHaveLength(1);
+  });
+
+  test("records a cost paid every three months after checking the form, then shows its page", async () => {
     totalsServer();
     const items = itemsServer([domain]);
-    const { user } = await renderApp({ path: "/admin/finance?tab=records" });
+    const { user, router } = await renderApp({ path: "/admin/finance/costs" });
     const list = await screen.findByRole("region", { name: "Recorded costs" });
-    expect(within(list).getByText("1 recorded cost")).toBeInTheDocument();
-    await user.click(within(list).getByRole("button", { name: "Record a cost" }));
-    const form = within(list).getByRole("region", { name: "Record a cost" });
-    expect(within(form).getByRole("textbox", { name: "Name" })).toHaveFocus();
+    await user.click(within(list).getByRole("link", { name: "Record a cost" }));
+    expect(await screen.findByRole("heading", { level: 1, name: "Record a cost" })).toBeInTheDocument();
+    const form = screen.getByRole("main");
 
     await user.click(within(form).getByRole("button", { name: "Record the cost" }));
     expect(within(form).getAllByText("Fill this in.").length).toBeGreaterThanOrEqual(3);
@@ -264,19 +300,18 @@ describe("the costs screen", () => {
     await user.type(interval, "3");
     await user.type(within(form).getByLabelText(/First payment/u), "2026-01-31");
     await user.type(within(form).getByRole("textbox", { name: "Amount" }), "12.34");
-    // The currency starts as that of the newest item.
+    // The currency starts as that of the newest item of the list the page came from.
     const currency = within(form).getByRole("textbox", { name: "Currency" });
     expect(currency).toHaveValue("JPY");
     await user.clear(currency);
     await user.type(currency, "usd");
     await user.click(within(form).getByRole("button", { name: "Record the cost" }));
 
-    // The panel closes; the result shows above the items and focus is back on the button.
-    expect(await within(list).findByRole("status")).toHaveTextContent(
-      "Recorded Main VM. The audit log records the change.",
-    );
-    expect(within(list).queryByRole("region", { name: "Record a cost" })).not.toBeInTheDocument();
-    expect(within(list).getByRole("button", { name: "Record a cost" })).toHaveFocus();
+    // A toast says what was done, and the item's page shows it.
+    expect(await screen.findByText("Recorded Main VM. The audit log records the change.")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe("/admin/finance/costs/0199f0e0-0000-7000-8000-0000000000a9");
+    });
     expect(items.writes[0]?.body).toEqual({
       schedule: "months",
       interval: 3,
@@ -287,65 +322,75 @@ describe("the costs screen", () => {
       memo: "",
       price: { amount: "12.34", currency: "USD" },
     });
-    expect(await within(list).findByRole("heading", { level: 3, name: "Main VM" })).toBeInTheDocument();
-    expect(within(list).getByText("Every 3 months")).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { level: 2, name: "Main VM" })).toBeInTheDocument();
+    expect(screen.getByText("Every 3 months")).toBeInTheDocument();
   });
 
-  test("edits an item, changes its price, ends it, and deletes one after confirming", async () => {
+  test("edits an item, changes its price and ends it on its page, and deletes it after confirming", async () => {
     totalsServer();
     const items = itemsServer([vm, domain]);
-    const { user } = await renderApp({ path: "/admin/finance?tab=records" });
-    const list = await screen.findByRole("region", { name: "Recorded costs" });
-    expect(within(list).getByText("the main server")).toHaveAttribute("dir", "auto");
+    const { user, router } = await renderApp({ path: `/admin/finance/costs/${vm.id}` });
+    expect(await screen.findByRole("heading", { level: 2, name: "Main VM" })).toBeInTheDocument();
+    // The memo of the facts (the edit form's text area holds it too).
+    expect(within(screen.getByRole("region", { name: "Main VM" })).getByText("the main server")).toHaveAttribute(
+      "dir",
+      "auto",
+    );
 
-    await user.click(within(list).getByRole("button", { name: "Edit: Main VM" }));
-    const edit = await screen.findByRole("dialog", { name: "Edit the cost" });
+    const edit = screen.getByRole("region", { name: "Edit the cost" });
     const name = within(edit).getByRole("textbox", { name: "Name" });
     await user.clear(name);
     await user.type(name, "Primary VM");
     await user.click(within(edit).getByRole("button", { name: "Save" }));
-    expect(await within(list).findByText("Changed Primary VM. The audit log records the change.")).toBeInTheDocument();
-    await waitFor(() => {
-      expect(within(list).getByRole("heading", { level: 3, name: "Primary VM" })).toHaveFocus();
-    });
+    expect(await within(edit).findByText("Changed Primary VM. The audit log records the change.")).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { level: 2, name: "Primary VM" })).toBeInTheDocument();
 
-    await user.click(within(list).getByRole("button", { name: "Change the price: Primary VM" }));
-    const revise = await screen.findByRole("dialog", { name: "Change the price of Primary VM" });
+    const revise = screen.getByRole("region", { name: "Change the price of Primary VM" });
     expect(within(revise).getByRole("textbox", { name: "Currency" })).toHaveValue("USD");
     await user.type(within(revise).getByLabelText(/From/u), "2026-07-31");
     await user.type(within(revise).getByRole("textbox", { name: "Amount" }), "15.00");
-    await user.click(within(revise).getByRole("button", { name: "Save" }));
+    await user.click(within(revise).getByRole("button", { name: "Change the price" }));
     expect(
-      await within(list).findByText("Changed the price of Primary VM. The audit log records the change."),
+      await within(revise).findByText("Changed the price of Primary VM. The audit log records the change."),
     ).toBeInTheDocument();
-    expect(within(list).getByText("$15.00 from Jul 31, 2026")).toBeInTheDocument();
+    expect(screen.getByText("$15.00 from Jul 31, 2026")).toBeInTheDocument();
+    // The form empties once the price is revised.
+    expect(within(revise).getByRole("textbox", { name: "Amount" })).toHaveValue("");
 
-    await user.click(within(list).getByRole("button", { name: "Set the end: Primary VM" }));
-    const end = await screen.findByRole("dialog", { name: "End Primary VM" });
+    const end = screen.getByRole("region", { name: "End Primary VM" });
     await user.type(within(end).getByLabelText(/Last payment by/u), "2026-12-31");
-    await user.click(within(end).getByRole("button", { name: "Save" }));
+    await user.click(within(end).getByRole("button", { name: "Set the end" }));
     expect(
-      await within(list).findByText("Set the end of Primary VM. The audit log records the change."),
+      await within(end).findByText("Set the end of Primary VM. The audit log records the change."),
     ).toBeInTheDocument();
-    expect(within(list).getByText("Dec 31, 2026")).toBeInTheDocument();
+    expect(screen.getByText("Dec 31, 2026")).toBeInTheDocument();
 
-    await user.click(within(list).getByRole("button", { name: "Delete: example.com" }));
-    const confirm = await screen.findByRole("alertdialog", { name: "Delete example.com?" });
+    const remove = screen.getByRole("region", { name: "Delete the cost" });
+    await user.click(within(remove).getByRole("button", { name: "Delete" }));
+    const confirm = await screen.findByRole("alertdialog", { name: "Delete Primary VM?" });
     await user.click(within(confirm).getByRole("button", { name: "Delete" }));
-    expect(await within(list).findByText("Deleted example.com. The audit log records the change.")).toBeInTheDocument();
-    expect(within(list).queryByRole("heading", { name: "example.com" })).not.toBeInTheDocument();
+    expect(await screen.findByText("Deleted Primary VM. The audit log records the change.")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe("/admin/finance/costs");
+    });
+    const list = await screen.findByRole("region", { name: "Recorded costs" });
+    expect(within(list).queryByRole("link", { name: "Primary VM" })).not.toBeInTheDocument();
+    expect(within(list).getByRole("link", { name: "example.com" })).toBeInTheDocument();
 
     expect(items.writes.map((write) => `${write.method} ${write.path}`)).toEqual([
       `PATCH /admin/cost_items/${vm.id}`,
       `POST /admin/cost_items/${vm.id}/price_revisions`,
       `PUT /admin/cost_items/${vm.id}/end`,
-      `DELETE /admin/cost_items/${domain.id}`,
+      `DELETE /admin/cost_items/${vm.id}`,
     ]);
-    expect(items.writes[1]?.body).toEqual({ effective_on: "2026-07-31", price: { amount: "15.00", currency: "USD" } });
+    expect(items.writes[1]?.body).toEqual({
+      effective_on: "2026-07-31",
+      price: { amount: "15.00", currency: "USD" },
+    });
     expect(items.writes[2]?.body).toEqual({ ends_on: "2026-12-31" });
   });
 
-  test("keeps a rejected change in its dialog", async () => {
+  test("keeps a rejected change in its form", async () => {
     totalsServer();
     itemsServer([vm]);
     server.use(
@@ -353,17 +398,14 @@ describe("the costs screen", () => {
         problem(422, "about:blank", "invalid value: price"),
       ),
     );
-    const { user } = await renderApp({ path: "/admin/finance?tab=records" });
-    const list = await screen.findByRole("region", { name: "Recorded costs" });
+    const { user } = await renderApp({ path: `/admin/finance/costs/${vm.id}` });
+    const revise = await screen.findByRole("region", { name: "Change the price of Main VM" });
 
-    await user.click(within(list).getByRole("button", { name: "Change the price: Main VM" }));
-    const revise = await screen.findByRole("dialog", { name: "Change the price of Main VM" });
     await user.type(within(revise).getByLabelText(/From/u), "2026-07-31");
     await user.type(within(revise).getByRole("textbox", { name: "Amount" }), "1.234");
-    await user.click(within(revise).getByRole("button", { name: "Save" }));
-    expect(await within(revise).findByRole("alert")).toHaveTextContent(
-      "Could not change the cost: invalid value: price",
-    );
+    await user.click(within(revise).getByRole("button", { name: "Change the price" }));
+    expect(await within(revise).findByText("Could not change the cost: invalid value: price")).toBeInTheDocument();
+    expect(within(revise).getByRole("textbox", { name: "Amount" })).toHaveValue("1.234");
   });
 
   test("shows the state of the billing imports and imports now once an hour", async () => {
@@ -392,7 +434,13 @@ describe("the costs screen", () => {
               max_requests_per_day: 4,
               max_requests_per_month: 120,
               bytes_billed_this_month: 0,
-              months: [{ month: "2026-10", kind: "estimate", totals: [{ amount: "31.24", currency: "USD" }] }],
+              months: [
+                {
+                  month: "2026-10",
+                  kind: "estimate",
+                  totals: [{ amount: "31.24", currency: "USD" }],
+                },
+              ],
             },
           ],
         } satisfies Schemas["BillingImportList"]),
@@ -403,7 +451,7 @@ describe("the costs screen", () => {
         return new HttpResponse(null, { status: 204 });
       }),
     );
-    const { user } = await renderApp({ path: "/admin/finance?tab=records" });
+    const { user } = await renderApp({ path: "/admin/finance/imports" });
     const region = await screen.findByRole("region", { name: "Billing imports" });
 
     expect(within(region).getByRole("heading", { level: 3, name: "AWS" })).toBeInTheDocument();
@@ -442,13 +490,19 @@ describe("the costs screen", () => {
                 requests_today: 1,
                 requests_this_month: 3,
                 bytes_billed_this_month: 2048,
-                months: [{ month: "2026-10", kind: "estimate", totals: [{ amount: "12.50", currency: "USD" }] }],
+                months: [
+                  {
+                    month: "2026-10",
+                    kind: "estimate",
+                    totals: [{ amount: "12.50", currency: "USD" }],
+                  },
+                ],
               },
             ],
           } satisfies Schemas["BillingImportList"]),
         ),
       );
-      await renderApp({ path: "/admin/finance?tab=records" });
+      await renderApp({ path: "/admin/finance/imports" });
       const region = await screen.findByRole("region", { name: "Billing imports" });
 
       expect(within(region).getByRole("heading", { level: 3, name: "Google Cloud" })).toBeInTheDocument();
@@ -488,7 +542,7 @@ describe("what the costs screen says of their publication", () => {
   test("publishes the running costs next to them, saying that the breakdown reveals the providers", async () => {
     server.use(signedInHandler, operatorHandler(["manage_finance", "manage_settings"]));
     const settings = settingsServer();
-    const { user } = await renderApp({ path: "/admin/finance" });
+    const { user } = await renderApp({ path: "/admin/finance/publication" });
     const publication = await screen.findByRole("region", { name: "Publication" });
     const costs = await within(publication).findByRole("region", { name: "Running costs" });
     const choice = within(costs).getByRole("radiogroup", { name: "What to publish" });
@@ -510,7 +564,7 @@ describe("what the costs screen says of their publication", () => {
   test("publishes the income apart from the costs, saying that the members of a small plan may be guessed", async () => {
     server.use(signedInHandler, operatorHandler(["manage_finance", "manage_settings"]));
     const settings = settingsServer();
-    const { user } = await renderApp({ path: "/admin/finance" });
+    const { user } = await renderApp({ path: "/admin/finance/publication" });
     const publication = await screen.findByRole("region", { name: "Publication" });
     const income = await within(publication).findByRole("region", { name: "Income" });
     const choice = within(income).getByRole("radiogroup", { name: "What to publish" });
@@ -528,7 +582,7 @@ describe("what the costs screen says of their publication", () => {
   test("chooses what the holders of view_finance see, nothing of the items by default", async () => {
     server.use(signedInHandler, operatorHandler(["manage_finance", "manage_settings"]));
     const settings = settingsServer();
-    const { user } = await renderApp({ path: "/admin/finance" });
+    const { user } = await renderApp({ path: "/admin/finance/publication" });
     const publication = await screen.findByRole("region", { name: "Publication" });
     const costs = await within(publication).findByRole("region", { name: "Running costs" });
     const names = within(costs).getByRole("checkbox", { name: "Show the names of the items" });
@@ -564,7 +618,7 @@ describe("what the costs screen says of their publication", () => {
       ),
     );
     serveVisibility("private");
-    await renderApp({ path: "/admin/finance" });
+    await renderApp({ path: "/admin/finance/publication" });
 
     expect(
       await screen.findByText(
@@ -576,7 +630,7 @@ describe("what the costs screen says of their publication", () => {
   test("shows what is published, without the form, to a viewer who may not change it", async () => {
     server.use(signedInHandler, operatorHandler(["manage_finance"]));
     serveVisibility("private");
-    await renderApp({ path: "/admin/finance" });
+    await renderApp({ path: "/admin/finance/publication" });
 
     const publication = await screen.findByRole("region", { name: "Publication" });
     expect(await within(publication).findByText("These costs are not published.")).toBeInTheDocument();
@@ -704,7 +758,9 @@ describe("the income on the costs screen", () => {
 
     const region = await screen.findByRole("region", { name: "Totals" });
     const section = within(region).getByRole("region", { name: "Income" });
-    const table = within(section).getByRole("table", { name: "Income by Months, Spread over the period paid for" });
+    const table = within(section).getByRole("table", {
+      name: "Income by Months, Spread over the period paid for",
+    });
     expect(
       within(table)
         .getAllByRole("columnheader")
@@ -733,11 +789,13 @@ describe("the income on the costs screen", () => {
   test("lists the money movements with their subscribers by username, linked for a viewer who may open the accounts", async () => {
     server.use(operatorHandler(["manage_finance", "manage_accounts"]));
     serveIncome();
-    await renderApp({ path: "/admin/finance" });
+    await renderApp({ path: "/admin/finance/income" });
 
     const region = await screen.findByRole("region", { name: "Payments and refunds" });
     const rows = within(region).getAllByRole("row").slice(1);
-    expect(within(rows[0] as HTMLElement).getByRole("rowheader")).toHaveTextContent("Payment");
+    // The date names the row; the kind, the net (with the gross and the fee) and the subscriber follow.
+    expect(within(rows[0] as HTMLElement).getByRole("rowheader")).toHaveTextContent("Oct 10, 2026");
+    expect(rows[0]).toHaveTextContent("Payment");
     expect(rows[0]).toHaveTextContent("¥11,568");
     expect(rows[0]).toHaveTextContent("¥12,000");
     expect(rows[0]).toHaveTextContent("¥432");
@@ -757,13 +815,13 @@ describe("the income on the costs screen", () => {
     server.use(operatorHandler(["manage_finance"]));
     serveIncome();
     serveMovements([movement, orphanRefund]);
-    await renderApp({ path: "/admin/finance" });
+    await renderApp({ path: "/admin/finance/income" });
 
     const region = await screen.findByRole("region", { name: "Payments and refunds" });
     const rows = within(region).getAllByRole("row").slice(1);
     expect(rows[0]).toHaveTextContent("@alice");
     expect(within(rows[0] as HTMLElement).queryByRole("link")).not.toBeInTheDocument();
-    expect(within(rows[1] as HTMLElement).getByRole("rowheader")).toHaveTextContent("Refund");
+    expect(rows[1]).toHaveTextContent("Refund");
     expect(rows[1]).toHaveTextContent("-¥500");
     expect(rows[1]).toHaveTextContent("Deleted account");
     expect(rows[1]).toHaveTextContent("Of the payment txn_0");
@@ -773,7 +831,7 @@ describe("the income on the costs screen", () => {
     server.use(operatorHandler(["manage_finance", "manage_accounts"]));
     serveIncome();
     const movements = serveMovements([movement, orphanRefund]);
-    const { user, router } = await renderApp({ path: "/admin/finance?basis=cash" });
+    const { user, router } = await renderApp({ path: "/admin/finance/income" });
 
     const region = await screen.findByRole("region", { name: "Payments and refunds" });
     expect(within(region).getAllByRole("row")).toHaveLength(3);
@@ -782,7 +840,7 @@ describe("the income on the costs screen", () => {
     await user.click(within(region).getByRole("button", { name: /Kind/u }));
     await user.click(await screen.findByRole("option", { name: "Refund" }));
     await waitFor(() => {
-      expect(router.state.location.search).toEqual({ basis: "cash", kind: "refund" });
+      expect(router.state.location.search).toEqual({ kind: "refund" });
     });
     expect(movements.queries.at(-1)).toEqual({ kind: "refund" });
     await waitFor(() => {
@@ -796,30 +854,36 @@ describe("the income on the costs screen", () => {
     await user.type(to, "2026-10-01");
     expect(within(region).getByText("The last date is before the first date.")).toBeInTheDocument();
     await user.click(within(region).getByRole("button", { name: "Show these dates" }));
-    expect(router.state.location.search).toEqual({ basis: "cash", kind: "refund" });
+    expect(router.state.location.search).toEqual({ kind: "refund" });
 
     await user.clear(to);
     await user.type(to, "2026-10-31");
     await user.click(within(region).getByRole("button", { name: "Show these dates" }));
     await waitFor(() => {
       expect(router.state.location.search).toEqual({
-        basis: "cash",
         kind: "refund",
         from: "2026-10-10",
         to: "2026-10-31",
       });
     });
-    expect(movements.queries.at(-1)).toEqual({ kind: "refund", from: "2026-10-10", to: "2026-10-31" });
+    expect(movements.queries.at(-1)).toEqual({
+      kind: "refund",
+      from: "2026-10-10",
+      to: "2026-10-31",
+    });
     // Nothing matches: the empty list offers to clear the filters, which moves focus to the kind select.
     expect(
-      await within(region).findByRole("heading", { level: 3, name: "No movements match the filters" }),
+      await within(region).findByRole("heading", {
+        level: 3,
+        name: "No movements match the filters",
+      }),
     ).toBeInTheDocument();
     const clears = within(region).getAllByRole("button", { name: "Clear the filters" });
     // The one above the filters, and the one of the empty list.
     expect(clears).toHaveLength(2);
     await user.click(clears[1] as HTMLElement);
     await waitFor(() => {
-      expect(router.state.location.search).toEqual({ basis: "cash" });
+      expect(router.state.location.search).toEqual({});
     });
     expect(within(region).getByRole("button", { name: /Kind/u })).toHaveFocus();
     expect(from).toHaveValue("");
@@ -830,7 +894,7 @@ describe("the income on the costs screen", () => {
     server.use(operatorHandler(["manage_finance"]));
     serveIncome();
     const movements = serveMovements([movement, orphanRefund]);
-    await renderApp({ path: "/admin/finance?kind=payment&from=2026-10-01&to=2026-13-40" });
+    await renderApp({ path: "/admin/finance/income?kind=payment&from=2026-10-01&to=2026-13-40" });
 
     const region = await screen.findByRole("region", { name: "Payments and refunds" });
     expect(movements.queries[0]).toEqual({ kind: "payment", from: "2026-10-01" });
@@ -840,12 +904,12 @@ describe("the income on the costs screen", () => {
     expect(within(region).getByRole("button", { name: "Clear the filters" })).toBeInTheDocument();
   });
 
-  test("shows what the server publishes of the income", async () => {
+  test("shows what the server publishes of the income on the publication page", async () => {
     server.use(
       operatorHandler(["manage_finance"]),
       http.get(`${apiBase}/instance`, () => HttpResponse.json({ ...instanceFixture, income_visibility: "plans" })),
     );
-    await renderApp({ path: "/admin/finance" });
+    await renderApp({ path: "/admin/finance/publication" });
 
     expect(
       await screen.findByText("The about page publishes the totals of the income and the members of each plan."),
@@ -856,11 +920,11 @@ describe("the income on the costs screen", () => {
 describe("the costs screen without the permission", () => {
   test("says why it shows nothing", async () => {
     server.use(signedInHandler, operatorHandler(["manage_settings"]));
-    await renderApp({ path: "/admin/finance?tab=records" });
+    await renderApp({ path: "/admin/finance/costs" });
 
     expect(await screen.findByRole("heading", { level: 1, name: "Costs" })).toBeInTheDocument();
-    expect(screen.queryByRole("region", { name: "Totals" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("region", { name: "Record a cost" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("navigation", { name: "Costs pages" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: "Recorded costs" })).not.toBeInTheDocument();
     expect(screen.queryByRole("region", { name: "Payments and refunds" })).not.toBeInTheDocument();
   });
 });

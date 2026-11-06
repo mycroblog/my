@@ -91,33 +91,17 @@
     "defaultMessage": "The command line",
     "description": "Value of 'Made by' for a custom emoji registered with the my command, not by a user."
   },
-  "admin.custom_emojis.tabs.label": {
-    "defaultMessage": "Custom emoji screen",
-    "description": "Accessible name of the tab list of the custom emoji screen: the emoji and the requests for new ones."
-  },
-  "admin.custom_emojis.tabs.emoji": {
-    "defaultMessage": "Emoji",
-    "description": "Tab of the custom emoji screen: registering and managing the emoji."
-  },
-  "admin.custom_emojis.tabs.requests": {
-    "defaultMessage": "Requests",
-    "description": "Tab of the custom emoji screen: the requests of users for new custom emoji, which administrators approve or reject."
-  },
-  "admin.custom_emojis.tabs.pending": {
+  "admin.custom_emojis.pages.pending": {
     "defaultMessage": "{count, plural, one {# request awaits review} other {# requests await review}}",
-    "description": "Accessible name of the count on the Requests tab: how many custom emoji requests await review."
+    "description": "Visually hidden words of the badge on the link to the requests page: the number of requests that await review."
   },
-  "admin.custom_emojis.tabs.pending_more": {
+  "admin.custom_emojis.pages.pending_more": {
     "defaultMessage": "{count, plural, one {More than # request awaits review} other {More than # requests await review}}",
-    "description": "Accessible name of the count on the Requests tab when there are more pending requests than one page shows."
+    "description": "Visually hidden words of the badge on the link to the requests page when there are more pending requests than the first page holds."
   },
   "admin.custom_emojis.submit": {
     "defaultMessage": "Register",
     "description": "Button that registers a new custom emoji."
-  },
-  "admin.custom_emojis.created": {
-    "defaultMessage": "{emoji} is registered.",
-    "description": "Status after registering a custom emoji. {emoji} is the emoji's :shortcode: (with @domain for another server's), not translated."
   },
   "admin.custom_emojis.create_failed": {
     "defaultMessage": "Could not register the custom emoji: {reason}",
@@ -126,14 +110,6 @@
   "admin.custom_emojis.list.title": {
     "defaultMessage": "Registered custom emoji",
     "description": "Heading of the list of custom emoji."
-  },
-  "admin.custom_emojis.count": {
-    "defaultMessage": "{count, plural, one {# custom emoji} other {# custom emoji}}",
-    "description": "Read for the count beside the heading of the custom emoji list. {count} is the number of emoji."
-  },
-  "admin.custom_emojis.count_at_least": {
-    "defaultMessage": "{count, plural, one {At least # custom emoji} other {At least # custom emoji}}",
-    "description": "Read for the count beside the heading of the custom emoji list while more of them can be loaded. {count} is the number loaded."
   },
   "admin.custom_emojis.remote_add": {
     "defaultMessage": "Emoji of other servers come with their posts. Copy one to use it on this server.",
@@ -227,22 +203,6 @@
     "defaultMessage": "Image set",
     "description": "Term in a custom emoji's details: when its current image was set."
   },
-  "admin.custom_emojis.edit": {
-    "defaultMessage": "Edit",
-    "description": "Button of a custom emoji that opens the dialog of its settings."
-  },
-  "admin.custom_emojis.edit_emoji": {
-    "defaultMessage": "Edit {emoji}",
-    "description": "Accessible name of the edit button of a custom emoji. {emoji} is the emoji's :shortcode: (with @domain for another server's), not translated."
-  },
-  "admin.custom_emojis.edit.title": {
-    "defaultMessage": "Edit {emoji}",
-    "description": "Title of the dialog of a custom emoji's settings. {emoji} is the emoji's :shortcode: (with @domain for another server's), not translated."
-  },
-  "admin.custom_emojis.edit.close": {
-    "defaultMessage": "Close",
-    "description": "Accessible name of the close button of the dialog of a custom emoji's settings."
-  },
   "admin.custom_emojis.save": {
     "defaultMessage": "Save",
     "description": "Button that saves the settings of a custom emoji."
@@ -262,10 +222,6 @@
   "admin.custom_emojis.replace_image": {
     "defaultMessage": "Replace the image",
     "description": "Button of a custom emoji that chooses a new image file for it."
-  },
-  "admin.custom_emojis.replace_image_of": {
-    "defaultMessage": "Replace the image of {emoji}",
-    "description": "Accessible name of the button that replaces a custom emoji's image. {emoji} is the emoji's :shortcode: (with @domain for another server's), not translated."
   },
   "admin.custom_emojis.image_replaced": {
     "defaultMessage": "The image of {emoji} is replaced. Other servers fetch it again.",
@@ -291,33 +247,17 @@
     "defaultMessage": "{emoji} is deleted.",
     "description": "Status after deleting a custom emoji. {emoji} is the emoji's :shortcode: (with @domain for another server's), not translated."
   },
-  "admin.custom_emojis.copy": {
+  "admin.custom_emojis.detail.copy": {
     "defaultMessage": "Copy to this server",
-    "description": "Button of another server's custom emoji that opens the dialog copying it into an emoji of this server."
-  },
-  "admin.custom_emojis.copy_emoji": {
-    "defaultMessage": "Copy to this server: {emoji}",
-    "description": "Accessible name of the copy button of another server's custom emoji. {emoji} is the emoji's :shortcode: (with @domain for another server's), not translated."
-  },
-  "admin.custom_emojis.copy.title": {
-    "defaultMessage": "Copy {emoji} to this server",
-    "description": "Title of the dialog that copies another server's custom emoji into an emoji of this server. {emoji} is the emoji's :shortcode: (with @domain for another server's), not translated."
+    "description": "Title of the region of a remote emoji's page that copies it into an emoji of this server."
   },
   "admin.custom_emojis.copy.description": {
     "defaultMessage": "This server fetches the image and registers it as its own emoji, shown in the picker. The image shrinks to 256 pixels at most.",
     "description": "Body of the dialog that copies another server's custom emoji."
   },
-  "admin.custom_emojis.copy.close": {
-    "defaultMessage": "Close",
-    "description": "Accessible name of the close button of the dialog that copies another server's custom emoji."
-  },
   "admin.custom_emojis.copy.submit": {
     "defaultMessage": "Copy",
     "description": "Confirm button of the dialog that copies another server's custom emoji."
-  },
-  "admin.custom_emojis.copied": {
-    "defaultMessage": "{emoji} is copied as {copy}.",
-    "description": "Status after copying another server's custom emoji. {emoji} is the copied emoji's :shortcode:@domain and {copy} the new emoji's :shortcode:, not translated."
   },
   "admin.custom_emojis.disable": {
     "defaultMessage": "Disable",
@@ -342,5 +282,57 @@
   "admin.custom_emojis.enabled_status": {
     "defaultMessage": "{emoji} is enabled.",
     "description": "Status after enabling a custom emoji. {emoji} is the emoji's :shortcode: (with @domain for another server's), not translated."
+  },
+  "admin.custom_emojis.pages": {
+    "defaultMessage": "Custom emoji pages",
+    "description": "Name of the local navigation between the pages of the custom emoji screen."
+  },
+  "admin.custom_emojis.pages.emoji": {
+    "defaultMessage": "Emoji",
+    "description": "Link of the local navigation to the list of custom emoji."
+  },
+  "admin.custom_emojis.pages.requests": {
+    "defaultMessage": "Requests",
+    "description": "Link of the local navigation to the requests for custom emoji."
+  },
+  "admin.custom_emojis.column.emoji": {
+    "defaultMessage": "Emoji",
+    "description": "Column header of the emoji: its image and :shortcode:, a link to its page."
+  },
+  "admin.custom_emojis.created_at": {
+    "defaultMessage": "Registered",
+    "description": "Term of when the emoji was registered on this server, or first seen from its server."
+  },
+  "admin.custom_emojis.back": {
+    "defaultMessage": "All custom emoji",
+    "description": "Link from an emoji's page and the registration form back to the list of custom emoji."
+  },
+  "admin.custom_emojis.detail.title": {
+    "defaultMessage": "Custom emoji details",
+    "description": "Heading and title of the page of one custom emoji."
+  },
+  "admin.custom_emojis.detail.about": {
+    "defaultMessage": "About this emoji",
+    "description": "Title of the region of an emoji's page with its image, :shortcode: and facts."
+  },
+  "admin.custom_emojis.detail.settings": {
+    "defaultMessage": "Settings",
+    "description": "Title of the region of a local emoji's page with the form of its category, other names and picker visibility."
+  },
+  "admin.custom_emojis.detail.image": {
+    "defaultMessage": "Image",
+    "description": "Title of the region of a local emoji's page that replaces its image."
+  },
+  "admin.custom_emojis.detail.state": {
+    "defaultMessage": "Enable or disable",
+    "description": "Title of the region of an emoji's page that enables or disables it."
+  },
+  "admin.custom_emojis.detail.state.description": {
+    "defaultMessage": "A disabled emoji appears nowhere, neither in posts, profiles, federation nor the picker: its :shortcode: is shown as text.",
+    "description": "Description of the region that enables or disables an emoji."
+  },
+  "admin.custom_emojis.detail.delete": {
+    "defaultMessage": "Delete this emoji",
+    "description": "Title of the region of a local emoji's page that deletes it."
   }
 }

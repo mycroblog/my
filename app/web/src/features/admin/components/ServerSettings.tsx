@@ -1,105 +1,100 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The server settings screen below its heading (manage_settings, FR-705): the instance's name and descriptions, how
-// to reach its operators and its thumbnail (#663), its own icon and logos (BrandSettings, ADR-0059), then its policies (who may sign up, the default language, the
-// public timelines, who may create invites of their own and their caps (ADR-0106 §14, §15), whether images need a description, the federation, who may read the list of the domain
-// actions, how much of the costs is published and shown to the holders of view_finance, how much of the income is published, which posts the post search covers while the server has one, and voice chat while the server offers it) in one form saved together. The name, the descriptions and the thumbnail's alt text hold one value each,
-// written in any language and shown as it is in every language; the labels are the app's. The name stands in for
-// the domain where the instance is named to people; the domain stays in handles and links. The browser keeps a
-// form from being sent while a field is invalid (React Aria's native validation: the error is under its field and
-// linked to it, and focus moves to the first invalid field). Each form has one FormActionBar: its save button with the
-// result of the last save beside it, success or failure (ADR-0110 §5, audit A8); the policies' bar sticks to the bottom
-// of the screen, since its form is taller than the screen (web-client/README.md E2).
+// The server settings screen below its heading (manage_settings, FR-705): its pages, one per topic, each a child route
+// with one form and one save under a LocalNav of the pages (web-client/14-admin.md, how a screen splits):
+// - general (/admin/settings): the instance's name, its descriptions, how to reach its operators and its thumbnail
+//   (#663);
+// - branding: its own icon and logos (BrandSettings, ADR-0059), three file forms of one primary action each;
+// - registration, content, federation, discovery and voice: its policies by topic (PolicySettings), voice only while
+//   the server offers voice chat.
+// The name, the descriptions and the thumbnail's alt text hold one value each, written in any language and shown as it
+// is in every language; the labels are the app's. The name stands in for the domain where the instance is named to
+// people; the domain stays in handles and links. The browser keeps a form from being sent while a field is invalid
+// (React Aria's native validation: the error is under its field and linked to it, and focus moves to the first
+// invalid field). Each form has one FormActionBar: its save button with the result of the last save beside it,
+// success or failure (ADR-0110 §5, audit A8); it sticks to the bottom of the screen, since a form may be taller than
+// the screen (web-client/README.md E2).
 import {
   Button,
-  Checkbox,
   Cluster,
-  Dialog,
-  DialogActions,
   FileTrigger,
+  FormActionBar,
   Heading,
   Hint,
-  FormActionBar,
-  type FormActionResult,
   InlineError,
+  LocalNav,
   PreviewImage,
-  Radio,
-  RadioGroup,
-  Select,
-  SelectItem,
   Stack,
-  Text,
   TextArea,
   TextField,
 } from "@my/ui";
 import { useId } from "react";
-import { usePostSearchAvailable } from "../../../lib/fullTextSearch";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
-import { Section, RequirePermission } from "../../moderation";
+import { RequirePermission, Section } from "../../moderation";
 import { acceptedImageTypes } from "../../settings";
 import { useVoiceAvailable } from "../../voice";
 import { thumbnailAltLimit } from "../api/settings";
-import { useServerContact } from "../hooks/useServerContact";
-import { type DescriptionField, descriptionLimits, useServerDescriptions } from "../hooks/useServerDescriptions";
-import {
-  type FederationNarrowing,
-  type NumberPolicyKey,
-  type PolicyKey,
-  useServerPolicies,
-} from "../hooks/useServerPolicies";
-import { useServerSettings } from "../hooks/useServerSettings";
+import type { PolicyPage } from "../hooks/useServerPolicies";
+import { type DescriptionField, descriptionLimits, useServerGeneral } from "../hooks/useServerGeneral";
 import { BrandSettings } from "./BrandSettings";
+import {
+  ContentSettings,
+  DiscoverySettings,
+  FederationSettings,
+  RegistrationSettings,
+  saveResult,
+  VoiceSettings,
+} from "./PolicySettings";
 
-export function ServerSettings() {
+/** A page of the server settings. */
+type ServerSettingsPage = "general" | "branding" | PolicyPage;
+
+/** The pages in the order of the LocalNav: their routes and the names of their links. */
+const pages = [
+  { page: "general", href: "/admin/settings", label: "client:admin.settings.page.general" },
+  { page: "branding", href: "/admin/settings/branding", label: "client:admin.settings.page.branding" },
+  { page: "registration", href: "/admin/settings/registration", label: "client:admin.settings.page.registration" },
+  { page: "content", href: "/admin/settings/content", label: "client:admin.settings.page.content" },
+  { page: "federation", href: "/admin/settings/federation", label: "client:admin.settings.page.federation" },
+  { page: "discovery", href: "/admin/settings/discovery", label: "client:admin.settings.page.discovery" },
+  { page: "voice", href: "/admin/settings/voice", label: "client:admin.settings.page.voice" },
+] as const satisfies readonly { page: ServerSettingsPage; href: string; label: ClientMessageKey }[];
+
+/** One page of the server settings, with the links to the others above it. */
+export function ServerSettings({ page }: { page: ServerSettingsPage }) {
+  const t = useT();
+  // The voice chat page is offered only while the server offers voice chat (ADR-0100 §2).
+  const voiceAvailable = useVoiceAvailable();
+  const shown = pages.filter((item) => item.page !== "voice" || voiceAvailable || page === "voice");
   return (
     <RequirePermission permission="manage_settings">
       <Stack gap="8">
-        <NameForm />
-        <DescriptionsForm />
-        <ContactForm />
-        <BrandSettings />
-        <PoliciesForm />
+        <LocalNav
+          label={t("client:admin.settings.pages")}
+          items={shown.map((item) => ({ href: item.href, label: t(item.label), current: item.page === page }))}
+        />
+        <SettingsPage page={page} />
       </Stack>
     </RequirePermission>
   );
 }
 
-/** The result of a form's last save for its FormActionBar: the failure with its reason, or what the save did. */
-function saveResult(
-  status: string | undefined,
-  saveError: string | undefined,
-  failed: (reason: string) => string,
-): FormActionResult | undefined {
-  if (saveError !== undefined) return { tone: "danger", message: failed(saveError) };
-  if (status !== undefined) return { tone: "success", message: status };
-  return undefined;
-}
-
-function NameForm() {
-  const t = useT();
-  const form = useServerSettings();
-  return (
-    <Section surface="card" title={t("client:admin.settings.name.title")}>
-      <Hint size="inherit">{t("client:admin.settings.name.description", { domain: form.domain })}</Hint>
-      <Stack as="form" gap="4" onSubmit={form.submit}>
-        <TextField
-          label={t("client:admin.settings.name.field")}
-          value={form.field.value}
-          onChange={form.field.onChange}
-          // Only an invalid name sets isInvalid: React Aria ignores `validate` once isInvalid is given at all.
-          {...(form.field.error === undefined ? {} : { isInvalid: true, errorMessage: form.field.error })}
-        />
-        <FormActionBar
-          result={saveResult(form.status, form.saveError, (reason) =>
-            t("client:admin.settings.name.save_failed", { reason }),
-          )}
-        >
-          <Button type="submit" variant="primary" isPending={form.isSaving}>
-            {t("client:admin.settings.name.save")}
-          </Button>
-        </FormActionBar>
-      </Stack>
-    </Section>
-  );
+function SettingsPage({ page }: { page: ServerSettingsPage }) {
+  switch (page) {
+    case "general":
+      return <GeneralSettings />;
+    case "branding":
+      return <BrandSettings />;
+    case "registration":
+      return <RegistrationSettings />;
+    case "content":
+      return <ContentSettings />;
+    case "federation":
+      return <FederationSettings />;
+    case "discovery":
+      return <DiscoverySettings />;
+    case "voice":
+      return <VoiceSettings />;
+  }
 }
 
 function DescriptionInput({ field, label }: { field: DescriptionField; label: string }) {
@@ -122,38 +117,31 @@ function DescriptionInput({ field, label }: { field: DescriptionField; label: st
   );
 }
 
-function DescriptionsForm() {
+/** The general page: the name, the descriptions, the contact and the thumbnail in one form with one save. */
+function GeneralSettings() {
   const t = useT();
-  const form = useServerDescriptions();
-  return (
-    <Section surface="card" title={t("client:admin.settings.descriptions.title")}>
-      <Hint size="inherit">{t("client:admin.settings.descriptions.description")}</Hint>
-      <Stack as="form" gap="6" onSubmit={form.submit}>
-        <DescriptionInput field={form.short} label={t("client:admin.settings.descriptions.short")} />
-        <DescriptionInput field={form.full} label={t("client:admin.settings.descriptions.full")} />
-        <FormActionBar
-          result={saveResult(form.status, form.saveError, (reason) =>
-            t("client:admin.settings.descriptions.save_failed", { reason }),
-          )}
-        >
-          <Button type="submit" variant="primary" isPending={form.isSaving}>
-            {t("client:admin.settings.descriptions.save")}
-          </Button>
-        </FormActionBar>
-      </Stack>
-    </Section>
-  );
-}
-
-function ContactForm() {
-  const t = useT();
-  const form = useServerContact();
+  const form = useServerGeneral();
   const thumbnailHeadingId = useId();
   const uploadErrorId = useId();
   return (
-    <Section surface="card" title={t("client:admin.settings.contact.title")}>
-      <Hint size="inherit">{t("client:admin.settings.contact.description")}</Hint>
-      <Stack as="form" gap="6" onSubmit={form.submit}>
+    <Stack as="form" gap="8" onSubmit={form.submit}>
+      <Section surface="card" title={t("client:admin.settings.name.title")}>
+        <Hint size="inherit">{t("client:admin.settings.name.description", { domain: form.domain })}</Hint>
+        <TextField
+          label={t("client:admin.settings.name.field")}
+          value={form.name.value}
+          onChange={form.name.onChange}
+          // Only an invalid name sets isInvalid: React Aria ignores `validate` once isInvalid is given at all.
+          {...(form.name.error === undefined ? {} : { isInvalid: true, errorMessage: form.name.error })}
+        />
+      </Section>
+      <Section surface="card" title={t("client:admin.settings.descriptions.title")}>
+        <Hint size="inherit">{t("client:admin.settings.descriptions.description")}</Hint>
+        <DescriptionInput field={form.short} label={t("client:admin.settings.descriptions.short")} />
+        <DescriptionInput field={form.full} label={t("client:admin.settings.descriptions.full")} />
+      </Section>
+      <Section surface="card" title={t("client:admin.settings.contact.title")}>
+        <Hint size="inherit">{t("client:admin.settings.contact.description")}</Hint>
         <TextField
           label={t("client:admin.settings.contact.account")}
           description={t("client:admin.settings.contact.account.description")}
@@ -228,804 +216,17 @@ function ContactForm() {
             errorMessage={t("client:admin.settings.name.too_long", { max: String(thumbnailAltLimit) })}
           />
         </Stack>
-        <FormActionBar
-          result={saveResult(form.status, form.saveError, (reason) =>
-            t("client:admin.settings.contact.save_failed", { reason }),
-          )}
-        >
-          <Button type="submit" variant="primary" isPending={form.isSaving}>
-            {t("client:admin.settings.contact.save")}
-          </Button>
-        </FormActionBar>
-      </Stack>
-    </Section>
-  );
-}
-
-/** Who may read a public timeline (FR-202), the choices of both timelines' settings. */
-const timelineAccessChoices = [
-  {
-    value: "everyone",
-    label: "client:admin.settings.timelines.access.everyone",
-    description: "client:admin.settings.timelines.access.everyone.description",
-  },
-  {
-    value: "signed_in",
-    label: "client:admin.settings.timelines.access.signed_in",
-    description: "client:admin.settings.timelines.access.signed_in.description",
-  },
-  {
-    value: "off",
-    label: "client:admin.settings.timelines.access.off",
-    description: "client:admin.settings.timelines.access.off.description",
-  },
-] as const satisfies readonly { value: string; label: ClientMessageKey; description: ClientMessageKey }[];
-
-/** The words and the description of each choice of the settings chosen with radio buttons. */
-
-const hookModeChoices = [
-  {
-    value: "off",
-    label: "client:admin.settings.hooks.mode.off",
-    description: "client:admin.settings.hooks.mode.off.description",
-  },
-  {
-    value: "observe",
-    label: "client:admin.settings.hooks.mode.observe",
-    description: "client:admin.settings.hooks.mode.observe.description",
-  },
-  {
-    value: "enforce",
-    label: "client:admin.settings.hooks.mode.enforce",
-    description: "client:admin.settings.hooks.mode.enforce.description",
-  },
-] as const;
-
-const hookPassOnFailure = {
-  value: "pass",
-  label: "client:admin.settings.hooks.failure.pass",
-  description: "client:admin.settings.hooks.failure.pass.description",
-} as const;
-
-const hookRetryOnFailure = {
-  value: "retry",
-  label: "client:admin.settings.hooks.failure.retry",
-  description: "client:admin.settings.hooks.failure.retry.description",
-} as const;
-
-const choices = {
-  registration_mode: [
-    {
-      value: "open",
-      label: "client:admin.settings.registration.open",
-      description: "client:admin.settings.registration.open.description",
-    },
-    {
-      value: "approval",
-      label: "client:admin.settings.registration.approval",
-      description: "client:admin.settings.registration.approval.description",
-    },
-    {
-      value: "invite",
-      label: "client:admin.settings.registration.invite",
-      description: "client:admin.settings.registration.invite.description",
-    },
-    {
-      value: "closed",
-      label: "client:admin.settings.registration.closed",
-      description: "client:admin.settings.registration.closed.description",
-    },
-  ],
-  federation_mode: [
-    {
-      value: "both",
-      label: "client:admin.settings.federation.mode.both",
-      description: "client:admin.settings.federation.mode.both.description",
-    },
-    {
-      value: "inbound",
-      label: "client:admin.settings.federation.mode.inbound",
-      description: "client:admin.settings.federation.mode.inbound.description",
-    },
-    {
-      value: "outbound",
-      label: "client:admin.settings.federation.mode.outbound",
-      description: "client:admin.settings.federation.mode.outbound.description",
-    },
-    {
-      value: "off",
-      label: "client:admin.settings.federation.mode.off",
-      description: "client:admin.settings.federation.mode.off.description",
-    },
-  ],
-  remote_media_policy: [
-    {
-      value: "none",
-      label: "client:admin.settings.remote_media.none",
-      description: "client:admin.settings.remote_media.none.description",
-    },
-    {
-      value: "avatars",
-      label: "client:admin.settings.remote_media.avatars",
-      description: "client:admin.settings.remote_media.avatars.description",
-    },
-    {
-      value: "all",
-      label: "client:admin.settings.remote_media.all",
-      description: "client:admin.settings.remote_media.all.description",
-    },
-  ],
-  domain_actions_visibility: [
-    {
-      value: "off",
-      label: "client:admin.settings.audience.off",
-      description: "client:admin.settings.domain_actions.list.off",
-    },
-    {
-      value: "signed_in",
-      label: "client:admin.settings.audience.signed_in",
-      description: "client:admin.settings.domain_actions.list.signed_in",
-    },
-    {
-      value: "everyone",
-      label: "client:admin.settings.audience.everyone",
-      description: "client:admin.settings.domain_actions.list.everyone",
-    },
-  ],
-  domain_actions_rationale_visibility: [
-    {
-      value: "off",
-      label: "client:admin.settings.audience.off",
-      description: "client:admin.settings.domain_actions.comments.off",
-    },
-    {
-      value: "signed_in",
-      label: "client:admin.settings.audience.signed_in",
-      description: "client:admin.settings.domain_actions.comments.signed_in",
-    },
-    {
-      value: "everyone",
-      label: "client:admin.settings.audience.everyone",
-      description: "client:admin.settings.domain_actions.comments.everyone",
-    },
-  ],
-  local_timeline_visibility: timelineAccessChoices,
-  federated_timeline_visibility: timelineAccessChoices,
-  search_indexing: [
-    {
-      value: "allow",
-      label: "client:admin.settings.crawlers.search.allow",
-      description: "client:admin.settings.crawlers.search.allow.description",
-    },
-    {
-      value: "deny",
-      label: "client:admin.settings.crawlers.search.deny",
-      description: "client:admin.settings.crawlers.search.deny.description",
-    },
-  ],
-  ai_usage: [
-    {
-      value: "allow",
-      label: "client:admin.settings.crawlers.ai.allow",
-      description: "client:admin.settings.crawlers.ai.allow.description",
-    },
-    {
-      value: "deny_training",
-      label: "client:admin.settings.crawlers.ai.deny_training",
-      description: "client:admin.settings.crawlers.ai.deny_training.description",
-    },
-    {
-      value: "deny",
-      label: "client:admin.settings.crawlers.ai.deny",
-      description: "client:admin.settings.crawlers.ai.deny.description",
-    },
-  ],
-  // Only what the common rule allows (ADR-0149 §5): unlisted, followers-only and direct posts are never searched.
-  search_visibilities: [
-    {
-      value: "public",
-      label: "client:admin.settings.search.public",
-      description: "client:admin.settings.search.public.description",
-    },
-    {
-      value: "local",
-      label: "client:admin.settings.search.local",
-      description: "client:admin.settings.search.local.description",
-    },
-    {
-      value: "public,local",
-      label: "client:admin.settings.search.public_local",
-      description: "client:admin.settings.search.public_local.description",
-    },
-  ],
-  invite_creators: [
-    {
-      value: "everyone",
-      label: "client:admin.settings.invites.creators.everyone",
-      description: "client:admin.settings.invites.creators.everyone.description",
-    },
-    {
-      value: "permitted",
-      label: "client:admin.settings.invites.creators.permitted",
-      description: "client:admin.settings.invites.creators.permitted.description",
-    },
-  ],
-  hook_inbound_status_mode: hookModeChoices,
-  hook_inbound_follow_mode: hookModeChoices,
-  hook_signup_check_mode: hookModeChoices,
-  hook_media_check_mode: hookModeChoices,
-  hook_local_status_mode: hookModeChoices,
-  hook_inbound_status_on_failure: [hookPassOnFailure, hookRetryOnFailure],
-  hook_inbound_follow_on_failure: [hookPassOnFailure, hookRetryOnFailure],
-  hook_signup_check_on_failure: [
-    hookPassOnFailure,
-    {
-      value: "require_approval",
-      label: "client:admin.settings.hooks.failure.require_approval",
-      description: "client:admin.settings.hooks.failure.require_approval.description",
-    },
-  ],
-  hook_media_check_on_failure: [hookPassOnFailure, hookRetryOnFailure],
-  voice_room_starters: [
-    {
-      value: "everyone",
-      label: "client:admin.settings.voice.starters.everyone",
-      description: "client:admin.settings.voice.starters.everyone.description",
-    },
-    {
-      value: "permitted",
-      label: "client:admin.settings.voice.starters.permitted",
-      description: "client:admin.settings.voice.starters.permitted.description",
-    },
-  ],
-} as const satisfies Partial<
-  Record<PolicyKey, readonly { value: string; label: ClientMessageKey; description: ClientMessageKey }[]>
->;
-
-type RadioKey = keyof typeof choices;
-
-function PolicyRadios({
-  form,
-  setting,
-  label,
-  description,
-}: {
-  form: ReturnType<typeof useServerPolicies>;
-  setting: RadioKey;
-  label: string;
-  description?: string;
-}) {
-  const t = useT();
-  return (
-    <RadioGroup
-      label={label}
-      {...(description === undefined ? {} : { description })}
-      value={form.value(setting)}
-      onChange={(value) => {
-        form.change(setting, value);
-      }}
-    >
-      {choices[setting].map((choice) => (
-        <Radio key={choice.value} value={choice.value} description={t(choice.description)}>
-          {t(choice.label)}
-        </Radio>
-      ))}
-    </RadioGroup>
-  );
-}
-
-function PolicyCheckbox({
-  form,
-  setting,
-  label,
-  description,
-}: {
-  form: ReturnType<typeof useServerPolicies>;
-  setting: PolicyKey;
-  label: string;
-  description: string;
-}) {
-  return (
-    <Checkbox
-      isSelected={form.value(setting) === "true"}
-      onChange={(selected) => {
-        form.change(setting, selected ? "true" : "false");
-      }}
-      description={description}
-    >
-      {label}
-    </Checkbox>
-  );
-}
-
-/** A setting typed as a whole number, with its bounds in the description and its error under the field. */
-function NumberPolicyField({
-  form,
-  setting,
-  label,
-  description,
-}: {
-  form: ReturnType<typeof useServerPolicies>;
-  setting: NumberPolicyKey;
-  label: string;
-  description: (range: { min: string; max: string }) => string;
-}) {
-  const field = form.numberField(setting);
-  return (
-    <TextField
-      label={label}
-      description={description({ min: String(field.min), max: String(field.max) })}
-      value={form.value(setting)}
-      onChange={(value) => {
-        form.change(setting, value);
-      }}
-      inputMode="numeric"
-      autoComplete="off"
-      // Only an invalid value sets isInvalid: React Aria ignores `validate` once isInvalid is given at all.
-      {...(field.error === undefined ? {} : { isInvalid: true, errorMessage: field.error })}
-    />
-  );
-}
-
-function PoliciesForm() {
-  const t = useT();
-  const form = useServerPolicies();
-  // The voice chat settings show only while the server offers voice chat (ADR-0100 §2).
-  const voiceAvailable = useVoiceAvailable();
-  // The setting of the post search shows only on a server with a search engine (ADR-0149 §5).
-  const searchAvailable = usePostSearchAvailable();
-  return (
-    <Stack as="form" gap="8" onSubmit={form.submit}>
-      <Section surface="card" title={t("client:admin.settings.registration.title")}>
-        <PolicyRadios
-          form={form}
-          setting="registration_mode"
-          label={t("client:admin.settings.registration.mode")}
-          description={t("client:admin.settings.registration.description")}
-        />
-        <PolicyCheckbox
-          form={form}
-          setting="login_providers_only"
-          label={t("client:admin.settings.login_providers_only.label")}
-          description={t("client:admin.settings.login_providers_only.description")}
-        />
       </Section>
-      <Section surface="card" title={t("client:admin.settings.invites.title")}>
-        <Hint size="inherit">{t("client:admin.settings.invites.description")}</Hint>
-        <PolicyRadios form={form} setting="invite_creators" label={t("client:admin.settings.invites.creators")} />
-        <NumberPolicyField
-          form={form}
-          setting="member_invite_max_active"
-          label={t("client:admin.settings.invites.max_active")}
-          description={(range) => t("client:admin.settings.invites.max_active.description", range)}
-        />
-        <NumberPolicyField
-          form={form}
-          setting="member_invite_max_uses"
-          label={t("client:admin.settings.invites.max_uses")}
-          description={(range) => t("client:admin.settings.invites.max_uses.description", range)}
-        />
-        <Select
-          label={t("client:admin.settings.invites.max_expires_in")}
-          description={t("client:admin.settings.invites.max_expires_in.description")}
-          value={form.value("member_invite_max_lifetime_seconds")}
-          onChange={(key) => {
-            if (typeof key === "string") form.change("member_invite_max_lifetime_seconds", key);
-          }}
-          items={form.inviteExpiryChoices.map((choice) => ({ id: choice.value, name: choice.label }))}
-        >
-          {(choice) => (
-            <SelectItem id={choice.id} textValue={choice.name}>
-              {choice.name}
-            </SelectItem>
-          )}
-        </Select>
-      </Section>
-      <Section surface="card" title={t("client:admin.settings.oauth_apps.title")}>
-        <Hint size="inherit">{t("client:admin.settings.oauth_apps.description")}</Hint>
-        <PolicyCheckbox
-          form={form}
-          setting="user_app_registration"
-          label={t("client:admin.settings.oauth_apps.user")}
-          description={t("client:admin.settings.oauth_apps.user.description")}
-        />
-        <PolicyCheckbox
-          form={form}
-          setting="oauth_metadata_document_clients"
-          label={t("client:admin.settings.oauth_apps.metadata_document")}
-          description={t("client:admin.settings.oauth_apps.metadata_document.description")}
-        />
-        <PolicyCheckbox
-          form={form}
-          setting="dynamic_client_registration"
-          label={t("client:admin.settings.oauth_apps.dynamic")}
-          description={t("client:admin.settings.oauth_apps.dynamic.description")}
-        />
-      </Section>
-      <Section surface="card" title={t("client:admin.settings.language.title")}>
-        <Select
-          label={t("client:admin.settings.language.default")}
-          description={t("client:admin.settings.language.description")}
-          value={form.value("default_locale")}
-          onChange={(key) => {
-            if (typeof key === "string") form.change("default_locale", key);
-          }}
-          items={form.localeChoices.map((choice) => ({ id: choice.value, name: choice.label }))}
-        >
-          {(choice) => (
-            <SelectItem id={choice.id} textValue={choice.name}>
-              {choice.name}
-            </SelectItem>
-          )}
-        </Select>
-      </Section>
-      <Section surface="card" title={t("client:admin.settings.timelines.title")}>
-        <PolicyRadios
-          form={form}
-          setting="local_timeline_visibility"
-          label={t("client:admin.settings.timelines.local")}
-          description={t("client:admin.settings.timelines.local.description")}
-        />
-        <PolicyRadios
-          form={form}
-          setting="federated_timeline_visibility"
-          label={t("client:admin.settings.timelines.federated")}
-          description={t("client:admin.settings.timelines.federated.description")}
-        />
-      </Section>
-      <Section surface="card" title={t("client:admin.settings.posts.title")}>
-        <PolicyCheckbox
-          form={form}
-          setting="require_media_description"
-          label={t("client:admin.settings.posts.require_media_description")}
-          description={t("client:admin.settings.posts.require_media_description.description")}
-        />
-      </Section>
-      <Section surface="card" title={t("client:admin.settings.federation.title")}>
-        <PolicyRadios
-          form={form}
-          setting="federation_mode"
-          label={t("client:admin.settings.federation.mode")}
-          description={t("client:admin.settings.federation.mode.description")}
-        />
-        <PolicyCheckbox
-          form={form}
-          setting="authorized_fetch"
-          label={t("client:admin.settings.federation.authorized_fetch")}
-          description={t("client:admin.settings.federation.authorized_fetch.description")}
-        />
-        <PolicyRadios
-          form={form}
-          setting="remote_media_policy"
-          label={t("client:admin.settings.remote_media.policy")}
-        />
-        <Select
-          label={t("client:admin.settings.remote_media.ttl")}
-          description={t("client:admin.settings.remote_media.ttl.description")}
-          value={form.value("remote_media_cache_ttl_seconds")}
-          onChange={(key) => {
-            if (typeof key === "string") form.change("remote_media_cache_ttl_seconds", key);
-          }}
-          items={form.cacheTtlChoices.map((choice) => ({ id: choice.value, name: choice.label }))}
-        >
-          {(choice) => (
-            <SelectItem id={choice.id} textValue={choice.name}>
-              {choice.name}
-            </SelectItem>
-          )}
-        </Select>
-        <PolicyCheckbox
-          form={form}
-          setting="link_cards"
-          label={t("client:admin.settings.federation.link_cards")}
-          description={t("client:admin.settings.federation.link_cards.description")}
-        />
-        <PolicyCheckbox
-          form={form}
-          setting="link_cards_ignore_robots_txt"
-          label={t("client:admin.settings.federation.link_cards_ignore_robots_txt")}
-          description={t("client:admin.settings.federation.link_cards_ignore_robots_txt.description")}
-        />
-      </Section>
-      <Section surface="card" title={t("client:admin.settings.domain_actions.title")}>
-        <Hint size="inherit">{t("client:admin.settings.domain_actions.description")}</Hint>
-        <PolicyRadios
-          form={form}
-          setting="domain_actions_visibility"
-          label={t("client:admin.settings.domain_actions.list")}
-        />
-        <PolicyRadios
-          form={form}
-          setting="domain_actions_rationale_visibility"
-          label={t("client:admin.settings.domain_actions.comments")}
-        />
-      </Section>
-      <Section surface="card" title={t("client:admin.settings.landing.title")}>
-        <Hint size="inherit">{t("client:admin.settings.landing.description")}</Hint>
-        <PolicyCheckbox
-          form={form}
-          setting="public_counts"
-          label={t("client:admin.settings.landing.counts")}
-          description={t("client:admin.settings.landing.counts.description")}
-        />
-      </Section>
-      {/* The accounts that the suggestions to follow show first, in this order (FR-308). */}
-      <Section surface="card" title={t("client:admin.settings.featured.title")}>
-        <Hint size="inherit">{t("client:admin.settings.featured.description")}</Hint>
-        <TextField
-          label={t("client:admin.settings.featured.accounts")}
-          description={t("client:admin.settings.featured.accounts.description")}
-          value={form.value("featured_accounts")}
-          onChange={(value) => {
-            form.change("featured_accounts", value);
-          }}
-          autoComplete="off"
-          autoCorrect="off"
-          spellCheck="false"
-        />
-      </Section>
-      <Section surface="card" title={t("client:admin.settings.crawlers.title")}>
-        <Hint size="inherit">{t("client:admin.settings.crawlers.description")}</Hint>
-        <PolicyRadios form={form} setting="search_indexing" label={t("client:admin.settings.crawlers.search")} />
-        <PolicyCheckbox
-          form={form}
-          setting="indexable_default"
-          label={t("client:admin.settings.crawlers.indexable_default")}
-          description={t("client:admin.settings.crawlers.indexable_default.description")}
-        />
-        <PolicyRadios form={form} setting="ai_usage" label={t("client:admin.settings.crawlers.ai")} />
-        <TextField
-          label={t("client:admin.settings.crawlers.security_contact")}
-          description={t("client:admin.settings.crawlers.security_contact.description")}
-          value={form.value("security_contact")}
-          onChange={(value) => {
-            form.change("security_contact", value);
-          }}
-        />
-      </Section>
-      {searchAvailable && (
-        <Section surface="card" title={t("client:admin.settings.search.title")}>
-          <Hint size="inherit">{t("client:admin.settings.search.description")}</Hint>
-          <PolicyRadios
-            form={form}
-            setting="search_visibilities"
-            label={t("client:admin.settings.search.visibilities")}
-            description={t("client:admin.settings.search.visibilities.description")}
-          />
-        </Section>
-      )}
-      <Section surface="card" title={t("client:admin.settings.hooks.title")}>
-        <Text tone="muted">{t("client:admin.settings.hooks.description")}</Text>
-        <PolicyRadios
-          form={form}
-          setting="hook_inbound_status_mode"
-          label={t("client:admin.settings.hooks.inbound_status.mode")}
-        />
-        <PolicyRadios
-          form={form}
-          setting="hook_inbound_status_on_failure"
-          label={t("client:admin.settings.hooks.inbound_status.on_failure")}
-        />
-        <PolicyCheckbox
-          form={form}
-          setting="hook_inbound_status_unfollowed_direct"
-          label={t("client:admin.settings.hooks.inbound_status.unfollowed_direct")}
-          description={t("client:admin.settings.hooks.inbound_status.unfollowed_direct.description")}
-        />
-        <PolicyRadios
-          form={form}
-          setting="hook_inbound_follow_mode"
-          label={t("client:admin.settings.hooks.inbound_follow.mode")}
-        />
-        <PolicyRadios
-          form={form}
-          setting="hook_inbound_follow_on_failure"
-          label={t("client:admin.settings.hooks.inbound_follow.on_failure")}
-        />
-        <PolicyRadios
-          form={form}
-          setting="hook_signup_check_mode"
-          label={t("client:admin.settings.hooks.signup_check.mode")}
-        />
-        <PolicyRadios
-          form={form}
-          setting="hook_signup_check_on_failure"
-          label={t("client:admin.settings.hooks.signup_check.on_failure")}
-        />
-        <PolicyCheckbox
-          form={form}
-          setting="hook_signup_check_reject"
-          label={t("client:admin.settings.hooks.signup_check.reject")}
-          description={t("client:admin.settings.hooks.signup_check.reject.description")}
-        />
-        <PolicyRadios
-          form={form}
-          setting="hook_media_check_mode"
-          label={t("client:admin.settings.hooks.media_check.mode")}
-        />
-        <PolicyRadios
-          form={form}
-          setting="hook_media_check_on_failure"
-          label={t("client:admin.settings.hooks.media_check.on_failure")}
-        />
-        <PolicyRadios
-          form={form}
-          setting="hook_local_status_mode"
-          label={t("client:admin.settings.hooks.local_status.mode")}
-        />
-        <NumberPolicyField
-          form={form}
-          setting="hook_local_status_account_age_days"
-          label={t("client:admin.settings.hooks.local_status.account_age")}
-          description={(range) => t("client:admin.settings.hooks.local_status.account_age.description", range)}
-        />
-        <NumberPolicyField
-          form={form}
-          setting="hook_decisions_retention_days"
-          label={t("client:admin.settings.hooks.retention")}
-          description={(range) => t("client:admin.settings.hooks.retention.description", range)}
-        />
-      </Section>
-      {voiceAvailable && (
-        <Section surface="card" title={t("client:admin.settings.voice.title")}>
-          <PolicyRadios form={form} setting="voice_room_starters" label={t("client:admin.settings.voice.starters")} />
-          <PolicyCheckbox
-            form={form}
-            setting="voice_public_summary"
-            label={t("client:admin.settings.voice.public_summary")}
-            description={t("client:admin.settings.voice.public_summary.description")}
-          />
-          <NumberPolicyField
-            form={form}
-            setting="voice_participants_retention_days"
-            label={t("client:admin.settings.voice.retention")}
-            description={(range) => t("client:admin.settings.voice.retention.description", range)}
-          />
-        </Section>
-      )}
       <FormActionBar
         sticky
         result={saveResult(form.status, form.saveError, (reason) =>
-          t("client:admin.settings.policies.save_failed", { reason }),
+          t("client:admin.settings.general.save_failed", { reason }),
         )}
       >
         <Button type="submit" variant="primary" isPending={form.isSaving}>
-          {t("client:admin.settings.policies.save")}
+          {t("client:admin.settings.general.save")}
         </Button>
       </FormActionBar>
-      <LoginProvidersOnlyDialog confirmation={form.limitConfirmation} />
-      {form.narrowing !== null && (
-        <NarrowingDialog
-          narrowing={form.narrowing}
-          isOpen={form.isConfirming}
-          onConfirm={form.confirm}
-          onCancel={form.cancel}
-        />
-      )}
     </Stack>
-  );
-}
-
-/**
- * Asks before sign-in is limited to login providers: an alert dialog (WAI-ARIA APG) that says what stops, how many
- * active users could no longer sign in, whether that includes the administrator, and how to undo it. It warns and
- * does not refuse. The cancel button has the focus first.
- */
-function LoginProvidersOnlyDialog({
-  confirmation,
-}: {
-  confirmation: ReturnType<typeof useServerPolicies>["limitConfirmation"];
-}) {
-  const t = useT();
-  const { impact } = confirmation;
-  const applies = impact !== undefined && impact.enabled_providers > 0;
-  return (
-    <Dialog
-      role="alertdialog"
-      closeLabel={null}
-      size="md"
-      title={t("client:admin.settings.login_providers_only.confirm.title")}
-      isOpen={confirmation.isOpen}
-      onOpenChange={(open) => {
-        if (!open) confirmation.cancel();
-      }}
-    >
-      <Stack gap="4">
-        {impact === undefined ? (
-          <p>
-            {confirmation.isFailed
-              ? t("client:admin.settings.login_providers_only.confirm.failed")
-              : t("client:admin.settings.login_providers_only.confirm.loading")}
-          </p>
-        ) : !applies ? (
-          <p>{t("client:admin.settings.login_providers_only.confirm.no_provider")}</p>
-        ) : (
-          <>
-            <p>
-              {t("client:admin.settings.login_providers_only.confirm.affected", {
-                count: impact.users_without_provider,
-              })}
-            </p>
-            {impact.includes_viewer && (
-              <InlineError>{t("client:admin.settings.login_providers_only.confirm.self")}</InlineError>
-            )}
-          </>
-        )}
-        <Stack as="ul" marker="disc" gap="2">
-          <li>{t("client:admin.settings.login_providers_only.confirm.stops")}</li>
-          <li>{t("client:admin.settings.login_providers_only.confirm.sessions")}</li>
-        </Stack>
-        <Hint>{t("client:admin.settings.login_providers_only.confirm.recovery")}</Hint>
-        <DialogActions>
-          {/* The least destructive choice has the focus first (APG, alert dialog pattern). */}
-          <Button autoFocus onPress={confirmation.cancel}>
-            {t("client:admin.settings.login_providers_only.confirm.cancel")}
-          </Button>
-          <Button variant="danger" onPress={confirmation.confirm}>
-            {t("client:admin.settings.login_providers_only.confirm.confirm")}
-          </Button>
-        </DialogActions>
-      </Stack>
-    </Dialog>
-  );
-}
-
-const modeLabels = {
-  off: "client:admin.settings.federation.mode.off",
-  inbound: "client:admin.settings.federation.mode.inbound",
-  outbound: "client:admin.settings.federation.mode.outbound",
-  both: "client:admin.settings.federation.mode.both",
-} as const satisfies Record<FederationNarrowing["to"], ClientMessageKey>;
-
-type NarrowingDialogProps = {
-  narrowing: FederationNarrowing;
-  isOpen: boolean;
-  onConfirm: () => void;
-  onCancel: () => void;
-};
-
-/**
- * Asks before the federation mode narrows (ADR-0006, "設定"): an alert dialog (WAI-ARIA APG) that lists what stops
- * flowing, says that the relations with other servers stay connected with nothing flowing, and, for `off`, that
- * deletions made meanwhile never reach other servers. The cancel button has the focus first.
- */
-function NarrowingDialog({ narrowing, isOpen, onConfirm, onCancel }: NarrowingDialogProps) {
-  const t = useT();
-  return (
-    <Dialog
-      role="alertdialog"
-      closeLabel={null}
-      size="md"
-      title={t("client:admin.settings.federation.narrow.title", { mode: t(modeLabels[narrowing.to]) })}
-      isOpen={isOpen}
-      onOpenChange={(open) => {
-        if (!open) onCancel();
-      }}
-    >
-      <Stack gap="4">
-        <p>
-          {t("client:admin.settings.federation.narrow.description", {
-            from: t(modeLabels[narrowing.from]),
-            to: t(modeLabels[narrowing.to]),
-          })}
-        </p>
-        <Stack as="ul" marker="disc" gap="2">
-          {narrowing.stopsSending && <li>{t("client:admin.settings.federation.narrow.sending")}</li>}
-          {narrowing.stopsReceiving && <li>{t("client:admin.settings.federation.narrow.receiving")}</li>}
-          {narrowing.stopsAll && <li>{t("client:admin.settings.federation.narrow.deletions")}</li>}
-          <li>{t("client:admin.settings.federation.narrow.relations")}</li>
-        </Stack>
-        <Hint>{t("client:admin.settings.federation.narrow.widen")}</Hint>
-        <DialogActions>
-          {/* The least destructive choice has the focus first (APG, alert dialog pattern). */}
-          <Button autoFocus onPress={onCancel}>
-            {t("client:admin.settings.federation.narrow.cancel")}
-          </Button>
-          <Button variant="danger" onPress={onConfirm}>
-            {t("client:admin.settings.federation.narrow.confirm")}
-          </Button>
-        </DialogActions>
-      </Stack>
-    </Dialog>
   );
 }

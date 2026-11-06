@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The decisions of the external reviews on the screen: their labels, the list, the summary, cancelling one, and the
-// authors' appeals of refused posts with their review.
+// The decisions of the external reviews on the screen: their labels, the list and one decision, the summary, cancelling
+// one, and the authors' appeals of refused posts, the list and one appeal, with their review.
 import {
   useMutation,
   useMutationState,
@@ -19,11 +19,13 @@ import {
   type HookAppeal,
   type HookAppealDecision,
   type HookAppealFilter,
+  hookAppealQueryOptions,
   hookAppealsQueryOptions,
   type HookAppealState,
   type HookDecision,
   type HookDecisionFilter,
   type HookDecisionMode,
+  hookDecisionQueryOptions,
   hookDecisionsQueryOptions,
   type HookMode,
   type HookName,
@@ -77,6 +79,12 @@ export const hookModeLabels: Readonly<Record<HookMode | HookDecisionMode, Client
 export function useHookDecisions(filter: HookDecisionFilter): PagedPages<HookDecision> {
   const api = useApi();
   return toPagedList(useSuspenseInfiniteQuery(hookDecisionsQueryOptions(api, filter)));
+}
+
+/** One decision with its cancellation, for its page. */
+export function useHookDecision(id: string): HookDecision {
+  const api = useApi();
+  return useSuspenseQuery(hookDecisionQueryOptions(api, id)).data;
 }
 
 export function useHookSummary() {
@@ -139,6 +147,12 @@ export function useHookAppeals(filter: HookAppealFilter): PagedPages<HookAppeal>
   return toPagedList(useSuspenseInfiniteQuery(hookAppealsQueryOptions(api, filter)));
 }
 
+/** One appeal of a refused post, for its page. */
+export function useHookAppeal(id: string): HookAppeal {
+  const api = useApi();
+  return useSuspenseQuery(hookAppealQueryOptions(api, id)).data;
+}
+
 /** The decision being confirmed, of which appeal. */
 type HookAppealConfirmation = { appeal: HookAppeal; decision: HookAppealDecision };
 
@@ -152,7 +166,7 @@ export type HookAppealReview = {
   isOpen: boolean;
   /** The confirmation open now or last, which a closing dialog still shows; null before the first one. */
   confirmation: HookAppealConfirmation | null;
-  /** Sends the decision; on success the confirmation closes and the list shows the appeal decided. */
+  /** Sends the decision; on success the confirmation closes and the page shows the appeal decided. */
   confirm: () => void;
   /** Closes the confirmation without deciding. */
   cancel: () => void;
@@ -165,9 +179,9 @@ export type HookAppealReview = {
 
 /**
  * Deciding the appeals of refused posts. A decision cannot be changed, so it is confirmed first (NFR-MOD-7). Once the
- * lists of appeals, the decisions (an overturn cancels one) and the audit log are fetched again, the confirmation
- * closes, the status says what the decision did, and `onDecided()` is called: the row's buttons are gone, and the page
- * moves focus to the section's heading. An appeal another moderator decided the other way first (409 appeal-decided)
+ * appeals, the decisions (an overturn cancels one) and the audit log are fetched again, the confirmation closes, the
+ * status says what the decision did, and `onDecided()` is called: the page's buttons are gone, and the page moves focus
+ * to the section's heading. An appeal another moderator decided the other way first (409 appeal-decided)
  * is read again with the lists, and the status says so.
  */
 export function useHookAppealReview(onDecided: () => void): HookAppealReview {

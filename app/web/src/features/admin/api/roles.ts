@@ -36,6 +36,9 @@ export const maxRolePosition = 999;
 /** What a key is made of (CreateRoleRequest): lowercase ASCII letters, digits, `_` and `-`. */
 export const roleKeyPattern = /^[a-z0-9_-]+$/;
 
+/** The one key a role cannot have (CreateRoleRequest): `/admin/roles/new` is the page that creates a role. */
+export const reservedRoleKey = "new";
+
 /**
  * The permissions by the area they belong to (ADR-0058, ADR-0070, `Permission.Category` of the server),
  * each in the order of the API's `Permission`.

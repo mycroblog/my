@@ -5,7 +5,15 @@
 // has no API, so each test plays the server of a signed-in operator with page.route; names change with the
 // locale, so the structure is checked by role and by what the server sends (names, handles, domains).
 import type { Page, Route } from "@playwright/test";
-import { expect, expectNoAxeViolations, expectNoHorizontalScroll, test } from "./fixtures";
+import {
+  expect,
+  expectNoAxeViolations,
+  expectNoHorizontalScroll,
+  recordRowHeaders,
+  recordRows,
+  recordTable,
+  test,
+} from "./fixtures";
 import { readCatalog } from "./catalog.ts";
 
 /** The client message `key` in the project's locale (only messages without arguments). */
@@ -34,7 +42,10 @@ const operator = {
   indexable: true,
   ai_opt_out: false,
   source: { note: "", fields: [] },
-  posting: { visibility_ceiling: "public", visibilities: ["public", "local", "unlisted", "private", "direct"] },
+  posting: {
+    visibility_ceiling: "public",
+    visibilities: ["public", "local", "unlisted", "private", "direct"],
+  },
   permissions: ["view_audit"],
 };
 
@@ -196,6 +207,7 @@ async function operatorServer(page: Page, { domains = false }: { domains?: boole
       return json(route, {
         items: url.searchParams.get("active") === "true" && limit.state !== "active" ? [] : [limit],
       });
+    if (domains && key === `GET /admin/domain_actions/${domainLimit.id}`) return json(route, limit);
     if (domains && key === `POST /admin/domain_actions/${domainLimit.id}/lift`) {
       limit = { ...limit, state: "lifted", lifted_at: "2026-10-17T10:00:00Z" };
       const lift: Entry = {
@@ -215,13 +227,9 @@ async function operatorServer(page: Page, { domains = false }: { domains?: boole
   return requests;
 }
 
-/** The rows of the table of operations, without its header row. */
+/** The rows of the table of operations (its cards at narrow widths). */
 function rows(page: Page) {
-  return page
-    .getByRole("main")
-    .getByRole("table")
-    .getByRole("row")
-    .filter({ has: page.getByRole("rowheader") });
+  return recordRows(recordTable(page.getByRole("main")));
 }
 
 test.describe("page /moderation/audit-log", () => {
@@ -251,7 +259,7 @@ test.describe("audit log", () => {
 
     // The row: the operation, who did it, on what, when, and the links that keep one actor or one target.
     const first = rows(page).first();
-    await expect(first.getByRole("rowheader")).not.toBeEmpty();
+    await expect(recordRowHeaders(first)).not.toBeEmpty();
     await expect(first).toContainText(new RegExp(`${moderator.display_name}.*@${moderator.acct}`));
     await expect(first.locator("time")).toHaveCount(1);
     await expect(first.getByRole("listitem")).toHaveCount(2);
@@ -290,7 +298,10 @@ test.describe("audit log", () => {
     const listbox = page.getByRole("listbox");
     await expect(listbox).toBeVisible();
     await listbox
-      .getByRole("option", { name: message("admin.audit_log.action.domain_action_issued"), exact: true })
+      .getByRole("option", {
+        name: message("admin.audit_log.action.domain_action_issued"),
+        exact: true,
+      })
       .click();
     await expect(page).toHaveURL(/[?&]action=domain_action_issued/);
     await expect(rows(page)).toHaveCount(1);
@@ -319,9 +330,14 @@ test.describe("audit log", () => {
     await page.goto("/moderation/audit-log");
     await expect(rows(page)).toHaveCount(2);
 
-    // The domain action's row links to the domain's actions; lifting the limit there is recorded in the log.
+    // The domain action's row links to the domain's actions, and the action's row to its page; lifting the limit
+    // there is recorded in the log.
     await rows(page).nth(1).getByRole("link").first().click();
     await expect(page).toHaveURL(/\/moderation\/domain-actions\?/);
+    await recordRowHeaders(recordTable(page.getByRole("main")))
+      .getByRole("link")
+      .click();
+    await expect(page).toHaveURL(new RegExp(`/moderation/domain-actions/${domainLimit.id}$`));
     const lift = page
       .getByRole("main")
       .getByRole("button")
@@ -332,12 +348,14 @@ test.describe("audit log", () => {
     await lift.click();
     await expect(lift).toHaveCount(0);
 
-    // Back on the log, the lift heads it as soon as the operations show, though the server answers the log
-    // slowly now: the log is not shown from a cache older than the lift.
+    // Back on the log (past the list), the lift heads it as soon as the operations show, though the server answers
+    // the log slowly now: the log is not shown from a cache older than the lift.
+    await page.goBack();
+    await expect(page).toHaveURL(/\/moderation\/domain-actions\?/);
     await page.goBack();
     await expect(page).toHaveURL(/\/moderation\/audit-log$/);
     await expect(rows(page)).toHaveCount(2);
-    expect(await rows(page).first().getByRole("rowheader").textContent()).toBe(
+    expect(await recordRowHeaders(rows(page).first()).textContent()).toBe(
       message("admin.audit_log.action.domain_action_lifted"),
     );
     await expectNoAxeViolations(makeAxeBuilder);

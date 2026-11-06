@@ -100,6 +100,7 @@ func QueueContract(t *testing.T, newHarness QueueFactory) {
 		{"KeepsJobsAcrossARestart", queueSurvivesRestart},
 		{"ReenqueuesJobsBeyondTheDelayLimit", queueReenqueueChain},
 		{"InspectsJobsByState", queueInspectsJobsByState},
+		{"GetsOneJobByID", queueGetsJobsByID},
 		{"RecordsUnsuccessfulAttempts", queueRecordsUnsuccessfulAttempts},
 		{"EnqueuesFromConcurrentTransactions", queueConcurrentTransactions},
 		{"RefusesARepeatedResult", queueRefusesRepeatedResults},

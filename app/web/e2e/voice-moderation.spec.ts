@@ -282,7 +282,7 @@ test.describe("voice chat moderation", () => {
 
   test("shows the voice chat settings, axe-clean and without horizontal scroll", async ({ page, makeAxeBuilder }) => {
     await serveApi(page);
-    await page.goto("/admin/settings");
+    await page.goto("/admin/settings/voice");
     const section = page.getByRole("region", { name: message("admin.settings.voice.title") });
     await expect(section.getByRole("radiogroup", { name: message("admin.settings.voice.starters") })).toBeVisible();
     await expect(section.getByRole("textbox", { name: message("admin.settings.voice.retention") })).toHaveValue("90");

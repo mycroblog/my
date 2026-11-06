@@ -135,6 +135,56 @@ func queueInspectsJobsByState(t *testing.T, newHarness QueueFactory) {
 	}
 }
 
+// contractUnknownID is an ID in the server's form that no job of the contract has.
+const contractUnknownID = "01890000-0000-7000-8000-000000000000"
+
+// queueGetsJobsByID checks that JobInspector.GetJob returns one pending job with its state at
+// now, and that DeadJobs.GetDeadJob returns one dead job; each reports an ID it does not hold
+// (completed, dead, pending or unknown) as not found.
+func queueGetsJobsByID(t *testing.T, newHarness QueueFactory) {
+	f := newQueueFixture(t, newHarness)
+	f.enqueue(probe(`{"N":"a"}`))
+	f.enqueue(probe(`{"N":"b"}`))
+	f.enqueue(probe(`{"N":"c"}`))
+	a := f.wantClaim("w1", "a")
+	b := f.wantClaim("w1", "b")
+	if err := f.h.Source.Bury(t.Context(), "w1", b, "bug", f.clock.Now()); err != nil {
+		t.Fatalf("Bury: %v", err)
+	}
+	c := f.wantClaim("w1", "c")
+	f.complete("w1", c)
+
+	dead, err := f.h.DeadJobs.GetDeadJob(t.Context(), b.ID)
+	if err != nil || dead.ID != b.ID || dead.Type != contractJobType || dead.LastError != "bug" || dead.Attempt != 1 ||
+		!sameJSON(dead.Payload, []byte(`{"N":"b"}`)) || !dead.FailedAt.Equal(contractStart) || !dead.CreatedAt.Equal(contractStart) {
+		t.Errorf("GetDeadJob(b) = %+v, %v", dead, err)
+	}
+	for name, id := range map[string]string{"pending": a.ID, "completed": c.ID, "unknown": contractUnknownID} {
+		if got, err := f.h.DeadJobs.GetDeadJob(t.Context(), id); !errors.Is(err, queue.ErrDeadJobNotFound) {
+			t.Errorf("GetDeadJob(%s) = %+v, %v; want ErrDeadJobNotFound", name, got, err)
+		}
+	}
+
+	if f.h.Inspector == nil {
+		return
+	}
+	got, err := f.h.Inspector.GetJob(t.Context(), f.clock.Now(), a.ID)
+	if err != nil || got.ID != a.ID || got.State != queue.JobStateRunning || got.Worker != "w1" || got.Attempt != 1 ||
+		!got.LockedUntil.Equal(contractStart.Add(contractLease)) || !sameJSON(got.Payload, []byte(`{"N":"a"}`)) {
+		t.Errorf("GetJob(a) = %+v, %v; want it running", got, err)
+	}
+	// Once the lease expired, the same job waits to be retried and holds no lease.
+	got, err = f.h.Inspector.GetJob(t.Context(), f.clock.Now().Add(2*contractLease), a.ID)
+	if err != nil || got.State != queue.JobStateRetrying || got.Worker != "" || !got.LockedUntil.IsZero() {
+		t.Errorf("GetJob(a) after the lease = %+v, %v; want it retrying", got, err)
+	}
+	for name, id := range map[string]string{"dead": b.ID, "completed": c.ID, "unknown": contractUnknownID} {
+		if got, err := f.h.Inspector.GetJob(t.Context(), f.clock.Now(), id); !errors.Is(err, queue.ErrJobNotFound) {
+			t.Errorf("GetJob(%s) = %+v, %v; want ErrJobNotFound", name, got, err)
+		}
+	}
+}
+
 func sameCounts(got, want []queue.JobCount) bool {
 	if len(got) != len(want) {
 		return false

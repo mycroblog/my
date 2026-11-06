@@ -187,6 +187,21 @@ func (r *InstanceRepository) ListAnnouncements(ctx context.Context, publishedOnl
 	return out, nil
 }
 
+// ListAnnouncementPage implements appinstance.AnnouncementRepository.
+func (r *InstanceRepository) ListAnnouncementPage(ctx context.Context, q appinstance.AnnouncementQuery, limit int) ([]instance.Announcement, error) {
+	rows, err := r.db.reader().ListAnnouncementPage(ctx, sqlitegen.ListAnnouncementPageParams{
+		BeforeID: q.Before, Filter: string(q.Filter), Now: toMillis(q.Now), RowLimit: int64(limit),
+	})
+	if err != nil {
+		return nil, wrap(err, "list a page of announcements")
+	}
+	out := make([]instance.Announcement, len(rows))
+	for i, row := range rows {
+		out[i] = announcementOf(sqlitegen.ListAnnouncementsRow(row))
+	}
+	return out, nil
+}
+
 func announcementOf(row sqlitegen.ListAnnouncementsRow) instance.Announcement {
 	return instance.Announcement{
 		ID: row.ID, CreatedAt: fromMillis(row.CreatedAt),

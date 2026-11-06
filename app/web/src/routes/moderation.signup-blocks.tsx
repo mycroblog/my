@@ -5,6 +5,7 @@ import {
   type SignupBlockFilter,
   signupBlockFilters,
   SignupBlocks,
+  SignupBlocksNav,
   signupBlocksQueryOptions,
 } from "../features/moderation";
 import { requireSignIn } from "../lib/auth/requireSignIn";
@@ -12,12 +13,12 @@ import { useT } from "../lib/i18n";
 import { AdminError, loadWithPermission } from "./-admin/adminRoute";
 import { PageHeading } from "./-layout/PageHeading";
 
-/** `filter`: the tab of the list; omitted, or anything unknown, shows the blocks in effect (web-client/README.md S3). */
+/** `filter`: the filter of the list; omitted, or anything unknown, shows the blocks in effect (web-client/README.md S3). */
 const searchSchema = z.object({
   filter: z.enum(signupBlockFilters).exclude(["active"]).optional().catch(undefined),
 });
 
-/** The blocks on sign-ups by email domain, email address or IP range, and adding and lifting them (FR-719), for manage_accounts. */
+/** The list of the blocks on sign-ups by email domain, email address or IP range (FR-719), for manage_accounts; each row links to its page. */
 export const Route = createFileRoute("/moderation/signup-blocks")({
   validateSearch: searchSchema,
   loaderDeps: ({ search: { filter } }): { filter: SignupBlockFilter } => ({ filter: filter ?? "active" }),
@@ -41,6 +42,7 @@ function SignupBlocksPage() {
   return (
     <>
       <PageHeading>{t("client:admin.signup_blocks.title")}</PageHeading>
+      <SignupBlocksNav current="list" />
       <SignupBlocks filter={filter} onFilterChange={changeFilter} />
     </>
   );

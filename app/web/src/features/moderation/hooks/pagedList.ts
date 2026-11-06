@@ -38,15 +38,17 @@ export function toPagedList<T>(query: InfiniteList<{ items: T[] }>): PagedPages<
   };
 }
 
-/** A list that is all there is, in one page, for a table of records the API returns whole. */
-export function wholeList<T>(items: T[]): PagedPages<T> {
-  return {
-    items,
-    pages: items.length > 0 ? [items] : [],
-    hasMore: false,
-    isLoadingMore: false,
-    loadMore: () => undefined,
-  };
+/** The rows of a page of a list the API returns whole (`wholeList`). */
+export const wholeListPageSize = 40;
+
+/**
+ * A list the API returns whole, paged on the client for a table with previous / next: `pageSize` rows a page
+ * (`wholeListPageSize`), so that a long list (a thousand link-card rules) still shows one page at a time.
+ */
+export function wholeList<T>(items: readonly T[], pageSize = wholeListPageSize): PagedPages<T> {
+  const pages: T[][] = [];
+  for (let start = 0; start < items.length; start += pageSize) pages.push(items.slice(start, start + pageSize));
+  return { items: [...items], pages, hasMore: false, isLoadingMore: false, loadMore: () => undefined };
 }
 
 export type ListPages<T> = {

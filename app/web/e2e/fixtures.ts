@@ -227,6 +227,29 @@ export async function expectNoHorizontalScroll(page: Page): Promise<void> {
 }
 
 /**
+ * The list of records of an admin screen (`RecordTable`, @my/ui's `ListTable`) inside `scope`: a table, or at narrow
+ * widths (below 40rem of its container, the 320 and 390 px projects) a list of cards. Its `data-list-table` says which.
+ */
+export function recordTable(scope: Locator | Page): Locator {
+  return scope.locator("[data-list-table]");
+}
+
+/** The rows of a `recordTable` in either form: its body rows or its cards, in order. */
+export function recordRows(list: Locator): Locator {
+  return list.locator("[data-row-id]");
+}
+
+/** What names each row of a `recordTable`: the row header (`th`) of the table, or the heading of a card. */
+export function recordRowHeaders(list: Locator): Locator {
+  return list.locator("[data-row-header]");
+}
+
+/** Whether a `recordTable` draws its rows as cards (a narrow container) rather than as a table. */
+export async function isCardForm(list: Locator): Promise<boolean> {
+  return (await list.getAttribute("data-list-table")) === "cards";
+}
+
+/**
  * Asserts that a tab is whole in its tab list, which scrolls sideways when the tabs do not fit: no part of
  * it is cut off by the list's edges or under the fade (as wide as the list's scroll-padding) of an edge with
  * more tabs behind it. Polls, since the list scrolls after a render.

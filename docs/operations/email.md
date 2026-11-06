@@ -307,7 +307,7 @@ domain). If DKIM aligns, DMARC passes.
 
 ## Look at send failures
 
-Look at send failures on the jobs dashboard (`/admin/jobs`, permission `manage_jobs`; see
+Look at send failures on the jobs page (`/admin/jobs/list`, permission `manage_jobs`; see
 [the job queue and failed jobs](running.md#the-job-queue-and-failed-dead-jobs)).
 Filter by job type to see only email jobs (in the admin API, `GET /api/v1/admin/jobs?type=identity.verification_email`).
 The types are in the table above.
@@ -350,7 +350,7 @@ complaints are recorded from the SES notifications
 | `hard_bounce` | Everything except the confirmation email. The password reset email is stopped too |
 | `complaint` (reported as spam) | Notification and announcement emails. Transactional emails are still sent |
 
-- Moderators see the kind and origin of a suppression on the account page of the admin screen (`email_suppression` in
+- Moderators see the kind and origin of a suppression on the account's Management page of the admin screens (`email_suppression` in
   `GET /api/v1/admin/accounts/{id}`).
 - There are two ways to **lift** it. When the user asks for a confirmation email and confirms the address again, the hard-bounce
   suppression is lifted (the confirmation email is sent even while the address is suppressed). The user asks for it through the

@@ -1,17 +1,12 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The supporter program (/admin/supporters; web-client/screens/admin-supporters.md) in the states of ADR-0079 §13
+// The first page of the supporters screen, the program (/admin/supporters; web-client/screens/admin-supporters.md), in
+// the states of ADR-0079 §13. The plans' and the subscriptions' pages are in supporterPages.stories.tsx.
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { http, HttpResponse } from "msw";
-import { expect } from "storybook/test";
-import type { Schemas } from "../../test/fixtures";
 import { apiBase, withViewer } from "../../test/msw/http";
-import { inLocale, narrow, settled } from "../../test/stories";
-import {
-  paymentStatusFixture,
-  supporterPlanFixture,
-  supporterProgramFixture,
-  supporterSubscriptionFixture,
-} from "./test/handlers";
+import { inLocale, narrow } from "../../test/stories";
+import { paymentStatusFixture, supporterProgramFixture } from "./test/handlers";
+import { enabled, live, supporterHandlers } from "./test/supporterStories";
 import {
   adminAnswering,
   adminFailingOn,
@@ -21,103 +16,6 @@ import {
   withoutPermission,
 } from "./test/stories";
 
-const supporterPlanId = "0199f0e0-0000-7000-8000-0000000000c1";
-const patronPlanId = "0199f0e0-0000-7000-8000-0000000000c2";
-
-/** A plan for each rank, one whose prices are being prepared, and a retired one. */
-const plans: Schemas["AdminSupporterPlan"][] = [
-  supporterPlanFixture(supporterPlanId, { members: 38 }),
-  supporterPlanFixture(patronPlanId, {
-    name: "Patron",
-    description: "For those who keep the lights on: a badge, twenty custom emoji and our heartfelt thanks every month.",
-    rank: 2,
-    monthly_price: { amount: "1500", currency: "JPY" },
-    yearly_price: { amount: "15000", currency: "JPY" },
-    annual_discount_percent: 16,
-    emoji_limit: 20,
-    members: 9,
-  }),
-  supporterPlanFixture("0199f0e0-0000-7000-8000-0000000000c3", {
-    name: "Server sustainer with a deliberately long plan name",
-    rank: 3,
-    monthly_price: { amount: "5000", currency: "JPY" },
-    yearly_price: { amount: "50000", currency: "JPY" },
-    prices_ready: false,
-  }),
-  supporterPlanFixture("0199f0e0-0000-7000-8000-0000000000c4", {
-    name: "Early bird",
-    rank: 0,
-    retired: true,
-    retired_at: "2026-09-30T00:00:00Z",
-    members: 4,
-  }),
-];
-
-const usernames = ["bob", "carol", "dave_the_very_long_username", "erin", "frank", "grace"];
-const states: Schemas["AdminSupporterSubscription"]["state"][] = [
-  "active",
-  "active",
-  "canceling",
-  "past_due",
-  "pending",
-  "lapsed",
-];
-
-/** Subscriptions of several states, monthly and yearly, and one of an account that was deleted since. */
-const subscriptions: Schemas["AdminSupporterSubscription"][] = [
-  ...usernames.map((username, index) =>
-    supporterSubscriptionFixture(`0199f0e0-0000-7000-8000-0000000000e${String(index)}`, {
-      username,
-      account_id: `0192f0c4-7a8e-7000-8000-00000000010${String(index)}`,
-      state: states[index] ?? "active",
-      ...(index % 2 === 1 && {
-        plan_id: patronPlanId,
-        plan_name: "Patron",
-        interval: "year",
-        price: { amount: "15000", currency: "JPY" },
-      }),
-    }),
-  ),
-  (() => {
-    const {
-      account_id: _account,
-      username: _username,
-      ...erased
-    } = supporterSubscriptionFixture("0199f0e0-0000-7000-8000-0000000000e9", { state: "expired" });
-    return erased;
-  })(),
-];
-
-/** The program of a server that takes supporters, the plans, the subscriptions and a payment provider in live mode. */
-function supporterHandlers(program: Schemas["AdminSupporterProgram"], payment: Schemas["PaymentStatus"]) {
-  return [
-    http.get(`${apiBase}/admin/supporter_program`, ({ request }) =>
-      withViewer(request, () => HttpResponse.json(program)),
-    ),
-    http.get(`${apiBase}/admin/supporter_plans`, ({ request }) =>
-      withViewer(request, () => HttpResponse.json({ items: plans } satisfies Schemas["AdminSupporterPlanList"])),
-    ),
-    http.get(`${apiBase}/admin/supporter_subscriptions`, ({ request }) =>
-      withViewer(request, () => HttpResponse.json({ items: subscriptions })),
-    ),
-    http.get(`${apiBase}/admin/payment_status`, ({ request }) => withViewer(request, () => HttpResponse.json(payment))),
-  ];
-}
-
-const enabled = supporterProgramFixture({ enabled: true, provider: "stripe", live_subscriptions: 47 });
-const live = paymentStatusFixture({
-  mode: "live",
-  last_webhook_at: "2026-10-28T23:40:00Z",
-  last_reconciliation: {
-    outcome: "succeeded",
-    error_kind: "none",
-    requests: 4,
-    checked_subscriptions: 47,
-    corrected_subscriptions: 0,
-    occurred_at: "2026-10-28T03:00:00Z",
-  },
-});
-
 const meta = {
   title: "Screens/Admin/Supporters",
   ...adminScreen("/admin/supporters", supporterHandlers(enabled, live)),
@@ -126,31 +24,8 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/**
- * An enabled program in live mode: the plans by rank with their count and the one button that creates another, a
- * retired one apart, and subscriptions of several states.
- */
-export const Normal: Story = {
-  play: async (context) => {
-    await settled(context);
-    await expect(context.canvas.getAllByRole("button", { name: "Create a plan" })).toHaveLength(1);
-  },
-};
-
-/**
- * The form that creates a plan, open in place of the button with focus in its first field. (The unit tests submit it:
- * the submit button leaves with the panel, and React Aria's announcement of its pending state would name a gone element.)
- */
-export const Adding: Story = {
-  play: async (context) => {
-    const { canvas, userEvent } = context;
-    await settled(context);
-    await userEvent.click(canvas.getByRole("button", { name: "Create a plan" }));
-    const role = canvas.getByRole("textbox", { name: "Role" });
-    await expect(role).toHaveFocus();
-    await userEvent.type(role, "patron");
-  },
-};
+/** An enabled program in live mode, its form with one save, and the payment provider's state. */
+export const Normal: Story = {};
 
 /** Warnings: no commerce disclosure, no webhook delivery, and a reconciliation that the provider refused. */
 export const Warnings: Story = adminAnswering(
@@ -180,7 +55,7 @@ export const Warnings: Story = adminAnswering(
   ),
 );
 
-/** A disabled program on a server without a payment provider: the switch stays off and says why. */
+/** A disabled program on a server without a payment provider: the checkbox stays off and says why. */
 export const Disabled: Story = {
   parameters: {
     screen: {
@@ -198,17 +73,17 @@ export const Disabled: Story = {
   },
 };
 
-/** A disabled program without plans or subscriptions (the default handlers). */
+/** A disabled program (the default handlers). */
 export const Empty: Story = adminAnswering();
 
 /** A moderator without manage_supporters. */
 export const MissingPermission: Story = withoutPermission;
 
-/** The subscriptions have not arrived yet. */
-export const Loading: Story = adminLoadingOn("get", "/admin/supporter_subscriptions");
+/** The payment provider's state has not arrived yet. */
+export const Loading: Story = adminLoadingOn("get", "/admin/payment_status");
 
-/** The server failed to answer the plans. */
-export const ServerError: Story = adminFailingOn("get", "/admin/supporter_plans");
+/** The server failed to answer the program. */
+export const ServerError: Story = adminFailingOn("get", "/admin/supporter_program");
 
 /** In Japanese. */
 export const Japanese: Story = inLocale("ja");
@@ -216,5 +91,5 @@ export const Japanese: Story = inLocale("ja");
 /** Right to left, in the pseudo-locale ar-XB. */
 export const RightToLeft: Story = inLocale("ar-XB");
 
-/** At 320 CSS px, where the subscriptions' table scrolls. */
+/** At 320 CSS px. */
 export const Narrow: Story = narrow;
