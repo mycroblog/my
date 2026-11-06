@@ -10,8 +10,14 @@ from another one.
 | --- | --- |
 | Your followers | Your posts, the accounts you follow, your blocks, mutes, and bookmarks |
 
-Carry the rest to the new account yourself: export your follows, blocks, mutes, and bookmarks as CSV files from the old
-account and import them on the new one (see below).
+![The old account on the left and the new account on the right: an alias, the move, your followers going to the new account, and what stays on the old account. The list below says the same.](images/account-move.svg)
+
+From the top of the diagram down:
+
+1. **Add an alias.** On the new account, add the old account under "Aliases".
+2. **Move account.** On the old account, choose "Move account" and name the new account.
+3. **What moves.** Your followers follow the new account. The old account shows "Your account has moved": you can still sign in, read, and export your data there.
+4. **What stays here.** Your posts, the accounts you follow, and your blocks, mutes, and bookmarks stay on the old account. Your posts do not move. Carry the rest yourself: export your follows, blocks, mutes, and bookmarks as CSV files with "Import and export" on the old account, and import them on the new one ([taking your follows with you](#taking-your-follows-with-you)).
 
 ## Moving from this account
 

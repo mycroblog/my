@@ -28,6 +28,16 @@ setting "Who sees your posts by default" under "Display, posting, and timelines"
 | Followers | Only your followers and the people you mention. |
 | Mentioned people | Only the people you mention. |
 
+![Who can see a post on this server and on other servers, for each of the five visibilities. The list below says the same.](images/visibility.svg)
+
+Row by row, on this server and then on other servers:
+
+- **Public**: anyone, also people who are not signed in, and the post is shown on the local and federated timelines. On other servers anyone can read it, and it is sent to your followers and the people you mention.
+- **This server**: the people signed in to this server, and the post is shown on the local timeline. Other servers receive it only for your followers there, who see it as a "Followers" post; it is not sent to anyone else.
+- **Unlisted**: anyone with the link, but the post is not shown on the public timelines. On other servers too, anyone with the link can read it, and it is sent to your followers and the people you mention.
+- **Followers**: your followers and the people you mention, on this server and on other servers.
+- **Mentioned people**: only the people you mention, on this server and on other servers.
+
 A block always wins: someone who blocks you, or whom you block, does not see your post whatever you chose.
 
 ### "This server"

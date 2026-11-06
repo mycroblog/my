@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 528" width="760" height="528" role="img" aria-labelledby="title desc">
+<!-- SPDX-License-Identifier: AGPL-3.0-only -->
+  <title id="title">Who can see a post, by its visibility</title>
+  <desc id="desc">A table of the five visibilities, with who can see a post on this server and on other servers. Public: on this server anyone, and it is shown on the local and federated timelines; on other servers anyone, and it is sent to your followers and the people you mention. This server: on this server the people signed in to it, and it is shown on the local timeline; on other servers only your followers, who see it as a Followers post, and it is not sent to anyone else. Unlisted: on this server anyone with the link, but it is not shown on the public timelines; on other servers anyone with the link, and it is sent to your followers and the people you mention. Followers: on both, your followers and the people you mention. Mentioned people: on both, only the people you mention.</desc>
+
+  <style>
+    svg { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif; }
+    .bg { fill: #ffffff; }
+    .t { fill: #1f2328; font-size: 16px; }
+    .b { font-weight: 600; }
+    .m { fill: #59636e; font-size: 15px; }
+    .h { fill: #1f2328; font-size: 17px; font-weight: 600; }
+    .danger { fill: #cf222e; font-size: 15px; }
+    .group { fill: #f6f8fa; stroke: #d1d9e0; stroke-width: 1.5; }
+    .proc { fill: #ddf4ff; stroke: #0969da; stroke-width: 2; }
+    .port { fill: #ffffff; stroke: #8c959f; stroke-width: 1.5; }
+    @media (prefers-color-scheme: dark) {
+      .bg { fill: #0d1117; }
+      .t, .h { fill: #e6edf3; }
+      .m { fill: #9198a1; }
+      .danger { fill: #f85149; }
+      .group { fill: #151b23; stroke: #3d444d; }
+      .proc { fill: #0c2d6b; stroke: #4493f8; }
+      .port { fill: #0d1117; stroke: #656c76; }
+    }
+  </style>
+  <rect class="bg" x="0" y="0" width="760" height="528" rx="12"/>
+  <text class="h" x="96" y="42" text-anchor="middle">Visibility</text>
+  <rect class="group" x="188" y="12" width="274" height="504" rx="12"/>
+  <text class="h" x="325" y="42" text-anchor="middle">On this server</text>
+  <rect class="group" x="470" y="12" width="274" height="504" rx="12"/>
+  <text class="h" x="607" y="42" text-anchor="middle">On other servers</text>
+
+  <rect class="proc" x="16" y="60" width="160" height="84" rx="8"/>
+  <text class="t b" x="96" y="108" text-anchor="middle">Public</text>
+  <rect class="port" x="196" y="60" width="258" height="84" rx="8"/>
+  <text class="t" x="212" y="96">Anyone</text>
+  <text class="m" x="212" y="118">local and federated timelines</text>
+  <rect class="port" x="478" y="60" width="258" height="84" rx="8"/>
+  <text class="t" x="494" y="88">Anyone</text>
+  <text class="m" x="494" y="110">sent to your followers</text>
+  <text class="m" x="494" y="130">and mentioned people</text>
+
+  <rect class="proc" x="16" y="152" width="160" height="84" rx="8"/>
+  <text class="t b" x="96" y="200" text-anchor="middle">This server</text>
+  <rect class="port" x="196" y="152" width="258" height="84" rx="8"/>
+  <text class="t" x="212" y="188">People signed in here</text>
+  <text class="m" x="212" y="210">local timeline</text>
+  <rect class="port" x="478" y="152" width="258" height="84" rx="8"/>
+  <text class="t" x="494" y="180">Your followers only</text>
+  <text class="m" x="494" y="202">shown as Followers</text>
+  <text class="danger" x="494" y="222">not sent to anyone else</text>
+
+  <rect class="proc" x="16" y="244" width="160" height="84" rx="8"/>
+  <text class="t b" x="96" y="292" text-anchor="middle">Unlisted</text>
+  <rect class="port" x="196" y="244" width="258" height="84" rx="8"/>
+  <text class="t" x="212" y="280">Anyone with the link</text>
+  <text class="m" x="212" y="302">not on public timelines</text>
+  <rect class="port" x="478" y="244" width="258" height="84" rx="8"/>
+  <text class="t" x="494" y="272">Anyone with the link</text>
+  <text class="m" x="494" y="294">sent to your followers</text>
+  <text class="m" x="494" y="314">and mentioned people</text>
+
+  <rect class="proc" x="16" y="336" width="160" height="84" rx="8"/>
+  <text class="t b" x="96" y="384" text-anchor="middle">Followers</text>
+  <rect class="port" x="196" y="336" width="258" height="84" rx="8"/>
+  <text class="t" x="212" y="372">Your followers and</text>
+  <text class="t" x="212" y="394">mentioned people</text>
+  <rect class="port" x="478" y="336" width="258" height="84" rx="8"/>
+  <text class="t" x="494" y="372">Your followers and</text>
+  <text class="t" x="494" y="394">mentioned people</text>
+
+  <rect class="proc" x="16" y="428" width="160" height="84" rx="8"/>
+  <text class="t b" x="96" y="476" text-anchor="middle">Mentioned people</text>
+  <rect class="port" x="196" y="428" width="258" height="84" rx="8"/>
+  <text class="t" x="212" y="476">Mentioned people</text>
+  <rect class="port" x="478" y="428" width="258" height="84" rx="8"/>
+  <text class="t" x="494" y="476">Mentioned people</text>
+</svg>
