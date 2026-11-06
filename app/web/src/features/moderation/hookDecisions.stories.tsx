@@ -3,6 +3,7 @@
 // with its counts, what they stopped, and the authors' appeals of refused posts, in the states of ADR-0079 §13.
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { http, HttpResponse } from "msw";
+import { remoteAccountFixture } from "../../test/fixtures";
 import { apiBase, problem } from "../../test/msw/http";
 import {
   answering,
@@ -20,6 +21,7 @@ const decisions = listing("/admin/hook_decisions", [
   hookDecisionFixture({
     id: "0192f0c4-7a8e-7000-8000-0000000002b3",
     subject_key: "https://remote.example/users/spammer/statuses/1/activity",
+    account_id: remoteAccountFixture.id,
     reason: "spam",
     note: "Same link posted to many accounts",
     decided_at: hoursAgo(2),

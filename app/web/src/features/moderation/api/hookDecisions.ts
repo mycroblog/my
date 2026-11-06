@@ -16,6 +16,7 @@ export type HookDecision = Schemas["AdminHookDecision"];
 export type HookName = Schemas["HookName"];
 export type HookSummary = Schemas["AdminHookSummary"];
 export type HookOutcome = Schemas["HookOutcome"];
+export type HookReason = Schemas["HookReason"];
 export type HookMode = Schemas["HookMode"];
 export type HookDecisionMode = Schemas["HookDecisionMode"];
 export type HookAppeal = Schemas["AdminHookAppeal"];

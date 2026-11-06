@@ -5,7 +5,7 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
 import { beforeEach, describe, expect, test } from "vitest";
-import type { Schemas } from "../../test/fixtures";
+import { remoteAccountFixture, type Schemas } from "../../test/fixtures";
 import { apiBase, operatorHandler, problem, signedInHandler } from "../../test/msw/http";
 import { server } from "../../test/msw/server";
 import { renderApp } from "../../test/render";
@@ -28,6 +28,7 @@ type Decision = Schemas["AdminHookDecision"];
 const dropped = hookDecisionFixture({
   id: "0192f0c4-7a8e-7000-8000-0000000002a2",
   subject_key: "https://remote.example/activities/1",
+  account_id: remoteAccountFixture.id,
   note: "Looks like a campaign",
   reason: "spam",
 });
@@ -74,6 +75,12 @@ describe("automated reviews", () => {
     const list = screen.getByRole("table", { name: "Decisions" });
     expect(within(list).getByRole("rowheader", { name: dropped.subject_key })).toBeVisible();
     expect(within(list).getByText("Looks like a campaign")).toHaveAttribute("dir", "auto");
+    // A decision with an account names it, and its reason code reads as a label; one without an account names none.
+    const droppedRow = within(list).getByRole("row", { name: /activities\/1/u });
+    expect(await within(droppedRow).findByText("Bob")).toBeVisible();
+    expect(within(droppedRow).getByText("Spam")).toBeVisible();
+    const observedRow = within(list).getByRole("row", { name: /activities\/2/u });
+    expect(within(observedRow).queryByText("Account")).not.toBeInTheDocument();
     expect(within(list).getByText("Timed out")).toBeVisible();
   });
 
@@ -140,7 +147,7 @@ describe("automated reviews", () => {
     );
     await renderApp({ path: `/moderation/reports/${id}` });
     expect(await screen.findByText("Filed by the review of Posts from other servers, not by a person.")).toBeVisible();
-    expect(screen.getByText("Reason of the review: spam")).toBeVisible();
+    expect(screen.getByText("Reason of the review: Spam")).toBeVisible();
   });
 
   test("a failed cancellation leaves the row and says why", async () => {
@@ -223,7 +230,7 @@ describe("appeals of refused posts", () => {
     if (first === undefined) throw new Error("an appeal is missing");
     expect(await within(first).findByText("Bob")).toBeVisible();
     expect(within(first).getByText("Local posts")).toBeVisible();
-    expect(within(first).getByText("spam")).toBeVisible();
+    expect(within(first).getByText("Spam")).toBeVisible();
     expect(within(first).getByText(appeal.status_text)).toHaveAttribute("dir", "auto");
     expect(within(first).getByText(appeal.comment ?? "")).toHaveAttribute("dir", "auto");
     expect(within(table).getByText(arabic.status_text)).toHaveAttribute("dir", "auto");

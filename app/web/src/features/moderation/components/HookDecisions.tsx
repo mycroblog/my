@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The automated reviews screen below its heading (ADR-0147 §9): each hook with its mode and its counts per outcome and
 // latency, then what the hooks stopped, would have stopped, or could not check, newest first. A decision holds no text of
-// a post, so a row shows only what identifies its subject. Cancelling takes effect at once and asks nothing first: the
-// result stays on the page in a StatusMessage (role="status"). The list is in the admin mode's table form: a toolbar with
+// a post, so a row shows only what identifies its subject and, when it has one, the account it belongs to. Cancelling
+// takes effect at once and asks nothing first: the result stays on the page in a StatusMessage (role="status"). The list is in the admin mode's table form: a toolbar with
 // the filter (kept in the URL by the route, web-client/README.md S3), one page of the table at a time, previous / next.
 // The authors' appeals of the posts that the review of local posts refused come first, as they await a moderator
 // (HookAppeals.tsx).
@@ -42,6 +42,7 @@ import {
 import {
   hookModeLabels,
   hookNameLabels,
+  hookReasonLabels,
   hookOutcomeLabels,
   type OverrideHookDecision,
   useHookDecisions,
@@ -50,6 +51,7 @@ import {
 } from "../hooks/useHookDecisions";
 import { HookAppeals } from "./HookAppeals";
 import { DateTime, RecordTable, RequirePermission, Section } from "./parts";
+import { AccountByIdLabel } from "./reportParts";
 
 type HookRow = HookSummary["hooks"][number];
 
@@ -234,11 +236,18 @@ function HookDecisionRow({ decision, override }: { decision: HookDecision; overr
       </TableCell>
       <TableCell wrap="anywhere">
         <DescriptionList>
+          {decision.account_id !== undefined && (
+            <DescriptionItem term={t("client:admin.hook_decisions.account")}>
+              <AccountByIdLabel id={decision.account_id} />
+            </DescriptionItem>
+          )}
           <DescriptionItem term={t("client:admin.hook_decisions.latency")}>
             {t("client:admin.hook_decisions.latency.value", { value: intl.formatNumber(decision.latency_ms) })}
           </DescriptionItem>
           {decision.reason !== undefined && (
-            <DescriptionItem term={t("client:admin.hook_decisions.reason")}>{decision.reason}</DescriptionItem>
+            <DescriptionItem term={t("client:admin.hook_decisions.reason")}>
+              {t(hookReasonLabels[decision.reason])}
+            </DescriptionItem>
           )}
           {decision.note !== undefined && (
             <DescriptionItem term={t("client:admin.hook_decisions.note")}>

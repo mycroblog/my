@@ -101,7 +101,7 @@
   },
   "admin.report.hook_origin.reason": {
     "defaultMessage": "審査の理由: {reason}",
-    "description": "The coded reason the external review gave. {reason} is a code such as spam."
+    "description": "The coded reason the external review gave. {reason} is the label of the code, such as Spam."
   },
   "admin.report.forwarded.no": {
     "defaultMessage": "なし",

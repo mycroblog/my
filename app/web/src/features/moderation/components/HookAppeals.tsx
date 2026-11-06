@@ -38,6 +38,7 @@ import {
   type HookAppealReview,
   hookAppealStateLabels,
   hookNameLabels,
+  hookReasonLabels,
   useHookAppealReview,
   useHookAppeals,
 } from "../hooks/useHookDecisions";
@@ -158,7 +159,9 @@ function HookAppealRow({ appeal, review }: { appeal: HookAppeal; review: HookApp
             {t(hookNameLabels[decision.hook])}
           </DescriptionItem>
           {decision.reason !== undefined && (
-            <DescriptionItem term={t("client:admin.hook_decisions.reason")}>{decision.reason}</DescriptionItem>
+            <DescriptionItem term={t("client:admin.hook_decisions.reason")}>
+              {t(hookReasonLabels[decision.reason])}
+            </DescriptionItem>
           )}
           {decision.note !== undefined && (
             <DescriptionItem term={t("client:admin.hook_decisions.note")}>

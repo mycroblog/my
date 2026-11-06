@@ -5,7 +5,7 @@
   },
   "admin.hook_decisions.column.details": {
     "defaultMessage": "詳細",
-    "description": "Column of the list of decisions: the wait, reason, note, and cancellation."
+    "description": "Column of the list of decisions: the account, wait, reason, note, and cancellation."
   },
   "admin.hook_decisions.column.hook": {
     "defaultMessage": "審査",
@@ -58,6 +58,10 @@
   "admin.hook_decisions.hook.signup_check": {
     "defaultMessage": "登録",
     "description": "Name of the external review of sign-ups."
+  },
+  "admin.hook_decisions.account": {
+    "defaultMessage": "アカウント",
+    "description": "Term of a decision: the account its subject belongs to, such as the author of the post or the account that signed up."
   },
   "admin.hook_decisions.latency": {
     "defaultMessage": "待ち時間",
@@ -166,6 +170,34 @@
   "admin.hook_decisions.reason": {
     "defaultMessage": "理由コード",
     "description": "Term of a decision: the coded reason the review gave."
+  },
+  "admin.hook_decisions.reason.spam": {
+    "defaultMessage": "スパム",
+    "description": "Coded reason an external review gave for its verdict: spam."
+  },
+  "admin.hook_decisions.reason.harassment": {
+    "defaultMessage": "嫌がらせ",
+    "description": "Coded reason an external review gave for its verdict: harassment."
+  },
+  "admin.hook_decisions.reason.sexual": {
+    "defaultMessage": "性的な内容",
+    "description": "Coded reason an external review gave for its verdict: sexual content."
+  },
+  "admin.hook_decisions.reason.violence": {
+    "defaultMessage": "暴力",
+    "description": "Coded reason an external review gave for its verdict: violence."
+  },
+  "admin.hook_decisions.reason.illegal": {
+    "defaultMessage": "違法な内容",
+    "description": "Coded reason an external review gave for its verdict: illegal content."
+  },
+  "admin.hook_decisions.reason.malware": {
+    "defaultMessage": "マルウェア",
+    "description": "Coded reason an external review gave for its verdict: malware."
+  },
+  "admin.hook_decisions.reason.other": {
+    "defaultMessage": "その他",
+    "description": "Coded reason an external review gave for its verdict: a reason none of the other codes names."
   },
   "admin.hook_decisions.summary.count": {
     "defaultMessage": "{count, plural, other {# 件}}、平均 {average} ミリ秒、最大 {max} ミリ秒",
