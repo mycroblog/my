@@ -9,7 +9,7 @@
 // /next/, /latest/, /vX.Y/), DOCS_SITE_REF (its git ref) and DOCS_SITE_VERSIONS. Builds of older tags read the same
 // variables, so their names and the format of the resolved file only ever grow.
 import { readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
+import { join } from "node:path";
 
 type SupportStatus = "supported" | "ended";
 
@@ -61,7 +61,9 @@ function parseVersions(source: string): Versions {
 }
 
 function readVersions(): Versions {
-  const file = process.env["DOCS_SITE_VERSIONS"] || fileURLToPath(new URL("../versions.json", import.meta.url));
+  // From the working directory, app/docs, where the build and the dev server run: the pages are prerendered from a
+  // bundle under dist/, so a path relative to this module (import.meta.url) would not find the file.
+  const file = process.env["DOCS_SITE_VERSIONS"] || join(process.cwd(), "versions.json");
   return parseVersions(readFileSync(file, "utf8"));
 }
 
