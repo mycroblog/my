@@ -5,7 +5,7 @@
 - **画面**（`/search`、ナビゲーションの「検索」）: 見出しが名前を与える `role="search"` のフォームに、ラベル付きの入力欄（`type="search"`）と送信ボタンを置く。
   入力欄は `@username@domain`・`username@domain`・アクターかプロフィールの `https` の URL を受け付け、前後の空白を除いて `GET /accounts/lookup` に送る。
   サインイン中は `resolve=true` を付け、サーバーが知らないアカウントを相手のサーバーから取ってこさせる。サインインしていない間は付けず（解決にはトークンが要る）、このサーバーが知っているアカウントだけが見つかることを説明に書き、サインインのリンクを出す。
-- **名前の検索**（FR-307、[screens/search.md](screens/search.md)）: サインイン中は、入力が 300 ms 止まるたびに、入力（先頭の `@` を除き、URL でないもの）を `GET /accounts/search`（`limit=20`）に送り、
+- **名前の検索**（FR-307、[screens/search.md](screens/search.md)）: サインイン中は、入力が 300 ms 止まるたびに（IME の変換中は待ち、`onCompositionEnd` から数える）、入力（先頭の `@` を除き、URL でないもの）を `GET /accounts/search`（`limit=20`）に送り、
   名前が合うアカウントを、フォームの下の区画（`h2`「アカウント（件数）」）に `features/profile` の `AccountFollowItem`（プロフィールへのリンクとフォローのボタン）で並べる。
   件数は視覚的に隠した `role="status"` で読み上げる。次の入力の結果が来るまで、前の結果を出したままにする。
 - **投稿の検索**（FR-309、[screens/search.md](screens/search.md)）: `lib/fullTextSearch.ts` が `GET /instance` の `full_text_search` を読む。`usePostSearchAvailable`（全文検索があり、サインイン中）のときだけ、ルートが `SearchTabs` で「アカウント」「投稿」のタブ（`?type=posts`、S3）を出す。どちらでもないときは今までのアカウントの検索だけで、`?type=posts` は無視する。タブの有無で入力欄が作り直されないよう、ルートの loader がセッションの再開と `GET /instance` を待つ。検索そのものは loader に置かない。`defaultPreload: "intent"` の先読みが検索の回数の制限を使うからである。

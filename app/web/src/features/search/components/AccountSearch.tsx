@@ -30,7 +30,7 @@ export type AccountSearchProps = AccountSearchOptions & {
 export function AccountSearch({ headingId, ...options }: AccountSearchProps) {
   const t = useT();
   const search = useAccountSearch(options);
-  const names = useNameSearch(search.value, !search.signedOut);
+  const { names, composition } = useNameSearch(search.value, !search.signedOut);
   return (
     <Stack gap="3">
       <Stack as="form" gap="3" role="search" aria-labelledby={headingId} onSubmit={search.submit} autoCapitalize="none">
@@ -46,6 +46,7 @@ export function AccountSearch({ headingId, ...options }: AccountSearchProps) {
           }
           value={search.value}
           onChange={search.onChange}
+          {...composition}
           isRequired
           maxLength={maxSearchLength}
           // A handle or a URL: no corrections and no suggestions from other forms (the form turns off capitals).

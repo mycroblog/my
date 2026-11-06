@@ -105,8 +105,9 @@ describe("the rules", () => {
     expect(hint).toHaveAttribute("dir", "auto");
     expect(hint).toHaveAttribute("lang", "");
     // The first rule cannot move up nor the last down.
-    expect(within(list).queryByRole("button", { name: "Move up: Be kind" })).not.toBeInTheDocument();
-    expect(within(list).queryByRole("button", { name: "Move down: No spam" })).not.toBeInTheDocument();
+    expect(within(list).getByRole("button", { name: "Move up: Be kind" })).toBeDisabled();
+    expect(within(list).getByRole("button", { name: "Move down: Be kind" })).toBeEnabled();
+    expect(within(list).getByRole("button", { name: "Move down: No spam" })).toBeDisabled();
   });
 
   test("adds a rule with a hint, one field each", async () => {

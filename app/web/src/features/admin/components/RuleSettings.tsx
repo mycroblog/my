@@ -164,31 +164,30 @@ function RuleRow({ rule, place, count, actions }: { rule: Rule; place: number; c
         </Text>
       )}
       <Cluster gap="2">
-        {/* The first rule cannot move up nor the last down: those buttons stay out rather than doing nothing. */}
-        {place > 1 && (
-          <Button
-            size="sm"
-            isPending={isMoving}
-            aria-label={t("client:admin.rules.move_up_rule", { rule: name })}
-            onPress={() => {
-              actions.move(rule, place - 1);
-            }}
-          >
-            {t("client:admin.rules.move_up")}
-          </Button>
-        )}
-        {place < count && (
-          <Button
-            size="sm"
-            isPending={isMoving}
-            aria-label={t("client:admin.rules.move_down_rule", { rule: name })}
-            onPress={() => {
-              actions.move(rule, place + 1);
-            }}
-          >
-            {t("client:admin.rules.move_down")}
-          </Button>
-        )}
+        {/* The first rule cannot move up nor the last down: those buttons are disabled, so that every row has its
+            buttons in the same places. The names start with the words on the buttons (WCAG 2.5.3). */}
+        <Button
+          size="sm"
+          isPending={isMoving}
+          isDisabled={place === 1}
+          aria-label={t("client:admin.rules.move_up_rule", { rule: name })}
+          onPress={() => {
+            actions.move(rule, place - 1);
+          }}
+        >
+          {t("client:admin.rules.move_up")}
+        </Button>
+        <Button
+          size="sm"
+          isPending={isMoving}
+          isDisabled={place === count}
+          aria-label={t("client:admin.rules.move_down_rule", { rule: name })}
+          onPress={() => {
+            actions.move(rule, place + 1);
+          }}
+        >
+          {t("client:admin.rules.move_down")}
+        </Button>
         <EditRule rule={rule} name={name} actions={actions} />
         <RetireRule rule={rule} name={name} actions={actions} />
       </Cluster>

@@ -3,7 +3,7 @@
 // T4): the real router and QueryClient, with MSW as the server (FR-305, FR-301). A signed-in viewer's search
 // asks the server to resolve the account on its own server; the found profile opens, and a follow of a
 // remote account stays requested until that server accepts it.
-import { screen, waitFor, within } from "@testing-library/react";
+import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
 import { describe, expect, test } from "vitest";
 import {
@@ -353,6 +353,32 @@ describe("the search by name", () => {
     expect(screen.getAllByRole("status").some((status) => status.textContent === "1 account found")).toBe(true);
     // The typing paused once: one search.
     expect(queries).toEqual(["aro"]);
+  });
+
+  test("does not search during an IME composition, and searches once it has ended", async () => {
+    server.use(resumableSession());
+    const queries: string[] = [];
+    server.use(
+      http.get(`${apiBase}/accounts/search`, ({ request }) => {
+        queries.push(new URL(request.url).searchParams.get("q") ?? "");
+        return HttpResponse.json({ items: [carol] });
+      }),
+    );
+    const { user, field } = await openSearch();
+    await user.click(field);
+
+    // oxlint-disable testing-library/prefer-user-event -- user-event cannot compose.
+    fireEvent.compositionStart(field);
+    fireEvent.change(field, { target: { value: "きゃ" } });
+    // Longer than the pause that sends a search.
+    await new Promise((resolve) => setTimeout(resolve, 400));
+    expect(queries).toEqual([]);
+    fireEvent.change(field, { target: { value: "キャロル" } });
+    fireEvent.compositionEnd(field);
+    // oxlint-enable testing-library/prefer-user-event
+
+    await screen.findByRole("region", { name: "Accounts (1)" });
+    expect(queries).toEqual(["キャロル"]);
   });
 
   test("says when no account matches", async () => {
