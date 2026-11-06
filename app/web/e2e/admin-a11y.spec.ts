@@ -311,7 +311,7 @@ const closureCheck: Schemas["AdminServiceClosureCheck"] = {
   retention_holds: 1,
 };
 
-/** A published announcement with a long first line and a link, as GET /admin/announcements lists it. */
+/** A published announcement with a long title and a link, as GET /admin/announcements lists it and GET /admin/announcements/{id} answers. */
 const announcement: Schemas["AdminAnnouncement"] = {
   id: "0192f0c4-7a8e-7000-8000-0000000000e6",
   title: `Scheduled maintenance of the database ${"and of the media storage ".repeat(2)}`.trim(),
@@ -790,6 +790,7 @@ async function moderatorServer(page: Page) {
     if (key === "GET /admin/custom_emoji_requests") return json(route, { items: [] });
     if (key === "GET /admin/webhooks") return json(route, { items: [webhook] });
     if (key === "GET /admin/announcements") return json(route, { items: [announcement] });
+    if (key === `GET /admin/announcements/${announcement.id}`) return json(route, announcement);
     if (key === "GET /admin/closure") return json(route, announcedClosure);
     if (key === "GET /admin/closure/check") return json(route, closureCheck);
     if (key === `GET /admin/webhooks/${webhook.id}`) return json(route, webhook);
@@ -1098,7 +1099,9 @@ const adminPages: Readonly<Record<string, { path: string; ready: string | { valu
   "admin.webhooks": { path: "/admin/webhooks", ready: webhook.description ?? "" },
   "admin.webhooks_.$id": { path: `/admin/webhooks/${webhook.id}`, ready: webhookDelivery.message_id },
   "admin.closure": { path: "/admin/closure", ready: announcedClosure.message ?? "" },
-  "admin.announcements": { path: "/admin/announcements", ready: "the status page" },
+  "admin.announcements": { path: "/admin/announcements", ready: announcement.title },
+  "admin.announcements_.new": { path: "/admin/announcements/new", ready: "" },
+  "admin.announcements_.$id": { path: `/admin/announcements/${announcement.id}`, ready: "the status page" },
   "admin.relays": { path: "/admin/relays", ready: relay.inbox_url },
   "admin.oauth-apps": { path: "/admin/oauth-apps", ready: oauthClient.name },
   "admin.oauth-apps_.hosts": { path: "/admin/oauth-apps/hosts", ready: hostDenial.host },

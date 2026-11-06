@@ -59,8 +59,15 @@ export { parseAliases } from "./hooks/useCustomEmojis";
 export { hostDenialsQueryOptions, type OAuthClientFilter, oauthClientsQueryOptions } from "./api/oauthApps";
 export { OAuthAppList, OAuthHostDenials } from "./components/OAuthAppSettings";
 // The server's announcements to every local user (FR-726), for manage_announcements.
-export { adminAnnouncementsQueryOptions } from "./api/announcements";
-export { AnnouncementSettings } from "./components/AnnouncementSettings";
+export {
+  type AnnouncementFilter,
+  adminAnnouncementQueryOptions,
+  adminAnnouncementsQueryOptions,
+  announcementFilters,
+} from "./api/announcements";
+export { AnnouncementDetail } from "./components/AnnouncementDetail";
+export { AnnouncementList } from "./components/AnnouncementList";
+export { NewAnnouncement } from "./components/NewAnnouncement";
 // The external login providers: setting them up, changing, disabling and deleting them (ADR-0106), for manage_login_providers.
 export { loginProvidersQueryOptions } from "./api/loginProviders";
 export { LoginProviderSettings } from "./components/LoginProviderSettings";

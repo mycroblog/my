@@ -192,8 +192,7 @@ export function auditTargetHref(
     case "webhook":
       return `/admin/webhooks/${id}`;
     case "announcement":
-      // An announcement has no screen of its own: the list, which keeps every announcement.
-      return "/admin/announcements";
+      return `/admin/announcements/${id}`;
     case "invite":
       // An invite has no screen of its own: the list of invites shows it.
       return "/moderation/invites";

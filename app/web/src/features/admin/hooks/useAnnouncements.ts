@@ -1,15 +1,19 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The server's announcements (FR-726, ADR-0125, manage_announcements): every announcement, newest first, with its
-// state; writing one with a plain-text title and a Markdown text, shown for a chosen time or until it is withdrawn, as
-// a draft or published at once; revising its title and text; publishing a draft; and withdrawing one for good. Every
-// change goes to the audit log.
-import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
+// The server's announcements (FR-726, ADR-0125, manage_announcements): the announcements a page at a time, newest
+// first, kept by where they are in their life; one of them; writing one with a plain-text title and a Markdown text,
+// shown for a chosen time or until it is withdrawn, as a draft or published at once; revising its title and text;
+// publishing a draft; and withdrawing one for good. Every change goes to the audit log.
+import { useMutation, useQueryClient, useSuspenseInfiniteQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { type SyntheticEvent, useState } from "react";
 import { useApi } from "../../../lib/auth/SessionProvider";
 import { errorMessage } from "../../../lib/errors";
-import { useT } from "../../../lib/i18n";
+import { type ClientMessageKey, useT } from "../../../lib/i18n";
+import { type PagedPages, toPagedList } from "../../moderation";
 import {
   type AdminAnnouncement,
+  type AnnouncementFilter,
+  type AnnouncementPhase,
+  adminAnnouncementQueryOptions,
   adminAnnouncementsQueryOptions,
   announcementTextLimit,
   announcementTitleLimit,
@@ -26,10 +30,51 @@ const day = 86_400;
 /** How long a new announcement may show, in seconds; the form also offers "until withdrawn". */
 export const announcementDurations = [day, 3 * day, 7 * day, 14 * day, 30 * day] as const;
 
-/** Every announcement, newest first. */
-export function useAdminAnnouncements(): AdminAnnouncement[] {
+/** The announcements of a list, newest first, which the route has loaded; later pages load on demand. */
+export function useAdminAnnouncements(filter: AnnouncementFilter): PagedPages<AdminAnnouncement> {
   const api = useApi();
-  return useSuspenseQuery(adminAnnouncementsQueryOptions(api)).data.items;
+  return toPagedList(useSuspenseInfiniteQuery(adminAnnouncementsQueryOptions(api, filter)));
+}
+
+/** One announcement, which the route has loaded. */
+export function useAdminAnnouncement(id: string): AdminAnnouncement {
+  const api = useApi();
+  return useSuspenseQuery(adminAnnouncementQueryOptions(api, id)).data;
+}
+
+export const announcementPhaseLabels: Readonly<Record<AnnouncementPhase, ClientMessageKey>> = {
+  draft: "client:admin.announcements.phase.draft",
+  scheduled: "client:admin.announcements.phase.scheduled",
+  showing: "client:admin.announcements.phase.showing",
+  ended: "client:admin.announcements.phase.ended",
+  withdrawn: "client:admin.announcements.phase.withdrawn",
+};
+
+/**
+ * When a published announcement starts to show: its publication, or the start of its window when that comes later
+ * (the server's ShowsFrom); undefined for a draft.
+ */
+export function announcementShowsFrom(
+  announcement: Pick<AdminAnnouncement, "published_at" | "starts_at">,
+): string | undefined {
+  const { published_at: publishedAt, starts_at: startsAt } = announcement;
+  if (publishedAt === undefined) return undefined;
+  return startsAt !== undefined && Date.parse(startsAt) > Date.parse(publishedAt) ? startsAt : publishedAt;
+}
+
+/**
+ * Where an announcement is in its life at `now` (ms since the epoch), as the server's `state` filter splits them: a
+ * published one is scheduled before it starts to show, showing within its window, and ended after it.
+ */
+export function announcementPhase(
+  announcement: Pick<AdminAnnouncement, "state" | "published_at" | "starts_at" | "ends_at">,
+  now: number,
+): AnnouncementPhase {
+  if (announcement.state !== "published") return announcement.state;
+  const from = announcementShowsFrom(announcement);
+  if (from !== undefined && Date.parse(from) > now) return "scheduled";
+  if (announcement.ends_at !== undefined && Date.parse(announcement.ends_at) <= now) return "ended";
+  return "showing";
 }
 
 /** The first line of an announcement's text, without its Markdown marks: the name of one written before titles. */
@@ -81,10 +126,9 @@ function useTextError() {
   };
 }
 
-/** The form of a new announcement: it empties once the list shows the announcement. */
-export function useNewAnnouncementForm() {
+/** The form of a new announcement; `onCreated` gets the announcement once the lists have it (the route opens its page). */
+export function useNewAnnouncementForm(onCreated: (announcement: AdminAnnouncement) => void) {
   const api = useApi();
-  const t = useT();
   const queryClient = useQueryClient();
   const textError = useTextError();
   const titleError = useTitleError();
@@ -93,22 +137,11 @@ export function useNewAnnouncementForm() {
   const [duration, setDuration] = useState<number | null>(7 * day);
   const [publish, setPublish] = useState(true);
   const [submitted, setSubmitted] = useState(false);
-  const [status, setStatus] = useState<string | undefined>(undefined);
   const create = useMutation({
     ...createAnnouncementMutation(api),
-    onMutate: () => {
-      setStatus(undefined);
-    },
     onSuccess: async (announcement) => {
       await refreshAnnouncements(queryClient);
-      setTitle("");
-      setText("");
-      setSubmitted(false);
-      setStatus(
-        announcement.state === "published"
-          ? t("client:admin.announcements.published_one", { announcement: announcementLabel(announcement) })
-          : t("client:admin.announcements.drafted"),
-      );
+      onCreated(announcement);
     },
   });
   const error = submitted ? textError(text) : undefined;
@@ -144,11 +177,10 @@ export function useNewAnnouncementForm() {
     isPending: create.isPending,
     /** Why writing failed, localized; the text stays. */
     failure: create.isError ? errorMessage(create.error) : undefined,
-    status,
   };
 }
 
-/** What the list of announcements does to one; each resolves whether it worked. */
+/** What the page of an announcement does to it; each resolves whether it worked. */
 export type AnnouncementActions = {
   /** Replaces the title and the text of the announcement and keeps its window. */
   update: (announcement: AdminAnnouncement, title: string, text: string) => Promise<boolean>;
@@ -163,9 +195,8 @@ export type AnnouncementActions = {
 };
 
 /**
- * The changes of the announcements in the list. Each says what it did through `onDone(announcement, status)` once
- * the list shows it (the announcements are fetched again first), so that the screen can move focus and keep the
- * status next to the list.
+ * The changes of an announcement. Each says what it did through `onDone(announcement, status)` once the page shows it
+ * (the announcement is fetched again first), so that the page can move focus and keep the status by the change.
  */
 export function useAnnouncementActions(
   onDone: (announcement: AdminAnnouncement, status: string) => void,

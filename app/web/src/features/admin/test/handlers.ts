@@ -931,7 +931,7 @@ export const handlers = [
   // operationIds listAdminAnnouncements, createAdminAnnouncement, getAdminAnnouncement, updateAdminAnnouncement,
   // publishAdminAnnouncement, withdrawAdminAnnouncement: no announcements; a new or changed one is answered as sent.
   http.get(`${apiBase}/admin/announcements`, ({ request }) =>
-    withViewer(request, () => HttpResponse.json({ items: [] } satisfies Schemas["AdminAnnouncementList"])),
+    withViewer(request, () => HttpResponse.json({ items: [] } satisfies Schemas["AdminAnnouncementPage"])),
   ),
   http.post(`${apiBase}/admin/announcements`, async ({ request }) => {
     const { publish, ...body } = (await request.clone().json()) as Schemas["AdminAnnouncementCreateRequest"];
