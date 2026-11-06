@@ -315,8 +315,37 @@ API の経路はどちらも `/admin/*` で（[client-api.md](../client-api.md) 
   連合先の詳細とリモートのアカウントの管理画面は「投稿の取り直し」の区画（`h2` の `section`）に、何をするか（件数の上限と、裏で 1 分ごとに進むこと）の説明を `aria-describedby` にした「投稿を取り直す」を置く。
   押すと `POST /admin/instances/{domain}/refetch_statuses` か `POST /admin/accounts/{id}/refetch_statuses`（通報の投稿は `POST /admin/statuses/{id}/refetch`）を送り、監査ログに無効化の印を付けてから、頼んで監査ログに記録したことを区画の `StatusMessage` に出す。
   ボタンは残るのでフォーカスも残る。投稿は取り直したときに変わるので、投稿の一覧は取り直さない。失敗はトーストで知らせ、ボタンを残す（E2）。
-- **共通の部品**: 管理画面の一覧と詳細は同じ型で組む。権限の出し分けは `RequirePermission`、記録の一覧（区切り線の行・空の状態・「さらに読み込む」、行の `data-row-id`）は `RecordList`（管理のモードの表の一覧は `RecordTable`。`Card` の中の `Table` を 1 ページずつ見せ、下に前へ / 次への `Pagination` を置く。カーソルで送る API なので、次へは読み込み済みのページの先なら 1 ページ読み込んでから進む。絞り込みは `ListToolbar` に置き、行の最初のセルが詳細のページへのリンクになる。詳細のページのない行の操作ボタン（承認・取り消し）は最後の列に置いて見出しを視覚的に隠し、操作で行が残るときのフォーカスは行見出しの `th`（`tabIndex={-1}`）に移す）、詳細の画面の区画（`h2` で名前を付けた `section`）は `@my/ui` の `Section`（`surface="card"`）、区画の中身が入れ替わって押したボタンが消えるときに区画の見出しへフォーカスを移すのは `useFocusAfterChange` にし（`features/moderation/components/parts.tsx`）、
+- **共通の部品**: 管理画面の一覧と詳細は同じ型で組む。権限の出し分けは `RequirePermission`、管理のモードの記録の一覧は `RecordTable`（下の「一覧の表」）、詳細のページの中の短い証拠の一覧（区切り線の行・空の状態・「さらに読み込む」、行の `data-row-id`）は `RecordList`、詳細の画面の区画（`h2` で名前を付けた `section`）は `@my/ui` の `Section`（`surface="card"`）、区画の中身が入れ替わって押したボタンが消えるときに区画の見出しへフォーカスを移すのは `useFocusAfterChange` にし（`features/moderation/components/parts.tsx`）、
   記録の項目と値は `@my/ui` の `DescriptionList` / `DescriptionItem` にする。
+- **画面の分け方**（#2333）: 1 つの画面はメニューの 1 項目を持ち、1 ページに入らない仕事は子のルートのページに分ける（`/admin/settings/registration`・`/admin/finance/costs`）。メニューの項目を増やさないので、まとまりごとの 7 項目の上限（§21.4 の L3）に収まる。
+  - ページの間は、`h1` の下に `@my/ui` の `LocalNav` を置く。`nav`（画面の名前で名付ける）の中のリンクの並びで、今いるページは `aria-current="page"`。ARIA のタブにはしない（各ページは URL・loader・主な操作を自分で持つルートで、`?tab=` で 1 つのルートに積まない）。
+    最初のページは画面そのもののルート（`/admin/finance`）。リンクは幅が足りなければ折り返し、横にスクロールしない。今いるページは色だけでなく下線の形でも違う。
+  - 記録は一覧 → 詳細で組む。`/x` は一覧（ページングした `RecordTable` と、`/x/new` へ行く「〜を作成する」のボタン）、`/x/new` は作成のフォーム、`/x/$id` は詳細（事実・編集のフォーム・取り消せない操作）。一覧の上に作成のフォームを置かず、一覧の行の上のダイアログで編集しない。
+  - 各ページの主な操作は 1 つ、保存の仕方は 1 つにする（§21 の P1）。保存ボタンを複数持つ画面は、保存ごとのページに分ける。
+  - 使い方: `<LocalNav label={t("…pages")} items={[{ href: "/admin/finance", label: t("…overview"), current: true }, { href: "/admin/finance/costs", label: t("…costs") }]} />`。`label` は `nav` の名前、`items` は順に `href`・`label`・`current`。今いるページは各ページのルートが `current` で渡す。
+- **一覧の表**（#2333）: 管理のモードの一覧はすべて、ページングした `RecordTable` にする。
+  - 列は 4 つまで: 記録の名前（詳細のページへのリンク）・状態・日時を 1 つ・操作。それ以外の事実は詳細のページに置く。絞り込みは `ListToolbar` に置く。
+  - `RecordTable` は列の定義（`columns`）から描く。行の部品（`TableRow` の子）は渡さない。同じ定義から 2 つの形を描く:
+    コンテナの幅が `listTableNarrowWidth`（40rem）以上なら `Card` の中の表（`@my/ui` の `ListTable`。最初の列が行見出しの `th`）、それより狭ければ行ごとのカードの `ul`（最初の列がカードの見出し、ほかの列は列の見出しを項目にした `DescriptionList`、操作はその下）。
+    どの値も見出し（項目）を失わないので、表を横にスクロールさせない。形はコンテナの幅で決め（README の D2）、2 つの形を CSS で出し分けると行の操作が 2 つずつページに入るので、描く前（`useLayoutEffect`）に幅を測って片方だけ描く。ResizeObserver のない jsdom では表になる。
+  - 行には `data-row-id`、行の名前の要素（`th` かカードの見出し）には `data-row-header` と `tabIndex={-1}` が付く。操作で行が残るときのフォーカスは `useFocusHeadingAfterLift`（既定で `[data-row-header]`）、行が消えるときは `useFocusAfterRemoval` に `listRef` を渡す。
+  - ページングは 1 ページずつ、下に前へ / 次への `Pagination` を置く。カーソルで送る API（`toPagedList`）は、次へが読み込み済みのページの先なら 1 ページ読み込んでから進む。API が全部を返す一覧（`wholeList(items)`）はクライアントで 40 行（`wholeListPageSize`）ずつのページにする。
+    限りなく増えうる API の一覧は、`RecordTable` にする前に `Cursor` / `Limit` を持たせる。「さらに表示」（`RecordList`・`ListSection`）は、詳細のページの中の短い証拠の一覧（通報やアカウントの履歴）だけに使う。
+  - 使い方:
+
+    ```tsx
+    const columns: RecordColumns<Relay> = [
+      { id: "inbox", header: t("…inbox"), wrap: "anywhere", cell: (relay) => <Link to="/admin/relays/$id" params={{ id: relay.id }}>{relay.inbox}</Link> },
+      { id: "state", header: t("…state"), cell: (relay) => <RelayState relay={relay} /> },
+      { id: "added", header: t("…added_at"), cell: (relay) => <DateTime value={relay.created_at} /> },
+      { id: "actions", kind: "actions", header: t("client:admin.list.column.actions"), cell: (relay) => <RemoveButton relay={relay} /> },
+    ];
+    <RecordTable list={wholeList(relays)} caption={t("…relays")} columns={columns} getId={(relay) => relay.id}
+      headingLevel={2} empty={<EmptyState headingLevel={2} heading={t("…empty")} />} listRef={listRef} />
+    ```
+
+    列（`ListTableColumn`）は `id`・`header`（表の列見出しとカードの項目）・`cell`（行の値。フックを使う値は小さい部品にする）・`kind`（`"value"` か、見出しを視覚的に隠してカードでは事実の下に置く `"actions"`）・`numeric`・`wrap`・`align`。
+    `headingLevel` はカードの見出しのレベルで、`empty` の `EmptyState` と同じレベルにする。`list` が空なら `empty` を出す。フィルターごとに別の一覧なら、`RecordTable` を絞り込みで key する。
 - **取り消せない操作**（BAN・ドメインの凍結・投稿の削除。NFR-MOD-7）: `@my/ui` の `ConfirmDialog`（APG の alertdialog）を挟む。理由は `ReasonField`、期限は `DurationSelect` をダイアログの中に置く。
   開くと最初の入力欄（なければ「キャンセル」）にフォーカスが移り、Esc で閉じ、閉じると開いたボタンにフォーカスが戻る。失敗はダイアログの中（`errorMessage`）に出して開いたままにし、成功したら閉じて、結果を画面の `StatusMessage`（`role="status"`）に出す。
   操作で開いたボタンが消えるとき（一覧から行が消えるなど）は、`lib/useFocusAfterRemoval.ts` でフォーカスの行き先を決める。
