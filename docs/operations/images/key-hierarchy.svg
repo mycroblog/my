@@ -1,0 +1,98 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 902" width="760" height="902" role="img" aria-labelledby="title desc">
+<!-- SPDX-License-Identifier: AGPL-3.0-only -->
+  <title id="title">The key hierarchy of a mycroblog server</title>
+  <desc id="desc">Three layers from top to bottom. The key-encryption key (KEK) is never in the database; key_manager chooses where it is: local, kek and kek_previous from MY_KEK or MY_KEK_FILE, key ID local: and 16 hexadecimal digits; gcpkms, a key in Google Cloud KMS named by kms_key and kms_key_previous, key ID gcpkms: and the resource name; awskms, a key in AWS KMS named by kms_key and kms_key_previous, key ID awskms: and the key ARN; plugin, a program of yours at plugin_key_manager_address, key ID plugin: and the plugin's ID. The KEK wraps and unwraps the data-encryption keys (DEK): each process makes a new random AES-256 DEK for each secret, and with a KMS or a plugin keeps unwrapped DEKs for kms_dek_cache_ttl. The DEK encrypts the secret with AES-256-GCM. The database holds one sealed value per secret: the key ID, the wrapped DEK, and the encrypted secret, bound to its row ID and column name. The sealed columns are local_account_private_keys.private_key_enc (actors' private keys), totp_enrollments.secret_enc (two-factor authentication secrets), login_provider_secrets.sealed_secret (client secrets of sign-in providers), webhook_secrets.sealed_secret (webhook signing secrets), and instance_secrets.sealed_secret (the media proxy signing key). The state of passkey and external sign-ins is sealed the same way but held by the browser, for at most 30 minutes, not stored.</desc>
+
+  <style>
+    svg { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif; }
+    .bg { fill: #ffffff; }
+    .t { fill: #1f2328; font-size: 16px; }
+    .b { font-weight: 600; }
+    .m { fill: #59636e; font-size: 15px; }
+    .h { fill: #1f2328; font-size: 17px; font-weight: 600; }
+    .group { fill: #f6f8fa; stroke: #d1d9e0; stroke-width: 1.5; }
+    .client { fill: #dafbe1; stroke: #1a7f37; stroke-width: 1.5; }
+    .proxy { fill: #ffffff; stroke: #59636e; stroke-width: 1.5; }
+    .proc { fill: #ddf4ff; stroke: #0969da; stroke-width: 2; }
+    .port { fill: #ffffff; stroke: #8c959f; stroke-width: 1.5; }
+    .svc { fill: #fbefff; stroke: #8250df; stroke-width: 1.5; }
+    .lost { fill: #ffebe9; stroke: #cf222e; stroke-width: 1.5; }
+    .arrow { stroke: #59636e; stroke-width: 2; fill: none; }
+    .head { fill: #59636e; }
+    @media (prefers-color-scheme: dark) {
+      .bg { fill: #0d1117; }
+      .t, .h { fill: #e6edf3; }
+      .m { fill: #9198a1; }
+      .group { fill: #151b23; stroke: #3d444d; }
+      .client { fill: #0f2d1b; stroke: #3fb950; }
+      .proxy { fill: #0d1117; stroke: #9198a1; }
+      .proc { fill: #0c2d6b; stroke: #4493f8; }
+      .port { fill: #0d1117; stroke: #656c76; }
+      .svc { fill: #2a1650; stroke: #ab7df8; }
+      .lost { fill: #3c0d12; stroke: #f85149; }
+      .arrow { stroke: #9198a1; }
+      .head { fill: #9198a1; }
+    }
+  </style>
+  <defs>
+    <marker id="arrowhead" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path class="head" d="M 0 0 L 10 5 L 0 10 z"/>
+    </marker>
+  </defs>
+  <rect class="bg" x="0" y="0" width="760" height="902" rx="12"/>
+  <rect class="group" x="20" y="16" width="720" height="286" rx="12"/>
+  <text class="h" x="40" y="44" text-anchor="start">Key-encryption key (KEK): never in the database</text>
+  <text class="m" x="720" y="44" text-anchor="end">chosen by key_manager</text>
+  <rect class="svc" x="40" y="60" width="330" height="108" rx="8"/>
+  <text class="t b" x="205.0" y="86.0" text-anchor="middle">key_manager = local</text>
+  <text class="m" x="205.0" y="108.0" text-anchor="middle">kek and kek_previous,</text>
+  <text class="m" x="205.0" y="130.0" text-anchor="middle">from MY_KEK or MY_KEK_FILE</text>
+  <text class="m" x="205.0" y="152.0" text-anchor="middle">key ID local:&lt;16 hex digits&gt;</text>
+  <rect class="svc" x="390" y="60" width="330" height="108" rx="8"/>
+  <text class="t b" x="555.0" y="86.0" text-anchor="middle">key_manager = gcpkms</text>
+  <text class="m" x="555.0" y="108.0" text-anchor="middle">a key in Google Cloud KMS,</text>
+  <text class="m" x="555.0" y="130.0" text-anchor="middle">named by kms_key and kms_key_previous</text>
+  <text class="m" x="555.0" y="152.0" text-anchor="middle">key ID gcpkms:&lt;resource name&gt;</text>
+  <rect class="svc" x="40" y="178" width="330" height="108" rx="8"/>
+  <text class="t b" x="205.0" y="204.0" text-anchor="middle">key_manager = awskms</text>
+  <text class="m" x="205.0" y="226.0" text-anchor="middle">a key in AWS KMS,</text>
+  <text class="m" x="205.0" y="248.0" text-anchor="middle">named by kms_key and kms_key_previous</text>
+  <text class="m" x="205.0" y="270.0" text-anchor="middle">key ID awskms:&lt;key ARN&gt;</text>
+  <rect class="svc" x="390" y="178" width="330" height="108" rx="8"/>
+  <text class="t b" x="555.0" y="204.0" text-anchor="middle">key_manager = plugin</text>
+  <text class="m" x="555.0" y="226.0" text-anchor="middle">a program of yours, at</text>
+  <text class="m" x="555.0" y="248.0" text-anchor="middle">plugin_key_manager_address</text>
+  <text class="m" x="555.0" y="270.0" text-anchor="middle">key ID plugin:&lt;the plugin's ID&gt;</text>
+  <path class="arrow" d="M 380 302 L 380 342" marker-end="url(#arrowhead)"/>
+  <text class="m" x="396" y="327" text-anchor="start">wraps and unwraps</text>
+  <rect class="proc" x="20" y="346" width="720" height="96" rx="8"/>
+  <text class="t b" x="380.0" y="377.0" text-anchor="middle">In each process: a data-encryption key (DEK)</text>
+  <text class="m" x="380.0" y="399.0" text-anchor="middle">a new random AES-256 key for each secret;</text>
+  <text class="m" x="380.0" y="421.0" text-anchor="middle">with a KMS or a plugin, unwrapped DEKs stay cached for kms_dek_cache_ttl</text>
+  <path class="arrow" d="M 380 442 L 380 482" marker-end="url(#arrowhead)"/>
+  <text class="m" x="396" y="467" text-anchor="start">encrypts the secret with AES-256-GCM</text>
+  <rect class="group" x="20" y="486" width="720" height="316" rx="12"/>
+  <text class="h" x="40" y="514" text-anchor="start">In the database: one sealed value per secret</text>
+  <rect class="port" x="40" y="530" width="160" height="56" rx="8"/>
+  <text class="t b" x="120.0" y="563" text-anchor="middle">key ID</text>
+  <rect class="port" x="200" y="530" width="200" height="56" rx="8"/>
+  <text class="t b" x="300.0" y="563" text-anchor="middle">wrapped DEK</text>
+  <rect class="port" x="400" y="530" width="320" height="56" rx="8"/>
+  <text class="t b" x="560.0" y="563" text-anchor="middle">encrypted secret</text>
+  <text class="m" x="40" y="610" text-anchor="start">bound to its row ID and column name: copied to another row or column, it does not open</text>
+  <text class="t b" x="40" y="646" text-anchor="start">Column (table.column)</text>
+  <text class="t b" x="440" y="646" text-anchor="start">Secret</text>
+  <text class="t" x="40" y="674" text-anchor="start">local_account_private_keys.private_key_enc</text>
+  <text class="m" x="440" y="674" text-anchor="start">actors' private keys</text>
+  <text class="t" x="40" y="702" text-anchor="start">totp_enrollments.secret_enc</text>
+  <text class="m" x="440" y="702" text-anchor="start">two-factor authentication secrets</text>
+  <text class="t" x="40" y="730" text-anchor="start">login_provider_secrets.sealed_secret</text>
+  <text class="m" x="440" y="730" text-anchor="start">client secrets of sign-in providers</text>
+  <text class="t" x="40" y="758" text-anchor="start">webhook_secrets.sealed_secret</text>
+  <text class="m" x="440" y="758" text-anchor="start">webhook signing secrets</text>
+  <text class="t" x="40" y="786" text-anchor="start">instance_secrets.sealed_secret</text>
+  <text class="m" x="440" y="786" text-anchor="start">the media proxy signing key</text>
+  <rect class="proxy" x="20" y="812" width="720" height="74" rx="8"/>
+  <text class="t b" x="380.0" y="843.0" text-anchor="middle">Sealed the same way, not stored</text>
+  <text class="m" x="380.0" y="865.0" text-anchor="middle">the state of passkey and external sign-ins, held by the browser for at most 30 minutes</text>
+</svg>

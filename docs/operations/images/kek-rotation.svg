@@ -1,0 +1,99 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 758" width="760" height="758" role="img" aria-labelledby="title desc">
+<!-- SPDX-License-Identifier: AGPL-3.0-only -->
+  <title id="title">Rotating the local KEK in five steps</title>
+  <desc id="desc">Five steps from top to bottom, with the values of kek and kek_previous after each. 1, generate a new KEK and back it up: kek is the old KEK, kek_previous is not set. 2, restart every process: kek is the old KEK, kek_previous the new one; every process can now decrypt with the new KEK. 3, restart every process: kek is the new KEK, kek_previous the old one; new secrets are wrapped with the new KEK and the old one only decrypts. 4, run my kek rewrap with the same configuration: it re-wraps the stored secrets with the new KEK, and exit status 0 means none needs the old KEK. 5, at least 30 minutes after step 3, restart every process: kek is the new KEK and kek_previous is not set. Keep the backup of the old KEK for as long as you keep database backups taken before step 4.</desc>
+
+  <style>
+    svg { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif; }
+    .bg { fill: #ffffff; }
+    .t { fill: #1f2328; font-size: 16px; }
+    .b { font-weight: 600; }
+    .m { fill: #59636e; font-size: 15px; }
+    .h { fill: #1f2328; font-size: 17px; font-weight: 600; }
+    .group { fill: #f6f8fa; stroke: #d1d9e0; stroke-width: 1.5; }
+    .client { fill: #dafbe1; stroke: #1a7f37; stroke-width: 1.5; }
+    .proxy { fill: #ffffff; stroke: #59636e; stroke-width: 1.5; }
+    .proc { fill: #ddf4ff; stroke: #0969da; stroke-width: 2; }
+    .port { fill: #ffffff; stroke: #8c959f; stroke-width: 1.5; }
+    .svc { fill: #fbefff; stroke: #8250df; stroke-width: 1.5; }
+    .lost { fill: #ffebe9; stroke: #cf222e; stroke-width: 1.5; }
+    .arrow { stroke: #59636e; stroke-width: 2; fill: none; }
+    .head { fill: #59636e; }
+    @media (prefers-color-scheme: dark) {
+      .bg { fill: #0d1117; }
+      .t, .h { fill: #e6edf3; }
+      .m { fill: #9198a1; }
+      .group { fill: #151b23; stroke: #3d444d; }
+      .client { fill: #0f2d1b; stroke: #3fb950; }
+      .proxy { fill: #0d1117; stroke: #9198a1; }
+      .proc { fill: #0c2d6b; stroke: #4493f8; }
+      .port { fill: #0d1117; stroke: #656c76; }
+      .svc { fill: #2a1650; stroke: #ab7df8; }
+      .lost { fill: #3c0d12; stroke: #f85149; }
+      .arrow { stroke: #9198a1; }
+      .head { fill: #9198a1; }
+    }
+  </style>
+  <defs>
+    <marker id="arrowhead" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path class="head" d="M 0 0 L 10 5 L 0 10 z"/>
+    </marker>
+  </defs>
+  <rect class="bg" x="0" y="0" width="760" height="758" rx="12"/>
+  <text class="h" x="20" y="38" text-anchor="start">kek wraps new secrets and decrypts; kek_previous only decrypts</text>
+  <rect class="port" x="20" y="56" width="720" height="104" rx="8"/>
+  <text class="t b" x="40" y="88" text-anchor="start">1. Generate a new KEK</text>
+  <text class="m" x="40" y="110" text-anchor="start">openssl rand -base64 32,</text>
+  <text class="m" x="40" y="132" text-anchor="start">and back it up</text>
+  <text class="t" x="530" y="95" text-anchor="end">kek</text>
+  <rect class="port" x="542" y="76" width="180" height="28" rx="6"/>
+  <text class="t" x="632" y="95" text-anchor="middle">old KEK</text>
+  <text class="t" x="530" y="131" text-anchor="end">kek_previous</text>
+  <text class="m" x="545" y="131" text-anchor="start">not set</text>
+  <path class="arrow" d="M 140 160 L 140 176" marker-end="url(#arrowhead)"/>
+  <rect class="port" x="20" y="180" width="720" height="104" rx="8"/>
+  <text class="t b" x="40" y="212" text-anchor="start">2. Restart every process</text>
+  <text class="m" x="40" y="234" text-anchor="start">every process can now decrypt</text>
+  <text class="m" x="40" y="256" text-anchor="start">with the new KEK</text>
+  <text class="t" x="530" y="219" text-anchor="end">kek</text>
+  <rect class="port" x="542" y="200" width="180" height="28" rx="6"/>
+  <text class="t" x="632" y="219" text-anchor="middle">old KEK</text>
+  <text class="t" x="530" y="255" text-anchor="end">kek_previous</text>
+  <rect class="client" x="542" y="236" width="180" height="28" rx="6"/>
+  <text class="t b" x="632" y="255" text-anchor="middle">new KEK</text>
+  <path class="arrow" d="M 140 284 L 140 300" marker-end="url(#arrowhead)"/>
+  <rect class="port" x="20" y="304" width="720" height="104" rx="8"/>
+  <text class="t b" x="40" y="336" text-anchor="start">3. Restart every process</text>
+  <text class="m" x="40" y="358" text-anchor="start">new secrets are wrapped with the new</text>
+  <text class="m" x="40" y="380" text-anchor="start">KEK; the old one only decrypts</text>
+  <text class="t" x="530" y="343" text-anchor="end">kek</text>
+  <rect class="client" x="542" y="324" width="180" height="28" rx="6"/>
+  <text class="t b" x="632" y="343" text-anchor="middle">new KEK</text>
+  <text class="t" x="530" y="379" text-anchor="end">kek_previous</text>
+  <rect class="port" x="542" y="360" width="180" height="28" rx="6"/>
+  <text class="t" x="632" y="379" text-anchor="middle">old KEK</text>
+  <path class="arrow" d="M 140 408 L 140 424" marker-end="url(#arrowhead)"/>
+  <rect class="port" x="20" y="428" width="720" height="104" rx="8"/>
+  <text class="t b" x="40" y="460" text-anchor="start">4. Run my kek rewrap</text>
+  <text class="m" x="40" y="482" text-anchor="start">re-wraps the stored secrets; exit 0:</text>
+  <text class="m" x="40" y="504" text-anchor="start">no secret needs the old KEK</text>
+  <text class="t" x="530" y="467" text-anchor="end">kek</text>
+  <rect class="client" x="542" y="448" width="180" height="28" rx="6"/>
+  <text class="t b" x="632" y="467" text-anchor="middle">new KEK</text>
+  <text class="t" x="530" y="503" text-anchor="end">kek_previous</text>
+  <rect class="port" x="542" y="484" width="180" height="28" rx="6"/>
+  <text class="t" x="632" y="503" text-anchor="middle">old KEK</text>
+  <path class="arrow" d="M 140 532 L 140 548" marker-end="url(#arrowhead)"/>
+  <rect class="port" x="20" y="552" width="720" height="104" rx="8"/>
+  <text class="t b" x="40" y="584" text-anchor="start">5. Restart every process</text>
+  <text class="m" x="40" y="606" text-anchor="start">at least 30 minutes after step 3, when the</text>
+  <text class="m" x="40" y="628" text-anchor="start">sign-in state of the old KEK has expired</text>
+  <text class="t" x="530" y="591" text-anchor="end">kek</text>
+  <rect class="client" x="542" y="572" width="180" height="28" rx="6"/>
+  <text class="t b" x="632" y="591" text-anchor="middle">new KEK</text>
+  <text class="t" x="530" y="627" text-anchor="end">kek_previous</text>
+  <text class="m" x="545" y="627" text-anchor="start">not set</text>
+  <rect class="lost" x="20" y="668" width="720" height="74" rx="8"/>
+  <text class="t b" x="380.0" y="699.0" text-anchor="middle">Keep the backup of the old KEK</text>
+  <text class="m" x="380.0" y="721.0" text-anchor="middle">for as long as you keep database backups taken before step 4</text>
+</svg>

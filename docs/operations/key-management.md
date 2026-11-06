@@ -4,12 +4,18 @@ A guide for operators. The [configuration reference](../reference/configuration.
 
 ## How it works
 
+![The key hierarchy: the key-encryption key, kept where key_manager says and never in the database, wraps a data-encryption key made for each secret, which encrypts the secret; the database holds the key ID, the wrapped data-encryption key, and the encrypted secret in five sealed columns. The list below describes each layer.](images/key-hierarchy.svg)
+
 - Secrets stored in the database, such as actors' private keys, are encrypted with AES-256-GCM using a data-encryption key (DEK) generated for each secret.
   The DEK is wrapped with a **key-encryption key (KEK)** and stored next to the ciphertext (envelope encryption).
 - The KEK is not stored in the database, so a leaked database dump alone does not expose the secrets.
 - Each ciphertext carries the **key ID** of the KEK that wrapped its DEK. With `key_manager = local`, the key ID is `local:` followed by 16 hexadecimal digits derived from the KEK,
   so the same KEK always gives the same ID. You never assign IDs.
 - A ciphertext is bound to the row ID and column name where it is stored. Copying it to another row or column makes it undecryptable.
+- The sealed columns, named as `my kek status` prints them, are `local_account_private_keys.private_key_enc` (actors' private keys),
+  `totp_enrollments.secret_enc` (two-factor authentication secrets), `login_provider_secrets.sealed_secret` (client secrets of sign-in providers),
+  `webhook_secrets.sealed_secret` (webhook signing secrets), and `instance_secrets.sealed_secret` (the media proxy signing key).
+- The state of a passkey sign-in or a sign-in through an external provider is sealed the same way but not stored: the browser holds it for at most 30 minutes.
 - The signing key (HMAC-SHA256) for media proxy URLs is a random key that the server generates on its first start and stores in the database, encrypted like the other secrets.
   It does not change when you rotate the KEK, so media proxy URLs keep working across rotations, and `my kek rewrap` re-wraps it with the other secrets.
 - `key_manager` is `local` (the default: it uses the `kek` setting), `gcpkms` (the KEK stays in Google Cloud KMS; see [Google Cloud KMS](#google-cloud-kms)),
@@ -19,6 +25,13 @@ A guide for operators. The [configuration reference](../reference/configuration.
 
 Without the KEK, restoring the database does not let you decrypt actors' private keys. Once a private key is lost, other servers can no longer verify that actor's signatures,
 and **the actor's identity in the fediverse is broken** (followers' relationships cannot be carried over). Treat the KEK with the same care as the database.
+
+![What is lost with the KEK: after a restore without it, everything that is not sealed is still readable, every sealed value fails to open, and the actors lose their identity. The paragraph below says the same.](images/kek-loss.svg)
+
+What is not sealed stays readable: posts, accounts, follows, and the rest of the database, and the media files in storage.
+Every sealed value fails with an `unknown key-encryption key` error: the actors' private keys, two-factor authentication secrets,
+client secrets of sign-in providers, webhook signing secrets, and the media proxy signing key.
+The same happens when another KEK is set in place of the one that wrapped the secrets, or when the KMS key or the plugin's key that wrapped them is disabled or destroyed.
 
 ## Generate a KEK
 
@@ -61,6 +74,8 @@ The KEK is a secret setting, so it can be passed only through the environment va
 
 A KEK in `kek_previous` is used only for decryption, and new secrets are always encrypted with `kek`.
 So that a rolling deploy, where old and new processes run side by side, never produces ciphertext that some process cannot read, switch in two steps.
+
+![A rotation of the local KEK in five steps, with the values of kek and kek_previous after each: the new KEK goes into kek_previous first, then swaps places with the old one, my kek rewrap moves the stored secrets, and the old KEK leaves the configuration. The steps below say the same.](images/kek-rotation.svg)
 
 1. Generate a new KEK and back it up.
 2. Restart every process with `MY_KEK=<old KEK>` and `MY_KEK_PREVIOUS=<new KEK>`. Now every process can decrypt with the new KEK.
