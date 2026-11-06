@@ -21,9 +21,10 @@ const (
 	JobPurgeDecisions = "hook.purge_decisions"
 	// PurgeInterval is the period of its schedule.
 	PurgeInterval = time.Hour
-	// PurgeBatch is how many decisions one transaction removes; purgeMaxBatches bounds one run.
+	// PurgeBatch is how many expired decisions one listing reads and one transaction removes at
+	// most; purgeMaxDeleted bounds the decisions one run removes.
 	PurgeBatch      = 100
-	purgeMaxBatches = 20
+	purgeMaxDeleted = 2000
 )
 
 // The labels of the metrics.
@@ -439,8 +440,9 @@ func (s *Service) Summary(ctx context.Context, period time.Duration) (time.Time,
 }
 
 // PurgeDecisions removes the decisions past their retention that nothing keeps
-// (hook.RetentionPolicy), and returns how many. Each batch is one short transaction, and what one
-// run leaves the next continues.
+// (hook.RetentionPolicy), and returns how many. Each batch is one short transaction. The run walks
+// the expired decisions in order past the ones it keeps, so kept decisions never stop the purge of
+// later ones; only the decisions it removes bound a run, and what one run leaves the next continues.
 func (s *Service) PurgeDecisions(ctx context.Context) (int64, error) {
 	retention, appealWindow, err := s.d.Settings.HookRetention(ctx)
 	if err != nil {
@@ -460,7 +462,7 @@ func (s *Service) PurgeDecisions(ctx context.Context) (int64, error) {
 	}
 	q := ExpiredQuery{Before: now.Add(-retention), Limit: PurgeBatch}
 	var total int64
-	for range purgeMaxBatches {
+	for total < purgeMaxDeleted {
 		expired, err := s.d.Repository.ListExpired(ctx, q)
 		if err != nil {
 			return total, err
