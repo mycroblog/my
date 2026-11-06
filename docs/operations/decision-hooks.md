@@ -129,7 +129,7 @@ The answers act as the block list's do when the hook enforces:
 
 - `require_approval` leaves the sign-up waiting under **Moderation** > **Registrations**, as a block with the same severity
   does, in every registration mode. Approve or reject it there: cancelling the decision does not change the registration.
-- `reject` does nothing until you turn on `hook_signup_check_reject` (**Server settings** > **External review**, off by
+- `reject` does nothing until you turn on `hook_signup_check_reject` (**Server settings** > **Federation** > **External review**, off by
   default). While it is off, a `reject` is recorded in `observe`, since it stops nothing, and the sign-up goes on. While it
   is on, the applicant sees the same fixed text as for a block ("This server cannot accept this sign-up."). No account is
   written, so cancelling such a decision only changes its record, and the applicant signs up again.
@@ -149,8 +149,8 @@ post through (`pass` is its only failure behaviour), and the wait is not part of
 
 What it sends and when:
 
-- Only the posts of accounts younger than `hook_local_status_account_age_days` (**Server settings** > **External review**,
-  7 days by default; `0` sends the posts of every account). New accounts are where most spam comes from, and established
+- Only the posts of accounts younger than `hook_local_status_account_age_days` (**Server settings** > **Federation** >
+  **External review**, 7 days by default; `0` sends the posts of every account). New accounts are where most spam comes from, and established
   accounts are not sent.
 - Only `public`, `local`, and `unlisted` posts. `private` and `direct` posts are never sent.
 - The text as the author typed it and as the server renders it, the content warning, the language, whether it is marked
@@ -196,7 +196,7 @@ over, `local.status` no longer reviews it.
 ## Modes
 
 Each hook has a mode, an [instance setting](instance-settings.md) (`hook_inbound_status_mode` and so on) you change under
-**Server settings** > **External review**. Changes go in the audit log as `setting_changed`.
+**Server settings** > **Federation** > **External review**. Changes go in the audit log as `setting_changed`.
 
 | Mode | What it does |
 | --- | --- |

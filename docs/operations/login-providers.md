@@ -166,7 +166,7 @@ it through the admin API.
 ## Limit sign-in to login providers
 
 The instance setting `login_providers_only` (off by default) makes the providers the only way to sign in and register,
-while at least one provider is enabled. Turn it on under "Server settings" in the web client, or with the CLI:
+while at least one provider is enabled. Turn it on on the "Registration" page of "Server settings" in the web client, or with the CLI:
 
 ```sh
 my instance set login_providers_only true

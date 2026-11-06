@@ -32,7 +32,7 @@ The states of a subscription, as the administration and `my admin supporters sub
 
 1. Set the deployment key `payments` to your payment provider and pass the provider's keys and webhook secret. Provider-specific steps are in [payments-stripe.md](payments-stripe.md) and [payments-payjp.md](payments-payjp.md). The program cannot be enabled while the key is `none`.
 2. Configure the server to send email (`mail` other than `none`). Only users with a confirmed email address can subscribe, so a server that sends no email cannot enable the program.
-3. In "Terms and policies" in the administration, write the commerce disclosure (for Japan, the notice required by the Act on Specified Commercial Transactions), the instance text `commerce_disclosure`, in Markdown. It is published at `/about/commerce`, and you can register that URL in the provider's dashboard.
+3. On the "Commerce disclosures" page of "Terms and policies" in the administration (`/admin/documents/commerce-disclosure`), write the commerce disclosure (for Japan, the notice required by the Act on Specified Commercial Transactions), the instance text `commerce_disclosure`, in Markdown. It is published at `/about/commerce`, and you can register that URL in the provider's dashboard.
    The program can be enabled with the text empty, but the administration shows a warning.
 4. In "Roles" in the administration, create the role to tie to the plan. It must have no holders, only member permissions (group `member`), and a `position` lower than that of every staff role, `moderator` included.
    The member permissions are the benefits a plan can give: `create_custom_emojis` (requesting custom emoji), `view_finance` (reading the server's finances), `start_voice_rooms` (opening voice chat rooms while only permitted users may), and `create_invites` (inviting people while only permitted users may, within the limits of [member invites](registration.md#member-invites)).
@@ -82,7 +82,7 @@ Enabling, disabling, and cancelling are written to the audit log as CLI operatio
 
 ## The list of members
 
-- The instance setting `supporter_list_visibility` ("Server settings"; see [instance-settings.md](instance-settings.md)) chooses who can see the list of current subscribers (`/about/supporters`). With the default `off`, neither the list nor the link from `/about` appears.
+- The instance setting `supporter_list_visibility` (on the "Supporters" screen; see [instance-settings.md](instance-settings.md)) chooses who can see the list of current subscribers (`/about/supporters`). With the default `off`, neither the list nor the link from `/about` appears.
 - The list shows only the subscribers who chose to be listed on the "Badges and supporter list" page of their settings (nobody is listed by default). It shows the plan name and each person's avatar, display name, and handle, and never amounts, whether the payment is monthly or yearly, dates, or counts.
 - A choice to be listed stays when the subscriber changes plans, and disappears when the subscription ends (the role is removed). Someone who subscribes again starts unlisted.
 - The list page and its API always send `noindex, noarchive`, whatever the search-engine setting (`search_indexing`) says.

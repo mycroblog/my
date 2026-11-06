@@ -137,9 +137,10 @@ whole username, or for the people who follow it.
 - The server does not know the language of a text, so the web client and the screens rendered by the server output texts with
   `dir="auto"` and `lang=""` (the HTML value for an unknown language) instead of inheriting the language of the screen.
 - Setting an empty text deletes it.
-- Besides the CLI, texts can be changed on the admin screens of the web client (name, short description, and description in
-  "Server settings", `/admin/settings`; terms, privacy policy, the commerce disclosure, and the like in "Terms and policies",
-  `/admin/documents`) and with the client API (`GET /api/v1/admin/instance_texts`, `PUT /api/v1/admin/instance_texts/{key}`).
+- Besides the CLI, texts can be changed on the admin screens of the web client (name, short description, and description on
+  the General page of "Server settings", `/admin/settings`; the terms on the first page of "Terms and policies",
+  `/admin/documents`, the privacy policy on `/admin/documents/privacy-policy`, and the commerce disclosure and the like on
+  `/admin/documents/commerce-disclosure`) and with the client API (`GET /api/v1/admin/instance_texts`, `PUT /api/v1/admin/instance_texts/{key}`).
   Both need the role permission `manage_settings`, and changes are recorded in the audit log (`text_changed`).
 
 ### Terms and privacy policy
@@ -185,7 +186,7 @@ and the text `thumbnail_alt`) appear in the places below. Whatever is unset does
   the contact account), `thumbnail` (`url` and `alt`), and `nodeDescription` from the short description `short_description`.
 
 When the contact account is suspended or deleted, the account is not shown and only the email address is.
-Change them on the admin screen of the web client ("Server settings", `/admin/settings`), or with the CLI or the client API.
+Change them on the General page of the admin screen of the web client ("Server settings", `/admin/settings`), or with the CLI or the client API.
 
 ## Usage
 
@@ -249,28 +250,22 @@ the role permission `manage_settings` (only the built-in `admin` role has it). A
 and recorded per key in the audit log (`setting_changed`, the target is the setting and the actor is that user). Look at the
 audit log on the moderation screen ("Audit log", `/moderation/audit-log`).
 
-- **Web client** ("Server settings", `/admin/settings`): you can change the name and description, and the settings below.
-  The settings are saved together in one form, and only what you changed is sent.
+- **Web client** ("Server settings", `/admin/settings`): the screen has one page per topic, linked under its heading. Each
+  page has one form and one save button, and saving sends only what you changed on that page; settings on the other pages
+  stay as they are.
 
-  | Section | Settings |
+  | Page | Sections and settings |
   | --- | --- |
-  | Registration | `registration_mode`, `login_providers_only` |
-  | Language | `default_locale` (chosen from the languages the app has) |
-  | Timelines | `local_timeline_visibility`, `federated_timeline_visibility` |
-  | Posts | `require_media_description` |
-  | Federation | `authorized_fetch`, `remote_media_policy`, `remote_media_cache_ttl_seconds` (choose from 1 hour, 1 day, 7 days, 30 days, or 365 days), `link_cards`, `link_cards_ignore_robots_txt` |
-  | Limited and suspended servers | `domain_actions_visibility`, `domain_actions_rationale_visibility` |
-  | Running costs | `finance_visibility` (the `breakdown` option says that the provider and category become known), `finance_viewer_item_names`, `finance_viewer_item_memos`, `finance_viewer_income` (how much people who can view finance see) |
-  | Income | `income_visibility` (the `plans` option says that, for a plan with few subscribers, people may guess who subscribes) |
-  | Supporter list | `supporter_list_visibility` |
-  | Landing page | `public_counts` |
-  | Suggested accounts | `featured_accounts` |
-  | Search engines and AI | `search_indexing`, `indexable_default`, `ai_usage`, `security_contact` |
-  | Apps | `user_app_registration`, `oauth_metadata_document_clients`, `dynamic_client_registration` |
+  | General (`/admin/settings`) | Name, Descriptions (`name`, `short_description`, `description`); Contact and thumbnail (`contact_account`, `contact_email`, `thumbnail`, and the text `thumbnail_alt`) |
+  | Icon and logo (`/admin/settings/branding`) | The icon, the logo, and the logo for dark backgrounds, each saved with its own button ([Logo and icon](#logo-and-icon)) |
+  | Registration (`/admin/settings/registration`) | Registration (`registration_mode`, `login_providers_only`); Member invites (`invite_creators`, `member_invite_max_active`, `member_invite_max_uses`, `member_invite_max_lifetime_seconds`); Apps (`user_app_registration`, `oauth_metadata_document_clients`, `dynamic_client_registration`) |
+  | Content (`/admin/settings/content`) | Language (`default_locale`, chosen from the languages the app has); Timelines (`local_timeline_visibility`, `federated_timeline_visibility`); Posts (`require_media_description`); Landing page (`public_counts`); Suggested accounts (`featured_accounts`) |
+  | Federation (`/admin/settings/federation`) | Federation (`federation_mode`, `authorized_fetch`, `remote_media_policy`, `remote_media_cache_ttl_seconds` (choose from 1 hour, 1 day, 7 days, 30 days, or 365 days), `link_cards`, `link_cards_ignore_robots_txt`); Limited and suspended servers (`domain_actions_visibility`, `domain_actions_rationale_visibility`); External review (the `hook_*` settings, see [Decision hooks](decision-hooks.md)) |
+  | Search and crawlers (`/admin/settings/discovery`) | Search engines and AI (`search_indexing`, `indexable_default`, `ai_usage`, `security_contact`); Post search (`search_visibilities`, only while the server has full-text search) |
+  | Voice chat (`/admin/settings/voice`) | `voice_room_starters`, `voice_public_summary`, `voice_participants_retention_days`; the page is listed only while the server offers voice chat |
 
-  Contact and thumbnail (`contact_account`, `contact_email`, `thumbnail`, and the text `thumbnail_alt`) are changed in the
-  "Contact and thumbnail" section below the name and description. An image is uploaded when you choose it and becomes the
-  thumbnail when you save.
+  On the General page, an image is uploaded when you choose it and becomes the thumbnail when you save. Who may see the
+  running costs, the income, and the supporter list is set on the "Finance" and "Supporters" screens.
 
   `max_status_length`, `preview_image`, `appeal_window_days`, and the retention periods (`*_retention_days`), `remote_media_cache_max_bytes`, and `oauth_client_rate_limits` do not appear on the screen;
   change them with the CLI or the client API. The settings of translation have a screen of their own, below.
@@ -431,7 +426,7 @@ Until one is set, the built-in mycroblog images are used, and clearing one bring
   on desktops the app keeps its old icon until it is installed again.
 - `GET /api/v1/instance` returns `icon`, `logo`, and `logo_dark` with the URL of the SVG, the URL and size of each PNG version,
   and the revision; each is left out while the built-in image is in use.
-- Set them in the web client under **Server settings** > **Icon and logo** (role permission `manage_settings`). Choose an SVG
+- Set them in the web client under **Server settings** > **Icon and logo** (`/admin/settings/branding`, role permission `manage_settings`). Choose an SVG
   file for the icon, the logo, or the logo for dark backgrounds: the server checks it, the browser draws the PNG versions, and the
   form previews them (a browser tab, the home screen, the app icon, an email on a light and a dark background, and the link
   preview) with the list of what the server removed. If the server refuses the file, the reason shows under the button with how

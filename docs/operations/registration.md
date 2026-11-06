@@ -35,7 +35,7 @@ After registering, that browser is signed in right away.
 The page works without JavaScript and, like the sign-in page, is protected by a CSRF token and by rejecting cross-origin requests.
 When you choose CAPTCHA for bot protection, the sign-up and sign-in pages show its widget and need JavaScript ([CAPTCHA](captcha.md)).
 
-The registration mode is the instance setting `registration_mode`. Choose it with the CLI or in the web client under "Server settings" (`/admin/settings`) ([instance settings](instance-settings.md)). A change applies from the next registration.
+The registration mode is the instance setting `registration_mode`. Choose it with the CLI or in the web client on the "Registration" page of "Server settings" (`/admin/settings/registration`) ([instance settings](instance-settings.md)). A change applies from the next registration.
 While the server announces its closure and after it closes, registration is treated as `closed` whatever the setting says ([admin CLI](admin-cli.md#announcing-the-end-of-the-service)).
 
 ```sh
@@ -161,7 +161,7 @@ The settings list the page only for a user who can create invites now; a user wh
 The list says, for each invite, whether it is usable, revoked, expired, used up, or unusable because its creator can no longer invite.
 
 Limits, also instance settings, apply to member invites only.
-Administrators change them, and `invite_creators`, under "Member invites" on the server settings screen (`/admin/settings`):
+Administrators change them, and `invite_creators`, under "Member invites" on the "Registration" page of the server settings (`/admin/settings/registration`):
 
 | Setting | Meaning | Default | Range |
 | --- | --- | --- | --- |

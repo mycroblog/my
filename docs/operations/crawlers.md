@@ -8,7 +8,7 @@ robots.txt and meta tags are statements that crawlers may or may not honor; they
 
 | Scope | Setting | Where to change it | When not set |
 | --- | --- | --- | --- |
-| Server | `search_indexing` (`allow` / `deny`) | The "Search engines and AI" section of the admin server settings, `my instance set`, `PATCH /api/v1/admin/settings` ([Instance settings](instance-settings.md)) | `deny` |
+| Server | `search_indexing` (`allow` / `deny`) | The "Search engines and AI" section on the "Search and crawlers" page of the admin server settings, `my instance set`, `PATCH /api/v1/admin/settings` ([Instance settings](instance-settings.md)) | `deny` |
 | Server | `ai_usage` (`allow` / `deny_training` / `deny`) | Same | `deny` |
 | Server | `indexable_default` (the `indexable` of new accounts) | Same | `false` |
 | Server | `security_contact` (where to report vulnerabilities) | Same | Empty (no `security.txt` is served) |

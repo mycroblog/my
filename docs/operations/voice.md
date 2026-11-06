@@ -71,7 +71,7 @@ docker compose up -d
 - Browsers on the same machine (two browser profiles, or a normal and a private window) connect to each other without a STUN or TURN
   server. To reach browsers on other machines, put the instance behind HTTPS and set `MY_VOICE_STUN_URLS` in `.env`.
 - Only the `admin` role may open rooms by default. Sign in as the administrator you created, or set `voice_room_starters` to `everyone`
-  under the server settings to let every user open rooms.
+  on the "Voice chat" page of the server settings to let every user open rooms.
 
 ### Size and bandwidth
 
