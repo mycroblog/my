@@ -1,9 +1,12 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// How people reach the server's operators and the image that represents the server (#663): the contact account (a
-// user of this server), the contact email address, and the thumbnail with its alt text, one value that every
-// language shows. The about page, the landing page, GET /instance and NodeInfo show them. A new image is uploaded as
-// soon as it is chosen and becomes the thumbnail when the form is saved; saving sends the settings that changed
-// together, then the alt text when it changed, each an audited change.
+// The general page of the server settings (FR-705, #663): the instance's display name, which names the instance to
+// people in place of its domain (the navigation, the tab title, the sign-in pages, emails, link previews); its
+// descriptions, the short one that the about page and other servers' directories show and the full one; how people
+// reach its operators (the contact account, a user of this server, and the contact email address); and the thumbnail
+// with its alt text. The administrator writes each text once, in any language, and every language shows it as it is;
+// with no name the domain shows, and handles and links keep the domain. A new image is uploaded as soon as it is
+// chosen and becomes the thumbnail when the form is saved. Saving sends only what changed: the settings together
+// (PATCH /admin/settings), then each text that changed, each an audited change.
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { type SyntheticEvent, useState } from "react";
 import { useApi } from "../../../lib/auth/SessionProvider";
@@ -14,27 +17,50 @@ import { instanceQueryOptions, instanceTextsQueryOptions } from "../api/document
 import {
   cacheSavedSettings,
   cacheSavedTexts,
-  type ContactChange,
+  descriptionLimit,
+  type GeneralChange,
   type InstanceSettingKey,
   type InstanceTextChange,
+  instanceNameLimit,
   instanceSettingsQueryOptions,
-  saveContactMutation,
+  saveGeneralMutation,
+  shortDescriptionLimit,
   thumbnailAltLimit,
 } from "../api/settings";
 import { characterCount } from "./languages";
 
+/** The texts of the form. */
+type TextKey = Extract<InstanceTextChange["key"], "name" | "short_description" | "description" | "thumbnail_alt">;
+
+type DescriptionKey = Extract<TextKey, "short_description" | "description">;
+
 /** The settings of the form. */
 type ContactKey = Extract<InstanceSettingKey, "contact_account" | "contact_email" | "thumbnail">;
 
+/** The most characters of each description. */
+export const descriptionLimits: Readonly<Record<DescriptionKey, number>> = {
+  short_description: shortDescriptionLimit,
+  description: descriptionLimit,
+};
+
+/** One description: what the field holds and how to change it. */
+export type DescriptionField = {
+  key: DescriptionKey;
+  value: string;
+  onChange: (value: string) => void;
+};
+
 /** What saving does to the thumbnail: keep the saved one, use a new upload, or remove it. */
 type ThumbnailChange = { kind: "keep" } | { kind: "new"; media: MediaAttachment } | { kind: "remove" };
+
+const textKeys = ["name", "short_description", "description", "thumbnail_alt"] as const satisfies readonly TextKey[];
 
 /** A username as the server takes it: without the `@` that people may type before it, and without spaces. */
 function username(value: string): string {
   return value.trim().replace(/^@/u, "");
 }
 
-export function useServerContact() {
+export function useServerGeneral() {
   const api = useApi();
   const queryClient = useQueryClient();
   const t = useT();
@@ -42,12 +68,12 @@ export function useServerContact() {
   const { data: texts } = useSuspenseQuery(instanceTextsQueryOptions(api));
   const { data: instance } = useSuspenseQuery(instanceQueryOptions(api));
   const savedSetting = (key: ContactKey) => settings.items.find((setting) => setting.key === key)?.value ?? "";
-  const savedAlt = texts.items.find((text) => text.key === "thumbnail_alt")?.body ?? "";
+  const savedText = (key: TextKey) => texts.items.find((text) => text.key === key)?.body ?? "";
 
+  const [textDrafts, setTextDrafts] = useState<Readonly<Partial<Record<TextKey, string>>>>({});
   const [account, setAccount] = useState<string | undefined>(undefined);
   const [email, setEmail] = useState<string | undefined>(undefined);
   const [thumbnail, setThumbnail] = useState<ThumbnailChange>({ kind: "keep" });
-  const [altDraft, setAltDraft] = useState<string | undefined>(undefined);
   const [status, setStatus] = useState<string | undefined>(undefined);
 
   const upload = useMutation({
@@ -57,40 +83,62 @@ export function useServerContact() {
     },
   });
 
+  const textValue = (key: TextKey) => textDrafts[key] ?? savedText(key);
+  const changeText = (key: TextKey) => (value: string) => {
+    setTextDrafts({ ...textDrafts, [key]: value });
+  };
+  const name = textValue("name");
+  const nameError = (() => {
+    if (characterCount(name) > instanceNameLimit)
+      return t("client:admin.settings.name.too_long", { max: String(instanceNameLimit) });
+    if (name !== "" && name.trim() === "") return t("client:admin.settings.name.blank");
+    return undefined;
+  })();
+  const tooLong =
+    characterCount(textValue("short_description")) > shortDescriptionLimit ||
+    characterCount(textValue("description")) > descriptionLimit ||
+    characterCount(textValue("thumbnail_alt")) > thumbnailAltLimit;
+
   const accountValue = account ?? savedSetting("contact_account");
   const emailValue = email ?? savedSetting("contact_email");
-  const altValue = altDraft ?? savedAlt;
-
   const values: Partial<Record<ContactKey, string>> = {};
   if (username(accountValue) !== savedSetting("contact_account")) values.contact_account = username(accountValue);
   if (emailValue.trim() !== savedSetting("contact_email")) values.contact_email = emailValue.trim();
   if (thumbnail.kind === "new") values.thumbnail = thumbnail.media.id;
   if (thumbnail.kind === "remove" && savedSetting("thumbnail") !== "") values.thumbnail = "";
-  const altChanges: InstanceTextChange[] = altValue === savedAlt ? [] : [{ key: "thumbnail_alt", body: altValue }];
-  const altTooLong = characterCount(altValue) > thumbnailAltLimit;
+  const textChanges: InstanceTextChange[] = textKeys
+    .filter((key) => textValue(key) !== savedText(key))
+    .map((key) => ({ key, body: textValue(key) }));
 
   const save = useMutation({
-    ...saveContactMutation(api),
+    ...saveGeneralMutation(api),
     onMutate: () => {
       setStatus(undefined);
     },
     onSuccess: async (saved) => {
-      // The about page and the landing page show the new contact and thumbnail once GET /instance is fetched again
-      // (the button stays pending until then).
+      // The navigation, the tab title, the about page and the landing page show the new name, descriptions, contact
+      // and thumbnail once GET /instance is fetched again (the button stays pending until then); the audit log has
+      // the change when it is opened next.
       await Promise.all([
         saved === undefined ? undefined : cacheSavedSettings(queryClient, api, saved),
         cacheSavedTexts(queryClient),
       ]);
+      setTextDrafts({});
       setAccount(undefined);
       setEmail(undefined);
       setThumbnail({ kind: "keep" });
       upload.reset();
-      setAltDraft(undefined);
-      setStatus(t("client:admin.settings.contact.saved"));
+      setStatus(t("client:admin.settings.general.saved"));
     },
-    // The settings may have been saved before the alt text failed: the form compares with what is saved now, and keeps
-    // the draft to send again (web-client/README.md E2).
+    // The settings and some texts may have been saved before a text failed: the form compares with what is saved now,
+    // and keeps the other drafts to send again (web-client/README.md E2).
     onError: () => cacheSavedTexts(queryClient),
+  });
+
+  const description = (key: DescriptionKey): DescriptionField => ({
+    key,
+    value: textValue(key),
+    onChange: changeText(key),
   });
 
   // The medium rendition of a new upload fills the preview; the saved thumbnail comes from GET /instance.
@@ -106,6 +154,12 @@ export function useServerContact() {
       : errorMessage(upload.error);
 
   return {
+    /** The domain that names the instance without a name, and that handles and links use. */
+    domain: instance.domain,
+    /** The name: what the field holds, how to change it, and why it cannot be saved (localized; undefined when it can). */
+    name: { value: name, onChange: changeText("name"), error: nameError },
+    short: description("short_description"),
+    full: description("description"),
     account: { value: accountValue, onChange: setAccount },
     email: { value: emailValue, onChange: setEmail },
     thumbnail: {
@@ -123,20 +177,20 @@ export function useServerContact() {
       error: upload.isError ? uploadError : undefined,
     },
     /** The alt text of the thumbnail. */
-    alt: { value: altValue, onChange: setAltDraft },
+    alt: { value: textValue("thumbnail_alt"), onChange: changeText("thumbnail_alt") },
     submit: (event: SyntheticEvent<HTMLFormElement>) => {
       event.preventDefault();
-      // An alt text over its limit shows why under its field (its count); the server would refuse it.
-      if (altTooLong || save.isPending || upload.isPending) return;
-      const change: ContactChange = { values, texts: altChanges };
-      if (Object.keys(values).length === 0 && altChanges.length === 0) {
-        setStatus(t("client:admin.settings.contact.unchanged"));
+      // A field that cannot be saved shows why under it (its error or its count); the server would refuse it.
+      if (nameError !== undefined || tooLong || save.isPending || upload.isPending) return;
+      if (Object.keys(values).length === 0 && textChanges.length === 0) {
+        setStatus(t("client:admin.settings.general.unchanged"));
         return;
       }
+      const change: GeneralChange = { values, texts: textChanges };
       save.mutate(change);
     },
     isSaving: save.isPending,
-    /** Why the last save failed, localized; the server names the invalid setting in it. */
+    /** Why the last save failed, localized; the server names the invalid setting or text in it. */
     saveError: save.isError ? errorMessage(save.error) : undefined,
     /** What the last save did, for the region that reports it. */
     status,

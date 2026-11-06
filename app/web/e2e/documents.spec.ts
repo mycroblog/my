@@ -177,9 +177,18 @@ test.describe("the terms and policies screen", () => {
     const main = page.getByRole("main");
     await expect(main.getByRole("heading", { level: 1 })).toBeVisible();
     await expect(main.getByRole("textbox").first()).toHaveValue("# Accounts\n\nBe kind.");
+    // One document per page, under the links to the pages.
     await expect(main).toMatchAriaSnapshot(`
       - main:
         - heading [level=1]
+        - navigation:
+          - list:
+            - listitem:
+              - link
+            - listitem:
+              - link
+            - listitem:
+              - link
         - region:
           - heading [level=2]
           - term
@@ -188,24 +197,26 @@ test.describe("the terms and policies screen", () => {
             - link
           - textbox
           - button
+    `);
+    await expectNoAxeViolations(makeAxeBuilder);
+    await expectNoHorizontalScroll(page);
+
+    // The second page is the privacy policy.
+    await main.getByRole("navigation").getByRole("link").nth(1).click();
+    await expect(page).toHaveURL(/\/admin\/documents\/privacy-policy$/);
+    const privacy = main.getByRole("region");
+    await expect(privacy.getByRole("textbox")).toHaveValue("");
+    await expect(main).toMatchAriaSnapshot(`
+      - main:
+        - heading [level=1]
+        - navigation
         - region:
           - heading [level=2]
-          - term
-          - definition
-          - textbox
-          - button
-        - region:
-          - heading [level=2]
-          - paragraph
           - term
           - definition
           - textbox
           - button
     `);
-    await expectNoAxeViolations(makeAxeBuilder);
-    await expectNoHorizontalScroll(page);
-
-    const privacy = main.getByRole("region").nth(1);
     const field = privacy.getByRole("textbox");
     await field.focus();
     await page.keyboard.type("# What we keep\n\nYour email address.");

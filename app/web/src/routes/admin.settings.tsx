@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import { createFileRoute, type ErrorComponentProps } from "@tanstack/react-router";
 import {
-  brandsQueryOptions,
   instanceSettingsQueryOptions,
   instanceTextsQueryOptions,
   ownInstanceQueryOptions,
@@ -13,8 +12,8 @@ import { AdminError, loadWithPermission } from "./-admin/adminRoute";
 import { PageHeading } from "./-layout/PageHeading";
 
 /**
- * The server's settings, for manage_settings: its name in each language, which people see in place of its domain,
- * its descriptions, its own icon and logos, and its policies (registration, default language, timelines, federation, domain actions).
+ * The general page of the server settings, for manage_settings: its name, which people see in place of its domain, its
+ * descriptions, how to reach its operators and its thumbnail. The other pages of the screen are its child routes.
  */
 export const Route = createFileRoute("/admin/settings")({
   staticData: { title: "client:admin.settings.title" },
@@ -25,7 +24,6 @@ export const Route = createFileRoute("/admin/settings")({
         context.queryClient.query({ ...instanceTextsQueryOptions(context.api), staleTime: Infinity }),
         context.queryClient.query({ ...ownInstanceQueryOptions(context.api), staleTime: Infinity }),
         context.queryClient.query({ ...instanceSettingsQueryOptions(context.api), staleTime: Infinity }),
-        context.queryClient.query({ ...brandsQueryOptions(context.api), staleTime: Infinity }),
       ]),
     ),
   component: ServerSettingsPage,
@@ -37,7 +35,7 @@ function ServerSettingsPage() {
   return (
     <>
       <PageHeading>{t("client:admin.settings.title")}</PageHeading>
-      <ServerSettings />
+      <ServerSettings page="general" />
     </>
   );
 }

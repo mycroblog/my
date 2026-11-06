@@ -80,7 +80,7 @@
     "description": "Error of the text area of a document when the text is too long."
   },
   "admin.documents.unsaved.description": {
-    "defaultMessage": "利用規約とプライバシーポリシーへの変更は失われます。",
+    "defaultMessage": "この本文への変更は失われます。",
     "description": "Body of the dialog that asks before leaving the terms and policies screen with unsaved texts."
   },
   "admin.documents.unsaved.leave": {
@@ -118,5 +118,9 @@
   "admin.documents.view_terms": {
     "defaultMessage": "利用規約のページを開く",
     "description": "Link from the terms and policies screen to the public page of the terms of service."
+  },
+  "admin.documents.pages": {
+    "defaultMessage": "規約とポリシーのページ",
+    "description": "Name of the navigation of the pages of the terms and policies screen, one per document, under its heading."
   }
 }

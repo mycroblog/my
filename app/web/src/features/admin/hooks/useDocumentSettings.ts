@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The terms and policies screen (#489): the terms of service and the privacy policy, each written once in Markdown, in
-// any language, and saved on its own (FR-705); every language shows the same text. The server renders and sanitizes
-// them on their public pages, keeps every revision, and records each change in the audit log.
+// The terms and policies screen (#489): the terms of service, the privacy policy and the commerce disclosures, each
+// written once in Markdown, in any language, on a page of its own with one save (FR-705); every language shows the
+// same text. The server renders and sanitizes them on their public pages, keeps every revision, and records each change
+// in the audit log.
 import { useMutation, useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { type SyntheticEvent, useState } from "react";
 import { useApi } from "../../../lib/auth/SessionProvider";
@@ -11,14 +12,10 @@ import { shellQueryReader } from "../../../lib/query";
 import {
   type DocumentKey,
   instanceQueryOptions,
-  type InstanceText,
   instanceTextsQueryOptions,
   cacheSavedDocument,
   setDocumentMutation,
 } from "../api/documents";
-
-/** The drafts that differ from what is saved, by document. */
-type Drafts = Readonly<Partial<Record<DocumentKey, string>>>;
 
 /** One document's form. */
 export type DocumentEditor = {
@@ -39,37 +36,30 @@ export type DocumentEditor = {
   error: string | undefined;
   /** What the last save did, for the form's StatusMessage. */
   status: string | undefined;
-};
-
-export type DocumentSettings = {
-  terms: DocumentEditor;
-  privacyPolicy: DocumentEditor;
-  /** The commerce disclosures of the supporter plans (ADR-0072 §13), published at /about/commerce. */
-  commerceDisclosure: DocumentEditor;
-  /** Whether a document has a draft that is not saved. */
+  /** Whether the field holds a draft that is not saved; leaving the page with one asks first (useUnsavedChangesGuard). */
   hasChanges: boolean;
 };
 
-type EditorContext = {
-  texts: readonly InstanceText[];
-  drafts: Drafts;
-  setDraft: (key: DocumentKey, value: string | undefined) => void;
-};
+/** The public page of each document, from GET /instance. */
+const pageUrls = {
+  terms: "terms_url",
+  privacy_policy: "privacy_policy_url",
+  commerce_disclosure: "commerce_disclosure_url",
+} as const satisfies Record<DocumentKey, string>;
 
-/** One document's form; the screen has three, so this is called three times (never in a loop, web-client/README.md R3). */
-function useDocumentEditor(
-  key: DocumentKey,
-  { texts, drafts, setDraft }: EditorContext,
-  pageUrl: string | undefined,
-): DocumentEditor {
+/** The form of one document, the page of the screen it is on. */
+export function useDocumentEditor(key: DocumentKey): DocumentEditor {
   const api = useApi();
   const t = useT();
   const queryClient = useQueryClient();
+  const texts = useSuspenseQuery(instanceTextsQueryOptions(api)).data.items;
+  const instance = useQuery({ ...instanceQueryOptions(api), ...shellQueryReader }).data;
+  const [draft, setDraft] = useState<string | undefined>(undefined);
   const [confirming, setConfirming] = useState(false);
   const [status, setStatus] = useState<string | undefined>(undefined);
   const saved = texts.find((text) => text.key === key);
   const savedBody = saved?.body ?? "";
-  const value = drafts[key] ?? savedBody;
+  const value = draft ?? savedBody;
   const save = useMutation({
     ...setDocumentMutation(api),
     onSuccess: async (text) => {
@@ -77,7 +67,7 @@ function useDocumentEditor(
       // fetched again (the form stays pending until then); the others load again when opened (cacheSavedDocument).
       await cacheSavedDocument(queryClient);
       setConfirming(false);
-      setDraft(key, undefined);
+      setDraft(undefined);
       setStatus(text.body === "" ? t("client:admin.documents.removed") : t("client:admin.documents.saved"));
     },
   });
@@ -88,10 +78,10 @@ function useDocumentEditor(
     key,
     value,
     change: (next) => {
-      setDraft(key, next === savedBody ? undefined : next);
+      setDraft(next === savedBody ? undefined : next);
     },
     savedAt: saved?.revised_at,
-    pageUrl,
+    pageUrl: instance?.[pageUrls[key]],
     submit: (event) => {
       event.preventDefault();
       if (save.isPending) return;
@@ -111,29 +101,6 @@ function useDocumentEditor(
       : null,
     error: save.isError ? errorMessage(save.error) : undefined,
     status,
-  };
-}
-
-/** The documents. Drafts are kept per document; leaving the screen with any asks first (useUnsavedChangesGuard). */
-export function useDocumentSettings(): DocumentSettings {
-  const api = useApi();
-  const texts = useSuspenseQuery(instanceTextsQueryOptions(api)).data.items;
-  const instance = useQuery({ ...instanceQueryOptions(api), ...shellQueryReader }).data;
-  const [drafts, setDrafts] = useState<Drafts>({});
-  const context: EditorContext = {
-    texts,
-    drafts,
-    setDraft: (key, value) => {
-      setDrafts((current) => {
-        const others = Object.fromEntries(Object.entries(current).filter(([other]) => other !== key));
-        return value === undefined ? others : { ...others, [key]: value };
-      });
-    },
-  };
-  return {
-    terms: useDocumentEditor("terms", context, instance?.terms_url),
-    privacyPolicy: useDocumentEditor("privacy_policy", context, instance?.privacy_policy_url),
-    commerceDisclosure: useDocumentEditor("commerce_disclosure", context, instance?.commerce_disclosure_url),
-    hasChanges: Object.keys(drafts).length > 0,
+    hasChanges: draft !== undefined,
   };
 }

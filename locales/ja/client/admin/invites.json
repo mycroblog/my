@@ -68,7 +68,7 @@
     "description": "Help of the number of sign-ups of an invite."
   },
   "admin.invites.mode_notice": {
-    "defaultMessage": "いまサーバーは新しいアカウントを受け付けていないので、招待では誰も登録できません。登録できる人は、管理者がサーバーの設定で変えます。",
+    "defaultMessage": "いまサーバーは新しいアカウントを受け付けていないので、招待では誰も登録できません。登録できる人は、管理者がサーバーの設定の「登録」のページで変えます。",
     "description": "Notice on the invites screen when the registration mode is closed: invites work in the open, approval, and invite modes."
   },
   "admin.invites.never": {

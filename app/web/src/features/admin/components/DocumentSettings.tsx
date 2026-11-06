@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The terms and policies screen (#489), for manage_settings: the terms of service, the privacy policy and the commerce
-// disclosures of the supporter plans (ADR-0072 §13, whose legal correctness the server does not vouch for), each a
-// form of its own (an `h2` section) with a Markdown text area, when it was saved, and a link to its page. Each
-// is one text, written in any language, that every language shows. Removing a saved text asks first (the APG alert
-// dialog pattern, web-client/16-look-states-and-wording.md G22).
+// disclosures of the supporter plans (ADR-0072 §13, whose legal correctness the server does not vouch for), each on a
+// page of its own (a child route under a LocalNav of the pages, web-client/14-admin.md, how a screen splits): when it
+// was saved, a link to its page, and one form (an `h2` section) of a Markdown text area with one save. Each is one
+// text, written in any language, that every language shows. Removing a saved text asks first (the APG alert dialog
+// pattern, web-client/16-look-states-and-wording.md G22).
 import {
   Button,
   ConfirmDialog,
@@ -11,54 +12,82 @@ import {
   DescriptionList,
   Hint,
   InlineError,
+  LocalNav,
   Stack,
   StatusMessage,
   TextArea,
 } from "@my/ui";
-import { useT } from "../../../lib/i18n";
+import { type ClientMessageKey, useT } from "../../../lib/i18n";
 import { DocumentLink } from "../../documents";
 import { useUnsavedChangesGuard } from "../../settings";
-import { documentTextLimit } from "../api/documents";
-import { type DocumentEditor, useDocumentSettings } from "../hooks/useDocumentSettings";
+import { type DocumentKey, documentTextLimit } from "../api/documents";
+import { type DocumentEditor, useDocumentEditor } from "../hooks/useDocumentSettings";
 import { DateTime, Section, RequirePermission } from "../../moderation";
 
-export function DocumentSettings() {
+/** A page of the screen: one document. */
+export type DocumentPage = DocumentKey;
+
+/** The pages in the order of the LocalNav: their routes, the names of their links, and what their form says. */
+const pages = {
+  terms: {
+    href: "/admin/documents",
+    title: "client:admin.documents.terms",
+    viewLabel: "client:admin.documents.view_terms",
+    confirmTitle: "client:admin.documents.confirm_remove.terms",
+  },
+  privacy_policy: {
+    href: "/admin/documents/privacy-policy",
+    title: "client:admin.documents.privacy_policy",
+    viewLabel: "client:admin.documents.view_privacy_policy",
+    confirmTitle: "client:admin.documents.confirm_remove.privacy_policy",
+  },
+  commerce_disclosure: {
+    href: "/admin/documents/commerce-disclosure",
+    title: "client:admin.documents.commerce_disclosure",
+    viewLabel: "client:admin.documents.view_commerce_disclosure",
+    confirmTitle: "client:admin.documents.confirm_remove.commerce_disclosure",
+  },
+} as const satisfies Record<
+  DocumentKey,
+  { href: string; title: ClientMessageKey; viewLabel: ClientMessageKey; confirmTitle: ClientMessageKey }
+>;
+
+const order: readonly DocumentKey[] = ["terms", "privacy_policy", "commerce_disclosure"];
+
+/** One document's page of the screen, with the links to the others above it. */
+export function DocumentSettings({ documentKey }: { documentKey: DocumentPage }) {
+  const t = useT();
   return (
     <RequirePermission permission="manage_settings">
-      <DocumentSettingsForms />
+      <Stack gap="8">
+        <LocalNav
+          label={t("client:admin.documents.pages")}
+          items={order.map((key) => ({
+            href: pages[key].href,
+            label: t(pages[key].title),
+            current: key === documentKey,
+          }))}
+        />
+        <DocumentPageForm documentKey={documentKey} />
+      </Stack>
     </RequirePermission>
   );
 }
 
-function DocumentSettingsForms() {
+function DocumentPageForm({ documentKey }: { documentKey: DocumentPage }) {
   const t = useT();
-  const settings = useDocumentSettings();
+  const editor = useDocumentEditor(documentKey);
+  const page = pages[documentKey];
   return (
-    <Stack gap="8">
-      <Section surface="card" title={t("client:admin.documents.terms")}>
-        <DocumentForm
-          editor={settings.terms}
-          viewLabel={t("client:admin.documents.view_terms")}
-          confirmTitle={t("client:admin.documents.confirm_remove.terms")}
-        />
+    <>
+      <Section surface="card" title={t(page.title)}>
+        {documentKey === "commerce_disclosure" && (
+          <Hint size="inherit">{t("client:admin.documents.commerce_disclosure.description")}</Hint>
+        )}
+        <DocumentForm editor={editor} viewLabel={t(page.viewLabel)} confirmTitle={t(page.confirmTitle)} />
       </Section>
-      <Section surface="card" title={t("client:admin.documents.privacy_policy")}>
-        <DocumentForm
-          editor={settings.privacyPolicy}
-          viewLabel={t("client:admin.documents.view_privacy_policy")}
-          confirmTitle={t("client:admin.documents.confirm_remove.privacy_policy")}
-        />
-      </Section>
-      <Section surface="card" title={t("client:admin.documents.commerce_disclosure")}>
-        <Hint size="inherit">{t("client:admin.documents.commerce_disclosure.description")}</Hint>
-        <DocumentForm
-          editor={settings.commerceDisclosure}
-          viewLabel={t("client:admin.documents.view_commerce_disclosure")}
-          confirmTitle={t("client:admin.documents.confirm_remove.commerce_disclosure")}
-        />
-      </Section>
-      <UnsavedChangesDialog hasChanges={settings.hasChanges} />
-    </Stack>
+      <UnsavedChangesDialog hasChanges={editor.hasChanges} />
+    </>
   );
 }
 
@@ -140,7 +169,7 @@ function DocumentForm({ editor, viewLabel, confirmTitle }: DocumentFormProps) {
 }
 
 /**
- * Asks before another page replaces the screen with unsaved texts (the APG alert dialog pattern): focus starts
+ * Asks before another page replaces the page with an unsaved text (the APG alert dialog pattern): focus starts
  * on "Keep editing", which stays on the screen like Esc does.
  */
 function UnsavedChangesDialog({ hasChanges }: { hasChanges: boolean }) {

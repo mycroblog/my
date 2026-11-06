@@ -14,14 +14,15 @@ export { JobDetail } from "./components/JobDetail";
 export { JobList } from "./components/JobList";
 export { JobQueueSummary } from "./components/JobQueueSummary";
 export { JobPagesNav } from "./components/jobParts";
-// The terms of service and the privacy policy (#489), for manage_settings.
+// The terms of service, the privacy policy and the commerce disclosures (#489), one page each, for manage_settings.
 export { instanceTextsQueryOptions } from "./api/documents";
 export { DocumentSettings } from "./components/DocumentSettings";
-// The server's settings: its name and descriptions in each language, and its policies, for manage_settings.
+// The server's settings: its name and descriptions, its icon and logos, and its policies, one page per topic, for
+// manage_settings.
 export { instanceQueryOptions as ownInstanceQueryOptions } from "./api/documents";
 export { brandsQueryOptions } from "./api/brand";
 export { instanceSettingsQueryOptions } from "./api/settings";
-export { ServerSettings } from "./components/ServerSettings";
+export { ServerSettings, type ServerSettingsPage } from "./components/ServerSettings";
 // The server's rules (FR-705), for manage_rules: their list, a new rule, and one rule's page.
 export { ruleQueryOptions, rulesQueryOptions } from "./api/rules";
 export { type RuleFilter, ruleFilters, RuleSettings } from "./components/RuleSettings";

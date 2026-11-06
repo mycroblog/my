@@ -68,7 +68,7 @@
     "description": "Help of the number of sign-ups of an invite."
   },
   "admin.invites.mode_notice": {
-    "defaultMessage": "The server takes no new accounts now, so invites let nobody sign up. An administrator changes who may sign up in the server settings.",
+    "defaultMessage": "The server takes no new accounts now, so invites let nobody sign up. An administrator changes who may sign up on the Registration page of the server settings.",
     "description": "Notice on the invites screen when the registration mode is closed: invites work in the open, approval, and invite modes."
   },
   "admin.invites.never": {

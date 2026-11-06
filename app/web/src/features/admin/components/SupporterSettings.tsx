@@ -226,7 +226,7 @@ function Program() {
               {warning === "no_commerce_disclosure" && (
                 <>
                   {" "}
-                  <Link href="/admin/documents" variant="standalone">
+                  <Link href="/admin/documents/commerce-disclosure" variant="standalone">
                     {t("client:admin.supporters.warning.no_commerce_disclosure.link")}
                   </Link>
                 </>

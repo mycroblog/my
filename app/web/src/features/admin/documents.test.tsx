@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The terms and policies screen through the whole app (web-client/README.md T4): an administrator with manage_settings
-// writes the terms of service and the privacy policy in Markdown, one text each in any language, saves and removes them,
-// and is asked before leaving with unsaved texts, with MSW playing the admin API.
+// writes the terms of service, the privacy policy and the commerce disclosures in Markdown, one text each in any language
+// on a page of its own, saves and removes them, and is asked before leaving a page with an unsaved text, with MSW
+// playing the admin API.
 import { screen, within } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
 import { beforeEach, describe, expect, test } from "vitest";
@@ -48,7 +49,7 @@ function section(name: string): HTMLElement {
 }
 
 describe("the terms and policies screen", () => {
-  test("shows each document, when it was saved, and its page", async () => {
+  test("shows a document per page, when it was saved, and its public page", async () => {
     textsServer([terms]);
     server.use(
       http.get(`${apiBase}/instance`, () =>
@@ -63,10 +64,6 @@ describe("the terms and policies screen", () => {
     const termsSection = within(section("Terms of service"));
     expect(termsSection.getByRole("textbox", { name: "Text" })).toHaveValue("# Terms\n\nBe kind.");
     expect(termsSection.getByText(/^Oct 17, 2026/)).toBeInTheDocument();
-    const privacy = within(section("Privacy policy"));
-    expect(privacy.getByRole("textbox", { name: "Text" })).toHaveValue("");
-    expect(privacy.getByText("Not written yet, so the page and its links are hidden")).toBeInTheDocument();
-    expect(privacy.queryByRole("link")).not.toBeInTheDocument();
 
     // The public page is an information page of the app: it opens in the same tab.
     const page = await termsSection.findByRole("link", { name: "Open the terms of service page" });
@@ -74,9 +71,22 @@ describe("the terms and policies screen", () => {
     expect(page).not.toHaveAttribute("target");
   });
 
+  test("shows a document that is not written yet without its page", async () => {
+    textsServer([terms]);
+    const { user } = await renderApp({ path: "/admin/documents" });
+    const pages = await screen.findByRole("navigation", { name: "Terms and policies pages" });
+    await user.click(within(pages).getByRole("link", { name: "Privacy policy" }));
+
+    const privacy = within(await screen.findByRole("region", { name: "Privacy policy" }));
+    expect(privacy.getByRole("textbox", { name: "Text" })).toHaveValue("");
+    expect(privacy.getByText("Not written yet, so the page and its links are hidden")).toBeInTheDocument();
+    expect(privacy.queryByRole("link")).not.toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: "Terms of service" })).not.toBeInTheDocument();
+  });
+
   test("saves a text and says that the audit log records it", async () => {
     const api = textsServer([]);
-    const { user } = await renderApp({ path: "/admin/documents" });
+    const { user } = await renderApp({ path: "/admin/documents/privacy-policy" });
 
     const privacy = within(await screen.findByRole("region", { name: "Privacy policy" }));
     const field = privacy.getByRole("textbox", { name: "Text" });
@@ -129,15 +139,15 @@ describe("the terms and policies screen", () => {
     expect(termsSection.getByRole("textbox", { name: "Text" })).toHaveValue("Be kind.");
   });
 
-  test("asks before leaving with unsaved texts", async () => {
+  test("asks before leaving the page with an unsaved text", async () => {
     textsServer([]);
     const { user, router } = await renderApp({ path: "/admin/documents" });
 
     const termsSection = within(await screen.findByRole("region", { name: "Terms of service" }));
     await user.type(termsSection.getByRole("textbox", { name: "Text" }), "Draft");
-    void router.navigate({ to: "/settings" });
+    void router.navigate({ to: "/admin/documents/privacy-policy" });
 
-    const dialog = await screen.findByRole("alertdialog", { name: "Leave without saving the texts?" });
+    const dialog = await screen.findByRole("alertdialog", { name: "Leave without saving the text?" });
     await user.click(within(dialog).getByRole("button", { name: "Keep editing" }));
     expect(router.state.location.pathname).toBe("/admin/documents");
     expect(termsSection.getByRole("textbox", { name: "Text" })).toHaveValue("Draft");

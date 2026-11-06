@@ -93,7 +93,7 @@ describe("the supporters screen", () => {
     expect(within(program).getByText("2 subscriptions")).toBeInTheDocument();
     expect(within(program).getByRole("link", { name: "Write them in the terms and policies" })).toHaveAttribute(
       "href",
-      "/admin/documents",
+      "/admin/documents/commerce-disclosure",
     );
 
     // docs/architecture/web-client/screens/admin-supporters.md §3

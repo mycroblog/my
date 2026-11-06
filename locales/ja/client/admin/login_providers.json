@@ -252,7 +252,7 @@
     "description": "First part of the dialog before a login provider starts the limit of sign-in to login providers."
   },
   "admin.login_providers.limit_start.recovery": {
-    "defaultMessage": "元に戻すには、サーバーの設定で制限をオフにするか、サーバーで「my instance set login_providers_only false」を実行します。",
+    "defaultMessage": "元に戻すには、サーバーの設定の「登録」のページで制限をオフにするか、サーバーで「my instance set login_providers_only false」を実行します。",
     "description": "In the dialog: how to undo the limit."
   },
   "admin.login_providers.limit_start.self": {

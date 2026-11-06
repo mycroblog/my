@@ -245,14 +245,14 @@ const writes: Write[] = [
     write: async (user) => {
       await user.type(await screen.findByRole("textbox", { name: "Name" }), "Example Social");
       await user.click(screen.getByRole("button", { name: "Save" }));
-      expect(await screen.findByText("Saved the name.")).toBeInTheDocument();
+      expect(await screen.findByText("Saved. The audit log records the change.")).toBeInTheDocument();
     },
   },
   {
     action: "setting_changed",
     method: "patch",
     path: "/admin/settings",
-    page: "/admin/settings",
+    page: "/admin/settings/registration",
     write: async (user) => {
       await user.click(await screen.findByRole("radio", { name: "With an invite" }));
       await user.click(screen.getByRole("button", { name: "Save the settings" }));
@@ -263,7 +263,7 @@ const writes: Write[] = [
     action: "rule_added",
     method: "post",
     path: "/admin/rules",
-    page: "/admin/rules",
+    page: "/admin/rules/new",
     write: async (user) => {
       await user.type(await screen.findByRole("textbox", { name: "Rule" }), "Be kind");
       await user.click(screen.getByRole("button", { name: "Add the rule" }));

@@ -40,7 +40,7 @@ export type InstanceTextChange = { key: SettingsTextKey; body: string };
  * Sets each text of the changes (one audited change each), as the options of useMutation. Returns the texts as
  * recorded.
  */
-export function setInstanceTextsMutation(api: Api) {
+function setInstanceTextsMutation(api: Api) {
   return {
     mutationKey: ["put", "/admin/instance_texts/{key}"] as const,
     mutationFn: (changes: readonly InstanceTextChange[]): Promise<InstanceText[]> =>
@@ -119,22 +119,25 @@ export async function cacheSavedSettings(
   ]);
 }
 
-/** A change of the server's contact and thumbnail: the settings that changed, and the alt text when it changed. */
-export type ContactChange = {
+/**
+ * A change of the general page of the server settings: the settings that changed (the contact and the thumbnail), and
+ * the texts that changed (the name, the descriptions and the thumbnail's alt text).
+ */
+export type GeneralChange = {
   values: Readonly<Partial<Record<InstanceSettingKey, string>>>;
   texts: readonly InstanceTextChange[];
 };
 
 /**
- * Saves the server's contact and thumbnail, as the options of useMutation: the settings together, all or none
- * (PATCH /admin/settings), then the alt text when it changed (PUT /admin/instance_texts/thumbnail_alt). Returns
- * every setting as it is now, or undefined when no setting changed.
+ * Saves the general page of the server settings, as the options of useMutation: the settings together, all or none
+ * (PATCH /admin/settings), then each text that changed (PUT /admin/instance_texts/{key}). Returns every setting as it
+ * is now, or undefined when no setting changed.
  */
-export function saveContactMutation(api: Api) {
+export function saveGeneralMutation(api: Api) {
   const setTexts = setInstanceTextsMutation(api).mutationFn;
   return {
-    mutationKey: ["patch", "/admin/settings", "contact"] as const,
-    mutationFn: async ({ values, texts }: ContactChange): Promise<InstanceSettingList | undefined> => {
+    mutationKey: ["patch", "/admin/settings", "general"] as const,
+    mutationFn: async ({ values, texts }: GeneralChange): Promise<InstanceSettingList | undefined> => {
       let settings: InstanceSettingList | undefined;
       if (Object.keys(values).length > 0) {
         const { data, error } = await api.fetch.PATCH("/admin/settings", { body: { values } });

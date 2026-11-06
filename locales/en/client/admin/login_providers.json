@@ -252,7 +252,7 @@
     "description": "First part of the dialog before a login provider starts the limit of sign-in to login providers."
   },
   "admin.login_providers.limit_start.recovery": {
-    "defaultMessage": "To undo this, turn the limit off in the server settings, or run \"my instance set login_providers_only false\" on the server.",
+    "defaultMessage": "To undo this, turn the limit off on the Registration page of the server settings, or run \"my instance set login_providers_only false\" on the server.",
     "description": "In the dialog: how to undo the limit."
   },
   "admin.login_providers.limit_start.self": {
