@@ -4,6 +4,27 @@ How a third-party app gets an access token: a client, bot, integration, or comma
 (`/api/v1`) of an instance on behalf of its users. The operations of the API are in its OpenAPI document
 (see [Stability of the API](stability.md)).
 
+## The flow at a glance
+
+![A sequence diagram of getting a token: the app discovers the server's endpoints, registers, sends the user's browser through the authorization code flow with PKCE, exchanges the code for tokens, and refreshes them. The steps are listed below.](images/token-flow.svg)
+
+From the top of the diagram down, between the app, the user's browser, and the server:
+
+1. **Discovery.** The app fetches `GET /.well-known/oauth-authorization-server` and learns the endpoints, `scopes_supported`,
+   and the code challenge method `S256` ([Discovery](#discovery)).
+2. **Registration.** The app gets a `client_id`: `POST /oauth/register` answers `201` with one, or the app uses a `client_id`
+   URL, or an app a user registered ([Registering an app](#registering-an-app)).
+3. **Authorization code with PKCE.** The app makes a `code_verifier` and its `S256` `code_challenge`, and opens the authorize URL
+   in the browser. The browser sends `GET /oauth/authorize` with `client_id`, `redirect_uri`, `code_challenge` and `state`; for a
+   `client_id` URL, the server fetches its document. The server shows the sign-in and consent screen, the user approves
+   (`POST /oauth/authorize`), and the server redirects with `303` to `redirect_uri` with `code`, `state` and `iss`. The browser
+   brings them to the app, which checks `state` and `iss` ([Authorization](#authorization)).
+4. **Token.** The app sends `POST /oauth/token` with `grant_type=authorization_code`, the `code` and the `code_verifier`, gets an
+   `access_token` for 1 hour and a `refresh_token` for 30 days, and calls `/api/v1` with `Authorization: Bearer <access_token>`.
+5. **Refresh.** When the access token has expired, the API answers `401` with `error="invalid_token"`. The app sends
+   `POST /oauth/token` with `grant_type=refresh_token` and gets a new access token and a new refresh token; the old ones stop
+   working ([Tokens](#tokens)).
+
 ## Mastodon client libraries do not work as they are
 
 The client API is this project's own. It is **not** the Mastodon client API:

@@ -1,0 +1,121 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 1310" width="760" height="1310" role="img" aria-labelledby="title desc">
+<!-- SPDX-License-Identifier: AGPL-3.0-only -->
+  <title id="title">The event stream</title>
+  <desc id="desc">Two participants: the client and the my server. Opening: the client sends GET /api/v1/streaming with Authorization: Bearer and the access token. The server may refuse with 429 /api/v1/problems/too-many-streams, or with 503 and Retry-After. Otherwise it answers 200 with text/event-stream and the comment : connected. While open: the server sends events such as update, list_update, notification, announcement, and announcement_removed; every 30 seconds it checks the access token again and sends the comment : heartbeat. The end: the server ends the stream when the token is no longer valid, the client falls behind, the server shuts down, or it may have missed updates. Catching up: the client waits with a backoff, refreshes the token if it expired, opens GET /api/v1/streaming again, and reads what it missed with the first pages of GET /api/v1/timelines/home, GET /api/v1/timelines/list/{id}, and GET /api/v1/notifications, because the server replays nothing.</desc>
+
+  <style>
+    svg { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif; }
+    .bg { fill: #ffffff; }
+    .t { fill: #1f2328; font-size: 20px; }
+    .m { fill: #59636e; font-size: 20px; }
+    .h { fill: #1f2328; font-size: 20px; font-weight: 600; }
+    .lh { fill: #1f2328; font-size: 22px; font-weight: 600; }
+    .x { fill: #d1242f; }
+    .halo { paint-order: stroke; stroke: #f6f8fa; stroke-width: 8px; stroke-linejoin: round; }
+    .group { fill: #f6f8fa; stroke: #d1d9e0; stroke-width: 1.5; }
+    .client { fill: #dafbe1; stroke: #1a7f37; stroke-width: 1.5; }
+    .proc { fill: #ddf4ff; stroke: #0969da; stroke-width: 2; }
+    .port { fill: #ffffff; stroke: #8c959f; stroke-width: 1.5; }
+    .danger-box { fill: #ffebe9; stroke: #cf222e; stroke-width: 1.5; }
+    .life { stroke: #8c959f; stroke-width: 1.5; stroke-dasharray: 4 6; fill: none; }
+    .arrow { stroke: #59636e; stroke-width: 2; fill: none; }
+    .reply { stroke: #59636e; stroke-width: 2; stroke-dasharray: 8 5; fill: none; }
+    .head { fill: #59636e; }
+    .signal { stroke: #0969da; stroke-width: 2; stroke-dasharray: 6 4; fill: none; }
+    .signal-head { fill: #0969da; }
+    .data { stroke: #1a7f37; stroke-width: 3; fill: none; }
+    .data-head { fill: #1a7f37; }
+    .danger { stroke: #cf222e; stroke-width: 2; fill: none; }
+    .danger-head { fill: #cf222e; }
+    @media (prefers-color-scheme: dark) {
+      .bg { fill: #0d1117; }
+      .t, .h, .lh { fill: #e6edf3; }
+      .m { fill: #9198a1; }
+      .x { fill: #ff7b72; }
+      .halo { stroke: #151b23; }
+      .group { fill: #151b23; stroke: #3d444d; }
+      .client { fill: #0f2d1b; stroke: #3fb950; }
+      .proc { fill: #0c2d6b; stroke: #4493f8; }
+      .port { fill: #0d1117; stroke: #656c76; }
+      .danger-box { fill: #25171c; stroke: #f85149; }
+      .life { stroke: #656c76; }
+      .arrow, .reply { stroke: #9198a1; }
+      .head { fill: #9198a1; }
+      .signal { stroke: #4493f8; }
+      .signal-head { fill: #4493f8; }
+      .data { stroke: #3fb950; }
+      .data-head { fill: #3fb950; }
+      .danger { stroke: #f85149; }
+      .danger-head { fill: #f85149; }
+    }
+  </style>
+  <defs>
+    <marker id="arrowhead" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path class="head" d="M 0 0 L 10 5 L 0 10 z"/>
+    </marker>
+    <marker id="signalhead" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path class="signal-head" d="M 0 0 L 10 5 L 0 10 z"/>
+    </marker>
+    <marker id="datahead" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+      <path class="data-head" d="M 0 0 L 10 5 L 0 10 z"/>
+    </marker>
+    <marker id="dangerhead" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path class="danger-head" d="M 0 0 L 10 5 L 0 10 z"/>
+    </marker>
+  </defs>
+  <rect class="bg" x="0" y="0" width="760" height="1310" rx="12"/>
+  <rect class="group" x="12" y="106" width="736" height="266" rx="12"/>
+  <rect class="group" x="12" y="386" width="736" height="252" rx="12"/>
+  <rect class="group" x="12" y="652" width="736" height="316" rx="12"/>
+  <rect class="group" x="12" y="982" width="736" height="310" rx="12"/>
+  <path class="life" d="M 150 90 L 150 1298"/>
+  <path class="life" d="M 610 90 L 610 1298"/>
+  <rect class="client" x="50" y="20" width="200" height="70" rx="8"/>
+  <text class="lh" x="150" y="51" text-anchor="middle">Client</text>
+  <text class="m" x="150" y="77" text-anchor="middle">fetch</text>
+  <rect class="proc" x="510" y="20" width="200" height="70" rx="8"/>
+  <text class="lh" x="610" y="51" text-anchor="middle">my server</text>
+  <text class="m" x="610" y="77" text-anchor="middle">the instance</text>
+  <text class="h halo" x="28" y="136">1. Opening a stream</text>
+  <text class="t halo" x="380" y="164" text-anchor="middle">GET /api/v1/streaming</text>
+  <text class="m halo" x="380" y="190" text-anchor="middle">Authorization: Bearer access_token</text>
+  <path class="arrow" d="M 153 200 L 606 200" marker-end="url(#arrowhead)"/>
+  <text class="t x halo" x="380" y="238" text-anchor="middle">refused: 429 too-many-streams</text>
+  <text class="m x halo" x="380" y="264" text-anchor="middle">or 503 with Retry-After</text>
+  <path class="danger" d="M 607 274 L 154 274" marker-end="url(#dangerhead)"/>
+  <text class="t halo" x="380" y="312" text-anchor="middle">200 text/event-stream</text>
+  <text class="m halo" x="380" y="338" text-anchor="middle">: connected</text>
+  <path class="reply" d="M 607 348 L 154 348" marker-end="url(#arrowhead)"/>
+  <text class="h halo" x="28" y="416">2. While it is open</text>
+  <text class="t halo" x="380" y="444" text-anchor="middle">event: update, list_update,</text>
+  <text class="m halo" x="380" y="470" text-anchor="middle">notification, announcement, ...</text>
+  <path class="data" d="M 607 480 L 154 480" marker-end="url(#datahead)"/>
+  <rect class="port" x="492" y="504" width="236" height="66" rx="8"/>
+  <text class="t" x="610" y="531" text-anchor="middle">every 30 seconds:</text>
+  <text class="t" x="610" y="557" text-anchor="middle">checks the token</text>
+  <text class="t halo" x="380" y="604" text-anchor="middle">: heartbeat</text>
+  <path class="signal" d="M 607 614 L 154 614" marker-end="url(#signalhead)"/>
+  <text class="h halo" x="28" y="682">3. The stream ends</text>
+  <rect class="danger-box" x="492" y="696" width="236" height="118" rx="8"/>
+  <text class="t x" x="610" y="723" text-anchor="middle">token not valid,</text>
+  <text class="t x" x="610" y="749" text-anchor="middle">client fell behind,</text>
+  <text class="t x" x="610" y="775" text-anchor="middle">server shuts down,</text>
+  <text class="t x" x="610" y="801" text-anchor="middle">or missed updates</text>
+  <text class="t x halo" x="380" y="848" text-anchor="middle">the stream ends</text>
+  <path class="danger" d="M 607 858 L 154 858" marker-end="url(#dangerhead)"/>
+  <rect class="port" x="32" y="882" width="236" height="66" rx="8"/>
+  <text class="t" x="150" y="909" text-anchor="middle">back off; refresh</text>
+  <text class="t" x="150" y="935" text-anchor="middle">the token if expired</text>
+  <text class="h halo" x="28" y="1012">4. Catching up</text>
+  <text class="t halo" x="380" y="1040" text-anchor="middle">GET /api/v1/streaming</text>
+  <text class="m halo" x="380" y="1066" text-anchor="middle">open a new stream</text>
+  <path class="arrow" d="M 153 1076 L 606 1076" marker-end="url(#arrowhead)"/>
+  <text class="t halo" x="380" y="1114" text-anchor="middle">GET /api/v1/timelines/home</text>
+  <path class="arrow" d="M 153 1124 L 606 1124" marker-end="url(#arrowhead)"/>
+  <text class="t halo" x="380" y="1162" text-anchor="middle">GET /api/v1/timelines/list/{id}</text>
+  <path class="arrow" d="M 153 1172 L 606 1172" marker-end="url(#arrowhead)"/>
+  <text class="t halo" x="380" y="1210" text-anchor="middle">GET /api/v1/notifications</text>
+  <path class="arrow" d="M 153 1220 L 606 1220" marker-end="url(#arrowhead)"/>
+  <text class="t halo" x="380" y="1258" text-anchor="middle">first pages: what the stream missed</text>
+  <path class="reply" d="M 607 1268 L 154 1268" marker-end="url(#arrowhead)"/>
+</svg>

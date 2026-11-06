@@ -1,0 +1,138 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 1790" width="760" height="1790" role="img" aria-labelledby="title desc">
+<!-- SPDX-License-Identifier: AGPL-3.0-only -->
+  <title id="title">Getting a token</title>
+  <desc id="desc">Three participants: the app, the user's browser, and the my server. Discovery: the app fetches /.well-known/oauth-authorization-server and gets the endpoints, scopes_supported, and the code challenge method S256. Registration: the app posts to /oauth/register and gets 201 with a client_id; an app can instead use a client_id URL or an app a user registered. Authorization: the app makes a code_verifier and its S256 code_challenge, and opens the authorize URL in the browser; the browser sends GET /oauth/authorize with client_id, redirect_uri, code_challenge, and state; for a client_id URL, the server fetches its document; the server shows the sign-in and consent screen; the user approves with POST /oauth/authorize; the server redirects with 303 to redirect_uri with code, state, and iss; the browser brings them to the app, which checks state and iss. Token: the app posts to /oauth/token with grant_type=authorization_code, the code, and the code_verifier, and gets an access_token for 1 hour and a refresh_token for 30 days; it calls /api/v1 with Authorization: Bearer and the access token. Refresh: when the access token expires the API answers 401 with error="invalid_token"; the app posts to /oauth/token with grant_type=refresh_token and gets a new access_token and a new refresh_token, and the old ones stop working.</desc>
+
+  <style>
+    svg { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif; }
+    .bg { fill: #ffffff; }
+    .t { fill: #1f2328; font-size: 20px; }
+    .m { fill: #59636e; font-size: 20px; }
+    .h { fill: #1f2328; font-size: 20px; font-weight: 600; }
+    .lh { fill: #1f2328; font-size: 22px; font-weight: 600; }
+    .x { fill: #d1242f; }
+    .halo { paint-order: stroke; stroke: #f6f8fa; stroke-width: 8px; stroke-linejoin: round; }
+    .group { fill: #f6f8fa; stroke: #d1d9e0; stroke-width: 1.5; }
+    .client { fill: #dafbe1; stroke: #1a7f37; stroke-width: 1.5; }
+    .proc { fill: #ddf4ff; stroke: #0969da; stroke-width: 2; }
+    .port { fill: #ffffff; stroke: #8c959f; stroke-width: 1.5; }
+    .danger-box { fill: #ffebe9; stroke: #cf222e; stroke-width: 1.5; }
+    .life { stroke: #8c959f; stroke-width: 1.5; stroke-dasharray: 4 6; fill: none; }
+    .arrow { stroke: #59636e; stroke-width: 2; fill: none; }
+    .reply { stroke: #59636e; stroke-width: 2; stroke-dasharray: 8 5; fill: none; }
+    .head { fill: #59636e; }
+    .signal { stroke: #0969da; stroke-width: 2; stroke-dasharray: 6 4; fill: none; }
+    .signal-head { fill: #0969da; }
+    .data { stroke: #1a7f37; stroke-width: 3; fill: none; }
+    .data-head { fill: #1a7f37; }
+    .danger { stroke: #cf222e; stroke-width: 2; fill: none; }
+    .danger-head { fill: #cf222e; }
+    @media (prefers-color-scheme: dark) {
+      .bg { fill: #0d1117; }
+      .t, .h, .lh { fill: #e6edf3; }
+      .m { fill: #9198a1; }
+      .x { fill: #ff7b72; }
+      .halo { stroke: #151b23; }
+      .group { fill: #151b23; stroke: #3d444d; }
+      .client { fill: #0f2d1b; stroke: #3fb950; }
+      .proc { fill: #0c2d6b; stroke: #4493f8; }
+      .port { fill: #0d1117; stroke: #656c76; }
+      .danger-box { fill: #25171c; stroke: #f85149; }
+      .life { stroke: #656c76; }
+      .arrow, .reply { stroke: #9198a1; }
+      .head { fill: #9198a1; }
+      .signal { stroke: #4493f8; }
+      .signal-head { fill: #4493f8; }
+      .data { stroke: #3fb950; }
+      .data-head { fill: #3fb950; }
+      .danger { stroke: #f85149; }
+      .danger-head { fill: #f85149; }
+    }
+  </style>
+  <defs>
+    <marker id="arrowhead" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path class="head" d="M 0 0 L 10 5 L 0 10 z"/>
+    </marker>
+    <marker id="dangerhead" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path class="danger-head" d="M 0 0 L 10 5 L 0 10 z"/>
+    </marker>
+  </defs>
+  <rect class="bg" x="0" y="0" width="760" height="1790" rx="12"/>
+  <rect class="group" x="12" y="106" width="736" height="140" rx="12"/>
+  <rect class="group" x="12" y="260" width="736" height="166" rx="12"/>
+  <rect class="group" x="12" y="440" width="736" height="746" rx="12"/>
+  <rect class="group" x="12" y="1200" width="736" height="292" rx="12"/>
+  <rect class="group" x="12" y="1506" width="736" height="266" rx="12"/>
+  <path class="life" d="M 130 90 L 130 1778"/>
+  <path class="life" d="M 385 90 L 385 1778"/>
+  <path class="life" d="M 635 90 L 635 1778"/>
+  <rect class="client" x="30" y="20" width="200" height="70" rx="8"/>
+  <text class="lh" x="130" y="51" text-anchor="middle">App</text>
+  <text class="m" x="130" y="77" text-anchor="middle">client_id</text>
+  <rect class="client" x="285" y="20" width="200" height="70" rx="8"/>
+  <text class="lh" x="385" y="51" text-anchor="middle">Browser</text>
+  <text class="m" x="385" y="77" text-anchor="middle">the user</text>
+  <rect class="proc" x="535" y="20" width="200" height="70" rx="8"/>
+  <text class="lh" x="635" y="51" text-anchor="middle">my server</text>
+  <text class="m" x="635" y="77" text-anchor="middle">the instance</text>
+  <text class="h halo" x="28" y="136">1. Discovery</text>
+  <text class="t halo" x="382.5" y="164" text-anchor="middle">GET /.well-known/oauth-authorization-server</text>
+  <path class="arrow" d="M 133 174 L 631 174" marker-end="url(#arrowhead)"/>
+  <text class="t halo" x="382.5" y="212" text-anchor="middle">endpoints, scopes_supported, S256</text>
+  <path class="reply" d="M 632 222 L 134 222" marker-end="url(#arrowhead)"/>
+  <text class="h halo" x="28" y="290">2. Registration</text>
+  <text class="t halo" x="382.5" y="318" text-anchor="middle">POST /oauth/register</text>
+  <text class="m halo" x="382.5" y="344" text-anchor="middle">or a client_id URL, or a user's app</text>
+  <path class="arrow" d="M 133 354 L 631 354" marker-end="url(#arrowhead)"/>
+  <text class="t halo" x="382.5" y="392" text-anchor="middle">201 client_id</text>
+  <path class="reply" d="M 632 402 L 134 402" marker-end="url(#arrowhead)"/>
+  <text class="h halo" x="28" y="470">3. Authorization code with PKCE</text>
+  <rect class="port" x="25" y="484" width="210" height="66" rx="8"/>
+  <text class="t" x="130" y="511" text-anchor="middle">code_verifier</text>
+  <text class="t" x="130" y="537" text-anchor="middle">S256 code_challenge</text>
+  <text class="t halo" x="257.5" y="584" text-anchor="middle">open the</text>
+  <text class="m halo" x="257.5" y="610" text-anchor="middle">authorize URL</text>
+  <path class="arrow" d="M 133 620 L 381 620" marker-end="url(#arrowhead)"/>
+  <text class="t halo" x="510" y="658" text-anchor="middle">GET /oauth/authorize</text>
+  <text class="m halo" x="510" y="684" text-anchor="middle">client_id, redirect_uri,</text>
+  <text class="m halo" x="510" y="710" text-anchor="middle">code_challenge, state</text>
+  <path class="arrow" d="M 388 720 L 631 720" marker-end="url(#arrowhead)"/>
+  <rect class="port" x="530" y="744" width="210" height="66" rx="8"/>
+  <text class="t" x="635" y="771" text-anchor="middle">a client_id URL:</text>
+  <text class="t" x="635" y="797" text-anchor="middle">fetches its document</text>
+  <text class="t halo" x="510" y="844" text-anchor="middle">sign-in and consent</text>
+  <path class="reply" d="M 632 854 L 389 854" marker-end="url(#arrowhead)"/>
+  <text class="t halo" x="510" y="892" text-anchor="middle">POST /oauth/authorize</text>
+  <text class="m halo" x="510" y="918" text-anchor="middle">the user approves</text>
+  <path class="arrow" d="M 388 928 L 631 928" marker-end="url(#arrowhead)"/>
+  <text class="t halo" x="510" y="966" text-anchor="middle">303 to redirect_uri</text>
+  <text class="m halo" x="510" y="992" text-anchor="middle">code, state, iss</text>
+  <path class="reply" d="M 632 1002 L 389 1002" marker-end="url(#arrowhead)"/>
+  <text class="t halo" x="257.5" y="1040" text-anchor="middle">redirect_uri</text>
+  <text class="m halo" x="257.5" y="1066" text-anchor="middle">code, state, iss</text>
+  <path class="arrow" d="M 382 1076 L 134 1076" marker-end="url(#arrowhead)"/>
+  <rect class="port" x="25" y="1100" width="210" height="66" rx="8"/>
+  <text class="t" x="130" y="1127" text-anchor="middle">checks state</text>
+  <text class="t" x="130" y="1153" text-anchor="middle">and iss</text>
+  <text class="h halo" x="28" y="1230">4. Token</text>
+  <text class="t halo" x="382.5" y="1258" text-anchor="middle">POST /oauth/token</text>
+  <text class="m halo" x="382.5" y="1284" text-anchor="middle">grant_type=authorization_code</text>
+  <text class="m halo" x="382.5" y="1310" text-anchor="middle">code, code_verifier</text>
+  <path class="arrow" d="M 133 1320 L 631 1320" marker-end="url(#arrowhead)"/>
+  <text class="t halo" x="382.5" y="1358" text-anchor="middle">access_token (1 hour)</text>
+  <text class="m halo" x="382.5" y="1384" text-anchor="middle">refresh_token (30 days)</text>
+  <path class="reply" d="M 632 1394 L 134 1394" marker-end="url(#arrowhead)"/>
+  <text class="t halo" x="382.5" y="1432" text-anchor="middle">GET /api/v1/...</text>
+  <text class="m halo" x="382.5" y="1458" text-anchor="middle">Authorization: Bearer access_token</text>
+  <path class="arrow" d="M 133 1468 L 631 1468" marker-end="url(#arrowhead)"/>
+  <text class="h halo" x="28" y="1536">5. Refresh</text>
+  <text class="t x halo" x="382.5" y="1564" text-anchor="middle">401 error="invalid_token"</text>
+  <text class="m x halo" x="382.5" y="1590" text-anchor="middle">the access token expired</text>
+  <path class="danger" d="M 632 1600 L 134 1600" marker-end="url(#dangerhead)"/>
+  <text class="t halo" x="382.5" y="1638" text-anchor="middle">POST /oauth/token</text>
+  <text class="m halo" x="382.5" y="1664" text-anchor="middle">grant_type=refresh_token</text>
+  <path class="arrow" d="M 133 1674 L 631 1674" marker-end="url(#arrowhead)"/>
+  <text class="t halo" x="382.5" y="1712" text-anchor="middle">new access_token and refresh_token</text>
+  <text class="m halo" x="382.5" y="1738" text-anchor="middle">the old ones stop working</text>
+  <path class="reply" d="M 632 1748 L 134 1748" marker-end="url(#arrowhead)"/>
+</svg>
