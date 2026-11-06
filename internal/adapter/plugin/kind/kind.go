@@ -29,6 +29,10 @@ func Protocols() []string { return []string{ProtocolJSON, ProtocolProto, Protoco
 // would be cut by the lease rather than by its own deadline (ADR-0146 §12).
 const MaxTimeout = 5 * time.Minute
 
+// MaxRequestTimeout bounds the deadline of a call of a kind that a request also waits for: a person waits for it, and
+// the request holds a goroutine and its connection meanwhile.
+const MaxRequestTimeout = 30 * time.Second
+
 // DefaultConcurrency is how many calls of a kind run at once unless the kind says otherwise, and how many connections a
 // client opens (ADR-0146 §7, §12).
 const DefaultConcurrency = 8
@@ -66,6 +70,9 @@ type Kind struct {
 	PlainTCP bool
 	// Timeout is the default deadline of one call.
 	Timeout time.Duration
+	// InRequests is a kind that the server calls while a request waits, and not only from jobs, so that its deadline
+	// stays below MaxRequestTimeout.
+	InRequests bool
 	// MaxSend and MaxReceive bound one message, in bytes. The library's own default is never relied on (ADR-0146 §12).
 	MaxSend, MaxReceive int
 	// Concurrency is how many calls run at once.
@@ -75,16 +82,16 @@ type Kind struct {
 // The kinds that have a destination in the configuration, in documentation order: ADR-0146 §2, §6, §12, and the waits
 // of ADR-0147 §2.
 var delegated = []Kind{
-	{Name: Translator, Protocol: ProtocolJSON, Timeout: 10 * time.Second, MaxSend: mib, MaxReceive: mib, Concurrency: DefaultConcurrency},
+	{Name: Translator, Protocol: ProtocolJSON, InRequests: true, Timeout: 10 * time.Second, MaxSend: mib, MaxReceive: mib, Concurrency: DefaultConcurrency},
 	{Name: Billing, Protocol: ProtocolJSON, PlainTCP: true, Timeout: 2 * time.Minute, MaxSend: 64 * kib, MaxReceive: 4 * mib, Concurrency: DefaultConcurrency},
 	{Name: Mailer, Protocol: ProtocolJSON, Timeout: 30 * time.Second, MaxSend: 2 * mib, MaxReceive: 64 * kib, Concurrency: DefaultConcurrency},
 	{Name: Media, Protocol: ProtocolProto, Streaming: true, PlainTCP: true, Timeout: 4 * time.Minute, MaxSend: 2 * mib, MaxReceive: 2 * mib, Concurrency: 2},
-	{Name: KeyManager, Protocol: ProtocolJSON, Timeout: 5 * time.Second, MaxSend: 128 * kib, MaxReceive: 128 * kib, Concurrency: DefaultConcurrency},
+	{Name: KeyManager, Protocol: ProtocolJSON, InRequests: true, Timeout: 5 * time.Second, MaxSend: 128 * kib, MaxReceive: 128 * kib, Concurrency: DefaultConcurrency},
 	{Name: InboundStatus, Protocol: ProtocolJSON, Timeout: 3 * time.Second, MaxSend: mib, MaxReceive: 64 * kib, Concurrency: DefaultConcurrency},
 	{Name: InboundFollow, Protocol: ProtocolJSON, PlainTCP: true, Timeout: 3 * time.Second, MaxSend: mib, MaxReceive: 64 * kib, Concurrency: DefaultConcurrency},
-	{Name: SignupCheck, Protocol: ProtocolJSON, Timeout: 2 * time.Second, MaxSend: mib, MaxReceive: 64 * kib, Concurrency: DefaultConcurrency},
-	{Name: MediaCheck, Protocol: ProtocolJSON, PlainTCP: true, Timeout: 10 * time.Second, MaxSend: mib, MaxReceive: 64 * kib, Concurrency: DefaultConcurrency},
-	{Name: LocalStatus, Protocol: ProtocolJSON, Timeout: time.Second, MaxSend: mib, MaxReceive: 64 * kib, Concurrency: DefaultConcurrency},
+	{Name: SignupCheck, Protocol: ProtocolJSON, InRequests: true, Timeout: 2 * time.Second, MaxSend: mib, MaxReceive: 64 * kib, Concurrency: DefaultConcurrency},
+	{Name: MediaCheck, Protocol: ProtocolJSON, PlainTCP: true, InRequests: true, Timeout: 10 * time.Second, MaxSend: mib, MaxReceive: 64 * kib, Concurrency: DefaultConcurrency},
+	{Name: LocalStatus, Protocol: ProtocolJSON, InRequests: true, Timeout: time.Second, MaxSend: mib, MaxReceive: 64 * kib, Concurrency: DefaultConcurrency},
 }
 
 // probe has no destination in the configuration: it delegates nothing, and only `my plugin test` calls it.
@@ -92,6 +99,14 @@ var probe = Kind{Name: Probe, Protocol: ProtocolJSON, PlainTCP: true, Timeout: 1
 
 // Delegated returns the kinds that have a destination in the configuration, in documentation order.
 func Delegated() []Kind { return slices.Clone(delegated) }
+
+// TimeoutBound returns what the deadline of a call of k must stay below.
+func (k Kind) TimeoutBound() time.Duration {
+	if k.InRequests {
+		return MaxRequestTimeout
+	}
+	return MaxTimeout
+}
 
 // ByName returns the kind of name, the probe included.
 func ByName(name string) (Kind, bool) {
@@ -198,7 +213,10 @@ func (k Kind) Check(d Destination) []Problem {
 			problem(SuffixTLSCertFile, "is required with the key file")
 		}
 	}
-	if d.Timeout < 0 || d.Timeout >= MaxTimeout {
+	switch {
+	case k.InRequests && (d.Timeout < 0 || d.Timeout >= MaxRequestTimeout):
+		problem(SuffixTimeout, "must be more than 0 and less than %s: a request waits for the %s plugin", MaxRequestTimeout, k.Name)
+	case d.Timeout < 0 || d.Timeout >= MaxTimeout:
 		problem(SuffixTimeout, "must be more than 0 and less than %s, the lease of the job that makes the call", MaxTimeout)
 	}
 	return out

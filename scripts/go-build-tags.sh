@@ -6,7 +6,8 @@
 # representative set of tags, it builds every package with CGO_ENABLED=0, runs go vet, and fails when cmd/my still
 # depends on a package that a tag of the set leaves out. It fails as well when cmd/my without e2e_fakes (the default
 # build with no tags among them) depends on a fake: a fake that records payments as paid, accepts any push message, or keeps a search index in memory must never reach a released
-# binary. The set with e2e_fakes also runs the tests that only that build has (named *E2EFakes*).
+# binary. The set with e2e_fakes also runs the tests that only that build has (named *E2EFakes*), and each tag of the sets
+# runs, alone, the tests of the packages with a test file that only a build with that tag has (such as no_plugins).
 #
 #   scripts/go-build-tags.sh                  every set below
 #   scripts/go-build-tags.sh SET...           the given comma-separated sets of tags
@@ -65,7 +66,7 @@ excluded_packages() {
     no_payments_payjp) echo "$m/payment/payjp" ;;
     no_voice_livekit) echo "$m/voice/livekit" ;;
     no_voice_sora) echo "$m/voice/sora" ;;
-    no_plugins) echo "$m/plugin/client $m/plugin/contract $m/billing/plugin $m/keymanager/plugin $m/mail/plugin $m/translator/plugin $m/media/plugin connectrpc.com/connect/v2" ;;
+    no_plugins) echo "$m/plugin/client $m/plugin/contract $m/billing/plugin $m/keymanager/plugin $m/mail/plugin $m/translator/plugin $m/media/plugin $m/hook/connect connectrpc.com/connect/v2" ;;
     no_otel) echo "$m/telemetry/otel $m/telemetry/otel/otlptest go.opentelemetry.io/otel/sdk/metric go.opentelemetry.io/otel/sdk/trace go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp" ;;
     e2e_fakes) ;; # adds the fakes and leaves nothing out
     *)
@@ -146,6 +147,16 @@ for set in "${sets[@]}"; do
   if [[ ",$set," == *,e2e_fakes,* ]]; then
     mapfile -t pkgs < <(grep -rlE '^//go:build .*e2e_fakes' --include='*_test.go' internal cmd | xargs -n1 dirname | sort -u | sed 's|^|./|')
     go test -tags "$set" -run E2EFakes "${pkgs[@]}"
+  fi
+done
+# The tests that only a build without an adapter has: the packages with a test file whose constraint names the tag
+# without !, run with that tag alone, since their other tests expect the adapters the other tags leave out.
+mapfile -t all_tags < <(printf '%s\n' "${sets[@]}" | tr , '\n' | grep -vx e2e_fakes | sort -u)
+for tag in "${all_tags[@]}"; do
+  mapfile -t pkgs < <(grep -rlE "^//go:build (.*[ (])?${tag}([ )]|\$)" --include='*_test.go' internal cmd | xargs -r -n1 dirname | sort -u | sed 's|^|./|')
+  if ((${#pkgs[@]} > 0)); then
+    echo "--- tests of -tags $tag"
+    go test -tags "$tag" "${pkgs[@]}" || status=1
   fi
 done
 exit "$status"
