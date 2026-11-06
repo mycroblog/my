@@ -35,8 +35,6 @@ export default defineConfig({
         Footer: "./src/components/Footer.astro",
       },
       customCss: ["./src/styles/custom.css"],
-      // The landing page's hero buttons name documents by their repository path (src/routeData.ts).
-      routeMiddleware: "./src/routeData.ts",
       // English only during v0, at the root of the URL space, so that translations added later keep every URL (ADR-0150 §9).
       defaultLocale: "root",
       locales: {
@@ -46,6 +44,9 @@ export default defineConfig({
       lastUpdated: false,
       // The groups and order of docs/README.md (src/sidebar.ts), with the client API reference after the guides.
       sidebar: docsSidebar({ Developers: [apiReferenceSidebar] }),
+      // The Markdown form of each page in its head (src/route-middleware.ts), and the landing page's hero buttons,
+      // which name documents by their repository path (src/routeData.ts).
+      routeMiddleware: ["./src/route-middleware.ts", "./src/routeData.ts"],
       // A broken link or #anchor between pages fails the build; the validator cannot see the generated reference.
       plugins: [starlightLinksValidator({ exclude: sitePageLinks }), apiReferencePlugin, llmsTxtPlugin],
     }),

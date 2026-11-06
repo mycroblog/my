@@ -18,7 +18,7 @@
       "project": ["src/**/*.ts"]
     },
     "docs": {
-      "entry": ["scripts/*.ts", "src/routeData.ts"],
+      "entry": ["scripts/*.ts", "src/route-middleware.ts", "src/routeData.ts"],
       "project": ["*.config.ts", "src/**/*.{ts,astro,mdx}", "scripts/**/*.ts"],
       "ignoreDependencies": ["satteri"]
     },
