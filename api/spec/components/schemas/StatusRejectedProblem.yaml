@@ -11,7 +11,8 @@ allOf:
     properties:
       hook_decision_id:
         description: The decision to appeal.
-        type: string
+        allOf:
+          - $ref: ./Id.yaml
       appeal_deadline:
         description: The last moment the author can appeal the decision.
         type: string

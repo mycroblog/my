@@ -351,7 +351,7 @@ func (q *Queries) GetReportByURI(ctx context.Context, uri sql.NullString) (Repor
 }
 
 const getReportForward = `-- name: GetReportForward :many
-SELECT id, report_id, forwarded_by_user_id, forwarded_at FROM report_forwards WHERE report_id = ?
+SELECT id, report_id, comment, forwarded_by_user_id, forwarded_at FROM report_forwards WHERE report_id = ?
 `
 
 func (q *Queries) GetReportForward(ctx context.Context, reportID string) ([]ReportForward, error) {
@@ -366,6 +366,7 @@ func (q *Queries) GetReportForward(ctx context.Context, reportID string) ([]Repo
 		if err := rows.Scan(
 			&i.ID,
 			&i.ReportID,
+			&i.Comment,
 			&i.ForwardedByUserID,
 			&i.ForwardedAt,
 		); err != nil {
@@ -733,13 +734,14 @@ func (q *Queries) InsertReportAssignment(ctx context.Context, arg InsertReportAs
 }
 
 const insertReportForward = `-- name: InsertReportForward :execrows
-INSERT INTO report_forwards (id, report_id, forwarded_by_user_id, forwarded_at) VALUES (?, ?, ?, ?)
+INSERT INTO report_forwards (id, report_id, comment, forwarded_by_user_id, forwarded_at) VALUES (?, ?, ?, ?, ?)
 ON CONFLICT (report_id) DO NOTHING
 `
 
 type InsertReportForwardParams struct {
 	ID                string
 	ReportID          string
+	Comment           string
 	ForwardedByUserID sql.NullString
 	ForwardedAt       int64
 }
@@ -749,6 +751,7 @@ func (q *Queries) InsertReportForward(ctx context.Context, arg InsertReportForwa
 	result, err := q.db.ExecContext(ctx, insertReportForward,
 		arg.ID,
 		arg.ReportID,
+		arg.Comment,
 		arg.ForwardedByUserID,
 		arg.ForwardedAt,
 	)

@@ -633,13 +633,15 @@ LEFT JOIN hook_decision_appeal_decisions r ON r.appeal_id = a.id
 LEFT JOIN hook_decision_overrides o ON o.decision_id = d.id
 WHERE ($1::uuid IS NULL OR a.id < $1::uuid)
   AND (NOT $2::boolean OR r.appeal_id IS NULL)
+  AND ($3::text = '' OR r.decision = $3::text)
 ORDER BY a.id DESC
-LIMIT $3
+LIMIT $4
 `
 
 type ListHookDecisionAppealsParams struct {
 	Before   *string
 	Pending  bool
+	Outcome  string
 	RowLimit int32
 }
 
@@ -668,9 +670,15 @@ type ListHookDecisionAppealsRow struct {
 	OverriddenAt         *time.Time
 }
 
-// The appeals newest first; pending keeps those that no moderator has decided.
+// The appeals newest first; pending keeps those that no moderator has decided, and outcome those
+// decided with it (” keeps every one).
 func (q *Queries) ListHookDecisionAppeals(ctx context.Context, arg ListHookDecisionAppealsParams) ([]ListHookDecisionAppealsRow, error) {
-	rows, err := q.db.Query(ctx, listHookDecisionAppeals, arg.Before, arg.Pending, arg.RowLimit)
+	rows, err := q.db.Query(ctx, listHookDecisionAppeals,
+		arg.Before,
+		arg.Pending,
+		arg.Outcome,
+		arg.RowLimit,
+	)
 	if err != nil {
 		return nil, err
 	}

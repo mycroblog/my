@@ -249,6 +249,8 @@ type Repository interface {
 type AppealQuery struct {
 	// Pending keeps the appeals that no moderator has decided.
 	Pending bool
+	// Outcome keeps the appeals that a moderator decided with it; "" keeps every one.
+	Outcome hook.AppealOutcome
 	// Before is the ID of the last appeal of the previous page; "" starts at the newest.
 	Before string
 	Limit  int
@@ -275,7 +277,8 @@ var ErrAppealDecided = errors.New("hook: the appeal is already decided")
 // ErrNotOverridable reports a decision that a moderator cannot cancel from the list.
 var ErrNotOverridable = errors.New("hook: the decision cannot be overridden")
 
-// ErrAlreadyOverridden reports a decision that is already cancelled.
+// ErrAlreadyOverridden reports a decision that is already cancelled, to OverrideTx; Override
+// answers such a decision as it is.
 var ErrAlreadyOverridden = errors.New("hook: the decision is already overridden")
 
 // ErrRetryLater reports a failed call of a hook whose failure behaviour is retry: no decision was

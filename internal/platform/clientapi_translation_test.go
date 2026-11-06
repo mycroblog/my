@@ -508,6 +508,9 @@ func TestTranslateStatusOverALimit(t *testing.T) {
 	e := newTranslationEnv(t)
 	st := e.c.post("alice", map[string]any{"text": "some words", "visibility": "public", "language": "en"})
 	e.limiter.refuse.Store(true)
+	if res, _ := e.translate("bob", st.Id); res.Header.Get("Retry-After") == "" {
+		t.Errorf("Retry-After of the translation-limit 429 is missing")
+	}
 	e.wantProblem("bob", st.Id, http.StatusTooManyRequests, clientapi.ProblemTypeTranslationLimit)
 	if n := e.one.calls(); n != 0 {
 		t.Errorf("provider calls = %d, want 0", n)

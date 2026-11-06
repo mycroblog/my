@@ -205,8 +205,8 @@ export type ReportChanges = {
   unassign: () => void;
   resolve: (outcome: ReportOutcome) => void;
   reopen: () => void;
-  /** Forwards the report to the server of its remote target, when `forwardable` allows it. */
-  forward: () => void;
+  /** Forwards the report to the server of its remote target, when `forwardable` allows it, with the moderator's text ("" for none). */
+  forward: (comment: string) => void;
   /** The change being sent, if any; its button waits and the others are disabled. */
   pending: ChangeReport | undefined;
 };
@@ -251,8 +251,8 @@ export function useReportChanges(
     reopen: () => {
       send({ id, operation: "reopen" });
     },
-    forward: () => {
-      send({ id, operation: "forward" });
+    forward: (comment) => {
+      send({ id, operation: "forward", comment });
     },
     pending: mutation.isPending ? mutation.variables : undefined,
   };

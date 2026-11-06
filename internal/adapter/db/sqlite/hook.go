@@ -293,7 +293,9 @@ func (r *HookRepository) ListAppeals(ctx context.Context, q apphook.AppealQuery)
 	if q.Pending {
 		pending = 1
 	}
-	rows, err := r.db.reader().ListHookDecisionAppeals(ctx, sqlitegen.ListHookDecisionAppealsParams{Before: q.Before, Pending: pending, RowLimit: int64(q.Limit)})
+	rows, err := r.db.reader().ListHookDecisionAppeals(ctx, sqlitegen.ListHookDecisionAppealsParams{
+		Before: q.Before, Pending: pending, Outcome: string(q.Outcome), RowLimit: int64(q.Limit),
+	})
 	if err != nil {
 		return nil, wrap(err, "list hook decision appeals")
 	}

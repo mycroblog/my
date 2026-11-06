@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"time"
 
 	appcontent "github.com/mycroblog/my/internal/app/content"
 	"github.com/mycroblog/my/internal/app/translation"
@@ -76,11 +77,22 @@ func (s *Server) translationProblem(ctx context.Context, err error) (problem, bo
 	case errors.Is(err, translation.ErrUnsupportedLanguage):
 		return s.problem(ctx, http.StatusUnprocessableEntity, ProblemTypeTranslationUnsupportedLanguage, l.ServerErrorsTranslationUnsupportedLanguage(), ""), true
 	case errors.Is(err, translation.ErrLimitReached):
-		return s.problem(ctx, http.StatusTooManyRequests, ProblemTypeTranslationLimit, l.ServerErrorsTranslationLimit(), ""), true
+		p := s.problem(ctx, http.StatusTooManyRequests, ProblemTypeTranslationLimit, l.ServerErrorsTranslationLimit(), "")
+		wait := untilNextMonth(time.Now())
+		p.Headers.RetryAfter = &wait
+		return p, true
 	case errors.Is(err, translation.ErrFailed):
 		return s.problem(ctx, http.StatusServiceUnavailable, ProblemTypeTranslationFailed, l.ServerErrorsTranslationFailed(), ""), true
 	}
 	return problem{}, false
+}
+
+// untilNextMonth returns the seconds from now until the next month in UTC, when the monthly
+// limits of translation start again: the Retry-After of the translation-limit 429.
+func untilNextMonth(now time.Time) int {
+	now = now.UTC()
+	next := time.Date(now.Year(), now.Month()+1, 1, 0, 0, 0, 0, time.UTC)
+	return seconds(next.Sub(now))
 }
 
 func newStatusTranslation(t translation.Translation) StatusTranslation {

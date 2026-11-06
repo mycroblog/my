@@ -295,7 +295,7 @@ type FullTextSearch interface {
 // instanceFullTextSearch is the item of GET /instance that tells clients whether to show an entry
 // to the full-text search: not available with search = none.
 func (s *Server) instanceFullTextSearch(ctx context.Context) (InstanceFullTextSearch, error) {
-	out := InstanceFullTextSearch{Visibilities: []InstanceFullTextSearchVisibilities{}}
+	out := InstanceFullTextSearch{Visibilities: []Visibility{}}
 	if s.o.FullTextSearch == nil {
 		return out, nil
 	}
@@ -305,7 +305,7 @@ func (s *Server) instanceFullTextSearch(ctx context.Context) (InstanceFullTextSe
 	}
 	out.Available = true
 	for _, v := range visibilities {
-		out.Visibilities = append(out.Visibilities, InstanceFullTextSearchVisibilities(v))
+		out.Visibilities = append(out.Visibilities, Visibility(v))
 	}
 	return out, nil
 }

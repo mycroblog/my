@@ -2871,7 +2871,8 @@ export interface paths {
          *     is enabled, or none is allowed its visibility. A 422
          *     `/api/v1/problems/translation-unsupported-language` when the providers do not translate the
          *     language, and a 422 without a type for a `target_language` that is not a language tag. A 429
-         *     `/api/v1/problems/translation-limit` over a monthly limit, until the next month in UTC. A 503
+         *     `/api/v1/problems/translation-limit` over a monthly limit, until the next month in UTC, with
+         *     `Retry-After` the seconds until then. A 503
          *     `/api/v1/problems/translation-failed` when no provider returned a usable translation, which
          *     may pass.
          */
@@ -4877,9 +4878,10 @@ export interface paths {
         /**
          * Cancel a decision
          * @description Records the cancellation as its own event and in the audit log, and undoes what the hook
-         *     can: what happens depends on the verdict. An unknown ID is a 404. A decision that had no
-         *     effect, that is already cancelled, or a `reject` of `local.status`, which goes through its
-         *     appeal, is a 409. Needs the `manage_reports` permission.
+         *     can: what happens depends on the verdict. Cancelling a cancelled decision again changes
+         *     nothing and answers the decision. An unknown ID is a 404. A decision that had no effect, or
+         *     a `reject` of `local.status`, which goes through its appeal, is a 409
+         *     `/api/v1/problems/hook-decision-not-overridable`. Needs the `manage_reports` permission.
          */
         post: operations["overrideHookDecision"];
         delete?: never;
@@ -5256,12 +5258,14 @@ export interface paths {
         /**
          * Forward a report to the target's server
          * @description Sends the report to the server of its remote target as a `Flag` of the instance actor,
-         *     with the posts it points at and its comment, and nothing of the reporter. Works on an
-         *     open or a resolved report that `forwardable` allows: one filed on this server (by a
-         *     person or by an automated review) about a remote account, of no voice chat room. A
-         *     report forwarded already, when it was filed or later, changes nothing. A report that
-         *     cannot be forwarded is a 409, an unknown ID a 404. Needs the `manage_reports`
-         *     permission.
+         *     with the account and the posts it points at, and `comment` as its text. Nothing of the
+         *     reporter is sent: not their account, and not their comment, nor the note of an automated
+         *     review that filed it. Works on an open or a resolved report that `forwardable` allows:
+         *     one filed on this server (by a person or by an automated review) about a remote account,
+         *     of no voice chat room. A report forwarded already, when it was filed or later, changes
+         *     nothing, whatever `comment` says. A report that cannot be forwarded is a 409
+         *     `/api/v1/problems/report-not-forwardable`, an unknown ID a 404, and a `comment` that is too
+         *     long or contains U+0000 a 422 naming it. Needs the `manage_reports` permission.
          */
         post: operations["forwardReport"];
         delete?: never;
@@ -6817,7 +6821,9 @@ export interface paths {
          *     each change is kept as a revision and audited (`setting_changed`). Setting the current
          *     value again still records a revision, so clients send only the settings they change.
          *     The changes take effect on the next request. An unknown key, or a value its key
-         *     rejects, is a 422 naming the key, and nothing is changed. Needs the `manage_settings`
+         *     rejects, is a 422 naming the key, and nothing is changed. A value can also depend on the
+         *     current one: the mode of a decision hook (`hook_*_mode`) goes from `off` to `enforce` only
+         *     through `observe`, so `enforce` while it is `off` is a 422. Needs the `manage_settings`
          *     permission.
          */
         patch: operations["updateInstanceSettings"];
@@ -9760,13 +9766,14 @@ export interface components {
         };
         /**
          * @description The decision hook that filed the report; omitted for a report that a person or another server
-         *     filed. Such a report has the instance actor as its reporter, is not forwarded, and nobody is
-         *     notified when it is resolved.
+         *     filed. Such a report has the instance actor as its reporter, is not forwarded when it is
+         *     filed (a moderator may forward it later, without the plugin's note), and nobody is notified
+         *     when it is resolved.
          */
         AdminReportHookOrigin: {
             hook: components["schemas"]["HookName"];
             /** @description The decision that filed the report, which can be gone after its retention. */
-            decision_id: string;
+            decision_id: components["schemas"]["Id"];
             reason?: components["schemas"]["HookReason"];
         };
         /** @description An account removed from a voice chat room, who may not join it again. */
@@ -9980,12 +9987,12 @@ export interface components {
         };
         /** @description What a decision hook answered about one subject. It holds no text of a post. */
         AdminHookDecision: {
-            id: string;
+            id: components["schemas"]["Id"];
             hook: components["schemas"]["HookName"];
             /** @description What identifies the subject for the hook, such as the URI of a received activity. */
             subject_key: string;
             /** @description The account the subject belongs to; absent when there is none. */
-            account_id?: string;
+            account_id?: components["schemas"]["Id"];
             mode: components["schemas"]["HookDecisionMode"];
             outcome: components["schemas"]["HookOutcome"];
             reason?: components["schemas"]["HookReason"];
@@ -10025,10 +10032,10 @@ export interface components {
          *     Deciding it never calls the plugin.
          */
         AdminHookAppeal: {
-            id: string;
+            id: components["schemas"]["Id"];
             decision: components["schemas"]["AdminHookDecision"];
             /** @description The author. */
-            account_id: string;
+            account_id: components["schemas"]["Id"];
             /** @description The text of the post the author tried to post, as plain text. */
             status_text: string;
             /** @description What the author adds for the moderators, as plain text; absent when there is none. */
@@ -10063,9 +10070,9 @@ export interface components {
         HookAppealState: "pending" | "upheld" | "overturned";
         /** @description The user's appeal of a post that the automated review refused. */
         OwnHookAppeal: {
-            id: string;
+            id: components["schemas"]["Id"];
             /** @description The decision appealed. */
-            hook_decision_id: string;
+            hook_decision_id: components["schemas"]["Id"];
             state: components["schemas"]["HookAppealState"];
             /** Format: date-time */
             submitted_at: string;
@@ -10079,7 +10086,7 @@ export interface components {
          */
         StatusRejectedProblem: components["schemas"]["Problem"] & {
             /** @description The decision to appeal. */
-            hook_decision_id?: string;
+            hook_decision_id?: components["schemas"]["Id"];
             /**
              * Format: date-time
              * @description The last moment the author can appeal the decision.
@@ -11920,6 +11927,15 @@ export interface components {
              */
             notify?: boolean;
         };
+        /** @description What a moderator sends with a report forwarded to the target's server. */
+        ForwardReportRequest: {
+            /**
+             * @description Text for the moderators of the target's server, as plain text, up to 1,000 characters:
+             *     the `content` of the `Flag`. Omitted or empty sends none. The reporter's comment is never
+             *     sent by a forward after filing.
+             */
+            comment?: string;
+        };
         /**
          * Format: uuid
          * @description The ID of a resource, a UUIDv7 in its canonical string form.
@@ -12372,8 +12388,11 @@ export interface components {
         InstanceFullTextSearch: {
             /** @description Whether the server has a search engine, so that statuses can be searched. */
             available: boolean;
-            /** @description The visibilities of the statuses that the search covers; empty while it is not available. */
-            visibilities: ("public" | "local")[];
+            /**
+             * @description The visibilities of the statuses that the search covers, only `public` and `local`; empty
+             *     while it is not available.
+             */
+            visibilities: components["schemas"]["Visibility"][];
         };
         /**
          * @description The key of an instance setting. New keys may be
@@ -13831,8 +13850,10 @@ export interface components {
          *     - `/api/v1/problems/email-already-verified` (409): the primary email address is already
          *       confirmed, so no confirmation mail is sent.
          *     - `/api/v1/problems/hook-decision-not-overridable` (409): the decision of a decision hook
-         *       had no effect, is already cancelled, or is a `reject` of `local.status`, which goes through
-         *       its appeal.
+         *       had no effect, or is a `reject` of `local.status`, which goes through its appeal.
+         *     - `/api/v1/problems/report-not-forwardable` (409): the report cannot be forwarded to the
+         *       target's server: it came from another server, is about a local account or a voice chat
+         *       room, or its target is gone.
          *     - `/api/v1/problems/status-rejected` (422): the server's automated review refused the post
          *       and nothing was posted. The problem carries `hook_decision_id` and `appeal_deadline`; the
          *       user may appeal (`POST /hook_decisions/{id}/appeal`).
@@ -15862,8 +15883,8 @@ export interface components {
                  */
                 "WWW-Authenticate"?: string;
                 /**
-                 * @description The seconds to wait before retrying, on a 429 and on a 503 of the streaming
-                 *     endpoint.
+                 * @description The seconds to wait before retrying, on a 429 (for `translation-limit`, until the next
+                 *     month in UTC) and on a 503 of the streaming endpoint.
                  */
                 "Retry-After"?: number;
                 [name: string]: unknown;
@@ -16016,6 +16037,8 @@ export interface components {
         ErrorGroupId: components["schemas"]["Id"];
         /** @description The ID of the domain action. */
         DomainActionId: components["schemas"]["Id"];
+        /** @description The ID of the decision. */
+        HookDecisionId: components["schemas"]["Id"];
         /**
          * @description A key the client chooses per new status; a retry with the same key returns the status
          *     posted with it instead of posting again. A key longer than 256 characters, or one
@@ -18643,8 +18666,8 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description The ID of the decision, `hook_decision_id` of the refusal. */
-                id: components["schemas"]["Id"];
+                /** @description The ID of the decision. */
+                id: components["parameters"]["HookDecisionId"];
             };
             cookie?: never;
         };
@@ -21446,7 +21469,7 @@ export interface operations {
             header?: never;
             path: {
                 /** @description The ID of the decision. */
-                id: string;
+                id: components["parameters"]["HookDecisionId"];
             };
             cookie?: never;
         };
@@ -21455,6 +21478,7 @@ export interface operations {
             /** @description The decision with its cancellation. */
             200: {
                 headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -21467,8 +21491,8 @@ export interface operations {
     listHookAppeals: {
         parameters: {
             query?: {
-                /** @description Keep the appeals that no moderator has decided. */
-                pending?: boolean;
+                /** @description Keep only the appeals in this state; omitted keeps every state. */
+                state?: components["schemas"]["HookAppealState"];
                 /** @description The `next_cursor` of the previous page; omitted for the first page. */
                 cursor?: components["parameters"]["Cursor"];
                 /** @description The maximum number of items in the page. */
@@ -21801,7 +21825,11 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["ForwardReportRequest"];
+            };
+        };
         responses: {
             200: components["responses"]["AdminReportDetail"];
             default: components["responses"]["Problem"];

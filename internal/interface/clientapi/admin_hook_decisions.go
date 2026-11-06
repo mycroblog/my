@@ -211,7 +211,7 @@ func (s *Server) OverrideHookDecision(ctx context.Context, req OverrideHookDecis
 	switch {
 	case errors.Is(err, apphook.ErrNotFound):
 		return OverrideHookDecisiondefaultApplicationProblemPlusJSONResponse(s.notFoundResponse(ctx)), nil
-	case errors.Is(err, apphook.ErrNotOverridable), errors.Is(err, apphook.ErrAlreadyOverridden):
+	case errors.Is(err, apphook.ErrNotOverridable):
 		return OverrideHookDecisiondefaultApplicationProblemPlusJSONResponse(s.problem(ctx, http.StatusConflict, ProblemTypeHookDecisionNotOverridable,
 			s.Localizer(ctx).ServerErrorsHookDecisionNotOverridable(), "")), nil
 	case err != nil:
@@ -221,5 +221,8 @@ func (s *Server) OverrideHookDecision(ctx context.Context, req OverrideHookDecis
 	if err := s.restorableUntil(ctx, record, &out); err != nil {
 		return nil, err
 	}
-	return OverrideHookDecision200JSONResponse(out), nil
+	cache := cacheNoStore
+	return OverrideHookDecision200JSONResponse{
+		Body: out, Headers: OverrideHookDecision200ResponseHeaders{CacheControl: &cache},
+	}, nil
 }

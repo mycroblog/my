@@ -149,11 +149,11 @@ ON CONFLICT (hook_decision_id) DO NOTHING;
 
 -- InsertReportForward inserts nothing when the report is forwarded already.
 -- name: InsertReportForward :execrows
-INSERT INTO report_forwards (id, report_id, forwarded_by_user_id, forwarded_at) VALUES ($1, $2, $3, $4)
+INSERT INTO report_forwards (id, report_id, comment, forwarded_by_user_id, forwarded_at) VALUES ($1, $2, $3, $4, $5)
 ON CONFLICT (report_id) DO NOTHING;
 
 -- name: GetReportForward :many
-SELECT id, report_id, forwarded_by_user_id, forwarded_at FROM report_forwards WHERE report_id = $1;
+SELECT id, report_id, comment, forwarded_by_user_id, forwarded_at FROM report_forwards WHERE report_id = $1;
 
 -- name: GetReportHookOrigin :many
 SELECT hook_decision_id, hook, reason_code FROM report_hook_origins WHERE report_id = $1;

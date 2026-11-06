@@ -295,7 +295,7 @@ func (r *HookRepository) AppealOfDecision(ctx context.Context, decisionID string
 // ListAppeals implements apphook.Repository.
 func (r *HookRepository) ListAppeals(ctx context.Context, q apphook.AppealQuery) ([]hook.AppealRecord, error) {
 	rows, err := r.db.reader().ListHookDecisionAppeals(ctx, postgresgen.ListHookDecisionAppealsParams{
-		Before: toNullString(q.Before), Pending: q.Pending, RowLimit: int32(q.Limit), //nolint:gosec // a page's size
+		Before: toNullString(q.Before), Pending: q.Pending, Outcome: string(q.Outcome), RowLimit: int32(q.Limit), //nolint:gosec // a page's size
 	})
 	if err != nil {
 		return nil, wrap(err, "list hook decision appeals")

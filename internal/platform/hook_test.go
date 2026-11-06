@@ -126,8 +126,11 @@ func TestDecisionHookThroughTheServer(t *testing.T) {
 		overridden.OverriddenAt == nil || overridden.Overridable {
 		t.Fatalf("override = %d, %+v", res.StatusCode, overridden)
 	}
-	if res := c.do("carol", http.MethodPost, "/admin/hook_decisions/"+enforced.DecisionID+"/override", nil, nil); res.StatusCode != http.StatusConflict {
-		t.Errorf("a second override = %d, want 409", res.StatusCode)
+	// A second override changes nothing and answers the decision as it is.
+	var again clientapi.AdminHookDecision
+	if res := c.do("carol", http.MethodPost, "/admin/hook_decisions/"+enforced.DecisionID+"/override", nil, &again); res.StatusCode != http.StatusOK ||
+		again.OverriddenAt == nil || !again.OverriddenAt.Equal(*overridden.OverriddenAt) || res.Header.Get("Cache-Control") != "no-store" {
+		t.Errorf("a second override = %d %q, %+v", res.StatusCode, res.Header.Get("Cache-Control"), again)
 	}
 	if res := c.do("carol", http.MethodPost, "/admin/hook_decisions/"+c.ids["carol"]+"/override", nil, nil); res.StatusCode != http.StatusNotFound {
 		t.Errorf("override of an unknown decision = %d, want 404", res.StatusCode)

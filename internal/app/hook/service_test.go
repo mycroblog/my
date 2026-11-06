@@ -494,8 +494,12 @@ func TestOverrideIsItsOwnEventAndRunsTheEffects(t *testing.T) {
 	if again := h.decide(t, "a"); again.Effect != hook.Allow || len(h.plugin.Requests()) != 1 {
 		t.Errorf("effect %s after %d calls", again.Effect, len(h.plugin.Requests()))
 	}
-	if _, err := h.s.Override(t.Context(), r.DecisionID, "moderator"); !errors.Is(err, apphook.ErrAlreadyOverridden) {
-		t.Errorf("a second override: %v", err)
+	// A second override changes nothing and answers the decision with its cancellation.
+	if again, err := h.s.Override(t.Context(), r.DecisionID, "other"); err != nil || again.Override == nil || again.Override.ByUserID != "moderator" {
+		t.Errorf("a second override = %+v, %v", again.Override, err)
+	}
+	if len(h.mem.events) != 1 {
+		t.Errorf("events after a second override %+v", h.mem.events)
 	}
 	if _, err := h.s.Override(t.Context(), "none", ""); !errors.Is(err, apphook.ErrNotFound) {
 		t.Errorf("an unknown decision: %v", err)

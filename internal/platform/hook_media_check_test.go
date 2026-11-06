@@ -240,7 +240,7 @@ func TestMediaCheckMarkAndModerationMarkOnOnePost(t *testing.T) {
 	marks := func(statusID string) (byHook, byAction int64) {
 		t.Helper()
 		where := "SELECT COUNT(*) FROM status_sensitivity_overrides WHERE status_id = '" + statusID + "' AND "
-		return h.count(where + "source_hook_decision_id IS NOT NULL"), h.count(where + "source_action_id IS NOT NULL")
+		return h.count(where + "source_kind = 'hook_decision'"), h.count(where + "source_kind = 'action'")
 	}
 	verify := func() {
 		t.Helper()
