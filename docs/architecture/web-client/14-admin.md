@@ -151,7 +151,7 @@ API の経路はどちらも `/admin/*` で（[client-api.md](../client-api.md) 
   - **内訳**: 今の期間の内訳は、1 つの通貨のときは事業者ごとに合わせた `BreakdownBar`（大きい順に 3 つと「その他」。作業「何にいちばんかかっているか」）、通貨が 2 つ以上のときは事業者・区分・額の一覧にする。
 - **サポーター**（`/admin/supporters`、`manage_supporters`、FR-910〜FR-912、[ADR-0072](../../adr/0072-supporter-plans-and-roles.md)、[画面の要件](screens/admin-supporters.md)）: 「課金」「決済の事業者」「プラン」「廃止したプラン」「加入者」「サポーターの一覧」の区画（`h2` の `section`）。
   「プラン」は一覧と追加の部品（`ListSection`）で、見出しの隣に件数、見出しの行の終わりに主な操作の「プランを作成する」を置く。
-  - **課金**（`GET`・`PUT /admin/supporter_program`）: 有効か、有効にしたときの事業者と設定の事業者、続いている加入の数、警告（事業者がない・メールを送らない・事業者が違う・特商法の表記がない。表記の警告は `/admin/documents` へリンクする）。
+  - **課金**（`GET`・`PUT /admin/supporter_program`）: 有効か、有効にしたときの事業者と設定の事業者、続いている加入の数、警告（事業者がない・メールを送らない・事業者が違う・特商法の表記がない。表記の警告は `/admin/documents/commerce-disclosure` へリンクする）。
     有効と無効の切り替えは `can_enable` が偽のとき有効にできない。サーバーの拒否（409 `supporters-unavailable`・`live-subscriptions`）はその `detail` を区画の中（`role="alert"`）に出す。
   - **決済の事業者**（`GET /admin/payment_status`、[ADR-0074](../../adr/0074-payment-provider-port.md) §4）: 課金の `configured_provider` があるときだけ出す（ないとき API は 404）。事業者・モード（テストは請求が起きないことを添える）・レポートのタイムゾーン・最後に webhook を受けた時刻（記録がなければ 45 日以内にないこと）・最後の照合の時刻と結果・要求の数・読み直した加入と直した加入の数の説明リスト。
     最後の照合の失敗の種類（`error_kind`）ごとに直し方を `client*` のメッセージで出し、`warnings`（`no_webhook`・`reconciliation_corrected`）は webhook の設定の誤りとして確かめることを警告で出す。
@@ -243,21 +243,28 @@ API の経路はどちらも `/admin/*` で（[client-api.md](../client-api.md) 
   - **異議申し立てのページ**（`/moderation/hook-decisions/appeals/{id}`、`GET /admin/hook_appeals/{id}`、[画面の要件](screens/moderation-hook-appeal.md)）: 申し立て（状態・作者とアカウントの管理画面へのリンク・日時・作者が送った本文とコメント（平文で `dir="auto"`））、審査の判定（判定のページと同じ事実、作者を除く。判定のページへのリンク）、モデレーターの審査の区画を `h2` の `Section` で並べる。
     待っている異議は「維持する」「撤回する」を `ConfirmDialog` で確かめて送り（撤回は判定を取り消してこの作者をフックから外すので `danger`）、異議・一覧・判定・監査ログを読み直してから、審査の区画の見出しにフォーカスを移して結果を区画の `StatusMessage` に出す。ほかのモデレーターが先に決めていた（409 `appeal-decided`）ときは読み直してそう伝える。
     `admin_hook_appeal` の通知と Web Push はこのページへ行く。
-- **サーバーの設定**（`/admin/settings`、`manage_settings`、FR-705、[画面の要件](screens/admin-settings.md)）: 「名前」「説明」「連絡先とサムネイル」「アイコンとロゴ」の区画と、設定のフォーム（「登録」「言語」「タイムライン」「投稿」「連合」「制限・凍結したサーバー」「運営の費用」「収入」「サポーターの一覧」「検索エンジンと AI」、サーバーに全文検索があるとき（`usePostSearchAvailable`）だけの「投稿の検索」、サーバーが通話を出しているとき（`useVoiceAvailable`）だけの「通話」の区画と保存のボタン）を `h2` の `section` で並べる。
-  「通話」は、ルームを開ける人（`voice_room_starters`、`RadioGroup`）、ログインしていない人への要約（`voice_public_summary`、チェックボックス）、参加者の記録を残す日数（`voice_participants_retention_days`、`inputMode="numeric"` の `TextField`。範囲は `GET /admin/settings` の `minimum`・`maximum`）を置く（[ADR-0100](../../adr/0100-voice-chat-rooms.md) §2・§9・§13）。範囲の外の日数は欄のエラーにして、フォームを送らない。
+- **サーバーの設定**（`/admin/settings`、`manage_settings`、FR-705）: 話題ごとに 7 つのページに分け（画面の分け方）、`h1` の下の `LocalNav`（「サーバーの設定のページ」）でつなぐ。管理のメニューは「サーバーの設定」の 1 項目のまま。
+  各ページは 1 つのフォームと 1 つの保存のボタンを持ち（アイコンとロゴは 3 つの絵がそれぞれのフォーム）、自分の設定だけを送る（`PATCH /admin/settings` は送ったキーだけを変える）。保存のボタンは `FormActionBar` に置き、画面より長いときのためにバーを画面の下に固定する（`sticky`）。
   管理者が書く値（名前・説明・画像の説明）は、どれも 1 つの入力欄で、どのロケールの閲覧者にも同じ値を出す（ほかの言語の閲覧者は機械翻訳などで読む）。欄の名前と説明は閲覧者の言語に翻訳する。
-  「名前」の区画に、名前の `TextField` を 1 つ置く。
-  説明に、名前がどの言語でも同じであること、名前がドメインの代わりに出る場所と、名前がないときに何が出るか、ハンドルとリンクはドメインのままであることを書く（[名前とドメイン](../../operations/instance-settings.md#name-and-domain)）。
-  101 文字以上と空白だけの名前はフォームの中で無効にし、送らない。「保存する」は名前を変えたときだけ `PUT /admin/instance_texts/name` で送り（空は消す）、規約とポリシーと同じく `GET /admin/instance_texts`・`GET /instance`・監査ログに無効化の印を付け、表示中の `GET /instance` を取り直してから、結果をフォームの `FormActionBar`（保存のボタンの横）に出す。
-  外枠の名前（「サーバーの名前」）はこの取り直しで変わる。変えていなければ何も送らずにその旨を出す。失敗も `FormActionBar`（`role="alert"`）に出し、入力を残す（E2）。
-  - **説明**: 短い説明（500 文字）と説明（20,000 文字）の `TextArea`（文字数の表示付き）を 1 つずつ置く。上限を超えた欄があれば送らず、
-    「説明を保存する」は変えたキーだけを `PUT /admin/instance_texts/{key}` で送り、名前と同じく取り直してからフォームの `FormActionBar` に出す。失敗も `FormActionBar`（`role="alert"`）に出し、入力を残す。
-  - **連絡先とサムネイル**: 連絡先のアカウント（`TextField`、このサーバーのユーザー名。前に付けた `@` は送らない）、連絡先のメールアドレス（`type="email"` の `TextField`。ブラウザの制約検証で確かめる）、
-    サムネイル（今の画像か選んだ画像のプレビュー、`FileTrigger` の「画像を選ぶ」と「画像を外す」）と、画像の説明（`TextArea`、1,500 文字）を 1 つのフォームに置く。
+  運営の費用・収入・サポーターの一覧の公開範囲は、それを出す費用の画面とサポーターの画面に置く。
+  - 全般（`/admin/settings`、[画面の要件](screens/admin-settings.md)）: 「名前」「説明」「連絡先とサムネイル」の区画。
+  - アイコンとロゴ（`/admin/settings/branding`、[画面の要件](screens/admin-settings-branding.md)）: 「アイコンとロゴ」の区画。
+  - 登録（`/admin/settings/registration`、[画面の要件](screens/admin-settings-registration.md)）: 「登録」「利用者の招待」「アプリ」の区画。
+  - コンテンツ（`/admin/settings/content`、[画面の要件](screens/admin-settings-content.md)）: 「言語」「タイムライン」「投稿」「トップページ」「おすすめのアカウント」の区画。
+  - 連合（`/admin/settings/federation`、[画面の要件](screens/admin-settings-federation.md)）: 「連合」「制限・凍結したサーバー」「外部の審査」の区画。
+  - 検索とクローラー（`/admin/settings/discovery`、[画面の要件](screens/admin-settings-discovery.md)）: 「検索エンジンと AI」と、サーバーに全文検索があるとき（`usePostSearchAvailable`）だけの「投稿の検索」の区画。
+  - 通話（`/admin/settings/voice`、[画面の要件](screens/admin-settings-voice.md)）: 「通話」の区画。サーバーが通話を出しているとき（`useVoiceAvailable`）だけ `LocalNav` に出し、出していなければ URL で開いてもフォームの代わりにその旨を出す。
+  - **全般**: 「名前」の区画に、名前の `TextField` を 1 つ置く。
+    説明に、名前がどの言語でも同じであること、名前がドメインの代わりに出る場所と、名前がないときに何が出るか、ハンドルとリンクはドメインのままであることを書く（[名前とドメイン](../../operations/instance-settings.md#name-and-domain)）。
+    101 文字以上と空白だけの名前はフォームの中で無効にし、送らない。
+    「説明」の区画に、短い説明（500 文字）と説明（20,000 文字）の `TextArea`（文字数の表示付き）を 1 つずつ置く。上限を超えた欄があれば送らない。
+    「連絡先とサムネイル」の区画に、連絡先のアカウント（`TextField`、このサーバーのユーザー名。前に付けた `@` は送らない）、連絡先のメールアドレス（`type="email"` の `TextField`。ブラウザの制約検証で確かめる）、
+    サムネイル（`h3`。今の画像か選んだ画像のプレビュー、`FileTrigger` の「画像を選ぶ」と「画像を外す」）と、画像の説明（`TextArea`、1,500 文字）を置く。
     画像は選んだとたんに `POST /media`（`purpose=attachment`）で送り、処理が終わるまで `GET /media/{id}` をポーリングする。失敗は画像のボタンの下（`role="alert"`）に出す。
-    「連絡先とサムネイルを保存する」は、変えた設定（`contact_account`・`contact_email`・`thumbnail`）を `PATCH /admin/settings` でまとめて送り、続けて画像の説明を変えたときは `PUT /admin/instance_texts/thumbnail_alt` で送る。
-    成功したら設定のキャッシュを応答で置き換え、`GET /instance`・`GET /admin/instance_texts`・監査ログを取り直してから、フォームの `FormActionBar` に出す。変えたものがなければ何も送らずにその旨を出し、失敗も `FormActionBar`（`role="alert"`）に出して入力を残す（E2）。
-  - **アイコンとロゴ**（[ADR-0059](../../adr/0059-design-tokens-and-instance-theme.md)、`BrandSettings`）: アイコン・ロゴ・暗い背景のロゴを、それぞれ `h3` の見出しを持つフォームにする。
+    3 つの区画は 1 つのフォームで、「保存する」は変えた設定（`contact_account`・`contact_email`・`thumbnail`）を `PATCH /admin/settings` でまとめて送り、続けて変えた文（名前・短い説明・説明・画像の説明）を `PUT /admin/instance_texts/{key}` で送る（名前を空にすると消す）。
+    成功したら設定のキャッシュを応答で置き換え、規約とポリシーと同じく `GET /admin/instance_texts`・`GET /instance`・監査ログに無効化の印を付け、表示中の `GET /instance` を取り直してから、結果を `FormActionBar`（保存のボタンの横）に出す。
+    外枠の名前（「サーバーの名前」）はこの取り直しで変わる。変えたものがなければ何も送らずにその旨を出し、失敗も `FormActionBar`（`role="alert"`）に出して入力を残す（文の一部が保存された後に失敗したときは、保存されたものと比べ直して残りを送れるようにする。E2）。
+  - **アイコンとロゴ**（[ADR-0059](../../adr/0059-design-tokens-and-instance-theme.md)、`BrandSettings`）: アイコン・ロゴ・暗い背景のロゴを、それぞれ `h3` の見出しを持つフォームにする。3 つの絵は別のものなので、フォームとその保存のボタンを分けたままにする。
     今の絵（`GET /admin/instance/brand` の `svg_url` の `<img>`）か「my の組み込みのものを使っています」を出し、`FileTrigger` の「SVG のファイルを選ぶ」で選んだとたんに
     `POST /admin/instance/brand/sanitize` で確かめる（256 KB を超えるファイルは送らずに欄のエラーにする）。応答のサニタイズした SVG を `blob:` の URL の `<img>` で読み、応答の `renditions` の各版を `<canvas>` に描いて PNG にする
     （`hooks/brandRenditions.ts`。アイコンの不透明な版は背景の色で塗り、`maskable-512` は中央 80% に、`preview-1200x630` はロゴを幅 80%・高さ 50% の中に比を保って中央に置く）。
@@ -266,12 +273,15 @@ API の経路はどちらも `/admin/*` で（[client-api.md](../client-api.md) 
     「…を保存する」は SVG と全部の版を `PUT /admin/instance/brand/{kind}` でまとめて送り、「組み込みの…に戻す」（保存済みのときだけ）は `DELETE` で消す。
     どちらも `GET /admin/instance/brand` のキャッシュを置き換え、`GET /instance` と監査ログを取り直してから、結果をボタンの横（`FormActionBar`）に出す。
     サーバーが拒んだ理由（422 `invalid-brand` の `brand_error`）は、直し方の文言にしてファイルのボタンの下（`role="alert"`、ボタンの説明）に出す。ファイルを選ばずに保存を押したときも同じ場所でファイルを求める。
-  - **設定**: `GET /admin/settings` の値で、登録モード（`RadioGroup`、各モードの説明付き）、既定の言語（`Select`。カタログのある言語と保存されている言語。新しい利用者の UI の言語の初期値）、ローカルと連合のタイムライン（`Checkbox`）、
-    すべての画像に代替テキストを必須にするか（`require_media_description`、`Checkbox`）、Authorized Fetch（`Checkbox`）、リモートのメディアの複製（`RadioGroup`）と持つ期間（`Select`。1 時間〜365 日と保存されている値）、処分したドメインの一覧と公開コメントを見られる人（`RadioGroup`、誰にも・ログインした利用者・誰にでも）、
-    （運営の費用・収入・サポーターの一覧の公開範囲は、それを出す費用の画面とサポーターの画面に置く）、
-    「トップページ」の区画にランディングページ（[screens/landing.md](screens/landing.md)）に数を出すか（`public_counts`、`Checkbox`、既定は出す）を出す。
-    1 つのフォームで、「設定を保存する」は変えた設定だけを `PATCH /admin/settings` でまとめて送る（サーバーはすべてか何も変えない）。成功したら応答で設定のキャッシュを置き換え、`GET /instance`（登録モードとタイムライン）・`GET /instance/cost_totals`・`GET /finance/cost_totals`・`GET /instance/income_totals`・`GET /finance/income_totals`・`GET /instance/supporters`・`GET /instance/overview`・監査ログを取り直してから
-    結果を `FormActionBar` に出す。フォームが画面より長いので、このバーは画面の下に固定する（`sticky`）。変えた設定がなければ何も送らずにその旨を出し、失敗も `FormActionBar`（`role="alert"`）に出して選択を残す（E2）。
+  - **方針のページ**（登録・コンテンツ・連合・検索とクローラー・通話。`PolicySettings`、`useServerPolicies(page)`）: `GET /admin/settings` の値で、登録は登録モード（`RadioGroup`、各モードの説明付き）とログインと登録を IdP だけにする設定（`Checkbox`）、利用者の招待、アプリの登録の経路、
+    コンテンツは既定の言語（`Select`。カタログのある言語と保存されている言語。新しい利用者の UI の言語の初期値）、ローカルと連合のタイムライン（`RadioGroup`）、すべての画像に代替テキストを必須にするか（`require_media_description`、`Checkbox`）、
+    ランディングページ（[screens/landing.md](screens/landing.md)）に数を出すか（「トップページ」の区画、`public_counts`、`Checkbox`、既定は出す）、おすすめのアカウント、
+    連合は Authorized Fetch（`Checkbox`）、リモートのメディアの複製（`RadioGroup`）と持つ期間（`Select`。1 時間〜365 日と保存されている値）、リンクカード、処分したドメインの一覧と公開コメントを見られる人（`RadioGroup`、誰にも・ログインした利用者・誰にでも）、外部の審査を置く。
+    どのページも、そのページの設定（`policyPages`）のうち変えたものだけを「設定を保存する」で `PATCH /admin/settings` でまとめて送る（サーバーはすべてか何も変えない）。範囲の外の数は欄のエラーにして送らない。
+    登録のページは、ログインを IdP だけにする設定をオンにするとき、連合のページは連合の向きを狭めるときに、保存の前に `alertdialog` で確かめる。
+    成功したら応答で設定のキャッシュを置き換え、`GET /instance`（登録モードとタイムライン）・`GET /instance/cost_totals`・`GET /finance/cost_totals`・`GET /instance/income_totals`・`GET /finance/income_totals`・`GET /instance/supporters`・`GET /instance/overview`・監査ログを取り直してから
+    結果を `FormActionBar` に出す。変えた設定がなければ何も送らずにその旨を出し、失敗も `FormActionBar`（`role="alert"`）に出して選択を残す（E2）。
+    「通話」は、ルームを開ける人（`voice_room_starters`、`RadioGroup`）、ログインしていない人への要約（`voice_public_summary`、チェックボックス）、参加者の記録を残す日数（`voice_participants_retention_days`、`inputMode="numeric"` の `TextField`。範囲は `GET /admin/settings` の `minimum`・`maximum`）を置く（[ADR-0100](../../adr/0100-voice-chat-rooms.md) §2・§9・§13）。範囲の外の日数は欄のエラーにして、フォームを送らない。
 - **ルール**（`/admin/rules`・`/admin/rules/new`・`/admin/rules/{id}`、`manage_rules`、FR-705、[一覧](screens/admin-rules.md)・[追加](screens/admin-rule-new.md)・[詳細](screens/admin-rule.md)）: 一覧 → 詳細で組み、並べ替えだけは順番の見える一覧に残す。
   - **一覧**（`/admin/rules`）: ルールの説明と、`/admin/rules/new` へ行く「ルールを追加する」（`ButtonLink`）。その下に一覧の見出し（`h2`）と、`ListToolbar` の絞り込み（有効・廃止。URL の `?filter=retired`、既定は有効）と `RecordTable`。
     有効なルールは `GET /admin/rules` の順に、文（ルールのページへのリンク、`dir="auto"`・`lang=""`）・順番・最後の変更・「上へ」「下へ」の 4 列。有効なルールは 100 までなので `wholeList` の 1 ページを 100 にし、動かしたルールがほかのページへ行かないようにする。
@@ -341,11 +351,13 @@ API の経路はどちらも `/admin/*` で（[client-api.md](../client-api.md) 
   - **投稿の取り直し**: 削除されていないリモートのアカウントで、閲覧者が `manage_domains` を持つときだけ出す（下の「投稿の取り直し」）。
   - **処分する**: 通報の詳細と同じ処分のフォーム（`AccountActionForm`。通報なし、理由の種類の最初は `other`）。リモートのアカウントには `force_sensitive`・`limit`・`suspend` だけを出し、知らせるかのチェックボックスを出さない。
     投稿への処分は投稿を選ぶ通報の詳細から行うので、この画面では出さず、その旨をフォームの上に書く。成功したら区画の `StatusMessage` に結果を出し、処分の履歴・アカウント・検索・通報を無効にする。削除済みのアカウントにはフォームを出さない。
-- **規約とポリシー**（`/admin/documents`、FR-705、#489）: 利用規約・プライバシーポリシー・特定商取引法に基づく表記など（`commerce_disclosure`、ADR-0072 §13）の 3 つの区画（`h2` の `section`）。文書はどのロケールでも同じ 1 つの値で、言語を選ぶ欄はない。
+- **規約とポリシー**（`/admin/documents`、FR-705、#489）: 文書ごとに 1 つのページに分け（画面の分け方）、`h1` の下の `LocalNav`（「規約とポリシーのページ」）でつなぐ。管理のメニューは「規約とポリシー」の 1 項目のまま。
+  利用規約（`/admin/documents`、[画面の要件](screens/admin-documents.md)）・プライバシーポリシー（`/admin/documents/privacy-policy`、[画面の要件](screens/admin-documents-privacy-policy.md)）・
+  特定商取引法に基づく表記など（`/admin/documents/commerce-disclosure`、`commerce_disclosure`、ADR-0072 §13、[画面の要件](screens/admin-documents-commerce-disclosure.md)）の各ページは、その文書の区画（`h2` の `section`）を 1 つ持つ。文書はどのロケールでも同じ 1 つの値で、言語を選ぶ欄はない。
   特定商取引法に基づく表記などの区画は、法的な正しさをサーバーが保証せず、運営者が自分の国の法令で確かめることを説明に書く。
-  各区画は、最後に保存した日時、公開ページへのリンク（公開しているときだけ。同じタブの `DocumentLink`）、本文（Markdown の `TextArea`、100,000 文字）と「保存する」の `form` で、文書ごとに別に保存する。
+  各区画は、最後に保存した日時、公開ページへのリンク（公開しているときだけ。同じタブの `DocumentLink`）、本文（Markdown の `TextArea`、100,000 文字）と「保存する」の `form` で、その文書だけを保存する。
   成功したら本文・`GET /instance`（リンク）・監査ログを取り直してから、監査ログに記録したことを区画の `StatusMessage` に出す。失敗はフォームの下（`role="alert"`）に出して入力を残す。保存してある本文を空にして保存すると削除になるので、`ConfirmDialog`（`danger`）で確かめる。
-  下書きは文書ごとに持つ。下書きがあるまま別の画面へ移るときは、`features/settings` の `useUnsavedChangesGuard` で確かめる（§9 の未保存の変更）。
+  下書きはページごとに持つ。下書きがあるまま別のページへ移るとき（ほかの文書のページも含む）は、`features/settings` の `useUnsavedChangesGuard` で確かめる（§9 の未保存の変更）。
 - **投稿の取り直し**（FR-407、[federation.md §6.4](../federation.md#64-投稿の取り直し)、`components/RefetchStatuses.tsx`・`hooks/useRefetch.ts`）: 保存したリモートの投稿を相手のサーバーから取り直すよう頼む。
   連合先の詳細とリモートのアカウントの管理画面は「投稿の取り直し」の区画（`h2` の `section`）に、何をするか（件数の上限と、裏で 1 分ごとに進むこと）の説明を `aria-describedby` にした「投稿を取り直す」を置く。
   押すと `POST /admin/instances/{domain}/refetch_statuses` か `POST /admin/accounts/{id}/refetch_statuses`（通報の投稿は `POST /admin/statuses/{id}/refetch`）を送り、監査ログに無効化の印を付けてから、頼んで監査ログに記録したことを区画の `StatusMessage` に出す。
@@ -400,7 +412,7 @@ API の経路はどちらも `/admin/*` で（[client-api.md](../client-api.md) 
   `features/moderation/appeals.test.tsx` は、異議申し立ての一覧とタブと URL、審査済みのタブが審査待ちだけのページを読み進めること、本文の `dir="auto"`、説明付きの撤回で処分が解除と出ることとフォーカス、説明なしの維持、キャンセルと Esc、ダイアログの中の失敗、先に逆の決定をされた申し立て、権限と 403 を検査する。
   `features/admin/brand.test.tsx` は、アイコンを確かめてプレビューと取り除いたものを出し、背景の色で描き直した全部の版と保存して戻すこと、ロゴの版と背景のないこと、拒まれたファイルの理由がボタンの下に出ること、ファイルなしの保存、保存済みの絵の表示を、
   `features/admin/hooks/brandRenditions.test.ts` は、各版の大きさ・不透明・安全域・ロゴの配置と描く順番を、`routes/-layout/brand.test.tsx` は、ロゴとアイコンが外枠とランディングページに出ることと、ないときの組み込みの絵を検査する。
-  `features/admin/settings.test.tsx` は、名前の保存と外枠の名前、説明の保存、連絡先とサムネイル（画像のアップロードと説明）の保存とサムネイルを外すこと、設定の表示と変えた設定だけをまとめて送ることと `GET /instance` の取り直し、既定の言語の選択、保存の失敗、権限を、
+  `features/admin/settings.test.tsx` は、全般のページの名前の保存と外枠の名前、説明の保存、連絡先とサムネイル（画像のアップロードと説明）の保存とサムネイルを外すこと、ページの間の `LocalNav` と今のページ、方針のページごとの設定の表示とそのページの変えた設定だけをまとめて送ることと `GET /instance` の取り直し、既定の言語の選択、保存の失敗、通話を出していないサーバーの通話のページ、権限を、
   `features/admin/rules.test.tsx` は、有効なルールの表と詳細へのリンク、URL の絞り込みでの廃止したルール、下へ動かしたルールの行見出しへのフォーカス、追加のページでの追加と入力の検査と詳細への移動、詳細のページでの 1 つの保存の編集、確認を経た廃止と見出しへのフォーカス、権限を、
   `features/admin/roles.test.tsx` は、ロールの表と区分ごとの権限の数と詳細へのリンク、詳細の区分ごとの権限、組み込みのロールと閲覧者より上のロールの操作の出し分け、閲覧者のロールにない権限を選べないこと、作成のページでの作成と入力の検査とキーの拒否と詳細への移動、詳細のページでの 1 つの保存の変更と権限の拒否、バッジの設定と見本と空の名前で外すこととその拒否、確認を経た削除と持っている人がいるロールの拒否と一覧への移動、権限を、
   `features/admin/linkCardDomains.test.tsx` は、ルールの一覧のモードとメモ、空の一覧、読み込みの失敗の区画の中での表示と再試行、設定、URL を送らないネイティブの検証、拒否の理由のドメインの欄への表示、行でのモードの変更、確認を経た削除、権限を検査する。
@@ -411,7 +423,7 @@ API の経路はどちらも `/admin/*` で（[client-api.md](../client-api.md) 
   `features/admin/webhooks.test.tsx` は、webhook の設定と一度だけの秘密、足りない権限の拒否をイベントの項目に出すこと、サーバーが無効にした webhook の理由と失敗の回数と有効化、確認を経た秘密の作り直し、ダイアログでの編集、確認を経た削除、送信履歴の一覧ともう一度送ること、権限を検査する。
   `features/admin/loginProviders.test.tsx` は、一覧の種類・状態・ひも付けた利用者の数・コールバック URL、OpenID Connect の設定と条件の行と送る内容、GitHub と Mastodon の項目の出し分け、サーバーの拒否を項目（Issuer・シークレット）に出すこと、値のない条件を送らずに出すことと行を外したあとのフォーカス、シークレットを持たないダイアログでの編集、シークレットの更新、ひも付けた利用者の数の警告を経た無効化と有効化、警告を経た削除、権限を検査する。
   `features/moderation/invites.test.tsx` は、招待の一覧の状態と人数、既定の値と制限なしでの作成とコードとリンク、失効と見出しへのフォーカス、登録モードが `invite` でないときの説明、権限を検査する。
-  `features/admin/documents.test.tsx` は、本文、公開ページをページごと開くこと、保存と `role="status"` の結果、文書ごとの下書き、削除の確認と取り消し、保存の失敗、未保存の変更の確認、権限を検査し、
+  `features/admin/documents.test.tsx` は、文書ごとのページと `LocalNav`、本文、公開ページをページごと開くこと、保存と `role="status"` の結果、文書ごとの下書き、削除の確認と取り消し、保存の失敗、未保存の変更の確認、権限を検査し、
   `features/documents/documents.test.tsx` は、サインインの画面・設定・メニューのシートの文書へのリンクと、公開していない文書を出さないことを検査する。
   `features/moderation/roles.test.tsx` は、ロールの一覧と持っているか、確認を経た付与と剥奪・`role="status"` の結果・見出しへのフォーカス、キャンセルと Esc、閲覧者より上のロールに操作がなく理由が出ること、403 と 409（最後の管理者）の理由をダイアログの中に出すこと、読み込みの失敗と再試行、`manage_roles` のない閲覧者にロールの区画も要求もないことを検査する。
   E2E（`e2e/admin.spec.ts`、`e2e/domain-actions.spec.ts`、`e2e/audit-log.spec.ts`、`e2e/reports.spec.ts`、`e2e/accounts.spec.ts`）は、権限のある閲覧者として各画面の axe・横スクロール・ARIA スナップショット・配送の再開・再実行・`suspend` の確認のダイアログ・解除とフォーカスの移動・Mastodon の CSV のプレビューとキーボードでの行の選択とインポート・監査ログのキーボードでの絞り込みとページの読み足しの URL・キーボードで通報を開き、BAN の確認のダイアログを経て、処分で通報を解決して一覧から消えるまで・キーボードで検索からアカウントを開き、押したときだけメールアドレスと IP アドレスを出し、解除の確認のダイアログを経てフォーカスが行の見出しに移るまで・リモートのアカウントの処分の種類・確認のダイアログを経たパスワードリセットのリンクの発行と、開き直すと消えることを検査する。

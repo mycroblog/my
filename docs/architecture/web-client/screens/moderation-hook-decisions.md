@@ -7,7 +7,7 @@ paths: ["app/web/src/features/moderation/**", "app/web/src/routes/moderation.hoo
 ## 自動審査の記録（`/moderation/hook-decisions`）
 
 外部の審査（判定フック、ADR-0147）が何を止めたか、止めるはずだったか、確かめられなかったかを読み、誤った判定を取り消す画面の最初のページ。
-判定の記録には投稿の本文は出ない。1 つの判定のすべての事実は[判定のページ](moderation-hook-decision.md)に、`local.status` に拒否された投稿への作者の異議は[異議申し立てのページ](moderation-hook-appeals.md)にある。モードは[サーバーの設定](admin-settings.md)で変える。
+判定の記録には投稿の本文は出ない。1 つの判定のすべての事実は[判定のページ](moderation-hook-decision.md)に、`local.status` に拒否された投稿への作者の異議は[異議申し立てのページ](moderation-hook-appeals.md)にある。モードは[サーバーの設定の連合のページ](admin-settings-federation.md)で変える。
 
 ### 1. 使う人と頻度
 
