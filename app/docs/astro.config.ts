@@ -6,6 +6,8 @@
 import starlight from "@astrojs/starlight";
 import { defineConfig } from "astro/config";
 
+import { apiReferencePlugin, apiReferenceSidebar } from "./src/api-reference";
+
 export default defineConfig({
   site: "https://mycroblog.dev",
   // The toolbar of `astro dev` is a development aid the site does not need.
@@ -28,6 +30,8 @@ export default defineConfig({
       },
       // Starlight's own lastUpdated reads the git history of the copied files, which says nothing about the documents.
       lastUpdated: false,
+      plugins: [apiReferencePlugin],
+      sidebar: [apiReferenceSidebar],
     }),
   ],
 });
