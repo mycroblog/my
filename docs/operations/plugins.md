@@ -115,6 +115,7 @@ or `grpc` and `json` is a configuration error.
 
 The protocol's definitions are the `.proto` files under `api/plugin/` of the repository. There is one package for each
 kind of port, and they share no types; the decision hooks all share one package, `my.plugin.hook.v1`.
+[The plugin protocol](../plugins/overview.md) has the reference of every package, generated from those files.
 
 ## When a call fails
 

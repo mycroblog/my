@@ -401,6 +401,8 @@ jobs:
             run: scripts/task.sh api:plugin-lint
           - name: api:plugin-breaking
             run: scripts/task.sh api:plugin-breaking
+          - name: api:plugin-docs-test
+            run: scripts/task.sh api:plugin-docs-test
           - name: go:mod-check
             run: scripts/task.sh go:mod-check
           - name: api:spec-check

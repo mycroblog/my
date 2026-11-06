@@ -15,3 +15,7 @@ plugins:
   - local: [go, tool, -modfile=tools/go.mod, protoc-gen-connect-go]
     out: internal/adapter/plugin/gen
     opt: paths=source_relative
+  # The reference pages of docs/plugins, one per package (tools/protodoc); strategy all gives it every file at once.
+  - local: [go, run, -C, tools, ./protodoc]
+    out: docs/plugins
+    strategy: all
