@@ -500,7 +500,7 @@ The server does not alert on cost. Set a budget with alerts at the provider, whi
 - Google Cloud: a Cloud Billing budget for the project, with alert thresholds at 50%, 90%, and 100%. The same budget's notifications can feed the
   cost import ([Importing cloud usage charges](billing-import.md)).
 
-The imported charges and the month-to-date estimate appear in Administration → Costs. Failed imports are recorded there and retried by the next daily import;
+The imported charges and the month-to-date estimate appear in Administration → Costs → Billing imports. Failed imports are recorded there and retried by the next daily import;
 [`MyBillingImportFailing`](#mybillingimportfailing) tells you before the month's figures go stale.
 
 ### MyBillingImportFailing
@@ -510,13 +510,13 @@ unavailability are retried within hours, and the other failures wait for the nex
 
 Check:
 
-- Administration → Costs: the last import of the source and its error.
+- Administration → Costs → Billing imports: the last import of the source and its error.
 - `my_billing_imports_total{my_outcome="failed"}` by `error_type`, or the `WARN` log line whose `msg` is `billing import failed`, with the `source` and the
   `error_kind`. [Importing cloud usage charges](billing-import.md) lists the kinds and how to fix each one.
 
 Fix:
 
-- Fix the cause (permissions, the billing export, the request cap), then press "Import now" on the costs screen instead of waiting for the next day.
+- Fix the cause (permissions, the billing export, the request cap), then press "Import now" in Administration → Costs → Billing imports instead of waiting for the next day.
 
 Without Prometheus (Cloud Run with `metrics_exporter = none`), make a log-based alert on the `billing import failed` line instead.
 
