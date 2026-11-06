@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The documentation site (ADR-0150): Astro Starlight, built to static files in dist/ by `scripts/task.sh docs:site-build`.
 // The site is a build tool, not where the documents live: the pages under src/content/docs/ are copied there from the
-// Markdown of the repository before the build, and only the landing page (src/content/docs/index.md) is written here.
+// Markdown of the repository before the build, and only the landing page (src/content/docs/index.mdx) is written here.
 // Search is Starlight's built-in Pagefind; the site loads no analytics and no external service (ADR-0150 §7).
 import starlight from "@astrojs/starlight";
 import { defineConfig } from "astro/config";
@@ -34,6 +34,7 @@ export default defineConfig({
         Banner: "./src/components/Banner.astro",
         Footer: "./src/components/Footer.astro",
       },
+      customCss: ["./src/styles/custom.css"],
       // English only during v0, at the root of the URL space, so that translations added later keep every URL (ADR-0150 §9).
       defaultLocale: "root",
       locales: {
@@ -43,7 +44,9 @@ export default defineConfig({
       lastUpdated: false,
       // The groups and order of docs/README.md (src/sidebar.ts), with the client API reference after the guides.
       sidebar: docsSidebar({ Developers: [apiReferenceSidebar] }),
-      routeMiddleware: "./src/route-middleware.ts",
+      // The Markdown form of each page in its head (src/route-middleware.ts), and the landing page's hero buttons,
+      // which name documents by their repository path (src/routeData.ts).
+      routeMiddleware: ["./src/route-middleware.ts", "./src/routeData.ts"],
       // A broken link or #anchor between pages fails the build; the validator cannot see the generated reference.
       plugins: [starlightLinksValidator({ exclude: sitePageLinks }), apiReferencePlugin, llmsTxtPlugin],
     }),

@@ -1,0 +1,7 @@
+/* SPDX-License-Identifier: AGPL-3.0-only */
+/* The site's styles on top of Starlight's (astro.config.ts, customCss). */
+
+/* The landing page's hero tagline is two paragraphs (src/content/docs/index.mdx). */
+.hero .tagline p + p {
+  margin-block-start: 0.75rem;
+}

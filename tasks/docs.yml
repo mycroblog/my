@@ -66,6 +66,14 @@ tasks:
     cmds:
       - bun run dev
 
+  screenshots:
+    desc: Take the screenshots of the documentation site and the README (app/docs/src/assets/screenshots/*.webp) from the Showcase stories of the app/web Storybook in PLAYWRIGHT_IMAGE, light and dark (needs Docker); review and commit them
+    deps: [":web:storybook-build"]
+    env:
+      PLAYWRIGHT_IMAGE: "{{.PLAYWRIGHT_IMAGE}}"
+    cmds:
+      - scripts/docs-screenshots.sh {{.CLI_ARGS}}
+
   site-typecheck:
     desc: Type-check the configuration of the documentation site (app/docs) with tsc (web:static runs it)
     deps: [":web:install"]
