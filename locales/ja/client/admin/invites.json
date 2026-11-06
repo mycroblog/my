@@ -127,17 +127,13 @@
     "defaultMessage": "制限なし",
     "description": "Option of an invite that any number of people may use."
   },
-  "admin.invites.used": {
-    "defaultMessage": "登録した人数",
-    "description": "Term of how many people signed up with an invite."
-  },
   "admin.invites.used.limited": {
-    "defaultMessage": "{max, number} 人中 {uses, number} 人",
-    "description": "How many people signed up with an invite, and how many it allows."
+    "defaultMessage": "{max, number} 人中 {uses, number} 人が登録",
+    "description": "How many people signed up with an invite, and how many it allows, under the invite's state. {uses} is the number; {max} the limit."
   },
   "admin.invites.used.unlimited": {
-    "defaultMessage": "{uses, number} 人 (制限なし)",
-    "description": "How many people signed up with an invite without a limit. {uses} is the number."
+    "defaultMessage": "{uses, number} 人が登録 (制限なし)",
+    "description": "How many people signed up with an invite without a limit, under the invite's state. {uses} is the number."
   },
   "admin.invites.uses": {
     "defaultMessage": "{count, plural, other {# 人}}",

@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The domain actions screen through the whole app (web-client/README.md T4): an operator with manage_domains lists the
-// actions, takes new ones (a suspension only after its confirmation), and lifts them, with MSW playing the
-// admin API. The server keeps domains in IDNA A-labels; the screen shows them with their U-labels.
+// actions, opens an action's page and lifts it there, and takes new ones on the page of the form (a suspension only
+// after its confirmation), with MSW playing the admin API. The server keeps domains in IDNA A-labels; the screen
+// shows them with their U-labels.
 import { screen, waitFor, within } from "@testing-library/react";
 import type { UserEvent } from "@testing-library/user-event";
 import { delay, http, HttpResponse } from "msw";
@@ -62,6 +63,10 @@ function domainActionsServer(initial: DomainAction[]) {
       );
       return HttpResponse.json({ items });
     }),
+    http.get(`${apiBase}/admin/domain_actions/:id`, ({ params }) => {
+      const action = actions.find((item) => item.id === String(params["id"]));
+      return action === undefined ? problem(404, "about:blank", "Not Found") : HttpResponse.json(action);
+    }),
     http.post(`${apiBase}/admin/domain_actions`, async ({ request }) => {
       const body = (await request.json()) as NewAction;
       created.push(body);
@@ -95,31 +100,38 @@ async function showFilter(user: UserEvent, name: string) {
 }
 
 describe("the list of domain actions", () => {
-  test("shows the actions in effect with both forms of a domain, and all of them under the other filter", async () => {
+  test("shows the actions in effect with both forms of a domain and no comments, and all of them under the other filter", async () => {
     const api = domainActionsServer([idn, limit, lifted]);
     const { user, router } = await renderApp({ path: "/moderation/domain-actions" });
 
     expect(await screen.findByRole("heading", { level: 1, name: "Domain actions" })).toBeInTheDocument();
+    const pages = screen.getByRole("navigation", { name: "Domain action pages" });
+    expect(within(pages).getByRole("link", { name: "Actions" })).toHaveAttribute("aria-current", "page");
+    expect(within(pages).getByRole("link", { name: "Mastodon's CSV" })).toHaveAttribute(
+      "href",
+      "/moderation/domain-actions/import",
+    );
+    expect(screen.getByRole("link", { name: "New action" })).toHaveAttribute("href", "/moderation/domain-actions/new");
+    expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
     expect(
       within(await screen.findByRole("table"))
         .getAllByRole("rowheader")
         .map((header) => header.textContent),
     ).toEqual(["例え.jp (xn--r8jz45g.jp)", "spam.example"]);
+    expect(within(screen.getByRole("table")).getAllByRole("columnheader")).toHaveLength(4);
     const [row] = rows();
     if (row === undefined) throw new Error("no action is listed");
     const details = within(row);
+    expect(details.getByRole("link", { name: "例え.jp (xn--r8jz45g.jp)" })).toHaveAttribute(
+      "href",
+      `/moderation/domain-actions/${idn.id}`,
+    );
     expect(details.getByText("Suspend")).toBeInTheDocument();
     expect(details.getByText("In effect")).toBeInTheDocument();
-    expect(details.getByText(/^Oct 12, 2026/)).toBeInTheDocument();
     expect(details.getByText(/^Nov 11, 2026/)).toBeInTheDocument();
-    expect(details.getByText("Partly hidden")).toBeInTheDocument();
-    expect(details.getByText("Spam from every account.")).toBeInTheDocument();
-    expect(details.getByText("Reported 12 times.")).toBeInTheDocument();
-    expect(
-      details.getByRole("button", {
-        name: `Lift Suspend for ${isolated("例え.jp (xn--r8jz45g.jp)")}, taken ${details.getByText(/^Oct 12, 2026/).textContent}`,
-      }),
-    ).toBeInTheDocument();
+    expect(details.queryByText("Spam from every account.")).not.toBeInTheDocument();
+    expect(details.queryByText("Reported 12 times.")).not.toBeInTheDocument();
+    expect(details.queryByRole("button")).not.toBeInTheDocument();
 
     await showFilter(user, "All");
     await waitFor(() => {
@@ -128,8 +140,6 @@ describe("the list of domain actions", () => {
     const all = within(screen.getByRole("table"));
     expect(await all.findByText("Lifted")).toBeInTheDocument();
     expect(rows()).toHaveLength(3);
-    // A lifted action has no lift button.
-    expect(all.getAllByRole("button", { name: /^Lift / })).toHaveLength(2);
     expect(api.lists).toEqual(["limit=40&active=true", "limit=40"]);
   });
 
@@ -137,56 +147,61 @@ describe("the list of domain actions", () => {
     domainActionsServer([]);
     await renderApp({ path: "/moderation/domain-actions" });
 
-    expect(await screen.findByRole("heading", { level: 3, name: "No domain actions in effect" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { level: 2, name: "No domain actions in effect" })).toBeInTheDocument();
   });
+});
 
-  test("lifts an action: it leaves the actions in effect, focus moves on, and the result stays on the page", async () => {
+describe("a domain action's page", () => {
+  test("shows the action with its comments, and lifts it: focus moves to the state's heading, and the result stays", async () => {
     const api = domainActionsServer([idn, limit]);
-    const { user } = await renderApp({ path: "/moderation/domain-actions" });
+    const { user } = await renderApp({ path: `/moderation/domain-actions/${idn.id}` });
 
-    await user.click(await screen.findByRole("button", { name: /^Lift Suspend for/ }));
+    expect(
+      await screen.findByRole("heading", { level: 1, name: `Suspend for ${isolated("例え.jp (xn--r8jz45g.jp)")}` }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Back to domain actions" })).toHaveAttribute(
+      "href",
+      "/moderation/domain-actions",
+    );
+    const details = within(screen.getByRole("region", { name: "Details" }));
+    expect(details.getByText("Spam from every account.")).toBeInTheDocument();
+    expect(details.getByText("Reported 12 times.")).toBeInTheDocument();
+    expect(details.getByText("Partly hidden")).toBeInTheDocument();
+    expect(details.getByRole("link", { name: "Every action on this domain" })).toHaveAttribute(
+      "href",
+      "/moderation/domain-actions?filter=all&domain=xn--r8jz45g.jp",
+    );
+    const state = within(screen.getByRole("region", { name: "State" }));
+    expect(state.getByText(/^Oct 12, 2026/)).toBeInTheDocument();
+    expect(state.getByText(/^Nov 11, 2026/)).toBeInTheDocument();
+
+    await user.click(state.getByRole("button", { name: "Lift" }));
 
     await waitFor(() => {
-      expect(screen.queryByRole("rowheader", { name: "例え.jp (xn--r8jz45g.jp)" })).not.toBeInTheDocument();
+      expect(state.queryByRole("button", { name: "Lift" })).not.toBeInTheDocument();
     });
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: /^Lift Limit for/ })).toHaveFocus();
+      expect(state.getByRole("heading", { level: 2, name: "State" })).toHaveFocus();
     });
-    expect(screen.getAllByRole("status").map((status) => status.textContent)).toContain(
+    expect(state.getByText("Lifted")).toBeInTheDocument();
+    expect(state.getByRole("status")).toHaveTextContent(
       `Suspend for ${isolated("例え.jp (xn--r8jz45g.jp)")} is lifted.`,
     );
     expect(api.liftedIds).toEqual([idn.id]);
   });
 
-  test("a lifted action stays in the list of all of them, and focus moves to its heading", async () => {
-    domainActionsServer([limit]);
-    const { user } = await renderApp({ path: "/moderation/domain-actions?filter=all" });
-
-    await user.click(await screen.findByRole("button", { name: /^Lift Limit for/ }));
-
-    await waitFor(() => {
-      expect(screen.getByRole("rowheader", { name: "spam.example" })).toHaveFocus();
-    });
-    expect(within(screen.getByRole("table")).getByText("Lifted")).toBeInTheDocument();
-  });
-
-  // #471: a lift writes the lift into every cached list, so another filter never shows the action as it was.
-  test("after a lift, the other filter shows the action lifted at once, however slowly the lists come", async () => {
+  // #471: a lift writes the lift into every cached list, so no filter shows the action as it was.
+  test("after a lift, the lists show the action lifted at once, however slowly they come", async () => {
     domainActionsServer([idn, limit]);
-    const { user } = await renderApp({ path: "/moderation/domain-actions?filter=all" });
+    const { user, router } = await renderApp({ path: "/moderation/domain-actions?filter=all" });
     expect(
       await within(await screen.findByRole("table")).findByRole("rowheader", { name: "spam.example" }),
     ).toBeInTheDocument();
-    await showFilter(user, "In effect");
-    // The list of all actions, with lift buttons of its own, stays on screen while the list in effect loads, and the
-    // pending page replaces both when that takes longer than defaultPendingMs: lift from the list of the actions in
-    // effect, and wait until that list, not just any page, no longer has the action.
+    await user.click(screen.getByRole("link", { name: "spam.example" }));
+    const state = within(await screen.findByRole("region", { name: "State" }));
+    await user.click(state.getByRole("button", { name: "Lift" }));
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: /Show domain actions/ })).toHaveTextContent("In effect");
-    });
-    await user.click(await within(screen.getByRole("table")).findByRole("button", { name: /^Lift Limit for/ }));
-    await waitFor(() => {
-      expect(screen.queryByRole("rowheader", { name: "spam.example" })).not.toBeInTheDocument();
+      expect(state.queryByRole("button", { name: "Lift" })).not.toBeInTheDocument();
     });
     // From now on every list takes a while; the handler falls through to domainActionsServer's.
     server.use(
@@ -195,7 +210,7 @@ describe("the list of domain actions", () => {
       }),
     );
 
-    await showFilter(user, "All");
+    await router.navigate({ to: "/moderation/domain-actions", search: { filter: "all" } });
     expect(await screen.findByRole("rowheader", { name: "spam.example" })).toBeInTheDocument();
     const row = rows().find((item) => within(item).queryByRole("rowheader", { name: "spam.example" }) !== null);
     if (row === undefined) throw new Error("the lifted action is not listed");
@@ -207,20 +222,30 @@ describe("the list of domain actions", () => {
     server.use(
       http.post(`${apiBase}/admin/domain_actions/:id/lift`, () => problem(503, "about:blank", "Service Unavailable")),
     );
-    const { user } = await renderApp({ path: "/moderation/domain-actions" });
+    const { user } = await renderApp({ path: `/moderation/domain-actions/${limit.id}` });
 
-    await user.click(await screen.findByRole("button", { name: /^Lift Limit for/ }));
+    await user.click(await screen.findByRole("button", { name: "Lift" }));
 
     expect(await screen.findByText("Could not lift the action: Service Unavailable")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /^Lift Limit for/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Lift" })).toBeInTheDocument();
+  });
+
+  test("a lifted action has no lift", async () => {
+    domainActionsServer([lifted]);
+    await renderApp({ path: `/moderation/domain-actions/${lifted.id}` });
+
+    const state = within(await screen.findByRole("region", { name: "State" }));
+    expect(state.getByText("Lifted")).toBeInTheDocument();
+    expect(state.queryByRole("button")).not.toBeInTheDocument();
   });
 });
 
 describe("a new domain action", () => {
-  test("is taken on a domain in non-Latin letters, recorded in A-labels, and shown in both forms", async () => {
+  test("is taken on a domain in non-Latin letters, recorded in A-labels, and listed in both forms", async () => {
     const api = domainActionsServer([]);
-    const { user } = await renderApp({ path: "/moderation/domain-actions" });
+    const { user, router } = await renderApp({ path: "/moderation/domain-actions/new" });
 
+    expect(await screen.findByRole("heading", { level: 1, name: "New action" })).toBeInTheDocument();
     await user.type(await screen.findByRole("textbox", { name: "Domain" }), "例え.jp");
     await user.click(screen.getByRole("radio", { name: "Limit" }));
     await user.click(screen.getByRole("button", { name: /Duration/ }));
@@ -243,31 +268,25 @@ describe("a new domain action", () => {
         expires_in: 7 * 86_400,
       },
     ]);
-    expect(
-      await within(screen.getByRole("table")).findByRole("rowheader", { name: "例え.jp (xn--r8jz45g.jp)" }),
-    ).toBeInTheDocument();
     // The form is ready for the next action on the same domain.
     expect(screen.getByRole("textbox", { name: "Domain" })).toHaveValue("例え.jp");
     expect(screen.getByRole("radio", { name: "Limit" })).not.toBeChecked();
     expect(screen.getByRole("textbox", { name: "Public comment" })).toHaveValue("");
+
+    await router.navigate({ to: "/moderation/domain-actions" });
+    expect(
+      await within(await screen.findByRole("table")).findByRole("rowheader", { name: "例え.jp (xn--r8jz45g.jp)" }),
+    ).toBeInTheDocument();
   });
 
-  // #471: the other filter's list, shown from its cache as the route loads it, must not show the actions as they
-  // were before the new one while a slow server answers the list again.
-  test("is in the other filter's list at once, however slowly the lists come", async () => {
+  // #471: a list shown before, cached as the route loads it again, must not show the actions as they were before the
+  // new one while a slow server answers the list again.
+  test("is in the lists at once, however slowly they come", async () => {
     const api = domainActionsServer([limit, lifted]);
-    const { user } = await renderApp({ path: "/moderation/domain-actions?filter=all" });
+    const { user, router } = await renderApp({ path: "/moderation/domain-actions?filter=all" });
     expect(await within(await screen.findByRole("table")).findByText("Lifted")).toBeInTheDocument();
-    await showFilter(user, "In effect");
-    // The form is outside the list: take the action once the list of the actions in effect is shown, not while the
-    // list of all of them stays on screen as that list loads.
-    await waitFor(() => {
-      expect(screen.getByRole("button", { name: /Show domain actions/ })).toHaveTextContent("In effect");
-    });
-    expect(
-      await within(screen.getByRole("table")).findByRole("rowheader", { name: "spam.example" }),
-    ).toBeInTheDocument();
-    await user.type(screen.getByRole("textbox", { name: "Domain" }), "new.example");
+    await user.click(screen.getByRole("link", { name: "New action" }));
+    await user.type(await screen.findByRole("textbox", { name: "Domain" }), "new.example");
     await user.click(screen.getByRole("radio", { name: "Limit" }));
     // From now on every list takes a while; the handler falls through to domainActionsServer's.
     server.use(
@@ -278,17 +297,14 @@ describe("a new domain action", () => {
     await user.click(screen.getByRole("button", { name: "Take action" }));
     expect(await screen.findByText(`Limit is in effect for ${isolated("new.example")}.`)).toBeInTheDocument();
 
-    await showFilter(user, "All");
-    // The list of all actions replaces the one in effect once it is there.
-    expect(await screen.findByText("Lifted")).toBeInTheDocument();
-    expect(within(screen.getByRole("table")).getByRole("rowheader", { name: "new.example" })).toBeInTheDocument();
-    // Each list once as it was shown, and once more after the action, before the tab changed.
-    expect(api.lists.toSorted()).toEqual(["limit=40", "limit=40", "limit=40&active=true", "limit=40&active=true"]);
+    await router.navigate({ to: "/moderation/domain-actions", search: { filter: "all" } });
+    expect(await screen.findByRole("rowheader", { name: "new.example" })).toBeInTheDocument();
+    expect(api.lists[0]).toEqual("limit=40");
   });
 
   test("needs a domain and a kind before anything is sent", async () => {
     const api = domainActionsServer([]);
-    const { user } = await renderApp({ path: "/moderation/domain-actions" });
+    const { user } = await renderApp({ path: "/moderation/domain-actions/new" });
 
     await user.click(await screen.findByRole("button", { name: "Take action" }));
 
@@ -300,7 +316,7 @@ describe("a new domain action", () => {
 
   test("a suspension asks first; cancelling sends nothing and confirming takes it", async () => {
     const api = domainActionsServer([]);
-    const { user } = await renderApp({ path: "/moderation/domain-actions" });
+    const { user } = await renderApp({ path: "/moderation/domain-actions/new" });
 
     await user.type(await screen.findByRole("textbox", { name: "Domain" }), "spam.example");
     await user.click(screen.getByRole("radio", { name: "Suspend" }));
@@ -332,7 +348,7 @@ describe("a new domain action", () => {
   test("a suspension that fails says why in its confirmation, which stays open", async () => {
     domainActionsServer([]);
     server.use(http.post(`${apiBase}/admin/domain_actions`, () => problem(503, "about:blank", "Service Unavailable")));
-    const { user } = await renderApp({ path: "/moderation/domain-actions" });
+    const { user } = await renderApp({ path: "/moderation/domain-actions/new" });
 
     await user.type(await screen.findByRole("textbox", { name: "Domain" }), "spam.example");
     await user.click(screen.getByRole("radio", { name: "Suspend" }));
@@ -356,7 +372,7 @@ describe("a new domain action", () => {
         ),
       ),
     );
-    const { user } = await renderApp({ path: "/moderation/domain-actions" });
+    const { user } = await renderApp({ path: "/moderation/domain-actions/new" });
 
     await user.type(await screen.findByRole("textbox", { name: "Domain" }), "not a domain");
     await user.click(screen.getByRole("radio", { name: "Reject reports" }));
@@ -372,7 +388,7 @@ describe("a new domain action", () => {
 });
 
 describe("the way from a remote server", () => {
-  test("a server's page links to its domain actions, which are listed and filled in the form", async () => {
+  test("a server's page links to its domain actions, which are listed, and the new action is filled in with the domain", async () => {
     const api = domainActionsServer([
       limit,
       domainActionFixture({ id: "0192f0c4-7a8e-7000-8000-0000000000a3", domain: "other.example" }),
@@ -385,7 +401,6 @@ describe("the way from a remote server", () => {
 
     expect(await screen.findByRole("heading", { level: 1, name: "Domain actions" })).toBeInTheDocument();
     expect(router.state.location.search).toEqual({ domain: "spam.example" });
-    expect(screen.getByRole("textbox", { name: "Domain" })).toHaveValue("spam.example");
     expect(screen.getByText(`Showing the actions on ${isolated("spam.example")}.`)).toBeInTheDocument();
     expect(
       within(screen.getByRole("table"))
@@ -393,7 +408,12 @@ describe("the way from a remote server", () => {
         .map((header) => header.textContent),
     ).toEqual(["spam.example"]);
 
-    await user.click(screen.getByRole("link", { name: "Show every domain" }));
+    await user.click(screen.getByRole("link", { name: "New action" }));
+    expect(await screen.findByRole("textbox", { name: "Domain" })).toHaveValue("spam.example");
+    expect(router.state.location.pathname).toBe("/moderation/domain-actions/new");
+
+    await router.navigate({ to: "/moderation/domain-actions", search: { domain: "spam.example" } });
+    await user.click(await screen.findByRole("link", { name: "Show every domain" }));
     // The list of one domain stays on screen, or the pending page replaces it, while the list of every domain loads.
     expect(screen.getByRole("table")).toContainElement(await screen.findByRole("rowheader", { name: "other.example" }));
     expect(api.lists).toEqual(["limit=40&active=true&domain=spam.example", "limit=40&active=true"]);
@@ -411,12 +431,15 @@ describe("permissions", () => {
     );
   });
 
-  test("a user without manage_domains is told why, and nothing is asked of the server", async () => {
-    server.use(operatorHandler(["manage_jobs"]));
-    const api = domainActionsServer([limit]);
-    await renderApp({ path: "/moderation/domain-actions" });
+  test.each(["/moderation/domain-actions", `/moderation/domain-actions/${limit.id}`, "/moderation/domain-actions/new"])(
+    "a user without manage_domains is told why on %s, and nothing is asked of the server",
+    async (path) => {
+      server.use(operatorHandler(["manage_jobs"]));
+      const api = domainActionsServer([limit]);
+      await renderApp({ path });
 
-    expect(await screen.findByRole("heading", { level: 2, name: "You cannot use this screen" })).toBeInTheDocument();
-    expect(api.lists).toEqual([]);
-  });
+      expect(await screen.findByRole("heading", { level: 2, name: "You cannot use this screen" })).toBeInTheDocument();
+      expect(api.lists).toEqual([]);
+    },
+  );
 });

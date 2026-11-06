@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The list page of the invites screen below its heading (FR-001, manage_invites, web-client §14): the link to the
 // form of a new invite (/moderation/invites/new), then the invites, newest first, in the admin mode's table (one
-// page at a time, previous / next). Each row names its code with who created it (a moderator, the command line, or a
-// member through their own invites, ADR-0106 §18), its state with how many signed up, when it expires, and, while it
+// page at a time, previous / next). Each row names its code; its state, how many signed up, and who created it (a
+// moderator, the command line, or a member through their own invites, ADR-0106 §18); when it expires; and, while it
 // is usable, copying its sign-up link and revoking it, which takes effect at once and asks nothing first. An invite
 // has no page of its own (the API has no operation for one). An invite lets people sign up in every registration
 // mode but `closed` (a server setting, /admin/settings), which the screen says while it is `closed`.
@@ -69,17 +69,9 @@ function InviteList() {
       header: t("client:admin.invites.column.invite"),
       wrap: "anywhere",
       cell: (invite) => (
-        <Stack as="span" gap="1" shrink>
-          <Text dir="ltr" mono wrap="anywhere">
-            {invite.code}
-          </Text>
-          <Text size="sm" weight="normal" wrap="anywhere">
-            <InviteCreator invite={invite} />
-          </Text>
-          <Text size="sm" weight="normal" tone="muted">
-            {t(inviteCreatorKindLabels[invite.creator_kind])}
-          </Text>
-        </Stack>
+        <Text dir="ltr" mono wrap="anywhere">
+          {invite.code}
+        </Text>
       ),
     },
     {
@@ -94,6 +86,12 @@ function InviteList() {
             {invite.max_uses === undefined
               ? t("client:admin.invites.used.unlimited", { uses: invite.uses })
               : t("client:admin.invites.used.limited", { uses: invite.uses, max: invite.max_uses })}
+          </Text>
+          <Text size="sm" wrap="anywhere">
+            <InviteCreator invite={invite} />
+          </Text>
+          <Text size="sm" tone="muted">
+            {t(inviteCreatorKindLabels[invite.creator_kind])}
           </Text>
         </Stack>
       ),

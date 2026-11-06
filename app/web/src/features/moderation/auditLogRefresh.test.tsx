@@ -116,7 +116,7 @@ const writes: Write[] = [
     action: "domain_action_issued",
     method: "post",
     path: "/admin/domain_actions",
-    page: "/moderation/domain-actions",
+    page: "/moderation/domain-actions/new",
     write: async (user) => {
       await user.type(await screen.findByRole("textbox", { name: "Domain" }), "spam.example");
       await user.click(screen.getByRole("radio", { name: "Limit" }));
@@ -128,14 +128,12 @@ const writes: Write[] = [
     action: "domain_action_lifted",
     method: "post",
     path: "/admin/domain_actions/:id/lift",
-    page: "/moderation/domain-actions",
+    page: `/moderation/domain-actions/${domainActionFixture().id}`,
     setup: () => {
-      server.use(
-        http.get(`${apiBase}/admin/domain_actions`, () => HttpResponse.json({ items: [domainActionFixture()] })),
-      );
+      server.use(http.get(`${apiBase}/admin/domain_actions/:id`, () => HttpResponse.json(domainActionFixture())));
     },
     write: async (user) => {
-      await user.click(await screen.findByRole("button", { name: /^Lift Limit for/ }));
+      await user.click(await screen.findByRole("button", { name: "Lift" }));
       expect(await screen.findByText(/^Limit for .+ is lifted\.$/)).toBeInTheDocument();
     },
   },

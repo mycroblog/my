@@ -127,17 +127,13 @@
     "defaultMessage": "No limit",
     "description": "Option of an invite that any number of people may use."
   },
-  "admin.invites.used": {
-    "defaultMessage": "Sign-ups",
-    "description": "Term of how many people signed up with an invite."
-  },
   "admin.invites.used.limited": {
-    "defaultMessage": "{uses, number} of {max, number}",
-    "description": "How many people signed up with an invite, and how many it allows."
+    "defaultMessage": "{uses, number} of {max, number} signed up",
+    "description": "How many people signed up with an invite, and how many it allows, under the invite's state. {uses} is the number; {max} the limit."
   },
   "admin.invites.used.unlimited": {
-    "defaultMessage": "{uses, number} (no limit)",
-    "description": "How many people signed up with an invite without a limit. {uses} is the number."
+    "defaultMessage": "{uses, number} signed up (no limit)",
+    "description": "How many people signed up with an invite without a limit, under the invite's state. {uses} is the number."
   },
   "admin.invites.uses": {
     "defaultMessage": "{count, plural, one {# person} other {# people}}",

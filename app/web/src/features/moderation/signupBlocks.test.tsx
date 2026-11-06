@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The sign-up blocks screen through the whole app (web-client/README.md T4): a moderator with manage_accounts lists the
-// blocks on sign-ups, adds blocks on an email domain, an email address or an IP range, and lifts them, with MSW
-// playing the admin API. The server keeps an email domain in IDNA A-labels; the screen shows it with its U-labels.
+// blocks on sign-ups, opens a block's page and lifts it there, and adds blocks on an email domain, an email address or
+// an IP range on the page of the form, with MSW playing the admin API. The server keeps an email domain in IDNA A-labels; the screen shows it with its U-labels.
 import { screen, waitFor, within } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
 import { beforeEach, describe, expect, test } from "vitest";
@@ -62,6 +62,10 @@ function signupBlocksServer(initial: SignupBlock[]) {
         items: blocks.filter((block) => query.get("active") !== "true" || block.state === "active"),
       });
     }),
+    http.get(`${apiBase}/admin/signup_blocks/:id`, ({ params }) => {
+      const block = blocks.find((item) => item.id === String(params["id"]));
+      return block === undefined ? problem(404, "about:blank", "Not Found") : HttpResponse.json(block);
+    }),
     http.post(`${apiBase}/admin/signup_blocks`, async ({ request }) => {
       const body = (await request.json()) as NewBlock;
       created.push(body);
@@ -89,34 +93,38 @@ function rows() {
 }
 
 describe("the list of sign-up blocks", () => {
-  test("shows the blocks in effect with both forms of a domain, and all of them under the other filter", async () => {
+  test("shows the blocks in effect with both forms of a domain and no comment, and all of them under the other filter", async () => {
     const api = signupBlocksServer([idn, range, address]);
     const { user, router } = await renderApp({ path: "/moderation/signup-blocks" });
 
     expect(await screen.findByRole("heading", { level: 1, name: "Sign-up blocks" })).toBeInTheDocument();
+    const pages = screen.getByRole("navigation", { name: "Sign-up block pages" });
+    expect(within(pages).getByRole("link", { name: "Blocks" })).toHaveAttribute("aria-current", "page");
+    expect(within(pages).getByRole("link", { name: "Add from a list" })).toHaveAttribute(
+      "href",
+      "/moderation/signup-blocks/import",
+    );
+    expect(screen.getByRole("link", { name: "Add a block" })).toHaveAttribute("href", "/moderation/signup-blocks/new");
+    expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
     expect(
       within(await screen.findByRole("table"))
         .getAllByRole("rowheader")
         .map((header) => header.textContent),
     ).toEqual(["例え.jp (xn--r8jz45g.jp)", "192.0.2.0/24"]);
+    expect(within(screen.getByRole("table")).getAllByRole("columnheader")).toHaveLength(4);
     const [first, second] = rows();
     if (first === undefined || second === undefined) throw new Error("the blocks are not listed");
     const details = within(first);
+    expect(details.getByRole("link", { name: "例え.jp (xn--r8jz45g.jp)" })).toHaveAttribute(
+      "href",
+      `/moderation/signup-blocks/${idn.id}`,
+    );
     expect(details.getByText("Email domain")).toBeInTheDocument();
-    expect(details.getByText("Require approval")).toBeInTheDocument();
     expect(details.getByText("In effect")).toBeInTheDocument();
-    expect(details.getByText(/^Oct 12, 2026/)).toBeInTheDocument();
     expect(details.getByText(/^Nov 11, 2026/)).toBeInTheDocument();
-    expect(details.getByText("Added on its own")).toBeInTheDocument();
-    expect(details.getByText("Disposable addresses.")).toHaveAttribute("dir", "auto");
-    expect(
-      details.getByRole("button", {
-        name: `Lift the block on the Email domain ${isolated("例え.jp (xn--r8jz45g.jp)")}, added ${details.getByText(/^Oct 12, 2026/).textContent}`,
-      }),
-    ).toBeInTheDocument();
+    expect(details.queryByText("Disposable addresses.")).not.toBeInTheDocument();
+    expect(details.queryByRole("button")).not.toBeInTheDocument();
     expect(within(second).getByText("IP range")).toBeInTheDocument();
-    expect(within(second).getByText("Refuse")).toBeInTheDocument();
-    expect(within(second).getByText("With a ban")).toBeInTheDocument();
     expect(within(second).getByText("Until lifted")).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: /Blocks to show/ }));
@@ -128,8 +136,6 @@ describe("the list of sign-up blocks", () => {
     expect(await all.findByRole("rowheader", { name: hash })).toBeInTheDocument();
     expect(all.getByText("Lifted", { selector: "span" })).toBeInTheDocument();
     expect(rows()).toHaveLength(3);
-    // A lifted block has no lift button.
-    expect(all.getAllByRole("button", { name: /^Lift / })).toHaveLength(2);
     expect(api.lists).toEqual(["limit=40&active=true", "limit=40"]);
   });
 
@@ -137,37 +143,55 @@ describe("the list of sign-up blocks", () => {
     signupBlocksServer([]);
     await renderApp({ path: "/moderation/signup-blocks" });
 
-    expect(await screen.findByRole("heading", { level: 3, name: "No sign-up blocks in effect" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { level: 2, name: "No sign-up blocks in effect" })).toBeInTheDocument();
   });
+});
 
-  test("lifts a block: it leaves the blocks in effect, focus moves on, and the result stays on the page", async () => {
+describe("a sign-up block's page", () => {
+  test("shows the block with its comment, and lifts it: focus moves to the state's heading, and the result stays", async () => {
     const api = signupBlocksServer([idn, range]);
-    const { user } = await renderApp({ path: "/moderation/signup-blocks" });
+    const { user, router } = await renderApp({ path: `/moderation/signup-blocks/${idn.id}` });
 
-    await user.click(await screen.findByRole("button", { name: /^Lift the block on the Email domain/ }));
+    expect(
+      await screen.findByRole("heading", {
+        level: 1,
+        name: `Block on the Email domain ${isolated("例え.jp (xn--r8jz45g.jp)")}`,
+      }),
+    ).toBeInTheDocument();
+    const details = within(screen.getByRole("region", { name: "Details" }));
+    expect(details.getByText("Require approval")).toBeInTheDocument();
+    expect(details.getByText("Added on its own")).toBeInTheDocument();
+    expect(details.getByText("Disposable addresses.")).toHaveAttribute("dir", "auto");
+    const state = within(screen.getByRole("region", { name: "State" }));
+    expect(state.getByText(/^Oct 12, 2026/)).toBeInTheDocument();
+    expect(state.getByText(/^Nov 11, 2026/)).toBeInTheDocument();
+
+    await user.click(state.getByRole("button", { name: "Lift" }));
 
     await waitFor(() => {
-      expect(screen.queryByRole("rowheader", { name: "例え.jp (xn--r8jz45g.jp)" })).not.toBeInTheDocument();
+      expect(state.queryByRole("button", { name: "Lift" })).not.toBeInTheDocument();
     });
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: /^Lift the block on the IP range/ })).toHaveFocus();
+      expect(state.getByRole("heading", { level: 2, name: "State" })).toHaveFocus();
     });
-    expect(screen.getAllByRole("status").map((status) => status.textContent)).toContain(
+    expect(state.getByRole("status")).toHaveTextContent(
       `The block on the Email domain ${isolated("例え.jp (xn--r8jz45g.jp)")} is lifted.`,
     );
     expect(api.liftedIds).toEqual([idn.id]);
+
+    // The list of the blocks in effect no longer has it.
+    await router.navigate({ to: "/moderation/signup-blocks" });
+    expect(await screen.findByRole("rowheader", { name: "192.0.2.0/24" })).toBeInTheDocument();
+    expect(screen.queryByRole("rowheader", { name: "例え.jp (xn--r8jz45g.jp)" })).not.toBeInTheDocument();
   });
 
-  test("a lifted block stays in the list of all of them, and focus moves to its heading", async () => {
+  test("a block a ban added says so", async () => {
     signupBlocksServer([range]);
-    const { user } = await renderApp({ path: "/moderation/signup-blocks?filter=all" });
+    await renderApp({ path: `/moderation/signup-blocks/${range.id}` });
 
-    await user.click(await screen.findByRole("button", { name: /^Lift the block on the IP range/ }));
-
-    await waitFor(() => {
-      expect(screen.getByRole("rowheader", { name: "192.0.2.0/24" })).toHaveFocus();
-    });
-    expect(within(screen.getByRole("table")).getByText("Lifted", { selector: "span" })).toBeInTheDocument();
+    const details = within(await screen.findByRole("region", { name: "Details" }));
+    expect(details.getByText("With a ban")).toBeInTheDocument();
+    expect(details.getByText("Refuse")).toBeInTheDocument();
   });
 
   test("a block that cannot be lifted stays, and the failure says why", async () => {
@@ -175,20 +199,20 @@ describe("the list of sign-up blocks", () => {
     server.use(
       http.post(`${apiBase}/admin/signup_blocks/:id/lift`, () => problem(503, "about:blank", "Service Unavailable")),
     );
-    const { user } = await renderApp({ path: "/moderation/signup-blocks" });
+    const { user } = await renderApp({ path: `/moderation/signup-blocks/${range.id}` });
 
-    await user.click(await screen.findByRole("button", { name: /^Lift the block on the IP range/ }));
+    await user.click(await screen.findByRole("button", { name: "Lift" }));
 
     expect(await screen.findByText("Could not lift the block: Service Unavailable")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /^Lift the block on the IP range/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Lift" })).toBeInTheDocument();
   });
 });
 
 describe("a new sign-up block", () => {
-  test("blocks an email domain in non-Latin letters, recorded in A-labels and shown in both forms", async () => {
+  test("blocks an email domain in non-Latin letters, recorded in A-labels and listed in both forms", async () => {
     const api = signupBlocksServer([]);
-    const { user } = await renderApp({ path: "/moderation/signup-blocks" });
-    const form = within(await screen.findByRole("region", { name: "Add a block" }));
+    const { user, router } = await renderApp({ path: "/moderation/signup-blocks/new" });
+    const form = within(await screen.findByRole("region", { name: "The block" }));
 
     // The domain of the email address is the kind chosen first.
     expect(form.getByRole("radio", { name: "Email domain" })).toBeChecked();
@@ -211,20 +235,22 @@ describe("a new sign-up block", () => {
         expires_in: 30 * 86_400,
       },
     ]);
-    expect(
-      await within(screen.getByRole("table")).findByRole("rowheader", { name: "例え.jp (xn--r8jz45g.jp)" }),
-    ).toBeInTheDocument();
     // The form is ready for the next block of the same kind.
     expect(form.getByRole("radio", { name: "Email domain" })).toBeChecked();
     expect(form.getByRole("textbox", { name: "Domain" })).toHaveValue("");
     expect(form.getByRole("radio", { name: "Refuse" })).not.toBeChecked();
     expect(form.getByRole("textbox", { name: "Comment" })).toHaveValue("");
+
+    await router.navigate({ to: "/moderation/signup-blocks" });
+    expect(
+      await within(await screen.findByRole("table")).findByRole("rowheader", { name: "例え.jp (xn--r8jz45g.jp)" }),
+    ).toBeInTheDocument();
   });
 
   test("blocks an IP range until it is lifted, with the field named for the kind", async () => {
     const api = signupBlocksServer([]);
-    const { user } = await renderApp({ path: "/moderation/signup-blocks" });
-    const form = within(await screen.findByRole("region", { name: "Add a block" }));
+    const { user } = await renderApp({ path: "/moderation/signup-blocks/new" });
+    const form = within(await screen.findByRole("region", { name: "The block" }));
 
     await user.click(form.getByRole("radio", { name: "IP range" }));
     await user.type(form.getByRole("textbox", { name: "IP address or range" }), " 192.0.2.0/24 ");
@@ -240,8 +266,8 @@ describe("a new sign-up block", () => {
 
   test("needs a value and an effect before anything is sent", async () => {
     const api = signupBlocksServer([]);
-    const { user } = await renderApp({ path: "/moderation/signup-blocks" });
-    const form = within(await screen.findByRole("region", { name: "Add a block" }));
+    const { user } = await renderApp({ path: "/moderation/signup-blocks/new" });
+    const form = within(await screen.findByRole("region", { name: "The block" }));
 
     await user.click(form.getByRole("radio", { name: "Email address" }));
     await user.click(form.getByRole("button", { name: "Add block" }));
@@ -267,8 +293,8 @@ describe("a new sign-up block", () => {
         ),
       ),
     );
-    const { user } = await renderApp({ path: "/moderation/signup-blocks" });
-    const form = within(await screen.findByRole("region", { name: "Add a block" }));
+    const { user } = await renderApp({ path: "/moderation/signup-blocks/new" });
+    const form = within(await screen.findByRole("region", { name: "The block" }));
 
     await user.click(form.getByRole("radio", { name: "IP range" }));
     await user.type(form.getByRole("textbox", { name: "IP address or range" }), "192.0.2.0/99");
@@ -295,10 +321,15 @@ describe("permissions", () => {
     expect(link).toHaveAttribute("href", "/moderation/signup-blocks");
   });
 
-  test("a user without manage_accounts is told why, and nothing is asked of the server", async () => {
+  test.each([
+    "/moderation/signup-blocks",
+    `/moderation/signup-blocks/${range.id}`,
+    "/moderation/signup-blocks/new",
+    "/moderation/signup-blocks/import",
+  ])("a user without manage_accounts is told why on %s, and nothing is asked of the server", async (path) => {
     server.use(operatorHandler(["manage_domains"]));
     const api = signupBlocksServer([range]);
-    await renderApp({ path: "/moderation/signup-blocks" });
+    await renderApp({ path });
 
     expect(await screen.findByRole("heading", { level: 2, name: "You cannot use this screen" })).toBeInTheDocument();
     expect(api.lists).toEqual([]);

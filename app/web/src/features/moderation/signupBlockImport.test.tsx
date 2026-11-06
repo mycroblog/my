@@ -91,7 +91,10 @@ describe("an import of a list of sign-up blocks", () => {
       }
       return reasonOf(value);
     });
-    const { user, router } = await renderApp({ path: "/moderation/signup-blocks/import" });
+    // The list of blocks is read first, and kept in the cache while the import page is open.
+    const { user, router } = await renderApp({ path: "/moderation/signup-blocks" });
+    expect(await screen.findByRole("heading", { level: 2, name: "No sign-up blocks in effect" })).toBeInTheDocument();
+    await user.click(screen.getByRole("link", { name: "Add from a list" }));
     const section = within(await screen.findByRole("region", { name: "Add from a list" }));
 
     expect(section.getByRole("radio", { name: "Email domain" })).toBeChecked();
@@ -116,8 +119,6 @@ describe("an import of a list of sign-up blocks", () => {
         expires_in: 90 * 86_400,
       },
     ]);
-    // The list of blocks was fetched again before the result was shown.
-    expect(api.fetches).toContain("signup_blocks");
 
     const table = section.getByRole("table", { name: "Lines not added" });
     const rows = within(table).getAllByRole("row");
@@ -152,13 +153,15 @@ describe("an import of a list of sign-up blocks", () => {
     expect(section.getByRole("textbox", { name: "Comment" })).toHaveValue("");
     expect(section.getByRole("radio", { name: "Refuse" })).toBeChecked();
 
-    // The blocks are in the list.
+    // The cached list of blocks is stale: going back shows the imported blocks.
+    api.fetches.length = 0;
     await router.navigate({ to: "/moderation/signup-blocks" });
     expect(
       await within(await screen.findByRole("table", { name: "In effect" })).findByRole("rowheader", {
         name: "mail.example",
       }),
     ).toBeInTheDocument();
+    expect(api.fetches).toContain("signup_blocks");
   });
 
   test("reads the list from a text file of IP ranges", async () => {
@@ -184,7 +187,11 @@ describe("an import of a list of sign-up blocks", () => {
       await section.findByText("2 blocks were added: IP range, Require approval. No line was skipped."),
     ).toBeInTheDocument();
     expect(api.imports).toEqual([
-      { kind: "ip_range", text: "192.0.2.0/24\n198.51.100.7,abuse\n", severity: "require_approval" },
+      {
+        kind: "ip_range",
+        text: "192.0.2.0/24\n198.51.100.7,abuse\n",
+        severity: "require_approval",
+      },
     ]);
     expect(section.queryByRole("table")).not.toBeInTheDocument();
   });

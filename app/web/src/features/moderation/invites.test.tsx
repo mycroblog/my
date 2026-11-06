@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The invites screen through the whole app (web-client/README.md T4): a moderator with manage_invites creates an invite
-// with a limit and an expiry or without them, reads its code and link, copies a link and revokes an invite (focus
-// moves to its heading); the screen says when the registration mode does not take invites; a viewer without the
+// on the page of the form with a limit and an expiry or without them, reads its code and link, and on the list copies
+// a link and revokes an invite (focus moves to its heading); the screen says when the registration mode does not take invites; a viewer without the
 // permission sees why; with MSW playing the API.
 import { screen, waitFor, within } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
@@ -62,17 +62,19 @@ describe("the invites", () => {
 
     expect(await screen.findByRole("heading", { level: 1, name: "Invites" })).toBeInTheDocument();
     expect(screen.queryByText(/takes no new accounts now/)).not.toBeInTheDocument();
-    expect(screen.getByRole("heading", { level: 2, name: "Invites" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Create an invite" })).toHaveAttribute("href", "/moderation/invites/new");
+    expect(screen.queryByRole("form")).not.toBeInTheDocument();
+    expect(within(screen.getByRole("table", { name: "Invites" })).getAllByRole("columnheader")).toHaveLength(4);
     const [exhausted, unlimited] = within(screen.getByRole("table", { name: "Invites" }))
       .getAllByRole("row")
       .slice(1);
     if (exhausted === undefined || unlimited === undefined) throw new Error("expected two invites");
     expect(within(exhausted).getByRole("rowheader", { name: "ABCDEFGHJKLMNPQR" })).toBeInTheDocument();
     expect(within(exhausted).getByText("Used up")).toBeInTheDocument();
-    expect(within(exhausted).getByText("1 of 1")).toBeInTheDocument();
+    expect(within(exhausted).getByText("1 of 1 signed up")).toBeInTheDocument();
     expect(within(exhausted).queryByRole("button")).not.toBeInTheDocument();
     expect(within(unlimited).getByRole("rowheader", { name: "ZZZZYYYYXXXXWWWW" })).toBeInTheDocument();
-    expect(within(unlimited).getByText("3 (no limit)")).toBeInTheDocument();
+    expect(within(unlimited).getByText("3 signed up (no limit)")).toBeInTheDocument();
     expect(within(unlimited).getByText("Never")).toBeInTheDocument();
   });
 
@@ -90,7 +92,6 @@ describe("the invites", () => {
     await renderApp({ path: "/moderation/invites" });
 
     const table = await screen.findByRole("table", { name: "Invites" });
-    expect(within(table).getByRole("columnheader", { name: "Created by" })).toBeInTheDocument();
     const [member, cli, deleted] = within(table).getAllByRole("row").slice(1);
     if (member === undefined || cli === undefined || deleted === undefined) throw new Error("expected three invites");
     expect(within(member).getByText("@bob")).toHaveAttribute("dir", "ltr");
@@ -103,9 +104,11 @@ describe("the invites", () => {
 
   test("creates an invite for one person within a week by default, and shows its code and link", async () => {
     const invites = invitesServer([]);
-    const { user } = await renderApp({ path: "/moderation/invites" });
+    const { user, router } = await renderApp({ path: "/moderation/invites" });
     expect(await screen.findByText("No invites yet")).toBeInTheDocument();
-    const form = screen.getByRole("region", { name: "Create an invite" });
+    await user.click(screen.getByRole("link", { name: "Create an invite" }));
+    expect(await screen.findByRole("heading", { level: 1, name: "Create an invite" })).toBeInTheDocument();
+    const form = screen.getByRole("region", { name: "The invite" });
     await user.click(within(form).getByRole("button", { name: "Create the invite" }));
 
     expect(await within(form).findByText("Created the invite NEWCODE234567ABC.")).toBeInTheDocument();
@@ -114,13 +117,17 @@ describe("the invites", () => {
       "ltr",
     );
     expect(invites.created).toEqual([{ max_uses: 1, expires_in: 7 * 86_400 }]);
+
+    // The way back leads to the list, which has the new invite.
+    await user.click(screen.getByRole("link", { name: "Back to invites" }));
+    expect(router.state.location.pathname).toBe("/moderation/invites");
     expect(await screen.findByRole("rowheader", { name: "NEWCODE234567ABC" })).toBeInTheDocument();
   });
 
   test("creates an invite without a limit that never expires", async () => {
     const invites = invitesServer([]);
-    const { user } = await renderApp({ path: "/moderation/invites" });
-    const form = await screen.findByRole("region", { name: "Create an invite" });
+    const { user } = await renderApp({ path: "/moderation/invites/new" });
+    const form = await screen.findByRole("region", { name: "The invite" });
     await user.click(within(form).getByRole("button", { name: /Number of sign-ups/ }));
     await user.click(await screen.findByRole("option", { name: "No limit" }));
     await user.click(within(form).getByRole("button", { name: /Expires after/ }));
@@ -160,16 +167,21 @@ describe("the invites", () => {
   });
 });
 
-test("says that invites let nobody sign up while the registration mode is closed", async () => {
-  server.use(
-    signedInHandler,
-    operatorHandler(["manage_invites"]),
-    http.get(`${apiBase}/instance`, () => HttpResponse.json({ ...instanceFixture, registrations: { mode: "closed" } })),
-  );
-  await renderApp({ path: "/moderation/invites" });
+test.each(["/moderation/invites", "/moderation/invites/new"])(
+  "says on %s that invites let nobody sign up while the registration mode is closed",
+  async (path) => {
+    server.use(
+      signedInHandler,
+      operatorHandler(["manage_invites"]),
+      http.get(`${apiBase}/instance`, () =>
+        HttpResponse.json({ ...instanceFixture, registrations: { mode: "closed" } }),
+      ),
+    );
+    await renderApp({ path });
 
-  expect(await screen.findByText(/takes no new accounts now/)).toBeInTheDocument();
-});
+    expect(await screen.findByText(/takes no new accounts now/)).toBeInTheDocument();
+  },
+);
 
 test("invites work in approval mode too, so the screen does not say they let nobody sign up", async () => {
   server.use(signedInHandler, operatorHandler(["manage_invites"]));

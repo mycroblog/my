@@ -552,7 +552,7 @@ describe("an account's admin page", () => {
     // The list is read once before the ban, and kept fresh for a while (staleTime).
     const { user, router } = await renderApp({ path: "/moderation/signup-blocks" });
     expect(await screen.findByRole("heading", { level: 1, name: "Sign-up blocks" })).toBeInTheDocument();
-    expect(await screen.findByRole("heading", { level: 3, name: "No sign-up blocks in effect" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { level: 2, name: "No sign-up blocks in effect" })).toBeInTheDocument();
     await router.navigate({ to: "/moderation/accounts/$id", params: { id: bobDetail.id } });
 
     const action = await screen.findByRole("region", { name: "Take action" });
