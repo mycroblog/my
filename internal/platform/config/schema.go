@@ -352,8 +352,6 @@ var schema = []field{
 		def: "native",
 		choices: []choice{
 			{value: "native", doc: "Pure Go image processing."},
-			{value: "vips", doc: "libvips; needs a cgo build with the adapter's build tag."},
-			{value: "none", doc: "No processing except EXIF removal."},
 			{value: "plugin", doc: "A plugin of yours (`plugin_media_address`) re-encodes images and remuxes video and audio, so that heavy conversion runs on another machine; the server still checks uploads and every output itself, and removing metadata is left to the plugin ([plugins](../operations/plugins.md)). The build tag `no_plugins` leaves it out."},
 		},
 		set: func(c *Config, v string) { c.Media = v },
