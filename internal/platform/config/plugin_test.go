@@ -64,7 +64,8 @@ func TestPlainTCPIsRefusedForTheKindsOfTheRule(t *testing.T) {
 		"inbound.status": "MY_PLUGIN_INBOUND_STATUS_ADDRESS", "local.status": "MY_PLUGIN_LOCAL_STATUS_ADDRESS",
 	}
 	allowed := map[string]string{
-		"billing": "MY_PLUGIN_BILLING_ADDRESS", "media": "MY_PLUGIN_MEDIA_ADDRESS",
+		"billing": "MY_PLUGIN_BILLING_ADDRESS", "media_image": "MY_PLUGIN_MEDIA_IMAGE_ADDRESS",
+		"media_video": "MY_PLUGIN_MEDIA_VIDEO_ADDRESS", "media_audio": "MY_PLUGIN_MEDIA_AUDIO_ADDRESS",
 		"inbound.follow": "MY_PLUGIN_INBOUND_FOLLOW_ADDRESS", "media.check": "MY_PLUGIN_MEDIA_CHECK_ADDRESS",
 	}
 	if len(refused)+len(allowed) != len(kind.Delegated()) {
@@ -122,8 +123,8 @@ func TestPluginSettings(t *testing.T) {
 	}
 
 	// Nothing set leaves the kind's defaults to the client.
-	cfg, _ = loadPlugin(t, map[string]string{"MY_PLUGIN_MEDIA_ADDRESS": "unix:///s"})
-	if got := cfg.PluginDestination(kind.Media); got != (kind.Destination{Address: "unix:///s"}) {
+	cfg, _ = loadPlugin(t, map[string]string{"MY_PLUGIN_MEDIA_VIDEO_ADDRESS": "unix:///s"})
+	if got := cfg.PluginDestination(kind.MediaVideo); got != (kind.Destination{Address: "unix:///s"}) {
 		t.Errorf("media = %+v", got)
 	}
 }
@@ -136,7 +137,7 @@ func TestPluginSettingsThatConflict(t *testing.T) {
 	}{
 		{"a token over plain TCP", map[string]string{"MY_PLUGIN_BILLING_ADDRESS": "http://127.0.0.1:1", "MY_PLUGIN_BILLING_TOKEN": "t"}, "plugin_billing_token"},
 		{"a malformed address", map[string]string{"MY_PLUGIN_BILLING_ADDRESS": "billing:8080"}, "plugin_billing_address"},
-		{"json for a streaming kind", map[string]string{"MY_PLUGIN_MEDIA_ADDRESS": "unix:///s", "MY_PLUGIN_MEDIA_PROTOCOL": "json"}, "plugin_media_protocol"},
+		{"json for a streaming kind", map[string]string{"MY_PLUGIN_MEDIA_VIDEO_ADDRESS": "unix:///s", "MY_PLUGIN_MEDIA_VIDEO_PROTOCOL": "json"}, "plugin_media_video_protocol"},
 		{"an unknown protocol", map[string]string{"MY_PLUGIN_BILLING_ADDRESS": "unix:///s", "MY_PLUGIN_BILLING_PROTOCOL": "soap"}, "plugin_billing_protocol"},
 		{"a timeout as long as a job's lease", map[string]string{"MY_PLUGIN_BILLING_ADDRESS": "unix:///s", "MY_PLUGIN_BILLING_TIMEOUT": "5m"}, "plugin_billing_timeout"},
 		{"not a timeout", map[string]string{"MY_PLUGIN_BILLING_TIMEOUT": "soon"}, "plugin_billing_timeout"},

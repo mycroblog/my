@@ -119,7 +119,7 @@ side effect beyond the call runs only when a flag asks for it.
 
 Flags:
   --kind           %s
-  --protocol       json, proto, or grpc (default: the kind's; media takes proto or grpc)
+  --protocol       json, proto, or grpc (default: the kind's; the media kinds take proto or grpc)
   --token-file     a file that holds the bearer token (https:// and unix:// only)
   --tls-ca-file    verify the plugin against this CA (default: the system's roots)
   --tls-cert-file  the client certificate of mTLS

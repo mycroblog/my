@@ -3,7 +3,7 @@
 - Status: Accepted
 - Date: 2026-11-05
 - Deciders: @rosylilly
-- Issue: #2214（エピック #2228）
+- Issue: #2214（エピック #2228）、#2406
 
 ## Decision（決定）
 
@@ -28,7 +28,7 @@
 | `translator` | `translation` の翻訳のポート（[ADR-0148](0148-post-translation.md)） | #2217 |
 | `billing` | `finance.BillingSource` | #2218 |
 | `mailer` | `kernel.Mailer` | #2219 |
-| `media` | `media.Processor`（`AVProcessor` を含む） | #2220 |
+| `media_image`・`media_video`・`media_audio` | `media.Processor`（`AVProcessor` を含む）。画像・動画・音声だけのファイルの 3 つに分ける（§13） | #2220、#2406 |
 | `key_manager` | `kernel.KeyManager` | #2221 |
 | フック | [ADR-0147](0147-decision-hooks.md) の各フック | #2222〜#2227 |
 | `probe` | なし。何も委譲しない | #2216 |
@@ -44,8 +44,8 @@
 
 | 値 | 送るもの | 相手 |
 | --- | --- | --- |
-| `json`（`media` 以外の既定） | Connect の unary を `application/json` で | Connect のライブラリのサーバー、および `net/http` と JSON だけのプラグイン |
-| `proto`（`media` の既定） | Connect を `application/proto` で | Connect のライブラリのサーバー |
+| `json`（メディアの kind 以外の既定） | Connect の unary を `application/json` で | Connect のライブラリのサーバー、および `net/http` と JSON だけのプラグイン |
+| `proto`（メディアの kind の既定） | Connect を `application/proto` で | Connect のライブラリのサーバー |
 | `grpc` | gRPC（HTTP/2） | grpc-go など gRPC だけのサーバー |
 
 - 既定が `json` なのは、これだけが 3 種類のうち 2 種類の相手に届き、小さなプラグインがライブラリなしで動く（#2216 の受け入れ条件）から。バイナリの Connect を JSON だけのプラグインへ送ると `415` になり、Connect を grpc-go へ送っても `415` になるので、設定の誤りは起動時の確認と §16 の CLI で出す
@@ -56,7 +56,7 @@
 ### 4. プロセスモデル
 
 - `my` は `plugin_<kind>_address` に接続する。形は `unix:///run/my/mailer.sock`・`https://mailer.internal:8443`・`http://...` の 3 つ。サブプロセスは起動も監視もしない。運営者がサイドカーや systemd で動かす
-- kind の選択は既存の設定の値を増やす: `mail = plugin`・`media = plugin`・`key_manager = plugin`・`billing_sources` の `plugin`。翻訳は ADR-0148、フックは ADR-0147 の選択に従う
+- kind の選択は既存の設定の値を増やす: `mail = plugin`・`media_image = plugin`・`media_video = plugin`・`media_audio = plugin`・`key_manager = plugin`・`billing_sources` の `plugin`。翻訳は ADR-0148、フックは ADR-0147 の選択に従う
 - 選ばれていない kind のクライアントは作らない。プラグインを使わないサーバーは接続もプロセスも増えない
 - ビルドタグ `no_plugins` で全体を外せる（既存の `no_*` と同じ）
 
@@ -84,14 +84,14 @@
 | `mailer` | 確認のリンクなどの秘密、宛先 | 拒否 |
 | `inbound.status`・`local.status` のフック | 投稿の本文 | 拒否 |
 | `translator` | 読者が求めた投稿の本文（IRI とハンドルは送らない。ADR-0148 §5） | 拒否 |
-| `media` | メタデータの残るアップロード（位置情報を含みうる） | 許可 |
+| `media_image`・`media_video`・`media_audio` | メタデータの残るアップロード（位置情報を含みうる） | 許可 |
 | `billing` | 費用の集計 | 許可 |
 | `signup.check` のフック | メールアドレスと IP | 拒否 |
 | `inbound.follow` のフック | フォローの当事者 | 許可 |
 | `media.check` のフック | 処理後の小さな版。原本は送らない | 許可 |
 
 - 平文の TCP を使う kind は、起動時に kind と宛先を挙げて警告する。bearer を使えないので、相手の認証も暗号化もない。そのネットワークを守るのは運営者の責任で、運用文書にそう書く
-- 線の理由: 拒むのは、漏れると別の被害に広がる秘密（DEK、確認のリンク）と、投稿の本文（運営者が許せば `private`・`direct` も）や個人のデータ（メールアドレスと IP）を運ぶ kind である。`media` は出力を `my` が確かめ（§13）、`billing`・`inbound.follow`・`media.check` が運ぶのは本文や個人の連絡先ではない。閉じたネットワークの LibreTranslate は Unix ソケットか TLS を使う。
+- 線の理由: 拒むのは、漏れると別の被害に広がる秘密（DEK、確認のリンク）と、投稿の本文（運営者が許せば `private`・`direct` も）や個人のデータ（メールアドレスと IP）を運ぶ kind である。メディアの kind は出力を `my` が確かめ（§13）、`billing`・`inbound.follow`・`media.check` が運ぶのは本文や個人の連絡先ではない。閉じたネットワークの LibreTranslate は Unix ソケットか TLS を使う。
 
 **ループバックに例外を置かない。** `http://127.0.0.1` も平文の TCP で、上の表に従う。拒む kind はループバックでも拒む。同じホストの別のプロセスから読まれない理由にならず、例外を置くと判定が名前解決やネットワーク名前空間の話になる。これらのサイドカーは共有ボリュームの Unix ソケットで話す。許可する kind はループバックでそのまま動く。
 
@@ -195,7 +195,7 @@ proto の版はパッケージごとの `v1` で、`my` の Go のインター�
 
 - **`BillingSource`:** スキーマの `source` の `CHECK (source IN ('aws', 'gcp'))`（`12-finance.sql` の 4 つの表）と、API の `BillingImport` の `method` の列挙に値を足す。`v0.1.0` の前なので DB を作り直せる。表示の名前は設定 `plugin_billing_provider` で、`SourceProvider` が使う
 - **`Mailer`:** `Send` はジョブからだけ呼ばれるので、遅延は要求に届かない。adapter は呼ぶ前に `ValidateMail` を通す。`Message-ID`・`Date`・`Auto-Submitted` はプラグインが付ける（契約に書き、§16 で確かめる）
-- **`media`:** `Limits`・`AVLimits` は `int64` と `double`、時間はミリ秒、`Format`・`AVKind` は列挙。拒否の `outcome` は `UNSUPPORTED_FORMAT`・`UNSUPPORTED_CODEC`・`TOO_LARGE`・`DIMENSIONS`・`CORRUPT`・`TOO_LONG` で、`media.Rejected` がそのまま効く
+- **メディアの kind:** `Limits`・`AVLimits` は `int64` と `double`、時間はミリ秒、`Format`・`AVKind` は列挙。拒否の `outcome` は `UNSUPPORTED_FORMAT`・`UNSUPPORTED_CODEC`・`TOO_LARGE`・`DIMENSIONS`・`CORRUPT`・`TOO_LONG` で、`media.Rejected` がそのまま効く
 - **`translator`:** 断片・原語（`und` を含む）・訳語 → 訳文・検出した言語・`outcome`。形は ADR-0148 の翻訳のポートの決定に従う
 
 ### 12. 期限と上限
@@ -208,7 +208,7 @@ proto の版はパッケージごとの `v1` で、`my` の Go のインター�
 | `mailer` | 30 秒（`smtp.DefaultTimeout` と同じ） | 2 MiB | 64 KiB | ジョブ |
 | `billing` | 2 分 | 64 KiB | 4 MiB | ジョブ |
 | `translator` | 10 秒（ADR-0148 が変えてよい） | 1 MiB | 1 MiB | ADR-0148 |
-| `media` | 4 分 | 2 MiB（チャンクは 1 MiB） | 2 MiB | ジョブ |
+| `media_image`・`media_video`・`media_audio` | 4 分 | 2 MiB（チャンクは 1 MiB） | 2 MiB | ジョブ |
 | フック | ADR-0147 | 1 MiB | 64 KiB | ジョブ |
 
 - `key_manager` の 128 KiB は、包んだ鍵の上限 65,535 バイト（`kernel.Sealer` の見出しの 2 バイト）の base64 が JSON に収まる大きさ
@@ -216,14 +216,14 @@ proto の版はパッケージごとの `v1` で、`my` の Go のインター�
 - 期限は `Connect-Timeout-Ms` でプラグインに届く（2026-11-05 に確認。gRPC は仕様の `grpc-timeout`）。手書きのプラグインは無視してもよく、`my` は期限で切る
 - 受信の上限は展開の後の大きさにかかる（圧縮の爆弾に効く）。`my` は送信を圧縮しない
 - 超過は `resource_exhausted` になる（2026-11-05 に確認）。§10 のとおり一時的な失敗として数え、繰り返せばジョブの再試行の上限で止まる
-- 同時の呼び出しは kind ごとのセマフォで絞る。`media` の既定は 2（要検証: M6 の実測で調整）で、ほかは `MaxConnsPerHost` の 8 まで
+- 同時の呼び出しは kind ごとのセマフォで絞る。メディアの 3 つの kind はそれぞれ 2（要検証: M6 の実測で調整）で、ほかは `MaxConnsPerHost` の 8 まで
 
 ### 13. メディアの本体
 
 **本体はストリームのチャンクで運ぶ。** 画像は 16 MiB、動画と音声は 100 MiB まであり（ADR-0019 §8）、1 つのメッセージにも、grpc-go の既定の 4 MiB にも収まらない。
 
 - **RPC:** `Process` と `Remux` を双方向ストリームにする。使い方は半二重で、`my` は `head`（操作の引数）とチャンクを送りきってから `CloseSend` し、プラグインは `head` のあとに、出力ごとの `part`（どの出力か・形式・寸法・バイト数）とチャンクを返す。`Process` の `head` は `outcome`・寸法・再生時間・blurhash を持つ。`Remux` の `head` は `outcome` だけで、再生時間・寸法・コーデックは `my` が出力から自分で読み直す（下の出力の検査）
-- **HTTP/2 が要る。** Connect の双方向は HTTP/2 だけで、HTTP/1.1 では送信が `EOF` で失敗する。したがって `media` は `proto` か `grpc` だけを受け、`json` は設定のエラーにする。TLS は ALPN の h2、Unix ソケットと平文の TCP は h2c
+- **HTTP/2 が要る。** Connect の双方向は HTTP/2 だけで、HTTP/1.1 では送信が `EOF` で失敗する。したがってメディアの kind は `proto` か `grpc` だけを受け、`json` は設定のエラーにする。TLS は ALPN の h2、Unix ソケットと平文の TCP は h2c
 - **上限:** チャンクは 1 MiB。入力の合計は `Limits.MaxBytes`・`AVLimits.MaxBytes` で、ポートが呼ばれる時点で守られている。`my` は受信を出力ごとと全体で数え、`part` の宣言か次の上限を超えたら読むのをやめて `ErrTooLarge` にする: `Process` の全体は `Limits.MaxBytes` の 2 倍、`Remux` は本体が `AVLimits.MaxBytes`、カバーが `Limits.MaxBytes`
 - **メモリ:** ポートは今も `data []byte` を受けて `[]byte` を返すので、ストリームにしても `my` のメモリは減らない。増えもしない。ポートを `io.Reader` にする変更は別の課題とする
 
@@ -234,6 +234,13 @@ proto の版はパッケージごとの `v1` で、`my` の Go のインター�
 - `Inspect`・`InspectAV` はアップロードの要求の中で動き（`content/media.go`）、`Preview` はメディアプロキシの読み取りの経路で動く（`remote_media.go`）。どれも遅延を許す経路ではない
 - 重い変換という #2220 の目的は `Process` と `Remux` で足りる。`Preview` はプラグインとの出力の違いが問題にならない小さな変種である
 - adapter は `Options` で組み込みの `media.Processor` を受け、`internal/platform` が組み立てる。adapter 同士の import は要らない
+
+**kind はファイルの種類ごとに 3 つに分ける。** 画像は `media_image`、映像のトラックを持つファイルは `media_video`、音声だけのファイルは `media_audio` で、それぞれに設定（`media_image` など。値は `native` か `plugin`）と宛先（`plugin_media_<kind>_*`）、期限、同時の呼び出しのセマフォを持つ。
+
+- 重い動画だけを GPU のあるマシンへ送り、画像はサーバーの中に残す、という分け方ができる。期限とセマフォが別なので、遅い動画が画像の処理を待たせない
+- 振り分けはサーバーがする。`Process` は `media_image` へ送る。`Remux` は組み込みの `InspectAV` が先に読んだ `AVKind` で `media_video` か `media_audio` へ送り、`RemuxHead.kind` に載せる。プラグインはこの値を信じてよく、`my` は出力を自分で読み直す（下の出力の検査）
+- `plugin` を選んでいない種類は組み込みの `media/native` が処理する。1 つのプラグインに全部を任せるときは、3 つの宛先に同じアドレスを書く
+- proto のサービスは 1 つ（`MediaService`）のままにする。画像のプラグインは `Process` だけ、動画と音声のプラグインは `Remux` だけを実装すればよい
 
 **出力の検査（ADR-0019 §8）:** `media.Sniff`・`SniffAV` で形式を判定し、ポートが定める形式（`Still` の large は JPEG か PNG、small と medium は WebP など）と `part` の宣言の両方に合うこと、組み込みの `Inspect`・`InspectAV` が同じ `Limits` で通すこと、箱の寸法に収まることを確かめる。`ContentType` と `Extension` はプラグインの値を使わず判定した形式から決める。合わない出力は `ErrCorrupt`、大きすぎる出力は `ErrTooLarge` で、`media.Rejected` により組み込みの拒否と同じくメディアの失敗になる。運搬の失敗は組み込みの一時的な失敗と同じく再試行する。
 
@@ -268,7 +275,7 @@ proto の版はパッケージごとの `v1` で、`my` の Go のインター�
 | `translator` | 翻訳が失敗として返る。投稿の表示は変わらない |
 | `billing` | 組み込みの source の失敗と同じ。過去の取り込みは変わらず、`unavailable` はジョブが再試行する |
 | `mailer` | 一時的な失敗として再試行する。メールが遅れる |
-| `media` | 組み込みの一時的な失敗と同じで、処理が遅れる。カスタム絵文字の登録のように `Process` を同期で呼ぶ経路（`custom_emoji_admin.go`）は、その要求がエラーになる |
+| `media_image`・`media_video`・`media_audio` | 組み込みの一時的な失敗と同じで、処理が遅れる。カスタム絵文字の登録のように `Process` を同期で呼ぶ経路（`custom_emoji_admin.go`）は、その要求がエラーになる |
 | `key_manager` | §14 |
 | フック | ADR-0147 |
 
@@ -283,7 +290,7 @@ proto の版はパッケージごとの `v1` で、`my` の Go のインター�
   - `mailer` は `--mail-to` を要求し、指定がなければ送る事例を飛ばす
   - `billing` は `max_requests = 0` の事例だけを既定にし、課金される事例は `--billed` で足す
   - `key_manager` は使い捨ての DEK だけを使う
-  - `media` はテストの画像だけを送る。位置情報を含む画像が除去されて返ることも確かめる
+  - `media_image` と `media_audio` はテストの画像と音声だけを送る。位置情報やタグが除去されて返ることも確かめる
 - 接続の設定は `plugin_<kind>_*` と同じ意味のフラグで渡す
 
 ### 17. ライセンス
@@ -294,7 +301,7 @@ proto の版はパッケージごとの `v1` で、`my` の Go のインター�
 
 - 別プロセスのプラグインにも `my` のライセンスが及ぶと判断する事情が生じたら、プラグインのライセンスの条件を見直す
 - `connect/v2` の保守が止まる、または Apache-2.0 でなくなったら、`v1` か gRPC の直接の実装へ移す。プロトコルの契約は proto の側にあるので、プラグインに影響しない
-- HTTP/2 を通せない配置が `media` の主な使い方になったら、§13 を URL の受け渡しに変える
+- HTTP/2 を通せない配置がメディアの kind の主な使い方になったら、§13 を URL の受け渡しに変える
 - `key_manager` の起動時の自己検査が、実在の KMS の費用や権限と合わなければ、`--skip` ではなく検査の内容を変える
 
 ## 経緯
@@ -307,6 +314,7 @@ proto の版はパッケージごとの `v1` で、`my` の Go のインター�
 
 - **`my` がクライアントであること。** 「1 つの proto で 3 つのプロトコル」はサーバーの性質なので、JSON だけのプラグインへ届くには `my` が JSON を送る必要があり、§3 の設定と既定になった
 - **メディアの本体。** #2220 は blob のキーか署名付き URL で渡す案だった。ポートと経路を読むと §13 の採らなかった理由があり、ストリームにした
+- **メディアの kind の分割。** #2220 は画像・動画・音声を 1 つの kind `media` で委譲した。動画だけを別のマシンへ送れないことから、決定者が 3 つの kind に分けると決めた（#2406）
 - **MIT の proto と生成物。** 検査のスクリプトと生成の動作を確かめると、見出しのコピーで検査が落ちることが分かり、§8 の 4 か所になった
 
 確認した一次情報（2026-11-05）: `connectrpc.com/connect/v2` v2.0.2 の `LICENSE`（Apache-2.0）・`go.mod`（ビルドの依存は `google.golang.org/protobuf` だけ、`go-cmp` はテスト用）・ソースに `import "C"` なし、[Connect Protocol Reference](https://connectrpc.com/docs/protocol/)、[Deployment & h2c](https://connectrpc.com/docs/go/deployment/)、[Migrating to v2](https://connectrpc.com/docs/go/migrating-to-v2/)。`CGO_ENABLED=0` でスクラッチのプログラムをビルドして動かし、Connect の分のバイナリの増加は約 0.8 MiB（protobuf と `net/http` を含む比較対象との差。`cmd/my` への追加では未計測）。`Apache-2.0` は `GO_ALLOWED_LICENSES` にある。
@@ -319,12 +327,13 @@ proto の版はパッケージごとの `v1` で、`my` の Go のインター�
 - **サブプロセスの管理（`hashicorp/go-plugin` の形）:** 配布が簡単で寿命を `my` が握れるが、別のマシンで動かせず、Cloud Run や ECS Fargate の 1 つのコンテナにプロセスを同居させることになり（要検証）、バイナリの更新の責任が `my` に来る
 - **Go の `plugin` パッケージや Wasm:** 通信の費用がなく同じプロセスで動くが、`plugin` は cgo とビルドの完全な一致を要し（要検証）、AGPL との結合の問題が最も重い。Wasm は Vault や別のマシンでの変換という目的に合わない
 - **管理画面で宛先を設定:** 運営者には楽だが、管理者のアカウントの盗難が投稿と鍵の行き先の変更になる
-- **`media` の本体を blob のキーや署名付き URL で渡す（#2220 の案）:** メッセージが小さく、プラグインが HTTP だけで動く。ただし次の理由で足りない
+- **メディアの本体を blob のキーや署名付き URL で渡す（#2220 の案）:** メッセージが小さく、プラグインが HTTP だけで動く。ただし次の理由で足りない
   - `blob.Signer` は読むだけの URL で書く URL がなく、出力の戻り道に新しいポートのメソッドが要る
   - `Signer` は `blob.Store` と別の任意のインターフェイスで、`s3` と `gcs` だけが実装し、`fs` にはない（2026-11-05 に確認）
   - `Remux` の入力は blob にあるが、リンクカードの画像（`link_card.go`）と埋め込みのカバー（`AVOutput.Cover`）の `Process` の入力は blob にないので、一時的な blob と掃除が要る
   - 利用者の未処理のアップロードの URL が外に出て、バケットへの到達性がプラグインの配置を縛る
-- **`media` を 2 つの RPC に分けて HTTP/1.1 に乗せる（クライアントストリームで送り、ジョブ ID でサーバーストリームを受ける）:** HTTP/1.1 で動くが、プラグインに状態が生まれ、ロードバランサーの後ろで同じインスタンスに届く保証が要る
+- **メディアの kind を 2 つの RPC に分けて HTTP/1.1 に乗せる（クライアントストリームで送り、ジョブ ID でサーバーストリームを受ける）:** HTTP/1.1 で動くが、プラグインに状態が生まれ、ロードバランサーの後ろで同じインスタンスに届く保証が要る
+- **メディアを 1 つの kind（`media`）で委譲する:** 設定と宛先が 1 組で済むが、画像・動画・音声が同じ宛先・期限・セマフォを分け合う。動画だけを別のマシンへ送れず、遅い動画が画像を待たせる。サーバーは `InspectAV` で種類を先に知っているので、分けても振り分けの費用は小さい
 - **`Inspect`・`Preview` も委譲:** ポートをまるごと委譲できて単純だが、アップロードの要求と読み取りの経路にプラグインの遅延と障害が入る
 - **すべての kind で平文の TCP を拒む:** 規則は 1 つで済むが、本文も個人のデータも運ばない `billing` などの閉じたネットワークの設定まで重くなる
 - **拒む kind でもループバックの平文の TCP を許す:** サイドカーの設定が簡単で、Unix ソケットの共有ボリュームが要らないが、§6 の理由で判定が曖昧になる
@@ -337,12 +346,12 @@ proto の版はパッケージごとの `v1` で、`my` の Go のインター�
 - 良い影響
   - 翻訳・費用・メール・変換・鍵の差し替えが `my` の依存を増やさず、プラグインなしのサーバーは何も変わらない
   - 契約が proto にあるので、内部のインターフェイスの変更がプラグインを壊さない。`buf breaking` で機械的に止まる
-  - `net/http` と JSON だけの小さなプラグインが書ける（`media` を除く）
+  - `net/http` と JSON だけの小さなプラグインが書ける（メディアの kind を除く）
 - 悪い影響・トレードオフ
   - `v0.1.0` の前に kind を全部作るので、最初のリリースまでの作業が増える。翻訳のポート（#2230）が前提になり、リリースの順序に影響する
-  - `media` は HTTP/2 と Connect か gRPC のライブラリを要し、JSON だけのプラグインにはできない
+  - メディアの kind は HTTP/2 と Connect か gRPC のライブラリを要し、JSON だけのプラグインにはできない
   - `my` はプラグインのメタデータの除去を完全には確かめられない。形式と寸法は検査するが、位置情報の除去は §16 の CLI の事例と運営者の責任になる（ADR-0019 §8 が前提とする再エンコードをプラグインに任せる）
-  - `media` を平文の TCP で動かすと、位置情報の残るアップロードがネットワークに暗号化されずに流れる。起動時に警告し、守るのは運営者の責任である
+  - メディアの kind を平文の TCP で動かすと、位置情報の残るアップロードがネットワークに暗号化されずに流れる。起動時に警告し、守るのは運営者の責任である
   - `key_manager` のプラグインは KEK と同じ信頼を要し、障害は §14 の範囲に広がる。誤って使うと連合上の同一性に関わる（NFR-REL-4）
   - Connect のエラーの `message` を捨てるので、プラグインの障害の調査はプラグインのログに頼る
   - 依存が増える: `connect/v2`（`cmd/my` に）、`buf`（`tools/buf/` に）。`connect/v2` は最初の版から 1 か月ほどで、変更に追随する可能性がある
@@ -357,5 +366,5 @@ proto の版はパッケージごとの `v1` で、`my` の Go のインター�
 - Cloud Run のサイドカーの共有ボリュームと ECS Fargate のボリュームでの Unix ソケット（未読。§6 の平文の TCP を拒む kind をサイドカーに置くときの前提。M6 のテンプレートで確かめる）
 - `buf breaking` の `--against` に Git のタグを渡す形が CI の浅いクローンで動くか（確かめたのはディレクトリとの比較だけ）
 - `tools/buf/go.mod` を分けたときの `scripts/go-work-check.sh` と Dependabot の扱い（未確認）
-- `media` の同時実行の既定と 100 MiB のときのメモリの実測（スクラッチのテストの速度は同じプロセスの中で、本番の参考にならない）
+- メディアの kind の同時実行の既定と 100 MiB のときのメモリの実測（スクラッチのテストの速度は同じプロセスの中で、本番の参考にならない）
 - `connect/v2` の Deployment の文書と実装の既定の上限の食い違い（§12。実装を信じて常に指定する）

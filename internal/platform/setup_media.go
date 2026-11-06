@@ -41,20 +41,19 @@ func (a *App) setUpMediaHTTP() {
 }
 
 // setMediaProcessor builds the media processor, which the media proxy and the media use cases
-// share.
+// share. The built-in processor handles every kind of media whose setting is native, and the
+// plugins the others.
 func (a *App) setMediaProcessor(cfg *config.Config) error {
-	switch cfg.Media {
-	case "native":
-		a.MediaProcessor = native.New(native.Options{})
-	case "plugin":
-		p, err := newPluginMediaProcessor(cfg, native.New(native.Options{}), a.Meter)
-		if err != nil {
-			return err
-		}
-		a.MediaProcessor = p
-	default:
-		return fmt.Errorf("media %q is not implemented yet", cfg.Media)
+	builtin := native.New(native.Options{})
+	if cfg.MediaImage != "plugin" && cfg.MediaVideo != "plugin" && cfg.MediaAudio != "plugin" {
+		a.MediaProcessor = builtin
+		return nil
 	}
+	p, err := newPluginMediaProcessor(cfg, builtin, a.Meter)
+	if err != nil {
+		return err
+	}
+	a.MediaProcessor = p
 	return nil
 }
 

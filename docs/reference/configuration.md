@@ -80,7 +80,9 @@ An instance setting that has never been set reads as its default, which is defin
 | [`queue_cloudtasks_audience`](#queue_cloudtasks_audience) | `MY_QUEUE_CLOUDTASKS_AUDIENCE` | the URL of the endpoint called | no | no |
 | [`queue_cloudtasks_dispatch_deadline`](#queue_cloudtasks_dispatch_deadline) | `MY_QUEUE_CLOUDTASKS_DISPATCH_DEADLINE` | `10m` | no | no |
 | [`blob`](#blob) | `MY_BLOB` | `fs` | no | no |
-| [`media`](#media) | `MY_MEDIA` | `native` | no | no |
+| [`media_image`](#media_image) | `MY_MEDIA_IMAGE` | `native` | no | no |
+| [`media_video`](#media_video) | `MY_MEDIA_VIDEO` | `native` | no | no |
+| [`media_audio`](#media_audio) | `MY_MEDIA_AUDIO` | `native` | no | no |
 | [`blob_fs_dir`](#blob_fs_dir) | `MY_BLOB_FS_DIR` | `blobs` | no | no |
 | [`blob_s3_bucket`](#blob_s3_bucket) | `MY_BLOB_S3_BUCKET` | none | when `blob = s3` | no |
 | [`blob_s3_endpoint`](#blob_s3_endpoint) | `MY_BLOB_S3_ENDPOINT` | none | no | no |
@@ -225,13 +227,27 @@ An instance setting that has never been set reads as its default, which is defin
 | [`plugin_mailer_tls_cert_file`](#plugin_mailer_tls_cert_file) | `MY_PLUGIN_MAILER_TLS_CERT_FILE` | none | no | no |
 | [`plugin_mailer_tls_key_file`](#plugin_mailer_tls_key_file) | `MY_PLUGIN_MAILER_TLS_KEY_FILE` | none | no | no |
 | [`plugin_mailer_timeout`](#plugin_mailer_timeout) | `MY_PLUGIN_MAILER_TIMEOUT` | `30s` | no | no |
-| [`plugin_media_address`](#plugin_media_address) | `MY_PLUGIN_MEDIA_ADDRESS` | none | when `media = plugin` | no |
-| [`plugin_media_protocol`](#plugin_media_protocol) | `MY_PLUGIN_MEDIA_PROTOCOL` | `proto` | no | no |
-| [`plugin_media_token`](#plugin_media_token) | `MY_PLUGIN_MEDIA_TOKEN` | none | no | yes |
-| [`plugin_media_tls_ca_file`](#plugin_media_tls_ca_file) | `MY_PLUGIN_MEDIA_TLS_CA_FILE` | the system's roots | no | no |
-| [`plugin_media_tls_cert_file`](#plugin_media_tls_cert_file) | `MY_PLUGIN_MEDIA_TLS_CERT_FILE` | none | no | no |
-| [`plugin_media_tls_key_file`](#plugin_media_tls_key_file) | `MY_PLUGIN_MEDIA_TLS_KEY_FILE` | none | no | no |
-| [`plugin_media_timeout`](#plugin_media_timeout) | `MY_PLUGIN_MEDIA_TIMEOUT` | `4m0s` | no | no |
+| [`plugin_media_image_address`](#plugin_media_image_address) | `MY_PLUGIN_MEDIA_IMAGE_ADDRESS` | none | when `media_image = plugin` | no |
+| [`plugin_media_image_protocol`](#plugin_media_image_protocol) | `MY_PLUGIN_MEDIA_IMAGE_PROTOCOL` | `proto` | no | no |
+| [`plugin_media_image_token`](#plugin_media_image_token) | `MY_PLUGIN_MEDIA_IMAGE_TOKEN` | none | no | yes |
+| [`plugin_media_image_tls_ca_file`](#plugin_media_image_tls_ca_file) | `MY_PLUGIN_MEDIA_IMAGE_TLS_CA_FILE` | the system's roots | no | no |
+| [`plugin_media_image_tls_cert_file`](#plugin_media_image_tls_cert_file) | `MY_PLUGIN_MEDIA_IMAGE_TLS_CERT_FILE` | none | no | no |
+| [`plugin_media_image_tls_key_file`](#plugin_media_image_tls_key_file) | `MY_PLUGIN_MEDIA_IMAGE_TLS_KEY_FILE` | none | no | no |
+| [`plugin_media_image_timeout`](#plugin_media_image_timeout) | `MY_PLUGIN_MEDIA_IMAGE_TIMEOUT` | `4m0s` | no | no |
+| [`plugin_media_video_address`](#plugin_media_video_address) | `MY_PLUGIN_MEDIA_VIDEO_ADDRESS` | none | when `media_video = plugin` | no |
+| [`plugin_media_video_protocol`](#plugin_media_video_protocol) | `MY_PLUGIN_MEDIA_VIDEO_PROTOCOL` | `proto` | no | no |
+| [`plugin_media_video_token`](#plugin_media_video_token) | `MY_PLUGIN_MEDIA_VIDEO_TOKEN` | none | no | yes |
+| [`plugin_media_video_tls_ca_file`](#plugin_media_video_tls_ca_file) | `MY_PLUGIN_MEDIA_VIDEO_TLS_CA_FILE` | the system's roots | no | no |
+| [`plugin_media_video_tls_cert_file`](#plugin_media_video_tls_cert_file) | `MY_PLUGIN_MEDIA_VIDEO_TLS_CERT_FILE` | none | no | no |
+| [`plugin_media_video_tls_key_file`](#plugin_media_video_tls_key_file) | `MY_PLUGIN_MEDIA_VIDEO_TLS_KEY_FILE` | none | no | no |
+| [`plugin_media_video_timeout`](#plugin_media_video_timeout) | `MY_PLUGIN_MEDIA_VIDEO_TIMEOUT` | `4m0s` | no | no |
+| [`plugin_media_audio_address`](#plugin_media_audio_address) | `MY_PLUGIN_MEDIA_AUDIO_ADDRESS` | none | when `media_audio = plugin` | no |
+| [`plugin_media_audio_protocol`](#plugin_media_audio_protocol) | `MY_PLUGIN_MEDIA_AUDIO_PROTOCOL` | `proto` | no | no |
+| [`plugin_media_audio_token`](#plugin_media_audio_token) | `MY_PLUGIN_MEDIA_AUDIO_TOKEN` | none | no | yes |
+| [`plugin_media_audio_tls_ca_file`](#plugin_media_audio_tls_ca_file) | `MY_PLUGIN_MEDIA_AUDIO_TLS_CA_FILE` | the system's roots | no | no |
+| [`plugin_media_audio_tls_cert_file`](#plugin_media_audio_tls_cert_file) | `MY_PLUGIN_MEDIA_AUDIO_TLS_CERT_FILE` | none | no | no |
+| [`plugin_media_audio_tls_key_file`](#plugin_media_audio_tls_key_file) | `MY_PLUGIN_MEDIA_AUDIO_TLS_KEY_FILE` | none | no | no |
+| [`plugin_media_audio_timeout`](#plugin_media_audio_timeout) | `MY_PLUGIN_MEDIA_AUDIO_TIMEOUT` | `4m0s` | no | no |
 | [`plugin_key_manager_address`](#plugin_key_manager_address) | `MY_PLUGIN_KEY_MANAGER_ADDRESS` | none | when `key_manager = plugin` | no |
 | [`plugin_key_manager_protocol`](#plugin_key_manager_protocol) | `MY_PLUGIN_KEY_MANAGER_PROTOCOL` | `json` | no | no |
 | [`plugin_key_manager_token`](#plugin_key_manager_token) | `MY_PLUGIN_KEY_MANAGER_TOKEN` | none | no | yes |
@@ -566,18 +582,44 @@ Blob storage adapter for media.
 | `s3` | S3-compatible object storage (Amazon S3, Cloudflare R2, the XML API of Google Cloud Storage, MinIO, Garage): `blob_s3_bucket` and the other `blob_s3_` settings. The build tag `no_s3` leaves it out. |
 | `gcs` | Google Cloud Storage through its JSON API, with Application Default Credentials (the service account of Cloud Run or of the instance), so that no key is kept: `blob_gcs_bucket`. The build tag `no_gcs` leaves it out. |
 
-### `media`
+### `media_image`
 
-Media processor adapter.
+Processor of images: their variants, without metadata.
 
-- Environment variable: `MY_MEDIA`
+- Environment variable: `MY_MEDIA_IMAGE`
 - Default: `native`
 - Required: no
 
 | Value | Description |
 | --- | --- |
-| `native` | Pure Go image processing. |
-| `plugin` | A plugin of yours (`plugin_media_address`) re-encodes images and remuxes video and audio, so that heavy conversion runs on another machine; the server still checks uploads and every output itself, and removing metadata is left to the plugin ([plugins](../operations/plugins.md)). The build tag `no_plugins` leaves it out. |
+| `native` | In the server, in pure Go. |
+| `plugin` | A plugin of yours (`plugin_media_image_address`) re-encodes images into their variants, so that heavy conversion runs on another machine; the server still checks uploads and every output itself, and removing metadata is left to the plugin ([plugins](../operations/plugins.md)). The build tag `no_plugins` leaves it out. |
+
+### `media_video`
+
+Processor of videos: writing their streams again without metadata.
+
+- Environment variable: `MY_MEDIA_VIDEO`
+- Default: `native`
+- Required: no
+
+| Value | Description |
+| --- | --- |
+| `native` | In the server, in pure Go. |
+| `plugin` | A plugin of yours (`plugin_media_video_address`) remuxes videos, so that heavy conversion runs on another machine; the server still checks uploads and every output itself, and removing metadata is left to the plugin ([plugins](../operations/plugins.md)). The build tag `no_plugins` leaves it out. |
+
+### `media_audio`
+
+Processor of audio-only files: writing their streams again without metadata.
+
+- Environment variable: `MY_MEDIA_AUDIO`
+- Default: `native`
+- Required: no
+
+| Value | Description |
+| --- | --- |
+| `native` | In the server, in pure Go. |
+| `plugin` | A plugin of yours (`plugin_media_audio_address`) remuxes audio files, so that heavy conversion runs on another machine; the server still checks uploads and every output itself, and removing metadata is left to the plugin ([plugins](../operations/plugins.md)). The build tag `no_plugins` leaves it out. |
 
 ### `blob_fs_dir`
 
@@ -1873,19 +1915,19 @@ Deadline of one call of the `mailer` plugin, less than `5m0s`.
 - Default: `30s`
 - Required: no
 
-### `plugin_media_address`
+### `plugin_media_image_address`
 
-Where the `media` plugin listens: `unix:///path/to.sock`, `https://host[:port]`, or `http://host[:port]`, which is plain TCP: nothing encrypts or authenticates it, and the server warns at start. Empty delegates nothing, and the server opens no connection. Host names are resolved per connection. Restart to change it; no instance setting or API can.
+Where the `media_image` plugin listens: `unix:///path/to.sock`, `https://host[:port]`, or `http://host[:port]`, which is plain TCP: nothing encrypts or authenticates it, and the server warns at start. Empty delegates nothing, and the server opens no connection. Host names are resolved per connection. Restart to change it; no instance setting or API can.
 
-- Environment variable: `MY_PLUGIN_MEDIA_ADDRESS`
+- Environment variable: `MY_PLUGIN_MEDIA_IMAGE_ADDRESS`
 - Default: none
-- Required: when `media = plugin`
+- Required: when `media_image = plugin`
 
-### `plugin_media_protocol`
+### `plugin_media_image_protocol`
 
-What the server sends to the `media` plugin; it must be what the plugin accepts.
+What the server sends to the `media_image` plugin; it must be what the plugin accepts.
 
-- Environment variable: `MY_PLUGIN_MEDIA_PROTOCOL`
+- Environment variable: `MY_PLUGIN_MEDIA_IMAGE_PROTOCOL`
 - Default: `proto`
 - Required: no
 
@@ -1894,43 +1936,165 @@ What the server sends to the `media` plugin; it must be what the plugin accepts.
 | `proto` | The Connect protocol with binary protobuf, for a server on a Connect library. |
 | `grpc` | gRPC, for a server that speaks only that. |
 
-### `plugin_media_token`
+### `plugin_media_image_token`
 
-Bearer token that the server sends to the `media` plugin, over `https://` or `unix://` only.
+Bearer token that the server sends to the `media_image` plugin, over `https://` or `unix://` only.
 
-- Environment variable: `MY_PLUGIN_MEDIA_TOKEN` or `MY_PLUGIN_MEDIA_TOKEN_FILE`
+- Environment variable: `MY_PLUGIN_MEDIA_IMAGE_TOKEN` or `MY_PLUGIN_MEDIA_IMAGE_TOKEN_FILE`
 - Default: none
 - Required: no
 
-### `plugin_media_tls_ca_file`
+### `plugin_media_image_tls_ca_file`
 
-File of the CA that verifies the `media` plugin at an `https://` address.
+File of the CA that verifies the `media_image` plugin at an `https://` address.
 
-- Environment variable: `MY_PLUGIN_MEDIA_TLS_CA_FILE`
+- Environment variable: `MY_PLUGIN_MEDIA_IMAGE_TLS_CA_FILE`
 - Default: the system's roots
 - Required: no
 
-### `plugin_media_tls_cert_file`
+### `plugin_media_image_tls_cert_file`
 
-File of the client certificate that the server shows the `media` plugin at an `https://` address (mTLS), with its key file.
+File of the client certificate that the server shows the `media_image` plugin at an `https://` address (mTLS), with its key file.
 
-- Environment variable: `MY_PLUGIN_MEDIA_TLS_CERT_FILE`
+- Environment variable: `MY_PLUGIN_MEDIA_IMAGE_TLS_CERT_FILE`
 - Default: none
 - Required: no
 
-### `plugin_media_tls_key_file`
+### `plugin_media_image_tls_key_file`
 
-File of the key of that client certificate of the `media` plugin.
+File of the key of that client certificate of the `media_image` plugin.
 
-- Environment variable: `MY_PLUGIN_MEDIA_TLS_KEY_FILE`
+- Environment variable: `MY_PLUGIN_MEDIA_IMAGE_TLS_KEY_FILE`
 - Default: none
 - Required: no
 
-### `plugin_media_timeout`
+### `plugin_media_image_timeout`
 
-Deadline of one call of the `media` plugin, less than `5m0s`.
+Deadline of one call of the `media_image` plugin, less than `5m0s`.
 
-- Environment variable: `MY_PLUGIN_MEDIA_TIMEOUT`
+- Environment variable: `MY_PLUGIN_MEDIA_IMAGE_TIMEOUT`
+- Default: `4m0s`
+- Required: no
+
+### `plugin_media_video_address`
+
+Where the `media_video` plugin listens: `unix:///path/to.sock`, `https://host[:port]`, or `http://host[:port]`, which is plain TCP: nothing encrypts or authenticates it, and the server warns at start. Empty delegates nothing, and the server opens no connection. Host names are resolved per connection. Restart to change it; no instance setting or API can.
+
+- Environment variable: `MY_PLUGIN_MEDIA_VIDEO_ADDRESS`
+- Default: none
+- Required: when `media_video = plugin`
+
+### `plugin_media_video_protocol`
+
+What the server sends to the `media_video` plugin; it must be what the plugin accepts.
+
+- Environment variable: `MY_PLUGIN_MEDIA_VIDEO_PROTOCOL`
+- Default: `proto`
+- Required: no
+
+| Value | Description |
+| --- | --- |
+| `proto` | The Connect protocol with binary protobuf, for a server on a Connect library. |
+| `grpc` | gRPC, for a server that speaks only that. |
+
+### `plugin_media_video_token`
+
+Bearer token that the server sends to the `media_video` plugin, over `https://` or `unix://` only.
+
+- Environment variable: `MY_PLUGIN_MEDIA_VIDEO_TOKEN` or `MY_PLUGIN_MEDIA_VIDEO_TOKEN_FILE`
+- Default: none
+- Required: no
+
+### `plugin_media_video_tls_ca_file`
+
+File of the CA that verifies the `media_video` plugin at an `https://` address.
+
+- Environment variable: `MY_PLUGIN_MEDIA_VIDEO_TLS_CA_FILE`
+- Default: the system's roots
+- Required: no
+
+### `plugin_media_video_tls_cert_file`
+
+File of the client certificate that the server shows the `media_video` plugin at an `https://` address (mTLS), with its key file.
+
+- Environment variable: `MY_PLUGIN_MEDIA_VIDEO_TLS_CERT_FILE`
+- Default: none
+- Required: no
+
+### `plugin_media_video_tls_key_file`
+
+File of the key of that client certificate of the `media_video` plugin.
+
+- Environment variable: `MY_PLUGIN_MEDIA_VIDEO_TLS_KEY_FILE`
+- Default: none
+- Required: no
+
+### `plugin_media_video_timeout`
+
+Deadline of one call of the `media_video` plugin, less than `5m0s`.
+
+- Environment variable: `MY_PLUGIN_MEDIA_VIDEO_TIMEOUT`
+- Default: `4m0s`
+- Required: no
+
+### `plugin_media_audio_address`
+
+Where the `media_audio` plugin listens: `unix:///path/to.sock`, `https://host[:port]`, or `http://host[:port]`, which is plain TCP: nothing encrypts or authenticates it, and the server warns at start. Empty delegates nothing, and the server opens no connection. Host names are resolved per connection. Restart to change it; no instance setting or API can.
+
+- Environment variable: `MY_PLUGIN_MEDIA_AUDIO_ADDRESS`
+- Default: none
+- Required: when `media_audio = plugin`
+
+### `plugin_media_audio_protocol`
+
+What the server sends to the `media_audio` plugin; it must be what the plugin accepts.
+
+- Environment variable: `MY_PLUGIN_MEDIA_AUDIO_PROTOCOL`
+- Default: `proto`
+- Required: no
+
+| Value | Description |
+| --- | --- |
+| `proto` | The Connect protocol with binary protobuf, for a server on a Connect library. |
+| `grpc` | gRPC, for a server that speaks only that. |
+
+### `plugin_media_audio_token`
+
+Bearer token that the server sends to the `media_audio` plugin, over `https://` or `unix://` only.
+
+- Environment variable: `MY_PLUGIN_MEDIA_AUDIO_TOKEN` or `MY_PLUGIN_MEDIA_AUDIO_TOKEN_FILE`
+- Default: none
+- Required: no
+
+### `plugin_media_audio_tls_ca_file`
+
+File of the CA that verifies the `media_audio` plugin at an `https://` address.
+
+- Environment variable: `MY_PLUGIN_MEDIA_AUDIO_TLS_CA_FILE`
+- Default: the system's roots
+- Required: no
+
+### `plugin_media_audio_tls_cert_file`
+
+File of the client certificate that the server shows the `media_audio` plugin at an `https://` address (mTLS), with its key file.
+
+- Environment variable: `MY_PLUGIN_MEDIA_AUDIO_TLS_CERT_FILE`
+- Default: none
+- Required: no
+
+### `plugin_media_audio_tls_key_file`
+
+File of the key of that client certificate of the `media_audio` plugin.
+
+- Environment variable: `MY_PLUGIN_MEDIA_AUDIO_TLS_KEY_FILE`
+- Default: none
+- Required: no
+
+### `plugin_media_audio_timeout`
+
+Deadline of one call of the `media_audio` plugin, less than `5m0s`.
+
+- Environment variable: `MY_PLUGIN_MEDIA_AUDIO_TIMEOUT`
 - Default: `4m0s`
 - Required: no
 

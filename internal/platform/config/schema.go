@@ -347,14 +347,34 @@ var schema = []field{
 		set: func(c *Config, v string) { c.Blob = v },
 	},
 	{
-		key: "media",
-		doc: "Media processor adapter.",
+		key: "media_image",
+		doc: "Processor of images: their variants, without metadata.",
 		def: "native",
 		choices: []choice{
-			{value: "native", doc: "Pure Go image processing."},
-			{value: "plugin", doc: "A plugin of yours (`plugin_media_address`) re-encodes images and remuxes video and audio, so that heavy conversion runs on another machine; the server still checks uploads and every output itself, and removing metadata is left to the plugin ([plugins](../operations/plugins.md)). The build tag `no_plugins` leaves it out."},
+			{value: "native", doc: "In the server, in pure Go."},
+			{value: "plugin", doc: "A plugin of yours (`plugin_media_image_address`) re-encodes images into their variants, so that heavy conversion runs on another machine; the server still checks uploads and every output itself, and removing metadata is left to the plugin ([plugins](../operations/plugins.md)). The build tag `no_plugins` leaves it out."},
 		},
-		set: func(c *Config, v string) { c.Media = v },
+		set: func(c *Config, v string) { c.MediaImage = v },
+	},
+	{
+		key: "media_video",
+		doc: "Processor of videos: writing their streams again without metadata.",
+		def: "native",
+		choices: []choice{
+			{value: "native", doc: "In the server, in pure Go."},
+			{value: "plugin", doc: "A plugin of yours (`plugin_media_video_address`) remuxes videos, so that heavy conversion runs on another machine; the server still checks uploads and every output itself, and removing metadata is left to the plugin ([plugins](../operations/plugins.md)). The build tag `no_plugins` leaves it out."},
+		},
+		set: func(c *Config, v string) { c.MediaVideo = v },
+	},
+	{
+		key: "media_audio",
+		doc: "Processor of audio-only files: writing their streams again without metadata.",
+		def: "native",
+		choices: []choice{
+			{value: "native", doc: "In the server, in pure Go."},
+			{value: "plugin", doc: "A plugin of yours (`plugin_media_audio_address`) remuxes audio files, so that heavy conversion runs on another machine; the server still checks uploads and every output itself, and removing metadata is left to the plugin ([plugins](../operations/plugins.md)). The build tag `no_plugins` leaves it out."},
+		},
+		set: func(c *Config, v string) { c.MediaAudio = v },
 	},
 	{
 		key:   "blob_fs_dir",

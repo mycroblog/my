@@ -30,7 +30,7 @@ func (r refusingMedia) Process(context.Context, []byte, media.Limits, media.Size
 	return media.Output{}, r.err
 }
 
-// With media = plugin, the plugin makes the variants of an upload, and what it does marks the job as the built-in
+// With media_image = plugin, the plugin makes the variants of an upload, and what it does marks the job as the built-in
 // processor does: an output is a ready file, a rejection a failed one, and a failure of the plugin leaves the file to the
 // job's next try (ADR-0146 §13, §15).
 func TestMediaOfAPlugin(t *testing.T) {
@@ -50,7 +50,7 @@ func TestMediaOfAPlugin(t *testing.T) {
 			h, rec := fakeplugin.Connect(fakeplugin.Options{Media: tc.behind, Broken: tc.broken})
 			cfg := loadConfig(t, map[string]string{
 				"MY_DATABASE_URL": newDatabase(t, true), "MY_QUEUE": "db",
-				"MY_MEDIA": "plugin", "MY_PLUGIN_MEDIA_ADDRESS": fakeplugin.ServeUnix(t, h),
+				"MY_MEDIA_IMAGE": "plugin", "MY_PLUGIN_MEDIA_IMAGE_ADDRESS": fakeplugin.ServeUnix(t, h),
 			})
 			s := start(t, cfg, platform.ServeOptions{}, nil)
 			m, err := s.app.Media.Upload(t.Context(), content.UploadInput{
@@ -92,7 +92,7 @@ func TestMediaOfAPlugin(t *testing.T) {
 func TestMediaOfAPluginAtStart(t *testing.T) {
 	t.Parallel()
 	cfg := loadConfig(t, map[string]string{
-		"MY_DATABASE_URL": newDatabase(t, true), "MY_MEDIA": "plugin", "MY_PLUGIN_MEDIA_ADDRESS": "unix:///nowhere/media.sock",
+		"MY_DATABASE_URL": newDatabase(t, true), "MY_MEDIA_IMAGE": "plugin", "MY_PLUGIN_MEDIA_IMAGE_ADDRESS": "unix:///nowhere/media.sock",
 	})
 	app, err := platform.NewApp(t.Context(), cfg, platform.AppOptions{})
 	if err != nil {

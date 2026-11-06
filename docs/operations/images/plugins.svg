@@ -55,8 +55,8 @@
   <text class="t b" x="205" y="268" text-anchor="middle">mailer</text>
   <text class="m" x="205" y="290" text-anchor="middle">mail = plugin</text>
   <rect class="port" x="40" y="312" width="330" height="56" rx="8"/>
-  <text class="t b" x="205" y="334" text-anchor="middle">media</text>
-  <text class="m" x="205" y="356" text-anchor="middle">media = plugin</text>
+  <text class="t b" x="205" y="334" text-anchor="middle">media_image, _video, _audio</text>
+  <text class="m" x="205" y="356" text-anchor="middle">media_<text class="m" x="205" y="356" text-anchor="middle">media = plugin</text>lt;kind<text class="m" x="205" y="356" text-anchor="middle">media = plugin</text>gt; = plugin</text>
   <rect class="port" x="40" y="378" width="330" height="56" rx="8"/>
   <text class="t b" x="205" y="400" text-anchor="middle">key_manager</text>
   <text class="m" x="205" y="422" text-anchor="middle">key_manager = plugin</text>

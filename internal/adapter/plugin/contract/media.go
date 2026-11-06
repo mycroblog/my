@@ -23,9 +23,10 @@ import (
 // kept the metadata.
 const locationMarker = "MY-PLUGIN-TEST-LOCATION-35.6812N-139.7671E"
 
-// mediaCases check a media plugin through the server's adapter, which checks every output as the server does. They send
-// only the small files made here, and check that the location in their metadata does not come back (ADR-0146 §16).
-var mediaCases = []Case{
+// mediaImageCases and mediaAudioCases check a media plugin through the server's adapter, which checks every output as
+// the server does. They send only the small files made here, and check that the location in their metadata does not
+// come back (ADR-0146 §16).
+var mediaImageCases = []Case{
 	{
 		Name: "process_photo",
 		Run:  mediaProcessPhoto,
@@ -34,12 +35,19 @@ var mediaCases = []Case{
 	},
 	{Name: "process_emoji", Run: mediaProcessEmoji},
 	{Name: "process_animation", Run: mediaProcessAnimation},
+}
+
+var mediaAudioCases = []Case{
 	{Name: "remux_audio", Run: mediaRemuxAudio},
 }
 
-// mediaProcessor returns the server's adapter on the Conn of env.
-func mediaProcessor(env Env) (*mediaplugin.Processor, error) {
-	return mediaplugin.New(env.Conn, mediaplugin.Options{Builtin: native.New(native.Options{Concurrency: 1})})
+// mediaImageProcessor and mediaAudioProcessor return the server's adapter that sends its kind to the Conn of env.
+func mediaImageProcessor(env Env) (*mediaplugin.Processor, error) {
+	return mediaplugin.New(mediaplugin.Options{Builtin: native.New(native.Options{Concurrency: 1}), Image: env.Conn})
+}
+
+func mediaAudioProcessor(env Env) (*mediaplugin.Processor, error) {
+	return mediaplugin.New(mediaplugin.Options{Builtin: native.New(native.Options{Concurrency: 1}), Audio: env.Conn})
 }
 
 // mediaVariants returns every variant of out by name.
@@ -68,7 +76,7 @@ func keptMetadata(outputs map[string][]byte) string {
 
 // mediaProcess processes data as an upload for purpose and checks that no output kept its metadata.
 func mediaProcess(ctx context.Context, env Env, data []byte, purpose media.Purpose) (media.Output, error) {
-	p, err := mediaProcessor(env)
+	p, err := mediaImageProcessor(env)
 	if err != nil {
 		return media.Output{}, err
 	}
@@ -118,7 +126,7 @@ func mediaProcessAnimation(ctx context.Context, env Env) error {
 
 // mediaRemuxAudio sends an MP3 with a title and a cover picture in its tags.
 func mediaRemuxAudio(ctx context.Context, env Env) error {
-	p, err := mediaProcessor(env)
+	p, err := mediaAudioProcessor(env)
 	if err != nil {
 		return err
 	}

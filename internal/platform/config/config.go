@@ -97,8 +97,10 @@ type Config struct {
 	// (ADR-0004); read them with QueueRoutes.
 	QueueCloudTasksRoutes []QueueRoute
 
-	Blob  string
-	Media string
+	Blob string
+	// MediaImage, MediaVideo, and MediaAudio select the processor of images, of videos, and of
+	// audio-only files: native or plugin.
+	MediaImage, MediaVideo, MediaAudio string
 	// BlobFSDir is the directory of the fs blob store.
 	BlobFSDir string
 	// The bucket, endpoint, region, addressing, and credentials of the s3 blob store; no
@@ -359,7 +361,9 @@ func (c *Config) LogValue() slog.Value {
 		slog.Duration("queue_cloudtasks_dispatch_deadline", c.QueueCloudTasksDispatchDeadline),
 		slog.Duration("database_acquire_timeout", c.DatabaseAcquireTimeout),
 		slog.String("blob", c.Blob),
-		slog.String("media", c.Media),
+		slog.String("media_image", c.MediaImage),
+		slog.String("media_video", c.MediaVideo),
+		slog.String("media_audio", c.MediaAudio),
 		slog.String("blob_fs_dir", c.BlobFSDir),
 		slog.String("blob_s3_bucket", c.BlobS3Bucket),
 		slog.String("blob_s3_endpoint", c.BlobS3Endpoint),

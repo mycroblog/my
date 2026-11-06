@@ -94,6 +94,58 @@ func (Purpose) EnumDescriptor() ([]byte, []int) {
 	return file_my_plugin_media_v1_media_proto_rawDescGZIP(), []int{0}
 }
 
+// What a video or audio file holds.
+type AVKind int32
+
+const (
+	AVKind_AV_KIND_UNSPECIFIED AVKind = 0
+	// A file with a video track, with or without sound.
+	AVKind_AV_KIND_VIDEO AVKind = 1
+	// A file with sound only.
+	AVKind_AV_KIND_AUDIO AVKind = 2
+)
+
+// Enum value maps for AVKind.
+var (
+	AVKind_name = map[int32]string{
+		0: "AV_KIND_UNSPECIFIED",
+		1: "AV_KIND_VIDEO",
+		2: "AV_KIND_AUDIO",
+	}
+	AVKind_value = map[string]int32{
+		"AV_KIND_UNSPECIFIED": 0,
+		"AV_KIND_VIDEO":       1,
+		"AV_KIND_AUDIO":       2,
+	}
+)
+
+func (x AVKind) Enum() *AVKind {
+	p := new(AVKind)
+	*p = x
+	return p
+}
+
+func (x AVKind) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (AVKind) Descriptor() protoreflect.EnumDescriptor {
+	return file_my_plugin_media_v1_media_proto_enumTypes[1].Descriptor()
+}
+
+func (AVKind) Type() protoreflect.EnumType {
+	return &file_my_plugin_media_v1_media_proto_enumTypes[1]
+}
+
+func (x AVKind) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use AVKind.Descriptor instead.
+func (AVKind) EnumDescriptor() ([]byte, []int) {
+	return file_my_plugin_media_v1_media_proto_rawDescGZIP(), []int{1}
+}
+
 // The outputs. Each one comes once at most.
 type Output int32
 
@@ -151,11 +203,11 @@ func (x Output) String() string {
 }
 
 func (Output) Descriptor() protoreflect.EnumDescriptor {
-	return file_my_plugin_media_v1_media_proto_enumTypes[1].Descriptor()
+	return file_my_plugin_media_v1_media_proto_enumTypes[2].Descriptor()
 }
 
 func (Output) Type() protoreflect.EnumType {
-	return &file_my_plugin_media_v1_media_proto_enumTypes[1]
+	return &file_my_plugin_media_v1_media_proto_enumTypes[2]
 }
 
 func (x Output) Number() protoreflect.EnumNumber {
@@ -164,7 +216,7 @@ func (x Output) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use Output.Descriptor instead.
 func (Output) EnumDescriptor() ([]byte, []int) {
-	return file_my_plugin_media_v1_media_proto_rawDescGZIP(), []int{1}
+	return file_my_plugin_media_v1_media_proto_rawDescGZIP(), []int{2}
 }
 
 type Format int32
@@ -219,11 +271,11 @@ func (x Format) String() string {
 }
 
 func (Format) Descriptor() protoreflect.EnumDescriptor {
-	return file_my_plugin_media_v1_media_proto_enumTypes[2].Descriptor()
+	return file_my_plugin_media_v1_media_proto_enumTypes[3].Descriptor()
 }
 
 func (Format) Type() protoreflect.EnumType {
-	return &file_my_plugin_media_v1_media_proto_enumTypes[2]
+	return &file_my_plugin_media_v1_media_proto_enumTypes[3]
 }
 
 func (x Format) Number() protoreflect.EnumNumber {
@@ -232,7 +284,7 @@ func (x Format) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use Format.Descriptor instead.
 func (Format) EnumDescriptor() ([]byte, []int) {
-	return file_my_plugin_media_v1_media_proto_rawDescGZIP(), []int{2}
+	return file_my_plugin_media_v1_media_proto_rawDescGZIP(), []int{3}
 }
 
 // The result of a call. Connect errors say only that the call failed in transport, which the server retries like
@@ -298,11 +350,11 @@ func (x Outcome) String() string {
 }
 
 func (Outcome) Descriptor() protoreflect.EnumDescriptor {
-	return file_my_plugin_media_v1_media_proto_enumTypes[3].Descriptor()
+	return file_my_plugin_media_v1_media_proto_enumTypes[4].Descriptor()
 }
 
 func (Outcome) Type() protoreflect.EnumType {
-	return &file_my_plugin_media_v1_media_proto_enumTypes[3]
+	return &file_my_plugin_media_v1_media_proto_enumTypes[4]
 }
 
 func (x Outcome) Number() protoreflect.EnumNumber {
@@ -311,7 +363,7 @@ func (x Outcome) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use Outcome.Descriptor instead.
 func (Outcome) EnumDescriptor() ([]byte, []int) {
-	return file_my_plugin_media_v1_media_proto_rawDescGZIP(), []int{3}
+	return file_my_plugin_media_v1_media_proto_rawDescGZIP(), []int{4}
 }
 
 type ProcessRequest struct {
@@ -911,7 +963,10 @@ type RemuxHead struct {
 	// The limits that the file passed, which the output must pass too.
 	Limits *AVLimits `protobuf:"bytes,1,opt,name=limits,proto3" json:"limits,omitempty"`
 	// The length of the file, which the chunks add up to.
-	Size          int64 `protobuf:"varint,2,opt,name=size,proto3" json:"size,omitempty"`
+	Size int64 `protobuf:"varint,2,opt,name=size,proto3" json:"size,omitempty"`
+	// Whether the file is a video or an audio-only file, as the server read it. The server sends a video to
+	// plugin_media_video_address and an audio file to plugin_media_audio_address, which may be the same plugin.
+	Kind          AVKind `protobuf:"varint,3,opt,name=kind,proto3,enum=my.plugin.media.v1.AVKind" json:"kind,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -958,6 +1013,13 @@ func (x *RemuxHead) GetSize() int64 {
 		return x.Size
 	}
 	return 0
+}
+
+func (x *RemuxHead) GetKind() AVKind {
+	if x != nil {
+		return x.Kind
+	}
+	return AVKind_AV_KIND_UNSPECIFIED
 }
 
 // The limits of a video or audio file, as the server's settings set them.
@@ -1312,10 +1374,11 @@ const file_my_plugin_media_v1_media_proto_rawDesc = "" +
 	"\fRemuxRequest\x123\n" +
 	"\x04head\x18\x01 \x01(\v2\x1d.my.plugin.media.v1.RemuxHeadH\x00R\x04head\x12\x16\n" +
 	"\x05chunk\x18\x02 \x01(\fH\x00R\x05chunkB\t\n" +
-	"\amessage\"U\n" +
+	"\amessage\"\x85\x01\n" +
 	"\tRemuxHead\x124\n" +
 	"\x06limits\x18\x01 \x01(\v2\x1c.my.plugin.media.v1.AVLimitsR\x06limits\x12\x12\n" +
-	"\x04size\x18\x02 \x01(\x03R\x04size\"\xd2\x01\n" +
+	"\x04size\x18\x02 \x01(\x03R\x04size\x12.\n" +
+	"\x04kind\x18\x03 \x01(\x0e2\x1a.my.plugin.media.v1.AVKindR\x04kind\"\xd2\x01\n" +
 	"\bAVLimits\x12\x1b\n" +
 	"\tmax_bytes\x18\x01 \x01(\x03R\bmaxBytes\x121\n" +
 	"\x15max_video_duration_ms\x18\x02 \x01(\x03R\x12maxVideoDurationMs\x121\n" +
@@ -1341,7 +1404,11 @@ const file_my_plugin_media_v1_media_proto_rawDesc = "" +
 	"\x12PURPOSE_ATTACHMENT\x10\x01\x12\x12\n" +
 	"\x0ePURPOSE_AVATAR\x10\x02\x12\x12\n" +
 	"\x0ePURPOSE_HEADER\x10\x03\x12\x11\n" +
-	"\rPURPOSE_EMOJI\x10\x04*\xe4\x01\n" +
+	"\rPURPOSE_EMOJI\x10\x04*G\n" +
+	"\x06AVKind\x12\x17\n" +
+	"\x13AV_KIND_UNSPECIFIED\x10\x00\x12\x11\n" +
+	"\rAV_KIND_VIDEO\x10\x01\x12\x11\n" +
+	"\rAV_KIND_AUDIO\x10\x02*\xe4\x01\n" +
 	"\x06Output\x12\x16\n" +
 	"\x12OUTPUT_UNSPECIFIED\x10\x00\x12\x16\n" +
 	"\x12OUTPUT_STILL_SMALL\x10\x01\x12\x17\n" +
@@ -1396,52 +1463,54 @@ func file_my_plugin_media_v1_media_proto_rawDescGZIP() []byte {
 	return file_my_plugin_media_v1_media_proto_rawDescData
 }
 
-var file_my_plugin_media_v1_media_proto_enumTypes = make([]protoimpl.EnumInfo, 4)
+var file_my_plugin_media_v1_media_proto_enumTypes = make([]protoimpl.EnumInfo, 5)
 var file_my_plugin_media_v1_media_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
 var file_my_plugin_media_v1_media_proto_goTypes = []any{
 	(Purpose)(0),            // 0: my.plugin.media.v1.Purpose
-	(Output)(0),             // 1: my.plugin.media.v1.Output
-	(Format)(0),             // 2: my.plugin.media.v1.Format
-	(Outcome)(0),            // 3: my.plugin.media.v1.Outcome
-	(*ProcessRequest)(nil),  // 4: my.plugin.media.v1.ProcessRequest
-	(*ProcessHead)(nil),     // 5: my.plugin.media.v1.ProcessHead
-	(*Limits)(nil),          // 6: my.plugin.media.v1.Limits
-	(*Box)(nil),             // 7: my.plugin.media.v1.Box
-	(*ProcessResponse)(nil), // 8: my.plugin.media.v1.ProcessResponse
-	(*ProcessResult)(nil),   // 9: my.plugin.media.v1.ProcessResult
-	(*RemuxRequest)(nil),    // 10: my.plugin.media.v1.RemuxRequest
-	(*RemuxHead)(nil),       // 11: my.plugin.media.v1.RemuxHead
-	(*AVLimits)(nil),        // 12: my.plugin.media.v1.AVLimits
-	(*RemuxResponse)(nil),   // 13: my.plugin.media.v1.RemuxResponse
-	(*RemuxResult)(nil),     // 14: my.plugin.media.v1.RemuxResult
-	(*Part)(nil),            // 15: my.plugin.media.v1.Part
+	(AVKind)(0),             // 1: my.plugin.media.v1.AVKind
+	(Output)(0),             // 2: my.plugin.media.v1.Output
+	(Format)(0),             // 3: my.plugin.media.v1.Format
+	(Outcome)(0),            // 4: my.plugin.media.v1.Outcome
+	(*ProcessRequest)(nil),  // 5: my.plugin.media.v1.ProcessRequest
+	(*ProcessHead)(nil),     // 6: my.plugin.media.v1.ProcessHead
+	(*Limits)(nil),          // 7: my.plugin.media.v1.Limits
+	(*Box)(nil),             // 8: my.plugin.media.v1.Box
+	(*ProcessResponse)(nil), // 9: my.plugin.media.v1.ProcessResponse
+	(*ProcessResult)(nil),   // 10: my.plugin.media.v1.ProcessResult
+	(*RemuxRequest)(nil),    // 11: my.plugin.media.v1.RemuxRequest
+	(*RemuxHead)(nil),       // 12: my.plugin.media.v1.RemuxHead
+	(*AVLimits)(nil),        // 13: my.plugin.media.v1.AVLimits
+	(*RemuxResponse)(nil),   // 14: my.plugin.media.v1.RemuxResponse
+	(*RemuxResult)(nil),     // 15: my.plugin.media.v1.RemuxResult
+	(*Part)(nil),            // 16: my.plugin.media.v1.Part
 }
 var file_my_plugin_media_v1_media_proto_depIdxs = []int32{
-	5,  // 0: my.plugin.media.v1.ProcessRequest.head:type_name -> my.plugin.media.v1.ProcessHead
-	6,  // 1: my.plugin.media.v1.ProcessHead.limits:type_name -> my.plugin.media.v1.Limits
+	6,  // 0: my.plugin.media.v1.ProcessRequest.head:type_name -> my.plugin.media.v1.ProcessHead
+	7,  // 1: my.plugin.media.v1.ProcessHead.limits:type_name -> my.plugin.media.v1.Limits
 	0,  // 2: my.plugin.media.v1.ProcessHead.purpose:type_name -> my.plugin.media.v1.Purpose
-	7,  // 3: my.plugin.media.v1.ProcessHead.small:type_name -> my.plugin.media.v1.Box
-	7,  // 4: my.plugin.media.v1.ProcessHead.medium:type_name -> my.plugin.media.v1.Box
-	7,  // 5: my.plugin.media.v1.ProcessHead.large:type_name -> my.plugin.media.v1.Box
-	9,  // 6: my.plugin.media.v1.ProcessResponse.head:type_name -> my.plugin.media.v1.ProcessResult
-	15, // 7: my.plugin.media.v1.ProcessResponse.part:type_name -> my.plugin.media.v1.Part
-	3,  // 8: my.plugin.media.v1.ProcessResult.outcome:type_name -> my.plugin.media.v1.Outcome
-	11, // 9: my.plugin.media.v1.RemuxRequest.head:type_name -> my.plugin.media.v1.RemuxHead
-	12, // 10: my.plugin.media.v1.RemuxHead.limits:type_name -> my.plugin.media.v1.AVLimits
-	14, // 11: my.plugin.media.v1.RemuxResponse.head:type_name -> my.plugin.media.v1.RemuxResult
-	15, // 12: my.plugin.media.v1.RemuxResponse.part:type_name -> my.plugin.media.v1.Part
-	3,  // 13: my.plugin.media.v1.RemuxResult.outcome:type_name -> my.plugin.media.v1.Outcome
-	1,  // 14: my.plugin.media.v1.Part.output:type_name -> my.plugin.media.v1.Output
-	2,  // 15: my.plugin.media.v1.Part.format:type_name -> my.plugin.media.v1.Format
-	4,  // 16: my.plugin.media.v1.MediaService.Process:input_type -> my.plugin.media.v1.ProcessRequest
-	10, // 17: my.plugin.media.v1.MediaService.Remux:input_type -> my.plugin.media.v1.RemuxRequest
-	8,  // 18: my.plugin.media.v1.MediaService.Process:output_type -> my.plugin.media.v1.ProcessResponse
-	13, // 19: my.plugin.media.v1.MediaService.Remux:output_type -> my.plugin.media.v1.RemuxResponse
-	18, // [18:20] is the sub-list for method output_type
-	16, // [16:18] is the sub-list for method input_type
-	16, // [16:16] is the sub-list for extension type_name
-	16, // [16:16] is the sub-list for extension extendee
-	0,  // [0:16] is the sub-list for field type_name
+	8,  // 3: my.plugin.media.v1.ProcessHead.small:type_name -> my.plugin.media.v1.Box
+	8,  // 4: my.plugin.media.v1.ProcessHead.medium:type_name -> my.plugin.media.v1.Box
+	8,  // 5: my.plugin.media.v1.ProcessHead.large:type_name -> my.plugin.media.v1.Box
+	10, // 6: my.plugin.media.v1.ProcessResponse.head:type_name -> my.plugin.media.v1.ProcessResult
+	16, // 7: my.plugin.media.v1.ProcessResponse.part:type_name -> my.plugin.media.v1.Part
+	4,  // 8: my.plugin.media.v1.ProcessResult.outcome:type_name -> my.plugin.media.v1.Outcome
+	12, // 9: my.plugin.media.v1.RemuxRequest.head:type_name -> my.plugin.media.v1.RemuxHead
+	13, // 10: my.plugin.media.v1.RemuxHead.limits:type_name -> my.plugin.media.v1.AVLimits
+	1,  // 11: my.plugin.media.v1.RemuxHead.kind:type_name -> my.plugin.media.v1.AVKind
+	15, // 12: my.plugin.media.v1.RemuxResponse.head:type_name -> my.plugin.media.v1.RemuxResult
+	16, // 13: my.plugin.media.v1.RemuxResponse.part:type_name -> my.plugin.media.v1.Part
+	4,  // 14: my.plugin.media.v1.RemuxResult.outcome:type_name -> my.plugin.media.v1.Outcome
+	2,  // 15: my.plugin.media.v1.Part.output:type_name -> my.plugin.media.v1.Output
+	3,  // 16: my.plugin.media.v1.Part.format:type_name -> my.plugin.media.v1.Format
+	5,  // 17: my.plugin.media.v1.MediaService.Process:input_type -> my.plugin.media.v1.ProcessRequest
+	11, // 18: my.plugin.media.v1.MediaService.Remux:input_type -> my.plugin.media.v1.RemuxRequest
+	9,  // 19: my.plugin.media.v1.MediaService.Process:output_type -> my.plugin.media.v1.ProcessResponse
+	14, // 20: my.plugin.media.v1.MediaService.Remux:output_type -> my.plugin.media.v1.RemuxResponse
+	19, // [19:21] is the sub-list for method output_type
+	17, // [17:19] is the sub-list for method input_type
+	17, // [17:17] is the sub-list for extension type_name
+	17, // [17:17] is the sub-list for extension extendee
+	0,  // [0:17] is the sub-list for field type_name
 }
 
 func init() { file_my_plugin_media_v1_media_proto_init() }
@@ -1472,7 +1541,7 @@ func file_my_plugin_media_v1_media_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_my_plugin_media_v1_media_proto_rawDesc), len(file_my_plugin_media_v1_media_proto_rawDesc)),
-			NumEnums:      4,
+			NumEnums:      5,
 			NumMessages:   12,
 			NumExtensions: 0,
 			NumServices:   1,

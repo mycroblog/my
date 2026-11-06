@@ -111,7 +111,7 @@ func TestAPluginOfNetHTTPAndJSONAlone(t *testing.T) {
 
 // A kind that streams speaks HTTP/2 on every transport, since Connect streams both ways only there (ADR-0146 §13).
 func TestAStreamingKindSpeaksHTTP2(t *testing.T) {
-	k, _ := kind.ByName(kind.Media)
+	k, _ := kind.ByName(kind.MediaVideo)
 	files := fakeplugin.NewTLSFiles(t, false)
 	h, rec := fakeplugin.Connect(fakeplugin.Options{})
 	for _, d := range []kind.Destination{
