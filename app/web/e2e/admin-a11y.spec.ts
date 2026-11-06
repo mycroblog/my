@@ -804,6 +804,7 @@ async function moderatorServer(page: Page) {
     if (key === "GET /admin/hook_appeals") return json(route, { items: [hookAppeal] });
     if (key === "GET /admin/translation") return json(route, translationOverview);
     if (key === "GET /admin/cost_items") return json(route, { items: [costItem] });
+    if (key === `GET /admin/cost_items/${costItem.id}`) return json(route, costItem);
     if (key === "GET /admin/cost_totals") return json(route, costTotals);
     if (key === "GET /finance/cost_totals") {
       return json(route, {
@@ -816,7 +817,7 @@ async function moderatorServer(page: Page) {
     if (key === "GET /admin/payment_status") return json(route, paymentStatus);
     if (key === "GET /admin/supporter_plans") return json(route, { items: [supporterPlan] });
     if (key === "GET /admin/supporter_subscriptions") return json(route, { items: [supporterSubscription] });
-    if (key === "GET /admin/billing_imports") return json(route, { items: [] });
+    if (key === "GET /admin/billing_imports") return json(route, { items: [billingImport] });
     if (key === "GET /admin/income_totals") return json(route, incomeTotals);
     if (key === "GET /admin/income_movements") return json(route, { items: [incomeMovement] });
     if (/^GET \/admin\/accounts\/[^/]+\/roles$/.test(key))
@@ -840,6 +841,21 @@ const costItem: Schemas["CostItem"] = {
     { effective_on: "2026-04-10", price: { amount: "1650", currency: "JPY" }, revised_at: "2026-04-10T00:00:00Z" },
   ],
   created_at: "2026-04-10T00:00:00Z",
+};
+
+/** The import of a billing source with a long provider name, as GET /admin/billing_imports lists it. */
+const billingImport: Schemas["BillingImport"] = {
+  source: "aws",
+  provider: "Amazon Web Services of a rather long account name that has to wrap",
+  time_zone: "UTC",
+  method: "cost_explorer",
+  last_success_at: "2026-10-21T01:00:00Z",
+  requests_today: 1,
+  requests_this_month: 21,
+  max_requests_per_day: 4,
+  max_requests_per_month: 120,
+  bytes_billed_this_month: 0,
+  months: [{ month: "2026-10", kind: "estimate", totals: [{ amount: "31.24", currency: "USD" }] }],
 };
 
 /** The totals of the costs screen: one month in two currencies with an estimate. */
@@ -1086,7 +1102,13 @@ const adminPages: Readonly<Record<string, { path: string; ready: string | { valu
   "admin.theme": { path: "/admin/theme", ready: { value: "#fdfdf6" } },
   "admin.rules": { path: "/admin/rules", ready: rule.hint ?? "" },
   "admin.roles": { path: "/admin/roles", ready: roles[2]?.key ?? "" },
-  "admin.finance": { path: "/admin/finance?tab=records", ready: costItem.provider },
+  "admin.finance": { path: "/admin/finance", ready: "registrar" },
+  "admin.finance_.income": { path: "/admin/finance/income", ready: `@${incomeMovement.username ?? ""}` },
+  "admin.finance_.costs": { path: "/admin/finance/costs", ready: costItem.name },
+  "admin.finance_.costs_.new": { path: "/admin/finance/costs/new", ready: "" },
+  "admin.finance_.costs_.$id": { path: `/admin/finance/costs/${costItem.id}`, ready: costItem.provider },
+  "admin.finance_.imports": { path: "/admin/finance/imports", ready: billingImport.provider },
+  "admin.finance_.publication": { path: "/admin/finance/publication", ready: "" },
   "admin.supporters": { path: "/admin/supporters", ready: supporterSubscription.plan_name },
   "moderation.invites": { path: "/moderation/invites", ready: invite.code },
   "moderation.hook-decisions": { path: "/moderation/hook-decisions", ready: hookDecision.subject_key },

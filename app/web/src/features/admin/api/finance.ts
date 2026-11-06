@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The queries and mutations of the costs screen (ADR-0067 §9, ADR-0068 §9, manage_finance, web-client/README.md S1): the
-// cost items (GET /admin/cost_items, newest first, as an infinite query), the totals of a range of weeks, months or
+// cost items (GET /admin/cost_items, newest first, as an infinite query) and one of them (GET /admin/cost_items/{id}), the totals of a range of weeks, months or
 // years under a basis (GET /admin/cost_totals), the state of the billing imports (GET /admin/billing_imports),
 // recording, relabeling, revising, ending and canceling an item, and importing a provider's charges now. Every change
 // goes to the audit log and changes the totals. The income (ADR-0067 §16) is only read: its totals with the gross, the
@@ -60,13 +60,61 @@ export function costItemsQueryOptions(api: Api) {
   });
 }
 
+/** The key of one cost item's query, which a change of the item replaces with the server's answer. */
+function costItemQueryKey(id: string) {
+  return ["get", "/admin/cost_items/{id}", id] as const;
+}
+
+/** One cost item that is not canceled (GET /admin/cost_items/{id}); an unknown or canceled one is a 404. */
+export function costItemQueryOptions(api: Api, id: string) {
+  return queryOptions({
+    queryKey: costItemQueryKey(id),
+    queryFn: async ({ signal }): Promise<CostItem> => {
+      const { data, error } = await api.fetch.GET("/admin/cost_items/{id}", {
+        params: { path: { id } },
+        signal,
+      });
+      if (data === undefined) throw new ApiError(error);
+      return data;
+    },
+  });
+}
+
+/**
+ * The currency a new item starts with: that of the newest item of the list when the list has been read (the new
+ * item's page came from it), else US dollars; the new item's page reads nothing else for it.
+ */
+export function newestCostCurrency(queryClient: QueryClient, api: Api): string {
+  return (
+    queryClient.getQueryData(costItemsQueryOptions(api).queryKey)?.pages[0]?.items[0]?.prices[0]?.price.currency ??
+    "USD"
+  );
+}
+
+/**
+ * Puts the server's answer to a write of a cost item (recording, relabeling, revising, ending) into the item's query,
+ * then marks what the change changes (refreshCosts) and awaits the queries shown now.
+ */
+export async function cacheCostItem(queryClient: QueryClient, item: CostItem): Promise<void> {
+  queryClient.setQueryData(costItemQueryKey(item.id), item);
+  await refreshCosts(queryClient);
+}
+
+/** Drops the query of a canceled cost item, once its page has left (reading it again would be a 404). */
+export function forgetCostItem(queryClient: QueryClient, id: string): void {
+  queryClient.removeQueries({ queryKey: costItemQueryKey(id) });
+}
+
 /** The totals of the shown periods up to `today` (GET /admin/cost_totals). */
 export function costTotalsQueryOptions(api: Api, granularity: CostGranularity, basis: CostBasis, today: string) {
   const query = totalsQuery(granularity, basis, today);
   return queryOptions({
     queryKey: ["get", "/admin/cost_totals", query] as const,
     queryFn: async ({ signal }) => {
-      const { data, error } = await api.fetch.GET("/admin/cost_totals", { params: { query }, signal });
+      const { data, error } = await api.fetch.GET("/admin/cost_totals", {
+        params: { query },
+        signal,
+      });
       if (data === undefined) throw new ApiError(error);
       return data;
     },
@@ -79,7 +127,10 @@ export function adminIncomeTotalsQueryOptions(api: Api, granularity: CostGranula
   return queryOptions({
     queryKey: ["get", "/admin/income_totals", query] as const,
     queryFn: async ({ signal }) => {
-      const { data, error } = await api.fetch.GET("/admin/income_totals", { params: { query }, signal });
+      const { data, error } = await api.fetch.GET("/admin/income_totals", {
+        params: { query },
+        signal,
+      });
       if (data === undefined) throw new ApiError(error);
       return data;
     },
@@ -149,7 +200,10 @@ export function updateCostItemMutation(api: Api) {
   return {
     mutationKey: ["patch", "/admin/cost_items/{id}"] as const,
     mutationFn: async ({ id, body }: { id: string; body: CostItemLabel }): Promise<CostItem> => {
-      const { data, error } = await api.fetch.PATCH("/admin/cost_items/{id}", { params: { path: { id } }, body });
+      const { data, error } = await api.fetch.PATCH("/admin/cost_items/{id}", {
+        params: { path: { id } },
+        body,
+      });
       if (data === undefined) throw new ApiError(error);
       return data;
     },
@@ -177,7 +231,10 @@ export function setCostItemEndMutation(api: Api) {
     mutationKey: ["put", "/admin/cost_items/{id}/end"] as const,
     mutationFn: async ({ id, endsOn }: { id: string; endsOn: string | undefined }): Promise<CostItem> => {
       const body = endsOn === undefined ? {} : { ends_on: endsOn };
-      const { data, error } = await api.fetch.PUT("/admin/cost_items/{id}/end", { params: { path: { id } }, body });
+      const { data, error } = await api.fetch.PUT("/admin/cost_items/{id}/end", {
+        params: { path: { id } },
+        body,
+      });
       if (data === undefined) throw new ApiError(error);
       return data;
     },
@@ -200,7 +257,9 @@ export function runBillingImportMutation(api: Api) {
   return {
     mutationKey: ["post", "/admin/billing_imports/{source}/runs"] as const,
     mutationFn: async (source: Schemas["BillingSourceName"]): Promise<void> => {
-      await api.fetch.POST("/admin/billing_imports/{source}/runs", { params: { path: { source } } });
+      await api.fetch.POST("/admin/billing_imports/{source}/runs", {
+        params: { path: { source } },
+      });
     },
   };
 }

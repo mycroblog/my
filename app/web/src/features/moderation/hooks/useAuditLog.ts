@@ -201,9 +201,10 @@ export function auditTargetHref(
       // The list, which a deleted relay has left; a relay has no screen of its own.
       return "/admin/relays";
     case "billing_source":
+      // The billing imports page of the costs screen shows the state of every billing source.
+      return "/admin/finance/imports";
     case "cost_item":
-      // The costs screen lists the items that are not canceled and the state of every billing source.
-      return "/admin/finance";
+      return `/admin/finance/costs/${id}`;
     case "supporter_program":
     case "supporter_plan":
     case "supporter_subscription":

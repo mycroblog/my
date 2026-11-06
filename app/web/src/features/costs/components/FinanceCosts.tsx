@@ -28,7 +28,7 @@ export type FinanceCostsProps = Omit<CostTotalsPanelProps, "children"> & {
  * The costs always come with the breakdown of the current period by provider and category, and the lines of its items
  * while the instance shows their names or memos (a holder of manage_finance reads them all); the income always with
  * the balance, and with the members of each plan when the instance shows them. It says what the instance does not
- * show. Nobody's payments are shown, and recording the costs is the costs screen's (`/admin/finance`). A viewer
+ * show. Nobody's payments are shown, and recording the costs is the costs screen's (`/admin/finance/costs`). A viewer
  * without the permission sees why.
  */
 export function FinanceCosts({ today, ...panel }: FinanceCostsProps) {

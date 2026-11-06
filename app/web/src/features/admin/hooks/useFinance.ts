@@ -13,7 +13,7 @@ import { useApi } from "../../../lib/auth/SessionProvider";
 import { ApiError, errorMessage } from "../../../lib/errors";
 import { useT } from "../../../lib/i18n";
 import { type CostBasis, type CostCategory, type CostGranularity, type CostTotals, utcDate } from "../../costs";
-import { type PagedList, type PagedPages, toPagedList } from "../../moderation";
+import { type PagedPages, toPagedList } from "../../moderation";
 import {
   type AdminIncomeTotals,
   adminIncomeTotalsQueryOptions,
@@ -21,16 +21,20 @@ import {
   billingImportsQueryOptions,
   deleteCostItemMutation,
   type CostItem,
+  cacheCostItem,
+  costItemQueryOptions,
   costItemsQueryOptions,
   costMemoLimit,
   costNameLimit,
   type CostSchedule,
   costTotalsQueryOptions,
   createCostItemMutation,
+  forgetCostItem,
   type IncomeMovement,
   type IncomeMovementFilter,
   incomeMovementsQueryOptions,
   maxCostInterval,
+  newestCostCurrency,
   refreshBillingImports,
   refreshCosts,
   reviseCostItemPriceMutation,
@@ -41,9 +45,15 @@ import {
 import { characterCount } from "./languages";
 
 /** The cost items that are not canceled, newest first. */
-export function useCostItems(): PagedList<CostItem> {
+export function useCostItems(): PagedPages<CostItem> {
   const api = useApi();
   return toPagedList(useSuspenseInfiniteQuery(costItemsQueryOptions(api)));
+}
+
+/** One cost item that is not canceled. */
+export function useCostItem(id: string): CostItem {
+  const api = useApi();
+  return useSuspenseQuery(costItemQueryOptions(api, id)).data;
 }
 
 /** The totals of the shown periods up to `today`. */
@@ -76,7 +86,10 @@ export type MovementDatesDraft = { from: string; to: string };
 export function useMovementDates(filter: IncomeMovementFilter, onFilterChange: (filter: IncomeMovementFilter) => void) {
   const t = useT();
   const [shown, setShown] = useState({ from: filter.from, to: filter.to });
-  const [draft, setDraft] = useState<MovementDatesDraft>({ from: filter.from ?? "", to: filter.to ?? "" });
+  const [draft, setDraft] = useState<MovementDatesDraft>({
+    from: filter.from ?? "",
+    to: filter.to ?? "",
+  });
   if (shown.from !== filter.from || shown.to !== filter.to) {
     setShown({ from: filter.from, to: filter.to });
     setDraft({ from: filter.from ?? "", to: filter.to ?? "" });
@@ -176,24 +189,22 @@ function emptyDraft(currency: string): NewCostDraft {
 }
 
 /**
- * The form of a new cost item; the currency starts as that of the newest item. It empties once the list shows the item,
- * and gives what it did to `onCreated` (the list's result).
+ * The form of a new cost item (`/admin/finance/costs/new`); the currency starts as that of the newest item. Once the
+ * item is recorded and the list and the totals are fetched again, `onCreated` gets it with what was done.
  */
-export function useNewCostItemForm(defaultCurrency: string, onCreated: (message: string) => void) {
+export function useNewCostItemForm(onCreated: (item: CostItem, message: string) => void) {
   const api = useApi();
   const t = useT();
   const queryClient = useQueryClient();
   const labelErrors = useLabelErrors();
   const priceErrors = usePriceErrors();
-  const [draft, setDraft] = useState<NewCostDraft>(() => emptyDraft(defaultCurrency));
+  const [draft, setDraft] = useState<NewCostDraft>(() => emptyDraft(newestCostCurrency(queryClient, api)));
   const [submitted, setSubmitted] = useState(false);
   const create = useMutation({
     ...createCostItemMutation(api),
     onSuccess: async (item) => {
-      await refreshCosts(queryClient);
-      setDraft((current) => emptyDraft(current.currency));
-      setSubmitted(false);
-      onCreated(t("client:admin.finance.created", { name: item.name }));
+      await cacheCostItem(queryClient, item);
+      onCreated(item, t("client:admin.finance.created", { name: item.name }));
     },
   });
   const errorsOf = (value: NewCostDraft) => {
@@ -222,122 +233,159 @@ export function useNewCostItemForm(defaultCurrency: string, onCreated: (message:
       setDraft((current) => ({ ...current, ...patch }));
     },
     errors,
-    /** Records the cost once the draft is valid; `onAdded` runs once it is recorded (to close the add panel). */
-    submit: (event: SyntheticEvent<HTMLFormElement>, onAdded?: () => void) => {
+    /** Records the cost once the draft is valid. */
+    submit: (event: SyntheticEvent<HTMLFormElement>) => {
       event.preventDefault();
       setSubmitted(true);
       if (create.isPending || Object.keys(errorsOf(draft)).length > 0) return;
-      create.mutate(
-        {
-          schedule: draft.schedule,
-          interval: draft.schedule === "once" ? 1 : Number(draft.interval),
-          starts_on: draft.startsOn,
-          ...(draft.endsOn === "" || draft.schedule === "once" ? {} : { ends_on: draft.endsOn }),
-          name: draft.name.trim(),
-          provider: draft.provider.trim(),
-          category: draft.category,
-          memo: draft.memo.trim(),
-          price: { amount: draft.amount.trim(), currency: draft.currency.trim() },
-        },
-        { onSuccess: () => onAdded?.() },
-      );
+      create.mutate({
+        schedule: draft.schedule,
+        interval: draft.schedule === "once" ? 1 : Number(draft.interval),
+        starts_on: draft.startsOn,
+        ...(draft.endsOn === "" || draft.schedule === "once" ? {} : { ends_on: draft.endsOn }),
+        name: draft.name.trim(),
+        provider: draft.provider.trim(),
+        category: draft.category,
+        memo: draft.memo.trim(),
+        price: { amount: draft.amount.trim(), currency: draft.currency.trim() },
+      });
     },
     isPending: create.isPending,
     /** Why recording failed, localized; the form keeps what was typed. */
     failure: create.isError ? errorMessage(create.error) : undefined,
   };
 }
-
-/** What the list does to an item; each resolves whether it worked. */
-export type CostItemActions = {
-  relabel: (item: CostItem, label: LabelDraft) => Promise<boolean>;
-  revise: (item: CostItem, effectiveOn: string, price: PriceDraft) => Promise<boolean>;
-  /** Sets the last payment date, or removes the end with undefined. */
-  setEnd: (item: CostItem, endsOn: string | undefined) => Promise<boolean>;
-  cancel: (item: CostItem) => Promise<boolean>;
-  labelErrors: (label: LabelDraft) => { name?: string; provider?: string; memo?: string };
-  priceErrors: (price: PriceDraft) => { amount?: string; currency?: string };
-  /** Why the last change failed, localized. */
-  error: string | undefined;
-};
+/** What a change of an item's page did last: nothing yet, or its result for the form's `FormActionBar`. */
+type CostChangeResult = { tone: "success" | "danger"; message: string } | undefined;
 
 /**
- * The changes of the items in the list. Each says what it did through `onDone(item, status, removed)` once the list
- * shows it (the items and the totals are fetched again first), so that the screen can move focus and keep the status
- * next to the list.
+ * One change of the item on its page (`/admin/finance/costs/$id`), each in a form of its own with its own result
+ * (web-client/README.md E2): `send` writes it, the server's answer replaces the item's query, and the list and the
+ * totals are fetched again before the result says what was done.
  */
-export function useCostItemActions(
-  onDone: (item: CostItem, status: string, removed: boolean) => void,
-): CostItemActions {
+function useCostItemChange<V>(mutationFn: (variables: V) => Promise<CostItem>, statusOf: (item: CostItem) => string) {
+  const t = useT();
+  const queryClient = useQueryClient();
+  const [result, setResult] = useState<CostChangeResult>(undefined);
+  const change = useMutation({
+    mutationFn,
+    onMutate: () => {
+      setResult(undefined);
+    },
+    onSuccess: async (item) => {
+      await cacheCostItem(queryClient, item);
+      setResult({ tone: "success", message: statusOf(item) });
+    },
+    onError: (failure) => {
+      setResult({
+        tone: "danger",
+        message: t("client:admin.finance.change_failed", { reason: errorMessage(failure) }),
+      });
+    },
+  });
+  return {
+    /** Sends the change; `onSaved` runs once the result shows it (to empty a form). */
+    send: (variables: V, onSaved?: () => void) => {
+      if (!change.isPending) change.mutate(variables, { onSuccess: () => onSaved?.() });
+    },
+    isPending: change.isPending,
+    result,
+  };
+}
+
+/** The label of an item as the form takes it. */
+export function labelOf(item: CostItem): LabelDraft {
+  return { name: item.name, provider: item.provider, category: item.category, memo: item.memo };
+}
+
+/** Changing an item's name, provider, category and memo, checked before it is sent. */
+export function useRelabelCostItem(item: CostItem) {
+  const api = useApi();
+  const t = useT();
+  const labelErrors = useLabelErrors();
+  const { mutationFn } = updateCostItemMutation(api);
+  const change = useCostItemChange(
+    (label: LabelDraft) =>
+      mutationFn({
+        id: item.id,
+        body: {
+          name: label.name.trim(),
+          provider: label.provider.trim(),
+          category: label.category,
+          memo: label.memo.trim(),
+        },
+      }),
+    (changed) => t("client:admin.finance.relabeled", { name: changed.name }),
+  );
+  return { ...change, errorsOf: labelErrors };
+}
+
+/** Revising an item's price from a date on its start or later, checked before it is sent. */
+export function useReviseCostItemPrice(item: CostItem) {
+  const api = useApi();
+  const t = useT();
+  const priceErrors = usePriceErrors();
+  const { mutationFn } = reviseCostItemPriceMutation(api);
+  const change = useCostItemChange(
+    ({ effectiveOn, price }: { effectiveOn: string; price: PriceDraft }) =>
+      mutationFn({
+        id: item.id,
+        body: {
+          effective_on: effectiveOn,
+          price: { amount: price.amount.trim(), currency: price.currency.trim() },
+        },
+      }),
+    (changed) => t("client:admin.finance.revised", { name: changed.name }),
+  );
+  const dateError = (value: string) => {
+    if (value === "") return t("client:admin.finance.required");
+    if (value < item.starts_on) return t("client:admin.finance.effective_on.before_start");
+    return undefined;
+  };
+  return { ...change, priceErrors, dateError };
+}
+
+/** Setting the last payment date of a recurring item, or removing its end with an empty date. */
+export function useSetCostItemEnd(item: CostItem) {
+  const api = useApi();
+  const t = useT();
+  const { mutationFn } = setCostItemEndMutation(api);
+  const change = useCostItemChange(
+    (endsOn: string | undefined) => mutationFn({ id: item.id, endsOn }),
+    (changed) =>
+      t(changed.ends_on === undefined ? "client:admin.finance.end_removed" : "client:admin.finance.ended", {
+        name: changed.name,
+      }),
+  );
+  const dateError = (value: string) =>
+    value !== "" && value < item.starts_on ? t("client:admin.finance.ends_on.before_start") : undefined;
+  return { ...change, dateError };
+}
+
+/**
+ * Canceling an item for good, after its alert dialog: the item's query is dropped and the list and the totals are
+ * fetched again, then `onCanceled` gets what was done and leaves for the list.
+ */
+export function useCancelCostItem(item: CostItem, onCanceled: (message: string) => Promise<void>) {
   const api = useApi();
   const t = useT();
   const queryClient = useQueryClient();
-  const labelErrors = useLabelErrors();
-  const priceErrors = usePriceErrors();
-  const [error, setError] = useState<string | undefined>(undefined);
-  const update = useMutation({ ...updateCostItemMutation(api) });
-  const revise = useMutation({ ...reviseCostItemPriceMutation(api) });
-  const end = useMutation({ ...setCostItemEndMutation(api) });
-  const cancel = useMutation({ ...deleteCostItemMutation(api) });
-  const run = async (
-    item: CostItem,
-    work: () => Promise<unknown>,
-    status: string,
-    removed = false,
-  ): Promise<boolean> => {
-    setError(undefined);
-    try {
-      await work();
+  const cancel = useMutation({
+    ...deleteCostItemMutation(api),
+    onSuccess: async () => {
       await refreshCosts(queryClient);
-      onDone(item, status, removed);
-      return true;
-    } catch (failure) {
-      setError(errorMessage(failure));
-      return false;
-    }
-  };
+      // The page leaves first, so that nothing reads the canceled item again (a 404).
+      await onCanceled(t("client:admin.finance.canceled", { name: item.name }));
+      forgetCostItem(queryClient, item.id);
+    },
+  });
   return {
-    relabel: (item, label) =>
-      run(
-        item,
-        () =>
-          update.mutateAsync({
-            id: item.id,
-            body: {
-              name: label.name.trim(),
-              provider: label.provider.trim(),
-              category: label.category,
-              memo: label.memo.trim(),
-            },
-          }),
-        t("client:admin.finance.relabeled", { name: label.name.trim() }),
-      ),
-    revise: (item, effectiveOn, price) =>
-      run(
-        item,
-        () =>
-          revise.mutateAsync({
-            id: item.id,
-            body: {
-              effective_on: effectiveOn,
-              price: { amount: price.amount.trim(), currency: price.currency.trim() },
-            },
-          }),
-        t("client:admin.finance.revised", { name: item.name }),
-      ),
-    setEnd: (item, endsOn) =>
-      run(
-        item,
-        () => end.mutateAsync({ id: item.id, endsOn }),
-        t(endsOn === undefined ? "client:admin.finance.end_removed" : "client:admin.finance.ended", {
-          name: item.name,
-        }),
-      ),
-    cancel: (item) =>
-      run(item, () => cancel.mutateAsync(item.id), t("client:admin.finance.canceled", { name: item.name }), true),
-    labelErrors,
-    priceErrors,
-    error,
+    cancel: () => {
+      if (!cancel.isPending) cancel.mutate(item.id);
+    },
+    isPending: cancel.isPending,
+    /** Why canceling failed, localized, for the alert dialog. */
+    error: cancel.isError ? t("client:admin.finance.change_failed", { reason: errorMessage(cancel.error) }) : undefined,
   };
 }
 

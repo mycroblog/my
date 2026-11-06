@@ -74,18 +74,26 @@ export { TranslationSettings } from "./components/TranslationSettings";
 // The roles: creating them and changing their positions and permissions (FR-720), for manage_roles. Their queries
 // are those of the moderation feature, which shows an account's roles.
 export { RoleSettings } from "./components/RoleSettings";
-// The instance's costs: recording them, their totals by week, month and year, and the state of the billing imports
-// (ADR-0067, ADR-0068), for manage_finance.
+// The instance's costs, in the pages of one screen: their totals by week, month and year, the income's money
+// movements, the recorded items with recording, changing and deleting one, the state of the billing imports, and
+// what is published of them (ADR-0067, ADR-0068), for manage_finance.
 export {
   adminIncomeTotalsQueryOptions,
   billingImportsQueryOptions,
+  costItemQueryOptions,
   costItemsQueryOptions,
   costTotalsQueryOptions,
   type IncomeMovementFilter,
   incomeKinds,
   incomeMovementsQueryOptions,
 } from "./api/finance";
-export { FinanceSettings, type FinanceTab } from "./components/FinanceSettings";
+export { BillingImports } from "./components/BillingImports";
+export { CostItemDetail } from "./components/CostItemDetail";
+export { CostItems } from "./components/CostItems";
+export { FinanceIncome } from "./components/FinanceIncome";
+export { FinancePublication } from "./components/FinancePublication";
+export { FinanceTotals } from "./components/FinanceTotals";
+export { NewCostItem } from "./components/NewCostItem";
 // The supporter program: enabling it, its plans and their subscriptions (ADR-0072), for manage_supporters.
 export {
   type SupporterSubscriptionFilter,
