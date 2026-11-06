@@ -85,7 +85,8 @@
 The documentation lives at **[mycroblog.dev](https://mycroblog.dev/latest/)**, one version per release (`/latest/` for
 the newest, `/v0.1/` and the like) and `/next/` for the development version.
 
-- **Run a server**: [running the server](https://mycroblog.dev/latest/operations/running/),
+- **Run a server**: [the overview of a mycroblog server](https://mycroblog.dev/latest/operations/overview/),
+  [running the server](https://mycroblog.dev/latest/operations/running/),
   [deploying with Docker Compose](https://mycroblog.dev/latest/operations/deploy-docker-compose/),
   [deploying on Cloud Run](https://mycroblog.dev/latest/operations/deploy-cloud-run/), and the
   [production checklist](https://mycroblog.dev/latest/operations/production-checklist/)
