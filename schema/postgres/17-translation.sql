@@ -40,7 +40,7 @@ CREATE TABLE status_translation_poll_options (
 -- Current value: the characters of one account sent to providers in a UTC month (YYYY-MM).
 CREATE TABLE translation_account_usage (
   account_id uuid NOT NULL,
-  month text COLLATE "C" NOT NULL,
+  month text COLLATE "C" NOT NULL CHECK (month ~ '^[0-9]{4}-[0-1][0-9]$'),
   characters bigint NOT NULL CHECK (characters >= 0),
   PRIMARY KEY (account_id, month)
 );
@@ -49,7 +49,7 @@ CREATE INDEX translation_account_usage_month ON translation_account_usage (month
 -- Current value: the characters of the whole server sent to providers in a UTC month (YYYY-MM),
 -- and how many requests that month were answered from the cache and how many went to a provider.
 CREATE TABLE translation_server_usage (
-  month text COLLATE "C" NOT NULL PRIMARY KEY,
+  month text COLLATE "C" NOT NULL PRIMARY KEY CHECK (month ~ '^[0-9]{4}-[0-1][0-9]$'),
   characters bigint NOT NULL DEFAULT 0 CHECK (characters >= 0),
   cache_hits bigint NOT NULL DEFAULT 0 CHECK (cache_hits >= 0),
   cache_misses bigint NOT NULL DEFAULT 0 CHECK (cache_misses >= 0)

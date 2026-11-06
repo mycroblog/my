@@ -480,6 +480,82 @@ func (q *Queries) InsertHookDecisionStatus(ctx context.Context, arg InsertHookDe
 	return err
 }
 
+const listAllowHookDecisions = `-- name: ListAllowHookDecisions :many
+SELECT d.id, d.hook, d.subject_key, d.account_id, d.mode, d.outcome, d.reason_code, d.note, d.latency_ms, d.decided_at,
+  o.decision_id AS overridden_decision_id, o.overridden_by_user_id, o.overridden_at
+FROM hook_decisions d
+LEFT JOIN hook_decision_overrides o ON o.decision_id = d.id
+WHERE d.outcome = 'allow'
+  AND ($1::uuid IS NULL OR d.id < $1::uuid)
+  AND ($2::text = '' OR d.hook = $2::text)
+  AND ($3::text = '' OR d.mode = $3::text)
+ORDER BY d.id DESC
+LIMIT $4
+`
+
+type ListAllowHookDecisionsParams struct {
+	Before   *string
+	Hook     string
+	Mode     string
+	RowLimit int32
+}
+
+type ListAllowHookDecisionsRow struct {
+	ID                   string
+	Hook                 string
+	SubjectKey           string
+	AccountID            *string
+	Mode                 string
+	Outcome              string
+	ReasonCode           string
+	Note                 string
+	LatencyMs            int64
+	DecidedAt            time.Time
+	OverriddenDecisionID *string
+	OverriddenByUserID   *string
+	OverriddenAt         *time.Time
+}
+
+// The allow decisions, which the list shows only when asked for that outcome.
+func (q *Queries) ListAllowHookDecisions(ctx context.Context, arg ListAllowHookDecisionsParams) ([]ListAllowHookDecisionsRow, error) {
+	rows, err := q.db.Query(ctx, listAllowHookDecisions,
+		arg.Before,
+		arg.Hook,
+		arg.Mode,
+		arg.RowLimit,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListAllowHookDecisionsRow{}
+	for rows.Next() {
+		var i ListAllowHookDecisionsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Hook,
+			&i.SubjectKey,
+			&i.AccountID,
+			&i.Mode,
+			&i.Outcome,
+			&i.ReasonCode,
+			&i.Note,
+			&i.LatencyMs,
+			&i.DecidedAt,
+			&i.OverriddenDecisionID,
+			&i.OverriddenByUserID,
+			&i.OverriddenAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listExpiredHookDecisions = `-- name: ListExpiredHookDecisions :many
 SELECT d.id, d.hook, d.account_id, d.mode, d.outcome, d.decided_at,
   CAST(EXISTS (SELECT 1 FROM hook_decision_overrides o WHERE o.decision_id = d.id) AS boolean) AS overridden,
@@ -670,11 +746,11 @@ SELECT d.id, d.hook, d.subject_key, d.account_id, d.mode, d.outcome, d.reason_co
   o.decision_id AS overridden_decision_id, o.overridden_by_user_id, o.overridden_at
 FROM hook_decisions d
 LEFT JOIN hook_decision_overrides o ON o.decision_id = d.id
-WHERE ($1::uuid IS NULL OR d.id < $1::uuid)
+WHERE d.outcome <> 'allow'
+  AND ($1::uuid IS NULL OR d.id < $1::uuid)
   AND ($2::text = '' OR d.hook = $2::text)
   AND ($3::text = '' OR d.mode = $3::text)
   AND ($4::text = '' OR d.outcome = $4::text)
-  AND ($4::text <> '' OR d.outcome <> 'allow')
 ORDER BY d.id DESC
 LIMIT $5
 `
@@ -703,7 +779,9 @@ type ListHookDecisionsRow struct {
 	OverriddenAt         *time.Time
 }
 
-// Without an outcome, the list leaves out allow: it shows what a hook would stop or could not check.
+// The decisions other than allow, the default of the list: what a hook would stop or could not
+// check. The literal predicate on outcome lets the planner use the partial index
+// hook_decisions_not_allow_id, so that a page does not walk past the allow rows.
 func (q *Queries) ListHookDecisions(ctx context.Context, arg ListHookDecisionsParams) ([]ListHookDecisionsRow, error) {
 	rows, err := q.db.Query(ctx, listHookDecisions,
 		arg.Before,
