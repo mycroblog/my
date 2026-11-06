@@ -70,6 +70,20 @@ If the CDN's addresses are in `trusted_proxies`, a caller on the CDN's own serve
 
 The three settings below close this. The CDN adds a secret header to every request it forwards, and the server answers `403` to any request without it, before it does anything else with the request.
 
+![The paths of requests with the origin check on: browsers, apps and other servers go through the CDN, which adds the secret header; the platform and anyone else reach the server straight, without it; the server's origin check passes the header and the exempt requests, and refuses the rest with 403. The list below describes each path.](images/cdn-request-flow.svg)
+
+- Browsers and apps (pages, the client API, OAuth and media URLs) and other servers (ActivityPub deliveries and fetches)
+  reach the CDN at `host` and at the host of `media_origin`. The CDN answers cached `/media/` files by itself, and sets
+  `origin_secret_header` to `origin_secret` on every request it forwards to the server.
+- The platform (health probes, uptime monitors, Cloud Tasks and Cloud Scheduler) and anyone else, such as a script or a
+  webhook of your own, reach the server's own address straight, without the header.
+- The origin check runs first in the server. It passes a request that carries the header once with `origin_secret` or
+  `origin_secret_previous`, and, without the header, only `GET` and `HEAD` of the health checks and `POST` to `/_internal/`.
+  It removes the header from every request and refuses the rest with `403`.
+- A request that passes reaches the web client, the client API, OAuth, ActivityPub, the health checks or `/_internal/`,
+  or `/media/` and `/media/proxy/`, which read the media storage (`blob = fs`, `s3` or `gcs`) or relay the file of
+  another server. A refused request gets `403` with `Cache-Control: no-store` and adds to `my.http.origin_refused`.
+
 Use it when the server has a public address that the platform cannot close to everything but the CDN. You do not need it when a firewall or the platform already limits who can connect, for example a server that listens only on a private network behind your load balancer.
 
 It cannot help when the platform's own feature forwards the traffic and adds no header you control, such as a Cloud Run domain mapping. Only a CDN or load balancer that can add a request header does.
