@@ -8,7 +8,8 @@ What a receiver gets (headers, signature, events, body) is described in the [web
 ## Set up a webhook
 
 Anyone with the `manage_webhooks` permission can set webhooks up on the admin screen "Webhooks" (`/admin/webhooks`).
-The built-in `admin` role has it.
+The built-in `admin` role has it. "Add a webhook" opens the form; choosing a webhook in the list opens its page, where you
+change, test, enable, disable and delete it, give it a new secret, and see its deliveries.
 
 1. Create a webhook with a destination URL, a description, and the events to subscribe to. Each event also needs its own
    permission besides `manage_webhooks`: `manage_reports` for reports, `manage_accounts` for registrations, accounts,
@@ -16,7 +17,7 @@ The built-in `admin` role has it.
    `manage_errors` for error groups.
    Public posts need no extra permission. You cannot select an event whose permission you lack.
 2. The secret (`whsec_...`) is shown once, when the webhook is created. Set it on the receiver. It cannot be shown again.
-3. Choose "Send a test" to send `webhook.test`, and check in the deliveries that it arrived.
+3. On the webhook's page, choose "Send a test" to send `webhook.test`, and check in its deliveries that it arrived.
 
 Creating, changing, deleting, enabling, disabling, and rotating the secret of a webhook are recorded in the audit log.
 The target is shown as the description and the host name of the URL; the URL itself is not recorded.

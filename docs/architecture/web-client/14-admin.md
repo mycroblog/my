@@ -91,33 +91,43 @@ API の経路はどちらも `/admin/*` で（[client-api.md](../client-api.md) 
     クローズの区画は、確認の前に点検（`GET /admin/closure/check`: `Delete` の見積もり、続いているサポーターの加入、終わっていない移転、保全の件数と、それぞれの注意。`federation_mode` にかかわらず `Delete` を送ることの説明）を出す。「クローズする」は閉鎖日を過ぎるまで押せず、押すと `ConfirmDialog`（`role="alertdialog"`）が開いて、サーバーのドメイン名（`GET /instance` の `domain`。大文字小文字は区別しない）の入力を求める。入力が合うまで実行できず（ネイティブの検証）、閉じるとき入力を捨てる。
   - **クローズ後**: 日程と、配送の進み具合（`progress`）。進み具合は、終わった配送（配送済み・恒久的な失敗・スキップ・試行切れ）の、記録した配送のうちの数を `ProgressMeter`（`progressbar`。値は「N / M 件」の文。ADR-0110）で出し、その下に処理したアカウント数、`Delete` の展開待ち（その間は全体の数が増える）、配送の状態ごとの件数を出す。10 秒ごとに読み直し、配送中は「ワーカーを止めない」注意を、`delivery_completed` になったら完了を `Callout` で出す。クローズ後も管理の画面は使える（利用者の画面は閉鎖の画面だけ）。
   - 変更でボタンが画面から消えたとき、フォーカスはページの見出し（`h1`）へ移す。
-- **webhook**（`/admin/webhooks`・`/admin/webhooks/{id}`、`manage_webhooks`、FR-722、[ADR-0060](../../adr/0060-instance-webhooks.md)）: 「webhook を設定する」と「このサーバーの webhook」の 2 つの区画（`h2` の `section`）。
-  - **設定**: URL（必須、2048 バイトまで）・説明（200 文字まで）・イベント（`role="group"` の中の `Checkbox`、イベントの種類ごとに 1 つ）のフォーム。`POST /admin/webhooks` で送り、サーバーの拒否（422 `invalid-webhook`）は `reason` の項目（URL・説明・イベント）にサーバーの `detail` を出し、`missing_permission` では足りない権限（`missing_permissions`）も並べて、入力を残す。
-    成功したら入力を空にし、一覧と監査ログに無効化の印を付けてから、結果をフォームの `StatusMessage` に、秘密（`whsec_…`、`dir="ltr"`）を二度と表示しない旨とコピーのボタン（結果はトースト）と一緒にフォームの下に出す。秘密はキャッシュにも保存にも置かず、次の操作で消える。
-  - **一覧**: 新しい順。各 webhook は見出し（説明、なければ URL のホスト名）と、URL（`dir="ltr"`）・イベント・状態（サーバーが無効にしたときはその理由: 宛先がなくなった `gone`、失敗が続いた `failing`）・最後の成功から失敗した回数と最初の失敗の日時・設定を変えた日時の説明リストにする。
-    「送信履歴」（その webhook のページへのリンク）・「編集」（フォームと同じ項目のダイアログ。保存したら閉じ、拒否はダイアログの項目に出す）・「無効にする」「有効にする」・「テスト送信」（有効なときだけ）・「秘密を作り直す」（`ConfirmDialog` で確かめ、新しい秘密を一覧の上に一度だけ出す）・「削除」（元に戻せないので `ConfirmDialog` で確かめ、フォーカスを次の行に移す）を持つ。
-    ボタンのアクセシブルネームは webhook の名前（説明は U+2068 / U+2069、ホスト名は U+2066 / U+2069 で囲む）を含める。結果は一覧の上の `StatusMessage` に、失敗は同じ場所（`role="alert"`）に出し、どの変更も一覧と監査ログに無効化の印を付ける。
-  - **webhook のページ**（`/admin/webhooks/{id}`）: 設定の説明リストと、過去 14 日の送信履歴（新しい順、「さらに表示」）。各送信はイベントの見出しと、結果（未送信・成功・失敗中）・試行回数・作成日時・最後の試行（結果・状態コード・日時）・メッセージ ID（`dir="ltr"`）の説明リストと「もう一度送る」を持ち、送ると履歴を取り直して `StatusMessage` に知らせる。
-- **外部ログインのプロバイダー**（`/admin/login-providers`、`manage_login_providers`、[ADR-0106](../../adr/0106-external-login-providers.md)）: 「ログインプロバイダーを設定する」と「このサーバーのログインプロバイダー」の 2 つの区画（`h2` の `section`）。
-  - **設定**: 種類（`RadioGroup`: OpenID Connect・GitHub・Mastodon）と、種類に応じた項目のフォーム。表示名（必須、100 文字まで。`oidc` ではサインインのボタンにそのまま出ることを添える）・Issuer（`oidc`、https の URL）かサーバー（`mastodon`、ドメイン）・クライアント ID・クライアントシークレット（`type="password"`、設定と作り直しのときだけ入力し、表示しない。新しい `mastodon` では任意で、どちらも空なら送らずにサーバーがクライアントを登録する）・追加の scope（空白区切り。`mastodon` にはない）・「新規登録を許可する」と「アカウントへのひも付けを許可する」の `Checkbox`・条件（`oidc` は `Fieldset` の中に claim と許す値（カンマ区切り）の行を 10 まで足し外しでき、足した行の claim の欄にフォーカスを移し、外したら「条件を追加」に戻す。`github` は Organization の欄（カンマか空白区切り）。`mastodon` は条件がないことを添える）。
-    種類が取らない項目は送らない。claim か値の片方だけの行は送らずに条件の区画に `role="alert"` で出す。`POST /admin/login_providers` で送り、サーバーの拒否（422 `invalid-login-provider`）は `reason` の項目にサーバーの `detail` を出して入力を残す。設定したらフォームを空にし、コールバック URL（`dir="ltr"`）を IdP に登録することの説明とコピーのボタン付きで出す。
-  - **一覧**: 新しい順。各プロバイダーは見出し（表示名、`dir="auto"`）と Issuer・コールバック URL（コピーのボタン付き）、種類、状態（有効か無効かと、登録を許すか）、ひも付けた利用者の数を持つ。
-    「編集」（種類を変えずに設定のフォームと同じ項目のダイアログ。シークレットの欄は持たない。保存したら閉じ、拒否はダイアログの項目に出す）・「シークレットを更新」（新しいシークレットを入れるダイアログ）・「無効にする」（`ConfirmDialog`）・「有効にする」・「削除」（元に戻せないので `ConfirmDialog` で確かめ、フォーカスを次の行に移す）を持つ。
-    無効にすることと削除の確認には、ひも付けた利用者の数と、その利用者がこのプロバイダーでサインインできなくなり、パスワード・パスキー・ほかのプロバイダーを持たなければまったくサインインできなくなることを出す。
-  - **制限が始まる前の確認**（[ADR-0106](../../adr/0106-external-login-providers.md)）: プロバイダーは設定した時点で有効になるので、設定の送信と「有効にする」の 2 つが、ログインをプロバイダーだけにする制限（`login_providers_only`）を始めることがある。どちらも実行の直前に `GET /admin/settings/login_providers_only/impact`（有効にするときは `provider_id` 付き）を読み、`starts_limit` が真のときだけ `ConfirmDialog` で確かめる。設定がオフのときと制限がもう働いているときは、ダイアログを出さない。ダイアログは止まるもの、このプロバイダーへのひも付けのない有効な利用者の数、管理者自身が含まれるならそのこと、元に戻す方法を言う。断らない。数を読めなかったときは、始まるかもしれないことを言う同じダイアログを出す。キャンセルしてもフォームの入力は残る。
-    ボタンのアクセシブルネームは表示名（U+2068 / U+2069 で囲む）を含める。結果は一覧の上の `StatusMessage` に、失敗は同じ場所（`role="alert"`）に出し、どの変更も一覧と監査ログに無効化の印を付ける。監査ログの対象はこの画面へリンクする。
-- **リンクのカードのドメイン**（`/admin/link-card-domains`、`manage_settings`、[ADR-0062](../../adr/0062-link-preview-cards.md)、[画面](screens/admin-link-card-domains.md)）: 「ルールを設定」と「ルール」の 2 つの区画（`h2` の `section`）。
-  - **設定**: ドメインとの連合と投稿のメディアには効かないことの説明、ドメイン（必須。空白と `/`・`:`・`@` はネイティブの検証で止める）、止めるもの（`RadioGroup`。「画像だけ止める」が既定、「取得を止める」）、メモ（`ReasonField`、5,000 文字）のフォーム。`PUT /admin/link_card_domains/{domain}` で送る。同じドメインのルールは置き換わる。成功でフォームを空にして結果を `StatusMessage` に出す。サーバーの拒否（422）はドメインの欄に出して入力を残す。
-  - **一覧**: `GET /admin/link_card_domains` を画面の中で `useQuery` で読む（ローダーで待たない）。読み込み中は区画の `Spinner`、最初の読み込みの失敗は区画の `RegionError`（`useLoadFailure`。G16）で、フォームと `h1` は残す。表の列はドメイン（`DomainName` とメモ）・止めるもの（`Select`。選ぶとすぐ保存し、`SaveIndicator` を `display="icon"` で隣に置く。G24）・最後の設定・操作（「削除」。`ConfirmDialog` で確かめ、フォーカスを次の行に移す）。ボタンと `Select` のアクセシブルネームはドメイン（U+2066 / U+2069 で囲む）を含める。どの変更も一覧と監査ログに無効化の印を付ける。
+- **webhook**（`/admin/webhooks`・`/admin/webhooks/new`・`/admin/webhooks/{id}`、`manage_webhooks`、FR-722、[ADR-0060](../../adr/0060-instance-webhooks.md)、画面は [一覧](screens/admin-webhooks.md)・[追加](screens/admin-webhooks-new.md)・[webhook のページ](screens/admin-webhook.md)）: 一覧 → 詳細（上の「画面の分け方」）。
+  - **一覧**（`/admin/webhooks`）: 「Webhook を追加」（`/admin/webhooks/new` へのリンクのボタン）と、「このサーバーの webhook」の区画の新しい順の `RecordTable`（`wholeList`）。列は Webhook（説明、なければ URL のホスト名。webhook のページへのリンク）・状態（有効か無効か、サーバーが無効にしたときはその理由: 宛先がなくなった `gone`、失敗が続いた `failing`、続けて失敗した回数）・変更日時。行の操作は持たない。
+  - **追加**（`/admin/webhooks/new`）: URL（必須、2048 バイトまで）・説明（200 文字まで）・イベント（`role="group"` の中の `Checkbox`、イベントの種類ごとに 1 つ）のフォーム（`FormActionBar`）。`POST /admin/webhooks` で送り、サーバーの拒否（422 `invalid-webhook`）は `reason` の項目（URL・説明・イベント）にサーバーの `detail` を出し、`missing_permission` では足りない権限（`missing_permissions`）も並べて、入力を残す。
+    秘密は二度と表示しないので、成功してもページを移らない。一覧と監査ログに無効化の印を付けてから、フォームの代わりに結果の `StatusMessage`、秘密（`whsec_…`、`dir="ltr"`）を二度と表示しない旨とコピーのボタン（結果はトースト）、「Webhook を開く」（webhook のページへのリンクのボタン）を出す。秘密はキャッシュにも保存にも置かず、ページを離れると消える。
+  - **webhook のページ**（`/admin/webhooks/{id}`、`GET /admin/webhooks/{id}`）: 4 つの区画。
+    webhook（見出しは説明かホスト名）は URL（`dir="ltr"`）・イベント・状態と理由・最後の成功から失敗した回数と最初の失敗の日時・変更日時の説明リスト。
+    設定は追加と同じ項目のフォーム（`FormActionBar`。結果はボタンの隣、拒否はその項目）。
+    状態・テスト・秘密は「無効にする」「有効にする」（同じ位置のボタン）・「テスト送信」（有効なときだけ）・「秘密を作り直す」（`ConfirmDialog` で確かめ、新しい秘密をこの区画に一度だけ出す）・「削除」（元に戻せないので `ConfirmDialog` で確かめ、一覧へ移ってトーストで知らせる）。結果はこの区画の `StatusMessage` に、失敗は同じ場所（`role="alert"`）に出す。
+    送信履歴は過去 14 日の送信の新しい順の `RecordTable`（カーソルでページング）。列はイベント（とメッセージ ID、`dir="ltr"`）・結果（未送信・成功・失敗中と、試行回数・最後の試行の結果と状態コードと日時）・作成日時・「もう一度送る」。送ると履歴を取り直して `StatusMessage` に知らせる。
+    どの変更も一覧・このページと監査ログに無効化の印を付ける。
+- **外部ログインのプロバイダー**（`/admin/login-providers`・`/admin/login-providers/new`・`/admin/login-providers/{id}`、`manage_login_providers`、[ADR-0106](../../adr/0106-external-login-providers.md)、画面は [一覧](screens/admin-login-providers.md)・[追加](screens/admin-login-providers-new.md)・[プロバイダーのページ](screens/admin-login-provider.md)）: 一覧 → 詳細。
+  - **一覧**（`/admin/login-providers`）: 「プロバイダーを追加」（`/admin/login-providers/new` へのリンクのボタン）と、「このサーバーのログインプロバイダー」の区画の新しい順の `RecordTable`（`wholeList`）。列はプロバイダー（表示名、`dir="auto"`。プロバイダーのページへのリンク）・種類・状態（有効か無効かと、登録を許すか）・設定日時。行の操作は持たない。
+  - **追加**（`/admin/login-providers/new`）: 種類（`RadioGroup`: OpenID Connect・GitHub・Discord・Mastodon）と、種類に応じた項目のフォーム（`FormActionBar`）。表示名（必須、100 文字まで。`oidc` ではサインインのボタンにそのまま出ることを添える）・Issuer（`oidc`、https の URL）かサーバー（`mastodon`、ドメイン）・クライアント ID・クライアントシークレット（`type="password"`、設定と作り直しのときだけ入力し、表示しない。新しい `mastodon` では任意で、どちらも空なら送らずにサーバーがクライアントを登録する）・追加の scope（空白区切り。`mastodon` にはない）・「新規登録を許可する」と「アカウントへのひも付けを許可する」の `Checkbox`・条件（`oidc` は `Fieldset` の中に claim と許す値（カンマ区切り）の行を 10 まで足し外しでき、足した行の claim の欄にフォーカスを移し、外したら「条件を追加」に戻す。`github` は Organization の欄、`discord` はサーバー ID の欄（カンマか空白区切り）。`mastodon` は条件がないことを添える）。
+    種類が取らない項目は送らない。claim か値の片方だけの行は送らずに条件の区画に `role="alert"` で出す。`POST /admin/login_providers` で送り、サーバーの拒否（422 `invalid-login-provider`）は `reason` の項目にサーバーの `detail` を出して入力を残す。設定したらそのプロバイダーのページへ移る（見出しが結果を示す）。
+  - **プロバイダーのページ**（`/admin/login-providers/{id}`、`GET /admin/login_providers/{id}`）: 3 つの区画。
+    プロバイダー（見出しは表示名）は種類・Issuer かサーバー・状態と変更日時・新規登録・ひも付けた利用者の数・設定日時の説明リストと、コールバック URL（`dir="ltr"`）を IdP に登録することの説明とコピーのボタン（結果はトースト）。
+    設定は種類を変えずに追加と同じ項目のフォーム（シークレットの欄は持たない。`FormActionBar`。結果はボタンの隣、拒否はその項目）。
+    シークレットと状態は「シークレットを更新」（新しいシークレットを入れるダイアログ。拒否はダイアログの欄）・「無効にする」（`ConfirmDialog`）か「有効にする」・「削除」（元に戻せないので `ConfirmDialog` で確かめ、一覧へ移ってトーストで知らせる）。
+    無効にすることと削除の確認には、ひも付けた利用者の数と、その利用者がこのプロバイダーでサインインできなくなり、パスワード・パスキー・ほかのプロバイダーを持たなければまったくサインインできなくなることを出す。結果はこの区画の `StatusMessage` に、失敗は同じ場所（`role="alert"`）に出す。
+  - **制限が始まる前の確認**（[ADR-0106](../../adr/0106-external-login-providers.md)）: プロバイダーは設定した時点で有効になるので、追加の送信とプロバイダーのページの「有効にする」の 2 つが、ログインをプロバイダーだけにする制限（`login_providers_only`）を始めることがある。どちらも実行の直前に `GET /admin/settings/login_providers_only/impact`（有効にするときは `provider_id` 付き）を読み、`starts_limit` が真のときだけ `ConfirmDialog` で確かめる。設定がオフのときと制限がもう働いているときは、ダイアログを出さない。ダイアログは止まるもの、このプロバイダーへのひも付けのない有効な利用者の数、管理者自身が含まれるならそのこと、元に戻す方法を言う。断らない。数を読めなかったときは、始まるかもしれないことを言う同じダイアログを出す。キャンセルしてもフォームの入力は残る。
+    どの変更も一覧・このページと監査ログに無効化の印を付ける。監査ログの対象は一覧へリンクする。
+- **リンクのカードのドメイン**（`/admin/link-card-domains`・`/admin/link-card-domains/new`・`/admin/link-card-domains/{domain}`、`manage_settings`、[ADR-0062](../../adr/0062-link-preview-cards.md)、画面は [一覧](screens/admin-link-card-domains.md)・[追加](screens/admin-link-card-domains-new.md)・[ルールのページ](screens/admin-link-card-domain.md)）: 一覧 → 詳細。
+  ルールは `GET /admin/link_card_domains` を画面の中で `useQuery` で読む（ローダーで待たない）。読み込み中は区画の `Spinner`、最初の読み込みの失敗は区画の `RegionError`（`useLoadFailure`。G16）で、`h1` は残す。1 つのルールを返す API はないので、ルールのページも一覧から（ドメインの大文字小文字を区別せずに）探す。
+  - **一覧**（`/admin/link-card-domains`）: 「ルールを追加」（`/admin/link-card-domains/new` へのリンクのボタン）と、「ルール」の区画。区画はドメインの一部での検索（`role="search"` のフォーム。送ると URL の `?domain=` に置き、「検索を解除」で外す。大文字小文字を区別しない部分一致）と、ドメインの順の `RecordTable`（`wholeList` で 40 行ずつ。サーバーは 1,000 まで持つ。検索で key して最初のページに戻す）。列はドメイン（`DomainName`。ルールのページへのリンク）・止めるもの・最後の設定。合うルールがなければ検索した文字を言う空の状態にする。
+  - **追加**（`/admin/link-card-domains/new`）: ドメインとの連合と投稿のメディアには効かないことの説明、ドメイン（必須。空白と `/`・`:`・`@` はネイティブの検証で止める）、止めるもの（`RadioGroup`。「画像だけ止める」が既定、「取得を止める」）、メモ（`ReasonField`、5,000 文字）のフォーム（`FormActionBar`）。`PUT /admin/link_card_domains/{domain}` で送る。同じドメインのルールは置き換わる。成功したら保存したルールのページへ移る。サーバーの拒否（422）はドメインの欄に出して入力を残す。
+  - **ルールのページ**（`/admin/link-card-domains/{domain}`）: ドメイン（見出しは `DomainName`）の区画に最後の設定の日時と、止めるものとメモのフォーム（同じ `PUT` でまとめて保存。結果はボタンの隣）。「ルールを削除」の区画に削除の説明と「削除」（`ConfirmDialog` で確かめ、一覧へ移ってトーストで知らせる）。ルールのないドメインは、その旨と「ルールを追加」の空の状態にする。
+    どの変更も一覧と監査ログに無効化の印を付ける。
 - **翻訳**（`/admin/translation`、`manage_settings`、[ADR-0148](../../adr/0148-post-translation.md)、[画面](screens/admin-translation.md)）: 「今月」「提供元」「上限と保持期間」の 3 つの区画（`h2` の `section`）。今月の数は `GET /admin/translation` を区画の中で読み、失敗は区画の `RegionError`（G16）にする。提供元の区画は、通報を提供元に送るか（`translation_reports_to_server`、ADR-0148 §13）とブラウザの内蔵翻訳のチェックボックスで終わる。提供元の一覧もこの応答から作り、設定は `GET`・`PATCH /admin/settings` で読み書きする。API キーはどこにも出さない。
-- **リレー**（`/admin/relays`、`manage_settings`、[ADR-0006](../../adr/0006-federation-protocol-scope.md)）: 「リレーに参加する」と「このサーバーのリレー」の 2 つの区画（`h2` の `section`）。
-  - **参加**: URL（必須、https、2048 バイトまで）・方式（`Select`。既定の「自動で判定」は `protocol` を送らずサーバーに任せ、ほかに Mastodon 方式・LitePub 方式）・リレーから投稿を受け取るか（`Checkbox`、既定は受け取る）のフォーム。`POST /admin/relays` で送る。
-    サーバーの拒否（422 `invalid-relay`）は `reason`（`url`・`exists`・`domain_suspended`・`not_actor`・`state`）をクライアントの文言にし、`state` のほかは URL の欄のエラーに、`state` と理由のない失敗はフォームの下（`role="alert"`）に出して、入力を残す。
-    成功したら入力を空にし、一覧と監査ログに無効化の印を付けてから、結果をフォームの `StatusMessage` に出す。
-  - **一覧**: 登録の順。各リレーは見出し（`h3`、URL のホスト名、`dir="ltr"`）と、方式・状態（承認待ち・参加中・拒否・脱退済み）・状態の変更日時・URL・inbox（URL と違うときだけ）・リレーの Actor（参加中のときだけ）・受信の有無・直近 24 時間に取り込んだ数と上限を超えて捨てた数の説明リストにする。URL と Actor は `dir="ltr"` で表示する。
-    ドメインへの処分でホストが停止されているリレーには、何も送らず受け取らない旨の警告を出す。
-    承認待ちと参加中のリレーは「脱退する」、拒否と脱退済みのリレーは「もう一度参加する」を同じ位置のボタンで出し（状態が変わってもフォーカスが残る）、拒否と脱退済みのリレーには「削除」（元に戻せないので `ConfirmDialog` で確かめ、フォーカスを次の行に移す）も出す。
-    ボタンのアクセシブルネームはリレーのホスト名（U+2066 / U+2069 で囲む）を含める。結果は一覧の上の `StatusMessage` に、失敗は `reason` の文言で同じ場所（`role="alert"`）に出し、どの変更も一覧と監査ログに無効化の印を付ける。
+- **リレー**（`/admin/relays`・`/admin/relays/new`・`/admin/relays/{id}`、`manage_settings`、[ADR-0006](../../adr/0006-federation-protocol-scope.md)、画面は [一覧](screens/admin-relays.md)・[参加](screens/admin-relays-new.md)・[リレーのページ](screens/admin-relay.md)）: 一覧 → 詳細。
+  - **一覧**（`/admin/relays`）: 「リレーに参加する」（`/admin/relays/new` へのリンクのボタン）と、「このサーバーのリレー」の区画の登録の順の `RecordTable`（`wholeList`）。列はリレー（URL のホスト名、`dir="ltr"`。リレーのページへのリンク。ドメインへの処分でホストが停止されていれば短い警告）・状態（承認待ち・参加中・拒否・脱退済み）・状態の変更日時・操作。
+    操作は、承認待ちと参加中のリレーは「脱退する」、拒否と脱退済みのリレーは「もう一度参加する」を同じ位置のボタンで出す（状態が変わってもフォーカスが残る）。結果は表の上の `StatusMessage` に、失敗は `reason` の文言で同じ場所（`role="alert"`）に出す。
+  - **参加**（`/admin/relays/new`）: URL（必須、https、2048 バイトまで）・方式（`Select`。既定の「自動で判定」は `protocol` を送らずサーバーに任せ、ほかに Mastodon 方式・LitePub 方式）・リレーから投稿を受け取るか（`Checkbox`、既定は受け取る）のフォーム（`FormActionBar`）。`POST /admin/relays` で送る。
+    サーバーの拒否（422 `invalid-relay`）は `reason`（`url`・`exists`・`domain_suspended`・`not_actor`・`state`）をクライアントの文言にし、`state` のほかは URL の欄のエラーに、`state` と理由のない失敗はボタンの隣（`role="alert"`）に出して、入力を残す。成功したら登録したリレーのページへ移る。
+  - **リレーのページ**（`/admin/relays/{id}`）: 1 つのリレーを返す API はないので、一覧（`GET /admin/relays`）から読み、ない ID はその旨の空の状態にする。2 つの区画。
+    リレー（見出しは URL のホスト名、`dir="ltr"`）は、ドメインへの処分でホストが停止されていれば何も送らず受け取らない旨の警告と、状態と変更日時・方式・URL・inbox・リレーの Actor（承認されたときだけ）・受信の有無・直近 24 時間に取り込んだ数と上限を超えて捨てた数の説明リスト。URL と Actor は `dir="ltr"` で表示する。
+    参加は、いまの状態でできることの説明と、一覧と同じ「脱退する」「もう一度参加する」、拒否と脱退済みのリレーには「削除」（元に戻せないので `ConfirmDialog` で確かめ、一覧へ移ってトーストで知らせる）。結果はこの区画の `StatusMessage` に、失敗は同じ場所（`role="alert"`）に出す。
+  - ボタンのアクセシブルネームはリレーのホスト名（U+2066 / U+2069 で囲む）を含める。どの変更も一覧と監査ログに無効化の印を付ける。
 - **費用**（`/admin/finance`、`manage_finance`、FR-901・FR-902・FR-904・FR-917、[ADR-0067](../../adr/0067-finance-cost-records.md)・[ADR-0068](../../adr/0068-billing-import.md)・[ADR-0067](../../adr/0067-finance-cost-records.md) §16）: 下の「画面の分け方」の形で、読む作業と記録する作業を子のルートのページに分ける（監査の A12）。
   ページは、概要（`/admin/finance`、[画面の要件](screens/admin-finance.md)）・支払いと返金（`/admin/finance/income`、[画面の要件](screens/admin-finance-income.md)）・登録した費用（`/admin/finance/costs`、[画面の要件](screens/admin-finance-costs.md)）・利用料金の取り込み（`/admin/finance/imports`、[画面の要件](screens/admin-finance-imports.md)）・公開範囲（`/admin/finance/publication`、[画面の要件](screens/admin-finance-publication.md)）で、`h1`（「費用」）の下の `LocalNav` でこの順に並べる。
   登録した費用の子に、新しい費用（`/admin/finance/costs/new`、[画面の要件](screens/admin-finance-costs-new.md)）と項目（`/admin/finance/costs/{id}`、[画面の要件](screens/admin-finance-costs-item.md)）のページを置き、どちらも `LocalNav` の代わりに「登録した費用に戻る」を `h1` の下に置く。
@@ -433,13 +443,13 @@ API の経路はどちらも `/admin/*` で（[client-api.md](../client-api.md) 
   `features/admin/settings.test.tsx` は、全般のページの名前の保存と外枠の名前、説明の保存、連絡先とサムネイル（画像のアップロードと説明）の保存とサムネイルを外すこと、ページの間の `LocalNav` と今のページ、方針のページごとの設定の表示とそのページの変えた設定だけをまとめて送ることと `GET /instance` の取り直し、既定の言語の選択、保存の失敗、通話を出していないサーバーの通話のページ、権限を、
   `features/admin/rules.test.tsx` は、有効なルールの表と詳細へのリンク、URL の絞り込みでの廃止したルール、下へ動かしたルールの行見出しへのフォーカス、追加のページでの追加と入力の検査と詳細への移動、詳細のページでの 1 つの保存の編集、確認を経た廃止と見出しへのフォーカス、権限を、
   `features/admin/roles.test.tsx` は、ロールの表と区分ごとの権限の数と詳細へのリンク、詳細の区分ごとの権限、組み込みのロールと閲覧者より上のロールの操作の出し分け、閲覧者のロールにない権限を選べないこと、作成のページでの作成と入力の検査とキーの拒否と詳細への移動、詳細のページでの 1 つの保存の変更と権限の拒否、バッジの設定と見本と空の名前で外すこととその拒否、確認を経た削除と持っている人がいるロールの拒否と一覧への移動、権限を、
-  `features/admin/linkCardDomains.test.tsx` は、ルールの一覧のモードとメモ、空の一覧、読み込みの失敗の区画の中での表示と再試行、設定、URL を送らないネイティブの検証、拒否の理由のドメインの欄への表示、行でのモードの変更、確認を経た削除、権限を検査する。
-  `features/admin/relays.test.tsx` は、リレーの一覧の状態・直近 24 時間の数・Actor・停止されたサーバーの警告、方式を自動で判定する参加と選んだ方式での参加、URL の欄に出す拒否の理由、脱退ともう一度参加すること、もう一度参加することの拒否の理由、確認を経た削除、権限を検査する。
+  `features/admin/linkCardDomains.test.tsx` は、ルールの一覧のモードとルールのページへのリンク、40 行ずつのページ、ドメインの検索と URL、空の一覧、読み込みの失敗の区画の中での表示と再試行、追加のページでの設定とルールのページへの遷移、URL を送らないネイティブの検証、拒否の理由のドメインの欄への表示、ルールのページでのモードとメモの保存、ルールのないドメイン、確認を経た削除と一覧への遷移、権限を検査する。
+  `features/admin/relays.test.tsx` は、リレーの一覧の状態とリレーのページへのリンク・停止されたサーバーの警告、リレーのページの直近 24 時間の数・Actor・警告、登録のないリレーのページ、方式を自動で判定する参加とリレーのページへの遷移、選んだ方式での参加、URL の欄に出す拒否の理由、脱退ともう一度参加すること、もう一度参加することの拒否の理由、確認を経た削除と一覧への遷移、権限を検査する。
   `features/admin/finance.test.tsx` は、概要の集計の既定（月・按分）と見込みの印・内訳・区切りの規則、週と年のタブ・現金主義への切り替えと URL・送る期間、`LocalNav` でのページの移動と今のページ、登録した費用の 4 列の表と項目へのリンク、新しい費用のページでの入力の検査と月ごとの費用の登録と送る内容と項目のページへの移動、項目のページのフォームでの編集と金額の改定と終了日・確認を経た取り消しと一覧への移動、フォームの中の失敗、取り込みの状態と今すぐ取り込むことと 1 時間以内の 429、収入の総額・手数料・収支・プランごとの人数と同じタブでの切り替え、お金の動きと加入者のユーザー名とリンク・消えたアカウントの行、種類と日付の絞り込みと URL・終わりが始めより前の日付・絞り込みで空のときの解除とフォーカス、収入の公開範囲、権限を検査する。
   `features/admin/errors.test.tsx` は、エラーのグループの一覧と各列、状態と報告元の絞り込みと URL、空の状態、管理のメニューのリンク、詳細の各区画と ID のコピー、時間ごとの件数と履歴の順、解決・ミュート・ミュートを外すことと `role="status"` の結果と見出しへのフォーカス、操作の失敗、ID と発生のないグループ、`admin_error_group` の通知の文とリンク、権限を検査する。
   `e2e/admin-errors.spec.ts` は、一覧から詳細をキーボードで開き、キーボードで解決してフォーカスが状態の見出しに移るまでを、各幅とロケールの axe・横スクロールとともに検査する。
-  `features/admin/webhooks.test.tsx` は、webhook の設定と一度だけの秘密、足りない権限の拒否をイベントの項目に出すこと、サーバーが無効にした webhook の理由と失敗の回数と有効化、確認を経た秘密の作り直し、ダイアログでの編集、確認を経た削除、送信履歴の一覧ともう一度送ること、権限を検査する。
-  `features/admin/loginProviders.test.tsx` は、一覧の種類・状態・ひも付けた利用者の数・コールバック URL、OpenID Connect の設定と条件の行と送る内容、GitHub と Mastodon の項目の出し分け、サーバーの拒否を項目（Issuer・シークレット）に出すこと、値のない条件を送らずに出すことと行を外したあとのフォーカス、シークレットを持たないダイアログでの編集、シークレットの更新、ひも付けた利用者の数の警告を経た無効化と有効化、警告を経た削除、権限を検査する。
+  `features/admin/webhooks.test.tsx` は、一覧のサーバーが無効にした理由と失敗の回数と webhook のページへのリンク、追加のページでの設定と一度だけの秘密と webhook のページへのリンク、足りない権限の拒否をイベントの項目に出すこと、webhook のページでの有効化、確認を経た秘密の作り直し、設定の保存、確認を経た削除と一覧への遷移、送信履歴の一覧ともう一度送ること、権限を検査する。
+  `features/admin/loginProviders.test.tsx` は、一覧の種類・状態とプロバイダーのページへのリンク、プロバイダーのページの事実とコールバック URL、OpenID Connect の設定と条件の行と送る内容とプロバイダーのページへの遷移、GitHub と Mastodon の項目の出し分け、サーバーの拒否を項目（Issuer・シークレット）に出すこと、値のない条件を送らずに出すことと行を外したあとのフォーカス、プロバイダーのページでのシークレットを持たない設定の保存、シークレットの更新、ひも付けた利用者の数の警告を経た無効化と有効化、警告を経た削除と一覧への遷移、権限を検査する。
   `features/moderation/invites.test.tsx` は、招待の一覧の状態と人数、既定の値と制限なしでの作成とコードとリンク、失効と見出しへのフォーカス、登録モードが `invite` でないときの説明、権限を検査する。
   `features/admin/documents.test.tsx` は、文書ごとのページと `LocalNav`、本文、公開ページをページごと開くこと、保存と `role="status"` の結果、文書ごとの下書き、削除の確認と取り消し、保存の失敗、未保存の変更の確認、権限を検査し、
   `features/documents/documents.test.tsx` は、サインインの画面・設定・メニューのシートの文書へのリンクと、公開していない文書を出さないことを検査する。
@@ -448,10 +458,10 @@ API の経路はどちらも `/admin/*` で（[client-api.md](../client-api.md) 
   `e2e/registrations.spec.ts` は、登録の審査の画面の axe・横スクロール・ARIA スナップショット、承認の確認のダイアログ、キーボードでの却下とフォーカスの移動を検査する。
   `e2e/signup-blocks.spec.ts` は、登録の拒否リストの axe・横スクロール・ARIA スナップショット（両方の形のドメインと長いハッシュ）、キーボードでのメールのドメインの拒否の追加、キーボードでの一覧からの追加と追加しなかった行の表の ARIA スナップショット、解除とフォーカスの移動を検査する。
   `e2e/server-settings.spec.ts` は、名前の区画の ARIA スナップショットと名前の変更で外枠の名前が変わることと、キーボードで登録モードを招待制にして保存するまでを、各幅とロケールの axe・横スクロールとともに検査する。
-  `e2e/relays.spec.ts` は、リレーへの参加、一覧、脱退ともう一度参加すること、確認のダイアログを経た削除までを、各幅とロケールの axe・横スクロールとともに検査する。
+  `e2e/relays.spec.ts` は、一覧から参加のページを開いてのリレーへの参加とリレーのページ、一覧、リレーのページでの脱退ともう一度参加すること、確認のダイアログを経た削除と一覧への戻りまでを、各幅とロケールの axe・横スクロールとともに検査する。
   `e2e/finance.spec.ts` は、費用の画面の概要の集計（按分の既定、キーボードでの週のタブ、現金主義と URL）、`LocalNav` での登録した費用への移動、新しい費用のページでの年ごとの費用の登録と項目のページ、確認のダイアログを経た取り消し、取り込みのページの状態、項目のページのフォーム、収入の表と支払いと返金のページのお金の動き（加入者のユーザー名、キーボードでの種類の絞り込みと URL）までを、各幅とロケールの axe・横スクロールとともに検査する。
-  `e2e/webhooks.spec.ts` は、webhook の設定と一度だけの秘密の表示、一覧、無効化と有効化、確認のダイアログを経た削除までを、各幅とロケールの axe・横スクロールとともに検査する。
-  `e2e/login-providers.spec.ts` は、OpenID Connect のプロバイダーの設定とコールバック URL の表示、一覧、警告のダイアログを経た無効化、確認のダイアログを経た削除までを、各幅とロケールの axe・横スクロールとともに検査する。
+  `e2e/webhooks.spec.ts` は、一覧から追加のページを開いての webhook の設定と一度だけの秘密の表示、webhook のページでの無効化と有効化、確認のダイアログを経た削除と一覧への戻りまでを、各幅とロケールの axe・横スクロールとともに検査する。
+  `e2e/login-providers.spec.ts` は、一覧から追加のページを開いての OpenID Connect のプロバイダーの設定とプロバイダーのページのコールバック URL、一覧、警告のダイアログを経た無効化、確認のダイアログを経た削除と一覧への戻りまでを、各幅とロケールの axe・横スクロールとともに検査する。
   `e2e/roles.spec.ts` は、ロールの区画の ARIA スナップショット（閲覧者より上のロールの理由）・axe・横スクロールと、キーボードで付与の確認のダイアログを経て、区画の見出しにフォーカスが移るまでを検査する。
   `e2e/documents.spec.ts` は、本物の `my serve` で登録の画面の同意の文とフッターが文書の SPA のパス（`/about/terms`・`/about/privacy`）へリンクし、その情報ページが目次つきで描かれる（公開していない文書は見つからない画面）ことを、`vite preview` で規約とポリシーの画面の ARIA スナップショット・axe・横スクロールと、キーボードでプライバシーポリシーを書いて保存するまでを検査する。
   `e2e/appeals.spec.ts` は、異議申し立ての一覧の axe・横スクロール・ARIA スナップショットと、キーボードで申し立てを開き、撤回の確認のダイアログを経て処分が解除と出て、審査の見出しにフォーカスが移るまでを検査する。

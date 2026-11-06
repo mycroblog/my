@@ -5,9 +5,10 @@ An external login provider lets users sign in with an account they have elsewher
 You set providers up with the `my login-provider` command on a host that has the server's configuration, or through the
 admin API (`/api/v1/admin/login_providers`) with the `manage_login_providers` permission, which only the built-in
 `admin` role has. The command works before any administrator can sign in, so you can use it for the first setup.
-In the web client, administrators with that permission use "Login providers" in the administration menu: "Set up a
-login provider" creates one (and shows its callback URL), and the list below it shows each provider's state, whether
-sign-up is allowed, and how many users are linked, with buttons to edit, enable, disable, and delete it.
+In the web client, administrators with that permission use "Login providers" in the administration menu. The list
+shows each provider's kind, state and whether sign-up is allowed; "Add a provider" opens the form that creates one.
+Choosing a provider opens its page, which shows its callback URL with a button that copies it and how many users are
+linked, and where you change its settings, give it a new client secret, enable, disable, and delete it.
 
 ## What external sign-in does
 

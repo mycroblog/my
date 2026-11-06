@@ -336,7 +336,7 @@ modes. A rule is the operator's choice, and it applies besides what the linked s
 - A change takes effect at once, also on the cards the server already has, and the proxied images of those cards stop being served while images are stopped.
 - Removing a rule brings the cards the server already has back as they were. A link that was skipped gets its card the next time a post needs it; nothing is fetched again in bulk.
   A card fetched again while images were stopped stays without an image until its next refetch.
-- On the admin screen of the web client ("Link card domains", `/admin/link-card-domains`, `manage_settings`) you can set a rule with a note, change its mode in the list, and remove it (after a confirmation dialog).
+- On the admin screen of the web client ("Link card domains", `/admin/link-card-domains`, `manage_settings`), "Add a rule" sets a rule with a note. The list shows 40 rules a page and can be searched by domain; choosing a domain opens its rule's page, where you change its mode and note, and remove it (after a confirmation dialog).
 - The admin API is `/api/v1/admin/link_card_domains` (list, set; a `DELETE` with the domain removes it) and needs the role permission `manage_settings`. A server keeps at most 1,000 rules, each with a note of up to 5,000 characters.
 - Every change is recorded in the audit log (`link_card_domain_fetch_stopped`, `link_card_domain_images_stopped`, `link_card_domain_rule_removed`).
 

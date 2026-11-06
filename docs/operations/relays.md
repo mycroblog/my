@@ -6,6 +6,8 @@ and its own public posts reach further. An instance that does not join a relay g
 ## Join a relay
 
 Use "Relays" in the admin area (`/admin/relays`). It requires the permission `manage_settings`, which the built-in `admin` role has.
+"Join a relay" opens the form that registers one. The list shows each relay's state with a button that leaves it or joins it again;
+choosing a relay opens its page, with its addresses, what it brought in during the last 24 hours, and the button that deletes it.
 The CLI is `my admin relay` (`my admin relay -help`):
 
 ```sh
@@ -38,7 +40,7 @@ but nothing is sent to or received from that relay, and the admin area shows a w
 
 - A public post carried by a joined relay is fetched again from its origin and checked before it is ingested. It then shows in the federated timeline and hashtag timelines. It does not show in home timelines and creates no notification.
 - At most `relay_max_activities_per_hour` posts per hour (default 1,000) are ingested per relay. Anything above the limit is dropped without being fetched.
-  The admin area and `my admin relay list` show how many were ingested in the last 24 hours and how many were dropped over the limit. If many are dropped, raise the limit or reconsider the relay.
+  The page of the relay in the admin area and `my admin relay list` show how many were ingested in the last 24 hours and how many were dropped over the limit. If many are dropped, raise the limit or reconsider the relay.
 - A post is not ingested when its domain or account has a `suspend` (a federation restriction) or a `limit` (a restriction that removes it from public places).
 - A post that arrived only through a relay is removed from public view after the instance setting `relay_status_retention_days` (default 7). A post that a local person replied to, boosted, favorited or bookmarked,
   and the posts of authors that a local person follows, get the same retention as other remote posts (`remote_status_retention_days`).
