@@ -316,9 +316,11 @@ my instance rule list                                  # active rules (-all incl
 ```
 
 - The admin API is `/api/v1/admin/rules` (list, add, get, revise, move, retire) and needs the role permission `manage_rules`.
-- On the admin screen of the web client ("Rules", `/admin/rules`, `manage_rules`) you can add a rule with a sentence and a
-  supplement, edit it, reorder it with "Move up" and "Move down", and retire it (after a confirmation dialog). Every change
-  is recorded in the audit log (`rule_added`, `rule_revised`, `rule_moved`, `rule_retired`).
+- On the admin screen of the web client ("Rules", `/admin/rules`, `manage_rules`), the list shows the rules in effect in
+  order, and "Move up" and "Move down" reorder them; the filter above the list shows the retired rules instead. "Add a
+  rule" opens a page with a sentence and a supplement. Choose a rule's sentence to open its page, where you edit it and
+  retire it (after a confirmation dialog). Every change is recorded in the audit log (`rule_added`, `rule_revised`,
+  `rule_moved`, `rule_retired`).
 - The exit codes are the same as for settings (0 for success, 1 for a rejected value or a database error, 2 for wrong arguments).
 
 ## Link card domains
