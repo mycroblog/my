@@ -102,8 +102,23 @@ func (r *HookRepository) InsertOverride(ctx context.Context, tx uow.Tx, o hook.O
 	return n > 0, wrap(err, "insert hook decision override")
 }
 
-// ListRecords implements apphook.Repository.
+// ListRecords implements apphook.Repository. The decisions other than allow and the allow ones
+// are two queries, so that the first can use the partial index that leaves allow out.
 func (r *HookRepository) ListRecords(ctx context.Context, q apphook.ListQuery) ([]hook.Record, error) {
+	if q.Outcome == hook.Allow {
+		rows, err := r.db.reader().ListAllowHookDecisions(ctx, sqlitegen.ListAllowHookDecisionsParams{
+			Before: q.Before, Hook: string(q.Hook), Mode: string(q.Mode), RowLimit: int64(q.Limit),
+		})
+		if err != nil {
+			return nil, wrap(err, "list hook decisions")
+		}
+		out := make([]hook.Record, len(rows))
+		for i, row := range rows {
+			out[i] = hookRecord(row.ID, row.Hook, row.SubjectKey, row.AccountID, row.Mode, row.Outcome, row.ReasonCode, row.Note, row.LatencyMs, row.DecidedAt,
+				row.OverriddenDecisionID, row.OverriddenByUserID, row.OverriddenAt)
+		}
+		return out, nil
+	}
 	rows, err := r.db.reader().ListHookDecisions(ctx, sqlitegen.ListHookDecisionsParams{
 		Before: q.Before, Hook: string(q.Hook), Mode: string(q.Mode), Outcome: string(q.Outcome), RowLimit: int64(q.Limit),
 	})

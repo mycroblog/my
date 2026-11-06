@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	apphook "github.com/mycroblog/my/internal/app/hook"
 	"github.com/mycroblog/my/internal/app/queue"
@@ -37,4 +38,20 @@ func RequeueDropped(repo InboxRepository, outbox queue.Outbox) apphook.OverrideE
 		}
 		return outbox.EnqueueTx(ctx, tx, job)
 	}
+}
+
+// RestorableUntil returns until when cancelling the drop of the received activity activityURI runs
+// it again: ReceivedDocumentRetention after the activity was received, when the purge removes its
+// document. A decision can come long after the activity arrived (a job retried, or re-run by hand),
+// so the time of the decision does not tell. ok is false when the record of the activity is gone,
+// which the purge removes only after the document.
+func (i *Inbox) RestorableUntil(ctx context.Context, activityURI string) (until time.Time, ok bool, err error) {
+	received, err := i.d.Repository.FindReceivedActivity(ctx, federation.IRI(activityURI))
+	switch {
+	case errors.Is(err, ErrNotFound):
+		return time.Time{}, false, nil
+	case err != nil:
+		return time.Time{}, false, err
+	}
+	return received.ReceivedAt.Add(ReceivedDocumentRetention), true, nil
 }

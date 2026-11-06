@@ -36,6 +36,13 @@ type HookDecisions interface {
 	InUse(ctx context.Context) ([]hook.Name, error)
 }
 
+// DroppedActivities tells until when cancelling the drop of a received activity runs it again;
+// *appfederation.Inbox implements it.
+type DroppedActivities interface {
+	// RestorableUntil is ok false when the record of the activity, and its document, is gone.
+	RestorableUntil(ctx context.Context, activityURI string) (until time.Time, ok bool, err error)
+}
+
 // requireHookDecisions checks manage_reports; a server built without HookDecisions answers 404.
 func (s *Server) requireHookDecisions(ctx context.Context) (*problem, error) {
 	if p, err := s.requirePermission(ctx, identity.PermManageReports); err != nil || p != nil {
@@ -67,11 +74,32 @@ func newHookDecision(r hook.Record) AdminHookDecision {
 	if r.Override != nil {
 		out.OverriddenAt = &r.Override.At
 	}
-	if (d.Hook == hook.InboundStatus || d.Hook == hook.InboundFollow) && d.Outcome == hook.Drop {
-		until := d.DecidedAt.Add(appfederation.ReceivedDocumentRetention)
-		out.RestorableUntil = &until
-	}
 	return out
+}
+
+// restorableUntil sets RestorableUntil of the drops of an inbound hook: counted from when the
+// activity was received, since its document goes then. An activity whose record is gone has
+// nothing left to run, and takes the time of its decision, which has passed. Without
+// DroppedActivities the decision's time stands in for the time it was received.
+func (s *Server) restorableUntil(ctx context.Context, r hook.Record, out *AdminHookDecision) error {
+	d := r.Decision
+	if (d.Hook != hook.InboundStatus && d.Hook != hook.InboundFollow) || d.Outcome != hook.Drop {
+		return nil
+	}
+	until := d.DecidedAt.Add(appfederation.ReceivedDocumentRetention)
+	if s.o.DroppedActivities != nil {
+		at, ok, err := s.o.DroppedActivities.RestorableUntil(ctx, d.SubjectKey)
+		switch {
+		case err != nil:
+			return fmt.Errorf("clientapi: read the dropped activity %s: %w", d.SubjectKey, err)
+		case ok:
+			until = at
+		default:
+			until = d.DecidedAt
+		}
+	}
+	out.RestorableUntil = &until
+	return nil
 }
 
 // ListHookDecisions serves GET /api/v1/admin/hook_decisions.
@@ -113,6 +141,9 @@ func (s *Server) ListHookDecisions(ctx context.Context, req ListHookDecisionsReq
 	page := AdminHookDecisionPage{Items: make([]AdminHookDecision, len(records))}
 	for i, r := range records {
 		page.Items[i] = newHookDecision(r)
+		if err := s.restorableUntil(ctx, r, &page.Items[i]); err != nil {
+			return nil, err
+		}
 	}
 	if last >= 0 {
 		page.NextCursor = encodeCursor(records[last].Decision.ID)
@@ -186,8 +217,12 @@ func (s *Server) OverrideHookDecision(ctx context.Context, req OverrideHookDecis
 	case err != nil:
 		return nil, fmt.Errorf("clientapi: override hook decision %s: %w", req.Id, err)
 	}
+	out := newHookDecision(record)
+	if err := s.restorableUntil(ctx, record, &out); err != nil {
+		return nil, err
+	}
 	cache := cacheNoStore
 	return OverrideHookDecision200JSONResponse{
-		Body: newHookDecision(record), Headers: OverrideHookDecision200ResponseHeaders{CacheControl: &cache},
+		Body: out, Headers: OverrideHookDecision200ResponseHeaders{CacheControl: &cache},
 	}, nil
 }

@@ -417,28 +417,33 @@ func (s *Service) signUp(ctx context.Context, in SignUpInput, ext *externalSignU
 // or IP address, and account erasure and holds go by it. An attempt that writes nothing leaves the
 // decision to its retention. The wait is the deadline of the hook's plugin connection, and a failure
 // of the plugin comes back as the Effect that hook_signup_check_on_failure chooses. A hook with no
-// plugin costs nothing. A reject counts only while the operator lets it refuse sign-ups.
+// plugin costs nothing. A reject counts only while the operator lets it refuse sign-ups: while the
+// switch is off, the hook records a reject in observe, so that the list does not show it as a
+// refusal that a moderator could cancel.
 func (s *Service) decideSignup(ctx context.Context, in SignUpInput, accountID string) (apphook.Result, error) {
 	if s.d.Hooks == nil || !s.d.Hooks.Configured(apphook.SignupCheck) {
 		return apphook.Result{}, nil
 	}
-	r, err := s.d.Hooks.Decide(ctx, apphook.Call{
-		Hook: apphook.SignupCheck, SubjectKey: accountID, AccountID: accountID,
-		Subject: apphook.SignupSubject{Email: in.Email, IP: normalizeIP(in.IP)},
-	})
-	if err != nil {
-		return apphook.Result{}, err
-	}
-	if r.Effect != apphook.Reject {
-		return r, nil
-	}
 	rejects := false
 	if s.d.SignupHookRejects != nil {
+		var err error
 		if rejects, err = s.d.SignupHookRejects(ctx); err != nil {
 			return apphook.Result{}, err
 		}
 	}
+	call := apphook.Call{
+		Hook: apphook.SignupCheck, SubjectKey: accountID, AccountID: accountID,
+		Subject: apphook.SignupSubject{Email: in.Email, IP: normalizeIP(in.IP)},
+	}
 	if !rejects {
+		call.Observed = []apphook.Outcome{apphook.Reject}
+	}
+	r, err := s.d.Hooks.Decide(ctx, call)
+	if err != nil {
+		return apphook.Result{}, err
+	}
+	if r.Effect == apphook.Reject && !rejects {
+		// A decision recorded while the switch was on refuses nothing once it is off.
 		r.Effect = apphook.Allow
 	}
 	return r, nil

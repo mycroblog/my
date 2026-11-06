@@ -258,6 +258,48 @@ func TestInboundFollowHook(t *testing.T) {
 		t.Errorf("hook_decision_applied after a second run = %d, want 1", got)
 	}
 
+	// A Follow sent again for a live follow does not ask, even in enforce with a drop: it gets its
+	// Accept again, and files no second report.
+	plugin.verdict.Store("VERDICT_DROP")
+	network.taken()
+	calls = plugin.calls.Load()
+	follow(flagged, flaggedURI+"/follow-again")
+	if got := plugin.calls.Load(); got != calls || !following(flaggedURI) {
+		t.Errorf("a Follow sent again: %d more calls, following %v", got-calls, following(flaggedURI))
+	}
+	if accepts := network.taken()[flaggedURI+"/inbox"]; len(accepts) != 1 || accepts[0]["type"] != "Accept" {
+		t.Errorf("sent for a Follow sent again = %v, want one Accept", accepts)
+	}
+	if got := len(hookReports()); got != 1 {
+		t.Errorf("reports after a Follow sent again = %d, want 1", got)
+	}
+
+	// A Follow from an account that alice blocks does not ask either: it gets its Reject.
+	blocked, blockedURI := actor("blocked")
+	follow(blocked, blockedURI+"/follow")
+	blockedAccount, err := c.app.Accounts.FindByURI(ctx, blockedURI)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := c.app.Graph.Block(ctx, c.ids["alice"], blockedAccount.Account.ID); err != nil {
+		t.Fatal(err)
+	}
+	network.taken()
+	calls = plugin.calls.Load()
+	follow(blocked, blockedURI+"/follow-blocked")
+	if got := plugin.calls.Load(); got != calls || following(blockedURI) {
+		t.Errorf("a Follow of a blocked account: %d more calls, following %v", got-calls, following(blockedURI))
+	}
+	var rejects int
+	for _, doc := range network.taken()[blockedURI+"/inbox"] {
+		if doc["type"] == "Reject" {
+			rejects++
+		}
+	}
+	if rejects != 1 {
+		t.Errorf("Rejects for a Follow of a blocked account = %d, want 1", rejects)
+	}
+
 	// A failure passes by default and is recorded as what it is.
 	plugin.verdict.Store("")
 	passed, passedURI := actor("passed")

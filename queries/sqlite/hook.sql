@@ -31,17 +31,32 @@ ON CONFLICT (decision_id, status_id) DO NOTHING;
 INSERT INTO hook_decision_overrides (decision_id, overridden_by_user_id, overridden_at) VALUES (?, ?, ?)
 ON CONFLICT (decision_id) DO NOTHING;
 
--- Without an outcome, the list leaves out allow: it shows what a hook would stop or could not check.
+-- The decisions other than allow, the default of the list: what a hook would stop or could not
+-- check. The literal predicate on outcome lets the planner use the partial index
+-- hook_decisions_not_allow_id, so that a page does not walk past the allow rows.
 -- name: ListHookDecisions :many
 SELECT d.id, d.hook, d.subject_key, d.account_id, d.mode, d.outcome, d.reason_code, d.note, d.latency_ms, d.decided_at,
   o.decision_id AS overridden_decision_id, o.overridden_by_user_id, o.overridden_at
 FROM hook_decisions d
 LEFT JOIN hook_decision_overrides o ON o.decision_id = d.id
-WHERE (CAST(sqlc.arg(before) AS TEXT) = '' OR d.id < sqlc.arg(before))
+WHERE d.outcome <> 'allow'
+  AND (CAST(sqlc.arg(before) AS TEXT) = '' OR d.id < sqlc.arg(before))
   AND (CAST(sqlc.arg(hook) AS TEXT) = '' OR d.hook = sqlc.arg(hook))
   AND (CAST(sqlc.arg(mode) AS TEXT) = '' OR d.mode = sqlc.arg(mode))
   AND (CAST(sqlc.arg(outcome) AS TEXT) = '' OR d.outcome = sqlc.arg(outcome))
-  AND (CAST(sqlc.arg(outcome) AS TEXT) <> '' OR d.outcome <> 'allow')
+ORDER BY d.id DESC
+LIMIT sqlc.arg(row_limit);
+
+-- The allow decisions, which the list shows only when asked for that outcome.
+-- name: ListAllowHookDecisions :many
+SELECT d.id, d.hook, d.subject_key, d.account_id, d.mode, d.outcome, d.reason_code, d.note, d.latency_ms, d.decided_at,
+  o.decision_id AS overridden_decision_id, o.overridden_by_user_id, o.overridden_at
+FROM hook_decisions d
+LEFT JOIN hook_decision_overrides o ON o.decision_id = d.id
+WHERE d.outcome = 'allow'
+  AND (CAST(sqlc.arg(before) AS TEXT) = '' OR d.id < sqlc.arg(before))
+  AND (CAST(sqlc.arg(hook) AS TEXT) = '' OR d.hook = sqlc.arg(hook))
+  AND (CAST(sqlc.arg(mode) AS TEXT) = '' OR d.mode = sqlc.arg(mode))
 ORDER BY d.id DESC
 LIMIT sqlc.arg(row_limit);
 

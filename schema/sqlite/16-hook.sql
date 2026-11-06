@@ -31,6 +31,8 @@ CREATE TABLE hook_decisions (
 CREATE UNIQUE INDEX hook_decisions_hook_subject_key ON hook_decisions (hook, subject_key);
 CREATE INDEX hook_decisions_decided_at_id ON hook_decisions (decided_at, id);
 CREATE INDEX hook_decisions_account_id ON hook_decisions (account_id);
+-- The list of the moderation screen leaves out allow, which most decisions are.
+CREATE INDEX hook_decisions_not_allow_id ON hook_decisions (id) WHERE outcome <> 'allow';
 
 -- Event child: a status that a decision had an effect on, the source of the projection
 -- status_sensitivity_overrides (ADR-0147 §8), written in the transaction that knows the status.
@@ -41,6 +43,7 @@ CREATE TABLE hook_decision_statuses (
 ) STRICT;
 
 -- Event: a moderator cancelled a decision (ADR-0147 §9). A decision is cancelled once.
+-- overridden_by_user_id is NULL when the CLI cancelled it.
 CREATE TABLE hook_decision_overrides (
   decision_id TEXT NOT NULL PRIMARY KEY,
   overridden_by_user_id TEXT,

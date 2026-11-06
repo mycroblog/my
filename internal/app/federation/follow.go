@@ -281,7 +281,7 @@ type FollowHandlerDeps struct {
 	// again to a deactivated account changes nothing and gets no answer (ADR-0089 §16); nil means
 	// that none does.
 	Relationships FollowRelationships
-	// Hooks asks the inbound.follow hook about a Follow that would be recorded (ADR-0147); nil
+	// Hooks asks the inbound.follow hook about a Follow that would make a new follow (ADR-0147); nil
 	// asks nothing.
 	Hooks apphook.Gate
 	// Reports files the report of a flag decision against the follower, with Instance as its
@@ -446,7 +446,7 @@ func (h followHandlers) follow(ctx context.Context, in *InboxActivity) error {
 	if followee == "" || refused {
 		return fmt.Errorf("%w: %s is not a local actor", ErrDropActivity, in.Activity.Object().ID)
 	}
-	v, err := h.review(ctx, in)
+	v, err := h.review(ctx, in, followee)
 	if err != nil {
 		return err
 	}
@@ -463,8 +463,10 @@ func (h followHandlers) follow(ctx context.Context, in *InboxActivity) error {
 }
 
 // fileFlag files the report of a flag decision against the follower, and records in the same
-// transaction that the decision was applied (ADR-0147 §7, §11). It runs after the follow is
-// recorded, so a Follow that the graph module refuses files nothing. The follow and the report are
+// transaction that the decision was applied (ADR-0147 §7, §11). It runs after the graph module took
+// the Follow, so a Follow that it fails files nothing; and only a Follow that makes a new follow
+// asks the hook (review), so a Follow sent again, a repeated request, and a Follow between blocked
+// accounts have no decision and file nothing. The follow and the report are
 // two transactions: a job that fails between them runs again, finds the follow recorded, and files
 // the report then; a decision that has its report files none again, and is not audited twice.
 func (h followHandlers) fileFlag(ctx context.Context, v hookVerdict, followerID string) error {
@@ -490,9 +492,12 @@ func (h followHandlers) fileFlag(ctx context.Context, v hookVerdict, followerID 
 // the job retries. Only the Follow itself asks: the Undo that takes it back has a handler of its own.
 // A flag settles its reporter, the instance actor, here, since creating it takes its own
 // transaction.
-func (h followHandlers) review(ctx context.Context, in *InboxActivity) (hookVerdict, error) {
+func (h followHandlers) review(ctx context.Context, in *InboxActivity, followeeID string) (hookVerdict, error) {
 	if h.d.Hooks == nil || !h.d.Hooks.Configured(apphook.InboundFollow) {
 		return allowed, nil
+	}
+	if fresh, err := h.newFollow(ctx, in.Actor.Account.ID, followeeID); err != nil || !fresh {
+		return allowed, err
 	}
 	r, err := h.d.Hooks.Decide(ctx, apphook.Call{
 		Hook: apphook.InboundFollow, SubjectKey: string(in.Received.ActivityURI), AccountID: in.Actor.Account.ID,
@@ -513,6 +518,23 @@ func (h followHandlers) review(ctx context.Context, in *InboxActivity) (hookVerd
 		v.reporterAccountID = instance.ID
 	}
 	return v, nil
+}
+
+// newFollow reports whether a Follow from followerID would make a new follow of followeeID, the only
+// Follow that asks the hook. The graph module answers the others itself: a Follow sent again for an
+// active follow gets its Accept again (federation.md §3.3), one sent again for a pending request
+// changes nothing, and one between accounts that block each other gets a Reject. Asking about them
+// would let a drop withhold that Accept or Reject, and a flag report a follower once more per Follow
+// sent again. Without Relationships every Follow asks.
+func (h followHandlers) newFollow(ctx context.Context, followerID, followeeID string) (bool, error) {
+	if h.d.Relationships == nil {
+		return true, nil
+	}
+	r, err := h.d.Relationships.Relationship(ctx, followerID, followeeID)
+	if err != nil {
+		return false, err
+	}
+	return !r.ActivelyFollowing() && !r.RequestedFollow() && !r.Blocking && !r.BlockedBy, nil
 }
 
 // followOfDeactivated answers a Follow of a local account whose owner deactivated it (ADR-0089 §16):
