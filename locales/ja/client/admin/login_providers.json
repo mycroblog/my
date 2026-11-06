@@ -15,6 +15,10 @@
     "defaultMessage": "アカウントを持たない人が、このサーバーの登録モードの範囲でこのプロバイダーから登録できます。",
     "description": "Description of the checkbox that allows signing up with a login provider."
   },
+  "admin.login_providers.back": {
+    "defaultMessage": "ログインプロバイダーの一覧へ戻る",
+    "description": "Link from the page of a login provider, or of the form of a new one, back to the list."
+  },
   "admin.login_providers.callback": {
     "defaultMessage": "コールバック URL",
     "description": "Label of a login provider's callback URL."
@@ -99,9 +103,9 @@
     "defaultMessage": "各条件には claim と 1 つ以上の値が必要です。",
     "description": "Error of a condition row without its claim or values."
   },
-  "admin.login_providers.created": {
-    "defaultMessage": "{name} を設定しました。",
-    "description": "Status after setting up a login provider. {name} is its display name."
+  "admin.login_providers.created_at": {
+    "defaultMessage": "設定日時",
+    "description": "Column and term of when a login provider was set up."
   },
   "admin.login_providers.delete": {
     "defaultMessage": "削除",
@@ -115,13 +119,13 @@
     "defaultMessage": "{name} を削除しますか？",
     "description": "Title of the dialog that confirms deleting a login provider."
   },
-  "admin.login_providers.delete_provider": {
-    "defaultMessage": "{name} を削除",
-    "description": "Accessible name of the button that deletes a login provider."
-  },
   "admin.login_providers.deleted": {
     "defaultMessage": "{name} を削除しました。",
     "description": "Status after deleting a login provider."
+  },
+  "admin.login_providers.detail.title": {
+    "defaultMessage": "ログインプロバイダー",
+    "description": "Heading of the page of one login provider."
   },
   "admin.login_providers.disable": {
     "defaultMessage": "無効にする",
@@ -134,10 +138,6 @@
   "admin.login_providers.disable.title": {
     "defaultMessage": "{name} を無効にしますか？",
     "description": "Title of the dialog that confirms disabling a login provider."
-  },
-  "admin.login_providers.disable_provider": {
-    "defaultMessage": "{name} を無効にする",
-    "description": "Accessible name of the button that disables a login provider."
   },
   "admin.login_providers.disabled_status": {
     "defaultMessage": "{name} を無効にしました。",
@@ -155,21 +155,9 @@
     "defaultMessage": "管理画面での名前で、ログインのボタンにもそのまま表示されます。",
     "description": "Description of the display name of an OpenID Connect provider."
   },
-  "admin.login_providers.edit": {
-    "defaultMessage": "編集",
-    "description": "Button that opens the dialog that changes a login provider."
-  },
   "admin.login_providers.edit.kind": {
     "defaultMessage": "種類: {kind}",
     "description": "The kind of the provider in its edit dialog, which cannot change. {kind} is the kind's name."
-  },
-  "admin.login_providers.edit.title": {
-    "defaultMessage": "{name} を編集",
-    "description": "Title of the dialog that changes a login provider."
-  },
-  "admin.login_providers.edit_provider": {
-    "defaultMessage": "{name} を編集",
-    "description": "Accessible name of the button that changes a login provider."
   },
   "admin.login_providers.empty": {
     "defaultMessage": "ログインプロバイダーはまだありません",
@@ -182,10 +170,6 @@
   "admin.login_providers.enable": {
     "defaultMessage": "有効にする",
     "description": "Button that enables a login provider."
-  },
-  "admin.login_providers.enable_provider": {
-    "defaultMessage": "{name} を有効にする",
-    "description": "Accessible name of the button that enables a login provider."
   },
   "admin.login_providers.enabled_status": {
     "defaultMessage": "{name} を有効にしました。",
@@ -275,13 +259,17 @@
     "defaultMessage": "このサーバーのログインプロバイダー",
     "description": "Heading of the list of login providers."
   },
+  "admin.login_providers.manage.title": {
+    "defaultMessage": "シークレットと状態",
+    "description": "Heading of the section of a login provider's page that gives it a new client secret, enables, disables or deletes it."
+  },
   "admin.login_providers.mastodon.conditions": {
     "defaultMessage": "そのサーバーの利用者すべてがログインできます。",
     "description": "Note that a Mastodon provider has no conditions."
   },
   "admin.login_providers.new.title": {
-    "defaultMessage": "ログインプロバイダーを設定する",
-    "description": "Heading of the form that sets up a login provider."
+    "defaultMessage": "プロバイダーを追加",
+    "description": "Heading of the page with the form that sets up a login provider, and the link to it."
   },
   "admin.login_providers.organizations": {
     "defaultMessage": "Organization",
@@ -311,10 +299,6 @@
     "defaultMessage": "{name} の新しいクライアントシークレット",
     "description": "Title of the dialog that gives a login provider a new client secret."
   },
-  "admin.login_providers.rotate_provider": {
-    "defaultMessage": "{name} のシークレットを更新",
-    "description": "Accessible name of the button that opens the new secret dialog."
-  },
   "admin.login_providers.rotated": {
     "defaultMessage": "{name} のクライアントシークレットを更新しました。",
     "description": "Status after giving a login provider a new client secret."
@@ -342,6 +326,14 @@
   "admin.login_providers.server.description": {
     "defaultMessage": "Mastodon サーバーのドメイン (例: mastodon.social)。",
     "description": "Description of the Mastodon server field."
+  },
+  "admin.login_providers.settings.title": {
+    "defaultMessage": "設定",
+    "description": "Heading of the section of a login provider's page with the form of its settings."
+  },
+  "admin.login_providers.signup": {
+    "defaultMessage": "新規登録",
+    "description": "Term in a login provider's details: whether people may sign up with it."
   },
   "admin.login_providers.state": {
     "defaultMessage": "状態",

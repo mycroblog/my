@@ -3,6 +3,14 @@
     "defaultMessage": "{count, plural, one {# activity} other {# activities}}",
     "description": "How many activities a relay brought in."
   },
+  "admin.relays.actor": {
+    "defaultMessage": "Relay actor",
+    "description": "Term in a relay's details: the actor of the relay, once it accepted the server."
+  },
+  "admin.relays.back": {
+    "defaultMessage": "Back to the relays",
+    "description": "Link from the page of one relay, or of the form that joins one, back to the list."
+  },
   "admin.relays.cancel": {
     "defaultMessage": "Cancel",
     "description": "Button that closes the dialog of a relay without changing it."
@@ -14,10 +22,6 @@
   "admin.relays.create_failed": {
     "defaultMessage": "Could not join the relay: {reason}",
     "description": "Error of the form that registers a relay, for another reason than its URL. {reason} says why."
-  },
-  "admin.relays.created": {
-    "defaultMessage": "{name} is registered, and the server asked to join it.",
-    "description": "Status after registering a relay. {name} is the host name of its URL."
   },
   "admin.relays.delete": {
     "defaultMessage": "Delete",
@@ -39,9 +43,17 @@
     "defaultMessage": "{name} is deleted.",
     "description": "Status after deleting a relay."
   },
+  "admin.relays.detail.title": {
+    "defaultMessage": "Relay",
+    "description": "Heading of the page of one relay."
+  },
   "admin.relays.domain_suspended": {
     "defaultMessage": "A domain action suspends the server of this relay: nothing is sent to it or taken from it while it does.",
     "description": "Warning on a relay whose host a domain action suspends."
+  },
+  "admin.relays.domain_suspended.short": {
+    "defaultMessage": "Suspended by a domain action",
+    "description": "Short warning in the list on a relay whose host a domain action suspends."
   },
   "admin.relays.dropped": {
     "defaultMessage": "Dropped over the limit, last 24 hours",
@@ -67,9 +79,25 @@
     "defaultMessage": "The server asked to join {name} again.",
     "description": "Status after asking to join a relay again."
   },
+  "admin.relays.inbox": {
+    "defaultMessage": "Inbox",
+    "description": "Term in a relay's details: the inbox the server sends to."
+  },
   "admin.relays.list.title": {
     "defaultMessage": "Relays of this server",
     "description": "Heading of the list of the relays."
+  },
+  "admin.relays.membership.joined": {
+    "defaultMessage": "While the server is a member or asks to be, it sends its public posts to the relay. Leave the relay to stop; a relay that is left can be joined again or deleted.",
+    "description": "Help of the membership of a relay that the server joined or asked to join."
+  },
+  "admin.relays.membership.left": {
+    "defaultMessage": "The server sends nothing to this relay and takes nothing from it. Join it again, or delete its registration.",
+    "description": "Help of the membership of a relay that the server left or that rejected it."
+  },
+  "admin.relays.membership.title": {
+    "defaultMessage": "Membership",
+    "description": "Heading of the section of a relay's page that leaves it, joins it again or deletes it."
   },
   "admin.relays.new.description": {
     "defaultMessage": "The public posts of this server go to every relay it joins, which passes them on to the other servers of the relay. Posts of other visibilities are never sent.",
@@ -78,6 +106,14 @@
   "admin.relays.new.title": {
     "defaultMessage": "Join a relay",
     "description": "Heading of the form that registers and joins a relay."
+  },
+  "admin.relays.not_found": {
+    "defaultMessage": "This relay is not registered",
+    "description": "Heading of the page of a relay that the server does not have, such as a deleted one."
+  },
+  "admin.relays.not_found.description": {
+    "defaultMessage": "It may have been deleted. The relays of this server are on the relays screen.",
+    "description": "Description of the page of a relay that the server does not have."
   },
   "admin.relays.problem.domain_suspended": {
     "defaultMessage": "The server of the relay is suspended by a domain action.",
@@ -139,6 +175,10 @@
     "defaultMessage": "Takes in the posts it relays",
     "description": "Value of whether a relay is received: the server takes in the posts it relays."
   },
+  "admin.relays.relay": {
+    "defaultMessage": "Relay",
+    "description": "Column of the list of relays: the host name of the relay, linking to its page."
+  },
   "admin.relays.state": {
     "defaultMessage": "State",
     "description": "Term in a relay's details: where its membership stands."
@@ -158,6 +198,10 @@
   "admin.relays.state.rejected": {
     "defaultMessage": "Rejected by the relay",
     "description": "State of a relay that rejected the server or ended its membership."
+  },
+  "admin.relays.state_changed_at": {
+    "defaultMessage": "State since",
+    "description": "Column of the list of relays: when the relay's state last changed."
   },
   "admin.relays.submit": {
     "defaultMessage": "Join",

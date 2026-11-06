@@ -3,6 +3,14 @@
     "defaultMessage": "{count, plural, other {# 件}}",
     "description": "How many activities a relay brought in."
   },
+  "admin.relays.actor": {
+    "defaultMessage": "リレーの Actor",
+    "description": "Term in a relay's details: the actor of the relay, once it accepted the server."
+  },
+  "admin.relays.back": {
+    "defaultMessage": "リレーの一覧へ戻る",
+    "description": "Link from the page of one relay, or of the form that joins one, back to the list."
+  },
   "admin.relays.cancel": {
     "defaultMessage": "キャンセル",
     "description": "Button that closes the dialog of a relay without changing it."
@@ -14,10 +22,6 @@
   "admin.relays.create_failed": {
     "defaultMessage": "リレーに参加できませんでした: {reason}",
     "description": "Error of the form that registers a relay, for another reason than its URL. {reason} says why."
-  },
-  "admin.relays.created": {
-    "defaultMessage": "{name} を登録し、参加を申し込みました。",
-    "description": "Status after registering a relay. {name} is the host name of its URL."
   },
   "admin.relays.delete": {
     "defaultMessage": "削除",
@@ -39,9 +43,17 @@
     "defaultMessage": "{name} を削除しました。",
     "description": "Status after deleting a relay."
   },
+  "admin.relays.detail.title": {
+    "defaultMessage": "リレー",
+    "description": "Heading of the page of one relay."
+  },
   "admin.relays.domain_suspended": {
     "defaultMessage": "ドメインへの処分でこのリレーのサーバーは停止されています。処分のあいだは、何も送らず何も受け取りません。",
     "description": "Warning on a relay whose host a domain action suspends."
+  },
+  "admin.relays.domain_suspended.short": {
+    "defaultMessage": "ドメインへの処分で停止中",
+    "description": "Short warning in the list on a relay whose host a domain action suspends."
   },
   "admin.relays.dropped": {
     "defaultMessage": "上限を超えて捨てた数 (直近 24 時間)",
@@ -67,9 +79,25 @@
     "defaultMessage": "{name} にもう一度参加を申し込みました。",
     "description": "Status after asking to join a relay again."
   },
+  "admin.relays.inbox": {
+    "defaultMessage": "inbox",
+    "description": "Term in a relay's details: the inbox the server sends to."
+  },
   "admin.relays.list.title": {
     "defaultMessage": "このサーバーのリレー",
     "description": "Heading of the list of the relays."
+  },
+  "admin.relays.membership.joined": {
+    "defaultMessage": "参加中か参加を求めている間は、このサーバーの公開投稿をリレーに送ります。止めるには脱退します。脱退したリレーは、もう一度参加するか削除できます。",
+    "description": "Help of the membership of a relay that the server joined or asked to join."
+  },
+  "admin.relays.membership.left": {
+    "defaultMessage": "このリレーには何も送らず、何も受け取りません。もう一度参加するか、登録を削除します。",
+    "description": "Help of the membership of a relay that the server left or that rejected it."
+  },
+  "admin.relays.membership.title": {
+    "defaultMessage": "参加",
+    "description": "Heading of the section of a relay's page that leaves it, joins it again or deletes it."
   },
   "admin.relays.new.description": {
     "defaultMessage": "このサーバーの公開投稿は、参加しているリレーに送られ、リレーがほかの参加サーバーへ中継します。公開以外の投稿は送りません。",
@@ -78,6 +106,14 @@
   "admin.relays.new.title": {
     "defaultMessage": "リレーに参加する",
     "description": "Heading of the form that registers and joins a relay."
+  },
+  "admin.relays.not_found": {
+    "defaultMessage": "このリレーは登録されていません",
+    "description": "Heading of the page of a relay that the server does not have, such as a deleted one."
+  },
+  "admin.relays.not_found.description": {
+    "defaultMessage": "削除された可能性があります。このサーバーのリレーは、リレーの画面にあります。",
+    "description": "Description of the page of a relay that the server does not have."
   },
   "admin.relays.problem.domain_suspended": {
     "defaultMessage": "このリレーのサーバーは、ドメインへの処分で停止されています。",
@@ -139,6 +175,10 @@
     "defaultMessage": "中継された投稿を受け取る",
     "description": "Value of whether a relay is received: the server takes in the posts it relays."
   },
+  "admin.relays.relay": {
+    "defaultMessage": "リレー",
+    "description": "Column of the list of relays: the host name of the relay, linking to its page."
+  },
   "admin.relays.state": {
     "defaultMessage": "状態",
     "description": "Term in a relay's details: where its membership stands."
@@ -158,6 +198,10 @@
   "admin.relays.state.rejected": {
     "defaultMessage": "リレーに拒否されました",
     "description": "State of a relay that rejected the server or ended its membership."
+  },
+  "admin.relays.state_changed_at": {
+    "defaultMessage": "状態の変更日時",
+    "description": "Column of the list of relays: when the relay's state last changed."
   },
   "admin.relays.submit": {
     "defaultMessage": "参加する",

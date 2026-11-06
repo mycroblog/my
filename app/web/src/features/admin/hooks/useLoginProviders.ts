@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The external login providers of the admin screens (ADR-0106, manage_login_providers): the list, setting one up,
-// changing, enabling, disabling and deleting it, and giving it a new client secret. The form edits the settings as
+// The external login providers of the admin screens (ADR-0106, manage_login_providers): the list and one provider,
+// setting one up (which then opens its page), changing, enabling, disabling and deleting it (which leaves its page), and
+// giving it a new client secret. The form edits the settings as
 // text (scopes, Organizations and Discord servers as lists in one field, the claims of the conditions one per row) and sends only
 // what the kind takes. What each change did is announced and kept in a StatusMessage; a refused setting stays next
 // to its field.
@@ -20,6 +21,7 @@ import {
   type LoginProvidersOnlyImpact,
   loginProviderLimitQueryOptions,
   loginProviderProblem,
+  loginProviderQueryOptions,
   loginProvidersQueryOptions,
   type NewLoginProvider,
   refreshLoginProviders,
@@ -37,6 +39,12 @@ export function loginProviderName(provider: Pick<LoginProvider, "display_name">)
 export function useLoginProviders(): LoginProvider[] {
   const api = useApi();
   return useSuspenseQuery(loginProvidersQueryOptions(api)).data.items;
+}
+
+/** One login provider. */
+export function useLoginProvider(id: string): LoginProvider {
+  const api = useApi();
+  return useSuspenseQuery(loginProviderQueryOptions(api, id)).data;
 }
 
 /** The fields of a provider that the server may refuse, and the rest of the form. */
@@ -194,7 +202,7 @@ function useLimitStartCheck() {
   };
 }
 
-/** Enabling a provider of the list, after the warning when that starts the limit. */
+/** Enabling a provider, after the warning when that starts the limit. */
 export function useEnableLoginProvider(provider: LoginProvider, actions: LoginProviderActions) {
   const check = useLimitStartCheck();
   const [isChecking, setIsChecking] = useState(false);
@@ -230,26 +238,24 @@ export function useEnableLoginProvider(provider: LoginProvider, actions: LoginPr
   };
 }
 
-/** The form of a new provider. A success empties it and keeps the new provider to show its callback URL. */
-export function useLoginProviderForm() {
+/**
+ * The form of a new provider. A success calls `onCreated` with the provider once the list has it, to open its page,
+ * which shows the callback URL to register at the provider (the page's heading is the result, G24).
+ */
+export function useLoginProviderForm(onCreated: (provider: LoginProvider) => void) {
   const api = useApi();
   const t = useT();
   const queryClient = useQueryClient();
   const [draft, setDraft] = useState<LoginProviderDraft>(emptyDraft);
-  const [created, setCreated] = useState<LoginProvider | undefined>(undefined);
   const [invalid, setInvalid] = useState<LoginProviderFieldError | undefined>(undefined);
   const check = useLimitStartCheck();
   const [isChecking, setIsChecking] = useState(false);
   const [limitStart, setLimitStart] = useState<(LimitStart & { body: NewLoginProvider }) | null>(null);
   const mutation = useMutation({
     ...createLoginProviderMutation(api),
-    onMutate: () => {
-      setCreated(undefined);
-    },
     onSuccess: async (provider) => {
       await refreshLoginProviders(queryClient);
-      setDraft(emptyDraft);
-      setCreated(provider);
+      onCreated(provider);
     },
   });
   return {
@@ -302,13 +308,6 @@ export function useLoginProviderForm() {
     },
     /** Why setting it up failed, next to its field; the draft stays. */
     error: invalid ?? (mutation.isError ? fieldError(mutation.error) : undefined),
-    /** The new provider, whose callback URL is shown until the next submit. */
-    created,
-    /** What the last submit did, for the form's StatusMessage. */
-    status:
-      created === undefined
-        ? undefined
-        : t("client:admin.login_providers.created", { name: loginProviderName(created) }),
   };
 }
 
@@ -330,7 +329,10 @@ export function useCopyCallbackUrl(): (url: string) => void {
 }
 
 export type LoginProviderActions = {
-  /** Changes a provider's settings from a draft; resolves with the refused field, or undefined once it is saved. */
+  /**
+   * Changes a provider's settings from a draft; resolves with the refused field, or undefined once it is saved. Its
+   * result shows next to the form's button, not in `status`.
+   */
   update: (provider: LoginProvider, draft: LoginProviderDraft) => Promise<LoginProviderFieldError | undefined>;
   /** Gives a provider a new client secret; resolves with the refused field, or undefined once it is saved. */
   rotate: (provider: LoginProvider, secret: string) => Promise<LoginProviderFieldError | undefined>;
@@ -342,15 +344,16 @@ export type LoginProviderActions = {
   pendingId: string | undefined;
   /** Why the last change failed, localized, until the next change. */
   error: string | undefined;
-  /** What the last change did, for the list's StatusMessage. */
+  /** What the last rotation, enabling or disabling did, for the StatusMessage next to the actions. */
   status: string | undefined;
 };
 
 /**
- * Changing the providers of the list. `onDeleted(id)` is called once a deleted provider is about to leave the list
- * (to keep focus, lib/useFocusAfterRemoval); a changed provider keeps its row, which shows the answer.
+ * Changing a provider on its page, which shows the answer. A deleted provider calls `onDeleted(provider)` before the
+ * list is fetched again, so that its page can leave for the list and say what happened there (a toast: the page that
+ * would show it is gone); no status is kept for it.
  */
-export function useLoginProviderActions(onDeleted: (id: string) => void): LoginProviderActions {
+export function useLoginProviderActions(onDeleted: (provider: LoginProvider) => void): LoginProviderActions {
   const api = useApi();
   const t = useT();
   const queryClient = useQueryClient();
@@ -377,7 +380,7 @@ export function useLoginProviderActions(onDeleted: (id: string) => void): LoginP
         : remove.isPending
           ? remove.variables
           : undefined;
-  // A refused setting stays in its dialog; only the list's own actions show their failure above it.
+  // A refused setting stays next to its field; only enabling, disabling and deleting show their failure by the actions.
   const failed = [enable, remove].find((mutation) => mutation.isError);
   return {
     update: async (provider, draft) => {
@@ -389,9 +392,8 @@ export function useLoginProviderActions(onDeleted: (id: string) => void): LoginP
       );
       if (isFieldError(change)) return change;
       try {
-        const saved = await update.mutateAsync({ id: provider.id, change });
+        await update.mutateAsync({ id: provider.id, change });
         await refreshLoginProviders(queryClient);
-        report(t("client:admin.login_providers.updated", { name: loginProviderName(saved) }));
         return undefined;
       } catch (error) {
         return fieldError(error);
@@ -430,9 +432,8 @@ export function useLoginProviderActions(onDeleted: (id: string) => void): LoginP
       } catch {
         return false;
       }
-      onDeleted(provider.id);
+      onDeleted(provider);
       await refreshLoginProviders(queryClient);
-      report(t("client:admin.login_providers.deleted", { name: loginProviderName(provider) }));
       return true;
     },
     pendingId,

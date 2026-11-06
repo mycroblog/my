@@ -17,8 +17,6 @@ export { DomainMutes } from "./components/DomainMutes";
 export { CsvExportsSection, ImportExport } from "./components/ImportExport";
 export { DataExportsSection, OwnAccount } from "./components/OwnAccount";
 export { PreferencesForm } from "./components/PreferencesForm";
-// What a screen that saves a control at once shows (G24).
-export { saveStateOf, useSaveLabels } from "./hooks/saveState";
 // The notification settings: in the app, Web Push on this device, email, and the sound of this device (FR-210, ADR-0086).
 export { notificationSettingsQueryOptions } from "./api/notificationSettings";
 export { instanceQueryOptions } from "./api/me";

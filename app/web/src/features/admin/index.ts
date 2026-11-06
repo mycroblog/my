@@ -68,17 +68,20 @@ export { AnnouncementDetail } from "./components/AnnouncementDetail";
 export { AnnouncementList } from "./components/AnnouncementList";
 export { NewAnnouncement } from "./components/NewAnnouncement";
 // The external login providers: setting them up, changing, disabling and deleting them (ADR-0106), for manage_login_providers.
-export { loginProvidersQueryOptions } from "./api/loginProviders";
-export { LoginProviderSettings } from "./components/LoginProviderSettings";
+export { loginProviderQueryOptions, loginProvidersQueryOptions } from "./api/loginProviders";
+export { LoginProviderDetail, LoginProviderSettings, NewLoginProvider } from "./components/LoginProviderSettings";
 // The webhooks: setting them up, their deliveries and sending one again (ADR-0060), for manage_webhooks.
 export { webhookDeliveriesQueryOptions, webhookQueryOptions, webhooksQueryOptions } from "./api/webhooks";
-export { WebhookDeliveries } from "./components/WebhookDeliveries";
-export { WebhookSettings } from "./components/WebhookSettings";
+export { NewWebhook, WebhookDetail, WebhookSettings } from "./components/WebhookSettings";
 // The federation relays: registering, joining, leaving and deleting them (ADR-0006), for manage_settings.
 export { relaysQueryOptions } from "./api/relays";
-export { RelaySettings } from "./components/RelaySettings";
+export { NewRelay, RelayDetail, RelaySettings } from "./components/RelaySettings";
 // The rules of the link card crawler per domain, for manage_settings.
-export { LinkCardDomainSettings } from "./components/LinkCardDomainSettings";
+export {
+  LinkCardDomainDetail,
+  LinkCardDomainSettings,
+  NewLinkCardDomainRule,
+} from "./components/LinkCardDomainSettings";
 export { TranslationSettings } from "./components/TranslationSettings";
 // The roles: their list, creating one, and one role's page with its position, permissions and badge (FR-720), for
 // manage_roles. Their queries are those of the moderation feature, which shows an account's roles.

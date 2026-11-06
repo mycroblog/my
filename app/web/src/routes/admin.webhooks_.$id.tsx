@@ -2,7 +2,7 @@
 import { Link, Stack } from "@my/ui";
 import { createFileRoute, type ErrorComponentProps } from "@tanstack/react-router";
 import { z } from "zod";
-import { WebhookDeliveries, webhookDeliveriesQueryOptions, webhookQueryOptions } from "../features/admin";
+import { WebhookDetail, webhookDeliveriesQueryOptions, webhookQueryOptions } from "../features/admin";
 import { requireSignIn } from "../lib/auth/requireSignIn";
 import { useT } from "../lib/i18n";
 import { AdminError, loadWithPermission } from "./-admin/adminRoute";
@@ -11,7 +11,10 @@ import { PageHeading } from "./-layout/PageHeading";
 /** The `_` keeps the page out of the list's layout at `/admin/webhooks`. */
 const paramsSchema = z.object({ id: z.string().min(1).max(64) });
 
-/** One webhook and its deliveries, with sending one again (ADR-0060), for manage_webhooks. */
+/**
+ * One webhook (ADR-0060): its settings, enabling, disabling, testing and deleting it, giving it a new secret, and its
+ * deliveries with sending one again, for manage_webhooks.
+ */
 export const Route = createFileRoute("/admin/webhooks_/$id")({
   staticData: { title: "client:admin.webhook.title" },
   params: { parse: (params) => paramsSchema.parse(params) },
@@ -45,7 +48,7 @@ function WebhookPage() {
     <>
       <WebhookHeading />
       {/* Another webhook is another page: nothing of the previous one carries over (web-client/README.md R10). */}
-      <WebhookDeliveries key={id} id={id} />
+      <WebhookDetail key={id} id={id} />
     </>
   );
 }

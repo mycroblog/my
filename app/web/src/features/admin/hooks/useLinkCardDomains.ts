@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The rules of the link card crawler on the admin screens (manage_settings): the list, the form that sets the rule of a
-// domain, changing the mode of a rule in its row, and removing one. What a change did is announced and kept in a
-// StatusMessage; a refusal of the form stays next to the domain, and a failure of a row next to its control.
-import { useNotice } from "@my/ui";
+// new domain (which then opens the rule's page), the form that changes the mode and the note of a rule on its page, and
+// removing one (which leaves its page). A refusal of the new rule stays next to the domain; the result of a change
+// stays next to its save button.
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type SyntheticEvent, useState } from "react";
 import { useApi } from "../../../lib/auth/SessionProvider";
@@ -11,7 +11,6 @@ import { useT } from "../../../lib/i18n";
 import { useLoadFailure } from "../../../lib/loadFailure";
 import { shellQueryRetry } from "../../../lib/query";
 import { domainInText } from "../../moderation";
-import { saveStateOf } from "../../settings";
 import {
   type LinkCardDomainMode,
   type LinkCardDomainRule,
@@ -52,22 +51,32 @@ const emptyDraft: LinkCardDomainDraft = { domain: "", mode: "no_images", note: "
 /** Why the form failed: on the domain when the server refused the rule (422), else under the form. */
 export type LinkCardDomainFormError = { field: "domain" | "form"; message: string };
 
-/** The form of a rule. A success empties it and says which domain the rule is on. */
-export function useLinkCardDomainForm() {
+/** The rule of a domain in the list, or undefined when the domain has none. */
+export function findRule(rules: readonly LinkCardDomainRule[], domain: string): LinkCardDomainRule | undefined {
+  const wanted = domain.toLowerCase();
+  return rules.find((rule) => rule.domain.toLowerCase() === wanted);
+}
+
+/** The rules whose domain holds `search` (any case), or every rule without one. */
+export function searchRules(rules: readonly LinkCardDomainRule[], search: string | undefined): LinkCardDomainRule[] {
+  if (search === undefined) return [...rules];
+  const wanted = search.toLowerCase();
+  return rules.filter((rule) => rule.domain.toLowerCase().includes(wanted));
+}
+
+/**
+ * The form of a new rule. A success calls `onSaved` with the rule once the list has it, to open its page (the page's
+ * heading is the result, web-client/16-look-states-and-wording.md G24).
+ */
+export function useLinkCardDomainForm(onSaved: (rule: LinkCardDomainRule) => void) {
   const api = useApi();
-  const t = useT();
   const queryClient = useQueryClient();
   const [draft, setDraft] = useState<LinkCardDomainDraft>(emptyDraft);
-  const [saved, setSaved] = useState<LinkCardDomainRule | undefined>(undefined);
   const mutation = useMutation({
     ...setLinkCardDomainRuleMutation(api),
-    onMutate: () => {
-      setSaved(undefined);
-    },
     onSuccess: async (rule) => {
       await refreshLinkCardDomainRules(queryClient);
-      setDraft(emptyDraft);
-      setSaved(rule);
+      onSaved(rule);
     },
   });
   const error = (): LinkCardDomainFormError | undefined => {
@@ -89,32 +98,49 @@ export function useLinkCardDomainForm() {
     isPending: mutation.isPending,
     /** Why saving failed; the draft stays. */
     error: error(),
-    /** What the last submit did, for the form's StatusMessage. */
-    status:
-      saved === undefined
-        ? undefined
-        : t("client:admin.link_card_domains.saved", { domain: domainInText(t, saved.domain) }),
   };
 }
 
-/** Changing the mode of a rule in its row, saved as soon as it is chosen (G24). */
-export function useLinkCardDomainMode(rule: LinkCardDomainRule) {
+/** The mode and the note of a rule as its page edits them. */
+export type LinkCardDomainChange = { mode: LinkCardDomainMode; note: string };
+
+/**
+ * The form of a rule on its page: its mode and note, saved together (G24, FormActionBar). The result of the last save
+ * stays next to its button until the form changes.
+ */
+export function useLinkCardDomainEdit(rule: LinkCardDomainRule) {
   const api = useApi();
+  const t = useT();
   const queryClient = useQueryClient();
+  const [draft, setDraft] = useState<LinkCardDomainChange>({ mode: rule.mode, note: rule.note });
   const mutation = useMutation({
     ...setLinkCardDomainRuleMutation(api),
     onSuccess: () => refreshLinkCardDomainRules(queryClient),
   });
   return {
-    /** The mode to show: the one on its way, else the rule's. */
-    mode: mutation.isPending ? mutation.variables.mode : rule.mode,
-    change: (mode: LinkCardDomainMode) => {
-      if (mode === rule.mode || mutation.isPending) return;
-      mutation.mutate({ domain: rule.domain, mode, note: rule.note });
+    draft,
+    change: (change: Partial<LinkCardDomainChange>) => {
+      mutation.reset();
+      setDraft((previous) => ({ ...previous, ...change }));
     },
-    saveState: saveStateOf(mutation),
-    /** Why the last change failed, until the next one. */
-    error: mutation.isError ? errorMessage(mutation.error) : undefined,
+    submit: (event: SyntheticEvent<HTMLFormElement>) => {
+      event.preventDefault();
+      if (mutation.isPending) return;
+      mutation.mutate({ domain: rule.domain, mode: draft.mode, note: draft.note.trim() });
+    },
+    isPending: mutation.isPending,
+    /** The result of the last save, for the FormActionBar. */
+    result: mutation.isError
+      ? {
+          tone: "danger" as const,
+          message: t("client:admin.link_card_domains.save_failed", { reason: errorMessage(mutation.error) }),
+        }
+      : mutation.isSuccess
+        ? {
+            tone: "success" as const,
+            message: t("client:admin.link_card_domains.saved", { domain: domainInText(t, rule.domain) }),
+          }
+        : undefined,
   };
 }
 
@@ -123,17 +149,15 @@ export type LinkCardDomainRemoval = {
   remove: (rule: LinkCardDomainRule) => Promise<boolean>;
   /** Why the last removal failed, localized, until the next one. */
   error: string | undefined;
-  /** What the last removal did, for the list's StatusMessage. */
-  status: string | undefined;
 };
 
-/** Removing rules. `onRemoved(domain)` is called once a rule is about to leave the list (lib/useFocusAfterRemoval). */
-export function useLinkCardDomainRemoval(onRemoved: (domain: string) => void): LinkCardDomainRemoval {
+/**
+ * Removing a rule from its page. `onRemoved(rule)` is called before the list is fetched again, so that the page can
+ * leave for the list and say what happened there (a toast: the page that would show it is gone).
+ */
+export function useLinkCardDomainRemoval(onRemoved: (rule: LinkCardDomainRule) => void): LinkCardDomainRemoval {
   const api = useApi();
-  const t = useT();
   const queryClient = useQueryClient();
-  const notice = useNotice();
-  const [status, setStatus] = useState<string | undefined>(undefined);
   const mutation = useMutation(removeLinkCardDomainRuleMutation(api));
   return {
     remove: async (rule) => {
@@ -143,14 +167,10 @@ export function useLinkCardDomainRemoval(onRemoved: (domain: string) => void): L
       } catch {
         return false;
       }
-      onRemoved(rule.domain);
+      onRemoved(rule);
       await refreshLinkCardDomainRules(queryClient);
-      const message = t("client:admin.link_card_domains.removed", { domain: domainInText(t, rule.domain) });
-      setStatus(message);
-      notice.inPlace(message);
       return true;
     },
     error: mutation.isError ? errorMessage(mutation.error) : undefined,
-    status,
   };
 }

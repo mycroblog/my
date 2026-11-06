@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The login providers screen in every width × locale project (ADR-0106, ADR-0110): an administrator sets up an
-// OpenID Connect provider and sees its callback URL, sees it listed, disables it after the warning dialog, and deletes
-// it after its dialog, each step passing axe without scrolling sideways. `vite preview` has no API, so each test plays
+// The login providers screen in every width × locale project (ADR-0106, ADR-0110): an administrator opens the form
+// from the list, sets up an OpenID Connect provider and lands on its page with its callback URL, sees it listed, and on
+// its page disables it after the warning dialog and deletes it after its dialog, back on the list; each step passing
+// axe without scrolling sideways. `vite preview` has no API, so each test plays
 // the server of a signed-in administrator with page.route; names change with the locale, so the structure is checked
 // by role, by the names in the project's locale catalog and by what the server sends.
 import type { Page, Route } from "@playwright/test";
@@ -10,13 +11,13 @@ import { expect, expectNoAxeViolations, expectNoHorizontalScroll, recordRowHeade
 import { readCatalog } from "./catalog.ts";
 
 type Schemas = components["schemas"];
-/** The client message `key` in the project's locale, with `{name}` replaced by `name`. */
-function message(key: string, name = ""): string {
+/** The client message `key` in the project's locale. */
+function message(key: string): string {
   const locale = test.info().project.use.locale ?? "en";
   const catalog = readCatalog(locale);
   const text = catalog[key]?.defaultMessage;
   if (text === undefined) throw new Error(`no message ${key} in ${locale}`);
-  return text.replace("{name}", name);
+  return text;
 }
 
 /** The signed-in administrator's account, as GET /accounts/verify_credentials answers, with manage_login_providers. */
@@ -43,8 +44,6 @@ const administrator = {
 const providerId = "0192f0c4-7a8e-7000-8000-0000000000c1";
 const callbackUrl = `https://my.example/auth/external/${providerId}/callback`;
 const displayName = "Example SSO";
-/** The provider in sentences: its display name, isolated (useLoginProviders.loginProviderName). */
-const name = `⁨${displayName}⁩`;
 
 function json(route: Route, body: unknown, status = 200) {
   return route.fulfill({
@@ -114,6 +113,10 @@ async function administratorServer(page: Page) {
       });
     }
     if (key === "GET /admin/login_providers") return json(route, { items: providers });
+    if (/^GET \/admin\/login_providers\/[^/]+$/.test(key)) {
+      const provider = providers.find((one) => path.endsWith(`/${one.id}`));
+      if (provider !== undefined) return json(route, provider);
+    }
     if (key === "POST /admin/login_providers") {
       const body = request.postDataJSON() as Schemas["CreateLoginProviderRequest"];
       sent.push(
@@ -163,48 +166,63 @@ test.describe("login providers", () => {
     const sent = await administratorServer(page);
     await page.goto("/admin/login-providers");
     const main = page.getByRole("main");
-    const form = main.getByRole("region", { name: message("admin.login_providers.new.title"), exact: true });
-    await expect(form).toBeVisible();
+    const list = main.getByRole("region", { name: message("admin.login_providers.list.title"), exact: true });
+    await expect(
+      list.getByRole("heading", { level: 3, name: message("admin.login_providers.empty"), exact: true }),
+    ).toBeVisible();
     await expectNoAxeViolations(makeAxeBuilder);
     await expectNoHorizontalScroll(page);
 
-    await form
+    // The list holds no form: "Add a provider" opens its page.
+    await main.getByRole("link", { name: message("admin.login_providers.new.title"), exact: true }).click();
+    await expect(page).toHaveURL(/\/admin\/login-providers\/new$/);
+    await expectNoAxeViolations(makeAxeBuilder);
+    await expectNoHorizontalScroll(page);
+    await main
       .getByRole("textbox", { name: message("admin.login_providers.display_name"), exact: true })
       .fill(displayName);
-    await form
+    await main
       .getByRole("textbox", { name: message("admin.login_providers.issuer"), exact: true })
       .fill("https://sso.example");
-    await form
+    await main
       .getByRole("textbox", { name: message("admin.login_providers.client_id"), exact: true })
       .fill("my-client");
-    await form.getByLabel(message("admin.login_providers.client_secret"), { exact: true }).fill("s3cret");
-    await form.getByRole("button", { name: message("admin.login_providers.submit"), exact: true }).click();
+    await main.getByLabel(message("admin.login_providers.client_secret"), { exact: true }).fill("s3cret");
+    await main.getByRole("button", { name: message("admin.login_providers.submit"), exact: true }).click();
 
-    await expect(form.getByText(callbackUrl, { exact: true })).toBeVisible();
+    // Setting it up opens its page, with the callback URL to register at the provider.
+    await expect(page).toHaveURL(new RegExp(`/admin/login-providers/${providerId}$`));
+    await expect(main.getByRole("heading", { level: 2, name: displayName, exact: true })).toBeVisible();
+    await expect(main.getByText(callbackUrl, { exact: true })).toBeVisible();
     expect(sent).toEqual(["create oidc https://sso.example my-client"]);
-    const list = main.getByRole("region", { name: message("admin.login_providers.list.title"), exact: true });
+    await expectNoAxeViolations(makeAxeBuilder);
+    await expectNoHorizontalScroll(page);
+
+    // The list shows it, and leads back to its page.
+    await main.getByRole("link", { name: message("admin.login_providers.back"), exact: true }).click();
     await expect(recordRowHeaders(list).filter({ hasText: displayName })).toBeVisible();
     await expectNoAxeViolations(makeAxeBuilder);
     await expectNoHorizontalScroll(page);
+    await list.getByRole("link", { name: displayName, exact: true }).click();
 
-    await list
-      .getByRole("button", { name: message("admin.login_providers.disable_provider", name), exact: true })
-      .click();
+    const actions = main.getByRole("region", { name: message("admin.login_providers.manage.title"), exact: true });
+    await actions.getByRole("button", { name: message("admin.login_providers.disable"), exact: true }).click();
     const disable = page.getByRole("alertdialog");
     await expect(disable).toBeVisible();
     await expectNoAxeViolations(makeAxeBuilder);
     await disable.getByRole("button", { name: message("admin.login_providers.disable"), exact: true }).click();
     await expect(
-      list.getByRole("button", { name: message("admin.login_providers.enable_provider", name), exact: true }),
+      actions.getByRole("button", { name: message("admin.login_providers.enable"), exact: true }),
     ).toBeVisible();
 
-    await list
-      .getByRole("button", { name: message("admin.login_providers.delete_provider", name), exact: true })
-      .click();
+    await actions.getByRole("button", { name: message("admin.login_providers.delete"), exact: true }).click();
     const remove = page.getByRole("alertdialog");
     await expect(remove).toBeVisible();
     await expectNoAxeViolations(makeAxeBuilder);
     await remove.getByRole("button", { name: message("admin.login_providers.delete"), exact: true }).click();
+
+    // Deleting goes back to the list.
+    await expect(page).toHaveURL(/\/admin\/login-providers$/);
     await expect(
       list.getByRole("heading", { level: 3, name: message("admin.login_providers.empty"), exact: true }),
     ).toBeVisible();
@@ -213,9 +231,9 @@ test.describe("login providers", () => {
 
   test("sets up a Discord provider with the servers it admits", async ({ page, makeAxeBuilder }) => {
     const sent = await administratorServer(page);
-    await page.goto("/admin/login-providers");
+    await page.goto("/admin/login-providers/new");
     const main = page.getByRole("main");
-    const form = main.getByRole("region", { name: message("admin.login_providers.new.title"), exact: true });
+    const form = main.locator("form");
     await expect(form).toBeVisible();
 
     await form.getByText(message("admin.login_providers.kind.discord"), { exact: true }).click();
@@ -239,7 +257,7 @@ test.describe("login providers", () => {
     await expectNoHorizontalScroll(page);
     await form.getByRole("button", { name: message("admin.login_providers.submit"), exact: true }).click();
 
-    await expect(form.getByText(callbackUrl, { exact: true })).toBeVisible();
+    await expect(main.getByText(callbackUrl, { exact: true })).toBeVisible();
     expect(sent).toEqual(["create discord  my-client guilds=1234567890,987654321"]);
   });
 });

@@ -357,7 +357,7 @@ const hostDenial: Schemas["AdminOAuthClientHostDenial"] = {
   denied_at: "2026-10-23T00:00:00Z",
 };
 
-/** An OIDC login provider with a long name and issuer, as GET /admin/login_providers lists it. */
+/** A rule of the link card crawler, as GET /admin/link_card_domains lists it. */
 const linkCardDomainRule: Schemas["LinkCardDomainRule"] = {
   domain: "cards.example",
   mode: "no_images",
@@ -365,6 +365,7 @@ const linkCardDomainRule: Schemas["LinkCardDomainRule"] = {
   updated_at: "2026-10-01T00:00:00Z",
 };
 
+/** An OIDC login provider with a long name and issuer, as GET /admin/login_providers lists it. */
 const loginProvider: Schemas["AdminLoginProvider"] = {
   id: "0192f0c4-7a8e-7000-8000-0000000000f2",
   kind: "oidc",
@@ -803,6 +804,7 @@ async function moderatorServer(page: Page) {
     if (key === "GET /admin/oauth_clients") return json(route, { items: [oauthClient] });
     if (key === "GET /admin/oauth_client_host_denials") return json(route, { items: [hostDenial] });
     if (key === "GET /admin/login_providers") return json(route, { items: [loginProvider] });
+    if (key === `GET /admin/login_providers/${loginProvider.id}`) return json(route, loginProvider);
     if (key === "GET /admin/link_card_domains") return json(route, { items: [linkCardDomainRule] });
     if (key === "GET /admin/roles") return json(route, { items: roles });
     if (key === "GET /admin/hook_decisions") return json(route, { items: [hookDecision] });
@@ -1113,15 +1115,28 @@ const adminPages: Readonly<Record<string, { path: string; ready: string | { valu
   "admin.errors_.$id": { path: `/admin/errors/${errorGroup.id}`, ready: errorRequestId },
   "admin.webhooks": { path: "/admin/webhooks", ready: webhook.description ?? "" },
   "admin.webhooks_.$id": { path: `/admin/webhooks/${webhook.id}`, ready: webhookDelivery.message_id },
+  "admin.webhooks_.new": { path: "/admin/webhooks/new", ready: "" },
   "admin.closure": { path: "/admin/closure", ready: announcedClosure.message ?? "" },
   "admin.announcements": { path: "/admin/announcements", ready: announcement.title },
   "admin.announcements_.new": { path: "/admin/announcements/new", ready: "" },
   "admin.announcements_.$id": { path: `/admin/announcements/${announcement.id}`, ready: "the status page" },
-  "admin.relays": { path: "/admin/relays", ready: relay.inbox_url },
+  "admin.relays": { path: "/admin/relays", ready: `relay.${longDomain}` },
+  "admin.relays_.new": { path: "/admin/relays/new", ready: "" },
+  "admin.relays_.$id": { path: `/admin/relays/${relay.id}`, ready: relay.inbox_url },
   "admin.oauth-apps": { path: "/admin/oauth-apps", ready: oauthClient.name },
   "admin.oauth-apps_.hosts": { path: "/admin/oauth-apps/hosts", ready: hostDenial.host },
   "admin.login-providers": { path: "/admin/login-providers", ready: loginProvider.display_name },
+  "admin.login-providers_.new": { path: "/admin/login-providers/new", ready: "" },
+  "admin.login-providers_.$id": {
+    path: `/admin/login-providers/${loginProvider.id}`,
+    ready: loginProvider.callback_url,
+  },
   "admin.link-card-domains": { path: "/admin/link-card-domains", ready: linkCardDomainRule.domain },
+  "admin.link-card-domains_.new": { path: "/admin/link-card-domains/new", ready: "" },
+  "admin.link-card-domains_.$domain": {
+    path: `/admin/link-card-domains/${linkCardDomainRule.domain}`,
+    ready: linkCardDomainRule.domain,
+  },
   "admin.documents": { path: "/admin/documents", ready: { value: documentText.body } },
   "admin.documents_.privacy-policy": { path: "/admin/documents/privacy-policy", ready: { value: "" } },
   "admin.documents_.commerce-disclosure": { path: "/admin/documents/commerce-disclosure", ready: { value: "" } },

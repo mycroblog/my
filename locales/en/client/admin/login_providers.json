@@ -15,6 +15,10 @@
     "defaultMessage": "Someone without an account signs up with the provider, within the server's sign-up mode.",
     "description": "Description of the checkbox that allows signing up with a login provider."
   },
+  "admin.login_providers.back": {
+    "defaultMessage": "Back to the login providers",
+    "description": "Link from the page of a login provider, or of the form of a new one, back to the list."
+  },
   "admin.login_providers.callback": {
     "defaultMessage": "Callback URL",
     "description": "Label of a login provider's callback URL."
@@ -99,9 +103,9 @@
     "defaultMessage": "Each condition needs a claim and at least one value.",
     "description": "Error of a condition row without its claim or values."
   },
-  "admin.login_providers.created": {
-    "defaultMessage": "{name} is set up.",
-    "description": "Status after setting up a login provider. {name} is its display name."
+  "admin.login_providers.created_at": {
+    "defaultMessage": "Set up",
+    "description": "Column and term of when a login provider was set up."
   },
   "admin.login_providers.delete": {
     "defaultMessage": "Delete",
@@ -115,13 +119,13 @@
     "defaultMessage": "Delete {name}?",
     "description": "Title of the dialog that confirms deleting a login provider."
   },
-  "admin.login_providers.delete_provider": {
-    "defaultMessage": "Delete {name}",
-    "description": "Accessible name of the button that deletes a login provider."
-  },
   "admin.login_providers.deleted": {
     "defaultMessage": "{name} is deleted.",
     "description": "Status after deleting a login provider."
+  },
+  "admin.login_providers.detail.title": {
+    "defaultMessage": "Login provider",
+    "description": "Heading of the page of one login provider."
   },
   "admin.login_providers.disable": {
     "defaultMessage": "Disable",
@@ -134,10 +138,6 @@
   "admin.login_providers.disable.title": {
     "defaultMessage": "Disable {name}?",
     "description": "Title of the dialog that confirms disabling a login provider."
-  },
-  "admin.login_providers.disable_provider": {
-    "defaultMessage": "Disable {name}",
-    "description": "Accessible name of the button that disables a login provider."
   },
   "admin.login_providers.disabled_status": {
     "defaultMessage": "{name} is disabled.",
@@ -155,21 +155,9 @@
     "defaultMessage": "The name on the administration screens and, as written, on the sign-in button.",
     "description": "Description of the display name of an OpenID Connect provider."
   },
-  "admin.login_providers.edit": {
-    "defaultMessage": "Edit",
-    "description": "Button that opens the dialog that changes a login provider."
-  },
   "admin.login_providers.edit.kind": {
     "defaultMessage": "Kind: {kind}",
     "description": "The kind of the provider in its edit dialog, which cannot change. {kind} is the kind's name."
-  },
-  "admin.login_providers.edit.title": {
-    "defaultMessage": "Edit {name}",
-    "description": "Title of the dialog that changes a login provider."
-  },
-  "admin.login_providers.edit_provider": {
-    "defaultMessage": "Edit {name}",
-    "description": "Accessible name of the button that changes a login provider."
   },
   "admin.login_providers.empty": {
     "defaultMessage": "No login providers yet",
@@ -182,10 +170,6 @@
   "admin.login_providers.enable": {
     "defaultMessage": "Enable",
     "description": "Button that enables a login provider."
-  },
-  "admin.login_providers.enable_provider": {
-    "defaultMessage": "Enable {name}",
-    "description": "Accessible name of the button that enables a login provider."
   },
   "admin.login_providers.enabled_status": {
     "defaultMessage": "{name} is enabled.",
@@ -275,13 +259,17 @@
     "defaultMessage": "Login providers of this server",
     "description": "Heading of the list of login providers."
   },
+  "admin.login_providers.manage.title": {
+    "defaultMessage": "Secret and state",
+    "description": "Heading of the section of a login provider's page that gives it a new client secret, enables, disables or deletes it."
+  },
   "admin.login_providers.mastodon.conditions": {
     "defaultMessage": "Every user of the server can sign in with it.",
     "description": "Note that a Mastodon provider has no conditions."
   },
   "admin.login_providers.new.title": {
-    "defaultMessage": "Set up a login provider",
-    "description": "Heading of the form that sets up a login provider."
+    "defaultMessage": "Add a provider",
+    "description": "Heading of the page with the form that sets up a login provider, and the link to it."
   },
   "admin.login_providers.organizations": {
     "defaultMessage": "Organizations",
@@ -311,10 +299,6 @@
     "defaultMessage": "New client secret for {name}",
     "description": "Title of the dialog that gives a login provider a new client secret."
   },
-  "admin.login_providers.rotate_provider": {
-    "defaultMessage": "New secret for {name}",
-    "description": "Accessible name of the button that opens the new secret dialog."
-  },
   "admin.login_providers.rotated": {
     "defaultMessage": "{name} has a new client secret.",
     "description": "Status after giving a login provider a new client secret."
@@ -342,6 +326,14 @@
   "admin.login_providers.server.description": {
     "defaultMessage": "The domain of the Mastodon server, such as mastodon.social.",
     "description": "Description of the Mastodon server field."
+  },
+  "admin.login_providers.settings.title": {
+    "defaultMessage": "Settings",
+    "description": "Heading of the section of a login provider's page with the form of its settings."
+  },
+  "admin.login_providers.signup": {
+    "defaultMessage": "Sign-up",
+    "description": "Term in a login provider's details: whether people may sign up with it."
   },
   "admin.login_providers.state": {
     "defaultMessage": "State",

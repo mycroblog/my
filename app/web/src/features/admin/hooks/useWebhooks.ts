@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The webhooks of the admin screens (ADR-0060, manage_webhooks): the list, setting one up, changing, enabling,
-// disabling, deleting it, giving it a new secret and sending it a test; and the deliveries of one, with sending one
-// again. A new secret is kept to show once, until the next change. What each change did is announced and kept in a
+// The webhooks of the admin screens (ADR-0060, manage_webhooks): the list, setting one up, and on the page of one
+// changing, enabling, disabling and deleting it (which leaves its page), giving it a new secret and sending it a test;
+// and the deliveries of one, with sending one again. A new secret is kept to show once, until the next change. What each change did is announced and kept in a
 // StatusMessage; a refused setting stays next to its field.
 import { useNotice, useToast } from "@my/ui";
 import { useMutation, useQueryClient, useSuspenseInfiniteQuery, useSuspenseQuery } from "@tanstack/react-query";
@@ -152,7 +152,10 @@ export function useCopySecret(): (secret: string) => void {
 }
 
 export type WebhookActions = {
-  /** Changes a webhook's settings; resolves with the refused field, or undefined once it is saved. */
+  /**
+   * Changes a webhook's settings; resolves with the refused field, or undefined once it is saved. Its result shows next
+   * to the form's button, not in `status`.
+   */
   update: (webhook: Webhook, change: WebhookChange) => Promise<WebhookFieldError | undefined>;
   /** Enables or disables a webhook. */
   setEnabled: (webhook: Webhook, enabled: boolean) => void;
@@ -168,15 +171,16 @@ export type WebhookActions = {
   error: string | undefined;
   /** The new secret of the last rotation, until the next change. */
   secret: ShownSecret | undefined;
-  /** What the last change did, for the list's StatusMessage. */
+  /** What the last action but a change of the settings did, for the StatusMessage next to the actions. */
   status: string | undefined;
 };
 
 /**
- * Changing the webhooks of the list. `onDeleted(id)` is called once a deleted webhook is about to leave the list (to
- * keep focus, lib/useFocusAfterRemoval); a changed webhook keeps its row, which shows the answer.
+ * Changing a webhook on its page, which shows the answer. A deleted webhook calls `onDeleted(webhook)` before the list
+ * is fetched again, so that its page can leave for the list and say what happened there (a toast: the page that would
+ * show it is gone); no status is kept for it.
  */
-export function useWebhookActions(onDeleted: (id: string) => void): WebhookActions {
+export function useWebhookActions(onDeleted: (webhook: Webhook) => void): WebhookActions {
   const api = useApi();
   const t = useT();
   const queryClient = useQueryClient();
@@ -208,14 +212,14 @@ export function useWebhookActions(onDeleted: (id: string) => void): WebhookActio
           : remove.isPending
             ? remove.variables
             : undefined;
-  const failed = mutations.find((mutation) => mutation.isError);
+  // A refused setting stays next to its field; the other actions show their failure by the actions.
+  const failed = [enable, rotate, test, remove].find((mutation) => mutation.isError);
   return {
     update: async (webhook, change) => {
       resetAll();
       try {
-        const saved = await update.mutateAsync({ id: webhook.id, change });
+        await update.mutateAsync({ id: webhook.id, change });
         await refreshWebhooks(queryClient);
-        report(t("client:admin.webhooks.updated", { name: webhookName(saved) }));
         return undefined;
       } catch (error) {
         return fieldError(error);
@@ -267,9 +271,8 @@ export function useWebhookActions(onDeleted: (id: string) => void): WebhookActio
       } catch {
         return false;
       }
-      onDeleted(webhook.id);
+      onDeleted(webhook);
       await refreshWebhooks(queryClient);
-      report(t("client:admin.webhooks.deleted", { name: webhookName(webhook) }));
       return true;
     },
     pendingId,

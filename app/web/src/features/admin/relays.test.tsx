@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The relays screen through the whole app (web-client/README.md T4, ADR-0006): an administrator with manage_settings sees
-// the relays and their state, registers and joins one, sees why the server refused one, leaves a relay, joins it
-// again and deletes it after asking; with MSW playing the API.
+// the relays and their state in the list and their facts on their page, registers and joins one on the form's page,
+// sees why the server refused one, leaves a relay, joins it again and deletes it after asking; with MSW playing the API.
 import { screen, waitFor, within } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
 import { beforeEach, describe, expect, test } from "vitest";
@@ -31,7 +31,7 @@ describe("the relays screen", () => {
     expect(await screen.findByRole("heading", { level: 2, name: "You cannot use this screen" })).toBeInTheDocument();
   });
 
-  test("lists the relays with their state, last day and actor, and warns of a suspended server", async () => {
+  test("lists the relays with their state and the link to their page, and warns of a suspended server", async () => {
     const { actor_uri: _, ...rejected } = relayFixture("0199f0e0-0000-7000-8000-0000000000da", {
       protocol: "litepub",
       url: "https://pleroma.example/relay",
@@ -42,36 +42,56 @@ describe("the relays screen", () => {
     server.use(
       http.get(`${apiBase}/admin/relays`, () =>
         HttpResponse.json({
-          items: [
-            relayFixture(relayId, { taken_last_day: 120, dropped_last_day: 3, domain_suspended: true }),
-            rejected,
-          ],
+          items: [relayFixture(relayId, { domain_suspended: true }), rejected],
         } satisfies Schemas["AdminRelayList"]),
       ),
     );
     await renderApp({ path: "/admin/relays" });
     const list = await screen.findByRole("region", { name: "Relays of this server" });
 
+    expect(screen.getByRole("link", { name: "Join a relay" })).toHaveAttribute("href", "/admin/relays/new");
     const [joinedRow, rejectedRow] = within(list).getAllByRole("row").slice(1);
     if (joinedRow === undefined || rejectedRow === undefined) throw new Error("two relays expected");
-    expect(within(joinedRow).getByRole("rowheader", { name: /^relay\.example/u })).toBeInTheDocument();
+    expect(within(joinedRow).getByRole("link", { name: "relay.example" })).toHaveAttribute(
+      "href",
+      `/admin/relays/${relayId}`,
+    );
     expect(within(joinedRow).getByText("Joined")).toBeInTheDocument();
-    expect(within(joinedRow).getByText("https://relay.example/actor")).toBeInTheDocument();
-    expect(within(joinedRow).getByText("120 activities")).toBeInTheDocument();
-    expect(within(joinedRow).getByText("3 activities")).toBeInTheDocument();
-    expect(within(joinedRow).getByText(/A domain action suspends the server of this relay/)).toBeInTheDocument();
+    expect(within(joinedRow).getByText("Suspended by a domain action")).toBeInTheDocument();
     expect(within(joinedRow).getByRole("button", { name: `Leave ${name}` })).toBeInTheDocument();
-    expect(within(joinedRow).queryByRole("button", { name: `Delete ${name}` })).not.toBeInTheDocument();
-
-    expect(within(rejectedRow).getByText("LitePub")).toBeInTheDocument();
     expect(within(rejectedRow).getByText("Rejected by the relay")).toBeInTheDocument();
-    expect(within(rejectedRow).getByText("Sends only")).toBeInTheDocument();
-    expect(within(rejectedRow).getByText("https://pleroma.example/inbox")).toBeInTheDocument();
     expect(within(rejectedRow).getByRole("button", { name: "Join again: ⁦pleroma.example⁩" })).toBeInTheDocument();
-    expect(within(rejectedRow).getByRole("button", { name: "Delete ⁦pleroma.example⁩" })).toBeInTheDocument();
+    // Deleting is on the relay's page.
+    expect(within(list).queryByRole("button", { name: /^Delete/u })).not.toBeInTheDocument();
   });
 
-  test("registers and joins a relay", async () => {
+  test("shows a relay's facts, last day and actor on its page", async () => {
+    server.use(
+      http.get(`${apiBase}/admin/relays`, () =>
+        HttpResponse.json({
+          items: [relayFixture(relayId, { taken_last_day: 120, dropped_last_day: 3, domain_suspended: true })],
+        }),
+      ),
+    );
+    await renderApp({ path: `/admin/relays/${relayId}` });
+
+    const details = await screen.findByRole("region", { name: "relay.example" });
+    expect(within(details).getByText("https://relay.example/actor")).toBeInTheDocument();
+    expect(within(details).getByText("120 activities")).toBeInTheDocument();
+    expect(within(details).getByText("3 activities")).toBeInTheDocument();
+    expect(within(details).getByText(/A domain action suspends the server of this relay/)).toBeInTheDocument();
+    const membership = screen.getByRole("region", { name: "Membership" });
+    expect(within(membership).getByRole("button", { name: `Leave ${name}` })).toBeInTheDocument();
+    expect(within(membership).queryByRole("button", { name: `Delete ${name}` })).not.toBeInTheDocument();
+  });
+
+  test("says so on the page of a relay that is not registered", async () => {
+    await renderApp({ path: `/admin/relays/${relayId}` });
+
+    expect(await screen.findByRole("heading", { name: "This relay is not registered" })).toBeInTheDocument();
+  });
+
+  test("registers and joins a relay, then opens its page", async () => {
     let sent: Schemas["CreateRelayRequest"] | undefined;
     server.use(
       http.get(`${apiBase}/admin/relays`, () =>
@@ -94,21 +114,20 @@ describe("the relays screen", () => {
         return HttpResponse.json(relayFixture(relayId, { url: sent.url, inbox_url: sent.url, state: "pending" }));
       }),
     );
-    const { user } = await renderApp({ path: "/admin/relays" });
-    const form = await screen.findByRole("region", { name: "Join a relay" });
+    const { user, router } = await renderApp({ path: "/admin/relays/new" });
+    const url = await screen.findByRole("textbox", { name: "URL" });
 
-    expect(within(form).getByRole("checkbox", { name: "Receive posts from the relay" })).toBeChecked();
-    await user.type(within(form).getByRole("textbox", { name: "URL" }), "https://relay.example/inbox");
-    await user.click(within(form).getByRole("checkbox", { name: "Receive posts from the relay" }));
-    await user.click(within(form).getByRole("button", { name: "Join" }));
+    expect(screen.getByRole("checkbox", { name: "Receive posts from the relay" })).toBeChecked();
+    await user.type(url, "https://relay.example/inbox");
+    await user.click(screen.getByRole("checkbox", { name: "Receive posts from the relay" }));
+    await user.click(screen.getByRole("button", { name: "Join" }));
 
-    expect(await within(form).findByRole("status")).toHaveTextContent(
-      `${name} is registered, and the server asked to join it.`,
-    );
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe(`/admin/relays/${relayId}`);
+    });
     expect(sent).toEqual({ url: "https://relay.example/inbox", receive: false });
-    expect(within(form).getByRole("textbox", { name: "URL" })).toHaveValue("");
-    const list = screen.getByRole("region", { name: "Relays of this server" });
-    expect(await within(list).findByText("Awaiting the relay's answer")).toBeInTheDocument();
+    const details = await screen.findByRole("region", { name: "relay.example" });
+    expect(within(details).getByText("Awaiting the relay's answer")).toBeInTheDocument();
   });
 
   test("sends the protocol chosen", async () => {
@@ -119,13 +138,12 @@ describe("the relays screen", () => {
         return HttpResponse.json(relayFixture(relayId, { url: sent.url, protocol: "litepub", state: "pending" }));
       }),
     );
-    const { user } = await renderApp({ path: "/admin/relays" });
-    const form = await screen.findByRole("region", { name: "Join a relay" });
+    const { user } = await renderApp({ path: "/admin/relays/new" });
 
-    await user.type(within(form).getByRole("textbox", { name: "URL" }), "https://pleroma.example/relay");
-    await user.click(within(form).getByRole("button", { name: /Protocol/ }));
+    await user.type(await screen.findByRole("textbox", { name: "URL" }), "https://pleroma.example/relay");
+    await user.click(screen.getByRole("button", { name: /Protocol/ }));
     await user.click(await screen.findByRole("option", { name: "LitePub" }));
-    await user.click(within(form).getByRole("button", { name: "Join" }));
+    await user.click(screen.getByRole("button", { name: "Join" }));
 
     await waitFor(() => {
       expect(sent).toEqual({ url: "https://pleroma.example/relay", protocol: "litepub", receive: true });
@@ -147,11 +165,10 @@ describe("the relays screen", () => {
         ),
       ),
     );
-    const { user } = await renderApp({ path: "/admin/relays" });
-    const form = await screen.findByRole("region", { name: "Join a relay" });
-    const url = within(form).getByRole("textbox", { name: "URL" });
+    const { user } = await renderApp({ path: "/admin/relays/new" });
+    const url = await screen.findByRole("textbox", { name: "URL" });
     await user.type(url, "https://relay.example/inbox");
-    await user.click(within(form).getByRole("button", { name: "Join" }));
+    await user.click(screen.getByRole("button", { name: "Join" }));
 
     await waitFor(() => {
       expect(url).toHaveAccessibleDescription(
@@ -205,16 +222,16 @@ describe("the relays screen", () => {
         ),
       ),
     );
-    const { user } = await renderApp({ path: "/admin/relays" });
-    await user.click(await screen.findByRole("button", { name: `Join again: ${name}` }));
+    const { user } = await renderApp({ path: `/admin/relays/${relayId}` });
+    const membership = await screen.findByRole("region", { name: "Membership" });
+    await user.click(within(membership).getByRole("button", { name: `Join again: ${name}` }));
 
-    const list = screen.getByRole("region", { name: "Relays of this server" });
-    expect(await within(list).findByRole("alert")).toHaveTextContent(
+    expect(await within(membership).findByRole("alert")).toHaveTextContent(
       "Could not change the relay: The server of the relay is suspended by a domain action.",
     );
   });
 
-  test("deletes a relay after asking", async () => {
+  test("deletes a relay after asking, and goes back to the list", async () => {
     let deleted = "";
     server.use(
       http.get(`${apiBase}/admin/relays`, () =>
@@ -225,12 +242,13 @@ describe("the relays screen", () => {
         return new HttpResponse(null, { status: 204 });
       }),
     );
-    const { user } = await renderApp({ path: "/admin/relays" });
+    const { user, router } = await renderApp({ path: `/admin/relays/${relayId}` });
     await user.click(await screen.findByRole("button", { name: `Delete ${name}` }));
     const dialog = await screen.findByRole("alertdialog", { name: `Delete ${name}?` });
     await user.click(within(dialog).getByRole("button", { name: "Delete" }));
 
     expect(await screen.findByRole("heading", { level: 3, name: "No relays yet" })).toBeInTheDocument();
+    expect(router.state.location.pathname).toBe("/admin/relays");
     expect(deleted).toBe(relayId);
   });
 });
