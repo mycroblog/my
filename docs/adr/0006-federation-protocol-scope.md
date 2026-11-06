@@ -245,7 +245,7 @@ Mastodon 4.x、Misskey、GoToSocial、Akkoma（Pleroma 系）。余力があれ�
 
 - 管理 API: `GET /api/v1/admin/relays`（状態つきの一覧）、`POST /api/v1/admin/relays`（登録して参加。`protocol`・`url`・`receive`）、`POST /api/v1/admin/relays/{id}/follow`（参加し直す）、`DELETE /api/v1/admin/relays/{id}/follow`（脱退）、`DELETE /api/v1/admin/relays/{id}`（`left` / `rejected` の登録の削除）。
 - 権限は `manage_settings`。リレー用の権限は分けない。
-- CLI: `my admin relay create|follow|unfollow|remove|list`。
+- CLI: `my admin relay create|follow|unfollow|delete|list`。
 - 管理画面: リレーの一覧（方式・URL・状態・受信の有無・直近 24 時間の取り込み件数と上限で捨てた件数）と、登録・参加・脱退・削除の操作。
 - 監査ログ（ADR-0058）: 登録・参加・脱退・削除を `target_kind = relay` で記録する。`Accept` / `Reject` の受信は `actor_kind = remote` で記録する。
 
