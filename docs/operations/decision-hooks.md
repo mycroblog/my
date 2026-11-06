@@ -179,7 +179,8 @@ decision. The appeal carries the text of the post, since the server stored nothi
 moderators. No plugin is called.
 
 Your moderators (`manage_reports`) are notified of each new appeal (**Appeals of refused posts** in their notification
-settings, which they can also get by email), and review appeals under **Moderation** > **Automated reviews**:
+settings, which they can also get by email; the notification opens the appeal), and review appeals under **Moderation** >
+**Automated reviews** > **Appeals of refused posts**. Each appeal opens on its own page, with the text the author sent:
 
 - **Uphold** leaves the decision as it is, and goes in the audit log as `hook_appeal_upheld`.
 - **Overturn** cancels the decision, which goes in the audit log as `hook_decision_overridden`, and stops sending the
@@ -237,8 +238,8 @@ A decision holds the hook, the key of the subject, the mode, the outcome, the re
 holds no text of a post, no email address, and no IP address.
 
 **Moderation** > **Automated reviews** (`manage_reports`) shows the counts and waits of the last 7 days, and what the hooks
-stopped, would have stopped in `observe`, or could not check. Cancelling a decision there goes in the audit log as
-`hook_decision_overridden`. A `reject` of `local.status` is not cancelled there: its author [appeals it](#appeals).
+stopped, would have stopped in `observe`, or could not check. Each decision opens on its own page with its reason, note, and
+wait. Cancelling a decision, from the list or its page, goes in the audit log as `hook_decision_overridden`. A `reject` of `local.status` is not cancelled there: its author [appeals it](#appeals).
 
 What cancelling does depends on the answer. A `mark_sensitive` loses its mark, and a mark from a moderation action on the same
 post stays. A `flag` keeps its report, which you resolve as usual. A `drop` of `inbound.status` processes the received post

@@ -9,7 +9,7 @@
 
 API の経路はどちらも `/admin/*` で（[client-api.md](../client-api.md) の管理の操作、タグ `admin-moderation` / `admin-server`）、Web の経路とは一致しない。
 
-- **出し分け**: 閲覧者の `CredentialAccount.permissions` で、ナビゲーションの「モデレーション」と「管理」（§9）・各区分の画面（`/moderation`・`/admin`）・設定の画面の「モデレーション」と「管理」の区画と各画面を出す。`manage_domains` が連合先とドメインへの処分、`manage_jobs` がジョブのキュー、`view_audit` が監査ログ、`manage_accounts` が登録の審査と登録の拒否リストと異議申し立ての審査とアカウント、`manage_invites` が招待、`manage_reports` が通報の画面、`manage_rules` がルールの画面、`manage_roles` がロールの画面とアカウントの管理画面のロールの区画、`manage_settings` が規約とポリシーの画面とサーバーの設定とテーマとリレーの画面、`manage_custom_emojis` がカスタム絵文字の画面、`manage_announcements` がお知らせの画面、`manage_webhooks` が webhook の画面、`manage_login_providers` が外部ログインのプロバイダーの画面、`manage_finance` が費用の画面に、`manage_errors` がエラーの画面に要る。
+- **出し分け**: 閲覧者の `CredentialAccount.permissions` で、ナビゲーションの「モデレーション」と「管理」（§9）・各区分の画面（`/moderation`・`/admin`）・設定の画面の「モデレーション」と「管理」の区画と各画面を出す。`manage_domains` が連合先とドメインへの処分、`manage_jobs` がジョブのキュー、`view_audit` が監査ログ、`manage_accounts` が登録の審査と登録の拒否リストと異議申し立ての審査とアカウント、`manage_invites` が招待、`manage_reports` が通報の画面と自動審査の記録、`manage_rules` がルールの画面、`manage_roles` がロールの画面とアカウントの管理画面のロールの区画、`manage_settings` が規約とポリシーの画面とサーバーの設定とテーマとリレーの画面、`manage_custom_emojis` がカスタム絵文字の画面、`manage_announcements` がお知らせの画面、`manage_webhooks` が webhook の画面、`manage_login_providers` が外部ログインのプロバイダーの画面、`manage_finance` が費用の画面に、`manage_errors` がエラーの画面に要る。
   利用者の機能の区分の権限はスタッフの画面を出さず、`view_finance` はナビゲーションの「会計」と会計のページ（`/finance`、§9）を、`create_custom_emojis` は設定のメニューの「あなたのカスタム絵文字」と自分のカスタム絵文字の画面（`/settings/custom-emojis`、§9）を出す。
   ルートは `requireSignIn` のあと、loader で閲覧者を読み、権限があるときだけ一覧を読み込む（`routes/-admin/adminRoute.tsx`）。権限がなければ、要求を送らずに理由（権限の名前）を出す。
   守るのはサーバーで、権限が途中で外れて 403 `missing-permission` が返ったときは、ルートの `errorComponent` が同じ理由を出す。
@@ -229,6 +229,16 @@ API の経路はどちらも `/admin/*` で（[client-api.md](../client-api.md) 
   審査待ちなら「維持する」「撤回する」を出す。決定は後から変えられないので、どちらも `ConfirmDialog` で確かめ（NFR-MOD-7。撤回は処分を解除するので `danger`、BAN の撤回は削除の取り消しも本文で示す）、ダイアログは本人に見せる説明（`ReasonField`、任意、2,000 文字）を持つ。失敗はダイアログの中に出す。
   成功したら応答の申し立て（撤回なら解除された処分を含む）でキャッシュを置き換え、一覧・件数・アカウントの処分の履歴を無効にする。処分の区画の状態は「解除」に変わり、審査の区画はボタンの代わりに決定・日時・審査した人・本人への説明を出して、その見出しにフォーカスを移し、結果を区画の `StatusMessage` に出す。
   ほかのモデレーターが先に逆の決定をした（409 `appeal-decided`）ときは、ダイアログを閉じて申し立てを読み直し、その決定が残ったことを知らせる。
+- **自動審査の記録**（`/moderation/hook-decisions`・`/moderation/hook-decisions/{id}`・`/moderation/hook-decisions/appeals`・`/moderation/hook-decisions/appeals/{id}`、`manage_reports`、[ADR-0147](../../adr/0147-decision-hooks.md) §9、[画面の要件](screens/moderation-hook-decisions.md)）: 外部の審査の判定と、`local.status` に拒否された投稿への作者の異議申し立て。
+  メニューの 1 項目の画面で、`h1`（「自動審査の記録」）の下の `LocalNav` が「判定」（`/moderation/hook-decisions`）と「止められた投稿への異議申し立て」（`/moderation/hook-decisions/appeals`）の 2 つのページを結ぶ。処分への異議申し立て（`/moderation/appeals`、`manage_accounts`）とは権限が違うので、1 つの一覧にまとめない。
+  - **判定**（`/moderation/hook-decisions`）: フックごとの状況（5 つのフックのモードと、過去 7 日のモードと結果ごとの件数・待ち時間の表）と、`allow` を除いた判定の一覧（`GET /admin/hook_decisions`、ページングした `RecordTable`、URL の `hook` で絞る）。
+    列は対象（判定のページへのリンク。キーは `dir="ltr"`、下にフック）・結果（結果とモード、取り消したものは「取り消し済み」）・判定した日時・操作（取り消し）の 4 つ。取り消しはすぐ保存で確かめず、結果は一覧の上の `StatusMessage` に、失敗はトーストに出す。
+  - **判定のページ**（`/moderation/hook-decisions/{id}`、`GET /admin/hook_decisions/{id}`、[画面の要件](screens/moderation-hook-decision.md)）: 判定（フック・対象・結果・モード・日時・対象のアカウント・待ち時間・理由コード・プラグインのメモ（`dir="auto"`）・取り消した日時・取り戻せる期限）と、取り消しの区画を `h2` の `Section` で並べる。
+    取り消すと判定を読み直し、取り消しの区画の見出しにフォーカスを移して結果を区画の `StatusMessage` に出す。取り消せない判定は、効果がなかったことか、`local.status` の `reject` は異議申し立てで扱うことを書く。
+  - **異議申し立て**（`/moderation/hook-decisions/appeals`、`GET /admin/hook_appeals`、[画面の要件](screens/moderation-hook-appeals.md)）: 「審査待ち」（既定）と「すべての異議申し立て」の絞り込み（URL の `state=all`）と、ページングした `RecordTable` の 3 列（作者（異議のページへのリンク。下に本文の始めの 2 行を `dir="auto"`）・状態・申し立ての日時）。行には審査のボタンを置かない。
+  - **異議申し立てのページ**（`/moderation/hook-decisions/appeals/{id}`、`GET /admin/hook_appeals/{id}`、[画面の要件](screens/moderation-hook-appeal.md)）: 申し立て（状態・作者とアカウントの管理画面へのリンク・日時・作者が送った本文とコメント（平文で `dir="auto"`））、審査の判定（判定のページと同じ事実、作者を除く。判定のページへのリンク）、モデレーターの審査の区画を `h2` の `Section` で並べる。
+    待っている異議は「維持する」「撤回する」を `ConfirmDialog` で確かめて送り（撤回は判定を取り消してこの作者をフックから外すので `danger`）、異議・一覧・判定・監査ログを読み直してから、審査の区画の見出しにフォーカスを移して結果を区画の `StatusMessage` に出す。ほかのモデレーターが先に決めていた（409 `appeal-decided`）ときは読み直してそう伝える。
+    `admin_hook_appeal` の通知と Web Push はこのページへ行く。
 - **サーバーの設定**（`/admin/settings`、`manage_settings`、FR-705、[画面の要件](screens/admin-settings.md)）: 「名前」「説明」「連絡先とサムネイル」「アイコンとロゴ」の区画と、設定のフォーム（「登録」「言語」「タイムライン」「投稿」「連合」「制限・凍結したサーバー」「運営の費用」「収入」「サポーターの一覧」「検索エンジンと AI」、サーバーに全文検索があるとき（`usePostSearchAvailable`）だけの「投稿の検索」、サーバーが通話を出しているとき（`useVoiceAvailable`）だけの「通話」の区画と保存のボタン）を `h2` の `section` で並べる。
   「通話」は、ルームを開ける人（`voice_room_starters`、`RadioGroup`）、ログインしていない人への要約（`voice_public_summary`、チェックボックス）、参加者の記録を残す日数（`voice_participants_retention_days`、`inputMode="numeric"` の `TextField`。範囲は `GET /admin/settings` の `minimum`・`maximum`）を置く（[ADR-0100](../../adr/0100-voice-chat-rooms.md) §2・§9・§13）。範囲の外の日数は欄のエラーにして、フォームを送らない。
   管理者が書く値（名前・説明・画像の説明）は、どれも 1 つの入力欄で、どのロケールの閲覧者にも同じ値を出す（ほかの言語の閲覧者は機械翻訳などで読む）。欄の名前と説明は閲覧者の言語に翻訳する。
