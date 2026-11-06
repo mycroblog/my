@@ -50,7 +50,7 @@
 - 部分型（ローカル / リモートの Actor、ローカル投稿の入力ソース）は、NULL カラムではなく部分型テーブルで表す。
 - **不変な事実の非正規化は許容する**（例: 投稿の公開範囲を投影にコピーする）。変わり得る値の非正規化は、投影として projector の管理下に置く場合に限る。
 
-複数の値を持つ `login_provider_revisions.scopes`・OAuth の `scope`・設定の `featured_accounts` は、項目ごとに絞り込まず制約もしないので、1 つの文字列のカラムのままでよい。
+複数の値を持つ `login_provider_revisions.scopes`・OAuth の `scope`・設定の `featured_accounts`（ユーザー名の順序付きの並び）・`translation_providers`（翻訳プロバイダーの順序付きの並び）・`translation_provider_visibilities`（プロバイダーごとの公開範囲の組）・`oauth_client_rate_limits`（クライアントごとの要求数の組）は、項目ごとに絞り込まず制約もしないので、1 つの文字列のカラムのままでよい。値の解釈と検証は Go の設定の定義が受け持つ。
 
 ### 規約 5: 履歴に意味がない高頻度の関係と設定値は「現在値」として持つ
 
@@ -99,6 +99,7 @@
 
 - 現在値モデル（1 エンティティ 1 テーブルで、状態はカラムで持つ）: 最も単純だが、上の問題が起きる。
 - 完全なイベントソーシング（すべての状態を単一のイベントストアから再生する）: 履歴と再構築の一貫性は最も強いが、実装・運用の複雑さが v0 の規模に見合わない。
+- 構造を持つ設定値（`translation_providers`・`translation_provider_visibilities`・`oauth_client_rate_limits`）を、プロバイダーやクライアントを鍵とする子テーブルに分ける: 項目ごとの制約を DB で持てるが、項目で絞り込む問い合わせがないのに設定の履歴の表が増える。
 
 ## Consequences（影響）
 

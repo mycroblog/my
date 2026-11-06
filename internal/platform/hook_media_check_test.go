@@ -195,7 +195,7 @@ func TestMediaCheckMarkSensitive(t *testing.T) {
 		t.Fatalf("decision %+v before any post", d)
 	}
 	p := h.post(m.File.ID)
-	if n := h.count("SELECT COUNT(*) FROM status_sensitivity_overrides WHERE status_id = '" + p.Status.ID + "' AND source_hook_decision_id = '" + d.DecisionID + "'"); n != 1 {
+	if n := h.count("SELECT COUNT(*) FROM status_sensitivity_overrides WHERE status_id = '" + p.Status.ID + "' AND source_kind = 'hook_decision' AND source_id = '" + d.DecisionID + "'"); n != 1 {
 		t.Errorf("%d marks of the post", n)
 	}
 	if n := h.count("SELECT COUNT(*) FROM hook_decision_statuses WHERE decision_id = '" + d.DecisionID + "' AND status_id = '" + p.Status.ID + "'"); n != 1 {

@@ -528,14 +528,14 @@ func TestInboundStatusMarkSensitive(t *testing.T) {
 	h.verify()
 
 	// A moderator's cancellation is what ends it, and only its own source.
-	h.exec("INSERT INTO status_sensitivity_overrides (status_id, source_action_id) VALUES ('" + h.statusID(marked) + "', '" + h.c.app.IDs.NewID() + "')")
+	h.exec("INSERT INTO status_sensitivity_overrides (status_id, source_kind, source_id) VALUES ('" + h.statusID(marked) + "', 'action', '" + h.c.app.IDs.NewID() + "')")
 	if _, err := h.c.app.Hooks.Override(ctx, h.decision(activity).Decision.ID, ""); err != nil {
 		t.Fatal(err)
 	}
 	if !h.sensitive(marked) {
 		t.Fatal("cancelling a decision took away the mark of a moderation action")
 	}
-	h.exec("DELETE FROM status_sensitivity_overrides WHERE source_action_id IS NOT NULL")
+	h.exec("DELETE FROM status_sensitivity_overrides WHERE source_kind = 'action'")
 	if h.sensitive(marked) {
 		t.Fatal("the mark stayed after its sources ended")
 	}
@@ -703,7 +703,8 @@ func TestInboundStatusRelayedPostAsksNothing(t *testing.T) {
 	}
 }
 
-// TestStatusSensitivitySourceIsExclusive checks the CHECK on both dialects: exactly one source.
+// TestStatusSensitivitySourceIsExclusive checks the key on both dialects: every row has exactly one
+// source of a known kind, and a source marks a status once (ADR-0147 §8).
 func TestStatusSensitivitySourceIsExclusive(t *testing.T) {
 	t.Parallel()
 	const a, b, st = "018f0000-0000-7000-8000-000000000001", "018f0000-0000-7000-8000-000000000002", "018f0000-0000-7000-8000-000000000003"
@@ -738,18 +739,18 @@ func TestStatusSensitivitySourceIsExclusive(t *testing.T) {
 				_, err = db.ExecContext(t.Context(), q)
 				return err
 			}
-			const insert = "INSERT INTO status_sensitivity_overrides (status_id, source_action_id, source_hook_decision_id) VALUES "
-			for _, values := range []string{"('" + st + "', NULL, NULL)", "('" + st + "', '" + a + "', '" + b + "')"} {
+			const insert = "INSERT INTO status_sensitivity_overrides (status_id, source_kind, source_id) VALUES "
+			for _, values := range []string{"('" + st + "', NULL, '" + a + "')", "('" + st + "', 'action', NULL)", "('" + st + "', 'report', '" + a + "')"} {
 				if try(insert+values) == nil {
 					t.Errorf("the table took %s", values)
 				}
 			}
-			for _, values := range []string{"('" + st + "', '" + a + "', NULL)", "('" + st + "', NULL, '" + b + "')"} {
+			for _, values := range []string{"('" + st + "', 'action', '" + a + "')", "('" + st + "', 'hook_decision', '" + b + "')"} {
 				if err := try(insert + values); err != nil {
 					t.Errorf("the table refused %s: %v", values, err)
 				}
 			}
-			for _, values := range []string{"('" + st + "', '" + a + "', NULL)", "('" + st + "', NULL, '" + b + "')"} {
+			for _, values := range []string{"('" + st + "', 'action', '" + a + "')", "('" + st + "', 'hook_decision', '" + b + "')"} {
 				if try(insert+values) == nil {
 					t.Errorf("the table took a second row of %s", values)
 				}

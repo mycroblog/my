@@ -11,8 +11,11 @@
 -- ---------------------------------------------------------------------------------------------
 
 -- Event (revision): one change of a setting. value is the canonical string form of the key's
--- type: a scalar, or an ordered list of usernames for featured_accounts, which no query filters
--- by item (ADR-0020 rule 4). revised_by_user_id is NULL for a change from the CLI.
+-- type: a scalar, or one of the structured values no query filters by item (ADR-0020 rule 4): the
+-- ordered list of usernames of featured_accounts, the ordered list of providers of
+-- translation_providers, the provider=visibility|visibility pairs of
+-- translation_provider_visibilities, and the client_id=requests pairs of oauth_client_rate_limits.
+-- revised_by_user_id is NULL for a change from the CLI.
 CREATE TABLE instance_setting_revisions (
   id uuid NOT NULL PRIMARY KEY,
   key text COLLATE "C" NOT NULL CHECK (key IN (
@@ -36,7 +39,7 @@ CREATE TABLE instance_setting_revisions (
     'hook_inbound_status_on_failure', 'hook_inbound_follow_on_failure', 'hook_signup_check_on_failure', 'hook_media_check_on_failure',
     'hook_signup_check_reject', 'hook_local_status_account_age_days',
     'hook_inbound_status_unfollowed_direct',
-    'retention_hook_decisions'
+    'hook_decisions_retention_days'
   )),
   value text NOT NULL,
   revised_by_user_id uuid,
