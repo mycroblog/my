@@ -28,20 +28,11 @@ const exportDBTimeout = 5 * time.Second
 
 // runMaintenance implements `my maintenance <subcommand>`.
 func runMaintenance(args []string, stdout, stderr io.Writer) int {
-	switch {
-	case len(args) == 0:
-		maintenanceUsage(stderr)
-		return 2
-	case args[0] == "-h" || args[0] == "-help" || args[0] == "--help":
-		maintenanceUsage(stderr)
-		return 0
-	case args[0] != "export":
-		_, _ = fmt.Fprintf(stderr, "my maintenance: unknown subcommand %q\n\n", args[0])
-		maintenanceUsage(stderr)
-		return 2
+	if _, code := dispatch("maintenance", args, []string{"export"}, stderr, maintenanceUsage); code >= 0 {
+		return code
 	}
 	const name = "my maintenance export"
-	fs := flag.NewFlagSet(name, flag.ContinueOnError)
+	fs := newFlagSet(name)
 	fs.SetOutput(stderr)
 	fs.Usage = func() { maintenanceUsage(stderr) }
 	out := fs.String("out", "", "directory to write the pages to (required)")

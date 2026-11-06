@@ -26,7 +26,7 @@ func runProjection(args []string, stdout, stderr io.Writer) int {
 		return code
 	}
 	name := "my projection " + sub
-	fs := flag.NewFlagSet(name, flag.ContinueOnError)
+	fs := newFlagSet(name)
 	fs.SetOutput(stderr)
 	fs.Usage = func() { projectionUsage(stderr) }
 	c := subcommand{name: name, fs: fs, file: fs.String("config", "", "TOML config file (default: $"+config.EnvConfigFile+")")}

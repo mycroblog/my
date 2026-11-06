@@ -67,7 +67,7 @@ Subcommands (test builds only):
 // runDevPushService implements `my dev push-service`: it serves the fake push service until ctx
 // ends. It refuses every profile but development.
 func runDevPushService(ctx context.Context, args []string, stdout, stderr io.Writer) int {
-	fs := flag.NewFlagSet("my dev push-service", flag.ContinueOnError)
+	fs := newFlagSet("my dev push-service")
 	fs.SetOutput(stderr)
 	file := fs.String("config", "", "TOML config file whose profile must be development (default: $"+config.EnvConfigFile+")")
 	listen := fs.String("listen", "127.0.0.1:8930", "address to listen on")

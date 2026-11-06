@@ -20,26 +20,16 @@ import (
 // runInstanceBrand implements `my instance brand <show|clear>`: the instance's own icon and logos,
 // which are set from the admin screen, since it draws their PNG renditions.
 func runInstanceBrand(args []string, stdout, stderr io.Writer) int {
-	if len(args) == 0 {
-		instanceBrandUsage(stderr)
-		return 2
+	sub, code := dispatch("instance brand", args, []string{"show", "clear"}, stderr, instanceBrandUsage)
+	if code >= 0 {
+		return code
 	}
-	sub := args[0]
 	nargs := 0
-	switch sub {
-	case "-h", "-help", "--help":
-		instanceBrandUsage(stderr)
-		return 0
-	case "show":
-	case "clear":
+	if sub == "clear" {
 		nargs = 1
-	default:
-		_, _ = fmt.Fprintf(stderr, "my instance brand: unknown subcommand %q\n\n", sub)
-		instanceBrandUsage(stderr)
-		return 2
 	}
 	name := "my instance brand " + sub
-	fs := flag.NewFlagSet(name, flag.ContinueOnError)
+	fs := newFlagSet(name)
 	fs.SetOutput(stderr)
 	fs.Usage = func() { instanceBrandUsage(stderr) }
 	file := fs.String("config", "", "TOML config file (default: $"+config.EnvConfigFile+")")

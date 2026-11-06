@@ -19,29 +19,13 @@ import (
 
 // runInstanceRule implements `my instance rule <subcommand>` (FR-705).
 func runInstanceRule(args []string, stdout, stderr io.Writer) int {
-	if len(args) == 0 {
-		instanceRuleUsage(stderr)
-		return 2
+	sub, code := dispatch("instance rule", args, []string{"list", "create", "edit", "move", "retire"}, stderr, instanceRuleUsage)
+	if code >= 0 {
+		return code
 	}
-	sub := args[0]
-	var nargs int
-	switch sub {
-	case "-h", "-help", "--help":
-		instanceRuleUsage(stderr)
-		return 0
-	case "list":
-		nargs = 0
-	case "create", "retire":
-		nargs = 1
-	case "edit", "move":
-		nargs = 2
-	default:
-		_, _ = fmt.Fprintf(stderr, "my instance rule: unknown subcommand %q\n\n", sub)
-		instanceRuleUsage(stderr)
-		return 2
-	}
+	nargs := map[string]int{"list": 0, "create": 1, "retire": 1, "edit": 2, "move": 2}[sub]
 	name := "my instance rule " + sub
-	fs := flag.NewFlagSet(name, flag.ContinueOnError)
+	fs := newFlagSet(name)
 	fs.SetOutput(stderr)
 	fs.Usage = func() { instanceRuleUsage(stderr) }
 	file := fs.String("config", "", "TOML config file (default: $"+config.EnvConfigFile+")")

@@ -70,6 +70,7 @@ Read the groups in order: start with the overview, then configure the instance b
 ## Reference
 
 - [Configuration reference](reference/configuration.md) (generated from the configuration schema)
+- [Command reference](reference/cli.md) (every command of `my` with its usage, flags, and help, generated from the binary)
 - [Jobs](reference/jobs.md) (every job type and periodic job: what it does, what starts it, how it retries, and whether to run it again by hand)
 - [Webhook reference](reference/webhooks.md) (the headers, signatures, events, and bodies a receiver gets)
 - [Build tags](reference/build-tags.md) (the tags that leave adapters out of the binary, and the sets that are checked)

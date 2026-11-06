@@ -29,7 +29,7 @@ func runPlugin(args []string, stdout, stderr io.Writer) int {
 // pluginTest implements `my plugin test`: it runs the contract cases of a kind against a running plugin and reports each
 // one. It reads no configuration, so that a plugin's author needs nothing but the binary (ADR-0146 §16).
 func pluginTest(args []string, stdout, stderr io.Writer) int {
-	fs := flag.NewFlagSet("my plugin test", flag.ContinueOnError)
+	fs := newFlagSet("my plugin test")
 	fs.SetOutput(stderr)
 	fs.Usage = func() { pluginUsage(stderr) }
 	name := fs.String("kind", "", "the kind of the plugin: "+strings.Join(kind.Names(), ", "))

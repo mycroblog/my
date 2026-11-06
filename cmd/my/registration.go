@@ -32,7 +32,7 @@ type subcommand struct {
 // parseSubcommand parses args (the subcommand's flags and arguments) and checks that there are
 // nargs positional arguments. It returns the exit code to stop with, or -1 to go on.
 func parseSubcommand(name string, args []string, nargs int, stderr io.Writer, usage func(io.Writer), define func(*flag.FlagSet)) (subcommand, int) {
-	fs := flag.NewFlagSet(name, flag.ContinueOnError)
+	fs := newFlagSet(name)
 	fs.SetOutput(stderr)
 	fs.Usage = func() { usage(stderr) }
 	c := subcommand{name: name, fs: fs, file: fs.String("config", "", "TOML config file (default: $"+config.EnvConfigFile+")")}
@@ -72,6 +72,9 @@ func (c subcommand) open(ctx context.Context, stderr io.Writer) (*platform.App, 
 // dispatch picks the subcommand of args[0] among subs, printing usage for none, help, or an
 // unknown one. It returns the subcommand, or "" with the exit code to stop with.
 func dispatch(cmd string, args []string, subs []string, stderr io.Writer, usage func(io.Writer)) (string, int) {
+	if traceSubcommands != nil {
+		traceSubcommands(cmd, subs)
+	}
 	if len(args) == 0 {
 		usage(stderr)
 		return "", 2

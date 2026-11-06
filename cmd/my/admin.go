@@ -27,49 +27,46 @@ import (
 
 // runAdmin implements `my admin <subcommand>`. stdin supplies the password.
 func runAdmin(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
-	switch {
-	case len(args) == 0:
-		adminUsage(stderr)
-		return 2
-	case args[0] == "-h" || args[0] == "-help" || args[0] == "--help":
-		adminUsage(stderr)
-		return 0
-	case args[0] == "account":
-		return runAdminAccount(args[1:], stdout, stderr)
-	case args[0] == "appeal":
-		return runAdminAppeal(args[1:], stdout, stderr)
-	case args[0] == "audit":
-		return runAdminAudit(args[1:], stdout, stderr)
-	case args[0] == "closure":
-		return runAdminClosure(args[1:], stdin, stdout, stderr)
-	case args[0] == "domain":
-		return runAdminDomain(args[1:], stdin, stdout, stderr)
-	case args[0] == "emoji":
-		return runAdminEmoji(args[1:], stdout, stderr)
-	case args[0] == "federation":
-		return runAdminFederation(args[1:], stdout, stderr)
-	case args[0] == "media":
-		return runAdminMedia(args[1:], stdout, stderr)
-	case args[0] == "refetch":
-		return runAdminRefetch(args[1:], stdout, stderr)
-	case args[0] == "relay":
-		return runAdminRelay(args[1:], stdout, stderr)
-	case args[0] == "report":
-		return runAdminReport(args[1:], stdout, stderr)
-	case args[0] == "retention":
-		return runAdminRetention(args[1:], stdout, stderr)
-	case args[0] == "role":
-		return runAdminRole(args[1:], stdout, stderr)
-	case args[0] == "supporters":
-		return runAdminSupporters(args[1:], stdout, stderr)
-	case args[0] == "signup-block":
-		return runAdminSignupBlock(args[1:], stdin, stdout, stderr)
-	case args[0] != "create":
-		_, _ = fmt.Fprintf(stderr, "my admin: unknown subcommand %q\n\n", args[0])
-		adminUsage(stderr)
-		return 2
+	sub, code := dispatch("admin", args, []string{
+		"create", "account", "appeal", "audit", "closure", "domain", "emoji", "federation", "media", "refetch", "relay",
+		"report", "retention", "role", "supporters", "signup-block",
+	}, stderr, adminUsage)
+	if code >= 0 {
+		return code
 	}
-	fs := flag.NewFlagSet("my admin create", flag.ContinueOnError)
+	switch sub {
+	case "account":
+		return runAdminAccount(args[1:], stdout, stderr)
+	case "appeal":
+		return runAdminAppeal(args[1:], stdout, stderr)
+	case "audit":
+		return runAdminAudit(args[1:], stdout, stderr)
+	case "closure":
+		return runAdminClosure(args[1:], stdin, stdout, stderr)
+	case "domain":
+		return runAdminDomain(args[1:], stdin, stdout, stderr)
+	case "emoji":
+		return runAdminEmoji(args[1:], stdout, stderr)
+	case "federation":
+		return runAdminFederation(args[1:], stdout, stderr)
+	case "media":
+		return runAdminMedia(args[1:], stdout, stderr)
+	case "refetch":
+		return runAdminRefetch(args[1:], stdout, stderr)
+	case "relay":
+		return runAdminRelay(args[1:], stdout, stderr)
+	case "report":
+		return runAdminReport(args[1:], stdout, stderr)
+	case "retention":
+		return runAdminRetention(args[1:], stdout, stderr)
+	case "role":
+		return runAdminRole(args[1:], stdout, stderr)
+	case "supporters":
+		return runAdminSupporters(args[1:], stdout, stderr)
+	case "signup-block":
+		return runAdminSignupBlock(args[1:], stdin, stdout, stderr)
+	}
+	fs := newFlagSet("my admin create")
 	fs.SetOutput(stderr)
 	fs.Usage = func() { adminUsage(stderr) }
 	username := fs.String("username", "", "username of the new admin (required)")
@@ -230,7 +227,7 @@ func adminUsage(w io.Writer) {
        my admin federation sever ...   (my admin federation -help)
        my admin media reprocess ...   (my admin media -help)
        my admin refetch status|account|domain ...   (my admin refetch -help)
-       my admin relay create|follow|unfollow|remove|list ...   (my admin relay -help)
+       my admin relay create|follow|unfollow|delete|list ...   (my admin relay -help)
        my admin report list|show|assign|unassign|resolve|note|reopen|forward ...   (my admin report -help)
        my admin audit list ...   (my admin audit -help)
        my admin retention hold|release|list ...   (my admin retention -help)
