@@ -472,8 +472,8 @@ func TestGetAdminQueue(t *testing.T) {
 	}
 }
 
-// TestAdminQueueWithoutListing checks a queue that cannot list its pending jobs (Cloud Tasks,
-// SQS): no counts, empty pages of pending jobs, while the dead jobs are still listed.
+// TestAdminQueueWithoutListing checks a queue that cannot list its pending jobs (Cloud Tasks):
+// no counts, empty pages of pending jobs, while the dead jobs are still listed.
 func TestAdminQueueWithoutListing(t *testing.T) {
 	e := newAuthEnv(t, func(o *clientapi.Options) {
 		o.Permissions = fakePermissions{userOf(aliceAccountID): identity.AllPermissions()}

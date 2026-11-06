@@ -153,7 +153,7 @@ type JobQueue interface {
 // through the same tx.
 //
 // The implementation is the database queue, which writes its jobs table in tx; with an external
-// queue (Cloud Tasks, SQS) the jobs stay there too and the queue carries only wake-up signals.
+// queue (Cloud Tasks) the jobs stay there too and the queue carries only wake-up signals.
 type Outbox interface {
 	// EnqueueTx records jobs in tx, with the same deduplication as JobQueue.Enqueue, also between
 	// concurrent transactions. It is safe to repeat when UnitOfWork.Tx retries the
@@ -241,7 +241,7 @@ type Backlog struct {
 }
 
 // BacklogReader reads the backlog of a queue that the server can count: the database queue.
-// The queues of the platforms (Cloud Tasks, SQS) have metrics of their own. Adapters pass
+// The queue of a platform (Cloud Tasks) has metrics of its own. Adapters pass
 // testkit.QueueBacklogContract.
 type BacklogReader interface {
 	Backlog(ctx context.Context, now time.Time) (Backlog, error)

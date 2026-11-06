@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 
 # One value of workers given to a queue and an app, for modules/workers/tests/compose.tftest.hcl: on ECS with the queue in the
-# database, and on Lambda with SQS.
+# database.
 
 terraform {
   required_version = ">= 1.11"
@@ -48,31 +48,10 @@ module "ecs" {
   backends         = [module.queue]
 }
 
-module "sqs" {
-  source = "../../modules/queue-aws-sqs"
-
-  workers = local.workers
-}
-
-module "lambda" {
-  source = "../../modules/app-aws-lambda"
-
-  name       = "fn"
-  image      = "111122223333.dkr.ecr.ap-northeast-1.amazonaws.com/my:0.1.0"
-  host       = "social.example.org"
-  secret_env = local.kek
-  workers    = local.workers
-  backends   = [module.sqs]
-}
-
 output "ecs_worker_env" {
   value = module.ecs.worker_env["delivery"]
 }
 
 output "ecs_env" {
   value = module.ecs.env
-}
-
-output "lambda_worker" {
-  value = module.lambda.worker_functions["delivery"]
 }

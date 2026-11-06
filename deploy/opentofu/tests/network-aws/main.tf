@@ -72,18 +72,6 @@ module "ecs" {
   backends         = [module.db, module.kv, module.ingress]
 }
 
-module "lambda" {
-  source = "../../modules/app-aws-lambda"
-
-  name       = "fn"
-  image      = "111122223333.dkr.ecr.ap-northeast-1.amazonaws.com/my:0.1.0"
-  host       = "social.example.org"
-  network    = module.network
-  env        = { MY_QUEUE = "sqs" }
-  secret_env = local.kek
-  backends   = [module.db, module.kv]
-}
-
 module "existing_db" {
   source = "../../modules/db-aws-rds"
 
@@ -121,18 +109,6 @@ module "existing_ecs" {
   backends         = [module.existing_db, module.existing_kv, module.existing_ingress]
 }
 
-module "existing_lambda" {
-  source = "../../modules/app-aws-lambda"
-
-  name       = "mine-fn"
-  image      = "111122223333.dkr.ecr.ap-northeast-1.amazonaws.com/my:0.1.0"
-  host       = "social.example.org"
-  network    = local.existing_vpc
-  env        = { MY_QUEUE = "sqs" }
-  secret_env = local.kek
-  backends   = [module.existing_db, module.existing_kv]
-}
-
 output "ecs_env" {
   value = module.ecs.env
 }
@@ -151,8 +127,4 @@ output "existing_kv_private_network" {
 
 output "existing_ecs_subnets" {
   value = module.existing_ecs.task_subnet_ids
-}
-
-output "existing_lambda_subnets" {
-  value = module.existing_lambda.vpc_subnet_ids
 }

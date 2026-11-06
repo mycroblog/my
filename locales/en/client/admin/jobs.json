@@ -113,7 +113,7 @@
   },
   "admin.jobs.queue.adapter": {
     "defaultMessage": "Queue",
-    "description": "Term in the queue's details: the kind of job queue the server runs, such as db or sqs."
+    "description": "Term in the queue's details: the kind of job queue the server runs, such as db or cloudtasks."
   },
   "admin.jobs.queue.by_state": {
     "defaultMessage": "Jobs by state",
@@ -129,7 +129,7 @@
   },
   "admin.jobs.queue.no_listing": {
     "defaultMessage": "This queue cannot list its waiting, running and retrying jobs: see their backlog in the metrics of the platform. Failed jobs and the history of their attempts are listed.",
-    "description": "Note of the queue region when the queue (Cloud Tasks or SQS) cannot list its pending jobs."
+    "description": "Note of the queue region when the queue (Cloud Tasks) cannot list its pending jobs."
   },
   "admin.jobs.retried": {
     "defaultMessage": "The job {type} is queued to run again.",
@@ -181,7 +181,7 @@
   },
   "admin.jobs.unlisted": {
     "defaultMessage": "This queue cannot list these jobs",
-    "description": "Heading in place of the list of pending jobs when the queue (Cloud Tasks or SQS) cannot list them."
+    "description": "Heading in place of the list of pending jobs when the queue (Cloud Tasks) cannot list them."
   },
   "admin.jobs.unlisted.description": {
     "defaultMessage": "See the backlog in the metrics of the platform. Failed jobs are listed under Failed.",

@@ -19,7 +19,7 @@ mock_provider "aws" {
 
 variables {
   host            = "social.example.org"
-  origin_host     = "abc.lambda-url.ap-northeast-1.on.aws"
+  origin_host     = "origin.social.example.org"
   certificate_arn = "arn:aws:acm:us-east-1:111122223333:certificate/abc"
 
   origin_secret    = "0123456789abcdef0123456789abcdef"
@@ -35,7 +35,7 @@ run "it_serves_host_with_no_cache" {
 
   assert {
     condition     = data.aws_cloudfront_origin_request_policy.all_viewer_except_host.name == "Managed-AllViewerExceptHostHeader"
-    error_message = "a Function URL routes by Host, so the viewer's must not reach it"
+    error_message = "the origin routes by its own Host, so the viewer's must not reach it"
   }
 
   assert {

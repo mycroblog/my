@@ -19,12 +19,22 @@ module "billing_aws" {
 }
 
 module "app" {
-  source = "../../modules/app-aws-lambda"
+  source = "../../modules/app-aws-ecs"
 
-  image = "111122223333.dkr.ecr.ap-northeast-1.amazonaws.com/my:0.1.0"
+  image = "ghcr.io/mycroblog/my:0.1.0"
   host  = "social.example.org"
-  env   = { MY_QUEUE = "sqs" }
+  network = {
+    platform            = "aws"
+    vpc_id              = "vpc-1"
+    vpc_cidr            = "10.0.0.0/16"
+    public_subnet_ids   = ["subnet-1", "subnet-2"]
+    public_subnet_cidrs = ["10.0.0.0/24", "10.0.1.0/24"]
+    private_subnet_ids  = ["subnet-a", "subnet-b"]
+    nat                 = true
+  }
+  assign_public_ip = true
   backends = [
+    { platform = "aws", env = { MY_DATABASE = "postgres", MY_BLOB = "s3" }, secret_env = { MY_DATABASE_URL = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:db-AbCdEf" } },
     { platform = "aws", secret_env = { MY_KEK = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:kek-AbCdEf" } },
     module.billing_aws,
   ]

@@ -47,7 +47,7 @@ RDB・キュー・ストレージ・実行環境を利用者が差し替えら�
 
 - 新しいクラウドへの対応 = アダプタ + entrypoint の追加で済み、コアは変更不要。
 - 抽象化の分だけボイラープレートは増える。
-- Self-hosted / Cloud Run / Lambda（`provided.al2023`）/ k8s で軽量に動き、メモリは数十 MB、配布は単一の静的バイナリになる。サーバーは単一バイナリの中で `serve` / `worker` / `cli` を切り替える構成にでき、Self-hosted の最小構成は「バイナリ + SQLite ファイル」になる。
+- Self-hosted / Cloud Run / ECS Fargate / k8s で軽量に動き、メモリは数十 MB、配布は単一の静的バイナリになる。サーバーは単一バイナリの中で `serve` / `worker` / `cli` を切り替える構成にでき、Self-hosted の最小構成は「バイナリ + SQLite ファイル」になる。
 - 連合ライブラリは `go-ap` 程度で、採用実績のある汎用ライブラリは少ない。相互運用の細部は自前で詰める（GoToSocial は参考実装として有用）。連合の署名ライブラリと自前実装の範囲は ADR-0006、SQL ツールとドライバ（いずれも cgo 不要）は ADR-0003 に定める。
 - Web / Tauri の UI は TypeScript になるため 2 言語体制で、i18n カタログと API 型の共有は生成ツールで行う。
 - `CGO_ENABLED=0` の静的ビルドを維持する。

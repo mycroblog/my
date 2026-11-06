@@ -10,7 +10,7 @@ The adapters that need nothing beyond the standard library and the packages the 
 | `no_sqlite` | The SQLite database (`modernc.org/sqlite`), the queue and key-value store kept in it, and `my schema apply` for SQLite (Atlas's SQLite driver) | `database = sqlite` |
 | `no_postgres` | The PostgreSQL database (`pgx/v5`), the queue and key-value store kept in it, the `LISTEN` / `NOTIFY` broker, and `my schema apply` for PostgreSQL (Atlas's PostgreSQL driver) | `database = postgres`, `stream = postgres` |
 | `no_valkey` | The Valkey client (`valkey-go`): the key-value store and the broker on `valkey_url` | `kv = valkey`, `stream = valkey` |
-| `no_sns` | The Amazon SNS / SQS broker (AWS SDK); with `no_sqs`, the AWS SDK for Amazon SQS too | `stream = sns` |
+| `no_sns` | The Amazon SNS / SQS broker (AWS SDK) | `stream = sns` |
 | `no_ses` | The Amazon SES mailer (AWS SDK) | `mail = ses` |
 | `no_s3` | The S3-compatible blob store (AWS SDK for Amazon S3) | `blob = s3` |
 | `no_gcs` | The Google Cloud Storage blob store (Cloud Storage client library) | `blob = gcs` |
@@ -18,7 +18,6 @@ The adapters that need nothing beyond the standard library and the packages the 
 | `no_gcpkms` | The Google Cloud KMS key manager (Cloud KMS client library) | `key_manager = gcpkms`, and Cloud KMS keys in `kms_key` / `kms_key_previous` |
 | `no_awskms` | The AWS KMS key manager (AWS SDK for AWS KMS) | `key_manager = awskms`, and AWS KMS keys in `kms_key` / `kms_key_previous` |
 | `no_cloudtasks` | The Google Cloud Tasks queue (Cloud Tasks client library) and its `/_internal/jobs` and `/_internal/tick` endpoints | `queue = cloudtasks` |
-| `no_sqs` | The Amazon SQS queue; with `no_sns`, the AWS SDK for Amazon SQS too | `queue = sqs` |
 | `no_billing_aws` | The import of the AWS usage charges (AWS Cost Explorer SDK) | `billing_sources = aws` |
 | `no_billing_gcp` | The import of the Google Cloud usage charges (BigQuery REST client; with `no_pubsub`, the Pub/Sub client library of `billing_gcp_method = budget`) | `billing_sources = gcp` |
 | `no_payments_stripe` | The Stripe adapter of the supporters' payments (`stripe-go`) | `payments = stripe` |
@@ -60,7 +59,7 @@ Pass the tags, separated by commas, to the Go build or to the container build. A
 ([Web client](../operations/running.md#web-client)); the container build includes it.
 
 ```sh
-CGO_ENABLED=0 go build -tags no_postgres,no_valkey,no_sns,no_ses,no_pubsub,no_gcpkms,no_awskms,no_cloudtasks,no_sqs,no_otel,no_billing_aws,no_billing_gcp,no_payments_stripe ./cmd/my
+CGO_ENABLED=0 go build -tags no_postgres,no_valkey,no_sns,no_ses,no_pubsub,no_gcpkms,no_awskms,no_cloudtasks,no_otel,no_billing_aws,no_billing_gcp,no_payments_stripe ./cmd/my
 docker build --build-arg GO_TAGS=no_sqlite,no_valkey,no_sns -t my .
 ```
 
@@ -77,6 +76,6 @@ Before each release, each of these sets is built and vetted, and the check fails
 
 | Set | Fits |
 | --- | --- |
-| `no_postgres,no_valkey,no_sns,no_ses,no_s3,no_gcs,no_pubsub,no_gcpkms,no_awskms,no_cloudtasks,no_sqs,no_otel,no_billing_aws,no_billing_gcp,no_payments_stripe,no_plugins` | A self-hosted instance on SQLite |
-| `no_sqlite,no_valkey,no_gcs,no_pubsub,no_gcpkms,no_cloudtasks,no_otel,no_billing_gcp,no_payments_payjp,no_voice_sora` | AWS: PostgreSQL, the SNS broker, SES, the EMF metrics, the AWS KMS key manager, the SQS queue, and the Stripe payments, without the Sora voice chat |
-| `no_sqlite,no_valkey,no_sns,no_ses,no_awskms,no_sqs,no_billing_aws,no_voice_livekit` | Google Cloud: PostgreSQL, the Pub/Sub broker, the Cloud KMS key manager, and the Cloud Tasks queue, without the LiveKit voice chat |
+| `no_postgres,no_valkey,no_sns,no_ses,no_s3,no_gcs,no_pubsub,no_gcpkms,no_awskms,no_cloudtasks,no_otel,no_billing_aws,no_billing_gcp,no_payments_stripe,no_plugins` | A self-hosted instance on SQLite |
+| `no_sqlite,no_valkey,no_gcs,no_pubsub,no_gcpkms,no_cloudtasks,no_otel,no_billing_gcp,no_payments_payjp,no_voice_sora` | AWS: PostgreSQL, the SNS broker, SES, the EMF metrics, the AWS KMS key manager, and the Stripe payments, without the Sora voice chat |
+| `no_sqlite,no_valkey,no_sns,no_ses,no_awskms,no_billing_aws,no_voice_livekit` | Google Cloud: PostgreSQL, the Pub/Sub broker, the Cloud KMS key manager, and the Cloud Tasks queue, without the LiveKit voice chat |

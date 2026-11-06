@@ -11,7 +11,7 @@
 
 - 単一の型付き設定スキーマを `core` に定義し、起動時に検証する（NFR-PORT-5）。
 - ソース: 環境変数（`MY_` プレフィックス、名称はプロダクト名確定時に変更）→ 任意の設定ファイル（TOML）→ 既定値。
-- アダプタ選択は明示的なキー（例: `MY_DATABASE=postgres`, `MY_DATABASE_URL=...`, `MY_QUEUE=sqs`, `MY_BLOB=s3`）。URL スキームからの推測はしない。
+- アダプタ選択は明示的なキー（例: `MY_DATABASE=postgres`, `MY_DATABASE_URL=...`, `MY_QUEUE=cloudtasks`, `MY_BLOB=s3`）。URL スキームからの推測はしない。
 - 秘密情報は環境変数 / シークレットストア（Secret Manager, Secrets Manager / SSM, Kubernetes Secret）から。Docker と Kubernetes の secret をファイルで渡せるよう `<NAME>_FILE`（ファイルのパスから読む）も受け付ける。設定ファイルには書けない。
 
 ### 2. パッケージング
@@ -19,7 +19,7 @@
 - モノレポ。サーバーの Go は単一モジュール（`cmd/`, `internal/`, `pkg/testkit`）とする。利用者に配る `pkg/mykit`・`pkg/mybot`（ADR-0093）と開発ツールの `tools` は別のモジュールにする。クライアントアプリは `app/` の下に 1 アプリ 1 ディレクトリで置く（`app/web`。モバイルアプリの `app/mobile` は v0 の範囲の外）。共有パッケージの `app/ui`（ADR-0025）とメールの `app/mail` も同じ場所に置く。
   `app/*` を Bun ワークスペースのメンバーにし、クライアントのツールチェーン（依存・lint・テスト）をサーバーの Go と分けて扱う（レイアウトは [overview](../architecture/overview.md#6-リポジトリ構成)）。
 - アダプタはパッケージ単位に分け、ビルドタグで除外できるようにする（NFR-PORT-4）。
-- エントリポイント: `cmd/my`（単一バイナリ: `serve` / `worker` / `cli`。Self-hosted・Cloud Run・コンテナ）、`cmd/my-lambda`（AWS Lambda。Lambda Web Adapter で `cmd/my` を流用できるなら不要。M6 で扱う）。
+- エントリポイント: `cmd/my`（単一バイナリ: `serve` / `worker` / `cli`。Self-hosted・Cloud Run・ECS Fargate・コンテナ）。
 - コンテナイメージ: multi-arch（amd64 / arm64）、非 root、distroless 系。レジストリは `ghcr.io/mycroblog/my` だけとし、公開（public）にする（§4 から §10）。
 - 利用者による拡張: 独自アダプタは「ポートの型を実装し、コントラクトテストを通し、独自エントリポイントで組み立てる」方式。
   Go の `plugin` パッケージによる動的ロードは使わない（移植性が低いため）。v0 ではフォークまたはツリー内への追加で拡張する。
@@ -33,7 +33,7 @@
 | Docker | `deploy/docker/compose.yaml`（SQLite 最小構成）に `compose.postgres.yaml`・`compose.s3.yaml`・`compose.caddy.yaml` を重ねる |
 | microk8s / k8s | Kustomize（base + overlays）。Helm chart は需要次第 |
 | Google Cloud | OpenTofu モジュール（Cloud Run, Cloud Tasks, GCS, Scheduler） |
-| AWS | OpenTofu モジュール（Lambda, SQS, S3, CloudFront, EventBridge Scheduler） |
+| AWS | OpenTofu モジュール（ECS Fargate, ALB, S3, CloudFront） |
 
 IaC は OSS ライセンスの OpenTofu だけを使う。プロプライエタリなソフトウェアに依存しないため、Terraform には対応しない。モジュールは OpenTofu の機能（`lifecycle` の `enabled` など）を使ってよく、Terraform で動くことを確かめない。
 
@@ -83,7 +83,7 @@ Docker の構成は次のとおり。
 - **`GO_TAGS` は空の 1 種類だけ**（すべてのアダプタ）。同じイメージがどのホスティングでも動くことを優先する。小さいイメージが欲しい運営者は `scripts/task.sh docker:build GO_TAGS=...` で作れる。
 - `e2e_fakes` は 3 か所で止める: `Dockerfile` のタグの検査、`Dockerfile` のバイナリの検査、公開の前に各プラットフォームのイメージからバイナリを取り出して走らせる `scripts/check-release-build.sh`。
 - バイナリは **`v0.1.0` では Release に添付しない。** 今の配布の手順はコンテナを前提にしていて、添付すると手順や文書も増える。あとから足しても互換を壊さない。足すときはイメージから取り出す。
-- ホスティング: Compose と Kubernetes はそのまま、Cloud Run は公開の `ghcr.io` を直接使える。AWS は ECR へコピーする（pull through cache も使える）。Lambda は 1 アーキテクチャのイメージの ECR へのコピーと runtime interface client が要り、公開するイメージはそのままでは動かない。M6 のテンプレートで扱う。
+- ホスティング: Compose と Kubernetes はそのまま、Cloud Run は公開の `ghcr.io` を直接使える。AWS は ECR へコピーする（pull through cache も使える）。
 
 ### 8. サプライチェーン
 

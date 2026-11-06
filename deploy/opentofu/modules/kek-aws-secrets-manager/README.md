@@ -2,7 +2,7 @@
 
 The KEK in AWS Secrets Manager, generated on the first apply. It follows [the backend contract](../../README.md#the-backend-contract).
 
-**This module has never been applied.** The tests mock the provider, so they show that the configuration is consistent, not that AWS accepts it. It lacks a server that reads it: the server takes a KEK from `MY_KEK` or a file, and Lambda has neither for a secret. `app-aws-lambda` says what it assumes.
+**This module has never been applied.** The tests mock the provider, so they show that the configuration is consistent, not that AWS accepts it.
 
 ## Source
 

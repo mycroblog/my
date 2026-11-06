@@ -18,7 +18,7 @@ variable "host" {
 }
 
 variable "origin_host" {
-  description = "Host name of the Function URL. It may come from the app module: env, trusted_proxies, and service_ingress depend on nothing that reads it."
+  description = "Host name of the origin. It may come from the app module: env, trusted_proxies, and service_ingress depend on nothing that reads it."
   type        = string
   nullable    = false
 }
@@ -97,7 +97,7 @@ variable "price_class" {
 }
 
 locals {
-  origin_id = "function-url"
+  origin_id = "origin"
 }
 
 # AWS's managed policies, by name. The API prefixes the names that AWS's guide lists with Managed-.
@@ -105,13 +105,12 @@ data "aws_cloudfront_cache_policy" "caching_disabled" {
   name = "Managed-CachingDisabled"
 }
 
-# Everything but the viewer's Host, since a Function URL routes by Host.
+# Everything but the viewer's Host, since the origin routes by its own Host.
 data "aws_cloudfront_origin_request_policy" "all_viewer_except_host" {
   name = "Managed-AllViewerExceptHostHeader"
 }
 
-# CLOUDFRONT_ORIGIN_FACING rather than CLOUDFRONT: those are what connects to an origin, and the full list does not fit in the
-# 4 KB of Lambda's environment.
+# CLOUDFRONT_ORIGIN_FACING rather than CLOUDFRONT: those are what connects to an origin.
 data "aws_ip_ranges" "origin_facing" {
   services = ["cloudfront_origin_facing"]
 }
@@ -198,12 +197,12 @@ output "env" {
 }
 
 output "trusted_proxies" {
-  description = "What connects to the Function URL from CloudFront. The app module adds the platform's own front end."
+  description = "What connects to the origin from CloudFront. The app module adds the platform's own front end."
   value       = concat(data.aws_ip_ranges.origin_facing.cidr_blocks, data.aws_ip_ranges.origin_facing.ipv6_cidr_blocks)
 }
 
 output "service_ingress" {
-  description = "All: AWS itself cannot limit a Function URL to CloudFront for this server, and the server refuses what lacks the header. Read the README."
+  description = "All: the server refuses what lacks the header. Read the README."
   value       = "all"
 }
 

@@ -98,7 +98,7 @@ type JobSummary struct {
 }
 
 // JobInspector reads the jobs a queue holds, for the dashboard (ADR-0004 §7). The database queue
-// and the inline queue implement it. Cloud Tasks and SQS only signal: their jobs are in the
+// and the inline queue implement it. Cloud Tasks only signals: its jobs are in the
 // database queue (ADR-0004 §9), so the jobs are listed with those queues too.
 type JobInspector interface {
 	// ListJobs returns up to limit pending jobs that match f at now, the earliest RunAt first,

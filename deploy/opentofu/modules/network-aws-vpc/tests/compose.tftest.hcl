@@ -95,9 +95,4 @@ run "the_modules_share_an_existing_vpc_by_the_same_input" {
     condition     = output.existing_ecs_subnets == tolist(["subnet-pub-1", "subnet-pub-2"])
     error_message = "the tasks must take the public subnets of the object with a public address"
   }
-
-  assert {
-    condition     = output.existing_lambda_subnets == tolist(["subnet-priv-1", "subnet-priv-2"])
-    error_message = "the functions must take the private subnets of the object"
-  }
 }

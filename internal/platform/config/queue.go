@@ -9,7 +9,6 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
-	"path"
 	"regexp"
 	"slices"
 	"strconv"
@@ -23,21 +22,13 @@ import (
 // default of Cloud Tasks.
 const DefaultCloudTasksDispatchDeadline = 10 * time.Minute
 
-// DefaultSQSEventsPath is the default of queue_sqs_events_path, the default of the Lambda Web
-// Adapter's AWS_LWA_PASS_THROUGH_PATH, and DefaultSQSEventsBudget that of queue_sqs_events_budget.
-const (
-	DefaultSQSEventsPath   = "/events"
-	DefaultSQSEventsBudget = 10 * time.Minute
-)
-
 // wakerQueueRequired are the settings that each queue with a waker requires.
 var wakerQueueRequired = map[string][]string{
 	"cloudtasks": {"queue_cloudtasks_queue", "queue_cloudtasks_service_account"},
-	"sqs":        {"queue_sqs_queue_url"},
 }
 
 // wakerQueueChecks are the checks of the queues whose external queue only carries wake-up
-// signals, cloudtasks and sqs (ADR-0004 §12, §14): the jobs are in the database, so they need a
+// signals, cloudtasks (ADR-0004 §12): the jobs are in the database, so they need a
 // database that the processes share, and the slots of the periodic jobs are claimed in the KV,
 // so they need one that the processes share too.
 func wakerQueueChecks(vals map[string]string, present map[string]bool) []Issue {
@@ -79,25 +70,6 @@ func checkDispatchDeadline(v string) error {
 	}
 	if d <= queue.DefaultLease {
 		return fmt.Errorf("must be longer than the %s lease of a job run", queue.DefaultLease)
-	}
-	return nil
-}
-
-// checkEventsPath accepts the path of the SQS events: an absolute path other than the root,
-// without a query, a fragment, or a pattern of the router.
-func checkEventsPath(v string) error {
-	if len(v) < 2 || v[0] != '/' || strings.ContainsAny(v, "?#{} \t") || path.Clean(v) != v {
-		return errors.New("must be an absolute path other than /, such as /events")
-	}
-	return nil
-}
-
-// checkEventsBudget accepts a budget of an SQS event longer than the lease of a job run and at
-// most the 15-minute limit of a Lambda invocation.
-func checkEventsBudget(v string) error {
-	d, err := time.ParseDuration(v)
-	if err != nil || d <= queue.DefaultLease || d > 15*time.Minute {
-		return fmt.Errorf("must be a Go duration longer than the %s lease of a job run and at most 15m, for example 10m", queue.DefaultLease)
 	}
 	return nil
 }
@@ -181,14 +153,14 @@ func workerJobConcurrencyChecks(vals map[string]string) []Issue {
 
 // QueueRoute sends the wake-up signals of the job types of Pattern, a type or a prefix such as
 // federation.*, to Queue instead of the default queue (ADR-0004). URL is the base URL of the
-// receiver of a Cloud Tasks route; for SQS it is empty, and the queue's event source decides.
+// receiver of the route; empty means queue_cloudtasks_url.
 type QueueRoute struct {
 	Pattern string
 	Queue   string
 	URL     string
 }
 
-// splitQueueRoutes returns the routes of queue_sqs_routes or queue_cloudtasks_routes,
+// splitQueueRoutes returns the routes of queue_cloudtasks_routes,
 // pattern=queue or pattern=queue@url.
 func splitQueueRoutes(v string) []QueueRoute {
 	var routes []QueueRoute
@@ -206,7 +178,7 @@ func splitQueueRoutes(v string) []QueueRoute {
 // checkQueueRoutes checks the form of a list of routes: a pattern and a queue on each, and no
 // pattern twice. Whether the patterns match a job type is known once the handlers are registered
 // (queue.WakeRouter.TypesOfRoutes).
-func checkQueueRoutes(v string, checkQueue func(string) error, withURL bool) error {
+func checkQueueRoutes(v string, checkQueue func(string) error) error {
 	seen := map[string]bool{}
 	for _, r := range splitQueueRoutes(v) {
 		if !jobTypePattern.MatchString(r.Pattern) {
@@ -222,9 +194,6 @@ func checkQueueRoutes(v string, checkQueue func(string) error, withURL bool) err
 		if err := checkQueue(r.Queue); err != nil {
 			return fmt.Errorf("the queue of %q: %w", r.Pattern, err)
 		}
-		if !withURL {
-			continue
-		}
 		if r.URL != "" {
 			if err := checkServiceURL(r.URL); err != nil {
 				return fmt.Errorf("the receiver of %q: %w", r.Pattern, err)
@@ -234,45 +203,30 @@ func checkQueueRoutes(v string, checkQueue func(string) error, withURL bool) err
 	return nil
 }
 
-func checkSQSRoutes(v string) error {
-	for _, r := range splitQueueRoutes(v) {
-		if r.URL != "" {
-			return fmt.Errorf("the route of %q: an SQS route has no receiver URL", r.Pattern)
-		}
-	}
-	return checkQueueRoutes(v, checkSQSQueueURL, false)
-}
-
 func checkCloudTasksRoutes(v string) error {
-	return checkQueueRoutes(v, checkCloudTasksQueue, true)
+	return checkQueueRoutes(v, checkCloudTasksQueue)
 }
 
-// queueRouteChecks are the rules of queue_sqs_routes and queue_cloudtasks_routes (ADR-0004 §23):
-// each belongs to its queue, and only the queues with a waker can send signals to several queues.
+// queueRouteChecks are the rules of queue_cloudtasks_routes (ADR-0004 §23): only the queue with a
+// waker can send signals to several queues.
 func queueRouteChecks(vals map[string]string) []Issue {
 	var issues []Issue
-	for _, q := range []string{"sqs", "cloudtasks"} {
-		key := "queue_" + q + "_routes"
-		if len(splitQueueRoutes(vals[key])) > 0 && vals["queue"] != q {
-			issues = append(issues, Issue{Key: key, Message: "needs queue = " + q + ", not " + cmp.Or(vals["queue"], "db")})
-		}
+	if len(splitQueueRoutes(vals["queue_cloudtasks_routes"])) > 0 && vals["queue"] != "cloudtasks" {
+		issues = append(issues, Issue{Key: "queue_cloudtasks_routes", Message: "needs queue = cloudtasks, not " + cmp.Or(vals["queue"], "db")})
 	}
 	return issues
 }
 
 // QueueRoutes returns the routes of the queue of the config, with the default receiver filled in.
 func (c *Config) QueueRoutes() []QueueRoute {
-	switch c.Queue {
-	case "sqs":
-		return c.QueueSQSRoutes
-	case "cloudtasks":
-		routes := slices.Clone(c.QueueCloudTasksRoutes)
-		for i := range routes {
-			routes[i].URL = cmp.Or(routes[i].URL, c.QueueCloudTasksURL)
-		}
-		return routes
+	if c.Queue != "cloudtasks" {
+		return nil
 	}
-	return nil
+	routes := slices.Clone(c.QueueCloudTasksRoutes)
+	for i := range routes {
+		routes[i].URL = cmp.Or(routes[i].URL, c.QueueCloudTasksURL)
+	}
+	return routes
 }
 
 // QueueRoutesSummary returns the routes of the queue as one sorted line and a short hash of it,

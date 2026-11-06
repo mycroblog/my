@@ -22,10 +22,10 @@ flowchart LR
   end
   subgraph runners["ジョブを動かすもの"]
     pull["PullRunner<br/>queue = db"]
-    push["PushReceiver<br/>queue = sqs / cloudtasks"]
+    push["PushReceiver<br/>queue = cloudtasks"]
     registry["JobHandlerRegistry<br/>type からハンドラを引く"]
   end
-  ext["外部のキュー<br/>（SQS / Cloud Tasks）"]
+  ext["外部のキュー<br/>（Cloud Tasks）"]
   tick["外部のスケジューラの tick"]
 
   tx --> jobs
@@ -43,7 +43,7 @@ flowchart LR
   runners -- "dead" --> dead
 ```
 
-- **ジョブの置き場**: `queue = inline`（テストと開発用）を除き、ジョブの本体は `jobs` にあります。SQS と Cloud Tasks は、ジョブ ID と時刻だけの合図を運びます（[ADR-0004](../adr/0004-job-queue-abstraction.md)）。合図は重複しても失っても構いません。`ClaimJob` は 1 回しか取れず、失った合図は `WakeSweeper` が送り直します。
+- **ジョブの置き場**: `queue = inline`（テストと開発用）を除き、ジョブの本体は `jobs` にあります。Cloud Tasks は、ジョブ ID と時刻だけの合図を運びます（[ADR-0004](../adr/0004-job-queue-abstraction.md)）。合図は重複しても失っても構いません。`ClaimJob` は 1 回しか取れず、失った合図は `WakeSweeper` が送り直します。
 - **積むタイミング**: ドメインの書き込みと同じトランザクションで積むと（`Outbox.EnqueueTx`）、コミットしたときだけジョブが存在します。トランザクションの外の `JobQueue.Enqueue` は、続きのページや読み取りの契機で使います。
 - **実行の単位**: `PullRunner` は 1 度に 1 つのジョブを順に動かします（`RunUntil` のループ）。プロセスの並列度は `worker_job_concurrency`（既定 1、[ADR-0004](../adr/0004-job-queue-abstraction.md)）で、2 以上では `SlotRunner` がスロットごとに `PullRunner` を動かします。空いたスロットだけが claim し、ジョブがない間は 1 つのスロットだけがポーリングします。`PushReceiver` の並列度は、プラットフォームが同時に送る要求の数です。
 - **ロール**: `role = all` と `worker` がジョブと `Scheduler` を動かし、`web` は動かしません。合図のキューでは、プロセスはジョブも周期も自分では回さず、要求を受けたときだけ動きます。
@@ -267,7 +267,7 @@ flowchart LR
 
 `queue = db` では、`worker_job_types` と `worker_job_types_except` で種別ごとにワーカーを分けられます（[ADR-0004](../adr/0004-job-queue-abstraction.md)）。分けるときの順序キーの制約は[順序キー](#順序キー)の表のとおりで、同じキーを持つ種別は同じワーカーの組に置きます。外部のキューの構成では分けられません。
 
-`queue = sqs` と `cloudtasks` では、`queue_sqs_routes` と `queue_cloudtasks_routes` で種別ごとに合図のキューを分け、処理能力をプラットフォームの設定で変えられます（[ADR-0004](../adr/0004-job-queue-abstraction.md)）。振り分けるのは合図を送る側（`WakeRouter`）だけで、受け口はどの合図でも同じように `ClaimJob` します。キューが違っても順序キーの判定は DB で行うので、順序は変わりません。掃除（`queue.wake`）はルートごとに 1 回 500 件まで読み、ルートのある種別は `jobs_type_run_at_id` を引きます。
+`queue = cloudtasks` では、`queue_cloudtasks_routes` で種別ごとに合図のキューを分け、処理能力をプラットフォームの設定で変えられます（[ADR-0004](../adr/0004-job-queue-abstraction.md)）。振り分けるのは合図を送る側（`WakeRouter`）だけで、受け口はどの合図でも同じように `ClaimJob` します。キューが違っても順序キーの判定は DB で行うので、順序は変わりません。掃除（`queue.wake`）はルートごとに 1 回 500 件まで読み、ルートのある種別は `jobs_type_run_at_id` を引きます。
 
 ### 確かめ方
 

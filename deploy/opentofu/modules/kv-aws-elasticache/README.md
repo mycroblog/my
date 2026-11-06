@@ -47,9 +47,6 @@ On Fargate this adds only the groups, since a task is already in a VPC, and Valk
 needs for everything else is the same with or without Valkey, and it is the larger cost: a public IPv4 address on each task, $0.005
 per hour (about $3.65 a month), or a NAT gateway, $0.045 per hour (about $33 a month in US East, Ohio) and $0.045 per GB.
 
-**On Lambda this takes a NAT gateway.** An attached function reaches the internet only through something like that gateway, which
-federation needs. A public endpoint would avoid it, but it requires IAM authentication, and the server takes one static URL.
-
 ## No password: the network is what keeps others out
 
 The URL holds no secret, so it goes in `env`, and there is nothing to generate or keep out of the state. **The security group decides

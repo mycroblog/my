@@ -478,7 +478,7 @@ ActivityPub の配送は順序を保証しません。ハンドラは、どの�
   `instance_health` と `instance_availability_events` は管理 API（`GET /api/v1/admin/instances`、`.../{domain}/availability_events`）で読めます。
   - 署名付きの受信と probe の成功は、`federation.Health.Reached`（理由 `inbound_request` / `probe_succeeded`）がイベント `federation.instance_reached` を発行し、配送と同じ projector が `instance_health` を更新します。失敗の記録が無いドメインでは、コミット済みの値を読むだけで書きません。
   - probe は `/.well-known/nodeinfo` と、そこから同じホストの NodeInfo 2.x の文書を署名なしで取得し、どちらも 2xx の JSON なら成功とします。1 つのジョブは 50 ドメインを順に処理し、残りがあれば続きのジョブを投入します。
-- 1 件の配送は 1 つのジョブです。Cloud Tasks / SQS では 1 回の試行が 1 オペレーションとして課金されるので、shared inbox への集約と `unavailable` のドメインの除外で回数を抑えます（NFR-COST-5）。
+- 1 件の配送は 1 つのジョブです。Cloud Tasks では 1 回の試行が 1 オペレーションとして課金されるので、shared inbox への集約と `unavailable` のドメインの除外で回数を抑えます（NFR-COST-5）。
 
 ### 7.4 文書の形
 

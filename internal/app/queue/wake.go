@@ -22,7 +22,7 @@ type Wake struct {
 	At    time.Time
 }
 
-// Waker sends wake-up signals through an external queue (Cloud Tasks, SQS), whose deliveries
+// Waker sends wake-up signals through an external queue (Cloud Tasks), whose deliveries
 // reach a PushReceiver. The jobs themselves live in the database queue, which signals each job
 // it stores once its transaction commits.
 //

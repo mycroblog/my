@@ -88,7 +88,7 @@ func TestLoadValid(t *testing.T) {
 		},
 		{
 			name: "file overrides defaults and env overrides file",
-			env:  with(minimal(), "MY_CONFIG", "my.toml", "MY_QUEUE", "sqs", "MY_QUEUE_SQS_QUEUE_URL", "https://sqs.ap-northeast-1.amazonaws.com/123456789012/my-jobs"),
+			env:  with(minimal(), "MY_CONFIG", "my.toml", "MY_QUEUE", "cloudtasks", "MY_QUEUE_CLOUDTASKS_QUEUE", "projects/p/locations/asia-northeast1/queues/my-jobs", "MY_QUEUE_CLOUDTASKS_SERVICE_ACCOUNT", "tasks@p.iam.gserviceaccount.com"),
 			files: map[string]string{"my.toml": `
 account_domain = "example.org"
 source_url = "https://git.example.org/fork/my"
@@ -100,7 +100,7 @@ listen = "127.0.0.1:9000"
 `},
 			want: Config{
 				Host: "social.example.org", AccountDomain: "example.org", SourceURL: "https://git.example.org/fork/my", WebOrigin: "http://localhost:5173", Role: RoleWeb, Listen: "127.0.0.1:9000", MaintenanceRetryAfter: 10 * time.Minute,
-				DB: "postgres", DatabaseURL: "file:my.db", DatabaseAcquireTimeout: DefaultDatabaseAcquireTimeout, Queue: "sqs", QueueSQSQueueURL: "https://sqs.ap-northeast-1.amazonaws.com/123456789012/my-jobs", QueueSQSEventsPath: "/events", QueueSQSEventsBudget: 10 * time.Minute, Blob: "fs", Media: "native", KV: "db", ValkeyKeyPrefix: "my:", Stream: "hub",
+				DB: "postgres", DatabaseURL: "file:my.db", DatabaseAcquireTimeout: DefaultDatabaseAcquireTimeout, Queue: "cloudtasks", QueueCloudTasksQueue: "projects/p/locations/asia-northeast1/queues/my-jobs", QueueCloudTasksServiceAccount: "tasks@p.iam.gserviceaccount.com", QueueCloudTasksURL: "https://social.example.org", QueueCloudTasksDispatchDeadline: DefaultCloudTasksDispatchDeadline, Blob: "fs", Media: "native", KV: "db", ValkeyKeyPrefix: "my:", Stream: "hub",
 				BlobFSDir: "blobs", MediaMaxImageBytes: 16 << 20, MediaMaxImageSide: 8192, MediaMaxImagePixels: 7680 * 4320, MediaUnattachedTTL: 24 * time.Hour, MediaReplacedRetention: 720 * time.Hour,
 				MediaMaxAVBytes: 100 << 20, MediaMaxVideoDuration: 5 * time.Minute, MediaMaxAudioDuration: 10 * time.Minute, CustomEmojiMaxBytes: 256 << 10, RemoteCustomEmojiMaxBytes: 1 << 20, RelayIngestHourlyLimit: 1000, BillingAWSMaxRequestsPerDay: 4, BillingAWSMaxRequestsPerMonth: 120, BillingAWSMetric: "NetUnblendedCost", BillingAWSFilter: "none", BillingGCPMethod: "bigquery", BillingGCPMaxBytesBilled: 1 << 30, PaymentsProvider: "none", PaymentsReconcileInterval: 6 * time.Hour, PaymentsReconcileMaxRequests: 1000, Search: "none", Voice: "off", VoiceP2PMaxParticipants: 10, VoiceMaxParticipants: 10, VoiceMaxRoomDuration: 4 * time.Hour, VoiceMaxOpenRooms: 10, VoiceTURN: "none", VoiceTURNCredentialTTL: 6 * time.Hour, VoiceICETransportPolicy: "all", DeadJobRetention: 30 * 24 * time.Hour, JobAttemptRetention: 30 * 24 * time.Hour, DynamicClientUnredeemedTTL: 24 * time.Hour, DynamicClientIdleTTL: 90 * 24 * time.Hour,
 				KeyManager: "local", KEK: kek, DEKCacheTTL: 10 * time.Minute, DEKCacheEntries: 1024, Mail: "none", SMTPPort: 587, Captcha: "none", Profile: "production", TrustedProxyHeader: "x-forwarded-for",
@@ -566,31 +566,6 @@ func TestLoadInvalid(t *testing.T) {
 			},
 		},
 		{
-			name: "queue sqs without its queue URL on SQLite and the memory KV",
-			env:  with(minimal(), "MY_QUEUE", "sqs", "MY_KV", "memory"),
-			want: []string{
-				"queue_sqs_queue_url (MY_QUEUE_SQS_QUEUE_URL): required when queue is sqs",
-				"queue (MY_QUEUE): sqs keeps the jobs in the database and requires database = postgres, not sqlite",
-				"queue (MY_QUEUE): sqs claims the periods of the periodic jobs in the KV and requires kv = db or valkey, not memory",
-			},
-		},
-		{
-			name: "queue sqs on a FIFO queue",
-			env: with(minimal(), "MY_DATABASE", "postgres", "MY_QUEUE", "sqs",
-				"MY_QUEUE_SQS_QUEUE_URL", "https://sqs.ap-northeast-1.amazonaws.com/123456789012/my-jobs.fifo"),
-			want: []string{"queue_sqs_queue_url (MY_QUEUE_SQS_QUEUE_URL): must be a standard queue, not a FIFO queue"},
-		},
-		{
-			name: "malformed queue sqs events settings",
-			env: with(minimal(), "MY_DATABASE", "postgres", "MY_QUEUE", "sqs",
-				"MY_QUEUE_SQS_QUEUE_URL", "https://sqs.ap-northeast-1.amazonaws.com/123456789012/my-jobs",
-				"MY_QUEUE_SQS_EVENTS_PATH", "events/", "MY_QUEUE_SQS_EVENTS_BUDGET", "5m"),
-			want: []string{
-				"queue_sqs_events_path (MY_QUEUE_SQS_EVENTS_PATH): must be an absolute path other than /",
-				"queue_sqs_events_budget (MY_QUEUE_SQS_EVENTS_BUDGET): must be a Go duration longer than the 5m0s lease of a job run and at most 15m",
-			},
-		},
-		{
 			name: "malformed queue cloudtasks settings",
 			env: with(minimal(), "MY_DATABASE", "postgres", "MY_QUEUE", "cloudtasks",
 				"MY_QUEUE_CLOUDTASKS_QUEUE", "my-jobs", "MY_QUEUE_CLOUDTASKS_URL", "https://my.example/_internal/jobs",
@@ -911,34 +886,24 @@ func TestLoadInvalid(t *testing.T) {
 			want: []string{"worker_job_concurrency (MY_WORKER_JOB_CONCURRENCY): above 1 works only with queue = db, not inline"},
 		},
 		{
-			name: "SQS routes without queue = sqs",
-			env:  with(minimal(), "MY_QUEUE_SQS_ROUTES", "federation.*=https://sqs.ap-northeast-1.amazonaws.com/123456789012/q"),
-			want: []string{"queue_sqs_routes (MY_QUEUE_SQS_ROUTES): needs queue = sqs, not db"},
-		},
-		{
 			name: "Cloud Tasks routes without queue = cloudtasks",
 			env:  with(minimal(), "MY_QUEUE_CLOUDTASKS_ROUTES", "federation.*=projects/p/locations/l/queues/q"),
 			want: []string{"queue_cloudtasks_routes (MY_QUEUE_CLOUDTASKS_ROUTES): needs queue = cloudtasks, not db"},
 		},
 		{
 			name: "a route with a bad type",
-			env:  with(minimal(), "MY_QUEUE_SQS_ROUTES", "Federation*=https://sqs.ap-northeast-1.amazonaws.com/123456789012/q"),
-			want: []string{`queue_sqs_routes (MY_QUEUE_SQS_ROUTES): "Federation*" must be a job type such as federation.deliver or a prefix such as federation.*, then = and a queue`},
+			env:  with(minimal(), "MY_QUEUE_CLOUDTASKS_ROUTES", "Federation*=projects/p/locations/l/queues/q"),
+			want: []string{`queue_cloudtasks_routes (MY_QUEUE_CLOUDTASKS_ROUTES): "Federation*" must be a job type such as federation.deliver or a prefix such as federation.*, then = and a queue`},
 		},
 		{
 			name: "a route without a queue",
-			env:  with(minimal(), "MY_QUEUE_SQS_ROUTES", "federation.*"),
-			want: []string{`queue_sqs_routes (MY_QUEUE_SQS_ROUTES): "federation.*" has no queue`},
+			env:  with(minimal(), "MY_QUEUE_CLOUDTASKS_ROUTES", "federation.*"),
+			want: []string{`queue_cloudtasks_routes (MY_QUEUE_CLOUDTASKS_ROUTES): "federation.*" has no queue`},
 		},
 		{
 			name: "two routes of one type",
-			env:  with(minimal(), "MY_QUEUE_SQS_ROUTES", "federation.*=https://sqs.ap-northeast-1.amazonaws.com/123456789012/a,federation.*=https://sqs.ap-northeast-1.amazonaws.com/123456789012/b"),
-			want: []string{`queue_sqs_routes (MY_QUEUE_SQS_ROUTES): "federation.*" has two routes`},
-		},
-		{
-			name: "an SQS route with a receiver",
-			env:  with(minimal(), "MY_QUEUE_SQS_ROUTES", "federation.*=https://sqs.ap-northeast-1.amazonaws.com/123456789012/a@https://worker.example.com"),
-			want: []string{`queue_sqs_routes (MY_QUEUE_SQS_ROUTES): the route of "federation.*": an SQS route has no receiver URL`},
+			env:  with(minimal(), "MY_QUEUE_CLOUDTASKS_ROUTES", "federation.*=projects/p/locations/l/queues/a,federation.*=projects/p/locations/l/queues/b"),
+			want: []string{`queue_cloudtasks_routes (MY_QUEUE_CLOUDTASKS_ROUTES): "federation.*" has two routes`},
 		},
 		{
 			name: "a Cloud Tasks route with a bad receiver",
@@ -1318,7 +1283,7 @@ func TestQueueRoutes(t *testing.T) {
 	}
 
 	// Routes of another queue are not used.
-	if got := (&Config{Queue: "db", QueueSQSRoutes: []QueueRoute{{Pattern: "a"}}}).QueueRoutes(); len(got) != 0 {
+	if got := (&Config{Queue: "db", QueueCloudTasksRoutes: []QueueRoute{{Pattern: "a"}}}).QueueRoutes(); len(got) != 0 {
 		t.Errorf("QueueRoutes with queue = db = %+v", got)
 	}
 }

@@ -309,17 +309,17 @@ proto の版はパッケージごとの `v1` で、`my` の Go のインター�
 - **メディアの本体。** #2220 は blob のキーか署名付き URL で渡す案だった。ポートと経路を読むと §13 の採らなかった理由があり、ストリームにした
 - **MIT の proto と生成物。** 検査のスクリプトと生成の動作を確かめると、見出しのコピーで検査が落ちることが分かり、§8 の 4 か所になった
 
-確認した一次情報（2026-11-05）: `connectrpc.com/connect/v2` v2.0.2 の `LICENSE`（Apache-2.0）・`go.mod`（ビルドの依存は `google.golang.org/protobuf` だけ、`go-cmp` はテスト用）・ソースに `import "C"` なし、[Connect Protocol Reference](https://connectrpc.com/docs/protocol/)、[Deployment & h2c](https://connectrpc.com/docs/go/deployment/)、[Migrating to v2](https://connectrpc.com/docs/go/migrating-to-v2/)。`CGO_ENABLED=0` でスクラッチのプログラムをビルドして動かし、Connect の分のバイナリの増加は約 0.8 MiB（protobuf と `net/http` を含む比較対象との差。`cmd/my` への追加では未計測）。`Apache-2.0` は `GO_ALLOWED_LICENSES` にある。[Lambda の quotas](https://docs.aws.amazon.com/lambda/latest/dg/gettingstarted-limits.html) の同期の上限は要求・応答とも 6 MB。
+確認した一次情報（2026-11-05）: `connectrpc.com/connect/v2` v2.0.2 の `LICENSE`（Apache-2.0）・`go.mod`（ビルドの依存は `google.golang.org/protobuf` だけ、`go-cmp` はテスト用）・ソースに `import "C"` なし、[Connect Protocol Reference](https://connectrpc.com/docs/protocol/)、[Deployment & h2c](https://connectrpc.com/docs/go/deployment/)、[Migrating to v2](https://connectrpc.com/docs/go/migrating-to-v2/)。`CGO_ENABLED=0` でスクラッチのプログラムをビルドして動かし、Connect の分のバイナリの増加は約 0.8 MiB（protobuf と `net/http` を含む比較対象との差。`cmd/my` への追加では未計測）。`Apache-2.0` は `GO_ALLOWED_LICENSES` にある。
 
 ## 採らなかった案
 
-- **gRPC だけ:** 実装の選択肢が最も広く、ストリームも素直だが、HTTP/2 が必須で、JSON だけの小さなプラグインが書けない。プラグインを Lambda に置く構成とも相性が悪い（要検証: Function URL と API Gateway の HTTP/2 と trailer の扱いは未読）。`protocol = grpc` として選べるので、相手としては失っていない
+- **gRPC だけ:** 実装の選択肢が最も広く、ストリームも素直だが、HTTP/2 が必須で、JSON だけの小さなプラグインが書けない。`protocol = grpc` として選べるので、相手としては失っていない
 - **HTTP + JSON の自前の仕様（OpenAPI）:** `api/spec/` と同じ道具で書け、依存が増えないが、ストリームと版の検査（`buf breaking`）を自分で作ることになり、gRPC のプラグインを受けられない
 - **`connect` の v1:** 保守が続き（Migrating to v2 に明記）、実績も長いが、これから書くコードが移行を背負う。v2 の最初の版は 2026-10-07 と新しいことはリスクとして受ける
-- **サブプロセスの管理（`hashicorp/go-plugin` の形）:** 配布が簡単で寿命を `my` が握れるが、別のマシンで動かせず、Lambda や Cloud Run の 1 つのコンテナにプロセスを同居させることになり（要検証）、バイナリの更新の責任が `my` に来る
+- **サブプロセスの管理（`hashicorp/go-plugin` の形）:** 配布が簡単で寿命を `my` が握れるが、別のマシンで動かせず、Cloud Run や ECS Fargate の 1 つのコンテナにプロセスを同居させることになり（要検証）、バイナリの更新の責任が `my` に来る
 - **Go の `plugin` パッケージや Wasm:** 通信の費用がなく同じプロセスで動くが、`plugin` は cgo とビルドの完全な一致を要し（要検証）、AGPL との結合の問題が最も重い。Wasm は Vault や別のマシンでの変換という目的に合わない
 - **管理画面で宛先を設定:** 運営者には楽だが、管理者のアカウントの盗難が投稿と鍵の行き先の変更になる
-- **`media` の本体を blob のキーや署名付き URL で渡す（#2220 の案）:** メッセージが小さく、プラグインが HTTP だけで動き、Lambda にも置ける。ただし次の理由で足りない
+- **`media` の本体を blob のキーや署名付き URL で渡す（#2220 の案）:** メッセージが小さく、プラグインが HTTP だけで動く。ただし次の理由で足りない
   - `blob.Signer` は読むだけの URL で書く URL がなく、出力の戻り道に新しいポートのメソッドが要る
   - `Signer` は `blob.Store` と別の任意のインターフェイスで、`s3` と `gcs` だけが実装し、`fs` にはない（2026-11-05 に確認）
   - `Remux` の入力は blob にあるが、リンクカードの画像（`link_card.go`）と埋め込みのカバー（`AVOutput.Cover`）の `Process` の入力は blob にないので、一時的な blob と掃除が要る
@@ -340,7 +340,7 @@ proto の版はパッケージごとの `v1` で、`my` の Go のインター�
   - `net/http` と JSON だけの小さなプラグインが書ける（`media` を除く）
 - 悪い影響・トレードオフ
   - `v0.1.0` の前に kind を全部作るので、最初のリリースまでの作業が増える。翻訳のポート（#2230）が前提になり、リリースの順序に影響する
-  - `media` は HTTP/2 と Connect か gRPC のライブラリを要し、JSON だけのプラグインにも Lambda の同期の呼び出し（6 MB）にも置けない
+  - `media` は HTTP/2 と Connect か gRPC のライブラリを要し、JSON だけのプラグインにはできない
   - `my` はプラグインのメタデータの除去を完全には確かめられない。形式と寸法は検査するが、位置情報の除去は §16 の CLI の事例と運営者の責任になる（ADR-0019 §8 が前提とする再エンコードをプラグインに任せる）
   - `media` を平文の TCP で動かすと、位置情報の残るアップロードがネットワークに暗号化されずに流れる。起動時に警告し、守るのは運営者の責任である
   - `key_manager` のプラグインは KEK と同じ信頼を要し、障害は §14 の範囲に広がる。誤って使うと連合上の同一性に関わる（NFR-REL-4）
@@ -354,7 +354,7 @@ proto の版はパッケージごとの `v1` で、`my` の Go のインター�
 ## Open Questions / 要検証
 
 - HSM の PKCS#11 と `CGO_ENABLED=0` の関係、Vault Transit の API（未読。§14 の理由づけに使っている）
-- Lambda の Function URL・API Gateway の HTTP/2 と trailer の扱い（未読）、Cloud Run のサイドカーの共有ボリュームと ECS Fargate のボリュームでの Unix ソケット（未読。§6 の平文の TCP を拒む kind をサイドカーに置くときの前提。M6 のテンプレートで確かめる）
+- Cloud Run のサイドカーの共有ボリュームと ECS Fargate のボリュームでの Unix ソケット（未読。§6 の平文の TCP を拒む kind をサイドカーに置くときの前提。M6 のテンプレートで確かめる）
 - `buf breaking` の `--against` に Git のタグを渡す形が CI の浅いクローンで動くか（確かめたのはディレクトリとの比較だけ）
 - `tools/buf/go.mod` を分けたときの `scripts/go-work-check.sh` と Dependabot の扱い（未確認）
 - `media` の同時実行の既定と 100 MiB のときのメモリの実測（スクラッチのテストの速度は同じプロセスの中で、本番の参考にならない）

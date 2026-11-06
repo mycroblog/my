@@ -82,8 +82,7 @@ func NewProcessID() string {
 }
 
 // Sweeper deletes the per-process resources that processes left behind on a broker: the
-// processes that ended without closing their listener (a crash, a frozen and discarded Lambda
-// execution environment). Brokers whose per-process resources go away with the process (a
+// processes that ended without closing their listener (a crash, a task that was stopped). Brokers whose per-process resources go away with the process (a
 // connection) need none. The job JobSweep drives it (RegisterSweepJob).
 type Sweeper interface {
 	// Sweep deletes the per-process resources created at least minAge ago whose process is not

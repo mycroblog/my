@@ -7,16 +7,14 @@
 # database first.
 #
 #   deploy/opentofu/upgrade.sh --project P --region R --image ghcr.io/mycroblog/my:0.2.0 [--name my]
-#   deploy/opentofu/upgrade.sh --platform aws-lambda --region R --image <ECR image> [--name my]
 #   deploy/opentofu/upgrade.sh --platform aws-ecs --region R --image <image> [--name my]
 #       [--maintenance]         switch the service to the maintenance mode first, and back with the new revision
 #       [--allow-destructive]   pass -allow-destructive to my schema apply, when the release notes call for it
 #       [--plan]                only print what the upgrade would run: upgrade-check and my schema apply -dry-run
 #       [--migrate-only]        stop before the service, for the first deployment, when it does not exist yet
 #
-# The order of the steps is the same on every platform; each platform is the functions gcp_* or aws_* below. On aws-lambda
-# nothing has run on AWS, and a step needs an image that answers the function's invocation: read modules/app-aws-lambda. On
-# aws-ecs nothing has run on AWS either: read modules/app-aws-ecs.
+# The order of the steps is the same on every platform; each platform is the functions gcp_* or ecs_* below. On aws-ecs
+# nothing has run on AWS: read modules/app-aws-ecs.
 set -euo pipefail
 
 # shellcheck source=/dev/null # Beside this script, at the same release.
@@ -47,7 +45,7 @@ while [ "$#" -gt 0 ]; do
 done
 case "$platform" in
   gcp-cloud-run) [ -n "$project" ] || usage ;;
-  aws-lambda | aws-ecs) ;;
+  aws-ecs) ;;
   *) usage ;;
 esac
 if [ -z "$region" ] || [ -z "$image" ]; then
@@ -102,63 +100,6 @@ gcp_service_takes_image() {
   for service in $workers "$name"; do
     echo "==> $service takes $image"
     gcloud run services update "$service" "${where[@]}" "${args[@]}" --quiet || return 1
-  done
-}
-
-aws_logs_hint() {
-  echo "aws logs tail /aws/lambda/$job --region $region --since 1h"
-}
-
-# aws_set_env FUNCTION JQ replaces the function's variables, since the API takes them only as a whole.
-aws_set_env() {
-  local variables
-  variables="$(aws lambda get-function-configuration --function-name "$1" --region "$region" --query Environment.Variables --output json)" || return 1
-  variables="$(jq -c "{Variables: ($variables | $2)}" <<< 'null')" || return 1
-  aws lambda update-function-configuration --function-name "$1" --region "$region" --environment "$variables" > /dev/null || return 1
-  aws lambda wait function-updated --function-name "$1" --region "$region"
-}
-
-aws_takes_image() {
-  aws lambda update-function-code --function-name "$1" --region "$region" --image-uri "$image" > /dev/null || return 1
-  aws lambda wait function-updated --function-name "$1" --region "$region"
-}
-
-# The functions of the workers of the workers input, by the name that the app module gives them.
-aws_workers() {
-  aws lambda list-functions --region "$region" --query "Functions[?starts_with(FunctionName, '$name-worker-')].FunctionName" --output text
-}
-
-aws_maintenance_on() {
-  local workers function
-  workers="$(aws_workers)" || return 1
-  for function in $workers "$name-worker" "$name-web"; do
-    aws_set_env "$function" '. + {MY_MAINTENANCE: "true"}' || return 1
-  done
-}
-
-aws_one_off_takes_image() {
-  aws_takes_image "$job"
-}
-
-# aws_step ARG... runs one my command in one invocation of the migration function, which lasts 15 minutes at most.
-aws_step() {
-  "$(dirname "$0")/console.sh" "$@" <<< "$(jq -nc --arg region "$region" --arg function "$job" '{platform: "aws-lambda", region: $region, function: $function}')"
-}
-
-aws_plan_hint() {
-  echo "The SQL is in the output above, and in the logs: $(aws_logs_hint)"
-}
-
-# Unlike Cloud Run, nothing holds a new image back: the function takes traffic as soon as it is updated, and a request that
-# starts one on an image that fails /readyz gets an error. The workers go first, since the web function enqueues for them.
-aws_service_takes_image() {
-  local workers function
-  workers="$(aws_workers)" || return 1
-  for function in $workers "$name-worker" "$name-web"; do
-    aws_takes_image "$function" || return 1
-    if [ "$maintenance" = 1 ]; then
-      aws_set_env "$function" 'del(.MY_MAINTENANCE)' || return 1
-    fi
   done
 }
 
@@ -250,7 +191,6 @@ ecs_service_takes_image() {
 
 case "$platform" in
   gcp-cloud-run) prefix=gcp ;;
-  aws-lambda) prefix=aws ;;
   aws-ecs) prefix=ecs ;;
 esac
 

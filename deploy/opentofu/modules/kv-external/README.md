@@ -35,7 +35,7 @@ The URL is `valkey://[user:password@]host[:port][/db]`, or `valkeys://` for TLS.
 network you control. The server refuses `skip_verify`.
 
 A CA reaches the server as a mounted file, so `tls_ca_secret_id` needs a platform that mounts secrets. On one that does not, such
-as Lambda, the file's setting does not exist: use a service whose certificate chains to the system roots.
+as ECS Fargate, the file's setting does not exist: use a service whose certificate chains to the system roots.
 
 ## What you must provide: a way to reach it
 

@@ -40,7 +40,7 @@ The KEK is a secret setting, so it can be passed only through the environment va
 | Docker / Compose | Mount a Docker secret at `/run/secrets/my_kek` and set `MY_KEK_FILE=/run/secrets/my_kek`. The files of `deploy/docker` do this from `secrets/kek` ([Docker Compose files](running.md#docker-compose-files)): to rotate, replace that file and set `MY_KEK_PREVIOUS` in `.env` |
 | Kubernetes / microk8s | Mount a Secret as a file and point `MY_KEK_FILE` at it |
 | Cloud Run | Expose a Secret Manager secret as a file or an environment variable |
-| AWS Lambda / ECS | Pass it from Secrets Manager or SSM Parameter Store (SecureString) |
+| AWS ECS | Pass it from Secrets Manager or SSM Parameter Store (SecureString) |
 
 - Give every process, such as web and worker, the same KEK.
 - The KEK never appears in logs or error messages (only the key ID does).
@@ -126,7 +126,7 @@ A leaked database dump and a leaked configuration together still do not expose t
   At start the server resolves the name to the key's ARN, and the key ID of the stored secrets is `awskms:` followed by that ARN.
   Pointing an alias at another key therefore changes nothing until the next start, and then only for new secrets: the secrets already stored keep naming the old key, so set it in `kms_key_previous` (see [Retire an AWS KMS key](#retire-an-aws-kms-key)).
   AWS managed keys (`alias/aws/...`) are rejected; only the AWS service that owns one can use it.
-- The server authenticates with the AWS SDK's default credential chain: on Lambda and ECS, the role of the function or task; on EC2, the instance profile; elsewhere, the environment (`AWS_ACCESS_KEY_ID` and the like) or the shared configuration files.
+- The server authenticates with the AWS SDK's default credential chain: on ECS, the role of the task; on EC2, the instance profile; elsewhere, the environment (`AWS_ACCESS_KEY_ID` and the like) or the shared configuration files.
   The region is that of the key's ARN; for an alias or a key ID, set `AWS_REGION`.
 - Allow `kms:Encrypt`, `kms:Decrypt`, and `kms:DescribeKey` on the key, for every process, such as web and worker, and for the commands `my kek status` and `my kek rewrap`. A policy of the IAM role:
 

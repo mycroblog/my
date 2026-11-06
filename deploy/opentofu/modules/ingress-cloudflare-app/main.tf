@@ -162,8 +162,8 @@ resource "cloudflare_dns_record" "host" {
 
   lifecycle {
     precondition {
-      condition     = var.rewrite_host_header || !(endswith(var.origin_host, ".run.app") || endswith(var.origin_host, ".on.aws"))
-      error_message = "A *.run.app or *.on.aws origin routes by Host, so it needs rewrite_host_header, which Cloudflare offers on the Enterprise plan only. On other plans, use an origin that accepts host: read the README."
+      condition     = var.rewrite_host_header || !endswith(var.origin_host, ".run.app")
+      error_message = "A *.run.app origin routes by Host, so it needs rewrite_host_header, which Cloudflare offers on the Enterprise plan only. On other plans, use an origin that accepts host: read the README."
     }
   }
 }

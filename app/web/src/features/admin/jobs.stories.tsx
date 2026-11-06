@@ -143,7 +143,7 @@ export const WithoutListing: Story = adminAnswering(
   http.get(`${apiBase}/admin/queue`, ({ request }) =>
     withViewer(request, () =>
       HttpResponse.json({
-        adapter: "sqs",
+        adapter: "cloudtasks",
         pending_listing: false,
         counts: [],
         waits: [],

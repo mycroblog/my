@@ -16,7 +16,7 @@
 
 | ID | 目標 |
 | --- | --- |
-| G1 | 費用を工夫で抑えられる: おひとりさま〜数十人規模なら、小さな VM 1 台（$4〜6/月）か、サーバーレス（Cloud Run / Lambda）とマネージド DB で動かせる。コストは設計の制約ではなく、できるところで減らす対象で、選択肢を費用だけで退けない。目安は [デプロイターゲット](../architecture/deployment-targets.md) に示す |
+| G1 | 費用を工夫で抑えられる: おひとりさま〜数十人規模なら、小さな VM 1 台（$4〜6/月）か、サーバーレス（Cloud Run / ECS Fargate）とマネージド DB で動かせる。コストは設計の制約ではなく、できるところで減らす対象で、選択肢を費用だけで退けない。目安は [デプロイターゲット](../architecture/deployment-targets.md) に示す |
 | G2 | 可搬性: Google Cloud / AWS / Self-hosted（Docker, microk8s）の 3 系統で同じコードベースが動く（Cloudflare Workers は対象外。[ADR-0002](../adr/0002-modular-monolith-hexagonal.md)） |
 | G3 | 差し替え可能性: RDB・キュー・ストレージ・メール等を設定で切り替えられ、利用者が独自アダプタを追加できる |
 | G4 | 相互運用性: Mastodon / Misskey / GoToSocial / Pleroma(Akkoma) と問題なく連合できる |

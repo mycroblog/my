@@ -6226,7 +6226,7 @@ type AdminPasswordResetLink struct {
 
 // AdminQueue The state of the job queue.
 type AdminQueue struct {
-	// Adapter The queue the server runs, the `queue` setting (`db`, `inline`, `sqs`, `cloudtasks`).
+	// Adapter The queue the server runs, the `queue` setting (`db`, `inline`, `cloudtasks`).
 	Adapter string `json:"adapter"`
 
 	// Counts The jobs by state (`queued`, `running`, `retrying`, `dead`) then type; states and
@@ -19474,8 +19474,8 @@ type ClientInterface interface {
 	//
 	// The jobs of the job queue by state and type, when the oldest due job has been waiting
 	// since, and what the queue can list. Every queue lists its pending jobs (`queued`,
-	// `running`, `retrying`): with Cloud Tasks and SQS the jobs are in the database too, and those
-	// services only signal them. `pending_listing` is `false` for a queue that cannot, and then
+	// `running`, `retrying`): with Cloud Tasks the jobs are in the database too, and that
+	// service only signals them. `pending_listing` is `false` for a queue that cannot, and then
 	// `counts` is empty, while `GET /admin/jobs?state=dead` and the attempts still list the dead
 	// jobs and the failed runs. Needs the `manage_jobs`
 	// permission; a user without it gets a 403 `/api/v1/problems/missing-permission`.
@@ -27226,8 +27226,8 @@ func (c *Client) GetPaymentStatus(ctx context.Context, reqEditors ...RequestEdit
 //
 // The jobs of the job queue by state and type, when the oldest due job has been waiting
 // since, and what the queue can list. Every queue lists its pending jobs (`queued`,
-// `running`, `retrying`): with Cloud Tasks and SQS the jobs are in the database too, and those
-// services only signal them. `pending_listing` is `false` for a queue that cannot, and then
+// `running`, `retrying`): with Cloud Tasks the jobs are in the database too, and that
+// service only signals them. `pending_listing` is `false` for a queue that cannot, and then
 // `counts` is empty, while `GET /admin/jobs?state=dead` and the attempts still list the dead
 // jobs and the failed runs. Needs the `manage_jobs`
 // permission; a user without it gets a 403 `/api/v1/problems/missing-permission`.
@@ -52612,8 +52612,8 @@ type ClientWithResponsesInterface interface {
 	//
 	// The jobs of the job queue by state and type, when the oldest due job has been waiting
 	// since, and what the queue can list. Every queue lists its pending jobs (`queued`,
-	// `running`, `retrying`): with Cloud Tasks and SQS the jobs are in the database too, and those
-	// services only signal them. `pending_listing` is `false` for a queue that cannot, and then
+	// `running`, `retrying`): with Cloud Tasks the jobs are in the database too, and that
+	// service only signals them. `pending_listing` is `false` for a queue that cannot, and then
 	// `counts` is empty, while `GET /admin/jobs?state=dead` and the attempts still list the dead
 	// jobs and the failed runs. Needs the `manage_jobs`
 	// permission; a user without it gets a 403 `/api/v1/problems/missing-permission`.
@@ -84115,8 +84115,8 @@ func (c *ClientWithResponses) GetPaymentStatusWithResponse(ctx context.Context, 
 //
 // The jobs of the job queue by state and type, when the oldest due job has been waiting
 // since, and what the queue can list. Every queue lists its pending jobs (`queued`,
-// `running`, `retrying`): with Cloud Tasks and SQS the jobs are in the database too, and those
-// services only signal them. `pending_listing` is `false` for a queue that cannot, and then
+// `running`, `retrying`): with Cloud Tasks the jobs are in the database too, and that
+// service only signals them. `pending_listing` is `false` for a queue that cannot, and then
 // `counts` is empty, while `GET /admin/jobs?state=dead` and the attempts still list the dead
 // jobs and the failed runs. Needs the `manage_jobs`
 // permission; a user without it gets a 403 `/api/v1/problems/missing-permission`.

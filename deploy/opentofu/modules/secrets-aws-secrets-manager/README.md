@@ -3,7 +3,7 @@
 Secrets in AWS Secrets Manager: ones the operator fills by hand, and a VAPID key that it can generate. It follows
 [the backend contract](../../README.md#the-backend-contract).
 
-**This module has never been applied.** The tests mock the provider, so they show that the configuration is consistent, not that AWS accepts it. It lacks a server that reads them: `app-aws-lambda` says why.
+**This module has never been applied.** The tests mock the provider, so they show that the configuration is consistent, not that AWS accepts it.
 
 ## Source
 

@@ -18,14 +18,14 @@ import (
 
 // setUpQueue builds the job queue that cfg.Queue selects, the runner of the worker role, and the
 // scheduler of the periodic jobs. The db queue is set with the database, before it, and so is the
-// database queue of cloudtasks and sqs with its waker: there a push receiver runs the jobs of
+// database queue of cloudtasks with its waker: there a push receiver runs the jobs of
 // the signals instead of a runner (ADR-0004 §10).
 func (a *App) setUpQueue(cfg *config.Config) error {
 	runnerOpts := a.runnerOptions()
 	switch cfg.Queue {
 	case "db":
 		// Set with the database above.
-	case "cloudtasks", "sqs":
+	case "cloudtasks":
 		// The jobs are in the database queue, whose operations are measured as queue.db.
 		a.Jobs = sysmetrics.Jobs(a.Jobs, a.Meter, "queue.db")
 		src := sysmetrics.Source(a.source, a.Meter, "queue.db")
@@ -145,14 +145,6 @@ func (a *App) setUpPushEndpoints(cfg *config.Config) {
 	a.Scheduler.UseSharedSlots(a.KV)
 	a.wakeSweeper = queue.NewWakeSweeper(queue.WakeSweepDeps{Finder: a.wakeFinder, Waker: a.waker, Clock: a.Clock})
 	a.trigger = queue.NewTrigger(a.Scheduler, a.wakeSweeper)
-	if cfg.Queue == "sqs" {
-		// The Lambda Web Adapter passes the SQS events of the signals and the ticks through.
-		queuepush.NewLambda(queuepush.LambdaOptions{
-			Receiver: a.pushReceiver, Trigger: a.trigger, Path: cfg.QueueSQSEventsPath, Budget: cfg.QueueSQSEventsBudget,
-			Problem: a.writeStatusProblem, Logger: a.Logger,
-		}).Register(internalRouter{a})
-		return
-	}
 	if a.pushAuth == nil {
 		a.pushAuth = newCloudTasksAuthenticator(cfg, a.HTTPClient, a.Clock)
 	}

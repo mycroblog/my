@@ -1,9 +1,8 @@
 # ingress-aws-cloudfront
 
-Traffic reaches the app through CloudFront at `host`, with no cache. A Function URL takes no custom domain, so a deployment on Lambda needs something in
-front of it to answer at `https://{host}`. It follows [the ingress contract](../../README.md#the-ingress-contract).
+Traffic reaches the app through CloudFront at `host`, with no cache. It follows [the ingress contract](../../README.md#the-ingress-contract).
 
-**This module has never been applied.** The tests mock the provider, so they show that the configuration is consistent, not that AWS accepts it. It needs `app-aws-lambda`, and what that module lacks.
+**This module has never been applied.** The tests mock the provider, so they show that the configuration is consistent, not that AWS accepts it. It does not yet work with `app-aws-ecs`.
 
 ## Source
 
@@ -34,7 +33,7 @@ module "ingress" {
 | `env` | `MY_TRUSTED_PROXY_HEADER`, `MY_ORIGIN_SECRET_HEADER` |
 | `secret_env` | `MY_ORIGIN_SECRET`, by reference |
 | `trusted_proxies` | The ranges of `CLOUDFRONT_ORIGIN_FACING` |
-| `service_ingress` | `all`: anyone can connect to the Function URL, and the server refuses what lacks the header |
+| `service_ingress` | `all`: anyone can connect to the origin, and the server refuses what lacks the header |
 | `dns_records` | What to create elsewhere: read [DNS](#dns) |
 | `dns_note` | What `dns_records` cannot say, or null |
 | `domain_name`, `hosted_zone_id` | Of the distribution, for records made elsewhere |
@@ -64,15 +63,13 @@ there. `host_is_apex` is an input because the labels of a name cannot tell: `soc
 
 ## What protects the origin: a header
 
-CloudFront sends `origin_secret_header` on every request to the origin, replacing what a viewer sent, and the server refuses a request without it with a `403`. So **a direct caller of the Function URL is refused**, whichever address it writes in `X-Forwarded-For`. Only the
-health checks and `POST` to `/_internal/...` are exempt, and the web function has no event path. The refusal is the server's: Lambda still runs the function for such a request, and bills it.
-
-An origin access control would close the URL in AWS itself, but then whoever sends a `POST` must send the SHA-256 of its body in `x-amz-content-sha256`, and Lambda takes no unsigned payload. A peer delivering an activity does not, so federation would stop.
+CloudFront sends `origin_secret_header` on every request to the origin, replacing what a viewer sent, and the server refuses a request without it with a `403`. So **a direct caller of the origin is refused**, whichever address it writes in `X-Forwarded-For`. Only the
+health checks and `POST` to `/_internal/...` are exempt.
 
 **The value is in the state.** The provider's `custom_header` has no write-only form, so nothing can keep it out, and generating it through an ephemeral resource would not help. The variable is sensitive, which keeps it out of what `tofu` prints, not out of the state. Keep the state private. Anyone who can
 read the distribution's configuration can read the value too.
 
-**This depends on what the server cannot yet do on Lambda**: it reads `MY_ORIGIN_SECRET` through `SECRET_ARN_MY_ORIGIN_SECRET`, like every secret there, which `app-aws-lambda` says is missing. Nothing has been run, so the `403` is what the server documents rather than what has been seen.
+Nothing has been run, so the `403` is what the server documents rather than what has been seen.
 
 To rotate the value, follow [the steps in the CDN guide](../../../../docs/operations/cdn.md#rotate-the-value).
 
@@ -81,8 +78,8 @@ To rotate the value, follow [the steps in the CDN guide](../../../../docs/operat
 | Limit | Value | What it means |
 | --- | --- | --- |
 | Origin response timeout | 120 seconds without a quota increase | Streams send a heartbeat every 30 seconds. Jobs do not come through here, unlike Cloud Tasks on Google Cloud |
-| Request body | 64 GB | Above Lambda's 6 MB, so that one decides |
-| Trust list | 1,736 bytes in November 2026 | Part of the 4 KB of each function's environment, of which the example's other settings take about 1,100. `CLOUDFRONT` in full was 4,318 bytes, which does not fit. The plan fails if the total no longer does |
+| Request body | 64 GB | |
+| Trust list | 1,736 bytes in November 2026 | `CLOUDFRONT_ORIGIN_FACING` only; `CLOUDFRONT` in full was 4,318 bytes |
 
 The ranges come from AWS at plan time and change only when you apply. Whether a request's Host matters: the server verifies signatures against `host`, so losing the
 viewer's Host header is fine, but `account_domain` other than `host` compares the header and will not work through this module.
@@ -92,5 +89,5 @@ viewer's Host header is fine, but `account_domain` other than `host` compares th
 - Everything against a real account.
 - The names `Managed-CachingDisabled` and `Managed-AllViewerExceptHostHeader`. AWS's guide lists these policies without the prefix, and the provider's documentation
   says that the API adds it. A wrong name fails the plan.
-- The shape of `X-Forwarded-For` through CloudFront, a Function URL, and the adapter. Check the client addresses in the first request logs.
+- The shape of `X-Forwarded-For` through CloudFront and the origin. Check the client addresses in the first request logs.
 - Whether a stream of real-time updates passes through CloudFront as it is sent, with `RESPONSE_STREAM` behind it.

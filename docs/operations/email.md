@@ -74,8 +74,8 @@ configuration file.
 
 ### Amazon SES (API)
 
-When you run on AWS, `mail = ses` uses the SES v2 API. Credentials come from the AWS SDK's default chain (the execution role of
-Lambda or ECS, environment variables, the shared configuration file), so there is no secret to configure.
+When you run on AWS, `mail = ses` uses the SES v2 API. Credentials come from the AWS SDK's default chain (the task role of
+ECS, environment variables, the shared configuration file), so there is no secret to configure.
 
 1. In SES, verify the domain of `mail_from` as an identity and enable Easy DKIM (see below).
 2. Request production access to leave the sandbox. In the sandbox you can only send to verified addresses.

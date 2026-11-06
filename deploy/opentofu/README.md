@@ -36,7 +36,7 @@ deploy/opentofu/
   modules/billing-aws/                 the usage cost import from AWS, never applied
   modules/monitoring-gcp/              uptime check, log-based metrics, and alert policies
   examples/gcp-cloud-run-neon/    all of the above, composed, on Git sources at MODULE_REF
-  modules/*-aws-*/, examples/aws-lambda-neon/, examples/aws-ecs-neon/  the same on AWS, never applied: see "AWS: unverified" below
+  modules/*-aws-*/, examples/aws-ecs-neon/  the same on AWS, never applied: see "AWS: unverified" below
   upgrade.sh                      migration job first, then the service
   console.sh                      runs one my command through an app module's console
   aws-ecs.sh                      what those two share on ECS
@@ -94,7 +94,7 @@ A module of one cloud works only with that cloud's app. Every module says which 
 | `platform` | Modules | Apps |
 | --- | --- | --- |
 | `gcp` | Every module with `gcp` in its name | `app-gcp-cloud-run` |
-| `aws` | Every module with `aws` in its name | `app-aws-ecs`, `app-aws-lambda` |
+| `aws` | Every module with `aws` in its name | `app-aws-ecs` |
 | `neutral` | `db-external`, `db-neon`, `mail-smtp`, `blob-s3`, `blob-cloudflare-r2`, `kv-external`, `ingress-cloudflare-*`, `stream-valkey`, `stream-postgres`, `queue-db` | Every app |
 
 A network has a platform too, and every module that takes one refuses another platform's: [The network contract](#the-network-contract).
@@ -103,7 +103,7 @@ Mixing them would take identity bridges between clouds, and more combinations th
 
 **The one exception** is `billing-aws` with `web_identity = true` on `app-gcp-cloud-run`, since reading another cloud's costs is only an outside API call: [The billing modules](#the-billing-modules) has how. The validation of `backends` in that app is the only place that allows it. `billing-gcp` has no such exception, so a server on AWS does not import Google Cloud's costs through these modules.
 
-**`queue-db` needs a process that stays up**, so being neutral does not make it fit everywhere. `app-aws-ecs` takes it, and `app-aws-lambda` refuses it, since a function runs only during an invocation. `app-gcp-cloud-run` refuses it unless `min_instances` is at least 1 and `cpu_always_allocated` is `true`, which bills an instance all the time. Each refusal covers a deployment that names no queue, since `db` is the server's default.
+**`queue-db` needs a process that stays up**, so being neutral does not make it fit everywhere. `app-aws-ecs` takes it. `app-gcp-cloud-run` refuses it unless `min_instances` is at least 1 and `cpu_always_allocated` is `true`, which bills an instance all the time. Each refusal covers a deployment that names no queue, since `db` is the server's default.
 
 `scripts/task.sh tofu:backend-fields` fails when a module has no `platform`, or one that its name contradicts.
 
@@ -124,7 +124,6 @@ changing one module block:
 | `security_group_ids` (optional) | `list(string)` | Security groups the app joins to reach a backend in a VPC, on AWS, such as those of `db-aws-rds` and `kv-aws-elasticache` |
 | `private_network` (optional) | `string` | The network on which this backend has private addresses: `network` of the shape on Google Cloud, `vpc_id` on AWS. The app must have the same network, and a plan fails otherwise. Read [The network contract](#the-network-contract) |
 | `invokers` (optional) | `list(string)` | Service accounts that call the app and need permission to invoke it, on a platform where something calls it |
-| `event_sources` (optional) | `map(object({ arn, visibility_timeout_seconds }))` | Queues that the platform polls to invoke the app, on a platform where the app is invoked that way |
 | `workers` (optional) | `map(list(string))` | The job types of each worker that a queue module was given. The app must have been given the same, and a plan fails otherwise. Read [Workers](#workers) |
 | `pool_max_conns` (optional) | `number` | `pool_max_conns` of the database URL, or `0` for the server's default, where a `db-*` module knows it: what the `concurrency` of a worker must stay below |
 | `billing_sources` (optional) | `list(string)` | What this module adds to the one setting `MY_BILLING_SOURCES`, which the app sets from all of them |
@@ -134,7 +133,7 @@ A permission means what the platform's IAM means: what the identity is permitted
 | Platform | `permission` | `scope` | `resource` | `conditions` |
 | --- | --- | --- | --- | --- |
 | Google Cloud | A role, such as `roles/storage.objectUser` | `project`, `bucket`, `topic`, `queue`, `service_account`, `crypto_key`, `dataset`, or `subscription`, each a different kind of binding | The resource's name. For `project`, null is the app's project, and otherwise another project's ID. For `dataset`, `projects/<project>/datasets/<dataset>`, and the permission is what an access entry holds | Not available |
-| AWS | One IAM action, such as `sqs:SendMessage` | None: every grant is a statement of one policy | An ARN or an ARN pattern, or `*` | Optional: `{ test, variable, values }` of the statement |
+| AWS | One IAM action, such as `s3:GetObject` | None: every grant is a statement of one policy | An ARN or an ARN pattern, or `*` | Optional: `{ test, variable, values }` of the statement |
 
 The service and its jobs share one identity, so a grant reaches them all. The app grants each permission on that resource alone, so a
 backend asks for as little as it can. Google Cloud's app keys one resource on each grant, so it reads the names of `permissions` and
@@ -215,13 +214,13 @@ it sits beside any other. A Cloudflare zone has one ruleset per phase, so two mo
 takes the other's `rules` as `extra_rules`.
 
 Swapping one for another changes its block, and `service_ingress` of the app if the new one needs another setting, which the plan says. `service_ingress` of Cloud Run's app is
-required and has no default, so nothing opens a service by accident: [its README](modules/app-gcp-cloud-run/README.md#who-may-reach-the-service) has what each setting means. Neither AWS app has such an input, because each has one setting that works:
-a Function URL accepts `all`, and ECS accepts `load-balancer`, and each refuses the others. An ingress may also be left out, for a deployment that uses the
+required and has no default, so nothing opens a service by accident: [its README](modules/app-gcp-cloud-run/README.md#who-may-reach-the-service) has what each setting means. AWS's app has no such input, because one setting works:
+ECS accepts `load-balancer`, and refuses the others. An ingress may also be left out, for a deployment that uses the
 service's own URL or has something else in front. Remove the block and that line: `MY_TRUSTED_PROXIES` is then only what the platform puts in front, or what `env` of the app says. Setting
 it in `env` beside an ingress that names proxies fails the plan, and so do two ingresses that both name them.
 
 An ingress closes the origin in one of three ways: on the platform (`ingress-gcp-load-balancer`, `ingress-aws-alb`), with a header that the server checks (`ingress-cloudflare-app`, `ingress-aws-cloudfront`), or not at all (`ingress-gcp-domain-mapping`). A module that sets the header returns `MY_ORIGIN_SECRET_HEADER` in `env` and `MY_ORIGIN_SECRET` by reference in `secret_env`, and takes the value as a sensitive input.
-**That value lands in the state**: neither provider has a write-only form of it. So this is the one place that breaks the rule below that no secret value reaches the state, and the state must be kept private. Two modules must not name those settings twice, so `ingress-cloudflare-media` beside `ingress-cloudflare-app` leaves them out and comes through `extra_rules`.
+**That value lands in the state**: the provider has no write-only form of it. So this is the one place that breaks the rule below that no secret value reaches the state, and the state must be kept private. Two modules must not name those settings twice, so `ingress-cloudflare-media` beside `ingress-cloudflare-app` leaves them out and comes through `extra_rules`.
 
 ## The network contract
 
@@ -271,7 +270,7 @@ Keep every range in RFC 1918: an app with egress for private ranges sends only t
 | `vpc_cidr` | `string` | Its primary range, which the load balancer's group allows out to reach the tasks |
 | `public_subnet_ids` | `list(string)` | Subnets with a route to an internet gateway: the load balancer's, in two zones or more, and the tasks' with `assign_public_ip` |
 | `public_subnet_cidrs` | `list(string)` | The range of each of those, in the same order, which is what the server trusts behind the load balancer |
-| `private_subnet_ids` | `list(string)` | Subnets for RDS, in two zones or more, ElastiCache, Lambda, and the tasks without `assign_public_ip` |
+| `private_subnet_ids` | `list(string)` | Subnets for RDS, in two zones or more, ElastiCache, and the tasks without `assign_public_ip` |
 | `nat` | `bool` | Whether the private subnets reach the internet, through a NAT gateway or anything else that does it |
 
 ### Who takes it
@@ -282,10 +281,9 @@ Keep every range in RFC 1918: an app with egress for private ranges sends only t
 | `db-gcp-cloud-sql` | A private address alone, reached over TCP | A public address that only the connector reaches, which needs no VPC |
 | `kv-gcp-memorystore` | Required | Refused: only Private Service Connect reaches it |
 | `app-aws-ecs` | Required: a task is always in a VPC | Refused |
-| `app-aws-lambda` | Every function attaches to the private subnets | Attaches nothing: enough for everything on public endpoints |
 | `db-aws-rds`, `kv-aws-elasticache`, `ingress-aws-alb` | Required | Refused: they live in a VPC |
 
-Nothing else takes one. `ingress-gcp-load-balancer` reaches the service through a serverless network endpoint group, and `ingress-aws-cloudfront` through its Function URL, so neither has an address in a VPC.
+Nothing else takes one. `ingress-gcp-load-balancer` reaches the service through a serverless network endpoint group, so it has no address in a VPC.
 
 ### The way out to the internet
 
@@ -297,7 +295,6 @@ An instance that runs jobs must reach anyone, since federation does, so **a plan
 | `app-gcp-cloud-run` with `vpc_egress = ALL_TRAFFIC` | Through Cloud NAT | **Refused** |
 | `app-aws-ecs` with `assign_public_ip = true` | Not used: a public subnet, with the task's own address | Fine |
 | `app-aws-ecs` with `assign_public_ip = false` | A private subnet, through the gateway | **Refused** |
-| `app-aws-lambda` with a network | A private subnet, through the gateway | **Refused**: an attached function has no public address, and a public subnet does not give it one |
 
 `nat` of a VPC of yours is what you say of it: set it when the private subnets, or the subnet of Cloud Run, reach the internet by whatever means. Nothing reads the routes.
 
@@ -343,7 +340,6 @@ Most backends are reached over the internet with the platform's own identity, an
 | --- | --- | --- | --- |
 | Google Cloud, AWS | `private_network` | Fails the plan unless its own `network` is that one | `kv-gcp-memorystore`, `db-gcp-cloud-sql` with a network, `db-aws-rds`, `kv-aws-elasticache` |
 | ECS | `security_group_ids` | The service and every one-off task join each group | `db-aws-rds`, `kv-aws-elasticache` |
-| Lambda | `security_group_ids` | Every function joins each group | `db-aws-rds`, `kv-aws-elasticache` |
 
 The server has one Valkey setting for `kv` and `stream`, so `MY_VALKEY_URL` has one owner: `url_secret_id` of `stream-valkey` is
 null beside a `kv-*` module. Both managed Valkey modules bill while the server is idle, and each README says what it costs.
@@ -376,20 +372,20 @@ module "app" {
 
 The key names everything, and whatever no worker names goes to the default service, which an app always has. **An empty `workers`, the default, plans as if it were not there**, with one service and one queue. Each is derived from inputs, not from created resources, so nothing is circular: the queue builds a service's URL from its name as it does for the default.
 
-| | `queue-gcp-cloud-tasks` on Cloud Run | `queue-db` on Cloud Run or ECS | `queue-aws-sqs` on Lambda |
-| --- | --- | --- | --- |
-| A worker | A service `<app>-<key>`, a queue `<queue>-<key>` | A service `<app>-<key>`, no queue | A function `<app>-worker-<key>`, a queue `<queue>-<key>` |
-| How jobs reach it | `MY_QUEUE_CLOUDTASKS_ROUTES`, to its queue and its deterministic URL | `MY_WORKER_JOB_TYPES`, and `MY_WORKER_JOB_TYPES_EXCEPT` of the default with every type of every worker | `MY_QUEUE_SQS_ROUTES`, and an event source mapping |
-| `concurrency` | Requests of an instance at once, since one signal is one job | `MY_WORKER_JOB_CONCURRENCY` | Maximum concurrency of the mapping, at least 2 |
+| | `queue-gcp-cloud-tasks` on Cloud Run | `queue-db` on Cloud Run or ECS |
+| --- | --- | --- |
+| A worker | A service `<app>-<key>`, a queue `<queue>-<key>` | A service `<app>-<key>`, no queue |
+| How jobs reach it | `MY_QUEUE_CLOUDTASKS_ROUTES`, to its queue and its deterministic URL | `MY_WORKER_JOB_TYPES`, and `MY_WORKER_JOB_TYPES_EXCEPT` of the default with every type of every worker |
+| `concurrency` | Requests of an instance at once, since one signal is one job | `MY_WORKER_JOB_CONCURRENCY` |
 
-| Field | Cloud Run | ECS | Lambda | Otherwise |
-| --- | --- | --- | --- | --- |
-| `job_types` | Required | Required | Required | Names and prefixes, as [the server reads them](../../docs/operations/running.md#splitting-workers-by-job-type) |
-| `min_instances`, `max_instances` | Yes | | | The service's. With `queue-db`, `min_instances` is 1 and must stay at least that |
-| `instances` | | Yes | | 1 task. ECS here has no scaling |
-| `cpu`, `memory_mib` | Yes | Yes | `memory_mib` | The service's, or the worker function's |
-| `concurrency` | Yes | Yes | Yes | As in the table above |
-| `max_concurrent_dispatches`, `max_dispatches_per_second` | With Cloud Tasks | | | The queue's input, and Cloud Tasks' own default |
+| Field | Cloud Run | ECS | Otherwise |
+| --- | --- | --- | --- |
+| `job_types` | Required | Required | Names and prefixes, as [the server reads them](../../docs/operations/running.md#splitting-workers-by-job-type) |
+| `min_instances`, `max_instances` | Yes | | The service's. With `queue-db`, `min_instances` is 1 and must stay at least that |
+| `instances` | | Yes | 1 task. ECS here has no scaling |
+| `cpu`, `memory_mib` | Yes | Yes | The service's |
+| `concurrency` | Yes | Yes | As in the table above |
+| `max_concurrent_dispatches`, `max_dispatches_per_second` | With Cloud Tasks | | The queue's input, and Cloud Tasks' own default |
 
 **A plan refuses** a field that nothing reads or that the platform and queue do not have, since a conversion would drop it without a word; a key that cannot name things or that a deployment already uses; a name or prefix that matches no job type; a type on two workers; a `concurrency` outside 1 to 128, or known not to be below the pool of the database; a queue module given other workers than the app, since a process with other routes undoes the split without an error; `stream = hub`, which would keep a job's updates in the process that ran it; and **a split of the types that must stay on one worker**, which [the guide](../../docs/operations/running.md#splitting-workers-by-job-type) lists. A prefix covers its types, so `federation.*` keeps them together.
 
@@ -399,7 +395,7 @@ What a worker has of the app: the image, the settings, the secrets with `direct_
 
 **One audience, and one account, across the services of Cloud Tasks.** A process checks a token against `queue_cloudtasks_url` plus the path, unless `queue_cloudtasks_audience` is set. That same URL is where the process sends the tasks of the default queue, so a worker cannot name its own URL there without taking those tasks. So with workers the queue module sets one audience, the default service's URL, for every process and for the tick, and a worker's service accepts it as a custom audience, which Cloud Run's own check of the token needs. There is one invoker account rather than one per service, because the server creates every task with the one `queue_cloudtasks_service_account` and accepts only that, and a route cannot name another.
 
-`upgrade.sh` finds the workers on the platform and moves each after the migration and before the default: by a label on Cloud Run, by being in the cluster on ECS, and by the name on Lambda. `--maintenance` puts them in the mode as well. `monitoring-gcp` takes the same `workers`, so that the lines of a job count wherever it ran.
+`upgrade.sh` finds the workers on the platform and moves each after the migration and before the default: by a label on Cloud Run, and by being in the cluster on ECS. `--maintenance` puts them in the mode as well. `monitoring-gcp` takes the same `workers`, so that the lines of a job count wherever it ran.
 
 Never applied, like everything here. Unverified: that Cloud Run accepts a token whose audience is a custom one on a service that shares it with no other, on the URL that Cloud Tasks counts as internal, and that the same value of audience on several services is allowed, which Google's page does not say; that `gcloud`'s filter finds a service by that label; and that `role = worker` answers Cloud Run's probes as the configuration reference says it does.
 
@@ -428,37 +424,31 @@ tofu output -json console | deploy/opentofu/console.sh admin create -username al
 [`upgrade.sh`](upgrade.sh) runs the same steps in the same order on every platform: the one-off migration takes the new image, then
 `config check`, `db upgrade -check`, `schema apply`, `db upgrade`, and only then the service. Each platform is a few functions there,
 chosen by `--platform`, which is `gcp-cloud-run` unless you say otherwise. What holds a bad image back is the platform's: Cloud Run
-gives a revision no traffic until `/readyz` answers, ECS goes back when a new task fails its load balancer's check, and Lambda has nothing like that.
+gives a revision no traffic until `/readyz` answers, and ECS goes back when a new task fails its load balancer's check.
 
 ## AWS: unverified
 
-The modules for AWS test whether this contract holds on a second platform, in two shapes. **None has ever been applied**, so use Google Cloud unless you mean to be the first.
+The modules for AWS test whether this contract holds on a second platform. **None has ever been applied**, so use Google Cloud unless you mean to be the first.
 
-`app-aws-ecs` runs the released image as it is, with its secrets from ECS and its one-off commands as tasks, so nothing is known to be missing: `modules/app-aws-ecs/README.md` says what stays unverified and what it costs. Unlike the others it costs money while idle.
-
-**A deployment cannot run on `app-aws-lambda` yet.** `modules/app-aws-lambda/README.md` says in detail what is missing, which comes to:
-
-- the server does not read a secret from Secrets Manager, and Lambda delivers none itself;
-- no released image runs on Lambda: it needs a single-architecture build with the Lambda Web Adapter, in ECR;
-- `my` has no way to run one command in an invocation, which the migration and the console need.
+`app-aws-ecs` runs the released image as it is, with its secrets from ECS and its one-off commands as tasks, so nothing is known to be missing: `modules/app-aws-ecs/README.md` says what stays unverified and what it costs. Unlike Cloud Run it costs money while idle.
 
 | Module | Replaces on AWS |
 | --- | --- |
-| `app-aws-lambda`, `app-aws-ecs` | `app-gcp-cloud-run` |
+| `app-aws-ecs` | `app-gcp-cloud-run` |
 | `db-aws-rds` | `db-gcp-cloud-sql` |
-| `queue-aws-sqs` (Lambda), `queue-db` (ECS) | `queue-gcp-cloud-tasks` |
+| `queue-db` | `queue-gcp-cloud-tasks` |
 | `blob-aws-s3` | `blob-gcp-gcs` |
 | `stream-aws-sns` | `stream-gcp-pubsub` |
 | `mail-aws-ses` | Beside `mail-smtp`, which works unchanged |
 | `secrets-aws-secrets-manager` | `secrets-gcp-secret-manager` |
 | `kek-aws-secrets-manager`, `kek-aws-kms` | `kek-gcp-secret-manager`, `kek-gcp-kms` |
-| `ingress-aws-cloudfront` (Lambda), `ingress-aws-alb` (ECS) | `ingress-gcp-domain-mapping`, `ingress-gcp-load-balancer` |
+| `ingress-aws-alb`, `ingress-aws-cloudfront` | `ingress-gcp-domain-mapping`, `ingress-gcp-load-balancer` |
 | `billing-aws` | `billing-gcp`, and it also runs on Google Cloud's app: read [The billing modules](#the-billing-modules) |
 | `monitoring-aws` | `monitoring-gcp` |
 
-`db-external`, `db-neon`, `mail-smtp`, and `ingress-cloudflare-app` take the same blocks, with an ARN where Google Cloud has a secret's ID. The app's `backends`
-tests show that a block of one platform fails the plan on the other's app. `examples/aws-lambda-neon` and `examples/aws-ecs-neon` compose them, and their tests swap each block
-their comments name; those tests mock the provider. Either shape's app refuses the queue and the ingress of the other at plan time.
+`db-external`, `db-neon`, and `mail-smtp` take the same blocks, with an ARN where Google Cloud has a secret's ID. The app's `backends`
+tests show that a block of one platform fails the plan on the other's app. `examples/aws-ecs-neon` composes them, and its tests swap each block
+its comments name; those tests mock the provider.
 
 ## Checks
 

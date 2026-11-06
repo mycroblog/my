@@ -11,7 +11,7 @@
 // returns an error only when it enqueued no job: a failure of the run after the jobs were stored
 // is left to the runner's log and the next run.
 //
-// Options.MaxDelay emulates a queue service with a delay limit (SQS allows 15 minutes): jobs
+// Options.MaxDelay emulates a queue service with a delay limit (Cloud Tasks allows 30 days): jobs
 // further in the future become visible at the limit, and the runner re-enqueues them until
 // their RunAt (the re-enqueue chain).
 package inline

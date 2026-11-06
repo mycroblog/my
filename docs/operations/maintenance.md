@@ -25,7 +25,6 @@ With [`origin_secret`](cdn.md#refuse-requests-that-did-not-come-through-the-cdn)
 | `GET /api/v1/instance/health` | `503` | `{"status":"maintenance"}` |
 | The rest of the client API (`/api/*`) and the OAuth endpoints that answer JSON | `503` | `application/problem+json` of type `/api/v1/problems/maintenance`, with `message`, `until`, and `status_page_url` when set |
 | ActivityPub (by path, `Accept`, or `Content-Type`), WebFinger, host-meta, NodeInfo, the payment webhooks, the Cloud Tasks and Cloud Scheduler calls (`/_internal/*`) | `503` | `{"error":"maintenance"}` |
-| A `POST` that the Lambda Web Adapter passes through (`x-amzn-request-context: null`, an SQS event), at any path | `503` | `{"batchItemFailures":[...]}` listing every record, for SQS to deliver them again |
 | Anything else (pages, the web client, its assets, form posts) | `503` | The maintenance page, or the problem when `Accept` asks for JSON |
 
 Every response has `Retry-After` and `Cache-Control: no-store`. `Retry-After` counts the seconds to `maintenance_until` while it is ahead
@@ -60,13 +59,13 @@ A stop longer than a day or two is not a maintenance: close the service instead 
 1. **Announce it.** Post the window on the status page (`status_page_url`) and as an announcement (Administration → Announcements) a while ahead.
    Set `maintenance_message` and `maintenance_until` in the deployment's configuration, and refresh the exported pages
    (`my maintenance export`) if the front end serves them.
-2. **Stop the push queues** (Cloud Tasks, SQS with Lambda) — see [below](#push-queues). Otherwise every delivery during the window
+2. **Stop the push queue** (Cloud Tasks) — see [below](#push-queues). Otherwise every delivery during the window
    is a `503` that uses up one of the task's attempts.
 3. **Switch to the maintenance mode**: redeploy with `MY_MAINTENANCE=true` (per target below). Every replica restarts in the maintenance mode;
    the load balancer keeps them because `/readyz` answers `200`.
 4. **Do the work.**
 5. **Switch back**: redeploy without `MY_MAINTENANCE` (or with `false`), check that `/readyz` and `/api/v1/instance/health` answer `{"status":"ok"}`,
-   then resume the push queues and close the announcement.
+   then resume the push queue and close the announcement.
 
 ### Push queues
 
@@ -81,17 +80,6 @@ A stop longer than a day or two is not a maintenance: close the service instead 
   Pause the Cloud Scheduler job of `/_internal/tick` too (`gcloud scheduler jobs pause` / `resume`), or let its calls fail with `503` meanwhile.
   The jobs themselves are in the database: a task that used up its attempts loses only its signal, and the first tick after the work signals
   every job that is due again.
-
-- **SQS with Lambda**: disable the event source mapping, which stops the polling and the invocations, and enable it after the work.
-  Otherwise the maintenance mode answers every SQS event that the Lambda Web Adapter passes through with all its records in `batchItemFailures`, so each
-  delivery raises the message's receive count, and a message that reaches the redrive policy's `maxReceiveCount` moves to the dead-letter queue.
-  Disable the EventBridge Scheduler schedule of the tick too (`aws scheduler update-schedule ... --state DISABLED`), or let its messages wait in the queue.
-  The jobs themselves are in the database: a lost signal is recovered by the first tick after the work.
-
-  ```sh
-  aws lambda update-event-source-mapping --uuid <mapping-uuid> --no-enabled
-  aws lambda update-event-source-mapping --uuid <mapping-uuid> --enabled
-  ```
 
 ## Per target
 
@@ -126,15 +114,11 @@ defaultCustomErrorResponsePolicy:
       overrideResponseCode: 503
 ```
 
-### AWS Lambda
+### AWS ECS
 
-Update the function's environment, which publishes the change to the next invocations, and remove the variable afterwards.
-`update-function-configuration` replaces the whole set of variables, so pass all of them.
-
-```sh
-aws lambda update-function-configuration --function-name my \
-  --environment "Variables={MY_HOST=social.example,MY_MAINTENANCE=true,...}"
-```
+Register a revision of the service's task definition with `MY_MAINTENANCE=true` in the container's environment, update the service to it,
+and do the same without the variable afterwards. With the OpenTofu modules, `deploy/opentofu/upgrade.sh --platform aws-ecs --maintenance`
+switches the service to the maintenance mode before an upgrade, and back with the new revision.
 
 **When `my serve` cannot run** behind CloudFront: upload the exported `index.html` to an S3 bucket that is a second origin
 (the error page cannot come from the failing origin), and add custom error responses for `502` and `504` (and `503` only while `my serve` cannot run)

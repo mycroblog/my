@@ -109,15 +109,12 @@ func (a *App) openDatabase(ctx context.Context, cfg *config.Config) (*repositori
 func queueInDatabase(q string) bool { return q == "db" || hasWaker(q) }
 
 // hasWaker reports whether the queue is the database queue with an external queue carrying its
-// wake-up signals: cloudtasks and sqs (ADR-0004).
-func hasWaker(q string) bool { return q == "cloudtasks" || q == "sqs" }
+// wake-up signals: cloudtasks (ADR-0004).
+func hasWaker(q string) bool { return q == "cloudtasks" }
 
 // newWaker returns the waker of the default queue of cfg, which hasWaker accepts, and what
 // releases its client.
 func newWaker(ctx context.Context, cfg *config.Config, clock kernel.Clock, reporter kernel.ErrorReporter) (queue.Waker, io.Closer, error) {
-	if cfg.Queue == "sqs" {
-		return newSQSWaker(ctx, cfg.QueueSQSQueueURL, clock)
-	}
 	return newCloudTasksWaker(ctx, cfg, config.QueueRoute{Queue: cfg.QueueCloudTasksQueue, URL: cfg.QueueCloudTasksURL}, clock, reporter)
 }
 
@@ -144,8 +141,6 @@ func (a *App) routeWaker(ctx context.Context, cfg *config.Config, stand func(con
 			switch {
 			case stand != nil:
 				w = stand(target)
-			case cfg.Queue == "sqs":
-				w, closer, err = newSQSWaker(ctx, r.Queue, a.Clock)
 			default:
 				w, closer, err = newCloudTasksWaker(ctx, cfg, target, a.Clock, a.ErrorReporter)
 			}

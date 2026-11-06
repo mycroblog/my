@@ -135,7 +135,7 @@ module "app" {
   desired_count    = var.desired_count
   console_enabled  = var.console_enabled
 
-  # The whole of the ingress, unlike on Lambda: it reads nothing of the app, so there is no cycle.
+  # The whole of the ingress: it reads nothing of the app, so there is no cycle.
   backends = [module.secrets, module.kek, module.db, module.queue, module.blob, module.stream, module.mail, module.ingress]
 
   env        = var.env

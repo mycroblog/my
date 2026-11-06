@@ -65,7 +65,7 @@ The web client's Service Worker does not cache media from another origin and lea
 
 ## Refuse requests that did not come through the CDN
 
-A CDN protects the server only from the requests that pass through it. When the origin is also reachable on its own address, as `*.run.app` on Cloud Run with traffic from the internet or a Lambda Function URL always is, anyone can call it directly, past the WAF and the cache.
+A CDN protects the server only from the requests that pass through it. When the origin is also reachable on its own address, as `*.run.app` on Cloud Run with traffic from the internet is, anyone can call it directly, past the WAF and the cache.
 If the CDN's addresses are in `trusted_proxies`, a caller on the CDN's own serverless platform (a Cloudflare Worker of their own, say) also connects from a trusted address and can choose the client IP that the rate limits see.
 
 The three settings below close this. The CDN adds a secret header to every request it forwards, and the server answers `403` to any request without it, before it does anything else with the request.
@@ -88,7 +88,6 @@ With none of them set, nothing is checked and the server behaves as if this sect
 | --- | --- |
 | `GET` or `HEAD` of `/healthz`, `/readyz`, `/api/v1/instance/health` | The platform's probes and uptime monitors call them directly |
 | `POST` to `/_internal/` paths | Cloud Tasks and Cloud Scheduler call them on the server's own URL. They carry their own signed token |
-| The SQS events that the Lambda Web Adapter passes through to `queue_sqs_events_path` (`queue = sqs`) | They come from inside the Lambda function, and no CDN sees them |
 
 Everything else needs the header, in the maintenance mode too: the web client and its assets, `/media/`, the client API, OAuth, and ActivityPub, including the deliveries of other servers.
 So anything that calls the server directly by its own address, instead of through the CDN, is refused: a webhook of your own, a voice media server, a script. Point it at the CDN's host name.

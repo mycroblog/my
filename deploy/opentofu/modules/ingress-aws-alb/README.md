@@ -39,6 +39,7 @@ module "ingress" {
 | `dns_records` | What to create elsewhere, as [`ingress-aws-cloudfront`](../ingress-aws-cloudfront/README.md#dns) does |
 | `dns_note` | What `dns_records` cannot say, or null |
 | `domain_name`, `hosted_zone_id` | Of the load balancer, for records made elsewhere |
+| `arn_suffix` | The load balancer's dimension in CloudWatch, which `load_balancer_arn_suffix` of `monitoring-aws` takes |
 
 It reads nothing of the app, so `backends` can name the whole module. The certificate is an input: create it first, since validating it within the apply would hold the apply until you add records that only the apply prints.
 

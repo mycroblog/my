@@ -1,9 +1,8 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 
-variable "service_name" {
-  description = "The app module's name. The alarms read its web function, <service_name>-web."
+variable "load_balancer_arn_suffix" {
+  description = "arn_suffix of ingress-aws-alb: the HTTP alarms read the load balancer's metrics."
   type        = string
-  default     = "my"
   nullable    = false
 }
 
@@ -22,13 +21,6 @@ variable "name" {
 variable "host" {
   description = "Host that the canary calls: the public domain, or the app module's origin_host when no ingress is in front."
   type        = string
-  nullable    = false
-}
-
-variable "queue_name" {
-  description = "The name of the job queue of queue-aws-sqs, whose age of the oldest message stands in for the queue's."
-  type        = string
-  default     = "my-jobs"
   nullable    = false
 }
 
@@ -66,7 +58,7 @@ variable "page_notification_topic_arns" {
 }
 
 variable "uptime_period_minutes" {
-  description = "How often the canary runs, in minutes, from 1 to 60. Every run is billed, wakes a function, and through /readyz a scale-to-zero database. The README says what that costs."
+  description = "How often the canary runs, in minutes, from 1 to 60. Every run is billed, and through /readyz it wakes a scale-to-zero database. The README says what that costs."
   type        = number
   default     = 15
   nullable    = false

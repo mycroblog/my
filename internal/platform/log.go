@@ -18,7 +18,7 @@ func NewLogger(w io.Writer, level slog.Leveler) *slog.Logger {
 }
 
 // logSeverity is the ReplaceAttr of the process logger: it writes the record's level as level,
-// as before (the JSON log format of Lambda and the examples of alerts read it), followed by
+// as before (the examples of alerts read it), followed by
 // severity, which Cloud Logging reads instead (ADR-0103 §4 (1)): DEBUG, INFO, WARNING, ERROR,
 // and CRITICAL above ERROR. Only the record's own level is a slog.Level at the top level.
 func logSeverity(groups []string, a slog.Attr) slog.Attr {

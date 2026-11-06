@@ -31,7 +31,7 @@ Remote servers ──AP──►│                               │
                 ▲  ports (interfaces) — application 層が定義
         ┌───────┴─────────── Outbound adapters（設定で選択）────────────────────┐
         │ DB: sqlite │ postgres                                                 │
-        │ Queue: db │ sqs │ cloud-tasks │ inline                                │
+        │ Queue: db │ cloud-tasks │ inline                                      │
         │ Blob: fs │ s3-compatible(S3/R2/GCS/MinIO)                             │
         │ KV/Cache: db │ memory │ valkey(任意。Redis 互換)                        │
         │ Mail: none │ smtp │ ses │ http-api   Push: webpush                    │
@@ -107,7 +107,7 @@ DB アダプタの実装は受け取った `uow.Tx` から自分のトランザ�
 ジョブキューのポート（`JobQueue` / `Outbox` / `JobHandlerRegistry` / `JobRunner`）も全モジュールと全キューアダプタが共有するので `internal/app/queue` に置く。
 ここにはリトライ方針（指数バックオフ + ジッタ）と、キューアダプタの `queue.Source` を駆動する pull runner、プロセス内の `Scheduler` も置く。
 `Scheduler` は定期ジョブを周期ごとの冪等キー付きで enqueue するだけで、worker と all のロールで動く。
-Cloud Tasks・SQS のキュー（[ADR-0004](../adr/0004-job-queue-abstraction.md)）でもジョブは DB の `jobs` に置き、外部のキューはジョブの ID を運ぶ合図（`queue.Waker`）だけを持つ。
+Cloud Tasks のキュー（[ADR-0004](../adr/0004-job-queue-abstraction.md)）でもジョブは DB の `jobs` に置き、外部のキューはジョブの ID を運ぶ合図（`queue.Waker`）だけを持つ。
 合図を受ける push receiver（`PushReceiver`）・取りこぼした合図を拾う掃除 `queue.wake`（`WakeSweeper`）・外部のスケジューラから `Scheduler.Tick` と掃除を 1 回ずつ動かす tick（`Trigger`）も `internal/app/queue` に置く。
 掃除は合図を運ぶキューを通らないよう、ジョブとして積まず tick の中で動かす。周期の 2 回目の投入は `Scheduler.UseSharedSlots` で KV に記録した周期の枠で防ぐ。
 ジョブの構成・ライフサイクル・fan-out の図は [ジョブの全体像](job-system.md) にまとめる。
@@ -120,7 +120,7 @@ Blob のキーはサーバーが生成し、`blob.ValidateKey` の構文（`[A-Z
 | `Repositories` / `UnitOfWork` | 永続化。書き込みは **短く再実行可能なトランザクション** 単位 | sqlite / postgres | [0003](../adr/0003-database-abstraction.md) |
 | `JobQueue` | ジョブ投入（遅延・冪等キー付き） | db | [0004](../adr/0004-job-queue-abstraction.md) |
 | `JobRunner` | ジョブ実行（pull ループ or push 受信。push は合図のジョブを ID で claim する） | db（pull） | [0004](../adr/0004-job-queue-abstraction.md), [0120](../adr/0004-job-queue-abstraction.md) |
-| `Scheduler` | 定期実行のトリガー。常駐しないターゲットでは Cloud Scheduler・EventBridge Scheduler の tick が起こす | in-process cron | [0004](../adr/0004-job-queue-abstraction.md), [0120](../adr/0004-job-queue-abstraction.md) |
+| `Scheduler` | 定期実行のトリガー。常駐しないターゲットでは Cloud Scheduler の tick が起こす | in-process cron | [0004](../adr/0004-job-queue-abstraction.md), [0120](../adr/0004-job-queue-abstraction.md) |
 | `BlobStore` | メディアの保存・署名付き URL | fs | [0005](../adr/0005-blob-storage-and-media.md) |
 | `MediaProcessor` | 用途ごとの S / M / L の版・アニメーションの静止版と動く版・EXIF 除去 | native | [0005](../adr/0005-blob-storage-and-media.md), [0054](../adr/0005-blob-storage-and-media.md) |
 | `KeyValueStore` | キャッシュ・レート制限・連合ライブラリ用 KV。任意の `valkey` は Valkey か Redis 互換のサーバーに置き、ADR-0003 と ADR-0019 の「Redis」の枠をこのアダプタで満たす | db | [0003](../adr/0003-database-abstraction.md), [0019](../adr/0019-security-baseline.md) |
@@ -153,7 +153,7 @@ Blob のキーはサーバーが生成し、`blob.ValidateKey` の構文（`[A-Z
 1. Client API の投稿作成 → `PostStatus` ユースケース
 2. ドメインで検証（文字数・公開範囲・メンション解決）→ `Status` を生成
 3. **1 回のトランザクション**（`UnitOfWork.Tx`）で `statuses` + 付随行を書き、同じトランザクションの同期 projector が `outbound_activities`（`Create`）と `jobs`（`federation.fanout` ジョブ）を書く（Transactional Outbox）
-4. コミットした分だけがワーカーに見える。Cloud Tasks・SQS のキューでは、コミットの後にジョブの ID の合図を送る（ADR-0004）
+4. コミットした分だけがワーカーに見える。Cloud Tasks のキューでは、コミットの後にジョブの ID の合図を送る（ADR-0004）
 5. ワーカー: `federation.fanout` が文書を 1 回だけ組み立て、公開範囲に応じて宛先 inbox を 500 件ずつ算出し（`local` はリモートフォロワーのみ）、**shared inbox 単位** の `deliveries` ごとに `federation.deliver{deliveryId}` を投入
 6. `federation.deliver` が署名付き POST。失敗時はバックオフで再投入、ドメインが連続失敗したら一時停止
 
@@ -224,8 +224,7 @@ Blob のキーはサーバーが生成し、`blob.ValidateKey` の構文（`[A-Z
 
 ```text
 cmd/
-  my/                # 単一バイナリ: serve / worker / cli（Self-hosted, Cloud Run, コンテナ）
-  my-lambda/         # AWS Lambda エントリ（Lambda Web Adapter で my を流用できるなら不要）
+  my/                # 単一バイナリ: serve / worker / cli（Self-hosted, Cloud Run, ECS Fargate, コンテナ）
 internal/
   domain/<module>/   # 純粋なドメイン（identity, account, content, graph, ...）
   app/<module>/      # ユースケースとポート定義
@@ -247,7 +246,7 @@ internal/
     web/             # Web クライアントの HTML の外枠（ランディングページ・インスタンスの情報ページ・プロフィール・投稿のリンクプレビューを含む）・ビルド成果物（dist/ を埋め込む）・Web アプリマニフェスト（ADR-0028）
   adapter/
     db/{sqlite,postgres}/
-    queue/{db,inline,sqs,cloudtasks}/
+    queue/{db,inline,cloudtasks}/
     blob/{fs,s3}/
     media/{native,vips,none}/
     kv/{db,memory,valkey}/

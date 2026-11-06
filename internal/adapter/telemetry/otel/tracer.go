@@ -22,7 +22,7 @@ const (
 	FlushBatch = "batch"
 	// FlushUnit also sends the recorded spans at the end of every HTTP request and job (the
 	// local root spans) before it returns, for the platforms that freeze or throttle an idle
-	// instance (Cloud Run with request-based billing, Lambda).
+	// instance (Cloud Run with request-based billing).
 	FlushUnit = "unit"
 )
 

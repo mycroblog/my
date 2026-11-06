@@ -3,7 +3,7 @@
 // when the oldest due job waits), then the jobs under tabs that filter by state, kept in the URL by the route
 // (web-client/README.md S3). Each job shows its state, why its last run failed, its keys and payload, and a disclosure with
 // the records of its runs that did not succeed; a dead job also has a button that runs it again, after which it leaves
-// the list and focus moves to the next job's button. A queue that cannot list its pending jobs (Cloud Tasks, SQS)
+// the list and focus moves to the next job's button. A queue that cannot list its pending jobs (Cloud Tasks)
 // says so, and still lists the dead jobs. The tabs follow the WAI-ARIA APG tabs pattern with automatic activation
 // (React Aria Tabs); only the selected panel is mounted.
 import {

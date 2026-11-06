@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 
 # The KEK in AWS Secrets Manager. This module generates it on the first apply: the value goes to Secrets Manager through an
-# ephemeral resource and a write-only attribute, so it reaches neither the plan nor the state. Lambda mounts nothing, so unlike
+# ephemeral resource and a write-only attribute, so it reaches neither the plan nor the state. Fargate mounts nothing, so unlike
 # kek-gcp-secret-manager it returns secret_env rather than secret_files.
 
 terraform {

@@ -30,7 +30,6 @@ It takes one input, `workers`, [the same value as the app](../../README.md#worke
 | --- | --- | --- |
 | `app-aws-ecs` | Yes | One process stays up |
 | `app-gcp-cloud-run` | Only with `min_instances` of at least 1 and `cpu_always_allocated = true` | By default instances scale to zero, with CPU only during requests, so jobs would run only while a request happens to be open. Read below, or use `queue-gcp-cloud-tasks` |
-| `app-aws-lambda` | No | A function runs only during an invocation, and nothing invokes it for this queue. Use `queue-aws-sqs` |
 
 A refusal covers `queue = db` however it is set, and also a deployment that names no queue, since that is the server's default.
 

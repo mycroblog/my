@@ -10,7 +10,7 @@
 // queries the database for it. When a part of the snapshot is older than its limit (QueueMaxAge,
 // TotalsMaxAge), the process that takes the lock in the KeyValueStore computes that part again;
 // the others report the older values. The periodic job JobSnapshot computes every part, so that
-// the targets without a scrape (Cloud Run, Lambda) get the values in their logs.
+// the targets without a scrape (Cloud Run, ECS) get the values in their logs.
 package metrics
 
 import (

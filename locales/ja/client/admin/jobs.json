@@ -113,7 +113,7 @@
   },
   "admin.jobs.queue.adapter": {
     "defaultMessage": "キュー",
-    "description": "Term in the queue's details: the kind of job queue the server runs, such as db or sqs."
+    "description": "Term in the queue's details: the kind of job queue the server runs, such as db or cloudtasks."
   },
   "admin.jobs.queue.by_state": {
     "defaultMessage": "状態ごとのジョブ",
@@ -129,7 +129,7 @@
   },
   "admin.jobs.queue.no_listing": {
     "defaultMessage": "このキューでは、待っている・実行中・リトライを待つジョブを一覧できません。滞留はプラットフォームの指標で確かめてください。失敗したジョブと試行の履歴は一覧できます。",
-    "description": "Note of the queue region when the queue (Cloud Tasks or SQS) cannot list its pending jobs."
+    "description": "Note of the queue region when the queue (Cloud Tasks) cannot list its pending jobs."
   },
   "admin.jobs.retried": {
     "defaultMessage": "ジョブ {type} をもう一度実行するようにキューに入れました。",
@@ -181,7 +181,7 @@
   },
   "admin.jobs.unlisted": {
     "defaultMessage": "このキューではこのジョブを一覧できません",
-    "description": "Heading in place of the list of pending jobs when the queue (Cloud Tasks or SQS) cannot list them."
+    "description": "Heading in place of the list of pending jobs when the queue (Cloud Tasks) cannot list them."
   },
   "admin.jobs.unlisted.description": {
     "defaultMessage": "滞留はプラットフォームの指標で確かめてください。失敗したジョブは「失敗」で一覧できます。",

@@ -83,9 +83,6 @@ type Config struct {
 	QueueCloudTasksServiceAccount   string
 	QueueCloudTasksAudience         string
 	QueueCloudTasksDispatchDeadline time.Duration
-	// QueueSQSQueueURL is the URL of the SQS standard queue of queue = sqs, QueueSQSEventsPath
-	// the path of its events from the Lambda Web Adapter, and QueueSQSEventsBudget how long an
-	// event may run when its request carries no deadline of the invocation.
 	// WorkerJobTypes and WorkerJobTypesExcept are the job types this process runs or skips, at
 	// most one of them set (ADR-0004).
 	WorkerJobTypes       []string
@@ -96,13 +93,9 @@ type Config struct {
 	// DatabaseAcquireTimeout bounds the wait for a connection of the pool of database = postgres; 0
 	// waits without a limit.
 	DatabaseAcquireTimeout time.Duration
-	// QueueSQSRoutes and QueueCloudTasksRoutes send the wake-up signals of some job types to their
-	// own queue (ADR-0004); read them with QueueRoutes.
-	QueueSQSRoutes        []QueueRoute
+	// QueueCloudTasksRoutes send the wake-up signals of some job types to their own queue
+	// (ADR-0004); read them with QueueRoutes.
 	QueueCloudTasksRoutes []QueueRoute
-	QueueSQSQueueURL      string
-	QueueSQSEventsPath    string
-	QueueSQSEventsBudget  time.Duration
 
 	Blob  string
 	Media string
@@ -364,9 +357,6 @@ func (c *Config) LogValue() slog.Value {
 		slog.String("queue_cloudtasks_service_account", c.QueueCloudTasksServiceAccount),
 		slog.String("queue_cloudtasks_audience", c.QueueCloudTasksAudience),
 		slog.Duration("queue_cloudtasks_dispatch_deadline", c.QueueCloudTasksDispatchDeadline),
-		slog.String("queue_sqs_queue_url", c.QueueSQSQueueURL),
-		slog.String("queue_sqs_events_path", c.QueueSQSEventsPath),
-		slog.Duration("queue_sqs_events_budget", c.QueueSQSEventsBudget),
 		slog.Duration("database_acquire_timeout", c.DatabaseAcquireTimeout),
 		slog.String("blob", c.Blob),
 		slog.String("media", c.Media),
@@ -744,10 +734,6 @@ func load(src Source, only map[string]bool) (*Config, []Setting, error) {
 	if cfg.Queue == "cloudtasks" {
 		cfg.QueueCloudTasksURL = cmp.Or(cfg.QueueCloudTasksURL, "https://"+cfg.Host)
 		cfg.QueueCloudTasksDispatchDeadline = cmp.Or(cfg.QueueCloudTasksDispatchDeadline, DefaultCloudTasksDispatchDeadline)
-	}
-	if cfg.Queue == "sqs" {
-		cfg.QueueSQSEventsPath = cmp.Or(cfg.QueueSQSEventsPath, DefaultSQSEventsPath)
-		cfg.QueueSQSEventsBudget = cmp.Or(cfg.QueueSQSEventsBudget, DefaultSQSEventsBudget)
 	}
 	if cfg.VoiceLiveKitAPIURL == "" {
 		cfg.VoiceLiveKitAPIURL = voiceAPIURL(cfg.VoiceLiveKitURL)

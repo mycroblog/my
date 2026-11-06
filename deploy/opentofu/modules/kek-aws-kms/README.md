@@ -3,7 +3,7 @@
 The KEK in AWS KMS, which it never leaves (`key_manager = awskms`). It follows [the backend contract](../../README.md#the-backend-contract).
 Of the AWS modules this one asks least of the server: the `awskms` adapter exists and reads no secret, so it needs no KEK from Secrets Manager.
 
-**This module has never been applied.** The tests mock the provider, so they show that the configuration is consistent, not that AWS accepts it. It needs `app-aws-lambda`, and what that module lacks, though `database_url` is still a secret.
+**This module has never been applied.** The tests mock the provider, so they show that the configuration is consistent, not that AWS accepts it.
 
 ## Source
 

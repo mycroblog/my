@@ -13,8 +13,6 @@ import (
 
 	"github.com/mycroblog/my/internal/app/kernel"
 	"github.com/mycroblog/my/internal/i18n"
-	"github.com/mycroblog/my/internal/interface/queuepush"
-	"github.com/mycroblog/my/internal/platform/config"
 )
 
 // OriginRefused counts the requests that the origin check refused (origin_secret): a CDN that
@@ -50,8 +48,8 @@ func originRefused(ctx context.Context) bool {
 // refused before routing, and adds to OriginRefused. It starts no span and reads no database. Its
 // answer is the plain 403 problem, the same for a wrong and a missing value, and it names nothing.
 //
-// events tells the exempt events of the queue. With no origin_secret, next is returned as it is.
-func (a *App) originCheck(next http.Handler, events func(*http.Request) bool) http.Handler {
+// With no origin_secret, next is returned as it is.
+func (a *App) originCheck(next http.Handler) http.Handler {
 	if a.Config.OriginSecret == "" {
 		return next
 	}
@@ -71,7 +69,7 @@ func (a *App) originCheck(next http.Handler, events func(*http.Request) bool) ht
 		for _, h := range [...]string{headerXForwardedFor, headerForwarded, headerTraceParent, HeaderRequestID} {
 			r.Header.Del(h)
 		}
-		if originExempt(r, events) {
+		if originExempt(r) {
 			next.ServeHTTP(w, r)
 			return
 		}
@@ -99,24 +97,15 @@ func originProved(values []string, accepted [][sha256.Size]byte) bool {
 // too, so that nothing else behind these paths answers: the web client answers the GET requests
 // that no route serves, /_internal/ ones included. A path that the router would rewrite is not
 // exempt, so that /_internal/../ leads nowhere.
-func originExempt(r *http.Request, events func(*http.Request) bool) bool {
+func originExempt(r *http.Request) bool {
 	p := r.URL.Path
 	switch r.Method {
 	case http.MethodGet, http.MethodHead:
 		return isHealthCheck(p)
 	case http.MethodPost:
-		return strings.HasPrefix(p, internalPathPrefix) && path.Clean(p) == p || events(r)
+		return strings.HasPrefix(p, internalPathPrefix) && path.Clean(p) == p
 	}
 	return false
-}
-
-// sqsEventsExempt tells the SQS events that the Lambda Web Adapter passes through to
-// queue_sqs_events_path, which no CDN sees, by the same proof that their endpoint requires.
-// There are none without queue = sqs.
-func sqsEventsExempt(cfg *config.Config) func(*http.Request) bool {
-	return func(r *http.Request) bool {
-		return cfg.Queue == "sqs" && r.URL.Path == cfg.QueueSQSEventsPath && queuepush.PassThrough(r)
-	}
 }
 
 // refuseOrigin answers a refused request. Its locale comes from Accept-Language alone: the

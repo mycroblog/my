@@ -68,7 +68,7 @@ ADR-0055 §16（span に `RecordError` とエラーの文字列を出さない�
   `logging.googleapis.com/trace` の形（`projects/<id>/traces/<trace_id>`）は ADR-0055 §18 の未決の点と同じくデプロイのテンプレートで決める
 - Error Reporting は `jsonPayload` の全フィールドからスタックを探すので、ほかのログの行にはスタックを書かない
 - すべてのログの行に、slog の `ReplaceAttr` で Cloud Logging の `severity` を足す（`DEBUG`・`INFO`・`WARN`→`WARNING`・`ERROR`、`ERROR` より上→`CRITICAL`）。
-  `level` も残す（Lambda の JSON のログ形式・アラートとログベースの指標の例が読む）。キーが重なる `warnReadiness` の属性は `severity` でなく `finding_severity` にする
+  `level` も残す（アラートとログベースの指標の例が読む）。キーが重なる `warnReadiness` の属性は `severity` でなく `finding_severity` にする
 
 **(2) エラーのグループ（常に。DB）**: §7 の表に指紋ごとに数え、新しいグループと、解決したグループの再発を §8 で知らせる。
 
@@ -169,7 +169,7 @@ ADR-0055 §16（span に `RecordError` とエラーの文字列を出さない�
 形を決めた外部の事実は次のとおりで、2026-10-27 に一次資料で確かめた（詳細は spike #1434 の報告）。
 
 - Cloud Error Reporting は `jsonPayload` の `stack_trace`・`exception`・`message` の順にスタックを探し、`@type` を `ReportedErrorEvent` にすると必須の項目（`serviceContext.service`・`message`）があるものと扱う。グルーピングは型と上位 5 フレームで指紋を指定できず、グループの保持は 30 日、通知は 60 分に 20 件まで、service と版とグループの組は 10,000 まで（[Formatting errors in logs](https://docs.cloud.google.com/error-reporting/docs/formatting-error-messages)、[Grouping](https://docs.cloud.google.com/error-reporting/docs/grouping-errors)、[Notifications](https://docs.cloud.google.com/error-reporting/docs/notifications)、[Quotas](https://docs.cloud.google.com/error-reporting/quotas)）。
-- Cloud Logging は `severity`・`message` を LogEntry に移し、`level`・`msg` を読まない（[special fields](https://docs.cloud.google.com/logging/docs/agent/configuration#special-fields)）。Lambda の JSON のログ形式は `level` を読む（[Lambda log level](https://docs.aws.amazon.com/lambda/latest/dg/monitoring-cloudwatchlogs-log-level.html)）。CloudWatch Logs の異常検知は各行の先頭 1,500 文字だけを見て、解決・再発の状態はない（[Log anomaly detection](https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/LogsAnomalyDetection.html)）。
+- Cloud Logging は `severity`・`message` を LogEntry に移し、`level`・`msg` を読まない（[special fields](https://docs.cloud.google.com/logging/docs/agent/configuration#special-fields)）。CloudWatch Logs の異常検知は各行の先頭 1,500 文字だけを見て、解決・再発の状態はない（[Log anomaly detection](https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/LogsAnomalyDetection.html)）。
 - Sentry は `POST {base}/api/{project}/envelope/` に `X-Sentry-Auth` で受け、`Event.fingerprint` が既定のグルーピングを置き換え、event の item は 1 MiB まで（[Envelopes](https://develop.sentry.dev/sdk/data-model/envelopes/)、[Event payloads](https://develop.sentry.dev/sdk/data-model/event-payloads/)）。`sentry-go` v0.50.0 は v0.48〜v0.50 の毎回に破壊的な変更があり、環境変数の読み込みと `git describe`、`ServerName` の hostname、`Transport.SendEvent` が成否を返さないことをソースで確認した。GlitchTip（MIT）は `/envelope/` を扱う。Datadog は専用の DSN（`https://<TOKEN>@sentry-intake.<DD_SITE>/1`）で受け、全イベントに `service` のタグが要り、`error.fingerprint` でまとめる（[Datadog: Sentry SDK](https://docs.datadoghq.com/error_tracking/guides/sentry_sdk/)）。
 - OTel の例外は LogRecord の属性として記録し（`exception.*`）、span の例外の規約は Deprecated（[Exceptions in logs](https://opentelemetry.io/docs/specs/semconv/exceptions/exceptions-logs/)）。`otlploghttp` は v0.23.0 で v0.x の間は破壊的な変更がありうる。`Record.SetErr` は `exception.message` を `err.Error()` から作り、BatchProcessor はあふれると古いものから上書きし捨てた数を数えにくい。
 - ブラウザ: React 19 の `onUncaughtError` の既定は `reportError`、`onCaughtError` は `console.error` だけ（[createRoot](https://react.dev/reference/react-dom/client/createRoot)）。`sendBeacon` はヘッダーを付けられず、keepalive の本文は同じ fetch group で合計 64 KiB まで（[Beacon](https://w3c.github.io/beacon/)、[Fetch](https://fetch.spec.whatwg.org/)）。

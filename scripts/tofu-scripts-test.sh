@@ -37,14 +37,13 @@ EOF
 chmod +x "$tmp/bin/gcloud"
 cat > "$tmp/bin/aws" << 'EOF'
 #!/usr/bin/env bash
-# Records the call, fails when it contains $FAIL_ON, and answers as Lambda would: $ANSWER is what the function returns.
+# Records the call, fails when it contains $FAIL_ON, and answers the few reads the scripts make.
 echo "$*" >> "$CALLS"
 if [ -n "${FAIL_ON:-}" ]; then
   case "$*" in *"$FAIL_ON"*) exit "${FAIL_CODE:-1}" ;; esac
 fi
 case "$*" in
   "ecs list-services"*) echo "${ECS_SERVICES:-arn:aws:ecs:r:1:service/my/my}" ;;
-  "lambda list-functions"*) echo "${LAMBDA_WORKERS:-}" ;;
   "ecs describe-services"*"taskDefinition"*) echo "arn:service:7" ;;
   "ecs describe-services"*"deployments"*)
     state="${ROLLOUT:-COMPLETED}"
@@ -67,16 +66,6 @@ case "$*" in
     ;;
   "logs filter-log-events"*) echo "${ECS_LOG:-[\"ok\"]}" ;;
   "ssm get-parameter"*) echo '{"awsvpcConfiguration":{"subnets":["s"]}}' ;;
-  "lambda get-function --function-name my-console"*) echo "${JOB_IMAGE:-image:new}" ;;
-  "lambda get-function "*) echo "${SERVICE_IMAGE:-image:new}" ;;
-  "lambda get-function-configuration"*) echo '{"MY_HOST":"h"}' ;;
-  "lambda invoke"*)
-    echo "attempts=${AWS_MAX_ATTEMPTS:-}" >> "$CALLS"
-    for last; do :; done
-    default_answer='{"exit_code":0,"output":"ok"}' default_meta='{"StatusCode":200}'
-    echo "${ANSWER:-$default_answer}" > "$last"
-    echo "${META:-$default_meta}"
-    ;;
 esac
 exit 0
 EOF
@@ -195,65 +184,6 @@ code=0
 "$root/deploy/opentofu/console.sh" <<< "$CONSOLE" > /dev/null 2>&1 || code=$?
 [ "$code" = 2 ] || fail "console without a command exited $code"
 
-# console on Lambda: the arguments survive as they are, the output comes back, and so does the exit code.
-LAMBDA_CONSOLE='{"platform":"aws-lambda","region":"r","function":"my-console","service":"my-web"}'
-
-lambda_console() {
-  : > "$CALLS"
-  local code=0
-  "$root/deploy/opentofu/console.sh" "$@" <<< "$LAMBDA_CONSOLE" > "$tmp/out" 2> "$tmp/err" || code=$?
-  return "$code"
-}
-
-lambda_console admin create -email 'a,b "c"@example.com' || fail "lambda console failed: $(cat "$tmp/err")"
-grep -qF -- '--payload {"args":["admin","create","-email","a,b \"c\"@example.com"]}' "$CALLS" || fail "lambda console args: $(cat "$CALLS")"
-grep -qx 'ok' "$tmp/out" || fail "lambda console did not print the output: $(cat "$tmp/out")"
-grep -qx 'attempts=1' "$CALLS" || fail "lambda console may run a command twice: $(cat "$CALLS")"
-if grep -q 'update-function-code' "$CALLS"; then fail "lambda console updated a function that has the service's image"; fi
-JOB_IMAGE=image:old lambda_console version || fail "lambda console failed"
-grep -q 'update-function-code --function-name my-console .*--image-uri image:new' "$CALLS" || fail "lambda console left the function on another image"
-code=0
-ANSWER='{"exit_code":3,"output":"no"}' lambda_console version || code=$?
-[ "$code" = 3 ] || fail "lambda console exited $code, want the command's 3"
-grep -qx 'no' "$tmp/out" || fail "lambda console hid the output of a failure"
-code=0
-ANSWER='{"errorMessage":"Task timed out after 900.00 seconds"}' META='{"StatusCode":200,"FunctionError":"Unhandled"}' lambda_console version || code=$?
-[ "$code" = 1 ] || fail "lambda console exited $code on a function error, want 1"
-grep -q 'may have stopped part way.*timed out' "$tmp/err" || fail "lambda console did not say what failed: $(cat "$tmp/err")"
-code=0
-ANSWER='{"statusCode":404}' lambda_console version || code=$?
-[ "$code" = 1 ] || fail "lambda console exited $code on an answer with no exit code, want 1"
-
-# upgrade on Lambda: the same order, the migration function first, and the service last.
-lambda_upgrade() {
-  : > "$CALLS"
-  "$root/deploy/opentofu/upgrade.sh" --platform aws-lambda --region r --image image:new "$@" > "$tmp/out" 2>&1
-}
-
-lambda_steps() {
-  grep -v '^attempts=\|^lambda wait\|^lambda list-functions' "$CALLS" | sed -E 's/ --region r//; s/ --cli-binary-format raw-in-base64-out --cli-read-timeout 0//; s/ --image-uri image:new//; s/lambda invoke --function-name my-migrate --payload /invoke /; s/ \/.*$//; s/lambda update-function-code --function-name /code /'
-}
-
-lambda_upgrade || fail "lambda upgrade failed: $(cat "$tmp/out")"
-want='code my-migrate
-invoke {"args":["config","check"]}
-invoke {"args":["db","upgrade","-check"]}
-invoke {"args":["schema","apply"]}
-invoke {"args":["db","upgrade"]}
-code my-worker
-code my-web'
-[ "$(lambda_steps)" = "$want" ] || fail "lambda upgrade ran: $(lambda_steps)"
-if ANSWER='{"exit_code":1,"output":"no"}' lambda_upgrade; then fail "lambda upgrade went on after a step failed"; fi
-if grep -q 'update-function-code --function-name my-w' "$CALLS"; then fail "the functions changed although a step failed"; fi
-lambda_upgrade --migrate-only
-if grep -q 'update-function-code --function-name my-w' "$CALLS"; then fail "--migrate-only changed the functions"; fi
-lambda_upgrade --plan
-grep -qF '{"args":["schema","apply","-dry-run"]}' "$CALLS" || fail "--plan did not run the dry run on Lambda"
-if grep -qF 'update-function-code --function-name my-w' "$CALLS"; then fail "--plan changed the functions on Lambda"; fi
-lambda_upgrade --maintenance
-grep -v '^lambda list-functions' "$CALLS" | head -n 1 | grep -q 'get-function-configuration --function-name my-worker' || fail "--maintenance did not come first on Lambda: $(head -n 1 "$CALLS")"
-grep -q 'update-function-configuration --function-name my-web .*"MY_MAINTENANCE":"true"' "$CALLS" || fail "--maintenance did not reach the web function: $(cat "$CALLS")"
-tail -n 2 "$CALLS" | grep -q 'update-function-configuration --function-name my-web --region r --environment {"Variables":{"MY_HOST":"h"}}' || fail "--maintenance did not end with the new image on Lambda: $(tail -n 3 "$CALLS")"
 # console on ECS: a one-off task with the command as its override, its exit code, and its output from the logs.
 ECS_CONSOLE='{"platform":"aws-ecs","region":"r","cluster":"my","task_definition":"my-console","container":"my","service":"my","network":"{\"awsvpcConfiguration\":{\"subnets\":[\"s\"]}}","log_group":"/ecs/my","log_prefix":"console"}'
 
@@ -331,11 +261,6 @@ if grep -q 'update-service --cluster my --service my \|put-parameter' "$CALLS"; 
 if TASK='{"lastStatus":"STOPPED","containers":[{"name":"my","exitCode":1}]}' ecs_upgrade; then fail "ecs upgrade with workers went on after a step failed"; fi
 if grep -q 'update-service' "$CALLS"; then fail "a worker moved although a step failed on ECS"; fi
 unset ECS_SERVICES
-
-# upgrade on Lambda with workers: the workers of the input before the default worker, and web last.
-: > "$CALLS"
-LAMBDA_WORKERS='my-worker-delivery' "$root/deploy/opentofu/upgrade.sh" --platform aws-lambda --region r --image image:new > "$tmp/out" 2>&1 || fail "lambda upgrade with workers failed: $(cat "$tmp/out")"
-grep -E '^lambda update-function-code' "$CALLS" | sed -E 's/.*--function-name ([^ ]*).*/\1/' | paste -sd' ' - | grep -q 'my-worker-delivery my-worker my-web$' || fail "lambda upgrade moved the functions in the wrong order: $(cat "$CALLS")"
 
 if "$root/deploy/opentofu/upgrade.sh" --platform elsewhere --region r --image i > /dev/null 2>&1; then fail "upgrade.sh took an unknown platform"; fi
 

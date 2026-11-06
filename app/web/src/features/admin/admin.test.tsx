@@ -367,7 +367,7 @@ describe("the queue dashboard", () => {
     server.use(
       operatorHandler(["manage_jobs"]),
       http.get(`${apiBase}/admin/queue`, () =>
-        HttpResponse.json({ adapter: "sqs", pending_listing: false, counts: [] }),
+        HttpResponse.json({ adapter: "cloudtasks", pending_listing: false, counts: [] }),
       ),
       http.get(`${apiBase}/admin/jobs`, () => HttpResponse.json({ items: [deliver] })),
     );

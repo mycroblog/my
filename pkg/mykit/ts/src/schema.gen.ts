@@ -4350,8 +4350,8 @@ export interface paths {
          * Get the state of the job queue
          * @description The jobs of the job queue by state and type, when the oldest due job has been waiting
          *     since, and what the queue can list. Every queue lists its pending jobs (`queued`,
-         *     `running`, `retrying`): with Cloud Tasks and SQS the jobs are in the database too, and those
-         *     services only signal them. `pending_listing` is `false` for a queue that cannot, and then
+         *     `running`, `retrying`): with Cloud Tasks the jobs are in the database too, and that
+         *     service only signals them. `pending_listing` is `false` for a queue that cannot, and then
          *     `counts` is empty, while `GET /admin/jobs?state=dead` and the attempts still list the dead
          *     jobs and the failed runs. Needs the `manage_jobs`
          *     permission; a user without it gets a 403 `/api/v1/problems/missing-permission`.
@@ -9560,7 +9560,7 @@ export interface components {
         };
         /** @description The state of the job queue. */
         AdminQueue: {
-            /** @description The queue the server runs, the `queue` setting (`db`, `inline`, `sqs`, `cloudtasks`). */
+            /** @description The queue the server runs, the `queue` setting (`db`, `inline`, `cloudtasks`). */
             adapter: string;
             /** @description Whether the queue lists its pending jobs (`queued`, `running`, `retrying`). */
             pending_listing: boolean;

@@ -49,7 +49,7 @@ const readinessTimeout = 3 * time.Second
 // that no database can look up are a 400 before any route (rejectInvalidText). With origin_secret,
 // the requests that did not come through the CDN are refused before all of it (originCheck).
 // The worker role serves only the health checks, for the platform's probes, and the endpoints of
-// the push receiver and the trigger of queue = cloudtasks and sqs, which the web role does not serve.
+// the push receiver and the trigger of queue = cloudtasks, which the web role does not serve.
 func (a *App) Handler() http.Handler { return a.handler(false) }
 
 // handler builds Handler. With gateDomains, as in Serve, requests other than the health checks
@@ -85,7 +85,7 @@ func (a *App) handler(gateDomains bool) http.Handler {
 	h = a.recoverPanics(h)
 	h = securityHeaders(h, a.Voice.Enabled())
 	h = a.accessLog(h)
-	return a.originCheck(a.requestIDs(h), sqsEventsExempt(a.Config))
+	return a.originCheck(a.requestIDs(h))
 }
 
 // domainsGate answers 503 to every request but the health checks until the database has confirmed
