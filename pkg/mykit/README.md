@@ -70,8 +70,9 @@ follows OAuth 2.0 with PKCE (S256 only). The ways to get a token, by use:
   `client_id`; no registration is needed. A CLI receives the code on a loopback redirect (`http://127.0.0.1:<port>/...`).
 - **A generic tool.** Dynamic client registration (RFC 7591) at `POST /oauth/register`.
 
-The three ways of registering, the scopes, and the rate limits are in
-[third-party-apps.md](../../docs/reference/third-party-apps.md).
+The three ways of registering and the scopes are in
+[getting a token](../../docs/developers/authentication.md), and the rate limits in
+[rate limits](../../docs/developers/rate-limits.md).
 
 The flow in Go (`ExampleOAuthConfig_Exchange`): send the user to `/oauth/authorize` with the challenge, then exchange
 the code from the redirect.
