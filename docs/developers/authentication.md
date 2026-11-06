@@ -1,8 +1,8 @@
-# Building apps for this server
+# Getting a token
 
 A guide for developers of third-party apps: clients, bots, integrations, and command-line tools that use the client API
 (`/api/v1`) of an instance on behalf of its users. The operations of the API are in its OpenAPI document
-(see [Stability of the API](#stability-of-the-api)).
+(see [Stability of the API](stability.md)).
 
 ## Mastodon client libraries do not work as they are
 
@@ -93,7 +93,7 @@ curl -X POST https://my.example/oauth/register \
   RFC 7592 (reading, updating, deleting a registration) is not supported. To change an app, register again.
 - CORS allows any origin, because the endpoint takes no credentials. It answers `403` (`access_denied`) when registration is turned off.
 - A client that never exchanges an authorization code within a day (by default), or has had no usable token and no use for 90 days (by default), is deleted by a periodic job.
-  Register again if your `client_id` stops working (`dynamic_client_unredeemed_retention` and `dynamic_client_idle_retention` in the [configuration reference](configuration.md)).
+  Register again if your `client_id` stops working (`dynamic_client_unredeemed_retention` and `dynamic_client_idle_retention` in the [configuration reference](../reference/configuration.md)).
 
 ## Authorization
 
@@ -167,30 +167,4 @@ A request without enough scope gets `403` with `WWW-Authenticate: Bearer error="
 - **Moderator notifications:** a third-party token never gets the moderator notifications (`admin_report`, `admin_appeal`, `admin_sign_up`, and the like), whatever the user's roles. They are left out of the notification list, the stream, and the unread count of the marker, and they are dropped from the alerts of the app's Web Push subscription.
 - **Relationships:** a `Relationship` holds only the fields of the lists the token's scopes cover, and the others are absent. `following`, `requested`, `followed_by`, `requested_by`, `show_boosts`, and `notify` need `read:follows` or `write:follows`; `blocking` needs `read:blocks` or `write:blocks`; `muting` and `muting_notifications` need `read:mutes` or `write:mutes`. An absent field says nothing about the state, so do not read it as false.
 
-## Rate limits
-
-The API is rate limited per account, across all of a user's apps, and anonymous requests per IP address.
-The endpoints for registering and authorizing apps are limited as well: user app registration, dynamic registration, `/oauth/token`, and the fetch of metadata documents.
-An administrator may also cap a single client across all its users (the instance setting `oauth_client_rate_limits`, see [instance settings](../operations/instance-settings.md)).
-The numbers belong to the server and the operator, so read them from the responses instead of hard-coding them.
-
-- A request answered `503 Service Unavailable` with a `Retry-After` header found the server busy. Wait that long before retrying.
-- A request over a limit is answered `429 Too Many Requests` with a `Retry-After` header (in seconds). Wait that long before retrying; back off if it happens again.
-  The OAuth endpoints answer an OAuth error body (`temporarily_unavailable`); `/api/v1` answers a problem document.
-- Responses of the API also carry `RateLimit-Policy` and `RateLimit` fields
-  ([draft-ietf-httpapi-ratelimit-headers](https://datatracker.ietf.org/doc/draft-ietf-httpapi-ratelimit-headers/)) with the policy's name, quota, and what remains.
-- Do not register an app or fetch a token per request: keep your `client_id`, cache your tokens, and refresh them only when they expire.
-
-## Stability of the API
-
-From the v0 release, `/api/v1` keeps these promises:
-
-- **Additions are not breaking**: new fields, operations, scopes, and enum values can appear at any time. Ignore what you do not know.
-- **Breaking changes are announced first.** Removing or renaming something, changing a type, making a field required, or changing the meaning of a scope is allowed in v0,
-  but the operation is first marked `deprecated: true` in the OpenAPI document and its responses carry a `Deprecation` header
-  ([RFC 9745](https://www.rfc-editor.org/rfc/rfc9745), a date such as `@1688169599`) and a `Sunset` header ([RFC 8594](https://www.rfc-editor.org/rfc/rfc8594)).
-  It stays for at least one v0.x minor release. The release notes have an "API changes" section. Log these headers in your client.
-- **Security fixes** can change behaviour without notice.
-- Version 1.0 makes no breaking change to `/api/v1`; one would go to `/api/v2`.
-
-The OpenAPI document of the running server is at `GET /api/v1/openapi.yaml`, with the scopes of each operation; generate your client from it.
+Next: [paging](paging.md), [errors](errors.md), [rate limits](rate-limits.md), and the [event stream](streaming.md). To skip the plumbing, use the [client libraries](libraries.md).

@@ -46,6 +46,8 @@ userdocs:
   cover:
     - "docs/operations/*.md"
     - "docs/reference/*.md"
+    - "docs/guide/*.md"
+    - "docs/developers/*.md"
   # Changed paths that no document describes, which `agentkit docs impact` passes over: tests, their fixtures and
   # stories, and the test-only deployments.
   skip:
@@ -120,6 +122,12 @@ entries:
     checks: [docs]
     notes:
       - "English only, and no links to or citations of ADRs, docs/requirements, docs/architecture, or issues and PRs: explain the behaviour itself. A new file is linked from docs/README.md and named in the userdocs of the entries whose paths it describes."
+  - name: guide-docs
+    paths: ["docs/guide/**"]
+    docs: ["AGENTS.md#documentation", "AGENTS.md#hard-rules"]
+    checks: [docs]
+    notes:
+      - "English only, and no links to or citations of ADRs, docs/requirements, docs/architecture, or issues and PRs: describe `my` itself, not one server's rules, and copy UI labels from locales/en. A new file is linked from docs/README.md and named in the userdocs of the entries whose paths it describes."
   - name: reference-docs
     paths: ["docs/reference/**"]
     docs: ["docs/reference/build-tags.md", "AGENTS.md#documentation"]
@@ -127,6 +135,12 @@ entries:
     notes:
       - "docs/reference/configuration.md is generated: `scripts/task.sh go:config-docs`."
       - "English only, and no links to or citations of ADRs, docs/requirements, docs/architecture, or issues and PRs (AGENTS.md#documentation)."
+  - name: developers-docs
+    paths: ["docs/developers/**"]
+    docs: ["docs/adr/0150-documentation-site.md#5-api-を使う開発者向けの文書", "AGENTS.md#documentation"]
+    checks: [docs]
+    notes:
+      - "Guides for people who build clients and bots against the client API. English only, and no links to or citations of ADRs, docs/requirements, docs/architecture, or issues and PRs (AGENTS.md#documentation). A new file is linked from docs/README.md and named in the userdocs of the entries whose paths it describes."
   - name: doc-rules
     paths: ["docs/lint.yaml", "tools/agentkit/internal/docslint/**", "tools/agentkit/internal/docsync/**"]
     docs: ["AGENTS.md#documentation", "tools/agentkit/README.md#documentation-rules"]
@@ -251,17 +265,18 @@ entries:
   - name: module-identity
     paths: ["internal/domain/identity/**", "internal/app/identity/**"]
     docs: ["docs/architecture/data-model/04-tables/01-identity.md#41-identity", "docs/operations/registration.md"]
-    userdocs: ["docs/operations/registration.md"]
+    userdocs: ["docs/operations/registration.md", "docs/guide/signing-in.md"]
   - name: module-account
     paths: ["internal/domain/account/**", "internal/app/account/**"]
     docs: ["docs/architecture/data-model/04-tables/02-account.md#42-account", "docs/architecture/data-model/05-states-and-policies.md#5-状態とポリシー"]
   - name: module-moderation
     paths: ["internal/domain/moderation/**", "internal/app/moderation/**"]
     docs: ["docs/architecture/data-model/04-tables/03-moderation.md#43-moderation", "docs/operations/moderation.md", "docs/adr/0058-moderation-admin-separation.md"]
-    userdocs: ["docs/operations/moderation.md"]
+    userdocs: ["docs/operations/moderation.md", "docs/guide/safety.md"]
   - name: module-content
     paths: ["internal/domain/content/**", "internal/app/content/**"]
     docs: ["docs/architecture/data-model/04-tables/04-content.md#44-content", "docs/architecture/visibility.md"]
+    userdocs: ["docs/guide/posting.md"]
     notes:
       - "Visibility checks go through the single domain policy function; never re-implement them."
   - name: link-card-crawler
@@ -282,6 +297,7 @@ entries:
   - name: account-move
     paths: ["internal/domain/account/move*.go", "internal/app/account/move.go", "internal/app/graph/migrate.go", "internal/app/federation/move.go", "internal/app/federation/move_out.go", "internal/interface/clientapi/account_move.go", "pkg/testkit/account_move_contract.go", "pkg/testkit/account_move_out_contract.go", "internal/domain/account/alias.go", "internal/app/account/alias.go", "internal/interface/clientapi/aliases.go", "pkg/testkit/account_alias_contract.go"]
     docs: ["docs/adr/0089-account-migration-move.md#decision決定", "docs/architecture/federation.md#34-アクティビティごとのハンドラ", "docs/architecture/federation.md#71-記録", "docs/architecture/data-model/04-tables/02-account.md#移転adr-0089"]
+    userdocs: ["docs/guide/moving-your-account.md"]
     notes:
       - "A Move is recorded by the account module (account.moved); the graph module migrates the local follows, blocks and mutes in graph.migrate_follows, idempotently."
       - "A local move is checked by federation.LocalMoves before account.RecordLocalMove; account.moved (self) queues the Update(Actor) with movedTo and the Move (flow retract), and a moved account is refused posting and following with 403 account-moved."
@@ -289,15 +305,18 @@ entries:
   - name: module-timeline
     paths: ["internal/domain/timeline/**", "internal/app/timeline/**"]
     docs: ["docs/architecture/data-model/04-tables/06-timeline.md#46-timeline", "docs/architecture/data-model/06-timeline-queries.md#6-タイムラインのクエリ", "docs/adr/0013-timeline-strategy.md"]
+    userdocs: ["docs/guide/following.md"]
   - name: lists
     paths: ["internal/domain/timeline/list.go", "internal/app/timeline/lists.go", "internal/adapter/db/*/timeline_lists.go", "internal/interface/clientapi/lists.go", "pkg/testkit/timeline_lists_contract.go", "api/spec/paths/lists*.yaml", "api/spec/paths/accounts_{id}_lists.yaml", "api/spec/paths/timelines_list_{id}.yaml", "app/web/src/features/lists/**", "app/web/src/routes/lists.tsx", "app/web/src/routes/lists_.$id.tsx", "app/web/e2e/lists.spec.ts"]
     docs: ["docs/adr/0013-timeline-strategy.md#decision決定", "docs/architecture/data-model/04-tables/06-timeline.md#リスト", "docs/architecture/web-client/screens/lists.md", "docs/architecture/web-client/screens/list-timeline.md"]
+    userdocs: ["docs/guide/following.md"]
     notes:
       - "Only the owner reads a list: every other account gets ErrNotFound (a 404), never a 403."
       - "A member is an active follow (feed_follow_edges); the projector of graph.follow_terminated removes it in the same update that deletes the follow edge, and RebuildProjections removes the members whose follow is gone."
   - name: module-notification
     paths: ["internal/domain/notification/**", "internal/app/notification/**"]
     docs: ["docs/architecture/data-model/04-tables/07-notification.md#47-notification"]
+    userdocs: ["docs/guide/notifications.md"]
   - name: post-subscriptions
     paths: ["internal/domain/notification/subscription.go", "internal/app/notification/subscription.go", "internal/adapter/db/*/notification_subscription.go", "queries/*/notification_subscription.sql", "internal/interface/clientapi/subscriptions.go", "api/spec/paths/accounts_{id}_subscribe.yaml", "api/spec/paths/accounts_{id}_unsubscribe.yaml", "api/spec/paths/subscriptions.yaml", "pkg/testkit/post_subscription_contract.go", "internal/platform/post_subscriptions_test.go"]
     docs: ["docs/adr/0086-email-delivery.md#14-投稿の通知の購読", "docs/architecture/data-model/04-tables/07-notification.md#47-notification"]
@@ -344,7 +363,7 @@ entries:
       - "The heartbeats and the session IDs live only in the KeyValueStore (voice.heartbeat, voice.session); the room requests and voice.sweep evaluate the expiry with conditional writes that apply once. Transport calls never run in a transaction: voice.apply (outbox) makes them after the commit."
       - "The SFU adapters (internal/adapter/voice/livekit, internal/adapter/voice/sora) call the operator's server with their own HTTP client and sign HS256 tokens and join values with crypto/hmac (no SDK). Their webhooks go through internal/interface/voice (routes per method, not in the OpenAPI) to ReceiveMediaEvents, which queues voice.apply_media_event keyed by the event ID, and to AuthorizeMediaConnect (Sora's auth webhook), which decides from the projections and the KeyValueStore only; voice.sweep reconciles each open room with Sessions. The Sora adapter is tested only on its httptest fake (no real Sora). The LiveKit contract also runs on livekit-server --dev only with TEST_LIVEKIT=container: `scripts/task.sh go:test-voice` (CI job voice-contract in the slow suite)."
       - "The room streams (voice_stream.go) carry the voice_* signals of stream.Hub / stream.Relay, each at most 1 KiB: a signal or a grant for one session waits in the KeyValueStore (voice.message, 30 s) and only its ID crosses the Bus; mic, reactions, and mutes are never recorded."
-    userdocs: ["docs/operations/voice.md"]
+    userdocs: ["docs/operations/voice.md", "docs/guide/voice-chat.md"]
   - name: module-search
     paths: ["internal/app/search/**", "internal/adapter/search/**", "internal/platform/search.go", "internal/platform/adapters_search_*.go", "internal/platform/adapters_no_search_*.go", "pkg/testkit/search_index_contract.go", "pkg/testkit/search_contract.go", "internal/adapter/db/*/search.go", "cmd/my/search.go", "schema/*/18-search.sql", "queries/*/search.sql", "api/spec/components/schemas/InstanceFullTextSearch.yaml", "api/spec/paths/statuses_search.yaml", "internal/interface/clientapi/status_search.go"]
     docs: ["docs/adr/0149-full-text-search.md", "docs/architecture/data-model/04-tables/18-search.md"]
@@ -514,6 +533,7 @@ entries:
   - name: client-api
     paths: ["internal/interface/clientapi/**", "api/**"]
     docs: ["docs/architecture/client-api.md#3-エンドポイントを追加する手順", "docs/architecture/client-api.md#2-規約"]
+    userdocs: ["docs/developers/paging.md", "docs/developers/errors.md", "docs/developers/streaming.md", "docs/developers/rate-limits.md", "docs/developers/stability.md"]
     checks: [api, go, web, mykit]
     shared: true
     notes:
@@ -523,7 +543,7 @@ entries:
     docs: ["docs/architecture/client-api.md#4-認可oauth-20", "docs/architecture/web-client/08-server-rendered-pages.md#8-サーバーが描画する画面"]
   - name: third-party-apps
     paths: ["internal/interface/oauth/**", "internal/domain/identity/oauth.go", "internal/interface/clientapi/ratelimit.go"]
-    userdocs: ["docs/reference/third-party-apps.md"]
+    userdocs: ["docs/developers/authentication.md", "docs/developers/rate-limits.md", "docs/developers/stability.md"]
   - name: activitypub
     paths: ["internal/interface/activitypub/**"]
     docs: ["docs/architecture/federation.md#3-受信inbox", "docs/architecture/federation.md#10-コレクションとオブジェクトの-get"]
@@ -574,6 +594,7 @@ entries:
   - name: mykit
     paths: ["pkg/mykit/**", "scripts/mykit-mod-check.sh", "internal/platform/platformtest/**"]
     docs: ["docs/adr/0093-api-client-library-mykit.md", "docs/architecture/client-api.md#4-認可oauth-20"]
+    userdocs: ["docs/developers/libraries.md"]
     checks: [mykit]
     notes:
       - "pkg/mykit is a Go module of its own under MIT (`// SPDX-License-Identifier: MIT`): it never imports or requires the server module, and its dependencies are permissive only (`scripts/task.sh mykit:check`)."
@@ -590,6 +611,7 @@ entries:
   - name: mybot
     paths: ["pkg/mybot/**"]
     docs: ["docs/adr/0093-api-client-library-mykit.md", "docs/adr/0093-api-client-library-mykit.md"]
+    userdocs: ["docs/developers/libraries.md"]
     checks: [mykit]
     notes:
       - "pkg/mybot is a Go module of its own under MIT (`// SPDX-License-Identifier: MIT`) that requires pkg/mykit alone, replaced with ../mykit, and never the server module; the mykit context checks it (`scripts/task.sh mykit:check`, the mybot-* tasks)."
@@ -649,6 +671,7 @@ entries:
   - name: web-server-pages
     paths: ["app/web/src/server-pages/**", "app/web/src/server-pages.css"]
     docs: ["docs/architecture/web-client/08-server-rendered-pages.md#8-サーバーが描画する画面"]
+    userdocs: ["docs/guide/signing-in.md"]
   - name: web-lib
     paths: ["app/web/src/lib/api/**", "app/web/src/lib/auth/**", "app/web/src/lib/sse/**"]
     docs: ["docs/architecture/web-client/10-api-client-and-auth.md#10-api-クライアントと認証", "docs/adr/0090-third-party-oauth-apps.md", "docs/adr/0028-html-shell-link-previews-and-pwa.md", "docs/adr/0093-api-client-library-mykit.md"]
@@ -660,12 +683,15 @@ entries:
   - name: web-feature-compose
     paths: ["app/web/src/features/compose/**"]
     docs: ["docs/architecture/web-client/12-compose.md#12-投稿フォーム", "docs/adr/0110-web-experience-principles.md"]
+    userdocs: ["docs/guide/posting.md"]
   - name: web-feature-status
     paths: ["app/web/src/features/status/**", "app/web/src/features/timeline/**", "app/web/src/features/notifications/**", "app/web/src/features/profile/**", "app/web/src/features/relationship/**"]
     docs: ["docs/architecture/web-client/13-status-detail-and-actions.md#13-投稿の詳細と投稿への操作", "docs/architecture/web-client/09-app-shell.md#9-アプリの外枠"]
+    userdocs: ["docs/guide/posting.md", "docs/guide/following.md", "docs/guide/notifications.md", "docs/guide/safety.md"]
   - name: web-feature-onboarding
     paths: ["app/web/src/features/onboarding/**", "app/web/src/routes/welcome.tsx"]
     docs: ["docs/architecture/web-client/21-experience-principles.md#21-体験の原則"]
+    userdocs: ["docs/guide/signing-in.md"]
   - name: web-feature-emoji
     paths: ["app/web/src/features/emoji/**", "app/web/src/features/custom-emojis/**"]
     docs: ["docs/adr/0051-custom-emoji.md", "docs/adr/0051-custom-emoji.md", "docs/adr/0070-permission-split-emoji-finance.md", "docs/adr/0091-composer-emoji-picker.md"]
@@ -675,12 +701,15 @@ entries:
   - name: web-feature-search
     paths: ["app/web/src/features/search/**"]
     docs: ["docs/architecture/web-client/15-search-and-remote-follow.md#15-検索とほかのサーバーのアカウントのフォロー"]
+    userdocs: ["docs/guide/following.md"]
   - name: web-feature-report
     paths: ["app/web/src/features/report/**"]
     docs: ["docs/architecture/web-client/17-reports.md#17-通報", "docs/architecture/web-client/18-account-status-and-appeals.md#18-アカウントの状態と異議申し立て"]
+    userdocs: ["docs/guide/safety.md"]
   - name: web-feature-settings
     paths: ["app/web/src/features/settings/**", "app/web/src/features/session/**"]
     docs: ["docs/architecture/web-client/19-import-and-export.md#19-インポートとエクスポート", "docs/architecture/web-client/10-api-client-and-auth.md#10-api-クライアントと認証"]
+    userdocs: ["docs/guide/signing-in.md", "docs/guide/notifications.md", "docs/guide/safety.md", "docs/guide/moving-your-account.md"]
   - name: web-feature-supporters
     paths: ["app/web/src/features/supporters/**"]
     docs: ["docs/adr/0072-supporter-plans-and-roles.md", "docs/adr/0070-permission-split-emoji-finance.md", "docs/operations/supporters.md"]
