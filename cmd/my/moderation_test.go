@@ -140,6 +140,9 @@ func TestAdminReportCommands(t *testing.T) {
 	if code, _, stderr := runCmd(t, adminCmd, "report", "forward", r.ID); code != 1 || !strings.Contains(stderr, "cannot be forwarded") {
 		t.Errorf("report forward of a received report = %d %q", code, stderr)
 	}
+	if code, _, stderr := runCmd(t, adminCmd, "report", "forward", "-comment", strings.Repeat("a", 1001), r.ID); code != 1 || !strings.Contains(stderr, "-comment must be text of at most 1000 characters") {
+		t.Errorf("report forward with a text too long = %d %q", code, stderr)
+	}
 	if code, stdout, _ := runCmd(t, adminCmd, "report", "show", r.ID); code != 0 || !regexp.MustCompile(`state: +open`).MatchString(stdout) ||
 		!regexp.MustCompile(`history: +0 other reports, 0 actions`).MatchString(stdout) ||
 		!regexp.MustCompile(`\nnote \S+ by - at \S+:\nseen before\n$`).MatchString(stdout) {

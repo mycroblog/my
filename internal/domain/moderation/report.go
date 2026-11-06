@@ -57,9 +57,45 @@ type Report struct {
 type ReportForward struct {
 	ID       string
 	ReportID string
+	// Comment is the text that the moderator wrote for the target's server when forwarding, ""
+	// for none. It is the Flag's content: the reporter's comment and a hook's note never leave
+	// the server through a later forward (ADR-0058 §6).
+	Comment string
 	// ForwardedByUserID is the moderator, "" for the CLI.
 	ForwardedByUserID string
 	ForwardedAt       time.Time
+}
+
+// MaxReportForwardComment is the number of characters of the text that a moderator writes for
+// the target's server when forwarding a report, the bound of a local report's comment.
+const MaxReportForwardComment = MaxLocalReportComment
+
+// ErrInvalidReportForward reports a forward of a report with a missing or invalid field.
+var ErrInvalidReportForward = errors.New("moderation: invalid report forward")
+
+// Validate checks the invariants of a new forward: its comment fails with a *TextError wrapped
+// with ErrInvalidReportForward.
+func (f ReportForward) Validate() error {
+	if f.ID == "" || f.ReportID == "" || f.ForwardedAt.IsZero() {
+		return fmt.Errorf("%w: a field is empty", ErrInvalidReportForward)
+	}
+	if err := checkText("comment", f.Comment, MaxReportForwardComment); err != nil {
+		return fmt.Errorf("%w: %w", ErrInvalidReportForward, err)
+	}
+	return nil
+}
+
+// FlagComment returns the content of the Flag that forwards the report: the reporter's comment
+// when the reporter had it forwarded when it was filed, and otherwise the moderator's text of the
+// later forward, which can be empty. A report not forwarded has none.
+func (r Report) FlagComment() string {
+	switch {
+	case r.Forwarded:
+		return r.Comment
+	case r.Forward != nil:
+		return r.Forward.Comment
+	}
+	return ""
 }
 
 // SentToTarget reports whether the report was forwarded to the target's server, when it was

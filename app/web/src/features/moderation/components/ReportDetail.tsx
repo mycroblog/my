@@ -6,7 +6,8 @@
 // ADR-0100 §11), its target with the target's history (its other reports
 // and its moderation actions), the moderator who handles it, the moderators' notes, and handling it: a
 // moderation action on the target that resolves it, resolving it without one, or reopening it; and, in the
-// summary, forwarding it to the server of a remote target when the server says it can be. What a change
+// summary, forwarding it to the server of a remote target when the server says it can be, with an optional text for
+// that server's moderators, the only text the forward sends (never the reporter's comment). What a change
 // did stays on the page in a StatusMessage (role="status") next to what caused it; failures are toasts, and a
 // failed note stays under its field (web-client/README.md E2).
 import {
@@ -36,7 +37,7 @@ import { useRef, useState } from "react";
 import { useIntl } from "react-intl";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
 import { ReportCommentText, StatusCard } from "../../status";
-import { type AccountAction, type ReportDetail, reportNoteLimit } from "../api/reports";
+import { type AccountAction, type ReportDetail, reportForwardCommentLimit, reportNoteLimit } from "../api/reports";
 import { hookNameLabels, hookReasonLabels } from "../hooks/useHookDecisions";
 import { useHasPermission } from "../hooks/usePermissions";
 import { useRefetch } from "../hooks/useRefetch";
@@ -107,12 +108,7 @@ function ReportPage({ id }: { id: string }) {
           <StatusMessage>{message?.region === "summary" ? message.text : undefined}</StatusMessage>
           <ReportSummary report={report} />
           {report.forwardable && (
-            <Stack align="start" gap="3">
-              <Hint>{t("client:admin.report.forward.description")}</Hint>
-              <Button onPress={changes.forward} isPending={changes.pending?.operation === "forward"}>
-                {t("client:admin.report.forward")}
-              </Button>
-            </Stack>
+            <ForwardForm onForward={changes.forward} isPending={changes.pending?.operation === "forward"} />
           )}
         </Section>
       }
@@ -484,6 +480,45 @@ function TargetActionRow({ action, fromThisReport }: { action: AccountAction; fr
           </DescriptionItem>
         </DescriptionList>
       )}
+    </Stack>
+  );
+}
+
+/**
+ * Forwarding a report to the server of its remote target: an optional text for that server's moderators, the only text
+ * sent, and the button. A text over the limit marks the field invalid and stops the form.
+ */
+function ForwardForm({ onForward, isPending }: { onForward: (comment: string) => void; isPending: boolean }) {
+  const t = useT();
+  const [comment, setComment] = useState("");
+  return (
+    <Stack
+      as="form"
+      gap="3"
+      onSubmit={(event) => {
+        event.preventDefault();
+        onForward(comment);
+      }}
+    >
+      <Hint>{t("client:admin.report.forward.description")}</Hint>
+      <ReasonField
+        label={t("client:admin.report.forward.comment")}
+        description={t("client:admin.report.forward.comment.description")}
+        value={comment}
+        onChange={setComment}
+        characterLimit={reportForwardCommentLimit}
+        formatRemaining={(remaining) =>
+          remaining < 0
+            ? t("client:admin.account_actions.characters_over", { count: -remaining })
+            : t("client:admin.account_actions.characters_left", { count: remaining })
+        }
+        errorMessage={() => t("client:admin.report.forward.comment.too_long", { max: reportForwardCommentLimit })}
+      />
+      <Box>
+        <Button type="submit" isPending={isPending}>
+          {t("client:admin.report.forward")}
+        </Button>
+      </Box>
     </Stack>
   );
 }

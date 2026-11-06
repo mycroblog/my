@@ -80,7 +80,7 @@
     "description": "Button that forwards a report to the server of the reported remote account."
   },
   "admin.report.forward.description": {
-    "defaultMessage": "Sends your server's report to the server of the account, with the posts and the comment. Nothing of the reporter is sent. It is sent once.",
+    "defaultMessage": "Sends your server's report to the server of the account, with the account and the posts and the text below. Nothing of the reporter is sent. It is sent once.",
     "description": "Help of the button that forwards a report to the server of the reported account."
   },
   "admin.report.forward_failed": {
@@ -546,5 +546,17 @@
   "admin.report.assignee.unassigned": {
     "defaultMessage": "Unassigned",
     "description": "Badge of an open report that nobody handles yet."
+  },
+  "admin.report.forward.comment": {
+    "defaultMessage": "Text for their moderators",
+    "description": "Label of the optional field whose text is sent with a report forwarded to the reported account's server."
+  },
+  "admin.report.forward.comment.description": {
+    "defaultMessage": "Optional. The only text sent: the reporter's comment stays on this server.",
+    "description": "Help of the field whose text is sent with a forwarded report."
+  },
+  "admin.report.forward.comment.too_long": {
+    "defaultMessage": "Use at most {max, number} characters",
+    "description": "Error of the field of a forwarded report's text when it is too long. {max} is the limit."
   }
 }

@@ -171,7 +171,7 @@ func TestLocalStatusHook(t *testing.T) {
 
 	// A moderator upholds it: the decision stays and the author is still reviewed.
 	var page clientapi.AdminHookAppealPage
-	if res := c.do("bob", http.MethodGet, "/admin/hook_appeals?pending=true", nil, &page); res.StatusCode != http.StatusOK ||
+	if res := c.do("bob", http.MethodGet, "/admin/hook_appeals?state=pending", nil, &page); res.StatusCode != http.StatusOK ||
 		len(page.Items) != 1 || page.Items[0].StatusText != "buy now, really" || page.Items[0].Decision.Id != upheldID {
 		t.Fatalf("the pending appeals = %+v", page)
 	}
@@ -203,7 +203,7 @@ func TestLocalStatusHook(t *testing.T) {
 	if res := appeal("alice", *second.HookDecisionId); res.StatusCode != http.StatusOK {
 		t.Fatalf("the second appeal = %d", res.StatusCode)
 	}
-	if res := c.do("bob", http.MethodGet, "/admin/hook_appeals?pending=true", nil, &page); res.StatusCode != http.StatusOK || len(page.Items) != 1 {
+	if res := c.do("bob", http.MethodGet, "/admin/hook_appeals?state=pending", nil, &page); res.StatusCode != http.StatusOK || len(page.Items) != 1 {
 		t.Fatalf("the pending appeals = %+v", page)
 	}
 	if res := c.do("bob", http.MethodPost, "/admin/hook_appeals/"+page.Items[0].Id+"/overturn", nil, &decided); res.StatusCode != http.StatusOK ||
@@ -212,6 +212,17 @@ func TestLocalStatusHook(t *testing.T) {
 	}
 	if d := decisionOf(*second.HookDecisionId); d.Override == nil || d.Override.ByUserID != c.userIDs["bob"] {
 		t.Errorf("the overturned decision = %+v", d)
+	}
+	// The list keeps the appeals of one state.
+	for state, want := range map[string]string{"upheld": own.Id, "overturned": decided.Id} {
+		page = clientapi.AdminHookAppealPage{}
+		if res := c.do("bob", http.MethodGet, "/admin/hook_appeals?state="+state, nil, &page); res.StatusCode != http.StatusOK ||
+			len(page.Items) != 1 || page.Items[0].Id != want {
+			t.Errorf("the %s appeals = %d %+v", state, res.StatusCode, page)
+		}
+	}
+	if res := c.do("bob", http.MethodGet, "/admin/hook_appeals?state=gone", nil, nil); res.StatusCode != http.StatusBadRequest {
+		t.Errorf("an unknown state = %d", res.StatusCode)
 	}
 	calls = plugin.calls.Load()
 	c.post("alice", text("buy now, one more time"))

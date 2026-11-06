@@ -80,7 +80,7 @@
     "description": "Button that forwards a report to the server of the reported remote account."
   },
   "admin.report.forward.description": {
-    "defaultMessage": "このサーバーからの通報として、投稿とコメントをアカウントのサーバーに送ります。通報者のことは送りません。送るのは 1 回だけです。",
+    "defaultMessage": "このサーバーからの通報として、アカウントと投稿、下のメッセージをアカウントのサーバーに送ります。通報者のことは送りません。送るのは 1 回だけです。",
     "description": "Help of the button that forwards a report to the server of the reported account."
   },
   "admin.report.forward_failed": {
@@ -546,5 +546,17 @@
   "admin.report.assignee.unassigned": {
     "defaultMessage": "未担当",
     "description": "Badge of an open report that nobody handles yet."
+  },
+  "admin.report.forward.comment": {
+    "defaultMessage": "相手のモデレーターへのメッセージ",
+    "description": "Label of the optional field whose text is sent with a report forwarded to the reported account's server."
+  },
+  "admin.report.forward.comment.description": {
+    "defaultMessage": "任意です。送る文章はこれだけで、通報者のコメントはこのサーバーに残ります。",
+    "description": "Help of the field whose text is sent with a forwarded report."
+  },
+  "admin.report.forward.comment.too_long": {
+    "defaultMessage": "{max, number} 文字以内にしてください",
+    "description": "Error of the field of a forwarded report's text when it is too long. {max} is the limit."
   }
 }

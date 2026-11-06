@@ -611,13 +611,15 @@ LEFT JOIN hook_decision_appeal_decisions r ON r.appeal_id = a.id
 LEFT JOIN hook_decision_overrides o ON o.decision_id = d.id
 WHERE (CAST(?1 AS TEXT) = '' OR a.id < ?1)
   AND (CAST(?2 AS INTEGER) = 0 OR r.appeal_id IS NULL)
+  AND (CAST(?3 AS TEXT) = '' OR r.decision = ?3)
 ORDER BY a.id DESC
-LIMIT ?3
+LIMIT ?4
 `
 
 type ListHookDecisionAppealsParams struct {
 	Before   string
 	Pending  int64
+	Outcome  string
 	RowLimit int64
 }
 
@@ -646,9 +648,15 @@ type ListHookDecisionAppealsRow struct {
 	OverriddenAt         sql.NullInt64
 }
 
-// The appeals newest first; pending keeps those that no moderator has decided.
+// The appeals newest first; pending keeps those that no moderator has decided, and outcome those
+// decided with it (” keeps every one).
 func (q *Queries) ListHookDecisionAppeals(ctx context.Context, arg ListHookDecisionAppealsParams) ([]ListHookDecisionAppealsRow, error) {
-	rows, err := q.db.QueryContext(ctx, listHookDecisionAppeals, arg.Before, arg.Pending, arg.RowLimit)
+	rows, err := q.db.QueryContext(ctx, listHookDecisionAppeals,
+		arg.Before,
+		arg.Pending,
+		arg.Outcome,
+		arg.RowLimit,
+	)
 	if err != nil {
 		return nil, err
 	}

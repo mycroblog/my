@@ -4,17 +4,25 @@ post:
   summary: Forward a report to the target's server
   description: |
     Sends the report to the server of its remote target as a `Flag` of the instance actor,
-    with the posts it points at and its comment, and nothing of the reporter. Works on an
-    open or a resolved report that `forwardable` allows: one filed on this server (by a
-    person or by an automated review) about a remote account, of no voice chat room. A
-    report forwarded already, when it was filed or later, changes nothing. A report that
-    cannot be forwarded is a 409, an unknown ID a 404. Needs the `manage_reports`
-    permission.
+    with the account and the posts it points at, and `comment` as its text. Nothing of the
+    reporter is sent: not their account, and not their comment, nor the note of an automated
+    review that filed it. Works on an open or a resolved report that `forwardable` allows:
+    one filed on this server (by a person or by an automated review) about a remote account,
+    of no voice chat room. A report forwarded already, when it was filed or later, changes
+    nothing, whatever `comment` says. A report that cannot be forwarded is a 409
+    `/api/v1/problems/report-not-forwardable`, an unknown ID a 404, and a `comment` that is too
+    long or contains U+0000 a 422 naming it. Needs the `manage_reports` permission.
   tags: [admin-moderation]
   security:
     - oauth2: ["admin:write"]
   parameters:
     - $ref: ../components/parameters/ReportId.yaml
+  requestBody:
+    required: false
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/ForwardReportRequest.yaml
   responses:
     "200":
       $ref: ../components/responses/AdminReportDetail.yaml

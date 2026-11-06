@@ -184,12 +184,15 @@ CREATE TABLE report_resolutions (
 CREATE INDEX report_resolutions_report_id_id ON report_resolutions (report_id, id DESC);
 
 -- Event: a moderator forwarded a report after it was filed, as a Flag of the instance actor to the
--- target's server (FR-709, ADR-0147 §7). A report is forwarded at most once: reports.forwarded is
+-- target's server (FR-709, ADR-0058 §6). A report is forwarded at most once: reports.forwarded is
 -- the reporter's choice when it was filed, and a report forwarded then has no row here.
+-- comment is the text that the moderator wrote for the target's server, '' for none; it is the
+-- Flag's content, which never carries the reporter's comment.
 -- forwarded_by_user_id is NULL for the CLI.
 CREATE TABLE report_forwards (
   id TEXT NOT NULL PRIMARY KEY,
   report_id TEXT NOT NULL,
+  comment TEXT NOT NULL DEFAULT '',
   forwarded_by_user_id TEXT,
   forwarded_at INTEGER NOT NULL
 ) STRICT;
