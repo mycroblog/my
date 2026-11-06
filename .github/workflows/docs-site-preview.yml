@@ -1,0 +1,57 @@
+name: Docs site preview
+
+# Builds the documentation site of a pull request that changes a published document or the site (ADR-0150 §7): /next/
+# alone, from the pull request's checkout (`scripts/docs-site.sh build-preview`), uploaded as the artifact
+# `docs-site-preview`. docs-site-preview-deploy.yml publishes it on the Preview pr-<number> of the Worker my-docs when
+# this workflow completes. This workflow holds no secret and no write permission, so it runs the same for pull requests
+# from forks; it is not part of the required `check` and never blocks a merge. A pull request that changes none of
+# these paths gets no preview.
+
+on:
+  pull_request:
+    paths:
+      # The published documents (app/docs/src/published.ts), the table of contents of the sidebar, and the site.
+      - "docs/README.md"
+      - "docs/operations/**"
+      - "docs/reference/**"
+      - "docs/guide/**"
+      - "docs/developers/**"
+      - "app/docs/**"
+      - "api/openapi.yaml"
+      - "scripts/docs-site.sh"
+      - "scripts/docs-site/**"
+      - ".github/workflows/docs-site-preview.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: docs-site-preview-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up go-task
+        uses: ./.github/actions/setup-task
+      - name: Set up Bun
+        uses: ./.github/actions/setup-bun
+      - name: Build /next/
+        run: scripts/docs-site.sh build-preview "$RUNNER_TEMP/docs-site-preview"
+      # Fails the build that docs-site-preview-deploy.yml would refuse anyway, where the author sees it.
+      - name: Check the build
+        run: scripts/docs-site.sh stage-preview "$RUNNER_TEMP/docs-site-preview" "$RUNNER_TEMP/docs-site-stage"
+      - name: Upload the build
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: docs-site-preview
+          path: ${{ runner.temp }}/docs-site-preview/
+          if-no-files-found: error
+          include-hidden-files: false
+          retention-days: 7
