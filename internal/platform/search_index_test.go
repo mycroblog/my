@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"net/http"
 	"slices"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -27,23 +28,29 @@ import (
 	"github.com/mycroblog/my/internal/platform"
 )
 
-// searchEnv is a server whose search backend is the fake, whose jobs run when a test drains them.
+// searchEnv is a server whose search backend is the fake, whose jobs run when a test drains them,
+// and whose clock a test moves ahead to make a restriction expire without sleeping past it.
 type searchEnv struct {
 	*accountsEnv
 	index *fake.Index
+	clock laterClock
 }
 
 func newSearchEnv(t *testing.T) *searchEnv {
 	t.Helper()
 	index := fake.New()
+	clock := laterClock{steadyClock: newSteadyClock(), ahead: &atomic.Int64{}}
 	cfg := loadConfig(t, map[string]string{"MY_DATABASE_URL": newDatabase(t, true), "MY_WEB_ORIGIN": webOrigin})
-	app, err := platform.NewApp(t.Context(), cfg, platform.AppOptions{Logger: slog.New(slog.DiscardHandler), SearchIndex: index})
+	app, err := platform.NewApp(t.Context(), cfg, platform.AppOptions{Logger: slog.New(slog.DiscardHandler), SearchIndex: index, Clock: clock})
 	if err != nil {
 		t.Fatalf("NewApp: %v", err)
 	}
 	t.Cleanup(func() { _ = app.Close() })
-	return &searchEnv{accountsEnv: &accountsEnv{t: t, app: app, h: app.Handler(), spec: apitest.Load(t)}, index: index}
+	return &searchEnv{accountsEnv: &accountsEnv{t: t, app: app, h: app.Handler(), spec: apitest.Load(t)}, index: index, clock: clock}
 }
+
+// advance moves the server's clock ahead by d.
+func (e *searchEnv) advance(d time.Duration) { e.clock.ahead.Add(int64(d)) }
 
 func (e *searchEnv) drain() {
 	e.t.Helper()
@@ -252,12 +259,14 @@ func TestSearchIndexFollowsSanctions(t *testing.T) {
 	e.wantFound("quokka", id, other)
 
 	if _, err := e.app.Moderation.IssueAccountAction(ctx, appmoderation.AccountActionInput{
-		TargetAccountID: alice.id, Kind: moderation.ActionSuspend, ReasonCategory: moderation.CategoryOther, Duration: 50 * time.Millisecond,
+		TargetAccountID: alice.id, Kind: moderation.ActionSuspend, ReasonCategory: moderation.CategoryOther, Duration: time.Hour,
 	}); err != nil {
 		t.Fatalf("IssueAccountAction: %v", err)
 	}
+	// The suspension lasts an hour of the server's clock, which only the test moves past its end:
+	// a short real duration could end before the jobs above run on a loaded machine.
 	e.wantFound("quokka", other)
-	waitPast(time.Now().Add(60 * time.Millisecond))
+	e.advance(2 * time.Hour)
 	// The rows remain until the expiry job runs: nothing has told the index yet.
 	e.wantFound("quokka", other)
 	if _, err := e.app.Moderation.ExpireAccountRestrictions(ctx); err != nil {
@@ -288,12 +297,12 @@ func TestSearchIndexFollowsDomainRestrictions(t *testing.T) {
 	e.wantFound("p")
 
 	if _, err := e.app.Moderation.IssueDomainAction(ctx, appmoderation.DomainActionInput{
-		Domain: "remote.example", Kind: moderation.DomainLimit, Duration: 200 * time.Millisecond,
+		Domain: "remote.example", Kind: moderation.DomainLimit, Duration: time.Hour,
 	}); err != nil {
 		t.Fatalf("IssueDomainAction: %v", err)
 	}
 	e.wantFound("narwhal", erinPost)
-	waitPast(time.Now().Add(250 * time.Millisecond))
+	e.advance(2 * time.Hour)
 	if _, err := e.app.Moderation.ExpireDomainRestrictions(ctx); err != nil {
 		t.Fatalf("ExpireDomainRestrictions: %v", err)
 	}
