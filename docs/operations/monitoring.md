@@ -1,6 +1,6 @@
 # Monitoring the server from outside
 
-A guide for operators. It shows how to point an uptime monitor at the server, how to keep the monitoring from raising the running cost,
+How to point an uptime monitor at the server, how to keep the monitoring from raising the running cost,
 and how to tell the maintenance mode ([Maintenance](maintenance.md)) from an outage. The probe paths are in
 [the health check section of the running guide](running.md#health-checks).
 

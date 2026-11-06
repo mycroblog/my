@@ -1,6 +1,6 @@
 # Getting a token
 
-A guide for developers of third-party apps: clients, bots, integrations, and command-line tools that use the client API
+How a third-party app gets an access token: a client, bot, integration, or command-line tool that uses the client API
 (`/api/v1`) of an instance on behalf of its users. The operations of the API are in its OpenAPI document
 (see [Stability of the API](stability.md)).
 

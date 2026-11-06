@@ -1,8 +1,7 @@
 # Supporters (paid plans)
 
-A guide for operators. The deployment key `payments` is described in the [configuration reference](../reference/configuration.md#payments).
-
 Only when an administrator enables it, local users can subscribe to a paid plan on the web and hold the role tied to the plan for as long as they keep paying. The program is off by default, and no plan or subscription entry point appears anywhere until it is enabled.
+The deployment key `payments` is described in the [configuration reference](../reference/configuration.md#payments).
 
 **mycroblog does not guarantee compliance with any law, including Japan's Act on Specified Commercial Transactions.** Operators must check the content of the disclosure, the final confirmation screen, and the handling of consumption tax and invoices against the laws of their own country (see "What operators must check" below).
 

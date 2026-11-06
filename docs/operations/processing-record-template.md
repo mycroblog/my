@@ -1,6 +1,6 @@
 # Record of processing activities template
 
-A template for operators: the record of processing activities that GDPR Article 30(1) asks a controller to keep, filled in as far as the software decides.
+The record of processing activities that GDPR Article 30(1) asks a controller to keep, filled in as far as the software decides.
 
 **This is a template and not legal advice.** It describes what the software does with its default settings, and it does not decide whether the GDPR, or this record, applies to you. Have it checked for your jurisdiction.
 

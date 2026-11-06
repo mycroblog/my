@@ -1,11 +1,9 @@
 # Server webhooks
 
-This page is for operators. What a receiver gets (headers, signature, events, body) is described in the
-[webhook reference](../reference/webhooks.md).
-
 Webhooks send reports, registration requests, account creations and profile changes, moderation actions, appeals,
 domain actions, local public posts, and custom emoji management actions to a Slack or Discord relay, a ticketing system,
 or an automation tool such as n8n. A server with no webhooks configured stores no extra rows and runs no extra jobs.
+What a receiver gets (headers, signature, events, body) is described in the [webhook reference](../reference/webhooks.md).
 
 ## Set up a webhook
 

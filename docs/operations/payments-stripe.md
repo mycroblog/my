@@ -1,8 +1,7 @@
 # Supporter payments with Stripe
 
-A guide for operators. The deployment keys are described in the [configuration reference](../reference/configuration.md#payments). For the program as a whole (plans, roles, the list of members), see [supporters.md](supporters.md).
-
 With `payments = stripe`, local users subscribe to monthly or yearly plans on Stripe's hosted payment page (Checkout), and the plan's role is granted and removed as the payment state changes.
+The deployment keys are described in the [configuration reference](../reference/configuration.md#payments). For the program as a whole (plans, roles, the list of members), see [supporters.md](supporters.md).
 An administrator enables the program and creates plans in the administration. This setting only lets the server talk to Stripe.
 
 One server can use only one provider. To switch to another provider later, ask the existing subscribers to subscribe again with the new one.

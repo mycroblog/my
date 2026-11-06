@@ -1,6 +1,6 @@
 # Instance settings
 
-This page is for operators. It covers the settings that define how your instance is run: registration mode, post length,
+The settings that define how your instance is run: registration mode, post length,
 default locale, who can see the timelines, the instance name, description, terms, rules, theme, and custom emoji.
 
 ## Configuration and instance settings

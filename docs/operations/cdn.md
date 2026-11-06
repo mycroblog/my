@@ -1,7 +1,5 @@
 # Put a CDN in front of media delivery
 
-A guide for operators. The setting is described in the [configuration reference](../reference/configuration.md#media_origin).
-
 A CDN in front of the server (Cloudflare, Google Cloud CDN, CloudFront and so on) can deliver media (`/media/` and `/media/proxy/`).
 Requests answered from the CDN cache use none of the server's CPU or transfer.
 This guide covers the setup where the server is the CDN's origin (origin pull). It applies to every blob store: with `blob = s3` or `blob = gcs` the server

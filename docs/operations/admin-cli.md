@@ -1,6 +1,6 @@
 # Administrators and roles
 
-A guide for operators: how to create the first administrator, manage roles from the command line, announce and carry out the end of the service, process uploaded images again, rebuild the search index, and export the maintenance page.
+How to create the first administrator, manage roles from the command line, announce and carry out the end of the service, process uploaded images again, rebuild the search index, and export the maintenance page.
 
 ## Prerequisites
 

@@ -1,8 +1,7 @@
 # Supporter payments with PAY.JP
 
-A guide for operators. The deployment keys are described in the [configuration reference](../reference/configuration.md#payments). For the program as a whole (plans, roles, the list of members), see [supporters.md](supporters.md).
-
 With `payments = payjp`, local users subscribe to monthly or yearly plans on this server's payment page, and the plan's role is granted and removed as the payment state changes.
+The deployment keys are described in the [configuration reference](../reference/configuration.md#payments). For the program as a whole (plans, roles, the list of members), see [supporters.md](supporters.md).
 An administrator enables the program and creates plans in the administration. This setting only lets the server talk to PAY.JP.
 
 One server can use only one provider. To switch from Stripe to PAY.JP (or the reverse), ask the existing subscribers to subscribe again with the new provider.

@@ -1,6 +1,7 @@
 # Sending email
 
-This page is for operators. The settings are listed in the [configuration reference](../reference/configuration.md#mail).
+What email the server sends, how to configure the sending, and how to handle failures and unsubscribing.
+The settings are listed in the [configuration reference](../reference/configuration.md#mail).
 The user-facing flows of email confirmation and password reset are in [registration and email confirmation](registration.md).
 
 ## What is sent, and how to configure it

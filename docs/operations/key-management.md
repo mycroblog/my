@@ -1,6 +1,8 @@
 # Managing the key-encryption key (KEK)
 
-A guide for operators. The [configuration reference](../reference/configuration.md) lists every setting.
+The server encrypts the secrets it keeps in the database with a key-encryption key (KEK) that it never stores there.
+This page covers how to generate, store, back up and rotate the KEK, how to keep it in a KMS instead, and what to do if it is lost or leaks.
+The [configuration reference](../reference/configuration.md) lists every setting.
 
 ## How it works
 

@@ -1,8 +1,6 @@
 # Link previews (OGP / X Card / fediverse:creator)
 
-This page explains link previews to operators and lists the steps to check them by hand.
-
-These are the previews that other services show of this server's pages. The cards this server shows for the links in its own posts
+The previews that other services show of this server's pages, what the server returns for them, and the steps to check them by hand. The cards this server shows for the links in its own posts
 are in [Cards of links in posts](#cards-of-links-in-posts) below; how to stop fetching them from a domain is in [instance settings](instance-settings.md#link-card-domains).
 
 ## What the server returns

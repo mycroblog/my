@@ -1,7 +1,5 @@
 # External login providers
 
-This guide is for operators and administrators.
-
 An external login provider lets users sign in with an account they have elsewhere: an OpenID Connect provider
 (Google Workspace, Microsoft Entra ID, Keycloak, and the like), GitHub, Discord, or one Mastodon server.
 You set providers up with the `my login-provider` command on a host that has the server's configuration, or through the

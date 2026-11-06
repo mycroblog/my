@@ -1,6 +1,6 @@
 # Alerts and runbook
 
-A guide for operators. It lists what the server's own metrics should alert you about, how urgent each alert is, and what to check
+What the server's own metrics should alert you about, how urgent each alert is, and what to check
 and do when one fires. Watching the server from outside (uptime monitors and a status page) is in [Monitoring the server from outside](monitoring.md);
 set that up too, because no metric arrives from a server that is down.
 
