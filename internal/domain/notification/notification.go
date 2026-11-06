@@ -14,7 +14,8 @@ type Type string
 // Notification types. The notification module generates follow, follow_request,
 // follow_accepted, mention, boost, favourite, reaction, quote, and poll_closed from the graph and
 // content events, and moderation_notice, appeal_decided, report_resolved, and
-// relationships_severed from the moderation events, custom_emoji_request_decided from the
+// relationships_severed from the moderation events, hook_appeal_decided from the review of an
+// appeal of a refused post (ADR-0147 §9), custom_emoji_request_decided from the
 // custom emoji requests (ADR-0070 §9), and supporter_payment_failed,
 // supporter_subscription_ended, and supporter_plan_retired from the supporter subscriptions
 // (ADR-0072 §16), and account_moved from the migration of the follows of a moved account
@@ -23,7 +24,7 @@ type Type string
 // whose subscription the announcement cancels (ADR-0088 §2). voice_room_started and
 // voice_room_invited come from the voice chat rooms (ADR-0100 §8). admin_report, admin_sign_up,
 // admin_appeal, admin_webhook_disabled, admin_custom_emoji_request, admin_account_moved,
-// admin_service_closure_due, and admin_error_group go to the staff whose roles grant the permission they need
+// admin_service_closure_due, admin_error_group, admin_hook_failing, and admin_hook_appeal go to the staff whose roles grant the permission they need
 // (ModeratorPermission). status tells a subscriber of a new post of an account it subscribes to
 // (ADR-0086). announcement tells every local user of a server-wide announcement once it starts
 // to show (ADR-0125 §2).
@@ -100,6 +101,12 @@ const (
 	// TypeAdminHookFailing tells the holders of manage_reports that calls of a decision hook keep
 	// failing, so that subjects go unreviewed or wait (ADR-0147).
 	TypeAdminHookFailing Type = "admin_hook_failing"
+	// TypeAdminHookAppeal tells the holders of manage_reports that an author appealed a post that
+	// the decision hook local.status refused (ADR-0147 §9): HookAppealID is the appeal.
+	TypeAdminHookAppeal Type = "admin_hook_appeal"
+	// TypeHookAppealDecided tells an author that a moderator reviewed their appeal of a refused post,
+	// upheld or overturned (ADR-0147 §9): HookAppealID is the appeal.
+	TypeHookAppealDecided Type = "hook_appeal_decided"
 	// TypeStatus tells a local account of a new post of an account it subscribes to (ADR-0086):
 	// SourceAccountID is the author and StatusID the post.
 	TypeStatus Type = "status"
@@ -207,6 +214,7 @@ var Types = []Type{
 	TypeAccountMoved, TypeAdminAccountMoved,
 	TypeServiceClosure, TypeAdminServiceClosureDue, TypeSupporterServiceClosure,
 	TypeVoiceRoomStarted, TypeVoiceRoomInvited, TypeAdminErrorGroup, TypeAdminHookFailing, TypeStatus, TypeAnnouncement,
+	TypeAdminHookAppeal, TypeHookAppealDecided,
 }
 
 // Valid reports whether t is a known notification type.
@@ -219,7 +227,8 @@ func (t Type) Valid() bool {
 		TypeSupporterPaymentFailed, TypeSupporterSubscriptionEnded, TypeSupporterPlanRetired,
 		TypeAccountMoved, TypeAdminAccountMoved,
 		TypeServiceClosure, TypeAdminServiceClosureDue, TypeSupporterServiceClosure,
-		TypeVoiceRoomStarted, TypeVoiceRoomInvited, TypeAdminErrorGroup, TypeAdminHookFailing, TypeStatus, TypeAnnouncement:
+		TypeVoiceRoomStarted, TypeVoiceRoomInvited, TypeAdminErrorGroup, TypeAdminHookFailing, TypeStatus, TypeAnnouncement,
+		TypeAdminHookAppeal, TypeHookAppealDecided:
 		return true
 	}
 	return false
@@ -244,6 +253,9 @@ type Notification struct {
 	SubjectUserID      string // "" unless the notification is an admin_sign_up: the user who signed up
 	SeveranceID        string // "" unless the notification is a relationships_severed
 	AppealID           string // "" unless the notification is an appeal_decided or an admin_appeal
+	// HookAppealID is the appeal of a refused post (hook_decision_appeals) of an admin_hook_appeal
+	// or a hook_appeal_decided, "" for the other types.
+	HookAppealID string
 	// CustomEmojiRequestID is the custom emoji request of an admin_custom_emoji_request or a
 	// custom_emoji_request_decided, "" for the other types.
 	CustomEmojiRequestID string
@@ -310,6 +322,10 @@ func (n Notification) Validate() error {
 	}
 	if (n.Type == TypeAppealDecided || n.Type == TypeAdminAppeal) != (n.AppealID != "") {
 		return errors.New("notification: an appeal_decided or an admin_appeal, and only they, name an appeal")
+	}
+	if hookAppeal := n.Type == TypeAdminHookAppeal || n.Type == TypeHookAppealDecided; hookAppeal != (n.HookAppealID != "") ||
+		(hookAppeal && n.SourceAccountID != "") {
+		return errors.New("notification: an admin_hook_appeal or a hook_appeal_decided, and only they, name an appeal of a refused post, and they have no source account")
 	}
 	if (n.Type == TypeAdminCustomEmojiRequest || n.Type == TypeCustomEmojiRequestDecided) != (n.CustomEmojiRequestID != "") {
 		return errors.New("notification: an admin_custom_emoji_request or a custom_emoji_request_decided, and only they, name a custom emoji request")
@@ -486,7 +502,7 @@ const (
 // other types need none.
 func ModeratorPermission(t Type) (Permission, bool) {
 	switch t {
-	case TypeAdminReport, TypeAdminHookFailing:
+	case TypeAdminReport, TypeAdminHookFailing, TypeAdminHookAppeal:
 		return PermissionManageReports, true
 	case TypeAdminSignUp, TypeAdminAppeal, TypeAdminAccountMoved:
 		return PermissionManageAccounts, true
@@ -567,6 +583,13 @@ func VoiceRoomStartedKey(roomID string) string { return string(TypeVoiceRoomStar
 func VoiceRoomInvitedKey(invitationID string) string {
 	return string(TypeVoiceRoomInvited) + ":" + invitationID
 }
+
+// AdminHookAppealKey is the dedupe key of an admin_hook_appeal notification: one per appeal.
+func AdminHookAppealKey(appealID string) string { return string(TypeAdminHookAppeal) + ":" + appealID }
+
+// HookAppealDecidedKey is the dedupe key of a hook_appeal_decided notification: one per appeal,
+// which is reviewed once.
+func HookAppealDecidedKey(appealID string) string { return string(TypeHookAppealDecided) + ":" + appealID }
 
 // AdminAppealKey is the dedupe key of an admin_appeal notification: one per appeal.
 func AdminAppealKey(appealID string) string { return string(TypeAdminAppeal) + ":" + appealID }

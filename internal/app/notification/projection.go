@@ -8,6 +8,7 @@ import (
 
 	appcontent "github.com/mycroblog/my/internal/app/content"
 	appgraph "github.com/mycroblog/my/internal/app/graph"
+	apphook "github.com/mycroblog/my/internal/app/hook"
 	"github.com/mycroblog/my/internal/app/kernel"
 	appmoderation "github.com/mycroblog/my/internal/app/moderation"
 	"github.com/mycroblog/my/internal/app/queue"
@@ -96,6 +97,9 @@ type ProjectorDeps struct {
 //   - moderation.appeal_decided: appeal_decided, to the account that appealed. It comes from
 //     the instance and has no source account; its dedupe key is the appeal's
 //     (notification.AppealDecidedKey).
+//   - hook.appeal_decided: hook_appeal_decided, to the author who appealed a post that local.status
+//     refused, upheld or overturned (ADR-0147 §9). It comes from the instance and has no source
+//     account; its dedupe key is the appeal's (notification.HookAppealDecidedKey).
 //   - content.custom_emoji_request_recorded of an approval or a rejection:
 //     custom_emoji_request_decided, to the requester's local account (ADR-0070 §9). It comes from
 //     the instance and has no source account; its dedupe key is the request's
@@ -252,6 +256,13 @@ func RegisterProjectors(r *uow.Projectors, d ProjectorDeps) {
 		return p.notify(ctx, tx, notification.Notification{
 			RecipientAccountID: ev.Appeal.AccountID, Type: notification.TypeAppealDecided, AppealID: ev.Appeal.ID,
 			DedupeKey: notification.AppealDecidedKey(ev.Appeal.ID), CreatedAt: ev.Decision.DecidedAt,
+		})
+	})
+	r.Register(apphook.EventAppealDecided, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
+		ev := e.(apphook.AppealDecided)
+		return p.notify(ctx, tx, notification.Notification{
+			RecipientAccountID: ev.Appeal.AccountID, Type: notification.TypeHookAppealDecided, HookAppealID: ev.Appeal.ID,
+			DedupeKey: notification.HookAppealDecidedKey(ev.Appeal.ID), CreatedAt: ev.Review.DecidedAt,
 		})
 	})
 	r.Register(appcontent.EventCustomEmojiRequestRecorded, func(ctx context.Context, tx uow.Tx, e uow.Event) error {

@@ -59,6 +59,14 @@
     "defaultMessage": "[Ḗřřǿǿřş ẇḗḗřḗḗ řḗḗƥǿǿřŧḗḗḓ ǿǿƞ {instance}]",
     "description": "Generated from en by tools/i18n; do not edit."
   },
+  "mail.admin_hook_appeal.body": {
+    "defaultMessage": "[Ȧ ŭŭşḗḗř ǿǿƒ {instance} ȧȧƥƥḗḗȧȧŀḗḗḓ ȧȧ ƥǿǿşŧ ŧħȧȧŧ ŧħḗḗ ȧȧŭŭŧǿǿḿȧȧŧḗḗḓ řḗḗṽīḗḗẇ řḗḗƒŭŭşḗḗḓ, ȧȧƞḓ ŧħḗḗ ȧȧƥƥḗḗȧȧŀ ȧȧẇȧȧīŧş ŧħḗḗ ḿǿǿḓḗḗřȧȧŧǿǿřş.]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "mail.admin_hook_appeal.subject": {
+    "defaultMessage": "[Ȧƞ ȧȧƥƥḗḗȧȧŀ ǿǿƒ ȧȧ řḗḗƒŭŭşḗḗḓ ƥǿǿşŧ ȧȧẇȧȧīŧş ŧħḗḗ ḿǿǿḓḗḗřȧȧŧǿǿřş ǿǿƒ {instance}]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
   "mail.admin_hook_failing.body": {
     "defaultMessage": "[Ƈȧȧŀŀş ǿǿƒ ȧȧƞ ḗḗẋŧḗḗřƞȧȧŀ řḗḗṽīḗḗẇ ǿǿƞ ŧħḗḗ şḗḗřṽḗḗř {instance} ķḗḗḗḗƥ ƒȧȧīŀīƞɠ. Ŭƞŧīŀ īŧ ẇǿǿřķş ȧȧɠȧȧīƞ, ẇħȧȧŧ īŧ řḗḗṽīḗḗẇş ƒǿǿŀŀǿǿẇş īŧş ƒȧȧīŀŭŭřḗḗ ƀḗḗħȧȧṽīǿǿŭŭř: ƀẏ ḓḗḗƒȧȧŭŭŀŧ īŧ ɠǿǿḗḗş ŧħřǿǿŭŭɠħ ŭŭƞřḗḗṽīḗḗẇḗḗḓ.]",
     "description": "Generated from en by tools/i18n; do not edit."
@@ -125,6 +133,10 @@
   },
   "mail.group.admin_error_group": {
     "defaultMessage": "[Ƞḗḗẇ ȧȧƞḓ řḗḗƈŭŭřřīƞɠ ḗḗřřǿǿřş]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "mail.group.admin_hook_appeal": {
+    "defaultMessage": "[Ȧƥƥḗḗȧȧŀş ǿǿƒ řḗḗƒŭŭşḗḗḓ ƥǿǿşŧş]",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "mail.group.admin_hook_failing": {

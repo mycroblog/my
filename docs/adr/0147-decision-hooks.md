@@ -29,9 +29,10 @@
 | `inbound.follow` | `federation.inbox` の `Follow` | `allow`, `drop`, `flag` | 通す（`retry`） | 3 秒 |
 | `signup.check` | `SignUp` と `SignUpExternal`。CAPTCHA と拒否リストの後。招待の登録は呼ばない | `allow`, `require_approval`, `reject`（運営者が有効にしたときだけ） | 通す（`require_approval`） | 2 秒 |
 | `media.check` | `media.process` の、結果が `ready` になる前。原本は送らない | `allow`, `mark_sensitive`, `flag` | 通す（`retry`） | 10 秒 |
-| `local.status` | `content.Service.Create` のトランザクションの前。冪等な再送の確認の後。既定は作成から日の浅いアカウントだけ | `allow`, `flag`, `reject` | 通す（選択肢なし） | 1 秒 |
+| `local.status` | `content.Service.Create` と `content.Service.Edit` のトランザクションの前。冪等な再送の確認の後。既定は作成から日の浅いアカウントだけ | `allow`, `flag`, `reject` | 通す（選択肢なし） | 1 秒 |
 
 - `media.check` の判定は `allow`・`mark_sensitive`・`flag`・`reject`。処理結果が出ると原本の blob が消えるので（`uploaded_media`）、`reject` は原本を残さない。保全や通報の義務は運営者とその国の話で、ソフトウェアでは決めない。使うかどうかはモードとプラグインの判定で運営者が選び、運用文書にこの性質を書く。
+- `local.status` はローカルの投稿の編集も審査する。対象は作成と同じで、`hook_local_status_account_age_days` の範囲のアカウントだけ。対象は版ごとに別で、キーは `<投稿の ID>#<新しい版の ID>` とする。`reject` はその編集だけを拒み、投稿は編集前のまま残る。編集の `reject` には異議申し立てを付けない（投稿は残っていて、モデレーターは通常の操作で扱える）。`flag` は投稿と同じく通報を起票し（§7）、`allow` は通す。
 - `Delete`・`Undo`・`Reject`、`Like`・リアクション・ブースト、配送の前にはフックを置かない。1 つのフックに複数のプラグインは連ねない。
 - 事後の確認は webhook（ADR-0060）と API の役目で、ここには持ち込まない。
 - フックを設定していないサーバーはプラグインを呼ばない。
@@ -67,7 +68,7 @@
 
 ADR-0020 の分類で次を足す。`schema/<dialect>/16-hook.sql` に置き、`internal/app/hook` が所有する。
 
-- `hook_decisions`（イベント）: フック、対象のキー、モード、結果（判定または失敗の種類）、理由コード、メモ、待ち時間、日時。`(hook, subject_key)` で一意。本文・メールアドレス・IP は持たない。`inbound.*` の対象のキーは受信したアクティビティの URI で、`Update` の版ごとに別の判定になる。
+- `hook_decisions`（イベント）: フック、対象のキー、モード、結果（判定または失敗の種類）、理由コード、メモ、待ち時間、日時。`(hook, subject_key)` で一意。本文・メールアドレス・IP は持たない。`inbound.*` の対象のキーは受信したアクティビティの URI で、`Update` の版ごとに別の判定になる。`local.status` のキーは新しい投稿ではその投稿の ID、編集では `<投稿の ID>#<新しい版の ID>` で、編集ごとに別の判定になる（§2）。
 - `hook_decision_statuses`（イベントの子）: 効果が及んだ投稿。`moderation_action_statuses` に対応し、§8 の投影の元になる。`Create` では投稿の ID が決まる取り込みのトランザクションで書く。
 - `hook_decision_overrides`（イベント）: モデレーターの取り消し（§9）。
 - `hook_decision_appeals`（リソース）と `hook_decision_appeal_decisions`（イベント）: `local.status` の `reject` への異議申し立てとその審査（§9）。処分の記録と分けた、この判定のためだけの表で、`moderation_appeals` と `moderation_appeal_decisions` と同じ形をとる。`hook_decision_appeals` は作者が送る本文を持つ。判定が本文を持たず、審査に要るからで、判定の表に本文がない原則はそのままである。1 つの判定に 1 件まで。
@@ -139,7 +140,13 @@ v0.1.0 の前なので移行は要らない（ADR-0023）。
 | `reject`（`local.status`） | 投稿は残らないので、取り消しは下の異議申し立ての審査で行う |
 | `require_approval` | 登録審査の通常の操作で承認する |
 
-**`local.status` の `reject` への異議申し立て。** 作者は `appeal_window_days` の間に、投稿しようとした本文を添えて申し立てる。審査は人が行い、プラグインを呼ばない。退ければ判定はそのままである。覆すと、同じトランザクションで判定を取り消し（`hook_decision_overrides`）、そのアカウントを `local.status` の対象から外す（`hook_account_exemptions`）。投稿は戻さず、作者が投稿し直す。
+**`local.status` の `reject` への異議申し立て。** 作者は `appeal_window_days` の間に、投稿しようとした本文を添えて申し立てる。審査は人が行い、プラグインを呼ばない。退ければ判定はそのままである。覆すと、同じトランザクションで判定を取り消し（`hook_decision_overrides`）、そのアカウントを `local.status` の対象から外す（`hook_account_exemptions`）。投稿は戻さず、作者が投稿し直す。申し立てられるのは新しい投稿の `reject` だけで、編集の `reject` は申し立てられない（§2）。
+
+**申し立ての知らせと読み取り。** 既存の通知の仕組みを使う。
+
+- 申し立てが届くと、`manage_reports` を持つモデレーター（申し立てた本人を除く）に `admin_hook_appeal` を通知する。通知の設定ではモデレーター向けの 1 行（`admin_hook_appeal`）で、メールも選べる。
+- 審査されると、維持でも覆しでも、作者に `hook_appeal_decided` を通知する。インスタンスからの知らせ（`moderation` の群）に入る。通知は申し立ての状態（`pending`・`upheld`・`overturned`）と審査の日時だけを持ち、判定の理由やメモは持たない（§12）。
+- 作者は `GET /hook_decisions/{id}/appeal`（第一者のクライアントだけ）で、自分の申し立ての状態を読める。投稿画面は申し立てを送った後にこれを読み、審査の結果を拒否の知らせに出す。拒まれた投稿の一覧は作らない。
 
 `drop` は tombstone を残さない。受信の重複排除（`received_activities`、30 日）が同じアクティビティを止めるが、スレッドの取得（`threads.go`）や `Announce` の取得は別の経路で同じ投稿を運び得る。それらは実際にすり抜けが出るまで広げない。
 
@@ -152,7 +159,8 @@ v0.1.0 の前なので移行は要らない（ADR-0023）。
 ### 11. 監査ログ
 
 - モードの変更は、既存の `setting_changed`（`actor_kind = user` か `cli`）で残す。
-- 判定の取り消しは、新しい `hook_decision_overridden` と `target_kind = hook_decision` で残す。
+- 判定の取り消しは、新しい `hook_decision_overridden` と `target_kind = hook_decision` で残す。申し立てを覆したときも同じ。
+- 申し立てを退けたときは、`hook_appeal_upheld`（`target_kind = hook_decision`、対象は判定）で残す。判定は変わらないが、人の決定なので記録する。
 - 自動の効果のうち、残っているものに状態を残すもの（`mark_sensitive`、`flag` の起票、`require_approval`）は `actor_kind = system` の `hook_decision_applied` で残す。何も保存しない `drop` と `reject` は `hook_decisions` にだけ残す。監査ログの保持は 730 日で表示名の写しを持つので（ADR-0058 §8）、スパムの波の 1 件ごとを書くと、§6 の短い保持が意味をなくす。
 
 覆る条件: `drop` にも監査ログが要ると法令の確認で分かったとき。
@@ -175,6 +183,8 @@ FR-719 の拒否リストと CAPTCHA は固定の規則にしか効かず、FR-7
 
 `drop` は誤りの代償が大きい一方で最も価値のある判定なので、外すのではなく `observe` から始める形にした。通報者は、`NOT NULL` を保てる行のあるインスタンス Actor にした。`mark_sensitive` は、投影の `source_action_id` が処分しか指せないことが問題で、処分を作ると原則の 3 に反するので、出所の排他にした。これに伴い、保持期間のある判定から投影を作ることになり、§6 が投影の指す判定を残す形になった。`media.check` の `reject` は法務の確認を待つ間だけ外し、語彙には残した。`local.status` の `reject` には、今の `moderation_appeals.action_id` が処分しか指せないので、専用の異議申し立てを付けた。
 
+編集を審査しないと、日の浅いアカウントが無害な投稿を後からスパムに書き換えられる。作成と同じ対象に絞って編集も審査し、拒むのはその編集だけにした。申し立てには知らせがなく、作者は結果を知る手段がなく、モデレーターは画面を見に行くしかなかったので、既存の通知の仕組みで両方に知らせ、作者が状態を読む API を足した。維持にも監査ログを残すのは、覆しが `hook_decision_overridden` で残るのと揃えるためである。
+
 ## 採らなかった案
 
 - プラグインに本文の書き換えを許す: 汚れた部分だけを除けるが、操られたプラグインが読者に見える文章を作れる。
@@ -189,6 +199,10 @@ FR-719 の拒否リストと CAPTCHA は固定の規則にしか効かず、FR-7
 - `media.check` から `reject` を外す: 原本が消える判定がなくなるが、運営者が公開前に止められない。法令への対応はソフトウェアではなく運営者が決めることなので、手段を減らさない。
 - `local.status` の `reject` に異議申し立てを付けない: 表も審査も増えないが、作者が誤りを正す道がなくなる。
 - 異議申し立てを既存の `moderation_appeals` に載せる: 審査の仕組みを共有できるが、`action_id` が処分を指すので、処分のない判定を載せると原則の 3 の記録の分離が崩れる。
+- 編集を審査しない: 費用は最小だが、日の浅いアカウントが投稿を後からスパムに書き換えれば審査をすり抜ける。
+- 編集の `reject` にも異議申し立てを付ける: 作者が誤りを正せるが、投稿は残っていてモデレーターが通常の操作で扱えるので、表と審査を増やすほどの価値がない。
+- 作者が拒まれた投稿の一覧と申し立ての期限を読めるようにする: タブを閉じても申し立てられるが、拒まれた投稿の記録を作者に見せる面が増える。使われ方を見てから考える。
+- 申し立ての通知を持たず、モデレーターが画面を見に行き、作者は投稿し直して確かめる: 何も足さずに済むが、§9 の「作者が投稿し直す」が結果を知らないまま行われる。
 - 拒否したものも監査ログにすべて書く: 1 つの場所で追えるが、§11 のとおり保持の短さを損なう。
 
 ## Consequences（影響）

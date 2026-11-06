@@ -582,6 +582,11 @@ func DescribeNotification(l *i18n.Localizer, n Wording, instance string) PushPay
 		p.Title, p.Path = l.ServerPushAdminWebhookDisabled(instance), "/admin/webhooks"
 	case notification.TypeAdminHookFailing:
 		p.Title, p.Path = l.ServerPushAdminHookFailing(instance), "/moderation/hook-decisions"
+	case notification.TypeAdminHookAppeal:
+		p.Title, p.Path = l.ServerPushAdminHookAppeal(instance), "/moderation/hook-decisions"
+	case notification.TypeHookAppealDecided:
+		// The author has no page of refused posts: the notification itself says how it ended.
+		p.Title = l.ServerPushHookAppealDecided(instance)
 	case notification.TypeAdminCustomEmojiRequest:
 		p.Title, p.Path = l.ServerPushAdminCustomEmojiRequest(instance), "/admin/custom-emojis?tab=requests"
 	case notification.TypeCustomEmojiRequestDecided:

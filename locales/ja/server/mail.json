@@ -399,8 +399,20 @@
     "defaultMessage": "{instance} の外部の審査が失敗し続けています",
     "description": "Subject of the email to a moderator who gets moderator notifications by email: calls of the external review of submissions keep failing. {instance} is the server's display name, or its domain name when it has none."
   },
+  "mail.admin_hook_appeal.body": {
+    "defaultMessage": "{instance} の利用者が、自動の審査に拒否された投稿に異議を申し立て、モデレーターの審査を待っています。",
+    "description": "Paragraph of the email to a moderator about a new appeal of a post that the automated review refused. It never names the user or the post. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.admin_hook_appeal.subject": {
+    "defaultMessage": "{instance} のモデレーターに、拒否された投稿への異議申し立てが届きました",
+    "description": "Subject of the email to a moderator who chose to get moderator notifications by email: a user appealed a post that the automated review refused. {instance} is the server's display name, or its domain name when it has none."
+  },
   "mail.group.admin_hook_failing": {
     "defaultMessage": "外部の審査の失敗",
+    "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
+  },
+  "mail.group.admin_hook_appeal": {
+    "defaultMessage": "拒否された投稿への異議申し立て",
     "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
   }
 }

@@ -356,7 +356,7 @@
     "description": "Introduction of the section of the information page about the external review."
   },
   "about.external_review.local_status": {
-    "defaultMessage": "Posts by accounts of this server: their text. Private and direct posts are not sent.",
+    "defaultMessage": "Posts by accounts of this server, and their edits: their text. Private and direct posts are not sent.",
     "description": "What the external review of local posts covers and what is sent to it."
   },
   "about.external_review.media_check": {

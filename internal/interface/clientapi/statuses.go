@@ -614,6 +614,13 @@ func (s *Server) EditStatus(ctx context.Context, req EditStatusRequestObject) (E
 			return EditStatus200JSONResponse{Body: out, Headers: EditStatus200ResponseHeaders{CacheControl: statusCache(ctx)}}, nil
 		}
 	}
+	if errors.Is(err, appcontent.ErrRejectedByReview) {
+		// An edit that local.status refused: the same fixed text as a refused post, with no decision
+		// to appeal, since the post stays as it was (ADR-0147 §2).
+		l := s.Localizer(ctx)
+		return EditStatusdefaultApplicationProblemPlusJSONResponse(s.problem(ctx, http.StatusUnprocessableEntity,
+			ProblemTypeStatusRejected, l.ServerErrorsStatusEditRejected(), l.ServerErrorsStatusEditRejectedDetail())), nil
+	}
 	if p, ok := s.authorProblem(ctx, v, req.Id, err); ok {
 		return EditStatusdefaultApplicationProblemPlusJSONResponse(p), nil
 	}

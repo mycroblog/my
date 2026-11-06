@@ -1,4 +1,36 @@
 # SPDX-License-Identifier: MIT
+get:
+  operationId: getOwnHookAppeal
+  x-first-party-only: true
+  summary: Show the user's appeal of a post that the automated review refused
+  description: |
+    Where the user's appeal of a refused post stands: `pending` until a moderator reviews it,
+    then `upheld` (the refusal stays) or `overturned` (the user's posts are no longer reviewed,
+    and the user posts again). A `hook_appeal_decided` notification tells the user when it is
+    reviewed. A decision that the user has not appealed, or that is not about the user's post,
+    is a 404, as is an appeal no longer kept.
+  tags: [statuses]
+  security:
+    - oauth2: ["read:statuses"]
+  parameters:
+    - name: id
+      in: path
+      required: true
+      description: The ID of the decision, `hook_decision_id` of the refusal.
+      schema:
+        $ref: ../components/schemas/Id.yaml
+  responses:
+    "200":
+      description: The appeal.
+      headers:
+        Cache-Control:
+          $ref: ../components/headers/CacheControl.yaml
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/OwnHookAppeal.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml
 post:
   operationId: appealHookDecision
   x-first-party-only: true

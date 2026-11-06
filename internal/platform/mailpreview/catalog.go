@@ -138,6 +138,7 @@ func Catalog() []Entry {
 		notification.TypeAdminReport, notification.TypeAdminSignUp, notification.TypeAdminAppeal,
 		notification.TypeAdminWebhookDisabled, notification.TypeAdminCustomEmojiRequest, notification.TypeAdminAccountMoved,
 		notification.TypeAdminServiceClosureDue, notification.TypeAdminErrorGroup, notification.TypeAdminHookFailing,
+		notification.TypeAdminHookAppeal,
 	} {
 		entries = append(entries, Entry{JobType: appnotification.JobModeratorEmail, Variant: string(t), Draft: func(s Sample) (kernel.MailDraft, bool) {
 			return appnotification.ModeratorEmailDraft(s.L, sampleName, sampleTo, t, sampleWebOrigin, sampleUnsubscribeURL)

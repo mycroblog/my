@@ -299,6 +299,7 @@ const (
 	AdminAuditActionDomainActionLifted              AdminAuditAction = "domain_action_lifted"
 	AdminAuditActionDomainStatusesRefetchQueued     AdminAuditAction = "domain_statuses_refetch_queued"
 	AdminAuditActionEmailSuppressionLifted          AdminAuditAction = "email_suppression_lifted"
+	AdminAuditActionHookAppealUpheld                AdminAuditAction = "hook_appeal_upheld"
 	AdminAuditActionHookDecisionApplied             AdminAuditAction = "hook_decision_applied"
 	AdminAuditActionHookDecisionOverridden          AdminAuditAction = "hook_decision_overridden"
 	AdminAuditActionInstanceMarkedAvailable         AdminAuditAction = "instance_marked_available"
@@ -434,6 +435,8 @@ func (e AdminAuditAction) Valid() bool {
 	case AdminAuditActionDomainStatusesRefetchQueued:
 		return true
 	case AdminAuditActionEmailSuppressionLifted:
+		return true
+	case AdminAuditActionHookAppealUpheld:
 		return true
 	case AdminAuditActionHookDecisionApplied:
 		return true
@@ -3053,6 +3056,7 @@ const (
 	NotificationGroupAdminAppeal             NotificationGroup = "admin_appeal"
 	NotificationGroupAdminCustomEmojiRequest NotificationGroup = "admin_custom_emoji_request"
 	NotificationGroupAdminErrorGroup         NotificationGroup = "admin_error_group"
+	NotificationGroupAdminHookAppeal         NotificationGroup = "admin_hook_appeal"
 	NotificationGroupAdminHookFailing        NotificationGroup = "admin_hook_failing"
 	NotificationGroupAdminReport             NotificationGroup = "admin_report"
 	NotificationGroupAdminServiceClosureDue  NotificationGroup = "admin_service_closure_due"
@@ -3087,6 +3091,8 @@ func (e NotificationGroup) Valid() bool {
 	case NotificationGroupAdminCustomEmojiRequest:
 		return true
 	case NotificationGroupAdminErrorGroup:
+		return true
+	case NotificationGroupAdminHookAppeal:
 		return true
 	case NotificationGroupAdminHookFailing:
 		return true
@@ -3179,6 +3185,7 @@ const (
 	NotificationTypeAdminAppeal                NotificationType = "admin_appeal"
 	NotificationTypeAdminCustomEmojiRequest    NotificationType = "admin_custom_emoji_request"
 	NotificationTypeAdminErrorGroup            NotificationType = "admin_error_group"
+	NotificationTypeAdminHookAppeal            NotificationType = "admin_hook_appeal"
 	NotificationTypeAdminHookFailing           NotificationType = "admin_hook_failing"
 	NotificationTypeAdminReport                NotificationType = "admin_report"
 	NotificationTypeAdminServiceClosureDue     NotificationType = "admin_service_closure_due"
@@ -3192,6 +3199,7 @@ const (
 	NotificationTypeFollow                     NotificationType = "follow"
 	NotificationTypeFollowAccepted             NotificationType = "follow_accepted"
 	NotificationTypeFollowRequest              NotificationType = "follow_request"
+	NotificationTypeHookAppealDecided          NotificationType = "hook_appeal_decided"
 	NotificationTypeMention                    NotificationType = "mention"
 	NotificationTypeModerationNotice           NotificationType = "moderation_notice"
 	NotificationTypePollClosed                 NotificationType = "poll_closed"
@@ -3222,6 +3230,8 @@ func (e NotificationType) Valid() bool {
 		return true
 	case NotificationTypeAdminErrorGroup:
 		return true
+	case NotificationTypeAdminHookAppeal:
+		return true
 	case NotificationTypeAdminHookFailing:
 		return true
 	case NotificationTypeAdminReport:
@@ -3247,6 +3257,8 @@ func (e NotificationType) Valid() bool {
 	case NotificationTypeFollowAccepted:
 		return true
 	case NotificationTypeFollowRequest:
+		return true
+	case NotificationTypeHookAppealDecided:
 		return true
 	case NotificationTypeMention:
 		return true
@@ -5235,7 +5247,8 @@ type AdminAppealPage struct {
 // `account`). On a `signup_block`: `signup_block_added`, `signup_block_lifted`. On a
 // `hook_decision`: `hook_decision_applied` (the server acted on a decision hook's verdict
 // and left state; the actor is the system), `hook_decision_overridden` (a moderator
-// cancelled the decision). On a
+// cancelled the decision, also when overturning its appeal), `hook_appeal_upheld` (a
+// moderator upheld the appeal of a refused post, and the decision stays). On a
 // `custom_emoji`: `custom_emoji_created`, `custom_emoji_image_replaced`,
 // `custom_emoji_copied` (a new local emoji copied from a remote one),
 // `custom_emoji_updated` (its category, aliases, or place in the picker),
@@ -5314,7 +5327,8 @@ type AdminAuditEntry struct {
 	// `account`). On a `signup_block`: `signup_block_added`, `signup_block_lifted`. On a
 	// `hook_decision`: `hook_decision_applied` (the server acted on a decision hook's verdict
 	// and left state; the actor is the system), `hook_decision_overridden` (a moderator
-	// cancelled the decision). On a
+	// cancelled the decision, also when overturning its appeal), `hook_appeal_upheld` (a
+	// moderator upheld the appeal of a refused post, and the decision stays). On a
 	// `custom_emoji`: `custom_emoji_created`, `custom_emoji_image_replaced`,
 	// `custom_emoji_copied` (a new local emoji copied from a remote one),
 	// `custom_emoji_updated` (its category, aliases, or place in the picker),
@@ -10866,6 +10880,13 @@ type Notification struct {
 	// ErrorGroup What an `admin_error_group` tells of; omitted for the other types.
 	ErrorGroup *NotificationErrorGroup `json:"error_group,omitempty"`
 
+	// HookAppeal The user's appeal of a refused post that a `hook_appeal_decided` tells of, with its state;
+	// first-party clients only, and absent once the appeal is no longer kept.
+	HookAppeal *OwnHookAppeal `json:"hook_appeal,omitempty"`
+
+	// HookAppealId The appeal of a refused post that an `admin_hook_appeal` is about.
+	HookAppealId *Id `json:"hook_appeal_id,omitempty"`
+
 	// Id The ID of a resource, a UUIDv7 in its canonical string form.
 	//
 	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
@@ -10917,7 +10938,10 @@ type Notification struct {
 	// the moderators resolved, without how they resolved it. It is sent once per report, even
 	// when the report is reopened and resolved again. `appeal_decided` also comes from the
 	// instance: the moderators decided the user's appeal, and its `moderation_action` is the
-	// action with the appeal and the decision.
+	// action with the appeal and the decision. `hook_appeal_decided` also comes from the
+	// instance: a moderator upheld or overturned the user's appeal of a post that the automated
+	// review refused, and its `hook_appeal` is the appeal with its state; first-party clients only,
+	// as the appeal is. It is sent once per appeal.
 	// `relationships_severed` also comes from the instance: its `relationship_severance` tells
 	// how many follows the user lost when the moderators suspended a server or a remote
 	// account, whose `account` it carries for an account. It is sent once per suspension.
@@ -10928,8 +10952,9 @@ type Notification struct {
 	// `admin_appeal` (a user appealed an action; `appeal_id` is the appeal) to those with
 	// `manage_accounts`, and `admin_webhook_disabled` (the server disabled a webhook that
 	// answered 410 Gone or kept failing; it names none) to those with `manage_webhooks`, and
-	// `admin_hook_failing` (calls of an external review keep failing; it names none) to those
-	// with `manage_reports`, and
+	// `admin_hook_failing` (calls of an external review keep failing; it names none) and
+	// `admin_hook_appeal` (a user appealed a post that the automated review refused;
+	// `hook_appeal_id` is the appeal) to those with `manage_reports`, and
 	// `admin_custom_emoji_request` (a user requested a custom emoji or a new image of one;
 	// `custom_emoji_request` is the request) to those with `manage_custom_emojis`.
 	// `custom_emoji_request_decided` also comes from the instance: an administrator approved
@@ -11003,9 +11028,10 @@ type NotificationErrorGroupChange string
 // `poll_closed`, `account_moved`, `status`), except `voice`, which is `voice_room_started` and
 // `voice_room_invited`. `status` has no `email` channel. The moderator notifications are one row per type (`admin_report`,
 // `admin_sign_up`, `admin_appeal`, `admin_webhook_disabled`, `admin_custom_emoji_request`,
-// `admin_account_moved`, `admin_service_closure_due`, `admin_error_group`, `admin_hook_failing`). The instance's
+// `admin_account_moved`, `admin_service_closure_due`, `admin_error_group`, `admin_hook_failing`, `admin_hook_appeal`). The instance's
 // notices to the user are `moderation` (`moderation_notice`, `report_resolved`,
-// `appeal_decided`, `relationships_severed`, `custom_emoji_request_decided`),
+// `appeal_decided`, `relationships_severed`, `custom_emoji_request_decided`,
+// `hook_appeal_decided`),
 // `service_closure`, `supporter` (the `supporter_*` types), and `announcement`, the only one of
 // them that the user turns off in the app (on by default); it has no `email` channel.
 type NotificationGroup string
@@ -11067,9 +11093,10 @@ type NotificationSettingRow struct {
 	// `poll_closed`, `account_moved`, `status`), except `voice`, which is `voice_room_started` and
 	// `voice_room_invited`. `status` has no `email` channel. The moderator notifications are one row per type (`admin_report`,
 	// `admin_sign_up`, `admin_appeal`, `admin_webhook_disabled`, `admin_custom_emoji_request`,
-	// `admin_account_moved`, `admin_service_closure_due`, `admin_error_group`, `admin_hook_failing`). The instance's
+	// `admin_account_moved`, `admin_service_closure_due`, `admin_error_group`, `admin_hook_failing`, `admin_hook_appeal`). The instance's
 	// notices to the user are `moderation` (`moderation_notice`, `report_resolved`,
-	// `appeal_decided`, `relationships_severed`, `custom_emoji_request_decided`),
+	// `appeal_decided`, `relationships_severed`, `custom_emoji_request_decided`,
+	// `hook_appeal_decided`),
 	// `service_closure`, `supporter` (the `supporter_*` types), and `announcement`, the only one of
 	// them that the user turns off in the app (on by default); it has no `email` channel.
 	Group NotificationGroup `json:"group"`
@@ -11117,9 +11144,10 @@ type NotificationSettingsUpdate struct {
 		// `poll_closed`, `account_moved`, `status`), except `voice`, which is `voice_room_started` and
 		// `voice_room_invited`. `status` has no `email` channel. The moderator notifications are one row per type (`admin_report`,
 		// `admin_sign_up`, `admin_appeal`, `admin_webhook_disabled`, `admin_custom_emoji_request`,
-		// `admin_account_moved`, `admin_service_closure_due`, `admin_error_group`, `admin_hook_failing`). The instance's
+		// `admin_account_moved`, `admin_service_closure_due`, `admin_error_group`, `admin_hook_failing`, `admin_hook_appeal`). The instance's
 		// notices to the user are `moderation` (`moderation_notice`, `report_resolved`,
-		// `appeal_decided`, `relationships_severed`, `custom_emoji_request_decided`),
+		// `appeal_decided`, `relationships_severed`, `custom_emoji_request_decided`,
+		// `hook_appeal_decided`),
 		// `service_closure`, `supporter` (the `supporter_*` types), and `announcement`, the only one of
 		// them that the user turns off in the app (on by default); it has no `email` channel.
 		Group NotificationGroup `json:"group"`
@@ -11142,7 +11170,10 @@ type NotificationSettingsUpdateChangesChannel string
 // the moderators resolved, without how they resolved it. It is sent once per report, even
 // when the report is reopened and resolved again. `appeal_decided` also comes from the
 // instance: the moderators decided the user's appeal, and its `moderation_action` is the
-// action with the appeal and the decision.
+// action with the appeal and the decision. `hook_appeal_decided` also comes from the
+// instance: a moderator upheld or overturned the user's appeal of a post that the automated
+// review refused, and its `hook_appeal` is the appeal with its state; first-party clients only,
+// as the appeal is. It is sent once per appeal.
 // `relationships_severed` also comes from the instance: its `relationship_severance` tells
 // how many follows the user lost when the moderators suspended a server or a remote
 // account, whose `account` it carries for an account. It is sent once per suspension.
@@ -11153,8 +11184,9 @@ type NotificationSettingsUpdateChangesChannel string
 // `admin_appeal` (a user appealed an action; `appeal_id` is the appeal) to those with
 // `manage_accounts`, and `admin_webhook_disabled` (the server disabled a webhook that
 // answered 410 Gone or kept failing; it names none) to those with `manage_webhooks`, and
-// `admin_hook_failing` (calls of an external review keep failing; it names none) to those
-// with `manage_reports`, and
+// `admin_hook_failing` (calls of an external review keep failing; it names none) and
+// `admin_hook_appeal` (a user appealed a post that the automated review refused;
+// `hook_appeal_id` is the appeal) to those with `manage_reports`, and
 // `admin_custom_emoji_request` (a user requested a custom emoji or a new image of one;
 // `custom_emoji_request` is the request) to those with `manage_custom_emojis`.
 // `custom_emoji_request_decided` also comes from the instance: an administrator approved
@@ -11348,6 +11380,9 @@ type OwnCustomEmojiPage struct {
 
 // OwnHookAppeal The user's appeal of a post that the automated review refused.
 type OwnHookAppeal struct {
+	// DecidedAt When a moderator upheld or overturned it; absent while it is `pending`.
+	DecidedAt *time.Time `json:"decided_at,omitempty"`
+
 	// HookDecisionId The decision appealed.
 	HookDecisionId string `json:"hook_decision_id"`
 	Id             string `json:"id"`
@@ -16181,6 +16216,9 @@ type ServerInterface interface {
 	// RejectFollowRequest Reject a follow request
 	// (POST /follow_requests/{id}/reject)
 	RejectFollowRequest(w http.ResponseWriter, r *http.Request, id AccountId)
+	// GetOwnHookAppeal Show the user's appeal of a post that the automated review refused
+	// (GET /hook_decisions/{id}/appeal)
+	GetOwnHookAppeal(w http.ResponseWriter, r *http.Request, id Id)
 	// AppealHookDecision Appeal a post that the automated review refused
 	// (POST /hook_decisions/{id}/appeal)
 	AppealHookDecision(w http.ResponseWriter, r *http.Request, id Id)
@@ -23389,6 +23427,32 @@ func (siw *ServerInterfaceWrapper) RejectFollowRequest(w http.ResponseWriter, r 
 	handler.ServeHTTP(w, r)
 }
 
+// GetOwnHookAppeal operation middleware
+func (siw *ServerInterfaceWrapper) GetOwnHookAppeal(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id Id
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetOwnHookAppeal(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // AppealHookDecision operation middleware
 func (siw *ServerInterfaceWrapper) AppealHookDecision(w http.ResponseWriter, r *http.Request) {
 
@@ -27477,6 +27541,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPatch+" "+options.BaseURL+"/media/{id}", wrapper.UpdateMedia)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/moderation/actions", wrapper.ListOwnModerationActions)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/moderation/actions/{id}/appeal", wrapper.AppealModerationAction)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/hook_decisions/{id}/appeal", wrapper.GetOwnHookAppeal)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/hook_decisions/{id}/appeal", wrapper.AppealHookDecision)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/notifications", wrapper.ListNotifications)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/notifications/marker", wrapper.GetNotificationMarker)
@@ -41881,6 +41946,68 @@ func (response RejectFollowRequestdefaultApplicationProblemPlusJSONResponse) Vis
 	return err
 }
 
+type GetOwnHookAppealRequestObject struct {
+	Id Id `json:"id"`
+}
+
+type GetOwnHookAppealResponseObject interface {
+	VisitGetOwnHookAppealResponse(w http.ResponseWriter) error
+}
+
+type GetOwnHookAppeal200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type GetOwnHookAppeal200JSONResponse struct {
+	Body    OwnHookAppeal
+	Headers GetOwnHookAppeal200ResponseHeaders
+}
+
+func (response GetOwnHookAppeal200JSONResponse) VisitGetOwnHookAppealResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetOwnHookAppealdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response GetOwnHookAppealdefaultApplicationProblemPlusJSONResponse) VisitGetOwnHookAppealResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type AppealHookDecisionRequestObject struct {
 	Id   Id `json:"id"`
 	Body *AppealHookDecisionJSONRequestBody
@@ -50916,6 +51043,9 @@ type StrictServerInterface interface {
 	// RejectFollowRequest Reject a follow request
 	// (POST /follow_requests/{id}/reject)
 	RejectFollowRequest(ctx context.Context, request RejectFollowRequestRequestObject) (RejectFollowRequestResponseObject, error)
+	// GetOwnHookAppeal Show the user's appeal of a post that the automated review refused
+	// (GET /hook_decisions/{id}/appeal)
+	GetOwnHookAppeal(ctx context.Context, request GetOwnHookAppealRequestObject) (GetOwnHookAppealResponseObject, error)
 	// AppealHookDecision Appeal a post that the automated review refused
 	// (POST /hook_decisions/{id}/appeal)
 	AppealHookDecision(ctx context.Context, request AppealHookDecisionRequestObject) (AppealHookDecisionResponseObject, error)
@@ -57685,6 +57815,32 @@ func (sh *strictHandler) RejectFollowRequest(w http.ResponseWriter, r *http.Requ
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(RejectFollowRequestResponseObject); ok {
 		if err := validResponse.VisitRejectFollowRequestResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetOwnHookAppeal operation middleware
+func (sh *strictHandler) GetOwnHookAppeal(w http.ResponseWriter, r *http.Request, id Id) {
+	var request GetOwnHookAppealRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetOwnHookAppeal(ctx, request.(GetOwnHookAppealRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetOwnHookAppeal")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetOwnHookAppealResponseObject); ok {
+		if err := validResponse.VisitGetOwnHookAppealResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

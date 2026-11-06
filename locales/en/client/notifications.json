@@ -407,9 +407,29 @@
     "defaultMessage": "Open the automated reviews",
     "description": "Link in a notification to the page of decisions of the external review of submissions."
   },
+  "notifications.link.hook_appeals": {
+    "defaultMessage": "Open the appeals",
+    "description": "Link of an admin_hook_appeal notification to the screen of the automated reviews, which lists the appeals of refused posts that await review."
+  },
   "notifications.type.admin_hook_failing": {
     "defaultMessage": "Calls of an external review keep failing",
     "description": "Notification sentence to a moderator: calls of the external review of submissions keep failing, so submissions go through unreviewed or wait."
+  },
+  "notifications.type.admin_hook_appeal": {
+    "defaultMessage": "A user appealed a post that the automated review refused",
+    "description": "Notification to a moderator: a user appealed a post that the server's automated review refused, and the appeal awaits review. Names neither the user nor the post."
+  },
+  "notifications.type.hook_appeal_decided": {
+    "defaultMessage": "The moderators reviewed your appeal of a refused post",
+    "description": "Notification: the moderators upheld or overturned the user's appeal of a post that the automated review refused; shown when the appeal is no longer available to say which."
+  },
+  "notifications.type.hook_appeal_upheld": {
+    "defaultMessage": "The moderators upheld the refusal of your post. It stays unpublished.",
+    "description": "Notification: a moderator reviewed the user's appeal of a post that the automated review refused, and kept the refusal."
+  },
+  "notifications.type.hook_appeal_overturned": {
+    "defaultMessage": "The moderators cancelled the refusal of your post. You can post it again.",
+    "description": "Notification: a moderator overturned the automated review's refusal of the user's post. The post is not restored; the user posts it again, and their posts are no longer reviewed."
   },
   "notifications.unknown": {
     "defaultMessage": "You have a new notification.",

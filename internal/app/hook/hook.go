@@ -50,6 +50,15 @@ const (
 	Reject          = hook.Reject
 )
 
+// The outcomes of the review of an appeal.
+const (
+	AppealUpheld     = hook.AppealUpheld
+	AppealOverturned = hook.AppealOverturned
+)
+
+// EditSubjectKey is hook.EditSubjectKey: the subject key of local.status for an edit of a post.
+func EditSubjectKey(statusID, revisionID string) string { return hook.EditSubjectKey(statusID, revisionID) }
+
 // Request is what a hook asks a plugin. Subject is the hook's own description of the subject, nil
 // for the contract's probes; the adapter of Plugin knows each hook's type and sends what it holds.
 type Request struct {
@@ -228,6 +237,8 @@ type Repository interface {
 	// AppealTx returns an appeal with its decision and review inside tx; it fails with
 	// ErrAppealNotFound.
 	AppealTx(ctx context.Context, tx uow.Tx, id string) (hook.AppealRecord, error)
+	// Appeal returns an appeal with its decision and review; it fails with ErrAppealNotFound.
+	Appeal(ctx context.Context, id string) (hook.AppealRecord, error)
 	// AppealOfDecision returns the appeal of a decision; it fails with ErrAppealNotFound.
 	AppealOfDecision(ctx context.Context, decisionID string) (hook.AppealRecord, error)
 	// ListAppeals returns the appeals that q selects, newest first.

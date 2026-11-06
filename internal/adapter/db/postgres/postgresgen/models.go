@@ -693,6 +693,7 @@ type Notification struct {
 	ErrorGroupID            *string
 	ErrorGroupHour          *time.Time
 	AnnouncementID          *string
+	HookAppealID            *string
 	DedupeKey               string
 	CreatedAt               time.Time
 }

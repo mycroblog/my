@@ -60,6 +60,17 @@ export const handlers = [
       } satisfies Schemas["OwnHookAppeal"]),
     ),
   ),
+  // operationId getOwnHookAppeal: the appeal of a refused post still awaits a moderator.
+  http.get(`${apiBase}/hook_decisions/:id/appeal`, ({ request, params }) =>
+    withViewer(request, () =>
+      HttpResponse.json({
+        id: "0192f0c4-7a8e-7000-8000-0000000003b1",
+        hook_decision_id: String(params["id"]),
+        state: "pending",
+        submitted_at: "2026-11-06T00:10:00Z",
+      } satisfies Schemas["OwnHookAppeal"]),
+    ),
+  ),
   // Accepts the upload; it is processed by the time the client asks again.
   http.post(`${apiBase}/media`, () => HttpResponse.json(mediaFixture(uploadedMediaId, "processing"), { status: 202 })),
   http.get(`${apiBase}/media/:id`, ({ params }) => HttpResponse.json(mediaFixture(String(params["id"])))),
