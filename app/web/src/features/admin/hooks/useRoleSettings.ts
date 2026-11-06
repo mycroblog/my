@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The roles screen (FR-720, manage_roles): the roles of the instance, what the viewer may do with each, creating a
-// role, changing its position and permissions, giving it a badge (ADR-0070), and deleting it. The viewer changes only
-// the roles at or below their highest one and only the permissions their roles grant; admin changes only its badge,
-// and neither built-in role is deleted. A refused input stays next to its field; what a change did is announced and kept in a StatusMessage.
-import { type BadgeColor, useNotice } from "@my/ui";
+// role (its own page), and, on a role's page, changing its position, permissions and badge (ADR-0070) in one form and
+// deleting it. The viewer changes only the roles at or below their highest one and only the permissions their roles
+// grant; admin changes only its badge, and neither built-in role is deleted. A refused input stays next to its field;
+// the result of a save shows beside its button (FormActionBar); creating and deleting move to another page with a toast.
+import { type BadgeColor, type FormActionResult, useNotice } from "@my/ui";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
+import { useNavigate } from "@tanstack/react-router";
 import { type SyntheticEvent, useState } from "react";
 import { useApi } from "../../../lib/auth/SessionProvider";
 import { ApiError, errorMessage } from "../../../lib/errors";
@@ -85,6 +87,17 @@ export function useRoleSettings(): { rows: RoleRow[]; rights: RoleRights } {
   };
 }
 
+/** One role of the instance by its key, with the viewer's rights; undefined for a key no role has. */
+export function useRole(key: string): { row: RoleRow | undefined; rights: RoleRights } {
+  const { rows, rights } = useRoleSettings();
+  return { row: rows.find((row) => row.role.key === key), rights };
+}
+
+/** The address of a role's page. */
+export function rolePath(key: string): string {
+  return `/admin/roles/${encodeURIComponent(key)}`;
+}
+
 /** The fields of a role that the form checks or the server may refuse, and the rest of the form. */
 type RoleField = "key" | "position" | "permissions" | "badge" | "form";
 
@@ -97,7 +110,7 @@ export type RoleDraft = { key: string; position: string; permissions: readonly P
 const emptyDraft: RoleDraft = { key: "", position: "", permissions: [] };
 
 /** The draft of an existing role. */
-export function draftOfRole(role: AdminRole): RoleDraft {
+function draftOfRole(role: AdminRole): RoleDraft {
   return { key: role.key, position: String(role.position), permissions: role.permissions };
 }
 
@@ -148,7 +161,11 @@ function parsePosition(text: string, max: number): number | undefined {
 function checkDraft(draft: RoleDraft, rights: RoleRights, t: Translate, isNew: boolean): RoleFieldError | undefined {
   const key = draft.key.trim();
   if (isNew && (key === "" || key.length > roleKeyLimit || !roleKeyPattern.test(key))) {
-    return { field: "key", message: t("client:admin.roles.key.invalid", { max: String(roleKeyLimit) }), missing: [] };
+    return {
+      field: "key",
+      message: t("client:admin.roles.key.invalid", { max: String(roleKeyLimit) }),
+      missing: [],
+    };
   }
   if (parsePosition(draft.position, rights.maxPosition) === undefined) {
     return {
@@ -160,28 +177,37 @@ function checkDraft(draft: RoleDraft, rights: RoleRights, t: Translate, isNew: b
   return undefined;
 }
 
-/** The form of a new role. A success empties it and says so in the form's StatusMessage. */
+/** The result of a refusal of the whole form (not of one field), for the form's FormActionBar. */
+function formResult(error: RoleFieldError | undefined, t: Translate): FormActionResult | undefined {
+  return error?.field === "form"
+    ? { tone: "danger", message: t("client:admin.roles.save_failed", { reason: error.message }) }
+    : undefined;
+}
+
+/**
+ * The form of a new role. Once it is created, the role's page opens (web-client §16 G24, the result is the page it
+ * moves to) and a toast says so; a refusal stays next to its field, or beside the button, with the draft.
+ */
 export function useNewRoleForm(rights: RoleRights) {
   const api = useApi();
   const t = useT();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const notice = useNotice();
   const [draft, setDraft] = useState<RoleDraft>(emptyDraft);
   const [invalid, setInvalid] = useState<RoleFieldError | undefined>(undefined);
-  const [status, setStatus] = useState<string | undefined>(undefined);
   const mutation = useMutation({
     ...createRoleMutation(api),
-    onMutate: () => {
-      setStatus(undefined);
-    },
     onSuccess: async (role) => {
       await refreshRoles(api, queryClient);
-      setDraft(emptyDraft);
-      const message = t("client:admin.roles.created", { role: isolatedRoleKey(role.key) });
-      setStatus(message);
-      notice.inPlace(message);
+      await navigate({ to: "/admin/roles/$key", params: { key: role.key } });
+      notice.toast({
+        tone: "success",
+        message: t("client:admin.roles.created", { role: isolatedRoleKey(role.key) }),
+      });
     },
   });
+  const error = invalid ?? (mutation.isError ? refusal(mutation.error, t) : undefined);
   return {
     draft,
     change: (change: Partial<RoleDraft>) => {
@@ -204,9 +230,9 @@ export function useNewRoleForm(rights: RoleRights) {
     },
     isPending: mutation.isPending,
     /** Why the role was refused, next to its field; the draft stays. */
-    error: invalid ?? (mutation.isError ? refusal(mutation.error, t) : undefined),
-    /** What the last submit did, for the form's StatusMessage. */
-    status,
+    error,
+    /** A refusal of the whole form, beside the button. */
+    result: formResult(error, t),
   };
 }
 
@@ -214,16 +240,16 @@ export function useNewRoleForm(rights: RoleRights) {
 export type BadgeDraft = { label: string; color: BadgeColor };
 
 /** The draft of a role's badge: its badge, or a neutral one without a name. */
-export function draftOfBadge(role: AdminRole): BadgeDraft {
+function draftOfBadge(role: AdminRole): BadgeDraft {
   return role.badge === undefined
     ? { label: "", color: "neutral" }
     : { label: role.badge.label, color: role.badge.color };
 }
 
-/** Checks the name of a badge before it is sent: 1 to 32 characters (code points, as the server counts) once trimmed. */
+/** Checks the name of a badge before it is sent: at most 32 characters (code points, as the server counts) once trimmed. */
 function checkBadge(draft: BadgeDraft, t: Translate): RoleFieldError | undefined {
   const length = Array.from(draft.label.trim()).length;
-  if (length === 0 || length > badgeLabelLimit) {
+  if (length > badgeLabelLimit) {
     return {
       field: "badge",
       message: t("client:admin.roles.badge.label.invalid", { max: String(badgeLabelLimit) }),
@@ -233,76 +259,112 @@ function checkBadge(draft: BadgeDraft, t: Translate): RoleFieldError | undefined
   return undefined;
 }
 
-export type RoleActions = {
-  /** Checks and sends a change of a role; resolves with the refused field, or undefined once it is saved. */
-  update: (role: AdminRole, draft: RoleDraft) => Promise<RoleFieldError | undefined>;
-  /** Sets the badge of a role, or removes it for null; resolves with the refusal, or undefined once it is saved. */
-  updateBadge: (role: AdminRole, draft: BadgeDraft | null) => Promise<RoleFieldError | undefined>;
-  /** Deletes a role; resolves with why it failed, or undefined once it is deleted. */
-  remove: (role: AdminRole) => Promise<string | undefined>;
-  /** What the last change did, for the list's StatusMessage. */
-  status: string | undefined;
-};
+/** A role as its page's form edits it: its position and permissions, and its badge (no name for none). */
+export type RoleFormDraft = RoleDraft & { badge: BadgeDraft };
 
 /**
- * Changing and deleting the roles of the list. `onDeleted(id)` is called once a deleted role is about to leave the
- * list (to keep focus, lib/useFocusAfterRemoval); a changed role keeps its row, which shows the answer.
+ * The form of a role's page: its position and permissions (never for admin) and its badge, saved with one button and
+ * one PATCH; the result shows beside the button (FormActionBar), a refusal next to its field. An empty name removes
+ * the badge.
  */
-export function useRoleActions(rights: RoleRights, onDeleted: (id: string) => void): RoleActions {
+export function useRoleForm(row: RoleRow, rights: RoleRights) {
   const api = useApi();
   const t = useT();
   const queryClient = useQueryClient();
-  const notice = useNotice();
-  const [status, setStatus] = useState<string | undefined>(undefined);
+  const { role } = row;
+  const [draft, setDraft] = useState<RoleFormDraft>(() => ({
+    ...draftOfRole(role),
+    badge: draftOfBadge(role),
+  }));
+  const [error, setError] = useState<RoleFieldError | undefined>(undefined);
+  const [result, setResult] = useState<FormActionResult | undefined>(undefined);
   const update = useMutation(updateRoleMutation(api));
-  const remove = useMutation(deleteRoleMutation(api));
-  const report = (message: string) => {
-    setStatus(message);
-    notice.inPlace(message);
-  };
-  return {
-    update: async (role, draft) => {
-      const checked = checkDraft(draft, rights, t, false);
-      if (checked !== undefined) return checked;
-      const position = Number(draft.position.trim());
-      const change: RoleChange = {
+  /** The change to send, or the refused field. */
+  const changeOf = (): RoleChange | RoleFieldError => {
+    const checked = (row.canChange ? checkDraft(draft, rights, t, false) : undefined) ?? checkBadge(draft.badge, t);
+    if (checked !== undefined) return checked;
+    const label = draft.badge.label.trim();
+    const position = Number(draft.position.trim());
+    return {
+      ...(row.canChange && {
         permissions: [...draft.permissions],
         ...(position === role.position ? {} : { position }),
-      };
-      try {
-        const saved = await update.mutateAsync({ key: role.key, change });
-        await refreshRoles(api, queryClient);
-        report(t("client:admin.roles.updated", { role: isolatedRoleKey(saved.key) }));
-        return undefined;
-      } catch (error) {
-        return refusal(error, t);
-      }
+      }),
+      ...(label === ""
+        ? role.badge === undefined
+          ? {}
+          : { remove_badge: true }
+        : { badge: { label, color: draft.badge.color } }),
+    };
+  };
+  return {
+    draft,
+    change: (change: Partial<RoleDraft>) => {
+      setDraft((previous) => ({ ...previous, ...change }));
     },
-    updateBadge: async (role, draft) => {
-      const checked = draft === null ? undefined : checkBadge(draft, t);
-      if (checked !== undefined) return checked;
-      const change: RoleChange =
-        draft === null ? { remove_badge: true } : { badge: { label: draft.label.trim(), color: draft.color } };
-      try {
-        const saved = await update.mutateAsync({ key: role.key, change });
-        await refreshRoles(api, queryClient);
-        report(t("client:admin.roles.updated", { role: isolatedRoleKey(saved.key) }));
-        return undefined;
-      } catch (error) {
-        return refusal(error, t);
-      }
+    changeBadge: (change: Partial<BadgeDraft>) => {
+      setDraft((previous) => ({ ...previous, badge: { ...previous.badge, ...change } }));
     },
-    remove: async (role) => {
+    submit: (event: SyntheticEvent<HTMLFormElement>) => {
+      event.preventDefault();
+      if (update.isPending) return;
+      setResult(undefined);
+      const change = changeOf();
+      if ("field" in change) {
+        setError(change);
+        return;
+      }
+      setError(undefined);
+      void update.mutateAsync({ key: role.key, change }).then(
+        async (saved) => {
+          await refreshRoles(api, queryClient);
+          setResult({
+            tone: "success",
+            message: t("client:admin.roles.updated", { role: isolatedRoleKey(saved.key) }),
+          });
+        },
+        (failure: unknown) => {
+          const refused = refusal(failure, t);
+          setError(refused);
+          setResult(formResult(refused, t));
+        },
+      );
+    },
+    isPending: update.isPending,
+    /** Why the role was refused, next to its field; the draft stays. */
+    error,
+    /** The result of the last save, beside the button. */
+    result,
+  };
+}
+
+/**
+ * Deleting a role from its page. Resolves with why it failed (the alert dialog stays open with it); once it is
+ * deleted, the list of roles opens and a toast says so.
+ */
+export function useDeleteRole(role: AdminRole) {
+  const api = useApi();
+  const t = useT();
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
+  const notice = useNotice();
+  const remove = useMutation(deleteRoleMutation(api));
+  return {
+    remove: async (): Promise<string | undefined> => {
       try {
         await remove.mutateAsync(role.key);
       } catch (error) {
         return refusal(error, t).message;
       }
-      onDeleted(role.id);
+      // The page leaves before the roles are fetched again, so that it never shows a role that is gone.
+      await navigate({ to: "/admin/roles" });
+      notice.toast({
+        tone: "success",
+        message: t("client:admin.roles.deleted", { role: isolatedRoleKey(role.key) }),
+      });
       await refreshRoles(api, queryClient);
-      report(t("client:admin.roles.deleted", { role: isolatedRoleKey(role.key) }));
       return undefined;
     },
-    status,
+    isPending: remove.isPending,
   };
 }

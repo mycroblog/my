@@ -22,9 +22,11 @@ export { instanceQueryOptions as ownInstanceQueryOptions } from "./api/documents
 export { brandsQueryOptions } from "./api/brand";
 export { instanceSettingsQueryOptions } from "./api/settings";
 export { ServerSettings } from "./components/ServerSettings";
-// The server's rules (FR-705), for manage_rules.
-export { rulesQueryOptions } from "./api/rules";
-export { RuleSettings } from "./components/RuleSettings";
+// The server's rules (FR-705), for manage_rules: their list, a new rule, and one rule's page.
+export { ruleQueryOptions, rulesQueryOptions } from "./api/rules";
+export { type RuleFilter, ruleFilters, RuleSettings } from "./components/RuleSettings";
+export { NewRule } from "./components/NewRule";
+export { RuleDetail } from "./components/RuleDetail";
 // The server's theme: overrides of the design tokens and a custom CSS (ADR-0059), for manage_settings.
 export { themeQueryOptions } from "./api/theme";
 export { ThemeSettings } from "./components/ThemeSettings";
@@ -71,9 +73,11 @@ export { RelaySettings } from "./components/RelaySettings";
 // The rules of the link card crawler per domain, for manage_settings.
 export { LinkCardDomainSettings } from "./components/LinkCardDomainSettings";
 export { TranslationSettings } from "./components/TranslationSettings";
-// The roles: creating them and changing their positions and permissions (FR-720), for manage_roles. Their queries
-// are those of the moderation feature, which shows an account's roles.
+// The roles: their list, creating one, and one role's page with its position, permissions and badge (FR-720), for
+// manage_roles. Their queries are those of the moderation feature, which shows an account's roles.
 export { RoleSettings } from "./components/RoleSettings";
+export { NewRole } from "./components/NewRole";
+export { RoleDetail } from "./components/RoleDetail";
 // The instance's costs, in the pages of one screen: their totals by week, month and year, the income's money
 // movements, the recorded items with recording, changing and deleting one, the state of the billing imports, and
 // what is published of them (ADR-0067, ADR-0068), for manage_finance.

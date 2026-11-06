@@ -1,15 +1,15 @@
 {
   "admin.roles.builtin.admin": {
     "defaultMessage": "Built-in role with every permission. Only its badge can be changed, and it cannot be deleted.",
-    "description": "Note on the built-in admin role in the list of roles."
+    "description": "Note on the built-in admin role on its page."
   },
   "admin.roles.builtin.moderator": {
     "defaultMessage": "Built-in role. Its position and permissions can be changed, but it cannot be deleted.",
-    "description": "Note on the built-in moderator role in the list of roles."
+    "description": "Note on the built-in moderator role on its page."
   },
   "admin.roles.cancel": {
     "defaultMessage": "Cancel",
-    "description": "Button that closes a role's dialog without changing anything."
+    "description": "Button that closes the confirmation of deleting a role without deleting it."
   },
   "admin.roles.category.moderation": {
     "defaultMessage": "Moderation",
@@ -43,29 +43,9 @@
     "defaultMessage": "Could not delete the role: {reason}",
     "description": "Error in the confirmation when deleting a role failed. {reason} is the server's explanation."
   },
-  "admin.roles.delete_role": {
-    "defaultMessage": "Delete {role}",
-    "description": "Accessible name of the delete button of a role. {role} is its key (isolated)."
-  },
   "admin.roles.deleted": {
     "defaultMessage": "Deleted the role {role}. The audit log records it.",
     "description": "Result after deleting a role. {role} is its key (isolated)."
-  },
-  "admin.roles.edit": {
-    "defaultMessage": "Edit",
-    "description": "Button that opens the dialog that changes a role."
-  },
-  "admin.roles.edit.close": {
-    "defaultMessage": "Close",
-    "description": "Accessible name of the button that closes the dialog that changes a role."
-  },
-  "admin.roles.edit.title": {
-    "defaultMessage": "Edit the role {role}",
-    "description": "Title of the dialog that changes a role. {role} is its key (isolated)."
-  },
-  "admin.roles.edit_role": {
-    "defaultMessage": "Edit {role}",
-    "description": "Accessible name of the edit button of a role. {role} is its key (isolated)."
   },
   "admin.roles.failed.outranked": {
     "defaultMessage": "This role is now above your highest role, so you cannot change it.",
@@ -85,7 +65,7 @@
   },
   "admin.roles.list.title": {
     "defaultMessage": "Roles of this server",
-    "description": "Heading of the list of roles, highest position first."
+    "description": "Caption of the table of roles, highest position first."
   },
   "admin.roles.missing_permissions": {
     "defaultMessage": "Permissions your roles do not grant: {permissions}",
@@ -105,11 +85,11 @@
   },
   "admin.roles.new.title": {
     "defaultMessage": "Create a role",
-    "description": "Heading of the form that creates a role."
+    "description": "Title of the page that creates a role, and the link to it from the list of roles."
   },
   "admin.roles.outranked": {
     "defaultMessage": "Above your highest role, {role}, so you cannot change it.",
-    "description": "Note on a role above the viewer's highest role. {role} is the viewer's highest role (isolated)."
+    "description": "Note on the page of a role above the viewer's highest role. {role} is the viewer's highest role (isolated)."
   },
   "admin.roles.permission.manage_accounts": {
     "defaultMessage": "Accounts and registrations",
@@ -229,7 +209,7 @@
   },
   "admin.roles.save": {
     "defaultMessage": "Save",
-    "description": "Button that saves the changes of a role in its dialog."
+    "description": "Button that saves a role's position, permissions and badge on its page."
   },
   "admin.roles.save_failed": {
     "defaultMessage": "Could not save the role: {reason}",
@@ -259,18 +239,6 @@
     "defaultMessage": "No badge",
     "description": "The value of the badge term when a role has no badge."
   },
-  "admin.roles.badge.edit": {
-    "defaultMessage": "Badge",
-    "description": "Button of a role that opens the dialog to change its badge."
-  },
-  "admin.roles.badge.edit_role": {
-    "defaultMessage": "{action}: {role}",
-    "description": "Accessible name of the button that opens the badge dialog: it starts with the button's visible text, so that the visible label is in the name. {action} is the button's visible text ('Badge') and {role} the role's key."
-  },
-  "admin.roles.badge.edit.title": {
-    "defaultMessage": "Badge of {role}",
-    "description": "Title of the dialog that changes a role's badge. {role} is the role's key."
-  },
   "admin.roles.badge.description": {
     "defaultMessage": "Holders of the role can show the badge on their profile. It stays hidden until each of them chooses to show it, and other servers never see it.",
     "description": "Explanation at the top of the badge dialog."
@@ -280,12 +248,12 @@
     "description": "Label of the field of the badge's name."
   },
   "admin.roles.badge.label.description": {
-    "defaultMessage": "Up to {max} characters on one line. It is shown as written in every language.",
-    "description": "Hint of the badge's name. {max} is the longest name, 32."
+    "defaultMessage": "Up to {max} characters on one line. It is shown as written in every language. Leave it empty for no badge.",
+    "description": "Description of the name field of a role's badge. {max} is the length limit."
   },
   "admin.roles.badge.label.invalid": {
-    "defaultMessage": "Enter a name of 1 to {max} characters.",
-    "description": "Error when the badge's name is empty or too long. {max} is the longest name, 32."
+    "defaultMessage": "Use at most {max} characters.",
+    "description": "Error of the name field of a badge longer than its limit. {max} is the limit."
   },
   "admin.roles.badge.color": {
     "defaultMessage": "Color",
@@ -339,8 +307,20 @@
     "defaultMessage": "Enter a name to see the badge.",
     "description": "Shown instead of the sample while the badge's name is empty."
   },
-  "admin.roles.badge.remove": {
-    "defaultMessage": "Remove the badge",
-    "description": "Button of the badge dialog that removes the role's badge, which hides it from every profile."
+  "admin.roles.description": {
+    "defaultMessage": "Each role grants its permissions to the accounts that hold it. A higher position outranks a lower one.",
+    "description": "Text at the top of the list of roles: what a role is."
+  },
+  "admin.roles.permissions": {
+    "defaultMessage": "Permissions",
+    "description": "Header of the column of the list of roles that counts the permissions of each role by area."
+  },
+  "admin.roles.permission_count": {
+    "defaultMessage": "{area}: {count, number}",
+    "description": "How many permissions a role grants in one area, in the list of roles. {area} is the area's name; {count} the number."
+  },
+  "admin.roles.empty": {
+    "defaultMessage": "No roles",
+    "description": "Heading of the empty list of roles."
   }
 }

@@ -1,0 +1,30 @@
+{
+  "admin.rule.title": {
+    "defaultMessage": "Rule",
+    "description": "Title of the page of one rule."
+  },
+  "admin.rule.back": {
+    "defaultMessage": "All rules",
+    "description": "Link from the page of a rule, or of a new one, back to the list of rules."
+  },
+  "admin.rule.facts": {
+    "defaultMessage": "About this rule",
+    "description": "Heading of the region of a rule's page with its text, hint, state and dates."
+  },
+  "admin.rule.state": {
+    "defaultMessage": "State",
+    "description": "Term of whether a rule is in effect or retired, on its page."
+  },
+  "admin.rule.created_at": {
+    "defaultMessage": "Added",
+    "description": "Term of when a rule was added, on its page."
+  },
+  "admin.rule.no_hint": {
+    "defaultMessage": "No hint",
+    "description": "Value of the hint of a rule that has none, on its page."
+  },
+  "admin.rule.retire.title": {
+    "defaultMessage": "Retire the rule",
+    "description": "Heading of the region of a rule's page that retires it."
+  }
+}

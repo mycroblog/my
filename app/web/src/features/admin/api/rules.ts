@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The queries and mutations of the rules screen (FR-705, manage_rules, web-client/README.md S1): the rules in effect (GET
-// /admin/rules), adding one, changing its text and hint, moving it among the others and retiring it. A rule's text
+// /admin/rules) and the retired ones (`include_retired`), one rule (GET /admin/rules/{id}), adding one, changing its
+// text and hint, moving it among the others and retiring it. A rule's text
 // and hint hold one value each, which every locale shows. GET /instance lists the rules (the about page, the
 // report form), and every change goes to the audit log.
 import type { QueryClient } from "@tanstack/react-query";
@@ -18,9 +19,16 @@ export type RuleInput = Schemas["InstanceRuleInput"];
 export const ruleTextLimit = 300;
 export const ruleHintLimit = 1000;
 
-/** The rules in effect, in order (GET /admin/rules). */
-export function rulesQueryOptions(api: Api) {
-  return api.query.queryOptions("get", "/admin/rules");
+/** The rules in effect, in order (GET /admin/rules); with `includeRetired`, followed by every retired rule. */
+export function rulesQueryOptions(api: Api, { includeRetired = false }: { includeRetired?: boolean } = {}) {
+  return includeRetired
+    ? api.query.queryOptions("get", "/admin/rules", { params: { query: { include_retired: true } } })
+    : api.query.queryOptions("get", "/admin/rules");
+}
+
+/** One rule, retired or not (GET /admin/rules/{id}); an unknown ID is a 404. */
+export function ruleQueryOptions(api: Api, id: string) {
+  return api.query.queryOptions("get", "/admin/rules/{id}", { params: { path: { id } } });
 }
 
 /** Adds a rule after the others (POST /admin/rules), as the options of useMutation. */
@@ -79,12 +87,13 @@ export function retireRuleMutation(api: Api) {
 }
 
 /**
- * Marks what a change of the rules changes (ADR-0028): the rules, whose order may change for every rule, the
- * rules of GET /instance and the audit log; the queries shown now are fetched again and awaited.
+ * Marks what a change of the rules changes (ADR-0028): the rules, whose order may change for every rule, each rule's
+ * page, the rules of GET /instance and the audit log; the queries shown now are fetched again and awaited.
  */
 export async function refreshRules(queryClient: QueryClient): Promise<void> {
   await Promise.all([
     queryClient.invalidateQueries({ queryKey: ["get", "/admin/rules"] }),
+    queryClient.invalidateQueries({ queryKey: ["get", "/admin/rules/{id}"] }),
     queryClient.invalidateQueries({ queryKey: ["get", "/instance"] }),
     refreshAuditLog(queryClient),
   ]);

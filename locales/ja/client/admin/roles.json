@@ -1,15 +1,15 @@
 {
   "admin.roles.builtin.admin": {
     "defaultMessage": "すべての権限を持つ組み込みのロール。変えられるのはバッジだけで、削除はできません。",
-    "description": "Note on the built-in admin role in the list of roles."
+    "description": "Note on the built-in admin role on its page."
   },
   "admin.roles.builtin.moderator": {
     "defaultMessage": "組み込みのロール。位置と権限は変えられますが、削除はできません。",
-    "description": "Note on the built-in moderator role in the list of roles."
+    "description": "Note on the built-in moderator role on its page."
   },
   "admin.roles.cancel": {
     "defaultMessage": "キャンセル",
-    "description": "Button that closes a role's dialog without changing anything."
+    "description": "Button that closes the confirmation of deleting a role without deleting it."
   },
   "admin.roles.category.moderation": {
     "defaultMessage": "モデレーション",
@@ -43,29 +43,9 @@
     "defaultMessage": "ロールを削除できませんでした: {reason}",
     "description": "Error in the confirmation when deleting a role failed. {reason} is the server's explanation."
   },
-  "admin.roles.delete_role": {
-    "defaultMessage": "{role} を削除",
-    "description": "Accessible name of the delete button of a role. {role} is its key (isolated)."
-  },
   "admin.roles.deleted": {
     "defaultMessage": "ロール {role} を削除しました。監査ログに記録しました。",
     "description": "Result after deleting a role. {role} is its key (isolated)."
-  },
-  "admin.roles.edit": {
-    "defaultMessage": "編集",
-    "description": "Button that opens the dialog that changes a role."
-  },
-  "admin.roles.edit.close": {
-    "defaultMessage": "閉じる",
-    "description": "Accessible name of the button that closes the dialog that changes a role."
-  },
-  "admin.roles.edit.title": {
-    "defaultMessage": "ロール {role} を編集",
-    "description": "Title of the dialog that changes a role. {role} is its key (isolated)."
-  },
-  "admin.roles.edit_role": {
-    "defaultMessage": "{role} を編集",
-    "description": "Accessible name of the edit button of a role. {role} is its key (isolated)."
   },
   "admin.roles.failed.outranked": {
     "defaultMessage": "このロールはあなたのいちばん高いロールより上になったので、変えられません。",
@@ -85,7 +65,7 @@
   },
   "admin.roles.list.title": {
     "defaultMessage": "このサーバーのロール",
-    "description": "Heading of the list of roles, highest position first."
+    "description": "Caption of the table of roles, highest position first."
   },
   "admin.roles.missing_permissions": {
     "defaultMessage": "自分のロールにない権限: {permissions}",
@@ -105,11 +85,11 @@
   },
   "admin.roles.new.title": {
     "defaultMessage": "ロールを作成する",
-    "description": "Heading of the form that creates a role."
+    "description": "Title of the page that creates a role, and the link to it from the list of roles."
   },
   "admin.roles.outranked": {
     "defaultMessage": "あなたのいちばん高いロール {role} より上なので、変えられません。",
-    "description": "Note on a role above the viewer's highest role. {role} is the viewer's highest role (isolated)."
+    "description": "Note on the page of a role above the viewer's highest role. {role} is the viewer's highest role (isolated)."
   },
   "admin.roles.permission.manage_accounts": {
     "defaultMessage": "アカウントと登録",
@@ -229,7 +209,7 @@
   },
   "admin.roles.save": {
     "defaultMessage": "保存",
-    "description": "Button that saves the changes of a role in its dialog."
+    "description": "Button that saves a role's position, permissions and badge on its page."
   },
   "admin.roles.save_failed": {
     "defaultMessage": "ロールを保存できませんでした: {reason}",
@@ -259,18 +239,6 @@
     "defaultMessage": "バッジなし",
     "description": "The value of the badge term when a role has no badge."
   },
-  "admin.roles.badge.edit": {
-    "defaultMessage": "バッジ",
-    "description": "Button of a role that opens the dialog to change its badge."
-  },
-  "admin.roles.badge.edit_role": {
-    "defaultMessage": "{action}: {role}",
-    "description": "Accessible name of the button that opens the badge dialog: it starts with the button's visible text, so that the visible label is in the name. {action} is the button's visible text ('Badge') and {role} the role's key."
-  },
-  "admin.roles.badge.edit.title": {
-    "defaultMessage": "{role} のバッジ",
-    "description": "Title of the dialog that changes a role's badge. {role} is the role's key."
-  },
   "admin.roles.badge.description": {
     "defaultMessage": "このロールを持つ人は、プロフィールにバッジを出せます。それぞれの人が出すと選ぶまでは出ず、ほかのサーバーには伝わりません。",
     "description": "Explanation at the top of the badge dialog."
@@ -280,12 +248,12 @@
     "description": "Label of the field of the badge's name."
   },
   "admin.roles.badge.label.description": {
-    "defaultMessage": "{max} 文字までの 1 行です。どの言語でも書いたとおりに出ます。",
-    "description": "Hint of the badge's name. {max} is the longest name, 32."
+    "defaultMessage": "{max} 文字までの 1 行です。どの言語でも書いたとおりに出ます。空にするとバッジを付けません。",
+    "description": "Description of the name field of a role's badge. {max} is the length limit."
   },
   "admin.roles.badge.label.invalid": {
-    "defaultMessage": "名前は 1〜{max} 文字で入れてください。",
-    "description": "Error when the badge's name is empty or too long. {max} is the longest name, 32."
+    "defaultMessage": "{max} 文字までで入力してください。",
+    "description": "Error of the name field of a badge longer than its limit. {max} is the limit."
   },
   "admin.roles.badge.color": {
     "defaultMessage": "色",
@@ -339,8 +307,20 @@
     "defaultMessage": "名前を入れると、バッジの見本が出ます。",
     "description": "Shown instead of the sample while the badge's name is empty."
   },
-  "admin.roles.badge.remove": {
-    "defaultMessage": "バッジを外す",
-    "description": "Button of the badge dialog that removes the role's badge, which hides it from every profile."
+  "admin.roles.description": {
+    "defaultMessage": "ロールは、それを持つアカウントに権限を与えます。位置の高いロールが低いロールより上になります。",
+    "description": "Text at the top of the list of roles: what a role is."
+  },
+  "admin.roles.permissions": {
+    "defaultMessage": "権限",
+    "description": "Header of the column of the list of roles that counts the permissions of each role by area."
+  },
+  "admin.roles.permission_count": {
+    "defaultMessage": "{area}: {count, number}",
+    "description": "How many permissions a role grants in one area, in the list of roles. {area} is the area's name; {count} the number."
+  },
+  "admin.roles.empty": {
+    "defaultMessage": "ロールがありません",
+    "description": "Heading of the empty list of roles."
   }
 }

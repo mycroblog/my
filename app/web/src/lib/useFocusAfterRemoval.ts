@@ -41,7 +41,8 @@ export function useFocusAfterRemoval(
 
 /**
  * Keeps focus on a row that moved to another place in the list (reordering the rules): after the next render,
- * focus moves to the row's heading (`h3`), so that it is where the row is now. Returns `moved(id)`, to call once
+ * focus moves to the row's heading (`h3`), or to the element that names a row of a `RecordTable` (`[data-row-header]`),
+ * so that it is where the row is now. Returns `moved(id)`, to call once
  * the list has the new order.
  */
 export function useFocusHeadingAfterMove(list: RefObject<HTMLElement | null>): (id: string) => void {
@@ -51,7 +52,10 @@ export function useFocusHeadingAfterMove(list: RefObject<HTMLElement | null>): (
     const id = pendingRef.current;
     if (id === null) return;
     pendingRef.current = null;
-    list.current?.querySelector<HTMLElement>(`[data-row-id="${id}"] h3`)?.focus();
+    list.current
+      ?.querySelector<HTMLElement>(`[data-row-id="${id}"]`)
+      ?.querySelector<HTMLElement>("h3, [data-row-header]")
+      ?.focus();
   });
   return (id) => {
     pendingRef.current = id;

@@ -782,6 +782,7 @@ async function moderatorServer(page: Page) {
     if (key === "GET /admin/settings") return json(route, instanceSettings);
     if (key === "GET /admin/instance/brand") return json(route, {});
     if (key === "GET /admin/rules") return json(route, { items: [rule] });
+    if (key === `GET /admin/rules/${rule.id}`) return json(route, rule);
     if (key === "GET /admin/invites") return json(route, { items: [invite] });
     if (key === "GET /admin/custom_emojis")
       return json(route, { items: url.searchParams.get("local") === "false" ? [] : [customEmoji] });
@@ -1106,8 +1107,12 @@ const adminPages: Readonly<Record<string, { path: string; ready: string | { valu
   "admin.documents": { path: "/admin/documents", ready: { value: documentText.body } },
   "admin.settings": { path: "/admin/settings", ready: "my.example" },
   "admin.theme": { path: "/admin/theme", ready: { value: "#fdfdf6" } },
-  "admin.rules": { path: "/admin/rules", ready: rule.hint ?? "" },
+  "admin.rules": { path: "/admin/rules", ready: rule.text },
+  "admin.rules_.new": { path: "/admin/rules/new", ready: { value: "" } },
+  "admin.rules_.$id": { path: `/admin/rules/${rule.id}`, ready: { value: rule.text } },
   "admin.roles": { path: "/admin/roles", ready: roles[2]?.key ?? "" },
+  "admin.roles_.new": { path: "/admin/roles/new", ready: { value: "" } },
+  "admin.roles_.$key": { path: `/admin/roles/${roles[2]?.key ?? ""}`, ready: roles[2]?.key ?? "" },
   "admin.finance": { path: "/admin/finance", ready: "registrar" },
   "admin.finance_.income": { path: "/admin/finance/income", ready: `@${incomeMovement.username ?? ""}` },
   "admin.finance_.costs": { path: "/admin/finance/costs", ready: costItem.name },

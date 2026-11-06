@@ -1,291 +1,223 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The rules screen below its heading (manage_rules, FR-705): the form of a new rule, then the rules in effect in
-// order. A rule has a text (one line) and an optional hint, written once in any language; the about page and the
-// report form show them as they are in every language. "Move up" and "Move down" reorder the rules with the keyboard
-// as well as the pointer (no dragging); focus then moves to the moved rule's heading. Editing opens a dialog with the
-// text and the hint; retiring cannot be undone, so it asks first (an alert dialog). What a change did stays on the
-// page in a StatusMessage above the list; a failure stays there too (role="alert", web-client/README.md E2).
+// The rules screen below its heading (manage_rules, FR-705): "Add a rule" (a link to its page), then the rules in
+// effect in order, or the retired ones (the filter, in the URL). Each rule's text links to its page, where it is
+// changed and retired. "Move up" and "Move down" reorder the rules in effect with the keyboard as well as the pointer
+// (no dragging); focus then moves to the moved rule's name. The rules in effect are at most 100, so they are one page
+// and a move never takes a rule to another page; the retired ones accumulate and are paged 40 at a time.
+// What a move did stays above the list in a StatusMessage; a failure stays there too (role="alert", web-client/README.md E2).
 import {
-  Box,
   Button,
+  ButtonLink,
   Cluster,
-  ConfirmDialog,
-  Dialog,
-  DialogTrigger,
   EmptyState,
   Heading,
   Hint,
   InlineError,
+  Link,
+  ListToolbar,
+  Select,
+  SelectItem,
   Stack,
   StatusMessage,
-  Text,
-  TextArea,
-  TextField,
 } from "@my/ui";
 import { useRef, useState } from "react";
-import { useT } from "../../../lib/i18n";
-import { useFocusAfterRemoval, useFocusHeadingAfterMove } from "../../../lib/useFocusAfterRemoval";
-import { Section, RequirePermission } from "../../moderation";
-import { type Rule, ruleHintLimit, ruleTextLimit } from "../api/rules";
-import {
-  type RuleActions,
-  type RuleFields,
-  useNewRuleForm,
-  useRuleActions,
-  useRuleDraft,
-  useRuleList,
-} from "../hooks/useRules";
+import { type ClientMessageKey, useT } from "../../../lib/i18n";
+import { useFocusHeadingAfterMove } from "../../../lib/useFocusAfterRemoval";
+import { DateTime, type RecordColumns, RecordTable, RequirePermission, wholeList } from "../../moderation";
+import type { Rule } from "../api/rules";
+import { type RuleMoves, rulePath, useRetiredRules, useRuleList, useRuleMoves } from "../hooks/useRules";
+import { RuleText } from "./ruleParts";
 
-export function RuleSettings() {
+/** Which rules the list shows. */
+export const ruleFilters = ["active", "retired"] as const;
+export type RuleFilter = (typeof ruleFilters)[number];
+
+const filterLabels: Readonly<Record<RuleFilter, ClientMessageKey>> = {
+  active: "client:admin.rules.filter.active",
+  retired: "client:admin.rules.filter.retired",
+};
+
+function isFilter(value: unknown): value is RuleFilter {
+  return ruleFilters.some((filter) => filter === value);
+}
+
+/** The most rules in effect (GET /admin/rules): the list of them is one page. */
+const maxRulesInEffect = 100;
+
+type RuleSettingsProps = {
+  filter: RuleFilter;
+  /** Selects another filter: the route puts it into the URL. */
+  onFilterChange: (filter: RuleFilter) => void;
+};
+
+export function RuleSettings({ filter, onFilterChange }: RuleSettingsProps) {
   const t = useT();
   return (
     <RequirePermission permission="manage_rules">
-      <Stack gap="8">
-        <Hint size="inherit">{t("client:admin.rules.description")}</Hint>
-        <Section surface="card" title={t("client:admin.rules.new.title")}>
-          <NewRuleForm />
-        </Section>
-        <Section surface="card" title={t("client:admin.rules.list.title")}>
-          <RuleList />
-        </Section>
+      <Stack gap="6">
+        <Stack gap="3" align="start">
+          <Hint size="inherit">{t("client:admin.rules.description")}</Hint>
+          <ButtonLink href="/admin/rules/new" variant="primary">
+            {t("client:admin.rules.new.title")}
+          </ButtonLink>
+        </Stack>
+        <Stack gap="3">
+          <Heading level={2}>
+            {t(filter === "active" ? "client:admin.rules.list.title" : "client:admin.rules.retired.title")}
+          </Heading>
+          <ListToolbar label={t("client:admin.list.filters")}>
+            <Select
+              variant="toolbar"
+              aria-label={t("client:admin.rules.filter.label")}
+              value={filter}
+              onChange={(key) => {
+                if (isFilter(key)) onFilterChange(key);
+              }}
+            >
+              {ruleFilters.map((item) => (
+                <SelectItem key={item} id={item}>
+                  {t(filterLabels[item])}
+                </SelectItem>
+              ))}
+            </Select>
+          </ListToolbar>
+          {filter === "active" ? <RulesInEffect /> : <RetiredRules />}
+        </Stack>
       </Stack>
     </RequirePermission>
   );
 }
 
-/** The text and hint fields of a rule. */
-function RuleTextFields({ fields, autoFocus = false }: { fields: RuleFields; autoFocus?: boolean }) {
-  const t = useT();
+/** A rule's text as the link to its page. */
+function RuleLink({ rule }: { rule: Rule }) {
   return (
-    <Stack gap="3">
-      <TextField
-        label={t("client:admin.rules.text")}
-        description={t("client:admin.rules.text.description", { max: String(ruleTextLimit) })}
-        value={fields.text}
-        onChange={fields.changeText}
-        autoComplete="off"
-        autoFocus={autoFocus}
-        {...(fields.textError === undefined ? {} : { isInvalid: true, errorMessage: fields.textError })}
-      />
-      <TextArea
-        label={t("client:admin.rules.hint")}
-        value={fields.hint}
-        onChange={fields.changeHint}
-        rows={2}
-        characterLimit={ruleHintLimit}
-        formatRemaining={(remaining) =>
-          remaining < 0
-            ? t("client:admin.settings.characters_over", { count: -remaining })
-            : t("client:admin.settings.characters_left", { count: remaining })
-        }
-        {...(fields.hintError === undefined ? {} : { isInvalid: true, errorMessage: fields.hintError })}
-      />
-    </Stack>
+    <Link href={rulePath(rule.id)} variant="standalone" wrap="anywhere">
+      <RuleText text={rule.text} />
+    </Link>
   );
 }
 
-function NewRuleForm() {
-  const t = useT();
-  const form = useNewRuleForm();
-  return (
-    <Stack as="form" gap="6" onSubmit={form.submit}>
-      <RuleTextFields fields={form.draft.fields} />
-      {form.error !== undefined && (
-        <InlineError size="inherit" alert>
-          {t("client:admin.rules.add_failed", { reason: form.error })}
-        </InlineError>
-      )}
-      <div>
-        <Button type="submit" variant="primary" isPending={form.isPending}>
-          {t("client:admin.rules.add")}
-        </Button>
-      </div>
-      <StatusMessage>{form.status}</StatusMessage>
-    </Stack>
-  );
-}
+/** A rule in effect with its place among the others, from 1. */
+type PlacedRule = { rule: Rule; place: number };
 
-function RuleList() {
+function RulesInEffect() {
   const t = useT();
   const rules = useRuleList();
-  const listRef = useRef<HTMLOListElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
   const [status, setStatus] = useState<string | undefined>(undefined);
-  const removed = useFocusAfterRemoval(
-    listRef,
-    rules.map((rule) => rule.id),
-  );
-  const focusHeading = useFocusHeadingAfterMove(listRef);
-  const actions = useRuleActions((rule, done, change) => {
-    if (change === "retired") removed(rule.id);
-    else if (change === "moved") focusHeading(rule.id);
+  const focusName = useFocusHeadingAfterMove(listRef);
+  const moves = useRuleMoves((rule, done) => {
+    focusName(rule.id);
     setStatus(done);
   });
+  const placed: PlacedRule[] = rules.map((rule, index) => ({ rule, place: index + 1 }));
+  const columns: RecordColumns<PlacedRule> = [
+    {
+      id: "rule",
+      header: t("client:admin.rules.text"),
+      wrap: "anywhere",
+      cell: ({ rule }) => <RuleLink rule={rule} />,
+    },
+    { id: "place", header: t("client:admin.rules.place"), numeric: true, cell: ({ place }) => String(place) },
+    {
+      id: "revised_at",
+      header: t("client:admin.rules.revised_at"),
+      cell: ({ rule }) => <DateTime value={rule.revised_at} />,
+    },
+    {
+      id: "actions",
+      kind: "actions",
+      header: t("client:admin.list.column.actions"),
+      cell: ({ rule, place }) => <MoveButtons rule={rule} place={place} count={rules.length} moves={moves} />,
+    },
+  ];
   return (
     <Stack gap="3">
       <StatusMessage>{status}</StatusMessage>
-      {actions.error !== undefined && (
+      {moves.error !== undefined && (
         <InlineError size="inherit" alert>
-          {t("client:admin.rules.change_failed", { reason: actions.error })}
+          {t("client:admin.rules.change_failed", { reason: moves.error })}
         </InlineError>
       )}
-      {rules.length === 0 ? (
+      <RecordTable
+        list={wholeList(placed, maxRulesInEffect)}
+        caption={t("client:admin.rules.list.title")}
+        columns={columns}
+        getId={({ rule }) => rule.id}
+        headingLevel={3}
+        listRef={listRef}
+        empty={
+          <EmptyState
+            headingLevel={3}
+            heading={t("client:admin.rules.empty")}
+            description={t("client:admin.rules.empty.description")}
+          />
+        }
+      />
+    </Stack>
+  );
+}
+
+/**
+ * Moving a rule one place. The first rule cannot move up nor the last down: those buttons are disabled, so that every
+ * row has its buttons in the same places. The names start with the words on the buttons (WCAG 2.5.3).
+ */
+function MoveButtons({ rule, place, count, moves }: { rule: Rule; place: number; count: number; moves: RuleMoves }) {
+  const t = useT();
+  const isMoving = moves.movingIds.includes(rule.id);
+  return (
+    <Cluster gap="2">
+      <Button
+        size="sm"
+        isPending={isMoving}
+        isDisabled={place === 1}
+        aria-label={t("client:admin.rules.move_up_rule", { rule: rule.text })}
+        onPress={() => {
+          moves.move(rule, place - 1);
+        }}
+      >
+        {t("client:admin.rules.move_up")}
+      </Button>
+      <Button
+        size="sm"
+        isPending={isMoving}
+        isDisabled={place === count}
+        aria-label={t("client:admin.rules.move_down_rule", { rule: rule.text })}
+        onPress={() => {
+          moves.move(rule, place + 1);
+        }}
+      >
+        {t("client:admin.rules.move_down")}
+      </Button>
+    </Cluster>
+  );
+}
+
+function RetiredRules() {
+  const t = useT();
+  const rules = useRetiredRules();
+  const columns: RecordColumns<Rule> = [
+    { id: "rule", header: t("client:admin.rules.text"), wrap: "anywhere", cell: (rule) => <RuleLink rule={rule} /> },
+    {
+      id: "retired_at",
+      header: t("client:admin.rules.retired_at"),
+      cell: (rule) => (rule.retired_at === undefined ? null : <DateTime value={rule.retired_at} />),
+    },
+  ];
+  return (
+    <RecordTable
+      list={wholeList(rules)}
+      caption={t("client:admin.rules.retired.title")}
+      columns={columns}
+      getId={(rule) => rule.id}
+      headingLevel={3}
+      empty={
         <EmptyState
           headingLevel={3}
-          heading={t("client:admin.rules.empty")}
-          description={t("client:admin.rules.empty.description")}
+          heading={t("client:admin.rules.retired.empty")}
+          description={t("client:admin.rules.retired.empty.description")}
         />
-      ) : (
-        <Stack as="ol" divided ref={listRef}>
-          {rules.map((rule, index) => (
-            <Box as="li" container paddingY="3" key={rule.id} data-row-id={rule.id}>
-              <RuleRow rule={rule} place={index + 1} count={rules.length} actions={actions} />
-            </Box>
-          ))}
-        </Stack>
-      )}
-    </Stack>
-  );
-}
-
-function RuleRow({ rule, place, count, actions }: { rule: Rule; place: number; count: number; actions: RuleActions }) {
-  const t = useT();
-  const name = rule.text;
-  const isMoving = actions.movingIds.includes(rule.id);
-  return (
-    <Stack gap="3">
-      <Heading level={3} wrap="anywhere" focusable>
-        {/* The rule is written by an administrator in any language: U+2068 FIRST STRONG ISOLATE … U+2069 POP DIRECTIONAL ISOLATE. */}
-        {t("client:admin.rules.heading", { place: String(place), rule: `\u2068${name}\u2069` })}
-      </Heading>
-      {rule.hint !== undefined && (
-        // Written by an administrator in a language the app does not know: lang="" rather than the app's (Y10).
-        <Text as="p" tone="muted" wrap="anywhere" whitespace="preWrap" dir="auto" lang="">
-          {rule.hint}
-        </Text>
-      )}
-      <Cluster gap="2">
-        {/* The first rule cannot move up nor the last down: those buttons are disabled, so that every row has its
-            buttons in the same places. The names start with the words on the buttons (WCAG 2.5.3). */}
-        <Button
-          size="sm"
-          isPending={isMoving}
-          isDisabled={place === 1}
-          aria-label={t("client:admin.rules.move_up_rule", { rule: name })}
-          onPress={() => {
-            actions.move(rule, place - 1);
-          }}
-        >
-          {t("client:admin.rules.move_up")}
-        </Button>
-        <Button
-          size="sm"
-          isPending={isMoving}
-          isDisabled={place === count}
-          aria-label={t("client:admin.rules.move_down_rule", { rule: name })}
-          onPress={() => {
-            actions.move(rule, place + 1);
-          }}
-        >
-          {t("client:admin.rules.move_down")}
-        </Button>
-        <EditRule rule={rule} name={name} actions={actions} />
-        <RetireRule rule={rule} name={name} actions={actions} />
-      </Cluster>
-    </Stack>
-  );
-}
-
-type RuleActionProps = { rule: Rule; name: string; actions: RuleActions };
-
-/** The text and the hint of a rule in a dialog; it closes once they are saved, and keeps a failure inside. */
-function EditRule({ rule, name, actions }: RuleActionProps) {
-  const t = useT();
-  return (
-    <DialogTrigger>
-      <Button size="sm" aria-label={t("client:admin.rules.edit_rule", { rule: name })}>
-        {t("client:admin.rules.edit")}
-      </Button>
-      <Dialog
-        title={t("client:admin.rules.edit.title")}
-        closeLabel={t("client:admin.rules.edit.close")}
-        isDismissable={false}
-        size="md"
-      >
-        {({ close }) => <EditRuleForm rule={rule} actions={actions} close={close} />}
-      </Dialog>
-    </DialogTrigger>
-  );
-}
-
-function EditRuleForm({ rule, actions, close }: { rule: Rule; actions: RuleActions; close: () => void }) {
-  const t = useT();
-  const draft = useRuleDraft(rule);
-  const [isSaving, setIsSaving] = useState(false);
-  const [failed, setFailed] = useState(false);
-  return (
-    <Stack
-      as="form"
-      gap="4"
-      onSubmit={(event) => {
-        event.preventDefault();
-        if (isSaving) return;
-        const input = draft.input();
-        if (input === null) return;
-        setIsSaving(true);
-        setFailed(false);
-        void actions.update(rule, input).then((saved) => {
-          setIsSaving(false);
-          if (saved) close();
-          else setFailed(true);
-        });
-      }}
-    >
-      <RuleTextFields fields={draft.fields} autoFocus />
-      {failed && actions.error !== undefined && (
-        <InlineError size="inherit" alert>
-          {t("client:admin.rules.change_failed", { reason: actions.error })}
-        </InlineError>
-      )}
-      <Cluster gap="2" justify="end">
-        <Button onPress={close}>{t("client:admin.rules.cancel")}</Button>
-        <Button type="submit" variant="primary" isPending={isSaving}>
-          {t("client:admin.rules.save")}
-        </Button>
-      </Cluster>
-    </Stack>
-  );
-}
-
-/** Retiring a rule, after an alert dialog: it cannot be undone. */
-function RetireRule({ rule, name, actions }: RuleActionProps) {
-  const t = useT();
-  const [isRetiring, setIsRetiring] = useState(false);
-  const [failed, setFailed] = useState(false);
-  return (
-    <DialogTrigger>
-      <Button size="sm" variant="danger" aria-label={t("client:admin.rules.retire_rule", { rule: name })}>
-        {t("client:admin.rules.retire")}
-      </Button>
-      <ConfirmDialog
-        title={t("client:admin.rules.retire.title", { rule: name })}
-        description={t("client:admin.rules.retire.description")}
-        confirmLabel={t("client:admin.rules.retire")}
-        cancelLabel={t("client:admin.rules.cancel")}
-        isPending={isRetiring}
-        {...(failed &&
-          actions.error !== undefined && {
-            errorMessage: t("client:admin.rules.change_failed", { reason: actions.error }),
-          })}
-        onConfirm={(close) => {
-          setIsRetiring(true);
-          setFailed(false);
-          void actions.retire(rule).then((retired) => {
-            setIsRetiring(false);
-            if (retired) close();
-            else setFailed(true);
-          });
-        }}
-      />
-    </DialogTrigger>
+      }
+    />
   );
 }
