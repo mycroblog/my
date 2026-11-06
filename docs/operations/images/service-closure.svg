@@ -1,0 +1,85 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 686" width="760" height="686" role="img" aria-labelledby="title desc">
+<!-- SPDX-License-Identifier: AGPL-3.0-only -->
+  <title id="title">The sequence of closing the service</title>
+  <desc id="desc">Closing the service from top to bottom, with the operator's step on the left and the state of the server on the right. 1, announce with my admin closure announce: the state becomes announced and sign-ups stop. 2, the notice period: users export their data and move; the server runs as usual. The closing date, -closes-at, ends the notice period. 3, close with my admin closure close: the state becomes closed, users can only sign in and export, and a Delete is delivered for every account. 4, when every delivery has finished, my admin closure status shows delivery_completed, and the local Actors also answer 410. 5, until the export deadline the server stays closed and keeps offering the export; export the records under retention holds. The export deadline, -export-until, is 30 days after the closing date unless set. 6, write the static page with my admin closure export-html while the database is still there, switch the front end to it, and stop my serve. 7, discard the DB, blobs, KV, queues, and backups; keep the domain and the static page, which answers 410, for about a year.</desc>
+
+  <style>
+    svg { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif; }
+    .bg { fill: #ffffff; }
+    .t { fill: #1f2328; font-size: 16px; }
+    .b { font-weight: 600; }
+    .m { fill: #59636e; font-size: 15px; }
+    .h { fill: #1f2328; font-size: 17px; font-weight: 600; }
+    .group { fill: #f6f8fa; stroke: #d1d9e0; stroke-width: 1.5; }
+    .proc { fill: #ddf4ff; stroke: #0969da; stroke-width: 2; }
+    .port { fill: #ffffff; stroke: #8c959f; stroke-width: 1.5; }
+    .svc { fill: #fbefff; stroke: #8250df; stroke-width: 1.5; }
+    .arrow { stroke: #59636e; stroke-width: 2; fill: none; }
+    .rule { stroke: #59636e; stroke-width: 1.5; stroke-dasharray: 6 5; fill: none; }
+    .head { fill: #59636e; }
+    @media (prefers-color-scheme: dark) {
+      .bg { fill: #0d1117; }
+      .t, .h { fill: #e6edf3; }
+      .m { fill: #9198a1; }
+      .group { fill: #151b23; stroke: #3d444d; }
+      .proc { fill: #0c2d6b; stroke: #4493f8; }
+      .port { fill: #0d1117; stroke: #656c76; }
+      .svc { fill: #2a1650; stroke: #ab7df8; }
+      .arrow, .rule { stroke: #9198a1; }
+      .head { fill: #9198a1; }
+    }
+  </style>
+  <defs>
+    <marker id="arrowhead" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path class="head" d="M 0 0 L 10 5 L 0 10 z"/>
+    </marker>
+  </defs>
+  <rect class="bg" x="0" y="0" width="760" height="686" rx="12"/>
+  <text class="h" x="20" y="38" text-anchor="start">Operator</text>
+  <text class="h" x="440" y="38" text-anchor="start">Server</text>
+  <rect class="port" x="20" y="60" width="370" height="58" rx="8"/>
+  <text class="t b" x="205.0" y="85.0" text-anchor="middle">1. Announce</text>
+  <text class="m" x="205.0" y="107.0" text-anchor="middle">my admin closure announce</text>
+  <rect class="port" x="20" y="140" width="370" height="58" rx="8"/>
+  <text class="t b" x="205.0" y="165.0" text-anchor="middle">2. Notice period</text>
+  <text class="m" x="205.0" y="187.0" text-anchor="middle">users export and move</text>
+  <path class="arrow" d="M 205.0 118 L 205.0 136" marker-end="url(#arrowhead)"/>
+  <rect class="port" x="20" y="254" width="370" height="58" rx="8"/>
+  <text class="t b" x="205.0" y="279.0" text-anchor="middle">3. Close</text>
+  <text class="m" x="205.0" y="301.0" text-anchor="middle">my admin closure close</text>
+  <path class="arrow" d="M 205.0 198 L 205.0 250" marker-end="url(#arrowhead)"/>
+  <rect class="port" x="20" y="334" width="370" height="58" rx="8"/>
+  <text class="t b" x="205.0" y="359.0" text-anchor="middle">4. Delivery complete</text>
+  <text class="m" x="205.0" y="381.0" text-anchor="middle">my admin closure status</text>
+  <path class="arrow" d="M 205.0 312 L 205.0 330" marker-end="url(#arrowhead)"/>
+  <rect class="port" x="20" y="414" width="370" height="58" rx="8"/>
+  <text class="t b" x="205.0" y="439.0" text-anchor="middle">5. Until the export deadline</text>
+  <text class="m" x="205.0" y="461.0" text-anchor="middle">export the retention holds</text>
+  <path class="arrow" d="M 205.0 392 L 205.0 410" marker-end="url(#arrowhead)"/>
+  <rect class="port" x="20" y="528" width="370" height="58" rx="8"/>
+  <text class="t b" x="205.0" y="553.0" text-anchor="middle">6. Static page</text>
+  <text class="m" x="205.0" y="575.0" text-anchor="middle">my admin closure export-html</text>
+  <path class="arrow" d="M 205.0 472 L 205.0 524" marker-end="url(#arrowhead)"/>
+  <rect class="port" x="20" y="608" width="370" height="58" rx="8"/>
+  <text class="t b" x="205.0" y="633.0" text-anchor="middle">7. Discard</text>
+  <text class="m" x="205.0" y="655.0" text-anchor="middle">DB, blobs, KV, queues, backups</text>
+  <path class="arrow" d="M 205.0 586 L 205.0 604" marker-end="url(#arrowhead)"/>
+  <rect class="proc" x="440" y="60" width="300" height="138" rx="8"/>
+  <text class="t b" x="590.0" y="125.0" text-anchor="middle">announced</text>
+  <text class="m" x="590.0" y="147.0" text-anchor="middle">runs as usual; sign-ups stop</text>
+  <rect class="proc" x="440" y="254" width="300" height="58" rx="8"/>
+  <text class="t b" x="590.0" y="279.0" text-anchor="middle">closed</text>
+  <text class="m" x="590.0" y="301.0" text-anchor="middle">sign-in and export only</text>
+  <rect class="proc" x="440" y="334" width="300" height="138" rx="8"/>
+  <text class="t b" x="590.0" y="399.0" text-anchor="middle">delivery_completed</text>
+  <text class="m" x="590.0" y="421.0" text-anchor="middle">local Actors answer 410</text>
+  <rect class="port" x="440" y="528" width="300" height="138" rx="8"/>
+  <text class="t b" x="590.0" y="593.0" text-anchor="middle">Static page and 410</text>
+  <text class="m" x="590.0" y="615.0" text-anchor="middle">my serve stopped; about a year</text>
+  <path class="rule" d="M 20 226.0 L 740 226.0"/>
+  <rect class="bg" x="75.0" y="214.0" width="260" height="24"/>
+  <text class="t b" x="205.0" y="232.0" text-anchor="middle">Closing date (-closes-at)</text>
+  <path class="rule" d="M 20 500.0 L 740 500.0"/>
+  <rect class="bg" x="75.0" y="488.0" width="260" height="24"/>
+  <text class="t b" x="205.0" y="506.0" text-anchor="middle">Export deadline (-export-until)</text>
+</svg>

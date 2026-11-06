@@ -67,6 +67,21 @@ A stop longer than a day or two is not a maintenance: close the service instead 
 5. **Switch back**: redeploy without `MY_MAINTENANCE` (or with `false`), check that `/readyz` and `/api/v1/instance/health` answer `{"status":"ok"}`,
    then resume the push queue and close the announcement.
 
+![What the server answers before, during, and after the maintenance mode, by kind of request: as usual before and after, and 503 with Retry-After during it, except /healthz and /readyz, which stay 200. The list below says the same.](images/maintenance.svg)
+
+From left to right:
+
+- **Before**, while you announce the maintenance, every request is answered as usual: `/healthz`, `/readyz`, and
+  `/api/v1/instance/health` answer `200` with `{"status":"ok"}`.
+- **In the maintenance mode** (`MY_MAINTENANCE=true`):
+  - `/healthz` and `/readyz` answer `200` with `{"status":"maintenance"}`.
+  - `/api/v1/instance/health` answers `503` with `{"status":"maintenance"}`.
+  - The rest of the client API and the OAuth endpoints that answer JSON get `503` with the maintenance problem.
+  - ActivityPub, WebFinger, and NodeInfo answer `503` with `{"error":"maintenance"}`.
+  - Pages and the web client get `503` with the maintenance page.
+  - Every response has `Retry-After` and `Cache-Control: no-store`.
+- **After** you redeploy without `MY_MAINTENANCE`, every request is answered as usual again.
+
 ### Push queues
 
 - **Cloud Tasks**: pause the queue, which keeps accepting new tasks but stops delivering them, and resume it after the work.

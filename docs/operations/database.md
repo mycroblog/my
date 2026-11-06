@@ -108,6 +108,22 @@ but it cannot take part in the data upgrade steps. Switch to the [maintenance mo
 `my serve` opens no database connection, so the backup is consistent and nothing writes while the steps run.
 Keep the maintenance window within a few hours ([how long](maintenance.md#how-long)).
 
+![The steps of an upgrade from top to bottom, and what /readyz answers at each: 200 with status ok before, 200 with status maintenance from the maintenance mode until the new release starts, then 200 with status ok again. The list below describes each step.](images/upgrade.svg)
+
+From the top of the diagram down:
+
+- **Previous release.** The server runs as usual, and `/readyz` answers `200` with `{"status":"ok"}`.
+- **Maintenance mode.** Redeploy with `MY_MAINTENANCE=true`. From now until the new release starts, `/readyz` answers `200` with
+  `{"status":"maintenance"}`, so the load balancer keeps the instances while nothing reaches the database.
+- **1. Back up** the database and the media.
+- **2 to 4: the one-off jobs of the new image.** `my db upgrade -check` changes nothing; `my schema apply` runs after you
+  read its `-dry-run`; `my db upgrade` runs the data upgrade steps.
+- **5. Start the new release** without `MY_MAINTENANCE`. `/readyz` answers `200` with `{"status":"ok"}` once every data upgrade
+  step of the release is recorded, and `503` while one is missing (or the schema is not applied).
+
+With Docker Compose, `docker compose up` replaces the maintenance-mode container before the one-off jobs run, so nothing answers
+on `/readyz` during steps 2 to 4 ([Docker Compose](#docker-compose-1)).
+
 ### Checking the SQL with `-dry-run`
 
 Before step 3 applies anything, run `my schema apply -dry-run` and read what it would run.
