@@ -17,6 +17,9 @@
     "mail": {
       "project": ["src/**/*.ts"]
     },
+    "docs": {
+      "project": ["*.config.ts", "src/**/*.{ts,astro,mdx}"]
+    },
     "../pkg/mykit/ts": {
       "entry": ["src/**/*.test.ts", "examples/*.ts"],
       "project": ["src/**/*.ts", "examples/*.ts"],

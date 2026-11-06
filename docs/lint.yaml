@@ -31,6 +31,7 @@ english:
   - ".github/ISSUE_TEMPLATE/*"
   - ".github/pull_request_template.md"
   - "app/ui/README.md"
+  - "app/docs/src/content/docs/index.md"
   - "pkg/**/README.md"
   - "tools/agentkit/README.md"
 
@@ -39,6 +40,8 @@ english:
 operator:
   - "README.md"
   - "SECURITY.md"
+  # The landing page of the documentation site.
+  - "app/docs/src/content/docs/index.md"
   - "docs/operations/**"
   - "docs/reference/**"
   # The development tasks, for contributors: it may cite the ADR a task's rule comes from.
@@ -49,6 +52,7 @@ operator:
 maintainer-terms:
   files:
     - "README.md"
+    - "app/docs/src/content/docs/index.md"
     - "docs/operations/**"
     - "docs/reference/**"
     # The development tasks, for contributors.
