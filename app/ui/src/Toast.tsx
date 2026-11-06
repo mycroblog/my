@@ -3,6 +3,7 @@
 // the bottom edge. A toast never takes focus. It is announced through the Announcer's live regions
 // (web-client/README.md Y7), so the visible list itself is not a live region and nothing is read twice.
 // The list is a labelled region landmark, so keyboard and screen reader users can reach a toast's action.
+// While toasts show, the shell keeps the end of the page clear of them, so a toast covers no control for good.
 //
 // React Aria Components' Toast is still UNSTABLE_ (react-aria-components 1.21), so the kit keeps its own
 // small queue. Auto-dismiss pauses while the pointer is over the toasts or focus is in them (WCAG 2.2.1),
@@ -11,6 +12,7 @@ import { createContext, type ReactNode, use, useEffect, useRef, useState } from 
 import { Button } from "react-aria-components";
 import { tv } from "tailwind-variants";
 import { useAnnouncer } from "./Announcer";
+import { useBlockSizeProperty } from "./blockSizeProperty";
 import { celebrationClasses, useCelebration } from "./celebration";
 import { AboutIcon, CheckIcon, CloseIcon, WarningIcon } from "./Icons";
 import { Tooltip, TooltipTrigger } from "./Tooltip";
@@ -96,8 +98,13 @@ const toast = tv({
   variants: {
     clearsTabBar: {
       true: {
-        region:
-          "bottom-[calc(4rem+1px+env(safe-area-inset-bottom))] pb-4 short:bottom-[calc(3rem+1px+env(safe-area-inset-bottom))] md:bottom-0 md:pb-[max(--spacing(4),env(safe-area-inset-bottom))] with-compose-fab:bottom-[calc(8rem+env(safe-area-inset-bottom))] with-compose-fab:short:bottom-[calc(6.5rem+env(safe-area-inset-bottom))] with-compose-fab:md:bottom-0",
+        region: [
+          "with-tab-bar:bottom-[calc(4rem+1px+env(safe-area-inset-bottom))] with-tab-bar:pb-4",
+          "with-tab-bar:short:bottom-[calc(3rem+1px+env(safe-area-inset-bottom))]",
+          "with-tab-bar:md:bottom-0 with-tab-bar:md:pb-[max(--spacing(4),env(safe-area-inset-bottom))]",
+          "with-compose-fab:bottom-[calc(8rem+env(safe-area-inset-bottom))]",
+          "with-compose-fab:short:bottom-[calc(6.5rem+env(safe-area-inset-bottom))] with-compose-fab:md:bottom-0",
+        ],
       },
     },
     tone: {
@@ -119,9 +126,11 @@ export type ToastProviderProps = {
   defaultTimeout?: number;
   /**
    * Below md the toasts stand above the app's tab bar along the bottom edge (4rem high, 3rem on short screens, with a 1px
-   * border above and the safe-area inset below), which they would otherwise cover. On a page with a floating new-post
-   * button (`[data-compose-fab]` in the document) they stand above it too (web-client/16-look-states-and-wording.md G4). From md the navigation is a
-   * side rail and the toasts go back to the bottom edge.
+   * border above and the safe-area inset below), which they would otherwise cover, while the page has it
+   * (`[data-tab-bar]` in the document, AppShell's `side` frame; the admin frame and the signed-out top bar have none). On a
+   * page with a floating new-post button (`[data-compose-fab]` in the document) they stand above it too
+   * (web-client/16-look-states-and-wording.md G4). From md the navigation is a side rail and the toasts go back to the
+   * bottom edge.
    */
   clearsTabBar?: boolean;
 };
@@ -201,6 +210,11 @@ export function ToastProvider({
     }
     return id;
   };
+
+  // While toasts show, the height of their stack is the document's `--toast-stack-block-size`, by which the shell's
+  // `main` pads its end and the app's stylesheet keeps focused elements clear (scroll-padding): a toast never hides
+  // the end of a page or the control that has focus (G4, WCAG 2.4.11). The stack wraps and grows, so it is measured.
+  useBlockSizeProperty(regionRef, toasts.length > 0 ? "--toast-stack-block-size" : undefined);
 
   const styles = toast({ clearsTabBar });
   return (

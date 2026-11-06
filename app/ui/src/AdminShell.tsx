@@ -22,7 +22,7 @@ const adminShell = tv({
     topBar:
       "sticky top-under-bar z-10 flex min-h-14 items-center gap-2 border-b border-border bg-surface-raised px-3 md:hidden",
     topTitle: "min-w-0 truncate text-base font-extrabold",
-    main: "mx-auto flex w-full min-w-0 max-w-6xl flex-col gap-6 px-4 pt-6 pb-[calc(2rem+env(safe-area-inset-bottom))] md:px-8",
+    main: "mx-auto flex w-full min-w-0 max-w-6xl flex-col gap-6 px-4 pt-6 pb-[calc(2rem+env(safe-area-inset-bottom)+var(--toast-stack-block-size,0px))] md:px-8",
     menu: "flex flex-col gap-1 p-3 pb-[calc(1.5rem+env(safe-area-inset-bottom))]",
     brand: "flex flex-col gap-1 px-2 pt-1 pb-4",
     modeLabel: "text-xs font-extrabold tracking-widest text-fg-muted uppercase",

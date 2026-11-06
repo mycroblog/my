@@ -21,52 +21,53 @@
      (web-client/README.md Y4). Its height is the min-h-16 of its links (min-h-12 on short screens) plus the
      safe-area inset. On pages with the floating new-post button (data-compose-fab on the main of @my/ui AppShell)
      they also clear the button: 3rem above the tab bar with a 1rem gap (0.5rem on short screens), or in the
-     corner from md. From xl the form is a side panel and nothing floats. */
+     corner from md. From xl the form is a side panel and nothing floats. While toasts show (@my/ui ToastProvider),
+     every value adds the height of their stack, --toast-stack-block-size, so that no toast hides a focused element. */
   :root {
-    scroll-padding-block-end: calc(4rem + env(safe-area-inset-bottom));
+    scroll-padding-block-end: calc(4rem + env(safe-area-inset-bottom) + var(--toast-stack-block-size, 0px));
   }
   :root:has([data-compose-fab]) {
-    scroll-padding-block-end: calc(8.5rem + env(safe-area-inset-bottom));
+    scroll-padding-block-end: calc(8.5rem + env(safe-area-inset-bottom) + var(--toast-stack-block-size, 0px));
   }
   @variant short {
     :root {
-      scroll-padding-block-end: calc(3rem + env(safe-area-inset-bottom));
+      scroll-padding-block-end: calc(3rem + env(safe-area-inset-bottom) + var(--toast-stack-block-size, 0px));
     }
     :root:has([data-compose-fab]) {
-      scroll-padding-block-end: calc(7rem + env(safe-area-inset-bottom));
+      scroll-padding-block-end: calc(7rem + env(safe-area-inset-bottom) + var(--toast-stack-block-size, 0px));
     }
   }
   @variant md {
     :root {
-      scroll-padding-block-end: 0;
+      scroll-padding-block-end: var(--toast-stack-block-size, 0px);
     }
     :root:has([data-compose-fab]) {
-      scroll-padding-block-end: calc(5rem + env(safe-area-inset-bottom));
+      scroll-padding-block-end: calc(5rem + env(safe-area-inset-bottom) + var(--toast-stack-block-size, 0px));
     }
   }
   @variant xl {
     :root:has([data-compose-fab]) {
-      scroll-padding-block-end: 0;
+      scroll-padding-block-end: var(--toast-stack-block-size, 0px);
     }
   }
   /* The bar of a voice chat call (data-call-bar, @my/ui CallBar in ShellDock) sticks to the bottom of the page's
      column, 1rem above the tab bar or the bottom edge from md: focused elements clear it
      too, with a 1rem gap. The bar writes its measured height to --call-bar-block-size (it wraps on narrow screens). */
   :root:has([data-call-bar]) {
-    scroll-padding-block-end: calc(var(--call-bar-block-size, 4rem) + 6rem + env(safe-area-inset-bottom));
+    scroll-padding-block-end: calc(var(--call-bar-block-size, 4rem) + 6rem + env(safe-area-inset-bottom) + var(--toast-stack-block-size, 0px));
   }
   /* On short screens the bar does not stick (it scrolls with the page): only the tab bar and the button are cleared. */
   @variant short {
     :root:has([data-call-bar]) {
-      scroll-padding-block-end: calc(3rem + env(safe-area-inset-bottom));
+      scroll-padding-block-end: calc(3rem + env(safe-area-inset-bottom) + var(--toast-stack-block-size, 0px));
     }
     :root:has([data-call-bar]):has([data-compose-fab]) {
-      scroll-padding-block-end: calc(7rem + env(safe-area-inset-bottom));
+      scroll-padding-block-end: calc(7rem + env(safe-area-inset-bottom) + var(--toast-stack-block-size, 0px));
     }
   }
   @variant md {
     :root:has([data-call-bar]) {
-      scroll-padding-block-end: calc(var(--call-bar-block-size, 4rem) + 2rem + env(safe-area-inset-bottom));
+      scroll-padding-block-end: calc(var(--call-bar-block-size, 4rem) + 2rem + env(safe-area-inset-bottom) + var(--toast-stack-block-size, 0px));
     }
   }
   /* What the shell fixes at the bottom of the screen, which a sticky submit bar of a long form (@my/ui FormActionBar
@@ -79,7 +80,7 @@
     --shell-inset-block-end: calc(5rem + env(safe-area-inset-bottom) + var(--call-bar-block-size, 4rem));
   }
   :root:has([data-form-action-bar][data-sticky]) {
-    scroll-padding-block-end: calc(var(--shell-inset-block-end) + 5rem);
+    scroll-padding-block-end: calc(var(--shell-inset-block-end) + 5rem + var(--toast-stack-block-size, 0px));
   }
   @variant md {
     :root {
@@ -105,7 +106,7 @@
   }
   @variant short {
     :root:has([data-form-action-bar][data-sticky]) {
-      scroll-padding-block-end: calc(3rem + env(safe-area-inset-bottom));
+      scroll-padding-block-end: calc(3rem + env(safe-area-inset-bottom) + var(--toast-stack-block-size, 0px));
     }
   }
 }
