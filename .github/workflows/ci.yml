@@ -8,8 +8,8 @@ name: CI
 #   the docker context changes; the OpenTofu modules (`tofu`) when the tofu context changes; the destructive changes of the schema against the base (`db-lint`) when the schema
 #   changes.
 # - merge_group: the full check of the contexts the group changes (scripts/changed-contexts.sh): server-static,
-#   server-test, client-static, client-test (2 shards), and repo, at most 6 jobs; repo also builds the documentation
-#   site when the site context changes.
+#   server-test, client-static, client-test (2 shards), and repo, at most 6 jobs; repo also checks the documentation
+#   site (app/docs) when the site context changes.
 # - pull_request labelled `ci:full`: both.
 #
 # Each job sets up its tools and generates what its checks read, then runs the checks as parallel steps (ADR-0079),
@@ -456,8 +456,6 @@ jobs:
       - parallel:
           - name: web:typecheck
             run: scripts/task.sh web:typecheck
-          - name: docs:site-typecheck
-            run: scripts/task.sh docs:site-typecheck
           - name: web:oxlint
             run: scripts/task.sh web:oxlint
           - name: web:knip
@@ -501,8 +499,8 @@ jobs:
     # files) and inventories (the names each document must mention), the ADR numbers, the bun fmt check of the TS packages, and that every check of `scripts/task.sh check` runs in a job: any change can break them. Also pkg/mykit and pkg/mybot, Go modules of their
     # own, their integration tests, and the npm packages @mycroblog/mykit and @mycroblog/mybot in pkg/mykit/ts and
     # pkg/mybot/ts when the mykit context changes (their licenses run in preflight). Also the build of the documentation
-    # site (app/docs, ADR-0150 §7) when the site context changes: it fails on a broken link or a page that does not
-    # render, which two pull requests can cause together (one removes a heading, the other links to it), so it runs on
+    # site (app/docs, ADR-0150 §7) and its tsc, Oxlint, and knip when the site context changes: the build fails on a
+    # broken link or a page that does not render, which two pull requests can cause together (one removes a heading, the other links to it), so it runs on
     # the merge group and not in preflight. A step here rather than a job of its own keeps a group at 6 jobs.
     needs: changes
     if: needs.changes.outputs.full == 'true'
@@ -556,10 +554,20 @@ jobs:
           # Also in preflight; here it checks the merge group, where one pull request's spec meets another's live test.
           - name: api:live-calls
             run: scripts/task.sh api:live-calls
-          # The check of the site context (site:check): copy the published documents in and build the site.
+          # The check of the site context (site:check): copy the published documents in and build the site, and run
+          # tsc, Oxlint, and knip on app/docs, which selects no client context (its bun fmt is web:fmt-check above).
           - name: docs:site-build
             if: needs.changes.outputs.site == 'true'
             run: scripts/task.sh docs:site-build
+          - name: docs:site-typecheck
+            if: needs.changes.outputs.site == 'true'
+            run: scripts/task.sh docs:site-typecheck
+          - name: docs:site-lint
+            if: needs.changes.outputs.site == 'true'
+            run: scripts/task.sh docs:site-lint
+          - name: docs:site-knip
+            if: needs.changes.outputs.site == 'true'
+            run: scripts/task.sh docs:site-knip
           - name: mykit:test
             if: needs.changes.outputs.mykit == 'true'
             run: scripts/task.sh mykit:test

@@ -25,7 +25,8 @@
 #   mykit   pkg/mykit and pkg/mybot, the client libraries, Go modules of their own, and their integration tests (mykit:check)
 #   tofu the OpenTofu modules of deploy/opentofu          (tofu:check)
 #   site    the documentation site app/docs and what it publishes: docs/operations, docs/reference, docs/guide,
-#           docs/developers, docs/README.md (its sidebar), and api/openapi.yaml   (site:check, the build of docs:site-build)
+#           docs/developers, docs/README.md (its sidebar), and api/openapi.yaml; app/docs selects no other context
+#           (site:check: the build of docs:site-build and the tsc, Oxlint, and knip of app/docs)
 #
 # A change to shared configuration (Taskfile.yml and tasks/, .tool-versions, tools/go.mod, the workflows and their
 # actions) selects every context, and so does any path no rule below knows: a new kind of file runs everything until a
@@ -184,7 +185,8 @@ classify() {
   esac
   case "$path" in
     # The documentation site (ADR-0150 §7): its workspace and the documents it copies in and builds. app/docs is a
-    # package of the client workspace too (web, below).
+    # package of the client workspace, but site:check runs its tsc, Oxlint, and knip, and it imports nothing from app/web
+    # or app/ui, so it selects no client context (web, below).
     app/docs/* | docs/operations/* | docs/reference/* | docs/guide/* | docs/developers/* | docs/README.md)
       select_contexts site
       known=1
@@ -238,6 +240,14 @@ classify() {
       ;;
   esac
   case "$path" in
+    # The workspace configuration that the checks of the documentation site read too (tsc, Oxlint, knip).
+    app/tsconfig.base.json | app/.oxlintrc.json | app/oxlint/* | app/knip.json)
+      select_contexts site
+      ;;
+  esac
+  case "$path" in
+    # The documentation site, whose checks are the site context's (above).
+    app/docs/*) ;;
     # web:tokens fails when the token list generated from app/ui/src/theme.css is stale.
     app/* | scripts/playwright-image-check.sh | scripts/web-icons.sh | internal/domain/instance/theme_tokens.gen.go)
       select_contexts web

@@ -66,7 +66,7 @@ Merge Queue に入るのは PR の `check` を通ったものだけなので、P
 | `server-test` | `go test ./...`（pgmem、ADR-0015） | go・schema・api・i18n |
 | `client-static` | 生成（ADR-0081）→ `tsc`・Oxlint・knip・`vite build`・i18n のカタログの検査 | ui・web・api・i18n |
 | `client-test`（2 シャード） | Vitest（`app/web`・`app/ui`・`tools/i18n`）。`app/web` は `vitest --shard=<i>/2` で 2 ジョブに分ける | ui・web・api・i18n |
-| `repo` | agentkit の検査と文脈の地図、ADR の番号の重複（ADR-0081）、手元と CI の組み合わせのずれ（§11）。site の文脈が変わったときは、ドキュメントサイトのビルド（ADR-0150 §7） | 常に（サイトのビルドは site） |
+| `repo` | agentkit の検査と文脈の地図、ADR の番号の重複（ADR-0081）、手元と CI の組み合わせのずれ（§11）。site の文脈が変わったときは、ドキュメントサイトのビルド（ADR-0150 §7）と `app/docs` の `tsc`・Oxlint・knip。`app/docs` は site だけを選び、client の文脈を選ばない | 常に（サイトの検査は site） |
 
 - ビルドタグの組み合わせ（アダプタを外したビルド）は Merge Queue で回さず、遅い検査で回す。組み合わせが壊れるのはアダプタやビルドタグを変えたときに限られ、マージのたびに確かめる必要はない。リリースの前には必ず通る。
 - `client-test` を初めから 2 つに分けるのは、`web-test` だけで 242 / 274 秒（中央値 / p90）かかり、Merge Queue の最長のジョブになるからである。

@@ -76,9 +76,11 @@ tasks:
 
   # The check of the site context. The tasks of the documentation site live in tasks/docs.yml (ADR-0150 §2), so the
   # context has no namespace of its own in which `check` could find a `site:check`.
+  # app/docs selects no client context, so its tsc, Oxlint, knip, and bun fmt run here; CI runs them in the merge
+  # queue's repo job (bun fmt also in the preflight).
   site:check:
-    desc: "Build the documentation site (app/docs), which fails on a broken link or #anchor between its pages or on a page that does not render"
-    deps: [docs:site-build]
+    desc: "Build the documentation site (app/docs), which fails on a broken link or #anchor between its pages or on a page that does not render, and run tsc, Oxlint, and knip on it and the TS formatting (web:fmt-check)"
+    deps: [docs:site-build, docs:site-typecheck, docs:site-lint, docs:site-knip, web:fmt-check]
 
   # The generated files Go reads are committed; the ones only the TS clients read are not, and the tasks that read
   # them generate them first (ADR-0081). Run this once after a clone for an editor's type checks.
