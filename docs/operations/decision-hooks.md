@@ -241,8 +241,9 @@ decisions alone.
 
 The job `hook.purge_decisions` removes decisions after `hook_decisions_retention_days` days (default 90, at least 30). It keeps
 those that a sensitive mark on an existing post rests on, those of an account under a
-[retention hold](moderation.md#record-retention-and-holds), and each `reject` of `local.status` its author can still appeal or
-whose appeal waits for review. An appeal goes with its decision. Deleting an account removes its decisions, its appeals, and
+[retention hold](moderation.md#record-retention-and-holds), and each `reject` of a new post by `local.status` its author can
+still appeal or whose appeal waits for review. A `reject` of an edit cannot be appealed, so it goes once the retention period
+is over. An appeal goes with its decision. Deleting an account removes its decisions, its appeals, and
 its exemption from `local.status`.
 
 ## What you tell your users

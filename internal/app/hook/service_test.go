@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"maps"
 	"slices"
 	"strings"
 	"testing"
@@ -50,6 +51,8 @@ type settings struct {
 	mode      hook.Mode
 	onFailure hook.OnFailure
 	reads     int
+	// retention and appealWindow replace the defaults of 90 and 30 days when set.
+	retention, appealWindow time.Duration
 }
 
 func (s *settings) HookMode(context.Context, hook.Name) (hook.Mode, error) {
@@ -62,7 +65,14 @@ func (s *settings) HookOnFailure(context.Context, hook.Name) (hook.OnFailure, er
 }
 
 func (s *settings) HookRetention(context.Context) (time.Duration, time.Duration, error) {
-	return 90 * 24 * time.Hour, 30 * 24 * time.Hour, nil
+	retention, window := 90*24*time.Hour, 30*24*time.Hour
+	if s.retention > 0 {
+		retention = s.retention
+	}
+	if s.appealWindow > 0 {
+		window = s.appealWindow
+	}
+	return retention, window, nil
 }
 
 // fakeTx collects the events of a transaction.
@@ -159,7 +169,7 @@ func (m *memory) ListExpired(_ context.Context, q apphook.ExpiredQuery) ([]hook.
 		after := q.AfterID == "" || d.DecidedAt.After(q.AfterAt) || (d.DecidedAt.Equal(q.AfterAt) && d.ID > q.AfterID)
 		if d.DecidedAt.Before(q.Before) && after {
 			out = append(out, hook.Expired{
-				ID: d.ID, Hook: d.Hook, AccountID: d.AccountID, Mode: d.Mode, Outcome: d.Outcome,
+				ID: d.ID, Hook: d.Hook, SubjectKey: d.SubjectKey, AccountID: d.AccountID, Mode: d.Mode, Outcome: d.Outcome,
 				DecidedAt: d.DecidedAt, Overridden: r.Override != nil, StatusIDs: m.statuses[d.ID], AppealPending: m.appealPending(d.ID),
 			})
 		}
@@ -560,6 +570,30 @@ func TestPurgeKeepsWhatTheDecisionLists(t *testing.T) {
 		if mem.records[id] != nil {
 			t.Errorf("%s stayed", id)
 		}
+	}
+}
+
+// A retention shorter than the appeal window keeps a reject of a new post until the window closes,
+// but not a reject of an edit, which cannot be appealed.
+func TestPurgeKeepsOnlyAppealableRejects(t *testing.T) {
+	mem := newMemory()
+	now := time.Date(2026, 11, 6, 0, 0, 0, 0, time.UTC)
+	old := now.Add(-10 * 24 * time.Hour)
+	for id, key := range map[string]string{"create": "status", "edit": apphook.EditSubjectKey("status", "revision")} {
+		mem.records[id] = &hook.Record{Decision: hook.Decision{
+			ID: id, SubjectKey: key, Hook: hook.LocalStatus, AccountID: "author", Mode: hook.ModeEnforce, Outcome: hook.Reject, DecidedAt: old,
+		}}
+	}
+	s := apphook.NewService(apphook.Deps{
+		UnitOfWork: mem, Repository: mem, Clock: &clock{now: now}, IDs: &ids{},
+		Settings: &settings{retention: 24 * time.Hour, appealWindow: 30 * 24 * time.Hour},
+	})
+	n, err := s.PurgeDecisions(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if n != 1 || mem.records["edit"] != nil || mem.records["create"] == nil {
+		t.Errorf("removed %d, left %v", n, slices.Collect(maps.Keys(mem.records)))
 	}
 }
 

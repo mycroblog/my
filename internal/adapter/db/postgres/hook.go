@@ -169,7 +169,7 @@ func (r *HookRepository) ListExpired(ctx context.Context, q apphook.ExpiredQuery
 	at := make(map[string]int, len(rows))
 	for i, row := range rows {
 		out[i] = hook.Expired{
-			ID: row.ID, Hook: hook.Name(row.Hook), AccountID: fromNullString(row.AccountID), Mode: hook.Mode(row.Mode),
+			ID: row.ID, Hook: hook.Name(row.Hook), SubjectKey: row.SubjectKey, AccountID: fromNullString(row.AccountID), Mode: hook.Mode(row.Mode),
 			Outcome: hook.Outcome(row.Outcome), DecidedAt: row.DecidedAt, Overridden: row.Overridden, AppealPending: row.AppealPending,
 		}
 		ids[i], at[row.ID] = row.ID, i

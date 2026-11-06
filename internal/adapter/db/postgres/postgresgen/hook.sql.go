@@ -557,7 +557,7 @@ func (q *Queries) ListAllowHookDecisions(ctx context.Context, arg ListAllowHookD
 }
 
 const listExpiredHookDecisions = `-- name: ListExpiredHookDecisions :many
-SELECT d.id, d.hook, d.account_id, d.mode, d.outcome, d.decided_at,
+SELECT d.id, d.hook, d.subject_key, d.account_id, d.mode, d.outcome, d.decided_at,
   CAST(EXISTS (SELECT 1 FROM hook_decision_overrides o WHERE o.decision_id = d.id) AS boolean) AS overridden,
   CAST(EXISTS (SELECT 1 FROM hook_decision_appeals a WHERE a.decision_id = d.id
     AND NOT EXISTS (SELECT 1 FROM hook_decision_appeal_decisions r WHERE r.appeal_id = a.id)) AS boolean) AS appeal_pending
@@ -579,6 +579,7 @@ type ListExpiredHookDecisionsParams struct {
 type ListExpiredHookDecisionsRow struct {
 	ID            string
 	Hook          string
+	SubjectKey    string
 	AccountID     *string
 	Mode          string
 	Outcome       string
@@ -605,6 +606,7 @@ func (q *Queries) ListExpiredHookDecisions(ctx context.Context, arg ListExpiredH
 		if err := rows.Scan(
 			&i.ID,
 			&i.Hook,
+			&i.SubjectKey,
 			&i.AccountID,
 			&i.Mode,
 			&i.Outcome,

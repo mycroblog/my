@@ -252,7 +252,7 @@ func HookRepositoryContract(t *testing.T, newHarness func(t *testing.T) HookHarn
 		slices.Sort(want)
 		got := slices.Clone(page[0].StatusIDs)
 		slices.Sort(got)
-		if !slices.Equal(got, want) || page[0].AccountID != old[0].AccountID || page[0].Overridden {
+		if !slices.Equal(got, want) || page[0].AccountID != old[0].AccountID || page[0].SubjectKey != old[0].SubjectKey || page[0].Overridden {
 			t.Errorf("first decision %+v", page[0])
 		}
 		if !page[1].Overridden || len(page[1].StatusIDs) != 0 {
