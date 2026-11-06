@@ -453,6 +453,8 @@ jobs:
       - parallel:
           - name: web:typecheck
             run: scripts/task.sh web:typecheck
+          - name: docs:site-typecheck
+            run: scripts/task.sh docs:site-typecheck
           - name: web:oxlint
             run: scripts/task.sh web:oxlint
           - name: web:knip

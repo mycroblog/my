@@ -8,6 +8,12 @@
 version: "3"
 
 vars:
+  # The packages of the client workspace that may have one license outside NPM_ALLOWED_LICENSES, each NAME=LICENSE
+  # (a NAME ending in `*` is a prefix; src/licenses.ts --exempt): any other package with that license still fails.
+  # - @img/sharp-libvips-*: the prebuilt libvips of sharp, the image library Astro uses when it builds the
+  #   documentation site (app/docs). The FSF lists LGPLv3 as compatible with AGPLv3, and the site is a build tool,
+  #   never shipped in the client or the server image.
+  NPM_LICENSE_EXEMPTIONS: "@img/sharp-libvips-*=LGPL-3.0-or-later"
   # internal/interface/web embeds the build from here with //go:embed all:dist (ADR-0028). Only its .gitkeep is
   # committed, so Go builds and tests need no Bun; go:bin embeds the real build.
   WEB_EMBED_DIR: internal/interface/web/dist
@@ -32,8 +38,8 @@ tasks:
     deps: [static, fmt-check, lint-css, licenses, tokens, test, playwright-image-check]
 
   static:
-    desc: Run tsc, Oxlint, knip, and the Vite build in parallel (without web:lint-rules, which must not run beside them)
-    deps: [typecheck, oxlint, knip, dist]
+    desc: Run tsc (app/web and the documentation site app/docs), Oxlint, knip, and the Vite build in parallel (without web:lint-rules, which must not run beside them)
+    deps: [typecheck, ":docs:site-typecheck", oxlint, knip, dist]
 
   # It skips while app/node_modules exists and the manifests are unchanged, so that the tasks of several processes (the
   # parallel steps of a CI job, ADR-0079) never install at once after the job's first install.
@@ -100,7 +106,7 @@ tasks:
     deps: [install, ":i18n:install"]
     dir: tools/i18n
     cmds:
-      - bun run src/licenses.ts {{.NPM_ALLOWED_LICENSES}} ../../app/node_modules
+      - bun run src/licenses.ts {{.NPM_ALLOWED_LICENSES}} --exempt {{shellQuote .NPM_LICENSE_EXEMPTIONS}} ../../app/node_modules
 
   lint:
     desc: Lint the client workspace, the tests of the Oxlint restrictions first, then Oxlint, knip, and no 100vh in CSS in parallel

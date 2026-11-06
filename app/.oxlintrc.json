@@ -33,6 +33,7 @@
     "**/node_modules/",
     "**/dist/",
     "**/storybook-static/",
+    "docs/.astro/",
     "web/src/routeTree.gen.ts",
     "oxlint/violations/"
   ],

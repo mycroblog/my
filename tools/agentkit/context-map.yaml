@@ -177,6 +177,14 @@ entries:
     notes:
       - "Edit app/mail/frame.mjml, never mail_frame.gen.html; then `scripts/task.sh mail:gen` and commit the generated template."
       - "Every value goes through html/template; the HTML links to https URLs only and loads no external font, image or style sheet."
+  - name: docs-site
+    paths: ["app/docs/**"]
+    docs: ["docs/adr/0150-documentation-site.md"]
+    userdocs: ["docs/reference/commands.md"]
+    checks: [web, docs]
+    notes:
+      - "The documentation site (@my/docs): Astro Starlight, built by `scripts/task.sh docs:site-build`, previewed by `docs:site-dev`. It imports nothing from app/web or app/ui (copy an asset instead) and adds no analytics or external service; search is Starlight's Pagefind."
+      - "The site holds no hand-written documents: the pages of src/content/docs/ are copied from the Markdown of the repository, except the landing page src/content/docs/index.md. English only, with the root locale `en`."
   - name: mail-preview
     paths: ["internal/platform/mailpreview/**", "scripts/mail-preview/**", "internal/app/identity/mail_drafts.go", "internal/app/notification/mail_drafts.go"]
     docs: ["docs/adr/0086-email-delivery.md#2-組み立てテンプレートと外枠"]

@@ -49,3 +49,26 @@ tasks:
       vars: [TITLE]
     cmds:
       - scripts/adr-new.sh {{shellQuote .TITLE}} {{.SLUG}}
+
+  # The documentation site (app/docs, @my/docs; ADR-0150): Astro Starlight in the client workspace. Its package.json
+  # scripts turn Astro's telemetry off, so the build needs no network beyond the package install.
+  site-build:
+    desc: Build the documentation site (app/docs) into app/docs/dist as static files, with its Pagefind search index
+    deps: [":web:install"]
+    dir: app/docs
+    cmds:
+      - bun run build
+
+  site-dev:
+    desc: Start the Astro dev server of the documentation site (app/docs) on http://localhost:4321
+    deps: [":web:install"]
+    dir: app/docs
+    cmds:
+      - bun run dev
+
+  site-typecheck:
+    desc: Type-check the configuration of the documentation site (app/docs) with tsc (web:static runs it)
+    deps: [":web:install"]
+    dir: app/docs
+    cmds:
+      - bun run typecheck

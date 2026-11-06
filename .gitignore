@@ -46,6 +46,9 @@ blob-report/
 storybook-static/
 .vitest/
 
+# The types and cache Astro generates for the documentation site (app/docs); its build goes to dist/.
+/app/docs/.astro/
+
 # Scratch space of local tools and agents (logs, temporary clones).
 /.tmp/
 
