@@ -241,3 +241,42 @@ func TestInboundStatusRefusesPlainTCP(t *testing.T) {
 		}
 	}
 }
+
+// The subject of local.status reaches the plugin in its own fields, and no other hook's subject is sent.
+func TestLocalStatusSubject(t *testing.T) {
+	t.Parallel()
+	got := make(chan *hookv1.CheckRequest, 1)
+	server := connect.NewServer()
+	hookv1connect.RegisterHookServiceHandler(server, &subjectPlugin{got: got})
+	mux := http.NewServeMux()
+	connecthttp.Mount(mux, server)
+	conn, err := client.New(client.Options{
+		Kind: mustKind(t, kind.LocalStatus), Destination: kind.Destination{Address: fakeplugin.ServeUnix(t, mux), Protocol: kind.ProtocolJSON},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(conn.Close)
+	created := time.Date(2026, 11, 1, 9, 30, 0, 0, time.UTC)
+	_, err = hookconnect.New(conn).Check(t.Context(), apphook.Request{
+		Hook: hook.LocalStatus, SubjectKey: "status-id",
+		Subject: apphook.LocalStatusSubject{
+			StatusURI: "https://my.example/ap/objects/status-id", AuthorURI: "https://my.example/ap/actors/a", AuthorUsername: "alice",
+			AccountCreatedAt: created, Visibility: "public", Language: "en", Text: "buy now", HTML: "<p>buy now</p>",
+			AttachmentDescriptions: []string{"", "a cat"}, Hashtags: []string{"deal"}, MentionCount: 3,
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	sent := <-got
+	s := sent.GetLocalStatus()
+	if s == nil || s.GetText() != "buy now" || s.GetHtml() != "<p>buy now</p>" || s.GetAuthorUsername() != "alice" ||
+		s.GetAccountCreatedAt() != "2026-11-01T09:30:00Z" || s.GetMentionCount() != 3 || len(s.GetAttachmentDescriptions()) != 2 ||
+		len(s.GetHashtags()) != 1 || s.GetVisibility() != "public" {
+		t.Errorf("sent %v", s)
+	}
+	if sent.GetSignup() != nil || sent.GetFollow() != nil || sent.GetInboundStatus() != nil {
+		t.Error("another hook's subject was sent")
+	}
+}

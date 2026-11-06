@@ -6,8 +6,8 @@ is stop one post, follow, sign-up, or upload, or file a report for your moderato
 
 Nothing is reviewed by default. A server with no hook address makes no call and spends no time on them. This version keeps
 the records, the modes, and the admin screens described here. Of the intake paths, posts from other servers ask
-`inbound.status`, follows from other servers ask `inbound.follow`, sign-ups ask `signup.check`, and uploads ask
-`media.check`; the other hooks are not called yet.
+`inbound.status`, follows from other servers ask `inbound.follow`, sign-ups ask `signup.check`, uploads ask
+`media.check`, and posts of local accounts ask `local.status`; the other hooks are not called yet.
 
 ## The hooks
 
@@ -34,7 +34,7 @@ What each answer does:
 - `require_approval` holds the sign-up for approval.
 - `reject` refuses it, with fixed text that shows nothing of the plugin's answer. On `signup.check` this also takes
   [the setting below](#sign-ups). On `media.check` it keeps nothing of the upload, the original included
-  ([below](#what-mediacheck-reviews)).
+  ([below](#what-mediacheck-reviews)). On `local.status` its author can [appeal](#local-posts).
 
 An answer can carry a coded reason (`spam`, `harassment`, `sexual`, `violence`, `illegal`, `malware`, `other`) and a note of
 up to 200 characters for your moderators. An answer the hook does not take counts as a failure.
@@ -117,6 +117,44 @@ The applicant's request waits for the plugin for up to `plugin_signup_check_time
 a person is waiting). The wait is not part of a database transaction. A sign-up that later fails, such as for a taken
 username, keeps its decision until the retention removes it.
 
+## Local posts
+
+`local.status` reviews a post of an account on your server before the server creates it. The author waits for the plugin, so
+the wait is short: `plugin_local_status_timeout` (1 second by default). A failure, a timeout, or an open breaker always lets the
+post through (`pass` is its only failure behaviour), and the wait is not part of a database transaction.
+
+What it sends and when:
+
+- Only the posts of accounts younger than `hook_local_status_account_age_days` (**Server settings** > **External review**,
+  7 days by default; `0` sends the posts of every account). New accounts are where most spam comes from, and established
+  accounts are not sent.
+- Only `public`, `local`, and `unlisted` posts. `private` and `direct` posts are never sent.
+- The text as the author typed it and as the server renders it, the content warning, the language, the image descriptions, the
+  poll options, the hashtags, how many accounts it mentions, the post it replies to or quotes (by address only), the author's
+  username, and when the account was created. No media is sent.
+- The key of the subject is the ID the post would get. Sending a post again with the same `Idempotency-Key` returns the post
+  that was created, without calling the plugin; a new attempt is a new subject.
+- Starting a voice chat room posts its first post without this hook.
+
+When it enforces, `reject` refuses the post and nothing is stored. The author sees fixed text ("This post was not published.")
+and a way to appeal; never the reason or the note. `flag` lets the post through and files one report of it, against its
+author.
+
+### Appeals
+
+The author of a refused post can appeal it within `appeal_window_days` (the same window as for moderation actions), once per
+decision. The appeal carries the text of the post, since the server stored nothing of it, and an optional comment for your
+moderators. No plugin is called.
+
+Your moderators (`manage_reports`) review appeals under **Moderation** > **Automated reviews**:
+
+- **Uphold** leaves the decision as it is.
+- **Overturn** cancels the decision, which goes in the audit log as `hook_decision_overridden`, and stops sending the
+  account's posts to `local.status`, in one transaction. The refused post is not restored: the author posts it again.
+
+An account that an overturned appeal took out of the hook stays out of it until the account is deleted. If it is later taken
+over, `local.status` no longer reviews it.
+
 ## Modes
 
 Each hook has a mode, an [instance setting](instance-settings.md) (`hook_inbound_status_mode` and so on) you change under
@@ -163,7 +201,7 @@ holds no text of a post, no email address, and no IP address.
 
 **Moderation** > **Automated reviews** (`manage_reports`) shows the counts and waits of the last 7 days, and what the hooks
 stopped, would have stopped in `observe`, or could not check. Cancelling a decision there goes in the audit log as
-`hook_decision_overridden`. A `reject` of `local.status` is not cancelled there: its author appeals it.
+`hook_decision_overridden`. A `reject` of `local.status` is not cancelled there: its author [appeals it](#appeals).
 
 What cancelling does depends on the answer. A `mark_sensitive` loses its mark, and a mark from a moderation action on the same
 post stays. A `flag` keeps its report, which you resolve as usual. A `drop` of `inbound.status` processes the received post
@@ -185,8 +223,9 @@ decisions alone.
 
 The job `hook.purge_decisions` removes decisions after `retention_hook_decisions` days (default 90, at least 30). It keeps
 those that a sensitive mark on an existing post rests on, those of an account under a
-[retention hold](moderation.md#record-retention-and-holds), and each `reject` of `local.status` its author can still appeal. Deleting
-an account removes its decisions.
+[retention hold](moderation.md#record-retention-and-holds), and each `reject` of `local.status` its author can still appeal or
+whose appeal waits for review. An appeal goes with its decision. Deleting an account removes its decisions, its appeals, and
+its exemption from `local.status`.
 
 ## What you tell your users
 

@@ -2,7 +2,7 @@
 // The default MSW handlers of the moderation feature (web-client/README.md §7). On the user's side: the actions on the
 // user's own account (none by default) and appealing one. On the staff's side: the health of remote servers, the
 // domain actions, the sign-up blocks, the audit log, the registrations awaiting approval, the reports, the
-// appeals, the accounts and their roles, all empty and every server available by default. The default viewer
+// appeals, the appeals of refused posts, the accounts and their roles, all empty and every server available by default. The default viewer
 // has no permissions, so the staff screens' tests start with `server.use(operatorHandler(...))` (test/msw/http.ts).
 import { http, HttpResponse } from "msw";
 import {
@@ -159,6 +159,45 @@ export function hookDecisionFixture(
     decided_at: "2026-11-06T00:00:00Z",
     overridable: true,
     ...overrides,
+  };
+}
+
+/**
+ * An author's appeal of a local post that the review refused, awaiting a moderator: Bob's, sent on 6 November 2026, of
+ * a reject in force.
+ */
+export function hookAppealFixture(overrides: Partial<Schemas["AdminHookAppeal"]> = {}): Schemas["AdminHookAppeal"] {
+  return {
+    id: "0192f0c4-7a8e-7000-8000-0000000003a1",
+    decision: hookDecisionFixture({
+      id: "0192f0c4-7a8e-7000-8000-0000000002c1",
+      hook: "local.status",
+      subject_key: "local-status:0192f0c4-7a8e-7000-8000-0000000002c1",
+      outcome: "reject",
+      reason: "spam",
+      overridable: false,
+      decided_at: "2026-11-06T00:00:00Z",
+    }),
+    account_id: otherAccountFixture.id,
+    status_text: "Come to my bake sale on Saturday!",
+    comment: "It is a local event, not an advert.",
+    state: "pending",
+    submitted_at: "2026-11-06T00:10:00Z",
+    ...overrides,
+  };
+}
+
+/** The appeal as a moderator's `decision` leaves it, decided on 6 November 2026. */
+export function decidedHookAppeal(
+  appeal: Schemas["AdminHookAppeal"],
+  decision: "uphold" | "overturn",
+): Schemas["AdminHookAppeal"] {
+  const decidedAt = "2026-11-06T01:00:00Z";
+  return {
+    ...appeal,
+    state: decision === "uphold" ? "upheld" : "overturned",
+    decided_at: decidedAt,
+    ...(decision === "overturn" && { decision: { ...appeal.decision, overridden_at: decidedAt } }),
   };
 }
 
@@ -678,6 +717,17 @@ export const handlers = [
         HttpResponse.json(decidedAppeal(appealFixture({ id: String(params["id"]) }), decision, body.public_reason)),
       );
     }),
+  ),
+  // operationIds listHookAppeals, upholdHookAppeal, overturnHookAppeal: no appeals; any one is decided as asked.
+  http.get(`${apiBase}/admin/hook_appeals`, ({ request }) =>
+    withViewer(request, () => HttpResponse.json({ items: [] })),
+  ),
+  ...(["uphold", "overturn"] as const).map((decision) =>
+    http.post(`${apiBase}/admin/hook_appeals/:id/${decision}`, ({ request, params }) =>
+      withViewer(request, () =>
+        HttpResponse.json(decidedHookAppeal(hookAppealFixture({ id: String(params["id"]) }), decision)),
+      ),
+    ),
   ),
   // operationIds listAccountActions, createAccountAction.
   http.get(`${apiBase}/admin/accounts/:id/actions`, ({ request }) =>

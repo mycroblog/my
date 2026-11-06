@@ -1,0 +1,122 @@
+{
+  "admin.hook_appeals.already_decided": {
+    "defaultMessage": "ほかのモデレーターがすでにこの異議申し立てを審査しました。その決定が残ります。",
+    "description": "Status message when another moderator decided the appeal of a refused post first."
+  },
+  "admin.hook_appeals.cancel": {
+    "defaultMessage": "キャンセル",
+    "description": "Button of the confirmation of a decision on an appeal of a refused post: closes it without deciding."
+  },
+  "admin.hook_appeals.column.account": {
+    "defaultMessage": "投稿した人",
+    "description": "Column of the list of appeals of refused posts: the account that tried to post and appealed."
+  },
+  "admin.hook_appeals.column.appeal": {
+    "defaultMessage": "申し立て",
+    "description": "Column of the list of appeals of refused posts: when it was sent, the text of the post and the author's comment."
+  },
+  "admin.hook_appeals.column.decision": {
+    "defaultMessage": "判定",
+    "description": "Column of the list of appeals of refused posts: the automated review's decision that refused the post."
+  },
+  "admin.hook_appeals.column.state": {
+    "defaultMessage": "状態",
+    "description": "Column of the list of appeals of refused posts: awaiting review, upheld, or overturned."
+  },
+  "admin.hook_appeals.comment": {
+    "defaultMessage": "コメント",
+    "description": "Term of an appeal of a refused post: what the author added for the moderators."
+  },
+  "admin.hook_appeals.confirm_overturn.description": {
+    "defaultMessage": "判定を取り消し、この人の投稿を審査しなくなります。止められた投稿は戻りません。本人がもう一度投稿します。決定は後から変えられません。",
+    "description": "Description of the confirmation of overturning an appeal of a refused post."
+  },
+  "admin.hook_appeals.confirm_overturn.title": {
+    "defaultMessage": "この異議申し立てを撤回しますか？",
+    "description": "Title of the confirmation of overturning an appeal of a refused post, which cancels the automated review's decision."
+  },
+  "admin.hook_appeals.confirm_uphold.description": {
+    "defaultMessage": "投稿は止められたままで、この人の投稿はこれまでどおり審査します。決定は後から変えられません。",
+    "description": "Description of the confirmation of upholding an appeal of a refused post."
+  },
+  "admin.hook_appeals.confirm_uphold.title": {
+    "defaultMessage": "この異議申し立てを維持しますか？",
+    "description": "Title of the confirmation of upholding an appeal of a refused post, which keeps the automated review's decision."
+  },
+  "admin.hook_appeals.decide_failed": {
+    "defaultMessage": "決定を保存できませんでした: {reason}",
+    "description": "Error in the confirmation when deciding an appeal of a refused post failed. {reason} says why."
+  },
+  "admin.hook_appeals.empty": {
+    "defaultMessage": "審査を待つ異議申し立てはありません",
+    "description": "Empty list of appeals of refused posts that await a moderator."
+  },
+  "admin.hook_appeals.empty_all": {
+    "defaultMessage": "異議申し立てはまだありません",
+    "description": "Empty list of every appeal of a refused post."
+  },
+  "admin.hook_appeals.filter.all": {
+    "defaultMessage": "すべての異議申し立て",
+    "description": "Option of the select of the appeals of refused posts: every appeal, decided or not."
+  },
+  "admin.hook_appeals.filter.label": {
+    "defaultMessage": "状態で絞る異議申し立て",
+    "description": "Accessible name of the select that keeps the appeals of refused posts that await review, or shows every one."
+  },
+  "admin.hook_appeals.filter.pending": {
+    "defaultMessage": "審査待ち",
+    "description": "Option of the select of the appeals of refused posts: those that await a moderator."
+  },
+  "admin.hook_appeals.none": {
+    "defaultMessage": "なし",
+    "description": "Value of the text or comment of an appeal of a refused post that has none."
+  },
+  "admin.hook_appeals.overturn": {
+    "defaultMessage": "撤回する",
+    "description": "Button of a pending appeal of a refused post that opens the confirmation of overturning it, and the confirmation's button that overturns it."
+  },
+  "admin.hook_appeals.overturn_of": {
+    "defaultMessage": "{date} の異議申し立てを撤回する",
+    "description": "Accessible name of the button that overturns an appeal of a refused post. {date} is when the appeal was sent."
+  },
+  "admin.hook_appeals.overturned": {
+    "defaultMessage": "異議申し立てを撤回しました。判定を取り消し、この人の投稿は審査しなくなりました。",
+    "description": "Status message after a moderator overturned an appeal of a refused post."
+  },
+  "admin.hook_appeals.state.overturned": {
+    "defaultMessage": "撤回",
+    "description": "State of an appeal of a refused post whose decision a moderator cancelled."
+  },
+  "admin.hook_appeals.state.pending": {
+    "defaultMessage": "審査待ち",
+    "description": "State of an appeal of a refused post that awaits a moderator."
+  },
+  "admin.hook_appeals.state.upheld": {
+    "defaultMessage": "維持",
+    "description": "State of an appeal of a refused post whose decision a moderator kept."
+  },
+  "admin.hook_appeals.status_text": {
+    "defaultMessage": "投稿の本文",
+    "description": "Term of an appeal of a refused post: the text the author tried to post."
+  },
+  "admin.hook_appeals.submitted_at": {
+    "defaultMessage": "送った日時",
+    "description": "Term of an appeal of a refused post: when the author sent it."
+  },
+  "admin.hook_appeals.title": {
+    "defaultMessage": "止められた投稿への異議申し立て",
+    "description": "Heading of the section of the automated reviews screen with the authors' appeals of posts the review refused, and the caption of its table."
+  },
+  "admin.hook_appeals.upheld": {
+    "defaultMessage": "異議申し立てを維持しました。投稿は止められたままです。",
+    "description": "Status message after a moderator upheld an appeal of a refused post."
+  },
+  "admin.hook_appeals.uphold": {
+    "defaultMessage": "維持する",
+    "description": "Button of a pending appeal of a refused post that opens the confirmation of upholding it, and the confirmation's button that upholds it."
+  },
+  "admin.hook_appeals.uphold_of": {
+    "defaultMessage": "{date} の異議申し立てを維持する",
+    "description": "Accessible name of the button that upholds an appeal of a refused post. {date} is when the appeal was sent."
+  }
+}

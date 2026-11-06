@@ -65,6 +65,15 @@ func setSubject(req *hookv1.CheckRequest, subject any) error {
 	case apphook.SignupSubject:
 		req.Signup = &hookv1.SignupSubject{Email: s.Email, Ip: s.IP}
 		return nil
+	case apphook.LocalStatusSubject:
+		req.LocalStatus = &hookv1.LocalStatus{
+			StatusUri: s.StatusURI, AuthorUri: s.AuthorURI, AuthorUsername: s.AuthorUsername,
+			AccountCreatedAt: s.AccountCreatedAt.UTC().Format(time.RFC3339Nano), Visibility: s.Visibility,
+			InReplyToUri: s.InReplyToURI, QuoteUri: s.QuoteURI, Language: s.Language, SpoilerText: s.SpoilerText,
+			Sensitive: s.Sensitive, Text: s.Text, Html: s.HTML, AttachmentDescriptions: s.AttachmentDescriptions,
+			PollOptions: s.PollOptions, Hashtags: s.Hashtags, MentionCount: count32(s.MentionCount),
+		}
+		return nil
 	case apphook.MediaSubject:
 		req.Media = mediaSubject(s)
 		return nil

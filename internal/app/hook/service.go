@@ -145,6 +145,16 @@ func (s *Service) Decide(ctx context.Context, c Call) (Result, error) {
 	if mode == hook.ModeOff {
 		return Result{Hook: c.Hook, SubjectKey: c.SubjectKey, Effect: hook.Allow}, nil
 	}
+	if c.Hook.Appealable() && c.AccountID != "" {
+		// An overturned appeal took the account out of the hook (ADR-0147 §9).
+		exempt, err := s.d.Repository.Exempt(ctx, c.Hook, c.AccountID)
+		if err != nil {
+			return Result{}, fmt.Errorf("hook: read the exemption of %s: %w", c.Hook, err)
+		}
+		if exempt {
+			return Result{Hook: c.Hook, SubjectKey: c.SubjectKey, Effect: hook.Allow}, nil
+		}
+	}
 	onFailure, err := s.d.Settings.HookOnFailure(ctx, c.Hook)
 	if err != nil {
 		return Result{}, fmt.Errorf("hook: the failure behaviour of %s: %w", c.Hook, err)
@@ -280,6 +290,7 @@ func resultOf(r hook.Record, onFailure hook.OnFailure) Result {
 	d := r.Decision
 	return Result{
 		DecisionID: d.ID, Hook: d.Hook, SubjectKey: d.SubjectKey, Effect: r.Effect(onFailure), Reason: d.Reason, Note: d.Note,
+		DecidedAt: d.DecidedAt,
 	}
 }
 
@@ -514,15 +525,25 @@ func (s *Service) purgeable(ctx context.Context, policy hook.RetentionPolicy, ex
 	return out, nil
 }
 
-// EraseAccountData implements appaccount.DataEraser: it removes the decisions of a deleted account.
-// The erasure skips an account that a hold preserves, so a held account keeps them.
+// EraseAccountData implements appaccount.DataEraser: it removes the decisions of a deleted account
+// with their appeals, and its appeals and exemptions. The erasure skips an account that a hold
+// preserves, so a held account keeps them.
 func (s *Service) EraseAccountData(ctx context.Context, target appaccount.ErasureTarget, _ string, limit int) (appaccount.ErasureStep, error) {
 	var ids []string
 	err := s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
 		var err error
 		ids, err = s.d.Repository.DecisionIDsOfAccount(ctx, tx, target.AccountID, limit)
-		if err != nil || len(ids) == 0 {
+		if err != nil {
 			return err
+		}
+		if len(ids) < limit {
+			// The last step: what no decision of the account holds goes too.
+			if err := s.d.Repository.DeleteAppealsOfAccount(ctx, tx, target.AccountID); err != nil {
+				return err
+			}
+		}
+		if len(ids) == 0 {
+			return nil
 		}
 		return s.d.Repository.DeleteDecisions(ctx, tx, ids)
 	})

@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: MIT
+description: An appeal of a post that the automated review refused.
+type: object
+required: [status_text]
+properties:
+  status_text:
+    description: The text of the post the user tried to post, as plain text.
+    type: string
+    minLength: 1
+    maxLength: 100000
+  comment:
+    description: Why the moderators should let the post through, as plain text.
+    type: string
+    maxLength: 2000

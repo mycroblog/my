@@ -139,6 +139,18 @@
     "defaultMessage": "‮⊥ɥıs sǝɹʌǝɹ ɥɐs ɔʅosǝp, ɐup ʇɥǝ ɹǝsonɹɔǝ ıs ƃouǝ.‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
+  "errors.hook_appeal.already_appealed": {
+    "defaultMessage": "‮⅄on ɥɐʌǝ ɐʅɹǝɐpʎ ɐddǝɐʅǝp ʇɥıs pǝɔısıou.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.hook_appeal.not_appealable": {
+    "defaultMessage": "‮⊥ɥıs pǝɔısıou ɔɐuuoʇ qǝ ɐddǝɐʅǝp.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.hook_appeal.window_closed": {
+    "defaultMessage": "‮⊥ɥǝ ʇıɯǝ ʇo ɐddǝɐʅ ʇɥıs pǝɔısıou ɥɐs dɐssǝp.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
   "errors.hook_decision.not_overridable": {
     "defaultMessage": "‮⊥ɥıs pǝɔısıou ɔɐuuoʇ qǝ ɔɐuɔǝʅʅǝp.‬",
     "description": "Generated from en by tools/i18n; do not edit."
@@ -537,6 +549,14 @@
   },
   "errors.status.quote_remote_audience": {
     "defaultMessage": "‮∀ ʅoɔɐʅ, ɟoʅʅoʍǝɹs-ouʅʎ, oɹ pıɹǝɔʇ dosʇ ɔɐuuoʇ bnoʇǝ ɐ dosʇ ɟɹoɯ ɐuoʇɥǝɹ sǝɹʌǝɹ.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.status.rejected": {
+    "defaultMessage": "‮⊥ɥıs dosʇ ʍɐs uoʇ dnqʅısɥǝp.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.status.rejected.detail": {
+    "defaultMessage": "‮⊥ɥıs sǝɹʌǝɹ's ɐnʇoɯɐʇǝp ɹǝʌıǝʍ pıp uoʇ ɐɔɔǝdʇ ʇɥıs dosʇ. Iɟ ʎon ʇɥıuʞ ʇɥıs ıs ɐ ɯısʇɐʞǝ, ʎon ɔɐu ɐddǝɐʅ.‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "errors.status.reply_not_found": {

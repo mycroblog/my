@@ -298,6 +298,8 @@ paths:
     $ref: ./paths/moderation_actions.yaml
   /moderation/actions/{id}/appeal:
     $ref: ./paths/moderation_actions_{id}_appeal.yaml
+  /hook_decisions/{id}/appeal:
+    $ref: ./paths/hook_decisions_{id}_appeal.yaml
   /notifications:
     $ref: ./paths/notifications.yaml
   /notifications/marker:
@@ -480,6 +482,12 @@ paths:
     $ref: ./paths/admin_hook_decisions_summary.yaml
   /admin/hook_decisions/{id}/override:
     $ref: ./paths/admin_hook_decisions_{id}_override.yaml
+  /admin/hook_appeals:
+    $ref: ./paths/admin_hook_appeals.yaml
+  /admin/hook_appeals/{id}/uphold:
+    $ref: ./paths/admin_hook_appeals_{id}_uphold.yaml
+  /admin/hook_appeals/{id}/overturn:
+    $ref: ./paths/admin_hook_appeals_{id}_overturn.yaml
   /admin/error_groups:
     $ref: ./paths/admin_error_groups.yaml
   /admin/error_groups/{id}:
@@ -875,6 +883,8 @@ components:
     WebhookId:
       $ref: ./components/parameters/WebhookId.yaml
   responses:
+    AdminHookAppeal:
+      $ref: ./components/responses/AdminHookAppeal.yaml
     AccountAliasList:
       $ref: ./components/responses/AccountAliasList.yaml
     AccountPage:
@@ -959,6 +969,8 @@ components:
       $ref: ./components/responses/Relationship.yaml
     RelayProblem:
       $ref: ./components/responses/RelayProblem.yaml
+    StatusRejectedProblem:
+      $ref: ./components/responses/StatusRejectedProblem.yaml
     RoleProblem:
       $ref: ./components/responses/RoleProblem.yaml
     StatusAfterAction:
@@ -1248,6 +1260,18 @@ components:
       $ref: ./components/schemas/AdminHookDecision.yaml
     AdminHookDecisionPage:
       $ref: ./components/schemas/AdminHookDecisionPage.yaml
+    AdminHookAppeal:
+      $ref: ./components/schemas/AdminHookAppeal.yaml
+    AdminHookAppealPage:
+      $ref: ./components/schemas/AdminHookAppealPage.yaml
+    AppealHookDecisionRequest:
+      $ref: ./components/schemas/AppealHookDecisionRequest.yaml
+    HookAppealState:
+      $ref: ./components/schemas/HookAppealState.yaml
+    OwnHookAppeal:
+      $ref: ./components/schemas/OwnHookAppeal.yaml
+    StatusRejectedProblem:
+      $ref: ./components/schemas/StatusRejectedProblem.yaml
     AdminHookOutcome:
       $ref: ./components/schemas/AdminHookOutcome.yaml
     AdminHookSummary:

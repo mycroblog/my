@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: MIT
+description: |
+  Where an appeal of a refused post stands: `pending` until a moderator decides it,
+  `upheld` when the refusal stays, `overturned` when the moderator cancelled it. After
+  `overturned` the user's posts are no longer reviewed, and the user posts again: the refused
+  post is not restored.
+type: string
+enum: [pending, upheld, overturned]

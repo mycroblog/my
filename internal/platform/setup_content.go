@@ -5,6 +5,7 @@ package platform
 import (
 	"context"
 	"errors"
+	"time"
 
 	"github.com/mycroblog/my/internal/app/content"
 	"github.com/mycroblog/my/internal/app/identity"
@@ -35,6 +36,19 @@ func (a *App) setUpContent(cfg *config.Config, statuses content.Repository, quot
 		// Reads a.CustomEmojis, built by setMedia.
 		LocalEmojis: func(ctx context.Context, texts ...string) ([]string, error) {
 			return a.CustomEmojis.LocalEmojiIDs(ctx, texts...)
+		},
+		// The decision hook local.status (ADR-0147), built by setUpHooks before this; a flag files
+		// its report on the moderation module, built by setUpModeration before this.
+		StatusReview: content.StatusReview{
+			Hooks: a.Hooks,
+			MaxAccountAge: func(ctx context.Context) (time.Duration, error) {
+				settings, err := a.Instance.Settings(ctx)
+				if err != nil {
+					return 0, err
+				}
+				return settings.HookLocalStatusAccountAge(), nil
+			},
+			Reports: hookReports{a.Moderation}, InstanceActor: a.emojiImageOwner,
 		},
 		MediaReview: a.mediaReview(),
 		Clock:       a.Clock, IDs: a.IDs, Host: cfg.Host, AccountDomain: cfg.AccountDomain,

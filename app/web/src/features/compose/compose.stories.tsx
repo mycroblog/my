@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The new-post form (a dialog from lg, a sheet below; FR-101) in the states of ADR-0079 §13: empty, written with a
-// content warning and a poll, too long, sent empty with Ctrl+Enter, with files dragged over it, a reply, a quote, and a
-// post the server refused.
+// content warning and a poll, too long, sent empty with Ctrl+Enter, with files dragged over it, a reply, a quote, a
+// post the server failed to take, and a post its automated review refused, with the appeal.
 import type { Meta, StoryContext, StoryObj } from "@storybook/react-vite";
 import { http, HttpResponse } from "msw";
 import { expect, userEvent, waitFor, within } from "storybook/test";
@@ -151,6 +151,38 @@ export const PostFailed: Story = {
     await userEvent.type(dialog.getByRole("textbox", { name: "Your post" }), "This one will not go through.");
     await userEvent.click(dialog.getByRole("button", { name: "Post" }));
     await expect(await dialog.findByText("Could not send the post: The server is busy")).toBeInTheDocument();
+  },
+};
+
+/**
+ * The server's automated review refused the post: the draft stays in the form, and a notice below the send bar shows
+ * the server's fixed text and the appeal, open until its deadline.
+ */
+export const Rejected: Story = {
+  ...answering(
+    http.post(`${apiBase}/statuses`, () =>
+      HttpResponse.json(
+        {
+          type: "/api/v1/problems/status-rejected",
+          title: "This post was not published.",
+          status: 422,
+          detail: "The server's automated review did not accept it. You can appeal the decision.",
+          hook_decision_id: "0192f0c4-7a8e-7000-8000-0000000003a1",
+          // Far enough ahead that the appeal stays open in every run.
+          appeal_deadline: "2099-01-01T00:00:00Z",
+        },
+        { status: 422, headers: { "Content-Type": "application/problem+json" } },
+      ),
+    ),
+  ),
+  play: async (context) => {
+    const { userEvent } = context;
+    const dialog = within(await openCompose(context));
+    await userEvent.type(dialog.getByRole("textbox", { name: "Your post" }), "Fresh bread, half price today.");
+    await userEvent.click(dialog.getByRole("button", { name: "Post" }));
+    await expect(await dialog.findByText("This post was not published.")).toBeInTheDocument();
+    await expect(dialog.getByRole("button", { name: "Appeal" })).toBeVisible();
+    await expect(dialog.getByRole("textbox", { name: "Your post" })).toHaveValue("Fresh bread, half price today.");
   },
 };
 

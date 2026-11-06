@@ -2,10 +2,11 @@
 // The server data of the compose feature (web-client/README.md S1): the limits and preferences a new post
 // follows, the post being replied to, the uploaded media while the server processes them, the accounts
 // that mentions name and the viewer's relationships with them, and the writes (uploading a file,
-// posting). Types come from the spec (S9).
+// posting, appealing a post the server's automated review refused). Types come from the spec (S9).
 import type { QueryClient } from "@tanstack/react-query";
 import type { Api } from "../../../lib/api/client";
 import type { components } from "@mycroblog/mykit";
+import { ApiError } from "../../../lib/errors";
 import { isPostListQuery } from "../../../lib/query";
 
 export type Status = components["schemas"]["Status"];
@@ -153,3 +154,69 @@ export function relationshipsQueryOptions(api: Api, ids: readonly string[]) {
 
 /** The most accounts one GET /accounts/relationships asks about (the operation's `maxItems`). */
 export const maxRelationshipIds = 40;
+
+/** The problem type of a post that the server's automated review refused (422): nothing was posted. */
+const statusRejectedType = "/api/v1/problems/status-rejected";
+
+/**
+ * A post that the server's automated review refused, as its problem says: the fixed `title` and `detail` the server
+ * localized (they say nothing of the review's answer), and the decision the author may appeal until `appealDeadline`.
+ * The decision and the deadline are null when the problem has none: then there is nothing to appeal.
+ */
+export type StatusRejection = {
+  title: string;
+  detail: string | null;
+  hookDecisionId: string | null;
+  appealDeadline: string | null;
+};
+
+/** The refusal that `error` is, or null for any other error. */
+export function statusRejection(error: unknown): StatusRejection | null {
+  if (!(error instanceof ApiError) || error.status !== 422 || error.type !== statusRejectedType) return null;
+  const { hook_decision_id: id, appeal_deadline: deadline } = error.document;
+  const hasAppeal = typeof id === "string" && id !== "" && typeof deadline === "string";
+  return {
+    title: error.title,
+    detail: error.detail ?? null,
+    hookDecisionId: hasAppeal ? id : null,
+    appealDeadline: hasAppeal ? deadline : null,
+  };
+}
+
+type AppealHookDecisionRequest = components["schemas"]["AppealHookDecisionRequest"];
+type OwnHookAppeal = components["schemas"]["OwnHookAppeal"];
+
+/** The longest text and comment an appeal of a refused post takes (the AppealHookDecisionRequest schema). */
+export const hookAppealTextLimit = 100_000;
+export const hookAppealCommentLimit = 2000;
+
+/** Appeals the decision that refused a post, with the text the author tried to post and an optional comment. */
+export async function appealHookDecision(
+  api: Api,
+  id: string,
+  body: AppealHookDecisionRequest,
+): Promise<OwnHookAppeal> {
+  const { data, error } = await api.fetch.POST("/hook_decisions/{id}/appeal", { params: { path: { id } }, body });
+  // The middleware throws an ApiError for every error status; this narrows the type.
+  if (data === undefined) throw new ApiError(error);
+  return data;
+}
+
+/**
+ * The problem types of an appeal that the decision's own state explains: it was appealed already, its window closed,
+ * or it cannot be appealed. Nothing the author changes in the appeal helps, so the form gives way to the reason.
+ */
+const closedHookAppealProblems = [
+  "/api/v1/problems/already-appealed",
+  "/api/v1/problems/appeal-window-closed",
+  "/api/v1/problems/not-appealable",
+] as const;
+export type ClosedHookAppealProblem = (typeof closedHookAppealProblems)[number];
+
+/** Why an appeal cannot be sent at all, from its error; null when sending it again may still work. */
+export function closedHookAppeal(error: unknown): ClosedHookAppealProblem | null {
+  if (!(error instanceof ApiError)) return null;
+  // An unknown decision cannot be appealed either.
+  if (error.status === 404) return "/api/v1/problems/not-appealable";
+  return closedHookAppealProblems.find((type) => type === error.type) ?? null;
+}

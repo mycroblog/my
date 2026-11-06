@@ -288,7 +288,7 @@ func (r Record) Overridable() bool {
 	if r.Override != nil || d.Mode != ModeEnforce || d.Outcome.Failed() || d.Outcome == Allow {
 		return false
 	}
-	return d.Hook != LocalStatus || d.Outcome != Reject
+	return !d.Hook.Appealable() || d.Outcome != Reject
 }
 
 // Expired is what the retention of the decisions reads of one past its retention period.
@@ -300,6 +300,8 @@ type Expired struct {
 	Outcome    Outcome
 	DecidedAt  time.Time
 	Overridden bool
+	// AppealPending says that its author appealed it and no moderator has decided the appeal yet.
+	AppealPending bool
 	// StatusIDs are the statuses the decision had an effect on that still exist.
 	StatusIDs []string
 }
@@ -314,7 +316,7 @@ type RetentionPolicy struct {
 
 // Keeps reports whether the decision stays: the projection status_sensitivity_overrides points at
 // it and could not be rebuilt without it, a hold preserves its account, or its author can still
-// appeal it.
+// appeal it or waits for the review of an appeal.
 func (p RetentionPolicy) Keeps(e Expired) bool {
 	switch {
 	case e.AccountID != "" && p.Held[e.AccountID]:
@@ -323,8 +325,139 @@ func (p RetentionPolicy) Keeps(e Expired) bool {
 		return false
 	case e.Outcome == MarkSensitive && len(e.StatusIDs) > 0:
 		return true
-	case e.Hook == LocalStatus && e.Outcome == Reject && !e.DecidedAt.Before(p.AppealsOpenSince):
+	case e.Hook.Appealable() && e.Outcome == Reject && (e.AppealPending || !e.DecidedAt.Before(p.AppealsOpenSince)):
 		return true
 	}
 	return false
+}
+
+// Appealable reports whether the author of a subject can appeal a reject of the hook: only
+// local.status, whose author is a local account and whose reject no moderator sees otherwise
+// (ADR-0147 §9). An overturned appeal exempts the account from the hook.
+func (n Name) Appealable() bool { return n == LocalStatus }
+
+// The bounds of an appeal, in characters. The text of the post follows the largest
+// max_status_length; the comment, those of the appeals of moderation actions.
+const (
+	MaxAppealStatusText = 100000
+	MaxAppealComment    = 2000
+)
+
+// The failures of an appeal.
+var (
+	// ErrNotAppealable reports a decision that its author cannot appeal: not a reject of
+	// local.status in force, or already cancelled.
+	ErrNotAppealable = errors.New("hook: the decision cannot be appealed")
+	// ErrAppealWindowClosed reports an appeal after the appeal window.
+	ErrAppealWindowClosed = errors.New("hook: the appeal window is closed")
+	// ErrInvalidAppeal reports an appeal whose text is blank, too long, or not valid.
+	ErrInvalidAppeal = errors.New("hook: invalid appeal")
+)
+
+// AppealDeadline returns the last moment the author can appeal the decision: its time plus the
+// appeal window (appeal_window_days) at the time of the appeal.
+func AppealDeadline(d Decision, window time.Duration) time.Time { return d.DecidedAt.Add(window) }
+
+// CheckAppealable returns why the record cannot be appealed at now, nil when it can.
+func (r Record) CheckAppealable(now time.Time, window time.Duration) error {
+	d := r.Decision
+	switch {
+	case !d.Hook.Appealable() || d.Mode != ModeEnforce || d.Outcome != Reject || r.Override != nil:
+		return ErrNotAppealable
+	case now.After(AppealDeadline(d, window)):
+		return ErrAppealWindowClosed
+	}
+	return nil
+}
+
+// Appeal is an author's appeal of a reject of local.status, at most one per decision. It holds the
+// text the author wanted to post, since the decision holds none and a person reviews it.
+type Appeal struct {
+	ID         string
+	DecisionID string
+	// AccountID is the author, the account of the decision.
+	AccountID string
+	// StatusText is the text of the post the author tried to post.
+	StatusText string
+	// Comment is what the author adds for the moderators, "" for none.
+	Comment     string
+	SubmittedAt time.Time
+}
+
+// Validate checks the fields of a new appeal.
+func (a Appeal) Validate() error {
+	switch {
+	case a.ID == "" || a.DecisionID == "" || a.AccountID == "" || a.SubmittedAt.IsZero():
+		return fmt.Errorf("%w: a field is empty", ErrInvalidAppeal)
+	case strings.TrimSpace(a.StatusText) == "":
+		return &AppealTextError{Field: "status_text"}
+	}
+	for _, f := range []struct {
+		name, value string
+		max         int
+	}{{"status_text", a.StatusText, MaxAppealStatusText}, {"comment", a.Comment, MaxAppealComment}} {
+		if !utf8.ValidString(f.value) || strings.ContainsRune(f.value, 0) {
+			return &AppealTextError{Field: f.name}
+		}
+		if utf8.RuneCountInString(f.value) > f.max {
+			return &AppealTextError{Field: f.name, Max: f.max}
+		}
+	}
+	return nil
+}
+
+// AppealTextError is an ErrInvalidAppeal of one field: blank or not valid, or longer than Max.
+type AppealTextError struct {
+	Field string
+	// Max is the limit that the text passes, 0 when it is blank or not valid.
+	Max int
+}
+
+func (e *AppealTextError) Error() string {
+	if e.Max > 0 {
+		return fmt.Sprintf("%v: %s is longer than %d characters", ErrInvalidAppeal, e.Field, e.Max)
+	}
+	return fmt.Sprintf("%v: %s is blank or not valid", ErrInvalidAppeal, e.Field)
+}
+
+// Unwrap returns ErrInvalidAppeal.
+func (e *AppealTextError) Unwrap() error { return ErrInvalidAppeal }
+
+// AppealOutcome is what a moderator decided on an appeal.
+type AppealOutcome string
+
+// The outcomes of an appeal.
+const (
+	// AppealUpheld leaves the decision as it is.
+	AppealUpheld AppealOutcome = "upheld"
+	// AppealOverturned cancels the decision and exempts the account from the hook.
+	AppealOverturned AppealOutcome = "overturned"
+)
+
+// Valid reports whether o is an outcome.
+func (o AppealOutcome) Valid() bool { return o == AppealUpheld || o == AppealOverturned }
+
+// AppealDecision is a moderator's decision on an appeal, at most one.
+type AppealDecision struct {
+	AppealID string
+	Outcome  AppealOutcome
+	// ByUserID is the moderator, "" for the CLI.
+	ByUserID  string
+	DecidedAt time.Time
+}
+
+// AppealRecord is an appeal with the decision it appeals and its review, nil while pending.
+type AppealRecord struct {
+	Appeal   Appeal
+	Decision Record
+	Review   *AppealDecision
+}
+
+// Exemption says that a hook no longer reviews an account, because a moderator overturned the
+// account's appeal. The row is the current value; it does not follow the decision or the appeal,
+// which retention removes.
+type Exemption struct {
+	Hook       Name
+	AccountID  string
+	ExemptedAt time.Time
 }

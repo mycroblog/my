@@ -66,6 +66,7 @@ const policyKeys = [
   "hook_inbound_follow_on_failure",
   "hook_signup_check_on_failure",
   "hook_signup_check_reject",
+  "hook_local_status_account_age_days",
   "hook_media_check_on_failure",
   "retention_hook_decisions",
 ] as const satisfies readonly InstanceSettingKey[];
@@ -88,12 +89,13 @@ const inviteExpiryChoices: readonly number[] = [
 
 /**
  * The settings typed as a whole number in a text field, with the bounds to use until the server gives its own: the
- * days to keep the participants' records of voice chat rooms (ADR-0100 §13) and the caps of the members' invites
- * (ADR-0106 §15).
+ * days to keep the participants' records of voice chat rooms (ADR-0100 §13), the days of the decision hooks
+ * (ADR-0147 §2, §6), and the caps of the members' invites (ADR-0106 §15).
  */
 const numberFields = {
   voice_participants_retention_days: { min: 30, max: 3650 },
   retention_hook_decisions: { min: 30, max: 3650 },
+  hook_local_status_account_age_days: { min: 0, max: 3650 },
   member_invite_max_active: { min: 0, max: 100 },
   member_invite_max_uses: { min: 1, max: 1000 },
 } as const satisfies Partial<Record<PolicyKey, { min: number; max: number }>>;
@@ -104,6 +106,7 @@ export type NumberPolicyKey = keyof typeof numberFields;
 const numberKeys: readonly NumberPolicyKey[] = [
   "voice_participants_retention_days",
   "retention_hook_decisions",
+  "hook_local_status_account_age_days",
   "member_invite_max_active",
   "member_invite_max_uses",
 ];
@@ -203,7 +206,7 @@ export function useServerPolicies() {
         ? undefined
         : key === "voice_participants_retention_days"
           ? t("client:admin.settings.voice.retention.invalid", range)
-          : key === "retention_hook_decisions"
+          : key === "retention_hook_decisions" || key === "hook_local_status_account_age_days"
             ? t("client:admin.settings.hooks.retention.invalid", range)
             : t("client:admin.settings.invites.number.invalid", range),
     };

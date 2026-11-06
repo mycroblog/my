@@ -68,6 +68,9 @@ export { RegistrationList } from "./components/RegistrationList";
 export { type SignupBlockFilter, signupBlockFilters, signupBlocksQueryOptions } from "./api/signupBlocks";
 export { SignupBlocks } from "./components/SignupBlocks";
 export {
+  type HookAppealFilter,
+  hookAppealFilters,
+  hookAppealsQueryOptions,
   type HookDecisionFilter,
   hookDecisionFilters,
   hookDecisionsQueryOptions,

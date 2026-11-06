@@ -64,6 +64,34 @@ type FollowSubject struct {
 	FolloweeURI string
 }
 
+// LocalStatusSubject is the Subject of LocalStatus: a post of a local account before it is created.
+// It holds the post as its author wrote it and how old the account is; the decision holds none of it.
+type LocalStatusSubject struct {
+	// StatusURI is the ActivityPub id the post would get.
+	StatusURI string
+	AuthorURI string
+	// AuthorUsername is the author's local username.
+	AuthorUsername   string
+	AccountCreatedAt time.Time
+	// Visibility is public, local, or unlisted: private and direct posts are never sent.
+	Visibility   string
+	InReplyToURI string
+	// QuoteURI is the ActivityPub id of the post it quotes, "" for none.
+	QuoteURI    string
+	Language    string
+	SpoilerText string
+	Sensitive   bool
+	// Text is the text as the author typed it; HTML is how the server renders it.
+	Text string
+	HTML string
+	// AttachmentDescriptions are the alt texts of the attachments in order, "" for none.
+	AttachmentDescriptions []string
+	PollOptions            []string
+	Hashtags               []string
+	// MentionCount is how many accounts the post names.
+	MentionCount int
+}
+
 // SignupSubject is what signup.check sends about a sign-up. Only the plugin receives it: a decision
 // holds neither of the two.
 type SignupSubject struct {
@@ -191,8 +219,39 @@ type Repository interface {
 	ListSensitivityMarks(ctx context.Context, tx uow.Tx) ([]SensitivityMark, error)
 	// DecisionIDsOfAccount returns up to limit decisions of an account inside tx.
 	DecisionIDsOfAccount(ctx context.Context, tx uow.Tx, accountID string, limit int) ([]string, error)
-	// DeleteDecisions deletes the decisions with their statuses and cancellations.
+	// DeleteDecisions deletes the decisions with their statuses, cancellations, and appeals.
 	DeleteDecisions(ctx context.Context, tx uow.Tx, ids []string) error
+
+	// InsertAppeal records an appeal and reports whether it did: false when the decision already
+	// has one.
+	InsertAppeal(ctx context.Context, tx uow.Tx, a hook.Appeal) (bool, error)
+	// AppealTx returns an appeal with its decision and review inside tx; it fails with
+	// ErrAppealNotFound.
+	AppealTx(ctx context.Context, tx uow.Tx, id string) (hook.AppealRecord, error)
+	// AppealOfDecision returns the appeal of a decision; it fails with ErrAppealNotFound.
+	AppealOfDecision(ctx context.Context, decisionID string) (hook.AppealRecord, error)
+	// ListAppeals returns the appeals that q selects, newest first.
+	ListAppeals(ctx context.Context, q AppealQuery) ([]hook.AppealRecord, error)
+	// InsertAppealDecision records the review of an appeal and reports whether it did: false when
+	// the appeal already has one.
+	InsertAppealDecision(ctx context.Context, tx uow.Tx, d hook.AppealDecision) (bool, error)
+	// InsertExemption records that the hook no longer reviews the account; a second record does
+	// nothing.
+	InsertExemption(ctx context.Context, tx uow.Tx, e hook.Exemption) error
+	// Exempt reports whether the hook no longer reviews the account.
+	Exempt(ctx context.Context, n hook.Name, accountID string) (bool, error)
+	// DeleteAppealsOfAccount deletes the appeals of an account with their reviews, and its
+	// exemptions.
+	DeleteAppealsOfAccount(ctx context.Context, tx uow.Tx, accountID string) error
+}
+
+// AppealQuery filters the list of appeals.
+type AppealQuery struct {
+	// Pending keeps the appeals that no moderator has decided.
+	Pending bool
+	// Before is the ID of the last appeal of the previous page; "" starts at the newest.
+	Before string
+	Limit  int
 }
 
 // SensitivityMark is a status that a mark_sensitive decision in force shows as sensitive.
@@ -203,6 +262,15 @@ type SensitivityMark struct {
 
 // ErrNotFound reports an unknown decision.
 var ErrNotFound = errors.New("hook: decision not found")
+
+// ErrAppealNotFound reports an unknown appeal, or a decision that is not the account's.
+var ErrAppealNotFound = errors.New("hook: appeal not found")
+
+// ErrAlreadyAppealed reports a second appeal of one decision.
+var ErrAlreadyAppealed = errors.New("hook: the decision is already appealed")
+
+// ErrAppealDecided reports a review of an appeal that a moderator decided otherwise.
+var ErrAppealDecided = errors.New("hook: the appeal is already decided")
 
 // ErrNotOverridable reports a decision that a moderator cannot cancel from the list.
 var ErrNotOverridable = errors.New("hook: the decision cannot be overridden")
@@ -238,6 +306,9 @@ type Result struct {
 	// Reason is the reason of the verdict, for a report the module files; its Note is the comment.
 	Reason hook.Reason
 	Note   string
+	// DecidedAt is when the decision was made, zero when none exists; an appeal window runs
+	// from it.
+	DecidedAt time.Time
 }
 
 // Gate is all that the modules that own a subject see of this module.

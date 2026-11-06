@@ -9,6 +9,8 @@ post:
     finished processing (422 otherwise). A status with a `poll` attaches no media, and a
     poll outside the limits of `PollInput` is a 422.
     A user whose account moved gets a 403 `/api/v1/problems/account-moved`.
+    When the server's automated review refuses the post, nothing is posted and the answer is a
+    422 `/api/v1/problems/status-rejected` with fixed text and the decision the user may appeal.
   tags: [statuses]
   security:
     - oauth2: ["write:statuses"]
@@ -30,5 +32,7 @@ post:
         application/json:
           schema:
             $ref: ../components/schemas/Status.yaml
+    "422":
+      $ref: ../components/responses/StatusRejectedProblem.yaml
     default:
       $ref: ../components/responses/Problem.yaml

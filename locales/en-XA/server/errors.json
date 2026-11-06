@@ -139,6 +139,18 @@
     "defaultMessage": "[Ŧħīş şḗḗřṽḗḗř ħȧȧş ƈŀǿǿşḗḗḓ, ȧȧƞḓ ŧħḗḗ řḗḗşǿǿŭŭřƈḗḗ īş ɠǿǿƞḗḗ.]",
     "description": "Generated from en by tools/i18n; do not edit."
   },
+  "errors.hook_appeal.already_appealed": {
+    "defaultMessage": "[Ẏǿǿŭŭ ħȧȧṽḗḗ ȧȧŀřḗḗȧȧḓẏ ȧȧƥƥḗḗȧȧŀḗḗḓ ŧħīş ḓḗḗƈīşīǿǿƞ.]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.hook_appeal.not_appealable": {
+    "defaultMessage": "[Ŧħīş ḓḗḗƈīşīǿǿƞ ƈȧȧƞƞǿǿŧ ƀḗḗ ȧȧƥƥḗḗȧȧŀḗḗḓ.]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.hook_appeal.window_closed": {
+    "defaultMessage": "[Ŧħḗḗ ŧīḿḗḗ ŧǿǿ ȧȧƥƥḗḗȧȧŀ ŧħīş ḓḗḗƈīşīǿǿƞ ħȧȧş ƥȧȧşşḗḗḓ.]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
   "errors.hook_decision.not_overridable": {
     "defaultMessage": "[Ŧħīş ḓḗḗƈīşīǿǿƞ ƈȧȧƞƞǿǿŧ ƀḗḗ ƈȧȧƞƈḗḗŀŀḗḗḓ.]",
     "description": "Generated from en by tools/i18n; do not edit."
@@ -537,6 +549,14 @@
   },
   "errors.status.quote_remote_audience": {
     "defaultMessage": "[Ȧ ŀǿǿƈȧȧŀ, ƒǿǿŀŀǿǿẇḗḗřş-ǿǿƞŀẏ, ǿǿř ḓīřḗḗƈŧ ƥǿǿşŧ ƈȧȧƞƞǿǿŧ ɋŭŭǿǿŧḗḗ ȧȧ ƥǿǿşŧ ƒřǿǿḿ ȧȧƞǿǿŧħḗḗř şḗḗřṽḗḗř.]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.status.rejected": {
+    "defaultMessage": "[Ŧħīş ƥǿǿşŧ ẇȧȧş ƞǿǿŧ ƥŭŭƀŀīşħḗḗḓ.]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.status.rejected.detail": {
+    "defaultMessage": "[Ŧħīş şḗḗřṽḗḗř'ş ȧȧŭŭŧǿǿḿȧȧŧḗḗḓ řḗḗṽīḗḗẇ ḓīḓ ƞǿǿŧ ȧȧƈƈḗḗƥŧ ŧħīş ƥǿǿşŧ. Īƒ ẏǿǿŭŭ ŧħīƞķ ŧħīş īş ȧȧ ḿīşŧȧȧķḗḗ, ẏǿǿŭŭ ƈȧȧƞ ȧȧƥƥḗḗȧȧŀ.]",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "errors.status.reply_not_found": {

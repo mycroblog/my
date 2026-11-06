@@ -4,6 +4,8 @@
 // a post, so a row shows only what identifies its subject. Cancelling takes effect at once and asks nothing first: the
 // result stays on the page in a StatusMessage (role="status"). The list is in the admin mode's table form: a toolbar with
 // the filter (kept in the URL by the route, web-client/README.md S3), one page of the table at a time, previous / next.
+// The authors' appeals of the posts that the review of local posts refused come first, as they await a moderator
+// (HookAppeals.tsx).
 import {
   Box,
   Button,
@@ -31,6 +33,7 @@ import { useIntl } from "react-intl";
 import { useNow } from "../../../lib/clock";
 import { useT } from "../../../lib/i18n";
 import {
+  type HookAppealFilter,
   type HookDecision,
   type HookDecisionFilter,
   hookDecisionFilters,
@@ -45,6 +48,7 @@ import {
   useHookSummary,
   useOverrideHookDecision,
 } from "../hooks/useHookDecisions";
+import { HookAppeals } from "./HookAppeals";
 import { DateTime, RecordTable, RequirePermission, Section } from "./parts";
 
 type HookRow = HookSummary["hooks"][number];
@@ -56,15 +60,20 @@ function isFilter(key: unknown): key is HookDecisionFilter {
 export function HookDecisions({
   filter,
   onFilterChange,
+  appealFilter,
+  onAppealFilterChange,
 }: {
   filter: HookDecisionFilter;
   onFilterChange: (next: HookDecisionFilter) => void;
+  appealFilter: HookAppealFilter;
+  onAppealFilterChange: (next: HookAppealFilter) => void;
 }) {
   const t = useT();
   const [status, setStatus] = useState("");
   return (
     <RequirePermission permission="manage_reports">
       <Stack gap="6">
+        <HookAppeals filter={appealFilter} onFilterChange={onAppealFilterChange} />
         <Section title={t("client:admin.hook_decisions.summary.title")}>
           <HookSummaryTable />
         </Section>

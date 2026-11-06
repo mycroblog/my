@@ -14,6 +14,7 @@ import (
 
 	appaccount "github.com/mycroblog/my/internal/app/account"
 	appgraph "github.com/mycroblog/my/internal/app/graph"
+	apphook "github.com/mycroblog/my/internal/app/hook"
 	"github.com/mycroblog/my/internal/app/kernel"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/content"
@@ -155,6 +156,9 @@ type Deps struct {
 	// LocalEmojis returns the enabled local custom emoji that texts use as :shortcode:
 	// ((*CustomEmojiService).LocalEmojiIDs, ADR-0051 §3); nil records no custom emoji.
 	LocalEmojis func(ctx context.Context, texts ...string) ([]string, error)
+	// StatusReview asks the decision hook local.status about new posts (ADR-0147); its zero
+	// value asks nothing.
+	StatusReview StatusReview
 	// MediaReview acts on the decisions of the hook media.check on the files a post attaches; nil
 	// acts on none.
 	MediaReview *MediaReview
@@ -247,6 +251,9 @@ type CreateInput struct {
 // Retrying with an IdempotencyKey that the author already used returns the status posted with it
 // and changes nothing; when that status is deleted, it fails with ErrAlreadyDeleted. A key that
 // is not valid fails with content.ErrInvalidIdempotencyKey.
+//
+// A new post then goes to the decision hook local.status, outside the transaction (status_review.go);
+// a reject in force fails with a *RejectedByReviewError and writes nothing.
 func (s *Service) Create(ctx context.Context, in CreateInput) (Post, error) {
 	if !in.Visibility.Valid() {
 		return Post{}, fmt.Errorf("%w: %q", content.ErrInvalidVisibility, in.Visibility)
@@ -267,11 +274,24 @@ func (s *Service) Create(ctx context.Context, in CreateInput) (Post, error) {
 	if err != nil {
 		return Post{}, err
 	}
+	review, err := s.review(ctx, author, p)
+	if err != nil {
+		return Post{}, err
+	}
+	if review.Effect == apphook.Reject {
+		return Post{}, &RejectedByReviewError{DecisionID: review.DecisionID, DecidedAt: review.DecidedAt}
+	}
+	verdict, err := s.verdict(ctx, review)
+	if err != nil {
+		return Post{}, err
+	}
 	var post Post
 	err = s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
 		var err error
-		post, err = s.CreateTx(ctx, tx, p)
-		return err
+		if post, err = s.CreateTx(ctx, tx, p); err != nil {
+			return err
+		}
+		return s.reviewed(ctx, tx, verdict, post)
 	})
 	if errors.Is(err, ErrIdempotencyKeyUsed) {
 		// A concurrent request with the same key won.

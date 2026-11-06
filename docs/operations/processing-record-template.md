@@ -51,6 +51,7 @@ These names are used under the activities below. List each one you use.
 | {{IF webhooks}} Webhook receivers | {{...}} | {{...}} |
 | {{IF follow review}} Follow review service | {{...}} | {{...}} |
 | {{IF sign-up review}} Sign-up review service | {{...}} | {{...}} |
+| {{IF post review}} Post review service | {{...}} | {{...}} |
 | {{IF media review}} Media review service | {{...}} | {{...}} |
 | {{IF translation}} Translation providers | {{...}} | {{...}} |
 | {{IF external review of posts}} External review of posts from other servers | {{...}} | {{...}} |
@@ -93,9 +94,9 @@ These names are used under the activities below. List each one you use.
 | --- | --- |
 | Purposes | Publishing profiles and posts, and the interactions people ask for |
 | Data subjects | People with an account, people they mention |
-| Personal data | Profile and its versions, posts and their versions, media, favourites, reactions, boosts, bookmarks, pins, poll votes, follows, blocks, mutes, lists. Posts can hold any data a person writes, including special categories |
-| Recipients | Hosting, CDN, media review service (a small processed copy of each upload), other users, the public web for public content, federated servers (activity 4), search engines and AI crawlers under `search_indexing` and `ai_usage`, `{{the operator of the full-text search engine, if another company runs it}}`, apps the person authorized |
-| Erasure | When the person deletes it, by their automatic deletion policy, or at account erasure. Uploads attached to nothing `{{24 hours}}`. Old versions of images after a newer version replaces them `{{30 days}}`. The record of a deleted post's URI stays |
+| Personal data | Profile and its versions, posts and their versions, media, favourites, reactions, boosts, bookmarks, pins, poll votes, follows, blocks, mutes, lists. Posts can hold any data a person writes, including special categories. `{{IF post review}}` The text of a refused post that its author sends with an appeal |
+| Recipients | Hosting, CDN, media review service (a small processed copy of each upload), other users, the public web for public content, federated servers (activity 4), search engines and AI crawlers under `search_indexing` and `ai_usage`, `{{the operator of the full-text search engine, if another company runs it}}`, apps the person authorized, `{{IF post review}}` the post review service for the `public`, `local`, and `unlisted` posts of new accounts |
+| Erasure | When the person deletes it, by their automatic deletion policy, or at account erasure. Uploads attached to nothing `{{24 hours}}`. Old versions of images after a newer version replaces them `{{30 days}}`. The record of a deleted post's URI stays. `{{IF post review}}` An appeal goes with its decision (`retention_hook_decisions`, kept while it can be appealed or waits for review) or at account erasure |
 | Legal basis | {{e.g. contract}} |
 
 ### 4. Federation

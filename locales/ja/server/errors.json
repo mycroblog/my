@@ -782,5 +782,25 @@
   "errors.search.failed": {
     "defaultMessage": "検索を完了できませんでした。しばらくしてからもう一度試してください。",
     "description": "API error title for HTTP 503 of the full-text search of posts when the search engine cannot answer."
+  },
+  "errors.status.rejected": {
+    "defaultMessage": "この投稿は公開されませんでした。",
+    "description": "API error title for HTTP 422 when the server's automated review of posts refused a post and nothing was posted. Fixed text: it never says why."
+  },
+  "errors.status.rejected.detail": {
+    "defaultMessage": "このサーバーの自動の審査が、この投稿を受け付けませんでした。誤りだと思うときは、異議を申し立てられます。",
+    "description": "API error detail for HTTP 422 when the server's automated review of posts refused a post; says that the author may appeal."
+  },
+  "errors.hook_appeal.already_appealed": {
+    "defaultMessage": "この判定にはすでに異議を申し立てています。",
+    "description": "API error title for HTTP 422 when the user appeals the refusal of a post a second time; a refusal is appealed once."
+  },
+  "errors.hook_appeal.not_appealable": {
+    "defaultMessage": "この判定には異議を申し立てられません。",
+    "description": "API error title for HTTP 422 when the user appeals a decision of the automated review that is not a refusal of their post in force."
+  },
+  "errors.hook_appeal.window_closed": {
+    "defaultMessage": "この判定に異議を申し立てられる期間は過ぎています。",
+    "description": "API error title for HTTP 422 when the user appeals the refusal of a post after the instance's appeal window."
   }
 }

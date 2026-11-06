@@ -154,11 +154,57 @@ func TestRetentionPolicyKeeps(t *testing.T) {
 		{"observed mark", Expired{Hook: InboundStatus, Mode: ModeObserve, Outcome: MarkSensitive, StatusIDs: []string{"s"}}, false},
 		{"appeal open", Expired{Hook: LocalStatus, Mode: ModeEnforce, Outcome: Reject, DecidedAt: now}, true},
 		{"appeal closed", Expired{Hook: LocalStatus, Mode: ModeEnforce, Outcome: Reject, DecidedAt: now.Add(-2 * time.Hour)}, false},
+		{"under review", Expired{Hook: LocalStatus, Mode: ModeEnforce, Outcome: Reject, DecidedAt: now.Add(-2 * time.Hour), AppealPending: true}, true},
+		{"overturned", Expired{Hook: LocalStatus, Mode: ModeEnforce, Outcome: Reject, DecidedAt: now, Overridden: true}, false},
 		{"signup reject", Expired{Hook: SignupCheck, Mode: ModeEnforce, Outcome: Reject, DecidedAt: now}, false},
 	}
 	for _, c := range cases {
 		if got := p.Keeps(c.e); got != c.want {
 			t.Errorf("%s: %v, want %v", c.name, got, c.want)
+		}
+	}
+}
+
+func TestCheckAppealable(t *testing.T) {
+	at := time.Unix(1000, 0)
+	window := time.Hour
+	rec := Record{Decision: Decision{ID: "d", Hook: LocalStatus, Mode: ModeEnforce, Outcome: Reject, DecidedAt: at}}
+	if err := rec.CheckAppealable(at.Add(window), window); err != nil {
+		t.Errorf("at the deadline: %v", err)
+	}
+	if err := rec.CheckAppealable(at.Add(window+time.Millisecond), window); !errors.Is(err, ErrAppealWindowClosed) {
+		t.Errorf("after the deadline: %v", err)
+	}
+	for name, change := range map[string]func(*Record){
+		"observe":   func(r *Record) { r.Decision.Mode = ModeObserve },
+		"flag":      func(r *Record) { r.Decision.Outcome = Flag },
+		"signup":    func(r *Record) { r.Decision.Hook = SignupCheck },
+		"cancelled": func(r *Record) { r.Override = &Override{} },
+	} {
+		r := rec
+		change(&r)
+		if err := r.CheckAppealable(at, window); !errors.Is(err, ErrNotAppealable) {
+			t.Errorf("%s: %v", name, err)
+		}
+	}
+}
+
+func TestAppealValidate(t *testing.T) {
+	good := Appeal{ID: "a", DecisionID: "d", AccountID: "x", StatusText: "hello", SubmittedAt: time.Unix(1, 0)}
+	if err := good.Validate(); err != nil {
+		t.Fatal(err)
+	}
+	for name, change := range map[string]func(*Appeal){
+		"blank":        func(a *Appeal) { a.StatusText = " \n" },
+		"nul":          func(a *Appeal) { a.Comment = "a\x00" },
+		"long text":    func(a *Appeal) { a.StatusText = strings.Repeat("a", MaxAppealStatusText+1) },
+		"long comment": func(a *Appeal) { a.Comment = strings.Repeat("a", MaxAppealComment+1) },
+	} {
+		a := good
+		change(&a)
+		var textErr *AppealTextError
+		if err := a.Validate(); !errors.As(err, &textErr) || !errors.Is(err, ErrInvalidAppeal) {
+			t.Errorf("%s: %v", name, err)
 		}
 	}
 }

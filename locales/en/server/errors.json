@@ -782,5 +782,25 @@
   "errors.search.failed": {
     "defaultMessage": "The search could not be completed. Try again later.",
     "description": "API error title for HTTP 503 of the full-text search of posts when the search engine cannot answer."
+  },
+  "errors.status.rejected": {
+    "defaultMessage": "This post was not published.",
+    "description": "API error title for HTTP 422 when the server's automated review of posts refused a post and nothing was posted. Fixed text: it never says why."
+  },
+  "errors.status.rejected.detail": {
+    "defaultMessage": "This server's automated review did not accept this post. If you think this is a mistake, you can appeal.",
+    "description": "API error detail for HTTP 422 when the server's automated review of posts refused a post; says that the author may appeal."
+  },
+  "errors.hook_appeal.already_appealed": {
+    "defaultMessage": "You have already appealed this decision.",
+    "description": "API error title for HTTP 422 when the user appeals the refusal of a post a second time; a refusal is appealed once."
+  },
+  "errors.hook_appeal.not_appealable": {
+    "defaultMessage": "This decision cannot be appealed.",
+    "description": "API error title for HTTP 422 when the user appeals a decision of the automated review that is not a refusal of their post in force."
+  },
+  "errors.hook_appeal.window_closed": {
+    "defaultMessage": "The time to appeal this decision has passed.",
+    "description": "API error title for HTTP 422 when the user appeals the refusal of a post after the instance's appeal window."
   }
 }

@@ -2324,6 +2324,35 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/hook_decisions/{id}/appeal": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Appeal a post that the automated review refused
+         * @description Asks the moderators to let a refused post through (the 422
+         *     `/api/v1/problems/status-rejected` of `POST /statuses`), once per decision and until its
+         *     `appeal_deadline` (the instance's appeal window from the refusal, 180 days by default).
+         *     People review it; the refused post is not stored, so the appeal sends its text. When a
+         *     moderator overturns the decision, the user's posts are no longer reviewed and the user posts
+         *     again. A second appeal is a 422 `/api/v1/problems/already-appealed`, an appeal after the
+         *     deadline a 422 `/api/v1/problems/appeal-window-closed`, and an appeal of a decision that is
+         *     not such a refusal a 422 `/api/v1/problems/not-appealable`. A `status_text` that is blank or
+         *     too long, or a field that contains U+0000, is a 422 naming it. A decision that is not about
+         *     the user's post is a 404.
+         */
+        post: operations["appealHookDecision"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/notifications": {
         parameters: {
             query?: never;
@@ -2468,6 +2497,8 @@ export interface paths {
          *     finished processing (422 otherwise). A status with a `poll` attaches no media, and a
          *     poll outside the limits of `PollInput` is a 422.
          *     A user whose account moved gets a 403 `/api/v1/problems/account-moved`.
+         *     When the server's automated review refuses the post, nothing is posted and the answer is a
+         *     422 `/api/v1/problems/status-rejected` with fixed text and the decision the user may appeal.
          */
         post: operations["createStatus"];
         delete?: never;
@@ -4851,6 +4882,74 @@ export interface paths {
          *     appeal, is a 409. Needs the `manage_reports` permission.
          */
         post: operations["overrideHookDecision"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/hook_appeals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List the appeals of refused posts
+         * @description The authors' appeals of a `reject` of `local.status`, the newest first, with the text each
+         *     author tried to post. Needs the `manage_reports` permission.
+         */
+        get: operations["listHookAppeals"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/hook_appeals/{id}/uphold": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Uphold an appeal of a refused post
+         * @description Rejects the appeal; the decision stays as it is and the author's posts are reviewed as
+         *     before. Deciding a decided appeal the same way again changes nothing; deciding it the other
+         *     way is a 409 `/api/v1/problems/appeal-decided`. An unknown ID is a 404. Needs the
+         *     `manage_reports` permission.
+         */
+        post: operations["upholdHookAppeal"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/hook_appeals/{id}/overturn": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Overturn an appeal of a refused post
+         * @description Cancels the decision, which goes in the audit log as `hook_decision_overridden`, and stops
+         *     reviewing the author's posts with `local.status`, in one transaction. The refused post is not
+         *     restored: the author posts again. Deciding a decided appeal the same way again changes
+         *     nothing; deciding it the other way is a 409 `/api/v1/problems/appeal-decided`. An unknown ID
+         *     is a 404. Needs the `manage_reports` permission.
+         */
+        post: operations["overturnHookAppeal"];
         delete?: never;
         options?: never;
         head?: never;
@@ -9921,6 +10020,72 @@ export interface components {
         AdminHookDecisionPage: components["schemas"]["PageInfo"] & {
             items: components["schemas"]["AdminHookDecision"][];
         };
+        /**
+         * @description An author's appeal of a `reject` of `local.status`, with the text the author tried to post.
+         *     Deciding it never calls the plugin.
+         */
+        AdminHookAppeal: {
+            id: string;
+            decision: components["schemas"]["AdminHookDecision"];
+            /** @description The author. */
+            account_id: string;
+            /** @description The text of the post the author tried to post, as plain text. */
+            status_text: string;
+            /** @description What the author adds for the moderators, as plain text; absent when there is none. */
+            comment?: string;
+            state: components["schemas"]["HookAppealState"];
+            /** Format: date-time */
+            submitted_at: string;
+            /**
+             * Format: date-time
+             * @description When a moderator decided the appeal; absent while it is pending.
+             */
+            decided_at?: string;
+        };
+        /** @description A page of appeals, the newest first. */
+        AdminHookAppealPage: components["schemas"]["PageInfo"] & {
+            items: components["schemas"]["AdminHookAppeal"][];
+        };
+        /** @description An appeal of a post that the automated review refused. */
+        AppealHookDecisionRequest: {
+            /** @description The text of the post the user tried to post, as plain text. */
+            status_text: string;
+            /** @description Why the moderators should let the post through, as plain text. */
+            comment?: string;
+        };
+        /**
+         * @description Where an appeal of a refused post stands: `pending` until a moderator decides it,
+         *     `upheld` when the refusal stays, `overturned` when the moderator cancelled it. After
+         *     `overturned` the user's posts are no longer reviewed, and the user posts again: the refused
+         *     post is not restored.
+         * @enum {string}
+         */
+        HookAppealState: "pending" | "upheld" | "overturned";
+        /** @description The user's appeal of a post that the automated review refused. */
+        OwnHookAppeal: {
+            id: string;
+            /** @description The decision appealed. */
+            hook_decision_id: string;
+            state: components["schemas"]["HookAppealState"];
+            /** Format: date-time */
+            submitted_at: string;
+        };
+        /**
+         * @description The problem of a post that the server's automated review refused (422,
+         *     `/api/v1/problems/status-rejected`). Nothing was posted. `title` and `detail` are fixed text
+         *     that holds nothing of the review's answer. The author may appeal the decision with
+         *     `POST /hook_decisions/{hook_decision_id}/appeal` until `appeal_deadline`, sending the text
+         *     of the post. Another 422 (a malformed request) has neither member.
+         */
+        StatusRejectedProblem: components["schemas"]["Problem"] & {
+            /** @description The decision to appeal. */
+            hook_decision_id?: string;
+            /**
+             * Format: date-time
+             * @description The last moment the author can appeal the decision.
+             */
+            appeal_deadline?: string;
+        };
         /** @description How many decisions of one mode and outcome a hook made, and how long they took. */
         AdminHookOutcome: {
             mode: components["schemas"]["HookDecisionMode"];
@@ -12215,7 +12380,7 @@ export interface components {
          *     added; clients show the ones they know.
          * @enum {string}
          */
-        InstanceSettingKey: "registration_mode" | "max_status_length" | "default_locale" | "local_timeline_visibility" | "federated_timeline_visibility" | "preview_image" | "contact_account" | "contact_email" | "thumbnail" | "remote_media_policy" | "remote_media_cache_ttl_seconds" | "authorized_fetch" | "domain_actions_visibility" | "domain_actions_rationale_visibility" | "appeal_window_days" | "session_origins_retention_days" | "registration_origins_retention_days" | "reports_retention_days" | "moderation_actions_retention_days" | "audit_log_retention_days" | "search_indexing" | "ai_usage" | "indexable_default" | "search_visibilities" | "security_contact" | "require_media_description" | "link_cards" | "link_cards_ignore_robots_txt" | "finance_visibility" | "finance_viewer_item_names" | "finance_viewer_item_memos" | "finance_viewer_income" | "supporter_list_visibility" | "income_visibility" | "federation_mode" | "user_app_registration" | "dynamic_client_registration" | "oauth_metadata_document_clients" | "voice_room_starters" | "voice_public_summary" | "voice_participants_retention_days" | "hook_inbound_status_mode" | "hook_inbound_follow_mode" | "hook_signup_check_mode" | "hook_media_check_mode" | "hook_local_status_mode" | "hook_inbound_status_on_failure" | "hook_inbound_status_unfollowed_direct" | "hook_inbound_follow_on_failure" | "hook_signup_check_on_failure" | "hook_signup_check_reject" | "hook_media_check_on_failure" | "retention_hook_decisions" | "invite_creators" | "member_invite_max_active" | "member_invite_max_uses" | "member_invite_max_lifetime_seconds" | "public_counts" | "featured_accounts" | "login_providers_only" | "remote_media_cache_max_bytes" | "remote_status_retention_days" | "remote_status_max_retention_days" | "relay_status_retention_days" | "oauth_client_rate_limits" | "translation_providers" | "translation_provider_visibilities" | "translation_browser" | "translation_user_monthly_characters" | "translation_server_monthly_characters" | "translation_retention_days" | "translation_reports_to_server";
+        InstanceSettingKey: "registration_mode" | "max_status_length" | "default_locale" | "local_timeline_visibility" | "federated_timeline_visibility" | "preview_image" | "contact_account" | "contact_email" | "thumbnail" | "remote_media_policy" | "remote_media_cache_ttl_seconds" | "authorized_fetch" | "domain_actions_visibility" | "domain_actions_rationale_visibility" | "appeal_window_days" | "session_origins_retention_days" | "registration_origins_retention_days" | "reports_retention_days" | "moderation_actions_retention_days" | "audit_log_retention_days" | "search_indexing" | "ai_usage" | "indexable_default" | "search_visibilities" | "security_contact" | "require_media_description" | "link_cards" | "link_cards_ignore_robots_txt" | "finance_visibility" | "finance_viewer_item_names" | "finance_viewer_item_memos" | "finance_viewer_income" | "supporter_list_visibility" | "income_visibility" | "federation_mode" | "user_app_registration" | "dynamic_client_registration" | "oauth_metadata_document_clients" | "voice_room_starters" | "voice_public_summary" | "voice_participants_retention_days" | "hook_inbound_status_mode" | "hook_inbound_follow_mode" | "hook_signup_check_mode" | "hook_media_check_mode" | "hook_local_status_mode" | "hook_inbound_status_on_failure" | "hook_inbound_status_unfollowed_direct" | "hook_inbound_follow_on_failure" | "hook_signup_check_on_failure" | "hook_signup_check_reject" | "hook_local_status_account_age_days" | "hook_media_check_on_failure" | "retention_hook_decisions" | "invite_creators" | "member_invite_max_active" | "member_invite_max_uses" | "member_invite_max_lifetime_seconds" | "public_counts" | "featured_accounts" | "login_providers_only" | "remote_media_cache_max_bytes" | "remote_status_retention_days" | "remote_status_max_retention_days" | "relay_status_retention_days" | "oauth_client_rate_limits" | "translation_providers" | "translation_provider_visibilities" | "translation_browser" | "translation_user_monthly_characters" | "translation_server_monthly_characters" | "translation_retention_days" | "translation_reports_to_server";
         /**
          * @description The type of a setting's value. `bool`: `true` or `false`. `int`: a decimal integer from
          *     `minimum` to `maximum`. `enum`: one of `choices`. `locale`: a BCP 47 language tag.
@@ -13492,11 +13657,12 @@ export interface components {
          *     - `/api/v1/problems/missing-permission` (403): the user's roles lack the permission
          *       that an admin operation needs.
          *     - `/api/v1/problems/already-appealed` (422): the user already appealed the moderation
-         *       action; an action is appealed once.
+         *       action or the refusal of a post; each is appealed once.
          *     - `/api/v1/problems/appeal-window-closed` (422): the time to appeal the moderation
-         *       action has passed.
+         *       action or the refusal of a post has passed.
          *     - `/api/v1/problems/not-appealable` (422): the moderation action is a ban whose
-         *       account is deleted, so it can no longer be appealed or overturned.
+         *       account is deleted, so it can no longer be appealed or overturned; or the decision of
+         *       the automated review is not a refusal of the user's post that is in force.
          *     - `/api/v1/problems/appeal-decided` (409): the appeal was already decided the other way.
          *     - `/api/v1/problems/wrong-password` (422): the password given to confirm the operation is
          *       not the user's current password.
@@ -13667,6 +13833,9 @@ export interface components {
          *     - `/api/v1/problems/hook-decision-not-overridable` (409): the decision of a decision hook
          *       had no effect, is already cancelled, or is a `reject` of `local.status`, which goes through
          *       its appeal.
+         *     - `/api/v1/problems/status-rejected` (422): the server's automated review refused the post
+         *       and nothing was posted. The problem carries `hook_decision_id` and `appeal_deadline`; the
+         *       user may appeal (`POST /hook_decisions/{id}/appeal`).
          *     - `/api/v1/problems/email-not-suppressed` (409): the email address of the account is not
          *       suppressed, so there is nothing to lift.
          *     - `/api/v1/problems/invalid-login-provider` (422): a login provider breaks a rule;
@@ -15272,6 +15441,16 @@ export interface components {
         };
     };
     responses: {
+        /** @description The appeal. */
+        AdminHookAppeal: {
+            headers: {
+                "Cache-Control": components["headers"]["CacheControl"];
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["AdminHookAppeal"];
+            };
+        };
         /** @description The aliases of the user. */
         AccountAliasList: {
             headers: {
@@ -15713,6 +15892,18 @@ export interface components {
             };
             content: {
                 "application/problem+json": components["schemas"]["RelayProblem"];
+            };
+        };
+        /** @description The post was refused; nothing was posted. */
+        StatusRejectedProblem: {
+            headers: {
+                /** @description The locale of `title` and `detail`. */
+                "Content-Language"?: string;
+                "Cache-Control": components["headers"]["CacheControl"];
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["StatusRejectedProblem"];
             };
         };
         /** @description The role change breaks a rule; nothing was changed. */
@@ -18447,6 +18638,35 @@ export interface operations {
             default: components["responses"]["Problem"];
         };
     };
+    appealHookDecision: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the decision, `hook_decision_id` of the refusal. */
+                id: components["schemas"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AppealHookDecisionRequest"];
+            };
+        };
+        responses: {
+            /** @description The appeal. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OwnHookAppeal"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
     listNotifications: {
         parameters: {
             query?: {
@@ -18674,6 +18894,7 @@ export interface operations {
                     "application/json": components["schemas"]["Status"];
                 };
             };
+            422: components["responses"]["StatusRejectedProblem"];
             default: components["responses"]["Problem"];
         };
     };
@@ -21240,6 +21461,67 @@ export interface operations {
                     "application/json": components["schemas"]["AdminHookDecision"];
                 };
             };
+            default: components["responses"]["Problem"];
+        };
+    };
+    listHookAppeals: {
+        parameters: {
+            query?: {
+                /** @description Keep the appeals that no moderator has decided. */
+                pending?: boolean;
+                /** @description The `next_cursor` of the previous page; omitted for the first page. */
+                cursor?: components["parameters"]["Cursor"];
+                /** @description The maximum number of items in the page. */
+                limit?: components["parameters"]["Limit"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A page of the appeals. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminHookAppealPage"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    upholdHookAppeal: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the appeal. */
+                id: components["parameters"]["AppealId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["AdminHookAppeal"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    overturnHookAppeal: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the appeal. */
+                id: components["parameters"]["AppealId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["AdminHookAppeal"];
             default: components["responses"]["Problem"];
         };
     };
