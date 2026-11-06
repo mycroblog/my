@@ -82,7 +82,7 @@ default locale, who can see the timelines, the instance name, description, terms
 | `member_invite_max_lifetime_seconds` | integer 3600-31536000 (seconds) | `2592000` (30 days) | How long one invite that a member creates may work at most. Lowering it does not shorten existing invites |
 | `translation_providers` | comma-separated provider IDs | empty | The server-side translation providers that are enabled, the first tried first. When it is empty nothing is sent to any provider. An ID this server has no provider for does nothing. A [translator plugin](plugins.md#translating-posts) has the ID `plugin` |
 | `translation_provider_visibilities` | comma-separated `provider=visibility\|visibility` pairs | empty | What each provider may receive. A provider not named receives `public`, `local`, and `unlisted` posts; `provider=` with nothing after it receives none. `private` and `direct` go only to a provider named with them, so allowing one provider does not allow the next |
-| `translation_browser` | boolean | `false` | Whether readers may use the translation built into their browser, which sends nothing to this server or to a provider |
+| `translation_browser` | boolean | `false` | Whether readers may use the translation built into their browser, which sends nothing to this server or to a provider. With a server-side provider enabled too, the provider comes first, and the browser translates what the server refuses: a post or a language that no provider takes, a monthly limit, or a provider that fails |
 | `translation_user_monthly_characters` | integer 0-1000000000000 | `50000` | How many characters one user's requests may send to translation providers in a UTC month. At `0` nothing is sent. No value means unlimited: set a large number instead |
 | `translation_server_monthly_characters` | integer 0-1000000000000 | `500000` | How many characters the whole server may send to translation providers in a UTC month. At `0` nothing is sent. No value means unlimited: set a large number instead |
 | `translation_retention_days` | integer 1-3650 (days) | `30` | How many days a translation is kept after it was made. Reading it does not extend this, and it goes with the post |
@@ -275,7 +275,8 @@ audit log on the moderation screen ("Audit log", `/moderation/audit-log`).
   change them with the CLI or the client API. The settings of translation have a screen of their own, below.
 - **Web client** ("Translation", `/admin/translation`): the providers this server has, their order and what each may
   receive, the browser's translation, the monthly limits, and how long translations are kept, with the characters sent
-  this month and the cache hit rate. Update your privacy policy ([template](privacy-policy-template.md#the-services-you-choose))
+  this month and the cache hit rate. Each server process adds its count of cache hits to the rate at most once a minute,
+  so the latest requests can take a minute to show, and a process that stops can leave its last minute uncounted. Update your privacy policy ([template](privacy-policy-template.md#the-services-you-choose))
   before you enable a server-side provider: text sent to a provider cannot be recalled. API keys of providers and the address of a
   [translator plugin](plugins.md#translating-posts) live in the [deployment configuration](../reference/configuration.md);
   no setting and no answer of the client API holds them.
@@ -283,7 +284,8 @@ audit log on the moderation screen ("Audit log", `/moderation/audit-log`).
   links, and the like do not count, and neither do a translation the server already keeps, a post already in the reader's
   language, or the browser's translation. Each call to a provider counts, also one that fails, since the provider may have
   received the text, so the number can differ from what a provider bills. Over a limit the request is refused with a `429`
-  and no provider is called. Months are in UTC.
+  and no provider is called; the web client then uses the reader's browser translation, when you allow it and the browser
+  can translate the post. Months are in UTC.
 - **Client API**: `GET /api/v1/admin/settings` returns every setting with its current value, its default, whether it is set,
   and its type and accepted values (choices or range). `PATCH /api/v1/admin/settings` changes settings together with
   `{"values": {"<key>": "<value>", ...}}`. All values are strings, normalized and stored as with the CLI. If a single key is

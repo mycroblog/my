@@ -79,13 +79,13 @@
 | ジョブ | 引数 | 積む事実 | すること |
 | --- | --- | --- | --- |
 | `search.sync_status` | 投稿の ID | `content.status_created`・`status_revised`・`status_deleted`（`ByAccountErasure` を除く） | 適格なら置き換え、そうでなければ削除 |
-| `search.sync_author` | アカウントの ID | `account.profile_revised`・`remote_actor_fetched`（`indexable` が変わったとき）、`account.lifecycle_event_recorded`、`moderation.account_restrictions_changed`、§11 の消去 | 作者が適格でなければ作者で一括削除。適格ならその作者の投稿を一定件数ずつカーソルで辿って同期 |
-| `search.sync_domain` | ドメイン | `moderation.domain_restrictions_changed` | そのドメインの作者ごとに `search.sync_author` を積む（`moderation.sever_domain` と同じ分割） |
+| `search.sync_author` | アカウントの ID | `account.profile_revised`・`remote_actor_fetched`（`indexable` が変わったとき）、`account.lifecycle_event_recorded`、`moderation.account_restrictions_changed`・`account_restrictions_expired`、§11 の消去 | 作者が適格でなければ作者で一括削除。適格ならその作者の投稿を一定件数ずつカーソルで辿って同期 |
+| `search.sync_domain` | ドメイン | `moderation.domain_restrictions_changed`・`domain_restrictions_expired` | そのドメインの作者ごとに `search.sync_author` を積む（`moderation.sever_domain` と同じ分割） |
 | `search.narrow` | 公開範囲 | `instance.setting_revised`（`search_visibilities` が狭まったとき） | 公開範囲で一括削除 |
 | `search.rebuild` | カーソル | `my search rebuild`（§10） | 全投稿を一定件数ずつ同期 |
 
 - **公開範囲の変化**: `statuses.visibility` は投稿の後に変わらない。後から変わるのは実効の公開範囲だけで、それは処分（`visibility_ceiling_private`）から来るので `search.sync_author` が扱う。添付済みのメディアの代替テキストも直接は変わらない（`ErrMediaAttached`）。変わるのは版のときだけで、`status_revised` が扱う。
-- **処分の期限切れ**: `moderation.expire_restrictions` はイベントを出さず、ドメインの制限の期限切れにはジョブもイベントも無い。処分で索引から消した投稿が期限の後に戻るよう、期限切れを `search.sync_author` と `search.sync_domain` に伝える手段を足す（#2248）。読み取りは期限を見ているので、この遅れは見つからない投稿になるだけで、見せてはいけない投稿は出ない。
+- **処分の期限切れ**: 定期ジョブ `moderation.expire_restrictions` は、期限の切れたアカウントとドメインの処分の行を消すトランザクションで、行を消したアカウントごとに `moderation.account_restrictions_expired`、ドメインごとに `moderation.domain_restrictions_expired` を出す。projector はそれぞれ `search.sync_author` と `search.sync_domain` を積むので、処分で索引から消した投稿は期限の後に戻る。期限からそのジョブが走るまでの間も読み取りは期限を見ているので、この遅れは見つからない投稿になるだけで、見せてはいけない投稿は出ない。
 - **書いた後に読み直す**: `search.sync_status` は文書を書いた後にもう一度 DB を読み、適格でなくなっているか版が変わっていれば、もう一度同期する。2 つのジョブが同時に走り、古い状態を読んだほうが後から書く競合を、エンジンの版の機能に頼らずに閉じる。削除のジョブはその削除のコミットの後に走るので、読み直しの前に書いた文書は必ず消える。
 - **`none` でのジョブの種類**: 種類はどの設定でも登録し、`none` のハンドラーは何もせず成功する。ハンドラーの無い種類は失敗を重ねて dead job になり（`docs/reference/jobs.md`）、`worker_job_types` に書いた `search.*` は一致する種類が無いと起動を止めるからである。`voice.apply` と同じ扱いで、`none` では積まれないので、走るのは切り替える前に積まれたものだけである。
 - **遅いバックエンド**: バックエンドの呼び出しはトランザクションの外で行い、短い期限を切り、失敗は既定の待ち時間で再試行する。既定のワーカーは 1 プロセス 1 ジョブで期限の順に走るので、期限を切っても検索のジョブが `federation.inbox` の時間を使う。完全に分けるには `worker_job_types` で分けるか、`queue` のルート（SQS・Cloud Tasks）で別のキューに送る。運営者の文書に、検索を入れるサーバーの構成として書く。
@@ -180,7 +180,7 @@ ADR-0058 と [data-model §8](../architecture/data-model/08-deletion-and-purge.m
 
 - `settings.profile.indexable`: `public` だけ・`local` を含む・`local` だけで、何が載るかを言い分ける。
 - `settings.profile.indexable.description`: このサーバーの検索という言い方は全文検索が使えるサーバーでだけ使う。`none` のサーバーで名前の検索に効くと読めないようにする（ADR-0092 のとおり `indexable` は名前の検索に効かない）。
-- 管理の設定に `search_visibilities` の選択を足す。`public` と `local` だけを出し、広げても過去の投稿は再構築までは見つからないと言う。`search = none` では出さない。
+- 管理の設定に `search_visibilities` の選択を足す。§5 の 3 つ（`public`・`local`・`public,local`）を出し、広げても過去の投稿は再構築までは見つからないと言う。`search = none` では出さない。
 
 **運営者の文書**（#2250）: `docs/operations/search.md`（有効にする手順、切り替え、§12 の手順、バックアップ、ワーカーの分け方、問い合わせが URL に載ることと前段のログの設定、`local` を足す前に利用者へ知らせる勧め、バックエンドがまだ無いこと）を足して `docs/README.md` から張る。`crawlers.md`（`indexable`）、`instance-settings.md`、`backup.md`、`service-closure.md`、`privacy-policy-template.md` と `processing-record-template.md`（本文を外部のエンジンに渡す場合）を直す。`docs/reference/jobs.md` に種類を足し、`admin-cli.md` に `my search` を足す。
 
@@ -198,7 +198,7 @@ ADR-0058 と [data-model §8](../architecture/data-model/08-deletion-and-purge.m
 
 CJK は、すべてのバックエンドに日本語の 2 文字以上の部分一致を求める案から、バックエンドごとに決めて文書に書く形に変えた。バックエンドは今は選ばず、中核だけを `v0.1.0` までに作る。作者への再確認はせず文言と運営者への勧めで足りるとし、問い合わせは `GET` のまま前段のログを文書にする形で決めた。
 
-コードと突き合わせた結果、`statuses.visibility` が不変で実効の公開範囲だけが変わること、処分の期限切れにイベントが無いこと、ハンドラーの無いジョブが dead job になること、既定のワーカーが 1 ジョブずつであること、`none` が索引に手を出せないことが分かり、それぞれ §7、§12 に反映した。
+コードと突き合わせた結果、`statuses.visibility` が不変で実効の公開範囲だけが変わること、処分の期限切れにイベントが無かったこと（期限切れのイベントを足した）、ハンドラーの無いジョブが dead job になること、既定のワーカーが 1 ジョブずつであること、`none` が索引に手を出せないことが分かり、それぞれ §7、§12 に反映した。
 
 ## 採らなかった案
 
@@ -237,5 +237,5 @@ CJK は、すべてのバックエンドに日本語の 2 文字以上の部分�
 ## Open Questions / 要検証
 
 - Elasticsearch・OpenSearch・Meilisearch が日本語をどう扱うか、エンジンの版の機能と平文の問い合わせの渡し方（要検証。各バックエンドの Issue で確かめる）。
-- Cloud Run と AWS の実行基盤のリクエストのログがクエリ文字列を含むか（要検証。#2250 の運営者の文書で確かめる）。
+- Cloud Run と AWS の実行基盤のリクエストのログがクエリ文字列を含むか（要検証）。運営者の文書（`docs/operations/search.md` の「The query appears in URLs」）は、問い合わせが URL に載ることを伝え、前段の層ごとにログを確かめるよう勧めている。確かめていないのは、その 2 つの実行基盤の既定のログに何が残るかだけである。
 - レート制限の 30 / 5 分は仮の値で、最初の運用で調整する。
