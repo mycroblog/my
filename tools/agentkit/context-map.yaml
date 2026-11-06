@@ -735,7 +735,7 @@ entries:
     checks: [docker]
   - name: docker-compose
     paths: ["deploy/docker/compose.yaml", "deploy/docker/compose.build.yaml", "deploy/docker/compose.postgres.yaml", "deploy/docker/compose.s3.yaml", "deploy/docker/compose.caddy.yaml", "deploy/docker/example.env", "Dockerfile"]
-    userdocs: ["README.md#quick-start-docker-compose", "docs/operations/running.md#docker-compose-files", "docs/operations/running.md#get-the-image", "docs/operations/database.md#docker-compose", "docs/operations/maintenance.md#docker-compose"]
+    userdocs: ["docs/operations/deploy-docker-compose.md", "docs/operations/running.md#docker-compose-files", "docs/operations/running.md#get-the-image", "docs/operations/database.md#docker-compose", "docs/operations/maintenance.md#docker-compose"]
     notes:
       - "deploy/docker/example.env is generated from the config schema (`scripts/task.sh go:config-docs`). The KEK stays out of it: .env reaches the containers whole through env_file, so the key is the file secrets/kek, mounted as a secret."
   - name: dev-compose

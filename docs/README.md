@@ -27,6 +27,7 @@ reference is there too. The contributing and design documents below are read her
 - [Database: initializing, upgrading, and recreating](operations/database.md)
 - [Backup and restore (database, media, KEK, configuration, and the recovery drill)](operations/backup.md)
 - [Running the server: starting, stopping, and health checks](operations/running.md)
+- [Deploying with Docker Compose](operations/deploy-docker-compose.md)
 - [Deploying on Cloud Run](operations/deploy-cloud-run.md)
 - [Serving media through a CDN, and refusing requests that did not come through it (media_origin, origin pull, caching and purging, origin_secret)](operations/cdn.md)
 - [Maintenance (the maintenance mode and the exported maintenance page)](operations/maintenance.md)

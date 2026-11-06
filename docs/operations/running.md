@@ -16,7 +16,7 @@ It speaks plain HTTP/1.1 there, without TLS: put a reverse proxy or load balance
 The real-time updates (`GET /api/v1/streaming`, the streams of the local and federated timelines, and the voice chat room streams) are long-lived responses that send a heartbeat comment every 30 seconds (15 for a voice room) and stay open while idle.
 The proxy must not buffer these responses (nginx: the server sends `X-Accel-Buffering: no`), and its idle or read timeout must be longer than the heartbeat interval.
 It does not apply the schema: apply it with `my schema apply` before starting (see [Database](database.md); upgrades run it as part of [Upgrading](database.md#upgrading)).
-In the Docker Compose setup (`deploy/docker/compose.yaml`; see the [README](../../README.md#quick-start-docker-compose)), a one-shot `schema` service runs `my schema apply` before the server starts.
+In the Docker Compose setup (`deploy/docker/compose.yaml`; see [Deploying with Docker Compose](deploy-docker-compose.md)), a one-shot `schema` service runs `my schema apply` before the server starts.
 If the schema is not applied, the process still starts and readiness returns 503, and it serves nothing else until the schema is there.
 
 The first `my serve` or `my` command that uses the database records `host` and `account_domain` in it. When the configuration differs from the recorded values, `my serve` logs `start failed` with both pairs of values and exits with code 1, and the commands print the same error. The exceptions are `my schema apply` and `my db backup`, which do not check, and the maintenance mode, which does not read the database. `my config check -instance` and `my db upgrade -check` check but record nothing.
