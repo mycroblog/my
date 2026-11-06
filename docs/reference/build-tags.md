@@ -64,10 +64,11 @@ docker build --build-arg GO_TAGS=no_sqlite,no_valkey,no_sns -t my .
 ```
 
 The binary validates the configuration at start ([configuration reference](configuration.md)), and `my config check` and
-`my serve` reject a setting whose adapter the build left out, naming the tag:
+`my serve` reject a setting whose adapter the build left out, naming the tag and linking this page on the
+documentation site for the version of the binary (`/next/` for a build that is not a release):
 
 ```text
-database (MY_DATABASE): "postgres" is not in this build: the build tag no_postgres left its adapter out (docs/reference/build-tags.md)
+database (MY_DATABASE): "postgres" is not in this build: the build tag no_postgres left its adapter out (https://mycroblog.dev/v0.1/reference/build-tags/)
 ```
 
 ## Sets of tags that are checked

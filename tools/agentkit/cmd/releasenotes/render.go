@@ -16,9 +16,20 @@ type draft struct {
 	required               []requiredItem
 }
 
-// doc links a document as of the release's tag.
+// doc links the page of a published document (docs/operations/database.md#upgrading) on the documentation site, at
+// the version of the release: /vX.Y/ for a stable release, /next/ for a pre-release, which the site does not publish.
+// The page path mirrors the document's path, as app/docs/src/published.ts and internal/platform/docsite map it.
 func doc(version, path, title string) string {
-	return fmt.Sprintf("[%s](https://github.com/mycroblog/my/blob/%s/%s)", title, version, path)
+	site := "next"
+	if !strings.Contains(version, "-") {
+		site = minorOf(version)
+	}
+	file, anchor, _ := strings.Cut(path, "#")
+	url := "https://mycroblog.dev/" + site + "/" + strings.ToLower(strings.TrimSuffix(strings.TrimPrefix(file, "docs/"), ".md")) + "/"
+	if anchor != "" {
+		url += "#" + anchor
+	}
+	return fmt.Sprintf("[%s](%s)", title, url)
 }
 
 // firstRelease has nothing to compare with: nothing can break or upgrade, and the commits marked ! before it changed

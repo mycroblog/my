@@ -32,7 +32,7 @@ tests:
             exp_annotations:
               summary: Jobs wait more than 5 minutes for a worker
               description: The oldest ready job of the database queue has waited 20m 0s.
-              runbook_url: https://github.com/mycroblog/my/blob/main/docs/operations/alerts.md#myqueuebacklog
+              runbook_url: https://mycroblog.dev/latest/operations/alerts/#myqueuebacklog
       - eval_time: 33m
         alertname: MyQueueStalled
         exp_alerts: []
@@ -46,7 +46,7 @@ tests:
               description: >-
                 The oldest ready job of the database queue has waited 36m 0s; deliveries, notifications, and emails
                 are late.
-              runbook_url: https://github.com/mycroblog/my/blob/main/docs/operations/alerts.md#myqueuestalled
+              runbook_url: https://mycroblog.dev/latest/operations/alerts/#myqueuestalled
 
   - name: dead jobs
     interval: 1m
@@ -66,7 +66,7 @@ tests:
             exp_annotations:
               summary: More than 10 jobs failed for good in the last hour
               description: The number of failed jobs grew by 30 in the last hour.
-              runbook_url: https://github.com/mycroblog/my/blob/main/docs/operations/alerts.md#mydeadjobsincreasing
+              runbook_url: https://mycroblog.dev/latest/operations/alerts/#mydeadjobsincreasing
 
   - name: stale snapshot
     interval: 1m
@@ -86,7 +86,7 @@ tests:
               summary: The instance-wide gauges are not refreshed
               description: >-
                 The queue part of the metrics snapshot is 30m 0s old, so the queue and storage alerts see old values.
-              runbook_url: https://github.com/mycroblog/my/blob/main/docs/operations/alerts.md#mymetricssnapshotstale
+              runbook_url: https://mycroblog.dev/latest/operations/alerts/#mymetricssnapshotstale
 
   - name: deliveries
     interval: 1m
@@ -110,7 +110,7 @@ tests:
               description: >-
                 100% of the delivery attempts failed in the last 15 minutes; the cause is most likely on this
                 server's side.
-              runbook_url: https://github.com/mycroblog/my/blob/main/docs/operations/alerts.md#mydeliveryallfailing
+              runbook_url: https://mycroblog.dev/latest/operations/alerts/#mydeliveryallfailing
       - eval_time: 50m
         alertname: MyDeliveryFailuresHigh
         exp_alerts:
@@ -119,7 +119,7 @@ tests:
             exp_annotations:
               summary: More than half of the delivery attempts fail
               description: 100% of the delivery attempts failed in the last 15 minutes.
-              runbook_url: https://github.com/mycroblog/my/blob/main/docs/operations/alerts.md#mydeliveryfailureshigh
+              runbook_url: https://mycroblog.dev/latest/operations/alerts/#mydeliveryfailureshigh
 
   - name: inbox signature failures
     interval: 1m
@@ -143,7 +143,7 @@ tests:
             exp_annotations:
               summary: The inbox refuses more than 10% of the activities it receives for their signature
               description: 15% of the POSTs to the inboxes failed the signature check in the last 15 minutes.
-              runbook_url: https://github.com/mycroblog/my/blob/main/docs/operations/alerts.md#myinboxsignaturefailures
+              runbook_url: https://mycroblog.dev/latest/operations/alerts/#myinboxsignaturefailures
       # 20% refused in all stays under the quarter of MyInboxRejectionsHigh.
       - eval_time: 50m
         alertname: MyInboxRejectionsHigh
@@ -171,7 +171,7 @@ tests:
             exp_annotations:
               summary: Deliveries to 5 or more servers were paused in a day
               description: Deliveries to 5 more servers were paused in the last day.
-              runbook_url: https://github.com/mycroblog/my/blob/main/docs/operations/alerts.md#myremoteserverspaused
+              runbook_url: https://mycroblog.dev/latest/operations/alerts/#myremoteserverspaused
 
   - name: database storage
     interval: 1m
@@ -191,7 +191,7 @@ tests:
             exp_annotations:
               summary: The database takes more than the planned storage
               description: The database takes 8.5GiB.
-              runbook_url: https://github.com/mycroblog/my/blob/main/docs/operations/alerts.md#mydatabasestoragelarge
+              runbook_url: https://mycroblog.dev/latest/operations/alerts/#mydatabasestoragelarge
 
   - name: billing import
     interval: 1m
@@ -218,7 +218,7 @@ tests:
               description: >-
                 The newest import of the usage charges of aws failed, and none has succeeded in the 6 hours since; the
                 costs screen shows older figures.
-              runbook_url: https://github.com/mycroblog/my/blob/main/docs/operations/alerts.md#mybillingimportfailing
+              runbook_url: https://mycroblog.dev/latest/operations/alerts/#mybillingimportfailing
 
   - name: http errors and latency
     interval: 1m
@@ -248,7 +248,7 @@ tests:
             exp_annotations:
               summary: More than 5% of the requests fail with a 5xx
               description: 10% of the HTTP requests answered 5xx in the last 5 minutes.
-              runbook_url: https://github.com/mycroblog/my/blob/main/docs/operations/alerts.md#myhttperrorshigh
+              runbook_url: https://mycroblog.dev/latest/operations/alerts/#myhttperrorshigh
       - eval_time: 50m
         alertname: MyAPILatencyHigh
         exp_alerts:
@@ -257,7 +257,7 @@ tests:
             exp_annotations:
               summary: The client API's 95th percentile is over 300 ms
               description: The 95th percentile of the client API requests is 487.5ms.
-              runbook_url: https://github.com/mycroblog/my/blob/main/docs/operations/alerts.md#myapilatencyhigh
+              runbook_url: https://mycroblog.dev/latest/operations/alerts/#myapilatencyhigh
 
   - name: restarts and memory
     interval: 1m
@@ -282,7 +282,7 @@ tests:
             exp_annotations:
               summary: a:9464 restarted 3 times in an hour
               description: The process behind a:9464 keeps restarting.
-              runbook_url: https://github.com/mycroblog/my/blob/main/docs/operations/alerts.md#myprocessrestarting
+              runbook_url: https://mycroblog.dev/latest/operations/alerts/#myprocessrestarting
       - eval_time: 20m
         alertname: MyMemoryNearLimit
         exp_alerts:
@@ -293,7 +293,7 @@ tests:
             exp_annotations:
               summary: a:9464 uses more than 90% of GOMEMLIMIT
               description: The Go runtime of a:9464 uses 93.29% of its memory limit.
-              runbook_url: https://github.com/mycroblog/my/blob/main/docs/operations/alerts.md#mymemorynearlimit
+              runbook_url: https://mycroblog.dev/latest/operations/alerts/#mymemorynearlimit
 
   - name: database pool
     interval: 1m
@@ -316,7 +316,7 @@ tests:
             exp_annotations:
               summary: a:9464 uses more than 90% of its database connections
               description: 95% of the postgres pool is in use.
-              runbook_url: https://github.com/mycroblog/my/blob/main/docs/operations/alerts.md#mydbpoolsaturated
+              runbook_url: https://mycroblog.dev/latest/operations/alerts/#mydbpoolsaturated
 
   - name: email
     interval: 1m
@@ -342,7 +342,7 @@ tests:
             exp_annotations:
               summary: Emails failed for good in the last hour
               description: "Email jobs that ran out of retries or were refused for good in the last hour: 1."
-              runbook_url: https://github.com/mycroblog/my/blob/main/docs/operations/alerts.md#myemailfailing
+              runbook_url: https://mycroblog.dev/latest/operations/alerts/#myemailfailing
       - eval_time: 40m
         alertname: MyEmailRetrying
         exp_alerts:
@@ -351,7 +351,7 @@ tests:
             exp_annotations:
               summary: Most email sends fail and wait for a retry
               description: 90.36% of the email job runs failed and will be retried.
-              runbook_url: https://github.com/mycroblog/my/blob/main/docs/operations/alerts.md#myemailretrying
+              runbook_url: https://mycroblog.dev/latest/operations/alerts/#myemailretrying
 
   - name: error reports
     interval: 1m
@@ -376,4 +376,4 @@ tests:
               description: >-
                 165 errors were reported in the last 15 minutes, more than three times the average of the day
                 before.
-              runbook_url: https://github.com/mycroblog/my/blob/main/docs/operations/alerts.md#myerrorreportsincreasing
+              runbook_url: https://mycroblog.dev/latest/operations/alerts/#myerrorreportsincreasing

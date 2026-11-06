@@ -9,6 +9,7 @@ import starlightLinksValidator from "starlight-links-validator";
 import { base, sitePageLinks } from "./src/published";
 import { docsSidebar } from "./src/sidebar";
 import { apiReferencePlugin, apiReferenceSidebar } from "./src/api-reference";
+import { llmsTxtPlugin } from "./src/llms-txt";
 
 export default defineConfig({
   site: "https://mycroblog.dev",
@@ -31,6 +32,7 @@ export default defineConfig({
       components: {
         SocialIcons: "./src/components/SocialIcons.astro",
         Banner: "./src/components/Banner.astro",
+        Footer: "./src/components/Footer.astro",
       },
       customCss: ["./src/styles/custom.css"],
       // The landing page's hero buttons name documents by their repository path (src/routeData.ts).
@@ -45,7 +47,7 @@ export default defineConfig({
       // The groups and order of docs/README.md (src/sidebar.ts), with the client API reference after the guides.
       sidebar: docsSidebar({ Developers: [apiReferenceSidebar] }),
       // A broken link or #anchor between pages fails the build; the validator cannot see the generated reference.
-      plugins: [starlightLinksValidator({ exclude: sitePageLinks }), apiReferencePlugin],
+      plugins: [starlightLinksValidator({ exclude: sitePageLinks }), apiReferencePlugin, llmsTxtPlugin],
     }),
   ],
 });

@@ -322,10 +322,9 @@ func instanceUsage(w io.Writer) {
   my instance theme <get|set> ...  (my instance theme -h)
   my instance brand <show|clear> ...  (my instance brand -h)
 
-Reads and changes the instance settings and texts stored in the
-database (docs/operations/instance-settings.md). Every change is kept as a
-revision; history shows them, newest first. The database schema must already
-be applied with Atlas.
+Reads and changes the instance settings and texts stored in the database.
+Every change is kept as a revision; history shows them, newest first. The
+database schema must already be applied with Atlas.
 
 Setting keys hold one value each; a key that has never been set reads as its
 default. Text keys (name, short_description, description, terms,
@@ -345,5 +344,5 @@ people reach the operators.
 
 Deployment configuration (adapters, host, secrets) is not an instance setting;
 it comes from the environment and the config file (my config check).
-`)
+`+docsLine("docs/operations/instance-settings.md"))
 }

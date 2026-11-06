@@ -11,6 +11,8 @@ import (
 	"os"
 	"runtime/debug"
 
+	"github.com/mycroblog/my/internal/platform/docsite"
+
 	// Embed the IANA time zone database so that time zone preferences validate and convert the
 	// same on every host, including images without /usr/share/zoneinfo (about 450 KB).
 	_ "time/tzdata"
@@ -27,6 +29,8 @@ func main() {
 
 // run executes the subcommand named by args[0] and returns the process exit code.
 func run(args []string, stdout, stderr io.Writer) int {
+	// The help and the errors link the documentation of this version.
+	docsite.SetBuildVersion(resolveVersion(version, debug.ReadBuildInfo))
 	fs := flag.NewFlagSet("my", flag.ContinueOnError)
 	fs.SetOutput(stderr)
 	fs.Usage = func() { usage(stderr) }
@@ -142,6 +146,13 @@ Commands:
   serve     Run the server (role web, worker, or all)
   version   Print the version
 `)
+}
+
+// docsLine is the last line of a command's help: the page of the documentation site that explains the command, at
+// the version of this binary. document is the repository path of the page's source, such as
+// docs/operations/registration.md.
+func docsLine(document string) string {
+	return "\nDocumentation: " + docsite.URL(document) + "\n"
 }
 
 // resolveVersion returns the injected version, else the module version from

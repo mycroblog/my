@@ -3,6 +3,9 @@
 An ActivityPub-compatible microblog server written in Go. It can run cheaply with care on
 Google Cloud, AWS, or your own machine (Docker, microk8s), and is open source.
 
+Documentation: **[mycroblog.dev](https://mycroblog.dev/latest/)**, the guides for users and operators, the reference,
+and the client API, for each release and for the development version.
+
 > **Status: in development, before the first release (v0).** Data may not survive an upgrade before `v0.1.0`: the
 > database may have to be recreated. From `v0.1.0` on, every upgrade between releases keeps your data.
 
@@ -80,6 +83,7 @@ For every setting see the [configuration reference](docs/reference/configuration
 
 ## Documentation
 
+- [Documentation site](https://mycroblog.dev/latest/): the guides and references of the documentation index, one version per release (`/latest/` for the newest, `/v0.1/` and the like) and `/next/` for the development version
 - [Documentation index](docs/README.md): operation guides and references
 - [Contributing](CONTRIBUTING.md)
 - [Security policy](SECURITY.md): report vulnerabilities privately, never in a public issue

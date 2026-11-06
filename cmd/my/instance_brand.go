@@ -125,14 +125,13 @@ func instanceBrandUsage(w io.Writer) {
   my instance brand show [-config <file>]
   my instance brand clear [-config <file>] <icon|logo|logo_dark>
 
-Shows and clears the instance's own icon, logo, and dark logo
-(docs/operations/instance-settings.md). They are set from the server settings
-of the admin screen, which draws the PNG versions of the uploaded SVG; the
-command line cannot set them.
+Shows and clears the instance's own icon, logo, and dark logo. They are set
+from the server settings of the admin screen, which draws the PNG versions of
+the uploaded SVG; the command line cannot set them.
 
 show lists each image with its revision, when and by whom it was set, the
 background color of the icon, and the URL of its SVG, or (built-in) when the
 built-in image is in use. clear brings one image back to the built-in one and
 records the change; the files of earlier revisions stay at their URLs.
-`)
+`+docsLine("docs/operations/instance-settings.md"))
 }
