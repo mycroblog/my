@@ -93,52 +93,6 @@ run_gcp_cloud_run() {
   return "$code"
 }
 
-# run_aws_lambda CONSOLE ARG... runs the command in one invocation of the console function, which takes the arguments as
-# {"args":[...]} and answers {"exit_code":N,"output":"..."}. No released image answers that yet: the module's README says so.
-# An invocation lasts 15 minutes at most and its answer 6 MB. No retry: a command must not run twice because a socket closed.
-run_aws_lambda() {
-  local console="$1"
-  shift
-  local region function service
-  region="$(jq -er .region <<< "$console")" || return 1
-  function="$(jq -er .function <<< "$console")" || return 1
-  service="$(jq -r '.service // empty' <<< "$console")"
-
-  # As on the other platforms: apply does not follow the upgrade script's image, and a command of another release must not
-  # touch the database. Absent when the caller has already chosen the image.
-  if [ -n "$service" ]; then
-    local running current
-    running="$(aws lambda get-function --function-name "$service" --region "$region" --query Code.ImageUri --output text)" || return 1
-    current="$(aws lambda get-function --function-name "$function" --region "$region" --query Code.ImageUri --output text)" || return 1
-    if [ "$running" != "$current" ]; then
-      aws lambda update-function-code --function-name "$function" --region "$region" --image-uri "$running" > /dev/null || return 1
-      aws lambda wait function-updated --function-name "$function" --region "$region" || return 1
-    fi
-  fi
-
-  local payload answer meta
-  payload="$(printf '%s\0' "$@" | jq -Rsc '{args: (split("\u0000")[:-1])}')" || return 1
-  answer="$(mktemp)"
-  meta="$(mktemp)"
-  # shellcheck disable=SC2064 # The names are set here and must be expanded now.
-  trap "rm -f '$answer' '$meta'" RETURN
-  AWS_MAX_ATTEMPTS=1 aws lambda invoke --function-name "$function" --region "$region" \
-    --cli-binary-format raw-in-base64-out --cli-read-timeout 0 --payload "$payload" "$answer" > "$meta" || return 1
-
-  # The function itself failed, such as on the 15 minutes: the command may have done part of its work.
-  if [ -n "$(jq -r '.FunctionError // empty' "$meta")" ]; then
-    echo "console.sh: the invocation failed, and the command may have stopped part way: $(jq -r '.errorMessage // "see the logs of the function"' "$answer")" >&2
-    return 1
-  fi
-  jq -r '.output // empty' "$answer"
-  local code
-  code="$(jq -er .exit_code "$answer")" || {
-    echo "console.sh: the function did not answer with an exit code: is its image built for it?" >&2
-    return 1
-  }
-  return "$code"
-}
-
 # run_aws_ecs CONSOLE ARG... runs the command as a one-off task and waits for it, for as long as it takes. The output of a task
 # goes to CloudWatch Logs only, so it is read back from there, which needs logs:FilterLogEvents. No retry of the start: a command
 # must not run twice because a socket closed.
@@ -233,7 +187,6 @@ platform="$(jq -er .platform <<< "$console")"
 code=0
 case "$platform" in
   gcp-cloud-run) run_gcp_cloud_run "$console" "$@" || code=$? ;;
-  aws-lambda) run_aws_lambda "$console" "$@" || code=$? ;;
   aws-ecs) run_aws_ecs "$console" "$@" || code=$? ;;
   *)
     echo "console.sh: this script does not know the platform $platform" >&2

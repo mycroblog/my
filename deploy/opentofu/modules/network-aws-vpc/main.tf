@@ -46,7 +46,7 @@ variable "availability_zones" {
 }
 
 variable "nat" {
-  description = "Creates one NAT gateway and routes the private subnets to the internet through it, which AWS bills by the hour and by the GB. Without it, nothing in a private subnet reaches the internet: Lambda and tasks with assign_public_ip = false fail the plan."
+  description = "Creates one NAT gateway and routes the private subnets to the internet through it, which AWS bills by the hour and by the GB. Without it, nothing in a private subnet reaches the internet: tasks with assign_public_ip = false fail the plan."
   type        = bool
   default     = false
   nullable    = false

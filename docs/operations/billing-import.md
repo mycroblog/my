@@ -63,7 +63,7 @@ How to pass credentials in each runtime environment:
 
 | Runtime | Credentials |
 | --- | --- |
-| AWS Lambda / ECS | Attach this policy to the execution role (task role). No configuration is needed |
+| AWS ECS | Attach this policy to the task role. No configuration is needed |
 | Google Cloud (Cloud Run) | Create the IAM role of "Calling from Cloud Run with web identity" below and set its ARN in `billing_aws_role_arn`. No AWS keys are needed |
 | Your own server | Pass the access key of an IAM user with this policy in `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` (or a shared credentials file and `AWS_PROFILE`). Pass it from a secret store |
 
@@ -122,7 +122,7 @@ Taxes, support fees, and some credits cannot carry a tag, and may fall out of a 
 
 A tag on a resource does not appear in the billing data until you activate it as a cost allocation tag.
 
-1. Put the same tag (for example `app=my`) on this server's resources (Lambda functions, RDS, S3 buckets, CloudFront, and so on).
+1. Put the same tag (for example `app=my`) on this server's resources (ECS services, RDS, S3 buckets, load balancers, and so on).
 2. In "Cost allocation tags" of the Billing and Cost Management console, select the tag key and activate it. It takes up to 24 hours for a tag to show in this list after you attach it, and up to another 24 hours after activation for it to show in the billing data.
 3. To reflect the costs of the period before activation, use "Backfill" on the same screen (the API `StartCostAllocationTagBackfill`).
 4. Set `MY_BILLING_AWS_FILTER=tag` and `MY_BILLING_AWS_TAG=app=my`.
@@ -195,7 +195,7 @@ Authentication is Application Default Credentials (ADC).
 | Runtime | Credentials |
 | --- | --- |
 | Google Cloud (Cloud Run) | ADC with the service's service account. No key and no configuration |
-| AWS Lambda | Place a credential configuration file of Workload Identity Federation (the AWS type) and pass its path in `GOOGLE_APPLICATION_CREDENTIALS` (not yet verified on a real account) |
+| AWS ECS | Place a credential configuration file of Workload Identity Federation (the AWS type) and pass its path in `GOOGLE_APPLICATION_CREDENTIALS` (not yet verified on a real account) |
 | Your own server | Workload Identity Federation, or a service account JSON key passed in `GOOGLE_APPLICATION_CREDENTIALS`. Pass a key from a secret store |
 
 ### Choosing which costs to import (filtering)

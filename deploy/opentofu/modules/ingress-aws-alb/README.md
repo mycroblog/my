@@ -36,9 +36,10 @@ module "ingress" {
 | `trusted_proxies` | The ranges of the public subnets |
 | `service_ingress` | `load-balancer`, which only an app that attaches to one accepts |
 | `load_balancer` | The target group and the security group that the app attaches to |
-| `dns_records` | What to create elsewhere, as [`ingress-aws-cloudfront`](../ingress-aws-cloudfront/README.md#dns) does |
+| `dns_records` | What to create at the DNS provider while `route53_zone_id` is null: a CNAME, or for an apex an ALIAS or ANAME |
 | `dns_note` | What `dns_records` cannot say, or null |
 | `domain_name`, `hosted_zone_id` | Of the load balancer, for records made elsewhere |
+| `arn_suffix` | The load balancer's dimension in CloudWatch, which `load_balancer_arn_suffix` of `monitoring-aws` takes |
 
 It reads nothing of the app, so `backends` can name the whole module. The certificate is an input: create it first, since validating it within the apply would hold the apply until you add records that only the apply prints.
 
@@ -51,7 +52,7 @@ A task in an Availability Zone that the public subnets do not cover gets no traf
 - The security group of the tasks admits port 8080 from the load balancer's security group alone, whether a task has a public address or not. Nobody on the internet can connect to a task, so no one can reach the server without passing the load balancer.
 - A load balancer could not send a secret anyway. [What AWS documents](https://docs.aws.amazon.com/elasticloadbalancing/latest/application/header-modification.html) for requests is renaming the headers it generates for mutual TLS and TLS; it lists no way to add a header of your own.
 
-So `origin_secret` stays empty, and nothing lands in the state, unlike `ingress-aws-cloudfront` and `ingress-cloudflare-app`. To put a CDN in front of the load balancer is another shape, in which the load balancer itself would be the open origin. This module does not do that, and two ingresses that both name `trusted_proxies` fail the plan.
+So `origin_secret` stays empty, and nothing lands in the state, unlike `ingress-cloudflare-app`. To put a CDN in front of the load balancer is another shape, in which the load balancer itself would be the open origin. This module does not do that, and two ingresses that both name `trusted_proxies` fail the plan.
 
 ## Client addresses
 

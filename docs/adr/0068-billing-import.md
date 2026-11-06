@@ -148,7 +148,7 @@ type CostLine struct {
 
 | 実行環境 | AWS（Cost Explorer） | Google Cloud（BigQuery・Pub/Sub） |
 | --- | --- | --- |
-| Lambda | 実行ロールに `ce:GetCostAndUsage` | Workload Identity Federation（AWS の種類）の credential configuration を `GOOGLE_APPLICATION_CREDENTIALS` で渡す（**要検証**、#882 の G-4）。サービスアカウントの JSON 鍵も読めるが勧めない |
+| ECS Fargate | タスクロールに `ce:GetCostAndUsage` | Workload Identity Federation（AWS の種類）の credential configuration を `GOOGLE_APPLICATION_CREDENTIALS` で渡す（**要検証**、#882 の G-4）。サービスアカウントの JSON 鍵も読めるが勧めない |
 | Cloud Run | `billing_aws_role_arn` を設定すると、adapter がメタデータサーバーから Google の ID トークンを取り、`stscreds.NewWebIdentityRoleProvider` で `AssumeRoleWithWebIdentity` する（**要検証**、#882 の A-4）。静的なアクセスキーも読める | サービスのサービスアカウントで ADC。鍵は要らない |
 | Self-hosted | 静的なアクセスキー（`AWS_ACCESS_KEY_ID` などか共有の認証ファイル）。IAM Roles Anywhere は **要検証** | サービスアカウントの JSON 鍵か Workload Identity Federation |
 
@@ -221,6 +221,6 @@ FR-904 は、AWS と Google Cloud の利用料金を定期的に取り込んで�
 
 - Cost Explorer の 2 か月 × 2 GroupBy の応答が小さなアカウントで 1 ページに収まるか、先月の `Estimated` が `false` になる日、`NetUnblendedCost` が請求書と一致するか（#882 の A-2）。
 - タグの絞り込みで税・クレジット・返金・サポート料の行が落ちるか、単独アカウントでのコスト配分タグの有効化と backfill（#882 の A-3）。
-- Cloud Run から AWS への web identity、Lambda から Google Cloud への Workload Identity Federation の組み立て（#882 の A-4・G-4）。
+- Cloud Run から AWS への web identity、ECS Fargate から Google Cloud への Workload Identity Federation の組み立て（#882 の A-4・G-4）。
 - Google Cloud の請求書の発行日と締めの後の行の追加の頻度（暫定値の「翌月 5 日」と「15 日」）、export のテーブルのパーティションの列と 1 回のスキャン量、税の行の `project.id`（#882 の G-2・G-3）。
 - Billing export の設定を API で行えるか。

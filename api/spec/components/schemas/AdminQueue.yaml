@@ -4,7 +4,7 @@ type: object
 required: [adapter, pending_listing, counts, waits]
 properties:
   adapter:
-    description: The queue the server runs, the `queue` setting (`db`, `inline`, `sqs`, `cloudtasks`).
+    description: The queue the server runs, the `queue` setting (`db`, `inline`, `cloudtasks`).
     type: string
   pending_listing:
     description: Whether the queue lists its pending jobs (`queued`, `running`, `retrying`).

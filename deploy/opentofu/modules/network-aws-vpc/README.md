@@ -4,7 +4,7 @@ A VPC on AWS that the other modules take as `network = module.network`. It follo
 
 **This module has never been applied.** The tests mock the provider, so they show that the configuration is consistent, not that AWS accepts it. [Unverified](#unverified) lists what stays open.
 
-**You need a network for ECS, RDS, ElastiCache, and the load balancer.** Lambda with Neon needs none. A VPC you have already passes as an object of the same shape, with no module.
+**You need a network for ECS, RDS, ElastiCache, and the load balancer.** A VPC you have already passes as an object of the same shape, with no module.
 
 ## Source
 
@@ -42,7 +42,7 @@ A VPC with DNS on, an internet gateway, a public and a private subnet in each zo
 
 ## The way out to the internet
 
-A plan refuses what would leave an instance with no way out, as [the table](../../README.md#the-way-out-to-the-internet) says: tasks with no public address need `nat`, tasks with one take the public subnets and need none, and Lambda in a VPC always needs `nat`, since AWS's guide says a public subnet gives a function no internet.
+A plan refuses what would leave an instance with no way out, as [the table](../../README.md#the-way-out-to-the-internet) says: tasks with no public address need `nat`, and tasks with one take the public subnets and need none.
 
 ## Unverified
 

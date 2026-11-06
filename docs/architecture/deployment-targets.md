@@ -10,8 +10,7 @@
 | ターゲット | コンピュート | RDB | キュー | Blob | スケジューラ | 想定固定費 |
 | --- | --- | --- | --- | --- | --- | --- |
 | **Google Cloud** | Cloud Run（min instances 0） | 外部の Neon、または Cloud SQL | Cloud Tasks（push） | GCS（または R2） | Cloud Scheduler | 約 $37/月（ロードバランサ約 $18 + Neon Launch 約 $19）。ドメインマッピングや Neon Free で減らせる。Cloud SQL は最小構成で約 $9/月〜 |
-| **AWS** | Lambda（Function URL）+ Lambda Web Adapter | Aurora Serverless v2（0 ACU）/ RDS / 外部 | SQS（event source） | S3 + CloudFront | EventBridge Scheduler | DB 次第（Aurora は常時接続があると 0 ACU にならない）。VPC の DB には NAT ゲートウェイが加わる |
-| **AWS（常駐）** | ECS Fargate + ALB | 外部 / RDS | DB キュー | S3 | プロセス内 cron | 約 $42/月 + DB（東京の最小構成。`app-aws-ecs` の README に内訳） |
+| **AWS** | ECS Fargate + ALB | 外部 / RDS | DB キュー | S3 | プロセス内 cron | 約 $42/月 + DB（東京の最小構成。`app-aws-ecs` の README に内訳） |
 | **Self-hosted** | Docker Compose / microk8s | SQLite（+ Litestream）/ PostgreSQL | DB キュー | ローカル FS / MinIO / 外部 S3 互換 | プロセス内 cron | VM 代（$4〜6/月 クラス、要検証） |
 
 ## 設計に効く事実（要点）
@@ -19,8 +18,7 @@
 1. **Aurora Serverless v2 の 0 ACU は「ユーザー接続が 1 本もない」ときだけ** 一時停止する。常駐ワーカーの DB ポーリングやコネクションプール、RDS Proxy があると停止しない。復帰は通常約 15 秒、24 時間超の停止後は 30 秒以上。
    → 連合サーバーは受信が途切れにくく、一時停止はあまり見込めない。費用を抑える選択肢として外部 DB を併記する。
 2. **Neon Free は 100 CU-hours/プロジェクト/月**。最小 0.25 CU で 400 時間/月（約 16.7 日）分で、常時起動（約 730 時間）には足りない。5 分無通信で scale to zero（Free では無効化不可）。想定するプランは Launch で、Free はトレードオフを受け入れれば使える。
-3. **SQS の遅延上限は 15 分、Cloud Tasks の予約上限は 30 日**。SQS のメッセージ上限は **1 MiB**。
-4. **AWS Lambda Web Functions**（2026-10 発表の新形態。HTTP サーバーをそのまま動かせる）は現時点で **Node.js のみ** 対応で、Go サーバーには使えない。Go では引き続き Lambda Web Adapter（Event Functions）を使う。
+3. **Cloud Tasks の予約上限は 30 日**。
 
 ## Cloudflare（実行環境としては対象外）
 
@@ -133,38 +131,9 @@
 
 ## AWS
 
-- **構成**: Lambda（Web 用関数 + SQS コンシューマ関数、同一コード）。Lambda Web Adapter で通常の HTTP サーバーとして書ける。
+- **構成**: ECS Fargate のサービス + ALB。ジョブは DB キュー（`queue = db`）で、定期ジョブはプロセス内の cron が動かす。費用の内訳は `app-aws-ecs` の README にある。
 - **RDB**: Aurora Serverless v2 は 0 ACU まで自動一時停止できるが、ユーザー接続が残っていると停止しない（下記）。
-- **キュー**: SQS の遅延は最大 15 分。→ 再投入チェーンで長いバックオフを実現。
-
-### Lambda
-
-| 項目 | 値 |
-| --- | --- |
-| 無料枠（Event Functions） | 月 100 万リクエスト + 400,000 GB 秒（Provisioned Concurrency を有効にした関数には適用されない） |
-| 料金（参考） | $0.20 / 100 万リクエスト、$0.0000166667 / GB 秒（x86、us-east-1 の第 1 段階） |
-| 関数タイムアウト | 最大 900 秒（15 分） |
-| 同期呼び出しのペイロード | リクエスト・レスポンスとも 6 MB（ストリーミング時は 6 MB 超の部分が 2 MBps に制限） |
-
-- **Lambda Web Adapter**: Lambda Runtime API と HTTP をつなぐ Rust 製のアダプタで、Go を含むマネージドランタイム上の通常の HTTP サーバーをそのまま Lambda で動かせる。zip の場合はレイヤーとして追加し `AWS_LAMBDA_EXEC_WRAPPER=/opt/bootstrap` を設定する。Function URL では複数値ヘッダ（同名ヘッダの複数指定）を返せない点に注意（AWS Compute Blog）。
-  - 要検証: アダプタ本体のリポジトリ（GitHub の awslabs）は本調査の出典範囲外のため、最新版の設定項目・バージョンは spike で確認する。
-- **Lambda Web Functions**（2026-10 発表）: HTTP サーバーを直接動かす新形態。1 環境で複数リクエストを並行処理し、scale to zero する。ただし **現時点で Node.js（`nodejs24.x`）のみ**、提供リージョンは 5 つ（東京を含む）で、Go サーバーには使えない。対応言語が広がったら再検討する。
-- **AWS Free Tier の変更**: 新規アカウントは「最大 $200 のクレジット（6 か月）」の Free plan / Paid plan 方式になり、30 以上のサービスの「Always free」枠は両プランで継続する。SQS の料金ページは「全顧客」に月 100 万リクエスト無料と明記している。
-  - 要検証: Lambda の無料枠（上表）が Always free に含まれるか。Lambda の料金ページは無料枠を記載しているが、Free Tier ページの一覧（動的表示）からは確認できなかった。
-
-### SQS
-
-| 項目 | 値 |
-| --- | --- |
-| 遅延（delay queue / メッセージタイマー） | 0 秒〜 **最大 15 分** |
-| メッセージサイズ | 最大 **1 MiB**（1,048,576 バイト）。1 リクエストに 1〜10 メッセージ、合計 1 MiB まで |
-| メッセージ保持期間 | 最大 14 日 |
-| 可視性タイムアウト | 既定 30 秒、最大 12 時間 |
-| 料金 | 全顧客に月 100 万リクエストの無料枠。ペイロード 64 KB ごとに 1 リクエストとして課金 |
-
-### EventBridge Scheduler
-
-- 無料枠は月 1,400 万回の呼び出し、超過分は $1.00 / 100 万回。
+- **AWS Free Tier**: 新規アカウントは「最大 $200 のクレジット（6 か月）」の Free plan / Paid plan 方式になり、30 以上のサービスの「Always free」枠は両プランで継続する。
 
 ### Aurora Serverless v2（0 ACU / 自動一時停止）
 
@@ -181,21 +150,11 @@
 - 新規アカウントの Free plan では Aurora PostgreSQL serverless を最大 4 ACU・1 GiB ストレージで使える（クレジット消費）。
 
 出典（2026-10-16 確認）:
-[AWS Lambda pricing](https://aws.amazon.com/lambda/pricing/) /
-[Lambda quotas](https://docs.aws.amazon.com/lambda/latest/dg/gettingstarted-limits.html) /
-[Lambda Web Functions](https://docs.aws.amazon.com/lambda/latest/dg/web-functions.html) /
-[Lambda Web Function runtimes](https://docs.aws.amazon.com/lambda/latest/dg/web-functions-runtimes.html) /
-[What's New: Lambda Web Functions](https://aws.amazon.com/about-aws/whats-new/2026/10/aws-lambda-web-functions/) /
-[AWS Compute Blog: Lambda Web Adapter と response streaming](https://aws.amazon.com/blogs/compute/using-response-streaming-with-aws-lambda-web-adapter-to-optimize-performance/) /
 [AWS Free Tier](https://aws.amazon.com/free/) /
-[SQS delay queues](https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-delay-queues.html) /
-[SQS message quotas](https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/quotas-messages.html) /
-[SQS pricing](https://aws.amazon.com/sqs/pricing/) /
-[EventBridge pricing](https://aws.amazon.com/eventbridge/pricing/) /
 [Aurora Serverless v2 auto-pause](https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/aurora-serverless-v2-auto-pause.html) /
 [Aurora pricing](https://aws.amazon.com/rds/aurora/pricing/)
 
-要検証（本調査で未確認）: S3 / CloudFront の料金・無料枠、Lambda Function URL の追加料金の有無、Lambda Web Functions の無料枠の有無。
+要検証（本調査で未確認）: S3 / CloudFront の料金・無料枠。
 
 ## 外部サーバーレス DB
 
@@ -267,25 +226,24 @@
 | Self-hosted（SQLite、または 1 プロセスの `role = all`） | `hub` | なし | なし |
 | Self-hosted（PostgreSQL で複数プロセス・レプリカ） | `postgres`（`database = postgres` のときだけ）。`kv = valkey` で Valkey を動かしているなら `valkey` も可 | `database_url` がトランザクションモードのプーラー（PgBouncer の transaction pooling、Neon のプール接続、Supabase の 6543 番）を通るときは、直接の接続先を `stream_postgres_url` に | なし（`LISTEN` の接続が 1 プロセスに 1 本） |
 | Google Cloud（Cloud Run） | `pubsub` | `stream_pubsub_topic`（`projects/<p>/topics/<t>`）、`stream_pubsub_subscription_prefix` | なし（無料枠の中なら $0） |
-| AWS（Lambda） | `sns` | `stream_sns_topic_arn`、`stream_sns_queue_prefix`。認証とリージョン以外の設定は AWS SDK の既定の連鎖（実行ロール） | なし（無料枠の中なら $0） |
+| AWS（ECS Fargate） | `sns` | `stream_sns_topic_arn`、`stream_sns_queue_prefix`。認証とリージョン以外の設定は AWS SDK の既定の連鎖（タスクロール） | なし（無料枠の中なら $0） |
 
 - **トピック** は各ブローカーとも 1 インスタンスに 1 つで、デプロイのテンプレートが作る（標準トピック）。プロセスごとのキュー・subscription はサーバーが作り、消す。
   消し損ねた分は、定期ジョブ `stream.sweep`（15 分ごと）が、KV の生存の印のないプロセスのものを消す。`stream_sns_queue_prefix` と `stream_pubsub_subscription_prefix` は、そのインスタンスだけが使う値にする
 - **Neon**: アイドルの `LISTEN` の接続はコンピュートを起こし続けないとみなしている（Neon の文書は明言せず、未計測）。scale to zero でリスナーは切られる。ストリームのないプロセスは listen しないので、切られるのはストリームがないときだけ
-- 未決（ADR-0050 の Open Questions）: Lambda でストリームを既定で有効にするか（下記の実行時間）と、`database = postgres` で `stream` の既定を `postgres` にするか。決まるまでは、どのターゲットも `stream` を明示的に設定する
+- 未決（ADR-0050 の Open Questions）: `database = postgres` で `stream` の既定を `postgres` にするか。決まるまでは、どのターゲットも `stream` を明示的に設定する
 
 ### コスト（2026-10-19 確認）
 
 - SNS（us-east-1）: API リクエストは月 100 万まで無料、以降 $0.50 / 100 万（64 KB ごとに 1 リクエスト）。SQS への配信は課金されない。知らせ 1 件は SNS 1 リクエスト
 - SQS（us-east-1）: 月 100 万リクエスト無料、以降 $0.40 / 100 万。空の受信も 1 リクエストで、listen 中のプロセス 1 つで約 129,600 回 / 月（20 秒のロングポーリング）。常時開いたストリーム約 7 本分までが無料枠
-- Lambda: SSE の接続 1 本が実行環境 1 つを最大 15 分（関数のタイムアウト）占有する。ブローカーとは別に、実行時間がストリームの本数 × 時間で増える（512 MB で 1 本を 1 か月開き続けると約 131 万 GB 秒で、無料枠 40 万 GB 秒を超える）
 - Pub/Sub: スループット $40 / TiB、毎月 10 GiB まで無料（リクエストごとに最低 1 KB で数える）。subscription 3 つなら知らせ約 268 万件 / 月までが無料枠で、以降 100 万件ごとに約 $0.15。保持を 1 日以下にするので保存料はかからない。subscription の作成・削除は無料
 - Cloud Run（リクエストベース課金）: CPU はリクエストの処理中だけ割り当てられる。SSE のストリームはリクエストなので、「ストリームがある間だけ受ける」形になる。subscription はインスタンスにつき 1 つ
 - Valkey: ElastiCache Serverless for Valkey は料金ページでは最小 100 MB の課金で約 $6.13 / 月（$0.084 / GB 時間、us-east-1）、ただしガイドの「How ElastiCache works」は最小 1 GB（約 $61 / 月）と書き、AWS の文書が食い違う。Memorystore for Valkey は最小の shared-core-nano でも約 $23 / 月（$0.0318 / 時間）。どちらも既定ではなく、DB の負荷に応じて選ぶ
 
 ### 権限
 
-- AWS（実行ロール）:
+- AWS（タスクロール）:
   - トピックに `sns:Publish`、`sns:Subscribe`（条件 `sns:Protocol` = `sqs`、`sns:Endpoint` をキューの ARN の接頭辞 `arn:aws:sqs:<region>:<account>:<stream_sns_queue_prefix>-*` に限る）、`sns:Unsubscribe`、`sns:ListSubscriptionsByTopic`（sweep）
   - キュー `arn:aws:sqs:<region>:<account>:<stream_sns_queue_prefix>-*` に `sqs:CreateQueue`、`sqs:TagQueue`、`sqs:SetQueueAttributes`、`sqs:GetQueueAttributes`、`sqs:ReceiveMessage`、`sqs:DeleteMessage`、`sqs:DeleteQueue`
   - `*` に `sqs:ListQueues`（sweep）
@@ -299,7 +257,6 @@
 [SQS pricing](https://aws.amazon.com/sqs/pricing/) /
 [SNS → SQS subscription](https://docs.aws.amazon.com/sns/latest/dg/subscribe-sqs-queue-to-sns-topic.html) /
 [SNS API permissions](https://docs.aws.amazon.com/sns/latest/dg/sns-access-policy-language-api-permissions-reference.html) /
-[Lambda pricing](https://aws.amazon.com/lambda/pricing/) /
 [Pub/Sub pricing](https://cloud.google.com/pubsub/pricing) /
 [Pub/Sub access control](https://docs.cloud.google.com/pubsub/docs/access-control) /
 [Pub/Sub subscription properties](https://docs.cloud.google.com/pubsub/docs/subscription-properties) /
@@ -336,19 +293,17 @@
 - 外部アプリケーションロードバランサの `X-Forwarded-For` は `[<クライアントが送った値>,]<クライアント IP>,<ロードバランサの IP>` と文書にある。一方、直接のリクエストに Cloud Run が何を足すか、コンテナから見た接続元が何かは、読んだ文書のどこにもなく、コンテナの契約のページにもない。`169.254.0.0/16` は仮定である。
   要検証: 最初のデプロイでアクセスログの接続元を確認し、ずれていれば表を直す。
 - AWS ALB の `append` モードはクライアント IP を `X-Forwarded-For` の右端に追記する。`preserve` は追記しない（クライアントの値がそのまま届く）ので使わない。
-- 要検証: Lambda Web Adapter 経由（Function URL / ALB → Lambda）では接続元がアダプタの `127.0.0.1` になる。`trusted_proxies = 127.0.0.1` で
-  `X-Forwarded-For` を採れるか、ヘッダが前段で追記されたものかを、Lambda のデプロイテンプレートの作業で確認する。
 
 ## CDN を経由しないリクエストの拒否
 
-Cloud Run の ingress は、Cloudflare のようにインターネットから来る CDN の通信を受けるなら `run.app` を閉じられない。Lambda Function URL も同じで、オリジンアクセス制御は連合の相手が POST の本文に署名できないので使えない。
+Cloud Run の ingress は、Cloudflare のようにインターネットから来る CDN の通信を受けるなら `run.app` を閉じられない。
 放っておくと WAF とキャッシュを迂回でき、CDN のアドレスを `trusted_proxies` に入れていれば、CDN のサーバーレス環境（自分の Cloudflare Worker など）から呼ぶ第三者がレート制限の見るクライアント IP を選べる。
 
 設定 `origin_secret`（値）、`origin_secret_header`（ヘッダ名）、`origin_secret_previous`（ローテーション中のもう 1 つの値）で閉じる（ADR-0019 §5）。
 
 - CDN がすべてのリクエストに静的なヘッダを設定する（Cloudflare は全プランの Transform Rules、CloudFront はオリジンのカスタムヘッダ、Google Cloud のロードバランサはカスタムリクエストヘッダ）。ヘッダを足せない経路（Cloud Run のドメインマッピングなど）には効かない。
 - 検査は `internal/platform/origincheck.go` のミドルウェアで、通常の `App.handler` と保守モードの `MaintenanceApp.Handler` の両方の最も外側に置く。リクエスト ID・アクセスログ・`traceparent`・クライアント IP より先に動く。公開しない `metrics_listen` は検査しない。
-- 除外するのは CDN を通らない呼び出しだけで、メソッドまで絞る: `/healthz`・`/readyz`・`/api/v1/instance/health` の `GET` / `HEAD`、`/_internal/` の `POST`（OIDC で認証する）、`queue = sqs` の `queue_sqs_events_path` への SQS イベント（保守モードはキューの設定を読まないので、パスを問わず SQS イベントだけ）。Web クライアントはルートのない `GET` に答えるので、`GET /_internal/...` を除外すると HTML が CDN を迂回して読める。`POST` に絞るのはこのため。
+- 除外するのは CDN を通らない呼び出しだけで、メソッドまで絞る: `/healthz`・`/readyz`・`/api/v1/instance/health` の `GET` / `HEAD`、`/_internal/` の `POST`（OIDC で認証する）。Web クライアントはルートのない `GET` に答えるので、`GET /_internal/...` を除外すると HTML が CDN を迂回して読める。`POST` に絞るのはこのため。
 - 秘密を示していないリクエストは、除外の対象でも信頼するプロキシの言い分を持たない。`X-Forwarded-For` / `Forwarded`・`traceparent`・`X-Request-Id` を消してから進める。
 - 拒否は `403` の問題詳細で、文言は他の `403` と同じ。ヘッダ名は応答にもログにもトレースにも出さない。DB を読まない（ロケールは `Accept-Language` だけで決める）。span は作らず、カウンタ `my.http.origin_refused` とアクセスログ 1 行だけを残す。ログの量はルートのない 404 と変わらない。
 - ヘッダは検査のあと必ず消すので、ハンドラ・ログ・トレース・ログに残るエラーレポートには届かない。
@@ -361,7 +316,7 @@ Cloud Run の ingress は、Cloudflare のようにインターネットから�
 
 | 観点 | 計測方法 |
 | --- | --- |
-| 1 投稿あたりの配送リクエスト数 | フォロワーのドメイン分布 × shared inbox 利用率（Cloud Tasks / SQS のオペレーション数に直結） |
+| 1 投稿あたりの配送リクエスト数 | フォロワーのドメイン分布 × shared inbox 利用率（Cloud Tasks のオペレーション数に直結） |
 | 受信アクティビティ量 | 連合タイムラインの流量（リレー非接続時） |
 | DB のアイドル時間 | 5 分以上アクセスが途切れる時間の合計（Neon の scale to zero、Aurora の自動一時停止が効くか） |
 | DB 読み書き行数 | タイムライン 1 回取得あたりの 読み取り行数・コンピュート時間（Neon の CU-hours） |

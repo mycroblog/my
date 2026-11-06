@@ -130,9 +130,8 @@ If you must guarantee who speaks, for example for moderated public events, use `
 
 - **Two streams per user**: during a call a participant holds the room's own event stream (Server-Sent Events) in addition to the stream the app always opens. Size connection limits for two long-lived requests per user in a call.
 - **Several processes**: use a shared stream adapter (`stream` set to `postgres`, `valkey`, `sns` or `pubsub`), as for the rest of the app. With `stream = hub` and a `role` other than `all`, the server warns at start that voice chat will not work across processes.
-- **AWS Lambda**: one stream occupies an execution environment for up to 15 minutes, then the client reconnects. Run time grows with participants times call length, and each participant in a call counts twice.
 - **Cloud Run**: a stream is a request, and CPU is allocated while it is open. When the request timeout cuts it, the client reconnects. Set the timeout as long as you can.
-- **Media servers need a VM**: LiveKit and Sora take audio over UDP in a long-running process. Cloud Run accepts only HTTP requests, and Lambda has no listening sockets, so neither can host them. Run them (and coturn) on a VM, or use LiveKit Cloud, Sora Cloud or Cloudflare TURN.
+- **Media servers need a VM**: LiveKit and Sora take audio over UDP in a long-running process. Cloud Run accepts only HTTP requests, so it cannot host them. Run them (and coturn) on a VM, or use LiveKit Cloud, Sora Cloud or Cloudflare TURN.
 
 ## LiveKit
 
@@ -192,7 +191,7 @@ Sora calls two endpoints of this server:
 | `/voice/webhooks/sora/auth` | The auth webhook. Sora calls it before every connection. The server allows it only for a participant who is in the room, not removed, allowed to speak if connecting as a speaker, and within the size limit, and it tells Sora to accept audio only. |
 | `/voice/webhooks/sora/events` | The event and session webhooks (connections created and destroyed, sessions ended). |
 
-**The auth webhook must answer in time.** Sora waits 5 seconds when self-hosted and 10 seconds on Sora Cloud. The server answers from its own data without calling anything else, but a cold start of the instance (Cloud Run scaling from zero, a cold Lambda function) can exceed that, and the connection is then refused. Keep an instance warm while voice chat is in use.
+**The auth webhook must answer in time.** Sora waits 5 seconds when self-hosted and 10 seconds on Sora Cloud. The server answers from its own data without calling anything else, but a cold start of the instance (Cloud Run scaling from zero) can exceed that, and the connection is then refused. Keep an instance warm while voice chat is in use.
 
 When self-hosting, set `default_duplicate_client_id = evict` in `sora.conf`. A listener who becomes a speaker reconnects under the same identity (Sora cannot change a connection's role), and `evict` makes Sora drop the old connection when the new one arrives.
 With the default `allow`, the server cuts the old connection itself once it learns of the new one, so the two overlap for a moment.
@@ -207,7 +206,7 @@ With the default `allow`, the server cuts the old connection itself once it lear
 | `voice_sora_webhook_username`, `voice_sora_webhook_password` | The Basic credentials of the webhooks. Required. |
 
 **Sora's own HTTP API has no authentication** and is meant to listen on the loopback address only. Never expose it. Put a reverse proxy that requires a credential in front of it, and give that credential to this server through the two header settings.
-Configure the webhook URLs in Sora with the same Basic credentials. The server accepts only an `https:` API URL (`http:` only for localhost) and does not start without the webhook credentials. mTLS is not supported, because Lambda function URLs and Cloud Run end TLS before the server.
+Configure the webhook URLs in Sora with the same Basic credentials. The server accepts only an `https:` API URL (`http:` only for localhost) and does not start without the webhook credentials. mTLS is not supported, because Cloud Run and the load balancer in front of ECS end TLS before the server.
 
 ### Sora Cloud
 

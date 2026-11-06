@@ -82,7 +82,7 @@ Fields used as labels take values from a finite set only; `url.path`, `request_i
 
 With `metrics_exporter = emf`, these two lines are the EMF lines themselves. The `http request` line carries the value of `http.server.request.duration`, and the `job` line carries the values of `my.job.duration` and `my.job.wait` (keys named after the metrics),
 plus the `_aws` directive, `service.name`, `service.version` and `my.role`. These three metrics are not written on any other line. Fields you choose in `metrics_emf_dimensions` are written as strings, as EMF requires (for example the dimension `http.response.status_code` is `"200"`).
-Logs go to standard error and the other EMF lines go to standard output. Lambda sends both to CloudWatch Logs, so metrics are extracted from both.
+Logs go to standard error and the other EMF lines go to standard output. The `awslogs` log driver of ECS sends both to CloudWatch Logs, so metrics are extracted from both.
 
 ## Docker Compose files
 
@@ -156,7 +156,6 @@ Where to run it:
 - **Kubernetes**: pull it from `ghcr.io` as it is.
 - **Cloud Run**: use the `ghcr.io` image directly. A deployment resolves the tag to a digest.
 - **AWS (ECS, EKS)**: copy the image to Amazon ECR, or use an ECR pull through cache, which needs ghcr.io credentials.
-- **AWS Lambda**: the image does not run as it is. Lambda needs a single-architecture image in ECR with a runtime interface client.
 - **A smaller image**: `docker build --build-arg VERSION=<name> --build-arg GO_TAGS=... -t my:<name> .` in a checkout builds one with fewer adapters ([build tags](../reference/build-tags.md)). It is your own build, so it is not covered by the checks below.
 
 ### Verify an image
@@ -215,7 +214,7 @@ The setting `metrics_exporter` (default `none`) exports service metrics. Its rel
 | `none` | Nothing is exported. Instrumentation costs almost nothing | Cloud Run (use the platform's metrics and log-based metrics instead) |
 | `prometheus` | `GET /metrics` on `metrics_listen` (default `127.0.0.1:9464`). It is a listener separate from the public `listen`, with no authentication, and runs for every `role` | Self-hosted (scraped by a Prometheus-compatible server or KEDA) |
 | `otlp` | Sent to an OpenTelemetry Collector over OTLP/HTTP. The destination comes from the standard OTel environment variables such as `OTEL_EXPORTER_OTLP_ENDPOINT` | Setups where you can run a collector |
-| `emf` | CloudWatch Embedded Metric Format JSON lines. Request and job metrics ride on the closing log lines above; the others are written to standard output, one line per label set, when a request or job finishes | AWS Lambda |
+| `emf` | CloudWatch Embedded Metric Format JSON lines. Request and job metrics ride on the closing log lines above; the others are written to standard output, one line per label set, when a request or job finishes | AWS ECS |
 
 The metrics are listed below. In Prometheus, `.` in a name becomes `_` and a unit suffix (`_seconds`, and `_total` for a counter) is added.
 
@@ -298,7 +297,7 @@ Do not use them to trigger scaling; use them for alerts and for estimating the i
 
 `GOMEMLIMIT` is a Go runtime environment variable that the operator sets; the application does not choose it.
 Without it, Go runs with its default (no limit), and the heap does not collect eagerly as it approaches the container's memory limit.
-On setups with a container memory limit (Cloud Run, Lambda, ECS, Kubernetes), set it to about 90% of that limit (for example `GOMEMLIMIT=460MiB` for a 512 MiB container).
+On setups with a container memory limit (Cloud Run, ECS, Kubernetes), set it to about 90% of that limit (for example `GOMEMLIMIT=460MiB` for a 512 MiB container).
 Do not set `GOMAXPROCS`: Go's default follows the container's CPU limit.
 
 ## Traces
@@ -326,7 +325,7 @@ A failed span has `error.type` (a finite name such as `timeout`, or a status cod
 | Default, small self-hosted | `traces_exporter = none` | No spans are exported. Follow `request_id` and `job_id` in the logs. If a trusted proxy supplies a `traceparent`, its `trace_id` and `span_id` are added to the logs |
 | Self-hosted (Jaeger, Tempo, an OpenTelemetry Collector and so on) | `traces_exporter = otlp`, `traces_flush = batch` | Sent over OTLP/HTTP to the receiver at `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` (or `OTEL_EXPORTER_OTLP_ENDPOINT`, default `http://localhost:4318`). Authentication headers go in `OTEL_EXPORTER_OTLP_HEADERS`. To reliably keep errors and slow traces, use the Collector's tail sampling |
 | Google Cloud (Cloud Run) | `none`, or `otlp` with `unit` to enable traces | See below |
-| AWS (Lambda) | `none`, or `otlp` with `unit` to enable traces | See below |
+| AWS (ECS) | `none`, or `otlp` with `batch` to enable traces | See below |
 
 ### Cloud Run
 
@@ -341,14 +340,13 @@ To send application spans to Cloud Trace, run an **OpenTelemetry Collector as a 
 - At the end of each recorded request or job, `unit` flushes the spans so far to the sidecar before returning. So that the sidecar can send them while no CPU is allocated, use instance-based billing for a setup with traces enabled.
 - The cost is the sidecar's resources and the span volume (Cloud Trace pricing). Choose the ratio with `traces_sample_ratio`.
 
-### AWS Lambda
+### AWS ECS
 
-To send to X-Ray, attach the **AWS Distro for OpenTelemetry (ADOT) Collector Lambda layer** to the function. The server has no SigV4 signing; the layer's Collector signs and sends to the X-Ray OTLP endpoint (`https://xray.<region>.amazonaws.com/v1/traces`).
+To send to X-Ray, run the **AWS Distro for OpenTelemetry (ADOT) Collector** as a sidecar container in the task. The server has no SigV4 signing; the Collector signs and sends to the X-Ray OTLP endpoint (`https://xray.<region>.amazonaws.com/v1/traces`).
 
-- Function: `MY_TRACES_EXPORTER=otlp`, `MY_TRACES_FLUSH=unit`, `OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318`. In the layer's Collector configuration (`OPENTELEMETRY_COLLECTOR_CONFIG_URI`), receive with an `otlp` receiver on `localhost:4318` and send to X-Ray with an `otlphttp` exporter that uses the `sigv4auth` extension.
-- Grant the execution role permission to write to X-Ray. Lambda's own X-Ray setting (`Active` / `PassThrough`) decides only Lambda's own segment and does not affect this server's spans.
-- With `unit`, the spans of a recorded invocation are flushed to the layer at its end, before the environment freezes.
-- The cost is the layer's share of the start-up time, and the number of traces X-Ray records (the first 100,000 per month are free).
+- Server: `MY_TRACES_EXPORTER=otlp`, `OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318`. In the Collector's configuration, receive with an `otlp` receiver on `localhost:4318` and send to X-Ray with an `otlphttp` exporter that uses the `sigv4auth` extension.
+- Grant the task role permission to write to X-Ray.
+- The cost is the sidecar's share of the task's resources, and the number of traces X-Ray records (the first 100,000 per month are free).
 
 ## Stop the server
 
@@ -373,13 +371,13 @@ The admin jobs page (`/admin/jobs`, permission `manage_jobs`) lists the queue's 
 It also shows the count per type and state, how long each type keeps a job waiting, when the oldest waiting job is scheduled, each job's last error, key and payload, and the history of unsuccessful attempts (result, error, worker, and start and end time of each attempt).
 The admin API is `GET /api/v1/admin/queue`, `GET /api/v1/admin/jobs?state=&type=`, `GET /api/v1/admin/jobs/{id}/attempts` and `POST /api/v1/admin/jobs/{id}/retry`.
 
-- Waiting, running and retry-waiting jobs can be listed only for the queues whose jobs the server holds: `queue = db`, `queue = cloudtasks` and `queue = sqs` (the jobs are in the database too), and `queue = inline`. Failed jobs and the attempt history are in the application database for every queue, so they can always be listed.
+- Waiting, running and retry-waiting jobs can be listed only for the queues whose jobs the server holds: `queue = db`, `queue = cloudtasks` (the jobs are in the database too), and `queue = inline`. Failed jobs and the attempt history are in the application database for every queue, so they can always be listed.
 - The attempt history keeps only unsuccessful attempts (retries and the attempt that finally failed). Follow a successful run through the structured `job` log line (which carries `job_id`).
   The history is removed by the hourly cleanup once `job_attempt_retention` (default 30 days; see the [setting](../reference/configuration.md#job_attempt_retention)) has passed since the attempt ended.
   The history holds no payload or handler log, and an error message is cut to its first 2,000 bytes. Job handlers keep email addresses, IP addresses, tokens and post bodies out of error messages.
   For a view limited to email job types, see [Sending email](email.md).
 
-A job whose handler decided it failed for good, and a job that used up its retries, becomes a dead job in the database queue (`queue = db`, `queue = cloudtasks` and `queue = sqs`).
+A job whose handler decided it failed for good, and a job that used up its retries, becomes a dead job in the database queue (`queue = db` and `queue = cloudtasks`).
 `my job` lists, retries and deletes them. The "Failed" state of the jobs page and the admin API can also list and retry them.
 
 ```sh
@@ -401,7 +399,7 @@ By default every worker runs every job type, in the order the jobs fell due, one
 - [`worker_job_types`](../reference/configuration.md#worker_job_types): this process runs only these types.
 - [`worker_job_types_except`](../reference/configuration.md#worker_job_types_except): this process runs every type but these.
 
-Each is a comma-separated list of [job types](../reference/jobs.md) (`my job types` prints them; `my config check` refuses a name that matches none), written as a name (`federation.deliver`) or a prefix (`federation.*`). Set them per process, for example with `MY_WORKER_JOB_TYPES`. You cannot set both on one process. A name or prefix that matches no job type stops the start, which also catches a type that a release renamed, or a type that exists only with a setting you have not set. They do not work with `role = web`, or with `queue = sqs`, `cloudtasks`, or `inline`, where the start fails too: there a signal names the job to run, so a process cannot choose its jobs.
+Each is a comma-separated list of [job types](../reference/jobs.md) (`my job types` prints them; `my config check` refuses a name that matches none), written as a name (`federation.deliver`) or a prefix (`federation.*`). Set them per process, for example with `MY_WORKER_JOB_TYPES`. You cannot set both on one process. A name or prefix that matches no job type stops the start, which also catches a type that a release renamed, or a type that exists only with a setting you have not set. They do not work with `role = web`, or with `queue = cloudtasks` or `inline`, where the start fails too: there a signal names the job to run, so a process cannot choose its jobs.
 
 At the start, a process with one of the settings logs the types it skips. It cannot see the settings of the other processes, so **make sure that some process runs every type**, or those jobs wait forever. Periodic cleanup and email are job types too. Every process still starts the periodic jobs; which process runs them depends on these settings.
 
@@ -448,7 +446,7 @@ The admin jobs page shows the same wait per type. A worker with one of the setti
 
 ### Running several jobs at once
 
-[`worker_job_concurrency`](../reference/configuration.md#worker_job_concurrency) sets how many jobs a process runs at once, from 1 to 128. It works with `queue = db`; with Cloud Tasks and SQS the platform decides it. The default is one job at a time, and a setting of 1 behaves the same.
+[`worker_job_concurrency`](../reference/configuration.md#worker_job_concurrency) sets how many jobs a process runs at once, from 1 to 128. It works with `queue = db`; with Cloud Tasks the platform decides it. The default is one job at a time, and a setting of 1 behaves the same.
 
 Raise it for jobs that spend their time waiting on other servers, such as `federation.deliver`. Those use little memory and few database connections per job, so one process does the work of many: in a local test where a job only waited 200 ms for a response, one process with 32 slots matched 32 processes with one slot each, using a small part of the memory. Those jobs did nothing else, so measure your own instance. Pair it with `worker_job_types`, and give each kind of job a process with its own number.
 
@@ -510,68 +508,22 @@ With `queue = cloudtasks` the jobs stay in the database (`database = postgres`),
 - The server's own service account needs `roles/cloudtasks.enqueuer` on the queue and `roles/iam.serviceAccountUser` on `queue_cloudtasks_service_account`.
   It authenticates with Application Default Credentials.
 
-### Amazon SQS
-
-With `queue = sqs` the jobs stay in the database (`database = postgres`), and an Amazon SQS standard queue only carries a wake-up signal for each of them:
-
-- For every job it stores, retries, or puts back, the server sends a message to `queue_sqs_queue_url` once the transaction commits, with the job's ID as its body
-  and a delay until the job is due. SQS delays a message by at most 15 minutes, so a job due later is signaled at 15 minutes, and again when that message arrives.
-  Several signals at once go in batches of up to 10 messages.
-- Use a standard queue, not a FIFO queue. The server's credentials, from the AWS SDK's default chain (the task or execution role, the environment, the shared files),
-  need `sqs:SendMessage` on it. The client uses the region in the queue URL.
-- No process polls the table or the SQS queue, and no process runs the periodic jobs by itself. The processes with `role = all` or `worker` run on
-  AWS Lambda behind the [Lambda Web Adapter](https://github.com/awslabs/aws-lambda-web-adapter), and an SQS event source mapping on the queue invokes them.
-  The adapter passes each SQS event through as `POST {AWS_LWA_PASS_THROUGH_PATH}`; set `queue_sqs_events_path` (default `/events`) to the same path.
-  Use the adapter's default, buffered invoke mode, not response streaming.
-- The path accepts only the events that the adapter passes through: the adapter sets the header `x-amzn-request-context` of every request it forwards,
-  to `null` for an event and to the request context for a Function URL request, replacing a header of that name that a client sent.
-  Any other request to the path is a `404`.
-- The records of an event run one after another: a record whose body is a job ID runs that job, as a Cloud Tasks delivery does.
-  The answer lists in `batchItemFailures` the records whose result could not be recorded (the database could not be reached), for SQS to deliver them again;
-  a job that fails is retried by the server at its next attempt time, not by SQS. Turn on `ReportBatchItemFailures` in the event source mapping:
-  without it, the whole batch counts as done whatever the answer says.
-
-  ```sh
-  aws lambda create-event-source-mapping --function-name my-worker \
-    --event-source-arn arn:aws:sqs:ap-northeast-1:123456789012:my-jobs \
-    --batch-size 10 --function-response-types ReportBatchItemFailures
-  ```
-
-- A record starts only while at least the 5-minute lease of a job run and 30 seconds remain before the invocation's deadline, which the adapter
-  sends in `x-amzn-lambda-context` (or, without it, `queue_sqs_events_budget` after the event arrives, default 10 minutes; set it to the function's timeout).
-  The records left are returned in `batchItemFailures`. Set the function's timeout above 5.5 minutes, 10 to 15 minutes to run several records of a batch,
-  and the queue's visibility timeout to at least the function's timeout.
-- Create an EventBridge Scheduler schedule `rate(1 minute)` whose target sends the tick message `{"type":"tick"}` to the same queue
-  (the templated target `SendMessage`, whose `Input` is the message body). Each tick enqueues the periodic jobs whose period came, once for the whole instance
-  (the periods are claimed in the KV, so `kv` must be `db` or `valkey`), and signals again the jobs that have been due for over 2 minutes without running,
-  which recovers a lost signal. Several ticks in one batch tick once. A message that is neither a job ID nor a tick is dropped.
-
-  ```sh
-  aws scheduler create-schedule --name my-tick --schedule-expression 'rate(1 minute)' \
-    --flexible-time-window Mode=OFF \
-    --target '{"Arn":"arn:aws:sqs:ap-northeast-1:123456789012:my-jobs","RoleArn":"arn:aws:iam::123456789012:role/my-scheduler","Input":"{\"type\":\"tick\"}"}'
-  ```
-
-  The schedule's role needs `sqs:SendMessage` on the queue; the function's execution role needs `sqs:ReceiveMessage`, `sqs:DeleteMessage`, and
-  `sqs:GetQueueAttributes` on it for the event source mapping.
-
 ### Routing job types to their own queues
 
-With `queue = sqs` or `queue = cloudtasks`, a worker cannot choose the jobs it runs: `worker_job_types` works only with `queue = db`, because the platform decides who receives a signal.
+With `queue = cloudtasks`, a worker cannot choose the jobs it runs: `worker_job_types` works only with `queue = db`, because the platform decides who receives a signal.
 To give some job types their own capacity, send their signals to their own queue, and set the capacity of that queue on the platform.
 Nothing changes unless you set a route.
 
-- [`queue_sqs_routes`](../reference/configuration.md#queue_sqs_routes): `federation.*=https://sqs.ap-northeast-1.amazonaws.com/123456789012/my-federation,notification.email=https://sqs.ap-northeast-1.amazonaws.com/123456789012/my-mail`
-- [`queue_cloudtasks_routes`](../reference/configuration.md#queue_cloudtasks_routes): `federation.*=projects/p/locations/l/queues/my-federation@https://federation-worker.example.com,notification.email=projects/p/locations/l/queues/my-mail`.
-  A route without `@` and a URL calls `queue_cloudtasks_url`.
+[`queue_cloudtasks_routes`](../reference/configuration.md#queue_cloudtasks_routes): `federation.*=projects/p/locations/l/queues/my-federation@https://federation-worker.example.com,notification.email=projects/p/locations/l/queues/my-mail`.
+A route without `@` and a URL calls `queue_cloudtasks_url`.
 
 The left side is a job type from the [job reference](../reference/jobs.md) or a prefix. A name wins over a prefix, and a longer prefix over a shorter one.
-Types that match no route, including those a later release adds, use the default queue (`queue_sqs_queue_url` or `queue_cloudtasks_queue`), so they keep running.
+Types that match no route, including those a later release adds, use the default queue (`queue_cloudtasks_queue`), so they keep running.
 `my config check` checks the form of the routes; a left side that matches no job type stops `my serve` at startup.
 
 **Give every process the same routes, `role = web` included.** A signal is sent by the process that stores the job: a web process for most of what users do, such as the
 first job of a post, and a worker for the jobs that a job stores, retries, the next job of an ordering key, and the sweep of lost signals.
-Where each role has its own settings, as Cloud Run services and Lambda functions do, pass the same value to all of them:
+Where each role has its own settings, as Cloud Run services do, pass the same value to all of them:
 
 ```sh
 routes='federation.*=projects/p/locations/l/queues/my-federation@https://federation-worker.example.com'
@@ -584,22 +536,19 @@ A process with other routes raises no error and loses no job: its signals go to 
 `my.queue.oldest_ready_age` does not show this, because those jobs do not wait. To compare the processes, each logs at startup a line with its `routes` and their `routes_hash`:
 the hash has to be the same everywhere. To see where signals go, read the platform's own metrics of each queue.
 
-**Permissions.** The credentials of every process need to send to every queue of the routes: `sqs:SendMessage`, or `roles/cloudtasks.enqueuer`.
+**Permissions.** The credentials of every process need to send to every queue of the routes: `roles/cloudtasks.enqueuer`.
 A send that fails is logged and not tried on another queue, so that a type you limit does not overflow to the others. Those jobs start late, once the sweep sends their signals again after 2 minutes.
 
 **Capacity.** Any receiver runs any job, so you choose how far to separate them:
 
 | Platform | One receiver | Separate receivers |
 | --- | --- | --- |
-| AWS | One function with an event source mapping per queue, each with its own maximum concurrency. Keep the function's reserved concurrency at or above their sum | One function per queue, each with its own memory, timeout and reserved concurrency |
 | Google Cloud | One service. Each queue has its own `maxConcurrentDispatches` and `maxDispatchesPerSecond`; the service's instance limit is shared | A service per queue, named by the URL in the route, each with its own instance limit and concurrency. Each sets `queue_cloudtasks_url` to its own URL |
 
-A queue needs the same setup as the default one: on AWS the event source mapping with `ReportBatchItemFailures` and the visibility timeout, on Google Cloud the role on the queue.
+A queue needs the same setup as the default one: the role on the queue.
 Only the default queue needs the tick.
-On SQS the tick shares the default queue with the jobs left there: if those can pile up, route them away or give the tick a queue of its own, or the periodic jobs and the sweep are delayed with them.
 
 **What a queue adds.** Each queue is one more thing to create, watch, and pay for, and how much that matters depends on the size of your instance.
-An SQS event source mapping polls its queue even while the queue is empty, and those requests count towards your SQS usage whatever the traffic. Check your own bill after adding one.
 Split what you have seen waiting in `my.job.wait`, not everything.
 
 **The sweep.** Every minute the sweep looks for jobs that have been due for over 2 minutes without running, up to 500 per route and 500 for the default queue, and signals them again.

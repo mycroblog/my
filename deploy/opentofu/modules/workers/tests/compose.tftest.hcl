@@ -49,12 +49,6 @@ mock_provider "aws" {
       arn = "arn:aws:logs:ap-northeast-1:111122223333:log-group:/ecs/my"
     }
   }
-  mock_resource "aws_sqs_queue" {
-    defaults = {
-      arn = "arn:aws:sqs:ap-northeast-1:111122223333:q"
-      url = "https://sqs.ap-northeast-1.amazonaws.com/111122223333/q"
-    }
-  }
 }
 
 run "cloud_tasks_and_the_app_agree_on_names" {
@@ -90,10 +84,5 @@ run "the_queue_in_the_database_and_ecs_agree" {
   assert {
     condition     = output.ecs_worker_env["MY_WORKER_JOB_TYPES"] == "federation.deliver,federation.fanout" && output.ecs_env["MY_WORKER_JOB_TYPES_EXCEPT"] == "federation.deliver,federation.fanout"
     error_message = "the worker and the default must split by the types"
-  }
-
-  assert {
-    condition     = output.lambda_worker == "fn-worker-delivery"
-    error_message = "Lambda follows the same value"
   }
 }

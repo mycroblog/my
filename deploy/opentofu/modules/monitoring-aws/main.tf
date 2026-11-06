@@ -20,8 +20,7 @@ data "aws_caller_identity" "current" {}
 data "aws_partition" "current" {}
 
 locals {
-  web_function = "${var.service_name}-web"
-  ns           = var.metrics_emf_namespace
+  ns = var.metrics_emf_namespace
 
   # CloudWatch matches a metric on its exact set of dimensions, and bills each combination of their values. These are
   # the labels the alarms below name. A label added here changes the dimensions of every metric that has it, so the
@@ -56,19 +55,21 @@ locals {
   inbox_rejected = join(" + ", [for id in keys(local.inbox) : "FILL(${id},0)" if startswith(id, "r_")])
 
   http = {
-    e = { namespace = "AWS/Lambda", name = "Url5xxCount", stat = "Sum", dimensions = { FunctionName = local.web_function } }
-    r = { namespace = "AWS/Lambda", name = "UrlRequestCount", stat = "Sum", dimensions = { FunctionName = local.web_function } }
+    t = { namespace = "AWS/ApplicationELB", name = "HTTPCode_Target_5XX_Count", stat = "Sum", dimensions = { LoadBalancer = var.load_balancer_arn_suffix } }
+    l = { namespace = "AWS/ApplicationELB", name = "HTTPCode_ELB_5XX_Count", stat = "Sum", dimensions = { LoadBalancer = var.load_balancer_arn_suffix } }
+    r = { namespace = "AWS/ApplicationELB", name = "RequestCount", stat = "Sum", dimensions = { LoadBalancer = var.load_balancer_arn_suffix } }
   }
+  http_errors = "(FILL(t,0) + FILL(l,0))"
 
   adapter = {
     for outcome in ["success", "error"] :
     "a_${outcome}" => { namespace = local.ns, name = "my.adapter.operation.duration", stat = "SampleCount", dimensions = { "my.outcome" = outcome } }
   }
 
-  sqs_age = { m = { namespace = "AWS/SQS", name = "ApproximateAgeOfOldestMessage", stat = "Maximum", dimensions = { QueueName = var.queue_name } } }
+  queue_age = { m = { namespace = local.ns, name = "my.queue.oldest_ready_age", stat = "Maximum", dimensions = {} } }
 
   # period is of each sample, periods how many must breach; together they approach the for of the Prometheus rule.
-  # missing is what a sample without data counts as. A request or job metric has gaps on a server that scales to zero,
+  # missing is what a sample without data counts as. A request or job metric has gaps on a server without traffic,
   # so it is notBreaching; only MyTargetDown and MyMetricsSnapshotStale watch something that goes on arriving when idle.
   alarms = merge(
     {
@@ -91,13 +92,13 @@ locals {
         severity   = "ticket", comparison = "GreaterThanThreshold", threshold = 300, missing = "notBreaching"
         period     = 300, periods = 2
         expression = "m"
-        metrics    = local.sqs_age
+        metrics    = local.queue_age
       }
       MyQueueStalled = {
         severity   = "page", comparison = "GreaterThanThreshold", threshold = 1800, missing = "notBreaching"
         period     = 300, periods = 1
         expression = "m"
-        metrics    = local.sqs_age
+        metrics    = local.queue_age
       }
       MyDeadJobsIncreasing = {
         severity   = "ticket", comparison = "GreaterThanThreshold", threshold = 10, missing = "notBreaching"
@@ -150,13 +151,13 @@ locals {
       MyHTTPErrorsHigh = {
         severity   = "page", comparison = "GreaterThanThreshold", threshold = 0.05, missing = "notBreaching"
         period     = 300, periods = 2
-        expression = "IF(r > 30, FILL(e,0) / r, 0)"
+        expression = "IF(r > 30, ${local.http_errors} / r, 0)"
         metrics    = local.http
       }
       MyHTTPErrorsElevated = {
         severity   = "ticket", comparison = "GreaterThanThreshold", threshold = 0.01, missing = "notBreaching"
         period     = 1800, periods = 1
-        expression = "IF(r > 18, FILL(e,0) / r, 0)"
+        expression = "IF(r > 18, ${local.http_errors} / r, 0)"
         metrics    = local.http
       }
       MyAPILatencyHigh = {
@@ -365,7 +366,7 @@ resource "aws_synthetics_canary" "ready" {
   }
 
   run_config {
-    # Enough for a cold start of the function and of the database.
+    # Enough for a database that scales to zero to wake up.
     timeout_in_seconds = 60
     environment_variables = {
       READY_URL = "https://${var.host}${var.uptime_path}"

@@ -85,8 +85,8 @@
 メンテナンスモードは通常のサーバーとは別の小さな HTTP ハンドラで、設定の一部だけを読んで起動する。切り替えの手段も応答に使う値も、DB・KV・キュー・Blob・Mailer・外への HTTP に依存しない。`my serve` を動かせないときの補助として、同じテンプレートで静的な HTML を書き出す（§12）。
 
 - 設定キー `maintenance`（真偽値。環境変数 `MY_MAINTENANCE`、TOML、`my serve -maintenance`）が真なら、`my serve` はメンテナンスモードで起動する。切り替えは再起動で行う。
-  - 起動中の切り替えは採らない。複数のインスタンス（Cloud Run・Lambda・k8s のレプリカ）に状態を揃えるには共有の置き場が要り、それは DB や KV そのものだから。
-    Cloud Run・Lambda・k8s では環境変数の変更が新しいリビジョン（ロールアウト）になり、通常のデプロイと同じ操作で全インスタンスが揃う。
+  - 起動中の切り替えは採らない。複数のインスタンス（Cloud Run・ECS Fargate・k8s のレプリカ）に状態を揃えるには共有の置き場が要り、それは DB や KV そのものだから。
+    Cloud Run・ECS Fargate・k8s では環境変数の変更が新しいリビジョン（ロールアウト）になり、通常のデプロイと同じ操作で全インスタンスが揃う。
 - `role`（web / worker / all）にかかわらず、メンテナンスモードのプロセスは HTTP だけを受け、ジョブの取得・定期実行・ストリームのブローカーへの接続をしない。
 - 起動の経路を分ける: `cmd/my` は設定の読み込みの前に `maintenance` だけを見て、真なら `platform.NewMaintenanceApp` を組み立てる。
   これは `platform.NewApp` を呼ばず、アダプタを 1 つも作らない。応答とテンプレートは新しいパッケージ `internal/interface/maintenance`（標準ライブラリと `internal/i18n` だけに依存）に置く。
@@ -123,7 +123,7 @@
 | 上の端点を除く client API（`/api/*`）と OAuth の端点のうち JSON を返すもの（`POST /oauth/token`・`/oauth/token/refresh` など） | パス | 503 | `application/problem+json`、`type: /api/v1/problems/maintenance`、`title` は `Accept-Language` で選んだ「メンテナンス中」、拡張メンバー `message`・`until`（設定があれば）・`status_page_url`（§20 の設定があれば） |
 | ActivityPub（Inbox の POST、Actor・オブジェクト・コレクションの GET） | `Accept` / `Content-Type` が ActivityPub、または `/ap/*`・`/inbox` | 503 | `application/json` の短い本文（`{"error":"maintenance"}`） |
 | WebFinger（`/.well-known/webfinger`）・NodeInfo（`/.well-known/nodeinfo`、`/nodeinfo/*`）・host-meta | パス | 503 | 同上 |
-| キューの push の受け口（Cloud Tasks・Lambda の SQS 受け口）・決済の webhook など外部からの通知 | パス | 503 | 同上。送り手の再試行に任せる |
+| キューの push の受け口（Cloud Tasks）・決済の webhook など外部からの通知 | パス | 503 | 同上。送り手の再試行に任せる |
 | Web の HTML（ページ・サインイン・認可同意など、上に当たらない `GET`・`HEAD`） | 残り | 503 | メンテナンスのページ（§11） |
 | Web クライアントの SPA と静的なアセット（JS・CSS・`sw.js`・`manifest.webmanifest`） | — | 503 | 出さない。メンテナンスのページが自己完結（インライン CSS・スクリプトなし）なので要らない |
 | 上に当たらない `POST` などの非安全メソッド | 残り | 503 | メンテナンスのページ（`Accept` が JSON なら Problem） |
@@ -179,9 +179,7 @@
 - 手順: 告知（§20 のステータスページ、FR-726 のお知らせ）→ `MY_MAINTENANCE=true` で再デプロイ → 作業 → 外して再デプロイ。
   push 型のキューは作業の前に止める。止めないと 503 の再試行で試行回数を使い切る。
   - Cloud Tasks: `gcloud tasks queues pause` で配信を止め（タスクの追加は続けられる）、`resume` で再開する。試行の上限はキューの `retryConfig.maxAttempts`（ドキュメントの既定の例は 100、`maxBackoff` 3600 秒）で決まる（2026-10-23 に [キューの設定](https://cloud.google.com/tasks/docs/configuring-queues)と [Queue の REST リファレンス](https://cloud.google.com/tasks/docs/reference/rest/v2/projects.locations.queues)で確認）。
-  - SQS（Lambda のイベントソース）: イベントソースマッピングの `Enabled` を偽にするとポーリングと呼び出しが止まる（2026-10-23 に [UpdateEventSourceMapping](https://docs.aws.amazon.com/lambda/latest/api/API_UpdateEventSourceMapping.html) で確認）。
-    止めないと失敗のたびに受信回数が増え、redrive policy の `maxReceiveCount` に達したメッセージはデッドレターキューへ移る（2026-10-23 に [SQS のデッドレターキュー](https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-dead-letter-queues.html)で確認）。
-- Cloud Run・Lambda: 環境変数を変えた新しいリビジョン。`my serve` も動かせないときは、前段のエラーページに `index.html` を置く。
+- Cloud Run・ECS Fargate: 環境変数を変えた新しいリビジョン。`my serve` も動かせないときは、前段のエラーページに `index.html` を置く。
   - CloudFront: カスタムエラーレスポンスで、オリジンの 5xx に S3 などに置いた `index.html` を返し、ビューアへの状態コード（`ResponseCode`）を 503 にできる。
     エラーページはオリジンと別の場所（S3）に置く（同じオリジンだと 5xx の間は取れない）。`Retry-After` はレスポンスヘッダーポリシーのカスタムヘッダーで付けられるが、ポリシーは付けたキャッシュビヘイビアのすべての応答に付くので、メンテナンスの間だけポリシーを付ける
     （2026-10-23 に [CustomErrorResponse](https://docs.aws.amazon.com/cloudfront/latest/APIReference/API_CustomErrorResponse.html)・[エラーページの設定](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/custom-error-pages-procedure.html)・[レスポンスヘッダーポリシー](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/understanding-response-headers-policies.html)で確認）。
@@ -237,8 +235,7 @@
 
 - scale to zero の DB で、監視の間隔が DB の停止までの時間（Neon は 5 分）より短いと、DB は止まらなくなる。連合サーバーは外からの配送で DB が起きている時間が長いので（[deployment-targets.md](../architecture/deployment-targets.md)）、増える費用は無通信の時間帯の分に限られる
 - アイドル時の費用を優先する運営者には、`/healthz`（DB に触れない）を監視し、DB を含む検査は間隔を長くする構成を運用文書で示す。サーバーレスでは、監視の要求そのものの費用は小さい。5 分ごとで月約 8,640 回、1 分ごとで約 43,200 回で、
-  Lambda の無料枠（月 100 万リクエスト・40 万 GB 秒、超えると 100 万リクエストあたり $0.20、時間は 1 ms 単位。2026-10-23 に [AWS Lambda pricing](https://aws.amazon.com/lambda/pricing/) で確認）に収まる。
-  Cloud Run のリクエストごとの課金も、無料枠（月 200 万リクエスト・18 万 vCPU 秒・36 万 GiB 秒。時間は 100 ms 単位に切り上げ）に収まる
+  Cloud Run のリクエストごとの課金の無料枠（月 200 万リクエスト・18 万 vCPU 秒・36 万 GiB 秒。時間は 100 ms 単位に切り上げ）に収まる
   （2026-10-23 に [Cloud Run pricing](https://cloud.google.com/run/pricing) で確認）
 
 ### 18. メンテナンスモードとの関係
@@ -316,9 +313,9 @@ DB の作り直し、PostgreSQL の版の更新、KV やキューの入れ替え
 - 投稿ごとの `Delete` も送る: Actor の削除で投稿を消さない実装にも効く。だが配送数が投稿数に比例し（数十倍〜数百倍）、費用と時間が合わない
 - `Delete` を送らず `410` だけにする: 費用がゼロ。だが取り直しの `410` でアカウントを消すのは主要な実装のうち Mastodon だけで、Misskey・GoToSocial・Akkoma はキャッシュを持ち続ける（2026-10-23 にソースで確認）
 - 配送の完了の後に消去ジョブ（`account.erase_deleted`）で全アカウントを消す: 個人データが消えたことを保証でき、破棄忘れが起きない。だがエクスポートの期間とぶつかり、期限の後なら運営者は DB ごと消せる。消去ジョブは 1 回 50 トランザクションの上限があり、保全の扱いも複雑になる
-- メンテナンスモードを起動中に切り替える（シグナル・ファイルの監視・管理 API）: 再デプロイなしに即座に切り替えられ、単一の VM なら十分に動く。だが複数のインスタンスを揃える共有の置き場がなく（DB・KV は使えない）、Cloud Run・Lambda にはシグナルを送れない
+- メンテナンスモードを起動中に切り替える（シグナル・ファイルの監視・管理 API）: 再デプロイなしに即座に切り替えられ、単一の VM なら十分に動く。だが複数のインスタンスを揃える共有の置き場がなく（DB・KV は使えない）、Cloud Run・ECS Fargate にはシグナルを送れない
 - メンテナンスを前段の静的な応答だけで済ませる: サーバーのコードを変えない。だが前段が無い構成があり、`Retry-After` や JSON の答え分けが難しいので、単独では採らず補助（書き出し）とした
-- 通常の運用中に DB の値をファイルへ書き出し、メンテナンスモードが読む: 名前とテーマが通常の画面と揃い、管理画面で告知文を書ける。だが Cloud Run・Lambda のファイルシステムは揮発し、共有の置き場と古さの管理が要る
+- 通常の運用中に DB の値をファイルへ書き出し、メンテナンスモードが読む: 名前とテーマが通常の画面と揃い、管理画面で告知文を書ける。だが Cloud Run・ECS Fargate のファイルシステムは揮発し、共有の置き場と古さの管理が要る
 - `/readyz` をそのまま外形監視に使う: 何も足さない。だが毎回 DB に触れ、「LB には受け付け可、監視にはメンテナンス中」を 1 つの応答で返せず、キャッシュするとプローブの反応が遅れる
 - 部品ごとの詳しい状態をトークン付きで返す: どの部品が壊れたかまで分かる。だがトークンの管理が要り、UptimeRobot のヘッダの追加は有料で、検査がミドルウェアを起こす。同じ情報は管理画面と指標にある
 - ステータスページの URL をインスタンス設定に置く: 再起動なしに変えられ、Mastodon も同じ。だがメンテナンスモードや DB の障害中に読めず、専用の設定キーを別に要する
@@ -334,7 +331,7 @@ DB の作り直し、PostgreSQL の版の更新、KV やキューの入れ替え
   - 監視の頻度や第三者の連打があっても、1 プロセスが DB に触れるのは最大 1 分に 1 回で、費用の上限が読める
   - サーバーが答えないときも、Web クライアントは残した値からステータスページへ案内できる
 - 悪い影響・トレードオフ
-  - `Delete`（Actor）の配送数は「アカウント数 × 既知の shared inbox 数」に比例する。大きなサーバーでは数百万件になり、Cloud Tasks / SQS では課金も比例する（NFR-COST-5）。見積もりを確認の画面に出すことでしか抑えない
+  - `Delete`（Actor）の配送数は「アカウント数 × 既知の shared inbox 数」に比例する。大きなサーバーでは数百万件になり、Cloud Tasks では課金も比例する（NFR-COST-5）。見積もりを確認の画面に出すことでしか抑えない
   - 連合先が `Delete` を取りこぼした（`unavailable`・dead job）場合、そのサーバーにはキャッシュが残る
   - クローズの間の `federation_mode` の例外で、`Flow` の判定は 2 つの入力を持つ
   - 運営者が DB とバックアップの破棄を忘れると個人データが残る。サーバーからは確かめられない

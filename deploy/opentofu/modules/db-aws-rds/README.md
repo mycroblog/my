@@ -68,25 +68,15 @@ bundle of RDS.
 
 There is no pooled connection, and RDS Proxy is deliberately not an option here. Its
 secret must be a JSON document of a user and a password rather than this URL, and AWS's documents say that session-level advisory
-locks, `SET`, and `LISTEN` pin a client to one connection, which removes what the proxy is for. Lambda is where this hurts: each
-instance of a function holds its own connections, so bound them with `web_reserved_concurrency`, `worker_max_concurrency`, and a
-small pool. A proxy of your own can still go in through `pooled_url_secret_id` of `db-external`.
+locks, `SET`, and `LISTEN` pin a client to one connection, which removes what the proxy is for. A proxy of your own can still go in through `pooled_url_secret_id` of `db-external`.
 
 To set `pool_max_conns`, name it in `url_parameters`. The one-off work reads the same URL, and only the service opens a pool with it.
 
 ## Reaching it from the app
 
-The instance has no public address. Its security group accepts only the group in `security_group_ids`, and the app joins that:
-
-- **Lambda**: give `app-aws-lambda` the same `network`. It takes the rest from `backends`. **An attached function loses the internet**, which it needs for federation, Secrets Manager, and the queue,
-  unless the private subnets route through a NAT gateway: a public subnet does not help. So on Lambda, this module brings a
-  NAT gateway with it, `nat` of the network, which costs more than the database.
-- **ECS**: a task joins the group the same way and needs the way out too, but it can have a public address in a public subnet instead
-  of a NAT gateway.
-
-The creating role also needs `ec2:DescribeSecurityGroups`, `ec2:DescribeSubnets`, `ec2:DescribeVpcs`, and `ec2:GetSecurityGroupsForVpc`
-for Lambda's checks. The function's role gets what Lambda needs to create its interfaces, which the function's own code can then
-call too; AWS's documents show a deny statement for that, which this configuration cannot express without a cycle.
+The instance has no public address. Its security group accepts only the group in `security_group_ids`, and the app joins that: give
+`app-aws-ecs` the same `network`, and it takes the rest from `backends`. A task needs a way out to the internet for federation, Secrets
+Manager, and the image: a public address in a public subnet, or a NAT gateway, `nat` of the network, which costs more than the database.
 
 ## The password
 
@@ -103,7 +93,7 @@ write-only attributes, so it reaches neither the plan nor the state. Nothing has
 
 ## Coming from db-external
 
-**In practice this is not a one-block swap.** The block changes, and on Lambda the `network` of the app with it, but the new
+**In practice this is not a one-block swap.** The block changes, and the `network` of the app with it, but the new
 instance is empty, and everything your instance knows is in the other database. Moving means, in this order: the maintenance mode,
 `pg_dump` from the old database, `pg_restore` to this one from inside the VPC, then swapping the block and applying, then leaving the
 maintenance mode. Nothing here does this for you, and no one has tried it.
@@ -125,5 +115,5 @@ A fixed cost, whatever the traffic. On-demand, for 730 hours, from AWS's price l
 That comes to **about $14 a month in N. Virginia and $21 in Tokyo**. CPU above the T4g baseline costs $0.075 per vCPU-hour, in Unlimited
 mode. The price of backup storage could not be read: AWS's pricing pages load it in a way that was not available. Check your first bill.
 
-On Lambda, add the NAT gateway, $0.045 per hour in Ohio or $32.85 a month plus $0.045 per GB, and its public address at $0.005 per hour,
+With tasks that have no public address, add the NAT gateway, $0.045 per hour in Ohio or $32.85 a month plus $0.045 per GB, and its public address at $0.005 per hour,
 or $3.65 a month. Only Ohio's price of the gateway could be read, so your region's may differ.

@@ -51,7 +51,7 @@ output "platform" {
 }
 
 output "env" {
-  description = "The settings of the mailer. No region: Lambda sets AWS_REGION, which the server takes when mail_ses_region is empty, so the identity must be in the function's region."
+  description = "The settings of the mailer. No region: Fargate sets AWS_REGION on a task, which the server takes when mail_ses_region is empty, so the identity must be in the app's region."
   value = merge(
     {
       MY_MAIL      = "ses"

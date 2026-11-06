@@ -17,7 +17,6 @@ import (
 	"github.com/mycroblog/my/internal/domain/instance"
 	"github.com/mycroblog/my/internal/i18n"
 	"github.com/mycroblog/my/internal/interface/maintenance"
-	"github.com/mycroblog/my/internal/interface/queuepush"
 	"github.com/mycroblog/my/internal/platform/config"
 )
 
@@ -110,9 +109,7 @@ func (m *MaintenanceApp) Handler() http.Handler {
 	// The maintenance pages end any voice chat call, so they never allow the microphone.
 	h = securityHeaders(h, false)
 	h = a.accessLog(h)
-	// This mode reads no setting of the queue. An SQS event comes to any path here and only gets
-	// its records back, so that the proof of the event alone tells it.
-	return a.originCheck(a.requestIDs(h), queuepush.PassThrough)
+	return a.originCheck(a.requestIDs(h))
 }
 
 // ServeMaintenance runs the maintenance mode until ctx ends, then shuts down gracefully, as

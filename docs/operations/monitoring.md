@@ -44,9 +44,8 @@ With [`origin_secret`](cdn.md#refuse-requests-that-did-not-come-through-the-cdn)
   the extra cost is limited to the quiet hours.
 - **Prefer a cheaper split if idle cost matters most.** Monitor `/healthz` (it never touches the database) at a short interval, and the database-backed
   `/api/v1/instance/health` at a long one (15 minutes or more). `/healthz` answers `200` during the maintenance mode too, so match `"status":"ok"` in the body.
-- **The requests themselves are small.** One check every 5 minutes is about 8,640 requests a month, every minute about 43,200. That fits in the free tier of AWS Lambda
-  (1 million requests and 400,000 GB-seconds a month, then $0.20 per million requests; confirmed 2026-10-23, [AWS Lambda pricing](https://aws.amazon.com/lambda/pricing/))
-  and of Cloud Run (2 million requests, 180,000 vCPU-seconds, and 360,000 GiB-seconds a month; time rounded up to 100 ms; confirmed 2026-10-23, [Cloud Run pricing](https://cloud.google.com/run/pricing)).
+- **The requests themselves are small.** One check every 5 minutes is about 8,640 requests a month, every minute about 43,200. That fits in the free tier
+  of Cloud Run (2 million requests, 180,000 vCPU-seconds, and 360,000 GiB-seconds a month; time rounded up to 100 ms; confirmed 2026-10-23, [Cloud Run pricing](https://cloud.google.com/run/pricing)).
 
 ## Telling the maintenance mode from an outage
 

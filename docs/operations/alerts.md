@@ -16,7 +16,7 @@ the ones Prometheus sees: dots become underscores, and the unit and counter suff
 | Self-hosted (Docker Compose, Kubernetes, a VM) | `metrics_exporter = prometheus` | Prometheus scrapes `GET /metrics` on `metrics_listen`, Alertmanager routes the alerts. The rules below work as they are |
 | Any target with an OpenTelemetry Collector | `metrics_exporter = otlp` | The Collector forwards to the backend of your choice. A Prometheus-compatible backend that adds the unit and type suffixes (as Prometheus' own OTLP receiver does by default) sees the same names |
 | Google Cloud (Cloud Run) | `metrics_exporter = none` | Cloud Monitoring alerting policies on an uptime check, the platform metrics, and log-based metrics (see [Cloud Run](#google-cloud-cloud-run)) |
-| AWS (Lambda) | `metrics_exporter = emf` | CloudWatch alarms on the metrics that CloudWatch Logs extracts (see [AWS Lambda](#aws-lambda)) |
+| AWS (ECS) | `metrics_exporter = emf` | CloudWatch alarms on the metrics that CloudWatch Logs extracts (see [AWS ECS](#aws-ecs)) |
 
 ### Prometheus and Alertmanager
 
@@ -68,15 +68,16 @@ With `metrics_exporter = none`, build the alerts from what Cloud Run and Cloud L
 
 The module [`monitoring-gcp`](../../deploy/opentofu/modules/monitoring-gcp/README.md) makes these as policies with the names of the table below, and lists each alert it covers differently or cannot express. It has never been applied. A metric that only traffic produces has gaps on a service that scales to zero, so an alert on its absence fires falsely; its uptime check is what notices a dead idle server.
 
-### AWS Lambda
+### AWS ECS
 
 With `metrics_exporter = emf`, CloudWatch Logs turns the server's lines into metrics in the namespace `metrics_emf_namespace`, with the dotted
 names (`my.job.duration`, `my.queue.oldest_ready_age`). The request and job duration metrics come from the request and job log lines, and the
 dimensions are the labels you list in `metrics_emf_dimensions`; include `my.outcome` to alarm on failed jobs and `http.response.status_code`
 to alarm on 5xx. The instance-wide gauges (queue, media, database size, remote servers, billing imports, snapshot) are written by the periodic snapshot job. The Go runtime metrics (`go.*`)
-are not written in EMF; use the Lambda memory and error metrics instead.
+are not written in EMF; use the CPU and memory metrics of the ECS service instead.
 
-- **Queue backlog**: with `queue = sqs`, the SQS metric `ApproximateAgeOfOldestMessage` of the job queues.
+- **HTTP errors**: the 5xx and request count metrics of the Application Load Balancer.
+- **Queue backlog**: `my.queue.oldest_ready_age`, which the snapshot job writes.
 - **Database**: the storage and connection metrics of RDS or Aurora, or the usage alerts of your database provider.
 - **Email** (`mail = ses`): the SES reputation metrics (bounce and complaint rates) in CloudWatch.
 - **Cost**: an AWS Budgets budget with alerts ([Cost and budget](#cost-and-budget)).

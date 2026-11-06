@@ -83,7 +83,7 @@ If you already switched, or cannot stop the server, delete the old index in the 
 By default a worker runs one job at a time, so a slow engine shares that worker's time with `federation.inbox`, even though each call of the engine has a 10-second limit. A busy server should separate them:
 
 - Run one worker process with `worker_job_types = search.*` and the others with `worker_job_types_except = search.*` ([Splitting workers by job type](running.md#splitting-workers-by-job-type)).
-- With `queue = sqs` or `queue = cloudtasks`, send the `search.*` types to their own queue with a [queue route](running.md#routing-job-types-to-their-own-queues).
+- With `queue = cloudtasks`, send the `search.*` types to their own queue with a [queue route](running.md#routing-job-types-to-their-own-queues).
 
 A small server can leave them together, and search jobs then share the time with federation.
 
@@ -97,7 +97,7 @@ A small server can leave them together, and search jobs then share the time with
 | Google Cloud load balancer | Only if you turn on logging for the backend service. It is off by default on new ones, and uses the same field. | Leave it off, or exclude them, as below. |
 | AWS Application Load Balancer | Only if you turn on access logs, which are off by default. The request line holds the URL as the client sent it. It has no way to drop part of a line. | Leave them off, or give them a short lifecycle rule and limited access. |
 | CloudFront | Only if you turn on standard logging, in the field `cs-uri-query`. | With standard logging v2, leave that field out when you select the fields. |
-| ECS and Lambda | No request log of their own: their logs hold what the server writes. Lambda's CloudTrail data events are off by default. | Nothing, unless you turn those events on. |
+| ECS | No request log of its own: its logs hold what the server writes. | Nothing. |
 | Cloudflare | Only if you use Logpush, in the field `ClientRequestURI`. | Select `ClientRequestPath` instead. |
 | Caddy | Only with a `log` directive, which `compose.caddy.yaml` does not have. | If you add one, remove the parameter, as below. |
 | Other reverse proxies | Usually yes: their default formats log the whole request line. | Log the path without the query for this route, or turn off its access log. |

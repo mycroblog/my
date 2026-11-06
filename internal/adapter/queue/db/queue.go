@@ -25,7 +25,7 @@ type Options struct {
 	Tracer kernel.Tracer
 	// Waker, when set, makes Queue send a wake-up signal for each job it stores, once the
 	// transaction that stores it commits (ADR-0004 §9): the jobs of a server whose external
-	// queue (Cloud Tasks, SQS) delivers them to a queue.PushReceiver. A failed send is logged,
+	// queue (Cloud Tasks) delivers them to a queue.PushReceiver. A failed send is logged,
 	// and the queue.WakeSweeper sends the signal again.
 	Waker queue.Waker
 	// Projectors are the registry of the database's UnitOfWork, whose commit hook sends the

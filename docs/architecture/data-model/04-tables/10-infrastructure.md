@@ -11,7 +11,7 @@ ADR-0020 の分類は、`jobs`・`dead_jobs`・`kv_entries` が現在値、`job_
 | `data_upgrade_runs`（イベント、`db/*`） | `step_key`（`string`）, `completed_at` | PK `(step_key)` | — |
 
 - ジョブのペイロードはアダプタ間を渡る「解釈しない文書」なので `document` 型です（ドメインのデータは入れず、ID を渡します）。
-- Transactional Outbox（ADR-0004）は `jobs` そのものです。`EnqueueTx` は呼び手のトランザクションで `jobs` に書き、外部のキュー（Cloud Tasks・SQS）を使うときも
+- Transactional Outbox（ADR-0004）は `jobs` そのものです。`EnqueueTx` は呼び手のトランザクションで `jobs` に書き、外部のキュー（Cloud Tasks）を使うときも
   ジョブは `jobs` に残り、外部のキューは起こす合図だけを運びます（[ADR-0004](../../../adr/0004-job-queue-abstraction.md)）。
 - `trace_parent` はジョブを投入した span の W3C `traceparent` で、ジョブの実行の span はこれへの link を持ちます（[ADR-0055](../../../adr/0055-service-observability.md) §14）。
   状態でなくジョブの属性で、記録していない span から投入したジョブは NULL です。dead job への移動・再実行はそのまま引き継ぎます。

@@ -78,7 +78,7 @@ for example as a step of the deployment before the new version takes traffic.
 
 ### Not reachable past the CDN
 
-- **Why**: with a CDN in front, and the server's own address still public (`*.run.app` on Cloud Run, a Lambda Function URL), anyone can call the server past the WAF and the cache,
+- **Why**: with a CDN in front, and the server's own address still public (`*.run.app` on Cloud Run), anyone can call the server past the WAF and the cache,
   and a caller on the CDN's own platform can choose the client IP that the rate limits see. Needed only in that case: not when a firewall or the platform already limits who can connect,
   and without a CDN there is nothing to bypass.
 - **Verify**: `origin_secret` and `origin_secret_header` are set and the CDN sets the header on every host name. `curl -s -o /dev/null -w '%{http_code}\n' https://<origin address>/`

@@ -42,9 +42,6 @@ module "ingress" {
 Cloud Run routes by `Host`, and Cloudflare's Origin Rules offer the Host header override on the **Enterprise plan only**, not
 on Free, Pro, or Business. A plan with a `*.run.app` origin and no `rewrite_host_header` fails, with that explanation.
 
-A Lambda Function URL (`*.on.aws`) routes by `Host` the same way, and a plan with one and no `rewrite_host_header` fails too. AWS
-has nothing like a domain mapping for a Function URL, so on Lambda this module needs the Enterprise plan, or CloudFront behind it.
-
 On the other plans, use an origin that accepts `host` itself:
 
 - `ingress-gcp-domain-mapping` for `host` with `origin_host = "ghs.googlehosted.com"`. Leave it out of `backends`: this module

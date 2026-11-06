@@ -338,3 +338,8 @@ output "hosted_zone_id" {
   description = "Route 53 hosted zone of the load balancer, for an alias record made elsewhere."
   value       = aws_lb.this.zone_id
 }
+
+output "arn_suffix" {
+  description = "The load balancer's dimension in CloudWatch, for the HTTP alarms of monitoring-aws."
+  value       = aws_lb.this.arn_suffix
+}

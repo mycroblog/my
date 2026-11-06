@@ -119,7 +119,7 @@ OAuth のクライアントの登録などの制限は ADR-0090 §7 が足す。
 
 - 超過時は `429 Too Many Requests` と `Retry-After` を返す。Inbox の `429` は送信側のリトライ（Mastodon は指数バックオフで再送する）に任せる。
 - クライアント IP は、設定した **信頼するプロキシ**（CIDR のリスト）経由の場合だけ `X-Forwarded-For` / `Forwarded` の右端から信頼できる値を採る。既定は接続元 IP のみ。
-- 公開の CDN のアドレスを信頼すると、同じ CDN のサーバーレス環境から呼ぶ第三者もその範囲から接続できる。そこでオリジンが公開のままの構成のために、**CDN が付ける秘密のヘッダを検査して、経由しないリクエストを拒否する** 設定を持つ（`origin_secret`、`origin_secret_header`、ローテーション中の `origin_secret_previous`）。HTTP を提供するすべてのプロセスで、保守モードでも、信頼するプロキシの判定より先に定数時間で比較する。ヘルスチェックと `/_internal/*` と Lambda の SQS イベントだけは CDN を通らないので除外し、秘密を示さないリクエストは除外の対象でも転送ヘッダと `traceparent` を信じない。詳細は [deployment-targets](../architecture/deployment-targets.md#cdn-を経由しないリクエストの拒否)。
+- 公開の CDN のアドレスを信頼すると、同じ CDN のサーバーレス環境から呼ぶ第三者もその範囲から接続できる。そこでオリジンが公開のままの構成のために、**CDN が付ける秘密のヘッダを検査して、経由しないリクエストを拒否する** 設定を持つ（`origin_secret`、`origin_secret_header`、ローテーション中の `origin_secret_previous`）。HTTP を提供するすべてのプロセスで、保守モードでも、信頼するプロキシの判定より先に定数時間で比較する。ヘルスチェックと `/_internal/*` だけは CDN を通らないので除外し、秘密を示さないリクエストは除外の対象でも転送ヘッダと `traceparent` を信じない。詳細は [deployment-targets](../architecture/deployment-targets.md#cdn-を経由しないリクエストの拒否)。
 - Inbox はレート制限の前にボディサイズ上限（1 MiB、`http.MaxBytesReader`）を適用し、ドメインブロック済みのドメインは署名検証より前に拒否する。
 
 ### 6. 秘密情報の保管とアクター秘密鍵の暗号化（NFR-SEC-7）
@@ -265,7 +265,7 @@ upgrade-insecure-requests
 
 - 運営者の大半がマネージド WAF / API Gateway を前提にでき、Self-hosted の最小構成を捨ててよい場合は、レート制限とヘッダ付与をインフラへ寄せる。
 - 認証要件（SSO、WebAuthn、管理者の多要素認証）が v0 の範囲で大きく膨らみ、自前実装の保守が見合わない場合は、OAuth / 認証部分だけ外部 IdP を再検討する。
-- Argon2id の既定パラメータで、1 vCPU の Cloud Run / Lambda でログインの p95 が 1 秒を超える場合は、OWASP の範囲内でパラメータを下げる（アルゴリズムは変えない）。
+- Argon2id の既定パラメータで、1 vCPU の Cloud Run / ECS Fargate でログインの p95 が 1 秒を超える場合は、OWASP の範囲内でパラメータを下げる（アルゴリズムは変えない）。
 - インスタンスの秘密の表を置くことが、ほかのモジュールの表の持ち方と合わないと分かった場合は、メディアプロキシの署名鍵を別の設定 `media_proxy_key` に移す（§12）。
 - 運用上、DEK をメモリに置く時間を 0 にする要件が出た場合は、キャッシュをやめ、配送の遅延と KMS の費用を受け入れる（§13）。
 
@@ -274,7 +274,7 @@ upgrade-insecure-requests
 NFR-SEC-1〜8 は「何を守るか」を定めるが、「どう実装するか」は決まっていなかった。Fediverse サーバーは任意のリモートサーバーから送られる URL・HTML・メディア・署名付きリクエストを処理するので、SSRF・XSS・署名偽装・リソース枯渇の攻撃面が通常の Web アプリより広い。
 これらは `HTTPClient`・`KeyValueStore` ポート、認証、メディア処理のインターフェイスに直接影響するので、M1 の実装の前に決めた。関連: NFR-PERF-4、NFR-REL-4、NFR-COST-2、NFR-PORT-1、ADR-0011。
 
-判断基準は、全ターゲット（Self-hosted の最小構成でも Cloud Run / Lambda でも）で同じ保護が効くこと、運営者が何も設定しなくても安全で、緩める設定は明示的で起動時に警告を出すこと、Mastodon など主要実装が実際に送るものを拒否しないこと、1 vCPU / 1 GB RAM で DoS されにくいこと、OWASP・RFC・IANA など公開された基準に基づくこと、pure Go で AGPL-3.0 と両立し保守されている依存だけを使うこと。
+判断基準は、全ターゲット（Self-hosted の最小構成でも Cloud Run / ECS Fargate でも）で同じ保護が効くこと、運営者が何も設定しなくても安全で、緩める設定は明示的で起動時に警告を出すこと、Mastodon など主要実装が実際に送るものを拒否しないこと、1 vCPU / 1 GB RAM で DoS されにくいこと、OWASP・RFC・IANA など公開された基準に基づくこと、pure Go で AGPL-3.0 と両立し保守されている依存だけを使うこと。
 
 Web クライアントのトークン保管は、当初リフレッシュトークンを IndexedDB に置くとしたが、ADR-0090 で HttpOnly の Cookie に移した。依存の脆弱性の検査は、当初 `govulncheck` を PR ごとの CI と日次実行で動かすとしたが、計算コストが高いので ADR-0081 で Dependabot Alerts に移した。送信の署名の順序は ADR-0006 が定め、ADR-0006 との食い違いを解消した。
 
@@ -318,9 +318,9 @@ Cloud KMS はソフトウェアの鍵の版 1 つ月約 $0.06（有効・無効�
 
 - Mastodon の現行のサニタイズ設定（`MASTODON_STRICT`）と、署名の時刻ずれ定数を最新ソースで確認する
 - Mastodon 4.x のメディアサイズ上限・Inbox のボディ上限を確認し、既定値を揃える
-- Argon2id（m = 19 MiB, t = 2, p = 1）の 1 vCPU（Cloud Run / Lambda / 1 GB VM）での所要時間とメモリの実測（M1）
+- Argon2id（m = 19 MiB, t = 2, p = 1）の 1 vCPU（Cloud Run / ECS Fargate / 1 GB VM）での所要時間とメモリの実測（M1）
 - `kv/db` でのレート制限の書き込み負荷（SQLite / PostgreSQL、NFR-PERF-1 の想定負荷）
 - Trusted Types と `require-trusted-types-for` の主要ブラウザでの対応状況
 - Tauri でのリフレッシュトークンのセキュアストレージ（#31 の spike で確認）
-- Cloud Run・Lambda からの 1 回の Decrypt の遅延（公式の文書に目安がない。M6 のデプロイで計測し、§13 のキャッシュの既定の有効期間を見直す）
+- Cloud Run・ECS Fargate からの 1 回の Decrypt の遅延（公式の文書に目安がない。M6 のデプロイで計測し、§13 のキャッシュの既定の有効期間を見直す）
 - Cloud KMS の Decrypt が AAD の不一致と鍵の無効化に返すエラーのコード（KMS の文書に書かれていない。`INVALID_ARGUMENT`・`FAILED_PRECONDITION` は他のサービスの文書と実例による見込みで、実装の PR で実際の KMS に対して確かめる）

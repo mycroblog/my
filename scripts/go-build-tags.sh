@@ -18,19 +18,18 @@ set -euo pipefail
 # The representative sets: together they use every tag.
 sets=(
   # A self-hosted instance on SQLite with the fs blob store, without a broker or a metrics exporter.
-  "no_postgres,no_valkey,no_sns,no_ses,no_s3,no_gcs,no_pubsub,no_gcpkms,no_awskms,no_cloudtasks,no_sqs,no_otel,no_billing_aws,no_billing_gcp,no_payments_stripe,no_plugins"
-  # AWS: PostgreSQL, the SNS broker, SES, the EMF metrics, AWS KMS, SQS, the Stripe payments, without the Sora voice chat.
+  "no_postgres,no_valkey,no_sns,no_ses,no_s3,no_gcs,no_pubsub,no_gcpkms,no_awskms,no_cloudtasks,no_otel,no_billing_aws,no_billing_gcp,no_payments_stripe,no_plugins"
+  # AWS: PostgreSQL, the SNS broker, SES, the EMF metrics, AWS KMS, the Stripe payments, without the Sora voice chat.
   "no_sqlite,no_valkey,no_gcs,no_pubsub,no_gcpkms,no_cloudtasks,no_otel,no_billing_gcp,no_payments_payjp,no_voice_sora"
   # Google Cloud: PostgreSQL, the Pub/Sub broker, Cloud KMS, Cloud Tasks, without the LiveKit voice chat.
-  "no_sqlite,no_valkey,no_sns,no_ses,no_awskms,no_sqs,no_billing_aws,no_voice_livekit"
+  "no_sqlite,no_valkey,no_sns,no_ses,no_awskms,no_billing_aws,no_voice_livekit"
   # The test build of the end-to-end tests and the demonstration.
   "e2e_fakes"
 )
 
 # excluded_packages TAG SET prints the packages that TAG of SET leaves out of cmd/my: the adapters and their client
 # library. The Pub/Sub client serves the broker and the budget method of the Google Cloud billing import, so only
-# no_pubsub and no_billing_gcp together leave it out; the SQS client serves the SNS broker and the SQS queue, so only
-# no_sns and no_sqs together leave it out.
+# no_pubsub and no_billing_gcp together leave it out.
 excluded_packages() {
   local m=github.com/mycroblog/my/internal/adapter
   case "$1" in
@@ -41,24 +40,16 @@ excluded_packages() {
       ;;
   esac
   case "$1" in
-    no_sns | no_sqs)
-      if [[ ",$2," == *,no_sns,* && ",$2," == *,no_sqs,* ]]; then
-        echo "github.com/aws/aws-sdk-go-v2/service/sqs"
-      fi
-      ;;
-  esac
-  case "$1" in
     no_sqlite) echo "$m/db/sqlite modernc.org/sqlite ariga.io/atlas/sql/sqlite" ;;
     no_postgres) echo "$m/db/postgres $m/stream/postgres github.com/jackc/pgx/v5 ariga.io/atlas/sql/postgres" ;;
     no_valkey) echo "$m/valkey $m/kv/valkey $m/stream/valkey github.com/valkey-io/valkey-go" ;;
-    no_sns) echo "$m/stream/sns github.com/aws/aws-sdk-go-v2/service/sns" ;;
+    no_sns) echo "$m/stream/sns github.com/aws/aws-sdk-go-v2/service/sns github.com/aws/aws-sdk-go-v2/service/sqs" ;;
     no_ses) echo "$m/mail/ses github.com/aws/aws-sdk-go-v2/service/sesv2" ;;
     no_s3) echo "$m/blob/s3 github.com/aws/aws-sdk-go-v2/service/s3" ;;
     no_gcs) echo "$m/blob/gcs cloud.google.com/go/storage" ;;
     no_pubsub) echo "$m/stream/pubsub" ;;
     no_gcpkms) echo "$m/keymanager/gcpkms cloud.google.com/go/kms/apiv1" ;;
     no_cloudtasks) echo "$m/queue/cloudtasks cloud.google.com/go/cloudtasks/apiv2" ;;
-    no_sqs) echo "$m/queue/sqs" ;;
     no_awskms) echo "$m/keymanager/awskms github.com/aws/aws-sdk-go-v2/service/kms" ;;
     no_billing_aws) echo "$m/billing/aws github.com/aws/aws-sdk-go-v2/service/costexplorer" ;;
     no_billing_gcp) echo "$m/billing/gcp google.golang.org/api/bigquery/v2" ;;

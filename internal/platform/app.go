@@ -270,7 +270,7 @@ type App struct {
 	// closeWaker releases its client; both are nil for the other queues.
 	waker      queue.Waker
 	closeWaker io.Closer
-	// wakeRouter and wakeSweeper are the router of queue_sqs_routes or queue_cloudtasks_routes
+	// wakeRouter and wakeSweeper are the router of queue_cloudtasks_routes
 	// (nil without routes) and the sweep of the lost signals (nil without a waker).
 	wakeRouter  *queue.WakeRouter
 	wakeSweeper *queue.WakeSweeper

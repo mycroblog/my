@@ -20,7 +20,7 @@ output "secret_env" {
 }
 
 output "permissions" {
-  description = "What the app's identity is permitted: nothing more, since Lambda writes the function's logs and CloudWatch Logs takes the metrics from them."
+  description = "What the app's identity is permitted: nothing more, since the tasks' log driver writes the logs with the execution role and CloudWatch Logs takes the metrics from them."
   value       = []
 }
 

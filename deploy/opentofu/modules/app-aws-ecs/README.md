@@ -2,7 +2,7 @@
 
 The server on Amazon ECS with Fargate: one service whose process stays up, and one-off tasks for the migration and the console. It follows [the app contract](../../README.md#the-app-contract).
 
-**This module has never been applied.** The tests mock the provider and the scripts' tests stub the `aws` command, so they show that the configuration and the steps are consistent, not that AWS accepts them. What stays unverified is [listed below](#unverified). Unlike `app-aws-lambda`, nothing is known to be missing: the released image runs here as it is, ECS delivers the secrets, and `my` runs one command as a one-off task.
+**This module has never been applied.** The tests mock the provider and the scripts' tests stub the `aws` command, so they show that the configuration and the steps are consistent, not that AWS accepts them. What stays unverified is [listed below](#unverified). Nothing is known to be missing: the released image runs here as it is, ECS delivers the secrets, and `my` runs one command as a one-off task.
 
 **It costs money while idle**, about $42 a month in Tokyo at the smallest useful shape, before the database. [What it costs](#what-it-costs) has the parts. Cloud Run costs nothing while nobody uses it; this shape does not scale to zero.
 
@@ -53,13 +53,13 @@ module "app" {
 
 ## How traffic reaches it
 
-Only through a load balancer that the service attaches to, which `ingress-aws-alb` provides. A task's address changes with every task and it has no TLS, so **this app has no host of its own**: `origin_host` is null, and a module that takes one as its origin, such as `ingress-cloudflare-app` or `ingress-aws-cloudfront`, fails the plan. So does `service_ingress` of anything but `load-balancer`. There is no `service_ingress` input, because there is nothing to choose.
+Only through a load balancer that the service attaches to, which `ingress-aws-alb` provides. A task's address changes with every task and it has no TLS, so **this app has no host of its own**: `origin_host` is null, and a module that takes one as its origin, such as `ingress-cloudflare-app`, fails the plan. So does `service_ingress` of anything but `load-balancer`. There is no `service_ingress` input, because there is nothing to choose.
 
 Without an ingress the service runs with no inbound rule and only the process's own start decides whether a deployment passes. To put something else in front, add a rule to `security_group_id`, and pass the app a backend of `{ service_ingress = "load-balancer", trusted_proxies = [...], load_balancer = { target_group_arn = "...", security_group_id = "..." } }`.
 
 ## Jobs
 
-The process runs them itself, so use `queue-db`, or leave `MY_QUEUE` at its default, which is the same. `queue-aws-sqs` fails the plan: `queue = sqs` runs jobs only when the Lambda adapter passes it the queue's events, and no process here polls SQS. Read [what `queue-db` needs of the database](../queue-db/README.md#what-it-needs): the database never rests.
+The process runs them itself, so use `queue-db`, or leave `MY_QUEUE` at its default, which is the same. Read [what `queue-db` needs of the database](../queue-db/README.md#what-it-needs): the database never rests.
 
 ## Secrets
 
@@ -72,7 +72,7 @@ A task reads a secret once, at start. After you change one, run `aws ecs update-
 
 ## The image
 
-The released image runs as it is, which Lambda cannot do. Fargate pulls `ghcr.io/mycroblog/my` over the internet, so a task needs a way out, and the architecture you choose picks from its index. A copy in ECR works too, in the same region or another: the execution role may pull from any repository of the account.
+The released image runs as it is. Fargate pulls `ghcr.io/mycroblog/my` over the internet, so a task needs a way out, and the architecture you choose picks from its index. A copy in ECR works too, in the same region or another: the execution role may pull from any repository of the account.
 
 ## The first deployment
 
@@ -142,17 +142,17 @@ Not read, so not in the total: Secrets Manager per secret, CloudWatch Logs, S3, 
 
 ## What differs from the other apps
 
-| | Cloud Run | Lambda | Here |
-| --- | --- | --- | --- |
-| Processes | One with `role = all` | `web` and `worker` | One with `role = all`, or several: each runs the web and the jobs |
-| Idle | Nothing | Nothing | The whole fixed cost above |
-| Jobs | Cloud Tasks calls in | The queue invokes the worker | The process polls the table |
-| Secrets | The platform's | Not delivered | The platform's, at the start of a task |
-| Request size and time | 32 MiB, up to the timeout | 6 MB, 15 minutes | The server's own limits |
-| One-off commands | A job, an hour by default | 15 minutes | No limit |
-| A bad image | No traffic until `/readyz` answers | Nothing holds it back | The load balancer's check, then the deployment goes back. No container check: read below |
-| Who may reach it | `service_ingress` | Everyone, and the server refuses by a header | The load balancer alone, by security group |
-| The disk | Gone with the instance | Read-only | Gone with the task, so the plan refuses `sqlite` and `blob = fs` |
+| | Cloud Run | Here |
+| --- | --- | --- |
+| Processes | One with `role = all` | One with `role = all`, or several: each runs the web and the jobs |
+| Idle | Nothing | The whole fixed cost above |
+| Jobs | Cloud Tasks calls in | The process polls the table |
+| Secrets | The platform's | The platform's, at the start of a task |
+| Request size and time | 32 MiB, up to the timeout | The server's own limits |
+| One-off commands | A job, an hour by default | No limit |
+| A bad image | No traffic until `/readyz` answers | The load balancer's check, then the deployment goes back. No container check: read below |
+| Who may reach it | `service_ingress` | The load balancer alone, by security group |
+| The disk | Gone with the instance | Gone with the task, so the plan refuses `sqlite` and `blob = fs` |
 
 **There is no container health check.** ECS would run one inside the container, and the image is distroless, with no shell or `curl`, and `my` has no command that asks the server's own `/readyz`. So health comes from the load balancer alone: without an ingress, a deployment passes once the process has started. Also, the one check of a load balancer serves for both a new image and a running task, as [its README says](../ingress-aws-alb/README.md#health-checks).
 

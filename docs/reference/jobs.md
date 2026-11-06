@@ -187,7 +187,7 @@ These types keep the index of a [search backend](configuration.md#search) in ste
 
 ## Periodic jobs
 
-The scheduler queues one job per period, however many processes run it, and the job then runs like any other. With `queue = cloudtasks` or `queue = sqs` the platform's scheduler starts the periods; see
+The scheduler queues one job per period, however many processes run it, and the job then runs like any other. With `queue = cloudtasks` the platform's scheduler starts the periods; see
 [The job queue and failed (dead) jobs](../operations/running.md#the-job-queue-and-failed-dead-jobs).
 
 | Periodic job | Every |

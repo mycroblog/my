@@ -103,16 +103,16 @@ module "rds" {
 }
 
 module "app_on_rds" {
-  source = "../../modules/app-aws-lambda"
+  source = "../../modules/app-aws-ecs"
 
-  env = { MY_QUEUE = "sqs" }
-
-  name       = "rds"
-  image      = "111122223333.dkr.ecr.ap-northeast-1.amazonaws.com/my:0.1.0"
-  host       = "social.example.org"
-  secret_env = { MY_KEK = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:kek" }
-  network    = local.aws_network
-  backends   = [module.rds]
+  name             = "rds"
+  env              = { MY_BLOB = "s3" }
+  image            = "ghcr.io/mycroblog/my:0.1.0"
+  host             = "social.example.org"
+  secret_env       = { MY_KEK = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:kek" }
+  network          = local.aws_network
+  assign_public_ip = true
+  backends         = [module.rds]
 }
 
 module "neon_on_aws" {
@@ -134,15 +134,16 @@ module "secrets_on_aws" {
 }
 
 module "app_on_neon_aws" {
-  source = "../../modules/app-aws-lambda"
+  source = "../../modules/app-aws-ecs"
 
-  env = { MY_QUEUE = "sqs" }
-
-  name       = "neon"
-  image      = "111122223333.dkr.ecr.ap-northeast-1.amazonaws.com/my:0.1.0"
-  host       = "social.example.org"
-  secret_env = { MY_KEK = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:kek" }
-  backends   = [module.secrets_on_aws, module.neon_on_aws]
+  name             = "neon"
+  env              = { MY_BLOB = "s3" }
+  image            = "ghcr.io/mycroblog/my:0.1.0"
+  host             = "social.example.org"
+  secret_env       = { MY_KEK = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:kek" }
+  network          = local.aws_network
+  assign_public_ip = true
+  backends         = [module.secrets_on_aws, module.neon_on_aws]
 }
 
 module "valkey" {

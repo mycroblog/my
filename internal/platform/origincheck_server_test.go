@@ -142,10 +142,7 @@ func TestMaintenanceModeChecksTheOrigin(t *testing.T) {
 	if rec := serve(http.MethodPost, "/_internal/jobs", nil); rec.Code != http.StatusServiceUnavailable {
 		t.Errorf("POST /_internal/jobs = %d, want the maintenance's 503", rec.Code)
 	}
-	if rec := serve(http.MethodPost, "/events", map[string]string{"X-Amzn-Request-Context": "null"}); rec.Code != http.StatusServiceUnavailable {
-		t.Errorf("an SQS event = %d, want the maintenance's 503", rec.Code)
-	}
 	if rec := serve(http.MethodPost, "/events", nil); rec.Code != http.StatusForbidden {
-		t.Errorf("POST /events that is no event = %d, want 403", rec.Code)
+		t.Errorf("POST /events = %d, want 403", rec.Code)
 	}
 }

@@ -151,7 +151,7 @@ IdP が検証済みと示したメールアドレス（`email_verified` が真�
 
 - 「鍵が設定されていれば自動で有効にする」ことはしない。アダプターは常に明示的なキーで選ぶ（設定リファレンスの規約）。
   `captcha` を選んだのに鍵が欠けていれば `my config check` が問題として挙げ、サーバーは起動しない。
-- 起動時に siteverify へ試しに問い合わせることはしない（起動を外部サービスに依存させない、Cloud Run / Lambda のコールドスタートを延ばさない）。
+- 起動時に siteverify へ試しに問い合わせることはしない（起動を外部サービスに依存させない、Cloud Run のコールドスタートを延ばさない）。
   秘密鍵が誤っていれば最初の検証で `invalid-input-secret` が返るので、ERROR のログを出し、`ErrHumanCheckUnavailable` として扱う（§10）。
 - 秘密鍵は `slog.LogValuer` で `[REDACTED]` を出す型で持つ。
 

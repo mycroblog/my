@@ -22,7 +22,7 @@
 //   - SQLite serializes every write transaction (BEGIN IMMEDIATE), so claims never collide; run
 //     a single worker per database, since more workers only contend for the same lock.
 //
-// With an external queue (Cloud Tasks, SQS), the jobs stay in jobs and the external queue
+// With an external queue (Cloud Tasks), the jobs stay in jobs and the external queue
 // carries only wake-up signals (ADR-0004): a Queue built with Options.Waker signals each job it
 // stores once its transaction commits, queue.Source.ClaimJob claims the job of a signal by ID
 // with the statements of a claim, and queue.WakeFinder finds the jobs whose signal was lost (the

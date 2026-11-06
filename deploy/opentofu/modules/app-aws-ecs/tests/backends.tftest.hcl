@@ -380,7 +380,7 @@ run "a_queue_that_needs_a_caller_fails" {
 
   variables {
     backends = [
-      { platform = "aws", env = { MY_DATABASE = "postgres", MY_BLOB = "s3", MY_QUEUE = "sqs" } },
+      { platform = "aws", env = { MY_DATABASE = "postgres", MY_BLOB = "s3", MY_QUEUE = "cloudtasks" } },
       { platform = "aws", secret_env = { MY_KEK = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:kek-AbCdEf" } },
     ]
   }
@@ -522,16 +522,6 @@ run "invokers_fail" {
 
   variables {
     backends = [{ platform = "aws", invokers = ["invoker@p.iam.gserviceaccount.com"] }]
-  }
-
-  expect_failures = [var.backends]
-}
-
-run "a_queue_that_lambda_polls_fails" {
-  command = plan
-
-  variables {
-    backends = [{ platform = "aws", event_sources = { jobs = { arn = "arn:aws:sqs:ap-northeast-1:111122223333:my-jobs", visibility_timeout_seconds = 5400 } } }]
   }
 
   expect_failures = [var.backends]

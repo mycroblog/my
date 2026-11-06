@@ -2,8 +2,8 @@
 
 // Package emf is the kernel.Meter adapter of metrics_exporter = emf (ADR-0055 §2): it writes
 // the measurements as JSON lines in the CloudWatch Embedded Metric Format, which CloudWatch
-// Logs turns into metrics, so that the process aggregates nothing and a frozen Lambda execution
-// environment loses nothing.
+// Logs turns into metrics, so that the process aggregates nothing and a process that ends loses
+// nothing.
 //
 // The measurements made with the context of a unit of work (kernel.Meter.Begin: an HTTP request
 // or a job) are written when it ends: one line per distinct label set, holding every metric
@@ -12,7 +12,7 @@
 // (kernel.LineMeter): it gets the _aws directive and the values, so that one line is both the
 // log and the metrics, and the end of the unit writes only the others. A measurement outside a
 // unit of work is written at once. UpDownCounters record nothing, since they are values of one
-// process that the platform's own metrics stand in for (Lambda's concurrency). Gauges and
+// process that the platform's own metrics stand in for (ECS's task count). Gauges and
 // observable counters are not collected: WriteGauges (kernel.GaugeWriter) writes them when the
 // periodic job of the metrics snapshot asks (ADR-0055 §4). EMF has no counter of totals, so an
 // observable counter is written as its increase since the previous write, which the Sum

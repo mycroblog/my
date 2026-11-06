@@ -1168,16 +1168,6 @@ run "the_security_groups_of_aws_fail" {
   expect_failures = [var.backends]
 }
 
-run "a_queue_that_lambda_polls_fails" {
-  command = plan
-
-  variables {
-    backends = [{ platform = "gcp", event_sources = { jobs = { arn = "a", visibility_timeout_seconds = 930 } } }]
-  }
-
-  expect_failures = [var.backends]
-}
-
 run "the_load_balancer_of_ecs_fails" {
   command = plan
 

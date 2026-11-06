@@ -130,10 +130,6 @@ variable "backends" {
     invokers = optional(list(string), [])
     # Accepted so that they cannot vanish, and refused below: they belong to Google Cloud.
     cloud_sql_instances = optional(list(string), [])
-    event_sources = optional(map(object({
-      arn                        = string
-      visibility_timeout_seconds = number
-    })), {})
   }))
   default  = []
   nullable = false
@@ -146,7 +142,7 @@ variable "backends" {
   # Modules of one cloud work only with that cloud's app: read "Platforms" in the README of deploy/opentofu.
   validation {
     condition     = alltrue([for b in var.backends : b.platform != "gcp"])
-    error_message = "A module of Google Cloud works only with app-gcp-cloud-run, and one is in backends here, naming: ${join(", ", flatten([for b in var.backends : concat(keys(b.env), keys(b.secret_env), keys(b.secret_files)) if b.platform == "gcp"]))}. Use the module of this platform or a neutral one: blob-aws-s3, blob-s3, or blob-cloudflare-r2 in place of blob-gcp-gcs; db-aws-rds, db-external, or db-neon in place of db-gcp-cloud-sql; queue-db in place of queue-gcp-cloud-tasks; stream-aws-sns, stream-valkey, or stream-postgres in place of stream-gcp-pubsub; kv-aws-elasticache or kv-external in place of kv-gcp-memorystore; secrets-aws-secrets-manager in place of secrets-gcp-secret-manager; kek-aws-secrets-manager or kek-aws-kms in place of kek-gcp-*; ingress-aws-alb or ingress-cloudflare-app in place of ingress-gcp-*; monitoring-aws in place of monitoring-gcp. billing-gcp has no place on AWS."
+    error_message = "A module of Google Cloud works only with app-gcp-cloud-run, and one is in backends here, naming: ${join(", ", flatten([for b in var.backends : concat(keys(b.env), keys(b.secret_env), keys(b.secret_files)) if b.platform == "gcp"]))}. Use the module of this platform or a neutral one: blob-aws-s3, blob-s3, or blob-cloudflare-r2 in place of blob-gcp-gcs; db-aws-rds, db-external, or db-neon in place of db-gcp-cloud-sql; queue-db in place of queue-gcp-cloud-tasks; stream-aws-sns, stream-valkey, or stream-postgres in place of stream-gcp-pubsub; kv-aws-elasticache or kv-external in place of kv-gcp-memorystore; secrets-aws-secrets-manager in place of secrets-gcp-secret-manager; kek-aws-secrets-manager or kek-aws-kms in place of kek-gcp-*; ingress-aws-alb in place of ingress-gcp-*; monitoring-aws in place of monitoring-gcp. billing-gcp has no place on AWS."
   }
 
   validation {
@@ -155,7 +151,7 @@ variable "backends" {
         for r in b.permissions : r.resource != null && can(regex("^[a-z0-9-]+:[A-Za-z0-9*]+$", r.permission))
       ] if b.platform != "gcp"
     ]))
-    error_message = "Each permission is one IAM action, such as sqs:SendMessage, with a resource, which is an ARN, an ARN pattern, or *."
+    error_message = "Each permission is one IAM action, such as s3:GetObject, with a resource, which is an ARN, an ARN pattern, or *."
   }
 
   validation {
@@ -166,11 +162,6 @@ variable "backends" {
   validation {
     condition     = alltrue([for b in var.backends : length(b.invokers) == 0])
     error_message = "invokers belongs to a platform that calls the app. A process here stays up and takes its jobs from the database: use queue-db."
-  }
-
-  validation {
-    condition     = alltrue([for b in var.backends : length(b.event_sources) == 0])
-    error_message = "event_sources belongs to a platform that polls a queue to invoke the app, and nothing does here: queue = sqs needs Lambda. Use queue-db."
   }
 
   validation {

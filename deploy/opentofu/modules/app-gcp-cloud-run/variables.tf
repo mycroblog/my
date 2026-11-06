@@ -156,10 +156,6 @@ variable "backends" {
     pool_max_conns = optional(number)
     # Accepted so that they cannot vanish, and refused below: they belong to AWS.
     security_group_ids = optional(list(string), [])
-    event_sources = optional(map(object({
-      arn                        = string
-      visibility_timeout_seconds = number
-    })), {})
     load_balancer = optional(object({
       target_group_arn  = string
       security_group_id = string
@@ -180,7 +176,7 @@ variable "backends" {
     condition = alltrue([
       for b in var.backends : b.platform != "aws" || (join(",", b.billing_sources) == "aws" && length(b.permissions) == 0)
     ])
-    error_message = "A module of AWS works only with app-aws-ecs or app-aws-lambda, and one is in backends here, naming: ${join(", ", flatten([for b in var.backends : concat(keys(b.env), keys(b.secret_env), keys(b.secret_files)) if b.platform == "aws"]))}. Use the module of this platform or a neutral one: blob-gcp-gcs, blob-s3 with keys, or blob-cloudflare-r2 in place of blob-aws-s3; db-gcp-cloud-sql, db-external, or db-neon in place of db-aws-rds; queue-gcp-cloud-tasks in place of queue-aws-sqs; stream-gcp-pubsub, stream-valkey, or stream-postgres in place of stream-aws-sns; kv-gcp-memorystore or kv-external in place of kv-aws-elasticache; mail-smtp in place of mail-aws-ses; secrets-gcp-secret-manager in place of secrets-aws-secrets-manager; kek-gcp-secret-manager or kek-gcp-kms in place of kek-aws-*; ingress-gcp-domain-mapping, ingress-gcp-load-balancer, or ingress-cloudflare-app in place of ingress-aws-*; monitoring-gcp in place of monitoring-aws. billing-aws is the one exception, with web_identity = true."
+    error_message = "A module of AWS works only with app-aws-ecs, and one is in backends here, naming: ${join(", ", flatten([for b in var.backends : concat(keys(b.env), keys(b.secret_env), keys(b.secret_files)) if b.platform == "aws"]))}. Use the module of this platform or a neutral one: blob-gcp-gcs, blob-s3 with keys, or blob-cloudflare-r2 in place of blob-aws-s3; db-gcp-cloud-sql, db-external, or db-neon in place of db-aws-rds; stream-gcp-pubsub, stream-valkey, or stream-postgres in place of stream-aws-sns; kv-gcp-memorystore or kv-external in place of kv-aws-elasticache; mail-smtp in place of mail-aws-ses; secrets-gcp-secret-manager in place of secrets-aws-secrets-manager; kek-gcp-secret-manager or kek-gcp-kms in place of kek-aws-*; ingress-gcp-domain-mapping, ingress-gcp-load-balancer, or ingress-cloudflare-app in place of ingress-aws-*; monitoring-gcp in place of monitoring-aws. billing-aws is the one exception, with web_identity = true."
   }
 
   validation {
@@ -201,8 +197,8 @@ variable "backends" {
   }
 
   validation {
-    condition     = alltrue([for b in var.backends : length(b.security_group_ids) == 0 && length(b.event_sources) == 0 && b.load_balancer == null])
-    error_message = "security_group_ids, event_sources, and load_balancer belong to AWS. A backend on private addresses here returns private_network."
+    condition     = alltrue([for b in var.backends : length(b.security_group_ids) == 0 && b.load_balancer == null])
+    error_message = "security_group_ids and load_balancer belong to AWS. A backend on private addresses here returns private_network."
   }
 
   validation {

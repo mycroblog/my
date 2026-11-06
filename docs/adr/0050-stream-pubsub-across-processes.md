@@ -75,7 +75,7 @@ type Listener interface {
 - 接続は KV（`kv = valkey`）と同じ `internal/adapter/valkey` で作り、設定 `valkey_url`（`valkey://` / `valkeys://`、認証と DB 番号を含む）・`valkey_tls_ca_file`・`valkey_key_prefix` を共有する
 - クライアント: valkey-go（Apache-2.0、pure Go）。版は `go.mod` が固定し、公開から 3 日を過ぎたものを使う（ADR-0081 §10 の cooldown）。KV のアダプタと同じ版を使う
 - クラウドでは既定にしない
-  - ElastiCache Serverless for Valkey は最小 100 MB の課金で約 $6.13 / 月（$0.084 / GB 時間、us-east-1）。VPC のエンドポイントでは Lambda を VPC に入れる必要があり、外向きに NAT が要るうえ、**VPC の中の Lambda の Function URL はレスポンスストリーミングに対応しない**。
+  - ElastiCache Serverless for Valkey は最小 100 MB の課金で約 $6.13 / 月（$0.084 / GB 時間、us-east-1）。
     公開エンドポイント（Valkey 9.0 以上、IAM 認証のみ、追加料金なし）なら VPC は要らないが、提供リージョンと valkey-go の IAM 認証の対応は要検証
   - Memorystore for Valkey は最小の shared-core-nano でも $0.0318 / 時間（約 $23 / 月）で SLA がなく、Private Service Connect と Cloud Run の Direct VPC egress が要る。GCP に scale to zero の Valkey は見つからなかった
 
@@ -89,19 +89,18 @@ type Listener interface {
   - トピックの購読（`Protocol` は `sqs`、`RawMessageDelivery=true`）。同じアカウントなので自動で確認される
 - 受信は 20 秒のロングポーリング（最大 10 件）と `DeleteMessageBatch`。`Close` で `Unsubscribe` と `DeleteQueue` を呼ぶ。キューの削除は最大 60 秒かかり、同じ名前は 60 秒使えないので、名前はプロセス ID と `Listen` の連番で毎回新しくする（`Relay` は `Broken` の後に同じプロセスで listen し直す）
 - 後始末
-  - Lambda Web Adapter は外部拡張として登録されるので、実行環境の終了時にプロセスは SIGTERM を受け、約 2 秒の猶予で `Close` を試みる
-  - 異常終了や凍結のまま捨てられた実行環境の分は、定期ジョブ `stream.sweep`（ADR-0004 の Scheduler → JobQueue）が消す。
+  - SIGTERM を受けたプロセスは `Close` を呼ぶ
+  - 異常終了したプロセスの分は、定期ジョブ `stream.sweep`（ADR-0004 の Scheduler → JobQueue）が消す。
     listen 中のプロセスは KV（`kernel.KeyValueStore`）に TTL 5 分の生存の印を 1 分ごとに書き、ジョブは接頭辞でキューとトピックの購読を一覧して、印のない古いもの（作成から 5 分以上）を消す
-  - 凍結から戻ったプロセスのキューが消されていたら、受信が `QueueDoesNotExist` で失敗して `Broken` になり、次の購読で作り直す
-- Lambda での形: 実行環境は 1 度に 1 リクエストを扱うので、SSE の接続 1 本が実行環境 1 つ、つまりキュー 1 つになる。関数のタイムアウト（最大 15 分）でストリームは切れ、クライアントが再接続する
+  - 生きているプロセスのキューが消されていたら、受信が `QueueDoesNotExist` で失敗して `Broken` になり、次の購読で作り直す
 - コスト（2026-10-19 確認、us-east-1）
   - SNS: API リクエストは月 100 万まで無料、以降 $0.50 / 100 万（64 KB ごとに 1 リクエスト）。SQS への配信は課金されない
   - SQS: 全顧客に月 100 万リクエスト無料、以降 $0.40 / 100 万。空の受信も 1 リクエスト。listen 中のプロセス 1 つで約 129,600 回 / 月（20 秒ごと）なので、常時開いたストリーム約 7 本分までが無料枠
   - 知らせ 1 件は SNS 1 リクエスト。月 10 万件でも無料枠に収まる
-- IAM（実行ロール）: `sns:Publish`、`sns:Subscribe`（`sns:Protocol` = `sqs` と `sns:Endpoint` でキューの接頭辞に限る）、`sns:Unsubscribe`、`sns:ListSubscriptionsByTopic`、
+- IAM（タスクロール）: `sns:Publish`、`sns:Subscribe`（`sns:Protocol` = `sqs` と `sns:Endpoint` でキューの接頭辞に限る）、`sns:Unsubscribe`、`sns:ListSubscriptionsByTopic`、
   キューの接頭辞の ARN に対する `sqs:CreateQueue`・`sqs:TagQueue`・`sqs:SetQueueAttributes`・`sqs:GetQueueAttributes`・`sqs:GetQueueUrl`・`sqs:ReceiveMessage`・`sqs:DeleteMessage`・`sqs:DeleteQueue`、`sqs:ListQueues`。
   `sns:Unsubscribe` の対象の資源の種類は要検証
-- 依存: aws-sdk-go-v2 の `service/sns`・`service/sqs`（Apache-2.0）。`queue/sqs` と同じ SDK
+- 依存: aws-sdk-go-v2 の `service/sns`・`service/sqs`（Apache-2.0）
 
 #### `stream/pubsub`（Google Cloud Pub/Sub、プロセスごとの subscription）
 
@@ -126,7 +125,7 @@ type Listener interface {
 | Self-hosted（SQLite、または 1 プロセスの `role = all`） | `hub` |
 | Self-hosted（PostgreSQL で複数プロセス・レプリカ） | `postgres`。Valkey を動かしている構成（`kv = valkey`）は `valkey` も可 |
 | Google Cloud（Cloud Run） | `pubsub` |
-| AWS（Lambda） | `sns` |
+| AWS（ECS Fargate） | `sns` |
 
 ### 4. 設定
 
@@ -159,7 +158,7 @@ type Listener interface {
 ## 経緯
 
 リアルタイム更新（`GET /api/v1/streaming`、FR-207、[ADR-0016](0016-client-api-style.md)）は、コミットフックが `stream.Publisher` に知らせを出し、各ストリームが `stream.Subscriber` で購読する（[overview §4.4](../architecture/overview.md#44-リアルタイム更新sse)）。
-1 つのプロセスの中だけで配る `stream.Hub` では、web のプロセスが複数ある構成（Cloud Run の複数インスタンス、Lambda の複数の実行環境、k8s のレプリカ）と、web と worker を分けた構成（Inbox の処理で作られた通知は worker で生まれる）に知らせが届かない（#196）。
+1 つのプロセスの中だけで配る `stream.Hub` では、web のプロセスが複数ある構成（Cloud Run の複数インスタンス、k8s のレプリカ）と、web と worker を分けた構成（Inbox の処理で作られた通知は worker で生まれる）に知らせが届かない（#196）。
 そこで決定者が、AWS の Queue、GCP の類似サービス、Valkey を対象に Pub/Sub のアダプタを増やすよう指示した。
 
 知らせは「何が変わったか」の ID だけで、配信は best effort でよく、再接続したクライアントが読み直せる。この性質が要件の上限を決めた。
@@ -176,8 +175,6 @@ type Listener interface {
 [EventBridge quotas](https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-quota.html) /
 [ElastiCache pricing](https://aws.amazon.com/elasticache/pricing/) /
 [ElastiCache serverless public endpoints](https://docs.aws.amazon.com/AmazonElastiCache/latest/dg/serverless-public-endpoints-chapter.html) /
-[Lambda response streaming](https://docs.aws.amazon.com/lambda/latest/dg/configuration-response-streaming.html) /
-[Lambda execution environment lifecycle](https://docs.aws.amazon.com/lambda/latest/dg/lambda-runtime-environment.html) /
 [LocalStack 2026.03.0](https://blog.localstack.cloud/localstack-for-aws-release-2026-03-0/) /
 [Floci](https://github.com/floci-io/floci) /
 [Pub/Sub subscription properties](https://docs.cloud.google.com/pubsub/docs/subscription-properties) /
@@ -214,13 +211,11 @@ type Listener interface {
 - 悪い影響・トレードオフ
   - プロセスをまたぐ配信は best effort。ブローカーの切断のたびに、そのプロセスのストリームが一斉に切れて再接続と読み直しが起きる
   - 購読の開始が listener の準備（SQS のキューの作成と購読、Pub/Sub の subscription の作成）を待つので、プロセスで最初のストリームの開始が数秒遅れうる（要検証: 実測）
-  - AWS では SSE の接続 1 本が Lambda の実行環境 1 つを最大 15 分占有する。ブローカーとは別に、Lambda の実行時間がストリームの本数 × 時間で増える（例: 512 MB で 1 本を 1 か月開き続けると約 131 万 GB 秒で、無料枠 40 万 GB 秒を超える）
   - クラウドではプロセスごとの資源を作り消すので、後始末の定期ジョブと IAM の権限が要る
   - アカウントごとのストリームの上限はプロセスごとで、全体では「上限 × プロセス数」になる
 
 ## Open Questions / 要検証
 
-- AWS（Lambda）でストリームを既定で有効にするか。上記の Lambda の実行時間を避けるなら、Lambda ではストリームを無効にしてクライアントのポーリングに任せる設定が要る
 - Self-hosted の `database = postgres` で、`stream` の既定を `postgres` にするか（§3 では `db` と同じく推測しない）
 - ElastiCache Serverless の公開エンドポイントの提供リージョンと、valkey-go の IAM 認証の対応（対応すれば AWS で `valkey` も選べる）
 - `NOTIFY` のコミット時の直列化が、知らせの多い構成で投稿の書き込みを遅らせないか（負荷試験）

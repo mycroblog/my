@@ -75,7 +75,7 @@ The inbox and GETs of posts and collections return `410 Gone`.
 
 ## 4. Confirming that delivery is complete
 
-**Do not stop `my serve` and the workers (processes whose `role` is `all` or `worker`; with a push-style queue, the Cloud Tasks queue or the SQS event source) until the state is `delivery_completed`.**
+**Do not stop `my serve` and the workers (processes whose `role` is `all` or `worker`; with a push-style queue, the Cloud Tasks queue) until the state is `delivery_completed`.**
 The workers deliver the `Delete` activities, and while they do, the server keeps returning the local Actor's document and key so that receivers can verify the signature of the `Delete`.
 If you stop early, the accounts remain on other servers.
 

@@ -17,9 +17,8 @@ import (
 )
 
 // JobRunner runs jobs until ctx ends. It has two forms (ADR-0004): a pull runner, which polls
-// a queue (PullRunner, for the database queue and long-running SQS workers), and a push
-// receiver, which handles the messages a platform delivers (Lambda SQS events, Cloud Tasks
-// HTTP targets).
+// a queue (PullRunner, for the database queue), and a push receiver, which handles the messages
+// a platform delivers (Cloud Tasks HTTP targets).
 type JobRunner interface {
 	// Run processes jobs until ctx ends, then returns nil. It returns an error only when it
 	// cannot run at all.

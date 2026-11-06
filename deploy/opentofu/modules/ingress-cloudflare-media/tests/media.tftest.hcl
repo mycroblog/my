@@ -114,7 +114,7 @@ run "alone_it_can_name_the_settings" {
   }
 }
 
-run "beside_cloudfront_it_only_sends_the_header" {
+run "beside_a_module_that_names_the_settings_it_only_sends_the_header" {
   command = plan
 
   variables {

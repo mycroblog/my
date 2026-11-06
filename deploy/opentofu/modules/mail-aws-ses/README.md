@@ -3,7 +3,7 @@
 Email through Amazon SES: the identity of the sender's domain and, if you want one, a configuration set. The server uses the SES v2 API with its
 execution role, so there is no password. It follows [the backend contract](../../README.md#the-backend-contract).
 
-**This module has never been applied.** The tests mock the provider, so they show that the configuration is consistent, not that AWS accepts it. It needs `app-aws-lambda`, and what that module lacks.
+**This module has never been applied.** The tests mock the provider, so they show that the configuration is consistent, not that AWS accepts it.
 
 ## Source
 

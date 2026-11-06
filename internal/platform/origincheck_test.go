@@ -301,37 +301,6 @@ func TestOriginCheckExemptions(t *testing.T) {
 	}
 }
 
-// Without queue = sqs nothing poses as an SQS event; with it the event alone passes, at its path.
-func TestOriginCheckSQSEvents(t *testing.T) {
-	cfg := &config.Config{Queue: "db"}
-	event := func(path string) *http.Request {
-		r := httptest.NewRequestWithContext(t.Context(), http.MethodPost, path, nil)
-		r.Header.Set("X-Amzn-Request-Context", "null")
-		return r
-	}
-	if sqsEventsExempt(cfg)(event("/events")) {
-		t.Error("an event passes without queue = sqs")
-	}
-	cfg = &config.Config{Queue: "sqs", QueueSQSEventsPath: "/events"}
-	exempt := sqsEventsExempt(cfg)
-	if !exempt(event("/events")) {
-		t.Error("the event of queue = sqs does not pass")
-	}
-	if exempt(event("/other")) {
-		t.Error("an event passes at another path")
-	}
-	if exempt(httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/events", nil)) {
-		t.Error("a request that is no event passes")
-	}
-	if originExempt(func() *http.Request {
-		r := event("/events")
-		r.Method = http.MethodGet
-		return r
-	}(), exempt) {
-		t.Error("a GET passes as an event")
-	}
-}
-
 // An exempt request without the secret proved nothing: the trusted peer's report of a client IP
 // and of a trace do not count, and the header it sent does not reach the handler.
 func TestOriginCheckExemptRequestTrustsNoOne(t *testing.T) {

@@ -46,12 +46,17 @@ mock_provider "aws" {
   }
   mock_resource "aws_cloudwatch_log_group" {
     defaults = {
-      arn = "arn:aws:logs:ap-northeast-1:111122223333:log-group:/aws/lambda/my"
+      arn = "arn:aws:logs:ap-northeast-1:111122223333:log-group:/ecs/my"
     }
   }
-  mock_resource "aws_lambda_function_url" {
+  mock_resource "aws_ecs_cluster" {
     defaults = {
-      function_url = "https://abc.lambda-url.ap-northeast-1.on.aws/"
+      arn = "arn:aws:ecs:ap-northeast-1:111122223333:cluster/my"
+    }
+  }
+  mock_resource "aws_ecs_task_definition" {
+    defaults = {
+      arn = "arn:aws:ecs:ap-northeast-1:111122223333:task-definition/my:1"
     }
   }
 }
@@ -113,20 +118,20 @@ run "the_budget_method_beside_aws_on_cloud_run" {
   }
 }
 
-run "on_lambda" {
+run "on_ecs" {
   command = plan
 
   module {
-    source = "../../tests/billing-on-lambda"
+    source = "../../tests/billing-on-ecs"
   }
 
   assert {
     condition     = output.env["MY_BILLING_SOURCES"] == "aws" && !contains(keys(output.env), "MY_BILLING_AWS_ROLE_ARN")
-    error_message = "on AWS the module sits in backends, and the execution role needs no role to assume"
+    error_message = "on AWS the module sits in backends, and the task role needs no role to assume"
   }
 
   assert {
     condition     = output.policy_actions[0].permission == "ce:GetCostAndUsage"
-    error_message = "the execution role must get the Cost Explorer action"
+    error_message = "the task role must get the Cost Explorer action"
   }
 }

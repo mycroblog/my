@@ -36,12 +36,17 @@ mock_provider "aws" {
   }
   mock_resource "aws_cloudwatch_log_group" {
     defaults = {
-      arn = "arn:aws:logs:ap-northeast-1:111122223333:log-group:/aws/lambda/my"
+      arn = "arn:aws:logs:ap-northeast-1:111122223333:log-group:/ecs/my"
     }
   }
-  mock_resource "aws_lambda_function_url" {
+  mock_resource "aws_ecs_cluster" {
     defaults = {
-      function_url = "https://abc.lambda-url.ap-northeast-1.on.aws/"
+      arn = "arn:aws:ecs:ap-northeast-1:111122223333:cluster/my"
+    }
+  }
+  mock_resource "aws_ecs_task_definition" {
+    defaults = {
+      arn = "arn:aws:ecs:ap-northeast-1:111122223333:task-definition/my:1"
     }
   }
   mock_resource "aws_s3_bucket" {
@@ -54,6 +59,7 @@ mock_provider "aws" {
 
 variables {
   host                           = "social.example"
+  load_balancer_arn_suffix       = "app/my/50dc6c495c0c9188"
   notification_emails            = ["ops@social.example"]
   database_size_limit_bytes      = 8589934592
   media_size_limit_bytes         = 53687091200
@@ -231,15 +237,23 @@ run "the_outputs_fit_the_app" {
   command = plan
 
   module {
-    source = "../app-aws-lambda"
+    source = "../app-aws-ecs"
   }
 
   variables {
-    image = "111122223333.dkr.ecr.ap-northeast-1.amazonaws.com/my:0.1.0"
+    image = "ghcr.io/mycroblog/my:0.1.0"
+    network = {
+      platform            = "aws"
+      vpc_id              = "vpc-1"
+      vpc_cidr            = "10.0.0.0/16"
+      public_subnet_ids   = ["subnet-1", "subnet-2"]
+      public_subnet_cidrs = ["10.0.0.0/24", "10.0.1.0/24"]
+    }
+    assign_public_ip = true
     backends = [
       # What this module returns: run blocks of a plan cannot pass outputs to another module.
       { platform = "aws", env = { MY_METRICS_EXPORTER = "emf", MY_METRICS_EMF_NAMESPACE = "my", MY_METRICS_EMF_DIMENSIONS = "my.outcome" }, secret_env = {}, permissions = [] },
-      { platform = "aws", env = { MY_DATABASE = "postgres", MY_QUEUE = "sqs" }, secret_env = { MY_DATABASE_URL = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:db-AbCdEf", MY_KEK = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:kek-AbCdEf" } },
+      { platform = "aws", env = { MY_DATABASE = "postgres", MY_BLOB = "s3" }, secret_env = { MY_DATABASE_URL = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:db-AbCdEf", MY_KEK = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:kek-AbCdEf" } },
     ]
   }
 

@@ -1,20 +1,17 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-//go:build !no_sqs
+//go:build !no_cloudtasks
 
 package platform_test
 
 import (
 	"context"
+	"net/http"
 	"strings"
 	"sync"
 	"testing"
 	"time"
 
-	"github.com/aws/aws-sdk-go-v2/service/sqs"
-	"github.com/aws/aws-sdk-go-v2/service/sqs/types"
-
-	sqsqueue "github.com/mycroblog/my/internal/adapter/queue/sqs"
 	"github.com/mycroblog/my/internal/app/kernel"
 	"github.com/mycroblog/my/internal/app/queue"
 	"github.com/mycroblog/my/internal/platform"
@@ -23,63 +20,52 @@ import (
 )
 
 const (
-	defaultSQSQueue = "https://sqs.ap-northeast-1.amazonaws.com/123456789012/my-jobs"
-	mailSQSQueue    = "https://sqs.ap-northeast-1.amazonaws.com/123456789012/my-mail"
+	defaultTasksQueue = "projects/p/locations/asia-northeast1/queues/my-jobs"
+	mailTasksQueue    = "projects/p/locations/asia-northeast1/queues/my-mail"
 )
 
-// fakeSQS is an SQS that records the bodies of the messages per queue.
-type fakeSQS struct {
+// routedWakers records the signals of each queue of the routes, by the queue's name.
+type routedWakers struct {
 	mu     sync.Mutex
-	bodies map[string][]string
+	wakers map[string]*testkit.Waker
 }
 
-func (s *fakeSQS) SendMessage(_ context.Context, in *sqs.SendMessageInput, _ ...func(*sqs.Options)) (*sqs.SendMessageOutput, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	s.bodies[*in.QueueUrl] = append(s.bodies[*in.QueueUrl], *in.MessageBody)
-	return &sqs.SendMessageOutput{}, nil
-}
-
-func (s *fakeSQS) SendMessageBatch(_ context.Context, in *sqs.SendMessageBatchInput, _ ...func(*sqs.Options)) (*sqs.SendMessageBatchOutput, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	out := &sqs.SendMessageBatchOutput{}
-	for _, e := range in.Entries {
-		s.bodies[*in.QueueUrl] = append(s.bodies[*in.QueueUrl], *e.MessageBody)
-		out.Successful = append(out.Successful, types.SendMessageBatchResultEntry{Id: e.Id})
-	}
-	return out, nil
-}
-
-func (s *fakeSQS) take(queueURL string) []string {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	b := s.bodies[queueURL]
-	delete(s.bodies, queueURL)
-	return b
-}
-
-func (s *fakeSQS) waker(t *testing.T, queueURL string) queue.Waker {
-	t.Helper()
-	w, err := sqsqueue.New(s, sqsqueue.Options{QueueURL: queueURL, Clock: testkit.NewClock(time.Now())})
-	if err != nil {
-		t.Fatal(err)
+func (r *routedWakers) of(q string) *testkit.Waker {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	w, ok := r.wakers[q]
+	if !ok {
+		w = &testkit.Waker{}
+		r.wakers[q] = w
 	}
 	return w
 }
 
-// routedSQSApp starts an app with queue = sqs whose signals reach the queues of server through the
-// real SQS adapter, with the given value of queue_sqs_routes.
-func routedSQSApp(t *testing.T, server *fakeSQS, routes string, setup func(*platform.App)) *server {
+// take returns the job IDs of the signals that the queue q got since the last take.
+func (r *routedWakers) take(q string) []string {
+	var ids []string
+	for _, w := range r.of(q).Take() {
+		ids = append(ids, w.JobID)
+	}
+	return ids
+}
+
+// routedTasksApp starts an app with queue = cloudtasks whose signals reach the wakers of r, with
+// the given value of queue_cloudtasks_routes.
+func routedTasksApp(t *testing.T, r *routedWakers, routes string, setup func(*platform.App)) *server {
 	t.Helper()
 	cfg := loadConfig(t, map[string]string{
-		"MY_DATABASE": "postgres", "MY_DATABASE_URL": "postgres://unused/my", "MY_QUEUE": "sqs",
-		"MY_QUEUE_SQS_QUEUE_URL": defaultSQSQueue, "MY_QUEUE_SQS_ROUTES": routes,
+		"MY_DATABASE": "postgres", "MY_DATABASE_URL": "postgres://unused/my", "MY_QUEUE": "cloudtasks",
+		"MY_QUEUE_CLOUDTASKS_QUEUE":           defaultTasksQueue,
+		"MY_QUEUE_CLOUDTASKS_SERVICE_ACCOUNT": "tasks@p.iam.gserviceaccount.com",
+		"MY_QUEUE_CLOUDTASKS_URL":             "https://jobs.example.test",
+		"MY_QUEUE_CLOUDTASKS_ROUTES":          routes,
 	})
 	cfg.DB, cfg.DatabaseURL = "sqlite", "file:"+newDatabase(t, true)
 	return startApp(t, cfg, platform.AppOptions{
-		Waker:      server.waker(t, defaultSQSQueue),
-		RouteWaker: func(r config.QueueRoute) queue.Waker { return server.waker(t, r.Queue) },
+		Waker:             r.of(defaultTasksQueue),
+		PushAuthenticator: pushAuth{},
+		RouteWaker:        func(q config.QueueRoute) queue.Waker { return r.of(q.Queue) },
 	}, platform.ServeOptions{}, func(a *platform.App) {
 		if setup != nil {
 			setup(a)
@@ -88,35 +74,35 @@ func routedSQSApp(t *testing.T, server *fakeSQS, routes string, setup func(*plat
 }
 
 func TestQueueRoutesSendSignalsToTheirQueue(t *testing.T) {
-	server := &fakeSQS{bodies: map[string][]string{}}
-	s := routedSQSApp(t, server, "notification.*="+mailSQSQueue, nil)
+	r := &routedWakers{wakers: map[string]*testkit.Waker{}}
+	s := routedTasksApp(t, r, "notification.*="+mailTasksQueue, nil)
 
-	// The signal is the job's ID alone, on the queue of the job's type.
+	// The signal is the job's ID, on the queue of the job's type.
 	if err := s.app.Jobs.Enqueue(t.Context(), queue.NewJob{Type: "notification.push"}); err != nil {
 		t.Fatalf("Enqueue: %v", err)
 	}
-	routed := server.take(mailSQSQueue)
+	routed := r.take(mailTasksQueue)
 	if len(routed) != 1 || !kernel.ValidID(routed[0]) {
 		t.Fatalf("the routed queue got %v, want a job ID", routed)
 	}
-	if got := server.take(defaultSQSQueue); len(got) != 0 {
+	if got := r.take(defaultTasksQueue); len(got) != 0 {
 		t.Errorf("the default queue got %v for a routed type", got)
 	}
 
 	if err := s.app.Jobs.Enqueue(t.Context(), queue.NewJob{Type: "media.process"}); err != nil {
 		t.Fatalf("Enqueue: %v", err)
 	}
-	if got := server.take(defaultSQSQueue); len(got) != 1 {
+	if got := r.take(defaultTasksQueue); len(got) != 1 {
 		t.Errorf("the default queue got %v, want the signal of a type without a route", got)
 	}
-	if got := server.take(mailSQSQueue); len(got) != 0 {
+	if got := r.take(mailTasksQueue); len(got) != 0 {
 		t.Errorf("the routed queue got %v for another type", got)
 	}
 
 	for deadline := time.Now().Add(5 * time.Second); !strings.Contains(s.logs.String(), `"routes_hash"`) && time.Now().Before(deadline); {
 		time.Sleep(10 * time.Millisecond)
 	}
-	if logs := s.logs.String(); !strings.Contains(logs, mailSQSQueue) {
+	if logs := s.logs.String(); !strings.Contains(logs, mailTasksQueue) {
 		t.Errorf("the startup log lacks the routes:\n%s", logs)
 	}
 }
@@ -124,10 +110,10 @@ func TestQueueRoutesSendSignalsToTheirQueue(t *testing.T) {
 // Which queue a signal came from does not matter to the receiver, so a misrouted signal, as from a
 // process with other routes, still runs its job.
 func TestQueueRoutesMisroutedSignalStillRuns(t *testing.T) {
-	server := &fakeSQS{bodies: map[string][]string{}}
+	r := &routedWakers{wakers: map[string]*testkit.Waker{}}
 	var ran sync.WaitGroup
 	ran.Add(1)
-	s := routedSQSApp(t, server, "notification.*="+mailSQSQueue, func(a *platform.App) {
+	s := routedTasksApp(t, r, "notification.*="+mailTasksQueue, func(a *platform.App) {
 		a.Handlers.Register("test.misrouted", func(context.Context, queue.Job) queue.Result {
 			ran.Done()
 			return queue.Done()
@@ -136,13 +122,12 @@ func TestQueueRoutesMisroutedSignalStillRuns(t *testing.T) {
 	if err := s.app.Jobs.Enqueue(t.Context(), queue.NewJob{Type: "test.misrouted"}); err != nil {
 		t.Fatalf("Enqueue: %v", err)
 	}
-	id := server.take(defaultSQSQueue)
+	id := r.take(defaultTasksQueue)
 	if len(id) != 1 {
 		t.Fatalf("signals = %v", id)
 	}
-	status, failed := postEvent(t, s.url+config.DefaultSQSEventsPath, "null", id[0])
-	if status != 200 || len(failed) != 0 {
-		t.Fatalf("event = %d, %v", status, failed)
+	if code := post(t, s.url+"/_internal/jobs", "good", id[0]); code != http.StatusNoContent {
+		t.Fatalf("delivery = %d", code)
 	}
 	ran.Wait()
 }
@@ -151,8 +136,10 @@ func TestQueueRoutesMisroutedSignalStillRuns(t *testing.T) {
 func TestQueueRoutesUnknownTypeFailsStartup(t *testing.T) {
 	for _, role := range []string{"web", "worker", "all"} {
 		cfg := loadConfig(t, map[string]string{
-			"MY_ROLE": role, "MY_DATABASE": "postgres", "MY_DATABASE_URL": "postgres://unused/my", "MY_QUEUE": "sqs",
-			"MY_QUEUE_SQS_QUEUE_URL": defaultSQSQueue, "MY_QUEUE_SQS_ROUTES": "nonexistent.*=" + mailSQSQueue,
+			"MY_ROLE": role, "MY_DATABASE": "postgres", "MY_DATABASE_URL": "postgres://unused/my", "MY_QUEUE": "cloudtasks",
+			"MY_QUEUE_CLOUDTASKS_QUEUE":           defaultTasksQueue,
+			"MY_QUEUE_CLOUDTASKS_SERVICE_ACCOUNT": "tasks@p.iam.gserviceaccount.com",
+			"MY_QUEUE_CLOUDTASKS_ROUTES":          "nonexistent.*=" + mailTasksQueue,
 		})
 		cfg.DB, cfg.DatabaseURL = "sqlite", "file:"+newDatabase(t, true)
 		a, err := platform.NewApp(t.Context(), cfg, platform.AppOptions{Waker: &testkit.Waker{}, RouteWaker: func(config.QueueRoute) queue.Waker { return &testkit.Waker{} }})

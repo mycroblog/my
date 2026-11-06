@@ -6224,7 +6224,7 @@ type AdminPasswordResetLink struct {
 
 // AdminQueue The state of the job queue.
 type AdminQueue struct {
-	// Adapter The queue the server runs, the `queue` setting (`db`, `inline`, `sqs`, `cloudtasks`).
+	// Adapter The queue the server runs, the `queue` setting (`db`, `inline`, `cloudtasks`).
 	Adapter string `json:"adapter"`
 
 	// Counts The jobs by state (`queued`, `running`, `retrying`, `dead`) then type; states and
