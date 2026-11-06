@@ -367,9 +367,14 @@ For work on the database, key-value store or queue, restart in maintenance mode 
 
 [Jobs](../reference/jobs.md) lists every job type: what it does, what starts it, how it retries, and what running it again does.
 
-The admin jobs page (`/admin/jobs`, permission `manage_jobs`) lists the queue's jobs by state (waiting, running, waiting to retry, failed).
-It also shows the count per type and state, how long each type keeps a job waiting, when the oldest waiting job is scheduled, each job's last error, key and payload, and the history of unsuccessful attempts (result, error, worker, and start and end time of each attempt).
-The admin API is `GET /api/v1/admin/queue`, `GET /api/v1/admin/jobs?state=&type=`, `GET /api/v1/admin/jobs/{id}/attempts` and `POST /api/v1/admin/jobs/{id}/retry`.
+The admin jobs page (`/admin/jobs`, permission `manage_jobs`) has three pages:
+
+- **Queue state** (`/admin/jobs`): the count per state and per type and state, how long each type keeps a job waiting, and how long the oldest waiting job has waited.
+- **Jobs** (`/admin/jobs/list`): a table of the jobs in one state (pending, waiting, running, waiting to retry, failed), a page at a time, with the type, state, the time it is scheduled or failed, and the number of attempts. Failed jobs have **Run again**.
+- **A job** (`/admin/jobs/<id>`, from the type in the table): every fact of the job, its last error, keys and payload, the history of unsuccessful attempts (result, error, worker, and start and end time of each attempt), and **Run again** for a failed job.
+
+The admin API is `GET /api/v1/admin/queue`, `GET /api/v1/admin/jobs?state=&type=`, `GET /api/v1/admin/jobs/{id}`, `GET /api/v1/admin/jobs/{id}/attempts` and `POST /api/v1/admin/jobs/{id}/retry`.
+A completed job is no longer in the queue, so its page is not found.
 
 - Waiting, running and retry-waiting jobs can be listed only for the queues whose jobs the server holds: `queue = db`, `queue = cloudtasks` (the jobs are in the database too), and `queue = inline`. Failed jobs and the attempt history are in the application database for every queue, so they can always be listed.
 - The attempt history keeps only unsuccessful attempts (retries and the attempt that finally failed). Follow a successful run through the structured `job` log line (which carries `job_id`).

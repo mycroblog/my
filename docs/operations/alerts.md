@@ -124,8 +124,8 @@ Severity: **page** = act now, **ticket** = during working hours. "–" in the ru
 
 These tools come back in most of the runbook entries below.
 
-- **The job screen** (Administration → Jobs, `/admin/jobs`, needs `manage_jobs`): jobs by state (queued, running, retrying, failed) and type, the counts,
-  the oldest waiting job, and for each job its last error and the attempts that did not succeed. Pending jobs are listed only for the queues kept in the database
+- **The job screen** (Administration → Jobs, `/admin/jobs`, needs `manage_jobs`): the counts by state (queued, running, retrying, failed) and type and
+  the oldest waiting job; its **Jobs** page (`/admin/jobs/list`) lists the jobs of one state, and each job's page has its last error and the attempts that did not succeed. Pending jobs are listed only for the queues kept in the database
   (`queue = db` and `cloudtasks`); failed jobs and attempts are listed for every queue.
 - **The `my job` command** on a host that has the server's configuration (`queue = db` and `cloudtasks`):
   `my job list` lists the failed jobs, newest first; `my job retry <id>...` puts them back in the queue; `my job delete <id>...` drops them.
