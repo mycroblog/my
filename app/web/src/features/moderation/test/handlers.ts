@@ -308,6 +308,7 @@ export function reportFixture(overrides: Partial<Schemas["AdminReportDetail"]> =
     category: "spam",
     comment: "Posts the same link again and again.",
     forwarded: false,
+    forwardable: false,
     filed_at: "2026-10-16T09:00:00Z",
     state: "open",
     state_changed_at: "2026-10-16T09:00:00Z",
@@ -651,7 +652,8 @@ export const handlers = [
       ),
     ),
   ),
-  // operationIds listReports, getReport, assignReportToSelf, unassignReport, resolveReport, addReportNote, reopenReport.
+  // operationIds listReports, getReport, assignReportToSelf, unassignReport, resolveReport, addReportNote, reopenReport,
+  // forwardReport.
   http.get(`${apiBase}/admin/reports`, ({ request }) => withViewer(request, () => HttpResponse.json({ items: [] }))),
   http.get(`${apiBase}/admin/reports/:id`, ({ request, params }) =>
     withViewer(request, () => HttpResponse.json(reportFixture({ id: String(params["id"]) }))),
@@ -697,6 +699,11 @@ export const handlers = [
   }),
   http.post(`${apiBase}/admin/reports/:id/reopen`, ({ request, params }) =>
     withViewer(request, () => HttpResponse.json(reportFixture({ id: String(params["id"]) }))),
+  ),
+  http.post(`${apiBase}/admin/reports/:id/forward`, ({ request, params }) =>
+    withViewer(request, () =>
+      HttpResponse.json(reportFixture({ id: String(params["id"]), forwarded: true, forwardable: false })),
+    ),
   ),
   // operationIds listAppeals, getAppeal, upholdAppeal, overturnAppeal.
   http.get(`${apiBase}/admin/appeals`, ({ request }) => withViewer(request, () => HttpResponse.json({ items: [] }))),

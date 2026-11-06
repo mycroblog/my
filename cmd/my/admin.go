@@ -231,7 +231,7 @@ func adminUsage(w io.Writer) {
        my admin media reprocess ...   (my admin media -help)
        my admin refetch status|account|domain ...   (my admin refetch -help)
        my admin relay create|follow|unfollow|remove|list ...   (my admin relay -help)
-       my admin report list|show|assign|unassign|resolve|note|reopen ...   (my admin report -help)
+       my admin report list|show|assign|unassign|resolve|note|reopen|forward ...   (my admin report -help)
        my admin audit list ...   (my admin audit -help)
        my admin retention hold|release|list ...   (my admin retention -help)
        my admin role list|grant|revoke ...   (my admin role -help)

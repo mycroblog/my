@@ -165,7 +165,7 @@ func (r *ModerationRepository) PurgeReports(ctx context.Context, tx uow.Tx, repo
 	}
 	steps := []func(context.Context, string) error{
 		q.PurgeReportStatuses, q.PurgeReportRuleCitations, q.PurgeReportAssignments, q.PurgeReportResolutions,
-		q.PurgeReportReopenings, q.PurgeReportNotes, q.PurgeReportVoiceRooms, q.PurgeReportHookOrigins, q.PurgeReportStates, q.PurgeReports,
+		q.PurgeReportReopenings, q.PurgeReportNotes, q.PurgeReportVoiceRooms, q.PurgeReportHookOrigins, q.PurgeReportForwards, q.PurgeReportStates, q.PurgeReports,
 	}
 	for _, step := range steps {
 		if err := step(ctx, ids); err != nil {

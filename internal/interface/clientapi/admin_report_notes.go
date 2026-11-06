@@ -28,7 +28,7 @@ func (s *Server) reportDetailResponse(ctx context.Context, d moderation.ReportDe
 	r := rs[0]
 	body := AdminReportDetail{
 		AssigneeAccountId: r.AssigneeAccountId, Category: r.Category, Comment: r.Comment,
-		FiledAt: r.FiledAt, Forwarded: r.Forwarded, Id: r.Id, Outcome: r.Outcome, ReporterAccount: r.ReporterAccount,
+		FiledAt: r.FiledAt, Forwarded: r.Forwarded, Forwardable: r.Forwardable, Id: r.Id, Outcome: r.Outcome, ReporterAccount: r.ReporterAccount,
 		ReporterAccountId: r.ReporterAccountId, RuleIds: r.RuleIds, State: r.State, StateChangedAt: r.StateChangedAt,
 		StatusIds: r.StatusIds, TargetAccount: r.TargetAccount, TargetAccountId: r.TargetAccountId, Uri: r.Uri,
 		Notes:         make([]AdminReportNote, 0, len(d.Notes)),
@@ -156,4 +156,33 @@ func (s *Server) ReopenReport(ctx context.Context, req ReopenReportRequestObject
 		return nil, err
 	}
 	return ReopenReport200JSONResponse{res}, nil
+}
+
+// ForwardReport serves POST /api/v1/admin/reports/{id}/forward.
+func (s *Server) ForwardReport(ctx context.Context, req ForwardReportRequestObject) (ForwardReportResponseObject, error) {
+	if p, err := s.requirePermission(ctx, identity.PermManageReports); err != nil {
+		return nil, err
+	} else if p != nil {
+		return ForwardReportdefaultApplicationProblemPlusJSONResponse(*p), nil
+	}
+	v, err := requireViewer(ctx)
+	if err != nil {
+		return nil, err
+	}
+	rec, err := s.o.Moderation.ForwardReport(ctx, req.Id, v.UserID)
+	switch {
+	case errors.Is(err, appmoderation.ErrNotFound):
+		return ForwardReportdefaultApplicationProblemPlusJSONResponse(s.notFoundResponse(ctx)), nil
+	case errors.Is(err, appmoderation.ErrReportNotForwardable):
+		l := s.Localizer(ctx)
+		return ForwardReportdefaultApplicationProblemPlusJSONResponse(
+			s.problem(ctx, http.StatusConflict, ProblemTypeBlank, l.ServerErrorsConflict(), l.ServerErrorsReportNotForwardable())), nil
+	case err != nil:
+		return nil, fmt.Errorf("clientapi: forward report %s: %w", req.Id, err)
+	}
+	res, err := s.reportResponse(ctx, rec)
+	if err != nil {
+		return nil, err
+	}
+	return ForwardReport200JSONResponse{res}, nil
 }

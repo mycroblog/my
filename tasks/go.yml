@@ -107,7 +107,7 @@ tasks:
       - go build ./...
 
   build-tags:
-    desc: Build (CGO_ENABLED=0) and vet with the representative sets of the build tags, fail when cmd/my links an adapter that a tag leaves out or a test fake without e2e_fakes, and run the tests of the e2e_fakes build (docs/reference/build-tags.md)
+    desc: Build (CGO_ENABLED=0) and vet with the representative sets of the build tags, fail when cmd/my links an adapter that a tag leaves out or a test fake without e2e_fakes, run the tests of the e2e_fakes build, and run with each tag alone the tests that only a build with that tag has, such as no_plugins (docs/reference/build-tags.md)
     cmds:
       - scripts/go-build-tags.sh
 

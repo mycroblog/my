@@ -14,14 +14,11 @@ package client
 
 import (
 	"context"
-	"crypto/tls"
-	"crypto/x509"
 	"errors"
 	"fmt"
 	"io"
 	"net"
 	"net/http"
-	"os"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -70,9 +67,11 @@ type Conn struct {
 	Timeout time.Duration
 
 	transport *http.Transport
+	tlsFiles  *tlsFiles
 }
 
-// New returns the Conn of o. It checks the destination and reads the TLS files, and opens no connection.
+// New returns the Conn of o. It checks the destination and reads the TLS files, and opens no connection. A new
+// connection reads the TLS files again once they change, so a certificate renewed in place needs no restart.
 func New(o Options) (*Conn, error) {
 	if problems := o.Kind.Check(o.Destination); len(problems) > 0 {
 		p := problems[0]
@@ -86,7 +85,7 @@ func New(o Options) (*Conn, error) {
 	if protocol == "" {
 		protocol = o.Kind.Protocol
 	}
-	transport, err := newTransport(o.Destination, addr, o.Kind.Streaming || protocol == kind.ProtocolGRPC)
+	transport, files, err := newTransport(o.Destination, addr, o.Kind.Streaming || protocol == kind.ProtocolGRPC)
 	if err != nil {
 		return nil, fmt.Errorf("plugin %s: %w", o.Kind.Name, err)
 	}
@@ -144,6 +143,7 @@ func New(o Options) (*Conn, error) {
 		BaseURL:   addr.BaseURL,
 		Timeout:   timeout,
 		transport: transport,
+		tlsFiles:  files,
 	}, nil
 }
 
@@ -152,8 +152,9 @@ func (c *Conn) Close() { c.transport.CloseIdleConnections() }
 
 // newTransport returns the transport of a destination. A plain connection speaks HTTP/1.1, which a plugin of net/http
 // serves with no further setup, unless the calls need HTTP/2; TLS offers what the calls can use through ALPN.
-func newTransport(d kind.Destination, addr kind.Address, needHTTP2 bool) (*http.Transport, error) {
+func newTransport(d kind.Destination, addr kind.Address, needHTTP2 bool) (*http.Transport, *tlsFiles, error) {
 	dialer := &net.Dialer{Timeout: dialTimeout}
+	var files *tlsFiles
 	t := &http.Transport{
 		Proxy:               nil,
 		DialContext:         dialer.DialContext,
@@ -165,11 +166,12 @@ func newTransport(d kind.Destination, addr kind.Address, needHTTP2 bool) (*http.
 	}
 	switch addr.Scheme {
 	case kind.SchemeHTTPS:
-		tlsConfig, err := newTLSConfig(d)
+		tlsConfig, f, err := newTLSConfig(d, addr)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		t.TLSClientConfig = tlsConfig
+		files = f
 		t.Protocols.SetHTTP2(true)
 		t.Protocols.SetHTTP1(!needHTTP2)
 	case kind.SchemeUnix:
@@ -181,31 +183,7 @@ func newTransport(d kind.Destination, addr kind.Address, needHTTP2 bool) (*http.
 		t.Protocols.SetUnencryptedHTTP2(needHTTP2)
 		t.Protocols.SetHTTP1(!needHTTP2)
 	}
-	return t, nil
-}
-
-// newTLSConfig always verifies the server, against the CA file or the system's roots; no setting turns that off
-// (ADR-0146 §6). The minimum version is Go's default.
-func newTLSConfig(d kind.Destination) (*tls.Config, error) {
-	c := new(tls.Config)
-	if d.TLSCAFile != "" {
-		pem, err := os.ReadFile(d.TLSCAFile)
-		if err != nil {
-			return nil, fmt.Errorf("read the CA file: %w", err)
-		}
-		c.RootCAs = x509.NewCertPool()
-		if !c.RootCAs.AppendCertsFromPEM(pem) {
-			return nil, fmt.Errorf("the CA file %s holds no certificate", d.TLSCAFile)
-		}
-	}
-	if d.TLSCertFile != "" {
-		cert, err := tls.LoadX509KeyPair(d.TLSCertFile, d.TLSKeyFile)
-		if err != nil {
-			return nil, fmt.Errorf("read the client certificate: %w", err)
-		}
-		c.Certificates = []tls.Certificate{cert}
-	}
-	return c, nil
+	return t, files, nil
 }
 
 // bearer adds the token to every request. kind.Check allows a token only on TLS or a Unix socket.

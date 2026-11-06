@@ -108,11 +108,22 @@ func TestEveryKindBoundsItsCalls(t *testing.T) {
 			t.Fatalf("ByName(%q) not found", name)
 		}
 		// A gRPC server takes 4 MiB by default, so the server never sends more (ADR-0146 §12).
-		if k.Timeout <= 0 || k.Timeout >= kind.MaxTimeout || k.MaxSend <= 0 || k.MaxSend > 4<<20 || k.MaxReceive <= 0 || k.Concurrency <= 0 {
+		if k.Timeout <= 0 || k.Timeout >= k.TimeoutBound() || k.MaxSend <= 0 || k.MaxSend > 4<<20 || k.MaxReceive <= 0 || k.Concurrency <= 0 {
 			t.Errorf("%s: %+v", name, k)
 		}
 		if problems := k.Check(kind.Destination{Address: "unix:///s", Protocol: k.Protocol, Timeout: k.Timeout}); len(problems) != 0 {
 			t.Errorf("%s: its own defaults: %v", name, problems)
+		}
+	}
+	// A kind that a request waits for takes a deadline below 30 seconds; one only jobs call, below the lease.
+	for name, inRequests := range map[string]bool{kind.KeyManager: true, kind.SignupCheck: true, kind.LocalStatus: true, kind.Translator: true, kind.MediaCheck: true, kind.Mailer: false, kind.Media: false, kind.Billing: false, kind.InboundStatus: false} {
+		k, _ := kind.ByName(name)
+		long := kind.Destination{Address: "unix:///s", Timeout: kind.MaxRequestTimeout}
+		if got := len(k.Check(long)) != 0; got != inRequests {
+			t.Errorf("%s with a deadline of %s refused = %v, want %v", name, kind.MaxRequestTimeout, got, inRequests)
+		}
+		if problems := k.Check(kind.Destination{Address: "unix:///s", Timeout: kind.MaxRequestTimeout - time.Second}); len(problems) != 0 {
+			t.Errorf("%s: %v", name, problems)
 		}
 	}
 	if _, ok := kind.ByName("nope"); ok {

@@ -207,6 +207,10 @@
     "defaultMessage": "Only a resolved report can be reopened.",
     "description": "Detail of the HTTP 409 API error when a moderator reopens a report that is still open."
   },
+  "errors.report.not_forwardable": {
+    "defaultMessage": "Only a report filed on this server about an account on another server, of no voice chat room, can be forwarded.",
+    "description": "Detail of the HTTP 409 API error when a moderator forwards a report that cannot be forwarded to the server of its target."
+  },
   "errors.request_too_large": {
     "defaultMessage": "The request is too large.",
     "description": "API error title for HTTP 413 when a request body is larger than the server accepts."

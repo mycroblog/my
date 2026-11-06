@@ -514,6 +514,8 @@ paths:
     $ref: ./paths/admin_reports_{id}_notes.yaml
   /admin/reports/{id}/reopen:
     $ref: ./paths/admin_reports_{id}_reopen.yaml
+  /admin/reports/{id}/forward:
+    $ref: ./paths/admin_reports_{id}_forward.yaml
   /admin/reports/{id}/comment/translation:
     $ref: ./paths/admin_reports_{id}_comment_translation.yaml
   /admin/reports/{id}/statuses/{status_id}/translation:

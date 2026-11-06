@@ -183,6 +183,18 @@ CREATE TABLE report_resolutions (
 );
 CREATE INDEX report_resolutions_report_id_id ON report_resolutions (report_id, id DESC);
 
+-- Event: a moderator forwarded a report after it was filed, as a Flag of the instance actor to the
+-- target's server (FR-709, ADR-0147 §7). A report is forwarded at most once: reports.forwarded is
+-- the reporter's choice when it was filed, and a report forwarded then has no row here.
+-- forwarded_by_user_id is NULL for the CLI.
+CREATE TABLE report_forwards (
+  id uuid NOT NULL PRIMARY KEY,
+  report_id uuid NOT NULL,
+  forwarded_by_user_id uuid,
+  forwarded_at timestamptz NOT NULL
+);
+CREATE UNIQUE INDEX report_forwards_report_id ON report_forwards (report_id);
+
 -- moderation and content: actions on statuses (#364, data-model §4.3, §4.4) -------------------
 
 -- Event child: a status that an action on statuses (delete_statuses, mark_statuses_sensitive)
@@ -230,7 +242,7 @@ CREATE TABLE audit_log_entries (
   action text NOT NULL CHECK (action IN (
     'account_action_issued', 'account_action_lifted', 'domain_action_issued',
     'domain_action_lifted', 'report_assigned', 'report_unassigned', 'report_resolved',
-    'report_reopened', 'report_note_added',
+    'report_reopened', 'report_note_added', 'report_forwarded',
     'registration_approved', 'registration_rejected', 'setting_changed', 'text_changed',
     'rule_added', 'rule_revised', 'rule_moved', 'rule_retired', 'role_granted', 'role_revoked',
     'role_created', 'role_updated', 'role_deleted', 'appeal_upheld',

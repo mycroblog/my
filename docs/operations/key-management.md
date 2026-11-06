@@ -203,7 +203,7 @@ Reading a stored secret works only while the process holds its data-encryption k
 - Checking a two-factor code at sign-in.
 - Webhook delivery.
 
-A restart stops as described above, so **do not restart the server to mend an outage of the plugin**: a server that is up keeps serving what its cache covers, and one that restarts serves nothing until the plugin answers. What needs no secret, such as reading timelines and posting, goes on. The media proxy's signing key is read at start and stays in memory.
+A restart stops as described above, so **do not restart the server to mend an outage of the plugin**: a server that is up keeps serving what its cache covers, and one that restarts serves nothing until the plugin answers. What needs no secret, such as reading timelines and posting, goes on. The media proxy's signing key is read at start and stays in memory. A renewed client certificate or CA file needs no restart either: the server reads the files again once they change ([Plugins](plugins.md#authentication)).
 
 ### The contract
 

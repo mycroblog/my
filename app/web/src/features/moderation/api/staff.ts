@@ -287,6 +287,7 @@ export const auditActions = [
   "report_resolved",
   "report_reopened",
   "report_note_added",
+  "report_forwarded",
   "registration_approved",
   "registration_rejected",
   "setting_changed",

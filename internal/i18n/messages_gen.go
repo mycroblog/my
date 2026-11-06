@@ -2205,6 +2205,13 @@ func (l *Localizer) ServerErrorsRemoteAccount() string {
 	return l.format("server:errors.remote_account", nil)
 }
 
+// ServerErrorsReportNotForwardable formats "server:errors.report.not_forwardable". Detail of the HTTP 409 API error when a moderator forwards a report that cannot be forwarded to the server of its target.
+//
+//	en: Only a report filed on this server about an account on another server, of no voice chat room, can be forwarded.
+func (l *Localizer) ServerErrorsReportNotForwardable() string {
+	return l.format("server:errors.report.not_forwardable", nil)
+}
+
 // ServerErrorsReportNotResolved formats "server:errors.report.not_resolved". Detail of the HTTP 409 API error when a moderator reopens a report that is still open.
 //
 //	en: Only a resolved report can be reopened.

@@ -350,6 +350,38 @@ func (q *Queries) GetReportByURI(ctx context.Context, uri sql.NullString) (Repor
 	return i, err
 }
 
+const getReportForward = `-- name: GetReportForward :many
+SELECT id, report_id, forwarded_by_user_id, forwarded_at FROM report_forwards WHERE report_id = ?
+`
+
+func (q *Queries) GetReportForward(ctx context.Context, reportID string) ([]ReportForward, error) {
+	rows, err := q.db.QueryContext(ctx, getReportForward, reportID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ReportForward{}
+	for rows.Next() {
+		var i ReportForward
+		if err := rows.Scan(
+			&i.ID,
+			&i.ReportID,
+			&i.ForwardedByUserID,
+			&i.ForwardedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getReportHookOrigin = `-- name: GetReportHookOrigin :many
 SELECT hook_decision_id, hook, reason_code FROM report_hook_origins WHERE report_id = ?
 `
@@ -698,6 +730,32 @@ func (q *Queries) InsertReportAssignment(ctx context.Context, arg InsertReportAs
 		arg.AssignedAt,
 	)
 	return err
+}
+
+const insertReportForward = `-- name: InsertReportForward :execrows
+INSERT INTO report_forwards (id, report_id, forwarded_by_user_id, forwarded_at) VALUES (?, ?, ?, ?)
+ON CONFLICT (report_id) DO NOTHING
+`
+
+type InsertReportForwardParams struct {
+	ID                string
+	ReportID          string
+	ForwardedByUserID sql.NullString
+	ForwardedAt       int64
+}
+
+// InsertReportForward inserts nothing when the report is forwarded already.
+func (q *Queries) InsertReportForward(ctx context.Context, arg InsertReportForwardParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, insertReportForward,
+		arg.ID,
+		arg.ReportID,
+		arg.ForwardedByUserID,
+		arg.ForwardedAt,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
 }
 
 const insertReportHookOrigin = `-- name: InsertReportHookOrigin :execrows

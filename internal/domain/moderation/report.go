@@ -32,7 +32,8 @@ type Report struct {
 	TargetAccountID   string
 	Category          Category
 	Comment           string
-	// Forwarded reports that the report was forwarded to the target's server.
+	// Forwarded reports that the reporter had the report forwarded to the target's server when
+	// it was filed. A moderator's later forward is Forward; SentToTarget says whether either was.
 	Forwarded bool
 	FiledAt   time.Time
 	// StatusIDs are the statuses of the target that the report points at (report_statuses).
@@ -46,6 +47,30 @@ type Report struct {
 	// HookOrigin is the decision of a hook that filed the report (report_hook_origins, ADR-0147
 	// §7), nil for a report that a person or another server filed.
 	HookOrigin *ReportHookOrigin
+	// Forward is a moderator's forward of the report to the target's server after it was filed
+	// (report_forwards), nil for none.
+	Forward *ReportForward
+}
+
+// ReportForward is a moderator's forward of a report to the target's server after it was filed,
+// as a Flag of the instance actor (report_forwards, an event).
+type ReportForward struct {
+	ID       string
+	ReportID string
+	// ForwardedByUserID is the moderator, "" for the CLI.
+	ForwardedByUserID string
+	ForwardedAt       time.Time
+}
+
+// SentToTarget reports whether the report was forwarded to the target's server, when it was
+// filed or later.
+func (r Report) SentToTarget() bool { return r.Forwarded || r.Forward != nil }
+
+// Forwardable reports whether a moderator can forward the report to the target's server;
+// targetRemote says whether the target is a remote account. Only a report filed on this server
+// (no URI) and of no voice chat room can be, and only once.
+func (r Report) Forwardable(targetRemote bool) bool {
+	return targetRemote && r.URI == "" && r.VoiceRoom == nil && !r.SentToTarget()
 }
 
 // ReportVoiceRoom is the voice chat room of a report with the revision of its settings when it

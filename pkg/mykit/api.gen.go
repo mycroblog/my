@@ -326,6 +326,7 @@ const (
 	AdminAuditActionRelayRemoved                    AdminAuditAction = "relay_removed"
 	AdminAuditActionRelayUnfollowed                 AdminAuditAction = "relay_unfollowed"
 	AdminAuditActionReportAssigned                  AdminAuditAction = "report_assigned"
+	AdminAuditActionReportForwarded                 AdminAuditAction = "report_forwarded"
 	AdminAuditActionReportNoteAdded                 AdminAuditAction = "report_note_added"
 	AdminAuditActionReportReopened                  AdminAuditAction = "report_reopened"
 	AdminAuditActionReportResolved                  AdminAuditAction = "report_resolved"
@@ -489,6 +490,8 @@ func (e AdminAuditAction) Valid() bool {
 	case AdminAuditActionRelayUnfollowed:
 		return true
 	case AdminAuditActionReportAssigned:
+		return true
+	case AdminAuditActionReportForwarded:
 		return true
 	case AdminAuditActionReportNoteAdded:
 		return true
@@ -5214,7 +5217,8 @@ type AdminAppealPage struct {
 // local account moved to another local account, which does not inherit the limit). On a `domain`:
 // `domain_action_issued`, `domain_action_lifted`, `instance_marked_available` (an operator
 // cleared the failures of the server). On a `report`: `report_assigned`,
-// `report_unassigned`, `report_resolved`, `report_reopened`, `report_note_added`. On a
+// `report_unassigned`, `report_resolved`, `report_reopened`, `report_note_added`,
+// `report_forwarded` (a moderator forwarded the report to the target's server). On a
 // `user` (a registration):
 // `registration_approved`, `registration_rejected`. On a `setting`: `setting_changed`
 // (an instance setting), `text_changed` (an instance text). On a `rule`:
@@ -5292,7 +5296,8 @@ type AdminAuditEntry struct {
 	// local account moved to another local account, which does not inherit the limit). On a `domain`:
 	// `domain_action_issued`, `domain_action_lifted`, `instance_marked_available` (an operator
 	// cleared the failures of the server). On a `report`: `report_assigned`,
-	// `report_unassigned`, `report_resolved`, `report_reopened`, `report_note_added`. On a
+	// `report_unassigned`, `report_resolved`, `report_reopened`, `report_note_added`,
+	// `report_forwarded` (a moderator forwarded the report to the target's server). On a
 	// `user` (a registration):
 	// `registration_approved`, `registration_rejected`. On a `setting`: `setting_changed`
 	// (an instance setting), `text_changed` (an instance text). On a `rule`:
@@ -6347,7 +6352,13 @@ type AdminReport struct {
 	Comment string    `json:"comment"`
 	FiledAt time.Time `json:"filed_at"`
 
-	// Forwarded Whether the report was forwarded to the target's server.
+	// Forwardable Whether a moderator can forward the report to the target's server now: it was filed on
+	// this server, its target is a remote account, it points at no voice chat room, and it is
+	// not forwarded yet.
+	Forwardable bool `json:"forwardable"`
+
+	// Forwarded Whether the report was forwarded to the target's server: when it was filed, because
+	// the reporter asked, or later by a moderator.
 	Forwarded bool `json:"forwarded"`
 
 	// HookOrigin The decision hook that filed the report; omitted for a report that a person or another server
@@ -6418,7 +6429,13 @@ type AdminReportDetail struct {
 	Comment string    `json:"comment"`
 	FiledAt time.Time `json:"filed_at"`
 
-	// Forwarded Whether the report was forwarded to the target's server.
+	// Forwardable Whether a moderator can forward the report to the target's server now: it was filed on
+	// this server, its target is a remote account, it points at no voice chat room, and it is
+	// not forwarded yet.
+	Forwardable bool `json:"forwardable"`
+
+	// Forwarded Whether the report was forwarded to the target's server: when it was filed, because
+	// the reporter asked, or later by a moderator.
 	Forwarded bool `json:"forwarded"`
 
 	// HookOrigin The decision hook that filed the report; omitted for a report that a person or another server
@@ -19624,6 +19641,19 @@ type ClientInterface interface {
 	// Corresponds with POST /admin/reports/{id}/comment/translation (the `TranslateReportComment` operationId).
 	TranslateReportComment(ctx context.Context, id ReportId, body TranslateReportCommentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// ForwardReport Forward a report to the target's server
+	//
+	// Sends the report to the server of its remote target as a `Flag` of the instance actor,
+	// with the posts it points at and its comment, and nothing of the reporter. Works on an
+	// open or a resolved report that `forwardable` allows: one filed on this server (by a
+	// person or by an automated review) about a remote account, of no voice chat room. A
+	// report forwarded already, when it was filed or later, changes nothing. A report that
+	// cannot be forwarded is a 409, an unknown ID a 404. Needs the `manage_reports`
+	// permission.
+	//
+	// Corresponds with POST /admin/reports/{id}/forward (the `ForwardReport` operationId).
+	ForwardReport(ctx context.Context, id ReportId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// AddReportNoteWithBody Write a note on a report
 	//
 	// Adds an internal note to the report. Notes are shown to the moderators only,
@@ -27480,6 +27510,29 @@ func (c *Client) TranslateReportCommentWithBody(ctx context.Context, id ReportId
 // Corresponds with POST /admin/reports/{id}/comment/translation (the `TranslateReportComment` operationId).
 func (c *Client) TranslateReportComment(ctx context.Context, id ReportId, body TranslateReportCommentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewTranslateReportCommentRequest(c.Server, id, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// ForwardReport Forward a report to the target's server
+//
+// Sends the report to the server of its remote target as a `Flag` of the instance actor,
+// with the posts it points at and its comment, and nothing of the reporter. Works on an
+// open or a resolved report that `forwardable` allows: one filed on this server (by a
+// person or by an automated review) about a remote account, of no voice chat room. A
+// report forwarded already, when it was filed or later, changes nothing. A report that
+// cannot be forwarded is a 409, an unknown ID a 404. Needs the `manage_reports`
+// permission.
+//
+// Corresponds with POST /admin/reports/{id}/forward (the `ForwardReport` operationId).
+func (c *Client) ForwardReport(ctx context.Context, id ReportId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewForwardReportRequest(c.Server, id)
 	if err != nil {
 		return nil, err
 	}
@@ -40631,6 +40684,40 @@ func NewTranslateReportCommentRequestWithBody(server string, id ReportId, conten
 	return req, nil
 }
 
+// NewForwardReportRequest constructs an http.Request for the ForwardReport method
+func NewForwardReportRequest(server string, id ReportId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/admin/reports/%s/forward", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewAddReportNoteRequest calls the generic AddReportNote builder with application/json body
 func NewAddReportNoteRequest(server string, id ReportId, body AddReportNoteJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
@@ -52556,6 +52643,21 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with POST /admin/reports/{id}/comment/translation (the `TranslateReportComment` operationId).
 	TranslateReportCommentWithResponse(ctx context.Context, id ReportId, body TranslateReportCommentJSONRequestBody, reqEditors ...RequestEditorFn) (*TranslateReportCommentResponse, error)
+
+	// ForwardReportWithResponse Forward a report to the target's server
+	//
+	// Sends the report to the server of its remote target as a `Flag` of the instance actor,
+	// with the posts it points at and its comment, and nothing of the reporter. Works on an
+	// open or a resolved report that `forwardable` allows: one filed on this server (by a
+	// person or by an automated review) about a remote account, of no voice chat room. A
+	// report forwarded already, when it was filed or later, changes nothing. A report that
+	// cannot be forwarded is a 409, an unknown ID a 404. Needs the `manage_reports`
+	// permission.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /admin/reports/{id}/forward (the `ForwardReport` operationId).
+	ForwardReportWithResponse(ctx context.Context, id ReportId, reqEditors ...RequestEditorFn) (*ForwardReportResponse, error)
 
 	// AddReportNoteWithBodyWithResponse Write a note on a report
 	//
@@ -66246,6 +66348,71 @@ func (r TranslateReportCommentResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r TranslateReportCommentResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// ForwardReportResponse200Headers the declared response headers of an HTTP 200 response for ForwardReport
+type ForwardReportResponse200Headers struct {
+	CacheControl *string
+}
+
+// ForwardReportResponseDefaultHeaders the declared response headers of an HTTP default response for ForwardReport
+type ForwardReportResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type ForwardReportResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *AdminReportDetail
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *ForwardReportResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *ForwardReportResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r ForwardReportResponse) GetJSON200() *AdminReportDetail {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r ForwardReportResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r ForwardReportResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r ForwardReportResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ForwardReportResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ForwardReportResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -83967,6 +84134,27 @@ func (c *ClientWithResponses) TranslateReportCommentWithResponse(ctx context.Con
 	return ParseTranslateReportCommentResponse(rsp)
 }
 
+// ForwardReportWithResponse Forward a report to the target's server
+//
+// Sends the report to the server of its remote target as a `Flag` of the instance actor,
+// with the posts it points at and its comment, and nothing of the reporter. Works on an
+// open or a resolved report that `forwardable` allows: one filed on this server (by a
+// person or by an automated review) about a remote account, of no voice chat room. A
+// report forwarded already, when it was filed or later, changes nothing. A report that
+// cannot be forwarded is a 409, an unknown ID a 404. Needs the `manage_reports`
+// permission.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /admin/reports/{id}/forward (the `ForwardReport` operationId).
+func (c *ClientWithResponses) ForwardReportWithResponse(ctx context.Context, id ReportId, reqEditors ...RequestEditorFn) (*ForwardReportResponse, error) {
+	rsp, err := c.ForwardReport(ctx, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseForwardReportResponse(rsp)
+}
+
 // AddReportNoteWithBodyWithResponse Write a note on a report
 //
 // Adds an internal note to the report. Notes are shown to the moderators only,
@@ -101317,6 +101505,83 @@ func ParseTranslateReportCommentResponse(rsp *http.Response) (*TranslateReportCo
 		response.Headers200 = &headers
 	case true:
 		var headers TranslateReportCommentResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseForwardReportResponse parses an HTTP response from a ForwardReportWithResponse call
+func ParseForwardReportResponse(rsp *http.Response) (*ForwardReportResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ForwardReportResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest AdminReportDetail
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers ForwardReportResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers ForwardReportResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {

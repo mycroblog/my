@@ -114,6 +114,7 @@ function reportOf(id: string, overrides: Partial<Schemas["AdminReportDetail"]> =
     comment:
       "This account posts the same advertisement in reply to everyone who mentions the server, many times a day.",
     forwarded: false,
+    forwardable: false,
     filed_at: "2026-10-16T09:00:00Z",
     state: "open",
     state_changed_at: "2026-10-16T09:00:00Z",

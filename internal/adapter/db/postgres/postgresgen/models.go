@@ -1005,6 +1005,13 @@ type ReportAssignment struct {
 	AssignedAt       time.Time
 }
 
+type ReportForward struct {
+	ID                string
+	ReportID          string
+	ForwardedByUserID *string
+	ForwardedAt       time.Time
+}
+
 type ReportNote struct {
 	ID           string
 	ReportID     string

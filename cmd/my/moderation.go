@@ -196,7 +196,7 @@ func runAdminReport(args []string, stdout, stderr io.Writer) int {
 		adminReportUsage(stderr)
 		return 2
 	}
-	sub, code := dispatch("admin report", args, []string{"list", "show", "assign", "unassign", "resolve", "note", "reopen"}, stderr, adminReportUsage)
+	sub, code := dispatch("admin report", args, []string{"list", "show", "assign", "unassign", "resolve", "note", "reopen", "forward"}, stderr, adminReportUsage)
 	if code >= 0 {
 		return code
 	}
@@ -269,6 +269,15 @@ func runAdminReport(args []string, stdout, stderr io.Writer) int {
 		}
 		if err == nil {
 			_, _ = fmt.Fprintf(stdout, "report %s is open again\n", rec.Report.ID)
+		}
+	case "forward":
+		var rec moderation.ReportRecord
+		rec, err = app.Moderation.ForwardReport(ctx, c.fs.Arg(0), "")
+		if errors.Is(err, appmoderation.ErrReportNotForwardable) {
+			err = fmt.Errorf("report %s cannot be forwarded: only a report filed on this server about a remote account, of no voice chat room, can be", c.fs.Arg(0))
+		}
+		if err == nil {
+			_, _ = fmt.Fprintf(stdout, "report %s is forwarded to the server of its target\n", rec.Report.ID)
 		}
 	}
 	if errors.Is(err, appmoderation.ErrNotFound) {
@@ -422,6 +431,7 @@ func adminReportUsage(w io.Writer) {
   my admin report resolve -outcome actioned|dismissed [-config <file>] <report id>
   my admin report note [-config <file>] <report id> <text>
   my admin report reopen [-config <file>] <report id>
+  my admin report forward [-config <file>] <report id>
 
 The reports in the moderators' queue, including those received from
 other servers. list shows them newest first; show adds the moderators' notes
@@ -430,5 +440,8 @@ user whose roles grant manage_reports handle a report; unassign leaves it to
 nobody. resolve closes an open report with its outcome; resolving a resolved
 report changes nothing. note adds an internal note (up to 2,000 characters)
 that only the moderators see. reopen puts a resolved report back in the queue.
+forward sends a report filed on this server about a remote account to that
+account's server, as your server's report, with its posts and comment and
+nothing of the reporter; a report forwarded already stays as it is.
 `)
 }

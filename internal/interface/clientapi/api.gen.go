@@ -328,6 +328,7 @@ const (
 	AdminAuditActionRelayRemoved                    AdminAuditAction = "relay_removed"
 	AdminAuditActionRelayUnfollowed                 AdminAuditAction = "relay_unfollowed"
 	AdminAuditActionReportAssigned                  AdminAuditAction = "report_assigned"
+	AdminAuditActionReportForwarded                 AdminAuditAction = "report_forwarded"
 	AdminAuditActionReportNoteAdded                 AdminAuditAction = "report_note_added"
 	AdminAuditActionReportReopened                  AdminAuditAction = "report_reopened"
 	AdminAuditActionReportResolved                  AdminAuditAction = "report_resolved"
@@ -491,6 +492,8 @@ func (e AdminAuditAction) Valid() bool {
 	case AdminAuditActionRelayUnfollowed:
 		return true
 	case AdminAuditActionReportAssigned:
+		return true
+	case AdminAuditActionReportForwarded:
 		return true
 	case AdminAuditActionReportNoteAdded:
 		return true
@@ -5216,7 +5219,8 @@ type AdminAppealPage struct {
 // local account moved to another local account, which does not inherit the limit). On a `domain`:
 // `domain_action_issued`, `domain_action_lifted`, `instance_marked_available` (an operator
 // cleared the failures of the server). On a `report`: `report_assigned`,
-// `report_unassigned`, `report_resolved`, `report_reopened`, `report_note_added`. On a
+// `report_unassigned`, `report_resolved`, `report_reopened`, `report_note_added`,
+// `report_forwarded` (a moderator forwarded the report to the target's server). On a
 // `user` (a registration):
 // `registration_approved`, `registration_rejected`. On a `setting`: `setting_changed`
 // (an instance setting), `text_changed` (an instance text). On a `rule`:
@@ -5294,7 +5298,8 @@ type AdminAuditEntry struct {
 	// local account moved to another local account, which does not inherit the limit). On a `domain`:
 	// `domain_action_issued`, `domain_action_lifted`, `instance_marked_available` (an operator
 	// cleared the failures of the server). On a `report`: `report_assigned`,
-	// `report_unassigned`, `report_resolved`, `report_reopened`, `report_note_added`. On a
+	// `report_unassigned`, `report_resolved`, `report_reopened`, `report_note_added`,
+	// `report_forwarded` (a moderator forwarded the report to the target's server). On a
 	// `user` (a registration):
 	// `registration_approved`, `registration_rejected`. On a `setting`: `setting_changed`
 	// (an instance setting), `text_changed` (an instance text). On a `rule`:
@@ -6349,7 +6354,13 @@ type AdminReport struct {
 	Comment string    `json:"comment"`
 	FiledAt time.Time `json:"filed_at"`
 
-	// Forwarded Whether the report was forwarded to the target's server.
+	// Forwardable Whether a moderator can forward the report to the target's server now: it was filed on
+	// this server, its target is a remote account, it points at no voice chat room, and it is
+	// not forwarded yet.
+	Forwardable bool `json:"forwardable"`
+
+	// Forwarded Whether the report was forwarded to the target's server: when it was filed, because
+	// the reporter asked, or later by a moderator.
 	Forwarded bool `json:"forwarded"`
 
 	// HookOrigin The decision hook that filed the report; omitted for a report that a person or another server
@@ -6420,7 +6431,13 @@ type AdminReportDetail struct {
 	Comment string    `json:"comment"`
 	FiledAt time.Time `json:"filed_at"`
 
-	// Forwarded Whether the report was forwarded to the target's server.
+	// Forwardable Whether a moderator can forward the report to the target's server now: it was filed on
+	// this server, its target is a remote account, it points at no voice chat room, and it is
+	// not forwarded yet.
+	Forwardable bool `json:"forwardable"`
+
+	// Forwarded Whether the report was forwarded to the target's server: when it was filed, because
+	// the reporter asked, or later by a moderator.
 	Forwarded bool `json:"forwarded"`
 
 	// HookOrigin The decision hook that filed the report; omitted for a report that a person or another server
@@ -15939,6 +15956,9 @@ type ServerInterface interface {
 	// TranslateReportComment Translate the comment of a report into a language
 	// (POST /admin/reports/{id}/comment/translation)
 	TranslateReportComment(w http.ResponseWriter, r *http.Request, id ReportId)
+	// ForwardReport Forward a report to the target's server
+	// (POST /admin/reports/{id}/forward)
+	ForwardReport(w http.ResponseWriter, r *http.Request, id ReportId)
 	// AddReportNote Write a note on a report
 	// (POST /admin/reports/{id}/notes)
 	AddReportNote(w http.ResponseWriter, r *http.Request, id ReportId)
@@ -21301,6 +21321,32 @@ func (siw *ServerInterfaceWrapper) TranslateReportComment(w http.ResponseWriter,
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.TranslateReportComment(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ForwardReport operation middleware
+func (siw *ServerInterfaceWrapper) ForwardReport(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ReportId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ForwardReport(w, r, id)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -27559,6 +27605,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/reports/{id}/resolve", wrapper.ResolveReport)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/reports/{id}/notes", wrapper.AddReportNote)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/reports/{id}/reopen", wrapper.ReopenReport)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/reports/{id}/forward", wrapper.ForwardReport)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/reports/{id}/comment/translation", wrapper.TranslateReportComment)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/reports/{id}/statuses/{status_id}/translation", wrapper.TranslateReportedStatus)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/voice_rooms/{id}/end", wrapper.EndVoiceRoomAsModerator)
@@ -37266,6 +37313,61 @@ type TranslateReportCommentdefaultApplicationProblemPlusJSONResponse struct {
 }
 
 func (response TranslateReportCommentdefaultApplicationProblemPlusJSONResponse) VisitTranslateReportCommentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ForwardReportRequestObject struct {
+	Id ReportId `json:"id"`
+}
+
+type ForwardReportResponseObject interface {
+	VisitForwardReportResponse(w http.ResponseWriter) error
+}
+
+type ForwardReport200JSONResponse struct{ AdminReportDetailJSONResponse }
+
+func (response ForwardReport200JSONResponse) VisitForwardReportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ForwardReportdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response ForwardReportdefaultApplicationProblemPlusJSONResponse) VisitForwardReportResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -50589,6 +50691,9 @@ type StrictServerInterface interface {
 	// TranslateReportComment Translate the comment of a report into a language
 	// (POST /admin/reports/{id}/comment/translation)
 	TranslateReportComment(ctx context.Context, request TranslateReportCommentRequestObject) (TranslateReportCommentResponseObject, error)
+	// ForwardReport Forward a report to the target's server
+	// (POST /admin/reports/{id}/forward)
+	ForwardReport(ctx context.Context, request ForwardReportRequestObject) (ForwardReportResponseObject, error)
 	// AddReportNote Write a note on a report
 	// (POST /admin/reports/{id}/notes)
 	AddReportNote(ctx context.Context, request AddReportNoteRequestObject) (AddReportNoteResponseObject, error)
@@ -55523,6 +55628,32 @@ func (sh *strictHandler) TranslateReportComment(w http.ResponseWriter, r *http.R
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(TranslateReportCommentResponseObject); ok {
 		if err := validResponse.VisitTranslateReportCommentResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ForwardReport operation middleware
+func (sh *strictHandler) ForwardReport(w http.ResponseWriter, r *http.Request, id ReportId) {
+	var request ForwardReportRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ForwardReport(ctx, request.(ForwardReportRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ForwardReport")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ForwardReportResponseObject); ok {
+		if err := validResponse.VisitForwardReportResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

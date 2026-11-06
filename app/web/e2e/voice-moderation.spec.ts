@@ -100,6 +100,7 @@ function roomReport(ended: boolean): Schemas["AdminReportDetail"] {
     category: "spam",
     comment: "Advertising all evening.",
     forwarded: false,
+    forwardable: false,
     filed_at: "2026-10-26T12:30:00Z",
     state: "open",
     state_changed_at: "2026-10-26T12:30:00Z",

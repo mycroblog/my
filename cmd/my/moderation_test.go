@@ -136,6 +136,10 @@ func TestAdminReportCommands(t *testing.T) {
 	if code, stdout, _ := runCmd(t, adminCmd, "report", "reopen", r.ID); code != 0 || stdout != "report "+r.ID+" is open again\n" {
 		t.Errorf("report reopen = %d %q", code, stdout)
 	}
+	// A report received from another server is not forwarded again.
+	if code, _, stderr := runCmd(t, adminCmd, "report", "forward", r.ID); code != 1 || !strings.Contains(stderr, "cannot be forwarded") {
+		t.Errorf("report forward of a received report = %d %q", code, stderr)
+	}
 	if code, stdout, _ := runCmd(t, adminCmd, "report", "show", r.ID); code != 0 || !regexp.MustCompile(`state: +open`).MatchString(stdout) ||
 		!regexp.MustCompile(`history: +0 other reports, 0 actions`).MatchString(stdout) ||
 		!regexp.MustCompile(`\nnote \S+ by - at \S+:\nseen before\n$`).MatchString(stdout) {

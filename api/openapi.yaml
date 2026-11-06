@@ -7324,6 +7324,30 @@ paths:
           $ref: '#/components/responses/AdminReportDetail'
         default:
           $ref: '#/components/responses/Problem'
+  /admin/reports/{id}/forward:
+    post:
+      operationId: forwardReport
+      summary: Forward a report to the target's server
+      description: |
+        Sends the report to the server of its remote target as a `Flag` of the instance actor,
+        with the posts it points at and its comment, and nothing of the reporter. Works on an
+        open or a resolved report that `forwardable` allows: one filed on this server (by a
+        person or by an automated review) about a remote account, of no voice chat room. A
+        report forwarded already, when it was filed or later, changes nothing. A report that
+        cannot be forwarded is a 409, an unknown ID a 404. Needs the `manage_reports`
+        permission.
+      tags:
+        - admin-moderation
+      security:
+        - oauth2:
+            - admin:write
+      parameters:
+        - $ref: '#/components/parameters/ReportId'
+      responses:
+        '200':
+          $ref: '#/components/responses/AdminReportDetail'
+        default:
+          $ref: '#/components/responses/Problem'
   /admin/reports/{id}/comment/translation:
     parameters:
       - $ref: '#/components/parameters/ReportId'
@@ -13066,7 +13090,8 @@ components:
         local account moved to another local account, which does not inherit the limit). On a `domain`:
         `domain_action_issued`, `domain_action_lifted`, `instance_marked_available` (an operator
         cleared the failures of the server). On a `report`: `report_assigned`,
-        `report_unassigned`, `report_resolved`, `report_reopened`, `report_note_added`. On a
+        `report_unassigned`, `report_resolved`, `report_reopened`, `report_note_added`,
+        `report_forwarded` (a moderator forwarded the report to the target's server). On a
         `user` (a registration):
         `registration_approved`, `registration_rejected`. On a `setting`: `setting_changed`
         (an instance setting), `text_changed` (an instance text). On a `rule`:
@@ -13136,6 +13161,7 @@ components:
         - report_resolved
         - report_reopened
         - report_note_added
+        - report_forwarded
         - registration_approved
         - registration_rejected
         - setting_changed
@@ -14641,6 +14667,7 @@ components:
         - category
         - comment
         - forwarded
+        - forwardable
         - filed_at
         - state
         - state_changed_at
@@ -14662,7 +14689,15 @@ components:
           description: The reporter's comment as plain text, up to 5,000 characters.
           type: string
         forwarded:
-          description: Whether the report was forwarded to the target's server.
+          description: |
+            Whether the report was forwarded to the target's server: when it was filed, because
+            the reporter asked, or later by a moderator.
+          type: boolean
+        forwardable:
+          description: |
+            Whether a moderator can forward the report to the target's server now: it was filed on
+            this server, its target is a remote account, it points at no voice chat room, and it is
+            not forwarded yet.
           type: boolean
         filed_at:
           type: string
