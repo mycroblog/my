@@ -184,7 +184,8 @@ entries:
     checks: [web, docs]
     notes:
       - "The documentation site (@my/docs): Astro Starlight, built by `scripts/task.sh docs:site-build`, previewed by `docs:site-dev`. It imports nothing from app/web or app/ui (copy an asset instead) and adds no analytics or external service; search is Starlight's Pagefind."
-      - "The site holds no hand-written documents: the pages of src/content/docs/ are copied from the Markdown of the repository, except the landing page src/content/docs/index.md. English only, with the root locale `en`."
+      - "The site holds no hand-written documents: scripts/import-docs.ts copies the published directories of src/published.ts (docs/operations, docs/reference but commands.md, docs/guide, docs/developers) into the git-ignored src/content/docs/, except the landing page src/content/docs/index.md. English only, with the root locale `en`."
+      - "The sidebar is built from the sections of docs/README.md (src/sidebar.ts): add a page there, not here. Links in the pages start with the base path (DOCS_SITE_BASE), and starlight-links-validator fails the build on a broken link or #anchor."
   - name: mail-preview
     paths: ["internal/platform/mailpreview/**", "scripts/mail-preview/**", "internal/app/identity/mail_drafts.go", "internal/app/notification/mail_drafts.go"]
     docs: ["docs/adr/0086-email-delivery.md#2-組み立てテンプレートと外枠"]
