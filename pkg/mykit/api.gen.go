@@ -2187,6 +2187,7 @@ func (e HookMode) Valid() bool {
 const (
 	HookNameInboundFollow HookName = "inbound.follow"
 	HookNameInboundStatus HookName = "inbound.status"
+	HookNameLocalProfile  HookName = "local.profile"
 	HookNameLocalStatus   HookName = "local.status"
 	HookNameMediaCheck    HookName = "media.check"
 	HookNameSignupCheck   HookName = "signup.check"
@@ -2198,6 +2199,8 @@ func (e HookName) Valid() bool {
 	case HookNameInboundFollow:
 		return true
 	case HookNameInboundStatus:
+		return true
+	case HookNameLocalProfile:
 		return true
 	case HookNameLocalStatus:
 		return true
@@ -2520,6 +2523,8 @@ const (
 	InstanceSettingKeyHookInboundStatusMode              InstanceSettingKey = "hook_inbound_status_mode"
 	InstanceSettingKeyHookInboundStatusOnFailure         InstanceSettingKey = "hook_inbound_status_on_failure"
 	InstanceSettingKeyHookInboundStatusUnfollowedDirect  InstanceSettingKey = "hook_inbound_status_unfollowed_direct"
+	InstanceSettingKeyHookLocalProfileAccountAgeDays     InstanceSettingKey = "hook_local_profile_account_age_days"
+	InstanceSettingKeyHookLocalProfileMode               InstanceSettingKey = "hook_local_profile_mode"
 	InstanceSettingKeyHookLocalStatusAccountAgeDays      InstanceSettingKey = "hook_local_status_account_age_days"
 	InstanceSettingKeyHookLocalStatusMode                InstanceSettingKey = "hook_local_status_mode"
 	InstanceSettingKeyHookMediaCheckMode                 InstanceSettingKey = "hook_media_check_mode"
@@ -2620,6 +2625,10 @@ func (e InstanceSettingKey) Valid() bool {
 	case InstanceSettingKeyHookInboundStatusOnFailure:
 		return true
 	case InstanceSettingKeyHookInboundStatusUnfollowedDirect:
+		return true
+	case InstanceSettingKeyHookLocalProfileAccountAgeDays:
+		return true
+	case InstanceSettingKeyHookLocalProfileMode:
 		return true
 	case InstanceSettingKeyHookLocalStatusAccountAgeDays:
 		return true
@@ -5704,7 +5713,7 @@ type AdminHook struct {
 
 	// Hook A decision hook, where the server asks an external review before it accepts something:
 	// `inbound.status` (posts from other servers), `inbound.follow` (follows from other servers),
-	// `signup.check` (sign-ups), `media.check` (uploaded media), `local.status` (local posts).
+	// `signup.check` (sign-ups), `media.check` (uploaded media), `local.status` (local posts), `local.profile` (local profiles).
 	Hook HookName `json:"hook"`
 
 	// Mode How far a decision hook acts: `off` calls nothing, `observe` records the verdict and acts on
@@ -5766,7 +5775,7 @@ type AdminHookDecision struct {
 
 	// Hook A decision hook, where the server asks an external review before it accepts something:
 	// `inbound.status` (posts from other servers), `inbound.follow` (follows from other servers),
-	// `signup.check` (sign-ups), `media.check` (uploaded media), `local.status` (local posts).
+	// `signup.check` (sign-ups), `media.check` (uploaded media), `local.status` (local posts), `local.profile` (local profiles).
 	Hook HookName `json:"hook"`
 
 	// Id The ID of a resource, a UUIDv7 in its canonical string form.
@@ -6559,7 +6568,7 @@ type AdminReportHookOrigin struct {
 
 	// Hook A decision hook, where the server asks an external review before it accepts something:
 	// `inbound.status` (posts from other servers), `inbound.follow` (follows from other servers),
-	// `signup.check` (sign-ups), `media.check` (uploaded media), `local.status` (local posts).
+	// `signup.check` (sign-ups), `media.check` (uploaded media), `local.status` (local posts), `local.profile` (local profiles).
 	Hook HookName `json:"hook"`
 
 	// Reason The coded reason of a verdict.
@@ -9460,7 +9469,7 @@ type HookMode string
 
 // HookName A decision hook, where the server asks an external review before it accepts something:
 // `inbound.status` (posts from other servers), `inbound.follow` (follows from other servers),
-// `signup.check` (sign-ups), `media.check` (uploaded media), `local.status` (local posts).
+// `signup.check` (sign-ups), `media.check` (uploaded media), `local.status` (local posts), `local.profile` (local profiles).
 type HookName string
 
 // HookOnFailure What a hook that enforces does when its plugin fails: `pass` lets the subject through, `retry`
@@ -10010,6 +10019,11 @@ type InstanceExternalReviewScope struct {
 	// follows are sent too (the instance setting `hook_inbound_status_unfollowed_direct`). The direct
 	// posts of followed authors are always sent.
 	InboundStatusUnfollowedDirect *bool `json:"inbound_status_unfollowed_direct,omitempty"`
+
+	// LocalProfileAccountAgeDays For `local.profile`: the profile updates of local accounts created at most this many days ago
+	// are sent (the instance setting `hook_local_profile_account_age_days`); `0` sends those of every
+	// account.
+	LocalProfileAccountAgeDays *int64 `json:"local_profile_account_age_days,omitempty"`
 
 	// LocalStatusAccountAgeDays For `local.status`: the posts of local accounts created at most this many days ago are sent
 	// (the instance setting `hook_local_status_account_age_days`); `0` sends those of every account.
@@ -12085,6 +12099,9 @@ type PreviewDomainBlockImportRequest struct {
 //   - `/api/v1/problems/status-rejected` (422): the server's automated review refused the post
 //     and nothing was posted. The problem carries `hook_decision_id` and `appeal_deadline`; the
 //     user may appeal (`POST /hook_decisions/{id}/appeal`).
+//   - `/api/v1/problems/profile-rejected` (422): the server's automated review refused the change
+//     of the profile, which stays as it was. It cannot be appealed; the user may change the profile
+//     and save it again.
 //   - `/api/v1/problems/email-not-suppressed` (409): the email address of the account is not
 //     suppressed, so there is nothing to lift.
 //   - `/api/v1/problems/invalid-login-provider` (422): a login provider breaks a rule;
@@ -17665,7 +17682,9 @@ type ClientInterface interface {
 	// Records a new revision of the profile. Properties left out of the request keep their
 	// current values. The note and the field values are plain text that the server renders
 	// to HTML like the text of a post (mentions, hashtags, and URLs become links). A 422
-	// problem names the property that is invalid in `detail`.
+	// problem names the property that is invalid in `detail`. When the server's automated review
+	// refuses the change, the answer is a 422 `/api/v1/problems/profile-rejected` with fixed text
+	// and no decision to appeal, and the profile stays as it was.
 	//
 	// Takes any type of body and a specified content type.
 	//
@@ -17677,7 +17696,9 @@ type ClientInterface interface {
 	// Records a new revision of the profile. Properties left out of the request keep their
 	// current values. The note and the field values are plain text that the server renders
 	// to HTML like the text of a post (mentions, hashtags, and URLs become links). A 422
-	// problem names the property that is invalid in `detail`.
+	// problem names the property that is invalid in `detail`. When the server's automated review
+	// refuses the change, the answer is a 422 `/api/v1/problems/profile-rejected` with fixed text
+	// and no decision to appeal, and the profile stays as it was.
 	//
 	// Takes a body of the `application/json` content type.
 	//
@@ -23901,7 +23922,9 @@ func (c *Client) ListAccountSuggestions(ctx context.Context, params *ListAccount
 // Records a new revision of the profile. Properties left out of the request keep their
 // current values. The note and the field values are plain text that the server renders
 // to HTML like the text of a post (mentions, hashtags, and URLs become links). A 422
-// problem names the property that is invalid in `detail`.
+// problem names the property that is invalid in `detail`. When the server's automated review
+// refuses the change, the answer is a 422 `/api/v1/problems/profile-rejected` with fixed text
+// and no decision to appeal, and the profile stays as it was.
 //
 // Takes any type of body and a specified content type.
 //
@@ -23923,7 +23946,9 @@ func (c *Client) UpdateAccountCredentialsWithBody(ctx context.Context, contentTy
 // Records a new revision of the profile. Properties left out of the request keep their
 // current values. The note and the field values are plain text that the server renders
 // to HTML like the text of a post (mentions, hashtags, and URLs become links). A 422
-// problem names the property that is invalid in `detail`.
+// problem names the property that is invalid in `detail`. When the server's automated review
+// refuses the change, the answer is a 422 `/api/v1/problems/profile-rejected` with fixed text
+// and no decision to appeal, and the profile stays as it was.
 //
 // Takes a body of the `application/json` content type.
 //
@@ -50912,7 +50937,9 @@ type ClientWithResponsesInterface interface {
 	// Records a new revision of the profile. Properties left out of the request keep their
 	// current values. The note and the field values are plain text that the server renders
 	// to HTML like the text of a post (mentions, hashtags, and URLs become links). A 422
-	// problem names the property that is invalid in `detail`.
+	// problem names the property that is invalid in `detail`. When the server's automated review
+	// refuses the change, the answer is a 422 `/api/v1/problems/profile-rejected` with fixed text
+	// and no decision to appeal, and the profile stays as it was.
 	//
 	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 	//
@@ -50924,7 +50951,9 @@ type ClientWithResponsesInterface interface {
 	// Records a new revision of the profile. Properties left out of the request keep their
 	// current values. The note and the field values are plain text that the server renders
 	// to HTML like the text of a post (mentions, hashtags, and URLs become links). A 422
-	// problem names the property that is invalid in `detail`.
+	// problem names the property that is invalid in `detail`. When the server's automated review
+	// refuses the change, the answer is a 422 `/api/v1/problems/profile-rejected` with fixed text
+	// and no decision to appeal, and the profile stays as it was.
 	//
 	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 	//
@@ -81787,7 +81816,9 @@ func (c *ClientWithResponses) ListAccountSuggestionsWithResponse(ctx context.Con
 // Records a new revision of the profile. Properties left out of the request keep their
 // current values. The note and the field values are plain text that the server renders
 // to HTML like the text of a post (mentions, hashtags, and URLs become links). A 422
-// problem names the property that is invalid in `detail`.
+// problem names the property that is invalid in `detail`. When the server's automated review
+// refuses the change, the answer is a 422 `/api/v1/problems/profile-rejected` with fixed text
+// and no decision to appeal, and the profile stays as it was.
 //
 // Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 //
@@ -81805,7 +81836,9 @@ func (c *ClientWithResponses) UpdateAccountCredentialsWithBodyWithResponse(ctx c
 // Records a new revision of the profile. Properties left out of the request keep their
 // current values. The note and the field values are plain text that the server renders
 // to HTML like the text of a post (mentions, hashtags, and URLs become links). A 422
-// problem names the property that is invalid in `detail`.
+// problem names the property that is invalid in `detail`. When the server's automated review
+// refuses the change, the answer is a 422 `/api/v1/problems/profile-rejected` with fixed text
+// and no decision to appeal, and the profile stays as it was.
 //
 // Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 //

@@ -40,8 +40,34 @@ func (a *App) setUpAccount(cfg *config.Config, repo account.Repository) {
 		LocalEmojis: func(ctx context.Context, texts ...string) ([]string, error) {
 			return a.CustomEmojis.LocalEmojiIDs(ctx, texts...)
 		},
+		// The decision hook local.profile (ADR-0147), built by setUpHooks before this; the instance
+		// settings and the moderation module, which files the report of a flag, are built after it
+		// and read when an update runs.
+		ProfileReview: account.ProfileReview{
+			Hooks: a.Hooks,
+			MaxAccountAge: func(ctx context.Context) (time.Duration, error) {
+				settings, err := a.Instance.Settings(ctx)
+				if err != nil {
+					return 0, err
+				}
+				return settings.HookLocalProfileAccountAge(), nil
+			},
+			Reports: accountHookReports{a}, InstanceActor: a.emojiImageOwner,
+		},
 	})
 	a.setUpAccountSuggestions()
+}
+
+// accountHookReports files the reports of the account module's hook decisions on the moderation
+// module, which the account module may not import. It reads a.Moderation, built after the account
+// module, when it runs.
+type accountHookReports struct{ a *App }
+
+func (r accountHookReports) FileHookReport(ctx context.Context, tx uow.Tx, in account.HookReport) (bool, error) {
+	return r.a.Moderation.FileHookReport(ctx, tx, moderation.HookReportInput{
+		ReporterAccountID: in.ReporterAccountID, TargetAccountID: in.TargetAccountID,
+		DecisionID: in.DecisionID, Hook: in.Hook, ReasonCode: in.ReasonCode, Comment: in.Comment,
+	})
 }
 
 // setUpAccountSuggestions builds the suggestions of accounts to follow (FR-308): the featured

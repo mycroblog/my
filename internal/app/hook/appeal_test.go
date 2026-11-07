@@ -8,7 +8,6 @@ import (
 	"testing"
 	"time"
 
-	appaccount "github.com/mycroblog/my/internal/app/account"
 	apphook "github.com/mycroblog/my/internal/app/hook"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/hook"
@@ -275,9 +274,9 @@ func TestErasureRemovesAppealsAndExemptions(t *testing.T) {
 	if _, err := h.s.DecideAppeal(t.Context(), a.Appeal.ID, hook.AppealOverturned, ""); err != nil {
 		t.Fatal(err)
 	}
-	step, err := h.s.EraseAccountData(t.Context(), appaccount.ErasureTarget{AccountID: "author"}, "", 10)
-	if err != nil || !step.Done {
-		t.Fatalf("step %+v, %v", step, err)
+	done, err := h.s.EraseAccount(t.Context(), "author", 10)
+	if err != nil || !done {
+		t.Fatalf("done %v, %v", done, err)
 	}
 	if len(h.mem.records) != 0 || len(h.mem.appeals) != 0 || len(h.mem.reviews) != 0 || len(h.mem.exemptions) != 0 {
 		t.Errorf("left: %d decisions, %d appeals, %d reviews, %d exemptions",

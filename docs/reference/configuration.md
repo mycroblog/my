@@ -315,6 +315,13 @@ An instance setting that has never been set reads as its default, which is defin
 | [`plugin_local_status_tls_cert_file`](#plugin_local_status_tls_cert_file) | `MY_PLUGIN_LOCAL_STATUS_TLS_CERT_FILE` | none | no | no |
 | [`plugin_local_status_tls_key_file`](#plugin_local_status_tls_key_file) | `MY_PLUGIN_LOCAL_STATUS_TLS_KEY_FILE` | none | no | no |
 | [`plugin_local_status_timeout`](#plugin_local_status_timeout) | `MY_PLUGIN_LOCAL_STATUS_TIMEOUT` | `1s` | no | no |
+| [`plugin_local_profile_address`](#plugin_local_profile_address) | `MY_PLUGIN_LOCAL_PROFILE_ADDRESS` | none | no | no |
+| [`plugin_local_profile_protocol`](#plugin_local_profile_protocol) | `MY_PLUGIN_LOCAL_PROFILE_PROTOCOL` | `json` | no | no |
+| [`plugin_local_profile_token`](#plugin_local_profile_token) | `MY_PLUGIN_LOCAL_PROFILE_TOKEN` | none | no | yes |
+| [`plugin_local_profile_tls_ca_file`](#plugin_local_profile_tls_ca_file) | `MY_PLUGIN_LOCAL_PROFILE_TLS_CA_FILE` | the system's roots | no | no |
+| [`plugin_local_profile_tls_cert_file`](#plugin_local_profile_tls_cert_file) | `MY_PLUGIN_LOCAL_PROFILE_TLS_CERT_FILE` | none | no | no |
+| [`plugin_local_profile_tls_key_file`](#plugin_local_profile_tls_key_file) | `MY_PLUGIN_LOCAL_PROFILE_TLS_KEY_FILE` | none | no | no |
+| [`plugin_local_profile_timeout`](#plugin_local_profile_timeout) | `MY_PLUGIN_LOCAL_PROFILE_TIMEOUT` | `1s` | no | no |
 
 ## Settings
 
@@ -2700,6 +2707,68 @@ File of the key of that client certificate of the `local.status` plugin.
 Deadline of one call of the `local.status` plugin, less than `30s`.
 
 - Environment variable: `MY_PLUGIN_LOCAL_STATUS_TIMEOUT`
+- Default: `1s`
+- Required: no
+
+### `plugin_local_profile_address`
+
+Where the `local.profile` plugin listens: `unix:///path/to.sock`, `https://host[:port]`, or `http://host[:port]`, which is plain TCP: nothing encrypts or authenticates it, and the server warns at start. Empty delegates nothing, and the server opens no connection. Host names are resolved per connection. Restart to change it; no instance setting or API can.
+
+- Environment variable: `MY_PLUGIN_LOCAL_PROFILE_ADDRESS`
+- Default: none
+- Required: no
+
+### `plugin_local_profile_protocol`
+
+What the server sends to the `local.profile` plugin; it must be what the plugin accepts.
+
+- Environment variable: `MY_PLUGIN_LOCAL_PROFILE_PROTOCOL`
+- Default: `json`
+- Required: no
+
+| Value | Description |
+| --- | --- |
+| `json` | The Connect protocol with JSON, which a plugin of an HTTP server and a JSON library serves with no Connect library. |
+| `proto` | The Connect protocol with binary protobuf, for a server on a Connect library. |
+| `grpc` | gRPC, for a server that speaks only that. |
+
+### `plugin_local_profile_token`
+
+Bearer token that the server sends to the `local.profile` plugin, over `https://` or `unix://` only.
+
+- Environment variable: `MY_PLUGIN_LOCAL_PROFILE_TOKEN` or `MY_PLUGIN_LOCAL_PROFILE_TOKEN_FILE`
+- Default: none
+- Required: no
+
+### `plugin_local_profile_tls_ca_file`
+
+File of the CA that verifies the `local.profile` plugin at an `https://` address.
+
+- Environment variable: `MY_PLUGIN_LOCAL_PROFILE_TLS_CA_FILE`
+- Default: the system's roots
+- Required: no
+
+### `plugin_local_profile_tls_cert_file`
+
+File of the client certificate that the server shows the `local.profile` plugin at an `https://` address (mTLS), with its key file.
+
+- Environment variable: `MY_PLUGIN_LOCAL_PROFILE_TLS_CERT_FILE`
+- Default: none
+- Required: no
+
+### `plugin_local_profile_tls_key_file`
+
+File of the key of that client certificate of the `local.profile` plugin.
+
+- Environment variable: `MY_PLUGIN_LOCAL_PROFILE_TLS_KEY_FILE`
+- Default: none
+- Required: no
+
+### `plugin_local_profile_timeout`
+
+Deadline of one call of the `local.profile` plugin, less than `30s`.
+
+- Environment variable: `MY_PLUGIN_LOCAL_PROFILE_TIMEOUT`
 - Default: `1s`
 - Required: no
 
