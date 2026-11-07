@@ -34,13 +34,15 @@ type InteractionHarness struct {
 // The factory registers the cleanup of everything it creates with t.Cleanup.
 type InteractionFactory func(t *testing.T, opts uow.Options) InteractionHarness
 
-// InteractionRepositoryContract verifies the interaction repository of a database adapter
-// together with the content module's projectors and its Interactions use cases: boosts and
-// their retractions with boost_edges, favourites, bookmarks, and pins; the visibility check
-// through content.CanView; the acting account's moderation restrictions; counters that move only when a row is actually written, also under
-// concurrent and repeated commands; the events for other modules' projectors; status deletions;
-// and the property that incrementally updated projections equal a rebuild from the sources.
-func InteractionRepositoryContract(t *testing.T, newHarness InteractionFactory) {
+// InteractionFlows verifies the content module's Interactions use cases with its projectors on a
+// database adapter, the flows of ADR-0153 §1, which internal/flowtest/content runs once on SQLite;
+// InteractionRepositoryContract checks the interaction repository's methods on every adapter. The
+// flows cover boosts and their retractions with boost_edges, favourites, bookmarks, and pins; the
+// visibility check through content.CanView; the acting account's moderation restrictions;
+// counters that move only when a row is actually written, also under concurrent and repeated
+// commands; the events for other modules' projectors; status deletions; and the property that
+// incrementally updated projections equal a rebuild from the sources.
+func InteractionFlows(t *testing.T, newHarness InteractionFactory) {
 	t.Helper()
 	cases := []struct {
 		name string

@@ -34,8 +34,9 @@ type MediaHarness struct {
 // factory registers the cleanup of everything it creates with t.Cleanup.
 type MediaFactory func(t *testing.T, opts uow.Options) MediaHarness
 
-// MediaRepositoryContract verifies the media repository of a database adapter through the
-// use cases that drive it: uploads stored with the detected type and their processing job
+// MediaFlows verifies the media use cases of the content module on a database adapter, the flows
+// of ADR-0153 §1, which internal/flowtest/content runs once on SQLite; MediaRepositoryContract
+// checks the media repository's methods on every adapter. The flows cover uploads stored with the detected type and their processing job
 // enqueued, rejected uploads leaving nothing behind, idempotent processing that records one
 // result with its variants for the upload's purpose under keys of the result and deletes the
 // file as received, processing again for another purpose, failures recorded as results,
@@ -47,7 +48,7 @@ type MediaFactory func(t *testing.T, opts uow.Options) MediaHarness
 // proxy's remote media cache with its cleanup, the work list of blob deletions that leaves no
 // blob of a failed or losing write and retries failed deletions, and the bytes that the local
 // uploads keep.
-func MediaRepositoryContract(t *testing.T, newHarness MediaFactory) {
+func MediaFlows(t *testing.T, newHarness MediaFactory) {
 	t.Helper()
 	cases := []struct {
 		name string

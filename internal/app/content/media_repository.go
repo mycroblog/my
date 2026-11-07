@@ -11,7 +11,8 @@ import (
 )
 
 // MediaRepository is the persistence port of the content module's media files (data-model
-// §4.4). The database adapters implement it and pass testkit.MediaRepositoryContract.
+// §4.4). The database adapters implement it and pass testkit.MediaRepositoryContract;
+// testkit.MediaFlows (internal/flowtest/content) drives the media use cases on them.
 //
 // Methods that take a uow.Tx run inside that transaction; the others read committed data outside
 // any transaction. Lookups that find nothing return an error wrapping ErrNotFound.
