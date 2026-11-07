@@ -28,11 +28,11 @@ default locale, who can see the timelines, the instance name, description, terms
 
 | Key | Type | Default | Description |
 | --- | --- | --- | --- |
-| `registration_mode` | `open` / `approval` / `invite` / `closed` | `approval` | The registration mode ([registration](registration.md)). While a service shutdown is announced and after it is closed, the effective value is `closed`. The stored value does not change, and cancelling the announcement restores it. `GET /instance` and NodeInfo show the effective value |
+| `registration_mode` | `open` / `approval` / `invite` / `closed` | `approval` | The registration mode ([registration](registration.md)). While a service shutdown is announced and after it is closed, and on a [one-person server](#one-person-server), the effective value is `closed`. The stored value does not change, and cancelling the announcement or turning `single_user` off restores it. `GET /instance` and NodeInfo show the effective value |
 | `max_status_length` | integer 1-100000 | `500` | The maximum length of a post, in characters |
 | `default_locale` | BCP 47 language tag | `en` | The default locale. It is the initial UI locale of new users, and the fallback when no catalog matches a user's preference |
-| `local_timeline_visibility` | `off` / `signed_in` / `everyone` | `everyone` | Who can see the local timeline (`GET /api/v1/timelines/local`): nobody, signed-in users, or everyone. `off` answers 404 and `signed_in` answers visitors who are not signed in with 401; in both cases the navigation hides it. Unless the value is `everyone`, the landing page shows no sample posts |
-| `federated_timeline_visibility` | `off` / `signed_in` / `everyone` | `signed_in` | Who can see the federated timeline (`GET /api/v1/timelines/federated`). The values mean the same as for the local timeline |
+| `local_timeline_visibility` | `off` / `signed_in` / `everyone` | `everyone` | Who can see the local timeline (`GET /api/v1/timelines/local`): nobody, signed-in users, or everyone. `off` answers 404 and `signed_in` answers visitors who are not signed in with 401; in both cases the navigation hides it. Unless the value is `everyone`, the landing page shows no sample posts. On a [one-person server](#one-person-server) it reads as `off` |
+| `federated_timeline_visibility` | `off` / `signed_in` / `everyone` | `signed_in` | Who can see the federated timeline (`GET /api/v1/timelines/federated`). The values mean the same as for the local timeline, and it reads as `off` on a one-person server too |
 | `preview_image` | media ID (empty = unset) | empty | The link preview image (`og:image`) for posts and profiles without an image. When unset, the bundled default image is used ([link previews](link-previews.md)) |
 | `contact_account` | username of a local account (empty = unset) | empty | The account to contact the operators. See [contact and thumbnail](#contact-and-thumbnail) |
 | `contact_email` | email address (empty = unset) | empty | The email address to contact the operators. It is also the `Reply-To` and the signature of the emails the server sends |
@@ -110,6 +110,7 @@ default locale, who can see the timelines, the instance name, description, terms
 | `hook_local_status_account_age_days` | integer 0-3650 (days) | `7` | `local.status` [reviews the posts and their edits](decision-hooks.md#local-posts) of accounts younger than this; `0` reviews every account. The information page (`/about`) states it while the hook is in use. |
 | `hook_local_profile_account_age_days` | integer 0-3650 (days) | `7` | `local.profile` [reviews the profile changes](decision-hooks.md#local-profiles) of accounts younger than this; `0` reviews every account. The information page (`/about`) states it while the hook is in use. |
 | `hook_decisions_retention_days` | integer 30-3650 (days) | `90` | How many days to keep the [decisions of the hooks](decision-hooks.md#the-decisions). |
+| `single_user` | boolean | `false` | Whether the server is a [one-person server](#one-person-server). It can be turned on only while the server has exactly one local account, and turned off at any time |
 
 - Values are normalized before they are stored (`TRUE` becomes `true`, `0750` becomes `750`, `ja_jp` becomes `ja-JP`, media IDs are lowercased).
   An invalid value is rejected and nothing is written.
@@ -251,6 +252,42 @@ and the text `thumbnail_alt`) appear in the places below. Whatever is unset does
 
 When the contact account is suspended or deleted, the account is not shown and only the email address is.
 Change them on the General page of the admin screen of the web client ("Server settings", `/admin/settings`), or with the CLI or the client API.
+
+### One-person server
+
+A server of its operator alone, the operator's own home in the fediverse, is a one-person server: turn on `single_user`.
+
+```sh
+my instance set single_user true
+my instance set single_user false   # back to a community server
+```
+
+- It can be turned on only while exactly one local account counts. Every local account that is not deleted counts,
+  those pending approval, deactivated, scheduled for deletion, suspended, or limited included, since each could come back as
+  a second person. An account whose registration was rejected does not count. With any other number, `my instance set`
+  fails with the count, and the admin API answers `422` with the type `/api/v1/problems/single-user-requires-one-account`.
+  The instance actor of the server is not an account and never counts.
+- It can be turned off at any time. Turning it on or off deletes nothing and changes the stored value of no other setting:
+  what it holds back applies again as it was once it is off. Like every setting, the change goes to the audit log.
+
+While it is on:
+
+- **Registration is closed.** `registration_mode` reads as `closed` whatever it stores, so the sign-up page, sign-up through a
+  login provider, and `my admin create` create no account. Signing in with a login provider still works.
+- **Only the home timeline.** `local_timeline_visibility` and `federated_timeline_visibility` read as `off`. Hashtag and list
+  timelines stay.
+- **What a community needs is hidden.** The local and federated timelines and their streams, the suggestions of accounts,
+  the invites of users and of administrators, the review of registrations, and the sign-up blocks answer `404` with the type
+  `/api/v1/problems/single-user-mode`.
+- **No new local posts.** On a server of one person, a post for "This server" reaches nobody but the followers, so a new
+  post cannot be local: the client API answers `422` and leaves it out of what an account may post. A default visibility
+  of "This server" reads as "Followers" and cannot be saved, and a voice chat room for the people of this server announces
+  itself in a post for the followers. Posts that are already local stay local.
+- **The server says what it is.** `single_user` in `GET /api/v1/instance` is `true`, with the effective registration mode
+  and timelines, and NodeInfo answers `openRegistrations: false` with `metadata.singleUser: true`.
+
+Federation, moderation, the full-text search, the supporter program, the documents, and the admin screens work as on any
+server.
 
 ## Usage
 

@@ -38,6 +38,9 @@ Row by row, on this server and then on other servers:
 - **Followers**: your followers and the people you mention, on this server and on other servers.
 - **Mentioned people**: only the people you mention, on this server and on other servers.
 
+On a server of one person, where nobody else is signed in, "This server" means no more than "Followers": new posts
+cannot have it, and a default of "This server" works as "Followers". Posts that already have it keep it.
+
 A block always wins: someone who blocks you, or whom you block, does not see your post whatever you chose.
 
 ### "This server"

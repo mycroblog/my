@@ -32,6 +32,7 @@ device, when a host removes you, or when you and the host or a co-host block eac
 - **Who can see and join**: "Everyone on this server", "Followers of the host", "Mutual follows of the host", or "Only invited people".
 - **Who can speak without asking**: "Everyone who joins", "Followers of the host", "Mutual follows of the host", or "Only people the hosts let speak".
 - **Post about the room**: a post with the link to the room, visible to everyone on this server or to your followers only.
+  On a server of one person, the post about a room for everyone on this server is for your followers.
 
 "Start the room" opens it. "Change the room's settings" edits it later, and "Invite" lets you invite a person of your
 server as a listener or a speaker; they get a notification and can see the room from then on. "Share" copies the link.

@@ -827,6 +827,7 @@ ADR-0005 の方針（既定はキャッシュしない）に従います。
 
 `off` では、ローカルの Actor・投稿・コレクションがどれも `404` です（`410` にしません）。NodeInfo は `metadata.federationMode` にモードを出します。
 NodeInfo の `metadata.serviceClosure` は、サービスの終了の状態（`state`。`none`・`announced`・`closed`・`delivery_completed`）と、予告の後は閉鎖日（`closesAt`）と持ち出しの期限（`exportUntil`）を出します（[ADR-0088](../adr/0088-service-shutdown-modes.md) §2）。
+一人のためのサーバー（インスタンス設定 `single_user`）は、NodeInfo の `openRegistrations` を `false` にし、`metadata.singleUser: true` を加えます。フォロー・配送・inbox はほかのサーバーと同じです（[ADR-0152](../adr/0152-single-user-mode.md) §6）。
 
 非同期の inbox は、型を次の流れに対応させます。
 
