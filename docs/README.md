@@ -47,6 +47,7 @@ Read the groups in order: start with the overview, then configure the instance b
 - [Decision hooks](operations/decision-hooks.md): ask a plugin of yours before accepting posts, follows, sign-ups, and media
 - [Voice chat (choosing P2P, LiveKit or Sora, STUN and TURN, deployment, moderation)](operations/voice.md)
 - [Full-text search of posts (what the index holds, rebuilding it, the query in URLs and logs, its backups)](operations/search.md)
+- [Search engines (Elasticsearch, OpenSearch, and Meilisearch: setup, sizing, and Japanese)](operations/search-engines.md)
 - [Supporters (paid plans)](operations/supporters.md)
 - [Supporter payments with Stripe](operations/payments-stripe.md)
 - [Supporter payments with PAY.JP](operations/payments-payjp.md)

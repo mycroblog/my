@@ -2,11 +2,16 @@
 
 What the full-text search of posts holds, how to turn it on and change it, how to rebuild its index, and what it asks of your logs and backups.
 
-## Nothing to enable yet
+## Choosing an engine
 
-No search engine is supported yet: the only value of [`search`](../reference/configuration.md#search) is `none`, the default, and the server runs without a full-text search of posts. With `none` the server connects to nothing, queues no search job, and the client shows no way to search posts. The search of accounts and hashtags works from the database and does not depend on this setting.
+The full-text search of posts needs a search engine that you run or rent. [`search`](../reference/configuration.md#search) chooses it:
 
-The commands and steps below apply once a search engine is available. On a server with `search = none`, each `my search` command says so and does nothing.
+- `none`, the default: no full-text search. The server connects to nothing, queues no search job, and the client shows no way to search posts. On such a server, each `my search` command says so and does nothing.
+- `elasticsearch`, `opensearch`, or `meilisearch`: that engine, with the settings of its section in [Search engines](search-engines.md).
+
+The search of accounts and hashtags works from the database and does not depend on this setting.
+
+The server owns only the fields it writes, filters, sorts, and pages on. How the engine analyzes text, how it ranks results, and how large its index is are yours to tune, through a settings file of the engine; [Search engines](search-engines.md) describes what each engine finds in Japanese with the built-in settings and how to change it.
 
 ## What the index holds
 

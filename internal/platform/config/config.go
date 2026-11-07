@@ -215,6 +215,43 @@ type Config struct {
 	// Search is the search engine of the full-text search of statuses (ADR-0149 §3): "none" or a
 	// backend's name.
 	Search string
+	// The Elasticsearch cluster of search = elasticsearch: the URL of its REST API, an API key or
+	// a user and password, the alias of the index (empty for the adapter's default), the file of the
+	// settings of its indexes, and a CA file for TLS.
+	SearchElasticsearchURL               string
+	SearchElasticsearchAPIKey            string
+	SearchElasticsearchUsername          string
+	SearchElasticsearchPassword          string
+	SearchElasticsearchIndex             string
+	SearchElasticsearchIndexSettingsFile string
+	// SearchElasticsearchIndexSettings is the content of SearchElasticsearchIndexSettingsFile,
+	// read and checked by Load; nil without the file.
+	SearchElasticsearchIndexSettings []byte
+	SearchElasticsearchCAFile        string
+	// The cluster of search = opensearch: the URL of its REST API, the alias of the index, the
+	// HTTP Basic authentication, and the AWS request signing ("off" or "es") with its region.
+	// Empty is the default of each: opensearch.DefaultIndex, no signing, and the SDK's region.
+	SearchOpenSearchURL   string
+	SearchOpenSearchIndex string
+	// SearchOpenSearchIndexSettingsFile is the path of the JSON file of the settings of the
+	// index, empty for the adapter's own.
+	SearchOpenSearchIndexSettingsFile string
+	// SearchOpenSearchIndexSettings is the content of SearchOpenSearchIndexSettingsFile, read and
+	// checked by Load; nil without the file.
+	SearchOpenSearchIndexSettings []byte
+	SearchOpenSearchUsername      string
+	SearchOpenSearchPassword      string
+	SearchOpenSearchAWSSigning    string
+	SearchOpenSearchAWSRegion     string
+	// The Meilisearch server of search = meilisearch (ADR-0149 §14).
+	SearchMeilisearchURL    string
+	SearchMeilisearchAPIKey string
+	SearchMeilisearchIndex  string
+	// SearchMeilisearchSettingsFile is the path of the operator's index settings, read at start.
+	SearchMeilisearchSettingsFile string
+	// SearchMeilisearchSettings is the content of SearchMeilisearchSettingsFile, read and checked
+	// by Load; nil without the file.
+	SearchMeilisearchSettings []byte
 	// PaymentsProvider is the payment provider of the supporters (ADR-0074 §5): "none" or a
 	// provider's name. PaymentsReconcileInterval and PaymentsReconcileMaxRequests bound the
 	// reconciliation with it (§4).
@@ -467,6 +504,24 @@ func (c *Config) LogValue() slog.Value {
 		slog.Duration("payments_reconcile_interval", c.PaymentsReconcileInterval),
 		slog.Int("payments_reconcile_max_requests", c.PaymentsReconcileMaxRequests),
 		slog.String("search", c.Search),
+		slog.String("search_elasticsearch_url", c.SearchElasticsearchURL),
+		slog.String("search_elasticsearch_api_key", redact(c.SearchElasticsearchAPIKey != "")),
+		slog.String("search_elasticsearch_username", c.SearchElasticsearchUsername),
+		slog.String("search_elasticsearch_password", redact(c.SearchElasticsearchPassword != "")),
+		slog.String("search_elasticsearch_index", c.SearchElasticsearchIndex),
+		slog.String("search_elasticsearch_index_settings_file", c.SearchElasticsearchIndexSettingsFile),
+		slog.String("search_elasticsearch_ca_file", c.SearchElasticsearchCAFile),
+		slog.String("search_opensearch_url", c.SearchOpenSearchURL),
+		slog.String("search_opensearch_index", c.SearchOpenSearchIndex),
+		slog.String("search_opensearch_index_settings_file", c.SearchOpenSearchIndexSettingsFile),
+		slog.String("search_opensearch_username", c.SearchOpenSearchUsername),
+		slog.String("search_opensearch_password", redact(c.SearchOpenSearchPassword != "")),
+		slog.String("search_opensearch_aws_signing", c.SearchOpenSearchAWSSigning),
+		slog.String("search_opensearch_aws_region", c.SearchOpenSearchAWSRegion),
+		slog.String("search_meilisearch_url", c.SearchMeilisearchURL),
+		slog.String("search_meilisearch_api_key", redact(c.SearchMeilisearchAPIKey != "")),
+		slog.String("search_meilisearch_index", c.SearchMeilisearchIndex),
+		slog.String("search_meilisearch_settings_file", c.SearchMeilisearchSettingsFile),
 		slog.String("translator_deepl_api_key", redact(c.TranslatorDeepLAPIKey != "")),
 		slog.String("translator_deepl_url", c.TranslatorDeepLURL),
 		slog.String("voice", c.Voice),
@@ -742,6 +797,9 @@ func load(src Source, only map[string]bool) (*Config, []Setting, error) {
 	}
 	if only == nil {
 		issues = append(issues, crossChecks(valid, present)...)
+	}
+	if only == nil {
+		issues = append(issues, loadSearchSettings(cfg, src)...)
 	}
 	if only == nil || only["origin_secret"] {
 		issues = append(issues, originChecks(valid, present)...)

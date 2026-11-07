@@ -6,6 +6,8 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"net/http"
+	"time"
 
 	"github.com/mycroblog/my/internal/app/queue"
 	"github.com/mycroblog/my/internal/app/search"
@@ -16,6 +18,16 @@ import (
 // searchIndexAdapters builds the Index of each value of search whose adapter is in this build
 // (ADR-0149 §3): the files of the adapters, under their build tags, add theirs.
 var searchIndexAdapters = map[string]func(ctx context.Context, cfg *config.Config, logger *slog.Logger) (search.Index, error){}
+
+// searchHTTPClient returns the HTTP client of a search backend. The adapter reaches only the
+// engine that the operator configured, which may be on a private address, so the client is not
+// the SSRF-guarded kernel.HTTPClient (ADR-0149 §3); a call has timeout and follows no redirect.
+func searchHTTPClient(timeout time.Duration) *http.Client {
+	return &http.Client{
+		Timeout:       timeout,
+		CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse },
+	}
+}
 
 // newSearchIndex returns the Index of search, AppOptions.SearchIndex standing in for it, and nil
 // with search = none, which opens no connection to anything (ADR-0149 §2).

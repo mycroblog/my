@@ -1052,8 +1052,133 @@ var schema = []field{
 		choices: []choice{
 			{value: "none", doc: "No full-text search: the server connects to no engine and enqueues no search job, and `GET /api/v1/instance` tells clients that the search is not available."},
 			{value: "fake", doc: "Test builds only: a stand-in index in the server's memory, for end-to-end tests and demonstrations. Only a binary built with the build tag `e2e_fakes` has it, and that binary refuses it unless `profile = development`; released binaries and images never have it ([build tags](build-tags.md)). It needs no other setting."},
+			{value: "elasticsearch", doc: "An Elasticsearch cluster, version 8 or later, at `search_elasticsearch_url`, with `search_elasticsearch_api_key` or `search_elasticsearch_username` and `search_elasticsearch_password` when it has security on. The server creates and upgrades the index itself ([search engines](../operations/search-engines.md#elasticsearch)). The build tag `no_search_elasticsearch` leaves it out."},
+			{value: "opensearch", doc: "An OpenSearch cluster, or a domain of Amazon OpenSearch Service, at `search_opensearch_url` ([search engines](../operations/search-engines.md#opensearch)). The server creates its index at start. The build tag `no_search_opensearch` leaves it out."},
+			{value: "meilisearch", doc: "A Meilisearch server (self-hosted or Meilisearch Cloud) at `search_meilisearch_url`, with `search_meilisearch_api_key`. The server creates the index `search_meilisearch_index` and its settings. The build tag `no_search_meilisearch` leaves it out."},
 		},
 		set: func(c *Config, v string) { c.Search = v },
+	},
+	{
+		key:          "search_elasticsearch_url",
+		doc:          "The URL of the REST API of the Elasticsearch cluster of `search = elasticsearch`, such as `https://search.internal.example:9200`, without credentials, query, or fragment; a path is kept, for a proxy that serves the API under one. Use `https:` whenever the server sends credentials over a network that others share.",
+		requiredWhen: "when `search = elasticsearch`",
+		check:        checkSearchURL,
+		set:          func(c *Config, v string) { c.SearchElasticsearchURL = strings.TrimSpace(v) },
+	},
+	{
+		key:    "search_elasticsearch_api_key",
+		doc:    "The API key of `search = elasticsearch`, the `encoded` value that Elasticsearch returns when it creates the key, sent as `Authorization: ApiKey <key>`. Set it or `search_elasticsearch_username` and `search_elasticsearch_password`, not both; with neither, the server sends no credentials.",
+		secret: true,
+		check:  checkNotBlank,
+		set:    func(c *Config, v string) { c.SearchElasticsearchAPIKey = strings.TrimSpace(v) },
+	},
+	{
+		key:   "search_elasticsearch_username",
+		doc:   "The user of `search = elasticsearch` for basic authentication, with `search_elasticsearch_password`, when `search_elasticsearch_api_key` is not set.",
+		check: checkNotBlank,
+		set:   func(c *Config, v string) { c.SearchElasticsearchUsername = strings.TrimSpace(v) },
+	},
+	{
+		key:          "search_elasticsearch_password",
+		doc:          "The password of `search_elasticsearch_username`.",
+		secret:       true,
+		requiredWhen: "when `search_elasticsearch_username` is set",
+		check:        checkNotBlank,
+		set:          func(c *Config, v string) { c.SearchElasticsearchPassword = v },
+	},
+	{
+		key:    "search_elasticsearch_index",
+		doc:    "The name of the alias that the index of `search = elasticsearch` lives behind; the server names the index behind it from this name with a suffix, such as `my-statuses-v1`. Up to 200 lowercase letters, digits, `-`, `_`, or `.`, starting with a letter or digit. Give each server that shares a cluster its own name.",
+		defDoc: "`my-statuses`",
+		check:  checkElasticsearchIndex,
+		set:    func(c *Config, v string) { c.SearchElasticsearchIndex = strings.TrimSpace(v) },
+	},
+	{
+		key:   "search_elasticsearch_index_settings_file",
+		doc:   "JSON file of the settings of each index that the server creates for `search = elasticsearch`, one object such as `{\"number_of_shards\": 1, \"number_of_replicas\": 0, \"analysis\": {...}}`: the analysis, the shards, the replicas, and any other index setting. It must define the analyzer `my_text`, which analyzes the posts, and may define `my_text_search`, which then analyzes the words of the queries. Empty uses the built-in settings, which need no plugin. The server reads it at start; after a change, it creates a new empty index and `my search rebuild` must fill it ([search engines](../operations/search-engines.md#tuning-the-analysis-of-elasticsearch)).",
+		check: checkNotBlank,
+		set:   func(c *Config, v string) { c.SearchElasticsearchIndexSettingsFile = strings.TrimSpace(v) },
+	},
+	{
+		key:   "search_elasticsearch_ca_file",
+		doc:   "PEM file of the certificate authorities that the TLS certificate of `search_elasticsearch_url` chains to, such as the `http_ca.crt` that Elasticsearch generates when it starts with security on. Empty uses the system roots; it needs an `https:` URL.",
+		check: checkNotBlank,
+		set:   func(c *Config, v string) { c.SearchElasticsearchCAFile = strings.TrimSpace(v) },
+	},
+	{
+		key:          "search_opensearch_url",
+		doc:          "The URL of the REST API of the OpenSearch cluster of `search = opensearch`, such as `https://search.example.org:9200`, with no credentials, query, or fragment; a path is kept, for a cluster behind a reverse proxy.",
+		requiredWhen: "when `search = opensearch`",
+		check:        checkSearchURL,
+		set:          func(c *Config, v string) { c.SearchOpenSearchURL = v },
+	},
+	{
+		key:    "search_opensearch_index",
+		doc:    "The name of the alias of the index of `search = opensearch`. The server keeps the documents in the index named after it with the version of its mapping, such as `my-statuses-v1`, and points the alias at it. Lowercase letters, digits, `-`, and `_`, starting with a letter or a digit.",
+		defDoc: "`my-statuses`",
+		check:  checkSearchIndexName,
+		set:    func(c *Config, v string) { c.SearchOpenSearchIndex = v },
+	},
+	{
+		key: "search_opensearch_index_settings_file",
+		doc: "The path of a JSON file whose object the server uses as the `settings` of every index of `search = opensearch` that it creates: the analysis, the shards, the replicas, and any other index setting. It must define the analyzers `my_text`, of the text of the posts, and `my_text_search`, of the queries ([tuning the analysis](../operations/search-engines.md#tuning-the-analysis-of-opensearch)). Empty uses the built-in settings. A change of the file takes effect at the next start, in a new empty index, so it needs a rebuild of the index.",
+		set: func(c *Config, v string) { c.SearchOpenSearchIndexSettingsFile = v },
+	},
+	{
+		key:   "search_opensearch_username",
+		doc:   "The user of the HTTP Basic authentication of `search = opensearch`, such as a user of the OpenSearch security plugin or the master user of an Amazon OpenSearch Service domain with fine-grained access control. Empty sends no credentials. It excludes `search_opensearch_aws_signing`.",
+		check: checkNotBlank,
+		set:   func(c *Config, v string) { c.SearchOpenSearchUsername = strings.TrimSpace(v) },
+	},
+	{
+		key:          "search_opensearch_password",
+		doc:          "The password of `search_opensearch_username`.",
+		secret:       true,
+		requiredWhen: "when `search_opensearch_username` is set",
+		check:        checkNotBlank,
+		set:          func(c *Config, v string) { c.SearchOpenSearchPassword = v },
+	},
+	{
+		key:    "search_opensearch_aws_signing",
+		doc:    "Whether the server signs the requests of `search = opensearch` with AWS Signature Version 4, as a domain of Amazon OpenSearch Service with an IAM access policy needs. The credentials come from the AWS SDK's default chain: the environment, the shared files, the execution role.",
+		defDoc: "`off`",
+		choices: []choice{
+			{value: "off", doc: "No signing."},
+			{value: "es", doc: "Sign for a domain of Amazon OpenSearch Service (the service name `es`) in `search_opensearch_aws_region`. OpenSearch Serverless (`aoss`) is not supported."},
+		},
+		set: func(c *Config, v string) { c.SearchOpenSearchAWSSigning = v },
+	},
+	{
+		key:    "search_opensearch_aws_region",
+		doc:    "The AWS region of the domain of `search_opensearch_aws_signing = es`, such as `us-east-1`.",
+		defDoc: "the region of the AWS SDK's default chain (`AWS_REGION`)",
+		check:  checkNotBlank,
+		set:    func(c *Config, v string) { c.SearchOpenSearchAWSRegion = strings.TrimSpace(v) },
+	},
+	{
+		key:          "search_meilisearch_url",
+		doc:          "The base URL of the Meilisearch server of `search = meilisearch`, such as `https://meilisearch.example.org` or `http://meilisearch:7700` on a private network. It holds no credentials: the key goes in `search_meilisearch_api_key`.",
+		requiredWhen: "when `search = meilisearch`",
+		check:        checkMeilisearchURL,
+		set:          func(c *Config, v string) { c.SearchMeilisearchURL = v },
+	},
+	{
+		key:    "search_meilisearch_api_key",
+		doc:    "The master key of the Meilisearch server, or an API key with the actions `search`, `documents.add`, `documents.get`, `documents.delete`, `indexes.create`, `indexes.get`, `indexes.delete`, `settings.update`, and `tasks.get` on `search_meilisearch_index`. Empty sends no key, for a server without a master key.",
+		secret: true,
+		set:    func(c *Config, v string) { c.SearchMeilisearchAPIKey = strings.TrimSpace(v) },
+	},
+	{
+		key:    "search_meilisearch_index",
+		doc:    "The uid of the Meilisearch index of the posts, which the server creates when it does not exist: letters, digits, hyphens, and underscores. Servers that share a Meilisearch server need different ones.",
+		defDoc: "`my_statuses`",
+		check:  checkMeilisearchIndex,
+		set:    func(c *Config, v string) { c.SearchMeilisearchIndex = v },
+	},
+	{
+		key: "search_meilisearch_settings_file",
+		doc: "The path of a JSON object of Meilisearch index settings, to tune the engine: `rankingRules` (which must start with `sort`), `typoTolerance`, `stopWords`, `synonyms`, `dictionary`, `separatorTokens`, `nonSeparatorTokens`, `localizedAttributes`, `proximityPrecision`, `pagination`, and the like. The server sets `searchableAttributes`, `displayedAttributes`, `filterableAttributes`, and `sortableAttributes` itself and refuses a file that sets them. A setting the file leaves out takes the server's default. The server reads the file at start and sends the settings when they differ from what the index has. Empty uses the server's defaults.",
+		set: func(c *Config, v string) { c.SearchMeilisearchSettingsFile = v },
 	},
 	{
 		key: "voice",
@@ -1490,6 +1615,9 @@ func crossChecks(vals map[string]string, present map[string]bool) []Issue {
 		}
 	}
 	issues = append(issues, voiceChecks(vals, present)...)
+	issues = append(issues, searchElasticsearchChecks(vals, present)...)
+	issues = append(issues, searchOpenSearchChecks(vals, present)...)
+	issues = append(issues, searchMeilisearchChecks(vals, present)...)
 	if vals["errors_exporter"] == "sentry" && !present["errors_sentry_dsn"] {
 		issues = append(issues, Issue{Key: "errors_sentry_dsn", Missing: true, Message: "required when errors_exporter is sentry"})
 	}

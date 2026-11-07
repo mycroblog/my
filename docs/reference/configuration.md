@@ -169,6 +169,24 @@ An instance setting that has never been set reads as its default, which is defin
 | [`translator_google_location`](#translator_google_location) | `MY_TRANSLATOR_GOOGLE_LOCATION` | `global` | no | no |
 | [`translator_aws_region`](#translator_aws_region) | `MY_TRANSLATOR_AWS_REGION` | none | no | no |
 | [`search`](#search) | `MY_SEARCH` | `none` | no | no |
+| [`search_elasticsearch_url`](#search_elasticsearch_url) | `MY_SEARCH_ELASTICSEARCH_URL` | none | when `search = elasticsearch` | no |
+| [`search_elasticsearch_api_key`](#search_elasticsearch_api_key) | `MY_SEARCH_ELASTICSEARCH_API_KEY` | none | no | yes |
+| [`search_elasticsearch_username`](#search_elasticsearch_username) | `MY_SEARCH_ELASTICSEARCH_USERNAME` | none | no | no |
+| [`search_elasticsearch_password`](#search_elasticsearch_password) | `MY_SEARCH_ELASTICSEARCH_PASSWORD` | none | when `search_elasticsearch_username` is set | yes |
+| [`search_elasticsearch_index`](#search_elasticsearch_index) | `MY_SEARCH_ELASTICSEARCH_INDEX` | `my-statuses` | no | no |
+| [`search_elasticsearch_index_settings_file`](#search_elasticsearch_index_settings_file) | `MY_SEARCH_ELASTICSEARCH_INDEX_SETTINGS_FILE` | none | no | no |
+| [`search_elasticsearch_ca_file`](#search_elasticsearch_ca_file) | `MY_SEARCH_ELASTICSEARCH_CA_FILE` | none | no | no |
+| [`search_opensearch_url`](#search_opensearch_url) | `MY_SEARCH_OPENSEARCH_URL` | none | when `search = opensearch` | no |
+| [`search_opensearch_index`](#search_opensearch_index) | `MY_SEARCH_OPENSEARCH_INDEX` | `my-statuses` | no | no |
+| [`search_opensearch_index_settings_file`](#search_opensearch_index_settings_file) | `MY_SEARCH_OPENSEARCH_INDEX_SETTINGS_FILE` | none | no | no |
+| [`search_opensearch_username`](#search_opensearch_username) | `MY_SEARCH_OPENSEARCH_USERNAME` | none | no | no |
+| [`search_opensearch_password`](#search_opensearch_password) | `MY_SEARCH_OPENSEARCH_PASSWORD` | none | when `search_opensearch_username` is set | yes |
+| [`search_opensearch_aws_signing`](#search_opensearch_aws_signing) | `MY_SEARCH_OPENSEARCH_AWS_SIGNING` | `off` | no | no |
+| [`search_opensearch_aws_region`](#search_opensearch_aws_region) | `MY_SEARCH_OPENSEARCH_AWS_REGION` | the region of the AWS SDK's default chain (`AWS_REGION`) | no | no |
+| [`search_meilisearch_url`](#search_meilisearch_url) | `MY_SEARCH_MEILISEARCH_URL` | none | when `search = meilisearch` | no |
+| [`search_meilisearch_api_key`](#search_meilisearch_api_key) | `MY_SEARCH_MEILISEARCH_API_KEY` | none | no | yes |
+| [`search_meilisearch_index`](#search_meilisearch_index) | `MY_SEARCH_MEILISEARCH_INDEX` | `my_statuses` | no | no |
+| [`search_meilisearch_settings_file`](#search_meilisearch_settings_file) | `MY_SEARCH_MEILISEARCH_SETTINGS_FILE` | none | no | no |
 | [`voice`](#voice) | `MY_VOICE` | `off` | no | no |
 | [`voice_p2p_max_participants`](#voice_p2p_max_participants) | `MY_VOICE_P2P_MAX_PARTICIPANTS` | `10` | no | no |
 | [`voice_sfu_max_participants`](#voice_sfu_max_participants) | `MY_VOICE_SFU_MAX_PARTICIPANTS` | `10` | no | no |
@@ -1393,6 +1411,158 @@ The search engine of the full-text search of statuses. The search of accounts an
 | --- | --- |
 | `none` | No full-text search: the server connects to no engine and enqueues no search job, and `GET /api/v1/instance` tells clients that the search is not available. |
 | `fake` | Test builds only: a stand-in index in the server's memory, for end-to-end tests and demonstrations. Only a binary built with the build tag `e2e_fakes` has it, and that binary refuses it unless `profile = development`; released binaries and images never have it ([build tags](build-tags.md)). It needs no other setting. |
+| `elasticsearch` | An Elasticsearch cluster, version 8 or later, at `search_elasticsearch_url`, with `search_elasticsearch_api_key` or `search_elasticsearch_username` and `search_elasticsearch_password` when it has security on. The server creates and upgrades the index itself ([search engines](../operations/search-engines.md#elasticsearch)). The build tag `no_search_elasticsearch` leaves it out. |
+| `opensearch` | An OpenSearch cluster, or a domain of Amazon OpenSearch Service, at `search_opensearch_url` ([search engines](../operations/search-engines.md#opensearch)). The server creates its index at start. The build tag `no_search_opensearch` leaves it out. |
+| `meilisearch` | A Meilisearch server (self-hosted or Meilisearch Cloud) at `search_meilisearch_url`, with `search_meilisearch_api_key`. The server creates the index `search_meilisearch_index` and its settings. The build tag `no_search_meilisearch` leaves it out. |
+
+### `search_elasticsearch_url`
+
+The URL of the REST API of the Elasticsearch cluster of `search = elasticsearch`, such as `https://search.internal.example:9200`, without credentials, query, or fragment; a path is kept, for a proxy that serves the API under one. Use `https:` whenever the server sends credentials over a network that others share.
+
+- Environment variable: `MY_SEARCH_ELASTICSEARCH_URL`
+- Default: none
+- Required: when `search = elasticsearch`
+
+### `search_elasticsearch_api_key`
+
+The API key of `search = elasticsearch`, the `encoded` value that Elasticsearch returns when it creates the key, sent as `Authorization: ApiKey <key>`. Set it or `search_elasticsearch_username` and `search_elasticsearch_password`, not both; with neither, the server sends no credentials.
+
+- Environment variable: `MY_SEARCH_ELASTICSEARCH_API_KEY` or `MY_SEARCH_ELASTICSEARCH_API_KEY_FILE`
+- Default: none
+- Required: no
+
+### `search_elasticsearch_username`
+
+The user of `search = elasticsearch` for basic authentication, with `search_elasticsearch_password`, when `search_elasticsearch_api_key` is not set.
+
+- Environment variable: `MY_SEARCH_ELASTICSEARCH_USERNAME`
+- Default: none
+- Required: no
+
+### `search_elasticsearch_password`
+
+The password of `search_elasticsearch_username`.
+
+- Environment variable: `MY_SEARCH_ELASTICSEARCH_PASSWORD` or `MY_SEARCH_ELASTICSEARCH_PASSWORD_FILE`
+- Default: none
+- Required: when `search_elasticsearch_username` is set
+
+### `search_elasticsearch_index`
+
+The name of the alias that the index of `search = elasticsearch` lives behind; the server names the index behind it from this name with a suffix, such as `my-statuses-v1`. Up to 200 lowercase letters, digits, `-`, `_`, or `.`, starting with a letter or digit. Give each server that shares a cluster its own name.
+
+- Environment variable: `MY_SEARCH_ELASTICSEARCH_INDEX`
+- Default: `my-statuses`
+- Required: no
+
+### `search_elasticsearch_index_settings_file`
+
+JSON file of the settings of each index that the server creates for `search = elasticsearch`, one object such as `{"number_of_shards": 1, "number_of_replicas": 0, "analysis": {...}}`: the analysis, the shards, the replicas, and any other index setting. It must define the analyzer `my_text`, which analyzes the posts, and may define `my_text_search`, which then analyzes the words of the queries. Empty uses the built-in settings, which need no plugin. The server reads it at start; after a change, it creates a new empty index and `my search rebuild` must fill it ([search engines](../operations/search-engines.md#tuning-the-analysis-of-elasticsearch)).
+
+- Environment variable: `MY_SEARCH_ELASTICSEARCH_INDEX_SETTINGS_FILE`
+- Default: none
+- Required: no
+
+### `search_elasticsearch_ca_file`
+
+PEM file of the certificate authorities that the TLS certificate of `search_elasticsearch_url` chains to, such as the `http_ca.crt` that Elasticsearch generates when it starts with security on. Empty uses the system roots; it needs an `https:` URL.
+
+- Environment variable: `MY_SEARCH_ELASTICSEARCH_CA_FILE`
+- Default: none
+- Required: no
+
+### `search_opensearch_url`
+
+The URL of the REST API of the OpenSearch cluster of `search = opensearch`, such as `https://search.example.org:9200`, with no credentials, query, or fragment; a path is kept, for a cluster behind a reverse proxy.
+
+- Environment variable: `MY_SEARCH_OPENSEARCH_URL`
+- Default: none
+- Required: when `search = opensearch`
+
+### `search_opensearch_index`
+
+The name of the alias of the index of `search = opensearch`. The server keeps the documents in the index named after it with the version of its mapping, such as `my-statuses-v1`, and points the alias at it. Lowercase letters, digits, `-`, and `_`, starting with a letter or a digit.
+
+- Environment variable: `MY_SEARCH_OPENSEARCH_INDEX`
+- Default: `my-statuses`
+- Required: no
+
+### `search_opensearch_index_settings_file`
+
+The path of a JSON file whose object the server uses as the `settings` of every index of `search = opensearch` that it creates: the analysis, the shards, the replicas, and any other index setting. It must define the analyzers `my_text`, of the text of the posts, and `my_text_search`, of the queries ([tuning the analysis](../operations/search-engines.md#tuning-the-analysis-of-opensearch)). Empty uses the built-in settings. A change of the file takes effect at the next start, in a new empty index, so it needs a rebuild of the index.
+
+- Environment variable: `MY_SEARCH_OPENSEARCH_INDEX_SETTINGS_FILE`
+- Default: none
+- Required: no
+
+### `search_opensearch_username`
+
+The user of the HTTP Basic authentication of `search = opensearch`, such as a user of the OpenSearch security plugin or the master user of an Amazon OpenSearch Service domain with fine-grained access control. Empty sends no credentials. It excludes `search_opensearch_aws_signing`.
+
+- Environment variable: `MY_SEARCH_OPENSEARCH_USERNAME`
+- Default: none
+- Required: no
+
+### `search_opensearch_password`
+
+The password of `search_opensearch_username`.
+
+- Environment variable: `MY_SEARCH_OPENSEARCH_PASSWORD` or `MY_SEARCH_OPENSEARCH_PASSWORD_FILE`
+- Default: none
+- Required: when `search_opensearch_username` is set
+
+### `search_opensearch_aws_signing`
+
+Whether the server signs the requests of `search = opensearch` with AWS Signature Version 4, as a domain of Amazon OpenSearch Service with an IAM access policy needs. The credentials come from the AWS SDK's default chain: the environment, the shared files, the execution role.
+
+- Environment variable: `MY_SEARCH_OPENSEARCH_AWS_SIGNING`
+- Default: `off`
+- Required: no
+
+| Value | Description |
+| --- | --- |
+| `off` | No signing. |
+| `es` | Sign for a domain of Amazon OpenSearch Service (the service name `es`) in `search_opensearch_aws_region`. OpenSearch Serverless (`aoss`) is not supported. |
+
+### `search_opensearch_aws_region`
+
+The AWS region of the domain of `search_opensearch_aws_signing = es`, such as `us-east-1`.
+
+- Environment variable: `MY_SEARCH_OPENSEARCH_AWS_REGION`
+- Default: the region of the AWS SDK's default chain (`AWS_REGION`)
+- Required: no
+
+### `search_meilisearch_url`
+
+The base URL of the Meilisearch server of `search = meilisearch`, such as `https://meilisearch.example.org` or `http://meilisearch:7700` on a private network. It holds no credentials: the key goes in `search_meilisearch_api_key`.
+
+- Environment variable: `MY_SEARCH_MEILISEARCH_URL`
+- Default: none
+- Required: when `search = meilisearch`
+
+### `search_meilisearch_api_key`
+
+The master key of the Meilisearch server, or an API key with the actions `search`, `documents.add`, `documents.get`, `documents.delete`, `indexes.create`, `indexes.get`, `indexes.delete`, `settings.update`, and `tasks.get` on `search_meilisearch_index`. Empty sends no key, for a server without a master key.
+
+- Environment variable: `MY_SEARCH_MEILISEARCH_API_KEY` or `MY_SEARCH_MEILISEARCH_API_KEY_FILE`
+- Default: none
+- Required: no
+
+### `search_meilisearch_index`
+
+The uid of the Meilisearch index of the posts, which the server creates when it does not exist: letters, digits, hyphens, and underscores. Servers that share a Meilisearch server need different ones.
+
+- Environment variable: `MY_SEARCH_MEILISEARCH_INDEX`
+- Default: `my_statuses`
+- Required: no
+
+### `search_meilisearch_settings_file`
+
+The path of a JSON object of Meilisearch index settings, to tune the engine: `rankingRules` (which must start with `sort`), `typoTolerance`, `stopWords`, `synonyms`, `dictionary`, `separatorTokens`, `nonSeparatorTokens`, `localizedAttributes`, `proximityPrecision`, `pagination`, and the like. The server sets `searchableAttributes`, `displayedAttributes`, `filterableAttributes`, and `sortableAttributes` itself and refuses a file that sets them. A setting the file leaves out takes the server's default. The server reads the file at start and sends the settings when they differ from what the index has. Empty uses the server's defaults.
+
+- Environment variable: `MY_SEARCH_MEILISEARCH_SETTINGS_FILE`
+- Default: none
+- Required: no
 
 ### `voice`
 

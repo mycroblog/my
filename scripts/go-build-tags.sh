@@ -17,12 +17,12 @@ set -euo pipefail
 
 # The representative sets: together they use every tag.
 sets=(
-  # A self-hosted instance on SQLite with the fs blob store, without a broker or a metrics exporter.
-  "no_postgres,no_valkey,no_sns,no_ses,no_s3,no_gcs,no_pubsub,no_gcpkms,no_awskms,no_cloudtasks,no_otel,no_billing_aws,no_billing_gcp,no_payments_stripe,no_plugins,no_translator_aws,no_translator_google"
+  # A self-hosted instance on SQLite with the fs blob store, without a broker, a metrics exporter, Elasticsearch, or OpenSearch.
+  "no_postgres,no_valkey,no_sns,no_ses,no_s3,no_gcs,no_pubsub,no_gcpkms,no_awskms,no_cloudtasks,no_otel,no_billing_aws,no_billing_gcp,no_payments_stripe,no_plugins,no_translator_aws,no_translator_google,no_search_elasticsearch,no_search_opensearch"
   # AWS: PostgreSQL, the SNS broker, SES, the EMF metrics, AWS KMS, the Stripe payments, without the Sora voice chat or Google Cloud Translation.
   "no_sqlite,no_valkey,no_gcs,no_pubsub,no_gcpkms,no_cloudtasks,no_otel,no_billing_gcp,no_payments_payjp,no_voice_sora,no_translator_google"
-  # Google Cloud: PostgreSQL, the Pub/Sub broker, Cloud KMS, Cloud Tasks, without the LiveKit voice chat or Amazon Translate.
-  "no_sqlite,no_valkey,no_sns,no_ses,no_awskms,no_billing_aws,no_voice_livekit,no_translator_aws"
+  # Google Cloud: PostgreSQL, the Pub/Sub broker, Cloud KMS, Cloud Tasks, without the LiveKit voice chat, Amazon Translate, or Meilisearch.
+  "no_sqlite,no_valkey,no_sns,no_ses,no_awskms,no_billing_aws,no_voice_livekit,no_translator_aws,no_search_meilisearch"
   # The test build of the end-to-end tests and the demonstration.
   "e2e_fakes"
 )
@@ -58,6 +58,9 @@ excluded_packages() {
     no_payments_payjp) echo "$m/payment/payjp" ;;
     no_voice_livekit) echo "$m/voice/livekit" ;;
     no_voice_sora) echo "$m/voice/sora" ;;
+    no_search_elasticsearch) echo "$m/search/elasticsearch" ;;
+    no_search_opensearch) echo "$m/search/opensearch" ;;
+    no_search_meilisearch) echo "$m/search/meilisearch" ;;
     no_plugins) echo "$m/plugin/client $m/plugin/contract $m/billing/plugin $m/keymanager/plugin $m/mail/plugin $m/translator/plugin $m/media/plugin $m/hook/connect connectrpc.com/connect/v2" ;;
     no_translator_aws) echo "$m/translator/aws github.com/aws/aws-sdk-go-v2/service/translate" ;;
     no_otel) echo "$m/telemetry/otel $m/telemetry/otel/otlptest go.opentelemetry.io/otel/sdk/metric go.opentelemetry.io/otel/sdk/trace go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp" ;;

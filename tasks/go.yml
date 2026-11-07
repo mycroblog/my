@@ -91,6 +91,13 @@ tasks:
     cmds:
       - go test -count=1 -run LiveKitServer ./internal/adapter/voice/livekit/
 
+  test-search:
+    desc: Run the search.Index contract of each search backend (-run SearchServer in internal/adapter/search) on a container of its engine, which go:test skips (needs Docker; CI in the slow suite)
+    env:
+      TEST_SEARCH: container
+    cmds:
+      - go test -count=1 -run SearchServer ./internal/adapter/search/...
+
   warm:
     desc: Download the modules and build the packages and the Go tools once, so that the Go checks a CI job runs in parallel read the build cache instead of each compiling the same packages
     cmds:
