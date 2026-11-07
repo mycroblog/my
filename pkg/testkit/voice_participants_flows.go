@@ -15,7 +15,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/voice"
 )
 
-// The cases of VoiceRoomsContract for the operations of the participants, the host, and the
+// The cases of VoiceRoomsFlows for the operations of the participants, the host, and the
 // co-hosts (ADR-0100 §4, §5, §7, §11).
 
 // block records a block of blocked by blocker, as the graph module does: the relation and the
