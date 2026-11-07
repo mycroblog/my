@@ -13,7 +13,6 @@ import (
 func TestMain(m *testing.M) {
 	noSecondConnections := checkSecondConnections()
 	code := pgtest.Main(m)
-	removeSQLiteTemplate()
 	if code == 0 && !noSecondConnections() {
 		code = 1
 	}

@@ -8,23 +8,19 @@ import (
 	"bytes"
 	"context"
 	"crypto/rand"
-	"database/sql"
 	"encoding/base64"
 	"errors"
 	"io"
 	"net"
 	"net/http"
-	"path/filepath"
 	"strings"
 	"syscall"
 	"testing"
 	"time"
 
-	_ "modernc.org/sqlite" // registers the "sqlite" driver for applying the schema
-
 	"github.com/mycroblog/my/internal/platform"
 	"github.com/mycroblog/my/internal/platform/config"
-	"github.com/mycroblog/my/schema"
+	"github.com/mycroblog/my/pkg/testkit/sqlitetest"
 )
 
 func TestServeArguments(t *testing.T) {
@@ -43,15 +39,7 @@ func TestServeArguments(t *testing.T) {
 
 // `my serve` with a SQLite configuration answers the health checks and stops on SIGTERM.
 func TestServeStopsOnSIGTERM(t *testing.T) {
-	path := filepath.Join(t.TempDir(), "my.db")
-	db, err := sql.Open("sqlite", path)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if _, err := db.ExecContext(t.Context(), schema.SQLite); err != nil {
-		t.Fatal(err)
-	}
-	_ = db.Close()
+	path := sqlitetest.NewFile(t)
 
 	kek := make([]byte, 32)
 	_, _ = rand.Read(kek)
