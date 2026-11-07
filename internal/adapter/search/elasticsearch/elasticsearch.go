@@ -4,16 +4,21 @@
 // search of statuses in an Elasticsearch cluster (8 or later) that the operator runs. The adapter
 // calls the REST API with net/http and encoding/json, without Elastic's client library.
 //
-// The documents live in one index behind an alias, the name the operator configures. The adapter
-// creates the index with its mapping when the alias is missing, and upgrades it when the mapping of
-// this build is newer (mapping.go): in place when the change only adds fields, or onto a new empty
-// index that `my search rebuild` fills. Clear moves the alias to a new empty index too, which is
-// faster than deleting every document and gives the disk back.
+// The documents live in one index behind an alias, the name the operator configures. my owns the
+// fields of the index, which it writes, filters, sorts, and pages on; the operator may own its
+// settings (Options.Settings): the analysis, the shards, the replicas. The adapter creates the
+// index when the alias is missing, and when the mapping of this build is newer or the settings
+// differ from those the index was made with (mapping.go): in place when the mapping only adds
+// fields, and otherwise onto a new empty index that `my search rebuild` fills. Clear moves the
+// alias to a new empty index too, which is faster than deleting every document and gives the disk
+// back.
 //
-// Text is analyzed by the standard tokenizer, cjk_width, and lowercase, which need no plugin. The
-// standard tokenizer makes a token of each kanji and each hiragana, and of each run of katakana,
-// so a search for a word matches it as a phrase: a Japanese word is found wherever its characters
-// stand together, and a Latin word as a whole word.
+// The text field is analyzed by the analyzer AnalyzerText of the settings, and the words of a
+// query by AnalyzerTextSearch when the settings define it. A query is one match_phrase of each of
+// its words on the text, all of which must match. The default settings (DefaultSettings) need no
+// plugin: their standard tokenizer makes a token of each kanji and each hiragana, and of each run
+// of katakana, so a Japanese word is found wherever its characters stand together, and a Latin
+// word as a whole word.
 //
 // The credentials (an API key, or a user name and password) go in the Authorization header only,
 // and no error or log of the adapter holds them, the query, or what the engine said beyond the
@@ -59,8 +64,10 @@ type Options struct {
 	Password string
 	// Index is the name of the alias that the documents live behind (search_elasticsearch_index).
 	Index string
-	// Replicas is the number of replicas of the index; a negative value leaves the engine's default.
-	Replicas int
+	// Settings is the JSON object of the settings of the indexes that the adapter creates, nil for
+	// DefaultSettings. It must define the analyzer AnalyzerText, and may define
+	// AnalyzerTextSearch.
+	Settings []byte
 	// HTTPClient calls the API: the operator configured the cluster, which may be on a private
 	// address, so it is the adapter's own client rather than the SSRF-guarded kernel.HTTPClient
 	// (ADR-0149 §3).
@@ -71,8 +78,9 @@ type Options struct {
 
 // Index is the Elasticsearch index. Use Open.
 type Index struct {
-	o    Options
-	base *url.URL
+	o        Options
+	base     *url.URL
+	settings settings
 }
 
 var _ search.Index = (*Index)(nil)
@@ -99,10 +107,17 @@ func New(o Options) (*Index, error) {
 	}
 	base.Path = strings.TrimSuffix(base.Path, "/")
 	base.RawPath, base.RawQuery, base.Fragment = "", "", ""
+	if o.Settings == nil {
+		o.Settings = []byte(DefaultSettings)
+	}
+	st, err := parseSettings(o.Settings)
+	if err != nil {
+		return nil, err
+	}
 	if o.Logger == nil {
 		o.Logger = slog.New(slog.DiscardHandler)
 	}
-	return &Index{o: o, base: base}, nil
+	return &Index{o: o, base: base, settings: st}, nil
 }
 
 // Open returns the Index of o, with the index created or upgraded to the mapping of this build.
@@ -291,6 +306,9 @@ type apiError struct {
 	// Type is error.type of the response, such as index_not_found_exception, and empty when the
 	// response has none, like the 404 of a document that is not there.
 	Type string
+	// Reason is error.reason of the response, which Error leaves out. Only the error of creating an
+	// index shows it, since that reason quotes nothing but the settings and the mapping.
+	Reason string
 }
 
 func (e *apiError) Error() string {
@@ -300,24 +318,26 @@ func (e *apiError) Error() string {
 	return fmt.Sprintf("elasticsearch: %s %s: status %d: %s", e.Method, e.Path, e.Status, e.Type)
 }
 
-// errorType returns error.type of an error response when it is an identifier, and empty otherwise.
-func errorType(body []byte) string {
+// errorType returns error.type of an error response when it is an identifier, and empty otherwise,
+// with error.reason.
+func errorType(body []byte) (typ, reason string) {
 	var res struct {
 		Error json.RawMessage `json:"error"`
 	}
 	if json.Unmarshal(body, &res) != nil || len(res.Error) == 0 {
-		return ""
+		return "", ""
 	}
 	var e struct {
-		Type string `json:"type"`
+		Type   string `json:"type"`
+		Reason string `json:"reason"`
 	}
 	if json.Unmarshal(res.Error, &e) != nil || len(e.Type) > 100 {
-		return ""
+		return "", ""
 	}
 	if strings.ContainsFunc(e.Type, func(r rune) bool { return (r < 'a' || r > 'z') && (r < '0' || r > '9') && r != '_' }) {
-		return ""
+		return "", ""
 	}
-	return e.Type
+	return e.Type, e.Reason
 }
 
 // call sends one request of the API with the JSON of in, when it is not nil, and decodes the
@@ -363,7 +383,8 @@ func (x *Index) call(ctx context.Context, method, path string, params url.Values
 		return fmt.Errorf("elasticsearch: %s %s: read the response: %w", method, path, err)
 	}
 	if resp.StatusCode < 200 || resp.StatusCode > 299 {
-		return &apiError{Method: method, Path: path, Status: resp.StatusCode, Type: errorType(b)}
+		typ, reason := errorType(b)
+		return &apiError{Method: method, Path: path, Status: resp.StatusCode, Type: typ, Reason: reason}
 	}
 	if out == nil {
 		return nil

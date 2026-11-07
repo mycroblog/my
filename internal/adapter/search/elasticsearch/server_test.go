@@ -3,10 +3,13 @@
 package elasticsearch
 
 import (
+	"cmp"
 	"context"
 	"fmt"
 	"net/http"
+	"os"
 	"slices"
+	"strings"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -42,12 +45,20 @@ func (r refreshing) Clear(ctx context.Context) error {
 
 var serverIndexes atomic.Int64
 
-// openServerIndex opens an index of its own on the node at url.
-func openServerIndex(t *testing.T, url string) *Index {
+// openServerIndex opens an index of its own on the node at url, with the settings of a file, or
+// the default ones for an empty path.
+func openServerIndex(t *testing.T, url, settingsFile string) *Index {
 	t.Helper()
+	var settings []byte
+	if settingsFile != "" {
+		var err error
+		if settings, err = os.ReadFile(settingsFile); err != nil { //nolint:gosec // G304: a file of testdata or of TEST_ELASTICSEARCH_SETTINGS
+			t.Fatal(err)
+		}
+	}
 	x, err := Open(t.Context(), Options{
 		URL: url, Username: elasticsearchtest.Username, Password: elasticsearchtest.Password,
-		Index: fmt.Sprintf("test-%d", serverIndexes.Add(1)), Replicas: 0,
+		Index: fmt.Sprintf("test-%d", serverIndexes.Add(1)), Settings: settings,
 		HTTPClient: &http.Client{Timeout: time.Minute},
 	})
 	if err != nil {
@@ -56,17 +67,26 @@ func openServerIndex(t *testing.T, url string) *Index {
 	return x
 }
 
-// TestSearchServerElasticsearch runs the contract, and the creation and upgrade of the index, on
-// an Elasticsearch node (scripts/task.sh go:test-search).
+// TestSearchServerElasticsearch runs the contract, with the default settings and with an operator's
+// settings, and the creation and upgrade of the index, on an Elasticsearch node
+// (scripts/task.sh go:test-search). TEST_ELASTICSEARCH_SETTINGS names one more settings file to
+// run the contract with, such as testdata/settings-kuromoji.json on an image with the
+// analysis-kuromoji plugin.
 func TestSearchServerElasticsearch(t *testing.T) {
 	url := elasticsearchtest.New(t)
-	t.Run("contract", func(t *testing.T) {
-		testkit.SearchIndexContract(t, func(t *testing.T) search.Index {
-			return refreshing{openServerIndex(t, url)}
+	files := []string{"", "testdata/settings-ngram.json"}
+	if f := os.Getenv("TEST_ELASTICSEARCH_SETTINGS"); f != "" {
+		files = append(files, f)
+	}
+	for _, file := range files {
+		t.Run("contract "+cmp.Or(file, "default settings"), func(t *testing.T) {
+			testkit.SearchIndexContract(t, func(t *testing.T) search.Index {
+				return refreshing{openServerIndex(t, url, file)}
+			})
 		})
-	})
+	}
 	t.Run("Japanese is found where the characters of a word stand together", func(t *testing.T) {
-		x := refreshing{openServerIndex(t, url)}
+		x := refreshing{openServerIndex(t, url, "")}
 		docs := []string{"全文検索の本文です", "東京都の天気は晴れ", "ｶﾀｶﾅとＡＢＣ", "猫がかわいい"}
 		for i, text := range docs {
 			id := fmt.Sprintf("0190b000-0000-7000-8000-%012d", i+1)
@@ -98,7 +118,7 @@ func TestSearchServerElasticsearch(t *testing.T) {
 		}
 	})
 	t.Run("an older mapping is upgraded in place or onto a new index", func(t *testing.T) {
-		x := openServerIndex(t, url)
+		x := openServerIndex(t, url, "")
 		ctx := t.Context()
 		if err := x.Replace(ctx, search.Document{StatusID: "s1", AuthorID: "a", Visibility: search.VisibilityPublic, Text: "alpha"}); err != nil {
 			t.Fatal(err)
@@ -120,7 +140,7 @@ func TestSearchServerElasticsearch(t *testing.T) {
 		if now, _ := x.aliasIndex(ctx); now != before {
 			t.Errorf("an upgrade in place moved the alias from %s to %s", before, now)
 		}
-		if v, _ := x.mappingVersion(ctx, before); v != inPlace.Version {
+		if v, _, _ := x.indexMeta(ctx, before); v != inPlace.Version {
 			t.Errorf("the mapping version is %d after an upgrade in place, want %d", v, inPlace.Version)
 		}
 
@@ -144,6 +164,48 @@ func TestSearchServerElasticsearch(t *testing.T) {
 		}
 		if err := x.ensure(ctx, currentMapping); err == nil {
 			t.Error("ensure of an older version than the index's succeeded, want an error")
+		}
+	})
+	t.Run("other settings replace the index, and settings without my_text are refused", func(t *testing.T) {
+		x := openServerIndex(t, url, "")
+		ctx := t.Context()
+		if err := x.Replace(ctx, search.Document{StatusID: "s1", AuthorID: "a", Visibility: search.VisibilityPublic, Text: "alpha"}); err != nil {
+			t.Fatal(err)
+		}
+		before, _ := x.aliasIndex(ctx)
+		raw, err := os.ReadFile("testdata/settings-ngram.json")
+		if err != nil {
+			t.Fatal(err)
+		}
+		o := x.o
+		o.Settings = raw
+		y, err := Open(ctx, o)
+		if err != nil {
+			t.Fatalf("Open with other settings: %v", err)
+		}
+		after, _ := y.aliasIndex(ctx)
+		if after == before || after != y.indexName(currentMapping) {
+			t.Errorf("the alias points at %s after a change of the settings, from %s", after, before)
+		}
+		if err := y.refresh(ctx); err != nil {
+			t.Fatal(err)
+		}
+		if page, err := y.Search(ctx, search.Query{Text: "alpha", Limit: 10}); err != nil || len(page.StatusIDs) != 0 {
+			t.Errorf("the new index holds %v (%v), want nothing until a rebuild", page.StatusIDs, err)
+		}
+		if _, err := Open(ctx, o); err != nil {
+			t.Errorf("Open with the same settings again: %v", err)
+		}
+
+		o.Settings = []byte(`{"analysis":{"analyzer":{"other":{"type":"standard"}}}}`)
+		_, err = Open(ctx, o)
+		if err == nil || !strings.Contains(err.Error(), AnalyzerText) {
+			t.Errorf("Open with settings without %s: %v, want an error naming it", AnalyzerText, err)
+		} else {
+			t.Logf("the error of settings without %s: %v", AnalyzerText, err)
+		}
+		if now, _ := y.aliasIndex(ctx); now != after {
+			t.Errorf("refused settings moved the alias to %s", now)
 		}
 	})
 }

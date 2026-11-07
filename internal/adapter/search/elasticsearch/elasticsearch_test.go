@@ -180,6 +180,39 @@ func TestTransportErrorHoldsNoSecret(t *testing.T) {
 	}
 }
 
+func TestNewRefusesSettings(t *testing.T) {
+	for _, raw := range []string{"", "[]", "null", `"x"`, `{"a":1} {"b":2}`, `{"a":`} {
+		if _, err := New(Options{URL: "https://es.example", Index: "x", HTTPClient: &http.Client{}, Settings: []byte(raw)}); err == nil {
+			t.Errorf("New with the settings %q succeeded", raw)
+		}
+	}
+}
+
+func TestSettingsHash(t *testing.T) {
+	a, err := parseSettings([]byte(`{"number_of_shards": 2, "analysis": {"analyzer": {"my_text": {"type": "standard"}}}}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	b, _ := parseSettings([]byte(`{"analysis":{"analyzer":{"my_text":{"type":"standard"}}},"number_of_shards":2}`))
+	c, _ := parseSettings([]byte(`{"analysis":{"analyzer":{"my_text":{"type":"standard"}}},"number_of_shards":3}`))
+	if a.hash != b.hash || a.hash == c.hash || len(a.hash) != 16 {
+		t.Errorf("the hashes %s, %s, %s: want the first two equal and the third different", a.hash, b.hash, c.hash)
+	}
+	if a.searchAnalyzer {
+		t.Error("settings without my_text_search define it")
+	}
+	for _, raw := range []string{
+		`{"analysis":{"analyzer":{"my_text_search":{"type":"standard"}}}}`,
+		`{"index":{"analysis":{"analyzer":{"my_text_search":{"type":"standard"}}}}}`,
+		`{"index.analysis.analyzer.my_text_search.type":"standard"}`,
+		`{"analysis.analyzer":{"my_text_search":{"type":"standard"}}}`,
+	} {
+		if s, err := parseSettings([]byte(raw)); err != nil || !s.searchAnalyzer {
+			t.Errorf("parseSettings(%s) = %+v, %v: want my_text_search found", raw, s, err)
+		}
+	}
+}
+
 func TestErrorType(t *testing.T) {
 	for body, want := range map[string]string{
 		`{"error":{"type":"index_not_found_exception","reason":"x"}}`: "index_not_found_exception",
@@ -188,7 +221,7 @@ func TestErrorType(t *testing.T) {
 		`not json`:                                                    "",
 		`{"_index":"x","result":"not_found"}`:                         "",
 	} {
-		if got := errorType([]byte(body)); got != want {
+		if got, _ := errorType([]byte(body)); got != want {
 			t.Errorf("errorType(%s) = %q, want %q", body, got, want)
 		}
 	}

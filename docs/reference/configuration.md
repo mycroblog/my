@@ -167,7 +167,7 @@ An instance setting that has never been set reads as its default, which is defin
 | [`search_elasticsearch_username`](#search_elasticsearch_username) | `MY_SEARCH_ELASTICSEARCH_USERNAME` | none | no | no |
 | [`search_elasticsearch_password`](#search_elasticsearch_password) | `MY_SEARCH_ELASTICSEARCH_PASSWORD` | none | when `search_elasticsearch_username` is set | yes |
 | [`search_elasticsearch_index`](#search_elasticsearch_index) | `MY_SEARCH_ELASTICSEARCH_INDEX` | `my-statuses` | no | no |
-| [`search_elasticsearch_replicas`](#search_elasticsearch_replicas) | `MY_SEARCH_ELASTICSEARCH_REPLICAS` | the cluster's default, `1` unless the cluster changed it | no | no |
+| [`search_elasticsearch_index_settings_file`](#search_elasticsearch_index_settings_file) | `MY_SEARCH_ELASTICSEARCH_INDEX_SETTINGS_FILE` | none | no | no |
 | [`search_elasticsearch_ca_file`](#search_elasticsearch_ca_file) | `MY_SEARCH_ELASTICSEARCH_CA_FILE` | none | no | no |
 | [`voice`](#voice) | `MY_VOICE` | `off` | no | no |
 | [`voice_p2p_max_participants`](#voice_p2p_max_participants) | `MY_VOICE_P2P_MAX_PARTICIPANTS` | `10` | no | no |
@@ -1379,12 +1379,12 @@ The name of the alias that the index of `search = elasticsearch` lives behind; t
 - Default: `my-statuses`
 - Required: no
 
-### `search_elasticsearch_replicas`
+### `search_elasticsearch_index_settings_file`
 
-How many replicas of the index of `search = elasticsearch` the cluster keeps besides the primary. The server sets it when it creates the index and at each start. A cluster of one node cannot place a replica, so its index stays yellow with `1`; set `0` there.
+JSON file of the settings of each index that the server creates for `search = elasticsearch`, one object such as `{"number_of_shards": 1, "number_of_replicas": 0, "analysis": {...}}`: the analysis, the shards, the replicas, and any other index setting. It must define the analyzer `my_text`, which analyzes the posts, and may define `my_text_search`, which then analyzes the words of the queries. Empty uses the built-in settings, which need no plugin. The server reads it at start; after a change, it creates a new empty index and `my search rebuild` must fill it ([search engines](../operations/search-engines.md#tuning-the-analysis)).
 
-- Environment variable: `MY_SEARCH_ELASTICSEARCH_REPLICAS`
-- Default: the cluster's default, `1` unless the cluster changed it
+- Environment variable: `MY_SEARCH_ELASTICSEARCH_INDEX_SETTINGS_FILE`
+- Default: none
 - Required: no
 
 ### `search_elasticsearch_ca_file`
