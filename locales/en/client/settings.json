@@ -2706,5 +2706,101 @@
   "settings.notifications.group.admin_hook_appeal": {
     "defaultMessage": "Appeals of refused posts",
     "description": "Row of the notification settings table: (moderators) a user appealed a post that the automated review refused."
+  },
+  "settings.auto_delete.limit.title": {
+    "defaultMessage": "This server's limit",
+    "description": "Heading of the section of the automatic deletion settings that explains the server's maximum of how long posts are kept, shown while it applies to the user."
+  },
+  "settings.auto_delete.limit.description": {
+    "defaultMessage": "On this server, posts are deleted at most {days, plural, one {# day} other {# days}} after they're published. Automatic deletion stays on, and only the exceptions this server allows can keep posts longer.",
+    "description": "Explanation of the server's maximum of the automatic deletion. {days} is the most days a post is kept."
+  },
+  "settings.auto_delete.limit.allowed": {
+    "defaultMessage": "What this server lets you keep",
+    "description": "Heading of the list of the exceptions that the server's maximum of the automatic deletion allows."
+  },
+  "settings.auto_delete.limit.allowed.none": {
+    "defaultMessage": "Nothing. Every post older than the limit is deleted.",
+    "description": "In place of the list of allowed exceptions when the server's maximum allows none."
+  },
+  "settings.auto_delete.limit.allowed.visibilities": {
+    "defaultMessage": "Posts with the visibilities you choose",
+    "description": "Item of the list of exceptions the server's maximum allows: keeping posts by their visibility."
+  },
+  "settings.auto_delete.limit.allowed.thresholds": {
+    "defaultMessage": "Posts with many boosts or favourites",
+    "description": "Item of the list of exceptions the server's maximum allows: keeping posts by their numbers of boosts and favourites."
+  },
+  "settings.auto_delete.limit.pins": {
+    "defaultMessage": "Pinned to your profile, {count, plural, one {only the most recently pinned} other {the # most recently pinned}}",
+    "description": "The exception of pinned posts when the server's maximum keeps only the newest pins. {count} is how many pins keep posts."
+  },
+  "settings.auto_delete.limit.not_allowed": {
+    "defaultMessage": "This server's limit doesn't allow this.",
+    "description": "Note under an exception of the automatic deletion that the server's maximum does not allow, which cannot be turned on."
+  },
+  "settings.auto_delete.limit.enabled_locked": {
+    "defaultMessage": "This server's limit keeps automatic deletion on. The server checks every hour and deletes at most 100 posts each time.",
+    "description": "Help of the checkbox that turns the automatic deletion on, while the server's maximum keeps it on."
+  },
+  "settings.auto_delete.limit.age": {
+    "defaultMessage": "Counted from when each post was published. At most {days, plural, one {# day} other {# days}} on this server.",
+    "description": "Help of the select of the age after which posts are deleted, while the server's maximum applies. {days} is the maximum."
+  },
+  "settings.auto_delete.limit.error.enabled": {
+    "defaultMessage": "This server's limit keeps automatic deletion on. Turn it on to save.",
+    "description": "Error under the checkbox of the automatic deletion when it is off while the server's maximum applies."
+  },
+  "settings.auto_delete.limit.error.age": {
+    "defaultMessage": "This server keeps posts at most {days, plural, one {# day} other {# days}}. Choose a shorter age to save.",
+    "description": "Error under the select of the age when it is longer than the server's maximum. {days} is the maximum."
+  },
+  "settings.auto_delete.limit.error.exception": {
+    "defaultMessage": "This server's limit doesn't allow this. Turn it off to save.",
+    "description": "Error under an exception of the automatic deletion that is on while the server's maximum does not allow it."
+  },
+  "settings.auto_delete.limit.bound.dated": {
+    "defaultMessage": "From {date}, this server's limit decides which of your posts are deleted.",
+    "description": "Headline of the notice that the server's maximum binds the user after a grace period. {date} is the formatted date it starts."
+  },
+  "settings.auto_delete.limit.bound.soon": {
+    "defaultMessage": "Soon, this server's limit will decide which of your posts are deleted.",
+    "description": "Headline of the notice that the server's maximum binds the user, before the server has said from when."
+  },
+  "settings.auto_delete.limit.bound.effective": {
+    "defaultMessage": "Until then, your settings below apply. After that, posts older than {days, plural, one {# day} other {# days}} are deleted, except:",
+    "description": "In the notice that the server's maximum binds the user: what deletes their posts after the grace period, before the list of what it keeps. {days} is the age."
+  },
+  "settings.auto_delete.limit.bound.keeps_none": {
+    "defaultMessage": "Nothing is kept.",
+    "description": "In place of the list of what the effective policy keeps when it keeps nothing."
+  },
+  "settings.auto_delete.limit.keeps.visibilities": {
+    "defaultMessage": "Posts with these visibilities: {visibilities}",
+    "description": "Item of the list of what the effective policy keeps: posts with these visibilities. {visibilities} is a list of visibility names."
+  },
+  "settings.auto_delete.limit.keeps.min_boosts": {
+    "defaultMessage": "Posts boosted at least {count, plural, one {# time} other {# times}}",
+    "description": "Item of the list of what the effective policy keeps: posts with at least this many boosts."
+  },
+  "settings.auto_delete.limit.keeps.min_favourites": {
+    "defaultMessage": "Posts favourited at least {count, plural, one {# time} other {# times}}",
+    "description": "Item of the list of what the effective policy keeps: posts with at least this many favourites."
+  },
+  "settings.auto_delete.limit.bound.count": {
+    "defaultMessage": "Posts that go then",
+    "description": "Label of the number of posts that the server's maximum deletes once it applies to the user, counted now."
+  },
+  "settings.auto_delete.limit.bound.fix": {
+    "defaultMessage": "To keep deciding for yourself, change the settings below to fit within the limit and save them.",
+    "description": "In the notice that the server's maximum binds the user: how to stop it from overriding their settings."
+  },
+  "settings.auto_delete.preview.description.limited": {
+    "defaultMessage": "Counted now from the conditions above under this server's limit, before you save them.",
+    "description": "Help of the estimate of the posts that the automatic deletion would delete, while the server's maximum applies."
+  },
+  "settings.auto_delete.limit.pins.note": {
+    "defaultMessage": "This server keeps only your {count, plural, one {most recently pinned post} other {# most recently pinned posts}}.",
+    "description": "Note under the exception of pinned posts when the server's maximum keeps only the newest pins. {count} is how many."
   }
 }

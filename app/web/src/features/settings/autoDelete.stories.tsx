@@ -16,7 +16,12 @@ import {
   screenLoader,
   settled,
 } from "../../test/stories";
-import { autoDeletePolicyFixture, autoDeletePreviewOf } from "./test/handlers";
+import {
+  autoDeleteLimitFixture,
+  autoDeletePolicyFixture,
+  autoDeletePreviewOf,
+  autoDeleteSettingsUnder,
+} from "./test/handlers";
 
 /** The server's policy of the viewer, which PUT replaces. */
 function autoDeletePolicy(initial: Schemas["AutoDeletePolicy"]) {
@@ -31,6 +36,29 @@ function autoDeletePolicy(initial: Schemas["AutoDeletePolicy"]) {
         policy = saved;
         return HttpResponse.json(policy);
       });
+    }),
+  ];
+}
+
+/** The server's policy of the viewer under the maximum of autoDeleteLimitFixture, told from `enforceFrom` when bound. */
+function limitedPolicy(initial: Schemas["AutoDeletePolicy"], enforceFrom?: string) {
+  let policy = initial;
+  return [
+    http.get(`${apiBase}/preferences/auto_delete`, ({ request }) =>
+      withViewer(request, () =>
+        HttpResponse.json(autoDeleteSettingsUnder(policy, autoDeleteLimitFixture, enforceFrom)),
+      ),
+    ),
+    http.put(`${apiBase}/preferences/auto_delete`, async ({ request }) => {
+      const saved = (await request.clone().json()) as Schemas["AutoDeletePolicy"];
+      return withViewer(request, () => {
+        policy = saved;
+        return HttpResponse.json(autoDeleteSettingsUnder(policy, autoDeleteLimitFixture));
+      });
+    }),
+    http.post(`${apiBase}/preferences/auto_delete/preview`, async ({ request }) => {
+      const draft = (await request.clone().json()) as Schemas["AutoDeletePolicy"];
+      return withViewer(request, () => HttpResponse.json(autoDeletePreviewOf(draft, autoDeleteLimitFixture)));
     }),
   ];
 }
@@ -110,6 +138,37 @@ export const PreviewMany: Story = answering(
     return withViewer(request, () => HttpResponse.json({ ...autoDeletePreviewOf(policy), count: 1000, more: true }));
   }),
 );
+
+/**
+ * Under the server's maximum of 60 days that allows pins and bookmarks: the deletion stays on, the ages stop at 60
+ * days, and the exceptions it does not allow are locked.
+ */
+export const UnderLimit: Story = answering(
+  ...limitedPolicy({
+    ...autoDeletePolicyFixture,
+    enabled: true,
+    keep_favourited: false,
+    keep_visibilities: [],
+  }),
+);
+
+/**
+ * Bound by the maximum: the saved policy is off and keeps favourites and direct posts, so the notice says from when the
+ * maximum deletes the posts, how, and how many go then, and the values beyond it are marked.
+ */
+export const Bound: Story = {
+  ...answering(...limitedPolicy(autoDeletePolicyFixture, "2026-12-01T00:00:00Z")),
+  play: async (context) => {
+    await settled(context);
+    const limit = within(context.canvasElement).getByRole("region", { name: "This server's limit" });
+    await waitFor(async () => {
+      await expect(within(limit).getByRole("status")).toHaveTextContent(/Posts that go then\s*4$/);
+    });
+  },
+};
+
+/** Bound by the maximum before the hourly job has told the user the date: it applies soon. */
+export const BoundSoon: Story = answering(...limitedPolicy(autoDeletePolicyFixture));
 
 /** In Japanese. */
 export const Japanese: Story = inLocale("ja");
