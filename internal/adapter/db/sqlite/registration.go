@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/mycroblog/my/internal/adapter/db/sqlite/sqlitegen"
+	"github.com/mycroblog/my/internal/adapter/db/sqlite/identitygen"
 	appidentity "github.com/mycroblog/my/internal/app/identity"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/identity"
@@ -21,7 +21,7 @@ func (r *IdentityRepository) InsertRegistrationApplication(ctx context.Context, 
 	if err != nil {
 		return err
 	}
-	err = q.InsertRegistrationApplication(ctx, sqlitegen.InsertRegistrationApplicationParams{
+	err = q.InsertRegistrationApplication(ctx, identitygen.InsertRegistrationApplicationParams{
 		ID: a.ID, UserID: a.UserID, Reason: toNullString(a.Reason), InviteID: toNullString(a.InviteID), SubmittedAt: toMillis(a.SubmittedAt),
 	})
 	return wrap(err, "insert registration application")
@@ -33,7 +33,7 @@ func (r *IdentityRepository) InsertRegistrationDecision(ctx context.Context, tx 
 	if err != nil {
 		return err
 	}
-	err = q.InsertRegistrationDecision(ctx, sqlitegen.InsertRegistrationDecisionParams{
+	err = q.InsertRegistrationDecision(ctx, identitygen.InsertRegistrationDecisionParams{
 		ID: d.ID, ApplicationID: d.ApplicationID, Decision: string(d.Decision), DecidedBy: string(d.DecidedBy),
 		DecidedByUserID: toNullString(d.DecidedByUserID), Note: toNullString(d.Note), DecidedAt: toMillis(d.DecidedAt),
 	})
@@ -46,7 +46,7 @@ func (r *IdentityRepository) UpsertRegistrationState(ctx context.Context, tx uow
 	if err != nil {
 		return err
 	}
-	err = q.UpsertRegistrationState(ctx, sqlitegen.UpsertRegistrationStateParams{
+	err = q.UpsertRegistrationState(ctx, identitygen.UpsertRegistrationStateParams{
 		UserID: s.UserID, State: string(s.State), Since: toMillis(s.Since),
 	})
 	return wrap(err, "upsert registration state")
@@ -58,7 +58,7 @@ func (r *IdentityRepository) TransitionPendingRegistrationState(ctx context.Cont
 	if err != nil {
 		return false, err
 	}
-	n, err := q.TransitionPendingRegistrationState(ctx, sqlitegen.TransitionPendingRegistrationStateParams{
+	n, err := q.TransitionPendingRegistrationState(ctx, identitygen.TransitionPendingRegistrationStateParams{
 		State: string(s.State), Since: toMillis(s.Since), UserID: s.UserID,
 	})
 	if err != nil {
@@ -109,7 +109,7 @@ func (r *IdentityRepository) FindRegistrationState(ctx context.Context, userID s
 
 // ListRegistrations implements identity.Repository.
 func (r *IdentityRepository) ListRegistrations(ctx context.Context, state identity.RegistrationState, after appidentity.RegistrationPosition, limit int) ([]appidentity.RegistrationEntry, error) {
-	rows, err := r.db.reader().ListRegistrationsInState(ctx, sqlitegen.ListRegistrationsInStateParams{
+	rows, err := r.db.reader().ListRegistrationsInState(ctx, identitygen.ListRegistrationsInStateParams{
 		State: string(state), AfterUserID: after.UserID, AfterSince: toMillis(after.Since), PageLimit: int64(limit)})
 	if err != nil {
 		return nil, wrap(err, "list registrations")
@@ -136,7 +136,7 @@ func (r *IdentityRepository) InsertInvite(ctx context.Context, tx uow.Tx, i iden
 		return err
 	}
 	maxUses := sql.NullInt64{Int64: int64(i.MaxUses), Valid: i.MaxUses > 0}
-	err = q.InsertInvite(ctx, sqlitegen.InsertInviteParams{
+	err = q.InsertInvite(ctx, identitygen.InsertInviteParams{
 		ID: i.ID, Code: i.Code, CreatedByUserID: toNullString(i.CreatedByUserID), CreatorKind: string(inviteCreatorKind(i.CreatorKind)),
 		MaxUses: maxUses, ExpiresAt: toNullMillis(i.ExpiresAt), CreatedAt: toMillis(i.CreatedAt),
 	})
@@ -199,7 +199,7 @@ func (r *IdentityRepository) InsertInviteRedemption(ctx context.Context, tx uow.
 	if err != nil {
 		return err
 	}
-	err = q.InsertInviteRedemption(ctx, sqlitegen.InsertInviteRedemptionParams{
+	err = q.InsertInviteRedemption(ctx, identitygen.InsertInviteRedemptionParams{
 		InviteID: rd.InviteID, Seq: int64(rd.Seq), UserID: rd.UserID, RedeemedAt: toMillis(rd.RedeemedAt),
 	})
 	if isUniqueViolation(err, "invite_redemptions.invite_id, invite_redemptions.seq") {
@@ -214,7 +214,7 @@ func (r *IdentityRepository) InsertInviteRevocation(ctx context.Context, tx uow.
 	if err != nil {
 		return err
 	}
-	err = q.InsertInviteRevocationIfAbsent(ctx, sqlitegen.InsertInviteRevocationIfAbsentParams{
+	err = q.InsertInviteRevocationIfAbsent(ctx, identitygen.InsertInviteRevocationIfAbsentParams{
 		InviteID: rv.InviteID, RevokedByUserID: toNullString(rv.RevokedByUserID), RevokedAt: toMillis(rv.RevokedAt),
 	})
 	return wrap(err, "insert invite revocation")
@@ -222,7 +222,7 @@ func (r *IdentityRepository) InsertInviteRevocation(ctx context.Context, tx uow.
 
 // ListInvites implements identity.Repository.
 func (r *IdentityRepository) ListInvites(ctx context.Context, before string, limit int) ([]appidentity.InviteStatus, error) {
-	rows, err := r.db.reader().ListInvites(ctx, sqlitegen.ListInvitesParams{Before: before, PageLimit: int64(limit)})
+	rows, err := r.db.reader().ListInvites(ctx, identitygen.ListInvitesParams{Before: before, PageLimit: int64(limit)})
 	if err != nil {
 		return nil, wrap(err, "list invites")
 	}
@@ -238,7 +238,7 @@ func (r *IdentityRepository) ListInvites(ctx context.Context, before string, lim
 
 // ListMemberInvites implements identity.Repository.
 func (r *IdentityRepository) ListMemberInvites(ctx context.Context, creatorUserID, before string, limit int) ([]appidentity.InviteStatus, error) {
-	rows, err := r.db.reader().ListMemberInvitesByCreator(ctx, sqlitegen.ListMemberInvitesByCreatorParams{
+	rows, err := r.db.reader().ListMemberInvitesByCreator(ctx, identitygen.ListMemberInvitesByCreatorParams{
 		Creator: toNullString(creatorUserID), Before: before, PageLimit: int64(limit),
 	})
 	if err != nil {
@@ -260,7 +260,7 @@ func (r *IdentityRepository) CountUsableMemberInvites(ctx context.Context, tx uo
 	if err != nil {
 		return 0, err
 	}
-	n, err := q.CountUsableMemberInvites(ctx, sqlitegen.CountUsableMemberInvitesParams{
+	n, err := q.CountUsableMemberInvites(ctx, identitygen.CountUsableMemberInvitesParams{
 		Creator: toNullString(creatorUserID), Now: sql.NullInt64{Int64: toMillis(now), Valid: true},
 	})
 	if err != nil {
@@ -275,7 +275,7 @@ func (r *IdentityRepository) InsertUserToken(ctx context.Context, tx uow.Tx, t i
 	if err != nil {
 		return err
 	}
-	err = q.InsertUserToken(ctx, sqlitegen.InsertUserTokenParams{
+	err = q.InsertUserToken(ctx, identitygen.InsertUserTokenParams{
 		ID: t.ID, UserID: t.UserID, Purpose: string(t.Purpose), EmailAddressID: toNullString(t.EmailAddressID),
 		TokenHash: t.TokenHash, ExpiresAt: toMillis(t.ExpiresAt), IssuedAt: toMillis(t.IssuedAt),
 		UnsubscribeCategory: toNullString(string(t.UnsubscribeCategory)),
@@ -311,7 +311,7 @@ func (r *IdentityRepository) InsertUserTokenRedemption(ctx context.Context, tx u
 	if err != nil {
 		return err
 	}
-	err = q.InsertUserTokenRedemption(ctx, sqlitegen.InsertUserTokenRedemptionParams{TokenID: rd.TokenID, RedeemedAt: toMillis(rd.RedeemedAt)})
+	err = q.InsertUserTokenRedemption(ctx, identitygen.InsertUserTokenRedemptionParams{TokenID: rd.TokenID, RedeemedAt: toMillis(rd.RedeemedAt)})
 	if isUniqueViolation(err, "user_token_redemptions.token_id") {
 		return fmt.Errorf("redeem user token: %w", appidentity.ErrInvalidToken)
 	}
@@ -324,7 +324,7 @@ func (r *IdentityRepository) InsertEmailVerification(ctx context.Context, tx uow
 	if err != nil {
 		return err
 	}
-	err = q.InsertEmailVerificationIfAbsent(ctx, sqlitegen.InsertEmailVerificationIfAbsentParams{
+	err = q.InsertEmailVerificationIfAbsent(ctx, identitygen.InsertEmailVerificationIfAbsentParams{
 		EmailAddressID: v.EmailAddressID, VerifiedAt: toMillis(v.VerifiedAt),
 	})
 	return wrap(err, "insert email verification")

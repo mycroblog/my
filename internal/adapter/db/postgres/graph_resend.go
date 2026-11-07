@@ -5,7 +5,7 @@ package postgres
 import (
 	"context"
 
-	"github.com/mycroblog/my/internal/adapter/db/postgres/postgresgen"
+	"github.com/mycroblog/my/internal/adapter/db/postgres/graphgen"
 	appgraph "github.com/mycroblog/my/internal/app/graph"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/graph"
@@ -17,7 +17,7 @@ func (r *GraphRepository) InsertResend(ctx context.Context, tx uow.Tx, rs graph.
 	if err != nil {
 		return false, err
 	}
-	n, err := q.InsertFollowResend(ctx, postgresgen.InsertFollowResendParams{
+	n, err := q.InsertFollowResend(ctx, graphgen.InsertFollowResendParams{
 		Uri: rs.URI, FollowID: rs.FollowID, ReceivedAt: rs.ReceivedAt,
 	})
 	if err != nil {

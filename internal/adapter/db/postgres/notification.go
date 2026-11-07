@@ -6,7 +6,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/mycroblog/my/internal/adapter/db/postgres/postgresgen"
+	"github.com/mycroblog/my/internal/adapter/db/postgres/notificationgen"
 	appnotification "github.com/mycroblog/my/internal/app/notification"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/notification"
@@ -50,7 +50,7 @@ func (r *NotificationRepository) InsertNotification(ctx context.Context, tx uow.
 	if err != nil {
 		return false, err
 	}
-	rows, err := q.InsertNotification(ctx, postgresgen.InsertNotificationParams{
+	rows, err := q.InsertNotification(ctx, notificationgen.InsertNotificationParams{
 		ID: n.ID, RecipientAccountID: n.RecipientAccountID, Type: string(n.Type),
 		SourceAccountID: toNullString(n.SourceAccountID), SourceDomain: toNullString(n.SourceDomain), StatusID: toNullString(n.StatusID),
 		ModerationActionID: toNullString(n.ModerationActionID), ReportID: toNullString(n.ReportID),
@@ -88,7 +88,7 @@ func (r *NotificationRepository) InsertDismissal(ctx context.Context, tx uow.Tx,
 	if err != nil {
 		return false, err
 	}
-	rows, err := q.InsertNotificationDismissal(ctx, postgresgen.InsertNotificationDismissalParams{
+	rows, err := q.InsertNotificationDismissal(ctx, notificationgen.InsertNotificationDismissalParams{
 		NotificationID: d.NotificationID, DismissedAt: d.DismissedAt,
 	})
 	if err != nil {
@@ -103,7 +103,7 @@ func (r *NotificationRepository) AdvanceReadMarker(ctx context.Context, tx uow.T
 	if err != nil {
 		return false, err
 	}
-	rows, err := q.AdvanceNotificationReadMarker(ctx, postgresgen.AdvanceNotificationReadMarkerParams{
+	rows, err := q.AdvanceNotificationReadMarker(ctx, notificationgen.AdvanceNotificationReadMarkerParams{
 		AccountID: m.AccountID, LastReadID: m.LastReadID,
 	})
 	if err != nil {
@@ -118,7 +118,7 @@ func (r *NotificationRepository) UpsertExclusion(ctx context.Context, tx uow.Tx,
 	if err != nil {
 		return err
 	}
-	return wrap(q.UpsertNotificationExclusion(ctx, postgresgen.UpsertNotificationExclusionParams{
+	return wrap(q.UpsertNotificationExclusion(ctx, notificationgen.UpsertNotificationExclusionParams{
 		ViewerAccountID: x.ViewerAccountID, TargetAccountID: x.TargetAccountID, Reason: string(x.Reason), ExpiresAt: x.ExpiresAt,
 	}), "upsert notification exclusion")
 }
@@ -129,7 +129,7 @@ func (r *NotificationRepository) DeleteExclusion(ctx context.Context, tx uow.Tx,
 	if err != nil {
 		return err
 	}
-	return wrap(q.DeleteNotificationExclusion(ctx, postgresgen.DeleteNotificationExclusionParams{
+	return wrap(q.DeleteNotificationExclusion(ctx, notificationgen.DeleteNotificationExclusionParams{
 		ViewerAccountID: viewerAccountID, TargetAccountID: targetAccountID, Reason: string(reason),
 	}), "delete notification exclusion")
 }
@@ -140,7 +140,7 @@ func (r *NotificationRepository) InsertDomainExclusion(ctx context.Context, tx u
 	if err != nil {
 		return err
 	}
-	return wrap(q.InsertNotificationDomainExclusion(ctx, postgresgen.InsertNotificationDomainExclusionParams{
+	return wrap(q.InsertNotificationDomainExclusion(ctx, notificationgen.InsertNotificationDomainExclusionParams{
 		ViewerAccountID: viewerAccountID, Domain: domain,
 	}), "insert notification domain exclusion")
 }
@@ -151,7 +151,7 @@ func (r *NotificationRepository) DeleteDomainExclusion(ctx context.Context, tx u
 	if err != nil {
 		return err
 	}
-	return wrap(q.DeleteNotificationDomainExclusion(ctx, postgresgen.DeleteNotificationDomainExclusionParams{
+	return wrap(q.DeleteNotificationDomainExclusion(ctx, notificationgen.DeleteNotificationDomainExclusionParams{
 		ViewerAccountID: viewerAccountID, Domain: domain,
 	}), "delete notification domain exclusion")
 }
@@ -162,7 +162,7 @@ func (r *NotificationRepository) DomainExcluded(ctx context.Context, tx uow.Tx, 
 	if err != nil {
 		return false, err
 	}
-	excluded, err := q.DomainExcluded(ctx, postgresgen.DomainExcludedParams{ViewerAccountID: viewerAccountID, Domain: domain})
+	excluded, err := q.DomainExcluded(ctx, notificationgen.DomainExcludedParams{ViewerAccountID: viewerAccountID, Domain: domain})
 	return excluded, wrap(err, "check notification domain exclusion")
 }
 
@@ -181,7 +181,7 @@ func (r *NotificationRepository) ListNotifications(ctx context.Context, recipien
 	if err != nil {
 		return nil, err
 	}
-	rows, err := r.db.reader().ListNotifications(ctx, postgresgen.ListNotificationsParams{
+	rows, err := r.db.reader().ListNotifications(ctx, notificationgen.ListNotificationsParams{
 		RecipientAccountID: recipientAccountID, Before: toNullString(before), AllTypes: len(types) == 0, Types: typeNames(types), HiddenTypes: typeNames(hidden.Types), ShownAnnouncements: idList(hidden.ShownAnnouncements), Now: now, PageLimit: n,
 	})
 	if err != nil {
@@ -200,7 +200,7 @@ func (r *NotificationRepository) ListNotificationsAfter(ctx context.Context, rec
 	if err != nil {
 		return nil, err
 	}
-	rows, err := r.db.reader().ListNotificationsAfter(ctx, postgresgen.ListNotificationsAfterParams{
+	rows, err := r.db.reader().ListNotificationsAfter(ctx, notificationgen.ListNotificationsAfterParams{
 		RecipientAccountID: recipientAccountID, After: after, AllTypes: len(types) == 0, Types: typeNames(types), HiddenTypes: typeNames(hidden.Types), ShownAnnouncements: idList(hidden.ShownAnnouncements), Now: now, PageLimit: n,
 	})
 	if err != nil {
@@ -215,7 +215,7 @@ func (r *NotificationRepository) ListNotificationsAfter(ctx context.Context, rec
 
 // NotificationListed implements notification.Repository.
 func (r *NotificationRepository) NotificationListed(ctx context.Context, recipientAccountID, id string, hidden appnotification.Hidden, now time.Time) (bool, error) {
-	ok, err := r.db.reader().NotificationListed(ctx, postgresgen.NotificationListedParams{
+	ok, err := r.db.reader().NotificationListed(ctx, notificationgen.NotificationListedParams{
 		ID: id, RecipientAccountID: recipientAccountID, HiddenTypes: typeNames(hidden.Types), ShownAnnouncements: idList(hidden.ShownAnnouncements), Now: now,
 	})
 	return ok, wrap(err, "notification listed")
@@ -223,7 +223,7 @@ func (r *NotificationRepository) NotificationListed(ctx context.Context, recipie
 
 // CountNotificationsAfter implements notification.Repository.
 func (r *NotificationRepository) CountNotificationsAfter(ctx context.Context, recipientAccountID, after string, hidden appnotification.Hidden, now time.Time) (int64, error) {
-	n, err := r.db.reader().CountNotificationsAfter(ctx, postgresgen.CountNotificationsAfterParams{
+	n, err := r.db.reader().CountNotificationsAfter(ctx, notificationgen.CountNotificationsAfterParams{
 		RecipientAccountID: recipientAccountID, After: toNullString(after), HiddenTypes: typeNames(hidden.Types), ShownAnnouncements: idList(hidden.ShownAnnouncements), Now: now,
 	})
 	return n, wrap(err, "count notifications")
@@ -245,7 +245,7 @@ func (r *NotificationRepository) SaveNotificationSettings(ctx context.Context, t
 		return err
 	}
 	for _, s := range settings {
-		err := q.UpsertNotificationSetting(ctx, postgresgen.UpsertNotificationSettingParams{
+		err := q.UpsertNotificationSetting(ctx, notificationgen.UpsertNotificationSettingParams{
 			AccountID: s.AccountID, NotificationGroup: string(s.Group), Channel: string(s.Channel),
 			Enabled: s.Enabled, UpdatedAt: at,
 		})
@@ -270,7 +270,7 @@ func (r *NotificationRepository) NotificationSettings(ctx context.Context, accou
 	return notificationSettings(r.db.reader().ListNotificationSettings(ctx, accountID))
 }
 
-func notificationSettings(rows []postgresgen.NotificationSetting, err error) ([]notification.Setting, error) {
+func notificationSettings(rows []notificationgen.NotificationSetting, err error) ([]notification.Setting, error) {
 	if err != nil {
 		return nil, wrap(err, "list notification settings")
 	}
@@ -284,7 +284,7 @@ func notificationSettings(rows []postgresgen.NotificationSetting, err error) ([]
 	return out, nil
 }
 
-func notificationFrom(row postgresgen.Notification) notification.Notification {
+func notificationFrom(row notificationgen.Notification) notification.Notification {
 	return notification.Notification{
 		ID: row.ID, RecipientAccountID: row.RecipientAccountID, Type: notification.Type(row.Type),
 		SourceAccountID: fromNullString(row.SourceAccountID), SourceDomain: fromNullString(row.SourceDomain), StatusID: fromNullString(row.StatusID),

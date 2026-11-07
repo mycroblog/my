@@ -5,7 +5,7 @@ package postgres
 import (
 	"context"
 
-	"github.com/mycroblog/my/internal/adapter/db/postgres/postgresgen"
+	"github.com/mycroblog/my/internal/adapter/db/postgres/contentgen"
 	appcontent "github.com/mycroblog/my/internal/app/content"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/content"
@@ -30,7 +30,7 @@ func (r *MediaRepository) InsertRemoteMedia(ctx context.Context, tx uow.Tx, m co
 		x, y := m.Focus.X, m.Focus.Y
 		fx, fy = &x, &y
 	}
-	n, err := q.InsertRemoteMedia(ctx, postgresgen.InsertRemoteMediaParams{
+	n, err := q.InsertRemoteMedia(ctx, contentgen.InsertRemoteMediaParams{
 		MediaID: m.MediaID, OwnerAccountID: m.OwnerAccountID, RemoteUrl: m.RemoteURL,
 		DeclaredContentType: toNullString(m.DeclaredContentType), DeclaredMediaType: string(m.DeclaredMediaType), Purpose: string(m.Purpose),
 		Width: width, Height: height, Blurhash: toNullString(m.Blurhash),
@@ -45,7 +45,7 @@ func (r *MediaRepository) RemoteMediaByURL(ctx context.Context, tx uow.Tx, owner
 	if err != nil {
 		return content.RemoteMedia{}, err
 	}
-	row, err := q.GetRemoteMediaByURL(ctx, postgresgen.GetRemoteMediaByURLParams{OwnerAccountID: ownerAccountID, RemoteUrl: remoteURL})
+	row, err := q.GetRemoteMediaByURL(ctx, contentgen.GetRemoteMediaByURLParams{OwnerAccountID: ownerAccountID, RemoteUrl: remoteURL})
 	if err != nil {
 		return content.RemoteMedia{}, notFound(err, appcontent.ErrNotFound, "remote media "+remoteURL)
 	}
@@ -77,7 +77,7 @@ func (r *MediaRepository) ListRemoteMedia(ctx context.Context, ids []string) ([]
 	return out, nil
 }
 
-func remoteMedia(row postgresgen.RemoteMedium) content.RemoteMedia {
+func remoteMedia(row contentgen.RemoteMedium) content.RemoteMedia {
 	m := content.RemoteMedia{
 		MediaID: row.MediaID, OwnerAccountID: row.OwnerAccountID, RemoteURL: row.RemoteUrl,
 		DeclaredContentType: fromNullString(row.DeclaredContentType), DeclaredMediaType: content.MediaType(row.DeclaredMediaType), Purpose: content.MediaPurpose(row.Purpose),

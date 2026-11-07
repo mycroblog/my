@@ -7,7 +7,7 @@ import (
 	"database/sql"
 	"time"
 
-	"github.com/mycroblog/my/internal/adapter/db/sqlite/sqlitegen"
+	"github.com/mycroblog/my/internal/adapter/db/sqlite/contentgen"
 	appcontent "github.com/mycroblog/my/internal/app/content"
 	"github.com/mycroblog/my/internal/app/kernel"
 	"github.com/mycroblog/my/internal/app/uow"
@@ -33,7 +33,7 @@ func (r *MediaRepository) InsertMediaFile(ctx context.Context, tx uow.Tx, m cont
 	if err != nil {
 		return err
 	}
-	return wrap(q.InsertMediaFile(ctx, sqlitegen.InsertMediaFileParams{
+	return wrap(q.InsertMediaFile(ctx, contentgen.InsertMediaFileParams{
 		ID: m.ID, OwnerAccountID: toNullString(m.OwnerAccountID), Origin: string(m.Origin), CreatedAt: toMillis(m.CreatedAt),
 	}), "insert media file")
 }
@@ -44,7 +44,7 @@ func (r *MediaRepository) InsertUploadedMedia(ctx context.Context, tx uow.Tx, u 
 	if err != nil {
 		return err
 	}
-	return wrap(q.InsertUploadedMedia(ctx, sqlitegen.InsertUploadedMediaParams{
+	return wrap(q.InsertUploadedMedia(ctx, contentgen.InsertUploadedMediaParams{
 		MediaID: u.MediaID, BlobKey: u.BlobKey, ContentType: u.ContentType, FileSize: u.FileSize,
 	}), "insert uploaded media")
 }
@@ -55,7 +55,7 @@ func (r *MediaRepository) InsertProcessingResult(ctx context.Context, tx uow.Tx,
 	if err != nil {
 		return err
 	}
-	err = q.InsertMediaProcessingResult(ctx, sqlitegen.InsertMediaProcessingResultParams{
+	err = q.InsertMediaProcessingResult(ctx, contentgen.InsertMediaProcessingResultParams{
 		ID: res.ID, MediaID: res.MediaID, Purpose: string(res.Purpose), Outcome: string(res.Outcome), MediaType: string(res.MediaType),
 		Width: toNullInt(res.Width), Height: toNullInt(res.Height), DurationMs: toNullInt(res.DurationMS),
 		Blurhash: toNullString(res.Blurhash), ProcessedAt: toMillis(res.ProcessedAt),
@@ -64,7 +64,7 @@ func (r *MediaRepository) InsertProcessingResult(ctx context.Context, tx uow.Tx,
 		return wrap(err, "insert media processing result")
 	}
 	for _, v := range res.Variants {
-		err := q.InsertMediaVariant(ctx, sqlitegen.InsertMediaVariantParams{
+		err := q.InsertMediaVariant(ctx, contentgen.InsertMediaVariantParams{
 			ResultID: res.ID, Size: string(v.Size), Motion: string(v.Motion), BlobKey: v.BlobKey, ContentType: v.ContentType, FileSize: v.FileSize,
 			Width: int64(v.Width), Height: int64(v.Height),
 		})
@@ -81,7 +81,7 @@ func (r *MediaRepository) HasProcessingResult(ctx context.Context, tx uow.Tx, me
 	if err != nil {
 		return false, err
 	}
-	ok, err := q.HasCurrentMediaProcessingResult(ctx, sqlitegen.HasCurrentMediaProcessingResultParams{Purpose: string(purpose), MediaID: mediaID})
+	ok, err := q.HasCurrentMediaProcessingResult(ctx, contentgen.HasCurrentMediaProcessingResultParams{Purpose: string(purpose), MediaID: mediaID})
 	return ok, wrap(err, "look up media processing result")
 }
 
@@ -91,7 +91,7 @@ func (r *MediaRepository) UpsertFocus(ctx context.Context, tx uow.Tx, f content.
 	if err != nil {
 		return err
 	}
-	return wrap(q.UpsertMediaFocus(ctx, sqlitegen.UpsertMediaFocusParams{MediaID: f.MediaID, FocusX: f.X, FocusY: f.Y}), "upsert media focus")
+	return wrap(q.UpsertMediaFocus(ctx, contentgen.UpsertMediaFocusParams{MediaID: f.MediaID, FocusX: f.X, FocusY: f.Y}), "upsert media focus")
 }
 
 // DeleteUnattachedMedia implements content.MediaRepository.
@@ -215,7 +215,7 @@ func (r *MediaRepository) FindFocus(ctx context.Context, mediaID string) (conten
 
 // ListUnattachedUploads implements content.MediaRepository.
 func (r *MediaRepository) ListUnattachedUploads(ctx context.Context, afterID string, createdBefore time.Time, limit int) ([]string, error) {
-	ids, err := r.db.reader().ListUnattachedUploads(ctx, sqlitegen.ListUnattachedUploadsParams{
+	ids, err := r.db.reader().ListUnattachedUploads(ctx, contentgen.ListUnattachedUploadsParams{
 		AfterID: afterID, BeforeID: kernel.UUIDv7Floor(createdBefore), RowLimit: int64(limit),
 	})
 	return ids, wrap(err, "list unattached uploads")
@@ -223,7 +223,7 @@ func (r *MediaRepository) ListUnattachedUploads(ctx context.Context, afterID str
 
 // ListOwnerUploads implements content.MediaRepository.
 func (r *MediaRepository) ListOwnerUploads(ctx context.Context, ownerAccountID, afterID string, limit int) ([]appcontent.OwnedUpload, error) {
-	rows, err := r.db.reader().ListOwnerUploads(ctx, sqlitegen.ListOwnerUploadsParams{
+	rows, err := r.db.reader().ListOwnerUploads(ctx, contentgen.ListOwnerUploadsParams{
 		OwnerAccountID: toNullString(ownerAccountID), AfterID: afterID, RowLimit: int64(limit),
 	})
 	if err != nil {
@@ -242,7 +242,7 @@ func (r *MediaRepository) UpsertDescription(ctx context.Context, tx uow.Tx, d co
 	if err != nil {
 		return err
 	}
-	return wrap(q.UpsertMediaDescription(ctx, sqlitegen.UpsertMediaDescriptionParams{MediaID: d.MediaID, Description: d.Text}), "upsert media description")
+	return wrap(q.UpsertMediaDescription(ctx, contentgen.UpsertMediaDescriptionParams{MediaID: d.MediaID, Description: d.Text}), "upsert media description")
 }
 
 // DeleteDescription implements content.MediaRepository.
@@ -279,7 +279,7 @@ func (r *MediaRepository) HasNewerProcessingResult(ctx context.Context, tx uow.T
 	if err != nil {
 		return false, err
 	}
-	ok, err := q.HasNewerMediaProcessingResult(ctx, sqlitegen.HasNewerMediaProcessingResultParams{MediaID: mediaID, ResultID: resultID})
+	ok, err := q.HasNewerMediaProcessingResult(ctx, contentgen.HasNewerMediaProcessingResultParams{MediaID: mediaID, ResultID: resultID})
 	return ok, wrap(err, "look up newer media processing result")
 }
 
@@ -298,7 +298,7 @@ func (r *MediaRepository) DeleteProcessingResult(ctx context.Context, tx uow.Tx,
 
 // ListReplacedProcessingResults implements content.MediaRepository.
 func (r *MediaRepository) ListReplacedProcessingResults(ctx context.Context, afterID string, replacedBefore time.Time, limit int) ([]string, error) {
-	ids, err := r.db.reader().ListReplacedMediaProcessingResults(ctx, sqlitegen.ListReplacedMediaProcessingResultsParams{
+	ids, err := r.db.reader().ListReplacedMediaProcessingResults(ctx, contentgen.ListReplacedMediaProcessingResultsParams{
 		AfterID: afterID, ReplacedBefore: toMillis(replacedBefore), RowLimit: int64(limit),
 	})
 	return ids, wrap(err, "list replaced media processing results")
@@ -306,7 +306,7 @@ func (r *MediaRepository) ListReplacedProcessingResults(ctx context.Context, aft
 
 // ListReprocessableUploads implements content.MediaRepository.
 func (r *MediaRepository) ListReprocessableUploads(ctx context.Context, afterID string, processedBefore time.Time, limit int) ([]string, error) {
-	ids, err := r.db.reader().ListReprocessableUploads(ctx, sqlitegen.ListReprocessableUploadsParams{
+	ids, err := r.db.reader().ListReprocessableUploads(ctx, contentgen.ListReprocessableUploadsParams{
 		AfterID: afterID, ProcessedBefore: toMillis(processedBefore), RowLimit: int64(limit),
 	})
 	return ids, wrap(err, "list reprocessable uploads")

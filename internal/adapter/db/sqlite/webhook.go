@@ -8,7 +8,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/mycroblog/my/internal/adapter/db/sqlite/sqlitegen"
+	"github.com/mycroblog/my/internal/adapter/db/sqlite/webhookgen"
 	"github.com/mycroblog/my/internal/app/uow"
 	appwebhook "github.com/mycroblog/my/internal/app/webhook"
 	"github.com/mycroblog/my/internal/domain/webhook"
@@ -30,7 +30,7 @@ func (r *WebhookRepository) InsertEndpoint(ctx context.Context, tx uow.Tx, id, c
 	if err != nil {
 		return err
 	}
-	return wrap(q.InsertWebhookEndpoint(ctx, sqlitegen.InsertWebhookEndpointParams{
+	return wrap(q.InsertWebhookEndpoint(ctx, webhookgen.InsertWebhookEndpointParams{
 		ID: id, CreatedByUserID: toNullString(createdByUserID), CreatedAt: toMillis(createdAt),
 	}), "insert webhook endpoint")
 }
@@ -41,7 +41,7 @@ func (r *WebhookRepository) InsertRevision(ctx context.Context, tx uow.Tx, rev a
 	if err != nil {
 		return err
 	}
-	err = q.InsertWebhookEndpointRevision(ctx, sqlitegen.InsertWebhookEndpointRevisionParams{
+	err = q.InsertWebhookEndpointRevision(ctx, webhookgen.InsertWebhookEndpointRevisionParams{
 		ID: rev.ID, EndpointID: rev.EndpointID, Url: rev.Settings.URL, Description: toNullString(rev.Settings.Description),
 		RevisedByUserID: toNullString(rev.RevisedByUserID), RevisedAt: toMillis(rev.RevisedAt),
 	})
@@ -49,7 +49,7 @@ func (r *WebhookRepository) InsertRevision(ctx context.Context, tx uow.Tx, rev a
 		return wrap(err, "insert webhook endpoint revision")
 	}
 	for _, e := range rev.Settings.Events {
-		err := q.InsertWebhookEndpointRevisionEvent(ctx, sqlitegen.InsertWebhookEndpointRevisionEventParams{
+		err := q.InsertWebhookEndpointRevisionEvent(ctx, webhookgen.InsertWebhookEndpointRevisionEventParams{
 			RevisionID: rev.ID, EventType: string(e),
 		})
 		if err != nil {
@@ -65,7 +65,7 @@ func (r *WebhookRepository) InsertSecret(ctx context.Context, tx uow.Tx, s webho
 	if err != nil {
 		return err
 	}
-	return wrap(q.InsertWebhookSecret(ctx, sqlitegen.InsertWebhookSecretParams{
+	return wrap(q.InsertWebhookSecret(ctx, webhookgen.InsertWebhookSecretParams{
 		ID: s.ID, EndpointID: s.EndpointID, SealedSecret: s.Sealed, CreatedByUserID: toNullString(s.CreatedByUserID),
 		CreatedAt: toMillis(s.CreatedAt),
 	}), "insert webhook secret")
@@ -77,7 +77,7 @@ func (r *WebhookRepository) InsertStateChange(ctx context.Context, tx uow.Tx, c 
 	if err != nil {
 		return err
 	}
-	return wrap(q.InsertWebhookEndpointStateChange(ctx, sqlitegen.InsertWebhookEndpointStateChangeParams{
+	return wrap(q.InsertWebhookEndpointStateChange(ctx, webhookgen.InsertWebhookEndpointStateChangeParams{
 		ID: c.ID, EndpointID: c.EndpointID, State: string(c.State), Reason: string(c.Reason),
 		ChangedByUserID: toNullString(c.ChangedByUserID), ChangedAt: toMillis(c.ChangedAt),
 	}), "insert webhook endpoint state change")
@@ -89,7 +89,7 @@ func (r *WebhookRepository) UpsertHead(ctx context.Context, tx uow.Tx, h appwebh
 	if err != nil {
 		return err
 	}
-	return wrap(q.UpsertWebhookEndpointHead(ctx, sqlitegen.UpsertWebhookEndpointHeadParams{
+	return wrap(q.UpsertWebhookEndpointHead(ctx, webhookgen.UpsertWebhookEndpointHeadParams{
 		EndpointID: h.EndpointID, RevisionID: h.RevisionID, State: string(h.State), SecretID: h.SecretID,
 	}), "upsert webhook endpoint head")
 }
@@ -185,7 +185,7 @@ func (r *WebhookRepository) SubscribedEndpoints(ctx context.Context, tx uow.Tx, 
 
 // Secrets implements appwebhook.Repository.
 func (r *WebhookRepository) Secrets(ctx context.Context, endpointID string, limit int) ([]webhook.Secret, error) {
-	rows, err := r.db.reader().ListWebhookSecrets(ctx, sqlitegen.ListWebhookSecretsParams{EndpointID: endpointID, Lim: int64(limit)})
+	rows, err := r.db.reader().ListWebhookSecrets(ctx, webhookgen.ListWebhookSecretsParams{EndpointID: endpointID, Lim: int64(limit)})
 	if err != nil {
 		return nil, wrap(err, "list webhook secrets")
 	}
@@ -205,7 +205,7 @@ func (r *WebhookRepository) InsertMessage(ctx context.Context, tx uow.Tx, m webh
 	if err != nil {
 		return err
 	}
-	return wrap(q.InsertWebhookMessage(ctx, sqlitegen.InsertWebhookMessageParams{
+	return wrap(q.InsertWebhookMessage(ctx, webhookgen.InsertWebhookMessageParams{
 		ID: m.ID, EventType: string(m.EventType), Body: m.Body, CreatedAt: toMillis(m.CreatedAt),
 	}), "insert webhook message")
 }
@@ -216,7 +216,7 @@ func (r *WebhookRepository) InsertDelivery(ctx context.Context, tx uow.Tx, d web
 	if err != nil {
 		return err
 	}
-	return wrap(q.InsertWebhookDelivery(ctx, sqlitegen.InsertWebhookDeliveryParams{
+	return wrap(q.InsertWebhookDelivery(ctx, webhookgen.InsertWebhookDeliveryParams{
 		ID: d.ID, MessageID: d.MessageID, EndpointID: d.EndpointID, CreatedAt: toMillis(d.CreatedAt),
 	}), "insert webhook delivery")
 }
@@ -242,7 +242,7 @@ func (r *WebhookRepository) InsertAttempt(ctx context.Context, tx uow.Tx, a webh
 	if err != nil {
 		return err
 	}
-	return wrap(q.InsertWebhookDeliveryAttempt(ctx, sqlitegen.InsertWebhookDeliveryAttemptParams{
+	return wrap(q.InsertWebhookDeliveryAttempt(ctx, webhookgen.InsertWebhookDeliveryAttemptParams{
 		ID: a.ID, DeliveryID: a.DeliveryID, Outcome: string(a.Outcome),
 		StatusCode: sql.NullInt64{Int64: int64(a.StatusCode), Valid: a.StatusCode != 0},
 		DurationMs: a.Duration.Milliseconds(), AttemptedAt: toMillis(a.AttemptedAt),
@@ -273,7 +273,7 @@ func (r *WebhookRepository) AddFailure(ctx context.Context, tx uow.Tx, endpointI
 	if err != nil {
 		return err
 	}
-	return wrap(q.AddWebhookEndpointFailure(ctx, sqlitegen.AddWebhookEndpointFailureParams{
+	return wrap(q.AddWebhookEndpointFailure(ctx, webhookgen.AddWebhookEndpointFailureParams{
 		EndpointID: endpointID, FirstFailureAttemptID: attemptID, FirstFailedAt: toMillis(at),
 	}), "add webhook endpoint failure")
 }
@@ -289,7 +289,7 @@ func (r *WebhookRepository) DeleteFailures(ctx context.Context, tx uow.Tx, endpo
 
 // ListDeliveries implements appwebhook.Repository.
 func (r *WebhookRepository) ListDeliveries(ctx context.Context, endpointID, before string, limit int) ([]webhook.DeliveryRecord, error) {
-	return r.deliveries(ctx, sqlitegen.ListWebhookDeliveriesParams{EndpointID: endpointID, Before: before, Lim: int64(limit)})
+	return r.deliveries(ctx, webhookgen.ListWebhookDeliveriesParams{EndpointID: endpointID, Before: before, Lim: int64(limit)})
 }
 
 // FindDelivery implements appwebhook.Repository.
@@ -297,7 +297,7 @@ func (r *WebhookRepository) FindDelivery(ctx context.Context, endpointID, delive
 	if deliveryID == "" {
 		return webhook.DeliveryRecord{}, appwebhook.ErrNotFound
 	}
-	out, err := r.deliveries(ctx, sqlitegen.ListWebhookDeliveriesParams{EndpointID: endpointID, ID: deliveryID, Lim: 1})
+	out, err := r.deliveries(ctx, webhookgen.ListWebhookDeliveriesParams{EndpointID: endpointID, ID: deliveryID, Lim: 1})
 	if err != nil {
 		return webhook.DeliveryRecord{}, err
 	}
@@ -307,7 +307,7 @@ func (r *WebhookRepository) FindDelivery(ctx context.Context, endpointID, delive
 	return out[0], nil
 }
 
-func (r *WebhookRepository) deliveries(ctx context.Context, p sqlitegen.ListWebhookDeliveriesParams) ([]webhook.DeliveryRecord, error) {
+func (r *WebhookRepository) deliveries(ctx context.Context, p webhookgen.ListWebhookDeliveriesParams) ([]webhook.DeliveryRecord, error) {
 	rows, err := r.db.reader().ListWebhookDeliveries(ctx, p)
 	if err != nil {
 		return nil, wrap(err, "list webhook deliveries")
@@ -335,7 +335,7 @@ func (r *WebhookRepository) DeleteMessagesBefore(ctx context.Context, tx uow.Tx,
 	if err != nil {
 		return 0, err
 	}
-	ids, err := q.ListWebhookMessagesBefore(ctx, sqlitegen.ListWebhookMessagesBeforeParams{Before: toMillis(t), Lim: int64(limit)})
+	ids, err := q.ListWebhookMessagesBefore(ctx, webhookgen.ListWebhookMessagesBeforeParams{Before: toMillis(t), Lim: int64(limit)})
 	if err != nil || len(ids) == 0 {
 		return 0, wrap(err, "list old webhook messages")
 	}

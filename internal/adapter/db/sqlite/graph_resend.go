@@ -5,7 +5,7 @@ package sqlite
 import (
 	"context"
 
-	"github.com/mycroblog/my/internal/adapter/db/sqlite/sqlitegen"
+	"github.com/mycroblog/my/internal/adapter/db/sqlite/graphgen"
 	appgraph "github.com/mycroblog/my/internal/app/graph"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/graph"
@@ -17,7 +17,7 @@ func (r *GraphRepository) InsertResend(ctx context.Context, tx uow.Tx, rs graph.
 	if err != nil {
 		return false, err
 	}
-	n, err := q.InsertFollowResend(ctx, sqlitegen.InsertFollowResendParams{
+	n, err := q.InsertFollowResend(ctx, graphgen.InsertFollowResendParams{
 		Uri: rs.URI, FollowID: rs.FollowID, ReceivedAt: toMillis(rs.ReceivedAt),
 	})
 	if err != nil {

@@ -71,7 +71,7 @@ Merge Queue に入るのは PR の `check` を通ったものだけなので、P
 | `repo` | agentkit の検査と文脈の地図、ADR の番号の重複（ADR-0081）、手元と CI の組み合わせのずれ（§11）。site の文脈が変わったときは、ドキュメントサイトのビルド（ADR-0150 §7）と `app/docs` の `tsc`・Oxlint・knip。`app/docs` は site だけを選び、client の文脈を選ばない | 常に（サイトの検査は site） |
 
 - client の文脈（ui・web・api・i18n）が変わったグループでは、E2E の操作の流れの spec を 1 プロジェクト（ADR-0015 §1）で回す。ジョブ数が同時 20 ジョブの上限に収まるように、シャードの数を決める。
-- アダプタの文脈が変わったグループでは、そのアダプタのコンテナの契約（`postgres-contract`・`stream-contract`・`blob-contract`・`voice-contract`・`search-contract`・`mail-integration`）を回す。1 つのジョブの parallel のステップにまとめ、変わっていないアダプタの契約は回さない。
+- アダプタの文脈が変わったグループでは、そのアダプタのコンテナの契約（`postgres-contract`・`stream-contract`・`blob-contract`・`voice-contract`・`search-contract`・`mail-integration`）を回す。1 つのジョブで順に回し（全部が選ばれたときに、同時に起動したコンテナが立ち上がりきらないため）、変わっていないアダプタの契約は回さない。
 - ビルドタグの組み合わせ（アダプタを外したビルド）は Merge Queue で回さず、遅い検査で回す。組み合わせが壊れるのはアダプタやビルドタグを変えたときに限られ、マージのたびに確かめる必要はない。リリースの前には必ず通る。
 - `client-test` を初めから 2 つに分けるのは、`web-test` だけで 242 / 274 秒（中央値 / p90）かかり、Merge Queue の最長のジョブになるからである。
   Vitest 5.0.5 の `--shard <index>/<count>` で分ける（`vitest --help`、2026-10-23 確認）。

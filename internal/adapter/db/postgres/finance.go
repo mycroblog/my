@@ -11,7 +11,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 
-	"github.com/mycroblog/my/internal/adapter/db/postgres/postgresgen"
+	"github.com/mycroblog/my/internal/adapter/db/postgres/financegen"
 	appfinance "github.com/mycroblog/my/internal/app/finance"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/finance"
@@ -62,7 +62,7 @@ func (r *FinanceRepository) InsertItem(ctx context.Context, tx uow.Tx, item fina
 	if err != nil {
 		return err
 	}
-	return wrap(q.InsertCostItem(ctx, postgresgen.InsertCostItemParams{
+	return wrap(q.InsertCostItem(ctx, financegen.InsertCostItemParams{
 		ID: item.ID, Schedule: string(item.Recurrence.Schedule), Interval: interval, StartsOn: toDate(item.StartsOn),
 		CreatedByUserID: toNullString(item.CreatedByUserID), CreatedAt: item.CreatedAt,
 	}), "insert cost item")
@@ -74,7 +74,7 @@ func (r *FinanceRepository) InsertLabelRevision(ctx context.Context, tx uow.Tx, 
 	if err != nil {
 		return err
 	}
-	return wrap(q.InsertCostItemLabelRevision(ctx, postgresgen.InsertCostItemLabelRevisionParams{
+	return wrap(q.InsertCostItemLabelRevision(ctx, financegen.InsertCostItemLabelRevisionParams{
 		ID: rev.ID, CostItemID: rev.CostItemID, Name: rev.Label.Name, Provider: rev.Label.Provider,
 		ProviderNormalized: rev.ProviderNormalized, Category: string(rev.Label.Category), Memo: rev.Label.Memo,
 		RevisedByUserID: toNullString(rev.RevisedByUserID), RevisedAt: rev.RevisedAt,
@@ -88,7 +88,7 @@ func (r *FinanceRepository) InsertPriceRevision(ctx context.Context, tx uow.Tx, 
 		return err
 	}
 	p := rev.Revision
-	return wrap(q.InsertCostItemPriceRevision(ctx, postgresgen.InsertCostItemPriceRevisionParams{
+	return wrap(q.InsertCostItemPriceRevision(ctx, financegen.InsertCostItemPriceRevisionParams{
 		ID: p.ID, CostItemID: rev.CostItemID, EffectiveOn: toDate(p.EffectiveOn), AmountMinor: p.Price.Minor,
 		Currency: string(p.Price.Currency), RevisedByUserID: toNullString(rev.RevisedByUserID), RevisedAt: p.RevisedAt,
 	}), "insert cost item price revision")
@@ -100,7 +100,7 @@ func (r *FinanceRepository) InsertEndChange(ctx context.Context, tx uow.Tx, c ap
 	if err != nil {
 		return err
 	}
-	return wrap(q.InsertCostItemEndChange(ctx, postgresgen.InsertCostItemEndChangeParams{
+	return wrap(q.InsertCostItemEndChange(ctx, financegen.InsertCostItemEndChangeParams{
 		ID: c.ID, CostItemID: c.CostItemID, EndsOn: toNullDate(c.EndsOn), ChangedByUserID: toNullString(c.ChangedByUserID),
 		ChangedAt: c.ChangedAt,
 	}), "insert cost item end change")
@@ -112,7 +112,7 @@ func (r *FinanceRepository) InsertCancellation(ctx context.Context, tx uow.Tx, c
 	if err != nil {
 		return err
 	}
-	return wrap(q.InsertCostItemCancellation(ctx, postgresgen.InsertCostItemCancellationParams{
+	return wrap(q.InsertCostItemCancellation(ctx, financegen.InsertCostItemCancellationParams{
 		ID: c.ID, CostItemID: c.CostItemID, CanceledByUserID: toNullString(c.CanceledByUserID), CanceledAt: c.CanceledAt,
 	}), "insert cost item cancellation")
 }
@@ -123,7 +123,7 @@ func (r *FinanceRepository) UpsertHead(ctx context.Context, tx uow.Tx, h appfina
 	if err != nil {
 		return err
 	}
-	return wrap(q.UpsertCostItemHead(ctx, postgresgen.UpsertCostItemHeadParams{
+	return wrap(q.UpsertCostItemHead(ctx, financegen.UpsertCostItemHeadParams{
 		CostItemID: h.CostItemID, LabelRevisionID: h.LabelRevisionID, EndsOn: toNullDate(h.EndsOn),
 	}), "upsert cost item head")
 }
@@ -192,7 +192,7 @@ func (r *FinanceRepository) AllItems(ctx context.Context) ([]finance.CostItem, e
 
 func (r *FinanceRepository) items(ctx context.Context, id, before string, limit int32) ([]finance.CostItem, error) {
 	q := r.db.reader()
-	rows, err := q.ListCostItems(ctx, postgresgen.ListCostItemsParams{ID: toNullString(id), Before: toNullString(before), Lim: limit})
+	rows, err := q.ListCostItems(ctx, financegen.ListCostItemsParams{ID: toNullString(id), Before: toNullString(before), Lim: limit})
 	if err != nil {
 		return nil, wrap(err, "list cost items")
 	}
@@ -244,5 +244,5 @@ func (r *FinanceRepository) items(ctx context.Context, id, before string, limit 
 // RebuildHeads implements appfinance.Repository.
 func (r *FinanceRepository) RebuildHeads(ctx context.Context, tx uow.Tx) error {
 	return r.db.execAll(ctx, tx, "rebuild cost item heads",
-		(*postgresgen.Queries).DeleteAllCostItemHeads, (*postgresgen.Queries).RebuildCostItemHeads)
+		(*genQueries).DeleteAllCostItemHeads, (*genQueries).RebuildCostItemHeads)
 }

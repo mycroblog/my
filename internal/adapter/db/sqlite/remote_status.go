@@ -7,30 +7,30 @@ import (
 	"database/sql"
 	"errors"
 
-	"github.com/mycroblog/my/internal/adapter/db/sqlite/sqlitegen"
+	"github.com/mycroblog/my/internal/adapter/db/sqlite/contentgen"
 	appcontent "github.com/mycroblog/my/internal/app/content"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/content"
 )
 
 // insertRemoteRevisionParts writes the poll and the remote subtype of a revision.
-func insertRemoteRevisionParts(ctx context.Context, q *sqlitegen.Queries, rev content.Revision) error {
+func insertRemoteRevisionParts(ctx context.Context, q *genQueries, rev content.Revision) error {
 	if p := rev.Poll; p != nil {
-		err := q.InsertPoll(ctx, sqlitegen.InsertPollParams{
+		err := q.InsertPoll(ctx, contentgen.InsertPollParams{
 			ID: p.ID, RevisionID: rev.ID, Multiple: boolToInt(p.Multiple), HideTotals: boolToInt(p.HideTotals), ClosesAt: toNullMillis(p.ClosesAt),
 		})
 		if err != nil {
 			return wrap(err, "insert poll")
 		}
 		for _, o := range p.Options {
-			err := q.InsertPollOption(ctx, sqlitegen.InsertPollOptionParams{PollID: p.ID, Position: int64(o.Position), Title: o.Title})
+			err := q.InsertPollOption(ctx, contentgen.InsertPollOptionParams{PollID: p.ID, Position: int64(o.Position), Title: o.Title})
 			if err != nil {
 				return wrap(err, "insert poll option")
 			}
 		}
 	}
 	if r := rev.Remote; r != nil {
-		err := q.InsertRemoteStatusRevision(ctx, sqlitegen.InsertRemoteStatusRevisionParams{
+		err := q.InsertRemoteStatusRevision(ctx, contentgen.InsertRemoteStatusRevisionParams{
 			RevisionID: rev.ID, ActivityUri: toNullString(r.ActivityURI), HtmlPolicyVersion: int64(r.HTMLPolicyVersion),
 			OmittedAttachmentCount: int64(r.OmittedAttachments),
 		})
@@ -42,7 +42,7 @@ func insertRemoteRevisionParts(ctx context.Context, q *sqlitegen.Queries, rev co
 }
 
 // findRemoteRevisionParts reads the poll and the remote subtype of rev.
-func findRemoteRevisionParts(ctx context.Context, q *sqlitegen.Queries, rev *content.Revision) error {
+func findRemoteRevisionParts(ctx context.Context, q *genQueries, rev *content.Revision) error {
 	poll, err := q.GetPollByRevision(ctx, rev.ID)
 	switch {
 	case errors.Is(err, sql.ErrNoRows):
@@ -87,14 +87,14 @@ func (r *StatusRepository) EnsureCustomEmoji(ctx context.Context, tx uow.Tx, e c
 	if err != nil {
 		return content.CustomEmoji{}, err
 	}
-	params := sqlitegen.InsertCustomEmojiIfAbsentParams{
+	params := contentgen.InsertCustomEmojiIfAbsentParams{
 		ID: e.ID, Shortcode: e.Shortcode, Domain: e.Domain, Uri: toNullString(e.URI), CreatedAt: toMillis(e.CreatedAt),
 	}
 	for range 2 {
 		if err := q.InsertCustomEmojiIfAbsent(ctx, params); err != nil {
 			return content.CustomEmoji{}, wrap(err, "insert custom emoji")
 		}
-		row, err := q.GetCustomEmojiByShortcode(ctx, sqlitegen.GetCustomEmojiByShortcodeParams{Shortcode: e.Shortcode, Domain: e.Domain})
+		row, err := q.GetCustomEmojiByShortcode(ctx, contentgen.GetCustomEmojiByShortcodeParams{Shortcode: e.Shortcode, Domain: e.Domain})
 		if err == nil {
 			return customEmojiFrom(row), nil
 		}
@@ -126,7 +126,7 @@ func (r *StatusRepository) InsertCustomEmojiImage(ctx context.Context, tx uow.Tx
 	if err != nil {
 		return err
 	}
-	err = q.InsertCustomEmojiImage(ctx, sqlitegen.InsertCustomEmojiImageParams{
+	err = q.InsertCustomEmojiImage(ctx, contentgen.InsertCustomEmojiImageParams{
 		ID: img.ID, EmojiID: img.EmojiID, MediaID: img.MediaID, RevisedAt: toMillis(img.RevisedAt),
 	})
 	return wrap(err, "insert custom emoji image")
@@ -161,14 +161,14 @@ func (r *StatusRepository) InsertPollObservation(ctx context.Context, tx uow.Tx,
 	if err != nil {
 		return err
 	}
-	err = q.InsertPollTallyObservation(ctx, sqlitegen.InsertPollTallyObservationParams{
+	err = q.InsertPollTallyObservation(ctx, contentgen.InsertPollTallyObservationParams{
 		ID: o.ID, PollID: o.PollID, VotersCount: toNullInt64(o.VotersCount), ObservedAt: toMillis(o.ObservedAt),
 	})
 	if err != nil {
 		return wrap(err, "insert poll observation")
 	}
 	for i, v := range o.Votes {
-		err := q.InsertPollTallyObservationCount(ctx, sqlitegen.InsertPollTallyObservationCountParams{
+		err := q.InsertPollTallyObservationCount(ctx, contentgen.InsertPollTallyObservationCountParams{
 			ObservationID: o.ID, Position: int64(i), Votes: v,
 		})
 		if err != nil {
@@ -188,7 +188,7 @@ func (r *StatusRepository) ReplacePollTallies(ctx context.Context, tx uow.Tx, po
 		return wrap(err, "delete poll tallies")
 	}
 	for _, t := range tallies {
-		err := q.InsertPollTally(ctx, sqlitegen.InsertPollTallyParams{
+		err := q.InsertPollTally(ctx, contentgen.InsertPollTallyParams{
 			PollID: pollID, Position: int64(t.Position), Votes: t.Votes, VotersCount: toNullInt64(t.VotersCount),
 		})
 		if err != nil {
@@ -209,7 +209,7 @@ func (r *StatusRepository) FindCustomEmoji(ctx context.Context, id string) (cont
 
 // FindCustomEmojiByShortcode implements content.Repository.
 func (r *StatusRepository) FindCustomEmojiByShortcode(ctx context.Context, shortcode, domain string) (content.CustomEmoji, error) {
-	row, err := r.db.reader().GetCustomEmojiByShortcode(ctx, sqlitegen.GetCustomEmojiByShortcodeParams{Shortcode: shortcode, Domain: domain})
+	row, err := r.db.reader().GetCustomEmojiByShortcode(ctx, contentgen.GetCustomEmojiByShortcodeParams{Shortcode: shortcode, Domain: domain})
 	if err != nil {
 		return content.CustomEmoji{}, notFound(err, appcontent.ErrNotFound, "custom emoji "+shortcode+"@"+domain)
 	}
@@ -238,14 +238,14 @@ func (r *StatusRepository) FindPollTallies(ctx context.Context, pollID string) (
 	return out, nil
 }
 
-func customEmojiFrom(row sqlitegen.CustomEmoji) content.CustomEmoji {
+func customEmojiFrom(row contentgen.CustomEmoji) content.CustomEmoji {
 	return content.CustomEmoji{
 		ID: row.ID, Shortcode: row.Shortcode, Domain: row.Domain, URI: row.Uri.String, CreatedByUserID: row.CreatedByUserID.String,
 		CreatedAt: fromMillis(row.CreatedAt),
 	}
 }
 
-func customEmojiImageFrom(row sqlitegen.CustomEmojiImage) content.CustomEmojiImage {
+func customEmojiImageFrom(row contentgen.CustomEmojiImage) content.CustomEmojiImage {
 	return content.CustomEmojiImage{ID: row.ID, EmojiID: row.EmojiID, MediaID: row.MediaID, RevisedAt: fromMillis(row.RevisedAt)}
 }
 
@@ -255,7 +255,7 @@ func (r *StatusRepository) InsertPollVote(ctx context.Context, tx uow.Tx, v cont
 	if err != nil {
 		return false, err
 	}
-	n, err := q.InsertPollVote(ctx, sqlitegen.InsertPollVoteParams{
+	n, err := q.InsertPollVote(ctx, contentgen.InsertPollVoteParams{
 		ID: v.ID, PollID: v.PollID, AccountID: v.AccountID, Position: int64(v.Position), Uri: toNullString(v.URI), VotedAt: toMillis(v.VotedAt),
 	})
 	if err != nil {
@@ -266,7 +266,7 @@ func (r *StatusRepository) InsertPollVote(ctx context.Context, tx uow.Tx, v cont
 
 // ListPollVotes implements content.Repository.
 func (r *StatusRepository) ListPollVotes(ctx context.Context, pollID, accountID string) ([]content.PollVote, error) {
-	rows, err := r.db.reader().ListPollVotesOfAccount(ctx, sqlitegen.ListPollVotesOfAccountParams{PollID: pollID, AccountID: accountID})
+	rows, err := r.db.reader().ListPollVotesOfAccount(ctx, contentgen.ListPollVotesOfAccountParams{PollID: pollID, AccountID: accountID})
 	if err != nil {
 		return nil, wrap(err, "list poll votes")
 	}
@@ -324,7 +324,7 @@ func (r *StatusRepository) CountPollVotes(ctx context.Context, tx uow.Tx, pollID
 
 // ListPollVoterIDs implements content.Repository.
 func (r *StatusRepository) ListPollVoterIDs(ctx context.Context, pollID, after string, limit int) ([]string, error) {
-	ids, err := r.db.reader().ListPollVoterIDs(ctx, sqlitegen.ListPollVoterIDsParams{PollID: pollID, After: after, Lim: int64(limit)})
+	ids, err := r.db.reader().ListPollVoterIDs(ctx, contentgen.ListPollVoterIDsParams{PollID: pollID, After: after, Lim: int64(limit)})
 	if err != nil {
 		return nil, wrap(err, "list poll voters")
 	}

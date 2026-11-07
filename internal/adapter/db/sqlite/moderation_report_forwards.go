@@ -5,7 +5,7 @@ package sqlite
 import (
 	"context"
 
-	"github.com/mycroblog/my/internal/adapter/db/sqlite/sqlitegen"
+	"github.com/mycroblog/my/internal/adapter/db/sqlite/moderationgen"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/moderation"
 )
@@ -16,7 +16,7 @@ func (r *ModerationRepository) InsertReportForward(ctx context.Context, tx uow.T
 	if err != nil {
 		return false, err
 	}
-	n, err := q.InsertReportForward(ctx, sqlitegen.InsertReportForwardParams{
+	n, err := q.InsertReportForward(ctx, moderationgen.InsertReportForwardParams{
 		ID: f.ID, ReportID: f.ReportID, Comment: f.Comment, ForwardedByUserID: toNullString(f.ForwardedByUserID), ForwardedAt: toMillis(f.ForwardedAt),
 	})
 	return n > 0, wrap(err, "insert report forward")

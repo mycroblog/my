@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/mycroblog/my/internal/adapter/db/sqlite/sqlitegen"
+	"github.com/mycroblog/my/internal/adapter/db/sqlite/identitygen"
 	appidentity "github.com/mycroblog/my/internal/app/identity"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/identity"
@@ -23,7 +23,7 @@ func (r *IdentityRepository) InsertLoginProvider(ctx context.Context, tx uow.Tx,
 	if err != nil {
 		return err
 	}
-	return wrap(q.InsertLoginProvider(ctx, sqlitegen.InsertLoginProviderParams{
+	return wrap(q.InsertLoginProvider(ctx, identitygen.InsertLoginProviderParams{
 		ID: id, CreatedByUserID: toNullString(createdByUserID), CreatedAt: toMillis(createdAt),
 	}), "insert login provider")
 }
@@ -35,7 +35,7 @@ func (r *IdentityRepository) InsertLoginProviderRevision(ctx context.Context, tx
 		return err
 	}
 	s := rev.Settings
-	err = q.InsertLoginProviderRevision(ctx, sqlitegen.InsertLoginProviderRevisionParams{
+	err = q.InsertLoginProviderRevision(ctx, identitygen.InsertLoginProviderRevisionParams{
 		ID: rev.ID, ProviderID: rev.ProviderID, Kind: string(s.Kind), DisplayName: s.DisplayName,
 		Issuer: toNullString(s.Issuer), ClientID: s.ClientID, Scopes: toNullString(strings.Join(s.Scopes, " ")),
 		AllowSignup: boolToInt(s.AllowSignup), AllowLink: boolToInt(s.AllowLink),
@@ -46,7 +46,7 @@ func (r *IdentityRepository) InsertLoginProviderRevision(ctx context.Context, tx
 	}
 	for _, c := range s.Claims {
 		for _, v := range c.Values {
-			err := q.InsertLoginProviderRevisionClaim(ctx, sqlitegen.InsertLoginProviderRevisionClaimParams{
+			err := q.InsertLoginProviderRevisionClaim(ctx, identitygen.InsertLoginProviderRevisionClaimParams{
 				RevisionID: rev.ID, Claim: c.Claim, Value: v,
 			})
 			if err != nil {
@@ -55,7 +55,7 @@ func (r *IdentityRepository) InsertLoginProviderRevision(ctx context.Context, tx
 		}
 	}
 	for _, o := range s.Organizations {
-		err := q.InsertLoginProviderRevisionOrganization(ctx, sqlitegen.InsertLoginProviderRevisionOrganizationParams{
+		err := q.InsertLoginProviderRevisionOrganization(ctx, identitygen.InsertLoginProviderRevisionOrganizationParams{
 			RevisionID: rev.ID, Organization: o,
 		})
 		if err != nil {
@@ -63,7 +63,7 @@ func (r *IdentityRepository) InsertLoginProviderRevision(ctx context.Context, tx
 		}
 	}
 	for _, g := range s.Guilds {
-		err := q.InsertLoginProviderRevisionGuild(ctx, sqlitegen.InsertLoginProviderRevisionGuildParams{
+		err := q.InsertLoginProviderRevisionGuild(ctx, identitygen.InsertLoginProviderRevisionGuildParams{
 			RevisionID: rev.ID, GuildID: g,
 		})
 		if err != nil {
@@ -79,7 +79,7 @@ func (r *IdentityRepository) InsertLoginProviderSecret(ctx context.Context, tx u
 	if err != nil {
 		return err
 	}
-	return wrap(q.InsertLoginProviderSecret(ctx, sqlitegen.InsertLoginProviderSecretParams{
+	return wrap(q.InsertLoginProviderSecret(ctx, identitygen.InsertLoginProviderSecretParams{
 		ID: s.ID, ProviderID: s.ProviderID, SealedSecret: s.Sealed, CreatedByUserID: toNullString(s.CreatedByUserID),
 		CreatedAt: toMillis(s.CreatedAt),
 	}), "insert login provider secret")
@@ -91,7 +91,7 @@ func (r *IdentityRepository) InsertLoginProviderStateChange(ctx context.Context,
 	if err != nil {
 		return err
 	}
-	return wrap(q.InsertLoginProviderStateChange(ctx, sqlitegen.InsertLoginProviderStateChangeParams{
+	return wrap(q.InsertLoginProviderStateChange(ctx, identitygen.InsertLoginProviderStateChangeParams{
 		ID: c.ID, ProviderID: c.ProviderID, State: string(c.State), ChangedByUserID: toNullString(c.ChangedByUserID),
 		ChangedAt: toMillis(c.ChangedAt),
 	}), "insert login provider state change")
@@ -103,7 +103,7 @@ func (r *IdentityRepository) UpsertLoginProviderHead(ctx context.Context, tx uow
 	if err != nil {
 		return err
 	}
-	return wrap(q.UpsertLoginProviderHead(ctx, sqlitegen.UpsertLoginProviderHeadParams{
+	return wrap(q.UpsertLoginProviderHead(ctx, identitygen.UpsertLoginProviderHeadParams{
 		ProviderID: h.ProviderID, RevisionID: h.RevisionID, State: string(h.State), SecretID: h.SecretID,
 	}), "upsert login provider head")
 }
@@ -229,13 +229,13 @@ func (r *IdentityRepository) EnsureExternalIdentity(ctx context.Context, tx uow.
 	if err != nil {
 		return identity.ExternalIdentity{}, err
 	}
-	err = q.InsertExternalIdentity(ctx, sqlitegen.InsertExternalIdentityParams{
+	err = q.InsertExternalIdentity(ctx, identitygen.InsertExternalIdentityParams{
 		ID: x.ID, ProviderID: x.ProviderID, Subject: x.Subject, CreatedAt: toMillis(x.CreatedAt),
 	})
 	if err != nil {
 		return identity.ExternalIdentity{}, wrap(err, "insert external identity")
 	}
-	row, err := q.GetExternalIdentity(ctx, sqlitegen.GetExternalIdentityParams{ProviderID: x.ProviderID, Subject: x.Subject})
+	row, err := q.GetExternalIdentity(ctx, identitygen.GetExternalIdentityParams{ProviderID: x.ProviderID, Subject: x.Subject})
 	if err != nil {
 		return identity.ExternalIdentity{}, wrap(err, "find external identity")
 	}
@@ -249,7 +249,7 @@ func (r *IdentityRepository) InsertExternalIdentityLink(ctx context.Context, tx 
 	if err != nil {
 		return err
 	}
-	n, err := q.InsertUserExternalIdentity(ctx, sqlitegen.InsertUserExternalIdentityParams{
+	n, err := q.InsertUserExternalIdentity(ctx, identitygen.InsertUserExternalIdentityParams{
 		ExternalIdentityID: x.ID, LinkID: l.ID, UserID: l.UserID, ProviderID: x.ProviderID,
 	})
 	if err != nil {
@@ -261,7 +261,7 @@ func (r *IdentityRepository) InsertExternalIdentityLink(ctx context.Context, tx 
 		}
 		return appidentity.ErrLoginProviderLinked
 	}
-	return wrap(q.InsertExternalIdentityLink(ctx, sqlitegen.InsertExternalIdentityLinkParams{
+	return wrap(q.InsertExternalIdentityLink(ctx, identitygen.InsertExternalIdentityLinkParams{
 		ID: l.ID, ExternalIdentityID: l.ExternalIdentityID, UserID: l.UserID, LinkedAt: toMillis(l.LinkedAt),
 	}), "insert external identity link")
 }
@@ -272,7 +272,7 @@ func (r *IdentityRepository) InsertExternalIdentityUnlink(ctx context.Context, t
 	if err != nil {
 		return err
 	}
-	n, err := q.InsertExternalIdentityUnlink(ctx, sqlitegen.InsertExternalIdentityUnlinkParams{LinkID: u.LinkID, UnlinkedAt: toMillis(u.UnlinkedAt)})
+	n, err := q.InsertExternalIdentityUnlink(ctx, identitygen.InsertExternalIdentityUnlinkParams{LinkID: u.LinkID, UnlinkedAt: toMillis(u.UnlinkedAt)})
 	if err != nil || n == 0 {
 		return wrap(err, "insert external identity unlink")
 	}
@@ -284,7 +284,7 @@ func (r *IdentityRepository) FindLinkedExternalIdentity(ctx context.Context, pro
 	if providerID == "" {
 		return identity.LinkedExternalIdentity{}, appidentity.ErrNotFound
 	}
-	row, err := r.db.reader().FindLinkedExternalIdentity(ctx, sqlitegen.FindLinkedExternalIdentityParams{ProviderID: providerID, Subject: subject})
+	row, err := r.db.reader().FindLinkedExternalIdentity(ctx, identitygen.FindLinkedExternalIdentityParams{ProviderID: providerID, Subject: subject})
 	if err != nil {
 		return identity.LinkedExternalIdentity{}, notFound(err, appidentity.ErrNotFound, "linked external identity")
 	}
@@ -335,13 +335,13 @@ func (r *IdentityRepository) CountActiveLocalUsersWithoutLoginProvider(ctx conte
 // RebuildLoginProviderHeads implements appidentity.ProjectionRepository.
 func (r *IdentityRepository) RebuildLoginProviderHeads(ctx context.Context, tx uow.Tx) error {
 	return r.db.execAll(ctx, tx, "rebuild login provider heads",
-		(*sqlitegen.Queries).DeleteAllLoginProviderHeads, (*sqlitegen.Queries).RebuildLoginProviderHeads)
+		(*genQueries).DeleteAllLoginProviderHeads, (*genQueries).RebuildLoginProviderHeads)
 }
 
 // RebuildUserExternalIdentities implements appidentity.ProjectionRepository.
 func (r *IdentityRepository) RebuildUserExternalIdentities(ctx context.Context, tx uow.Tx) error {
 	return r.db.execAll(ctx, tx, "rebuild user external identities",
-		(*sqlitegen.Queries).DeleteAllUserExternalIdentities, (*sqlitegen.Queries).RebuildUserExternalIdentities)
+		(*genQueries).DeleteAllUserExternalIdentities, (*genQueries).RebuildUserExternalIdentities)
 }
 
 // scopeList splits the space-separated scopes of a revision, nil for none.

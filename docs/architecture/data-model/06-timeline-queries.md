@@ -1,6 +1,6 @@
 ## 6. タイムラインのクエリ
 
-v0 は fan-out-on-read（ADR-0013）です。`timeline` モジュールの投影だけを読みます。返す直前にドメインの `canView`（[公開範囲の閲覧判定](../visibility.md)）を再適用します（多重防御、NFR-SEC-4）。以下は方言に依存しない概略で、実際のクエリは `queries/<dialect>/timeline.sql` です。
+v0 は fan-out-on-read（ADR-0013）です。`timeline` モジュールの投影だけを読みます。返す直前にドメインの `canView`（[公開範囲の閲覧判定](../visibility.md)）を再適用します（多重防御、NFR-SEC-4）。以下は方言に依存しない概略で、実際のクエリは `queries/<dialect>/timeline/timeline.sql` です。
 
 共通の規則:
 

@@ -8,7 +8,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgtype"
 
-	"github.com/mycroblog/my/internal/adapter/db/postgres/postgresgen"
+	"github.com/mycroblog/my/internal/adapter/db/postgres/financegen"
 	appfinance "github.com/mycroblog/my/internal/app/finance"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/finance"
@@ -47,7 +47,7 @@ func (r *FinanceRepository) InsertIncome(ctx context.Context, tx uow.Tx, rec app
 		return false, err
 	}
 	starts, ends := toNullRange(rec.Covers)
-	n, err := q.InsertIncomeMovement(ctx, postgresgen.InsertIncomeMovementParams{
+	n, err := q.InsertIncomeMovement(ctx, financegen.InsertIncomeMovementParams{
 		ID: rec.ID, Provider: rec.Provider, ProviderMovementID: rec.ProviderID, Kind: string(rec.Kind),
 		ParentMovementID: toNullString(rec.ParentMovementID), SubscriptionID: toNullString(rec.SubscriptionID),
 		OccurredAt: rec.OccurredAt, OccurredOn: toDate(rec.OccurredOn), CoversStartsOn: starts, CoversEndsOn: ends,
@@ -63,7 +63,7 @@ func (r *FinanceRepository) FindIncomeID(ctx context.Context, tx uow.Tx, provide
 	if err != nil {
 		return "", err
 	}
-	id, err := q.FindIncomeMovementID(ctx, postgresgen.FindIncomeMovementIDParams{Provider: provider, ProviderMovementID: providerID})
+	id, err := q.FindIncomeMovementID(ctx, financegen.FindIncomeMovementIDParams{Provider: provider, ProviderMovementID: providerID})
 	if err != nil {
 		return "", notFound(err, appfinance.ErrNotFound, "income movement "+providerID)
 	}
@@ -75,13 +75,13 @@ func (r *FinanceRepository) KnownIncome(ctx context.Context, provider string, id
 	if len(ids) == 0 {
 		return nil, nil
 	}
-	out, err := r.db.reader().KnownIncomeMovements(ctx, postgresgen.KnownIncomeMovementsParams{Provider: provider, Ids: ids})
+	out, err := r.db.reader().KnownIncomeMovements(ctx, financegen.KnownIncomeMovementsParams{Provider: provider, Ids: ids})
 	return out, wrap(err, "list known income movements")
 }
 
 // IncomeInWindow implements appfinance.Repository.
 func (r *FinanceRepository) IncomeInWindow(ctx context.Context, window finance.DateRange) ([]finance.IncomeMovement, error) {
-	rows, err := r.db.reader().ListIncomeMovementsInWindow(ctx, postgresgen.ListIncomeMovementsInWindowParams{
+	rows, err := r.db.reader().ListIncomeMovementsInWindow(ctx, financegen.ListIncomeMovementsInWindowParams{
 		StartsOn: toDate(window.Start), EndsOn: toDate(window.End),
 	})
 	if err != nil {
@@ -114,7 +114,7 @@ func (r *FinanceRepository) ListIncome(ctx context.Context, f appfinance.IncomeF
 	if limit <= 0 {
 		return []appfinance.IncomeRecord{}, nil
 	}
-	rows, err := r.db.reader().ListIncomeMovements(ctx, postgresgen.ListIncomeMovementsParams{
+	rows, err := r.db.reader().ListIncomeMovements(ctx, financegen.ListIncomeMovementsParams{
 		StartsOn: toDate(f.From), EndsOn: toDate(f.To), Kind: string(f.Kind), Before: toNullString(before), Lim: int32(min(limit, math.MaxInt32)),
 	})
 	if err != nil {

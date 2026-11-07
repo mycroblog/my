@@ -8,7 +8,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/mycroblog/my/internal/adapter/db/sqlite/sqlitegen"
+	"github.com/mycroblog/my/internal/adapter/db/sqlite/translationgen"
 	"github.com/mycroblog/my/internal/app/translation"
 	"github.com/mycroblog/my/internal/app/uow"
 )
@@ -27,7 +27,7 @@ func (r *TranslationRepository) InsertTranslation(ctx context.Context, tx uow.Tx
 	if err != nil {
 		return false, err
 	}
-	n, err := q.InsertStatusTranslation(ctx, sqlitegen.InsertStatusTranslationParams{
+	n, err := q.InsertStatusTranslation(ctx, translationgen.InsertStatusTranslationParams{
 		ID: t.ID, StatusID: t.StatusID, RevisionID: t.RevisionID, TargetLanguage: t.TargetLanguage, Provider: t.Provider,
 		SourceLanguage: t.SourceLanguage, ContentHtml: t.ContentHTML, SpoilerText: t.SpoilerText, CreatedAt: toMillis(t.CreatedAt),
 	})
@@ -38,7 +38,7 @@ func (r *TranslationRepository) InsertTranslation(ctx context.Context, tx uow.Tx
 		return false, nil
 	}
 	for _, a := range t.Attachments {
-		err := q.InsertStatusTranslationAttachment(ctx, sqlitegen.InsertStatusTranslationAttachmentParams{
+		err := q.InsertStatusTranslationAttachment(ctx, translationgen.InsertStatusTranslationAttachmentParams{
 			TranslationID: t.ID, Position: int64(a.Position), Description: a.Description,
 		})
 		if err != nil {
@@ -46,7 +46,7 @@ func (r *TranslationRepository) InsertTranslation(ctx context.Context, tx uow.Tx
 		}
 	}
 	for _, o := range t.PollOptions {
-		err := q.InsertStatusTranslationPollOption(ctx, sqlitegen.InsertStatusTranslationPollOptionParams{
+		err := q.InsertStatusTranslationPollOption(ctx, translationgen.InsertStatusTranslationPollOptionParams{
 			TranslationID: t.ID, Position: int64(o.Position), Title: o.Title,
 		})
 		if err != nil {
@@ -59,7 +59,7 @@ func (r *TranslationRepository) InsertTranslation(ctx context.Context, tx uow.Tx
 // FindTranslations implements translation.Repository.
 func (r *TranslationRepository) FindTranslations(ctx context.Context, revisionID, targetLanguage string) ([]translation.Stored, error) {
 	q := r.db.reader()
-	rows, err := q.ListStatusTranslations(ctx, sqlitegen.ListStatusTranslationsParams{RevisionID: revisionID, TargetLanguage: targetLanguage})
+	rows, err := q.ListStatusTranslations(ctx, translationgen.ListStatusTranslationsParams{RevisionID: revisionID, TargetLanguage: targetLanguage})
 	if err != nil {
 		return nil, wrap(err, "list status translations")
 	}
@@ -103,7 +103,7 @@ func (r *TranslationRepository) DeleteStatusTranslations(ctx context.Context, tx
 
 // ListExpiredTranslations implements translation.Repository.
 func (r *TranslationRepository) ListExpiredTranslations(ctx context.Context, createdBefore time.Time, limit int) ([]string, error) {
-	rows, err := r.db.reader().ListExpiredStatusTranslationIDs(ctx, sqlitegen.ListExpiredStatusTranslationIDsParams{
+	rows, err := r.db.reader().ListExpiredStatusTranslationIDs(ctx, translationgen.ListExpiredStatusTranslationIDsParams{
 		CreatedBefore: toMillis(createdBefore), BatchLimit: int64(limit),
 	})
 	if err != nil {
@@ -143,11 +143,11 @@ func (r *TranslationRepository) AddUsageWithin(ctx context.Context, tx uow.Tx, a
 	}
 	// Without an account, only the server's row counts (a moderator's translation of a report).
 	if accountID != "" {
-		err = q.EnsureTranslationAccountUsage(ctx, sqlitegen.EnsureTranslationAccountUsageParams{AccountID: accountID, Month: month})
+		err = q.EnsureTranslationAccountUsage(ctx, translationgen.EnsureTranslationAccountUsageParams{AccountID: accountID, Month: month})
 		if err != nil {
 			return false, wrap(err, "ensure translation account usage")
 		}
-		n, err := q.AddTranslationAccountUsageWithin(ctx, sqlitegen.AddTranslationAccountUsageWithinParams{AccountID: accountID, Month: month, Characters: characters, MaxCharacters: limits.Account})
+		n, err := q.AddTranslationAccountUsageWithin(ctx, translationgen.AddTranslationAccountUsageWithinParams{AccountID: accountID, Month: month, Characters: characters, MaxCharacters: limits.Account})
 		if err != nil || n == 0 {
 			return false, wrap(err, "add translation account usage")
 		}
@@ -155,7 +155,7 @@ func (r *TranslationRepository) AddUsageWithin(ctx context.Context, tx uow.Tx, a
 	if err := q.EnsureTranslationServerUsage(ctx, month); err != nil {
 		return false, wrap(err, "ensure translation server usage")
 	}
-	n, err := q.AddTranslationServerUsageWithin(ctx, sqlitegen.AddTranslationServerUsageWithinParams{Month: month, Characters: characters, MaxCharacters: limits.Server})
+	n, err := q.AddTranslationServerUsageWithin(ctx, translationgen.AddTranslationServerUsageWithinParams{Month: month, Characters: characters, MaxCharacters: limits.Server})
 	return n > 0, wrap(err, "add translation server usage")
 }
 
@@ -165,14 +165,14 @@ func (r *TranslationRepository) AddCacheLookups(ctx context.Context, tx uow.Tx, 
 	if err != nil {
 		return err
 	}
-	err = q.AddTranslationCacheLookups(ctx, sqlitegen.AddTranslationCacheLookupsParams{Month: month, Hits: hits, Misses: misses})
+	err = q.AddTranslationCacheLookups(ctx, translationgen.AddTranslationCacheLookupsParams{Month: month, Hits: hits, Misses: misses})
 	return wrap(err, "add translation cache lookups")
 }
 
 // FindUsage implements translation.Repository.
 func (r *TranslationRepository) FindUsage(ctx context.Context, accountID, month string) (translation.Usage, error) {
 	q := r.db.reader()
-	account, err := q.GetTranslationAccountUsage(ctx, sqlitegen.GetTranslationAccountUsageParams{AccountID: accountID, Month: month})
+	account, err := q.GetTranslationAccountUsage(ctx, translationgen.GetTranslationAccountUsageParams{AccountID: accountID, Month: month})
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return translation.Usage{}, wrap(err, "get translation account usage")
 	}

@@ -1,0 +1,48 @@
+-- SPDX-License-Identifier: AGPL-3.0-only
+
+-- The sources and the emptying of the projections of moderation, identity, content (the
+-- sensitivity overrides and the poll tallies), and timeline (the restrictions) that
+-- `my projection rebuild` derives again (data-model section 9). The Rebuild queries state the
+-- rules of the commands and projectors in SQL.
+
+-- name: DeleteAllWebhookEndpointHeads :exec
+DELETE FROM webhook_endpoint_heads;
+
+-- RebuildWebhookEndpointHeads states the rule of the endpoint commands: the newest revision,
+-- state change, and secret of each endpoint, which the commands write together with it.
+-- name: RebuildWebhookEndpointHeads :exec
+INSERT INTO webhook_endpoint_heads (endpoint_id, revision_id, state, secret_id)
+SELECT e.id,
+  (SELECT r.id FROM webhook_endpoint_revisions r WHERE r.endpoint_id = e.id ORDER BY r.id DESC LIMIT 1),
+  (SELECT c.state FROM webhook_endpoint_state_changes c WHERE c.endpoint_id = e.id ORDER BY c.id DESC LIMIT 1),
+  (SELECT s.id FROM webhook_secrets s WHERE s.endpoint_id = e.id ORDER BY s.id DESC LIMIT 1)
+FROM webhook_endpoints e;
+
+-- DeleteDerivableWebhookEndpointFailures deletes the runs of failures that the kept attempts
+-- derive: those whose first failure is kept, and those that a kept success after their first
+-- failure ended. A run whose first failure the purge removed stays.
+-- name: DeleteDerivableWebhookEndpointFailures :exec
+DELETE FROM webhook_endpoint_failures
+WHERE EXISTS (SELECT 1 FROM webhook_delivery_attempts a WHERE a.id = webhook_endpoint_failures.first_failure_attempt_id)
+  OR EXISTS (
+    SELECT 1 FROM webhook_delivery_attempts a JOIN webhook_deliveries d ON d.id = a.delivery_id
+    WHERE d.endpoint_id = webhook_endpoint_failures.endpoint_id AND a.outcome = 'succeeded'
+      AND a.id > webhook_endpoint_failures.first_failure_attempt_id
+  );
+
+-- RebuildWebhookEndpointFailures states the projector's rule for the endpoints without a run:
+-- the failed attempts after the newest succeeded one, from the first of them.
+-- name: RebuildWebhookEndpointFailures :exec
+INSERT INTO webhook_endpoint_failures (endpoint_id, first_failure_attempt_id, first_failed_at, consecutive_failures)
+SELECT g.endpoint_id, g.first_id, f.attempted_at, g.failures
+FROM (
+  SELECT d.endpoint_id, MIN(a.id) AS first_id, COUNT(*) AS failures
+  FROM webhook_delivery_attempts a JOIN webhook_deliveries d ON d.id = a.delivery_id
+  WHERE a.outcome <> 'succeeded'
+    AND NOT EXISTS (
+      SELECT 1 FROM webhook_delivery_attempts s JOIN webhook_deliveries sd ON sd.id = s.delivery_id
+      WHERE sd.endpoint_id = d.endpoint_id AND s.outcome = 'succeeded' AND s.id > a.id
+    )
+  GROUP BY d.endpoint_id
+) g JOIN webhook_delivery_attempts f ON f.id = g.first_id
+WHERE NOT EXISTS (SELECT 1 FROM webhook_endpoint_failures x WHERE x.endpoint_id = g.endpoint_id);

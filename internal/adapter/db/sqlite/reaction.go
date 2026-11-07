@@ -6,7 +6,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/mycroblog/my/internal/adapter/db/sqlite/sqlitegen"
+	"github.com/mycroblog/my/internal/adapter/db/sqlite/contentgen"
 	appcontent "github.com/mycroblog/my/internal/app/content"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/content"
@@ -20,7 +20,7 @@ func (r *InteractionRepository) InsertReaction(ctx context.Context, tx uow.Tx, r
 	if err != nil {
 		return false, err
 	}
-	n, err := q.InsertReaction(ctx, sqlitegen.InsertReactionParams{
+	n, err := q.InsertReaction(ctx, contentgen.InsertReactionParams{
 		ID: re.ID, AccountID: re.AccountID, StatusID: re.StatusID, EmojiKey: re.Emoji.Key(),
 		CustomEmojiID: toNullString(re.Emoji.CustomEmojiID), Uri: re.URI, CreatedAt: toMillis(re.CreatedAt),
 	})
@@ -55,7 +55,7 @@ func (r *InteractionRepository) DeleteAccountStatusReactions(ctx context.Context
 	if err != nil {
 		return nil, err
 	}
-	rows, err := q.DeleteAccountStatusReactions(ctx, sqlitegen.DeleteAccountStatusReactionsParams{AccountID: accountID, StatusID: statusID, ExceptKey: exceptKey})
+	rows, err := q.DeleteAccountStatusReactions(ctx, contentgen.DeleteAccountStatusReactionsParams{AccountID: accountID, StatusID: statusID, ExceptKey: exceptKey})
 	if err != nil {
 		return nil, wrap(err, "delete reactions of an account")
 	}
@@ -71,15 +71,15 @@ func (r *InteractionRepository) AddReactions(ctx context.Context, tx uow.Tx, sta
 	key := emoji.Key()
 	switch delta {
 	case 1:
-		err = q.IncrementReactionCount(ctx, sqlitegen.IncrementReactionCountParams{
+		err = q.IncrementReactionCount(ctx, contentgen.IncrementReactionCountParams{
 			EmojiKey: key, CustomEmojiID: toNullString(emoji.CustomEmojiID), StatusID: statusID,
 		})
 		return wrap(err, "increment reaction count")
 	case -1:
-		if err := q.DeleteSingleReactionCount(ctx, sqlitegen.DeleteSingleReactionCountParams{StatusID: statusID, EmojiKey: key}); err != nil {
+		if err := q.DeleteSingleReactionCount(ctx, contentgen.DeleteSingleReactionCountParams{StatusID: statusID, EmojiKey: key}); err != nil {
 			return wrap(err, "delete reaction count")
 		}
-		err = q.DecrementReactionCount(ctx, sqlitegen.DecrementReactionCountParams{StatusID: statusID, EmojiKey: key})
+		err = q.DecrementReactionCount(ctx, contentgen.DecrementReactionCountParams{StatusID: statusID, EmojiKey: key})
 		return wrap(err, "decrement reaction count")
 	}
 	return fmt.Errorf("sqlite: add reactions: delta %d is not 1 or -1", delta)
@@ -108,7 +108,7 @@ func (r *InteractionRepository) RebuildReactionCounts(ctx context.Context, tx uo
 
 // FindReaction implements content.InteractionRepository.
 func (r *InteractionRepository) FindReaction(ctx context.Context, accountID, statusID, emojiKey string) (content.Reaction, error) {
-	row, err := r.db.reader().GetReaction(ctx, sqlitegen.GetReactionParams{AccountID: accountID, StatusID: statusID, EmojiKey: emojiKey})
+	row, err := r.db.reader().GetReaction(ctx, contentgen.GetReactionParams{AccountID: accountID, StatusID: statusID, EmojiKey: emojiKey})
 	if err != nil {
 		return content.Reaction{}, notFound(err, appcontent.ErrNotFound, "reaction of "+accountID+" on "+statusID)
 	}
@@ -126,7 +126,7 @@ func (r *InteractionRepository) FindReactionByURI(ctx context.Context, uri strin
 
 // ListAccountStatusReactions implements content.InteractionRepository.
 func (r *InteractionRepository) ListAccountStatusReactions(ctx context.Context, accountID, statusID string) ([]content.Reaction, error) {
-	rows, err := r.db.reader().ListAccountStatusReactions(ctx, sqlitegen.ListAccountStatusReactionsParams{AccountID: accountID, StatusID: statusID})
+	rows, err := r.db.reader().ListAccountStatusReactions(ctx, contentgen.ListAccountStatusReactionsParams{AccountID: accountID, StatusID: statusID})
 	if err != nil {
 		return nil, wrap(err, "list reactions of an account")
 	}
@@ -135,7 +135,7 @@ func (r *InteractionRepository) ListAccountStatusReactions(ctx context.Context, 
 
 // ListStatusReactions implements content.InteractionRepository.
 func (r *InteractionRepository) ListStatusReactions(ctx context.Context, statusID, emojiKey, before string, limit int) ([]content.Reaction, error) {
-	rows, err := r.db.reader().ListStatusReactions(ctx, sqlitegen.ListStatusReactionsParams{
+	rows, err := r.db.reader().ListStatusReactions(ctx, contentgen.ListStatusReactionsParams{
 		StatusID: statusID, EmojiKey: emojiKey, Before: before, PageLimit: int64(limit),
 	})
 	if err != nil {
@@ -146,7 +146,7 @@ func (r *InteractionRepository) ListStatusReactions(ctx context.Context, statusI
 
 // ListReactionCounts implements content.InteractionRepository.
 func (r *InteractionRepository) ListReactionCounts(ctx context.Context, statusID string, limit int) ([]content.ReactionCount, error) {
-	rows, err := r.db.reader().ListReactionCounts(ctx, sqlitegen.ListReactionCountsParams{StatusID: statusID, PageLimit: int64(limit)})
+	rows, err := r.db.reader().ListReactionCounts(ctx, contentgen.ListReactionCountsParams{StatusID: statusID, PageLimit: int64(limit)})
 	if err != nil {
 		return nil, wrap(err, "list reaction counts")
 	}
@@ -169,14 +169,14 @@ func reactionEmojiFrom(key string, customEmojiID string) content.ReactionEmoji {
 	return content.ReactionEmoji{Unicode: key}
 }
 
-func reactionFrom(row sqlitegen.Reaction) content.Reaction {
+func reactionFrom(row contentgen.Reaction) content.Reaction {
 	return content.Reaction{
 		ID: row.ID, AccountID: row.AccountID, StatusID: row.StatusID, Emoji: reactionEmojiFrom(row.EmojiKey, row.CustomEmojiID.String),
 		URI: row.Uri, CreatedAt: fromMillis(row.CreatedAt),
 	}
 }
 
-func reactionsFrom(rows []sqlitegen.Reaction) []content.Reaction {
+func reactionsFrom(rows []contentgen.Reaction) []content.Reaction {
 	out := make([]content.Reaction, len(rows))
 	for i, row := range rows {
 		out[i] = reactionFrom(row)
@@ -184,7 +184,7 @@ func reactionsFrom(rows []sqlitegen.Reaction) []content.Reaction {
 	return out
 }
 
-func reactionCountsFrom(rows []sqlitegen.StatusReactionCount) []content.ReactionCount {
+func reactionCountsFrom(rows []contentgen.StatusReactionCount) []content.ReactionCount {
 	out := make([]content.ReactionCount, len(rows))
 	for i, row := range rows {
 		out[i] = content.ReactionCount{StatusID: row.StatusID, Emoji: reactionEmojiFrom(row.EmojiKey, row.CustomEmojiID.String), Count: row.Count}

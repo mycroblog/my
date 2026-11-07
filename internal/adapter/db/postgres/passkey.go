@@ -5,7 +5,7 @@ package postgres
 import (
 	"context"
 
-	"github.com/mycroblog/my/internal/adapter/db/postgres/postgresgen"
+	"github.com/mycroblog/my/internal/adapter/db/postgres/identitygen"
 	appidentity "github.com/mycroblog/my/internal/app/identity"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/identity"
@@ -17,7 +17,7 @@ func (r *IdentityRepository) InsertPasskeyCredential(ctx context.Context, tx uow
 	if err != nil {
 		return err
 	}
-	err = q.InsertPasskeyCredential(ctx, postgresgen.InsertPasskeyCredentialParams{
+	err = q.InsertPasskeyCredential(ctx, identitygen.InsertPasskeyCredentialParams{
 		ID: c.ID, UserID: c.UserID, CredentialID: c.CredentialID, PublicKey: c.PublicKey,
 		BackupEligible: c.BackupEligible, Name: c.Name, CreatedAt: c.CreatedAt,
 	})
@@ -72,7 +72,7 @@ func (r *IdentityRepository) InsertPasskeyCredentialRevocation(ctx context.Conte
 	if err != nil {
 		return err
 	}
-	err = q.InsertPasskeyCredentialRevocation(ctx, postgresgen.InsertPasskeyCredentialRevocationParams{
+	err = q.InsertPasskeyCredentialRevocation(ctx, identitygen.InsertPasskeyCredentialRevocationParams{
 		PasskeyID: rev.PasskeyID, RevokedAt: rev.RevokedAt,
 	})
 	return wrap(err, "insert passkey credential revocation")

@@ -6,7 +6,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/mycroblog/my/internal/adapter/db/sqlite/sqlitegen"
+	"github.com/mycroblog/my/internal/adapter/db/sqlite/federationgen"
 	appfederation "github.com/mycroblog/my/internal/app/federation"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/federation"
@@ -18,7 +18,7 @@ func (r *FederationRepository) InsertRemoteFollowTombstone(ctx context.Context, 
 	if err != nil {
 		return false, err
 	}
-	n, err := q.InsertRemoteFollowTombstone(ctx, sqlitegen.InsertRemoteFollowTombstoneParams{
+	n, err := q.InsertRemoteFollowTombstone(ctx, federationgen.InsertRemoteFollowTombstoneParams{
 		ActivityUri: string(t.ActivityURI), ActorUri: string(t.ActorURI), ObjectUri: string(t.ObjectURI),
 		ReceivedAt: toMillis(t.ReceivedAt),
 	})
@@ -31,7 +31,7 @@ func (r *FederationRepository) InsertReceivedActivityAnswer(ctx context.Context,
 	if err != nil {
 		return false, err
 	}
-	n, err := q.InsertReceivedActivityAnswer(ctx, sqlitegen.InsertReceivedActivityAnswerParams{ActivityUri: string(activityURI), AnsweredAt: toMillis(at)})
+	n, err := q.InsertReceivedActivityAnswer(ctx, federationgen.InsertReceivedActivityAnswerParams{ActivityUri: string(activityURI), AnsweredAt: toMillis(at)})
 	return n == 1, wrap(err, "insert received activity answer")
 }
 
@@ -41,7 +41,7 @@ func (r *FederationRepository) DeleteReceivedActivityAnswersBefore(ctx context.C
 	if err != nil {
 		return 0, err
 	}
-	n, err := q.DeleteReceivedActivityAnswersBefore(ctx, sqlitegen.DeleteReceivedActivityAnswersBeforeParams{AnsweredBefore: toMillis(t), BatchLimit: int64(limit)})
+	n, err := q.DeleteReceivedActivityAnswersBefore(ctx, federationgen.DeleteReceivedActivityAnswersBeforeParams{AnsweredBefore: toMillis(t), BatchLimit: int64(limit)})
 	return n, wrap(err, "delete received activity answers")
 }
 
@@ -51,7 +51,7 @@ func (r *FederationRepository) LiveRemoteFollowTombstone(ctx context.Context, tx
 	if err != nil {
 		return federation.RemoteFollowTombstone{}, err
 	}
-	row, err := q.GetLiveRemoteFollowTombstone(ctx, sqlitegen.GetLiveRemoteFollowTombstoneParams{
+	row, err := q.GetLiveRemoteFollowTombstone(ctx, federationgen.GetLiveRemoteFollowTombstoneParams{
 		ActorUri: string(actorURI), ObjectUri: string(objectURI),
 	})
 	if err != nil {

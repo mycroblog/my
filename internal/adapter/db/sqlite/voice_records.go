@@ -6,7 +6,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/mycroblog/my/internal/adapter/db/sqlite/sqlitegen"
+	"github.com/mycroblog/my/internal/adapter/db/sqlite/voicegen"
 	"github.com/mycroblog/my/internal/app/uow"
 	appvoice "github.com/mycroblog/my/internal/app/voice"
 	"github.com/mycroblog/my/internal/domain/voice"
@@ -91,7 +91,7 @@ func (r *VoiceRepository) RoomsToPurge(ctx context.Context, tx uow.Tx, endedBefo
 	if err != nil {
 		return nil, err
 	}
-	ids, err := q.ListVoiceRoomsToPurge(ctx, sqlitegen.ListVoiceRoomsToPurgeParams{EndedBefore: toMillis(endedBefore), After: after, RowLimit: int64(limit)})
+	ids, err := q.ListVoiceRoomsToPurge(ctx, voicegen.ListVoiceRoomsToPurgeParams{EndedBefore: toMillis(endedBefore), After: after, RowLimit: int64(limit)})
 	return ids, wrap(err, "list voice rooms to purge")
 }
 
@@ -133,7 +133,7 @@ func (r *VoiceRepository) RoomsRevisedBy(ctx context.Context, tx uow.Tx, account
 	if err != nil {
 		return nil, err
 	}
-	ids, err := q.ListVoiceRoomsRevisedBy(ctx, sqlitegen.ListVoiceRoomsRevisedByParams{AccountID: accountID, RowLimit: int64(limit)})
+	ids, err := q.ListVoiceRoomsRevisedBy(ctx, voicegen.ListVoiceRoomsRevisedByParams{AccountID: accountID, RowLimit: int64(limit)})
 	return ids, wrap(err, "list voice rooms revised by an account")
 }
 
@@ -147,5 +147,5 @@ func (r *VoiceRepository) EraseRevisionTexts(ctx context.Context, tx uow.Tx, acc
 	if err != nil {
 		return err
 	}
-	return wrap(q.EraseVoiceRoomRevisionTexts(ctx, sqlitegen.EraseVoiceRoomRevisionTextsParams{AccountID: accountID, Ids: ids}), "erase voice room revision texts")
+	return wrap(q.EraseVoiceRoomRevisionTexts(ctx, voicegen.EraseVoiceRoomRevisionTextsParams{AccountID: accountID, Ids: ids}), "erase voice room revision texts")
 }

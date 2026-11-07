@@ -6,7 +6,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/mycroblog/my/internal/adapter/db/sqlite/sqlitegen"
+	"github.com/mycroblog/my/internal/adapter/db/sqlite/identitygen"
 	appidentity "github.com/mycroblog/my/internal/app/identity"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/identity"
@@ -18,7 +18,7 @@ func (r *IdentityRepository) InsertSessionOrigin(ctx context.Context, tx uow.Tx,
 	if err != nil {
 		return err
 	}
-	err = q.InsertSessionOrigin(ctx, sqlitegen.InsertSessionOriginParams{
+	err = q.InsertSessionOrigin(ctx, identitygen.InsertSessionOriginParams{
 		SessionID: o.SessionID, UserID: o.UserID, Ip: toNullString(o.IP), UserAgent: toNullString(o.UserAgent),
 		CreatedAt: toMillis(o.CreatedAt),
 	})
@@ -31,7 +31,7 @@ func (r *IdentityRepository) InsertRegistrationOrigin(ctx context.Context, tx uo
 	if err != nil {
 		return err
 	}
-	err = q.InsertRegistrationOrigin(ctx, sqlitegen.InsertRegistrationOriginParams{
+	err = q.InsertRegistrationOrigin(ctx, identitygen.InsertRegistrationOriginParams{
 		UserID: o.UserID, Ip: o.IP, RecordedAt: toMillis(o.RecordedAt),
 	})
 	return wrap(err, "insert registration origin")
@@ -68,7 +68,7 @@ func (r *IdentityRepository) DeleteSessionOriginsBefore(ctx context.Context, tx 
 	if err != nil {
 		return 0, err
 	}
-	n, err := q.DeleteSessionOriginsBefore(ctx, sqlitegen.DeleteSessionOriginsBeforeParams{
+	n, err := q.DeleteSessionOriginsBefore(ctx, identitygen.DeleteSessionOriginsBeforeParams{
 		CreatedBefore: toMillis(t), ExceptUserIds: ids, BatchLimit: int64(limit),
 	})
 	return n, wrap(err, "delete session origins")
@@ -84,7 +84,7 @@ func (r *IdentityRepository) DeleteRegistrationOriginsBefore(ctx context.Context
 	if err != nil {
 		return 0, err
 	}
-	n, err := q.DeleteRegistrationOriginsBefore(ctx, sqlitegen.DeleteRegistrationOriginsBeforeParams{
+	n, err := q.DeleteRegistrationOriginsBefore(ctx, identitygen.DeleteRegistrationOriginsBeforeParams{
 		RecordedBefore: toMillis(t), ExceptUserIds: ids, BatchLimit: int64(limit),
 	})
 	return n, wrap(err, "delete registration origins")

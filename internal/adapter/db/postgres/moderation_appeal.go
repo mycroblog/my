@@ -6,7 +6,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/mycroblog/my/internal/adapter/db/postgres/postgresgen"
+	"github.com/mycroblog/my/internal/adapter/db/postgres/moderationgen"
 	appmoderation "github.com/mycroblog/my/internal/app/moderation"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/moderation"
@@ -20,7 +20,7 @@ func (r *ModerationRepository) InsertAppeal(ctx context.Context, tx uow.Tx, a mo
 	if err != nil {
 		return err
 	}
-	n, err := q.InsertModerationAppeal(ctx, postgresgen.InsertModerationAppealParams{
+	n, err := q.InsertModerationAppeal(ctx, moderationgen.InsertModerationAppealParams{
 		ID: a.ID, ActionID: a.ActionID, AccountID: a.AccountID, Body: a.Text, SubmittedAt: a.SubmittedAt,
 	})
 	if err != nil {
@@ -38,7 +38,7 @@ func (r *ModerationRepository) InsertAppealDecision(ctx context.Context, tx uow.
 	if err != nil {
 		return err
 	}
-	n, err := q.InsertModerationAppealDecision(ctx, postgresgen.InsertModerationAppealDecisionParams{
+	n, err := q.InsertModerationAppealDecision(ctx, moderationgen.InsertModerationAppealDecisionParams{
 		AppealID: d.AppealID, Decision: string(d.Decision), PublicReason: toNullString(d.PublicReason),
 		DecidedByUserID: toNullString(d.DecidedByUserID), DecidedAt: d.DecidedAt,
 	})
@@ -57,7 +57,7 @@ func (r *ModerationRepository) UpsertAppealStatus(ctx context.Context, tx uow.Tx
 	if err != nil {
 		return err
 	}
-	return wrap(q.UpsertAppealState(ctx, postgresgen.UpsertAppealStateParams{
+	return wrap(q.UpsertAppealState(ctx, moderationgen.UpsertAppealStateParams{
 		AppealID: st.AppealID, State: string(st.State), Since: st.Since,
 	}), "upsert appeal state")
 }
@@ -76,7 +76,7 @@ func (r *ModerationRepository) FindAppeal(ctx context.Context, id string) (moder
 	return getAppeal(ctx, r.db.reader(), id)
 }
 
-func getAppeal(ctx context.Context, q *postgresgen.Queries, id string) (moderation.AppealRecord, error) {
+func getAppeal(ctx context.Context, q *genQueries, id string) (moderation.AppealRecord, error) {
 	row, err := q.GetModerationAppeal(ctx, id)
 	if err != nil {
 		return moderation.AppealRecord{}, notFound(err, appmoderation.ErrNotFound, "moderation appeal "+id)
@@ -95,7 +95,7 @@ func (r *ModerationRepository) AppealsOfActions(ctx context.Context, actionIDs [
 	}
 	out := make([]moderation.AppealRecord, len(rows))
 	for i, row := range rows {
-		out[i] = appealRecord(postgresgen.GetModerationAppealRow(row))
+		out[i] = appealRecord(moderationgen.GetModerationAppealRow(row))
 	}
 	return out, nil
 }
@@ -106,7 +106,7 @@ func (r *ModerationRepository) ListAppeals(ctx context.Context, q appmoderation.
 	if err != nil {
 		return nil, err
 	}
-	rows, err := r.db.reader().ListModerationAppeals(ctx, postgresgen.ListModerationAppealsParams{
+	rows, err := r.db.reader().ListModerationAppeals(ctx, moderationgen.ListModerationAppealsParams{
 		State: string(q.State), Before: toNullString(q.Before), Lim: lim,
 	})
 	if err != nil {
@@ -114,7 +114,7 @@ func (r *ModerationRepository) ListAppeals(ctx context.Context, q appmoderation.
 	}
 	out := make([]moderation.AppealRecord, len(rows))
 	for i, row := range rows {
-		out[i] = appealRecord(postgresgen.GetModerationAppealRow(row))
+		out[i] = appealRecord(moderationgen.GetModerationAppealRow(row))
 	}
 	return out, nil
 }
@@ -125,7 +125,7 @@ func (r *ModerationRepository) CountAppeals(ctx context.Context, state moderatio
 	return n, wrap(err, "count appeals")
 }
 
-func appealRecord(row postgresgen.GetModerationAppealRow) moderation.AppealRecord {
+func appealRecord(row moderationgen.GetModerationAppealRow) moderation.AppealRecord {
 	rec := moderation.AppealRecord{Appeal: moderation.Appeal{
 		ID: row.ID, ActionID: row.ActionID, AccountID: row.AccountID, Text: row.Body, SubmittedAt: utc(row.SubmittedAt),
 	}}

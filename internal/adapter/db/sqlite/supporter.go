@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/mycroblog/my/internal/adapter/db/sqlite/sqlitegen"
+	"github.com/mycroblog/my/internal/adapter/db/sqlite/supportersgen"
 	"github.com/mycroblog/my/internal/app/supporters"
 	"github.com/mycroblog/my/internal/app/uow"
 	domain "github.com/mycroblog/my/internal/domain/supporters"
@@ -27,7 +27,7 @@ var _ supporters.Repository = (*SupporterRepository)(nil)
 func (d *DB) SupporterRepository() *SupporterRepository { return &SupporterRepository{db: d} }
 
 // q returns the queries in tx, or on the reader when tx is nil.
-func (r *SupporterRepository) q(tx uow.Tx) (*sqlitegen.Queries, error) {
+func (r *SupporterRepository) q(tx uow.Tx) (*genQueries, error) {
 	if tx == nil {
 		return r.db.reader(), nil
 	}
@@ -51,7 +51,7 @@ func (r *SupporterRepository) InsertProgramChange(ctx context.Context, tx uow.Tx
 	if c.Enabled {
 		state = "enabled"
 	}
-	return wrap(q.InsertSupporterProgramChange(ctx, sqlitegen.InsertSupporterProgramChangeParams{
+	return wrap(q.InsertSupporterProgramChange(ctx, supportersgen.InsertSupporterProgramChangeParams{
 		ID: c.ID, State: state, Provider: c.Provider, ChangedByUserID: toNullString(c.ChangedByUserID), ChangedAt: toMillis(c.ChangedAt),
 	}), "insert supporter program change")
 }
@@ -78,7 +78,7 @@ func (r *SupporterRepository) InsertPlan(ctx context.Context, tx uow.Tx, p domai
 	if err != nil {
 		return err
 	}
-	err = q.InsertSupporterPlan(ctx, sqlitegen.InsertSupporterPlanParams{
+	err = q.InsertSupporterPlan(ctx, supportersgen.InsertSupporterPlanParams{
 		ID: p.ID, RoleID: p.RoleID, Currency: p.Currency, CreatedByUserID: toNullString(p.CreatedByUserID), CreatedAt: toMillis(p.CreatedAt),
 	})
 	if isUniqueViolation(err, "supporter_plans.role_id") {
@@ -93,7 +93,7 @@ func (r *SupporterRepository) InsertPlanRevision(ctx context.Context, tx uow.Tx,
 	if err != nil {
 		return err
 	}
-	err = q.InsertSupporterPlanRevision(ctx, sqlitegen.InsertSupporterPlanRevisionParams{
+	err = q.InsertSupporterPlanRevision(ctx, supportersgen.InsertSupporterPlanRevisionParams{
 		ID: rev.ID, PlanID: rev.PlanID, Name: rev.Name, Description: rev.Description, Rank: int64(rev.Rank),
 		MonthlyAmountMinor: rev.MonthlyAmountMinor, AnnualDiscountPercent: int64(rev.AnnualDiscountPercent),
 		EmojiLimit: int64(rev.EmojiLimit), Visibility: string(rev.Visibility), RevisedByUserID: toNullString(rev.RevisedByUserID),
@@ -102,7 +102,7 @@ func (r *SupporterRepository) InsertPlanRevision(ctx context.Context, tx uow.Tx,
 	if err != nil {
 		return wrap(err, "insert supporter plan revision")
 	}
-	err = q.UpsertSupporterPlanHead(ctx, sqlitegen.UpsertSupporterPlanHeadParams{
+	err = q.UpsertSupporterPlanHead(ctx, supportersgen.UpsertSupporterPlanHeadParams{
 		PlanID: rev.PlanID, RevisionID: rev.ID, Rank: int64(rev.Rank), Visibility: string(rev.Visibility),
 	})
 	if isUniqueViolation(err, "supporter_plan_heads.rank") {
@@ -117,7 +117,7 @@ func (r *SupporterRepository) InsertPlanRetirement(ctx context.Context, tx uow.T
 	if err != nil {
 		return err
 	}
-	err = q.InsertSupporterPlanRetirement(ctx, sqlitegen.InsertSupporterPlanRetirementParams{
+	err = q.InsertSupporterPlanRetirement(ctx, supportersgen.InsertSupporterPlanRetirementParams{
 		PlanID: planID, RetiredByUserID: toNullString(byUserID), RetiredAt: toMillis(at),
 	})
 	if err != nil {
@@ -145,7 +145,7 @@ func (r *SupporterRepository) plans(ctx context.Context, tx uow.Tx, planID strin
 		if prices[h.PlanID] == nil {
 			prices[h.PlanID] = map[domain.Interval]supporters.Price{}
 		}
-		prices[h.PlanID][domain.Interval(h.Interval)] = priceFrom(sqlitegen.GetSupporterPriceRow{
+		prices[h.PlanID][domain.Interval(h.Interval)] = priceFrom(supportersgen.GetSupporterPriceRow{
 			ID: h.ID, PlanID: h.PlanID, Interval: h.Interval, AmountMinor: h.AmountMinor, Currency: h.Currency,
 			Provider: h.Provider, ProviderPriceID: h.ProviderPriceID, CreatedAt: h.CreatedAt, Archived: h.Archived,
 		})
@@ -200,7 +200,7 @@ func (r *SupporterRepository) FindPlan(ctx context.Context, tx uow.Tx, id string
 	return plans[0], nil
 }
 
-func priceFrom(row sqlitegen.GetSupporterPriceRow) supporters.Price {
+func priceFrom(row supportersgen.GetSupporterPriceRow) supporters.Price {
 	return supporters.Price{
 		ID: row.ID, PlanID: row.PlanID, Interval: domain.Interval(row.Interval), AmountMinor: row.AmountMinor,
 		Currency: row.Currency, Provider: row.Provider, Ref: supporters.PriceRef(row.ProviderPriceID),
@@ -214,7 +214,7 @@ func (r *SupporterRepository) InsertPrice(ctx context.Context, tx uow.Tx, p supp
 	if err != nil {
 		return err
 	}
-	return wrap(q.InsertSupporterPrice(ctx, sqlitegen.InsertSupporterPriceParams{
+	return wrap(q.InsertSupporterPrice(ctx, supportersgen.InsertSupporterPriceParams{
 		ID: p.ID, PlanID: p.PlanID, Interval: string(p.Interval), AmountMinor: p.AmountMinor, Currency: p.Currency,
 		Provider: p.Provider, ProviderPriceID: string(p.Ref), CreatedAt: toMillis(p.CreatedAt),
 	}), "insert supporter price")
@@ -226,7 +226,7 @@ func (r *SupporterRepository) SetPriceHead(ctx context.Context, tx uow.Tx, planI
 	if err != nil {
 		return err
 	}
-	return wrap(q.UpsertSupporterPriceHead(ctx, sqlitegen.UpsertSupporterPriceHeadParams{
+	return wrap(q.UpsertSupporterPriceHead(ctx, supportersgen.UpsertSupporterPriceHeadParams{
 		PlanID: planID, Interval: string(interval), PriceID: priceID,
 	}), "upsert supporter price head")
 }
@@ -237,7 +237,7 @@ func (r *SupporterRepository) InsertPriceArchival(ctx context.Context, tx uow.Tx
 	if err != nil {
 		return err
 	}
-	return wrap(q.InsertSupporterPriceArchival(ctx, sqlitegen.InsertSupporterPriceArchivalParams{
+	return wrap(q.InsertSupporterPriceArchival(ctx, supportersgen.InsertSupporterPriceArchivalParams{
 		PriceID: priceID, ArchivedAt: toMillis(at),
 	}), "insert supporter price archival")
 }
@@ -248,11 +248,11 @@ func (r *SupporterRepository) FindPriceByRef(ctx context.Context, tx uow.Tx, pro
 	if err != nil {
 		return supporters.Price{}, err
 	}
-	row, err := q.GetSupporterPriceByRef(ctx, sqlitegen.GetSupporterPriceByRefParams{Provider: provider, ProviderPriceID: string(ref)})
+	row, err := q.GetSupporterPriceByRef(ctx, supportersgen.GetSupporterPriceByRefParams{Provider: provider, ProviderPriceID: string(ref)})
 	if err != nil {
 		return supporters.Price{}, notFound(err, supporters.ErrNotFound, "supporter price "+string(ref))
 	}
-	return priceFrom(sqlitegen.GetSupporterPriceRow(row)), nil
+	return priceFrom(supportersgen.GetSupporterPriceRow(row)), nil
 }
 
 // FindPrice implements supporters.Repository.
@@ -274,7 +274,7 @@ func (r *SupporterRepository) InsertCustomer(ctx context.Context, tx uow.Tx, c s
 	if err != nil {
 		return err
 	}
-	return wrap(q.InsertSupporterCustomer(ctx, sqlitegen.InsertSupporterCustomerParams{
+	return wrap(q.InsertSupporterCustomer(ctx, supportersgen.InsertSupporterCustomerParams{
 		ID: c.ID, UserID: c.UserID, Provider: c.Provider, ProviderCustomerID: string(c.Ref), CreatedAt: toMillis(c.CreatedAt),
 	}), "insert supporter customer")
 }
@@ -285,7 +285,7 @@ func (r *SupporterRepository) FindCustomer(ctx context.Context, tx uow.Tx, provi
 	if err != nil {
 		return supporters.Customer{}, err
 	}
-	row, err := q.GetSupporterCustomer(ctx, sqlitegen.GetSupporterCustomerParams{Provider: provider, UserID: userID})
+	row, err := q.GetSupporterCustomer(ctx, supportersgen.GetSupporterCustomerParams{Provider: provider, UserID: userID})
 	if err != nil {
 		return supporters.Customer{}, notFound(err, supporters.ErrNotFound, "supporter customer of "+userID)
 	}
@@ -297,8 +297,8 @@ func (r *SupporterRepository) FindCustomer(ctx context.Context, tx uow.Tx, provi
 
 // insertTransition writes a transition with its grace and scheduled change and makes it the
 // current one of its subscription.
-func insertTransition(ctx context.Context, q *sqlitegen.Queries, t supporters.TransitionRecord, userID string) error {
-	err := q.InsertSupporterTransition(ctx, sqlitegen.InsertSupporterTransitionParams{
+func insertTransition(ctx context.Context, q *genQueries, t supporters.TransitionRecord, userID string) error {
+	err := q.InsertSupporterTransition(ctx, supportersgen.InsertSupporterTransitionParams{
 		ID: t.ID, SubscriptionID: t.SubscriptionID, State: string(t.State), PlanID: t.PlanID, PriceID: t.PriceID,
 		PeriodEndsAt: toNullMillisValue(t.PeriodEndsAt), Reason: string(t.Reason), OccurredAt: toMillis(t.OccurredAt),
 	})
@@ -306,7 +306,7 @@ func insertTransition(ctx context.Context, q *sqlitegen.Queries, t supporters.Tr
 		return wrap(err, "insert supporter transition")
 	}
 	if g := t.Grace; g != nil {
-		err := q.InsertSupporterGracePeriod(ctx, sqlitegen.InsertSupporterGracePeriodParams{
+		err := q.InsertSupporterGracePeriod(ctx, supportersgen.InsertSupporterGracePeriodParams{
 			TransitionID: t.ID, FailedAt: toMillis(g.FailedAt), EndsAt: toMillis(g.EndsAt),
 		})
 		if err != nil {
@@ -314,24 +314,24 @@ func insertTransition(ctx context.Context, q *sqlitegen.Queries, t supporters.Tr
 		}
 	}
 	if s := t.Scheduled; s != nil {
-		err := q.InsertSupporterScheduledChange(ctx, sqlitegen.InsertSupporterScheduledChangeParams{
+		err := q.InsertSupporterScheduledChange(ctx, supportersgen.InsertSupporterScheduledChangeParams{
 			TransitionID: t.ID, PriceID: s.PriceID, EffectiveAt: toMillis(s.EffectiveAt),
 		})
 		if err != nil {
 			return wrap(err, "insert supporter scheduled change")
 		}
 	}
-	return wrap(q.UpsertSupporterSubscriptionHead(ctx, sqlitegen.UpsertSupporterSubscriptionHeadParams{
+	return wrap(q.UpsertSupporterSubscriptionHead(ctx, supportersgen.UpsertSupporterSubscriptionHeadParams{
 		SubscriptionID: t.SubscriptionID, TransitionID: t.ID, UserID: userID, PlanID: t.PlanID, State: string(t.State),
 	}), "upsert supporter subscription head")
 }
 
 // setDeadline writes the deadline of a subscription, or removes it when d is nil.
-func setDeadline(ctx context.Context, q *sqlitegen.Queries, subscriptionID string, d *supporters.Deadline) error {
+func setDeadline(ctx context.Context, q *genQueries, subscriptionID string, d *supporters.Deadline) error {
 	if d == nil {
 		return wrap(q.DeleteSupporterDeadline(ctx, subscriptionID), "delete supporter deadline")
 	}
-	return wrap(q.UpsertSupporterDeadline(ctx, sqlitegen.UpsertSupporterDeadlineParams{
+	return wrap(q.UpsertSupporterDeadline(ctx, supportersgen.UpsertSupporterDeadlineParams{
 		SubscriptionID: subscriptionID, Kind: string(d.Kind), DueAt: toMillis(d.DueAt),
 	}), "upsert supporter deadline")
 }
@@ -342,14 +342,14 @@ func (r *SupporterRepository) InsertSubscription(ctx context.Context, tx uow.Tx,
 	if err != nil {
 		return err
 	}
-	err = q.InsertSupporterLiveSubscription(ctx, sqlitegen.InsertSupporterLiveSubscriptionParams{UserID: s.UserID, SubscriptionID: s.ID})
+	err = q.InsertSupporterLiveSubscription(ctx, supportersgen.InsertSupporterLiveSubscriptionParams{UserID: s.UserID, SubscriptionID: s.ID})
 	if isUniqueViolation(err, "supporter_live_subscriptions.user_id") {
 		return fmt.Errorf("user %s: %w", s.UserID, supporters.ErrLiveSubscription)
 	}
 	if err != nil {
 		return wrap(err, "insert supporter live subscription")
 	}
-	err = q.InsertSupporterSubscription(ctx, sqlitegen.InsertSupporterSubscriptionParams{
+	err = q.InsertSupporterSubscription(ctx, supportersgen.InsertSupporterSubscriptionParams{
 		ID: s.ID, UserID: s.UserID, PlanID: s.PlanID, PriceID: s.PriceID, Provider: s.Provider, CreatedAt: toMillis(s.CreatedAt),
 	})
 	if err != nil {
@@ -372,7 +372,7 @@ func (r *SupporterRepository) InsertCheckout(ctx context.Context, tx uow.Tx, c s
 	if err != nil {
 		return err
 	}
-	return wrap(q.InsertSupporterCheckout(ctx, sqlitegen.InsertSupporterCheckoutParams{
+	return wrap(q.InsertSupporterCheckout(ctx, supportersgen.InsertSupporterCheckoutParams{
 		ID: c.ID, SubscriptionID: c.SubscriptionID, Provider: c.Provider, ProviderCheckoutID: string(c.Ref),
 		ExpiresAt: toMillis(c.ExpiresAt), CreatedAt: toMillis(c.CreatedAt),
 	}), "insert supporter checkout")
@@ -384,7 +384,7 @@ func (r *SupporterRepository) LiveCheckouts(ctx context.Context, tx uow.Tx, subs
 	if err != nil {
 		return nil, err
 	}
-	rows, err := q.ListLiveSupporterCheckouts(ctx, sqlitegen.ListLiveSupporterCheckoutsParams{SubscriptionID: subscriptionID, Now: toMillis(now)})
+	rows, err := q.ListLiveSupporterCheckouts(ctx, supportersgen.ListLiveSupporterCheckoutsParams{SubscriptionID: subscriptionID, Now: toMillis(now)})
 	if err != nil {
 		return nil, wrap(err, "list live supporter checkouts")
 	}
@@ -401,7 +401,7 @@ func (r *SupporterRepository) InsertDuplicate(ctx context.Context, tx uow.Tx, d 
 	if err != nil {
 		return false, err
 	}
-	n, err := q.InsertSupporterDuplicate(ctx, sqlitegen.InsertSupporterDuplicateParams{
+	n, err := q.InsertSupporterDuplicate(ctx, supportersgen.InsertSupporterDuplicateParams{
 		ID: d.ID, SubscriptionID: d.SubscriptionID, Provider: d.Provider, ProviderSubscriptionID: string(d.Ref), DetectedAt: toMillis(d.DetectedAt),
 	})
 	if err != nil {
@@ -416,7 +416,7 @@ func (r *SupporterRepository) CancelDuplicate(ctx context.Context, tx uow.Tx, du
 	if err != nil {
 		return err
 	}
-	return wrap(q.InsertSupporterDuplicateCancellation(ctx, sqlitegen.InsertSupporterDuplicateCancellationParams{DuplicateID: duplicateID, DecidedAt: toMillis(at)}), "record the cancellation of a supporter duplicate")
+	return wrap(q.InsertSupporterDuplicateCancellation(ctx, supportersgen.InsertSupporterDuplicateCancellationParams{DuplicateID: duplicateID, DecidedAt: toMillis(at)}), "record the cancellation of a supporter duplicate")
 }
 
 // SettleDuplicate implements supporters.Repository.
@@ -425,7 +425,7 @@ func (r *SupporterRepository) SettleDuplicate(ctx context.Context, tx uow.Tx, du
 	if err != nil {
 		return err
 	}
-	return wrap(q.InsertSupporterDuplicateSettlement(ctx, sqlitegen.InsertSupporterDuplicateSettlementParams{DuplicateID: duplicateID, SettledAt: toMillis(at)}), "settle supporter duplicate")
+	return wrap(q.InsertSupporterDuplicateSettlement(ctx, supportersgen.InsertSupporterDuplicateSettlementParams{DuplicateID: duplicateID, SettledAt: toMillis(at)}), "settle supporter duplicate")
 }
 
 // FindDuplicate implements supporters.Repository.
@@ -434,7 +434,7 @@ func (r *SupporterRepository) FindDuplicate(ctx context.Context, tx uow.Tx, prov
 	if err != nil {
 		return supporters.Duplicate{}, err
 	}
-	row, err := q.GetSupporterDuplicate(ctx, sqlitegen.GetSupporterDuplicateParams{Provider: provider, ProviderSubscriptionID: string(ref)})
+	row, err := q.GetSupporterDuplicate(ctx, supportersgen.GetSupporterDuplicateParams{Provider: provider, ProviderSubscriptionID: string(ref)})
 	if err != nil {
 		return supporters.Duplicate{}, notFound(err, supporters.ErrNotFound, "supporter duplicate "+string(ref))
 	}
@@ -461,7 +461,7 @@ func (r *SupporterRepository) UnsettledDuplicates(ctx context.Context, provider 
 }
 
 // subscription reads a subscription with its current transition, link, and latest checkout.
-func subscription(ctx context.Context, q *sqlitegen.Queries, id string) (supporters.SubscriptionRecord, error) {
+func subscription(ctx context.Context, q *genQueries, id string) (supporters.SubscriptionRecord, error) {
 	row, err := q.GetSupporterSubscription(ctx, id)
 	if err != nil {
 		return supporters.SubscriptionRecord{}, notFound(err, supporters.ErrNotFound, "supporter subscription "+id)
@@ -537,7 +537,7 @@ func (r *SupporterRepository) MarkSubscriptionRead(ctx context.Context, tx uow.T
 	if err != nil {
 		return false, err
 	}
-	n, err := q.MarkSupporterSubscriptionRead(ctx, sqlitegen.MarkSupporterSubscriptionReadParams{SubscriptionID: id, ReadAt: toMillis(at)})
+	n, err := q.MarkSupporterSubscriptionRead(ctx, supportersgen.MarkSupporterSubscriptionReadParams{SubscriptionID: id, ReadAt: toMillis(at)})
 	return n > 0, wrap(err, "mark the read of a subscription")
 }
 
@@ -547,7 +547,7 @@ func (r *SupporterRepository) FindSubscriptionIDByRef(ctx context.Context, tx uo
 	if err != nil {
 		return "", err
 	}
-	id, err := q.GetSupporterSubscriptionIDByRef(ctx, sqlitegen.GetSupporterSubscriptionIDByRefParams{
+	id, err := q.GetSupporterSubscriptionIDByRef(ctx, supportersgen.GetSupporterSubscriptionIDByRefParams{
 		Provider: provider, ProviderSubscriptionID: string(ref),
 	})
 	if err != nil {
@@ -562,7 +562,7 @@ func (r *SupporterRepository) FindSubscriptionIDByCheckout(ctx context.Context, 
 	if err != nil {
 		return "", err
 	}
-	id, err := q.GetSupporterSubscriptionIDByCheckout(ctx, sqlitegen.GetSupporterSubscriptionIDByCheckoutParams{
+	id, err := q.GetSupporterSubscriptionIDByCheckout(ctx, supportersgen.GetSupporterSubscriptionIDByCheckoutParams{
 		Provider: provider, ProviderCheckoutID: string(ref),
 	})
 	if err != nil {
@@ -590,7 +590,7 @@ func (r *SupporterRepository) InsertLink(ctx context.Context, tx uow.Tx, subscri
 	if err != nil {
 		return err
 	}
-	return wrap(q.InsertSupporterLink(ctx, sqlitegen.InsertSupporterLinkParams{
+	return wrap(q.InsertSupporterLink(ctx, supportersgen.InsertSupporterLinkParams{
 		SubscriptionID: subscriptionID, Provider: provider, ProviderSubscriptionID: string(ref), LinkedAt: toMillis(at),
 	}), "insert supporter link")
 }
@@ -605,7 +605,7 @@ func (r *SupporterRepository) InsertTransition(ctx context.Context, tx uow.Tx, t
 		return err
 	}
 	if t.State.Live() {
-		err = q.EnsureSupporterLiveSubscription(ctx, sqlitegen.EnsureSupporterLiveSubscriptionParams{UserID: userID, SubscriptionID: t.SubscriptionID})
+		err = q.EnsureSupporterLiveSubscription(ctx, supportersgen.EnsureSupporterLiveSubscriptionParams{UserID: userID, SubscriptionID: t.SubscriptionID})
 	} else {
 		err = q.DeleteSupporterLiveSubscription(ctx, t.SubscriptionID)
 	}
@@ -621,7 +621,7 @@ func (r *SupporterRepository) InsertReversal(ctx context.Context, tx uow.Tx, rev
 	if err != nil {
 		return false, err
 	}
-	n, err := q.InsertSupporterReversal(ctx, sqlitegen.InsertSupporterReversalParams{
+	n, err := q.InsertSupporterReversal(ctx, supportersgen.InsertSupporterReversalParams{
 		ID: rev.ID, SubscriptionID: rev.SubscriptionID, Kind: string(rev.Kind), Provider: rev.Provider,
 		ProviderReversalID: rev.ProviderID, OccurredAt: toMillis(rev.OccurredAt),
 	})
@@ -647,13 +647,13 @@ func (r *SupporterRepository) KnownReversals(ctx context.Context, provider strin
 	if err != nil {
 		return nil, err
 	}
-	out, err := r.db.reader().ListKnownSupporterReversals(ctx, sqlitegen.ListKnownSupporterReversalsParams{Provider: provider, Ids: list})
+	out, err := r.db.reader().ListKnownSupporterReversals(ctx, supportersgen.ListKnownSupporterReversalsParams{Provider: provider, Ids: list})
 	return out, wrap(err, "list known supporter reversals")
 }
 
 // OpenCheckouts implements supporters.Repository.
 func (r *SupporterRepository) OpenCheckouts(ctx context.Context, provider string, now time.Time) ([]supporters.CheckoutRef, error) {
-	rows, err := r.db.reader().ListOpenSupporterCheckouts(ctx, sqlitegen.ListOpenSupporterCheckoutsParams{Provider: provider, Now: toMillis(now)})
+	rows, err := r.db.reader().ListOpenSupporterCheckouts(ctx, supportersgen.ListOpenSupporterCheckoutsParams{Provider: provider, Now: toMillis(now)})
 	if err != nil {
 		return nil, wrap(err, "list open supporter checkouts")
 	}
@@ -666,7 +666,7 @@ func (r *SupporterRepository) OpenCheckouts(ctx context.Context, provider string
 
 // DueDeadlines implements supporters.Repository.
 func (r *SupporterRepository) DueDeadlines(ctx context.Context, now time.Time, limit int) ([]supporters.Deadline, error) {
-	rows, err := r.db.reader().ListDueSupporterDeadlines(ctx, sqlitegen.ListDueSupporterDeadlinesParams{Now: toMillis(now), Lim: int64(limit)})
+	rows, err := r.db.reader().ListDueSupporterDeadlines(ctx, supportersgen.ListDueSupporterDeadlinesParams{Now: toMillis(now), Lim: int64(limit)})
 	if err != nil {
 		return nil, wrap(err, "list due supporter deadlines")
 	}
@@ -680,7 +680,7 @@ func (r *SupporterRepository) DueDeadlines(ctx context.Context, now time.Time, l
 // ListSubscriptions implements supporters.Repository.
 func (r *SupporterRepository) ListSubscriptions(ctx context.Context, f supporters.SubscriptionFilter) ([]supporters.SubscriptionRecord, error) {
 	q := r.db.reader()
-	ids, err := q.ListSupporterSubscriptionIDs(ctx, sqlitegen.ListSupporterSubscriptionIDsParams{
+	ids, err := q.ListSupporterSubscriptionIDs(ctx, supportersgen.ListSupporterSubscriptionIDsParams{
 		PlanID: f.PlanID, State: string(f.State), Before: f.Before, Lim: int64(f.Limit),
 	})
 	if err != nil {
@@ -766,7 +766,7 @@ func (r *SupporterRepository) InsertListing(ctx context.Context, tx uow.Tx, user
 	if err != nil {
 		return err
 	}
-	return wrap(q.InsertSupporterListing(ctx, sqlitegen.InsertSupporterListingParams{UserID: userID, CreatedAt: toMillis(at)}), "insert supporter listing")
+	return wrap(q.InsertSupporterListing(ctx, supportersgen.InsertSupporterListingParams{UserID: userID, CreatedAt: toMillis(at)}), "insert supporter listing")
 }
 
 // HasListing implements supporters.Repository.
@@ -781,7 +781,7 @@ func (r *SupporterRepository) HasListing(ctx context.Context, tx uow.Tx, userID 
 
 // ListListings implements supporters.Repository.
 func (r *SupporterRepository) ListListings(ctx context.Context, f supporters.ListingFilter) ([]supporters.Listing, error) {
-	params := sqlitegen.ListSupporterListingsParams{PlanID: f.PlanID, Lim: int64(f.Limit)}
+	params := supportersgen.ListSupporterListingsParams{PlanID: f.PlanID, Lim: int64(f.Limit)}
 	if f.After != nil {
 		params.AfterUserID, params.AfterRank, params.AfterAt = f.After.UserID, int64(f.After.Rank), toMillis(f.After.ListedAt)
 	}

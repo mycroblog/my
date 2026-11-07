@@ -6,7 +6,9 @@ import (
 	"context"
 	"time"
 
-	"github.com/mycroblog/my/internal/adapter/db/postgres/postgresgen"
+	"github.com/mycroblog/my/internal/adapter/db/postgres/accountgen"
+	"github.com/mycroblog/my/internal/adapter/db/postgres/contentgen"
+	"github.com/mycroblog/my/internal/adapter/db/postgres/federationgen"
 	appaccount "github.com/mycroblog/my/internal/app/account"
 	appcontent "github.com/mycroblog/my/internal/app/content"
 	appfederation "github.com/mycroblog/my/internal/app/federation"
@@ -31,7 +33,7 @@ func (r *StatusRepository) ListRemoteStatusesToPurge(ctx context.Context, tx uow
 	if err != nil {
 		return nil, err
 	}
-	rows, err := q.ListRemoteStatusesToPurge(ctx, postgresgen.ListRemoteStatusesToPurgeParams{
+	rows, err := q.ListRemoteStatusesToPurge(ctx, contentgen.ListRemoteStatusesToPurgeParams{
 		After:              toNullString(pq.After),
 		IDBefore:           purgeIDBound(pq),
 		AnyBefore:          pq.Before,
@@ -58,7 +60,7 @@ func (r *StatusRepository) ListRelayedStatusesToPurge(ctx context.Context, tx uo
 	if err != nil {
 		return nil, err
 	}
-	rows, err := q.ListRelayedStatusesToPurge(ctx, postgresgen.ListRelayedStatusesToPurgeParams{
+	rows, err := q.ListRelayedStatusesToPurge(ctx, contentgen.ListRelayedStatusesToPurgeParams{
 		After: toNullString(pq.After), IDBefore: kernel.UUIDv7Floor(pq.Before.Add(time.Millisecond)), RelayedBefore: pq.Before, BatchLimit: n,
 	})
 	if err != nil {
@@ -77,7 +79,7 @@ func (r *StatusRepository) InsertRelayedStatus(ctx context.Context, tx uow.Tx, s
 	if err != nil {
 		return err
 	}
-	err = q.InsertRelayedStatus(ctx, postgresgen.InsertRelayedStatusParams{StatusID: statusID, RelayID: relayID, ReceivedAt: receivedAt})
+	err = q.InsertRelayedStatus(ctx, contentgen.InsertRelayedStatusParams{StatusID: statusID, RelayID: relayID, ReceivedAt: receivedAt})
 	return wrap(err, "insert relayed status")
 }
 
@@ -138,7 +140,7 @@ func (r *FederationRepository) DeleteReceivedDocumentsBefore(ctx context.Context
 	if err != nil {
 		return 0, err
 	}
-	n, err := q.DeleteReceivedActivityDocumentsBefore(ctx, postgresgen.DeleteReceivedActivityDocumentsBeforeParams{
+	n, err := q.DeleteReceivedActivityDocumentsBefore(ctx, federationgen.DeleteReceivedActivityDocumentsBeforeParams{
 		ReceivedBefore: t, BatchLimit: batch,
 	})
 	return n, wrap(err, "delete received documents")
@@ -154,7 +156,7 @@ func (r *FederationRepository) DeleteReceivedActivitiesBefore(ctx context.Contex
 	if err != nil {
 		return 0, err
 	}
-	n, err := q.DeleteReceivedActivitiesBefore(ctx, postgresgen.DeleteReceivedActivitiesBeforeParams{
+	n, err := q.DeleteReceivedActivitiesBefore(ctx, federationgen.DeleteReceivedActivitiesBeforeParams{
 		ReceivedBefore: t, BatchLimit: batch,
 	})
 	return n, wrap(err, "delete received activities")
@@ -170,7 +172,7 @@ func (r *FederationRepository) DeleteRemoteFollowTombstonesBefore(ctx context.Co
 	if err != nil {
 		return 0, err
 	}
-	n, err := q.DeleteRemoteFollowTombstonesBefore(ctx, postgresgen.DeleteRemoteFollowTombstonesBeforeParams{
+	n, err := q.DeleteRemoteFollowTombstonesBefore(ctx, federationgen.DeleteRemoteFollowTombstonesBeforeParams{
 		ReceivedBefore: t, BatchLimit: batch,
 	})
 	return n, wrap(err, "delete remote follow tombstones")
@@ -186,7 +188,7 @@ func (r *FederationRepository) DeleteRemoteObjectTombstonesBefore(ctx context.Co
 	if err != nil {
 		return 0, err
 	}
-	n, err := q.DeleteRemoteObjectTombstonesBefore(ctx, postgresgen.DeleteRemoteObjectTombstonesBeforeParams{
+	n, err := q.DeleteRemoteObjectTombstonesBefore(ctx, federationgen.DeleteRemoteObjectTombstonesBeforeParams{
 		ReceivedBefore: t, BatchLimit: batch,
 	})
 	return n, wrap(err, "delete remote object tombstones")
@@ -202,7 +204,7 @@ func (r *FederationRepository) DeleteOutboundDocumentsBefore(ctx context.Context
 	if err != nil {
 		return 0, err
 	}
-	n, err := q.DeleteOutboundActivityDocumentsBefore(ctx, postgresgen.DeleteOutboundActivityDocumentsBeforeParams{
+	n, err := q.DeleteOutboundActivityDocumentsBefore(ctx, federationgen.DeleteOutboundActivityDocumentsBeforeParams{
 		IDBefore: kernel.UUIDv7Floor(t.Add(time.Millisecond)), BuiltBefore: t, BatchLimit: batch,
 	})
 	return n, wrap(err, "delete outbound documents")
@@ -218,7 +220,7 @@ func (r *FederationRepository) DeleteDeliveryAttemptsBefore(ctx context.Context,
 	if err != nil {
 		return 0, err
 	}
-	n, err := q.DeleteDeliveryAttemptsBefore(ctx, postgresgen.DeleteDeliveryAttemptsBeforeParams{
+	n, err := q.DeleteDeliveryAttemptsBefore(ctx, federationgen.DeleteDeliveryAttemptsBeforeParams{
 		IDBefore: kernel.UUIDv7Floor(t.Add(time.Millisecond)), AttemptedBefore: t, BatchLimit: batch,
 	})
 	return n, wrap(err, "delete delivery attempts")
@@ -230,7 +232,7 @@ func (r *AccountRepository) ListRemoteAccountsWithPastProfiles(ctx context.Conte
 	if err != nil {
 		return nil, err
 	}
-	ids, err := r.db.reader().ListRemoteAccountsWithPastProfiles(ctx, postgresgen.ListRemoteAccountsWithPastProfilesParams{
+	ids, err := r.db.reader().ListRemoteAccountsWithPastProfiles(ctx, accountgen.ListRemoteAccountsWithPastProfilesParams{
 		After: toNullString(after), BatchLimit: batch,
 	})
 	return ids, wrap(err, "list remote accounts with past profiles")
@@ -262,7 +264,7 @@ func (r *FederationRepository) DeleteSupersededStatusCreates(ctx context.Context
 	if err != nil {
 		return 0, err
 	}
-	ids, err := q.ListSupersededStatusCreates(ctx, postgresgen.ListSupersededStatusCreatesParams{CreatedBefore: t, BatchLimit: batch})
+	ids, err := q.ListSupersededStatusCreates(ctx, federationgen.ListSupersededStatusCreatesParams{CreatedBefore: t, BatchLimit: batch})
 	if err != nil {
 		return 0, wrap(err, "list superseded status creates")
 	}
@@ -279,7 +281,7 @@ func (r *FederationRepository) DeleteExpiredOutboundActivities(ctx context.Conte
 	if err != nil {
 		return 0, err
 	}
-	ids, err := q.ListExpiredOutboundActivities(ctx, postgresgen.ListExpiredOutboundActivitiesParams{CreatedBefore: t, BatchLimit: batch})
+	ids, err := q.ListExpiredOutboundActivities(ctx, federationgen.ListExpiredOutboundActivitiesParams{CreatedBefore: t, BatchLimit: batch})
 	if err != nil {
 		return 0, wrap(err, "list expired outbound activities")
 	}
@@ -287,7 +289,7 @@ func (r *FederationRepository) DeleteExpiredOutboundActivities(ctx context.Conte
 }
 
 // deleteOutboundActivities deletes activities with their children, children first.
-func deleteOutboundActivities(ctx context.Context, q *postgresgen.Queries, ids []string) error {
+func deleteOutboundActivities(ctx context.Context, q *genQueries, ids []string) error {
 	if len(ids) == 0 {
 		return nil
 	}
@@ -306,7 +308,7 @@ func (r *FederationRepository) DeleteNodeInfoObservationsBefore(ctx context.Cont
 	if err != nil {
 		return 0, err
 	}
-	n, err := q.DeleteNodeInfoObservationsBefore(ctx, postgresgen.DeleteNodeInfoObservationsBeforeParams{
+	n, err := q.DeleteNodeInfoObservationsBefore(ctx, federationgen.DeleteNodeInfoObservationsBeforeParams{
 		IDBefore: kernel.UUIDv7Floor(t.Add(time.Millisecond)), ObservedBefore: t, BatchLimit: batch,
 	})
 	return n, wrap(err, "delete nodeinfo observations")
@@ -322,7 +324,7 @@ func (r *FederationRepository) DeleteAvailabilityEventsBefore(ctx context.Contex
 	if err != nil {
 		return 0, err
 	}
-	n, err := q.DeleteAvailabilityEventsBefore(ctx, postgresgen.DeleteAvailabilityEventsBeforeParams{
+	n, err := q.DeleteAvailabilityEventsBefore(ctx, federationgen.DeleteAvailabilityEventsBeforeParams{
 		IDBefore: kernel.UUIDv7Floor(t.Add(time.Millisecond)), OccurredBefore: t, BatchLimit: batch,
 	})
 	return n, wrap(err, "delete availability events")
@@ -338,7 +340,7 @@ func (r *StatusRepository) DeleteRetentionDeletionsBefore(ctx context.Context, t
 	if err != nil {
 		return 0, err
 	}
-	n, err := q.DeleteRetentionDeletionsBefore(ctx, postgresgen.DeleteRetentionDeletionsBeforeParams{DeletedBefore: t, BatchLimit: batch})
+	n, err := q.DeleteRetentionDeletionsBefore(ctx, contentgen.DeleteRetentionDeletionsBeforeParams{DeletedBefore: t, BatchLimit: batch})
 	return n, wrap(err, "delete retention deletions")
 }
 
@@ -352,7 +354,7 @@ func (r *AccountRepository) DeleteHandleVerificationsBefore(ctx context.Context,
 	if err != nil {
 		return 0, err
 	}
-	n, err := q.DeleteHandleVerificationsBefore(ctx, postgresgen.DeleteHandleVerificationsBeforeParams{
+	n, err := q.DeleteHandleVerificationsBefore(ctx, accountgen.DeleteHandleVerificationsBeforeParams{
 		IDBefore: kernel.UUIDv7Floor(t.Add(time.Millisecond)), CheckedBefore: t, BatchLimit: batch,
 	})
 	return n, wrap(err, "delete handle verifications")

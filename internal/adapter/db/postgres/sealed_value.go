@@ -6,7 +6,10 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/mycroblog/my/internal/adapter/db/postgres/postgresgen"
+	"github.com/mycroblog/my/internal/adapter/db/postgres/accountgen"
+	"github.com/mycroblog/my/internal/adapter/db/postgres/identitygen"
+	"github.com/mycroblog/my/internal/adapter/db/postgres/instancegen"
+	"github.com/mycroblog/my/internal/adapter/db/postgres/webhookgen"
 	"github.com/mycroblog/my/internal/app/rewrap"
 	"github.com/mycroblog/my/internal/app/uow"
 )
@@ -43,32 +46,32 @@ func (s *SealedValueStore) List(ctx context.Context, column, after string, limit
 	var out []rewrap.Value
 	switch column {
 	case sealedAccountPrivateKeys:
-		var rows []postgresgen.ListSealedAccountPrivateKeysRow
-		rows, err = q.ListSealedAccountPrivateKeys(ctx, postgresgen.ListSealedAccountPrivateKeysParams{After: toNullString(after), PageLimit: pageLimit})
+		var rows []accountgen.ListSealedAccountPrivateKeysRow
+		rows, err = q.ListSealedAccountPrivateKeys(ctx, accountgen.ListSealedAccountPrivateKeysParams{After: toNullString(after), PageLimit: pageLimit})
 		for _, r := range rows {
 			out = append(out, rewrap.Value{RowID: r.RowID, Sealed: r.Sealed})
 		}
 	case sealedLoginProviderSecrets:
-		var rows []postgresgen.ListSealedLoginProviderSecretsRow
-		rows, err = q.ListSealedLoginProviderSecrets(ctx, postgresgen.ListSealedLoginProviderSecretsParams{After: toNullString(after), PageLimit: pageLimit})
+		var rows []identitygen.ListSealedLoginProviderSecretsRow
+		rows, err = q.ListSealedLoginProviderSecrets(ctx, identitygen.ListSealedLoginProviderSecretsParams{After: toNullString(after), PageLimit: pageLimit})
 		for _, r := range rows {
 			out = append(out, rewrap.Value{RowID: r.RowID, Sealed: r.Sealed})
 		}
 	case sealedTOTPEnrollmentSecrets:
-		var rows []postgresgen.ListSealedTOTPEnrollmentSecretsRow
-		rows, err = q.ListSealedTOTPEnrollmentSecrets(ctx, postgresgen.ListSealedTOTPEnrollmentSecretsParams{After: toNullString(after), PageLimit: pageLimit})
+		var rows []identitygen.ListSealedTOTPEnrollmentSecretsRow
+		rows, err = q.ListSealedTOTPEnrollmentSecrets(ctx, identitygen.ListSealedTOTPEnrollmentSecretsParams{After: toNullString(after), PageLimit: pageLimit})
 		for _, r := range rows {
 			out = append(out, rewrap.Value{RowID: r.RowID, Sealed: r.Sealed})
 		}
 	case sealedInstanceSecrets:
-		var rows []postgresgen.ListSealedInstanceSecretsRow
-		rows, err = q.ListSealedInstanceSecrets(ctx, postgresgen.ListSealedInstanceSecretsParams{After: toNullString(after), PageLimit: pageLimit})
+		var rows []instancegen.ListSealedInstanceSecretsRow
+		rows, err = q.ListSealedInstanceSecrets(ctx, instancegen.ListSealedInstanceSecretsParams{After: toNullString(after), PageLimit: pageLimit})
 		for _, r := range rows {
 			out = append(out, rewrap.Value{RowID: r.RowID, Sealed: r.Sealed})
 		}
 	case sealedWebhookSecrets:
-		var rows []postgresgen.ListSealedWebhookSecretsRow
-		rows, err = q.ListSealedWebhookSecrets(ctx, postgresgen.ListSealedWebhookSecretsParams{After: toNullString(after), PageLimit: pageLimit})
+		var rows []webhookgen.ListSealedWebhookSecretsRow
+		rows, err = q.ListSealedWebhookSecrets(ctx, webhookgen.ListSealedWebhookSecretsParams{After: toNullString(after), PageLimit: pageLimit})
 		for _, r := range rows {
 			out = append(out, rewrap.Value{RowID: r.RowID, Sealed: r.Sealed})
 		}
@@ -87,15 +90,15 @@ func (s *SealedValueStore) Replace(ctx context.Context, tx uow.Tx, column, rowID
 	var n int64
 	switch column {
 	case sealedAccountPrivateKeys:
-		n, err = q.ReplaceSealedAccountPrivateKeys(ctx, postgresgen.ReplaceSealedAccountPrivateKeysParams{Sealed: sealed, RowID: rowID, OldSealed: old})
+		n, err = q.ReplaceSealedAccountPrivateKeys(ctx, accountgen.ReplaceSealedAccountPrivateKeysParams{Sealed: sealed, RowID: rowID, OldSealed: old})
 	case sealedLoginProviderSecrets:
-		n, err = q.ReplaceSealedLoginProviderSecrets(ctx, postgresgen.ReplaceSealedLoginProviderSecretsParams{Sealed: sealed, RowID: rowID, OldSealed: old})
+		n, err = q.ReplaceSealedLoginProviderSecrets(ctx, identitygen.ReplaceSealedLoginProviderSecretsParams{Sealed: sealed, RowID: rowID, OldSealed: old})
 	case sealedTOTPEnrollmentSecrets:
-		n, err = q.ReplaceSealedTOTPEnrollmentSecrets(ctx, postgresgen.ReplaceSealedTOTPEnrollmentSecretsParams{Sealed: sealed, RowID: rowID, OldSealed: old})
+		n, err = q.ReplaceSealedTOTPEnrollmentSecrets(ctx, identitygen.ReplaceSealedTOTPEnrollmentSecretsParams{Sealed: sealed, RowID: rowID, OldSealed: old})
 	case sealedInstanceSecrets:
-		n, err = q.ReplaceSealedInstanceSecrets(ctx, postgresgen.ReplaceSealedInstanceSecretsParams{Sealed: sealed, RowID: rowID, OldSealed: old})
+		n, err = q.ReplaceSealedInstanceSecrets(ctx, instancegen.ReplaceSealedInstanceSecretsParams{Sealed: sealed, RowID: rowID, OldSealed: old})
 	case sealedWebhookSecrets:
-		n, err = q.ReplaceSealedWebhookSecrets(ctx, postgresgen.ReplaceSealedWebhookSecretsParams{Sealed: sealed, RowID: rowID, OldSealed: old})
+		n, err = q.ReplaceSealedWebhookSecrets(ctx, webhookgen.ReplaceSealedWebhookSecretsParams{Sealed: sealed, RowID: rowID, OldSealed: old})
 	default:
 		return false, fmt.Errorf("%w: %q", rewrap.ErrUnknownColumn, column)
 	}

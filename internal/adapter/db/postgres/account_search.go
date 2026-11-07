@@ -5,7 +5,7 @@ package postgres
 import (
 	"context"
 
-	"github.com/mycroblog/my/internal/adapter/db/postgres/postgresgen"
+	"github.com/mycroblog/my/internal/adapter/db/postgres/accountgen"
 	appaccount "github.com/mycroblog/my/internal/app/account"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/account"
@@ -25,7 +25,7 @@ func (r *AccountRepository) ReplaceSearchTerms(ctx context.Context, tx uow.Tx, a
 		return wrap(err, "delete account search terms")
 	}
 	for _, t := range terms {
-		if err := q.InsertAccountSearchTerm(ctx, postgresgen.InsertAccountSearchTermParams{
+		if err := q.InsertAccountSearchTerm(ctx, accountgen.InsertAccountSearchTermParams{
 			AccountID: accountID, Kind: string(t.Kind), Term: t.Term, IsLocal: t.IsLocal,
 		}); err != nil {
 			return wrap(err, "insert account search term")
@@ -82,7 +82,7 @@ func (r *AccountRepository) SearchTerms(ctx context.Context, low, high string, l
 	if err != nil {
 		return nil, err
 	}
-	rows, err := r.db.reader().SearchAccountTerms(ctx, postgresgen.SearchAccountTermsParams{Low: low, High: high, Lim: n})
+	rows, err := r.db.reader().SearchAccountTerms(ctx, accountgen.SearchAccountTermsParams{Low: low, High: high, Lim: n})
 	if err != nil {
 		return nil, wrap(err, "search account terms")
 	}

@@ -5,7 +5,7 @@ package postgres
 import (
 	"context"
 
-	"github.com/mycroblog/my/internal/adapter/db/postgres/postgresgen"
+	"github.com/mycroblog/my/internal/adapter/db/postgres/contentgen"
 	"github.com/mycroblog/my/internal/app/uow"
 )
 
@@ -15,7 +15,7 @@ func (r *StatusRepository) InsertSensitivityOverride(ctx context.Context, tx uow
 	if err != nil {
 		return err
 	}
-	return wrap(q.InsertStatusSensitivityOverride(ctx, postgresgen.InsertStatusSensitivityOverrideParams{
+	return wrap(q.InsertStatusSensitivityOverride(ctx, contentgen.InsertStatusSensitivityOverrideParams{
 		StatusID: statusID, SourceID: actionID,
 	}), "insert status sensitivity override")
 }
@@ -35,7 +35,7 @@ func (r *StatusRepository) InsertSensitivityOverrideOfHookDecision(ctx context.C
 	if err != nil {
 		return err
 	}
-	return wrap(q.InsertStatusSensitivityOverrideOfHookDecision(ctx, postgresgen.InsertStatusSensitivityOverrideOfHookDecisionParams{
+	return wrap(q.InsertStatusSensitivityOverrideOfHookDecision(ctx, contentgen.InsertStatusSensitivityOverrideOfHookDecisionParams{
 		StatusID: statusID, SourceID: decisionID,
 	}), "insert status sensitivity override of a hook decision")
 }

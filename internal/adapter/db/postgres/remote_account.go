@@ -6,7 +6,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/mycroblog/my/internal/adapter/db/postgres/postgresgen"
+	"github.com/mycroblog/my/internal/adapter/db/postgres/accountgen"
 	appaccount "github.com/mycroblog/my/internal/app/account"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/account"
@@ -22,7 +22,7 @@ func (r *AccountRepository) UpsertRemoteHead(ctx context.Context, tx uow.Tx, h a
 	if err != nil {
 		return err
 	}
-	err = q.UpsertRemoteAccountHead(ctx, postgresgen.UpsertRemoteAccountHeadParams{
+	err = q.UpsertRemoteAccountHead(ctx, accountgen.UpsertRemoteAccountHeadParams{
 		AccountID: h.AccountID, SnapshotID: h.SnapshotID, InboxUrl: h.InboxURL,
 		SharedInboxUrl: toNullString(h.SharedInboxURL), LastFetchedAt: h.LastFetchedAt,
 		ConsecutiveFetchFailures: failures,
@@ -39,14 +39,14 @@ func (r *AccountRepository) FindRemoteHead(ctx context.Context, accountID string
 	return remoteHeadFrom(row), nil
 }
 
-func keyFrom(row postgresgen.AccountKey) account.Key {
+func keyFrom(row accountgen.AccountKey) account.Key {
 	return account.Key{
 		ID: row.ID, AccountID: row.AccountID, KeyID: row.KeyID, Algorithm: account.KeyAlgorithm(row.Algorithm),
 		PublicKeyPEM: row.PublicKeyPem, Fingerprint: row.Fingerprint, CreatedAt: utc(row.CreatedAt),
 	}
 }
 
-func remoteHeadFrom(row postgresgen.RemoteAccountHead) account.RemoteHead {
+func remoteHeadFrom(row accountgen.RemoteAccountHead) account.RemoteHead {
 	return account.RemoteHead{
 		AccountID: row.AccountID, SnapshotID: row.SnapshotID, InboxURL: row.InboxUrl,
 		SharedInboxURL: fromNullString(row.SharedInboxUrl), LastFetchedAt: utc(row.LastFetchedAt),
@@ -54,7 +54,7 @@ func remoteHeadFrom(row postgresgen.RemoteAccountHead) account.RemoteHead {
 	}
 }
 
-func handleVerificationFrom(row postgresgen.RemoteAccountHandleVerification) account.HandleVerification {
+func handleVerificationFrom(row accountgen.RemoteAccountHandleVerification) account.HandleVerification {
 	return account.HandleVerification{
 		ID: row.ID, AccountID: row.AccountID, Username: row.Username, Domain: row.Domain,
 		Outcome: account.HandleOutcome(row.Outcome), CheckedAt: utc(row.CheckedAt),
@@ -80,7 +80,7 @@ func (r *AccountRepository) InsertRemoteAccount(ctx context.Context, tx uow.Tx, 
 	if err != nil {
 		return false, err
 	}
-	n, err := q.InsertRemoteAccount(ctx, postgresgen.InsertRemoteAccountParams{AccountID: ra.AccountID, FirstSeenAt: ra.FirstSeenAt})
+	n, err := q.InsertRemoteAccount(ctx, accountgen.InsertRemoteAccountParams{AccountID: ra.AccountID, FirstSeenAt: ra.FirstSeenAt})
 	return n > 0, wrap(err, "insert remote account")
 }
 
@@ -111,7 +111,7 @@ func (r *AccountRepository) FindRemoteProfileDigest(ctx context.Context, account
 	return remoteProfileDigest(ctx, r.db.reader(), accountID)
 }
 
-func remoteProfileDigest(ctx context.Context, q *postgresgen.Queries, accountID string) ([]byte, error) {
+func remoteProfileDigest(ctx context.Context, q *genQueries, accountID string) ([]byte, error) {
 	digest, err := q.GetCurrentRemoteProfileDigest(ctx, accountID)
 	if err != nil {
 		return nil, notFound(err, appaccount.ErrNotFound, "remote profile revision of "+accountID)
@@ -128,7 +128,7 @@ func (r *AccountRepository) FindLatestRemoteSnapshot(ctx context.Context, accoun
 	return remoteSnapshotFrom(row), nil
 }
 
-func remoteSnapshotFrom(row postgresgen.RemoteAccountSnapshot) account.RemoteSnapshot {
+func remoteSnapshotFrom(row accountgen.RemoteAccountSnapshot) account.RemoteSnapshot {
 	return account.RemoteSnapshot{
 		ID: row.ID, AccountID: row.AccountID, PreferredUsername: row.PreferredUsername,
 		ProfileURL: fromNullString(row.ProfileUrl), InboxURL: row.InboxUrl, SharedInboxURL: fromNullString(row.SharedInboxUrl),
@@ -163,7 +163,7 @@ func (r *AccountRepository) InsertRemoteSnapshot(ctx context.Context, tx uow.Tx,
 	if err != nil {
 		return err
 	}
-	err = q.InsertRemoteAccountSnapshot(ctx, postgresgen.InsertRemoteAccountSnapshotParams{
+	err = q.InsertRemoteAccountSnapshot(ctx, accountgen.InsertRemoteAccountSnapshotParams{
 		ID: s.ID, AccountID: s.AccountID, PreferredUsername: s.PreferredUsername,
 		ProfileUrl: toNullString(s.ProfileURL), InboxUrl: s.InboxURL, SharedInboxUrl: toNullString(s.SharedInboxURL),
 		OutboxUrl: toNullString(s.OutboxURL), FollowersUrl: toNullString(s.FollowersURL),
@@ -180,7 +180,7 @@ func (r *AccountRepository) RecordRemoteFetchFailure(ctx context.Context, tx uow
 	if err != nil {
 		return false, err
 	}
-	n, err := q.RecordRemoteAccountFetchFailure(ctx, postgresgen.RecordRemoteAccountFetchFailureParams{AccountID: accountID, LastFetchedAt: at})
+	n, err := q.RecordRemoteAccountFetchFailure(ctx, accountgen.RecordRemoteAccountFetchFailureParams{AccountID: accountID, LastFetchedAt: at})
 	return n > 0, wrap(err, "record remote fetch failure")
 }
 
@@ -190,7 +190,7 @@ func (r *AccountRepository) ListStaleRemoteHeads(ctx context.Context, before tim
 	if err != nil {
 		return nil, err
 	}
-	rows, err := r.db.reader().ListStaleRemoteAccountHeads(ctx, postgresgen.ListStaleRemoteAccountHeadsParams{
+	rows, err := r.db.reader().ListStaleRemoteAccountHeads(ctx, accountgen.ListStaleRemoteAccountHeadsParams{
 		FetchedBefore: before, AfterFetchedAt: after.LastFetchedAt, AfterAccountID: toNullString(after.AccountID), BatchLimit: batch,
 	})
 	if err != nil {
@@ -209,7 +209,7 @@ func (r *AccountRepository) ListKnownSharedInboxes(ctx context.Context, after st
 	if err != nil {
 		return nil, err
 	}
-	rows, err := r.db.reader().ListKnownSharedInboxes(ctx, postgresgen.ListKnownSharedInboxesParams{After: after, BatchLimit: batch})
+	rows, err := r.db.reader().ListKnownSharedInboxes(ctx, accountgen.ListKnownSharedInboxesParams{After: after, BatchLimit: batch})
 	if err != nil {
 		return nil, wrap(err, "list known shared inboxes")
 	}
@@ -247,7 +247,7 @@ func (r *AccountRepository) InsertHandleVerification(ctx context.Context, tx uow
 	if err != nil {
 		return err
 	}
-	err = q.InsertRemoteAccountHandleVerification(ctx, postgresgen.InsertRemoteAccountHandleVerificationParams{
+	err = q.InsertRemoteAccountHandleVerification(ctx, accountgen.InsertRemoteAccountHandleVerificationParams{
 		ID: v.ID, AccountID: v.AccountID, Username: v.Username, Domain: v.Domain,
 		Outcome: string(v.Outcome), CheckedAt: v.CheckedAt,
 	})
@@ -286,7 +286,7 @@ func (r *AccountRepository) DeleteOtherHandle(ctx context.Context, tx uow.Tx, h 
 	if err != nil {
 		return err
 	}
-	err = q.DeleteOtherAccountHandle(ctx, postgresgen.DeleteOtherAccountHandleParams{
+	err = q.DeleteOtherAccountHandle(ctx, accountgen.DeleteOtherAccountHandleParams{
 		UsernameNormalized: h.UsernameNormalized, Domain: h.Domain, AccountID: h.AccountID,
 	})
 	return wrap(err, "delete other account handle")
@@ -298,7 +298,7 @@ func (r *AccountRepository) KeyByFingerprint(ctx context.Context, tx uow.Tx, key
 	if err != nil {
 		return account.Key{}, err
 	}
-	row, err := q.GetAccountKeyByKeyIDAndFingerprint(ctx, postgresgen.GetAccountKeyByKeyIDAndFingerprintParams{KeyID: keyID, Fingerprint: fingerprint})
+	row, err := q.GetAccountKeyByKeyIDAndFingerprint(ctx, accountgen.GetAccountKeyByKeyIDAndFingerprintParams{KeyID: keyID, Fingerprint: fingerprint})
 	if err != nil {
 		return account.Key{}, notFound(err, appaccount.ErrNotFound, "key "+keyID)
 	}
@@ -350,6 +350,6 @@ func (r *AccountRepository) InsertKeyRevocation(ctx context.Context, tx uow.Tx, 
 	if err != nil {
 		return false, err
 	}
-	n, err := q.InsertAccountKeyRevocation(ctx, postgresgen.InsertAccountKeyRevocationParams{AccountKeyID: rev.AccountKeyID, RevokedAt: rev.RevokedAt})
+	n, err := q.InsertAccountKeyRevocation(ctx, accountgen.InsertAccountKeyRevocationParams{AccountKeyID: rev.AccountKeyID, RevokedAt: rev.RevokedAt})
 	return n > 0, wrap(err, "insert key revocation")
 }

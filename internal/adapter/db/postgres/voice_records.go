@@ -6,7 +6,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/mycroblog/my/internal/adapter/db/postgres/postgresgen"
+	"github.com/mycroblog/my/internal/adapter/db/postgres/voicegen"
 	"github.com/mycroblog/my/internal/app/uow"
 	appvoice "github.com/mycroblog/my/internal/app/voice"
 	"github.com/mycroblog/my/internal/domain/voice"
@@ -95,7 +95,7 @@ func (r *VoiceRepository) RoomsToPurge(ctx context.Context, tx uow.Tx, endedBefo
 	if err != nil {
 		return nil, err
 	}
-	ids, err := q.ListVoiceRoomsToPurge(ctx, postgresgen.ListVoiceRoomsToPurgeParams{EndedBefore: endedBefore, After: after, RowLimit: n})
+	ids, err := q.ListVoiceRoomsToPurge(ctx, voicegen.ListVoiceRoomsToPurgeParams{EndedBefore: endedBefore, After: after, RowLimit: n})
 	return ids, wrap(err, "list voice rooms to purge")
 }
 
@@ -138,7 +138,7 @@ func (r *VoiceRepository) RoomsRevisedBy(ctx context.Context, tx uow.Tx, account
 	if err != nil {
 		return nil, err
 	}
-	ids, err := q.ListVoiceRoomsRevisedBy(ctx, postgresgen.ListVoiceRoomsRevisedByParams{AccountID: accountID, RowLimit: n})
+	ids, err := q.ListVoiceRoomsRevisedBy(ctx, voicegen.ListVoiceRoomsRevisedByParams{AccountID: accountID, RowLimit: n})
 	return ids, wrap(err, "list voice rooms revised by an account")
 }
 
@@ -149,5 +149,5 @@ func (r *VoiceRepository) EraseRevisionTexts(ctx context.Context, tx uow.Tx, acc
 		return err
 	}
 	ids := textArray(roomIDs)
-	return wrap(q.EraseVoiceRoomRevisionTexts(ctx, postgresgen.EraseVoiceRoomRevisionTextsParams{AccountID: accountID, Ids: ids}), "erase voice room revision texts")
+	return wrap(q.EraseVoiceRoomRevisionTexts(ctx, voicegen.EraseVoiceRoomRevisionTextsParams{AccountID: accountID, Ids: ids}), "erase voice room revision texts")
 }

@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/mycroblog/my/internal/adapter/db/postgres/postgresgen"
+	"github.com/mycroblog/my/internal/adapter/db/postgres/identitygen"
 	appidentity "github.com/mycroblog/my/internal/app/identity"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/identity"
@@ -21,7 +21,7 @@ func (r *IdentityRepository) InsertRegistrationApplication(ctx context.Context, 
 	if err != nil {
 		return err
 	}
-	err = q.InsertRegistrationApplication(ctx, postgresgen.InsertRegistrationApplicationParams{
+	err = q.InsertRegistrationApplication(ctx, identitygen.InsertRegistrationApplicationParams{
 		ID: a.ID, UserID: a.UserID, Reason: toNullString(a.Reason), InviteID: toNullString(a.InviteID), SubmittedAt: a.SubmittedAt,
 	})
 	return wrap(err, "insert registration application")
@@ -33,7 +33,7 @@ func (r *IdentityRepository) InsertRegistrationDecision(ctx context.Context, tx 
 	if err != nil {
 		return err
 	}
-	err = q.InsertRegistrationDecision(ctx, postgresgen.InsertRegistrationDecisionParams{
+	err = q.InsertRegistrationDecision(ctx, identitygen.InsertRegistrationDecisionParams{
 		ID: d.ID, ApplicationID: d.ApplicationID, Decision: string(d.Decision), DecidedBy: string(d.DecidedBy),
 		DecidedByUserID: toNullString(d.DecidedByUserID), Note: toNullString(d.Note), DecidedAt: d.DecidedAt,
 	})
@@ -46,7 +46,7 @@ func (r *IdentityRepository) UpsertRegistrationState(ctx context.Context, tx uow
 	if err != nil {
 		return err
 	}
-	err = q.UpsertRegistrationState(ctx, postgresgen.UpsertRegistrationStateParams{UserID: s.UserID, State: string(s.State), Since: s.Since})
+	err = q.UpsertRegistrationState(ctx, identitygen.UpsertRegistrationStateParams{UserID: s.UserID, State: string(s.State), Since: s.Since})
 	return wrap(err, "upsert registration state")
 }
 
@@ -56,7 +56,7 @@ func (r *IdentityRepository) TransitionPendingRegistrationState(ctx context.Cont
 	if err != nil {
 		return false, err
 	}
-	n, err := q.TransitionPendingRegistrationState(ctx, postgresgen.TransitionPendingRegistrationStateParams{
+	n, err := q.TransitionPendingRegistrationState(ctx, identitygen.TransitionPendingRegistrationStateParams{
 		State: string(s.State), Since: s.Since, UserID: s.UserID,
 	})
 	if err != nil {
@@ -113,7 +113,7 @@ func (r *IdentityRepository) ListRegistrations(ctx context.Context, state identi
 	if err != nil {
 		return nil, err
 	}
-	rows, err := r.db.reader().ListRegistrationsInState(ctx, postgresgen.ListRegistrationsInStateParams{
+	rows, err := r.db.reader().ListRegistrationsInState(ctx, identitygen.ListRegistrationsInStateParams{
 		State: string(state), AfterUserID: toNullString(after.UserID), AfterSince: after.Since, PageLimit: n})
 	if err != nil {
 		return nil, wrap(err, "list registrations")
@@ -147,7 +147,7 @@ func (r *IdentityRepository) InsertInvite(ctx context.Context, tx uow.Tx, i iden
 		}
 		maxUses = &n
 	}
-	err = q.InsertInvite(ctx, postgresgen.InsertInviteParams{
+	err = q.InsertInvite(ctx, identitygen.InsertInviteParams{
 		ID: i.ID, Code: i.Code, CreatedByUserID: toNullString(i.CreatedByUserID), CreatorKind: string(inviteCreatorKind(i.CreatorKind)),
 		MaxUses: maxUses, ExpiresAt: i.ExpiresAt, CreatedAt: i.CreatedAt,
 	})
@@ -218,7 +218,7 @@ func (r *IdentityRepository) InsertInviteRedemption(ctx context.Context, tx uow.
 	if err != nil {
 		return err
 	}
-	err = q.InsertInviteRedemption(ctx, postgresgen.InsertInviteRedemptionParams{
+	err = q.InsertInviteRedemption(ctx, identitygen.InsertInviteRedemptionParams{
 		InviteID: rd.InviteID, Seq: seq, UserID: rd.UserID, RedeemedAt: rd.RedeemedAt,
 	})
 	if isUniqueViolation(err, "invite_redemptions_pkey") {
@@ -233,7 +233,7 @@ func (r *IdentityRepository) InsertInviteRevocation(ctx context.Context, tx uow.
 	if err != nil {
 		return err
 	}
-	err = q.InsertInviteRevocationIfAbsent(ctx, postgresgen.InsertInviteRevocationIfAbsentParams{
+	err = q.InsertInviteRevocationIfAbsent(ctx, identitygen.InsertInviteRevocationIfAbsentParams{
 		InviteID: rv.InviteID, RevokedByUserID: toNullString(rv.RevokedByUserID), RevokedAt: rv.RevokedAt,
 	})
 	return wrap(err, "insert invite revocation")
@@ -245,7 +245,7 @@ func (r *IdentityRepository) ListInvites(ctx context.Context, before string, lim
 	if err != nil {
 		return nil, err
 	}
-	rows, err := r.db.reader().ListInvites(ctx, postgresgen.ListInvitesParams{Before: toNullString(before), PageLimit: n})
+	rows, err := r.db.reader().ListInvites(ctx, identitygen.ListInvitesParams{Before: toNullString(before), PageLimit: n})
 	if err != nil {
 		return nil, wrap(err, "list invites")
 	}
@@ -265,7 +265,7 @@ func (r *IdentityRepository) ListMemberInvites(ctx context.Context, creatorUserI
 	if err != nil {
 		return nil, err
 	}
-	rows, err := r.db.reader().ListMemberInvitesByCreator(ctx, postgresgen.ListMemberInvitesByCreatorParams{
+	rows, err := r.db.reader().ListMemberInvitesByCreator(ctx, identitygen.ListMemberInvitesByCreatorParams{
 		Creator: &creatorUserID, Before: toNullString(before), PageLimit: n,
 	})
 	if err != nil {
@@ -287,7 +287,7 @@ func (r *IdentityRepository) CountUsableMemberInvites(ctx context.Context, tx uo
 	if err != nil {
 		return 0, err
 	}
-	n, err := q.CountUsableMemberInvites(ctx, postgresgen.CountUsableMemberInvitesParams{Creator: &creatorUserID, Now: &now})
+	n, err := q.CountUsableMemberInvites(ctx, identitygen.CountUsableMemberInvitesParams{Creator: &creatorUserID, Now: &now})
 	if err != nil {
 		return 0, wrap(err, "count usable member invites")
 	}
@@ -300,7 +300,7 @@ func (r *IdentityRepository) InsertUserToken(ctx context.Context, tx uow.Tx, t i
 	if err != nil {
 		return err
 	}
-	err = q.InsertUserToken(ctx, postgresgen.InsertUserTokenParams{
+	err = q.InsertUserToken(ctx, identitygen.InsertUserTokenParams{
 		ID: t.ID, UserID: t.UserID, Purpose: string(t.Purpose), EmailAddressID: toNullString(t.EmailAddressID),
 		TokenHash: t.TokenHash, ExpiresAt: t.ExpiresAt, IssuedAt: t.IssuedAt,
 		UnsubscribeCategory: toNullString(string(t.UnsubscribeCategory)),
@@ -336,7 +336,7 @@ func (r *IdentityRepository) InsertUserTokenRedemption(ctx context.Context, tx u
 	if err != nil {
 		return err
 	}
-	err = q.InsertUserTokenRedemption(ctx, postgresgen.InsertUserTokenRedemptionParams{TokenID: rd.TokenID, RedeemedAt: rd.RedeemedAt})
+	err = q.InsertUserTokenRedemption(ctx, identitygen.InsertUserTokenRedemptionParams{TokenID: rd.TokenID, RedeemedAt: rd.RedeemedAt})
 	if isUniqueViolation(err, "user_token_redemptions_pkey") {
 		return fmt.Errorf("redeem user token: %w", appidentity.ErrInvalidToken)
 	}
@@ -349,7 +349,7 @@ func (r *IdentityRepository) InsertEmailVerification(ctx context.Context, tx uow
 	if err != nil {
 		return err
 	}
-	err = q.InsertEmailVerificationIfAbsent(ctx, postgresgen.InsertEmailVerificationIfAbsentParams{
+	err = q.InsertEmailVerificationIfAbsent(ctx, identitygen.InsertEmailVerificationIfAbsentParams{
 		EmailAddressID: v.EmailAddressID, VerifiedAt: v.VerifiedAt,
 	})
 	return wrap(err, "insert email verification")

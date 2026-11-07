@@ -6,7 +6,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/mycroblog/my/internal/adapter/db/postgres/postgresgen"
+	"github.com/mycroblog/my/internal/adapter/db/postgres/moderationgen"
 	appmoderation "github.com/mycroblog/my/internal/app/moderation"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/moderation"
@@ -20,7 +20,7 @@ func (r *ModerationRepository) InsertAuditEntry(ctx context.Context, tx uow.Tx, 
 	if err != nil {
 		return err
 	}
-	return wrap(q.InsertAuditLogEntry(ctx, postgresgen.InsertAuditLogEntryParams{
+	return wrap(q.InsertAuditLogEntry(ctx, moderationgen.InsertAuditLogEntryParams{
 		ID: e.ID, ActorKind: string(e.ActorKind), ActorUserID: toNullString(e.ActorUserID), Action: string(e.Action),
 		TargetKind: string(e.TargetKind), TargetID: e.TargetID, TargetLabel: e.TargetLabel,
 		SourceEventID: toNullString(e.SourceEventID), OccurredAt: e.OccurredAt,
@@ -33,7 +33,7 @@ func (r *ModerationRepository) ListAuditEntries(ctx context.Context, q appmodera
 	if err != nil {
 		return nil, err
 	}
-	rows, err := r.db.reader().ListAuditLogEntries(ctx, postgresgen.ListAuditLogEntriesParams{
+	rows, err := r.db.reader().ListAuditLogEntries(ctx, moderationgen.ListAuditLogEntriesParams{
 		ActorUserID: toNullString(q.ActorUserID), Action: string(q.Action), TargetKind: string(q.TargetKind), TargetID: q.TargetID,
 		Before: toNullString(q.Before), Lim: lim,
 	})

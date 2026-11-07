@@ -247,7 +247,9 @@ cd app/web && E2E_DEMO=1 bun run e2e --project=demo-chromium
 
 ## SQL and database tests
 
-- Queries are written per dialect in `queries/<dialect>/*.sql`, and [sqlc](https://sqlc.dev/) generates the Go code.
+- Queries are written per dialect and module in `queries/<dialect>/<module>/*.sql`, and [sqlc](https://sqlc.dev/)
+  generates the Go code of each module into `internal/adapter/db/<dialect>/<module>gen` (ADR-0153 §3). A query goes in
+  the module of the repository that runs it, and can read the tables of that module and of the modules it depends on.
   The configuration is `sqlc.yaml` and the sqlc version is pinned in `tools/go.mod`. The generated code is committed,
   and `scripts/task.sh check` fails when it is stale.
 
@@ -281,6 +283,8 @@ scripts/task.sh go:sqlc-check  # fail when the generated code is stale (part of 
 - The PostgreSQL tests get their server from `pkg/testkit/pgtest`. By default it starts pgmem (PostgreSQL in memory)
   inside the test process, so no Docker is needed: one server per test binary, and each test copies a template
   database with the schema applied.
+  A test of what only a real server shows beyond pgmem (Atlas planning against the server, for example) calls
+  `pgtest.RequireRealServer(t)`: it skips on pgmem and runs in `scripts/task.sh go:test-postgres`.
 - To run against a real PostgreSQL, use one of these (CI runs `scripts/task.sh go:test-postgres`, the tests whose result can differ from pgmem, nightly):
   - `scripts/task.sh go:test-postgres`: starts a testcontainers-go container (`TEST_POSTGRES_IMAGE`, default
     `postgres:18-alpine`) with `TEST_POSTGRES=container`. Without Docker it fails, since it sets

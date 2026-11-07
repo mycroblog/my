@@ -5,7 +5,7 @@ package postgres
 import (
 	"context"
 
-	"github.com/mycroblog/my/internal/adapter/db/postgres/postgresgen"
+	"github.com/mycroblog/my/internal/adapter/db/postgres/instancegen"
 	appinstance "github.com/mycroblog/my/internal/app/instance"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/instance"
@@ -17,7 +17,7 @@ func (r *InstanceRepository) InsertClosureEvent(ctx context.Context, tx uow.Tx, 
 	if err != nil {
 		return err
 	}
-	err = q.InsertServiceClosureEvent(ctx, postgresgen.InsertServiceClosureEventParams{
+	err = q.InsertServiceClosureEvent(ctx, instancegen.InsertServiceClosureEventParams{
 		ID: e.ID, Kind: string(e.Kind), ChangedByUserID: toNullString(e.ByUserID), OccurredAt: e.OccurredAt,
 	})
 	if err != nil {
@@ -26,7 +26,7 @@ func (r *InstanceRepository) InsertClosureEvent(ctx context.Context, tx uow.Tx, 
 	if e.Kind != instance.ClosureEventAnnounced {
 		return nil
 	}
-	err = q.InsertServiceClosureSchedule(ctx, postgresgen.InsertServiceClosureScheduleParams{
+	err = q.InsertServiceClosureSchedule(ctx, instancegen.InsertServiceClosureScheduleParams{
 		EventID: e.ID, ClosesAt: e.Schedule.ClosesAt, ExportUntil: e.Schedule.ExportUntil, Message: e.Schedule.Message,
 	})
 	return wrap(err, "insert service closure schedule")
@@ -51,7 +51,7 @@ func (r *InstanceRepository) UpsertClosureHead(ctx context.Context, tx uow.Tx, h
 	if err != nil {
 		return err
 	}
-	return wrap(q.UpsertServiceClosureHead(ctx, postgresgen.UpsertServiceClosureHeadParams{
+	return wrap(q.UpsertServiceClosureHead(ctx, instancegen.UpsertServiceClosureHeadParams{
 		State: string(h.State), EventID: h.EventID, AnnouncementEventID: h.AnnouncementID,
 	}), "upsert service closure head")
 }
@@ -101,7 +101,7 @@ func (r *InstanceRepository) CurrentClosure(ctx context.Context) (instance.Closu
 	return currentClosure(ctx, r.db.reader())
 }
 
-func currentClosure(ctx context.Context, q *postgresgen.Queries) (instance.Closure, error) {
+func currentClosure(ctx context.Context, q *genQueries) (instance.Closure, error) {
 	row, err := q.GetCurrentServiceClosure(ctx)
 	if err != nil {
 		return instance.Closure{}, notFound(err, appinstance.ErrNotFound, "service closure")

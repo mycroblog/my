@@ -6,7 +6,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/mycroblog/my/internal/adapter/db/sqlite/sqlitegen"
+	"github.com/mycroblog/my/internal/adapter/db/sqlite/moderationgen"
 	appmoderation "github.com/mycroblog/my/internal/app/moderation"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/moderation"
@@ -20,7 +20,7 @@ func (r *ModerationRepository) InsertAuditEntry(ctx context.Context, tx uow.Tx, 
 	if err != nil {
 		return err
 	}
-	return wrap(q.InsertAuditLogEntry(ctx, sqlitegen.InsertAuditLogEntryParams{
+	return wrap(q.InsertAuditLogEntry(ctx, moderationgen.InsertAuditLogEntryParams{
 		ID: e.ID, ActorKind: string(e.ActorKind), ActorUserID: toNullString(e.ActorUserID), Action: string(e.Action),
 		TargetKind: string(e.TargetKind), TargetID: e.TargetID, TargetLabel: e.TargetLabel,
 		SourceEventID: toNullString(e.SourceEventID), OccurredAt: toMillis(e.OccurredAt),
@@ -29,7 +29,7 @@ func (r *ModerationRepository) InsertAuditEntry(ctx context.Context, tx uow.Tx, 
 
 // ListAuditEntries implements moderation.AuditRepository.
 func (r *ModerationRepository) ListAuditEntries(ctx context.Context, q appmoderation.AuditQuery, limit int) ([]moderation.AuditEntry, error) {
-	rows, err := r.db.reader().ListAuditLogEntries(ctx, sqlitegen.ListAuditLogEntriesParams{
+	rows, err := r.db.reader().ListAuditLogEntries(ctx, moderationgen.ListAuditLogEntriesParams{
 		ActorUserID: q.ActorUserID, Action: string(q.Action), TargetKind: string(q.TargetKind), TargetID: q.TargetID,
 		Before: q.Before, Lim: int64(limit),
 	})

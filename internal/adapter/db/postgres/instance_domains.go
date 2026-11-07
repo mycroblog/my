@@ -5,7 +5,7 @@ package postgres
 import (
 	"context"
 
-	"github.com/mycroblog/my/internal/adapter/db/postgres/postgresgen"
+	"github.com/mycroblog/my/internal/adapter/db/postgres/instancegen"
 	appinstance "github.com/mycroblog/my/internal/app/instance"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/instance"
@@ -17,7 +17,7 @@ func (r *InstanceRepository) InsertDomains(ctx context.Context, tx uow.Tx, d ins
 	if err != nil {
 		return false, err
 	}
-	n, err := q.InsertInstanceDomains(ctx, postgresgen.InsertInstanceDomainsParams{
+	n, err := q.InsertInstanceDomains(ctx, instancegen.InsertInstanceDomainsParams{
 		Host: d.Host, AccountDomain: d.AccountDomain, RecordedAt: d.RecordedAt,
 	})
 	return n > 0, wrap(err, "insert instance domains")

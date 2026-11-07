@@ -6,7 +6,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/mycroblog/my/internal/adapter/db/sqlite/sqlitegen"
+	"github.com/mycroblog/my/internal/adapter/db/sqlite/diagnosticsgen"
 	appdiagnostics "github.com/mycroblog/my/internal/app/diagnostics"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/diagnostics"
@@ -28,7 +28,7 @@ func (r *DiagnosticsRepository) InsertGroup(ctx context.Context, tx uow.Tx, g ap
 	if err != nil {
 		return false, err
 	}
-	n, err := q.InsertErrorGroup(ctx, sqlitegen.InsertErrorGroupParams{
+	n, err := q.InsertErrorGroup(ctx, diagnosticsgen.InsertErrorGroupParams{
 		ID: g.ID, Fingerprint: g.Fingerprint, Source: g.Source, Kind: g.Kind, ErrorType: g.ErrorType,
 		Message: g.Message, WhereName: g.Where, FirstVersion: g.FirstVersion, Unauthenticated: boolToInt(g.Unauthenticated), FirstSeenAt: toMillis(g.FirstSeenAt),
 	})
@@ -85,7 +85,7 @@ func (r *DiagnosticsRepository) InsertEvent(ctx context.Context, tx uow.Tx, e ap
 	if err != nil {
 		return err
 	}
-	return wrap(q.InsertErrorGroupEvent(ctx, sqlitegen.InsertErrorGroupEventParams{
+	return wrap(q.InsertErrorGroupEvent(ctx, diagnosticsgen.InsertErrorGroupEventParams{
 		ID: e.ID, GroupID: e.GroupID, Kind: string(e.Kind), ActorKind: string(e.Actor.Kind),
 		ActorUserID: toNullString(e.Actor.UserID), Version: e.Version, OccurredAt: toMillis(e.OccurredAt),
 	}), "insert error group event")
@@ -97,7 +97,7 @@ func (r *DiagnosticsRepository) InsertConfirmation(ctx context.Context, tx uow.T
 	if err != nil {
 		return false, err
 	}
-	n, err := q.InsertErrorGroupConfirmation(ctx, sqlitegen.InsertErrorGroupConfirmationParams{GroupID: groupID, ConfirmedAt: toMillis(at)})
+	n, err := q.InsertErrorGroupConfirmation(ctx, diagnosticsgen.InsertErrorGroupConfirmationParams{GroupID: groupID, ConfirmedAt: toMillis(at)})
 	return n > 0, wrap(err, "insert error group confirmation")
 }
 
@@ -107,14 +107,14 @@ func (r *DiagnosticsRepository) UpsertHead(ctx context.Context, tx uow.Tx, h app
 	if err != nil {
 		return err
 	}
-	return wrap(q.UpsertErrorGroupState(ctx, sqlitegen.UpsertErrorGroupStateParams{
+	return wrap(q.UpsertErrorGroupState(ctx, diagnosticsgen.UpsertErrorGroupStateParams{
 		GroupID: h.GroupID, State: string(h.State), ResolvedVersion: h.ResolvedVersion, Since: toMillis(h.Since),
 	}), "upsert error group state")
 }
 
 // AddCount implements appdiagnostics.Repository.
 func (r *DiagnosticsRepository) AddCount(ctx context.Context, c appdiagnostics.Count) error {
-	return wrap(r.db.reader().AddErrorGroupCount(ctx, sqlitegen.AddErrorGroupCountParams{
+	return wrap(r.db.reader().AddErrorGroupCount(ctx, diagnosticsgen.AddErrorGroupCountParams{
 		HourStart: toMillis(c.Hour), Occurrences: c.Occurrences, LastSeenAt: toMillis(c.LastSeenAt),
 		LastVersion: c.LastVersion, Fingerprint: c.Fingerprint,
 	}), "add error group count")
@@ -122,7 +122,7 @@ func (r *DiagnosticsRepository) AddCount(ctx context.Context, c appdiagnostics.C
 
 // PutSample implements appdiagnostics.Repository.
 func (r *DiagnosticsRepository) PutSample(ctx context.Context, s appdiagnostics.Sample) error {
-	return wrap(r.db.reader().PutErrorGroupSample(ctx, sqlitegen.PutErrorGroupSampleParams{
+	return wrap(r.db.reader().PutErrorGroupSample(ctx, diagnosticsgen.PutErrorGroupSampleParams{
 		ErrorType: s.ErrorType, Message: s.Message, Stack: s.Stack, RequestID: s.RequestID, TraceID: s.TraceID,
 		Version: s.Version, Role: s.Role, OccurredAt: toMillis(s.OccurredAt), Fingerprint: s.Fingerprint,
 	}), "put error group sample")
@@ -147,7 +147,7 @@ func (r *DiagnosticsRepository) FindGroup(ctx context.Context, id string) (appdi
 
 // ListSummaries implements appdiagnostics.Repository.
 func (r *DiagnosticsRepository) ListSummaries(ctx context.Context, q appdiagnostics.SummaryQuery) ([]appdiagnostics.Summary, error) {
-	rows, err := r.db.reader().ListErrorGroupSummaries(ctx, sqlitegen.ListErrorGroupSummariesParams{
+	rows, err := r.db.reader().ListErrorGroupSummaries(ctx, diagnosticsgen.ListErrorGroupSummariesParams{
 		SinceDay: toMillis(q.Window.SinceDay), SinceWeek: toMillis(q.Window.SinceWeek), State: string(q.State), Source: q.Source,
 		BeforeID: q.BeforeID, BeforeSeen: toMillis(q.BeforeSeen), RowLimit: int64(q.Limit),
 	})
@@ -156,7 +156,7 @@ func (r *DiagnosticsRepository) ListSummaries(ctx context.Context, q appdiagnost
 	}
 	out := make([]appdiagnostics.Summary, len(rows))
 	for i, row := range rows {
-		out[i] = summaryFromRow(sqlitegen.GetErrorGroupSummaryRow(row))
+		out[i] = summaryFromRow(diagnosticsgen.GetErrorGroupSummaryRow(row))
 	}
 	return out, nil
 }
@@ -171,7 +171,7 @@ func (r *DiagnosticsRepository) FindSummary(ctx context.Context, tx uow.Tx, id s
 		}
 	}
 	q := db.reader()
-	row, err := q.GetErrorGroupSummary(ctx, sqlitegen.GetErrorGroupSummaryParams{
+	row, err := q.GetErrorGroupSummary(ctx, diagnosticsgen.GetErrorGroupSummaryParams{
 		SinceDay: toMillis(w.SinceDay), SinceWeek: toMillis(w.SinceWeek), ID: id,
 	})
 	if err != nil {
@@ -180,7 +180,7 @@ func (r *DiagnosticsRepository) FindSummary(ctx context.Context, tx uow.Tx, id s
 	return summaryFromRow(row), nil
 }
 
-func summaryFromRow(row sqlitegen.GetErrorGroupSummaryRow) appdiagnostics.Summary {
+func summaryFromRow(row diagnosticsgen.GetErrorGroupSummaryRow) appdiagnostics.Summary {
 	c := currentFromRow(row.ID, row.Fingerprint, row.Source, row.Kind, row.ErrorType, row.Message, row.WhereName,
 		row.FirstVersion, row.Unauthenticated != 0, row.FirstSeenAt, row.State, row.ResolvedVersion, row.Since, row.LastVersion)
 	return appdiagnostics.Summary{
@@ -221,7 +221,7 @@ func (r *DiagnosticsRepository) CountsSince(ctx context.Context, groupIDs []stri
 	if len(groupIDs) == 0 {
 		return nil, nil
 	}
-	rows, err := r.db.reader().ListErrorGroupCountsSince(ctx, sqlitegen.ListErrorGroupCountsSinceParams{GroupIds: groupIDs, Since: toMillis(since)})
+	rows, err := r.db.reader().ListErrorGroupCountsSince(ctx, diagnosticsgen.ListErrorGroupCountsSinceParams{GroupIds: groupIDs, Since: toMillis(since)})
 	if err != nil {
 		return nil, wrap(err, "list error group counts since")
 	}

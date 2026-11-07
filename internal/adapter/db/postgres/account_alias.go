@@ -5,7 +5,7 @@ package postgres
 import (
 	"context"
 
-	"github.com/mycroblog/my/internal/adapter/db/postgres/postgresgen"
+	"github.com/mycroblog/my/internal/adapter/db/postgres/accountgen"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/account"
 )
@@ -16,7 +16,7 @@ func (r *AccountRepository) InsertAlias(ctx context.Context, tx uow.Tx, a accoun
 	if err != nil {
 		return false, err
 	}
-	n, err := q.InsertAccountAlias(ctx, postgresgen.InsertAccountAliasParams{AccountID: a.AccountID, AliasUri: a.URI, AddedAt: a.AddedAt})
+	n, err := q.InsertAccountAlias(ctx, accountgen.InsertAccountAliasParams{AccountID: a.AccountID, AliasUri: a.URI, AddedAt: a.AddedAt})
 	return n > 0, wrap(err, "insert account alias")
 }
 
@@ -26,7 +26,7 @@ func (r *AccountRepository) DeleteAlias(ctx context.Context, tx uow.Tx, accountI
 	if err != nil {
 		return false, err
 	}
-	n, err := q.DeleteAccountAlias(ctx, postgresgen.DeleteAccountAliasParams{AccountID: accountID, AliasUri: uri})
+	n, err := q.DeleteAccountAlias(ctx, accountgen.DeleteAccountAliasParams{AccountID: accountID, AliasUri: uri})
 	return n > 0, wrap(err, "delete account alias")
 }
 
@@ -55,6 +55,6 @@ func (r *AccountRepository) ListAliases(ctx context.Context, accountID string) (
 
 // HasAlias implements account.Repository.
 func (r *AccountRepository) HasAlias(ctx context.Context, accountID, uri string) (bool, error) {
-	ok, err := r.db.reader().HasAccountAlias(ctx, postgresgen.HasAccountAliasParams{AccountID: accountID, AliasUri: uri})
+	ok, err := r.db.reader().HasAccountAlias(ctx, accountgen.HasAccountAliasParams{AccountID: accountID, AliasUri: uri})
 	return ok, wrap(err, "find account alias")
 }

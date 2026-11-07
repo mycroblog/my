@@ -6,7 +6,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/mycroblog/my/internal/adapter/db/postgres/postgresgen"
+	"github.com/mycroblog/my/internal/adapter/db/postgres/contentgen"
 	"github.com/mycroblog/my/internal/app/kernel"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/content"
@@ -21,13 +21,13 @@ func (d *DB) addLocalPosts(ctx context.Context, tx uow.Tx, accountID string, del
 	}
 	switch {
 	case delta > 0:
-		return wrap(q.AddLocalPosts(ctx, postgresgen.AddLocalPostsParams{AccountID: accountID, Added: delta}), "add local posts")
+		return wrap(q.AddLocalPosts(ctx, contentgen.AddLocalPostsParams{AccountID: accountID, Added: delta}), "add local posts")
 	case delta < 0:
 		removed := -delta
-		if err := q.DeleteSpentLocalPostCounter(ctx, postgresgen.DeleteSpentLocalPostCounterParams{AccountID: accountID, Removed: removed}); err != nil {
+		if err := q.DeleteSpentLocalPostCounter(ctx, contentgen.DeleteSpentLocalPostCounterParams{AccountID: accountID, Removed: removed}); err != nil {
 			return wrap(err, "delete spent local post counter")
 		}
-		return wrap(q.SubtractLocalPosts(ctx, postgresgen.SubtractLocalPostsParams{Removed: removed, AccountID: accountID}), "subtract local posts")
+		return wrap(q.SubtractLocalPosts(ctx, contentgen.SubtractLocalPostsParams{Removed: removed, AccountID: accountID}), "subtract local posts")
 	}
 	return nil
 }
@@ -39,7 +39,7 @@ func (r *StatusRepository) AddLocalPosts(ctx context.Context, tx uow.Tx, account
 
 // RebuildLocalPostCounters implements content.Repository.
 func (r *StatusRepository) RebuildLocalPostCounters(ctx context.Context, tx uow.Tx) error {
-	return r.rebuild(ctx, tx, "local post counters", (*postgresgen.Queries).DeleteAllLocalPostCounters, (*postgresgen.Queries).RebuildLocalPostCounters)
+	return r.rebuild(ctx, tx, "local post counters", (*genQueries).DeleteAllLocalPostCounters, (*genQueries).RebuildLocalPostCounters)
 }
 
 // ListLocalPostCounters implements content.Repository.
@@ -65,7 +65,7 @@ func (r *StatusRepository) LocalPostsTotal(ctx context.Context) (int64, error) {
 func (r *StatusRepository) DailyLocalPublicPosts(ctx context.Context, to time.Time, days int) ([]int, error) {
 	out := make([]int, days)
 	from := to.Add(-time.Duration(days) * 24 * time.Hour)
-	rows, err := r.db.reader().CountLocalPublicPostsByDay(ctx, postgresgen.CountLocalPublicPostsByDayParams{FromAt: from, FromID: kernel.UUIDv7Floor(from), ToAt: to})
+	rows, err := r.db.reader().CountLocalPublicPostsByDay(ctx, contentgen.CountLocalPublicPostsByDayParams{FromAt: from, FromID: kernel.UUIDv7Floor(from), ToAt: to})
 	if err != nil {
 		return nil, wrap(err, "count local public posts by day")
 	}
@@ -94,7 +94,7 @@ func (r *InteractionRepository) ListLocalStatusBoosters(ctx context.Context, tx 
 
 // ListRecentLocalPosters implements content.Repository.
 func (r *StatusRepository) ListRecentLocalPosters(ctx context.Context, since time.Time, limit int) ([]string, error) {
-	rows, err := r.db.reader().ListRecentLocalPosters(ctx, postgresgen.ListRecentLocalPostersParams{
+	rows, err := r.db.reader().ListRecentLocalPosters(ctx, contentgen.ListRecentLocalPostersParams{
 		FromID: kernel.UUIDv7Floor(since), SinceAt: since, Lim: int32(min(limit, 1<<30)), //nolint:gosec // bounded above
 	})
 	if err != nil {

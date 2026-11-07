@@ -5,7 +5,6 @@ package sqlite
 import (
 	"context"
 
-	"github.com/mycroblog/my/internal/adapter/db/sqlite/sqlitegen"
 	appmoderation "github.com/mycroblog/my/internal/app/moderation"
 	apptimeline "github.com/mycroblog/my/internal/app/timeline"
 	"github.com/mycroblog/my/internal/app/uow"
@@ -19,7 +18,7 @@ import (
 
 // execAll runs the queries in order inside tx, for a rebuild that empties a projection and
 // derives it again in SQL.
-func (d *DB) execAll(ctx context.Context, tx uow.Tx, what string, steps ...func(*sqlitegen.Queries, context.Context) error) error {
+func (d *DB) execAll(ctx context.Context, tx uow.Tx, what string, steps ...func(*genQueries, context.Context) error) error {
 	q, err := d.queries(tx)
 	if err != nil {
 		return err
@@ -123,65 +122,65 @@ func (r *ModerationRepository) ListAllDomainRestrictionRows(ctx context.Context,
 
 // DeleteAllAccountRestrictions implements moderation.Repository.
 func (r *ModerationRepository) DeleteAllAccountRestrictions(ctx context.Context, tx uow.Tx) error {
-	return r.db.execAll(ctx, tx, "empty account restrictions", (*sqlitegen.Queries).DeleteAllAccountRestrictions)
+	return r.db.execAll(ctx, tx, "empty account restrictions", (*genQueries).DeleteAllAccountRestrictions)
 }
 
 // DeleteAllDomainRestrictions implements moderation.Repository.
 func (r *ModerationRepository) DeleteAllDomainRestrictions(ctx context.Context, tx uow.Tx) error {
-	return r.db.execAll(ctx, tx, "empty domain restrictions", (*sqlitegen.Queries).DeleteAllDomainRestrictions)
+	return r.db.execAll(ctx, tx, "empty domain restrictions", (*genQueries).DeleteAllDomainRestrictions)
 }
 
 // RebuildReportStates implements moderation.Repository.
 func (r *ModerationRepository) RebuildReportStates(ctx context.Context, tx uow.Tx) error {
-	return r.db.execAll(ctx, tx, "rebuild report states", (*sqlitegen.Queries).DeleteAllReportStates, (*sqlitegen.Queries).RebuildReportStates)
+	return r.db.execAll(ctx, tx, "rebuild report states", (*genQueries).DeleteAllReportStates, (*genQueries).RebuildReportStates)
 }
 
 // RebuildAppealStates implements moderation.Repository.
 func (r *ModerationRepository) RebuildAppealStates(ctx context.Context, tx uow.Tx) error {
-	return r.db.execAll(ctx, tx, "rebuild appeal states", (*sqlitegen.Queries).DeleteAllAppealStates, (*sqlitegen.Queries).RebuildAppealStates)
+	return r.db.execAll(ctx, tx, "rebuild appeal states", (*genQueries).DeleteAllAppealStates, (*genQueries).RebuildAppealStates)
 }
 
 // RebuildUserRoles implements identity.Repository.
 func (r *IdentityRepository) RebuildUserRoles(ctx context.Context, tx uow.Tx) error {
-	return r.db.execAll(ctx, tx, "rebuild user roles", (*sqlitegen.Queries).DeleteAllUserRoles, (*sqlitegen.Queries).RebuildUserRoles)
+	return r.db.execAll(ctx, tx, "rebuild user roles", (*genQueries).DeleteAllUserRoles, (*genQueries).RebuildUserRoles)
 }
 
 // RebuildRegistrationStates implements identity.Repository.
 func (r *IdentityRepository) RebuildRegistrationStates(ctx context.Context, tx uow.Tx) error {
 	return r.db.execAll(ctx, tx, "rebuild registration states",
-		(*sqlitegen.Queries).DeleteAllUserRegistrationStates, (*sqlitegen.Queries).RebuildUserRegistrationStates)
+		(*genQueries).DeleteAllUserRegistrationStates, (*genQueries).RebuildUserRegistrationStates)
 }
 
 // RebuildPrimaryEmails implements identity.Repository.
 func (r *IdentityRepository) RebuildPrimaryEmails(ctx context.Context, tx uow.Tx) error {
-	return r.db.execAll(ctx, tx, "rebuild primary emails", (*sqlitegen.Queries).DeleteAllUserPrimaryEmails, (*sqlitegen.Queries).RebuildUserPrimaryEmails)
+	return r.db.execAll(ctx, tx, "rebuild primary emails", (*genQueries).DeleteAllUserPrimaryEmails, (*genQueries).RebuildUserPrimaryEmails)
 }
 
 // RebuildHeads implements webhook.Repository.
 func (r *WebhookRepository) RebuildHeads(ctx context.Context, tx uow.Tx) error {
 	return r.db.execAll(ctx, tx, "rebuild webhook endpoint heads",
-		(*sqlitegen.Queries).DeleteAllWebhookEndpointHeads, (*sqlitegen.Queries).RebuildWebhookEndpointHeads)
+		(*genQueries).DeleteAllWebhookEndpointHeads, (*genQueries).RebuildWebhookEndpointHeads)
 }
 
 // RebuildFailures implements webhook.Repository.
 func (r *WebhookRepository) RebuildFailures(ctx context.Context, tx uow.Tx) error {
 	return r.db.execAll(ctx, tx, "rebuild webhook endpoint failures",
-		(*sqlitegen.Queries).DeleteDerivableWebhookEndpointFailures, (*sqlitegen.Queries).RebuildWebhookEndpointFailures)
+		(*genQueries).DeleteDerivableWebhookEndpointFailures, (*genQueries).RebuildWebhookEndpointFailures)
 }
 
 // DeleteAllSensitivityOverrides implements content.Repository.
 func (r *StatusRepository) DeleteAllSensitivityOverrides(ctx context.Context, tx uow.Tx) error {
-	return r.db.execAll(ctx, tx, "empty status sensitivity overrides", (*sqlitegen.Queries).DeleteAllStatusSensitivityOverrides)
+	return r.db.execAll(ctx, tx, "empty status sensitivity overrides", (*genQueries).DeleteAllStatusSensitivityOverrides)
 }
 
 // DeleteSensitivityOverridesWithoutStatus implements content.Repository.
 func (r *StatusRepository) DeleteSensitivityOverridesWithoutStatus(ctx context.Context, tx uow.Tx) error {
-	return r.db.execAll(ctx, tx, "drop status sensitivity overrides of gone statuses", (*sqlitegen.Queries).DeleteStatusSensitivityOverridesWithoutStatus)
+	return r.db.execAll(ctx, tx, "drop status sensitivity overrides of gone statuses", (*genQueries).DeleteStatusSensitivityOverridesWithoutStatus)
 }
 
 // RebuildPollTallies implements content.Repository.
 func (r *StatusRepository) RebuildPollTallies(ctx context.Context, tx uow.Tx) error {
-	return r.db.execAll(ctx, tx, "rebuild poll tallies", (*sqlitegen.Queries).DeleteAllPollTallies, (*sqlitegen.Queries).RebuildPollTallies)
+	return r.db.execAll(ctx, tx, "rebuild poll tallies", (*genQueries).DeleteAllPollTallies, (*genQueries).RebuildPollTallies)
 }
 
 // ListRestrictions implements timeline.Repository.
@@ -216,5 +215,5 @@ func (r *TimelineRepository) ListRestrictions(ctx context.Context, tx uow.Tx) ([
 // DeleteRestrictions implements timeline.Repository.
 func (r *TimelineRepository) DeleteRestrictions(ctx context.Context, tx uow.Tx) error {
 	return r.db.execAll(ctx, tx, "empty feed restrictions",
-		(*sqlitegen.Queries).DeleteAllFeedAuthorRestrictions, (*sqlitegen.Queries).DeleteAllFeedDomainRestrictions)
+		(*genQueries).DeleteAllFeedAuthorRestrictions, (*genQueries).DeleteAllFeedDomainRestrictions)
 }

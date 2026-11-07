@@ -9,7 +9,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
-	"github.com/mycroblog/my/internal/adapter/db/postgres/postgresgen"
+	"github.com/mycroblog/my/internal/adapter/db/postgres/hookgen"
 	apphook "github.com/mycroblog/my/internal/app/hook"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/hook"
@@ -31,7 +31,7 @@ func (r *HookRepository) InsertDecision(ctx context.Context, tx uow.Tx, d hook.D
 	if err != nil {
 		return false, err
 	}
-	n, err := q.InsertHookDecision(ctx, postgresgen.InsertHookDecisionParams{
+	n, err := q.InsertHookDecision(ctx, hookgen.InsertHookDecisionParams{
 		ID: d.ID, Hook: string(d.Hook), SubjectKey: d.SubjectKey, AccountID: toNullString(d.AccountID), Mode: string(d.Mode),
 		Outcome: string(d.Outcome), ReasonCode: string(d.Reason), Note: d.Note, LatencyMs: d.Latency.Milliseconds(), DecidedAt: d.DecidedAt,
 	})
@@ -56,7 +56,7 @@ func hookRecord(id, name, subjectKey string, accountID *string, mode, outcome, r
 
 // RecordBySubject implements apphook.Repository.
 func (r *HookRepository) RecordBySubject(ctx context.Context, n hook.Name, subjectKey string) (hook.Record, error) {
-	row, err := r.db.reader().GetHookDecisionBySubject(ctx, postgresgen.GetHookDecisionBySubjectParams{Hook: string(n), SubjectKey: subjectKey})
+	row, err := r.db.reader().GetHookDecisionBySubject(ctx, hookgen.GetHookDecisionBySubjectParams{Hook: string(n), SubjectKey: subjectKey})
 	if err != nil {
 		return hook.Record{}, hookNotFound(err, subjectKey)
 	}
@@ -91,7 +91,7 @@ func (r *HookRepository) InsertDecisionStatus(ctx context.Context, tx uow.Tx, de
 	if err != nil {
 		return err
 	}
-	return wrap(q.InsertHookDecisionStatus(ctx, postgresgen.InsertHookDecisionStatusParams{DecisionID: decisionID, StatusID: statusID}), "insert hook decision status")
+	return wrap(q.InsertHookDecisionStatus(ctx, hookgen.InsertHookDecisionStatusParams{DecisionID: decisionID, StatusID: statusID}), "insert hook decision status")
 }
 
 // InsertOverride implements apphook.Repository.
@@ -100,7 +100,7 @@ func (r *HookRepository) InsertOverride(ctx context.Context, tx uow.Tx, o hook.O
 	if err != nil {
 		return false, err
 	}
-	n, err := q.InsertHookDecisionOverride(ctx, postgresgen.InsertHookDecisionOverrideParams{
+	n, err := q.InsertHookDecisionOverride(ctx, hookgen.InsertHookDecisionOverrideParams{
 		DecisionID: o.DecisionID, OverriddenByUserID: toNullString(o.ByUserID), OverriddenAt: o.At,
 	})
 	return n > 0, wrap(err, "insert hook decision override")
@@ -110,7 +110,7 @@ func (r *HookRepository) InsertOverride(ctx context.Context, tx uow.Tx, o hook.O
 // are two queries, so that the first can use the partial index that leaves allow out.
 func (r *HookRepository) ListRecords(ctx context.Context, q apphook.ListQuery) ([]hook.Record, error) {
 	if q.Outcome == hook.Allow {
-		rows, err := r.db.reader().ListAllowHookDecisions(ctx, postgresgen.ListAllowHookDecisionsParams{
+		rows, err := r.db.reader().ListAllowHookDecisions(ctx, hookgen.ListAllowHookDecisionsParams{
 			Before: toNullString(q.Before), Hook: string(q.Hook), Mode: string(q.Mode), RowLimit: int32(q.Limit), //nolint:gosec // a page's size
 		})
 		if err != nil {
@@ -123,7 +123,7 @@ func (r *HookRepository) ListRecords(ctx context.Context, q apphook.ListQuery) (
 		}
 		return out, nil
 	}
-	rows, err := r.db.reader().ListHookDecisions(ctx, postgresgen.ListHookDecisionsParams{
+	rows, err := r.db.reader().ListHookDecisions(ctx, hookgen.ListHookDecisionsParams{
 		Before: toNullString(q.Before), Hook: string(q.Hook), Mode: string(q.Mode), Outcome: string(q.Outcome), RowLimit: int32(q.Limit), //nolint:gosec // a page's size
 	})
 	if err != nil {
@@ -155,7 +155,7 @@ func (r *HookRepository) Summarize(ctx context.Context, since time.Time) ([]apph
 
 // ListExpired implements apphook.Repository.
 func (r *HookRepository) ListExpired(ctx context.Context, q apphook.ExpiredQuery) ([]hook.Expired, error) {
-	rows, err := r.db.reader().ListExpiredHookDecisions(ctx, postgresgen.ListExpiredHookDecisionsParams{
+	rows, err := r.db.reader().ListExpiredHookDecisions(ctx, hookgen.ListExpiredHookDecisionsParams{
 		Before: q.Before, AfterID: toNullString(q.AfterID), AfterAt: q.AfterAt, RowLimit: int32(q.Limit), //nolint:gosec // a batch's size
 	})
 	if err != nil {
@@ -208,7 +208,7 @@ func (r *HookRepository) DecisionIDsOfAccount(ctx context.Context, tx uow.Tx, ac
 	if err != nil {
 		return nil, err
 	}
-	ids, err := q.ListHookDecisionIDsOfAccount(ctx, postgresgen.ListHookDecisionIDsOfAccountParams{AccountID: &accountID, Limit: int32(limit)}) //nolint:gosec // a batch's size
+	ids, err := q.ListHookDecisionIDsOfAccount(ctx, hookgen.ListHookDecisionIDsOfAccountParams{AccountID: &accountID, Limit: int32(limit)}) //nolint:gosec // a batch's size
 	return ids, wrap(err, "list hook decisions of account")
 }
 
@@ -239,13 +239,13 @@ func (r *HookRepository) InsertAppeal(ctx context.Context, tx uow.Tx, a hook.App
 	if err != nil {
 		return false, err
 	}
-	n, err := q.InsertHookDecisionAppeal(ctx, postgresgen.InsertHookDecisionAppealParams{
+	n, err := q.InsertHookDecisionAppeal(ctx, hookgen.InsertHookDecisionAppealParams{
 		ID: a.ID, DecisionID: a.DecisionID, AccountID: a.AccountID, StatusText: a.StatusText, Comment: a.Comment, SubmittedAt: a.SubmittedAt,
 	})
 	return n > 0, wrap(err, "insert hook decision appeal")
 }
 
-func hookAppealRecord(row postgresgen.GetHookDecisionAppealRow) hook.AppealRecord {
+func hookAppealRecord(row hookgen.GetHookDecisionAppealRow) hook.AppealRecord {
 	out := hook.AppealRecord{
 		Appeal: hook.Appeal{
 			ID: row.AppealID, DecisionID: row.AppealDecisionID, AccountID: row.AppealAccountID,
@@ -298,12 +298,12 @@ func (r *HookRepository) AppealOfDecision(ctx context.Context, decisionID string
 	if err != nil {
 		return hook.AppealRecord{}, hookAppealNotFound(err, "of "+decisionID)
 	}
-	return hookAppealRecord(postgresgen.GetHookDecisionAppealRow(row)), nil
+	return hookAppealRecord(hookgen.GetHookDecisionAppealRow(row)), nil
 }
 
 // ListAppeals implements apphook.Repository.
 func (r *HookRepository) ListAppeals(ctx context.Context, q apphook.AppealQuery) ([]hook.AppealRecord, error) {
-	rows, err := r.db.reader().ListHookDecisionAppeals(ctx, postgresgen.ListHookDecisionAppealsParams{
+	rows, err := r.db.reader().ListHookDecisionAppeals(ctx, hookgen.ListHookDecisionAppealsParams{
 		Before: toNullString(q.Before), Pending: q.Pending, Outcome: string(q.Outcome), RowLimit: int32(q.Limit), //nolint:gosec // a page's size
 	})
 	if err != nil {
@@ -311,7 +311,7 @@ func (r *HookRepository) ListAppeals(ctx context.Context, q apphook.AppealQuery)
 	}
 	out := make([]hook.AppealRecord, len(rows))
 	for i, row := range rows {
-		out[i] = hookAppealRecord(postgresgen.GetHookDecisionAppealRow(row))
+		out[i] = hookAppealRecord(hookgen.GetHookDecisionAppealRow(row))
 	}
 	return out, nil
 }
@@ -322,7 +322,7 @@ func (r *HookRepository) InsertAppealDecision(ctx context.Context, tx uow.Tx, d 
 	if err != nil {
 		return false, err
 	}
-	n, err := q.InsertHookDecisionAppealDecision(ctx, postgresgen.InsertHookDecisionAppealDecisionParams{
+	n, err := q.InsertHookDecisionAppealDecision(ctx, hookgen.InsertHookDecisionAppealDecisionParams{
 		AppealID: d.AppealID, Decision: string(d.Outcome), DecidedByUserID: toNullString(d.ByUserID), DecidedAt: d.DecidedAt,
 	})
 	return n > 0, wrap(err, "insert hook decision appeal decision")
@@ -334,14 +334,14 @@ func (r *HookRepository) InsertExemption(ctx context.Context, tx uow.Tx, e hook.
 	if err != nil {
 		return err
 	}
-	return wrap(q.InsertHookAccountExemption(ctx, postgresgen.InsertHookAccountExemptionParams{
+	return wrap(q.InsertHookAccountExemption(ctx, hookgen.InsertHookAccountExemptionParams{
 		Hook: string(e.Hook), AccountID: e.AccountID, ExemptedAt: e.ExemptedAt,
 	}), "insert hook account exemption")
 }
 
 // Exempt implements apphook.Repository.
 func (r *HookRepository) Exempt(ctx context.Context, n hook.Name, accountID string) (bool, error) {
-	exempt, err := r.db.reader().HookAccountExempt(ctx, postgresgen.HookAccountExemptParams{Hook: string(n), AccountID: accountID})
+	exempt, err := r.db.reader().HookAccountExempt(ctx, hookgen.HookAccountExemptParams{Hook: string(n), AccountID: accountID})
 	return exempt, wrap(err, "read hook account exemption")
 }
 

@@ -5,7 +5,7 @@ package sqlite
 import (
 	"context"
 
-	"github.com/mycroblog/my/internal/adapter/db/sqlite/sqlitegen"
+	"github.com/mycroblog/my/internal/adapter/db/sqlite/identitygen"
 	appidentity "github.com/mycroblog/my/internal/app/identity"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/identity"
@@ -17,14 +17,14 @@ func (r *IdentityRepository) InsertTOTPEnrollment(ctx context.Context, tx uow.Tx
 	if err != nil {
 		return err
 	}
-	err = q.InsertTOTPEnrollment(ctx, sqlitegen.InsertTOTPEnrollmentParams{
+	err = q.InsertTOTPEnrollment(ctx, identitygen.InsertTOTPEnrollmentParams{
 		ID: e.ID, UserID: e.UserID, SecretEnc: e.SecretEnc, EnrolledAt: toMillis(e.EnrolledAt),
 	})
 	if err != nil {
 		return wrap(err, "insert TOTP enrollment")
 	}
 	for _, h := range recoveryCodeHashes {
-		if err := q.InsertTOTPRecoveryCode(ctx, sqlitegen.InsertTOTPRecoveryCodeParams{EnrollmentID: e.ID, CodeHash: h}); err != nil {
+		if err := q.InsertTOTPRecoveryCode(ctx, identitygen.InsertTOTPRecoveryCodeParams{EnrollmentID: e.ID, CodeHash: h}); err != nil {
 			return wrap(err, "insert TOTP recovery code")
 		}
 	}
@@ -49,7 +49,7 @@ func (r *IdentityRepository) InsertTOTPEnrollmentRevocation(ctx context.Context,
 	if err != nil {
 		return err
 	}
-	err = q.InsertTOTPEnrollmentRevocation(ctx, sqlitegen.InsertTOTPEnrollmentRevocationParams{
+	err = q.InsertTOTPEnrollmentRevocation(ctx, identitygen.InsertTOTPEnrollmentRevocationParams{
 		EnrollmentID: rev.EnrollmentID, RevokedAt: toMillis(rev.RevokedAt),
 	})
 	return wrap(err, "insert TOTP enrollment revocation")
@@ -61,7 +61,7 @@ func (r *IdentityRepository) UseTOTPRecoveryCode(ctx context.Context, tx uow.Tx,
 	if err != nil {
 		return false, err
 	}
-	n, err := q.UseTOTPRecoveryCode(ctx, sqlitegen.UseTOTPRecoveryCodeParams{
+	n, err := q.UseTOTPRecoveryCode(ctx, identitygen.UseTOTPRecoveryCodeParams{
 		UsedAt: toMillis(u.UsedAt), EnrollmentID: u.EnrollmentID, CodeHash: u.CodeHash,
 	})
 	if err != nil {

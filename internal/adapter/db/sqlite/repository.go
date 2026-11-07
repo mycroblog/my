@@ -12,29 +12,28 @@ import (
 	msqlite "modernc.org/sqlite"
 	sqlite3 "modernc.org/sqlite/lib"
 
-	"github.com/mycroblog/my/internal/adapter/db/sqlite/sqlitegen"
 	"github.com/mycroblog/my/internal/adapter/telemetry/dbtrace"
 	"github.com/mycroblog/my/internal/app/uow"
 )
 
 // queries returns the generated queries bound to the SQLite transaction behind tx, which must
 // be a transaction of d's database.
-func (d *DB) queries(tx uow.Tx) (*sqlitegen.Queries, error) {
+func (d *DB) queries(tx uow.Tx) (*genQueries, error) {
 	db, err := d.QueryTx(tx)
 	if err != nil {
 		return nil, err
 	}
-	return sqlitegen.New(db), nil
+	return newGenQueries(db), nil
 }
 
 // reader returns the generated queries on the connection pool, for reads outside transactions,
 // or on the transaction of a copy that in made.
-func (d *DB) reader() *sqlitegen.Queries {
+func (d *DB) reader() *genQueries {
 	if d.tx != nil {
-		return sqlitegen.New(dbtrace.Wrap(d.tx, d.tracer, dbtrace.SystemSQLite))
+		return newGenQueries(dbtrace.Wrap(d.tx, d.tracer, dbtrace.SystemSQLite))
 	}
 	checkSecondConnection(d.db)
-	return sqlitegen.New(dbtrace.Wrap(d.db, d.tracer, dbtrace.SystemSQLite))
+	return newGenQueries(dbtrace.Wrap(d.db, d.tracer, dbtrace.SystemSQLite))
 }
 
 // in returns a copy of d whose reads run in tx, for the repositories' read methods that take a

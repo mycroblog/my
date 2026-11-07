@@ -5,7 +5,7 @@ package sqlite
 import (
 	"context"
 
-	"github.com/mycroblog/my/internal/adapter/db/sqlite/sqlitegen"
+	"github.com/mycroblog/my/internal/adapter/db/sqlite/accountgen"
 	appaccount "github.com/mycroblog/my/internal/app/account"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/account"
@@ -25,7 +25,7 @@ func (r *AccountRepository) ReplaceSearchTerms(ctx context.Context, tx uow.Tx, a
 		return wrap(err, "delete account search terms")
 	}
 	for _, t := range terms {
-		if err := q.InsertAccountSearchTerm(ctx, sqlitegen.InsertAccountSearchTermParams{
+		if err := q.InsertAccountSearchTerm(ctx, accountgen.InsertAccountSearchTermParams{
 			AccountID: accountID, Kind: string(t.Kind), Term: t.Term, IsLocal: boolToInt(t.IsLocal),
 		}); err != nil {
 			return wrap(err, "insert account search term")
@@ -78,7 +78,7 @@ func (r *AccountRepository) ListSearchTerms(ctx context.Context) ([]account.Sear
 
 // SearchTerms implements account.SearchTermRepository.
 func (r *AccountRepository) SearchTerms(ctx context.Context, low, high string, limit int) ([]account.SearchTerm, error) {
-	rows, err := r.db.reader().SearchAccountTerms(ctx, sqlitegen.SearchAccountTermsParams{Low: low, High: high, Lim: int64(limit)})
+	rows, err := r.db.reader().SearchAccountTerms(ctx, accountgen.SearchAccountTermsParams{Low: low, High: high, Lim: int64(limit)})
 	if err != nil {
 		return nil, wrap(err, "search account terms")
 	}

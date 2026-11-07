@@ -9,7 +9,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
-	"github.com/mycroblog/my/internal/adapter/db/postgres/postgresgen"
+	"github.com/mycroblog/my/internal/adapter/db/postgres/contentgen"
 	appcontent "github.com/mycroblog/my/internal/app/content"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/content"
@@ -24,7 +24,7 @@ func (r *CustomEmojiRepository) InsertCustomEmojiRequest(ctx context.Context, tx
 	if err != nil {
 		return err
 	}
-	pending := postgresgen.InsertCustomEmojiPendingRequestParams{RequestID: req.ID, RequesterUserID: req.RequesterUserID}
+	pending := contentgen.InsertCustomEmojiPendingRequestParams{RequestID: req.ID, RequesterUserID: req.RequesterUserID}
 	if req.Kind == content.RequestCreate {
 		taken, err := q.LocalCustomEmojiShortcodeTaken(ctx, req.Shortcode)
 		if err != nil {
@@ -37,7 +37,7 @@ func (r *CustomEmojiRepository) InsertCustomEmojiRequest(ctx context.Context, tx
 	} else {
 		pending.EmojiID = toNullString(req.EmojiID)
 	}
-	err = q.InsertCustomEmojiRequest(ctx, postgresgen.InsertCustomEmojiRequestParams{
+	err = q.InsertCustomEmojiRequest(ctx, contentgen.InsertCustomEmojiRequestParams{
 		ID: req.ID, Kind: string(req.Kind), RequesterUserID: toNullString(req.RequesterUserID), EmojiID: toNullString(req.EmojiID),
 		Shortcode: req.Shortcode, MediaID: req.MediaID, CreatedAt: utc(req.CreatedAt),
 	})
@@ -67,7 +67,7 @@ func (r *CustomEmojiRepository) CloseCustomEmojiRequest(ctx context.Context, tx 
 	if n == 0 {
 		return appcontent.ErrCustomEmojiRequestNotPending
 	}
-	err = q.InsertCustomEmojiRequestOutcome(ctx, postgresgen.InsertCustomEmojiRequestOutcomeParams{
+	err = q.InsertCustomEmojiRequestOutcome(ctx, contentgen.InsertCustomEmojiRequestOutcomeParams{
 		ID: o.ID, RequestID: o.RequestID, Outcome: string(o.Outcome), DecidedByUserID: toNullString(o.DecidedByUserID),
 		Reason: toNullString(o.Reason), EmojiID: toNullString(o.EmojiID), DecidedAt: utc(o.DecidedAt),
 	})
@@ -132,7 +132,7 @@ func (r *CustomEmojiRepository) ListCustomEmojiRequests(ctx context.Context, q a
 	if err != nil {
 		return nil, err
 	}
-	rows, err := r.db.reader().ListCustomEmojiRequests(ctx, postgresgen.ListCustomEmojiRequestsParams{
+	rows, err := r.db.reader().ListCustomEmojiRequests(ctx, contentgen.ListCustomEmojiRequestsParams{
 		RequesterUserID: toNullString(q.RequesterUserID), State: string(q.State), BeforeID: toNullString(q.Before), RowLimit: n,
 	})
 	if err != nil {
@@ -163,7 +163,7 @@ func (r *CustomEmojiRepository) ListCustomEmojiRequestsByID(ctx context.Context,
 
 // CountCustomEmojiUsage implements content.CustomEmojiRequestRepository.
 func (r *CustomEmojiRepository) CountCustomEmojiUsage(ctx context.Context, userID string, since, until time.Time) (approved, pending int, err error) {
-	row, err := r.db.reader().CountCustomEmojiUsage(ctx, postgresgen.CountCustomEmojiUsageParams{UserID: userID, Since: since, Until: until})
+	row, err := r.db.reader().CountCustomEmojiUsage(ctx, contentgen.CountCustomEmojiUsageParams{UserID: userID, Since: since, Until: until})
 	return int(row.Approved), int(row.Pending), wrap(err, "count custom emoji usage")
 }
 

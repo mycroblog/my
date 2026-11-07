@@ -9,7 +9,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
-	"github.com/mycroblog/my/internal/adapter/db/postgres/postgresgen"
+	"github.com/mycroblog/my/internal/adapter/db/postgres/translationgen"
 	"github.com/mycroblog/my/internal/app/translation"
 	"github.com/mycroblog/my/internal/app/uow"
 )
@@ -28,7 +28,7 @@ func (r *TranslationRepository) InsertTranslation(ctx context.Context, tx uow.Tx
 	if err != nil {
 		return false, err
 	}
-	n, err := q.InsertStatusTranslation(ctx, postgresgen.InsertStatusTranslationParams{
+	n, err := q.InsertStatusTranslation(ctx, translationgen.InsertStatusTranslationParams{
 		ID: t.ID, StatusID: t.StatusID, RevisionID: t.RevisionID, TargetLanguage: t.TargetLanguage, Provider: t.Provider,
 		SourceLanguage: t.SourceLanguage, ContentHtml: t.ContentHTML, SpoilerText: t.SpoilerText, CreatedAt: t.CreatedAt,
 	})
@@ -43,7 +43,7 @@ func (r *TranslationRepository) InsertTranslation(ctx context.Context, tx uow.Tx
 		if err != nil {
 			return false, err
 		}
-		err = q.InsertStatusTranslationAttachment(ctx, postgresgen.InsertStatusTranslationAttachmentParams{
+		err = q.InsertStatusTranslationAttachment(ctx, translationgen.InsertStatusTranslationAttachmentParams{
 			TranslationID: t.ID, Position: position, Description: a.Description,
 		})
 		if err != nil {
@@ -55,7 +55,7 @@ func (r *TranslationRepository) InsertTranslation(ctx context.Context, tx uow.Tx
 		if err != nil {
 			return false, err
 		}
-		err = q.InsertStatusTranslationPollOption(ctx, postgresgen.InsertStatusTranslationPollOptionParams{
+		err = q.InsertStatusTranslationPollOption(ctx, translationgen.InsertStatusTranslationPollOptionParams{
 			TranslationID: t.ID, Position: position, Title: o.Title,
 		})
 		if err != nil {
@@ -68,7 +68,7 @@ func (r *TranslationRepository) InsertTranslation(ctx context.Context, tx uow.Tx
 // FindTranslations implements translation.Repository.
 func (r *TranslationRepository) FindTranslations(ctx context.Context, revisionID, targetLanguage string) ([]translation.Stored, error) {
 	q := r.db.reader()
-	rows, err := q.ListStatusTranslations(ctx, postgresgen.ListStatusTranslationsParams{RevisionID: revisionID, TargetLanguage: targetLanguage})
+	rows, err := q.ListStatusTranslations(ctx, translationgen.ListStatusTranslationsParams{RevisionID: revisionID, TargetLanguage: targetLanguage})
 	if err != nil {
 		return nil, wrap(err, "list status translations")
 	}
@@ -116,7 +116,7 @@ func (r *TranslationRepository) ListExpiredTranslations(ctx context.Context, cre
 	if err != nil {
 		return nil, err
 	}
-	rows, err := r.db.reader().ListExpiredStatusTranslationIDs(ctx, postgresgen.ListExpiredStatusTranslationIDsParams{
+	rows, err := r.db.reader().ListExpiredStatusTranslationIDs(ctx, translationgen.ListExpiredStatusTranslationIDsParams{
 		CreatedBefore: createdBefore, BatchLimit: n,
 	})
 	if err != nil {
@@ -156,11 +156,11 @@ func (r *TranslationRepository) AddUsageWithin(ctx context.Context, tx uow.Tx, a
 	}
 	// Without an account, only the server's row counts (a moderator's translation of a report).
 	if accountID != "" {
-		err = q.EnsureTranslationAccountUsage(ctx, postgresgen.EnsureTranslationAccountUsageParams{AccountID: accountID, Month: month})
+		err = q.EnsureTranslationAccountUsage(ctx, translationgen.EnsureTranslationAccountUsageParams{AccountID: accountID, Month: month})
 		if err != nil {
 			return false, wrap(err, "ensure translation account usage")
 		}
-		n, err := q.AddTranslationAccountUsageWithin(ctx, postgresgen.AddTranslationAccountUsageWithinParams{AccountID: accountID, Month: month, Characters: characters, MaxCharacters: limits.Account})
+		n, err := q.AddTranslationAccountUsageWithin(ctx, translationgen.AddTranslationAccountUsageWithinParams{AccountID: accountID, Month: month, Characters: characters, MaxCharacters: limits.Account})
 		if err != nil || n == 0 {
 			return false, wrap(err, "add translation account usage")
 		}
@@ -168,7 +168,7 @@ func (r *TranslationRepository) AddUsageWithin(ctx context.Context, tx uow.Tx, a
 	if err := q.EnsureTranslationServerUsage(ctx, month); err != nil {
 		return false, wrap(err, "ensure translation server usage")
 	}
-	n, err := q.AddTranslationServerUsageWithin(ctx, postgresgen.AddTranslationServerUsageWithinParams{Month: month, Characters: characters, MaxCharacters: limits.Server})
+	n, err := q.AddTranslationServerUsageWithin(ctx, translationgen.AddTranslationServerUsageWithinParams{Month: month, Characters: characters, MaxCharacters: limits.Server})
 	return n > 0, wrap(err, "add translation server usage")
 }
 
@@ -178,14 +178,14 @@ func (r *TranslationRepository) AddCacheLookups(ctx context.Context, tx uow.Tx, 
 	if err != nil {
 		return err
 	}
-	err = q.AddTranslationCacheLookups(ctx, postgresgen.AddTranslationCacheLookupsParams{Month: month, Hits: hits, Misses: misses})
+	err = q.AddTranslationCacheLookups(ctx, translationgen.AddTranslationCacheLookupsParams{Month: month, Hits: hits, Misses: misses})
 	return wrap(err, "add translation cache lookups")
 }
 
 // FindUsage implements translation.Repository.
 func (r *TranslationRepository) FindUsage(ctx context.Context, accountID, month string) (translation.Usage, error) {
 	q := r.db.reader()
-	account, err := q.GetTranslationAccountUsage(ctx, postgresgen.GetTranslationAccountUsageParams{AccountID: accountID, Month: month})
+	account, err := q.GetTranslationAccountUsage(ctx, translationgen.GetTranslationAccountUsageParams{AccountID: accountID, Month: month})
 	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
 		return translation.Usage{}, wrap(err, "get translation account usage")
 	}

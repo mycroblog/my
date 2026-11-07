@@ -9,7 +9,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/mycroblog/my/internal/adapter/db/sqlite/sqlitegen"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/pkg/testkit"
 )
@@ -21,7 +20,7 @@ func TestBackupTo(t *testing.T) {
 	want := []string{testkit.NamedID("a"), testkit.NamedID("b")}
 	slices.Sort(want)
 	for _, k := range want {
-		if err := insertProbe(ctx, sqlitegen.New(db.db), k); err != nil {
+		if err := insertProbe(ctx, newGenQueries(db.db), k); err != nil {
 			t.Fatalf("insert %s: %v", k, err)
 		}
 	}

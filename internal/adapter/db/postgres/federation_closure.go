@@ -6,7 +6,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/mycroblog/my/internal/adapter/db/postgres/postgresgen"
+	"github.com/mycroblog/my/internal/adapter/db/postgres/federationgen"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/federation"
 )
@@ -17,7 +17,7 @@ func (r *FederationRepository) InsertFanOutCompletion(ctx context.Context, tx uo
 	if err != nil {
 		return err
 	}
-	err = q.InsertOutboundFanOutCompletion(ctx, postgresgen.InsertOutboundFanOutCompletionParams{
+	err = q.InsertOutboundFanOutCompletion(ctx, federationgen.InsertOutboundFanOutCompletionParams{
 		OutboundActivityID: outboundActivityID, CompletedAt: completedAt,
 	})
 	return wrap(err, "insert outbound fan-out completion")
@@ -29,7 +29,7 @@ func (r *FederationRepository) InsertClosureDelete(ctx context.Context, tx uow.T
 	if err != nil {
 		return false, err
 	}
-	n, err := q.InsertClosureDelete(ctx, postgresgen.InsertClosureDeleteParams{
+	n, err := q.InsertClosureDelete(ctx, federationgen.InsertClosureDeleteParams{
 		AccountID: d.AccountID, OutboundActivityID: d.OutboundActivityID, RecordedAt: d.RecordedAt,
 	})
 	return n == 1, wrap(err, "insert closure delete")
@@ -68,6 +68,6 @@ func (r *FederationRepository) ClosureProgress(ctx context.Context, maxAttempts 
 
 // CountPendingMoves implements federation.Repository.
 func (r *FederationRepository) CountPendingMoves(ctx context.Context, since time.Time, maxAttempts int) (int, error) {
-	n, err := r.db.reader().CountPendingMoveSends(ctx, postgresgen.CountPendingMoveSendsParams{Since: since, MaxAttempts: int64(maxAttempts)})
+	n, err := r.db.reader().CountPendingMoveSends(ctx, federationgen.CountPendingMoveSendsParams{Since: since, MaxAttempts: int64(maxAttempts)})
 	return int(n), wrap(err, "count pending moves")
 }

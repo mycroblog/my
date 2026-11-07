@@ -6,7 +6,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/mycroblog/my/internal/adapter/db/sqlite/sqlitegen"
+	"github.com/mycroblog/my/internal/adapter/db/sqlite/contentgen"
 	appcontent "github.com/mycroblog/my/internal/app/content"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/content"
@@ -20,7 +20,7 @@ func (r *StatusRepository) UpsertStatusLinkCard(ctx context.Context, tx uow.Tx, 
 	if err != nil {
 		return err
 	}
-	return wrap(q.UpsertStatusLinkCard(ctx, sqlitegen.UpsertStatusLinkCardParams{StatusID: l.StatusID, Url: l.URL}), "upsert status link card")
+	return wrap(q.UpsertStatusLinkCard(ctx, contentgen.UpsertStatusLinkCardParams{StatusID: l.StatusID, Url: l.URL}), "upsert status link card")
 }
 
 // DeleteStatusLinkCard implements content.LinkCardRepository.
@@ -65,7 +65,7 @@ func (r *StatusRepository) UpsertLinkCard(ctx context.Context, tx uow.Tx, c cont
 	if err != nil {
 		return err
 	}
-	return wrap(q.UpsertLinkCard(ctx, sqlitegen.UpsertLinkCardParams{
+	return wrap(q.UpsertLinkCard(ctx, contentgen.UpsertLinkCardParams{
 		Url: c.URL, CardUrl: c.CardURL, Title: c.Title, Description: c.Description, SiteName: c.SiteName,
 		AuthorName: c.AuthorName, PublishedAt: toNullMillis(c.PublishedAt), ImageMediaID: toNullString(c.ImageMediaID),
 		CreatorAccountID: toNullString(c.CreatorAccountID), Language: toNullString(c.Language), FetchedAt: toMillis(c.FetchedAt),
@@ -74,7 +74,7 @@ func (r *StatusRepository) UpsertLinkCard(ctx context.Context, tx uow.Tx, c cont
 
 // ListUnreferencedLinkCards implements content.LinkCardRepository.
 func (r *StatusRepository) ListUnreferencedLinkCards(ctx context.Context, fetchedBefore time.Time, limit int) ([]content.LinkCard, error) {
-	rows, err := r.db.reader().ListUnreferencedLinkCards(ctx, sqlitegen.ListUnreferencedLinkCardsParams{
+	rows, err := r.db.reader().ListUnreferencedLinkCards(ctx, contentgen.ListUnreferencedLinkCardsParams{
 		FetchedBefore: toMillis(fetchedBefore), BatchLimit: int64(limit),
 	})
 	if err != nil {
@@ -102,7 +102,7 @@ func (r *StatusRepository) DeleteUnreferencedLinkCard(ctx context.Context, tx uo
 	if err != nil {
 		return false, err
 	}
-	n, err := q.DeleteUnreferencedLinkCard(ctx, sqlitegen.DeleteUnreferencedLinkCardParams{Url: url, FetchedAt: toMillis(fetchedAt)})
+	n, err := q.DeleteUnreferencedLinkCard(ctx, contentgen.DeleteUnreferencedLinkCardParams{Url: url, FetchedAt: toMillis(fetchedAt)})
 	return n > 0, wrap(err, "delete link card")
 }
 
@@ -112,14 +112,14 @@ func (r *StatusRepository) InsertLinkCardMedia(ctx context.Context, tx uow.Tx, m
 	if err != nil {
 		return false, err
 	}
-	n, err := q.InsertLinkCardMedia(ctx, sqlitegen.InsertLinkCardMediaParams{
+	n, err := q.InsertLinkCardMedia(ctx, contentgen.InsertLinkCardMediaParams{
 		MediaID: m.MediaID, RemoteUrl: m.RemoteURL, ContentType: m.ContentType, Width: int64(m.Width), Height: int64(m.Height),
 		Blurhash: m.Blurhash, Description: m.Description,
 	})
 	if err != nil || n == 0 {
 		return false, wrap(err, "insert link card media")
 	}
-	err = q.InsertMediaFile(ctx, sqlitegen.InsertMediaFileParams{
+	err = q.InsertMediaFile(ctx, contentgen.InsertMediaFileParams{
 		ID: m.MediaID, OwnerAccountID: toNullString(""), Origin: string(content.MediaOriginRemote), CreatedAt: toMillis(createdAt),
 	})
 	return err == nil, wrap(err, "insert link card media file")
@@ -166,7 +166,7 @@ func (r *StatusRepository) DeleteUnreferencedLinkCardMedia(ctx context.Context, 
 	return true, wrap(q.DeleteLinkCardMediaFile(ctx, mediaID), "delete link card media file")
 }
 
-func linkCard(row sqlitegen.LinkCard) content.LinkCard {
+func linkCard(row contentgen.LinkCard) content.LinkCard {
 	return content.LinkCard{
 		URL: row.Url, CardURL: row.CardUrl, Title: row.Title, Description: row.Description, SiteName: row.SiteName,
 		AuthorName: row.AuthorName, PublishedAt: fromNullMillis(row.PublishedAt), ImageMediaID: row.ImageMediaID.String,
@@ -174,7 +174,7 @@ func linkCard(row sqlitegen.LinkCard) content.LinkCard {
 	}
 }
 
-func linkCardMedia(row sqlitegen.LinkCardMedium) content.LinkCardMedia {
+func linkCardMedia(row contentgen.LinkCardMedium) content.LinkCardMedia {
 	return content.LinkCardMedia{
 		MediaID: row.MediaID, RemoteURL: row.RemoteUrl, ContentType: row.ContentType, Width: int(row.Width), Height: int(row.Height),
 		Blurhash: row.Blurhash, Description: row.Description,

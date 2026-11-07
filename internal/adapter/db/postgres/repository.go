@@ -11,27 +11,26 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 
-	"github.com/mycroblog/my/internal/adapter/db/postgres/postgresgen"
 	"github.com/mycroblog/my/internal/app/uow"
 )
 
 // queries returns the generated queries bound to the PostgreSQL transaction behind tx, which
 // must be a transaction of d's database.
-func (d *DB) queries(tx uow.Tx) (*postgresgen.Queries, error) {
+func (d *DB) queries(tx uow.Tx) (*genQueries, error) {
 	pgTx, err := d.txOf(tx)
 	if err != nil {
 		return nil, err
 	}
-	return postgresgen.New(pgTx), nil
+	return newGenQueries(pgTx), nil
 }
 
 // reader returns the generated queries on the pool, for reads outside transactions, or on the
 // transaction of a copy that in made.
-func (d *DB) reader() *postgresgen.Queries {
+func (d *DB) reader() *genQueries {
 	if d.tx != nil {
-		return postgresgen.New(d.tx)
+		return newGenQueries(d.tx)
 	}
-	return postgresgen.New(d.conns)
+	return newGenQueries(d.conns)
 }
 
 // in returns a copy of d whose reads run in tx, for the repositories' read methods that take a

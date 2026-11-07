@@ -9,7 +9,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
-	"github.com/mycroblog/my/internal/adapter/db/postgres/postgresgen"
+	"github.com/mycroblog/my/internal/adapter/db/postgres/identitygen"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/identity"
 )
@@ -38,7 +38,7 @@ func (r *IdentityRepository) SetRoleBadge(ctx context.Context, tx uow.Tx, roleID
 	if err != nil {
 		return err
 	}
-	return wrap(q.UpsertRoleBadge(ctx, postgresgen.UpsertRoleBadgeParams{
+	return wrap(q.UpsertRoleBadge(ctx, identitygen.UpsertRoleBadgeParams{
 		RoleID: roleID, Label: b.Label, Color: string(b.Color), UpdatedAt: b.UpdatedAt,
 	}), "set role badge")
 }
@@ -61,7 +61,7 @@ func (r *IdentityRepository) RoleBadgeDisplayed(ctx context.Context, tx uow.Tx, 
 	if err != nil {
 		return false, err
 	}
-	n, err := q.CountUserRoleBadgeDisplays(ctx, postgresgen.CountUserRoleBadgeDisplaysParams{UserID: userID, RoleID: roleID})
+	n, err := q.CountUserRoleBadgeDisplays(ctx, identitygen.CountUserRoleBadgeDisplaysParams{UserID: userID, RoleID: roleID})
 	return n > 0, wrap(err, "count role badge displays")
 }
 
@@ -72,10 +72,10 @@ func (r *IdentityRepository) SetRoleBadgeDisplayed(ctx context.Context, tx uow.T
 		return err
 	}
 	if !displayed {
-		return wrap(q.DeleteUserRoleBadgeDisplay(ctx, postgresgen.DeleteUserRoleBadgeDisplayParams{UserID: userID, RoleID: roleID}),
+		return wrap(q.DeleteUserRoleBadgeDisplay(ctx, identitygen.DeleteUserRoleBadgeDisplayParams{UserID: userID, RoleID: roleID}),
 			"delete role badge display")
 	}
-	return wrap(q.InsertUserRoleBadgeDisplay(ctx, postgresgen.InsertUserRoleBadgeDisplayParams{
+	return wrap(q.InsertUserRoleBadgeDisplay(ctx, identitygen.InsertUserRoleBadgeDisplayParams{
 		UserID: userID, RoleID: roleID, CreatedAt: at,
 	}), "insert role badge display")
 }
@@ -110,7 +110,7 @@ func (r *IdentityRepository) ListProfileBadges(ctx context.Context, userID strin
 }
 
 // roleBadges returns the badge of every role that has one, by role.
-func roleBadges(ctx context.Context, q *postgresgen.Queries) (map[string]*identity.RoleBadge, error) {
+func roleBadges(ctx context.Context, q *genQueries) (map[string]*identity.RoleBadge, error) {
 	rows, err := q.ListRoleBadges(ctx)
 	if err != nil {
 		return nil, wrap(err, "list role badges")
@@ -123,6 +123,6 @@ func roleBadges(ctx context.Context, q *postgresgen.Queries) (map[string]*identi
 	return out, nil
 }
 
-func roleBadgeFrom(row postgresgen.RoleBadge) identity.RoleBadge {
+func roleBadgeFrom(row identitygen.RoleBadge) identity.RoleBadge {
 	return identity.RoleBadge{Label: row.Label, Color: identity.BadgeColor(row.Color), UpdatedAt: row.UpdatedAt}
 }

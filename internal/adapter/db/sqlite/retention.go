@@ -6,7 +6,9 @@ import (
 	"context"
 	"time"
 
-	"github.com/mycroblog/my/internal/adapter/db/sqlite/sqlitegen"
+	"github.com/mycroblog/my/internal/adapter/db/sqlite/accountgen"
+	"github.com/mycroblog/my/internal/adapter/db/sqlite/contentgen"
+	"github.com/mycroblog/my/internal/adapter/db/sqlite/federationgen"
 	appaccount "github.com/mycroblog/my/internal/app/account"
 	appcontent "github.com/mycroblog/my/internal/app/content"
 	appfederation "github.com/mycroblog/my/internal/app/federation"
@@ -27,7 +29,7 @@ func (r *StatusRepository) ListRemoteStatusesToPurge(ctx context.Context, tx uow
 	if err != nil {
 		return nil, err
 	}
-	rows, err := q.ListRemoteStatusesToPurge(ctx, sqlitegen.ListRemoteStatusesToPurgeParams{
+	rows, err := q.ListRemoteStatusesToPurge(ctx, contentgen.ListRemoteStatusesToPurgeParams{
 		After:              pq.After,
 		IDBefore:           purgeIDBound(pq),
 		AnyBefore:          toMillis(pq.Before),
@@ -50,7 +52,7 @@ func (r *StatusRepository) ListRelayedStatusesToPurge(ctx context.Context, tx uo
 	if err != nil {
 		return nil, err
 	}
-	rows, err := q.ListRelayedStatusesToPurge(ctx, sqlitegen.ListRelayedStatusesToPurgeParams{
+	rows, err := q.ListRelayedStatusesToPurge(ctx, contentgen.ListRelayedStatusesToPurgeParams{
 		After: pq.After, IDBefore: kernel.UUIDv7Floor(pq.Before.Add(time.Millisecond)), RelayedBefore: toMillis(pq.Before),
 		BatchLimit: int64(pq.Limit),
 	})
@@ -70,7 +72,7 @@ func (r *StatusRepository) InsertRelayedStatus(ctx context.Context, tx uow.Tx, s
 	if err != nil {
 		return err
 	}
-	err = q.InsertRelayedStatus(ctx, sqlitegen.InsertRelayedStatusParams{StatusID: statusID, RelayID: relayID, ReceivedAt: toMillis(receivedAt)})
+	err = q.InsertRelayedStatus(ctx, contentgen.InsertRelayedStatusParams{StatusID: statusID, RelayID: relayID, ReceivedAt: toMillis(receivedAt)})
 	return wrap(err, "insert relayed status")
 }
 
@@ -130,7 +132,7 @@ func (r *FederationRepository) DeleteReceivedDocumentsBefore(ctx context.Context
 	if err != nil {
 		return 0, err
 	}
-	n, err := q.DeleteReceivedActivityDocumentsBefore(ctx, sqlitegen.DeleteReceivedActivityDocumentsBeforeParams{
+	n, err := q.DeleteReceivedActivityDocumentsBefore(ctx, federationgen.DeleteReceivedActivityDocumentsBeforeParams{
 		ReceivedBefore: toMillis(t), BatchLimit: int64(limit),
 	})
 	return n, wrap(err, "delete received documents")
@@ -142,7 +144,7 @@ func (r *FederationRepository) DeleteReceivedActivitiesBefore(ctx context.Contex
 	if err != nil {
 		return 0, err
 	}
-	n, err := q.DeleteReceivedActivitiesBefore(ctx, sqlitegen.DeleteReceivedActivitiesBeforeParams{
+	n, err := q.DeleteReceivedActivitiesBefore(ctx, federationgen.DeleteReceivedActivitiesBeforeParams{
 		ReceivedBefore: toMillis(t), BatchLimit: int64(limit),
 	})
 	return n, wrap(err, "delete received activities")
@@ -154,7 +156,7 @@ func (r *FederationRepository) DeleteRemoteFollowTombstonesBefore(ctx context.Co
 	if err != nil {
 		return 0, err
 	}
-	n, err := q.DeleteRemoteFollowTombstonesBefore(ctx, sqlitegen.DeleteRemoteFollowTombstonesBeforeParams{
+	n, err := q.DeleteRemoteFollowTombstonesBefore(ctx, federationgen.DeleteRemoteFollowTombstonesBeforeParams{
 		ReceivedBefore: toMillis(t), BatchLimit: int64(limit),
 	})
 	return n, wrap(err, "delete remote follow tombstones")
@@ -166,7 +168,7 @@ func (r *FederationRepository) DeleteRemoteObjectTombstonesBefore(ctx context.Co
 	if err != nil {
 		return 0, err
 	}
-	n, err := q.DeleteRemoteObjectTombstonesBefore(ctx, sqlitegen.DeleteRemoteObjectTombstonesBeforeParams{
+	n, err := q.DeleteRemoteObjectTombstonesBefore(ctx, federationgen.DeleteRemoteObjectTombstonesBeforeParams{
 		ReceivedBefore: toMillis(t), BatchLimit: int64(limit),
 	})
 	return n, wrap(err, "delete remote object tombstones")
@@ -178,7 +180,7 @@ func (r *FederationRepository) DeleteOutboundDocumentsBefore(ctx context.Context
 	if err != nil {
 		return 0, err
 	}
-	n, err := q.DeleteOutboundActivityDocumentsBefore(ctx, sqlitegen.DeleteOutboundActivityDocumentsBeforeParams{
+	n, err := q.DeleteOutboundActivityDocumentsBefore(ctx, federationgen.DeleteOutboundActivityDocumentsBeforeParams{
 		IDBefore: kernel.UUIDv7Floor(t.Add(time.Millisecond)), BuiltBefore: toMillis(t), BatchLimit: int64(limit),
 	})
 	return n, wrap(err, "delete outbound documents")
@@ -190,7 +192,7 @@ func (r *FederationRepository) DeleteDeliveryAttemptsBefore(ctx context.Context,
 	if err != nil {
 		return 0, err
 	}
-	n, err := q.DeleteDeliveryAttemptsBefore(ctx, sqlitegen.DeleteDeliveryAttemptsBeforeParams{
+	n, err := q.DeleteDeliveryAttemptsBefore(ctx, federationgen.DeleteDeliveryAttemptsBeforeParams{
 		IDBefore: kernel.UUIDv7Floor(t.Add(time.Millisecond)), AttemptedBefore: toMillis(t), BatchLimit: int64(limit),
 	})
 	return n, wrap(err, "delete delivery attempts")
@@ -198,7 +200,7 @@ func (r *FederationRepository) DeleteDeliveryAttemptsBefore(ctx context.Context,
 
 // ListRemoteAccountsWithPastProfiles implements account.ProfilePruneRepository.
 func (r *AccountRepository) ListRemoteAccountsWithPastProfiles(ctx context.Context, after string, limit int) ([]string, error) {
-	ids, err := r.db.reader().ListRemoteAccountsWithPastProfiles(ctx, sqlitegen.ListRemoteAccountsWithPastProfilesParams{
+	ids, err := r.db.reader().ListRemoteAccountsWithPastProfiles(ctx, accountgen.ListRemoteAccountsWithPastProfilesParams{
 		After: after, BatchLimit: int64(limit),
 	})
 	return ids, wrap(err, "list remote accounts with past profiles")
@@ -226,7 +228,7 @@ func (r *FederationRepository) DeleteSupersededStatusCreates(ctx context.Context
 	if err != nil {
 		return 0, err
 	}
-	ids, err := q.ListSupersededStatusCreates(ctx, sqlitegen.ListSupersededStatusCreatesParams{CreatedBefore: toMillis(t), BatchLimit: int64(limit)})
+	ids, err := q.ListSupersededStatusCreates(ctx, federationgen.ListSupersededStatusCreatesParams{CreatedBefore: toMillis(t), BatchLimit: int64(limit)})
 	if err != nil {
 		return 0, wrap(err, "list superseded status creates")
 	}
@@ -239,7 +241,7 @@ func (r *FederationRepository) DeleteExpiredOutboundActivities(ctx context.Conte
 	if err != nil {
 		return 0, err
 	}
-	ids, err := q.ListExpiredOutboundActivities(ctx, sqlitegen.ListExpiredOutboundActivitiesParams{CreatedBefore: toMillis(t), BatchLimit: int64(limit)})
+	ids, err := q.ListExpiredOutboundActivities(ctx, federationgen.ListExpiredOutboundActivitiesParams{CreatedBefore: toMillis(t), BatchLimit: int64(limit)})
 	if err != nil {
 		return 0, wrap(err, "list expired outbound activities")
 	}
@@ -247,7 +249,7 @@ func (r *FederationRepository) DeleteExpiredOutboundActivities(ctx context.Conte
 }
 
 // deleteOutboundActivities deletes activities with their children, children first.
-func deleteOutboundActivities(ctx context.Context, q *sqlitegen.Queries, ids []string) error {
+func deleteOutboundActivities(ctx context.Context, q *genQueries, ids []string) error {
 	if len(ids) == 0 {
 		return nil
 	}
@@ -266,7 +268,7 @@ func (r *FederationRepository) DeleteNodeInfoObservationsBefore(ctx context.Cont
 	if err != nil {
 		return 0, err
 	}
-	n, err := q.DeleteNodeInfoObservationsBefore(ctx, sqlitegen.DeleteNodeInfoObservationsBeforeParams{
+	n, err := q.DeleteNodeInfoObservationsBefore(ctx, federationgen.DeleteNodeInfoObservationsBeforeParams{
 		IDBefore: kernel.UUIDv7Floor(t.Add(time.Millisecond)), ObservedBefore: toMillis(t), BatchLimit: int64(limit),
 	})
 	return n, wrap(err, "delete nodeinfo observations")
@@ -278,7 +280,7 @@ func (r *FederationRepository) DeleteAvailabilityEventsBefore(ctx context.Contex
 	if err != nil {
 		return 0, err
 	}
-	n, err := q.DeleteAvailabilityEventsBefore(ctx, sqlitegen.DeleteAvailabilityEventsBeforeParams{
+	n, err := q.DeleteAvailabilityEventsBefore(ctx, federationgen.DeleteAvailabilityEventsBeforeParams{
 		IDBefore: kernel.UUIDv7Floor(t.Add(time.Millisecond)), OccurredBefore: toMillis(t), BatchLimit: int64(limit),
 	})
 	return n, wrap(err, "delete availability events")
@@ -290,7 +292,7 @@ func (r *StatusRepository) DeleteRetentionDeletionsBefore(ctx context.Context, t
 	if err != nil {
 		return 0, err
 	}
-	n, err := q.DeleteRetentionDeletionsBefore(ctx, sqlitegen.DeleteRetentionDeletionsBeforeParams{DeletedBefore: toMillis(t), BatchLimit: int64(limit)})
+	n, err := q.DeleteRetentionDeletionsBefore(ctx, contentgen.DeleteRetentionDeletionsBeforeParams{DeletedBefore: toMillis(t), BatchLimit: int64(limit)})
 	return n, wrap(err, "delete retention deletions")
 }
 
@@ -300,7 +302,7 @@ func (r *AccountRepository) DeleteHandleVerificationsBefore(ctx context.Context,
 	if err != nil {
 		return 0, err
 	}
-	n, err := q.DeleteHandleVerificationsBefore(ctx, sqlitegen.DeleteHandleVerificationsBeforeParams{
+	n, err := q.DeleteHandleVerificationsBefore(ctx, accountgen.DeleteHandleVerificationsBeforeParams{
 		IDBefore: kernel.UUIDv7Floor(t.Add(time.Millisecond)), CheckedBefore: toMillis(t), BatchLimit: int64(limit),
 	})
 	return n, wrap(err, "delete handle verifications")

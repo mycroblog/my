@@ -5,7 +5,7 @@ package sqlite
 import (
 	"context"
 
-	"github.com/mycroblog/my/internal/adapter/db/sqlite/sqlitegen"
+	"github.com/mycroblog/my/internal/adapter/db/sqlite/instancegen"
 	appinstance "github.com/mycroblog/my/internal/app/instance"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/instance"
@@ -17,7 +17,7 @@ func (r *InstanceRepository) InsertThemeRevision(ctx context.Context, tx uow.Tx,
 	if err != nil {
 		return err
 	}
-	err = q.InsertInstanceThemeRevision(ctx, sqlitegen.InsertInstanceThemeRevisionParams{
+	err = q.InsertInstanceThemeRevision(ctx, instancegen.InsertInstanceThemeRevisionParams{
 		ID: rev.ID, CustomCss: rev.CustomCSS, RevisedByUserID: toNullString(rev.RevisedByUserID), RevisedAt: toMillis(rev.RevisedAt),
 	})
 	if err != nil {
@@ -25,7 +25,7 @@ func (r *InstanceRepository) InsertThemeRevision(ctx context.Context, tx uow.Tx,
 	}
 	for _, v := range rev.Tokens {
 		for _, row := range v.Rows() {
-			err := q.InsertInstanceThemeToken(ctx, sqlitegen.InsertInstanceThemeTokenParams{
+			err := q.InsertInstanceThemeToken(ctx, instancegen.InsertInstanceThemeTokenParams{
 				RevisionID: rev.ID, Token: row.Token, Scheme: string(row.Scheme), Value: row.Value,
 			})
 			if err != nil {
@@ -95,7 +95,7 @@ func (r *InstanceRepository) FindThemeRevision(ctx context.Context, id string) (
 	return findThemeRevision(ctx, r.db.reader(), id)
 }
 
-func findThemeRevision(ctx context.Context, q *sqlitegen.Queries, id string) (instance.ThemeRevision, error) {
+func findThemeRevision(ctx context.Context, q *genQueries, id string) (instance.ThemeRevision, error) {
 	row, err := q.GetInstanceThemeRevision(ctx, id)
 	if err != nil {
 		return instance.ThemeRevision{}, notFound(err, appinstance.ErrNotFound, "instance theme revision "+id)

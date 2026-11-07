@@ -14,7 +14,7 @@ import (
 	msqlite "modernc.org/sqlite"
 	sqlite3 "modernc.org/sqlite/lib"
 
-	"github.com/mycroblog/my/internal/adapter/db/sqlite/sqlitegen"
+	"github.com/mycroblog/my/internal/adapter/db/sqlite/identitygen"
 	"github.com/mycroblog/my/internal/adapter/payment/fake"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/pkg/testkit"
@@ -54,8 +54,8 @@ func newTestDB(t *testing.T, dsnSuffix string, opts uow.Options) (*DB, string) {
 
 // The UnitOfWork contract uses users as its probe table: a row per key, keyed by id.
 
-func insertProbe(ctx context.Context, q *sqlitegen.Queries, key string) error {
-	return q.InsertUser(ctx, sqlitegen.InsertUserParams{ID: key})
+func insertProbe(ctx context.Context, q *genQueries, key string) error {
+	return q.InsertUser(ctx, identitygen.InsertUserParams{ID: key})
 }
 
 func probeKeys(ctx context.Context, db *DB) ([]string, error) {
@@ -368,7 +368,7 @@ func TestAccountSearchContract(t *testing.T) {
 }
 
 // TestAccountSearchUsesTermIndex checks that the range of the prefix search (SearchAccountTerms
-// in queries/sqlite/account_search.sql) reads account_search_terms through its term index, in
+// in queries/sqlite/account/account_search.sql) reads account_search_terms through its term index, in
 // order, without sorting (ADR-0092 §1).
 func TestAccountSearchUsesTermIndex(t *testing.T) {
 	t.Parallel()
@@ -614,7 +614,7 @@ func TestRetriesWhenTheDatabaseIsLocked(t *testing.T) {
 	if blocker, err = other.db.BeginTx(t.Context(), nil); err != nil {
 		t.Fatal(err)
 	}
-	if err := insertProbe(t.Context(), sqlitegen.New(blocker), testkit.NamedID("blocker")); err != nil {
+	if err := insertProbe(t.Context(), newGenQueries(blocker), testkit.NamedID("blocker")); err != nil {
 		t.Fatal(err)
 	}
 

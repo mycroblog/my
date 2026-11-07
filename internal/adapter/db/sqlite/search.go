@@ -8,7 +8,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/mycroblog/my/internal/adapter/db/sqlite/sqlitegen"
+	"github.com/mycroblog/my/internal/adapter/db/sqlite/searchgen"
 	"github.com/mycroblog/my/internal/app/search"
 	"github.com/mycroblog/my/internal/app/uow"
 )
@@ -27,7 +27,7 @@ func (r *SearchRepository) StartRebuild(ctx context.Context, tx uow.Tx, b search
 	if err != nil {
 		return false, err
 	}
-	n, err := q.StartSearchRebuild(ctx, sqlitegen.StartSearchRebuildParams{
+	n, err := q.StartSearchRebuild(ctx, searchgen.StartSearchRebuildParams{
 		RebuildID: b.ID, Mode: string(b.Mode), Phase: string(b.Phase), Rate: int64(b.Rate), StartedAt: toMillis(b.StartedAt),
 	})
 	if err != nil {
@@ -64,7 +64,7 @@ func (r *SearchRepository) StepRebuild(ctx context.Context, tx uow.Tx, step sear
 	if err != nil {
 		return false, err
 	}
-	n, err := q.StepSearchRebuild(ctx, sqlitegen.StepSearchRebuildParams{
+	n, err := q.StepSearchRebuild(ctx, searchgen.StepSearchRebuildParams{
 		Phase: string(step.Phase), AfterStatusID: step.After, Processed: step.Processed, Failed: step.Failed,
 		LastError: step.LastError, UpdatedAt: toMillis(step.UpdatedAt),
 		RebuildID: step.ID, FromPhase: string(step.FromPhase), FromAfter: step.FromAfter,
@@ -81,7 +81,7 @@ func (r *SearchRepository) SetRebuildRate(ctx context.Context, tx uow.Tx, id str
 	if err != nil {
 		return err
 	}
-	return wrap(q.SetSearchRebuildRate(ctx, sqlitegen.SetSearchRebuildRateParams{Rate: int64(rate), RebuildID: id}), "set search rebuild rate")
+	return wrap(q.SetSearchRebuildRate(ctx, searchgen.SetSearchRebuildRateParams{Rate: int64(rate), RebuildID: id}), "set search rebuild rate")
 }
 
 // SetRebuildError implements search.Repository.
@@ -90,7 +90,7 @@ func (r *SearchRepository) SetRebuildError(ctx context.Context, tx uow.Tx, id, m
 	if err != nil {
 		return err
 	}
-	return wrap(q.SetSearchRebuildError(ctx, sqlitegen.SetSearchRebuildErrorParams{LastError: message, UpdatedAt: toMillis(at), RebuildID: id}), "set search rebuild error")
+	return wrap(q.SetSearchRebuildError(ctx, searchgen.SetSearchRebuildErrorParams{LastError: message, UpdatedAt: toMillis(at), RebuildID: id}), "set search rebuild error")
 }
 
 // AddRebuildFailures implements search.Repository.
@@ -100,7 +100,7 @@ func (r *SearchRepository) AddRebuildFailures(ctx context.Context, tx uow.Tx, id
 		return err
 	}
 	for _, f := range failures {
-		err := q.AddSearchRebuildFailure(ctx, sqlitegen.AddSearchRebuildFailureParams{
+		err := q.AddSearchRebuildFailure(ctx, searchgen.AddSearchRebuildFailureParams{
 			RebuildID: id, StatusID: f.StatusID, Message: f.Message, FailedAt: toMillis(f.FailedAt),
 		})
 		if err != nil {
@@ -112,7 +112,7 @@ func (r *SearchRepository) AddRebuildFailures(ctx context.Context, tx uow.Tx, id
 
 // ListRebuildFailures implements search.Repository.
 func (r *SearchRepository) ListRebuildFailures(ctx context.Context, id string, limit int) ([]search.RebuildFailure, error) {
-	rows, err := r.db.reader().ListSearchRebuildFailures(ctx, sqlitegen.ListSearchRebuildFailuresParams{RebuildID: id, PageLimit: int64(limit)})
+	rows, err := r.db.reader().ListSearchRebuildFailures(ctx, searchgen.ListSearchRebuildFailuresParams{RebuildID: id, PageLimit: int64(limit)})
 	if err != nil {
 		return nil, wrap(err, "list search rebuild failures")
 	}

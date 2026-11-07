@@ -5,7 +5,7 @@ package postgres
 import (
 	"context"
 
-	"github.com/mycroblog/my/internal/adapter/db/postgres/postgresgen"
+	"github.com/mycroblog/my/internal/adapter/db/postgres/identitygen"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/identity"
 )
@@ -16,7 +16,7 @@ func (r *IdentityRepository) ListVerifiedEmailUsers(ctx context.Context, after s
 	if err != nil {
 		return nil, err
 	}
-	ids, err := r.db.reader().ListVerifiedPrimaryEmailUsers(ctx, postgresgen.ListVerifiedPrimaryEmailUsersParams{After: toNullString(after), RowLimit: rowLimit})
+	ids, err := r.db.reader().ListVerifiedPrimaryEmailUsers(ctx, identitygen.ListVerifiedPrimaryEmailUsersParams{After: toNullString(after), RowLimit: rowLimit})
 	return ids, wrap(err, "list users with a verified primary email")
 }
 
@@ -26,7 +26,7 @@ func (r *IdentityRepository) InsertServiceClosureEmail(ctx context.Context, tx u
 	if err != nil {
 		return false, err
 	}
-	n, err := q.InsertServiceClosureEmail(ctx, postgresgen.InsertServiceClosureEmailParams{
+	n, err := q.InsertServiceClosureEmail(ctx, identitygen.InsertServiceClosureEmailParams{
 		ID: e.ID, ClosureEventID: e.ClosureEventID, Email: string(e.Email), UserID: e.UserID, QueuedAt: e.QueuedAt,
 	})
 	return n > 0, wrap(err, "insert service closure email")
@@ -34,6 +34,6 @@ func (r *IdentityRepository) InsertServiceClosureEmail(ctx context.Context, tx u
 
 // ServiceClosureEmailQueued implements identity.Repository.
 func (r *IdentityRepository) ServiceClosureEmailQueued(ctx context.Context, closureEventID string, e identity.ClosureEmail) (bool, error) {
-	ok, err := r.db.reader().ServiceClosureEmailQueued(ctx, postgresgen.ServiceClosureEmailQueuedParams{ClosureEventID: closureEventID, Email: string(e)})
+	ok, err := r.db.reader().ServiceClosureEmailQueued(ctx, identitygen.ServiceClosureEmailQueuedParams{ClosureEventID: closureEventID, Email: string(e)})
 	return ok, wrap(err, "find service closure emails")
 }

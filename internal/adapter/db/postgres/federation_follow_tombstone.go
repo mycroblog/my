@@ -6,7 +6,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/mycroblog/my/internal/adapter/db/postgres/postgresgen"
+	"github.com/mycroblog/my/internal/adapter/db/postgres/federationgen"
 	appfederation "github.com/mycroblog/my/internal/app/federation"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/federation"
@@ -18,7 +18,7 @@ func (r *FederationRepository) InsertRemoteFollowTombstone(ctx context.Context, 
 	if err != nil {
 		return false, err
 	}
-	n, err := q.InsertRemoteFollowTombstone(ctx, postgresgen.InsertRemoteFollowTombstoneParams{
+	n, err := q.InsertRemoteFollowTombstone(ctx, federationgen.InsertRemoteFollowTombstoneParams{
 		ActivityUri: string(t.ActivityURI), ActorUri: string(t.ActorURI), ObjectUri: string(t.ObjectURI),
 		ReceivedAt: t.ReceivedAt,
 	})
@@ -31,7 +31,7 @@ func (r *FederationRepository) InsertReceivedActivityAnswer(ctx context.Context,
 	if err != nil {
 		return false, err
 	}
-	n, err := q.InsertReceivedActivityAnswer(ctx, postgresgen.InsertReceivedActivityAnswerParams{ActivityUri: string(activityURI), AnsweredAt: at})
+	n, err := q.InsertReceivedActivityAnswer(ctx, federationgen.InsertReceivedActivityAnswerParams{ActivityUri: string(activityURI), AnsweredAt: at})
 	return n == 1, wrap(err, "insert received activity answer")
 }
 
@@ -45,7 +45,7 @@ func (r *FederationRepository) DeleteReceivedActivityAnswersBefore(ctx context.C
 	if err != nil {
 		return 0, err
 	}
-	n, err := q.DeleteReceivedActivityAnswersBefore(ctx, postgresgen.DeleteReceivedActivityAnswersBeforeParams{AnsweredBefore: t, BatchLimit: batch})
+	n, err := q.DeleteReceivedActivityAnswersBefore(ctx, federationgen.DeleteReceivedActivityAnswersBeforeParams{AnsweredBefore: t, BatchLimit: batch})
 	return n, wrap(err, "delete received activity answers")
 }
 
@@ -55,7 +55,7 @@ func (r *FederationRepository) LiveRemoteFollowTombstone(ctx context.Context, tx
 	if err != nil {
 		return federation.RemoteFollowTombstone{}, err
 	}
-	row, err := q.GetLiveRemoteFollowTombstone(ctx, postgresgen.GetLiveRemoteFollowTombstoneParams{
+	row, err := q.GetLiveRemoteFollowTombstone(ctx, federationgen.GetLiveRemoteFollowTombstoneParams{
 		ActorUri: string(actorURI), ObjectUri: string(objectURI),
 	})
 	if err != nil {
