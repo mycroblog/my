@@ -21,3 +21,8 @@ func TestRoleFlows(t *testing.T) {
 	t.Parallel()
 	testkit.RoleFlows(t, accountHarness)
 }
+
+func TestRegistrationFlows(t *testing.T) {
+	t.Parallel()
+	testkit.RegistrationFlows(t, accountHarness)
+}
