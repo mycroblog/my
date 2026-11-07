@@ -31,6 +31,9 @@ import (
 	"github.com/mycroblog/my/internal/app/search"
 )
 
+// DefaultIndex is the default of Options.Index (search_opensearch_index).
+const DefaultIndex = "my-statuses"
+
 // The AWS services whose requests Options.AWS signs.
 const (
 	// ServiceManaged is a domain of Amazon OpenSearch Service.
@@ -171,6 +174,11 @@ func term(field, value string) map[string]any {
 // it. A call that times out leaves the engine's task running, and the retry of the job deletes
 // what is left.
 func (x *Index) deleteByQuery(ctx context.Context, op string, query map[string]any) error {
+	// A delete by query sees only the documents of the last refresh: refresh first, so that a
+	// document written within the last second is deleted too.
+	if err := x.refresh(ctx); err != nil {
+		return err
+	}
 	return x.call(ctx, op, http.MethodPost, x.o.Index+"/_delete_by_query", url.Values{"conflicts": {"proceed"}},
 		map[string]any{"query": query}, nil)
 }

@@ -173,8 +173,9 @@ func (x *Index) createIndex(ctx context.Context, name string) error {
 	return err
 }
 
-// refresh makes the writes so far visible to searches. The engine refreshes on its own within a
-// second; only the tests, whose contract wants a write in the next search, call it.
+// refresh makes the writes so far visible to searches and to a delete by query. The engine
+// refreshes on its own within a second; deleteByQuery and the tests, whose contract wants a write
+// in the next search, call it.
 func (x *Index) refresh(ctx context.Context) error {
 	return x.call(ctx, "refresh", http.MethodPost, x.o.Index+"/_refresh", nil, nil, nil)
 }

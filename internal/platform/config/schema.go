@@ -1019,8 +1019,8 @@ var schema = []field{
 	{
 		key:   "search_opensearch_index",
 		doc:   "The name of the alias of the index of `search = opensearch`. The server keeps the documents in the index named after it with the version of its mapping, such as `my-statuses-v1`, and points the alias at it. Lowercase letters, digits, `-`, and `_`, starting with a letter or a digit.",
-		def:   "my-statuses",
-		check: checkSearchIndexName,
+		defDoc: "`my-statuses`",
+		check:  checkSearchIndexName,
 		set:   func(c *Config, v string) { c.SearchOpenSearchIndex = v },
 	},
 	{
@@ -1040,7 +1040,7 @@ var schema = []field{
 	{
 		key: "search_opensearch_aws_signing",
 		doc: "Whether the server signs the requests of `search = opensearch` with AWS Signature Version 4, as a domain of Amazon OpenSearch Service with an IAM access policy needs. The credentials come from the AWS SDK's default chain: the environment, the shared files, the execution role.",
-		def: "off",
+		defDoc: "`off`",
 		choices: []choice{
 			{value: "off", doc: "No signing."},
 			{value: "es", doc: "Sign for a domain of Amazon OpenSearch Service (the service name `es`) in `search_opensearch_aws_region`. OpenSearch Serverless (`aoss`) is not supported."},

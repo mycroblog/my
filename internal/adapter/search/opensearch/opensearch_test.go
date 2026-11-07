@@ -187,6 +187,10 @@ func TestDeleteByQuery(t *testing.T) {
 			t.Fatal(err)
 		}
 		r := e.last(t)
+		// A delete by query sees only refreshed documents, so a refresh goes first.
+		if before := e.requests[len(e.requests)-2]; before.Method != http.MethodPost || before.Path != "/prefix/my-statuses/_refresh" {
+			t.Errorf("the request before the delete %s %s", before.Method, before.Path)
+		}
 		if r.Method != http.MethodPost || r.Path != "/prefix/my-statuses/_delete_by_query" || r.Query != "conflicts=proceed" {
 			t.Errorf("request %s %s?%s", r.Method, r.Path, r.Query)
 		}

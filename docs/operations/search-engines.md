@@ -16,8 +16,8 @@ Written by the Elasticsearch backend.
 2. Set [`search`](../reference/configuration.md#search) to `opensearch` and [`search_opensearch_url`](../reference/configuration.md#search_opensearch_url) to the URL of the REST API, such as `https://search.internal.example.org:9200`. A path is kept, for a cluster behind a reverse proxy.
 3. Give the server a way in:
    - With the security plugin, a user with [`search_opensearch_username`](../reference/configuration.md#search_opensearch_username) and [`search_opensearch_password`](../reference/configuration.md#search_opensearch_password), sent with HTTP Basic authentication. Use `https` when the cluster is not on the same host or a private network you trust. The user needs to create indexes and aliases named after [`search_opensearch_index`](../reference/configuration.md#search_opensearch_index), and to read, write, and delete their documents.
-   - On Amazon OpenSearch Service with an IAM access policy, [`search_opensearch_aws_signing`](../reference/configuration.md#search_opensearch_aws_signing)` = es`, which signs every request with AWS Signature Version 4. The credentials come from the AWS SDK's default chain (the execution role, the environment, the shared files), and the region from [`search_opensearch_aws_region`](../reference/configuration.md#search_opensearch_aws_region) or `AWS_REGION`. The role needs `es:ESHttpGet`, `es:ESHttpPost`, `es:ESHttpPut`, and `es:ESHttpDelete` on the domain. A domain with fine-grained access control and an internal master user takes the user and password instead.
-   - Amazon OpenSearch Serverless is not supported.
+   - On Amazon OpenSearch Service with an IAM access policy, [`search_opensearch_aws_signing`](../reference/configuration.md#search_opensearch_aws_signing) set to `es`, which signs every request with AWS Signature Version 4. The credentials come from the AWS SDK's default chain (the execution role, the environment, the shared files), and the region from [`search_opensearch_aws_region`](../reference/configuration.md#search_opensearch_aws_region) or `AWS_REGION`. The role needs `es:ESHttpGet`, `es:ESHttpPost`, `es:ESHttpPut`, and `es:ESHttpDelete` on the domain. A domain with fine-grained access control and an internal master user takes the user and password instead.
+   - Amazon OpenSearch Serverless is not supported: it has no delete by query, which removing the posts of an author or of a visibility needs.
 4. Start the server. It creates the index at start and refuses to start when it cannot reach the cluster or create the index.
 5. Run `my search rebuild` to index the posts that are already there ([rebuilding the index](search.md#rebuilding-the-index)).
 
@@ -49,7 +49,7 @@ Every post, whatever its language, is analyzed the same way: the text is split i
 - The pairs do not know where words end, so a query can find a post where its characters only happen to stand side by side: `京都` finds `東京都` as well. A query of katakana written in half-width or full-width letters finds both.
 - Readings are not matched: `ぜんぶん` does not find `全文`, and inflected forms are not matched to their dictionary forms, in Japanese or in English (`running` does not find `run`).
 
-A morphological analyzer such as the `analysis-kuromoji` plugin would split Japanese into words instead; the server does not use one, so that the same index works on any OpenSearch cluster without a plugin.
+A morphological analyzer such as the `analysis-kuromoji` plugin would split Japanese into words instead. Amazon OpenSearch Service has it on every domain, but a cluster you run needs it installed (`opensearch-plugin install analysis-kuromoji`), so the server does not use it: the same index works on any OpenSearch cluster.
 
 ## Meilisearch
 

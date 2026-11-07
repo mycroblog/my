@@ -5,6 +5,7 @@
 package platform
 
 import (
+	"cmp"
 	"context"
 	"fmt"
 	"log/slog"
@@ -30,7 +31,7 @@ const openSearchHTTPTimeout = 15 * time.Minute
 // its alias to the index of this release's mapping.
 func newOpenSearchIndex(ctx context.Context, cfg *config.Config, logger *slog.Logger) (search.Index, error) {
 	o := opensearch.Options{
-		URL: cfg.SearchOpenSearchURL, Index: cfg.SearchOpenSearchIndex,
+		URL: cfg.SearchOpenSearchURL, Index: cmp.Or(cfg.SearchOpenSearchIndex, opensearch.DefaultIndex),
 		Username: cfg.SearchOpenSearchUsername, Password: cfg.SearchOpenSearchPassword,
 		HTTPClient: searchHTTPClient(openSearchHTTPTimeout), Logger: logger,
 	}

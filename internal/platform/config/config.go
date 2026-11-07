@@ -216,8 +216,8 @@ type Config struct {
 	// backend's name.
 	Search string
 	// The cluster of search = opensearch: the URL of its REST API, the alias of the index, the
-	// HTTP Basic authentication, and the AWS request signing ("off" or "es") with its region,
-	// empty for the SDK's.
+	// HTTP Basic authentication, and the AWS request signing ("off" or "es") with its region.
+	// Empty is the default of each: opensearch.DefaultIndex, no signing, and the SDK's region.
 	SearchOpenSearchURL        string
 	SearchOpenSearchIndex      string
 	SearchOpenSearchUsername   string

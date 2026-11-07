@@ -22,7 +22,7 @@ func TestSearchOpenSearch(t *testing.T) {
 			if err != nil {
 				t.Fatalf("Load: %v", err)
 			}
-			if cfg.SearchOpenSearchURL == "" || cfg.SearchOpenSearchIndex == "" || cfg.SearchOpenSearchAWSSigning == "" {
+			if cfg.SearchOpenSearchURL == "" {
 				t.Errorf("config %+v", cfg)
 			}
 		}

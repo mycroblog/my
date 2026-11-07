@@ -246,3 +246,32 @@ func TestSearchServerJapanese(t *testing.T) {
 		}
 	}
 }
+
+// TestSearchServerDeleteByQueryOfUnrefreshedWrites checks that a removal by author or visibility
+// removes a document written just before it, which no refresh has shown to searches yet.
+func TestSearchServerDeleteByQueryOfUnrefreshedWrites(t *testing.T) {
+	base := testServer(t)
+	x := newServerIndex(t, base, fmt.Sprintf("my-unrefreshed-%d", indexSeq.Add(1)))
+	ctx := t.Context()
+	if err := x.Ensure(ctx); err != nil {
+		t.Fatal(err)
+	}
+	for _, remove := range []func() error{
+		func() error { return x.RemoveByAuthor(ctx, "a") },
+		func() error { return x.RemoveByVisibility(ctx, search.VisibilityLocal) },
+		func() error { return x.Clear(ctx) },
+	} {
+		if err := x.Replace(ctx, search.Document{StatusID: "1", AuthorID: "a", Visibility: search.VisibilityLocal, Text: "alpha"}); err != nil {
+			t.Fatal(err)
+		}
+		if err := remove(); err != nil {
+			t.Fatal(err)
+		}
+		if err := x.refresh(ctx); err != nil {
+			t.Fatal(err)
+		}
+		if page, err := x.Search(ctx, search.Query{Text: "alpha", Limit: 10}); err != nil || len(page.StatusIDs) != 0 {
+			t.Errorf("Search after the removal = %v, %v", page.StatusIDs, err)
+		}
+	}
+}
