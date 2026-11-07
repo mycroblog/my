@@ -1,0 +1,238 @@
+{
+  "account_move.aliases.add.description": {
+    "defaultMessage": "账号名（如 @name@example.com）或账号地址。最多可以添加 {max} 个别名。",
+    "description": "Help text of the field for the account to add as an alias. {max} is the most aliases a user can have."
+  },
+  "account_move.aliases.add.field": {
+    "defaultMessage": "要迁出的账号",
+    "description": "Label of the field for the account to add as an alias."
+  },
+  "account_move.aliases.add.required": {
+    "defaultMessage": "请输入账号名或地址。",
+    "description": "Error of the alias field when it is empty."
+  },
+  "account_move.aliases.add.submit": {
+    "defaultMessage": "添加别名",
+    "description": "Button that adds an alias."
+  },
+  "account_move.aliases.add.title": {
+    "defaultMessage": "添加别名",
+    "description": "Button above the list of aliases that opens the form that adds one, and the heading of that form."
+  },
+  "account_move.aliases.add_failed": {
+    "defaultMessage": "无法添加别名：{reason}",
+    "description": "Error next to the form that adds an alias. {reason} is the server's explanation."
+  },
+  "account_move.aliases.added": {
+    "defaultMessage": "已添加别名 {name}。",
+    "description": "Status message after an alias is added. {name} is the alias's handle or address."
+  },
+  "account_move.aliases.description": {
+    "defaultMessage": "别名指明你要从哪个账号迁移过来。请在那个账号把关注者迁移给你之前，先在这里添加它。仅添加别名不会改变任何内容。",
+    "description": "Explains what an alias is, below the heading of the aliases page."
+  },
+  "account_move.aliases.empty": {
+    "defaultMessage": "你还没有别名。",
+    "description": "Text of the list of aliases when the user has none."
+  },
+  "account_move.aliases.item.since": {
+    "defaultMessage": "添加于 {date}",
+    "description": "Under an alias: when the user added it. {date} is a date in the user's locale and time zone."
+  },
+  "account_move.aliases.limit": {
+    "defaultMessage": "你已有 {max} 个别名，已达上限。请先移除一个再添加。",
+    "description": "Replaces the form that adds an alias when the user has the most aliases. {max} is that number."
+  },
+  "account_move.aliases.list.title": {
+    "defaultMessage": "你的别名",
+    "description": "Heading of the section that lists the user's aliases."
+  },
+  "account_move.aliases.move_link": {
+    "defaultMessage": "将你的账号迁移到另一个账号",
+    "description": "Link from the aliases page to the page that moves the account."
+  },
+  "account_move.aliases.remove": {
+    "defaultMessage": "移除",
+    "description": "Button that removes an alias."
+  },
+  "account_move.aliases.remove_failed": {
+    "defaultMessage": "无法移除别名：{reason}",
+    "description": "Error under the list of aliases when removing one failed. {reason} is the server's explanation."
+  },
+  "account_move.aliases.remove_of": {
+    "defaultMessage": "移除别名 {name}",
+    "description": "Accessible name of the button that removes an alias. {name} is the alias's handle or address."
+  },
+  "account_move.aliases.removed": {
+    "defaultMessage": "已移除别名 {name}。",
+    "description": "Status message after an alias is removed. {name} is the alias's handle or address."
+  },
+  "account_move.aliases.title": {
+    "defaultMessage": "别名",
+    "description": "Heading and menu entry of the settings page of the account's aliases."
+  },
+  "account_move.cancel.close": {
+    "defaultMessage": "保持迁移",
+    "description": "Button in the dialog that closes it without cancelling the move."
+  },
+  "account_move.cancel.confirm": {
+    "defaultMessage": "取消迁移",
+    "description": "Button in the dialog that cancels the move."
+  },
+  "account_move.cancel.description": {
+    "defaultMessage": "此账号将可以再次发帖和关注，其他服务器也会收到通知。已经迁移的关注者仍留在 {handle}。迁移后 30 天内无法再次迁移。",
+    "description": "Description of the dialog that cancels the move. {handle} is the new account's handle."
+  },
+  "account_move.cancel.done": {
+    "defaultMessage": "已取消迁移。",
+    "description": "Status message after the move was cancelled."
+  },
+  "account_move.cancel.failed": {
+    "defaultMessage": "无法取消迁移：{reason}",
+    "description": "Error in the dialog that cancels the move. {reason} is the server's explanation."
+  },
+  "account_move.cancel.open": {
+    "defaultMessage": "取消迁移…",
+    "description": "Button that opens the dialog that cancels the move of the account."
+  },
+  "account_move.cancel.title": {
+    "defaultMessage": "要取消迁移吗？",
+    "description": "Title of the dialog that asks the user to confirm cancelling the move."
+  },
+  "account_move.closure.move": {
+    "defaultMessage": "迁移你的账号",
+    "description": "Link in the notice of the server's closure to the page that moves the account."
+  },
+  "account_move.move.confirm.cancel": {
+    "defaultMessage": "取消",
+    "description": "Button in the dialog that closes it without moving the account."
+  },
+  "account_move.move.confirm.description": {
+    "defaultMessage": "请输入密码以确认。你的关注者将改为关注 {handle}，此账号会显示已迁移。30 天内无法再次迁移。",
+    "description": "Description of the dialog that moves the account. {handle} is the new account's handle."
+  },
+  "account_move.move.confirm.description_passkey": {
+    "defaultMessage": "浏览器会要求你使用一个通行密钥来确认。你的关注者将改为关注 {handle}，此账号会显示已迁移。30 天内无法再次迁移。",
+    "description": "Description of the dialog that moves the account of a user who has no password. {handle} is the new account's handle."
+  },
+  "account_move.move.confirm.export": {
+    "defaultMessage": "将你的关注、屏蔽、隐藏和书签导出为 CSV 文件",
+    "description": "Link in the dialog that moves the account to the page that exports the user's lists as CSV files, to import them into the new account."
+  },
+  "account_move.move.confirm.moves": {
+    "defaultMessage": "会迁移的内容",
+    "description": "Heading in the dialog that moves the account, above what moves to the new account."
+  },
+  "account_move.move.confirm.moves.followers": {
+    "defaultMessage": "你的关注者",
+    "description": "Item in the dialog that moves the account: the followers move to the new account."
+  },
+  "account_move.move.confirm.stays": {
+    "defaultMessage": "会留在这里的内容",
+    "description": "Heading in the dialog that moves the account, above what stays with this account."
+  },
+  "account_move.move.confirm.stays.items": {
+    "defaultMessage": "你的帖子、你关注的账号、你的屏蔽、隐藏和书签",
+    "description": "Item in the dialog that moves the account: what does not move to the new account."
+  },
+  "account_move.move.confirm.submit": {
+    "defaultMessage": "迁移账号",
+    "description": "Button in the dialog that moves the account."
+  },
+  "account_move.move.confirm.title": {
+    "defaultMessage": "要迁移到 {handle} 吗？",
+    "description": "Title of the dialog that asks the user to confirm moving the account. {handle} is the new account's handle."
+  },
+  "account_move.move.description": {
+    "defaultMessage": "将此账号迁移到本服务器或其他服务器上的另一个账号。你的关注者将改为关注新账号，此账号会显示已迁移。",
+    "description": "Explains what moving the account does, below the heading of the move page."
+  },
+  "account_move.move.done": {
+    "defaultMessage": "你的账号已迁移到 {handle}。",
+    "description": "Status message after the account moved. {handle} is the new account's handle."
+  },
+  "account_move.move.failed": {
+    "defaultMessage": "无法迁移账号：{reason}",
+    "description": "Error in the dialog that moves the account when it failed. {reason} is the server's explanation."
+  },
+  "account_move.move.form.title": {
+    "defaultMessage": "选择新账号",
+    "description": "Heading of the section with the form that names the account to move to."
+  },
+  "account_move.move.lookup_failed": {
+    "defaultMessage": "找不到该账号：{reason}",
+    "description": "Error next to the form that names the account to move to. {reason} is the server's explanation."
+  },
+  "account_move.move.password.field": {
+    "defaultMessage": "密码",
+    "description": "Label of the password field in the dialog that moves the account."
+  },
+  "account_move.move.password.required": {
+    "defaultMessage": "请输入密码。",
+    "description": "Error of the password field in the dialog that moves the account."
+  },
+  "account_move.move.prerequisite": {
+    "defaultMessage": "首先，请在新账号的设置中将此账号添加为它的别名。此账号的地址是 {url}。",
+    "description": "Tells the user to set this account as an alias of the new account before moving. {url} is this account's address."
+  },
+  "account_move.move.target.description": {
+    "defaultMessage": "账号名（如 @name@example.com）或账号地址。",
+    "description": "Help text of the field for the account to move to."
+  },
+  "account_move.move.target.field": {
+    "defaultMessage": "新账号",
+    "description": "Label of the field for the account to move to."
+  },
+  "account_move.move.target.required": {
+    "defaultMessage": "请输入账号名或地址。",
+    "description": "Error of the field for the account to move to when it is empty."
+  },
+  "account_move.move.target.submit": {
+    "defaultMessage": "继续",
+    "description": "Button that looks up the account to move to and opens the confirmation."
+  },
+  "account_move.move.title": {
+    "defaultMessage": "迁移账号",
+    "description": "Heading and menu entry of the settings page that moves the account to another account."
+  },
+  "account_move.move.wrong_password": {
+    "defaultMessage": "密码不正确。",
+    "description": "Error in the dialog that moves the account when the password is wrong."
+  },
+  "account_move.moved.description": {
+    "defaultMessage": "此账号已迁移到 {handle}，其关注者已改为关注新账号。你仍可以登录、浏览、导出数据和删除账号，但不能发帖、转发、回应、关注或投票。",
+    "description": "Explains the state of an account that has moved. {handle} is the new account's handle."
+  },
+  "account_move.moved.target": {
+    "defaultMessage": "打开 {handle}",
+    "description": "Link from the move page to the new account's profile. {handle} is the new account's handle."
+  },
+  "account_move.moved.title": {
+    "defaultMessage": "你的账号已迁移",
+    "description": "Heading of the section of the move page for an account that has moved."
+  },
+  "account_move.profile.manage": {
+    "defaultMessage": "管理迁移",
+    "description": "Link on the profile of the user's own moved account to the page that shows and cancels the move."
+  },
+  "account_move.profile.moved": {
+    "defaultMessage": "{name} 已迁移到 {target}。",
+    "description": "Note on the profile of an account that moved. {name} is its name; {target} is a link to the new account, with its handle."
+  },
+  "account_move.profile.moved_self": {
+    "defaultMessage": "你已迁移到 {target}。",
+    "description": "Note on the profile of the signed-in user's own account after it moved. {target} is a link to the new account, with its handle."
+  },
+  "account_move.move.confirm.description_external": {
+    "defaultMessage": "你的关注者将改为关注 {handle}，此账号会显示已迁移。30 天内无法再次迁移。",
+    "description": "Description of the dialog that moves the account of a user who confirmed by signing in again at a linked service (an external login provider). {handle} is the new account's handle."
+  },
+  "account_move.aliases.count": {
+    "defaultMessage": "{count, plural, other {# 个别名}}",
+    "description": "Read for the count beside the heading of the list of aliases. {count} is the number of aliases."
+  },
+  "account_move.aliases.empty.description": {
+    "defaultMessage": "请在要迁出的账号把关注者迁移给你之前，先添加该账号。",
+    "description": "Text of the empty list of aliases, above the button that adds one."
+  }
+}

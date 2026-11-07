@@ -1,0 +1,414 @@
+{
+  "admin.domain_actions.characters_left": {
+    "defaultMessage": "{count, plural, other {还可输入 # 个字符}}",
+    "description": "Character count under the public comment or private note of a domain action while the text is within the limit."
+  },
+  "admin.domain_actions.characters_over": {
+    "defaultMessage": "{count, plural, other {超出 # 个字符}}",
+    "description": "Character count under the public comment or private note of a domain action when the text is longer than the limit."
+  },
+  "admin.domain_actions.confirm_suspend.cancel": {
+    "defaultMessage": "取消",
+    "description": "Button of the confirmation of a domain suspension that closes it without suspending."
+  },
+  "admin.domain_actions.confirm_suspend.confirm": {
+    "defaultMessage": "封禁",
+    "description": "Button of the confirmation of a domain suspension that suspends the domain."
+  },
+  "admin.domain_actions.confirm_suspend.description": {
+    "defaultMessage": "将不再向此域名及其子域名发送任何内容，也不再接受来自它们的任何内容，其账号和帖子将被隐藏。此处用户与这些账号之间的关注关系将会结束，解除封禁也不会恢复。",
+    "description": "Text of the confirmation before suspending a remote domain: what the suspension does and what it cannot undo."
+  },
+  "admin.domain_actions.confirm_suspend.title": {
+    "defaultMessage": "要封禁 {domain} 吗？",
+    "description": "Title of the confirmation before suspending a remote domain. {domain} is the domain."
+  },
+  "admin.domain_actions.domain": {
+    "defaultMessage": "域名",
+    "description": "Label of the domain field of a new domain action."
+  },
+  "admin.domain_actions.domain.description": {
+    "defaultMessage": "远程域名，例如 spam.example。此操作也适用于其子域名。非拉丁字母的域名可以直接输入。",
+    "description": "Help text under the domain field of a new domain action."
+  },
+  "admin.domain_actions.domain.required": {
+    "defaultMessage": "请输入域名",
+    "description": "Error under the domain field of a new domain action when it is empty."
+  },
+  "admin.domain_actions.duration": {
+    "defaultMessage": "期限",
+    "description": "Label of the select of how long a new domain action lasts."
+  },
+  "admin.domain_actions.duration.days": {
+    "defaultMessage": "{count, plural, other {# 天}}",
+    "description": "An option of the duration of a domain action, in days."
+  },
+  "admin.domain_actions.duration.description": {
+    "defaultMessage": "到期后此操作会自动结束。",
+    "description": "Help text under the duration of a new domain action."
+  },
+  "admin.domain_actions.duration.indefinite": {
+    "defaultMessage": "直到解除",
+    "description": "The duration option of a domain action without an end, and the end of such an action in its details."
+  },
+  "admin.domain_actions.empty.active": {
+    "defaultMessage": "没有生效中的域名操作",
+    "description": "Heading of the list of domain actions in effect when there is none."
+  },
+  "admin.domain_actions.empty.active.description": {
+    "defaultMessage": "对远程域名执行的操作会列在这里，直到结束或被解除。",
+    "description": "Text of the empty list of domain actions in effect."
+  },
+  "admin.domain_actions.empty.all": {
+    "defaultMessage": "还没有域名操作",
+    "description": "Heading of the list of every domain action when there is none."
+  },
+  "admin.domain_actions.expires_at": {
+    "defaultMessage": "结束时间",
+    "description": "Term in a domain action's details: when the action ends by itself."
+  },
+  "admin.domain_actions.filter.active": {
+    "defaultMessage": "生效中",
+    "description": "Tab of the domain actions that lists those in effect now."
+  },
+  "admin.domain_actions.filter.all": {
+    "defaultMessage": "全部",
+    "description": "Tab of the domain actions that lists every action, lifted and expired ones too."
+  },
+  "admin.domain_actions.filter.label": {
+    "defaultMessage": "显示域名操作",
+    "description": "Accessible name of the tabs that filter the domain actions."
+  },
+  "admin.domain_actions.issue_failed": {
+    "defaultMessage": "无法执行操作：{reason}",
+    "description": "Error when a new domain action failed. {reason} is the server's localized reason, which names the field at fault."
+  },
+  "admin.domain_actions.issued": {
+    "defaultMessage": "已对 {domain} 执行“{kind}”。",
+    "description": "Status after a new domain action took effect. {kind} is the kind of action, such as Suspend; {domain} is the domain."
+  },
+  "admin.domain_actions.issued_at": {
+    "defaultMessage": "执行时间",
+    "description": "Term in a domain action's details: when the action was taken."
+  },
+  "admin.domain_actions.kind": {
+    "defaultMessage": "操作",
+    "description": "Label of the choice of the kind of a new domain action, and term in a domain action's details."
+  },
+  "admin.domain_actions.kind.force_sensitive": {
+    "defaultMessage": "将媒体标记为敏感",
+    "description": "Kind of domain action: the domain's media are marked sensitive."
+  },
+  "admin.domain_actions.kind.force_sensitive.description": {
+    "defaultMessage": "来自此域名的媒体会被隐藏在警告之后。",
+    "description": "Description of the domain action that marks the domain's media sensitive."
+  },
+  "admin.domain_actions.kind.limit": {
+    "defaultMessage": "限制",
+    "description": "Kind of domain action: the domain's posts stay off the public timelines and its accounts reach only their followers."
+  },
+  "admin.domain_actions.kind.limit.description": {
+    "defaultMessage": "其帖子不会出现在公开时间线上，其账号只能触达关注它们的用户。",
+    "description": "Description of the domain action that limits a domain."
+  },
+  "admin.domain_actions.kind.reject_media": {
+    "defaultMessage": "拒绝媒体",
+    "description": "Kind of domain action: the domain's media are not fetched."
+  },
+  "admin.domain_actions.kind.reject_media.description": {
+    "defaultMessage": "不获取也不显示来自此域名的媒体。",
+    "description": "Description of the domain action that rejects the domain's media."
+  },
+  "admin.domain_actions.kind.reject_reports": {
+    "defaultMessage": "拒绝举报",
+    "description": "Kind of domain action: the reports the domain sends are dropped."
+  },
+  "admin.domain_actions.kind.reject_reports.description": {
+    "defaultMessage": "丢弃来自此域名的举报。",
+    "description": "Description of the domain action that rejects the domain's reports."
+  },
+  "admin.domain_actions.kind.required": {
+    "defaultMessage": "请选择操作",
+    "description": "Error under the choice of the kind of a new domain action when none is chosen."
+  },
+  "admin.domain_actions.kind.suspend": {
+    "defaultMessage": "封禁",
+    "description": "Kind of domain action: no federation with the domain at all."
+  },
+  "admin.domain_actions.kind.suspend.description": {
+    "defaultMessage": "不再向此域名发送任何内容，也不再接受来自它的任何内容，其账号和帖子将被隐藏。",
+    "description": "Description of the domain action that suspends a domain."
+  },
+  "admin.domain_actions.lift": {
+    "defaultMessage": "解除",
+    "description": "Button of a domain action in effect that lifts it."
+  },
+  "admin.domain_actions.lift_failed": {
+    "defaultMessage": "无法解除操作：{reason}",
+    "description": "Error toast when a domain action could not be lifted. {reason} is the server's localized reason."
+  },
+  "admin.domain_actions.lifted": {
+    "defaultMessage": "已解除对 {domain} 的“{kind}”。",
+    "description": "Status after a domain action was lifted. {kind} is the kind of action; {domain} is the domain."
+  },
+  "admin.domain_actions.lifted_at": {
+    "defaultMessage": "解除时间",
+    "description": "Term in a domain action's details: when the action was lifted."
+  },
+  "admin.domain_actions.list.every_domain": {
+    "defaultMessage": "显示所有域名",
+    "description": "Link next to the list of one domain's actions that lists the actions of every domain."
+  },
+  "admin.domain_actions.list.of_domain": {
+    "defaultMessage": "正在显示对 {domain} 的操作。",
+    "description": "Text above the list of domain actions when it shows the actions of one domain only. {domain} is the domain."
+  },
+  "admin.domain_actions.list.title": {
+    "defaultMessage": "操作",
+    "description": "Heading of the list of domain actions."
+  },
+  "admin.domain_actions.new.title": {
+    "defaultMessage": "新操作",
+    "description": "Button on the list of domain actions that opens the form of a new one, and the heading of that page."
+  },
+  "admin.domain_actions.obfuscate": {
+    "defaultMessage": "在公开列表中隐藏部分域名",
+    "description": "Checkbox of a new domain action: the public list of moderated domains shows the domain partly hidden."
+  },
+  "admin.domain_actions.obfuscate.description": {
+    "defaultMessage": "当此服务器公开列出其审核的域名时，此域名的中间部分会被替换为星号。",
+    "description": "Help text of the checkbox that hides part of the domain in the public list."
+  },
+  "admin.domain_actions.obfuscate.no": {
+    "defaultMessage": "完整显示",
+    "description": "Value of a domain action's detail: the public list shows the whole domain."
+  },
+  "admin.domain_actions.obfuscate.term": {
+    "defaultMessage": "公开列表",
+    "description": "Term in a domain action's details: how the public list of moderated domains shows the domain."
+  },
+  "admin.domain_actions.obfuscate.yes": {
+    "defaultMessage": "部分隐藏",
+    "description": "Value of a domain action's detail: the public list shows the domain partly hidden."
+  },
+  "admin.domain_actions.private_note": {
+    "defaultMessage": "私密备注",
+    "description": "Label of the private note of a new domain action, and term in its details."
+  },
+  "admin.domain_actions.private_note.description": {
+    "defaultMessage": "只有审核员能看到。",
+    "description": "Help text under the private note of a new domain action."
+  },
+  "admin.domain_actions.public_comment": {
+    "defaultMessage": "公开说明",
+    "description": "Label of the public comment of a new domain action, and term in its details."
+  },
+  "admin.domain_actions.public_comment.description": {
+    "defaultMessage": "理由，可能会与域名一起公开显示。",
+    "description": "Help text under the public comment of a new domain action."
+  },
+  "admin.domain_actions.state": {
+    "defaultMessage": "状态",
+    "description": "Term in a domain action's details: whether it is in effect, ended, or lifted."
+  },
+  "admin.domain_actions.state.active": {
+    "defaultMessage": "生效中",
+    "description": "State of a domain action that is in effect now."
+  },
+  "admin.domain_actions.state.expired": {
+    "defaultMessage": "已结束",
+    "description": "State of a domain action that ended at its end date."
+  },
+  "admin.domain_actions.state.lifted": {
+    "defaultMessage": "已解除",
+    "description": "State of a domain action that a moderator lifted."
+  },
+  "admin.domain_actions.submit": {
+    "defaultMessage": "执行操作",
+    "description": "Submit button of the form of a new domain action."
+  },
+  "admin.domain_actions.summary": {
+    "defaultMessage": "对远程域名执行限制、封禁等操作，以及解除这些操作。",
+    "description": "Description of the domain actions screen in the administration menu of the settings."
+  },
+  "admin.domain_actions.title": {
+    "defaultMessage": "域名操作",
+    "description": "Heading of the screen of moderation actions on remote domains, and its link in the administration menu."
+  },
+  "admin.domain_actions.too_long": {
+    "defaultMessage": "最多可输入 {max, number} 个字符",
+    "description": "Error under the public comment or private note of a domain action when it is too long. {max} is the limit."
+  },
+  "admin.domain_actions.csv.confirm.confirm": {
+    "defaultMessage": "导入并封禁",
+    "description": "Confirm button of an import of a domain block CSV that suspends domains."
+  },
+  "admin.domain_actions.csv.confirm.title": {
+    "defaultMessage": "要封禁 {count, plural, other {# 个域名}}吗？",
+    "description": "Title of the confirmation of an import of a domain block CSV that suspends domains. {count} is how many."
+  },
+  "admin.domain_actions.csv.csv": {
+    "defaultMessage": "CSV",
+    "description": "Label of the text area of a domain block CSV to import."
+  },
+  "admin.domain_actions.csv.csv.description": {
+    "defaultMessage": "由 Mastodon 导出的域名屏蔽 CSV，最多 {max, number} 行。没有 #domain 标题行的文件会被视为要封禁的域名列表。",
+    "description": "Help text under the text area of a domain block CSV. {max} is the most rows one import holds."
+  },
+  "admin.domain_actions.csv.csv.required": {
+    "defaultMessage": "请粘贴 CSV，或选择文件",
+    "description": "Error under the text area of a domain block CSV when it is empty."
+  },
+  "admin.domain_actions.csv.csv.too_large": {
+    "defaultMessage": "CSV 大于 {max, number} KB。请将其拆分为更小的文件",
+    "description": "Error under the text area of a domain block CSV when it has too many bytes to send. {max} is the limit in kilobytes."
+  },
+  "admin.domain_actions.csv.description": {
+    "defaultMessage": "将生效中的操作导出为 Mastodon 可导入的域名屏蔽 CSV，或导入由 Mastodon 导出的 CSV。Mastodon 的“隐藏”（silence）在这里对应“限制”。仅有“强制标记为敏感”的域名不会被导出，私密备注和结束日期也不会被导出。",
+    "description": "Text at the top of the section that exports and imports Mastodon's domain block CSV."
+  },
+  "admin.domain_actions.csv.export": {
+    "defaultMessage": "导出 CSV",
+    "description": "Button that saves the domain actions in effect as Mastodon's domain block CSV."
+  },
+  "admin.domain_actions.csv.export.done": {
+    "defaultMessage": "已保存 {name}。",
+    "description": "Status after the domain block CSV was saved. {name} is the file name."
+  },
+  "admin.domain_actions.csv.export.failed": {
+    "defaultMessage": "无法导出 CSV：{reason}",
+    "description": "Error when the domain block CSV could not be exported. {reason} is why."
+  },
+  "admin.domain_actions.csv.file": {
+    "defaultMessage": "选择 CSV 文件",
+    "description": "Button that opens the file picker to read a domain block CSV."
+  },
+  "admin.domain_actions.csv.file.description": {
+    "defaultMessage": "其内容会替换上方的 CSV。",
+    "description": "Help text next to the button that reads a domain block CSV from a file."
+  },
+  "admin.domain_actions.csv.file.failed": {
+    "defaultMessage": "无法读取 {name}。请重新选择文件。",
+    "description": "Error when the browser could not read the chosen domain block CSV. {name} is the file name."
+  },
+  "admin.domain_actions.csv.file.read": {
+    "defaultMessage": "已读取 {name}。",
+    "description": "Status after the chosen domain block CSV was read into the text area. {name} is the file name."
+  },
+  "admin.domain_actions.csv.file.too_large": {
+    "defaultMessage": "{name} 大于 {max, number} KB。请将其拆分为更小的文件。",
+    "description": "Error when the chosen domain block CSV is too large to send. {name} is the file name; {max} the limit in kilobytes."
+  },
+  "admin.domain_actions.csv.import.done": {
+    "defaultMessage": "{issued, plural, =0 {未执行任何操作。} other {已执行 # 项操作。}}{skipped, plural, =0 {未跳过任何行。} other {已跳过 # 行。}}",
+    "description": "Status after an import of a domain block CSV. {issued} is the number of actions taken; {skipped} the number of rows that took none."
+  },
+  "admin.domain_actions.csv.import.failed": {
+    "defaultMessage": "无法导入这些行：{reason}",
+    "description": "Error when the server refused the import of the chosen rows of a domain block CSV. {reason} is why."
+  },
+  "admin.domain_actions.csv.import.title": {
+    "defaultMessage": "导入 CSV",
+    "description": "Heading of the form that imports Mastodon's domain block CSV."
+  },
+  "admin.domain_actions.csv.none_selected": {
+    "defaultMessage": "请至少选择一行导入",
+    "description": "Error when the import of a domain block CSV is sent with no row chosen."
+  },
+  "admin.domain_actions.csv.preview": {
+    "defaultMessage": "预览",
+    "description": "Submit button that shows what importing each row of a domain block CSV would do, without changing anything."
+  },
+  "admin.domain_actions.csv.preview.failed": {
+    "defaultMessage": "无法读取 CSV：{reason}",
+    "description": "Error under the import form when the server refused the domain block CSV. {reason} is why."
+  },
+  "admin.domain_actions.csv.preview.summary": {
+    "defaultMessage": "{count, plural, other {# 行}}中有 {importable, number} 行可以导入。请取消勾选你不需要的行。",
+    "description": "Text above the preview table of a domain block CSV. {count} is the number of rows; {importable} how many issue an action."
+  },
+  "admin.domain_actions.csv.preview.title": {
+    "defaultMessage": "CSV 中的行",
+    "description": "Heading of the preview of a domain block CSV, and the name of its table."
+  },
+  "admin.domain_actions.csv.private_note.description": {
+    "defaultMessage": "只有审核员能看到。此次导入的每项操作都会附上此备注。",
+    "description": "Help text under the private note of an import of a domain block CSV."
+  },
+  "admin.domain_actions.csv.row.issue": {
+    "defaultMessage": "第 {line, number} 行。执行：{kinds}",
+    "description": "What importing a row of a domain block CSV does, under the checkbox that chooses it. {line} is its line; {kinds} the list of the kinds of action, such as Suspend and Reject reports."
+  },
+  "admin.domain_actions.csv.row.skipped": {
+    "defaultMessage": "第 {line, number} 行。{reason}",
+    "description": "A row of a domain block CSV that takes no action. {line} is its line; {reason} why, such as Already in effect."
+  },
+  "admin.domain_actions.csv.status.own_domain": {
+    "defaultMessage": "此服务器的域名",
+    "description": "Why a row of a domain block CSV takes no action: the domain is the domain of this server."
+  },
+  "admin.domain_actions.csv.status.already_applied": {
+    "defaultMessage": "已生效",
+    "description": "Why a row of a domain block CSV takes no action: actions in effect on the domain or a parent domain cover it."
+  },
+  "admin.domain_actions.csv.status.duplicate": {
+    "defaultMessage": "与前面某行的域名相同",
+    "description": "Why a row of a domain block CSV takes no action: an earlier row has the same domain."
+  },
+  "admin.domain_actions.csv.status.invalid": {
+    "defaultMessage": "不是有效的行",
+    "description": "Why a row of a domain block CSV takes no action: its domain, severity or comment is not valid."
+  },
+  "admin.domain_actions.csv.status.no_action": {
+    "defaultMessage": "无操作",
+    "description": "Why a row of a domain block CSV takes no action: a noop row without rejections."
+  },
+  "admin.domain_actions.csv.submit": {
+    "defaultMessage": "导入 {count, plural, other {# 行}}",
+    "description": "Button that imports the chosen rows of a domain block CSV. {count} is how many are chosen."
+  },
+  "admin.domain_actions.csv.title": {
+    "defaultMessage": "Mastodon 的 CSV",
+    "description": "Heading of the section of the domain actions screen that exports and imports Mastodon's domain block CSV."
+  },
+  "admin.domain_actions.column.domain": {
+    "defaultMessage": "域名",
+    "description": "Header of the column of the domain actions table that names the domain."
+  },
+  "admin.domain_actions.pages": {
+    "defaultMessage": "域名操作页面",
+    "description": "Accessible name of the navigation between the pages of the domain actions screen: the list and the CSV."
+  },
+  "admin.domain_actions.new.form": {
+    "defaultMessage": "操作内容",
+    "description": "Heading of the form on the page of a new domain action."
+  },
+  "admin.domain_actions.back": {
+    "defaultMessage": "返回域名操作",
+    "description": "Link under the heading of a page of one domain action, or of the form of a new one, to the list of domain actions."
+  },
+  "admin.domain_actions.detail.title": {
+    "defaultMessage": "域名操作",
+    "description": "Title of the page of one domain action, before the action has loaded or when the viewer may not see it."
+  },
+  "admin.domain_actions.detail.heading": {
+    "defaultMessage": "对 {domain} 的“{kind}”",
+    "description": "Heading of the page of one domain action. {kind} is the kind of action, such as Suspend; {domain} is the domain."
+  },
+  "admin.domain_actions.detail.details": {
+    "defaultMessage": "详细信息",
+    "description": "Heading of the region of a domain action's page with its domain, kind, and comments."
+  },
+  "admin.domain_actions.detail.of_domain": {
+    "defaultMessage": "此域名的所有操作",
+    "description": "Link on a domain action's page to the list of every action on its domain, lifted and ended ones too."
+  },
+  "admin.domain_actions.detail.no_text": {
+    "defaultMessage": "无",
+    "description": "The public comment or private note of a domain action that has none."
+  },
+  "admin.domain_actions.lift.description": {
+    "defaultMessage": "此操作将立即结束。其记录会保留，并显示为已解除。",
+    "description": "Help text under the button that lifts a domain action."
+  }
+}

@@ -1,0 +1,214 @@
+{
+  "admin.jobs.attempts": {
+    "defaultMessage": "尝试次数",
+    "description": "Term in a job's details: how many times the job ran."
+  },
+  "admin.jobs.back": {
+    "defaultMessage": "返回任务列表",
+    "description": "Link from the page of one job back to the job list."
+  },
+  "admin.jobs.column.type": {
+    "defaultMessage": "类型",
+    "description": "Column header of the job list, and term in a job's details: the job type, such as federation.deliver."
+  },
+  "admin.jobs.created_at": {
+    "defaultMessage": "创建时间",
+    "description": "Term in a job's details: when the job was enqueued first."
+  },
+  "admin.jobs.detail.details": {
+    "defaultMessage": "详细信息",
+    "description": "Heading of the section of a job's page with its type, creation time, worker, lease and keys, and its last error."
+  },
+  "admin.jobs.detail_title": {
+    "defaultMessage": "任务",
+    "description": "Title and heading of the page of one job of the job queue."
+  },
+  "admin.jobs.empty": {
+    "defaultMessage": "没有任务",
+    "description": "Heading of the job list when no job is in the selected state."
+  },
+  "admin.jobs.empty.dead": {
+    "defaultMessage": "没有失败的任务",
+    "description": "Heading of the job list of failed jobs when no job failed for good."
+  },
+  "admin.jobs.failed_at": {
+    "defaultMessage": "失败时间",
+    "description": "Term in a failed job's details: when the job failed for good."
+  },
+  "admin.jobs.filter.label": {
+    "defaultMessage": "任务状态",
+    "description": "Accessible name of the select of the job list that filters the jobs by state."
+  },
+  "admin.jobs.filter.pending": {
+    "defaultMessage": "待处理",
+    "description": "Tab of the jobs screen with the jobs not done yet: waiting, running and retrying."
+  },
+  "admin.jobs.history.attempt": {
+    "defaultMessage": "第 {number, number} 次尝试：{outcome}",
+    "description": "Heading of one record of a job's attempt history. {number} is the number of the run, from 1, formatted; {outcome} is admin.jobs.outcome.retry or admin.jobs.outcome.dead."
+  },
+  "admin.jobs.history.empty": {
+    "defaultMessage": "没有失败尝试的记录",
+    "description": "Heading of a job's attempt history when no failed run is recorded."
+  },
+  "admin.jobs.history.empty.description": {
+    "defaultMessage": "成功的运行不会被记录，记录会在一段时间后删除。",
+    "description": "Description of an empty attempt history: why a job may have no records."
+  },
+  "admin.jobs.history.error": {
+    "defaultMessage": "错误",
+    "description": "Term in a record of a job's attempt: why the run failed."
+  },
+  "admin.jobs.history.failed": {
+    "defaultMessage": "无法加载尝试记录",
+    "description": "Heading in place of a job's attempt history when it failed to load."
+  },
+  "admin.jobs.history.finished_at": {
+    "defaultMessage": "结束时间",
+    "description": "Term in a record of a job's attempt: when the run ended."
+  },
+  "admin.jobs.history.heading": {
+    "defaultMessage": "尝试历史",
+    "description": "Heading of the section of a job's page with the records of its runs that did not succeed."
+  },
+  "admin.jobs.history.loading": {
+    "defaultMessage": "正在加载尝试记录",
+    "description": "Accessible name of the spinner while the records of a job's attempts load."
+  },
+  "admin.jobs.history.more_failed": {
+    "defaultMessage": "无法加载更多尝试记录",
+    "description": "Message under a job's attempt history when its next page failed to load."
+  },
+  "admin.jobs.history.retry": {
+    "defaultMessage": "重试",
+    "description": "Button that loads a job's attempt history again after it failed to load."
+  },
+  "admin.jobs.history.started_at": {
+    "defaultMessage": "开始时间",
+    "description": "Term in a record of a job's attempt: when the run started."
+  },
+  "admin.jobs.idempotency_key": {
+    "defaultMessage": "幂等键",
+    "description": "Term in a job's details: the key that keeps the job from being enqueued twice."
+  },
+  "admin.jobs.last_error": {
+    "defaultMessage": "最近的错误",
+    "description": "Term in a job's details: why the job's last run failed."
+  },
+  "admin.jobs.list.caption": {
+    "defaultMessage": "任务：{filter}",
+    "description": "Visually hidden caption of the job table. {filter} is the selected state filter, such as admin.jobs.state.dead."
+  },
+  "admin.jobs.locked_until": {
+    "defaultMessage": "租约结束时间",
+    "description": "Term in a running job's details: when the worker's hold on it ends, after which another worker may run it."
+  },
+  "admin.jobs.ordering_key": {
+    "defaultMessage": "排序键",
+    "description": "Term in a job's details: the key that runs the jobs with the same key one after another."
+  },
+  "admin.jobs.outcome.dead": {
+    "defaultMessage": "永久失败",
+    "description": "Outcome of the failed run that made a job fail for good, in the heading of its record."
+  },
+  "admin.jobs.outcome.retry": {
+    "defaultMessage": "已重试",
+    "description": "Outcome of a failed run of a job that runs again, in the heading of its record."
+  },
+  "admin.jobs.page.list": {
+    "defaultMessage": "任务列表",
+    "description": "Link of the local navigation of the jobs screen to the table of the jobs of one state; also the title of that page."
+  },
+  "admin.jobs.page.queue": {
+    "defaultMessage": "队列状态",
+    "description": "Link of the local navigation of the jobs screen to its first page: the state of the job queue."
+  },
+  "admin.jobs.pages": {
+    "defaultMessage": "任务页面",
+    "description": "Name of the local navigation between the pages of the jobs screen (the queue's state and the job list)."
+  },
+  "admin.jobs.payload": {
+    "defaultMessage": "负载",
+    "description": "Term in a job's details: the job's input data, as JSON."
+  },
+  "admin.jobs.queue.adapter": {
+    "defaultMessage": "队列",
+    "description": "Term in the queue's details: the kind of job queue the server runs, such as db or cloudtasks."
+  },
+  "admin.jobs.queue.by_state": {
+    "defaultMessage": "按状态统计的任务",
+    "description": "Accessible name of the tiles of the jobs screen: the longest wait and the count of the jobs of each state."
+  },
+  "admin.jobs.queue.by_type": {
+    "defaultMessage": "按类型统计的任务",
+    "description": "Accessible name of the list of the counts of the jobs of each job type."
+  },
+  "admin.jobs.queue.heading": {
+    "defaultMessage": "队列",
+    "description": "Heading of the region of the jobs screen with the counts of the jobs of the queue."
+  },
+  "admin.jobs.queue.no_listing": {
+    "defaultMessage": "此队列无法列出等待中、运行中和重试中的任务：请在平台的指标中查看积压情况。失败的任务及其尝试历史会列出。",
+    "description": "Note of the queue region when the queue (Cloud Tasks) cannot list its pending jobs."
+  },
+  "admin.jobs.retried": {
+    "defaultMessage": "任务 {type} 已加入队列，将再次运行。",
+    "description": "Announcement after an operator ran a failed job again. {type} is the job type, such as federation.deliver."
+  },
+  "admin.jobs.retry_failed": {
+    "defaultMessage": "无法再次运行任务：{reason}",
+    "description": "Error toast when a failed job could not be run again. {reason} is the server's localized reason."
+  },
+  "admin.jobs.retry_job": {
+    "defaultMessage": "再次运行：{type}，失败于 {date}",
+    "description": "Accessible name of the run-again button of a failed job, which names the job. {type} is the job type; {date} is when it failed, formatted."
+  },
+  "admin.jobs.run_again": {
+    "defaultMessage": "再次运行",
+    "description": "Button of a failed job that runs it again."
+  },
+  "admin.jobs.run_at": {
+    "defaultMessage": "预定时间",
+    "description": "Term in a job's details: when a pending job is due to run."
+  },
+  "admin.jobs.state": {
+    "defaultMessage": "状态",
+    "description": "Term in a job's details: its state, such as waiting or failed."
+  },
+  "admin.jobs.state.dead": {
+    "defaultMessage": "失败",
+    "description": "State of a job that failed for good; also a tab and a count."
+  },
+  "admin.jobs.state.queued": {
+    "defaultMessage": "等待中",
+    "description": "State of a job that has not run yet; also a tab and a count."
+  },
+  "admin.jobs.state.retrying": {
+    "defaultMessage": "重试中",
+    "description": "State of a job that ran, failed, and waits to run again; also a tab and a count."
+  },
+  "admin.jobs.state.running": {
+    "defaultMessage": "运行中",
+    "description": "State of a job that a worker runs now; also a tab and a count."
+  },
+  "admin.jobs.summary": {
+    "defaultMessage": "等待中、运行中、重试中和失败的后台任务，失败原因，以及再次运行失败的任务。",
+    "description": "Description of the jobs screen in the administration menu of the settings."
+  },
+  "admin.jobs.title": {
+    "defaultMessage": "任务",
+    "description": "Heading of the admin screen of the background job queue (waiting, running, retrying and failed jobs), and its link in the administration menu."
+  },
+  "admin.jobs.unlisted": {
+    "defaultMessage": "此队列无法列出这些任务",
+    "description": "Heading in place of the list of pending jobs when the queue (Cloud Tasks) cannot list them."
+  },
+  "admin.jobs.unlisted.description": {
+    "defaultMessage": "请在平台的指标中查看积压情况。失败的任务列在“失败”下。",
+    "description": "Description in place of the list of pending jobs when the queue cannot list them."
+  },
+  "admin.jobs.worker": {
+    "defaultMessage": "Worker",
+    "description": "Term in a job's or an attempt's details: the name of the worker that runs or ran it."
+  }
+}

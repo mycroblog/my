@@ -1,0 +1,26 @@
+{
+  "closure.closed_on": {
+    "defaultMessage": "关闭日期",
+    "description": "Label of the server's closing date (closes_at, ADR-0088), shown in UTC next to it on the static closure page."
+  },
+  "closure.description": {
+    "defaultMessage": "{server} 已关闭，不再运行。其账号和帖子均已删除，数据也无法再导出。感谢你的使用。",
+    "description": "Explanation under the heading of the static closure page (my admin closure export-html). {server} is the server's name, or its host name."
+  },
+  "closure.document_title": {
+    "defaultMessage": "已关闭 – {server}",
+    "description": "<title> of the static closure page. {server} is the server's name, or its host name."
+  },
+  "closure.notice": {
+    "defaultMessage": "管理员留言",
+    "description": "Heading over the administrators' message of the closure announcement on the static closure page."
+  },
+  "closure.status_page": {
+    "defaultMessage": "查看服务状态",
+    "description": "Text of the link to the instance's status page (status_page_url) on the static closure page."
+  },
+  "closure.title": {
+    "defaultMessage": "此服务器已关闭",
+    "description": "Heading of the static closure page that the server's domain serves after the closure of the service (ADR-0088 §6)."
+  }
+}

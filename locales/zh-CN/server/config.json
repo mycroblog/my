@@ -1,0 +1,22 @@
+{
+  "config.errors": {
+    "defaultMessage": "{count, plural, other {发现 # 个配置错误。}}",
+    "description": "Summary printed before the list of configuration problems when the server refuses to start."
+  },
+  "config.invalid": {
+    "defaultMessage": "设置 {name} 的值不正确。",
+    "description": "A configuration value failed validation at startup. {name} is the environment variable or config file key, e.g. MY_DATABASE."
+  },
+  "config.missing": {
+    "defaultMessage": "未设置必需的设置 {name}。",
+    "description": "A required configuration value is absent at startup. {name} is the environment variable or config file key, e.g. MY_DATABASE_URL."
+  },
+  "config.readiness.errors": {
+    "defaultMessage": "{count, plural, other {发现 # 个尚未准备好用于生产环境的设置。}}",
+    "description": "Summary printed by `my config check` before the list of settings that are valid but break or weaken a production instance, such as a key-encryption key that is not random. The command fails on them."
+  },
+  "config.readiness.warnings": {
+    "defaultMessage": "{count, plural, other {发现 # 个关于在生产环境中运行的警告。}}",
+    "description": "Summary printed by `my config check` before the list of settings and instance settings that are usual in development and may be deliberate in production, such as mail = none. The command still succeeds."
+  }
+}

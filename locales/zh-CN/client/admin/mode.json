@@ -1,0 +1,22 @@
+{
+  "admin.mode.back": {
+    "defaultMessage": "返回应用",
+    "description": "Link at the foot of the admin and moderation menu that leaves the mode and returns to the app."
+  },
+  "admin.mode.menu": {
+    "defaultMessage": "管理菜单",
+    "description": "Name of the button below the md width that opens the admin and moderation menu in a sheet, and the sheet's title."
+  },
+  "admin.mode.overview": {
+    "defaultMessage": "概览",
+    "description": "Item at the head of a group of the admin and moderation menu that opens the group's page with the links to its screens."
+  },
+  "admin.mode.summary": {
+    "defaultMessage": "独立于应用的审核和服务器管理界面。",
+    "description": "Description of the settings page's entry into the admin and moderation mode."
+  },
+  "admin.mode.title": {
+    "defaultMessage": "管理与审核",
+    "description": "Name of the admin and moderation mode: the settings page's entry, the menu's landmark and the top bar's title below the md width."
+  }
+}

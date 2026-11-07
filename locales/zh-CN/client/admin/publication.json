@@ -1,0 +1,18 @@
+{
+  "admin.publication.save": {
+    "defaultMessage": "保存公开设置",
+    "description": "Button that saves the publication settings on the costs screen."
+  },
+  "admin.publication.save_failed": {
+    "defaultMessage": "无法保存公开设置：{reason}",
+    "description": "Shown beside the save button when the publication settings could not be saved; reason is the server's localized reason."
+  },
+  "admin.publication.saved": {
+    "defaultMessage": "已保存公开设置。",
+    "description": "Shown beside the save button after the publication settings are saved."
+  },
+  "admin.publication.unchanged": {
+    "defaultMessage": "没有任何更改。",
+    "description": "Shown beside the save button of the publication settings when nothing was changed."
+  }
+}

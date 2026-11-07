@@ -1,0 +1,106 @@
+{
+  "admin.hook_appeals.already_decided": {
+    "defaultMessage": "其他审核员已对此申诉作出决定，该决定保持有效。",
+    "description": "Status message when another moderator decided the appeal of a refused post first."
+  },
+  "admin.hook_appeals.cancel": {
+    "defaultMessage": "取消",
+    "description": "Button of the confirmation of a decision on an appeal of a refused post: closes it without deciding."
+  },
+  "admin.hook_appeals.column.account": {
+    "defaultMessage": "作者",
+    "description": "Column of the list of appeals of refused posts: the account that tried to post and appealed."
+  },
+  "admin.hook_appeals.column.state": {
+    "defaultMessage": "状态",
+    "description": "Column of the list of appeals of refused posts: awaiting review, upheld, or overturned."
+  },
+  "admin.hook_appeals.comment": {
+    "defaultMessage": "留言",
+    "description": "Term of an appeal of a refused post: what the author added for the moderators."
+  },
+  "admin.hook_appeals.confirm_overturn.description": {
+    "defaultMessage": "这会取消原决定，并停止审查此作者的帖子。被拒绝的帖子不会恢复，需要作者重新发布。此决定之后无法更改。",
+    "description": "Description of the confirmation of overturning an appeal of a refused post."
+  },
+  "admin.hook_appeals.confirm_overturn.title": {
+    "defaultMessage": "要采纳此申诉吗？",
+    "description": "Title of the confirmation of overturning an appeal of a refused post, which cancels the automated review's decision."
+  },
+  "admin.hook_appeals.confirm_uphold.description": {
+    "defaultMessage": "帖子仍被拒绝，此作者的帖子将照常接受审查。此决定之后无法更改。",
+    "description": "Description of the confirmation of upholding an appeal of a refused post."
+  },
+  "admin.hook_appeals.confirm_uphold.title": {
+    "defaultMessage": "要驳回此申诉吗？",
+    "description": "Title of the confirmation of upholding an appeal of a refused post, which keeps the automated review's decision."
+  },
+  "admin.hook_appeals.decide_failed": {
+    "defaultMessage": "无法保存决定：{reason}",
+    "description": "Error in the confirmation when deciding an appeal of a refused post failed. {reason} says why."
+  },
+  "admin.hook_appeals.empty": {
+    "defaultMessage": "没有待审核的申诉",
+    "description": "Empty list of appeals of refused posts that await a moderator."
+  },
+  "admin.hook_appeals.empty_all": {
+    "defaultMessage": "还没有申诉",
+    "description": "Empty list of every appeal of a refused post."
+  },
+  "admin.hook_appeals.filter.all": {
+    "defaultMessage": "所有申诉",
+    "description": "Option of the select of the appeals of refused posts: every appeal, decided or not."
+  },
+  "admin.hook_appeals.filter.label": {
+    "defaultMessage": "按状态筛选申诉",
+    "description": "Accessible name of the select that keeps the appeals of refused posts that await review, or shows every one."
+  },
+  "admin.hook_appeals.filter.pending": {
+    "defaultMessage": "等待审核",
+    "description": "Option of the select of the appeals of refused posts: those that await a moderator."
+  },
+  "admin.hook_appeals.none": {
+    "defaultMessage": "无",
+    "description": "Value of the text or comment of an appeal of a refused post that has none."
+  },
+  "admin.hook_appeals.overturn": {
+    "defaultMessage": "采纳",
+    "description": "Button of a pending appeal of a refused post that opens the confirmation of overturning it, and the confirmation's button that overturns it."
+  },
+  "admin.hook_appeals.overturned": {
+    "defaultMessage": "已采纳申诉。原决定已取消，此作者的帖子不再接受审查。",
+    "description": "Status message after a moderator overturned an appeal of a refused post."
+  },
+  "admin.hook_appeals.state.overturned": {
+    "defaultMessage": "已采纳",
+    "description": "State of an appeal of a refused post whose decision a moderator cancelled."
+  },
+  "admin.hook_appeals.state.pending": {
+    "defaultMessage": "等待审核",
+    "description": "State of an appeal of a refused post that awaits a moderator."
+  },
+  "admin.hook_appeals.state.upheld": {
+    "defaultMessage": "已驳回",
+    "description": "State of an appeal of a refused post whose decision a moderator kept."
+  },
+  "admin.hook_appeals.status_text": {
+    "defaultMessage": "帖子内容",
+    "description": "Term of an appeal of a refused post: the text the author tried to post."
+  },
+  "admin.hook_appeals.submitted_at": {
+    "defaultMessage": "发送时间",
+    "description": "Term of an appeal of a refused post: when the author sent it."
+  },
+  "admin.hook_appeals.title": {
+    "defaultMessage": "被拒帖子的申诉",
+    "description": "Heading of the section of the automated reviews screen with the authors' appeals of posts the review refused, and the caption of its table."
+  },
+  "admin.hook_appeals.upheld": {
+    "defaultMessage": "已驳回申诉。帖子仍被拒绝。",
+    "description": "Status message after a moderator upheld an appeal of a refused post."
+  },
+  "admin.hook_appeals.uphold": {
+    "defaultMessage": "驳回",
+    "description": "Button of a pending appeal of a refused post that opens the confirmation of upholding it, and the confirmation's button that upholds it."
+  }
+}

@@ -1,0 +1,2810 @@
+{
+  "settings.account.delete.cancel": {
+    "defaultMessage": "取消",
+    "description": "Button in the dialog that closes it without deleting the account."
+  },
+  "settings.account.delete.confirm": {
+    "defaultMessage": "删除账号",
+    "description": "Button in the dialog that deletes the user's account."
+  },
+  "settings.account.delete.confirm.description": {
+    "defaultMessage": "输入密码以确认。你的账号会立即删除，你也会退出登录。此操作无法撤销。",
+    "description": "Description of the dialog that deletes the user's account."
+  },
+  "settings.account.delete.confirm.description_passkey": {
+    "defaultMessage": "浏览器会要求你使用一个通行密钥来确认。你的账号会立即删除，你也会退出登录。此操作无法撤销。",
+    "description": "Description of the dialog that deletes the account of a user who has no password: pressing the delete button opens the browser's passkey prompt, which confirms the deletion."
+  },
+  "settings.account.delete.confirm.title": {
+    "defaultMessage": "要删除你的账号吗？",
+    "description": "Title of the dialog that asks the user to confirm deleting their account."
+  },
+  "settings.account.delete.description": {
+    "defaultMessage": "你的账号、帖子和个人资料会立即消失，其他服务器也会被要求删除它们的副本。此操作无法撤销，你的用户名也无法再次使用。如果想保留数据，请先下载。",
+    "description": "Explains what deleting the account does, above the button that starts it."
+  },
+  "settings.account.delete.open": {
+    "defaultMessage": "删除账号…",
+    "description": "Button that opens the dialog that deletes the user's account."
+  },
+  "settings.account.delete.password": {
+    "defaultMessage": "密码",
+    "description": "Label of the field in which the user types their password to confirm deleting the account."
+  },
+  "settings.account.delete.password.required": {
+    "defaultMessage": "请输入密码。",
+    "description": "Error under the password field when the user confirms the deletion without typing the password."
+  },
+  "settings.account.delete.title": {
+    "defaultMessage": "删除你的账号",
+    "description": "Heading of the section of the account page about deleting the account."
+  },
+  "settings.account.delete.wrong_password": {
+    "defaultMessage": "密码不正确。",
+    "description": "Error in the deletion dialog when the password the user typed is not their current password."
+  },
+  "settings.account.export.description": {
+    "defaultMessage": "获取一个 ZIP 压缩包，其中包含 ActivityStreams 格式的帖子、你的个人资料、针对你账号的审核操作，以及 CSV 格式的关注、屏蔽、隐藏和书签列表。准备需要一些时间，准备好后可在 7 天内下载。",
+    "description": "Explains the archive of the user's data, above the button that asks for one."
+  },
+  "settings.account.export.download": {
+    "defaultMessage": "下载",
+    "description": "Button that downloads an archive of the user's data."
+  },
+  "settings.account.export.download_of": {
+    "defaultMessage": "下载 {date} 的压缩包",
+    "description": "Accessible name of the button that downloads one archive. {date} is when the user asked for it, a formatted date and time."
+  },
+  "settings.account.export.empty": {
+    "defaultMessage": "你还没有压缩包",
+    "description": "Shown when the user has no archive of their data."
+  },
+  "settings.account.export.expires_at": {
+    "defaultMessage": "有效期至",
+    "description": "Label of the date until which an archive of the user's data can be downloaded."
+  },
+  "settings.account.export.item": {
+    "defaultMessage": "{date} 的压缩包",
+    "description": "Heading of one archive of the user's data. {date} is when the user asked for it, a formatted date and time."
+  },
+  "settings.account.export.request": {
+    "defaultMessage": "准备压缩包",
+    "description": "Button that asks the server to prepare an archive of the user's data."
+  },
+  "settings.account.export.requested": {
+    "defaultMessage": "正在准备压缩包。准备好后会显示在下方。",
+    "description": "Announced after the user asked for an archive of their data."
+  },
+  "settings.account.export.size": {
+    "defaultMessage": "大小",
+    "description": "Label of the file size of an archive of the user's data."
+  },
+  "settings.account.export.state": {
+    "defaultMessage": "状态",
+    "description": "Label of the state of an archive of the user's data (being prepared, ready, failed)."
+  },
+  "settings.account.export.state.failed": {
+    "defaultMessage": "失败。请重新准备一个。",
+    "description": "State of an archive of the user's data that the server could not prepare; the user can ask for another."
+  },
+  "settings.account.export.state.pending": {
+    "defaultMessage": "正在准备",
+    "description": "State of an archive of the user's data that the server is still preparing."
+  },
+  "settings.account.export.state.ready": {
+    "defaultMessage": "已就绪",
+    "description": "State of an archive of the user's data that can be downloaded."
+  },
+  "settings.account.export.title": {
+    "defaultMessage": "下载你的数据",
+    "description": "Heading of the section of the account page about archives of the user's data."
+  },
+  "settings.account.title": {
+    "defaultMessage": "存档和删除",
+    "description": "Heading and document title of the settings page about the user's own account: the archives of their data and deleting the account."
+  },
+  "settings.autoplay.description": {
+    "defaultMessage": "开启时，动图（GIF）和表情会自动播放；关闭时，帖子或个人资料只在你指向它、用键盘浏览它或轻触它之后才会播放，再次轻触即停止。无论哪种设置，当你的设备要求减少动态效果时，它们都会保持静止。保存在此浏览器中。",
+    "description": "Help text of the switch that turns the autoplay of animated images on or off."
+  },
+  "settings.autoplay.label": {
+    "defaultMessage": "自动播放动画",
+    "description": "Label of the switch on the preferences page that turns the autoplay of animated images on or off."
+  },
+  "settings.back": {
+    "defaultMessage": "返回设置",
+    "description": "Link under the heading of a settings page that opens the list of settings pages."
+  },
+  "settings.blocks.empty": {
+    "defaultMessage": "你还没有屏蔽任何人",
+    "description": "Shown when the user blocks no account."
+  },
+  "settings.blocks.title": {
+    "defaultMessage": "已屏蔽的账号",
+    "description": "Heading and document title of the settings page with the blocked accounts."
+  },
+  "settings.blocks.unblock": {
+    "defaultMessage": "取消屏蔽",
+    "description": "Button that unblocks an account."
+  },
+  "settings.blocks.unblocked": {
+    "defaultMessage": "你已取消屏蔽 {name}。",
+    "description": "Announced after an account was unblocked. {name} is the account's display name."
+  },
+  "settings.default_post_language.description": {
+    "defaultMessage": "新帖子默认使用此语言。你仍可以为每条帖子单独选择。",
+    "description": "Help text of the default post language select."
+  },
+  "settings.default_post_language.label": {
+    "defaultMessage": "帖子的默认语言",
+    "description": "Label of the select of the language new posts start with."
+  },
+  "settings.default_visibility.description": {
+    "defaultMessage": "你仍可以为每条帖子单独选择。",
+    "description": "Help text of the default visibility radio group."
+  },
+  "settings.default_visibility.label": {
+    "defaultMessage": "帖子的默认可见范围",
+    "description": "Label of the radio group of the visibility new posts start with."
+  },
+  "settings.follow_requests.accept": {
+    "defaultMessage": "接受",
+    "description": "Button that accepts a follow request."
+  },
+  "settings.follow_requests.accepted": {
+    "defaultMessage": "{name} 现在关注了你。",
+    "description": "Announced after a follow request was accepted. {name} is the account's display name."
+  },
+  "settings.follow_requests.empty": {
+    "defaultMessage": "没有关注请求",
+    "description": "Shown when no follow request awaits approval."
+  },
+  "settings.follow_requests.reject": {
+    "defaultMessage": "拒绝",
+    "description": "Button that rejects a follow request."
+  },
+  "settings.follow_requests.rejected": {
+    "defaultMessage": "你已拒绝 {name} 的关注请求。",
+    "description": "Announced after a follow request was rejected. {name} is the account's display name."
+  },
+  "settings.follow_requests.title": {
+    "defaultMessage": "关注请求",
+    "description": "Heading and document title of the settings page with the follow requests awaiting approval."
+  },
+  "settings.follow_requests.waiting": {
+    "defaultMessage": "{count, plural, other {# 个待处理}}",
+    "description": "Badge of the settings menu's Follow requests item: how many follow requests await the user's approval. The item's name is its label followed by this."
+  },
+  "settings.import_export.export.description": {
+    "defaultMessage": "下载 Mastodon 所用格式的 CSV 文件。Mastodon 和其他能读取此格式的服务器可以导入这些文件。",
+    "description": "Explains the CSV files the user can download, above the list of them."
+  },
+  "settings.import_export.export.download": {
+    "defaultMessage": "下载",
+    "description": "Button that downloads one CSV file."
+  },
+  "settings.import_export.export.download_of": {
+    "defaultMessage": "以 CSV 格式下载 {kind}",
+    "description": "Accessible name of the button that downloads one CSV file. {kind} is the name of the list, e.g. Blocked accounts."
+  },
+  "settings.import_export.export.title": {
+    "defaultMessage": "导出",
+    "description": "Heading of the section of the import and export page that downloads CSV files."
+  },
+  "settings.import_export.history.empty": {
+    "defaultMessage": "你还没有导入记录",
+    "description": "Shown when the user has no recent import."
+  },
+  "settings.import_export.history.failed": {
+    "defaultMessage": "无法导入",
+    "description": "Label of the number of entries of an import that could not be carried out, e.g. accounts that no longer exist."
+  },
+  "settings.import_export.history.item": {
+    "defaultMessage": "{kind}，{date}",
+    "description": "Heading of one import in the list. {kind} is the name of the list, e.g. Follows; {date} is when the import started, a formatted date and time."
+  },
+  "settings.import_export.history.mode": {
+    "defaultMessage": "方式",
+    "description": "Label of how an import was done (merge or overwrite)."
+  },
+  "settings.import_export.history.progress": {
+    "defaultMessage": "进度",
+    "description": "Label of how many entries of an import are done."
+  },
+  "settings.import_export.history.progress_value": {
+    "defaultMessage": "{processed, number}/{total, number}",
+    "description": "How many entries of an import are done. {processed} and {total} are numbers."
+  },
+  "settings.import_export.history.state": {
+    "defaultMessage": "状态",
+    "description": "Label of the state of an import (in progress, finished)."
+  },
+  "settings.import_export.history.state.finished": {
+    "defaultMessage": "已完成",
+    "description": "State of an import that the server has carried out."
+  },
+  "settings.import_export.history.state.in_progress": {
+    "defaultMessage": "进行中",
+    "description": "State of an import that the server is still carrying out."
+  },
+  "settings.import_export.history.title": {
+    "defaultMessage": "最近的导入",
+    "description": "Heading of the list of the user's latest imports on the import and export page."
+  },
+  "settings.import_export.import.choose": {
+    "defaultMessage": "选择 CSV 文件",
+    "description": "Button that opens the file picker to choose the CSV file to import."
+  },
+  "settings.import_export.import.chosen": {
+    "defaultMessage": "已选择的文件：{name}",
+    "description": "Shows the name of the CSV file the user chose to import. {name} is the file name."
+  },
+  "settings.import_export.import.description": {
+    "defaultMessage": "导入从 Mastodon 或此服务器导出的 CSV 文件。其他服务器上的账号和帖子会在后台查找，可能需要一些时间。",
+    "description": "Explains importing a CSV file, above the form."
+  },
+  "settings.import_export.import.file": {
+    "defaultMessage": "CSV 文件",
+    "description": "Heading of the part of the import form where the user chooses the file."
+  },
+  "settings.import_export.import.file_too_large": {
+    "defaultMessage": "文件太大，无法导入。请将它拆分成较小的文件。",
+    "description": "Error in the import form when the chosen CSV file is larger than the server accepts."
+  },
+  "settings.import_export.import.file_unreadable": {
+    "defaultMessage": "无法读取该文件。请重新选择。",
+    "description": "Error in the import form when the browser could not read the chosen file."
+  },
+  "settings.import_export.import.kind": {
+    "defaultMessage": "导入内容",
+    "description": "Label of the radio group that chooses the kind of CSV file to import (follows, blocked accounts, muted accounts, bookmarks)."
+  },
+  "settings.import_export.import.mode": {
+    "defaultMessage": "导入方式",
+    "description": "Label of the radio group that chooses whether the import merges with or overwrites what the user has."
+  },
+  "settings.import_export.import.mode.merge": {
+    "defaultMessage": "合并",
+    "description": "Option of an import that keeps what the user has and adds what the file lists."
+  },
+  "settings.import_export.import.mode.merge.description": {
+    "defaultMessage": "保留现有内容，并添加文件中列出的内容。",
+    "description": "Description of the merge option of an import."
+  },
+  "settings.import_export.import.mode.overwrite": {
+    "defaultMessage": "覆盖",
+    "description": "Option of an import that makes the user's list exactly what the file lists."
+  },
+  "settings.import_export.import.mode.overwrite.description": {
+    "defaultMessage": "使其与文件中列出的内容完全一致。文件中未列出的内容会被移除。",
+    "description": "Description of the overwrite option of an import."
+  },
+  "settings.import_export.import.no_file": {
+    "defaultMessage": "未选择文件",
+    "description": "Shown in the import form before the user chooses a CSV file."
+  },
+  "settings.import_export.import.preview": {
+    "defaultMessage": "检查文件",
+    "description": "Button that asks the server what importing the chosen file would do, without importing it."
+  },
+  "settings.import_export.import.preview.entries": {
+    "defaultMessage": "文件中的条目",
+    "description": "Label of the number of accounts or posts that the file to import lists."
+  },
+  "settings.import_export.import.preview.present": {
+    "defaultMessage": "已在你的列表中",
+    "description": "Label of the number of entries of the file to import that the user already has."
+  },
+  "settings.import_export.import.preview.removals": {
+    "defaultMessage": "将被移除",
+    "description": "Label of the number of accounts or posts that an overwrite removes because the file does not list them."
+  },
+  "settings.import_export.import.preview.skip.duplicate": {
+    "defaultMessage": "与前面的行重复",
+    "description": "Why a line of the file to import is skipped: an earlier line names the same account or post."
+  },
+  "settings.import_export.import.preview.skip.invalid": {
+    "defaultMessage": "不是账号地址或帖子 URL",
+    "description": "Why a line of the file to import is skipped: it names no account (user@domain) or post URL."
+  },
+  "settings.import_export.import.preview.skipped": {
+    "defaultMessage": "跳过的行",
+    "description": "Heading of the list of lines of the file that the import skips."
+  },
+  "settings.import_export.import.preview.skipped_line": {
+    "defaultMessage": "第 {line, number} 行：{value}",
+    "description": "One line of the file that the import skips. {line} is the line number, {value} the line as written."
+  },
+  "settings.import_export.import.preview.title": {
+    "defaultMessage": "导入将执行的操作",
+    "description": "Heading of the result of checking the file to import."
+  },
+  "settings.import_export.import.start": {
+    "defaultMessage": "开始导入",
+    "description": "Button that starts importing the checked file."
+  },
+  "settings.import_export.import.started": {
+    "defaultMessage": "导入已开始，共 {total, plural, other {# 个条目}}。进度会显示在下方。",
+    "description": "Announced after the user started an import. {total} is the number of accounts or posts to add or remove."
+  },
+  "settings.import_export.import.title": {
+    "defaultMessage": "导入",
+    "description": "Heading of the section of the import and export page that imports a CSV file."
+  },
+  "settings.import_export.kind.blocks": {
+    "defaultMessage": "已屏蔽的账号",
+    "description": "Name of the list of accounts the user blocks, as one kind of CSV file to export or import."
+  },
+  "settings.import_export.kind.bookmarks": {
+    "defaultMessage": "书签",
+    "description": "Name of the list of posts the user bookmarked, as one kind of CSV file to export or import."
+  },
+  "settings.import_export.kind.following": {
+    "defaultMessage": "关注",
+    "description": "Name of the list of accounts the user follows, as one kind of CSV file to export or import."
+  },
+  "settings.import_export.kind.mutes": {
+    "defaultMessage": "已隐藏的账号",
+    "description": "Name of the list of accounts the user mutes, as one kind of CSV file to export or import."
+  },
+  "settings.import_export.title": {
+    "defaultMessage": "导入和导出",
+    "description": "Heading and document title of the settings page for exporting and importing the user's follows, blocks, mutes, and bookmarks as CSV files."
+  },
+  "settings.link_card_size.label": {
+    "defaultMessage": "链接卡片",
+    "description": "Label of the radio group that chooses the size of the cards of the links in posts."
+  },
+  "settings.link_card_size.large": {
+    "defaultMessage": "大",
+    "description": "Option of the link card size: the image is above the text."
+  },
+  "settings.link_card_size.large.description": {
+    "defaultMessage": "图片显示在文字上方。",
+    "description": "Help text of the large option of the link card size."
+  },
+  "settings.link_card_size.small": {
+    "defaultMessage": "小",
+    "description": "Option of the link card size: a square image is beside the text."
+  },
+  "settings.link_card_size.small.description": {
+    "defaultMessage": "方形图片显示在文字旁边，使帖子占用更少空间。",
+    "description": "Help text of the small option of the link card size."
+  },
+  "settings.list.action": {
+    "defaultMessage": "{action}：{name}",
+    "description": "Accessible name of a button in a list of accounts. {action} is the button's visible text (for example 'Unblock'), {name} the account's display name."
+  },
+  "settings.list.more": {
+    "defaultMessage": "显示更多",
+    "description": "Button under a list of accounts in the settings that loads more of them."
+  },
+  "settings.locale.description": {
+    "defaultMessage": "应用会立即切换到所选语言。",
+    "description": "Help text of the display language select."
+  },
+  "settings.locale.follow_browser": {
+    "defaultMessage": "跟随此浏览器（{language}）",
+    "description": "Option of the display language select: follow the browser's language. language is the language it shows now, in that language."
+  },
+  "settings.locale.follow_browser_description": {
+    "defaultMessage": "使用浏览器的语言；如果应用不支持该语言，则使用此服务器的语言。",
+    "description": "Description of the option that follows the browser's language."
+  },
+  "settings.locale.machine_translated": {
+    "defaultMessage": "机器翻译",
+    "description": "Description of a language in the display language select whose text is a machine translation (every language but English and Japanese)."
+  },
+  "settings.locale.label": {
+    "defaultMessage": "显示语言",
+    "description": "Label of the select of the language the app is shown in."
+  },
+  "settings.menu.title": {
+    "defaultMessage": "设置页面",
+    "description": "Heading of the list of links to the pages of the settings."
+  },
+  "settings.menu.status_page": {
+    "defaultMessage": "服务器状态",
+    "description": "Link under the settings menu to the server's status page on another site, where the operators tell of outages and maintenance. The link leaves the app."
+  },
+  "settings.mutes.empty": {
+    "defaultMessage": "你还没有隐藏任何人",
+    "description": "Shown when the user mutes no account."
+  },
+  "settings.mutes.notifications": {
+    "defaultMessage": "同时隐藏通知",
+    "description": "Under a muted account whose mute also hides its notifications."
+  },
+  "settings.mutes.title": {
+    "defaultMessage": "已隐藏的账号",
+    "description": "Heading and document title of the settings page with the muted accounts."
+  },
+  "settings.mutes.unmute": {
+    "defaultMessage": "取消隐藏",
+    "description": "Button that unmutes an account."
+  },
+  "settings.mutes.unmuted": {
+    "defaultMessage": "你已取消隐藏 {name}。",
+    "description": "Announced after an account was unmuted. {name} is the account's display name."
+  },
+  "settings.mutes.until": {
+    "defaultMessage": "直到 {date}",
+    "description": "When a mute ends, under the muted account. {date} is a formatted date and time."
+  },
+  "settings.navigation.description": {
+    "defaultMessage": "选择导航中的项目及其顺序。在移动端，前 {count, plural, other {# 个显示的项目}} 位于标签栏，其余位于菜单中。“设置”始终显示。保存在此浏览器中。",
+    "description": "Help text of the navigation section. {count} is how many shown items the bottom tab bar of phones holds (5); the name of the Settings item is shell.nav.settings."
+  },
+  "settings.navigation.hidden": {
+    "defaultMessage": "已隐藏",
+    "description": "Help text under an item of the navigation section whose checkbox is off: it is not in the navigation."
+  },
+  "settings.navigation.in_menu": {
+    "defaultMessage": "在移动端的菜单中",
+    "description": "Help text under an item of the navigation section: the item is shown in the menu (the sheet opened by the Menu button) on phones, and in the side rail on larger screens."
+  },
+  "settings.navigation.in_tab_bar": {
+    "defaultMessage": "在移动端的标签栏中",
+    "description": "Help text under an item of the navigation section: the item is shown in the bottom tab bar on phones."
+  },
+  "settings.navigation.move_down": {
+    "defaultMessage": "下移 {name}",
+    "description": "Accessible name and tooltip of the icon button that moves an item of the navigation one place down (later). {name} is the item's label (shell.nav.*)."
+  },
+  "settings.navigation.move_up": {
+    "defaultMessage": "上移 {name}",
+    "description": "Accessible name and tooltip of the icon button that moves an item of the navigation one place up (earlier). {name} is the item's label (shell.nav.*)."
+  },
+  "settings.navigation.moved": {
+    "defaultMessage": "{name} 已移至第 {position, number} 位，共 {count, number} 位",
+    "description": "Announced to screen readers after an item of the navigation moved. {name} is the item's label, {position} its new place counted from 1, {count} the number of items."
+  },
+  "settings.navigation.preview": {
+    "defaultMessage": "移动端的标签栏",
+    "description": "Caption under the preview of the bottom tab bar of phones in the navigation section: the icons and labels of the items it holds, then Menu (shell.nav.menu)."
+  },
+  "settings.navigation.reset": {
+    "defaultMessage": "恢复默认",
+    "description": "Button of the navigation section that puts back the default items and order."
+  },
+  "settings.navigation.reset_done": {
+    "defaultMessage": "已恢复默认导航",
+    "description": "Announced to screen readers after the navigation went back to the default items and order."
+  },
+  "settings.navigation.title": {
+    "defaultMessage": "导航",
+    "description": "Heading of the section of the preferences page where the user chooses the items of the navigation and their order."
+  },
+  "settings.navigation.unavailable": {
+    "defaultMessage": "此服务器不提供",
+    "description": "Help text under the local or federated timeline item of the navigation section when this server has turned that timeline off, so it does not show whatever is chosen."
+  },
+  "settings.notifications.group.status": {
+    "defaultMessage": "新帖子",
+    "description": "Row of the notification settings table: a new post of an account whose new posts the user chose to be notified of."
+  },
+  "settings.preferences.autosave": {
+    "defaultMessage": "更改会在你做出后立即保存。",
+    "description": "Text at the top of the preferences page."
+  },
+  "settings.preferences.display.title": {
+    "defaultMessage": "显示",
+    "description": "Heading of the section of the preferences page with the display language, the time zone, the color theme and the autoplay of animations."
+  },
+  "settings.preferences.display.description": {
+    "defaultMessage": "语言、时区和链接卡片保存到你的账号；主题和动画保存在此浏览器中。",
+    "description": "Description under the display section of the preferences page: where each of its settings is saved."
+  },
+  "settings.preferences.posting.title": {
+    "defaultMessage": "新帖子",
+    "description": "Heading of the section of the preferences page with what new posts start with: the visibility, who may quote, the language, and whether every attachment needs a description."
+  },
+  "settings.preferences.posting.description": {
+    "defaultMessage": "新帖子默认使用这些选项，你可以在每条帖子中更改。保存到你的账号。",
+    "description": "Description under the section of the preferences page with what new posts start with."
+  },
+  "settings.preferences.timeline.title": {
+    "defaultMessage": "时间线",
+    "description": "Heading of the section of the preferences page with the languages of the timelines and the automatic insertion of new posts."
+  },
+  "settings.preferences.timeline.description": {
+    "defaultMessage": "时间线显示哪些帖子，以及新帖子如何出现。保存到你的账号。",
+    "description": "Description under the timelines section of the preferences page."
+  },
+  "settings.preferences.title": {
+    "defaultMessage": "显示、发帖和时间线",
+    "description": "Heading and document title of the settings page with the display (language, time zone, theme), the navigation, the defaults of new posts and the timelines."
+  },
+  "settings.profile.avatar": {
+    "defaultMessage": "头像",
+    "description": "Heading of the part of the profile form for the user's profile picture."
+  },
+  "settings.profile.bot": {
+    "defaultMessage": "这是机器人账号",
+    "description": "Checkbox of the profile form: the account is automated."
+  },
+  "settings.profile.bot.description": {
+    "defaultMessage": "此账号会自动发帖，其他人会看到它可能无人看管。",
+    "description": "Help text of the 'This is a bot' checkbox."
+  },
+  "settings.profile.crawlers": {
+    "defaultMessage": "搜索引擎和 AI",
+    "description": "Heading of the part of the profile form about search engines and AI."
+  },
+  "settings.profile.indexable": {
+    "defaultMessage": "{scope, select, none {允许搜索引擎索引我的个人资料和公开帖子} public {在搜索中显示我的个人资料和公开帖子} local {在搜索引擎中显示我的个人资料和公开帖子，并在此服务器的搜索中显示我的本站帖子} other {在搜索中显示我的个人资料、公开帖子和本站帖子}}",
+    "description": "Label of the checkbox that lets the profile and posts appear in search. {scope} is what this server's post search covers: none (the server has no post search), public, local, or public_local."
+  },
+  "settings.profile.indexable.description": {
+    "defaultMessage": "{scope, select, none {在服务器允许时，搜索引擎可能会索引它们。遵循此选项的其他服务器也会看到它。这不会改变别人通过名字找到你账号的方式。} public {此服务器的帖子搜索可以找到你的公开帖子。在服务器允许时，搜索引擎可能会索引你的个人资料和公开帖子。遵循此选项的其他服务器也会看到它。} local {此服务器的帖子搜索可以找到你可见范围为“本站”的帖子，但不包括公开帖子。在服务器允许时，搜索引擎可能会索引你的个人资料和公开帖子。遵循此选项的其他服务器也会看到它。} other {此服务器的帖子搜索可以找到你的公开帖子和可见范围为“本站”的帖子。在服务器允许时，搜索引擎可能会索引你的个人资料和公开帖子。遵循此选项的其他服务器也会看到它。}}",
+    "description": "Help text of the indexable checkbox. Only a server with a post search speaks of this server's search; on the others (none) it must not read as if it affected the search by name. {scope} as in settings.profile.indexable."
+  },
+  "settings.profile.indexable.server_denies": {
+    "defaultMessage": "此服务器要求搜索引擎不要索引任何页面，因此即使你允许，它们也不会索引你的页面。",
+    "description": "Note shown when the server denies search engines, so the user's choice does not reach them."
+  },
+  "settings.profile.ai_opt_out": {
+    "defaultMessage": "拒绝 AI 训练和使用",
+    "description": "Label of the checkbox that denies AI training on and use of the user's pages."
+  },
+  "settings.profile.ai_opt_out.description": {
+    "defaultMessage": "此服务器上你的个人资料和帖子页面会要求 AI 不要用它们进行训练或使用它们。媒体文件和其他服务器上你帖子的副本不带有此要求。",
+    "description": "Help text of the AI opt-out checkbox, with its limits."
+  },
+  "settings.profile.ai_opt_out.server_denies": {
+    "defaultMessage": "{usage, select, deny_training {此服务器已在所有页面上拒绝 AI 训练；此选项还会拒绝 AI 搜索和助手的使用。} other {此服务器已在所有页面上拒绝 AI 训练和使用。}}",
+    "description": "Note shown when the server already denies AI training (deny_training) or both training and use (deny)."
+  },
+  "settings.profile.characters_left": {
+    "defaultMessage": "{count, plural, other {还可输入 # 个字符}}",
+    "description": "Character count under the bio field while the text is within the limit."
+  },
+  "settings.profile.characters_over": {
+    "defaultMessage": "{count, plural, other {超出 # 个字符}}",
+    "description": "Character count under the bio field when the text is longer than the limit."
+  },
+  "settings.profile.display_name": {
+    "defaultMessage": "昵称",
+    "description": "Label of the display name field of the profile form."
+  },
+  "settings.profile.display_name.description": {
+    "defaultMessage": "最多 {max} 个字符。留空则显示你的用户名。",
+    "description": "Help text of the display name field. {max} is the character limit, for example 30."
+  },
+  "settings.profile.field": {
+    "defaultMessage": "字段 {number}",
+    "description": "Caption of one field of the profile form. {number} is its position, starting at 1."
+  },
+  "settings.profile.field.name": {
+    "defaultMessage": "标签",
+    "description": "Label of the name part of a profile field."
+  },
+  "settings.profile.field.name_required": {
+    "defaultMessage": "请为此字段填写标签。",
+    "description": "Error of a profile field that has content but no label."
+  },
+  "settings.profile.field.remove": {
+    "defaultMessage": "移除字段 {number}",
+    "description": "Button that removes one field from the profile form. {number} is its position, starting at 1."
+  },
+  "settings.profile.field.value": {
+    "defaultMessage": "内容",
+    "description": "Label of the value part of a profile field."
+  },
+  "settings.profile.fields": {
+    "defaultMessage": "字段",
+    "description": "Heading of the part of the profile form with the label and content pairs shown on the profile."
+  },
+  "settings.profile.fields.add": {
+    "defaultMessage": "添加字段",
+    "description": "Button that adds an empty field to the profile form."
+  },
+  "settings.profile.fields.description": {
+    "defaultMessage": "最多 {max} 组标签和内容，显示在你的个人资料中。内容中的链接可以点击。",
+    "description": "Help text of the profile fields. {max} is how many fields a profile can have, for example 4."
+  },
+  "settings.profile.header": {
+    "defaultMessage": "横幅图片",
+    "description": "Heading of the part of the profile form for the wide image at the top of the profile."
+  },
+  "settings.profile.image.choose": {
+    "defaultMessage": "选择图片",
+    "description": "Button that opens the file picker to choose a new avatar or header image."
+  },
+  "settings.profile.image.failed": {
+    "defaultMessage": "服务器无法处理此图片。请换一张试试。",
+    "description": "Error under an avatar or header image whose upload failed during processing."
+  },
+  "settings.profile.image.remove": {
+    "defaultMessage": "移除图片",
+    "description": "Button that removes the avatar or header image when the profile is saved."
+  },
+  "settings.profile.locked": {
+    "defaultMessage": "审核关注者",
+    "description": "Checkbox of the profile form: follow requests need the user's approval."
+  },
+  "settings.profile.locked.description": {
+    "defaultMessage": "别人需要请求关注你，由你决定接受谁。",
+    "description": "Help text of the 'Approve followers' checkbox."
+  },
+  "settings.profile.note": {
+    "defaultMessage": "简介",
+    "description": "Label of the profile text field of the profile form."
+  },
+  "settings.profile.save": {
+    "defaultMessage": "保存个人资料",
+    "description": "Submit button of the profile form."
+  },
+  "settings.profile.saved": {
+    "defaultMessage": "你的个人资料已保存。",
+    "description": "Notification after the profile was saved."
+  },
+  "settings.profile.title": {
+    "defaultMessage": "个人资料",
+    "description": "Heading and document title of the settings page that edits the user's profile."
+  },
+  "settings.badges.title": {
+    "defaultMessage": "徽章和支持者列表",
+    "description": "Heading and document title of the settings page that chooses the role badges the profile shows and whether the user is on the supporter list."
+  },
+  "settings.badges.none": {
+    "defaultMessage": "你没有可在个人资料中显示的徽章。徽章随工作人员授予你的角色而来。",
+    "description": "Shown in the badges section when none of the user's roles has a badge."
+  },
+  "settings.profile.too_long": {
+    "defaultMessage": "最多使用 {max} 个字符。",
+    "description": "Error of a profile field whose text is longer than its limit. {max} is the limit."
+  },
+  "settings.profile.unsaved.description": {
+    "defaultMessage": "你对个人资料的更改将会丢失。",
+    "description": "Body of the dialog shown when the user leaves the profile settings with unsaved changes: what happens if they leave."
+  },
+  "settings.profile.unsaved.leave": {
+    "defaultMessage": "放弃更改",
+    "description": "Button of the unsaved-changes dialog that leaves the profile settings and drops the changes."
+  },
+  "settings.profile.unsaved.stay": {
+    "defaultMessage": "继续编辑",
+    "description": "Button of the unsaved-changes dialog that stays on the profile settings with the changes kept."
+  },
+  "settings.profile.unsaved.title": {
+    "defaultMessage": "不保存个人资料就离开吗？",
+    "description": "Title (a question) of the dialog shown when the user leaves the profile settings with changes that are not saved."
+  },
+  "settings.push.denied": {
+    "defaultMessage": "此网站的通知已被阻止。要开启推送通知，请在浏览器中为此网站允许通知。",
+    "description": "Shown in the push notification settings when the user blocked notifications for this site in the browser."
+  },
+  "settings.push.enable": {
+    "defaultMessage": "在此设备上通知我",
+    "description": "Label of the switch that turns on Web Push notifications for this browser and signed-in session."
+  },
+  "settings.push.enable.description": {
+    "defaultMessage": "即使应用已关闭，新通知也会显示在此设备上。请在下方表格的“推送”列中选择通知类型。",
+    "description": "Description of the switch that turns on Web Push on this device: what it does, and that its kinds are chosen in the Push column of the tables."
+  },
+  "settings.push.failed": {
+    "defaultMessage": "无法在此设备上设置推送通知。请稍后重试。",
+    "description": "Error shown when the browser failed to subscribe to push notifications."
+  },
+  "settings.push.not_allowed": {
+    "defaultMessage": "由于浏览器不允许通知，推送通知已关闭。",
+    "description": "Error shown when the user did not allow notifications in the browser's permission prompt after turning on push notifications."
+  },
+  "settings.push.title": {
+    "defaultMessage": "推送通知",
+    "description": "Heading of the section of the notification settings about Web Push notifications on this device."
+  },
+  "settings.push.unsupported": {
+    "defaultMessage": "此浏览器无法接收推送通知。在 iPhone 和 iPad 上，请将此网站添加到主屏幕，然后从主屏幕打开。",
+    "description": "Shown in the push notification settings when the browser has no Push API."
+  },
+  "settings.push_prompt.choose_types": {
+    "defaultMessage": "选择类型",
+    "description": "Action of the toast after the prompt on the notifications page turned on push notifications: opens the notification settings, where the types pushed are chosen."
+  },
+  "settings.push_prompt.close": {
+    "defaultMessage": "关闭",
+    "description": "Button of the prompt at the top of the notifications page: closes it without turning on push notifications. It does not come back."
+  },
+  "settings.push_prompt.description": {
+    "defaultMessage": "即使应用已关闭，通知也会送达此设备。你也可以稍后在通知设置中开启。",
+    "description": "Text of the prompt at the top of the notifications page, offering to turn on push notifications. Says where to do it after closing the prompt."
+  },
+  "settings.push_prompt.enable": {
+    "defaultMessage": "开启",
+    "description": "Button of the prompt at the top of the notifications page: turns on push notifications on this device. The browser may ask for permission."
+  },
+  "settings.push_prompt.enabled": {
+    "defaultMessage": "此设备已开启推送通知。",
+    "description": "Toast after the prompt on the notifications page turned on push notifications."
+  },
+  "settings.push_prompt.title": {
+    "defaultMessage": "在此设备上接收通知",
+    "description": "Heading of the prompt at the top of the notifications page, offering to turn on push notifications on this device."
+  },
+  "settings.require_media_description.description": {
+    "defaultMessage": "发帖前，发帖表单会要求你为每个没有替代文本的图片、视频或音频文件添加替代文本，让看不到或听不到它们的人也能理解你的帖子。",
+    "description": "Help text of the switch that asks for a description of every attachment."
+  },
+  "settings.require_media_description.label": {
+    "defaultMessage": "要求我为每个附件添加替代文本",
+    "description": "Label of the switch that makes the post form ask for an alternative text of every attached file before posting."
+  },
+  "settings.saved": {
+    "defaultMessage": "已保存",
+    "description": "Announced to screen readers after a preference was saved; preferences save as soon as they change."
+  },
+  "settings.theme.dark": {
+    "defaultMessage": "深色",
+    "description": "Option of the color theme radio group: always the dark theme."
+  },
+  "settings.theme.description": {
+    "defaultMessage": "立即生效，保存在此浏览器中。",
+    "description": "Help text of the color theme radio group on the preferences page."
+  },
+  "settings.theme.label": {
+    "defaultMessage": "主题",
+    "description": "Label of the radio group that chooses the app's color theme, on the preferences page."
+  },
+  "settings.theme.light": {
+    "defaultMessage": "浅色",
+    "description": "Option of the color theme radio group: always the light theme."
+  },
+  "settings.theme.system": {
+    "defaultMessage": "跟随系统",
+    "description": "Option of the color theme radio group: follow the device's light or dark setting."
+  },
+  "settings.time_zone.device_differs": {
+    "defaultMessage": "此设备位于不同的时区：{zone}。",
+    "description": "Note under the time zone select when the chosen zone is not the time zone of the device in use. {zone} is that device zone as the select names it, like (UTC+09:00) Japan Standard Time."
+  },
+  "settings.time_zone.description": {
+    "defaultMessage": "日期和时间以此时区显示。",
+    "description": "Help text of the time zone select."
+  },
+  "settings.time_zone.follow_browser": {
+    "defaultMessage": "跟随此浏览器（{zone}）",
+    "description": "Option of the time zone select: follow the browser's time zone. zone is that zone's name."
+  },
+  "settings.time_zone.follow_browser_description": {
+    "defaultMessage": "日期以浏览器的时区显示。",
+    "description": "Description of the option that follows the browser's time zone."
+  },
+  "settings.time_zone.label": {
+    "defaultMessage": "时区",
+    "description": "Label of the select of the user's time zone."
+  },
+  "settings.time_zone.offset": {
+    "defaultMessage": "UTC{offset}",
+    "description": "Option of the time zone select for a zone that has no name, only its difference from UTC. {offset} is like +05:00 or −05:00."
+  },
+  "settings.time_zone.option": {
+    "defaultMessage": "（UTC{offset}）{name}",
+    "description": "Option of the time zone select. {offset} is the zone's difference from UTC, like +09:00 or −05:00; {name} is the zone's name in the display language, like Japan Standard Time."
+  },
+  "settings.time_zone.use_device": {
+    "defaultMessage": "使用此设备的时区",
+    "description": "Button under the time zone select that changes the setting to the time zone of the device in use; shown only when they differ."
+  },
+  "settings.timeline_auto_insert.description": {
+    "defaultMessage": "新帖子会自动出现在主页顶部，你正在阅读的帖子保持原位。当焦点位于时间线中或你选中了时间线中的文字时，新帖子会改为在“新帖子”按钮后等待。",
+    "description": "Help text of the switch that inserts new posts into the home timeline on their own."
+  },
+  "settings.timeline_auto_insert.label": {
+    "defaultMessage": "自动显示新帖子",
+    "description": "Label of the switch that makes the home timeline insert new posts on their own instead of waiting behind a button."
+  },
+  "settings.timeline_languages.description": {
+    "defaultMessage": "时间线只显示你勾选的语言的帖子。不勾选任何语言则显示所有语言。",
+    "description": "Help text of the timeline languages."
+  },
+  "settings.timeline_languages.label": {
+    "defaultMessage": "时间线的语言",
+    "description": "Caption of the group of checkboxes of the languages timelines show."
+  },
+  "settings.title": {
+    "defaultMessage": "设置",
+    "description": "Heading and document title of the settings page."
+  },
+  "settings.two_factor.title": {
+    "defaultMessage": "双重验证",
+    "description": "Heading and document title of the settings page of two-factor authentication with an authenticator app, and its item in the settings menu."
+  },
+  "settings.auto_delete.title": {
+    "defaultMessage": "删除旧帖子",
+    "description": "Heading and document title of the settings page of the automatic deletion of the user's own old posts, and its item in the settings menu."
+  },
+  "settings.auto_delete.description": {
+    "defaultMessage": "当你的帖子超过你选择的时长后，它会在此处以及它被发送到的服务器上被删除，就像你亲自删除一样。已删除的帖子无法恢复。你的转发不会被删除。",
+    "description": "Explanation at the top of the automatic deletion settings page."
+  },
+  "settings.auto_delete.enabled": {
+    "defaultMessage": "自动删除旧帖子",
+    "description": "Label of the switch that turns the automatic deletion of old posts on."
+  },
+  "settings.auto_delete.enabled.description": {
+    "defaultMessage": "服务器每小时检查一次，每次最多删除 100 条帖子，因此大量旧帖子需要几个小时才能删完。",
+    "description": "Help of the switch of the automatic deletion of old posts."
+  },
+  "settings.auto_delete.age": {
+    "defaultMessage": "删除早于以下时长的帖子",
+    "description": "Label of the select of the age after which posts are deleted."
+  },
+  "settings.auto_delete.age.description": {
+    "defaultMessage": "从每条帖子的发布时间算起。",
+    "description": "Help of the select of the age after which posts are deleted."
+  },
+  "settings.auto_delete.age.days": {
+    "defaultMessage": "{count, plural, other {# 天}}",
+    "description": "An age of posts in days, an option of the select of the age after which posts are deleted."
+  },
+  "settings.auto_delete.keep": {
+    "defaultMessage": "保留这些帖子",
+    "description": "Legend of the checkboxes of the exceptions that keep posts from the automatic deletion."
+  },
+  "settings.auto_delete.keep.description": {
+    "defaultMessage": "符合任一勾选项的帖子永远不会被自动删除。",
+    "description": "Help of the exceptions that keep posts from the automatic deletion."
+  },
+  "settings.auto_delete.keep.pinned": {
+    "defaultMessage": "置顶在个人资料中",
+    "description": "Exception of the automatic deletion: posts pinned to the profile."
+  },
+  "settings.auto_delete.keep.bookmarked": {
+    "defaultMessage": "你添加了书签",
+    "description": "Exception of the automatic deletion: posts the user bookmarked."
+  },
+  "settings.auto_delete.keep.favourited": {
+    "defaultMessage": "你喜欢过",
+    "description": "Exception of the automatic deletion: posts the user favourited."
+  },
+  "settings.auto_delete.keep.media": {
+    "defaultMessage": "包含图片或其他媒体",
+    "description": "Exception of the automatic deletion: posts with media attachments."
+  },
+  "settings.auto_delete.keep.polls": {
+    "defaultMessage": "包含投票",
+    "description": "Exception of the automatic deletion: posts with a poll."
+  },
+  "settings.auto_delete.visibilities": {
+    "defaultMessage": "保留以下可见范围的帖子",
+    "description": "Legend of the checkboxes of the visibilities whose posts the automatic deletion keeps."
+  },
+  "settings.auto_delete.visibilities.description": {
+    "defaultMessage": "勾选的可见范围的帖子永远不会被自动删除。",
+    "description": "Help of the visibilities whose posts the automatic deletion keeps."
+  },
+  "settings.auto_delete.min_boosts": {
+    "defaultMessage": "保留转发次数至少为",
+    "description": "Label of the select of the number of boosts that keeps a post from the automatic deletion."
+  },
+  "settings.auto_delete.min_favourites": {
+    "defaultMessage": "保留喜欢次数至少为",
+    "description": "Label of the select of the number of favourites that keeps a post from the automatic deletion."
+  },
+  "settings.auto_delete.threshold.off": {
+    "defaultMessage": "不按此条件保留帖子",
+    "description": "Option of the boosts or favourites threshold of the automatic deletion that keeps no post for it."
+  },
+  "settings.auto_delete.threshold.count": {
+    "defaultMessage": "{count, plural, other {# 次}}",
+    "description": "Option of the boosts or favourites threshold of the automatic deletion: a number of boosts or favourites."
+  },
+  "settings.auto_delete.save": {
+    "defaultMessage": "保存",
+    "description": "Button that saves the automatic deletion settings."
+  },
+  "settings.auto_delete.saved_on": {
+    "defaultMessage": "已保存。早于 {days, plural, other {# 天}} 的帖子将被删除，你保留的帖子除外。",
+    "description": "Status after the automatic deletion settings were saved turned on."
+  },
+  "settings.auto_delete.saved_off": {
+    "defaultMessage": "已保存。你的帖子不会被自动删除。",
+    "description": "Status after the automatic deletion settings were saved turned off."
+  },
+  "settings.auto_delete.save_failed": {
+    "defaultMessage": "无法保存设置：{reason}",
+    "description": "Error after saving the automatic deletion settings failed. {reason} is the localized reason."
+  },
+  "settings.auto_delete.unsaved.title": {
+    "defaultMessage": "不保存就离开吗？",
+    "description": "Title of the dialog that asks before leaving the automatic deletion settings with unsaved changes."
+  },
+  "settings.auto_delete.unsaved.description": {
+    "defaultMessage": "你对自动删除的更改将会丢失。",
+    "description": "Description of the dialog that asks before leaving the automatic deletion settings with unsaved changes."
+  },
+  "settings.auto_delete.unsaved.leave": {
+    "defaultMessage": "放弃更改",
+    "description": "Button that leaves the automatic deletion settings without saving."
+  },
+  "settings.auto_delete.unsaved.stay": {
+    "defaultMessage": "继续编辑",
+    "description": "Button that stays on the automatic deletion settings."
+  },
+  "settings.two_factor.status.title": {
+    "defaultMessage": "当前设置",
+    "description": "Heading of the region of the two-factor authentication page that says whether it is on."
+  },
+  "settings.two_factor.status": {
+    "defaultMessage": "双重验证",
+    "description": "Term of the description list: whether two-factor authentication is on."
+  },
+  "settings.two_factor.status.on": {
+    "defaultMessage": "已开启",
+    "description": "Value of the two-factor authentication term while it is on."
+  },
+  "settings.two_factor.status.off": {
+    "defaultMessage": "已关闭。登录时只需要密码。",
+    "description": "Text of the two-factor authentication page while it is off."
+  },
+  "settings.two_factor.enrolled_at": {
+    "defaultMessage": "开启时间",
+    "description": "Term of the description list: when two-factor authentication was turned on; the value is a date and time."
+  },
+  "settings.two_factor.recovery_codes.remaining": {
+    "defaultMessage": "未使用的恢复代码",
+    "description": "Term of the description list: how many recovery codes are left; the value is a number."
+  },
+  "settings.two_factor.setup.title": {
+    "defaultMessage": "设置身份验证器应用",
+    "description": "Heading of the region that enrolls an authenticator app while two-factor authentication is off."
+  },
+  "settings.two_factor.setup.description": {
+    "defaultMessage": "将此账号添加到手机上的身份验证器应用。之后登录时还需要输入应用显示的六位数验证码。",
+    "description": "Explanation above the button that starts setting up an authenticator app."
+  },
+  "settings.two_factor.setup.start": {
+    "defaultMessage": "设置",
+    "description": "Button that generates a new secret to add to an authenticator app."
+  },
+  "settings.two_factor.setup.step.scan": {
+    "defaultMessage": "用身份验证器应用扫描二维码，或在应用中输入下方的密钥。",
+    "description": "First step of setting up an authenticator app."
+  },
+  "settings.two_factor.setup.step.confirm": {
+    "defaultMessage": "输入应用显示的六位数验证码以开启双重验证。",
+    "description": "Second step of setting up an authenticator app."
+  },
+  "settings.two_factor.setup.qr_code": {
+    "defaultMessage": "身份验证器应用的二维码",
+    "description": "Accessible name of the QR code image that holds the secret for the authenticator app."
+  },
+  "settings.two_factor.setup.secret": {
+    "defaultMessage": "密钥",
+    "description": "Label of the secret shown as text, for typing it into an authenticator app instead of scanning the QR code."
+  },
+  "settings.two_factor.setup.code.description": {
+    "defaultMessage": "应用当前显示的六位数验证码。",
+    "description": "Help under the code field that confirms the setup of an authenticator app."
+  },
+  "settings.two_factor.setup.submit": {
+    "defaultMessage": "开启",
+    "description": "Button that turns two-factor authentication on with the code of the app."
+  },
+  "settings.two_factor.setup.expired": {
+    "defaultMessage": "设置用时过长。请重新开始。",
+    "description": "Error when the setup of an authenticator app expired (after 15 minutes) before its code was entered."
+  },
+  "settings.two_factor.code": {
+    "defaultMessage": "验证码",
+    "description": "Label of the field for a code of the authenticator app or a recovery code."
+  },
+  "settings.two_factor.code.description": {
+    "defaultMessage": "身份验证器应用中的验证码，或你的一个恢复代码。",
+    "description": "Help under the code field that confirms replacing the recovery codes or turning two-factor authentication off."
+  },
+  "settings.two_factor.code.required": {
+    "defaultMessage": "请输入验证码。",
+    "description": "Error of an empty code field."
+  },
+  "settings.two_factor.code.invalid": {
+    "defaultMessage": "验证码不正确或已被使用。",
+    "description": "Error of the code field when the server refused the code."
+  },
+  "settings.two_factor.state_changed": {
+    "defaultMessage": "双重验证已在其他地方更改。页面现在显示的是当前设置。",
+    "description": "Error when two-factor authentication was turned on or off in another tab or device meanwhile."
+  },
+  "settings.two_factor.rate_limited": {
+    "defaultMessage": "错误的验证码次数过多：{reason}",
+    "description": "Error after too many wrong codes. {reason} is the server's explanation of when to try again."
+  },
+  "settings.two_factor.failed": {
+    "defaultMessage": "无法更改双重验证：{reason}",
+    "description": "Error when a change of two-factor authentication failed. {reason} is the server's explanation."
+  },
+  "settings.two_factor.enabled": {
+    "defaultMessage": "双重验证已开启。",
+    "description": "Status message after turning two-factor authentication on."
+  },
+  "settings.two_factor.disabled": {
+    "defaultMessage": "双重验证已关闭。",
+    "description": "Status message after turning two-factor authentication off."
+  },
+  "settings.two_factor.recovery_codes.title": {
+    "defaultMessage": "恢复代码",
+    "description": "Heading of the region that replaces the recovery codes."
+  },
+  "settings.two_factor.recovery_codes.description": {
+    "defaultMessage": "如果你丢失了身份验证器应用，可以改用恢复代码登录。每个代码只能使用一次。新代码会替换旧代码，旧代码将失效。",
+    "description": "Explanation of the recovery codes above the form that replaces them."
+  },
+  "settings.two_factor.recovery_codes.replace": {
+    "defaultMessage": "替换恢复代码",
+    "description": "Button that replaces the recovery codes with new ones."
+  },
+  "settings.two_factor.recovery_codes.replaced": {
+    "defaultMessage": "新的恢复代码已就绪。旧代码已失效。",
+    "description": "Status message after replacing the recovery codes."
+  },
+  "settings.two_factor.recovery_codes.new.title": {
+    "defaultMessage": "保存你的恢复代码",
+    "description": "Heading of the list of new recovery codes, which is shown only once."
+  },
+  "settings.two_factor.recovery_codes.new.description": {
+    "defaultMessage": "请将这些代码保存在安全的地方，例如密码管理器。它们只显示这一次。每个代码可在没有应用的情况下让你登录一次。",
+    "description": "Text above the list of new recovery codes."
+  },
+  "settings.two_factor.disable.title": {
+    "defaultMessage": "关闭双重验证",
+    "description": "Heading of the region that turns two-factor authentication off."
+  },
+  "settings.two_factor.disable.description": {
+    "defaultMessage": "登录时将只需要密码。请输入验证码以确认。",
+    "description": "Explanation above the form that turns two-factor authentication off."
+  },
+  "settings.two_factor.disable.submit": {
+    "defaultMessage": "关闭",
+    "description": "Button that turns two-factor authentication off."
+  },
+  "settings.passkeys.title": {
+    "defaultMessage": "通行密钥",
+    "description": "Title of the settings page of passkeys (WebAuthn credentials that sign in instead of the password), and its entry in the settings menu."
+  },
+  "settings.passkeys.description": {
+    "defaultMessage": "通行密钥让你使用解锁设备或密码管理器的指纹、面容或 PIN 登录，而无需密码。如果开启了双重验证，登录时仍需要输入验证码。有了通行密钥后，你可以在密码页面移除密码。",
+    "description": "Explanation at the top of the passkeys settings page."
+  },
+  "settings.passkeys.add.title": {
+    "defaultMessage": "添加通行密钥",
+    "description": "Button above the list of passkeys that opens the form that adds one, and the heading of that form."
+  },
+  "settings.passkeys.add.description": {
+    "defaultMessage": "为通行密钥命名以便区分，并输入密码以确认。之后浏览器会询问将通行密钥保存在哪里。",
+    "description": "Explanation of the form that adds a passkey."
+  },
+  "settings.passkeys.add.description_passkey": {
+    "defaultMessage": "为通行密钥命名以便区分。浏览器会要求你使用一个通行密钥来确认，然后询问将新的通行密钥保存在哪里。",
+    "description": "Explanation of the form that adds a passkey for a user who has no password: an existing passkey confirms adding the new one."
+  },
+  "settings.passkeys.name": {
+    "defaultMessage": "名称",
+    "description": "Label of the field for the name of a new passkey."
+  },
+  "settings.passkeys.name.description": {
+    "defaultMessage": "例如保存它的设备或密码管理器。",
+    "description": "Hint under the field for the name of a new passkey."
+  },
+  "settings.passkeys.name.required": {
+    "defaultMessage": "请输入名称。",
+    "description": "Error of the empty name field of a new passkey."
+  },
+  "settings.passkeys.password": {
+    "defaultMessage": "当前密码",
+    "description": "Label of the password field that confirms adding a passkey."
+  },
+  "settings.passkeys.password.description": {
+    "defaultMessage": "添加登录方式需要你的密码。",
+    "description": "Hint under the password field that confirms adding a passkey."
+  },
+  "settings.passkeys.password.required": {
+    "defaultMessage": "请输入密码。",
+    "description": "Error of the empty password field when adding a passkey."
+  },
+  "settings.passkeys.add.submit": {
+    "defaultMessage": "添加通行密钥",
+    "description": "Button that adds a passkey: it checks the password and opens the browser's prompt."
+  },
+  "settings.passkeys.add.wrong_password": {
+    "defaultMessage": "密码不正确。",
+    "description": "Error of the password field when the server refused the password that confirms adding a passkey."
+  },
+  "settings.passkeys.add.cancelled": {
+    "defaultMessage": "未添加通行密钥：浏览器的提示已关闭或已超时。请重试。",
+    "description": "Alert when the user dismissed the browser's passkey prompt or it timed out."
+  },
+  "settings.passkeys.add.exists": {
+    "defaultMessage": "此设备或密码管理器已有你账号的通行密钥。",
+    "description": "Alert when the authenticator already holds a passkey of the account."
+  },
+  "settings.passkeys.add.unavailable": {
+    "defaultMessage": "浏览器无法为此网站创建通行密钥。",
+    "description": "Alert when the browser refused to create a passkey for another reason (unsupported, or the site's address does not allow it)."
+  },
+  "settings.passkeys.add.invalid": {
+    "defaultMessage": "无法验证该通行密钥。请使用其他设备或密码管理器重试。",
+    "description": "Alert when the server could not verify the new passkey (for example, the device has no screen lock)."
+  },
+  "settings.passkeys.add.expired": {
+    "defaultMessage": "添加通行密钥用时过长。请重试。",
+    "description": "Alert when the passkey was created after the registration expired (5 minutes)."
+  },
+  "settings.passkeys.add.too_many": {
+    "defaultMessage": "你的通行密钥已达到上限。请先移除一个。",
+    "description": "Alert when the user already has the most passkeys allowed (20)."
+  },
+  "settings.passkeys.add.rate_limited": {
+    "defaultMessage": "错误的密码次数过多：{reason}",
+    "description": "Alert when too many wrong passwords were entered to add a passkey. {reason} is the server's message, which says when to try again."
+  },
+  "settings.passkeys.add.failed": {
+    "defaultMessage": "无法添加通行密钥：{reason}",
+    "description": "Alert when adding a passkey failed for another reason. {reason} is the error's message."
+  },
+  "settings.passkeys.added": {
+    "defaultMessage": "已添加通行密钥“{name}”。",
+    "description": "Status after a passkey was added. {name} is the name the user gave it."
+  },
+  "settings.passkeys.unsupported": {
+    "defaultMessage": "此浏览器无法创建通行密钥。请在支持通行密钥的浏览器中打开此页面来添加。",
+    "description": "Note instead of the form that adds a passkey, in a browser without passkey support."
+  },
+  "settings.passkeys.list.title": {
+    "defaultMessage": "你的通行密钥",
+    "description": "Heading of the list of the user's passkeys."
+  },
+  "settings.passkeys.empty": {
+    "defaultMessage": "还没有通行密钥",
+    "description": "Empty state of the list of the user's passkeys."
+  },
+  "settings.passkeys.added_at": {
+    "defaultMessage": "添加于 {date}",
+    "description": "When a passkey was added, under its name. {date} is a formatted date and time."
+  },
+  "settings.passkeys.remove": {
+    "defaultMessage": "移除",
+    "description": "Button that removes a passkey, and the confirm button of its dialog."
+  },
+  "settings.passkeys.remove.title": {
+    "defaultMessage": "要移除通行密钥“{name}”吗？",
+    "description": "Title of the dialog that confirms removing a passkey. {name} is its name."
+  },
+  "settings.passkeys.remove.description": {
+    "defaultMessage": "你将无法再使用它登录。请同时从你的设备或密码管理器中删除它。",
+    "description": "Explanation in the dialog that confirms removing a passkey."
+  },
+  "settings.passkeys.remove.cancel": {
+    "defaultMessage": "取消",
+    "description": "Button that closes the dialog without removing the passkey."
+  },
+  "settings.passkeys.remove.failed": {
+    "defaultMessage": "无法移除通行密钥：{reason}",
+    "description": "Alert in the dialog when removing a passkey failed. {reason} is the error's message."
+  },
+  "settings.passkeys.removed": {
+    "defaultMessage": "已移除通行密钥“{name}”。",
+    "description": "Announcement after a passkey was removed. {name} is its name."
+  },
+  "settings.password.title": {
+    "defaultMessage": "密码",
+    "description": "Title of the settings page that changes the password, and its entry in the settings menu."
+  },
+  "settings.password.description": {
+    "defaultMessage": "更改密码会让你在其他所有浏览器和应用中退出登录。你的通行密钥和双重验证保持不变。",
+    "description": "Text at the top of the settings page that changes the password."
+  },
+  "settings.password.change.title": {
+    "defaultMessage": "更改密码",
+    "description": "Heading of the form that changes the password with the current one, on the password settings page."
+  },
+  "settings.password.current": {
+    "defaultMessage": "当前密码",
+    "description": "Label of the field of the current password, which confirms a password change."
+  },
+  "settings.password.current.required": {
+    "defaultMessage": "请输入当前密码。",
+    "description": "Error of the empty current password field when changing the password."
+  },
+  "settings.password.wrong_password": {
+    "defaultMessage": "密码不正确。",
+    "description": "Error of the current password field when the server refused it."
+  },
+  "settings.password.new": {
+    "defaultMessage": "新密码",
+    "description": "Label of the field of the new password."
+  },
+  "settings.password.new.description": {
+    "defaultMessage": "{min, number} 到 {max, number} 个字符。",
+    "description": "Hint under the new password field. {min} and {max} are the allowed lengths in characters."
+  },
+  "settings.password.new.invalid": {
+    "defaultMessage": "请使用 {min, number} 到 {max, number} 个字符。",
+    "description": "Error of the new password field when it is empty, too short, or too long. {min} and {max} are the allowed lengths in characters."
+  },
+  "settings.password.submit": {
+    "defaultMessage": "更改密码",
+    "description": "Button that changes the password."
+  },
+  "settings.password.changed": {
+    "defaultMessage": "你的密码已更改。其他浏览器和应用已退出登录。",
+    "description": "Status after the password was changed."
+  },
+  "settings.password.rate_limited": {
+    "defaultMessage": "错误的密码次数过多：{reason}",
+    "description": "Alert when too many wrong current passwords were entered to change the password. {reason} is the server's message, which says when to try again."
+  },
+  "settings.password.failed": {
+    "defaultMessage": "无法更改密码：{reason}",
+    "description": "Alert when changing the password failed for another reason. {reason} is the error's message."
+  },
+  "settings.password.remove.title": {
+    "defaultMessage": "移除密码",
+    "description": "Heading of the section that removes the password, so that only passkeys sign in, on the password settings page."
+  },
+  "settings.password.remove.description": {
+    "defaultMessage": "只使用通行密钥登录。移除时需要用一个通行密钥确认，你会在其他所有浏览器和应用中退出登录。你可以在此页面或通过密码重置链接重新设置密码。",
+    "description": "Explanation of the section that removes the password."
+  },
+  "settings.password.remove.no_passkey": {
+    "defaultMessage": "请在移除密码前添加通行密钥，以便你仍能登录。",
+    "description": "Note instead of the button that removes the password, for a user who has no passkey."
+  },
+  "settings.password.remove.open": {
+    "defaultMessage": "移除密码…",
+    "description": "Button that opens the dialog that removes the password."
+  },
+  "settings.password.remove.confirm.title": {
+    "defaultMessage": "要移除你的密码吗？",
+    "description": "Title of the dialog that confirms removing the password."
+  },
+  "settings.password.remove.confirm.description": {
+    "defaultMessage": "从现在起，你只能使用通行密钥登录。浏览器会要求你使用其中一个来确认。",
+    "description": "Description of the dialog that removes the password: the confirm button opens the browser's passkey prompt."
+  },
+  "settings.password.remove.confirm": {
+    "defaultMessage": "移除密码",
+    "description": "Button in the dialog that removes the password after the browser's passkey prompt."
+  },
+  "settings.password.remove.cancel": {
+    "defaultMessage": "取消",
+    "description": "Button that closes the dialog without removing the password."
+  },
+  "settings.password.removed": {
+    "defaultMessage": "你的密码已移除。从现在起请使用通行密钥登录。其他浏览器和应用已退出登录。",
+    "description": "Status after the password was removed."
+  },
+  "settings.password.remove.failed": {
+    "defaultMessage": "无法移除密码：{reason}",
+    "description": "Alert in the dialog when removing the password failed. {reason} is the error's message."
+  },
+  "settings.password.set.title": {
+    "defaultMessage": "设置密码",
+    "description": "Heading of the form that sets a password for a user who removed theirs and signs in with passkeys only."
+  },
+  "settings.password.set.description": {
+    "defaultMessage": "你目前使用通行密钥登录。设置密码后，也可以用电子邮件地址和密码登录。浏览器会要求你使用一个通行密钥来确认，你会在其他所有浏览器和应用中退出登录。",
+    "description": "Explanation of the form that sets a password for a user who has none."
+  },
+  "settings.password.set.submit": {
+    "defaultMessage": "设置密码",
+    "description": "Button that sets a password after the browser's passkey prompt, for a user who has none."
+  },
+  "settings.password.set.done": {
+    "defaultMessage": "你的密码已设置。其他浏览器和应用已退出登录。",
+    "description": "Status after a user who had no password set one."
+  },
+  "settings.password.passkeys_unsupported": {
+    "defaultMessage": "此操作需要通行密钥确认，但此浏览器无法使用通行密钥。请在支持通行密钥的浏览器中打开此页面。",
+    "description": "Note instead of a form or button of the password page that a passkey confirms (removing or setting the password), in a browser without passkey support."
+  },
+  "settings.passkey_confirmation.cancelled": {
+    "defaultMessage": "未使用你的通行密钥：浏览器的提示已关闭或已超时。请重试。",
+    "description": "Alert when the user dismissed the browser's passkey prompt that confirms an operation (deleting the account, setting or removing the password, adding a passkey), or it timed out."
+  },
+  "settings.passkey_confirmation.unavailable": {
+    "defaultMessage": "浏览器无法为此网站使用通行密钥。",
+    "description": "Alert when the browser refused the passkey prompt that confirms an operation for another reason (unsupported, or the site's address)."
+  },
+  "settings.passkey_confirmation.invalid": {
+    "defaultMessage": "无法验证该通行密钥。请使用此账号的通行密钥。",
+    "description": "Alert when the server did not accept the passkey that confirms an operation (another account's passkey, a removed one, or one that does not verify)."
+  },
+  "settings.passkey_confirmation.expired": {
+    "defaultMessage": "使用通行密钥确认用时过长。请重试。",
+    "description": "Alert when the passkey that confirms an operation was given after the confirmation expired (5 minutes)."
+  },
+  "settings.profile.display_name.emoji": {
+    "defaultMessage": "在昵称中添加表情",
+    "description": "Accessible name and tooltip of the button that opens the custom emoji picker for the display name."
+  },
+  "settings.profile.note.emoji": {
+    "defaultMessage": "在简介中添加表情",
+    "description": "Accessible name and tooltip of the button that opens the custom emoji picker for the bio."
+  },
+  "settings.profile.badges": {
+    "defaultMessage": "徽章",
+    "description": "Heading of the section of the badges settings page that chooses which role badges the profile shows (ADR-0070)."
+  },
+  "settings.profile.badges.description": {
+    "defaultMessage": "选择在个人资料中显示哪些角色徽章。徽章在你选择显示之前保持隐藏，并且只显示在你的个人资料中。",
+    "description": "Explanation of the badges section."
+  },
+  "settings.profile.badges.shown": {
+    "defaultMessage": "{badge} 已显示在你的个人资料中。",
+    "description": "Announced when a badge is shown. {badge} is the badge's name, which the staff wrote."
+  },
+  "settings.profile.badges.hidden": {
+    "defaultMessage": "{badge} 不再显示在你的个人资料中。",
+    "description": "Announced when a badge is hidden. {badge} is the badge's name, which the staff wrote."
+  },
+  "settings.profile.badges.failed": {
+    "defaultMessage": "无法更改徽章：{reason}",
+    "description": "Error under a badge's switch when the change was not saved. {reason} is the localized reason."
+  },
+  "settings.domain_mutes.title": {
+    "defaultMessage": "已隐藏的域名",
+    "description": "Heading and document title of the settings page with the domains the user mutes."
+  },
+  "settings.domain_mutes.description": {
+    "defaultMessage": "隐藏一个域名后，该域名及其子域名的账号的帖子不会出现在主页以外的时间线中，它们的转发不会出现在主页中，它们的通知也会被隐藏。你关注的账号仍会显示在主页中。这只影响你自己，服务器不会收到通知。",
+    "description": "Explains what muting a domain does, at the top of the muted domains page."
+  },
+  "settings.domain_mutes.new.title": {
+    "defaultMessage": "隐藏域名",
+    "description": "Button above the list of muted domains that opens the form that mutes one, and the heading of that form."
+  },
+  "settings.domain_mutes.list.title": {
+    "defaultMessage": "你隐藏的域名",
+    "description": "Heading of the section of the muted domains page that lists them."
+  },
+  "settings.domain_mutes.domain": {
+    "defaultMessage": "域名",
+    "description": "Label of the field for the domain to mute."
+  },
+  "settings.domain_mutes.domain.description": {
+    "defaultMessage": "服务器的域名，例如 mastodon.example。其子域名也会被隐藏。",
+    "description": "Help under the field for the domain to mute."
+  },
+  "settings.domain_mutes.domain.required": {
+    "defaultMessage": "请输入域名。",
+    "description": "Error under the domain field when the user mutes without entering a domain."
+  },
+  "settings.domain_mutes.mute": {
+    "defaultMessage": "隐藏",
+    "description": "Button that mutes the domain entered in the field."
+  },
+  "settings.domain_mutes.mute_failed": {
+    "defaultMessage": "无法隐藏该域名：{reason}",
+    "description": "Shown under the form when muting a domain fails. {reason} is the server's explanation."
+  },
+  "settings.domain_mutes.muted": {
+    "defaultMessage": "你已隐藏 {domain}。",
+    "description": "Shown under the form after a domain was muted. {domain} is the domain."
+  },
+  "settings.domain_mutes.empty": {
+    "defaultMessage": "你没有隐藏任何域名",
+    "description": "Shown when the user mutes no domain."
+  },
+  "settings.domain_mutes.since": {
+    "defaultMessage": "隐藏于 {date}",
+    "description": "When the domain was muted, under a muted domain. {date} is a formatted date and time."
+  },
+  "settings.domain_mutes.unmute": {
+    "defaultMessage": "取消隐藏",
+    "description": "Button that unmutes a domain."
+  },
+  "settings.domain_mutes.unmuted": {
+    "defaultMessage": "你已取消隐藏 {domain}。",
+    "description": "Announced after a domain was unmuted. {domain} is the domain."
+  },
+  "settings.import_export.kind.domain_mutes": {
+    "defaultMessage": "已隐藏的域名",
+    "description": "Name of the list of domains the user mutes, as one kind of CSV file to export or import."
+  },
+  "settings.default_quote_policy.label": {
+    "defaultMessage": "谁可以引用你的新帖子",
+    "description": "Label of the setting of who may quote the user's new posts."
+  },
+  "settings.default_quote_policy.description": {
+    "defaultMessage": "你也可以为每条帖子单独选择。",
+    "description": "Description of the setting of who may quote the user's new posts."
+  },
+  "settings.apps.title": {
+    "defaultMessage": "你的应用",
+    "description": "Title of the settings page where the user registers OAuth apps of their own, and its entry in the settings menu."
+  },
+  "settings.apps.description": {
+    "defaultMessage": "注册你自己的应用，例如机器人、脚本或客户端，并获取它们使用你账号所需的信息。其他人授权你注册的应用时，与授权此服务器未验证的任何应用相同。",
+    "description": "Explanation at the top of the development settings page."
+  },
+  "settings.apps.new.title": {
+    "defaultMessage": "注册应用",
+    "description": "Heading of the form that registers an OAuth app on the development settings page."
+  },
+  "settings.apps.name": {
+    "defaultMessage": "名称",
+    "description": "Label of the name field of an OAuth app."
+  },
+  "settings.apps.name.description": {
+    "defaultMessage": "向授权此应用的人显示。最多 {max} 个字符。",
+    "description": "Description of the name field of an OAuth app. {max} is the most characters."
+  },
+  "settings.apps.name.required": {
+    "defaultMessage": "请输入应用名称。",
+    "description": "Error when the name of an OAuth app is empty."
+  },
+  "settings.apps.website": {
+    "defaultMessage": "网站",
+    "description": "Label of the optional website field of an OAuth app."
+  },
+  "settings.apps.website.description": {
+    "defaultMessage": "可选。应用的主页，以 https:// 或 http:// 开头。",
+    "description": "Description of the website field of an OAuth app."
+  },
+  "settings.apps.redirect_uris": {
+    "defaultMessage": "重定向 URI",
+    "description": "Label of the field of the redirect URIs of an OAuth app."
+  },
+  "settings.apps.redirect_uris.description": {
+    "defaultMessage": "每行一个，最多 {max} 个。可以是 https URL、应用协议（例如 com.example.app:/callback）或回环 URL（例如 http://127.0.0.1/callback）。",
+    "description": "Description of the redirect URIs field of an OAuth app. {max} is the most URIs."
+  },
+  "settings.apps.redirect_uris.required": {
+    "defaultMessage": "请至少输入一个重定向 URI。",
+    "description": "Error when the redirect URIs of an OAuth app are empty."
+  },
+  "settings.apps.scope": {
+    "defaultMessage": "权限范围",
+    "description": "Label of the field of the scopes of an OAuth app."
+  },
+  "settings.apps.scope.description": {
+    "defaultMessage": "应用最多可以请求的权限范围，以空格分隔，例如“read write”。管理和支持者权限范围不对应用开放。",
+    "description": "Description of the scopes field of an OAuth app."
+  },
+  "settings.apps.scope.required": {
+    "defaultMessage": "请至少输入一个权限范围。",
+    "description": "Error when the scopes of an OAuth app are empty."
+  },
+  "settings.apps.client_type": {
+    "defaultMessage": "类型",
+    "description": "Legend of the choice between a public and a confidential OAuth app."
+  },
+  "settings.apps.client_type.public": {
+    "defaultMessage": "公开",
+    "description": "Choice of a public OAuth app."
+  },
+  "settings.apps.client_type.public.description": {
+    "defaultMessage": "没有密钥。适用于单页、移动端或命令行应用。",
+    "description": "Description of the choice of a public OAuth app."
+  },
+  "settings.apps.client_type.confidential": {
+    "defaultMessage": "机密",
+    "description": "Choice of a confidential OAuth app."
+  },
+  "settings.apps.client_type.confidential.description": {
+    "defaultMessage": "有一个只显示一次的密钥。适用于机器人或在服务器上运行的应用。",
+    "description": "Description of the choice of a confidential OAuth app."
+  },
+  "settings.apps.register": {
+    "defaultMessage": "注册应用",
+    "description": "Button that registers an OAuth app."
+  },
+  "settings.apps.register_failed": {
+    "defaultMessage": "应用未注册：{reason}",
+    "description": "Alert when registering an OAuth app failed. {reason} is the server's explanation."
+  },
+  "settings.apps.registered": {
+    "defaultMessage": "已注册应用“{name}”。",
+    "description": "Status after an OAuth app was registered. {name} is the app's name."
+  },
+  "settings.apps.list.title": {
+    "defaultMessage": "你的应用",
+    "description": "Heading of the list of the user's OAuth apps."
+  },
+  "settings.apps.empty": {
+    "defaultMessage": "还没有应用",
+    "description": "Empty state of the list of the user's OAuth apps."
+  },
+  "settings.apps.client_id": {
+    "defaultMessage": "客户端 ID",
+    "description": "Label of the client ID of an OAuth app."
+  },
+  "settings.apps.type.public": {
+    "defaultMessage": "公开应用",
+    "description": "Label of a public OAuth app in the list."
+  },
+  "settings.apps.type.confidential": {
+    "defaultMessage": "机密应用",
+    "description": "Label of a confidential OAuth app in the list."
+  },
+  "settings.apps.created_at": {
+    "defaultMessage": "注册于 {date}",
+    "description": "When an OAuth app was registered. {date} is a date and time."
+  },
+  "settings.apps.disabled": {
+    "defaultMessage": "管理员已停用此应用。它无法被授权或使用。",
+    "description": "Note on an OAuth app that an administrator disabled."
+  },
+  "settings.apps.edit": {
+    "defaultMessage": "编辑",
+    "description": "Button that opens the dialog to change an OAuth app."
+  },
+  "settings.apps.edit.title": {
+    "defaultMessage": "编辑 {name}",
+    "description": "Title of the dialog that changes an OAuth app. {name} is the app's name."
+  },
+  "settings.apps.edit.description": {
+    "defaultMessage": "应用已持有的令牌会继续以其被授予的权限范围工作。",
+    "description": "Note in the dialog that changes an OAuth app."
+  },
+  "settings.apps.edit.close": {
+    "defaultMessage": "关闭",
+    "description": "Label of the close button of the dialogs of the development settings."
+  },
+  "settings.apps.cancel": {
+    "defaultMessage": "取消",
+    "description": "Button that closes a dialog of the development settings without changing anything."
+  },
+  "settings.apps.save": {
+    "defaultMessage": "保存",
+    "description": "Button that saves the changes to an OAuth app."
+  },
+  "settings.apps.save_failed": {
+    "defaultMessage": "应用未保存：{reason}",
+    "description": "Alert when saving an OAuth app failed. {reason} is the server's explanation."
+  },
+  "settings.apps.saved": {
+    "defaultMessage": "已保存应用“{name}”。",
+    "description": "Announcement after an OAuth app was saved. {name} is the app's name."
+  },
+  "settings.apps.delete": {
+    "defaultMessage": "删除",
+    "description": "Button that deletes an OAuth app."
+  },
+  "settings.apps.delete.title": {
+    "defaultMessage": "要删除 {name} 吗？",
+    "description": "Title of the dialog that confirms deleting an OAuth app. {name} is the app's name."
+  },
+  "settings.apps.delete.description": {
+    "defaultMessage": "应用会被永久删除，它的所有令牌都会失效，包括其他授权了它的人的令牌。此操作无法撤销。",
+    "description": "Explanation in the dialog that confirms deleting an OAuth app."
+  },
+  "settings.apps.delete.failed": {
+    "defaultMessage": "应用未删除：{reason}",
+    "description": "Alert when deleting an OAuth app failed. {reason} is the server's explanation."
+  },
+  "settings.apps.deleted": {
+    "defaultMessage": "已删除应用“{name}”。",
+    "description": "Announcement after an OAuth app was deleted. {name} is the app's name."
+  },
+  "settings.apps.rotate": {
+    "defaultMessage": "生成新密钥",
+    "description": "Button that gives a confidential OAuth app a new secret."
+  },
+  "settings.apps.rotate.title": {
+    "defaultMessage": "要为 {name} 生成新密钥吗？",
+    "description": "Title of the dialog that confirms a new secret for an OAuth app. {name} is the app's name."
+  },
+  "settings.apps.rotate.description": {
+    "defaultMessage": "旧密钥会立即失效，在你把新密钥交给应用之前，它无法刷新令牌。新密钥只显示一次。",
+    "description": "Explanation in the dialog that confirms a new secret for an OAuth app."
+  },
+  "settings.apps.rotate.failed": {
+    "defaultMessage": "密钥未替换：{reason}",
+    "description": "Alert when giving an OAuth app a new secret failed. {reason} is the server's explanation."
+  },
+  "settings.apps.token": {
+    "defaultMessage": "签发令牌",
+    "description": "Button that opens the dialog to issue tokens of an OAuth app to the user."
+  },
+  "settings.apps.token.title": {
+    "defaultMessage": "签发 {name} 的令牌",
+    "description": "Title of the dialog that issues tokens of an OAuth app to the user. {name} is the app's name."
+  },
+  "settings.apps.token.description": {
+    "defaultMessage": "为你自己的账号签发此应用的访问令牌和刷新令牌，供机器人或脚本使用。持有它们的任何人都能在权限范围内以你的身份操作，因此请妥善保密。",
+    "description": "Explanation in the dialog that issues tokens of an OAuth app to the user."
+  },
+  "settings.apps.token.scope": {
+    "defaultMessage": "权限范围",
+    "description": "Label of the scopes field of the dialog that issues tokens."
+  },
+  "settings.apps.token.scope.description": {
+    "defaultMessage": "以空格分隔，须在应用的权限范围之内。留空则使用全部权限范围。",
+    "description": "Description of the scopes field of the dialog that issues tokens."
+  },
+  "settings.apps.token.submit": {
+    "defaultMessage": "签发令牌",
+    "description": "Button that issues tokens of an OAuth app."
+  },
+  "settings.apps.token.failed": {
+    "defaultMessage": "令牌未签发：{reason}",
+    "description": "Alert when issuing tokens failed. {reason} is the server's explanation."
+  },
+  "settings.apps.token.result.title": {
+    "defaultMessage": "{name} 的令牌",
+    "description": "Title of the dialog that shows the tokens that were issued. {name} is the app's name."
+  },
+  "settings.apps.token.result.notice": {
+    "defaultMessage": "这些令牌只显示这一次。请复制并妥善保管；它们无法再次显示。",
+    "description": "Notice that issued tokens are shown once."
+  },
+  "settings.apps.token.result.expires": {
+    "defaultMessage": "访问令牌的有效期为 {minutes, plural, other {# 分钟}}。请使用刷新令牌刷新，刷新后两者都会被替换。",
+    "description": "Explanation of the lifetime of the issued access token. {minutes} is the number of minutes."
+  },
+  "settings.apps.token.access": {
+    "defaultMessage": "访问令牌",
+    "description": "Label of the issued access token."
+  },
+  "settings.apps.token.refresh": {
+    "defaultMessage": "刷新令牌",
+    "description": "Label of the issued refresh token."
+  },
+  "settings.apps.token.granted_scope": {
+    "defaultMessage": "权限范围：{scope}",
+    "description": "The scopes of the issued tokens. {scope} is a list of scopes."
+  },
+  "settings.apps.secret.title": {
+    "defaultMessage": "{name} 的客户端密钥",
+    "description": "Heading of the notice that shows the secret of an OAuth app once. {name} is the app's name."
+  },
+  "settings.apps.secret.notice": {
+    "defaultMessage": "密钥只显示这一次。请立即复制并妥善保管；如果丢失，请为应用生成新密钥。",
+    "description": "Notice that the secret of an OAuth app is shown once."
+  },
+  "settings.apps.secret.public": {
+    "defaultMessage": "应用“{name}”没有密钥。其客户端 ID 显示在下方。",
+    "description": "Notice after a public OAuth app was registered. {name} is the app's name."
+  },
+  "settings.apps.secret.client_secret": {
+    "defaultMessage": "客户端密钥",
+    "description": "Label of the secret of an OAuth app."
+  },
+  "settings.apps.copy": {
+    "defaultMessage": "复制",
+    "description": "Button that copies a value to the clipboard."
+  },
+  "settings.apps.copy.label": {
+    "defaultMessage": "复制：{name}",
+    "description": "Accessible name of a button that copies a value. {name} is the value's label."
+  },
+  "settings.apps.copied": {
+    "defaultMessage": "已复制到剪贴板。",
+    "description": "Toast after a value was copied."
+  },
+  "settings.apps.copy_failed": {
+    "defaultMessage": "无法复制。请选中文字后自行复制。",
+    "description": "Toast when copying a value failed."
+  },
+  "settings.apps.done": {
+    "defaultMessage": "完成",
+    "description": "Button that closes the dialog that showed the issued tokens."
+  },
+  "settings.authorized_apps.title": {
+    "defaultMessage": "已授权的应用",
+    "description": "Title of the settings page that lists the apps the user authorized, and its entry in the settings menu."
+  },
+  "settings.authorized_apps.description": {
+    "defaultMessage": "这些应用可以操作你的账号。撤销应用的授权会立即停止它；它必须再次请求你的许可才能获得访问权限。应用名称由应用自行提供。最后使用时间只精确到小时。",
+    "description": "Explanation at the top of the authorized apps settings page."
+  },
+  "settings.authorized_apps.empty": {
+    "defaultMessage": "没有已授权的应用",
+    "description": "Empty state of the list of authorized apps."
+  },
+  "settings.authorized_apps.origin.first_party": {
+    "defaultMessage": "此服务器自己的应用",
+    "description": "Where an authorized app comes from: the web client of this server."
+  },
+  "settings.authorized_apps.origin.user": {
+    "defaultMessage": "由 @{username} 注册",
+    "description": "Where an authorized app comes from: a user registered it. {username} is the user's name without the at sign."
+  },
+  "settings.authorized_apps.origin.metadata_document": {
+    "defaultMessage": "来自 {host}",
+    "description": "Where an authorized app comes from: it is described by a document at a web address. {host} is the host name of that address."
+  },
+  "settings.authorized_apps.origin.dynamic": {
+    "defaultMessage": "由应用自行注册",
+    "description": "Where an authorized app comes from: it registered itself and nobody vouches for it."
+  },
+  "settings.authorized_apps.unverified": {
+    "defaultMessage": "此服务器尚未验证此应用。",
+    "description": "Note on every authorized app that is not this server's own: the name and logo are the app's own claims."
+  },
+  "settings.authorized_apps.scope": {
+    "defaultMessage": "授予的权限",
+    "description": "Label of the scopes (permissions) the user granted to an authorized app."
+  },
+  "settings.authorized_apps.authorized_at": {
+    "defaultMessage": "首次授权",
+    "description": "Label of when the user first authorized an app."
+  },
+  "settings.authorized_apps.last_used": {
+    "defaultMessage": "最后使用",
+    "description": "Label of when an authorized app last made a request."
+  },
+  "settings.authorized_apps.last_used.at": {
+    "defaultMessage": "{date}（精确到小时）",
+    "description": "When an app was last used. {date} is a date with the hour only, because the server records the time to the hour."
+  },
+  "settings.authorized_apps.last_used.never": {
+    "defaultMessage": "没有使用记录",
+    "description": "Shown instead of the last use of an authorized app when no use was recorded."
+  },
+  "settings.authorized_apps.revoke": {
+    "defaultMessage": "撤销",
+    "description": "Button that revokes an authorized app."
+  },
+  "settings.authorized_apps.revoke.title": {
+    "defaultMessage": "要撤销“{name}”吗？",
+    "description": "Title of the dialog that confirms revoking an authorized app. {name} is the app's name."
+  },
+  "settings.authorized_apps.revoke.description": {
+    "defaultMessage": "应用会立即失去对你账号的访问权限。要再次使用它，你需要重新授权。",
+    "description": "Explanation in the dialog that confirms revoking an authorized app."
+  },
+  "settings.authorized_apps.revoke.description_first_party": {
+    "defaultMessage": "这是你正在使用的网页应用。撤销它会让你在所有浏览器中退出登录，包括此浏览器。你需要重新登录。",
+    "description": "Warning in the dialog that confirms revoking the server's own web app."
+  },
+  "settings.authorized_apps.revoke.cancel": {
+    "defaultMessage": "取消",
+    "description": "Button that closes the dialog without revoking the app."
+  },
+  "settings.authorized_apps.revoke.failed": {
+    "defaultMessage": "无法撤销该应用：{reason}",
+    "description": "Alert in the dialog when revoking an authorized app failed. {reason} is the error's message."
+  },
+  "settings.authorized_apps.revoked": {
+    "defaultMessage": "已撤销“{name}”。",
+    "description": "Announcement after an authorized app was revoked. {name} is its name."
+  },
+  "settings.sessions.title": {
+    "defaultMessage": "已登录的浏览器",
+    "description": "Title of the settings page that lists the browsers signed in to the user's account, and its menu item."
+  },
+  "settings.sessions.description": {
+    "defaultMessage": "这些浏览器已登录你的账号。IP 地址是各浏览器登录时的地址，而不是现在的地址；最后使用时间只精确到小时。",
+    "description": "Explanation at the top of the signed-in browsers settings page."
+  },
+  "settings.sessions.unknown_sign_in": {
+    "defaultMessage": "有不认识的浏览器？让它退出登录不会更改你的密码或你授权的应用，因此也请检查 {password} 和 {apps}。",
+    "description": "Advice below the list of signed-in browsers, for a sign-in the user does not recognize. {password} and {apps} are links named after those settings pages."
+  },
+  "settings.sessions.current": {
+    "defaultMessage": "此浏览器",
+    "description": "Badge on the row of the browser the user is using, in the list of signed-in browsers."
+  },
+  "settings.sessions.name.browser_on_os": {
+    "defaultMessage": "{os} 上的 {browser}",
+    "description": "Name of a row in the list of signed-in browsers: a browser and an operating system, such as 'Chrome on Windows'."
+  },
+  "settings.sessions.name.unknown": {
+    "defaultMessage": "未知浏览器",
+    "description": "Name of a row in the list of signed-in browsers when its User-Agent was not recorded or was erased."
+  },
+  "settings.sessions.ip": {
+    "defaultMessage": "登录时的 IP 地址",
+    "description": "Label of the IP address a browser signed in from, in the list of signed-in browsers."
+  },
+  "settings.sessions.ip.unknown": {
+    "defaultMessage": "未知",
+    "description": "Value of the IP address of a browser when it was not recorded or was erased."
+  },
+  "settings.sessions.signed_in_at": {
+    "defaultMessage": "登录时间",
+    "description": "Label of when a browser signed in, in the list of signed-in browsers."
+  },
+  "settings.sessions.last_used": {
+    "defaultMessage": "最后使用",
+    "description": "Label of when a browser was last used, in the list of signed-in browsers."
+  },
+  "settings.sessions.last_used.at": {
+    "defaultMessage": "{date}（精确到小时）",
+    "description": "When a browser was last used; the date is exact to the hour."
+  },
+  "settings.sessions.last_used.never": {
+    "defaultMessage": "没有使用记录",
+    "description": "Shown when no use of a browser was recorded."
+  },
+  "settings.sessions.revoke": {
+    "defaultMessage": "退出登录",
+    "description": "Button that signs out one browser from the list of signed-in browsers, and the confirming button of its dialog."
+  },
+  "settings.sessions.revoke.title": {
+    "defaultMessage": "要让此浏览器退出登录吗？",
+    "description": "Title of the dialog that confirms signing out a browser from the list."
+  },
+  "settings.sessions.revoke.description": {
+    "defaultMessage": "它会立即失效，需要重新登录。你的密码和你授权的应用不会改变。",
+    "description": "Description in the dialog that confirms signing out a browser from the list."
+  },
+  "settings.sessions.revoke.cancel": {
+    "defaultMessage": "取消",
+    "description": "Button that closes a dialog on the signed-in browsers page without signing out."
+  },
+  "settings.sessions.revoke.failed": {
+    "defaultMessage": "无法让该浏览器退出登录：{reason}",
+    "description": "Error in the dialog when signing out a browser failed. reason is the localized error."
+  },
+  "settings.sessions.revoke_others": {
+    "defaultMessage": "让其他所有浏览器退出登录",
+    "description": "Button that signs out every browser but the current one, and the confirming button of its dialog."
+  },
+  "settings.sessions.revoke_others.title": {
+    "defaultMessage": "要让其他所有浏览器退出登录吗？",
+    "description": "Title of the dialog that confirms signing out every browser but the current one."
+  },
+  "settings.sessions.revoke_others.description": {
+    "defaultMessage": "它们会立即失效，需要重新登录。此浏览器保持登录。你的密码和你授权的应用不会改变。",
+    "description": "Description in the dialog that confirms signing out every other browser."
+  },
+  "settings.sessions.revoke_others.failed": {
+    "defaultMessage": "无法让其他浏览器退出登录：{reason}",
+    "description": "Error in the dialog when signing out the other browsers failed. reason is the localized error."
+  },
+  "settings.sessions.revoked": {
+    "defaultMessage": "该浏览器已退出登录。",
+    "description": "Announcement after a browser was signed out."
+  },
+  "settings.sessions.others_revoked": {
+    "defaultMessage": "其他浏览器已退出登录。",
+    "description": "Announcement after every other browser was signed out."
+  },
+  "settings.email_suppression.title": {
+    "defaultMessage": "邮件投递",
+    "description": "Heading of the section of the notification settings that says emails do not reach the user's address; shown only while the address is suppressed."
+  },
+  "settings.email_suppression.hard_bounce": {
+    "defaultMessage": "邮件无法送达你的地址：发往该地址的邮件被退回，因此服务器不会向你发送任何邮件，包括通知和密码重置邮件。",
+    "description": "Text of that section after a hard bounce: nothing reaches the address."
+  },
+  "settings.email_suppression.complaint": {
+    "defaultMessage": "来自此服务器的一封邮件被标记为垃圾邮件，因此不会再向你的地址发送通知邮件。登录所需的邮件仍会发送。",
+    "description": "Text of that section after a spam complaint: notification emails are not sent."
+  },
+  "settings.email_suppression.since": {
+    "defaultMessage": "自 {since} 起",
+    "description": "When the suppression started. {since} is a formatted date and time."
+  },
+  "settings.email_suppression.hard_bounce.action": {
+    "defaultMessage": "邮箱恢复正常后，请重新请求验证邮件。验证地址后，服务器会重新向它发送邮件，此提示也会消失。",
+    "description": "What to do after a hard bounce: fix the mailbox, then ask for the verification email again."
+  },
+  "settings.email_suppression.verification.send": {
+    "defaultMessage": "发送验证邮件",
+    "description": "Button in the notice that emails do not reach the user's address after a hard bounce: sends a new verification email to the address."
+  },
+  "settings.email_suppression.verification.sent": {
+    "defaultMessage": "我们已发送验证邮件。请打开其中的链接来验证你的地址。",
+    "description": "Shown next to that button, and read out, after the verification email was sent."
+  },
+  "settings.email_suppression.verification.failed": {
+    "defaultMessage": "无法发送验证邮件：{reason} 请重试。",
+    "description": "Alert next to that button when the email could not be sent. {reason} is the server's explanation."
+  },
+  "settings.email_suppression.verification.rate_limited": {
+    "defaultMessage": "你请求验证邮件的次数过多。请稍后重试。",
+    "description": "Alert next to that button when the user asked for the email too often (at most 3 an hour) and the server named no time."
+  },
+  "settings.email_suppression.verification.rate_limited_until": {
+    "defaultMessage": "你请求验证邮件的次数过多。你可以在 {time} 再次请求。",
+    "description": "Alert next to that button when the user asked for the email too often (at most 3 an hour). {time} is a formatted time of day."
+  },
+  "settings.linked_accounts.title": {
+    "defaultMessage": "关联的账号",
+    "description": "Title of the settings page of linked accounts (accounts at sign-in services, such as an OpenID Connect provider, that the server's administrators set up), and its entry in the settings menu."
+  },
+  "settings.linked_accounts.description": {
+    "defaultMessage": "这些服务上的账号可以代替密码让你登录，并确认对你账号的更改。关联账号不会向该服务分享你的帖子。",
+    "description": "Description at the top of the settings page of linked accounts (accounts at sign-in services, such as an OpenID Connect provider, that the server's administrators set up)."
+  },
+  "settings.linked_accounts.list.title": {
+    "defaultMessage": "你关联的账号",
+    "description": "Heading of the list of the user's linked accounts on the settings page of linked accounts (accounts at sign-in services, such as an OpenID Connect provider, that the server's administrators set up)."
+  },
+  "settings.linked_accounts.empty": {
+    "defaultMessage": "你还没有关联任何账号。",
+    "description": "Empty state of the list of linked accounts."
+  },
+  "settings.linked_accounts.linked_at": {
+    "defaultMessage": "关联于 {date}",
+    "description": "When an account was linked, under the service's name. {date} is a formatted date and time."
+  },
+  "settings.linked_accounts.unavailable": {
+    "defaultMessage": "此服务暂时已关闭：无法使用该账号登录。",
+    "description": "Note under a linked account whose service the administrators turned off."
+  },
+  "settings.linked_accounts.unlink": {
+    "defaultMessage": "取消关联",
+    "description": "Button of a linked account that unlinks it, after a dialog."
+  },
+  "settings.linked_accounts.unlink.title": {
+    "defaultMessage": "要取消关联你在 {provider} 的账号吗？",
+    "description": "Title of the dialog that confirms unlinking an account. {provider} is the service's name as the administrators wrote it."
+  },
+  "settings.linked_accounts.unlink.description": {
+    "defaultMessage": "你将无法再使用该账号登录。你可以稍后重新关联。",
+    "description": "Description of the dialog that confirms unlinking an account."
+  },
+  "settings.linked_accounts.unlink.cancel": {
+    "defaultMessage": "取消",
+    "description": "Button that closes the dialog that confirms unlinking an account, without unlinking it."
+  },
+  "settings.linked_accounts.unlink.last": {
+    "defaultMessage": "这是你最后一种登录方式。请先设置密码、添加通行密钥或关联其他账号。",
+    "description": "Error in the dialog that unlinks an account when the account is the user's last way to sign in."
+  },
+  "settings.linked_accounts.unlink.failed": {
+    "defaultMessage": "无法取消关联该账号：{reason}",
+    "description": "Error in the dialog that unlinks an account. {reason} is the server's or the network's reason."
+  },
+  "settings.linked_accounts.unlinked": {
+    "defaultMessage": "已取消关联你在 {provider} 的账号。",
+    "description": "Announcement after an account was unlinked. {provider} is the service's name."
+  },
+  "settings.linked_accounts.add.title": {
+    "defaultMessage": "关联账号",
+    "description": "Button above the list of linked accounts that opens the sign-in services to link an account at, and the heading of that panel."
+  },
+  "settings.linked_accounts.add.description": {
+    "defaultMessage": "你在该服务上登录后，它会将你送回这里。已关联到此服务器其他用户的账号无法关联。",
+    "description": "Description of the section that links an account."
+  },
+  "settings.linked_accounts.add.none": {
+    "defaultMessage": "没有可以关联账号的服务。",
+    "description": "Note in the section that links an account when the server has no service that allows linking, or the user linked every one."
+  },
+  "settings.linked_accounts.link": {
+    "defaultMessage": "关联 {provider}",
+    "description": "Button that starts linking an account at a service. {provider} is the service's name as the administrators wrote it."
+  },
+  "settings.linked_accounts.link.title": {
+    "defaultMessage": "关联你在 {provider} 的账号",
+    "description": "Title of the dialog that confirms linking an account. {provider} is the service's name."
+  },
+  "settings.linked_accounts.link.description": {
+    "defaultMessage": "输入密码以继续前往 {provider}。",
+    "description": "Description of the dialog that links an account, for a user with a password. {provider} is the service's name."
+  },
+  "settings.linked_accounts.link.description_passkey": {
+    "defaultMessage": "浏览器会要求你使用一个通行密钥，然后继续前往 {provider}。",
+    "description": "Description of the dialog that links an account, for a user without a password who has passkeys. {provider} is the service's name."
+  },
+  "settings.linked_accounts.link.description_external": {
+    "defaultMessage": "你已使用关联的账号重新登录。请继续前往 {provider}。",
+    "description": "Description of the dialog that links an account, once the user confirmed with another linked account. {provider} is the service's name."
+  },
+  "settings.linked_accounts.link.password": {
+    "defaultMessage": "当前密码",
+    "description": "Label of the password field in the dialog that links an account."
+  },
+  "settings.linked_accounts.link.password.required": {
+    "defaultMessage": "请输入密码。",
+    "description": "Error of the empty password field in the dialog that links an account."
+  },
+  "settings.linked_accounts.link.wrong_password": {
+    "defaultMessage": "密码不正确。",
+    "description": "Error in the dialog that links an account when the password is wrong."
+  },
+  "settings.linked_accounts.link.continue": {
+    "defaultMessage": "继续",
+    "description": "Button of the dialog that links an account: it leaves for the service."
+  },
+  "settings.linked_accounts.link.cancel": {
+    "defaultMessage": "取消",
+    "description": "Button that closes the dialog that links an account."
+  },
+  "settings.linked_accounts.link.failed": {
+    "defaultMessage": "无法开始关联：{reason}",
+    "description": "Error in the dialog that links an account. {reason} is the server's or the network's reason."
+  },
+  "settings.linked_accounts.linked": {
+    "defaultMessage": "已关联你在 {provider} 的账号。",
+    "description": "Status at the top of the page after the service sent the user back with the account linked. {provider} is the service's name."
+  },
+  "settings.linked_accounts.failed.linked_elsewhere": {
+    "defaultMessage": "该账号已关联到此服务器的其他用户。",
+    "description": "Alert when the account the user signed in with at the service is linked to another user already."
+  },
+  "settings.linked_accounts.failed.already_linked": {
+    "defaultMessage": "你已关联过该服务的账号。",
+    "description": "Alert when the user links an account at a service where they already have one linked."
+  },
+  "settings.linked_accounts.failed.denied": {
+    "defaultMessage": "该服务不接受你登录所用的账号。",
+    "description": "Alert when the account at the service does not meet the conditions that the administrators set (such as an organization)."
+  },
+  "settings.linked_accounts.failed.unavailable": {
+    "defaultMessage": "该服务不可用。",
+    "description": "Alert when the service is turned off or no longer allows linking."
+  },
+  "settings.linked_accounts.failed.expired": {
+    "defaultMessage": "关联用时过长。请重试。",
+    "description": "Alert when the link expired before the service sent the user back."
+  },
+  "settings.linked_accounts.failed.rate_limited": {
+    "defaultMessage": "尝试次数过多。请稍后重试。",
+    "description": "Alert when the user tried too many times."
+  },
+  "settings.linked_accounts.failed.failed": {
+    "defaultMessage": "该服务未完成登录。请重试。",
+    "description": "Alert when the user cancelled at the service, or the service answered an error."
+  },
+  "settings.external_confirmation.description": {
+    "defaultMessage": "请使用关联的账号重新登录，以确认是你本人。",
+    "description": "Text above the buttons that confirm an operation (such as deleting the account) by signing in again at a linked service, for a user without a password and passkeys."
+  },
+  "settings.external_confirmation.start": {
+    "defaultMessage": "使用 {provider} 重新登录",
+    "description": "Button that leaves for a linked service to confirm an operation. {provider} is the service's name as the administrators wrote it."
+  },
+  "settings.external_confirmation.confirmed": {
+    "defaultMessage": "你已使用 {provider} 重新登录。请在 10 分钟内完成操作。",
+    "description": "Note once the user confirmed an operation at a linked service and came back. {provider} is the service's name."
+  },
+  "settings.external_confirmation.start_failed": {
+    "defaultMessage": "无法开始确认：{reason}",
+    "description": "Alert when starting a confirmation with a linked service failed. {reason} is the server's or the network's reason."
+  },
+  "settings.external_confirmation.failed.mismatch": {
+    "defaultMessage": "你登录的账号未关联到你的账号。请使用你关联的账号重试。",
+    "description": "Alert when the user confirmed at the service with another account than the linked one."
+  },
+  "settings.external_confirmation.failed.expired": {
+    "defaultMessage": "确认用时过长或已被使用。请重试。",
+    "description": "Alert when the confirmation with a linked service expired (10 minutes) or was used."
+  },
+  "settings.external_confirmation.failed.rate_limited": {
+    "defaultMessage": "尝试次数过多。请稍后重试。",
+    "description": "Alert when the user failed to confirm too many times."
+  },
+  "settings.external_confirmation.failed.unavailable": {
+    "defaultMessage": "该服务不可用。",
+    "description": "Alert when the linked service is turned off."
+  },
+  "settings.external_confirmation.failed.denied": {
+    "defaultMessage": "该服务不接受你登录所用的账号。",
+    "description": "Alert when the account at the service does not meet the administrators' conditions."
+  },
+  "settings.external_confirmation.failed.failed": {
+    "defaultMessage": "该服务未确认登录。请重试。",
+    "description": "Alert when the user cancelled at the service, the service answered an error, or it did not ask the user to sign in again."
+  },
+  "settings.account.delete.confirm.description_external": {
+    "defaultMessage": "你的账号会立即删除，你也会退出登录。此操作无法撤销。",
+    "description": "Description of the dialog that deletes the account of a user who confirmed by signing in again at a linked service."
+  },
+  "settings.invites.title": {
+    "defaultMessage": "你的邀请",
+    "description": "Title of the settings page of the invites that the user created, and its item in the settings menu."
+  },
+  "settings.invites.description": {
+    "defaultMessage": "邀请你认识的人加入此服务器。每个邀请都有一个链接，可在一段时间内让几个人注册。在服务器人工审核注册期间，你邀请的人无需等待。",
+    "description": "Explanation at the top of the user's invites page."
+  },
+  "settings.invites.new.title": {
+    "defaultMessage": "创建邀请",
+    "description": "Heading of the region of the form of a new invite on the user's invites page."
+  },
+  "settings.invites.not_allowed": {
+    "defaultMessage": "你现在无法创建邀请。你仍可以复制可用邀请的链接或撤销它们。",
+    "description": "Shown instead of the form of a new invite when the user may not create invites: the server or their roles do not let them, their account is restricted, or the server takes no new accounts."
+  },
+  "settings.invites.usage": {
+    "defaultMessage": "你有 {usable, number} 个可用邀请，上限为 {max, number} 个。",
+    "description": "How many usable invites the user holds, and how many the server lets one person hold at once."
+  },
+  "settings.invites.full": {
+    "defaultMessage": "你的可用邀请已达到上限。请撤销一个，或等待某个邀请过期或用完后再创建。",
+    "description": "Shown above the form of a new invite when the user already holds as many usable invites as the server allows."
+  },
+  "settings.invites.max_uses": {
+    "defaultMessage": "注册人数",
+    "description": "Label of the choice of how many people may sign up with a new invite."
+  },
+  "settings.invites.max_uses.description": {
+    "defaultMessage": "可以使用此邀请注册的人数，最多 {max, number} 人。",
+    "description": "Help of the number of sign-ups of a new invite. {max} is the most the server allows."
+  },
+  "settings.invites.uses": {
+    "defaultMessage": "{count, plural, other {# 人}}",
+    "description": "An option of the number of sign-ups of a new invite."
+  },
+  "settings.invites.expires_in": {
+    "defaultMessage": "有效期",
+    "description": "Label of the choice of how long a new invite works."
+  },
+  "settings.invites.expires_in.description": {
+    "defaultMessage": "邀请在此时间后失效，最长 {max}。",
+    "description": "Help of how long a new invite works. {max} is the longest time the server allows, formatted like the options (for example \"30 days\")."
+  },
+  "settings.invites.duration.minutes": {
+    "defaultMessage": "{count, plural, other {# 分钟}}",
+    "description": "An option of how long an invite works, in minutes."
+  },
+  "settings.invites.duration.hours": {
+    "defaultMessage": "{count, plural, other {# 小时}}",
+    "description": "An option of how long an invite works, in hours."
+  },
+  "settings.invites.duration.days": {
+    "defaultMessage": "{count, plural, other {# 天}}",
+    "description": "An option of how long an invite works, in days."
+  },
+  "settings.invites.create": {
+    "defaultMessage": "创建邀请",
+    "description": "Button that creates a new invite on the user's invites page."
+  },
+  "settings.invites.create_failed": {
+    "defaultMessage": "无法创建邀请：{reason}",
+    "description": "Error when creating an invite failed. {reason} is the server's reason."
+  },
+  "settings.invites.created": {
+    "defaultMessage": "已创建邀请 {code}。",
+    "description": "Status after the user created an invite. {code} is its code."
+  },
+  "settings.invites.link": {
+    "defaultMessage": "将此链接发送给你邀请的人：",
+    "description": "Text before the sign-up link of a new invite."
+  },
+  "settings.invites.list.title": {
+    "defaultMessage": "你创建的邀请",
+    "description": "Heading of the list of the user's invites."
+  },
+  "settings.invites.empty": {
+    "defaultMessage": "还没有邀请",
+    "description": "Heading of the empty list of the user's invites."
+  },
+  "settings.invites.empty.description": {
+    "defaultMessage": "你创建的邀请及其使用情况会列在这里。",
+    "description": "Description of the empty list of the user's invites."
+  },
+  "settings.invites.state": {
+    "defaultMessage": "状态",
+    "description": "Term of an invite in the user's list: what it allows now."
+  },
+  "settings.invites.state.usable": {
+    "defaultMessage": "可用",
+    "description": "State of an invite that people may sign up with."
+  },
+  "settings.invites.state.revoked": {
+    "defaultMessage": "已撤销",
+    "description": "State of an invite that was revoked."
+  },
+  "settings.invites.state.expired": {
+    "defaultMessage": "已过期",
+    "description": "State of an invite whose time ran out."
+  },
+  "settings.invites.state.exhausted": {
+    "defaultMessage": "已用完",
+    "description": "State of an invite that as many people signed up with as it allows."
+  },
+  "settings.invites.state.creator_ineligible": {
+    "defaultMessage": "你无法邀请期间不可用",
+    "description": "State of the user's invite while the user may not create invites (their permission ended, or their account is restricted). It works again when they may."
+  },
+  "settings.invites.used": {
+    "defaultMessage": "已注册",
+    "description": "Term of an invite in the user's list: how many people signed up with it."
+  },
+  "settings.invites.used.value": {
+    "defaultMessage": "{uses, number}/{max, number}",
+    "description": "How many people signed up with an invite, and how many it allows."
+  },
+  "settings.invites.expires_at": {
+    "defaultMessage": "过期时间",
+    "description": "Term of an invite in the user's list: when it stops working."
+  },
+  "settings.invites.created_at": {
+    "defaultMessage": "创建时间",
+    "description": "Term of an invite in the user's list: when it was created."
+  },
+  "settings.invites.copy": {
+    "defaultMessage": "复制链接",
+    "description": "Button that copies the sign-up link of an invite."
+  },
+  "settings.invites.copy_invite": {
+    "defaultMessage": "{action}：{code}",
+    "description": "Accessible name of the copy button of an invite: it starts with the button's visible text, so that the visible label is in the name. {action} is the button's visible text ('Copy link') and {code} the invite's code."
+  },
+  "settings.invites.copied": {
+    "defaultMessage": "已复制邀请 {code} 的链接。",
+    "description": "Toast after an invite's link was copied. {code} is its code."
+  },
+  "settings.invites.copy_failed": {
+    "defaultMessage": "无法复制链接。请选中后自行复制。",
+    "description": "Toast when copying an invite's link failed."
+  },
+  "settings.invites.revoke": {
+    "defaultMessage": "撤销",
+    "description": "Button that revokes an invite at once."
+  },
+  "settings.invites.revoke_invite": {
+    "defaultMessage": "撤销于 {date} 创建的邀请 {code}",
+    "description": "Accessible name of the revoke button of an invite. {code} is its code; {date} when it was created, formatted."
+  },
+  "settings.invites.revoked": {
+    "defaultMessage": "已撤销邀请 {code}。使用它注册的人会保留他们的账号。",
+    "description": "Status after the user revoked an invite. {code} is its code."
+  },
+  "settings.invites.revoke_failed": {
+    "defaultMessage": "无法撤销邀请：{reason}",
+    "description": "Toast when revoking an invite failed. {reason} is the server's reason."
+  },
+  "settings.notifications.title": {
+    "defaultMessage": "通知",
+    "description": "Title of the settings page of notifications (which notifications arrive in the app, by push, by email, and with a sound), and its entry in the settings menu."
+  },
+  "settings.notifications.table.description": {
+    "defaultMessage": "选择每种通知送达你的方式，或用“全部”复选框设置整列。在应用内关闭的通知类型不会生成，因此也不会通过推送、邮件或声音送达；你已有的通知会保留。",
+    "description": "Help text above the tables of the notification settings: a row or a whole column (its All box), and turning a kind off in the app stops it everywhere."
+  },
+  "settings.notifications.section.ordinary": {
+    "defaultMessage": "来自其他人",
+    "description": "Heading of the table of the notifications about what other users did (mentions, follows, boosts...)."
+  },
+  "settings.notifications.section.moderator": {
+    "defaultMessage": "面向审核员",
+    "description": "Heading of the table of the notifications for moderators (reports, sign-ups, appeals...); shown only to users with those permissions."
+  },
+  "settings.notifications.section.instance": {
+    "defaultMessage": "来自此服务器",
+    "description": "Heading of the table of the server's notices to the user (moderation decisions, the closure of the server, the supporter plan)."
+  },
+  "settings.notifications.column.type": {
+    "defaultMessage": "通知",
+    "description": "Header of the first column of the notification settings tables, which names the kind of notification of each row."
+  },
+  "settings.notifications.column.all": {
+    "defaultMessage": "全部：{channel}，{section}",
+    "description": "Accessible name of a checkbox of the All row of a notification settings table, which turns every cell of its column on or off at once. Starts with the row header (settings.notifications.column.all.short). {channel} is the column (In the app, Push, Email, Sound); {section} is the table's heading."
+  },
+  "settings.notifications.column.all.short": {
+    "defaultMessage": "全部",
+    "description": "Row header of the first row of a notification settings table, whose checkboxes turn a whole column on or off."
+  },
+  "settings.notifications.row.in_app_off": {
+    "defaultMessage": "已在应用内关闭，因此不会通过其他方式送达。",
+    "description": "Note under the name of a row of the notification settings table whose in-app cell is off, which is why its other cells cannot be changed."
+  },
+  "settings.notifications.row.always_on": {
+    "defaultMessage": "始终开启：{channels}。",
+    "description": "Note under the name of a row of the notification settings table with cells that cannot be turned off. {channels} is a list of the column names (In the app, Email)."
+  },
+  "settings.notifications.channel.in_app": {
+    "defaultMessage": "应用内",
+    "description": "Column header of the notification settings tables: whether the notifications are created and shown in the app."
+  },
+  "settings.notifications.channel.push": {
+    "defaultMessage": "推送",
+    "description": "Column header of the notification settings tables: whether the notifications are pushed to this device (Web Push)."
+  },
+  "settings.notifications.channel.email": {
+    "defaultMessage": "邮件",
+    "description": "Column header of the notification settings tables: whether the notifications are sent by email."
+  },
+  "settings.notifications.channel.sound": {
+    "defaultMessage": "声音",
+    "description": "Column header of the notification settings tables: whether this device plays a sound when the notifications arrive while the app is open."
+  },
+  "settings.notifications.cell": {
+    "defaultMessage": "{type}：{channel}",
+    "description": "Accessible name of a checkbox of the notification settings tables. {type} is the row (a kind of notification), {channel} the column (In the app, Push, Email, Sound)."
+  },
+  "settings.notifications.group.mention": {
+    "defaultMessage": "提及",
+    "description": "Row of the notification settings table: a post mentions the user."
+  },
+  "settings.notifications.group.follow": {
+    "defaultMessage": "新关注者",
+    "description": "Row of the notification settings table: someone followed the user."
+  },
+  "settings.notifications.group.follow_request": {
+    "defaultMessage": "关注请求",
+    "description": "Row of the notification settings table: someone asked to follow the user."
+  },
+  "settings.notifications.group.follow_accepted": {
+    "defaultMessage": "已接受的关注请求",
+    "description": "Row of the notification settings table: someone accepted the user's follow request."
+  },
+  "settings.notifications.group.boost": {
+    "defaultMessage": "转发",
+    "description": "Row of the notification settings table: someone boosted the user's post."
+  },
+  "settings.notifications.group.favourite": {
+    "defaultMessage": "喜欢",
+    "description": "Row of the notification settings table: someone favourited the user's post."
+  },
+  "settings.notifications.group.reaction": {
+    "defaultMessage": "表情回应",
+    "description": "Row of the notification settings table: someone reacted to the user's post with an emoji."
+  },
+  "settings.notifications.group.quote": {
+    "defaultMessage": "引用",
+    "description": "Row of the notification settings table: someone quoted the user's post."
+  },
+  "settings.notifications.group.poll_closed": {
+    "defaultMessage": "已结束的投票",
+    "description": "Row of the notification settings table: a poll the user made or voted in ended."
+  },
+  "settings.notifications.group.account_moved": {
+    "defaultMessage": "你关注的账号迁移",
+    "description": "Row of the notification settings table: an account the user followed moved to another account."
+  },
+  "settings.notifications.group.voice": {
+    "defaultMessage": "语音聊天",
+    "description": "Row of the notification settings table: an account the user follows opened a voice chat room, or the user was invited to one."
+  },
+  "settings.notifications.group.admin_report": {
+    "defaultMessage": "举报",
+    "description": "Row of the notification settings table: (moderators) an account was reported."
+  },
+  "settings.notifications.group.admin_sign_up": {
+    "defaultMessage": "待审核的注册",
+    "description": "Row of the notification settings table: (moderators) a registration awaits approval."
+  },
+  "settings.notifications.group.admin_appeal": {
+    "defaultMessage": "申诉",
+    "description": "Row of the notification settings table: (moderators) a user appealed a moderation action."
+  },
+  "settings.notifications.group.admin_webhook_disabled": {
+    "defaultMessage": "已停用的 Webhook",
+    "description": "Row of the notification settings table: (administrators) the server disabled a webhook that kept failing."
+  },
+  "settings.notifications.group.admin_custom_emoji_request": {
+    "defaultMessage": "自定义表情请求",
+    "description": "Row of the notification settings table: (administrators) a user requested a custom emoji."
+  },
+  "settings.notifications.group.admin_account_moved": {
+    "defaultMessage": "受限账号迁移",
+    "description": "Row of the notification settings table: (moderators) an account the moderators limit moved to another account."
+  },
+  "settings.notifications.group.admin_service_closure_due": {
+    "defaultMessage": "已到关闭日期",
+    "description": "Row of the notification settings table: (administrators) the announced closing date of the server has passed."
+  },
+  "settings.notifications.group.admin_error_group": {
+    "defaultMessage": "服务器错误",
+    "description": "Row of the notification settings table: (administrators) a new server error, or one that happened again."
+  },
+  "settings.notifications.group.moderation": {
+    "defaultMessage": "来自审核员的通知",
+    "description": "Row of the notification settings table: notices and decisions of the moderators about the user's account, appeals, reports and custom emoji requests, and follows ended by a suspension."
+  },
+  "settings.notifications.group.service_closure": {
+    "defaultMessage": "此服务器的关闭",
+    "description": "Row of the notification settings table: the closure of the service was announced, rescheduled or withdrawn."
+  },
+  "settings.notifications.group.supporter": {
+    "defaultMessage": "你的支持者方案",
+    "description": "Row of the notification settings table: a failed payment for the user's supporter plan, its end, and its retirement. Not shown in the mobile app."
+  },
+  "settings.notifications.group.announcement": {
+    "defaultMessage": "公告",
+    "description": "Row of the notification settings table: a new announcement of the server's administrators to every user."
+  },
+  "settings.notifications.group.auto_delete_limit": {
+    "defaultMessage": "帖子的自动删除",
+    "description": "Row of the notification settings table: the notices that the server's maximum of the automatic deletion of old posts will apply to the user's posts."
+  },
+  "settings.notifications.sound.title": {
+    "defaultMessage": "通知声音",
+    "description": "Heading of the section of the notification settings about the sound this device plays for new notifications."
+  },
+  "settings.notifications.sound.enable": {
+    "defaultMessage": "收到新通知时播放声音",
+    "description": "Label of the switch that turns the notification sound on for this device."
+  },
+  "settings.notifications.sound.enable.description": {
+    "defaultMessage": "在此设备上，应用打开时生效。请在下方表格的“声音”列中选择通知类型。",
+    "description": "Help text of the switch of the notification sound; the Sound column appears in the tables while it is on."
+  },
+  "settings.notifications.sound.play": {
+    "defaultMessage": "播放声音",
+    "description": "Button that plays the notification sound once, which also lets the browser play it later."
+  },
+  "settings.notifications.sound.blocked": {
+    "defaultMessage": "浏览器未播放声音。请在浏览器设置中允许此网站播放声音，然后重试。",
+    "description": "Error shown when the browser refused to play the notification sound after the user pressed the button."
+  },
+  "settings.menu.group.profile": {
+    "defaultMessage": "个人资料和社区",
+    "description": "Heading of a group of the settings menu: the profile, the badges, the user's custom emoji, invites and supporter plans."
+  },
+  "settings.menu.group.display": {
+    "defaultMessage": "显示和通知",
+    "description": "Heading of a group of the settings menu: how the app shows things and posts, the notifications, and the voice chat history."
+  },
+  "settings.menu.group.relationships": {
+    "defaultMessage": "关系",
+    "description": "Heading of a group of the settings menu: follow requests, blocked and muted accounts, and muted domains."
+  },
+  "settings.menu.group.security": {
+    "defaultMessage": "安全",
+    "description": "Heading of a group of the settings menu: the password, two-factor authentication, passkeys and linked accounts."
+  },
+  "settings.menu.group.apps": {
+    "defaultMessage": "应用",
+    "description": "Heading of a group of the settings menu: the apps the user authorized and the apps they registered."
+  },
+  "settings.menu.group.account": {
+    "defaultMessage": "账号和数据",
+    "description": "Heading of a group of the settings menu: the account's status, aliases and move, import and export, deleting old posts, the archive and deleting the account."
+  },
+  "settings.profile.preview": {
+    "defaultMessage": "预览",
+    "description": "Heading of the section of the profile settings that shows the profile as it is being edited."
+  },
+  "settings.profile.preview.description": {
+    "defaultMessage": "保存后其他人看到的你的个人资料。链接和提及会在保存时生成。",
+    "description": "Description under the preview of the profile settings."
+  },
+  "settings.profile.identity": {
+    "defaultMessage": "名称和简介",
+    "description": "Heading of the section of the profile settings with the display name and the bio (settings.profile.display_name, settings.profile.note)."
+  },
+  "settings.profile.account_kind": {
+    "defaultMessage": "关注者和机器人",
+    "description": "Heading of the section of the profile settings with whether follow requests need approval and whether the account is a bot."
+  },
+  "settings.profile.save_failed": {
+    "defaultMessage": "无法保存个人资料：{reason}",
+    "description": "Error beside the save button of the profile settings when the server refused the save. {reason} is the server's reason."
+  },
+  "settings.auto_delete.policy": {
+    "defaultMessage": "自动删除",
+    "description": "Heading of the section of the auto-delete settings with turning it on and the age of the posts it deletes."
+  },
+  "settings.auto_delete.reactions": {
+    "defaultMessage": "互动多的帖子",
+    "description": "Heading of the section of the auto-delete settings with the boost and favourite counts above which posts are kept."
+  },
+  "settings.auto_delete.preview": {
+    "defaultMessage": "这些条件会删除的帖子",
+    "description": "Heading of the section of the auto-delete settings with how many posts the conditions above would delete now, before saving."
+  },
+  "settings.auto_delete.preview.description": {
+    "defaultMessage": "按上方的条件即时统计，不论是否已保存，也不论自动删除是否开启。",
+    "description": "Help of the estimate of the posts that the automatic deletion would delete."
+  },
+  "settings.auto_delete.preview.count": {
+    "defaultMessage": "现在会删除的帖子",
+    "description": "Label of the number of posts that the conditions of the automatic deletion would delete now."
+  },
+  "settings.auto_delete.preview.value": {
+    "defaultMessage": "{more, select, true {{count, number}+} other {{count, number}}}",
+    "description": "The number of posts that the automatic deletion would delete now; with more, the count stopped at its limit and there are more."
+  },
+  "settings.auto_delete.preview.counting": {
+    "defaultMessage": "正在统计…",
+    "description": "Value of the estimate of the automatic deletion while the server counts the posts."
+  },
+  "settings.auto_delete.preview.examples": {
+    "defaultMessage": "其中最早的帖子",
+    "description": "Heading of the list of example posts that the automatic deletion would delete, oldest first."
+  },
+  "settings.auto_delete.preview.example": {
+    "defaultMessage": "将删除的帖子",
+    "description": "Accessible name of the box of an example post that the automatic deletion would delete."
+  },
+  "settings.auto_delete.preview.failed": {
+    "defaultMessage": "无法统计帖子：{reason}",
+    "description": "Error in place of the estimate of the automatic deletion. {reason} is the localized reason."
+  },
+  "settings.security.title": {
+    "defaultMessage": "安全",
+    "description": "Heading of the section of the settings page that sums up how the account signs in and is protected."
+  },
+  "settings.security.description": {
+    "defaultMessage": "你的登录方式，以及保护你账号的措施。打开一项即可更改。",
+    "description": "Description under the security section of the settings page."
+  },
+  "settings.security.count": {
+    "defaultMessage": "{count, plural, other {已添加 # 个}}",
+    "description": "Badge of a row of the security section of the settings page: how many passkeys or linked accounts the user has (at least one)."
+  },
+  "settings.security.none": {
+    "defaultMessage": "无",
+    "description": "Badge of a row of the security section of the settings page: the user has no password, passkey or linked account."
+  },
+  "settings.security.password.set": {
+    "defaultMessage": "已设置",
+    "description": "Badge of the password row of the security section of the settings page: the user has a password."
+  },
+  "settings.security.on": {
+    "defaultMessage": "已开启",
+    "description": "Badge of the two-factor authentication row of the security section of the settings page: it is on."
+  },
+  "settings.security.off": {
+    "defaultMessage": "已关闭",
+    "description": "Badge of the two-factor authentication row of the security section of the settings page: it is off, which the warning tone suggests turning on."
+  },
+  "settings.profile.discovery": {
+    "defaultMessage": "发现",
+    "description": "Heading of the section of the profile settings about being suggested to others and found by name."
+  },
+  "settings.profile.discoverable": {
+    "defaultMessage": "推荐我的账号，并允许通过部分名称找到它",
+    "description": "Label of the checkbox that lets the account appear in the suggestions and in the search by part of its name."
+  },
+  "settings.profile.discoverable.description": {
+    "defaultMessage": "此服务器的用户会在关注推荐中看到你的账号，并能通过你名称的一部分找到它。关闭后，他们仍可以通过你的完整用户名找到你，关注你的人也仍能找到你。",
+    "description": "Help text of the discoverable checkbox."
+  },
+  "settings.list.cancel": {
+    "defaultMessage": "取消",
+    "description": "Button that closes the panel that adds to a settings list without adding."
+  },
+  "settings.passkeys.count": {
+    "defaultMessage": "{count, plural, other {# 个通行密钥}}",
+    "description": "Read for the count beside the heading of the list of passkeys. {count} is the number of passkeys."
+  },
+  "settings.passkeys.empty.description": {
+    "defaultMessage": "添加一个通行密钥，无需输入密码即可登录。",
+    "description": "Text of the empty list of passkeys, above the button that adds one."
+  },
+  "settings.domain_mutes.count": {
+    "defaultMessage": "{count, plural, other {# 个已隐藏的域名}}",
+    "description": "Read for the count beside the heading of the list of muted domains. {count} is the number of domains."
+  },
+  "settings.domain_mutes.count_at_least": {
+    "defaultMessage": "{count, plural, other {至少 # 个已隐藏的域名}}",
+    "description": "Read for the count beside the heading of the list of muted domains while more of them can be loaded. {count} is the number loaded."
+  },
+  "settings.domain_mutes.empty.description": {
+    "defaultMessage": "隐藏一个域名，让它的帖子不出现在你的时间线中。",
+    "description": "Text of the empty list of muted domains, above the button that mutes one."
+  },
+  "settings.domain_mutes.unmute_failed": {
+    "defaultMessage": "无法取消隐藏 {domain}：{reason}",
+    "description": "Error above the list of muted domains when unmuting one failed. {domain} is the domain; {reason} is the server's explanation."
+  },
+  "settings.linked_accounts.count": {
+    "defaultMessage": "{count, plural, other {# 个关联的账号}}",
+    "description": "Read for the count beside the heading of the list of linked accounts. {count} is the number of accounts."
+  },
+  "settings.linked_accounts.empty.description": {
+    "defaultMessage": "关联一个账号，即可通过该服务登录。",
+    "description": "Text of the empty list of linked accounts, above the button that links one."
+  },
+  "settings.linked_accounts.login_providers_only": {
+    "defaultMessage": "此服务器只能通过其登录服务提供方登录。如果没有在此关联账号，你的会话结束后将无法再次登录。",
+    "description": "On the linked accounts page while the instance limits sign-in to login providers."
+  },
+  "settings.notifications.row.no_email": {
+    "defaultMessage": "不通过邮件发送。",
+    "description": "Note under the name of a row of the notification settings that has no email cell: the server's announcements are never emailed."
+  },
+  "settings.passkeys.login_providers_only": {
+    "defaultMessage": "此服务器只能通过其登录服务提供方登录，因此无法在此添加通行密钥。你已有的通行密钥仍可用于确认对账号的更改。",
+    "description": "On the passkeys settings page, in place of the add button, while the instance limits sign-in to login providers."
+  },
+  "settings.password.login_providers_only": {
+    "defaultMessage": "此服务器只能通过其登录服务提供方登录，因此无法在此设置或更改密码。你的密码仍可用于确认对账号的更改。",
+    "description": "On the password settings page while the instance limits sign-in to login providers."
+  },
+  "settings.account.deactivate.title": {
+    "defaultMessage": "停用你的账号",
+    "description": "Heading of the part of the account page that deactivates the user's account."
+  },
+  "settings.account.deactivate.description": {
+    "defaultMessage": "暂时离开而不丢失任何内容：在 30 天内，你的个人资料和帖子对所有人隐藏。在 30 天内登录即可重新启用，你的帖子、关注和关注者都会保持原样。30 天后，你的账号将被删除。",
+    "description": "What deactivating the account does."
+  },
+  "settings.account.deactivate.effects": {
+    "defaultMessage": "停用期间，你不会收到任何内容：提及和私信会丢失，新的关注者会被拒绝。其他服务器可能会将你的账号显示为已封禁。你会在所有地方退出登录，应用也需要重新授权。",
+    "description": "What the user gives up while the account is deactivated, including that other servers may show it as suspended."
+  },
+  "settings.account.deactivate.open": {
+    "defaultMessage": "停用账号…",
+    "description": "Button that opens the dialog that deactivates the user's account."
+  },
+  "settings.account.deactivate.confirm.title": {
+    "defaultMessage": "要停用你的账号吗？",
+    "description": "Title of the dialog that deactivates the user's account."
+  },
+  "settings.account.deactivate.confirm.deletion": {
+    "defaultMessage": "除非你在此之前登录并重新启用，否则它将于 {date} 被删除。",
+    "description": "Sentence of the deactivation dialog with the date of the deletion. {date} is a formatted date and time."
+  },
+  "settings.account.deactivate.confirm.password": {
+    "defaultMessage": "输入密码以确认。",
+    "description": "Asks for the password in the deactivation dialog."
+  },
+  "settings.account.deactivate.confirm.passkey": {
+    "defaultMessage": "由你的通行密钥确认。",
+    "description": "Tells that a passkey confirms the deactivation."
+  },
+  "settings.account.deactivate.confirm.external": {
+    "defaultMessage": "由你在关联账号上的登录确认。",
+    "description": "Tells that the sign-in at a linked provider confirms the deactivation."
+  },
+  "settings.account.deactivate.confirm.code": {
+    "defaultMessage": "输入身份验证器应用中的验证码或恢复代码以确认。",
+    "description": "Asks for a code of the second factor in the deactivation dialog."
+  },
+  "settings.account.deactivate.password": {
+    "defaultMessage": "当前密码",
+    "description": "Label of the field with the password in the deactivation dialog."
+  },
+  "settings.account.deactivate.password.required": {
+    "defaultMessage": "请输入密码。",
+    "description": "Error of the empty password field in the deactivation dialog."
+  },
+  "settings.account.deactivate.code": {
+    "defaultMessage": "验证码",
+    "description": "Label of the field with the code in the deactivation dialog."
+  },
+  "settings.account.deactivate.code.required": {
+    "defaultMessage": "请输入验证码。",
+    "description": "Error of the empty code field in the deactivation dialog."
+  },
+  "settings.account.deactivate.use_code": {
+    "defaultMessage": "改用验证码",
+    "description": "Button in the deactivation dialog that confirms with a code in place of the password or the passkey."
+  },
+  "settings.account.deactivate.use_sign_in": {
+    "defaultMessage": "改用另一种方式确认",
+    "description": "Button in the deactivation dialog that goes back from the code to the password, the passkey, or the linked account."
+  },
+  "settings.account.deactivate.confirm": {
+    "defaultMessage": "停用",
+    "description": "Button of the dialog that deactivates the account."
+  },
+  "settings.account.deactivate.cancel": {
+    "defaultMessage": "保持账号启用",
+    "description": "Button that closes the deactivation dialog without deactivating."
+  },
+  "settings.account.deactivate.wrong_password": {
+    "defaultMessage": "密码不正确。",
+    "description": "Error in the deactivation dialog."
+  },
+  "settings.account.deactivate.wrong_code": {
+    "defaultMessage": "验证码不正确。",
+    "description": "Error in the deactivation dialog."
+  },
+  "settings.account.deactivate.refused.login_restricted": {
+    "defaultMessage": "此账号因审核操作而无法登录，因此无法停用。",
+    "description": "Why the account cannot be deactivated."
+  },
+  "settings.account.deactivate.refused.deletion_scheduled": {
+    "defaultMessage": "此账号正在等待删除，因此无法停用。",
+    "description": "Why the account cannot be deactivated."
+  },
+  "settings.account.deactivate.refused.already_deactivated": {
+    "defaultMessage": "此账号已停用。",
+    "description": "Why the account cannot be deactivated."
+  },
+  "settings.account.deactivate.refused.moved": {
+    "defaultMessage": "此账号已迁移到其他账号，因此无法停用。",
+    "description": "Why the account cannot be deactivated."
+  },
+  "settings.account.deactivate.refused.registration_pending": {
+    "defaultMessage": "你的注册正在等待审核，因此无法停用此账号。",
+    "description": "Why the account cannot be deactivated."
+  },
+  "settings.account.deactivate.refused.paid_subscription": {
+    "defaultMessage": "你的支持者订阅仍在进行中。请先取消订阅；订阅结束后即可停用。",
+    "description": "Why the account cannot be deactivated, followed by a link to the subscription."
+  },
+  "settings.account.deactivate.refused.subscription_link": {
+    "defaultMessage": "管理你的订阅",
+    "description": "Link from the refused deactivation to the page of the supporter subscription."
+  },
+  "settings.account.deactivate.refused.recently_reactivated": {
+    "defaultMessage": "你最近重新启用了此账号。你可以从 {date} 起再次停用。",
+    "description": "Why the account cannot be deactivated. {date} is a formatted date and time, 24 hours after the reactivation."
+  },
+  "settings.account.deactivate.refused.last_administrator": {
+    "defaultMessage": "这是唯一可以登录的管理员账号，因此无法停用。请先让其他人成为管理员。",
+    "description": "Why the account cannot be deactivated."
+  },
+  "settings.notifications.group.admin_hook_failing": {
+    "defaultMessage": "失败的外部审查",
+    "description": "Row of the notification settings table: (moderators) calls of an external review keep failing."
+  },
+  "settings.notifications.group.admin_hook_appeal": {
+    "defaultMessage": "被拒绝帖子的申诉",
+    "description": "Row of the notification settings table: (moderators) a user appealed a post that the automated review refused."
+  },
+  "settings.auto_delete.limit.title": {
+    "defaultMessage": "此服务器的限制",
+    "description": "Heading of the section of the automatic deletion settings that explains the server's maximum of how long posts are kept, shown while it applies to the user."
+  },
+  "settings.auto_delete.limit.description": {
+    "defaultMessage": "在此服务器上，帖子最晚会在发布 {days, plural, other {# 天}} 后被删除。自动删除保持开启，只有此服务器允许的例外才能让帖子保留更久。",
+    "description": "Explanation of the server's maximum of the automatic deletion. {days} is the most days a post is kept."
+  },
+  "settings.auto_delete.limit.allowed": {
+    "defaultMessage": "此服务器允许你保留的内容",
+    "description": "Heading of the list of the exceptions that the server's maximum of the automatic deletion allows."
+  },
+  "settings.auto_delete.limit.allowed.none": {
+    "defaultMessage": "无。所有超过限制的帖子都会被删除。",
+    "description": "In place of the list of allowed exceptions when the server's maximum allows none."
+  },
+  "settings.auto_delete.limit.allowed.visibilities": {
+    "defaultMessage": "你选择的可见范围的帖子",
+    "description": "Item of the list of exceptions the server's maximum allows: keeping posts by their visibility."
+  },
+  "settings.auto_delete.limit.allowed.thresholds": {
+    "defaultMessage": "转发或喜欢多的帖子",
+    "description": "Item of the list of exceptions the server's maximum allows: keeping posts by their numbers of boosts and favourites."
+  },
+  "settings.auto_delete.limit.pins": {
+    "defaultMessage": "置顶在个人资料中，{count, plural, =1 {仅限最近置顶的一条} other {仅限最近置顶的 # 条}}",
+    "description": "The exception of pinned posts when the server's maximum keeps only the newest pins. {count} is how many pins keep posts."
+  },
+  "settings.auto_delete.limit.not_allowed": {
+    "defaultMessage": "此服务器的限制不允许此项。",
+    "description": "Note under an exception of the automatic deletion that the server's maximum does not allow, which cannot be turned on."
+  },
+  "settings.auto_delete.limit.enabled_locked": {
+    "defaultMessage": "此服务器的限制使自动删除保持开启。服务器每小时检查一次，每次最多删除 100 条帖子。",
+    "description": "Help of the checkbox that turns the automatic deletion on, while the server's maximum keeps it on."
+  },
+  "settings.auto_delete.limit.age": {
+    "defaultMessage": "从每条帖子的发布时间算起。此服务器上最长为 {days, plural, other {# 天}}。",
+    "description": "Help of the select of the age after which posts are deleted, while the server's maximum applies. {days} is the maximum."
+  },
+  "settings.auto_delete.limit.error.enabled": {
+    "defaultMessage": "此服务器的限制使自动删除保持开启。请开启后再保存。",
+    "description": "Error under the checkbox of the automatic deletion when it is off while the server's maximum applies."
+  },
+  "settings.auto_delete.limit.error.age": {
+    "defaultMessage": "此服务器最多保留帖子 {days, plural, other {# 天}}。请选择更短的时长后再保存。",
+    "description": "Error under the select of the age when it is longer than the server's maximum. {days} is the maximum."
+  },
+  "settings.auto_delete.limit.error.exception": {
+    "defaultMessage": "此服务器的限制不允许此项。请关闭后再保存。",
+    "description": "Error under an exception of the automatic deletion that is on while the server's maximum does not allow it."
+  },
+  "settings.auto_delete.limit.bound.dated": {
+    "defaultMessage": "从 {date} 起，将由此服务器的限制决定删除你的哪些帖子。",
+    "description": "Headline of the notice that the server's maximum binds the user after a grace period. {date} is the formatted date it starts."
+  },
+  "settings.auto_delete.limit.bound.soon": {
+    "defaultMessage": "不久后，将由此服务器的限制决定删除你的哪些帖子。",
+    "description": "Headline of the notice that the server's maximum binds the user, before the server has said from when."
+  },
+  "settings.auto_delete.limit.bound.effective": {
+    "defaultMessage": "在此之前，下方的设置有效。之后，早于 {days, plural, other {# 天}} 的帖子都会被删除，但以下情况除外：",
+    "description": "In the notice that the server's maximum binds the user: what deletes their posts after the grace period, before the list of what it keeps. {days} is the age."
+  },
+  "settings.auto_delete.limit.bound.keeps_none": {
+    "defaultMessage": "不保留任何帖子。",
+    "description": "In place of the list of what the effective policy keeps when it keeps nothing."
+  },
+  "settings.auto_delete.limit.keeps.visibilities": {
+    "defaultMessage": "以下可见范围的帖子：{visibilities}",
+    "description": "Item of the list of what the effective policy keeps: posts with these visibilities. {visibilities} is a list of visibility names."
+  },
+  "settings.auto_delete.limit.keeps.min_boosts": {
+    "defaultMessage": "转发至少 {count, plural, other {# 次}} 的帖子",
+    "description": "Item of the list of what the effective policy keeps: posts with at least this many boosts."
+  },
+  "settings.auto_delete.limit.keeps.min_favourites": {
+    "defaultMessage": "喜欢至少 {count, plural, other {# 次}} 的帖子",
+    "description": "Item of the list of what the effective policy keeps: posts with at least this many favourites."
+  },
+  "settings.auto_delete.limit.bound.count": {
+    "defaultMessage": "届时会删除的帖子",
+    "description": "Label of the number of posts that the server's maximum deletes once it applies to the user, counted now."
+  },
+  "settings.auto_delete.limit.bound.fix": {
+    "defaultMessage": "如果想继续自行决定，请修改下方的设置使其符合限制，然后保存。",
+    "description": "In the notice that the server's maximum binds the user: how to stop it from overriding their settings."
+  },
+  "settings.auto_delete.preview.description.limited": {
+    "defaultMessage": "按上方的条件在此服务器的限制下即时统计，不论是否已保存。",
+    "description": "Help of the estimate of the posts that the automatic deletion would delete, while the server's maximum applies."
+  },
+  "settings.auto_delete.limit.pins.note": {
+    "defaultMessage": "此服务器只保留你 {count, plural, =1 {最近置顶的一条帖子} other {最近置顶的 # 条帖子}}。",
+    "description": "Note under the exception of pinned posts when the server's maximum keeps only the newest pins. {count} is how many."
+  }
+}

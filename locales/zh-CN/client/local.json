@@ -1,0 +1,22 @@
+{
+  "local.disabled.body": {
+    "defaultMessage": "本服务器不在同一时间线中显示其账号的公开帖子。",
+    "description": "Text below the heading of the local timeline's page when the server's operators have turned that timeline off."
+  },
+  "local.disabled.title": {
+    "defaultMessage": "本站时间线已关闭",
+    "description": "Heading and document title of the local timeline's page when the server's operators have turned that timeline off."
+  },
+  "local.sign_in_required.body": {
+    "defaultMessage": "登录后即可阅读本服务器账号的公开帖子。",
+    "description": "Description of the sign-in state on the local timeline's page for visitors who are not signed in, under its heading and above the link to sign in."
+  },
+  "local.sign_in_required.title": {
+    "defaultMessage": "本站时间线仅供已登录用户查看",
+    "description": "Heading of the sign-in state on the local timeline's page for visitors who are not signed in, when the server shows that timeline only to signed-in users."
+  },
+  "local.title": {
+    "defaultMessage": "本站时间线",
+    "description": "Heading and document title of the page with the public posts of this server's accounts."
+  }
+}

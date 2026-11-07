@@ -1,0 +1,82 @@
+{
+  "income.title": {
+    "defaultMessage": "收入",
+    "description": "Heading of the section of the income from the supporter plans on the finances page, the public page of the running costs, and the costs screen."
+  },
+  "income.public.no_balance": {
+    "defaultMessage": "由于此服务器不公开费用，因此不公开结余。",
+    "description": "Note in the income section of the public page of the running costs when the server publishes its income but not its costs, so the balance is not published."
+  },
+  "income.loading": {
+    "defaultMessage": "正在加载收入",
+    "description": "Accessible name of the progress indicator while the income totals load."
+  },
+  "income.failed": {
+    "defaultMessage": "无法加载收入",
+    "description": "Heading shown in place of the income totals when they could not be loaded."
+  },
+  "income.retry": {
+    "defaultMessage": "重试",
+    "description": "Button that tries again to load the income totals after a failure."
+  },
+  "income.totals.caption": {
+    "defaultMessage": "按 {granularity} 统计的收入（{basis}）",
+    "description": "Accessible caption of the table of the income totals: the chosen period kind and the way payments are counted."
+  },
+  "income.totals.gross": {
+    "defaultMessage": "总额",
+    "description": "Column header and term of what the supporters paid before the payment provider's fees, on the costs screen only."
+  },
+  "income.totals.fee": {
+    "defaultMessage": "手续费",
+    "description": "Column header and term of the payment provider's fees, on the costs screen only."
+  },
+  "income.totals.net": {
+    "defaultMessage": "扣除手续费后的收入",
+    "description": "Column header and term of the income after the payment provider's fees and the refunds."
+  },
+  "income.totals.balance": {
+    "defaultMessage": "结余",
+    "description": "Column header of the balance: the income less the costs of the same period and currency."
+  },
+  "income.plans.title": {
+    "defaultMessage": "各方案的成员",
+    "description": "Heading of the number of members of each supporter plan now, next to the income totals."
+  },
+  "income.plans.description": {
+    "defaultMessage": "显示当前成员，而非各期间的成员。不显示各方案的金额。",
+    "description": "Explanation of the number of members of each supporter plan next to the income totals."
+  },
+  "income.plans.empty": {
+    "defaultMessage": "没有方案有成员。",
+    "description": "What the list of the members of each plan says when no plan has members."
+  },
+  "income.plans.members": {
+    "defaultMessage": "{count, plural, other {# 名成员}}",
+    "description": "The number of members of a supporter plan now."
+  },
+  "income.rules.title": {
+    "defaultMessage": "收入的计算方式",
+    "description": "Heading of the rules that date and place the payments in the income totals."
+  },
+  "income.rules.net": {
+    "defaultMessage": "收入为支持者支付的金额减去支付服务商的手续费。退款或拒付会在其发生的期间扣除。",
+    "description": "Rule of the income totals: what the income is."
+  },
+  "income.rules.provider": {
+    "defaultMessage": "{provider} 按 {timeZone} 时区记录付款日期。",
+    "description": "Rule of the income totals: the time zone in which a payment provider (such as stripe) dates its money movements (UTC, Asia/Tokyo)."
+  },
+  "income.rules.amortized": {
+    "defaultMessage": "超过 {days} 天的付款（例如年付方案）会按天分摊到其覆盖的各天。其退款会在退款当天扣除退款日之前的天数，并取消退款日之后的天数。其他付款按其日期计入。",
+    "description": "Rule of the spread income totals. {days} is the number of days a payment must cover to be spread, such as 31."
+  },
+  "income.rules.cash": {
+    "defaultMessage": "每笔付款、退款和手续费都按其日期计入。",
+    "description": "Rule of the income totals on the payment date."
+  },
+  "income.rules.balance": {
+    "defaultMessage": "结余为每种货币的收入减去费用，两者按相同方式计算。从不换算货币。",
+    "description": "Rule of the income totals: what the balance is."
+  }
+}

@@ -1,0 +1,194 @@
+{
+  "timeline.boosted_by": {
+    "defaultMessage": "{name} 转发了",
+    "description": "Line above a post in a timeline that someone else shared (boosted). {name} is the display name of the account that boosted it."
+  },
+  "timeline.content_warning.toggle": {
+    "defaultMessage": "显示内容",
+    "description": "Button next to a post's content warning that shows or hides the post behind it. The same text is used while the post is shown."
+  },
+  "timeline.empty.account.heading": {
+    "defaultMessage": "还没有帖子",
+    "description": "Shown instead of the posts of a profile's tab when it has none."
+  },
+  "timeline.empty.bookmarks.description": {
+    "defaultMessage": "你添加书签的帖子会显示在这里。只有你能看到你的书签。",
+    "description": "Text under the heading of the empty list of bookmarks."
+  },
+  "timeline.empty.bookmarks.heading": {
+    "defaultMessage": "还没有书签",
+    "description": "Heading shown instead of posts when the user has bookmarked none."
+  },
+  "timeline.empty.home.action": {
+    "defaultMessage": "浏览本站时间线",
+    "description": "Link from the empty home timeline to the local timeline, where the user can find people to follow."
+  },
+  "timeline.empty.home.search": {
+    "defaultMessage": "查找要关注的人",
+    "description": "Link from the empty home timeline to the search, where the user can find people to follow, on a server that does not offer the local timeline."
+  },
+  "timeline.empty.home.description": {
+    "defaultMessage": "你的帖子和你关注的人的帖子会显示在这里。",
+    "description": "Text under the heading of the empty home timeline."
+  },
+  "timeline.empty.home.heading": {
+    "defaultMessage": "你的主页是空的",
+    "description": "Heading shown instead of posts when the home timeline has none."
+  },
+  "timeline.empty.list.description": {
+    "defaultMessage": "此列表中的人发布和转发的帖子会显示在这里。",
+    "description": "Text under the heading of the timeline of a list whose members have not posted yet."
+  },
+  "timeline.empty.list.heading": {
+    "defaultMessage": "还没有帖子",
+    "description": "Heading shown instead of posts when a list with members has none in its timeline."
+  },
+  "timeline.empty.local.description": {
+    "defaultMessage": "本服务器上的人的公开帖子会显示在这里。",
+    "description": "Text under the heading of the empty local timeline."
+  },
+  "timeline.empty.local.heading": {
+    "defaultMessage": "还没有帖子",
+    "description": "Heading shown instead of posts when the local timeline has none."
+  },
+  "timeline.empty.public.description": {
+    "defaultMessage": "本服务器以及本服务器所知的其他服务器上的人的公开帖子会显示在这里。",
+    "description": "Text under the heading of the empty federated timeline."
+  },
+  "timeline.empty.public.heading": {
+    "defaultMessage": "还没有帖子",
+    "description": "Heading shown instead of posts when the federated timeline has none."
+  },
+  "timeline.empty.tag.description": {
+    "defaultMessage": "带有 #{tag} 的公开帖子会显示在这里。",
+    "description": "Text under the heading of an empty hashtag timeline. {tag} is the hashtag without the #."
+  },
+  "timeline.empty.tag.heading": {
+    "defaultMessage": "没有带 #{tag} 的帖子",
+    "description": "Heading shown instead of posts when no post has the hashtag. {tag} is the hashtag without the #."
+  },
+  "timeline.keyboard_hint": {
+    "defaultMessage": "在时间线中，按 Page Down 和 Page Up 可在帖子之间移动。",
+    "description": "Hint for screen reader users before a timeline, about the keys that move from post to post."
+  },
+  "timeline.load_more": {
+    "defaultMessage": "加载更多帖子",
+    "description": "Button at the end of a timeline that loads older posts."
+  },
+  "timeline.load_more.failed": {
+    "defaultMessage": "无法加载更多帖子：{reason}",
+    "description": "Message, read out and shown at the end of a timeline, when older posts failed to load. {reason} is the error message, a full sentence."
+  },
+  "timeline.loading": {
+    "defaultMessage": "正在加载帖子",
+    "description": "Visually hidden text that names the busy region while posts load: the first page of a timeline, or a post page."
+  },
+  "timeline.media.no_description": {
+    "defaultMessage": "无描述",
+    "description": "Name of a picture of a post whose author gave no description (alternative text), read by screen readers and shown under the picture in the viewer; it is not drawn on the thumbnail."
+  },
+  "timeline.media.reveal": {
+    "defaultMessage": "显示敏感媒体",
+    "description": "Toggle button over the pictures of a post that the author marked sensitive; it shows or hides them."
+  },
+  "timeline.media.more": {
+    "defaultMessage": "+{count, number}",
+    "description": "Mark in the corner of the pictures of a remote post that had more attachments than the four this server keeps; it links to the original post. {count} is the number of attachments left out."
+  },
+  "timeline.media.more.label": {
+    "defaultMessage": "还有 +{count, number} 个——查看原始帖子",
+    "description": "Accessible name of the mark of a remote post's left-out attachments, a link that opens the original post on its server. It must contain the text of timeline.media.more. {count} is the number of attachments left out."
+  },
+  "timeline.media.audio.play": {
+    "defaultMessage": "播放",
+    "description": "Accessible name of the play button of the audio player of a post's audio attachment."
+  },
+  "timeline.media.audio.pause": {
+    "defaultMessage": "暂停",
+    "description": "Accessible name of the pause button of the audio player of a post's audio attachment, shown while the audio plays."
+  },
+  "timeline.media.audio.seek": {
+    "defaultMessage": "音频播放位置",
+    "description": "Accessible name of the seek slider of the audio player of a post's audio attachment; arrow keys move the playback position."
+  },
+  "timeline.media.viewer.title": {
+    "defaultMessage": "第 {position, number} 张图片，共 {count, number} 张",
+    "description": "Heading of the image viewer, the dialog that shows a picture of a post at its original size when it is pressed. {position} is the place of the picture among the post's pictures, from 1; {count} is how many there are."
+  },
+  "timeline.media.viewer.close": {
+    "defaultMessage": "关闭",
+    "description": "Accessible name of the × button that closes the image viewer."
+  },
+  "timeline.media.viewer.previous": {
+    "defaultMessage": "上一张图片",
+    "description": "Accessible name of the icon button of the image viewer that shows the post's picture before the current one."
+  },
+  "timeline.media.viewer.next": {
+    "defaultMessage": "下一张图片",
+    "description": "Accessible name of the icon button of the image viewer that shows the post's next picture."
+  },
+  "timeline.media.viewer.position": {
+    "defaultMessage": "{position, number} / {count, number}",
+    "description": "Position of the picture shown in the image viewer among the post's pictures, between its previous and next buttons. {position} is the place of the picture, from 1; {count} is how many there are."
+  },
+  "timeline.media.viewer.alt_text": {
+    "defaultMessage": "描述",
+    "description": "Accessible name of the note button of the image viewer that shows or hides the picture's description (alt text) over the picture. The button exists only for a picture that has a description."
+  },
+  "timeline.card.author": {
+    "defaultMessage": "作者：{author}",
+    "description": "Line under the description of a link card naming the author of the linked page. {author} is the author's name as the page gives it, or the verified account (timeline.card.account)."
+  },
+  "timeline.card.author_published": {
+    "defaultMessage": "作者：{author} · {date}",
+    "description": "Line under the description of a link card naming the author of the linked page and when it was published. {author} is the author's name; {date} is the formatted date."
+  },
+  "timeline.card.published": {
+    "defaultMessage": "发布于 {date}",
+    "description": "Line under the description of a link card saying when the linked page was published. {date} is the formatted date."
+  },
+  "timeline.card.account": {
+    "defaultMessage": "{name}（{handle}）",
+    "description": "The verified author of a linked page as an account: {name} is the display name, {handle} the handle such as @alice@example.com."
+  },
+  "timeline.card.failed": {
+    "defaultMessage": "无法显示此链接的预览。",
+    "description": "Shown in place of the card of a link in a post when it failed to render."
+  },
+  "timeline.new_posts": {
+    "defaultMessage": "{count, plural, other {# 条新帖子}}",
+    "description": "Button above the home timeline when new posts have arrived; pressing it shows them at the top. Screen readers also read it out when the count changes."
+  },
+  "timeline.new_posts.failed": {
+    "defaultMessage": "无法加载新帖子：{reason}",
+    "description": "Message read out when pressing the new posts button failed to load them. {reason} is the error message, a full sentence."
+  },
+  "timeline.offline.home": {
+    "defaultMessage": "你已离线。这些是截至 {time} 的帖子。",
+    "description": "Notice above the home timeline while the device is offline or the server cannot be reached: the posts shown are the ones loaded last, kept on this device. {time} is the date and time they were loaded, already formatted."
+  },
+  "timeline.retry": {
+    "defaultMessage": "重试",
+    "description": "Button at the end of a timeline that tries again to load older posts after a failure."
+  },
+  "timeline.signed_out.description": {
+    "defaultMessage": "登录后即可阅读你关注的人的帖子。",
+    "description": "Description of the sign-in state that the home page shows when nobody is signed in, under its heading and above the link to sign in."
+  },
+  "timeline.signed_out.heading": {
+    "defaultMessage": "你尚未登录",
+    "description": "Heading on the home page when nobody is signed in, shown instead of the home timeline."
+  },
+  "timeline.empty.quotes.heading": {
+    "defaultMessage": "还没有引用",
+    "description": "Heading of the empty list of the posts that quote one of the user's posts."
+  },
+  "timeline.empty.quotes.description": {
+    "defaultMessage": "引用这条帖子的帖子会显示在这里。",
+    "description": "Description of the empty list of the posts that quote one of the user's posts."
+  },
+  "timeline.load_more.failed.heading": {
+    "defaultMessage": "无法加载更多帖子",
+    "description": "Heading of the error shown at the end of a timeline when older posts failed to load, above the reason and the button to try again."
+  }
+}

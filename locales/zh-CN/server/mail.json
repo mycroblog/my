@@ -1,0 +1,426 @@
+{
+  "mail.action.open_notifications": {
+    "defaultMessage": "打开通知",
+    "description": "Label of the link in an email that opens the notifications of the web client."
+  },
+  "mail.action.set_new_password": {
+    "defaultMessage": "设置新密码",
+    "description": "Label of the link in an email that sets a new password."
+  },
+  "mail.admin_account_moved.body": {
+    "defaultMessage": "一个被 {instance} 审核员限制的账号已迁移到另一个账号。迁移后的账号不受此限制。",
+    "description": "Paragraph of the email to a moderator about an account with a limit that moved to another account. It never names the accounts. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.admin_account_moved.subject": {
+    "defaultMessage": "{instance} 上一个受限账号已迁移到另一个账号",
+    "description": "Subject of the email to a moderator who chose to get moderator notifications by email: an account that the moderators limit moved to another account. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.admin_appeal.body": {
+    "defaultMessage": "{instance} 的一位用户对审核操作提出了申诉，该申诉正等待审核员处理。",
+    "description": "Paragraph of the email to a moderator about a new appeal. It never names the user or the action. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.admin_appeal.subject": {
+    "defaultMessage": "{instance} 有一条新申诉等待审核员处理",
+    "description": "Subject of the email to a moderator who chose to get moderator notifications by email: a user appealed a moderation action on their account. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.admin_custom_emoji_request.body": {
+    "defaultMessage": "{instance} 的一位用户申请了自定义表情或某个表情的新图片，该请求正等待审核。",
+    "description": "Paragraph of the email to an administrator about a new custom emoji request. It never names the user or the emoji. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.admin_custom_emoji_request.subject": {
+    "defaultMessage": "{instance} 有一条自定义表情请求等待审核",
+    "description": "Subject of the email to an administrator who chose to get moderator notifications by email: a user requested a custom emoji or a new image of one. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.admin_report.body": {
+    "defaultMessage": "{instance} 有一条新举报等待审核员处理。",
+    "description": "Paragraph of the email to a moderator about a new report. It never names the report or the accounts. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.admin_report.subject": {
+    "defaultMessage": "{instance} 有一条新举报等待审核员处理",
+    "description": "Subject of the email to a moderator who chose to get moderator notifications by email: someone reported an account that had no open report. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.admin_service_closure_due.body": {
+    "defaultMessage": "{instance} 的关闭日期已过。服务器不会自动关闭：请在管理页面中或使用 my admin closure close 关闭它。",
+    "description": "Paragraph of the email to an administrator: the closing date of the announced closure has passed, and an administrator closes the server. {instance} is the server's display name, or its domain name when it has none. Keep the command my admin closure close as it is."
+  },
+  "mail.admin_service_closure_due.subject": {
+    "defaultMessage": "{instance} 的关闭日期已过",
+    "description": "Subject of the email to an administrator who chose to get moderator notifications by email: the closing date of the announced closure of the server has passed. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.admin_error_group.body": {
+    "defaultMessage": "{instance} 的服务器或 Web 客户端报告了一个新错误，或者一个已标记为已解决的错误再次发生。请在管理页面中查看错误。",
+    "description": "Paragraph of the email to an administrator who manages the errors. It never names the error or a user. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.admin_error_group.subject": {
+    "defaultMessage": "{instance} 报告了错误",
+    "description": "Subject of the email to an administrator who chose to get moderator notifications by email: a new error, or a resolved error that happened again. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.admin_sign_up.body": {
+    "defaultMessage": "一位新用户在 {instance} 注册，正等待批准。",
+    "description": "Paragraph of the email to a moderator about a sign-up that awaits approval. It never names the user. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.admin_sign_up.subject": {
+    "defaultMessage": "{instance} 有一条新注册等待批准",
+    "description": "Subject of the email to a moderator who chose to get moderator notifications by email: a new user signed up and waits for a moderator to approve the registration. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.admin_webhook_disabled.body": {
+    "defaultMessage": "服务器 {instance} 关闭了它的一个 Webhook：其端点持续失败，或返回已不存在。",
+    "description": "First paragraph of the email to an administrator about a webhook endpoint that the server turned off. It never names the endpoint or its URL. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.admin_webhook_disabled.detail": {
+    "defaultMessage": "打开通知查看是哪一个，并在端点恢复正常后重新开启。",
+    "description": "Second paragraph of the email to an administrator about a webhook endpoint that the server turned off, before the link to the notifications."
+  },
+  "mail.admin_webhook_disabled.subject": {
+    "defaultMessage": "{instance} 的一个 Webhook 已关闭",
+    "description": "Subject of the email to an administrator who chose to get moderator notifications by email: the server turned off a webhook endpoint that kept failing or answered that it is gone. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.password_changed.body": {
+    "defaultMessage": "你在 {instance} 上的账号密码已更改，你的其他会话和应用已退出登录。",
+    "description": "First paragraph of the email that tells a user their password was changed. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.password_changed.detail": {
+    "defaultMessage": "如果不是你本人更改的，可能有其他人知道你的密码。请立即设置新密码。",
+    "description": "Second paragraph of the email that tells a user their password was changed, before the link that asks for a password reset link."
+  },
+  "mail.password_changed.subject": {
+    "defaultMessage": "你在 {instance} 的密码已更改",
+    "description": "Subject of the email that tells a user their password was changed. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.password_removed.body": {
+    "defaultMessage": "你在 {instance} 上的账号密码已移除，你的其他会话和应用已退出登录。今后你将使用通行密钥登录。",
+    "description": "First paragraph of the email that tells a user their password was removed, so that only their passkeys sign in. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.password_removed.detail": {
+    "defaultMessage": "如果不是你本人移除的，可能有其他人已登录你的账号。请立即设置新密码。",
+    "description": "Second paragraph of the email that tells a user their password was removed, before the link that asks for a password reset link, which sets a new password."
+  },
+  "mail.password_removed.subject": {
+    "defaultMessage": "你在 {instance} 的密码已移除",
+    "description": "Subject of the email that tells a user their password was removed, so that only their passkeys sign in. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.password_reset.body": {
+    "defaultMessage": "有人请求重置你在 {instance} 上的账号密码。",
+    "description": "First paragraph of the email with a password reset link. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.password_reset.detail": {
+    "defaultMessage": "{minutes, plural, other {此链接在 # 分钟内有效，且只能使用一次。}}",
+    "description": "Second paragraph of the email with a password reset link: how long the link works. {minutes} is the number of minutes."
+  },
+  "mail.password_reset.reason": {
+    "defaultMessage": "你收到这封邮件，是因为有人在 {host} 请求重置你的密码。如果不是你本人，请忽略这封邮件；你的密码保持不变。",
+    "description": "Sentence of the signature of the email with a password reset link: why it comes. {host} is the server's domain name."
+  },
+  "mail.password_reset.subject": {
+    "defaultMessage": "重置你在 {instance} 的密码",
+    "description": "Subject of the email with a password reset link. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.reason.account": {
+    "defaultMessage": "你收到这封邮件，是因为此地址属于你在 {instance} 上的账号。",
+    "description": "Sentence of the signature of an email about the security of a user's account: why it comes. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.reason.supporter": {
+    "defaultMessage": "你收到这封邮件，是因为你正在或曾经订阅 {instance} 的支持者方案。",
+    "description": "Sentence of the signature of an email about a user's supporter plan: why it comes. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.service_closure.action_export": {
+    "defaultMessage": "导出你的数据",
+    "description": "Label of the button of a service closure email that opens the page where the user exports their data."
+  },
+  "mail.service_closure.export": {
+    "defaultMessage": "在 {exportUntil} 之前，你可以登录并导出你的数据。之后，管理员会删除服务器的数据。",
+    "description": "Paragraph of a service closure email during the notice: until when the user may export their data. {exportUntil} is the deadline of the export as YYYY-MM-DD HH:MM followed by the user's time zone in parentheses, such as 2026-12-01 09:00 (Asia/Tokyo)."
+  },
+  "mail.service_closure.message": {
+    "defaultMessage": "管理员留言：{message}",
+    "description": "Paragraph of a service closure email: the message that the administrators wrote with the announcement. {message} is their text, written in any language."
+  },
+  "mail.service_closure.move": {
+    "defaultMessage": "在关闭日期之前，你也可以在账号设置中将账号迁移到其他服务器，让你的关注者在那里继续关注你。",
+    "description": "Paragraph of a service closure email during the notice: the user may move their account (ActivityPub Move) to another server before the closing date."
+  },
+  "mail.service_closure.reason": {
+    "defaultMessage": "你收到这封邮件，是因为此地址属于你在 {instance} 上的账号，而该服务器的关闭会影响你的数据。此类邮件无法关闭。",
+    "description": "Sentence of the signature of a service closure email: why it comes, and that the user cannot unsubscribe from it. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.service_closure_announced.body": {
+    "defaultMessage": "{instance} 的管理员宣布服务器将于 {closesAt} 关闭。此后，你只能登录导出你的数据。",
+    "description": "First paragraph of the email of the service closure to every user with a verified address: the announcement of the closure. {instance} is the server's display name, or its domain name when it has none. {closesAt} is the closing date as YYYY-MM-DD HH:MM followed by the user's time zone in parentheses, such as 2026-12-01 09:00 (Asia/Tokyo)."
+  },
+  "mail.service_closure_announced.subject": {
+    "defaultMessage": "{instance} 将于 {closesAt} 关闭",
+    "description": "Subject of the email of the service closure to every user with a verified address: the administrators announced that the server closes. {instance} is the server's display name, or its domain name when it has none. {closesAt} is the closing date as YYYY-MM-DD HH:MM followed by the user's time zone in parentheses, such as 2026-12-01 09:00 (Asia/Tokyo)."
+  },
+  "mail.service_closure_closed.body": {
+    "defaultMessage": "{instance} 已关闭。在 {exportUntil} 之前，你仍可以登录并导出你的数据；其他功能均已停止。",
+    "description": "First paragraph of the email of the service closure to every user with a verified address: the server has closed, and the user may still export their data. {instance} is the server's display name, or its domain name when it has none. {exportUntil} is the deadline of the export as YYYY-MM-DD HH:MM followed by the user's time zone in parentheses, such as 2026-12-01 09:00 (Asia/Tokyo)."
+  },
+  "mail.service_closure_closed.detail": {
+    "defaultMessage": "之后，管理员会删除服务器的数据，且无法恢复。",
+    "description": "Second paragraph of the email of the closed server: what happens after the deadline of the export."
+  },
+  "mail.service_closure_closed.subject": {
+    "defaultMessage": "{instance} 已关闭",
+    "description": "Subject of the email of the service closure to every user with a verified address: the server has closed. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.service_closure_day_before.body": {
+    "defaultMessage": "{instance} 将在一天内关闭，关闭时间为 {closesAt}。这是关闭日期前的最后一次提醒。",
+    "description": "First paragraph of the reminder email of the service closure to every user with a verified address, a day before the closing date. {instance} is the server's display name, or its domain name when it has none. {closesAt} is the closing date as YYYY-MM-DD HH:MM followed by the user's time zone in parentheses, such as 2026-12-01 09:00 (Asia/Tokyo)."
+  },
+  "mail.service_closure_day_before.subject": {
+    "defaultMessage": "{instance} 将在一天内关闭（{closesAt}）",
+    "description": "Subject of the reminder email of the service closure to every user with a verified address, a day before the closing date. {instance} is the server's display name, or its domain name when it has none. {closesAt} is the closing date as YYYY-MM-DD HH:MM followed by the user's time zone in parentheses, such as 2026-12-01 09:00 (Asia/Tokyo)."
+  },
+  "mail.service_closure_export_week_before.body": {
+    "defaultMessage": "你可以在 {exportUntil}（一周后）之前从 {instance} 导出你的数据。",
+    "description": "First paragraph of the reminder email of the service closure to every user with a verified address, a week before the deadline of the export. {instance} is the server's display name, or its domain name when it has none. {exportUntil} is the deadline of the export as YYYY-MM-DD HH:MM followed by the user's time zone in parentheses, such as 2026-12-01 09:00 (Asia/Tokyo)."
+  },
+  "mail.service_closure_export_week_before.subject": {
+    "defaultMessage": "距离从 {instance} 导出数据还剩一周",
+    "description": "Subject of the reminder email of the service closure to every user with a verified address, a week before the deadline of the export after the server closed. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.service_closure_rescheduled.body": {
+    "defaultMessage": "{instance} 的管理员更改了关闭日期：服务器现在将于 {closesAt} 关闭。",
+    "description": "First paragraph of the email of the service closure to every user with a verified address: the dates of the announced closure changed. {instance} is the server's display name, or its domain name when it has none. {closesAt} is the closing date as YYYY-MM-DD HH:MM followed by the user's time zone in parentheses, such as 2026-12-01 09:00 (Asia/Tokyo)."
+  },
+  "mail.service_closure_rescheduled.subject": {
+    "defaultMessage": "{instance} 现在将于 {closesAt} 关闭",
+    "description": "Subject of the email of the service closure to every user with a verified address: the administrators changed the dates of the announced closure. {instance} is the server's display name, or its domain name when it has none. {closesAt} is the closing date as YYYY-MM-DD HH:MM followed by the user's time zone in parentheses, such as 2026-12-01 09:00 (Asia/Tokyo)."
+  },
+  "mail.service_closure_week_before.body": {
+    "defaultMessage": "{instance} 将在一周后关闭，关闭时间为 {closesAt}。请在无法访问之前导出你的数据。",
+    "description": "First paragraph of the reminder email of the service closure to every user with a verified address, a week before the closing date. {instance} is the server's display name, or its domain name when it has none. {closesAt} is the closing date as YYYY-MM-DD HH:MM followed by the user's time zone in parentheses, such as 2026-12-01 09:00 (Asia/Tokyo)."
+  },
+  "mail.service_closure_week_before.subject": {
+    "defaultMessage": "距离 {instance} 关闭还剩一周（{closesAt}）",
+    "description": "Subject of the reminder email of the service closure to every user with a verified address, a week before the closing date. {instance} is the server's display name, or its domain name when it has none. {closesAt} is the closing date as YYYY-MM-DD HH:MM followed by the user's time zone in parentheses, such as 2026-12-01 09:00 (Asia/Tokyo)."
+  },
+  "mail.service_closure_withdrawn.body": {
+    "defaultMessage": "{instance} 的管理员撤回了已宣布的关闭。服务器将照常运行，你无需进行任何操作。",
+    "description": "Paragraph of the email of the service closure to every user with a verified address: the announced closure is withdrawn. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.service_closure_withdrawn.subject": {
+    "defaultMessage": "{instance} 不再关闭",
+    "description": "Subject of the email of the service closure to every user with a verified address: the administrators withdrew the announced closure. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.signature.contact": {
+    "defaultMessage": "联系方式：{email}",
+    "description": "Line of the signature at the end of every email with the instance's contact address. {email} is the address."
+  },
+  "mail.signature.unsubscribe": {
+    "defaultMessage": "停止接收此类邮件：{url}",
+    "description": "Last line of the signature of a notification email with its one-click unsubscribe link. {url} is the link."
+  },
+  "mail.supporter_payment_failed.action": {
+    "defaultMessage": "更新付款方式",
+    "description": "Label of the link in the email about a failed payment that opens the supporter page, where the payment method is fixed."
+  },
+  "mail.supporter_payment_failed.body": {
+    "defaultMessage": "你在 {instance} 的支持者方案“{plan}”付款失败。",
+    "description": "First paragraph of the email to a subscriber whose payment for a supporter plan failed. {instance} is the server's display name, or its domain name when it has none. {plan} is the plan's name, written by the administrators."
+  },
+  "mail.supporter_payment_failed.detail": {
+    "defaultMessage": "你可以保留方案权益至 {endsAt}（UTC）。如果届时仍未付款成功，权益将终止。",
+    "description": "Second paragraph of the email to a subscriber whose payment for a supporter plan failed, before the link to the supporter page. {endsAt} is the end of the grace period as YYYY-MM-DD HH:MM in UTC."
+  },
+  "mail.supporter_payment_failed.subject": {
+    "defaultMessage": "你在 {instance} 的支持者方案付款失败",
+    "description": "Subject of the email to a subscriber whose payment for a supporter plan failed. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.supporter_plan_retired.body": {
+    "defaultMessage": "{instance} 的管理员停用了你订阅的支持者方案“{plan}”。",
+    "description": "First paragraph of the email to a subscriber whose supporter plan the administrators retired. {instance} is the server's display name, or its domain name when it has none. {plan} is the plan's name, written by the administrators."
+  },
+  "mail.supporter_plan_retired.detail": {
+    "defaultMessage": "你的订阅已取消，不会续订。除非有逾期未付的款项，你可以保留方案权益至已付费期间结束。",
+    "description": "Second paragraph of the email to a subscriber whose supporter plan the administrators retired."
+  },
+  "mail.supporter_plan_retired.subject": {
+    "defaultMessage": "你在 {instance} 的支持者方案已停用",
+    "description": "Subject of the email to a subscriber whose supporter plan the administrators retired. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.supporter_service_closure.body": {
+    "defaultMessage": "{instance} 的管理员宣布服务器将关闭，因此你对支持者方案“{plan}”的订阅将被取消。",
+    "description": "First paragraph of the email to a subscriber whose supporter subscription the announced closure of the server cancels at the end of its period. {instance} is the server's display name, or its domain name when it has none. {plan} is the plan's name, written by the administrators."
+  },
+  "mail.supporter_service_closure.detail": {
+    "defaultMessage": "你的订阅不会续订。除非有逾期未付的款项，你可以保留方案权益至已付费期间结束。",
+    "description": "Second paragraph of the email to a subscriber whose supporter subscription the announced closure of the server cancels."
+  },
+  "mail.supporter_service_closure.subject": {
+    "defaultMessage": "你在 {instance} 的支持者订阅将随服务器关闭而结束",
+    "description": "Subject of the email to a subscriber whose supporter subscription the announced closure of the server cancels. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.supporter_subscription_ended.body": {
+    "defaultMessage": "你在 {instance} 的支持者方案“{plan}”已结束，其权益也随之终止。{reason, select, lapsed {付款失败后 7 天内未能成功付款，或订阅已暂停。} reversed {有一笔付款已全额退款或被拒付。} plan_retired {管理员停用了该方案。} account_suspended {你的账号已被封禁。} staff {管理员取消了该订阅。} other {该订阅已取消。}}",
+    "description": "Paragraph of the email to a subscriber whose supporter subscription ended. {instance} is the server's display name, or its domain name when it has none. {plan} is the plan's name, written by the administrators; {reason} the reason code (not shown), each branch saying why."
+  },
+  "mail.supporter_subscription_ended.subject": {
+    "defaultMessage": "你在 {instance} 的支持者方案已结束",
+    "description": "Subject of the email to a subscriber whose supporter subscription ended: a payment kept failing, a payment was refunded, the plan was retired, or it was canceled. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.verify_email.action": {
+    "defaultMessage": "确认你的电子邮件地址",
+    "description": "Label of the link in the email that confirms a new account's email address."
+  },
+  "mail.verify_email.body": {
+    "defaultMessage": "欢迎来到 {instance}。",
+    "description": "First paragraph of the email that confirms a new account's email address. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.verify_email.detail": {
+    "defaultMessage": "{hours, plural, other {此链接在 # 小时内有效。}}",
+    "description": "Second paragraph of the email that confirms a new account's email address: how long the link works. {hours} is the number of hours."
+  },
+  "mail.verify_email.reason": {
+    "defaultMessage": "你收到这封邮件，是因为有人使用此地址在 {host} 注册。如果不是你本人注册，请忽略这封邮件。",
+    "description": "Sentence of the signature of the email that confirms a new account's email address: why it comes. {host} is the server's domain name."
+  },
+  "mail.verify_email.subject": {
+    "defaultMessage": "确认你在 {instance} 的电子邮件地址",
+    "description": "Subject of the email that confirms a new account's email address. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.reason.notification": {
+    "defaultMessage": "你收到这封邮件，是因为你在通知设置中为“{group}”开启了邮件通知。你可以在那里关闭。",
+    "description": "Sentence of the signature of a notification email: why it comes. {group} is the name of the kind of notification, as the notification settings name it (such as Mentions)."
+  },
+  "mail.notification.body": {
+    "defaultMessage": "你在 {instance} 上有一条未读通知。",
+    "description": "Paragraph of the email of a notification that stayed unread for 15 minutes, below the subject that tells what happened. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.action.open_notification": {
+    "defaultMessage": "打开",
+    "description": "Label of the link in the email of a notification that opens the page of the notification in the web client: the post, the profile, or the notifications."
+  },
+  "mail.group.mention": {
+    "defaultMessage": "提及",
+    "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
+  },
+  "mail.group.follow": {
+    "defaultMessage": "新关注者",
+    "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
+  },
+  "mail.group.follow_request": {
+    "defaultMessage": "关注请求",
+    "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
+  },
+  "mail.group.follow_accepted": {
+    "defaultMessage": "已接受的关注请求",
+    "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
+  },
+  "mail.group.boost": {
+    "defaultMessage": "转发",
+    "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
+  },
+  "mail.group.favourite": {
+    "defaultMessage": "喜欢",
+    "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
+  },
+  "mail.group.reaction": {
+    "defaultMessage": "表情回应",
+    "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
+  },
+  "mail.group.quote": {
+    "defaultMessage": "引用",
+    "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
+  },
+  "mail.group.poll_closed": {
+    "defaultMessage": "已结束的投票",
+    "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
+  },
+  "mail.group.account_moved": {
+    "defaultMessage": "你关注的账号迁移",
+    "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
+  },
+  "mail.group.voice": {
+    "defaultMessage": "语音聊天",
+    "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
+  },
+  "mail.group.admin_report": {
+    "defaultMessage": "新举报",
+    "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
+  },
+  "mail.group.admin_sign_up": {
+    "defaultMessage": "待批准的注册",
+    "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
+  },
+  "mail.group.admin_appeal": {
+    "defaultMessage": "新申诉",
+    "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
+  },
+  "mail.group.admin_webhook_disabled": {
+    "defaultMessage": "已停用的 Webhook",
+    "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
+  },
+  "mail.group.admin_custom_emoji_request": {
+    "defaultMessage": "自定义表情请求",
+    "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
+  },
+  "mail.group.admin_account_moved": {
+    "defaultMessage": "受限账号迁移",
+    "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
+  },
+  "mail.group.admin_service_closure_due": {
+    "defaultMessage": "关闭日期已过",
+    "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
+  },
+  "mail.group.admin_error_group": {
+    "defaultMessage": "新错误和重复出现的错误",
+    "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
+  },
+  "mail.group.moderation": {
+    "defaultMessage": "来自审核员的通知",
+    "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
+  },
+  "mail.group.auto_delete_limit": {
+    "defaultMessage": "帖子自动删除通知",
+    "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page: the notices that the server's maximum of the automatic deletion of old posts applies to the user's posts. Matches the row of the web client's notification settings."
+  },
+  "mail.auto_delete_limit.detail": {
+    "defaultMessage": "在此之前，你自己的设置仍然适用。自动删除设置会显示你的哪些帖子将被删除，你可以在服务器上限范围内更改设置。已删除的帖子无法恢复。",
+    "description": "Second paragraph of the email that tells a local user that the server's maximum of the automatic deletion of old posts will apply to their posts; the first paragraph is the notification itself, with the days. The button below opens the user's settings of the automatic deletion."
+  },
+  "mail.action.sign_in": {
+    "defaultMessage": "登录",
+    "description": "Label of the link in an email that opens the sign-in page."
+  },
+  "mail.account_deactivated.subject": {
+    "defaultMessage": "你在 {instance} 的账号已停用",
+    "description": "Subject of the one email that tells a user their account is deactivated. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.account_deactivated.body": {
+    "defaultMessage": "你在 {instance} 的账号已停用。除非你在 {date} 之前重新启用，否则账号将在该日期被删除。",
+    "description": "First paragraph of the email that tells a user their account is deactivated. {instance} is the server's display name, or its domain name when it has none. {date} is the date and time of the deletion with its time zone, such as 2026-12-03 09:00 (UTC)."
+  },
+  "mail.account_deactivated.detail": {
+    "defaultMessage": "登录即可重新启用账号。在删除之前，我们不会再就此事给你发送邮件。如果这不是你本人的操作，请登录、重新启用账号并更改密码。",
+    "description": "Second paragraph of the email that tells a user their account is deactivated: how to undo it, that no more email comes, and what to do when it was not them."
+  },
+  "mail.admin_hook_failing.body": {
+    "defaultMessage": "服务器 {instance} 上的外部审查调用持续失败。在其恢复正常之前，它所审查的内容将按其失败处理方式处理：默认情况下不经审查直接通过。",
+    "description": "First paragraph of the email to a moderator about an external review that keeps failing. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.admin_hook_failing.detail": {
+    "defaultMessage": "打开通知，在自动审查中查看失败的内容。",
+    "description": "Second paragraph of the email to a moderator about an external review that keeps failing, before the link to the notifications."
+  },
+  "mail.admin_hook_failing.subject": {
+    "defaultMessage": "{instance} 的外部审查持续失败",
+    "description": "Subject of the email to a moderator who gets moderator notifications by email: calls of the external review of submissions keep failing. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.admin_hook_appeal.body": {
+    "defaultMessage": "{instance} 的一位用户对被自动审查拒绝的帖子提出了申诉，该申诉正等待审核员处理。",
+    "description": "Paragraph of the email to a moderator about a new appeal of a post that the automated review refused. It never names the user or the post. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.admin_hook_appeal.subject": {
+    "defaultMessage": "{instance} 有一条被拒绝帖子的申诉等待审核员处理",
+    "description": "Subject of the email to a moderator who chose to get moderator notifications by email: a user appealed a post that the automated review refused. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.group.admin_hook_failing": {
+    "defaultMessage": "持续失败的外部审查",
+    "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
+  },
+  "mail.group.admin_hook_appeal": {
+    "defaultMessage": "被拒绝帖子的申诉",
+    "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
+  }
+}

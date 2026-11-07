@@ -1,0 +1,22 @@
+{
+  "public.disabled.body": {
+    "defaultMessage": "此服务器不会在一条时间线中显示其他服务器的公开帖子。",
+    "description": "Text below the heading of the federated timeline's page when the server's operators have turned that timeline off."
+  },
+  "public.disabled.title": {
+    "defaultMessage": "联邦时间线已关闭",
+    "description": "Heading and document title of the federated timeline's page when the server's operators have turned that timeline off."
+  },
+  "public.sign_in_required.body": {
+    "defaultMessage": "登录后即可阅读到达此服务器的公开帖子。",
+    "description": "Description of the sign-in state on the federated timeline's page for visitors who are not signed in, under its heading and above the link to sign in."
+  },
+  "public.sign_in_required.title": {
+    "defaultMessage": "联邦时间线仅供已登录用户使用",
+    "description": "Heading of the sign-in state on the federated timeline's page for visitors who are not signed in, when the server shows that timeline only to signed-in users."
+  },
+  "public.title": {
+    "defaultMessage": "联邦时间线",
+    "description": "Heading and document title of the page with the public posts of this server's accounts and of the accounts on other servers that this server knows."
+  }
+}

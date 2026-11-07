@@ -1,0 +1,386 @@
+{
+  "supporter.title": {
+    "defaultMessage": "支持者方案",
+    "description": "Title of the user's page of the supporter plans, and its entry in the settings menu."
+  },
+  "supporter.app": {
+    "defaultMessage": "此页面在应用中不可用。",
+    "description": "Shown in the mobile app instead of the supporter plans page."
+  },
+  "supporter.disabled": {
+    "defaultMessage": "此服务器不提供支持者方案。",
+    "description": "Shown when the server offers no supporter plans."
+  },
+  "supporter.loading": {
+    "defaultMessage": "正在加载支持者方案",
+    "description": "Label of the spinner while the supporter plans load."
+  },
+  "supporter.failed": {
+    "defaultMessage": "无法加载支持者方案",
+    "description": "Heading when the supporter plans could not load."
+  },
+  "supporter.retry": {
+    "defaultMessage": "重试",
+    "description": "Button that loads the supporter plans again."
+  },
+  "supporter.return.canceled": {
+    "defaultMessage": "你已离开付款页面，未产生任何费用。",
+    "description": "Shown when the user left the payment page without paying."
+  },
+  "supporter.return.confirming": {
+    "defaultMessage": "正在与支付服务商确认你的付款，这需要几秒钟。",
+    "description": "Shown after the payment page returned, while the server waits for the payment provider's confirmation."
+  },
+  "supporter.return.started": {
+    "defaultMessage": "感谢你的支持。你的订阅已确认。",
+    "description": "Shown after the payment page returned and the subscription is confirmed."
+  },
+  "supporter.plans.title": {
+    "defaultMessage": "选择方案",
+    "description": "Heading of the list of supporter plans to choose from."
+  },
+  "supporter.plans.description": {
+    "defaultMessage": "方案用于支持此服务器的运营。较高的方案包含较低方案的全部内容。你一次只能订阅一个方案。",
+    "description": "Explanation above the supporter plans."
+  },
+  "supporter.plans.empty": {
+    "defaultMessage": "目前没有可订阅的方案。",
+    "description": "Shown when no supporter plan takes subscriptions now."
+  },
+  "supporter.plans.plan": {
+    "defaultMessage": "方案",
+    "description": "Label of the radio group of the plans."
+  },
+  "supporter.plans.interval": {
+    "defaultMessage": "付款周期",
+    "description": "Label of the radio group of monthly or yearly payment."
+  },
+  "supporter.plans.prices": {
+    "defaultMessage": "{monthly} 或 {yearly}",
+    "description": "The monthly and the yearly prices of a plan. monthly and yearly are amounts per interval."
+  },
+  "supporter.per_month": {
+    "defaultMessage": "每月 {amount}",
+    "description": "An amount paid every month. amount is formatted money."
+  },
+  "supporter.per_year": {
+    "defaultMessage": "每年 {amount}",
+    "description": "An amount paid every year. amount is formatted money."
+  },
+  "supporter.interval.month": {
+    "defaultMessage": "按月",
+    "description": "Choice: pay every month."
+  },
+  "supporter.interval.year": {
+    "defaultMessage": "按年",
+    "description": "Choice: pay every year."
+  },
+  "supporter.ineligible.not_local": {
+    "defaultMessage": "只有此服务器的用户可以订阅。",
+    "description": "Why the user cannot subscribe: the account is not of this server."
+  },
+  "supporter.ineligible.email_unverified": {
+    "defaultMessage": "要订阅，请先通过服务器发送给你的邮件中的链接验证你的电子邮件地址。",
+    "description": "Why the user cannot subscribe: their primary email address is not verified."
+  },
+  "supporter.ineligible.restricted": {
+    "defaultMessage": "你的账号在已封禁或正在删除期间无法订阅。",
+    "description": "Why the user cannot subscribe: the account is suspended or being deleted."
+  },
+  "supporter.subscribe": {
+    "defaultMessage": "订阅",
+    "description": "Button that opens the final confirmation of a subscription."
+  },
+  "supporter.confirm.title": {
+    "defaultMessage": "要订阅 {plan} 吗？",
+    "description": "Title of the final confirmation before the payment page. plan is the plan's name."
+  },
+  "supporter.confirm.description": {
+    "defaultMessage": "请查看以下条款。你将在支付服务商的页面上输入付款信息，而不是在此服务器上。",
+    "description": "Explanation in the final confirmation before the payment page."
+  },
+  "supporter.confirm.plan": {
+    "defaultMessage": "方案",
+    "description": "Term: the plan in the final confirmation."
+  },
+  "supporter.confirm.amount": {
+    "defaultMessage": "金额",
+    "description": "Term: the amount in the final confirmation."
+  },
+  "supporter.confirm.amount.value": {
+    "defaultMessage": "{price}，每次续订金额相同",
+    "description": "The amount of the subscription. price is an amount per interval."
+  },
+  "supporter.confirm.payments": {
+    "defaultMessage": "付款",
+    "description": "Term: when the payments are made."
+  },
+  "supporter.confirm.payments.value": {
+    "defaultMessage": "{interval, select, year {立即付款，之后每年付款} other {立即付款，之后每月付款}}",
+    "description": "When the payments of a subscription are made."
+  },
+  "supporter.confirm.benefits": {
+    "defaultMessage": "权益",
+    "description": "Term: when the benefits start."
+  },
+  "supporter.confirm.benefits.value": {
+    "defaultMessage": "确认付款后立即生效",
+    "description": "When the benefits of a plan start."
+  },
+  "supporter.confirm.cancel": {
+    "defaultMessage": "取消订阅",
+    "description": "Term: how to cancel."
+  },
+  "supporter.confirm.cancel.value": {
+    "defaultMessage": "可随时在此页面取消。权益保留至已付费周期结束，之后不再扣款。",
+    "description": "How to cancel a subscription and what it does."
+  },
+  "supporter.confirm.go": {
+    "defaultMessage": "前往付款",
+    "description": "Button that goes to the payment provider's page."
+  },
+  "supporter.confirm.failed": {
+    "defaultMessage": "无法打开付款页面：{reason}",
+    "description": "Why the payment page could not open."
+  },
+  "supporter.commerce": {
+    "defaultMessage": "商业信息披露",
+    "description": "Link to the server's page of commerce disclosures."
+  },
+  "supporter.cancel": {
+    "defaultMessage": "取消",
+    "description": "Button that closes a dialog of the supporter plans without doing anything."
+  },
+  "supporter.subscription.title": {
+    "defaultMessage": "你的订阅",
+    "description": "Heading of the user's subscription."
+  },
+  "supporter.subscription.plan": {
+    "defaultMessage": "方案",
+    "description": "Term: the plan of the subscription."
+  },
+  "supporter.subscription.state": {
+    "defaultMessage": "状态",
+    "description": "Term: the state of the subscription."
+  },
+  "supporter.subscription.price": {
+    "defaultMessage": "价格",
+    "description": "Term: what the subscription renews at."
+  },
+  "supporter.subscription.renews_at": {
+    "defaultMessage": "续订日期",
+    "description": "Term: when the subscription renews."
+  },
+  "supporter.subscription.ends_at": {
+    "defaultMessage": "结束日期",
+    "description": "Term: when a cancelled subscription ends."
+  },
+  "supporter.subscription.grace_ends_at": {
+    "defaultMessage": "权益结束日期",
+    "description": "Term: when a subscription whose payment failed loses its benefits."
+  },
+  "supporter.subscription.scheduled": {
+    "defaultMessage": "计划中的更改",
+    "description": "Term: a change that waits for the end of the period."
+  },
+  "supporter.subscription.scheduled.value": {
+    "defaultMessage": "于 {date} 更改为 {plan}，价格 {price}",
+    "description": "The scheduled change. plan is the new plan's name, price an amount per interval, date a formatted date and time."
+  },
+  "supporter.state.pending": {
+    "defaultMessage": "等待付款",
+    "description": "State of a subscription: started, not paid yet."
+  },
+  "supporter.state.active": {
+    "defaultMessage": "有效",
+    "description": "State of a subscription: paid."
+  },
+  "supporter.state.canceling": {
+    "defaultMessage": "将在周期结束时取消",
+    "description": "State of a subscription: cancelled at the end of the period."
+  },
+  "supporter.state.past_due": {
+    "defaultMessage": "付款失败",
+    "description": "State of a subscription: a payment failed recently."
+  },
+  "supporter.state.lapsed": {
+    "defaultMessage": "已暂停，付款逾期",
+    "description": "State of a subscription: a payment failed long ago, the benefits are paused."
+  },
+  "supporter.state.expired": {
+    "defaultMessage": "已结束",
+    "description": "State of a subscription: ended."
+  },
+  "supporter.state.revoked": {
+    "defaultMessage": "已退款",
+    "description": "State of a subscription: refunded."
+  },
+  "supporter.state.abandoned": {
+    "defaultMessage": "未完成",
+    "description": "State of a subscription: ended before its first payment."
+  },
+  "supporter.note.pending": {
+    "defaultMessage": "付款尚未完成。请继续前往付款页面完成订阅。",
+    "description": "Note on a subscription that waits for its first payment."
+  },
+  "supporter.note.canceling": {
+    "defaultMessage": "你的订阅将在周期结束时终止，权益保留至那时。恢复订阅即可继续。",
+    "description": "Note on a cancelled subscription."
+  },
+  "supporter.note.past_due": {
+    "defaultMessage": "付款失败。请在权益结束前更新你的付款方式。",
+    "description": "Note on a subscription whose payment failed recently."
+  },
+  "supporter.note.lapsed": {
+    "defaultMessage": "由于付款逾期，权益已暂停。请更新你的付款方式，或取消订阅。",
+    "description": "Note on a subscription whose payment failed long ago."
+  },
+  "supporter.continue_checkout": {
+    "defaultMessage": "继续付款",
+    "description": "Button that goes to the payment page of a subscription waiting for payment."
+  },
+  "supporter.resume": {
+    "defaultMessage": "恢复订阅",
+    "description": "Button that withdraws the cancellation of a subscription."
+  },
+  "supporter.unschedule": {
+    "defaultMessage": "撤回计划中的更改",
+    "description": "Button that withdraws a scheduled change of plan."
+  },
+  "supporter.portal": {
+    "defaultMessage": "付款方式和账单",
+    "description": "Button that opens the payment provider's page of payment methods and invoices."
+  },
+  "supporter.portal.failed": {
+    "defaultMessage": "无法打开付款方式页面：{reason}",
+    "description": "Why the payment provider's page could not open."
+  },
+  "supporter.command.failed": {
+    "defaultMessage": "无法更改订阅：{reason}",
+    "description": "Why a change of the subscription failed."
+  },
+  "supporter.cancel_subscription": {
+    "defaultMessage": "取消订阅",
+    "description": "Button that cancels the subscription at the end of the period."
+  },
+  "supporter.cancel_subscription.title": {
+    "defaultMessage": "要取消 {plan} 吗？",
+    "description": "Title of the dialog that confirms cancelling. plan is the plan's name."
+  },
+  "supporter.cancel_subscription.description": {
+    "defaultMessage": "订阅将在已付费周期结束时终止，权益保留至那时，之后不再扣款。你可以在周期结束前恢复订阅。",
+    "description": "What cancelling does."
+  },
+  "supporter.keep": {
+    "defaultMessage": "保留订阅",
+    "description": "Button that closes the cancel dialog and keeps the subscription."
+  },
+  "supporter.subscription.changed": {
+    "defaultMessage": "已更改方案。",
+    "description": "Announced when the plan was changed."
+  },
+  "supporter.subscription.canceled": {
+    "defaultMessage": "订阅将在周期结束时取消。",
+    "description": "Announced when the subscription was cancelled."
+  },
+  "supporter.subscription.resumed": {
+    "defaultMessage": "已恢复订阅。",
+    "description": "Announced when the cancellation was withdrawn."
+  },
+  "supporter.subscription.unscheduled": {
+    "defaultMessage": "已撤回计划中的更改。",
+    "description": "Announced when the scheduled change was withdrawn."
+  },
+  "supporter.change.title": {
+    "defaultMessage": "更改方案",
+    "description": "Heading of the section that changes the plan."
+  },
+  "supporter.change.description": {
+    "defaultMessage": "更高的方案或按年付款会在支付本周期剩余时间的差价后生效，差价会立即扣除。更低的方案或按月付款会在周期结束时生效。",
+    "description": "How changes of plan apply."
+  },
+  "supporter.change.price_kept": {
+    "defaultMessage": "你目前支付的是以前的价格 {price}。更改后，你将支付新方案的当前价格，即使之后改回此方案也是如此。",
+    "description": "Note that a change loses the lower price the user pays now. price is formatted money."
+  },
+  "supporter.change": {
+    "defaultMessage": "更改方案",
+    "description": "Button that changes the plan."
+  },
+  "supporter.change.confirm": {
+    "defaultMessage": "要更改为 {plan} 吗？",
+    "description": "Title of the dialog that confirms a change. plan is the new plan's name."
+  },
+  "supporter.change.now": {
+    "defaultMessage": "本周期剩余时间的差价将立即扣除，付款完成后更改生效。",
+    "description": "A change that applies at once."
+  },
+  "supporter.change.period_end": {
+    "defaultMessage": "更改将在周期结束时生效。在此之前你仍使用当前方案，并且可以撤回更改。",
+    "description": "A change that applies at the end of the period."
+  },
+  "supporter.change.rules": {
+    "defaultMessage": "更高的方案或按年付款会在支付立即扣除的差价后生效；更低的方案或按月付款会在周期结束时生效。",
+    "description": "A change whose timing the page cannot tell."
+  },
+  "supporter.change.unchanged": {
+    "defaultMessage": "请选择其他方案或付款周期以进行更改。",
+    "description": "Why the change button is disabled."
+  },
+  "supporter.error.ineligible": {
+    "defaultMessage": "你的账号无法订阅。",
+    "description": "Problem: the user cannot subscribe."
+  },
+  "supporter.error.subscribed": {
+    "defaultMessage": "你已有订阅。请改为更改其方案。",
+    "description": "Problem: the user has a subscription already."
+  },
+  "supporter.error.plan_unavailable": {
+    "defaultMessage": "此方案目前不接受订阅。",
+    "description": "Problem: the plan takes no subscriptions."
+  },
+  "supporter.error.state": {
+    "defaultMessage": "订阅当前的状态不允许此操作。请重新加载页面。",
+    "description": "Problem: the subscription's state does not allow the change."
+  },
+  "supporter.error.same_plan": {
+    "defaultMessage": "这是你当前的方案和付款周期。",
+    "description": "Problem: the change chose the current plan and interval."
+  },
+  "supporter.error.payment_failed": {
+    "defaultMessage": "付款失败，因此你的方案未更改，也未产生任何费用。请更新你的银行卡后重试。每次付款都要求验证的银行卡无法用于支付更改。",
+    "description": "Problem: the payment of the change failed; the page offers the way to update the card."
+  },
+  "supporter.error.payment_processing": {
+    "defaultMessage": "付款仍在处理中，因此你的方案尚未更改。付款成功后方案即会更改。",
+    "description": "Problem: the payment of the change has not settled."
+  },
+  "supporter.error.ended": {
+    "defaultMessage": "订阅已结束。",
+    "description": "Problem: the subscription has ended."
+  },
+  "supporter.listing.title": {
+    "defaultMessage": "支持者名单",
+    "description": "Heading of the choice to be on the supporter list."
+  },
+  "supporter.listing.description": {
+    "defaultMessage": "支持者名单会在你的方案下显示你的头像、昵称和用户名，不会显示金额或日期。只有本人选择后才会列入名单，你的选择会随订阅结束而失效。",
+    "description": "What the supporter list shows of the user."
+  },
+  "supporter.listing.switch": {
+    "defaultMessage": "将我列入支持者名单",
+    "description": "Switch that lists the user on the supporter list."
+  },
+  "supporter.listing.listed": {
+    "defaultMessage": "你已列入支持者名单。",
+    "description": "Announced when the user is listed."
+  },
+  "supporter.listing.unlisted": {
+    "defaultMessage": "你已从支持者名单中移除。",
+    "description": "Announced when the user is taken off the list."
+  },
+  "supporter.listing.failed": {
+    "defaultMessage": "无法保存选择：{reason}",
+    "description": "Why the choice was not saved."
+  }
+}

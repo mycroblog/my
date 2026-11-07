@@ -1,0 +1,34 @@
+{
+  "admin.hook_decision.appeal_only": {
+    "defaultMessage": "本站帖子被拒绝后，无法在此处取消。作者可以提出申诉，申诉被采纳后该决定即被取消。",
+    "description": "Shown in the cancellation region of a refusal of a local post: it goes through the author's appeal instead."
+  },
+  "admin.hook_decision.back": {
+    "defaultMessage": "返回自动审核",
+    "description": "Link from a decision's page back to the list of decisions."
+  },
+  "admin.hook_decision.cancel.description": {
+    "defaultMessage": "取消会立即生效，并尽可能撤销该审核所做的处理。",
+    "description": "Hint above the button that cancels a decision on its page."
+  },
+  "admin.hook_decision.cancel.title": {
+    "defaultMessage": "取消",
+    "description": "Heading of the region of a decision's page where a moderator cancels it."
+  },
+  "admin.hook_decision.cancelled": {
+    "defaultMessage": "审核员已取消此决定。",
+    "description": "Shown in the cancellation region of a decision that is cancelled; the facts above say when."
+  },
+  "admin.hook_decision.facts.title": {
+    "defaultMessage": "决定",
+    "description": "Heading of the region of a decision's page with what the review decided and on what."
+  },
+  "admin.hook_decision.no_effect": {
+    "defaultMessage": "此决定未产生任何效果，因此无需取消。",
+    "description": "Shown in the cancellation region of a decision made in observe mode or that failed: there is no button."
+  },
+  "admin.hook_decision.title": {
+    "defaultMessage": "自动审核的决定",
+    "description": "Heading of the page of one decision of an external review."
+  }
+}

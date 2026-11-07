@@ -1,0 +1,166 @@
+{
+  "push.account_moved": {
+    "defaultMessage": "{name} 已迁移到另一个账号",
+    "description": "Web Push notification. {name} is the display name, or the @handle, of an account that the user followed, which moved to another account."
+  },
+  "push.admin_account_moved": {
+    "defaultMessage": "一个被 {instance} 审核员限制的账号已迁移到另一个账号",
+    "description": "Web Push notification to a moderator: an account that the moderators limit moved to another account, which does not get the limit. It never names the accounts. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "push.admin_appeal": {
+    "defaultMessage": "有一条新申诉等待 {instance} 的审核员处理",
+    "description": "Web Push notification to a moderator: a user appealed a moderation action. It never names the user. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "push.admin_custom_emoji_request": {
+    "defaultMessage": "{instance} 上有一条自定义表情请求等待审查",
+    "description": "Web Push notification to an administrator: a user requested a custom emoji or a new image of one. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "push.admin_report": {
+    "defaultMessage": "有一条新举报等待 {instance} 的审核员处理",
+    "description": "Web Push notification to a moderator: someone reported an account that had no open report. It never names the accounts. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "push.admin_sign_up": {
+    "defaultMessage": "{instance} 上有一个新注册等待批准",
+    "description": "Web Push notification to a moderator: a new user signed up and waits for approval. It never names the user. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "push.admin_webhook_disabled": {
+    "defaultMessage": "{instance} 的一个 Webhook 已被停用",
+    "description": "Web Push notification to an administrator: the server turned off a webhook endpoint that kept failing or answered that it is gone. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "push.announcement": {
+    "defaultMessage": "来自 {instance} 的公告：{title}",
+    "description": "Web Push notification of a new announcement of the server to every local user. {title} is the announcement's title, as the administrators wrote it. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "push.auto_delete_limit": {
+    "defaultMessage": "{instance}：超过 {days, plural, other {# 天}}的帖子将{daysLeft, plural, =0 {从现在起} other {在 # 天后}}被自动删除",
+    "description": "Web Push notification, and the subject of its email, telling a local user that the server's maximum of the automatic deletion of old posts now applies to their posts. {days} is the most days after its publication that a post is kept; {daysLeft} is the days of the grace period until the maximum applies (0 when it applies at once). {instance} is the server's display name, or its domain name when it has none."
+  },
+  "push.appeal_decided": {
+    "defaultMessage": "{instance} 的审核员已对你的申诉作出决定",
+    "description": "Web Push notification: the moderators upheld or overturned the user's appeal. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "push.custom_emoji_request_decided": {
+    "defaultMessage": "{instance} 的管理员已审查你的自定义表情请求",
+    "description": "Web Push notification: an administrator approved or rejected the user's request for a custom emoji or a new image of one. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "push.boost": {
+    "defaultMessage": "{name} 转发了你的帖子",
+    "description": "Web Push notification. {name} is the display name, or the @handle, of the account that boosted the user's post."
+  },
+  "push.favourite": {
+    "defaultMessage": "{name} 喜欢了你的帖子",
+    "description": "Web Push notification. {name} is the display name, or the @handle, of the account that favourited the user's post."
+  },
+  "push.follow": {
+    "defaultMessage": "{name} 关注了你",
+    "description": "Web Push notification. {name} is the display name, or the @handle, of the account that followed the user."
+  },
+  "push.follow_accepted": {
+    "defaultMessage": "{name} 接受了你的关注请求",
+    "description": "Web Push notification. {name} is the display name, or the @handle, of the account that accepted the user's follow request."
+  },
+  "push.follow_request": {
+    "defaultMessage": "{name} 请求关注你",
+    "description": "Web Push notification. {name} is the display name, or the @handle, of the account that asked to follow the user."
+  },
+  "push.mention": {
+    "defaultMessage": "{name} 提及了你",
+    "description": "Web Push notification. {name} is the display name, or the @handle, of the account that wrote a post that mentions the user."
+  },
+  "push.moderation_notice": {
+    "defaultMessage": "{instance} 的审核员向你发送了一条通知",
+    "description": "Web Push notification: a notice to the user from the moderators. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "push.other": {
+    "defaultMessage": "你在 {instance} 上有一条新通知",
+    "description": "Web Push notification of a kind without its own sentence. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "push.poll_closed": {
+    "defaultMessage": "你参与的一项投票已结束",
+    "description": "Web Push notification: a poll that the user created or voted in has ended."
+  },
+  "push.quote": {
+    "defaultMessage": "{name} 引用了你的帖子",
+    "description": "Web Push notification. {name} is the display name, or the @handle, of the account that quoted the user's post in a post of its own."
+  },
+  "push.reaction": {
+    "defaultMessage": "{name} 回应了你的帖子",
+    "description": "Web Push notification. {name} is the display name, or the @handle, of the account that reacted to the user's post with an emoji."
+  },
+  "push.relationships_severed": {
+    "defaultMessage": "{instance} 审核员的封禁操作解除了你的部分关注关系",
+    "description": "Web Push notification: the moderators suspended a server or an account, which ended follows between it and the user. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "push.report_resolved": {
+    "defaultMessage": "你在 {instance} 上提交的一条举报已处理",
+    "description": "Web Push notification: the moderators resolved a report that the user filed. It never says how. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "push.status": {
+    "defaultMessage": "{name} 发布了帖子",
+    "description": "Web Push notification. {name} is the display name, or the @handle, of an account that the user subscribes to, which made a new post."
+  },
+  "push.supporter_payment_failed": {
+    "defaultMessage": "你在 {instance} 的支持者方案付款失败",
+    "description": "Web Push notification: a payment for the user's supporter plan failed. It never says where to pay (the app shows no way to pay). {instance} is the server's display name, or its domain name when it has none."
+  },
+  "push.supporter_plan_retired": {
+    "defaultMessage": "你在 {instance} 的支持者方案已停用",
+    "description": "Web Push notification: the administrators retired the user's supporter plan, whose subscription ends with its period. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "push.supporter_subscription_ended": {
+    "defaultMessage": "你在 {instance} 的支持者方案已结束",
+    "description": "Web Push notification: the user's supporter subscription ended (a payment kept failing, a refund, a retired plan, or a cancellation). {instance} is the server's display name, or its domain name when it has none."
+  },
+  "push.service_closure_announced": {
+    "defaultMessage": "{instance} 即将关闭：请在关闭前导出你的数据",
+    "description": "Web Push notification to every user: the administrators announced that the server closes on a date. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "push.service_closure_rescheduled": {
+    "defaultMessage": "{instance} 的关闭日期已更改",
+    "description": "Web Push notification to every user: the administrators changed the dates of the announced closure of the server. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "push.service_closure_withdrawn": {
+    "defaultMessage": "{instance} 不会关闭：关闭计划已撤回",
+    "description": "Web Push notification to every user: the administrators withdrew the announced closure of the server, which goes on. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "push.admin_service_closure_due": {
+    "defaultMessage": "{instance} 的关闭日期已过：请关闭服务器",
+    "description": "Web Push notification to an administrator who may close the server: the closing date of the announced closure has passed, and the server closes only when an administrator closes it. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "push.admin_error_group.created": {
+    "defaultMessage": "{instance} 上报告了一个新错误",
+    "description": "Web Push notification to an administrator who manages the errors: the server or the web client reported an error of a new kind. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "push.admin_error_group.regressed": {
+    "defaultMessage": "{instance} 上一个已解决的错误再次出现",
+    "description": "Web Push notification to an administrator who manages the errors: an error that an administrator marked resolved happened again with a newer version of the server. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "push.admin_error_group.others": {
+    "defaultMessage": "{instance} 上报告了更多错误",
+    "description": "Web Push notification to an administrator who manages the errors: more new or recurring errors happened in this hour than are notified one by one, and they are counted in one notification. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "push.admin_hook_failing": {
+    "defaultMessage": "{instance} 的一项外部审查持续失败",
+    "description": "Web Push notification to a moderator: calls of the external review of submissions keep failing. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "push.admin_hook_appeal": {
+    "defaultMessage": "有一条被拒帖子向 {instance} 的审核员提出了申诉",
+    "description": "Web Push notification to a moderator: a user appealed a post that the server's automated review refused, and the appeal awaits review. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "push.hook_appeal_decided": {
+    "defaultMessage": "{instance} 的审核员已复核你对被拒帖子的申诉",
+    "description": "Web Push notification: the moderators upheld or overturned the user's appeal of a post that the automated review refused. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "push.supporter_service_closure": {
+    "defaultMessage": "你在 {instance} 的支持者订阅将随服务器关闭而结束",
+    "description": "Web Push notification: the announced closure of the server cancels the user's supporter subscription at the end of its period. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "push.voice_room_started": {
+    "defaultMessage": "{name} 开启了一个语音聊天房间",
+    "description": "Web Push notification: an account that the user follows opened a voice chat room that the user may join. {name} is the display name, or the @handle, of the host."
+  },
+  "push.voice_room_invited": {
+    "defaultMessage": "{name} 邀请你加入一个语音聊天房间",
+    "description": "Web Push notification: the host or a co-host of a voice chat room invited the user to it. {name} is the display name, or the @handle, of the account that invited the user."
+  }
+}

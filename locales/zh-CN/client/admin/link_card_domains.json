@@ -1,0 +1,182 @@
+{
+  "admin.link_card_domains.back": {
+    "defaultMessage": "返回规则",
+    "description": "Link from the page of a rule, or of the form of a new one, back to the list."
+  },
+  "admin.link_card_domains.cancel": {
+    "defaultMessage": "取消",
+    "description": "Button that closes the dialog of removing a rule of the link card crawler without removing it."
+  },
+  "admin.link_card_domains.characters_left": {
+    "defaultMessage": "{count, plural, other {还可输入 # 个字符}}",
+    "description": "How many characters the note of a rule can still take."
+  },
+  "admin.link_card_domains.characters_over": {
+    "defaultMessage": "{count, plural, other {超出 # 个字符}}",
+    "description": "How many characters the note of a rule is over its limit."
+  },
+  "admin.link_card_domains.detail.title": {
+    "defaultMessage": "链接卡片规则",
+    "description": "Heading of the page of one rule of the link card crawler."
+  },
+  "admin.link_card_domains.domain": {
+    "defaultMessage": "域名",
+    "description": "Label of the domain of a rule of the link card crawler, in the form and as the column of the list."
+  },
+  "admin.link_card_domains.domain.description": {
+    "defaultMessage": "主机名，例如 example.com。规则也适用于其子域名。已有规则的域名将改用此规则。",
+    "description": "Help under the domain of a new rule of the link card crawler."
+  },
+  "admin.link_card_domains.domain.invalid": {
+    "defaultMessage": "只输入主机名，不要包含 https:// 或路径。",
+    "description": "Error of a domain of a rule that holds a space or a part of a URL."
+  },
+  "admin.link_card_domains.empty": {
+    "defaultMessage": "还没有规则",
+    "description": "Heading of the list of the rules of the link card crawler when there are none."
+  },
+  "admin.link_card_domains.empty.description": {
+    "defaultMessage": "服务器会获取所有域名的链接卡片，但被域名操作封禁的域名除外。",
+    "description": "What the server does while the list of the rules of the link card crawler is empty."
+  },
+  "admin.link_card_domains.failed": {
+    "defaultMessage": "无法加载规则",
+    "description": "Heading of the error in place of the list of the rules of the link card crawler."
+  },
+  "admin.link_card_domains.list.title": {
+    "defaultMessage": "规则",
+    "description": "Heading of the section with the list of the rules of the link card crawler."
+  },
+  "admin.link_card_domains.loading": {
+    "defaultMessage": "正在加载规则…",
+    "description": "Label of the spinner while the rules of the link card crawler load."
+  },
+  "admin.link_card_domains.mode": {
+    "defaultMessage": "要停止的内容",
+    "description": "Label of the mode of a rule of the link card crawler, in the form and as the column of the list."
+  },
+  "admin.link_card_domains.mode.no_fetch": {
+    "defaultMessage": "停止获取",
+    "description": "Mode of a rule: the link card crawler fetches nothing from the domain."
+  },
+  "admin.link_card_domains.mode.no_fetch.description": {
+    "defaultMessage": "服务器不再为链接卡片从此域名获取页面或图片。已有的此域名卡片将被隐藏。",
+    "description": "What the mode that stops fetching does."
+  },
+  "admin.link_card_domains.mode.no_images": {
+    "defaultMessage": "仅停止图片",
+    "description": "Mode of a rule: the link card crawler fetches pages but no images from the domain."
+  },
+  "admin.link_card_domains.mode.no_images.description": {
+    "defaultMessage": "服务器仍会从此域名获取页面，但不获取图片。其卡片将不显示图片，已有的卡片也是如此。",
+    "description": "What the mode that stops only images does."
+  },
+  "admin.link_card_domains.new.description": {
+    "defaultMessage": "这些规则只影响帖子中的链接卡片：该域名仍保持联邦，其帖子的媒体照常获取。要切断与某服务器的联系，请使用域名操作。",
+    "description": "Introduction of the form of a rule of the link card crawler, which sets it apart from a domain action."
+  },
+  "admin.link_card_domains.new.title": {
+    "defaultMessage": "添加规则",
+    "description": "Heading of the page with the form of a new rule of the link card crawler, and the link to it."
+  },
+  "admin.link_card_domains.not_found": {
+    "defaultMessage": "{domain} 没有规则",
+    "description": "Heading of the page of a rule that does not exist, such as a removed one. {domain} is the domain of the address."
+  },
+  "admin.link_card_domains.not_found.description": {
+    "defaultMessage": "服务器照常获取其链接卡片。添加规则即可停止。",
+    "description": "Description of the page of a domain that has no rule."
+  },
+  "admin.link_card_domains.note": {
+    "defaultMessage": "备注",
+    "description": "Label of the note of a rule of the link card crawler."
+  },
+  "admin.link_card_domains.note.description": {
+    "defaultMessage": "设置此规则的原因。只有能打开此页面的人可以看到。",
+    "description": "Help under the note of a rule of the link card crawler."
+  },
+  "admin.link_card_domains.remove": {
+    "defaultMessage": "移除",
+    "description": "Button that removes a rule of the link card crawler, and the confirming button of its dialog."
+  },
+  "admin.link_card_domains.remove.description": {
+    "defaultMessage": "服务器已有的此域名卡片将恢复原样显示。被跳过的链接会在下次有帖子需要时获取卡片。备注将丢失。",
+    "description": "Description of the dialog that confirms removing a rule of the link card crawler."
+  },
+  "admin.link_card_domains.remove.section": {
+    "defaultMessage": "移除规则",
+    "description": "Heading of the section of a rule's page that removes it."
+  },
+  "admin.link_card_domains.remove.title": {
+    "defaultMessage": "要移除 {domain} 的规则吗？",
+    "description": "Title of the dialog that confirms removing a rule. {domain} is its domain."
+  },
+  "admin.link_card_domains.remove_failed": {
+    "defaultMessage": "无法移除规则：{reason}",
+    "description": "Error of removing a rule of the link card crawler. {reason} says why."
+  },
+  "admin.link_card_domains.remove_rule": {
+    "defaultMessage": "移除 {domain} 的规则",
+    "description": "Accessible name of the button that removes a rule. {domain} is its domain."
+  },
+  "admin.link_card_domains.removed": {
+    "defaultMessage": "已移除 {domain} 的规则。",
+    "description": "Status after removing a rule of the link card crawler. {domain} is its domain."
+  },
+  "admin.link_card_domains.retry": {
+    "defaultMessage": "重试",
+    "description": "Button that loads the rules of the link card crawler again after a failure."
+  },
+  "admin.link_card_domains.save": {
+    "defaultMessage": "保存",
+    "description": "Button that saves what a rule stops and its note, on the rule's page."
+  },
+  "admin.link_card_domains.save_failed": {
+    "defaultMessage": "无法保存规则：{reason}",
+    "description": "Error of the form of a rule, for another reason than its values. {reason} says why."
+  },
+  "admin.link_card_domains.saved": {
+    "defaultMessage": "已保存 {domain} 的规则。",
+    "description": "Status after saving a rule of the link card crawler. {domain} is its domain."
+  },
+  "admin.link_card_domains.search.clear": {
+    "defaultMessage": "清除搜索",
+    "description": "Button that clears the search of the rules."
+  },
+  "admin.link_card_domains.search.domain": {
+    "defaultMessage": "域名包含",
+    "description": "Label of the search field of the rules: a part of the domain."
+  },
+  "admin.link_card_domains.search.empty": {
+    "defaultMessage": "没有域名包含 {search} 的规则",
+    "description": "Heading of the list of rules when the search finds none. {search} is what was searched."
+  },
+  "admin.link_card_domains.search.label": {
+    "defaultMessage": "搜索规则",
+    "description": "Accessible name of the search form above the list of the rules of the link card crawler."
+  },
+  "admin.link_card_domains.search.submit": {
+    "defaultMessage": "搜索",
+    "description": "Button that searches the rules by domain."
+  },
+  "admin.link_card_domains.submit": {
+    "defaultMessage": "保存规则",
+    "description": "Button that saves the form of a rule of the link card crawler."
+  },
+  "admin.link_card_domains.summary": {
+    "defaultMessage": "在特定域名上停止链接卡片爬虫，或仅停止其图片。",
+    "description": "What the link card domains screen is for, in the menu of server administration."
+  },
+  "admin.link_card_domains.title": {
+    "defaultMessage": "链接卡片域名",
+    "description": "Heading and menu entry of the screen with the rules of the link card crawler per domain."
+  },
+  "admin.link_card_domains.too_long": {
+    "defaultMessage": "备注最多 {max, number} 个字符。",
+    "description": "Error of a note of a rule that is too long. {max} is the limit."
+  },
+  "admin.link_card_domains.updated": {
+    "defaultMessage": "最后设置时间",
+    "description": "Column of the list of rules: when the rule was last set."
+  }
+}
