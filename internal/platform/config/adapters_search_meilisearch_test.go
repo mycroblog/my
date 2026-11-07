@@ -6,6 +6,8 @@ package config
 
 import (
 	"errors"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -41,5 +43,42 @@ func TestLoadMeilisearch(t *testing.T) {
 				t.Errorf("%s: issue %d = %q, want prefix %q and no password", tc.name, i, got, w)
 			}
 		}
+	}
+}
+
+func TestLoadMeilisearchSettingsFile(t *testing.T) {
+	dir := t.TempDir()
+	file := func(name, content string) string {
+		p := filepath.Join(dir, name)
+		if err := os.WriteFile(p, []byte(content), 0o600); err != nil {
+			t.Fatal(err)
+		}
+		return p
+	}
+	meili := func(path string) map[string]string {
+		return with(minimal(), "MY_SEARCH", "meilisearch", "MY_SEARCH_MEILISEARCH_URL", "http://meilisearch:7700",
+			"MY_SEARCH_MEILISEARCH_SETTINGS_FILE", path)
+	}
+	ok := file("ok.json", `{"stopWords": ["the"]}`)
+	cfg, _, err := Load(source(meili(ok), nil))
+	if err != nil || cfg.SearchMeilisearchSettingsFile != ok {
+		t.Fatalf("Load() = %v, %v", cfg, err)
+	}
+	for name, path := range map[string]string{
+		"missing": filepath.Join(dir, "missing.json"),
+		"owned":   file("owned.json", `{"sortableAttributes": ["hidden-value"]}`),
+		"broken":  file("broken.json", `{"stopWords": hidden-value`),
+	} {
+		_, _, err := Load(source(meili(path), nil))
+		var ve *ValidationError
+		if !errors.As(err, &ve) || len(ve.Issues) != 1 || ve.Issues[0].Key != "search_meilisearch_settings_file" {
+			t.Errorf("%s: Load() = %v, want one issue of search_meilisearch_settings_file", name, err)
+		} else if strings.Contains(err.Error(), "hidden-value") {
+			t.Errorf("%s: Load() = %v, which quotes the file", name, err)
+		}
+	}
+	// With another search the file is not read.
+	if _, _, err := Load(source(with(minimal(), "MY_SEARCH_MEILISEARCH_SETTINGS_FILE", filepath.Join(dir, "missing.json")), nil)); err != nil {
+		t.Errorf("Load() with search = none: %v", err)
 	}
 }

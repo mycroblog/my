@@ -1018,7 +1018,7 @@ var schema = []field{
 	},
 	{
 		key:    "search_meilisearch_api_key",
-		doc:    "The master key of the Meilisearch server, or an API key with the actions `search`, `documents.add`, `documents.delete`, `indexes.create`, `indexes.get`, `settings.update`, and `tasks.get` on `search_meilisearch_index`. Empty sends no key, for a server without a master key.",
+		doc:    "The master key of the Meilisearch server, or an API key with the actions `search`, `documents.add`, `documents.get`, `documents.delete`, `indexes.create`, `indexes.get`, `indexes.delete`, `settings.update`, and `tasks.get` on `search_meilisearch_index`. Empty sends no key, for a server without a master key.",
 		secret: true,
 		set:    func(c *Config, v string) { c.SearchMeilisearchAPIKey = strings.TrimSpace(v) },
 	},
@@ -1028,6 +1028,11 @@ var schema = []field{
 		defDoc: "`my_statuses`",
 		check:  checkMeilisearchIndex,
 		set:    func(c *Config, v string) { c.SearchMeilisearchIndex = v },
+	},
+	{
+		key: "search_meilisearch_settings_file",
+		doc: "The path of a JSON object of Meilisearch index settings, to tune the engine: `rankingRules` (which must start with `sort`), `typoTolerance`, `stopWords`, `synonyms`, `dictionary`, `separatorTokens`, `nonSeparatorTokens`, `localizedAttributes`, `proximityPrecision`, `pagination`, and the like. The server sets `searchableAttributes`, `displayedAttributes`, `filterableAttributes`, and `sortableAttributes` itself and refuses a file that sets them. A setting the file leaves out takes the server's default. The server reads the file at start and sends the settings when they differ from what the index has. Empty uses the server's defaults.",
+		set: func(c *Config, v string) { c.SearchMeilisearchSettingsFile = v },
 	},
 	{
 		key: "voice",

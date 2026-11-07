@@ -10,9 +10,12 @@
 // The tasks of an index run in the order they were enqueued, so a write that succeeded also means
 // that every write before it is applied.
 //
-// The adapter creates the index when it does not exist and sends its settings the first time it
-// is used in a process, so that a new version of the adapter upgrades them; Meilisearch reindexes
-// the documents it holds by itself, so no change of the settings needs a rebuild.
+// The index settings are the adapter's defaults, overridden by the operator's settings file, and
+// the attributes that the port needs (ownedSettings), which the file may not set. The first call
+// in a process creates the index when it does not exist and sends the settings unless the index
+// already has them: a marker document (settingsDocID) holds the hash of the settings applied
+// last. Meilisearch reindexes the documents it holds by itself, so no change of the settings needs
+// a rebuild; the writes wait for the settings task in the order of the tasks.
 //
 // A document keeps its text in the field of its language: text_ja for Japanese, text_zh for
 // Chinese, text_ko for Korean, and text for every other language and for none. The index tells
@@ -64,6 +67,14 @@ var localized = []struct{ lang, field, locale string }{
 	{"ko", "text_ko", "kor"},
 }
 
+// settingsDocID is the ID of the marker document that holds the hash of the settings applied
+// last. It has no text, so no search finds it, and its visibility is neither of the port's.
+const (
+	settingsDocID      = "my_settings"
+	settingsVisibility = "settings"
+	fieldSettingsHash  = "settings_hash"
+)
+
 // cursorPrefix marks a cursor of this adapter, so that it can tell one it did not issue.
 const cursorPrefix = "m1:"
 
@@ -89,6 +100,9 @@ type Options struct {
 	APIKey string
 	// Index is the uid of the index (search_meilisearch_index), DefaultIndex when empty.
 	Index string
+	// Settings is the content of the settings file (search_meilisearch_settings_file), a JSON
+	// object of index settings, nil for the adapter's defaults.
+	Settings []byte
 	// HTTPClient calls the API: the operator configured the server, which may be on a private
 	// address, so it is the adapter's own client rather than the SSRF-guarded kernel.HTTPClient.
 	HTTPClient *http.Client
@@ -100,6 +114,7 @@ type Index struct {
 	key    string
 	uid    string
 	client *http.Client
+	set    indexSettings
 
 	mu sync.Mutex
 	// settingsTask is the task of the settings that this process enqueued, -1 before it did.
@@ -126,7 +141,11 @@ func New(o Options) (*Index, error) {
 	if o.HTTPClient == nil {
 		return nil, errors.New("meilisearch: no HTTP client")
 	}
-	return &Index{base: base, key: o.APIKey, uid: uid, client: o.HTTPClient, settingsTask: -1}, nil
+	set, err := parseSettings(o.Settings)
+	if err != nil {
+		return nil, err
+	}
+	return &Index{base: base, key: o.APIKey, uid: uid, client: o.HTTPClient, set: set, settingsTask: -1}, nil
 }
 
 // CheckURL checks search_meilisearch_url: an http: or https: URL with a host and nothing but a
@@ -224,7 +243,8 @@ func (e *Error) Error() string {
 
 // The error codes of Meilisearch that the adapter reads.
 const (
-	codeIndexNotFound = "index_not_found"
+	codeIndexNotFound    = "index_not_found"
+	codeDocumentNotFound = "document_not_found"
 )
 
 func isCode(err error, code string) bool {
@@ -262,27 +282,6 @@ func textField(lang string) string {
 // Latin letters and digits match their usual forms, which Meilisearch does not fold itself.
 func normalize(s string) string {
 	return norm.NFKC.String(s)
-}
-
-// settings returns the settings of the index that the adapter needs.
-func settings() map[string]any {
-	searchable := []string{fieldText}
-	locales := []map[string]any{}
-	for _, l := range localized {
-		searchable = append(searchable, l.field)
-		locales = append(locales, map[string]any{"attributePatterns": []string{l.field}, "locales": []string{l.locale}})
-	}
-	return map[string]any{
-		"searchableAttributes": searchable,
-		"filterableAttributes": []string{fieldStatusID, fieldAuthorID, fieldVisibility},
-		"sortableAttributes":   []string{fieldStatusID},
-		// The results are in the order of the IDs, newest first, whatever their relevance: sort
-		// comes first, and the IDs are unique.
-		"rankingRules": []string{"sort", "words", "typo", "proximity", "attribute", "exactness"},
-		// Every word of a query is a word of the document, as the port says, not a near one.
-		"typoTolerance":       map[string]any{"enabled": false},
-		"localizedAttributes": locales,
-	}
 }
 
 // Replace implements search.Index. Meilisearch adds the document, or replaces the whole document
@@ -324,9 +323,22 @@ func (x *Index) RemoveByVisibility(ctx context.Context, visibility search.Visibi
 	return x.write(ctx, "POST", x.indexPath("/documents/delete"), map[string]any{"filter": filterEquals(fieldVisibility, string(visibility))}, true)
 }
 
-// Clear implements search.Index. It deletes the documents and keeps the index and its settings.
+// Clear implements search.Index. It deletes the index, which is quicker than deleting each of its
+// documents, and creates it again with its settings.
 func (x *Index) Clear(ctx context.Context) error {
-	return x.write(ctx, "DELETE", x.indexPath("/documents"), nil, true)
+	var t taskRef
+	err := x.call(ctx, "DELETE", x.indexPath(""), nil, &t)
+	if err == nil {
+		err = x.await(ctx, t.TaskUID)
+	}
+	if err != nil && !isCode(err, codeIndexNotFound) {
+		return err
+	}
+	x.forget()
+	if err := x.ensure(ctx); err != nil {
+		return err
+	}
+	return x.settled(ctx)
 }
 
 // filterEquals returns the filter of a field equal to a value that isIdentifier accepts, so that
@@ -357,13 +369,14 @@ func (x *Index) write(ctx context.Context, method, path string, body any, remova
 	return x.settled(ctx)
 }
 
-// ensure creates the index when it does not exist and enqueues the settings, once in a process
-// while they succeed. It does not wait for the settings: the writes after them wait for them in
-// the order of the tasks, and settled checks that they succeeded.
+// ensure creates the index when it does not exist and enqueues the settings unless the marker
+// document says the index has them, once in a process while they succeed. It does not wait for
+// the settings: the writes after them wait for them in the order of the tasks, and settled checks
+// that they succeeded.
 func (x *Index) ensure(ctx context.Context) error {
 	x.mu.Lock()
 	defer x.mu.Unlock()
-	if x.settingsTask >= 0 {
+	if x.settingsTask >= 0 || x.settingsApplied {
 		return nil
 	}
 	err := x.call(ctx, "GET", x.indexPath(""), nil, nil)
@@ -377,17 +390,28 @@ func (x *Index) ensure(ctx context.Context) error {
 		// anyway; the primary key also comes with every document.
 	case err != nil:
 		return err
+	default:
+		var marker map[string]any
+		err := x.call(ctx, "GET", x.indexPath("/documents/"+settingsDocID+"?fields="+fieldSettingsHash), nil, &marker)
+		switch {
+		case err == nil && marker[fieldSettingsHash] == x.set.hash:
+			x.settingsApplied = true
+			return nil
+		case err != nil && !isCode(err, codeDocumentNotFound):
+			return err
+		}
 	}
 	var t taskRef
-	if err := x.call(ctx, "PATCH", x.indexPath("/settings"), settings(), &t); err != nil {
+	if err := x.call(ctx, "PATCH", x.indexPath("/settings"), x.set.body, &t); err != nil {
 		return err
 	}
-	x.settingsTask, x.settingsApplied = t.TaskUID, false
+	x.settingsTask = t.TaskUID
 	return nil
 }
 
-// settled checks, once, that the settings task of ensure succeeded; a write that succeeded came
-// after it, so it has finished. A failed one is enqueued again on the next call.
+// settled checks, once, that the settings task of ensure succeeded, and then records their hash
+// in the marker document. A write that succeeded came after the settings task, so it has
+// finished; Clear waits for it. A failed one is enqueued again on the next call.
 func (x *Index) settled(ctx context.Context) error {
 	x.mu.Lock()
 	uid, applied := x.settingsTask, x.settingsApplied
@@ -405,9 +429,13 @@ func (x *Index) settled(ctx context.Context) error {
 		}
 		return fmt.Errorf("meilisearch: the settings of the index: %w", err)
 	}
+	// The marker only saves sending the same settings again on the next start, so a failure to
+	// write it fails nothing.
+	marker := []map[string]any{{fieldStatusID: settingsDocID, fieldVisibility: settingsVisibility, fieldSettingsHash: x.set.hash}}
+	_ = x.call(ctx, "POST", x.indexPath("/documents")+"?primaryKey="+fieldStatusID, marker, nil)
 	x.mu.Lock()
 	if x.settingsTask == uid {
-		x.settingsApplied = true
+		x.settingsTask, x.settingsApplied = -1, true
 	}
 	x.mu.Unlock()
 	return nil

@@ -12,3 +12,6 @@ func checkMeilisearchURL(string) error { return nil }
 // checkMeilisearchIndex accepts every value: no adapter of this build reads
 // search_meilisearch_index.
 func checkMeilisearchIndex(string) error { return nil }
+
+// checkMeilisearchSettingsFile accepts every file: no adapter of this build reads it.
+func checkMeilisearchSettingsFile(string) error { return nil }

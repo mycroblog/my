@@ -219,6 +219,8 @@ type Config struct {
 	SearchMeilisearchURL    string
 	SearchMeilisearchAPIKey string
 	SearchMeilisearchIndex  string
+	// SearchMeilisearchSettingsFile is the path of the operator's index settings, read at start.
+	SearchMeilisearchSettingsFile string
 	// PaymentsProvider is the payment provider of the supporters (ADR-0074 §5): "none" or a
 	// provider's name. PaymentsReconcileInterval and PaymentsReconcileMaxRequests bound the
 	// reconciliation with it (§4).
@@ -453,6 +455,7 @@ func (c *Config) LogValue() slog.Value {
 		slog.String("search_meilisearch_url", c.SearchMeilisearchURL),
 		slog.String("search_meilisearch_api_key", redact(c.SearchMeilisearchAPIKey != "")),
 		slog.String("search_meilisearch_index", c.SearchMeilisearchIndex),
+		slog.String("search_meilisearch_settings_file", c.SearchMeilisearchSettingsFile),
 		slog.String("voice", c.Voice),
 		slog.Int("voice_p2p_max_participants", c.VoiceP2PMaxParticipants),
 		slog.Int("voice_sfu_max_participants", c.VoiceMaxParticipants),

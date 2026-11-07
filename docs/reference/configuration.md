@@ -165,6 +165,7 @@ An instance setting that has never been set reads as its default, which is defin
 | [`search_meilisearch_url`](#search_meilisearch_url) | `MY_SEARCH_MEILISEARCH_URL` | none | when `search = meilisearch` | no |
 | [`search_meilisearch_api_key`](#search_meilisearch_api_key) | `MY_SEARCH_MEILISEARCH_API_KEY` | none | no | yes |
 | [`search_meilisearch_index`](#search_meilisearch_index) | `MY_SEARCH_MEILISEARCH_INDEX` | `my_statuses` | no | no |
+| [`search_meilisearch_settings_file`](#search_meilisearch_settings_file) | `MY_SEARCH_MEILISEARCH_SETTINGS_FILE` | none | no | no |
 | [`voice`](#voice) | `MY_VOICE` | `off` | no | no |
 | [`voice_p2p_max_participants`](#voice_p2p_max_participants) | `MY_VOICE_P2P_MAX_PARTICIPANTS` | `10` | no | no |
 | [`voice_sfu_max_participants`](#voice_sfu_max_participants) | `MY_VOICE_SFU_MAX_PARTICIPANTS` | `10` | no | no |
@@ -1345,7 +1346,7 @@ The base URL of the Meilisearch server of `search = meilisearch`, such as `https
 
 ### `search_meilisearch_api_key`
 
-The master key of the Meilisearch server, or an API key with the actions `search`, `documents.add`, `documents.delete`, `indexes.create`, `indexes.get`, `settings.update`, and `tasks.get` on `search_meilisearch_index`. Empty sends no key, for a server without a master key.
+The master key of the Meilisearch server, or an API key with the actions `search`, `documents.add`, `documents.get`, `documents.delete`, `indexes.create`, `indexes.get`, `indexes.delete`, `settings.update`, and `tasks.get` on `search_meilisearch_index`. Empty sends no key, for a server without a master key.
 
 - Environment variable: `MY_SEARCH_MEILISEARCH_API_KEY` or `MY_SEARCH_MEILISEARCH_API_KEY_FILE`
 - Default: none
@@ -1357,6 +1358,14 @@ The uid of the Meilisearch index of the posts, which the server creates when it 
 
 - Environment variable: `MY_SEARCH_MEILISEARCH_INDEX`
 - Default: `my_statuses`
+- Required: no
+
+### `search_meilisearch_settings_file`
+
+The path of a JSON object of Meilisearch index settings, to tune the engine: `rankingRules` (which must start with `sort`), `typoTolerance`, `stopWords`, `synonyms`, `dictionary`, `separatorTokens`, `nonSeparatorTokens`, `localizedAttributes`, `proximityPrecision`, `pagination`, and the like. The server sets `searchableAttributes`, `displayedAttributes`, `filterableAttributes`, and `sortableAttributes` itself and refuses a file that sets them. A setting the file leaves out takes the server's default. The server reads the file at start and sends the settings when they differ from what the index has. Empty uses the server's defaults.
+
+- Environment variable: `MY_SEARCH_MEILISEARCH_SETTINGS_FILE`
+- Default: none
 - Required: no
 
 ### `voice`

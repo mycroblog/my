@@ -3,6 +3,8 @@
 package meilisearch_test
 
 import (
+	"encoding/json"
+	"net/http"
 	"os"
 	"slices"
 	"testing"
@@ -18,12 +20,66 @@ func TestMain(m *testing.M) { os.Exit(meilisearchtest.Main(m)) }
 
 func newServerIndex(t *testing.T) *meilisearch.Index {
 	t.Helper()
-	s := meilisearchtest.New(t)
-	x, err := meilisearch.New(meilisearch.Options{URL: s.URL, APIKey: s.Key, Index: s.Index, HTTPClient: newClient()})
+	return newServerIndexWith(t, meilisearchtest.New(t), nil)
+}
+
+func newServerIndexWith(t *testing.T, s meilisearchtest.Server, settings []byte) *meilisearch.Index {
+	t.Helper()
+	x, err := meilisearch.New(meilisearch.Options{URL: s.URL, APIKey: s.Key, Index: s.Index, Settings: settings, HTTPClient: newClient()})
 	if err != nil {
 		t.Fatal(err)
 	}
 	return x
+}
+
+// tunedSettings is the example settings file of the operator documentation
+// (docs/operations/search-engines.md#tuning).
+const tunedSettings = `{
+  "localizedAttributes": [
+    {"attributePatterns": ["text_ja"], "locales": ["jpn"]}
+  ],
+  "separatorTokens": ["・"],
+  "proximityPrecision": "byAttribute",
+  "typoTolerance": {"enabled": true, "minWordSizeForTypos": {"oneTypo": 8, "twoTypos": 12}},
+  "synonyms": {"ご飯": ["ごはん"], "ごはん": ["ご飯"]}
+}`
+
+// TestSearchServerContractWithSettingsFile runs the contract on an index tuned by a settings file.
+func TestSearchServerContractWithSettingsFile(t *testing.T) {
+	testkit.SearchIndexContract(t, func(t *testing.T) search.Index {
+		return newServerIndexWith(t, meilisearchtest.New(t), []byte(tunedSettings))
+	})
+}
+
+// TestSearchServerSettingsAreSentOnce checks that a process whose settings the index already has
+// sends none, and that one with other settings does.
+func TestSearchServerSettingsAreSentOnce(t *testing.T) {
+	s := meilisearchtest.New(t)
+	updates := func() int {
+		t.Helper()
+		req, _ := http.NewRequestWithContext(t.Context(), http.MethodGet, s.URL+"/tasks?types=settingsUpdate&indexUids="+s.Index, nil)
+		req.Header.Set("Authorization", "Bearer "+s.Key)
+		res, err := newClient().Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer func() { _ = res.Body.Close() }()
+		var body struct {
+			Total int `json:"total"`
+		}
+		if err := json.NewDecoder(res.Body).Decode(&body); err != nil {
+			t.Fatal(err)
+		}
+		return body.Total
+	}
+	for i, settings := range []string{tunedSettings, tunedSettings, `{"stopWords": ["the"]}`} {
+		if err := newServerIndexWith(t, s, []byte(settings)).Replace(t.Context(), doc(1, "", "alpha")); err != nil {
+			t.Fatal(err)
+		}
+		if got, want := updates(), []int{1, 1, 2}[i]; got != want {
+			t.Errorf("after process %d, %d settings updates, want %d", i+1, got, want)
+		}
+	}
 }
 
 // TestSearchServerContract runs the contract on a real Meilisearch (scripts/task.sh go:test-search).

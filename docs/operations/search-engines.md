@@ -35,6 +35,7 @@ docker run -d --name meilisearch --restart unless-stopped \
 search = "meilisearch"
 search_meilisearch_url = "http://meilisearch:7700"
 # search_meilisearch_index = "my_statuses"
+# search_meilisearch_settings_file = "/etc/my/meilisearch-settings.json"
 ```
 
 Set the key through the environment (`MY_SEARCH_MEILISEARCH_API_KEY`, or `MY_SEARCH_MEILISEARCH_API_KEY_FILE`), never in the config file. It may be the master key, but a key that can do only what `my` needs is safer. Create one with the master key:
@@ -43,7 +44,8 @@ Set the key through the environment (`MY_SEARCH_MEILISEARCH_API_KEY`, or `MY_SEA
 curl -X POST http://meilisearch:7700/keys \
   -H "Authorization: Bearer $MEILI_MASTER_KEY" -H 'Content-Type: application/json' \
   --data '{"description": "my", "indexes": ["my_statuses"],
-    "actions": ["search", "documents.add", "documents.delete", "indexes.create", "indexes.get", "settings.update", "tasks.get"],
+    "actions": ["search", "documents.add", "documents.get", "documents.delete", "indexes.create", "indexes.get",
+      "indexes.delete", "settings.update", "tasks.get"],
     "expiresAt": null}'
 ```
 
@@ -53,17 +55,50 @@ Several servers can share one Meilisearch server with a different `search_meilis
 
 ### The index and its settings
 
-The server creates the index when it does not exist, and sends the settings it needs the first time it uses the index after each start: the fields to search, filter, and sort on, the language of each text field, the order of the results, and no typo tolerance. Do not change these settings by hand: the next start puts them back. When a new version of `my` changes them, Meilisearch reindexes the documents it holds by itself in the background, and nothing needs a rebuild. Until it finishes, the writes of the index wait behind it, and their jobs retry when they run out of time.
+The server creates the index when it does not exist. The first time it uses the index after a start, it compares the settings it would send with those it applied last, which it records as a hash in a document of the index that no search finds, and sends them only when they differ: a restart with nothing changed sends nothing. The settings are:
 
-A rebuild (`my search rebuild`, see [rebuilding the index](search.md#rebuilding-the-index)) is needed when:
+- **What the server sets itself:** `searchableAttributes` (the text fields of the posts), `displayedAttributes` (all), `filterableAttributes` (the post ID, the author, and the visibility), and `sortableAttributes` (the post ID). The search depends on them, and a settings file that sets one is refused.
+- **What you can tune:** everything else, in the [settings file](#tuning). Without one, or for what the file leaves out, the server uses its defaults: `rankingRules` of `sort`, `words`, `typo`, `proximity`, `attribute`, and `exactness`; no typo tolerance; the languages of the Japanese, Chinese, and Korean fields in `localizedAttributes`; and Meilisearch's own defaults for the rest (`stopWords`, `synonyms`, `dictionary`, `separatorTokens`, `nonSeparatorTokens`, `proximityPrecision`, `pagination`, `faceting`, `distinctAttribute`, `searchCutoffMs`, `prefixSearch`). Settings you change by hand on the engine stay only until the server next sends its settings.
 
-- You change `search_meilisearch_index`: the new index starts empty.
+**A change of the settings needs no `my search rebuild`.** Meilisearch reindexes the documents it holds by itself, in the background, and the posts stay in the index. It only takes time, roughly as long as indexing them did. The start of the server does not wait for it: the server sends the settings and goes on. Meanwhile searches answer with the previous settings, and the writes of the index wait behind the reindex, since Meilisearch runs the tasks of an index in order; a job whose write does not finish within its 10 seconds retries later, so posts written during the reindex reach the index after it. `my search clear` waits for the settings of the new, empty index, which take no time.
+
+A rebuild is needed only when the index starts empty:
+
+- You change `search_meilisearch_index`.
 - You start a new, empty Meilisearch server, for example rather than upgrading the old one.
 - The release notes of a version of `my` say that it writes the documents differently.
 
-Writes are tasks that Meilisearch runs in order. The server waits for the task of each write, and a task that fails or does not end within the time of the job makes the job retry, so a Meilisearch that is down or busy delays the index without losing a change. The tasks Meilisearch keeps are listed by `GET /tasks`, with the error of any that failed.
+Writes are tasks that Meilisearch runs in order. The server waits for the task of each write, and a task that fails or does not end within the time of the job makes the job retry, so a Meilisearch that is down or busy delays the index without losing a change. A settings task that fails, for example over a value of the settings file that Meilisearch refuses, fails the writes until it succeeds; `GET /tasks?types=settingsUpdate` on the engine shows its error. `my search clear` deletes the index and creates it again with the settings.
 
 To upgrade Meilisearch itself, follow its upgrade guide (a dump, or its dumpless upgrade), or start the new version empty and run `my search rebuild`.
+
+### What a search sends
+
+The query of a search is fixed, whatever the settings file says: `matchingStrategy: all`, so that a post must have every word; `sort: status_id:desc`, newest first; a `filter` on the post ID for the next page; a `limit` of the page plus one; `attributesToRetrieve` of the post ID; and `showMatchesPosition`, which tells a query that has no word. The double quotes of a phrase and the minus sign before a word, which Meilisearch would read as operators, are dropped, so a query is always plain words.
+
+### Tuning
+
+Tune the engine with a JSON file of [Meilisearch index settings](https://www.meilisearch.com/docs/reference/api/settings), named by `search_meilisearch_settings_file`. The server checks it at start, when `search = meilisearch`: it must exist and be a JSON object, must not set the four settings the server sets itself, and its `rankingRules`, when it has them, must start with `sort`, which keeps the results newest first. Meilisearch checks the values when the server sends them. The server never logs the file's content.
+
+An example that narrows the languages to Japanese, treats `・` as a separator, makes proximity cheaper to index, and turns typo tolerance on for long words:
+
+```json
+{
+  "localizedAttributes": [
+    {"attributePatterns": ["text_ja"], "locales": ["jpn"]}
+  ],
+  "separatorTokens": ["・"],
+  "proximityPrecision": "byAttribute",
+  "typoTolerance": {"enabled": true, "minWordSizeForTypos": {"oneTypo": 8, "twoTypos": 12}},
+  "synonyms": {"ご飯": ["ごはん"], "ごはん": ["ご飯"]}
+}
+```
+
+What a change costs:
+
+- Every change of the file, on the next start, makes Meilisearch reindex every document, as above: no data is lost and nothing needs a rebuild, but writes wait until it ends. Change it at a quiet time, and watch the task with `GET /tasks?types=settingsUpdate`.
+- `localizedAttributes` and the tokens decide how text is split into words: a narrower list of locales can segment a post in another language as the wrong one (see below), so keep the Japanese, Chinese, and Korean fields unless the server has none of those posts.
+- Typo tolerance and synonyms make a search find more than the exact words. The ranking rules after `sort` change nothing, since no two posts share an ID; leaving them out only saves Meilisearch a little work.
 
 ### Sizing
 

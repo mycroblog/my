@@ -10,6 +10,8 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 	"testing"
@@ -56,6 +58,9 @@ type stub struct {
 	matchNothing bool
 	// searchCode answers a search with this error code and 404.
 	searchCode string
+
+	// marker is the settings hash of the marker document, empty when there is none.
+	marker string
 
 	next  int64
 	tasks map[int64]*stubTask
@@ -131,6 +136,18 @@ func (s *stub) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		answer(202, map[string]any{"taskUid": uid, "status": "enqueued"})
 	}
 	switch {
+	case r.Method == "GET" && r.URL.Path == "/indexes/idx/documents/my_settings":
+		if s.marker == "" {
+			meiliError(404, "document_not_found")
+			return
+		}
+		answer(200, map[string]any{"settings_hash": s.marker})
+	case r.Method == "POST" && r.URL.Path == "/indexes/idx/documents" && len(req.List) == 1 && req.List[0]["status_id"] == "my_settings":
+		s.marker, _ = req.List[0]["settings_hash"].(string)
+		enqueue("marker")
+	case r.Method == "DELETE" && r.URL.Path == "/indexes/idx":
+		s.indexMissing, s.marker = true, ""
+		enqueue("delete")
 	case r.Method == "GET" && r.URL.Path == "/indexes/idx":
 		if s.indexMissing {
 			meiliError(404, "index_not_found")
@@ -169,7 +186,8 @@ func (s *stub) writes() []request {
 	defer s.mu.Unlock()
 	var out []request
 	for _, r := range s.reqs {
-		if strings.HasPrefix(r.Path, "/tasks/") || r.Path == "/indexes" || r.Path == "/indexes/idx" || r.Path == "/indexes/idx/settings" {
+		if strings.HasPrefix(r.Path, "/tasks/") || r.Path == "/indexes" || r.Path == "/indexes/idx" || r.Path == "/indexes/idx/settings" ||
+			r.Path == "/indexes/idx/documents/my_settings" || len(r.List) == 1 && r.List[0]["status_id"] == "my_settings" {
 			continue
 		}
 		out = append(out, r)
@@ -232,11 +250,10 @@ func TestReplaceCreatesTheIndexAndWaitsForTheTask(t *testing.T) {
 	}
 }
 
-func TestSettings(t *testing.T) {
-	s, x := newStub(t)
-	if err := x.Clear(t.Context()); err != nil {
-		t.Fatal(err)
-	}
+// sentSettings returns the JSON of the last settings sent.
+func (s *stub) sentSettings() string {
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	var settings map[string]any
 	for _, r := range s.reqs {
 		if r.Path == "/indexes/idx/settings" {
@@ -244,19 +261,145 @@ func TestSettings(t *testing.T) {
 		}
 	}
 	b, _ := json.Marshal(settings)
+	return string(b)
+}
+
+func newStubWith(t *testing.T, s *stub, settings string) *meilisearch.Index {
+	t.Helper()
+	srv := httptest.NewServer(s)
+	t.Cleanup(srv.Close)
+	o := meilisearch.Options{URL: srv.URL, APIKey: testKey, Index: "idx", HTTPClient: newClient()}
+	if settings != "" {
+		o.Settings = []byte(settings)
+	}
+	x, err := meilisearch.New(o)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return x
+}
+
+func TestSettings(t *testing.T) {
+	s, x := newStub(t)
+	if err := x.Remove(t.Context(), statusID(1)); err != nil {
+		t.Fatal(err)
+	}
+	b := s.sentSettings()
 	for _, want := range []string{
 		`"filterableAttributes":["status_id","author_id","visibility"]`,
 		`"sortableAttributes":["status_id"]`,
 		`"rankingRules":["sort",`,
 		`"typoTolerance":{"enabled":false}`,
 		`{"attributePatterns":["text_ja"],"locales":["jpn"]}`,
+		`"stopWords":null`,
+		`"displayedAttributes":["*"]`,
 	} {
-		if !strings.Contains(string(b), want) {
+		if !strings.Contains(b, want) {
 			t.Errorf("the settings %s lack %s", b, want)
 		}
 	}
 	if s.count("POST", "/indexes") != 0 {
 		t.Error("an index that exists was created again")
+	}
+}
+
+// The settings file overrides the defaults, the server's own attributes override nothing in it,
+// and unchanged settings are not sent again by the next process.
+func TestSettingsFile(t *testing.T) {
+	s := &stub{t: t, tasks: map[int64]*stubTask{}}
+	file := `{"rankingRules": ["sort", "words"], "typoTolerance": {"enabled": true}, "stopWords": ["the"],
+		"localizedAttributes": [{"attributePatterns": ["text_ja"], "locales": ["jpn"]}]}`
+	x := newStubWith(t, s, file)
+	if err := x.Remove(t.Context(), statusID(1)); err != nil {
+		t.Fatal(err)
+	}
+	b := s.sentSettings()
+	for _, want := range []string{
+		`"rankingRules":["sort","words"]`, `"typoTolerance":{"enabled":true}`, `"stopWords":["the"]`,
+		`"localizedAttributes":[{"attributePatterns":["text_ja"],"locales":["jpn"]}]`, `"synonyms":null`,
+		`"filterableAttributes":["status_id","author_id","visibility"]`,
+	} {
+		if !strings.Contains(b, want) {
+			t.Errorf("the settings %s lack %s", b, want)
+		}
+	}
+	if s.marker == "" {
+		t.Fatal("the hash of the settings was not recorded")
+	}
+
+	// A new process with the same file sends nothing; one with another file sends it.
+	if err := newStubWith(t, s, file).Remove(t.Context(), statusID(1)); err != nil {
+		t.Fatal(err)
+	}
+	if n := s.count("PATCH", "/indexes/idx/settings"); n != 1 {
+		t.Errorf("unchanged settings were sent %d times, want once", n)
+	}
+	if err := newStubWith(t, s, `{"stopWords": ["a"]}`).Remove(t.Context(), statusID(1)); err != nil {
+		t.Fatal(err)
+	}
+	if n := s.count("PATCH", "/indexes/idx/settings"); n != 2 {
+		t.Errorf("changed settings were sent %d times in all, want twice", n)
+	}
+	if b := s.sentSettings(); !strings.Contains(b, `"typoTolerance":{"enabled":false}`) || !strings.Contains(b, `"rankingRules":["sort","words","typo"`) {
+		t.Errorf("the settings %s do not go back to the defaults for what the file no longer sets", b)
+	}
+}
+
+func TestClearDeletesTheIndexAndAppliesTheSettingsAgain(t *testing.T) {
+	s, x := newStub(t)
+	if err := x.Replace(t.Context(), doc(1, "", "alpha")); err != nil {
+		t.Fatal(err)
+	}
+	s.mu.Lock()
+	s.polls = 2
+	s.mu.Unlock()
+	if err := x.Clear(t.Context()); err != nil {
+		t.Fatal(err)
+	}
+	if s.count("DELETE", "/indexes/idx") != 1 || s.count("POST", "/indexes") != 1 || s.count("PATCH", "/indexes/idx/settings") != 2 {
+		t.Errorf("Clear sent %+v", s.reqs)
+	}
+	if s.marker == "" {
+		t.Error("Clear returned before the settings of the new index were applied")
+	}
+	if err := x.Clear(t.Context()); err != nil {
+		t.Errorf("Clear again: %v", err)
+	}
+}
+
+func TestSettingsFileChecks(t *testing.T) {
+	dir := t.TempDir()
+	write := func(name, content string) string {
+		p := filepath.Join(dir, name)
+		if err := os.WriteFile(p, []byte(content), 0o600); err != nil {
+			t.Fatal(err)
+		}
+		return p
+	}
+	if err := meilisearch.CheckSettingsFile(write("ok.json", `{"stopWords": ["the"], "rankingRules": ["sort", "words"]}`)); err != nil {
+		t.Errorf("CheckSettingsFile(ok) = %v", err)
+	}
+	for name, content := range map[string]string{
+		"array.json":    `["secret-value"]`,
+		"broken.json":   `{"stopWords": [secret-value`,
+		"two.json":      `{} {}`,
+		"null.json":     `null`,
+		"owned.json":    `{"filterableAttributes": ["secret-value"]}`,
+		"unsorted.json": `{"rankingRules": ["words", "sort"]}`,
+		"twice.json":    `{"rankingRules": ["sort", "words", "sort"]}`,
+	} {
+		err := meilisearch.CheckSettingsFile(write(name, content))
+		if err == nil {
+			t.Errorf("CheckSettingsFile(%s) = nil", name)
+		} else if strings.Contains(err.Error(), "secret-value") {
+			t.Errorf("CheckSettingsFile(%s) = %v, which quotes the file", name, err)
+		}
+		if _, err := meilisearch.New(meilisearch.Options{URL: "http://h", HTTPClient: newClient(), Settings: []byte(content)}); err == nil {
+			t.Errorf("New with %s = nil", name)
+		}
+	}
+	if err := meilisearch.CheckSettingsFile(filepath.Join(dir, "missing.json")); err == nil {
+		t.Error("CheckSettingsFile(missing) = nil")
 	}
 }
 
@@ -340,7 +483,6 @@ func TestRemovalRequests(t *testing.T) {
 		"DELETE /indexes/idx/documents/" + statusID(1) + " <nil>",
 		`POST /indexes/idx/documents/delete author_id = "0190a000-0000-7000-8000-00000000000a"`,
 		`POST /indexes/idx/documents/delete visibility = "local"`,
-		"DELETE /indexes/idx/documents <nil>",
 	}
 	for i, r := range w {
 		got := fmt.Sprintf("%s %s %v", r.Method, r.Path, r.Body["filter"])
