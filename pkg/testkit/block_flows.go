@@ -18,18 +18,19 @@ import (
 	"github.com/mycroblog/my/internal/domain/graph"
 )
 
-// BlockRepositoryContract verifies the block and mute part of the graph repository of a
-// database adapter through the use cases between local accounts: blocking ends the follows in
-// both directions with the reason blocked and refuses follows while it is in force, unblocking,
-// blocking again as a new block that keeps the earlier one on record, paging blocks, rejecting
-// invalid blocks, recording each retraction once, concurrent follows and blocks of one pair,
-// the emitted domain events, the blocks of remote accounts received from their servers and a
-// local account's block of a remote one, muting with and without expiry (an expired mute no longer applies
-// on read), paging mutes, rejecting invalid mutes, deleting expired mutes with an Unmuted each,
-// muting domains (once each, in the order of their domains, with their events and replay),
-// and the property that follow_edges,
+// BlockFlows verifies the block and mute use cases of the graph module between accounts that the
+// account module keeps, the flows of ADR-0153 §1, which internal/flowtest/graph runs once on
+// SQLite; BlockRepositoryContract checks the graph repository's blocks and mutes on every
+// adapter. Blocking ends the follows in both directions with the reason blocked and refuses
+// follows while it is in force, unblocking, blocking again as a new block that keeps the earlier
+// one on record, paging blocks, rejecting invalid blocks, recording each retraction once,
+// concurrent follows and blocks of one pair, the emitted domain events, the blocks of remote
+// accounts received from their servers and a local account's block of a remote one, muting with
+// and without expiry (an expired mute no longer applies on read), paging mutes, rejecting invalid
+// mutes, deleting expired mutes with an Unmuted each, muting domains (once each, in the order of
+// their domains, with their events and replay), and the property that follow_edges,
 // follow_counters, and block_edges equal a rebuild from the follows, the blocks, and their events.
-func BlockRepositoryContract(t *testing.T, newHarness FollowFactory) {
+func BlockFlows(t *testing.T, newHarness FollowFactory) {
 	t.Helper()
 	cases := []struct {
 		name string
