@@ -1,0 +1,146 @@
+{
+  "admin.registrations.account_gone": {
+    "defaultMessage": "已移除的账号",
+    "description": "Heading of a registration on the registrations admin screen, and the applicant in its sentences, when the user's account no longer exists."
+  },
+  "admin.registrations.already_approved": {
+    "defaultMessage": "{applicant} 已由其他审核员批准，该决定保持不变。",
+    "description": "Status after a moderator decided a registration that another moderator had approved first; nothing changed. {applicant} is the applicant's @username."
+  },
+  "admin.registrations.already_rejected": {
+    "defaultMessage": "{applicant} 已由其他审核员拒绝，该决定保持不变。",
+    "description": "Status after a moderator decided a registration that another moderator had rejected first; nothing changed. {applicant} is the applicant's @username."
+  },
+  "admin.registrations.approve": {
+    "defaultMessage": "批准",
+    "description": "Button of a pending registration that opens the confirmation of approving it, and the button of that confirmation that approves it."
+  },
+  "admin.registrations.approve_applicant": {
+    "defaultMessage": "批准 {applicant}",
+    "description": "Accessible name of the approve button of a pending registration. {applicant} is the applicant's @username."
+  },
+  "admin.registrations.approved": {
+    "defaultMessage": "已批准 {applicant}，对方现在可以登录。",
+    "description": "Status after a moderator approved a registration. {applicant} is the applicant's @username."
+  },
+  "admin.registrations.cancel": {
+    "defaultMessage": "取消",
+    "description": "Button of the confirmation of approving or rejecting a registration that closes it without deciding."
+  },
+  "admin.registrations.characters_left": {
+    "defaultMessage": "{count, plural, other {还可输入 # 个字符}}",
+    "description": "Character count under the note of a registration decision while the text is within the limit."
+  },
+  "admin.registrations.characters_over": {
+    "defaultMessage": "{count, plural, other {超出 # 个字符}}",
+    "description": "Character count under the note of a registration decision when the text is longer than the limit."
+  },
+  "admin.registrations.confirm_approve.description": {
+    "defaultMessage": "{applicant} 将可以登录并开始发帖。此决定之后无法更改。",
+    "description": "Text of the confirmation before approving a registration. {applicant} is the applicant's @username."
+  },
+  "admin.registrations.confirm_approve.title": {
+    "defaultMessage": "要批准 {applicant} 吗？",
+    "description": "Title of the confirmation before approving a registration. {applicant} is the applicant's @username."
+  },
+  "admin.registrations.confirm_reject.description": {
+    "defaultMessage": "{applicant} 将无法登录。此决定之后无法更改。",
+    "description": "Text of the confirmation before rejecting a registration. {applicant} is the applicant's @username."
+  },
+  "admin.registrations.confirm_reject.title": {
+    "defaultMessage": "要拒绝 {applicant} 吗？",
+    "description": "Title of the confirmation before rejecting a registration. {applicant} is the applicant's @username."
+  },
+  "admin.registrations.decide_failed": {
+    "defaultMessage": "无法保存决定：{reason}",
+    "description": "Error in the confirmation of approving or rejecting a registration when the request failed. {reason} is why."
+  },
+  "admin.registrations.email": {
+    "defaultMessage": "电子邮件",
+    "description": "Term of a pending registration's email address."
+  },
+  "admin.registrations.email.none": {
+    "defaultMessage": "无",
+    "description": "Value of a pending registration's email address when the user has none."
+  },
+  "admin.registrations.email_verified": {
+    "defaultMessage": "电子邮件已确认",
+    "description": "Term of whether the applicant confirmed their email address."
+  },
+  "admin.registrations.email_verified.no": {
+    "defaultMessage": "未确认",
+    "description": "Value when the applicant has not confirmed their email address."
+  },
+  "admin.registrations.email_verified.yes": {
+    "defaultMessage": "已确认",
+    "description": "Value when the applicant confirmed their email address."
+  },
+  "admin.registrations.empty": {
+    "defaultMessage": "没有等待批准的注册",
+    "description": "Heading of the registrations admin screen when no registration awaits a decision."
+  },
+  "admin.registrations.empty.description": {
+    "defaultMessage": "注册需要批准时，新的注册会显示在这里。",
+    "description": "Text under the heading of the empty registrations admin screen."
+  },
+  "admin.registrations.invite": {
+    "defaultMessage": "邀请",
+    "description": "Term of whether the applicant signed up with an invite."
+  },
+  "admin.registrations.invite.none": {
+    "defaultMessage": "无",
+    "description": "Value when the applicant signed up without an invite."
+  },
+  "admin.registrations.invite.used": {
+    "defaultMessage": "通过邀请注册",
+    "description": "Value when the applicant signed up with an invite."
+  },
+  "admin.registrations.note": {
+    "defaultMessage": "给审核员的备注",
+    "description": "Label of the optional note in the confirmation of approving or rejecting a registration."
+  },
+  "admin.registrations.note.description": {
+    "defaultMessage": "可选。只有审核员可以看到。",
+    "description": "Hint under the note of a registration decision."
+  },
+  "admin.registrations.note.too_long": {
+    "defaultMessage": "最多使用 {max, number} 个字符",
+    "description": "Error under the note of a registration decision when it is too long. {max} is the limit."
+  },
+  "admin.registrations.reason": {
+    "defaultMessage": "加入理由",
+    "description": "Term of the reason the applicant gave for joining."
+  },
+  "admin.registrations.reason.none": {
+    "defaultMessage": "未填写理由",
+    "description": "Value when the applicant gave no reason for joining."
+  },
+  "admin.registrations.reject": {
+    "defaultMessage": "拒绝",
+    "description": "Button of a pending registration that opens the confirmation of rejecting it, and the button of that confirmation that rejects it."
+  },
+  "admin.registrations.reject_applicant": {
+    "defaultMessage": "拒绝 {applicant}",
+    "description": "Accessible name of the reject button of a pending registration. {applicant} is the applicant's @username."
+  },
+  "admin.registrations.rejected": {
+    "defaultMessage": "已拒绝 {applicant}。",
+    "description": "Status after a moderator rejected a registration. {applicant} is the applicant's @username."
+  },
+  "admin.registrations.submitted_at": {
+    "defaultMessage": "注册时间",
+    "description": "Term of when the applicant signed up."
+  },
+  "admin.registrations.summary": {
+    "defaultMessage": "等待批准的注册，以及批准或拒绝它们。",
+    "description": "Description of the registration review screen in the administration menu."
+  },
+  "admin.registrations.title": {
+    "defaultMessage": "注册",
+    "description": "Title of the admin screen that lists the registrations awaiting approval."
+  },
+  "admin.registrations.column.applicant": {
+    "defaultMessage": "申请人",
+    "description": "Header of the column of the registrations table that names the applicant."
+  }
+}

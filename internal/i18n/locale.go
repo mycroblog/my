@@ -32,21 +32,31 @@ func formattingLocale(locale string) string {
 	return locale
 }
 
-// parentLocales overrides the default parent (drop the last subtag) where that would
-// cross scripts, following CLDR parentLocales: Traditional Chinese never falls back to
-// "zh", which is Simplified.
+// parentLocales overrides the default parent (drop the last subtag) so that each tag reaches
+// the one catalog locale of its language and script (ADR-0009 §2): Simplified Chinese ("zh",
+// "zh-SG", "zh-Hans", "zh-Hans-*") resolves to zh-CN, Traditional Chinese ("zh-HK", "zh-MO",
+// "zh-Hant", "zh-Hant-*") to zh-TW, and Portuguese ("pt", "pt-PT") to pt-BR. A catalog locale
+// with a region ends its chain before SourceLocale, so that a message missing from it falls
+// back to SourceLocale and never to another locale (zh-TW never reaches zh-CN).
 var parentLocales = map[string]string{
-	"zh-Hant": "",
-	"zh-HK":   "zh-Hant",
-	"zh-MO":   "zh-Hant",
-	"zh-TW":   "zh-Hant",
+	"zh":      "zh-CN",
+	"zh-SG":   "zh-CN",
+	"zh-Hans": "zh-CN",
+	"zh-CN":   "",
+	"zh-Hant": "zh-TW",
+	"zh-HK":   "zh-TW",
+	"zh-MO":   "zh-TW",
+	"zh-TW":   "",
+	"pt":      "pt-BR",
+	"pt-PT":   "pt-BR",
+	"pt-BR":   "",
 }
 
 // FallbackChain returns the locales consulted for a message, most specific first,
-// always ending with SourceLocale: zh-Hant-TW -> zh-Hant -> en, ja-JP -> ja -> en.
+// always ending with SourceLocale: zh-Hant-HK -> zh-Hant -> zh-TW -> en, ja-JP -> ja -> en.
 func FallbackChain(locale string) []string {
 	var chain []string
-	for l := Canonicalize(locale); l != ""; {
+	for l := Canonicalize(locale); l != "" && !slices.Contains(chain, l); {
 		chain = append(chain, l)
 		if p, ok := parentLocales[l]; ok {
 			l = p
@@ -62,6 +72,26 @@ func FallbackChain(locale string) []string {
 		chain = append(chain, SourceLocale)
 	}
 	return chain
+}
+
+// Aliases returns the tags other than locale that parentLocales resolves to it, longest
+// first: zh-Hans, zh-SG and zh for zh-CN. A tag of a region or script under one of them
+// ("zh-Hans-SG") resolves to locale too; a tag of a language alone ("zh") does only by
+// itself, since another tag of its language may resolve elsewhere ("zh-TW").
+func Aliases(locale string) []string {
+	locale = Canonicalize(locale)
+	if locale == SourceLocale {
+		// Every chain ends with SourceLocale; only a tag of its language asks for it.
+		return nil
+	}
+	var tags []string
+	for tag := range parentLocales {
+		if tag != locale && slices.Contains(FallbackChain(tag), locale) {
+			tags = append(tags, tag)
+		}
+	}
+	slices.SortFunc(tags, func(a, b string) int { return cmp.Or(cmp.Compare(len(b), len(a)), cmp.Compare(a, b)) })
+	return tags
 }
 
 // Canonicalize normalizes the case and separators of a BCP 47 tag and replaces deprecated

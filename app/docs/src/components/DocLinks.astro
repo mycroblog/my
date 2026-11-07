@@ -8,7 +8,7 @@ import { Card } from "@astrojs/starlight/components";
 import type { ComponentProps } from "astro/types";
 import { getEntry } from "astro:content";
 import { isPublished, siteLink, slugOf } from "../published";
-import { localeOf } from "../translations";
+import { localeOf, localeSegment } from "../translations";
 
 interface Props {
   title: string;
@@ -19,7 +19,8 @@ interface Props {
 
 const { title, icon, links } = Astro.props;
 // From the URL, not Starlight's route: the llms-full.txt of the site renders the landing page outside a route.
-const locale = localeOf(Astro.url.pathname);
+const translation = localeOf(Astro.url.pathname);
+const locale = translation === undefined ? undefined : localeSegment(translation);
 for (const { path } of links) {
   if (isPublished(path) && (await getEntry("docs", slugOf(path))) === undefined) {
     throw new Error(`the landing page links ${path}, which has no page`);

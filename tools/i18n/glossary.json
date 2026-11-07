@@ -42,5 +42,57 @@
       "avoid": ["お試し"],
       "note": "Matches the retry button もう一度試す (web-client G16, G18)."
     }
+  ],
+  "zh-CN": [
+    {
+      "use": "你",
+      "avoid": ["您"],
+      "note": "How the copy addresses the user: the plain 你, as mainland Chinese apps do (web-client G19)."
+    },
+    {
+      "use": "帖子",
+      "avoid": ["嘟文", "推文"],
+      "note": "A post. Not the names of other services' posts."
+    },
+    {
+      "use": "转发",
+      "avoid": ["转嘟", "转推"],
+      "note": "A boost."
+    },
+    {
+      "use": "喜欢",
+      "avoid": ["点赞"],
+      "note": "A favourite."
+    },
+    {
+      "use": "账号",
+      "avoid": ["帐号", "帐户", "账户"],
+      "note": "An account. One spelling everywhere."
+    },
+    {
+      "use": "登录",
+      "avoid": ["登陆"],
+      "note": "Starting a session. 登陆 is a common misspelling."
+    },
+    {
+      "use": "退出登录",
+      "avoid": ["登出"],
+      "note": "Ending a session. 注销 is not used for it either: it means closing an account."
+    },
+    {
+      "use": "关注者",
+      "avoid": ["粉丝"],
+      "note": "A follower."
+    },
+    {
+      "use": "屏蔽",
+      "avoid": ["拉黑"],
+      "note": "Blocking an account or a domain."
+    },
+    {
+      "use": "移动端",
+      "avoid": ["电话"],
+      "note": "A narrow screen where the bottom tab bar is the navigation (\"phone\" in en)."
+    }
   ]
 }

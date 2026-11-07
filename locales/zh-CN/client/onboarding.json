@@ -1,0 +1,78 @@
+{
+  "onboarding.checklist": {
+    "defaultMessage": "开始使用",
+    "description": "Heading of the checklist of first steps on the home timeline of a new user."
+  },
+  "onboarding.progress": {
+    "defaultMessage": "已完成的步骤",
+    "description": "Label of the progress bar of the first steps."
+  },
+  "onboarding.progress.value": {
+    "defaultMessage": "已完成 {done}/{total}",
+    "description": "How many of the first steps are done, next to the progress bar."
+  },
+  "onboarding.step.profile": {
+    "defaultMessage": "设置你的个人资料",
+    "description": "First step of the checklist: set an avatar or a display name."
+  },
+  "onboarding.step.follow": {
+    "defaultMessage": "关注一个人",
+    "description": "Second step of the checklist: follow an account."
+  },
+  "onboarding.step.post": {
+    "defaultMessage": "发布你的第一条帖子",
+    "description": "Third step of the checklist: write a post."
+  },
+  "onboarding.done": {
+    "defaultMessage": "已完成",
+    "description": "Badge of a step of the checklist that is done."
+  },
+  "onboarding.todo": {
+    "defaultMessage": "待完成",
+    "description": "Badge of a step of the checklist that is not done yet."
+  },
+  "onboarding.action.profile": {
+    "defaultMessage": "编辑个人资料",
+    "description": "Link of the profile step to the profile settings."
+  },
+  "onboarding.action.follow": {
+    "defaultMessage": "查看推荐",
+    "description": "Link of the follow step to the suggested accounts below."
+  },
+  "onboarding.action.search": {
+    "defaultMessage": "查找用户",
+    "description": "Link of the follow step to the account search, when there are no suggestions."
+  },
+  "onboarding.action.post": {
+    "defaultMessage": "写帖子",
+    "description": "Button of the post step that opens the post form."
+  },
+  "onboarding.dismiss": {
+    "defaultMessage": "隐藏这些步骤",
+    "description": "Button that closes the checklist of first steps on this browser."
+  },
+  "onboarding.suggestions": {
+    "defaultMessage": "推荐的账号",
+    "description": "Heading of the accounts suggested to follow on the home timeline."
+  },
+  "onboarding.suggestions.more": {
+    "defaultMessage": "查找更多用户",
+    "description": "Link under the suggested accounts to the account search."
+  },
+  "onboarding.suggestions.failed": {
+    "defaultMessage": "无法加载推荐",
+    "description": "Heading of the error shown when the suggested accounts fail to load, above the reason and the button to try again."
+  },
+  "onboarding.suggestions.retry": {
+    "defaultMessage": "重试",
+    "description": "Button that loads the suggested accounts again."
+  },
+  "onboarding.reason.featured": {
+    "defaultMessage": "服务器推荐",
+    "description": "Badge of a suggested account that the administrators feature."
+  },
+  "onboarding.reason.recently_active": {
+    "defaultMessage": "最近发过帖子",
+    "description": "Badge of a suggested account that posted recently."
+  }
+}

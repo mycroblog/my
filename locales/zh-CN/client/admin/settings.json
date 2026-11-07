@@ -1,0 +1,1282 @@
+{
+  "admin.settings.audience.everyone": {
+    "defaultMessage": "所有人",
+    "description": "Choice of who may read something: everyone, visitors included."
+  },
+  "admin.settings.audience.off": {
+    "defaultMessage": "无人",
+    "description": "Choice of who may read something: nobody."
+  },
+  "admin.settings.audience.signed_in": {
+    "defaultMessage": "已登录用户",
+    "description": "Choice of who may read something: the server's signed-in users."
+  },
+  "admin.settings.characters_left": {
+    "defaultMessage": "{count, plural, other {还可输入 # 个字符}}",
+    "description": "Character count under a text of the server settings and the rules while the text is within its limit."
+  },
+  "admin.settings.characters_over": {
+    "defaultMessage": "{count, plural, other {超出 # 个字符}}",
+    "description": "Character count under a text of the server settings and the rules when the text is over its limit."
+  },
+  "admin.settings.contact.account": {
+    "defaultMessage": "联系账号",
+    "description": "Label of the field of the username of the account to contact about the server."
+  },
+  "admin.settings.contact.account.description": {
+    "defaultMessage": "此服务器上某个账号的用户名，例如 admin。",
+    "description": "Help under the field of the contact account: what to type in it."
+  },
+  "admin.settings.contact.description": {
+    "defaultMessage": "大家联系此服务器运营者的方式，以及代表此服务器的图片。关于页面、欢迎访客的页面以及其他服务器（NodeInfo）会显示这些信息。留空则不显示。",
+    "description": "Explanation above the fields of the server's contact and thumbnail on the server settings screen."
+  },
+  "admin.settings.contact.email": {
+    "defaultMessage": "联系邮箱地址",
+    "description": "Label of the field of the email address to contact about the server."
+  },
+  "admin.settings.contact.email.description": {
+    "defaultMessage": "所有人都能看到，无论是否登录。",
+    "description": "Help under the field of the contact email address: who can see it."
+  },
+  "admin.settings.contact.email.invalid": {
+    "defaultMessage": "请输入邮箱地址，例如 admin@example.com。",
+    "description": "Error under the field of the contact email address when it is not an email address."
+  },
+  "admin.settings.contact.thumbnail": {
+    "defaultMessage": "缩略图",
+    "description": "Heading of the part of the form with the image that represents the server."
+  },
+  "admin.settings.contact.thumbnail.alt": {
+    "defaultMessage": "图片的替代文本",
+    "description": "Label of the alt text of the server's thumbnail."
+  },
+  "admin.settings.contact.thumbnail.choose": {
+    "defaultMessage": "选择图片",
+    "description": "Button that opens the file picker to choose the server's thumbnail."
+  },
+  "admin.settings.contact.thumbnail.description": {
+    "defaultMessage": "显示在关于页面和欢迎访客页面顶部的宽幅图片，例如 1600 × 900 像素。",
+    "description": "Help about the server's thumbnail: where it shows and what size suits it."
+  },
+  "admin.settings.contact.thumbnail.failed": {
+    "defaultMessage": "服务器无法处理此图片。请换一张试试。",
+    "description": "Error when the chosen thumbnail could not be processed."
+  },
+  "admin.settings.contact.thumbnail.remove": {
+    "defaultMessage": "移除图片",
+    "description": "Button that removes the server's thumbnail when the form is saved."
+  },
+  "admin.settings.contact.title": {
+    "defaultMessage": "联系方式与缩略图",
+    "description": "Heading of the section of the server's contact and thumbnail on the server settings screen."
+  },
+  "admin.settings.descriptions.description": {
+    "defaultMessage": "简短介绍是一段文字，关于页面和其他应用会将其显示在服务器名称旁；完整介绍会在关于页面中提供更多信息。可用任意语言撰写一次：无论应用使用哪种语言，所有人看到的都是原文。",
+    "description": "Description of the server's descriptions."
+  },
+  "admin.settings.descriptions.full": {
+    "defaultMessage": "介绍",
+    "description": "Label of the server's full description."
+  },
+  "admin.settings.descriptions.short": {
+    "defaultMessage": "简短介绍",
+    "description": "Label of the server's short description."
+  },
+  "admin.settings.descriptions.title": {
+    "defaultMessage": "介绍",
+    "description": "Heading of the section of the server's descriptions on the server settings screen."
+  },
+  "admin.settings.domain_actions.comments": {
+    "defaultMessage": "谁可以查看公开备注",
+    "description": "Label of the radio buttons of who may read the public comments of the domain actions."
+  },
+  "admin.settings.domain_actions.comments.everyone": {
+    "defaultMessage": "所有可以查看列表的人都能看到备注。",
+    "description": "Description of showing the comments of the domain actions to everyone."
+  },
+  "admin.settings.finance.title": {
+    "defaultMessage": "运营成本",
+    "description": "Heading of the section of the publication of the running costs in the server settings."
+  },
+  "admin.settings.finance.description": {
+    "defaultMessage": "关于页面和 API 可以公开在“成本”界面中记录的成本总额。项目的名称、备注以及每笔付款绝不会公开。",
+    "description": "Explanation of the publication of the running costs in the server settings."
+  },
+  "admin.settings.finance.visibility": {
+    "defaultMessage": "公开内容",
+    "description": "Label of the radio buttons of how much of the running costs the server publishes."
+  },
+  "admin.settings.finance.private": {
+    "defaultMessage": "不公开",
+    "description": "Choice of not publishing the running costs."
+  },
+  "admin.settings.finance.private.description": {
+    "defaultMessage": "只有管理成本的人可以看到。",
+    "description": "Description of not publishing the running costs."
+  },
+  "admin.settings.finance.totals": {
+    "defaultMessage": "总额",
+    "description": "Choice of publishing the totals of the running costs only."
+  },
+  "admin.settings.finance.totals.description": {
+    "defaultMessage": "所有人都能看到每种货币按周、月、年计算的总额。",
+    "description": "Description of publishing the totals of the running costs only."
+  },
+  "admin.settings.finance.breakdown": {
+    "defaultMessage": "总额与明细",
+    "description": "Choice of publishing the running costs with their breakdown by provider and category."
+  },
+  "admin.settings.finance.breakdown.description": {
+    "defaultMessage": "所有人还能看到按服务商和类别划分的总额。这会透露运行此服务器所使用的服务商，例如云服务。",
+    "description": "Description of publishing the running costs with their breakdown, which reveals the providers that run the server."
+  },
+  "admin.settings.finance.viewer.description": {
+    "defaultMessage": "角色允许查看财务的人，无论公开了什么，都能在财务页面看到总额及按服务商和类别划分的明细。请选择他们还能看到哪些内容。",
+    "description": "Introduction of the settings of what the holders of the view_finance permission see, in the costs section of the server settings."
+  },
+  "admin.settings.finance.viewer.item_names": {
+    "defaultMessage": "显示项目名称",
+    "description": "Checkbox of the server setting finance_viewer_item_names."
+  },
+  "admin.settings.finance.viewer.item_names.description": {
+    "defaultMessage": "已记录成本的名称和已导入费用的服务名称，以及对应金额。",
+    "description": "Description of the checkbox of the server setting finance_viewer_item_names."
+  },
+  "admin.settings.finance.viewer.item_memos": {
+    "defaultMessage": "显示项目备注",
+    "description": "Checkbox of the server setting finance_viewer_item_memos."
+  },
+  "admin.settings.finance.viewer.item_memos.description": {
+    "defaultMessage": "已记录成本的备注，以及对应金额。备注中可能包含仅供运营者查看的内容。",
+    "description": "Description of the checkbox of the server setting finance_viewer_item_memos."
+  },
+  "admin.settings.finance.viewer.income": {
+    "defaultMessage": "收入",
+    "description": "Label of the choice of the server setting finance_viewer_income: how much of the income the holders of view_finance see."
+  },
+  "admin.settings.finance.viewer.income.totals": {
+    "defaultMessage": "仅总额",
+    "description": "Choice of showing the totals of the income only to the holders of view_finance."
+  },
+  "admin.settings.finance.viewer.income.totals.description": {
+    "defaultMessage": "每种货币按周、月、年计算的总额。",
+    "description": "Description of showing the totals of the income only."
+  },
+  "admin.settings.finance.viewer.income.plans": {
+    "defaultMessage": "总额与各方案的成员数",
+    "description": "Choice of showing the totals of the income and the number of members of each plan to the holders of view_finance."
+  },
+  "admin.settings.finance.viewer.income.plans.description": {
+    "defaultMessage": "还包括每个方案的成员数，但绝不包括金额或成员是谁。",
+    "description": "Description of showing the number of members of each plan too."
+  },
+  "admin.settings.income.title": {
+    "defaultMessage": "收入",
+    "description": "Heading of the section of the publication of the income in the server settings."
+  },
+  "admin.settings.income.description": {
+    "defaultMessage": "关于页面和 API 可以公开支持者方案的收入（已扣除支付服务商的手续费和退款）。付款人、每人支付的金额、各方案的金额以及手续费绝不会公开。同时公开成本和收入时，也会公开收支余额。",
+    "description": "Explanation of the publication of the income in the server settings."
+  },
+  "admin.settings.income.visibility": {
+    "defaultMessage": "公开内容",
+    "description": "Label of the radio buttons of how much of the income the server publishes."
+  },
+  "admin.settings.income.private": {
+    "defaultMessage": "不公开",
+    "description": "Choice of not publishing the income."
+  },
+  "admin.settings.income.private.description": {
+    "defaultMessage": "只有管理或可以查看财务的人能看到。",
+    "description": "Description of not publishing the income."
+  },
+  "admin.settings.income.totals": {
+    "defaultMessage": "总额",
+    "description": "Choice of publishing the totals of the income only."
+  },
+  "admin.settings.income.totals.description": {
+    "defaultMessage": "所有人都能看到每种货币按周、月、年计算的收入。",
+    "description": "Description of publishing the totals of the income only."
+  },
+  "admin.settings.income.plans": {
+    "defaultMessage": "总额与各方案的成员数",
+    "description": "Choice of publishing the totals of the income and the number of members of each plan."
+  },
+  "admin.settings.income.plans.description": {
+    "defaultMessage": "所有人还能看到每个方案当前的成员数，但绝不包括金额。成员较少的方案，可能会被人猜出成员是谁。",
+    "description": "Description of publishing the number of members of each plan too, which may let people guess the members of a small plan."
+  },
+  "admin.settings.supporter_list.title": {
+    "defaultMessage": "支持者列表",
+    "description": "Heading of the section of the supporter list in the server settings."
+  },
+  "admin.settings.supporter_list.description": {
+    "defaultMessage": "/about/supporters 上的支持者列表按方案显示选择公开的成员：仅显示头像、名称和用户名，绝不显示金额或日期。始终要求搜索引擎不要将其编入索引。",
+    "description": "Explanation of the supporter list setting."
+  },
+  "admin.settings.supporter_list.visibility": {
+    "defaultMessage": "谁可以查看支持者列表",
+    "description": "Label of the choice of who may read the supporter list."
+  },
+  "admin.settings.supporter_list.off": {
+    "defaultMessage": "无人",
+    "description": "Choice: nobody may read the supporter list."
+  },
+  "admin.settings.supporter_list.off.description": {
+    "defaultMessage": "不公开列表，关于页面也不会链接到它。",
+    "description": "Description of not publishing the supporter list."
+  },
+  "admin.settings.supporter_list.everyone": {
+    "defaultMessage": "所有人",
+    "description": "Choice: everyone may read the supporter list."
+  },
+  "admin.settings.supporter_list.everyone.description": {
+    "defaultMessage": "任何人都可以查看列表，无论是否登录。",
+    "description": "Description of publishing the supporter list to everyone."
+  },
+  "admin.settings.supporter_list.signed_in": {
+    "defaultMessage": "已登录用户",
+    "description": "Choice: only signed-in users may read the supporter list."
+  },
+  "admin.settings.supporter_list.signed_in.description": {
+    "defaultMessage": "只有登录此服务器的人可以查看列表。",
+    "description": "Description of publishing the supporter list to signed-in users only."
+  },
+  "admin.settings.crawlers.title": {
+    "defaultMessage": "搜索引擎与 AI",
+    "description": "Heading of the section of the server settings about search engines and AI crawlers."
+  },
+  "admin.settings.crawlers.description": {
+    "defaultMessage": "服务器向搜索引擎和 AI 爬虫声明的内容。设置之前，服务器会拒绝两者。服务器根据这些设置和内置的已知 AI 爬虫列表生成 robots.txt，并在每个页面上声明。每个账号可以为自己的页面拒绝更多，但不能更少。",
+    "description": "Explanation of the section of the server settings about search engines and AI crawlers."
+  },
+  "admin.settings.crawlers.search": {
+    "defaultMessage": "搜索引擎",
+    "description": "Label of the radio group of whether search engines may index the server's pages (search_indexing)."
+  },
+  "admin.settings.crawlers.search.allow": {
+    "defaultMessage": "允许编入索引",
+    "description": "Choice that lets search engines index the pages of the accounts that allow it."
+  },
+  "admin.settings.crawlers.search.allow.description": {
+    "defaultMessage": "搜索引擎可以将允许的账号的个人资料和公开帖子编入索引。其他页面不会被编入索引。",
+    "description": "Description of letting search engines index pages."
+  },
+  "admin.settings.crawlers.search.deny": {
+    "defaultMessage": "拒绝编入索引",
+    "description": "Choice that asks search engines not to index any page."
+  },
+  "admin.settings.crawlers.search.deny.description": {
+    "defaultMessage": "每个页面都会要求搜索引擎不要将其编入索引（noindex）。链接预览仍可正常使用。",
+    "description": "Description of asking search engines not to index any page."
+  },
+  "admin.settings.crawlers.indexable_default": {
+    "defaultMessage": "新账号允许搜索引擎编入索引",
+    "description": "Label of the checkbox of whether new accounts allow search indexing (indexable_default)."
+  },
+  "admin.settings.crawlers.indexable_default.description": {
+    "defaultMessage": "此后注册的账号的初始设置。现有账号保留各自的选择。",
+    "description": "Help text of the indexable default checkbox."
+  },
+  "admin.settings.crawlers.ai": {
+    "defaultMessage": "AI",
+    "description": "Label of the radio group of what the server states to AI crawlers (ai_usage)."
+  },
+  "admin.settings.crawlers.ai.allow": {
+    "defaultMessage": "允许",
+    "description": "Choice that reserves nothing against AI."
+  },
+  "admin.settings.crawlers.ai.allow.description": {
+    "defaultMessage": "服务器不对 AI 作任何保留。账号仍可为自己的页面拒绝 AI。",
+    "description": "Description of reserving nothing against AI."
+  },
+  "admin.settings.crawlers.ai.deny_training": {
+    "defaultMessage": "拒绝训练",
+    "description": "Choice that denies the training of AI models only."
+  },
+  "admin.settings.crawlers.ai.deny_training.description": {
+    "defaultMessage": "拒绝为训练 AI 模型而收集数据的爬虫。不拒绝用户要求读取页面的 AI 搜索和助手。",
+    "description": "Description of denying the training of AI models only."
+  },
+  "admin.settings.crawlers.ai.deny": {
+    "defaultMessage": "拒绝训练和使用",
+    "description": "Choice that denies both the training and the use by AI."
+  },
+  "admin.settings.crawlers.ai.deny.description": {
+    "defaultMessage": "拒绝 AI 爬虫，包括用户要求读取页面的 AI 搜索、助手和智能体。",
+    "description": "Description of denying both the training and the use by AI."
+  },
+  "admin.settings.crawlers.security_contact": {
+    "defaultMessage": "安全联系方式",
+    "description": "Label of the field of the address to report vulnerabilities to (security_contact)."
+  },
+  "admin.settings.crawlers.security_contact.description": {
+    "defaultMessage": "报告漏洞的地址：https: 或 mailto: 地址，例如 mailto:security@example.com。仅在设置后，服务器才会提供 /.well-known/security.txt。",
+    "description": "Help text of the security contact field."
+  },
+  "admin.settings.domain_actions.comments.off": {
+    "defaultMessage": "不显示备注。",
+    "description": "Description of not showing the comments of the domain actions."
+  },
+  "admin.settings.domain_actions.comments.signed_in": {
+    "defaultMessage": "可以查看列表的已登录用户能看到备注。",
+    "description": "Description of showing the comments of the domain actions to signed-in users."
+  },
+  "admin.settings.domain_actions.description": {
+    "defaultMessage": "关于页面和 API 可以列出此服务器限制或封禁的服务器，以及相应操作的公开备注。",
+    "description": "Explanation of the publication of the domain actions."
+  },
+  "admin.settings.domain_actions.list": {
+    "defaultMessage": "谁可以查看列表",
+    "description": "Label of the radio buttons of who may read the list of domain actions."
+  },
+  "admin.settings.domain_actions.list.everyone": {
+    "defaultMessage": "任何人无需登录即可查看列表。",
+    "description": "Description of publishing the list of domain actions to everyone."
+  },
+  "admin.settings.domain_actions.list.off": {
+    "defaultMessage": "不公开列表。",
+    "description": "Description of not publishing the list of domain actions."
+  },
+  "admin.settings.domain_actions.list.signed_in": {
+    "defaultMessage": "只有登录此服务器的用户可以查看列表。",
+    "description": "Description of publishing the list of domain actions to signed-in users."
+  },
+  "admin.settings.domain_actions.title": {
+    "defaultMessage": "已限制和已封禁的服务器",
+    "description": "Heading of the section of the publication of the domain actions."
+  },
+  "admin.settings.duration.days": {
+    "defaultMessage": "{count, plural, other {# 天}}",
+    "description": "A length of time in days."
+  },
+  "admin.settings.duration.hours": {
+    "defaultMessage": "{count, plural, other {# 小时}}",
+    "description": "A length of time in hours."
+  },
+  "admin.settings.duration.seconds": {
+    "defaultMessage": "{count, plural, other {# 秒}}",
+    "description": "A length of time in seconds."
+  },
+  "admin.settings.federation.authorized_fetch": {
+    "defaultMessage": "要求签名请求（authorized fetch）",
+    "description": "Checkbox of the authorized fetch setting."
+  },
+  "admin.settings.federation.authorized_fetch.description": {
+    "defaultMessage": "开启后，其他服务器只有在签名验证通过时才能读取帖子和集合，因此已封禁的服务器无法读取。部分软件将无法再读取。",
+    "description": "Description of the authorized fetch checkbox."
+  },
+  "admin.settings.federation.link_cards": {
+    "defaultMessage": "显示帖子中链接的卡片",
+    "description": "Checkbox of the link_cards setting: whether posts show the cards (title, description, image) of the pages they link to."
+  },
+  "admin.settings.federation.link_cards.description": {
+    "defaultMessage": "无论谁能看到帖子，服务器都会获取每个帖子中第一个链接的页面，并在帖子下方显示其标题、描述和图片。被链接的网站会知道链接的发布时间，但不会知道发布者。",
+    "description": "Description of the link cards checkbox."
+  },
+  "admin.settings.federation.link_cards_ignore_robots_txt": {
+    "defaultMessage": "获取链接卡片时不检查 robots.txt",
+    "description": "Checkbox of the link_cards_ignore_robots_txt setting: whether the fetches of link cards skip the robots.txt of the linked sites."
+  },
+  "admin.settings.federation.link_cards_ignore_robots_txt.description": {
+    "defaultMessage": "开启后，被链接的网站将无法再通过 robots.txt 拒绝生成卡片，服务器仍以 my-linkcard 标识自己。页面自身的 robots 指令和链接卡片的域名设置仍然有效。仅在大量卡片缺失时开启。",
+    "description": "Description of the checkbox that makes the fetches of link cards skip robots.txt. my-linkcard is the crawler's name in robots.txt and is not translated."
+  },
+  "admin.settings.federation.mode": {
+    "defaultMessage": "联邦方向",
+    "description": "Label of the radio buttons of the federation direction setting (federation_mode, ADR-0006): which way posts flow between this server and other servers."
+  },
+  "admin.settings.federation.mode.description": {
+    "defaultMessage": "帖子、关注和互动在此服务器与其他服务器之间的流动方向。更改立即生效。",
+    "description": "Description of the federation direction radio buttons."
+  },
+  "admin.settings.federation.mode.both": {
+    "defaultMessage": "双向",
+    "description": "Federation direction choice: send to and receive from other servers (the default)."
+  },
+  "admin.settings.federation.mode.both.description": {
+    "defaultMessage": "用户可以关注和阅读其他服务器的账号，此服务器也会将帖子投递给那里的关注者。",
+    "description": "Description of the federation direction choice 'Both ways'."
+  },
+  "admin.settings.federation.mode.inbound": {
+    "defaultMessage": "仅接收",
+    "description": "Federation direction choice: only receive from other servers."
+  },
+  "admin.settings.federation.mode.inbound.description": {
+    "defaultMessage": "用户可以关注和阅读其他服务器的账号，但此服务器的帖子、个人资料和互动不会发出，来自其他服务器的关注也会被拒绝。",
+    "description": "Description of the federation direction choice 'Receive only'."
+  },
+  "admin.settings.federation.mode.outbound": {
+    "defaultMessage": "仅发送",
+    "description": "Federation direction choice: only send to other servers."
+  },
+  "admin.settings.federation.mode.outbound.description": {
+    "defaultMessage": "其他服务器的账号可以关注这里的用户并接收其帖子，但不会接收其他服务器的帖子和互动，用户也无法关注或查找其他服务器的账号。",
+    "description": "Description of the federation direction choice 'Send only'."
+  },
+  "admin.settings.federation.mode.off": {
+    "defaultMessage": "关闭",
+    "description": "Federation direction choice: no federation at all."
+  },
+  "admin.settings.federation.mode.off.description": {
+    "defaultMessage": "不向其他服务器发送任何内容，也不从其他服务器接收任何内容。此服务器独立运行。",
+    "description": "Description of the federation direction choice 'Off'."
+  },
+  "admin.settings.federation.narrow.title": {
+    "defaultMessage": "要将联邦方向更改为“{mode}”吗？",
+    "description": "Title of the confirmation before saving a federation direction that stops something from flowing. {mode} is the chosen direction, such as 'Receive only'."
+  },
+  "admin.settings.federation.narrow.description": {
+    "defaultMessage": "从“{from}”更改为“{to}”会在保存后立即生效：",
+    "description": "First sentence of the confirmation before narrowing the federation direction, followed by a list of what changes. {from} and {to} are the saved and the chosen directions."
+  },
+  "admin.settings.federation.narrow.sending": {
+    "defaultMessage": "此服务器的帖子、个人资料和互动将不再发送到其他服务器。那里的关注者会保留，但收不到任何内容，在此期间发布的内容之后也不会补发。",
+    "description": "Item of the list in the confirmation before narrowing the federation direction, when the new direction stops sending to other servers."
+  },
+  "admin.settings.federation.narrow.receiving": {
+    "defaultMessage": "将不再接收来自其他服务器的帖子和互动，用户也无法再关注或查找其他服务器的账号。他们对远程账号的关注会保留，但不再更新。",
+    "description": "Item of the list in the confirmation before narrowing the federation direction, when the new direction stops receiving from other servers."
+  },
+  "admin.settings.federation.narrow.deletions": {
+    "defaultMessage": "联邦关闭期间删除的帖子和账号不会在其他服务器上删除：那里的副本会保留。",
+    "description": "Item of the list in the confirmation before turning federation off."
+  },
+  "admin.settings.federation.narrow.relations": {
+    "defaultMessage": "与其他服务器之间的关注、已接收的帖子和投递记录都会保留，也不会发送任何结束关注的通知。",
+    "description": "Last item of the list in the confirmation before narrowing the federation direction."
+  },
+  "admin.settings.federation.narrow.widen": {
+    "defaultMessage": "之后重新放宽方向，将从那时起恢复流动。",
+    "description": "Note under the list in the confirmation before narrowing the federation direction."
+  },
+  "admin.settings.federation.narrow.cancel": {
+    "defaultMessage": "取消",
+    "description": "Button that closes the confirmation before narrowing the federation direction without saving."
+  },
+  "admin.settings.federation.narrow.confirm": {
+    "defaultMessage": "更改并保存",
+    "description": "Button that saves the settings with the narrower federation direction."
+  },
+  "admin.settings.federation.title": {
+    "defaultMessage": "联邦",
+    "description": "Heading of the section of the federation settings."
+  },
+  "admin.settings.language.default": {
+    "defaultMessage": "默认语言",
+    "description": "Label of the select of the server's default language."
+  },
+  "admin.settings.language.description": {
+    "defaultMessage": "新账号的语言，以及应用不支持其语言的访客所使用的语言。",
+    "description": "Help of the server's default language."
+  },
+  "admin.settings.language.title": {
+    "defaultMessage": "语言",
+    "description": "Heading of the section of the server's default language."
+  },
+  "admin.settings.name.blank": {
+    "defaultMessage": "请输入包含文字的名称，或将此栏留空。",
+    "description": "Error of a field of the server's name that holds only spaces."
+  },
+  "admin.settings.name.description": {
+    "defaultMessage": "应用中提到此服务器的地方，都会显示此名称而非域名 {domain}：侧栏、浏览器标签页、登录页面、邮件和链接预览。可用任意语言撰写一次：无论应用使用哪种语言，所有人看到的都是同一个名称。未设置名称时显示域名。用户名和链接始终使用域名。",
+    "description": "Explanation above the fields of the server's name on the server settings screen. {domain} is the server's domain name."
+  },
+  "admin.settings.name.field": {
+    "defaultMessage": "名称",
+    "description": "Label of the server's name."
+  },
+  "admin.settings.name.title": {
+    "defaultMessage": "名称",
+    "description": "Heading of the section of the server's name on the server settings screen."
+  },
+  "admin.settings.name.too_long": {
+    "defaultMessage": "最多 {max} 个字符。",
+    "description": "Error of a field of the server's name whose text is longer than its limit. {max} is the limit."
+  },
+  "admin.settings.policies.save": {
+    "defaultMessage": "保存设置",
+    "description": "Button that saves the registration, language, timeline, federation and domain action settings together."
+  },
+  "admin.settings.policies.save_failed": {
+    "defaultMessage": "无法保存设置，未作任何更改：{reason}",
+    "description": "Error when saving the server's settings failed. {reason} is the server's localized reason, which names the setting at fault."
+  },
+  "admin.settings.policies.saved": {
+    "defaultMessage": "设置已保存。设置立即生效，审计日志会记录每一项更改。",
+    "description": "Status after the server's settings were saved."
+  },
+  "admin.settings.policies.unchanged": {
+    "defaultMessage": "设置已是最新。",
+    "description": "Status after pressing the save button of the settings without changing one."
+  },
+  "admin.settings.registration.approval": {
+    "defaultMessage": "需要批准",
+    "description": "Registration mode approval."
+  },
+  "admin.settings.registration.approval.description": {
+    "defaultMessage": "任何人都可以填写理由进行注册；账号在审核员批准后才能使用。使用邀请注册的人会立即获得批准。",
+    "description": "Description of the registration mode approval: a usable invite skips the review."
+  },
+  "admin.settings.registration.closed": {
+    "defaultMessage": "无人",
+    "description": "Registration mode closed."
+  },
+  "admin.settings.registration.closed.description": {
+    "defaultMessage": "任何人都不能注册；管理员通过命令行创建账号。",
+    "description": "Description of the registration mode closed."
+  },
+  "admin.settings.registration.description": {
+    "defaultMessage": "审核员在审核界面中审核等待批准的注册并创建邀请。",
+    "description": "Help of the registration mode: where the sign-ups and the invites are handled."
+  },
+  "admin.settings.registration.invite": {
+    "defaultMessage": "需要邀请",
+    "description": "Registration mode invite."
+  },
+  "admin.settings.registration.invite.description": {
+    "defaultMessage": "只有持有邀请码的人可以注册。",
+    "description": "Description of the registration mode invite."
+  },
+  "admin.settings.registration.mode": {
+    "defaultMessage": "谁可以注册",
+    "description": "Label of the radio buttons of the registration mode."
+  },
+  "admin.settings.registration.open": {
+    "defaultMessage": "任何人",
+    "description": "Registration mode open."
+  },
+  "admin.settings.registration.open.description": {
+    "defaultMessage": "任何人都可以注册并立即使用账号。",
+    "description": "Description of the registration mode open."
+  },
+  "admin.settings.registration.title": {
+    "defaultMessage": "注册",
+    "description": "Heading of the section of who may sign up on the server settings screen."
+  },
+  "admin.settings.single_user.title": {
+    "defaultMessage": "个人服务器",
+    "description": "Heading of the section of the instance setting single_user (ADR-0152) on the registration page of the server settings: the server of its operator alone."
+  },
+  "admin.settings.single_user.description": {
+    "defaultMessage": "只属于一个人的服务器，是你在联邦宇宙中的家。开启后，任何人都不能注册，服务器在时间线中只提供主页：本站和联邦时间线、邀请、注册审核、注册屏蔽列表以及推荐账号都会隐藏，新帖子也不能设为“本站”。访客会在首页看到你的个人资料。开启或关闭都不会删除任何内容。",
+    "description": "Help of the section of the one-person server: what the mode hides and that it deletes nothing. “This server” is the name of the visibility local (client:compose.visibility.local)."
+  },
+  "admin.settings.single_user.label": {
+    "defaultMessage": "设为个人服务器",
+    "description": "Label of the checkbox of the instance setting single_user."
+  },
+  "admin.settings.single_user.label.description": {
+    "defaultMessage": "只有当服务器恰好有一个本站账号时才能开启。等待批准、已停用或已封禁的账号也计算在内；注册被拒绝的不计算在内。可以随时关闭。",
+    "description": "Description of the checkbox of the one-person server: the condition of exactly one local account, which accounts count, and that it can always be turned off."
+  },
+  "admin.settings.single_user.refused": {
+    "defaultMessage": "{reason} {detail}",
+    "description": "The reason why the server refused to turn the one-person server on, put inside client:admin.settings.policies.save_failed. {reason} is the server's localized sentence that a one-person server can have only one local account, {detail} its localized sentence of how many local accounts the server has. Keep the space between the sentences as the language separates sentences."
+  },
+  "admin.settings.remote_media.all": {
+    "defaultMessage": "全部",
+    "description": "Remote media policy all."
+  },
+  "admin.settings.remote_media.all.description": {
+    "defaultMessage": "在下方设定的时间内保留所有文件的副本。",
+    "description": "Description of the remote media policy all."
+  },
+  "admin.settings.remote_media.avatars": {
+    "defaultMessage": "头像和封面图片",
+    "description": "Remote media policy avatars."
+  },
+  "admin.settings.remote_media.avatars.description": {
+    "defaultMessage": "在下方设定的时间内保留头像、封面图片和自定义表情的副本。",
+    "description": "Description of the remote media policy avatars."
+  },
+  "admin.settings.remote_media.none": {
+    "defaultMessage": "不保留",
+    "description": "Remote media policy none."
+  },
+  "admin.settings.remote_media.none.description": {
+    "defaultMessage": "媒体代理每次都从源服务器转发所有文件。",
+    "description": "Description of the remote media policy none."
+  },
+  "admin.settings.remote_media.policy": {
+    "defaultMessage": "其他服务器媒体的副本",
+    "description": "Label of the radio buttons of the remote media policy."
+  },
+  "admin.settings.remote_media.ttl": {
+    "defaultMessage": "其他服务器媒体的保留时间",
+    "description": "Label of the select of the remote media cache time."
+  },
+  "admin.settings.remote_media.ttl.description": {
+    "defaultMessage": "浏览器和 CDN 也会将文件保留同样长的时间。",
+    "description": "Help of the remote media cache time."
+  },
+  "admin.settings.summary": {
+    "defaultMessage": "服务器的名称和介绍、谁可以注册、默认语言、时间线和联邦。",
+    "description": "Description of the server settings screen in the administration menu."
+  },
+  "admin.settings.timelines.federated": {
+    "defaultMessage": "联邦时间线",
+    "description": "Label of the radio group that chooses who may read the federated timeline."
+  },
+  "admin.settings.timelines.federated.description": {
+    "defaultMessage": "到达此服务器的公开帖子，也包括来自其他服务器的帖子。谁可以查看？",
+    "description": "Description of the radio group that chooses who may read the federated timeline."
+  },
+  "admin.settings.timelines.access.everyone": {
+    "defaultMessage": "所有人",
+    "description": "Choice of who may read a public timeline: everyone, visitors who are not signed in included."
+  },
+  "admin.settings.timelines.access.everyone.description": {
+    "defaultMessage": "未登录的访客也可以查看，落地页会展示部分本站时间线。",
+    "description": "Description of the choice that lets everyone read a public timeline."
+  },
+  "admin.settings.timelines.access.signed_in": {
+    "defaultMessage": "已登录用户",
+    "description": "Choice of who may read a public timeline: only the users signed in to this server."
+  },
+  "admin.settings.timelines.access.signed_in.description": {
+    "defaultMessage": "只有登录此服务器的用户可以查看。访客会被要求登录。",
+    "description": "Description of the choice that lets only signed-in users read a public timeline."
+  },
+  "admin.settings.timelines.access.off": {
+    "defaultMessage": "无人",
+    "description": "Choice of who may read a public timeline: nobody, the timeline is off."
+  },
+  "admin.settings.timelines.access.off.description": {
+    "defaultMessage": "关闭此时间线，不向任何人提供。",
+    "description": "Description of the choice that turns a public timeline off."
+  },
+  "admin.settings.timelines.local": {
+    "defaultMessage": "本站时间线",
+    "description": "Label of the radio group that chooses who may read the local timeline."
+  },
+  "admin.settings.timelines.local.description": {
+    "defaultMessage": "此服务器账号的公开帖子。谁可以查看？",
+    "description": "Description of the radio group that chooses who may read the local timeline."
+  },
+  "admin.settings.timelines.title": {
+    "defaultMessage": "时间线",
+    "description": "Heading of the section of the public timelines on the server settings screen."
+  },
+  "admin.settings.posts.title": {
+    "defaultMessage": "帖子",
+    "description": "Heading of the section of the server settings about posts."
+  },
+  "admin.settings.posts.require_media_description": {
+    "defaultMessage": "要求每张图片都有替代文本",
+    "description": "Checkbox of the instance setting require_media_description: whether every image attached to a post needs an alternative text."
+  },
+  "admin.settings.posts.require_media_description.description": {
+    "defaultMessage": "包含无替代文本图片的帖子和编辑会被拒绝，以便看不到图片的人也能理解每个帖子。",
+    "description": "Description of the checkbox that requires a description of every image."
+  },
+  "admin.settings.title": {
+    "defaultMessage": "服务器设置",
+    "description": "Title of the server settings screen (the server's name), in the administration menu and as its heading."
+  },
+  "admin.settings.oauth_apps.title": {
+    "defaultMessage": "应用",
+    "description": "Heading of the section of how apps may register on the server settings screen."
+  },
+  "admin.settings.oauth_apps.description": {
+    "defaultMessage": "应用可以通过哪些途径获取客户端 ID。全部关闭时，只有服务器自带的应用可用。关闭某个途径不会停用已注册的应用。",
+    "description": "Explains the section of how apps may register."
+  },
+  "admin.settings.oauth_apps.user": {
+    "defaultMessage": "用户注册应用",
+    "description": "Checkbox of letting signed-in users register apps."
+  },
+  "admin.settings.oauth_apps.user.description": {
+    "defaultMessage": "已登录用户可以在设置中注册应用，用于自己的机器人和脚本。",
+    "description": "Description of the checkbox of letting users register apps."
+  },
+  "admin.settings.oauth_apps.metadata_document": {
+    "defaultMessage": "客户端 ID 元数据文档",
+    "description": "Checkbox of accepting apps whose client ID is the URL of a metadata document."
+  },
+  "admin.settings.oauth_apps.metadata_document.description": {
+    "defaultMessage": "应用以其托管的元数据文档的 URL 作为客户端 ID。服务器会获取该文档。",
+    "description": "Description of the checkbox of accepting metadata document apps."
+  },
+  "admin.settings.oauth_apps.dynamic": {
+    "defaultMessage": "动态客户端注册",
+    "description": "Checkbox of letting apps register themselves."
+  },
+  "admin.settings.oauth_apps.dynamic.description": {
+    "defaultMessage": "应用无需登录即可自行注册（RFC 7591），适用于无法使用元数据文档的工具。",
+    "description": "Description of the checkbox of dynamic client registration."
+  },
+  "admin.settings.voice.title": {
+    "defaultMessage": "语音聊天",
+    "description": "Heading of the voice chat section of the server settings."
+  },
+  "admin.settings.voice.starters": {
+    "defaultMessage": "谁可以创建房间",
+    "description": "Label of the choice of who may start voice chat rooms."
+  },
+  "admin.settings.voice.starters.everyone": {
+    "defaultMessage": "此服务器上的所有人",
+    "description": "Choice of who may start voice chat rooms: every local user."
+  },
+  "admin.settings.voice.starters.everyone.description": {
+    "defaultMessage": "此服务器的每个已登录用户都可以创建房间。",
+    "description": "Explanation of the choice that every local user may start voice chat rooms."
+  },
+  "admin.settings.voice.starters.permitted": {
+    "defaultMessage": "仅限拥有权限的人",
+    "description": "Choice of who may start voice chat rooms: the holders of the permission."
+  },
+  "admin.settings.voice.starters.permitted.description": {
+    "defaultMessage": "只有角色拥有创建语音聊天房间权限的人才能创建。",
+    "description": "Explanation of the choice that only the holders of the permission may start voice chat rooms."
+  },
+  "admin.settings.voice.public_summary": {
+    "defaultMessage": "向访客显示房间摘要",
+    "description": "Checkbox of whether the summary of a voice chat room shows to people who are not signed in."
+  },
+  "admin.settings.voice.public_summary.description": {
+    "defaultMessage": "对于向此服务器所有人开放的房间，未登录的人和其他服务器上的人可以看到其名称、描述、主持人以及是否正在进行，链接预览中也会显示。他们绝不会看到房间里有谁。",
+    "description": "Explanation of the checkbox that shows the summary of voice chat rooms to visitors."
+  },
+  "admin.settings.voice.retention": {
+    "defaultMessage": "参与者记录的保留天数",
+    "description": "Label of the field of how many days the records of the participants of a voice chat room are kept."
+  },
+  "admin.settings.voice.retention.description": {
+    "defaultMessage": "房间结束后，服务器保留谁加入、离开、发言和被移出的记录的时长：{min} 到 {max} 天。被举报房间的记录会与举报保留同样长的时间。",
+    "description": "Description of the field of how many days the records of the participants of voice chat rooms are kept. {min} and {max} are the bounds."
+  },
+  "admin.settings.voice.retention.invalid": {
+    "defaultMessage": "请输入 {min} 到 {max} 之间的整数天数。",
+    "description": "Error of the field of how many days the records of voice chat participants are kept."
+  },
+  "admin.settings.invites.title": {
+    "defaultMessage": "成员邀请",
+    "description": "Heading of the section of the invites that members create on the server settings screen."
+  },
+  "admin.settings.invites.description": {
+    "defaultMessage": "成员可以在自己的设置页面创建邀请。这些限制只适用于成员的邀请，不适用于审核员的邀请；降低限制不会影响现有的邀请。",
+    "description": "Help of the section of member invites on the server settings screen."
+  },
+  "admin.settings.invites.creators": {
+    "defaultMessage": "谁可以创建邀请",
+    "description": "Label of the choice of who may create invites of their own."
+  },
+  "admin.settings.invites.creators.everyone": {
+    "defaultMessage": "此服务器上的所有人",
+    "description": "Choice of who may create invites: every local user."
+  },
+  "admin.settings.invites.creators.everyone.description": {
+    "defaultMessage": "此服务器上每个未被封禁或限制的已登录用户都可以创建邀请。注册需要批准时，受邀者可以跳过审核，因此这相当于让每个用户都能批准新账号。",
+    "description": "Explanation of the choice that every local user may create invites, with its effect in the approval registration mode."
+  },
+  "admin.settings.invites.creators.permitted": {
+    "defaultMessage": "仅限拥有权限的人",
+    "description": "Choice of who may create invites: the holders of the permission."
+  },
+  "admin.settings.invites.creators.permitted.description": {
+    "defaultMessage": "只有角色拥有创建邀请权限的人才能创建。",
+    "description": "Explanation of the choice that only the holders of the permission create_invites may create invites."
+  },
+  "admin.settings.invites.max_active": {
+    "defaultMessage": "每人可用邀请数",
+    "description": "Label of the field of how many usable invites one member may hold at once."
+  },
+  "admin.settings.invites.max_active.description": {
+    "defaultMessage": "每人同时可持有的可用邀请数：{min} 到 {max}。设为 0 则任何人都不能创建邀请。",
+    "description": "Description of the field of how many usable invites one member may hold. {min} and {max} are the bounds."
+  },
+  "admin.settings.invites.max_uses": {
+    "defaultMessage": "每个邀请的注册人数",
+    "description": "Label of the field of how many people may sign up with one invite a member creates."
+  },
+  "admin.settings.invites.max_uses.description": {
+    "defaultMessage": "使用一个邀请最多可注册的人数：{min} 到 {max}。",
+    "description": "Description of the field of how many sign-ups one member invite may allow. {min} and {max} are the bounds."
+  },
+  "admin.settings.invites.number.invalid": {
+    "defaultMessage": "请输入 {min} 到 {max} 之间的整数。",
+    "description": "Error of a field of the member invites that holds a number out of its bounds."
+  },
+  "admin.settings.invites.max_expires_in": {
+    "defaultMessage": "邀请的最长有效期",
+    "description": "Label of the choice of how long one invite that a member creates may work at most."
+  },
+  "admin.settings.invites.max_expires_in.description": {
+    "defaultMessage": "成员可以为每个邀请选择有效期，最长不超过此值。",
+    "description": "Description of the choice of how long a member invite may work at most."
+  },
+  "admin.settings.landing.title": {
+    "defaultMessage": "落地页",
+    "description": "Heading of the section of the server settings about what the landing page (the root address, for people who are not signed in) shows."
+  },
+  "admin.settings.landing.description": {
+    "defaultMessage": "除名称、介绍和规则外，此服务器地址的页面向未登录的人显示的内容。",
+    "description": "Explanation of the landing page section of the server settings."
+  },
+  "admin.settings.landing.counts": {
+    "defaultMessage": "显示服务器数据",
+    "description": "Checkbox of whether the landing page shows how many members the server has, its public posts of the last 7 days, and since when it runs."
+  },
+  "admin.settings.landing.counts.description": {
+    "defaultMessage": "服务器的成员数、成员在最近 7 天中每天发布的公开帖子数，以及服务器的运行起始时间。只统计公开帖子，数据每隔几分钟更新一次。",
+    "description": "Explanation of the checkbox that shows the numbers of the server on the landing page."
+  },
+  "admin.settings.featured.title": {
+    "defaultMessage": "推荐账号",
+    "description": "Heading of the section of the server settings about the accounts suggested to follow."
+  },
+  "admin.settings.featured.description": {
+    "defaultMessage": "新用户和回访用户会看到推荐关注的人：先按顺序显示下方的账号，再显示此服务器上最近发过帖子的人。关闭了被推荐的人不会出现。",
+    "description": "Note of the suggested accounts section of the server settings."
+  },
+  "admin.settings.featured.accounts": {
+    "defaultMessage": "优先推荐的账号",
+    "description": "Label of the field with the usernames of the accounts that the suggestions show first."
+  },
+  "admin.settings.featured.accounts.description": {
+    "defaultMessage": "此服务器上最多 20 个账号的用户名，以空格分隔。",
+    "description": "Help text of the field of the accounts that the suggestions show first."
+  },
+  "admin.settings.hooks.description": {
+    "defaultMessage": "只有在服务器运营者设置了相应插件后，审查才会运行。从“关闭”切换到“执行”时必须先经过“观察”，以便你先了解审查会拦截哪些内容。",
+    "description": "Explanation of the section of the server settings about the external reviews."
+  },
+  "admin.settings.hooks.failure.pass": {
+    "defaultMessage": "放行",
+    "description": "Choice of what happens when an external review fails."
+  },
+  "admin.settings.hooks.failure.pass.description": {
+    "defaultMessage": "未经审查直接接受。审查不可用期间，垃圾信息可能会进入。",
+    "description": "Description of letting a submission through when its external review fails."
+  },
+  "admin.settings.hooks.failure.require_approval": {
+    "defaultMessage": "等待批准",
+    "description": "Choice of what happens when the external review of sign-ups fails."
+  },
+  "admin.settings.hooks.failure.require_approval.description": {
+    "defaultMessage": "注册将等待审核员处理。",
+    "description": "Description of holding a sign-up for approval when its external review fails."
+  },
+  "admin.settings.hooks.failure.retry": {
+    "defaultMessage": "重试",
+    "description": "Choice of what happens when an external review fails."
+  },
+  "admin.settings.hooks.failure.retry.description": {
+    "defaultMessage": "任务会再次运行。对于帖子和关注，这也会暂缓同一发送者之后的所有内容（包括删除），最长约 4 小时。",
+    "description": "Description of retrying when an external review fails."
+  },
+  "admin.settings.hooks.inbound_follow.mode": {
+    "defaultMessage": "来自其他服务器的关注",
+    "description": "Label of the choice of the mode of the external review of this kind of submission."
+  },
+  "admin.settings.hooks.inbound_follow.on_failure": {
+    "defaultMessage": "来自其他服务器的关注：审查失败时",
+    "description": "Label of the choice of what happens when this external review fails while it enforces."
+  },
+  "admin.settings.hooks.inbound_status.mode": {
+    "defaultMessage": "来自其他服务器的帖子",
+    "description": "Label of the choice of the mode of the external review of this kind of submission."
+  },
+  "admin.settings.hooks.inbound_status.on_failure": {
+    "defaultMessage": "来自其他服务器的帖子：审查失败时",
+    "description": "Label of the choice of what happens when this external review fails while it enforces."
+  },
+  "admin.settings.hooks.local_status.account_age": {
+    "defaultMessage": "审查注册不满以下天数的账号的帖子",
+    "description": "Label of the number of days after its creation that an account's posts go to the external review of local posts."
+  },
+  "admin.settings.hooks.local_status.account_age.description": {
+    "defaultMessage": "{min} 到 {max} 天；设为 0 则审查所有账号的帖子。仅关注者和私信帖子绝不会被发送，申诉已被审核员批准的账号的帖子也不会被发送。",
+    "description": "Description of the number of days an account's posts go to the external review. {min} and {max} are the bounds."
+  },
+  "admin.settings.hooks.local_profile.account_age": {
+    "defaultMessage": "审查注册不满以下天数的账号的个人资料",
+    "description": "Label of the number of days after its creation that an account's profile changes go to the external review of local profiles."
+  },
+  "admin.settings.hooks.local_profile.account_age.description": {
+    "defaultMessage": "{min} 到 {max} 天；设为 0 则审查所有账号的个人资料。",
+    "description": "Description of the number of days an account's profile changes go to the external review. {min} and {max} are the bounds."
+  },
+  "admin.settings.hooks.inbound_status.unfollowed_direct": {
+    "defaultMessage": "同时审查本站无人关注的作者发来的私信帖子",
+    "description": "Label of the setting that sends direct posts from unfollowed authors to the external review."
+  },
+  "admin.settings.hooks.inbound_status.unfollowed_direct.description": {
+    "defaultMessage": "私信帖子只对其提及的人可见。关闭时，本站无人关注的作者发来的私信帖子会未经审查直接送达收件人；开启时，其文本会发送给外部审查。",
+    "description": "Help of the setting that sends direct posts from unfollowed authors to the external review."
+  },
+  "admin.settings.hooks.local_status.mode": {
+    "defaultMessage": "本站帖子",
+    "description": "Label of the choice of the mode of the external review of this kind of submission."
+  },
+  "admin.settings.hooks.inbound_actor.mode": {
+    "defaultMessage": "来自其他服务器的个人资料",
+    "description": "Label of the choice of the mode of the external review of this kind of submission."
+  },
+  "admin.settings.hooks.inbound_actor.on_failure": {
+    "defaultMessage": "来自其他服务器的个人资料：审查失败时",
+    "description": "Label of the choice of what happens when this external review fails while it enforces."
+  },
+  "admin.settings.hooks.local_profile.mode": {
+    "defaultMessage": "本站个人资料",
+    "description": "Label of the choice of the mode of the external review of this kind of submission."
+  },
+  "admin.settings.hooks.media_check.mode": {
+    "defaultMessage": "上传的媒体",
+    "description": "Label of the choice of the mode of the external review of this kind of submission."
+  },
+  "admin.settings.hooks.media_check.on_failure": {
+    "defaultMessage": "上传的媒体：审查失败时",
+    "description": "Label of the choice of what happens when this external review fails while it enforces."
+  },
+  "admin.settings.hooks.mode.enforce": {
+    "defaultMessage": "执行",
+    "description": "Choice of the mode of an external review."
+  },
+  "admin.settings.hooks.mode.enforce.description": {
+    "defaultMessage": "按审查结果处理。",
+    "description": "Description of the Enforce mode of an external review."
+  },
+  "admin.settings.hooks.mode.observe": {
+    "defaultMessage": "观察",
+    "description": "Choice of the mode of an external review."
+  },
+  "admin.settings.hooks.mode.observe.description": {
+    "defaultMessage": "记录审查结果，但不作任何处理。",
+    "description": "Description of the Observe mode of an external review."
+  },
+  "admin.settings.hooks.mode.off": {
+    "defaultMessage": "关闭",
+    "description": "Choice of the mode of an external review."
+  },
+  "admin.settings.hooks.mode.off.description": {
+    "defaultMessage": "不调用任何审查。",
+    "description": "Description of the Off mode of an external review."
+  },
+  "admin.settings.hooks.retention": {
+    "defaultMessage": "审查结果的保留天数",
+    "description": "Label of the number of days the records of the decisions of the external reviews stay."
+  },
+  "admin.settings.hooks.retention.description": {
+    "defaultMessage": "{min} 到 {max} 天。如果审查结果仍有敏感标记、其账号处于保全状态，或作者仍可申诉，则会保留更长时间。",
+    "description": "Description of the number of days the records of decisions stay. {min} and {max} are the bounds."
+  },
+  "admin.settings.hooks.retention.invalid": {
+    "defaultMessage": "请输入 {min} 到 {max} 之间的整数天数。",
+    "description": "Error of the number of days the records of decisions stay: not a whole number within {min} and {max}."
+  },
+  "admin.settings.hooks.signup_check.mode": {
+    "defaultMessage": "注册",
+    "description": "Label of the choice of the mode of the external review of this kind of submission."
+  },
+  "admin.settings.hooks.signup_check.on_failure": {
+    "defaultMessage": "注册：审查失败时",
+    "description": "Label of the choice of what happens when this external review fails while it enforces."
+  },
+  "admin.settings.hooks.signup_check.reject": {
+    "defaultMessage": "注册：允许审查拒绝注册",
+    "description": "Label of the checkbox that lets the external review of sign-ups refuse a sign-up."
+  },
+  "admin.settings.hooks.signup_check.reject.description": {
+    "defaultMessage": "审查处于执行模式并返回拒绝时，申请人会看到一条固定消息，说明服务器无法接受此注册。关闭时，该结果仅被记录，注册会继续进行。",
+    "description": "Help text of the checkbox that lets the external review of sign-ups refuse a sign-up."
+  },
+  "admin.settings.hooks.title": {
+    "defaultMessage": "外部审查",
+    "description": "Heading of the section of the server settings about the external reviews of submissions."
+  },
+  "admin.settings.login_providers_only.confirm.affected": {
+    "defaultMessage": "{count, plural, =0 {所有活跃用户都已关联登录服务。} other {# 位活跃用户未关联登录服务，其会话结束后将无法登录。}}",
+    "description": "In the confirmation dialog: how many active users have no link to an enabled login provider."
+  },
+  "admin.settings.login_providers_only.confirm.cancel": {
+    "defaultMessage": "取消",
+    "description": "Button in the confirmation dialog that keeps the form as it is."
+  },
+  "admin.settings.login_providers_only.confirm.confirm": {
+    "defaultMessage": "限制登录方式",
+    "description": "Button in the confirmation dialog that saves the limit."
+  },
+  "admin.settings.login_providers_only.confirm.failed": {
+    "defaultMessage": "无法获取将无法登录的用户数。未关联登录服务的用户在会话结束后将无法登录。",
+    "description": "In the confirmation dialog when the count of affected users could not be read."
+  },
+  "admin.settings.login_providers_only.confirm.loading": {
+    "defaultMessage": "正在统计将无法登录的用户…",
+    "description": "In the confirmation dialog while the count of affected users loads."
+  },
+  "admin.settings.login_providers_only.confirm.no_provider": {
+    "defaultMessage": "当前未启用任何登录服务，因此暂时不会有变化。启用登录服务后，限制才会生效。",
+    "description": "In the confirmation dialog when no login provider is enabled."
+  },
+  "admin.settings.login_providers_only.confirm.recovery": {
+    "defaultMessage": "如需撤销，请在此处关闭，或在服务器上运行“my instance set login_providers_only false”。",
+    "description": "In the confirmation dialog: how to undo the limit."
+  },
+  "admin.settings.login_providers_only.confirm.self": {
+    "defaultMessage": "你也是其中之一。请在会话结束前，在“已关联的账号”中关联一个登录服务。",
+    "description": "In the confirmation dialog when the administrator who confirms has no link to an enabled login provider."
+  },
+  "admin.settings.login_providers_only.confirm.sessions": {
+    "defaultMessage": "已登录的会话和应用会继续可用，用户可以在此期间关联登录服务。",
+    "description": "In the confirmation dialog: what keeps working."
+  },
+  "admin.settings.login_providers_only.confirm.stops": {
+    "defaultMessage": "将无法再使用密码和通行密钥登录，也无法再使用密码注册或重置密码。",
+    "description": "In the confirmation dialog: what stops."
+  },
+  "admin.settings.login_providers_only.confirm.title": {
+    "defaultMessage": "要限制为仅通过登录服务登录吗？",
+    "description": "Title of the dialog that confirms limiting sign-in to login providers."
+  },
+  "admin.settings.login_providers_only.description": {
+    "defaultMessage": "只要至少启用了一个登录服务，就无法再使用密码和通行密钥登录，也无法再使用密码注册或重置密码。未启用任何登录服务时，此设置不生效。",
+    "description": "Description of the checkbox that limits sign-in and registration to login providers."
+  },
+  "admin.settings.login_providers_only.label": {
+    "defaultMessage": "仅允许通过登录服务登录和注册",
+    "description": "Checkbox in the registration section of the server settings: limits sign-in and registration to login providers."
+  },
+  "admin.settings.search.title": {
+    "defaultMessage": "帖子搜索",
+    "description": "Heading of the section of the server settings about the search of posts, shown only on a server with a search engine."
+  },
+  "admin.settings.search.description": {
+    "defaultMessage": "登录此服务器的人可以按关键词找到哪些帖子。只包括允许被搜索的账号，不公开列出、仅关注者和私信帖子绝不包括在内。服务器向搜索引擎声明的内容是另一项设置。",
+    "description": "Explanation of the section of the server settings about the search of posts."
+  },
+  "admin.settings.search.visibilities": {
+    "defaultMessage": "搜索范围",
+    "description": "Label of the radio group of which posts the search covers (search_visibilities)."
+  },
+  "admin.settings.search.visibilities.description": {
+    "defaultMessage": "移除某类帖子后，这类帖子会从搜索中移除。添加某类帖子后，只能找到这类帖子中的新帖子：在你重建索引（在服务器上运行“my search rebuild --keep”）之前，较早的帖子不会被找到。",
+    "description": "Help text of which posts the search covers: narrowing takes effect, widening reaches older posts only after a rebuild."
+  },
+  "admin.settings.search.public": {
+    "defaultMessage": "公开帖子",
+    "description": "Choice of search_visibilities: public posts only."
+  },
+  "admin.settings.search.public.description": {
+    "defaultMessage": "此服务器及其已知的其他服务器账号的公开帖子。",
+    "description": "Description of covering public posts."
+  },
+  "admin.settings.search.local": {
+    "defaultMessage": "本站帖子",
+    "description": "Choice of search_visibilities: posts with the visibility 'This server' only."
+  },
+  "admin.settings.search.local.description": {
+    "defaultMessage": "可见范围为“本站”的帖子，不包括公开帖子。已允许被搜索的账号不会被再次询问，请先告知你的用户。",
+    "description": "Description of covering posts with the visibility 'This server' only."
+  },
+  "admin.settings.search.public_local": {
+    "defaultMessage": "两者",
+    "description": "Choice of search_visibilities: public posts and posts with the visibility 'This server'."
+  },
+  "admin.settings.search.public_local.description": {
+    "defaultMessage": "公开帖子和可见范围为“本站”的帖子。已允许被搜索的账号不会被再次询问，请先告知你的用户。",
+    "description": "Description of covering public posts and posts with the visibility 'This server'."
+  },
+  "admin.settings.pages": {
+    "defaultMessage": "服务器设置页面",
+    "description": "Name of the navigation of the pages of the server settings screen, under its heading."
+  },
+  "admin.settings.page.general": {
+    "defaultMessage": "常规",
+    "description": "Link to the page of the server settings with the server's name, descriptions, contact and thumbnail."
+  },
+  "admin.settings.page.branding": {
+    "defaultMessage": "图标与徽标",
+    "description": "Link to the page of the server settings with the server's icon and logos."
+  },
+  "admin.settings.page.registration": {
+    "defaultMessage": "注册",
+    "description": "Link to the page of the server settings with who may sign up, the members' invites and the registration of apps."
+  },
+  "admin.settings.page.content": {
+    "defaultMessage": "内容",
+    "description": "Link to the page of the server settings with the default language, the public timelines, the posts, the landing page and the featured accounts."
+  },
+  "admin.settings.page.federation": {
+    "defaultMessage": "联邦",
+    "description": "Link to the page of the server settings with the federation, the list of domain actions and the external review."
+  },
+  "admin.settings.page.discovery": {
+    "defaultMessage": "搜索与爬虫",
+    "description": "Link to the page of the server settings with what the server states to search engines and AI, and the post search."
+  },
+  "admin.settings.page.voice": {
+    "defaultMessage": "语音聊天",
+    "description": "Link to the page of the server settings with the voice chat settings."
+  },
+  "admin.settings.general.save": {
+    "defaultMessage": "保存",
+    "description": "Button that saves the name, the descriptions, the contact and the thumbnail of the server together."
+  },
+  "admin.settings.general.saved": {
+    "defaultMessage": "已保存。审计日志已记录此更改。",
+    "description": "Result beside the save button of the general page of the server settings after a save."
+  },
+  "admin.settings.general.unchanged": {
+    "defaultMessage": "此页面上的所有内容都已保存。",
+    "description": "Result beside the save button of the general page of the server settings when nothing changed."
+  },
+  "admin.settings.general.save_failed": {
+    "defaultMessage": "无法保存：{reason}",
+    "description": "Result beside the save button of the general page of the server settings when the save failed; the reason follows."
+  },
+  "admin.settings.voice.unavailable": {
+    "defaultMessage": "此服务器不提供语音聊天，因此这里没有可设置的内容。",
+    "description": "Text of the voice chat page of the server settings while the server does not offer voice chat."
+  },
+  "admin.settings.page.auto_delete": {
+    "defaultMessage": "帖子删除",
+    "description": "Link to the page of the server settings with the default and the maximum of the automatic deletion of old posts."
+  },
+  "admin.settings.auto_delete.number.invalid": {
+    "defaultMessage": "请输入 {min} 到 {max} 之间的整数。",
+    "description": "Error under a number field of the automatic deletion settings when its value is not a whole number in range."
+  },
+  "admin.settings.auto_delete.default.title": {
+    "defaultMessage": "新账号的默认设置",
+    "description": "Heading of the section of the server's default policy of the automatic deletion of old posts."
+  },
+  "admin.settings.auto_delete.default.description": {
+    "defaultMessage": "每个新账号都以这些设置作为自己的初始设置，之后可以更改。更改这些设置不会影响现有账号。",
+    "description": "Help of the section of the server's default policy of the automatic deletion: it is copied at sign-up."
+  },
+  "admin.settings.auto_delete.default.enabled": {
+    "defaultMessage": "自动删除旧帖子",
+    "description": "Checkbox of the server's default: new accounts start with the automatic deletion turned on."
+  },
+  "admin.settings.auto_delete.default.age": {
+    "defaultMessage": "删除早于以下天数的帖子",
+    "description": "Label of the number field of the default age in days after which posts are deleted."
+  },
+  "admin.settings.auto_delete.days.description": {
+    "defaultMessage": "从每个帖子发布时起计算：{min} 到 {max} 天。",
+    "description": "Help of the default age of the automatic deletion. {min} and {max} are the bounds."
+  },
+  "admin.settings.auto_delete.default.keep": {
+    "defaultMessage": "保留以下帖子",
+    "description": "Label of the group of the exceptions of the server's default policy."
+  },
+  "admin.settings.auto_delete.default.visibilities": {
+    "defaultMessage": "保留以下可见范围的帖子",
+    "description": "Label of the group of the visibilities that the server's default policy keeps."
+  },
+  "admin.settings.auto_delete.default.min_boosts": {
+    "defaultMessage": "保留转发次数至少达到以下值的帖子",
+    "description": "Label of the number field of the default threshold of boosts that keeps a post."
+  },
+  "admin.settings.auto_delete.default.min_favourites": {
+    "defaultMessage": "保留喜欢次数至少达到以下值的帖子",
+    "description": "Label of the number field of the default threshold of favourites that keeps a post."
+  },
+  "admin.settings.auto_delete.threshold.description": {
+    "defaultMessage": "设为 0 则不因此保留任何帖子。{min} 到 {max}。",
+    "description": "Help of a threshold of the server's default policy. {min} and {max} are the bounds."
+  },
+  "admin.settings.auto_delete.pinned": {
+    "defaultMessage": "置顶到个人资料的",
+    "description": "Exception of the automatic deletion in the server settings: posts pinned to the profile."
+  },
+  "admin.settings.auto_delete.bookmarked": {
+    "defaultMessage": "作者加入书签的",
+    "description": "Exception of the automatic deletion in the server settings: posts the author bookmarked."
+  },
+  "admin.settings.auto_delete.favourited": {
+    "defaultMessage": "作者喜欢的",
+    "description": "Exception of the automatic deletion in the server settings: posts the author favourited."
+  },
+  "admin.settings.auto_delete.media": {
+    "defaultMessage": "包含图片或其他媒体的",
+    "description": "Exception of the automatic deletion in the server settings: posts with media attachments."
+  },
+  "admin.settings.auto_delete.polls": {
+    "defaultMessage": "包含投票的",
+    "description": "Exception of the automatic deletion in the server settings: posts with a poll."
+  },
+  "admin.settings.auto_delete.max.title": {
+    "defaultMessage": "上限",
+    "description": "Heading of the section of the server's maximum of how long local posts are kept."
+  },
+  "admin.settings.auto_delete.max.description": {
+    "defaultMessage": "开启上限后，每个本站账号都会在帖子发布后最多这么多天内将其删除，且无法关闭自动删除。角色拥有更长时间保留帖子权限的账号不受此限制。关于页面会显示此上限。",
+    "description": "Help of the section of the server's maximum of the automatic deletion."
+  },
+  "admin.settings.auto_delete.max.age": {
+    "defaultMessage": "帖子最长保留天数",
+    "description": "Label of the number field of the server's maximum in days."
+  },
+  "admin.settings.auto_delete.max.age.description": {
+    "defaultMessage": "设为 0 则不设上限。最多 {max} 天。",
+    "description": "Help of the maximum's days. {max} is the upper bound; {min} is 0 and not shown."
+  },
+  "admin.settings.auto_delete.max.allow": {
+    "defaultMessage": "上限下允许的例外",
+    "description": "Label of the group of the exceptions that the maximum lets accounts keep posts by."
+  },
+  "admin.settings.auto_delete.max.allow.description": {
+    "defaultMessage": "勾选的例外在适用期间可以让帖子保留超过上限。",
+    "description": "Help of the group of the exceptions allowed under the maximum."
+  },
+  "admin.settings.auto_delete.max.allow.visibilities": {
+    "defaultMessage": "按可见范围保留帖子",
+    "description": "Allowance of the maximum: posts may be kept by their visibility."
+  },
+  "admin.settings.auto_delete.max.allow.thresholds": {
+    "defaultMessage": "保留转发或喜欢较多的帖子",
+    "description": "Allowance of the maximum: posts may be kept by their numbers of boosts and favourites."
+  },
+  "admin.settings.auto_delete.max.kept_pins": {
+    "defaultMessage": "上限下保留的置顶数",
+    "description": "Label of the number field of how many of an account's pins keep posts under the maximum."
+  },
+  "admin.settings.auto_delete.max.kept_pins.description": {
+    "defaultMessage": "优先保留最近置顶的：{min} 到 {max}。设为 {max} 则保留所有置顶帖子。",
+    "description": "Help of the number of pins kept under the maximum. {min} and {max} are the bounds; {max} is the most pins of an account."
+  },
+  "admin.settings.auto_delete.grace": {
+    "defaultMessage": "宽限期（天）",
+    "description": "Label of the number field of the grace period of an account newly bound by the maximum."
+  },
+  "admin.settings.auto_delete.grace.description": {
+    "defaultMessage": "新受上限约束的账号在收到通知后可继续使用自己设置的时长：{min} 到 {max} 天。更改此值不会改变已通知的日期。",
+    "description": "Help of the grace period of the maximum. {min} and {max} are the bounds."
+  },
+  "admin.settings.auto_delete.confirm.title_on": {
+    "defaultMessage": "要将帖子最长保留 {days, plural, other {# 天}}吗？",
+    "description": "Title of the dialog that asks before turning the maximum of the automatic deletion on. {days} is the maximum."
+  },
+  "admin.settings.auto_delete.confirm.title_stricter": {
+    "defaultMessage": "要将上限收紧为 {days, plural, other {# 天}}吗？",
+    "description": "Title of the dialog that asks before lowering the maximum or allowing fewer exceptions or pins. {days} is the maximum."
+  },
+  "admin.settings.auto_delete.confirm.notify": {
+    "defaultMessage": "一小时内，所有设置为更长时间保留帖子的本站账号都会通过应用和邮件收到通知。",
+    "description": "In the dialog before turning on or tightening the maximum: who is notified and how."
+  },
+  "admin.settings.auto_delete.confirm.grace": {
+    "defaultMessage": "{days, plural, =0 {他们的帖子将立即开始按上限处理。} other {他们的帖子将在通知后 # 天开始按上限处理。}}",
+    "description": "In the dialog before turning on or tightening the maximum: when the posts of the notified accounts start to go. {days} is the grace period."
+  },
+  "admin.settings.auto_delete.confirm.permanent": {
+    "defaultMessage": "已删除的帖子无法恢复，无论是在此处还是在帖子已发送到的服务器上。",
+    "description": "In the dialog before turning on or tightening the maximum: deletions are permanent."
+  },
+  "admin.settings.auto_delete.confirm.exempt": {
+    "defaultMessage": "拥有更长时间保留帖子权限的账号不受影响。在此之前将设置改为不超过上限的账号会保留自己的设置。",
+    "description": "Note in the dialog before turning on or tightening the maximum."
+  },
+  "admin.settings.auto_delete.confirm.cancel": {
+    "defaultMessage": "取消",
+    "description": "Button that closes the dialog without saving the maximum."
+  },
+  "admin.settings.auto_delete.confirm.confirm": {
+    "defaultMessage": "保存并通知",
+    "description": "Button that saves the stricter maximum, which notifies the bound accounts."
+  }
+}

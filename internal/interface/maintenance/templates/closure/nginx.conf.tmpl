@@ -9,8 +9,8 @@
 
 map $http_accept_language $closure_page {
     default /index.html;
-{{- range .Locales}}
-    "~*^{{.}}(-|,|;|$)" /{{.}}.html;
+{{- range .Matches}}
+    "~*^{{.Tag}}({{if .Prefix}}-|{{end}},|;|$)" /{{.Locale}}.html;
 {{- end}}
 }
 

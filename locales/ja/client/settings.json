@@ -391,6 +391,10 @@
     "defaultMessage": "ブラウザの言語を使います。アプリがその言語に対応していないときは、このサーバーの言語を使います。",
     "description": "Description of the option that follows the browser's language."
   },
+  "settings.locale.machine_translated": {
+    "defaultMessage": "機械翻訳",
+    "description": "Description of a language in the display language select whose text is a machine translation (every language but English and Japanese)."
+  },
   "settings.locale.label": {
     "defaultMessage": "表示言語",
     "description": "Label of the select of the language the app is shown in."

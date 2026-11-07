@@ -171,12 +171,13 @@ entries:
     checks: [go]
   - name: i18n
     paths: ["internal/i18n/**", "locales/**", "tools/i18n/**"]
-    docs: ["docs/adr/0009-internationalization.md"]
+    docs: ["docs/adr/0009-internationalization.md", "docs/agents/translating-catalogs.md"]
     checks: [i18n, go, web]
     shared: true
     notes:
       - "Add messages to locales/en and locales/ja, each key in the file of its area: locales/<locale>/<namespace>/<first segment>.json, or <namespace>/admin/<second segment>.json under admin (ADR-0081); a new area is a new file."
       - "Then `scripts/task.sh i18n:gen` and commit the files Go reads (client pseudo-locales and TS accessors are not committed)."
+      - "The other locales (zh-CN, ...) are machine translations an agent catches up in runs of their own (docs/agents/translating-catalogs.md, ADR-0009 §8): a change to en does not translate them, and their untranslated keys only warn; removing or renaming a key still removes it from every locale (an obsolete key fails i18n:check)."
       - "Call each thing by the term of tools/i18n/glossary.json (web-client G21); `i18n:check` rejects the variants it lists, and a new term goes there."
   - name: mail-templates
     paths: ["app/mail/**", "internal/app/kernel/mail_composer.go", "internal/app/kernel/mail_frame.gen.html"]

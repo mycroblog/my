@@ -1,0 +1,294 @@
+{
+  "lists.title": {
+    "defaultMessage": "列表",
+    "description": "Heading and document title of the page of the user's lists, and its item in the main navigation."
+  },
+  "lists.list.title": {
+    "defaultMessage": "你的列表",
+    "description": "Heading of the region of the user's lists on the lists page."
+  },
+  "lists.count": {
+    "defaultMessage": "{count, plural, other {# 个列表}}（上限 {max} 个）",
+    "description": "Read for the count beside the heading of the user's lists, drawn as '3 / 50'. {count} is the number of lists, {max} the most a user may have."
+  },
+  "lists.empty": {
+    "defaultMessage": "还没有列表",
+    "description": "Heading of the empty list of the user's lists."
+  },
+  "lists.empty.description": {
+    "defaultMessage": "把你关注的人加入列表，即可在主页之外单独阅读他们的帖子。只有你能看到自己的列表。",
+    "description": "Text of the empty list of the user's lists, above the button that creates one."
+  },
+  "lists.limit": {
+    "defaultMessage": "你最多可以有 {max} 个列表。删除不再使用的列表后才能创建新的列表。",
+    "description": "Shown in place of the button that creates a list, and in the add-to-list dialog, when the user has the most lists. {max} is that number."
+  },
+  "lists.create": {
+    "defaultMessage": "创建列表",
+    "description": "Button that opens the form that creates a list, and the title of that form."
+  },
+  "lists.create.submit": {
+    "defaultMessage": "创建",
+    "description": "Button that sends the form that creates a list."
+  },
+  "lists.created": {
+    "defaultMessage": "已创建 {name}。",
+    "description": "Shown above the user's lists after creating one. {name} is the new list's name."
+  },
+  "lists.name": {
+    "defaultMessage": "名称",
+    "description": "Label of the field with a list's name."
+  },
+  "lists.name.description": {
+    "defaultMessage": "只有你能看到自己的列表，被加入列表的人也不会收到通知。",
+    "description": "Description under the field with a list's name."
+  },
+  "lists.name.required": {
+    "defaultMessage": "请输入名称。",
+    "description": "Error of the empty name field of a list."
+  },
+  "lists.name.too_long": {
+    "defaultMessage": "名称最多 {max} 个字符。",
+    "description": "Error of a list's name that is too long. {max} is the most characters."
+  },
+  "lists.name.invalid": {
+    "defaultMessage": "名称必须是单行文本。",
+    "description": "Error of a list's name with line breaks or other control characters."
+  },
+  "lists.save_failed": {
+    "defaultMessage": "无法保存列表。{reason}",
+    "description": "Error in the form that creates or renames a list. {reason} says why."
+  },
+  "lists.cancel": {
+    "defaultMessage": "取消",
+    "description": "Button that closes the form that creates or renames a list without saving."
+  },
+  "lists.member_count": {
+    "defaultMessage": "{count, plural, other {# 名成员}}",
+    "description": "The number of members of a list, in its row on the lists page and on the list's page."
+  },
+  "lists.list_action": {
+    "defaultMessage": "{action}：{name}",
+    "description": "Accessible name of a button in a row of the user's lists. {action} is the button's visible text (for example 'Rename'), {name} the list's name."
+  },
+  "lists.rename": {
+    "defaultMessage": "重命名",
+    "description": "Button in a row of the user's lists that opens the form that renames the list."
+  },
+  "lists.rename.title": {
+    "defaultMessage": "重命名 {name}",
+    "description": "Title of the form that renames a list. {name} is the list's name."
+  },
+  "lists.rename.submit": {
+    "defaultMessage": "保存",
+    "description": "Button that saves a list's new name."
+  },
+  "lists.renamed": {
+    "defaultMessage": "已将列表重命名为 {name}。",
+    "description": "Read after a list is renamed. {name} is its new name."
+  },
+  "lists.delete": {
+    "defaultMessage": "删除",
+    "description": "Button in a row of the user's lists that deletes the list after asking, and the button of that dialog that does it."
+  },
+  "lists.delete.title": {
+    "defaultMessage": "要删除 {name} 吗？",
+    "description": "Title of the dialog that asks before a list is deleted. {name} is the list's name."
+  },
+  "lists.delete.description": {
+    "defaultMessage": "列表及其成员信息将被删除。你仍会继续关注其中的所有人。",
+    "description": "Text of the dialog that asks before a list is deleted."
+  },
+  "lists.delete.cancel": {
+    "defaultMessage": "取消",
+    "description": "Button that closes the dialog that asks before a list is deleted, keeping the list."
+  },
+  "lists.deleted": {
+    "defaultMessage": "已删除 {name}。",
+    "description": "Read after a list is deleted. {name} is the list's name."
+  },
+  "lists.delete_failed": {
+    "defaultMessage": "无法删除 {name}。{reason}",
+    "description": "Toast when a list could not be deleted. {name} is the list's name, {reason} says why."
+  },
+  "lists.retry": {
+    "defaultMessage": "重试",
+    "description": "Button that loads the members of a list, or the user's lists in the add-to-list dialog, again after they failed."
+  },
+  "lists.manage": {
+    "defaultMessage": "管理列表",
+    "description": "Link from a list's page to the page of the user's lists."
+  },
+  "lists.members.manage": {
+    "defaultMessage": "管理成员",
+    "description": "Button in a row of the user's lists that shows or hides the list's members, and the button of the empty state of a list's page without members."
+  },
+  "lists.members.title": {
+    "defaultMessage": "{name} 的成员",
+    "description": "Heading of the region of a list's members. {name} is the list's name."
+  },
+  "lists.members.count": {
+    "defaultMessage": "{count, plural, other {# 名成员}}（上限 {max} 名）",
+    "description": "Read for the count beside the heading of a list's members, drawn as '12 / 1,000'. {count} is the number of members, {max} the most a list may have."
+  },
+  "lists.members.search": {
+    "defaultMessage": "搜索你关注的人",
+    "description": "Label of the field that searches the accounts the user follows, to add one to a list."
+  },
+  "lists.members.search.description": {
+    "defaultMessage": "按名称或用户名搜索。只有接受了你的关注的人才能加入列表。",
+    "description": "Description under the field that searches the accounts the user follows."
+  },
+  "lists.members.searching": {
+    "defaultMessage": "正在搜索",
+    "description": "Accessible name of the spinner while the accounts the user follows are searched."
+  },
+  "lists.members.search_failed": {
+    "defaultMessage": "无法搜索。{reason}",
+    "description": "Shown when the search of the accounts the user follows failed. {reason} says why."
+  },
+  "lists.members.no_match": {
+    "defaultMessage": "你关注的人中没有匹配的结果。这里只能找到你关注且已接受你的关注的人。",
+    "description": "Shown when the search of the accounts the user follows found none."
+  },
+  "lists.members.results": {
+    "defaultMessage": "你关注的人",
+    "description": "Accessible name of the results of the search of the accounts the user follows."
+  },
+  "lists.members.add": {
+    "defaultMessage": "添加",
+    "description": "Button of a search result that adds the account to the list."
+  },
+  "lists.members.add_of": {
+    "defaultMessage": "添加 {name}",
+    "description": "Accessible name of the button that adds an account to a list. {name} is the account's display name."
+  },
+  "lists.members.added_mark": {
+    "defaultMessage": "已添加",
+    "description": "Mark of a search result that is already in the list, in place of the button that adds it."
+  },
+  "lists.members.added": {
+    "defaultMessage": "已将 {name} 添加到 {list}。",
+    "description": "Read after an account is added to a list. {name} is the account's display name, {list} the list's name."
+  },
+  "lists.members.add_failed": {
+    "defaultMessage": "无法添加。{reason}",
+    "description": "Shown beside a search result that could not be added to the list. {reason} says why."
+  },
+  "lists.members.not_followed": {
+    "defaultMessage": "你只能添加你关注的人，且需要对方已接受你的关注。",
+    "description": "Shown when an account that the user does not follow could not be added to a list."
+  },
+  "lists.members.limit": {
+    "defaultMessage": "一个列表最多可以有 {max} 名成员。",
+    "description": "Shown when a list has the most members, so that no one more can be added. {max} is that number."
+  },
+  "lists.members.loading": {
+    "defaultMessage": "正在加载成员",
+    "description": "Accessible name of the spinner while a list's members load."
+  },
+  "lists.members.failed": {
+    "defaultMessage": "无法加载成员",
+    "description": "Heading of the error when a list's members could not load."
+  },
+  "lists.members.empty": {
+    "defaultMessage": "此列表还没有成员。请在上方搜索你关注的人。",
+    "description": "Shown in place of the members of a list without members."
+  },
+  "lists.members.list": {
+    "defaultMessage": "成员",
+    "description": "Accessible name of the list of a list's members."
+  },
+  "lists.members.remove": {
+    "defaultMessage": "移除",
+    "description": "Button of a member that takes the account out of the list."
+  },
+  "lists.members.remove_of": {
+    "defaultMessage": "移除 {name}",
+    "description": "Accessible name of the button that takes an account out of a list. {name} is the account's display name."
+  },
+  "lists.members.removed": {
+    "defaultMessage": "已将 {name} 从 {list} 中移除。",
+    "description": "Read after an account is taken out of a list. {name} is the account's display name, {list} the list's name."
+  },
+  "lists.members.remove_failed": {
+    "defaultMessage": "无法移除成员。{reason}",
+    "description": "Shown above a list's members when one could not be removed. {reason} says why."
+  },
+  "lists.members.more": {
+    "defaultMessage": "显示更多",
+    "description": "Button that loads more members of a list."
+  },
+  "lists.members.more_failed": {
+    "defaultMessage": "无法加载更多成员。{reason}",
+    "description": "Shown under a list's members when the next ones could not load. {reason} says why."
+  },
+  "lists.timeline.empty.heading": {
+    "defaultMessage": "此列表还没有成员",
+    "description": "Heading shown on a list's page in place of the posts while the list has no members."
+  },
+  "lists.timeline.empty.description": {
+    "defaultMessage": "添加你关注的人后，他们的帖子会显示在这里。",
+    "description": "Text under the heading shown on the page of a list without members."
+  },
+  "lists.not_found.title": {
+    "defaultMessage": "找不到列表",
+    "description": "Heading of the page of a list that does not exist or is not the user's."
+  },
+  "lists.not_found.body": {
+    "defaultMessage": "此列表不存在，或者不属于你。",
+    "description": "Text of the page of a list that does not exist or is not the user's."
+  },
+  "lists.not_found.link": {
+    "defaultMessage": "前往你的列表",
+    "description": "Link from the page of a list that was not found to the page of the user's lists."
+  },
+  "lists.add_to_list.open": {
+    "defaultMessage": "添加到列表",
+    "description": "Item of the menu of a followed account's profile that opens the dialog that puts the account in the user's lists."
+  },
+  "lists.add_to_list.title": {
+    "defaultMessage": "将 {name} 添加到列表",
+    "description": "Title of the dialog that puts an account in the user's lists. {name} is the account's display name."
+  },
+  "lists.add_to_list.close": {
+    "defaultMessage": "关闭",
+    "description": "Accessible name of the button that closes the add-to-list dialog."
+  },
+  "lists.add_to_list.lists": {
+    "defaultMessage": "你的列表",
+    "description": "Accessible name of the checkboxes of the user's lists in the add-to-list dialog."
+  },
+  "lists.add_to_list.manage": {
+    "defaultMessage": "管理列表",
+    "description": "Link from the add-to-list dialog to the page of the user's lists."
+  },
+  "lists.add_to_list.loading": {
+    "defaultMessage": "正在加载你的列表",
+    "description": "Accessible name of the spinner while the add-to-list dialog loads the user's lists."
+  },
+  "lists.add_to_list.load_failed": {
+    "defaultMessage": "无法加载你的列表",
+    "description": "Heading of the error when the add-to-list dialog could not load the user's lists."
+  },
+  "lists.add_to_list.none": {
+    "defaultMessage": "你还没有列表。请先在列表页面创建一个，然后在这里添加人员。",
+    "description": "Text of the add-to-list dialog while the user has no lists."
+  },
+  "lists.add_to_list.saving": {
+    "defaultMessage": "正在保存…",
+    "description": "Shown under a list's checkbox in the add-to-list dialog while its change is saved."
+  },
+  "lists.add_to_list.added": {
+    "defaultMessage": "已添加到 {list}",
+    "description": "Read after the account of the add-to-list dialog is put in a list. {list} is the list's name."
+  },
+  "lists.add_to_list.removed": {
+    "defaultMessage": "已从 {list} 中移除",
+    "description": "Read after the account of the add-to-list dialog is taken out of a list. {list} is the list's name."
+  },
+  "lists.add_to_list.failed": {
+    "defaultMessage": "无法更改列表。{reason}",
+    "description": "Shown under a list's checkbox in the add-to-list dialog when the change failed. {reason} says why."
+  }
+}

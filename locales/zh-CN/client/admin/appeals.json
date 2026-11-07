@@ -1,0 +1,54 @@
+{
+  "admin.appeals.empty.decided": {
+    "defaultMessage": "尚无已处理的申诉",
+    "description": "Heading of the appeals screen's reviewed tab when it is empty."
+  },
+  "admin.appeals.empty.pending": {
+    "defaultMessage": "没有待处理的申诉",
+    "description": "Heading of the appeals screen's pending tab when it is empty."
+  },
+  "admin.appeals.empty.pending.description": {
+    "defaultMessage": "用户对其账号所受操作提出的申诉会显示在这里。",
+    "description": "Text under the heading of the empty pending tab of the appeals screen."
+  },
+  "admin.appeals.filter.decided": {
+    "defaultMessage": "已处理",
+    "description": "Tab of the appeals that were upheld or overturned."
+  },
+  "admin.appeals.filter.label": {
+    "defaultMessage": "按状态筛选申诉",
+    "description": "Accessible name of the tabs of the appeals admin screen."
+  },
+  "admin.appeals.filter.pending": {
+    "defaultMessage": "待处理",
+    "description": "Tab of the appeals that await a decision."
+  },
+  "admin.appeals.of": {
+    "defaultMessage": "对“{kind}”的申诉",
+    "description": "Heading of an appeal in the list, a link to its page. {kind} is the kind of the moderation action, such as Suspend."
+  },
+  "admin.appeals.state.overturned": {
+    "defaultMessage": "已撤销",
+    "description": "State of an appeal whose action the moderators lifted."
+  },
+  "admin.appeals.state.pending": {
+    "defaultMessage": "待处理",
+    "description": "State of an appeal that awaits a decision."
+  },
+  "admin.appeals.state.upheld": {
+    "defaultMessage": "已维持",
+    "description": "State of an appeal whose action the moderators kept."
+  },
+  "admin.appeals.summary": {
+    "defaultMessage": "处理对审核操作的申诉，维持或撤销原操作。",
+    "description": "Description of the appeals screen in the admin menu."
+  },
+  "admin.appeals.title": {
+    "defaultMessage": "申诉",
+    "description": "Heading of the admin screen of the appeals of moderation actions, and its link in the admin menu."
+  },
+  "admin.appeals.column.appeal": {
+    "defaultMessage": "申诉",
+    "description": "Header of the column of the appeals table that names the appeal and links to it."
+  }
+}

@@ -1,0 +1,118 @@
+{
+  "admin.instance.back": {
+    "defaultMessage": "返回远程服务器列表",
+    "description": "Link under the heading of a remote server's page that opens the list of remote servers."
+  },
+  "admin.instance.event.marked_available": {
+    "defaultMessage": "已恢复投递",
+    "description": "Heading of an entry of a remote server's history: deliveries to it resumed."
+  },
+  "admin.instance.event.marked_unavailable": {
+    "defaultMessage": "已暂停投递",
+    "description": "Heading of an entry of a remote server's history: deliveries to it were paused."
+  },
+  "admin.instance.failure_days": {
+    "defaultMessage": "投递失败的天数",
+    "description": "Term in a remote server's details: on how many different days deliveries to it failed in a row."
+  },
+  "admin.instance.failure_days.value": {
+    "defaultMessage": "{count, plural, other {# 天}}",
+    "description": "The number of days with failed deliveries to a remote server."
+  },
+  "admin.instance.history.empty": {
+    "defaultMessage": "对此服务器的投递从未暂停过",
+    "description": "Text of a remote server's history when deliveries to it were never paused or resumed."
+  },
+  "admin.instance.history.title": {
+    "defaultMessage": "历史记录",
+    "description": "Heading of the history of a remote server: when deliveries to it were paused and resumed, and why."
+  },
+  "admin.instance.last_failure": {
+    "defaultMessage": "上次投递失败",
+    "description": "Term in a remote server's details: the last day a delivery to it failed."
+  },
+  "admin.instance.last_resumed": {
+    "defaultMessage": "上次恢复投递",
+    "description": "Term in a remote server's details: the last time deliveries to it resumed after a pause."
+  },
+  "admin.instance.mark_available": {
+    "defaultMessage": "恢复投递",
+    "description": "Button on a remote server's page that clears its failures and resumes deliveries to it."
+  },
+  "admin.instance.mark_available.description": {
+    "defaultMessage": "清除失败天数，让该服务器重新接收所有投递。",
+    "description": "Description under the button that resumes deliveries to a remote server."
+  },
+  "admin.instance.mark_failed": {
+    "defaultMessage": "无法恢复投递：{reason}",
+    "description": "Error toast when deliveries to a remote server could not be resumed. {reason} is the server's localized reason."
+  },
+  "admin.instance.marked_available": {
+    "defaultMessage": "已恢复对 {domain} 的投递。",
+    "description": "Announcement after an operator resumed deliveries to a remote server. {domain} is its domain."
+  },
+  "admin.instance.moderation.description": {
+    "defaultMessage": "查看对此服务器域名的审核措施，或采取新的措施。",
+    "description": "Help text under the link from a remote server's page to its domain actions."
+  },
+  "admin.instance.moderation.link": {
+    "defaultMessage": "域名措施",
+    "description": "Link on a remote server's page that opens the domain actions of its domain."
+  },
+  "admin.instance.moderation.title": {
+    "defaultMessage": "审核",
+    "description": "Heading of the section of a remote server's page that links to its domain actions."
+  },
+  "admin.instance.none": {
+    "defaultMessage": "无",
+    "description": "Value of a term in a remote server's details that has nothing to show, such as the last failure of a server without failures."
+  },
+  "admin.instance.reason": {
+    "defaultMessage": "原因",
+    "description": "Term in a remote server's details: why deliveries to it were last paused or resumed."
+  },
+  "admin.instance.reason.delivery_succeeded": {
+    "defaultMessage": "对该服务器的一次投递成功。",
+    "description": "Why deliveries to a remote server resumed: a delivery to it succeeded."
+  },
+  "admin.instance.reason.failure_days": {
+    "defaultMessage": "投递在 7 个不同的日子失败。",
+    "description": "Why deliveries to a remote server were paused: they failed on 7 different days."
+  },
+  "admin.instance.reason.inbound_request": {
+    "defaultMessage": "该服务器发送了已签名的请求。",
+    "description": "Why deliveries to a remote server resumed: it sent this server a signed request."
+  },
+  "admin.instance.reason.operator": {
+    "defaultMessage": "运营者恢复了投递。",
+    "description": "Why deliveries to a remote server resumed: an operator resumed them."
+  },
+  "admin.instance.reason.probe_succeeded": {
+    "defaultMessage": "每日检查成功连接到该服务器。",
+    "description": "Why deliveries to a remote server resumed: the daily check reached it."
+  },
+  "admin.instance.since": {
+    "defaultMessage": "开始时间",
+    "description": "Term in a remote server's details: since when it is in its state."
+  },
+  "admin.instance.state": {
+    "defaultMessage": "状态",
+    "description": "Term in a remote server's details: whether deliveries go to it."
+  },
+  "admin.instance.state.available": {
+    "defaultMessage": "正在投递",
+    "description": "State of a remote server that gets every delivery."
+  },
+  "admin.instance.state.unavailable": {
+    "defaultMessage": "已暂停",
+    "description": "State of a remote server that gets only follow requests and their answers, because deliveries to it kept failing."
+  },
+  "admin.instance.column.event": {
+    "defaultMessage": "事件",
+    "description": "Header of the column of a remote server's availability history that names what happened."
+  },
+  "admin.instance.column.occurred_at": {
+    "defaultMessage": "时间",
+    "description": "Header of the column of a remote server's availability history that holds when it happened."
+  }
+}

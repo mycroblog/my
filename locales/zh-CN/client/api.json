@@ -1,0 +1,14 @@
+{
+  "api.error.network": {
+    "defaultMessage": "无法连接到服务器。请检查网络连接后重试。",
+    "description": "Error message when a request to the server got no answer (offline, or the server is down)."
+  },
+  "api.error.offline": {
+    "defaultMessage": "你处于离线状态，无法连接到服务器。请连接到互联网后重试。",
+    "description": "Error message when a request failed because the device has no network connection. Shown as the reason why something could not load or be sent."
+  },
+  "api.error.status": {
+    "defaultMessage": "服务器无法处理该请求（错误 {status}）。请稍后重试。",
+    "description": "Error message when the server failed without describing the problem. {status} is the HTTP status code, for example 502."
+  }
+}

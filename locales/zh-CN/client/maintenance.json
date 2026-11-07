@@ -1,0 +1,26 @@
+{
+  "maintenance.body": {
+    "defaultMessage": "服务器正在维护。你会保持登录状态，维护结束后应用会自动恢复。",
+    "description": "Text below the heading of the screen shown in place of the app while the server is under maintenance. The app tries again by itself and returns to the page the user was on."
+  },
+  "maintenance.reload": {
+    "defaultMessage": "重新加载",
+    "description": "Button on the maintenance screen: asks the server again at once and, when the maintenance has ended, reloads the page."
+  },
+  "maintenance.status_page": {
+    "defaultMessage": "查看状态页面",
+    "description": "Link on the maintenance screen to the instance's status page, which another service hosts."
+  },
+  "maintenance.still": {
+    "defaultMessage": "服务器仍在维护中。",
+    "description": "Announced to assistive technology after the user pressed Reload on the maintenance screen and the server still answered that it is under maintenance."
+  },
+  "maintenance.title": {
+    "defaultMessage": "正在维护",
+    "description": "Heading of the screen shown in place of the app while the server is under maintenance; also the page name in the browser tab."
+  },
+  "maintenance.until": {
+    "defaultMessage": "预计结束时间：{time}",
+    "description": "When the maintenance is expected to end, on the maintenance screen. {time} is a date and time in the user's locale and time zone."
+  }
+}

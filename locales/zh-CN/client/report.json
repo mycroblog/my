@@ -1,0 +1,182 @@
+{
+  "report.back": {
+    "defaultMessage": "返回",
+    "description": "Button that goes back to the previous step of the report dialog, keeping the answers."
+  },
+  "report.category.heading": {
+    "defaultMessage": "你为什么要举报此账号？",
+    "description": "Heading of the first step of the report dialog, which also names the group of reasons."
+  },
+  "report.category.legal": {
+    "defaultMessage": "违法内容",
+    "description": "Reason of a report: the account posts content that is against the law."
+  },
+  "report.category.legal.description": {
+    "defaultMessage": "你认为违反法律的内容。",
+    "description": "Explanation of the illegal content reason of a report."
+  },
+  "report.category.other": {
+    "defaultMessage": "其他原因",
+    "description": "Reason of a report that is none of the others."
+  },
+  "report.category.other.description": {
+    "defaultMessage": "请在备注中告诉审核员。",
+    "description": "Explanation of the other reason of a report."
+  },
+  "report.category.required": {
+    "defaultMessage": "请选择一个原因。",
+    "description": "Error under the reasons of a report when the user went on without choosing one."
+  },
+  "report.category.spam": {
+    "defaultMessage": "垃圾信息",
+    "description": "Reason of a report: the account posts spam or unwanted promotion."
+  },
+  "report.category.spam.description": {
+    "defaultMessage": "不受欢迎的广告、链接，或反复发布相同的帖子。",
+    "description": "Explanation of the spam reason of a report."
+  },
+  "report.category.violation": {
+    "defaultMessage": "违反服务器规则",
+    "description": "Reason of a report: the account breaks the rules of this server. The next step lists the rules."
+  },
+  "report.category.violation.description": {
+    "defaultMessage": "你将在下一步选择规则。",
+    "description": "Explanation of the rule violation reason of a report."
+  },
+  "report.close": {
+    "defaultMessage": "关闭",
+    "description": "Accessible name of the × button of the report dialog. Nothing is sent."
+  },
+  "report.comment.characters_left": {
+    "defaultMessage": "{count, plural, other {还可输入 # 个字符}}",
+    "description": "Character count under the comment of a report while the text is within the limit."
+  },
+  "report.comment.characters_over": {
+    "defaultMessage": "{count, plural, other {超出 # 个字符}}",
+    "description": "Character count under the comment of a report when the text is longer than the limit."
+  },
+  "report.comment.description": {
+    "defaultMessage": "可选。只有审核员会看到。",
+    "description": "Hint under the comment field of a report: the reported account never sees it."
+  },
+  "report.comment.heading": {
+    "defaultMessage": "还有什么需要让审核员知道的吗？",
+    "description": "Heading of the last step of the report dialog, with the comment and, for another server's account, forwarding."
+  },
+  "report.comment.label": {
+    "defaultMessage": "备注",
+    "description": "Label of the comment field of a report."
+  },
+  "report.comment.too_long": {
+    "defaultMessage": "请将备注缩短到 {max, number} 个字符以内。",
+    "description": "Error under the comment of a report that is longer than the limit. {max} is a number."
+  },
+  "report.done": {
+    "defaultMessage": "完成",
+    "description": "Button that closes the report dialog after the report was sent."
+  },
+  "report.failed": {
+    "defaultMessage": "无法发送举报：{reason}",
+    "description": "Error in the report dialog when sending the report failed; the answers are kept. {reason} is the error message, a full sentence."
+  },
+  "report.forward": {
+    "defaultMessage": "同时将举报发送到 {domain}",
+    "description": "Checkbox in the report dialog for an account of another server. {domain} is that server's domain."
+  },
+  "report.forward.description": {
+    "defaultMessage": "{domain} 的审核员会收到一份匿名副本。",
+    "description": "Explanation under the checkbox that forwards a report to the account's server. {domain} is that server's domain."
+  },
+  "report.next": {
+    "defaultMessage": "下一步",
+    "description": "Button that goes on to the next step of the report dialog."
+  },
+  "report.open": {
+    "defaultMessage": "举报",
+    "description": "Menu item on another account's post or profile that opens the dialog to report the account to the moderators."
+  },
+  "report.posts.content_warning": {
+    "defaultMessage": "内容警告：{text}",
+    "description": "Shown instead of the text of a post with a content warning in the report dialog. {text} is the warning the author wrote."
+  },
+  "report.posts.description": {
+    "defaultMessage": "选择需要审核员查看的帖子。你也可以不选帖子，直接举报此账号。",
+    "description": "Hint under the heading of the posts step of the report dialog."
+  },
+  "report.posts.empty": {
+    "defaultMessage": "此账号没有你可以选择的帖子。",
+    "description": "Shown in the posts step of the report dialog when the account has no posts the user can see."
+  },
+  "report.posts.failed": {
+    "defaultMessage": "无法加载帖子",
+    "description": "Heading of the error in the posts step of the report dialog when its posts did not load."
+  },
+  "report.posts.heading": {
+    "defaultMessage": "你要举报哪些帖子？",
+    "description": "Heading of the step of the report dialog that lists the account's posts; it also names the group of posts."
+  },
+  "report.posts.item": {
+    "defaultMessage": "{date} 的帖子",
+    "description": "Label of the checkbox of one post in the report dialog. {date} is the date and time of the post. The post's text follows as the description."
+  },
+  "report.posts.loading": {
+    "defaultMessage": "正在加载帖子",
+    "description": "Accessible name of the spinner while the report dialog loads the account's posts."
+  },
+  "report.posts.media": {
+    "defaultMessage": "{count, plural, other {# 个附件}}",
+    "description": "Shown for a post in the report dialog that has media attachments."
+  },
+  "report.posts.retry": {
+    "defaultMessage": "重试",
+    "description": "Button that loads the posts of the report dialog again after a failure."
+  },
+  "report.rules.description": {
+    "defaultMessage": "选择所有适用的规则。",
+    "description": "Hint under the heading of the rules step of the report dialog."
+  },
+  "report.rules.heading": {
+    "defaultMessage": "违反了哪些规则？",
+    "description": "Heading of the step of the report dialog that lists the server rules; it also names the group of rules."
+  },
+  "report.rules.required": {
+    "defaultMessage": "请至少选择一条规则。",
+    "description": "Error in the rules step of the report dialog when the user went on without choosing a rule."
+  },
+  "report.sent.body": {
+    "defaultMessage": "审核员会进行审核。被举报的账号不会知道是谁举报的。",
+    "description": "Text of the report dialog after the report was sent."
+  },
+  "report.sent.forwarded": {
+    "defaultMessage": "一份匿名副本将发送到 {domain}。",
+    "description": "Text of the report dialog after a report that is forwarded to the account's server was sent. {domain} is that server's domain."
+  },
+  "report.sent.heading": {
+    "defaultMessage": "举报已发送",
+    "description": "Heading of the report dialog after the report was sent."
+  },
+  "report.step": {
+    "defaultMessage": "第 {current, number} 步，共 {total, number} 步",
+    "description": "Shown above the heading of each step of the report dialog. {current} and {total} are numbers; the total depends on the chosen reason."
+  },
+  "report.submit": {
+    "defaultMessage": "发送举报",
+    "description": "Button on the last step of the report dialog that sends the report to the moderators."
+  },
+  "report.title": {
+    "defaultMessage": "举报 {name}",
+    "description": "Title of the dialog that reports an account to the moderators. {name} is the account's display name."
+  },
+  "report.title_room": {
+    "defaultMessage": "举报房间 {room}",
+    "description": "Title of the dialog that reports a voice chat room to the moderators. {room} is the room's name."
+  },
+  "report.room.category.heading": {
+    "defaultMessage": "你为什么要举报此房间？",
+    "description": "Heading of the first step of the dialog that reports a voice chat room, which also names the group of reasons."
+  },
+  "report.room.target": {
+    "defaultMessage": "此举报针对此房间及其主持人 {name}。",
+    "description": "Text above the reasons of the dialog that reports a voice chat room. {name} is the host's display name."
+  }
+}

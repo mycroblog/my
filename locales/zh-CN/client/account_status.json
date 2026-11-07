@@ -1,0 +1,194 @@
+{
+  "account_status.active.empty": {
+    "defaultMessage": "你的账号目前没有生效的处理措施",
+    "description": "Shown when no moderation action is in effect on the user's account."
+  },
+  "account_status.active.empty.description": {
+    "defaultMessage": "如果审核员对你的账号采取措施，会在这里显示原因和结束时间。",
+    "description": "Under the heading shown when no moderation action is in effect on the user's account."
+  },
+  "account_status.active.title": {
+    "defaultMessage": "生效中的措施",
+    "description": "Heading of the account status page's region with the moderation actions in effect now."
+  },
+  "account_status.appeal.cancel": {
+    "defaultMessage": "取消",
+    "description": "Button that closes the appeal dialog without appealing."
+  },
+  "account_status.appeal.characters_left": {
+    "defaultMessage": "{count, plural, other {还可输入 # 个字符}}",
+    "description": "Character count of the appeal field. {count} is the number of characters left."
+  },
+  "account_status.appeal.characters_over": {
+    "defaultMessage": "{count, plural, other {超出 # 个字符}}",
+    "description": "Character count of the appeal field when it is over the limit. {count} is the number of characters too many."
+  },
+  "account_status.appeal.closed": {
+    "defaultMessage": "对此措施的申诉期限已于 {date} 结束。",
+    "description": "Shown instead of the appeal button when the time to appeal a moderation action has passed. {date} is a formatted date and time."
+  },
+  "account_status.appeal.confirm.description": {
+    "defaultMessage": "审核员会重新审核 {date} 的“{kind}”，并通过通知告诉你结果。每项措施只能申诉一次，发送后无法修改。",
+    "description": "Description of the dialog that appeals a moderation action. {kind} is what the action does, as the server names it; {date} is when it was taken, a formatted date and time."
+  },
+  "account_status.appeal.confirm.title": {
+    "defaultMessage": "要对此措施提出申诉吗？",
+    "description": "Question that titles the dialog that appeals a moderation action."
+  },
+  "account_status.appeal.decided_at": {
+    "defaultMessage": "决定时间",
+    "description": "Term of the user's appeal of a moderation action: when the moderators decided it."
+  },
+  "account_status.appeal.decision_reason": {
+    "defaultMessage": "决定说明",
+    "description": "Term of the user's appeal of a moderation action: the moderators' explanation of their decision."
+  },
+  "account_status.appeal.failed": {
+    "defaultMessage": "无法发送申诉：{reason}",
+    "description": "In the appeal dialog when sending the appeal failed. {reason} is why, from the server."
+  },
+  "account_status.appeal.open": {
+    "defaultMessage": "申诉",
+    "description": "Button that opens the appeal of a moderation action."
+  },
+  "account_status.appeal.open_of": {
+    "defaultMessage": "对 {date} 的措施提出申诉",
+    "description": "Accessible name of the button that opens the appeal of a moderation action. {date} is when the action was taken, a formatted date and time."
+  },
+  "account_status.appeal.send": {
+    "defaultMessage": "发送申诉",
+    "description": "Button in the appeal dialog that sends the appeal."
+  },
+  "account_status.appeal.sent": {
+    "defaultMessage": "你已对“{kind}”提出申诉。审核员会通过通知告诉你结果。",
+    "description": "Status shown after the user appealed a moderation action. {kind} is what the action does, as the server names it."
+  },
+  "account_status.appeal.state.overturned": {
+    "defaultMessage": "措施已撤销",
+    "description": "State of an appeal after which the moderators lifted the action."
+  },
+  "account_status.appeal.state.pending": {
+    "defaultMessage": "审核中",
+    "description": "State of an appeal that awaits the moderators' decision."
+  },
+  "account_status.appeal.state.upheld": {
+    "defaultMessage": "措施维持",
+    "description": "State of an appeal after which the moderators kept the action."
+  },
+  "account_status.appeal.submitted_at": {
+    "defaultMessage": "发送时间",
+    "description": "Term of the user's appeal of a moderation action: when the user sent it."
+  },
+  "account_status.appeal.text": {
+    "defaultMessage": "你的申诉",
+    "description": "Term of the user's appeal of a moderation action: what the user wrote."
+  },
+  "account_status.appeal.text.description": {
+    "defaultMessage": "写下审核员需要了解的情况。审核员会看到你在这里写的内容。",
+    "description": "Help text under the field of an appeal."
+  },
+  "account_status.appeal.text.label": {
+    "defaultMessage": "审核员为什么应该重新考虑？",
+    "description": "Label of the field where the user writes why the moderators should reconsider an action."
+  },
+  "account_status.appeal.text.required": {
+    "defaultMessage": "请输入审核员应重新考虑此措施的理由",
+    "description": "Error of the appeal field when it is empty or has white space only."
+  },
+  "account_status.appeal.text.too_long": {
+    "defaultMessage": "最多可输入 {max, number} 个字符",
+    "description": "Error of the appeal field when it has too many characters. {max} is the limit."
+  },
+  "account_status.appeal.title": {
+    "defaultMessage": "申诉",
+    "description": "Heading of the appeal part of a moderation action on the user's account."
+  },
+  "account_status.appeal.unavailable": {
+    "defaultMessage": "此措施无法申诉。",
+    "description": "Shown instead of the appeal button when a moderation action cannot be appealed."
+  },
+  "account_status.appeal.until": {
+    "defaultMessage": "{days, plural, other {你可以在 # 天内（{date} 之前）申诉一次。}}",
+    "description": "Above the button that appeals a moderation action. {days} is the time left to appeal, rounded up to whole days; {date} is the deadline, a formatted date and time. The server's status page says the same without the date."
+  },
+  "account_status.ends_in": {
+    "defaultMessage": "{days, plural, other {# 天后结束}}",
+    "description": "Under a moderation action in effect on the user's account: when it ends. {days} is the time left, rounded up to whole days. The server's status page says the same."
+  },
+  "account_status.until_lifted": {
+    "defaultMessage": "持续到审核员解除为止",
+    "description": "Under a moderation action in effect on the user's account that has no end date. The server's status page says the same."
+  },
+  "account_status.no_end": {
+    "defaultMessage": "此措施没有结束日期",
+    "description": "Under a moderation action in effect on the user's account whose kind does not last for a time, such as a warning: says that the missing end date is not an omission."
+  },
+  "account_status.expires_at": {
+    "defaultMessage": "结束时间",
+    "description": "Term of a moderation action on the user's account: when it ends."
+  },
+  "account_status.expires_at.none": {
+    "defaultMessage": "解除时",
+    "description": "Value of the end of a moderation action that lasts until a moderator lifts it."
+  },
+  "account_status.issued_at": {
+    "defaultMessage": "采取时间",
+    "description": "Term of a moderation action on the user's account: when it was taken."
+  },
+  "account_status.lifted_at": {
+    "defaultMessage": "解除时间",
+    "description": "Term of a moderation action on the user's account: when a moderator lifted it."
+  },
+  "account_status.more": {
+    "defaultMessage": "显示更多",
+    "description": "Button under a list of moderation actions that loads more of them."
+  },
+  "account_status.past.empty": {
+    "defaultMessage": "没有过去的措施",
+    "description": "Shown when no moderation action on the user's account has ended."
+  },
+  "account_status.past.title": {
+    "defaultMessage": "过去的措施",
+    "description": "Heading of the account status page's region with the moderation actions that ended (expired or lifted)."
+  },
+  "account_status.posts.loading": {
+    "defaultMessage": "正在加载帖子",
+    "description": "Accessible label of the spinner while a post that a moderation action acted on loads."
+  },
+  "account_status.posts.missing": {
+    "defaultMessage": "此帖子已删除或无法显示。",
+    "description": "In place of a post that a moderation action acted on and that cannot be shown, such as a deleted one."
+  },
+  "account_status.posts.title": {
+    "defaultMessage": "帖子",
+    "description": "Heading of the posts that a moderation action on posts acted on."
+  },
+  "account_status.public_reason": {
+    "defaultMessage": "审核员的说明",
+    "description": "Term of a moderation action on the user's account: the moderators' explanation to the user."
+  },
+  "account_status.public_reason.none": {
+    "defaultMessage": "未提供",
+    "description": "Value of the moderators' explanation of an action when they gave none."
+  },
+  "account_status.reason_category": {
+    "defaultMessage": "原因",
+    "description": "Term of a moderation action on the user's account: the kind of reason the moderators gave."
+  },
+  "account_status.state.active": {
+    "defaultMessage": "生效中",
+    "description": "State of a moderation action that is in effect now."
+  },
+  "account_status.state.expired": {
+    "defaultMessage": "已结束",
+    "description": "State of a moderation action that ended at its end time."
+  },
+  "account_status.state.lifted": {
+    "defaultMessage": "已解除",
+    "description": "State of a moderation action that a moderator lifted."
+  },
+  "account_status.title": {
+    "defaultMessage": "账号状态",
+    "description": "Heading and document title of the account status page, and its entry in the list of settings pages."
+  }
+}

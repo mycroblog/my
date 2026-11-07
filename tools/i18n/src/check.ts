@@ -13,7 +13,8 @@
 // checked here (ADR-0081): i18n:gen-ts writes them before the tasks that read them, maybe while this runs.
 //   error: copy outside the tone and punctuation rules (web-client/16-look-states-and-wording.md G19, G20): an exclamation mark
 //          in any non-pseudo locale; a full-width colon, semicolon or parenthesis, or an ASCII comma, in Japanese text
-//          (use ":", ";", "()" and "、")
+//          (use ":", ";", "()" and "、"); in Simplified Chinese, an ASCII comma, semicolon, colon, question mark or
+//          parenthesis next to a Han character, corner brackets 「」『』, or kana
 //   error: a variant the glossary (tools/i18n/glossary.json, G21) bans in the locale's text, in any namespace
 //   warn:  untranslated key (falls back to en at runtime)
 //   warn:  translation drops a source argument (sometimes legitimate)
@@ -88,6 +89,32 @@ function copyStyleFindings(locale: string, text: string): string[] {
     if (text.includes(","))
       out.push('use "、" instead of an ASCII comma in Japanese (web-client/16-look-states-and-wording.md G20)');
   }
+  if (isSimplifiedChinese(locale)) out.push(...simplifiedChineseFindings(text));
+  return out;
+}
+
+/** zh-CN and the tags that resolve to it (ADR-0009 §2). */
+function isSimplifiedChinese(locale: string): boolean {
+  const { language, script, region } = new Intl.Locale(locale);
+  return language === "zh" && script !== "Hant" && !["TW", "HK", "MO"].includes(region ?? "");
+}
+
+const HAN = "\\p{Script=Han}";
+const ZH_ASCII_PUNCTUATION = new RegExp(`${HAN}[,;:?]|[,;?]${HAN}|${HAN}[()]|[()]${HAN}`, "u");
+
+/** The punctuation rules of Simplified Chinese (web-client/16-look-states-and-wording.md G20). */
+function simplifiedChineseFindings(text: string): string[] {
+  const out: string[] = [];
+  if (ZH_ASCII_PUNCTUATION.test(text))
+    out.push(
+      'use the full-width "，", "；", "：", "？" and "（）" next to Chinese text in Simplified Chinese (web-client/16-look-states-and-wording.md G20)',
+    );
+  if (/[「」『』]/u.test(text))
+    out.push(
+      'use "“…”" and "‘…’" as quotation marks in Simplified Chinese, not "「」" or "『』" (web-client/16-look-states-and-wording.md G20)',
+    );
+  if (/[\p{Script=Hiragana}\p{Script=Katakana}]/u.test(text))
+    out.push("no kana in Simplified Chinese (web-client/16-look-states-and-wording.md G20)");
   return out;
 }
 

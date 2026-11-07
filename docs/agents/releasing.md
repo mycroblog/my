@@ -35,7 +35,9 @@ only when every job passes, tags that commit, drafts a GitHub Release, publishes
    and mark a minor version whose support ends with it as `ended` ([The documentation site](#the-documentation-site)). Every deploy of the site fails while a published release's minor version is not listed.
 
    Translate the documents again before the release ([Translating the documentation site](translating-docs.md#before-a-release)), so that the tag carries
-   current translations: `scripts/task.sh docs:site-translations -- status` lists what is stale. Stale translations do not block the release.
+   current translations: `scripts/task.sh docs:site-translations -- status --locale <locale>` lists what is stale in each locale. Translate the
+   untranslated keys of the UI catalogs of every locale too ([Translating the UI catalogs](translating-catalogs.md#before-a-release)). Stale
+   translations and untranslated keys do not block the release.
 
 3. Run `release.yml` on `main`. The head commit of `main` at that moment is the commit that is checked and tagged.
 

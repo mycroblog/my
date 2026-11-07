@@ -1,0 +1,166 @@
+{
+  "admin.theme.bounds.default": {
+    "defaultMessage": "默认值：{value}",
+    "description": "Description of a token field without bounds (font family, shadow, easing). {value} is the default (not translated)."
+  },
+  "admin.theme.bounds.duration": {
+    "defaultMessage": "默认值：{value}。单位为 ms 或 s，范围为 {min}ms 到 {max}ms。",
+    "description": "Description of a duration token field."
+  },
+  "admin.theme.bounds.length": {
+    "defaultMessage": "默认值：{value}。0 或以 rem / px 为单位，范围为 {min}rem 到 {max}rem。",
+    "description": "Description of a length token field. {value} is the default, {min} and {max} numbers (not translated)."
+  },
+  "admin.theme.bounds.number": {
+    "defaultMessage": "默认值：{value}。{min} 到 {max} 之间的数字。",
+    "description": "Description of a number token field (line height)."
+  },
+  "admin.theme.color.dark": {
+    "defaultMessage": "深色",
+    "description": "Visible label of the field of a color token's value in the dark theme, after the token name that only assistive technology reads (\"color-accent Dark\")."
+  },
+  "admin.theme.color.default": {
+    "defaultMessage": "默认值：{value}",
+    "description": "Description of a color field. {value} is the default color (not translated)."
+  },
+  "admin.theme.color.light": {
+    "defaultMessage": "浅色",
+    "description": "Visible label of the field of a color token's value in the light theme, after the token name that only assistive technology reads (\"color-accent Light\")."
+  },
+  "admin.theme.colors.description": {
+    "defaultMessage": "每种颜色都有浅色主题和深色主题两个值，格式为 #rrggbb；如果默认值带透明度，则为 #rrggbbaa。文字和控件必须与其所在背景保持足够的对比度（WCAG 2.2 AA），因此更改一种颜色可能需要同时更改另一种颜色。",
+    "description": "Description of the colors section of the theme screen."
+  },
+  "admin.theme.colors.title": {
+    "defaultMessage": "颜色",
+    "description": "Heading of the section of the color tokens on the theme screen."
+  },
+  "admin.theme.contrast.failing_dark": {
+    "defaultMessage": "在深色主题中，{fg} 在 {bg} 上的对比度为 {ratio}:1，需要达到 {minimum}:1。",
+    "description": "A color pair below its minimum contrast in the dark theme. {fg} and {bg} are token names, {ratio} and {minimum} numbers (not translated)."
+  },
+  "admin.theme.contrast.failing_light": {
+    "defaultMessage": "在浅色主题中，{fg} 在 {bg} 上的对比度为 {ratio}:1，需要达到 {minimum}:1。",
+    "description": "A color pair below its minimum contrast in the light theme. {fg} and {bg} are token names, {ratio} and {minimum} numbers (not translated)."
+  },
+  "admin.theme.contrast.ok": {
+    "defaultMessage": "在两种主题中，所有文字和控件颜色与其背景都有足够的对比度（WCAG 2.2 AA）。",
+    "description": "Shown when every contrast pair of the theme meets its minimum."
+  },
+  "admin.theme.contrast.title": {
+    "defaultMessage": "对比度",
+    "description": "Heading of the section that lists the color pairs below their minimum contrast on the theme screen."
+  },
+  "admin.theme.css.description": {
+    "defaultMessage": "此 CSS 会添加在令牌之后，并应用于所有页面。它在应用的内容安全策略（Content Security Policy）下运行，因此只能使用此服务器上的图片和字体。服务器不会检查其效果：对比度、布局、焦点指示和从右到左的语言需由你负责，而且类名和页面结构可能随任何更新而改变。请优先使用上方保持稳定的令牌。",
+    "description": "Description of the custom CSS field: what the server does not guarantee."
+  },
+  "admin.theme.css.label": {
+    "defaultMessage": "自定义 CSS",
+    "description": "Label of the custom CSS text area."
+  },
+  "admin.theme.css.title": {
+    "defaultMessage": "自定义 CSS",
+    "description": "Heading of the custom CSS section of the theme screen."
+  },
+  "admin.theme.description": {
+    "defaultMessage": "主题会应用于所有访问者的网页应用，以及登录页和其他服务器页面，包括浅色和深色主题。已打开的页面在重新加载前保持原样，保存的主题可能需要几分钟才能对所有人生效。将字段留空即可保留其默认值。",
+    "description": "Introduction of the theme screen."
+  },
+  "admin.theme.error.css_invalid": {
+    "defaultMessage": "自定义 CSS 不是有效的文本。",
+    "description": "Reason a theme is refused: the custom CSS is not UTF-8 or contains NUL."
+  },
+  "admin.theme.error.css_too_long": {
+    "defaultMessage": "自定义 CSS 最多为 {max} 字节。",
+    "description": "Reason a theme is refused: the custom CSS is too long. {max} is a number of bytes."
+  },
+  "admin.theme.error.duplicate_token": {
+    "defaultMessage": "{token} 被重复指定。",
+    "description": "Reason a theme is refused: the token appears twice."
+  },
+  "admin.theme.error.invalid_dark": {
+    "defaultMessage": "深色主题中的 {token} 不是有效的颜色。",
+    "description": "Reason a theme is refused: the dark value of a color token is not #rrggbb."
+  },
+  "admin.theme.error.invalid_light": {
+    "defaultMessage": "浅色主题中的 {token} 不是有效的颜色。",
+    "description": "Reason a theme is refused: the light value of a color token is not #rrggbb."
+  },
+  "admin.theme.error.invalid_value": {
+    "defaultMessage": "{token} 的值无效。",
+    "description": "Reason a theme is refused: a non-color token's value has the wrong form."
+  },
+  "admin.theme.error.out_of_range": {
+    "defaultMessage": "{token} 必须在 {min} 到 {max} 之间。",
+    "description": "Reason a theme is refused: a value is outside its bounds. {min} and {max} are numbers, rem for lengths and ms for durations (not translated)."
+  },
+  "admin.theme.error.unknown_token": {
+    "defaultMessage": "{token} 无法更改。",
+    "description": "Reason a theme is refused: the token is not overridable. {token} is a token name (not translated)."
+  },
+  "admin.theme.preview.button": {
+    "defaultMessage": "主要按钮",
+    "description": "Sample primary button text in the theme preview."
+  },
+  "admin.theme.preview.danger": {
+    "defaultMessage": "一条错误消息",
+    "description": "Sample error text in the theme preview."
+  },
+  "admin.theme.preview.description": {
+    "defaultMessage": "按输入的令牌值显示，使用此页面当前的主题。不预览自定义 CSS。",
+    "description": "Description of the theme preview."
+  },
+  "admin.theme.preview.heading": {
+    "defaultMessage": "时间线上的一条帖子",
+    "description": "Sample heading in the theme preview."
+  },
+  "admin.theme.preview.link": {
+    "defaultMessage": "一个链接",
+    "description": "Sample link text in the theme preview."
+  },
+  "admin.theme.preview.muted": {
+    "defaultMessage": "次要文字：时间、用户标识和提示",
+    "description": "Sample secondary text in the theme preview."
+  },
+  "admin.theme.preview.text": {
+    "defaultMessage": "正文看起来是这样的。",
+    "description": "Sample body text in the theme preview."
+  },
+  "admin.theme.preview.title": {
+    "defaultMessage": "预览",
+    "description": "Heading of the preview of the theme being edited."
+  },
+  "admin.theme.save": {
+    "defaultMessage": "保存主题",
+    "description": "Button that saves the theme."
+  },
+  "admin.theme.save_failed": {
+    "defaultMessage": "无法保存主题：{reason}",
+    "description": "Error when saving the theme failed for another reason. {reason} is the localized cause."
+  },
+  "admin.theme.save_refused": {
+    "defaultMessage": "主题未保存：",
+    "description": "Lead-in of the list of reasons the server refused the theme."
+  },
+  "admin.theme.saved": {
+    "defaultMessage": "主题已保存。访问者下次加载页面时即可看到，最多需要几分钟。",
+    "description": "Status after the theme was saved."
+  },
+  "admin.theme.summary": {
+    "defaultMessage": "面向所有人的网页应用的颜色、字体、间距和自定义 CSS",
+    "description": "Description of the theme screen's link in the admin menu."
+  },
+  "admin.theme.title": {
+    "defaultMessage": "主题",
+    "description": "Title of the admin screen that sets the instance theme (design token overrides and custom CSS), and its link in the admin menu."
+  },
+  "admin.theme.tokens.description": {
+    "defaultMessage": "字体、文字大小和行高、间距步长、圆角半径、阴影（层级），以及动画的时长和缓动。超出令牌范围的值不会被保存；服务器不会检查应用使用这些值后的外观。",
+    "description": "Description of the section of the non-color tokens on the theme screen."
+  },
+  "admin.theme.tokens.title": {
+    "defaultMessage": "字体、间距和动画",
+    "description": "Heading of the section of the tokens other than colors on the theme screen."
+  }
+}

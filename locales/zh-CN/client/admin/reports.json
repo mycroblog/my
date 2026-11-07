@@ -1,0 +1,118 @@
+{
+  "admin.reports.category.legal": {
+    "defaultMessage": "违法内容",
+    "description": "Category of a report, and of the reason of an account action: content against the law."
+  },
+  "admin.reports.category.other": {
+    "defaultMessage": "其他",
+    "description": "Category of a report, and of the reason of an account action: other."
+  },
+  "admin.reports.category.spam": {
+    "defaultMessage": "垃圾信息",
+    "description": "Category of a report, and of the reason of an account action: spam."
+  },
+  "admin.reports.category.violation": {
+    "defaultMessage": "违反服务器规则",
+    "description": "Category of a report, and of the reason of an account action: a rule violation."
+  },
+  "admin.reports.column.report": {
+    "defaultMessage": "举报",
+    "description": "Header of the column of the reports table that names the reported account and links to the report."
+  },
+  "admin.reports.column.waiting": {
+    "defaultMessage": "等待时间",
+    "description": "Header of the column of the open reports' queue with how long each report has waited since it was filed."
+  },
+  "admin.reports.empty.filtered": {
+    "defaultMessage": "没有符合这些筛选条件的举报",
+    "description": "Empty state of the report queue when a category or an assignee filter is chosen."
+  },
+  "admin.reports.empty.open": {
+    "defaultMessage": "没有待处理的举报",
+    "description": "Empty state of the open reports."
+  },
+  "admin.reports.empty.open.description": {
+    "defaultMessage": "来自本站用户和其他服务器的举报会显示在这里。",
+    "description": "Description of the empty state of the open reports."
+  },
+  "admin.reports.empty.resolved": {
+    "defaultMessage": "没有已解决的举报",
+    "description": "Empty state of the resolved reports."
+  },
+  "admin.reports.filter.assignee": {
+    "defaultMessage": "负责人",
+    "description": "Accessible name of the filter of the report queue by who handles the report."
+  },
+  "admin.reports.filter.assignee.all": {
+    "defaultMessage": "任何人",
+    "description": "Option of the assignee filter of the report queue that keeps every report."
+  },
+  "admin.reports.filter.assignee.me": {
+    "defaultMessage": "分配给我",
+    "description": "Option of the assignee filter of the report queue: the reports the viewer handles."
+  },
+  "admin.reports.filter.assignee.none": {
+    "defaultMessage": "未分配",
+    "description": "Option of the assignee filter of the report queue: the reports nobody handles."
+  },
+  "admin.reports.filter.category": {
+    "defaultMessage": "类别",
+    "description": "Accessible name of the filter of the report queue by the report's category."
+  },
+  "admin.reports.filter.category.all": {
+    "defaultMessage": "所有类别",
+    "description": "Option of the category filter of the report queue that keeps every category."
+  },
+  "admin.reports.filter.label": {
+    "defaultMessage": "举报",
+    "description": "Accessible name of the tabs of the report queue."
+  },
+  "admin.reports.filter.open": {
+    "defaultMessage": "待处理",
+    "description": "Tab of the reports that await the moderators, and that state of a report."
+  },
+  "admin.reports.filter.order": {
+    "defaultMessage": "排序",
+    "description": "Accessible name of the choice of the order of the report queue."
+  },
+  "admin.reports.filter.order.newest": {
+    "defaultMessage": "最新优先",
+    "description": "Order of the report queue: the most recently filed report first."
+  },
+  "admin.reports.filter.order.oldest": {
+    "defaultMessage": "最早优先",
+    "description": "Order of the report queue: the report that has waited longest first."
+  },
+  "admin.reports.filter.resolved": {
+    "defaultMessage": "已解决",
+    "description": "Tab of the handled reports, and that state of a report."
+  },
+  "admin.reports.outcome.actioned": {
+    "defaultMessage": "已采取操作",
+    "description": "Outcome of a report: a moderator took an action on the target."
+  },
+  "admin.reports.outcome.dismissed": {
+    "defaultMessage": "未采取操作",
+    "description": "Outcome of a report: there was nothing to act on."
+  },
+  "admin.reports.summary": {
+    "defaultMessage": "向审核员提交的账号和帖子举报，以及对它们的处理。",
+    "description": "Description of the report queue in the administration menu of the settings."
+  },
+  "admin.reports.title": {
+    "defaultMessage": "举报",
+    "description": "Heading and title of the report queue."
+  },
+  "admin.reports.wait.days": {
+    "defaultMessage": "{count, plural, other {已等待 # 天}}",
+    "description": "Badge of an item of a queue (a report): how long it has waited, in whole days."
+  },
+  "admin.reports.wait.hours": {
+    "defaultMessage": "{count, plural, other {已等待 # 小时}}",
+    "description": "Badge of an item of a queue (a report): how long it has waited, in whole hours."
+  },
+  "admin.reports.wait.minutes": {
+    "defaultMessage": "{count, plural, other {已等待 # 分钟}}",
+    "description": "Badge of an item of a queue (a report): how long it has waited, in whole minutes."
+  }
+}

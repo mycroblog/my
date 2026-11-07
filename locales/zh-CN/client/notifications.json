@@ -1,0 +1,450 @@
+{
+  "notifications.appeal.overturned": {
+    "defaultMessage": "你的申诉已被采纳，措施已解除。",
+    "description": "In an appeal_decided notification: the moderators granted the user's appeal and lifted the action."
+  },
+  "notifications.appeal.upheld": {
+    "defaultMessage": "你的申诉未被采纳，措施继续有效。",
+    "description": "In an appeal_decided notification: the moderators kept the action that the user appealed."
+  },
+  "notifications.all": {
+    "defaultMessage": "所有通知",
+    "description": "Link from the panel of notifications in the side column to the notifications page."
+  },
+  "notifications.empty.all": {
+    "defaultMessage": "还没有通知",
+    "description": "Heading shown on the notifications page, and text of the panel of notifications in the side column, when the user has no notifications."
+  },
+  "notifications.empty.description": {
+    "defaultMessage": "当有人关注你、提及你或回应你的帖子时，会显示在这里。",
+    "description": "Text under the heading of an empty notifications page."
+  },
+  "notifications.empty.filtered": {
+    "defaultMessage": "没有此类型的通知",
+    "description": "Heading shown on the notifications page when no notification matches the selected type filter."
+  },
+  "notifications.failed": {
+    "defaultMessage": "无法加载通知",
+    "description": "Heading of the error that replaces the list of notifications when it failed to load; the reason follows."
+  },
+  "notifications.filter.all": {
+    "defaultMessage": "全部",
+    "description": "Tab on the notifications page that shows notifications of every type."
+  },
+  "notifications.filter.boosts": {
+    "defaultMessage": "转发",
+    "description": "Tab on the notifications page that shows only boosts of the user's posts."
+  },
+  "notifications.filter.favourites": {
+    "defaultMessage": "喜欢",
+    "description": "Tab on the notifications page that shows only favourites of the user's posts."
+  },
+  "notifications.filter.follows": {
+    "defaultMessage": "关注",
+    "description": "Tab on the notifications page that shows only new followers, follow requests and accepted follow requests."
+  },
+  "notifications.filter.label": {
+    "defaultMessage": "通知类型",
+    "description": "Accessible name of the tab list that filters the notifications by type."
+  },
+  "notifications.filter.mentions": {
+    "defaultMessage": "提及",
+    "description": "Tab on the notifications page that shows only posts that mention the user."
+  },
+  "notifications.filter.posts": {
+    "defaultMessage": "新帖子",
+    "description": "Tab on the notifications page that shows only the new posts of the accounts whose new posts the user chose to be notified of."
+  },
+  "notifications.group.boost": {
+    "defaultMessage": "{name} 和其他 {count, plural, other {# 人}}转发了你的帖子",
+    "description": "Notification sentence for several boosts of one of the user's posts, grouped in one row. {name} is the display name of the newest account that boosted it; {count} is the number of the other accounts that did (1 or more)."
+  },
+  "notifications.group.favourite": {
+    "defaultMessage": "{name} 和其他 {count, plural, other {# 人}}喜欢了你的帖子",
+    "description": "Notification sentence for several favourites of one of the user's posts, grouped in one row. {name} is the display name of the newest account that favourited it; {count} is the number of the other accounts that did (1 or more)."
+  },
+  "notifications.link.account_status": {
+    "defaultMessage": "查看你的账号状态",
+    "description": "Link in a moderation notice notification to the page with the moderation actions on the user's account."
+  },
+  "notifications.link.appeal": {
+    "defaultMessage": "打开申诉",
+    "description": "Link in a moderator's notification of a new appeal to the appeal's admin page."
+  },
+  "notifications.link.followers": {
+    "defaultMessage": "查看你的关注者",
+    "description": "Link in a notification of follows ended by a suspension to the user's list of followers."
+  },
+  "notifications.link.following": {
+    "defaultMessage": "查看你关注的账号",
+    "description": "Link in a notification of follows ended by a suspension to the list of accounts the user follows."
+  },
+  "notifications.link.registrations": {
+    "defaultMessage": "审核注册申请",
+    "description": "Link in a moderator's notification of a new sign-up to the registration review screen."
+  },
+  "notifications.link.report": {
+    "defaultMessage": "打开举报",
+    "description": "Link in a moderator's notification of a new report to the report's admin page."
+  },
+  "notifications.link.webhooks": {
+    "defaultMessage": "打开 Webhook",
+    "description": "Link in an administrator's notification of a disabled webhook to the webhooks screen."
+  },
+  "notifications.link.custom_emoji_requests": {
+    "defaultMessage": "审核申请",
+    "description": "Link in an administrator's notification of a custom emoji request to the requests tab of the custom emoji screen."
+  },
+  "notifications.link.own_custom_emojis": {
+    "defaultMessage": "打开你的自定义表情",
+    "description": "Link in the notification of a decided custom emoji request to the user's custom emoji page."
+  },
+  "notifications.load_more": {
+    "defaultMessage": "加载更多通知",
+    "description": "Button at the end of the notifications that loads older ones."
+  },
+  "notifications.loading": {
+    "defaultMessage": "正在加载通知",
+    "description": "Visually hidden text that names the busy list of notifications while its first page loads."
+  },
+  "notifications.moderation.action": {
+    "defaultMessage": "{kind}：{category}",
+    "description": "In a moderation notice notification: what the action on the user's account does ({kind}, e.g. 'Suspension') and the reason category ({category}, e.g. 'Spam'), both already translated by the server."
+  },
+  "notifications.moderation.until": {
+    "defaultMessage": "至 {date}",
+    "description": "In a moderation notice notification: when the action on the user's account ends by itself; {date} is a formatted date and time."
+  },
+  "notifications.post.content_warning": {
+    "defaultMessage": "内容警告：{summary}",
+    "description": "A notification's link to the post it is about, when the post is behind its author's content warning: the warning only. {summary} is the warning's text."
+  },
+  "notifications.post.open": {
+    "defaultMessage": "打开帖子",
+    "description": "A notification's link to the post it is about, when the post has no text to quote (pictures only)."
+  },
+  "notifications.report_resolved.account": {
+    "defaultMessage": "你对 {name} 的举报已处理",
+    "description": "Notification sentence: the moderators resolved the user's report; {name} is the reported account's name, a link to its profile."
+  },
+  "notifications.retry": {
+    "defaultMessage": "重试",
+    "description": "Button that loads the notifications again after they failed to load."
+  },
+  "notifications.severed.account": {
+    "defaultMessage": "审核员封禁了 {name}。你失去了 {followers, plural, other {# 位关注者}}和 {following, plural, other {# 个你关注的账号}}。",
+    "description": "Notification sentence: the moderators of this server suspended a remote account, which ended the follows between it and the user in both directions; they are not restored when the suspension ends. {name} is the display name of the suspended account. {followers} is the number of the suspended accounts that followed the user, {following} the number of those that the user followed (either may be 0)."
+  },
+  "notifications.severed.domain": {
+    "defaultMessage": "审核员封禁了 {domain}。你失去了该服务器上的 {followers, plural, other {# 位关注者}}和 {following, plural, other {# 个你关注的账号}}。",
+    "description": "Notification sentence: the moderators of this server suspended another server, which ended the follows between its accounts and the user in both directions; they are not restored when the suspension ends. {domain} is the server's domain name. {followers} is the number of the suspended accounts that followed the user, {following} the number of those that the user followed (either may be 0)."
+  },
+  "notifications.signed_out": {
+    "defaultMessage": "登录后即可查看你的通知。",
+    "description": "Description of the sign-in state that the notifications page shows when nobody is signed in, under its heading and above the link to sign in."
+  },
+  "notifications.title": {
+    "defaultMessage": "通知",
+    "description": "Heading and document title of the notifications page."
+  },
+  "notifications.type.admin_account_moved": {
+    "defaultMessage": "一个被审核员限制的账号迁移到了另一个账号",
+    "description": "Notification sentence to a moderator: an account that the moderators limit moved to another account, which does not get the limit."
+  },
+  "notifications.type.admin_appeal": {
+    "defaultMessage": "有新的申诉等待审核员处理",
+    "description": "Notification sentence to a moderator: a user appealed a moderation action on their account."
+  },
+  "notifications.type.admin_report": {
+    "defaultMessage": "有新的举报等待审核员处理",
+    "description": "Notification sentence to a moderator: someone reported an account that had no open report."
+  },
+  "notifications.type.admin_sign_up": {
+    "defaultMessage": "{name} 已注册，正在等待批准",
+    "description": "Notification sentence to a moderator. {name} is the display name, or the username, of a new user whose registration waits for a moderator's approval."
+  },
+  "notifications.type.admin_webhook_disabled": {
+    "defaultMessage": "服务器已停用一个持续失败的 Webhook",
+    "description": "Notification sentence to an administrator: the server disabled a webhook whose endpoint kept failing or answered that it is gone."
+  },
+  "notifications.type.admin_custom_emoji_request": {
+    "defaultMessage": "有自定义表情申请等待审核",
+    "description": "Notification sentence to an administrator when the request it is about is no longer known."
+  },
+  "notifications.type.custom_emoji_request_decided": {
+    "defaultMessage": "管理员已审核你的自定义表情申请",
+    "description": "Notification sentence of a decided custom emoji request when the request is no longer known."
+  },
+  "notifications.custom_emoji_request.submitted.create": {
+    "defaultMessage": "有用户申请了自定义表情 {emoji}",
+    "description": "Notification sentence to an administrator: a user requested a new custom emoji. {emoji} is its :shortcode:."
+  },
+  "notifications.custom_emoji_request.submitted.image": {
+    "defaultMessage": "有用户申请为自定义表情 {emoji} 更换图片",
+    "description": "Notification sentence to an administrator: a user requested a new image of a custom emoji they made. {emoji} is its :shortcode:."
+  },
+  "notifications.custom_emoji_request.approved.create": {
+    "defaultMessage": "你的自定义表情 {emoji} 已获批准",
+    "description": "Notification sentence: an administrator approved the user's request for a new custom emoji. {emoji} is its :shortcode:."
+  },
+  "notifications.custom_emoji_request.approved.image": {
+    "defaultMessage": "你的自定义表情 {emoji} 的新图片已获批准",
+    "description": "Notification sentence: an administrator approved the user's request for a new image of their custom emoji. {emoji} is its :shortcode:."
+  },
+  "notifications.custom_emoji_request.rejected.create": {
+    "defaultMessage": "你对自定义表情 {emoji} 的申请已被拒绝",
+    "description": "Notification sentence: an administrator rejected the user's request for a new custom emoji. {emoji} is its :shortcode:."
+  },
+  "notifications.custom_emoji_request.rejected.image": {
+    "defaultMessage": "你为 {emoji} 更换图片的申请已被拒绝",
+    "description": "Notification sentence: an administrator rejected the user's request for a new image of their custom emoji. {emoji} is its :shortcode:."
+  },
+  "notifications.type.status": {
+    "defaultMessage": "{name} 发布了帖子",
+    "description": "Notification sentence. {name} is the display name of an account that the user subscribes to, which made the new post that the notification shows."
+  },
+  "notifications.type.announcement": {
+    "defaultMessage": "管理员发布了公告",
+    "description": "Notification sentence to every user: the administrators of the server published an announcement, which the notification shows by its title."
+  },
+  "notifications.type.auto_delete_limit": {
+    "defaultMessage": "服务器的帖子最长保留期限将适用于你的帖子",
+    "description": "Notification sentence: the server's maximum of the automatic deletion of old posts now applies to the user's posts, and after a grace period it deletes the posts that the user's own settings keep. The settings of the automatic deletion show which posts will go."
+  },
+  "notifications.type.supporter_payment_failed": {
+    "defaultMessage": "你的支持者方案付款失败",
+    "description": "Notification sentence: a payment for the user's supporter plan failed and the grace period began."
+  },
+  "notifications.type.supporter_subscription_ended": {
+    "defaultMessage": "你的支持者方案已结束",
+    "description": "Notification sentence: the user's supporter subscription ended, and the plan's benefits with it."
+  },
+  "notifications.type.supporter_plan_retired": {
+    "defaultMessage": "管理员停用了你的支持者方案",
+    "description": "Notification sentence: the administrators retired the user's supporter plan."
+  },
+  "notifications.supporter.grace": {
+    "defaultMessage": "你在 {date} 之前仍可享受方案权益。如果届时仍未成功付款，权益将结束。",
+    "description": "In the notification of a failed payment for a supporter plan, while the payment is still overdue: when the grace period ends; {date} is a formatted date and time."
+  },
+  "notifications.supporter.ended": {
+    "defaultMessage": "{reason, select, lapsed {付款失败后 7 天内没有成功付款，或订阅已暂停。} reversed {一笔付款已全额退款或被拒付。} plan_retired {管理员停用了该方案。} account_suspended {你的账号已被封禁。} account_closed {你的账号已被删除。} staff {管理员取消了订阅。} other {订阅已取消。}}",
+    "description": "In the notification of an ended supporter subscription: why it ended. {reason} is the reason code (not shown); each branch says one reason."
+  },
+  "notifications.supporter.retired": {
+    "defaultMessage": "你的订阅不会续订。除非有逾期未付的款项，你在已付费期间结束前仍可享受方案权益。",
+    "description": "In the notification of a retired supporter plan: what happens to the user's subscription."
+  },
+  "notifications.link.supporter_payment": {
+    "defaultMessage": "更新付款方式",
+    "description": "Link in the notification of a failed payment for a supporter plan to the supporter page, where the user fixes the payment method. Not shown in the mobile app."
+  },
+  "notifications.link.supporter": {
+    "defaultMessage": "打开你的支持者方案",
+    "description": "Link in the notification of an ended supporter subscription or a retired plan to the supporter page. Not shown in the mobile app."
+  },
+  "notifications.custom_emoji_request.reason": {
+    "defaultMessage": "管理员给出的原因：",
+    "description": "Label before the reason of a rejected custom emoji request in its notification."
+  },
+  "notifications.type.account_moved": {
+    "defaultMessage": "{name} 已迁移到另一个账号",
+    "description": "Notification sentence. {name} is the display name of an account that the user followed, which moved to another account."
+  },
+  "notifications.type.appeal_decided": {
+    "defaultMessage": "审核员已对你的申诉作出决定",
+    "description": "Notification sentence: the moderators upheld or overturned the user's appeal of a moderation action on their account."
+  },
+  "notifications.type.boost": {
+    "defaultMessage": "{name} 转发了你的帖子",
+    "description": "Notification sentence. {name} is the display name of the account that boosted the user's post."
+  },
+  "notifications.type.favourite": {
+    "defaultMessage": "{name} 喜欢了你的帖子",
+    "description": "Notification sentence. {name} is the display name of the account that favourited the user's post."
+  },
+  "notifications.type.follow": {
+    "defaultMessage": "{name} 关注了你",
+    "description": "Notification sentence. {name} is the display name of the new follower."
+  },
+  "notifications.type.follow_accepted": {
+    "defaultMessage": "{name} 接受了你的关注请求",
+    "description": "Notification sentence. {name} is the display name of the account that accepted the user's follow request."
+  },
+  "notifications.type.follow_request": {
+    "defaultMessage": "{name} 请求关注你",
+    "description": "Notification sentence. {name} is the display name of the account that asked to follow the user."
+  },
+  "notifications.type.mention": {
+    "defaultMessage": "{name} 提及了你",
+    "description": "Notification sentence. {name} is the display name of the author of a post that mentions the user."
+  },
+  "notifications.type.moderation_notice": {
+    "defaultMessage": "此服务器的审核员向你发送了一条通知",
+    "description": "Notification sentence: a notice to the user from the moderators of the server."
+  },
+  "notifications.type.poll_closed": {
+    "defaultMessage": "你参与的投票已结束",
+    "description": "Notification sentence: a poll that the user created or voted in has closed."
+  },
+  "notifications.type.quote": {
+    "defaultMessage": "{name} 引用了你的帖子",
+    "description": "Notification sentence. {name} is the display name of the account that quoted the user's post in a post of its own, which the notification shows."
+  },
+  "notifications.type.reaction": {
+    "defaultMessage": "{name} 用 {emoji} 回应了你的帖子",
+    "description": "Notification sentence. {name} is the display name of the account that reacted to the user's post with an emoji; {emoji} is the emoji, or the :shortcode: of a custom emoji."
+  },
+  "notifications.type.relationships_severed": {
+    "defaultMessage": "审核员的封禁措施解除了你的部分关注关系",
+    "description": "Notification sentence when the details of the suspension are no longer available: the moderators of this server suspended a server or an account, which ended follows between it and the user."
+  },
+  "notifications.type.report_resolved": {
+    "defaultMessage": "你提交的举报已处理",
+    "description": "Notification sentence: the moderators of the server resolved a report that the user filed. It never says how."
+  },
+  "notifications.unread": {
+    "defaultMessage": "未读：",
+    "description": "Read by screen readers before the sentence of a notification that was new when the page opened."
+  },
+  "notifications.unread_count": {
+    "defaultMessage": "{count, plural, other {# 条未读}}",
+    "description": "The number of unread notifications on the badge of the navigation item, for example '3 unread'."
+  },
+  "notifications.account_moved.followed": {
+    "defaultMessage": "你现在已关注 {target}。",
+    "description": "Under the notification that an account the user followed moved: the user follows the new account instead. {target} is the new account's handle."
+  },
+  "notifications.account_moved.requested": {
+    "defaultMessage": "你对 {target} 的关注请求正在等待批准。",
+    "description": "Under the notification that an account the user followed moved: the new account is locked, so the user's follow awaits its approval. {target} is the new account's handle."
+  },
+  "notifications.account_moved.blocking": {
+    "defaultMessage": "你没有关注 {target}，因为你屏蔽了它。",
+    "description": "Under the notification that an account the user followed moved: the user blocks the new account, so did not follow it. {target} is its handle."
+  },
+  "notifications.account_moved.blocked_by": {
+    "defaultMessage": "你没有关注 {target}，因为它屏蔽了你。",
+    "description": "Under the notification that an account the user followed moved: the new account blocks the user, so the user did not follow it. {target} is its handle."
+  },
+  "notifications.account_moved.domain_muted": {
+    "defaultMessage": "你没有关注 {target}，因为你隐藏了它所在的服务器。",
+    "description": "Under the notification that an account the user followed moved: the user mutes the new account's server, so did not follow it. {target} is the handle."
+  },
+  "notifications.account_moved.target": {
+    "defaultMessage": "打开 {target}",
+    "description": "Link from the notification that an account moved to the new account's profile. {target} is its handle."
+  },
+  "notifications.type.service_closure": {
+    "defaultMessage": "管理员宣布此服务器将停止服务",
+    "description": "Notification sentence to every user: the administrators announced the closure of the server."
+  },
+  "notifications.type.service_closure_rescheduled": {
+    "defaultMessage": "管理员更改了此服务器的停止服务日期",
+    "description": "Notification sentence to every user: the administrators changed the dates of the announced closure of the server."
+  },
+  "notifications.type.service_closure_withdrawn": {
+    "defaultMessage": "管理员撤回了此服务器的停止服务",
+    "description": "Notification sentence to every user: the administrators withdrew the announced closure; the server goes on."
+  },
+  "notifications.type.admin_service_closure_due": {
+    "defaultMessage": "停止服务日期已过：请关闭服务器",
+    "description": "Notification sentence to an administrator who may close the server: the closing date of the announced closure has passed, and the server closes only when an administrator closes it."
+  },
+  "notifications.type.admin_error_group": {
+    "defaultMessage": "报告了新的错误，或已解决的错误再次出现",
+    "description": "Notification sentence to an administrator who manages the errors: the server or the web client reported an error of a new kind, or an error that was marked resolved happened again."
+  },
+  "notifications.type.supporter_service_closure": {
+    "defaultMessage": "由于此服务器将停止服务，你的支持者订阅已取消",
+    "description": "Notification sentence: the announced closure of the server cancels the user's supporter subscription at the end of its period."
+  },
+  "notifications.type.voice_room_started": {
+    "defaultMessage": "{name} 开启了一个语音聊天房间",
+    "description": "Notification sentence. {name} is the display name of an account that the user follows, which opened a voice chat room that the user may join."
+  },
+  "notifications.type.voice_room_invited": {
+    "defaultMessage": "{name} 邀请你加入语音聊天房间",
+    "description": "Notification sentence. {name} is the display name of the host or a co-host of a voice chat room, who invited the user to it."
+  },
+  "notifications.link.voice_room": {
+    "defaultMessage": "打开房间",
+    "description": "Link in a voice chat notification to the page of the room."
+  },
+  "notifications.type.admin_error_group_created": {
+    "defaultMessage": "报告了新的错误",
+    "description": "Notification sentence to an administrator who manages the errors: the server or the web client reported an error of a new kind."
+  },
+  "notifications.type.admin_error_group_regressed": {
+    "defaultMessage": "已解决的错误再次出现",
+    "description": "Notification sentence to an administrator who manages the errors: an error that was marked resolved happened again on another version."
+  },
+  "notifications.type.admin_error_group_others": {
+    "defaultMessage": "这一小时内还报告了更多新的或再次出现的错误",
+    "description": "Notification sentence to an administrator who manages the errors: more errors than the server notifies of one by one in an hour were reported."
+  },
+  "notifications.link.error_group": {
+    "defaultMessage": "打开错误",
+    "description": "Link of an admin_error_group notification to the page of the error group."
+  },
+  "notifications.link.errors": {
+    "defaultMessage": "打开错误列表",
+    "description": "Link of an admin_error_group notification about more groups to the list of error groups."
+  },
+  "notifications.signed_out.heading": {
+    "defaultMessage": "你尚未登录",
+    "description": "Heading of the sign-in state that the notifications page shows, instead of the notifications, when nobody is signed in."
+  },
+  "notifications.mention.reply": {
+    "defaultMessage": "回复",
+    "description": "Button in the row of a mention notification that opens the form to reply to the post that mentioned the user."
+  },
+  "notifications.announcement.titled": {
+    "defaultMessage": "公告：{title}",
+    "description": "Notification sentence to every user: the administrators of the server published an announcement. {title} is its title, a link that opens it."
+  },
+  "notifications.link.announcement": {
+    "defaultMessage": "打开公告",
+    "description": "Link from a notification of an announcement without a title to the announcement on the list page."
+  },
+  "notifications.link.hook_decisions": {
+    "defaultMessage": "打开自动审查",
+    "description": "Link in a notification to the page of decisions of the external review of submissions."
+  },
+  "notifications.link.hook_appeals": {
+    "defaultMessage": "打开申诉",
+    "description": "Link of an admin_hook_appeal notification to the page of the appeal of a refused post that awaits review."
+  },
+  "notifications.type.admin_hook_failing": {
+    "defaultMessage": "外部审查的调用持续失败",
+    "description": "Notification sentence to a moderator: calls of the external review of submissions keep failing, so submissions go through unreviewed or wait."
+  },
+  "notifications.type.admin_hook_appeal": {
+    "defaultMessage": "有用户对被自动审查拒绝的帖子提出了申诉",
+    "description": "Notification to a moderator: a user appealed a post that the server's automated review refused, and the appeal awaits review. Names neither the user nor the post."
+  },
+  "notifications.type.hook_appeal_decided": {
+    "defaultMessage": "审核员已审核你对被拒帖子的申诉",
+    "description": "Notification: the moderators upheld or overturned the user's appeal of a post that the automated review refused; shown when the appeal is no longer available to say which."
+  },
+  "notifications.type.hook_appeal_upheld": {
+    "defaultMessage": "审核员维持了对你帖子的拒绝，该帖子仍不会发布。",
+    "description": "Notification: a moderator reviewed the user's appeal of a post that the automated review refused, and kept the refusal."
+  },
+  "notifications.type.hook_appeal_overturned": {
+    "defaultMessage": "审核员取消了对你帖子的拒绝。你可以重新发布它。",
+    "description": "Notification: a moderator overturned the automated review's refusal of the user's post. The post is not restored; the user posts it again, and their posts are no longer reviewed."
+  },
+  "notifications.unknown": {
+    "defaultMessage": "你有一条新通知。",
+    "description": "Sentence of a notification whose type this version of the web client does not know yet."
+  },
+  "notifications.auto_delete_limit.detail": {
+    "defaultMessage": "从 {date} 起，你超过 {days, plural, other {# 天}}的帖子将被删除，此服务器允许你保留的帖子除外。在此之前，仍适用你自己的设置。",
+    "description": "In the notification that the server's maximum of the automatic deletion binds the user: {date} is the formatted date it starts to delete their posts, {days} the most days a post is kept."
+  },
+  "notifications.link.auto_delete": {
+    "defaultMessage": "查看哪些帖子将被删除",
+    "description": "Link in the notification of the server's maximum of the automatic deletion to the settings of the automatic deletion, which preview what goes."
+  }
+}

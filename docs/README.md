@@ -114,6 +114,7 @@ The protocol between the server and the plugins that do a job in its place, gene
 - [Releasing (playbook)](agents/releasing.md)
 - [Drawing a diagram (playbook)](agents/diagrams.md)
 - [Translating the documentation site (playbook)](agents/translating-docs.md)
+- [Translating the UI catalogs (playbook)](agents/translating-catalogs.md)
 - [Commands](reference/commands.md) (the development tasks and the pinned toolchain)
 
 ## Design (in Japanese)

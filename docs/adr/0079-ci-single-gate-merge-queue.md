@@ -76,7 +76,7 @@ Merge Queue に入るのは PR の `check` を通ったものだけなので、P
 - `client-test` を初めから 2 つに分けるのは、`web-test` だけで 242 / 274 秒（中央値 / p90）かかり、Merge Queue の最長のジョブになるからである。
   Vitest 5.0.5 の `--shard <index>/<count>` で分ける（`vitest --help`、2026-10-23 確認）。
 - Merge Queue で同時に組むグループは最大 2（`max_entries_to_build: 2`）、1 回にマージするのは最大 5（`max_entries_to_merge: 5`）にする（`.github/rulesets/protect-main.json`）。グループが増えると同時 20 ジョブを使い切り、PR の待ちが延びるからである。
-  1 グループで同時に動くジョブは最大 9（E2E のシャード 3 を含む。E2E のビルドとレポートはシャードの前後に動く）なので、Merge Queue が同時 20 ジョブのうち 18 を超えて使うことはない。
+  1 グループで同時に動くジョブは最大 10（コンテナの契約のジョブと E2E のシャード 3 を含む。E2E のビルドとレポートはシャードの前後に動く）なので、Merge Queue が同時 20 ジョブを超えて使うことはない。
 - PR の `check` を本検査にしたいとき（外の貢献者の PR を早めに確かめる、Merge Queue で落ちた原因を PR で調べる）は、PR に `ci:full` のラベルを付ける。そのときだけ、PR でも Merge Queue と同じジョブを回す。
 
 ### 6. 必須チェックとスキップ

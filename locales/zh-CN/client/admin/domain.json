@@ -1,0 +1,10 @@
+{
+  "admin.domain.ascii": {
+    "defaultMessage": "（{domain}）",
+    "description": "After a domain in non-Latin letters: the same domain as the server keeps it, in ASCII (IDNA A-labels), such as '(xn--r8jz45g.jp)'. {domain} is that ASCII form."
+  },
+  "admin.domain.both": {
+    "defaultMessage": "{unicode}（{ascii}）",
+    "description": "A domain in non-Latin letters inside a sentence. {unicode} is its readable form, such as 例え.jp; {ascii} is the same domain in ASCII as the server keeps it, such as xn--r8jz45g.jp."
+  }
+}

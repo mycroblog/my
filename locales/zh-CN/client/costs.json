@@ -1,0 +1,238 @@
+{
+  "costs.basis": {
+    "defaultMessage": "付款计算方式",
+    "description": "Label of the choice between spreading long payments over the days they cover and counting each payment on its date, on the costs screen and the public costs page."
+  },
+  "costs.basis.amortized": {
+    "defaultMessage": "按付款所覆盖的期间分摊",
+    "description": "Choice of counting a payment for more than a month (a yearly domain) by day over the days it pays for, on the costs screen and the public costs page. The default."
+  },
+  "costs.basis.amortized.description": {
+    "defaultMessage": "显示一个月或一周的成本：按年付款会按天计入，直到下一次付款。",
+    "description": "Explanation of the spread choice on the costs screen and the public costs page."
+  },
+  "costs.basis.cash": {
+    "defaultMessage": "按付款日期",
+    "description": "Choice of counting each payment on the date it is paid, on the costs screen and the public costs page."
+  },
+  "costs.basis.cash.description": {
+    "defaultMessage": "显示何时付了多少：可与你的账单对照。",
+    "description": "Explanation of the payment-date choice on the costs screen and the public costs page."
+  },
+  "costs.granularity": {
+    "defaultMessage": "期间",
+    "description": "Accessible name of the tabs that choose weeks, months, or years for the totals on the costs screen and the public costs page."
+  },
+  "costs.granularity.week": {
+    "defaultMessage": "周",
+    "description": "Tab of the totals by ISO week on the costs screen and the public costs page."
+  },
+  "costs.granularity.month": {
+    "defaultMessage": "月",
+    "description": "Tab of the totals by calendar month on the costs screen and the public costs page."
+  },
+  "costs.granularity.year": {
+    "defaultMessage": "年",
+    "description": "Tab of the totals by calendar year on the costs screen and the public costs page."
+  },
+  "costs.totals.caption": {
+    "defaultMessage": "按 {granularity} 汇总，{basis}",
+    "description": "Accessible caption of the table of totals on the costs screen and the public costs page: the chosen period kind and the way payments are counted."
+  },
+  "costs.totals.period": {
+    "defaultMessage": "期间",
+    "description": "Column header of the period in the table of totals on the costs screen and the public costs page."
+  },
+  "costs.totals.total": {
+    "defaultMessage": "合计",
+    "description": "Column header of the total in the table of totals on the costs screen and the public costs page."
+  },
+  "costs.totals.none": {
+    "defaultMessage": "无",
+    "description": "Total of a period without any cost on the costs screen and the public costs page."
+  },
+  "costs.totals.plus": {
+    "defaultMessage": "{sum} + {amount}",
+    "description": "Totals in different currencies, which are never converted, put together on the costs screen and the public costs page: an amount added to the amounts before it."
+  },
+  "costs.totals.estimated": {
+    "defaultMessage": "含估算",
+    "description": "Badge of a period whose total includes imported charges that the cloud provider has not closed yet and may still change, on the costs screen and the public costs page."
+  },
+  "costs.period.week": {
+    "defaultMessage": "{range}（{week}）",
+    "description": "A week of the totals on the costs screen and the public costs page: its dates and its ISO week number such as 2026-W17."
+  },
+  "costs.breakdown.title": {
+    "defaultMessage": "{period} 明细",
+    "description": "Heading of the breakdown of the current period by provider and category on the costs screen and the public costs page."
+  },
+  "costs.breakdown.empty": {
+    "defaultMessage": "此期间没有成本。",
+    "description": "What the breakdown says for a period without costs on the costs screen and the public costs page."
+  },
+  "costs.items.title": {
+    "defaultMessage": "{period} 的项目",
+    "description": "Heading of the list of the cost items and imported services of the current period on the finances page. {period} is the period's name, such as October 2026."
+  },
+  "costs.items.empty": {
+    "defaultMessage": "此期间没有产生成本的项目。",
+    "description": "What the list of the items of the current period says when no item has a cost in it."
+  },
+  "costs.rules.title": {
+    "defaultMessage": "期间的计算方式",
+    "description": "Heading of the rules that cut the periods of the totals on the costs screen and the public costs page."
+  },
+  "costs.rules.dates": {
+    "defaultMessage": "成本按自然日记录日期，与账单一致，不考虑时区：每个人看到的合计都相同。",
+    "description": "Rule of the totals on the costs screen and the public costs page: dates without time zones."
+  },
+  "costs.rules.week_start": {
+    "defaultMessage": "每周从星期一到星期日（ISO 8601）。跨年的一周会拆分到两个年份中。",
+    "description": "Rule of the totals on the costs screen and the public costs page: the first day of a week."
+  },
+  "costs.rules.amortized": {
+    "defaultMessage": "超过一个月的付款会从付款日起按天分摊到下一次付款的前一天，并经过取整，使各天之和等于付款金额。其他付款按付款日期计入。",
+    "description": "Rule of the spread totals on the costs screen and the public costs page."
+  },
+  "costs.rules.cash": {
+    "defaultMessage": "每笔付款都按付款日期计入。",
+    "description": "Rule of the payment-date totals on the costs screen and the public costs page."
+  },
+  "costs.rules.currencies": {
+    "defaultMessage": "每种货币单独合计，不进行换算。",
+    "description": "Rule of the totals on the costs screen and the public costs page: currencies."
+  },
+  "costs.rules.source": {
+    "defaultMessage": "{provider} 按 {timeZone} 时区的自然月计费；其费用按天分摊到每个计费月。",
+    "description": "Rule of the totals on the costs screen and the public costs page: the time zone of an imported cloud provider's billing months (UTC, America/Los_Angeles)."
+  },
+  "costs.rules.estimated": {
+    "defaultMessage": "服务商尚未结算的月份为估算值，可能仍会变化。",
+    "description": "Rule of the totals on the costs screen and the public costs page: estimates of imported charges."
+  },
+  "costs.public.title": {
+    "defaultMessage": "{instance} 的运营成本",
+    "description": "Heading and document title of the public page of the server's running costs. {instance} is the name of this server."
+  },
+  "costs.public.description": {
+    "defaultMessage": "运营本服务器的成本以及支持者带来的收入（以本服务器公开的范围为限）。不同货币的金额分别合计，不进行换算。不显示任何人的付款。",
+    "description": "Introduction of the public page of the server's running costs and income."
+  },
+  "costs.public.totals_only": {
+    "defaultMessage": "本服务器只公开合计，不公开用途。",
+    "description": "Note on the public page of the running costs when the server publishes the totals without their breakdown."
+  },
+  "costs.public.hidden": {
+    "defaultMessage": "本服务器不公开其运营成本和收入。",
+    "description": "What the public page of the running costs says when the server publishes neither its costs nor its income."
+  },
+  "costs.public.costs": {
+    "defaultMessage": "成本",
+    "description": "Heading of the section of the costs on the public page of the running costs."
+  },
+  "costs.public.about": {
+    "defaultMessage": "关于本服务器",
+    "description": "Link from the public page of the running costs, when the server publishes nothing, back to the server's information page."
+  },
+  "costs.public.loading": {
+    "defaultMessage": "正在加载运营成本",
+    "description": "Accessible name of the progress indicator while the totals of the running costs load on their public page."
+  },
+  "costs.public.failed": {
+    "defaultMessage": "无法加载运营成本",
+    "description": "Heading shown in place of the totals of the running costs when they could not be loaded."
+  },
+  "costs.public.retry": {
+    "defaultMessage": "重试",
+    "description": "Button that tries again to load the totals of the running costs after a failure."
+  },
+  "costs.category": {
+    "defaultMessage": "分类",
+    "description": "Label of the category of a cost on the costs screen and the public costs page."
+  },
+  "costs.category.compute": {
+    "defaultMessage": "服务器",
+    "description": "Category of a cost: compute, the servers or functions that run the instance."
+  },
+  "costs.category.database": {
+    "defaultMessage": "数据库",
+    "description": "Category of a cost: the database."
+  },
+  "costs.category.storage": {
+    "defaultMessage": "存储",
+    "description": "Category of a cost: storage of media and backups."
+  },
+  "costs.category.network": {
+    "defaultMessage": "网络",
+    "description": "Category of a cost: network, CDN, and data transfer."
+  },
+  "costs.category.domain": {
+    "defaultMessage": "域名",
+    "description": "Category of a cost: domain registration and renewal."
+  },
+  "costs.category.email": {
+    "defaultMessage": "电子邮件",
+    "description": "Category of a cost: sending email."
+  },
+  "costs.category.software": {
+    "defaultMessage": "软件",
+    "description": "Category of a cost: software and services."
+  },
+  "costs.category.other": {
+    "defaultMessage": "其他",
+    "description": "Category of a cost: anything else, and taxes."
+  },
+  "costs.overview.label": {
+    "defaultMessage": "{period} 概览",
+    "description": "Accessible name of the tiles of the current period's costs, income and balance. period is the name of the period, such as October 2026."
+  },
+  "costs.overview.costs": {
+    "defaultMessage": "{granularity, select, week {本周成本} year {本年成本} other {本月成本}}",
+    "description": "Name of the tile of the costs of the current period."
+  },
+  "costs.overview.income": {
+    "defaultMessage": "{granularity, select, week {本周收入} year {本年收入} other {本月收入}}",
+    "description": "Name of the tile of the income after fees of the current period."
+  },
+  "costs.overview.balance": {
+    "defaultMessage": "{granularity, select, week {本周结余} year {本年结余} other {本月结余}}",
+    "description": "Name of the tile of the income less the costs of the current period."
+  },
+  "costs.overview.balance.short": {
+    "defaultMessage": "入不敷出",
+    "description": "Word beside a warning icon on the balance tile when the income does not cover the costs of the period."
+  },
+  "costs.overview.since": {
+    "defaultMessage": "{granularity, select, week {较上周} year {较上一年} other {较上月}}",
+    "description": "After the change of a tile of the costs: the period it is measured against."
+  },
+  "costs.chart.title": {
+    "defaultMessage": "{granularity, select, week {每周} year {每年} other {每月}}{shown, select, costs {成本} income {收入} other {成本和收入}}",
+    "description": "Title of the bar chart of the costs and the income of each period. shown is costs, income, or both."
+  },
+  "costs.chart.summary.both": {
+    "defaultMessage": "{period}：成本 {costs}，收入 {income}。成本最高的是 {peakPeriod}（{peak}）。",
+    "description": "Summary under the chart of the costs and the income: the current period's costs and income, and the period with the highest costs. Amounts are formatted."
+  },
+  "costs.chart.summary.costs": {
+    "defaultMessage": "{period}：成本 {costs}。成本最高的是 {peakPeriod}（{peak}）。",
+    "description": "Summary under the chart of the costs alone: the current period's costs and the period with the highest costs."
+  },
+  "costs.chart.summary.income": {
+    "defaultMessage": "{period}：收入 {income}。",
+    "description": "Summary under the chart of the income alone: the current period's income after fees."
+  },
+  "costs.chart.estimated_period": {
+    "defaultMessage": "{period}（估算）",
+    "description": "A period under the axis and in the table of the costs chart whose costs include estimates."
+  },
+  "costs.chart.empty": {
+    "defaultMessage": "没有可显示的期间。",
+    "description": "Shown instead of the costs chart when it has no period."
+  },
+  "costs.breakdown.other": {
+    "defaultMessage": "其他",
+    "description": "The part of the breakdown of a period's costs that adds up the providers after the three largest."
+  }
+}

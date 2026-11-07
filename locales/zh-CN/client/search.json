@@ -1,0 +1,130 @@
+{
+  "search.description": {
+    "defaultMessage": "输入 @用户名@服务器 或个人资料地址，可以是本服务器或其他服务器上的账号。",
+    "description": "Help text under the search field for a signed-in user, who can find accounts on any server."
+  },
+  "search.description_signed_out": {
+    "defaultMessage": "输入 @用户名@服务器 或个人资料地址。只能找到本服务器已知的账号。",
+    "description": "Help text under the search field while nobody is signed in: the server does not fetch unknown accounts from other servers."
+  },
+  "search.description_known_only": {
+    "defaultMessage": "输入 @用户名@服务器 或个人资料地址。本服务器目前不查找其他服务器的账号，因此只能找到它已知的账号。",
+    "description": "Help text of the account search field while this server does not look up accounts of other servers (federation direction 'Send only' or 'Off', ADR-0006)."
+  },
+  "search.failed": {
+    "defaultMessage": "无法搜索账号：{reason}",
+    "description": "Error under the search field when the search failed for another reason. {reason} is the localized reason."
+  },
+  "search.label": {
+    "defaultMessage": "用户名或 URL",
+    "description": "Label of the search field, which takes an account's handle (@username@server) or the address of its profile."
+  },
+  "search.not_found": {
+    "defaultMessage": "未找到账号。请检查用户名或地址。",
+    "description": "Error under the search field when neither this server nor the account's server knows the account."
+  },
+  "search.not_found_signed_out": {
+    "defaultMessage": "本服务器不知道该账号。登录后即可在其所在服务器上查找。",
+    "description": "Error under the search field when nobody is signed in and this server does not know the account."
+  },
+  "search.not_found_known_only": {
+    "defaultMessage": "本服务器不知道该账号，且目前不查找其他服务器的账号。",
+    "description": "Error of the account search when this server does not know the account and does not look up accounts of other servers (federation direction 'Send only' or 'Off', ADR-0006)."
+  },
+  "search.rate_limited": {
+    "defaultMessage": "搜索次数过多。请几分钟后重试。",
+    "description": "Error under the search field when the server limits how often the user can look up accounts on other servers."
+  },
+  "search.required": {
+    "defaultMessage": "请输入用户名或 URL。",
+    "description": "Error under the search field when it is sent empty."
+  },
+  "search.sign_in": {
+    "defaultMessage": "登录以查找其他服务器上的账号",
+    "description": "Link on the search page while nobody is signed in; it signs in and comes back to the search."
+  },
+  "search.submit": {
+    "defaultMessage": "搜索",
+    "description": "Button that sends the search for an account."
+  },
+  "search.title": {
+    "defaultMessage": "搜索",
+    "description": "Heading and document title of the page that finds an account by its handle or URL."
+  },
+  "search.results": {
+    "defaultMessage": "账号",
+    "description": "Heading of the accounts found by name while their count is not known yet."
+  },
+  "search.results.title": {
+    "defaultMessage": "账号（{count}）",
+    "description": "Heading of the accounts found by name, with their count."
+  },
+  "search.results.count": {
+    "defaultMessage": "{count, plural, =0 {未找到账号} other {找到 # 个账号}}",
+    "description": "Read by screen readers when the accounts found by name change."
+  },
+  "search.results.none": {
+    "defaultMessage": "未找到账号。要查找其他服务器上的人，请输入 @user@host。",
+    "description": "Shown when no account matches the typed name."
+  },
+  "search.results.failed": {
+    "defaultMessage": "无法搜索账号：{reason}",
+    "description": "Shown when the search by name fails. {reason} is the error."
+  },
+  "search.tabs": {
+    "defaultMessage": "搜索内容",
+    "description": "Label of the tabs of the search page, on a server with the search of posts: accounts or posts."
+  },
+  "search.tabs.accounts": {
+    "defaultMessage": "账号",
+    "description": "Tab of the search page that finds accounts."
+  },
+  "search.tabs.posts": {
+    "defaultMessage": "帖子",
+    "description": "Tab of the search page that finds posts by their words."
+  },
+  "search.posts.label": {
+    "defaultMessage": "要查找的词语",
+    "description": "Label of the field that takes the words of the search of posts."
+  },
+  "search.posts.description": {
+    "defaultMessage": "查找包含所有这些词语的帖子，最新的在前。",
+    "description": "Help text under the field of the search of posts."
+  },
+  "search.posts.required": {
+    "defaultMessage": "请输入要查找的词语。",
+    "description": "Error under the field of the search of posts when it is sent empty."
+  },
+  "search.posts.submit": {
+    "defaultMessage": "搜索帖子",
+    "description": "Button that sends the search of posts."
+  },
+  "search.posts.results": {
+    "defaultMessage": "帖子",
+    "description": "Heading of the posts that the search found, and the name of their feed."
+  },
+  "search.posts.results.count": {
+    "defaultMessage": "{count, plural, =0 {未找到帖子} other {目前找到 # 条帖子}}",
+    "description": "Read by screen readers when the search of posts has an answer. More posts may follow."
+  },
+  "search.posts.empty.heading": {
+    "defaultMessage": "未找到帖子",
+    "description": "Heading of the empty state of the search of posts."
+  },
+  "search.posts.empty.description": {
+    "defaultMessage": "{scope, select, public {本服务器的搜索只能找到允许被搜索的账号的公开帖子。作者可以在个人资料设置中选择退出。} local {本服务器的搜索只能找到允许被搜索的账号发布的可见范围为“本站”的帖子。作者可以在个人资料设置中选择退出。} other {本服务器的搜索只能找到允许被搜索的账号发布的公开帖子和可见范围为“本站”的帖子。作者可以在个人资料设置中选择退出。}}",
+    "description": "Empty state of the search of posts: which posts can be found on this server and that authors can opt out. {scope} is the visibilities this server's post search covers: public, local, or public_local."
+  },
+  "search.posts.failed.heading": {
+    "defaultMessage": "无法搜索帖子",
+    "description": "Heading of the error of the search of posts."
+  },
+  "search.posts.rate_limited.heading": {
+    "defaultMessage": "搜索次数过多",
+    "description": "Heading of the error of the search of posts when the server limits how often the user can search."
+  },
+  "search.posts.rate_limited.reason": {
+    "defaultMessage": "在限制允许时，搜索会自动重新运行。",
+    "description": "What happens after the server limited how often the user can search posts."
+  }
+}

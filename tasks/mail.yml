@@ -41,7 +41,7 @@ tasks:
       - bun run typecheck
 
   preview:
-    desc: Write every email, rendered from sample inputs in en, ja, en-XA, and ar-XB, to .tmp/mail/preview/ and print the path of its index.html (no database, server, or mail server)
+    desc: Write every email, rendered from sample inputs in en, ja, zh-CN, en-XA, and ar-XB, to .tmp/mail/preview/ and print the path of its index.html (no database, server, or mail server)
     deps: [gen, ":i18n:gen"]
     cmds:
       - go run ./scripts/mail-preview -out .tmp/mail/preview

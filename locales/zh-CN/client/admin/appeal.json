@@ -1,0 +1,150 @@
+{
+  "admin.appeal.account": {
+    "defaultMessage": "账号",
+    "description": "Term of the account that appealed, which the action is on."
+  },
+  "admin.appeal.account.admin": {
+    "defaultMessage": "在管理页面中打开此账号",
+    "description": "Link from an appeal's page to the admin page of the account that appealed."
+  },
+  "admin.appeal.action.kind": {
+    "defaultMessage": "操作",
+    "description": "Term of the kind of the moderation action on an appeal's page."
+  },
+  "admin.appeal.action.lifted_at": {
+    "defaultMessage": "解除时间",
+    "description": "Term of when the action was lifted."
+  },
+  "admin.appeal.action.report": {
+    "defaultMessage": "打开举报",
+    "description": "Link from an appeal's page to the report the action follows from."
+  },
+  "admin.appeal.action.title": {
+    "defaultMessage": "审核操作",
+    "description": "Heading of the region of an appeal's page with the action it is of."
+  },
+  "admin.appeal.action_state": {
+    "defaultMessage": "操作状态",
+    "description": "Term of the state of the action an appeal is of, in the list of appeals."
+  },
+  "admin.appeal.already_decided": {
+    "defaultMessage": "另一位审核员已处理此申诉，以该决定为准。",
+    "description": "Status when a moderator decided an appeal that another moderator had decided the other way first."
+  },
+  "admin.appeal.appeal.title": {
+    "defaultMessage": "申诉",
+    "description": "Heading of the region of an appeal's page with what the user wrote."
+  },
+  "admin.appeal.back": {
+    "defaultMessage": "返回申诉列表",
+    "description": "Link from an appeal's page to the list of appeals."
+  },
+  "admin.appeal.cancel": {
+    "defaultMessage": "取消",
+    "description": "Button of the confirmation of a decision on an appeal that closes it without deciding."
+  },
+  "admin.appeal.confirm_overturn.description": {
+    "defaultMessage": "操作“{kind}”将立即解除。已删除的帖子不会恢复。此决定之后无法更改。",
+    "description": "Text of the confirmation before overturning an appeal. {kind} is the kind of the action."
+  },
+  "admin.appeal.confirm_overturn.description_ban": {
+    "defaultMessage": "封禁将立即解除，账号不再被删除。此决定之后无法更改。",
+    "description": "Text of the confirmation before overturning the appeal of a ban."
+  },
+  "admin.appeal.confirm_overturn.title": {
+    "defaultMessage": "撤销原操作并接受此申诉？",
+    "description": "Title of the confirmation before overturning an appeal."
+  },
+  "admin.appeal.confirm_uphold.description": {
+    "defaultMessage": "操作“{kind}”将保持不变。此决定之后无法更改。",
+    "description": "Text of the confirmation before upholding an appeal. {kind} is the kind of the action."
+  },
+  "admin.appeal.confirm_uphold.title": {
+    "defaultMessage": "维持原操作并驳回此申诉？",
+    "description": "Title of the confirmation before upholding an appeal."
+  },
+  "admin.appeal.decide_failed": {
+    "defaultMessage": "无法保存决定：{reason}",
+    "description": "Error in the confirmation of a decision on an appeal when the request failed. {reason} is why."
+  },
+  "admin.appeal.decided_at": {
+    "defaultMessage": "处理时间",
+    "description": "Term of when a moderator decided an appeal."
+  },
+  "admin.appeal.decided_by": {
+    "defaultMessage": "处理人",
+    "description": "Term of the moderator who decided an appeal."
+  },
+  "admin.appeal.decided_by.cli": {
+    "defaultMessage": "命令行",
+    "description": "Value of who decided an appeal when it was decided from the command line."
+  },
+  "admin.appeal.decision": {
+    "defaultMessage": "决定",
+    "description": "Term of the decision on an appeal."
+  },
+  "admin.appeal.decision.description": {
+    "defaultMessage": "维持将保留该操作，撤销将解除该操作。用户会收到决定和你的说明。",
+    "description": "Text above the uphold and overturn buttons of a pending appeal."
+  },
+  "admin.appeal.decision.title": {
+    "defaultMessage": "处理",
+    "description": "Heading of the region of an appeal's page where it is decided."
+  },
+  "admin.appeal.decision_reason": {
+    "defaultMessage": "给用户的说明",
+    "description": "Term of the explanation of a decision that the user was shown."
+  },
+  "admin.appeal.none": {
+    "defaultMessage": "无",
+    "description": "Value of a moderator's text on an appeal's page when there is none."
+  },
+  "admin.appeal.overturn": {
+    "defaultMessage": "撤销",
+    "description": "Button of a pending appeal that opens the confirmation of overturning it, and the confirmation's button that overturns it."
+  },
+  "admin.appeal.overturned": {
+    "defaultMessage": "申诉已通过，操作已解除。",
+    "description": "Status after a moderator overturned an appeal, which lifted its action."
+  },
+  "admin.appeal.overturned_ended": {
+    "defaultMessage": "申诉已通过。该操作此前已结束。",
+    "description": "Status after a moderator overturned an appeal whose action had already ended or been lifted."
+  },
+  "admin.appeal.reason": {
+    "defaultMessage": "给用户的说明",
+    "description": "Label of the optional explanation in the confirmation of a decision on an appeal."
+  },
+  "admin.appeal.reason.description": {
+    "defaultMessage": "可选。提出申诉的用户会在决定中看到它。",
+    "description": "Hint under the explanation of a decision on an appeal."
+  },
+  "admin.appeal.reason.too_long": {
+    "defaultMessage": "最多 {max, number} 个字符",
+    "description": "Error under the explanation of a decision on an appeal when it is too long. {max} is the limit."
+  },
+  "admin.appeal.state": {
+    "defaultMessage": "状态",
+    "description": "Term of an appeal's state."
+  },
+  "admin.appeal.submitted_at": {
+    "defaultMessage": "申诉时间",
+    "description": "Term of when the user appealed."
+  },
+  "admin.appeal.text": {
+    "defaultMessage": "用户的申诉内容",
+    "description": "Term of the text of an appeal, written by the user."
+  },
+  "admin.appeal.title": {
+    "defaultMessage": "申诉",
+    "description": "Heading of the page of one appeal of a moderation action."
+  },
+  "admin.appeal.upheld": {
+    "defaultMessage": "已维持原操作，操作保持不变。",
+    "description": "Status after a moderator upheld an appeal."
+  },
+  "admin.appeal.uphold": {
+    "defaultMessage": "维持",
+    "description": "Button of a pending appeal that opens the confirmation of upholding it, and the confirmation's button that upholds it."
+  }
+}

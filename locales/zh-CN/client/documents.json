@@ -1,0 +1,22 @@
+{
+  "documents.commerce_disclosure": {
+    "defaultMessage": "商业信息披露",
+    "description": "Link to the server's page of the commerce disclosures of its supporter plans, and the heading of that page."
+  },
+  "documents.label": {
+    "defaultMessage": "条款和政策",
+    "description": "Accessible name of the links to the server's terms of service and privacy policy (in the third column, the menu, the settings, and the sign-in page), and the heading of their section in the settings."
+  },
+  "documents.privacy_policy": {
+    "defaultMessage": "隐私政策",
+    "description": "Link to the server's public page of its privacy policy."
+  },
+  "documents.revised": {
+    "defaultMessage": "最后修订于 {date}",
+    "description": "When the current revision of a document (terms of service, privacy policy, commerce disclosures) was recorded, above its text; {date} is a formatted date."
+  },
+  "documents.terms": {
+    "defaultMessage": "服务条款",
+    "description": "Link to the server's public page of its terms of service."
+  }
+}
