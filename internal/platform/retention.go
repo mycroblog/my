@@ -9,6 +9,8 @@ import (
 	"github.com/mycroblog/my/internal/app/account"
 	"github.com/mycroblog/my/internal/app/content"
 	"github.com/mycroblog/my/internal/app/federation"
+	"github.com/mycroblog/my/internal/app/uow"
+	domaincontent "github.com/mycroblog/my/internal/domain/content"
 	"github.com/mycroblog/my/internal/domain/instance"
 )
 
@@ -59,9 +61,40 @@ func (a *App) setUpRetention(repos retentionRepositories, statuses content.Repos
 	// as their authors would and so sends a Delete of each.
 	a.AutoDelete = content.NewAutoDelete(content.AutoDeleteDeps{
 		UnitOfWork: a.UnitOfWork, Repository: statuses, AutoDeletes: repos.autoDeletes, Accounts: a.Accounts,
-		Jobs: a.Jobs, Clock: a.Clock,
+		Server: autoDeleteServer{a}, Jobs: a.Jobs, Clock: a.Clock,
 	})
 	a.AutoDelete.RegisterJobs(a.Handlers, a.Scheduler)
+	// New local accounts start from the server default (ADR-0151 §2).
+	a.AutoDelete.RegisterProjectors(a.Projectors)
+}
+
+// autoDeleteServer reads the server default of the automatic deletion from the instance
+// settings (ADR-0151).
+type autoDeleteServer struct{ a *App }
+
+func (s autoDeleteServer) settings(ctx context.Context, tx uow.Tx) (instance.Settings, error) {
+	if tx == nil {
+		return s.a.Instance.Settings(ctx)
+	}
+	return s.a.Instance.SettingsTx(ctx, tx)
+}
+
+func (s autoDeleteServer) AutoDeleteDefault(ctx context.Context, tx uow.Tx) (domaincontent.AutoDeletePolicy, error) {
+	settings, err := s.settings(ctx, tx)
+	if err != nil {
+		return domaincontent.AutoDeletePolicy{}, err
+	}
+	d := settings.AutoDeleteDefault()
+	p := domaincontent.AutoDeletePolicy{
+		Enabled: d.Enabled, MinAgeDays: d.MinAgeDays,
+		KeepPinned: d.KeepPinned, KeepBookmarked: d.KeepBookmarked, KeepFavourited: d.KeepFavourited,
+		KeepMedia: d.KeepMedia, KeepPolls: d.KeepPolls,
+		KeepMinBoosts: d.KeepMinBoosts, KeepMinFavourites: d.KeepMinFavourites,
+	}
+	for _, v := range d.KeepVisibilities {
+		p.KeepVisibilities = append(p.KeepVisibilities, domaincontent.Visibility(v))
+	}
+	return p, nil
 }
 
 // remoteRelations tells the account module whether something local relates to a remote account:

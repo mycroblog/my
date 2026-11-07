@@ -191,6 +191,24 @@ const (
 	// server-side providers, which still receive only the visibilities that each is allowed; off,
 	// the text of a report reaches no provider (ADR-0148 §13).
 	SettingTranslationReportsToServer SettingKey = "translation_reports_to_server"
+
+	// The server default of the automatic deletion of old posts (ADR-0151 §2): the policy that a
+	// new local account starts from, one key per field of the policy. Existing accounts keep
+	// theirs.
+	SettingAutoDeleteDefaultEnabled           SettingKey = "auto_delete_default_enabled"
+	SettingAutoDeleteDefaultMinAgeDays        SettingKey = "auto_delete_default_min_age_days"
+	SettingAutoDeleteDefaultKeepPinned        SettingKey = "auto_delete_default_keep_pinned"
+	SettingAutoDeleteDefaultKeepBookmarked    SettingKey = "auto_delete_default_keep_bookmarked"
+	SettingAutoDeleteDefaultKeepFavourited    SettingKey = "auto_delete_default_keep_favourited"
+	SettingAutoDeleteDefaultKeepMedia         SettingKey = "auto_delete_default_keep_media"
+	SettingAutoDeleteDefaultKeepPolls         SettingKey = "auto_delete_default_keep_polls"
+	SettingAutoDeleteDefaultKeepPublic        SettingKey = "auto_delete_default_keep_public"
+	SettingAutoDeleteDefaultKeepLocal         SettingKey = "auto_delete_default_keep_local"
+	SettingAutoDeleteDefaultKeepUnlisted      SettingKey = "auto_delete_default_keep_unlisted"
+	SettingAutoDeleteDefaultKeepPrivate       SettingKey = "auto_delete_default_keep_private"
+	SettingAutoDeleteDefaultKeepDirect        SettingKey = "auto_delete_default_keep_direct"
+	SettingAutoDeleteDefaultKeepMinBoosts     SettingKey = "auto_delete_default_keep_min_boosts"
+	SettingAutoDeleteDefaultKeepMinFavourites SettingKey = "auto_delete_default_keep_min_favourites"
 )
 
 // RegistrationMode is the value of SettingRegistrationMode (FR-001).
@@ -445,6 +463,15 @@ const (
 	DefaultRemoteStatusRetentionDays    = 90
 	DefaultRemoteStatusMaxRetentionDays = 0
 	DefaultRelayStatusRetentionDays     = 7
+)
+
+// The bounds of the server default of the automatic deletion of old posts (ADR-0151 §2), the same
+// as those of a user's policy (FR-118).
+const (
+	MinAutoDeleteAgeDays     = 1
+	MaxAutoDeleteAgeDays     = 3650
+	DefaultAutoDeleteAgeDays = 30
+	MaxAutoDeleteThreshold   = 1_000_000
 )
 
 // MaxSettingAccounts bounds the usernames of a KindAccounts value.
@@ -753,6 +780,41 @@ var definitions = []Definition{
 		Key: SettingTranslationReportsToServer, Kind: KindBool, Default: "false",
 		Doc: "Whether moderators may send the text of a report, its posts and its comment, to the server-side translation providers; each provider still receives only the visibilities it is allowed, and a comment counts as private (ADR-0148 §13).",
 	},
+	{
+		Key: SettingAutoDeleteDefaultEnabled, Kind: KindBool, Default: "false",
+		Doc: "Whether a new local account starts with the automatic deletion of its old posts enabled. The auto_delete_default_* keys are the policy that each new account receives when it is created; a later change leaves existing accounts as they are (ADR-0151 §2).",
+	},
+	{
+		Key: SettingAutoDeleteDefaultMinAgeDays, Kind: KindInt, Default: strconv.Itoa(DefaultAutoDeleteAgeDays), Min: MinAutoDeleteAgeDays, Max: MaxAutoDeleteAgeDays,
+		Doc: "How many days after its publication the default policy of a new account deletes a post (ADR-0151 §2).",
+	},
+	autoDeleteDefaultKeep(SettingAutoDeleteDefaultKeepPinned, "true", "the posts the author pinned"),
+	autoDeleteDefaultKeep(SettingAutoDeleteDefaultKeepBookmarked, "true", "the posts the author bookmarked"),
+	autoDeleteDefaultKeep(SettingAutoDeleteDefaultKeepFavourited, "true", "the posts the author favourited"),
+	autoDeleteDefaultKeep(SettingAutoDeleteDefaultKeepMedia, "false", "the posts with media attachments"),
+	autoDeleteDefaultKeep(SettingAutoDeleteDefaultKeepPolls, "false", "the posts with a poll"),
+	autoDeleteDefaultKeep(SettingAutoDeleteDefaultKeepPublic, "false", "the public posts"),
+	autoDeleteDefaultKeep(SettingAutoDeleteDefaultKeepLocal, "false", "the local-only posts"),
+	autoDeleteDefaultKeep(SettingAutoDeleteDefaultKeepUnlisted, "false", "the unlisted posts"),
+	autoDeleteDefaultKeep(SettingAutoDeleteDefaultKeepPrivate, "false", "the followers-only posts"),
+	autoDeleteDefaultKeep(SettingAutoDeleteDefaultKeepDirect, "true", "the direct posts"),
+	{
+		Key: SettingAutoDeleteDefaultKeepMinBoosts, Kind: KindInt, Default: "0", Min: 0, Max: MaxAutoDeleteThreshold,
+		Doc: "The default policy of a new account keeps a post boosted at least this many times; 0 sets no threshold (ADR-0151 §2).",
+	},
+	{
+		Key: SettingAutoDeleteDefaultKeepMinFavourites, Kind: KindInt, Default: "0", Min: 0, Max: MaxAutoDeleteThreshold,
+		Doc: "The default policy of a new account keeps a post favourited at least this many times; 0 sets no threshold (ADR-0151 §2).",
+	},
+}
+
+// autoDeleteDefaultKeep is the definition of an exception of the server default of the automatic
+// deletion, which keeps what.
+func autoDeleteDefaultKeep(key SettingKey, def, what string) Definition {
+	return Definition{
+		Key: key, Kind: KindBool, Default: def,
+		Doc: "Whether the default policy of a new account keeps " + what + " (ADR-0151 §2).",
+	}
 }
 
 // Definitions returns the definitions of every setting key, in a fixed order.
@@ -1366,6 +1428,38 @@ func (s Settings) TranslationRetentionDays() int {
 // TranslationReportsToServer returns the value of SettingTranslationReportsToServer.
 func (s Settings) TranslationReportsToServer() bool {
 	return s.boolValue(SettingTranslationReportsToServer)
+}
+
+// AutoDeleteDefault is the server default of the automatic deletion of old posts, the policy that
+// a new local account starts from (ADR-0151 §2). KeepVisibilities are the kept visibilities in the
+// order of TranslationVisibilities, which is that of the posts' visibilities.
+type AutoDeleteDefault struct {
+	Enabled                                                          bool
+	MinAgeDays                                                       int
+	KeepPinned, KeepBookmarked, KeepFavourited, KeepMedia, KeepPolls bool
+	KeepVisibilities                                                 []string
+	KeepMinBoosts, KeepMinFavourites                                 int
+}
+
+// AutoDeleteDefault returns the server default of the automatic deletion.
+func (s Settings) AutoDeleteDefault() AutoDeleteDefault {
+	d := AutoDeleteDefault{
+		Enabled:    s.boolValue(SettingAutoDeleteDefaultEnabled),
+		MinAgeDays: s.intValue(SettingAutoDeleteDefaultMinAgeDays),
+		KeepPinned: s.boolValue(SettingAutoDeleteDefaultKeepPinned), KeepBookmarked: s.boolValue(SettingAutoDeleteDefaultKeepBookmarked),
+		KeepFavourited: s.boolValue(SettingAutoDeleteDefaultKeepFavourited), KeepMedia: s.boolValue(SettingAutoDeleteDefaultKeepMedia),
+		KeepPolls:     s.boolValue(SettingAutoDeleteDefaultKeepPolls),
+		KeepMinBoosts: s.intValue(SettingAutoDeleteDefaultKeepMinBoosts), KeepMinFavourites: s.intValue(SettingAutoDeleteDefaultKeepMinFavourites),
+	}
+	for i, key := range []SettingKey{
+		SettingAutoDeleteDefaultKeepPublic, SettingAutoDeleteDefaultKeepLocal, SettingAutoDeleteDefaultKeepUnlisted,
+		SettingAutoDeleteDefaultKeepPrivate, SettingAutoDeleteDefaultKeepDirect,
+	} {
+		if s.boolValue(key) {
+			d.KeepVisibilities = append(d.KeepVisibilities, TranslationVisibilities[i])
+		}
+	}
+	return d
 }
 
 // maxProviderSettingLength bounds the values of KindProviderList and KindProviderVisibilities.

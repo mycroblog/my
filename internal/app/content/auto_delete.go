@@ -67,12 +67,23 @@ type AutoDeleteAccounts interface {
 	FindByID(ctx context.Context, id string) (appaccount.Actor, error)
 }
 
+// AutoDeleteServer reads what the operator set for the automatic deletion of every account
+// (ADR-0151); the composition root implements it on the instance settings.
+type AutoDeleteServer interface {
+	// AutoDeleteDefault returns, inside tx, the server default that a new local account starts
+	// from (§2), as a policy without an account.
+	AutoDeleteDefault(ctx context.Context, tx uow.Tx) (content.AutoDeletePolicy, error)
+}
+
 // AutoDeleteDeps are the ports of the automatic deletion.
 type AutoDeleteDeps struct {
 	UnitOfWork  uow.UnitOfWork
 	Repository  Repository
 	AutoDeletes AutoDeleteRepository
 	Accounts    AutoDeleteAccounts
+	// Server is the server default; nil gives new accounts no policy row, so that they have the
+	// built-in default.
+	Server AutoDeleteServer
 	// Jobs enqueues the next job of a run, outside any transaction.
 	Jobs  queue.JobQueue
 	Clock kernel.Clock
@@ -124,6 +135,29 @@ func (a *AutoDelete) UpdateAutoDeletePolicy(ctx context.Context, accountID strin
 		return content.AutoDeletePolicy{}, err
 	}
 	return p, nil
+}
+
+// RegisterProjectors registers the projector that gives a new local account the server default
+// as its own policy, in the transaction that creates the account (ADR-0151 §2). Every way of
+// creating a local account (the sign-up form, an external login provider, an invite, the CLI)
+// emits account.local_account_created; the instance actor, which has no user, gets no policy.
+// The policy is the account's from then on: a later change of the default changes nothing.
+func (a *AutoDelete) RegisterProjectors(r *uow.Projectors) {
+	r.Register(appaccount.EventLocalAccountCreated, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
+		ev := e.(appaccount.LocalAccountCreated)
+		if a.d.Server == nil || ev.Local.UserID == "" {
+			return nil
+		}
+		p, err := a.d.Server.AutoDeleteDefault(ctx, tx)
+		if err != nil {
+			return fmt.Errorf("content: the auto delete default: %w", err)
+		}
+		p.AccountID, p.UpdatedAt = ev.Account.ID, kernel.Normalize(a.d.Clock.Now())
+		if p, err = p.Normalize(); err != nil {
+			return err
+		}
+		return a.d.AutoDeletes.SaveAutoDeletePolicy(ctx, tx, p)
+	})
 }
 
 // autoDeletePayload is the payload of JobAutoDeleteStatuses: the cursor of the run.

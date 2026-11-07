@@ -2509,6 +2509,20 @@ const (
 	InstanceSettingKeyAppealWindowDays                   InstanceSettingKey = "appeal_window_days"
 	InstanceSettingKeyAuditLogRetentionDays              InstanceSettingKey = "audit_log_retention_days"
 	InstanceSettingKeyAuthorizedFetch                    InstanceSettingKey = "authorized_fetch"
+	InstanceSettingKeyAutoDeleteDefaultEnabled           InstanceSettingKey = "auto_delete_default_enabled"
+	InstanceSettingKeyAutoDeleteDefaultKeepBookmarked    InstanceSettingKey = "auto_delete_default_keep_bookmarked"
+	InstanceSettingKeyAutoDeleteDefaultKeepDirect        InstanceSettingKey = "auto_delete_default_keep_direct"
+	InstanceSettingKeyAutoDeleteDefaultKeepFavourited    InstanceSettingKey = "auto_delete_default_keep_favourited"
+	InstanceSettingKeyAutoDeleteDefaultKeepLocal         InstanceSettingKey = "auto_delete_default_keep_local"
+	InstanceSettingKeyAutoDeleteDefaultKeepMedia         InstanceSettingKey = "auto_delete_default_keep_media"
+	InstanceSettingKeyAutoDeleteDefaultKeepMinBoosts     InstanceSettingKey = "auto_delete_default_keep_min_boosts"
+	InstanceSettingKeyAutoDeleteDefaultKeepMinFavourites InstanceSettingKey = "auto_delete_default_keep_min_favourites"
+	InstanceSettingKeyAutoDeleteDefaultKeepPinned        InstanceSettingKey = "auto_delete_default_keep_pinned"
+	InstanceSettingKeyAutoDeleteDefaultKeepPolls         InstanceSettingKey = "auto_delete_default_keep_polls"
+	InstanceSettingKeyAutoDeleteDefaultKeepPrivate       InstanceSettingKey = "auto_delete_default_keep_private"
+	InstanceSettingKeyAutoDeleteDefaultKeepPublic        InstanceSettingKey = "auto_delete_default_keep_public"
+	InstanceSettingKeyAutoDeleteDefaultKeepUnlisted      InstanceSettingKey = "auto_delete_default_keep_unlisted"
+	InstanceSettingKeyAutoDeleteDefaultMinAgeDays        InstanceSettingKey = "auto_delete_default_min_age_days"
 	InstanceSettingKeyContactAccount                     InstanceSettingKey = "contact_account"
 	InstanceSettingKeyContactEmail                       InstanceSettingKey = "contact_email"
 	InstanceSettingKeyDefaultLocale                      InstanceSettingKey = "default_locale"
@@ -2594,6 +2608,34 @@ func (e InstanceSettingKey) Valid() bool {
 	case InstanceSettingKeyAuditLogRetentionDays:
 		return true
 	case InstanceSettingKeyAuthorizedFetch:
+		return true
+	case InstanceSettingKeyAutoDeleteDefaultEnabled:
+		return true
+	case InstanceSettingKeyAutoDeleteDefaultKeepBookmarked:
+		return true
+	case InstanceSettingKeyAutoDeleteDefaultKeepDirect:
+		return true
+	case InstanceSettingKeyAutoDeleteDefaultKeepFavourited:
+		return true
+	case InstanceSettingKeyAutoDeleteDefaultKeepLocal:
+		return true
+	case InstanceSettingKeyAutoDeleteDefaultKeepMedia:
+		return true
+	case InstanceSettingKeyAutoDeleteDefaultKeepMinBoosts:
+		return true
+	case InstanceSettingKeyAutoDeleteDefaultKeepMinFavourites:
+		return true
+	case InstanceSettingKeyAutoDeleteDefaultKeepPinned:
+		return true
+	case InstanceSettingKeyAutoDeleteDefaultKeepPolls:
+		return true
+	case InstanceSettingKeyAutoDeleteDefaultKeepPrivate:
+		return true
+	case InstanceSettingKeyAutoDeleteDefaultKeepPublic:
+		return true
+	case InstanceSettingKeyAutoDeleteDefaultKeepUnlisted:
+		return true
+	case InstanceSettingKeyAutoDeleteDefaultMinAgeDays:
 		return true
 	case InstanceSettingKeyContactAccount:
 		return true

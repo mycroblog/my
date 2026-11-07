@@ -127,7 +127,8 @@
 | `status_auto_delete_policies` | `account_id`, `enabled`（`bool`）, `min_age_days`（`int`、1〜3650）, `keep_pinned` / `keep_bookmarked` / `keep_favourited` / `keep_media` / `keep_polls`（`bool`）, `keep_min_boosts` / `keep_min_favourites`（`int`、0〜1,000,000。0 は閾値なし）, `updated_at` | PK `(account_id)`、部分インデックス `(account_id) WHERE enabled` |
 | `status_auto_delete_kept_visibilities` | `account_id`, `visibility`（`enum`） | PK `(account_id, visibility)` |
 
-- 行がなければ既定の設定（無効、30 日、ピン留め・自分のブックマーク・自分のお気に入り・`direct` を残す）です。保存は設定全体の置き換えで、残す公開範囲の行も入れ替えます。
+- 行がなければ組み込みの既定の設定（無効、30 日、ピン留め・自分のブックマーク・自分のお気に入り・`direct` を残す）です。保存は設定全体の置き換えで、残す公開範囲の行も入れ替えます。
+- 新しいローカルのアカウントは、作られたトランザクションで、サーバーの既定（インスタンス設定 `auto_delete_default_*`）を自分の行として受け取ります（ADR-0151 §2）。`content` が `account.local_account_created` を同期で購読し、設定をトランザクションの中で読みます。インスタンスの Actor は行を持ちません。既定から来たことを記録する列は持たず、既定を後で変えても既存の行は変わりません。
 - 1 時間ごとのジョブ `content.auto_delete_statuses` が、有効な設定をアカウントの順に 20 件ずつ読み（続きはカーソル（アカウントの ID）を持った次のジョブ）、アカウントごとに、公開から `min_age_days` 日を過ぎた削除されていないローカルの投稿を古い順に消します。
   例外は、ピン留め、本人のブックマーク・お気に入り、現在版の添付・投票、残す公開範囲、`status_counters` のブースト数・お気に入り数が閾値以上の投稿です。例外の判定は投稿を読む SQL の中で行うので、残る投稿は消す対象として読みません。
   ローカルの投稿の `id` は公開日時の UUIDv7 なので、走査は `(author_account_id, id)` のインデックスを期限の UUIDv7 の下限で止めます。

@@ -58,6 +58,13 @@ default locale, who can see the timelines, the instance name, description, terms
 | `search_indexing` | `allow` / `deny` | `deny` | Whether search engines may index the instance. Even with `allow`, only the profiles of `indexable` accounts and `public` posts are indexed ([search engines and AI crawlers](crawlers.md)) |
 | `ai_usage` | `allow` / `deny_training` / `deny` | `deny` | The statement to AI services. `deny_training` refuses training; `deny` refuses training and use by AI (AI search, assistants, agents) |
 | `indexable_default` | `true` / `false` | `false` | The default of `indexable` for new accounts. Changing it does not change existing accounts |
+| `auto_delete_default_enabled` | `true` / `false` | `false` | Whether new accounts start with the automatic deletion of their old posts on. With the other `auto_delete_default_*` keys it is the policy that a new account receives ([automatic deletion of old posts](#automatic-deletion-of-old-posts)) |
+| `auto_delete_default_min_age_days` | integer 1-3650 (days) | `30` | How many days after its publication the policy of a new account deletes a post |
+| `auto_delete_default_keep_pinned`, `auto_delete_default_keep_bookmarked`, `auto_delete_default_keep_favourited` | `true` / `false` | `true` | Whether the policy of a new account keeps the posts its author pinned, bookmarked, or favourited |
+| `auto_delete_default_keep_media`, `auto_delete_default_keep_polls` | `true` / `false` | `false` | Whether the policy of a new account keeps the posts with media or a poll |
+| `auto_delete_default_keep_public`, `auto_delete_default_keep_local`, `auto_delete_default_keep_unlisted`, `auto_delete_default_keep_private` | `true` / `false` | `false` | Whether the policy of a new account keeps the posts of that visibility |
+| `auto_delete_default_keep_direct` | `true` / `false` | `true` | Whether the policy of a new account keeps direct posts |
+| `auto_delete_default_keep_min_boosts`, `auto_delete_default_keep_min_favourites` | integer 0-1000000 | `0` | The policy of a new account keeps a post boosted or favourited at least this many times. `0` sets no threshold |
 | `search_visibilities` | `public` / `local` / `public,local` | `public` | Which posts the full-text search of a server with a search backend covers. `unlisted`, `private`, and `direct` posts are never covered, and only accounts with `indexable` are. Leaving a visibility out removes its posts from the index. Adding one finds only new posts of it, until you [rebuild the index](search.md#changing-search_visibilities). It does nothing with `search = none` |
 | `security_contact` | `https:` or `mailto:` URI (empty = unset) | empty | Where to report security problems of this server: how it is configured and run, and its accounts and data. When set, the server serves `/.well-known/security.txt` (RFC 9116). This is your contact, not the software's: forward a report of a vulnerability in the software itself to the project as its [security policy](../../SECURITY.md) describes |
 | `require_media_description` | `true` / `false` | `false` | Whether every media file (image, video, or audio) attached to a local post needs a description. When `true`, a post or an edit with a file whose description is missing or only whitespace is rejected with 422. It is published as `limits.require_media_description` in `GET /api/v1/instance`, and the web client makes the description field required. It is separate from the per-user setting `require_media_description`, which only checks before sending |
@@ -118,6 +125,21 @@ deactivated are left out.
 New accounts are suggested and can be found by part of their name in the account search. A user who turns off "Suggest my
 account and find it by part of its name" in the profile settings leaves both: the search then finds the account only by its
 whole username, or for the people who follow it.
+
+### Automatic deletion of old posts
+
+Users can have their own posts deleted automatically some days after they publish them (Settings, "Automatic deletion").
+Each user's policy is their own: whether it is on, after how many days, and which posts it keeps (pinned, bookmarked, and
+favourited posts, posts with media or a poll, posts of chosen visibilities, and posts with at least some boosts or
+favourites). Deleting a post this way is the same as its author deleting it: the servers it went to receive a `Delete`.
+Only the posts of local accounts are deleted this way, never boosts.
+
+The `auto_delete_default_*` keys are the policy that each new local account starts with, whichever way it is created
+(the sign-up form, an external login provider, an invite, or `my admin`). The account receives it when it is created and
+then owns it: changing the keys later changes neither the accounts that exist nor those that received an earlier value.
+The settings screen shows the values as the user's own. With the keys unset, a new account starts with the automatic
+deletion off, after 30 days, keeping pinned, bookmarked, and favourited posts and direct posts. The default is not shown
+to people outside the instance.
 
 ### Texts (one key, one value)
 
