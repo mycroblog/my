@@ -260,6 +260,9 @@ func TestClientThatLeftIsNotAServerError(t *testing.T) {
 	t.Parallel()
 	cfg := loadConfig(t, map[string]string{"MY_DATABASE_URL": newDatabase(t, true), "MY_ROLE": "web"})
 	var logger *slog.Logger
+	// The handlers of the clients that leave say when they run, and the client leaves only then: one that left
+	// before the server read its request would leave nothing in the log.
+	started := make(chan struct{}, 1)
 	fail := func(w http.ResponseWriter, r *http.Request) {
 		logger.ErrorContext(r.Context(), "handler failed", slog.String("url.path", r.URL.Path))
 		w.WriteHeader(http.StatusInternalServerError)
@@ -267,10 +270,12 @@ func TestClientThatLeftIsNotAServerError(t *testing.T) {
 	s := start(t, cfg, platform.ServeOptions{}, func(a *platform.App) {
 		logger = a.Logger
 		a.Handle("GET /left", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			started <- struct{}{}
 			<-r.Context().Done()
 			fail(w, r)
 		}))
 		a.Handle("GET /left-panic", http.HandlerFunc(func(_ http.ResponseWriter, r *http.Request) {
+			started <- struct{}{}
 			<-r.Context().Done()
 			panic("boom")
 		}))
@@ -283,7 +288,13 @@ func TestClientThatLeftIsNotAServerError(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		time.AfterFunc(50*time.Millisecond, cancel)
+		go func() {
+			select {
+			case <-started:
+			case <-time.After(10 * time.Second): // the checks of the log report a handler that never ran
+			}
+			cancel()
+		}()
 		if resp, err := http.DefaultTransport.RoundTrip(req); err == nil {
 			_ = resp.Body.Close()
 			t.Errorf("GET %s answered %d, want the client to leave first", path, resp.StatusCode)
