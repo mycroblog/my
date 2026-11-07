@@ -15,7 +15,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/instance"
 )
 
-// instanceRuleCases are the cases of InstanceRepositoryContract about the instance rules
+// instanceRuleCases are the cases of InstanceFlows about the instance rules
 // (FR-705): a rule keeps its ID across revisions, retired rules leave the rules in effect but
 // stay readable, moves renumber the rules, invalid input writes nothing, and the
 // instance_rule_heads projection equals a rebuild.

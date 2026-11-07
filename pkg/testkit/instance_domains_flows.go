@@ -12,7 +12,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/instance"
 )
 
-// instanceDomainCases are the cases of InstanceRepositoryContract about the domains of the
+// instanceDomainCases are the cases of InstanceFlows about the domains of the
 // instance (ADR-0018): the first values are kept, and any other value is a mismatch.
 var instanceDomainCases = []struct {
 	name string

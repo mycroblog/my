@@ -12,7 +12,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/instance"
 )
 
-// instanceThemeCases are the cases of InstanceRepositoryContract about the instance theme
+// instanceThemeCases are the cases of InstanceFlows about the instance theme
 // (ADR-0059): no theme until one is saved, revisions that keep their tokens and CSS and stay
 // readable after a newer one, a reset by an empty revision, invalid themes that write nothing, and
 // the instance_theme projection equal to a rebuild.

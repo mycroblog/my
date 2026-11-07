@@ -14,7 +14,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/instance"
 )
 
-// instanceSecretCases are the cases of InstanceRepositoryContract about the secrets of the
+// instanceSecretCases are the cases of InstanceFlows about the secrets of the
 // instance (ADR-0019 §12): a secret is generated once and kept, one row per name, sealed and bound
 // to its row.
 var instanceSecretCases = []struct {

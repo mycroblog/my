@@ -30,17 +30,18 @@ type InstanceHarness struct {
 // The factory registers the cleanup of everything it creates with t.Cleanup.
 type InstanceFactory func(t *testing.T, opts uow.Options) InstanceHarness
 
-// InstanceRepositoryContract verifies the instance repository of a database adapter through the
-// use cases that drive it: defaults for unset settings, every change kept as a revision,
-// canonical values, rejection of invalid input without writing, texts (one value for every
-// locale) with their history, cleared texts, the media files that media settings
-// refer to, the property that the synchronous projections equal a rebuild from the
-// revisions, the instance rules (instanceRuleCases), the rules of the link card crawler
-// (instanceLinkCardDomainCases), the theme (instanceThemeCases), the brand
-// images (instanceBrandCases), the
-// announcements (instanceAnnouncementCases), the service closure (instanceClosureCases), and the
-// secrets of the instance (instanceSecretCases), and its domains (instanceDomainCases).
-func InstanceRepositoryContract(t *testing.T, newHarness InstanceFactory) {
+// InstanceFlows verifies the instance repository of a database adapter through the use cases that
+// drive it: defaults for unset settings, every change kept as a revision, canonical values,
+// rejection of invalid input without writing, texts (one value for every locale) with their
+// history, cleared texts, the media files that media settings refer to, the property that the
+// synchronous projections equal a rebuild from the revisions, the instance rules
+// (instanceRuleCases), the rules of the link card crawler (instanceLinkCardDomainCases), the theme
+// (instanceThemeCases), the brand images (instanceBrandCases), the announcements
+// (instanceAnnouncementCases), the service closure (instanceClosureCases), and the secrets of the
+// instance (instanceSecretCases), and its domains (instanceDomainCases). These are the flows of
+// ADR-0153 §1, which internal/flowtest/instance runs once on SQLite; InstanceRepositoryContract
+// checks the repository's methods on every adapter.
+func InstanceFlows(t *testing.T, newHarness InstanceFactory) {
 	t.Helper()
 	cases := []struct {
 		name string
