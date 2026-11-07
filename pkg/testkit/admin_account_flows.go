@@ -32,7 +32,10 @@ type AdminAccountHarness struct {
 // factory registers the cleanup of everything it creates with t.Cleanup.
 type AdminAccountFactory func(t *testing.T, opts uow.Options) AdminAccountHarness
 
-// AdminAccountContract verifies the reads of the moderators' account management (FR-714) in the
+// AdminAccountFlows verifies the moderators' account management on a database adapter, the flows
+// of ADR-0153 §1, which internal/flowtest/identity runs once on SQLite; AdminAccountContract
+// checks the repository methods it reads on every adapter. The flows check the reads of the
+// moderators' account management (FR-714) in the
 // identity, account, and moderation repositories of a database adapter, through
 // appidentity.AccountAdmin: the search lists local and remote accounts newest first without the
 // instance actor, in keyset pages, by username prefix, domain, origin, state (each derived from
@@ -42,7 +45,7 @@ type AdminAccountFactory func(t *testing.T, opts uow.Options) AdminAccountHarnes
 // sign-in addresses, and the other accounts of the same addresses only to a local user's
 // account, recording each reveal in the audit log; and an administrator removes the two-factor
 // authentication of a local user, recorded in the audit log.
-func AdminAccountContract(t *testing.T, newHarness AdminAccountFactory) {
+func AdminAccountFlows(t *testing.T, newHarness AdminAccountFactory) {
 	t.Helper()
 	cases := []struct {
 		name string
