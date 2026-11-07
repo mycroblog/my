@@ -14,9 +14,10 @@ translation follows them and never adds, drops, or corrects a fact. A wrong fact
 | The `## Headings` and `### Headings` of `docs/README.md` (the sidebar groups) | `app/docs/i18n/<locale>/sidebar.json` | yes |
 | `docs/reference/`, `docs/developers/`, `docs/plugins/` | none: the site shows the English page with a notice | no |
 
-The site serves a translation under `/<locale>/` (`/next/ja/guide/posting/`). A page with no translation file, and a
-section with no translation, is shown in English. The locales are listed in `app/docs/src/translations.ts`
-(`translationLocales`); `ja` is the only one.
+The site serves a translation under `/<locale>/`, the locale's tag in lower case (`/next/ja/guide/posting/`,
+`/next/zh-cn/guide/posting/`). A page with no translation file, and a section with no translation, is shown in English.
+The locales are listed in `app/docs/src/translations.ts` (`translationLocales`), by the tag of their catalog in
+`locales/` (`ja`, `zh-CN`); the commands and the directories of `app/docs/i18n/` use that tag.
 
 ## How a translation is written
 
@@ -45,9 +46,11 @@ the paths of its images as in English; the site adjusts them.
 ### Style
 
 - Write natural prose in the target language, not a word-for-word rendering. For `ja`, use the polite style
-  (`です・ます`) for every page.
+  (`です・ます`) for every page. For `zh-CN`, address the reader as `你`, use full-width punctuation in Chinese text,
+  and put a half-width space between Chinese and Latin letters, digits, or code.
 - Name the UI by its text in the locale's catalog (`locales/<locale>/`): the English documents quote it
-  (`"Write a post"`), and `glossary` prints its text in the locale. Quote it as the locale does (for `ja`, `「…」`).
+  (`"Write a post"`), and `glossary` prints its text in the locale. Quote it as the locale does (for `ja`, `「…」`;
+  for `zh-CN`, `“…”`).
   When `glossary` offers more than one text, pick the one of the screen the sentence is about. A phrase with no UI
   string is translated like any other text.
 - Keep names of products, commands, settings, environment variables, metrics, and job types in English.
@@ -102,6 +105,8 @@ the release: each page lists them and links the English page.
 
 ## Adding a locale
 
-1. Add the locale to `translationLocales` in `app/docs/src/translations.ts` and to `locales` in `app/docs/astro.config.ts`.
+1. Add the locale to `translationLocales` in `app/docs/src/translations.ts`, by the tag of its catalog in `locales/`, and
+   to `locales` in `app/docs/astro.config.ts`, keyed by the tag in lower case with the tag as its `lang`
+   (`"zh-cn": { label: "简体中文", lang: "zh-CN" }`).
 2. Add the site's UI strings for it: `app/docs/src/content/i18n/<locale>.json`, with the keys of `en.json`.
 3. Translate as above, starting with `docs/guide/` and the landing page, and add `sidebar.json`.
