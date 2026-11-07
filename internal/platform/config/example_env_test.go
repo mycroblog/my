@@ -93,6 +93,7 @@ var exampleEnvSections = map[string]string{
 	"relay_max_activities_per_hour": "Relays",
 	"billing_sources":               "Cost records",
 	"payments":                      "Payments",
+	"translator_deepl_api_key":      "Translation providers",
 	"voice":                         "Voice chat",
 	"plugin_translator_address":     "Plugins",
 	"dead_job_retention":            "Retention",

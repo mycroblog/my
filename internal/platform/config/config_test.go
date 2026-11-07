@@ -1067,6 +1067,7 @@ func TestLoadSettingsRedactSecrets(t *testing.T) {
 		"MY_STREAM_POSTGRES_URL", "postgres://user:pass@db/my", "MY_DATABASE_DEV_URL", "postgres://user:pass@db/my_dev",
 		"MY_PAYMENTS", "stripe", "MY_PAYMENTS_STRIPE_SECRET_KEY", "rk_test_abc", "MY_PAYMENTS_STRIPE_WEBHOOK_SECRET", "whsec_abc",
 		"MY_PAYMENTS_PAYJP_SECRET_KEY", "sk_test_abc", "MY_PAYMENTS_PAYJP_WEBHOOK_TOKEN", "whook_abc",
+		"MY_TRANSLATOR_DEEPL_API_KEY", "deepl:fx",
 		"MY_VOICE_TURN_COTURN_SECRET", "turn", "MY_VOICE_TURN_CLOUDFLARE_API_TOKEN", "token", "MY_VOICE_LIVEKIT_API_SECRET", "lk",
 		"MY_VOICE_SORA_API_HEADER_VALUE", "Basic abc", "MY_VOICE_SORA_WEBHOOK_PASSWORD", "pw", "MY_VOICE_SORA_CLOUD_API_KEY", "key",
 		"MY_VOICE_SORA_JOIN_SECRET", "0123456789abcdef0123456789abcdef", "MY_ERRORS_SENTRY_DSN", "https://key@o0.ingest.sentry.io/1",

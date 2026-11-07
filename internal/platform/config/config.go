@@ -243,6 +243,10 @@ type Config struct {
 	// libretranslate calls, empty for none, and its optional API key (ADR-0148 §15).
 	TranslatorLibreTranslateURL    string
 	TranslatorLibreTranslateAPIKey string
+	// TranslatorDeepLAPIKey is the key of DeepL's API, which registers DeepL as a translation provider (ADR-0148 §15),
+	// and TranslatorDeepLURL its API, empty for the one of the key's plan.
+	TranslatorDeepLAPIKey string
+	TranslatorDeepLURL    string
 	// Voice is how the voice chat rooms connect, "off" for no voice chat (ADR-0101 §1), and the
 	// Voice* limits bound the rooms; zero is no limit, except for VoiceP2PMaxParticipants.
 	Voice                   string
@@ -452,6 +456,8 @@ func (c *Config) LogValue() slog.Value {
 		slog.Duration("payments_reconcile_interval", c.PaymentsReconcileInterval),
 		slog.Int("payments_reconcile_max_requests", c.PaymentsReconcileMaxRequests),
 		slog.String("search", c.Search),
+		slog.String("translator_deepl_api_key", redact(c.TranslatorDeepLAPIKey != "")),
+		slog.String("translator_deepl_url", c.TranslatorDeepLURL),
 		slog.String("voice", c.Voice),
 		slog.Int("voice_p2p_max_participants", c.VoiceP2PMaxParticipants),
 		slog.Int("voice_sfu_max_participants", c.VoiceMaxParticipants),

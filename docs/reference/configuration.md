@@ -164,6 +164,8 @@ An instance setting that has never been set reads as its default, which is defin
 | [`translator_libretranslate_url`](#translator_libretranslate_url) | `MY_TRANSLATOR_LIBRETRANSLATE_URL` | none | no | no |
 | [`translator_libretranslate_api_key`](#translator_libretranslate_api_key) | `MY_TRANSLATOR_LIBRETRANSLATE_API_KEY` | none | no | yes |
 | [`search`](#search) | `MY_SEARCH` | `none` | no | no |
+| [`translator_deepl_api_key`](#translator_deepl_api_key) | `MY_TRANSLATOR_DEEPL_API_KEY` | none | no | yes |
+| [`translator_deepl_url`](#translator_deepl_url) | `MY_TRANSLATOR_DEEPL_URL` | `https://api-free.deepl.com` for a key of the free plan, `https://api.deepl.com` otherwise | no | no |
 | [`voice`](#voice) | `MY_VOICE` | `off` | no | no |
 | [`voice_p2p_max_participants`](#voice_p2p_max_participants) | `MY_VOICE_P2P_MAX_PARTICIPANTS` | `10` | no | no |
 | [`voice_sfu_max_participants`](#voice_sfu_max_participants) | `MY_VOICE_SFU_MAX_PARTICIPANTS` | `10` | no | no |
@@ -1348,6 +1350,22 @@ The search engine of the full-text search of statuses. The search of accounts an
 | --- | --- |
 | `none` | No full-text search: the server connects to no engine and enqueues no search job, and `GET /api/v1/instance` tells clients that the search is not available. |
 | `fake` | Test builds only: a stand-in index in the server's memory, for end-to-end tests and demonstrations. Only a binary built with the build tag `e2e_fakes` has it, and that binary refuses it unless `profile = development`; released binaries and images never have it ([build tags](build-tags.md)). It needs no other setting. |
+
+### `translator_deepl_api_key`
+
+The authentication key of DeepL's API, which makes DeepL a translation provider that `translation_providers` can enable as `deepl` ([translation](../operations/translation.md#deepl)). A key of the free plan ends in `:fx`; DeepL may keep the text that the free plan translates.
+
+- Environment variable: `MY_TRANSLATOR_DEEPL_API_KEY` or `MY_TRANSLATOR_DEEPL_API_KEY_FILE`
+- Default: none
+- Required: no
+
+### `translator_deepl_url`
+
+The `https:` URL of DeepL's API that the server calls, such as a proxy in front of it; `http:` is accepted for localhost only.
+
+- Environment variable: `MY_TRANSLATOR_DEEPL_URL`
+- Default: `https://api-free.deepl.com` for a key of the free plan, `https://api.deepl.com` otherwise
+- Required: no
 
 ### `voice`
 
