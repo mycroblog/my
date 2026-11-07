@@ -13,7 +13,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/moderation"
 )
 
-// The role badges of RoleRepositoryContract (ADR-0070).
+// The role badges of RoleFlows (ADR-0070).
 
 // createBadgeRole creates a role at position with a badge (none for an empty label).
 func (e *roleEnv) createBadgeRole(t *testing.T, key string, position int, label string, color identity.BadgeColor) identity.Role {
