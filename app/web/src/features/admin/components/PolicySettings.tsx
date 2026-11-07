@@ -263,6 +263,7 @@ const choices = {
   hook_signup_check_mode: hookModeChoices,
   hook_media_check_mode: hookModeChoices,
   hook_local_status_mode: hookModeChoices,
+  hook_local_profile_mode: hookModeChoices,
   hook_inbound_status_on_failure: [hookPassOnFailure, hookRetryOnFailure],
   hook_inbound_follow_on_failure: [hookPassOnFailure, hookRetryOnFailure],
   hook_signup_check_on_failure: [
@@ -737,6 +738,17 @@ function FederationSections({ form }: { form: PolicyForm }) {
           setting="hook_local_status_account_age_days"
           label={t("client:admin.settings.hooks.local_status.account_age")}
           description={(range) => t("client:admin.settings.hooks.local_status.account_age.description", range)}
+        />
+        <PolicyRadios
+          form={form}
+          setting="hook_local_profile_mode"
+          label={t("client:admin.settings.hooks.local_profile.mode")}
+        />
+        <NumberPolicyField
+          form={form}
+          setting="hook_local_profile_account_age_days"
+          label={t("client:admin.settings.hooks.local_profile.account_age")}
+          description={(range) => t("client:admin.settings.hooks.local_profile.account_age.description", range)}
         />
         <NumberPolicyField
           form={form}

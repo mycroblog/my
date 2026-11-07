@@ -871,6 +871,14 @@
     "defaultMessage": "{min} 日から {max} 日まで。0 ならすべてのアカウントの投稿を審査します。非公開とダイレクトの投稿は送りません。異議申し立てが認められたアカウントの投稿も送りません。",
     "description": "Description of the number of days an account's posts go to the external review. {min} and {max} are the bounds."
   },
+  "admin.settings.hooks.local_profile.account_age": {
+    "defaultMessage": "プロフィールを審査するアカウントの作成からの日数",
+    "description": "Label of the number of days after its creation that an account's profile changes go to the external review of local profiles."
+  },
+  "admin.settings.hooks.local_profile.account_age.description": {
+    "defaultMessage": "{min} 日から {max} 日まで。0 ならすべてのアカウントのプロフィールを審査します。",
+    "description": "Description of the number of days an account's profile changes go to the external review. {min} and {max} are the bounds."
+  },
   "admin.settings.hooks.inbound_status.unfollowed_direct": {
     "defaultMessage": "外部の審査に、ここの誰もフォローしていない作者のダイレクト投稿も送る",
     "description": "Label of the setting that sends direct posts from unfollowed authors to the external review."
@@ -881,6 +889,10 @@
   },
   "admin.settings.hooks.local_status.mode": {
     "defaultMessage": "このサーバーの投稿",
+    "description": "Label of the choice of the mode of the external review of this kind of submission."
+  },
+  "admin.settings.hooks.local_profile.mode": {
+    "defaultMessage": "このサーバーのプロフィール",
     "description": "Label of the choice of the mode of the external review of this kind of submission."
   },
   "admin.settings.hooks.media_check.mode": {

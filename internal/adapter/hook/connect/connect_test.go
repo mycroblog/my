@@ -280,3 +280,43 @@ func TestLocalStatusSubject(t *testing.T) {
 		t.Error("another hook's subject was sent")
 	}
 }
+
+// The subject of local.profile reaches the plugin in its own fields, with no image.
+func TestLocalProfileSubject(t *testing.T) {
+	t.Parallel()
+	got := make(chan *hookv1.CheckRequest, 1)
+	server := connect.NewServer()
+	hookv1connect.RegisterHookServiceHandler(server, &subjectPlugin{got: got})
+	mux := http.NewServeMux()
+	connecthttp.Mount(mux, server)
+	conn, err := client.New(client.Options{
+		Kind: mustKind(t, kind.LocalProfile), Destination: kind.Destination{Address: fakeplugin.ServeUnix(t, mux), Protocol: kind.ProtocolJSON},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(conn.Close)
+	created := time.Date(2026, 11, 1, 9, 30, 0, 0, time.UTC)
+	_, err = hookconnect.New(conn).Check(t.Context(), apphook.Request{
+		Hook: hook.LocalProfile, SubjectKey: apphook.ProfileSubjectKey("account-id", "revision-id"),
+		Subject: apphook.LocalProfileSubject{
+			AccountURI: "https://my.example/ap/actors/a", Username: "alice", AccountCreatedAt: created,
+			DisplayName: "Cheap pills", Note: "visit", NoteHTML: "<p>visit</p>",
+			Fields:        []apphook.LocalProfileField{{Name: "shop", Value: "https://spam.example", ValueHTML: "<a>spam</a>"}},
+			AvatarChanged: true,
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	sent := <-got
+	s := sent.GetLocalProfile()
+	if sent.GetSubjectKey() != "account-id#revision-id" || s == nil || s.GetDisplayName() != "Cheap pills" || s.GetNote() != "visit" ||
+		s.GetNoteHtml() != "<p>visit</p>" || s.GetUsername() != "alice" || s.GetAccountCreatedAt() != "2026-11-01T09:30:00Z" ||
+		len(s.GetFields()) != 1 || s.GetFields()[0].GetValue() != "https://spam.example" || !s.GetAvatarChanged() || s.GetHeaderChanged() {
+		t.Errorf("sent %v", sent)
+	}
+	if sent.GetLocalStatus() != nil || sent.GetMedia() != nil {
+		t.Error("another hook's subject was sent")
+	}
+}

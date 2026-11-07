@@ -50,6 +50,9 @@ type Deps struct {
 	// LocalEmojis returns the IDs, sorted, of the enabled local custom emoji that the texts of
 	// a local profile use as :shortcode: (the content module, ADR-0051 §3); nil records none.
 	LocalEmojis func(ctx context.Context, texts ...string) ([]string, error)
+	// ProfileReview asks the decision hook local.profile about the updates of local profiles
+	// (ADR-0147); its zero value asks nothing.
+	ProfileReview ProfileReview
 }
 
 // ErrUnusableImage reports an avatar or header that is not a processed image of the account.
@@ -284,18 +287,32 @@ func (s *Service) IsEmojiReferenced(ctx context.Context, emojiID string) (bool, 
 
 // ReviseProfile records a new revision of an account's profile and makes it current.
 func (s *Service) ReviseProfile(ctx context.Context, accountID string, in ProfileInput) (account.ProfileRevision, error) {
-	return s.reviseProfile(ctx, accountID, in, nil)
+	return s.reviseProfile(ctx, accountID, in, reviseOptions{})
 }
 
 // errProfileChanged reports that the current profile revision is no longer the one that a
 // revision was built on.
 var errProfileChanged = errors.New("account: the profile changed concurrently")
 
-// reviseProfile records a new revision like ReviseProfile. With a non-nil baseSeq, it fails with
-// errProfileChanged unless the current revision has that seq (0 for none).
-func (s *Service) reviseProfile(ctx context.Context, accountID string, in ProfileInput, baseSeq *int) (account.ProfileRevision, error) {
+// reviseOptions are the options of reviseProfile.
+type reviseOptions struct {
+	// baseSeq, when not nil, fails the revision with errProfileChanged unless the current revision
+	// has that seq (0 for none).
+	baseSeq *int
+	// id is the ID of the new revision, fixed before the transaction; "" generates one.
+	id string
+	// inTx runs inside the transaction after the revision is stored; nil runs nothing.
+	inTx func(ctx context.Context, tx uow.Tx) error
+}
+
+// reviseProfile records a new revision like ReviseProfile, with the options of o.
+func (s *Service) reviseProfile(ctx context.Context, accountID string, in ProfileInput, o reviseOptions) (account.ProfileRevision, error) {
+	id := o.id
+	if id == "" {
+		id = s.d.IDs.NewID()
+	}
 	base := account.ProfileRevision{
-		ID:            s.d.IDs.NewID(),
+		ID:            id,
 		AccountID:     accountID,
 		DisplayName:   in.DisplayName,
 		NoteHTML:      in.NoteHTML,
@@ -324,7 +341,7 @@ func (s *Service) reviseProfile(ctx context.Context, accountID string, in Profil
 		if err != nil && !errors.Is(err, ErrNotFound) {
 			return err
 		}
-		if baseSeq != nil && head.Seq != *baseSeq {
+		if o.baseSeq != nil && head.Seq != *o.baseSeq {
 			return errProfileChanged
 		}
 		rev.Seq = head.Seq + 1
@@ -338,6 +355,11 @@ func (s *Service) reviseProfile(ctx context.Context, accountID string, in Profil
 		}
 		if err := s.d.Repository.InsertProfileRevision(ctx, tx, rev); err != nil {
 			return err
+		}
+		if o.inTx != nil {
+			if err := o.inTx(ctx, tx); err != nil {
+				return err
+			}
 		}
 		return tx.Emit(ctx, ProfileRevised{Revision: rev, IndexableChanged: indexableChanged})
 	})

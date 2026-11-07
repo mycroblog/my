@@ -14,7 +14,8 @@ service HookService {
 }
 
 message CheckRequest {
-  // The hook that asks: inbound.status, inbound.follow, signup.check, media.check, or local.status.
+  // The hook that asks: inbound.status, inbound.follow, signup.check, media.check, local.status, or
+  // local.profile.
   string hook = 1;
   // What identifies the subject for the hook, such as the URI of a received activity.
   string subject_key = 2;
@@ -30,6 +31,8 @@ message CheckRequest {
   LocalStatus local_status = 7;
   // What media.check reviews; empty on the calls of the other hooks and on probes.
   MediaSubject media = 8;
+  // What local.profile reviews; empty on the calls of the other hooks and on probes.
+  LocalProfile local_profile = 10;
 }
 
 // A post from another server, or a new revision of one, for inbound.status. It holds the post as
@@ -162,6 +165,39 @@ message MediaSubject {
   bool animated = 10;
 }
 
+// The profile of an account on this server, before the server stores an update of it, for
+// local.profile. The subject_key of the call is the account's ID, "#", and the ID of the profile
+// revision the update would store, so every update is its own subject; a reject refuses that
+// update alone, which leaves the profile as it was. The profile is public. By default only the
+// accounts created recently are sent. The server sends no image: only whether the update changes
+// the avatar or the header.
+message LocalProfile {
+  // The ActivityPub id of the account.
+  string account_uri = 1;
+  // The account's username on this server.
+  string username = 2;
+  // When the account was created, in RFC 3339.
+  string account_created_at = 3;
+  // The display name as it would be stored.
+  string display_name = 4;
+  // The bio as the user typed it.
+  string note = 5;
+  // The bio as the server renders it, in HTML.
+  string note_html = 6;
+  // The profile fields in order, as they would be stored.
+  repeated Field fields = 7;
+  // Whether the update sets, replaces, or removes the avatar, or the header image.
+  bool avatar_changed = 8;
+  bool header_changed = 9;
+
+  // One profile field: its name, and its value as typed and as the server renders it in HTML.
+  message Field {
+    string name = 1;
+    string value = 2;
+    string value_html = 3;
+  }
+}
+
 message CheckResponse {
   // A name in JSON. VERDICT_UNSPECIFIED, an empty response included, a name this version does not
   // know, and a verdict the hook does not take are all failures and follow the hook's failure
@@ -180,6 +216,7 @@ message CheckResponse {
 // signup.check: ALLOW, REQUIRE_APPROVAL, REJECT.
 // media.check: ALLOW, MARK_SENSITIVE, FLAG, REJECT.
 // local.status: ALLOW, FLAG, REJECT. A REJECT can be appealed by the author, which people review.
+// local.profile: ALLOW, FLAG, REJECT. A REJECT cannot be appealed; the user may change the profile and save it again.
 enum Verdict {
   VERDICT_UNSPECIFIED = 0;
   // Go on as if the hook were not there.

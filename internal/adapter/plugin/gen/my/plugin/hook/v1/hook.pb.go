@@ -33,6 +33,7 @@ const (
 // signup.check: ALLOW, REQUIRE_APPROVAL, REJECT.
 // media.check: ALLOW, MARK_SENSITIVE, FLAG, REJECT.
 // local.status: ALLOW, FLAG, REJECT. A REJECT can be appealed by the author, which people review.
+// local.profile: ALLOW, FLAG, REJECT. A REJECT cannot be appealed; the user may change the profile and save it again.
 type Verdict int32
 
 const (
@@ -167,7 +168,8 @@ func (Reason) EnumDescriptor() ([]byte, []int) {
 
 type CheckRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// The hook that asks: inbound.status, inbound.follow, signup.check, media.check, or local.status.
+	// The hook that asks: inbound.status, inbound.follow, signup.check, media.check, local.status, or
+	// local.profile.
 	Hook string `protobuf:"bytes,1,opt,name=hook,proto3" json:"hook,omitempty"`
 	// What identifies the subject for the hook, such as the URI of a received activity.
 	SubjectKey string `protobuf:"bytes,2,opt,name=subject_key,json=subjectKey,proto3" json:"subject_key,omitempty"`
@@ -182,7 +184,9 @@ type CheckRequest struct {
 	// What local.status reviews; empty on the calls of the other hooks and on probes.
 	LocalStatus *LocalStatus `protobuf:"bytes,7,opt,name=local_status,json=localStatus,proto3" json:"local_status,omitempty"`
 	// What media.check reviews; empty on the calls of the other hooks and on probes.
-	Media         *MediaSubject `protobuf:"bytes,8,opt,name=media,proto3" json:"media,omitempty"`
+	Media *MediaSubject `protobuf:"bytes,8,opt,name=media,proto3" json:"media,omitempty"`
+	// What local.profile reviews; empty on the calls of the other hooks and on probes.
+	LocalProfile  *LocalProfile `protobuf:"bytes,10,opt,name=local_profile,json=localProfile,proto3" json:"local_profile,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -269,6 +273,13 @@ func (x *CheckRequest) GetLocalStatus() *LocalStatus {
 func (x *CheckRequest) GetMedia() *MediaSubject {
 	if x != nil {
 		return x.Media
+	}
+	return nil
+}
+
+func (x *CheckRequest) GetLocalProfile() *LocalProfile {
+	if x != nil {
+		return x.LocalProfile
 	}
 	return nil
 }
@@ -880,6 +891,128 @@ func (x *MediaSubject) GetAnimated() bool {
 	return false
 }
 
+// The profile of an account on this server, before the server stores an update of it, for
+// local.profile. The subject_key of the call is the account's ID, "#", and the ID of the profile
+// revision the update would store, so every update is its own subject; a reject refuses that
+// update alone, which leaves the profile as it was. The profile is public. By default only the
+// accounts created recently are sent. The server sends no image: only whether the update changes
+// the avatar or the header.
+type LocalProfile struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The ActivityPub id of the account.
+	AccountUri string `protobuf:"bytes,1,opt,name=account_uri,json=accountUri,proto3" json:"account_uri,omitempty"`
+	// The account's username on this server.
+	Username string `protobuf:"bytes,2,opt,name=username,proto3" json:"username,omitempty"`
+	// When the account was created, in RFC 3339.
+	AccountCreatedAt string `protobuf:"bytes,3,opt,name=account_created_at,json=accountCreatedAt,proto3" json:"account_created_at,omitempty"`
+	// The display name as it would be stored.
+	DisplayName string `protobuf:"bytes,4,opt,name=display_name,json=displayName,proto3" json:"display_name,omitempty"`
+	// The bio as the user typed it.
+	Note string `protobuf:"bytes,5,opt,name=note,proto3" json:"note,omitempty"`
+	// The bio as the server renders it, in HTML.
+	NoteHtml string `protobuf:"bytes,6,opt,name=note_html,json=noteHtml,proto3" json:"note_html,omitempty"`
+	// The profile fields in order, as they would be stored.
+	Fields []*LocalProfile_Field `protobuf:"bytes,7,rep,name=fields,proto3" json:"fields,omitempty"`
+	// Whether the update sets, replaces, or removes the avatar, or the header image.
+	AvatarChanged bool `protobuf:"varint,8,opt,name=avatar_changed,json=avatarChanged,proto3" json:"avatar_changed,omitempty"`
+	HeaderChanged bool `protobuf:"varint,9,opt,name=header_changed,json=headerChanged,proto3" json:"header_changed,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *LocalProfile) Reset() {
+	*x = LocalProfile{}
+	mi := &file_my_plugin_hook_v1_hook_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *LocalProfile) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*LocalProfile) ProtoMessage() {}
+
+func (x *LocalProfile) ProtoReflect() protoreflect.Message {
+	mi := &file_my_plugin_hook_v1_hook_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use LocalProfile.ProtoReflect.Descriptor instead.
+func (*LocalProfile) Descriptor() ([]byte, []int) {
+	return file_my_plugin_hook_v1_hook_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *LocalProfile) GetAccountUri() string {
+	if x != nil {
+		return x.AccountUri
+	}
+	return ""
+}
+
+func (x *LocalProfile) GetUsername() string {
+	if x != nil {
+		return x.Username
+	}
+	return ""
+}
+
+func (x *LocalProfile) GetAccountCreatedAt() string {
+	if x != nil {
+		return x.AccountCreatedAt
+	}
+	return ""
+}
+
+func (x *LocalProfile) GetDisplayName() string {
+	if x != nil {
+		return x.DisplayName
+	}
+	return ""
+}
+
+func (x *LocalProfile) GetNote() string {
+	if x != nil {
+		return x.Note
+	}
+	return ""
+}
+
+func (x *LocalProfile) GetNoteHtml() string {
+	if x != nil {
+		return x.NoteHtml
+	}
+	return ""
+}
+
+func (x *LocalProfile) GetFields() []*LocalProfile_Field {
+	if x != nil {
+		return x.Fields
+	}
+	return nil
+}
+
+func (x *LocalProfile) GetAvatarChanged() bool {
+	if x != nil {
+		return x.AvatarChanged
+	}
+	return false
+}
+
+func (x *LocalProfile) GetHeaderChanged() bool {
+	if x != nil {
+		return x.HeaderChanged
+	}
+	return false
+}
+
 type CheckResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// A name in JSON. VERDICT_UNSPECIFIED, an empty response included, a name this version does not
@@ -897,7 +1030,7 @@ type CheckResponse struct {
 
 func (x *CheckResponse) Reset() {
 	*x = CheckResponse{}
-	mi := &file_my_plugin_hook_v1_hook_proto_msgTypes[6]
+	mi := &file_my_plugin_hook_v1_hook_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -909,7 +1042,7 @@ func (x *CheckResponse) String() string {
 func (*CheckResponse) ProtoMessage() {}
 
 func (x *CheckResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_my_plugin_hook_v1_hook_proto_msgTypes[6]
+	mi := &file_my_plugin_hook_v1_hook_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -922,7 +1055,7 @@ func (x *CheckResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CheckResponse.ProtoReflect.Descriptor instead.
 func (*CheckResponse) Descriptor() ([]byte, []int) {
-	return file_my_plugin_hook_v1_hook_proto_rawDescGZIP(), []int{6}
+	return file_my_plugin_hook_v1_hook_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *CheckResponse) GetVerdict() Verdict {
@@ -958,7 +1091,7 @@ type InboundStatus_Body struct {
 
 func (x *InboundStatus_Body) Reset() {
 	*x = InboundStatus_Body{}
-	mi := &file_my_plugin_hook_v1_hook_proto_msgTypes[7]
+	mi := &file_my_plugin_hook_v1_hook_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -970,7 +1103,7 @@ func (x *InboundStatus_Body) String() string {
 func (*InboundStatus_Body) ProtoMessage() {}
 
 func (x *InboundStatus_Body) ProtoReflect() protoreflect.Message {
-	mi := &file_my_plugin_hook_v1_hook_proto_msgTypes[7]
+	mi := &file_my_plugin_hook_v1_hook_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1015,7 +1148,7 @@ type InboundStatus_Attachment struct {
 
 func (x *InboundStatus_Attachment) Reset() {
 	*x = InboundStatus_Attachment{}
-	mi := &file_my_plugin_hook_v1_hook_proto_msgTypes[8]
+	mi := &file_my_plugin_hook_v1_hook_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1027,7 +1160,7 @@ func (x *InboundStatus_Attachment) String() string {
 func (*InboundStatus_Attachment) ProtoMessage() {}
 
 func (x *InboundStatus_Attachment) ProtoReflect() protoreflect.Message {
-	mi := &file_my_plugin_hook_v1_hook_proto_msgTypes[8]
+	mi := &file_my_plugin_hook_v1_hook_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1071,11 +1204,72 @@ func (x *InboundStatus_Attachment) GetDescription() string {
 	return ""
 }
 
+// One profile field: its name, and its value as typed and as the server renders it in HTML.
+type LocalProfile_Field struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Value         string                 `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty"`
+	ValueHtml     string                 `protobuf:"bytes,3,opt,name=value_html,json=valueHtml,proto3" json:"value_html,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *LocalProfile_Field) Reset() {
+	*x = LocalProfile_Field{}
+	mi := &file_my_plugin_hook_v1_hook_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *LocalProfile_Field) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*LocalProfile_Field) ProtoMessage() {}
+
+func (x *LocalProfile_Field) ProtoReflect() protoreflect.Message {
+	mi := &file_my_plugin_hook_v1_hook_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use LocalProfile_Field.ProtoReflect.Descriptor instead.
+func (*LocalProfile_Field) Descriptor() ([]byte, []int) {
+	return file_my_plugin_hook_v1_hook_proto_rawDescGZIP(), []int{6, 0}
+}
+
+func (x *LocalProfile_Field) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *LocalProfile_Field) GetValue() string {
+	if x != nil {
+		return x.Value
+	}
+	return ""
+}
+
+func (x *LocalProfile_Field) GetValueHtml() string {
+	if x != nil {
+		return x.ValueHtml
+	}
+	return ""
+}
+
 var File_my_plugin_hook_v1_hook_proto protoreflect.FileDescriptor
 
 const file_my_plugin_hook_v1_hook_proto_rawDesc = "" +
 	"\n" +
-	"\x1cmy/plugin/hook/v1/hook.proto\x12\x11my.plugin.hook.v1\"\x90\x03\n" +
+	"\x1cmy/plugin/hook/v1/hook.proto\x12\x11my.plugin.hook.v1\"\xd6\x03\n" +
 	"\fCheckRequest\x12\x12\n" +
 	"\x04hook\x18\x01 \x01(\tR\x04hook\x12\x1f\n" +
 	"\vsubject_key\x18\x02 \x01(\tR\n" +
@@ -1085,7 +1279,9 @@ const file_my_plugin_hook_v1_hook_proto_rawDesc = "" +
 	"\x06follow\x18\x05 \x01(\v2 .my.plugin.hook.v1.FollowSubjectR\x06follow\x128\n" +
 	"\x06signup\x18\x06 \x01(\v2 .my.plugin.hook.v1.SignupSubjectR\x06signup\x12A\n" +
 	"\flocal_status\x18\a \x01(\v2\x1e.my.plugin.hook.v1.LocalStatusR\vlocalStatus\x125\n" +
-	"\x05media\x18\b \x01(\v2\x1f.my.plugin.hook.v1.MediaSubjectR\x05media\"\xe2\x06\n" +
+	"\x05media\x18\b \x01(\v2\x1f.my.plugin.hook.v1.MediaSubjectR\x05media\x12D\n" +
+	"\rlocal_profile\x18\n" +
+	" \x01(\v2\x1f.my.plugin.hook.v1.LocalProfileR\flocalProfile\"\xe2\x06\n" +
 	"\rInboundStatus\x12#\n" +
 	"\ractivity_type\x18\x01 \x01(\tR\factivityType\x12\x1d\n" +
 	"\n" +
@@ -1161,7 +1357,23 @@ const file_my_plugin_hook_v1_hook_proto_rawDesc = "" +
 	"\vduration_ms\x18\t \x01(\x03R\n" +
 	"durationMs\x12\x1a\n" +
 	"\banimated\x18\n" +
-	" \x01(\bR\banimated\"\x8c\x01\n" +
+	" \x01(\bR\banimated\"\xac\x03\n" +
+	"\fLocalProfile\x12\x1f\n" +
+	"\vaccount_uri\x18\x01 \x01(\tR\n" +
+	"accountUri\x12\x1a\n" +
+	"\busername\x18\x02 \x01(\tR\busername\x12,\n" +
+	"\x12account_created_at\x18\x03 \x01(\tR\x10accountCreatedAt\x12!\n" +
+	"\fdisplay_name\x18\x04 \x01(\tR\vdisplayName\x12\x12\n" +
+	"\x04note\x18\x05 \x01(\tR\x04note\x12\x1b\n" +
+	"\tnote_html\x18\x06 \x01(\tR\bnoteHtml\x12=\n" +
+	"\x06fields\x18\a \x03(\v2%.my.plugin.hook.v1.LocalProfile.FieldR\x06fields\x12%\n" +
+	"\x0eavatar_changed\x18\b \x01(\bR\ravatarChanged\x12%\n" +
+	"\x0eheader_changed\x18\t \x01(\bR\rheaderChanged\x1aP\n" +
+	"\x05Field\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value\x12\x1d\n" +
+	"\n" +
+	"value_html\x18\x03 \x01(\tR\tvalueHtml\"\x8c\x01\n" +
 	"\rCheckResponse\x124\n" +
 	"\averdict\x18\x01 \x01(\x0e2\x1a.my.plugin.hook.v1.VerdictR\averdict\x121\n" +
 	"\x06reason\x18\x02 \x01(\x0e2\x19.my.plugin.hook.v1.ReasonR\x06reason\x12\x12\n" +
@@ -1200,7 +1412,7 @@ func file_my_plugin_hook_v1_hook_proto_rawDescGZIP() []byte {
 }
 
 var file_my_plugin_hook_v1_hook_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_my_plugin_hook_v1_hook_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
+var file_my_plugin_hook_v1_hook_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
 var file_my_plugin_hook_v1_hook_proto_goTypes = []any{
 	(Verdict)(0),                     // 0: my.plugin.hook.v1.Verdict
 	(Reason)(0),                      // 1: my.plugin.hook.v1.Reason
@@ -1210,9 +1422,11 @@ var file_my_plugin_hook_v1_hook_proto_goTypes = []any{
 	(*SignupSubject)(nil),            // 5: my.plugin.hook.v1.SignupSubject
 	(*LocalStatus)(nil),              // 6: my.plugin.hook.v1.LocalStatus
 	(*MediaSubject)(nil),             // 7: my.plugin.hook.v1.MediaSubject
-	(*CheckResponse)(nil),            // 8: my.plugin.hook.v1.CheckResponse
-	(*InboundStatus_Body)(nil),       // 9: my.plugin.hook.v1.InboundStatus.Body
-	(*InboundStatus_Attachment)(nil), // 10: my.plugin.hook.v1.InboundStatus.Attachment
+	(*LocalProfile)(nil),             // 8: my.plugin.hook.v1.LocalProfile
+	(*CheckResponse)(nil),            // 9: my.plugin.hook.v1.CheckResponse
+	(*InboundStatus_Body)(nil),       // 10: my.plugin.hook.v1.InboundStatus.Body
+	(*InboundStatus_Attachment)(nil), // 11: my.plugin.hook.v1.InboundStatus.Attachment
+	(*LocalProfile_Field)(nil),       // 12: my.plugin.hook.v1.LocalProfile.Field
 }
 var file_my_plugin_hook_v1_hook_proto_depIdxs = []int32{
 	3,  // 0: my.plugin.hook.v1.CheckRequest.inbound_status:type_name -> my.plugin.hook.v1.InboundStatus
@@ -1220,17 +1434,19 @@ var file_my_plugin_hook_v1_hook_proto_depIdxs = []int32{
 	5,  // 2: my.plugin.hook.v1.CheckRequest.signup:type_name -> my.plugin.hook.v1.SignupSubject
 	6,  // 3: my.plugin.hook.v1.CheckRequest.local_status:type_name -> my.plugin.hook.v1.LocalStatus
 	7,  // 4: my.plugin.hook.v1.CheckRequest.media:type_name -> my.plugin.hook.v1.MediaSubject
-	9,  // 5: my.plugin.hook.v1.InboundStatus.bodies:type_name -> my.plugin.hook.v1.InboundStatus.Body
-	10, // 6: my.plugin.hook.v1.InboundStatus.attachments:type_name -> my.plugin.hook.v1.InboundStatus.Attachment
-	0,  // 7: my.plugin.hook.v1.CheckResponse.verdict:type_name -> my.plugin.hook.v1.Verdict
-	1,  // 8: my.plugin.hook.v1.CheckResponse.reason:type_name -> my.plugin.hook.v1.Reason
-	2,  // 9: my.plugin.hook.v1.HookService.Check:input_type -> my.plugin.hook.v1.CheckRequest
-	8,  // 10: my.plugin.hook.v1.HookService.Check:output_type -> my.plugin.hook.v1.CheckResponse
-	10, // [10:11] is the sub-list for method output_type
-	9,  // [9:10] is the sub-list for method input_type
-	9,  // [9:9] is the sub-list for extension type_name
-	9,  // [9:9] is the sub-list for extension extendee
-	0,  // [0:9] is the sub-list for field type_name
+	8,  // 5: my.plugin.hook.v1.CheckRequest.local_profile:type_name -> my.plugin.hook.v1.LocalProfile
+	10, // 6: my.plugin.hook.v1.InboundStatus.bodies:type_name -> my.plugin.hook.v1.InboundStatus.Body
+	11, // 7: my.plugin.hook.v1.InboundStatus.attachments:type_name -> my.plugin.hook.v1.InboundStatus.Attachment
+	12, // 8: my.plugin.hook.v1.LocalProfile.fields:type_name -> my.plugin.hook.v1.LocalProfile.Field
+	0,  // 9: my.plugin.hook.v1.CheckResponse.verdict:type_name -> my.plugin.hook.v1.Verdict
+	1,  // 10: my.plugin.hook.v1.CheckResponse.reason:type_name -> my.plugin.hook.v1.Reason
+	2,  // 11: my.plugin.hook.v1.HookService.Check:input_type -> my.plugin.hook.v1.CheckRequest
+	9,  // 12: my.plugin.hook.v1.HookService.Check:output_type -> my.plugin.hook.v1.CheckResponse
+	12, // [12:13] is the sub-list for method output_type
+	11, // [11:12] is the sub-list for method input_type
+	11, // [11:11] is the sub-list for extension type_name
+	11, // [11:11] is the sub-list for extension extendee
+	0,  // [0:11] is the sub-list for field type_name
 }
 
 func init() { file_my_plugin_hook_v1_hook_proto_init() }
@@ -1244,7 +1460,7 @@ func file_my_plugin_hook_v1_hook_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_my_plugin_hook_v1_hook_proto_rawDesc), len(file_my_plugin_hook_v1_hook_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   9,
+			NumMessages:   11,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

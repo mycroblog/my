@@ -18,7 +18,8 @@ From the top of the diagram down:
     on), and `key_manager` (`key_manager = plugin`).
   - **[Decision hooks](decision-hooks.md)**: a plugin answers whether to accept something, and is asked unless the hook's
     mode `hook_<hook>_mode` is `off`: `inbound.status` for posts from other servers, `inbound.follow` for follows from
-    other servers, `signup.check` for sign-ups, `media.check` for uploads, and `local.status` for posts of local accounts.
+    other servers, `signup.check` for sign-ups, `media.check` for uploads, `local.status` for posts of local accounts, and `local.profile` for profile changes of
+    local accounts.
 - **The plugin client** makes every call. Each kind has one destination, `plugin_<kind>_address`, and a deadline,
   `plugin_<kind>_timeout`, and runs at most 8 calls at once (2 for each media kind). It connects over a Unix socket, `https://`, or,
   for [some kinds](#plain-tcp) only, `http://`.
@@ -46,6 +47,7 @@ key, so `inbound.status` has `plugin_inbound_status_address`.
 | `key_manager` | Data-encryption keys in plaintext | **Refused** | `json` | 5 s |
 | `inbound.status` | The text of incoming posts | **Refused** | `json` | 3 s |
 | `local.status` | The text of local posts | **Refused** | `json` | 1 s |
+| `local.profile` | The public profile of local accounts, without images | Allowed | `json` | 1 s |
 | `inbound.follow` | The two parties of a follow | Allowed | `json` | 3 s |
 | `signup.check` | Email addresses and IP addresses | **Refused** | `json` | 2 s |
 | `media.check` | A small processed version of the media, never the original | Allowed | `json` | 10 s |
@@ -129,7 +131,7 @@ A plugin that is down when the server starts stops nothing, except `key_manager`
 
 A call has the deadline of `plugin_<kind>_timeout`, and a plugin receives it as `Connect-Timeout-Ms` (`grpc-timeout` on
 gRPC). A plugin may ignore that header: the server stops waiting anyway. The deadline must stay below 30 seconds for the
-kinds that a request can wait for (`key_manager`, `translator`, `signup.check`, `media.check`, and `local.status`), and
+kinds that a request can wait for (`key_manager`, `translator`, `signup.check`, `media.check`, `local.status`, and `local.profile`), and
 below 5 minutes, how long a job may run, for the others.
 
 ## Test a plugin

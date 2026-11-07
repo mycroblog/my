@@ -799,6 +799,14 @@
     "defaultMessage": "このサーバーの自動の審査が、この編集を受け付けませんでした。投稿は編集前のままです。",
     "description": "API error detail for HTTP 422 when the server's automated review refused an edit; the post keeps its previous version, and an edit cannot be appealed."
   },
+  "errors.profile.rejected": {
+    "defaultMessage": "このプロフィールの変更は保存されませんでした。",
+    "description": "API error title for HTTP 422 when the server's automated review of profiles refused a change of the user's profile. Fixed text: it never says why."
+  },
+  "errors.profile.rejected.detail": {
+    "defaultMessage": "このサーバーの自動の審査が、この変更を受け付けませんでした。プロフィールは変更前のままです。",
+    "description": "API error detail for HTTP 422 when the server's automated review refused a change of the profile; the profile keeps its previous version, and the refusal cannot be appealed."
+  },
   "errors.hook_appeal.already_appealed": {
     "defaultMessage": "この判定にはすでに異議を申し立てています。",
     "description": "API error title for HTTP 422 when the user appeals the refusal of a post a second time; a refusal is appealed once."
