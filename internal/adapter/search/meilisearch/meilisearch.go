@@ -430,9 +430,13 @@ func (x *Index) settled(ctx context.Context) error {
 		return fmt.Errorf("meilisearch: the settings of the index: %w", err)
 	}
 	// The marker only saves sending the same settings again on the next start, so a failure to
-	// write it fails nothing.
+	// write it fails nothing. Its write is a task too: wait for it, or a process that starts right
+	// after this one reads no marker yet and sends the same settings again.
 	marker := []map[string]any{{fieldStatusID: settingsDocID, fieldVisibility: settingsVisibility, fieldSettingsHash: x.set.hash}}
-	_ = x.call(ctx, "POST", x.indexPath("/documents")+"?primaryKey="+fieldStatusID, marker, nil)
+	var written taskRef
+	if x.call(ctx, "POST", x.indexPath("/documents")+"?primaryKey="+fieldStatusID, marker, &written) == nil {
+		_ = x.await(ctx, written.TaskUID)
+	}
 	x.mu.Lock()
 	if x.settingsTask == uid {
 		x.settingsTask, x.settingsApplied = -1, true
