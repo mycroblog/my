@@ -26,7 +26,8 @@ import (
 )
 
 // AccountHarness is one database under test: an empty database with the product schema, its
-// UnitOfWork, and the identity and account repositories on it.
+// UnitOfWork, and the identity and account repositories on it. The port contracts of those
+// repositories and the flows of the identity module use it.
 type AccountHarness struct {
 	UnitOfWork uow.UnitOfWork
 	Identity   appidentity.Repository
@@ -37,8 +38,10 @@ type AccountHarness struct {
 // The factory registers the cleanup of everything it creates with t.Cleanup.
 type AccountFactory func(t *testing.T, opts uow.Options) AccountHarness
 
-// AccountRepositoryContract verifies the identity and account repositories of a database
-// adapter through the use cases that drive them: registering a local user with sealed RSA and
+// AccountFlows verifies the account and identity use cases on a database adapter, the flows of
+// ADR-0153 §1, which internal/flowtest/identity runs once on SQLite; AccountRepositoryContract
+// checks the methods of the identity and account repositories on every adapter. The flows check
+// the identity and account repositories through the use cases that drive them: registering a local user with sealed RSA and
 // Ed25519 keys, rejecting a taken username, creating the instance actor exactly once, lookups by
 // handle and ID, profile revisions, lifecycle events, the deletion of an account at its owner's
 // request, the data exports with their archives, expiry, and erasure, the CSV imports carried out by their jobs, the built-in roles, creating an admin with
@@ -64,7 +67,7 @@ type AccountFactory func(t *testing.T, opts uow.Options) AccountHarness
 // register with their revisions, rotated secrets stored as digests, the limit per user, tokens
 // issued to their owner, and clients that stop working with their owner),
 // and the property that the account module's synchronous projections equal a rebuild from their events.
-func AccountRepositoryContract(t *testing.T, newHarness AccountFactory) {
+func AccountFlows(t *testing.T, newHarness AccountFactory) {
 	t.Helper()
 	cases := []struct {
 		name string

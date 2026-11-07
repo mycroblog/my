@@ -17,6 +17,11 @@ func accountHarness(t *testing.T, opts uow.Options) testkit.AccountHarness {
 	return testkit.AccountHarness{UnitOfWork: db, Identity: db.IdentityRepository(), Accounts: db.AccountRepository()}
 }
 
+func TestAccountFlows(t *testing.T) {
+	t.Parallel()
+	testkit.AccountFlows(t, accountHarness)
+}
+
 func TestRoleFlows(t *testing.T) {
 	t.Parallel()
 	testkit.RoleFlows(t, accountHarness)
