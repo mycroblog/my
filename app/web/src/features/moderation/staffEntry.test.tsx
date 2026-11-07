@@ -6,9 +6,10 @@
 // digits); the pages they open; and the counts read again when the stream tells of a new registration. jsdom applies no styles, so the rail's and the
 // tab bar's items are all in the document; e2e/admin-entry.spec.ts checks which ones each width shows.
 import { screen, waitFor, within } from "@testing-library/react";
+import { delay, http, HttpResponse } from "msw";
 import { beforeEach, describe, expect, test } from "vitest";
-import { otherAccountFixture, type Schemas } from "../../test/fixtures";
-import { apiBase, operatorHandler, signedInHandler } from "../../test/msw/http";
+import { otherAccountFixture, type Schemas, viewerFixture } from "../../test/fixtures";
+import { apiBase, operatorHandler, signedInHandler, withViewer } from "../../test/msw/http";
 import { server } from "../../test/msw/server";
 import { streamingServer } from "../../test/msw/streaming";
 import { renderApp } from "../../test/render";
@@ -168,6 +169,21 @@ describe("the navigation's staff entries", () => {
 });
 
 describe("the navigation's Administration", () => {
+  test("is there from the navigation's first render, while the viewer's account is slow to load", async () => {
+    server.use(
+      http.get(`${apiBase}/accounts/verify_credentials`, async ({ request }) => {
+        // Slower than the page's own data: the page waits for the account instead of rendering without it.
+        await delay(200);
+        return withViewer(request, () => HttpResponse.json({ ...viewerFixture, permissions: ["manage_settings"] }));
+      }),
+    );
+    await renderApp({ path: "/home" });
+    await screen.findByRole("navigation", { name: "Main" });
+
+    // Read at once, not awaited: the first render already has the entry.
+    expect(within(navigation()).getByRole("link", { name: "Administration" })).toHaveAttribute("href", "/admin");
+  });
+
   test("follows Moderation for a user with both areas, has no count, and opens the server administration page", async () => {
     server.use(
       operatorHandler(["manage_reports", "manage_settings", "manage_jobs"]),

@@ -29,6 +29,8 @@ function oauthServer() {
   const seen = {
     tokenForms: [] as Record<string, string>[],
     refreshes: 0,
+    /** The refreshes done when verify_credentials first succeeded: the shell's later requests may refresh again. */
+    refreshesBeforeViewer: null as number | null,
     revoked: [] as Record<string, string>[],
     authorizations: [] as (string | null)[],
   };
@@ -59,9 +61,9 @@ function oauthServer() {
     http.get(`${apiBase}/accounts/verify_credentials`, ({ request }) => {
       const authorization = request.headers.get("Authorization");
       seen.authorizations.push(authorization);
-      return authorization === "Bearer access-2"
-        ? HttpResponse.json(viewerFixture)
-        : problem(401, "/api/v1/problems/invalid-token", "Invalid token");
+      if (authorization !== "Bearer access-2") return problem(401, "/api/v1/problems/invalid-token", "Invalid token");
+      seen.refreshesBeforeViewer ??= seen.refreshes;
+      return HttpResponse.json(viewerFixture);
     }),
     // The shell's other requests take the refreshed token too, as every operation of the server does.
     http.get(`${apiBase}/preferences`, ({ request }) =>
@@ -145,14 +147,18 @@ describe("signing in and out", () => {
       }),
     ]);
     expect(oauth.seen.authorizations).toEqual(["Bearer access-1", "Bearer access-2"]);
-    expect(oauth.seen.refreshes).toBe(1);
+    expect(oauth.seen.refreshesBeforeViewer).toBe(1);
 
     // 4. Signing out revokes the token and forgets the user's data.
     const account = screen.getByRole("region", { name: "Account" });
     await user.click(within(account).getByRole("button", { name: "Sign out" }));
     // The landing page opens: /login would start signing in again.
     expect(await screen.findByRole("heading", { level: 1, name: "my example" })).toBeInTheDocument();
-    expect(oauth.seen.revoked).toEqual([{ token: "access-2", token_type_hint: "access_token", client_id: "my-web" }]);
+    // The token revoked is the last one issued: the shell's other requests may have refreshed it again, since this
+    // server's other handlers accept none of these tokens.
+    expect(oauth.seen.revoked).toEqual([
+      { token: `access-${oauth.seen.refreshes + 1}`, token_type_hint: "access_token", client_id: "my-web" },
+    ]);
     expect(session.status).toBe("signed-out");
     // No query keeps the account (an observer that was still mounted may leave an empty, disabled one).
     // The navigation reads the public GET /instance again at once, as anyone may, and the landing page it opens reads

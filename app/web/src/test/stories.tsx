@@ -259,7 +259,9 @@ export async function settled({ canvasElement, parameters }: ScreenPlayContext):
   await waitFor(
     () => {
       if (canvasElement.querySelector("main h1") === null) throw new Error("the page has no h1 yet");
-      if (canvasElement.querySelector('[role="progressbar"]') !== null) throw new Error("a spinner is still shown");
+      // A spinner is an indeterminate progress bar; one with a value (the first run's checklist) is content.
+      if (canvasElement.querySelector('[role="progressbar"]:not([aria-valuenow])') !== null)
+        throw new Error("a spinner is still shown");
     },
     { timeout: 10_000 },
   );

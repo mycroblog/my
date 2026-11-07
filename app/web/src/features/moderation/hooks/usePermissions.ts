@@ -4,7 +4,7 @@
 // operation itself, and answers 403 missing-permission without it.
 import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { useApi, useSessionStatus } from "../../../lib/auth/SessionProvider";
-import { shellQueryRetry } from "../../../lib/query";
+import { shellQueryReader } from "../../../lib/query";
 import { viewerQueryOptions } from "../../session";
 import type { Permission } from "../api/staff";
 
@@ -12,7 +12,7 @@ import type { Permission } from "../api/staff";
 export function useViewerPermissions(): readonly Permission[] {
   const api = useApi();
   const status = useSessionStatus();
-  const account = useQuery({ ...viewerQueryOptions(api), enabled: status === "signed-in", retry: shellQueryRetry });
+  const account = useQuery({ ...viewerQueryOptions(api), enabled: status === "signed-in", ...shellQueryReader });
   return status === "signed-in" ? (account.data?.permissions ?? []) : [];
 }
 

@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useApi, useSessionStatus } from "../../../lib/auth/SessionProvider";
 import { errorMessage } from "../../../lib/errors";
 import { useLoadFailure } from "../../../lib/loadFailure";
-import { shellQueryRetry } from "../../../lib/query";
+import { shellQueryReader } from "../../../lib/query";
 import { type CredentialAccount, viewerQueryOptions } from "../api/viewer";
 
 /** Who is using the app. */
@@ -22,7 +22,8 @@ export type Viewer =
 export function useViewer(): Viewer {
   const api = useApi();
   const status = useSessionStatus();
-  const account = useQuery({ ...viewerQueryOptions(api), enabled: status === "signed-in", retry: shellQueryRetry });
+  // The root route's loader loads it first, with the same retry; a failure it met is not sent again on mount.
+  const account = useQuery({ ...viewerQueryOptions(api), enabled: status === "signed-in", ...shellQueryReader });
   const failure = useLoadFailure(account);
   if (status === "signed-out") return { status: "signed-out" };
   if (status === "unknown") return { status: "loading" };
