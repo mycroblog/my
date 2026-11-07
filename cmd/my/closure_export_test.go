@@ -69,7 +69,7 @@ func TestAdminClosureExportHTML(t *testing.T) {
 	nginx := readFile(t, filepath.Join(dir, "nginx.conf"))
 	for _, want := range []string{
 		"server_name social.example;", "location ^~ /ap/ { return 410; }", "location ^~ /@ { return 410; }",
-		"location = /.well-known/webfinger { return 410; }", `"~*^ja(-|,|;|$)" /ja.html;`, `location ~ ^/(index|ja|en)\.html$ {`,
+		"location = /.well-known/webfinger { return 410; }", `"~*^ja(-|,|;|$)" /ja.html;`, `location ~ ^/(index|ja|en|zh-CN)\.html$ {`,
 		"error_page 410 $closure_page;",
 	} {
 		if !strings.Contains(nginx, want) {
@@ -77,13 +77,13 @@ func TestAdminClosureExportHTML(t *testing.T) {
 		}
 	}
 	caddy := readFile(t, filepath.Join(dir, "Caddyfile"))
-	for _, want := range []string{"social.example {", "@gone path /inbox /.well-known/webfinger", "/ap/* /nodeinfo/* /@*", "~(?i)^en(-|,|;|$) /en.html", "status 410"} {
+	for _, want := range []string{"social.example {", "@gone path /inbox /.well-known/webfinger", "/ap/* /nodeinfo/* /@*", "~(?i)^en(-|,|;|$) /en.html", "~(?i)^zh(,|;|$) /zh-CN.html", "status 410"} {
 		if !strings.Contains(caddy, want) {
 			t.Errorf("Caddyfile lacks %s:\n%s", want, caddy)
 		}
 	}
 	cloudfront := readFile(t, filepath.Join(dir, "cloudfront-function.js"))
-	for _, want := range []string{`var gonePrefixes = ["/ap/","/nodeinfo/","/@"];`, `var locales = ["ja","en"];`, "statusCode: 410"} {
+	for _, want := range []string{`var gonePrefixes = ["/ap/","/nodeinfo/","/@"];`, `{"tag":"ja","prefix":true,"locale":"ja"}`, "statusCode: 410"} {
 		if !strings.Contains(cloudfront, want) {
 			t.Errorf("cloudfront-function.js lacks %s:\n%s", want, cloudfront)
 		}

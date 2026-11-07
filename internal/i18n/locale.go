@@ -74,6 +74,26 @@ func FallbackChain(locale string) []string {
 	return chain
 }
 
+// Aliases returns the tags other than locale that parentLocales resolves to it, longest
+// first: zh-Hans, zh-SG and zh for zh-CN. A tag of a region or script under one of them
+// ("zh-Hans-SG") resolves to locale too; a tag of a language alone ("zh") does only by
+// itself, since another tag of its language may resolve elsewhere ("zh-TW").
+func Aliases(locale string) []string {
+	locale = Canonicalize(locale)
+	if locale == SourceLocale {
+		// Every chain ends with SourceLocale; only a tag of its language asks for it.
+		return nil
+	}
+	var tags []string
+	for tag := range parentLocales {
+		if tag != locale && slices.Contains(FallbackChain(tag), locale) {
+			tags = append(tags, tag)
+		}
+	}
+	slices.SortFunc(tags, func(a, b string) int { return cmp.Or(cmp.Compare(len(b), len(a)), cmp.Compare(a, b)) })
+	return tags
+}
+
 // Canonicalize normalizes the case and separators of a BCP 47 tag and replaces deprecated
 // subtags by their preferred ones: "zh_hant_tw" -> "zh-Hant-TW", "iw" -> "he". It returns ""
 // for an empty tag and for a tag that is not well-formed or has no language subtag

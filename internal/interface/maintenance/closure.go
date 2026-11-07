@@ -87,18 +87,45 @@ var closureConfigs = template.Must(template.New("").Funcs(template.FuncMap{
 
 // closureConfigData is the data of the templates of ClosureConfigs.
 type closureConfigData struct {
-	Host     string
-	Locales  []string
+	Host    string
+	Locales []string
+	// Matches choose the page of the first language of Accept-Language, in order.
+	Matches  []closureMatch
 	Paths    []string
 	Prefixes []string
 	// Root is the directory of the pages in the examples, which the operator changes.
 	Root string
 }
 
+// closureMatch is a language tag of Accept-Language that the page of Locale answers: the tag
+// and the tags under it (Prefix: "zh-Hans" and "zh-Hans-SG"), or the tag alone.
+type closureMatch struct {
+	Tag    string `json:"tag"`
+	Prefix bool   `json:"prefix"`
+	Locale string `json:"locale"`
+}
+
+// closureMatches are the tags that the pages of locales answer, as ADR-0009 §2 resolves them:
+// each locale's own tag and the tags under it, then its aliases (zh-Hans, zh-SG, and zh alone
+// for zh-CN, so that zh-TW does not reach it).
+func closureMatches(locales []string) []closureMatch {
+	var ms []closureMatch
+	for _, l := range locales {
+		ms = append(ms, closureMatch{Tag: l, Prefix: true, Locale: l})
+		for _, a := range i18n.Aliases(l) {
+			ms = append(ms, closureMatch{Tag: a, Prefix: strings.Contains(a, "-"), Locale: l})
+		}
+	}
+	return ms
+}
+
 // ClosureConfig writes the example of the front end's configuration name (one of ClosureConfigs)
 // for host, choosing among the pages of locales.
 func ClosureConfig(name, host string, locales []string) ([]byte, error) {
-	d := closureConfigData{Host: host, Locales: locales, Paths: ClosureGonePaths, Prefixes: ClosureGonePrefixes, Root: "/srv/closure"}
+	d := closureConfigData{
+		Host: host, Locales: locales, Matches: closureMatches(locales),
+		Paths: ClosureGonePaths, Prefixes: ClosureGonePrefixes, Root: "/srv/closure",
+	}
 	var buf bytes.Buffer
 	if err := closureConfigs.ExecuteTemplate(&buf, name+".tmpl", d); err != nil {
 		return nil, fmt.Errorf("maintenance: %s: %w", name, err)

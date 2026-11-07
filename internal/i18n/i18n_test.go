@@ -88,6 +88,21 @@ func TestFallbackChain(t *testing.T) {
 	}
 }
 
+func TestAliases(t *testing.T) {
+	tests := map[string][]string{
+		"zh-CN": {"zh-Hans", "zh-SG", "zh"},
+		"zh-TW": {"zh-Hant", "zh-HK", "zh-MO"},
+		"pt-BR": {"pt-PT", "pt"},
+		"ja":    nil,
+		"en":    nil,
+	}
+	for in, want := range tests {
+		if got := Aliases(in); !slices.Equal(got, want) {
+			t.Errorf("Aliases(%q) = %v, want %v", in, got, want)
+		}
+	}
+}
+
 func TestCanonicalize(t *testing.T) {
 	tests := map[string]string{
 		"ja":                  "ja",
