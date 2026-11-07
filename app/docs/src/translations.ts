@@ -263,7 +263,11 @@ export function headingOf(text: string): { level: number; heading: string } | un
   return match?.[1] === undefined || match[2] === undefined ? undefined : { level: match[1].length, heading: match[2] };
 }
 
-/** The parts of a Markdown text a translation must keep as they are, outside code blocks and in them. */
+/**
+ * The parts of a Markdown text a translation must keep as they are, outside code blocks and in them. Code spans and
+ * links are read per paragraph, since a code span may continue on the next line (CommonMark reads the line break as a
+ * space): the English source wraps its lines, and a translation need not wrap them at the same place.
+ */
 export function protectedParts(text: string): {
   headings: number[];
   fences: string[];
@@ -275,8 +279,24 @@ export function protectedParts(text: string): {
   const codeSpans: string[] = [];
   const links: string[] = [];
   let block: string[] | undefined;
+  let paragraph: string[] = [];
+  const flush = (): void => {
+    if (paragraph.length === 0) {
+      return;
+    }
+    const joined = paragraph.join(" ");
+    paragraph = [];
+    for (const match of joined.matchAll(/(`+)(.+?)\1/g)) {
+      codeSpans.push(match[2] ?? "");
+    }
+    const withoutCode = joined.replace(/(`+).+?\1/g, "");
+    for (const match of withoutCode.matchAll(/\]\((<[^>]*>|[^)\s]+)/g)) {
+      links.push((match[1] ?? "").replace(/^<|>$/g, ""));
+    }
+  };
   eachLine(text.split("\n"), (line, outside) => {
     if (!outside) {
+      flush();
       if (reFence.test(line) && block !== undefined) {
         block.push(line);
         fences.push(block.join("\n"));
@@ -289,21 +309,25 @@ export function protectedParts(text: string): {
       return;
     }
     const heading = reHeading.exec(line);
+    const definition = /^\s{0,3}\[[^\]]+\]:\s*(<[^>]*>|\S+)/.exec(line);
+    if (heading?.[1] !== undefined || definition !== null || line.trim() === "") {
+      flush();
+    }
     if (heading?.[1] !== undefined) {
       headings.push(heading[1].length);
     }
-    for (const match of line.matchAll(/(`+)(.+?)\1/g)) {
-      codeSpans.push(match[2] ?? "");
-    }
-    const withoutCode = line.replace(/(`+).+?\1/g, "");
-    for (const match of withoutCode.matchAll(/\]\((<[^>]*>|[^)\s]+)/g)) {
-      links.push((match[1] ?? "").replace(/^<|>$/g, ""));
-    }
-    const definition = /^\s{0,3}\[[^\]]+\]:\s*(<[^>]*>|\S+)/.exec(withoutCode);
     if (definition?.[1] !== undefined) {
       links.push(definition[1].replace(/^<|>$/g, ""));
+      return;
+    }
+    if (line.trim() !== "") {
+      paragraph.push(line.trim());
+    }
+    if (heading?.[1] !== undefined) {
+      flush();
     }
   });
+  flush();
   return { headings, fences, codeSpans: codeSpans.sort(), links: links.sort() };
 }
 
