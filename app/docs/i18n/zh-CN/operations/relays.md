@@ -18,8 +18,7 @@ my admin relay delete <relay id>                                  # delete a rel
 
 1. 登记中继的 URL。有两种协议：
    - **Mastodon**：中继的 **inbox URL**（例如 `https://relay.example/inbox`）。包括 pub-relay 和 Activity-Relay 在内的许多中继都接受这种方式。
-   - **LitePub**：中继的 **actor URL**（例如 `https://relay.example/relay`）。这是 Pleroma 和 Akkoma 中继使用的协议。
-   如果不选择协议（“自动检测”），当该 URL 提供 actor 文档时，服务器使用 LitePub，否则使用 Mastodon。
+   - **LitePub**：中继的 **actor URL**（例如 `https://relay.example/relay`）。这是 Pleroma 和 Akkoma 中继使用的协议。如果不选择协议（“自动检测”），当该 URL 提供 actor 文档时，服务器使用 LitePub，否则使用 Mastodon。
 2. 登记之后，实例 actor 会向中继发送 `Follow`，状态为“等待中继回应”（`pending`）。中继接受后，状态变为“已加入”（`accepted`）；中继拒绝时，状态变为“已被中继拒绝”（`rejected`）。有些中继由运营者逐一手动批准请求，因此需要一段时间。
 3. 如果登记时关闭“接收来自中继的帖子”，服务器只发送而不接收。要更改这一点，需要退出该中继后重新登记。
 

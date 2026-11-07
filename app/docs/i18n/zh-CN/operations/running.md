@@ -13,20 +13,11 @@ my serve          # start according to the configured role (-config <file> reads
 my version        # print the version of the binary
 ```
 
-`my serve` 会校验配置，构建数据库、任务队列和密钥管理的适配器，并在 `listen` 上接受 HTTP 请求。
-它在那里使用不带 TLS 的普通 HTTP/1.1：请在前面放置一个反向代理或负载均衡器，由它终结 HTTPS（以及面向客户端的 HTTP/2 或 HTTP/3），再通过 HTTP/1.1 转发。
-实时更新（`GET /api/v1/streaming`、本站时间线和联邦时间线的流，以及语音聊天房间的流）是长时间保持的响应，每 30 秒（语音房间为 15 秒）发送一次心跳注释，空闲时也保持打开。
-代理不得缓冲这些响应（nginx：服务器会发送 `X-Accel-Buffering: no`），并且它的空闲超时或读取超时必须长于心跳间隔。
-它不会应用 schema：请在启动前用 `my schema apply` 应用（参见[数据库](database.md)；升级时会在[升级](database.md#upgrading)的步骤中运行它）。
-在 Docker Compose 部署（`deploy/docker/compose.yaml`；参见[使用 Docker Compose 部署](deploy-docker-compose.md)）中，一个一次性的 `schema` 服务会在服务器启动前运行 `my schema apply`。
-如果 schema 尚未应用，进程仍会启动，就绪检查返回 503，并且在 schema 就位之前不提供其他任何服务。
+`my serve` 会校验配置，构建数据库、任务队列和密钥管理的适配器，并在 `listen` 上接受 HTTP 请求。它在那里使用不带 TLS 的普通 HTTP/1.1：请在前面放置一个反向代理或负载均衡器，由它终结 HTTPS（以及面向客户端的 HTTP/2 或 HTTP/3），再通过 HTTP/1.1 转发。实时更新（`GET /api/v1/streaming`、本站时间线和联邦时间线的流，以及语音聊天房间的流）是长时间保持的响应，每 30 秒（语音房间为 15 秒）发送一次心跳注释，空闲时也保持打开。代理不得缓冲这些响应（nginx：服务器会发送 `X-Accel-Buffering: no`），并且它的空闲超时或读取超时必须长于心跳间隔。它不会应用 schema：请在启动前用 `my schema apply` 应用（参见[数据库](database.md)；升级时会在[升级](database.md#upgrading)的步骤中运行它）。在 Docker Compose 部署（`deploy/docker/compose.yaml`；参见[使用 Docker Compose 部署](deploy-docker-compose.md)）中，一个一次性的 `schema` 服务会在服务器启动前运行 `my schema apply`。如果 schema 尚未应用，进程仍会启动，就绪检查返回 503，并且在 schema 就位之前不提供其他任何服务。
 
-第一个使用数据库的 `my serve` 或 `my` 命令会把 `host` 和 `account_domain` 记录到数据库中。当配置与记录的值不同时，`my serve` 会记录 `start failed` 日志并附上两组值，然后以退出码 1 退出，命令也会输出同样的错误。例外是不做检查的 `my schema apply` 和 `my db backup`，以及不读取数据库的维护模式。`my config check -instance` 和 `my db upgrade -check` 会检查，但不记录任何内容。
-启动时无法读取数据库的进程，在能够读取之前不会就绪；在此之前它不运行任何任务，并对除下面三个健康检查（`/healthz`、`/readyz`、`/api/v1/instance/health`）以外的所有请求返回带 `Retry-After` 的 `503`。在 `my schema apply` 之前启动的服务器也是如此。如果之后它发现值不同，就会以同样的错误停止。
+第一个使用数据库的 `my serve` 或 `my` 命令会把 `host` 和 `account_domain` 记录到数据库中。当配置与记录的值不同时，`my serve` 会记录 `start failed` 日志并附上两组值，然后以退出码 1 退出，命令也会输出同样的错误。例外是不做检查的 `my schema apply` 和 `my db backup`，以及不读取数据库的维护模式。`my config check -instance` 和 `my db upgrade -check` 会检查，但不记录任何内容。启动时无法读取数据库的进程，在能够读取之前不会就绪；在此之前它不运行任何任务，并对除下面三个健康检查（`/healthz`、`/readyz`、`/api/v1/instance/health`）以外的所有请求返回带 `Retry-After` 的 `503`。在 `my schema apply` 之前启动的服务器也是如此。如果之后它发现值不同，就会以同样的错误停止。
 
-在 `production` 配置档中，`my config check` 还会检查有效的设置是否适合生产实例：错误（例如其他服务器无法访问的 `host`，或不是随机生成的 KEK）会让它以 1 退出，而警告（例如 `mail = none`）不会。
-`my serve` 启动时会把两者都记录为警告，但仍然会启动，所以请把 `my config check` 作为部署的一个步骤来运行。
-[生产环境检查清单](production-checklist.md)列出了这些检查，以及上线前需要手动确认的事项。
+在 `production` 配置档中，`my config check` 还会检查有效的设置是否适合生产实例：错误（例如其他服务器无法访问的 `host`，或不是随机生成的 KEK）会让它以 1 退出，而警告（例如 `mail = none`）不会。`my serve` 启动时会把两者都记录为警告，但仍然会启动，所以请把 `my config check` 作为部署的一个步骤来运行。[生产环境检查清单](production-checklist.md)列出了这些检查，以及上线前需要手动确认的事项。
 
 | `role` | HTTP | 任务 worker |
 | --- | --- | --- |
@@ -34,13 +25,9 @@ my version        # print the version of the binary
 | `web` | 所有路由 | 不运行 |
 | `worker` | 仅健康检查（供平台探针使用） | 运行 |
 
-日志以 JSON Lines 格式写入标准错误。每一行都有 `level`（`DEBUG`、`INFO`、`WARN`、`ERROR`）和 `severity`，后者是以 Cloud Logging 读取的形式表示的同一级别（`DEBUG`、`INFO`、`WARNING`、`ERROR`，以及用于导致进程停止的错误的 `CRITICAL`）。
-处理请求期间写入的日志带有 `request_id`，同一 ID 也会在 `X-Request-Id` 响应头中返回。
-如果请求的 `X-Request-Id` 不超过 128 个字符，且只由字母、数字和 `-_.:` 组成，就会作为负载均衡器分配的 ID 原样使用。
-追踪中的日志（请求和任务）还带有 `trace_id` 和 `span_id`（参见[追踪](#traces)）。
+日志以 JSON Lines 格式写入标准错误。每一行都有 `level`（`DEBUG`、`INFO`、`WARN`、`ERROR`）和 `severity`，后者是以 Cloud Logging 读取的形式表示的同一级别（`DEBUG`、`INFO`、`WARNING`、`ERROR`，以及用于导致进程停止的错误的 `CRITICAL`）。处理请求期间写入的日志带有 `request_id`，同一 ID 也会在 `X-Request-Id` 响应头中返回。如果请求的 `X-Request-Id` 不超过 128 个字符，且只由字母、数字和 `-_.:` 组成，就会作为负载均衡器分配的 ID 原样使用。追踪中的日志（请求和任务）还带有 `trace_id` 和 `span_id`（参见[追踪](#traces)）。
 
-每个 HTTP 请求和每次任务执行在结束时都会写入一行。这一行使用与下面[指标](#metrics)的标签相同的名称和值，
-因此在 `metrics_exporter = none` 的 Cloud Run 上，你可以基于这些行构建 Cloud Logging 的基于日志的指标（计数器和分布）。
+每个 HTTP 请求和每次任务执行在结束时都会写入一行。这一行使用与下面[指标](#metrics)的标签相同的名称和值，因此在 `metrics_exporter = none` 的 Cloud Run 上，你可以基于这些行构建 Cloud Logging 的基于日志的指标（计数器和分布）。
 
 | 行（`msg`） | 字段 |
 | --- | --- |
@@ -76,16 +63,11 @@ my version        # print the version of the binary
 | `request_id`、`job_id`、`attempt`、`trace_id`、`span_id` | 用于查找同一错误的请求行或任务行的 ID（如果有） |
 | `message` | 位于行末：`<type>: <message>`、一个换行符，以及 Go 栈 |
 
-在报告离开进程之前，消息中的 URL、电子邮件地址、`@user@host` 形式的用户名、IP 地址、UUID 和 ULID，以及 10 位及以上的数字，会分别替换为 `<url>`、`<email>`、`<acct>`、`<ip>`、`<id>` 和 `<n>`，并截断到 1 KiB。
-栈保留文件位置，但不保留函数行中的参数值（显示为 `(...)`），并截断到 16 KiB。任何报告都不包含请求体、请求头、查询、Cookie、账号、用户名、IP 地址或 User-Agent。
-其他行都不带栈，因此 Error Reporting 只会从这些行中找到栈。
+在报告离开进程之前，消息中的 URL、电子邮件地址、`@user@host` 形式的用户名、IP 地址、UUID 和 ULID，以及 10 位及以上的数字，会分别替换为 `<url>`、`<email>`、`<acct>`、`<ip>`、`<id>` 和 `<n>`，并截断到 1 KiB。栈保留文件位置，但不保留函数行中的参数值（显示为 `(...)`），并截断到 16 KiB。任何报告都不包含请求体、请求头、查询、Cookie、账号、用户名、IP 地址或 User-Agent。其他行都不带栈，因此 Error Reporting 只会从这些行中找到栈。
 
-字段名是一个包含 `.` 的单一键，并非嵌套。在 Cloud Logging 的过滤和提取中请给它加引号（例如 `jsonPayload."http.route"`，以及用于分布值的 `EXTRACT(jsonPayload.duration_seconds)`）。
-用作标签的字段只取有限集合中的值；`url.path`、`request_id` 和 `job_id` 从不作为标签。
+字段名是一个包含 `.` 的单一键，并非嵌套。在 Cloud Logging 的过滤和提取中请给它加引号（例如 `jsonPayload."http.route"`，以及用于分布值的 `EXTRACT(jsonPayload.duration_seconds)`）。用作标签的字段只取有限集合中的值；`url.path`、`request_id` 和 `job_id` 从不作为标签。
 
-当 `metrics_exporter = emf` 时，这两行本身就是 EMF 行。`http request` 行携带 `http.server.request.duration` 的值，`job` 行携带 `my.job.duration` 和 `my.job.wait` 的值（键以指标命名），
-另外还有 `_aws` 指令、`service.name`、`service.version` 和 `my.role`。这三个指标不会写在其他任何行上。你在 `metrics_emf_dimensions` 中选择的字段按 EMF 的要求以字符串写入（例如维度 `http.response.status_code` 为 `"200"`）。
-日志写入标准错误，其他 EMF 行写入标准输出。ECS 的 `awslogs` 日志驱动会把两者都发送到 CloudWatch Logs，因此会从两者中提取指标。
+当 `metrics_exporter = emf` 时，这两行本身就是 EMF 行。`http request` 行携带 `http.server.request.duration` 的值，`job` 行携带 `my.job.duration` 和 `my.job.wait` 的值（键以指标命名），另外还有 `_aws` 指令、`service.name`、`service.version` 和 `my.role`。这三个指标不会写在其他任何行上。你在 `metrics_emf_dimensions` 中选择的字段按 EMF 的要求以字符串写入（例如维度 `http.response.status_code` 为 `"200"`）。日志写入标准错误，其他 EMF 行写入标准输出。ECS 的 `awslogs` 日志驱动会把两者都发送到 CloudWatch Logs，因此会从两者中提取指标。
 
 <!-- source: docker-compose-files df45a902f45b -->
 ## Docker Compose 文件
@@ -100,11 +82,9 @@ my version        # print the version of the binary
 | `compose.caddy.yaml` | Caddy，在 80 和 443 端口上提供 TLS 证书 | `MY_HOST` 是公网域名，且这台机器上没有其他程序终结 TLS |
 | `compose.build.yaml` | 从检出的代码构建镜像 | 你自己构建镜像 |
 
-请在首次启动前选好数据库和媒体存储：文件改变时，数据不会自行迁移
-（[备份](backup.md)说明了需要迁移哪些内容）。
+请在首次启动前选好数据库和媒体存储：文件改变时，数据不会自行迁移（[备份](backup.md)说明了需要迁移哪些内容）。
 
-**叠加文件**：按上述顺序使用 `-f` 选项，或者在 `.env` 中一次性指定，这样之后的每条 `docker compose` 命令
-（`exec`、`logs`、`pull`，以及其他指南中的命令）都会使用相同的文件：
+**叠加文件**：按上述顺序使用 `-f` 选项，或者在 `.env` 中一次性指定，这样之后的每条 `docker compose` 命令（`exec`、`logs`、`pull`，以及其他指南中的命令）都会使用相同的文件：
 
 ```sh
 cd deploy/docker
@@ -112,30 +92,20 @@ cp example.env .env
 # In .env: COMPOSE_FILE=compose.yaml:compose.postgres.yaml:compose.caddy.yaml
 ```
 
-目录中名为 `compose.override.yaml` 的文件，只有在 `-f` 和 `COMPOSE_FILE` 都没有指定文件时才会被读取。如果指定了，
-也要把它列进去。
+目录中名为 `compose.override.yaml` 的文件，只有在 `-f` 和 `COMPOSE_FILE` 都没有指定文件时才会被读取。如果指定了，也要把它列进去。
 
-**设置。** 把 `example.env` 复制为 `.env`。Compose 读取 `.env` 来填充其文件中的变量，并把整个文件
-交给服务器的容器，因此[配置参考](../reference/configuration.md)中的每个设置都可以在这里设置后生效。
-模板列出了所有设置，并对每一项附有一句说明。
+**设置。** 把 `example.env` 复制为 `.env`。Compose 读取 `.env` 来填充其文件中的变量，并把整个文件交给服务器的容器，因此[配置参考](../reference/configuration.md)中的每个设置都可以在这里设置后生效。模板列出了所有设置，并对每一项附有一句说明。
 
 - 密钥加密密钥（KEK）不放在 `.env` 中，而是放在文件 `secrets/kek` 中，容器以 Docker secret
-  `/run/secrets/my_kek` 的形式读取它，因此它永远不会成为环境变量。`.env` 中的 `MY_KEK` 一行会让服务器停止，
-  因为服务器拒绝同时使用 `MY_KEK` 和 `MY_KEK_FILE`（[管理密钥](key-management.md)）。
-- 服务器以用户 `65532` 运行，而 Compose 会按文件原有的权限挂载它，因此该文件必须对其他用户可读。
-  请把它放在只有你能进入的目录中，就像 `example.env` 中的命令那样。
-- 其他密钥以环境变量的形式传入容器。如果想改为以文件形式传入，请在你自己的 `compose.override.yaml` 中
-  用 secret 挂载它，并设置其 `<NAME>_FILE`，就像 `compose.yaml` 对密钥所做的那样。
+  `/run/secrets/my_kek` 的形式读取它，因此它永远不会成为环境变量。`.env` 中的 `MY_KEK` 一行会让服务器停止，因为服务器拒绝同时使用 `MY_KEK` 和 `MY_KEK_FILE`（[管理密钥](key-management.md)）。
+- 服务器以用户 `65532` 运行，而 Compose 会按文件原有的权限挂载它，因此该文件必须对其他用户可读。请把它放在只有你能进入的目录中，就像 `example.env` 中的命令那样。
+- 其他密钥以环境变量的形式传入容器。如果想改为以文件形式传入，请在你自己的 `compose.override.yaml` 中用 secret 挂载它，并设置其 `<NAME>_FILE`，就像 `compose.yaml` 对密钥所做的那样。
 - `.env` 中含有机密信息：执行 `chmod 600 .env`，并在备份中保留一份副本。
 - `MY_LISTEN` 保持为 `:8080`，因为这些文件连接的是该端口。
 
-**使用 Caddy 的 TLS。** 把 `MY_HOST` 设置为 DNS 指向这台机器的域名，并确保 80 和 443 端口可从互联网访问，
-然后从 `.env` 中删除 `MY_WEB_ORIGIN`。Caddy 会在第一次请求时自行获取并续期证书。
-服务器信任来自 Docker 默认地址池的 `X-Forwarded-For`；如果你的地址池不同，请设置 `MY_TRUSTED_PROXIES`。
+**使用 Caddy 的 TLS。** 把 `MY_HOST` 设置为 DNS 指向这台机器的域名，并确保 80 和 443 端口可从互联网访问，然后从 `.env` 中删除 `MY_WEB_ORIGIN`。Caddy 会在第一次请求时自行获取并续期证书。服务器信任来自 Docker 默认地址池的 `X-Forwarded-For`；如果你的地址池不同，请设置 `MY_TRUSTED_PROXIES`。
 
-**内置的 Garage。** 配合 `COMPOSE_PROFILES=garage` 使用 `compose.s3.yaml` 时，需要 `example.env` 顶部列出的那些值。
-一次性服务 `garage-init` 会在每次 `up` 时准备存储。它只留在 Compose 网络内部，因为媒体由服务器自己提供。
-一个节点就是一块磁盘：请备份卷 `garage` 或存储桶（[备份](backup.md#media-in-a-bucket)）。
+**内置的 Garage。** 配合 `COMPOSE_PROFILES=garage` 使用 `compose.s3.yaml` 时，需要 `example.env` 顶部列出的那些值。一次性服务 `garage-init` 会在每次 `up` 时准备存储。它只留在 Compose 网络内部，因为媒体由服务器自己提供。一个节点就是一块磁盘：请备份卷 `garage` 或存储桶（[备份](backup.md#media-in-a-bucket)）。
 
 <!-- source: get-the-image 238d00ea9826 -->
 ## 获取镜像
@@ -148,8 +118,7 @@ cp example.env .env
 | `0.1` | `v0.1` 的最新补丁版本 | Docker Compose，它会在每次 `up` 时应用 schema |
 | `0.1.0-rc.1` | 该预发布版本 | 在正式发布前试用 |
 
-没有 `latest`，也没有 `0`：两者都会跨越次版本，而每次升级到新的次版本都必须[经过上一个次版本](database.md#skipping-releases)。请在每条命令中指定版本；只写 `docker pull ghcr.io/mycroblog/my` 会以 `manifest unknown` 失败。
-补丁版本也可能需要 `my schema apply` 和 `my db upgrade`，因此在 Docker Compose 之外，请对每个版本按照[升级](database.md#upgrading)操作。在生产环境中，请固定该版本发布说明中给出的摘要：
+没有 `latest`，也没有 `0`：两者都会跨越次版本，而每次升级到新的次版本都必须[经过上一个次版本](database.md#skipping-releases)。请在每条命令中指定版本；只写 `docker pull ghcr.io/mycroblog/my` 会以 `manifest unknown` 失败。补丁版本也可能需要 `my schema apply` 和 `my db upgrade`，因此在 Docker Compose 之外，请对每个版本按照[升级](database.md#upgrading)操作。在生产环境中，请固定该版本发布说明中给出的摘要：
 
 ```text
 ghcr.io/mycroblog/my:0.1.0@sha256:...
@@ -179,8 +148,7 @@ docker buildx imagetools inspect ghcr.io/mycroblog/my@sha256:... --format '{{ js
 <!-- source: publish-the-source-code-agpl-30 2f3b73ce9dfc -->
 ## 公开源代码（AGPL-3.0）
 
-`my` 采用 AGPL-3.0-only 许可证。AGPL-3.0 第 13 条要求，任何运行该服务器并让用户通过网络与之交互的人，
-都必须向这些用户提供获取正在运行的程序的对应源代码的方式。这适用于所有与服务器交互的人，而不仅仅是拥有账号的人。
+`my` 采用 AGPL-3.0-only 许可证。AGPL-3.0 第 13 条要求，任何运行该服务器并让用户通过网络与之交互的人，都必须向这些用户提供获取正在运行的程序的对应源代码的方式。这适用于所有与服务器交互的人，而不仅仅是拥有账号的人。
 
 用设置 `source_url`（环境变量 `MY_SOURCE_URL`；参见[配置参考](../reference/configuration.md#source_url)）指明源代码的公开位置。
 
@@ -196,15 +164,12 @@ docker buildx imagetools inspect ghcr.io/mycroblog/my@sha256:... --format '{{ js
 
 - 客户端 API 的 `GET /instance` 中的 `source_url`
 - 网页客户端实例信息页面（`/about`）中的“源代码”部分，以及首页（`/`）上的链接
-- NodeInfo（`/nodeinfo/2.1`）中的 `metadata.sourceCode`。`https:` URL 还会作为 `software.repository` 公开
-  （NodeInfo 2.1 的 schema 只允许在 `software.repository` 中使用 `http(s)` URL，因此 `mailto:` 值只出现在 `metadata.sourceCode` 中）
+- NodeInfo（`/nodeinfo/2.1`）中的 `metadata.sourceCode`。`https:` URL 还会作为 `software.repository` 公开（NodeInfo 2.1 的 schema 只允许在 `software.repository` 中使用 `http(s)` URL，因此 `mailto:` 值只出现在 `metadata.sourceCode` 中）
 
 <!-- source: when-you-fork-or-modify-my be83256fe6a3 -->
 ### 当你分支或修改 `my` 时
 
-如果你运行的是修改过的 `my`（打了补丁、构建了分支版本，或者替换了依赖），默认 URL 就不再指向正在运行的程序的源代码。
-请把 `source_url` 改为能找到正在运行的版本（包括你的修改）的源代码的位置。指向与正在运行的版本相符的提交、标签或归档，而不是仓库的最新状态，能让用户可靠地获得相同的源代码。
-如果你运行的是未经修改的官方版本，请保留默认值。
+如果你运行的是修改过的 `my`（打了补丁、构建了分支版本，或者替换了依赖），默认 URL 就不再指向正在运行的程序的源代码。请把 `source_url` 改为能找到正在运行的版本（包括你的修改）的源代码的位置。指向与正在运行的版本相符的提交、标签或归档，而不是仓库的最新状态，能让用户可靠地获得相同的源代码。如果你运行的是未经修改的官方版本，请保留默认值。
 
 <!-- source: when-you-use-mailto 11155a8b71ed -->
 ### 当你使用 `mailto:` 时
@@ -265,15 +230,12 @@ docker buildx imagetools inspect ghcr.io/mycroblog/my@sha256:... --format '{{ js
 | `my.metrics.snapshot.age` | Gauge，秒 | `my.metrics.snapshot.part`（`queue` / `totals`） |
 | `my.errors.reported` | Counter | `my.error.source`（`server` / `web`）、`my.error.kind`（`panic` / `error`）。每份[错误报告](#error-reports)计一次 |
 
-健康检查（`/healthz`、`/readyz`）不会被统计。任何标签都不包含远程域名、账号、URL 或客户端 IP。
-`my.queue.*`、`my.instance.*`、`my.media.stored_bytes`、`my.db.size`、`my.federation.instances` 和 `my.billing.import.failing` 是整个实例的值：每个进程都从保存在键值存储中的同一份快照报告相同的值。
+健康检查（`/healthz`、`/readyz`）不会被统计。任何标签都不包含远程域名、账号、URL 或客户端 IP。`my.queue.*`、`my.instance.*`、`my.media.stored_bytes`、`my.db.size`、`my.federation.instances` 和 `my.billing.import.failing` 是整个实例的值：每个进程都从保存在键值存储中的同一份快照报告相同的值。
 
 <!-- source: system-metrics 8b5d40a4eb98 -->
 ### 系统指标
 
-关于进程、Go 运行时以及与资源的连接的指标，通过同一个 `metrics_exporter` 导出。
-容器的 CPU、内存、实例数和入站请求交给平台的指标；这些指标覆盖的是平台看不到的进程内部的饱和情况。
-不要用它们来触发扩缩容；请把它们用于告警和估算实例数上限。
+关于进程、Go 运行时以及与资源的连接的指标，通过同一个 `metrics_exporter` 导出。容器的 CPU、内存、实例数和入站请求交给平台的指标；这些指标覆盖的是平台看不到的进程内部的饱和情况。不要用它们来触发扩缩容；请把它们用于告警和估算实例数上限。
 
 | 指标 | 类型 | 标签 |
 | --- | --- | --- |
@@ -298,8 +260,7 @@ docker buildx imagetools inspect ghcr.io/mycroblog/my@sha256:... --format '{{ js
 | `my.http.origin_refused` | Counter | 无。每个因未经过 CDN 而被拒绝的请求计一次（[`origin_secret`](cdn.md#refuse-requests-that-did-not-come-through-the-cdn)）。对源站地址的探测会让它缓慢增长；如果它在流量停止的同时猛增，说明 CDN 不再发送该请求头。维护模式不统计任何内容，因此只有它的访问日志会显示这些请求 |
 
 - Go 运行时指标（`go.*`）只由 `prometheus` 和 `otlp` 导出。使用 `emf` 时，一个定期快照任务会写入进程和连接池的 Gauge 以及 Observable Counter。
-- 连接池等待和 CPU 时间是 Observable Counter：连接池和内核会保存自启动以来的总计，并在采集时读取。在 Prometheus 中它们是 `_total` 计数器（例如 `process_cpu_time_seconds_total`），在 OTLP 中是单调递增的总和，你可以用 PromQL 的 `rate()` 查看其增长。
-  `emf` 没有总计计数器，因此它写入的是自上次写入以来的增量（用 CloudWatch 的 Sum 统计量把它们加起来）。
+- 连接池等待和 CPU 时间是 Observable Counter：连接池和内核会保存自启动以来的总计，并在采集时读取。在 Prometheus 中它们是 `_total` 计数器（例如 `process_cpu_time_seconds_total`），在 OTLP 中是单调递增的总和，你可以用 PromQL 的 `rate()` 查看其增长。`emf` 没有总计计数器，因此它写入的是自上次写入以来的增量（用 CloudWatch 的 Sum 统计量把它们加起来）。
 - 队列的 `claim` 只在取到任务或失败时才统计。等待中的 worker 的轮询不记录任何内容。
 - 不导出 `db.client.connection.pending_requests`：pgx 和 `database/sql` 的统计信息不报告有多少请求在等待，因此用等待的次数和时长来代替。
 - 请针对 `go.memory.used` 的总和与 `go.memory.limit` 之比，以及 `db.client.connection.wait_time` 的增长（说明达到了连接池上限）设置告警。
@@ -307,10 +268,7 @@ docker buildx imagetools inspect ghcr.io/mycroblog/my@sha256:... --format '{{ js
 <!-- source: memory-limit-gomemlimit 8ea44722eefd -->
 ### 内存上限（`GOMEMLIMIT`）
 
-`GOMEMLIMIT` 是由运营者设置的 Go 运行时环境变量；应用程序不会自行选择它。
-如果不设置，Go 会以默认值（无上限）运行，堆在接近容器内存上限时也不会积极回收。
-在有容器内存上限的环境中（Cloud Run、ECS、Kubernetes），请把它设置为该上限的 90% 左右（例如 512 MiB 的容器设置 `GOMEMLIMIT=460MiB`）。
-不要设置 `GOMAXPROCS`：Go 的默认值会跟随容器的 CPU 上限。
+`GOMEMLIMIT` 是由运营者设置的 Go 运行时环境变量；应用程序不会自行选择它。如果不设置，Go 会以默认值（无上限）运行，堆在接近容器内存上限时也不会积极回收。在有容器内存上限的环境中（Cloud Run、ECS、Kubernetes），请把它设置为该上限的 90% 左右（例如 512 MiB 的容器设置 `GOMEMLIMIT=460MiB`）。不要设置 `GOMAXPROCS`：Go 的默认值会跟随容器的 CPU 上限。
 
 <!-- source: traces e274793f5885 -->
 ## 追踪
@@ -326,8 +284,7 @@ docker buildx imagetools inspect ghcr.io/mycroblog/my@sha256:... --format '{{ js
 | 投递（`my.delivery`） | `my.delivery` | `activity.type`、`my.outcome` |
 | 出站 HTTP（客户端） | `<method>` | `http.request.method`、`server.address`（仅目标主机名）、`http.response.status_code`。4xx 或 5xx 视为失败 |
 
-失败的 span 带有 `error.type`（例如 `timeout` 这样取值有限的名称，或状态码）。属性中从不包含账号、帖子或任务的 ID、URL、路径或查询、客户端 IP、User-Agent 值、SQL 文本或错误字符串。
-`server.address` 会把远程服务器的主机名留在接收端，因此由你决定接收端保留它们多久、谁可以查看。健康检查和被 `origin_secret` 拒绝的请求不会创建 span。
+失败的 span 带有 `error.type`（例如 `timeout` 这样取值有限的名称，或状态码）。属性中从不包含账号、帖子或任务的 ID、URL、路径或查询、客户端 IP、User-Agent 值、SQL 文本或错误字符串。`server.address` 会把远程服务器的主机名留在接收端，因此由你决定接收端保留它们多久、谁可以查看。健康检查和被 `origin_secret` 拒绝的请求不会创建 span。
 
 - 任务执行不是把它加入队列的 span（通常是 HTTP 请求）的子 span。它是一条**新追踪的根**，并带有指向加入队列的 span 的链接。在查看器中，请从请求的追踪沿着链接查看。
 - 只有当连接方位于 `trusted_proxies` 中，并且在使用 [`origin_secret`](cdn.md#refuse-requests-that-did-not-come-through-the-cdn) 时请求带有该密钥，传入的 `traceparent` 才会成为父级。否则它会被丢弃，并开始一条新追踪。`tracestate` 总是被丢弃。出站 HTTP（联邦、WebFinger、媒体、Web Push 等）不携带 `traceparent`。
@@ -343,9 +300,7 @@ docker buildx imagetools inspect ghcr.io/mycroblog/my@sha256:... --format '{{ js
 <!-- source: cloud-run 7f1a21bbfbef -->
 ### Cloud Run
 
-即使使用 `none`，Cloud Run 自动创建的请求追踪与日志中的 `trace_id` 也共用同一个 ID（当你用 `trusted_proxies` 信任来自 Cloud Run 前端的连接时）。
-Cloud Run 是否总是覆盖公开请求的 `traceparent`，目前尚未验证。
-日志没有采用 Cloud Logging 能识别的追踪字段（`logging.googleapis.com/trace`）的形式。
+即使使用 `none`，Cloud Run 自动创建的请求追踪与日志中的 `trace_id` 也共用同一个 ID（当你用 `trusted_proxies` 信任来自 Cloud Run 前端的连接时）。Cloud Run 是否总是覆盖公开请求的 `traceparent`，目前尚未验证。日志没有采用 Cloud Logging 能识别的追踪字段（`logging.googleapis.com/trace`）的形式。
 
 要把应用的 span 发送到 Cloud Trace，请在同一服务中**以 sidecar 方式运行 OpenTelemetry Collector**。服务器不持有任何 Google 凭据；sidecar 使用应用默认凭据（Application Default Credentials）发送到 Cloud Trace 的 OTLP 端点。
 
@@ -370,12 +325,9 @@ Cloud Run 是否总是覆盖公开请求的 `traceparent`，目前尚未验证�
 
 1. 它停止接受新连接和领取任务。
 2. 它最多等待 25 秒，让进行中的请求和正在运行的任务完成。
-3. 25 秒后，它会取消剩余请求和任务的上下文并关闭连接。
-   然后它再给被取消的任务最多 3 秒来记录结果，并以退出码 1 退出（总共最多 28 秒，在 Kubernetes 和 ECS 默认的 30 秒宽限期之内）。
-   被取消的任务会重试。在这 3 秒内没有停止，或者中途被终止的任务会被放弃，并在其租约到期后由 worker 重新领取，因此它可能运行两次。
+3. 25 秒后，它会取消剩余请求和任务的上下文并关闭连接。然后它再给被取消的任务最多 3 秒来记录结果，并以退出码 1 退出（总共最多 28 秒，在 Kubernetes 和 ECS 默认的 30 秒宽限期之内）。被取消的任务会重试。在这 3 秒内没有停止，或者中途被终止的任务会被放弃，并在其租约到期后由 worker 重新领取，因此它可能运行两次。
 
-服务器的某个后台任务发生 panic 时，也会开始同样的关闭过程，使服务器永远不会在损坏的状态下继续运行。
-`serve failed` 日志行会指出是哪个任务，进程以退出码 1 退出，由平台或进程管理器重新启动它。
+服务器的某个后台任务发生 panic 时，也会开始同样的关闭过程，使服务器永远不会在损坏的状态下继续运行。`serve failed` 日志行会指出是哪个任务，进程以退出码 1 退出，由平台或进程管理器重新启动它。
 
 对数据库、键值存储或队列进行操作时，请以维护模式（`MY_MAINTENANCE=true`）重新启动，而不是停止服务器。参见[维护](maintenance.md)。
 
@@ -390,17 +342,12 @@ Cloud Run 是否总是覆盖公开请求的 `traceparent`，目前尚未验证�
 - **任务列表**（`/admin/jobs/list`）：处于某一状态（待处理、等待中、运行中、重试中、失败）的任务表格，分页显示，包括类型、状态、计划运行或失败的时间以及尝试次数。失败的任务有“再次运行”。
 - **单个任务**（`/admin/jobs/<id>`，从表格中的类型进入）：任务的全部信息、最后一次错误、键和载荷、未成功尝试的历史（每次尝试的结果、错误、worker 以及开始和结束时间），失败的任务还有“再次运行”。
 
-管理 API 为 `GET /api/v1/admin/queue`、`GET /api/v1/admin/jobs?state=&type=`、`GET /api/v1/admin/jobs/{id}`、`GET /api/v1/admin/jobs/{id}/attempts` 和 `POST /api/v1/admin/jobs/{id}/retry`。
-已完成的任务不再位于队列中，因此找不到它的页面。
+管理 API 为 `GET /api/v1/admin/queue`、`GET /api/v1/admin/jobs?state=&type=`、`GET /api/v1/admin/jobs/{id}`、`GET /api/v1/admin/jobs/{id}/attempts` 和 `POST /api/v1/admin/jobs/{id}/retry`。已完成的任务不再位于队列中，因此找不到它的页面。
 
 - 只有对由服务器保存任务的队列，才能列出等待中、运行中和等待重试的任务：`queue = db`、`queue = cloudtasks`（任务也在数据库中）和 `queue = inline`。对于每种队列，失败的任务和尝试历史都保存在应用数据库中，因此总能列出。
-- 尝试历史只保留未成功的尝试（重试和最终失败的那次尝试）。成功的运行请通过结构化的 `job` 日志行（带有 `job_id`）跟踪。
-  当尝试结束后经过 `job_attempt_retention`（默认 30 天；参见该[设置](../reference/configuration.md#job_attempt_retention)）时，历史会被每小时一次的清理删除。
-  历史中不含载荷或处理程序的日志，错误消息会截断为前 2,000 字节。任务处理程序不会把电子邮件地址、IP 地址、令牌和帖子正文写入错误消息。
-  仅限电子邮件任务类型的视图，参见[发送电子邮件](email.md)。
+- 尝试历史只保留未成功的尝试（重试和最终失败的那次尝试）。成功的运行请通过结构化的 `job` 日志行（带有 `job_id`）跟踪。当尝试结束后经过 `job_attempt_retention`（默认 30 天；参见该[设置](../reference/configuration.md#job_attempt_retention)）时，历史会被每小时一次的清理删除。历史中不含载荷或处理程序的日志，错误消息会截断为前 2,000 字节。任务处理程序不会把电子邮件地址、IP 地址、令牌和帖子正文写入错误消息。仅限电子邮件任务类型的视图，参见[发送电子邮件](email.md)。
 
-处理程序判定为永久失败的任务，以及用尽重试次数的任务，会在数据库队列（`queue = db` 和 `queue = cloudtasks`）中成为 dead 任务。
-`my job` 可以列出、重试和删除它们。任务页面和管理 API 的“失败”状态也可以列出并重试它们。
+处理程序判定为永久失败的任务，以及用尽重试次数的任务，会在数据库队列（`queue = db` 和 `queue = cloudtasks`）中成为 dead 任务。`my job` 可以列出、重试和删除它们。任务页面和管理 API 的“失败”状态也可以列出并重试它们。
 
 ```sh
 my job list                  # newest failures first: ID, type, run count, time of failure, last error (-limit sets the count, default 50)
@@ -491,9 +438,7 @@ max by (my_job_type) (my_queue_oldest_ready_age_seconds) > 1800
 <!-- source: waiting-for-a-database-connection f481d577ea58 -->
 ### 等待数据库连接
 
-使用 `database = postgres` 时，每条语句和每个事务都要先等待进程连接池中的空闲连接。
-[`database_acquire_timeout`](../reference/configuration.md#database_acquire_timeout)（默认 `60s`）限制的就是这段等待，而不限制其他任何东西：已经拿到连接的长查询或
-长事务会一直运行下去，无论耗时多久。`0` 表示无限等待。SQLite 没有需要等待的连接数上限，因此在 SQLite 上设置它会导致启动失败。
+使用 `database = postgres` 时，每条语句和每个事务都要先等待进程连接池中的空闲连接。[`database_acquire_timeout`](../reference/configuration.md#database_acquire_timeout)（默认 `60s`）限制的就是这段等待，而不限制其他任何东西：已经拿到连接的长查询或长事务会一直运行下去，无论耗时多久。`0` 表示无限等待。SQLite 没有需要等待的连接数上限，因此在 SQLite 上设置它会导致启动失败。
 
 等待超时后：
 
@@ -501,8 +446,7 @@ max by (my_job_type) (my_queue_oldest_ready_age_seconds) > 1800
 - 任务会在 30 秒后再次运行，并且不消耗尝试次数，因此繁忙的数据库永远不会把任务变成 dead 任务。
 - `db.client.connection.timeouts` 指标会计入一次，并触发 [`MyDBPoolWaiting`](alerts.md#mydbpoolwaiting) 告警。
 
-默认值等于服务器 60 秒的写超时：等待更久的请求无论如何都无法发送响应，因此默认值不会让任何本可以成功的请求失败。
-请根据你的实例的运行方式选择一个值：
+默认值等于服务器 60 秒的写超时：等待更久的请求无论如何都无法发送响应，因此默认值不会让任何本可以成功的请求失败。请根据你的实例的运行方式选择一个值：
 
 - **调低它**可以快速卸载负载：客户端会在 `Retry-After` 之后重试，而不是让请求一直挂着。请让它长于你最慢的正常事务，否则一阵短暂的突发就会开始返回 `503`。
 - **先确定连接池的大小。** 一个进程需要的连接数大约等于它同时运行的工作数。`database_url` 中的 `pool_max_conns` 默认为 4 与 CPU 数量中的较大者，并且所有进程加起来必须低于数据库的连接上限。
@@ -520,37 +464,26 @@ max by (my_job_type) (my_queue_oldest_ready_age_seconds) > 1800
 - 对于它保存、重试或放回的每个任务，服务器会在事务提交后在 `queue_cloudtasks_queue` 中创建一个 task。该 task 会在任务到期时调用
   `POST {queue_cloudtasks_url}/_internal/jobs`，请求体为任务的 ID，并附带
   `queue_cloudtasks_service_account` 的 OIDC ID 令牌。到期时间超过 30 天之后的任务会在 30 天时发出信号，并在该 task 到达时再次发出信号。
-- 收到 task 的进程运行该任务，并在记录结果后返回 `204`，任务已经运行过或尚未到期时也是如此。
-  失败的任务由服务器在下一次尝试时间重试，而不是由 Cloud Tasks 重试。Cloud Tasks 只在响应为
+- 收到 task 的进程运行该任务，并在记录结果后返回 `204`，任务已经运行过或尚未到期时也是如此。失败的任务由服务器在下一次尝试时间重试，而不是由 Cloud Tasks 重试。Cloud Tasks 只在响应为
   `5xx`（无法连接到数据库）或 `401`（服务器拒绝的令牌）时重试 task，因此无需调整它的 `retryConfig`。
 - 没有进程轮询表，也没有进程自行运行定期任务。请创建一个 Cloud Scheduler 作业，每分钟（`* * * * *`）调用
-  `POST {queue_cloudtasks_url}/_internal/tick`，并附带同一服务账号的 OIDC 令牌（设置了 `queue_cloudtasks_audience` 时，还要使用其
-  受众）。每次 tick 会把到达周期的定期任务加入队列，在整个实例中只加入一次（周期在 KV 中领取，
-  因此 `kv` 必须为 `db` 或 `valkey`），并对到期超过 2 分钟仍未运行的任务再次发出信号，从而恢复丢失的信号。
+  `POST {queue_cloudtasks_url}/_internal/tick`，并附带同一服务账号的 OIDC 令牌（设置了 `queue_cloudtasks_audience` 时，还要使用其受众）。每次 tick 会把到达周期的定期任务加入队列，在整个实例中只加入一次（周期在 KV 中领取，因此 `kv` 必须为 `db` 或 `valkey`），并对到期超过 2 分钟仍未运行的任务再次发出信号，从而恢复丢失的信号。
 - `/_internal/jobs` 和 `/_internal/tick` 由 `role = all` 或 `worker` 的进程提供，只接受由 Google 为
   `queue_cloudtasks_service_account` 签名、电子邮件已验证，且受众为 `queue_cloudtasks_audience`（默认为被调用的 URL）的令牌。其他任何请求都会得到 `401`。
 - 一次投递运行一个任务，最长不超过 5 分钟的租约。请让 `queue_cloudtasks_dispatch_deadline`（默认 10 分钟）和
   Cloud Run 服务的请求超时都长于这个时间。
-- 服务器自身的服务账号需要队列上的 `roles/cloudtasks.enqueuer` 以及 `queue_cloudtasks_service_account` 上的 `roles/iam.serviceAccountUser`。
-  它使用应用默认凭据（Application Default Credentials）进行认证。
+- 服务器自身的服务账号需要队列上的 `roles/cloudtasks.enqueuer` 以及 `queue_cloudtasks_service_account` 上的 `roles/iam.serviceAccountUser`。它使用应用默认凭据（Application Default Credentials）进行认证。
 
 <!-- source: routing-job-types-to-their-own-queues 292b3f6071a8 -->
 ### 把任务类型路由到专用队列
 
-使用 `queue = cloudtasks` 时，worker 无法选择它运行的任务：`worker_job_types` 只适用于 `queue = db`，因为由平台决定谁接收信号。
-要为某些任务类型分配专用容量，请把它们的信号发送到专用队列，并在平台上设置该队列的容量。
-不设置路由就不会有任何变化。
+使用 `queue = cloudtasks` 时，worker 无法选择它运行的任务：`worker_job_types` 只适用于 `queue = db`，因为由平台决定谁接收信号。要为某些任务类型分配专用容量，请把它们的信号发送到专用队列，并在平台上设置该队列的容量。不设置路由就不会有任何变化。
 
-[`queue_cloudtasks_routes`](../reference/configuration.md#queue_cloudtasks_routes)：`federation.*=projects/p/locations/l/queues/my-federation@https://federation-worker.example.com,notification.email=projects/p/locations/l/queues/my-mail`。
-不带 `@` 和 URL 的路由会调用 `queue_cloudtasks_url`。
+[`queue_cloudtasks_routes`](../reference/configuration.md#queue_cloudtasks_routes)：`federation.*=projects/p/locations/l/queues/my-federation@https://federation-worker.example.com,notification.email=projects/p/locations/l/queues/my-mail`。不带 `@` 和 URL 的路由会调用 `queue_cloudtasks_url`。
 
-左侧是[任务参考](../reference/jobs.md)中的任务类型或前缀。名称优先于前缀，较长的前缀优先于较短的前缀。
-不匹配任何路由的类型，包括以后的版本新增的类型，会使用默认队列（`queue_cloudtasks_queue`），因此它们会继续运行。
-`my config check` 会检查路由的格式；左侧不匹配任何任务类型时，`my serve` 会在启动时停止。
+左侧是[任务参考](../reference/jobs.md)中的任务类型或前缀。名称优先于前缀，较长的前缀优先于较短的前缀。不匹配任何路由的类型，包括以后的版本新增的类型，会使用默认队列（`queue_cloudtasks_queue`），因此它们会继续运行。`my config check` 会检查路由的格式；左侧不匹配任何任务类型时，`my serve` 会在启动时停止。
 
-**给每个进程设置相同的路由，包括 `role = web`。** 信号由保存任务的进程发送：对于用户的大部分操作（例如帖子的第一个任务），这是 web 进程；
-对于由任务保存的任务、重试、同一排序键的下一个任务以及丢失信号的补发，这是 worker。
-如果每个角色有各自的设置（就像 Cloud Run 服务那样），请把相同的值传给所有角色：
+**给每个进程设置相同的路由，包括 `role = web`。** 信号由保存任务的进程发送：对于用户的大部分操作（例如帖子的第一个任务），这是 web 进程；对于由任务保存的任务、重试、同一排序键的下一个任务以及丢失信号的补发，这是 worker。如果每个角色有各自的设置（就像 Cloud Run 服务那样），请把相同的值传给所有角色：
 
 ```sh
 routes='federation.*=projects/p/locations/l/queues/my-federation@https://federation-worker.example.com'
@@ -559,12 +492,9 @@ gcloud run services update my-worker --update-env-vars "^|^MY_QUEUE_CLOUDTASKS_R
 gcloud run services update my-federation-worker --update-env-vars "^|^MY_QUEUE_CLOUDTASKS_ROUTES=$routes"
 ```
 
-路由不同的进程不会报错，也不会丢失任务：它的信号会发往另一个队列，任务在那里运行，不受你设置的容量约束。
-`my.queue.oldest_ready_age` 不会显示这一点，因为这些任务并不等待。为了比较各个进程，每个进程在启动时都会记录一行日志，包含它的 `routes` 及其 `routes_hash`：
-这个哈希在所有地方都必须相同。要查看信号发往何处，请查看平台自身提供的每个队列的指标。
+路由不同的进程不会报错，也不会丢失任务：它的信号会发往另一个队列，任务在那里运行，不受你设置的容量约束。`my.queue.oldest_ready_age` 不会显示这一点，因为这些任务并不等待。为了比较各个进程，每个进程在启动时都会记录一行日志，包含它的 `routes` 及其 `routes_hash`：这个哈希在所有地方都必须相同。要查看信号发往何处，请查看平台自身提供的每个队列的指标。
 
-**权限。** 每个进程的凭据都需要能向路由中的每个队列发送：`roles/cloudtasks.enqueuer`。
-发送失败会被记录，并且不会改为尝试另一个队列，这样你限制的类型就不会溢出到其他队列。这些任务会延迟开始，要等 2 分钟后补发再次发送它们的信号。
+**权限。** 每个进程的凭据都需要能向路由中的每个队列发送：`roles/cloudtasks.enqueuer`。发送失败会被记录，并且不会改为尝试另一个队列，这样你限制的类型就不会溢出到其他队列。这些任务会延迟开始，要等 2 分钟后补发再次发送它们的信号。
 
 **容量。** 任何接收方都能运行任何任务，因此由你选择把它们分开到什么程度：
 
@@ -572,14 +502,11 @@ gcloud run services update my-federation-worker --update-env-vars "^|^MY_QUEUE_C
 | --- | --- | --- |
 | Google Cloud | 一个服务。每个队列有各自的 `maxConcurrentDispatches` 和 `maxDispatchesPerSecond`；服务的实例数上限是共用的 | 每个队列一个服务，由路由中的 URL 指定，各有自己的实例数上限和并发数。每个服务都把 `queue_cloudtasks_url` 设置为自己的 URL |
 
-每个队列都需要与默认队列相同的设置：队列上的角色。
-只有默认队列需要 tick。
+每个队列都需要与默认队列相同的设置：队列上的角色。只有默认队列需要 tick。
 
-**增加队列的代价。** 每个队列都是又一个需要创建、监控和付费的东西，其影响有多大取决于你的实例规模。
-请只拆分你在 `my.job.wait` 中看到在等待的类型，而不是全部拆分。
+**增加队列的代价。** 每个队列都是又一个需要创建、监控和付费的东西，其影响有多大取决于你的实例规模。请只拆分你在 `my.job.wait` 中看到在等待的类型，而不是全部拆分。
 
-**补发。** 补发每分钟查找一次到期超过 2 分钟仍未运行的任务，每条路由最多 500 个，默认队列最多 500 个，并再次为它们发出信号。
-因此，跟不上的队列每分钟最多会收到 500 个重复信号。它们不会让任务运行两次，但这些都是需要付费的消息，积压清除后它们就会停止。
+**补发。** 补发每分钟查找一次到期超过 2 分钟仍未运行的任务，每条路由最多 500 个，默认队列最多 500 个，并再次为它们发出信号。因此，跟不上的队列每分钟最多会收到 500 个重复信号。它们不会让任务运行两次，但这些都是需要付费的消息，积压清除后它们就会停止。
 
 **排序键**依然有效：由数据库决定什么可以运行。同一键的任务可能位于不同的队列，但停滞的队列也会延迟其键下较晚的任务。
 
@@ -587,8 +514,7 @@ gcloud run services update my-federation-worker --update-env-vars "^|^MY_QUEUE_C
 
 1. 创建队列及其接收方，并赋予每个进程向它发送的权限。
 2. 在每个进程上修改路由。在它们不一致期间，信号会发往任意一个队列，任务会在两处运行。
-3. 要删除队列，请先在所有地方把它从路由中移除，等它清空后再删除。已删除队列中的信号会丢失，但任务不会：任务到期 2 分钟后，补发会再次为它发出信号。
-   Cloud Tasks 的 task 可以为最多 30 天之后到期的任务保存信号，因此到期时间晚于等待时间的任务，会在到期时直接由补发发出信号。
+3. 要删除队列，请先在所有地方把它从路由中移除，等它清空后再删除。已删除队列中的信号会丢失，但任务不会：任务到期 2 分钟后，补发会再次为它发出信号。Cloud Tasks 的 task 可以为最多 30 天之后到期的任务保存信号，因此到期时间晚于等待时间的任务，会在到期时直接由补发发出信号。
 
 <!-- source: health-checks 924644f30f58 -->
 ## 健康检查
@@ -601,17 +527,12 @@ gcloud run services update my-federation-worker --update-env-vars "^|^MY_QUEUE_C
 
 - `/healthz` 或 `/readyz` 返回 200 时，响应体为 `{"status":"ok"}`。
 - `/readyz` 在每次请求时都检查数据库，并发的请求共用一次检查。
-- `/api/v1/instance/health` 在健康时返回 200 和 `{"status":"ok","checked_at":"<RFC 3339>"}`，失败时返回 503 和 `{"status":"unavailable","checked_at":...}`（`Cache-Control: no-store`）。
-  无论被监控或请求得多频繁，每个进程每分钟最多访问一次数据库，并且它既不查看访问令牌，也不受速率限制约束。请把可用性监控指向这个端点，而不是探针（`/readyz`）。
-  关于各服务的设置、监控间隔和成本，以及如何处理维护，参见[可用性监控指南](monitoring.md)。
+- `/api/v1/instance/health` 在健康时返回 200 和 `{"status":"ok","checked_at":"<RFC 3339>"}`，失败时返回 503 和 `{"status":"unavailable","checked_at":...}`（`Cache-Control: no-store`）。无论被监控或请求得多频繁，每个进程每分钟最多访问一次数据库，并且它既不查看访问令牌，也不受速率限制约束。请把可用性监控指向这个端点，而不是探针（`/readyz`）。关于各服务的设置、监控间隔和成本，以及如何处理维护，参见[可用性监控指南](monitoring.md)。
 - 这三个端点在访问日志中都以 Debug 级别记录，并且不创建追踪 span。
-- 就绪条件不满足时，响应为 503，响应体为 RFC 9457 的 `application/problem+json`。
-  其 `title` 会根据 `Accept-Language` 进行翻译，且不包含任何内部细节。原因（连接错误，或缺失的表名）会写入日志。
+- 就绪条件不满足时，响应为 503，响应体为 RFC 9457 的 `application/problem+json`。其 `title` 会根据 `Accept-Language` 进行翻译，且不包含任何内部细节。原因（连接错误，或缺失的表名）会写入日志。
 - 单次就绪检查在 3 秒后中止。
 - 就绪还要求数据库中保存着已配置的 `host` 和 `account_domain`，或者进程能够记录它们。
-- **schema 已应用**是指 `schema/<dialect>/` 中的文件用 `CREATE TABLE` 声明的每张表都存在
-  （SQLite 通过 `sqlite_schema` 检查，PostgreSQL 通过连接的 `current_schema()` 检查）。`my schema apply` 会应用整个 schema，因此缺少某张表意味着 schema 尚未应用，或者比二进制文件旧。
-  列和索引的差异不会被检查；`my schema apply -dry-run` 会输出将要发生的变更。
+- **schema 已应用**是指 `schema/<dialect>/` 中的文件用 `CREATE TABLE` 声明的每张表都存在（SQLite 通过 `sqlite_schema` 检查，PostgreSQL 通过连接的 `current_schema()` 检查）。`my schema apply` 会应用整个 schema，因此缺少某张表意味着 schema 尚未应用，或者比二进制文件旧。列和索引的差异不会被检查；`my schema apply -dry-run` 会输出将要发生的变更。
 
 <!-- source: requests-that-bypass-the-cdn 2cca4127af07 -->
 ## 绕过 CDN 的请求
@@ -621,13 +542,7 @@ gcloud run services update my-federation-worker --update-env-vars "^|^MY_QUEUE_C
 <!-- source: security-headers 8c5e82848149 -->
 ## 安全响应头
 
-每个响应都带有 `Strict-Transport-Security`、`X-Content-Type-Options`、`Referrer-Policy`、`Permissions-Policy`、`Cross-Origin-Opener-Policy`、`Cross-Origin-Resource-Policy: same-site` 和 `X-Frame-Options`，
-对于不是文档的响应，还带有 `Content-Security-Policy: default-src 'none'; frame-ancestors 'none'; base-uri 'none'`。
-对于需要其他值的响应（例如 ActivityPub JSON 和公开媒体），处理程序会覆盖这些值。
-`Permissions-Policy` 禁止摄像头、地理位置、支付和 USB。它也禁止麦克风，但语音聊天开启时（`voice` 不是 `off`）除外：
-此时它只允许服务器自身源的页面使用麦克风（`microphone=(self)`），以便浏览器能在通话中说话。
-网页客户端的 HTML 会得到一个不使用 nonce 的文档 CSP（`script-src 'self'` 等）。
-它要求使用 Trusted Types（`require-trusted-types-for 'script'`），并把可以创建的策略限制为客户端的两个（`trusted-types my-server-sanitized-html my-service-worker`）。
+每个响应都带有 `Strict-Transport-Security`、`X-Content-Type-Options`、`Referrer-Policy`、`Permissions-Policy`、`Cross-Origin-Opener-Policy`、`Cross-Origin-Resource-Policy: same-site` 和 `X-Frame-Options`，对于不是文档的响应，还带有 `Content-Security-Policy: default-src 'none'; frame-ancestors 'none'; base-uri 'none'`。对于需要其他值的响应（例如 ActivityPub JSON 和公开媒体），处理程序会覆盖这些值。`Permissions-Policy` 禁止摄像头、地理位置、支付和 USB。它也禁止麦克风，但语音聊天开启时（`voice` 不是 `off`）除外：此时它只允许服务器自身源的页面使用麦克风（`microphone=(self)`），以便浏览器能在通话中说话。网页客户端的 HTML 会得到一个不使用 nonce 的文档 CSP（`script-src 'self'` 等）。它要求使用 Trusted Types（`require-trusted-types-for 'script'`），并把可以创建的策略限制为客户端的两个（`trusted-types my-server-sanitized-html my-service-worker`）。
 
 <!-- source: web-client f35b79dd2cc3 -->
 ## 网页客户端
@@ -644,9 +559,7 @@ gcloud run services update my-federation-worker --update-env-vars "^|^MY_QUEUE_C
 | `GET /robots.txt`、`/.well-known/tdmrep.json`、`/.well-known/security.txt` | 根据实例设置生成（参见[搜索引擎与 AI 爬虫](crawlers.md)） | `public, max-age=3600`、ETag |
 
 - `/api`、`/oauth`、`/auth`、`/.well-known`、`/nodeinfo`、`/ap`、`/media`、`/uploads`、`/theme`（服务器主题的样式表）和 `/licenses` 下的路径，以及 `/robots.txt`，永远不会返回外壳；如果没有其他路由匹配，它们会返回 404 problem。
-- 外壳在 ActivityPub 内容协商之后提供。用 ActivityPub 的 `Accept` 请求外壳路径会返回 404（帖子页面会重定向，见下文）。
-  外壳总是带有 `Vary: Accept`。如果在前面放置 CDN，请把 `Accept` 的种类（ActivityPub 或 HTML）加入缓存键，或者把外壳、`/ap/*` 和 `/@*` 排除在缓存之外。
-  只让 CDN 提供 `/assets/*`。
+- 外壳在 ActivityPub 内容协商之后提供。用 ActivityPub 的 `Accept` 请求外壳路径会返回 404（帖子页面会重定向，见下文）。外壳总是带有 `Vary: Accept`。如果在前面放置 CDN，请把 `Accept` 的种类（ActivityPub 或 HTML）加入缓存键，或者把外壳、`/ap/*` 和 `/@*` 排除在缓存之外。只让 CDN 提供 `/assets/*`。
 - 不含网页客户端构建的二进制文件（直接 `go build`，没有先构建客户端）会在启动时记录警告，并提供一个不含脚本的外壳。
 
 <!-- source: federation-endpoints 7aaee8c9da42 -->
@@ -667,12 +580,9 @@ gcloud run services update my-federation-worker --update-env-vars "^|^MY_QUEUE_C
 
 - 实例 Actor 的用户名为 `{account_domain}@{account_domain}`（与 Mastodon 的形式相同）。
 - 不存在或无法显示（已停用、已注销、已删除或远程）的账号，总是得到相同的 404（`Cache-Control: no-store`）。
-- 匿名响应带有 `Cache-Control: public, max-age=60`。随 `Accept` 而变化的响应带有 `Vary: Accept`。
-  对于无法处理 `Vary: Accept` 的 CDN，请把 `/ap/*` 和 `/@*` 排除在缓存之外。
+- 匿名响应带有 `Cache-Control: public, max-age=60`。随 `Accept` 而变化的响应带有 `Vary: Accept`。对于无法处理 `Vary: Accept` 的 CDN，请把 `/ap/*` 和 `/@*` 排除在缓存之外。
 
 <!-- source: separate-handle-and-delivery-domains b1c23d994d0e -->
 ### 分离用户名域名与投递域名
 
-当 `account_domain` 与 `host` 不同时，对 `account_domain` 一侧的 `/.well-known/webfinger`、`/.well-known/host-meta` 和 `/.well-known/nodeinfo` 的请求会以 301 重定向到 `host`（带有 `Access-Control-Allow-Origin: *`）。
-如果你把发往 `account_domain` 的请求路由到这台服务器，服务器会自己返回该重定向。
-如果由其他服务器或反向代理来响应，请重定向到 `https://{host}`，并保留路径和查询字符串。
+当 `account_domain` 与 `host` 不同时，对 `account_domain` 一侧的 `/.well-known/webfinger`、`/.well-known/host-meta` 和 `/.well-known/nodeinfo` 的请求会以 301 重定向到 `host`（带有 `Access-Control-Allow-Origin: *`）。如果你把发往 `account_domain` 的请求路由到这台服务器，服务器会自己返回该重定向。如果由其他服务器或反向代理来响应，请重定向到 `https://{host}`，并保留路径和查询字符串。

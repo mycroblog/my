@@ -1,9 +1,7 @@
 <!-- source: run-voice-chat 54808e78eb0d -->
 # 运行语音聊天
 
-语音聊天让已登录的用户开设房间、邀请他人并交谈。在你选择音频的传输方式之前，它处于关闭状态。
-本指南介绍如何做出这个选择、每种方式所需的 STUN 和 TURN 服务器或媒体服务器，以及部署、隐私和审核方面需要了解的事项。
-这里提到的每项设置都在[配置参考](../reference/configuration.md#voice)中有说明。
+语音聊天让已登录的用户开设房间、邀请他人并交谈。在你选择音频的传输方式之前，它处于关闭状态。本指南介绍如何做出这个选择、每种方式所需的 STUN 和 TURN 服务器或媒体服务器，以及部署、隐私和审核方面需要了解的事项。这里提到的每项设置都在[配置参考](../reference/configuration.md#voice)中有说明。
 
 <!-- source: choose-how-the-audio-travels 9d60bd0655e9 -->
 ## 选择音频的传输方式
@@ -19,23 +17,12 @@
 
 ![三种方式的对比。使用 p2p 时，服务器中转信令，浏览器之间直接或经由 TURN 服务器互相发送音频。使用 livekit 和 sora 时，浏览器把信令和音频发送到媒体服务器，服务器通过 API 和 webhook 与该媒体服务器通信。下面的列表逐一说明各种方式。](images/voice-methods.svg)
 
-在所有方式中，服务器（`my serve`）都负责管理房间、参与者及其会话，并向每位
-参与者发放一份授权：浏览器连接所需的信息。它从不传输音频。不同之处在于信令
-（建立连接的消息）和音频去往哪里：
+在所有方式中，服务器（`my serve`）都负责管理房间、参与者及其会话，并向每位参与者发放一份授权：浏览器连接所需的信息。它从不传输音频。不同之处在于信令（建立连接的消息）和音频去往哪里：
 
-- **`p2p`**。浏览器把信令（offer、answer 和 ICE 候选）发送到服务器，服务器通过房间的事件流
-  转交给另一个浏览器；信令最多在键值存储中等待 30 秒。音频
-  直接在浏览器之间传输。授权中列出 `voice_stun_urls` 的 STUN 服务器，以及 `voice_turn`
-  （`coturn` 或 `cloudflare`）的 TURN 服务器和短期凭据。浏览器通过 STUN 获知自己的公网地址，
-  当两个浏览器找不到直接路径时，由 TURN 服务器中转音频。
-- **`livekit`**。授权中包含 `voice_livekit_url` 和有效期 60 秒的访问令牌。浏览器把信令和
-  音频发送到 LiveKit 服务器，LiveKit 自带 STUN 和 TURN，并把音频转发给其他参与者（选择性转发单元，
-  即 SFU）。
-  服务器通过 LiveKit 的 API 创建 LiveKit 房间并更改谁能发言，LiveKit 则通过 webhook 向服务器报告加入和
-  离开。
-- **`sora`**。授权中包含 `voice_sora_signaling_urls` 和签名的加入值。浏览器把信令和
-  音频发送到 Sora 服务器，Sora 自带 STUN 和 TURN。Sora 在每次连接之前询问服务器的认证 webhook，
-  服务器通过 Sora 的 API 控制房间，Sora 则通过 webhook 报告连接情况。
+- **`p2p`**。浏览器把信令（offer、answer 和 ICE 候选）发送到服务器，服务器通过房间的事件流转交给另一个浏览器；信令最多在键值存储中等待 30 秒。音频直接在浏览器之间传输。授权中列出 `voice_stun_urls` 的 STUN 服务器，以及 `voice_turn`
+  （`coturn` 或 `cloudflare`）的 TURN 服务器和短期凭据。浏览器通过 STUN 获知自己的公网地址，当两个浏览器找不到直接路径时，由 TURN 服务器中转音频。
+- **`livekit`**。授权中包含 `voice_livekit_url` 和有效期 60 秒的访问令牌。浏览器把信令和音频发送到 LiveKit 服务器，LiveKit 自带 STUN 和 TURN，并把音频转发给其他参与者（选择性转发单元，即 SFU）。服务器通过 LiveKit 的 API 创建 LiveKit 房间并更改谁能发言，LiveKit 则通过 webhook 向服务器报告加入和离开。
+- **`sora`**。授权中包含 `voice_sora_signaling_urls` 和签名的加入值。浏览器把信令和音频发送到 Sora 服务器，Sora 自带 STUN 和 TURN。Sora 在每次连接之前询问服务器的认证 webhook，服务器通过 Sora 的 API 控制房间，Sora 则通过 webhook 报告连接情况。
 
 关于选择的说明：
 
@@ -62,28 +49,22 @@
 <!-- source: try-it-with-docker-compose ac3681681768 -->
 ### 用 Docker Compose 试用
 
-要在你的机器上用 Docker Compose 配置（[`deploy/docker/compose.yaml`](../../deploy/docker/compose.yaml)）试用语音聊天，
-请在 `.env` 中设置 `MY_VOICE=p2p` 并重新创建服务器。
+要在你的机器上用 Docker Compose 配置（[`deploy/docker/compose.yaml`](../../deploy/docker/compose.yaml)）试用语音聊天，请在 `.env` 中设置 `MY_VOICE=p2p` 并重新创建服务器。
 
 ```sh
 cd deploy/docker
 docker compose up -d
 ```
 
-- 在 `http://localhost:8080`（`example.env` 的 `MY_WEB_ORIGIN`）打开实例。浏览器只允许 `localhost` 或 HTTPS 上的页面
-  使用麦克风，因此 `http://192.168.1.10:8080` 这样的地址无法发言。
+- 在 `http://localhost:8080`（`example.env` 的 `MY_WEB_ORIGIN`）打开实例。浏览器只允许 `localhost` 或 HTTPS 上的页面使用麦克风，因此 `http://192.168.1.10:8080` 这样的地址无法发言。
 - 同一台机器上的浏览器（两个浏览器配置文件，或一个普通窗口和一个隐私窗口）无需 STUN 或 TURN
   服务器即可互相连接。要连接其他机器上的浏览器，请把实例放在 HTTPS 后面，并在 `.env` 中设置 `MY_VOICE_STUN_URLS`。
-- 默认只有 `admin` 角色可以开设房间。请以你创建的管理员身份登录，或在服务器设置的“语音聊天”页面
-  将 `voice_room_starters` 设为 `everyone`，让所有用户都能开设房间。
+- 默认只有 `admin` 角色可以开设房间。请以你创建的管理员身份登录，或在服务器设置的“语音聊天”页面将 `voice_room_starters` 设为 `everyone`，让所有用户都能开设房间。
 
 <!-- source: size-and-bandwidth 9872bf829e26 -->
 ### 规模与带宽
 
-只要两个浏览器中至少有一方在发言，它们就会互相连接；两个只听不说的人之间不会连接。
-因此，发言者要向其他每位参与者分别发送一份音频。用 Opus 编码的语音加上开销约为 30 到 50 kbit/s，所以在 10 人房间中，发言者约上传 9 份，共几百 kbit/s；
-在 50 人房间中则上传 49 份，约 2 Mbit/s，使用移动数据的手机或家庭网络可能难以承受。N 人房间中的连接数最多为 N(N-1)/2：10 人为 45 个，50 人为 1,225 个。
-这就是默认值为 10 的原因。只有在用户具备足够上传带宽时才提高 `voice_p2p_max_participants`；大型房间请使用 `livekit` 或 `sora`。
+只要两个浏览器中至少有一方在发言，它们就会互相连接；两个只听不说的人之间不会连接。因此，发言者要向其他每位参与者分别发送一份音频。用 Opus 编码的语音加上开销约为 30 到 50 kbit/s，所以在 10 人房间中，发言者约上传 9 份，共几百 kbit/s；在 50 人房间中则上传 49 份，约 2 Mbit/s，使用移动数据的手机或家庭网络可能难以承受。N 人房间中的连接数最多为 N(N-1)/2：10 人为 45 个，50 人为 1,225 个。这就是默认值为 10 的原因。只有在用户具备足够上传带宽时才提高 `voice_p2p_max_participants`；大型房间请使用 `livekit` 或 `sora`。
 
 <!-- source: stun-and-turn 51e427976a77 -->
 ### STUN 与 TURN
@@ -100,8 +81,7 @@ docker compose up -d
 <!-- source: coturn d665e942c91b -->
 #### coturn
 
-设置 `voice_turn = coturn`、`voice_turn_coturn_urls` 和 `voice_turn_coturn_secret`。服务器自己计算凭据（用户名是到期时间和会话 ID，密码是用密钥对用户名计算的 HMAC-SHA1），因此不会向 TURN 服务器发出请求。
-在 `turnserver.conf` 中对 coturn 做相应配置：
+设置 `voice_turn = coturn`、`voice_turn_coturn_urls` 和 `voice_turn_coturn_secret`。服务器自己计算凭据（用户名是到期时间和会话 ID，密码是用密钥对用户名计算的 HMAC-SHA1），因此不会向 TURN 服务器发出请求。在 `turnserver.conf` 中对 coturn 做相应配置：
 
 ```conf
 # Time-limited credentials signed with a shared secret.
@@ -144,16 +124,14 @@ denied-peer-ip=192.168.0.0-192.168.255.255
 
 使用 `voice_ice_transport_policy = all`（默认值）时，浏览器能直接连接就会直接连接，因此房间的参与者可能会得知彼此的 IP 地址。
 
-使用 `relay` 时，浏览器只使用 TURN 服务器，因此参与者看到的是 TURN 服务器的地址，而不是其他参与者的地址。音频在浏览器之间仍保持加密。`relay` 隐藏不了的是：运营 TURN 服务器的一方（你或 Cloudflare）能看到每位参与者的地址，本服务器也能看到调用其 API 的每个人的地址。
-`relay` 要求 `voice_turn` 为 `coturn` 或 `cloudflare`（否则服务器拒绝启动），并且会让每次通话都经过 TURN 服务器，使用 coturn 时消耗的是你的带宽，使用 Cloudflare 时则计入你的流量账单。
+使用 `relay` 时，浏览器只使用 TURN 服务器，因此参与者看到的是 TURN 服务器的地址，而不是其他参与者的地址。音频在浏览器之间仍保持加密。`relay` 隐藏不了的是：运营 TURN 服务器的一方（你或 Cloudflare）能看到每位参与者的地址，本服务器也能看到调用其 API 的每个人的地址。`relay` 要求 `voice_turn` 为 `coturn` 或 `cloudflare`（否则服务器拒绝启动），并且会让每次通话都经过 TURN 服务器，使用 coturn 时消耗的是你的带宽，使用 Cloudflare 时则计入你的流量账单。
 
 <!-- source: what-p2p-cannot-enforce 31e06affcd4f -->
 ### P2P 无法强制执行的事项
 
 房间中只有部分参与者可以发言：主持人和主持人允许的听众。在 `p2p` 中，这一点在两处执行：服务器拒绝中转会让无权发言者发送音频的连接 offer，其他浏览器也不会播放非发言者的音频。
 
-这能阻止普通用户和官方 Web 客户端，但并不是完整的防护。**两个使用修改版客户端的参与者相互配合，仍然可以交换音频**：无权发言者的修改版客户端可以发送音频，接收方的修改版客户端可以播放它，而服务器无法看到加密媒体的内容。
-如果你必须保证谁能发言（例如有审核的公开活动），请使用 `livekit` 或 `sora`，由媒体服务器本身丢弃无权限者的音频。
+这能阻止普通用户和官方 Web 客户端，但并不是完整的防护。**两个使用修改版客户端的参与者相互配合，仍然可以交换音频**：无权发言者的修改版客户端可以发送音频，接收方的修改版客户端可以播放它，而服务器无法看到加密媒体的内容。如果你必须保证谁能发言（例如有审核的公开活动），请使用 `livekit` 或 `sora`，由媒体服务器本身丢弃无权限者的音频。
 
 <!-- source: deployment-notes b0f03da306b7 -->
 ## 部署说明
@@ -205,16 +183,14 @@ webhook:
 <!-- source: livekit-cloud 5bd9f833be11 -->
 ### LiveKit Cloud
 
-使用项目的 WebSocket URL、API key 和 secret，并在项目设置中将 `https://<your domain>/voice/webhooks/livekit` 添加为 webhook 端点。
-免费的 Build 套餐每月提供 5,000 分钟和 50 GB，以及 100 个并发连接（2026-10-26 核实）；当前套餐请查看 LiveKit 的价格页面。
+使用项目的 WebSocket URL、API key 和 secret，并在项目设置中将 `https://<your domain>/voice/webhooks/livekit` 添加为 webhook 端点。免费的 Build 套餐每月提供 5,000 分钟和 50 GB，以及 100 个并发连接（2026-10-26 核实）；当前套餐请查看 LiveKit 的价格页面。
 
 <!-- source: sora 5e9209dd3baa -->
 ## Sora
 
 **Sora 适配器只针对按照 Sora 文档模拟的 Sora 进行过测试，没有针对真实的 Sora 服务器测试过**。在依赖它之前，请在预发布实例上用真实的 Sora 试用。
 
-设置 `voice = sora`、`voice_sora_signaling_urls`（浏览器连接的 `wss:` URL，以逗号分隔）、`voice_sora_join_secret`（至少 32 字节，例如用 `openssl rand -base64 32` 生成；用于签名参与者加入时使用的值）和 `voice_sora_mode`（`self_hosted` 或 `cloud`）。
-实例必须通过 HTTPS 提供，因为 Sora 会回调 `https://<your domain>`。
+设置 `voice = sora`、`voice_sora_signaling_urls`（浏览器连接的 `wss:` URL，以逗号分隔）、`voice_sora_join_secret`（至少 32 字节，例如用 `openssl rand -base64 32` 生成；用于签名参与者加入时使用的值）和 `voice_sora_mode`（`self_hosted` 或 `cloud`）。实例必须通过 HTTPS 提供，因为 Sora 会回调 `https://<your domain>`。
 
 <!-- source: webhooks 11b2c486a476 -->
 ### Webhook
@@ -228,8 +204,7 @@ Sora 会调用本服务器的两个端点：
 
 **认证 webhook 必须及时响应**。自行托管时 Sora 等待 5 秒，Sora Cloud 上等待 10 秒。服务器根据自己的数据响应，不调用其他任何东西，但实例冷启动（Cloud Run 从零开始扩容）可能会超出这个时间，此时连接会被拒绝。使用语音聊天期间，请保持一个实例处于运行状态。
 
-自行托管时，请在 `sora.conf` 中设置 `default_duplicate_client_id = evict`。成为发言者的听众会以相同身份重新连接（Sora 无法更改连接的角色），`evict` 会让 Sora 在新连接到达时断开旧连接。
-使用默认的 `allow` 时，服务器在得知新连接后会自己切断旧连接，因此两者会短暂重叠。
+自行托管时，请在 `sora.conf` 中设置 `default_duplicate_client_id = evict`。成为发言者的听众会以相同身份重新连接（Sora 无法更改连接的角色），`evict` 会让 Sora 在新连接到达时断开旧连接。使用默认的 `allow` 时，服务器在得知新连接后会自己切断旧连接，因此两者会短暂重叠。
 
 <!-- source: self-hosted-sora dd3244368b73 -->
 ### 自行托管 Sora
@@ -241,8 +216,7 @@ Sora 会调用本服务器的两个端点：
 | `voice_sora_api_header_name`、`voice_sora_api_header_value` | 代理用来认证本服务器的请求头，例如 `Authorization` 和 `Basic ...`。 |
 | `voice_sora_webhook_username`、`voice_sora_webhook_password` | webhook 的 Basic 凭据。必填。 |
 
-**Sora 自身的 HTTP API 没有认证**，本应只在回环地址上监听。切勿将其暴露。请在它前面放一个要求凭据的反向代理，并通过这两项请求头设置把该凭据交给本服务器。
-在 Sora 中用相同的 Basic 凭据配置 webhook URL。服务器只接受 `https:` 的 API URL（只有 localhost 可以用 `http:`），没有 webhook 凭据时不会启动。不支持 mTLS，因为 Cloud Run 和 ECS 前面的负载均衡器会在服务器之前终止 TLS。
+**Sora 自身的 HTTP API 没有认证**，本应只在回环地址上监听。切勿将其暴露。请在它前面放一个要求凭据的反向代理，并通过这两项请求头设置把该凭据交给本服务器。在 Sora 中用相同的 Basic 凭据配置 webhook URL。服务器只接受 `https:` 的 API URL（只有 localhost 可以用 `http:`），没有 webhook 凭据时不会启动。不支持 mTLS，因为 Cloud Run 和 ECS 前面的负载均衡器会在服务器之前终止 TLS。
 
 <!-- source: sora-cloud ac4935c7f7a7 -->
 ### Sora Cloud

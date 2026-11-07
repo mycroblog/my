@@ -6,7 +6,7 @@ template: splash
 hero:
   tagline: |
     <p><strong>mycroblog</strong> — 从小规模起步、随社区一同成长的联邦宇宙微博客。</p>
-    <p>mycroblog 的服务器 <code>my</code> 使用 ActivityPub 进行联邦，用 Go 编写。你可以从一台小机器，或者一个可缩容到零的容器加 SQLite 起步。社区壮大后，可以迁移到 PostgreSQL、作业队列、流消息代理，以及分开的 Web 进程和 worker 进程：代码相同，数据也相同。</p>
+    <p>mycroblog 的服务器 <code>my</code> 使用 ActivityPub 进行联邦，用 Go 编写。你可以从一台小机器，或者一个可缩容到零的容器加 SQLite 起步。社区壮大后，可以迁移到 PostgreSQL、任务队列、流消息代理，以及分开的 Web 进程和 worker 进程：代码相同，数据也相同。</p>
   image:
     light: ../../assets/wordmark-light.svg
     dark: ../../assets/wordmark-dark.svg
@@ -130,7 +130,7 @@ import Screenshot from "../../components/Screenshot.astro";
     links={[
       { path: "docs/reference/configuration.md", label: "配置参考（英文）" },
       { path: "docs/reference/cli.md", label: "命令参考（英文）" },
-      { path: "docs/reference/jobs.md", label: "作业（英文）" },
+      { path: "docs/reference/jobs.md", label: "任务（英文）" },
     ]}
   />
 </CardGrid>

@@ -1,12 +1,7 @@
 <!-- source: importing-cloud-usage-costs db52fcd17ff9 -->
 # 导入云服务使用费用
 
-服务器每 24 小时导入一次设置 [`billing_sources`](../reference/configuration.md#billing_sources) 中所列服务商的使用费用（对于服务器没有适配器的服务商，则通过[插件](#a-plugin-billing_sources--plugin)导入），并把它们加入实例的费用。默认值为空，即不导入任何内容。
-它导入当前账单月和上一个账单月的费用（上一个月导入到当月 15 日为止，或直到上一个月的费用确定为止），每项服务和每种费用类型（使用费、抵扣额、退款、税费、支持费、手续费、其他）各占一行。
-在服务商结算某个月之前，数值记录为估算值；结算之后记录为确定值；确定之后数值如果发生变化，则记录为更正。过去的记录从不被改写。
-导入的状态（最近一次成功、最近一次失败的类型以及本月的请求数）显示在管理界面的费用页面上，也可以通过 `GET /api/v1/admin/billing_imports` 获取。
-指标按来源、结果和失败类型统计每次尝试（`my.billing.imports`），并报告最近一次尝试失败的来源（`my.billing.import.failing`）；
-[告警与处置手册](alerts.md#mybillingimportfailing)中有针对它们的告警。
+服务器每 24 小时导入一次设置 [`billing_sources`](../reference/configuration.md#billing_sources) 中所列服务商的使用费用（对于服务器没有适配器的服务商，则通过[插件](#a-plugin-billing_sources--plugin)导入），并把它们加入实例的费用。默认值为空，即不导入任何内容。它导入当前账单月和上一个账单月的费用（上一个月导入到当月 15 日为止，或直到上一个月的费用确定为止），每项服务和每种费用类型（使用费、抵扣额、退款、税费、支持费、手续费、其他）各占一行。在服务商结算某个月之前，数值记录为估算值；结算之后记录为确定值；确定之后数值如果发生变化，则记录为更正。过去的记录从不被改写。导入的状态（最近一次成功、最近一次失败的类型以及本月的请求数）显示在管理界面的费用页面上，也可以通过 `GET /api/v1/admin/billing_imports` 获取。指标按来源、结果和失败类型统计每次尝试（`my.billing.imports`），并报告最近一次尝试失败的来源（`my.billing.import.failing`）；[告警与处置手册](alerts.md#mybillingimportfailing)中有针对它们的告警。
 
 本服务器的配置中不保存任何凭据。请为运行环境提供各服务商 SDK 的默认凭据链所读取的内容（AWS 为执行角色、环境变量或共享凭据文件；Google Cloud 为应用默认凭据）。
 
@@ -29,19 +24,12 @@
 <!-- source: aws-billing_sources--aws 9e5fa0132ca3 -->
 ## AWS（`billing_sources = aws`）
 
-服务器每个账单月（UTC 的自然月）调用一次 AWS Cost Explorer 的 `GetCostAndUsage`，按服务（`SERVICE`）和记录类型（`RECORD_TYPE`）分组。端点始终是 `us-east-1`。
-金额以美元计。在 Cost Explorer 把某个月标记为估算（`Estimated`）期间，服务器把截至前一天的金额记录为估算值；不再标记之后，记录为确定值。
-使用构建标签 `no_billing_aws` 构建的二进制文件会拒绝 `aws`（见 [build-tags.md](../reference/build-tags.md)）。
+服务器每个账单月（UTC 的自然月）调用一次 AWS Cost Explorer 的 `GetCostAndUsage`，按服务（`SERVICE`）和记录类型（`RECORD_TYPE`）分组。端点始终是 `us-east-1`。金额以美元计。在 Cost Explorer 把某个月标记为估算（`Estimated`）期间，服务器把截至前一天的金额记录为估算值；不再标记之后，记录为确定值。使用构建标签 `no_billing_aws` 构建的二进制文件会拒绝 `aws`（见 [build-tags.md](../reference/build-tags.md)）。
 
 <!-- source: cost-and-limits a555f91984c3 -->
 ### 费用与限额
 
-Cost Explorer API 对每个分页请求收取 0.01 美元。小型账号每天只需一个单页请求，每月约 0.31 美元。
-为了防止意外费用，服务器按 UTC 日（`billing_aws_max_requests_per_day`，默认 4）和 UTC 自然月（`billing_aws_max_requests_per_month`，默认 120，即 1.20 美元）统计请求数，达到限额后不再调用并停止。
-定时导入、任务重试以及管理界面中的“立即导入”都会计入。达到限额的导入记录为 `request_cap` 类型的失败，并在第二天（每日限额）或下个月的第一天（每月限额）的导入中重试。
-导入在调用之前会预留限额剩余的请求数，因此同时运行的多个导入加起来也不会超过限额。
-同一服务商的导入一次只运行一个：在另一个导入尚未结束时开始的导入会在一分钟后重试，已经成功导入的任务再次运行时不会进行任何调用。
-在完成之前就停止了的导入（进程退出）会计入它预留的请求数，下一次导入最多会等待它 15 分钟。
+Cost Explorer API 对每个分页请求收取 0.01 美元。小型账号每天只需一个单页请求，每月约 0.31 美元。为了防止意外费用，服务器按 UTC 日（`billing_aws_max_requests_per_day`，默认 4）和 UTC 自然月（`billing_aws_max_requests_per_month`，默认 120，即 1.20 美元）统计请求数，达到限额后不再调用并停止。定时导入、任务重试以及管理界面中的“立即导入”都会计入。达到限额的导入记录为 `request_cap` 类型的失败，并在第二天（每日限额）或下个月的第一天（每月限额）的导入中重试。导入在调用之前会预留限额剩余的请求数，因此同时运行的多个导入加起来也不会超过限额。同一服务商的导入一次只运行一个：在另一个导入尚未结束时开始的导入会在一分钟后重试，已经成功导入的任务再次运行时不会进行任何调用。在完成之前就停止了的导入（进程退出）会计入它预留的请求数，下一次导入最多会等待它 15 分钟。
 
 <!-- source: enable-cost-explorer 2f6cd1add48d -->
 ### 启用 Cost Explorer
@@ -108,8 +96,7 @@ Cost Explorer API 对每个分页请求收取 0.01 美元。小型账号每天�
 <!-- source: calling-from-a-linked-account-of-organizations d12e10b51af3 -->
 ### 从 Organizations 的关联账号调用
 
-AWS Organizations 的管理账号可以查看组织中每个成员账号的费用。要使用成员（关联）账号的凭据进行调用，
-请在管理账号的 Cost Explorer 偏好设置中打开“Linked Account Access”。它关闭时，无论 IAM 权限如何，调用都会被拒绝，导入会以 `not_enabled` 或 `permission` 失败。
+AWS Organizations 的管理账号可以查看组织中每个成员账号的费用。要使用成员（关联）账号的凭据进行调用，请在管理账号的 Cost Explorer 偏好设置中打开“Linked Account Access”。它关闭时，无论 IAM 权限如何，调用都会被拒绝，导入会以 `not_enabled` 或 `permission` 失败。
 
 <!-- source: choosing-which-costs-to-import-filtering 60cfa862b6a2 -->
 ### 选择要导入的费用（筛选）
@@ -122,8 +109,7 @@ AWS Organizations 的管理账号可以查看组织中每个成员账号的费�
 | `linked_account` | 你指定的成员账号的费用（`LINKED_ACCOUNT`） | `billing_aws_linked_accounts`（12 位账号 ID，以逗号分隔） |
 | `tag` | 带有你指定的成本分配标签的资源的费用 | `billing_aws_tag`（`key=value`，例如 `app=my`） |
 
-最准确的配置是为本服务器专门准备一个 AWS 账号（可以是 Organizations 的成员账号），并用 `none`（使用该账号的凭据调用）或 `linked_account`（从管理账号调用）导入。
-税费、支持费和部分抵扣额无法带有标签，可能会被标签筛选排除（尚未在真实账号上验证）。
+最准确的配置是为本服务器专门准备一个 AWS 账号（可以是 Organizations 的成员账号），并用 `none`（使用该账号的凭据调用）或 `linked_account`（从管理账号调用）导入。税费、支持费和部分抵扣额无法带有标签，可能会被标签筛选排除（尚未在真实账号上验证）。
 
 <!-- source: activating-a-cost-allocation-tag-billing_aws_filter--tag 8e642123a388 -->
 ### 激活成本分配标签（`billing_aws_filter = tag`）
@@ -138,8 +124,7 @@ AWS Organizations 的管理账号可以查看组织中每个成员账号的费�
 <!-- source: metric 3e034dd351bd -->
 ### 指标
 
-`billing_aws_metric` 可以是 `NetUnblendedCost`（默认，更接近账单），即扣除折扣（Savings Plans、预留实例、协商价格）之后的费用；也可以是 `UnblendedCost`，即扣除折扣之前的费用。
-由于更新时间和舍入的原因，Cost Explorer 的数值可能与账单不同。两者不一致时，以账单为准。
+`billing_aws_metric` 可以是 `NetUnblendedCost`（默认，更接近账单），即扣除折扣（Savings Plans、预留实例、协商价格）之后的费用；也可以是 `UnblendedCost`，即扣除折扣之前的费用。由于更新时间和舍入的原因，Cost Explorer 的数值可能与账单不同。两者不一致时，以账单为准。
 
 <!-- source: kinds-of-failure 2a6f9042f460 -->
 ### 失败类型
@@ -159,26 +144,19 @@ AWS Organizations 的管理账号可以查看组织中每个成员账号的费�
 <!-- source: google-cloud-billing_sources--gcp c74934cb4d9a -->
 ## Google Cloud（`billing_sources = gcp`）
 
-Google Cloud 没有返回实际费用的 API，因此服务器每天用一次 BigQuery `jobs.query` 汇总 Cloud Billing 导出到 BigQuery 的数据（标准使用费用）（`billing_gcp_method = bigquery`，默认）。
-无法设置导出时，还有一种简易方法，只从预算的 Pub/Sub 通知导入一个近似的总额（见[从预算通知导入](#importing-from-budget-notifications-billing_gcp_method--budget)）。
-账单月是导出数据中的 `invoice.month`，即美国太平洋时间（含夏令时）的自然月。日期按太平洋时间原样记录。
-金额以结算账号的货币计，按账单月、服务（`service.description`）和费用类型（`cost_type`）以 `NUMERIC` 求和；抵扣额（`credits[]`）每项服务合并为一行抵扣。导出中用于抵消先前行的更正行也计入总和。
-导出数据没有表示已确定的标记，因此从次月 5 日（太平洋时间）起运行的导入会把该月视为已确定，在此之前则记录为从当月第一天到最后一次使用当天的估算值。确定之后，导入仍会在 15 日之前再次读取该月，并把任何差额记录为更正。
-使用构建标签 `no_billing_gcp` 构建的二进制文件会拒绝 `gcp`（见 [build-tags.md](../reference/build-tags.md)）。
+Google Cloud 没有返回实际费用的 API，因此服务器每天用一次 BigQuery `jobs.query` 汇总 Cloud Billing 导出到 BigQuery 的数据（标准使用费用）（`billing_gcp_method = bigquery`，默认）。无法设置导出时，还有一种简易方法，只从预算的 Pub/Sub 通知导入一个近似的总额（见[从预算通知导入](#importing-from-budget-notifications-billing_gcp_method--budget)）。账单月是导出数据中的 `invoice.month`，即美国太平洋时间（含夏令时）的自然月。日期按太平洋时间原样记录。金额以结算账号的货币计，按账单月、服务（`service.description`）和费用类型（`cost_type`）以 `NUMERIC` 求和；抵扣额（`credits[]`）每项服务合并为一行抵扣。导出中用于抵消先前行的更正行也计入总和。导出数据没有表示已确定的标记，因此从次月 5 日（太平洋时间）起运行的导入会把该月视为已确定，在此之前则记录为从当月第一天到最后一次使用当天的估算值。确定之后，导入仍会在 15 日之前再次读取该月，并把任何差额记录为更正。使用构建标签 `no_billing_gcp` 构建的二进制文件会拒绝 `gcp`（见 [build-tags.md](../reference/build-tags.md)）。
 
 <!-- source: cost-and-limits-1 ca56b5d7b34d -->
 ### 费用与限额
 
-一次导入就是一次查询，BigQuery 按每次查询扫描的字节数计费（至少 10 MB）。小型账号每月扫描约 0.3 GB，在免费额度每月 1 TiB（与结算账号的其他用途共享）之内，因此费用为 0 美元。
-为了防止意外的扫描，每次查询都带有 `maximumBytesBilled`（`billing_gcp_max_bytes_billed`，默认 1 GiB）。会超过该值的查询不计费并且失败，记录为 `bytes_cap` 类型的失败。管理界面会显示计费的字节数。
+一次导入就是一次查询，BigQuery 按每次查询扫描的字节数计费（至少 10 MB）。小型账号每月扫描约 0.3 GB，在免费额度每月 1 TiB（与结算账号的其他用途共享）之内，因此费用为 0 美元。为了防止意外的扫描，每次查询都带有 `maximumBytesBilled`（`billing_gcp_max_bytes_billed`，默认 1 GiB）。会超过该值的查询不计费并且失败，记录为 `bytes_cap` 类型的失败。管理界面会显示计费的字节数。
 
 <!-- source: enable-the-export-to-bigquery 40c7a176b9f1 -->
 ### 启用到 BigQuery 的导出
 
 运营者需要在控制台中设置一次（尚未发现通过 API 设置的方法）。
 
-1. 在关联到结算账号的项目中创建一个 BigQuery 数据集（例如 `billing_export`）。选择多区域位置（`US` 或 `EU`）。当月和上个月的数据会被回填（选择单一区域时，数据从启用当天开始）。位置之后无法更改。
-   不要为表设置过期时间。过期的行不会再回来。
+1. 在关联到结算账号的项目中创建一个 BigQuery 数据集（例如 `billing_export`）。选择多区域位置（`US` 或 `EU`）。当月和上个月的数据会被回填（选择单一区域时，数据从启用当天开始）。位置之后无法更改。不要为表设置过期时间。过期的行不会再回来。
 2. 在“Billing > Billing export > BigQuery export”中启用“Standard usage cost”，并选择第 1 步中的数据集。设置需要结算账号上的“Billing Account Costs Manager”或“Billing Account Administrator”，以及项目上的 BigQuery User 角色。
 3. 几小时到一天之后，会创建表 `gcp_billing_export_v1_<BILLING_ACCOUNT_ID>`（ID 中的连字符会变成 `_`）。
 4. 设置 `MY_BILLING_GCP_TABLE=<project>.billing_export.gcp_billing_export_v1_<BILLING_ACCOUNT_ID>`。
@@ -222,8 +200,7 @@ bq add-iam-policy-binding --member=serviceAccount:<service account> \
 | `billing_gcp_projects`（项目 ID，以逗号分隔） | 你指定的项目的费用（`project.id`） |
 | `billing_gcp_label`（`key=value`，例如 `app=my`） | 带有你指定的标签的资源的费用（`labels`） |
 
-两者都设置时，服务器只导入同时符合两者的费用。
-账单层级的费用（例如税费）可能既不带项目也不带标签，这时会被筛选排除（尚未在真实账号上验证）。
+两者都设置时，服务器只导入同时符合两者的费用。账单层级的费用（例如税费）可能既不带项目也不带标签，这时会被筛选排除（尚未在真实账号上验证）。
 
 <!-- source: kinds-of-failure-1 612d14e2ba5c -->
 ### 失败类型
@@ -243,8 +220,7 @@ bq add-iam-policy-binding --member=serviceAccount:<service account> \
 <!-- source: importing-from-budget-notifications-billing_gcp_method--budget b90e6393e3d3 -->
 ### 从预算通知导入（`billing_gcp_method = budget`）
 
-这是在无法设置 BigQuery 导出时使用的简易方法。服务器每天一次从拉取订阅中读取 Cloud Billing 预算发送到 Pub/Sub 主题的通知。
-它使用拉取而不是推送，因此通知从不会唤醒服务器（例如 Cloud Run）。
+这是在无法设置 BigQuery 导出时使用的简易方法。服务器每天一次从拉取订阅中读取 Cloud Billing 预算发送到 Pub/Sub 主题的通知。它使用拉取而不是推送，因此通知从不会唤醒服务器（例如 Cloud Run）。
 
 这种方法**只导入基于估算值的近似总额**。
 
@@ -265,10 +241,7 @@ bq add-iam-policy-binding --member=serviceAccount:<service account> \
      --message-retention-duration=31d --expiration-period=never
    ```
 
-2. 在控制台的“Billing > Budgets & alerts”中创建一个预算。把它的期间设为**每月**（非每月预算的通知会以 `invalid_response` 失败）。
-   选择本服务器的项目作为范围，并在“Manage notifications > Connect a Pub/Sub topic to this budget”中选择第 1 步中的主题。
-   创建预算需要结算账号上的“Billing Account Costs Manager”或“Billing Account Administrator”，以及主题所在项目上的 `pubsub.topics.setIamPolicy` 和 `pubsub.topics.list`。
-   第一条通知需要几个小时才会到达，之后每天会到达几条。
+2. 在控制台的“Billing > Budgets & alerts”中创建一个预算。把它的期间设为**每月**（非每月预算的通知会以 `invalid_response` 失败）。选择本服务器的项目作为范围，并在“Manage notifications > Connect a Pub/Sub topic to this budget”中选择第 1 步中的主题。创建预算需要结算账号上的“Billing Account Costs Manager”或“Billing Account Administrator”，以及主题所在项目上的 `pubsub.topics.setIamPolicy` 和 `pubsub.topics.list`。第一条通知需要几个小时才会到达，之后每天会到达几条。
 3. 为执行导入的服务器的服务账号授予该订阅上的 `roles/pubsub.subscriber`（Pub/Sub Subscriber）。它用于拉取消息并确认消息（`pubsub.subscriptions.consume`）。
 
    ```sh
@@ -278,14 +251,12 @@ bq add-iam-policy-binding --member=serviceAccount:<service account> \
 
 4. 设置 `MY_BILLING_GCP_METHOD=budget` 和 `MY_BILLING_GCP_BUDGET_SUBSCRIPTION=projects/<project>/subscriptions/my-billing-budget`。
 
-身份验证与 BigQuery 相同，使用应用默认凭据（见上文 [IAM 角色](#iam-roles)中的表格）。
-构建标签 `no_billing_gcp` 也会移除这种方法。Pub/Sub 客户端库与 `stream = pubsub` 共用，因此只有同时设置 `no_pubsub` 时，它才会从二进制文件中移除（见 [build-tags.md](../reference/build-tags.md)）。
+身份验证与 BigQuery 相同，使用应用默认凭据（见上文 [IAM 角色](#iam-roles)中的表格）。构建标签 `no_billing_gcp` 也会移除这种方法。Pub/Sub 客户端库与 `stream = pubsub` 共用，因此只有同时设置 `no_pubsub` 时，它才会从二进制文件中移除（见 [build-tags.md](../reference/build-tags.md)）。
 
 <!-- source: how-notifications-are-read 646a6dd9b2b6 -->
 #### 如何读取通知
 
-- 一次导入会反复执行 Pull，直到不再有新消息到达，并为每个预算和月份取发布时间最新的那条通知。这样可以吸收 Pub/Sub 的重复投递、数值相同的重复通知以及顺序错乱，因此同一条通知收到多次，在总额中也只计一次。
-  一次导入计入的请求数就是 Pull 的次数，通常为两次：一次返回消息，一次返回空结果。最后进行的确认（`Acknowledge`、`ModifyAckDeadline`）不计入。
+- 一次导入会反复执行 Pull，直到不再有新消息到达，并为每个预算和月份取发布时间最新的那条通知。这样可以吸收 Pub/Sub 的重复投递、数值相同的重复通知以及顺序错乱，因此同一条通知收到多次，在总额中也只计一次。一次导入计入的请求数就是 Pull 的次数，通常为两次：一次返回消息，一次返回空结果。最后进行的确认（`Acknowledge`、`ModifyAckDeadline`）不计入。
 - 服务器只确认（ack）已被同一预算和月份的更新通知取代的通知，以及已不再导入的月份的通知（上一个月在被记录为确定之后）。正在导入的月份的最新通知不会被确认，而是退回订阅，因此下一次导入会再次读取同一条通知，在没有新通知的日子里数值也不会改变。
 - 因此，请把订阅的消息保留期限设为**至少 14 天（建议 31 天）**。某个月预算的最后一条通知在次月 2 日前后到达，而上一个月会被反复读取到 15 日。通知已过期的月份会被记录为费用 0。
 - 默认情况下，订阅在 31 天未使用后过期。请把过期设置设为“never”，使它在导入停止的期间也能保留下来。

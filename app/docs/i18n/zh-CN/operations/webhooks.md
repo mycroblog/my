@@ -35,8 +35,7 @@ Webhook 的创建、修改、删除、启用、停用和密钥轮换都会记录
 
 投递会经过出站 HTTP 的 SSRF 防护。默认情况下，它只能通过 `https`（端口 443
 和 80）访问公网地址。要发送到内部目标（例如同一主机上的 n8n 或 VPC 内的聊天服务），请在设置 `webhook_allowed_destinations`（环境变量
-`MY_WEBHOOK_ALLOWED_DESTINATIONS`；参见[配置参考](../reference/configuration.md#webhook_allowed_destinations)）中列出主机名、
-IP 地址和 CIDR，以逗号分隔。
+`MY_WEBHOOK_ALLOWED_DESTINATIONS`；参见[配置参考](../reference/configuration.md#webhook_allowed_destinations)）中列出主机名、IP 地址和 CIDR，以逗号分隔。
 
 ```sh
 MY_WEBHOOK_ALLOWED_DESTINATIONS=n8n.internal,10.0.0.0/8

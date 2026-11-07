@@ -21,7 +21,7 @@ my config check -instance  # also the instance settings in the database
   - 把数据库放在内存中的 SQLite `database_url`。
   - 不是随机生成的 `kek`，例如全为零或由同一个字节重复组成。
   - 属于 CAPTCHA 服务公开的测试密钥的 `captcha` 站点密钥或密钥。
-  - 指定了不存在的作业类型的 `worker_job_types`、`worker_job_types_except` 或队列路由（在所有配置档下都会检查；`my job types` 会列出作业类型）。
+  - 指定了不存在的任务类型的 `worker_job_types`、`worker_job_types_except` 或队列路由（在所有配置档下都会检查；`my job types` 会列出任务类型）。
   - 使用 `-instance` 时，数据库连接池无法满足的 `worker_job_concurrency`。
 - **警告**不改变退出码，仍为 0。它们是在开发中很常见、在生产中也可能是有意为之的设置：
   - `mail = none`。
@@ -131,7 +131,7 @@ my config check -instance  # also the instance settings in the database
 ## 运维
 
 - **备份和恢复**：数据库、blob 存储（`blob_fs_dir` 或存储桶）和 KEK 都按计划备份到与服务器分开的地方，并且已经演练过恢复到一台全新的服务器：恢复后的服务器能够启动，账号能够登录并发帖。从未恢复过的备份，无法知道它是否可用。数据库和媒体不能放在临时目录中；如果放在那里，`my config check` 会发出警告。请参阅[密钥管理](key-management.md)（备份 KEK）和[数据库](database.md)。
-- **监控和告警**：由外部监控检查 `/healthz`，并向能够处理问题的人发出告警，同时关注作业队列中的死信作业。请参阅[监控](monitoring.md)和[运行服务器](running.md)（健康检查、指标和作业队列）。
+- **监控和告警**：由外部监控检查 `/healthz`，并向能够处理问题的人发出告警，同时关注任务队列中的死信任务。请参阅[监控](monitoring.md)和[运行服务器](running.md)（健康检查、指标和任务队列）。
 - **镜像**：实例运行按摘要固定的已发布镜像（`ghcr.io/mycroblog/my:0.1.0@sha256:...`，见版本说明），而不是重启时会变化的镜像，并且[已验证其来源](running.md#verify-an-image)。镜像没有 `latest` 标签。升级时有意地更改该版本，并按照[升级](database.md#upgrading)的步骤，每次升级一个次版本。
 - **源代码（AGPL-3.0）**：服务器必须向所有使用者提供其源代码。运行未经修改的版本时，让 [`source_url`](../reference/configuration.md#source_url) 保持默认值；运行分支或修改版本时，把它指向你自己的源代码。在 `/about` 上验证该链接。请参阅[运行服务器](running.md)（公开源代码）。
 - **维护**：在需要之前就了解如何让服务器进入维护模式。请参阅[维护](maintenance.md)。

@@ -42,12 +42,9 @@ my instance set registration_mode invite
 
 - 来自同一网络（IP 地址；IPv6 为 `/64`）的注册限制为每 30 分钟 5 次。超出后，服务器返回带有 `Retry-After` 的 `429`。
 - 如果用户名或邮箱地址已被占用，页面会在该栏显示错误，并且不会写入任何内容（邀请也不会被消耗）。
-- 如果你设置了[外部登录提供方](login-providers.md)（OpenID Connect、GitHub、Discord 或 Mastodon），并允许新用户通过它注册，登录和注册页面会为每个已启用的提供方显示一个按钮，按钮上的名称与你输入的提供方显示名称完全一致（GitHub 提供方显示“使用 GitHub 登录”，Discord 提供方显示“使用 Discord 登录”，以访客的语言显示）。在该提供方的账号尚未关联到本服务器用户的人，会看到同样的注册表单，只是没有密码栏，新用户只能通过该提供方登录。注册模式、邀请码、加入理由、CAPTCHA、注册屏蔽、`signup.check` 和网络限制都与密码表单一样适用；在 `closed` 模式下，或者提供方不允许注册时，登录页面会显示没有关联的账号。提供方标记为已验证的地址（`email_verified`；GitHub 为已验证的主要地址；Discord 为 Discord 标记为已验证的地址），如果用户保留该地址，会立即确认；其他地址，以及通过 Mastodon 服务器注册的用户的所有地址（Mastodon 不提供地址），按下文通过邮件确认。与现有用户相同的邮箱地址绝不会关联到该用户：表单会显示该地址已被占用。启用了双重验证的用户通过提供方登录后，仍需输入验证码。
-  GitHub 提供方会向 GitHub 请求 `user:email` 作用域；如果你列出了允许的 Organization，还会请求 `read:org`，之后服务器在每次登录时都会检查用户是否属于其中之一，不属于则拒绝登录。请把 `https://<host>/auth/external/<provider ID>/callback` 注册为你的 GitHub OAuth 应用的回调 URL。
-  Discord 提供方会向 Discord 请求 `identify` 和 `email` 作用域；如果你列出了允许的服务器，还会请求 `guilds`，之后服务器在每次登录时都会检查用户是否属于其中之一。请在你的 Discord 应用中注册同样的回调 URL。
+- 如果你设置了[外部登录提供方](login-providers.md)（OpenID Connect、GitHub、Discord 或 Mastodon），并允许新用户通过它注册，登录和注册页面会为每个已启用的提供方显示一个按钮，按钮上的名称与你输入的提供方显示名称完全一致（GitHub 提供方显示“使用 GitHub 登录”，Discord 提供方显示“使用 Discord 登录”，以访客的语言显示）。在该提供方的账号尚未关联到本服务器用户的人，会看到同样的注册表单，只是没有密码栏，新用户只能通过该提供方登录。注册模式、邀请码、加入理由、CAPTCHA、注册屏蔽、`signup.check` 和网络限制都与密码表单一样适用；在 `closed` 模式下，或者提供方不允许注册时，登录页面会显示没有关联的账号。提供方标记为已验证的地址（`email_verified`；GitHub 为已验证的主要地址；Discord 为 Discord 标记为已验证的地址），如果用户保留该地址，会立即确认；其他地址，以及通过 Mastodon 服务器注册的用户的所有地址（Mastodon 不提供地址），按下文通过邮件确认。与现有用户相同的邮箱地址绝不会关联到该用户：表单会显示该地址已被占用。启用了双重验证的用户通过提供方登录后，仍需输入验证码。GitHub 提供方会向 GitHub 请求 `user:email` 作用域；如果你列出了允许的 Organization，还会请求 `read:org`，之后服务器在每次登录时都会检查用户是否属于其中之一，不属于则拒绝登录。请把 `https://<host>/auth/external/<provider ID>/callback` 注册为你的 GitHub OAuth 应用的回调 URL。Discord 提供方会向 Discord 请求 `identify` 和 `email` 作用域；如果你列出了允许的服务器，还会请求 `guilds`，之后服务器在每次登录时都会检查用户是否属于其中之一。请在你的 Discord 应用中注册同样的回调 URL。
 - 已登录的用户可以在设置的“关联的账号”中关联某个提供方的账号，需要先用密码、通行密钥或另一个已关联的账号确认，并且只限允许关联的提供方。浏览器必须以同一用户登录了登录页面；否则服务器会要求先登录。已被其他用户关联的提供方账号会被拒绝，每个用户在每个提供方最多关联一个账号。用户可以取消关联某个账号，除非它是最后一种登录方式（没有密码、没有通行密钥，也没有其他已关联的账号）。
-- 没有密码也没有通行密钥的用户，在进行原本需要它们确认的操作（设置密码、添加通行密钥、删除或迁移账号、关联另一个账号）时，通过在已关联的提供方重新登录来确认。
-  OpenID Connect 提供方会被要求重新验证用户（`max_age=0` 和 `prompt=login`），之前的验证会被拒绝。该确认只能使用一次，只对该操作有效，期限为 10 分钟；用非关联的账号登录会计为一次错误尝试，与输错密码共用同一个限制。
+- 没有密码也没有通行密钥的用户，在进行原本需要它们确认的操作（设置密码、添加通行密钥、删除或迁移账号、关联另一个账号）时，通过在已关联的提供方重新登录来确认。OpenID Connect 提供方会被要求重新验证用户（`max_age=0` 和 `prompt=login`），之前的验证会被拒绝。该确认只能使用一次，只对该操作有效，期限为 10 分钟；用非关联的账号登录会计为一次错误尝试，与输错密码共用同一个限制。
 - 每次注册和登录时，服务器都会记录客户端 IP 地址（登录时还会记录 User-Agent）。这些记录会在 180 天后自动删除（实例设置 `session_origins_retention_days` 和 `registration_origins_retention_days`，至少 90 天）。处于保留冻结状态的账号的记录会被保留（[记录保留与冻结](moderation.md#record-retention-and-holds)）。请在你的隐私政策中写明这一保留期限（[隐私政策模板](privacy-policy-template.md)）。
 
 <!-- source: when-a-user-can-use-the-app 317d6d8b7688 -->
@@ -62,8 +59,7 @@ my instance set registration_mode invite
 <!-- source: email-confirmation 6c1b7759c2cf -->
 ## 邮箱确认
 
-设置 `mail`（[配置参考](../reference/configuration.md#mail)）决定邮件的发送方式。
-SMTP 示例、DNS 设置以及如何解读投递失败，见[发送电子邮件](email.md)。
+设置 `mail`（[配置参考](../reference/configuration.md#mail)）决定邮件的发送方式。SMTP 示例、DNS 设置以及如何解读投递失败，见[发送电子邮件](email.md)。
 
 - `mail = smtp`：服务器在注册时发送确认邮件。链接有效期为 24 小时，只能使用一次。打开链接会显示一个带有确认按钮的页面，用户按下按钮后地址才会被确认（这样，预先抓取邮件中链接的扫描程序就不会消耗令牌）。登录后，用户每小时最多可以要求重发 3 次邮件。与 SMTP 服务器的连接始终用 STARTTLS 加密，服务器会在验证身份和发送之前校验证书。它从不向不提供 STARTTLS 的服务器发送邮件。
 - `mail = none`（默认）：服务器不发送任何邮件，而是把 `mail not sent (mail = none)` 连同消息类别写入服务器日志。只有在 `profile = development` 时，该行才会同时包含地址和正文（包括确认链接）。由于邮件永远到不了用户，服务器会改为要求审核员批准，而不是邮箱确认。因此 `open` 模式下的注册也会从等待审批开始，未确认的邮箱地址不会妨碍使用应用。

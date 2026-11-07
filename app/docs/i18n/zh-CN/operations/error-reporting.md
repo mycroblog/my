@@ -1,8 +1,7 @@
 <!-- source: error-reporting 1ccf0c1c98a4 -->
 # 错误报告
 
-服务器如何告诉你它自身的缺陷和故障、在各个平台上到哪里查看报告，以及如何把报告发送到错误跟踪服务。
-指标告诉你出了问题；错误报告则告诉你是什么失败了，并附带调用栈。[配置参考](../reference/configuration.md)列出了所有设置项。
+服务器如何告诉你它自身的缺陷和故障、在各个平台上到哪里查看报告，以及如何把报告发送到错误跟踪服务。指标告诉你出了问题；错误报告则告诉你是什么失败了，并附带调用栈。[配置参考](../reference/configuration.md)列出了所有设置项。
 
 无论你如何配置，每份报告都会经过以下三步：
 
@@ -31,8 +30,7 @@
 <!-- source: the-log-line 6b570d0bfd09 -->
 ## 日志行
 
-这一行的 `msg` 为 `error report`，`level` 为 `ERROR`（当故障导致进程停止时，`severity` 为 `CRITICAL`）。
-它的字段以及清洗对这些字段的处理，见[运行服务器](running.md#error-reports)。简而言之：
+这一行的 `msg` 为 `error report`，`level` 为 `ERROR`（当故障导致进程停止时，`severity` 为 `CRITICAL`）。它的字段以及清洗对这些字段的处理，见[运行服务器](running.md#error-reports)。简而言之：
 
 - 同一错误的每次出现，`my.error.fingerprint` 都相同。可以按它搜索或分组。
 - `my.error.where` 表示错误发生的位置，例如 `client_api GET /api/v1/statuses/{id}`。
@@ -62,15 +60,12 @@ CloudWatch Logs 会把这一行当作普通 JSON 读取。
 <!-- source: self-hosted 90de7a419474 -->
 ### 自托管
 
-从容器日志中读取这一行：`docker compose logs my | jq -c 'select(.msg == "error report")'`。
-使用 `metrics_exporter = prometheus` 时，告警 `MyErrorReportsIncreasing`（[告警与运维手册](alerts.md#myerrorreportsincreasing)）会在报告急剧增加时发出警告；其背后的计数器是 `my.errors.reported`。
-如果需要不依赖外部服务的通知，请使用管理界面和下文的 webhook。如果需要跟踪服务，请使用 [`errors_exporter`](#sending-reports-to-a-service)。
+从容器日志中读取这一行：`docker compose logs my | jq -c 'select(.msg == "error report")'`。使用 `metrics_exporter = prometheus` 时，告警 `MyErrorReportsIncreasing`（[告警与运维手册](alerts.md#myerrorreportsincreasing)）会在报告急剧增加时发出警告；其背后的计数器是 `my.errors.reported`。如果需要不依赖外部服务的通知，请使用管理界面和下文的 webhook。如果需要跟踪服务，请使用 [`errors_exporter`](#sending-reports-to-a-service)。
 
 <!-- source: error-groups-and-notifications 8f740a328309 -->
 ## 错误分组与通知
 
-服务器在数据库中按指纹统计报告。它不需要任何设置，也不需要额外的服务，写入量也很小：某个指纹的第一份报告会立即写入，后续的报告在内存中累加，每分钟写入一次。强制终止进程可能会丢失最后一分钟的计数；日志行不会因此丢失。
-超过 90 天的计数每天删除。如果出故障的正是数据库，报告就只保留在日志行中。
+服务器在数据库中按指纹统计报告。它不需要任何设置，也不需要额外的服务，写入量也很小：某个指纹的第一份报告会立即写入，后续的报告在内存中累加，每分钟写入一次。强制终止进程可能会丢失最后一分钟的计数；日志行不会因此丢失。超过 90 天的计数每天删除。如果出故障的正是数据库，报告就只保留在日志行中。
 
 <!-- source: the-administration-screen 09092782a7c1 -->
 ### 管理界面
@@ -94,9 +89,7 @@ CloudWatch Logs 会把这一行当作普通 JSON 读取。
 <!-- source: errors-from-the-web-client e5b2f45b62be -->
 ### 来自 Web 客户端的错误
 
-Web 客户端会把其页面未处理的错误发送到你自己服务器上的 `POST /api/v1/client_errors`，因此任何第三方都看不到它们，内容安全相关的设置也无需更改。服务器对所有请求都回答 `204`，并丢弃它不接受的内容：超过 16 KiB 的正文、不包含你自己 Web 客户端文件的调用栈，以及同一 IP 地址每分钟超过 10 份的报告。同一错误每次页面浏览只发送一次，每次页面浏览最多发送 20 个。
-没有登录会话时发送的报告会被计数和记录日志，但它本身不会通知任何人，因此匿名脚本无法塞满你的收件箱。当已登录用户的浏览器也报告该错误时，分组才会发送通知。
-调用栈来自压缩后的构建产物，不会映射回源代码，因此请先看路由和消息。版本（release）是提供该页面的服务器的版本。离线打开的页面，或在 3 秒内没有得到响应后打开的页面，来自浏览器保存的副本，其中记录的是浏览器保存 Web 客户端时的版本：一个 Web 客户端相同的旧版本。
+Web 客户端会把其页面未处理的错误发送到你自己服务器上的 `POST /api/v1/client_errors`，因此任何第三方都看不到它们，内容安全相关的设置也无需更改。服务器对所有请求都回答 `204`，并丢弃它不接受的内容：超过 16 KiB 的正文、不包含你自己 Web 客户端文件的调用栈，以及同一 IP 地址每分钟超过 10 份的报告。同一错误每次页面浏览只发送一次，每次页面浏览最多发送 20 个。没有登录会话时发送的报告会被计数和记录日志，但它本身不会通知任何人，因此匿名脚本无法塞满你的收件箱。当已登录用户的浏览器也报告该错误时，分组才会发送通知。调用栈来自压缩后的构建产物，不会映射回源代码，因此请先看路由和消息。版本（release）是提供该页面的服务器的版本。离线打开的页面，或在 3 秒内没有得到响应后打开的页面，来自浏览器保存的副本，其中记录的是浏览器保存 Web 客户端时的版本：一个 Web 客户端相同的旧版本。
 
 <!-- source: sending-reports-to-a-service eb5f208ca8fc -->
 ## 把报告发送到服务

@@ -11,9 +11,7 @@
 <!-- source: what-the-maintenance-mode-answers 05dd30158a8e -->
 ## 维护模式的响应
 
-进程只读取监听地址、`host`、`account_domain`、`web_origin`、代理（`trusted_proxies`、`trusted_proxy_header`）、
-[来源检查](cdn.md#refuse-requests-that-did-not-come-through-the-cdn)（`origin_secret`、`origin_secret_previous`、`origin_secret_header`）、`status_page_url` 以及 `maintenance_*` 设置（[配置参考](../reference/configuration.md)）。数据库、队列、blob 存储、KV、邮件和流的设置既不读取也不检查，因此这期间它们即使有误或无法访问也没关系。无论 `role` 是什么，它都只提供 HTTP：不运行任务、定期任务，也不运行流代理。
-`my config check -maintenance` 检查的正是维护模式所读取的内容。
+进程只读取监听地址、`host`、`account_domain`、`web_origin`、代理（`trusted_proxies`、`trusted_proxy_header`）、[来源检查](cdn.md#refuse-requests-that-did-not-come-through-the-cdn)（`origin_secret`、`origin_secret_previous`、`origin_secret_header`）、`status_page_url` 以及 `maintenance_*` 设置（[配置参考](../reference/configuration.md)）。数据库、队列、blob 存储、KV、邮件和流的设置既不读取也不检查，因此这期间它们即使有误或无法访问也没关系。无论 `role` 是什么，它都只提供 HTTP：不运行任务、定期任务，也不运行流代理。`my config check -maintenance` 检查的正是维护模式所读取的内容。
 
 如果设置了 [`origin_secret`](cdn.md#refuse-requests-that-did-not-come-through-the-cdn)，需要该头部却缺少它的请求会得到该检查的 `403`，而不是下表中的响应。
 
@@ -117,8 +115,7 @@ defaultCustomErrorResponsePolicy:
 在容器的环境中加入 `MY_MAINTENANCE=true`，为服务的任务定义注册一个修订版本，并把服务更新到该版本；维护结束后，以不带该变量的方式再做一次。使用 OpenTofu 模块时，`deploy/opentofu/upgrade.sh --platform aws-ecs --maintenance`
 会在升级之前把服务切换到维护模式，并用新修订版本切换回来。
 
-**`my serve` 无法运行时**，如果它位于 CloudFront 之后：把导出的 `index.html` 上传到作为第二个源的 S3 存储桶（错误页面不能来自出错的源），并为 `502` 和 `504`（以及只在 `my serve` 无法运行期间的 `503`）添加自定义错误响应，设置 `ResponsePagePath: /maintenance/index.html` 和 `ResponseCode: 503`。
-CloudFront 可以通过带自定义头部的响应头策略添加 `Retry-After`，但该策略适用于缓存行为的所有响应，因此只在维护期间附加它，之后再解除。
+**`my serve` 无法运行时**，如果它位于 CloudFront 之后：把导出的 `index.html` 上传到作为第二个源的 S3 存储桶（错误页面不能来自出错的源），并为 `502` 和 `504`（以及只在 `my serve` 无法运行期间的 `503`）添加自定义错误响应，设置 `ResponsePagePath: /maintenance/index.html` 和 `ResponseCode: 503`。CloudFront 可以通过带自定义头部的响应头策略添加 `Retry-After`，但该策略适用于缓存行为的所有响应，因此只在维护期间附加它，之后再解除。
 
 应用负载均衡器的固定响应无法承载导出的页面：其正文最多 1,024 个字符，并且不设置 `Retry-After` 等头部。只用它返回简短的文字和状态：
 
@@ -138,8 +135,7 @@ CloudFront 可以通过带自定义头部的响应头策略添加 `Retry-After`�
 <!-- source: docker-compose d564c0b39ae8 -->
 ### Docker Compose
 
-`deploy/docker/compose.yaml` 会把 `.env` 中的设置传给服务器，并且也会从 shell 获取 `MY_MAINTENANCE`、`MY_MAINTENANCE_MESSAGE` 和 `MY_MAINTENANCE_UNTIL`。设置它们并重新创建 `my` 服务，维护结束后取消设置 `MY_MAINTENANCE`，再重新创建一次。
-`--no-deps` 可以阻止一次性的数据库服务（`upgrade-check`、`schema`、`upgrade`）运行；升级时才运行它们（[升级](database.md#upgrading)）：
+`deploy/docker/compose.yaml` 会把 `.env` 中的设置传给服务器，并且也会从 shell 获取 `MY_MAINTENANCE`、`MY_MAINTENANCE_MESSAGE` 和 `MY_MAINTENANCE_UNTIL`。设置它们并重新创建 `my` 服务，维护结束后取消设置 `MY_MAINTENANCE`，再重新创建一次。`--no-deps` 可以阻止一次性的数据库服务（`upgrade-check`、`schema`、`upgrade`）运行；升级时才运行它们（[升级](database.md#upgrading)）：
 
 ```sh
 MY_MAINTENANCE=true MY_MAINTENANCE_UNTIL=2026-10-24T03:00:00Z docker compose up -d --no-deps --force-recreate my

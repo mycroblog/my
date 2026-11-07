@@ -33,8 +33,7 @@ scrape_configs:
 - `metrics_listen` 默认为 `127.0.0.1:9464`，只有同一主机上的 Prometheus 能访问。在 Docker Compose 或 Kubernetes 中，请设置 `MY_METRICS_LISTEN=0.0.0.0:9464`，并把该端口限制在私有网络中：这个监听器没有身份验证。
 - 抓取每个进程（每个 `role = web` 和 `role = worker` 的进程都有自己的监听器）。队列、媒体、数据库大小、远程服务器、账单导入和快照这些仪表在每个进程中都携带相同的实例级数值，因此规则取它们的最大值。
 - 每条规则都有一个 `severity` 标签：**`page`** 需要立即有人处理（用户已经或即将受到影响），**`ticket`** 可以等到工作时间处理。请在 Alertmanager 中把它们路由到不同的接收方。每条规则的 `runbook_url` 指向下面对应的小节。
-- 这些阈值是针对小型服务器的起点。观察一周的数值，再根据你的流量调整阈值和 `for` 持续时间。
-  `MyRemoteMediaCacheOverLimit`、`MyMediaStorageLarge` 和 `MyDatabaseStorageLarge` 中的大小必须按你自己的限制设置。
+- 这些阈值是针对小型服务器的起点。观察一周的数值，再根据你的流量调整阈值和 `for` 持续时间。`MyRemoteMediaCacheOverLimit`、`MyMediaStorageLarge` 和 `MyDatabaseStorageLarge` 中的大小必须按你自己的限制设置。
 - 维护模式期间，服务器不提供指标并返回 `503`，因此 `MyTargetDown` 和 HTTP 告警会触发。请在开始之前，在 Alertmanager 中为这段时间静默告警（[维护](maintenance.md#steps)）。
 
 更改规则后，用 Prometheus 自带的 `promtool` 检查文件并运行其单元测试（`alerts.test.yml`）：
@@ -115,12 +114,9 @@ promtool test rules alerts.test.yml
 以下工具会在下面的大多数运行手册条目中反复出现。
 
 - **任务页面**（管理 → 任务，`/admin/jobs`，需要 `manage_jobs`）：按状态（排队中、运行中、重试中、失败）和类型统计的数量，以及等待最久的任务；其**任务**页面（`/admin/jobs/list`）列出某一状态的任务，每个任务的页面显示其最后一次错误和未成功的尝试。只有保存在数据库中的队列（`queue = db` 和 `cloudtasks`）才会列出待处理的任务；失败的任务和尝试则对所有队列都会列出。
-- **`my job` 命令**，在拥有服务器配置的主机上运行（`queue = db` 和 `cloudtasks`）：
-  `my job list` 按从新到旧的顺序列出失败的任务；`my job retry <id>...` 把它们放回队列；`my job delete <id>...` 丢弃它们。
-  任务可以安全地重新运行。
+- **`my job` 命令**，在拥有服务器配置的主机上运行（`queue = db` 和 `cloudtasks`）：`my job list` 按从新到旧的顺序列出失败的任务；`my job retry <id>...` 把它们放回队列；`my job delete <id>...` 丢弃它们。任务可以安全地重新运行。
 - **远程服务器页面**（审核 → 远程服务器，`/moderation/instances`，需要 `manage_domains`）：投递失败的服务器，以及投递已暂停的服务器，并附有原因和时间。“恢复投递”会把服务器重新标记为可用。
-- **日志**：标准错误上的 JSON 行。每个 HTTP 请求以一行 `msg` 为 `http request` 的日志结束，每次任务运行以一行 `msg` 为 `job` 的日志结束（成功为 `INFO`，重试为 `WARN`，永久失败的任务为 `ERROR`，并附带 `error`、`job_id` 和 `my.job.type`）。
-  请求内的日志行携带其 `request_id`，客户端看到的是 `X-Request-Id`。
+- **日志**：标准错误上的 JSON 行。每个 HTTP 请求以一行 `msg` 为 `http request` 的日志结束，每次任务运行以一行 `msg` 为 `job` 的日志结束（成功为 `INFO`，重试为 `WARN`，永久失败的任务为 `ERROR`，并附带 `error`、`job_id` 和 `my.job.type`）。请求内的日志行携带其 `request_id`，客户端看到的是 `X-Request-Id`。
   - Docker Compose：`docker compose logs my | jq -c 'select(.msg == "job" and ."my.outcome" == "dead")'`
   - Cloud Logging：`jsonPayload.msg="job" AND jsonPayload."my.outcome"="dead"`
   - CloudWatch Logs Insights：``filter msg = "job" and `my.outcome` = "dead"``
@@ -291,8 +287,7 @@ promtool test rules alerts.test.yml
 
 检查：
 
-- 过去一小时的 `error report` 行，按 `my.error.fingerprint` 分组：最常见的错误、它们的 `my.error.where`，以及 `message` 的首行。
-  在 Cloud Run 上，Google Cloud Error Reporting 会显示相同的分组。
+- 过去一小时的 `error report` 行，按 `my.error.fingerprint` 分组：最常见的错误、它们的 `my.error.where`，以及 `message` 的首行。在 Cloud Run 上，Google Cloud Error Reporting 会显示相同的分组。
 - 是否在同一时间发布了新版本、更改了配置，或某个依赖开始失败（`MyNotReady`、`MyAdapterErrors`）。
 - 具有相同 `request_id` 或 `job_id` 的请求或任务日志行。
 
@@ -470,8 +465,7 @@ Go 运行时使用了超过 90% 的 `GOMEMLIMIT`。接近上限时，垃圾回�
 
 处理：
 
-- SMTP 主机、端口或凭据错误，或者 SES 账号或权限有问题：修正后重新运行失败的任务。
-  超过链接有效期的验证邮件和重置邮件在重试时会不发送而直接完成，因此请让这些用户重新申请。
+- SMTP 主机、端口或凭据错误，或者 SES 账号或权限有问题：修正后重新运行失败的任务。超过链接有效期的验证邮件和重置邮件在重试时会不发送而直接完成，因此请让这些用户重新申请。
 - 被永久拒绝的地址会被抑制；无需处理。
 
 <!-- source: myemailretrying 40d3ed1a76f5 -->

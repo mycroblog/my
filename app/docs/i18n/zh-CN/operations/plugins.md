@@ -15,10 +15,10 @@
 - **插件客户端**负责所有调用。每一类调用有一个目标地址 `plugin_<kind>_address` 和一个截止时间 `plugin_<kind>_timeout`，同时最多运行 8 个调用（每种媒体类别为 2 个）。它通过 Unix 套接字、`https://`，或者（仅限[部分类别](#plain-tcp)）`http://` 进行连接。
 - **你的插件**是由你运行的独立程序，可以作为 sidecar、在 systemd 下或在另一台机器上运行。服务器只负责连接它们。
 - **当调用失败或超时**（[详情](#when-a-call-fails)）：
-  - `billing`、`mailer` 和各媒体类别：发起调用的作业稍后会再次运行。
+  - `billing`、`mailer` 和各媒体类别：发起调用的任务稍后会再次运行。
   - `translator`：服务器会询问下一个服务商；如果已经没有服务商，读者会看到翻译失败。
   - `key_manager` 采取失败即关闭的方式：所有需要密钥的操作都会失败，没有插件时服务器不会启动。
-  - `search`：写入的作业稍后会再次运行，而搜索会失败，所以用户会看到搜索不可用。
+  - `search`：写入的任务稍后会再次运行，而搜索会失败，所以用户会看到搜索不可用。
   - 决策钩子按 `hook_<hook>_on_failure` 的设置执行：`pass`、`retry`，或者（对于注册）`require_approval`。
 
 <!-- source: kinds 73da92ef7563 -->
@@ -46,7 +46,7 @@
 
 让服务器使用某个目标地址的设置属于各自的功能：表中最后五个类别是[决策钩子](decision-hooks.md)。本页介绍它们的共同之处。
 
-每条消息中，服务器最多发送该类别固定上限的数据量，最多读取另一个上限的数据量。超过上限的调用会失败，发起调用的作业会重试。
+每条消息中，服务器最多发送该类别固定上限的数据量，最多读取另一个上限的数据量。超过上限的调用会失败，发起调用的任务会重试。
 
 <!-- source: the-destination f397f6e80550 -->
 ## 目标地址
@@ -97,11 +97,11 @@
 <!-- source: when-a-call-fails 1caa41ab429e -->
 ## 当调用失败时
 
-调用会在同一类别中同时运行的调用之间排队等候，等待时间计入它的截止时间，也计入指标 [`my.plugin.slot_wait`](running.md)。失败的调用按类别和 Connect 代码计入指标 [`my.plugin.failures`](running.md)。服务器会丢弃插件放在错误中的消息，所以插件失败的原因要看插件自己的日志。服务器本身不会重试调用：由发起调用的作业重试，所以插件必须能应对同一个调用到达两次。
+调用会在同一类别中同时运行的调用之间排队等候，等待时间计入它的截止时间，也计入指标 [`my.plugin.slot_wait`](running.md)。失败的调用按类别和 Connect 代码计入指标 [`my.plugin.failures`](running.md)。服务器会丢弃插件放在错误中的消息，所以插件失败的原因要看插件自己的日志。服务器本身不会重试调用：由发起调用的任务重试，所以插件必须能应对同一个调用到达两次。
 
 服务器启动时插件没有运行，并不会让任何东西停止，`key_manager` 除外：没有它服务器不会启动，而[没有它时会停止什么](key-management.md#when-the-plugin-is-unreachable)是设置它时首先要阅读的内容。
 
-调用的截止时间是 `plugin_<kind>_timeout`，插件以 `Connect-Timeout-Ms`（gRPC 上为 `grpc-timeout`）的形式收到它。插件可以忽略这个请求头：服务器到时仍会停止等待。对于请求可能需要等待的类别（`key_manager`、`translator`、`search`、`signup.check`、`media.check`、`local.status`、`inbound.actor` 和 `local.profile`），截止时间必须小于 30 秒；对于其他类别，必须小于作业可运行的时长 5 分钟。
+调用的截止时间是 `plugin_<kind>_timeout`，插件以 `Connect-Timeout-Ms`（gRPC 上为 `grpc-timeout`）的形式收到它。插件可以忽略这个请求头：服务器到时仍会停止等待。对于请求可能需要等待的类别（`key_manager`、`translator`、`search`、`signup.check`、`media.check`、`local.status`、`inbound.actor` 和 `local.profile`），截止时间必须小于 30 秒；对于其他类别，必须小于任务可运行的时长 5 分钟。
 
 <!-- source: test-a-plugin 5d8195bb27f5 -->
 ## 测试插件
@@ -208,7 +208,7 @@ Content-Type: application/json
 <!-- source: searching-posts bd9dfba5a3e7 -->
 ## 搜索帖子
 
-`search` 类别的插件把[帖子全文搜索](search.md)的索引保存在服务器没有内置支持的引擎中，例如 Groonga 或 PGroonga、用 Sudachi 构建的索引、Typesense、Manticore，或者托管的搜索服务。对服务器来说，它只是又一个引擎：相同的帖子进入索引，相同的作业保持索引最新，而且仍由服务器决定每个人可以看到什么。
+`search` 类别的插件把[帖子全文搜索](search.md)的索引保存在服务器没有内置支持的引擎中，例如 Groonga 或 PGroonga、用 Sudachi 构建的索引、Typesense、Manticore，或者托管的搜索服务。对服务器来说，它只是又一个引擎：相同的帖子进入索引，相同的任务保持索引最新，而且仍由服务器决定每个人可以看到什么。
 
 ```sh
 MY_SEARCH=plugin
@@ -282,7 +282,7 @@ Content-Type: application/json
 | `outcome` | 含义 | 服务器的处理 |
 | --- | --- | --- |
 | `OUTCOME_OK` | 调用完成了要求的操作 | 对一页中的 ID 应用查看策略 |
-| `OUTCOME_FAILED` | 引擎失败或没有响应 | 写入由其作业重试；搜索失败，用户可以再试一次 |
+| `OUTCOME_FAILED` | 引擎失败或没有响应 | 写入由其任务重试；搜索失败，用户可以再试一次 |
 | `OUTCOME_INVALID_CURSOR` | 仅限 `Search`：游标不是插件发出的 | 告知客户端它的游标有误 |
 
 缺失或未知的 `outcome`、失败的调用，以及违反这些规则的页面，都按 `OUTCOME_FAILED` 处理，这样的页面中任何内容都不会显示。一次调用最长持续 `plugin_search_timeout`（默认 10 秒），无论该设置是多少，最多 10 秒。
@@ -309,7 +309,7 @@ MY_PLUGIN_MEDIA_VIDEO_ADDRESS=https://media.internal:9000
 - **删除元数据是插件的工作**。上传文件以发送时的原样到达插件，带有 EXIF 数据和标签，其中可能含有照片的拍摄地点。服务器会检查每个输出的格式和大小，但无法判断元数据是否已全部清除。`my plugin test --kind media_image` 会检查测试文件中的位置没有出现在输出中；其余部分请在插件中检查。
 - **普通 TCP 以未加密的方式发送上传文件**。媒体类别接受 `http://`，启动时会给出警告。这时上传文件及其元数据会以明文穿过网络，两端都没有身份验证：该网络上的任何人都能读取它们，或者冒充插件作出回答。除非网络只供你自己使用，否则请使用 Unix 套接字或 `https://`。
 - **服务器不信任输出**。它根据内容检测每个输出的格式，绝不依据插件声明的格式，并以该格式的内容类型和文件扩展名提供它。它在与上传文件相同的限制下解码每个输出，并检查其大小是否符合。如果输出大于声明的大小或超出这些限制、格式不是插件声明的格式，或者格式不是该变体接受的格式，上传就会作为服务器无法处理的文件而失败。
-- **失败只是延迟**。插件没有运行或失败时，作业会稍后重试，与内置处理器相同。需要立即获得自定义表情符号图片的操作（例如复制远程表情符号或接受相关请求）在插件失败期间会失败。
+- **失败只是延迟**。插件没有运行或失败时，任务会稍后重试，与内置处理器相同。需要立即获得自定义表情符号图片的操作（例如复制远程表情符号或接受相关请求）在插件失败期间会失败。
 
 <!-- source: the-contract-2 812c987c276c -->
 ### 契约
@@ -327,7 +327,7 @@ MY_PLUGIN_MEDIA_VIDEO_ADDRESS=https://media.internal:9000
 | `outcome` | 含义 | 服务器的处理 |
 | --- | --- | --- |
 | `OUTCOME_OK` | 随后是输出 | 检查并保存输出 |
-| `OUTCOME_TEMPORARY` | 插件失败 | 稍后重试作业 |
+| `OUTCOME_TEMPORARY` | 插件失败 | 稍后重试任务 |
 | `OUTCOME_UNSUPPORTED_FORMAT`、`OUTCOME_UNSUPPORTED_CODEC`、`OUTCOME_TOO_LARGE`、`OUTCOME_DIMENSIONS`、`OUTCOME_CORRUPT`、`OUTCOME_TOO_LONG` | 文件不可接受 | 把上传标记为失败 |
 
 缺失或未知的 `outcome` 以及失败的调用按 `OUTCOME_TEMPORARY` 处理。
@@ -358,6 +358,6 @@ JSON 遵循 proto3 的标准映射：
 - 处于零值的字段可以省略，两个方向都是如此。插件必须把缺失的字段读作零值。
 - 服务器忽略它不认识的字段。
 - 结果是响应的 `outcome`。缺失或未知的 `outcome` 是失败，绝不是成功。
-- 失败的插件返回 HTTP 错误，或者返回 Connect 的 `{"code":"unavailable"}` 及相应的状态码。作业会重试。
+- 失败的插件返回 HTTP 错误，或者返回 Connect 的 `{"code":"unavailable"}` 及相应的状态码。任务会重试。
 
 `Connect-Timeout-Ms` 和 `Connect-Protocol-Version` 可以忽略。

@@ -8,24 +8,19 @@
 
 ![密钥层级：密钥加密密钥保存在 key_manager 指定的位置，从不进入数据库；它包裹为每个机密生成的数据加密密钥，再由数据加密密钥加密机密；数据库在五个加密列中保存密钥 ID、被包裹的数据加密密钥和加密后的机密。下面的列表逐层说明。](images/key-hierarchy.svg)
 
-- 存入数据库的机密（例如 actor 的私钥）使用为每个机密生成的数据加密密钥（DEK），以 AES-256-GCM 加密。
-  DEK 由**密钥加密密钥（KEK）**包裹后，和密文存放在一起（信封加密）。
+- 存入数据库的机密（例如 actor 的私钥）使用为每个机密生成的数据加密密钥（DEK），以 AES-256-GCM 加密。DEK 由 **密钥加密密钥（KEK）** 包裹后，和密文存放在一起（信封加密）。
 - KEK 不存入数据库，因此仅凭泄露的数据库转储无法得到这些机密。
 - 每段密文都带有包裹其 DEK 的 KEK 的**密钥 ID**。在 `key_manager = local` 时，密钥 ID 是 `local:` 加上由 KEK 推导出的 16 位十六进制数，因此同一把 KEK 总是得到同一个 ID。你无需分配 ID。
 - 密文绑定到它所在的行 ID 和列名。把它复制到其他行或列后将无法解密。
-- 加密列（名称与 `my kek status` 的输出一致）有：`local_account_private_keys.private_key_enc`（actor 的私钥）、
-  `totp_enrollments.secret_enc`（双重验证的密钥）、`login_provider_secrets.sealed_secret`（登录提供方的客户端密钥）、
-  `webhook_secrets.sealed_secret`（Webhook 签名密钥）和 `instance_secrets.sealed_secret`（媒体代理签名密钥）。
+- 加密列（名称与 `my kek status` 的输出一致）有：`local_account_private_keys.private_key_enc`（actor 的私钥）、`totp_enrollments.secret_enc`（双重验证的密钥）、`login_provider_secrets.sealed_secret`（登录提供方的客户端密钥）、`webhook_secrets.sealed_secret`（Webhook 签名密钥）和 `instance_secrets.sealed_secret`（媒体代理签名密钥）。
 - 通行密钥登录或通过外部提供方登录时的状态也以同样方式加密，但不会存储：由浏览器保管，最长 30 分钟。
 - 媒体代理 URL 的签名密钥（HMAC-SHA256）是服务器首次启动时生成的随机密钥，和其他机密一样加密后存入数据库。轮换 KEK 时它不会改变，因此媒体代理 URL 在轮换前后都能正常使用；`my kek rewrap` 会把它和其他机密一起重新包裹。
-- `key_manager` 可以是 `local`（默认，使用 `kek` 设置）、`gcpkms`（KEK 保存在 Google Cloud KMS 中，参见 [Google Cloud KMS](#google-cloud-kms)）、
-  `awskms`（KEK 保存在 AWS KMS 中，参见 [AWS KMS](#aws-kms)）或 `plugin`（KEK 由你自己的程序保管，参见[插件](#a-plugin)）。
+- `key_manager` 可以是 `local`（默认，使用 `kek` 设置）、`gcpkms`（KEK 保存在 Google Cloud KMS 中，参见 [Google Cloud KMS](#google-cloud-kms)）、`awskms`（KEK 保存在 AWS KMS 中，参见 [AWS KMS](#aws-kms)）或 `plugin`（KEK 由你自己的程序保管，参见[插件](#a-plugin)）。
 
 <!-- source: what-happens-if-you-lose-the-kek 76126b09f09c -->
 ## 丢失 KEK 会怎样
 
-没有 KEK，即使恢复了数据库也无法解密 actor 的私钥。私钥一旦丢失，其他服务器就无法再验证该 actor 的签名，
-**该 actor 在联邦宇宙中的身份也随之失效**（关注者关系无法迁移）。请像对待数据库一样谨慎对待 KEK。
+没有 KEK，即使恢复了数据库也无法解密 actor 的私钥。私钥一旦丢失，其他服务器就无法再验证该 actor 的签名，**该 actor 在联邦宇宙中的身份也随之失效**（关注者关系无法迁移）。请像对待数据库一样谨慎对待 KEK。
 
 ![丢失 KEK 后会失去什么：在没有 KEK 的情况下恢复后，所有未加密的内容仍可读取，所有加密的值都无法解开，actor 失去身份。下面的段落说明了同样的内容。](images/kek-loss.svg)
 
@@ -103,8 +98,7 @@ my kek rewrap   # re-wrap every secret that a key of kek_previous wraps with kek
 
 在 `key_manager = gcpkms` 时，由一把对称的 Cloud KMS 密钥（用途为 `ENCRYPT_DECRYPT` 的 CryptoKey）包裹数据加密密钥，KEK 从不离开 Cloud KMS。即使数据库转储和配置同时泄露，机密也不会暴露：解密需要使用该密钥的权限。
 
-- 把 `kms_key` 设置为密钥的资源名称，不带版本：
-  `projects/{project}/locations/{location}/keyRings/{ring}/cryptoKeys/{key}`。超过 248 字节的名称在启动时会被拒绝。已存储机密的密钥 ID 是 `gcpkms:` 加上这个名称。
+- 把 `kms_key` 设置为密钥的资源名称，不带版本：`projects/{project}/locations/{location}/keyRings/{ring}/cryptoKeys/{key}`。超过 248 字节的名称在启动时会被拒绝。已存储机密的密钥 ID 是 `gcpkms:` 加上这个名称。
 - 服务器使用应用默认凭据（Application Default Credentials）进行身份验证：在 Cloud Run 上是该服务的服务账号；在其他环境中是 `GOOGLE_APPLICATION_CREDENTIALS`。向该服务账号授予密钥（而不是项目）上的 `roles/cloudkms.cryptoKeyEncrypterDecrypter`，供所有进程（例如 web 和 worker）以及 `my kek status`、`my kek rewrap` 命令使用。没有该角色时，读取机密会失败，错误中会写明该角色；密钥版本不存在或已停用时也同样失败，这些错误在修正配置之前不会重试。配额错误或 Cloud KMS 不可用属于临时问题，需要该机密的工作会重试。
 - 服务器会把 Cloud KMS 解密的数据加密密钥保留 `kms_dek_cache_ttl`（默认 `10m`），因此大多数机密读取不会调用 Cloud KMS。
 - 构建标签 `no_gcpkms` 会把该适配器排除在二进制文件之外（[构建标签](../reference/build-tags.md)）。
@@ -114,8 +108,7 @@ my kek rewrap   # re-wrap every secret that a key of kek_previous wraps with kek
 
 Cloud KMS 中的轮换（手动进行，或为密钥设置轮换周期）会添加新的主版本，并保持旧版本启用。新机密用新版本包裹，服务器用包裹每个机密的那个版本来解密它，密钥 ID 不变，因此**轮换不需要 `my kek rewrap`**。
 
-**只要还有机密需要旧版本，就不要停用或销毁它**：用已停用或已销毁的版本包裹的机密将无法再解密。
-Cloud KMS 不会告诉你某个版本包裹了哪些机密，因此要淘汰密钥材料，需要先把机密迁移到新密钥：
+**只要还有机密需要旧版本，就不要停用或销毁它**：用已停用或已销毁的版本包裹的机密将无法再解密。Cloud KMS 不会告诉你某个版本包裹了哪些机密，因此要淘汰密钥材料，需要先把机密迁移到新密钥：
 
 1. 创建新密钥（可以在同一个密钥环中），并向服务账号授予该密钥上的角色。
 2. 把 `kms_key` 设置为新密钥、`kms_key_previous` 设置为旧密钥，然后重启所有进程。此时旧密钥只用于解密。
@@ -127,8 +120,7 @@ Cloud KMS 不会告诉你某个版本包裹了哪些机密，因此要淘汰密�
 
 在 `key_manager = awskms` 时，由一把对称的 AWS KMS 密钥（密钥规格 `SYMMETRIC_DEFAULT`、密钥用途 `ENCRYPT_DECRYPT`、客户托管）包裹数据加密密钥，KEK 从不离开 AWS KMS。即使数据库转储和配置同时泄露，机密也不会暴露：解密需要使用该密钥的权限。
 
-- 把 `kms_key` 设置为密钥的 ARN（`arn:aws:kms:{region}:{account}:key/{key-id}`）、别名（`alias/{name}` 或其 ARN）或密钥 ID。服务器在启动时把名称解析为密钥的 ARN，已存储机密的密钥 ID 是 `awskms:` 加上该 ARN。因此，把别名指向另一把密钥，在下次启动之前不会产生任何影响，启动之后也只影响新机密：已存储的机密仍指向旧密钥，所以要把旧密钥设置到 `kms_key_previous` 中（参见[淘汰 AWS KMS 密钥](#retire-an-aws-kms-key)）。
-  AWS 托管密钥（`alias/aws/...`）会被拒绝；只有拥有它的 AWS 服务才能使用。
+- 把 `kms_key` 设置为密钥的 ARN（`arn:aws:kms:{region}:{account}:key/{key-id}`）、别名（`alias/{name}` 或其 ARN）或密钥 ID。服务器在启动时把名称解析为密钥的 ARN，已存储机密的密钥 ID 是 `awskms:` 加上该 ARN。因此，把别名指向另一把密钥，在下次启动之前不会产生任何影响，启动之后也只影响新机密：已存储的机密仍指向旧密钥，所以要把旧密钥设置到 `kms_key_previous` 中（参见[淘汰 AWS KMS 密钥](#retire-an-aws-kms-key)）。AWS 托管密钥（`alias/aws/...`）会被拒绝；只有拥有它的 AWS 服务才能使用。
 - 服务器使用 AWS SDK 的默认凭据链进行身份验证：在 ECS 上是任务的角色；在 EC2 上是实例配置文件；在其他环境中是环境变量（`AWS_ACCESS_KEY_ID` 等）或共享配置文件。区域取自密钥的 ARN；使用别名或密钥 ID 时，请设置 `AWS_REGION`。
 - 为所有进程（例如 web 和 worker）以及 `my kek status`、`my kek rewrap` 命令允许该密钥上的 `kms:Encrypt`、`kms:Decrypt` 和 `kms:DescribeKey`。IAM 角色的策略示例：
 
@@ -244,8 +236,7 @@ POST /my.plugin.key_manager.v1.KeyManagerService/UnwrapKey
 
 密钥 ID 以包裹它的密钥管理器的种类开头（`local:`、`gcpkms:`、`awskms:`、`plugin:`）。服务器用当前的 `key_manager` 包裹新机密，并用每个已存储机密的密钥 ID 所指的密钥管理器来解包，因此在本地 KEK 与 KMS 之间迁移，就是一次跨种类的轮换。
 
-- 使用 KMS 时，`kek` 和 `kek_previous` 只用于解密：它们解开仍由本地 KEK 包裹的机密，所有新机密都用 `kms_key` 包裹。
-  `kms_key_previous` 列出同一 KMS 中更早的密钥，它们也只用于解密。
+- 使用 KMS 时，`kek` 和 `kek_previous` 只用于解密：它们解开仍由本地 KEK 包裹的机密，所有新机密都用 `kms_key` 包裹。`kms_key_previous` 列出同一 KMS 中更早的密钥，它们也只用于解密。
 - 在 `key_manager = local` 时，`kms_key` 和 `kms_key_previous` 如果已设置，也只用于解密：它们解开仍由 KMS 包裹的机密。
 - 从本地 KEK 迁移到 KMS：
   1. 按照 [Google Cloud KMS](#google-cloud-kms) 或 [AWS KMS](#aws-kms) 中的说明创建密钥并授予权限。

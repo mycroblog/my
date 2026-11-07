@@ -12,7 +12,7 @@
 | --- | --- | --- |
 | 服务器 | `app-gcp-cloud-run` | 一个 `role = all` 的 Cloud Run 服务、一个迁移作业、需要时的控制台作业、一个服务账号，以及公开访问权限 |
 | 流量 | `ingress-gcp-load-balancer`，或 `ingress-gcp-domain-mapping` 或 `ingress-cloudflare-app`，以及可选的 `ingress-cloudflare-media` | 带证书的全球外部应用负载均衡器，或域名映射，或 Cloudflare，以及一个媒体主机 |
-| 作业 | `queue-gcp-cloud-tasks` | 一个 Cloud Tasks 队列、一个 Cloud Scheduler 作业，以及一个调用服务器的服务账号 |
+| 任务 | `queue-gcp-cloud-tasks` | 一个 Cloud Tasks 队列、一个 Cloud Scheduler 作业，以及一个调用服务器的服务账号 |
 | 媒体 | `blob-gcp-gcs` | 一个私有存储桶 |
 | 实时更新 | `stream-gcp-pubsub` | 一个主题和一个自定义角色。服务器自行创建和删除自己的订阅 |
 | 数据库 | `db-external` | 无：数据库由你手动创建 |
@@ -52,7 +52,7 @@ gcloud services enable --project="$PROJECT" run.googleapis.com cloudtasks.google
 有两种方式，示例使用第一种：
 
 - **手动创建，使用 `db-external`**。在 Neon 控制台中，在靠近你的 Cloud Run 区域的地区创建项目，并复制其连接字符串。密码不会进入 OpenTofu 状态。
-- **使用 [`db-neon`](../../deploy/opentofu/modules/db-neon/README.md)**，它会为你创建项目并把 URL 写入机密**。此时数据库密码会进入状态**，而且该 provider 已无人维护：它的 README 说明了这意味着什么，`main.tf` 中 `db` 块上的注释展示了如何替换。
+- **使用 [`db-neon`](../../deploy/opentofu/modules/db-neon/README.md)**，它会为你创建项目并把 URL 写入机密。**此时数据库密码会进入状态**，而且该 provider 已无人维护：它的 README 说明了这意味着什么，`main.tf` 中 `db` 块上的注释展示了如何替换。
 
 一个项目有两个连接字符串，部署会把它们各用在合适的地方：
 
@@ -152,7 +152,7 @@ tofu apply
 
 `tofu output dns_records` 会列出一条 `A` 记录，把 `host` 指向负载均衡器的地址。请在你的 DNS 服务商处添加它。如果该服务商有自己的代理，请对这条记录关闭代理。
 
-证书由 Google 管理，只有在 DNS 指向该地址后才会生效，这可能需要一段时间。在此之前，`https://{host}` 会因 TLS 错误而失败，因此联邦和浏览器暂时无法访问服务器。其他部分无需等待：Cloud Tasks 和 Cloud Scheduler 调用的是服务的默认 `run.app` URL，即 `https://<service>-<project number>.<region>.run.app`。**不要禁用默认 URL**，否则作业会停止。该 URL 拒绝来自互联网的请求，而 Cloud Run 只有在同一项目内、且通过该 URL（而非自定义域名）调用时，才会把这两者视为内部流量。
+证书由 Google 管理，只有在 DNS 指向该地址后才会生效，这可能需要一段时间。在此之前，`https://{host}` 会因 TLS 错误而失败，因此联邦和浏览器暂时无法访问服务器。其他部分无需等待：Cloud Tasks 和 Cloud Scheduler 调用的是服务的默认 `run.app` URL，即 `https://<service>-<project number>.<region>.run.app`。**不要禁用默认 URL**，否则任务会停止。该 URL 拒绝来自互联网的请求，而 Cloud Run 只有在同一项目内、且通过该 URL（而非自定义域名）调用时，才会把这两者视为内部流量。
 
 还有哪些选择，见[流量如何到达服务](#how-traffic-reaches-the-service)。
 
@@ -185,7 +185,7 @@ tofu output -json console | "$SCRIPTS/console.sh" instance set registration_mode
 tofu apply -var console_enabled=false
 ```
 
-`console.sh` 会等待命令结束，打印其输出和退出码，并以该退出码退出。它需要 `roles/logging.viewer`，因为作业的输出会进入 Cloud Logging。无论 `image` 怎么写，它都使用服务正在运行的镜像。
+`console.sh` 会等待命令结束，打印其输出和退出码，并以该退出码退出。它需要 `roles/logging.viewer`，因为任务的输出会进入 Cloud Logging。无论 `image` 怎么写，它都使用服务正在运行的镜像。
 
 该命令没有标准输入和终端，因此需要从中读取密码或文件的命令无法这样运行。它打印的内容会留在日志中，所以不要运行你不愿让输出写进日志的命令。
 
@@ -272,9 +272,9 @@ module "kv" {
 同时给应用设置 `network = module.network`，并把 `module.kv` 加入它的 `backends`。只有私有地址段的流量经过该网络，因此服务仍像以前一样访问互联网，不需要 Cloud NAT。使用私有地址的后端，如果应用位于另一个网络或不在任何网络中，计划会失败。请先启用 Service Networking 和 Network Connectivity API，以及 Compute Engine API。网络会增加实例的冷启动时间：请阅读[私有网络增加了什么](../../deploy/opentofu/modules/kv-gcp-memorystore/README.md#what-the-private-network-adds)。
 
 <!-- source: splitting-jobs-into-workers ed661aede0a3 -->
-## 将作业拆分到 worker
+## 将任务拆分到 worker
 
-当某一类作业拖慢了其他作业时，就给它一个单独的服务。按照[按作业类型拆分 worker](running.md#splitting-workers-by-job-type) 中的说明，根据指标决定拆分什么。同一个值同时交给队列和应用，所有队列、URL、路由和设置都由它的键生成，因此这些你都不用写：
+当某一类任务拖慢了其他任务时，就给它一个单独的服务。按照[按任务类型拆分 worker](running.md#splitting-workers-by-job-type) 中的说明，根据指标决定拆分什么。同一个值同时交给队列和应用，所有队列、URL、路由和设置都由它的键生成，因此这些你都不用写：
 
 ```hcl
 locals {
@@ -290,7 +290,7 @@ locals {
 
 在 `queue` 块和 `app` 块上都设置 `workers = local.workers`。计划会拒绝拆开必须放在一起的类型，也会拒绝队列和应用设置了不同的值。它还需要一个能到达每个进程的消息代理，`stream-gcp-pubsub` 就是这样的代理。如果你使用 `monitoring-gcp`，也要把同一个值交给它。
 
-那一页中两种常见的布局如下。要让投递不拖慢其他作业，请使用上面的值。要让邮件和通知保持及时：
+那一页中两种常见的布局如下。要让投递不拖慢其他任务，请使用上面的值。要让邮件和通知保持及时：
 
 ```hcl
 locals {
@@ -340,12 +340,12 @@ Cloud Tasks 和 Cloud Scheduler 不经过这两者：它们直接调用默认的
 `ingress-cloudflare-app` 把 Cloudflare 放在 `host` 前面，并对所有内容绕过缓存；`ingress-cloudflare-media` 则在任何 ingress 旁边添加一个带缓存的媒体主机。请先阅读每个模块的 README（[app](../../deploy/opentofu/modules/ingress-cloudflare-app/README.md)、[media](../../deploy/opentofu/modules/ingress-cloudflare-media/README.md)）。令牌放在 `CLOUDFLARE_API_TOKEN` 中。这些模块只在模拟的 provider 上运行过。
 
 - **你的套餐决定源站**。Cloud Run 按 `Host` 路由，而 Cloudflare 只在 Enterprise 套餐中提供 Host 请求头覆盖功能。在其他任何套餐上，`*.run.app` 源站会导致计划失败，因此源站本身必须接受你的主机名：保留该主机的一个 `ingress-gcp-domain-mapping`（不放在 `backends` 中），并设置 `origin_host = "ghs.googlehosted.com"`。每个主机都需要各自的映射。它的证书能否在代理后面签发和续期尚未验证，因此请从 `proxied = false` 开始。
-- **请求头封闭源站**。`ingress-cloudflare-app` 会添加一条请求头转换规则，服务器对不带该请求头的请求返回 `403`，健康检查和作业自己的 `POST`（它们会校验各自的令牌）除外。因此，没有人能通过 `run.app` URL 绕过 Cloudflare，调用方自己的 Cloudflare Worker 也无法决定速率限制看到的客户端地址。
+- **请求头封闭源站**。`ingress-cloudflare-app` 会添加一条请求头转换规则，服务器对不带该请求头的请求返回 `403`，健康检查和任务自己的 `POST`（它们会校验各自的令牌）除外。因此，没有人能通过 `run.app` URL 绕过 Cloudflare，调用方自己的 Cloudflare Worker 也无法决定速率限制看到的客户端地址。
 - **该值会进入状态**。Cloudflare provider 没有规则请求头值的只写形式。用 `openssl rand -hex 32` 生成一个值，用 `gcloud secrets versions add` 将其加入机密，用 `TF_VAR_origin_secret` 传入同一个值，并确保状态不公开。[CDN 指南](cdn.md#rotate-the-value)介绍了如何轮换它。
 - **记录未开启代理时，没有任何东西会添加该请求头**，因此服务器会拒绝除健康检查之外的所有请求：如果为了域名映射的证书而设置了 `proxied = false`，请在那之后再设置机密。
-- 在控制台中**关闭 Bot Fight Mode**。它覆盖整个区域，任何规则都无法跳过它，而对 `/ap/`、`/.well-known/` 或 `/api/` 的质询会破坏联邦，因为其他服务器不是浏览器。作业不经过 Cloudflare。这些模块不添加任何质询，并关闭 Browser Integrity Check，但不管理 Bot Fight Mode。出于同样的原因，不要开启“I'm Under Attack”。
+- 在控制台中**关闭 Bot Fight Mode**。它覆盖整个区域，任何规则都无法跳过它，而对 `/ap/`、`/.well-known/` 或 `/api/` 的质询会破坏联邦，因为其他服务器不是浏览器。任务不经过 Cloudflare。这些模块不添加任何质询，并关闭 Browser Integrity Check，但不管理 Bot Fight Mode。出于同样的原因，不要开启“I'm Under Attack”。
 - 如果你希望重定向 `http://`，请在控制台中**开启 Always Use HTTPS**。它覆盖整个区域，所以模块把它留给你决定。
-- **超时**：源站 125 秒内没有发送任何内容时，Cloudflare 会返回 `524`。作业不受影响，因为它们直接调用 `run.app` URL。流每 30 秒发送一次心跳，低于 900 秒的空闲上限。它在普通的已代理主机上是否会缓冲流尚未验证。
+- **超时**：源站 125 秒内没有发送任何内容时，Cloudflare 会返回 `524`。任务不受影响，因为它们直接调用 `run.app` URL。流每 30 秒发送一次心跳，低于 900 秒的空闲上限。它在普通的已代理主机上是否会缓冲流尚未验证。
 - **上传**：Free 和 Pro 套餐为 100 MB，高于 Cloud Run 的 32 MiB，因此上限仍是后者。
 - **视频**：Cloudflare 的条款限制在 Free、Pro 和 Business 套餐上提供视频以及不成比例的大量大文件，它可能会重定向这些内容或采取其他措施。在媒体主机上缓存视频之前，请先做好决定。
 
@@ -387,13 +387,13 @@ curl https://api.cloudflare.com/client/v4/zones/$ZONE_ID/purge_cache \
 | 负载均衡器 | 每月约 18 美元，未在价格页面上得到确认 | 按 GB 收费；见[流量如何到达服务](#how-traffic-reaches-the-service) |
 | Neon（Launch 套餐） | 使用默认 tick 时每月约 19 美元 | 存储每 GB 每月 0.35 美元。`db-gcp-cloud-sql` 则有每月约 9.40 美元的固定费用，机器更小：它的 README 中有明细 |
 | Cloud Run | 0 美元：最小实例数为 0，CPU 只在请求期间计费 | 每个打开的流都会让一个实例持续计费；见下文 |
-| Cloud Tasks | 0 美元 | 100 万次操作免费，之后每百万次 0.40 美元。一个作业约需 2 次 |
+| Cloud Tasks | 0 美元 | 100 万次操作免费，之后每百万次 0.40 美元。一个任务约需 2 次 |
 | Cloud Scheduler | 0 美元：每个结算账号 3 个作业免费 | 超出部分每个作业 0.10 美元 |
 | Cloud Storage | 每 GiB 每月约 0.02 美元 | 只有 `us-east1`、`us-west1` 和 `us-central1` 有 5 GiB 免费额度。媒体经由 Cloud Run 发出 |
 | Pub/Sub | 0 美元：10 GiB 免费 | 仅在流打开期间产生 |
 | Secret Manager | 几美分 | 少量版本免费，之后每个版本几美分 |
 
-**tick 会让 Neon 保持唤醒**。每次 tick 都会读写数据库，而 Neon 只有在 5 分钟没有活动后才会停止计算资源，因此使用默认的 `* * * * *` 时，计算资源永远不会停止。这相当于每月 730 小时，按 0.25 CU 计为 182.5 CU 小时，也就是上面的 19 美元。tick 保持每分钟一次，是为了让定期作业按时运行，并让丢失的唤醒信号能尽快恢复。
+**tick 会让 Neon 保持唤醒**。每次 tick 都会读写数据库，而 Neon 只有在 5 分钟没有活动后才会停止计算资源，因此使用默认的 `* * * * *` 时，计算资源永远不会停止。这相当于每月 730 小时，按 0.25 CU 计为 182.5 CU 小时，也就是上面的 19 美元。tick 保持每分钟一次，是为了让定期任务按时运行，并让丢失的唤醒信号能尽快恢复。
 
 **打开的流会让实例持续计费**。在按请求计费的模式下，实例在处理任何请求期间都会计费，而实时更新是一个长请求。一个整月保持流打开的客户端，就会让一个实例全天候计费：扣除免费额度后，1 vCPU、512 MiB 的实例每月约 60 美元。更多的流会共用该实例，最多到 `concurrency`。如果流大部分时间都保持打开，请与按实例计费的模式，或与小型虚拟机加 [Docker Compose](deploy-docker-compose.md) 的方案进行比较。
 
@@ -402,6 +402,6 @@ curl https://api.cloudflare.com/client/v4/zones/$ZONE_ID/purge_cache \
 
 - 用**域名映射**代替负载均衡器，可以省去 18 美元，但要接受[上文所述的取舍](#how-traffic-reaches-the-service)。它适合试用部署。
 - **Neon 的 Free 套餐**可以省去 19 美元，小型实例可以在上面运行，但有以下取舍：
-  - 它每月允许 100 CU 小时，默认 tick 大约 17 天就会用完。使用更长的计划可以保持在额度之内，例如 `tick_schedule = "*/10 * * * *"`：在其他因素唤醒它之前，最多一半时间处于唤醒状态，约 91 CU 小时。此时定期作业最多会延迟 10 分钟运行，丢失的唤醒信号也会更晚恢复。
+  - 它每月允许 100 CU 小时，默认 tick 大约 17 天就会用完。使用更长的计划可以保持在额度之内，例如 `tick_schedule = "*/10 * * * *"`：在其他因素唤醒它之前，最多一半时间处于唤醒状态，约 91 CU 小时。此时定期任务最多会延迟 10 分钟运行，丢失的唤醒信号也会更晚恢复。
   - 联邦服务器全天候接收投递，这也会唤醒数据库，因此无论计划如何，繁忙的实例都会超出它的额度。
   - 每个项目容量为 1 GB，可恢复的历史为 6 小时，而且计算资源在空闲 5 分钟后总会停止，因此之后的第一个请求需要等待它启动。

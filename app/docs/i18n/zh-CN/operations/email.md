@@ -1,15 +1,12 @@
 <!-- source: sending-email 941ecea58cd9 -->
 # 发送邮件
 
-服务器会发送哪些邮件、如何配置发送方式，以及如何处理发送失败和退订。
-各项设置列在[配置参考](../reference/configuration.md#mail)中。
-面向用户的邮箱验证和密码重置流程见[注册与邮箱验证](registration.md)。
+服务器会发送哪些邮件、如何配置发送方式，以及如何处理发送失败和退订。各项设置列在[配置参考](../reference/configuration.md#mail)中。面向用户的邮箱验证和密码重置流程见[注册与邮箱验证](registration.md)。
 
 <!-- source: what-is-sent-and-how-to-configure-it 3f387cd1afcc -->
 ## 发送哪些邮件，以及如何配置
 
-服务器从不在请求处理过程中发送邮件。它会针对每种用途，在触发邮件的那个事实所在的同一事务中把一个任务放入队列，再由任务 worker 发送。发送失败不会体现在注册或重置的响应中：
-用户看到的是“我们已发送验证邮件”，如果没有收到，就再请求一次。
+服务器从不在请求处理过程中发送邮件。它会针对每种用途，在触发邮件的那个事实所在的同一事务中把一个任务放入队列，再由任务 worker 发送。发送失败不会体现在注册或重置的响应中：用户看到的是“我们已发送验证邮件”，如果没有收到，就再请求一次。
 
 | 类别 | 邮件 | 任务类型 | 用户能否退订？ |
 | --- | --- | --- | --- |
@@ -37,9 +34,7 @@
 
 通知邮件只发送到用户已验证的主邮箱地址，并且从不发送到邮件已被停止的地址（见下文）。来自其他用户的通知，其邮件主题与对应的 Web Push 消息文本相同，邮件中会链接到帖子、个人资料或通知页面。
 
-服务关闭邮件会发送给所有主邮箱地址已验证的用户。错过这类邮件可能意味着丢失数据，因此它们作为事务性邮件发送，不带退订链接，也不会因投诉而停止（硬退信会停止它们）。
-公告、日期变更、取消和关闭各自会在其记录所在的同一事务中把 `identity.closure_email_fanout` 放入队列。每小时运行的 `identity.queue_closure_reminders` 决定何时发送关闭日期前 7 天和前 1 天、以及导出截止日期前 7 天的提醒。如果某个提醒的时间在公告发布时已经过去，就不会发送，因为公告邮件中已写明了这些日期。
-分发任务会为每个用户记录一行 `service_closure_emails`，并且只为成功记录的用户把 `identity.closure_email` 放入队列，因此无论该任务运行多少次，每个用户每封邮件只会收到一次。发送前，任务会检查这封邮件是否仍然有效（不是针对已取消的公告，也不是针对之后已变更的日期）。
+服务关闭邮件会发送给所有主邮箱地址已验证的用户。错过这类邮件可能意味着丢失数据，因此它们作为事务性邮件发送，不带退订链接，也不会因投诉而停止（硬退信会停止它们）。公告、日期变更、取消和关闭各自会在其记录所在的同一事务中把 `identity.closure_email_fanout` 放入队列。每小时运行的 `identity.queue_closure_reminders` 决定何时发送关闭日期前 7 天和前 1 天、以及导出截止日期前 7 天的提醒。如果某个提醒的时间在公告发布时已经过去，就不会发送，因为公告邮件中已写明了这些日期。分发任务会为每个用户记录一行 `service_closure_emails`，并且只为成功记录的用户把 `identity.closure_email` 放入队列，因此无论该任务运行多少次，每个用户每封邮件只会收到一次。发送前，任务会检查这封邮件是否仍然有效（不是针对已取消的公告，也不是针对之后已变更的日期）。
 
 设置项 `mail` 决定邮件的发送方式。
 
@@ -50,11 +45,7 @@
 | `ses` | 通过 Amazon SES v2 API（使用原始内容的 `SendEmail`）发送。通过 AWS SDK 的默认凭证链（例如 IAM 角色）认证，不保存 SMTP 密码 |
 | `plugin` | 把每封消息交给你运行的[插件](#a-plugin-mail--plugin)，适用于只提供 HTTP API 的邮件服务 |
 
-`smtp` 的设置项是 `mail_from`、`mail_smtp_host`、`mail_smtp_port`（默认 587）、`mail_smtp_username` 和 `mail_smtp_password`。`ses` 的设置项是 `mail_from`、`mail_ses_region` 和 `mail_ses_configuration_set`。`plugin` 的设置项是 `mail_from` 和 `plugin_mailer_address`，以及[其目标地址](plugins.md#the-destination)的其余设置。
-`mail_from` 是一个纯地址，例如 `noreply@social.example`。`From` 会变成 `"<server name>" <mail_from>`，`mail_from` 的域名同时也是 `Message-ID` 的域名，以及 SPF、DKIM 和 DMARC 所适用的域名（见下文）。
-设置了实例设置 `contact_email` 时，`Reply-To` 就是它（[实例设置](instance-settings.md)）。
-每封邮件都带有 `Auto-Submitted: auto-generated`。
-`smtp` 和 `ses` 构建的消息相同。不使用 SMTPUTF8，因此地址以 ASCII 发送，国际化域名会转换为 Punycode。本地部分（`@` 之前）不是 ASCII 的地址无法发送，其任务会失败。
+`smtp` 的设置项是 `mail_from`、`mail_smtp_host`、`mail_smtp_port`（默认 587）、`mail_smtp_username` 和 `mail_smtp_password`。`ses` 的设置项是 `mail_from`、`mail_ses_region` 和 `mail_ses_configuration_set`。`plugin` 的设置项是 `mail_from` 和 `plugin_mailer_address`，以及[其目标地址](plugins.md#the-destination)的其余设置。`mail_from` 是一个纯地址，例如 `noreply@social.example`。`From` 会变成 `"<server name>" <mail_from>`，`mail_from` 的域名同时也是 `Message-ID` 的域名，以及 SPF、DKIM 和 DMARC 所适用的域名（见下文）。设置了实例设置 `contact_email` 时，`Reply-To` 就是它（[实例设置](instance-settings.md)）。每封邮件都带有 `Auto-Submitted: auto-generated`。`smtp` 和 `ses` 构建的消息相同。不使用 SMTPUTF8，因此地址以 ASCII 发送，国际化域名会转换为 Punycode。本地部分（`@` 之前）不是 ASCII 的地址无法发送，其任务会失败。
 
 <!-- source: examples-by-provider 7ab129a02c43 -->
 ## 各服务商的示例
@@ -77,9 +68,7 @@ MY_MAIL_SES_REGION=ap-northeast-1          # the region where you verified the i
 MY_MAIL_SES_CONFIGURATION_SET=my-events    # optional; a configuration set with event destinations
 ```
 
-设置了 `mail_ses_configuration_set` 时，每封邮件都使用该配置集。SES 会用它自己的值覆盖邮件的 `Message-ID` 和 `Date`。
-SES 从不在发送时同步拒绝收件人。它会接受发往账号抑制列表中地址的邮件，然后不投递，退信稍后以通知（SNS）的形式到达。
-要记录退信和投诉，请按下文设置让 SES 通知通过 SNS 送达。
+设置了 `mail_ses_configuration_set` 时，每封邮件都使用该配置集。SES 会用它自己的值覆盖邮件的 `Message-ID` 和 `Date`。SES 从不在发送时同步拒绝收件人。它会接受发往账号抑制列表中地址的邮件，然后不投递，退信稍后以通知（SNS）的形式到达。要记录退信和投诉，请按下文设置让 SES 通知通过 SNS 送达。
 
 <!-- source: a-plugin-mail--plugin 65b46feaf1cf -->
 ### 插件（`mail = plugin`）
@@ -142,8 +131,7 @@ Content-Type: application/json
 | `OUTCOME_TEMPORARY` | 服务暂时拒绝，或没有响应 | 重试任务 |
 | 其他值，或没有值 | | 重试任务 |
 
-HTTP 错误，或带有相应状态码的 Connect `{"code":"unavailable"}`，也属于临时失败。
-`enhancedStatus` 是可选的：拒绝的增强状态码，例如 `5.1.1`。服务器会保留拒绝结果中的 5 类代码和 `OUTCOME_TEMPORARY` 中的 4 类代码，忽略其他代码。它不保留插件给出的任何文本，因此不要在那里放原因：原因应写在插件自己的日志里。
+HTTP 错误，或带有相应状态码的 Connect `{"code":"unavailable"}`，也属于临时失败。`enhancedStatus` 是可选的：拒绝的增强状态码，例如 `5.1.1`。服务器会保留拒绝结果中的 5 类代码和 `OUTCOME_TEMPORARY` 中的 4 类代码，忽略其他代码。它不保留插件给出的任何文本，因此不要在那里放原因：原因应写在插件自己的日志里。
 
 服务器只能通过这个响应得知退信。它没有用于接收插件服务后续退信和投诉的端点，因此服务事后报告的退信不会抑制该地址。
 
@@ -154,14 +142,12 @@ my plugin test --kind mailer unix:///run/my/mailer.sock
 my plugin test --kind mailer --mail-to you@example.com --mail-from noreply@social.example unix:///run/my/mailer.sock
 ```
 
-第一条只检查插件是否响应，不发送任何邮件。第二条向 `--mail-to` 发送一封真实的邮件，并向插件发送一个没有收件人的请求，插件必须拒绝它。插件拿到消息后服务器就看不到它了，因此请查看实际收到的邮件：其邮件头中必须有 `Message-ID`、`Date` 和 `Auto-Submitted: auto-generated`。
-参见[测试插件](plugins.md#test-a-plugin)。
+第一条只检查插件是否响应，不发送任何邮件。第二条向 `--mail-to` 发送一封真实的邮件，并向插件发送一个没有收件人的请求，插件必须拒绝它。插件拿到消息后服务器就看不到它了，因此请查看实际收到的邮件：其邮件头中必须有 `Message-ID`、`Date` 和 `Auto-Submitted: auto-generated`。参见[测试插件](plugins.md#test-a-plugin)。
 
 <!-- source: receive-ses-notifications-sns e21b650ab5fe -->
 ### 接收 SES 通知（SNS）
 
-SES 的退信和投诉会发送到一个 SNS 主题，该主题上的 HTTPS 订阅再把它们投递到服务器的 `POST /mail/events/ses`。
-只有设置了 `mail_ses_sns_topic_arn` 时这个端点才会开放；否则它回答 `404`。
+SES 的退信和投诉会发送到一个 SNS 主题，该主题上的 HTTPS 订阅再把它们投递到服务器的 `POST /mail/events/ses`。只有设置了 `mail_ses_sns_topic_arn` 时这个端点才会开放；否则它回答 `404`。
 
 1. 在与 SES 身份相同的区域创建一个标准 SNS 主题。
 2. 把主题属性 `SignatureVersion` 设为 `2`（SHA256withRSA）。使用默认值 `1` 的签名不被接受，服务器会回答 `400`。
@@ -170,8 +156,7 @@ SES 的退信和投诉会发送到一个 SNS 主题，该主题上的 HTTPS 订�
    - 身份通知：把这个主题用于 `mail_from` 身份的“Bounce”和“Complaint”反馈通知。
    - 配置集事件目标：把这个主题添加为 `mail_ses_configuration_set` 中配置集的目标，事件类型为 `BOUNCE` 和 `COMPLAINT`。
 5. 把 `MY_MAIL_SES_SNS_TOPIC_ARN` 设为该主题的 ARN，用 `my config check` 检查，然后重启。
-6. 在主题上创建一个订阅，协议为 `https`，端点为 `https://<server host>/mail/events/ses`。
-   **不要启用原始消息传输**（没有签名的正文会被拒绝）。
+6. 在主题上创建一个订阅，协议为 `https`，端点为 `https://<server host>/mail/events/ses`。**不要启用原始消息传输**（没有签名的正文会被拒绝）。
 
 ```sh
 aws sns create-topic --region ap-northeast-1 --name my-ses-feedback
@@ -190,8 +175,7 @@ aws sns subscribe --region ap-northeast-1 \
   --protocol https --notification-endpoint https://social.example/mail/events/ses
 ```
 
-服务器收到订阅确认（`SubscriptionConfirmation`）时，会向其 `SubscribeURL` 发送 `GET` 以确认订阅，并记录日志 `SNS subscription of the SES notifications confirmed`。
-用 `aws sns list-subscriptions-by-topic` 确认订阅不再是 `PendingConfirmation`。
+服务器收到订阅确认（`SubscriptionConfirmation`）时，会向其 `SubscribeURL` 发送 `GET` 以确认订阅，并记录日志 `SNS subscription of the SES notifications confirmed`。用 `aws sns list-subscriptions-by-topic` 确认订阅不再是 `PendingConfirmation`。
 
 在使用一条消息之前，端点会检查以下所有条件。任何一项不满足，它就回答 `400`，并且不记录任何内容。
 
@@ -199,8 +183,7 @@ aws sns subscribe --region ap-northeast-1 \
 - `SignatureVersion` 是 `2`，且签名有效。
 - 签名的证书 URL（`SigningCertURL`）是 `https`，其主机是该主题所在区域的 `sns.<region>.amazonaws.com`。订阅确认的 `SubscribeURL` 也必须是同一主机。
 
-证书通过防范 SSRF 的出站 HTTP 客户端获取，并在 KV 存储中缓存 24 小时。正文最多读取 1 MiB，更大的正文会得到 `413`。
-无法获取证书、订阅确认失败或无法写入记录时，端点回答 `503`，交由 SNS 重试。维护模式期间它也回答 `503`。
+证书通过防范 SSRF 的出站 HTTP 客户端获取，并在 KV 存储中缓存 24 小时。正文最多读取 1 MiB，更大的正文会得到 `413`。无法获取证书、订阅确认失败或无法写入记录时，端点回答 `503`，交由 SNS 重试。维护模式期间它也回答 `503`。
 
 以下是它会记录的通知。它会把收件人地址与主邮箱地址进行匹配（不区分大小写，Punycode 域名也能与其 Unicode 形式匹配）；如果没有匹配的地址，就什么也不做。
 
@@ -246,14 +229,12 @@ MY_MAIL_SMTP_USERNAME=<user name>           # empty for a server without authent
 MY_MAIL_SMTP_PASSWORD_FILE=/run/secrets/mail_smtp_password
 ```
 
-如果对方服务器不提供 STARTTLS，或者其证书无法针对 `mail_smtp_host` 中的名称通过验证，服务器就不会向它发送。凭证只在 STARTTLS 之后发送。
-修改设置后，用 `my config check` 检查，然后重启。
+如果对方服务器不提供 STARTTLS，或者其证书无法针对 `mail_smtp_host` 中的名称通过验证，服务器就不会向它发送。凭证只在 STARTTLS 之后发送。修改设置后，用 `my config check` 检查，然后重启。
 
 <!-- source: spf-dkim-and-dmarc d6b36a4f4d74 -->
 ## SPF、DKIM 和 DMARC
 
-Gmail 和 Yahoo 要求每天发送大量邮件的发件人配置 SPF、DKIM、DMARC 和一键退订。即使发送量很小，没有这些配置的邮件也更容易被归类为垃圾邮件。
-请在 `mail_from` 的域名（例如 `social.example`）的 DNS 中全部设置好，取值使用服务商提供的值。
+Gmail 和 Yahoo 要求每天发送大量邮件的发件人配置 SPF、DKIM、DMARC 和一键退订。即使发送量很小，没有这些配置的邮件也更容易被归类为垃圾邮件。请在 `mail_from` 的域名（例如 `social.example`）的 DNS 中全部设置好，取值使用服务商提供的值。
 
 - **SPF**：在域名上放一条 TXT 记录，授权你所使用的发送服务商（例如，如果你使用 SES 的自定义 MAIL FROM 域名，就在该域名上放服务商指定的 `include:`）。
 - **DKIM**：把服务商签发的公钥放进 DNS，并在发送端启用签名。对于 SES，就是 Easy DKIM 的三条 CNAME 记录。服务器本身不签名，由服务商签名。
@@ -268,28 +249,21 @@ _dmarc.social.example.  TXT  "v=DMARC1; p=none; rua=mailto:dmarc@social.example"
 <!-- source: look-at-send-failures ab9c4f356d3b -->
 ## 查看发送失败
 
-在任务页面（`/admin/jobs/list`，权限 `manage_jobs`；参见[任务队列与失败的任务](running.md#the-job-queue-and-failed-dead-jobs)）查看发送失败。
-按任务类型筛选即可只看邮件任务（在管理 API 中为 `GET /api/v1/admin/jobs?type=identity.verification_email`）。
-各类型见上表。
+在任务页面（`/admin/jobs/list`，权限 `manage_jobs`；参见[任务队列与失败的任务](running.md#the-job-queue-and-failed-dead-jobs)）查看发送失败。按任务类型筛选即可只看邮件任务（在管理 API 中为 `GET /api/v1/admin/jobs?type=identity.verification_email`）。各类型见上表。
 
 - **临时失败**（连接错误、超时、4xx 响应）会重试。事务性邮件尝试 6 次（从 30 秒开始指数退避，总共约 15 分钟）；通知邮件使用默认策略（10 次，约 4 小时）。尝试次数用完后，任务会变成失败的任务（dead job）。错误的 `mail_smtp_host`、认证失败和网络被阻断都会出现在这里。修复原因后，用 `my job retry <id>` 或在任务页面重新运行。
 - **永久拒绝**（针对收件人或内容的 5xx）不会重试，立即失败。
-- 使用 `mail = ses` 时，SES 的 `MessageRejected`（内容被拒绝）属于永久拒绝。`TooManyRequestsException`（发送速率限制）、`SendingPausedException`、`MailFromDomainNotVerifiedException`、`AccountSuspendedException` 以及未能到达 SES 的请求属于临时失败，修复账号或权限后重试即可成功。
-  错误文本中只保留 SES 的错误代码。
+- 使用 `mail = ses` 时，SES 的 `MessageRejected`（内容被拒绝）属于永久拒绝。`TooManyRequestsException`（发送速率限制）、`SendingPausedException`、`MailFromDomainNotVerifiedException`、`AccountSuspendedException` 以及未能到达 SES 的请求属于临时失败，修复账号或权限后重试即可成功。错误文本中只保留 SES 的错误代码。
 - 使用 `mail = plugin` 时，由响应中的 [`outcome`](#a-plugin-mail--plugin) 决定。无法连接的插件或返回错误的插件属于临时失败，并计入 [`my.plugin.failures`](running.md)。错误文本中只保留结果和增强状态码，因此失败的原因要看插件的日志。
 - 从请求起超过时限（重置为 15 分钟，验证为 1 小时）的事务性邮件会不发送而直接完成。这样可以避免旧链接迟迟才送达；这不算失败。
 - 任务运行时如果已没有发送的理由（地址被抑制、期间已完成验证，或用户已失去该通知的权限或设置），它会不发送而直接完成。
 
-任务载荷中不包含邮件地址、正文或令牌，错误文本中也不包含。只保留 ID、任务类型和 SMTP 响应码。
-发送成功可以在每次运行的结构化 `job` 日志行（`my.job.type`）中跟踪。
+任务载荷中不包含邮件地址、正文或令牌，错误文本中也不包含。只保留 ID、任务类型和 SMTP 响应码。发送成功可以在每次运行的结构化 `job` 日志行（`my.job.type`）中跟踪。
 
 <!-- source: suppression-of-addresses-that-cannot-receive-email 18b4750f1531 -->
 ## 抑制无法接收邮件的地址
 
-当 SMTP 服务器表示收件人地址不存在（对 `RCPT TO` 返回扩展状态为 `5.1.x` 的 5xx）时，服务器会把该地址记录为硬退信，并停止向它发送。
-使用 `mail = plugin` 时，`OUTCOME_RECIPIENT_REJECTED` 会记录同样的硬退信，其他结果都不会。
-使用 `mail = smtp` 时，只记录发送时的这种拒绝。SMTP 服务器接收邮件之后才返回的异步退信，以及投诉反馈循环，都不会被接收。
-使用 `mail = ses` 时，SES 从不同步拒绝收件人，因此发送时不会记录任何内容；永久退信和投诉根据 SES 通知记录（[接收 SES 通知（SNS）](#receive-ses-notifications-sns)）。
+当 SMTP 服务器表示收件人地址不存在（对 `RCPT TO` 返回扩展状态为 `5.1.x` 的 5xx）时，服务器会把该地址记录为硬退信，并停止向它发送。使用 `mail = plugin` 时，`OUTCOME_RECIPIENT_REJECTED` 会记录同样的硬退信，其他结果都不会。使用 `mail = smtp` 时，只记录发送时的这种拒绝。SMTP 服务器接收邮件之后才返回的异步退信，以及投诉反馈循环，都不会被接收。使用 `mail = ses` 时，SES 从不同步拒绝收件人，因此发送时不会记录任何内容；永久退信和投诉根据 SES 通知记录（[接收 SES 通知（SNS）](#receive-ses-notifications-sns)）。
 
 | 种类 | 被停止的邮件 |
 | --- | --- |
