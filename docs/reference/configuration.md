@@ -2072,7 +2072,7 @@ File of the key of that client certificate of the `search` plugin.
 
 ### `plugin_search_timeout`
 
-Deadline of one call of the `search` plugin, less than `30s`.
+Deadline of one call of the `search` plugin, less than `30s`. The server stops a call after `10s` whatever this says.
 
 - Environment variable: `MY_PLUGIN_SEARCH_TIMEOUT`
 - Default: `10s`

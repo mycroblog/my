@@ -17,10 +17,11 @@ import (
 	"github.com/mycroblog/my/internal/app/uow"
 )
 
+// IndexCallTimeout bounds one call of the backend: the default worker runs one job at a time, so
+// a slow engine must not take the time of federation.inbox for long (ADR-0149 §7).
+const IndexCallTimeout = 10 * time.Second
+
 const (
-	// indexCallTimeout bounds one call of the backend: the default worker runs one job at a time,
-	// so a slow engine must not take the time of federation.inbox for long (ADR-0149 §7).
-	indexCallTimeout = 10 * time.Second
 	// syncAttempts bounds how many times one status is written in one run when the database keeps
 	// changing under it; after that the job retries.
 	syncAttempts = 3
@@ -254,7 +255,7 @@ func (s *Service) syncStatus(ctx context.Context, statusID string) error {
 
 // call runs one call of the backend with its deadline.
 func (s *Service) call(ctx context.Context, f func(ctx context.Context) error) error {
-	ctx, cancel := context.WithTimeout(ctx, indexCallTimeout)
+	ctx, cancel := context.WithTimeout(ctx, IndexCallTimeout)
 	defer cancel()
 	return f(ctx)
 }

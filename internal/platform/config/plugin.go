@@ -12,6 +12,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/mycroblog/my/internal/adapter/plugin/kind"
+	"github.com/mycroblog/my/internal/app/search"
 	"github.com/mycroblog/my/internal/app/translation"
 	"github.com/mycroblog/my/internal/domain/finance"
 	"github.com/mycroblog/my/internal/domain/identity"
@@ -34,20 +35,23 @@ func pluginFields() []field {
 			fields = append(fields, pluginBillingFields()...)
 		}
 		if k.Name == kind.Translator {
-			capTranslatorTimeout(fields, k)
+			capTimeout(fields, k, translation.ProviderTimeout) // the translation service stops one call of a provider
 			fields = append(fields, pluginTranslatorName())
+		}
+		if k.Name == kind.Search {
+			capTimeout(fields, k, search.IndexCallTimeout) // the search stops one call of its engine
 		}
 	}
 	return fields
 }
 
-// capTranslatorTimeout says in the timeout setting of the translator plugin that the translation service stops one call
-// of a provider earlier whatever the setting says.
-func capTranslatorTimeout(fields []field, k kind.Kind) {
+// capTimeout says in the timeout setting of a kind that the module that calls the plugin stops a call after bound
+// whatever the setting says.
+func capTimeout(fields []field, k kind.Kind, bound time.Duration) {
 	key := k.Key(kind.SuffixTimeout)
 	for i := range fields {
 		if fields[i].key == key {
-			fields[i].doc += " The server stops a call after `" + translation.ProviderTimeout.String() + "` whatever this says."
+			fields[i].doc += " The server stops a call after `" + bound.String() + "` whatever this says."
 		}
 	}
 }

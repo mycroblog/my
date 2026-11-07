@@ -12,8 +12,8 @@ syntax = "proto3";
 // drops, and never shows a post that it should not.
 //
 // The server calls every RPC from background jobs, which retry a failure and may send the same call twice, and Search
-// from the search of its API too, while a person waits. Each call lasts plugin_search_timeout at most. A write must show
-// in the next search.
+// from the search of its API too, while a person waits. Each call lasts plugin_search_timeout at most, and the server
+// waits 10 seconds at most whatever that setting says. A write must show in the next search.
 package my.plugin.search.v1;
 
 service SearchService {
