@@ -162,6 +162,9 @@ An instance setting that has never been set reads as its default, which is defin
 | [`payments_reconcile_interval`](#payments_reconcile_interval) | `MY_PAYMENTS_RECONCILE_INTERVAL` | `6h` | no | no |
 | [`payments_reconcile_max_requests`](#payments_reconcile_max_requests) | `MY_PAYMENTS_RECONCILE_MAX_REQUESTS` | `1000` | no | no |
 | [`search`](#search) | `MY_SEARCH` | `none` | no | no |
+| [`search_meilisearch_url`](#search_meilisearch_url) | `MY_SEARCH_MEILISEARCH_URL` | none | when `search = meilisearch` | no |
+| [`search_meilisearch_api_key`](#search_meilisearch_api_key) | `MY_SEARCH_MEILISEARCH_API_KEY` | none | no | yes |
+| [`search_meilisearch_index`](#search_meilisearch_index) | `MY_SEARCH_MEILISEARCH_INDEX` | `my_statuses` | no | no |
 | [`voice`](#voice) | `MY_VOICE` | `off` | no | no |
 | [`voice_p2p_max_participants`](#voice_p2p_max_participants) | `MY_VOICE_P2P_MAX_PARTICIPANTS` | `10` | no | no |
 | [`voice_sfu_max_participants`](#voice_sfu_max_participants) | `MY_VOICE_SFU_MAX_PARTICIPANTS` | `10` | no | no |
@@ -1330,6 +1333,31 @@ The search engine of the full-text search of statuses. The search of accounts an
 | --- | --- |
 | `none` | No full-text search: the server connects to no engine and enqueues no search job, and `GET /api/v1/instance` tells clients that the search is not available. |
 | `fake` | Test builds only: a stand-in index in the server's memory, for end-to-end tests and demonstrations. Only a binary built with the build tag `e2e_fakes` has it, and that binary refuses it unless `profile = development`; released binaries and images never have it ([build tags](build-tags.md)). It needs no other setting. |
+| `meilisearch` | A Meilisearch server (self-hosted or Meilisearch Cloud) at `search_meilisearch_url`, with `search_meilisearch_api_key`. The server creates the index `search_meilisearch_index` and its settings. The build tag `no_search_meilisearch` leaves it out. |
+
+### `search_meilisearch_url`
+
+The base URL of the Meilisearch server of `search = meilisearch`, such as `https://meilisearch.example.org` or `http://meilisearch:7700` on a private network. It holds no credentials: the key goes in `search_meilisearch_api_key`.
+
+- Environment variable: `MY_SEARCH_MEILISEARCH_URL`
+- Default: none
+- Required: when `search = meilisearch`
+
+### `search_meilisearch_api_key`
+
+The master key of the Meilisearch server, or an API key with the actions `search`, `documents.add`, `documents.delete`, `indexes.create`, `indexes.get`, `settings.update`, and `tasks.get` on `search_meilisearch_index`. Empty sends no key, for a server without a master key.
+
+- Environment variable: `MY_SEARCH_MEILISEARCH_API_KEY` or `MY_SEARCH_MEILISEARCH_API_KEY_FILE`
+- Default: none
+- Required: no
+
+### `search_meilisearch_index`
+
+The uid of the Meilisearch index of the posts, which the server creates when it does not exist: letters, digits, hyphens, and underscores. Servers that share a Meilisearch server need different ones.
+
+- Environment variable: `MY_SEARCH_MEILISEARCH_INDEX`
+- Default: `my_statuses`
+- Required: no
 
 ### `voice`
 

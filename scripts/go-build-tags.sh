@@ -21,7 +21,7 @@ sets=(
   "no_postgres,no_valkey,no_sns,no_ses,no_s3,no_gcs,no_pubsub,no_gcpkms,no_awskms,no_cloudtasks,no_otel,no_billing_aws,no_billing_gcp,no_payments_stripe,no_plugins"
   # AWS: PostgreSQL, the SNS broker, SES, the EMF metrics, AWS KMS, the Stripe payments, without the Sora voice chat.
   "no_sqlite,no_valkey,no_gcs,no_pubsub,no_gcpkms,no_cloudtasks,no_otel,no_billing_gcp,no_payments_payjp,no_voice_sora"
-  # Google Cloud: PostgreSQL, the Pub/Sub broker, Cloud KMS, Cloud Tasks, without the LiveKit voice chat.
+  # Google Cloud: PostgreSQL, the Pub/Sub broker, Cloud KMS, Cloud Tasks, without the LiveKit voice chat and Meilisearch.
   "no_sqlite,no_valkey,no_sns,no_ses,no_awskms,no_billing_aws,no_voice_livekit"
   # The test build of the end-to-end tests and the demonstration.
   "e2e_fakes"
@@ -57,6 +57,7 @@ excluded_packages() {
     no_payments_payjp) echo "$m/payment/payjp" ;;
     no_voice_livekit) echo "$m/voice/livekit" ;;
     no_voice_sora) echo "$m/voice/sora" ;;
+    no_search_meilisearch) echo "$m/search/meilisearch" ;;
     no_plugins) echo "$m/plugin/client $m/plugin/contract $m/billing/plugin $m/keymanager/plugin $m/mail/plugin $m/translator/plugin $m/media/plugin $m/hook/connect connectrpc.com/connect/v2" ;;
     no_otel) echo "$m/telemetry/otel $m/telemetry/otel/otlptest go.opentelemetry.io/otel/sdk/metric go.opentelemetry.io/otel/sdk/trace go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp" ;;
     e2e_fakes) ;; # adds the fakes and leaves nothing out

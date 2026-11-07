@@ -1005,8 +1005,29 @@ var schema = []field{
 		choices: []choice{
 			{value: "none", doc: "No full-text search: the server connects to no engine and enqueues no search job, and `GET /api/v1/instance` tells clients that the search is not available."},
 			{value: "fake", doc: "Test builds only: a stand-in index in the server's memory, for end-to-end tests and demonstrations. Only a binary built with the build tag `e2e_fakes` has it, and that binary refuses it unless `profile = development`; released binaries and images never have it ([build tags](build-tags.md)). It needs no other setting."},
+			{value: "meilisearch", doc: "A Meilisearch server (self-hosted or Meilisearch Cloud) at `search_meilisearch_url`, with `search_meilisearch_api_key`. The server creates the index `search_meilisearch_index` and its settings. The build tag `no_search_meilisearch` leaves it out."},
 		},
 		set: func(c *Config, v string) { c.Search = v },
+	},
+	{
+		key:          "search_meilisearch_url",
+		doc:          "The base URL of the Meilisearch server of `search = meilisearch`, such as `https://meilisearch.example.org` or `http://meilisearch:7700` on a private network. It holds no credentials: the key goes in `search_meilisearch_api_key`.",
+		requiredWhen: "when `search = meilisearch`",
+		check:        checkMeilisearchURL,
+		set:          func(c *Config, v string) { c.SearchMeilisearchURL = v },
+	},
+	{
+		key:    "search_meilisearch_api_key",
+		doc:    "The master key of the Meilisearch server, or an API key with the actions `search`, `documents.add`, `documents.delete`, `indexes.create`, `indexes.get`, `settings.update`, and `tasks.get` on `search_meilisearch_index`. Empty sends no key, for a server without a master key.",
+		secret: true,
+		set:    func(c *Config, v string) { c.SearchMeilisearchAPIKey = strings.TrimSpace(v) },
+	},
+	{
+		key:    "search_meilisearch_index",
+		doc:    "The uid of the Meilisearch index of the posts, which the server creates when it does not exist: letters, digits, hyphens, and underscores. Servers that share a Meilisearch server need different ones.",
+		defDoc: "`my_statuses`",
+		check:  checkMeilisearchIndex,
+		set:    func(c *Config, v string) { c.SearchMeilisearchIndex = v },
 	},
 	{
 		key: "voice",
@@ -1443,6 +1464,7 @@ func crossChecks(vals map[string]string, present map[string]bool) []Issue {
 		}
 	}
 	issues = append(issues, voiceChecks(vals, present)...)
+	issues = append(issues, searchMeilisearchChecks(vals, present)...)
 	if vals["errors_exporter"] == "sentry" && !present["errors_sentry_dsn"] {
 		issues = append(issues, Issue{Key: "errors_sentry_dsn", Missing: true, Message: "required when errors_exporter is sentry"})
 	}

@@ -215,6 +215,10 @@ type Config struct {
 	// Search is the search engine of the full-text search of statuses (ADR-0149 §3): "none" or a
 	// backend's name.
 	Search string
+	// The Meilisearch server of search = meilisearch (ADR-0149 §14).
+	SearchMeilisearchURL    string
+	SearchMeilisearchAPIKey string
+	SearchMeilisearchIndex  string
 	// PaymentsProvider is the payment provider of the supporters (ADR-0074 §5): "none" or a
 	// provider's name. PaymentsReconcileInterval and PaymentsReconcileMaxRequests bound the
 	// reconciliation with it (§4).
@@ -446,6 +450,9 @@ func (c *Config) LogValue() slog.Value {
 		slog.Duration("payments_reconcile_interval", c.PaymentsReconcileInterval),
 		slog.Int("payments_reconcile_max_requests", c.PaymentsReconcileMaxRequests),
 		slog.String("search", c.Search),
+		slog.String("search_meilisearch_url", c.SearchMeilisearchURL),
+		slog.String("search_meilisearch_api_key", redact(c.SearchMeilisearchAPIKey != "")),
+		slog.String("search_meilisearch_index", c.SearchMeilisearchIndex),
 		slog.String("voice", c.Voice),
 		slog.Int("voice_p2p_max_participants", c.VoiceP2PMaxParticipants),
 		slog.Int("voice_sfu_max_participants", c.VoiceMaxParticipants),
