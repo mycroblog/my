@@ -70,7 +70,10 @@ export const permissionCategories: readonly {
       "manage_login_providers",
     ],
   },
-  { category: "member", permissions: ["view_finance", "create_custom_emojis", "start_voice_rooms", "create_invites", "keep_posts_longer"] },
+  {
+    category: "member",
+    permissions: ["view_finance", "create_custom_emojis", "start_voice_rooms", "create_invites", "keep_posts_longer"],
+  },
 ];
 
 /** Every permission, in the order of the API's `Permission`. */
