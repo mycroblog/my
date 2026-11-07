@@ -27,8 +27,9 @@ import (
 	"github.com/mycroblog/my/internal/domain/graph"
 )
 
-// FederationHarness is one database under test: an empty database with the product schema, its
-// UnitOfWork, and the federation repository on it.
+// FederationHarness is what FederationRepositoryContract and FederationFlows need from a
+// database adapter: an empty database with the product schema, its UnitOfWork, and the
+// federation repository on it.
 type FederationHarness struct {
 	UnitOfWork uow.UnitOfWork
 	Federation appfederation.Repository
@@ -38,10 +39,11 @@ type FederationHarness struct {
 // The factory registers the cleanup of everything it creates with t.Cleanup.
 type FederationFactory func(t *testing.T, opts uow.Options) FederationHarness
 
-// FederationRepositoryContract verifies the federation repository of a database adapter, alone
-// and through the outbound use cases that drive it (federation.md §7): the outbound activities
-// and their lookups, the first document kept, one delivery per inbox, the state of remote
-// servers, the inboxes each visibility reaches (data-model §7), the Update and Delete that follow
+// FederationFlows verifies the outbound use cases of the federation module on a database adapter
+// (federation.md §7), the flows of ADR-0153 §1, which internal/flowtest/federation runs once on
+// SQLite; FederationRepositoryContract checks the repository's methods on every adapter. It
+// covers the outbound activities and their lookups, the first document kept, one delivery per
+// inbox, the state of remote servers, the inboxes each visibility reaches (data-model §7), the Update and Delete that follow
 // the Create, a fan-out run again without a delivery twice, the servers left out, the boosts that
 // are not recorded, the Update and Delete of a local actor (to its followers, and for the
 // Delete to every known shared inbox), the Update of a local actor's suspension and of its end
@@ -59,7 +61,7 @@ type FederationFactory func(t *testing.T, opts uow.Options) FederationHarness
 // pages of availability events, and an operator's clearing of a server. The other modules are
 // in-memory stand-ins; the fan-out reads its recipients in batches of two, so that every source
 // of recipients spans several jobs.
-func FederationRepositoryContract(t *testing.T, newHarness FederationFactory) {
+func FederationFlows(t *testing.T, newHarness FederationFactory) {
 	t.Helper()
 	cases := []struct {
 		name string

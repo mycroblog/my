@@ -15,7 +15,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/federation"
 )
 
-// contractAccountDomain is the domain of local handles in the federation contract, other than
+// contractAccountDomain is the domain of local handles in the federation flows, other than
 // the serving host, so that mentions show which one they use.
 const contractAccountDomain = "accounts.example"
 

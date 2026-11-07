@@ -31,7 +31,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/moderation"
 )
 
-// This file holds the cases of FederationRepositoryContract that cover one delivery
+// This file holds the cases of FederationFlows that cover one delivery
 // (federation.md §7.3): the classification of responses, the circuit breaker, the health of
 // remote servers and its availability events, the dead job after the retry schedule, and the
 // daily probe. The network is an in-memory HTTPClient that routes by host.
@@ -772,7 +772,7 @@ func (s *oneJobSource) Bury(_ context.Context, _ string, _ queue.Job, lastErr st
 	return nil
 }
 
-// ClaimJob implements queue.Source; the delivery contract drives a pull runner only.
+// ClaimJob implements queue.Source; the delivery flows drive a pull runner only.
 func (s *oneJobSource) ClaimJob(context.Context, string, string, time.Time, time.Duration) (queue.ClaimResult, error) {
 	return queue.ClaimResult{}, nil
 }
