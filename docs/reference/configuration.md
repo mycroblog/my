@@ -165,6 +165,7 @@ An instance setting that has never been set reads as its default, which is defin
 | [`translator_libretranslate_api_key`](#translator_libretranslate_api_key) | `MY_TRANSLATOR_LIBRETRANSLATE_API_KEY` | none | no | yes |
 | [`translator_google_project`](#translator_google_project) | `MY_TRANSLATOR_GOOGLE_PROJECT` | none | no | no |
 | [`translator_google_location`](#translator_google_location) | `MY_TRANSLATOR_GOOGLE_LOCATION` | `global` | no | no |
+| [`translator_aws_region`](#translator_aws_region) | `MY_TRANSLATOR_AWS_REGION` | none | no | no |
 | [`search`](#search) | `MY_SEARCH` | `none` | no | no |
 | [`translator_deepl_api_key`](#translator_deepl_api_key) | `MY_TRANSLATOR_DEEPL_API_KEY` | none | no | yes |
 | [`translator_deepl_url`](#translator_deepl_url) | `MY_TRANSLATOR_DEEPL_URL` | `https://api-free.deepl.com` for a key of the free plan, `https://api.deepl.com` otherwise | no | no |
@@ -1354,6 +1355,14 @@ The location of the requests of the provider `google`: `global`, or a location o
 
 - Environment variable: `MY_TRANSLATOR_GOOGLE_LOCATION`
 - Default: `global`
+- Required: no
+
+### `translator_aws_region`
+
+The AWS region of Amazon Translate, such as `us-east-1`. Setting it registers Amazon Translate as the translation provider `aws`, which the instance setting `translation_providers` enables ([translation providers](../operations/translation.md#amazon-translate)); the credentials come from the AWS SDK's default chain, such as the execution role. The build tag `no_translator_aws` leaves it out. Empty registers no such provider.
+
+- Environment variable: `MY_TRANSLATOR_AWS_REGION`
+- Default: none
 - Required: no
 
 ### `search`

@@ -1026,6 +1026,12 @@ var schema = []field{
 		set:    func(c *Config, v string) { c.TranslatorGoogleLocation = strings.TrimSpace(v) },
 	},
 	{
+		key:   "translator_aws_region",
+		doc:   "The AWS region of Amazon Translate, such as `us-east-1`. Setting it registers Amazon Translate as the translation provider `aws`, which the instance setting `translation_providers` enables ([translation providers](../operations/translation.md#amazon-translate)); the credentials come from the AWS SDK's default chain, such as the execution role. The build tag `no_translator_aws` leaves it out. Empty registers no such provider.",
+		check: checkTranslatorAWSRegion,
+		set:   func(c *Config, v string) { c.TranslatorAWSRegion = v },
+	},
+	{
 		key: "search",
 		doc: "The search engine of the full-text search of statuses. The search of accounts and hashtags uses the database and does not depend on this setting.",
 		def: "none",

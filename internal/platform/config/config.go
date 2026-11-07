@@ -252,6 +252,9 @@ type Config struct {
 	// location is the global one.
 	TranslatorGoogleProject  string
 	TranslatorGoogleLocation string
+	// TranslatorAWSRegion is the region of Amazon Translate; set, it registers the translation
+	// provider aws (ADR-0148 §15).
+	TranslatorAWSRegion string
 	// Voice is how the voice chat rooms connect, "off" for no voice chat (ADR-0101 §1), and the
 	// Voice* limits bound the rooms; zero is no limit, except for VoiceP2PMaxParticipants.
 	Voice                   string
@@ -454,6 +457,7 @@ func (c *Config) LogValue() slog.Value {
 		slog.String("translator_libretranslate_api_key", redact(c.TranslatorLibreTranslateAPIKey != "")),
 		slog.String("translator_google_project", c.TranslatorGoogleProject),
 		slog.String("translator_google_location", c.TranslatorGoogleLocation),
+		slog.String("translator_aws_region", c.TranslatorAWSRegion),
 		slog.String("payments", c.PaymentsProvider),
 		slog.String("payments_stripe_secret_key", redact(c.PaymentsStripeSecretKey != "")),
 		slog.String("payments_stripe_webhook_secret", redact(c.PaymentsStripeWebhookSecret != "")),

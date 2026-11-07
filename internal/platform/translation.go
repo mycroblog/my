@@ -31,7 +31,11 @@ func (a *App) setUpTranslation(ctx context.Context, cfg *config.Config, repo tra
 	if closeGoogle != nil {
 		a.translatorClosers = append(a.translatorClosers, closeGoogle)
 	}
-	registered := slices.Concat(opts.TranslationRegistered, plugin, libre, deeplTranslationProviders(cfg), google)
+	aws, err := awsTranslationProviders(ctx, cfg)
+	if err != nil {
+		return err
+	}
+	registered := slices.Concat(opts.TranslationRegistered, plugin, libre, deeplTranslationProviders(cfg), google, aws)
 	var providers translation.Providers = translation.ConfiguredProviders{
 		Registered: registered,
 		Settings: func(ctx context.Context) (translation.ProviderSettings, error) {
