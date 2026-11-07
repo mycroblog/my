@@ -588,8 +588,11 @@ export const invites: {
   ],
 };
 
-/** Announcements of the administrators, published to every local user. */
-export const announcements: readonly { key: string; title: string; text: string }[] = [
+/**
+ * Announcements of the administrators, published to every local user. One with `endedDaysAgo` showed for a week that
+ * ended that many days before the seeding: only the list of the announcements has it.
+ */
+export const announcements: readonly { key: string; title: string; text: string; endedDaysAgo?: number }[] = [
   {
     key: "announcement-welcome",
     title: "Welcome to My Demo! / ようこそ",
@@ -599,5 +602,11 @@ export const announcements: readonly { key: string; title: string; text: string 
     key: "announcement-maintenance",
     title: "Scheduled maintenance on Sunday",
     text: "Scheduled maintenance this Sunday, 02:00–03:00 UTC. Posting may be unavailable for a few minutes.",
+  },
+  {
+    key: "announcement-media-outage",
+    title: "Media uploads are back / 画像のアップロードが復旧しました",
+    text: "Uploading images and videos failed for about an hour. It works again; please retry what failed.\n\n画像と動画のアップロードが 1 時間ほど失敗していました。復旧したので、失敗したものはもう一度お試しください。",
+    endedDaysAgo: 14,
   },
 ];

@@ -629,11 +629,19 @@ class Seeder {
     for (const a of announcements) {
       if (existing.includes(a.text)) continue;
       await api.POST("/admin/announcements", {
-        body: { title: a.title, text: a.text, publish: true },
+        body: { title: a.title, text: a.text, publish: true, ...endedWindow(a.endedDaysAgo) },
         headers: { "Idempotency-Key": idempotencyKey(a.key) },
       });
     }
   }
+}
+
+/** The window of an announcement that showed for a week and ended `daysAgo` days ago, or none. */
+function endedWindow(daysAgo: number | undefined): { starts_at?: string; ends_at?: string } {
+  if (daysAgo === undefined) return {};
+  const day = 24 * 60 * 60 * 1000;
+  const end = Date.now() - daysAgo * day;
+  return { starts_at: new Date(end - 7 * day).toISOString(), ends_at: new Date(end).toISOString() };
 }
 
 /** The image of a person's avatar: a disc of their color on a lighter gradient. */
