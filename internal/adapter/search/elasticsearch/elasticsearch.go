@@ -122,16 +122,14 @@ func Open(ctx context.Context, o Options) (*Index, error) {
 // suffixes of the indexes behind it, and not starting with a dot, which marks system indexes.
 func CheckIndexName(name string) error {
 	const maxBytes = 200
-	bad := name == "" || len(name) > maxBytes || strings.ContainsAny(name[:1], "-_+.")
-	for _, r := range name {
-		if !(r >= 'a' && r <= 'z' || r >= '0' && r <= '9' || r == '-' || r == '_' || r == '.') {
-			bad = true
-		}
-	}
-	if bad {
+	if name == "" || len(name) > maxBytes || strings.ContainsAny(name[:1], "-_+.") || strings.ContainsFunc(name, isNotIndexNameRune) {
 		return fmt.Errorf("elasticsearch: the index name must be up to %d lowercase letters, digits, '-', '_', or '.', starting with a letter or digit", maxBytes)
 	}
 	return nil
+}
+
+func isNotIndexNameRune(r rune) bool {
+	return (r < 'a' || r > 'z') && (r < '0' || r > '9') && r != '-' && r != '_' && r != '.'
 }
 
 // document is the source of a document of the index.
@@ -316,10 +314,8 @@ func errorType(body []byte) string {
 	if json.Unmarshal(res.Error, &e) != nil || len(e.Type) > 100 {
 		return ""
 	}
-	for _, r := range e.Type {
-		if !(r >= 'a' && r <= 'z' || r >= '0' && r <= '9' || r == '_') {
-			return ""
-		}
+	if strings.ContainsFunc(e.Type, func(r rune) bool { return (r < 'a' || r > 'z') && (r < '0' || r > '9') && r != '_' }) {
+		return ""
 	}
 	return e.Type
 }

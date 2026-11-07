@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	testAPIKey   = "dGVzdC1rZXktaWQ6dGVzdC1rZXktc2VjcmV0"
+	testAPIKey   = "dGVzdC1rZXktaWQ6dGVzdC1rZXktc2VjcmV0" //nolint:gosec // G101: a made-up key of the test
 	testUser     = "my-user"
 	testPassword = "a-password-nobody-may-see"
 )
