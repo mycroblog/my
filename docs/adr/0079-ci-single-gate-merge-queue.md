@@ -3,12 +3,13 @@
 - Status: Accepted
 - Date: 2026-10-23
 - Deciders: @rosylilly
-- Issue: #1052, #553, #1064, #1638, #1674, #1734
+- Issue: #1052, #553, #1064, #1638, #1674, #1734, #2453
 
 ## Decision（決定）
 
 本検査（テストを含む重い検査）は Merge Queue に一本化し、PR はその PR のファイルだけで結果が決まる軽い検査にする。
-遅い検査はリリースを作るときの関門にし、nightly と手動でも回す。ジョブはツールチェーンと種類ごとに数個にまとめ、ジョブの中を並列で埋める。
+遅い検査は nightly と手動で回し、リリースは遅い検査を通ったコミットを昇格させる。ジョブはツールチェーンと種類ごとに数個にまとめ、ジョブの中を並列で埋める。
+1 つの保証は、結果を決められるいちばん早くて安い層で 1 回だけ確かめる（§18）。
 
 ### 1. 守るものと防ぐ場所
 
@@ -20,9 +21,10 @@ Merge Queue の全検査が、`main` に入る前の唯一の関門である。
 | PR の `check`（preflight） | `pull_request` | その PR のファイルだけで結果が決まり、重ねても変わらないもの（§2） | ○ |
 | PR の lint | `pull_request` | golangci-lint（PR が変えたモジュールの全体。§3）、スキーマを変えた PR の `db-lint`（ADR-0023） | ○ |
 | PR の Docker | `pull_request`（Docker の文脈が変わったとき） | Docker Compose の smoke test（amd64。§4） | ○ |
-| Merge Queue の `check`（本検査） | `merge_group` | 統合した状態で、変わった文脈のコンパイル・型・vet・テスト・生成物（§5） | ○ |
-| main への push | `push` | 検査はしない。キャッシュを作るジョブだけ（§7） | — |
-| 遅い検査 | リリースの関門・nightly・手動 | E2E（全体）・実 PostgreSQL・stream の契約・連合・arm64 と amd64 のイメージ・golangci-lint（全体）・ビルドタグの組み合わせ・CodeQL（§8） | リリースでは○ |
+| Merge Queue の `check`（本検査） | `merge_group` | 統合した状態で、変わった文脈のコンパイル・型・vet・テスト・生成物。client が変わったときは E2E の流れの spec、アダプタが変わったときはそのアダプタのコンテナの契約（§5） | ○ |
+| main への push | `push` | 関門にはしない。キャッシュを作るジョブだけ。Go のキャッシュはテストの結果も含めて作る（§7） | — |
+| 遅い検査 | nightly・手動 | E2E のロケールと幅の spec・コンテナの契約（全部）・連合・arm64 と amd64 のイメージ・golangci-lint（全体）・ビルドタグの組み合わせ・CodeQL（§8） | 落ちたら止める |
+| リリースの関門 | `release.yml` | リリースするコミットで成功した遅い検査があること、なければ遅い検査。upgrade・restore-drill・イメージは毎回（§8） | ○ |
 
 Merge Queue に入るのは PR の `check` を通ったものだけなので、PR だけで回す検査も main に入る前に一度は通っている。
 
@@ -68,11 +70,13 @@ Merge Queue に入るのは PR の `check` を通ったものだけなので、P
 | `client-test`（2 シャード） | Vitest（`app/web`・`app/ui`・`tools/i18n`）。`app/web` は `vitest --shard=<i>/2` で 2 ジョブに分ける | ui・web・api・i18n |
 | `repo` | agentkit の検査と文脈の地図、ADR の番号の重複（ADR-0081）、手元と CI の組み合わせのずれ（§11）。site の文脈が変わったときは、ドキュメントサイトのビルド（ADR-0150 §7）と `app/docs` の `tsc`・Oxlint・knip。`app/docs` は site だけを選び、client の文脈を選ばない | 常に（サイトの検査は site） |
 
+- client の文脈（ui・web・api・i18n）が変わったグループでは、E2E の操作の流れの spec を 1 プロジェクト（ADR-0015 §1）で回す。ジョブ数が同時 20 ジョブの上限に収まるように、シャードの数を決める。
+- アダプタの文脈が変わったグループでは、そのアダプタのコンテナの契約（`postgres-contract`・`stream-contract`・`blob-contract`・`voice-contract`・`search-contract`・`mail-integration`）を回す。1 つのジョブの parallel のステップにまとめ、変わっていないアダプタの契約は回さない。
 - ビルドタグの組み合わせ（アダプタを外したビルド）は Merge Queue で回さず、遅い検査で回す。組み合わせが壊れるのはアダプタやビルドタグを変えたときに限られ、マージのたびに確かめる必要はない。リリースの前には必ず通る。
 - `client-test` を初めから 2 つに分けるのは、`web-test` だけで 242 / 274 秒（中央値 / p90）かかり、Merge Queue の最長のジョブになるからである。
   Vitest 5.0.5 の `--shard <index>/<count>` で分ける（`vitest --help`、2026-10-23 確認）。
 - Merge Queue で同時に組むグループは最大 2（`max_entries_to_build: 2`）、1 回にマージするのは最大 5（`max_entries_to_merge: 5`）にする（`.github/rulesets/protect-main.json`）。グループが増えると同時 20 ジョブを使い切り、PR の待ちが延びるからである。
-  1 グループのジョブは最大 6 なので、Merge Queue が同時 20 ジョブのうち 12 を超えて使うことはない。
+  1 グループのジョブは最大 7（コンテナの契約のジョブを含む）なので、Merge Queue が同時 20 ジョブのうち 14 を超えて使うことはない。
 - PR の `check` を本検査にしたいとき（外の貢献者の PR を早めに確かめる、Merge Queue で落ちた原因を PR で調べる）は、PR に `ci:full` のラベルを付ける。そのときだけ、PR でも Merge Queue と同じジョブを回す。
 
 ### 6. 必須チェックとスキップ
@@ -88,28 +92,29 @@ Merge Queue に入るのは PR の `check` を通ったものだけなので、P
 
 ### 7. main への push
 
-- 検査は回し直さない。main のコミットは、Merge Queue で検査したマージグループの head そのものである。
+- 関門にはしない。main のコミットは、Merge Queue で検査したマージグループの head そのものである。
 - `main.yml` は、PR と Merge Queue が復元するキャッシュだけを作る。キャッシュを作れるのは main だけである。
   実行は、そのブランチと既定のブランチで作られたキャッシュしか復元できない。マージグループは `gh-readonly-queue/main/...` という自分のブランチで動くので、
   そこで保存したキャッシュはほかのグループや PR から使えない（[Dependency caching](https://docs.github.com/en/actions/reference/workflows-and-actions/dependency-caching)、2026-10-23 確認）。
-- Go のキャッシュは、空の `GOCACHE` から作り直して保存する（前のキャッシュを復元して足さない）。これでキャッシュの大きさを 1 回のビルドの分に保つ。
-  キーは `go.sum`・`tools/go.sum`・Go の版・日付にする。保存するのは、そのキーのキャッシュがまだないときだけにする。
+- Go のキャッシュは、テストの結果も含めて作る。マージのたびに `go test ./...` を回し、Go のテストの結果のキャッシュによって、Merge Queue と PR では変更の影響を受けたパッケージのテストだけが走るようにする。
+  キーはコミットにし、前のコミットのキャッシュを復元して足していく。大きさが上限（リポジトリで 10 GB）に近づく前に、定期的に空から作り直す。
+  `go test` が落ちてもマージは止まらない（関門は Merge Queue である）。落ちたことは nightly と同じ形で知らせる（§8）。
+  キャッシュが効くのは、パッケージの境界が変更の影響範囲に沿っているときに限る。テストの責務を分ける（§18）までは、今の形（空の `GOCACHE` から日付をキーに作るビルドの結果）のままにする。
   Bun のキャッシュは lockfile をキーにする。
 - Go のキャッシュには、復元するジョブが読むものだけを、そのジョブと同じ設定（`CGO_ENABLED=0`。cgo の設定はビルドキャッシュのキーに入る）で、1 つずつ順に作る。
-  モジュール、パッケージと Go のツールのビルド、テストのバイナリ、`go vet` の結果、agentkit のビルド、golangci-lint の解析の結果である。
-  検査は回さない（golangci-lint は指摘があっても失敗させない）。ライセンスや `go mod tidy` のように何も残さない検査を回したり、検査を並列に回して CPU を取り合わせたりしない。
+  モジュール、パッケージと Go のツールのビルド、テストのバイナリ（テストの責務を分けた後はテストの結果も）、`go vet` の結果、agentkit のビルド、golangci-lint の解析の結果である。
+  golangci-lint は指摘があっても失敗させない。ライセンスや `go mod tidy` のように何も残さない検査を回したり、検査を並列に回して CPU を取り合わせたりしない。
 - CodeQL は main への push では回さず、nightly（`slow-suite.yml` の経由で毎日）・リリースの関門・手動で回す。
 
-### 8. 遅い検査: リリースの関門・nightly・手動
+### 8. 遅い検査: nightly・手動・リリースの関門
 
-- 遅い検査の組（E2E の全体〈`matrix: full`、8 シャード〉、`federation-live`、`postgres-contract`、`stream-contract`、`mail-integration`、`voice-contract`、`blob-contract`、amd64 と arm64 のイメージと smoke test、`upgrade`、`restore-drill`、golangci-lint の全体とビルドタグの組み合わせ、CodeQL）を、1 つの再利用ワークフロー `slow-suite.yml` にまとめる。
-- **リリースの関門**: リリースは `release.yml`（`workflow_dispatch`、入力は版）だけが作る。`release.yml` は、指定したコミットで `slow-suite.yml` を回す。
-  すべて通ったときだけ、そのコミットにタグを打ち、GitHub Release を下書きで作る。成果物（イメージの公開・リリースノート）は M5（#30）が足す。
+- 遅い検査の組（E2E のロケールと幅の spec、`federation-live`、`postgres-contract`、`stream-contract`、`mail-integration`、`voice-contract`、`blob-contract`、`search-contract`、amd64 と arm64 のイメージと smoke test、`upgrade`、`restore-drill`、golangci-lint の全体とビルドタグの組み合わせ、CodeQL）を、1 つの再利用ワークフロー `slow-suite.yml` にまとめる。コンテナの契約は Merge Queue でも、そのアダプタが変わったときに回る（§5）。nightly ではすべてを回し、アダプタを変えずに依存の更新で壊れた分を拾う。
 - **nightly**: `nightly.yml` は `slow-suite.yml` を毎日 18:00 UTC に回す。ただし、前回成功した nightly から main が動いていなければ回さない。GitHub の混雑で 2 時間ほど遅れて起動することがあるが、退行を 1 日以内に見つけるには足りる。
-- **手動**: `slow-suite.yml` と各ワークフロー（`web-e2e.yml` など）は、`workflow_dispatch` で任意のブランチに回せる。E2E の部分集合（`matrix: pr`）は手動でだけ回す。
-- **E2E の頻度**: main への push ごとの E2E はやめる。PR でも自動では回さない（パスやラベルによる起動も持たない）。
-  E2E に触れる PR では、作者が `scripts/task.sh web:e2e` か `web-e2e.yml` を手で回す。並行の作業では、E2E の失敗をマイルストーンの終わりにまとめて直す（workflow.md §9）。
-  v0 のあいだは main が一時的に E2E で落ちることを許す。見つけたら、壊した PR を特定して直す PR を出す。
+- **赤は止める合図**: nightly が落ちたら、落ちたジョブと前回緑のコミットからの差分を書いた issue を自動で起こす。同じ失敗が続く間は同じ issue に追記し、緑に戻ったら閉じる。main が落ちたままの状態を許す期間は設けない。直すまでは、そのマイルストーンのほかの作業より先にする（workflow.md の Failures on main）。retry で通ったテストは flaky の候補として集計して知らせる。
+- **リリースの関門**: リリースは `release.yml`（`workflow_dispatch`、入力は版）だけが作る。`release.yml` は、リリースするコミットで成功した遅い検査の組（nightly のもの、または手で回した `slow-suite.yml`）があれば、それを関門の結果として使う。なければそのコミットで `slow-suite.yml` を回す。部分的な実行や別のコミットの結果は数えない。
+  `upgrade` と `restore-drill` は、そのコミットのイメージで確かめるので、リリースでは毎回回す。すべて通ったときだけ、そのコミットにタグを打ち、GitHub Release を下書きで作る。
+- **手動**: `slow-suite.yml` と各ワークフロー（`web-e2e.yml` など）は、`workflow_dispatch` で任意のブランチに回せる。
+- **E2E の頻度**: 操作の流れの spec は、client が変わったマージグループで回す（§5）。ロケールと幅の spec は nightly で回す。PR では自動では回さない（パスやラベルによる起動も持たない）。E2E に触れる PR では、作者が `scripts/task.sh web:e2e` か `web-e2e.yml` を手で回せる。
 
 ### 9. E2E の並列化
 
@@ -151,7 +156,8 @@ report（1 ジョブ、if: always()）: blob を集めて playwright merge-repor
 ### 12. 覆す条件
 
 - Merge Queue で落ちて外れる PR が週に数件を超えるなら、本検査の一部（コンパイル・型検査）を PR にも戻す。`ci:full` の使い方と preflight の範囲も見直す。
-- リリースの関門で見つかる退行が、直前のマイルストーンの作業に埋もれて直しにくいなら、nightly を必須にするか、E2E の部分集合を Merge Queue に入れる。
+- Merge Queue の E2E の流れの spec が律速になり、グループの wall の中央値が 10 分を超えるなら、シャードを増やすか、流れの spec を見直す。
+- nightly の自動の issue が、同じ flaky のテストで繰り返し開くなら、retry で通ったテストを自動で隔離する仕組みを考え直す。
 - 有料のプラン、大きな runner や self-hosted runner に移り、同時実行の上限が問題でなくなったら、PR でも本検査を回すことや、E2E の部分集合を Merge Queue に入れることを考え直す。
 - 重ねて初めて壊れる種類の失敗が、Merge Queue で回さない検査（`ui-test`・`docker-smoke` など）で main に繰り返し入るなら、その検査を Merge Queue に戻す。
 - `parallel` のステップが GitHub-hosted runner で期待どおりに動かない（ログが分かれない、失敗が拾えない）なら、ジョブを検査ごとに分けるか、ジョブの中身を集約タスクの呼び出しに戻す。
@@ -211,6 +217,15 @@ CI から Claude API を使うジョブはすべて Workload Identity Federation
 
 WIF は GitHub の OIDC のトークンを短い有効期間の Anthropic のアクセストークンに交換する仕組みである（2026-10-28 に [Use WIF with GitHub Actions](https://platform.claude.com/docs/en/manage-claude/wif-providers/github-actions) で確認）。
 
+### 18. 検査の配置の原則
+
+- 1 つの保証は、結果を決められるいちばん早くて安い層で、1 回だけ確かめる。別の層でもう一度回すのは、その層でしか分からないもの（統合した状態、実際のインフラ、リリースの成果物）に限る。
+- テストの範囲は、変更の影響範囲で決める。Go では、パッケージの依存とテストの結果のキャッシュに任せる。そのため、パッケージの境界をテストの責務の境界にする: モジュール（`internal/app/<module>`）の変更で走るテストは、そのモジュールとその利用者のものに限る。
+  集約点（sqlc の生成物、`schema` の埋め込み、DB アダプタ、`pkg/testkit`、`internal/platform` の結合テスト）をどう分けるかは、#2454 のスパイクで決め、その結果を ADR にする。
+- 組み立ての層（`cmd/my`・`internal/platform`）のテストは、ほぼ全体に依存するので毎回走ってよい。その代わり、合わせて Merge Queue の最長のジョブに収まる速さに保つ。
+- 遅い層の赤は止める合図にする（§8）。
+- リリースは、検査済みのコミットを昇格させる（§8）。
+
 ## 経緯
 
 関係する要件は NFR-DEV-1（1 つのコマンドで検査が走る）と NFR-DEV-2（外部サービスなしで検査が完結する）。
@@ -236,6 +251,10 @@ UI のプレビュー（§13〜§16）は、ADR-0110 の批評のサイクル（
 
 Claude API の認証（§17）は、ADR-0015 が API キーを environment に置くとしていたものを、決定者の求めで WIF に変えた。
 
+その後、#2119（`cmd/my` のテストが 600 秒の上限に迫る）を発端に、CI の全体を計測した（#2463、2026-11-07）。リリースは、手順で緑を確かめた nightly と同じ遅い検査を回し直していた（runner 約 245 分）。full nightly は 14 回中 7 回落ちていて、v0 の間は E2E の赤を許していたので、リリースの直前にまとめて直す形になっていた。これは §12 の覆す条件の 1 つ（リリースの関門で見つかる退行が直前の作業に埋もれて直しにくい）にあたる。
+E2E は 364 テストを 20 プロジェクトで回し、遅い検査の runner 時間の 70% を使っていたが、ロケールと幅の見た目は画面のストーリー（§13）がすでに PR で見ていた。Merge Queue の `go test ./...` では、テストの結果のキャッシュが 1 つも効いていなかった。それでも、キャッシュだけを入れても、Go に触れた PR の 98% で重いテストが走る。モジュールの依存に循環はないが、集約点が全モジュールを 1 つにまとめるからである。
+そこで、検査の配置の原則（§18）を決め、リリースを昇格の形にし、nightly の赤を止める合図にし、E2E の流れの spec とアダプタのコンテナの契約を Merge Queue に入れ、main でテストの結果のキャッシュを作ることにした（キャッシュはテストの責務を分けた後で効く）。
+
 ## 採らなかった案
 
 - 今のまま PR と Merge Queue の両方で本検査を回す: PR で全部の結果が分かるが、同じ検査を 2 回回し、runner の取り合いでどちらも遅くなる。
@@ -243,6 +262,10 @@ Claude API の認証（§17）は、ADR-0015 が API キーを environment に�
 - Merge Queue をやめる: 一番単純で待ちの列もないが、重ねて壊れた main は並行で動くエージェント全員を止める。実測では本物の重ね合わせの失敗が 3 日で 1 回あった。
 - 遅い検査を main への push ごとに、取り消さず回す: 退行に早く気づくが、マージの多い日は runner を使い続け、workflow.md §9 の並行の作業では結果がすぐには使われない。
 - 遅い検査を nightly だけにする: 一番安いが、リリースの直前に確かめる仕組みがない。
+- リリースのたびに遅い検査の組を回し直す: 直前の nightly とリリースの間に入ったコミットも必ず確かめられるが、同じコミットでは同じ結果を得るために runner 約 245 分と 30 分を使う。昇格の形でも、緑の結果がないコミットでは回すので、保証は変わらない。
+- v0 の間は main が E2E で落ちることを許す: 並行の作業を止めないが、赤が常態になり、退行がリリースの直前にまとまる。
+- テストの結果のキャッシュだけを入れ、パッケージの構成は変えない: 一番安いが、集約点のために、ほぼすべての PR で重いテストが走り、時間が縮まない。
+- E2E を幅 × ロケールのマトリクスのまま、シャードを増やす: 組み合わせの漏れがないが、同じ不具合が 20 回落ち、見た目はストーリーと重なる。
 - 文脈ごとの 1〜2 ジョブ（PR で最大約 14 ジョブ）のまま: 落ちた文脈がジョブ名で分かるが、ジョブごとの準備が足し上がり、同時 20 ジョブを取り合う。
 - 文脈ごとの独立したワークフローに `paths` を付ける: 文脈ごとに読め回せるが、スキップで必須チェックが Pending のまま残り、`merge_group` にはパスのフィルタがない。
 - E2E を 1 ジョブのまま回す: runner の消費は最も少ないが、全体で 45〜49 分かかる。
@@ -260,7 +283,9 @@ Claude API の認証（§17）は、ADR-0015 が API キーを environment に�
 
 - 良い影響:
   - 本検査は、統合した状態に対して 1 回だけ回る。PR の結果は 2 分以内に返る。並行のマシンが検査で詰まらない。
-  - main への push と CodeQL が、検査のための runner を使わなくなる。
+  - CodeQL は main への push で runner を使わない。main への push は、キャッシュを作るためだけに runner を使う。
+  - リリースは、同じコミットで緑の遅い検査があれば、それを回し直さない。
+  - nightly の赤が自動で issue になり、放置されない。
   - リリースは、遅い検査をすべて通ったコミットからしか作れない。
   - Actions の画面で、検査ごとの所要時間とログが見え、失敗したステップの名前が落ちた検査の名前になる。
   - 決定者が PR ごとに、画面の状態と動きをブラウザで見てコメントでき、変わったストーリーの一覧がレビューの順になる。画面のストーリーは ADR-0110 の L3 と L4 の入力にも使える。
@@ -268,7 +293,9 @@ Claude API の認証（§17）は、ADR-0015 が API キーを environment に�
 - 悪い影響・トレードオフ:
   - 自分の PR の中で閉じた失敗も、Merge Queue で初めて見つかることが増える。落ちた PR は外れ、同じグループの後ろの PR が組み直しになる。
   - 外の貢献者の PR は、`ci:full` を付けない限り、Merge Queue まで型やテストの結果が分からない。
-  - E2E の退行が main に入ってから見つかるまでが、nightly の最長 1 日になる。実 PostgreSQL も同じである。
+  - E2E のロケールと幅の退行が main に入ってから見つかるまでが、nightly の最長 1 日になる。流れの spec とコンテナの契約は、該当する変更なら Merge Queue で見つかる。
+  - client を変えたマージグループは、E2E の流れの spec の分だけ遅くなり、runner を多く使う。
+  - main への push のたびに `go test ./...` を回すので、main の runner の使用量が増える。テストの責務を分けるまでは、キャッシュの効果が小さい。
   - キャッシュを日付で作り直すので、日中に変わったパッケージは Merge Queue で毎回ビルドし直す。
   - `scripts/changed-contexts.sh` の判定に Merge Queue が頼る。
   - E2E のシャードは準備の時間の分だけ runner を多く使う。

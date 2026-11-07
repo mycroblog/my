@@ -4,9 +4,7 @@ package main
 
 import (
 	"bytes"
-	"database/sql"
 	"encoding/base64"
-	"path/filepath"
 	"strings"
 	"testing"
 
@@ -15,22 +13,14 @@ import (
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/identity"
 	"github.com/mycroblog/my/internal/platform/config"
-	"github.com/mycroblog/my/schema"
+	"github.com/mycroblog/my/pkg/testkit/sqlitetest"
 )
 
 // newAdminEnv points the configuration at a new SQLite database with the product schema applied
 // and returns the database path.
 func newAdminEnv(t *testing.T) string {
 	t.Helper()
-	path := filepath.Join(t.TempDir(), "my.db")
-	raw, err := sql.Open("sqlite", path)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if _, err := raw.ExecContext(t.Context(), schema.SQLite); err != nil {
-		t.Fatalf("apply schema: %v", err)
-	}
-	_ = raw.Close()
+	path := sqlitetest.NewFile(t)
 	t.Setenv(config.EnvConfigFile, "")
 	t.Setenv(config.EnvPrefix+"HOST", "social.example")
 	t.Setenv(config.EnvPrefix+"DATABASE", "sqlite")

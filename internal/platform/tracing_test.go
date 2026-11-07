@@ -6,20 +6,18 @@ import (
 	"bytes"
 	"context"
 	"crypto/rand"
-	"database/sql"
 	"encoding/base64"
 	"encoding/json"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
-	"path/filepath"
 	"slices"
 	"strings"
 	"testing"
 
 	"github.com/mycroblog/my/internal/app/queue"
 	"github.com/mycroblog/my/internal/platform/config"
-	"github.com/mycroblog/my/schema"
+	"github.com/mycroblog/my/pkg/testkit/sqlitetest"
 )
 
 // The span attributes that ADR-0055 §16 allows.
@@ -38,16 +36,7 @@ const (
 // which handler runs.
 func newTracedApp(t *testing.T, env map[string]string, handler queue.Handler) (*App, *bytes.Buffer) {
 	t.Helper()
-	dir := t.TempDir()
-	path := filepath.Join(dir, "my.db")
-	db, err := sql.Open("sqlite", path)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if _, err := db.ExecContext(t.Context(), schema.SQLite); err != nil {
-		t.Fatal(err)
-	}
-	_ = db.Close()
+	path := sqlitetest.NewFile(t)
 	kek := make([]byte, 32)
 	_, _ = rand.Read(kek)
 	full := map[string]string{

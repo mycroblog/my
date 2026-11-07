@@ -3,7 +3,7 @@
 - Status: Accepted
 - Date: 2026-10-16
 - Deciders: @rosylilly
-- Issue: #14, #453, #1674, #1712, #1720
+- Issue: #14, #453, #1674, #1712, #1720, #2453
 
 ## Decision（決定）
 
@@ -14,12 +14,12 @@
 | レベル | 対象 | 実行環境 | 実行タイミング |
 | --- | --- | --- | --- |
 | Unit | domain / application（フェイクのポート使用） | ローカル・CI | 本検査 |
-| Contract | 各ポートの全アダプタ（同一スイート） | SQLite in-memory / pgmem（§3）/ PG（コンテナ）/ Garage（S3 互換。`pkg/testkit/s3test`）/ Floci（SNS・SQS。ADR-0050 §5）/ Cloud Tasks エミュレータ | 本検査は SQLite・pgmem（§3）・メモリの偽物で回す。コンテナの契約（`postgres-contract`・`stream-contract`・`blob-contract`・`voice-contract`・`mail-integration`）は遅い検査。クラウド実体が必要なものは nightly |
+| Contract | 各ポートの全アダプタ（同一スイート） | SQLite in-memory / pgmem（§3）/ PG（コンテナ）/ Garage（S3 互換。`pkg/testkit/s3test`）/ Floci（SNS・SQS。ADR-0050 §5）/ Cloud Tasks エミュレータ | 本検査は SQLite・pgmem（§3）・メモリの偽物で回す。コンテナの契約（`postgres-contract`・`stream-contract`・`blob-contract`・`voice-contract`・`search-contract`・`mail-integration`）は、そのアダプタが変わったときの本検査と、遅い検査（全部）。クラウド実体が必要なものは nightly |
 | Build matrix | `CGO_ENABLED=0` で linux/amd64・linux/arm64 をビルド、ビルドタグでアダプタを除外してもビルドできる | CI | `CGO_ENABLED=0` のビルドは本検査。ビルドタグの組み合わせと arm64 のイメージは遅い検査 |
 | API conformance | OpenAPI スキーマとサーバー実装・生成クライアントの一致 | CI | 本検査 |
 | Federation fixtures | 実サーバー由来の JSON を入力にした受信・生成の回帰テスト | CI | 本検査 |
 | Federation live | docker compose で Mastodon / GoToSocial 等と実際に連合 | CI | 遅い検査 |
-| E2E (web) | Playwright。`en`, `ja`, 疑似ロケール `en-XA`, `ar-XB` | CI | 遅い検査（全体）。部分集合は手動。PR と main への push では回さない |
+| E2E (web) | Playwright。操作の流れの spec は `en` の 1 プロジェクト。ロケールで結果が変わる挙動（言語の選択、`dir="rtl"`、日付と数値の書式、サーバーが描くページの翻訳、欠けた翻訳）と幅で振る舞いが変わる挙動は、専用の spec をそのロケール・幅でだけ回す。ロケールと幅による見た目と axe は画面のストーリー（ADR-0079 §13）が受け持つ | CI | 流れの spec は client が変わったときの本検査。ロケールと幅の spec は遅い検査。PR と main への push では回さない |
 | Deploy smoke | 各ターゲットへデプロイしてヘルスチェック + 投稿 | 実クラウド | nightly / リリース前 |
 
 ### 2. 検査の原則
@@ -35,8 +35,9 @@
   - テストごとのデータベースは、スキーマを当てたテンプレートの複製（`CREATE DATABASE ... TEMPLATE`）で作る
   - サーバーは環境変数で選ぶ。`TEST_POSTGRES_URL` を指定するとその実サーバー、指定しなければ `TEST_POSTGRES` が `pgmem`（既定）なら pgmem、`container` なら testcontainers-go のコンテナ
 - 本検査の契約テスト（`scripts/task.sh go:test`、ジョブ `server-test`）は pgmem で回し、Docker を前提にしない
-- コンテナの PostgreSQL での契約テスト（`scripts/task.sh go:test-postgres`、ジョブ `postgres-contract`）は、遅い検査で回す
-  - 同じテストを、`TEST_POSTGRES=container` で流す
+- コンテナの PostgreSQL での契約テスト（`scripts/task.sh go:test-postgres`、ジョブ `postgres-contract`）は、pgmem とコンテナで結果が変わりうるものに絞る
+  - pgmem は PostgreSQL 本体（PGlite）なので、SQL の意味は本検査で確かめている。コンテナで分かるのは、ネットワーク越しの接続、接続プール、複数の接続・プロセスの間の並行性（`SKIP LOCKED`・アドバイザリーロック・`LISTEN/NOTIFY`）、タイムアウト、pgmem と本番の版の差である
+  - 絞ったテストを `TEST_POSTGRES=container` で流す。PostgreSQL のアダプタが変わったときの本検査と、遅い検査で回す（ADR-0079 §5・§8）
   - ADR-0003 の契約テストの PostgreSQL の頻度は、この節が決める
 - スキーマの検査（`scripts/task.sh db:check`）は、本物の PostgreSQL と Atlas で本検査に回す
 - pgmem のテストごとの fork と `Reset` は使わない
@@ -192,6 +193,8 @@ ADR-0110 §7 は L4 を PR の前に行うと決めていたが、並列の作�
 
 デモ環境は当初 Web Push を設定しなかったが、決定者の求めで検討した。ブラウザの購読の宛先（FCM）に CI の headless のブラウザは届かず、サーバーの送信は SSRF ガードがループバックを拒み、endpoint は領域の規則（`notification.ErrInvalidPushEndpoint`）で `https` に限り、Service Worker の `push` の処理は本物のブラウザで通っていなかった。FR-206、FR-210、ADR-0086 を本番を弱めず本番と同じ経路で通すため、§9 から §14 を決めた。決定者はプッシュサービスを自前の偽物、SSRF ガードの例外を開発用プロファイルに限るもの、fake の置き場所を `e2e_fakes` のサブコマンドとした。
 
+E2E はすべての spec を幅 5 × ロケール 4 の 20 プロジェクトで回していた。364 テストを約 7,280 回実行して遅い検査の runner 時間の 70% を使い、1 つの不具合が 20 回ずつ落ちていた。幅やプロジェクトで結果が変わる spec は 81 のうち 18 で、ロケールと幅の見た目は画面のストーリーが PR で見ていた。そこで、操作の流れを 1 プロジェクトに、ロケールと幅を固有の挙動の spec に分けた（§1）。同じ計測で、コンテナの PostgreSQL の契約が、pgmem で回したのと同じテストを繰り返していたので、pgmem で分からないことに絞った（§3、#2453）。
+
 ## 採らなかった案
 
 - PostgreSQL をコンテナのまま: 本物そのものだが、129 秒かかり Docker を要し、起動の失敗で落ちる。
@@ -208,6 +211,8 @@ ADR-0110 §7 は L4 を PR の前に行うと決めていたが、並列の作�
 - [marc1706/web-push-testing](https://github.com/marc1706/web-push-testing): 必要な機能を持ち MIT で自前のコードが要らないが、Node と npm の依存を足し、HTTP だけで待ち、`aud` と `exp` の検査は要検証で、保守者は 1 人（2026-10-28 に GitHub の API とソースで確認）。[web-push-testing-service](https://github.com/GoogleChromeLabs/web-push-testing-service) はアーカイブ済み。
 - ブラウザのフラグで宛先を変える: 差し替えなしで本物の購読の流れを通せるが、GCM・MCS か autopush のプロトコルを話す必要があり（要検証）、作るものがずっと大きい。
 - `http_allow_private_networks = true` をデモ環境で使う: 鍵を増やさずすぐ使えるが、取得・リンクのプレビュー・メディアまでループバックに届き、必要な範囲より広い。
+- E2E を幅 × ロケールのマトリクスのまま回す: 組み合わせの漏れがないが、流れの不具合が 20 回落ち、見た目の確認はストーリーと重なる。
+- コンテナの PostgreSQL で契約テストを全部回し続ける: pgmem との差をすべて拾えるが、差の出ないテストに毎回 9 分ほど使う。
 
 ## Consequences（影響）
 

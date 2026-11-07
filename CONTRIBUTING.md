@@ -137,7 +137,7 @@ step.
   `ci:full` to the pull request.
 - Pull requests do not run the web E2E automatically. For a pull request that touches the web client, run
   `scripts/task.sh web:e2e` locally, or run `gh workflow run web-e2e.yml -R mycroblog/my --ref <branch>` against its
-  branch (add `-f matrix=full` for the full matrix; the Actions tab can start it too).
+  branch (add `-f matrix=full` for the width and locale projects too; the Actions tab can start it too).
 - `slow-suite.yml`, `nightly.yml`, `web-e2e.yml`, `federation-live.yml`, `postgres-contract.yml`,
   `stream-contract.yml`, `mail-integration.yml`, and `codeql.yml` can also be run by hand (`workflow_dispatch`).
 
@@ -258,10 +258,14 @@ scripts/task.sh go:sqlc-check  # fail when the generated code is stale (part of 
 - Database adapters pass the contract tests of `pkg/testkit` (`testkit.UnitOfWorkContract`, for example) on both
   SQLite and PostgreSQL. Test databases get the desired-state files of `schema/<dialect>/` run directly, in name order
   (the same SQL Atlas applies to an empty database).
+- The SQLite tests get their database from `pkg/testkit/sqlitetest`: `sqlitetest.NewFile(t)` copies a file that the
+  test binary made once with the schema applied, and `sqlitetest.ApplySchema` runs a schema in one transaction. Do not
+  execute `schema.SQLite` outside a transaction: SQLite then commits and syncs the file after each of its hundreds of
+  statements, which takes seconds per database and far longer on a loaded machine.
 - The PostgreSQL tests get their server from `pkg/testkit/pgtest`. By default it starts pgmem (PostgreSQL in memory)
   inside the test process, so no Docker is needed: one server per test binary, and each test copies a template
   database with the schema applied.
-- To run against a real PostgreSQL, use one of these (CI runs `scripts/task.sh go:test-postgres` nightly):
+- To run against a real PostgreSQL, use one of these (CI runs `scripts/task.sh go:test-postgres`, the tests whose result can differ from pgmem, nightly):
   - `scripts/task.sh go:test-postgres`: starts a testcontainers-go container (`TEST_POSTGRES_IMAGE`, default
     `postgres:18-alpine`) with `TEST_POSTGRES=container`. Without Docker it fails, since it sets
     `TEST_POSTGRES_REQUIRED=1`.

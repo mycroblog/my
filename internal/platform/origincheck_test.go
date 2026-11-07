@@ -5,12 +5,10 @@ package platform
 import (
 	"bytes"
 	"context"
-	"database/sql"
 	"encoding/json"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
-	"path/filepath"
 	"strings"
 	"sync/atomic"
 	"testing"
@@ -18,7 +16,7 @@ import (
 	"github.com/mycroblog/my/internal/app/kernel"
 	"github.com/mycroblog/my/internal/platform/config"
 	"github.com/mycroblog/my/pkg/testkit"
-	"github.com/mycroblog/my/schema"
+	"github.com/mycroblog/my/pkg/testkit/sqlitetest"
 )
 
 const (
@@ -64,15 +62,7 @@ type originSeen struct {
 
 func newOriginApp(t *testing.T, env map[string]string) *originApp {
 	t.Helper()
-	path := filepath.Join(t.TempDir(), "my.db")
-	db, err := sql.Open("sqlite", path)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if _, err := db.ExecContext(t.Context(), schema.SQLite); err != nil {
-		t.Fatal(err)
-	}
-	_ = db.Close()
+	path := sqlitetest.NewFile(t)
 	full := map[string]string{
 		"MY_HOST": "example.test", "MY_KEK": "MDEyMzQ1Njc4OWFiY2RlZmdoaWprbG1ub3BxcnN0dXY=", "MY_BLOB_FS_DIR": t.TempDir(),
 		"MY_DATABASE_URL": path, "MY_TRUSTED_PROXIES": "192.0.2.10",

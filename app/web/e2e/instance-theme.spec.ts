@@ -8,6 +8,7 @@ import type { Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
 import { ownsServer, runMy } from "./server-cli.ts";
 import { serverURL } from "./server-origin.ts";
+import { primaryProject } from "./projects.ts";
 
 test.use({ baseURL: serverURL });
 // One worker runs every test of the file: beforeAll and afterAll run once per worker, so with the tests spread over
@@ -25,7 +26,7 @@ const sample = {
 
 /** The one project that runs the spec; the others neither run it nor change the server's theme. */
 const runs = (browserName: string, projectName: string) =>
-  ownsServer && browserName === "chromium" && projectName === "en-1440";
+  ownsServer && browserName === "chromium" && projectName === primaryProject;
 
 test.beforeEach(({ browserName }, testInfo) => {
   test.skip(!ownsServer, "the theme is saved with bin/my, which needs the database of the server e2e/server.ts starts");

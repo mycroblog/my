@@ -10,6 +10,7 @@ import (
 )
 
 func TestAuditLogContract(t *testing.T) {
+	t.Parallel()
 	testkit.AuditLogContract(t, func(t *testing.T, opts uow.Options) testkit.ModerationHarness {
 		db, _ := newTestDB(t, "", opts)
 		return testkit.ModerationHarness{UnitOfWork: db, Moderation: db.ModerationRepository()}

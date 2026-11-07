@@ -46,9 +46,13 @@ only when every job passes, tags that commit, drafts a GitHub Release, publishes
    gh run list -R mycroblog/my --workflow release.yml --limit 1
    ```
 
-4. Wait for it to finish. The slow suite (the full E2E, federation, real PostgreSQL, the stream contract, the images, [the upgrade test](#the-upgrade-test), [the restore drill](../operations/backup.md#recovery-drill), CodeQL)
-   takes a while even with its jobs in parallel.
-   The `release` job does not run if any slow-suite job fails or is cancelled: no tag, no Release, and no library is published.
+4. Wait for it to finish. The release promotes a commit that passed the slow suite: its `gate` job looks for a successful run of
+   the whole suite on the commit (the full Nightly, `Nightly (slow-suite)`, or `slow-suite.yml` run by hand). When it finds one,
+   only [the upgrade test](#the-upgrade-test) and [the restore drill](../operations/backup.md#recovery-drill) run again, since
+   they check the commit's images against this version; otherwise the whole slow suite runs (the full E2E, federation, the
+   container contracts, the images, CodeQL), which takes a while even with its jobs in parallel. The job summary of `gate`
+   names the run it found.
+   The `release` job does not run if any slow-suite job that ran fails or is cancelled: no tag, no Release, and no library is published.
    On a failure, fix the cause on `main` and run the workflow again with the same version.
    If only the `npm` job or an `image` job fails after `release` passed, fix the cause (for `npm`, usually the trusted publisher registration) and rerun the failed jobs of that run
    (`gh run rerun <run-id> -R mycroblog/my --failed`); versions already published are skipped.
@@ -389,11 +393,14 @@ gh workflow run release.yml -R mycroblog/my --ref <branch> -f version=v0.0.0-tes
   gh workflow run release.yml -R mycroblog/my --ref <branch> -f version=v0.0.0-test.2 -f previous=v0.0.0-test.1
   ```
 
-  To try only the upgrade test (with the rest of the slow suite, but without tagging anything), run the slow suite by hand:
+  To try only the upgrade test and the restore drill, without tagging anything, run the slow suite by hand with `scope=release`:
 
   ```sh
-  gh workflow run slow-suite.yml -R mycroblog/my --ref <branch> -f previous=v0.0.0-test.1
+  gh workflow run slow-suite.yml -R mycroblog/my --ref <branch> -f previous=v0.0.0-test.1 -f scope=release
   ```
+
+- On a branch head where the whole slow suite already passed (for example after `gh workflow run slow-suite.yml --ref <branch>`), the
+  `gate` job names that run and the slow suite runs only its release jobs; on a new commit it runs the whole suite.
 
 - On a branch where the slow suite fails, the `release` job is skipped and no tag is created (`gh api repos/mycroblog/my/git/ref/tags/v0.0.0-test.1` answers 404).
 - On a branch where it passes, the tags (the server's and `pkg/mykit/v0.0.0-test.1` on the branch's head, `pkg/mybot/v0.0.0-test.1` on the commit above it) and a draft Release
