@@ -216,15 +216,18 @@ type Config struct {
 	// backend's name.
 	Search string
 	// The Elasticsearch cluster of search = elasticsearch: the URL of its REST API, an API key or
-	// a user and password, the alias of the index (empty for the adapter's default), its replicas
-	// (nil for the cluster's default), and a CA file for TLS.
-	SearchElasticsearchURL      string
-	SearchElasticsearchAPIKey   string
-	SearchElasticsearchUsername string
-	SearchElasticsearchPassword string
-	SearchElasticsearchIndex    string
-	SearchElasticsearchReplicas *int
-	SearchElasticsearchCAFile   string
+	// a user and password, the alias of the index (empty for the adapter's default), the file of the
+	// settings of its indexes, and a CA file for TLS.
+	SearchElasticsearchURL               string
+	SearchElasticsearchAPIKey            string
+	SearchElasticsearchUsername          string
+	SearchElasticsearchPassword          string
+	SearchElasticsearchIndex             string
+	SearchElasticsearchIndexSettingsFile string
+	// SearchElasticsearchIndexSettings is the content of SearchElasticsearchIndexSettingsFile,
+	// read and checked by Load; nil without the file.
+	SearchElasticsearchIndexSettings []byte
+	SearchElasticsearchCAFile        string
 	// PaymentsProvider is the payment provider of the supporters (ADR-0074 §5): "none" or a
 	// provider's name. PaymentsReconcileInterval and PaymentsReconcileMaxRequests bound the
 	// reconciliation with it (§4).
@@ -461,7 +464,7 @@ func (c *Config) LogValue() slog.Value {
 		slog.String("search_elasticsearch_username", c.SearchElasticsearchUsername),
 		slog.String("search_elasticsearch_password", redact(c.SearchElasticsearchPassword != "")),
 		slog.String("search_elasticsearch_index", c.SearchElasticsearchIndex),
-		slog.Any("search_elasticsearch_replicas", c.SearchElasticsearchReplicas),
+		slog.String("search_elasticsearch_index_settings_file", c.SearchElasticsearchIndexSettingsFile),
 		slog.String("search_elasticsearch_ca_file", c.SearchElasticsearchCAFile),
 		slog.String("voice", c.Voice),
 		slog.Int("voice_p2p_max_participants", c.VoiceP2PMaxParticipants),
@@ -736,6 +739,9 @@ func load(src Source, only map[string]bool) (*Config, []Setting, error) {
 	}
 	if only == nil {
 		issues = append(issues, crossChecks(valid, present)...)
+	}
+	if only == nil {
+		issues = append(issues, loadSearchElasticsearchSettings(cfg, src)...)
 	}
 	if only == nil || only["origin_secret"] {
 		issues = append(issues, originChecks(valid, present)...)

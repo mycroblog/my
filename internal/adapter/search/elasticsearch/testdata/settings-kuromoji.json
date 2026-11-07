@@ -1,0 +1,18 @@
+{
+  "number_of_shards": 1,
+  "number_of_replicas": 0,
+  "analysis": {
+    "analyzer": {
+      "my_text": {
+        "type": "custom",
+        "tokenizer": "kuromoji_tokenizer",
+        "filter": ["cjk_width", "lowercase", "kuromoji_baseform"]
+      },
+      "my_text_search": {
+        "type": "custom",
+        "tokenizer": "kuromoji_tokenizer",
+        "filter": ["cjk_width", "lowercase", "kuromoji_baseform"]
+      }
+    }
+  }
+}

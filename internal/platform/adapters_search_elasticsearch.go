@@ -45,14 +45,10 @@ func newElasticsearchIndex(ctx context.Context, cfg *config.Config, logger *slog
 		transport.TLSClientConfig = &tls.Config{RootCAs: roots, MinVersion: tls.VersionTLS12}
 		client.Transport = transport
 	}
-	replicas := -1
-	if cfg.SearchElasticsearchReplicas != nil {
-		replicas = *cfg.SearchElasticsearchReplicas
-	}
 	return elasticsearch.Open(ctx, elasticsearch.Options{
 		URL: cfg.SearchElasticsearchURL, APIKey: cfg.SearchElasticsearchAPIKey,
 		Username: cfg.SearchElasticsearchUsername, Password: cfg.SearchElasticsearchPassword,
-		Index: cmp.Or(cfg.SearchElasticsearchIndex, elasticsearch.DefaultIndex), Replicas: replicas,
+		Index: cmp.Or(cfg.SearchElasticsearchIndex, elasticsearch.DefaultIndex), Settings: cfg.SearchElasticsearchIndexSettings,
 		HTTPClient: client, Logger: logger,
 	})
 }

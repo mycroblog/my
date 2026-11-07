@@ -1,0 +1,13 @@
+{
+  "number_of_shards": 1,
+  "number_of_replicas": 0,
+  "max_ngram_diff": 1,
+  "analysis": {
+    "tokenizer": {
+      "my_grams": { "type": "ngram", "min_gram": 1, "max_gram": 2, "token_chars": ["letter", "digit"] }
+    },
+    "analyzer": {
+      "my_text": { "type": "custom", "tokenizer": "my_grams", "filter": ["cjk_width", "lowercase"] }
+    }
+  }
+}
