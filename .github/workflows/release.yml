@@ -1,8 +1,10 @@
 name: Release
 
 # The only way a release is made (ADR-0079): run by hand with a version on the commit to release
-# (`gh workflow run release.yml --ref main -f version=v0.1.0`). It runs the slow suite (slow-suite.yml) on that commit
-# (github.sha) and, only when every job of the suite passed, tags the commit and creates a draft GitHub Release.
+# (`gh workflow run release.yml --ref main -f version=v0.1.0`). It promotes a commit that passed the slow suite
+# (slow-suite.yml, ADR-0079 §8): when a run of the suite already passed on that commit (github.sha), the gate job finds
+# it and the suite runs only its release jobs (upgrade, restore-drill); otherwise the whole suite runs. Only when every
+# job that ran passed does it tag the commit and create a draft GitHub Release.
 # The decider reads the draft and publishes it. docs/agents/releasing.md describes the procedure.
 #
 # The notes (scripts/release-notes.sh): the release job creates the draft with the facts, derived from the repository.
@@ -93,12 +95,44 @@ jobs:
             fi
           done
 
-  slow-suite:
+  # Looks for a successful run of the whole slow suite on the commit: a full Nightly (titled `Nightly`, which ran every
+  # job or skipped them after a full run passed on the same commit), a Nightly of the suite alone (`Nightly
+  # (slow-suite)`), or slow-suite.yml run by hand with scope all. A run on another commit or of other jobs never counts.
+  gate:
     needs: validate
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+    outputs:
+      scope: ${{ steps.find.outputs.scope }}
+    steps:
+      - name: Find a passed slow suite on the commit
+        id: find
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          SHA: ${{ github.sha }}
+        run: |
+          run="$(gh api "repos/$GH_REPO/actions/runs?head_sha=$SHA&status=success&per_page=100" --jq '
+            [.workflow_runs[]
+              | select((.path == ".github/workflows/nightly.yml" and (.display_title == "Nightly" or .display_title == "Nightly (slow-suite)"))
+                or (.path == ".github/workflows/slow-suite.yml" and .event == "workflow_dispatch" and .display_title != "Slow suite (release)"))
+            ][0].html_url // ""')"
+          if [ -n "$run" ]; then
+            echo "scope=release" >> "$GITHUB_OUTPUT"
+            echo "The slow suite passed on $SHA in $run: only its release jobs run." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "scope=all" >> "$GITHUB_OUTPUT"
+            echo "No passed slow suite on $SHA: the whole suite runs." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+  slow-suite:
+    needs: [validate, gate]
     uses: ./.github/workflows/slow-suite.yml
     with:
       version: ${{ inputs.version }}
       previous: ${{ inputs.previous }}
+      scope: ${{ needs.gate.outputs.scope }}
     # The permissions of slow-suite.yml's CodeQL job.
     permissions:
       actions: read
