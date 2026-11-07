@@ -255,6 +255,17 @@ scripts/task.sh go:sqlc        # regenerate from sqlc.yaml
 scripts/task.sh go:sqlc-check  # fail when the generated code is stale (part of check)
 ```
 
+- Tests come in three layers ([ADR-0153](docs/adr/0153-test-boundaries.md)):
+  - A **port contract** checks the methods of one repository on every adapter, with no service of another module
+    (`testkit.WebhookRepositoryContract`).
+  - A **flow** drives the use cases of the modules it crosses. It runs once, on SQLite, in
+    `internal/flowtest/<module>`, the most dependent module it goes through (`testkit.WebhookFlows` in
+    `internal/flowtest/webhook`, with `flowtest.SQLite`). depguard keeps these packages off `internal/interface`,
+    `internal/platform`, and the postgres adapter.
+  - The **composition root** (`internal/platform`, `cmd/my`) checks the wiring.
+
+  When a contract of `pkg/testkit` builds the services of other modules, move that part to a flow and keep the
+  repository's methods in a port contract that every adapter runs.
 - Database adapters pass the contract tests of `pkg/testkit` (`testkit.UnitOfWorkContract`, for example) on both
   SQLite and PostgreSQL. Test databases get the desired-state files of `schema/<dialect>/` run directly, in name order
   (the same SQL Atlas applies to an empty database).

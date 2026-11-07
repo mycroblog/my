@@ -540,6 +540,18 @@ linters:
               desc: testkit depends only on application ports and domain types
             - pkg: github.com/mycroblog/my/internal/platform
               desc: testkit depends only on application ports and domain types
+        # The tests of the flows across modules (ADR-0153 §1) drive the application layer on the SQLite adapter.
+        flowtest:
+          list-mode: lax
+          files:
+            - "**/internal/flowtest/**"
+          deny:
+            - pkg: github.com/mycroblog/my/internal/interface
+              desc: flow tests drive the application layer, not the inbound interfaces (ADR-0153 §1)
+            - pkg: github.com/mycroblog/my/internal/platform
+              desc: flow tests assemble only the modules they cross, not the composition root (ADR-0153 §1)
+            - pkg: github.com/mycroblog/my/internal/adapter/db/postgres
+              desc: flow tests run once, on SQLite; the port contracts cover PostgreSQL (ADR-0153 §1)
         # The fake payment provider records payments as paid without any money moving: besides the tests, only the
         # test builds (build tag e2e_fakes) link it, through one file (ADR-0015 §6; scripts/go-build-tags.sh checks it).
         payment-fake:
