@@ -34,6 +34,9 @@ only when every job passes, tags that commit, drafts a GitHub Release, publishes
    For the first stable version of a minor version (`vX.Y.0`), add the minor version to the top of `app/docs/versions.json` in the same change,
    and mark a minor version whose support ends with it as `ended` ([The documentation site](#the-documentation-site)). Every deploy of the site fails while a published release's minor version is not listed.
 
+   Translate the documents again before the release ([Translating the documentation site](translating-docs.md#before-a-release)), so that the tag carries
+   current translations: `scripts/task.sh docs:site-translations -- status` lists what is stale. Stale translations do not block the release.
+
 3. Run `release.yml` on `main`. The head commit of `main` at that moment is the commit that is checked and tagged.
 
    ```sh
@@ -342,6 +345,7 @@ The documentation site (`app/docs`) is served by the Cloudflare Worker `my-docs`
 | `/` | the landing page and the 404 page of `/latest/` |
 
 Each version is built from its own tag's tree, so the documents of a version are those of its tag; nothing keeps copies of old documents on `main`.
+The translations (`app/docs/i18n/`, served under `/<locale>/` of each version) are part of that tree too: a version publishes the translations of its tag.
 Before the first stable release, `/` is the landing page of `/next/` and `/latest/` redirects to `/next/`.
 
 - `docs-site-deploy.yml` runs on a push to `main` that changes the published documents or `app/docs/`, when a stable release is published, and by hand

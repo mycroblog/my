@@ -434,6 +434,9 @@ mark an ADR `Accepted`.
   `CONTRIBUTING.md`, `docs/README.md`, `docs/operations/`, `docs/reference/`, `docs/agents/`, `schema/README.md`, the
   comments of `deploy/`, and the issue and pull request templates.
 - Design documents (`docs/adr/`, `docs/requirements/`, `docs/architecture/`) are written in Japanese during v0.
+- The documentation site's Japanese pages are machine translations that an agent writes into `app/docs/i18n/`, following
+  [docs/agents/translating-docs.md](docs/agents/translating-docs.md). The English document is authoritative: change it,
+  not only its translation. A pull request that changes English documents does not need to translate them too.
 - Documents for users and operators (`README.md`, `docs/operations/`, `docs/reference/` except `commands.md`, the
   development tasks for contributors) explain the behaviour themselves. They do not link to or cite ADRs, `docs/requirements/`, `docs/architecture/`, or GitHub issues and pull
   requests; link only the other user and operator documents a reader needs.
