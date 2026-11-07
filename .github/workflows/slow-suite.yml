@@ -1,13 +1,19 @@
 name: Slow suite
 
+# A run by hand of the release jobs alone is titled `Slow suite (release)`, which release.yml's gate does not count as a
+# passed suite.
+run-name: ${{ inputs.scope == 'release' && 'Slow suite (release)' || 'Slow suite' }}
+
 # The checks too slow for the merge queue (ADR-0079): the web E2E over the full width × locale matrix on 8 shards, the
 # live interoperability test with Mastodon, GoToSocial, Misskey, and Akkoma, the PostgreSQL tests on a real postgres container
 # (ADR-0015), the stream.Bus contracts on broker containers (ADR-0050), the mail = smtp integration tests on Mailpit, the
 # LiveKit transport contract on livekit-server --dev (ADR-0101), the blob = s3 contract on Garage, the search.Index contracts on the
 # search engines (ADR-0149), the Docker Compose smoke test (linux/amd64)
 # with the linux/arm64 image builds, the upgrade from the previous minor version (ADR-0023 §7), the restore drill, golangci-lint over everything with the build tag sets,
-# and CodeQL. release.yml calls it as the release gate, nightly.yml every night,
-# and it runs by hand on any branch: `gh workflow run slow-suite.yml --ref <branch>`. Every job checks out the commit
+# and CodeQL. nightly.yml calls it every night, and it runs by hand on any branch:
+# `gh workflow run slow-suite.yml --ref <branch>`. release.yml calls it as the release gate: the whole suite, or, when a
+# run of it already passed on the commit, `scope: release`, which runs only the jobs that check the commit's images
+# against a release (upgrade, restore-drill). Every job checks out the commit
 # of the run (github.sha), so a caller tests the commit it was started on.
 #
 # No concurrency group: in a called workflow the group would be evaluated in the caller's context, and a release and
@@ -28,6 +34,10 @@ on:
         description: "The tag to upgrade from instead of the one the version picks."
         type: string
         default: ""
+      scope:
+        description: "`all` runs every job; `release` runs only the jobs that check this commit's images for a release (upgrade, restore-drill), for a commit whose suite already passed."
+        type: string
+        default: all
   workflow_dispatch:
     inputs:
       version:
@@ -38,39 +48,53 @@ on:
         description: "The tag to upgrade from instead of the one the version picks (e.g. v0.0.0-test.1)."
         type: string
         default: ""
+      scope:
+        description: "`all` runs every job; `release` runs only upgrade and restore-drill."
+        type: choice
+        options: [all, release]
+        default: all
 
 permissions:
   contents: read
 
 jobs:
   web-e2e:
+    if: inputs.scope != 'release'
     uses: ./.github/workflows/web-e2e.yml
     with:
       matrix: full
       shards: 8
 
   federation-live:
+    if: inputs.scope != 'release'
     uses: ./.github/workflows/federation-live.yml
 
   postgres-contract:
+    if: inputs.scope != 'release'
     uses: ./.github/workflows/postgres-contract.yml
 
   stream-contract:
+    if: inputs.scope != 'release'
     uses: ./.github/workflows/stream-contract.yml
 
   mail-integration:
+    if: inputs.scope != 'release'
     uses: ./.github/workflows/mail-integration.yml
 
   voice-contract:
+    if: inputs.scope != 'release'
     uses: ./.github/workflows/voice-contract.yml
 
   blob-contract:
+    if: inputs.scope != 'release'
     uses: ./.github/workflows/blob-contract.yml
 
   search-contract:
+    if: inputs.scope != 'release'
     uses: ./.github/workflows/search-contract.yml
 
   docker:
+    if: inputs.scope != 'release'
     # The docker job of ci.yml, with the linux/arm64 image builds whatever changed.
     runs-on: ubuntu-latest
     steps:
@@ -157,6 +181,7 @@ jobs:
         run: scripts/task.sh docker:restore-drill
 
   go-static:
+    if: inputs.scope != 'release'
     # The Go checks the merge queue leaves out (ADR-0079): golangci-lint over everything, where pull requests only
     # lint the modules they change, and the builds of the build tag sets that leave adapters out.
     runs-on: ubuntu-latest
@@ -193,6 +218,7 @@ jobs:
             run: scripts/task.sh go:build-tags
 
   codeql:
+    if: inputs.scope != 'release'
     uses: ./.github/workflows/codeql.yml
     # The analysis uploads its results to the Security tab. A caller grants the same permissions to the job that calls
     # this workflow.
@@ -202,6 +228,7 @@ jobs:
       security-events: write
 
   # The one result of the suite: fails when any job above failed or was cancelled, so that a caller can depend on it.
+  # A job is skipped only by `scope: release`, and a skipped job counts as passed.
   result:
     if: always()
     needs: [web-e2e, federation-live, postgres-contract, stream-contract, mail-integration, voice-contract, blob-contract, search-contract, docker, upgrade, restore-drill, go-static, codeql]
@@ -219,6 +246,6 @@ jobs:
           while IFS=$'\t' read -r job result; do
             echo "| $job | $result |" >> "$GITHUB_STEP_SUMMARY"
             echo "$job: $result"
-            if [ "$result" != success ]; then failed=1; fi
+            if [ "$result" != success ] && [ "$result" != skipped ]; then failed=1; fi
           done < <(jq -r 'to_entries[] | [.key, .value.result] | @tsv' <<< "$RESULTS")
           exit "$failed"
