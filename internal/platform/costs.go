@@ -12,6 +12,6 @@ import (
 // changes them but the tests of this package (export_test.go), which assemble the app hundreds of
 // times and are not testing those costs (ADR-0153 §2).
 var (
-	argon2Params                      = identity.DefaultArgon2Params
-	generateKey  account.KeyGenerator = nil
+	argon2Params = identity.DefaultArgon2Params
+	generateKey  account.KeyGenerator
 )
