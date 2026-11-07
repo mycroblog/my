@@ -28,6 +28,7 @@ const Marker = `<!-- Code generated from api/plugin by "scripts/task.sh api:plug
 var pages = map[protoreflect.FullName]struct{ file, title string }{
 	"my.plugin.probe.v1":       {"probe.md", "Probe protocol"},
 	"my.plugin.translator.v1":  {"translator.md", "Translator protocol"},
+	"my.plugin.search.v1":      {"search.md", "Search protocol"},
 	"my.plugin.billing.v1":     {"billing.md", "Billing protocol"},
 	"my.plugin.mailer.v1":      {"mailer.md", "Mailer protocol"},
 	"my.plugin.media.v1":       {"media.md", "Media protocol"},

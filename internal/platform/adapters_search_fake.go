@@ -10,6 +10,7 @@ import (
 	"log/slog"
 
 	searchfake "github.com/mycroblog/my/internal/adapter/search/fake"
+	"github.com/mycroblog/my/internal/app/kernel"
 	"github.com/mycroblog/my/internal/app/search"
 	"github.com/mycroblog/my/internal/platform/config"
 )
@@ -23,7 +24,7 @@ func init() { searchIndexAdapters["fake"] = newFakeSearchIndex }
 
 // newFakeSearchIndex returns the Index of search = fake, whose documents live in this process
 // only. Like the configuration's check, it refuses any profile but development.
-func newFakeSearchIndex(ctx context.Context, cfg *config.Config, logger *slog.Logger) (search.Index, error) {
+func newFakeSearchIndex(ctx context.Context, cfg *config.Config, logger *slog.Logger, _ kernel.Meter) (search.Index, error) {
 	if cfg.Profile != "development" {
 		return nil, errors.New("fake needs profile = development: it is an index in memory for tests")
 	}

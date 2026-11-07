@@ -13,7 +13,7 @@ import (
 
 func TestPlainTCPRefusedOnlyForTheKindsThatCarrySecretsPostsOrPersonalData(t *testing.T) {
 	refused := map[string]bool{
-		kind.KeyManager: true, kind.Mailer: true, kind.Translator: true,
+		kind.KeyManager: true, kind.Mailer: true, kind.Translator: true, kind.Search: true,
 		kind.InboundStatus: true, kind.LocalStatus: true, kind.SignupCheck: true,
 	}
 	for _, k := range kind.Delegated() {
@@ -116,7 +116,7 @@ func TestEveryKindBoundsItsCalls(t *testing.T) {
 		}
 	}
 	// A kind that a request waits for takes a deadline below 30 seconds; one only jobs call, below the lease.
-	for name, inRequests := range map[string]bool{kind.KeyManager: true, kind.SignupCheck: true, kind.LocalStatus: true, kind.Translator: true, kind.MediaCheck: true, kind.Mailer: false, kind.MediaImage: false, kind.MediaVideo: false, kind.MediaAudio: false, kind.Billing: false, kind.InboundStatus: false} {
+	for name, inRequests := range map[string]bool{kind.KeyManager: true, kind.SignupCheck: true, kind.LocalStatus: true, kind.Translator: true, kind.Search: true, kind.MediaCheck: true, kind.Mailer: false, kind.MediaImage: false, kind.MediaVideo: false, kind.MediaAudio: false, kind.Billing: false, kind.InboundStatus: false} {
 		k, _ := kind.ByName(name)
 		long := kind.Destination{Address: "unix:///s", Timeout: kind.MaxRequestTimeout}
 		if got := len(k.Check(long)) != 0; got != inRequests {

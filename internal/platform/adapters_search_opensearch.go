@@ -14,6 +14,7 @@ import (
 	awsconfig "github.com/aws/aws-sdk-go-v2/config"
 
 	"github.com/mycroblog/my/internal/adapter/search/opensearch"
+	"github.com/mycroblog/my/internal/app/kernel"
 	"github.com/mycroblog/my/internal/app/search"
 	"github.com/mycroblog/my/internal/platform/config"
 )
@@ -29,7 +30,7 @@ const openSearchHTTPTimeout = 15 * time.Minute
 
 // newOpenSearchIndex returns the Index of search = opensearch, after creating its index or moving
 // its alias to the index of this release's mapping.
-func newOpenSearchIndex(ctx context.Context, cfg *config.Config, logger *slog.Logger) (search.Index, error) {
+func newOpenSearchIndex(ctx context.Context, cfg *config.Config, logger *slog.Logger, _ kernel.Meter) (search.Index, error) {
 	o := opensearch.Options{
 		URL: cfg.SearchOpenSearchURL, Index: cmp.Or(cfg.SearchOpenSearchIndex, opensearch.DefaultIndex),
 		Username: cfg.SearchOpenSearchUsername, Password: cfg.SearchOpenSearchPassword,
