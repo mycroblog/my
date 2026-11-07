@@ -8,7 +8,8 @@ name: CI
 #   the docker context changes; the OpenTofu modules (`tofu`) when the tofu context changes; the destructive changes of the schema against the base (`db-lint`) when the schema
 #   changes.
 # - merge_group: the full check of the contexts the group changes (scripts/changed-contexts.sh): server-static,
-#   server-test, client-static, client-test (2 shards), and repo, at most 6 jobs; repo also checks the documentation
+#   server-test, client-static, client-test (2 shards), and repo, and the container contracts of the adapters it changes
+#   (scripts/changed-contracts.sh), at most 7 jobs; repo also checks the documentation
 #   site (app/docs) when the site context changes.
 # - pull_request labelled `ci:full`: both.
 #
@@ -56,6 +57,7 @@ jobs:
       schema: ${{ steps.select.outputs.schema }}
       tofu: ${{ steps.select.outputs.tofu }}
       site: ${{ steps.select.outputs.site }}
+      contracts: ${{ steps.select.outputs.contracts }}
     steps:
       # A pull request checks out its merge commit, whose first parent is the base branch. A merge group checks out
       # its head commit and compares it with its base, the main commit the group is built on; that base is fetched by
@@ -106,6 +108,12 @@ jobs:
           touches schema schema
           touches tofu tofu
           touches site site
+          # The container contracts that the change can break (ADR-0079 §5), as ` postgres blob ` with a space on both
+          # sides, so that a job's `if` finds a name with contains().
+          contracts=" $(scripts/changed-contracts.sh "$RUNNER_TEMP/changed" | tr '\n' ' ')"
+          echo "contracts:$contracts"
+          if [ "$contracts" = " " ]; then contracts=""; fi
+          echo "contracts=$contracts" >> "$GITHUB_OUTPUT"
 
   # --- Pull requests --------------------------------------------------------------------------------------------
 
@@ -431,6 +439,41 @@ jobs:
         env:
           TEST_VALKEY_REQUIRED: "1"
 
+  contracts:
+    # The container contracts of the adapters the group changes (scripts/changed-contracts.sh, ADR-0079 §5), in one job
+    # as parallel steps; the Nightly runs all of them. Each starts its containers on the runner's Docker.
+    needs: changes
+    if: needs.changes.outputs.full == 'true' && needs.changes.outputs.contracts != ''
+    runs-on: ubuntu-latest
+    env:
+      CONTRACTS: ${{ needs.changes.outputs.contracts }}
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Set up go-task
+        uses: ./.github/actions/setup-task
+      - name: Set up Go
+        uses: ./.github/actions/setup-go
+      - parallel:
+          - name: go:test-postgres
+            if: contains(env.CONTRACTS, ' postgres ')
+            run: scripts/task.sh go:test-postgres
+          - name: go:test-stream
+            if: contains(env.CONTRACTS, ' stream ')
+            run: scripts/task.sh go:test-stream
+          - name: go:test-mail
+            if: contains(env.CONTRACTS, ' mail ')
+            run: scripts/task.sh go:test-mail
+          - name: go:test-blob
+            if: contains(env.CONTRACTS, ' blob ')
+            run: scripts/task.sh go:test-blob
+          - name: go:test-voice
+            if: contains(env.CONTRACTS, ' voice ')
+            run: scripts/task.sh go:test-voice
+          - name: go:test-search
+            if: contains(env.CONTRACTS, ' search ')
+            run: scripts/task.sh go:test-search
+
   client-static:
     needs: changes
     if: needs.changes.outputs.full == 'true' && needs.changes.outputs.client == 'true'
@@ -677,7 +720,7 @@ jobs:
     # reusable workflow fails when a called job fails, so a failed story test fails `check`. `always()` makes it report
     # a result even when every other job is skipped, so neither a pull request nor a merge group waits on it.
     if: always()
-    needs: [changes, preflight, ui-test, web-story-test, lint, docker-smoke, tofu, db-lint, server-static, server-test, client-static, client-test, repo]
+    needs: [changes, preflight, ui-test, web-story-test, lint, docker-smoke, tofu, db-lint, server-static, server-test, contracts, client-static, client-test, repo]
     runs-on: ubuntu-latest
     steps:
       - name: Fail if a check job failed or was cancelled
