@@ -20,7 +20,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/graph"
 )
 
-// The moves of local accounts (ADR-0089 §3), part of AccountMoveContract: a move whose target
+// The moves of local accounts (ADR-0089 §3), part of AccountMoveFlows: a move whose target
 // names the account among its aliases records the move, makes the actor carry movedTo, queues the
 // Update of the actor and the Move to the remote followers' shared inbox, and moves the local
 // followers; a target without the alias, the account itself, a target that moved, and a move

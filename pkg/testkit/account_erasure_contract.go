@@ -3,698 +3,405 @@
 package testkit
 
 import (
-	"bytes"
 	"context"
-	"strings"
+	"errors"
+	"slices"
 	"testing"
 	"time"
 
 	appaccount "github.com/mycroblog/my/internal/app/account"
 	appcontent "github.com/mycroblog/my/internal/app/content"
-	appfederation "github.com/mycroblog/my/internal/app/federation"
-	appgraph "github.com/mycroblog/my/internal/app/graph"
-	appidentity "github.com/mycroblog/my/internal/app/identity"
-	"github.com/mycroblog/my/internal/app/media"
-	appnotification "github.com/mycroblog/my/internal/app/notification"
 	apptimeline "github.com/mycroblog/my/internal/app/timeline"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/account"
 	"github.com/mycroblog/my/internal/domain/content"
+	"github.com/mycroblog/my/internal/domain/graph"
 	"github.com/mycroblog/my/internal/domain/identity"
+	"github.com/mycroblog/my/internal/domain/notification"
+	"github.com/mycroblog/my/internal/domain/timeline"
 )
 
-// AccountErasureHarness is one database under test for the erasure of deleted accounts: the
-// harness of the retention contract, the modules' erasure repositories on the same database,
-// and Rows, which counts the rows of a table whose column equals value.
-type AccountErasureHarness struct {
-	RetentionHarness
-	AccountErasure      appaccount.ErasureRepository
-	IdentityErasure     appidentity.ErasureRepository
-	ContentErasure      appcontent.ErasureRepository
-	GraphErasure        appgraph.ErasureRepository
-	TimelineErasure     apptimeline.ErasureRepository
-	NotificationErasure appnotification.ErasureRepository
-	Rows                func(t *testing.T, table, column, value string) int
-}
-
-// AccountErasureFactory returns a harness on a new, empty database whose UnitOfWork uses opts.
-// The factory registers the cleanup of everything it creates with t.Cleanup.
-type AccountErasureFactory func(t *testing.T, opts uow.Options) AccountErasureHarness
-
-// AccountErasureContract verifies the erasure of deleted local accounts (data-model §8) on a
-// database adapter, with the real modules: an account deleted longer than the delay ago, without
-// a retention hold, loses its personal data (profile, keys, email addresses, credentials,
-// sessions, preferences, statuses, favourites, bookmarks, boosts, follows, mutes, domain mutes, uploads,
-// notifications, timeline rows, lists and their membership in others' lists) while its row, URI, domain, username, and lifecycle stay; its
-// statuses become deletions with origin account_deletion, the other accounts' counters lose it,
-// and a status that the moderation records need keeps its rows until they are gone, after which
-// the account is recorded as erased once. A remote account deleted on its server is erased the same
-// way, with the statuses that local accounts bookmarked or replied to, and does not come back.
+// AccountErasureContract verifies the erasure repositories of the modules on a database adapter, by
+// their methods alone, the port contract of ADR-0153 §1: the deleted accounts to erase are listed
+// in ID order and in pages until their erasure is recorded, once; an account loses its profile
+// revisions and head; a user loses its email addresses and password credentials; the statuses of
+// an author are listed in pages with whether they are deleted, and erased with their interactions,
+// keeping their deletions; an account's favourites and bookmarks go in bounded batches; its follows,
+// blocks, mutes, and counters go in bounded batches; its feed entries go; and its notifications go,
+// as do the notifications about erased statuses. Each method leaves the rows of other accounts.
+// The erasure on top of it is AccountErasureFlows, which internal/flowtest/federation runs once on
+// SQLite.
 func AccountErasureContract(t *testing.T, newHarness AccountErasureFactory) {
 	t.Helper()
 	cases := []struct {
 		name string
-		run  func(t *testing.T, e *erasureEnv)
+		run  func(t *testing.T, r *erasureRepo)
 	}{
-		{"ErasesDeletedAccounts", erasureErasesDeletedAccounts},
-		{"WaitsForTheDelayAndHolds", erasureWaits},
-		{"ErasesDeletedRemoteActors", erasureErasesRemoteActors},
-		{"RemoteActorsWaitForTheDelayAndHolds", erasureRemoteActorsWait},
-		{"ErasedRemoteActorsDoNotComeBack", erasureRemoteActorsStayErased},
-		{"DisablesAndBlanksOwnedOAuthClients", erasureBlanksOwnedOAuthClients},
-		{"PurgesSensitivityOverrides", erasurePurgesSensitivityOverrides},
-		{"ErasesTheLastUseOfTokenFamilies", erasureErasesTokenFamilyLastUse},
-		{"PurgesExpiredAuthRecords", authRecordsPurged},
-		{"PurgesExpiredUserTokensInBatches", authRecordsPurgedInBatches},
+		{"ListsAndRecordsTheAccountsToErase", erasureRepoTargets},
+		{"ErasesProfilesAndUserData", erasureRepoProfiles},
+		{"ErasesStatusesAndInteractions", erasureRepoContent},
+		{"ErasesTheGraph", erasureRepoGraph},
+		{"ErasesFeedsAndNotifications", erasureRepoFeeds},
 	}
 	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) { tc.run(t, newErasureEnv(t, newHarness)) })
+		t.Run(tc.name, func(t *testing.T) {
+			h := newHarness(t, uow.Options{})
+			clock := NewClock(time.Date(2026, 11, 7, 12, 0, 0, 0, time.UTC))
+			tc.run(t, &erasureRepo{h: h, clock: clock, ids: NewIDGenerator(clock)})
+		})
 	}
 }
 
-type erasureEnv struct {
-	*retentionEnv
-	eh    AccountErasureHarness
-	blobs *MemoryBlobStore
-	media *appcontent.MediaService
+type erasureRepo struct {
+	h     AccountErasureHarness
+	clock *Clock
+	ids   *IDGenerator
 }
 
-func newErasureEnv(t *testing.T, newHarness AccountErasureFactory) *erasureEnv {
+func (r *erasureRepo) tx(t *testing.T, fn func(ctx context.Context, tx uow.Tx) error) {
 	t.Helper()
-	var eh AccountErasureHarness
-	re := newRetentionEnv(t, func(t *testing.T, opts uow.Options) RetentionHarness {
-		eh = newHarness(t, opts)
-		return eh.RetentionHarness
-	})
-	blobs := NewMemoryBlobStore(re.clock)
-	svc := appcontent.NewMediaService(appcontent.MediaDeps{
-		UnitOfWork: eh.UnitOfWork, Repository: eh.Media, Blobs: blobs, Processor: FakeMediaProcessor{},
-		Jobs: &recordingJobs{}, Clock: re.clock, IDs: re.ids, Limits: media.Limits{MaxBytes: 1 << 20},
-	})
-	return &erasureEnv{retentionEnv: re, eh: eh, blobs: blobs, media: svc}
+	if err := r.h.UnitOfWork.Tx(t.Context(), func(tx uow.Tx) error { return fn(t.Context(), tx) }); err != nil {
+		t.Fatal(err)
+	}
 }
 
-// upload uploads and processes an image of the account and returns its media file ID.
-func (e *erasureEnv) upload(t *testing.T, accountID string) string {
+// account inserts a remote account and returns its ID.
+func (r *erasureRepo) account(t *testing.T) string {
 	t.Helper()
-	m, err := e.media.Upload(t.Context(), appcontent.UploadInput{OwnerAccountID: accountID, Content: bytes.NewReader(FixturePNG(4, 3, false))})
-	if err != nil {
-		t.Fatalf("Upload = %v", err)
-	}
-	if res := e.media.Process(t.Context(), m.File.ID, ""); !res.IsDone() {
-		t.Fatalf("Process = %+v, want Done", res)
-	}
-	return m.File.ID
+	id := r.ids.NewID()
+	a := account.Account{ID: id, URI: "https://remote.example/users/" + id, Domain: "remote.example", ActorType: account.ActorPerson, CreatedAt: r.clock.Now()}
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error { return r.h.Accounts.InsertAccount(ctx, tx, a) })
+	return id
 }
 
-// blobsOf returns the number of blobs of a media file.
-func (e *erasureEnv) blobsOf(mediaID string) int {
-	n := 0
-	for _, k := range e.blobs.Keys() {
-		if strings.Contains(k, mediaID) {
-			n++
-		}
-	}
-	return n
-}
-
-// stubHolds stands in for the moderation module's retention holds.
-type stubHolds []string
-
-// HeldAccountIDs implements appaccount.HeldAccounts.
-func (s stubHolds) HeldAccountIDs(context.Context) ([]string, error) { return s, nil }
-
-// eraser returns the erasure with the evidence and holds of moderation, batch rows per
-// statement.
-func (e *erasureEnv) eraser(evidence appcontent.RetainedStatuses, holds appaccount.HeldAccounts, batch int) *appaccount.Eraser {
-	u := e.eh.UnitOfWork
-	notifications := appnotification.NewEraser(u, e.eh.NotificationErasure)
-	return appaccount.NewEraser(appaccount.ErasureDeps{
-		UnitOfWork: u, Repository: e.eh.AccountErasure, Holds: holds, Clock: e.clock, Batch: batch,
-		Erasers: []appaccount.DataEraser{
-			appcontent.NewStatusEraser(appcontent.ErasureDeps{
-				UnitOfWork: u, Repository: e.eh.Statuses, Erasure: e.eh.ContentErasure, Notifications: notifications,
-				Evidence: evidence, Clock: e.clock,
-			}),
-			appcontent.NewInteractionEraser(u, e.eh.ContentErasure),
-			appgraph.NewEraser(u, e.eh.Graph, e.eh.GraphErasure, e.clock),
-			apptimeline.NewEraser(u, e.eh.TimelineErasure),
-			notifications,
-			appcontent.NewMediaEraser(appcontent.MediaErasureDeps{UnitOfWork: u, Repository: e.eh.Media, Blobs: e.blobs}),
-			appidentity.NewEraser(u, e.eh.IdentityErasure, e.clock, e.ids),
-		},
-	})
-}
-
-// run runs the erasure to the end of its run and returns how many accounts it erased.
-func (e *erasureEnv) run(t *testing.T, er *appaccount.Eraser) int {
+// rows requires that table has want rows whose column is value.
+func (r *erasureRepo) rows(t *testing.T, table, column, value string, want int) {
 	t.Helper()
-	total, after := 0, appaccount.ErasureCursor{}
-	for range 100 {
-		res, err := er.Run(t.Context(), after)
-		if err != nil {
-			t.Fatalf("Run(%+v) = %v", after, err)
-		}
-		total += res.Erased
-		if !res.More {
-			return total
-		}
-		after = res.Next
-	}
-	t.Fatal("the erasure did not reach the end")
-	return total
-}
-
-// deleteAccount schedules the deletion of the account now and runs the deletion job.
-func (e *erasureEnv) deleteAccount(t *testing.T, accountID string) {
-	t.Helper()
-	ctx := t.Context()
-	err := e.h.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
-		return e.accounts.ScheduleDeletionByModeration(ctx, tx, accountID, NamedID("action-ban"), e.clock.Now())
-	})
-	if err != nil {
-		t.Fatalf("ScheduleDeletionByModeration = %v", err)
-	}
-	if n, err := e.accounts.ExecuteDueDeletions(ctx); err != nil || n != 1 {
-		t.Fatalf("ExecuteDueDeletions = %d, %v; want 1", n, err)
-	}
-}
-
-// rows fails unless the table has want rows whose column is value.
-func (e *erasureEnv) rows(t *testing.T, table, column, value string, want int) {
-	t.Helper()
-	if got := e.eh.Rows(t, table, column, value); got != want {
+	if got := r.h.Rows(t, table, column, value); got != want {
 		t.Errorf("%s rows with %s = %s: %d, want %d", table, column, value, got, want)
 	}
 }
 
-func (e *erasureEnv) postAs(t *testing.T, authorID, text string) content.Status {
-	t.Helper()
-	p, err := e.content.Create(t.Context(), appcontent.CreateInput{
-		AuthorAccountID: authorID, TextInput: appcontent.TextInput{Text: text}, Visibility: content.VisibilityPublic,
-	})
-	if err != nil {
-		t.Fatalf("Create(%q) = %v", text, err)
+func erasureRepoTargets(t *testing.T, r *erasureRepo) {
+	ctx := t.Context()
+	state := func(id string, name account.LifecycleStateName, since time.Time) {
+		r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+			return r.h.Accounts.UpsertLifecycleState(ctx, tx, account.LifecycleState{AccountID: id, State: name, Since: since})
+		})
 	}
-	return p.Status
+	now := r.clock.Now()
+	first, second, recent, active := r.account(t), r.account(t), r.account(t), r.account(t)
+	state(first, account.StateDeleted, now.Add(-48*time.Hour))
+	state(second, account.StateDeleted, now.Add(-24*time.Hour))
+	state(recent, account.StateDeleted, now)
+	state(active, account.StateActive, now.Add(-48*time.Hour))
+
+	cutoff := now.Add(-time.Hour)
+	targets, err := r.h.AccountErasure.ListAccountsToErase(ctx, cutoff, "", 10)
+	want := []appaccount.ErasureTarget{{AccountID: first, DeletedAt: now.Add(-48 * time.Hour)}, {AccountID: second, DeletedAt: now.Add(-24 * time.Hour)}}
+	if err != nil || !slices.EqualFunc(targets, want, func(a, b appaccount.ErasureTarget) bool {
+		return a.AccountID == b.AccountID && a.UserID == b.UserID && a.DeletedAt.Equal(b.DeletedAt)
+	}) {
+		t.Errorf("ListAccountsToErase = %+v, %v; want %+v", targets, err, want)
+	}
+	if page, err := r.h.AccountErasure.ListAccountsToErase(ctx, cutoff, first, 1); err != nil || len(page) != 1 || page[0].AccountID != second {
+		t.Errorf("the page after the first = %+v, %v; want %s", page, err, second)
+	}
+
+	for range 2 {
+		r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+			return r.h.AccountErasure.InsertErasure(ctx, tx, first, now)
+		})
+	}
+	if erased, err := r.h.AccountErasure.AccountErased(ctx, first); err != nil || !erased {
+		t.Errorf("AccountErased(erased) = %v, %v; want true", erased, err)
+	}
+	if erased, err := r.h.AccountErasure.AccountErased(ctx, second); err != nil || erased {
+		t.Errorf("AccountErased(not erased) = %v, %v; want false", erased, err)
+	}
+	targets, err = r.h.AccountErasure.ListAccountsToErase(ctx, cutoff, "", 10)
+	if err != nil || len(targets) != 1 || targets[0].AccountID != second {
+		t.Errorf("ListAccountsToErase after an erasure = %+v, %v; want only %s", targets, err, second)
+	}
 }
 
-func erasureErasesDeletedAccounts(t *testing.T, e *erasureEnv) {
-	ctx := t.Context()
-	alice := e.sessionUser(t)
-	aliceID, userID := alice.AccountID, alice.User.ID
-	e.signIn(t, appidentity.SignInInput{})
-	e.enableTOTP(t, alice)
-	e.registerPasskey(t, userID, "phone")
-	bob := e.user(t, "bob")
-	carol := e.actor(t, "https://remote.example/users/carol")
-
-	plain := e.postAs(t, aliceID, "plain")
-	reported := e.postAs(t, aliceID, "reported")
-	gone := e.postAs(t, aliceID, "deleted by alice")
-	if _, err := e.content.Delete(ctx, aliceID, gone.ID); err != nil {
-		t.Fatalf("Delete = %v", err)
-	}
-	bobs := e.postAs(t, bob, "bob's")
-	aliceUpload, bobUpload := e.upload(t, aliceID), e.upload(t, bob)
-	// Bob interacts with alice's statuses, alice with bob's.
-	if _, err := e.interactions.Favourite(ctx, bob, plain.ID); err != nil {
-		t.Fatal(err)
-	}
-	if err := e.interactions.Bookmark(ctx, bob, plain.ID); err != nil {
-		t.Fatal(err)
-	}
-	if _, err := e.interactions.Boost(ctx, bob, plain.ID); err != nil {
-		t.Fatal(err)
-	}
-	if _, err := e.interactions.Favourite(ctx, aliceID, bobs.ID); err != nil {
-		t.Fatal(err)
-	}
-	if _, err := e.interactions.Boost(ctx, aliceID, bobs.ID); err != nil {
-		t.Fatal(err)
-	}
-	if err := e.interactions.Bookmark(ctx, aliceID, bobs.ID); err != nil {
-		t.Fatal(err)
-	}
-	if err := e.interactions.Pin(ctx, aliceID, plain.ID); err != nil {
-		t.Fatal(err)
-	}
-	// Carol reacts to alice's status, alice to bob's (as the reaction command of a local account
-	// records it: the row and its event).
-	if _, err := e.interactions.RecordRemoteReaction(ctx, appcontent.RemoteReactionInput{
-		URI: "https://remote.example/users/carol/reactions/1", AccountID: carol, StatusID: plain.ID,
-		Emoji: appcontent.RemoteReactionEmoji{Unicode: "👍"},
-	}); err != nil {
-		t.Fatal(err)
-	}
-	err := e.h.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
-		r := content.Reaction{
-			ID: e.ids.NewID(), AccountID: aliceID, StatusID: bobs.ID, Emoji: content.ReactionEmoji{Unicode: "🎉"},
-			URI: "https://" + contractHost + "/ap/activities/alice-reaction", CreatedAt: e.clock.Now(),
-		}
-		if _, err := e.rh.Interactions.InsertReaction(ctx, tx, r); err != nil {
-			return err
-		}
-		return tx.Emit(ctx, appcontent.Reacted{Reaction: r, Status: appcontent.RefOf(bobs)})
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-	e.rows(t, "status_reaction_counts", "status_id", bobs.ID, 1)
-	if _, err := e.graph.Follow(ctx, bob, aliceID); err != nil {
-		t.Fatal(err)
-	}
-	if _, err := e.graph.Follow(ctx, aliceID, bob); err != nil {
-		t.Fatal(err)
-	}
-	e.follow(t, aliceID, carol)
-	if _, err := e.graph.Mute(ctx, aliceID, bob, appgraph.MuteInput{}); err != nil {
-		t.Fatal(err)
-	}
-	if _, err := e.graph.MuteDomain(ctx, aliceID, "muted.example"); err != nil {
-		t.Fatal(err)
-	}
-	e.rows(t, "feed_domain_mutes", "viewer_account_id", aliceID, 1)
-	e.rows(t, "notification_domain_exclusions", "viewer_account_id", aliceID, 1)
-	if c, _ := e.graph.Counters(ctx, bob); c.FollowersCount != 1 || c.FollowingCount != 1 {
-		t.Fatalf("bob's counters before = %+v", c)
-	}
-	e.rows(t, "notifications", "recipient_account_id", aliceID, 4) // bob's follow, favourite, boost; carol's reaction
-	e.rows(t, "notifications", "source_account_id", aliceID, 4)    // alice's follow, favourite, boost, reaction
-	carolActor, err := e.accounts.FindByID(ctx, carol)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if _, _, err := e.accounts.AddAlias(ctx, aliceID, carolActor); err != nil {
-		t.Fatal(err)
-	}
-	e.rows(t, "account_aliases", "account_id", aliceID, 1)
-	// Alice lists bob, and bob lists alice (rows as the commands of lists write them).
-	aliceList, bobList := e.ids.NewID(), e.ids.NewID()
-	if feeds, ok := e.eh.TimelineErasure.(apptimeline.Repository); ok {
-		err := e.h.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
-			for _, m := range []apptimeline.ListMember{
-				{ListID: aliceList, OwnerAccountID: aliceID, MemberAccountID: bob},
-				{ListID: bobList, OwnerAccountID: bob, MemberAccountID: aliceID},
-			} {
-				l := apptimeline.List{ID: m.ListID, OwnerAccountID: m.OwnerAccountID, Name: "friends", CreatedAt: e.clock.Now()}
-				if err := feeds.InsertList(ctx, tx, l); err != nil {
-					return err
-				}
-				m.AddedAt = e.clock.Now()
-				if _, err := feeds.InsertListMember(ctx, tx, m); err != nil {
-					return err
+func erasureRepoProfiles(t *testing.T, r *erasureRepo) {
+	profile := func(id string) {
+		r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+			var errs []error
+			for seq := 1; seq <= 2; seq++ {
+				rev := account.ProfileRevision{ID: r.ids.NewID(), AccountID: id, Seq: seq, DisplayName: "name", RevisedAt: r.clock.Now()}
+				errs = append(errs, r.h.Accounts.InsertProfileRevision(ctx, tx, rev))
+				if seq == 2 {
+					errs = append(errs, r.h.Accounts.UpsertProfileHead(ctx, tx, account.ProfileHead{AccountID: id, RevisionID: rev.ID, Seq: seq}))
 				}
 			}
-			return nil
+			return errors.Join(errs...)
 		})
-		if err != nil {
-			t.Fatal(err)
-		}
-	} else {
-		t.Fatal("the timeline erasure repository is no timeline.Repository")
 	}
-	e.rows(t, "lists", "owner_account_id", aliceID, 1)
-	e.rows(t, "list_members", "member_account_id", aliceID, 1)
-
-	e.deleteAccount(t, aliceID)
-	e.clock.Advance(appaccount.ErasureDelay)
-	evidence := stubEvidence{statuses: map[string]bool{reported.ID: true}}
-	// Batches of one row exercise the continuation of every eraser.
-	if n := e.run(t, e.eraser(evidence, nil, 1)); n != 0 {
-		t.Errorf("erased %d accounts while evidence stays, want 0", n)
-	}
-
-	// The account itself stays, without a profile or keys.
-	actor, err := e.accounts.FindByID(ctx, aliceID)
-	if err != nil {
-		t.Fatalf("FindByID = %v", err)
-	}
-	if actor.Profile != nil || len(actor.Keys) != 0 || actor.Local == nil || actor.Local.Username != "alice" ||
-		actor.Lifecycle.State != account.StateDeleted || actor.Account.URI == "" {
-		t.Errorf("erased actor = %+v, want the account, its username, and its lifecycle only", actor)
-	}
-	for _, table := range []string{"account_profile_revisions", "account_profile_heads", "account_keys", "account_aliases", "follow_counters",
-		"account_post_counters", "local_post_counters", "mutes", "account_domain_mutes", "favourites", "reactions", "bookmarks", "status_pins",
-		"notification_read_markers"} {
-		e.rows(t, table, "account_id", aliceID, 0)
-	}
-	for _, table := range []string{"user_email_addresses", "user_primary_emails", "password_credentials", "sessions",
-		"user_preferences", "user_role_badge_displays", "user_time_zones", "user_registration_states", "registration_applications", "totp_enrollments", "passkey_credentials"} {
-		e.rows(t, table, "user_id", userID, 0)
-	}
-	e.rows(t, "local_accounts", "account_id", aliceID, 1)
-	e.rows(t, "accounts", "id", aliceID, 1)
-	e.rows(t, "users", "id", userID, 1)
-	e.rows(t, "account_lifecycle_events", "account_id", aliceID, 2)
-	e.rows(t, "follows", "follower_account_id", aliceID, 0)
-	e.rows(t, "follows", "followee_account_id", aliceID, 0)
-	e.rows(t, "follow_edges", "follower_account_id", aliceID, 0)
-	e.rows(t, "follow_edges", "followee_account_id", aliceID, 0)
-	e.rows(t, "feed_follow_edges", "follower_account_id", aliceID, 0)
-	e.rows(t, "feed_follow_edges", "followee_account_id", aliceID, 0)
-	e.rows(t, "mutes", "target_account_id", aliceID, 0)
-	e.rows(t, "feed_exclusions", "viewer_account_id", aliceID, 0)
-	e.rows(t, "feed_domain_mutes", "viewer_account_id", aliceID, 0)
-	// Alice's list goes with its name and members, and she leaves bob's list, which stays.
-	e.rows(t, "lists", "owner_account_id", aliceID, 0)
-	e.rows(t, "list_names", "list_id", aliceList, 0)
-	e.rows(t, "list_members", "owner_account_id", aliceID, 0)
-	e.rows(t, "list_members", "member_account_id", aliceID, 0)
-	e.rows(t, "lists", "owner_account_id", bob, 1)
-	e.rows(t, "list_names", "list_id", bobList, 1)
-	e.rows(t, "notification_domain_exclusions", "viewer_account_id", aliceID, 0)
-	e.rows(t, "boosts", "booster_account_id", aliceID, 0)
-	e.rows(t, "boost_edges", "booster_account_id", aliceID, 0)
-	e.rows(t, "feed_entries", "author_account_id", aliceID, 0)
-	e.rows(t, "notifications", "recipient_account_id", aliceID, 0)
-	e.rows(t, "notifications", "source_account_id", aliceID, 0)
-	e.rows(t, "notifications", "status_id", plain.ID, 0)
-	e.rows(t, "local_statuses", "author_account_id", aliceID, 1) // the reported one
-	// Alice's uploads go with their blobs; bob's stay.
-	e.rows(t, "media_files", "owner_account_id", aliceID, 0)
-	for _, table := range []string{"uploaded_media", "media_processing_results"} {
-		e.rows(t, table, "media_id", aliceUpload, 0)
-	}
-	if n := e.blobsOf(aliceUpload); n != 0 {
-		t.Errorf("alice's upload kept %d blobs", n)
-	}
-	e.rows(t, "media_files", "owner_account_id", bob, 1)
-	if n := e.blobsOf(bobUpload); n != 3 {
-		t.Errorf("bob's upload has %d blobs, want its 3 variants", n)
-	}
-
-	// The statuses are deletions; the reported one keeps its rows for now.
-	for _, st := range []content.Status{plain, gone} {
-		if e.stored(t, st.URI) {
-			t.Errorf("status %q is still stored", st.URI)
-		}
-		e.rows(t, "status_revisions", "status_id", st.ID, 0)
-		e.rows(t, "boosts", "status_id", st.ID, 0)
-		e.rows(t, "favourites", "status_id", st.ID, 0)
-		e.rows(t, "reactions", "status_id", st.ID, 0)
-		e.rows(t, "status_reaction_counts", "status_id", st.ID, 0)
-		e.rows(t, "bookmarks", "status_id", st.ID, 0)
-	}
-	if d, err := e.eh.Statuses.FindDeletion(ctx, plain.ID); err != nil || d.Origin != content.DeletedByAccountDeletion {
-		t.Errorf("FindDeletion(plain) = %+v, %v; want origin account_deletion", d, err)
-	}
-	if d, err := e.eh.Statuses.FindDeletion(ctx, gone.ID); err != nil || d.Origin != content.DeletedByAuthor {
-		t.Errorf("FindDeletion(gone) = %+v, %v; want the author's deletion", d, err)
-	}
-	if !e.stored(t, reported.URI) {
-		t.Errorf("reported status is gone, want its rows kept")
-	}
-	if d, err := e.eh.Statuses.FindDeletion(ctx, reported.ID); err != nil || d.Origin != content.DeletedByAccountDeletion {
-		t.Errorf("FindDeletion(reported) = %+v, %v; want origin account_deletion", d, err)
-	}
-
-	// Bob loses alice's follows and interactions.
-	if c, _ := e.graph.Counters(ctx, bob); c.FollowersCount != 0 || c.FollowingCount != 0 {
-		t.Errorf("bob's follow counters = %+v, want none", c)
-	}
-	if c, _ := e.interactions.Counters(ctx, bobs.ID); c.FavouritesCount != 0 || c.BoostsCount != 0 {
-		t.Errorf("bob's status counters = %+v, want none", c)
-	}
-	e.rows(t, "status_reaction_counts", "status_id", bobs.ID, 0)
-	if erased, err := e.eh.AccountErasure.AccountErased(ctx, aliceID); err != nil || erased {
-		t.Errorf("AccountErased while evidence stays = %v, %v; want false", erased, err)
-	}
-
-	// Once the records are gone, so is the reported status, and the account is erased once.
-	if n := e.run(t, e.eraser(stubEvidence{}, nil, 0)); n != 1 {
-		t.Errorf("erased %d accounts, want 1", n)
-	}
-	if e.stored(t, reported.URI) {
-		t.Errorf("reported status is still stored")
-	}
-	e.rows(t, "local_statuses", "author_account_id", aliceID, 0)
-	if erased, err := e.eh.AccountErasure.AccountErased(ctx, aliceID); err != nil || !erased {
-		t.Errorf("AccountErased = %v, %v; want true", erased, err)
-	}
-	if n := e.run(t, e.eraser(stubEvidence{}, nil, 0)); n != 0 {
-		t.Errorf("erased %d accounts again, want 0", n)
-	}
-	// Bob is untouched.
-	if _, err := e.accounts.FindByID(ctx, bob); err != nil {
-		t.Errorf("FindByID(bob) = %v", err)
-	}
-	if !e.stored(t, bobs.URI) {
-		t.Errorf("bob's status is gone")
-	}
-}
-
-func erasureWaits(t *testing.T, e *erasureEnv) {
-	ctx := t.Context()
-	alice, bob := e.user(t, "alice"), e.user(t, "bob")
-	e.postAs(t, alice, "alice's")
-	e.postAs(t, bob, "bob's")
-	e.deleteAccount(t, alice)
-	profile := func(id string) bool {
-		t.Helper()
-		a, err := e.accounts.FindByID(ctx, id)
-		if err != nil {
-			t.Fatalf("FindByID = %v", err)
-		}
-		return a.Profile != nil
-	}
-	// Within the delay, the Delete of the actor still needs the account's keys and follows.
-	e.clock.Advance(appaccount.ErasureDelay - time.Minute)
-	if n := e.run(t, e.eraser(nil, nil, 0)); n != 0 || !profile(alice) {
-		t.Errorf("erased %d accounts within the delay, want 0", n)
-	}
-	e.clock.Advance(time.Minute)
-	// A retention hold stops the erasure.
-	if n := e.run(t, e.eraser(nil, stubHolds{alice}, 0)); n != 0 || !profile(alice) {
-		t.Errorf("erased %d held accounts, want 0", n)
-	}
-	if n := e.run(t, e.eraser(nil, nil, 0)); n != 1 || profile(alice) {
-		t.Errorf("erased %d accounts, want 1", n)
-	}
-	// An account that is not deleted is never erased.
-	if !profile(bob) {
-		t.Error("bob's profile is gone")
-	}
-}
-
-// markRemoteDeleted records that the remote account was deleted on its server.
-func (e *erasureEnv) markRemoteDeleted(t *testing.T, accountID string) {
-	t.Helper()
-	ctx := t.Context()
-	if err := e.h.UnitOfWork.Tx(ctx, func(tx uow.Tx) error { return e.accounts.MarkRemoteDeleted(ctx, tx, accountID) }); err != nil {
-		t.Fatalf("MarkRemoteDeleted = %v", err)
-	}
-}
-
-func erasureErasesRemoteActors(t *testing.T, e *erasureEnv) {
-	ctx := t.Context()
-	const alice = "https://remote.example/users/alice"
-	statuses, reader, _ := e.referencedStatuses(t)
-	aliceID := statuses["unrelated"].AuthorAccountID
-	own := e.postAs(t, reader, "the reader's")
-	attached := e.note(t, alice, alice+"/notes/attached", time.Hour, map[string]any{
-		"attachment": []any{map[string]any{"type": "Document", "mediaType": "image/png", "url": "https://remote.example/files/a.png"}},
+	erased, kept := r.account(t), r.account(t)
+	profile(erased)
+	profile(kept)
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+		return r.h.AccountErasure.EraseProfilesAndKeys(ctx, tx, erased)
 	})
-	reported := e.note(t, alice, alice+"/notes/reported", time.Hour, map[string]any{
-		"attachment": []any{map[string]any{"type": "Document", "mediaType": "image/png", "url": "https://remote.example/files/reported.png"}},
-	})
-	statuses["attached"] = attached
-	// She favourites a status of the reader and follows them.
-	if _, err := e.interactions.RecordRemoteReaction(ctx, appcontent.RemoteReactionInput{
-		URI: alice + "/reactions/1", AccountID: aliceID, StatusID: own.ID, Emoji: appcontent.RemoteReactionEmoji{Unicode: "👍"},
-	}); err != nil {
-		t.Fatalf("RecordRemoteReaction = %v", err)
-	}
-	e.follow(t, aliceID, reader)
-	if err := e.h.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
-		return e.h.Accounts.UpsertHandle(ctx, tx, account.Handle{AccountID: aliceID, Username: "alice", UsernameNormalized: "alice", Domain: "remote.example"})
-	}); err != nil {
-		t.Fatalf("UpsertHandle = %v", err)
-	}
-	e.rows(t, "remote_account_heads", "account_id", aliceID, 1)
-	e.rows(t, "remote_media", "owner_account_id", aliceID, 2)
+	r.rows(t, "account_profile_revisions", "account_id", erased, 0)
+	r.rows(t, "account_profile_heads", "account_id", erased, 0)
+	r.rows(t, "account_profile_revisions", "account_id", kept, 2)
+	r.rows(t, "account_profile_heads", "account_id", kept, 1)
 
-	e.markRemoteDeleted(t, aliceID)
-	e.clock.Advance(appaccount.ErasureDelay)
-
-	// A status that the moderation records need keeps its rows and its attachment until they go.
-	if n := e.run(t, e.eraser(stubEvidence{statuses: map[string]bool{reported.ID: true}}, nil, 2)); n != 0 {
-		t.Errorf("erased %d accounts while evidence stays, want 0", n)
+	user := func() string {
+		u := identity.User{ID: r.ids.NewID(), CreatedAt: r.clock.Now()}
+		email := identity.EmailAddress{ID: r.ids.NewID(), UserID: u.ID, Address: u.ID + "@example.com", AddressNormalized: u.ID + "@example.com", AddedAt: r.clock.Now()}
+		r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+			return errors.Join(
+				r.h.Identity.InsertUser(ctx, tx, u),
+				r.h.Identity.InsertEmailAddress(ctx, tx, email),
+				r.h.Identity.InsertPrimaryEmail(ctx, tx, email),
+				r.h.Identity.InsertPasswordCredential(ctx, tx, identity.PasswordCredential{ID: r.ids.NewID(), UserID: u.ID, Hash: "$argon2id$hash", SetAt: r.clock.Now()}),
+			)
+		})
+		return u.ID
 	}
-	if !e.stored(t, reported.URI) {
-		t.Errorf("the reported status is gone, want its rows kept")
-	}
-	e.rows(t, "remote_media", "owner_account_id", aliceID, 1)
-	if erased, err := e.eh.AccountErasure.AccountErased(ctx, aliceID); err != nil || erased {
-		t.Errorf("AccountErased while evidence stays = %v, %v; want false", erased, err)
-	}
-
-	if n := e.run(t, e.eraser(stubEvidence{}, nil, 2)); n != 1 {
-		t.Errorf("erased %d accounts, want 1", n)
-	}
-	statuses["reported"] = reported
-	for name, st := range statuses {
-		if e.stored(t, st.URI) {
-			t.Errorf("status %q is still stored", name)
-		}
-		e.rows(t, "status_revisions", "status_id", st.ID, 0)
-		e.rows(t, "boosts", "status_id", st.ID, 0)
-		e.rows(t, "favourites", "status_id", st.ID, 0)
-		e.rows(t, "bookmarks", "status_id", st.ID, 0)
-		if d, err := e.eh.Statuses.FindDeletion(ctx, st.ID); err != nil || d.Origin != content.DeletedByAccountDeletion {
-			t.Errorf("FindDeletion(%s) = %+v, %v; want origin account_deletion", name, d, err)
-		}
-	}
-	for _, table := range []string{"account_profile_revisions", "account_profile_heads", "account_keys", "account_handles",
-		"remote_account_snapshots", "remote_account_heads", "remote_account_handle_verifications", "reactions", "follow_counters", "account_post_counters"} {
-		e.rows(t, table, "account_id", aliceID, 0)
-	}
-	e.rows(t, "remote_media", "owner_account_id", aliceID, 0)
-	e.rows(t, "media_files", "owner_account_id", aliceID, 0)
-	e.rows(t, "follows", "follower_account_id", aliceID, 0)
-	e.rows(t, "follows", "followee_account_id", aliceID, 0)
-	e.rows(t, "feed_entries", "author_account_id", aliceID, 0)
-	e.rows(t, "feed_entries", "original_author_account_id", aliceID, 0)
-	e.rows(t, "notifications", "source_account_id", aliceID, 0)
-
-	// The row, its URI, and the lifecycle stay; the actor reads as deleted.
-	e.rows(t, "accounts", "id", aliceID, 1)
-	e.rows(t, "remote_accounts", "account_id", aliceID, 1)
-	e.rows(t, "account_lifecycle_events", "account_id", aliceID, 1)
-	actor, err := e.accounts.FindByURI(ctx, alice)
-	if err != nil || !actor.Deleted() || actor.Profile != nil || len(actor.Keys) != 0 || actor.Handle != nil {
-		t.Errorf("erased actor = %+v, %v; want the account and its lifecycle only", actor, err)
-	}
-
-	// The reader keeps their own and loses the counts of hers.
-	if !e.stored(t, own.URI) {
-		t.Errorf("the reader's status is gone")
-	}
-	e.rows(t, "status_reaction_counts", "status_id", own.ID, 0)
-	if c, _ := e.graph.Counters(ctx, reader); c.FollowersCount != 0 || c.FollowingCount != 0 {
-		t.Errorf("the reader's follow counters = %+v, want none", c)
-	}
-	if erased, err := e.eh.AccountErasure.AccountErased(ctx, aliceID); err != nil || !erased {
-		t.Errorf("AccountErased = %v, %v; want true", erased, err)
-	}
-	if n := e.run(t, e.eraser(stubEvidence{}, nil, 2)); n != 0 {
-		t.Errorf("erased %d accounts again, want 0", n)
-	}
-	// The reader's own account is untouched.
-	if a, err := e.accounts.FindByID(ctx, reader); err != nil || a.Profile == nil || a.Handle == nil {
-		t.Errorf("FindByID(reader) = %+v, %v", a, err)
-	}
-}
-
-func erasureRemoteActorsWait(t *testing.T, e *erasureEnv) {
-	ctx := t.Context()
-	const alice = "https://remote.example/users/alice"
-	aliceID := e.actor(t, alice)
-	reader := e.user(t, "reader")
-	e.follow(t, reader, aliceID)
-	note := e.note(t, alice, alice+"/notes/1", time.Hour, nil)
-	profile := func() bool {
-		t.Helper()
-		a, err := e.accounts.FindByID(ctx, aliceID)
-		if err != nil {
-			t.Fatalf("FindByID = %v", err)
-		}
-		return a.Profile != nil
-	}
-	// A remote account that is not deleted is never erased.
-	e.clock.Advance(2 * appaccount.ErasureDelay)
-	if n := e.run(t, e.eraser(nil, nil, 0)); n != 0 || !profile() {
-		t.Errorf("erased %d accounts that are not deleted, want 0", n)
-	}
-	e.markRemoteDeleted(t, aliceID)
-	e.clock.Advance(appaccount.ErasureDelay - time.Minute)
-	if n := e.run(t, e.eraser(nil, nil, 0)); n != 0 || !profile() || !e.stored(t, note.URI) {
-		t.Errorf("erased %d accounts within the delay, want 0", n)
-	}
-	e.clock.Advance(time.Minute)
-	if n := e.run(t, e.eraser(nil, stubHolds{aliceID}, 0)); n != 0 || !profile() || !e.stored(t, note.URI) {
-		t.Errorf("erased %d held accounts, want 0", n)
-	}
-	if n := e.run(t, e.eraser(nil, nil, 0)); n != 1 || profile() || e.stored(t, note.URI) {
-		t.Errorf("erased %d accounts, want 1", n)
-	}
-}
-
-func erasureRemoteActorsStayErased(t *testing.T, e *erasureEnv) {
-	ctx := t.Context()
-	const alice = "https://remote.example/users/alice"
-	aliceID := e.actor(t, alice)
-	reader := e.user(t, "reader")
-	e.follow(t, reader, aliceID)
-	e.note(t, alice, alice+"/notes/1", time.Hour, nil)
-	create := func(id string) []byte {
-		return remoteActivity(t, "Create", id+"/activity", alice, remoteNote(id, alice, remoteNow.Add(-time.Hour), nil))
-	}
-	e.markRemoteDeleted(t, aliceID)
-
-	// Before the erasure, nothing new of the actor is stored.
-	e.expect(t, create(alice+"/notes/2"), appfederation.InboxDropped)
-	if e.stored(t, alice+"/notes/2") {
-		t.Errorf("a post of the deleted actor was stored")
-	}
-	e.clock.Advance(appaccount.ErasureDelay)
-	if n := e.run(t, e.eraser(nil, nil, 0)); n != 1 {
-		t.Fatalf("erased %d accounts, want 1", n)
-	}
-
-	// After it, its activities bring nothing back.
-	e.expect(t, create(alice+"/notes/3"), appfederation.InboxDropped)
-	e.rows(t, "statuses", "author_account_id", aliceID, 0)
-	for _, table := range []string{"account_profile_revisions", "account_handles", "remote_account_snapshots", "remote_account_heads"} {
-		e.rows(t, table, "account_id", aliceID, 0)
-	}
-	if erased, err := e.eh.AccountErasure.AccountErased(ctx, aliceID); err != nil || !erased {
-		t.Errorf("AccountErased = %v, %v; want true", erased, err)
-	}
-}
-
-// erasureBlanksOwnedOAuthClients checks that the erasure of a client's owner removes its name and
-// website, with those of its revisions, and disables it, which stops the tokens other users gave it.
-func erasureBlanksOwnedOAuthClients(t *testing.T, e *erasureEnv) {
-	ctx := t.Context()
-	client := e.thirdPartyApp(t)
-	tokens := e.appTokensFor(t, e.register(t, "user").User.ID)
-	revision := identity.OAuthClientRevision{
-		ID: e.ids.NewID(), ClientID: client.ID, Name: "Renamed", Website: "https://renamed.example/", Scope: client.Scope, RevisedAt: e.clock.Now(),
-	}
-	err := e.eh.UnitOfWork.Tx(ctx, func(tx uow.Tx) error { return e.accountEnv.h.Identity.InsertOAuthClientRevision(ctx, tx, revision) })
-	if err != nil {
-		t.Fatal(err)
-	}
-	eraser := appidentity.NewEraser(e.eh.UnitOfWork, e.eh.IdentityErasure, e.clock, e.ids)
-	for range 2 { // safe to repeat
-		if _, err := eraser.EraseAccountData(ctx, appaccount.ErasureTarget{UserID: client.OwnerUserID}, "", 0); err != nil {
-			t.Fatalf("EraseAccountData = %v", err)
-		}
-	}
-	got, err := e.accountEnv.h.Identity.FindOAuthClientByID(ctx, client.ID)
-	if err != nil || got.Name != "" || got.Website != "" {
-		t.Errorf("the erased owner's client = %+v, %v; want no name or website", got, err)
-	}
-	e.rows(t, "oauth_client_revisions", "name", "Renamed", 0)
-	e.rows(t, "oauth_client_revisions", "website", "https://renamed.example/", 0)
-	e.rows(t, "oauth_client_revisions", "oauth_client_id", client.ID, 1)
-	e.rows(t, "oauth_client_disablements", "oauth_client_id", client.ID, 1)
-	e.wantAccess(t, tokens.AccessToken, false, "a token given to the client of an erased owner")
-}
-
-// erasurePurgesSensitivityOverrides checks that a purged status leaves no sensitivity override.
-func erasurePurgesSensitivityOverrides(t *testing.T, e *erasureEnv) {
-	ctx := t.Context()
-	st := e.postAs(t, e.user(t, "author"), "marked")
-	err := e.eh.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
-		if err := e.eh.Statuses.InsertSensitivityOverride(ctx, tx, st.ID, e.ids.NewID()); err != nil {
+	erasedUser, keptUser := user(), user()
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+		if err := r.h.IdentityErasure.EraseUserData(ctx, tx, erasedUser); err != nil {
 			return err
 		}
-		return e.rh.Retention.PurgeStatuses(ctx, tx, []string{st.ID})
+		if ids, err := r.h.IdentityErasure.ListOwnedOAuthClientIDs(ctx, tx, erasedUser); err != nil || len(ids) != 0 {
+			t.Errorf("ListOwnedOAuthClientIDs(a user without clients) = %v, %v; want none", ids, err)
+		}
+		return r.h.IdentityErasure.BlankOwnedOAuthClientDetails(ctx, tx, erasedUser)
 	})
-	if err != nil {
-		t.Fatal(err)
+	for _, table := range []string{"user_email_addresses", "user_primary_emails", "password_credentials"} {
+		r.rows(t, table, "user_id", erasedUser, 0)
+		r.rows(t, table, "user_id", keptUser, 1)
 	}
-	e.rows(t, "status_sensitivity_overrides", "status_id", st.ID, 0)
+	r.rows(t, "users", "id", erasedUser, 1)
+}
+
+func erasureRepoContent(t *testing.T, r *erasureRepo) {
+	ctx := t.Context()
+	author, other := r.account(t), r.account(t)
+	post := func(by string) content.Status {
+		id := r.ids.NewID()
+		s := content.Status{ID: id, URI: "https://remote.example/notes/" + id, AuthorAccountID: by, Visibility: content.VisibilityPublic, PublishedAt: r.clock.Now()}
+		rev := content.Revision{ID: r.ids.NewID(), StatusID: id, Seq: 1, RevisedAt: s.PublishedAt, Bodies: []content.Body{{ContentHTML: "<p>hi</p>"}}}
+		r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+			return errors.Join(
+				r.h.Statuses.InsertStatus(ctx, tx, s),
+				r.h.Statuses.InsertRevision(ctx, tx, rev),
+				r.h.Statuses.UpsertHead(ctx, tx, content.Head{StatusID: id, RevisionID: rev.ID, Seq: 1, LastRevisedAt: rev.RevisedAt}),
+			)
+		})
+		return s
+	}
+	first, second, third := post(author), post(author), post(author)
+	others := post(other)
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+		return r.h.Statuses.InsertDeletion(ctx, tx, content.Deletion{
+			StatusID: second.ID, URI: second.URI, AuthorAccountID: author, Origin: content.DeletedByAccountDeletion, DeletedAt: r.clock.Now(),
+		})
+	})
+
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+		page, err := r.h.ContentErasure.ListAuthorStatusesToErase(ctx, tx, author, "", 2)
+		want := []appcontent.ErasableStatus{{Status: first}, {Status: second, Deleted: true}}
+		if err != nil || !slices.EqualFunc(page, want, equalErasable) {
+			t.Errorf("ListAuthorStatusesToErase = %+v, %v; want %+v", page, err, want)
+		}
+		page, err = r.h.ContentErasure.ListAuthorStatusesToErase(ctx, tx, author, second.ID, 2)
+		if want := []appcontent.ErasableStatus{{Status: third}}; err != nil || !slices.EqualFunc(page, want, equalErasable) {
+			t.Errorf("the page after the second = %+v, %v; want %+v", page, err, want)
+		}
+		return nil
+	})
+
+	// The other account favourites a post of the author and one of its own.
+	for _, s := range []content.Status{first, others} {
+		r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+			id := r.ids.NewID()
+			_, err := r.h.Interactions.InsertFavourite(ctx, tx, content.Favourite{
+				ID: id, AccountID: other, StatusID: s.ID, URI: "https://remote.example/likes/" + id, CreatedAt: r.clock.Now(),
+			})
+			return err
+		})
+	}
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+		return r.h.ContentErasure.EraseStatuses(ctx, tx, []string{second.ID})
+	})
+	if _, err := r.h.Statuses.FindStatus(ctx, second.ID); !errors.Is(err, appcontent.ErrNotFound) {
+		t.Errorf("FindStatus(erased) = %v, want ErrNotFound", err)
+	}
+	if _, err := r.h.Statuses.FindDeletion(ctx, second.ID); err != nil {
+		t.Errorf("FindDeletion(erased) = %v, want the deletion kept", err)
+	}
+
+	for i, want := range []int64{1, 1, 0} {
+		r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+			n, err := r.h.ContentErasure.EraseInteractionsBy(ctx, tx, other, 1)
+			if err == nil && n != want {
+				t.Errorf("EraseInteractionsBy #%d = %d, want %d", i+1, n, want)
+			}
+			return err
+		})
+	}
+	r.rows(t, "favourites", "account_id", other, 0)
+	if _, err := r.h.Statuses.FindStatus(ctx, others.ID); err != nil {
+		t.Errorf("FindStatus(the other account's) = %v, want it kept", err)
+	}
+}
+
+func equalErasable(a, b appcontent.ErasableStatus) bool {
+	return a.Deleted == b.Deleted && a.Status.ID == b.Status.ID && a.Status.URI == b.Status.URI &&
+		a.Status.AuthorAccountID == b.Status.AuthorAccountID && a.Status.PublishedAt.Equal(b.Status.PublishedAt)
+}
+
+func erasureRepoGraph(t *testing.T, r *erasureRepo) {
+	ctx := t.Context()
+	erased, a, b, c := r.account(t), r.account(t), r.account(t), r.account(t)
+	follow := func(follower, followee string) {
+		f := graph.Follow{ID: r.ids.NewID(), URI: "https://remote.example/follows/" + r.ids.NewID(), FollowerAccountID: follower, FolloweeAccountID: followee, RequestedAt: r.clock.Now()}
+		r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+			if err := r.h.Graph.InsertFollow(ctx, tx, f); err != nil {
+				return err
+			}
+			_, err := r.h.Graph.InsertEdge(ctx, tx, graph.Edge{FollowerAccountID: follower, FolloweeAccountID: followee, FollowID: f.ID, State: graph.StateActive, Since: r.clock.Now()})
+			return err
+		})
+	}
+	follow(erased, a)
+	follow(b, erased)
+	follow(a, b)
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+		var errs []error
+		for _, pair := range [][2]string{{erased, a}, {c, erased}, {a, c}} {
+			blk := graph.Block{ID: r.ids.NewID(), BlockerAccountID: pair[0], BlockedAccountID: pair[1], CreatedAt: r.clock.Now()}
+			_, err := r.h.Graph.InsertBlockEdge(ctx, tx, graph.BlockEdge{BlockerAccountID: pair[0], BlockedAccountID: pair[1], BlockID: blk.ID})
+			errs = append(errs, r.h.Graph.InsertBlock(ctx, tx, blk), err)
+		}
+		for _, pair := range [][2]string{{erased, a}, {erased, b}, {c, erased}, {a, b}} {
+			errs = append(errs, r.h.Graph.UpsertMute(ctx, tx, graph.Mute{AccountID: pair[0], TargetAccountID: pair[1], CreatedAt: r.clock.Now()}))
+		}
+		errs = append(errs,
+			r.h.Graph.UpsertCounters(ctx, tx, graph.Counters{AccountID: erased, FollowersCount: 1, FollowingCount: 1}),
+			r.h.Graph.UpsertCounters(ctx, tx, graph.Counters{AccountID: a, FollowersCount: 1, FollowingCount: 1}))
+		return errors.Join(errs...)
+	})
+
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+		if edges, err := r.h.GraphErasure.ListEdgesToErase(ctx, tx, erased, 10); err != nil || len(edges) != 2 {
+			t.Errorf("ListEdgesToErase = %+v, %v; want the 2 follows into and out of the account", edges, err)
+		}
+		if edges, err := r.h.GraphErasure.ListEdgesToErase(ctx, tx, erased, 1); err != nil || len(edges) != 1 {
+			t.Errorf("ListEdgesToErase(limit 1) = %+v, %v; want 1", edges, err)
+		}
+		return nil
+	})
+	type erase struct {
+		name string
+		fn   func(ctx context.Context, tx uow.Tx, accountID string, limit int) (int64, error)
+		want []int64
+	}
+	for _, e := range []erase{
+		{"EraseFollowsOf", r.h.GraphErasure.EraseFollowsOf, []int64{1, 1, 0}},
+		{"EraseBlocksOf", r.h.GraphErasure.EraseBlocksOf, []int64{1, 1, 0}},
+		// Two mutes by the account and one of it: the more of the two counts per call.
+		{"EraseMutesOf", r.h.GraphErasure.EraseMutesOf, []int64{1, 1, 0}},
+	} {
+		for i, want := range e.want {
+			r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+				n, err := e.fn(ctx, tx, erased, 1)
+				if err == nil && n != want {
+					t.Errorf("%s #%d = %d, want %d", e.name, i+1, n, want)
+				}
+				return err
+			})
+		}
+	}
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error { return r.h.GraphErasure.EraseCountersOf(ctx, tx, erased) })
+
+	edges, err := r.h.Graph.ListEdges(ctx)
+	if err != nil || len(edges) != 1 || edges[0].FollowerAccountID != a || edges[0].FolloweeAccountID != b {
+		t.Errorf("ListEdges after the erasure = %+v, %v; want only %s -> %s", edges, err, a, b)
+	}
+	blocks, err := r.h.Graph.ListBlockEdges(ctx)
+	if err != nil || len(blocks) != 1 || blocks[0].BlockerAccountID != a {
+		t.Errorf("ListBlockEdges after the erasure = %+v, %v; want only the block by %s", blocks, err, a)
+	}
+	var mutes []graph.Mute
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+		var err error
+		mutes, err = r.h.Graph.ListAllMutes(ctx, tx)
+		return err
+	})
+	if len(mutes) != 1 || mutes[0].AccountID != a {
+		t.Errorf("ListAllMutes after the erasure = %+v; want only the mute by %s", mutes, a)
+	}
+	counters, err := r.h.Graph.ListCounters(ctx)
+	if err != nil || len(counters) != 1 || counters[0].AccountID != a {
+		t.Errorf("ListCounters after the erasure = %+v, %v; want only %s", counters, err, a)
+	}
+}
+
+func erasureRepoFeeds(t *testing.T, r *erasureRepo) {
+	erased, other := r.account(t), r.account(t)
+	entry := func(author string) apptimeline.Entry {
+		e := apptimeline.Entry{
+			ID: r.ids.NewID(), Kind: timeline.KindPost, StatusID: r.ids.NewID(), AuthorAccountID: author, AuthorDomain: "remote.example",
+			OriginalAuthorAccountID: author, OriginalAuthorDomain: "remote.example", Visibility: content.VisibilityPublic, RevisionSeq: 1,
+		}
+		r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+			_, err := r.h.Timeline.InsertEntry(ctx, tx, e)
+			return err
+		})
+		return e
+	}
+	entry(erased)
+	entry(erased)
+	entry(other)
+	for i, want := range []int64{1, 1, 0} {
+		r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+			n, err := r.h.TimelineErasure.EraseFeedsOf(ctx, tx, erased, 1)
+			if err == nil && n != want {
+				t.Errorf("EraseFeedsOf #%d = %d, want %d", i+1, n, want)
+			}
+			return err
+		})
+	}
+	r.rows(t, "feed_entries", "author_account_id", erased, 0)
+	r.rows(t, "feed_entries", "author_account_id", other, 1)
+
+	notify := func(recipient, source, statusID string) {
+		n := notification.Notification{ID: r.ids.NewID(), RecipientAccountID: recipient, Type: notification.TypeFavourite, SourceAccountID: source, StatusID: statusID, CreatedAt: r.clock.Now()}
+		if statusID == "" {
+			n.Type = notification.TypeFollow
+		}
+		r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+			_, err := r.h.Notifications.InsertNotification(ctx, tx, n)
+			return err
+		})
+	}
+	third := r.account(t)
+	erasedStatus := r.ids.NewID()
+	notify(erased, other, "")
+	notify(other, erased, "")
+	notify(other, third, erasedStatus)
+	notify(third, other, "")
+	for i, want := range []int64{1, 1, 0} {
+		r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+			n, err := r.h.NotificationErasure.EraseNotificationsOf(ctx, tx, erased, "", 1)
+			if err == nil && n != want {
+				t.Errorf("EraseNotificationsOf #%d = %d, want %d", i+1, n, want)
+			}
+			return err
+		})
+	}
+	r.rows(t, "notifications", "recipient_account_id", erased, 0)
+	r.rows(t, "notifications", "source_account_id", erased, 0)
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+		return r.h.NotificationErasure.EraseStatusNotifications(ctx, tx, []string{erasedStatus})
+	})
+	r.rows(t, "notifications", "status_id", erasedStatus, 0)
+	r.rows(t, "notifications", "recipient_account_id", third, 1)
 }

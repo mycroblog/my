@@ -11,7 +11,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/identity"
 )
 
-// The cases of AccountErasureContract on the purge of expired sign-in records.
+// The cases of AccountErasureFlows on the purge of expired sign-in records.
 
 const authPurgeDay = 24 * time.Hour
 
