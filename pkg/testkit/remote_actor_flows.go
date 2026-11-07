@@ -16,7 +16,6 @@ import (
 	"net/http"
 	"net/url"
 	"reflect"
-	"regexp"
 	"strings"
 	"sync"
 	"testing"
@@ -147,19 +146,6 @@ func newRemoteEnv(t *testing.T, newHarness RemoteActorFactory) *remoteEnv {
 	e.actors.RegisterJobs(e.handlers, e.scheduler)
 	return e
 }
-
-// remoteSanitizer stands in for the HTML sanitizer: it drops script elements and records
-// version 7, so that the contract sees that remote HTML went through it.
-type remoteSanitizer struct{}
-
-var (
-	remoteScripts = regexp.MustCompile(`(?s)<script.*?</script>`)
-	remoteTags    = regexp.MustCompile(`<[^>]*>`)
-)
-
-func (remoteSanitizer) SanitizeHTML(s string) string { return remoteScripts.ReplaceAllString(s, "") }
-func (remoteSanitizer) PlainText(s string) string    { return remoteTags.ReplaceAllString(s, "") }
-func (remoteSanitizer) PolicyVersion() int           { return 7 }
 
 // remoteSigner stands in for the HTTP signature adapter: it names the key in a Signature header.
 type remoteSigner struct{}

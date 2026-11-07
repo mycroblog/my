@@ -197,8 +197,6 @@ type accountEnv struct {
 	unsubscriptions *stubUnsubscriptions
 }
 
-const contractHost = "social.example"
-
 // cheapArgon2 keeps the contract fast; the parameters do not affect what is stored.
 var cheapArgon2 = appidentity.Argon2Params{MemoryKiB: 64, Iterations: 1, Parallelism: 1, SaltLength: 16, KeyLength: 32}
 

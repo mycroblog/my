@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"math/rand/v2"
 	"reflect"
-	"slices"
 	"sync"
 	"testing"
 	"time"
@@ -208,50 +207,6 @@ func (e *interactionEnv) post(t *testing.T, author string, v content.Visibility,
 
 func (e *interactionEnv) follow(follower, followee string, state graph.State) {
 	e.relations.set(follower, followee, state)
-}
-
-type stubActors struct {
-	mu     sync.Mutex
-	actors map[string]appaccount.Actor
-}
-
-func (s *stubActors) set(a appaccount.Actor) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	s.actors[a.Account.ID] = a
-}
-
-func (s *stubActors) local(id string) bool {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	return s.actors[id].Account.IsLocal()
-}
-
-func (s *stubActors) FindByHandle(context.Context, string, string) (appaccount.Actor, error) {
-	return appaccount.Actor{}, appaccount.ErrNotFound
-}
-
-func (s *stubActors) FindByID(_ context.Context, id string) (appaccount.Actor, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	a, ok := s.actors[id]
-	if !ok {
-		return appaccount.Actor{}, appaccount.ErrNotFound
-	}
-	return a, nil
-}
-
-func (s *stubActors) ExistingIDs(_ context.Context, ids []string) ([]string, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	var out []string
-	for _, id := range ids {
-		if _, ok := s.actors[id]; ok {
-			out = append(out, id)
-		}
-	}
-	slices.Sort(out)
-	return out, nil
 }
 
 type stubRelations struct {
@@ -1045,13 +1000,4 @@ func snapshotInteractionProjections(t *testing.T, h InteractionHarness) interact
 		t.Fatalf("ListAllReactionCounts = %v", err)
 	}
 	return p
-}
-
-// MoveState implements the graph module's Accounts: no stub account has moved.
-func (s *stubActors) MoveState(context.Context, string) (appaccount.MoveState, error) {
-	return appaccount.MoveState{}, appaccount.ErrNotFound
-}
-
-func (s *stubActors) FindByIDTx(ctx context.Context, _ uow.Tx, id string) (appaccount.Actor, error) {
-	return s.FindByID(ctx, id)
 }

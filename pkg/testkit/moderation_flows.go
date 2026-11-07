@@ -467,12 +467,6 @@ func moderationListsAccountActions(t *testing.T, e *moderationEnv) {
 	}
 }
 
-// AccountDomain implements appmoderation.AccountDomains.
-func (s *stubActors) AccountDomain(ctx context.Context, id string) (string, error) {
-	a, err := s.FindByID(ctx, id)
-	return a.Account.Domain, err
-}
-
 func moderationRejectsInvalid(t *testing.T, e *moderationEnv) {
 	ctx := t.Context()
 	for _, in := range []appmoderation.DomainActionInput{
@@ -1236,8 +1230,4 @@ func moderationFirstOpenReport(t *testing.T, e *moderationEnv) {
 		t.Error("a report after the others are resolved is not FirstOpen")
 	}
 	count(1)
-}
-
-func (s *stubActors) AccountDomainTx(ctx context.Context, _ uow.Tx, id string) (string, error) {
-	return s.AccountDomain(ctx, id)
 }

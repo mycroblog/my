@@ -79,28 +79,6 @@ type followEnv struct {
 	captured *uow.Projectors
 }
 
-// eventLog records the graph events that commands emit (committed or not).
-type eventLog struct {
-	mu     sync.Mutex
-	events []uow.Event
-}
-
-// record is a projector that logs e.
-func (l *eventLog) record(_ context.Context, _ uow.Tx, e uow.Event) error {
-	l.mu.Lock()
-	defer l.mu.Unlock()
-	l.events = append(l.events, e)
-	return nil
-}
-
-func (l *eventLog) take() []uow.Event {
-	l.mu.Lock()
-	defer l.mu.Unlock()
-	out := l.events
-	l.events = nil
-	return out
-}
-
 func newFollowEnv(t *testing.T, newHarness FollowFactory) *followEnv {
 	t.Helper()
 	var (

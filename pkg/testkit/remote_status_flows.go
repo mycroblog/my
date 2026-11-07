@@ -698,11 +698,6 @@ func remoteStatusStoresStringsWithNUL(t *testing.T, e *remoteStatusEnv) {
 	}
 }
 
-func sortedIDs(ids ...string) []string {
-	slices.Sort(ids)
-	return ids
-}
-
 // follower stores the remote actor uri, makes a local account follow it, and returns its ID.
 func (e *remoteStatusEnv) follower(t *testing.T, uri string) string {
 	t.Helper()

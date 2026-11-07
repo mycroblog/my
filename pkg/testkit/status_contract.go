@@ -103,34 +103,6 @@ func newStatusEnv(t *testing.T, newHarness StatusFactory) *statusEnv {
 	return e
 }
 
-// rendezvous lets each of n transactions wait, inside the transaction, until all n reach it or
-// patience runs out. A transaction that waits for a lock that another one holds never reaches
-// it, so patience bounds the wait; the transactions then go on in the order the database allows.
-type rendezvous struct {
-	arrived  chan struct{}
-	n        int
-	patience time.Duration
-}
-
-func newRendezvous(n int) *rendezvous {
-	return &rendezvous{arrived: make(chan struct{}, n), n: n, patience: 300 * time.Millisecond}
-}
-
-func (r *rendezvous) wait() {
-	r.arrived <- struct{}{}
-	deadline := time.After(r.patience)
-	for {
-		if len(r.arrived) == r.n {
-			return
-		}
-		select {
-		case <-deadline:
-			return
-		case <-time.After(time.Millisecond):
-		}
-	}
-}
-
 // statusConvergesToRebuild fails the test unless the incremental projections equal a rebuild.
 func statusConvergesToRebuild(t *testing.T, e *statusEnv) {
 	t.Helper()

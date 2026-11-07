@@ -85,27 +85,6 @@ func (s *stubStaff) UnsubscribeLink(_ context.Context, accountID string, g notif
 	return "https://" + contractHost + "/mail/unsubscribe?token=my_eut_" + accountID + "_" + string(g), nil
 }
 
-// recordingOutbox is a queue.Outbox that keeps the jobs it is given.
-type recordingOutbox struct {
-	mu   sync.Mutex
-	jobs []queue.NewJob
-}
-
-func (o *recordingOutbox) EnqueueTx(_ context.Context, _ uow.Tx, jobs ...queue.NewJob) error {
-	o.mu.Lock()
-	defer o.mu.Unlock()
-	o.jobs = append(o.jobs, jobs...)
-	return nil
-}
-
-func (o *recordingOutbox) take() []queue.NewJob {
-	o.mu.Lock()
-	defer o.mu.Unlock()
-	out := o.jobs
-	o.jobs = nil
-	return out
-}
-
 // notificationModerators checks the moderator notifications (FR-712): an admin_report of the
 // first open report of an account to the holders of manage_reports other than the reporter
 // and the target, an admin_sign_up of a pending registration to the holders of
