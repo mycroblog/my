@@ -36,3 +36,14 @@ func TestAdminAccountFlows(t *testing.T) {
 		}
 	})
 }
+
+func TestAccountSearchFlows(t *testing.T) {
+	t.Parallel()
+	testkit.AccountSearchFlows(t, func(t *testing.T, opts uow.Options) testkit.AccountSearchHarness {
+		db := flowtest.SQLite(t, opts)
+		return testkit.AccountSearchHarness{
+			UnitOfWork: db, Identity: db.IdentityRepository(), Accounts: db.AccountRepository(),
+			Graph: db.GraphRepository(), Moderation: db.ModerationRepository(),
+		}
+	})
+}
