@@ -88,7 +88,10 @@ Docker の構成は次のとおり。
 ### 8. サプライチェーン
 
 - **来歴と署名は `actions/attest` にまとめる。** 公開リポジトリでは Sigstore の keyless 署名になり、workflow の ID と commit が digest に結び付く。npm の provenance と同じ考え方である。
+- **証明はレジストリに push しない**（`push-to-registry: false`）。リポジトリの attestation にだけ置き、`gh attestation verify` はそこから読む。
+  GHCR は OCI の referrers API を持たないので、push した証明は代わりのタグ `sha256-<digest>` になり、版のタグの一覧に digest ごとに並ぶ。
 - **cosign の署名は足さない。** 署名の基盤は同じ Sigstore で、足すと書き込みと OIDC の権限を持つジョブの依存が増える（Trivy の事件を参照）。覆す条件: 運営者の入場制御（policy-controller など）が `actions/attest` の証明を読めないと分かったとき（要検証）。
+  証明がレジストリにないので、レジストリから証明を探す入場制御はこれを見つけられない。そうした運営者が出たら、証明の push（GHCR が referrers API を持てばタグは増えない）か cosign を足す
 - **SBOM は buildx の `sbom: true`** で、インデックスに入れる。インデックスの digest に対する来歴がこれも覆う。`web` ステージに `ARG BUILDKIT_SBOM_SCAN_STAGE=true` を置く。既定の最終ステージだけでは、Go の embed に入る npm パッケージが載らない。開発用のパッケージも載る点は受け入れる。
 - **buildx の来歴は切る**（`provenance: false`）。署名のない来歴が重なるだけで、役に立つのは署名のある方である。
 - **脆弱性の検査は止めない報告にする。** 別のジョブで、書き込み権限なしに、digest で固定した Grype のコンテナでイメージを調べる。
@@ -144,6 +147,8 @@ M5（エピック #30）で `ghcr.io/mycroblog/my` のイメージが要り、§
 
 判断の元にした事実（2026-11-03 に確認）: GHCR の新しいパッケージは非公開が既定で、公開イメージは匿名で pull でき、保存と転送は現在無料（[Billing](https://docs.github.com/en/billing/managing-billing-for-github-packages/about-billing-for-github-packages)）。5,000 回を超えてダウンロードされた公開の版は API で消せない（[REST](https://docs.github.com/en/rest/packages/packages)）。`published` は下書きからの公開で発火し pre-release も含む（[Events](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows)）。buildx の SBOM は既定で最後のステージだけを調べる（[SBOM](https://docs.docker.com/build/metadata/attestations/sbom/)）。Immutable releases は公開した Release のタグとアセットを固定する（[Immutable releases](https://docs.github.com/en/code-security/supply-chain-security/understanding-your-software-supply-chain/immutable-releases)）。2026 年 3 月に `trivy-action` のタグの 76/77 が書き換えられ、Aqua は commit SHA への固定だけが確実と述べた（[Aqua](https://www.aquasec.com/blog/trivy-supply-chain-attack-what-you-need-to-know)）。
 
+rc のリリースで、証明を push したために `sha256-<digest>` のタグが版のタグの間に並んだ。決定者が、証明をレジストリに push しないと決めた（§8）。
+
 ## 採らなかった案
 
 - すべて `release.yml` で全タグを付ける: 1 つのワークフローで済むが、ノートより先に `0.1` が動き、更新の手順のない版が運営者に届く。
@@ -152,6 +157,7 @@ M5（エピック #30）で `ghcr.io/mycroblog/my` のイメージが要り、§
 - イメージを先に作りスローな検査がそれを試す: 検査したものそのものを出せるが、検査の組み直しが大きく、失敗した候補がレジストリに残り、E2E の多くはイメージを使わない。
 - `latest`（`0` の有無を問わず）: 試すだけの人には最短でタグなしのツールも動く。つまずきは一度のエラーで済むのに対し、作った場合の最悪は運用中のインスタンスの停止である。
 - `edge`: 変更をすぐ試せて次のリリースへも上がれるが、`v0.1.0` の時点で試す人は rc で足りる。足すのはいつでもできる。
+- 証明をレジストリにも push する（`push-to-registry: true`）: レジストリだけを読む道具（cosign・入場制御）からも証明が見つかる。しかし GHCR では digest ごとにタグ `sha256-<digest>` が増えて版のタグの一覧が読みにくくなり、文書の確認の手順（`gh attestation verify`）は使わない。
 - cosign: `cosign verify` は広く知られ `gh` なしで確かめられ、1 ステップで足せる。入場制御で読めないと分かれば足す。
 - バイナリの添付: 単一の静的バイナリで費用は小さく VM でも動くが、需要が出てから足す。
 
