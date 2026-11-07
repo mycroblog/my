@@ -21,13 +21,14 @@ import (
 // The account module's types that other modules name in their ports.
 type (
 	Account    = account.Account
-	// ReceivedProfile is what the decision hook inbound.actor reviews of a remote profile.
-	ReceivedProfile = account.ReceivedProfile
 	Key        = account.Key
 	RemoteHead = account.RemoteHead
 	Move       = account.Move
 	MoveState  = account.MoveState
 	Alias      = account.Alias
+
+	// ReceivedProfile is what the decision hook inbound.actor reviews of a remote profile.
+	ReceivedProfile = account.ReceivedProfile
 )
 
 // MoveInitiatedBySelf is the initiator of a local account's own move; see
