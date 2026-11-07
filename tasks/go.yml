@@ -8,8 +8,15 @@ vars:
   # Go tools (go-licenses, sqlc, oapi-codegen, go-task) are pinned with `tool` directives in tools/go.mod,
   # kept apart from the product module so their dependencies never affect ours.
   GO_TOOL: go tool -modfile=tools/go.mod
-  # The packages whose tests use PostgreSQL through pkg/testkit/pgtest.
-  POSTGRES_TEST_PACKAGES: ./internal/adapter/db/postgres/ ./internal/adapter/kv/db/ ./internal/adapter/queue/db/ ./internal/adapter/stream/postgres/ ./internal/platform/
+  # The PostgreSQL tests whose result can differ between pgmem and a real server (ADR-0015 §3): pgmem is PostgreSQL
+  # itself, so the SQL of the repository contracts is already checked on it, and a container adds only the connection
+  # over the network and its pool (Acquire*, OpenSQL*, Ready), Atlas against a real server (ApplySchema*), the
+  # isolation, locks, and deadlocks between connections (TransactionsAreReadCommitted, RetriesDeadlocks, *Lock*,
+  # TxReads*, UnitOfWorkContract, RejectsForeignTransactions), the planner (AccountSearchUsesTermIndex), the size of a
+  # real database (DatabaseSizerContract), SKIP LOCKED and LISTEN/NOTIFY of the queue, the key-value store, and the
+  # stream (TestPostgres* of kv/db and queue/db, every test of stream/postgres).
+  POSTGRES_CONTAINER_PACKAGES: ./internal/adapter/db/postgres/ ./internal/adapter/kv/db/ ./internal/adapter/queue/db/ ./internal/adapter/stream/postgres/
+  POSTGRES_CONTAINER_TESTS: ^Test(Acquire|OpenSQL|Ready|ApplySchema|TransactionsAreReadCommitted|RetriesDeadlocks|AccountRestrictionsLock|TokenGrantsLock|TxReads|UnitOfWorkContract|RejectsForeignTransactions|AccountSearchUsesTermIndex|DatabaseSizerContract|Postgres|Stream|NewRejectsBadOptions|ListenURL)
   # The AI crawlers that /robots.txt names (ADR-0057), from ai-robots-txt/ai.robots.txt (MIT). To
   # update the list, change both to a newer commit, run go:ai-crawlers, and review the diff.
   AI_ROBOTS_COMMIT: a446ec974c221a133cb21cb96f30c4585b208998
@@ -52,12 +59,12 @@ tasks:
       - go test ./...
 
   test-postgres:
-    desc: Run the PostgreSQL tests on a postgres container instead of pgmem (needs Docker; CI in the slow suite)
+    desc: Run the PostgreSQL tests whose result can differ from pgmem on a postgres container (needs Docker; CI in the slow suite, and in the merge queue when the PostgreSQL adapters change)
     env:
       TEST_POSTGRES: container
       TEST_POSTGRES_REQUIRED: "1"
     cmds:
-      - go test -count=1 {{.POSTGRES_TEST_PACKAGES}}
+      - go test -count=1 -run '{{.POSTGRES_CONTAINER_TESTS}}' {{.POSTGRES_CONTAINER_PACKAGES}}
 
   test-stream:
     desc: Run the stream.Bus contracts on broker containers instead of the in-process fakes (Valkey; Floci for SNS / SQS; the Pub/Sub emulator) (needs Docker; CI in the slow suite)

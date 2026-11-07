@@ -265,7 +265,7 @@ scripts/task.sh go:sqlc-check  # fail when the generated code is stale (part of 
 - The PostgreSQL tests get their server from `pkg/testkit/pgtest`. By default it starts pgmem (PostgreSQL in memory)
   inside the test process, so no Docker is needed: one server per test binary, and each test copies a template
   database with the schema applied.
-- To run against a real PostgreSQL, use one of these (CI runs `scripts/task.sh go:test-postgres` nightly):
+- To run against a real PostgreSQL, use one of these (CI runs `scripts/task.sh go:test-postgres`, the tests whose result can differ from pgmem, nightly):
   - `scripts/task.sh go:test-postgres`: starts a testcontainers-go container (`TEST_POSTGRES_IMAGE`, default
     `postgres:18-alpine`) with `TEST_POSTGRES=container`. Without Docker it fails, since it sets
     `TEST_POSTGRES_REQUIRED=1`.
