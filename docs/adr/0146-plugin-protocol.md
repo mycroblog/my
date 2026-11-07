@@ -30,7 +30,7 @@
 | `mailer` | `kernel.Mailer` | #2219 |
 | `media_image`・`media_video`・`media_audio` | `media.Processor`（`AVProcessor` を含む）。画像・動画・音声だけのファイルの 3 つに分ける（§13） | #2220、#2406 |
 | `key_manager` | `kernel.KeyManager` | #2221 |
-| フック | [ADR-0147](0147-decision-hooks.md) の各フック | #2222〜#2227 |
+| フック | [ADR-0147](0147-decision-hooks.md) の各フック | #2222〜#2227、#2431、#2432 |
 | `probe` | なし。何も委譲しない | #2216 |
 
 `probe` は宛先の設定を持たず、`my plugin test --kind probe` だけが呼ぶ。`Echo` の 1 つの RPC で、どの kind のプラグインも自分の kind を作る前に輸送・プロトコル・認証を確かめられる。秘密も本文も運ばないので平文の TCP を許す（§6）。proto は他の kind と同じく `v0.1.0` のタグで凍る。
@@ -89,6 +89,7 @@
 | `signup.check` のフック | メールアドレスと IP | 拒否 |
 | `inbound.follow` のフック | フォローの当事者 | 許可 |
 | `media.check` のフック | 処理後の小さな版。原本は送らない | 許可 |
+| `inbound.actor`・`local.profile` のフック | 公開のプロフィール（表示名・自己紹介・項目・画像の URL か変更の有無） | 許可 |
 
 - 平文の TCP を使う kind は、起動時に kind と宛先を挙げて警告する。bearer を使えないので、相手の認証も暗号化もない。そのネットワークを守るのは運営者の責任で、運用文書にそう書く
 - 線の理由: 拒むのは、漏れると別の被害に広がる秘密（DEK、確認のリンク）と、投稿の本文（運営者が許せば `private`・`direct` も）や個人のデータ（メールアドレスと IP）を運ぶ kind である。メディアの kind は出力を `my` が確かめ（§13）、`billing`・`inbound.follow`・`media.check` が運ぶのは本文や個人の連絡先ではない。閉じたネットワークの LibreTranslate は Unix ソケットか TLS を使う。

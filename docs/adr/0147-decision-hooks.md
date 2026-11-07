@@ -30,14 +30,19 @@
 | `signup.check` | `SignUp` と `SignUpExternal`。CAPTCHA と拒否リストの後。招待の登録は呼ばない | `allow`, `require_approval`, `reject`（運営者が `hook_signup_check_reject` を有効にしたときだけ） | 通す（`require_approval`） | 2 秒 |
 | `media.check` | `media.process` の、結果が `ready` になる前。原本は送らない | `allow`, `mark_sensitive`, `flag`, `reject` | 通す（`retry`） | 10 秒 |
 | `local.status` | `content.Service.Create` と `content.Service.Edit` のトランザクションの前。冪等な再送の確認の後。既定は作成から 7 日以内のアカウントだけ（`hook_local_status_account_age_days`） | `allow`, `flag`, `reject` | 通す（選択肢なし） | 1 秒 |
+| `inbound.actor` | リモートの Actor のプロフィールの取り込み（初めての取得・`Update`・再取得）のトランザクションの前。フックに送るプロフィールが変わったときだけ | `allow`, `drop`, `flag` | 通す（`retry`） | 3 秒 |
+| `local.profile` | ローカルのアカウントのプロフィールの更新のトランザクションの前。既定は作成から 7 日以内のアカウントだけ（`hook_local_profile_account_age_days`） | `allow`, `flag`, `reject` | 通す（選択肢なし） | 1 秒 |
 
 - `media.check` の判定は `allow`・`mark_sensitive`・`flag`・`reject`。処理結果が出ると原本の blob が消えるので（`uploaded_media`）、`reject` は原本を残さない。保全や通報の義務は運営者とその国の話で、ソフトウェアでは決めない。使うかどうかはモードとプラグインの判定で運営者が選び、運用文書にこの性質を書く。
 - `local.status` はローカルの投稿の編集も審査する。対象は作成と同じで、`hook_local_status_account_age_days` の範囲のアカウントだけ。対象は版ごとに別で、キーは `<投稿の ID>#<新しい版の ID>` とする。`reject` はその編集だけを拒み、投稿は編集前のまま残る。編集の `reject` には異議申し立てを付けない（投稿は残っていて、モデレーターは通常の操作で扱える）。`flag` は投稿と同じく通報を起票し（§7）、`allow` は通す。
+- `inbound.actor` と `local.profile` が送るプロフィールは、表示名・自己紹介・プロフィールの項目と、アイコンとヘッダー（`inbound.actor` はその URL、`local.profile` は変わったかどうか）である。画像の中身は送らない。どちらも `flag` はアカウントへの通報を起票する（§7）。
+- `inbound.actor` の `drop` は既知の Actor の更新を捨て、保存済みのプロフィールを前のまま残す。初めての取得の Actor は、フォローとメンションの解決に行が要るので捨てられず、`drop` を `flag` として扱う。プロフィールを書き換えて取り込むことはしない（§1 の 1）。
+- `local.profile` の `reject` はその更新だけを拒み、プロフィールは更新の前のまま残る。異議申し立ては付けない（利用者は直して送り直せる）。拒んだ理由は見せず、決まった文を i18n のメッセージで出す（§12）。
 - `Delete`・`Undo`・`Reject`、`Like`・リアクション・ブースト、配送の前にはフックを置かない。1 つのフックに複数のプラグインは連ねない。
 - 事後の確認は webhook（ADR-0060）と API の役目で、ここには持ち込まない。
 - フックを設定していないサーバーはプラグインを呼ばない。
-- 投稿の本文を送る `inbound.status` と `local.status`、メールアドレスと IP アドレスを送る `signup.check` は平文の TCP を拒み、`inbound.follow` と `media.check` は使える（ADR-0146 §6）。
-- 設定はインスタンス設定に置く。フックごとのモードは `hook_<hook>_mode`（`<hook>` はフック名の `.` を `_` にしたもの。既定は `observe`。§5）。失敗時の選択肢は `hook_<hook>_on_failure` で、既定は `pass`（通す）、もう 1 つは表の括弧の中のもの。選択肢のない `local.status` はこの設定を持たない。`signup.check` の `reject` を効かせるのは `hook_signup_check_reject`（真偽値、既定は無効）で、無効の間は `reject` を記録するだけで登録を通す。`local.status` の対象は `hook_local_status_account_age_days`（既定は 7、`0` はすべてのアカウント）で絞る。`inbound.status` の `direct` は §10 の `hook_inbound_status_unfollowed_direct`。
+- 投稿の本文を送る `inbound.status` と `local.status`、メールアドレスと IP アドレスを送る `signup.check` は平文の TCP を拒み、`inbound.follow`・`media.check`・公開のプロフィールを送る `inbound.actor` と `local.profile` は使える（ADR-0146 §6）。
+- 設定はインスタンス設定に置く。フックごとのモードは `hook_<hook>_mode`（`<hook>` はフック名の `.` を `_` にしたもの。既定は `observe`。§5）。失敗時の選択肢は `hook_<hook>_on_failure` で、既定は `pass`（通す）、もう 1 つは表の括弧の中のもの。選択肢のない `local.status` はこの設定を持たない。`signup.check` の `reject` を効かせるのは `hook_signup_check_reject`（真偽値、既定は無効）で、無効の間は `reject` を記録するだけで登録を通す。`local.status` の対象は `hook_local_status_account_age_days`（既定は 7、`0` はすべてのアカウント）で絞る。`local.profile` も同じく `hook_local_profile_account_age_days` で絞り、`local.status` と同じく失敗時の選択肢を持たない。`inbound.status` の `direct` は §10 の `hook_inbound_status_unfollowed_direct`。
 
 ### 3. `inbound.status` の位置
 
@@ -69,7 +74,7 @@
 
 ADR-0020 の分類で次を足す。`schema/<dialect>/16-hook.sql` に置き、`internal/app/hook` が所有する。
 
-- `hook_decisions`（イベント）: フック、対象のキー、モード、結果（判定または失敗の種類）、理由コード、メモ、待ち時間、日時。`(hook, subject_key)` で一意。本文・メールアドレス・IP は持たない。`inbound.*` の対象のキーは受信したアクティビティの URI で、`Update` の版ごとに別の判定になる。`local.status` のキーは新しい投稿ではその投稿の ID、編集では `<投稿の ID>#<新しい版の ID>` で、編集ごとに別の判定になる（§2）。
+- `hook_decisions`（イベント）: フック、対象のキー、モード、結果（判定または失敗の種類）、理由コード、メモ、待ち時間、日時。`(hook, subject_key)` で一意。本文・メールアドレス・IP は持たない。`inbound.*` の対象のキーは受信したアクティビティの URI で、`Update` の版ごとに別の判定になる。`local.status` のキーは新しい投稿ではその投稿の ID、編集では `<投稿の ID>#<新しい版の ID>` で、編集ごとに別の判定になる（§2）。`inbound.actor` のキーは `<Actor の URI>#<送るプロフィールのハッシュ>` で、プロフィールの中身ごとに 1 つの判定になり、同じプロフィールの再取得はプラグインを呼ばない。`local.profile` のキーは `<アカウントの ID>#<プロフィールの版の ID>` である。
 - `hook_decision_statuses`（イベントの子）: 効果が及んだ投稿。`moderation_action_statuses` に対応し、§8 の投影の元になる。`Create` では投稿の ID が決まる取り込みのトランザクションで書く。
 - `hook_decision_overrides`（イベント）: モデレーターの取り消し（§9）。
 - `hook_decision_appeals`（リソース）と `hook_decision_appeal_decisions`（イベント）: `local.status` の `reject` への異議申し立てとその審査（§9）。処分の記録と分けた、この判定のためだけの表で、`moderation_appeals` と `moderation_appeal_decisions` と同じ形をとる。`hook_decision_appeals` は作者が送る本文を持つ。判定が本文を持たず、審査に要るからで、判定の表に本文がない原則はそのままである。1 つの判定に 1 件まで。
@@ -165,11 +170,11 @@ v0.1.0 の前なので移行は要らない（ADR-0023）。
 
 - インスタンスの情報ページに、外部の審査を使っていること、対象、送るデータを、設定から生成して出す。
 - 申請者に判定の理由は見せない。`reject` は決まった文を i18n のメッセージで出し、プラグインの文章を出さない。
-- 運営者向けの文書に、送るデータ（`signup.check` のメールアドレスと IP）、受信量に比例する費用、誤った `drop` が黙って投稿を隠すことを書く。
+- 運営者向けの文書に、送るデータ（`signup.check` のメールアドレスと IP、`inbound.actor` と `local.profile` のプロフィール）、受信量に比例する費用、誤った `drop` が黙って投稿を隠すことを書く。
 
 ### 13. 作る順序
 
-`v0.1.0` までに #2222 から #2227 を作る。順序は #2222、#2223、#2224、#2227、#2226、#2225 で、どのフックも `observe` を既定に出す。
+`v0.1.0` までに #2222 から #2227 と、プロフィールのフック #2431（`inbound.actor`）・#2432（`local.profile`）を作る。順序は #2222、#2223、#2224、#2227、#2226、#2225 で、どのフックも `observe` を既定に出す。
 
 ## 経緯
 
@@ -180,6 +185,8 @@ FR-719 の拒否リストと CAPTCHA は固定の規則にしか効かず、FR-7
 `drop` は誤りの代償が大きい一方で最も価値のある判定なので、外すのではなく `observe` から始める形にした。通報者は、`NOT NULL` を保てる行のあるインスタンス Actor にした。`mark_sensitive` は、投影の出所の列が処分しか指せないことが問題で、処分を作ると原則の 3 に反するので、出所を処分か判定のどちらか一方にした。その形は、はじめ NULL 可の 2 列と排他の CHECK で、主キーのない表だった。主キーのない表は、論理レプリケーションの publication がある PostgreSQL（Cloud SQL の移行や blue-green の更新が作る）で `DELETE` が失敗し、処分の解除・判定の取り消し・保持の削除が止まる。v0.1.0 の前で投影は作り直せるため、`(status_id, source_kind, source_id)` を主キーとする形に改めた。これに伴い、保持期間のある判定から投影を作ることになり、§6 が投影の指す判定を残す形になった。`media.check` の `reject` は原本を残さないので、保全や通報の義務をソフトウェアでは決めず、運営者がモードとプラグインで選び、運用文書にこの性質を書く形で判定に入れた（§2）。`local.status` の `reject` には、今の `moderation_appeals.action_id` が処分しか指せないので、専用の異議申し立てを付けた。保持期間の設定の名前は、ほかの保持期間の設定（`<対象>_retention_days`）と `hook_` で始まるフックの設定に揃えて `hook_decisions_retention_days` とした。
 
 編集を審査しないと、日の浅いアカウントが無害な投稿を後からスパムに書き換えられる。作成と同じ対象に絞って編集も審査し、拒むのはその編集だけにした。申し立てには知らせがなく、作者は結果を知る手段がなく、モデレーターは画面を見に行くしかなかったので、既存の通知の仕組みで両方に知らせ、作者が状態を読む API を足した。維持にも監査ログを残すのは、覆しが `hook_decision_overridden` で残るのと揃えるためである。
+
+プロフィールのフックは、投稿・フォロー・登録・メディアのフックの後に、決定者が `v0.1.0` の前に足すと決めた。連合のスパムは表示名や自己紹介の URL でも来るのに、リモートの Actor の取り込みとローカルのプロフィールの更新はどのフックも通らなかったからである。フックの名前はスキーマの `CHECK` にあり、`my.plugin.hook.v1` はタグで凍るので、後から足すとスキーマの更新が要る。
 
 ## 採らなかった案
 
