@@ -15,7 +15,7 @@ vars:
   # TxReads*, UnitOfWorkContract, RejectsForeignTransactions), the planner (AccountSearchUsesTermIndex), the size of a
   # real database (DatabaseSizerContract), SKIP LOCKED and LISTEN/NOTIFY of the queue, the key-value store, and the
   # stream (TestPostgres* of kv/db and queue/db, every test of stream/postgres).
-  POSTGRES_CONTAINER_PACKAGES: ./internal/adapter/db/postgres/ ./internal/adapter/kv/db/ ./internal/adapter/queue/db/ ./internal/adapter/stream/postgres/
+  POSTGRES_CONTAINER_PACKAGES: ./internal/adapter/db/postgres/... ./internal/adapter/kv/db/ ./internal/adapter/queue/db/ ./internal/adapter/stream/postgres/
   POSTGRES_CONTAINER_TESTS: ^Test(Acquire|OpenSQL|Ready|ApplySchema|TransactionsAreReadCommitted|RetriesDeadlocks|AccountRestrictionsLock|TokenGrantsLock|TxReads|UnitOfWorkContract|RejectsForeignTransactions|AccountSearchUsesTermIndex|DatabaseSizerContract|Postgres|Stream|NewRejectsBadOptions|ListenURL)
   # The AI crawlers that /robots.txt names (ADR-0057), from ai-robots-txt/ai.robots.txt (MIT). To
   # update the list, change both to a newer commit, run go:ai-crawlers, and review the diff.

@@ -1,7 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-// Package postgres implements the persistence ports on PostgreSQL and compatible services
-// with pgx/v5 (ADR-0003).
+// Package postgres is the base of the persistence adapter on PostgreSQL and compatible services with
+// pgx/v5 (ADR-0003): the pool, the transactions and their retries, and the helpers of the queries. The
+// repositories of each module are in the sub-package of the module, internal/adapter/db/postgres/<module>,
+// over the DB of this package and the queries that sqlc generates for the module (<module>gen); this
+// package imports none of them (ADR-0153 §3).
 //
 // Transactions run at READ COMMITTED. Serialization failures (SQLSTATE 40001) and deadlocks
 // (40P01) are retryable: UnitOfWork.Tx runs the transaction again.

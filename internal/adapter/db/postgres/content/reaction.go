@@ -1,0 +1,202 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+
+package content
+
+import (
+	"context"
+	"fmt"
+
+	"github.com/mycroblog/my/internal/adapter/db/postgres"
+	"github.com/mycroblog/my/internal/adapter/db/postgres/contentgen"
+	appcontent "github.com/mycroblog/my/internal/app/content"
+	"github.com/mycroblog/my/internal/app/uow"
+	"github.com/mycroblog/my/internal/domain/content"
+)
+
+// This file holds the emoji reactions of content.InteractionRepository (ADR-0051).
+
+// InsertReaction implements content.InteractionRepository.
+func (r *InteractionRepository) InsertReaction(ctx context.Context, tx uow.Tx, re content.Reaction) (bool, error) {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return false, err
+	}
+	n, err := q.InsertReaction(ctx, contentgen.InsertReactionParams{
+		ID: re.ID, AccountID: re.AccountID, StatusID: re.StatusID, EmojiKey: re.Emoji.Key(),
+		CustomEmojiID: postgres.ToNullString(re.Emoji.CustomEmojiID), Uri: re.URI, CreatedAt: re.CreatedAt,
+	})
+	if postgres.IsUniqueViolation(err, "reactions_uri") {
+		return false, fmt.Errorf("insert reaction %s: %w", re.URI, appcontent.ErrReactionURIUsed)
+	}
+	if err != nil {
+		return false, postgres.Wrap(err, "insert reaction")
+	}
+	return n == 1, nil
+}
+
+// DeleteReaction implements content.InteractionRepository.
+func (r *InteractionRepository) DeleteReaction(ctx context.Context, tx uow.Tx, id string) (content.Reaction, bool, error) {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return content.Reaction{}, false, err
+	}
+	rows, err := q.DeleteReaction(ctx, id)
+	if err != nil {
+		return content.Reaction{}, false, postgres.Wrap(err, "delete reaction")
+	}
+	if len(rows) == 0 {
+		return content.Reaction{}, false, nil
+	}
+	return reactionFrom(rows[0]), true, nil
+}
+
+// DeleteAccountStatusReactions implements content.InteractionRepository.
+func (r *InteractionRepository) DeleteAccountStatusReactions(ctx context.Context, tx uow.Tx, accountID, statusID, exceptKey string) ([]content.Reaction, error) {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return nil, err
+	}
+	rows, err := q.DeleteAccountStatusReactions(ctx, contentgen.DeleteAccountStatusReactionsParams{AccountID: accountID, StatusID: statusID, ExceptKey: exceptKey})
+	if err != nil {
+		return nil, postgres.Wrap(err, "delete reactions of an account")
+	}
+	return reactionsFrom(rows), nil
+}
+
+// AddReactions implements content.InteractionRepository.
+func (r *InteractionRepository) AddReactions(ctx context.Context, tx uow.Tx, statusID string, emoji content.ReactionEmoji, delta int64) error {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return err
+	}
+	key := emoji.Key()
+	switch delta {
+	case 1:
+		err = q.IncrementReactionCount(ctx, contentgen.IncrementReactionCountParams{
+			EmojiKey: key, CustomEmojiID: postgres.ToNullString(emoji.CustomEmojiID), StatusID: statusID,
+		})
+		return postgres.Wrap(err, "increment reaction count")
+	case -1:
+		if err := q.DeleteSingleReactionCount(ctx, contentgen.DeleteSingleReactionCountParams{StatusID: statusID, EmojiKey: key}); err != nil {
+			return postgres.Wrap(err, "delete reaction count")
+		}
+		err = q.DecrementReactionCount(ctx, contentgen.DecrementReactionCountParams{StatusID: statusID, EmojiKey: key})
+		return postgres.Wrap(err, "decrement reaction count")
+	}
+	return fmt.Errorf("postgres: add reactions: delta %d is not 1 or -1", delta)
+}
+
+// DeleteStatusReactionCounts implements content.InteractionRepository.
+func (r *InteractionRepository) DeleteStatusReactionCounts(ctx context.Context, tx uow.Tx, statusID string) error {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return err
+	}
+	return postgres.Wrap(q.DeleteStatusReactionCounts(ctx, statusID), "delete reaction counts")
+}
+
+// RebuildReactionCounts implements content.InteractionRepository.
+func (r *InteractionRepository) RebuildReactionCounts(ctx context.Context, tx uow.Tx) error {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return err
+	}
+	if err := q.DeleteAllReactionCounts(ctx); err != nil {
+		return postgres.Wrap(err, "empty status_reaction_counts")
+	}
+	return postgres.Wrap(q.RebuildReactionCounts(ctx), "rebuild status_reaction_counts")
+}
+
+// FindReaction implements content.InteractionRepository.
+func (r *InteractionRepository) FindReaction(ctx context.Context, accountID, statusID, emojiKey string) (content.Reaction, error) {
+	row, err := r.db.reader().GetReaction(ctx, contentgen.GetReactionParams{AccountID: accountID, StatusID: statusID, EmojiKey: emojiKey})
+	if err != nil {
+		return content.Reaction{}, postgres.NotFound(err, appcontent.ErrNotFound, "reaction of "+accountID+" on "+statusID)
+	}
+	return reactionFrom(row), nil
+}
+
+// FindReactionByURI implements content.InteractionRepository.
+func (r *InteractionRepository) FindReactionByURI(ctx context.Context, uri string) (content.Reaction, error) {
+	row, err := r.db.reader().GetReactionByURI(ctx, uri)
+	if err != nil {
+		return content.Reaction{}, postgres.NotFound(err, appcontent.ErrNotFound, "reaction "+uri)
+	}
+	return reactionFrom(row), nil
+}
+
+// ListAccountStatusReactions implements content.InteractionRepository.
+func (r *InteractionRepository) ListAccountStatusReactions(ctx context.Context, accountID, statusID string) ([]content.Reaction, error) {
+	rows, err := r.db.reader().ListAccountStatusReactions(ctx, contentgen.ListAccountStatusReactionsParams{AccountID: accountID, StatusID: statusID})
+	if err != nil {
+		return nil, postgres.Wrap(err, "list reactions of an account")
+	}
+	return reactionsFrom(rows), nil
+}
+
+// ListStatusReactions implements content.InteractionRepository.
+func (r *InteractionRepository) ListStatusReactions(ctx context.Context, statusID, emojiKey, before string, limit int) ([]content.Reaction, error) {
+	n, err := postgres.ToInt32(limit, "page limit")
+	if err != nil {
+		return nil, err
+	}
+	rows, err := r.db.reader().ListStatusReactions(ctx, contentgen.ListStatusReactionsParams{
+		StatusID: statusID, EmojiKey: emojiKey, Before: postgres.ToNullString(before), PageLimit: n,
+	})
+	if err != nil {
+		return nil, postgres.Wrap(err, "list reactions to a status")
+	}
+	return reactionsFrom(rows), nil
+}
+
+// ListReactionCounts implements content.InteractionRepository.
+func (r *InteractionRepository) ListReactionCounts(ctx context.Context, statusID string, limit int) ([]content.ReactionCount, error) {
+	n, err := postgres.ToInt32(limit, "page limit")
+	if err != nil {
+		return nil, err
+	}
+	rows, err := r.db.reader().ListReactionCounts(ctx, contentgen.ListReactionCountsParams{StatusID: statusID, PageLimit: n})
+	if err != nil {
+		return nil, postgres.Wrap(err, "list reaction counts")
+	}
+	return reactionCountsFrom(rows), nil
+}
+
+// ListAllReactionCounts implements content.InteractionRepository.
+func (r *InteractionRepository) ListAllReactionCounts(ctx context.Context) ([]content.ReactionCount, error) {
+	rows, err := r.db.reader().ListAllReactionCounts(ctx)
+	if err != nil {
+		return nil, postgres.Wrap(err, "list reaction counts")
+	}
+	return reactionCountsFrom(rows), nil
+}
+
+func reactionEmojiFrom(key string, customEmojiID string) content.ReactionEmoji {
+	if customEmojiID != "" {
+		return content.ReactionEmoji{CustomEmojiID: customEmojiID}
+	}
+	return content.ReactionEmoji{Unicode: key}
+}
+
+func reactionFrom(row contentgen.Reaction) content.Reaction {
+	return content.Reaction{
+		ID: row.ID, AccountID: row.AccountID, StatusID: row.StatusID, Emoji: reactionEmojiFrom(row.EmojiKey, postgres.FromNullString(row.CustomEmojiID)),
+		URI: row.Uri, CreatedAt: postgres.UTC(row.CreatedAt),
+	}
+}
+
+func reactionsFrom(rows []contentgen.Reaction) []content.Reaction {
+	out := make([]content.Reaction, len(rows))
+	for i, row := range rows {
+		out[i] = reactionFrom(row)
+	}
+	return out
+}
+
+func reactionCountsFrom(rows []contentgen.StatusReactionCount) []content.ReactionCount {
+	out := make([]content.ReactionCount, len(rows))
+	for i, row := range rows {
+		out[i] = content.ReactionCount{StatusID: row.StatusID, Emoji: reactionEmojiFrom(row.EmojiKey, postgres.FromNullString(row.CustomEmojiID)), Count: row.Count}
+	}
+	return out
+}

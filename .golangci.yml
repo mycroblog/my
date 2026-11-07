@@ -571,9 +571,12 @@ linters:
           list-mode: lax
           files:
             - "**/internal/adapter/db/sqlite/*.go"
+            - "**/internal/adapter/db/postgres/*.go"
             - "!$test"
           deny:
             - pkg: github.com/mycroblog/my/internal/adapter/db/sqlite/
+              desc: the base of the adapter is below the modules; move what a module needs into the base, or the code into the module
+            - pkg: github.com/mycroblog/my/internal/adapter/db/postgres/
               desc: the base of the adapter is below the modules; move what a module needs into the base, or the code into the module
         # A module's sub-package imports the base, its own generated queries, and the sub-packages of the modules that
         # its module imports (transitively) in internal/app, never another module's generated queries: a helper that
@@ -582,59 +585,81 @@ linters:
           list-mode: strict
           files:
             - "**/internal/adapter/db/sqlite/account/**"
+            - "**/internal/adapter/db/postgres/account/**"
             - "!$test"
           allow:
             - $gostd
             - github.com/mycroblog/my/internal/app
             - github.com/mycroblog/my/internal/domain
+            - github.com/jackc/pgx/v5
             - github.com/mycroblog/my/internal/adapter/db/sqlite$
             - github.com/mycroblog/my/internal/adapter/db/sqlite/accountgen$
             - github.com/mycroblog/my/internal/adapter/db/sqlite/hook$
+            - github.com/mycroblog/my/internal/adapter/db/postgres$
+            - github.com/mycroblog/my/internal/adapter/db/postgres/accountgen$
+            - github.com/mycroblog/my/internal/adapter/db/postgres/hook$
         db-content:
           list-mode: strict
           files:
             - "**/internal/adapter/db/sqlite/content/**"
+            - "**/internal/adapter/db/postgres/content/**"
             - "!$test"
           allow:
             - $gostd
             - github.com/mycroblog/my/internal/app
             - github.com/mycroblog/my/internal/domain
+            - github.com/jackc/pgx/v5
             - github.com/mycroblog/my/internal/adapter/db/sqlite$
             - github.com/mycroblog/my/internal/adapter/db/sqlite/contentgen$
             - github.com/mycroblog/my/internal/adapter/db/sqlite/account$
             - github.com/mycroblog/my/internal/adapter/db/sqlite/graph$
             - github.com/mycroblog/my/internal/adapter/db/sqlite/hook$
+            - github.com/mycroblog/my/internal/adapter/db/postgres$
+            - github.com/mycroblog/my/internal/adapter/db/postgres/contentgen$
+            - github.com/mycroblog/my/internal/adapter/db/postgres/account$
+            - github.com/mycroblog/my/internal/adapter/db/postgres/graph$
+            - github.com/mycroblog/my/internal/adapter/db/postgres/hook$
         db-dbupgrade:
           list-mode: strict
           files:
             - "**/internal/adapter/db/sqlite/dbupgrade/**"
+            - "**/internal/adapter/db/postgres/dbupgrade/**"
             - "!$test"
           allow:
             - $gostd
             - github.com/mycroblog/my/internal/app
             - github.com/mycroblog/my/internal/domain
+            - github.com/jackc/pgx/v5
             - github.com/mycroblog/my/internal/adapter/db/sqlite$
             - github.com/mycroblog/my/internal/adapter/db/sqlite/dbupgradegen$
+            - github.com/mycroblog/my/internal/adapter/db/postgres$
+            - github.com/mycroblog/my/internal/adapter/db/postgres/dbupgradegen$
         db-diagnostics:
           list-mode: strict
           files:
             - "**/internal/adapter/db/sqlite/diagnostics/**"
+            - "**/internal/adapter/db/postgres/diagnostics/**"
             - "!$test"
           allow:
             - $gostd
             - github.com/mycroblog/my/internal/app
             - github.com/mycroblog/my/internal/domain
+            - github.com/jackc/pgx/v5
             - github.com/mycroblog/my/internal/adapter/db/sqlite$
             - github.com/mycroblog/my/internal/adapter/db/sqlite/diagnosticsgen$
+            - github.com/mycroblog/my/internal/adapter/db/postgres$
+            - github.com/mycroblog/my/internal/adapter/db/postgres/diagnosticsgen$
         db-federation:
           list-mode: strict
           files:
             - "**/internal/adapter/db/sqlite/federation/**"
+            - "**/internal/adapter/db/postgres/federation/**"
             - "!$test"
           allow:
             - $gostd
             - github.com/mycroblog/my/internal/app
             - github.com/mycroblog/my/internal/domain
+            - github.com/jackc/pgx/v5
             - github.com/mycroblog/my/internal/adapter/db/sqlite$
             - github.com/mycroblog/my/internal/adapter/db/sqlite/federationgen$
             - github.com/mycroblog/my/internal/adapter/db/sqlite/account$
@@ -644,15 +669,26 @@ linters:
             - github.com/mycroblog/my/internal/adapter/db/sqlite/instance$
             - github.com/mycroblog/my/internal/adapter/db/sqlite/moderation$
             - github.com/mycroblog/my/internal/adapter/db/sqlite/timeline$
+            - github.com/mycroblog/my/internal/adapter/db/postgres$
+            - github.com/mycroblog/my/internal/adapter/db/postgres/federationgen$
+            - github.com/mycroblog/my/internal/adapter/db/postgres/account$
+            - github.com/mycroblog/my/internal/adapter/db/postgres/content$
+            - github.com/mycroblog/my/internal/adapter/db/postgres/graph$
+            - github.com/mycroblog/my/internal/adapter/db/postgres/hook$
+            - github.com/mycroblog/my/internal/adapter/db/postgres/instance$
+            - github.com/mycroblog/my/internal/adapter/db/postgres/moderation$
+            - github.com/mycroblog/my/internal/adapter/db/postgres/timeline$
         db-finance:
           list-mode: strict
           files:
             - "**/internal/adapter/db/sqlite/finance/**"
+            - "**/internal/adapter/db/postgres/finance/**"
             - "!$test"
           allow:
             - $gostd
             - github.com/mycroblog/my/internal/app
             - github.com/mycroblog/my/internal/domain
+            - github.com/jackc/pgx/v5
             - github.com/mycroblog/my/internal/adapter/db/sqlite$
             - github.com/mycroblog/my/internal/adapter/db/sqlite/financegen$
             - github.com/mycroblog/my/internal/adapter/db/sqlite/account$
@@ -660,39 +696,58 @@ linters:
             - github.com/mycroblog/my/internal/adapter/db/sqlite/graph$
             - github.com/mycroblog/my/internal/adapter/db/sqlite/hook$
             - github.com/mycroblog/my/internal/adapter/db/sqlite/moderation$
+            - github.com/mycroblog/my/internal/adapter/db/postgres$
+            - github.com/mycroblog/my/internal/adapter/db/postgres/financegen$
+            - github.com/mycroblog/my/internal/adapter/db/postgres/account$
+            - github.com/mycroblog/my/internal/adapter/db/postgres/content$
+            - github.com/mycroblog/my/internal/adapter/db/postgres/graph$
+            - github.com/mycroblog/my/internal/adapter/db/postgres/hook$
+            - github.com/mycroblog/my/internal/adapter/db/postgres/moderation$
         db-graph:
           list-mode: strict
           files:
             - "**/internal/adapter/db/sqlite/graph/**"
+            - "**/internal/adapter/db/postgres/graph/**"
             - "!$test"
           allow:
             - $gostd
             - github.com/mycroblog/my/internal/app
             - github.com/mycroblog/my/internal/domain
+            - github.com/jackc/pgx/v5
             - github.com/mycroblog/my/internal/adapter/db/sqlite$
             - github.com/mycroblog/my/internal/adapter/db/sqlite/graphgen$
             - github.com/mycroblog/my/internal/adapter/db/sqlite/account$
             - github.com/mycroblog/my/internal/adapter/db/sqlite/hook$
+            - github.com/mycroblog/my/internal/adapter/db/postgres$
+            - github.com/mycroblog/my/internal/adapter/db/postgres/graphgen$
+            - github.com/mycroblog/my/internal/adapter/db/postgres/account$
+            - github.com/mycroblog/my/internal/adapter/db/postgres/hook$
         db-hook:
           list-mode: strict
           files:
             - "**/internal/adapter/db/sqlite/hook/**"
+            - "**/internal/adapter/db/postgres/hook/**"
             - "!$test"
           allow:
             - $gostd
             - github.com/mycroblog/my/internal/app
             - github.com/mycroblog/my/internal/domain
+            - github.com/jackc/pgx/v5
             - github.com/mycroblog/my/internal/adapter/db/sqlite$
             - github.com/mycroblog/my/internal/adapter/db/sqlite/hookgen$
+            - github.com/mycroblog/my/internal/adapter/db/postgres$
+            - github.com/mycroblog/my/internal/adapter/db/postgres/hookgen$
         db-identity:
           list-mode: strict
           files:
             - "**/internal/adapter/db/sqlite/identity/**"
+            - "**/internal/adapter/db/postgres/identity/**"
             - "!$test"
           allow:
             - $gostd
             - github.com/mycroblog/my/internal/app
             - github.com/mycroblog/my/internal/domain
+            - github.com/jackc/pgx/v5
             - github.com/mycroblog/my/internal/adapter/db/sqlite$
             - github.com/mycroblog/my/internal/adapter/db/sqlite/identitygen$
             - github.com/mycroblog/my/internal/adapter/db/sqlite/account$
@@ -701,15 +756,25 @@ linters:
             - github.com/mycroblog/my/internal/adapter/db/sqlite/hook$
             - github.com/mycroblog/my/internal/adapter/db/sqlite/instance$
             - github.com/mycroblog/my/internal/adapter/db/sqlite/moderation$
+            - github.com/mycroblog/my/internal/adapter/db/postgres$
+            - github.com/mycroblog/my/internal/adapter/db/postgres/identitygen$
+            - github.com/mycroblog/my/internal/adapter/db/postgres/account$
+            - github.com/mycroblog/my/internal/adapter/db/postgres/content$
+            - github.com/mycroblog/my/internal/adapter/db/postgres/graph$
+            - github.com/mycroblog/my/internal/adapter/db/postgres/hook$
+            - github.com/mycroblog/my/internal/adapter/db/postgres/instance$
+            - github.com/mycroblog/my/internal/adapter/db/postgres/moderation$
         db-instance:
           list-mode: strict
           files:
             - "**/internal/adapter/db/sqlite/instance/**"
+            - "**/internal/adapter/db/postgres/instance/**"
             - "!$test"
           allow:
             - $gostd
             - github.com/mycroblog/my/internal/app
             - github.com/mycroblog/my/internal/domain
+            - github.com/jackc/pgx/v5
             - github.com/mycroblog/my/internal/adapter/db/sqlite$
             - github.com/mycroblog/my/internal/adapter/db/sqlite/instancegen$
             - github.com/mycroblog/my/internal/adapter/db/sqlite/account$
@@ -717,30 +782,47 @@ linters:
             - github.com/mycroblog/my/internal/adapter/db/sqlite/graph$
             - github.com/mycroblog/my/internal/adapter/db/sqlite/hook$
             - github.com/mycroblog/my/internal/adapter/db/sqlite/moderation$
+            - github.com/mycroblog/my/internal/adapter/db/postgres$
+            - github.com/mycroblog/my/internal/adapter/db/postgres/instancegen$
+            - github.com/mycroblog/my/internal/adapter/db/postgres/account$
+            - github.com/mycroblog/my/internal/adapter/db/postgres/content$
+            - github.com/mycroblog/my/internal/adapter/db/postgres/graph$
+            - github.com/mycroblog/my/internal/adapter/db/postgres/hook$
+            - github.com/mycroblog/my/internal/adapter/db/postgres/moderation$
         db-moderation:
           list-mode: strict
           files:
             - "**/internal/adapter/db/sqlite/moderation/**"
+            - "**/internal/adapter/db/postgres/moderation/**"
             - "!$test"
           allow:
             - $gostd
             - github.com/mycroblog/my/internal/app
             - github.com/mycroblog/my/internal/domain
+            - github.com/jackc/pgx/v5
             - github.com/mycroblog/my/internal/adapter/db/sqlite$
             - github.com/mycroblog/my/internal/adapter/db/sqlite/moderationgen$
             - github.com/mycroblog/my/internal/adapter/db/sqlite/account$
             - github.com/mycroblog/my/internal/adapter/db/sqlite/content$
             - github.com/mycroblog/my/internal/adapter/db/sqlite/graph$
             - github.com/mycroblog/my/internal/adapter/db/sqlite/hook$
+            - github.com/mycroblog/my/internal/adapter/db/postgres$
+            - github.com/mycroblog/my/internal/adapter/db/postgres/moderationgen$
+            - github.com/mycroblog/my/internal/adapter/db/postgres/account$
+            - github.com/mycroblog/my/internal/adapter/db/postgres/content$
+            - github.com/mycroblog/my/internal/adapter/db/postgres/graph$
+            - github.com/mycroblog/my/internal/adapter/db/postgres/hook$
         db-notification:
           list-mode: strict
           files:
             - "**/internal/adapter/db/sqlite/notification/**"
+            - "**/internal/adapter/db/postgres/notification/**"
             - "!$test"
           allow:
             - $gostd
             - github.com/mycroblog/my/internal/app
             - github.com/mycroblog/my/internal/domain
+            - github.com/jackc/pgx/v5
             - github.com/mycroblog/my/internal/adapter/db/sqlite$
             - github.com/mycroblog/my/internal/adapter/db/sqlite/notificationgen$
             - github.com/mycroblog/my/internal/adapter/db/sqlite/account$
@@ -754,15 +836,30 @@ linters:
             - github.com/mycroblog/my/internal/adapter/db/sqlite/moderation$
             - github.com/mycroblog/my/internal/adapter/db/sqlite/supporters$
             - github.com/mycroblog/my/internal/adapter/db/sqlite/webhook$
+            - github.com/mycroblog/my/internal/adapter/db/postgres$
+            - github.com/mycroblog/my/internal/adapter/db/postgres/notificationgen$
+            - github.com/mycroblog/my/internal/adapter/db/postgres/account$
+            - github.com/mycroblog/my/internal/adapter/db/postgres/content$
+            - github.com/mycroblog/my/internal/adapter/db/postgres/diagnostics$
+            - github.com/mycroblog/my/internal/adapter/db/postgres/finance$
+            - github.com/mycroblog/my/internal/adapter/db/postgres/graph$
+            - github.com/mycroblog/my/internal/adapter/db/postgres/hook$
+            - github.com/mycroblog/my/internal/adapter/db/postgres/identity$
+            - github.com/mycroblog/my/internal/adapter/db/postgres/instance$
+            - github.com/mycroblog/my/internal/adapter/db/postgres/moderation$
+            - github.com/mycroblog/my/internal/adapter/db/postgres/supporters$
+            - github.com/mycroblog/my/internal/adapter/db/postgres/webhook$
         db-search:
           list-mode: strict
           files:
             - "**/internal/adapter/db/sqlite/search/**"
+            - "**/internal/adapter/db/postgres/search/**"
             - "!$test"
           allow:
             - $gostd
             - github.com/mycroblog/my/internal/app
             - github.com/mycroblog/my/internal/domain
+            - github.com/jackc/pgx/v5
             - github.com/mycroblog/my/internal/adapter/db/sqlite$
             - github.com/mycroblog/my/internal/adapter/db/sqlite/searchgen$
             - github.com/mycroblog/my/internal/adapter/db/sqlite/account$
@@ -772,15 +869,26 @@ linters:
             - github.com/mycroblog/my/internal/adapter/db/sqlite/instance$
             - github.com/mycroblog/my/internal/adapter/db/sqlite/moderation$
             - github.com/mycroblog/my/internal/adapter/db/sqlite/timeline$
+            - github.com/mycroblog/my/internal/adapter/db/postgres$
+            - github.com/mycroblog/my/internal/adapter/db/postgres/searchgen$
+            - github.com/mycroblog/my/internal/adapter/db/postgres/account$
+            - github.com/mycroblog/my/internal/adapter/db/postgres/content$
+            - github.com/mycroblog/my/internal/adapter/db/postgres/graph$
+            - github.com/mycroblog/my/internal/adapter/db/postgres/hook$
+            - github.com/mycroblog/my/internal/adapter/db/postgres/instance$
+            - github.com/mycroblog/my/internal/adapter/db/postgres/moderation$
+            - github.com/mycroblog/my/internal/adapter/db/postgres/timeline$
         db-supporters:
           list-mode: strict
           files:
             - "**/internal/adapter/db/sqlite/supporters/**"
+            - "**/internal/adapter/db/postgres/supporters/**"
             - "!$test"
           allow:
             - $gostd
             - github.com/mycroblog/my/internal/app
             - github.com/mycroblog/my/internal/domain
+            - github.com/jackc/pgx/v5
             - github.com/mycroblog/my/internal/adapter/db/sqlite$
             - github.com/mycroblog/my/internal/adapter/db/sqlite/supportersgen$
             - github.com/mycroblog/my/internal/adapter/db/sqlite/account$
@@ -791,15 +899,27 @@ linters:
             - github.com/mycroblog/my/internal/adapter/db/sqlite/identity$
             - github.com/mycroblog/my/internal/adapter/db/sqlite/instance$
             - github.com/mycroblog/my/internal/adapter/db/sqlite/moderation$
+            - github.com/mycroblog/my/internal/adapter/db/postgres$
+            - github.com/mycroblog/my/internal/adapter/db/postgres/supportersgen$
+            - github.com/mycroblog/my/internal/adapter/db/postgres/account$
+            - github.com/mycroblog/my/internal/adapter/db/postgres/content$
+            - github.com/mycroblog/my/internal/adapter/db/postgres/finance$
+            - github.com/mycroblog/my/internal/adapter/db/postgres/graph$
+            - github.com/mycroblog/my/internal/adapter/db/postgres/hook$
+            - github.com/mycroblog/my/internal/adapter/db/postgres/identity$
+            - github.com/mycroblog/my/internal/adapter/db/postgres/instance$
+            - github.com/mycroblog/my/internal/adapter/db/postgres/moderation$
         db-timeline:
           list-mode: strict
           files:
             - "**/internal/adapter/db/sqlite/timeline/**"
+            - "**/internal/adapter/db/postgres/timeline/**"
             - "!$test"
           allow:
             - $gostd
             - github.com/mycroblog/my/internal/app
             - github.com/mycroblog/my/internal/domain
+            - github.com/jackc/pgx/v5
             - github.com/mycroblog/my/internal/adapter/db/sqlite$
             - github.com/mycroblog/my/internal/adapter/db/sqlite/timelinegen$
             - github.com/mycroblog/my/internal/adapter/db/sqlite/account$
@@ -807,30 +927,47 @@ linters:
             - github.com/mycroblog/my/internal/adapter/db/sqlite/graph$
             - github.com/mycroblog/my/internal/adapter/db/sqlite/hook$
             - github.com/mycroblog/my/internal/adapter/db/sqlite/moderation$
+            - github.com/mycroblog/my/internal/adapter/db/postgres$
+            - github.com/mycroblog/my/internal/adapter/db/postgres/timelinegen$
+            - github.com/mycroblog/my/internal/adapter/db/postgres/account$
+            - github.com/mycroblog/my/internal/adapter/db/postgres/content$
+            - github.com/mycroblog/my/internal/adapter/db/postgres/graph$
+            - github.com/mycroblog/my/internal/adapter/db/postgres/hook$
+            - github.com/mycroblog/my/internal/adapter/db/postgres/moderation$
         db-translation:
           list-mode: strict
           files:
             - "**/internal/adapter/db/sqlite/translation/**"
+            - "**/internal/adapter/db/postgres/translation/**"
             - "!$test"
           allow:
             - $gostd
             - github.com/mycroblog/my/internal/app
             - github.com/mycroblog/my/internal/domain
+            - github.com/jackc/pgx/v5
             - github.com/mycroblog/my/internal/adapter/db/sqlite$
             - github.com/mycroblog/my/internal/adapter/db/sqlite/translationgen$
             - github.com/mycroblog/my/internal/adapter/db/sqlite/account$
             - github.com/mycroblog/my/internal/adapter/db/sqlite/content$
             - github.com/mycroblog/my/internal/adapter/db/sqlite/graph$
             - github.com/mycroblog/my/internal/adapter/db/sqlite/hook$
+            - github.com/mycroblog/my/internal/adapter/db/postgres$
+            - github.com/mycroblog/my/internal/adapter/db/postgres/translationgen$
+            - github.com/mycroblog/my/internal/adapter/db/postgres/account$
+            - github.com/mycroblog/my/internal/adapter/db/postgres/content$
+            - github.com/mycroblog/my/internal/adapter/db/postgres/graph$
+            - github.com/mycroblog/my/internal/adapter/db/postgres/hook$
         db-voice:
           list-mode: strict
           files:
             - "**/internal/adapter/db/sqlite/voice/**"
+            - "**/internal/adapter/db/postgres/voice/**"
             - "!$test"
           allow:
             - $gostd
             - github.com/mycroblog/my/internal/app
             - github.com/mycroblog/my/internal/domain
+            - github.com/jackc/pgx/v5
             - github.com/mycroblog/my/internal/adapter/db/sqlite$
             - github.com/mycroblog/my/internal/adapter/db/sqlite/voicegen$
             - github.com/mycroblog/my/internal/adapter/db/sqlite/account$
@@ -839,15 +976,25 @@ linters:
             - github.com/mycroblog/my/internal/adapter/db/sqlite/hook$
             - github.com/mycroblog/my/internal/adapter/db/sqlite/instance$
             - github.com/mycroblog/my/internal/adapter/db/sqlite/moderation$
+            - github.com/mycroblog/my/internal/adapter/db/postgres$
+            - github.com/mycroblog/my/internal/adapter/db/postgres/voicegen$
+            - github.com/mycroblog/my/internal/adapter/db/postgres/account$
+            - github.com/mycroblog/my/internal/adapter/db/postgres/content$
+            - github.com/mycroblog/my/internal/adapter/db/postgres/graph$
+            - github.com/mycroblog/my/internal/adapter/db/postgres/hook$
+            - github.com/mycroblog/my/internal/adapter/db/postgres/instance$
+            - github.com/mycroblog/my/internal/adapter/db/postgres/moderation$
         db-webhook:
           list-mode: strict
           files:
             - "**/internal/adapter/db/sqlite/webhook/**"
+            - "**/internal/adapter/db/postgres/webhook/**"
             - "!$test"
           allow:
             - $gostd
             - github.com/mycroblog/my/internal/app
             - github.com/mycroblog/my/internal/domain
+            - github.com/jackc/pgx/v5
             - github.com/mycroblog/my/internal/adapter/db/sqlite$
             - github.com/mycroblog/my/internal/adapter/db/sqlite/webhookgen$
             - github.com/mycroblog/my/internal/adapter/db/sqlite/account$
@@ -858,11 +1005,22 @@ linters:
             - github.com/mycroblog/my/internal/adapter/db/sqlite/identity$
             - github.com/mycroblog/my/internal/adapter/db/sqlite/instance$
             - github.com/mycroblog/my/internal/adapter/db/sqlite/moderation$
+            - github.com/mycroblog/my/internal/adapter/db/postgres$
+            - github.com/mycroblog/my/internal/adapter/db/postgres/webhookgen$
+            - github.com/mycroblog/my/internal/adapter/db/postgres/account$
+            - github.com/mycroblog/my/internal/adapter/db/postgres/content$
+            - github.com/mycroblog/my/internal/adapter/db/postgres/diagnostics$
+            - github.com/mycroblog/my/internal/adapter/db/postgres/graph$
+            - github.com/mycroblog/my/internal/adapter/db/postgres/hook$
+            - github.com/mycroblog/my/internal/adapter/db/postgres/identity$
+            - github.com/mycroblog/my/internal/adapter/db/postgres/instance$
+            - github.com/mycroblog/my/internal/adapter/db/postgres/moderation$
         # The store of the sealed values (`my kek rewrap`) gathers the sealed columns of the modules that own them.
         db-rewrap:
           list-mode: strict
           files:
             - "**/internal/adapter/db/sqlite/rewrap/**"
+            - "**/internal/adapter/db/postgres/rewrap/**"
             - "!$test"
           allow:
             - $gostd
@@ -872,6 +1030,11 @@ linters:
             - github.com/mycroblog/my/internal/adapter/db/sqlite/identity$
             - github.com/mycroblog/my/internal/adapter/db/sqlite/instance$
             - github.com/mycroblog/my/internal/adapter/db/sqlite/webhook$
+            - github.com/mycroblog/my/internal/adapter/db/postgres$
+            - github.com/mycroblog/my/internal/adapter/db/postgres/account$
+            - github.com/mycroblog/my/internal/adapter/db/postgres/identity$
+            - github.com/mycroblog/my/internal/adapter/db/postgres/instance$
+            - github.com/mycroblog/my/internal/adapter/db/postgres/webhook$
         # The fake payment provider records payments as paid without any money moving: besides the tests, only the
         # test builds (build tag e2e_fakes) link it, through one file (ADR-0015 §6; scripts/go-build-tags.sh checks it).
         payment-fake:
