@@ -60,8 +60,8 @@ Follow [docs/agents/workflow.md](docs/agents/workflow.md). Summary:
    `scripts/task.sh web:fmt` (`bun fmt`) first, since the preflight checks it; after resolving a conflict in such a file, run it again.
 4. Open a PR using the template, with `Closes #N` and the acceptance criteria checked, and wait for its CI to pass.
    Pull requests run the `check` gate as a preflight of under 2 minutes ([ADR-0079](docs/adr/0079-ci-single-gate-merge-queue.md);
-   the label `ci:full` runs the merge queue's full check on the PR too) but not the web E2E: in single-issue work, for a
-   change to the web client, run `scripts/task.sh web:e2e` or `gh workflow run web-e2e.yml --ref <branch>`. In a parallel batch run by an orchestrator,
+   the label `ci:full` runs the merge queue's full check on the PR too) but not the web E2E, which the merge queue runs when the client changes: in single-issue work, to see a failure
+   earlier, run `scripts/task.sh web:e2e` or `gh workflow run web-e2e.yml --ref <branch>`. In a parallel batch run by an orchestrator,
    follow [workflow.md §9](docs/agents/workflow.md#9-parallel-batches) instead (no per-PR web E2E; a failure of the nightly is fixed as soon as it appears, before more issues).
    Do not merge or queue the PR yourself: the orchestrator or the decider queues it with `gh pr merge --auto`, and the merge queue
    runs the full `check` of the changed contexts on top of the latest `main` before merging. Merge `main` into the branch only when the PR conflicts or the

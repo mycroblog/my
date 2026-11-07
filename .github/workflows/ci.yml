@@ -8,8 +8,9 @@ name: CI
 #   the docker context changes; the OpenTofu modules (`tofu`) when the tofu context changes; the destructive changes of the schema against the base (`db-lint`) when the schema
 #   changes.
 # - merge_group: the full check of the contexts the group changes (scripts/changed-contexts.sh): server-static,
-#   server-test, client-static, client-test (2 shards), and repo, and the container contracts of the adapters it changes
-#   (scripts/changed-contracts.sh), at most 7 jobs; repo also checks the documentation
+#   server-test, client-static, client-test (2 shards), and repo, the container contracts of the adapters it changes
+#   (scripts/changed-contracts.sh), and the web E2E of the primary project (e2e, a build, 3 shards, and a report,
+#   web-e2e.yml) when the client changes; repo also checks the documentation
 #   site (app/docs) when the site context changes.
 # - pull_request labelled `ci:full`: both.
 #
@@ -439,6 +440,17 @@ jobs:
         env:
           TEST_VALKEY_REQUIRED: "1"
 
+  e2e:
+    # The web E2E of the primary project (ADR-0079 §5, ADR-0015 §1: every spec, en at 1440 px; the width and locale
+    # projects stay in the Nightly) when the group changes the client, on 3 shards of one build. Pull requests do not
+    # run it; with `ci:full` they do.
+    needs: changes
+    if: needs.changes.outputs.full == 'true' && needs.changes.outputs.client == 'true'
+    uses: ./.github/workflows/web-e2e.yml
+    with:
+      matrix: pr
+      shards: 3
+
   contracts:
     # The container contracts of the adapters the group changes (scripts/changed-contracts.sh, ADR-0079 §5), in one job
     # as parallel steps; the Nightly runs all of them. Each starts its containers on the runner's Docker.
@@ -720,7 +732,7 @@ jobs:
     # reusable workflow fails when a called job fails, so a failed story test fails `check`. `always()` makes it report
     # a result even when every other job is skipped, so neither a pull request nor a merge group waits on it.
     if: always()
-    needs: [changes, preflight, ui-test, web-story-test, lint, docker-smoke, tofu, db-lint, server-static, server-test, contracts, client-static, client-test, repo]
+    needs: [changes, preflight, ui-test, web-story-test, lint, docker-smoke, tofu, db-lint, server-static, server-test, contracts, e2e, client-static, client-test, repo]
     runs-on: ubuntu-latest
     steps:
       - name: Fail if a check job failed or was cancelled
