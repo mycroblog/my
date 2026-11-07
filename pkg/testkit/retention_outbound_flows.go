@@ -15,7 +15,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/federation"
 )
 
-// The cases of RetentionContract on the outbound activities, the deletions by retention, and the
+// The cases of RetentionFlows on the outbound activities, the deletions by retention, and the
 // observations of remote servers (data-model §4.8, §8).
 
 const retentionDay = 24 * time.Hour

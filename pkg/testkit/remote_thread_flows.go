@@ -19,7 +19,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/content"
 )
 
-// The cases of RemoteStatusContract that fetch remote posts (federation.md §6.1, §6.3): the real
+// The cases of RemoteStatusFlows that fetch remote posts (federation.md §6.1, §6.3): the real
 // Fetcher, RemoteActors, StatusHandlers, and Resolver over an in-memory network.
 
 // remoteFetchEnv is a remoteStatusEnv whose inbox processor and status handlers fetch through

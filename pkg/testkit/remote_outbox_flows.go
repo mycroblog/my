@@ -21,7 +21,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/federation"
 )
 
-// The cases of RemoteStatusContract that fetch the recent posts of a remote profile that a user
+// The cases of RemoteStatusFlows that fetch the recent posts of a remote profile that a user
 // opens (federation.md §6.3, ADR-0006): StatusHandlers.FetchOutbox and federation.fetch_outbox
 // through the real Fetcher over an in-memory network.
 

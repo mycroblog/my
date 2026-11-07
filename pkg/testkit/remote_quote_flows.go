@@ -14,7 +14,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/federation"
 )
 
-// The cases of RemoteStatusContract about the quotes of remote posts (ADR-0069): the quotes of
+// The cases of RemoteStatusFlows about the quotes of remote posts (ADR-0069): the quotes of
 // the major implementations are recorded, the quoted posts fetched one level, the approvals
 // verified and revoked, and the quotes presented to each viewer.
 
