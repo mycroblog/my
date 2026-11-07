@@ -558,6 +558,40 @@ describe("the notifications page", () => {
       expect(within(ended).getByText("A payment was refunded in full or charged back.")).toBeInTheDocument();
     });
 
+    test("the server's maximum of the automatic deletion says from when, and leads to its settings", async () => {
+      server.use(resumableSession());
+      markerServer({ last_read_id: "0192f0c4-7a8e-7000-8000-0000000000ff", unread_count: 0 });
+      server.use(
+        http.get(`${apiBase}/notifications`, () =>
+          HttpResponse.json({
+            items: [
+              {
+                id: "0192f0c4-7a8e-7000-8000-0000000000f6",
+                type: "auto_delete_limit",
+                created_at: "2026-10-16T09:00:00Z",
+                auto_delete_limit: { max_age_days: 90, enforce_from: "2026-11-15T09:00:00Z" },
+              },
+            ] satisfies Notification[],
+          }),
+        ),
+      );
+
+      await renderApp({ path: "/notifications" });
+
+      const feed = await screen.findByRole("feed", { name: "Notifications" });
+      const row = within(feed).getByRole("article", {
+        name: /The server's maximum for keeping posts will apply to your posts/,
+      });
+      expect(row).toHaveTextContent(
+        "From November 15, 2026, your posts older than 90 days will be deleted, except those this server lets you keep.",
+      );
+      expect(within(row).getByText("November 15, 2026")).toHaveAttribute("datetime", "2026-11-15T09:00:00Z");
+      expect(within(row).getByRole("link", { name: "Check which posts will go" })).toHaveAttribute(
+        "href",
+        "/settings/auto-delete",
+      );
+    });
+
     test("lead nowhere to pay in the Tauri app", async () => {
       (globalThis as { isTauri?: unknown }).isTauri = true;
       server.use(resumableSession());

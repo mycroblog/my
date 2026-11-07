@@ -13,8 +13,9 @@
 // the registrations; a custom emoji request leads the administrators to the requests and its decision the
 // requester to their custom emoji, with the reason of a rejection; a supporter notification names the plan and
 // says when the grace period ends or why the subscription ended, and leads to the supporter page except in the
-// Tauri app, which shows no way to pay (ADR-0072 §14); and lost follows lead to the user's lists of followers and
-// follows. An announcement of the administrators has the announcement's mark in place of an avatar, and its title as
+// Tauri app, which shows no way to pay (ADR-0072 §14); the notice of the server maximum of the automatic deletion says
+// from when and after how many days it deletes the user's posts, and leads to its settings (ADR-0151 §7); and lost
+// follows lead to the user's lists of followers and follows. An announcement of the administrators has the announcement's mark in place of an avatar, and its title as
 // the sentence, a link to it on the list page, which marks it read.
 //
 // A group of the favourites or the boosts of one post is one row: "Alice and 2 others favourited your
@@ -158,6 +159,8 @@ export function NotificationItem({ group, isUnread, surface = "card" }: Notifica
           <RejectionReason reason={view.emojiRequest.reason} />
         ) : view.supporter !== null ? (
           <SupporterNotice supporter={view.supporter} />
+        ) : view.autoDeleteLimit !== null ? (
+          <AutoDeleteLimitNotice limit={view.autoDeleteLimit} />
         ) : view.move !== null && view.move.outcome !== null ? (
           <MoveOutcome move={view.move} outcome={view.move.outcome} />
         ) : null
@@ -303,6 +306,31 @@ function RejectionReason({ reason }: { reason: string }) {
       <Text as="p" dir="auto" whitespace="preLine" wrap="anywhere">
         {reason}
       </Text>
+    </QuoteBlock>
+  );
+}
+
+/**
+ * What an `auto_delete_limit` tells of the server maximum (ADR-0151 §7): the most days it keeps a post and the date it
+ * starts to delete the user's posts by it; the link to the settings, which preview what goes, is the row's action.
+ */
+function AutoDeleteLimitNotice({ limit }: { limit: NonNullable<NotificationView["autoDeleteLimit"]> }) {
+  const intl = useIntl();
+  return (
+    <QuoteBlock>
+      <Hint as="p">
+        {intl.formatMessage(
+          { id: "client:notifications.auto_delete_limit.detail" },
+          {
+            days: limit.days,
+            date: (
+              <time key="from" dateTime={limit.from.dateTime}>
+                {limit.from.text}
+              </time>
+            ),
+          },
+        )}
+      </Hint>
     </QuoteBlock>
   );
 }

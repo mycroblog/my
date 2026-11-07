@@ -438,5 +438,13 @@
   "notifications.unknown": {
     "defaultMessage": "You have a new notification.",
     "description": "Sentence of a notification whose type this version of the web client does not know yet."
+  },
+  "notifications.auto_delete_limit.detail": {
+    "defaultMessage": "From {date}, your posts older than {days, plural, one {# day} other {# days}} will be deleted, except those this server lets you keep. Until then, your own settings apply.",
+    "description": "In the notification that the server's maximum of the automatic deletion binds the user: {date} is the formatted date it starts to delete their posts, {days} the most days a post is kept."
+  },
+  "notifications.link.auto_delete": {
+    "defaultMessage": "Check which posts will go",
+    "description": "Link in the notification of the server's maximum of the automatic deletion to the settings of the automatic deletion, which preview what goes."
   }
 }

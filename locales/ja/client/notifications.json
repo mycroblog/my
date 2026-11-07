@@ -438,5 +438,13 @@
   "notifications.unknown": {
     "defaultMessage": "新しい通知があります。",
     "description": "Sentence of a notification whose type this version of the web client does not know yet."
+  },
+  "notifications.auto_delete_limit.detail": {
+    "defaultMessage": "{date}から、{days, plural, other {# 日}}より古いあなたの投稿は、このサーバーで残せるものを除いて削除されます。それまでは、あなたの設定のとおりです。",
+    "description": "In the notification that the server's maximum of the automatic deletion binds the user: {date} is the formatted date it starts to delete their posts, {days} the most days a post is kept."
+  },
+  "notifications.link.auto_delete": {
+    "defaultMessage": "削除される投稿を確かめる",
+    "description": "Link in the notification of the server's maximum of the automatic deletion to the settings of the automatic deletion, which preview what goes."
   }
 }
