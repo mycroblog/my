@@ -23,8 +23,10 @@ import (
 // recorded once per status and URI; its revisions keep their remote source and the head points at
 // the newest; the live replies to a URI are listed in ID order; the link of a reply is upserted;
 // a received activity is recorded once with its document, and one of trust refetch, never one of
-// trust signed, is released; and the tombstones of objects are recorded once per actor and URI and
-// hold back only the activities of their actor. The ingestion on top of it is RemoteStatusFlows,
+// trust signed, is released; the tombstones of objects are recorded once per actor and URI and
+// hold back only the activities of their actor; the quotes of posts, their events, policies,
+// approvals, and states are stored and listed (ADR-0069); and the pins that featured collections
+// become take one of content.MaxPins slots (ADR-0006). The ingestion on top of it is RemoteStatusFlows,
 // which internal/flowtest/federation runs once on SQLite; StatusRepositoryContract checks the rest
 // of the status repository.
 func RemoteStatusContract(t *testing.T, newHarness RemoteStatusFactory) {
@@ -39,6 +41,8 @@ func RemoteStatusContract(t *testing.T, newHarness RemoteStatusFactory) {
 		{"ListsTheLiveRepliesAndLinksThem", remoteStatusRepoReplies},
 		{"RecordsAndReleasesReceivedActivities", remoteStatusRepoReceived},
 		{"RecordsTheTombstonesOfObjects", remoteStatusRepoTombstones},
+		{"StoresTheQuotesOfPosts", remoteStatusRepoQuotes},
+		{"StoresThePinsOfFeaturedCollections", remoteStatusRepoPins},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

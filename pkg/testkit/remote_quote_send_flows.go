@@ -17,7 +17,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/notification"
 )
 
-// The cases of RemoteInteractionContract about the quotes that local accounts post and the
+// The cases of RemoteInteractionFlows about the quotes that local accounts post and the
 // approvals this server gives (FR-114, ADR-0069 §3): quotes of local posts approved at once, the
 // QuoteRequest of a quote of a remote post and its answer, the answer to a remote QuoteRequest,
 // and the revocation of an approval.
