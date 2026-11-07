@@ -103,6 +103,29 @@ export const Federation: Story = { parameters: { screen: { path: "/admin/setting
 /** The page of the search engines and AI. */
 export const Discovery: Story = { parameters: { screen: { path: "/admin/settings/discovery" } } };
 
+/** The server is a one-person server, as GET /instance and the settings say. */
+const onePersonServer = adminAnswering(
+  http.get(`${apiBase}/instance`, () =>
+    HttpResponse.json({
+      ...instanceFixture,
+      single_user: true,
+      registrations: { mode: "closed" },
+      timelines: { local: "off", federated: "off" },
+    }),
+  ),
+  http.get(`${apiBase}/admin/settings`, ({ request }) =>
+    withViewer(request, () => HttpResponse.json(instanceSettingsFixture({ single_user: "true" }))),
+  ),
+).parameters.screen.handlers;
+
+/**
+ * The page of the registration on a one-person server: the switch is on, and who may sign up and the members' invites
+ * are left out.
+ */
+export const OnePersonServer: Story = {
+  parameters: { screen: { path: "/admin/settings/registration", handlers: onePersonServer } },
+};
+
 /** A new server: no name, no descriptions, the built-in images and every setting at its default. */
 export const Defaults: Story = adminAnswering();
 

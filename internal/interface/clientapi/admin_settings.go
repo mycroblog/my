@@ -152,7 +152,10 @@ func (s *Server) UpdateInstanceSettings(ctx context.Context, req UpdateInstanceS
 	}
 	_, err = s.o.Settings.SetSettings(ctx, ins)
 	var se *appinstance.SettingError
+	var accounts *appinstance.SingleUserAccountsError
 	switch {
+	case errors.As(err, &accounts):
+		return UpdateInstanceSettingsdefaultApplicationProblemPlusJSONResponse(s.singleUserSettingsProblem(ctx, accounts.Count)), nil
 	case errors.As(err, &se):
 		return unprocessable("values." + string(se.Key)), nil
 	case err != nil:

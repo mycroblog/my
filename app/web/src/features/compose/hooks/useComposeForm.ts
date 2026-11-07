@@ -9,6 +9,7 @@ import { useFederation } from "../../../lib/federation";
 import { isRemoteAcct } from "../../../lib/handle";
 import { useLocale, useT } from "../../../lib/i18n";
 import { shellQueryReader } from "../../../lib/query";
+import { isSingleUser } from "../../../lib/singleUser";
 import {
   cachePostedStatus,
   countPostedStatus,
@@ -32,7 +33,8 @@ import { rememberTags } from "./recentTags";
 import { type Attachments, descriptionFieldId, useAttachments } from "./useAttachments";
 import { type ComposeController, composeTextId, useComposeState } from "./useCompose";
 import { useUnreachedMentions } from "./useUnreachedMentions";
-import { visibilities, visibilityLabel } from "./visibilityMessages";
+import { offeredVisibilities } from "./useOfferedVisibilities";
+import { visibilityLabel } from "./visibilityMessages";
 
 /** The key of every post mutation, so that the outbox can read their state (useMutationState). */
 const createStatusMutationKey = ["compose", "createStatus"] as const;
@@ -238,7 +240,11 @@ export function useComposeForm(controller: ComposeController): ComposeForm {
   const visibility =
     preferredVisibility === undefined
       ? undefined
-      : postedVisibility(draft.visibility ?? defaultVisibility(preferredVisibility, replyPost), limits);
+      : postedVisibility(
+          draft.visibility ?? defaultVisibility(preferredVisibility, replyPost),
+          limits,
+          isSingleUser(instance.data),
+        );
   const unreachedMentions = useUnreachedMentions(draft.text, visibility === "local");
   const { reachesRemote } = useFederation();
   const { accountDomain } = useConfig();
@@ -392,7 +398,11 @@ export function useComposeForm(controller: ComposeController): ComposeForm {
     },
     textLimit,
     visibility,
-    limits: limits === undefined || limits.visibilities.length === visibilities.length ? null : limits,
+    // A one-person server leaves `local` out of every account's limits; only a restriction narrows them further.
+    limits:
+      limits === undefined || limits.visibilities.length === offeredVisibilities(isSingleUser(instance.data)).length
+        ? null
+        : limits,
     unreachedMentions,
     staysLocal,
     language,

@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: MIT
 description: Public information about the instance.
 type: object
-required: [domain, name, version, source_url, registrations, login_providers_only, limits, timelines, federation, sends_email, rules, search_indexing, ai_usage, link_cards, link_cards_ignore_robots_txt, finance_visibility, income_visibility, supporters_enabled, supporter_list_visibility, voice_enabled, voice_room_starters, full_text_search, translation]
+required: [domain, name, version, source_url, registrations, login_providers_only, limits, timelines, federation, sends_email, rules, search_indexing, ai_usage, link_cards, link_cards_ignore_robots_txt, finance_visibility, income_visibility, supporters_enabled, supporter_list_visibility, voice_enabled, voice_room_starters, full_text_search, translation, single_user]
 properties:
   domain:
     description: The domain that serves the instance.
@@ -147,3 +147,18 @@ properties:
     $ref: ./FinanceVisibility.yaml
   income_visibility:
     $ref: ./IncomeVisibility.yaml
+  single_user:
+    description: |
+      Whether the instance is a one-person server: the home of its operator alone, with nobody else
+      to join. While it is true, `registrations.mode` is `closed` and both `timelines` are `off`,
+      whatever the instance settings store. Clients also hide the suggestions of accounts, invites,
+      the review of registrations, the sign-up blocks, and the visibility `local`: those operations
+      answer a 404 of the type `/api/v1/problems/single-user-mode`, and a new `local` post is a 422.
+    type: boolean
+  single_user_account:
+    description: |
+      The operator's account of a one-person server, whose profile the web client shows people who
+      are not signed in at the root address. Present only while `single_user` is true, and omitted
+      when the account cannot be shown (it is suspended or deleted).
+    allOf:
+      - $ref: ./Account.yaml

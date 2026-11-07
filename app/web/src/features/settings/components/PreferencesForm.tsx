@@ -24,7 +24,7 @@ import {
   quotePolicies,
   quotePolicyDescription,
   quotePolicyLabel,
-  visibilities,
+  useOfferedVisibilities,
   visibilityDescription,
   visibilityLabel,
 } from "../../compose";
@@ -57,6 +57,8 @@ export function PreferencesForm() {
     timelineAutoInsert,
     linkCardSize,
   } = usePreferences();
+  // A one-person server takes no default of `local` (ADR-0152 §5) and reads a stored one as `private`.
+  const offeredVisibilities = useOfferedVisibilities();
   return (
     <Stack gap="8">
       <Hint size="inherit">{t("client:settings.preferences.autosave")}</Hint>
@@ -106,7 +108,7 @@ export function PreferencesForm() {
               isInvalid={defaultVisibility.error !== undefined}
               errorMessage={defaultVisibility.error}
             >
-              {visibilities.map((visibility) => (
+              {offeredVisibilities.map((visibility) => (
                 <Radio key={visibility} value={visibility} description={t(visibilityDescription[visibility])}>
                   {t(visibilityLabel[visibility])}
                 </Radio>

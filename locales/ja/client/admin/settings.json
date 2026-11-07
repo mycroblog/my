@@ -555,6 +555,26 @@
     "defaultMessage": "登録",
     "description": "Heading of the section of who may sign up on the server settings screen."
   },
+  "admin.settings.single_user.title": {
+    "defaultMessage": "一人のサーバー",
+    "description": "Heading of the section of the instance setting single_user (ADR-0152) on the registration page of the server settings: the server of its operator alone."
+  },
+  "admin.settings.single_user.description": {
+    "defaultMessage": "運営者ひとりだけのサーバーで、fediverse でのあなたの居場所です。有効な間は誰も登録できず、タイムラインはホームだけになります。ローカルと連合のタイムライン、招待、登録の審査、登録の拒否リスト、おすすめのアカウントを出さず、新しい投稿を「このサーバー」にはできません。ログインしていない人には、トップページにあなたのプロフィールを出します。有効にしても無効にしても、何も消えません。",
+    "description": "Help of the section of the one-person server: what the mode hides and that it deletes nothing. “This server” is the name of the visibility local (client:compose.visibility.local)."
+  },
+  "admin.settings.single_user.label": {
+    "defaultMessage": "一人のサーバーにする",
+    "description": "Label of the checkbox of the instance setting single_user."
+  },
+  "admin.settings.single_user.label.description": {
+    "defaultMessage": "有効にできるのは、このサーバーのアカウントがちょうど 1 つのときだけです。承認待ち・無効化・凍結中のアカウントも数え、登録を却下したアカウントは数えません。無効にするのはいつでもできます。",
+    "description": "Description of the checkbox of the one-person server: the condition of exactly one local account, which accounts count, and that it can always be turned off."
+  },
+  "admin.settings.single_user.refused": {
+    "defaultMessage": "{reason}{detail}",
+    "description": "The reason why the server refused to turn the one-person server on, put inside client:admin.settings.policies.save_failed. {reason} is the server's localized sentence that a one-person server can have only one local account, {detail} its localized sentence of how many local accounts the server has. Keep the space between the sentences as the language separates sentences."
+  },
   "admin.settings.remote_media.all": {
     "defaultMessage": "すべて",
     "description": "Remote media policy all."

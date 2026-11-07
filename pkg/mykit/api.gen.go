@@ -2591,6 +2591,7 @@ const (
 	InstanceSettingKeySearchVisibilities                 InstanceSettingKey = "search_visibilities"
 	InstanceSettingKeySecurityContact                    InstanceSettingKey = "security_contact"
 	InstanceSettingKeySessionOriginsRetentionDays        InstanceSettingKey = "session_origins_retention_days"
+	InstanceSettingKeySingleUser                         InstanceSettingKey = "single_user"
 	InstanceSettingKeySupporterListVisibility            InstanceSettingKey = "supporter_list_visibility"
 	InstanceSettingKeyThumbnail                          InstanceSettingKey = "thumbnail"
 	InstanceSettingKeyTranslationBrowser                 InstanceSettingKey = "translation_browser"
@@ -2784,6 +2785,8 @@ func (e InstanceSettingKey) Valid() bool {
 	case InstanceSettingKeySecurityContact:
 		return true
 	case InstanceSettingKeySessionOriginsRetentionDays:
+		return true
+	case InstanceSettingKeySingleUser:
 		return true
 	case InstanceSettingKeySupporterListVisibility:
 		return true
@@ -10041,6 +10044,18 @@ type Instance struct {
 	// ShortDescription A one-paragraph summary of the instance, as plain text; omitted when there is none.
 	ShortDescription *string `json:"short_description,omitempty"`
 
+	// SingleUser Whether the instance is a one-person server: the home of its operator alone, with nobody else
+	// to join. While it is true, `registrations.mode` is `closed` and both `timelines` are `off`,
+	// whatever the instance settings store. Clients also hide the suggestions of accounts, invites,
+	// the review of registrations, the sign-up blocks, and the visibility `local`: those operations
+	// answer a 404 of the type `/api/v1/problems/single-user-mode`, and a new `local` post is a 422.
+	SingleUser bool `json:"single_user"`
+
+	// SingleUserAccount The operator's account of a one-person server, whose profile the web client shows people who
+	// are not signed in at the root address. Present only while `single_user` is true, and omitted
+	// when the account cannot be shown (it is suspended or deleted).
+	SingleUserAccount *Account `json:"single_user_account,omitempty"`
+
 	// SourceUrl Where users get the source code of the running server (AGPL-3.0 section 13), as an https URL to read it at or a mailto URI to request it by email.
 	SourceUrl string `json:"source_url"`
 
@@ -10075,7 +10090,8 @@ type Instance struct {
 	// Timelines Who may read the public timelines the instance serves: `local` is the instance
 	// setting `local_timeline_visibility` of `GET /timelines/local`, and `federated` the instance
 	// setting `federated_timeline_visibility` of `GET /timelines/federated`. Clients do not offer a
-	// timeline that is `off`, nor one that is `signed_in` to a visitor who is not logged in.
+	// timeline that is `off`, nor one that is `signed_in` to a visitor who is not logged in. On a
+	// one-person server (`single_user`) both are `off`, whatever the settings store.
 	Timelines InstanceTimelines `json:"timelines"`
 
 	// Translation What the instance offers for translating posts, and what it sends where. With `browser` false and
@@ -10317,16 +10333,16 @@ type InstanceRegistrations struct {
 	// Mode Who may sign up: `open` (anyone), `approval` (sign-ups wait for a moderator's
 	// approval), `invite` (only with an invite), or `closed` (nobody). It is the mode that
 	// sign-ups follow: `closed` while the closure of the service is announced or done, whatever
-	// the instance setting says, and while registration is limited to the login providers and
-	// none of them lets new users sign up.
+	// the instance setting says, on a one-person server (`single_user`), and while registration
+	// is limited to the login providers and none of them lets new users sign up.
 	Mode InstanceRegistrationsMode `json:"mode"`
 }
 
 // InstanceRegistrationsMode Who may sign up: `open` (anyone), `approval` (sign-ups wait for a moderator's
 // approval), `invite` (only with an invite), or `closed` (nobody). It is the mode that
 // sign-ups follow: `closed` while the closure of the service is announced or done, whatever
-// the instance setting says, and while registration is limited to the login providers and
-// none of them lets new users sign up.
+// the instance setting says, on a one-person server (`single_user`), and while registration
+// is limited to the login providers and none of them lets new users sign up.
 type InstanceRegistrationsMode string
 
 // InstanceRule A rule of the instance. Its text and hint hold one value each, written in any
@@ -10398,7 +10414,8 @@ type InstanceThumbnail struct {
 // InstanceTimelines Who may read the public timelines the instance serves: `local` is the instance
 // setting `local_timeline_visibility` of `GET /timelines/local`, and `federated` the instance
 // setting `federated_timeline_visibility` of `GET /timelines/federated`. Clients do not offer a
-// timeline that is `off`, nor one that is `signed_in` to a visitor who is not logged in.
+// timeline that is `off`, nor one that is `signed_in` to a visitor who is not logged in. On a
+// one-person server (`single_user`) both are `off`, whatever the settings store.
 type InstanceTimelines struct {
 	// Federated Who may read something public about the instance, the value of the instance settings
 	// `local_timeline_visibility`, `federated_timeline_visibility`, `domain_actions_visibility`,
@@ -12057,7 +12074,8 @@ type PollOption struct {
 // not in `visibilities` gets `visibility_ceiling` instead.
 type PostingLimits struct {
 	// Visibilities The visibilities that a new status keeps as asked for, from the widest audience to the
-	// narrowest; every visibility while the account is not restricted.
+	// narrowest; every visibility while the account is not restricted. A one-person server
+	// (`Instance.single_user`) leaves out `local`, which a new status cannot have there.
 	Visibilities []Visibility `json:"visibilities"`
 
 	// VisibilityCeiling Who may see a status: `public` everyone, listed on public timelines;
@@ -12373,6 +12391,13 @@ type PreviewDomainBlockImportRequest struct {
 //     be searched (`Instance.full_text_search.available`).
 //   - `/api/v1/problems/search-failed` (503): the search engine could not answer. Only the search of
 //     posts is affected; try again later.
+//   - `/api/v1/problems/single-user-mode` (404): the server is a one-person server
+//     (`Instance.single_user`), which does not offer the operation: the local and federated
+//     timelines, the suggestions of accounts, invites, the review of registrations, and the sign-up
+//     blocks. It works again when the server stops being one.
+//   - `/api/v1/problems/single-user-requires-one-account` (422): the instance setting `single_user`
+//     can be turned on only while the server has exactly one local account; `detail` says how many
+//     it has.
 type Problem struct {
 	// Detail An explanation of this occurrence, localized from `Accept-Language`.
 	Detail *string `json:"detail,omitempty"`
@@ -17921,6 +17946,9 @@ type ClientInterface interface {
 	// it follows, the accounts that it blocks, mutes, or is blocked by, and accounts that are
 	// deactivated, deleted, or suspended are left out. There is no paging.
 	//
+	// On a one-person server (`Instance.single_user`) it is a 404 of the type
+	// `/api/v1/problems/single-user-mode`.
+	//
 	// Corresponds with GET /accounts/suggestions (the `ListAccountSuggestions` operationId).
 	ListAccountSuggestions(ctx context.Context, params *ListAccountSuggestionsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -19483,6 +19511,9 @@ type ClientInterface interface {
 	// created them: the staff's and the members' own invites. Needs the `manage_invites`
 	// permission.
 	//
+	// On a one-person server (`Instance.single_user`) it is a 404 of the type
+	// `/api/v1/problems/single-user-mode`.
+	//
 	// Corresponds with GET /admin/invites (the `ListInvites` operationId).
 	ListInvites(ctx context.Context, params *ListInvitesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -19494,6 +19525,9 @@ type ClientInterface interface {
 	// 409 `/api/v1/problems/registration-closed`. `max_uses` outside 1 to 1,000,000 or
 	// `expires_in` outside 1 second to 10 years is a 422 naming it. Needs the `manage_invites`
 	// permission.
+	//
+	// On a one-person server (`Instance.single_user`) it is a 404 of the type
+	// `/api/v1/problems/single-user-mode`.
 	//
 	// Takes any type of body and a specified content type.
 	//
@@ -19509,6 +19543,9 @@ type ClientInterface interface {
 	// `expires_in` outside 1 second to 10 years is a 422 naming it. Needs the `manage_invites`
 	// permission.
 	//
+	// On a one-person server (`Instance.single_user`) it is a 404 of the type
+	// `/api/v1/problems/single-user-mode`.
+	//
 	// Takes a body of the `application/json` content type.
 	//
 	// Corresponds with POST /admin/invites (the `CreateInvite` operationId).
@@ -19519,6 +19556,9 @@ type ClientInterface interface {
 	// The invite stops working at once; the people who signed up with it keep their
 	// accounts. Revoking a revoked invite changes nothing. An unknown ID is a 404. Needs the
 	// `manage_invites` permission.
+	//
+	// On a one-person server (`Instance.single_user`) it is a 404 of the type
+	// `/api/v1/problems/single-user-mode`.
 	//
 	// Corresponds with POST /admin/invites/{id}/revoke (the `RevokeInvite` operationId).
 	RevokeInvite(ctx context.Context, id InviteId, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -19846,6 +19886,9 @@ type ClientInterface interface {
 	// The sign-ups that wait for a moderator's decision, with the reasons their
 	// applicants gave, longest waiting first. Needs the `manage_accounts` permission.
 	//
+	// On a one-person server (`Instance.single_user`) it is a 404 of the type
+	// `/api/v1/problems/single-user-mode`.
+	//
 	// Corresponds with GET /admin/registrations (the `ListPendingRegistrations` operationId).
 	ListPendingRegistrations(ctx context.Context, params *ListPendingRegistrationsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -19858,6 +19901,9 @@ type ClientInterface interface {
 	// announcement of the closure of the service on, a pending registration is not approved: a
 	// 409 `/api/v1/problems/service-closing` (the announcement rejects the pending ones). Needs
 	// the `manage_accounts` permission.
+	//
+	// On a one-person server (`Instance.single_user`) it is a 404 of the type
+	// `/api/v1/problems/single-user-mode`.
 	//
 	// Takes any type of body and a specified content type.
 	//
@@ -19874,6 +19920,9 @@ type ClientInterface interface {
 	// 409 `/api/v1/problems/service-closing` (the announcement rejects the pending ones). Needs
 	// the `manage_accounts` permission.
 	//
+	// On a one-person server (`Instance.single_user`) it is a 404 of the type
+	// `/api/v1/problems/single-user-mode`.
+	//
 	// Takes a body of the `application/json` content type.
 	//
 	// Corresponds with POST /admin/registrations/{id}/approve (the `ApproveRegistration` operationId).
@@ -19888,6 +19937,9 @@ type ClientInterface interface {
 	// An unknown ID is a 404. Needs the
 	// `manage_accounts` permission.
 	//
+	// On a one-person server (`Instance.single_user`) it is a 404 of the type
+	// `/api/v1/problems/single-user-mode`.
+	//
 	// Takes any type of body and a specified content type.
 	//
 	// Corresponds with POST /admin/registrations/{id}/reject (the `RejectRegistration` operationId).
@@ -19901,6 +19953,9 @@ type ClientInterface interface {
 	// only the list of pending registrations shows it, and `POST /admin/accounts/{id}/reveal` after.
 	// An unknown ID is a 404. Needs the
 	// `manage_accounts` permission.
+	//
+	// On a one-person server (`Instance.single_user`) it is a 404 of the type
+	// `/api/v1/problems/single-user-mode`.
 	//
 	// Takes a body of the `application/json` content type.
 	//
@@ -20431,6 +20486,9 @@ type ClientInterface interface {
 	// The blocks on sign-ups from the registration page, newest first, lifted and
 	// expired ones included unless `active` is set. Needs the `manage_accounts` permission.
 	//
+	// On a one-person server (`Instance.single_user`) it is a 404 of the type
+	// `/api/v1/problems/single-user-mode`.
+	//
 	// Corresponds with GET /admin/signup_blocks (the `ListSignupBlocks` operationId).
 	ListSignupBlocks(ctx context.Context, params *ListSignupBlocksParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -20446,6 +20504,9 @@ type ClientInterface interface {
 	// CIDR prefix (a single address is a prefix of its full length). A value that is not
 	// valid for its kind, or a `comment` that is too long or contains U+0000, is a 422.
 	// Needs the `manage_accounts` permission.
+	//
+	// On a one-person server (`Instance.single_user`) it is a 404 of the type
+	// `/api/v1/problems/single-user-mode`.
 	//
 	// Takes any type of body and a specified content type.
 	//
@@ -20464,6 +20525,9 @@ type ClientInterface interface {
 	// CIDR prefix (a single address is a prefix of its full length). A value that is not
 	// valid for its kind, or a `comment` that is too long or contains U+0000, is a 422.
 	// Needs the `manage_accounts` permission.
+	//
+	// On a one-person server (`Instance.single_user`) it is a 404 of the type
+	// `/api/v1/problems/single-user-mode`.
 	//
 	// Takes a body of the `application/json` content type.
 	//
@@ -20485,6 +20549,9 @@ type ClientInterface interface {
 	// 10,000 values, an invalid kind or severity, or a `comment` that is too long or contains
 	// U+0000 is a 422 that adds nothing. Needs the `manage_accounts` permission.
 	//
+	// On a one-person server (`Instance.single_user`) it is a 404 of the type
+	// `/api/v1/problems/single-user-mode`.
+	//
 	// Takes any type of body and a specified content type.
 	//
 	// Corresponds with POST /admin/signup_blocks/import (the `ImportSignupBlocks` operationId).
@@ -20505,6 +20572,9 @@ type ClientInterface interface {
 	// 10,000 values, an invalid kind or severity, or a `comment` that is too long or contains
 	// U+0000 is a 422 that adds nothing. Needs the `manage_accounts` permission.
 	//
+	// On a one-person server (`Instance.single_user`) it is a 404 of the type
+	// `/api/v1/problems/single-user-mode`.
+	//
 	// Takes a body of the `application/json` content type.
 	//
 	// Corresponds with POST /admin/signup_blocks/import (the `ImportSignupBlocks` operationId).
@@ -20514,6 +20584,9 @@ type ClientInterface interface {
 	//
 	// An unknown ID is a 404. Needs the `manage_accounts` permission.
 	//
+	// On a one-person server (`Instance.single_user`) it is a 404 of the type
+	// `/api/v1/problems/single-user-mode`.
+	//
 	// Corresponds with GET /admin/signup_blocks/{id} (the `GetSignupBlock` operationId).
 	GetSignupBlock(ctx context.Context, id SignupBlockId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -20521,6 +20594,9 @@ type ClientInterface interface {
 	//
 	// The block stops matching sign-ups at once; the lift is audited. Lifting a lifted block
 	// changes nothing. An unknown ID is a 404. Needs the `manage_accounts` permission.
+	//
+	// On a one-person server (`Instance.single_user`) it is a 404 of the type
+	// `/api/v1/problems/single-user-mode`.
 	//
 	// Corresponds with POST /admin/signup_blocks/{id}/lift (the `LiftSignupBlock` operationId).
 	LiftSignupBlock(ctx context.Context, id SignupBlockId, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -21479,6 +21555,9 @@ type ClientInterface interface {
 	// otherwise usable one is then `creator_ineligible`. Invites of the staff
 	// (`/admin/invites`) are not listed.
 	//
+	// On a one-person server (`Instance.single_user`) it is a 404 of the type
+	// `/api/v1/problems/single-user-mode`.
+	//
 	// Corresponds with GET /invites (the `ListOwnInvites` operationId).
 	ListOwnInvites(ctx context.Context, params *ListOwnInvitesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -21497,6 +21576,9 @@ type ClientInterface interface {
 	// `/api/v1/problems/too-many-invites`. The creation is recorded in the audit log with the
 	// user as the actor. Every sign-up with the invite checks again that the user may create
 	// invites; while they may not, the invite does not work.
+	//
+	// On a one-person server (`Instance.single_user`) it is a 404 of the type
+	// `/api/v1/problems/single-user-mode`.
 	//
 	// Takes any type of body and a specified content type.
 	//
@@ -21519,6 +21601,9 @@ type ClientInterface interface {
 	// user as the actor. Every sign-up with the invite checks again that the user may create
 	// invites; while they may not, the invite does not work.
 	//
+	// On a one-person server (`Instance.single_user`) it is a 404 of the type
+	// `/api/v1/problems/single-user-mode`.
+	//
 	// Takes a body of the `application/json` content type.
 	//
 	// Corresponds with POST /invites (the `CreateOwnInvite` operationId).
@@ -21531,6 +21616,9 @@ type ClientInterface interface {
 	// with the user as the actor. A user revokes their own invites even when they may no longer
 	// create invites. An unknown ID, or an invite that the user did not create as a member, is
 	// a 404.
+	//
+	// On a one-person server (`Instance.single_user`) it is a 404 of the type
+	// `/api/v1/problems/single-user-mode`.
 	//
 	// Corresponds with POST /invites/{id}/revoke (the `RevokeOwnInvite` operationId).
 	RevokeOwnInvite(ctx context.Context, id InviteId, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -22145,7 +22233,8 @@ type ClientInterface interface {
 	//
 	// Properties left out of the request keep their current values. Language tags are
 	// canonicalized (`ja-jp` becomes `ja-JP`). A 422 problem names the property that is
-	// invalid in `detail`.
+	// invalid in `detail`. On a one-person server (`Instance.single_user`) `default_visibility`
+	// cannot be `local`, and a stored `local` reads as `private`.
 	//
 	// Takes any type of body and a specified content type.
 	//
@@ -22156,7 +22245,8 @@ type ClientInterface interface {
 	//
 	// Properties left out of the request keep their current values. Language tags are
 	// canonicalized (`ja-jp` becomes `ja-JP`). A 422 problem names the property that is
-	// invalid in `detail`.
+	// invalid in `detail`. On a one-person server (`Instance.single_user`) `default_visibility`
+	// cannot be `local`, and a stored `local` reads as `private`.
 	//
 	// Takes a body of the `application/json` content type.
 	//
@@ -22460,6 +22550,8 @@ type ClientInterface interface {
 	// A user whose account moved gets a 403 `/api/v1/problems/account-moved`.
 	// When the server's automated review refuses the post, nothing is posted and the answer is a
 	// 422 `/api/v1/problems/status-rejected` with fixed text and the decision the user may appeal.
+	// On a one-person server (`Instance.single_user`) the visibility `local` is a 422, and
+	// `CredentialAccount.posting_limits` leaves it out.
 	//
 	// Takes any type of body and a specified content type.
 	//
@@ -22476,6 +22568,8 @@ type ClientInterface interface {
 	// A user whose account moved gets a 403 `/api/v1/problems/account-moved`.
 	// When the server's automated review refuses the post, nothing is posted and the answer is a
 	// 422 `/api/v1/problems/status-rejected` with fixed text and the decision the user may appeal.
+	// On a one-person server (`Instance.single_user`) the visibility `local` is a 422, and
+	// `CredentialAccount.posting_limits` leaves it out.
 	//
 	// Takes a body of the `application/json` content type.
 	//
@@ -22988,6 +23082,9 @@ type ClientInterface interface {
 	// `federated_timeline_visibility` decides who may read it: while it is `off` it is a 404, and while it
 	// is `signed_in` an anonymous request is a 401.
 	//
+	// On a one-person server (`Instance.single_user`) it is a 404 of the type
+	// `/api/v1/problems/single-user-mode`.
+	//
 	// Corresponds with GET /timelines/federated (the `GetFederatedTimeline` operationId).
 	GetFederatedTimeline(ctx context.Context, params *GetFederatedTimelineParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -23014,6 +23111,9 @@ type ClientInterface interface {
 	// logged-in viewer, in the viewer's timeline languages. The instance setting
 	// `local_timeline_visibility` decides who may read it: while it is `off` it is a 404, and while it
 	// is `signed_in` an anonymous request is a 401.
+	//
+	// On a one-person server (`Instance.single_user`) it is a 404 of the type
+	// `/api/v1/problems/single-user-mode`.
 	//
 	// Corresponds with GET /timelines/local (the `GetLocalTimeline` operationId).
 	GetLocalTimeline(ctx context.Context, params *GetLocalTimelineParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -24162,6 +24262,9 @@ func (c *Client) SearchAccounts(ctx context.Context, params *SearchAccountsParam
 // Only accounts that are `discoverable` are suggested. The viewer itself, the accounts that
 // it follows, the accounts that it blocks, mutes, or is blocked by, and accounts that are
 // deactivated, deleted, or suspended are left out. There is no paging.
+//
+// On a one-person server (`Instance.single_user`) it is a 404 of the type
+// `/api/v1/problems/single-user-mode`.
 //
 // Corresponds with GET /accounts/suggestions (the `ListAccountSuggestions` operationId).
 func (c *Client) ListAccountSuggestions(ctx context.Context, params *ListAccountSuggestionsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -26995,6 +27098,9 @@ func (c *Client) RefetchInstanceStatuses(ctx context.Context, domain InstanceDom
 // created them: the staff's and the members' own invites. Needs the `manage_invites`
 // permission.
 //
+// On a one-person server (`Instance.single_user`) it is a 404 of the type
+// `/api/v1/problems/single-user-mode`.
+//
 // Corresponds with GET /admin/invites (the `ListInvites` operationId).
 func (c *Client) ListInvites(ctx context.Context, params *ListInvitesParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewListInvitesRequest(c.Server, params)
@@ -27016,6 +27122,9 @@ func (c *Client) ListInvites(ctx context.Context, params *ListInvitesParams, req
 // 409 `/api/v1/problems/registration-closed`. `max_uses` outside 1 to 1,000,000 or
 // `expires_in` outside 1 second to 10 years is a 422 naming it. Needs the `manage_invites`
 // permission.
+//
+// On a one-person server (`Instance.single_user`) it is a 404 of the type
+// `/api/v1/problems/single-user-mode`.
 //
 // Takes any type of body and a specified content type.
 //
@@ -27041,6 +27150,9 @@ func (c *Client) CreateInviteWithBody(ctx context.Context, contentType string, b
 // `expires_in` outside 1 second to 10 years is a 422 naming it. Needs the `manage_invites`
 // permission.
 //
+// On a one-person server (`Instance.single_user`) it is a 404 of the type
+// `/api/v1/problems/single-user-mode`.
+//
 // Takes a body of the `application/json` content type.
 //
 // Corresponds with POST /admin/invites (the `CreateInvite` operationId).
@@ -27061,6 +27173,9 @@ func (c *Client) CreateInvite(ctx context.Context, body CreateInviteJSONRequestB
 // The invite stops working at once; the people who signed up with it keep their
 // accounts. Revoking a revoked invite changes nothing. An unknown ID is a 404. Needs the
 // `manage_invites` permission.
+//
+// On a one-person server (`Instance.single_user`) it is a 404 of the type
+// `/api/v1/problems/single-user-mode`.
 //
 // Corresponds with POST /admin/invites/{id}/revoke (the `RevokeInvite` operationId).
 func (c *Client) RevokeInvite(ctx context.Context, id InviteId, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -27688,6 +27803,9 @@ func (c *Client) GetAdminQueue(ctx context.Context, reqEditors ...RequestEditorF
 // The sign-ups that wait for a moderator's decision, with the reasons their
 // applicants gave, longest waiting first. Needs the `manage_accounts` permission.
 //
+// On a one-person server (`Instance.single_user`) it is a 404 of the type
+// `/api/v1/problems/single-user-mode`.
+//
 // Corresponds with GET /admin/registrations (the `ListPendingRegistrations` operationId).
 func (c *Client) ListPendingRegistrations(ctx context.Context, params *ListPendingRegistrationsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewListPendingRegistrationsRequest(c.Server, params)
@@ -27710,6 +27828,9 @@ func (c *Client) ListPendingRegistrations(ctx context.Context, params *ListPendi
 // announcement of the closure of the service on, a pending registration is not approved: a
 // 409 `/api/v1/problems/service-closing` (the announcement rejects the pending ones). Needs
 // the `manage_accounts` permission.
+//
+// On a one-person server (`Instance.single_user`) it is a 404 of the type
+// `/api/v1/problems/single-user-mode`.
 //
 // Takes any type of body and a specified content type.
 //
@@ -27736,6 +27857,9 @@ func (c *Client) ApproveRegistrationWithBody(ctx context.Context, id Registratio
 // 409 `/api/v1/problems/service-closing` (the announcement rejects the pending ones). Needs
 // the `manage_accounts` permission.
 //
+// On a one-person server (`Instance.single_user`) it is a 404 of the type
+// `/api/v1/problems/single-user-mode`.
+//
 // Takes a body of the `application/json` content type.
 //
 // Corresponds with POST /admin/registrations/{id}/approve (the `ApproveRegistration` operationId).
@@ -27760,6 +27884,9 @@ func (c *Client) ApproveRegistration(ctx context.Context, id RegistrationId, bod
 // An unknown ID is a 404. Needs the
 // `manage_accounts` permission.
 //
+// On a one-person server (`Instance.single_user`) it is a 404 of the type
+// `/api/v1/problems/single-user-mode`.
+//
 // Takes any type of body and a specified content type.
 //
 // Corresponds with POST /admin/registrations/{id}/reject (the `RejectRegistration` operationId).
@@ -27783,6 +27910,9 @@ func (c *Client) RejectRegistrationWithBody(ctx context.Context, id Registration
 // only the list of pending registrations shows it, and `POST /admin/accounts/{id}/reveal` after.
 // An unknown ID is a 404. Needs the
 // `manage_accounts` permission.
+//
+// On a one-person server (`Instance.single_user`) it is a 404 of the type
+// `/api/v1/problems/single-user-mode`.
 //
 // Takes a body of the `application/json` content type.
 //
@@ -28723,6 +28853,9 @@ func (c *Client) GetLoginProvidersOnlyImpact(ctx context.Context, params *GetLog
 // The blocks on sign-ups from the registration page, newest first, lifted and
 // expired ones included unless `active` is set. Needs the `manage_accounts` permission.
 //
+// On a one-person server (`Instance.single_user`) it is a 404 of the type
+// `/api/v1/problems/single-user-mode`.
+//
 // Corresponds with GET /admin/signup_blocks (the `ListSignupBlocks` operationId).
 func (c *Client) ListSignupBlocks(ctx context.Context, params *ListSignupBlocksParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewListSignupBlocksRequest(c.Server, params)
@@ -28748,6 +28881,9 @@ func (c *Client) ListSignupBlocks(ctx context.Context, params *ListSignupBlocksP
 // CIDR prefix (a single address is a prefix of its full length). A value that is not
 // valid for its kind, or a `comment` that is too long or contains U+0000, is a 422.
 // Needs the `manage_accounts` permission.
+//
+// On a one-person server (`Instance.single_user`) it is a 404 of the type
+// `/api/v1/problems/single-user-mode`.
 //
 // Takes any type of body and a specified content type.
 //
@@ -28776,6 +28912,9 @@ func (c *Client) CreateSignupBlockWithBody(ctx context.Context, contentType stri
 // CIDR prefix (a single address is a prefix of its full length). A value that is not
 // valid for its kind, or a `comment` that is too long or contains U+0000, is a 422.
 // Needs the `manage_accounts` permission.
+//
+// On a one-person server (`Instance.single_user`) it is a 404 of the type
+// `/api/v1/problems/single-user-mode`.
 //
 // Takes a body of the `application/json` content type.
 //
@@ -28807,6 +28946,9 @@ func (c *Client) CreateSignupBlock(ctx context.Context, body CreateSignupBlockJS
 // 10,000 values, an invalid kind or severity, or a `comment` that is too long or contains
 // U+0000 is a 422 that adds nothing. Needs the `manage_accounts` permission.
 //
+// On a one-person server (`Instance.single_user`) it is a 404 of the type
+// `/api/v1/problems/single-user-mode`.
+//
 // Takes any type of body and a specified content type.
 //
 // Corresponds with POST /admin/signup_blocks/import (the `ImportSignupBlocks` operationId).
@@ -28837,6 +28979,9 @@ func (c *Client) ImportSignupBlocksWithBody(ctx context.Context, contentType str
 // 10,000 values, an invalid kind or severity, or a `comment` that is too long or contains
 // U+0000 is a 422 that adds nothing. Needs the `manage_accounts` permission.
 //
+// On a one-person server (`Instance.single_user`) it is a 404 of the type
+// `/api/v1/problems/single-user-mode`.
+//
 // Takes a body of the `application/json` content type.
 //
 // Corresponds with POST /admin/signup_blocks/import (the `ImportSignupBlocks` operationId).
@@ -28856,6 +29001,9 @@ func (c *Client) ImportSignupBlocks(ctx context.Context, body ImportSignupBlocks
 //
 // An unknown ID is a 404. Needs the `manage_accounts` permission.
 //
+// On a one-person server (`Instance.single_user`) it is a 404 of the type
+// `/api/v1/problems/single-user-mode`.
+//
 // Corresponds with GET /admin/signup_blocks/{id} (the `GetSignupBlock` operationId).
 func (c *Client) GetSignupBlock(ctx context.Context, id SignupBlockId, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetSignupBlockRequest(c.Server, id)
@@ -28873,6 +29021,9 @@ func (c *Client) GetSignupBlock(ctx context.Context, id SignupBlockId, reqEditor
 //
 // The block stops matching sign-ups at once; the lift is audited. Lifting a lifted block
 // changes nothing. An unknown ID is a 404. Needs the `manage_accounts` permission.
+//
+// On a one-person server (`Instance.single_user`) it is a 404 of the type
+// `/api/v1/problems/single-user-mode`.
 //
 // Corresponds with POST /admin/signup_blocks/{id}/lift (the `LiftSignupBlock` operationId).
 func (c *Client) LiftSignupBlock(ctx context.Context, id SignupBlockId, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -30631,6 +30782,9 @@ func (c *Client) ListInstanceSupporters(ctx context.Context, params *ListInstanc
 // otherwise usable one is then `creator_ineligible`. Invites of the staff
 // (`/admin/invites`) are not listed.
 //
+// On a one-person server (`Instance.single_user`) it is a 404 of the type
+// `/api/v1/problems/single-user-mode`.
+//
 // Corresponds with GET /invites (the `ListOwnInvites` operationId).
 func (c *Client) ListOwnInvites(ctx context.Context, params *ListOwnInvitesParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewListOwnInvitesRequest(c.Server, params)
@@ -30659,6 +30813,9 @@ func (c *Client) ListOwnInvites(ctx context.Context, params *ListOwnInvitesParam
 // `/api/v1/problems/too-many-invites`. The creation is recorded in the audit log with the
 // user as the actor. Every sign-up with the invite checks again that the user may create
 // invites; while they may not, the invite does not work.
+//
+// On a one-person server (`Instance.single_user`) it is a 404 of the type
+// `/api/v1/problems/single-user-mode`.
 //
 // Takes any type of body and a specified content type.
 //
@@ -30691,6 +30848,9 @@ func (c *Client) CreateOwnInviteWithBody(ctx context.Context, contentType string
 // user as the actor. Every sign-up with the invite checks again that the user may create
 // invites; while they may not, the invite does not work.
 //
+// On a one-person server (`Instance.single_user`) it is a 404 of the type
+// `/api/v1/problems/single-user-mode`.
+//
 // Takes a body of the `application/json` content type.
 //
 // Corresponds with POST /invites (the `CreateOwnInvite` operationId).
@@ -30713,6 +30873,9 @@ func (c *Client) CreateOwnInvite(ctx context.Context, body CreateOwnInviteJSONRe
 // with the user as the actor. A user revokes their own invites even when they may no longer
 // create invites. An unknown ID, or an invite that the user did not create as a member, is
 // a 404.
+//
+// On a one-person server (`Instance.single_user`) it is a 404 of the type
+// `/api/v1/problems/single-user-mode`.
 //
 // Corresponds with POST /invites/{id}/revoke (the `RevokeOwnInvite` operationId).
 func (c *Client) RevokeOwnInvite(ctx context.Context, id InviteId, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -31807,7 +31970,8 @@ func (c *Client) GetPreferences(ctx context.Context, reqEditors ...RequestEditor
 //
 // Properties left out of the request keep their current values. Language tags are
 // canonicalized (`ja-jp` becomes `ja-JP`). A 422 problem names the property that is
-// invalid in `detail`.
+// invalid in `detail`. On a one-person server (`Instance.single_user`) `default_visibility`
+// cannot be `local`, and a stored `local` reads as `private`.
 //
 // Takes any type of body and a specified content type.
 //
@@ -31828,7 +31992,8 @@ func (c *Client) UpdatePreferencesWithBody(ctx context.Context, contentType stri
 //
 // Properties left out of the request keep their current values. Language tags are
 // canonicalized (`ja-jp` becomes `ja-JP`). A 422 problem names the property that is
-// invalid in `detail`.
+// invalid in `detail`. On a one-person server (`Instance.single_user`) `default_visibility`
+// cannot be `local`, and a stored `local` reads as `private`.
 //
 // Takes a body of the `application/json` content type.
 //
@@ -32382,6 +32547,8 @@ func (c *Client) RevokeSession(ctx context.Context, id Id, reqEditors ...Request
 // A user whose account moved gets a 403 `/api/v1/problems/account-moved`.
 // When the server's automated review refuses the post, nothing is posted and the answer is a
 // 422 `/api/v1/problems/status-rejected` with fixed text and the decision the user may appeal.
+// On a one-person server (`Instance.single_user`) the visibility `local` is a 422, and
+// `CredentialAccount.posting_limits` leaves it out.
 //
 // Takes any type of body and a specified content type.
 //
@@ -32408,6 +32575,8 @@ func (c *Client) CreateStatusWithBody(ctx context.Context, params *CreateStatusP
 // A user whose account moved gets a 403 `/api/v1/problems/account-moved`.
 // When the server's automated review refuses the post, nothing is posted and the answer is a
 // 422 `/api/v1/problems/status-rejected` with fixed text and the decision the user may appeal.
+// On a one-person server (`Instance.single_user`) the visibility `local` is a 422, and
+// `CredentialAccount.posting_limits` leaves it out.
 //
 // Takes a body of the `application/json` content type.
 //
@@ -33330,6 +33499,9 @@ func (c *Client) SearchTags(ctx context.Context, params *SearchTagsParams, reqEd
 // `federated_timeline_visibility` decides who may read it: while it is `off` it is a 404, and while it
 // is `signed_in` an anonymous request is a 401.
 //
+// On a one-person server (`Instance.single_user`) it is a 404 of the type
+// `/api/v1/problems/single-user-mode`.
+//
 // Corresponds with GET /timelines/federated (the `GetFederatedTimeline` operationId).
 func (c *Client) GetFederatedTimeline(ctx context.Context, params *GetFederatedTimelineParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetFederatedTimelineRequest(c.Server, params)
@@ -33386,6 +33558,9 @@ func (c *Client) GetListTimeline(ctx context.Context, id ListId, params *GetList
 // logged-in viewer, in the viewer's timeline languages. The instance setting
 // `local_timeline_visibility` decides who may read it: while it is `off` it is a 404, and while it
 // is `signed_in` an anonymous request is a 401.
+//
+// On a one-person server (`Instance.single_user`) it is a 404 of the type
+// `/api/v1/problems/single-user-mode`.
 //
 // Corresponds with GET /timelines/local (the `GetLocalTimeline` operationId).
 func (c *Client) GetLocalTimeline(ctx context.Context, params *GetLocalTimelineParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -51198,6 +51373,9 @@ type ClientWithResponsesInterface interface {
 	// it follows, the accounts that it blocks, mutes, or is blocked by, and accounts that are
 	// deactivated, deleted, or suspended are left out. There is no paging.
 	//
+	// On a one-person server (`Instance.single_user`) it is a 404 of the type
+	// `/api/v1/problems/single-user-mode`.
+	//
 	// Returns a wrapper object for the known response body format(s).
 	//
 	// Corresponds with GET /accounts/suggestions (the `ListAccountSuggestions` operationId).
@@ -52914,6 +53092,9 @@ type ClientWithResponsesInterface interface {
 	// created them: the staff's and the members' own invites. Needs the `manage_invites`
 	// permission.
 	//
+	// On a one-person server (`Instance.single_user`) it is a 404 of the type
+	// `/api/v1/problems/single-user-mode`.
+	//
 	// Returns a wrapper object for the known response body format(s).
 	//
 	// Corresponds with GET /admin/invites (the `ListInvites` operationId).
@@ -52927,6 +53108,9 @@ type ClientWithResponsesInterface interface {
 	// 409 `/api/v1/problems/registration-closed`. `max_uses` outside 1 to 1,000,000 or
 	// `expires_in` outside 1 second to 10 years is a 422 naming it. Needs the `manage_invites`
 	// permission.
+	//
+	// On a one-person server (`Instance.single_user`) it is a 404 of the type
+	// `/api/v1/problems/single-user-mode`.
 	//
 	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 	//
@@ -52942,6 +53126,9 @@ type ClientWithResponsesInterface interface {
 	// `expires_in` outside 1 second to 10 years is a 422 naming it. Needs the `manage_invites`
 	// permission.
 	//
+	// On a one-person server (`Instance.single_user`) it is a 404 of the type
+	// `/api/v1/problems/single-user-mode`.
+	//
 	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 	//
 	// Corresponds with POST /admin/invites (the `CreateInvite` operationId).
@@ -52952,6 +53139,9 @@ type ClientWithResponsesInterface interface {
 	// The invite stops working at once; the people who signed up with it keep their
 	// accounts. Revoking a revoked invite changes nothing. An unknown ID is a 404. Needs the
 	// `manage_invites` permission.
+	//
+	// On a one-person server (`Instance.single_user`) it is a 404 of the type
+	// `/api/v1/problems/single-user-mode`.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
@@ -53319,6 +53509,9 @@ type ClientWithResponsesInterface interface {
 	// The sign-ups that wait for a moderator's decision, with the reasons their
 	// applicants gave, longest waiting first. Needs the `manage_accounts` permission.
 	//
+	// On a one-person server (`Instance.single_user`) it is a 404 of the type
+	// `/api/v1/problems/single-user-mode`.
+	//
 	// Returns a wrapper object for the known response body format(s).
 	//
 	// Corresponds with GET /admin/registrations (the `ListPendingRegistrations` operationId).
@@ -53333,6 +53526,9 @@ type ClientWithResponsesInterface interface {
 	// announcement of the closure of the service on, a pending registration is not approved: a
 	// 409 `/api/v1/problems/service-closing` (the announcement rejects the pending ones). Needs
 	// the `manage_accounts` permission.
+	//
+	// On a one-person server (`Instance.single_user`) it is a 404 of the type
+	// `/api/v1/problems/single-user-mode`.
 	//
 	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 	//
@@ -53349,6 +53545,9 @@ type ClientWithResponsesInterface interface {
 	// 409 `/api/v1/problems/service-closing` (the announcement rejects the pending ones). Needs
 	// the `manage_accounts` permission.
 	//
+	// On a one-person server (`Instance.single_user`) it is a 404 of the type
+	// `/api/v1/problems/single-user-mode`.
+	//
 	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 	//
 	// Corresponds with POST /admin/registrations/{id}/approve (the `ApproveRegistration` operationId).
@@ -53363,6 +53562,9 @@ type ClientWithResponsesInterface interface {
 	// An unknown ID is a 404. Needs the
 	// `manage_accounts` permission.
 	//
+	// On a one-person server (`Instance.single_user`) it is a 404 of the type
+	// `/api/v1/problems/single-user-mode`.
+	//
 	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 	//
 	// Corresponds with POST /admin/registrations/{id}/reject (the `RejectRegistration` operationId).
@@ -53376,6 +53578,9 @@ type ClientWithResponsesInterface interface {
 	// only the list of pending registrations shows it, and `POST /admin/accounts/{id}/reveal` after.
 	// An unknown ID is a 404. Needs the
 	// `manage_accounts` permission.
+	//
+	// On a one-person server (`Instance.single_user`) it is a 404 of the type
+	// `/api/v1/problems/single-user-mode`.
 	//
 	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 	//
@@ -53938,6 +54143,9 @@ type ClientWithResponsesInterface interface {
 	// The blocks on sign-ups from the registration page, newest first, lifted and
 	// expired ones included unless `active` is set. Needs the `manage_accounts` permission.
 	//
+	// On a one-person server (`Instance.single_user`) it is a 404 of the type
+	// `/api/v1/problems/single-user-mode`.
+	//
 	// Returns a wrapper object for the known response body format(s).
 	//
 	// Corresponds with GET /admin/signup_blocks (the `ListSignupBlocks` operationId).
@@ -53956,6 +54164,9 @@ type ClientWithResponsesInterface interface {
 	// valid for its kind, or a `comment` that is too long or contains U+0000, is a 422.
 	// Needs the `manage_accounts` permission.
 	//
+	// On a one-person server (`Instance.single_user`) it is a 404 of the type
+	// `/api/v1/problems/single-user-mode`.
+	//
 	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 	//
 	// Corresponds with POST /admin/signup_blocks (the `CreateSignupBlock` operationId).
@@ -53973,6 +54184,9 @@ type ClientWithResponsesInterface interface {
 	// CIDR prefix (a single address is a prefix of its full length). A value that is not
 	// valid for its kind, or a `comment` that is too long or contains U+0000, is a 422.
 	// Needs the `manage_accounts` permission.
+	//
+	// On a one-person server (`Instance.single_user`) it is a 404 of the type
+	// `/api/v1/problems/single-user-mode`.
 	//
 	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 	//
@@ -53994,6 +54208,9 @@ type ClientWithResponsesInterface interface {
 	// 10,000 values, an invalid kind or severity, or a `comment` that is too long or contains
 	// U+0000 is a 422 that adds nothing. Needs the `manage_accounts` permission.
 	//
+	// On a one-person server (`Instance.single_user`) it is a 404 of the type
+	// `/api/v1/problems/single-user-mode`.
+	//
 	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 	//
 	// Corresponds with POST /admin/signup_blocks/import (the `ImportSignupBlocks` operationId).
@@ -54014,6 +54231,9 @@ type ClientWithResponsesInterface interface {
 	// 10,000 values, an invalid kind or severity, or a `comment` that is too long or contains
 	// U+0000 is a 422 that adds nothing. Needs the `manage_accounts` permission.
 	//
+	// On a one-person server (`Instance.single_user`) it is a 404 of the type
+	// `/api/v1/problems/single-user-mode`.
+	//
 	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 	//
 	// Corresponds with POST /admin/signup_blocks/import (the `ImportSignupBlocks` operationId).
@@ -54022,6 +54242,9 @@ type ClientWithResponsesInterface interface {
 	// GetSignupBlockWithResponse Get a sign-up block
 	//
 	// An unknown ID is a 404. Needs the `manage_accounts` permission.
+	//
+	// On a one-person server (`Instance.single_user`) it is a 404 of the type
+	// `/api/v1/problems/single-user-mode`.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
@@ -54032,6 +54255,9 @@ type ClientWithResponsesInterface interface {
 	//
 	// The block stops matching sign-ups at once; the lift is audited. Lifting a lifted block
 	// changes nothing. An unknown ID is a 404. Needs the `manage_accounts` permission.
+	//
+	// On a one-person server (`Instance.single_user`) it is a 404 of the type
+	// `/api/v1/problems/single-user-mode`.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
@@ -55098,6 +55324,9 @@ type ClientWithResponsesInterface interface {
 	// otherwise usable one is then `creator_ineligible`. Invites of the staff
 	// (`/admin/invites`) are not listed.
 	//
+	// On a one-person server (`Instance.single_user`) it is a 404 of the type
+	// `/api/v1/problems/single-user-mode`.
+	//
 	// Returns a wrapper object for the known response body format(s).
 	//
 	// Corresponds with GET /invites (the `ListOwnInvites` operationId).
@@ -55118,6 +55347,9 @@ type ClientWithResponsesInterface interface {
 	// `/api/v1/problems/too-many-invites`. The creation is recorded in the audit log with the
 	// user as the actor. Every sign-up with the invite checks again that the user may create
 	// invites; while they may not, the invite does not work.
+	//
+	// On a one-person server (`Instance.single_user`) it is a 404 of the type
+	// `/api/v1/problems/single-user-mode`.
 	//
 	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 	//
@@ -55140,6 +55372,9 @@ type ClientWithResponsesInterface interface {
 	// user as the actor. Every sign-up with the invite checks again that the user may create
 	// invites; while they may not, the invite does not work.
 	//
+	// On a one-person server (`Instance.single_user`) it is a 404 of the type
+	// `/api/v1/problems/single-user-mode`.
+	//
 	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 	//
 	// Corresponds with POST /invites (the `CreateOwnInvite` operationId).
@@ -55152,6 +55387,9 @@ type ClientWithResponsesInterface interface {
 	// with the user as the actor. A user revokes their own invites even when they may no longer
 	// create invites. An unknown ID, or an invite that the user did not create as a member, is
 	// a 404.
+	//
+	// On a one-person server (`Instance.single_user`) it is a 404 of the type
+	// `/api/v1/problems/single-user-mode`.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
@@ -55812,7 +56050,8 @@ type ClientWithResponsesInterface interface {
 	//
 	// Properties left out of the request keep their current values. Language tags are
 	// canonicalized (`ja-jp` becomes `ja-JP`). A 422 problem names the property that is
-	// invalid in `detail`.
+	// invalid in `detail`. On a one-person server (`Instance.single_user`) `default_visibility`
+	// cannot be `local`, and a stored `local` reads as `private`.
 	//
 	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 	//
@@ -55823,7 +56062,8 @@ type ClientWithResponsesInterface interface {
 	//
 	// Properties left out of the request keep their current values. Language tags are
 	// canonicalized (`ja-jp` becomes `ja-JP`). A 422 problem names the property that is
-	// invalid in `detail`.
+	// invalid in `detail`. On a one-person server (`Instance.single_user`) `default_visibility`
+	// cannot be `local`, and a stored `local` reads as `private`.
 	//
 	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 	//
@@ -56147,6 +56387,8 @@ type ClientWithResponsesInterface interface {
 	// A user whose account moved gets a 403 `/api/v1/problems/account-moved`.
 	// When the server's automated review refuses the post, nothing is posted and the answer is a
 	// 422 `/api/v1/problems/status-rejected` with fixed text and the decision the user may appeal.
+	// On a one-person server (`Instance.single_user`) the visibility `local` is a 422, and
+	// `CredentialAccount.posting_limits` leaves it out.
 	//
 	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 	//
@@ -56163,6 +56405,8 @@ type ClientWithResponsesInterface interface {
 	// A user whose account moved gets a 403 `/api/v1/problems/account-moved`.
 	// When the server's automated review refuses the post, nothing is posted and the answer is a
 	// 422 `/api/v1/problems/status-rejected` with fixed text and the decision the user may appeal.
+	// On a one-person server (`Instance.single_user`) the visibility `local` is a 422, and
+	// `CredentialAccount.posting_limits` leaves it out.
 	//
 	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 	//
@@ -56727,6 +56971,9 @@ type ClientWithResponsesInterface interface {
 	// `federated_timeline_visibility` decides who may read it: while it is `off` it is a 404, and while it
 	// is `signed_in` an anonymous request is a 401.
 	//
+	// On a one-person server (`Instance.single_user`) it is a 404 of the type
+	// `/api/v1/problems/single-user-mode`.
+	//
 	// Returns a wrapper object for the known response body format(s).
 	//
 	// Corresponds with GET /timelines/federated (the `GetFederatedTimeline` operationId).
@@ -56759,6 +57006,9 @@ type ClientWithResponsesInterface interface {
 	// logged-in viewer, in the viewer's timeline languages. The instance setting
 	// `local_timeline_visibility` decides who may read it: while it is `off` it is a 404, and while it
 	// is `signed_in` an anonymous request is a 401.
+	//
+	// On a one-person server (`Instance.single_user`) it is a 404 of the type
+	// `/api/v1/problems/single-user-mode`.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
@@ -82083,6 +82333,9 @@ func (c *ClientWithResponses) SearchAccountsWithResponse(ctx context.Context, pa
 // it follows, the accounts that it blocks, mutes, or is blocked by, and accounts that are
 // deactivated, deleted, or suspended are left out. There is no paging.
 //
+// On a one-person server (`Instance.single_user`) it is a 404 of the type
+// `/api/v1/problems/single-user-mode`.
+//
 // Returns a wrapper object for the known response body format(s).
 //
 // Corresponds with GET /accounts/suggestions (the `ListAccountSuggestions` operationId).
@@ -84561,6 +84814,9 @@ func (c *ClientWithResponses) RefetchInstanceStatusesWithResponse(ctx context.Co
 // created them: the staff's and the members' own invites. Needs the `manage_invites`
 // permission.
 //
+// On a one-person server (`Instance.single_user`) it is a 404 of the type
+// `/api/v1/problems/single-user-mode`.
+//
 // Returns a wrapper object for the known response body format(s).
 //
 // Corresponds with GET /admin/invites (the `ListInvites` operationId).
@@ -84580,6 +84836,9 @@ func (c *ClientWithResponses) ListInvitesWithResponse(ctx context.Context, param
 // 409 `/api/v1/problems/registration-closed`. `max_uses` outside 1 to 1,000,000 or
 // `expires_in` outside 1 second to 10 years is a 422 naming it. Needs the `manage_invites`
 // permission.
+//
+// On a one-person server (`Instance.single_user`) it is a 404 of the type
+// `/api/v1/problems/single-user-mode`.
 //
 // Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 //
@@ -84601,6 +84860,9 @@ func (c *ClientWithResponses) CreateInviteWithBodyWithResponse(ctx context.Conte
 // `expires_in` outside 1 second to 10 years is a 422 naming it. Needs the `manage_invites`
 // permission.
 //
+// On a one-person server (`Instance.single_user`) it is a 404 of the type
+// `/api/v1/problems/single-user-mode`.
+//
 // Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 //
 // Corresponds with POST /admin/invites (the `CreateInvite` operationId).
@@ -84617,6 +84879,9 @@ func (c *ClientWithResponses) CreateInviteWithResponse(ctx context.Context, body
 // The invite stops working at once; the people who signed up with it keep their
 // accounts. Revoking a revoked invite changes nothing. An unknown ID is a 404. Needs the
 // `manage_invites` permission.
+//
+// On a one-person server (`Instance.single_user`) it is a 404 of the type
+// `/api/v1/problems/single-user-mode`.
 //
 // Returns a wrapper object for the known response body format(s).
 //
@@ -85164,6 +85429,9 @@ func (c *ClientWithResponses) GetAdminQueueWithResponse(ctx context.Context, req
 // The sign-ups that wait for a moderator's decision, with the reasons their
 // applicants gave, longest waiting first. Needs the `manage_accounts` permission.
 //
+// On a one-person server (`Instance.single_user`) it is a 404 of the type
+// `/api/v1/problems/single-user-mode`.
+//
 // Returns a wrapper object for the known response body format(s).
 //
 // Corresponds with GET /admin/registrations (the `ListPendingRegistrations` operationId).
@@ -85184,6 +85452,9 @@ func (c *ClientWithResponses) ListPendingRegistrationsWithResponse(ctx context.C
 // announcement of the closure of the service on, a pending registration is not approved: a
 // 409 `/api/v1/problems/service-closing` (the announcement rejects the pending ones). Needs
 // the `manage_accounts` permission.
+//
+// On a one-person server (`Instance.single_user`) it is a 404 of the type
+// `/api/v1/problems/single-user-mode`.
 //
 // Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 //
@@ -85206,6 +85477,9 @@ func (c *ClientWithResponses) ApproveRegistrationWithBodyWithResponse(ctx contex
 // 409 `/api/v1/problems/service-closing` (the announcement rejects the pending ones). Needs
 // the `manage_accounts` permission.
 //
+// On a one-person server (`Instance.single_user`) it is a 404 of the type
+// `/api/v1/problems/single-user-mode`.
+//
 // Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 //
 // Corresponds with POST /admin/registrations/{id}/approve (the `ApproveRegistration` operationId).
@@ -85226,6 +85500,9 @@ func (c *ClientWithResponses) ApproveRegistrationWithResponse(ctx context.Contex
 // An unknown ID is a 404. Needs the
 // `manage_accounts` permission.
 //
+// On a one-person server (`Instance.single_user`) it is a 404 of the type
+// `/api/v1/problems/single-user-mode`.
+//
 // Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 //
 // Corresponds with POST /admin/registrations/{id}/reject (the `RejectRegistration` operationId).
@@ -85245,6 +85522,9 @@ func (c *ClientWithResponses) RejectRegistrationWithBodyWithResponse(ctx context
 // only the list of pending registrations shows it, and `POST /admin/accounts/{id}/reveal` after.
 // An unknown ID is a 404. Needs the
 // `manage_accounts` permission.
+//
+// On a one-person server (`Instance.single_user`) it is a 404 of the type
+// `/api/v1/problems/single-user-mode`.
 //
 // Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 //
@@ -86053,6 +86333,9 @@ func (c *ClientWithResponses) GetLoginProvidersOnlyImpactWithResponse(ctx contex
 // The blocks on sign-ups from the registration page, newest first, lifted and
 // expired ones included unless `active` is set. Needs the `manage_accounts` permission.
 //
+// On a one-person server (`Instance.single_user`) it is a 404 of the type
+// `/api/v1/problems/single-user-mode`.
+//
 // Returns a wrapper object for the known response body format(s).
 //
 // Corresponds with GET /admin/signup_blocks (the `ListSignupBlocks` operationId).
@@ -86077,6 +86360,9 @@ func (c *ClientWithResponses) ListSignupBlocksWithResponse(ctx context.Context, 
 // valid for its kind, or a `comment` that is too long or contains U+0000, is a 422.
 // Needs the `manage_accounts` permission.
 //
+// On a one-person server (`Instance.single_user`) it is a 404 of the type
+// `/api/v1/problems/single-user-mode`.
+//
 // Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 //
 // Corresponds with POST /admin/signup_blocks (the `CreateSignupBlock` operationId).
@@ -86100,6 +86386,9 @@ func (c *ClientWithResponses) CreateSignupBlockWithBodyWithResponse(ctx context.
 // CIDR prefix (a single address is a prefix of its full length). A value that is not
 // valid for its kind, or a `comment` that is too long or contains U+0000, is a 422.
 // Needs the `manage_accounts` permission.
+//
+// On a one-person server (`Instance.single_user`) it is a 404 of the type
+// `/api/v1/problems/single-user-mode`.
 //
 // Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 //
@@ -86127,6 +86416,9 @@ func (c *ClientWithResponses) CreateSignupBlockWithResponse(ctx context.Context,
 // 10,000 values, an invalid kind or severity, or a `comment` that is too long or contains
 // U+0000 is a 422 that adds nothing. Needs the `manage_accounts` permission.
 //
+// On a one-person server (`Instance.single_user`) it is a 404 of the type
+// `/api/v1/problems/single-user-mode`.
+//
 // Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 //
 // Corresponds with POST /admin/signup_blocks/import (the `ImportSignupBlocks` operationId).
@@ -86153,6 +86445,9 @@ func (c *ClientWithResponses) ImportSignupBlocksWithBodyWithResponse(ctx context
 // 10,000 values, an invalid kind or severity, or a `comment` that is too long or contains
 // U+0000 is a 422 that adds nothing. Needs the `manage_accounts` permission.
 //
+// On a one-person server (`Instance.single_user`) it is a 404 of the type
+// `/api/v1/problems/single-user-mode`.
+//
 // Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 //
 // Corresponds with POST /admin/signup_blocks/import (the `ImportSignupBlocks` operationId).
@@ -86167,6 +86462,9 @@ func (c *ClientWithResponses) ImportSignupBlocksWithResponse(ctx context.Context
 // GetSignupBlockWithResponse Get a sign-up block
 //
 // An unknown ID is a 404. Needs the `manage_accounts` permission.
+//
+// On a one-person server (`Instance.single_user`) it is a 404 of the type
+// `/api/v1/problems/single-user-mode`.
 //
 // Returns a wrapper object for the known response body format(s).
 //
@@ -86183,6 +86481,9 @@ func (c *ClientWithResponses) GetSignupBlockWithResponse(ctx context.Context, id
 //
 // The block stops matching sign-ups at once; the lift is audited. Lifting a lifted block
 // changes nothing. An unknown ID is a 404. Needs the `manage_accounts` permission.
+//
+// On a one-person server (`Instance.single_user`) it is a 404 of the type
+// `/api/v1/problems/single-user-mode`.
 //
 // Returns a wrapper object for the known response body format(s).
 //
@@ -87729,6 +88030,9 @@ func (c *ClientWithResponses) ListInstanceSupportersWithResponse(ctx context.Con
 // otherwise usable one is then `creator_ineligible`. Invites of the staff
 // (`/admin/invites`) are not listed.
 //
+// On a one-person server (`Instance.single_user`) it is a 404 of the type
+// `/api/v1/problems/single-user-mode`.
+//
 // Returns a wrapper object for the known response body format(s).
 //
 // Corresponds with GET /invites (the `ListOwnInvites` operationId).
@@ -87755,6 +88059,9 @@ func (c *ClientWithResponses) ListOwnInvitesWithResponse(ctx context.Context, pa
 // `/api/v1/problems/too-many-invites`. The creation is recorded in the audit log with the
 // user as the actor. Every sign-up with the invite checks again that the user may create
 // invites; while they may not, the invite does not work.
+//
+// On a one-person server (`Instance.single_user`) it is a 404 of the type
+// `/api/v1/problems/single-user-mode`.
 //
 // Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 //
@@ -87783,6 +88090,9 @@ func (c *ClientWithResponses) CreateOwnInviteWithBodyWithResponse(ctx context.Co
 // user as the actor. Every sign-up with the invite checks again that the user may create
 // invites; while they may not, the invite does not work.
 //
+// On a one-person server (`Instance.single_user`) it is a 404 of the type
+// `/api/v1/problems/single-user-mode`.
+//
 // Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 //
 // Corresponds with POST /invites (the `CreateOwnInvite` operationId).
@@ -87801,6 +88111,9 @@ func (c *ClientWithResponses) CreateOwnInviteWithResponse(ctx context.Context, b
 // with the user as the actor. A user revokes their own invites even when they may no longer
 // create invites. An unknown ID, or an invite that the user did not create as a member, is
 // a 404.
+//
+// On a one-person server (`Instance.single_user`) it is a 404 of the type
+// `/api/v1/problems/single-user-mode`.
 //
 // Returns a wrapper object for the known response body format(s).
 //
@@ -88749,7 +89062,8 @@ func (c *ClientWithResponses) GetPreferencesWithResponse(ctx context.Context, re
 //
 // Properties left out of the request keep their current values. Language tags are
 // canonicalized (`ja-jp` becomes `ja-JP`). A 422 problem names the property that is
-// invalid in `detail`.
+// invalid in `detail`. On a one-person server (`Instance.single_user`) `default_visibility`
+// cannot be `local`, and a stored `local` reads as `private`.
 //
 // Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 //
@@ -88766,7 +89080,8 @@ func (c *ClientWithResponses) UpdatePreferencesWithBodyWithResponse(ctx context.
 //
 // Properties left out of the request keep their current values. Language tags are
 // canonicalized (`ja-jp` becomes `ja-JP`). A 422 problem names the property that is
-// invalid in `detail`.
+// invalid in `detail`. On a one-person server (`Instance.single_user`) `default_visibility`
+// cannot be `local`, and a stored `local` reads as `private`.
 //
 // Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 //
@@ -89240,6 +89555,8 @@ func (c *ClientWithResponses) RevokeSessionWithResponse(ctx context.Context, id 
 // A user whose account moved gets a 403 `/api/v1/problems/account-moved`.
 // When the server's automated review refuses the post, nothing is posted and the answer is a
 // 422 `/api/v1/problems/status-rejected` with fixed text and the decision the user may appeal.
+// On a one-person server (`Instance.single_user`) the visibility `local` is a 422, and
+// `CredentialAccount.posting_limits` leaves it out.
 //
 // Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 //
@@ -89262,6 +89579,8 @@ func (c *ClientWithResponses) CreateStatusWithBodyWithResponse(ctx context.Conte
 // A user whose account moved gets a 403 `/api/v1/problems/account-moved`.
 // When the server's automated review refuses the post, nothing is posted and the answer is a
 // 422 `/api/v1/problems/status-rejected` with fixed text and the decision the user may appeal.
+// On a one-person server (`Instance.single_user`) the visibility `local` is a 422, and
+// `CredentialAccount.posting_limits` leaves it out.
 //
 // Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 //
@@ -90072,6 +90391,9 @@ func (c *ClientWithResponses) SearchTagsWithResponse(ctx context.Context, params
 // `federated_timeline_visibility` decides who may read it: while it is `off` it is a 404, and while it
 // is `signed_in` an anonymous request is a 401.
 //
+// On a one-person server (`Instance.single_user`) it is a 404 of the type
+// `/api/v1/problems/single-user-mode`.
+//
 // Returns a wrapper object for the known response body format(s).
 //
 // Corresponds with GET /timelines/federated (the `GetFederatedTimeline` operationId).
@@ -90122,6 +90444,9 @@ func (c *ClientWithResponses) GetListTimelineWithResponse(ctx context.Context, i
 // logged-in viewer, in the viewer's timeline languages. The instance setting
 // `local_timeline_visibility` decides who may read it: while it is `off` it is a 404, and while it
 // is `signed_in` an anonymous request is a 401.
+//
+// On a one-person server (`Instance.single_user`) it is a 404 of the type
+// `/api/v1/problems/single-user-mode`.
 //
 // Returns a wrapper object for the known response body format(s).
 //

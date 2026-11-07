@@ -247,6 +247,13 @@ description: |
     be searched (`Instance.full_text_search.available`).
   - `/api/v1/problems/search-failed` (503): the search engine could not answer. Only the search of
     posts is affected; try again later.
+  - `/api/v1/problems/single-user-mode` (404): the server is a one-person server
+    (`Instance.single_user`), which does not offer the operation: the local and federated
+    timelines, the suggestions of accounts, invites, the review of registrations, and the sign-up
+    blocks. It works again when the server stops being one.
+  - `/api/v1/problems/single-user-requires-one-account` (422): the instance setting `single_user`
+    can be turned on only while the server has exactly one local account; `detail` says how many
+    it has.
 type: object
 required: [type, title, status]
 properties:

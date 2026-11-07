@@ -7,6 +7,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { useApi } from "../../../lib/auth/SessionProvider";
 import { shellQueryReader } from "../../../lib/query";
+import { useCommunityOffered } from "../../../lib/singleUser";
 import { firstRunDismissedKey, useStorage } from "../../../lib/storage";
 import { viewerQueryOptions } from "../../session";
 
@@ -38,6 +39,8 @@ export function useFirstRun(): FirstRunState {
   // The shell reads the viewer on every page; this only reads its answer.
   const { data: account } = useQuery({ ...viewerQueryOptions(api), ...shellQueryReader });
   const dismissed = useStorage(firstRunDismissedKey(account?.id ?? ""));
+  // A one-person server suggests no accounts (ADR-0152 §4): the suggestions show only once the server says it is not one.
+  const suggestionsOffered = useCommunityOffered();
   const done: Done = {
     profile: account !== undefined && (account.display_name !== "" || account.avatar !== undefined),
     // The viewer's own account carries its follow counts; without them, the step is not asked for.
@@ -63,7 +66,7 @@ export function useFirstRun(): FirstRunState {
   }
   if (account === undefined || initial === undefined) return { status: "hidden" };
   const showChecklist = !dismissed && !firstRunSteps.every((step) => initial[step]);
-  const showSuggestions = !initial.follow;
+  const showSuggestions = !initial.follow && suggestionsOffered;
   if (!showChecklist && !showSuggestions) return { status: "hidden" };
   return {
     status: "shown",

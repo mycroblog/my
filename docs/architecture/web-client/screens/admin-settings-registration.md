@@ -1,12 +1,13 @@
 ---
 start: "/admin"
 persona: "hana"
+unavailable: {"一人のサーバーにする": "The demo server has more than one local account, so the server refuses the mode."}
 paths: ["app/web/src/routes/admin.settings_.registration.tsx", "app/web/src/features/admin/components/PolicySettings.tsx", "app/web/src/features/admin/hooks/useServerPolicies.ts", "app/web/src/features/admin/api/settings.ts", "app/web/src/features/admin/components/ServerSettings.tsx", "app/ui/src/LocalNav.tsx"]
 ---
 
 ## サーバーの設定: 登録（`/admin/settings/registration`）
 
-`manage_settings` を持つ管理者が、登録できる人、ログインと登録を IdP だけにするか、利用者が作る招待とその上限、アプリの登録の経路を決めるページ（FR-001、[ADR-0106](../../../adr/0106-external-login-providers.md) §14・§15、[ADR-0090](../../../adr/0090-third-party-oauth-apps.md) §1、[§14](../14-admin.md)）。
+`manage_settings` を持つ管理者が、一人のサーバーにするか（FR-811、[ADR-0152](../../../adr/0152-single-user-mode.md)）、登録できる人、ログインと登録を IdP だけにするか、利用者が作る招待とその上限、アプリの登録の経路を決めるページ（FR-001、[ADR-0106](../../../adr/0106-external-login-providers.md) §14・§15、[ADR-0090](../../../adr/0090-third-party-oauth-apps.md) §1、[§14](../14-admin.md)）。
 画面の名前の `h1` の下に、ページの間のリンクの並び（`LocalNav`。「全般」「アイコンとロゴ」「登録」「コンテンツ」「投稿の自動削除」「連合」「検索とクローラー」、サーバーが通話を出しているときだけ「通話」）を置き、今のページを `aria-current="page"` にする。管理のメニューは「サーバーの設定」の 1 項目のままで、どのページでも今いる項目になる。
 
 ### 1. 使う人と頻度
@@ -18,6 +19,7 @@ paths: ["app/web/src/routes/admin.settings_.registration.tsx", "app/web/src/feat
 
 | 作業 | 最短の手順の数 |
 | --- | --- |
+| 一人のサーバーにする | 4 |
 | 登録のモードを変える | 4 |
 | 利用者が招待を作れるようにする | 4 |
 | 招待 1 つで登録できる人数の上限を変える | 4 |
@@ -26,9 +28,13 @@ paths: ["app/web/src/routes/admin.settings_.registration.tsx", "app/web/src/feat
 
 ### 3. 情報の優先順位とまとまり
 
-1. 登録: 登録のモード（`RadioGroup`）と、ログインと登録を IdP だけにする設定（チェックボックス）。
-2. 利用者の招待: 招待を作れる人（`RadioGroup`）、1 人が持てる使える招待の数と招待 1 つで登録できる人数（`inputMode="numeric"` の `TextField`）、招待が使える最長の期間（`Select`）。
-3. アプリ: 利用者がアプリを登録するか、Client ID Metadata Document、Dynamic Client Registration（チェックボックス）。
+1. 一人のサーバー: 何が変わるかの説明（登録を閉じ、タイムラインをホームだけにし、ローカル・連合のタイムライン・招待・登録の審査・登録の拒否リスト・おすすめのアカウントを出さず、新しい投稿を「このサーバー」にできない。訪問者にはトップページに運営者のプロフィールを出す。何も消さない）と、
+   一人のサーバーにする設定（チェックボックス、`single_user`）。チェックボックスの説明は、このサーバーのアカウントがちょうど 1 つのときだけ有効にでき（承認待ち・無効化・凍結中も数え、登録を却下したものは数えない）、いつでも無効にできることを言う。
+2. 登録: 登録のモード（`RadioGroup`）と、ログインと登録を IdP だけにする設定（チェックボックス）。
+3. 利用者の招待: 招待を作れる人（`RadioGroup`）、1 人が持てる使える招待の数と招待 1 つで登録できる人数（`inputMode="numeric"` の `TextField`）、招待が使える最長の期間（`Select`）。
+4. アプリ: 利用者がアプリを登録するか、Client ID Metadata Document、Dynamic Client Registration（チェックボックス）。
+
+保存した設定が一人のサーバーのとき（[ADR-0152](../../../adr/0152-single-user-mode.md) §8）は、登録のモードと「利用者の招待」の区画を出さない。登録はサーバーが閉じたままにし、招待はない。一人のサーバーの区画（切るためのチェックボックス）と、IdP の設定とアプリは残す。
 
 ### 4. 主な操作と保存の仕方
 
@@ -42,6 +48,8 @@ paths: ["app/web/src/routes/admin.settings_.registration.tsx", "app/web/src/feat
 | ログインを IdP だけにする設定（`login_providers_only`）をオンにして保存する | `alertdialog` で確かめる。ログインに使える IdP へのひも付けのない有効な利用者の数（`GET /admin/settings/login_providers_only/impact`）、管理者自身が含まれるならそのこと、止まるものと続くもの、元に戻す CLI のコマンドを言う。断らない。オフにするときは聞かない |
 | 保存 | その場。`FormActionBar`（保存のボタンの横）に結果を出す |
 | 変えずに保存 | その場。`FormActionBar` に保存するものがないこと |
+| 一人のサーバーにして保存し、ほかのアカウントがある | その場。`FormActionBar`（`role="alert"`）に、サーバーの理由（一人のサーバーにはアカウントが 1 つだけ）と数（`422` の `single-user-requires-one-account` の `detail`）を出し、入力を残す |
+| 一人のサーバーにして保存する | その場。`FormActionBar` に結果を出す。`GET /instance` を取り直し、ナビゲーション・メニュー・このページの区画が一人のサーバーのものになる |
 | サーバーが拒否 | その場。`FormActionBar`（`role="alert"`）に理由を出し、入力を残す |
 
 ### 6. 入口と出口

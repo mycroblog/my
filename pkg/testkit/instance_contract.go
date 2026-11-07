@@ -57,6 +57,7 @@ func InstanceRepositoryContract(t *testing.T, newHarness InstanceFactory) {
 		{"IncrementalProjectionEqualsRebuild", instanceProjectionEqualsRebuild},
 		{"ReferencesMediaFromSettings", instanceReferencesMedia},
 		{"KeepsTheContactAndTheThumbnail", instanceKeepsContactAndThumbnail},
+		{"TurnsSingleUserOnOnlyWithOneAccount", instanceGuardsSingleUser},
 	}
 	cases = append(cases, instanceRuleCases...)
 	cases = append(cases, instanceLinkCardDomainCases...)
@@ -78,6 +79,18 @@ type instanceEnv struct {
 	clock      *Clock
 	sealer     *kernel.Sealer
 	service    *appinstance.Service
+	// accounts is how many local accounts the setting single_user counts; it starts at 1.
+	accounts *singleUserAccounts
+}
+
+// singleUserAccounts counts n local accounts for single_user, and fails without a transaction.
+type singleUserAccounts struct{ n int }
+
+func (c *singleUserAccounts) CountSingleUserAccountsTx(_ context.Context, tx uow.Tx) (int, error) {
+	if tx == nil {
+		return 0, errors.New("testkit: CountSingleUserAccountsTx without a transaction")
+	}
+	return c.n, nil
 }
 
 func newInstanceEnv(t *testing.T, newHarness InstanceFactory) *instanceEnv {
@@ -88,7 +101,9 @@ func newInstanceEnv(t *testing.T, newHarness InstanceFactory) *instanceEnv {
 	clock := NewClock(time.Date(2026, 10, 16, 12, 0, 0, 0, time.UTC))
 	blobs := NewMemoryBlobStore(clock)
 	sealer := kernel.NewSealer(NewKeyManager("testkit:instance"))
+	accounts := &singleUserAccounts{n: 1}
 	return &instanceEnv{
+		accounts:   accounts,
 		h:          h,
 		projectors: projectors,
 		blobs:      blobs,
@@ -96,7 +111,7 @@ func newInstanceEnv(t *testing.T, newHarness InstanceFactory) *instanceEnv {
 		sealer:     sealer,
 		service: appinstance.NewService(appinstance.Deps{
 			UnitOfWork: h.UnitOfWork, Repository: h.Instance, Clock: clock, IDs: NewIDGenerator(clock),
-			Blobs: blobs, Sealer: sealer,
+			Blobs: blobs, Sealer: sealer, SingleUserAccounts: accounts,
 		}),
 	}
 }
@@ -517,5 +532,45 @@ func instanceKeepsContactAndThumbnail(t *testing.T, e *instanceEnv) {
 	e.set(t, instance.SettingThumbnail, "", "")
 	if img, err := service.Thumbnail(ctx); err != nil || img != (appinstance.Image{}) {
 		t.Errorf("Thumbnail cleared = %+v, %v; want none", img, err)
+	}
+}
+
+// instanceGuardsSingleUser checks that single_user turns on only while exactly one local account
+// counts, that the refusal records nothing, and that turning it off always works (ADR-0152 §1).
+func instanceGuardsSingleUser(t *testing.T, e *instanceEnv) {
+	ctx := t.Context()
+	for _, n := range []int{0, 2} {
+		e.accounts.n = n
+		_, err := e.service.SetSettings(ctx, []appinstance.SetSettingInput{
+			{Key: instance.SettingMaxStatusLength, Value: "600"}, {Key: instance.SettingSingleUser, Value: "true"},
+		})
+		var refused *appinstance.SingleUserAccountsError
+		if !errors.As(err, &refused) || refused.Count != n {
+			t.Fatalf("SetSettings(single_user=true) with %d accounts = %v, want a *SingleUserAccountsError of %d", n, err, n)
+		}
+		if s := e.settings(t); s.SingleUser() || s.MaxStatusLength() == 600 {
+			t.Fatalf("a refused SetSettings recorded something: single_user %v, max_status_length %d", s.SingleUser(), s.MaxStatusLength())
+		}
+	}
+	e.accounts.n = 1
+	e.set(t, instance.SettingSingleUser, "true", "")
+	if on, err := e.service.SingleUser(ctx); err != nil || !on {
+		t.Fatalf("SingleUser after turning it on = %v, %v", on, err)
+	}
+	err := e.h.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+		on, err := e.service.SingleUserTx(ctx, tx)
+		if err == nil && !on {
+			t.Error("SingleUserTx after turning it on = false")
+		}
+		return err
+	})
+	if err != nil {
+		t.Fatalf("SingleUserTx = %v", err)
+	}
+	// A second account (one the mode cannot stop, such as a reactivated one) never blocks the way out.
+	e.accounts.n = 2
+	e.set(t, instance.SettingSingleUser, "false", "")
+	if e.settings(t).SingleUser() {
+		t.Error("single_user is still on after turning it off")
 	}
 }

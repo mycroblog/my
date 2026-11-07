@@ -231,8 +231,9 @@ func (s *Server) GetLocalTimeline(ctx context.Context, req GetLocalTimelineReque
 }
 
 // timelineDenied returns the problem that refuses a timeline to the request under the instance
-// setting access (FR-202): a 404 while it is off, and a 401 for an anonymous request while it is
-// signed_in. It returns nil when the request may read the timeline.
+// setting access (FR-202): the 404 single-user-mode on a one-person server (ADR-0152 §4), a 404
+// while it is off, and a 401 for an anonymous request while it is signed_in. It returns nil when
+// the request may read the timeline.
 func (s *Server) timelineDenied(ctx context.Context, access func(instance.Settings) instance.Audience) (*problem, error) {
 	var settings instance.Settings
 	if s.o.Instance != nil {
@@ -240,6 +241,9 @@ func (s *Server) timelineDenied(ctx context.Context, access func(instance.Settin
 		if settings, err = s.o.Instance.Settings(ctx); err != nil {
 			return nil, fmt.Errorf("clientapi: instance settings: %w", err)
 		}
+	}
+	if p := s.timelineSingleUserProblem(ctx, settings); p != nil {
+		return p, nil
 	}
 	_, loggedIn := ViewerFrom(ctx)
 	switch access(settings) {

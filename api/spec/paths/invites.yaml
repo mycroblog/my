@@ -10,6 +10,9 @@ get:
     A user who may no longer create invites still lists and revokes the ones they made; an
     otherwise usable one is then `creator_ineligible`. Invites of the staff
     (`/admin/invites`) are not listed.
+
+    On a one-person server (`Instance.single_user`) it is a 404 of the type
+    `/api/v1/problems/single-user-mode`.
   tags: [invites]
   security:
     - oauth2: ["read:accounts"]
@@ -46,6 +49,9 @@ post:
     `/api/v1/problems/too-many-invites`. The creation is recorded in the audit log with the
     user as the actor. Every sign-up with the invite checks again that the user may create
     invites; while they may not, the invite does not work.
+
+    On a one-person server (`Instance.single_user`) it is a 404 of the type
+    `/api/v1/problems/single-user-mode`.
   tags: [invites]
   security:
     - oauth2: ["write:accounts"]

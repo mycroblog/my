@@ -37,6 +37,7 @@ When you choose CAPTCHA for bot protection, the sign-up and sign-in pages show i
 
 The registration mode is the instance setting `registration_mode`. Choose it with the CLI or in the web client on the "Registration" page of "Server settings" (`/admin/settings/registration`) ([instance settings](instance-settings.md)). A change applies from the next registration.
 While the server announces its closure and after it closes, registration is treated as `closed` whatever the setting says ([admin CLI](admin-cli.md#announcing-the-end-of-the-service)).
+So it is on a [one-person server](instance-settings.md#one-person-server), where invites, the review of registrations, and the sign-up blocks are not offered either, and no way creates an account, `my admin create` included.
 
 ```sh
 my instance set registration_mode invite

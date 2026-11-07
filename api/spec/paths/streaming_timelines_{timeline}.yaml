@@ -42,6 +42,10 @@ get:
     produced itself, so a deployment that runs several web processes, or separate web and
     worker processes, misses updates on some streams. A deployment with a shared stream broker
     does not.
+
+    On a one-person server (`Instance.single_user`) it is a 404 of the type
+    `/api/v1/problems/single-user-mode`, and an open stream ends at the next heartbeat after the
+    server becomes one.
   tags: [streaming]
   security:
     - oauth2: ["read:statuses"]

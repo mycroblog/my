@@ -10,6 +10,9 @@ post:
     announcement of the closure of the service on, a pending registration is not approved: a
     409 `/api/v1/problems/service-closing` (the announcement rejects the pending ones). Needs
     the `manage_accounts` permission.
+
+    On a one-person server (`Instance.single_user`) it is a 404 of the type
+    `/api/v1/problems/single-user-mode`.
   tags: [admin-moderation]
   security:
     - oauth2: ["admin:write"]

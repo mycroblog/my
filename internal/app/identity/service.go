@@ -99,6 +99,11 @@ type Deps struct {
 	// setting). SignUp calls it once per sign-up, so a change applies to the next one. Nil
 	// means identity.RegistrationClosed.
 	RegistrationMode func(ctx context.Context) (identity.RegistrationMode, error)
+	// SingleUser and SingleUserTx read the instance setting single_user (ADR-0152), outside and
+	// inside a transaction: no account is created while it is on, and the default visibility local
+	// reads as private. Nil leaves it off.
+	SingleUser   func(ctx context.Context) (bool, error)
+	SingleUserTx func(ctx context.Context, tx uow.Tx) (bool, error)
 	// Closure stops the approval of pending registrations from the announcement of the service
 	// closure on (ADR-0088 §2); nil never stops it.
 	Closure ServiceClosure
@@ -203,7 +208,7 @@ type Registration struct {
 // RegisterLocalUser creates a user with a password, default preferences, and the local account it
 // logs in as, in one transaction. It fails with account.ErrUsernameTaken when the username is
 // taken, and with errors wrapping identity.ErrInvalidPassword, identity.ErrInvalidLanguageTag, or
-// account.ErrInvalidUsername for invalid input.
+// account.ErrInvalidUsername for invalid input, and with ErrSingleUserMode on a one-person server.
 //
 // Hashing the password and generating the account's keys happen before the transaction.
 func (s *Service) RegisterLocalUser(ctx context.Context, in RegisterInput) (Registration, error) {
@@ -231,9 +236,15 @@ type CreateAdminInput struct {
 //
 // It fails with account.ErrUsernameTaken or ErrEmailTaken when another user has the username or
 // email address, and with errors wrapping identity.ErrInvalidPassword, identity.ErrInvalidEmail,
-// or account.ErrInvalidUsername for invalid input. A failure writes nothing, so running it again
-// is safe; it never changes an existing user.
+// or account.ErrInvalidUsername for invalid input, and with ErrSingleUserMode on a one-person
+// server (ADR-0152 §3). A failure writes nothing, so running it again is safe; it never changes an
+// existing user.
 func (s *Service) CreateAdmin(ctx context.Context, in CreateAdminInput) (Registration, error) {
+	if on, err := s.singleUser(ctx); err != nil {
+		return Registration{}, err
+	} else if on {
+		return Registration{}, ErrSingleUserMode
+	}
 	if err := identity.ValidateEmail(in.Email); err != nil {
 		return Registration{}, err
 	}
@@ -333,6 +344,9 @@ func (s *Service) prepareUser(ctx context.Context, in RegisterInput) (*preparedU
 }
 
 func (s *Service) writeUser(ctx context.Context, tx uow.Tx, p *preparedUser) error {
+	if err := s.refuseSingleUserTx(ctx, tx); err != nil {
+		return err
+	}
 	if err := s.d.Repository.InsertUser(ctx, tx, p.user); err != nil {
 		return err
 	}

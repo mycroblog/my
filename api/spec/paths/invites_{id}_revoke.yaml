@@ -9,6 +9,9 @@ post:
     with the user as the actor. A user revokes their own invites even when they may no longer
     create invites. An unknown ID, or an invite that the user did not create as a member, is
     a 404.
+
+    On a one-person server (`Instance.single_user`) it is a 404 of the type
+    `/api/v1/problems/single-user-mode`.
   tags: [invites]
   security:
     - oauth2: ["write:accounts"]

@@ -84,6 +84,7 @@ function instance(federated: Instance["timelines"]["federated"]): Instance {
     voice_room_starters: "permitted",
     full_text_search: { available: false, visibilities: [] },
     translation: { browser: false, providers: [] },
+    single_user: false,
     rules: [],
   };
 }

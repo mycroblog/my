@@ -6,6 +6,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useApi, useSessionStatus } from "../../../lib/auth/SessionProvider";
 import { shellQueryRetry } from "../../../lib/query";
+import { useSingleUser } from "../../../lib/singleUser";
 import { type AdminCounts, adminCountsQueryOptions, countPermissions } from "../api/counts";
 import { moderationPages } from "../components/moderationPages";
 import { useShownStaffPages } from "../components/StaffPages";
@@ -25,7 +26,14 @@ export function useModerationCounts(): AdminCounts {
     enabled: status === "signed-in" && counted,
     retry: shellQueryRetry,
   });
-  return status === "signed-in" && counted ? (counts.data ?? {}) : {};
+  const singleUser = useSingleUser();
+  if (status !== "signed-in" || !counted) return {};
+  // A one-person server reviews no registrations (ADR-0152 §4): their count is no queue there.
+  if (singleUser && counts.data !== undefined) {
+    const { pending_registrations: _registrations, ...rest } = counts.data;
+    return rest;
+  }
+  return counts.data ?? {};
 }
 
 /** The navigation's Moderation entry: whether it shows, and the number of things that await the viewer there. */

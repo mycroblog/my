@@ -9,6 +9,8 @@ paths: ["app/web/src/routes/moderation.invites.tsx", "app/web/src/features/moder
 `manage_invites` を持つ人が、スタッフとメンバーが作った招待（FR-001、ADR-0106 §18）を新しい順に読み、使える招待のリンクをコピーし、失効させる画面（[§14](../14-admin.md)）。
 招待を作るのは[新しい招待](moderation-invite-new.md)で行う。招待の API に 1 件を返す操作はないので、招待の詳細のページはない。
 
+一人のサーバー（`GET /instance` の `single_user`、[ADR-0152](../../../adr/0152-single-user-mode.md) §4）にはこの画面がない。モデレーションのメニューとトップに出さず、アドレス（下の画面も）を開くと見つからないページを出し、API に求めない。
+
 ### 1. 使う人と頻度
 
 - 管理者か、`manage_invites` を持つロールの人。招待制のサーバーで、新しい人を迎えるたびに来る。週に数回。

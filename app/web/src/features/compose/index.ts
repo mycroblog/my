@@ -18,3 +18,5 @@ export { useDirectMessage, useQuote, useReply } from "./hooks/useCompose";
 export { useFormatRemaining } from "./hooks/useFormatRemaining";
 /** The one definition of the visibilities (ADR-0017) that the preferences and the post cards use too. */
 export { isVisibility, visibilities, visibilityDescription, visibilityLabel } from "./hooks/visibilityMessages";
+/** The visibilities a new post and the default may have: no `local` on a one-person server (ADR-0152 §5). */
+export { useOfferedVisibilities } from "./hooks/useOfferedVisibilities";

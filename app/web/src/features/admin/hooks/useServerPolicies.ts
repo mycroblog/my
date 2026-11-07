@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The server's policies (FR-001, FR-105, FR-202, FR-408, FR-409, FR-413, FR-718, FR-725, FR-903, ADR-0009, ADR-0057): who may sign
-// up, who may create invites of their own and the caps of those invites (ADR-0106 §14, §15), the default language, the public timelines, whether images need a description, the federation (its direction,
+// up, whether the server is a one-person server (FR-811, ADR-0152), who may create invites of their own and the caps of those invites (ADR-0106 §14, §15), the default language, the public timelines, whether images need a description, the federation (its direction,
 // ADR-0006, which asks before it narrows), who may read the
 // list of the domain actions, whether the landing page shows the server's numbers and who runs it,
 // what the server states to search engines and AI crawlers, which posts its search covers (ADR-0149 §5), voice chat (ADR-0100 §2, §9, §13: who may start a
@@ -13,9 +13,10 @@
 import { useMutation, useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { type SyntheticEvent, useState } from "react";
 import { useApi } from "../../../lib/auth/SessionProvider";
-import { errorMessage } from "../../../lib/errors";
+import { ApiError, errorMessage } from "../../../lib/errors";
 import { type FederationMode, federationModes, federationReachOf } from "../../../lib/federation";
 import { useLocale, useT } from "../../../lib/i18n";
+import { singleUserRequiresOneAccountType } from "../../../lib/singleUser";
 import {
   cacheSavedSettings,
   type InstanceSettingKey,
@@ -27,6 +28,7 @@ import { languageName, selectableLocales } from "./languages";
 
 /** The settings of the forms of the policies. */
 const policyKeys = [
+  "single_user",
   "registration_mode",
   "login_providers_only",
   "invite_creators",
@@ -110,6 +112,7 @@ export type PolicyKey = (typeof policyKeys)[number];
  */
 const policyPages = {
   registration: [
+    "single_user",
     "registration_mode",
     "login_providers_only",
     "invite_creators",
@@ -518,8 +521,22 @@ export function useServerPolicies(page: PolicyPage) {
       setIsConfirming(false);
     },
     isSaving: save.isPending,
-    /** Why the last save failed, localized; nothing was changed and the form keeps the drafts. */
-    saveError: save.isError ? errorMessage(save.error) : undefined,
+    /**
+     * Why the last save failed, localized; nothing was changed and the form keeps the drafts. A refused one-person
+     * server says both why and how many local accounts the server has (ADR-0152 §1).
+     */
+    saveError: save.isError
+      ? save.error instanceof ApiError &&
+        save.error.type === singleUserRequiresOneAccountType &&
+        save.error.detail !== undefined
+        ? t("client:admin.settings.single_user.refused", { reason: save.error.title, detail: save.error.detail })
+        : errorMessage(save.error)
+      : undefined,
+    /**
+     * Whether the server is a one-person server as saved (ADR-0152 §8): the pages leave out what makes no sense for
+     * one person until it is turned off and saved.
+     */
+    singleUser: savedValue("single_user") === "true",
     /** What the last save did, for the region that reports it. */
     status,
   };

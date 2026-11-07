@@ -478,7 +478,8 @@ export interface paths {
          * Change the authenticated user's preferences
          * @description Properties left out of the request keep their current values. Language tags are
          *     canonicalized (`ja-jp` becomes `ja-JP`). A 422 problem names the property that is
-         *     invalid in `detail`.
+         *     invalid in `detail`. On a one-person server (`Instance.single_user`) `default_visibility`
+         *     cannot be `local`, and a stored `local` reads as `private`.
          */
         patch: operations["updatePreferences"];
         trace?: never;
@@ -1693,6 +1694,9 @@ export interface paths {
          *     Only accounts that are `discoverable` are suggested. The viewer itself, the accounts that
          *     it follows, the accounts that it blocks, mutes, or is blocked by, and accounts that are
          *     deactivated, deleted, or suspended are left out. There is no paging.
+         *
+         *     On a one-person server (`Instance.single_user`) it is a 404 of the type
+         *     `/api/v1/problems/single-user-mode`.
          */
         get: operations["listAccountSuggestions"];
         put?: never;
@@ -2516,6 +2520,8 @@ export interface paths {
          *     A user whose account moved gets a 403 `/api/v1/problems/account-moved`.
          *     When the server's automated review refuses the post, nothing is posted and the answer is a
          *     422 `/api/v1/problems/status-rejected` with fixed text and the decision the user may appeal.
+         *     On a one-person server (`Instance.single_user`) the visibility `local` is a 422, and
+         *     `CredentialAccount.posting_limits` leaves it out.
          */
         post: operations["createStatus"];
         delete?: never;
@@ -3101,6 +3107,9 @@ export interface paths {
          *     logged-in viewer, in the viewer's timeline languages. The instance setting
          *     `local_timeline_visibility` decides who may read it: while it is `off` it is a 404, and while it
          *     is `signed_in` an anonymous request is a 401.
+         *
+         *     On a one-person server (`Instance.single_user`) it is a 404 of the type
+         *     `/api/v1/problems/single-user-mode`.
          */
         get: operations["getLocalTimeline"];
         put?: never;
@@ -3125,6 +3134,9 @@ export interface paths {
          *     visibilities, `local` ones included, and boosts never appear on it. The instance setting
          *     `federated_timeline_visibility` decides who may read it: while it is `off` it is a 404, and while it
          *     is `signed_in` an anonymous request is a 401.
+         *
+         *     On a one-person server (`Instance.single_user`) it is a 404 of the type
+         *     `/api/v1/problems/single-user-mode`.
          */
         get: operations["getFederatedTimeline"];
         put?: never;
@@ -3401,6 +3413,10 @@ export interface paths {
          *     produced itself, so a deployment that runs several web processes, or separate web and
          *     worker processes, misses updates on some streams. A deployment with a shared stream broker
          *     does not.
+         *
+         *     On a one-person server (`Instance.single_user`) it is a 404 of the type
+         *     `/api/v1/problems/single-user-mode`, and an open stream ends at the next heartbeat after the
+         *     server becomes one.
          */
         get: operations["streamTimeline"];
         put?: never;
@@ -6628,6 +6644,9 @@ export interface paths {
          * List the registrations that await approval
          * @description The sign-ups that wait for a moderator's decision, with the reasons their
          *     applicants gave, longest waiting first. Needs the `manage_accounts` permission.
+         *
+         *     On a one-person server (`Instance.single_user`) it is a 404 of the type
+         *     `/api/v1/problems/single-user-mode`.
          */
         get: operations["listPendingRegistrations"];
         put?: never;
@@ -6656,6 +6675,9 @@ export interface paths {
          *     announcement of the closure of the service on, a pending registration is not approved: a
          *     409 `/api/v1/problems/service-closing` (the announcement rejects the pending ones). Needs
          *     the `manage_accounts` permission.
+         *
+         *     On a one-person server (`Instance.single_user`) it is a 404 of the type
+         *     `/api/v1/problems/single-user-mode`.
          */
         post: operations["approveRegistration"];
         delete?: never;
@@ -6681,6 +6703,9 @@ export interface paths {
          *     only the list of pending registrations shows it, and `POST /admin/accounts/{id}/reveal` after.
          *     An unknown ID is a 404. Needs the
          *     `manage_accounts` permission.
+         *
+         *     On a one-person server (`Instance.single_user`) it is a 404 of the type
+         *     `/api/v1/problems/single-user-mode`.
          */
         post: operations["rejectRegistration"];
         delete?: never;
@@ -6700,6 +6725,9 @@ export interface paths {
          * List the sign-up blocks
          * @description The blocks on sign-ups from the registration page, newest first, lifted and
          *     expired ones included unless `active` is set. Needs the `manage_accounts` permission.
+         *
+         *     On a one-person server (`Instance.single_user`) it is a 404 of the type
+         *     `/api/v1/problems/single-user-mode`.
          */
         get: operations["listSignupBlocks"];
         put?: never;
@@ -6715,6 +6743,9 @@ export interface paths {
          *     CIDR prefix (a single address is a prefix of its full length). A value that is not
          *     valid for its kind, or a `comment` that is too long or contains U+0000, is a 422.
          *     Needs the `manage_accounts` permission.
+         *
+         *     On a one-person server (`Instance.single_user`) it is a 404 of the type
+         *     `/api/v1/problems/single-user-mode`.
          */
         post: operations["createSignupBlock"];
         delete?: never;
@@ -6733,6 +6764,9 @@ export interface paths {
         /**
          * Get a sign-up block
          * @description An unknown ID is a 404. Needs the `manage_accounts` permission.
+         *
+         *     On a one-person server (`Instance.single_user`) it is a 404 of the type
+         *     `/api/v1/problems/single-user-mode`.
          */
         get: operations["getSignupBlock"];
         put?: never;
@@ -6756,6 +6790,9 @@ export interface paths {
          * Lift a sign-up block
          * @description The block stops matching sign-ups at once; the lift is audited. Lifting a lifted block
          *     changes nothing. An unknown ID is a 404. Needs the `manage_accounts` permission.
+         *
+         *     On a one-person server (`Instance.single_user`) it is a 404 of the type
+         *     `/api/v1/problems/single-user-mode`.
          */
         post: operations["liftSignupBlock"];
         delete?: never;
@@ -6787,6 +6824,9 @@ export interface paths {
          *     ones before it; sending the list again skips them as `already_blocked`. More than
          *     10,000 values, an invalid kind or severity, or a `comment` that is too long or contains
          *     U+0000 is a 422 that adds nothing. Needs the `manage_accounts` permission.
+         *
+         *     On a one-person server (`Instance.single_user`) it is a 404 of the type
+         *     `/api/v1/problems/single-user-mode`.
          */
         post: operations["importSignupBlocks"];
         delete?: never;
@@ -6953,6 +6993,9 @@ export interface paths {
          *     A user who may no longer create invites still lists and revokes the ones they made; an
          *     otherwise usable one is then `creator_ineligible`. Invites of the staff
          *     (`/admin/invites`) are not listed.
+         *
+         *     On a one-person server (`Instance.single_user`) it is a 404 of the type
+         *     `/api/v1/problems/single-user-mode`.
          */
         get: operations["listOwnInvites"];
         put?: never;
@@ -6971,6 +7014,9 @@ export interface paths {
          *     `/api/v1/problems/too-many-invites`. The creation is recorded in the audit log with the
          *     user as the actor. Every sign-up with the invite checks again that the user may create
          *     invites; while they may not, the invite does not work.
+         *
+         *     On a one-person server (`Instance.single_user`) it is a 404 of the type
+         *     `/api/v1/problems/single-user-mode`.
          */
         post: operations["createOwnInvite"];
         delete?: never;
@@ -6995,6 +7041,9 @@ export interface paths {
          *     with the user as the actor. A user revokes their own invites even when they may no longer
          *     create invites. An unknown ID, or an invite that the user did not create as a member, is
          *     a 404.
+         *
+         *     On a one-person server (`Instance.single_user`) it is a 404 of the type
+         *     `/api/v1/problems/single-user-mode`.
          */
         post: operations["revokeOwnInvite"];
         delete?: never;
@@ -7016,6 +7065,9 @@ export interface paths {
          *     or `invite`, newest first, with how they have been used and who
          *     created them: the staff's and the members' own invites. Needs the `manage_invites`
          *     permission.
+         *
+         *     On a one-person server (`Instance.single_user`) it is a 404 of the type
+         *     `/api/v1/problems/single-user-mode`.
          */
         get: operations["listInvites"];
         put?: never;
@@ -7027,6 +7079,9 @@ export interface paths {
          *     409 `/api/v1/problems/registration-closed`. `max_uses` outside 1 to 1,000,000 or
          *     `expires_in` outside 1 second to 10 years is a 422 naming it. Needs the `manage_invites`
          *     permission.
+         *
+         *     On a one-person server (`Instance.single_user`) it is a 404 of the type
+         *     `/api/v1/problems/single-user-mode`.
          */
         post: operations["createInvite"];
         delete?: never;
@@ -7049,6 +7104,9 @@ export interface paths {
          * @description The invite stops working at once; the people who signed up with it keep their
          *     accounts. Revoking a revoked invite changes nothing. An unknown ID is a 404. Needs the
          *     `manage_invites` permission.
+         *
+         *     On a one-person server (`Instance.single_user`) it is a 404 of the type
+         *     `/api/v1/problems/single-user-mode`.
          */
         post: operations["revokeInvite"];
         delete?: never;
@@ -12395,6 +12453,20 @@ export interface components {
             auto_delete_limit?: components["schemas"]["AutoDeleteLimit"];
             finance_visibility: components["schemas"]["FinanceVisibility"];
             income_visibility: components["schemas"]["IncomeVisibility"];
+            /**
+             * @description Whether the instance is a one-person server: the home of its operator alone, with nobody else
+             *     to join. While it is true, `registrations.mode` is `closed` and both `timelines` are `off`,
+             *     whatever the instance settings store. Clients also hide the suggestions of accounts, invites,
+             *     the review of registrations, the sign-up blocks, and the visibility `local`: those operations
+             *     answer a 404 of the type `/api/v1/problems/single-user-mode`, and a new `local` post is a 422.
+             */
+            single_user: boolean;
+            /**
+             * @description The operator's account of a one-person server, whose profile the web client shows people who
+             *     are not signed in at the root address. Present only while `single_user` is true, and omitted
+             *     when the account cannot be shown (it is suspended or deleted).
+             */
+            single_user_account?: components["schemas"]["Account"];
         };
         /**
          * @description How people reach the instance's operators (the instance settings `contact_account` and
@@ -12547,8 +12619,8 @@ export interface components {
              * @description Who may sign up: `open` (anyone), `approval` (sign-ups wait for a moderator's
              *     approval), `invite` (only with an invite), or `closed` (nobody). It is the mode that
              *     sign-ups follow: `closed` while the closure of the service is announced or done, whatever
-             *     the instance setting says, and while registration is limited to the login providers and
-             *     none of them lets new users sign up.
+             *     the instance setting says, on a one-person server (`single_user`), and while registration
+             *     is limited to the login providers and none of them lets new users sign up.
              * @enum {string}
              */
             mode: "open" | "approval" | "invite" | "closed";
@@ -12628,7 +12700,7 @@ export interface components {
          *     added; clients show the ones they know.
          * @enum {string}
          */
-        InstanceSettingKey: "registration_mode" | "max_status_length" | "default_locale" | "local_timeline_visibility" | "federated_timeline_visibility" | "preview_image" | "contact_account" | "contact_email" | "thumbnail" | "remote_media_policy" | "remote_media_cache_ttl_seconds" | "authorized_fetch" | "domain_actions_visibility" | "domain_actions_rationale_visibility" | "appeal_window_days" | "session_origins_retention_days" | "registration_origins_retention_days" | "reports_retention_days" | "moderation_actions_retention_days" | "audit_log_retention_days" | "search_indexing" | "ai_usage" | "indexable_default" | "search_visibilities" | "security_contact" | "require_media_description" | "link_cards" | "link_cards_ignore_robots_txt" | "finance_visibility" | "finance_viewer_item_names" | "finance_viewer_item_memos" | "finance_viewer_income" | "supporter_list_visibility" | "income_visibility" | "federation_mode" | "user_app_registration" | "dynamic_client_registration" | "oauth_metadata_document_clients" | "voice_room_starters" | "voice_public_summary" | "voice_participants_retention_days" | "hook_inbound_status_mode" | "hook_inbound_follow_mode" | "hook_signup_check_mode" | "hook_media_check_mode" | "hook_local_status_mode" | "hook_inbound_actor_mode" | "hook_local_profile_mode" | "hook_inbound_status_on_failure" | "hook_inbound_status_unfollowed_direct" | "hook_inbound_follow_on_failure" | "hook_signup_check_on_failure" | "hook_signup_check_reject" | "hook_local_status_account_age_days" | "hook_local_profile_account_age_days" | "hook_media_check_on_failure" | "hook_inbound_actor_on_failure" | "hook_decisions_retention_days" | "invite_creators" | "member_invite_max_active" | "member_invite_max_uses" | "member_invite_max_lifetime_seconds" | "public_counts" | "featured_accounts" | "login_providers_only" | "remote_media_cache_max_bytes" | "remote_status_retention_days" | "remote_status_max_retention_days" | "relay_status_retention_days" | "oauth_client_rate_limits" | "translation_providers" | "translation_provider_visibilities" | "translation_browser" | "translation_user_monthly_characters" | "translation_server_monthly_characters" | "translation_retention_days" | "translation_reports_to_server" | "auto_delete_default_enabled" | "auto_delete_default_min_age_days" | "auto_delete_default_keep_pinned" | "auto_delete_default_keep_bookmarked" | "auto_delete_default_keep_favourited" | "auto_delete_default_keep_media" | "auto_delete_default_keep_polls" | "auto_delete_default_keep_public" | "auto_delete_default_keep_local" | "auto_delete_default_keep_unlisted" | "auto_delete_default_keep_private" | "auto_delete_default_keep_direct" | "auto_delete_default_keep_min_boosts" | "auto_delete_default_keep_min_favourites" | "auto_delete_max_age_days" | "auto_delete_max_allow_pinned" | "auto_delete_max_kept_pins" | "auto_delete_max_allow_bookmarked" | "auto_delete_max_allow_favourited" | "auto_delete_max_allow_media" | "auto_delete_max_allow_polls" | "auto_delete_max_allow_visibilities" | "auto_delete_max_allow_thresholds" | "auto_delete_grace_days";
+        InstanceSettingKey: "registration_mode" | "max_status_length" | "default_locale" | "local_timeline_visibility" | "federated_timeline_visibility" | "preview_image" | "contact_account" | "contact_email" | "thumbnail" | "remote_media_policy" | "remote_media_cache_ttl_seconds" | "authorized_fetch" | "domain_actions_visibility" | "domain_actions_rationale_visibility" | "appeal_window_days" | "session_origins_retention_days" | "registration_origins_retention_days" | "reports_retention_days" | "moderation_actions_retention_days" | "audit_log_retention_days" | "search_indexing" | "ai_usage" | "indexable_default" | "search_visibilities" | "security_contact" | "require_media_description" | "link_cards" | "link_cards_ignore_robots_txt" | "finance_visibility" | "finance_viewer_item_names" | "finance_viewer_item_memos" | "finance_viewer_income" | "supporter_list_visibility" | "income_visibility" | "federation_mode" | "user_app_registration" | "dynamic_client_registration" | "oauth_metadata_document_clients" | "voice_room_starters" | "voice_public_summary" | "voice_participants_retention_days" | "hook_inbound_status_mode" | "hook_inbound_follow_mode" | "hook_signup_check_mode" | "hook_media_check_mode" | "hook_local_status_mode" | "hook_inbound_actor_mode" | "hook_local_profile_mode" | "hook_inbound_status_on_failure" | "hook_inbound_status_unfollowed_direct" | "hook_inbound_follow_on_failure" | "hook_signup_check_on_failure" | "hook_signup_check_reject" | "hook_local_status_account_age_days" | "hook_local_profile_account_age_days" | "hook_media_check_on_failure" | "hook_inbound_actor_on_failure" | "hook_decisions_retention_days" | "invite_creators" | "member_invite_max_active" | "member_invite_max_uses" | "member_invite_max_lifetime_seconds" | "public_counts" | "featured_accounts" | "login_providers_only" | "remote_media_cache_max_bytes" | "remote_status_retention_days" | "remote_status_max_retention_days" | "relay_status_retention_days" | "oauth_client_rate_limits" | "translation_providers" | "translation_provider_visibilities" | "translation_browser" | "translation_user_monthly_characters" | "translation_server_monthly_characters" | "translation_retention_days" | "translation_reports_to_server" | "auto_delete_default_enabled" | "auto_delete_default_min_age_days" | "auto_delete_default_keep_pinned" | "auto_delete_default_keep_bookmarked" | "auto_delete_default_keep_favourited" | "auto_delete_default_keep_media" | "auto_delete_default_keep_polls" | "auto_delete_default_keep_public" | "auto_delete_default_keep_local" | "auto_delete_default_keep_unlisted" | "auto_delete_default_keep_private" | "auto_delete_default_keep_direct" | "auto_delete_default_keep_min_boosts" | "auto_delete_default_keep_min_favourites" | "auto_delete_max_age_days" | "auto_delete_max_allow_pinned" | "auto_delete_max_kept_pins" | "auto_delete_max_allow_bookmarked" | "auto_delete_max_allow_favourited" | "auto_delete_max_allow_media" | "auto_delete_max_allow_polls" | "auto_delete_max_allow_visibilities" | "auto_delete_max_allow_thresholds" | "auto_delete_grace_days" | "single_user";
         /**
          * @description The type of a setting's value. `bool`: `true` or `false`. `int`: a decimal integer from
          *     `minimum` to `maximum`. `enum`: one of `choices`. `locale`: a BCP 47 language tag.
@@ -12678,7 +12750,8 @@ export interface components {
          * @description Who may read the public timelines the instance serves: `local` is the instance
          *     setting `local_timeline_visibility` of `GET /timelines/local`, and `federated` the instance
          *     setting `federated_timeline_visibility` of `GET /timelines/federated`. Clients do not offer a
-         *     timeline that is `off`, nor one that is `signed_in` to a visitor who is not logged in.
+         *     timeline that is `off`, nor one that is `signed_in` to a visitor who is not logged in. On a
+         *     one-person server (`single_user`) both are `off`, whatever the settings store.
          */
         InstanceTimelines: {
             local: components["schemas"]["InstanceAudience"];
@@ -13831,7 +13904,8 @@ export interface components {
             visibility_ceiling: components["schemas"]["Visibility"];
             /**
              * @description The visibilities that a new status keeps as asked for, from the widest audience to the
-             *     narrowest; every visibility while the account is not restricted.
+             *     narrowest; every visibility while the account is not restricted. A one-person server
+             *     (`Instance.single_user`) leaves out `local`, which a new status cannot have there.
              */
             visibilities: components["schemas"]["Visibility"][];
         };
@@ -14136,6 +14210,13 @@ export interface components {
          *       be searched (`Instance.full_text_search.available`).
          *     - `/api/v1/problems/search-failed` (503): the search engine could not answer. Only the search of
          *       posts is affected; try again later.
+         *     - `/api/v1/problems/single-user-mode` (404): the server is a one-person server
+         *       (`Instance.single_user`), which does not offer the operation: the local and federated
+         *       timelines, the suggestions of accounts, invites, the review of registrations, and the sign-up
+         *       blocks. It works again when the server stops being one.
+         *     - `/api/v1/problems/single-user-requires-one-account` (422): the instance setting `single_user`
+         *       can be turned on only while the server has exactly one local account; `detail` says how many
+         *       it has.
          */
         Problem: {
             /**

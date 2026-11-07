@@ -359,3 +359,21 @@ func (r *InstanceRepository) ListCurrentSettingsTx(ctx context.Context, tx uow.T
 	}
 	return (&InstanceRepository{db: db}).ListCurrentSettings(ctx)
 }
+
+// CountLocalAccountsTx implements the reads in a transaction.
+func (r *AccountRepository) CountLocalAccountsTx(ctx context.Context, tx uow.Tx) (int, error) {
+	db, err := r.db.in(tx)
+	if err != nil {
+		return 0, err
+	}
+	return (&AccountRepository{db: db}).CountLocalAccounts(ctx)
+}
+
+// ListUserIDsInRegistrationStateTx implements the reads in a transaction.
+func (r *IdentityRepository) ListUserIDsInRegistrationStateTx(ctx context.Context, tx uow.Tx, state identity.RegistrationState, before string, limit int) ([]string, error) {
+	db, err := r.db.in(tx)
+	if err != nil {
+		return nil, err
+	}
+	return (&IdentityRepository{db: db}).ListUserIDsInRegistrationState(ctx, state, before, limit)
+}

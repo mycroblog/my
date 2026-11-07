@@ -211,8 +211,13 @@
   - 最後に受け取った `timelines` は localStorage の `my:instance:timelines` に残し（インスタンスの設定で、利用者のデータではない）、ナビゲーションを置いたときに 1 回だけ読む。
     オフラインで開いたりリロードしたりして `GET /instance` が届かないときも、前と同じ項目を出す。サーバーの答えが届けばそちらを使う。
   - 無効にしたタイムラインのアドレスを直接開いたとき（古いリンクやブックマーク）は、「もう一度試す」ではなく無効であることを出す（`routes/local.tsx`・`routes/public.tsx`）。
+  - **一人のサーバー**（`GET /instance` の `single_user`、[ADR-0152](../../adr/0152-single-user-mode.md)、`lib/singleUser.ts`）: サーバーは両方のタイムラインを `off`、登録の方式を `closed` として返すので、ナビゲーションはどのサーバーとも同じ読み方でローカル・連合・新規登録を出さず、タイムラインはホームだけになる。
+    残りのサーバーが出さないもの（おすすめのアカウント・利用者と管理者の招待・登録の審査・登録の拒否リスト・公開範囲 `local`、§4 の 404 `single-user-mode`）は `single_user` を読んで出さず、試す前に隠す。
+    おすすめと利用者の招待は、`GET /instance` がそうでないと言うまで求めない（`useCommunityOffered`）。それらの画面のアドレスは、ルートの `beforeLoad`（`notFoundOnSingleUser`）が見つからないページにし、API に求めない。
+    開いている間にサーバーが一人のサーバーになり、操作が 404 `single-user-mode` を受けたときは、`GET /instance` を取り直す（`refetchInstanceOnSingleUserMode`）。
   先頭に、フォーカスしたときだけ見える「本文へ移動」のリンクを置く。
 - **ランディングページ**（`routes/index.tsx`、`features/landing`）: ルートのアドレス `/` は、サインインしていない人にはランディングページを、サインインしている利用者にはホームのタイムライン（`/home` へ置き換えの遷移）を出す。
+  一人のサーバーでは、サインインしていない人にも、ランディングページの代わりに運営者のプロフィール（`GET /instance` の `single_user_account`、`/@<name>` へ置き換えの遷移）を出す（[ADR-0152](../../adr/0152-single-user-mode.md) §7）。
   セッションを再開できるかを loader で確かめてから決める。サーバーに届かず再開できないとき（オフラインで開いたとき）も、このブラウザに残した投稿を読めるように `/home` へ移す。
   外枠の中（ナビゲーション付き）に出す。画面の要件（区画の順・作業・操作の結果）は [screens/landing.md](screens/landing.md) にある。
   中身は `GET /instance`（名前・要約・説明・ルール・サムネイル・登録の方式・連絡先のアカウント・ソースコード）と `GET /instance/overview`（利用者の数・7 日の公開の投稿の数・動き始めた日。管理者が隠した部分は応答にない）から出す。

@@ -31,7 +31,8 @@ Until the account is approved and the address is confirmed, you can sign in but 
 
 After sign-up, a welcome page lets you choose an avatar and a display name ("Continue" saves them, "Later" skips this).
 Your home timeline then shows a "Get started" checklist: "Set up your profile", "Follow someone", and "Write your first
-post". "Hide these steps" closes it on that browser. "Suggested accounts" lists people you can follow.
+post". "Hide these steps" closes it on that browser. "Suggested accounts" lists people you can follow, except on a server
+of one person, where "Find people" opens the search instead.
 
 ## Signing in
 

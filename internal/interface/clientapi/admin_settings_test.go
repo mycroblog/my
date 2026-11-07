@@ -20,6 +20,8 @@ import (
 type fakeSettings struct {
 	stored []instance.CurrentSetting
 	sets   [][]appinstance.SetSettingInput
+	// accounts, when set, is how many local accounts refuse turning single_user on.
+	accounts int
 }
 
 func (f *fakeSettings) Settings(context.Context) (instance.Settings, error) {
@@ -36,6 +38,9 @@ func (f *fakeSettings) SetSettings(_ context.Context, ins []appinstance.SetSetti
 		v, err := d.Parse(in.Value)
 		if err != nil {
 			return nil, &appinstance.SettingError{Key: in.Key, Err: err}
+		}
+		if in.Key == instance.SettingSingleUser && v == "true" && f.accounts != 0 {
+			return nil, &appinstance.SingleUserAccountsError{Count: f.accounts}
 		}
 		revs[i] = instance.SettingRevision{Key: in.Key, Value: v, RevisedByUserID: in.RevisedByUserID}
 	}
@@ -148,5 +153,27 @@ func TestInstanceSettingProblems(t *testing.T) {
 	}
 	if len(f.stored) != 0 {
 		t.Errorf("a refused change was stored: %+v", f.stored)
+	}
+}
+
+// TestSingleUserNeedsOneAccount checks the 422 of turning single_user on while the server has more
+// than one local account (ADR-0152 §1).
+func TestSingleUserNeedsOneAccount(t *testing.T) {
+	e, f := newSettingsEnv(t)
+	f.accounts = 3
+	res := e.sendJSON(t, http.MethodPatch, "/admin/settings", "admin", `{"values":{"single_user":"true"}}`)
+	p := decodeProblem(t, res)
+	if res.StatusCode != http.StatusUnprocessableEntity || p.Type != clientapi.ProblemTypeSingleUserRequiresOneAccount {
+		t.Fatalf("single_user with 3 accounts = %d %+v, want the 422 single-user-requires-one-account", res.StatusCode, p)
+	}
+	if p.Detail == nil || *p.Detail != "このサーバーにはローカルのアカウントが 3 個あります。" {
+		t.Errorf("detail = %v, want the count", p.Detail)
+	}
+	if len(f.stored) != 0 {
+		t.Errorf("a refused change was stored: %+v", f.stored)
+	}
+	f.accounts = 0
+	if res := e.sendJSON(t, http.MethodPatch, "/admin/settings", "admin", `{"values":{"single_user":"true"}}`); res.StatusCode != http.StatusOK {
+		t.Errorf("single_user with one account = %d, want 200", res.StatusCode)
 	}
 }

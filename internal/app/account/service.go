@@ -713,6 +713,12 @@ func (s *Service) DeletedTx(ctx context.Context, tx uow.Tx, id string) (bool, er
 	return st.State == account.StateDeleted, nil
 }
 
+// LocalAccountsTx returns, inside tx, every local account of a user, ordered by account ID; the
+// instance actor has none.
+func (s *Service) LocalAccountsTx(ctx context.Context, tx uow.Tx) ([]account.LocalAccount, error) {
+	return s.d.Repository.ListLocalAccounts(ctx, tx)
+}
+
 // LocalAccountOfUserTx returns the local account of a user as LocalAccountOfUser does, read in tx.
 func (s *Service) LocalAccountOfUserTx(ctx context.Context, tx uow.Tx, userID string) (account.LocalAccount, error) {
 	return s.d.Repository.FindLocalAccountByUserTx(ctx, tx, userID)
@@ -805,6 +811,11 @@ func (s *Service) UserLifecycleTx(ctx context.Context, tx uow.Tx, userID string)
 // NodeInfo's usage statistics. The instance actor is not counted.
 func (s *Service) CountLocalUsers(ctx context.Context) (int, error) {
 	return s.d.Repository.CountLocalAccounts(ctx)
+}
+
+// CountLocalUsersTx is CountLocalUsers read in tx.
+func (s *Service) CountLocalUsersTx(ctx context.Context, tx uow.Tx) (int, error) {
+	return s.d.Repository.CountLocalAccountsTx(ctx, tx)
 }
 
 // PrivateKey opens the sealed private key of a local actor's key.

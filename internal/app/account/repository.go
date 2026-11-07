@@ -178,4 +178,5 @@ type TxReads interface {
 	FindLifecycleStateTx(ctx context.Context, tx uow.Tx, accountID string) (account.LifecycleState, error)
 	ListKeysTx(ctx context.Context, tx uow.Tx, accountID string) ([]account.Key, error)
 	ListRemoteProfileURLsTx(ctx context.Context, tx uow.Tx, accountIDs []string) (map[string]string, error)
+	CountLocalAccountsTx(ctx context.Context, tx uow.Tx) (int, error)
 }

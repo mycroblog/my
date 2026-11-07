@@ -78,10 +78,20 @@ func (s *Service) prepareStartPost(ctx context.Context, accountID, roomID string
 		TextInput:       appcontent.TextInput{Text: startPostText(p.Text, RoomURL(s.d.Host, roomID)), Language: p.Language},
 	}
 	// The post is local for a room of the local users and private for a room of the host's
-	// followers; a room for the mutuals or by invitation has no start post (ADR-0100 §9).
+	// followers; a room for the mutuals or by invitation has no start post (ADR-0100 §9). A
+	// one-person server posts nothing new as local, so its start post is private (ADR-0152 §5).
 	switch settings.Visibility {
 	case voice.VisibilityLocal:
 		in.Visibility = "local"
+		if s.d.SingleUser != nil {
+			on, err := s.d.SingleUser(ctx)
+			if err != nil {
+				return nil, fmt.Errorf("voice: instance single_user: %w", err)
+			}
+			if on {
+				in.Visibility = "private"
+			}
+		}
 	case voice.VisibilityFollowers:
 		in.Visibility = "private"
 	default:

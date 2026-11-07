@@ -459,6 +459,18 @@
     "defaultMessage": "‮⊥ɥıs ɹǝbnǝsʇ uǝǝps ɐ ʌɐʅıp H⊥⊥Ԁ sıƃuɐʇnɹǝ.‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
+  "errors.single_user_mode": {
+    "defaultMessage": "‮⊥ɥıs sǝɹʌǝɹ ıs ɐ ouǝ-dǝɹsou sǝɹʌǝɹ, ʍɥıɔɥ poǝs uoʇ oɟɟǝɹ ʇɥıs.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.single_user_requires_one_account": {
+    "defaultMessage": "‮∀ ouǝ-dǝɹsou sǝɹʌǝɹ ɔɐu ɥɐʌǝ ouʅʎ ouǝ ʅoɔɐʅ ɐɔɔonuʇ.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.single_user_requires_one_account_detail": {
+    "defaultMessage": "‮{count,plural,one{⊥ɥıs sǝɹʌǝɹ ɥɐs # ʅoɔɐʅ ɐɔɔonuʇ.} other{⊥ɥıs sǝɹʌǝɹ ɥɐs # ʅoɔɐʅ ɐɔɔonuʇs.}}‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
   "errors.status.already_deleted": {
     "defaultMessage": "‮⊥ɥǝ dosʇ ɔɹǝɐʇǝp ʍıʇɥ ʇɥıs Ipǝɯdoʇǝuɔʎ-Ӽǝʎ ɥɐs qǝǝu pǝʅǝʇǝp.‬",
     "description": "Generated from en by tools/i18n; do not edit."
@@ -489,6 +501,10 @@
   },
   "errors.status.invalid_text": {
     "defaultMessage": "‮⊥ɥǝ ʇǝxʇ ɔouʇɐıus ɔɥɐɹɐɔʇǝɹs ʇɥɐʇ ɔɐuuoʇ qǝ dosʇǝp.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.status.local_unavailable": {
+    "defaultMessage": "‮Ԁosʇs ou ɐ ouǝ-dǝɹsou sǝɹʌǝɹ ɔɐuuoʇ qǝ ʅoɔɐʅ.‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "errors.status.media_not_found": {

@@ -10,6 +10,8 @@ seed: [{"my": ["admin", "signup-block", "create", "-kind", "email_domain", "-com
 `manage_accounts` を持つモデレーターが、メールのドメイン・メールアドレス・IP アドレスの範囲による登録の拒否（FR-719）を新しい順に読み、1 つの拒否の詳細か新しい拒否のフォームへ進む画面（[§14](../14-admin.md)）。
 一覧は読むだけで、追加するのは[新しい拒否](moderation-signup-block-new.md)と[一覧からの追加](moderation-signup-blocks-import.md)、解除するのは[拒否の詳細](moderation-signup-block.md)で行う。
 
+一人のサーバー（`GET /instance` の `single_user`、[ADR-0152](../../../adr/0152-single-user-mode.md) §4）にはこの画面がない。モデレーションのメニューとトップに出さず、アドレス（下の画面も）を開くと見つからないページを出し、API に求めない。
+
 ### 1. 使う人と頻度
 
 - モデレーター（`manage_accounts`）。スパムの登録が続いたとき、登録の審査やアカウントの BAN から来る。週に数回より少ない。

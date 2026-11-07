@@ -63,7 +63,8 @@ type PreferencesInput struct {
 }
 
 // Preferences returns the preferences of a user. It fails with an error wrapping ErrNotFound
-// when the user has none.
+// when the user has none. On a one-person server the default visibility local reads as private
+// (ADR-0152 §5), and the stored value stays.
 func (s *Service) Preferences(ctx context.Context, userID string) (UserPreferences, error) {
 	p, err := s.d.Repository.FindPreferences(ctx, userID)
 	if err != nil {
@@ -74,7 +75,23 @@ func (s *Service) Preferences(ctx context.Context, userID string) (UserPreferenc
 		return UserPreferences{}, err
 	}
 	slices.Sort(langs) // byte order, whatever the database's collation
-	return UserPreferences{Preferences: p, TimelineLanguages: langs}, nil
+	return s.effectivePreferences(ctx, UserPreferences{Preferences: p, TimelineLanguages: langs})
+}
+
+// effectivePreferences returns p with the default visibility local read as private on a
+// one-person server, where new posts are never local (ADR-0152 §5).
+func (s *Service) effectivePreferences(ctx context.Context, p UserPreferences) (UserPreferences, error) {
+	if p.DefaultVisibility != identity.VisibilityLocal {
+		return p, nil
+	}
+	on, err := s.singleUser(ctx)
+	if err != nil {
+		return UserPreferences{}, err
+	}
+	if on {
+		p.DefaultVisibility = identity.VisibilityPrivate
+	}
+	return p, nil
 }
 
 // SetPreferences validates in, canonicalizes its language tags, and replaces the preferences of
@@ -197,11 +214,20 @@ func (e *PreferenceError) Unwrap() error { return e.Err }
 // sorted. The current preferences are read and locked in that transaction, so concurrent changes
 // of different preferences (a time zone the client adopts while the user picks a locale) all
 // stay. Invalid input fails with a *PreferenceError, and a user without preferences with
-// ErrNotFound.
+// ErrNotFound. On a one-person server the default visibility local is invalid (ADR-0152 §5).
 func (s *Service) UpdatePreferences(ctx context.Context, userID string, in PreferencesUpdate) (UserPreferences, error) {
 	in, err := canonicalPreferencesUpdate(in)
 	if err != nil {
 		return UserPreferences{}, err
+	}
+	if in.DefaultVisibility != nil && *in.DefaultVisibility == identity.VisibilityLocal {
+		if on, err := s.singleUser(ctx); err != nil {
+			return UserPreferences{}, err
+		} else if on {
+			return UserPreferences{}, &PreferenceError{
+				Preference: "default_visibility", Err: fmt.Errorf("%w: local on a one-person server", identity.ErrInvalidVisibility),
+			}
+		}
 	}
 	var out UserPreferences
 	err = s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
@@ -222,7 +248,7 @@ func (s *Service) UpdatePreferences(ctx context.Context, userID string, in Prefe
 	if err != nil {
 		return UserPreferences{}, err
 	}
-	return out, nil
+	return s.effectivePreferences(ctx, out)
 }
 
 // canonicalPreferencesUpdate validates the values of in and returns them canonicalized, or a

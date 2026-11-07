@@ -142,4 +142,5 @@ type TxReads interface {
 	FindRegistrationApplicationTx(ctx context.Context, tx uow.Tx, userID string) (identity.RegistrationApplication, error)
 	FindRegistrationStateTx(ctx context.Context, tx uow.Tx, userID string) (identity.UserRegistrationState, error)
 	FindPrimaryEmailTx(ctx context.Context, tx uow.Tx, userID string) (identity.EmailAddress, bool, error)
+	ListUserIDsInRegistrationStateTx(ctx context.Context, tx uow.Tx, state identity.RegistrationState, before string, limit int) ([]string, error)
 }

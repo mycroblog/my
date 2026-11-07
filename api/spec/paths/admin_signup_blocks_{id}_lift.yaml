@@ -5,6 +5,9 @@ post:
   description: |
     The block stops matching sign-ups at once; the lift is audited. Lifting a lifted block
     changes nothing. An unknown ID is a 404. Needs the `manage_accounts` permission.
+
+    On a one-person server (`Instance.single_user`) it is a 404 of the type
+    `/api/v1/problems/single-user-mode`.
   tags: [admin-moderation]
   security:
     - oauth2: ["admin:write"]

@@ -8,6 +8,9 @@ get:
     visibilities, `local` ones included, and boosts never appear on it. The instance setting
     `federated_timeline_visibility` decides who may read it: while it is `off` it is a 404, and while it
     is `signed_in` an anonymous request is a 401.
+
+    On a one-person server (`Instance.single_user`) it is a 404 of the type
+    `/api/v1/problems/single-user-mode`.
   tags: [timelines]
   security:
     - {}

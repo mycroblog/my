@@ -459,6 +459,18 @@
     "defaultMessage": "[Ŧħīş řḗḗɋŭŭḗḗşŧ ƞḗḗḗḗḓş ȧȧ ṽȧȧŀīḓ ĦŦŦƤ şīɠƞȧȧŧŭŭřḗḗ.]",
     "description": "Generated from en by tools/i18n; do not edit."
   },
+  "errors.single_user_mode": {
+    "defaultMessage": "[Ŧħīş şḗḗřṽḗḗř īş ȧȧ ǿǿƞḗḗ-ƥḗḗřşǿǿƞ şḗḗřṽḗḗř, ẇħīƈħ ḓǿǿḗḗş ƞǿǿŧ ǿǿƒƒḗḗř ŧħīş.]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.single_user_requires_one_account": {
+    "defaultMessage": "[Ȧ ǿǿƞḗḗ-ƥḗḗřşǿǿƞ şḗḗřṽḗḗř ƈȧȧƞ ħȧȧṽḗḗ ǿǿƞŀẏ ǿǿƞḗḗ ŀǿǿƈȧȧŀ ȧȧƈƈǿǿŭŭƞŧ.]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.single_user_requires_one_account_detail": {
+    "defaultMessage": "[{count,plural,one{Ŧħīş şḗḗřṽḗḗř ħȧȧş # ŀǿǿƈȧȧŀ ȧȧƈƈǿǿŭŭƞŧ.} other{Ŧħīş şḗḗřṽḗḗř ħȧȧş # ŀǿǿƈȧȧŀ ȧȧƈƈǿǿŭŭƞŧş.}}]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
   "errors.status.already_deleted": {
     "defaultMessage": "[Ŧħḗḗ ƥǿǿşŧ ƈřḗḗȧȧŧḗḗḓ ẇīŧħ ŧħīş Īḓḗḗḿƥǿǿŧḗḗƞƈẏ-Ķḗḗẏ ħȧȧş ƀḗḗḗḗƞ ḓḗḗŀḗḗŧḗḗḓ.]",
     "description": "Generated from en by tools/i18n; do not edit."
@@ -489,6 +501,10 @@
   },
   "errors.status.invalid_text": {
     "defaultMessage": "[Ŧħḗḗ ŧḗḗẋŧ ƈǿǿƞŧȧȧīƞş ƈħȧȧřȧȧƈŧḗḗřş ŧħȧȧŧ ƈȧȧƞƞǿǿŧ ƀḗḗ ƥǿǿşŧḗḗḓ.]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.status.local_unavailable": {
+    "defaultMessage": "[Ƥǿǿşŧş ǿǿƞ ȧȧ ǿǿƞḗḗ-ƥḗḗřşǿǿƞ şḗḗřṽḗḗř ƈȧȧƞƞǿǿŧ ƀḗḗ ŀǿǿƈȧȧŀ.]",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "errors.status.media_not_found": {

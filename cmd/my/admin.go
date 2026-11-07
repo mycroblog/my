@@ -144,6 +144,8 @@ func describeAdminError(err error, username, email string) string {
 		return fmt.Sprintf("username %q is already taken; nothing was changed", username)
 	case errors.Is(err, appidentity.ErrEmailTaken):
 		return fmt.Sprintf("email address %q is already in use; nothing was changed", email)
+	case errors.Is(err, appidentity.ErrSingleUserMode):
+		return "the server is a one-person server (the instance setting single_user), which creates no other account; nothing was changed"
 	default:
 		return err.Error()
 	}

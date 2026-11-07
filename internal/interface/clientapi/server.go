@@ -324,6 +324,9 @@ type Options struct {
 	SignupBlocks SignupBlocks
 	// Settings reads and changes the instance settings (admin_settings.go).
 	Settings InstanceSettings
+	// SingleUserAccount finds the operator's account of a one-person server, which GET /instance
+	// presents (ADR-0152 §7); nil presents none.
+	SingleUserAccount SingleUserAccount
 	// SignInLimit reads the limit of registration and sign-in to the login providers, for
 	// GET /instance and the count of those it affects (admin_settings.go); nil means no limit.
 	SignInLimit SignInLimit

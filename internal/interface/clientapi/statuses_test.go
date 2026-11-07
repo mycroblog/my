@@ -427,6 +427,7 @@ func TestStatusProblems(t *testing.T) {
 		{appcontent.ErrPollWithMedia, http.StatusUnprocessableEntity, "", "投票のある投稿にはファイルを添付できません。"},
 		{appcontent.ErrPollNotEditable, http.StatusUnprocessableEntity, "", "投票のある投稿は編集できません。"},
 		{content.ErrInvalidVisibility, http.StatusUnprocessableEntity, "", ""},
+		{appcontent.ErrLocalVisibilityUnavailable, http.StatusUnprocessableEntity, "", "一人のためのサーバーでは、ローカルの公開範囲で投稿できません。"},
 		{fmt.Errorf("x: %w", content.ErrInvalidIdempotencyKey), http.StatusUnprocessableEntity, "", "Idempotency-Key の値が正しくありません。"},
 		{appcontent.ErrPostingRestricted, http.StatusForbidden, "", "現在、あなたのアカウントは投稿できません。"},
 		{fmt.Errorf("x: %w", appcontent.ErrInteractionRestricted), http.StatusForbidden, "", "現在、あなたのアカウントはフォロー・お気に入り・ブースト・返信ができません。"},

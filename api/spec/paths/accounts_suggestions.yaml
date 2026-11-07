@@ -11,6 +11,9 @@ get:
     Only accounts that are `discoverable` are suggested. The viewer itself, the accounts that
     it follows, the accounts that it blocks, mutes, or is blocked by, and accounts that are
     deactivated, deleted, or suspended are left out. There is no paging.
+
+    On a one-person server (`Instance.single_user`) it is a 404 of the type
+    `/api/v1/problems/single-user-mode`.
   tags: [accounts]
   security:
     - oauth2: ["read:accounts"]

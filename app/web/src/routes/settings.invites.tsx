@@ -2,6 +2,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { OwnInvites, ownInvitesQueryOptions } from "../features/settings";
 import { requireSignIn } from "../lib/auth/requireSignIn";
+import { notFoundOnSingleUser } from "../lib/singleUser";
 import { useT } from "../lib/i18n";
 import { SettingsHeading } from "./-layout/SettingsHeading";
 
@@ -12,7 +13,11 @@ import { SettingsHeading } from "./-layout/SettingsHeading";
  */
 export const Route = createFileRoute("/settings/invites")({
   staticData: { title: "client:settings.invites.title" },
-  beforeLoad: requireSignIn,
+  // A one-person server has none of this (ADR-0152 §4): the address is not found there.
+  beforeLoad: async (match) => {
+    await requireSignIn(match);
+    await notFoundOnSingleUser(match);
+  },
   loader: ({ context }) =>
     context.queryClient.infiniteQuery({ ...ownInvitesQueryOptions(context.api), staleTime: Infinity }),
   component: InvitesPage,

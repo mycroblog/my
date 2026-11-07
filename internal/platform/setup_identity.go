@@ -62,6 +62,9 @@ func (a *App) setUpIdentity(cfg *config.Config, repo identity.Repository) error 
 			return domainidentity.RegistrationMode(mode), err
 		},
 		Closure: a.Instance,
+		// A one-person server creates no account, read again in the transaction that writes one, and
+		// reads the default visibility local as private (ADR-0152 §3, §5).
+		SingleUser: a.Instance.SingleUser, SingleUserTx: a.Instance.SingleUserTx,
 		// The service closure emails read the state of the closure per job (ADR-0088 §2).
 		ClosureView: a.closureView,
 		// A client_id that is an https URL is a Client ID Metadata Document, fetched through the

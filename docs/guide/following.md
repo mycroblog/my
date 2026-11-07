@@ -46,7 +46,8 @@ operators can turn either one off, or show it only to people who are signed in; 
 
 A hashtag page (for example `#cats`) shows the public posts and the posts set to "This server" with that tag.
 
-An empty home timeline says "Your home timeline is empty". Follow someone, or "Browse the local timeline".
+An empty home timeline says "Your home timeline is empty". Follow someone, or "Browse the local timeline"; on a server
+without a local timeline, "Find people to follow" opens the search.
 
 ## Lists
 

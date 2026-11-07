@@ -2,6 +2,7 @@
 import { createFileRoute, type ErrorComponentProps } from "@tanstack/react-router";
 import { Invites, invitesQueryOptions, moderationInstanceQueryOptions } from "../features/moderation";
 import { requireSignIn } from "../lib/auth/requireSignIn";
+import { notFoundOnSingleUser } from "../lib/singleUser";
 import { useT } from "../lib/i18n";
 import { AdminError, loadWithPermission } from "./-admin/adminRoute";
 import { PageHeading } from "./-layout/PageHeading";
@@ -9,7 +10,11 @@ import { PageHeading } from "./-layout/PageHeading";
 /** The list of the invites that let people sign up (FR-001): copying and revoking them, for manage_invites. */
 export const Route = createFileRoute("/moderation/invites")({
   staticData: { title: "client:admin.invites.title" },
-  beforeLoad: requireSignIn,
+  // A one-person server has none of this (ADR-0152 §4): the address is not found there.
+  beforeLoad: async (match) => {
+    await requireSignIn(match);
+    await notFoundOnSingleUser(match);
+  },
   loader: ({ context }) =>
     loadWithPermission(context, "manage_invites", () =>
       Promise.all([

@@ -23,6 +23,7 @@ my admin create -username alice -email alice@example.com
 - One transaction creates the user, the password, the primary email address, the local account (with its keys), and the grant of the `admin` role (with no grantor, which means the CLI).
   The built-in roles are created first if they are missing.
 - On success the command prints `created admin @alice@<account_domain> (user <id>, account <id>)` and exits with code 0.
+- On a [one-person server](instance-settings.md#one-person-server) the command creates no account and exits with code 1.
   While [sign-in is limited to login providers](login-providers.md#limit-sign-in-to-login-providers), it also warns that the password cannot sign in until the limit ends.
 
 ## Running it again

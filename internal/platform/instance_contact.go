@@ -55,7 +55,7 @@ func (a *App) nodeMetadata(ctx context.Context) (activitypub.NodeMetadata, error
 	if err != nil {
 		return activitypub.NodeMetadata{}, err
 	}
-	out := activitypub.NodeMetadata{Description: a.instanceSummary(ctx), ContactEmail: settings.ContactEmail()}
+	out := activitypub.NodeMetadata{Description: a.instanceSummary(ctx), ContactEmail: settings.ContactEmail(), SingleUser: settings.SingleUser()}
 	if username := settings.ContactAccount(); username != "" {
 		actor, err := a.Accounts.FindByHandle(ctx, username, account.LocalDomain)
 		switch {
