@@ -96,7 +96,7 @@
 
 - 訳す範囲
   - `docs/guide/` のすべて、`docs/operations/` のすべて、トップページ（`app/docs/src/content/docs/index.mdx`）を訳す
-  - `docs/reference/`（設定・コマンド・メトリクスなどの名前が大半で、一部は生成物）と `docs/developers/`（クライアントの開発者が英語で読む）は訳さない。
+  - `docs/reference/`（設定・コマンド・メトリクスなどの名前が大半で、一部は生成物）と、`docs/developers/`・`docs/plugins/`（クライアントとプラグインの開発者が英語で読む）は訳さない。
     ロケールのそのページは Starlight の代替（英語のページと「まだ翻訳がない」旨の案内）とする
   - サイドバーの見出しは、ページの見出しは訳したページの題から、区分の見出しは `app/docs/i18n/<locale>/sidebar.json` から付ける
 - 置き場所: `app/docs/i18n/<locale>/` に、原稿の `docs/` 以下と同じ道で置く（`docs/guide/posting.md` の訳は `app/docs/i18n/ja/guide/posting.md`）。

@@ -241,8 +241,8 @@ export function filesIn(dir: string, suffix: RegExp): string[] {
 
 /**
  * The published directories whose documents are translated. docs/reference (mostly names of settings, commands and
- * metrics, partly generated) and docs/developers (read by developers of clients, in English) are not: their pages in a
- * locale are the English pages with Starlight's notice.
+ * metrics, partly generated), docs/developers and docs/plugins (read by developers of clients and plugins, in English)
+ * are not: their pages in a locale are the English pages with Starlight's notice.
  */
 const translatedDirs: readonly (typeof publishedDirs)[number][] = ["guide", "operations"];
 

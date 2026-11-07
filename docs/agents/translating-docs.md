@@ -12,7 +12,7 @@ translation follows them and never adds, drops, or corrects a fact. A wrong fact
 | `docs/operations/*.md` | `app/docs/i18n/<locale>/operations/*.md` | yes |
 | `app/docs/src/content/docs/index.mdx` (the landing page) | `app/docs/i18n/<locale>/index.mdx` | yes, as one section |
 | The `## Headings` and `### Headings` of `docs/README.md` (the sidebar groups) | `app/docs/i18n/<locale>/sidebar.json` | yes |
-| `docs/reference/`, `docs/developers/` | none: the site shows the English page with a notice | no |
+| `docs/reference/`, `docs/developers/`, `docs/plugins/` | none: the site shows the English page with a notice | no |
 
 The site serves a translation under `/<locale>/` (`/next/ja/guide/posting/`). A page with no translation file, and a
 section with no translation, is shown in English. The locales are listed in `app/docs/src/translations.ts`
