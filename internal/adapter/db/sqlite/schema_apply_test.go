@@ -94,6 +94,7 @@ func assertSyncedWithCLI(t *testing.T, path string) {
 }
 
 func TestApplySchemaToAnEmptyDatabase(t *testing.T) {
+	t.Parallel()
 	path := newEmptyFile(t)
 	r, err := ApplySchema(t.Context(), path, schemaapply.Options{})
 	if err != nil {
@@ -122,6 +123,7 @@ func TestApplySchemaToAnEmptyDatabase(t *testing.T) {
 }
 
 func TestApplySchemaAddsAColumn(t *testing.T) {
+	t.Parallel()
 	path := newEmptyFile(t)
 	mustApply(t, path, schema.SQLite, schemaapply.Options{})
 	table := schema.Tables(schema.SQLite)[0]
@@ -135,6 +137,7 @@ func TestApplySchemaAddsAColumn(t *testing.T) {
 }
 
 func TestApplySchemaRefusesDropsUnlessAllowed(t *testing.T) {
+	t.Parallel()
 	path := newEmptyFile(t)
 	table := schema.Tables(schema.SQLite)[0]
 	mustApply(t, path, schema.SQLite+"\nCREATE TABLE probe_extra (id INTEGER PRIMARY KEY);\nALTER TABLE "+table+" ADD COLUMN probe_extra TEXT;\n", schemaapply.Options{})
@@ -167,6 +170,7 @@ func TestApplySchemaRefusesDropsUnlessAllowed(t *testing.T) {
 }
 
 func TestApplySchemaDryRunChangesNothing(t *testing.T) {
+	t.Parallel()
 	path := newEmptyFile(t)
 	r, err := ApplySchema(t.Context(), path, schemaapply.Options{DryRun: true})
 	if err != nil {
@@ -184,6 +188,7 @@ func TestApplySchemaDryRunChangesNothing(t *testing.T) {
 }
 
 func TestApplySchemaRollsBackAFailedPlan(t *testing.T) {
+	t.Parallel()
 	path := newEmptyFile(t)
 	mustApply(t, path, schema.SQLite, schemaapply.Options{})
 	table := schema.Tables(schema.SQLite)[0]

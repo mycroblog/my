@@ -11,6 +11,7 @@ import (
 )
 
 func TestDataUpgradeRepositoryContract(t *testing.T) {
+	t.Parallel()
 	testkit.DataUpgradeRepositoryContract(t, func(t *testing.T) testkit.DataUpgradeHarness {
 		db, _ := newTestDB(t, "", uow.Options{})
 		empty, err := Open(t.Context(), filepath.Join(t.TempDir(), "empty.db"), uow.Options{})

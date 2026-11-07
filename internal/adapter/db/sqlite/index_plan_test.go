@@ -12,6 +12,7 @@ import (
 // TestQueriesUseTheirIndexes checks with EXPLAIN QUERY PLAN that frequent or growing queries read an
 // index instead of scanning their table.
 func TestQueriesUseTheirIndexes(t *testing.T) {
+	t.Parallel()
 	db, _ := newTestDB(t, "", uow.Options{})
 	for _, tc := range []struct{ name, query, index string }{
 		{
