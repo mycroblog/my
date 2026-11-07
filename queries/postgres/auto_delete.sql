@@ -40,7 +40,8 @@ LIMIT sqlc.arg(batch_limit)::integer;
 
 -- ListStatusesToAutoDelete returns, oldest first, up to @batch_limit local statuses of
 -- @account_id below @id_before that are not deleted, were published before @published_before,
--- and that none of the policy's exceptions keeps: a visibility in @kept_visibilities, a pin, the
+-- and that none of the policy's exceptions keeps: a visibility in @kept_visibilities, a pin (one
+-- of the author's newest @max_kept_pins pins when it is positive), the
 -- author's bookmark or favourite, media or a poll in the current revision, or at least
 -- @keep_min_boosts boosts or @keep_min_favourites favourites (0 for no threshold).
 -- name: ListStatusesToAutoDelete :many
@@ -52,7 +53,11 @@ WHERE s.author_account_id = sqlc.arg(account_id)::uuid AND s.id < sqlc.arg(id_be
   AND NOT EXISTS (SELECT 1 FROM status_deletions d WHERE d.status_id = s.id)
   AND NOT (s.visibility = ANY(sqlc.arg(kept_visibilities)::text[]))
   AND (NOT sqlc.arg(keep_pinned)::boolean
-    OR NOT EXISTS (SELECT 1 FROM status_pins p WHERE p.status_id = s.id))
+    OR NOT EXISTS (SELECT 1 FROM status_pins p WHERE p.status_id = s.id
+      AND (sqlc.arg(max_kept_pins)::integer = 0 OR p.id IN (
+        SELECT k.id FROM status_pins k WHERE k.account_id = s.author_account_id
+          AND NOT EXISTS (SELECT 1 FROM status_deletions kd WHERE kd.status_id = k.status_id)
+        ORDER BY k.id DESC LIMIT sqlc.arg(max_kept_pins)::integer))))
   AND (NOT sqlc.arg(keep_bookmarked)::boolean
     OR NOT EXISTS (SELECT 1 FROM bookmarks b WHERE b.account_id = s.author_account_id AND b.status_id = s.id))
   AND (NOT sqlc.arg(keep_favourited)::boolean
@@ -70,3 +75,30 @@ WHERE s.author_account_id = sqlc.arg(account_id)::uuid AND s.id < sqlc.arg(id_be
       AND c.favourites_count >= sqlc.arg(keep_min_favourites)::integer))
 ORDER BY s.id
 LIMIT sqlc.arg(batch_limit)::integer;
+
+-- CountStatusAutoDeletePins counts the account's pins of statuses that are not deleted.
+-- name: CountStatusAutoDeletePins :one
+SELECT count(*) FROM status_pins p
+WHERE p.account_id = $1 AND NOT EXISTS (SELECT 1 FROM status_deletions d WHERE d.status_id = p.status_id);
+
+-- name: InsertStatusAutoDeleteLimitNotice :exec
+INSERT INTO status_auto_delete_limit_notices (id, account_id, max_age_days, noticed_at, enforce_from)
+VALUES ($1, $2, $3, $4, $5);
+
+-- name: ListStatusAutoDeleteLimitNotices :many
+SELECT id, account_id, max_age_days, noticed_at, enforce_from FROM status_auto_delete_limit_notices
+WHERE id = ANY(sqlc.arg(ids)::uuid[]) ORDER BY id;
+
+-- name: GetStatusAutoDeleteLimit :one
+SELECT account_id, notice_id, max_age_days, enforce_from FROM status_auto_delete_limits WHERE account_id = $1;
+
+-- name: UpsertStatusAutoDeleteLimit :exec
+INSERT INTO status_auto_delete_limits (account_id, notice_id, max_age_days, enforce_from) VALUES ($1, $2, $3, $4)
+ON CONFLICT (account_id) DO UPDATE SET
+  notice_id = excluded.notice_id, max_age_days = excluded.max_age_days, enforce_from = excluded.enforce_from;
+
+-- name: DeleteStatusAutoDeleteLimit :exec
+DELETE FROM status_auto_delete_limits WHERE account_id = $1;
+
+-- name: DeleteAllStatusAutoDeleteLimits :exec
+DELETE FROM status_auto_delete_limits;

@@ -13,14 +13,18 @@ import (
 )
 
 // AutoDeletePolicies reads and replaces the viewer's automatic deletion of their old posts
-// (FR-118); *content.AutoDelete implements it.
+// (FR-118) under the server maximum (ADR-0151); *content.AutoDelete implements it.
 type AutoDeletePolicies interface {
-	AutoDeletePolicy(ctx context.Context, accountID string) (content.AutoDeletePolicy, error)
-	// UpdateAutoDeletePolicy fails with a *content.AutoDeletePolicyError for invalid input.
-	UpdateAutoDeletePolicy(ctx context.Context, accountID string, p content.AutoDeletePolicy) (content.AutoDeletePolicy, error)
+	AutoDeletePolicy(ctx context.Context, accountID string) (appcontent.AutoDeleteView, error)
+	// UpdateAutoDeletePolicy fails with a *content.AutoDeletePolicyError for invalid input or
+	// input over the server maximum.
+	UpdateAutoDeletePolicy(ctx context.Context, accountID string, p content.AutoDeletePolicy) (appcontent.AutoDeleteView, error)
 	// PreviewAutoDeletePolicy counts what p would delete now without saving it; it fails with a
 	// *content.AutoDeletePolicyError for invalid input.
 	PreviewAutoDeletePolicy(ctx context.Context, accountID string, p content.AutoDeletePolicy) (appcontent.AutoDeletePreview, error)
+	// LimitNotices returns the notices of the server maximum among ids that went to the
+	// account, by ID.
+	LimitNotices(ctx context.Context, accountID string, ids []string) (map[string]content.AutoDeleteLimitNotice, error)
 }
 
 // autoDeletePolicyFrom is the policy of a request body.
@@ -62,6 +66,41 @@ func newAutoDeletePolicy(p content.AutoDeletePolicy) AutoDeletePolicy {
 	}
 }
 
+// newAutoDeleteLimit is the public part of the server maximum.
+func newAutoDeleteLimit(l content.AutoDeleteLimit) AutoDeleteLimit {
+	return AutoDeleteLimit{
+		MaxAgeDays: l.MaxAgeDays, AllowPinned: l.AllowPinned, KeptPins: l.KeptPins,
+		AllowBookmarked: l.AllowBookmarked, AllowFavourited: l.AllowFavourited, AllowMedia: l.AllowMedia,
+		AllowPolls: l.AllowPolls, AllowVisibilities: l.AllowVisibilities, AllowThresholds: l.AllowThresholds,
+	}
+}
+
+// newAutoDeleteSettings is the saved policy of v with the server maximum when it applies.
+func newAutoDeleteSettings(v appcontent.AutoDeleteView) AutoDeleteSettings {
+	p := newAutoDeletePolicy(v.Policy)
+	out := AutoDeleteSettings{
+		Enabled: p.Enabled, MinAgeDays: p.MinAgeDays,
+		KeepPinned: p.KeepPinned, KeepBookmarked: p.KeepBookmarked, KeepFavourited: p.KeepFavourited,
+		KeepMedia: p.KeepMedia, KeepPolls: p.KeepPolls, KeepVisibilities: p.KeepVisibilities,
+		KeepMinBoosts: p.KeepMinBoosts, KeepMinFavourites: p.KeepMinFavourites,
+	}
+	if v.Limit != nil {
+		l := newAutoDeleteLimit(v.Limit.AutoDeleteLimit)
+		sl := AutoDeleteServerLimit{
+			MaxAgeDays: l.MaxAgeDays, AllowPinned: l.AllowPinned, KeptPins: l.KeptPins,
+			AllowBookmarked: l.AllowBookmarked, AllowFavourited: l.AllowFavourited, AllowMedia: l.AllowMedia,
+			AllowPolls: l.AllowPolls, AllowVisibilities: l.AllowVisibilities, AllowThresholds: l.AllowThresholds,
+			Effective: newAutoDeletePolicy(v.Limit.Effective), Bound: v.Limit.Bound,
+		}
+		if !v.Limit.EnforceFrom.IsZero() {
+			at := v.Limit.EnforceFrom.UTC()
+			sl.EnforceFrom = &at
+		}
+		out.ServerLimit = &sl
+	}
+	return out
+}
+
 // GetAutoDeletePolicy serves GET /api/v1/preferences/auto_delete.
 func (s *Server) GetAutoDeletePolicy(ctx context.Context, _ GetAutoDeletePolicyRequestObject) (GetAutoDeletePolicyResponseObject, error) {
 	v, err := requireViewer(ctx)
@@ -77,7 +116,7 @@ func (s *Server) GetAutoDeletePolicy(ctx context.Context, _ GetAutoDeletePolicyR
 		return nil, fmt.Errorf("clientapi: the auto delete policy of %s: %w", v.AccountID, err)
 	}
 	cache := cacheNoStore
-	return GetAutoDeletePolicy200JSONResponse{Body: newAutoDeletePolicy(p), Headers: GetAutoDeletePolicy200ResponseHeaders{CacheControl: &cache}}, nil
+	return GetAutoDeletePolicy200JSONResponse{Body: newAutoDeleteSettings(p), Headers: GetAutoDeletePolicy200ResponseHeaders{CacheControl: &cache}}, nil
 }
 
 // UpdateAutoDeletePolicy serves PUT /api/v1/preferences/auto_delete.
@@ -101,7 +140,7 @@ func (s *Server) UpdateAutoDeletePolicy(ctx context.Context, req UpdateAutoDelet
 		return nil, fmt.Errorf("clientapi: update the auto delete policy of %s: %w", v.AccountID, err)
 	}
 	cache := cacheNoStore
-	return UpdateAutoDeletePolicy200JSONResponse{Body: newAutoDeletePolicy(p), Headers: UpdateAutoDeletePolicy200ResponseHeaders{CacheControl: &cache}}, nil
+	return UpdateAutoDeletePolicy200JSONResponse{Body: newAutoDeleteSettings(p), Headers: UpdateAutoDeletePolicy200ResponseHeaders{CacheControl: &cache}}, nil
 }
 
 // PreviewAutoDeletePolicy serves POST /api/v1/preferences/auto_delete/preview. The oldest posts

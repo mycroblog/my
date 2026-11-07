@@ -4,8 +4,8 @@
 // - general (/admin/settings): the instance's name, its descriptions, how to reach its operators and its thumbnail
 //   (#663);
 // - branding: its own icon and logos (BrandSettings, ADR-0059), three file forms of one primary action each;
-// - registration, content, federation, discovery and voice: its policies by topic (PolicySettings), voice only while
-//   the server offers voice chat.
+// - registration, content, automatic deletion, federation, discovery and voice: its policies by topic
+//   (PolicySettings), voice only while the server offers voice chat.
 // The name, the descriptions and the thumbnail's alt text hold one value each, written in any language and shown as it
 // is in every language; the labels are the app's. The name stands in for the domain where the instance is named to
 // people; the domain stays in handles and links. The browser keeps a form from being sent while a field is invalid
@@ -37,6 +37,7 @@ import type { PolicyPage } from "../hooks/useServerPolicies";
 import { type DescriptionField, descriptionLimits, useServerGeneral } from "../hooks/useServerGeneral";
 import { BrandSettings } from "./BrandSettings";
 import {
+  AutoDeleteServerSettings,
   ContentSettings,
   DiscoverySettings,
   FederationSettings,
@@ -54,6 +55,7 @@ const pages = [
   { page: "branding", href: "/admin/settings/branding", label: "client:admin.settings.page.branding" },
   { page: "registration", href: "/admin/settings/registration", label: "client:admin.settings.page.registration" },
   { page: "content", href: "/admin/settings/content", label: "client:admin.settings.page.content" },
+  { page: "auto_delete", href: "/admin/settings/auto-delete", label: "client:admin.settings.page.auto_delete" },
   { page: "federation", href: "/admin/settings/federation", label: "client:admin.settings.page.federation" },
   { page: "discovery", href: "/admin/settings/discovery", label: "client:admin.settings.page.discovery" },
   { page: "voice", href: "/admin/settings/voice", label: "client:admin.settings.page.voice" },
@@ -88,6 +90,8 @@ function SettingsPage({ page }: { page: ServerSettingsPage }) {
       return <RegistrationSettings />;
     case "content":
       return <ContentSettings />;
+    case "auto_delete":
+      return <AutoDeleteServerSettings />;
     case "federation":
       return <FederationSettings />;
     case "discovery":

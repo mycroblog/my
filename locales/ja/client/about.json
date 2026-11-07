@@ -430,5 +430,53 @@
   "about.title": {
     "defaultMessage": "{instance} について",
     "description": "Heading and document title of the server's information page, which everyone may read. {instance} is the name of this server."
+  },
+  "about.retention.title": {
+    "defaultMessage": "投稿を残せる期間",
+    "description": "Heading of the section of the about page that states the server's maximum of how long local posts are kept."
+  },
+  "about.retention.description": {
+    "defaultMessage": "このサーバーでは、投稿は投稿してから長くても{days, plural, other {# 日}}で自動で削除されます。利用者はもっと短い期間を選べますが、オフにはできません。",
+    "description": "The server's maximum of the automatic deletion of old posts on the about page. {days} is the most days a post is kept."
+  },
+  "about.retention.allowed": {
+    "defaultMessage": "次の投稿は、それより長く残せます。",
+    "description": "Before the list of the exceptions that the server's maximum of the automatic deletion allows, on the about page."
+  },
+  "about.retention.none": {
+    "defaultMessage": "それより長く残せる投稿はありません。",
+    "description": "On the about page, when the server's maximum of the automatic deletion allows no exception."
+  },
+  "about.retention.pinned": {
+    "defaultMessage": "プロフィールにピン留めした投稿",
+    "description": "Exception the server's maximum of the automatic deletion allows, on the about page: pinned posts."
+  },
+  "about.retention.pinned_newest": {
+    "defaultMessage": "プロフィールにピン留めした投稿 (ピン留めした時刻の新しい{count, plural, other {# 件}}まで)",
+    "description": "Exception the server's maximum of the automatic deletion allows, on the about page: the newest pinned posts. {count} is how many."
+  },
+  "about.retention.bookmarked": {
+    "defaultMessage": "本人がブックマークした投稿",
+    "description": "Exception the server's maximum of the automatic deletion allows, on the about page."
+  },
+  "about.retention.favourited": {
+    "defaultMessage": "本人がお気に入りにした投稿",
+    "description": "Exception the server's maximum of the automatic deletion allows, on the about page."
+  },
+  "about.retention.media": {
+    "defaultMessage": "画像などのメディアが付いた投稿",
+    "description": "Exception the server's maximum of the automatic deletion allows, on the about page."
+  },
+  "about.retention.polls": {
+    "defaultMessage": "投票が付いた投稿",
+    "description": "Exception the server's maximum of the automatic deletion allows, on the about page."
+  },
+  "about.retention.visibilities": {
+    "defaultMessage": "本人が選んだ公開範囲の投稿",
+    "description": "Exception the server's maximum of the automatic deletion allows, on the about page: keeping posts by visibility."
+  },
+  "about.retention.thresholds": {
+    "defaultMessage": "ブーストやお気に入りの多い投稿",
+    "description": "Exception the server's maximum of the automatic deletion allows, on the about page: keeping posts by their reactions."
   }
 }

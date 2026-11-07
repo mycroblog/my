@@ -22,6 +22,11 @@ export type About = {
   /** How people reach the operators; undefined when the instance has no contact. */
   contact: Instance["contact"];
   /**
+   * The server maximum of how long local posts are kept (ADR-0151 §8), which people learn before they sign up;
+   * undefined when there is none.
+   */
+  autoDeleteLimit: Instance["auto_delete_limit"];
+  /**
    * What the instance states to search engines and AI crawlers (FR-725, ADR-0057); undefined while the instance
    * has not loaded.
    */
@@ -74,6 +79,7 @@ export function useAbout(): About {
     rules: instance?.rules ?? [],
     thumbnail: instance?.thumbnail,
     contact: instance?.contact,
+    autoDeleteLimit: instance?.auto_delete_limit,
     externalReviews: instance?.external_reviews ?? [],
     externalReviewScope: instance?.external_review_scope,
     crawlers:

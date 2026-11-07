@@ -16,6 +16,17 @@ export const describedInstance: Schemas["Instance"] = {
   contact: { email: "admin@my.example", account: { ...otherAccountFixture, display_name: "Bob (administrator)" } },
   search_indexing: "allow",
   ai_usage: "deny",
+  auto_delete_limit: {
+    max_age_days: 365,
+    allow_pinned: true,
+    kept_pins: 3,
+    allow_bookmarked: true,
+    allow_favourited: false,
+    allow_media: false,
+    allow_polls: false,
+    allow_visibilities: false,
+    allow_thresholds: false,
+  },
   rules: [
     { id: "0192f0c4-7a8e-7000-8000-0000000000e1", text: "Be kind.", hint: "Disagree with ideas, not with people." },
     {

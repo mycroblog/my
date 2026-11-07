@@ -115,6 +115,10 @@
     "defaultMessage": "[Ȧ ẇḗḗƀħǿǿǿǿķ ǿǿƒ {instance} ẇȧȧş ŧŭŭřƞḗḗḓ ǿǿƒƒ]",
     "description": "Generated from en by tools/i18n; do not edit."
   },
+  "mail.auto_delete_limit.detail": {
+    "defaultMessage": "[Ŭƞŧīŀ ŧħḗḗƞ, ẏǿǿŭŭř ǿǿẇƞ şḗḗŧŧīƞɠş ȧȧƥƥŀẏ. Ŧħḗḗ şḗḗŧŧīƞɠş ǿǿƒ ŧħḗḗ ȧȧŭŭŧǿǿḿȧȧŧīƈ ḓḗḗŀḗḗŧīǿǿƞ şħǿǿẇ ẇħīƈħ ǿǿƒ ẏǿǿŭŭř ƥǿǿşŧş ẇīŀŀ ƀḗḗ ḓḗḗŀḗḗŧḗḗḓ, ȧȧƞḓ ẏǿǿŭŭ ƈȧȧƞ ƈħȧȧƞɠḗḗ ŧħḗḗḿ ẇīŧħīƞ ŧħḗḗ şḗḗřṽḗḗř'ş ḿȧȧẋīḿŭŭḿ. Ḓḗḗŀḗḗŧḗḗḓ ƥǿǿşŧş ƈȧȧƞƞǿǿŧ ƀḗḗ řḗḗşŧǿǿřḗḗḓ.]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
   "mail.group.account_moved": {
     "defaultMessage": "[Ȧƈƈǿǿŭŭƞŧş ẏǿǿŭŭ ƒǿǿŀŀǿǿẇ ḿǿǿṽīƞɠ]",
     "description": "Generated from en by tools/i18n; do not edit."
@@ -157,6 +161,10 @@
   },
   "mail.group.admin_webhook_disabled": {
     "defaultMessage": "[Ḓīşȧȧƀŀḗḗḓ ẇḗḗƀħǿǿǿǿķş]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "mail.group.auto_delete_limit": {
+    "defaultMessage": "[Ƞǿǿŧīƈḗḗş ǿǿƒ ŧħḗḗ ȧȧŭŭŧǿǿḿȧȧŧīƈ ḓḗḗŀḗḗŧīǿǿƞ ǿǿƒ ƥǿǿşŧş]",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "mail.group.boost": {

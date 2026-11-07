@@ -1110,5 +1110,153 @@
   "admin.settings.voice.unavailable": {
     "defaultMessage": "This server does not offer voice chat, so there is nothing to set here.",
     "description": "Text of the voice chat page of the server settings while the server does not offer voice chat."
+  },
+  "admin.settings.page.auto_delete": {
+    "defaultMessage": "Post deletion",
+    "description": "Link to the page of the server settings with the default and the maximum of the automatic deletion of old posts."
+  },
+  "admin.settings.auto_delete.number.invalid": {
+    "defaultMessage": "Enter a whole number from {min} to {max}.",
+    "description": "Error under a number field of the automatic deletion settings when its value is not a whole number in range."
+  },
+  "admin.settings.auto_delete.default.title": {
+    "defaultMessage": "Default for new accounts",
+    "description": "Heading of the section of the server's default policy of the automatic deletion of old posts."
+  },
+  "admin.settings.auto_delete.default.description": {
+    "defaultMessage": "Each new account starts with these settings as its own, and can change them. Changing them doesn't change existing accounts.",
+    "description": "Help of the section of the server's default policy of the automatic deletion: it is copied at sign-up."
+  },
+  "admin.settings.auto_delete.default.enabled": {
+    "defaultMessage": "Delete old posts automatically",
+    "description": "Checkbox of the server's default: new accounts start with the automatic deletion turned on."
+  },
+  "admin.settings.auto_delete.default.age": {
+    "defaultMessage": "Delete posts older than (days)",
+    "description": "Label of the number field of the default age in days after which posts are deleted."
+  },
+  "admin.settings.auto_delete.days.description": {
+    "defaultMessage": "Counted from when each post was published: {min} to {max} days.",
+    "description": "Help of the default age of the automatic deletion. {min} and {max} are the bounds."
+  },
+  "admin.settings.auto_delete.default.keep": {
+    "defaultMessage": "Keep these posts",
+    "description": "Label of the group of the exceptions of the server's default policy."
+  },
+  "admin.settings.auto_delete.default.visibilities": {
+    "defaultMessage": "Keep posts with these visibilities",
+    "description": "Label of the group of the visibilities that the server's default policy keeps."
+  },
+  "admin.settings.auto_delete.default.min_boosts": {
+    "defaultMessage": "Keep posts boosted at least (times)",
+    "description": "Label of the number field of the default threshold of boosts that keeps a post."
+  },
+  "admin.settings.auto_delete.default.min_favourites": {
+    "defaultMessage": "Keep posts favourited at least (times)",
+    "description": "Label of the number field of the default threshold of favourites that keeps a post."
+  },
+  "admin.settings.auto_delete.threshold.description": {
+    "defaultMessage": "0 keeps no post for this. From {min} to {max}.",
+    "description": "Help of a threshold of the server's default policy. {min} and {max} are the bounds."
+  },
+  "admin.settings.auto_delete.pinned": {
+    "defaultMessage": "Pinned to the profile",
+    "description": "Exception of the automatic deletion in the server settings: posts pinned to the profile."
+  },
+  "admin.settings.auto_delete.bookmarked": {
+    "defaultMessage": "Bookmarked by the author",
+    "description": "Exception of the automatic deletion in the server settings: posts the author bookmarked."
+  },
+  "admin.settings.auto_delete.favourited": {
+    "defaultMessage": "Favourited by the author",
+    "description": "Exception of the automatic deletion in the server settings: posts the author favourited."
+  },
+  "admin.settings.auto_delete.media": {
+    "defaultMessage": "With images or other media",
+    "description": "Exception of the automatic deletion in the server settings: posts with media attachments."
+  },
+  "admin.settings.auto_delete.polls": {
+    "defaultMessage": "With a poll",
+    "description": "Exception of the automatic deletion in the server settings: posts with a poll."
+  },
+  "admin.settings.auto_delete.max.title": {
+    "defaultMessage": "Maximum",
+    "description": "Heading of the section of the server's maximum of how long local posts are kept."
+  },
+  "admin.settings.auto_delete.max.description": {
+    "defaultMessage": "While the maximum is on, every local account deletes its posts at most this many days after they're published, and can't turn automatic deletion off. Accounts whose roles have the permission to keep posts longer are exempt. The about page shows the maximum.",
+    "description": "Help of the section of the server's maximum of the automatic deletion."
+  },
+  "admin.settings.auto_delete.max.age": {
+    "defaultMessage": "Keep posts at most (days)",
+    "description": "Label of the number field of the server's maximum in days."
+  },
+  "admin.settings.auto_delete.max.age.description": {
+    "defaultMessage": "0 sets no maximum. Up to {max} days.",
+    "description": "Help of the maximum's days. {max} is the upper bound; {min} is 0 and not shown."
+  },
+  "admin.settings.auto_delete.max.allow": {
+    "defaultMessage": "Exceptions allowed under the maximum",
+    "description": "Label of the group of the exceptions that the maximum lets accounts keep posts by."
+  },
+  "admin.settings.auto_delete.max.allow.description": {
+    "defaultMessage": "A checked exception can keep a post past the maximum, for as long as it applies.",
+    "description": "Help of the group of the exceptions allowed under the maximum."
+  },
+  "admin.settings.auto_delete.max.allow.visibilities": {
+    "defaultMessage": "Keeping posts by their visibility",
+    "description": "Allowance of the maximum: posts may be kept by their visibility."
+  },
+  "admin.settings.auto_delete.max.allow.thresholds": {
+    "defaultMessage": "Keeping posts with many boosts or favourites",
+    "description": "Allowance of the maximum: posts may be kept by their numbers of boosts and favourites."
+  },
+  "admin.settings.auto_delete.max.kept_pins": {
+    "defaultMessage": "Pins kept under the maximum",
+    "description": "Label of the number field of how many of an account's pins keep posts under the maximum."
+  },
+  "admin.settings.auto_delete.max.kept_pins.description": {
+    "defaultMessage": "The most recently pinned first: {min} to {max}. {max} keeps every pinned post.",
+    "description": "Help of the number of pins kept under the maximum. {min} and {max} are the bounds; {max} is the most pins of an account."
+  },
+  "admin.settings.auto_delete.grace": {
+    "defaultMessage": "Grace period (days)",
+    "description": "Label of the number field of the grace period of an account newly bound by the maximum."
+  },
+  "admin.settings.auto_delete.grace.description": {
+    "defaultMessage": "How long an account that the maximum newly holds keeps its own settings after it is told: {min} to {max} days. Changing it doesn't move the dates already told.",
+    "description": "Help of the grace period of the maximum. {min} and {max} are the bounds."
+  },
+  "admin.settings.auto_delete.confirm.title_on": {
+    "defaultMessage": "Keep posts at most {days, plural, one {# day} other {# days}}?",
+    "description": "Title of the dialog that asks before turning the maximum of the automatic deletion on. {days} is the maximum."
+  },
+  "admin.settings.auto_delete.confirm.title_stricter": {
+    "defaultMessage": "Make the maximum stricter, at {days, plural, one {# day} other {# days}}?",
+    "description": "Title of the dialog that asks before lowering the maximum or allowing fewer exceptions or pins. {days} is the maximum."
+  },
+  "admin.settings.auto_delete.confirm.notify": {
+    "defaultMessage": "Within an hour, every local account whose settings keep posts longer is notified, in the app and by email.",
+    "description": "In the dialog before turning on or tightening the maximum: who is notified and how."
+  },
+  "admin.settings.auto_delete.confirm.grace": {
+    "defaultMessage": "{days, plural, =0 {Their posts start to go by the maximum right away.} one {Their posts start to go by the maximum # day after the notice.} other {Their posts start to go by the maximum # days after the notice.}}",
+    "description": "In the dialog before turning on or tightening the maximum: when the posts of the notified accounts start to go. {days} is the grace period."
+  },
+  "admin.settings.auto_delete.confirm.permanent": {
+    "defaultMessage": "Deleted posts can't be restored, here or on the servers they were sent to.",
+    "description": "In the dialog before turning on or tightening the maximum: deletions are permanent."
+  },
+  "admin.settings.auto_delete.confirm.exempt": {
+    "defaultMessage": "Accounts with the permission to keep posts longer are not affected. An account that changes its settings to within the maximum before then keeps its own settings.",
+    "description": "Note in the dialog before turning on or tightening the maximum."
+  },
+  "admin.settings.auto_delete.confirm.cancel": {
+    "defaultMessage": "Cancel",
+    "description": "Button that closes the dialog without saving the maximum."
+  },
+  "admin.settings.auto_delete.confirm.confirm": {
+    "defaultMessage": "Save and notify",
+    "description": "Button that saves the stricter maximum, which notifies the bound accounts."
   }
 }

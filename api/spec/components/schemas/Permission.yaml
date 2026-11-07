@@ -28,8 +28,11 @@ description: |
   `manage_login_providers`: the external identity providers that users sign in with (only the
   built-in admin role by default). `create_invites`: creating, listing, and revoking
   invites of one's own on `/invites` while the instance setting `invite_creators` is
-  `permitted`, a member permission (only the built-in admin role by default). The
-  others guard no client API operation yet.
+  `permitted`, a member permission (only the built-in admin role by default).
+  `keep_posts_longer`: keeping one's own posts past the server maximum of the automatic
+  deletion and turning it off on `/preferences/auto_delete` while the maximum is on, a member
+  permission (only the built-in admin role by default). The others guard no client API
+  operation yet.
 type: string
 enum:
   - manage_reports
@@ -55,3 +58,4 @@ enum:
   - manage_errors
   - manage_login_providers
   - create_invites
+  - keep_posts_longer

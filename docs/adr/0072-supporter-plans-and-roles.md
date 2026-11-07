@@ -68,7 +68,7 @@
 - プランに結び付けられるロールの条件（プランの作成のときに検査し、満たさなければ `422`）:
   - 組み込みのロール（`admin`・`moderator`）でない、ほかのプランに結び付いていない
   - 持っている人がいない（手で付けた付与と混ざらないため）
-  - 権限がすべて区分 `member`（ADR-0070 §1。いまは `create_custom_emojis`・`view_finance`・`start_voice_rooms`・`create_invites`）
+  - 権限がすべて区分 `member`（ADR-0070 §1。いまは `create_custom_emojis`・`view_finance`・`start_voice_rooms`・`create_invites`・`keep_posts_longer`）
   - `position` が、**スタッフのロール**（区分 `moderation` か `server` の権限を 1 つでも持つロール。`moderator` と `admin` を含む）のいちばん低い `position` より低い
 - `identity` は `managed_roles` に入ったロールについて、次を `409`（`role_managed_by_plan`）で断る:
   - FR-720 の手での付与と剥奪（API・CLI・管理画面）。付け外しは `supporters` が §7 の規則でだけ行う

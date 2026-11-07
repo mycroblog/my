@@ -56,7 +56,11 @@ type AutoDeletePolicy struct {
 	// times; zero sets no threshold.
 	KeepMinBoosts     int
 	KeepMinFavourites int
-	UpdatedAt         time.Time
+	// MaxKeptPins, when positive, keeps only that many of the author's pins, the newest first,
+	// while KeepPinned is on: the server maximum sets it on the effective policy
+	// (EffectiveAutoDeletePolicy); a saved policy has zero, which keeps every pin.
+	MaxKeptPins int
+	UpdatedAt   time.Time
 }
 
 // DefaultAutoDeletePolicy is the policy of an account that has never saved one: disabled, with

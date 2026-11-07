@@ -158,6 +158,24 @@ func (q *Queries) EraseAutoDeleteKeptVisibilitiesBy(ctx context.Context, account
 	return err
 }
 
+const eraseAutoDeleteLimitBy = `-- name: EraseAutoDeleteLimitBy :exec
+DELETE FROM status_auto_delete_limits WHERE account_id = ?1
+`
+
+func (q *Queries) EraseAutoDeleteLimitBy(ctx context.Context, accountID string) error {
+	_, err := q.db.ExecContext(ctx, eraseAutoDeleteLimitBy, accountID)
+	return err
+}
+
+const eraseAutoDeleteLimitNoticesBy = `-- name: EraseAutoDeleteLimitNoticesBy :exec
+DELETE FROM status_auto_delete_limit_notices WHERE account_id = ?1
+`
+
+func (q *Queries) EraseAutoDeleteLimitNoticesBy(ctx context.Context, accountID string) error {
+	_, err := q.db.ExecContext(ctx, eraseAutoDeleteLimitNoticesBy, accountID)
+	return err
+}
+
 const eraseAutoDeletePolicyBy = `-- name: EraseAutoDeletePolicyBy :exec
 DELETE FROM status_auto_delete_policies WHERE account_id = ?1
 `

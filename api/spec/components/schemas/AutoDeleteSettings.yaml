@@ -1,0 +1,13 @@
+# SPDX-License-Identifier: MIT
+description: |
+  The authenticated user's automatic deletion of their own old posts as they saved it, with the
+  server maximum when it applies to them.
+allOf:
+  - $ref: ./AutoDeletePolicy.yaml
+  - type: object
+    properties:
+      server_limit:
+        description: |
+          The server maximum and what it makes of the policy; absent when the server sets no
+          maximum or the user has the permission `keep_posts_longer`.
+        $ref: ./AutoDeleteServerLimit.yaml

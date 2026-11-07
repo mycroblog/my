@@ -64,7 +64,8 @@ func sampleNotification(t notification.Type) appnotification.Wording {
 		Source:    appnotification.PushAccount{DisplayName: "Bob", Acct: "bob@remote.example"},
 		Recipient: appnotification.PushAccount{DisplayName: "Alice", Acct: "alice"},
 		StatusID:  "01JSAMPLE0STATUS00000000000", ReportID: "01JSAMPLE0REPORT00000000000", AppealID: "01JSAMPLE0APPEAL00000000000",
-		VoiceRoomID: "01JSAMPLE0VOICEROOM0000000",
+		VoiceRoomID:          "01JSAMPLE0VOICEROOM0000000",
+		AutoDeleteMaxAgeDays: 90, AutoDeleteDaysLeft: 30,
 	}
 }
 

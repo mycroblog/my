@@ -10,8 +10,9 @@ description: |
   notices to the user are `moderation` (`moderation_notice`, `report_resolved`,
   `appeal_decided`, `relationships_severed`, `custom_emoji_request_decided`,
   `hook_appeal_decided`),
-  `service_closure`, `supporter` (the `supporter_*` types), and `announcement`, the only one of
-  them that the user turns off in the app (on by default); it has no `email` channel.
+  `service_closure`, `supporter` (the `supporter_*` types), `announcement`, which the user
+  turns off in the app (on by default) and which has no `email` channel, and
+  `auto_delete_limit`, whose app and email channels the user chooses, both on by default.
 type: string
 enum:
   - mention
@@ -40,3 +41,4 @@ enum:
   - service_closure
   - supporter
   - announcement
+  - auto_delete_limit

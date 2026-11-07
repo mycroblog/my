@@ -158,6 +158,11 @@ export type NotificationView = {
    */
   announcement: { title: string; href: string } | null;
   /**
+   * What an `auto_delete_limit` tells of the server maximum (ADR-0151 §7): its days, and when it starts to delete the
+   * user's posts; null for the other types and without them.
+   */
+  autoDeleteLimit: { days: number; from: { dateTime: string; text: string } } | null;
+  /**
    * The pages the row leads to besides the actor's profile and the post, where the user follows up what it
    * tells: the account status, the report, the registrations, or the user's follow lists.
    */
@@ -201,6 +206,7 @@ const kinds: Readonly<Record<NotificationType, NotificationKind>> = {
   admin_error_group: "staff",
   status: "status",
   announcement: "announcement",
+  auto_delete_limit: "notice",
 };
 
 const sentences: Readonly<Record<NotificationType, ClientMessageKey>> = {
@@ -235,6 +241,7 @@ const sentences: Readonly<Record<NotificationType, ClientMessageKey>> = {
   admin_service_closure_due: "client:notifications.type.admin_service_closure_due",
   supporter_service_closure: "client:notifications.type.supporter_service_closure",
   announcement: "client:notifications.type.announcement",
+  auto_delete_limit: "client:notifications.type.auto_delete_limit",
   voice_room_started: "client:notifications.type.voice_room_started",
   voice_room_invited: "client:notifications.type.voice_room_invited",
   admin_error_group: "client:notifications.type.admin_error_group",
@@ -517,6 +524,9 @@ function linksOf(notification: Notification, ownAcct: string | null): Notificati
       return notification.announcement === undefined || notification.announcement.title !== ""
         ? []
         : [{ href: announcementPath(notification.announcement), label: "client:notifications.link.announcement" }];
+    // The settings show the maximum in effect now and preview what goes (ADR-0151 §7).
+    case "auto_delete_limit":
+      return [{ href: "/settings/auto-delete", label: "client:notifications.link.auto_delete" }];
     case "relationships_severed":
       return ownAcct === null
         ? []
@@ -599,6 +609,16 @@ export function useNotificationView(group: NotificationGroup): NotificationView 
     supporter: supporterOf(notification, formatDate),
     move: moveOf(notification),
     announcement,
+    autoDeleteLimit:
+      notification.type === "auto_delete_limit" && notification.auto_delete_limit !== undefined
+        ? {
+            days: notification.auto_delete_limit.max_age_days,
+            from: {
+              dateTime: notification.auto_delete_limit.enforce_from,
+              text: intl.formatDate(notification.auto_delete_limit.enforce_from, { dateStyle: "long" }),
+            },
+          }
+        : null,
     links: linksOf(notification, viewer.status === "signed-in" ? viewer.account.acct : null),
   };
 }

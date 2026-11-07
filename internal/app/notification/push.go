@@ -158,6 +158,10 @@ type pushJob struct {
 	// title when it was notified.
 	AnnouncementID    string `json:"announcement_id,omitempty"`
 	AnnouncementTitle string `json:"announcement_title,omitempty"`
+	// AutoDeleteMaxAgeDays and AutoDeleteDaysLeft are the maximum that an auto_delete_limit tells
+	// of and the days of its grace period, as of the notice.
+	AutoDeleteMaxAgeDays int `json:"auto_delete_max_age_days,omitempty"`
+	AutoDeleteDaysLeft   int `json:"auto_delete_days_left,omitempty"`
 }
 
 // jobOf returns the payload of a job about n: JobPush to the subscription subscriptionID, or
@@ -514,6 +518,7 @@ func (d describer) describe(ctx context.Context, job pushJob) (PushPayload, *i18
 		HookAppealID:         job.HookAppealID,
 		ServiceClosureChange: job.ServiceClosureChange, ErrorGroupChange: job.ErrorGroupChange, ErrorGroupID: job.ErrorGroupID,
 		AnnouncementID: job.AnnouncementID, AnnouncementTitle: job.AnnouncementTitle,
+		AutoDeleteMaxAgeDays: job.AutoDeleteMaxAgeDays, AutoDeleteDaysLeft: job.AutoDeleteDaysLeft,
 	}, instance), l, nil
 }
 
@@ -536,6 +541,9 @@ type Wording struct {
 	// AnnouncementID and AnnouncementTitle are the announcement of an announcement and its
 	// title.
 	AnnouncementID, AnnouncementTitle string
+	// AutoDeleteMaxAgeDays and AutoDeleteDaysLeft are the maximum of an auto_delete_limit and the
+	// days until it applies to the recipient's posts.
+	AutoDeleteMaxAgeDays, AutoDeleteDaysLeft int
 }
 
 // DescribeNotification words n in the locale of l for the instance named instance: the title
@@ -645,11 +653,20 @@ func DescribeNotification(l *i18n.Localizer, n Wording, instance string) PushPay
 	case notification.TypeAnnouncement:
 		p.Title = l.ServerPushAnnouncement(i18n.ServerPushAnnouncementArgs{Instance: instance, Title: n.AnnouncementTitle})
 		p.Path = AnnouncementPath(n.AnnouncementID)
+	case notification.TypeAutoDeleteLimit:
+		// The settings of the automatic deletion show the maximum and preview what goes.
+		p.Title = l.ServerPushAutoDeleteLimit(i18n.ServerPushAutoDeleteLimitArgs{
+			Instance: instance, Days: n.AutoDeleteMaxAgeDays, DaysLeft: n.AutoDeleteDaysLeft,
+		})
+		p.Path = AutoDeleteSettingsPath
 	default:
 		p.Title = l.ServerPushOther(instance)
 	}
 	return p
 }
+
+// AutoDeleteSettingsPath is the web client's page of the automatic deletion of old posts.
+const AutoDeleteSettingsPath = "/settings/auto-delete"
 
 // AnnouncementPath is the web client's page of an announcement.
 func AnnouncementPath(id string) string { return "/announcements/" + id }

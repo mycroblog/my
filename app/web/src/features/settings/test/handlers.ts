@@ -47,6 +47,63 @@ export const autoDeletePolicyFixture: Schemas["AutoDeletePolicy"] = {
   keep_min_favourites: 0,
 };
 
+/**
+ * A server maximum of 60 days that allows pins (the newest 3 of them) and bookmarks only, as the instance publishes it
+ * (ADR-0151 §3).
+ */
+export const autoDeleteLimitFixture: Schemas["AutoDeleteLimit"] = {
+  max_age_days: 60,
+  allow_pinned: true,
+  kept_pins: 3,
+  allow_bookmarked: true,
+  allow_favourited: false,
+  allow_media: false,
+  allow_polls: false,
+  allow_visibilities: false,
+  allow_thresholds: false,
+};
+
+/** The policy the automatic deletion uses for `policy` under `limit`, as the server makes it (ADR-0151 §4). */
+export function effectiveAutoDeletePolicy(
+  policy: Schemas["AutoDeletePolicy"],
+  limit: Schemas["AutoDeleteLimit"],
+): Schemas["AutoDeletePolicy"] {
+  return {
+    enabled: true,
+    min_age_days: policy.enabled ? Math.min(policy.min_age_days, limit.max_age_days) : limit.max_age_days,
+    keep_pinned: policy.keep_pinned && limit.allow_pinned,
+    keep_bookmarked: policy.keep_bookmarked && limit.allow_bookmarked,
+    keep_favourited: policy.keep_favourited && limit.allow_favourited,
+    keep_media: policy.keep_media && limit.allow_media,
+    keep_polls: policy.keep_polls && limit.allow_polls,
+    keep_visibilities: limit.allow_visibilities ? policy.keep_visibilities : [],
+    keep_min_boosts: limit.allow_thresholds ? policy.keep_min_boosts : 0,
+    keep_min_favourites: limit.allow_thresholds ? policy.keep_min_favourites : 0,
+  };
+}
+
+/**
+ * What GET /preferences/auto_delete answers for the saved `policy` under `limit`: the maximum with the effective
+ * policy, bound when it deletes what the saved one keeps, and from `enforceFrom` once the user was told.
+ */
+export function autoDeleteSettingsUnder(
+  policy: Schemas["AutoDeletePolicy"],
+  limit: Schemas["AutoDeleteLimit"],
+  enforceFrom?: string,
+): Schemas["AutoDeleteSettings"] {
+  const effective = effectiveAutoDeletePolicy(policy, limit);
+  const bound = JSON.stringify(effective) !== JSON.stringify(policy);
+  return {
+    ...policy,
+    server_limit: {
+      ...limit,
+      effective,
+      bound,
+      ...(bound && enforceFrom !== undefined ? { enforce_from: enforceFrom } : {}),
+    },
+  };
+}
+
 /** One of the viewer's posts that the fake estimate of the automatic deletion counts. */
 type AutoDeleteCandidate = {
   id: string;
@@ -80,10 +137,16 @@ const autoDeleteCandidates: readonly AutoDeleteCandidate[] = [
 const autoDeleteNow = Date.parse("2026-10-20T00:00:00Z");
 
 /**
- * What POST /preferences/auto_delete/preview answers for `policy` over the fake posts, as the server counts it: the
- * posts older than the age that no exception keeps, the oldest three of them as examples.
+ * What POST /preferences/auto_delete/preview answers for `draft` over the fake posts, as the server counts it: the
+ * posts older than the age that no exception keeps, the oldest three of them as examples. The fake posts have one pin,
+ * so the cap of the kept pins changes nothing.
  */
-export function autoDeletePreviewOf(policy: Schemas["AutoDeletePolicy"]): Schemas["AutoDeletePreview"] {
+export function autoDeletePreviewOf(
+  draft: Schemas["AutoDeletePolicy"],
+  limit?: Schemas["AutoDeleteLimit"],
+): Schemas["AutoDeletePreview"] {
+  // Under a maximum, the server counts what the draft deletes under it (ADR-0151 §8).
+  const policy = limit === undefined ? draft : effectiveAutoDeletePolicy({ ...draft, enabled: true }, limit);
   const thresholdKeeps = (threshold: number, count = 0) => threshold > 0 && count >= threshold;
   const deleted = autoDeleteCandidates.filter(
     (post) =>

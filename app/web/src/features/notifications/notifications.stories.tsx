@@ -234,6 +234,9 @@ const fromServer: Notification[] = [
     service_closure: { closes_at: "2027-03-31T00:00:00Z", export_until: "2027-04-30T00:00:00Z" },
     supporter_subscription: { ...subscription, state: "canceling" },
   }),
+  notification(14, "auto_delete_limit", {
+    auto_delete_limit: { max_age_days: 90, enforce_from: "2026-11-27T12:00:00Z" },
+  }),
 ];
 
 /** The notifications from the server to its staff. */

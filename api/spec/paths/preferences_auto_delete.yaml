@@ -3,8 +3,10 @@ get:
   operationId: getAutoDeletePolicy
   summary: Get the authenticated user's automatic deletion of old posts
   description: |
-    The policy that deletes the user's own posts some days after their publication.
-    A user who has never saved one gets the default policy, which is disabled.
+    The policy that deletes the user's own posts some days after their publication, with
+    the server maximum in `server_limit` when it applies to the user. A user who has never
+    saved one gets the default policy, which is disabled; a user who signed up after the
+    operator set a server default got that default as their own policy.
   tags: [preferences]
   security:
     - oauth2: ["read:accounts"]
@@ -17,7 +19,7 @@ get:
       content:
         application/json:
           schema:
-            $ref: ../components/schemas/AutoDeletePolicy.yaml
+            $ref: ../components/schemas/AutoDeleteSettings.yaml
     default:
       $ref: ../components/responses/Problem.yaml
 put:
@@ -29,8 +31,10 @@ put:
     published more than `min_age_days` days ago, unless an exception keeps them, as the user
     would delete them: each deletion is sent to the servers the post went to. A run deletes
     at most 100 posts of a user, so a policy that finds more spreads their deletion over the
-    following hours. Boosts are not deleted. A 422 problem names the property that is invalid
-    in `detail`.
+    following hours. Boosts are not deleted. While the server maximum applies to the user,
+    a policy that is disabled, keeps posts longer than the maximum, or uses an exception that
+    the maximum does not allow is refused. A 422 problem names the property that is invalid or
+    over the maximum in `detail`.
   tags: [preferences]
   security:
     - oauth2: ["write:accounts"]
@@ -49,6 +53,6 @@ put:
       content:
         application/json:
           schema:
-            $ref: ../components/schemas/AutoDeletePolicy.yaml
+            $ref: ../components/schemas/AutoDeleteSettings.yaml
     default:
       $ref: ../components/responses/Problem.yaml

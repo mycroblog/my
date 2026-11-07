@@ -1255,6 +1255,8 @@ const adminPages: Readonly<Record<string, { path: string; ready: string | { valu
   // The first field is the usable invites per person, member_invite_max_active of instanceSettings.
   "admin.settings_.registration": { path: "/admin/settings/registration", ready: { value: "5" } },
   "admin.settings_.content": { path: "/admin/settings/content", ready: { value: "" } },
+  // The first field is the default age of the automatic deletion, which instanceSettings leaves out.
+  "admin.settings_.auto-delete": { path: "/admin/settings/auto-delete", ready: { value: "" } },
   "admin.settings_.federation": { path: "/admin/settings/federation", ready: { value: "" } },
   "admin.settings_.discovery": { path: "/admin/settings/discovery", ready: { value: "" } },
   "admin.settings_.voice": { path: "/admin/settings/voice", ready: "" },

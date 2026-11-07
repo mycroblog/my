@@ -9,6 +9,9 @@ import (
 	"github.com/mycroblog/my/internal/app/account"
 	"github.com/mycroblog/my/internal/app/content"
 	"github.com/mycroblog/my/internal/app/federation"
+	"github.com/mycroblog/my/internal/app/uow"
+	domaincontent "github.com/mycroblog/my/internal/domain/content"
+	"github.com/mycroblog/my/internal/domain/identity"
 	"github.com/mycroblog/my/internal/domain/instance"
 )
 
@@ -59,9 +62,48 @@ func (a *App) setUpRetention(repos retentionRepositories, statuses content.Repos
 	// as their authors would and so sends a Delete of each.
 	a.AutoDelete = content.NewAutoDelete(content.AutoDeleteDeps{
 		UnitOfWork: a.UnitOfWork, Repository: statuses, AutoDeletes: repos.autoDeletes, Accounts: a.Accounts,
-		Jobs: a.Jobs, Clock: a.Clock,
+		Server: autoDeleteServer{a}, Exemptions: autoDeleteExemptions{a}, Jobs: a.Jobs, Clock: a.Clock, IDs: a.IDs,
 	})
 	a.AutoDelete.RegisterJobs(a.Handlers, a.Scheduler)
+	// New local accounts start from the server default (ADR-0151 §2).
+	a.AutoDelete.RegisterProjectors(a.Projectors)
+}
+
+// autoDeleteExemptions exempts the holders of keep_posts_longer from the server maximum of the
+// automatic deletion (ADR-0151 §6).
+type autoDeleteExemptions struct{ a *App }
+
+func (e autoDeleteExemptions) KeepsPostsLonger(ctx context.Context, userID string) (bool, error) {
+	return e.a.Identity.HasPermission(ctx, userID, identity.PermKeepPostsLonger)
+}
+
+// autoDeleteServer reads the server default and maximum of the automatic deletion from the
+// instance settings (ADR-0151).
+type autoDeleteServer struct{ a *App }
+
+func (s autoDeleteServer) settings(ctx context.Context, tx uow.Tx) (instance.Settings, error) {
+	if tx == nil {
+		return s.a.Instance.Settings(ctx)
+	}
+	return s.a.Instance.SettingsTx(ctx, tx)
+}
+
+func (s autoDeleteServer) AutoDeleteDefault(ctx context.Context, tx uow.Tx) (domaincontent.AutoDeletePolicy, error) {
+	settings, err := s.settings(ctx, tx)
+	if err != nil {
+		return domaincontent.AutoDeletePolicy{}, err
+	}
+	d := settings.AutoDeleteDefault()
+	p := domaincontent.AutoDeletePolicy{
+		Enabled: d.Enabled, MinAgeDays: d.MinAgeDays,
+		KeepPinned: d.KeepPinned, KeepBookmarked: d.KeepBookmarked, KeepFavourited: d.KeepFavourited,
+		KeepMedia: d.KeepMedia, KeepPolls: d.KeepPolls,
+		KeepMinBoosts: d.KeepMinBoosts, KeepMinFavourites: d.KeepMinFavourites,
+	}
+	for _, v := range d.KeepVisibilities {
+		p.KeepVisibilities = append(p.KeepVisibilities, domaincontent.Visibility(v))
+	}
+	return p, nil
 }
 
 // remoteRelations tells the account module whether something local relates to a remote account:
@@ -97,4 +139,17 @@ func (a *App) relayStatusRetention(ctx context.Context) (time.Duration, error) {
 		return 0, err
 	}
 	return s.Retention(instance.SettingRelayStatusRetentionDays), nil
+}
+
+func (s autoDeleteServer) AutoDeleteLimit(ctx context.Context, tx uow.Tx) (domaincontent.AutoDeleteLimit, error) {
+	settings, err := s.settings(ctx, tx)
+	if err != nil {
+		return domaincontent.AutoDeleteLimit{}, err
+	}
+	l := settings.AutoDeleteLimit()
+	return domaincontent.AutoDeleteLimit{
+		MaxAgeDays: l.MaxAgeDays, AllowPinned: l.AllowPinned, KeptPins: l.KeptPins,
+		AllowBookmarked: l.AllowBookmarked, AllowFavourited: l.AllowFavourited, AllowMedia: l.AllowMedia, AllowPolls: l.AllowPolls,
+		AllowVisibilities: l.AllowVisibilities, AllowThresholds: l.AllowThresholds, GraceDays: l.GraceDays,
+	}, nil
 }

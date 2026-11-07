@@ -69,9 +69,14 @@ func UnreadEmailDraft(l *i18n.Localizer, name, to string, p PushPayload, webOrig
 	if !ok || !g.DelayedEmail() {
 		return kernel.MailDraft{}, false
 	}
+	paragraphs := []string{l.ServerMailNotificationBody(name)}
+	if p.Type == notification.TypeAutoDeleteLimit {
+		// Posts are about to go for good (ADR-0151 §7): the email says so itself.
+		paragraphs = []string{p.Title, l.ServerMailAutoDeleteLimitDetail()}
+	}
 	return kernel.MailDraft{
 		Category: kernel.MailNotification, To: to, Subject: p.Title,
-		Paragraphs:     []string{l.ServerMailNotificationBody(name)},
+		Paragraphs:     paragraphs,
 		Action:         &kernel.MailAction{Label: l.ServerMailActionOpenNotification(), URL: strings.TrimSuffix(webOrigin, "/") + p.Path},
 		Reason:         l.ServerMailReasonNotification(GroupLabel(l, g.Group)),
 		UnsubscribeURL: unsubscribeURL,

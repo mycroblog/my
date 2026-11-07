@@ -207,6 +207,10 @@
     "defaultMessage": "運営からお知らせがあります",
     "description": "Notification sentence to every user: the administrators of the server published an announcement, which the notification shows by its title."
   },
+  "notifications.type.auto_delete_limit": {
+    "defaultMessage": "サーバーの投稿の保持の上限があなたの投稿に適用されます",
+    "description": "Notification sentence: the server's maximum of the automatic deletion of old posts now applies to the user's posts, and after a grace period it deletes the posts that the user's own settings keep. The settings of the automatic deletion show which posts will go."
+  },
   "notifications.type.supporter_payment_failed": {
     "defaultMessage": "サポーターのプランの支払いに失敗しました",
     "description": "Notification sentence: a payment for the user's supporter plan failed and the grace period began."
@@ -434,5 +438,13 @@
   "notifications.unknown": {
     "defaultMessage": "新しい通知があります。",
     "description": "Sentence of a notification whose type this version of the web client does not know yet."
+  },
+  "notifications.auto_delete_limit.detail": {
+    "defaultMessage": "{date}から、{days, plural, other {# 日}}より古いあなたの投稿は、このサーバーで残せるものを除いて削除されます。それまでは、あなたの設定のとおりです。",
+    "description": "In the notification that the server's maximum of the automatic deletion binds the user: {date} is the formatted date it starts to delete their posts, {days} the most days a post is kept."
+  },
+  "notifications.link.auto_delete": {
+    "defaultMessage": "削除される投稿を確かめる",
+    "description": "Link in the notification of the server's maximum of the automatic deletion to the settings of the automatic deletion, which preview what goes."
   }
 }

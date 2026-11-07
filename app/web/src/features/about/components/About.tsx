@@ -29,7 +29,7 @@ import { type ModeratedDomains, useAbout, useModeratedDomains } from "../hooks/u
 /**
  * The body of the instance's information page (`/about`), under the page's heading, in the order of what someone who
  * considers joining reads first (web-client/screens/about.md): the thumbnail, the summary, the description, the rules
- * followed by its terms of service and privacy policy, how to reach the operators, the remote domains it moderates as
+ * followed by its terms of service and privacy policy, the most days it keeps posts, how to reach the operators, the remote domains it moderates as
  * far as the instance lists them, what it states to search engines and AI crawlers (its details folded), what running
  * it costs and what its supporters bring in as far as the instance publishes them, its supporter plans and the
  * supporter list, its commerce disclosures, its status page, where to get its source code, and the license notices of
@@ -52,6 +52,8 @@ export function About() {
       {/* What users agree to stands together: the rules, then the terms and policies. */}
       {about.rules.length > 0 && <Rules rules={about.rules} />}
       <DocumentsSection />
+      {/* How long posts last here, which someone who considers joining learns before they sign up (ADR-0151 §8). */}
+      {about.autoDeleteLimit !== undefined && <PostRetention limit={about.autoDeleteLimit} />}
       {/* Who runs it, for someone who considers joining (web-client/screens/about.md). */}
       {about.contact !== undefined && <Contact contact={about.contact} />}
       {about.externalReviews.length > 0 && (
@@ -170,6 +172,54 @@ export function ContactDetails({ contact }: { contact: NonNullable<Instance["con
         </Stack>
       )}
     </Stack>
+  );
+}
+
+type AutoDeleteLimit = NonNullable<Instance["auto_delete_limit"]>;
+
+/** The most pins of an account: a maximum that keeps this many keeps every pinned post. */
+const maxPins = 5;
+
+/**
+ * The server maximum of how long posts are kept: the most days, that automatic deletion cannot be turned off, and the
+ * exceptions the operator allows, as a list (or that none keeps a post longer).
+ */
+function PostRetention({ limit }: { limit: AutoDeleteLimit }) {
+  const t = useT();
+  const allowed: { id: string; label: string }[] = [];
+  if (limit.allow_pinned)
+    allowed.push({
+      id: "pinned",
+      label:
+        limit.kept_pins >= maxPins
+          ? t("client:about.retention.pinned")
+          : t("client:about.retention.pinned_newest", { count: limit.kept_pins }),
+    });
+  const flags = [
+    ["bookmarked", limit.allow_bookmarked, t("client:about.retention.bookmarked")],
+    ["favourited", limit.allow_favourited, t("client:about.retention.favourited")],
+    ["media", limit.allow_media, t("client:about.retention.media")],
+    ["polls", limit.allow_polls, t("client:about.retention.polls")],
+    ["visibilities", limit.allow_visibilities, t("client:about.retention.visibilities")],
+    ["thresholds", limit.allow_thresholds, t("client:about.retention.thresholds")],
+  ] as const;
+  for (const [id, isAllowed, label] of flags) if (isAllowed) allowed.push({ id, label });
+  return (
+    <Section title={t("client:about.retention.title")}>
+      <p>{t("client:about.retention.description", { days: limit.max_age_days })}</p>
+      {allowed.length === 0 ? (
+        <p>{t("client:about.retention.none")}</p>
+      ) : (
+        <>
+          <p>{t("client:about.retention.allowed")}</p>
+          <ul>
+            {allowed.map((item) => (
+              <li key={item.id}>{item.label}</li>
+            ))}
+          </ul>
+        </>
+      )}
+    </Section>
   );
 }
 

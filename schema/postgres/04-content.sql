@@ -369,6 +369,29 @@ CREATE TABLE status_auto_delete_kept_visibilities (
   PRIMARY KEY (account_id, visibility)
 );
 
+-- Event: the advance notice to a local account that the server maximum of the automatic deletion
+-- binds it (ADR-0151 §5), of the maximum max_age_days at the time; from enforce_from (noticed_at
+-- plus the grace period) its posts go by its effective policy.
+CREATE TABLE status_auto_delete_limit_notices (
+  id uuid NOT NULL PRIMARY KEY,
+  account_id uuid NOT NULL,
+  max_age_days integer NOT NULL CHECK (max_age_days BETWEEN 1 AND 3650),
+  noticed_at timestamptz NOT NULL,
+  enforce_from timestamptz NOT NULL,
+  CHECK (enforce_from >= noticed_at)
+);
+CREATE INDEX status_auto_delete_limit_notices_account_id_id ON status_auto_delete_limit_notices (account_id, id DESC);
+
+-- Projection of status_auto_delete_limit_notices: the notice in effect of each account that the
+-- maximum binds now; an account that it does not bind has no row. The hourly job rebuilds it from
+-- the latest notice and the current policy, permissions, and maximum.
+CREATE TABLE status_auto_delete_limits (
+  account_id uuid NOT NULL PRIMARY KEY,
+  notice_id uuid NOT NULL,
+  max_age_days integer NOT NULL CHECK (max_age_days BETWEEN 1 AND 3650),
+  enforce_from timestamptz NOT NULL
+);
+
 -- ---------------------------------------------------------------------------------------------
 -- content: remote statuses and media (data-model §4.4, docs/architecture/federation.md §9).
 -- Owned by internal/app/content.

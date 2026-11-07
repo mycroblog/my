@@ -7,10 +7,12 @@ import (
 	"errors"
 	"reflect"
 	"slices"
+	"strings"
 	"sync"
 	"testing"
 	"time"
 
+	appaccount "github.com/mycroblog/my/internal/app/account"
 	appcontent "github.com/mycroblog/my/internal/app/content"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/account"
@@ -49,6 +51,10 @@ func AutoDeleteContract(t *testing.T, newHarness AutoDeleteFactory) {
 		{"DeletesOldPostsButTheExceptions", autoDeleteDeletesOldPosts},
 		{"SkipsDisabledPoliciesAndInactiveAccounts", autoDeleteSkips},
 		{"BoundsTheDeletionsOfARun", autoDeleteBounds},
+		{"HoldsAccountsToTheServerMaximum", autoDeleteServerMaximum},
+		{"RefusesPoliciesOverTheMaximum", autoDeleteRefusesOverMaximum},
+		{"CapsTheKeptPins", autoDeleteCapsPins},
+		{"NoticesALowerMaximum", autoDeleteLowerMaximum},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) { tc.run(t, newAutoDeleteEnv(t, newHarness)) })
@@ -61,6 +67,74 @@ type autoDeleteEnv struct {
 
 	mu       sync.Mutex
 	deletion []content.Deletion
+	noticed  []content.AutoDeleteLimitNotice
+	// limit is the server maximum and exempt the users with keep_posts_longer.
+	limit  content.AutoDeleteLimit
+	exempt map[string]bool
+}
+
+// autoDeleteActors gives the local accounts of the stub a user, as the account module does,
+// and pages them.
+type autoDeleteActors struct{ *stubActors }
+
+func (a autoDeleteActors) FindByID(ctx context.Context, id string) (appaccount.Actor, error) {
+	actor, err := a.stubActors.FindByID(ctx, id)
+	if err == nil && actor.Account.IsLocal() {
+		actor.Local = &account.LocalAccount{AccountID: id, UserID: "user-" + id}
+	}
+	return actor, err
+}
+
+func (a autoDeleteActors) LocalAccountIDs(_ context.Context, after string, limit int) ([]string, error) {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	var ids []string
+	for id, actor := range a.actors {
+		if actor.Account.IsLocal() && id > after {
+			ids = append(ids, id)
+		}
+	}
+	slices.Sort(ids)
+	return ids[:min(len(ids), limit)], nil
+}
+
+// AutoDeleteDefault implements appcontent.AutoDeleteServer: the built-in default.
+func (e *autoDeleteEnv) AutoDeleteDefault(context.Context, uow.Tx) (content.AutoDeletePolicy, error) {
+	return content.DefaultAutoDeletePolicy(""), nil
+}
+
+// AutoDeleteLimit implements appcontent.AutoDeleteServer.
+func (e *autoDeleteEnv) AutoDeleteLimit(context.Context, uow.Tx) (content.AutoDeleteLimit, error) {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	return e.limit, nil
+}
+
+// KeepsPostsLonger implements appcontent.AutoDeleteExemptions.
+func (e *autoDeleteEnv) KeepsPostsLonger(_ context.Context, userID string) (bool, error) {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	return e.exempt[userID], nil
+}
+
+func (e *autoDeleteEnv) setLimit(l content.AutoDeleteLimit) {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	e.limit = l
+}
+
+func (e *autoDeleteEnv) setExempt(accountID string, exempt bool) {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	e.exempt["user-"+accountID] = exempt
+}
+
+func (e *autoDeleteEnv) takeNotices() []content.AutoDeleteLimitNotice {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	out := e.noticed
+	e.noticed = nil
+	return out
 }
 
 func newAutoDeleteEnv(t *testing.T, newHarness AutoDeleteFactory) *autoDeleteEnv {
@@ -74,7 +148,13 @@ func newAutoDeleteEnv(t *testing.T, newHarness AutoDeleteFactory) *autoDeleteEnv
 		h = newHarness(t, opts)
 		return h.InteractionHarness
 	})
-	e := &autoDeleteEnv{interactionEnv: ie, repo: h.AutoDeletes}
+	e := &autoDeleteEnv{interactionEnv: ie, repo: h.AutoDeletes, exempt: map[string]bool{}}
+	captured.Projectors.Register(appcontent.EventAutoDeleteLimitNoticed, func(_ context.Context, _ uow.Tx, ev uow.Event) error {
+		e.mu.Lock()
+		defer e.mu.Unlock()
+		e.noticed = append(e.noticed, ev.(appcontent.AutoDeleteLimitNoticed).Notice)
+		return nil
+	})
 	captured.Projectors.Register(appcontent.EventStatusDeleted, func(_ context.Context, _ uow.Tx, ev uow.Event) error {
 		e.mu.Lock()
 		defer e.mu.Unlock()
@@ -88,8 +168,8 @@ func newAutoDeleteEnv(t *testing.T, newHarness AutoDeleteFactory) *autoDeleteEnv
 // per account and run (zero for the defaults).
 func (e *autoDeleteEnv) service(batch, perAccount int) *appcontent.AutoDelete {
 	return appcontent.NewAutoDelete(appcontent.AutoDeleteDeps{
-		UnitOfWork: e.h.UnitOfWork, Repository: e.h.Statuses, AutoDeletes: e.repo, Accounts: e.actors, Clock: e.clock,
-		Batch: batch, PerAccount: perAccount,
+		UnitOfWork: e.h.UnitOfWork, Repository: e.h.Statuses, AutoDeletes: e.repo, Accounts: autoDeleteActors{e.actors},
+		Server: e, Exemptions: e, Clock: e.clock, IDs: e.ids, Batch: batch, PerAccount: perAccount,
 	})
 }
 
@@ -100,7 +180,7 @@ func (e *autoDeleteEnv) save(t *testing.T, p content.AutoDeletePolicy) content.A
 	if err != nil {
 		t.Fatalf("UpdateAutoDeletePolicy(%+v): %v", p, err)
 	}
-	return saved
+	return saved.Policy
 }
 
 // runAll runs the job from the first policy to the last and returns how many posts it deleted.
@@ -161,7 +241,7 @@ func autoDeleteSavesPolicies(t *testing.T, e *autoDeleteEnv) {
 	alice, bob := e.localAccount(), e.localAccount()
 	s := e.service(0, 0)
 	got, err := s.AutoDeletePolicy(ctx, alice)
-	if err != nil || !reflect.DeepEqual(got, content.DefaultAutoDeletePolicy(alice)) {
+	if err != nil || !reflect.DeepEqual(got, appcontent.AutoDeleteView{Policy: content.DefaultAutoDeletePolicy(alice)}) {
 		t.Errorf("AutoDeletePolicy before a save = %+v, %v; want the default", got, err)
 	}
 	want := content.AutoDeletePolicy{
@@ -175,13 +255,13 @@ func autoDeleteSavesPolicies(t *testing.T, e *autoDeleteEnv) {
 	if !reflect.DeepEqual(saved, want) {
 		t.Errorf("saved = %+v, want %+v", saved, want)
 	}
-	if got, err := s.AutoDeletePolicy(ctx, alice); err != nil || !reflect.DeepEqual(got, want) {
+	if got, err := s.AutoDeletePolicy(ctx, alice); err != nil || !reflect.DeepEqual(got.Policy, want) || got.Limit != nil {
 		t.Errorf("AutoDeletePolicy = %+v, %v; want %+v", got, err, want)
 	}
 	// Saving again replaces the whole policy, the kept visibilities too.
 	e.clock.Advance(time.Minute)
 	replaced := e.save(t, content.AutoDeletePolicy{AccountID: alice, MinAgeDays: 30, KeepVisibilities: nil})
-	if got, err := s.AutoDeletePolicy(ctx, alice); err != nil || !reflect.DeepEqual(got, replaced) || got.Enabled || len(got.KeepVisibilities) != 0 {
+	if got, err := s.AutoDeletePolicy(ctx, alice); err != nil || !reflect.DeepEqual(got.Policy, replaced) || got.Policy.Enabled || len(got.Policy.KeepVisibilities) != 0 {
 		t.Errorf("AutoDeletePolicy after the replacement = %+v, %v; want %+v", got, err, replaced)
 	}
 	if _, err := s.UpdateAutoDeletePolicy(ctx, alice, content.AutoDeletePolicy{MinAgeDays: 0}); err == nil {
@@ -359,5 +439,219 @@ func autoDeleteBounds(t *testing.T, e *autoDeleteEnv) {
 	}
 	if n := e.runAll(t, s); n != 2 {
 		t.Errorf("the second run deleted %d posts, want 2", n)
+	}
+}
+
+// autoDeleteDefaultMaximum is the server maximum of 30 days with a grace period of 10 days and the
+// default exceptions: every pin, nothing else.
+func autoDeleteDefaultMaximum() content.AutoDeleteLimit {
+	return content.AutoDeleteLimit{MaxAgeDays: 30, AllowPinned: true, KeptPins: content.MaxPins, GraceDays: 10}
+}
+
+// autoDeleteServerMaximum checks ADR-0151 §4 and §5: under the maximum, an account that it binds
+// (a disabled policy, a longer one, or exceptions it does not allow) is told once and keeps its
+// saved policy until the grace period ends, then goes by its effective policy; an account within
+// the maximum goes by its own at once; one with keep_posts_longer is left alone; and an account
+// that is no longer bound loses its notice in effect, which goes when the maximum is turned off.
+func autoDeleteServerMaximum(t *testing.T, e *autoDeleteEnv) {
+	ctx := t.Context()
+	disabled, longer, within, exempt := e.localAccount(), e.localAccount(), e.localAccount(), e.localAccount()
+	e.setExempt(exempt, true)
+	post := func(author string) content.Status { return e.post(t, author, content.VisibilityPublic) }
+	oldOf := map[string]content.Status{disabled: post(disabled), longer: post(longer), within: post(within), exempt: post(exempt)}
+	bookmarked := post(longer)
+	if err := e.svc.Bookmark(ctx, longer, bookmarked.ID); err != nil {
+		t.Fatal(err)
+	}
+	e.clock.Advance(40 * 24 * time.Hour)
+	e.save(t, content.AutoDeletePolicy{AccountID: longer, Enabled: true, MinAgeDays: 90, KeepBookmarked: true})
+	e.save(t, content.AutoDeletePolicy{AccountID: within, Enabled: true, MinAgeDays: 7, KeepPinned: true})
+	e.setLimit(autoDeleteDefaultMaximum())
+	s := e.service(0, 0)
+
+	// The view shows the maximum to the accounts it holds, and whether it binds them.
+	view, err := s.AutoDeletePolicy(ctx, longer)
+	if err != nil || view.Limit == nil || !view.Limit.Bound || view.Limit.Effective.MinAgeDays != 30 || view.Limit.Effective.KeepBookmarked || !view.Limit.EnforceFrom.IsZero() {
+		t.Errorf("view of the longer policy before the run = %+v, %v", view.Limit, err)
+	}
+	if view, err := s.AutoDeletePolicy(ctx, exempt); err != nil || view.Limit != nil {
+		t.Errorf("view of the exempt account = %+v, %v; want no maximum", view.Limit, err)
+	}
+	if view, err := s.AutoDeletePolicy(ctx, within); err != nil || view.Limit == nil || view.Limit.Bound {
+		t.Errorf("view of the policy within the maximum = %+v, %v; want unbound", view.Limit, err)
+	}
+
+	// The first run notices the bound accounts and deletes only by the policy within the maximum.
+	now := e.clock.Now()
+	if n := e.runAll(t, s); n != 1 || !e.deleted(t, oldOf[within].ID) {
+		t.Errorf("the first run deleted %d posts, want the old post of the policy within the maximum", n)
+	}
+	notices := e.takeNotices()
+	slices.SortFunc(notices, func(a, b content.AutoDeleteLimitNotice) int { return strings.Compare(a.AccountID, b.AccountID) })
+	if len(notices) != 2 || notices[0].AccountID != min(disabled, longer) || notices[1].AccountID != max(disabled, longer) {
+		t.Fatalf("notices = %+v, want one to each bound account", notices)
+	}
+	for _, n := range notices {
+		if n.MaxAgeDays != 30 || !n.NoticedAt.Equal(now) || !n.EnforceFrom.Equal(now.Add(10*24*time.Hour)) {
+			t.Errorf("notice = %+v, want 30 days enforced 10 days from now", n)
+		}
+		if got, err := e.repo.FindAutoDeleteLimit(ctx, n.AccountID); err != nil || got.ID != n.ID || !got.EnforceFrom.Equal(n.EnforceFrom) {
+			t.Errorf("notice in effect of %s = %+v, %v; want %+v", n.AccountID, got, err, n)
+		}
+	}
+	if found, err := s.LimitNotices(ctx, longer, []string{notices[0].ID, notices[1].ID}); err != nil || len(found) != 1 {
+		t.Errorf("LimitNotices of one account = %+v, %v; want its own only", found, err)
+	}
+	if view, err := s.AutoDeletePolicy(ctx, longer); err != nil || view.Limit == nil || !view.Limit.EnforceFrom.Equal(now.Add(10*24*time.Hour)) {
+		t.Errorf("view of the bound account after the notice = %+v, %v", view.Limit, err)
+	}
+	for _, id := range []string{disabled, longer, exempt} {
+		if e.deleted(t, oldOf[id].ID) {
+			t.Errorf("the post of %s went during the grace period or while exempt", id)
+		}
+	}
+	// A run during the grace period tells nobody again.
+	e.clock.Advance(9 * 24 * time.Hour)
+	if n := e.runAll(t, s); n != 0 || len(e.takeNotices()) != 0 {
+		t.Errorf("a run in the grace period deleted %d posts or noticed again", n)
+	}
+	// Past the grace period the effective policies apply: the bookmark keeps nothing any more.
+	e.clock.Advance(24 * time.Hour)
+	if n := e.runAll(t, s); n != 3 || len(e.takeNotices()) != 0 {
+		t.Errorf("the run after the grace period deleted %d posts, want 3", n)
+	}
+	for _, st := range []content.Status{oldOf[disabled], oldOf[longer], bookmarked} {
+		if !e.deleted(t, st.ID) {
+			t.Errorf("post %s is kept past the grace period", st.ID)
+		}
+	}
+	if e.deleted(t, oldOf[exempt].ID) {
+		t.Error("the post of the account with keep_posts_longer went")
+	}
+
+	// A policy within the maximum ends the binding: the next run removes the notice in effect.
+	e.save(t, content.AutoDeletePolicy{AccountID: longer, Enabled: true, MinAgeDays: 20})
+	e.runAll(t, s)
+	if _, err := e.repo.FindAutoDeleteLimit(ctx, longer); !errors.Is(err, appcontent.ErrNotFound) {
+		t.Errorf("notice in effect after the policy came within the maximum: %v, want ErrNotFound", err)
+	}
+	// Turning the maximum off removes every notice in effect.
+	e.setLimit(content.AutoDeleteLimit{})
+	e.runAll(t, s)
+	if _, err := e.repo.FindAutoDeleteLimit(ctx, disabled); !errors.Is(err, appcontent.ErrNotFound) {
+		t.Errorf("notice in effect after the maximum went: %v, want ErrNotFound", err)
+	}
+	if view, err := s.AutoDeletePolicy(ctx, disabled); err != nil || view.Limit != nil {
+		t.Errorf("view without a maximum = %+v, %v", view.Limit, err)
+	}
+}
+
+// autoDeleteRefusesOverMaximum checks ADR-0151 §3: under the maximum, a policy that is disabled,
+// longer, or uses an exception that the maximum does not allow is refused, but not for an account
+// with keep_posts_longer; a preview counts what the effective policy deletes.
+func autoDeleteRefusesOverMaximum(t *testing.T, e *autoDeleteEnv) {
+	ctx := t.Context()
+	alice, exempt := e.localAccount(), e.localAccount()
+	e.setExempt(exempt, true)
+	e.setLimit(autoDeleteDefaultMaximum())
+	s := e.service(0, 0)
+	for _, p := range []content.AutoDeletePolicy{
+		{MinAgeDays: 7},
+		{Enabled: true, MinAgeDays: 31},
+		{Enabled: true, MinAgeDays: 7, KeepMedia: true},
+		{Enabled: true, MinAgeDays: 7, KeepVisibilities: []content.Visibility{content.VisibilityDirect}},
+	} {
+		if _, err := s.UpdateAutoDeletePolicy(ctx, alice, p); !errors.Is(err, content.ErrAutoDeleteOverLimit) {
+			t.Errorf("UpdateAutoDeletePolicy(%+v) = %v, want ErrAutoDeleteOverLimit", p, err)
+		}
+		if _, err := s.UpdateAutoDeletePolicy(ctx, exempt, p); err != nil {
+			t.Errorf("UpdateAutoDeletePolicy(%+v) with keep_posts_longer = %v", p, err)
+		}
+	}
+	if v, err := s.UpdateAutoDeletePolicy(ctx, alice, content.AutoDeletePolicy{Enabled: true, MinAgeDays: 30, KeepPinned: true}); err != nil || v.Limit == nil || v.Limit.Bound {
+		t.Errorf("UpdateAutoDeletePolicy within the maximum = %+v, %v", v, err)
+	}
+
+	old := e.post(t, alice, content.VisibilityDirect)
+	e.clock.Advance(40 * 24 * time.Hour)
+	// The draft keeps direct posts and posts for 90 days, which the maximum does not allow.
+	draft := content.AutoDeletePolicy{MinAgeDays: 90, KeepVisibilities: []content.Visibility{content.VisibilityDirect}}
+	if p, err := s.PreviewAutoDeletePolicy(ctx, alice, draft); err != nil || p.Count != 1 || p.Examples[0].ID != old.ID {
+		t.Errorf("preview under the maximum = %+v, %v; want the old direct post", p, err)
+	}
+	if p, err := s.PreviewAutoDeletePolicy(ctx, exempt, draft); err != nil || p.Count != 0 {
+		t.Errorf("preview with keep_posts_longer = %+v, %v; want nothing", p, err)
+	}
+}
+
+// autoDeleteCapsPins checks the cap on the kept pins (ADR-0151 §3, §4): under a maximum that keeps
+// one pin, an account with two pins of old posts is bound, and past the grace period only the
+// post of its newest pin stays.
+func autoDeleteCapsPins(t *testing.T, e *autoDeleteEnv) {
+	ctx := t.Context()
+	author := e.localAccount()
+	first, second := e.post(t, author, content.VisibilityPublic), e.post(t, author, content.VisibilityPublic)
+	for _, st := range []content.Status{second, first} { // first is the newest pin
+		e.clock.Advance(time.Minute)
+		if err := e.svc.Pin(ctx, author, st.ID); err != nil {
+			t.Fatal(err)
+		}
+	}
+	e.clock.Advance(40 * 24 * time.Hour)
+	e.save(t, content.AutoDeletePolicy{AccountID: author, Enabled: true, MinAgeDays: 30, KeepPinned: true})
+	limit := autoDeleteDefaultMaximum()
+	limit.KeptPins = 1
+	e.setLimit(limit)
+	s := e.service(0, 0)
+	if n := e.runAll(t, s); n != 0 || len(e.takeNotices()) != 1 {
+		t.Errorf("the first run deleted %d posts; want none and a notice", n)
+	}
+	e.clock.Advance(10 * 24 * time.Hour)
+	if n := e.runAll(t, s); n != 1 || !e.deleted(t, second.ID) || e.deleted(t, first.ID) {
+		t.Errorf("after the grace period deleted %d posts; want the post of the older pin only", n)
+	}
+	// With one pin left, the cap keeps every pin of the account: nothing binds it any more.
+	e.runAll(t, s)
+	if _, err := e.repo.FindAutoDeleteLimit(ctx, author); !errors.Is(err, appcontent.ErrNotFound) {
+		t.Errorf("notice in effect with one pin: %v, want ErrNotFound", err)
+	}
+}
+
+// autoDeleteLowerMaximum checks that lowering the maximum, or losing keep_posts_longer, tells a
+// bound account again with a new grace period, and that raising it does not (ADR-0151 §5).
+func autoDeleteLowerMaximum(t *testing.T, e *autoDeleteEnv) {
+	ctx := t.Context()
+	alice, bob := e.localAccount(), e.localAccount()
+	e.setExempt(bob, true)
+	e.setLimit(autoDeleteDefaultMaximum())
+	s := e.service(0, 0)
+	e.runAll(t, s)
+	if got := e.takeNotices(); len(got) != 1 || got[0].AccountID != alice {
+		t.Fatalf("notices = %+v, want one to alice", got)
+	}
+	raised := autoDeleteDefaultMaximum()
+	raised.MaxAgeDays = 60
+	e.setLimit(raised)
+	e.runAll(t, s)
+	if got := e.takeNotices(); len(got) != 0 {
+		t.Errorf("raising the maximum noticed %+v", got)
+	}
+	lowered := autoDeleteDefaultMaximum()
+	lowered.MaxAgeDays = 14
+	e.setLimit(lowered)
+	e.clock.Advance(time.Hour)
+	e.runAll(t, s)
+	got := e.takeNotices()
+	if len(got) != 1 || got[0].AccountID != alice || got[0].MaxAgeDays != 14 || !got[0].EnforceFrom.Equal(e.clock.Now().Add(10*24*time.Hour)) {
+		t.Errorf("lowering the maximum noticed %+v, want a new notice of 14 days to alice", got)
+	}
+	if n, err := e.repo.FindAutoDeleteLimit(ctx, alice); err != nil || n.MaxAgeDays != 14 {
+		t.Errorf("notice in effect = %+v, %v; want the new one", n, err)
+	}
+	// bob loses keep_posts_longer: bound from now, after a grace period of his own.
+	e.setExempt(bob, false)
+	e.runAll(t, s)
+	if got := e.takeNotices(); len(got) != 1 || got[0].AccountID != bob {
+		t.Errorf("notices after bob lost the permission = %+v, want one to bob", got)
 	}
 }

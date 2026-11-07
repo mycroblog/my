@@ -138,6 +138,11 @@ properties:
     type: boolean
   translation:
     $ref: ./InstanceTranslation.yaml
+  auto_delete_limit:
+    description: |
+      The server maximum of the automatic deletion of old posts, which the about page shows so
+      that people know it before they sign up; absent when the server sets none.
+    $ref: ./AutoDeleteLimit.yaml
   finance_visibility:
     $ref: ./FinanceVisibility.yaml
   income_visibility:

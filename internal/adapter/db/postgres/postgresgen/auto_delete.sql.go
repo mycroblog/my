@@ -12,6 +12,28 @@ import (
 	"time"
 )
 
+const countStatusAutoDeletePins = `-- name: CountStatusAutoDeletePins :one
+SELECT count(*) FROM status_pins p
+WHERE p.account_id = $1 AND NOT EXISTS (SELECT 1 FROM status_deletions d WHERE d.status_id = p.status_id)
+`
+
+// CountStatusAutoDeletePins counts the account's pins of statuses that are not deleted.
+func (q *Queries) CountStatusAutoDeletePins(ctx context.Context, accountID string) (int64, error) {
+	row := q.db.QueryRow(ctx, countStatusAutoDeletePins, accountID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const deleteAllStatusAutoDeleteLimits = `-- name: DeleteAllStatusAutoDeleteLimits :exec
+DELETE FROM status_auto_delete_limits
+`
+
+func (q *Queries) DeleteAllStatusAutoDeleteLimits(ctx context.Context) error {
+	_, err := q.db.Exec(ctx, deleteAllStatusAutoDeleteLimits)
+	return err
+}
+
 const deleteStatusAutoDeleteKeptVisibilities = `-- name: DeleteStatusAutoDeleteKeptVisibilities :exec
 DELETE FROM status_auto_delete_kept_visibilities WHERE account_id = $1
 `
@@ -19,6 +41,31 @@ DELETE FROM status_auto_delete_kept_visibilities WHERE account_id = $1
 func (q *Queries) DeleteStatusAutoDeleteKeptVisibilities(ctx context.Context, accountID string) error {
 	_, err := q.db.Exec(ctx, deleteStatusAutoDeleteKeptVisibilities, accountID)
 	return err
+}
+
+const deleteStatusAutoDeleteLimit = `-- name: DeleteStatusAutoDeleteLimit :exec
+DELETE FROM status_auto_delete_limits WHERE account_id = $1
+`
+
+func (q *Queries) DeleteStatusAutoDeleteLimit(ctx context.Context, accountID string) error {
+	_, err := q.db.Exec(ctx, deleteStatusAutoDeleteLimit, accountID)
+	return err
+}
+
+const getStatusAutoDeleteLimit = `-- name: GetStatusAutoDeleteLimit :one
+SELECT account_id, notice_id, max_age_days, enforce_from FROM status_auto_delete_limits WHERE account_id = $1
+`
+
+func (q *Queries) GetStatusAutoDeleteLimit(ctx context.Context, accountID string) (StatusAutoDeleteLimit, error) {
+	row := q.db.QueryRow(ctx, getStatusAutoDeleteLimit, accountID)
+	var i StatusAutoDeleteLimit
+	err := row.Scan(
+		&i.AccountID,
+		&i.NoticeID,
+		&i.MaxAgeDays,
+		&i.EnforceFrom,
+	)
+	return i, err
 }
 
 const getStatusAutoDeletePolicy = `-- name: GetStatusAutoDeletePolicy :one
@@ -61,6 +108,30 @@ type InsertStatusAutoDeleteKeptVisibilityParams struct {
 
 func (q *Queries) InsertStatusAutoDeleteKeptVisibility(ctx context.Context, arg InsertStatusAutoDeleteKeptVisibilityParams) error {
 	_, err := q.db.Exec(ctx, insertStatusAutoDeleteKeptVisibility, arg.AccountID, arg.Visibility)
+	return err
+}
+
+const insertStatusAutoDeleteLimitNotice = `-- name: InsertStatusAutoDeleteLimitNotice :exec
+INSERT INTO status_auto_delete_limit_notices (id, account_id, max_age_days, noticed_at, enforce_from)
+VALUES ($1, $2, $3, $4, $5)
+`
+
+type InsertStatusAutoDeleteLimitNoticeParams struct {
+	ID          string
+	AccountID   string
+	MaxAgeDays  int32
+	NoticedAt   time.Time
+	EnforceFrom time.Time
+}
+
+func (q *Queries) InsertStatusAutoDeleteLimitNotice(ctx context.Context, arg InsertStatusAutoDeleteLimitNoticeParams) error {
+	_, err := q.db.Exec(ctx, insertStatusAutoDeleteLimitNotice,
+		arg.ID,
+		arg.AccountID,
+		arg.MaxAgeDays,
+		arg.NoticedAt,
+		arg.EnforceFrom,
+	)
 	return err
 }
 
@@ -136,6 +207,37 @@ func (q *Queries) ListStatusAutoDeleteKeptVisibilities(ctx context.Context, acco
 	return items, nil
 }
 
+const listStatusAutoDeleteLimitNotices = `-- name: ListStatusAutoDeleteLimitNotices :many
+SELECT id, account_id, max_age_days, noticed_at, enforce_from FROM status_auto_delete_limit_notices
+WHERE id = ANY($1::uuid[]) ORDER BY id
+`
+
+func (q *Queries) ListStatusAutoDeleteLimitNotices(ctx context.Context, ids []string) ([]StatusAutoDeleteLimitNotice, error) {
+	rows, err := q.db.Query(ctx, listStatusAutoDeleteLimitNotices, ids)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []StatusAutoDeleteLimitNotice{}
+	for rows.Next() {
+		var i StatusAutoDeleteLimitNotice
+		if err := rows.Scan(
+			&i.ID,
+			&i.AccountID,
+			&i.MaxAgeDays,
+			&i.NoticedAt,
+			&i.EnforceFrom,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listStatusesToAutoDelete = `-- name: ListStatusesToAutoDelete :many
 SELECT s.id, s.uri, s.url, s.author_account_id, s.is_local, s.visibility, s.in_reply_to_uri,
   s.conversation_uri, s.published_at
@@ -145,24 +247,28 @@ WHERE s.author_account_id = $1::uuid AND s.id < $2::uuid
   AND NOT EXISTS (SELECT 1 FROM status_deletions d WHERE d.status_id = s.id)
   AND NOT (s.visibility = ANY($4::text[]))
   AND (NOT $5::boolean
-    OR NOT EXISTS (SELECT 1 FROM status_pins p WHERE p.status_id = s.id))
-  AND (NOT $6::boolean
-    OR NOT EXISTS (SELECT 1 FROM bookmarks b WHERE b.account_id = s.author_account_id AND b.status_id = s.id))
+    OR NOT EXISTS (SELECT 1 FROM status_pins p WHERE p.status_id = s.id
+      AND ($6::integer = 0 OR p.id IN (
+        SELECT k.id FROM status_pins k WHERE k.account_id = s.author_account_id
+          AND NOT EXISTS (SELECT 1 FROM status_deletions kd WHERE kd.status_id = k.status_id)
+        ORDER BY k.id DESC LIMIT $6::integer))))
   AND (NOT $7::boolean
+    OR NOT EXISTS (SELECT 1 FROM bookmarks b WHERE b.account_id = s.author_account_id AND b.status_id = s.id))
+  AND (NOT $8::boolean
     OR NOT EXISTS (SELECT 1 FROM favourites f WHERE f.account_id = s.author_account_id AND f.status_id = s.id))
-  AND (NOT $8::boolean OR NOT EXISTS (
+  AND (NOT $9::boolean OR NOT EXISTS (
     SELECT 1 FROM status_heads h JOIN status_revision_attachments a ON a.revision_id = h.revision_id
     WHERE h.status_id = s.id))
-  AND (NOT $9::boolean OR NOT EXISTS (
+  AND (NOT $10::boolean OR NOT EXISTS (
     SELECT 1 FROM status_heads h JOIN polls q ON q.revision_id = h.revision_id WHERE h.status_id = s.id))
-  AND ($10::integer = 0 OR NOT EXISTS (
-    SELECT 1 FROM status_counters c WHERE c.status_id = s.id
-      AND c.boosts_count >= $10::integer))
   AND ($11::integer = 0 OR NOT EXISTS (
     SELECT 1 FROM status_counters c WHERE c.status_id = s.id
-      AND c.favourites_count >= $11::integer))
+      AND c.boosts_count >= $11::integer))
+  AND ($12::integer = 0 OR NOT EXISTS (
+    SELECT 1 FROM status_counters c WHERE c.status_id = s.id
+      AND c.favourites_count >= $12::integer))
 ORDER BY s.id
-LIMIT $12::integer
+LIMIT $13::integer
 `
 
 type ListStatusesToAutoDeleteParams struct {
@@ -171,6 +277,7 @@ type ListStatusesToAutoDeleteParams struct {
 	PublishedBefore   time.Time
 	KeptVisibilities  []string
 	KeepPinned        bool
+	MaxKeptPins       int32
 	KeepBookmarked    bool
 	KeepFavourited    bool
 	KeepMedia         bool
@@ -182,7 +289,8 @@ type ListStatusesToAutoDeleteParams struct {
 
 // ListStatusesToAutoDelete returns, oldest first, up to @batch_limit local statuses of
 // @account_id below @id_before that are not deleted, were published before @published_before,
-// and that none of the policy's exceptions keeps: a visibility in @kept_visibilities, a pin, the
+// and that none of the policy's exceptions keeps: a visibility in @kept_visibilities, a pin (one
+// of the author's newest @max_kept_pins pins when it is positive), the
 // author's bookmark or favourite, media or a poll in the current revision, or at least
 // @keep_min_boosts boosts or @keep_min_favourites favourites (0 for no threshold).
 func (q *Queries) ListStatusesToAutoDelete(ctx context.Context, arg ListStatusesToAutoDeleteParams) ([]Status, error) {
@@ -192,6 +300,7 @@ func (q *Queries) ListStatusesToAutoDelete(ctx context.Context, arg ListStatuses
 		arg.PublishedBefore,
 		arg.KeptVisibilities,
 		arg.KeepPinned,
+		arg.MaxKeptPins,
 		arg.KeepBookmarked,
 		arg.KeepFavourited,
 		arg.KeepMedia,
@@ -226,6 +335,29 @@ func (q *Queries) ListStatusesToAutoDelete(ctx context.Context, arg ListStatuses
 		return nil, err
 	}
 	return items, nil
+}
+
+const upsertStatusAutoDeleteLimit = `-- name: UpsertStatusAutoDeleteLimit :exec
+INSERT INTO status_auto_delete_limits (account_id, notice_id, max_age_days, enforce_from) VALUES ($1, $2, $3, $4)
+ON CONFLICT (account_id) DO UPDATE SET
+  notice_id = excluded.notice_id, max_age_days = excluded.max_age_days, enforce_from = excluded.enforce_from
+`
+
+type UpsertStatusAutoDeleteLimitParams struct {
+	AccountID   string
+	NoticeID    string
+	MaxAgeDays  int32
+	EnforceFrom time.Time
+}
+
+func (q *Queries) UpsertStatusAutoDeleteLimit(ctx context.Context, arg UpsertStatusAutoDeleteLimitParams) error {
+	_, err := q.db.Exec(ctx, upsertStatusAutoDeleteLimit,
+		arg.AccountID,
+		arg.NoticeID,
+		arg.MaxAgeDays,
+		arg.EnforceFrom,
+	)
+	return err
 }
 
 const upsertStatusAutoDeletePolicy = `-- name: UpsertStatusAutoDeletePolicy :exec

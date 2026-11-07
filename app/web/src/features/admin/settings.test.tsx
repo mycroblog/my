@@ -2,8 +2,8 @@
 // The server settings screen through the whole app (web-client/README.md T4): an administrator with manage_settings
 // names the server once, in any language, the app then calls the server by that name instead of its domain, and
 // a name that the server would refuse is caught in the form; the general page saves the name, the descriptions, the
-// contact and the thumbnail together, and each page of the policies (registration, content, federation, discovery,
-// voice) saves only its own settings; with MSW playing the API.
+// contact and the thumbnail together, and each page of the policies (registration, content, automatic deletion,
+// federation, discovery, voice) saves only its own settings; with MSW playing the API.
 import { screen, waitFor, within } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
 import { beforeEach, describe, expect, test } from "vitest";
@@ -280,7 +280,15 @@ describe("the server's policies", () => {
       within(pages)
         .getAllByRole("link")
         .map((link) => link.textContent),
-    ).toEqual(["General", "Icon and logo", "Registration", "Content", "Federation", "Search and crawlers"]);
+    ).toEqual([
+      "General",
+      "Icon and logo",
+      "Registration",
+      "Content",
+      "Post deletion",
+      "Federation",
+      "Search and crawlers",
+    ]);
     expect(within(pages).getByRole("link", { name: "Content" })).toHaveAttribute("aria-current", "page");
     expect(screen.getAllByRole("button", { name: /^Save/ })).toHaveLength(1);
     expect(screen.queryByRole("region", { name: "Registration" })).not.toBeInTheDocument();
@@ -719,6 +727,98 @@ describe("the server's policies", () => {
       },
     ]);
     expect(days).toHaveValue("45");
+  });
+
+  describe("the automatic deletion of old posts", () => {
+    test("sets the default of new accounts without asking, since existing accounts keep theirs", async () => {
+      const settings = settingsServer();
+      const { user } = await renderApp({ path: "/admin/settings/auto-delete" });
+      const defaults = await screen.findByRole("region", { name: "Default for new accounts" });
+      expect(defaults).toHaveAccessibleDescription(/Changing them doesn't change existing accounts\./);
+      const keep = within(defaults).getByRole("group", { name: "Keep these posts" });
+      expect(within(keep).getByRole("checkbox", { name: "Pinned to the profile" })).toBeChecked();
+      const visibilities = within(defaults).getByRole("group", { name: "Keep posts with these visibilities" });
+      expect(within(visibilities).getByRole("checkbox", { name: "Mentioned people" })).toBeChecked();
+
+      await user.click(within(defaults).getByRole("checkbox", { name: "Delete old posts automatically" }));
+      const age = within(defaults).getByRole("textbox", { name: "Delete posts older than (days)" });
+      await user.clear(age);
+      await user.type(age, "90");
+      await user.click(within(keep).getByRole("checkbox", { name: "With images or other media" }));
+      await user.click(screen.getByRole("button", { name: "Save the settings" }));
+      expect(await screen.findByText(/^Saved the settings\./)).toBeInTheDocument();
+      expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+      expect(settings.patches).toEqual([
+        {
+          values: {
+            auto_delete_default_enabled: "true",
+            auto_delete_default_min_age_days: "90",
+            auto_delete_default_keep_media: "true",
+          },
+        },
+      ]);
+    });
+
+    test("asks before turning the maximum on, saying who is notified and when posts go, and saves once confirmed", async () => {
+      const settings = settingsServer();
+      const { user } = await renderApp({ path: "/admin/settings/auto-delete" });
+      const maximum = await screen.findByRole("region", { name: "Maximum" });
+      const days = within(maximum).getByRole("textbox", { name: "Keep posts at most (days)" });
+      expect(days).toHaveValue("0");
+      expect(days).toHaveAccessibleDescription(/0 sets no maximum\. Up to 3650 days\./);
+      await user.clear(days);
+      await user.type(days, "365");
+      await user.click(screen.getByRole("button", { name: "Save the settings" }));
+
+      const dialog = await screen.findByRole("alertdialog", { name: "Keep posts at most 365 days?" });
+      expect(
+        within(dialog)
+          .getAllByRole("listitem")
+          .map((item) => item.textContent),
+      ).toEqual([
+        "Within an hour, every local account whose settings keep posts longer is notified, in the app and by email.",
+        "Their posts start to go by the maximum 30 days after the notice.",
+        "Deleted posts can't be restored, here or on the servers they were sent to.",
+      ]);
+      expect(within(dialog).getByRole("button", { name: "Cancel" })).toHaveFocus();
+      await user.click(within(dialog).getByRole("button", { name: "Cancel" }));
+      await waitFor(() => {
+        expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+      });
+      expect(settings.patches).toEqual([]);
+
+      await user.click(screen.getByRole("button", { name: "Save the settings" }));
+      await user.click(within(await screen.findByRole("alertdialog")).getByRole("button", { name: "Save and notify" }));
+      expect(await screen.findByText(/^Saved the settings\./)).toBeInTheDocument();
+      expect(settings.patches).toEqual([{ values: { auto_delete_max_age_days: "365" } }]);
+
+      // Raising it binds no more accounts, so it saves without asking; allowing fewer exceptions asks again.
+      await user.clear(days);
+      await user.type(days, "400");
+      await user.click(screen.getByRole("button", { name: "Save the settings" }));
+      await waitFor(() => {
+        expect(settings.patches).toHaveLength(2);
+      });
+      expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+      const allowed = within(maximum).getByRole("group", { name: "Exceptions allowed under the maximum" });
+      await user.click(within(allowed).getByRole("checkbox", { name: "Pinned to the profile" }));
+      await user.click(screen.getByRole("button", { name: "Save the settings" }));
+      expect(
+        await screen.findByRole("alertdialog", { name: "Make the maximum stricter, at 400 days?" }),
+      ).toBeInTheDocument();
+    });
+
+    test("checks the days of the maximum, the pins and the grace period", async () => {
+      const settings = settingsServer();
+      const { user } = await renderApp({ path: "/admin/settings/auto-delete" });
+      const maximum = await screen.findByRole("region", { name: "Maximum" });
+      const pins = within(maximum).getByRole("textbox", { name: "Pins kept under the maximum" });
+      await user.clear(pins);
+      await user.type(pins, "9");
+      await user.click(screen.getByRole("button", { name: "Save the settings" }));
+      expect(pins).toHaveAccessibleDescription(/Enter a whole number from 1 to 5\./);
+      expect(settings.patches).toEqual([]);
+    });
   });
 
   test("chooses who creates invites and the caps of the members' invites, checking the numbers", async () => {

@@ -210,6 +210,8 @@ func GroupLabel(l *i18n.Localizer, g notification.Group) string {
 		return l.ServerMailGroupAdminErrorGroup()
 	case notification.GroupModeration:
 		return l.ServerMailGroupModeration()
+	case notification.GroupAutoDeleteLimit:
+		return l.ServerMailGroupAutoDeleteLimit()
 	}
 	return ""
 }

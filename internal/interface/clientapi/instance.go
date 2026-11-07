@@ -109,6 +109,15 @@ func (s *Server) GetInstance(ctx context.Context, _ GetInstanceRequestObject) (G
 		return nil, err
 	}
 	out.Translation = translationInfo
+	// The server maximum of the automatic deletion is public, so that people know it before they
+	// sign up (ADR-0151 §8); the server default is not.
+	if l := settings.AutoDeleteLimit(); l.MaxAgeDays > 0 {
+		out.AutoDeleteLimit = &AutoDeleteLimit{
+			MaxAgeDays: l.MaxAgeDays, AllowPinned: l.AllowPinned, KeptPins: l.KeptPins,
+			AllowBookmarked: l.AllowBookmarked, AllowFavourited: l.AllowFavourited, AllowMedia: l.AllowMedia,
+			AllowPolls: l.AllowPolls, AllowVisibilities: l.AllowVisibilities, AllowThresholds: l.AllowThresholds,
+		}
+	}
 	// How much of the costs GET /instance/cost_totals publishes (FR-903, ADR-0067 §8).
 	out.FinanceVisibility = FinanceVisibility(settings.FinanceVisibility())
 	// How much of the income GET /instance/income_totals publishes (FR-917, ADR-0067 §17).

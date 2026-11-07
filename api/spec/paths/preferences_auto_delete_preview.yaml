@@ -8,7 +8,10 @@ post:
     as if it were enabled (`enabled` is ignored): posts published more than `min_age_days`
     days ago that none of the exceptions keeps. The count stops at 1000 (`more` is then
     true), so the call stays cheap enough to repeat as the user edits the policy. The
-    response also shows the oldest of those posts. A 422 problem names the property that
+    response also shows the oldest of those posts. While the server maximum applies to the
+    user, it counts what the policy deletes under the maximum (`server_limit.effective` of
+    `getAutoDeletePolicy` for the saved policy), so the preview of the saved policy of a bound
+    user shows what goes once the grace period ends. A 422 problem names the property that
     is invalid in `detail`.
   tags: [preferences]
   security:

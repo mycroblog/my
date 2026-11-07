@@ -15,6 +15,7 @@ When someone follows you, mentions you, or reacts to your posts, it shows up her
 - Voice chat: someone started a voice chat room, or invited you to one.
 - Notices from the moderators of the server, the result of an appeal, and the resolution of a report you filed.
 - Announcements and messages of the administrators about the server, for example when it is going to close.
+- The server's maximum for keeping posts will apply to your posts, and from when (see [Deleting old posts automatically](posting.md#deleting-old-posts-automatically)).
 - Moderators and administrators also get notifications about what awaits them, such as new reports and sign-ups.
 
 Each notification links to what it is about, for example "Open post" or "Open the report".

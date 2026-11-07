@@ -162,6 +162,16 @@ func (s *Service) SearchVisibilities(ctx context.Context) ([]string, error) {
 	return settings.SearchVisibilities(), nil
 }
 
+// SettingsTx is Settings inside tx, for the projectors of other modules that read a setting in the
+// transaction of the event they project.
+func (s *Service) SettingsTx(ctx context.Context, tx uow.Tx) (instance.Settings, error) {
+	cur, err := s.d.Repository.ListCurrentSettingsTx(ctx, tx)
+	if err != nil {
+		return instance.Settings{}, err
+	}
+	return instance.NewSettings(cur), nil
+}
+
 // FederationModeTx is FederationMode inside tx.
 func (s *Service) FederationModeTx(ctx context.Context, tx uow.Tx) (instance.FederationMode, error) {
 	cur, err := s.d.Repository.ListCurrentSettingsTx(ctx, tx)

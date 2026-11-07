@@ -1,0 +1,42 @@
+# SPDX-License-Identifier: MIT
+description: |
+  The server maximum of the automatic deletion of old posts: while it is on, the automatic
+  deletion of every local user without the permission `keep_posts_longer` is on, deletes a post
+  at most `max_age_days` days after its publication, and keeps posts only by the exceptions that
+  the operator allows.
+type: object
+required: [max_age_days, allow_pinned, kept_pins, allow_bookmarked, allow_favourited, allow_media, allow_polls, allow_visibilities, allow_thresholds]
+properties:
+  max_age_days:
+    description: The most days after its publication that a post is kept.
+    type: integer
+    minimum: 1
+    maximum: 3650
+  allow_pinned:
+    description: Whether pinned posts may be kept (`keep_pinned`).
+    type: boolean
+  kept_pins:
+    description: |
+      How many pins keep posts, the most recently pinned first; 5, the most pins of an account,
+      keeps every pinned post.
+    type: integer
+    minimum: 1
+    maximum: 5
+  allow_bookmarked:
+    description: Whether the posts that the user bookmarked may be kept (`keep_bookmarked`).
+    type: boolean
+  allow_favourited:
+    description: Whether the posts that the user favourited may be kept (`keep_favourited`).
+    type: boolean
+  allow_media:
+    description: Whether the posts with media attachments may be kept (`keep_media`).
+    type: boolean
+  allow_polls:
+    description: Whether the posts with a poll may be kept (`keep_polls`).
+    type: boolean
+  allow_visibilities:
+    description: Whether posts may be kept by their visibility (`keep_visibilities`).
+    type: boolean
+  allow_thresholds:
+    description: Whether posts may be kept by their boosts and favourites (`keep_min_boosts`, `keep_min_favourites`).
+    type: boolean

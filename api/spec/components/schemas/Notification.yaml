@@ -80,3 +80,6 @@ properties:
   announcement:
     description: The announcement that an `announcement` tells of, as the user sees it; omitted for the other types.
     $ref: ./Announcement.yaml
+  auto_delete_limit:
+    description: What an `auto_delete_limit` tells of; omitted for the other types.
+    $ref: ./NotificationAutoDeleteLimit.yaml

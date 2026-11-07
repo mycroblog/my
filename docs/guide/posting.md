@@ -68,3 +68,23 @@ Your bookmarks are listed on the "Bookmarks" page; only you see them.
 
 When the server offers translation, or your browser can translate, "Translate" appears under posts in other languages.
 If the server sends the text of posts to a translation service, the visibility picker tells you for which choices.
+
+## Deleting old posts automatically
+
+"Delete old posts" in the settings deletes your posts once they are older than the age you choose, as if you had
+deleted them yourself: they go here and on the servers they were sent to, and cannot be restored. The posts you keep
+(pinned, bookmarked, or favourited by you, with media or a poll, of some visibilities, or with many boosts or
+favourites) stay. Your boosts of other people's posts are never deleted. The server checks every hour and deletes at
+most 100 of your posts each time, so many old posts take several hours to go.
+
+A new account starts with the settings the server chose for new accounts; they are yours from then on, and you can
+change them like any other setting.
+
+A server can also keep posts for at most some days. The server's "About" page says so before you sign up. Under such a
+maximum, automatic deletion is always on for you, the age you choose cannot be longer than the maximum, and only the
+kinds of posts that the server allows can be kept (by default only pinned posts). Some servers let some people keep
+their posts longer, for example as a benefit of a supporter plan.
+
+When a maximum starts to apply to you (the server introduces or lowers it, or you lose the right to keep posts longer),
+you get a notification, and an email unless you turned that off, saying from when it applies. Until then your own
+settings stay in effect. The settings page shows the date and, with its preview, which of your posts will be deleted then.

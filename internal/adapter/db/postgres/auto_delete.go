@@ -111,6 +111,10 @@ func (r *StatusRepository) ListStatusesToAutoDelete(ctx context.Context, tx uow.
 	if err != nil {
 		return nil, err
 	}
+	pins, err := toInt32(p.MaxKeptPins, "kept pins")
+	if err != nil {
+		return nil, err
+	}
 	kept := make([]string, 0, len(p.KeepVisibilities))
 	for _, v := range p.KeepVisibilities {
 		kept = append(kept, string(v))
@@ -119,7 +123,7 @@ func (r *StatusRepository) ListStatusesToAutoDelete(ctx context.Context, tx uow.
 		AccountID: p.AccountID, IDBefore: kernel.UUIDv7Floor(before.Add(time.Millisecond)), PublishedBefore: before,
 		KeptVisibilities: kept, KeepPinned: p.KeepPinned, KeepBookmarked: p.KeepBookmarked,
 		KeepFavourited: p.KeepFavourited, KeepMedia: p.KeepMedia, KeepPolls: p.KeepPolls,
-		KeepMinBoosts: ints[1], KeepMinFavourites: ints[2], BatchLimit: n,
+		KeepMinBoosts: ints[1], KeepMinFavourites: ints[2], MaxKeptPins: pins, BatchLimit: n,
 	})
 	if err != nil {
 		return nil, wrap(err, "list statuses to auto delete")
@@ -148,4 +152,100 @@ func autoDeletePolicyFrom(ctx context.Context, q *postgresgen.Queries, row postg
 	}
 	// The rows come in name order; the policy keeps them in the order of the visibilities.
 	return p.Normalize()
+}
+
+// CountAutoDeletePins implements content.AutoDeleteRepository.
+func (r *StatusRepository) CountAutoDeletePins(ctx context.Context, tx uow.Tx, accountID string) (int, error) {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return 0, err
+	}
+	n, err := q.CountStatusAutoDeletePins(ctx, accountID)
+	if err != nil {
+		return 0, wrap(err, "count pins")
+	}
+	return int(n), nil
+}
+
+// FindAutoDeleteLimit implements content.AutoDeleteRepository.
+func (r *StatusRepository) FindAutoDeleteLimit(ctx context.Context, accountID string) (content.AutoDeleteLimitNotice, error) {
+	return autoDeleteLimit(ctx, r.db.reader(), accountID)
+}
+
+// FindAutoDeleteLimitTx implements content.AutoDeleteRepository.
+func (r *StatusRepository) FindAutoDeleteLimitTx(ctx context.Context, tx uow.Tx, accountID string) (content.AutoDeleteLimitNotice, error) {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return content.AutoDeleteLimitNotice{}, err
+	}
+	return autoDeleteLimit(ctx, q, accountID)
+}
+
+func autoDeleteLimit(ctx context.Context, q *postgresgen.Queries, accountID string) (content.AutoDeleteLimitNotice, error) {
+	row, err := q.GetStatusAutoDeleteLimit(ctx, accountID)
+	if err != nil {
+		return content.AutoDeleteLimitNotice{}, notFound(err, appcontent.ErrNotFound, "auto delete limit of "+accountID)
+	}
+	return content.AutoDeleteLimitNotice{
+		ID: row.NoticeID, AccountID: row.AccountID, MaxAgeDays: int(row.MaxAgeDays), EnforceFrom: row.EnforceFrom.UTC(),
+	}, nil
+}
+
+// RecordAutoDeleteLimitNotice implements content.AutoDeleteRepository.
+func (r *StatusRepository) RecordAutoDeleteLimitNotice(ctx context.Context, tx uow.Tx, n content.AutoDeleteLimitNotice) error {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return err
+	}
+	days, err := toInt32(n.MaxAgeDays, "auto delete maximum")
+	if err != nil {
+		return err
+	}
+	err = q.InsertStatusAutoDeleteLimitNotice(ctx, postgresgen.InsertStatusAutoDeleteLimitNoticeParams{
+		ID: n.ID, AccountID: n.AccountID, MaxAgeDays: days, NoticedAt: n.NoticedAt, EnforceFrom: n.EnforceFrom,
+	})
+	if err != nil {
+		return wrap(err, "insert auto delete limit notice")
+	}
+	err = q.UpsertStatusAutoDeleteLimit(ctx, postgresgen.UpsertStatusAutoDeleteLimitParams{
+		AccountID: n.AccountID, NoticeID: n.ID, MaxAgeDays: days, EnforceFrom: n.EnforceFrom,
+	})
+	return wrap(err, "upsert auto delete limit")
+}
+
+// DeleteAutoDeleteLimit implements content.AutoDeleteRepository.
+func (r *StatusRepository) DeleteAutoDeleteLimit(ctx context.Context, tx uow.Tx, accountID string) error {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return err
+	}
+	return wrap(q.DeleteStatusAutoDeleteLimit(ctx, accountID), "delete auto delete limit")
+}
+
+// DeleteAutoDeleteLimits implements content.AutoDeleteRepository.
+func (r *StatusRepository) DeleteAutoDeleteLimits(ctx context.Context, tx uow.Tx) error {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return err
+	}
+	return wrap(q.DeleteAllStatusAutoDeleteLimits(ctx), "delete auto delete limits")
+}
+
+// FindAutoDeleteLimitNotices implements content.AutoDeleteRepository.
+func (r *StatusRepository) FindAutoDeleteLimitNotices(ctx context.Context, ids []string) ([]content.AutoDeleteLimitNotice, error) {
+	if len(ids) == 0 {
+		return nil, nil
+	}
+	rows, err := r.db.reader().ListStatusAutoDeleteLimitNotices(ctx, ids)
+	if err != nil {
+		return nil, wrap(err, "list auto delete limit notices")
+	}
+	out := make([]content.AutoDeleteLimitNotice, 0, len(rows))
+	for _, row := range rows {
+		out = append(out, content.AutoDeleteLimitNotice{
+			ID: row.ID, AccountID: row.AccountID, MaxAgeDays: int(row.MaxAgeDays),
+			NoticedAt: row.NoticedAt.UTC(), EnforceFrom: row.EnforceFrom.UTC(),
+		})
+	}
+	return out, nil
 }

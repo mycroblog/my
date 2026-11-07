@@ -126,15 +126,22 @@
 | --- | --- | --- |
 | `status_auto_delete_policies` | `account_id`, `enabled`（`bool`）, `min_age_days`（`int`、1〜3650）, `keep_pinned` / `keep_bookmarked` / `keep_favourited` / `keep_media` / `keep_polls`（`bool`）, `keep_min_boosts` / `keep_min_favourites`（`int`、0〜1,000,000。0 は閾値なし）, `updated_at` | PK `(account_id)`、部分インデックス `(account_id) WHERE enabled` |
 | `status_auto_delete_kept_visibilities` | `account_id`, `visibility`（`enum`） | PK `(account_id, visibility)` |
+| `status_auto_delete_limit_notices`【イベント】 | `id`, `account_id`, `max_age_days`（`int`、1〜3650。通知した上限）, `noticed_at`, `enforce_from`（`noticed_at` + 猶予） | インデックス `(account_id, id DESC)` |
+| `status_auto_delete_limits`【投影】 | `account_id`, `notice_id`, `max_age_days`, `enforce_from` | PK `(account_id)`。今上限に縛られているアカウントだけが行を持つ |
 
-- 行がなければ既定の設定（無効、30 日、ピン留め・自分のブックマーク・自分のお気に入り・`direct` を残す）です。保存は設定全体の置き換えで、残す公開範囲の行も入れ替えます。
+- 行がなければ組み込みの既定の設定（無効、30 日、ピン留め・自分のブックマーク・自分のお気に入り・`direct` を残す）です。保存は設定全体の置き換えで、残す公開範囲の行も入れ替えます。
+- 新しいローカルのアカウントは、作られたトランザクションで、サーバーの既定（インスタンス設定 `auto_delete_default_*`）を自分の行として受け取ります（ADR-0151 §2）。`content` が `account.local_account_created` を同期で購読し、設定をトランザクションの中で読みます。インスタンスの Actor は行を持ちません。既定から来たことを記録する列は持たず、既定を後で変えても既存の行は変わりません。
 - 1 時間ごとのジョブ `content.auto_delete_statuses` が、有効な設定をアカウントの順に 20 件ずつ読み（続きはカーソル（アカウントの ID）を持った次のジョブ）、アカウントごとに、公開から `min_age_days` 日を過ぎた削除されていないローカルの投稿を古い順に消します。
   例外は、ピン留め、本人のブックマーク・お気に入り、現在版の添付・投票、残す公開範囲、`status_counters` のブースト数・お気に入り数が閾値以上の投稿です。例外の判定は投稿を読む SQL の中で行うので、残る投稿は消す対象として読みません。
   ローカルの投稿の `id` は公開日時の UUIDv7 なので、走査は `(author_account_id, id)` のインデックスを期限の UUIDv7 の下限で止めます。
 - 投稿ごとに `status_deletions`（`origin = auto_delete`）を記録して `content.status_deleted` を発行します。投影からの除外・通知・`Delete` の配送は本人の削除と同じで、行の物理削除も本人の削除と同じく消去ジョブ（§8）に任せます。
+- サーバーの上限（インスタンス設定 `auto_delete_max_age_days` が 1 以上、ADR-0151 §3〜§5）があるとき、`keep_posts_longer` を持たないアカウントは、保存した設定を上限で切った実効の設定（`content.EffectiveAutoDeletePolicy`。有効、日数は保存した日数と上限の短いほう、例外は許されたものだけで、ピン留めは新しい順に `auto_delete_max_kept_pins` 件）で消されます。
+  ジョブは上限がある間、有効な設定のアカウントではなく、ローカルのアカウントをすべて同じカーソルで読みます。アカウントごとに、実効の設定が保存した設定の残す投稿を消すか（**縛られる**。ピン留めの件数の上限は、削除されていないピン留めがそれより多いときだけ縛る）を判定し、
+  縛られるのに `status_auto_delete_limits` の行が無いか、行の `max_age_days` が今の上限より長ければ、同じトランザクションで通知を記録して投影を置き換え、`content.auto_delete_limit_noticed` を発行します（`notification` が `auto_delete_limit` を作る）。縛られなければ投影の行を消します。通知のイベントは残ります。
+  縛られるアカウントは `enforce_from` の前は保存した設定で、後は実効の設定で消します。上限が無い間は、各実行の最初のジョブが投影の行をすべて消します。投影は、最新の通知と今の設定・権限・上限から作り直せます。
 - 1 トランザクションで消すのは 20 件まで、1 回の実行で 1 アカウント 100 件までです。どの投稿も `Delete` を連合先へ送るので、古い投稿の多い設定は数時間に分けて消し、配送の量を抑えます（ADR-0004）。
 - `active` でないアカウント（無効化・削除予定・削除済み）の投稿は消しません。ブーストは投稿ではないので対象外です。
-- 保存していない設定が今消す投稿の数（`POST /preferences/auto_delete/preview`）は、ジョブと同じ SQL を 1 つの短い読み取りのトランザクションで 1,001 件まで読んで数えます（1,000 件で止め、超えたことを返す）。設定の有効・無効は数に関係しません。古い 3 件を例として返します。
+- 保存していない設定が今消す投稿の数（`POST /preferences/auto_delete/preview`）は、上限が効くアカウントでは送られた設定の実効の設定で数え、ジョブと同じ SQL を 1 つの短い読み取りのトランザクションで 1,001 件まで読んで数えます（1,000 件で止め、超えたことを返す）。設定の有効・無効は数に関係しません。古い 3 件を例として返します。
 
 #### ブースト
 

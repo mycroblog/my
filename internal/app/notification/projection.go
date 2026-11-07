@@ -97,6 +97,9 @@ type ProjectorDeps struct {
 //   - moderation.appeal_decided: appeal_decided, to the account that appealed. It comes from
 //     the instance and has no source account; its dedupe key is the appeal's
 //     (notification.AppealDecidedKey).
+//   - content.auto_delete_limit_noticed: auto_delete_limit, to the account that the server maximum
+//     of the automatic deletion newly binds (ADR-0151 §7), once per notice
+//     (notification.AutoDeleteLimitKey). It comes from the instance and has no source account.
 //   - hook.appeal_decided: hook_appeal_decided, to the author who appealed a post that local.status
 //     refused, upheld or overturned (ADR-0147 §9). It comes from the instance and has no source
 //     account; its dedupe key is the appeal's (notification.HookAppealDecidedKey).
@@ -141,6 +144,7 @@ type ProjectorDeps struct {
 func RegisterProjectors(r *uow.Projectors, d ProjectorDeps) {
 	p := &projector{d: d}
 	registerSubscriptionProjectors(r, d)
+	registerAutoDeleteProjector(r, p)
 	r.Register(appgraph.EventFollowed, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
 		ev := e.(appgraph.Followed)
 		f := ev.Follow
@@ -421,6 +425,12 @@ func (p *projector) interaction(ctx context.Context, tx uow.Tx, t notification.T
 // recipient is none, the recipient mutes the source's domain, or the recipient turned its group
 // off in the app. A notification with the same dedupe key leaves n out.
 func (p *projector) notify(ctx context.Context, tx uow.Tx, n notification.Notification) error {
+	return p.notifyWith(ctx, tx, n, nil)
+}
+
+// notifyWith is notify with the payloads of the Web Push messages and of the email completed by
+// complete (nil completes nothing): what words them that the notification row does not hold.
+func (p *projector) notifyWith(ctx context.Context, tx uow.Tx, n notification.Notification, complete func(*pushJob)) error {
 	if n.RecipientAccountID == n.SourceAccountID {
 		return nil
 	}
@@ -467,10 +477,10 @@ func (p *projector) notify(ctx context.Context, tx uow.Tx, n notification.Notifi
 	if err != nil || !created {
 		return err
 	}
-	if err := p.d.Push.enqueue(ctx, tx, n); err != nil {
+	if err := p.d.Push.enqueueWith(ctx, tx, n, complete); err != nil {
 		return err
 	}
-	return p.d.Email.enqueue(ctx, tx, n, choices)
+	return p.d.Email.enqueueWith(ctx, tx, n, choices, complete)
 }
 
 // reaches reports whether sourceID may notify recipientID: always, unless the source has

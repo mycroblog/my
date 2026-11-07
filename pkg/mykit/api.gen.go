@@ -2507,6 +2507,30 @@ const (
 	InstanceSettingKeyAppealWindowDays                   InstanceSettingKey = "appeal_window_days"
 	InstanceSettingKeyAuditLogRetentionDays              InstanceSettingKey = "audit_log_retention_days"
 	InstanceSettingKeyAuthorizedFetch                    InstanceSettingKey = "authorized_fetch"
+	InstanceSettingKeyAutoDeleteDefaultEnabled           InstanceSettingKey = "auto_delete_default_enabled"
+	InstanceSettingKeyAutoDeleteDefaultKeepBookmarked    InstanceSettingKey = "auto_delete_default_keep_bookmarked"
+	InstanceSettingKeyAutoDeleteDefaultKeepDirect        InstanceSettingKey = "auto_delete_default_keep_direct"
+	InstanceSettingKeyAutoDeleteDefaultKeepFavourited    InstanceSettingKey = "auto_delete_default_keep_favourited"
+	InstanceSettingKeyAutoDeleteDefaultKeepLocal         InstanceSettingKey = "auto_delete_default_keep_local"
+	InstanceSettingKeyAutoDeleteDefaultKeepMedia         InstanceSettingKey = "auto_delete_default_keep_media"
+	InstanceSettingKeyAutoDeleteDefaultKeepMinBoosts     InstanceSettingKey = "auto_delete_default_keep_min_boosts"
+	InstanceSettingKeyAutoDeleteDefaultKeepMinFavourites InstanceSettingKey = "auto_delete_default_keep_min_favourites"
+	InstanceSettingKeyAutoDeleteDefaultKeepPinned        InstanceSettingKey = "auto_delete_default_keep_pinned"
+	InstanceSettingKeyAutoDeleteDefaultKeepPolls         InstanceSettingKey = "auto_delete_default_keep_polls"
+	InstanceSettingKeyAutoDeleteDefaultKeepPrivate       InstanceSettingKey = "auto_delete_default_keep_private"
+	InstanceSettingKeyAutoDeleteDefaultKeepPublic        InstanceSettingKey = "auto_delete_default_keep_public"
+	InstanceSettingKeyAutoDeleteDefaultKeepUnlisted      InstanceSettingKey = "auto_delete_default_keep_unlisted"
+	InstanceSettingKeyAutoDeleteDefaultMinAgeDays        InstanceSettingKey = "auto_delete_default_min_age_days"
+	InstanceSettingKeyAutoDeleteGraceDays                InstanceSettingKey = "auto_delete_grace_days"
+	InstanceSettingKeyAutoDeleteMaxAgeDays               InstanceSettingKey = "auto_delete_max_age_days"
+	InstanceSettingKeyAutoDeleteMaxAllowBookmarked       InstanceSettingKey = "auto_delete_max_allow_bookmarked"
+	InstanceSettingKeyAutoDeleteMaxAllowFavourited       InstanceSettingKey = "auto_delete_max_allow_favourited"
+	InstanceSettingKeyAutoDeleteMaxAllowMedia            InstanceSettingKey = "auto_delete_max_allow_media"
+	InstanceSettingKeyAutoDeleteMaxAllowPinned           InstanceSettingKey = "auto_delete_max_allow_pinned"
+	InstanceSettingKeyAutoDeleteMaxAllowPolls            InstanceSettingKey = "auto_delete_max_allow_polls"
+	InstanceSettingKeyAutoDeleteMaxAllowThresholds       InstanceSettingKey = "auto_delete_max_allow_thresholds"
+	InstanceSettingKeyAutoDeleteMaxAllowVisibilities     InstanceSettingKey = "auto_delete_max_allow_visibilities"
+	InstanceSettingKeyAutoDeleteMaxKeptPins              InstanceSettingKey = "auto_delete_max_kept_pins"
 	InstanceSettingKeyContactAccount                     InstanceSettingKey = "contact_account"
 	InstanceSettingKeyContactEmail                       InstanceSettingKey = "contact_email"
 	InstanceSettingKeyDefaultLocale                      InstanceSettingKey = "default_locale"
@@ -2592,6 +2616,54 @@ func (e InstanceSettingKey) Valid() bool {
 	case InstanceSettingKeyAuditLogRetentionDays:
 		return true
 	case InstanceSettingKeyAuthorizedFetch:
+		return true
+	case InstanceSettingKeyAutoDeleteDefaultEnabled:
+		return true
+	case InstanceSettingKeyAutoDeleteDefaultKeepBookmarked:
+		return true
+	case InstanceSettingKeyAutoDeleteDefaultKeepDirect:
+		return true
+	case InstanceSettingKeyAutoDeleteDefaultKeepFavourited:
+		return true
+	case InstanceSettingKeyAutoDeleteDefaultKeepLocal:
+		return true
+	case InstanceSettingKeyAutoDeleteDefaultKeepMedia:
+		return true
+	case InstanceSettingKeyAutoDeleteDefaultKeepMinBoosts:
+		return true
+	case InstanceSettingKeyAutoDeleteDefaultKeepMinFavourites:
+		return true
+	case InstanceSettingKeyAutoDeleteDefaultKeepPinned:
+		return true
+	case InstanceSettingKeyAutoDeleteDefaultKeepPolls:
+		return true
+	case InstanceSettingKeyAutoDeleteDefaultKeepPrivate:
+		return true
+	case InstanceSettingKeyAutoDeleteDefaultKeepPublic:
+		return true
+	case InstanceSettingKeyAutoDeleteDefaultKeepUnlisted:
+		return true
+	case InstanceSettingKeyAutoDeleteDefaultMinAgeDays:
+		return true
+	case InstanceSettingKeyAutoDeleteGraceDays:
+		return true
+	case InstanceSettingKeyAutoDeleteMaxAgeDays:
+		return true
+	case InstanceSettingKeyAutoDeleteMaxAllowBookmarked:
+		return true
+	case InstanceSettingKeyAutoDeleteMaxAllowFavourited:
+		return true
+	case InstanceSettingKeyAutoDeleteMaxAllowMedia:
+		return true
+	case InstanceSettingKeyAutoDeleteMaxAllowPinned:
+		return true
+	case InstanceSettingKeyAutoDeleteMaxAllowPolls:
+		return true
+	case InstanceSettingKeyAutoDeleteMaxAllowThresholds:
+		return true
+	case InstanceSettingKeyAutoDeleteMaxAllowVisibilities:
+		return true
+	case InstanceSettingKeyAutoDeleteMaxKeptPins:
 		return true
 	case InstanceSettingKeyContactAccount:
 		return true
@@ -3088,6 +3160,7 @@ const (
 	NotificationGroupAdminSignUp             NotificationGroup = "admin_sign_up"
 	NotificationGroupAdminWebhookDisabled    NotificationGroup = "admin_webhook_disabled"
 	NotificationGroupAnnouncement            NotificationGroup = "announcement"
+	NotificationGroupAutoDeleteLimit         NotificationGroup = "auto_delete_limit"
 	NotificationGroupBoost                   NotificationGroup = "boost"
 	NotificationGroupFavourite               NotificationGroup = "favourite"
 	NotificationGroupFollow                  NotificationGroup = "follow"
@@ -3130,6 +3203,8 @@ func (e NotificationGroup) Valid() bool {
 	case NotificationGroupAdminWebhookDisabled:
 		return true
 	case NotificationGroupAnnouncement:
+		return true
+	case NotificationGroupAutoDeleteLimit:
 		return true
 	case NotificationGroupBoost:
 		return true
@@ -3218,6 +3293,7 @@ const (
 	NotificationTypeAdminWebhookDisabled       NotificationType = "admin_webhook_disabled"
 	NotificationTypeAnnouncement               NotificationType = "announcement"
 	NotificationTypeAppealDecided              NotificationType = "appeal_decided"
+	NotificationTypeAutoDeleteLimit            NotificationType = "auto_delete_limit"
 	NotificationTypeBoost                      NotificationType = "boost"
 	NotificationTypeCustomEmojiRequestDecided  NotificationType = "custom_emoji_request_decided"
 	NotificationTypeFavourite                  NotificationType = "favourite"
@@ -3270,6 +3346,8 @@ func (e NotificationType) Valid() bool {
 	case NotificationTypeAnnouncement:
 		return true
 	case NotificationTypeAppealDecided:
+		return true
+	case NotificationTypeAutoDeleteLimit:
 		return true
 	case NotificationTypeBoost:
 		return true
@@ -3486,6 +3564,7 @@ func (e PaymentStatusWarnings) Valid() bool {
 const (
 	PermissionCreateCustomEmojis   Permission = "create_custom_emojis"
 	PermissionCreateInvites        Permission = "create_invites"
+	PermissionKeepPostsLonger      Permission = "keep_posts_longer"
 	PermissionManageAccounts       Permission = "manage_accounts"
 	PermissionManageAnnouncements  Permission = "manage_announcements"
 	PermissionManageCustomEmojis   Permission = "manage_custom_emojis"
@@ -3515,6 +3594,8 @@ func (e Permission) Valid() bool {
 	case PermissionCreateCustomEmojis:
 		return true
 	case PermissionCreateInvites:
+		return true
+	case PermissionKeepPostsLonger:
 		return true
 	case PermissionManageAccounts:
 		return true
@@ -7519,6 +7600,40 @@ type AuthorizedAppList struct {
 	Items []AuthorizedApp `json:"items"`
 }
 
+// AutoDeleteLimit The server maximum of the automatic deletion of old posts: while it is on, the automatic
+// deletion of every local user without the permission `keep_posts_longer` is on, deletes a post
+// at most `max_age_days` days after its publication, and keeps posts only by the exceptions that
+// the operator allows.
+type AutoDeleteLimit struct {
+	// AllowBookmarked Whether the posts that the user bookmarked may be kept (`keep_bookmarked`).
+	AllowBookmarked bool `json:"allow_bookmarked"`
+
+	// AllowFavourited Whether the posts that the user favourited may be kept (`keep_favourited`).
+	AllowFavourited bool `json:"allow_favourited"`
+
+	// AllowMedia Whether the posts with media attachments may be kept (`keep_media`).
+	AllowMedia bool `json:"allow_media"`
+
+	// AllowPinned Whether pinned posts may be kept (`keep_pinned`).
+	AllowPinned bool `json:"allow_pinned"`
+
+	// AllowPolls Whether the posts with a poll may be kept (`keep_polls`).
+	AllowPolls bool `json:"allow_polls"`
+
+	// AllowThresholds Whether posts may be kept by their boosts and favourites (`keep_min_boosts`, `keep_min_favourites`).
+	AllowThresholds bool `json:"allow_thresholds"`
+
+	// AllowVisibilities Whether posts may be kept by their visibility (`keep_visibilities`).
+	AllowVisibilities bool `json:"allow_visibilities"`
+
+	// KeptPins How many pins keep posts, the most recently pinned first; 5, the most pins of an account,
+	// keeps every pinned post.
+	KeptPins int `json:"kept_pins"`
+
+	// MaxAgeDays The most days after its publication that a post is kept.
+	MaxAgeDays int `json:"max_age_days"`
+}
+
 // AutoDeletePolicy The authenticated user's automatic deletion of their own old posts. A post is
 // deleted once it was published more than `min_age_days` days ago, unless one of the
 // exceptions (the `keep_` properties) keeps it.
@@ -7565,6 +7680,90 @@ type AutoDeletePreview struct {
 
 	// More Whether the policy would delete more posts than `count`.
 	More bool `json:"more"`
+}
+
+// AutoDeleteServerLimit The server maximum as it applies to the authenticated user, and the policy that the automatic
+// deletion uses under it.
+type AutoDeleteServerLimit struct {
+	// AllowBookmarked Whether the posts that the user bookmarked may be kept (`keep_bookmarked`).
+	AllowBookmarked bool `json:"allow_bookmarked"`
+
+	// AllowFavourited Whether the posts that the user favourited may be kept (`keep_favourited`).
+	AllowFavourited bool `json:"allow_favourited"`
+
+	// AllowMedia Whether the posts with media attachments may be kept (`keep_media`).
+	AllowMedia bool `json:"allow_media"`
+
+	// AllowPinned Whether pinned posts may be kept (`keep_pinned`).
+	AllowPinned bool `json:"allow_pinned"`
+
+	// AllowPolls Whether the posts with a poll may be kept (`keep_polls`).
+	AllowPolls bool `json:"allow_polls"`
+
+	// AllowThresholds Whether posts may be kept by their boosts and favourites (`keep_min_boosts`, `keep_min_favourites`).
+	AllowThresholds bool `json:"allow_thresholds"`
+
+	// AllowVisibilities Whether posts may be kept by their visibility (`keep_visibilities`).
+	AllowVisibilities bool `json:"allow_visibilities"`
+
+	// Bound Whether `effective` deletes posts that the saved policy keeps. A user whom the maximum
+	// newly binds is told in advance and keeps the saved policy until `enforce_from`.
+	Bound bool `json:"bound"`
+
+	// Effective The policy that deletes the user's posts under the maximum: it is on, its days are the
+	// saved ones or the maximum, whichever is fewer (the maximum when the saved policy is
+	// off), and it keeps only the saved exceptions that the maximum allows, with at most
+	// `kept_pins` pins.
+	Effective AutoDeletePolicy `json:"effective"`
+
+	// EnforceFrom When `effective` starts to delete the posts of a bound user, after the grace period;
+	// absent while the user is not bound, and until the hourly job has told them.
+	EnforceFrom *time.Time `json:"enforce_from,omitempty"`
+
+	// KeptPins How many pins keep posts, the most recently pinned first; 5, the most pins of an account,
+	// keeps every pinned post.
+	KeptPins int `json:"kept_pins"`
+
+	// MaxAgeDays The most days after its publication that a post is kept.
+	MaxAgeDays int `json:"max_age_days"`
+}
+
+// AutoDeleteSettings The authenticated user's automatic deletion of their own old posts as they saved it, with the
+// server maximum when it applies to them.
+type AutoDeleteSettings struct {
+	// Enabled Whether old posts are deleted.
+	Enabled bool `json:"enabled"`
+
+	// KeepBookmarked Keep the posts that the user bookmarked.
+	KeepBookmarked bool `json:"keep_bookmarked"`
+
+	// KeepFavourited Keep the posts that the user favourited.
+	KeepFavourited bool `json:"keep_favourited"`
+
+	// KeepMedia Keep the posts with media attachments.
+	KeepMedia bool `json:"keep_media"`
+
+	// KeepMinBoosts Keep the posts boosted at least this many times; 0 keeps none for their boosts.
+	KeepMinBoosts int `json:"keep_min_boosts"`
+
+	// KeepMinFavourites Keep the posts favourited at least this many times; 0 keeps none for their favourites.
+	KeepMinFavourites int `json:"keep_min_favourites"`
+
+	// KeepPinned Keep the posts pinned to the profile.
+	KeepPinned bool `json:"keep_pinned"`
+
+	// KeepPolls Keep the posts with a poll.
+	KeepPolls bool `json:"keep_polls"`
+
+	// KeepVisibilities Keep the posts with these visibilities, from the widest audience to the narrowest; empty keeps none for their visibility.
+	KeepVisibilities []Visibility `json:"keep_visibilities"`
+
+	// MinAgeDays How many days after its publication a post is deleted.
+	MinAgeDays int `json:"min_age_days"`
+
+	// ServerLimit The server maximum and what it makes of the policy; absent when the server sets no
+	// maximum or the user has the permission `keep_posts_longer`.
+	ServerLimit *AutoDeleteServerLimit `json:"server_limit,omitempty"`
 }
 
 // BadgeChoice A role that the authenticated user holds and that has a badge, with whether the user shows
@@ -9710,6 +9909,10 @@ type Instance struct {
 	// instance allows (`ai_opt_out`), never the reverse.
 	AiUsage AIUsage `json:"ai_usage"`
 
+	// AutoDeleteLimit The server maximum of the automatic deletion of old posts, which the about page shows so
+	// that people know it before they sign up; absent when the server sets none.
+	AutoDeleteLimit *AutoDeleteLimit `json:"auto_delete_limit,omitempty"`
+
 	// Closure The closure of the service, present while a closure is announced and after
 	// the server closes; absent when none is announced. Clients show it on every screen with the
 	// way to export the data and to move the account.
@@ -10950,6 +11153,9 @@ type Notification struct {
 	// AppealId The appeal that an `admin_appeal` is about.
 	AppealId *Id `json:"appeal_id,omitempty"`
 
+	// AutoDeleteLimit What an `auto_delete_limit` tells of; omitted for the other types.
+	AutoDeleteLimit *NotificationAutoDeleteLimit `json:"auto_delete_limit,omitempty"`
+
 	// CreatedAt When it happened.
 	CreatedAt time.Time `json:"created_at"`
 
@@ -11076,6 +11282,11 @@ type Notification struct {
 	// `announcement` carries it, and it has no `account`. Editing the announcement afterwards sends
 	// nothing again, and the notification leaves the list and the unread count once the
 	// announcement is withdrawn or its window ends.
+	// `auto_delete_limit` comes from the instance: the server maximum of the automatic deletion of
+	// old posts now binds the user (it was turned on or lowered, or the user lost the permission
+	// `keep_posts_longer`), and after a grace period it deletes the user's posts that their own
+	// policy keeps. Its `auto_delete_limit` carries the maximum and when it starts to apply, and it
+	// has no `account`. It is sent once per notice.
 	Type NotificationType `json:"type"`
 
 	// VoiceRoom The voice chat room that a `voice_room_started` or a `voice_room_invited` is about, while
@@ -11084,6 +11295,17 @@ type Notification struct {
 
 	// VoiceRoomId The voice chat room that a `voice_room_started` or a `voice_room_invited` is about.
 	VoiceRoomId *Id `json:"voice_room_id,omitempty"`
+}
+
+// NotificationAutoDeleteLimit The notice that the server maximum of the automatic deletion of old posts binds the user: the
+// maximum it told of and when the user's posts start to go by it. The settings of the automatic
+// deletion (`getAutoDeletePolicy`) show the maximum in effect now, and their preview what goes.
+type NotificationAutoDeleteLimit struct {
+	// EnforceFrom When the maximum starts to delete the user's posts, at the end of the grace period.
+	EnforceFrom time.Time `json:"enforce_from"`
+
+	// MaxAgeDays The most days after its publication that a post is kept, as of the notice.
+	MaxAgeDays int `json:"max_age_days"`
 }
 
 // NotificationErrorGroup What an `admin_error_group` tells of: a new error group (`created`, with `group_id`), a
@@ -11113,8 +11335,9 @@ type NotificationErrorGroupChange string
 // notices to the user are `moderation` (`moderation_notice`, `report_resolved`,
 // `appeal_decided`, `relationships_severed`, `custom_emoji_request_decided`,
 // `hook_appeal_decided`),
-// `service_closure`, `supporter` (the `supporter_*` types), and `announcement`, the only one of
-// them that the user turns off in the app (on by default); it has no `email` channel.
+// `service_closure`, `supporter` (the `supporter_*` types), `announcement`, which the user
+// turns off in the app (on by default) and which has no `email` channel, and
+// `auto_delete_limit`, whose app and email channels the user chooses, both on by default.
 type NotificationGroup string
 
 // NotificationMarker How far the authenticated user has read the notifications, across all clients.
@@ -11158,8 +11381,8 @@ type NotificationSettingCell struct {
 // turned off, the row's notifications are not created, so neither Web Push nor email delivers
 // them, and clients show the row's other channels disabled; the notifications from before stay.
 // `email` sends each notification to the primary address once it is confirmed and while emails
-// reach it (`Preferences.email_suppression`). The ordinary notifications and `moderation` are
-// emailed one by one 15 minutes after they arrive, and only while they stay unread (newer than
+// reach it (`Preferences.email_suppression`). The ordinary notifications, `moderation`, and
+// `auto_delete_limit` are emailed one by one 15 minutes after they arrive, and only while they stay unread (newer than
 // the read marker and not dismissed); the moderator notifications are emailed at once. Clients
 // offer the email column only when `Instance.sends_email` is true. A row without `email` (`status`,
 // `announcement`) is never emailed, and clients show no email cell for it. Web Push stays the choice of each
@@ -11178,8 +11401,9 @@ type NotificationSettingRow struct {
 	// notices to the user are `moderation` (`moderation_notice`, `report_resolved`,
 	// `appeal_decided`, `relationships_severed`, `custom_emoji_request_decided`,
 	// `hook_appeal_decided`),
-	// `service_closure`, `supporter` (the `supporter_*` types), and `announcement`, the only one of
-	// them that the user turns off in the app (on by default); it has no `email` channel.
+	// `service_closure`, `supporter` (the `supporter_*` types), `announcement`, which the user
+	// turns off in the app (on by default) and which has no `email` channel, and
+	// `auto_delete_limit`, whose app and email channels the user chooses, both on by default.
 	Group NotificationGroup `json:"group"`
 
 	// InApp One channel of one row of the notification settings.
@@ -11188,7 +11412,7 @@ type NotificationSettingRow struct {
 	// Section The kind of the row: `ordinary` (what other users did; in the app on and email off by
 	// default), `moderator` (to the holders of the permission it needs; both on by default),
 	// or `instance` (the instance's notices to the user; always in the app, but for
-	// `announcement`, which is on by default).
+	// `announcement` and `auto_delete_limit`, which are on by default).
 	Section NotificationSettingRowSection `json:"section"`
 
 	// Types The notification types of the row.
@@ -11198,7 +11422,7 @@ type NotificationSettingRow struct {
 // NotificationSettingRowSection The kind of the row: `ordinary` (what other users did; in the app on and email off by
 // default), `moderator` (to the holders of the permission it needs; both on by default),
 // or `instance` (the instance's notices to the user; always in the app, but for
-// `announcement`, which is on by default).
+// `announcement` and `auto_delete_limit`, which are on by default).
 type NotificationSettingRowSection string
 
 // NotificationSettings The authenticated user's notification settings: the rows the user gets, in the order to
@@ -11229,8 +11453,9 @@ type NotificationSettingsUpdate struct {
 		// notices to the user are `moderation` (`moderation_notice`, `report_resolved`,
 		// `appeal_decided`, `relationships_severed`, `custom_emoji_request_decided`,
 		// `hook_appeal_decided`),
-		// `service_closure`, `supporter` (the `supporter_*` types), and `announcement`, the only one of
-		// them that the user turns off in the app (on by default); it has no `email` channel.
+		// `service_closure`, `supporter` (the `supporter_*` types), `announcement`, which the user
+		// turns off in the app (on by default) and which has no `email` channel, and
+		// `auto_delete_limit`, whose app and email channels the user chooses, both on by default.
 		Group NotificationGroup `json:"group"`
 	} `json:"changes"`
 }
@@ -11308,6 +11533,11 @@ type NotificationSettingsUpdateChangesChannel string
 // `announcement` carries it, and it has no `account`. Editing the announcement afterwards sends
 // nothing again, and the notification leaves the list and the unread count once the
 // announcement is withdrawn or its window ends.
+// `auto_delete_limit` comes from the instance: the server maximum of the automatic deletion of
+// old posts now binds the user (it was turned on or lowered, or the user lost the permission
+// `keep_posts_longer`), and after a grace period it deletes the user's posts that their own
+// policy keeps. Its `auto_delete_limit` carries the maximum and when it starts to apply, and it
+// has no `account`. It is sent once per notice.
 type NotificationType string
 
 // OAuthApp An OAuth app that the authenticated user registered. Like every third-party app,
@@ -11729,8 +11959,11 @@ type PaymentStatusWarnings string
 // `manage_login_providers`: the external identity providers that users sign in with (only the
 // built-in admin role by default). `create_invites`: creating, listing, and revoking
 // invites of one's own on `/invites` while the instance setting `invite_creators` is
-// `permitted`, a member permission (only the built-in admin role by default). The
-// others guard no client API operation yet.
+// `permitted`, a member permission (only the built-in admin role by default).
+// `keep_posts_longer`: keeping one's own posts past the server maximum of the automatic
+// deletion and turning it off on `/preferences/auto_delete` while the maximum is on, a member
+// permission (only the built-in admin role by default). The others guard no client API
+// operation yet.
 type Permission string
 
 // PickerCustomEmoji A local custom emoji that the picker offers. Picking it inserts
@@ -21932,8 +22165,10 @@ type ClientInterface interface {
 
 	// GetAutoDeletePolicy Get the authenticated user's automatic deletion of old posts
 	//
-	// The policy that deletes the user's own posts some days after their publication.
-	// A user who has never saved one gets the default policy, which is disabled.
+	// The policy that deletes the user's own posts some days after their publication, with
+	// the server maximum in `server_limit` when it applies to the user. A user who has never
+	// saved one gets the default policy, which is disabled; a user who signed up after the
+	// operator set a server default got that default as their own policy.
 	//
 	// Corresponds with GET /preferences/auto_delete (the `GetAutoDeletePolicy` operationId).
 	GetAutoDeletePolicy(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -21944,8 +22179,10 @@ type ClientInterface interface {
 	// published more than `min_age_days` days ago, unless an exception keeps them, as the user
 	// would delete them: each deletion is sent to the servers the post went to. A run deletes
 	// at most 100 posts of a user, so a policy that finds more spreads their deletion over the
-	// following hours. Boosts are not deleted. A 422 problem names the property that is invalid
-	// in `detail`.
+	// following hours. Boosts are not deleted. While the server maximum applies to the user,
+	// a policy that is disabled, keeps posts longer than the maximum, or uses an exception that
+	// the maximum does not allow is refused. A 422 problem names the property that is invalid or
+	// over the maximum in `detail`.
 	//
 	// Takes any type of body and a specified content type.
 	//
@@ -21958,8 +22195,10 @@ type ClientInterface interface {
 	// published more than `min_age_days` days ago, unless an exception keeps them, as the user
 	// would delete them: each deletion is sent to the servers the post went to. A run deletes
 	// at most 100 posts of a user, so a policy that finds more spreads their deletion over the
-	// following hours. Boosts are not deleted. A 422 problem names the property that is invalid
-	// in `detail`.
+	// following hours. Boosts are not deleted. While the server maximum applies to the user,
+	// a policy that is disabled, keeps posts longer than the maximum, or uses an exception that
+	// the maximum does not allow is refused. A 422 problem names the property that is invalid or
+	// over the maximum in `detail`.
 	//
 	// Takes a body of the `application/json` content type.
 	//
@@ -21972,7 +22211,10 @@ type ClientInterface interface {
 	// as if it were enabled (`enabled` is ignored): posts published more than `min_age_days`
 	// days ago that none of the exceptions keeps. The count stops at 1000 (`more` is then
 	// true), so the call stays cheap enough to repeat as the user edits the policy. The
-	// response also shows the oldest of those posts. A 422 problem names the property that
+	// response also shows the oldest of those posts. While the server maximum applies to the
+	// user, it counts what the policy deletes under the maximum (`server_limit.effective` of
+	// `getAutoDeletePolicy` for the saved policy), so the preview of the saved policy of a bound
+	// user shows what goes once the grace period ends. A 422 problem names the property that
 	// is invalid in `detail`.
 	//
 	// Takes any type of body and a specified content type.
@@ -21986,7 +22228,10 @@ type ClientInterface interface {
 	// as if it were enabled (`enabled` is ignored): posts published more than `min_age_days`
 	// days ago that none of the exceptions keeps. The count stops at 1000 (`more` is then
 	// true), so the call stays cheap enough to repeat as the user edits the policy. The
-	// response also shows the oldest of those posts. A 422 problem names the property that
+	// response also shows the oldest of those posts. While the server maximum applies to the
+	// user, it counts what the policy deletes under the maximum (`server_limit.effective` of
+	// `getAutoDeletePolicy` for the saved policy), so the preview of the saved policy of a bound
+	// user shows what goes once the grace period ends. A 422 problem names the property that
 	// is invalid in `detail`.
 	//
 	// Takes a body of the `application/json` content type.
@@ -31602,8 +31847,10 @@ func (c *Client) UpdatePreferences(ctx context.Context, body UpdatePreferencesJS
 
 // GetAutoDeletePolicy Get the authenticated user's automatic deletion of old posts
 //
-// The policy that deletes the user's own posts some days after their publication.
-// A user who has never saved one gets the default policy, which is disabled.
+// The policy that deletes the user's own posts some days after their publication, with
+// the server maximum in `server_limit` when it applies to the user. A user who has never
+// saved one gets the default policy, which is disabled; a user who signed up after the
+// operator set a server default got that default as their own policy.
 //
 // Corresponds with GET /preferences/auto_delete (the `GetAutoDeletePolicy` operationId).
 func (c *Client) GetAutoDeletePolicy(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -31624,8 +31871,10 @@ func (c *Client) GetAutoDeletePolicy(ctx context.Context, reqEditors ...RequestE
 // published more than `min_age_days` days ago, unless an exception keeps them, as the user
 // would delete them: each deletion is sent to the servers the post went to. A run deletes
 // at most 100 posts of a user, so a policy that finds more spreads their deletion over the
-// following hours. Boosts are not deleted. A 422 problem names the property that is invalid
-// in `detail`.
+// following hours. Boosts are not deleted. While the server maximum applies to the user,
+// a policy that is disabled, keeps posts longer than the maximum, or uses an exception that
+// the maximum does not allow is refused. A 422 problem names the property that is invalid or
+// over the maximum in `detail`.
 //
 // Takes any type of body and a specified content type.
 //
@@ -31648,8 +31897,10 @@ func (c *Client) UpdateAutoDeletePolicyWithBody(ctx context.Context, contentType
 // published more than `min_age_days` days ago, unless an exception keeps them, as the user
 // would delete them: each deletion is sent to the servers the post went to. A run deletes
 // at most 100 posts of a user, so a policy that finds more spreads their deletion over the
-// following hours. Boosts are not deleted. A 422 problem names the property that is invalid
-// in `detail`.
+// following hours. Boosts are not deleted. While the server maximum applies to the user,
+// a policy that is disabled, keeps posts longer than the maximum, or uses an exception that
+// the maximum does not allow is refused. A 422 problem names the property that is invalid or
+// over the maximum in `detail`.
 //
 // Takes a body of the `application/json` content type.
 //
@@ -31672,7 +31923,10 @@ func (c *Client) UpdateAutoDeletePolicy(ctx context.Context, body UpdateAutoDele
 // as if it were enabled (`enabled` is ignored): posts published more than `min_age_days`
 // days ago that none of the exceptions keeps. The count stops at 1000 (`more` is then
 // true), so the call stays cheap enough to repeat as the user edits the policy. The
-// response also shows the oldest of those posts. A 422 problem names the property that
+// response also shows the oldest of those posts. While the server maximum applies to the
+// user, it counts what the policy deletes under the maximum (`server_limit.effective` of
+// `getAutoDeletePolicy` for the saved policy), so the preview of the saved policy of a bound
+// user shows what goes once the grace period ends. A 422 problem names the property that
 // is invalid in `detail`.
 //
 // Takes any type of body and a specified content type.
@@ -31696,7 +31950,10 @@ func (c *Client) PreviewAutoDeletePolicyWithBody(ctx context.Context, contentTyp
 // as if it were enabled (`enabled` is ignored): posts published more than `min_age_days`
 // days ago that none of the exceptions keeps. The count stops at 1000 (`more` is then
 // true), so the call stays cheap enough to repeat as the user edits the policy. The
-// response also shows the oldest of those posts. A 422 problem names the property that
+// response also shows the oldest of those posts. While the server maximum applies to the
+// user, it counts what the policy deletes under the maximum (`server_limit.effective` of
+// `getAutoDeletePolicy` for the saved policy), so the preview of the saved policy of a bound
+// user shows what goes once the grace period ends. A 422 problem names the property that
 // is invalid in `detail`.
 //
 // Takes a body of the `application/json` content type.
@@ -55575,8 +55832,10 @@ type ClientWithResponsesInterface interface {
 
 	// GetAutoDeletePolicyWithResponse Get the authenticated user's automatic deletion of old posts
 	//
-	// The policy that deletes the user's own posts some days after their publication.
-	// A user who has never saved one gets the default policy, which is disabled.
+	// The policy that deletes the user's own posts some days after their publication, with
+	// the server maximum in `server_limit` when it applies to the user. A user who has never
+	// saved one gets the default policy, which is disabled; a user who signed up after the
+	// operator set a server default got that default as their own policy.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
@@ -55589,8 +55848,10 @@ type ClientWithResponsesInterface interface {
 	// published more than `min_age_days` days ago, unless an exception keeps them, as the user
 	// would delete them: each deletion is sent to the servers the post went to. A run deletes
 	// at most 100 posts of a user, so a policy that finds more spreads their deletion over the
-	// following hours. Boosts are not deleted. A 422 problem names the property that is invalid
-	// in `detail`.
+	// following hours. Boosts are not deleted. While the server maximum applies to the user,
+	// a policy that is disabled, keeps posts longer than the maximum, or uses an exception that
+	// the maximum does not allow is refused. A 422 problem names the property that is invalid or
+	// over the maximum in `detail`.
 	//
 	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 	//
@@ -55603,8 +55864,10 @@ type ClientWithResponsesInterface interface {
 	// published more than `min_age_days` days ago, unless an exception keeps them, as the user
 	// would delete them: each deletion is sent to the servers the post went to. A run deletes
 	// at most 100 posts of a user, so a policy that finds more spreads their deletion over the
-	// following hours. Boosts are not deleted. A 422 problem names the property that is invalid
-	// in `detail`.
+	// following hours. Boosts are not deleted. While the server maximum applies to the user,
+	// a policy that is disabled, keeps posts longer than the maximum, or uses an exception that
+	// the maximum does not allow is refused. A 422 problem names the property that is invalid or
+	// over the maximum in `detail`.
 	//
 	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 	//
@@ -55617,7 +55880,10 @@ type ClientWithResponsesInterface interface {
 	// as if it were enabled (`enabled` is ignored): posts published more than `min_age_days`
 	// days ago that none of the exceptions keeps. The count stops at 1000 (`more` is then
 	// true), so the call stays cheap enough to repeat as the user edits the policy. The
-	// response also shows the oldest of those posts. A 422 problem names the property that
+	// response also shows the oldest of those posts. While the server maximum applies to the
+	// user, it counts what the policy deletes under the maximum (`server_limit.effective` of
+	// `getAutoDeletePolicy` for the saved policy), so the preview of the saved policy of a bound
+	// user shows what goes once the grace period ends. A 422 problem names the property that
 	// is invalid in `detail`.
 	//
 	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
@@ -55631,7 +55897,10 @@ type ClientWithResponsesInterface interface {
 	// as if it were enabled (`enabled` is ignored): posts published more than `min_age_days`
 	// days ago that none of the exceptions keeps. The count stops at 1000 (`more` is then
 	// true), so the call stays cheap enough to repeat as the user edits the policy. The
-	// response also shows the oldest of those posts. A 422 problem names the property that
+	// response also shows the oldest of those posts. While the server maximum applies to the
+	// user, it counts what the policy deletes under the maximum (`server_limit.effective` of
+	// `getAutoDeletePolicy` for the saved policy), so the preview of the saved policy of a bound
+	// user shows what goes once the grace period ends. A 422 problem names the property that
 	// is invalid in `detail`.
 	//
 	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
@@ -75619,7 +75888,7 @@ type GetAutoDeletePolicyResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	// JSON200 the response for an HTTP 200 `application/json` response
-	JSON200 *AutoDeletePolicy
+	JSON200 *AutoDeleteSettings
 	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
 	ApplicationproblemJSONDefault *Problem
 	// Headers200 the parsed response headers for an HTTP 200 response
@@ -75629,7 +75898,7 @@ type GetAutoDeletePolicyResponse struct {
 }
 
 // GetJSON200 returns the response for an HTTP 200 `application/json` response
-func (r GetAutoDeletePolicyResponse) GetJSON200() *AutoDeletePolicy {
+func (r GetAutoDeletePolicyResponse) GetJSON200() *AutoDeleteSettings {
 	return r.JSON200
 }
 
@@ -75684,7 +75953,7 @@ type UpdateAutoDeletePolicyResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	// JSON200 the response for an HTTP 200 `application/json` response
-	JSON200 *AutoDeletePolicy
+	JSON200 *AutoDeleteSettings
 	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
 	ApplicationproblemJSONDefault *Problem
 	// Headers200 the parsed response headers for an HTTP 200 response
@@ -75694,7 +75963,7 @@ type UpdateAutoDeletePolicyResponse struct {
 }
 
 // GetJSON200 returns the response for an HTTP 200 `application/json` response
-func (r UpdateAutoDeletePolicyResponse) GetJSON200() *AutoDeletePolicy {
+func (r UpdateAutoDeletePolicyResponse) GetJSON200() *AutoDeleteSettings {
 	return r.JSON200
 }
 
@@ -88512,8 +88781,10 @@ func (c *ClientWithResponses) UpdatePreferencesWithResponse(ctx context.Context,
 
 // GetAutoDeletePolicyWithResponse Get the authenticated user's automatic deletion of old posts
 //
-// The policy that deletes the user's own posts some days after their publication.
-// A user who has never saved one gets the default policy, which is disabled.
+// The policy that deletes the user's own posts some days after their publication, with
+// the server maximum in `server_limit` when it applies to the user. A user who has never
+// saved one gets the default policy, which is disabled; a user who signed up after the
+// operator set a server default got that default as their own policy.
 //
 // Returns a wrapper object for the known response body format(s).
 //
@@ -88532,8 +88803,10 @@ func (c *ClientWithResponses) GetAutoDeletePolicyWithResponse(ctx context.Contex
 // published more than `min_age_days` days ago, unless an exception keeps them, as the user
 // would delete them: each deletion is sent to the servers the post went to. A run deletes
 // at most 100 posts of a user, so a policy that finds more spreads their deletion over the
-// following hours. Boosts are not deleted. A 422 problem names the property that is invalid
-// in `detail`.
+// following hours. Boosts are not deleted. While the server maximum applies to the user,
+// a policy that is disabled, keeps posts longer than the maximum, or uses an exception that
+// the maximum does not allow is refused. A 422 problem names the property that is invalid or
+// over the maximum in `detail`.
 //
 // Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 //
@@ -88552,8 +88825,10 @@ func (c *ClientWithResponses) UpdateAutoDeletePolicyWithBodyWithResponse(ctx con
 // published more than `min_age_days` days ago, unless an exception keeps them, as the user
 // would delete them: each deletion is sent to the servers the post went to. A run deletes
 // at most 100 posts of a user, so a policy that finds more spreads their deletion over the
-// following hours. Boosts are not deleted. A 422 problem names the property that is invalid
-// in `detail`.
+// following hours. Boosts are not deleted. While the server maximum applies to the user,
+// a policy that is disabled, keeps posts longer than the maximum, or uses an exception that
+// the maximum does not allow is refused. A 422 problem names the property that is invalid or
+// over the maximum in `detail`.
 //
 // Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 //
@@ -88572,7 +88847,10 @@ func (c *ClientWithResponses) UpdateAutoDeletePolicyWithResponse(ctx context.Con
 // as if it were enabled (`enabled` is ignored): posts published more than `min_age_days`
 // days ago that none of the exceptions keeps. The count stops at 1000 (`more` is then
 // true), so the call stays cheap enough to repeat as the user edits the policy. The
-// response also shows the oldest of those posts. A 422 problem names the property that
+// response also shows the oldest of those posts. While the server maximum applies to the
+// user, it counts what the policy deletes under the maximum (`server_limit.effective` of
+// `getAutoDeletePolicy` for the saved policy), so the preview of the saved policy of a bound
+// user shows what goes once the grace period ends. A 422 problem names the property that
 // is invalid in `detail`.
 //
 // Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
@@ -88592,7 +88870,10 @@ func (c *ClientWithResponses) PreviewAutoDeletePolicyWithBodyWithResponse(ctx co
 // as if it were enabled (`enabled` is ignored): posts published more than `min_age_days`
 // days ago that none of the exceptions keeps. The count stops at 1000 (`more` is then
 // true), so the call stays cheap enough to repeat as the user edits the policy. The
-// response also shows the oldest of those posts. A 422 problem names the property that
+// response also shows the oldest of those posts. While the server maximum applies to the
+// user, it counts what the policy deletes under the maximum (`server_limit.effective` of
+// `getAutoDeletePolicy` for the saved policy), so the preview of the saved policy of a bound
+// user shows what goes once the grace period ends. A 422 problem names the property that
 // is invalid in `detail`.
 //
 // Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
@@ -112972,7 +113253,7 @@ func ParseGetAutoDeletePolicyResponse(rsp *http.Response) (*GetAutoDeletePolicyR
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest AutoDeletePolicy
+		var dest AutoDeleteSettings
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -113049,7 +113330,7 @@ func ParseUpdateAutoDeletePolicyResponse(rsp *http.Response) (*UpdateAutoDeleteP
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest AutoDeletePolicy
+		var dest AutoDeleteSettings
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}

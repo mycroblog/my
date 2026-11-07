@@ -58,6 +58,20 @@ default locale, who can see the timelines, the instance name, description, terms
 | `search_indexing` | `allow` / `deny` | `deny` | Whether search engines may index the instance. Even with `allow`, only the profiles of `indexable` accounts and `public` posts are indexed ([search engines and AI crawlers](crawlers.md)) |
 | `ai_usage` | `allow` / `deny_training` / `deny` | `deny` | The statement to AI services. `deny_training` refuses training; `deny` refuses training and use by AI (AI search, assistants, agents) |
 | `indexable_default` | `true` / `false` | `false` | The default of `indexable` for new accounts. Changing it does not change existing accounts |
+| `auto_delete_default_enabled` | `true` / `false` | `false` | Whether new accounts start with the automatic deletion of their old posts on. With the other `auto_delete_default_*` keys it is the policy that a new account receives ([automatic deletion of old posts](#automatic-deletion-of-old-posts)) |
+| `auto_delete_default_min_age_days` | integer 1-3650 (days) | `30` | How many days after its publication the policy of a new account deletes a post |
+| `auto_delete_default_keep_pinned`, `auto_delete_default_keep_bookmarked`, `auto_delete_default_keep_favourited` | `true` / `false` | `true` | Whether the policy of a new account keeps the posts its author pinned, bookmarked, or favourited |
+| `auto_delete_default_keep_media`, `auto_delete_default_keep_polls` | `true` / `false` | `false` | Whether the policy of a new account keeps the posts with media or a poll |
+| `auto_delete_default_keep_public`, `auto_delete_default_keep_local`, `auto_delete_default_keep_unlisted`, `auto_delete_default_keep_private` | `true` / `false` | `false` | Whether the policy of a new account keeps the posts of that visibility |
+| `auto_delete_default_keep_direct` | `true` / `false` | `true` | Whether the policy of a new account keeps direct posts |
+| `auto_delete_default_keep_min_boosts`, `auto_delete_default_keep_min_favourites` | integer 0-1000000 | `0` | The policy of a new account keeps a post boosted or favourited at least this many times. `0` sets no threshold |
+| `auto_delete_max_age_days` | integer 0-3650 (days) | `0` | The most days after its publication that any local post is kept ([maximum](#a-maximum-for-keeping-posts)). `0` sets no maximum |
+| `auto_delete_max_allow_pinned` | `true` / `false` | `true` | Whether pinned posts may still be kept under the maximum |
+| `auto_delete_max_kept_pins` | integer 1-5 | `5` | How many pins keep posts under the maximum, the most recently pinned first. `5`, the most pins of an account, keeps every pinned post |
+| `auto_delete_max_allow_bookmarked`, `auto_delete_max_allow_favourited`, `auto_delete_max_allow_media`, `auto_delete_max_allow_polls` | `true` / `false` | `false` | Whether the posts that the author bookmarked or favourited, or with media or a poll, may still be kept under the maximum |
+| `auto_delete_max_allow_visibilities` | `true` / `false` | `false` | Whether posts may still be kept by their visibility under the maximum |
+| `auto_delete_max_allow_thresholds` | `true` / `false` | `false` | Whether posts may still be kept by their boosts and favourites under the maximum |
+| `auto_delete_grace_days` | integer 0-365 (days) | `30` | How many days an account that the maximum newly applies to keeps its own settings after it is told. A change does not move the dates of the accounts already told |
 | `search_visibilities` | `public` / `local` / `public,local` | `public` | Which posts the full-text search of a server with a search backend covers. `unlisted`, `private`, and `direct` posts are never covered, and only accounts with `indexable` are. Leaving a visibility out removes its posts from the index. Adding one finds only new posts of it, until you [rebuild the index](search.md#changing-search_visibilities). It does nothing with `search = none` |
 | `security_contact` | `https:` or `mailto:` URI (empty = unset) | empty | Where to report security problems of this server: how it is configured and run, and its accounts and data. When set, the server serves `/.well-known/security.txt` (RFC 9116). This is your contact, not the software's: forward a report of a vulnerability in the software itself to the project as its [security policy](../../SECURITY.md) describes |
 | `require_media_description` | `true` / `false` | `false` | Whether every media file (image, video, or audio) attached to a local post needs a description. When `true`, a post or an edit with a file whose description is missing or only whitespace is rejected with 422. It is published as `limits.require_media_description` in `GET /api/v1/instance`, and the web client makes the description field required. It is separate from the per-user setting `require_media_description`, which only checks before sending |
@@ -118,6 +132,55 @@ deactivated are left out.
 New accounts are suggested and can be found by part of their name in the account search. A user who turns off "Suggest my
 account and find it by part of its name" in the profile settings leaves both: the search then finds the account only by its
 whole username, or for the people who follow it.
+
+### Automatic deletion of old posts
+
+Users can have their own posts deleted automatically some days after they publish them (Settings, "Delete old posts").
+Each user's policy is their own: whether it is on, after how many days, and which posts it keeps (pinned, bookmarked, and
+favourited posts, posts with media or a poll, posts of chosen visibilities, and posts with at least some boosts or
+favourites). Deleting a post this way is the same as its author deleting it: the servers it went to receive a `Delete`.
+Only the posts of local accounts are deleted this way, never boosts.
+
+The `auto_delete_default_*` keys are the policy that each new local account starts with, whichever way it is created
+(the sign-up form, an external login provider, an invite, or `my admin`). The account receives it when it is created and
+then owns it: changing the keys later changes neither the accounts that exist nor those that received an earlier value.
+The settings screen shows the values as the user's own. With the keys unset, a new account starts with the automatic
+deletion off, after 30 days, keeping pinned, bookmarked, and favourited posts and direct posts. The default is not shown
+to people outside the instance. When a maximum is set, a new account receives the default cut to the maximum, as
+described below, so it starts within it.
+
+#### A maximum for keeping posts
+
+With `auto_delete_max_age_days` above `0`, no local post is kept longer than that many days after its publication.
+For every local account without the permission `keep_posts_longer`:
+
+- The automatic deletion is always on: a user cannot turn it off, and cannot choose more days than the maximum (fewer is
+  fine). The settings screen and `PUT /api/v1/preferences/auto_delete` refuse both.
+- Only the exceptions that the `auto_delete_max_allow_*` keys allow keep posts. By default only pinned posts do, all of
+  them; with `auto_delete_max_kept_pins` below 5, only that many of the most recent pins keep their posts.
+- Users who turned the automatic deletion off, or never set it, are held to the maximum too.
+
+Turning the maximum on, lowering it, or changing the exceptions does not rewrite anyone's settings. Instead, each hour the
+job `content.auto_delete_statuses` finds the accounts whose own settings keep posts that the maximum does not (because
+the maximum was turned on or lowered, or the account lost `keep_posts_longer`). It tells each of them once, with a
+notification and an email that are on by default, and from when the maximum applies: `auto_delete_grace_days` after
+the notice. Until then the account's own settings stay in effect; from then on its posts go by the maximum. An account
+that comes within the maximum again (its user changes the settings, it gets `keep_posts_longer`, or the maximum goes or
+rises) is no longer held, and a later change tells it again with a new grace period.
+
+Turning the maximum on tells every account that it holds within the hour. Deletions keep their pace: at most 100 posts
+of an account per hour, each sent to the servers the post went to as a `Delete`, so an account with many old posts
+takes hours or days to empty. A user who changes their settings in the meantime stops the rest.
+
+`keep_posts_longer` is a member permission: give it to a role to let its holders keep their posts as long as they choose
+and turn the automatic deletion off. The built-in `admin` role has it. A [supporter plan](supporters.md) can carry it, so
+keeping posts longer can be a benefit of the plan; when the subscription ends, the maximum applies again after the grace
+period.
+
+The maximum is public: `GET /api/v1/instance` returns it in `auto_delete_limit`, and the about page shows it, so people
+know it before they sign up. Changes of these keys need `manage_settings` and are recorded in the audit log like any
+other setting. In the web client they are on the "Post deletion" page of "Server settings", which asks before it saves a
+maximum that is turned on or made stricter.
 
 ### Texts (one key, one value)
 
@@ -261,6 +324,7 @@ audit log on the moderation screen ("Audit log", `/moderation/audit-log`).
   | Icon and logo (`/admin/settings/branding`) | The icon, the logo, and the logo for dark backgrounds, each saved with its own button ([Logo and icon](#logo-and-icon)) |
   | Registration (`/admin/settings/registration`) | Registration (`registration_mode`, `login_providers_only`); Member invites (`invite_creators`, `member_invite_max_active`, `member_invite_max_uses`, `member_invite_max_lifetime_seconds`); Apps (`user_app_registration`, `oauth_metadata_document_clients`, `dynamic_client_registration`) |
   | Content (`/admin/settings/content`) | Language (`default_locale`, chosen from the languages the app has); Timelines (`local_timeline_visibility`, `federated_timeline_visibility`); Posts (`require_media_description`); Landing page (`public_counts`); Suggested accounts (`featured_accounts`) |
+  | Post deletion (`/admin/settings/auto-delete`) | Default for new accounts (the `auto_delete_default_*` settings); Maximum (`auto_delete_max_age_days`, the `auto_delete_max_allow_*` settings, `auto_delete_max_kept_pins`, `auto_delete_grace_days`). Saving a maximum that is turned on or made stricter (fewer days, fewer exceptions or pins) asks first, since it notifies the accounts it newly holds ([A maximum for keeping posts](#a-maximum-for-keeping-posts)) |
   | Federation (`/admin/settings/federation`) | Federation (`federation_mode`, `authorized_fetch`, `remote_media_policy`, `remote_media_cache_ttl_seconds` (choose from 1 hour, 1 day, 7 days, 30 days, or 365 days), `link_cards`, `link_cards_ignore_robots_txt`); Limited and suspended servers (`domain_actions_visibility`, `domain_actions_rationale_visibility`); External review (the `hook_*` settings, see [Decision hooks](decision-hooks.md)) |
   | Search and crawlers (`/admin/settings/discovery`) | Search engines and AI (`search_indexing`, `indexable_default`, `ai_usage`, `security_contact`); Post search (`search_visibilities`, only while the server has full-text search) |
   | Voice chat (`/admin/settings/voice`) | `voice_room_starters`, `voice_public_summary`, `voice_participants_retention_days`; the page is listed only while the server offers voice chat |

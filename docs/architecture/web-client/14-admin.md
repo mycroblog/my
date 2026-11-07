@@ -270,7 +270,7 @@ API の経路はどちらも `/admin/*` で（[client-api.md](../client-api.md) 
   - **異議申し立てのページ**（`/moderation/hook-decisions/appeals/{id}`、`GET /admin/hook_appeals/{id}`、[画面の要件](screens/moderation-hook-appeal.md)）: 申し立て（状態・作者とアカウントの管理画面へのリンク・日時・作者が送った本文とコメント（平文で `dir="auto"`））、審査の判定（判定のページと同じ事実、作者を除く。判定のページへのリンク）、モデレーターの審査の区画を `h2` の `Section` で並べる。
     待っている異議は「維持する」「撤回する」を `ConfirmDialog` で確かめて送り（撤回は判定を取り消してこの作者をフックから外すので `danger`）、異議・一覧・判定・監査ログを読み直してから、審査の区画の見出しにフォーカスを移して結果を区画の `StatusMessage` に出す。ほかのモデレーターが先に決めていた（409 `appeal-decided`）ときは読み直してそう伝える。
     `admin_hook_appeal` の通知と Web Push はこのページへ行く。
-- **サーバーの設定**（`/admin/settings`、`manage_settings`、FR-705）: 話題ごとに 7 つのページに分け（画面の分け方）、`h1` の下の `LocalNav`（「サーバーの設定のページ」）でつなぐ。管理のメニューは「サーバーの設定」の 1 項目のまま。
+- **サーバーの設定**（`/admin/settings`、`manage_settings`、FR-705）: 話題ごとに 8 つのページに分け（画面の分け方）、`h1` の下の `LocalNav`（「サーバーの設定のページ」）でつなぐ。管理のメニューは「サーバーの設定」の 1 項目のまま。
   各ページは 1 つのフォームと 1 つの保存のボタンを持ち（アイコンとロゴは 3 つの絵がそれぞれのフォーム）、自分の設定だけを送る（`PATCH /admin/settings` は送ったキーだけを変える）。保存のボタンは `FormActionBar` に置き、画面より長いときのためにバーを画面の下に固定する（`sticky`）。
   管理者が書く値（名前・説明・画像の説明）は、どれも 1 つの入力欄で、どのロケールの閲覧者にも同じ値を出す（ほかの言語の閲覧者は機械翻訳などで読む）。欄の名前と説明は閲覧者の言語に翻訳する。
   運営の費用・収入・サポーターの一覧の公開範囲は、それを出す費用の画面とサポーターの画面に置く。
@@ -278,6 +278,7 @@ API の経路はどちらも `/admin/*` で（[client-api.md](../client-api.md) 
   - アイコンとロゴ（`/admin/settings/branding`、[画面の要件](screens/admin-settings-branding.md)）: 「アイコンとロゴ」の区画。
   - 登録（`/admin/settings/registration`、[画面の要件](screens/admin-settings-registration.md)）: 「登録」「利用者の招待」「アプリ」の区画。
   - コンテンツ（`/admin/settings/content`、[画面の要件](screens/admin-settings-content.md)）: 「言語」「タイムライン」「投稿」「トップページ」「おすすめのアカウント」の区画。
+  - 投稿の自動削除（`/admin/settings/auto-delete`、[画面の要件](screens/admin-settings-auto-delete.md)）: 「新しいアカウントの既定」「上限」の区画（ADR-0151）。上限を有効にするか厳しくする保存は、縛られるアカウントに通知が届き猶予が始まることを `alertdialog` で確かめてから送る。
   - 連合（`/admin/settings/federation`、[画面の要件](screens/admin-settings-federation.md)）: 「連合」「制限・凍結したサーバー」「外部の審査」の区画。
   - 検索とクローラー（`/admin/settings/discovery`、[画面の要件](screens/admin-settings-discovery.md)）: 「検索エンジンと AI」と、サーバーに全文検索があるとき（`usePostSearchAvailable`）だけの「投稿の検索」の区画。
   - 通話（`/admin/settings/voice`、[画面の要件](screens/admin-settings-voice.md)）: 「通話」の区画。サーバーが通話を出しているとき（`useVoiceAvailable`）だけ `LocalNav` に出し、出していなければ URL で開いてもフォームの代わりにその旨を出す。

@@ -62,6 +62,11 @@ type ServerOptions = {
   sendsEmail?: boolean;
   timeZoneChosen?: boolean;
   emailSuppression?: { kind: string; state_changed_at: string };
+  /**
+   * The server maximum of the automatic deletion that applies to the viewer (AutoDeleteLimit): GET answers the saved
+   * policy with it, bound from `enforceFrom` while the policy goes beyond it, and the preview counts four posts.
+   */
+  autoDeleteLimit?: { limit: Record<string, unknown>; effective: Record<string, unknown>; enforceFrom: string };
 };
 
 /**
@@ -71,7 +76,7 @@ type ServerOptions = {
 async function signedInServer(
   page: Page,
   locale: string,
-  { permissions = [], sendsEmail = true, timeZoneChosen = true, emailSuppression }: ServerOptions = {},
+  { permissions = [], sendsEmail = true, timeZoneChosen = true, emailSuppression, autoDeleteLimit }: ServerOptions = {},
 ) {
   let preferences = {
     locale,
@@ -98,6 +103,20 @@ async function signedInServer(
     keep_min_boosts: 0,
     keep_min_favourites: 0,
   };
+  let autoDeleteBound = autoDeleteLimit !== undefined;
+  /** The policy with the maximum that applies to the viewer, as GET and PUT /preferences/auto_delete answer it. */
+  const autoDeleteSettings = () =>
+    autoDeleteLimit === undefined
+      ? autoDeletePolicy
+      : {
+          ...autoDeletePolicy,
+          server_limit: {
+            ...autoDeleteLimit.limit,
+            effective: autoDeleteBound ? autoDeleteLimit.effective : autoDeletePolicy,
+            bound: autoDeleteBound,
+            ...(autoDeleteBound ? { enforce_from: autoDeleteLimit.enforceFrom } : {}),
+          },
+        };
   // The badges of the viewer's roles (ADR-0070): a long name, and one in a right-to-left script.
   let badgeChoices = [
     { role_id: supporterBadgeId, label: "Supporter of the medium plan", color: "green", displayed: false },
@@ -359,10 +378,14 @@ async function signedInServer(
         );
       }
       case "GET /preferences/auto_delete":
-        return json(route, autoDeletePolicy);
+        return json(route, autoDeleteSettings());
       case "PUT /preferences/auto_delete":
         autoDeletePolicy = request.postDataJSON() as typeof autoDeletePolicy;
-        return json(route, autoDeletePolicy);
+        // Saved within the maximum, the viewer is no longer bound.
+        autoDeleteBound = false;
+        return json(route, autoDeleteSettings());
+      case "POST /preferences/auto_delete/preview":
+        return json(route, { count: 4, more: false, examples: [] });
       case "GET /two_factor":
         return json(route, { enabled: false });
       case "GET /accounts/password":
@@ -687,6 +710,69 @@ test("the automatic deletion of old posts is turned on and saved without axe vio
   ).toBeVisible();
   await expectNoAxeViolations(makeAxeBuilder);
   await expectNoHorizontalScroll(page);
+});
+
+// Under the server maximum (ADR-0151), the viewer whose saved policy goes beyond it is told from when it applies, and
+// saves a policy within it by keyboard.
+test("the automatic deletion under the server maximum is brought within it without axe violations or horizontal scroll", async ({
+  page,
+  makeAxeBuilder,
+}) => {
+  await signedInServer(page, projectLocale(), {
+    autoDeleteLimit: {
+      limit: {
+        max_age_days: 60,
+        allow_pinned: true,
+        kept_pins: 5,
+        allow_bookmarked: true,
+        allow_favourited: false,
+        allow_media: false,
+        allow_polls: false,
+        allow_visibilities: false,
+        allow_thresholds: false,
+      },
+      effective: {
+        enabled: true,
+        min_age_days: 60,
+        keep_pinned: true,
+        keep_bookmarked: true,
+        keep_favourited: false,
+        keep_media: false,
+        keep_polls: false,
+        keep_visibilities: [],
+        keep_min_boosts: 0,
+        keep_min_favourites: 0,
+      },
+      enforceFrom: "2026-12-01T00:00:00Z",
+    },
+  });
+  await page.goto("/settings/auto-delete");
+  const main = page.getByRole("main");
+  const limit = main.getByRole("region", { name: message("settings.auto_delete.limit.title") });
+  await expect(limit.locator("time[datetime='2026-12-01T00:00:00Z']")).toBeVisible();
+  // The count of what goes then, under its label (the pseudo-locales wrap the number in their own marks).
+  const count = limit.getByRole("status");
+  await expect(count).toContainText(message("settings.auto_delete.limit.bound.count"));
+  await expect(count).toContainText("4");
+  // The saved policy is off and keeps favourites and direct posts: each is marked, and turned within the maximum.
+  const enabled = main.getByRole("checkbox", { name: message("settings.auto_delete.enabled") });
+  await expect(enabled).toHaveAttribute("aria-invalid", "true");
+  for (const name of [
+    message("settings.auto_delete.enabled"),
+    message("settings.auto_delete.keep.favourited"),
+    message("compose.visibility.direct"),
+  ]) {
+    await main.getByRole("checkbox", { name, exact: true }).focus();
+    await page.keyboard.press("Space");
+  }
+  await expect(main.getByRole("checkbox", { name: message("settings.auto_delete.keep.media") })).toBeDisabled();
+  await expectNoAxeViolations(makeAxeBuilder);
+  await expectNoHorizontalScroll(page);
+  await main.getByRole("button", { name: message("settings.auto_delete.save"), exact: true }).click();
+  await expect(
+    main.getByRole("status").getByText(message("settings.auto_delete.saved_on").replace(/\{.*$/s, "").trim()),
+  ).toBeVisible();
+  await expect(limit.locator("time")).toHaveCount(0);
 });
 
 // Deactivating states the date before and after it (ADR-0089 §13), and the page after it stands without a session.

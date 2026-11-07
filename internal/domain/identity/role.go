@@ -77,6 +77,11 @@ const (
 	// invites, never those of others or the settings of the server, so a supporter plan may
 	// grant it (ADR-0072 §5).
 	PermCreateInvites Permission = "create_invites"
+	// PermKeepPostsLonger: keep one's own posts past the server maximum of the automatic deletion
+	// and turn the automatic deletion off while the maximum is on (ADR-0151 §6). It is a member
+	// permission (ADR-0070 §1): it decides only about the holder's own posts, so a supporter plan
+	// may grant it (ADR-0072 §5).
+	PermKeepPostsLonger Permission = "keep_posts_longer"
 )
 
 // AllPermissions lists every permission.
@@ -87,6 +92,7 @@ func AllPermissions() []Permission {
 		PermManageLoginRecovery, PermManageCustomEmojis, PermManageWebhooks, PermManageAnnouncements,
 		PermManageFinance, PermViewFinance, PermManageSupporters, PermCreateCustomEmojis, PermManageOAuthApps,
 		PermManageServiceClosure, PermStartVoiceRooms, PermManageErrors, PermManageLoginProviders, PermCreateInvites,
+		PermKeepPostsLonger,
 	}
 }
 
@@ -110,7 +116,7 @@ func (p Permission) Category() PermissionCategory {
 	switch p {
 	case PermManageReports, PermManageAccounts, PermManageDomains, PermManageInvites, PermViewAudit:
 		return CategoryModeration
-	case PermViewFinance, PermCreateCustomEmojis, PermStartVoiceRooms, PermCreateInvites:
+	case PermViewFinance, PermCreateCustomEmojis, PermStartVoiceRooms, PermCreateInvites, PermKeepPostsLonger:
 		return CategoryMember
 	default:
 		return CategoryServer
