@@ -9,7 +9,9 @@
 //   list of the domain actions, and the decision hooks (ADR-0147);
 // - discovery: what the server states to search engines and AI crawlers, and which posts the post search covers while
 //   the server has one (ADR-0149 §5);
-// - voice: voice chat while the server offers it (ADR-0100 §2, §9, §13).
+// - voice: voice chat while the server offers it (ADR-0100 §2, §9, §13);
+// - automatic deletion: the policy new accounts start with, and the maximum every account without keep_posts_longer is
+//   held to with its grace period (ADR-0151), which asks before it binds more accounts.
 import {
   Button,
   Checkbox,
@@ -27,15 +29,17 @@ import {
   Text,
   TextField,
 } from "@my/ui";
-import type { ReactNode } from "react";
+import { type ReactNode, useId } from "react";
 import { usePostSearchAvailable } from "../../../lib/fullTextSearch";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
+import { visibilities, visibilityLabel } from "../../compose";
 import { Section } from "../../moderation";
 import { useVoiceAvailable } from "../../voice";
 import {
   type FederationNarrowing,
   type NumberPolicyKey,
   type PolicyKey,
+  type RetentionTightening,
   useServerPolicies,
 } from "../hooks/useServerPolicies";
 
@@ -334,7 +338,7 @@ function PolicyCheckbox({
   form: PolicyForm;
   setting: PolicyKey;
   label: string;
-  description: string;
+  description?: string;
 }) {
   return (
     <Checkbox
@@ -342,7 +346,7 @@ function PolicyCheckbox({
       onChange={(selected) => {
         form.change(setting, selected ? "true" : "false");
       }}
-      description={description}
+      {...(description === undefined ? {} : { description })}
     >
       {label}
     </Checkbox>
@@ -398,6 +402,14 @@ function PolicyFormFrame({ form, children }: { form: PolicyForm; children: React
         </Button>
       </FormActionBar>
       <LoginProvidersOnlyDialog confirmation={form.limitConfirmation} />
+      {form.retentionConfirmation.tightening !== null && (
+        <RetentionDialog
+          tightening={form.retentionConfirmation.tightening}
+          isOpen={form.retentionConfirmation.isOpen}
+          onConfirm={form.retentionConfirmation.confirm}
+          onCancel={form.retentionConfirmation.cancel}
+        />
+      )}
       {form.narrowing !== null && (
         <NarrowingDialog
           narrowing={form.narrowing}
@@ -447,6 +459,235 @@ export function DiscoverySettings() {
     <PolicyFormFrame form={form}>
       <DiscoverySections form={form} />
     </PolicyFormFrame>
+  );
+}
+
+/** The automatic deletion of old posts: the default of new accounts, and the maximum with its grace period. */
+export function AutoDeleteServerSettings() {
+  const form = useServerPolicies("auto_delete");
+  return (
+    <PolicyFormFrame form={form}>
+      <AutoDeleteSections form={form} />
+    </PolicyFormFrame>
+  );
+}
+
+/** The settings of the default's visibilities, in the order of ADR-0017. */
+const defaultVisibilityKeys = {
+  public: "auto_delete_default_keep_public",
+  local: "auto_delete_default_keep_local",
+  unlisted: "auto_delete_default_keep_unlisted",
+  private: "auto_delete_default_keep_private",
+  direct: "auto_delete_default_keep_direct",
+} as const satisfies Record<(typeof visibilities)[number], PolicyKey>;
+
+/** The exceptions of the default and the maximum's allowances of them, in the order of the user's settings. */
+const autoDeleteExceptions = [
+  {
+    keep: "auto_delete_default_keep_pinned",
+    allow: "auto_delete_max_allow_pinned",
+    label: "client:admin.settings.auto_delete.pinned",
+  },
+  {
+    keep: "auto_delete_default_keep_bookmarked",
+    allow: "auto_delete_max_allow_bookmarked",
+    label: "client:admin.settings.auto_delete.bookmarked",
+  },
+  {
+    keep: "auto_delete_default_keep_favourited",
+    allow: "auto_delete_max_allow_favourited",
+    label: "client:admin.settings.auto_delete.favourited",
+  },
+  {
+    keep: "auto_delete_default_keep_media",
+    allow: "auto_delete_max_allow_media",
+    label: "client:admin.settings.auto_delete.media",
+  },
+  {
+    keep: "auto_delete_default_keep_polls",
+    allow: "auto_delete_max_allow_polls",
+    label: "client:admin.settings.auto_delete.polls",
+  },
+] as const satisfies readonly { keep: PolicyKey; allow: PolicyKey; label: ClientMessageKey }[];
+
+/**
+ * The two sections of the automatic deletion: the default that each new account receives as its own policy (a later
+ * change leaves existing accounts as they are, ADR-0151 §2), and the maximum (0 turns it off) with the exceptions it
+ * allows, the pins it keeps and the grace period of newly bound accounts (§3, §5).
+ */
+function AutoDeleteSections({ form }: { form: PolicyForm }) {
+  const t = useT();
+  return (
+    <>
+      <Section
+        surface="card"
+        title={t("client:admin.settings.auto_delete.default.title")}
+        description={t("client:admin.settings.auto_delete.default.description")}
+      >
+        <PolicyCheckbox
+          form={form}
+          setting="auto_delete_default_enabled"
+          label={t("client:admin.settings.auto_delete.default.enabled")}
+        />
+        <NumberPolicyField
+          form={form}
+          setting="auto_delete_default_min_age_days"
+          label={t("client:admin.settings.auto_delete.default.age")}
+          description={(range) => t("client:admin.settings.auto_delete.days.description", range)}
+        />
+        <PolicyCheckboxGroup label={t("client:admin.settings.auto_delete.default.keep")}>
+          {autoDeleteExceptions.map((exception) => (
+            <PolicyCheckbox key={exception.keep} form={form} setting={exception.keep} label={t(exception.label)} />
+          ))}
+        </PolicyCheckboxGroup>
+        <PolicyCheckboxGroup label={t("client:admin.settings.auto_delete.default.visibilities")}>
+          {visibilities.map((visibility) => (
+            <PolicyCheckbox
+              key={visibility}
+              form={form}
+              setting={defaultVisibilityKeys[visibility]}
+              label={t(visibilityLabel[visibility])}
+            />
+          ))}
+        </PolicyCheckboxGroup>
+        <NumberPolicyField
+          form={form}
+          setting="auto_delete_default_keep_min_boosts"
+          label={t("client:admin.settings.auto_delete.default.min_boosts")}
+          description={(range) => t("client:admin.settings.auto_delete.threshold.description", range)}
+        />
+        <NumberPolicyField
+          form={form}
+          setting="auto_delete_default_keep_min_favourites"
+          label={t("client:admin.settings.auto_delete.default.min_favourites")}
+          description={(range) => t("client:admin.settings.auto_delete.threshold.description", range)}
+        />
+      </Section>
+      <Section
+        surface="card"
+        title={t("client:admin.settings.auto_delete.max.title")}
+        description={t("client:admin.settings.auto_delete.max.description")}
+      >
+        <NumberPolicyField
+          form={form}
+          setting="auto_delete_max_age_days"
+          label={t("client:admin.settings.auto_delete.max.age")}
+          description={(range) => t("client:admin.settings.auto_delete.max.age.description", range)}
+        />
+        <PolicyCheckboxGroup
+          label={t("client:admin.settings.auto_delete.max.allow")}
+          description={t("client:admin.settings.auto_delete.max.allow.description")}
+        >
+          {autoDeleteExceptions.map((exception) => (
+            <PolicyCheckbox key={exception.allow} form={form} setting={exception.allow} label={t(exception.label)} />
+          ))}
+          <PolicyCheckbox
+            form={form}
+            setting="auto_delete_max_allow_visibilities"
+            label={t("client:admin.settings.auto_delete.max.allow.visibilities")}
+          />
+          <PolicyCheckbox
+            form={form}
+            setting="auto_delete_max_allow_thresholds"
+            label={t("client:admin.settings.auto_delete.max.allow.thresholds")}
+          />
+        </PolicyCheckboxGroup>
+        <NumberPolicyField
+          form={form}
+          setting="auto_delete_max_kept_pins"
+          label={t("client:admin.settings.auto_delete.max.kept_pins")}
+          description={(range) => t("client:admin.settings.auto_delete.max.kept_pins.description", range)}
+        />
+        <NumberPolicyField
+          form={form}
+          setting="auto_delete_grace_days"
+          label={t("client:admin.settings.auto_delete.grace")}
+          description={(range) => t("client:admin.settings.auto_delete.grace.description", range)}
+        />
+      </Section>
+    </>
+  );
+}
+
+/** Checkboxes of one topic as a group (the APG checkbox pattern) named by its label and described by its note. */
+function PolicyCheckboxGroup({
+  label,
+  description,
+  children,
+}: {
+  label: string;
+  description?: string;
+  children: ReactNode;
+}) {
+  const labelId = useId();
+  const descriptionId = useId();
+  return (
+    <Stack
+      role="group"
+      aria-labelledby={labelId}
+      {...(description === undefined ? {} : { "aria-describedby": descriptionId })}
+      gap="2"
+    >
+      <Text as="p" id={labelId} weight="semibold">
+        {label}
+      </Text>
+      {description !== undefined && <Hint id={descriptionId}>{description}</Hint>}
+      {children}
+    </Stack>
+  );
+}
+
+/**
+ * Asks before the maximum of the automatic deletion is turned on or made stricter (ADR-0151 §7): an alert dialog
+ * (WAI-ARIA APG) that says every local account the maximum newly binds is notified, by email too, within the hour, and
+ * that their posts go by the maximum after the grace period, which cannot be undone. The cancel button has the focus
+ * first.
+ */
+function RetentionDialog({
+  tightening,
+  isOpen,
+  onConfirm,
+  onCancel,
+}: {
+  tightening: RetentionTightening;
+  isOpen: boolean;
+  onConfirm: () => void;
+  onCancel: () => void;
+}) {
+  const t = useT();
+  return (
+    <Dialog
+      role="alertdialog"
+      closeLabel={null}
+      size="md"
+      title={
+        tightening.turnsOn
+          ? t("client:admin.settings.auto_delete.confirm.title_on", { days: tightening.maxAgeDays })
+          : t("client:admin.settings.auto_delete.confirm.title_stricter", { days: tightening.maxAgeDays })
+      }
+      isOpen={isOpen}
+      onOpenChange={(open) => {
+        if (!open) onCancel();
+      }}
+    >
+      <Stack gap="4">
+        <Stack as="ul" marker="disc" gap="2">
+          <li>{t("client:admin.settings.auto_delete.confirm.notify")}</li>
+          <li>{t("client:admin.settings.auto_delete.confirm.grace", { days: tightening.graceDays })}</li>
+          <li>{t("client:admin.settings.auto_delete.confirm.permanent")}</li>
+        </Stack>
+        <Hint>{t("client:admin.settings.auto_delete.confirm.exempt")}</Hint>
+        <DialogActions>
+          {/* The least destructive choice has the focus first (APG, alert dialog pattern). */}
+          <Button autoFocus onPress={onCancel}>
+            {t("client:admin.settings.auto_delete.confirm.cancel")}
+          </Button>
+          <Button variant="danger" onPress={onConfirm}>
+            {t("client:admin.settings.auto_delete.confirm.confirm")}
+          </Button>
+        </DialogActions>
+      </Stack>
+    </Dialog>
   );
 }
 

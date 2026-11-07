@@ -3,8 +3,10 @@
 // up, who may create invites of their own and the caps of those invites (ADR-0106 §14, §15), the default language, the public timelines, whether images need a description, the federation (its direction,
 // ADR-0006, which asks before it narrows), who may read the
 // list of the domain actions, whether the landing page shows the server's numbers and who runs it,
-// what the server states to search engines and AI crawlers, which posts its search covers (ADR-0149 §5), and voice chat (ADR-0100 §2, §9, §13: who may start a
-// room, whether visitors see a room's summary, and how many days the participants' records are kept). They are
+// what the server states to search engines and AI crawlers, which posts its search covers (ADR-0149 §5), voice chat (ADR-0100 §2, §9, §13: who may start a
+// room, whether visitors see a room's summary, and how many days the participants' records are kept), and the
+// automatic deletion of old posts (ADR-0151: the default of new accounts, the maximum and its grace period, which
+// asks before it binds more accounts). They are
 // instance settings that used to change only from the CLI (`my instance set`). Each page of the server settings has one
 // form of the settings of its topic (policyPages); the form sends the ones of its page that changed together, all or
 // none, and each change goes to the audit log (FR-704).
@@ -74,6 +76,30 @@ const policyKeys = [
   "hook_media_check_on_failure",
   "hook_inbound_actor_on_failure",
   "hook_decisions_retention_days",
+  "auto_delete_default_enabled",
+  "auto_delete_default_min_age_days",
+  "auto_delete_default_keep_pinned",
+  "auto_delete_default_keep_bookmarked",
+  "auto_delete_default_keep_favourited",
+  "auto_delete_default_keep_media",
+  "auto_delete_default_keep_polls",
+  "auto_delete_default_keep_public",
+  "auto_delete_default_keep_local",
+  "auto_delete_default_keep_unlisted",
+  "auto_delete_default_keep_private",
+  "auto_delete_default_keep_direct",
+  "auto_delete_default_keep_min_boosts",
+  "auto_delete_default_keep_min_favourites",
+  "auto_delete_max_age_days",
+  "auto_delete_max_allow_pinned",
+  "auto_delete_max_kept_pins",
+  "auto_delete_max_allow_bookmarked",
+  "auto_delete_max_allow_favourited",
+  "auto_delete_max_allow_media",
+  "auto_delete_max_allow_polls",
+  "auto_delete_max_allow_visibilities",
+  "auto_delete_max_allow_thresholds",
+  "auto_delete_grace_days",
 ] as const satisfies readonly InstanceSettingKey[];
 
 export type PolicyKey = (typeof policyKeys)[number];
@@ -131,6 +157,32 @@ const policyPages = {
   ],
   discovery: ["search_indexing", "indexable_default", "ai_usage", "security_contact", "search_visibilities"],
   voice: ["voice_room_starters", "voice_public_summary", "voice_participants_retention_days"],
+  auto_delete: [
+    "auto_delete_default_enabled",
+    "auto_delete_default_min_age_days",
+    "auto_delete_default_keep_pinned",
+    "auto_delete_default_keep_bookmarked",
+    "auto_delete_default_keep_favourited",
+    "auto_delete_default_keep_media",
+    "auto_delete_default_keep_polls",
+    "auto_delete_default_keep_public",
+    "auto_delete_default_keep_local",
+    "auto_delete_default_keep_unlisted",
+    "auto_delete_default_keep_private",
+    "auto_delete_default_keep_direct",
+    "auto_delete_default_keep_min_boosts",
+    "auto_delete_default_keep_min_favourites",
+    "auto_delete_max_age_days",
+    "auto_delete_max_allow_pinned",
+    "auto_delete_max_kept_pins",
+    "auto_delete_max_allow_bookmarked",
+    "auto_delete_max_allow_favourited",
+    "auto_delete_max_allow_media",
+    "auto_delete_max_allow_polls",
+    "auto_delete_max_allow_visibilities",
+    "auto_delete_max_allow_thresholds",
+    "auto_delete_grace_days",
+  ],
 } as const satisfies Record<string, readonly PolicyKey[]>;
 
 /** A page of the server settings that holds policies. */
@@ -153,7 +205,8 @@ const inviteExpiryChoices: readonly number[] = [
 /**
  * The settings typed as a whole number in a text field, with the bounds to use until the server gives its own: the
  * days to keep the participants' records of voice chat rooms (ADR-0100 §13), the days of the decision hooks
- * (ADR-0147 §2, §6), and the caps of the members' invites (ADR-0106 §15).
+ * (ADR-0147 §2, §6), the caps of the members' invites (ADR-0106 §15), and the numbers of the automatic deletion
+ * (ADR-0151 §2, §3).
  */
 const numberFields = {
   voice_participants_retention_days: { min: 30, max: 3650 },
@@ -162,6 +215,12 @@ const numberFields = {
   hook_local_profile_account_age_days: { min: 0, max: 3650 },
   member_invite_max_active: { min: 0, max: 100 },
   member_invite_max_uses: { min: 1, max: 1000 },
+  auto_delete_default_min_age_days: { min: 1, max: 3650 },
+  auto_delete_default_keep_min_boosts: { min: 0, max: 1_000_000 },
+  auto_delete_default_keep_min_favourites: { min: 0, max: 1_000_000 },
+  auto_delete_max_age_days: { min: 0, max: 3650 },
+  auto_delete_max_kept_pins: { min: 1, max: 5 },
+  auto_delete_grace_days: { min: 0, max: 365 },
 } as const satisfies Partial<Record<PolicyKey, { min: number; max: number }>>;
 
 /** A setting typed as a whole number. */
@@ -174,6 +233,12 @@ const numberKeys: readonly NumberPolicyKey[] = [
   "hook_local_profile_account_age_days",
   "member_invite_max_active",
   "member_invite_max_uses",
+  "auto_delete_default_min_age_days",
+  "auto_delete_default_keep_min_boosts",
+  "auto_delete_default_keep_min_favourites",
+  "auto_delete_max_age_days",
+  "auto_delete_max_kept_pins",
+  "auto_delete_grace_days",
 ];
 
 function isNumberField(key: PolicyKey): key is NumberPolicyKey {
@@ -200,6 +265,54 @@ export type FederationNarrowing = {
   /** `off`: nothing flows, and a deletion made meanwhile never reaches other servers. */
   stopsAll: boolean;
 };
+
+/** The allowances of the maximum of the automatic deletion: taking one away binds the accounts that use it. */
+const autoDeleteAllowances = [
+  "auto_delete_max_allow_pinned",
+  "auto_delete_max_allow_bookmarked",
+  "auto_delete_max_allow_favourited",
+  "auto_delete_max_allow_media",
+  "auto_delete_max_allow_polls",
+  "auto_delete_max_allow_visibilities",
+  "auto_delete_max_allow_thresholds",
+] as const satisfies readonly PolicyKey[];
+
+/**
+ * A change of the maximum of the automatic deletion that may bind more local accounts (ADR-0151 §5, §7), which the form
+ * confirms before it saves: the maximum is turned on or lowered, or it allows fewer exceptions or fewer pins. The next
+ * hourly run notifies every newly bound account, and their posts go by the maximum after the grace period.
+ */
+export type RetentionTightening = {
+  /** The most days of the maximum as it will be. */
+  maxAgeDays: number;
+  /** The days of the grace period as it will be. */
+  graceDays: number;
+  /** Whether the maximum is turned on, rather than made stricter. */
+  turnsOn: boolean;
+};
+
+/** Whether a typed whole number is one; NaN otherwise. */
+function wholeNumber(text: string): number {
+  return /^\d+$/u.test(text.trim()) ? Number(text.trim()) : Number.NaN;
+}
+
+/** What saving the drafts does to the maximum of the automatic deletion, or null when it binds no more accounts. */
+function retentionTightening(
+  saved: (key: PolicyKey) => string,
+  draft: (key: PolicyKey) => string,
+): RetentionTightening | null {
+  const before = wholeNumber(saved("auto_delete_max_age_days"));
+  const after = wholeNumber(draft("auto_delete_max_age_days"));
+  if (!(after > 0)) return null;
+  const graceDays = wholeNumber(draft("auto_delete_grace_days"));
+  const turnsOn = !(before > 0);
+  const tightens =
+    turnsOn ||
+    after < before ||
+    autoDeleteAllowances.some((key) => saved(key) === "true" && draft(key) !== "true") ||
+    wholeNumber(draft("auto_delete_max_kept_pins")) < wholeNumber(saved("auto_delete_max_kept_pins"));
+  return tightens ? { maxAgeDays: after, graceDays, turnsOn } : null;
+}
 
 /** The saved or chosen federation mode; the default `both` when the value is not a mode. */
 function federationModeOf(value: string): FederationMode {
@@ -229,6 +342,7 @@ export function useServerPolicies(page: PolicyPage) {
   const [status, setStatus] = useState<string | undefined>(undefined);
   const [isConfirming, setIsConfirming] = useState(false);
   const [isConfirmingLimit, setIsConfirmingLimit] = useState(false);
+  const [isConfirmingRetention, setIsConfirmingRetention] = useState(false);
 
   const savedValue = (key: PolicyKey) => saved.get(key)?.value ?? "";
   const valueOf = (key: PolicyKey) => drafts[key] ?? savedValue(key);
@@ -280,7 +394,9 @@ export function useServerPolicies(page: PolicyPage) {
               key === "hook_local_status_account_age_days" ||
               key === "hook_local_profile_account_age_days"
             ? t("client:admin.settings.hooks.retention.invalid", range)
-            : t("client:admin.settings.invites.number.invalid", range),
+            : key.startsWith("auto_delete_")
+              ? t("client:admin.settings.auto_delete.number.invalid", range)
+              : t("client:admin.settings.invites.number.invalid", range),
     };
   };
   const numberErrors = numberKeys.filter((key) => keys.includes(key)).map((key) => numberField(key).error);
@@ -305,6 +421,8 @@ export function useServerPolicies(page: PolicyPage) {
   // from the server, which never refuses: the administrator decides.
   const limitTurnsOn = savedValue("login_providers_only") !== "true" && valueOf("login_providers_only") === "true";
   const impact = useQuery({ ...loginProvidersOnlyImpactQueryOptions(api), enabled: limitTurnsOn });
+  // Turning on or tightening the maximum of the automatic deletion notifies every account it newly binds.
+  const tightening = page === "auto_delete" ? retentionTightening(savedValue, sentValue) : null;
 
   return {
     /** The value of a setting in the form: the draft, else what is saved. */
@@ -334,6 +452,10 @@ export function useServerPolicies(page: PolicyPage) {
       if (save.isPending || numberErrors.some((error) => error !== undefined)) return;
       if (Object.keys(changes).length === 0) {
         setStatus(t("client:admin.settings.policies.unchanged"));
+        return;
+      }
+      if (tightening !== null) {
+        setIsConfirmingRetention(true);
         return;
       }
       if (limitTurnsOn) {
@@ -369,6 +491,19 @@ export function useServerPolicies(page: PolicyPage) {
       /** Closes the confirmation without saving; the form keeps the drafts. */
       cancel: () => {
         setIsConfirmingLimit(false);
+      },
+    },
+    /** The confirmation of a stricter maximum of the automatic deletion: what it will be, and whether it is open. */
+    retentionConfirmation: {
+      tightening,
+      isOpen: isConfirmingRetention && tightening !== null,
+      confirm: () => {
+        setIsConfirmingRetention(false);
+        if (!save.isPending) save.mutate(changes);
+      },
+      /** Closes the confirmation without saving; the form keeps the drafts. */
+      cancel: () => {
+        setIsConfirmingRetention(false);
       },
     },
     /** Whether the confirmation of `narrowing` is open. */

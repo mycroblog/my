@@ -135,7 +135,7 @@ whole username, or for the people who follow it.
 
 ### Automatic deletion of old posts
 
-Users can have their own posts deleted automatically some days after they publish them (Settings, "Automatic deletion").
+Users can have their own posts deleted automatically some days after they publish them (Settings, "Delete old posts").
 Each user's policy is their own: whether it is on, after how many days, and which posts it keeps (pinned, bookmarked, and
 favourited posts, posts with media or a poll, posts of chosen visibilities, and posts with at least some boosts or
 favourites). Deleting a post this way is the same as its author deleting it: the servers it went to receive a `Delete`.
@@ -179,7 +179,8 @@ period.
 
 The maximum is public: `GET /api/v1/instance` returns it in `auto_delete_limit`, and the about page shows it, so people
 know it before they sign up. Changes of these keys need `manage_settings` and are recorded in the audit log like any
-other setting.
+other setting. In the web client they are on the "Post deletion" page of "Server settings", which asks before it saves a
+maximum that is turned on or made stricter.
 
 ### Texts (one key, one value)
 
@@ -323,6 +324,7 @@ audit log on the moderation screen ("Audit log", `/moderation/audit-log`).
   | Icon and logo (`/admin/settings/branding`) | The icon, the logo, and the logo for dark backgrounds, each saved with its own button ([Logo and icon](#logo-and-icon)) |
   | Registration (`/admin/settings/registration`) | Registration (`registration_mode`, `login_providers_only`); Member invites (`invite_creators`, `member_invite_max_active`, `member_invite_max_uses`, `member_invite_max_lifetime_seconds`); Apps (`user_app_registration`, `oauth_metadata_document_clients`, `dynamic_client_registration`) |
   | Content (`/admin/settings/content`) | Language (`default_locale`, chosen from the languages the app has); Timelines (`local_timeline_visibility`, `federated_timeline_visibility`); Posts (`require_media_description`); Landing page (`public_counts`); Suggested accounts (`featured_accounts`) |
+  | Post deletion (`/admin/settings/auto-delete`) | Default for new accounts (the `auto_delete_default_*` settings); Maximum (`auto_delete_max_age_days`, the `auto_delete_max_allow_*` settings, `auto_delete_max_kept_pins`, `auto_delete_grace_days`). Saving a maximum that is turned on or made stricter (fewer days, fewer exceptions or pins) asks first, since it notifies the accounts it newly holds ([A maximum for keeping posts](#a-maximum-for-keeping-posts)) |
   | Federation (`/admin/settings/federation`) | Federation (`federation_mode`, `authorized_fetch`, `remote_media_policy`, `remote_media_cache_ttl_seconds` (choose from 1 hour, 1 day, 7 days, 30 days, or 365 days), `link_cards`, `link_cards_ignore_robots_txt`); Limited and suspended servers (`domain_actions_visibility`, `domain_actions_rationale_visibility`); External review (the `hook_*` settings, see [Decision hooks](decision-hooks.md)) |
   | Search and crawlers (`/admin/settings/discovery`) | Search engines and AI (`search_indexing`, `indexable_default`, `ai_usage`, `security_contact`); Post search (`search_visibilities`, only while the server has full-text search) |
   | Voice chat (`/admin/settings/voice`) | `voice_room_starters`, `voice_public_summary`, `voice_participants_retention_days`; the page is listed only while the server offers voice chat |

@@ -6,8 +6,8 @@ paths: ["app/web/src/routes/admin.settings.tsx", "app/web/src/features/admin/com
 
 ## サーバーの設定: 全般（`/admin/settings`）
 
-`manage_settings` を持つ管理者が、サーバーの名前・説明・連絡先とサムネイルを決めるページ（FR-705、[§14](../14-admin.md)）。サーバーの設定の画面の最初のページで、ほかのページ（[アイコンとロゴ](admin-settings-branding.md)・[登録](admin-settings-registration.md)・[コンテンツ](admin-settings-content.md)・[連合](admin-settings-federation.md)・[検索とクローラー](admin-settings-discovery.md)・[通話](admin-settings-voice.md)）は子のルート。
-画面の名前の `h1` の下に、ページの間のリンクの並び（`LocalNav`。「全般」「アイコンとロゴ」「登録」「コンテンツ」「連合」「検索とクローラー」、サーバーが通話を出しているときだけ「通話」）を置き、今のページを `aria-current="page"` にする。管理のメニューは「サーバーの設定」の 1 項目のままで、どのページでも今いる項目になる。
+`manage_settings` を持つ管理者が、サーバーの名前・説明・連絡先とサムネイルを決めるページ（FR-705、[§14](../14-admin.md)）。サーバーの設定の画面の最初のページで、ほかのページ（[アイコンとロゴ](admin-settings-branding.md)・[登録](admin-settings-registration.md)・[コンテンツ](admin-settings-content.md)・[投稿の自動削除](admin-settings-auto-delete.md)・[連合](admin-settings-federation.md)・[検索とクローラー](admin-settings-discovery.md)・[通話](admin-settings-voice.md)）は子のルート。
+画面の名前の `h1` の下に、ページの間のリンクの並び（`LocalNav`。「全般」「アイコンとロゴ」「登録」「コンテンツ」「投稿の自動削除」「連合」「検索とクローラー」、サーバーが通話を出しているときだけ「通話」）を置き、今のページを `aria-current="page"` にする。管理のメニューは「サーバーの設定」の 1 項目のままで、どのページでも今いる項目になる。
 
 ### 1. 使う人と頻度
 

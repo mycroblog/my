@@ -45,6 +45,11 @@ function configured(name: string, short: string, long: string) {
             finance_visibility: "breakdown",
             supporter_list_visibility: "public",
             federation_mode: "both",
+            auto_delete_default_enabled: "true",
+            auto_delete_default_min_age_days: "180",
+            auto_delete_max_age_days: "365",
+            auto_delete_max_kept_pins: "3",
+            auto_delete_max_allow_bookmarked: "true",
           }),
         ),
       ),
@@ -88,6 +93,9 @@ export const Registration: Story = { parameters: { screen: { path: "/admin/setti
 
 /** The page of the content, with Japanese as the default language. */
 export const Content: Story = { parameters: { screen: { path: "/admin/settings/content" } } };
+
+/** The page of the automatic deletion: a default of 180 days for new accounts, and a maximum of a year. */
+export const AutoDelete: Story = { parameters: { screen: { path: "/admin/settings/auto-delete" } } };
 
 /** The page of the federation, the longest: the federation, the list of the domain actions and the external review. */
 export const Federation: Story = { parameters: { screen: { path: "/admin/settings/federation" } } };
