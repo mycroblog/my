@@ -9,7 +9,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"os"
 	"slices"
 	"strings"
 )
@@ -143,17 +142,9 @@ func decodeSettingsFile(file []byte) (map[string]json.RawMessage, error) {
 	return tuned, nil
 }
 
-// CheckSettingsFile checks the file of search_meilisearch_settings_file: it exists, and it is a
-// JSON object that sets none of the settings the server sets itself. Its errors never quote the
-// file.
-func CheckSettingsFile(path string) error {
-	b, err := os.ReadFile(path) //nolint:gosec // The operator configures the path.
-	if err != nil {
-		if pe, ok := errors.AsType[*os.PathError](err); ok {
-			err = pe.Err
-		}
-		return fmt.Errorf("meilisearch: the settings file: %w", err)
-	}
-	_, err = decodeSettingsFile(b)
+// CheckSettings returns why b, the content of the operator's settings file, cannot be the
+// settings of the index, nil when it can. The error never quotes the file.
+func CheckSettings(b []byte) error {
+	_, err := decodeSettingsFile(b)
 	return err
 }

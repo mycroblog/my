@@ -6,8 +6,6 @@ package config
 
 import (
 	"errors"
-	"os"
-	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -47,38 +45,30 @@ func TestLoadMeilisearch(t *testing.T) {
 }
 
 func TestLoadMeilisearchSettingsFile(t *testing.T) {
-	dir := t.TempDir()
-	file := func(name, content string) string {
-		p := filepath.Join(dir, name)
-		if err := os.WriteFile(p, []byte(content), 0o600); err != nil {
-			t.Fatal(err)
-		}
-		return p
+	files := map[string]string{
+		"/etc/my/ok.json":     `{"stopWords": ["the"]}`,
+		"/etc/my/owned.json":  `{"sortableAttributes": ["hidden-value"]}`,
+		"/etc/my/broken.json": `{"stopWords": hidden-value`,
 	}
 	meili := func(path string) map[string]string {
 		return with(minimal(), "MY_SEARCH", "meilisearch", "MY_SEARCH_MEILISEARCH_URL", "http://meilisearch:7700",
 			"MY_SEARCH_MEILISEARCH_SETTINGS_FILE", path)
 	}
-	ok := file("ok.json", `{"stopWords": ["the"]}`)
-	cfg, _, err := Load(source(meili(ok), nil))
-	if err != nil || cfg.SearchMeilisearchSettingsFile != ok {
-		t.Fatalf("Load() = %v, %v", cfg, err)
+	cfg, _, err := Load(source(meili("/etc/my/ok.json"), files))
+	if err != nil || string(cfg.SearchMeilisearchSettings) != files["/etc/my/ok.json"] {
+		t.Fatalf("Load() = %q, %v", cfg.SearchMeilisearchSettings, err)
 	}
-	for name, path := range map[string]string{
-		"missing": filepath.Join(dir, "missing.json"),
-		"owned":   file("owned.json", `{"sortableAttributes": ["hidden-value"]}`),
-		"broken":  file("broken.json", `{"stopWords": hidden-value`),
-	} {
-		_, _, err := Load(source(meili(path), nil))
+	for _, path := range []string{"/etc/my/missing.json", "/etc/my/owned.json", "/etc/my/broken.json"} {
+		_, _, err := Load(source(meili(path), files))
 		var ve *ValidationError
 		if !errors.As(err, &ve) || len(ve.Issues) != 1 || ve.Issues[0].Key != "search_meilisearch_settings_file" {
-			t.Errorf("%s: Load() = %v, want one issue of search_meilisearch_settings_file", name, err)
+			t.Errorf("%s: Load() = %v, want one issue of search_meilisearch_settings_file", path, err)
 		} else if strings.Contains(err.Error(), "hidden-value") {
-			t.Errorf("%s: Load() = %v, which quotes the file", name, err)
+			t.Errorf("%s: Load() = %v, which quotes the file", path, err)
 		}
 	}
 	// With another search the file is not read.
-	if _, _, err := Load(source(with(minimal(), "MY_SEARCH_MEILISEARCH_SETTINGS_FILE", filepath.Join(dir, "missing.json")), nil)); err != nil {
+	if _, _, err := Load(source(with(minimal(), "MY_SEARCH_MEILISEARCH_SETTINGS_FILE", "/etc/my/missing.json"), files)); err != nil {
 		t.Errorf("Load() with search = none: %v", err)
 	}
 }

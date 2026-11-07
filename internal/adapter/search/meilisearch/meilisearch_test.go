@@ -10,8 +10,6 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
-	"os"
-	"path/filepath"
 	"strings"
 	"sync"
 	"testing"
@@ -367,39 +365,28 @@ func TestClearDeletesTheIndexAndAppliesTheSettingsAgain(t *testing.T) {
 	}
 }
 
-func TestSettingsFileChecks(t *testing.T) {
-	dir := t.TempDir()
-	write := func(name, content string) string {
-		p := filepath.Join(dir, name)
-		if err := os.WriteFile(p, []byte(content), 0o600); err != nil {
-			t.Fatal(err)
-		}
-		return p
-	}
-	if err := meilisearch.CheckSettingsFile(write("ok.json", `{"stopWords": ["the"], "rankingRules": ["sort", "words"]}`)); err != nil {
-		t.Errorf("CheckSettingsFile(ok) = %v", err)
+func TestSettingsChecks(t *testing.T) {
+	if err := meilisearch.CheckSettings([]byte(`{"stopWords": ["the"], "rankingRules": ["sort", "words"]}`)); err != nil {
+		t.Errorf("CheckSettings(ok) = %v", err)
 	}
 	for name, content := range map[string]string{
-		"array.json":    `["secret-value"]`,
-		"broken.json":   `{"stopWords": [secret-value`,
-		"two.json":      `{} {}`,
-		"null.json":     `null`,
-		"owned.json":    `{"filterableAttributes": ["secret-value"]}`,
-		"unsorted.json": `{"rankingRules": ["words", "sort"]}`,
-		"twice.json":    `{"rankingRules": ["sort", "words", "sort"]}`,
+		"array":    `["secret-value"]`,
+		"broken":   `{"stopWords": [secret-value`,
+		"two":      `{} {}`,
+		"null":     `null`,
+		"owned":    `{"filterableAttributes": ["secret-value"]}`,
+		"unsorted": `{"rankingRules": ["words", "sort"]}`,
+		"twice":    `{"rankingRules": ["sort", "words", "sort"]}`,
 	} {
-		err := meilisearch.CheckSettingsFile(write(name, content))
+		err := meilisearch.CheckSettings([]byte(content))
 		if err == nil {
-			t.Errorf("CheckSettingsFile(%s) = nil", name)
+			t.Errorf("CheckSettings(%s) = nil", name)
 		} else if strings.Contains(err.Error(), "secret-value") {
-			t.Errorf("CheckSettingsFile(%s) = %v, which quotes the file", name, err)
+			t.Errorf("CheckSettings(%s) = %v, which quotes the file", name, err)
 		}
 		if _, err := meilisearch.New(meilisearch.Options{URL: "http://h", HTTPClient: newClient(), Settings: []byte(content)}); err == nil {
 			t.Errorf("New with %s = nil", name)
 		}
-	}
-	if err := meilisearch.CheckSettingsFile(filepath.Join(dir, "missing.json")); err == nil {
-		t.Error("CheckSettingsFile(missing) = nil")
 	}
 }
 

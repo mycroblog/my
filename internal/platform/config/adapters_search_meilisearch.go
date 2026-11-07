@@ -10,4 +10,4 @@ func checkMeilisearchURL(v string) error { return meilisearch.CheckURL(v) }
 
 func checkMeilisearchIndex(v string) error { return meilisearch.CheckIndexUID(v) }
 
-func checkMeilisearchSettingsFile(path string) error { return meilisearch.CheckSettingsFile(path) }
+func checkMeilisearchSettings(b []byte) error { return meilisearch.CheckSettings(b) }

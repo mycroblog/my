@@ -9,7 +9,6 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
-	"os"
 	"time"
 
 	awsconfig "github.com/aws/aws-sdk-go-v2/config"
@@ -50,14 +49,9 @@ func newOpenSearchIndex(ctx context.Context, cfg *config.Config, logger *slog.Lo
 		}
 		o.AWS = &opensearch.AWSSigning{Credentials: awsCfg.Credentials, Region: awsCfg.Region, Service: opensearch.ServiceManaged}
 	}
-	if path := cfg.SearchOpenSearchIndexSettingsFile; path != "" {
-		// The configuration's check read it already; its contents never reach a log or an error.
-		b, err := os.ReadFile(path) //nolint:gosec // the operator chose the path
-		if err != nil {
-			return nil, fmt.Errorf("read search_opensearch_index_settings_file: %w", err)
-		}
-		o.Settings = b
-	}
+	// Load read and checked search_opensearch_index_settings_file; its content never reaches a
+	// log or an error.
+	o.Settings = cfg.SearchOpenSearchIndexSettings
 	index, err := opensearch.New(o)
 	if err != nil {
 		return nil, err

@@ -13,11 +13,5 @@ func searchMeilisearchChecks(vals map[string]string, present map[string]bool) []
 	if !present["search_meilisearch_url"] {
 		issues = append(issues, Issue{Key: "search_meilisearch_url", Missing: true, Message: "required when search is meilisearch"})
 	}
-	if path := vals["search_meilisearch_settings_file"]; path != "" {
-		// The error says what is wrong with the file, never what it holds.
-		if err := checkMeilisearchSettingsFile(path); err != nil {
-			issues = append(issues, Issue{Key: "search_meilisearch_settings_file", Message: err.Error()})
-		}
-	}
 	return issues
 }

@@ -236,16 +236,22 @@ type Config struct {
 	// SearchOpenSearchIndexSettingsFile is the path of the JSON file of the settings of the
 	// index, empty for the adapter's own.
 	SearchOpenSearchIndexSettingsFile string
-	SearchOpenSearchUsername          string
-	SearchOpenSearchPassword          string
-	SearchOpenSearchAWSSigning        string
-	SearchOpenSearchAWSRegion         string
+	// SearchOpenSearchIndexSettings is the content of SearchOpenSearchIndexSettingsFile, read and
+	// checked by Load; nil without the file.
+	SearchOpenSearchIndexSettings []byte
+	SearchOpenSearchUsername      string
+	SearchOpenSearchPassword      string
+	SearchOpenSearchAWSSigning    string
+	SearchOpenSearchAWSRegion     string
 	// The Meilisearch server of search = meilisearch (ADR-0149 §14).
 	SearchMeilisearchURL    string
 	SearchMeilisearchAPIKey string
 	SearchMeilisearchIndex  string
 	// SearchMeilisearchSettingsFile is the path of the operator's index settings, read at start.
 	SearchMeilisearchSettingsFile string
+	// SearchMeilisearchSettings is the content of SearchMeilisearchSettingsFile, read and checked
+	// by Load; nil without the file.
+	SearchMeilisearchSettings []byte
 	// PaymentsProvider is the payment provider of the supporters (ADR-0074 §5): "none" or a
 	// provider's name. PaymentsReconcileInterval and PaymentsReconcileMaxRequests bound the
 	// reconciliation with it (§4).
@@ -770,7 +776,7 @@ func load(src Source, only map[string]bool) (*Config, []Setting, error) {
 		issues = append(issues, crossChecks(valid, present)...)
 	}
 	if only == nil {
-		issues = append(issues, loadSearchElasticsearchSettings(cfg, src)...)
+		issues = append(issues, loadSearchSettings(cfg, src)...)
 	}
 	if only == nil || only["origin_secret"] {
 		issues = append(issues, originChecks(valid, present)...)
