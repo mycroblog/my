@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"github.com/mycroblog/my/internal/adapter/search/elasticsearch"
+	"github.com/mycroblog/my/internal/app/kernel"
 	"github.com/mycroblog/my/internal/app/search"
 	"github.com/mycroblog/my/internal/platform/config"
 )
@@ -30,7 +31,7 @@ const elasticsearchTimeout = time.Minute
 
 // newElasticsearchIndex returns the Index of search = elasticsearch, with the index created or
 // upgraded to the mapping of this build.
-func newElasticsearchIndex(ctx context.Context, cfg *config.Config, logger *slog.Logger) (search.Index, error) {
+func newElasticsearchIndex(ctx context.Context, cfg *config.Config, logger *slog.Logger, _ kernel.Meter) (search.Index, error) {
 	client := searchHTTPClient(elasticsearchTimeout)
 	if cfg.SearchElasticsearchCAFile != "" {
 		pem, err := os.ReadFile(cfg.SearchElasticsearchCAFile)

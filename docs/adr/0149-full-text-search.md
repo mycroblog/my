@@ -28,7 +28,7 @@
 
 ### 3. バックエンドの選択
 
-- 設定キー `search` を `queue` と同じ形で `internal/platform/config/schema.go` に宣言する。`v0.1.0` の時点の選択肢は `none` だけである。
+- 設定キー `search` を `queue` と同じ形で `internal/platform/config/schema.go` に宣言する。`v0.1.0` の時点の選択肢は `none` と `plugin` である。`plugin` は ADR-0146 の kind `search` に `search.Index` を委譲し、`my` に adapter の無いエンジン（日本語に強い Groonga や Sudachi を組んだ索引など）を運営者が使えるようにする。宛先は `plugin_search_*` で、`mail = plugin` と同じ形である。
 - 任意のバックエンドごとにビルドタグを 1 つ持つ。`internal/platform` の `adapters_search_<name>.go` と `adapters_no_search_<name>.go`（タグ `no_search_<name>`）の対で、外したバックエンドは `config.ExcludedError` で起動を止める。既存の `no_voice_livekit` と同じ形である。
 - バックエンドの宛先は運営者が設定したものなので、SSRF を防ぐ `kernel.HTTPClient` ではなくアダプタ自身の `*http.Client` を使う（`internal/adapter/voice/livekit` と同じ）。
 - 偽のバックエンドは `none` と別に作る。`internal/adapter/search/fake` に置き、Go のテストはこれを注入する。Web の E2E のサーバーはビルドタグ `e2e_fakes` の `search = fake` で使い、`profile = development` 以外では起動を拒む（`payments = fake` と同じ形、ADR-0015 §6）。製品のビルドには入らない。
@@ -145,7 +145,7 @@ ADR-0058 と [data-model §8](../architecture/data-model/08-deletion-and-purge.m
 
 ### 14. `v0.1.0` までに作るものと、バックエンドが後で要るもの
 
-`v0.1.0` までに作る: ポートと `none`（#2247）、索引のジョブ（#2248）、API（#2249）、再構築（#2250）、Web クライアント（#2251）。偽のバックエンドで検査する。`search_visibilities`・進み具合の表・ジョブの種類・API・文言は全部ここで入るので、`v0.1.0` の後にバックエンドを足しても、スキーマの変更（ADR-0023）も API の変更も要らない。
+`v0.1.0` までに作る: ポートと `none`（#2247）、索引のジョブ（#2248）、API（#2249）、再構築（#2250）、Web クライアント（#2251）、プラグインへの委譲（#2430、§3）。偽のバックエンドで検査する。`search_visibilities`・進み具合の表・ジョブの種類・API・文言は全部ここで入るので、`v0.1.0` の後にバックエンドを足しても、スキーマの変更（ADR-0023）も API の変更も要らない。
 
 バックエンドを足すときに要るものはこれだけである。
 

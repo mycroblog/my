@@ -7,7 +7,7 @@ or on another machine.
 Nothing is delegated by default. A server without a plugin address opens no connection and starts no process.
 The build tag [`no_plugins`](../reference/build-tags.md) takes the plugin client out of the binary.
 
-![Where plugins sit: the my process hands five ports to a plugin and asks five decision hooks, all through one plugin client that connects to the plugins you run; the bottom of the diagram shows what each does when a call fails. The list below describes each part.](images/plugins.svg)
+![Where plugins sit: the my process hands six ports to a plugin and asks five decision hooks, all through one plugin client that connects to the plugins you run; the bottom of the diagram shows what each does when a call fails. The list below describes each part.](images/plugins.svg)
 
 From the top of the diagram down:
 
@@ -15,7 +15,7 @@ From the top of the diagram down:
   - **Ports it hands over**: a plugin does a job in place of a built-in part, and each is on only when a setting names
     `plugin`: `translator` (the instance setting `translation_providers = plugin`), `billing` (`billing_sources` includes
     `plugin`), `mailer` (`mail = plugin`), `media_image`, `media_video`, and `media_audio` (`media_image = plugin` and so
-    on), and `key_manager` (`key_manager = plugin`).
+    on), `key_manager` (`key_manager = plugin`), and `search` (`search = plugin`).
   - **[Decision hooks](decision-hooks.md)**: a plugin answers whether to accept something, and is asked unless the hook's
     mode `hook_<hook>_mode` is `off`: `inbound.status` for posts from other servers, `inbound.follow` for follows from
     other servers, `signup.check` for sign-ups, `media.check` for uploads, `local.status` for posts of local accounts,
@@ -30,6 +30,7 @@ From the top of the diagram down:
   - `billing`, `mailer`, and the media kinds: the job that made the call runs again later.
   - `translator`: the server asks the next provider, and when none is left the reader sees that the translation failed.
   - `key_manager` fails closed: whatever needs a key fails, and the server does not start without the plugin.
+  - `search`: the job of a write runs again later, and a search fails, so the person sees that the search is unavailable.
   - A decision hook does what `hook_<hook>_on_failure` says: `pass`, `retry`, or, for sign-ups, `require_approval`.
 
 ## Kinds
@@ -40,6 +41,7 @@ key, so `inbound.status` has `plugin_inbound_status_address`.
 | Kind | What it carries | Plain TCP (`http://`) | Default protocol | Default deadline |
 | --- | --- | --- | --- | --- |
 | `translator` | The text of a post that a reader asked to translate | **Refused** | `json` | 10 s |
+| `search` | The text, author, visibility, and language of `public` and `local` posts, and the queries of signed-in people | **Refused** | `json` | 10 s |
 | `billing` | The costs of the instance | Allowed | `json` | 2 min |
 | `mailer` | Addresses and secrets such as confirmation links | **Refused** | `json` | 30 s |
 | `media_image` | Uploaded images, with their metadata, which may hold a location | Allowed | `proto` | 4 min |
@@ -96,7 +98,7 @@ connection. The token is read at start only.
 
 ### Plain TCP
 
-`mailer`, `key_manager`, `translator`, `inbound.status`, `local.status`, and `signup.check` refuse `http://`: the server does not start. That holds on
+`mailer`, `key_manager`, `translator`, `search`, `inbound.status`, `local.status`, and `signup.check` refuse `http://`: the server does not start. That holds on
 loopback too (`http://127.0.0.1`), since a loopback address does not keep other processes on the host from reading the
 traffic. Put such a sidecar on a Unix socket in a shared volume.
 
@@ -133,7 +135,7 @@ A plugin that is down when the server starts stops nothing, except `key_manager`
 
 A call has the deadline of `plugin_<kind>_timeout`, and a plugin receives it as `Connect-Timeout-Ms` (`grpc-timeout` on
 gRPC). A plugin may ignore that header: the server stops waiting anyway. The deadline must stay below 30 seconds for the
-kinds that a request can wait for (`key_manager`, `translator`, `signup.check`, `media.check`, `local.status`, `inbound.actor`, and `local.profile`), and
+kinds that a request can wait for (`key_manager`, `translator`, `search`, `signup.check`, `media.check`, `local.status`, `inbound.actor`, and `local.profile`), and
 below 5 minutes, how long a job may run, for the others.
 
 ## Test a plugin
@@ -172,6 +174,13 @@ choose another pair for a plugin that has only some). A service behind the plugi
 about 200 characters. It checks the form of the answers, and that the plugin refuses the language `qaa`, a code that ISO 639
 leaves for private use. It cannot judge the words, so read a translation of the plugin yourself.
 [Translating posts](#translating-posts) has the contract of the kind.
+
+`--kind search` searches, and writes and removes only documents of its own: a few with IDs that no post has, of an
+author that no account is, holding a word made for the run, which it removes at the end. It checks that a query with no
+word finds nothing, that a query in the query language of an engine or in Japanese does not fail, that the plugin refuses a
+cursor it did not issue, and that documents are found newest first, page by page, replaced, and removed by post and by
+author. `--clear-index` also runs the cases that remove every document of a visibility and the whole index: use it only
+against an index for testing. [Searching posts](#searching-posts) has the contract of the kind.
 
 `--kind media_image` and `--kind media_audio` send only small test files that they make themselves: a photo, an emoji, and
 an animated GIF, or an MP3. Each one hides a location or a title in its metadata, and a case fails when that comes back in
@@ -277,6 +286,110 @@ The characters of each call count against the monthly limits, also of a call tha
 The server stops waiting after `plugin_translator_timeout`, and after 20 seconds whatever that setting says. All the
 providers of one request get 45 seconds in all. It does not retry a
 failed call, and the same fragments can come again for another reader.
+
+## Searching posts
+
+A plugin of the kind `search` keeps the index of the [full-text search of posts](search.md) in an engine that the server
+has no built-in support for, such as Groonga or PGroonga, an index built with Sudachi, Typesense, Manticore, or a hosted
+search service. To the server it is one more engine: the same posts go into the index, the same jobs keep it up to date,
+and the server still decides what each person may see.
+
+```sh
+MY_SEARCH=plugin
+MY_PLUGIN_SEARCH_ADDRESS=unix:///run/my/search.sock
+```
+
+1. Run the plugin, and check it with [`my plugin test --kind search`](#test-a-plugin).
+2. Set `search = plugin` and `plugin_search_address`, and follow [Turning it on](search.md#turning-it-on), as for any
+   engine: the index fills from then on, and `my search rebuild` adds the existing posts.
+3. If the plugin sends the posts to a service of another company, name that service in your
+   [privacy documents](search.md#your-privacy-documents).
+
+The server opens no connection at start, so a plugin that is down stops nothing but the search. To move to or from the
+plugin, follow [Switching off or changing the engine](search.md#switching-off-or-changing-the-engine).
+
+### What the plugin receives
+
+- **The posts of the index.** For each post that the index holds, the plugin receives its text (the body, the content
+  warning, and the image descriptions, as plain text), its ID, the account ID of its author, its visibility, its language,
+  and when it was published. Those are `public` and `local` posts only, as [`search_visibilities`](instance-settings.md)
+  says, of authors who allow search. `local` posts are meant for the accounts of this server alone: the plugin, and any
+  service behind it, reads them too. `unlisted`, `private`, and `direct` posts never reach it.
+- **The queries.** When a signed-in person searches posts, the plugin receives what they typed, with the cursor of the
+  page and the number of results. It does not receive who searched.
+- **The removals:** of a post, of every post of an account, of every post of a visibility, and of the whole index.
+
+The plugin returns post IDs only. The server reads each post again from its database and shows only what the person may
+see now, so a plugin cannot show a post to anyone who may not see it, and an index that lags behind only finds less. The
+server also never shows a plugin's errors to anyone.
+
+The server refuses `http://` for this kind, also on loopback, because it carries the text of posts and what people search
+for. Use a Unix socket or `https://`.
+
+### The contract
+
+The service is `my.plugin.search.v1.SearchService`, with one RPC per operation:
+
+| RPC | What it does |
+| --- | --- |
+| `Replace` | Adds the document of a post, or replaces the document with the same `statusId` |
+| `Remove` | Removes the document of a post |
+| `RemoveByAuthor` | Removes every document of an account |
+| `RemoveByVisibility` | Removes every document of a visibility, `VISIBILITY_PUBLIC` or `VISIBILITY_LOCAL` |
+| `Clear` | Removes every document; the index takes documents again afterwards |
+| `Search` | Returns one page of the IDs of the documents that a query finds, newest first |
+
+```text
+POST /my.plugin.search.v1.SearchService/Replace
+Content-Type: application/json
+
+{"document":{"statusId":"019a5f3e-8b2c-7d41-9a3e-2f6c1b8d4e07","authorId":"0199c2d4-1e5f-7a3b-8c9d-0e1f2a3b4c5d","visibility":"VISIBILITY_PUBLIC","language":"ja","publishedAt":"2026-11-07T05:12:30Z","text":"週末に図書館で全文検索の本を読んだ"}}
+```
+
+```text
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+{"outcome":"OUTCOME_OK"}
+```
+
+```text
+POST /my.plugin.search.v1.SearchService/Search
+Content-Type: application/json
+
+{"text":"全文検索","limit":1}
+```
+
+```text
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+{"outcome":"OUTCOME_OK","statusIds":["019a5f3e-8b2c-7d41-9a3e-2f6c1b8d4e07"],"nextCursor":"019a5f3e-8b2c-7d41-9a3e-2f6c1b8d4e07"}
+```
+
+- **A query is plain text.** The plugin splits it into words and finds the documents with every word. It never reads the
+  text as the query language of its engine: an operator, a wildcard, a quote, or a field name in it is just text. A query
+  with no word finds nothing. How the plugin finds words in Japanese and other languages written without spaces is its own
+  choice, and the reason to have one.
+- **A page is newest first.** `statusIds` are in descending order, each at most once, `limit` of them at most, and each a
+  status ID as the server sent it (36 lowercase characters). The IDs are UUIDv7, so their order as strings is the order of
+  time.
+- **The cursor is the plugin's.** `nextCursor` is empty on the last page, and otherwise at most 256 bytes of printable
+  ASCII with no space, such as the last ID of the page. The server sends it back unchanged for the next page, which goes on
+  after that ID even when documents came and went. A page that is not the last may hold fewer than `limit` IDs. A cursor
+  that the plugin did not issue gets `OUTCOME_INVALID_CURSOR`.
+- **A write shows in the next search**, and every call may come twice: removing what is not there succeeds. An engine that
+  shows writes only after a refresh makes the plugin wait for it.
+
+| `outcome` | Meaning | What the server does |
+| --- | --- | --- |
+| `OUTCOME_OK` | The call did what it asks | Applies the view policy to the IDs of a page |
+| `OUTCOME_FAILED` | The engine failed or did not answer | Retries a write with its job; fails a search, which the person may try again |
+| `OUTCOME_INVALID_CURSOR` | `Search` only: the cursor is not one the plugin issued | Tells the client that its cursor is wrong |
+
+A missing or unknown `outcome`, a failed call, and a page that breaks these rules count as `OUTCOME_FAILED`, and nothing
+of such a page is shown. A call lasts `plugin_search_timeout` (10 seconds by default) at most, and 10 seconds whatever that
+setting says.
 
 ## Converting media
 

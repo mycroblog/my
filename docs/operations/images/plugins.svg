@@ -1,7 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 1066" width="760" height="1066" role="img" aria-labelledby="title desc">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 1150" width="760" height="1150" role="img" aria-labelledby="title desc">
 <!-- SPDX-License-Identifier: AGPL-3.0-only -->
   <title id="title">Where plugins sit</title>
-  <desc id="desc">The my process, with role web, worker, or all, holds two kinds of plugin calls. Ports it hands over, each on when a setting names plugin: translator (translation_providers = plugin), billing (billing_sources includes plugin), mailer (mail = plugin), media (media = plugin), and key_manager (key_manager = plugin). Decision hooks, asked unless hook_&lt;hook&gt;_mode is off: inbound.status for posts from other servers, inbound.follow for follows from other servers, signup.check for sign-ups, media.check for uploads, local.status for posts of local accounts, and inbound.actor for the profiles of accounts on other servers. Every call goes through the plugin client, which has one destination per kind (plugin_&lt;kind&gt;_address), a deadline (plugin_&lt;kind&gt;_timeout), and 8 calls at once (2 for media). It connects over unix://, https://, or, for some kinds only, http:// to your plugins: separate programs that you run as a sidecar, under systemd, or on another machine; the server only connects. When a call fails or times out: for billing, mailer, and media, the job that made the call runs again later; for translator, the next provider is asked, and with none left the reader sees it fail; key_manager fails closed, so what needs a key fails, and the server does not start without it; a decision hook does what hook_&lt;hook&gt;_on_failure says: pass, retry, or require_approval.</desc>
+  <desc id="desc">The my process, with role web, worker, or all, holds two kinds of plugin calls. Ports it hands over, each on when a setting names plugin: translator (translation_providers = plugin), billing (billing_sources includes plugin), mailer (mail = plugin), media_image, media_video, and media_audio (media_&lt;kind&gt; = plugin), key_manager (key_manager = plugin), and search (search = plugin). Decision hooks, asked unless hook_&lt;hook&gt;_mode is off: inbound.status for posts from other servers, inbound.follow for follows from other servers, signup.check for sign-ups, media.check for uploads, local.status for posts of local accounts, and inbound.actor for the profiles of accounts on other servers. Every call goes through the plugin client, which has one destination per kind (plugin_&lt;kind&gt;_address), a deadline (plugin_&lt;kind&gt;_timeout), and 8 calls at once (2 for media). It connects over unix://, https://, or, for some kinds only, http:// to your plugins: separate programs that you run as a sidecar, under systemd, or on another machine; the server only connects. When a call fails or times out: for billing, mailer, and media, the job that made the call runs again later; for translator, the next provider is asked, and with none left the reader sees it fail; key_manager fails closed, so what needs a key fails, and the server does not start without it; for search, the job of a write runs again later and a search fails; a decision hook does what hook_&lt;hook&gt;_on_failure says: pass, retry, or require_approval.</desc>
 
   <style>
     svg { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif; }
@@ -35,7 +35,7 @@
       <path class="head" d="M 0 0 L 10 5 L 0 10 z"/>
     </marker>
   </defs>
-  <rect class="bg" x="0" y="0" width="760" height="1066" rx="12"/>
+  <rect class="bg" x="0" y="0" width="760" height="1150" rx="12"/>
 
   <rect class="group" x="20" y="16" width="720" height="500" rx="12"/>
   <text class="h" x="40" y="44" text-anchor="start">The my process</text>
@@ -76,6 +76,10 @@
   <rect class="port" x="390" y="378" width="330" height="56" rx="8"/>
   <text class="t b" x="555" y="400" text-anchor="middle">local.status</text>
   <text class="m" x="555" y="422" text-anchor="middle">posts of local accounts</text>
+
+  <rect class="port" x="40" y="444" width="330" height="56" rx="8"/>
+  <text class="t b" x="205" y="466" text-anchor="middle">search</text>
+  <text class="m" x="205" y="488" text-anchor="middle">search = plugin</text>
   <rect class="port" x="390" y="444" width="330" height="56" rx="8"/>
   <text class="t b" x="555" y="466" text-anchor="middle">inbound.actor</text>
   <text class="m" x="555" y="488" text-anchor="middle">profiles from other servers</text>
@@ -91,7 +95,7 @@
   <text class="t b" x="380" y="723" text-anchor="middle">Your plugins: separate programs that you run</text>
   <text class="m" x="380" y="745" text-anchor="middle">a sidecar, under systemd, or on another machine; the server only connects</text>
 
-  <rect class="group" x="20" y="788" width="720" height="262" rx="12"/>
+  <rect class="group" x="20" y="788" width="720" height="346" rx="12"/>
   <text class="h" x="40" y="816" text-anchor="start">When a call fails or times out</text>
   <rect class="danger" x="40" y="832" width="330" height="96" rx="8"/>
   <text class="t b" x="205" y="863" text-anchor="middle">billing · mailer · media</text>
@@ -109,4 +113,7 @@
   <text class="t b" x="555" y="969" text-anchor="middle">Decision hooks</text>
   <text class="m" x="555" y="991" text-anchor="middle">hook_&lt;hook&gt;_on_failure:</text>
   <text class="m" x="555" y="1013" text-anchor="middle">pass, retry, or require_approval</text>
+  <rect class="danger" x="40" y="1044" width="680" height="74" rx="8"/>
+  <text class="t b" x="380" y="1073" text-anchor="middle">search</text>
+  <text class="m" x="380" y="1095" text-anchor="middle">a write's job runs again later; a search fails, and the person may try again</text>
 </svg>

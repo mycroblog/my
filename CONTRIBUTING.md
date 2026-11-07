@@ -3,6 +3,10 @@
 Human contributors and coding agents work by the same rules. [AGENTS.md](AGENTS.md) lists them in full, and the
 decisions behind them are the Architecture Decision Records indexed in [docs/adr/README.md](docs/adr/README.md).
 
+Everyone who takes part in the project follows the
+[code of conduct](https://github.com/mycroblog/.github/blob/main/CODE_OF_CONDUCT.md) of the mycroblog organization.
+Report a violation to [ops@mycroblog.dev](mailto:ops@mycroblog.dev), in English or Japanese.
+
 Do not report security vulnerabilities in issues or pull requests; follow [SECURITY.md](SECURITY.md) instead.
 
 ## Setup

@@ -2378,7 +2378,7 @@ side effect beyond the call runs only when a flag asks for it.
 <address> is unix:///path/to.sock, https://host[:port], or http://host[:port].
 
 Flags:
-  --kind           probe, translator, billing, mailer, media_image, media_video, media_audio, key_manager, inbound.status, inbound.follow, signup.check, media.check, local.status, inbound.actor, local.profile
+  --kind           probe, translator, search, billing, mailer, media_image, media_video, media_audio, key_manager, inbound.status, inbound.follow, signup.check, media.check, local.status, inbound.actor, local.profile
   --protocol       json, proto, or grpc (default: the kind's; the media kinds take proto or grpc)
   --token-file     a file that holds the bearer token (https:// and unix:// only)
   --tls-ca-file    verify the plugin against this CA (default: the system's roots)
@@ -2392,6 +2392,8 @@ Flags:
                    --mail-to address)
   --translate-from --kind translator: the source language of the cases (default: en)
   --translate-to   --kind translator: the target language of the cases (default: ja)
+  --clear-index    --kind search: also run the cases that remove every document of a
+                   visibility or of the whole index, against an index for testing
 
 The flags mean what the settings plugin_<kind>_* mean, and this command reads no
 configuration.
@@ -2406,7 +2408,8 @@ my plugin test --kind <kind> [flags] <address>
 | Flag | Default | Description |
 | --- | --- | --- |
 | `-billed` | `false` | --kind billing: also run the case that may cost money at the plugin's providers |
-| `-kind <string>` |  | the kind of the plugin: probe, translator, billing, mailer, media_image, media_video, media_audio, key_manager, inbound.status, inbound.follow, signup.check, media.check, local.status, inbound.actor, local.profile |
+| `-clear-index` | `false` | --kind search: also run the cases that remove every document of the index, against an index for testing |
+| `-kind <string>` |  | the kind of the plugin: probe, translator, search, billing, mailer, media_image, media_video, media_audio, key_manager, inbound.status, inbound.follow, signup.check, media.check, local.status, inbound.actor, local.profile |
 | `-mail-from <string>` |  | --kind mailer: the sender of that mail, as mail_from (default: the --mail-to address) |
 | `-mail-to <string>` |  | --kind mailer: run the cases that send real mail, to this address |
 | `-protocol <string>` |  | json, proto, or grpc (default: the kind's) |

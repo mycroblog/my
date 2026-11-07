@@ -59,7 +59,7 @@ func TestEveryPluginIsOffByDefault(t *testing.T) {
 
 func TestPlainTCPIsRefusedForTheKindsOfTheRule(t *testing.T) {
 	refused := map[string]string{
-		"translator": "MY_PLUGIN_TRANSLATOR_ADDRESS", "signup.check": "MY_PLUGIN_SIGNUP_CHECK_ADDRESS",
+		"translator": "MY_PLUGIN_TRANSLATOR_ADDRESS", "search": "MY_PLUGIN_SEARCH_ADDRESS", "signup.check": "MY_PLUGIN_SIGNUP_CHECK_ADDRESS",
 		"key_manager": "MY_PLUGIN_KEY_MANAGER_ADDRESS", "mailer": "MY_PLUGIN_MAILER_ADDRESS",
 		"inbound.status": "MY_PLUGIN_INBOUND_STATUS_ADDRESS", "local.status": "MY_PLUGIN_LOCAL_STATUS_ADDRESS",
 	}

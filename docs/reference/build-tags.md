@@ -28,7 +28,7 @@ The adapters that need nothing beyond the standard library and the packages the 
 | `no_search_elasticsearch` | The Elasticsearch adapter of the full-text search of posts (no third-party library) | `search = elasticsearch` |
 | `no_search_opensearch` | The OpenSearch adapter of the full-text search of posts (no library of its own: its AWS request signing uses the AWS SDK that the AWS adapters share) | `search = opensearch` |
 | `no_search_meilisearch` | The Meilisearch adapter of the full-text search of posts (no third-party library) | `search = meilisearch` |
-| `no_plugins` | The plugin client (`connect/v2`), the adapters of the plugins, and `my plugin test` | Every `plugin_<kind>_address`, `billing_sources = plugin`, `mail = plugin`, `key_manager = plugin`, `media_image = plugin`, `media_video = plugin`, `media_audio = plugin` |
+| `no_plugins` | The plugin client (`connect/v2`), the adapters of the plugins, and `my plugin test` | Every `plugin_<kind>_address`, `billing_sources = plugin`, `mail = plugin`, `key_manager = plugin`, `media_image = plugin`, `media_video = plugin`, `media_audio = plugin`, `search = plugin` |
 | `no_translator_aws` | The Amazon Translate provider of the translation of posts (AWS SDK for Amazon Translate) | `translator_aws_region` |
 | `no_otel` | The OpenTelemetry SDK and its Prometheus and OTLP exporters, of the metrics, the traces, and the error reports | `metrics_exporter = prometheus`, `metrics_exporter = otlp`, `traces_exporter = otlp`, `errors_exporter = otlp` |
 

@@ -1055,6 +1055,7 @@ var schema = []field{
 			{value: "elasticsearch", doc: "An Elasticsearch cluster, version 8 or later, at `search_elasticsearch_url`, with `search_elasticsearch_api_key` or `search_elasticsearch_username` and `search_elasticsearch_password` when it has security on. The server creates and upgrades the index itself ([search engines](../operations/search-engines.md#elasticsearch)). The build tag `no_search_elasticsearch` leaves it out."},
 			{value: "opensearch", doc: "An OpenSearch cluster, or a domain of Amazon OpenSearch Service, at `search_opensearch_url` ([search engines](../operations/search-engines.md#opensearch)). The server creates its index at start. The build tag `no_search_opensearch` leaves it out."},
 			{value: "meilisearch", doc: "A Meilisearch server (self-hosted or Meilisearch Cloud) at `search_meilisearch_url`, with `search_meilisearch_api_key`. The server creates the index `search_meilisearch_index` and its settings. The build tag `no_search_meilisearch` leaves it out."},
+			{value: "plugin", doc: "A plugin of yours (`plugin_search_address`), for an engine that the server has no built-in support for, such as Groonga or an index built with Sudachi. The plugin receives the text, author, visibility, and language of the posts that the index holds and the queries of signed-in people, and returns post IDs only ([plugins](../operations/plugins.md#searching-posts), [search protocol](../plugins/search.md)). The build tag `no_plugins` leaves it out."},
 		},
 		set: func(c *Config, v string) { c.Search = v },
 	},

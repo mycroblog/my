@@ -35,7 +35,7 @@ const (
 
 const (
 	// authorJobSize is how many statuses one JobSyncAuthor covers: each takes a few reads and up to
-	// indexCallTimeout of the backend, and the job has to end within its lease.
+	// IndexCallTimeout of the backend, and the job has to end within its lease.
 	authorJobSize = 200
 	// authorBatch is how many statuses are read in one page of that walk.
 	authorBatch = 50

@@ -1,6 +1,6 @@
 # Search engines
 
-How to run each search engine that the full-text search of posts can use, how large it needs to be, and how far it finds Japanese and other languages written without spaces. [Full-text search of posts](search.md) covers what the index holds, turning the search on, rebuilding the index, and switching engines, whatever the engine.
+How to run each search engine that the full-text search of posts can use, how large it needs to be, and how far it finds Japanese and other languages written without spaces. For an engine that is not here, such as Groonga or an index built with Sudachi, [a search plugin](plugins.md#searching-posts) of yours can keep the index instead. [Full-text search of posts](search.md) covers what the index holds, turning the search on, rebuilding the index, and switching engines, whatever the engine.
 
 ## Elasticsearch
 

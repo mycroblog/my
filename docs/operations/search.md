@@ -8,6 +8,7 @@ The full-text search of posts needs a search engine that you run or rent. [`sear
 
 - `none`, the default: no full-text search. The server connects to nothing, queues no search job, and the client shows no way to search posts. On such a server, each `my search` command says so and does nothing.
 - `elasticsearch`, `opensearch`, or `meilisearch`: that engine, with the settings of its section in [Search engines](search-engines.md).
+- `plugin`: a program of yours that keeps the index in any other engine, such as Groonga or an index built with Sudachi, at `plugin_search_address` ([Searching posts with a plugin](plugins.md#searching-posts)).
 
 The search of accounts and hashtags works from the database and does not depend on this setting.
 

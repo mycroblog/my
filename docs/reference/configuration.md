@@ -236,6 +236,13 @@ An instance setting that has never been set reads as its default, which is defin
 | [`plugin_translator_tls_key_file`](#plugin_translator_tls_key_file) | `MY_PLUGIN_TRANSLATOR_TLS_KEY_FILE` | none | no | no |
 | [`plugin_translator_timeout`](#plugin_translator_timeout) | `MY_PLUGIN_TRANSLATOR_TIMEOUT` | `10s` | no | no |
 | [`plugin_translator_name`](#plugin_translator_name) | `MY_PLUGIN_TRANSLATOR_NAME` | none | when `plugin_translator_address` is set | no |
+| [`plugin_search_address`](#plugin_search_address) | `MY_PLUGIN_SEARCH_ADDRESS` | none | when `search = plugin` | no |
+| [`plugin_search_protocol`](#plugin_search_protocol) | `MY_PLUGIN_SEARCH_PROTOCOL` | `json` | no | no |
+| [`plugin_search_token`](#plugin_search_token) | `MY_PLUGIN_SEARCH_TOKEN` | none | no | yes |
+| [`plugin_search_tls_ca_file`](#plugin_search_tls_ca_file) | `MY_PLUGIN_SEARCH_TLS_CA_FILE` | the system's roots | no | no |
+| [`plugin_search_tls_cert_file`](#plugin_search_tls_cert_file) | `MY_PLUGIN_SEARCH_TLS_CERT_FILE` | none | no | no |
+| [`plugin_search_tls_key_file`](#plugin_search_tls_key_file) | `MY_PLUGIN_SEARCH_TLS_KEY_FILE` | none | no | no |
+| [`plugin_search_timeout`](#plugin_search_timeout) | `MY_PLUGIN_SEARCH_TIMEOUT` | `10s` | no | no |
 | [`plugin_billing_address`](#plugin_billing_address) | `MY_PLUGIN_BILLING_ADDRESS` | none | when `billing_sources` includes `plugin` | no |
 | [`plugin_billing_protocol`](#plugin_billing_protocol) | `MY_PLUGIN_BILLING_PROTOCOL` | `json` | no | no |
 | [`plugin_billing_token`](#plugin_billing_token) | `MY_PLUGIN_BILLING_TOKEN` | none | no | yes |
@@ -1428,6 +1435,7 @@ The search engine of the full-text search of statuses. The search of accounts an
 | `elasticsearch` | An Elasticsearch cluster, version 8 or later, at `search_elasticsearch_url`, with `search_elasticsearch_api_key` or `search_elasticsearch_username` and `search_elasticsearch_password` when it has security on. The server creates and upgrades the index itself ([search engines](../operations/search-engines.md#elasticsearch)). The build tag `no_search_elasticsearch` leaves it out. |
 | `opensearch` | An OpenSearch cluster, or a domain of Amazon OpenSearch Service, at `search_opensearch_url` ([search engines](../operations/search-engines.md#opensearch)). The server creates its index at start. The build tag `no_search_opensearch` leaves it out. |
 | `meilisearch` | A Meilisearch server (self-hosted or Meilisearch Cloud) at `search_meilisearch_url`, with `search_meilisearch_api_key`. The server creates the index `search_meilisearch_index` and its settings. The build tag `no_search_meilisearch` leaves it out. |
+| `plugin` | A plugin of yours (`plugin_search_address`), for an engine that the server has no built-in support for, such as Groonga or an index built with Sudachi. The plugin receives the text, author, visibility, and language of the posts that the index holds and the queries of signed-in people, and returns post IDs only ([plugins](../operations/plugins.md#searching-posts), [search protocol](../plugins/search.md)). The build tag `no_plugins` leaves it out. |
 
 ### `search_elasticsearch_url`
 
@@ -2021,6 +2029,68 @@ The name that readers see next to a translation by the `translator` plugin and t
 - Environment variable: `MY_PLUGIN_TRANSLATOR_NAME`
 - Default: none
 - Required: when `plugin_translator_address` is set
+
+### `plugin_search_address`
+
+Where the `search` plugin listens: `unix:///path/to.sock` or `https://host[:port]`; `http://` is refused, on loopback too. Empty delegates nothing, and the server opens no connection. Host names are resolved per connection. Restart to change it; no instance setting or API can.
+
+- Environment variable: `MY_PLUGIN_SEARCH_ADDRESS`
+- Default: none
+- Required: when `search = plugin`
+
+### `plugin_search_protocol`
+
+What the server sends to the `search` plugin; it must be what the plugin accepts.
+
+- Environment variable: `MY_PLUGIN_SEARCH_PROTOCOL`
+- Default: `json`
+- Required: no
+
+| Value | Description |
+| --- | --- |
+| `json` | The Connect protocol with JSON, which a plugin of an HTTP server and a JSON library serves with no Connect library. |
+| `proto` | The Connect protocol with binary protobuf, for a server on a Connect library. |
+| `grpc` | gRPC, for a server that speaks only that. |
+
+### `plugin_search_token`
+
+Bearer token that the server sends to the `search` plugin, over `https://` or `unix://` only.
+
+- Environment variable: `MY_PLUGIN_SEARCH_TOKEN` or `MY_PLUGIN_SEARCH_TOKEN_FILE`
+- Default: none
+- Required: no
+
+### `plugin_search_tls_ca_file`
+
+File of the CA that verifies the `search` plugin at an `https://` address.
+
+- Environment variable: `MY_PLUGIN_SEARCH_TLS_CA_FILE`
+- Default: the system's roots
+- Required: no
+
+### `plugin_search_tls_cert_file`
+
+File of the client certificate that the server shows the `search` plugin at an `https://` address (mTLS), with its key file.
+
+- Environment variable: `MY_PLUGIN_SEARCH_TLS_CERT_FILE`
+- Default: none
+- Required: no
+
+### `plugin_search_tls_key_file`
+
+File of the key of that client certificate of the `search` plugin.
+
+- Environment variable: `MY_PLUGIN_SEARCH_TLS_KEY_FILE`
+- Default: none
+- Required: no
+
+### `plugin_search_timeout`
+
+Deadline of one call of the `search` plugin, less than `30s`. The server stops a call after `10s` whatever this says.
+
+- Environment variable: `MY_PLUGIN_SEARCH_TIMEOUT`
+- Default: `10s`
+- Required: no
 
 ### `plugin_billing_address`
 

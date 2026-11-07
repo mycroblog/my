@@ -46,6 +46,7 @@ const (
 const (
 	Probe         = "probe"
 	Translator    = "translator"
+	Search        = "search"
 	Billing       = "billing"
 	Mailer        = "mailer"
 	MediaImage    = "media_image"
@@ -87,6 +88,7 @@ type Kind struct {
 // of ADR-0147 §2.
 var delegated = []Kind{
 	{Name: Translator, Protocol: ProtocolJSON, InRequests: true, Timeout: 10 * time.Second, MaxSend: mib, MaxReceive: mib, Concurrency: DefaultConcurrency},
+	{Name: Search, Protocol: ProtocolJSON, InRequests: true, Timeout: 10 * time.Second, MaxSend: mib, MaxReceive: mib, Concurrency: DefaultConcurrency},
 	{Name: Billing, Protocol: ProtocolJSON, PlainTCP: true, Timeout: 2 * time.Minute, MaxSend: 64 * kib, MaxReceive: 4 * mib, Concurrency: DefaultConcurrency},
 	{Name: Mailer, Protocol: ProtocolJSON, Timeout: 30 * time.Second, MaxSend: 2 * mib, MaxReceive: 64 * kib, Concurrency: DefaultConcurrency},
 	{Name: MediaImage, Protocol: ProtocolProto, Streaming: true, PlainTCP: true, Timeout: 4 * time.Minute, MaxSend: 2 * mib, MaxReceive: 2 * mib, Concurrency: 2},

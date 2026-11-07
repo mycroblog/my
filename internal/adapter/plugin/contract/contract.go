@@ -33,6 +33,9 @@ type Env struct {
 	// TranslateFrom and TranslateTo are the languages of the cases of the translator kind (--translate-from, --translate-to),
 	// for a plugin that has only some; empty takes en and ja.
 	TranslateFrom, TranslateTo string
+	// ClearIndex runs the cases of the search kind that remove every document of a visibility or of the whole index
+	// (--clear-index), for a plugin whose index is for testing.
+	ClearIndex bool
 }
 
 // Case is one contract case.
@@ -53,6 +56,7 @@ var table = map[string][]Case{
 	kind.Billing:       billingCases,
 	kind.Mailer:        mailerCases,
 	kind.Translator:    translatorCases,
+	kind.Search:        searchCases,
 	kind.MediaImage:    mediaImageCases,
 	kind.MediaAudio:    mediaAudioCases,
 	kind.KeyManager:    keyManagerCases,
