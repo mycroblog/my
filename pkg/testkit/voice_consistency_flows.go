@@ -15,7 +15,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/voice"
 )
 
-// The cases of VoiceRoomsContract for the decisions that a change committed between the steps of
+// The cases of VoiceRoomsFlows for the decisions that a change committed between the steps of
 // a command must not undo: the admission of a join, and the current session of a participation.
 
 // hookKV is the store of the voice service, which runs a hook once after a Get of a key.

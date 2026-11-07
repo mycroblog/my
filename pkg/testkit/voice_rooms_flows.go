@@ -21,17 +21,19 @@ import (
 	"github.com/mycroblog/my/internal/domain/voice"
 )
 
-// VoiceRoomsContract verifies the room use cases of the voice module (ADR-0100 §2, §5, §6, §8,
+// VoiceRoomsFlows verifies the room use cases of the voice module (ADR-0100 §2, §5, §6, §8,
 // ADR-0101 §2, §6) on a database adapter: opening a room, joining, moving, replacing a session,
-// leaving with the choice of the host, handing over, the expiry of the heartbeats and the grace
-// of the host, voice.sweep (time_limit, disabled, and concurrent sweeps that apply once), the
+// leaving with the choice of the host, handing over, the expiry of the heartbeats and the grace of
+// the host, voice.sweep (time_limit, disabled, and concurrent sweeps that apply once), the
 // visibility and the order of the list, the reaction to suspensions and lost eligibility, the
-// operations of the participants, the host, and the co-hosts with their permissions, the
-// co-hosts, the invitations, and the bans and blocks (ADR-0100 §4, §5, §7, §11), a transport
-// that gives no grant leaving nothing behind, admissions and sessions that a change committed
-// meanwhile does not undo, and, on a media server, the reconciliation of voice.sweep and the events of voice.apply_media_event
-// (ADR-0101 §13).
-func VoiceRoomsContract(t *testing.T, newHarness VoiceFactory) {
+// operations of the participants, the host, and the co-hosts with their permissions, the co-hosts,
+// the invitations, and the bans and blocks (ADR-0100 §4, §5, §7, §11), a transport that gives no
+// grant leaving nothing behind, admissions and sessions that a change committed meanwhile does not
+// undo, and, on a media server, the reconciliation of voice.sweep and the events of
+// voice.apply_media_event (ADR-0101 §13). These are the flows of ADR-0153 §1, which
+// internal/flowtest/voice runs once on SQLite; VoiceRoomsContract checks the repository's methods
+// on every adapter.
+func VoiceRoomsFlows(t *testing.T, newHarness VoiceFactory) {
 	t.Helper()
 	cases := []struct {
 		name string

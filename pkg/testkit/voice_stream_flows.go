@@ -14,7 +14,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/voice"
 )
 
-// The cases of VoiceRoomsContract for the room streams, the P2P signaling relay, the
+// The cases of VoiceRoomsFlows for the room streams, the P2P signaling relay, the
 // microphone, the reactions, and the grants (ADR-0100 §10, ADR-0101 §3, §4, §6).
 
 // roomSignals subscribes the session session to the signals of a room on the Hub of e.

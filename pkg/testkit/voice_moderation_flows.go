@@ -17,7 +17,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/voice"
 )
 
-// The cases of VoiceRoomsContract for the moderation of the rooms and the retention of their
+// The cases of VoiceRoomsFlows for the moderation of the rooms and the retention of their
 // records (ADR-0100 §11, §13).
 
 // roomsRetention is the instance setting voice_participants_retention_days, the rooms that reports
