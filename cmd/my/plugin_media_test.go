@@ -22,7 +22,7 @@ func TestPluginTestMedia(t *testing.T) {
 	}{
 		{"media_image", []string{"PASS process_photo: ", "PASS process_emoji\n", "PASS process_animation\n", "4 passed, 0 failed, 0 skipped\n"}},
 		{"media_audio", []string{"PASS remux_audio\n", "2 passed, 0 failed, 0 skipped\n"}},
-		{"media_video", []string{"SKIP media_video: ", "1 passed, 0 failed, 1 skipped\n"}},
+		{"media_video", []string{"PASS remux_video: ", "2 passed, 0 failed, 0 skipped\n"}},
 	} {
 		code, stdout, stderr := runPluginTest("--kind", tc.kind, fakeplugin.ServeTCP(t, h))
 		if code != 0 {

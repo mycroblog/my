@@ -182,10 +182,10 @@ cursor it did not issue, and that documents are found newest first, page by page
 author. `--clear-index` also runs the cases that remove every document of a visibility and the whole index: use it only
 against an index for testing. [Searching posts](#searching-posts) has the contract of the kind.
 
-`--kind media_image` and `--kind media_audio` send only small test files that they make themselves: a photo, an emoji, and
-an animated GIF, or an MP3. Each one hides a location or a title in its metadata, and a case fails when that comes back in
-an output. They check every output as the server does. `--kind media_video` has no cases of its own yet; it checks only
-that the plugin answers. [Converting media](#converting-media) has the contract of the kinds.
+`--kind media_image`, `--kind media_video`, and `--kind media_audio` send only small test files that they make themselves:
+a photo, an emoji, and an animated GIF, an MP4 with a video and a sound track, or an MP3. Each one hides a location or a
+title in its metadata, and a case fails when that comes back in an output. They check every output as the server does.
+[Converting media](#converting-media) has the contract of the kinds.
 
 `--kind key_manager` runs the checks the server runs at each start, and checks that the plugin refuses a changed value and a
 KEK it does not hold. It sends only keys it makes up and throws away, so it is safe against a real key store, which may bill

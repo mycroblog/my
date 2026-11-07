@@ -4,6 +4,7 @@ package contract_test
 
 import (
 	"context"
+	"encoding/binary"
 	"strings"
 	"testing"
 
@@ -17,9 +18,11 @@ import (
 
 func runMedia(t *testing.T, o fakeplugin.Options) map[string]contract.Result {
 	t.Helper()
-	out := runMediaKind(t, kind.MediaImage, o)
-	for name, r := range runMediaKind(t, kind.MediaAudio, o) {
-		out[name] = r
+	out := map[string]contract.Result{}
+	for _, k := range []string{kind.MediaImage, kind.MediaVideo, kind.MediaAudio} {
+		for name, r := range runMediaKind(t, k, o) {
+			out[name] = r
+		}
 	}
 	return out
 }
@@ -38,7 +41,7 @@ func runMediaKind(t *testing.T, name string, o fakeplugin.Options) map[string]co
 	return out
 }
 
-var mediaCaseNames = []string{"process_photo", "process_emoji", "process_animation", "remux_audio"}
+var mediaCaseNames = []string{"process_photo", "process_emoji", "process_animation", "remux_video", "remux_audio"}
 
 func TestMediaCases(t *testing.T) {
 	results := runMedia(t, fakeplugin.Options{Media: native.New(native.Options{})})
@@ -75,7 +78,11 @@ func (k keeping) Remux(ctx context.Context, data []byte, limits media.AVLimits) 
 
 func TestMediaCasesFindTheLocation(t *testing.T) {
 	results := runMedia(t, fakeplugin.Options{Media: keeping{native.New(native.Options{})}})
-	for name, want := range map[string]string{"process_photo": "MY-PLUGIN-TEST-LOCATION", "remux_audio": "the tags of the file came back"} {
+	for name, want := range map[string]string{
+		"process_photo": "MY-PLUGIN-TEST-LOCATION",
+		"remux_video":   "the location of the video came back",
+		"remux_audio":   "the tags of the file came back",
+	} {
 		if r := results[name]; r.Outcome != contract.Fail || !strings.Contains(r.Detail, want) {
 			t.Errorf("%s: %+v", name, r)
 		}
@@ -89,5 +96,28 @@ func TestMediaCasesReportAnOutputTheServerRefuses(t *testing.T) {
 		if r := results[name]; r.Outcome != contract.Fail || !strings.Contains(r.Detail, "longer than its declared") {
 			t.Errorf("%s: %+v", name, r)
 		}
+	}
+}
+
+// keepingTags is a plugin's processor that removes the location of a video but hands back its title in a free box.
+type keepingTags struct {
+	*native.Processor
+}
+
+func (k keepingTags) Remux(ctx context.Context, data []byte, limits media.AVLimits) (media.AVOutput, error) {
+	out, err := k.Processor.Remux(ctx, data, limits)
+	if err != nil {
+		return out, err
+	}
+	title := []byte("MY-PLUGIN-TEST-LOCATION-35.6812N-139.7671E")
+	out.Data = append(binary.BigEndian.AppendUint32(out.Data, uint32(8+len(title))), "free"...) //nolint:gosec // a few dozen bytes
+	out.Data = append(out.Data, title...)
+	return out, nil
+}
+
+func TestMediaVideoCaseFindsTheTags(t *testing.T) {
+	results := runMediaKind(t, kind.MediaVideo, fakeplugin.Options{Media: keepingTags{native.New(native.Options{})}})
+	if r := results["remux_video"]; r.Outcome != contract.Fail || !strings.Contains(r.Detail, "the tags of the video came back") {
+		t.Errorf("remux_video: %+v", r)
 	}
 }

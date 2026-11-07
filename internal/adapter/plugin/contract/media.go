@@ -13,6 +13,7 @@ import (
 	"image/gif"
 	"image/jpeg"
 	"image/png"
+	"slices"
 
 	"github.com/mycroblog/my/internal/adapter/media/native"
 	mediaplugin "github.com/mycroblog/my/internal/adapter/media/plugin"
@@ -23,7 +24,10 @@ import (
 // kept the metadata.
 const locationMarker = "MY-PLUGIN-TEST-LOCATION-35.6812N-139.7671E"
 
-// mediaImageCases and mediaAudioCases check a media plugin through the server's adapter, which checks every output as
+// videoLocation is the position in the user data (udta ©xyz) of the test video, in ISO 6709 as phones write it.
+const videoLocation = "+35.6812+139.7671/"
+
+// mediaImageCases, mediaVideoCases, and mediaAudioCases check a media plugin through the server's adapter, which checks every output as
 // the server does. They send only the small files made here, and check that the location in their metadata does not
 // come back (ADR-0146 §16).
 var mediaImageCases = []Case{
@@ -37,13 +41,26 @@ var mediaImageCases = []Case{
 	{Name: "process_animation", Run: mediaProcessAnimation},
 }
 
+var mediaVideoCases = []Case{
+	{
+		Name: "remux_video",
+		Run:  mediaRemuxVideo,
+		// The server checks the container and its tracks; it cannot know every box that can hold metadata.
+		Note: "the output held neither the test location nor the tags; the plugin must remove every other form of metadata too",
+	},
+}
+
 var mediaAudioCases = []Case{
 	{Name: "remux_audio", Run: mediaRemuxAudio},
 }
 
-// mediaImageProcessor and mediaAudioProcessor return the server's adapter that sends its kind to the Conn of env.
+// mediaImageProcessor, mediaVideoProcessor, and mediaAudioProcessor return the server's adapter that sends its kind to the Conn of env.
 func mediaImageProcessor(env Env) (*mediaplugin.Processor, error) {
 	return mediaplugin.New(mediaplugin.Options{Builtin: native.New(native.Options{Concurrency: 1}), Image: env.Conn})
+}
+
+func mediaVideoProcessor(env Env) (*mediaplugin.Processor, error) {
+	return mediaplugin.New(mediaplugin.Options{Builtin: native.New(native.Options{Concurrency: 1}), Video: env.Conn})
 }
 
 func mediaAudioProcessor(env Env) (*mediaplugin.Processor, error) {
@@ -136,6 +153,25 @@ func mediaRemuxAudio(ctx context.Context, env Env) error {
 	}
 	if kept := keptMetadata(map[string][]byte{"remuxed": out.Data}); kept != "" {
 		return fmt.Errorf("the tags of the file came back: %s", kept)
+	}
+	return nil
+}
+
+// mediaRemuxVideo sends an MP4 with a video and a sound track, a location in its user data, and a title in its tags.
+func mediaRemuxVideo(ctx context.Context, env Env) error {
+	p, err := mediaVideoProcessor(env)
+	if err != nil {
+		return err
+	}
+	out, err := p.Remux(ctx, testMP4(64, 48, 10), media.AVLimits{})
+	if err != nil {
+		return describeCallError(env, err)
+	}
+	if bytes.Contains(out.Data, []byte(videoLocation)) {
+		return fmt.Errorf("the location of the video came back: the remuxed output holds %q", videoLocation)
+	}
+	if kept := keptMetadata(map[string][]byte{"remuxed": out.Data}); kept != "" {
+		return fmt.Errorf("the tags of the video came back: %s", kept)
 	}
 	return nil
 }
@@ -277,4 +313,78 @@ func testMP3(frames int, cover []byte) []byte {
 	tag := make([]byte, 128)
 	copy(tag, "TAG"+locationMarker)
 	return append(out, tag...)
+}
+
+// mp4Box returns an MP4 box of typ whose body is parts.
+func mp4Box(typ string, parts ...[]byte) []byte {
+	body := slices.Concat(parts...)
+	return slices.Concat(binary.BigEndian.AppendUint32(nil, uint32(8+len(body))), []byte(typ), body) //nolint:gosec // a few hundred bytes
+}
+
+// be32 returns n as 4 big-endian bytes.
+func be32(n int) []byte { return binary.BigEndian.AppendUint32(nil, uint32(n)) } //nolint:gosec // small numbers
+
+// testMP4 returns a 1-second w × h MP4 with its moov after its mdat, as cameras write it: a video track (avc1) of frames
+// samples "FRAME<i>" and a sound track (mp4a) of 4 samples "AUDIO<i>", one per chunk, and user data with videoLocation
+// (©xyz) and an item list whose title holds locationMarker. The samples are not coded media, which a remux never
+// decodes.
+func testMP4(w, h, frames int) []byte {
+	ftyp := mp4Box("ftyp", []byte("isom\x00\x00\x02\x00isomiso2mp41"))
+	type track struct {
+		handler, codec string
+		samples        [][]byte
+		offsets        []int
+	}
+	tracks := []*track{{handler: "vide", codec: "avc1"}, {handler: "soun", codec: "mp4a"}}
+	for i := range frames {
+		tracks[0].samples = append(tracks[0].samples, fmt.Appendf(nil, "FRAME%d", i))
+	}
+	for i := range 4 {
+		tracks[1].samples = append(tracks[1].samples, fmt.Appendf(nil, "AUDIO%d", i))
+	}
+	var mdat []byte
+	for i := range frames {
+		for _, t := range tracks {
+			if i < len(t.samples) {
+				t.offsets = append(t.offsets, len(ftyp)+8+len(mdat))
+				mdat = append(mdat, t.samples[i]...)
+			}
+		}
+	}
+	const timescale, duration = 1000, 1000
+	zero := make([]byte, 4)
+	moov := [][]byte{mp4Box("mvhd", zero, zero, zero, be32(timescale), be32(duration), make([]byte, 80))}
+	for ti, t := range tracks {
+		matrix := slices.Concat(be32(0x10000), make([]byte, 12), be32(0x10000), make([]byte, 12), be32(0x40000000))
+		size, entry := be32(0), slices.Concat(make([]byte, 6), []byte{0, 1}, make([]byte, 20))
+		if t.handler == "vide" {
+			size = slices.Concat(be32(w<<16), be32(h<<16))
+			entry = slices.Concat(make([]byte, 6), []byte{0, 1}, make([]byte, 16), be32(w<<16|h), make([]byte, 50))
+		} else {
+			size = slices.Concat(size, be32(0))
+		}
+		tkhd := mp4Box("tkhd", []byte{0, 0, 0, 3}, zero, zero, be32(ti+1), zero, be32(duration), make([]byte, 16), matrix, size)
+		mdhd := mp4Box("mdhd", zero, zero, zero, be32(timescale), be32(duration), zero)
+		hdlr := mp4Box("hdlr", zero, zero, []byte(t.handler), make([]byte, 12), []byte("handler\x00"))
+		stsz := slices.Concat(zero, zero, be32(len(t.samples)))
+		for _, s := range t.samples {
+			stsz = append(stsz, be32(len(s))...)
+		}
+		stco := slices.Concat(zero, be32(len(t.offsets)))
+		for _, off := range t.offsets {
+			stco = append(stco, be32(off)...)
+		}
+		stbl := mp4Box("stbl",
+			mp4Box("stsd", zero, be32(1), mp4Box(t.codec, entry)),
+			mp4Box("stts", zero, be32(1), be32(len(t.samples)), be32(1)),
+			mp4Box("stsc", zero, be32(1), be32(1), be32(1), be32(1)),
+			mp4Box("stsz", stsz), mp4Box("stco", stco))
+		dinf := mp4Box("dinf", mp4Box("dref", zero, be32(1), mp4Box("url ", []byte{0, 0, 0, 1})))
+		moov = append(moov, mp4Box("trak", tkhd, mp4Box("mdia", mdhd, hdlr, mp4Box("minf", dinf, stbl))))
+	}
+	meta := mp4Box("meta", zero, mp4Box("hdlr", zero, zero, []byte("mdir"), make([]byte, 12), []byte{0}),
+		mp4Box("ilst", mp4Box("\xA9nam", mp4Box("data", be32(1), zero, []byte(locationMarker)))))
+	xyz := slices.Concat([]byte{0, byte(len(videoLocation)), 0x15, 0xC7}, []byte(videoLocation)) // its length and the language "eng"
+	moov = append(moov, mp4Box("udta", mp4Box("\xA9xyz", xyz), meta))
+	return slices.Concat(ftyp, mp4Box("mdat", mdat), mp4Box("moov", moov...))
 }
