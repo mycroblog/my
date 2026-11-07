@@ -55,6 +55,41 @@ func (s *Service) CountSingleUserAccountsTx(ctx context.Context, tx uow.Tx) (int
 	}
 }
 
+// SingleUserAccountID returns the account of the operator of a one-person server (ADR-0152 §7): the
+// first local account that CountSingleUserAccountsTx counts, which is the only one while the mode
+// is on. It reports false when no account counts.
+func (s *Service) SingleUserAccountID(ctx context.Context) (string, bool, error) {
+	var id string
+	err := s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+		id = ""
+		locals, err := s.d.Accounts.LocalAccountsTx(ctx, tx)
+		if err != nil {
+			return fmt.Errorf("identity: list the local accounts: %w", err)
+		}
+		for _, la := range locals {
+			deleted, err := s.d.Accounts.DeletedTx(ctx, tx, la.AccountID)
+			if err != nil {
+				return err
+			}
+			if deleted {
+				continue
+			}
+			st, err := s.d.Repository.FindRegistrationStateTx(ctx, tx, la.UserID)
+			switch {
+			case errors.Is(err, ErrNotFound):
+			case err != nil:
+				return fmt.Errorf("identity: the registration of %s: %w", la.UserID, err)
+			case st.State == identity.RegistrationRejected:
+				continue
+			}
+			id = la.AccountID
+			return nil
+		}
+		return nil
+	})
+	return id, id != "", err
+}
+
 // countedLocalAccountTx reports whether CountLocalUsersTx counted the local account of userID: it
 // has one, and it is not deleted.
 func (s *Service) countedLocalAccountTx(ctx context.Context, tx uow.Tx, userID string) (bool, error) {

@@ -12461,6 +12461,12 @@ export interface components {
              *     answer a 404 of the type `/api/v1/problems/single-user-mode`, and a new `local` post is a 422.
              */
             single_user: boolean;
+            /**
+             * @description The operator's account of a one-person server, whose profile the web client shows people who
+             *     are not signed in at the root address. Present only while `single_user` is true, and omitted
+             *     when the account cannot be shown (it is suspended or deleted).
+             */
+            single_user_account?: components["schemas"]["Account"];
         };
         /**
          * @description How people reach the instance's operators (the instance settings `contact_account` and

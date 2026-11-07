@@ -10050,6 +10050,11 @@ type Instance struct {
 	// answer a 404 of the type `/api/v1/problems/single-user-mode`, and a new `local` post is a 422.
 	SingleUser bool `json:"single_user"`
 
+	// SingleUserAccount The operator's account of a one-person server, whose profile the web client shows people who
+	// are not signed in at the root address. Present only while `single_user` is true, and omitted
+	// when the account cannot be shown (it is suspended or deleted).
+	SingleUserAccount *Account `json:"single_user_account,omitempty"`
+
 	// SourceUrl Where users get the source code of the running server (AGPL-3.0 section 13), as an https URL to read it at or a mailto URI to request it by email.
 	SourceUrl string `json:"source_url"`
 

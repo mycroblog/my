@@ -70,6 +70,10 @@ func TestSingleUserMode(t *testing.T) {
 		inst.Timelines.Federated != clientapi.InstanceAudienceOff {
 		t.Errorf("GET /instance on a one-person server = %d %+v", res.StatusCode, inst)
 	}
+	// The landing page shows the operator: the one account that counts, not the deleted bob.
+	if inst.SingleUserAccount == nil || inst.SingleUserAccount.Id != c.ids["alice"] {
+		t.Errorf("GET /instance single_user_account = %+v, want alice", inst.SingleUserAccount)
+	}
 	code, doc := apGet(t, c, "/nodeinfo/2.1")
 	meta, _ := doc["metadata"].(map[string]any)
 	if code != http.StatusOK || doc["openRegistrations"] != false || meta["singleUser"] != true {
@@ -135,6 +139,9 @@ func TestSingleUserMode(t *testing.T) {
 	if res := c.do("", http.MethodGet, "/instance", nil, &inst); res.StatusCode != http.StatusOK || inst.SingleUser ||
 		inst.Registrations.Mode != clientapi.InstanceRegistrationsModeOpen || inst.Timelines.Local == clientapi.InstanceAudienceOff {
 		t.Errorf("GET /instance after the mode = %d %+v", res.StatusCode, inst)
+	}
+	if inst.SingleUserAccount != nil {
+		t.Errorf("GET /instance after the mode has single_user_account %+v", inst.SingleUserAccount)
 	}
 	if res := c.do("alice", http.MethodGet, "/timelines/local", nil, nil); res.StatusCode != http.StatusOK {
 		t.Errorf("local timeline after the mode = %d", res.StatusCode)

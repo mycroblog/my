@@ -194,6 +194,11 @@ func (s *Server) GetInstance(ctx context.Context, _ GetInstanceRequestObject) (G
 	// A one-person server (ADR-0152 §6): its timelines and registration read off and closed above,
 	// and clients hide the rest of what it does not offer.
 	out.SingleUser = settings.SingleUser()
+	if out.SingleUser {
+		if out.SingleUserAccount, err = s.singleUserAccount(ctx); err != nil {
+			return nil, err
+		}
+	}
 	// While registration and sign-in are limited to the login providers, clients stop offering the
 	// rest, and registration is closed when no provider lets new users sign up.
 	if settings.LoginProvidersOnly() && s.o.SignInLimit != nil {
@@ -218,6 +223,37 @@ func (s *Server) GetInstance(ctx context.Context, _ GetInstanceRequestObject) (G
 		cache = cachePrivate
 	}
 	return GetInstance200JSONResponse{Body: out, Headers: GetInstance200ResponseHeaders{CacheControl: &cache}}, nil
+}
+
+// SingleUserAccount finds the operator's account of a one-person server. *appidentity.Service
+// implements it.
+type SingleUserAccount interface {
+	// SingleUserAccountID returns the one local account that a one-person server counts (ADR-0152
+	// §1, §7), and false when none does.
+	SingleUserAccountID(ctx context.Context) (string, bool, error)
+}
+
+// singleUserAccount presents the operator's account of a one-person server, nil when there is none
+// or the viewer may not see it (ADR-0152 §7).
+func (s *Server) singleUserAccount(ctx context.Context) (*Account, error) {
+	if s.o.SingleUserAccount == nil {
+		return nil, nil
+	}
+	id, ok, err := s.o.SingleUserAccount.SingleUserAccountID(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("clientapi: the account of the one-person server: %w", err)
+	}
+	if !ok {
+		return nil, nil
+	}
+	accounts, err := s.presentAccounts(ctx, viewerOf(ctx), []string{id}, false)
+	if err != nil {
+		return nil, fmt.Errorf("clientapi: the account of the one-person server: %w", err)
+	}
+	if len(accounts) != 1 {
+		return nil, nil
+	}
+	return &accounts[0], nil
 }
 
 // externalReviewScope presents the settings that narrow what the hooks in use send (ADR-0147
