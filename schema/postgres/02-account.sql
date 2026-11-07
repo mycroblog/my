@@ -280,11 +280,13 @@ CREATE INDEX remote_account_handle_verifications_account_id_id ON remote_account
 -- name, note, fields, and the URLs of the avatar and the header, sanitized). The hook reviews a
 -- received profile only when its digest differs from that of the current revision (ADR-0147 §2,
 -- §6); a revision that a drop of the hook kept the profile of keeps the digest of the one before.
+-- The empty default marks a revision stored before the digest existed: it matches no received
+-- profile, so the hook reviews that actor's profile once, at its next fetch.
 CREATE TABLE remote_profile_revisions (
   revision_id uuid NOT NULL PRIMARY KEY,
   snapshot_id uuid NOT NULL,
   html_policy_version integer NOT NULL,
-  profile_digest bytea NOT NULL
+  profile_digest bytea NOT NULL DEFAULT ''::bytea
 );
 
 -- Event: a key was replaced or withdrawn. Verification uses the newest key of a key_id without
