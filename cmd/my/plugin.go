@@ -45,6 +45,7 @@ func pluginTest(args []string, stdout, stderr io.Writer) int {
 	mailFrom := fs.String("mail-from", "", "--kind mailer: the sender of that mail, as mail_from (default: the --mail-to address)")
 	translateFrom := fs.String("translate-from", "", "--kind translator: the source language of the cases (default: en)")
 	translateTo := fs.String("translate-to", "", "--kind translator: the target language of the cases (default: ja)")
+	clearIndex := fs.Bool("clear-index", false, "--kind search: also run the cases that remove every document of the index, against an index for testing")
 	if err := fs.Parse(args); err != nil {
 		if errors.Is(err, flag.ErrHelp) {
 			return 0
@@ -93,6 +94,7 @@ func pluginTest(args []string, stdout, stderr io.Writer) int {
 	counts := map[contract.Outcome]int{}
 	results := contract.Run(context.Background(), k, contract.Env{
 		Conn: conn, Protocol: protocol, Billed: *billed, MailTo: *mailTo, MailFrom: *mailFrom, TranslateFrom: *translateFrom, TranslateTo: *translateTo,
+		ClearIndex: *clearIndex,
 	}, func(r contract.Result) {
 		counts[r.Outcome]++
 		line := string(r.Outcome) + " " + r.Case
@@ -132,6 +134,8 @@ Flags:
                    --mail-to address)
   --translate-from --kind translator: the source language of the cases (default: en)
   --translate-to   --kind translator: the target language of the cases (default: ja)
+  --clear-index    --kind search: also run the cases that remove every document of a
+                   visibility or of the whole index, against an index for testing
 
 The flags mean what the settings plugin_<kind>_* mean, and this command reads no
 configuration.

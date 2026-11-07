@@ -26,6 +26,7 @@
 | kind | ポート | 課題 |
 | --- | --- | --- |
 | `translator` | `translation` の翻訳のポート（[ADR-0148](0148-post-translation.md)） | #2217 |
+| `search` | `search.Index`（[ADR-0149](0149-full-text-search.md)） | #2430 |
 | `billing` | `finance.BillingSource` | #2218 |
 | `mailer` | `kernel.Mailer` | #2219 |
 | `media_image`・`media_video`・`media_audio` | `media.Processor`（`AVProcessor` を含む）。画像・動画・音声だけのファイルの 3 つに分ける（§13） | #2220、#2406 |
@@ -76,7 +77,7 @@
 
 `https://` のサーバー証明書は常に検証する（`_tls_ca_file` か OS の信頼する CA）。検証を切る設定は作らない。TLS の最小の版は Go の既定に従う。
 
-平文の TCP（`http://`）を拒むのは **`key_manager`・`mailer`・`translator`・投稿の本文を送るフック・`signup.check`** で、これらは起動時に設定のエラーにする。ほかの kind は平文の TCP を使える。
+平文の TCP（`http://`）を拒むのは **`key_manager`・`mailer`・`translator`・`search`・投稿の本文を送るフック・`signup.check`** で、これらは起動時に設定のエラーにする。ほかの kind は平文の TCP を使える。
 
 | kind | 運ぶもの | 平文の TCP |
 | --- | --- | --- |
@@ -84,6 +85,7 @@
 | `mailer` | 確認のリンクなどの秘密、宛先 | 拒否 |
 | `inbound.status`・`local.status` のフック | 投稿の本文 | 拒否 |
 | `translator` | 読者が求めた投稿の本文（IRI とハンドルは送らない。ADR-0148 §5） | 拒否 |
+| `search` | `public`・`local` の投稿の本文・作者・公開範囲・言語、ログイン中の利用者の検索語 | 拒否 |
 | `media_image`・`media_video`・`media_audio` | メタデータの残るアップロード（位置情報を含みうる） | 許可 |
 | `billing` | 費用の集計 | 許可 |
 | `signup.check` のフック | メールアドレスと IP | 拒否 |
@@ -197,6 +199,7 @@ proto の版はパッケージごとの `v1` で、`my` の Go のインター�
 - **`Mailer`:** `Send` はジョブからだけ呼ばれるので、遅延は要求に届かない。adapter は呼ぶ前に `ValidateMail` を通す。`Message-ID`・`Date`・`Auto-Submitted` はプラグインが付ける（契約に書き、§16 で確かめる）
 - **メディアの kind:** `Limits`・`AVLimits` は `int64` と `double`、時間はミリ秒、`Format`・`AVKind` は列挙。拒否の `outcome` は `UNSUPPORTED_FORMAT`・`UNSUPPORTED_CODEC`・`TOO_LARGE`・`DIMENSIONS`・`CORRUPT`・`TOO_LONG` で、`media.Rejected` がそのまま効く
 - **`translator`:** 断片・原語（`und` を含む）・訳語 → 訳文・検出した言語・`outcome`。形は ADR-0148 の翻訳のポートの決定に従う
+- **`search`:** `search.Index` の操作ごとに unary の RPC を 1 つ置く（`Replace`・`Remove`・`RemoveByAuthor`・`RemoveByVisibility`・`Clear`・`Search`）。問い合わせは平文の文字列で、結果は投稿の ID と不透明なカーソルだけである（ADR-0149 §4）。`my` は返った ID を DB から読み直して閲覧の方針を通すので、プラグインは見せてよい投稿を決めない。失敗は `search.ErrBackendFailed` に写し、検索語と本文をエラーにもログにも載せない
 
 ### 12. 期限と上限
 
@@ -208,6 +211,7 @@ proto の版はパッケージごとの `v1` で、`my` の Go のインター�
 | `mailer` | 30 秒（`smtp.DefaultTimeout` と同じ） | 2 MiB | 64 KiB | ジョブ |
 | `billing` | 2 分 | 64 KiB | 4 MiB | ジョブ |
 | `translator` | 10 秒（ADR-0148 が変えてよい） | 1 MiB | 1 MiB | ADR-0148 |
+| `search` | 10 秒（`search` の 1 回の呼び出しと同じ） | 1 MiB | 1 MiB | ジョブと検索の API |
 | `media_image`・`media_video`・`media_audio` | 4 分 | 2 MiB（チャンクは 1 MiB） | 2 MiB | ジョブ |
 | フック | ADR-0147 | 1 MiB | 64 KiB | ジョブ |
 
@@ -315,6 +319,7 @@ proto の版はパッケージごとの `v1` で、`my` の Go のインター�
 - **`my` がクライアントであること。** 「1 つの proto で 3 つのプロトコル」はサーバーの性質なので、JSON だけのプラグインへ届くには `my` が JSON を送る必要があり、§3 の設定と既定になった
 - **メディアの本体。** #2220 は blob のキーか署名付き URL で渡す案だった。ポートと経路を読むと §13 の採らなかった理由があり、ストリームにした
 - **メディアの kind の分割。** #2220 は画像・動画・音声を 1 つの kind `media` で委譲した。動画だけを別のマシンへ送れないことから、決定者が 3 つの kind に分けると決めた（#2406）
+- **kind `search`。** #2228 の範囲は全文検索の前に決まり、検索のポートを含まなかった。Elasticsearch・OpenSearch・Meilisearch の adapter（#2252〜#2254）の後、日本語に強いエンジンを adapter なしで使えるように、決定者が `v0.1.0` の前に `search` を足すと決めた（#2430）
 - **MIT の proto と生成物。** 検査のスクリプトと生成の動作を確かめると、見出しのコピーで検査が落ちることが分かり、§8 の 4 か所になった
 
 確認した一次情報（2026-11-05）: `connectrpc.com/connect/v2` v2.0.2 の `LICENSE`（Apache-2.0）・`go.mod`（ビルドの依存は `google.golang.org/protobuf` だけ、`go-cmp` はテスト用）・ソースに `import "C"` なし、[Connect Protocol Reference](https://connectrpc.com/docs/protocol/)、[Deployment & h2c](https://connectrpc.com/docs/go/deployment/)、[Migrating to v2](https://connectrpc.com/docs/go/migrating-to-v2/)。`CGO_ENABLED=0` でスクラッチのプログラムをビルドして動かし、Connect の分のバイナリの増加は約 0.8 MiB（protobuf と `net/http` を含む比較対象との差。`cmd/my` への追加では未計測）。`Apache-2.0` は `GO_ALLOWED_LICENSES` にある。

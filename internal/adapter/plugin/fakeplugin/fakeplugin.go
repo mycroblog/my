@@ -24,10 +24,12 @@ import (
 	"github.com/mycroblog/my/internal/adapter/plugin/gen/my/plugin/media/v1/mediav1connect"
 	probev1 "github.com/mycroblog/my/internal/adapter/plugin/gen/my/plugin/probe/v1"
 	"github.com/mycroblog/my/internal/adapter/plugin/gen/my/plugin/probe/v1/probev1connect"
+	"github.com/mycroblog/my/internal/adapter/plugin/gen/my/plugin/search/v1/searchv1connect"
 	"github.com/mycroblog/my/internal/adapter/plugin/gen/my/plugin/translator/v1/translatorv1connect"
 	appfinance "github.com/mycroblog/my/internal/app/finance"
 	"github.com/mycroblog/my/internal/app/kernel"
 	"github.com/mycroblog/my/internal/app/media"
+	"github.com/mycroblog/my/internal/app/search"
 	"github.com/mycroblog/my/internal/app/translation"
 )
 
@@ -56,6 +58,10 @@ type Options struct {
 	// can make the fake break the contract. Its key IDs are the plugin's own, without the server's prefix, and an error that
 	// is no result of the port fails the call. Without it the fake does not serve the kind.
 	KeyManager kernel.KeyManager
+	// Search is the index behind the fake's search kind, whose pages it hands on as they are and whose errors are failures
+	// of the engine, ErrInvalidCursor aside. Without it the fake does not serve the kind, which only the Connect form
+	// serves; that form answers JSON too.
+	Search search.Index
 }
 
 // Recorder tells what reached a fake.
@@ -92,6 +98,7 @@ func Connect(o Options) (http.Handler, *Recorder) {
 	billingv1connect.RegisterBillingServiceHandler(server, &billingServer{o: o})
 	mailerv1connect.RegisterMailerServiceHandler(server, &mailerServer{o: o})
 	translatorv1connect.RegisterTranslatorServiceHandler(server, &translatorServer{o: o})
+	searchv1connect.RegisterSearchServiceHandler(server, &searchServer{o: o})
 	mediav1connect.RegisterMediaServiceHandler(server, &mediaServer{o: o})
 	keymanagerv1connect.RegisterKeyManagerServiceHandler(server, &keyManagerServer{o: o})
 	hookv1connect.RegisterHookServiceHandler(server, &hookServer{o: o})

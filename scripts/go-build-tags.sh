@@ -61,7 +61,7 @@ excluded_packages() {
     no_search_elasticsearch) echo "$m/search/elasticsearch" ;;
     no_search_opensearch) echo "$m/search/opensearch" ;;
     no_search_meilisearch) echo "$m/search/meilisearch" ;;
-    no_plugins) echo "$m/plugin/client $m/plugin/contract $m/billing/plugin $m/keymanager/plugin $m/mail/plugin $m/translator/plugin $m/media/plugin $m/hook/connect connectrpc.com/connect/v2" ;;
+    no_plugins) echo "$m/plugin/client $m/plugin/contract $m/billing/plugin $m/keymanager/plugin $m/mail/plugin $m/translator/plugin $m/search/plugin $m/media/plugin $m/hook/connect connectrpc.com/connect/v2" ;;
     no_translator_aws) echo "$m/translator/aws github.com/aws/aws-sdk-go-v2/service/translate" ;;
     no_otel) echo "$m/telemetry/otel $m/telemetry/otel/otlptest go.opentelemetry.io/otel/sdk/metric go.opentelemetry.io/otel/sdk/trace go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp" ;;
     e2e_fakes) ;; # adds the fakes and leaves nothing out

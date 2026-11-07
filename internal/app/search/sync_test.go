@@ -292,8 +292,8 @@ func TestBackendCalls(t *testing.T) {
 	if res.IsDone() || res.Err() == nil {
 		t.Errorf("result %+v, want a retry", res)
 	}
-	if x.deadline <= 0 || x.deadline > indexCallTimeout {
-		t.Errorf("the deadline of the call was %s away, want at most %s", x.deadline, indexCallTimeout)
+	if x.deadline <= 0 || x.deadline > IndexCallTimeout {
+		t.Errorf("the deadline of the call was %s away, want at most %s", x.deadline, IndexCallTimeout)
 	}
 }
 

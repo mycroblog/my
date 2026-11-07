@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/mycroblog/my/internal/adapter/search/meilisearch"
+	"github.com/mycroblog/my/internal/app/kernel"
 	"github.com/mycroblog/my/internal/app/search"
 	"github.com/mycroblog/my/internal/platform/config"
 )
@@ -21,7 +22,7 @@ func init() { searchIndexAdapters["meilisearch"] = newMeilisearchIndex }
 // search module, which bounds the waiting for a task with its own context.
 //
 // Load read and checked the settings file; its content never reaches a log.
-func newMeilisearchIndex(_ context.Context, cfg *config.Config, _ *slog.Logger) (search.Index, error) {
+func newMeilisearchIndex(_ context.Context, cfg *config.Config, _ *slog.Logger, _ kernel.Meter) (search.Index, error) {
 	return meilisearch.New(meilisearch.Options{
 		URL: cfg.SearchMeilisearchURL, APIKey: cfg.SearchMeilisearchAPIKey, Index: cfg.SearchMeilisearchIndex,
 		Settings: cfg.SearchMeilisearchSettings, HTTPClient: searchHTTPClient(10 * time.Second),
