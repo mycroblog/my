@@ -23,7 +23,8 @@ patch:
   description: |
     Properties left out of the request keep their current values. Language tags are
     canonicalized (`ja-jp` becomes `ja-JP`). A 422 problem names the property that is
-    invalid in `detail`.
+    invalid in `detail`. On a one-person server (`Instance.single_user`) `default_visibility`
+    cannot be `local`, and a stored `local` reads as `private`.
   tags: [preferences]
   security:
     - oauth2: ["write:accounts"]

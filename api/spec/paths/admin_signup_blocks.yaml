@@ -5,6 +5,9 @@ get:
   description: |
     The blocks on sign-ups from the registration page, newest first, lifted and
     expired ones included unless `active` is set. Needs the `manage_accounts` permission.
+
+    On a one-person server (`Instance.single_user`) it is a 404 of the type
+    `/api/v1/problems/single-user-mode`.
   tags: [admin-moderation]
   security:
     - oauth2: ["admin:read"]
@@ -49,6 +52,9 @@ post:
     CIDR prefix (a single address is a prefix of its full length). A value that is not
     valid for its kind, or a `comment` that is too long or contains U+0000, is a 422.
     Needs the `manage_accounts` permission.
+
+    On a one-person server (`Instance.single_user`) it is a 404 of the type
+    `/api/v1/problems/single-user-mode`.
   tags: [admin-moderation]
   security:
     - oauth2: ["admin:write"]

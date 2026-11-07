@@ -2345,6 +2345,27 @@ func (l *Localizer) ServerErrorsSignatureRequired() string {
 	return l.format("server:errors.signature_required", nil)
 }
 
+// ServerErrorsSingleUserMode formats "server:errors.single_user_mode". API error title for HTTP 404 of an operation that a one-person server (the instance setting single_user) does not offer: the local and federated timelines, the suggestions of accounts, invites, the review of registrations, and the sign-up blocks.
+//
+//	en: This server is a one-person server, which does not offer this.
+func (l *Localizer) ServerErrorsSingleUserMode() string {
+	return l.format("server:errors.single_user_mode", nil)
+}
+
+// ServerErrorsSingleUserRequiresOneAccount formats "server:errors.single_user_requires_one_account". API error title for HTTP 422 when an administrator turns on the instance setting single_user while the server does not have exactly one local account.
+//
+//	en: A one-person server can have only one local account.
+func (l *Localizer) ServerErrorsSingleUserRequiresOneAccount() string {
+	return l.format("server:errors.single_user_requires_one_account", nil)
+}
+
+// ServerErrorsSingleUserRequiresOneAccountDetail formats "server:errors.single_user_requires_one_account_detail". API error detail for HTTP 422 when an administrator turns on the instance setting single_user: how many local accounts the server has. {count} is that number.
+//
+//	en: {count, plural, one {This server has # local account.} other {This server has # local accounts.}}
+func (l *Localizer) ServerErrorsSingleUserRequiresOneAccountDetail(count int) string {
+	return l.format("server:errors.single_user_requires_one_account_detail", map[string]any{"count": count})
+}
+
 // ServerErrorsStatusAlreadyDeleted formats "server:errors.status.already_deleted". Detail of the HTTP 409 API error when a client retries posting with an Idempotency-Key whose post was deleted. Idempotency-Key is a header name (not translated).
 //
 //	en: The post created with this Idempotency-Key has been deleted.
@@ -2399,6 +2420,13 @@ func (l *Localizer) ServerErrorsStatusInvalidReaction() string {
 //	en: The text contains characters that cannot be posted.
 func (l *Localizer) ServerErrorsStatusInvalidText() string {
 	return l.format("server:errors.status.invalid_text", nil)
+}
+
+// ServerErrorsStatusLocalUnavailable formats "server:errors.status.local_unavailable". API error detail for HTTP 422 when a user posts with the visibility local on a one-person server (the instance setting single_user), where local means no more than followers only.
+//
+//	en: Posts on a one-person server cannot be local.
+func (l *Localizer) ServerErrorsStatusLocalUnavailable() string {
+	return l.format("server:errors.status.local_unavailable", nil)
 }
 
 // ServerErrorsStatusMediaNotFound formats "server:errors.status.media_not_found". Detail of the HTTP 422 API error when a post attaches a media file that does not exist or that another account uploaded.

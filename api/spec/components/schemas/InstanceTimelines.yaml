@@ -3,7 +3,8 @@ description: |
   Who may read the public timelines the instance serves: `local` is the instance
   setting `local_timeline_visibility` of `GET /timelines/local`, and `federated` the instance
   setting `federated_timeline_visibility` of `GET /timelines/federated`. Clients do not offer a
-  timeline that is `off`, nor one that is `signed_in` to a visitor who is not logged in.
+  timeline that is `off`, nor one that is `signed_in` to a visitor who is not logged in. On a
+  one-person server (`single_user`) both are `off`, whatever the settings store.
 type: object
 required: [local, federated]
 properties:

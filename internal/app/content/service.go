@@ -61,6 +61,9 @@ var (
 	ErrMissingMediaDescription = errors.New("content: the media file has no description")
 	// ErrPollWithMedia reports a post with both a poll and media attachments (FR-112).
 	ErrPollWithMedia = errors.New("content: a post with a poll attaches no media")
+	// ErrLocalVisibilityUnavailable reports a new local post on a one-person server, where local
+	// means no more than private (ADR-0152 §5).
+	ErrLocalVisibilityUnavailable = errors.New("content: a one-person server posts nothing new as local")
 	// ErrPollNotEditable reports an edit of a status with a poll: the votes belong to the poll
 	// of the revision they were cast in (FR-112).
 	ErrPollNotEditable = errors.New("content: a status with a poll cannot be edited")
@@ -147,6 +150,9 @@ type Deps struct {
 	// RequireMediaDescription returns the current require_media_description instance setting
 	// (FR-105), read per command; nil requires no alt text.
 	RequireMediaDescription func(ctx context.Context) (bool, error)
+	// SingleUser returns the current single_user instance setting (ADR-0152 §5), read per command:
+	// a one-person server posts nothing new as local. Nil leaves it off.
+	SingleUser func(ctx context.Context) (bool, error)
 	// DefaultLanguage returns the default post language of a user (FR-110), used when a post
 	// names none; nil or UndeterminedLanguage leaves the language undetermined.
 	DefaultLanguage func(ctx context.Context, userID string) (string, error)
@@ -253,10 +259,11 @@ type CreateInput struct {
 // is not valid fails with content.ErrInvalidIdempotencyKey.
 //
 // A new post then goes to the decision hook local.status, outside the transaction (status_review.go);
-// a reject in force fails with a *RejectedByReviewError and writes nothing.
+// a reject in force fails with a *RejectedByReviewError and writes nothing. On a one-person server
+// a local post fails with ErrLocalVisibilityUnavailable (ADR-0152 §5).
 func (s *Service) Create(ctx context.Context, in CreateInput) (Post, error) {
-	if !in.Visibility.Valid() {
-		return Post{}, fmt.Errorf("%w: %q", content.ErrInvalidVisibility, in.Visibility)
+	if err := s.checkNewVisibility(ctx, in.Visibility); err != nil {
+		return Post{}, err
 	}
 	if err := content.ValidateIdempotencyKey(in.IdempotencyKey); err != nil {
 		return Post{}, err
@@ -303,6 +310,38 @@ func (s *Service) Create(ctx context.Context, in CreateInput) (Post, error) {
 	return post, nil
 }
 
+// checkNewVisibility fails with an error wrapping content.ErrInvalidVisibility for a visibility
+// that is not one, and with ErrLocalVisibilityUnavailable for local on a one-person server
+// (ADR-0152 §5).
+func (s *Service) checkNewVisibility(ctx context.Context, v content.Visibility) error {
+	if !v.Valid() {
+		return fmt.Errorf("%w: %q", content.ErrInvalidVisibility, v)
+	}
+	if v != content.VisibilityLocal {
+		return nil
+	}
+	on, err := s.singleUser(ctx)
+	if err != nil {
+		return err
+	}
+	if on {
+		return ErrLocalVisibilityUnavailable
+	}
+	return nil
+}
+
+// singleUser reports whether the server is a one-person server (ADR-0152).
+func (s *Service) singleUser(ctx context.Context) (bool, error) {
+	if s.d.SingleUser == nil {
+		return false, nil
+	}
+	on, err := s.d.SingleUser(ctx)
+	if err != nil {
+		return false, fmt.Errorf("content: instance single_user: %w", err)
+	}
+	return on, nil
+}
+
 // PreparedCreate is a new local status that PrepareCreate checked and built and CreateTx writes.
 type PreparedCreate struct {
 	st          content.Status
@@ -321,8 +360,8 @@ type PreparedCreate struct {
 // that another module writes it with CreateTx inside its own transaction: the start post of a
 // voice chat room (ADR-0100 §9). It takes no Idempotency-Key (content.ErrInvalidIdempotencyKey).
 func (s *Service) PrepareCreate(ctx context.Context, in CreateInput) (PreparedCreate, error) {
-	if !in.Visibility.Valid() {
-		return PreparedCreate{}, fmt.Errorf("%w: %q", content.ErrInvalidVisibility, in.Visibility)
+	if err := s.checkNewVisibility(ctx, in.Visibility); err != nil {
+		return PreparedCreate{}, err
 	}
 	if in.IdempotencyKey != "" {
 		return PreparedCreate{}, content.ErrInvalidIdempotencyKey
@@ -682,13 +721,23 @@ func (s *Service) ownStatus(ctx context.Context, accountID, statusID string) (co
 
 // PostingLimits returns what the account's current restrictions let it post: the visibility
 // ceiling that Create applies and the visibilities that a new status keeps as asked for
-// (data-model §5.4), so that a client can say so before posting.
+// (data-model §5.4), so that a client can say so before posting. A one-person server leaves local
+// out of those visibilities, since Create refuses it (ADR-0152 §5).
 func (s *Service) PostingLimits(ctx context.Context, accountID string) (PostingLimits, error) {
 	r, err := s.d.Restrictions.Restrictions(ctx, accountID)
 	if err != nil {
 		return PostingLimits{}, err
 	}
-	return PostingLimits{VisibilityCeiling: r.VisibilityCeiling(), Visibilities: content.PostingVisibilities(r.Author)}, nil
+	visibilities := content.PostingVisibilities(r.Author)
+	// A one-person server posts nothing new as local (ADR-0152 §5).
+	on, err := s.singleUser(ctx)
+	if err != nil {
+		return PostingLimits{}, err
+	}
+	if on {
+		visibilities = slices.DeleteFunc(visibilities, func(v content.Visibility) bool { return v == content.VisibilityLocal })
+	}
+	return PostingLimits{VisibilityCeiling: r.VisibilityCeiling(), Visibilities: visibilities}, nil
 }
 
 func (s *Service) postingRestrictions(ctx context.Context, accountID string) (Restrictions, error) {

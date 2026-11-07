@@ -123,6 +123,8 @@ func (a *App) setUpVoice(cfg *config.Config, repo appvoice.Repository) error {
 		RateLimiter: a.RateLimiter, Transport: transport, Members: voiceMembers{a}, Relations: voiceRelations{a},
 		Streams: a.Streams, Emojis: voiceEmojis{a}, Notifier: a.voiceNotifier, Posts: a.Content, Host: cfg.Host,
 		Retention: voiceRetention{a}, Config: c, Logger: a.Logger,
+		// A one-person server posts the start post of a room of the local users as private (ADR-0152 §5).
+		SingleUser: a.Instance.SingleUser,
 	})
 	a.VoiceRooms.RegisterCommitHooks(a.Projectors)
 	a.VoiceRooms.RegisterEligibilityProjectors(a.Projectors)

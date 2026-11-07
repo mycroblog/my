@@ -7,6 +7,9 @@ get:
     or `invite`, newest first, with how they have been used and who
     created them: the staff's and the members' own invites. Needs the `manage_invites`
     permission.
+
+    On a one-person server (`Instance.single_user`) it is a 404 of the type
+    `/api/v1/problems/single-user-mode`.
   tags: [admin-moderation]
   security:
     - oauth2: ["admin:read"]
@@ -35,6 +38,9 @@ post:
     409 `/api/v1/problems/registration-closed`. `max_uses` outside 1 to 1,000,000 or
     `expires_in` outside 1 second to 10 years is a 422 naming it. Needs the `manage_invites`
     permission.
+
+    On a one-person server (`Instance.single_user`) it is a 404 of the type
+    `/api/v1/problems/single-user-mode`.
   tags: [admin-moderation]
   security:
     - oauth2: ["admin:write"]

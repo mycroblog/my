@@ -39,6 +39,9 @@ type NodeMetadata struct {
 	ThumbnailURL, ThumbnailAlt string
 	// Closure is the closure of the service (serviceClosure); the zero value is none.
 	Closure NodeClosure
+	// SingleUser is whether the instance is a one-person server (singleUser, present only when
+	// true).
+	SingleUser bool
 }
 
 // NodeClosure is the closure of the service as NodeInfo's metadata states it (ADR-0088 §2).
@@ -102,6 +105,10 @@ func metadata(name, sourceURL string, m NodeMetadata, mode federation.Mode) map[
 	}
 	if m.ThumbnailURL != "" {
 		out["thumbnail"] = nodeThumbnail{URL: m.ThumbnailURL, Alt: m.ThumbnailAlt}
+	}
+	if m.SingleUser {
+		// A one-person server tells other servers that nobody else can join it (ADR-0152 §6).
+		out["singleUser"] = true
 	}
 	return out
 }

@@ -11,6 +11,8 @@ post:
     A user whose account moved gets a 403 `/api/v1/problems/account-moved`.
     When the server's automated review refuses the post, nothing is posted and the answer is a
     422 `/api/v1/problems/status-rejected` with fixed text and the decision the user may appeal.
+    On a one-person server (`Instance.single_user`) the visibility `local` is a 422, and
+    `CredentialAccount.posting_limits` leaves it out.
   tags: [statuses]
   security:
     - oauth2: ["write:statuses"]

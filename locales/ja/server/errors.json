@@ -818,5 +818,21 @@
   "errors.hook_appeal.window_closed": {
     "defaultMessage": "この判定に異議を申し立てられる期間は過ぎています。",
     "description": "API error title for HTTP 422 when the user appeals the refusal of a post after the instance's appeal window."
+  },
+  "errors.single_user_mode": {
+    "defaultMessage": "このサーバーは一人のためのサーバーで、この機能はありません。",
+    "description": "API error title for HTTP 404 of an operation that a one-person server (the instance setting single_user) does not offer: the local and federated timelines, the suggestions of accounts, invites, the review of registrations, and the sign-up blocks."
+  },
+  "errors.single_user_requires_one_account": {
+    "defaultMessage": "一人のためのサーバーにできるのは、ローカルのアカウントが 1 つだけのときです。",
+    "description": "API error title for HTTP 422 when an administrator turns on the instance setting single_user while the server does not have exactly one local account."
+  },
+  "errors.single_user_requires_one_account_detail": {
+    "defaultMessage": "{count, plural, other {このサーバーにはローカルのアカウントが # 個あります。}}",
+    "description": "API error detail for HTTP 422 when an administrator turns on the instance setting single_user: how many local accounts the server has. {count} is that number."
+  },
+  "errors.status.local_unavailable": {
+    "defaultMessage": "一人のためのサーバーでは、ローカルの公開範囲で投稿できません。",
+    "description": "API error detail for HTTP 422 when a user posts with the visibility local on a one-person server (the instance setting single_user), where local means no more than followers only."
   }
 }

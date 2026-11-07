@@ -144,6 +144,9 @@ type Deps struct {
 	Notifier Notifier
 	// Posts writes the start posts (ADR-0100 §9); nil refuses them with ErrNoStartPost.
 	Posts Posts
+	// SingleUser reads the instance setting single_user: a one-person server posts the start post
+	// of a room of the local users as private (ADR-0152 §5). Nil leaves it off.
+	SingleUser func(ctx context.Context) (bool, error)
 	// Retention reads what the purge of the records of the participants keeps (ADR-0100
 	// §13); nil purges nothing.
 	Retention Retention

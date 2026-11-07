@@ -2593,6 +2593,7 @@ const (
 	InstanceSettingKeySearchVisibilities                 InstanceSettingKey = "search_visibilities"
 	InstanceSettingKeySecurityContact                    InstanceSettingKey = "security_contact"
 	InstanceSettingKeySessionOriginsRetentionDays        InstanceSettingKey = "session_origins_retention_days"
+	InstanceSettingKeySingleUser                         InstanceSettingKey = "single_user"
 	InstanceSettingKeySupporterListVisibility            InstanceSettingKey = "supporter_list_visibility"
 	InstanceSettingKeyThumbnail                          InstanceSettingKey = "thumbnail"
 	InstanceSettingKeyTranslationBrowser                 InstanceSettingKey = "translation_browser"
@@ -2786,6 +2787,8 @@ func (e InstanceSettingKey) Valid() bool {
 	case InstanceSettingKeySecurityContact:
 		return true
 	case InstanceSettingKeySessionOriginsRetentionDays:
+		return true
+	case InstanceSettingKeySingleUser:
 		return true
 	case InstanceSettingKeySupporterListVisibility:
 		return true
@@ -10040,6 +10043,13 @@ type Instance struct {
 	// ShortDescription A one-paragraph summary of the instance, as plain text; omitted when there is none.
 	ShortDescription *string `json:"short_description,omitempty"`
 
+	// SingleUser Whether the instance is a one-person server: the home of its operator alone, with nobody else
+	// to join. While it is true, `registrations.mode` is `closed` and both `timelines` are `off`,
+	// whatever the instance settings store. Clients also hide the suggestions of accounts, invites,
+	// the review of registrations, the sign-up blocks, and the visibility `local`: those operations
+	// answer a 404 of the type `/api/v1/problems/single-user-mode`, and a new `local` post is a 422.
+	SingleUser bool `json:"single_user"`
+
 	// SourceUrl Where users get the source code of the running server (AGPL-3.0 section 13), as an https URL to read it at or a mailto URI to request it by email.
 	SourceUrl string `json:"source_url"`
 
@@ -10074,7 +10084,8 @@ type Instance struct {
 	// Timelines Who may read the public timelines the instance serves: `local` is the instance
 	// setting `local_timeline_visibility` of `GET /timelines/local`, and `federated` the instance
 	// setting `federated_timeline_visibility` of `GET /timelines/federated`. Clients do not offer a
-	// timeline that is `off`, nor one that is `signed_in` to a visitor who is not logged in.
+	// timeline that is `off`, nor one that is `signed_in` to a visitor who is not logged in. On a
+	// one-person server (`single_user`) both are `off`, whatever the settings store.
 	Timelines InstanceTimelines `json:"timelines"`
 
 	// Translation What the instance offers for translating posts, and what it sends where. With `browser` false and
@@ -10316,16 +10327,16 @@ type InstanceRegistrations struct {
 	// Mode Who may sign up: `open` (anyone), `approval` (sign-ups wait for a moderator's
 	// approval), `invite` (only with an invite), or `closed` (nobody). It is the mode that
 	// sign-ups follow: `closed` while the closure of the service is announced or done, whatever
-	// the instance setting says, and while registration is limited to the login providers and
-	// none of them lets new users sign up.
+	// the instance setting says, on a one-person server (`single_user`), and while registration
+	// is limited to the login providers and none of them lets new users sign up.
 	Mode InstanceRegistrationsMode `json:"mode"`
 }
 
 // InstanceRegistrationsMode Who may sign up: `open` (anyone), `approval` (sign-ups wait for a moderator's
 // approval), `invite` (only with an invite), or `closed` (nobody). It is the mode that
 // sign-ups follow: `closed` while the closure of the service is announced or done, whatever
-// the instance setting says, and while registration is limited to the login providers and
-// none of them lets new users sign up.
+// the instance setting says, on a one-person server (`single_user`), and while registration
+// is limited to the login providers and none of them lets new users sign up.
 type InstanceRegistrationsMode string
 
 // InstanceRule A rule of the instance. Its text and hint hold one value each, written in any
@@ -10397,7 +10408,8 @@ type InstanceThumbnail struct {
 // InstanceTimelines Who may read the public timelines the instance serves: `local` is the instance
 // setting `local_timeline_visibility` of `GET /timelines/local`, and `federated` the instance
 // setting `federated_timeline_visibility` of `GET /timelines/federated`. Clients do not offer a
-// timeline that is `off`, nor one that is `signed_in` to a visitor who is not logged in.
+// timeline that is `off`, nor one that is `signed_in` to a visitor who is not logged in. On a
+// one-person server (`single_user`) both are `off`, whatever the settings store.
 type InstanceTimelines struct {
 	// Federated Who may read something public about the instance, the value of the instance settings
 	// `local_timeline_visibility`, `federated_timeline_visibility`, `domain_actions_visibility`,
@@ -12055,7 +12067,8 @@ type PollOption struct {
 // not in `visibilities` gets `visibility_ceiling` instead.
 type PostingLimits struct {
 	// Visibilities The visibilities that a new status keeps as asked for, from the widest audience to the
-	// narrowest; every visibility while the account is not restricted.
+	// narrowest; every visibility while the account is not restricted. A one-person server
+	// (`Instance.single_user`) leaves out `local`, which a new status cannot have there.
 	Visibilities []Visibility `json:"visibilities"`
 
 	// VisibilityCeiling Who may see a status: `public` everyone, listed on public timelines;
@@ -12371,6 +12384,13 @@ type PreviewDomainBlockImportRequest struct {
 //     be searched (`Instance.full_text_search.available`).
 //   - `/api/v1/problems/search-failed` (503): the search engine could not answer. Only the search of
 //     posts is affected; try again later.
+//   - `/api/v1/problems/single-user-mode` (404): the server is a one-person server
+//     (`Instance.single_user`), which does not offer the operation: the local and federated
+//     timelines, the suggestions of accounts, invites, the review of registrations, and the sign-up
+//     blocks. It works again when the server stops being one.
+//   - `/api/v1/problems/single-user-requires-one-account` (422): the instance setting `single_user`
+//     can be turned on only while the server has exactly one local account; `detail` says how many
+//     it has.
 type Problem struct {
 	// Detail An explanation of this occurrence, localized from `Accept-Language`.
 	Detail *string `json:"detail,omitempty"`

@@ -32,7 +32,9 @@ func (a *App) setUpContent(cfg *config.Config, statuses content.Repository, quot
 		DefaultQuotePolicy:      a.defaultQuotePolicy,
 		MaxStatusLength:         a.Instance.MaxStatusLength,
 		RequireMediaDescription: a.Instance.RequireMediaDescription,
-		DefaultLanguage:         a.defaultPostLanguage,
+		// A one-person server posts nothing new as local (ADR-0152 §5).
+		SingleUser:      a.Instance.SingleUser,
+		DefaultLanguage: a.defaultPostLanguage,
 		// Reads a.CustomEmojis, built by setMedia.
 		LocalEmojis: func(ctx context.Context, texts ...string) ([]string, error) {
 			return a.CustomEmojis.LocalEmojiIDs(ctx, texts...)

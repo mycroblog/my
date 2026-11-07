@@ -184,13 +184,16 @@ func (s *Server) GetInstance(ctx context.Context, _ GetInstanceRequestObject) (G
 	if out.Closure, err = s.instanceClosure(ctx); err != nil {
 		return nil, err
 	}
-	// The registration mode that sign-ups follow: closed from the announcement on, whatever the
-	// setting says (instance.EffectiveRegistrationMode).
+	// The registration mode that sign-ups follow: closed from the announcement on and on a
+	// one-person server, whatever the setting says (instance.Settings.EffectiveRegistrationMode).
 	closure := instance.ClosureNone
 	if out.Closure != nil {
 		closure = instance.ClosureState(out.Closure.State)
 	}
-	out.Registrations = InstanceRegistrations{Mode: InstanceRegistrationsMode(instance.EffectiveRegistrationMode(settings.RegistrationMode(), closure))}
+	out.Registrations = InstanceRegistrations{Mode: InstanceRegistrationsMode(settings.EffectiveRegistrationMode(closure))}
+	// A one-person server (ADR-0152 §6): its timelines and registration read off and closed above,
+	// and clients hide the rest of what it does not offer.
+	out.SingleUser = settings.SingleUser()
 	// While registration and sign-in are limited to the login providers, clients stop offering the
 	// rest, and registration is closed when no provider lets new users sign up.
 	if settings.LoginProvidersOnly() && s.o.SignInLimit != nil {

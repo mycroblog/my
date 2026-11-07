@@ -6,6 +6,9 @@ post:
     The invite stops working at once; the people who signed up with it keep their
     accounts. Revoking a revoked invite changes nothing. An unknown ID is a 404. Needs the
     `manage_invites` permission.
+
+    On a one-person server (`Instance.single_user`) it is a 404 of the type
+    `/api/v1/problems/single-user-mode`.
   tags: [admin-moderation]
   security:
     - oauth2: ["admin:write"]

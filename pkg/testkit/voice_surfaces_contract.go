@@ -198,9 +198,20 @@ func roomsStartPost(t *testing.T, e *roomsEnv) {
 	}
 	e.open(t, host, appvoice.SettingsInput{})
 	e.posts.mu.Lock()
-	defer e.posts.mu.Unlock()
 	if e.posts.written != 3 {
 		t.Errorf("a room without a start post wrote %d posts, want 3 in all", e.posts.written)
+	}
+	e.posts.mu.Unlock()
+
+	// A one-person server posts nothing new as local: the start post of a room of the local users
+	// is private (ADR-0152 §5).
+	e.singleUser.Store(true)
+	defer e.singleUser.Store(false)
+	e.open(t, e.account(true), appvoice.SettingsInput{Visibility: voice.VisibilityLocal, Post: &appvoice.StartPost{Text: "Just me"}})
+	e.posts.mu.Lock()
+	defer e.posts.mu.Unlock()
+	if in := e.posts.prepared[len(e.posts.prepared)-1]; in.Visibility != content.VisibilityPrivate {
+		t.Errorf("the start post of a room of the local users on a one-person server = %s, want private", in.Visibility)
 	}
 }
 

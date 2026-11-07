@@ -105,3 +105,4 @@ enum:
   - auto_delete_max_allow_visibilities
   - auto_delete_max_allow_thresholds
   - auto_delete_grace_days
+  - single_user

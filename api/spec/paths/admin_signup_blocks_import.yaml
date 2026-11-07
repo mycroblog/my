@@ -15,6 +15,9 @@ post:
     ones before it; sending the list again skips them as `already_blocked`. More than
     10,000 values, an invalid kind or severity, or a `comment` that is too long or contains
     U+0000 is a 422 that adds nothing. Needs the `manage_accounts` permission.
+
+    On a one-person server (`Instance.single_user`) it is a 404 of the type
+    `/api/v1/problems/single-user-mode`.
   tags: [admin-moderation]
   security:
     - oauth2: ["admin:write"]

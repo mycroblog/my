@@ -10,6 +10,7 @@ import (
 	"slices"
 	"strconv"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -397,6 +398,8 @@ type roomsEnv struct {
 	// change between the steps of a command.
 	kv   *hookKV
 	repo *hookRepo
+	// singleUser is the instance setting single_user that the services read.
+	singleUser atomic.Bool
 }
 
 func newRoomsEnv(t *testing.T, newHarness VoiceFactory, cfg appvoice.Config) *roomsEnv {
@@ -422,7 +425,7 @@ func newRoomsEnv(t *testing.T, newHarness VoiceFactory, cfg appvoice.Config) *ro
 			Repository: repo, UnitOfWork: h.UnitOfWork, Outbox: outbox, Clock: clock, IDs: e.ids,
 			Heartbeats: appvoice.NewHeartbeats(kv, repo), Members: e.members, Relations: e.members, Config: cfg,
 			Streams: e.hub, Notifier: e.notices, Posts: e.posts, Host: contractHost, Retention: e.retention,
-			Emojis: e.emojis,
+			Emojis: e.emojis, SingleUser: func(context.Context) (bool, error) { return e.singleUser.Load(), nil },
 		}
 		if cfg.Transport != "" {
 			d.Transport = e.transport

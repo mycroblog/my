@@ -147,6 +147,8 @@ func (s *Server) statusProblem(ctx context.Context, err error) (problem, bool) {
 		return unprocessable(l.ServerErrorsInvalidValue("Idempotency-Key"))
 	case errors.Is(err, content.ErrInvalidVisibility):
 		return unprocessable("")
+	case errors.Is(err, appcontent.ErrLocalVisibilityUnavailable):
+		return unprocessable(l.ServerErrorsStatusLocalUnavailable())
 	case errors.Is(err, appcontent.ErrReplyTargetNotFound):
 		return unprocessable(l.ServerErrorsStatusReplyNotFound())
 	case errors.Is(err, appcontent.ErrQuoteTargetNotFound):
