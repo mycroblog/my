@@ -225,11 +225,11 @@ tasks:
       - cp -R app/ui/storybook-static app/web/storybook-static/ui
 
   story-test:
-    desc: Run the app/web screen stories in Chromium with their play functions and axe (no screenshots; ui:test-install installs it)
+    desc: Run the app/web screen stories in Chromium with their play functions and axe (no screenshots; ui:test-install installs it); SHARD=1/2 runs one of two shards
     deps: [generate]
     dir: app/web
     cmds:
-      - bun run test:stories
+      - bun run test:stories{{if .SHARD}} --shard={{.SHARD}}{{end}}
 
   e2e:
     desc: Run the web E2E tests with Playwright (E2E_MATRIX=full for the whole matrix)

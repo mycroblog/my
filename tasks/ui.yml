@@ -42,11 +42,11 @@ tasks:
       - bun run build-storybook
 
   test:
-    desc: Run the @my/ui story tests (axe + screenshots) in Chromium; screenshots match only in PLAYWRIGHT_IMAGE
+    desc: Run the @my/ui story tests (axe + screenshots) in Chromium; screenshots match only in PLAYWRIGHT_IMAGE; SHARD=1/2 runs one of two shards
     deps: [":web:tokens-gen-ts"]
     dir: app/ui
     cmds:
-      - bun run test
+      - bun run test{{if .SHARD}} --shard={{.SHARD}}{{end}}
 
   test-install:
     desc: Download the Chromium that ui:test uses (local runs only)
