@@ -228,6 +228,18 @@ type Config struct {
 	// read and checked by Load; nil without the file.
 	SearchElasticsearchIndexSettings []byte
 	SearchElasticsearchCAFile        string
+	// The cluster of search = opensearch: the URL of its REST API, the alias of the index, the
+	// HTTP Basic authentication, and the AWS request signing ("off" or "es") with its region.
+	// Empty is the default of each: opensearch.DefaultIndex, no signing, and the SDK's region.
+	SearchOpenSearchURL   string
+	SearchOpenSearchIndex string
+	// SearchOpenSearchIndexSettingsFile is the path of the JSON file of the settings of the
+	// index, empty for the adapter's own.
+	SearchOpenSearchIndexSettingsFile string
+	SearchOpenSearchUsername          string
+	SearchOpenSearchPassword          string
+	SearchOpenSearchAWSSigning        string
+	SearchOpenSearchAWSRegion         string
 	// PaymentsProvider is the payment provider of the supporters (ADR-0074 §5): "none" or a
 	// provider's name. PaymentsReconcileInterval and PaymentsReconcileMaxRequests bound the
 	// reconciliation with it (§4).
@@ -466,6 +478,13 @@ func (c *Config) LogValue() slog.Value {
 		slog.String("search_elasticsearch_index", c.SearchElasticsearchIndex),
 		slog.String("search_elasticsearch_index_settings_file", c.SearchElasticsearchIndexSettingsFile),
 		slog.String("search_elasticsearch_ca_file", c.SearchElasticsearchCAFile),
+		slog.String("search_opensearch_url", c.SearchOpenSearchURL),
+		slog.String("search_opensearch_index", c.SearchOpenSearchIndex),
+		slog.String("search_opensearch_index_settings_file", c.SearchOpenSearchIndexSettingsFile),
+		slog.String("search_opensearch_username", c.SearchOpenSearchUsername),
+		slog.String("search_opensearch_password", redact(c.SearchOpenSearchPassword != "")),
+		slog.String("search_opensearch_aws_signing", c.SearchOpenSearchAWSSigning),
+		slog.String("search_opensearch_aws_region", c.SearchOpenSearchAWSRegion),
 		slog.String("voice", c.Voice),
 		slog.Int("voice_p2p_max_participants", c.VoiceP2PMaxParticipants),
 		slog.Int("voice_sfu_max_participants", c.VoiceMaxParticipants),
