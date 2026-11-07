@@ -3,6 +3,7 @@
 // The site is a build tool, not where the documents live: the pages under src/content/docs/ are copied there from the
 // Markdown of the repository before the build, and only the landing page (src/content/docs/index.mdx) is written here.
 // Search is Starlight's built-in Pagefind; the site loads no analytics and no external service (ADR-0150 §7).
+import { satteri } from "@astrojs/markdown-satteri";
 import starlight from "@astrojs/starlight";
 import { defineConfig } from "astro/config";
 import starlightLinksValidator from "starlight-links-validator";
@@ -17,6 +18,9 @@ export default defineConfig({
   base,
   // The toolbar of `astro dev` is a development aid the site does not need.
   devToolbar: { enabled: false },
+  // Heading attributes (`## 公開範囲 {#visibility}`) give each heading of a translated page the anchor of its English
+  // heading (scripts/import-docs.ts), so that the links and #anchors of the sources lead to it in every locale.
+  markdown: { processor: satteri({ features: { headingAttributes: true } }) },
   integrations: [
     starlight({
       title: "mycroblog",
@@ -36,10 +40,12 @@ export default defineConfig({
         Footer: "./src/components/Footer.astro",
       },
       customCss: ["./src/styles/custom.css"],
-      // English only during v0, at the root of the URL space, so that translations added later keep every URL (ADR-0150 §9).
+      // English at the root of the URL space, and the translations of app/docs/i18n/ under /<locale>/ (ADR-0150 §9,
+      // src/translations.ts): a page a locale has not translated is the English page with Starlight's notice.
       defaultLocale: "root",
       locales: {
         root: { label: "English", lang: "en" },
+        ja: { label: "日本語", lang: "ja" },
       },
       // Starlight's own lastUpdated reads the git history of the copied files, which says nothing about the documents.
       lastUpdated: false,
@@ -48,8 +54,13 @@ export default defineConfig({
       // The Markdown form of each page in its head (src/route-middleware.ts), and the landing page's hero buttons,
       // which name documents by their repository path (src/routeData.ts).
       routeMiddleware: ["./src/route-middleware.ts", "./src/routeData.ts"],
-      // A broken link or #anchor between pages fails the build; the validator cannot see the generated reference.
-      plugins: [starlightLinksValidator({ exclude: sitePageLinks }), apiReferencePlugin, llmsTxtPlugin],
+      // A broken link or #anchor between pages fails the build; the validator cannot see the generated reference. A
+      // translated page links the pages of its locale, which may be the English page in its place (a fallback page).
+      plugins: [
+        starlightLinksValidator({ exclude: sitePageLinks, errorOnFallbackPages: false }),
+        apiReferencePlugin,
+        llmsTxtPlugin,
+      ],
     }),
   ],
 });

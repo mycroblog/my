@@ -7,12 +7,13 @@ import { markdownURL } from "../page-markdown";
 import { base } from "../published";
 
 const markdown = markdownURL(Astro.locals.starlightRoute.id);
+const t = Astro.locals.t;
 ---
 
 <Default />
 <p class="docs-llms" data-pagefind-ignore>
-  For LLMs and coding agents:
-  {markdown !== undefined && <><a href={markdown} type="text/markdown">this page as Markdown</a>, </>}
+  {t("docs.llms.lead")}
+  {markdown !== undefined && <><a href={markdown} type="text/markdown">{t("docs.llms.page")}</a>, </>}
   <a href={`${base}llms.txt`}>llms.txt</a>,
   <a href={`${base}llms-full.txt`}>llms-full.txt</a>, <a href={`${base}llms-small.txt`}>llms-small.txt</a>
 </p>

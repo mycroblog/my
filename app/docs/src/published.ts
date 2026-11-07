@@ -76,17 +76,21 @@ function normalizeBase(value: string): string {
  */
 export const sitePageLinks = Object.values(sitePages).flatMap((slug) => [`${base}${slug}/`, `${base}${slug}/#*`]);
 
-/** The site URL of a published document, under the base path, with a trailing slash. */
-export function pageURL(path: string): string {
-  return `${base}${slugOf(path)}/`;
+/**
+ * The site URL of a published document, under the base path, with a trailing slash; with `locale` (ja), its page in
+ * that locale, which Starlight fills with the English page when the locale has no translation of it.
+ */
+export function pageURL(path: string, locale?: string): string {
+  return `${base}${locale === undefined ? "" : `${locale}/`}${slugOf(path)}/`;
 }
 
 /**
- * The site URL of the page of a repository path, for the landing page: a published document or a file of sitePages.
+ * The site URL of the page of a repository path, for the landing page: a published document (in `locale`, for the
+ * landing page of a translation) or a file of sitePages, which has no translations.
  * It fails the build on any other path. It also runs inside the built pages, out of reach of the repository's files:
  * starlight-links-validator checks that the hero's buttons lead to a page, and DocLinks checks its own links.
  */
-export function siteLink(path: string): string {
+export function siteLink(path: string, locale?: string): string {
   const sitePage = sitePages[path];
   if (sitePage !== undefined) {
     return `${base}${sitePage}/`;
@@ -94,7 +98,7 @@ export function siteLink(path: string): string {
   if (!isPublished(path)) {
     throw new Error(`the landing page links ${path}, which is not a published document`);
   }
-  return pageURL(path);
+  return pageURL(path, locale);
 }
 
 export interface IndexSection {

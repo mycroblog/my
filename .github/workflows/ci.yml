@@ -555,7 +555,8 @@ jobs:
           - name: api:live-calls
             run: scripts/task.sh api:live-calls
           # The check of the site context (site:check): copy the published documents in and build the site, and run
-          # tsc, Oxlint, and knip on app/docs, which selects no client context (its bun fmt is web:fmt-check above).
+          # tsc, Oxlint, and knip on app/docs, which selects no client context (its bun fmt is web:fmt-check above),
+          # and the check of its translations.
           - name: docs:site-build
             if: needs.changes.outputs.site == 'true'
             run: scripts/task.sh docs:site-build
@@ -568,6 +569,9 @@ jobs:
           - name: docs:site-knip
             if: needs.changes.outputs.site == 'true'
             run: scripts/task.sh docs:site-knip
+          - name: docs:site-translations-check
+            if: needs.changes.outputs.site == 'true'
+            run: scripts/task.sh docs:site-translations-check
           - name: mykit:test
             if: needs.changes.outputs.mykit == 'true'
             run: scripts/task.sh mykit:test

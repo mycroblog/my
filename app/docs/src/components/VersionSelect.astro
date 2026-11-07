@@ -16,7 +16,7 @@ const options = versionOptions().map((option) => ({
 {
   options.length > 1 && (
     <docs-version-select data-base={base}>
-      <Select icon="list-format" label="Documentation version" options={options} width="9em" />
+      <Select icon="list-format" label={Astro.locals.t("docs.version.label")} options={options} width="9em" />
     </docs-version-select>
   )
 }
