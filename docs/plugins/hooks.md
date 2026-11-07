@@ -27,8 +27,8 @@ only when an earlier call failed, so a plugin should give the same answer again.
 
 ### `CheckRequest`
 
-- `hook` (`string`, field 1): The hook that asks: inbound.status, inbound.follow, signup.check, media.check, local.status, or
-  inbound.actor.
+- `hook` (`string`, field 1): The hook that asks: inbound.status, inbound.follow, signup.check, media.check, local.status,
+  inbound.actor, or local.profile.
 - `subject_key` (`string`, field 2): What identifies the subject for the hook, such as the URI of a received activity.
 - `probe` (`bool`, field 3): True for a call of `my plugin test`, which is about no real subject and acts on nothing.
 - `inbound_status` ([`InboundStatus`](#inboundstatus), field 4): What inbound.status reviews; empty on the calls of the other hooks and on probes.
@@ -37,6 +37,7 @@ only when an earlier call failed, so a plugin should give the same answer again.
 - `local_status` ([`LocalStatus`](#localstatus), field 7): What local.status reviews; empty on the calls of the other hooks and on probes.
 - `media` ([`MediaSubject`](#mediasubject), field 8): What media.check reviews; empty on the calls of the other hooks and on probes.
 - `inbound_actor` ([`InboundActor`](#inboundactor), field 9): What inbound.actor reviews; empty on the calls of the other hooks and on probes.
+- `local_profile` ([`LocalProfile`](#localprofile), field 10): What local.profile reviews; empty on the calls of the other hooks and on probes.
 
 ### `InboundStatus`
 
@@ -168,6 +169,33 @@ A profile field.
 - `name` (`string`, field 1): The name, as plain text.
 - `value_html` (`string`, field 2): The value, as sanitized HTML.
 
+### `LocalProfile`
+
+The profile of an account on this server, before the server stores an update of it, for
+local.profile. The subject_key of the call is the account's ID, "#", and the ID of the profile
+revision the update would store, so every update is its own subject; a reject refuses that
+update alone, which leaves the profile as it was. The profile is public. By default only the
+accounts created recently are sent. The server sends no image: only whether the update changes
+the avatar or the header.
+
+- `account_uri` (`string`, field 1): The ActivityPub id of the account.
+- `username` (`string`, field 2): The account's username on this server.
+- `account_created_at` (`string`, field 3): When the account was created, in RFC 3339.
+- `display_name` (`string`, field 4): The display name as it would be stored.
+- `note` (`string`, field 5): The bio as the user typed it.
+- `note_html` (`string`, field 6): The bio as the server renders it, in HTML.
+- `fields` (repeated [`LocalProfile.Field`](#localprofilefield), field 7): The profile fields in order, as they would be stored.
+- `avatar_changed` (`bool`, field 8): Whether the update sets, replaces, or removes the avatar, or the header image.
+- `header_changed` (`bool`, field 9)
+
+### `LocalProfile.Field`
+
+One profile field: its name, and its value as typed and as the server renders it in HTML.
+
+- `name` (`string`, field 1)
+- `value` (`string`, field 2)
+- `value_html` (`string`, field 3)
+
 ### `CheckResponse`
 
 - `verdict` ([`Verdict`](#verdict), field 1): A name in JSON. VERDICT_UNSPECIFIED, an empty response included, a name this version does not
@@ -189,6 +217,7 @@ media.check: ALLOW, MARK_SENSITIVE, FLAG, REJECT.
 local.status: ALLOW, FLAG, REJECT. A REJECT can be appealed by the author, which people review.
 inbound.actor: ALLOW, DROP, FLAG. A DROP keeps the profile stored before; the server still stores
 the rest of the actor, such as its keys and endpoints.
+local.profile: ALLOW, FLAG, REJECT. A REJECT cannot be appealed; the user may change the profile and save it again.
 
 - `VERDICT_UNSPECIFIED` = 0
 - `VERDICT_ALLOW` = 1: Go on as if the hook were not there.

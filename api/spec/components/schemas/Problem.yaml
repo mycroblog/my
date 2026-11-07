@@ -220,6 +220,9 @@ description: |
   - `/api/v1/problems/status-rejected` (422): the server's automated review refused the post
     and nothing was posted. The problem carries `hook_decision_id` and `appeal_deadline`; the
     user may appeal (`POST /hook_decisions/{id}/appeal`).
+  - `/api/v1/problems/profile-rejected` (422): the server's automated review refused the change
+    of the profile, which stays as it was. It cannot be appealed; the user may change the profile
+    and save it again.
   - `/api/v1/problems/email-not-suppressed` (409): the email address of the account is not
     suppressed, so there is nothing to lift.
   - `/api/v1/problems/invalid-login-provider` (422): a login provider breaks a rule;

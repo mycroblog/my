@@ -799,6 +799,14 @@
     "defaultMessage": "This server's automated review did not accept this edit. The post stays as it was.",
     "description": "API error detail for HTTP 422 when the server's automated review refused an edit; the post keeps its previous version, and an edit cannot be appealed."
   },
+  "errors.profile.rejected": {
+    "defaultMessage": "This change of your profile was not saved.",
+    "description": "API error title for HTTP 422 when the server's automated review of profiles refused a change of the user's profile. Fixed text: it never says why."
+  },
+  "errors.profile.rejected.detail": {
+    "defaultMessage": "This server's automated review did not accept this change. Your profile stays as it was.",
+    "description": "API error detail for HTTP 422 when the server's automated review refused a change of the profile; the profile keeps its previous version, and the refusal cannot be appealed."
+  },
   "errors.hook_appeal.already_appealed": {
     "defaultMessage": "You have already appealed this decision.",
     "description": "API error title for HTTP 422 when the user appeals the refusal of a post a second time; a refusal is appealed once."

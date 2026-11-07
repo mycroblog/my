@@ -63,12 +63,14 @@ const policyKeys = [
   "hook_media_check_mode",
   "hook_local_status_mode",
   "hook_inbound_actor_mode",
+  "hook_local_profile_mode",
   "hook_inbound_status_on_failure",
   "hook_inbound_status_unfollowed_direct",
   "hook_inbound_follow_on_failure",
   "hook_signup_check_on_failure",
   "hook_signup_check_reject",
   "hook_local_status_account_age_days",
+  "hook_local_profile_account_age_days",
   "hook_media_check_on_failure",
   "hook_inbound_actor_on_failure",
   "hook_decisions_retention_days",
@@ -123,6 +125,8 @@ const policyPages = {
     "hook_local_status_account_age_days",
     "hook_inbound_actor_mode",
     "hook_inbound_actor_on_failure",
+    "hook_local_profile_mode",
+    "hook_local_profile_account_age_days",
     "hook_decisions_retention_days",
   ],
   discovery: ["search_indexing", "indexable_default", "ai_usage", "security_contact", "search_visibilities"],
@@ -155,6 +159,7 @@ const numberFields = {
   voice_participants_retention_days: { min: 30, max: 3650 },
   hook_decisions_retention_days: { min: 30, max: 3650 },
   hook_local_status_account_age_days: { min: 0, max: 3650 },
+  hook_local_profile_account_age_days: { min: 0, max: 3650 },
   member_invite_max_active: { min: 0, max: 100 },
   member_invite_max_uses: { min: 1, max: 1000 },
 } as const satisfies Partial<Record<PolicyKey, { min: number; max: number }>>;
@@ -166,6 +171,7 @@ const numberKeys: readonly NumberPolicyKey[] = [
   "voice_participants_retention_days",
   "hook_decisions_retention_days",
   "hook_local_status_account_age_days",
+  "hook_local_profile_account_age_days",
   "member_invite_max_active",
   "member_invite_max_uses",
 ];
@@ -270,7 +276,9 @@ export function useServerPolicies(page: PolicyPage) {
         ? undefined
         : key === "voice_participants_retention_days"
           ? t("client:admin.settings.voice.retention.invalid", range)
-          : key === "hook_decisions_retention_days" || key === "hook_local_status_account_age_days"
+          : key === "hook_decisions_retention_days" ||
+              key === "hook_local_status_account_age_days" ||
+              key === "hook_local_profile_account_age_days"
             ? t("client:admin.settings.hooks.retention.invalid", range)
             : t("client:admin.settings.invites.number.invalid", range),
     };

@@ -2163,6 +2163,20 @@ func (l *Localizer) ServerErrorsPasskeyTooMany() string {
 	return l.format("server:errors.passkey.too_many", nil)
 }
 
+// ServerErrorsProfileRejected formats "server:errors.profile.rejected". API error title for HTTP 422 when the server's automated review of profiles refused a change of the user's profile. Fixed text: it never says why.
+//
+//	en: This change of your profile was not saved.
+func (l *Localizer) ServerErrorsProfileRejected() string {
+	return l.format("server:errors.profile.rejected", nil)
+}
+
+// ServerErrorsProfileRejectedDetail formats "server:errors.profile.rejected.detail". API error detail for HTTP 422 when the server's automated review refused a change of the profile; the profile keeps its previous version, and the refusal cannot be appealed.
+//
+//	en: This server's automated review did not accept this change. Your profile stays as it was.
+func (l *Localizer) ServerErrorsProfileRejectedDetail() string {
+	return l.format("server:errors.profile.rejected.detail", nil)
+}
+
 // ServerErrorsRateLimited formats "server:errors.rate_limited". API error title for HTTP 429 when a client sent more requests than the rate limit allows.
 //
 //	en: Too many requests.

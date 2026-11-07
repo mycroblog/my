@@ -46,6 +46,7 @@ export const hookNameLabels: Readonly<Record<HookName, ClientMessageKey>> = {
   "media.check": "client:admin.hook_decisions.hook.media_check",
   "local.status": "client:admin.hook_decisions.hook.local_status",
   "inbound.actor": "client:admin.hook_decisions.hook.inbound_actor",
+  "local.profile": "client:admin.hook_decisions.hook.local_profile",
 };
 
 export const hookOutcomeLabels: Readonly<Record<HookOutcome, ClientMessageKey>> = {

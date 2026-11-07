@@ -80,6 +80,9 @@ func setSubject(req *hookv1.CheckRequest, subject any) error {
 	case apphook.ActorSubject:
 		req.InboundActor = inboundActor(s)
 		return nil
+	case apphook.LocalProfileSubject:
+		req.LocalProfile = localProfile(s)
+		return nil
 	}
 	return fmt.Errorf("hook: no mapping of the subject %T", subject)
 }
@@ -122,6 +125,18 @@ func mediaSubject(s apphook.MediaSubject) *hookv1.MediaSubject {
 	if len(s.Image) > 0 {
 		out.Image, out.ImageContentType = s.Image, s.ImageContentType
 		out.ImageWidth, out.ImageHeight = count32(s.ImageWidth), count32(s.ImageHeight)
+	}
+	return out
+}
+
+func localProfile(s apphook.LocalProfileSubject) *hookv1.LocalProfile {
+	out := &hookv1.LocalProfile{
+		AccountUri: s.AccountURI, Username: s.Username, AccountCreatedAt: s.AccountCreatedAt.UTC().Format(time.RFC3339Nano),
+		DisplayName: s.DisplayName, Note: s.Note, NoteHtml: s.NoteHTML,
+		AvatarChanged: s.AvatarChanged, HeaderChanged: s.HeaderChanged,
+	}
+	for _, f := range s.Fields {
+		out.Fields = append(out.Fields, &hookv1.LocalProfile_Field{Name: f.Name, Value: f.Value, ValueHtml: f.ValueHTML})
 	}
 	return out
 }

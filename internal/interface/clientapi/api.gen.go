@@ -2190,6 +2190,7 @@ const (
 	HookNameInboundActor  HookName = "inbound.actor"
 	HookNameInboundFollow HookName = "inbound.follow"
 	HookNameInboundStatus HookName = "inbound.status"
+	HookNameLocalProfile  HookName = "local.profile"
 	HookNameLocalStatus   HookName = "local.status"
 	HookNameMediaCheck    HookName = "media.check"
 	HookNameSignupCheck   HookName = "signup.check"
@@ -2203,6 +2204,8 @@ func (e HookName) Valid() bool {
 	case HookNameInboundFollow:
 		return true
 	case HookNameInboundStatus:
+		return true
+	case HookNameLocalProfile:
 		return true
 	case HookNameLocalStatus:
 		return true
@@ -2527,6 +2530,8 @@ const (
 	InstanceSettingKeyHookInboundStatusMode              InstanceSettingKey = "hook_inbound_status_mode"
 	InstanceSettingKeyHookInboundStatusOnFailure         InstanceSettingKey = "hook_inbound_status_on_failure"
 	InstanceSettingKeyHookInboundStatusUnfollowedDirect  InstanceSettingKey = "hook_inbound_status_unfollowed_direct"
+	InstanceSettingKeyHookLocalProfileAccountAgeDays     InstanceSettingKey = "hook_local_profile_account_age_days"
+	InstanceSettingKeyHookLocalProfileMode               InstanceSettingKey = "hook_local_profile_mode"
 	InstanceSettingKeyHookLocalStatusAccountAgeDays      InstanceSettingKey = "hook_local_status_account_age_days"
 	InstanceSettingKeyHookLocalStatusMode                InstanceSettingKey = "hook_local_status_mode"
 	InstanceSettingKeyHookMediaCheckMode                 InstanceSettingKey = "hook_media_check_mode"
@@ -2631,6 +2636,10 @@ func (e InstanceSettingKey) Valid() bool {
 	case InstanceSettingKeyHookInboundStatusOnFailure:
 		return true
 	case InstanceSettingKeyHookInboundStatusUnfollowedDirect:
+		return true
+	case InstanceSettingKeyHookLocalProfileAccountAgeDays:
+		return true
+	case InstanceSettingKeyHookLocalProfileMode:
 		return true
 	case InstanceSettingKeyHookLocalStatusAccountAgeDays:
 		return true
@@ -5716,7 +5725,7 @@ type AdminHook struct {
 	// Hook A decision hook, where the server asks an external review before it accepts something:
 	// `inbound.status` (posts from other servers), `inbound.follow` (follows from other servers),
 	// `signup.check` (sign-ups), `media.check` (uploaded media), `local.status` (local posts),
-	// `inbound.actor` (profiles of accounts on other servers).
+	// `inbound.actor` (profiles of accounts on other servers), `local.profile` (local profiles).
 	Hook HookName `json:"hook"`
 
 	// Mode How far a decision hook acts: `off` calls nothing, `observe` records the verdict and acts on
@@ -5779,7 +5788,7 @@ type AdminHookDecision struct {
 	// Hook A decision hook, where the server asks an external review before it accepts something:
 	// `inbound.status` (posts from other servers), `inbound.follow` (follows from other servers),
 	// `signup.check` (sign-ups), `media.check` (uploaded media), `local.status` (local posts),
-	// `inbound.actor` (profiles of accounts on other servers).
+	// `inbound.actor` (profiles of accounts on other servers), `local.profile` (local profiles).
 	Hook HookName `json:"hook"`
 
 	// Id The ID of a resource, a UUIDv7 in its canonical string form.
@@ -6574,7 +6583,7 @@ type AdminReportHookOrigin struct {
 	// Hook A decision hook, where the server asks an external review before it accepts something:
 	// `inbound.status` (posts from other servers), `inbound.follow` (follows from other servers),
 	// `signup.check` (sign-ups), `media.check` (uploaded media), `local.status` (local posts),
-	// `inbound.actor` (profiles of accounts on other servers).
+	// `inbound.actor` (profiles of accounts on other servers), `local.profile` (local profiles).
 	Hook HookName `json:"hook"`
 
 	// Reason The coded reason of a verdict.
@@ -9473,7 +9482,7 @@ type HookMode string
 // HookName A decision hook, where the server asks an external review before it accepts something:
 // `inbound.status` (posts from other servers), `inbound.follow` (follows from other servers),
 // `signup.check` (sign-ups), `media.check` (uploaded media), `local.status` (local posts),
-// `inbound.actor` (profiles of accounts on other servers).
+// `inbound.actor` (profiles of accounts on other servers), `local.profile` (local profiles).
 type HookName string
 
 // HookOnFailure What a hook that enforces does when its plugin fails: `pass` lets the subject through, `retry`
@@ -10023,6 +10032,11 @@ type InstanceExternalReviewScope struct {
 	// follows are sent too (the instance setting `hook_inbound_status_unfollowed_direct`). The direct
 	// posts of followed authors are always sent.
 	InboundStatusUnfollowedDirect *bool `json:"inbound_status_unfollowed_direct,omitempty"`
+
+	// LocalProfileAccountAgeDays For `local.profile`: the profile updates of local accounts created at most this many days ago
+	// are sent (the instance setting `hook_local_profile_account_age_days`); `0` sends those of every
+	// account.
+	LocalProfileAccountAgeDays *int64 `json:"local_profile_account_age_days,omitempty"`
 
 	// LocalStatusAccountAgeDays For `local.status`: the posts of local accounts created at most this many days ago are sent
 	// (the instance setting `hook_local_status_account_age_days`); `0` sends those of every account.
@@ -12097,6 +12111,9 @@ type PreviewDomainBlockImportRequest struct {
 //   - `/api/v1/problems/status-rejected` (422): the server's automated review refused the post
 //     and nothing was posted. The problem carries `hook_decision_id` and `appeal_deadline`; the
 //     user may appeal (`POST /hook_decisions/{id}/appeal`).
+//   - `/api/v1/problems/profile-rejected` (422): the server's automated review refused the change
+//     of the profile, which stays as it was. It cannot be appealed; the user may change the profile
+//     and save it again.
 //   - `/api/v1/problems/email-not-suppressed` (409): the email address of the account is not
 //     suppressed, so there is nothing to lift.
 //   - `/api/v1/problems/invalid-login-provider` (422): a login provider breaks a rule;

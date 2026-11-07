@@ -7,8 +7,8 @@ is stop one post, follow, sign-up, upload, or profile change, or file a report f
 Nothing is reviewed by default. A server with no hook address makes no call and spends no time on them. This version keeps
 the records, the modes, and the admin screens described here. Of the intake paths, posts from other servers ask
 `inbound.status`, follows from other servers ask `inbound.follow`, sign-ups ask `signup.check`, uploads ask
-`media.check`, posts of local accounts ask `local.status`, and profiles of accounts on other servers ask
-`inbound.actor`; the other hooks are not called yet.
+`media.check`, posts of local accounts ask `local.status`, profiles of accounts on other servers ask `inbound.actor`, and
+profile changes of local accounts ask `local.profile`; the other hooks are not called yet.
 
 ![The path of a decision hook: a remote post, a remote follow, a sign-up, an upload, a local post, or the changed profile of a remote actor goes through the hook's mode to your plugin, whose verdict or failure leads to one recorded decision. The list below describes each step.](images/decision-hooks.svg)
 
@@ -16,9 +16,10 @@ From the top of the diagram down:
 
 1. **What is reviewed, and who waits.** A post from another server (`inbound.status`), a follow from another server
    (`inbound.follow`), and an upload (`media.check`) are reviewed in a job. A sign-up (`signup.check`) is reviewed while
-   the applicant waits, and a post of a local account (`local.status`) while its author waits. A profile from another
-   server (`inbound.actor`) is reviewed wherever the server fetches the account: in a job, and also while a request
-   waits, such as one from a server whose account is new here.
+   the applicant waits, a post of a local account (`local.status`) while its author waits, and a change of a local
+   account's profile (`local.profile`) while its owner waits. A profile from another server (`inbound.actor`) is
+   reviewed wherever the server fetches the account: in a job, and also while a request waits, such as one from a server
+   whose account is new here.
 2. **The mode**, `hook_<hook>_mode`: `off` makes no call, `observe` records the verdict and acts on nothing, and `enforce`
    acts on it ([Modes](#modes)).
 3. **Your plugin** gets `POST /my.plugin.hook.v1.HookService/Check`. The server waits up to `plugin_<hook>_timeout`, makes
@@ -42,6 +43,7 @@ From the top of the diagram down:
 | `media.check` | Uploaded media, before anyone can use them | `allow`, `mark_sensitive`, `flag`, `reject` | `pass` (default) or `retry` |
 | `local.status` | Posts of local accounts, and their edits | `allow`, `flag`, `reject` | `pass` |
 | `inbound.actor` | Profiles of accounts on other servers, when they change | `allow`, `drop`, `flag` | `pass` (default) or `retry` |
+| `local.profile` | Profile changes of local accounts | `allow`, `flag`, `reject` | `pass` |
 
 Set `plugin_<hook>_address` to give a hook a plugin, with a dot in the name becoming `_`
 (`plugin_inbound_status_address`). [Plugins](plugins.md) covers the destination, its authentication, and how to test a
@@ -60,7 +62,8 @@ What each answer does:
 - `require_approval` holds the sign-up for approval.
 - `reject` refuses it, with fixed text that shows nothing of the plugin's answer. On `signup.check` this also takes
   [the setting below](#sign-ups). On `media.check` it keeps nothing of the upload, the original included
-  ([below](#what-mediacheck-reviews)). On `local.status` its author can [appeal](#local-posts).
+  ([below](#what-mediacheck-reviews)). On `local.status` its author can [appeal](#local-posts). On `local.profile` the
+  profile stays as it was and there is no appeal ([below](#local-profiles)).
 
 An answer can carry a coded reason (`spam`, `harassment`, `sexual`, `violence`, `illegal`, `malware`, `other`) and a note of
 up to 200 characters for your moderators. An answer the hook does not take counts as a failure.
@@ -235,6 +238,30 @@ note. A first-party client reads where an appeal stands with `GET /api/v1/hook_d
 An account that an overturned appeal took out of the hook stays out of it until the account is deleted. If it is later taken
 over, `local.status` no longer reviews it.
 
+## Local profiles
+
+`local.profile` reviews a change of the profile of an account on your server before the server stores it. The owner waits
+for the plugin, so the wait is short: `plugin_local_profile_timeout` (1 second by default). A failure, a timeout, or an open
+breaker always lets the change through (`pass` is its only failure behaviour), and the wait is not part of a database
+transaction.
+
+What it sends and when:
+
+- Only the changes of accounts younger than `hook_local_profile_account_age_days` (**Server settings** > **Federation** >
+  **External review**, 7 days by default; `0` sends those of every account).
+- Only a change of what the hook sees: the display name, the bio, the profile fields, the avatar, or the header. A change
+  that only locks the account or changes its discovery settings is not sent.
+- The display name, the bio as typed and as the server renders it, each profile field's name and value (as typed and as
+  rendered), whether the change sets, replaces, or removes the avatar or the header, the account's address and username,
+  and when the account was created. No image is sent. The profile is public, so the hook may use plain TCP.
+- The key of the subject is the account's ID, `#`, and the ID of the profile revision the change would store, so each change
+  is a subject of its own.
+
+When it enforces, `reject` refuses that change alone: the profile stays as it was, and the owner sees fixed text ("This
+change of your profile was not saved."), never the reason or the note. There is no appeal: the owner can change the profile
+and save it again. `flag` saves the change and files one report against the account, which names no post; its reporter,
+category, and comment are those of [a post's report](#what-inboundstatus-reviews).
+
 ## Modes
 
 Each hook has a mode, an [instance setting](instance-settings.md) (`hook_inbound_status_mode` and so on) you change under
@@ -314,7 +341,8 @@ its exemption from `local.status`.
 
 While a hook has a plugin and is not `off`, your information page (`/about`) states that an external review is in use, what
 it covers, and what is sent to it. The server writes this from your settings, including the account age of
-`hook_local_status_account_age_days` (or that the posts of every account go, at `0`) and whether
+`hook_local_status_account_age_days` and `hook_local_profile_account_age_days` (or that those of every account go, at
+`0`) and whether
 `hook_inbound_status_unfollowed_direct` sends the direct posts of authors nobody here follows.
 
 ## What is sent, and what it costs
@@ -337,3 +365,5 @@ is one call, and every revision another. Review what you send before you turn a 
   changes, so its volume follows the number of accounts your server knows.
 - `media.check` sends the smallest processed image of each upload, never the original, with what the file is for, its
   kind, size, and length. It may use plain TCP, as it sends no text: a processed image can still show a person.
+- `local.profile` sends the public profile listed under [Local profiles](#local-profiles), and no image. It may use plain
+  TCP.

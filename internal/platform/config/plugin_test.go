@@ -68,6 +68,7 @@ func TestPlainTCPIsRefusedForTheKindsOfTheRule(t *testing.T) {
 		"media_video": "MY_PLUGIN_MEDIA_VIDEO_ADDRESS", "media_audio": "MY_PLUGIN_MEDIA_AUDIO_ADDRESS",
 		"inbound.follow": "MY_PLUGIN_INBOUND_FOLLOW_ADDRESS", "media.check": "MY_PLUGIN_MEDIA_CHECK_ADDRESS",
 		"inbound.actor": "MY_PLUGIN_INBOUND_ACTOR_ADDRESS",
+		"local.profile": "MY_PLUGIN_LOCAL_PROFILE_ADDRESS",
 	}
 	if len(refused)+len(allowed) != len(kind.Delegated()) {
 		t.Fatalf("this test names %d kinds of %d", len(refused)+len(allowed), len(kind.Delegated()))

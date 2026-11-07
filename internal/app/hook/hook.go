@@ -39,6 +39,7 @@ const (
 	MediaCheck    = hook.MediaCheck
 	LocalStatus   = hook.LocalStatus
 	InboundActor  = hook.InboundActor
+	LocalProfile  = hook.LocalProfile
 )
 
 // The effects a module acts on.
@@ -126,6 +127,36 @@ type ActorSubject struct {
 type ActorField struct {
 	Name      string
 	ValueHTML string
+}
+
+// LocalProfileSubject is the Subject of LocalProfile: the profile of a local account as an update
+// would store it. The profile is public; no image is sent, only whether the update changes it.
+type LocalProfileSubject struct {
+	AccountURI string
+	// Username is the account's local username.
+	Username         string
+	AccountCreatedAt time.Time
+	DisplayName      string
+	// Note is the bio as the user typed it; NoteHTML is how the server renders it.
+	Note     string
+	NoteHTML string
+	Fields   []LocalProfileField
+	// AvatarChanged and HeaderChanged say that the update sets, replaces, or removes the image.
+	AvatarChanged bool
+	HeaderChanged bool
+}
+
+// LocalProfileField is one field of a LocalProfileSubject: the value as typed and as rendered.
+type LocalProfileField struct {
+	Name      string
+	Value     string
+	ValueHTML string
+}
+
+// ProfileSubjectKey is hook.ProfileSubjectKey: the subject key of local.profile for an update of a
+// profile that would store the revision.
+func ProfileSubjectKey(accountID, revisionID string) string {
+	return hook.ProfileSubjectKey(accountID, revisionID)
 }
 
 // SignupSubject is what signup.check sends about a sign-up. Only the plugin receives it: a decision

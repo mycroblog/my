@@ -1136,6 +1136,33 @@ describe("profile", () => {
         .filter((alert) => alert.textContent === "The profile could not be saved: fields is not a valid value."),
     ).toHaveLength(1);
   });
+
+  test("a change the automated review refuses shows the server's fixed text and keeps the edits", async () => {
+    const detail = "This server's automated review did not accept this change. Your profile stays as it was.";
+    server.use(
+      http.patch(`${apiBase}/accounts/update_credentials`, () =>
+        HttpResponse.json(
+          {
+            type: "/api/v1/problems/profile-rejected",
+            title: "This change of your profile was not saved.",
+            status: 422,
+            detail,
+          },
+          { status: 422, headers: { "Content-Type": "application/problem+json" } },
+        ),
+      ),
+    );
+    const { user } = await renderApp({ path: "/settings/profile" });
+    const name = await screen.findByRole("textbox", { name: "Display name" });
+    await user.clear(name);
+    await user.type(name, "Cheap pills");
+
+    await user.click(screen.getByRole("button", { name: "Save profile" }));
+
+    expect(await screen.findByText(`The profile could not be saved: ${detail}`)).toBeVisible();
+    // The user may change the profile and save it again: the form still holds what they typed.
+    expect(name).toHaveValue("Cheap pills");
+  });
 });
 
 describe("blocks, mutes and follow requests", () => {

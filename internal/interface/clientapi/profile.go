@@ -15,10 +15,14 @@ import (
 	"github.com/mycroblog/my/internal/i18n"
 )
 
+// ProblemTypeProfileRejected is the problem of a profile update that the hook local.profile refused.
+const ProblemTypeProfileRejected = "/api/v1/problems/profile-rejected"
+
 // Profiles changes the viewer's profile. *appaccount.Service implements it.
 type Profiles interface {
 	// UpdateProfile records a new profile revision; it fails with an error wrapping
-	// account.ErrInvalidProfile for invalid content.
+	// account.ErrInvalidProfile for invalid content, and with appaccount.ErrProfileRejected for an
+	// update that the decision hook local.profile refused.
 	UpdateProfile(ctx context.Context, accountID string, in appaccount.ProfileUpdate) (appaccount.Actor, error)
 }
 
@@ -148,6 +152,16 @@ func (s *Server) UpdateAccountCredentials(ctx context.Context, req UpdateAccount
 	if errors.As(err, &invalid) {
 		body, headers := s.NewProblem(ctx, http.StatusUnprocessableEntity, ProblemTypeBlank,
 			s.Localizer(ctx).ServerErrorsUnprocessable(), s.profileProblemDetail(ctx, invalid))
+		return UpdateAccountCredentialsdefaultApplicationProblemPlusJSONResponse{
+			Body: body, Headers: headers, StatusCode: http.StatusUnprocessableEntity,
+		}, nil
+	}
+	if errors.Is(err, appaccount.ErrProfileRejected) {
+		// An update that local.profile refused: fixed text that holds nothing of the plugin's
+		// answer, with no decision to appeal, since the profile stays as it was (ADR-0147 §2, §12).
+		l := s.Localizer(ctx)
+		body, headers := s.NewProblem(ctx, http.StatusUnprocessableEntity, ProblemTypeProfileRejected,
+			l.ServerErrorsProfileRejected(), l.ServerErrorsProfileRejectedDetail())
 		return UpdateAccountCredentialsdefaultApplicationProblemPlusJSONResponse{
 			Body: body, Headers: headers, StatusCode: http.StatusUnprocessableEntity,
 		}, nil

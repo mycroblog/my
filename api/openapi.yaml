@@ -671,7 +671,9 @@ paths:
         Records a new revision of the profile. Properties left out of the request keep their
         current values. The note and the field values are plain text that the server renders
         to HTML like the text of a post (mentions, hashtags, and URLs become links). A 422
-        problem names the property that is invalid in `detail`.
+        problem names the property that is invalid in `detail`. When the server's automated review
+        refuses the change, the answer is a 422 `/api/v1/problems/profile-rejected` with fixed text
+        and no decision to appeal, and the profile stays as it was.
       tags:
         - accounts
       security:
@@ -15674,7 +15676,7 @@ components:
         A decision hook, where the server asks an external review before it accepts something:
         `inbound.status` (posts from other servers), `inbound.follow` (follows from other servers),
         `signup.check` (sign-ups), `media.check` (uploaded media), `local.status` (local posts),
-        `inbound.actor` (profiles of accounts on other servers).
+        `inbound.actor` (profiles of accounts on other servers), `local.profile` (local profiles).
       type: string
       enum:
         - inbound.status
@@ -15683,6 +15685,7 @@ components:
         - media.check
         - local.status
         - inbound.actor
+        - local.profile
     HookOnFailure:
       description: |
         What a hook that enforces does when its plugin fails: `pass` lets the subject through, `retry`
@@ -19319,6 +19322,14 @@ components:
           type: integer
           format: int64
           minimum: 0
+        local_profile_account_age_days:
+          description: |
+            For `local.profile`: the profile updates of local accounts created at most this many days ago
+            are sent (the instance setting `hook_local_profile_account_age_days`); `0` sends those of every
+            account.
+          type: integer
+          format: int64
+          minimum: 0
         inbound_status_unfollowed_direct:
           description: |
             For `inbound.status`: whether the direct posts of remote authors that no local account
@@ -19537,12 +19548,14 @@ components:
         - hook_media_check_mode
         - hook_local_status_mode
         - hook_inbound_actor_mode
+        - hook_local_profile_mode
         - hook_inbound_status_on_failure
         - hook_inbound_status_unfollowed_direct
         - hook_inbound_follow_on_failure
         - hook_signup_check_on_failure
         - hook_signup_check_reject
         - hook_local_status_account_age_days
+        - hook_local_profile_account_age_days
         - hook_media_check_on_failure
         - hook_inbound_actor_on_failure
         - hook_decisions_retention_days
@@ -21765,6 +21778,9 @@ components:
         - `/api/v1/problems/status-rejected` (422): the server's automated review refused the post
           and nothing was posted. The problem carries `hook_decision_id` and `appeal_deadline`; the
           user may appeal (`POST /hook_decisions/{id}/appeal`).
+        - `/api/v1/problems/profile-rejected` (422): the server's automated review refused the change
+          of the profile, which stays as it was. It cannot be appealed; the user may change the profile
+          and save it again.
         - `/api/v1/problems/email-not-suppressed` (409): the email address of the account is not
           suppressed, so there is nothing to lift.
         - `/api/v1/problems/invalid-login-provider` (422): a login provider breaks a rule;

@@ -122,6 +122,7 @@ const (
 	SettingHookMediaCheckMode         SettingKey = "hook_media_check_mode"
 	SettingHookLocalStatusMode        SettingKey = "hook_local_status_mode"
 	SettingHookInboundActorMode       SettingKey = "hook_inbound_actor_mode"
+	SettingHookLocalProfileMode       SettingKey = "hook_local_profile_mode"
 	SettingHookInboundStatusOnFailure SettingKey = "hook_inbound_status_on_failure"
 	SettingHookInboundFollowOnFailure SettingKey = "hook_inbound_follow_on_failure"
 	SettingHookSignupCheckOnFailure   SettingKey = "hook_signup_check_on_failure"
@@ -133,6 +134,9 @@ const (
 	// SettingHookLocalStatusAccountAgeDays limits the hook local.status to the posts of accounts
 	// created recently (ADR-0147 §2).
 	SettingHookLocalStatusAccountAgeDays SettingKey = "hook_local_status_account_age_days"
+	// SettingHookLocalProfileAccountAgeDays limits the hook local.profile to the profiles of
+	// accounts created recently (ADR-0147 §2).
+	SettingHookLocalProfileAccountAgeDays SettingKey = "hook_local_profile_account_age_days"
 
 	// SettingHookInboundStatusUnfollowedDirect decides whether inbound.status also sends the direct
 	// posts of authors no local account follows (ADR-0147 §10).
@@ -382,6 +386,8 @@ const (
 	DefaultHookDecisionsRetentionDays = 90
 	// DefaultHookLocalStatusAccountAgeDays is the default of SettingHookLocalStatusAccountAgeDays.
 	DefaultHookLocalStatusAccountAgeDays = 7
+	// DefaultHookLocalProfileAccountAgeDays is the default of SettingHookLocalProfileAccountAgeDays.
+	DefaultHookLocalProfileAccountAgeDays = 7
 )
 
 // Kind is the scalar type of a setting's value.
@@ -642,6 +648,7 @@ var definitions = []Definition{
 	hookModeDefinition(SettingHookMediaCheckMode, "media.check"),
 	hookModeDefinition(SettingHookLocalStatusMode, "local.status"),
 	hookModeDefinition(SettingHookInboundActorMode, "inbound.actor"),
+	hookModeDefinition(SettingHookLocalProfileMode, "local.profile"),
 	hookOnFailureDefinition(SettingHookInboundStatusOnFailure, "inbound.status", HookRetryOnFailure),
 	hookOnFailureDefinition(SettingHookInboundFollowOnFailure, "inbound.follow", HookRetryOnFailure),
 	hookOnFailureDefinition(SettingHookSignupCheckOnFailure, "signup.check", HookApproveOnFailure),
@@ -658,6 +665,10 @@ var definitions = []Definition{
 	{
 		Key: SettingHookLocalStatusAccountAgeDays, Kind: KindInt, Default: strconv.Itoa(DefaultHookLocalStatusAccountAgeDays), Min: 0, Max: MaxRetention,
 		Doc: "How many days after its creation an account's posts go to the decision hook local.status; 0 sends the posts of every account. Private and direct posts never go, nor those of an account whose appeal a moderator overturned (ADR-0147 §2, §9).",
+	},
+	{
+		Key: SettingHookLocalProfileAccountAgeDays, Kind: KindInt, Default: strconv.Itoa(DefaultHookLocalProfileAccountAgeDays), Min: 0, Max: MaxRetention,
+		Doc: "How many days after its creation an account's profile updates go to the decision hook local.profile; 0 sends those of every account (ADR-0147 §2).",
 	},
 	{
 		Key: SettingHookDecisionsRetentionDays, Kind: KindInt, Default: strconv.Itoa(DefaultHookDecisionsRetentionDays), Min: MinHookDecisionsRetentionDays, Max: MaxRetention,
@@ -1188,6 +1199,12 @@ func (s Settings) HookLocalStatusAccountAge() time.Duration {
 	return time.Duration(s.intValue(SettingHookLocalStatusAccountAgeDays)) * 24 * time.Hour
 }
 
+// HookLocalProfileAccountAge returns SettingHookLocalProfileAccountAgeDays as a duration; 0 sends
+// the profile updates of every account.
+func (s Settings) HookLocalProfileAccountAge() time.Duration {
+	return time.Duration(s.intValue(SettingHookLocalProfileAccountAgeDays)) * 24 * time.Hour
+}
+
 // FinanceVisibility returns the value of SettingFinanceVisibility; an unexpected value is private.
 func (s Settings) FinanceVisibility() FinanceVisibility {
 	switch v, _ := s.Value(SettingFinanceVisibility); FinanceVisibility(v) {
@@ -1536,11 +1553,14 @@ func HookModeKey(hook string) (SettingKey, bool) {
 		return SettingHookLocalStatusMode, true
 	case "inbound.actor":
 		return SettingHookInboundActorMode, true
+	case "local.profile":
+		return SettingHookLocalProfileMode, true
 	}
 	return "", false
 }
 
-// HookOnFailureKey returns the setting of what a hook does on failure; local.status has no choice.
+// HookOnFailureKey returns the setting of what a hook does on failure; local.status and
+// local.profile have no choice.
 func HookOnFailureKey(hook string) (SettingKey, bool) {
 	switch hook {
 	case "inbound.status":
@@ -1572,7 +1592,8 @@ func (s Settings) CheckHookModeChange(key SettingKey, value string) error {
 // IsHookModeKey reports whether key is the setting of the mode of a hook.
 func IsHookModeKey(key SettingKey) bool {
 	switch key {
-	case SettingHookInboundStatusMode, SettingHookInboundFollowMode, SettingHookSignupCheckMode, SettingHookMediaCheckMode, SettingHookLocalStatusMode, SettingHookInboundActorMode:
+	case SettingHookInboundStatusMode, SettingHookInboundFollowMode, SettingHookSignupCheckMode, SettingHookMediaCheckMode, SettingHookLocalStatusMode,
+		SettingHookInboundActorMode, SettingHookLocalProfileMode:
 		return true
 	}
 	return false

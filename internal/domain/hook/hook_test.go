@@ -27,9 +27,14 @@ func TestSpecsFollowTheDecision(t *testing.T) {
 			t.Errorf("%s does not pass by default", name)
 		}
 	}
-	local, _ := SpecOf(LocalStatus)
-	if local.AcceptsFailure(RetryOnFailure) {
-		t.Error("local.status can retry")
+	for _, n := range []Name{LocalStatus, LocalProfile} {
+		if local, _ := SpecOf(n); local.AcceptsFailure(RetryOnFailure) || len(local.OnFailure) != 1 {
+			t.Errorf("%s has a failure option", n)
+		}
+	}
+	rejected := Record{Decision: Decision{Hook: LocalProfile, SubjectKey: ProfileSubjectKey("a", "r"), Mode: ModeEnforce, Outcome: Reject}}
+	if rejected.CheckAppealable(rejected.Decision.DecidedAt, time.Hour) == nil {
+		t.Error("a reject of local.profile can be appealed")
 	}
 	signup, _ := SpecOf(SignupCheck)
 	if signup.AcceptsFailure(RetryOnFailure) || !signup.AcceptsFailure(ApproveOnFailure) {
