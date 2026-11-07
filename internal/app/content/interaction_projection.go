@@ -25,7 +25,7 @@ var errBoostEdgeExists = errors.New("content: the account already boosts the sta
 //     (ADR-0051).
 //
 // The rebuild queries state the same rules in SQL (InteractionRepository.RebuildBoostEdges,
-// InteractionRepository.RebuildReactionCounts, and Repository.RebuildCounters); the property test in testkit.InteractionRepositoryContract
+// InteractionRepository.RebuildReactionCounts, and Repository.RebuildCounters); the property test in testkit.InteractionFlows
 // checks that both agree.
 func RegisterInteractionProjectors(r *uow.Projectors, repo InteractionRepository) {
 	r.Register(EventBoosted, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
