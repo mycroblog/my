@@ -238,10 +238,12 @@ keeps the per-PR web E2E of §5.
   `main` by design; when a build or a test on `main` still breaks, fix it before starting more issues.
 - The slow suite (the full web E2E, the real PostgreSQL and broker contracts, the live federation test, the images,
   and CodeQL) runs nightly on `main` ([ADR-0079](../adr/0079-ci-single-gate-merge-queue.md)) and does not pause the
-  queue, but a red Nightly stops the line ([ADR-0079](../adr/0079-ci-single-gate-merge-queue.md) §8): check the Nightly
-  runs every morning (`gh run list -R mycroblog/my --workflow nightly.yml --status failure`; a night on which `main`
-  did not move runs only the image scan), file one issue per cause with the failing jobs and the commits since the last
-  green run, and fix it before starting more issues. Do not collect failures for the end of the milestone.
+  queue, but a red Nightly stops the line ([ADR-0079](../adr/0079-ci-single-gate-merge-queue.md) §8). The Nightly's
+  `report` job opens an issue labelled `nightly-failure` with the failed jobs and the commits since the last green run,
+  comments on it while the failure goes on, and closes it when a Nightly passes
+  (`gh issue list -R mycroblog/my --label nightly-failure`). Fix it before starting more issues, filing one issue per
+  cause when the failure has several. Do not collect failures for the end of the milestone. The summary of the run also
+  lists the E2E tests that passed only on a retry: quarantine or fix one that keeps appearing.
 - A release needs the slow suite green: `release.yml` tags nothing while any of it fails
   ([releasing.md](releasing.md)). Fix every failure before cutting a release.
 
