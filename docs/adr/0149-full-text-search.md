@@ -152,7 +152,7 @@ ADR-0058 と [data-model §8](../architecture/data-model/08-deletion-and-purge.m
 - `internal/adapter/search/<name>` のアダプタ。`testkit.SearchIndexContract` を通し、`CGO_ENABLED=0` で作れる。
 - `search` の選択肢と `search_<name>_*` の設定。
 - `adapters_search_<name>.go` と `adapters_no_search_<name>.go` の対、`docs/reference/build-tags.md`、`tools/agentkit/context-map.yaml` の項目。
-- 索引の定義の作成と更新。定義を変えるときに再構築が要るなら、その手順。
+- 索引の定義の作成と更新。定義を変えるときに再構築が要るなら、その手順。`my` が持つのは書き込み・絞り込み・並べ替え・ページングに使う項目だけで、解析器・トークナイザ・順位付け・シャードやレプリカの数などエンジンの調整は運営者がエンジンの設定のファイルで渡す。`my` は組み込みの既定を持ち、ファイルが `my` の項目の参照する名前（解析器の名前など）を定義することだけを求める。
 - `docs/operations/` のバックエンドの文書: 設定、規模の目安、日本語の扱い（§13）。
 
 ポート・ジョブ・API・再構築・Web クライアント・文言は変えない。

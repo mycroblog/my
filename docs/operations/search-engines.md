@@ -55,7 +55,7 @@ The settings:
 | [`search_elasticsearch_api_key`](../reference/configuration.md#search_elasticsearch_api_key) | The API key, which is the better choice. |
 | [`search_elasticsearch_username`](../reference/configuration.md#search_elasticsearch_username), [`search_elasticsearch_password`](../reference/configuration.md#search_elasticsearch_password) | A user and password for basic authentication instead of a key. |
 | [`search_elasticsearch_index`](../reference/configuration.md#search_elasticsearch_index) | The name of the alias, `my-statuses` by default. Give each server that shares a cluster its own name, and grant its key that name followed by `*`. |
-| [`search_elasticsearch_index_settings_file`](../reference/configuration.md#search_elasticsearch_index_settings_file) | A JSON file of your own settings of the index, as in [tuning the analysis](#tuning-the-analysis). |
+| [`search_elasticsearch_index_settings_file`](../reference/configuration.md#search_elasticsearch_index_settings_file) | A JSON file of your own settings of the index, as in [tuning the analysis](#tuning-the-analysis-of-elasticsearch). |
 | [`search_elasticsearch_ca_file`](../reference/configuration.md#search_elasticsearch_ca_file) | The certificate authority of an HTTPS cluster whose certificate the system does not trust. |
 
 The credentials are read only from the environment, as secrets, and never appear in the server's logs or errors. An error of the cluster reaches the logs as the request's path, its status, and the type of the error, such as `index_not_found_exception`, never with the text of a post or a query. Only when the cluster refuses to create the index does the error quote its reason, which names nothing but the settings and the fields.
@@ -102,7 +102,7 @@ The built-in `my_text` is the standard tokenizer of Elasticsearch with the `cjk_
 
 Chinese and Korean are found the same way, by their characters. Words in the languages written with spaces are found whole, without stemming: `run` does not find `running`.
 
-### Tuning the analysis
+### Tuning the analysis of Elasticsearch
 
 Put the settings of the index in a JSON file and name it in `search_elasticsearch_index_settings_file`. The server uses the whole file as the `settings` of each index it creates, in place of the built-in ones, so it must hold everything the index needs:
 
@@ -184,7 +184,7 @@ Searches took a few milliseconds with each of them on this small index, and the 
    - With the security plugin, a user with [`search_opensearch_username`](../reference/configuration.md#search_opensearch_username) and [`search_opensearch_password`](../reference/configuration.md#search_opensearch_password), sent with HTTP Basic authentication. Use `https` when the cluster is not on the same host or a private network you trust. The user needs to create, read the mapping of, and delete the indexes whose names start with [`search_opensearch_index`](../reference/configuration.md#search_opensearch_index), to manage that alias, and to read, write, and delete their documents.
    - On Amazon OpenSearch Service with an IAM access policy, [`search_opensearch_aws_signing`](../reference/configuration.md#search_opensearch_aws_signing) set to `es`, which signs every request with AWS Signature Version 4. The credentials come from the AWS SDK's default chain (the execution role, the environment, the shared files), and the region from [`search_opensearch_aws_region`](../reference/configuration.md#search_opensearch_aws_region) or `AWS_REGION`. The role needs `es:ESHttpGet`, `es:ESHttpPost`, `es:ESHttpPut`, and `es:ESHttpDelete` on the domain. A domain with fine-grained access control and an internal master user takes the user and password instead.
    - Amazon OpenSearch Serverless is not supported: it has no delete by query, which removing the posts of an author or of a visibility needs.
-4. Optionally, [tune the analysis](#tuning-the-analysis) with a settings file.
+4. Optionally, [tune the analysis](#tuning-the-analysis-of-opensearch) with a settings file.
 5. Start the server. It creates the index at start and refuses to start when it cannot reach the cluster or create the index.
 6. Run `my search rebuild` to index the posts that are already there ([rebuilding the index](search.md#rebuilding-the-index)).
 
@@ -218,9 +218,9 @@ With the built-in settings, every post, whatever its language, is analyzed the s
 - The pairs do not know where words end, so a query can find a post where its characters only happen to stand side by side: `京都` finds `東京都` as well. A query of katakana written in half-width or full-width letters finds both.
 - Readings are not matched: `ぜんぶん` does not find `全文`, and inflected forms are not matched to their dictionary forms, in Japanese or in English (`running` does not find `run`).
 
-To find Japanese by words, use a morphological analyzer such as kuromoji in a [settings file](#tuning-the-analysis).
+To find Japanese by words, use a morphological analyzer such as kuromoji in a [settings file](#tuning-the-analysis-of-opensearch).
 
-### Tuning the analysis
+### Tuning the analysis of OpenSearch
 
 [`search_opensearch_index_settings_file`](../reference/configuration.md#search_opensearch_index_settings_file) names a JSON file whose object becomes the `settings` of every index the server creates: `analysis`, `index.number_of_shards`, `index.number_of_replicas`, and any other index setting. It holds settings only; the server owns the mapping, and refuses a file with `mappings`.
 
@@ -310,7 +310,7 @@ Several servers can share one Meilisearch server with a different `search_meilis
 The server creates the index when it does not exist. The first time it uses the index after a start, it compares the settings it would send with those it applied last, which it records as a hash in a document of the index that no search finds, and sends them only when they differ: a restart with nothing changed sends nothing. The settings are:
 
 - **What the server sets itself:** `searchableAttributes` (the text fields of the posts), `displayedAttributes` (all), `filterableAttributes` (the post ID, the author, and the visibility), and `sortableAttributes` (the post ID). The search depends on them, and a settings file that sets one is refused.
-- **What you can tune:** everything else, in the [settings file](#tuning). Without one, or for what the file leaves out, the server uses its defaults: `rankingRules` of `sort`, `words`, `typo`, `proximity`, `attribute`, and `exactness`; no typo tolerance; the languages of the Japanese, Chinese, and Korean fields in `localizedAttributes`; and Meilisearch's own defaults for the rest (`stopWords`, `synonyms`, `dictionary`, `separatorTokens`, `nonSeparatorTokens`, `proximityPrecision`, `pagination`, `faceting`, `distinctAttribute`, `searchCutoffMs`, `prefixSearch`). Settings you change by hand on the engine stay only until the server next sends its settings.
+- **What you can tune:** everything else, in the [settings file](#tuning-meilisearch). Without one, or for what the file leaves out, the server uses its defaults: `rankingRules` of `sort`, `words`, `typo`, `proximity`, `attribute`, and `exactness`; no typo tolerance; the languages of the Japanese, Chinese, and Korean fields in `localizedAttributes`; and Meilisearch's own defaults for the rest (`stopWords`, `synonyms`, `dictionary`, `separatorTokens`, `nonSeparatorTokens`, `proximityPrecision`, `pagination`, `faceting`, `distinctAttribute`, `searchCutoffMs`, `prefixSearch`). Settings you change by hand on the engine stay only until the server next sends its settings.
 
 **A change of the settings needs no `my search rebuild`.** Meilisearch reindexes the documents it holds by itself, in the background, and the posts stay in the index. It only takes time, roughly as long as indexing them did. The start of the server does not wait for it: the server sends the settings and goes on. Meanwhile searches answer with the previous settings, and the writes of the index wait behind the reindex, since Meilisearch runs the tasks of an index in order; a job whose write does not finish within its 10 seconds retries later, so posts written during the reindex reach the index after it. `my search clear` waits for the settings of the new, empty index, which take no time.
 
@@ -328,7 +328,7 @@ To upgrade Meilisearch itself, follow its upgrade guide (a dump, or its dumpless
 
 The query of a search is fixed, whatever the settings file says: `matchingStrategy: all`, so that a post must have every word; `sort: status_id:desc`, newest first; a `filter` on the post ID for the next page; a `limit` of the page plus one; `attributesToRetrieve` of the post ID; and `showMatchesPosition`, which tells a query that has no word. The double quotes of a phrase and the minus sign before a word, which Meilisearch would read as operators, are dropped, so a query is always plain words.
 
-### Tuning
+### Tuning Meilisearch
 
 Tune the engine with a JSON file of [Meilisearch index settings](https://www.meilisearch.com/docs/reference/api/settings), named by `search_meilisearch_settings_file`. The server checks it at start, when `search = meilisearch`: it must exist and be a JSON object, must not set the four settings the server sets itself, and its `rankingRules`, when it has them, must start with `sort`, which keeps the results newest first. Meilisearch checks the values when the server sends them. The server never logs the file's content.
 

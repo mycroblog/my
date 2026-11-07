@@ -33,7 +33,7 @@ func newServerIndexWith(t *testing.T, s meilisearchtest.Server, settings []byte)
 }
 
 // tunedSettings is the example settings file of the operator documentation
-// (docs/operations/search-engines.md#tuning).
+// (docs/operations/search-engines.md#tuning-meilisearch).
 const tunedSettings = `{
   "localizedAttributes": [
     {"attributePatterns": ["text_ja"], "locales": ["jpn"]}

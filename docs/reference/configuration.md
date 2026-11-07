@@ -1394,7 +1394,7 @@ The name of the alias that the index of `search = elasticsearch` lives behind; t
 
 ### `search_elasticsearch_index_settings_file`
 
-JSON file of the settings of each index that the server creates for `search = elasticsearch`, one object such as `{"number_of_shards": 1, "number_of_replicas": 0, "analysis": {...}}`: the analysis, the shards, the replicas, and any other index setting. It must define the analyzer `my_text`, which analyzes the posts, and may define `my_text_search`, which then analyzes the words of the queries. Empty uses the built-in settings, which need no plugin. The server reads it at start; after a change, it creates a new empty index and `my search rebuild` must fill it ([search engines](../operations/search-engines.md#tuning-the-analysis)).
+JSON file of the settings of each index that the server creates for `search = elasticsearch`, one object such as `{"number_of_shards": 1, "number_of_replicas": 0, "analysis": {...}}`: the analysis, the shards, the replicas, and any other index setting. It must define the analyzer `my_text`, which analyzes the posts, and may define `my_text_search`, which then analyzes the words of the queries. Empty uses the built-in settings, which need no plugin. The server reads it at start; after a change, it creates a new empty index and `my search rebuild` must fill it ([search engines](../operations/search-engines.md#tuning-the-analysis-of-elasticsearch)).
 
 - Environment variable: `MY_SEARCH_ELASTICSEARCH_INDEX_SETTINGS_FILE`
 - Default: none
@@ -1426,7 +1426,7 @@ The name of the alias of the index of `search = opensearch`. The server keeps th
 
 ### `search_opensearch_index_settings_file`
 
-The path of a JSON file whose object the server uses as the `settings` of every index of `search = opensearch` that it creates: the analysis, the shards, the replicas, and any other index setting. It must define the analyzers `my_text`, of the text of the posts, and `my_text_search`, of the queries ([tuning the analysis](../operations/search-engines.md#tuning-the-analysis)). Empty uses the built-in settings. A change of the file takes effect at the next start, in a new empty index, so it needs a rebuild of the index.
+The path of a JSON file whose object the server uses as the `settings` of every index of `search = opensearch` that it creates: the analysis, the shards, the replicas, and any other index setting. It must define the analyzers `my_text`, of the text of the posts, and `my_text_search`, of the queries ([tuning the analysis](../operations/search-engines.md#tuning-the-analysis-of-opensearch)). Empty uses the built-in settings. A change of the file takes effect at the next start, in a new empty index, so it needs a rebuild of the index.
 
 - Environment variable: `MY_SEARCH_OPENSEARCH_INDEX_SETTINGS_FILE`
 - Default: none
