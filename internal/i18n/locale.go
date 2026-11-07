@@ -32,21 +32,31 @@ func formattingLocale(locale string) string {
 	return locale
 }
 
-// parentLocales overrides the default parent (drop the last subtag) where that would
-// cross scripts, following CLDR parentLocales: Traditional Chinese never falls back to
-// "zh", which is Simplified.
+// parentLocales overrides the default parent (drop the last subtag) so that each tag reaches
+// the one catalog locale of its language and script (ADR-0009 §2): Simplified Chinese ("zh",
+// "zh-SG", "zh-Hans", "zh-Hans-*") resolves to zh-CN, Traditional Chinese ("zh-HK", "zh-MO",
+// "zh-Hant", "zh-Hant-*") to zh-TW, and Portuguese ("pt", "pt-PT") to pt-BR. A catalog locale
+// with a region ends its chain before SourceLocale, so that a message missing from it falls
+// back to SourceLocale and never to another locale (zh-TW never reaches zh-CN).
 var parentLocales = map[string]string{
-	"zh-Hant": "",
-	"zh-HK":   "zh-Hant",
-	"zh-MO":   "zh-Hant",
-	"zh-TW":   "zh-Hant",
+	"zh":      "zh-CN",
+	"zh-SG":   "zh-CN",
+	"zh-Hans": "zh-CN",
+	"zh-CN":   "",
+	"zh-Hant": "zh-TW",
+	"zh-HK":   "zh-TW",
+	"zh-MO":   "zh-TW",
+	"zh-TW":   "",
+	"pt":      "pt-BR",
+	"pt-PT":   "pt-BR",
+	"pt-BR":   "",
 }
 
 // FallbackChain returns the locales consulted for a message, most specific first,
-// always ending with SourceLocale: zh-Hant-TW -> zh-Hant -> en, ja-JP -> ja -> en.
+// always ending with SourceLocale: zh-Hant-HK -> zh-Hant -> zh-TW -> en, ja-JP -> ja -> en.
 func FallbackChain(locale string) []string {
 	var chain []string
-	for l := Canonicalize(locale); l != ""; {
+	for l := Canonicalize(locale); l != "" && !slices.Contains(chain, l); {
 		chain = append(chain, l)
 		if p, ok := parentLocales[l]; ok {
 			l = p

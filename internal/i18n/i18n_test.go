@@ -35,6 +35,8 @@ func TestAccessors(t *testing.T) {
 		{"en-XA", func(l *Localizer) string { return l.ServerErrorsNotFound() }, "[Ŧħḗḗ řḗḗɋŭŭḗḗşŧḗḗḓ řḗḗşǿǿŭŭřƈḗḗ ẇȧȧş ƞǿǿŧ ƒǿǿŭŭƞḓ.]"},
 		{"en-XA", func(l *Localizer) string { return l.ServerConfigErrors(1) }, "[Ƒǿǿŭŭƞḓ 1 ƈǿǿƞƒīɠŭŭřȧȧŧīǿǿƞ ḗḗřřǿǿř.]"},
 		{"ar-XB", func(l *Localizer) string { return l.ServerConfigInvalid("MY_DATABASE") }, "\u202e⊥ɥǝ sǝʇʇıuƃ MY_DATABASE ɥɐs ɐu ıuʌɐʅıp ʌɐʅnǝ.\u202c"},
+		{"zh-CN", func(l *Localizer) string { return l.ServerConfigErrors(1234) }, "发现 1,234 个配置错误。"},
+		{"zh-Hans-SG", func(l *Localizer) string { return l.ServerErrorsNotFound() }, "找不到请求的资源。"},
 		// Locales without a catalog fall back to en.
 		{"fr", func(l *Localizer) string { return l.ServerErrorsNotFound() }, "The requested resource was not found."},
 		{"ja-JP", func(l *Localizer) string { return l.ServerErrorsNotFound() }, "指定されたリソースが見つかりません。"},
@@ -47,10 +49,10 @@ func TestAccessors(t *testing.T) {
 }
 
 func TestLocales(t *testing.T) {
-	if got, want := load(t).Locales(), []string{"en", "ja"}; !slices.Equal(got, want) {
+	if got, want := load(t).Locales(), []string{"en", "ja", "zh-CN"}; !slices.Equal(got, want) {
 		t.Errorf("Locales() = %v, want %v", got, want)
 	}
-	if got, want := load(t, WithPseudoLocales()).Locales(), []string{"ar-XB", "en", "en-XA", "ja"}; !slices.Equal(got, want) {
+	if got, want := load(t, WithPseudoLocales()).Locales(), []string{"ar-XB", "en", "en-XA", "ja", "zh-CN"}; !slices.Equal(got, want) {
 		t.Errorf("Locales() with pseudo-locales = %v, want %v", got, want)
 	}
 }
@@ -59,9 +61,22 @@ func TestFallbackChain(t *testing.T) {
 	tests := map[string][]string{
 		"en":         {"en"},
 		"ja-JP":      {"ja-JP", "ja", "en"},
-		"zh-Hant-TW": {"zh-Hant-TW", "zh-Hant", "en"},
-		"zh-TW":      {"zh-TW", "zh-Hant", "en"},
-		"zh-Hans-CN": {"zh-Hans-CN", "zh-Hans", "zh", "en"},
+		"zh":         {"zh", "zh-CN", "en"},
+		"zh-CN":      {"zh-CN", "en"},
+		"zh-SG":      {"zh-SG", "zh-CN", "en"},
+		"zh-Hans":    {"zh-Hans", "zh-CN", "en"},
+		"zh-Hans-CN": {"zh-Hans-CN", "zh-Hans", "zh-CN", "en"},
+		"zh-Hans-SG": {"zh-Hans-SG", "zh-Hans", "zh-CN", "en"},
+		"zh-TW":      {"zh-TW", "en"},
+		"zh-HK":      {"zh-HK", "zh-TW", "en"},
+		"zh-MO":      {"zh-MO", "zh-TW", "en"},
+		"zh-Hant":    {"zh-Hant", "zh-TW", "en"},
+		"zh-Hant-TW": {"zh-Hant-TW", "zh-Hant", "zh-TW", "en"},
+		"zh-Hant-HK": {"zh-Hant-HK", "zh-Hant", "zh-TW", "en"},
+		"pt":         {"pt", "pt-BR", "en"},
+		"pt-PT":      {"pt-PT", "pt-BR", "en"},
+		"pt-AO":      {"pt-AO", "pt", "pt-BR", "en"},
+		"de-AT":      {"de-AT", "de", "en"},
 		"en-XA":      {"en-XA", "en"},
 		"ar-XB":      {"ar-XB", "ar", "en"},
 		"":           {"en"},

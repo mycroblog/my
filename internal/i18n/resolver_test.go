@@ -43,6 +43,12 @@ func TestResolverLocale(t *testing.T) {
 		{"malformed values are skipped", "!!", "*, ja_jp", "en", "ja"},
 		{"malformed instance default falls back to en", "", "", "!!", "en"},
 		{"pseudo-locales are not selectable by default", "en-XA", "", "ja", "en"},
+		{"zh resolves to zh-CN", "", "zh", "", "zh-CN"},
+		{"zh-SG resolves to zh-CN", "", "zh-SG, ja;q=0.5", "", "zh-CN"},
+		{"zh-Hans resolves to zh-CN", "", "zh-Hans", "", "zh-CN"},
+		{"zh-Hans with a region resolves to zh-CN", "", "zh-Hans-SG", "", "zh-CN"},
+		{"zh-CN user setting", "zh-CN", "ja", "", "zh-CN"},
+		{"Traditional Chinese never resolves to zh-CN", "", "zh-TW, zh-HK, zh-Hant", "ja", "ja"},
 	}
 	for _, tt := range tests {
 		r := &Resolver{
@@ -108,6 +114,7 @@ func TestResolverRequestedLocale(t *testing.T) {
 		{"user setting with region", "ja-JP", "en", "", "ja", "ja-JP"},
 		{"instance default with region", "", "fr", "ja-JP", "ja", "ja-JP"},
 		{"nothing matches", "", "fr-CA", "de", "en", "en"},
+		{"Simplified Chinese with a script", "", "zh-Hans-CN", "", "zh-CN", "zh-Hans-CN"},
 	}
 	for _, tt := range tests {
 		r := &Resolver{
