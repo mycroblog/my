@@ -624,6 +624,11 @@ entries:
   - name: testkit
     paths: ["pkg/testkit/**"]
     docs: ["docs/adr/0015-testing-strategy.md", "docs/adr/0015-testing-strategy.md"]
+  - name: flowtest
+    paths: ["internal/flowtest/**"]
+    docs: ["docs/adr/0153-test-boundaries.md#1-テストの-3-つの層", "docs/adr/0015-testing-strategy.md"]
+    notes:
+      - "The flows across modules run once, on SQLite, in internal/flowtest/<module> (ADR-0153 §1); the port contracts of pkg/testkit check each repository's methods on both dialects. depguard keeps these packages off internal/interface, internal/platform, and the postgres adapter."
   - name: testkit-backends
     paths: ["pkg/testkit/pgtest/**", "pkg/testkit/sqlitetest/**", "pkg/testkit/valkeytest/**", "pkg/testkit/awstest/**", "pkg/testkit/mailpittest/**", "pkg/testkit/fixtures/**"]
     docs: ["docs/adr/0015-testing-strategy.md"]

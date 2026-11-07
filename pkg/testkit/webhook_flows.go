@@ -26,8 +26,9 @@ import (
 	"github.com/mycroblog/my/internal/domain/webhook"
 )
 
-// WebhookHarness is what WebhookRepositoryContract needs from a database adapter: its unit of
-// work, the webhook repository, and the moderation repository, which keeps the audit log.
+// WebhookHarness is what WebhookRepositoryContract and WebhookFlows need from a database adapter:
+// its unit of work, the webhook repository, and the moderation repository, which keeps the audit
+// log.
 type WebhookHarness struct {
 	UnitOfWork uow.UnitOfWork
 	Webhooks   appwebhook.Repository
@@ -38,8 +39,9 @@ type WebhookHarness struct {
 // factory registers the cleanup of everything it creates with t.Cleanup.
 type WebhookFactory func(t *testing.T, opts uow.Options) WebhookHarness
 
-// WebhookRepositoryContract verifies the webhook repository of a database adapter through the
-// webhook use cases (ADR-0060, FR-722): endpoints are created, revised, enabled, disabled, and
+// WebhookFlows verifies the webhook use cases on a database adapter (ADR-0060, FR-722), the flows
+// of ADR-0153 §1, which internal/flowtest/webhook runs once on SQLite; WebhookRepositoryContract
+// checks the repository's methods on every adapter: endpoints are created, revised, enabled, disabled, and
 // deleted with their audit log entries, which name the host and never the URL; subscribing needs
 // the permissions of the events; an event becomes a message and a delivery job for the enabled
 // endpoints that subscribe to it only; a delivery is signed with Standard Webhooks v1 under the
@@ -49,7 +51,7 @@ type WebhookFactory func(t *testing.T, opts uow.Options) WebhookHarness
 // the messages are purged after webhook.Retention. The error groups are sent as
 // error_group.created and error_group.regressed, which need manage_errors, only once a report
 // with a session has seen them, and a group muted by then is not sent.
-func WebhookRepositoryContract(t *testing.T, newHarness WebhookFactory) {
+func WebhookFlows(t *testing.T, newHarness WebhookFactory) {
 	t.Helper()
 	cases := []struct {
 		name string
