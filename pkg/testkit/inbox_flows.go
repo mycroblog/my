@@ -40,7 +40,7 @@ type InboxHarness struct {
 	Inbox      appfederation.InboxRepository
 	Federation appfederation.Repository
 	// Graph and Moderation are the repositories of the modules whose inbox handlers
-	// InboxProcessingContract runs for real (Block, Undo Block, Flag).
+	// InboxProcessingFlows runs for real (Block, Undo Block, Flag).
 	Graph      appgraph.Repository
 	Moderation appmoderation.Repository
 	Instances  appfederation.InstanceRepository
@@ -54,15 +54,15 @@ type InboxHarness struct {
 // factory registers the cleanup of everything it creates with t.Cleanup.
 type InboxFactory func(t *testing.T, opts uow.Options) InboxHarness
 
-// InboxContract verifies the inbox repository of a database adapter through the synchronous part
-// of the inbox (federation.md §3.1): an activity recorded once with its document and one
-// federation.inbox job, the URI synthesized for an activity without an id, trust = refetch for an
-// activity whose signer is not its actor, every refusal answered with its status before the
-// database or the queue is touched, an unknown actor's own Delete dropped without fetching its
-// key, and the signer's server marked available again. It also checks that a tombstone of a
-// remote object is recorded once. Signatures, keys, and the other modules are in-memory
-// stand-ins.
-func InboxContract(t *testing.T, newHarness InboxFactory) {
+// InboxFlows verifies the synchronous part of the inbox (federation.md §3.1) on a database
+// adapter, the flows of ADR-0153 §1, which internal/flowtest/federation runs once on SQLite
+// (InboxContract checks the inbox repository's methods on every adapter): an activity recorded
+// once with its document and one federation.inbox job, the URI synthesized for an activity
+// without an id, trust = refetch for an activity whose signer is not its actor, every refusal
+// answered with its status before the database or the queue is touched, an unknown actor's own
+// Delete dropped without fetching its key, the signer's server marked available again, and the
+// integrity proofs verified. Signatures, keys, and the other modules are in-memory stand-ins.
+func InboxFlows(t *testing.T, newHarness InboxFactory) {
 	t.Helper()
 	cases := []struct {
 		name string
@@ -77,7 +77,6 @@ func InboxContract(t *testing.T, newHarness InboxFactory) {
 		{"ChargesTheDomainLimitOnlyToVerifiedSignatures", inboxChargesDomainLimitAfterVerification},
 		{"DropsAnUnknownActorsOwnDelete", inboxDropsUnknownSelfDelete},
 		{"MarksTheSignersServerAvailable", inboxMarksServerAvailable},
-		{"RecordsTombstonesOnce", inboxRecordsTombstonesOnce},
 		{"VerifiesIntegrityProofs", inboxVerifiesProofs},
 	}
 	for _, c := range cases {
@@ -664,60 +663,6 @@ func inboxMarksServerAvailable(t *testing.T, e *inboxEnv) {
 	events, err := e.h.Federation.ListAvailabilityEvents(ctx, "remote.example", "", 10)
 	if err != nil || len(events) != 1 || events[0].Kind != federation.MarkedAvailable || events[0].Reason != federation.ReasonInboundRequest {
 		t.Errorf("availability events = %+v, %v; want one marked_available for inbound_request", events, err)
-	}
-}
-
-func inboxRecordsTombstonesOnce(t *testing.T, e *inboxEnv) {
-	ctx := t.Context()
-	note := federation.IRI(inboxAlice + "/notes/gone")
-	first := federation.RemoteObjectTombstone{
-		URI: note, ActorURI: inboxAlice, ActivityURI: inboxAlice + "/activities/delete-1", ReceivedAt: e.clock.Now(),
-	}
-	if ok, err := e.h.Inbox.RemoteObjectTombstoned(ctx, note, inboxAlice); err != nil || ok {
-		t.Fatalf("RemoteObjectTombstoned before = %t, %v; want false", ok, err)
-	}
-	insert := func(ts federation.RemoteObjectTombstone) bool {
-		t.Helper()
-		var inserted bool
-		err := e.h.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
-			var err error
-			inserted, err = e.h.Inbox.InsertRemoteObjectTombstone(ctx, tx, ts)
-			return err
-		})
-		if err != nil {
-			t.Fatalf("InsertRemoteObjectTombstone: %v", err)
-		}
-		return inserted
-	}
-	// Another actor of the same origin records a tombstone of the URI first: it holds back only
-	// that actor's objects, and the owner's own tombstone of the URI is still recorded.
-	carol := federation.IRI("https://remote.example/users/carol")
-	if !insert(federation.RemoteObjectTombstone{
-		URI: note, ActorURI: carol, ActivityURI: carol + "/activities/delete-1", ReceivedAt: e.clock.Now(),
-	}) {
-		t.Error("InsertRemoteObjectTombstone(another actor) = false, want it recorded")
-	}
-	if ok, err := e.h.Inbox.RemoteObjectTombstoned(ctx, note, inboxAlice); err != nil || ok {
-		t.Errorf("RemoteObjectTombstoned after another actor's tombstone = %t, %v; want false", ok, err)
-	}
-	if !insert(first) {
-		t.Error("InsertRemoteObjectTombstone = false, want the first tombstone of the owner recorded")
-	}
-	again := first
-	again.ActivityURI = inboxAlice + "/activities/delete-2"
-	again.ReceivedAt = e.clock.Now().Add(time.Minute)
-	if insert(again) {
-		t.Error("InsertRemoteObjectTombstone again = true, want the first tombstone to stay")
-	}
-	if ok, err := e.h.Inbox.RemoteObjectTombstoned(ctx, note, inboxAlice); err != nil || !ok {
-		t.Errorf("RemoteObjectTombstoned = %t, %v; want true", ok, err)
-	}
-	if ok, err := e.h.Inbox.RemoteObjectTombstoned(ctx, inboxAlice+"/notes/other", inboxAlice); err != nil || ok {
-		t.Errorf("RemoteObjectTombstoned(other) = %t, %v; want false", ok, err)
-	}
-	// The tombstone holds back only what its actor owns.
-	if ok, err := e.h.Inbox.RemoteObjectTombstoned(ctx, note, "https://remote.example/users/dave"); err != nil || ok {
-		t.Errorf("RemoteObjectTombstoned(another actor) = %t, %v; want false", ok, err)
 	}
 }
 
