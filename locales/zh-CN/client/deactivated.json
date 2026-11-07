@@ -1,0 +1,18 @@
+{
+  "deactivated.title": {
+    "defaultMessage": "你的账号已停用",
+    "description": "Title of the page after a user deactivated their account."
+  },
+  "deactivated.deletion": {
+    "defaultMessage": "它将于 {date} 被删除。",
+    "description": "The date of the deletion on the page after a user deactivated their account. {date} is a formatted date and time."
+  },
+  "deactivated.description": {
+    "defaultMessage": "在此之前登录即可重新启用。在你重新启用前，它对所有人隐藏，也不会收到任何内容。",
+    "description": "What to do after deactivating the account."
+  },
+  "deactivated.sign_in": {
+    "defaultMessage": "登录",
+    "description": "Link to the sign-in page on the page after a user deactivated their account."
+  }
+}

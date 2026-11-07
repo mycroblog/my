@@ -1,0 +1,54 @@
+{
+  "custom_emoji_requests.kind": {
+    "defaultMessage": "请求内容",
+    "description": "Term of the description list of a custom emoji request: what it asks for."
+  },
+  "custom_emoji_requests.kind.create": {
+    "defaultMessage": "新表情",
+    "description": "What a custom emoji request asks for: a new emoji."
+  },
+  "custom_emoji_requests.kind.image": {
+    "defaultMessage": "新图片",
+    "description": "What a custom emoji request asks for: a new image of an emoji the requester made."
+  },
+  "custom_emoji_requests.state": {
+    "defaultMessage": "状态",
+    "description": "Term of the description list of a custom emoji request: its state."
+  },
+  "custom_emoji_requests.state.pending": {
+    "defaultMessage": "等待审查",
+    "description": "State of a custom emoji request that no administrator has decided yet."
+  },
+  "custom_emoji_requests.state.approved": {
+    "defaultMessage": "已批准",
+    "description": "State of an approved custom emoji request."
+  },
+  "custom_emoji_requests.state.rejected": {
+    "defaultMessage": "已拒绝",
+    "description": "State of a rejected custom emoji request."
+  },
+  "custom_emoji_requests.state.withdrawn": {
+    "defaultMessage": "已撤回",
+    "description": "State of a custom emoji request that its requester withdrew."
+  },
+  "custom_emoji_requests.state.lapsed": {
+    "defaultMessage": "已失效：该表情已被删除",
+    "description": "State of a request for a new image of a custom emoji that was deleted before the request was decided."
+  },
+  "custom_emoji_requests.created_at": {
+    "defaultMessage": "请求时间",
+    "description": "Term of the description list of a custom emoji request: when it was made."
+  },
+  "custom_emoji_requests.decided_at": {
+    "defaultMessage": "结束时间",
+    "description": "Term of the description list of a custom emoji request: when it was approved, rejected, withdrawn, or lapsed."
+  },
+  "custom_emoji_requests.reason": {
+    "defaultMessage": "拒绝理由",
+    "description": "Term of the description list of a rejected custom emoji request: the administrator's reason."
+  },
+  "custom_emoji_requests.no_image": {
+    "defaultMessage": "已不再保留",
+    "description": "Value of the image of a custom emoji request whose uploaded image was deleted after the request ended."
+  }
+}

@@ -1,0 +1,242 @@
+{
+  "admin.relays.activities": {
+    "defaultMessage": "{count, plural, other {# 个活动}}",
+    "description": "How many activities a relay brought in."
+  },
+  "admin.relays.actor": {
+    "defaultMessage": "中继 Actor",
+    "description": "Term in a relay's details: the actor of the relay, once it accepted the server."
+  },
+  "admin.relays.back": {
+    "defaultMessage": "返回中继",
+    "description": "Link from the page of one relay, or of the form that joins one, back to the list."
+  },
+  "admin.relays.cancel": {
+    "defaultMessage": "取消",
+    "description": "Button that closes the dialog of a relay without changing it."
+  },
+  "admin.relays.change_failed": {
+    "defaultMessage": "无法更改中继：{reason}",
+    "description": "Error of leaving, joining again or deleting a relay. {reason} says why."
+  },
+  "admin.relays.create_failed": {
+    "defaultMessage": "无法加入中继：{reason}",
+    "description": "Error of the form that registers a relay, for another reason than its URL. {reason} says why."
+  },
+  "admin.relays.delete": {
+    "defaultMessage": "删除",
+    "description": "Button that deletes the registration of a relay, and the confirming button of its dialog."
+  },
+  "admin.relays.delete.description": {
+    "defaultMessage": "其注册信息将被删除。已发送到该中继的帖子仍会收到更新和删除。此操作无法撤销。",
+    "description": "Description of the dialog that confirms deleting a relay."
+  },
+  "admin.relays.delete.title": {
+    "defaultMessage": "要删除 {name} 吗？",
+    "description": "Title of the dialog that confirms deleting a relay. {name} is the host name of its URL."
+  },
+  "admin.relays.delete_relay": {
+    "defaultMessage": "删除 {name}",
+    "description": "Accessible name of the button that deletes a relay. {name} is the host name of its URL."
+  },
+  "admin.relays.deleted": {
+    "defaultMessage": "已删除 {name}。",
+    "description": "Status after deleting a relay."
+  },
+  "admin.relays.detail.title": {
+    "defaultMessage": "中继",
+    "description": "Heading of the page of one relay."
+  },
+  "admin.relays.domain_suspended": {
+    "defaultMessage": "某个域名操作封禁了此中继所在的服务器：在此期间不会向其发送任何内容，也不会从其接收任何内容。",
+    "description": "Warning on a relay whose host a domain action suspends."
+  },
+  "admin.relays.domain_suspended.short": {
+    "defaultMessage": "已被域名操作封禁",
+    "description": "Short warning in the list on a relay whose host a domain action suspends."
+  },
+  "admin.relays.dropped": {
+    "defaultMessage": "超出限制而丢弃（最近 24 小时）",
+    "description": "Term in a relay's details: the activities it brought in during the last 24 hours that were dropped over the hourly limit."
+  },
+  "admin.relays.empty": {
+    "defaultMessage": "还没有中继",
+    "description": "Heading of the empty list of relays."
+  },
+  "admin.relays.empty.description": {
+    "defaultMessage": "中继会在加入它的服务器之间传递公开帖子，可以充实小型服务器的联邦时间线。",
+    "description": "Description of the empty list of relays."
+  },
+  "admin.relays.follow": {
+    "defaultMessage": "重新加入",
+    "description": "Button that asks to join again a relay that was left or rejected the server."
+  },
+  "admin.relays.follow_relay": {
+    "defaultMessage": "重新加入：{name}",
+    "description": "Accessible name of the button that joins a relay again. {name} is the host name of its URL."
+  },
+  "admin.relays.followed": {
+    "defaultMessage": "服务器已请求重新加入 {name}。",
+    "description": "Status after asking to join a relay again."
+  },
+  "admin.relays.inbox": {
+    "defaultMessage": "收件箱",
+    "description": "Term in a relay's details: the inbox the server sends to."
+  },
+  "admin.relays.list.title": {
+    "defaultMessage": "此服务器的中继",
+    "description": "Heading of the list of the relays."
+  },
+  "admin.relays.membership.joined": {
+    "defaultMessage": "服务器作为成员或正在申请加入时，会将其公开帖子发送到中继。如需停止，请退出中继；已退出的中继可以重新加入或删除。",
+    "description": "Help of the membership of a relay that the server joined or asked to join."
+  },
+  "admin.relays.membership.left": {
+    "defaultMessage": "服务器不会向此中继发送任何内容，也不会从中接收任何内容。你可以重新加入，或删除其注册信息。",
+    "description": "Help of the membership of a relay that the server left or that rejected it."
+  },
+  "admin.relays.membership.title": {
+    "defaultMessage": "成员身份",
+    "description": "Heading of the section of a relay's page that leaves it, joins it again or deletes it."
+  },
+  "admin.relays.new.description": {
+    "defaultMessage": "此服务器的公开帖子会发送到其加入的每个中继，再由中继转给中继中的其他服务器。其他可见范围的帖子绝不会被发送。",
+    "description": "Description of the form that registers and joins a relay."
+  },
+  "admin.relays.new.title": {
+    "defaultMessage": "加入中继",
+    "description": "Heading of the form that registers and joins a relay."
+  },
+  "admin.relays.not_found": {
+    "defaultMessage": "此中继未注册",
+    "description": "Heading of the page of a relay that the server does not have, such as a deleted one."
+  },
+  "admin.relays.not_found.description": {
+    "defaultMessage": "它可能已被删除。此服务器的中继列在中继界面中。",
+    "description": "Description of the page of a relay that the server does not have."
+  },
+  "admin.relays.problem.domain_suspended": {
+    "defaultMessage": "该中继所在的服务器已被域名操作封禁。",
+    "description": "Why a relay was refused: a domain action suspends its host."
+  },
+  "admin.relays.problem.exists": {
+    "defaultMessage": "已注册使用此 URL 的中继。",
+    "description": "Why a relay was refused: one with the same URL is registered."
+  },
+  "admin.relays.problem.not_actor": {
+    "defaultMessage": "此 URL 未提供带有收件箱的中继 Actor。",
+    "description": "Why a LitePub relay was refused: its URL serves no actor with an inbox."
+  },
+  "admin.relays.problem.state": {
+    "defaultMessage": "中继当前的状态不允许此操作：删除中继前请先退出，且只能重新加入已退出或拒绝了本服务器的中继。",
+    "description": "Why an operation on a relay was refused: its state does not allow it."
+  },
+  "admin.relays.problem.url": {
+    "defaultMessage": "请输入不超过 2048 字节的 https URL。",
+    "description": "Why a relay was refused: its URL is not an https URL of at most 2048 bytes."
+  },
+  "admin.relays.protocol": {
+    "defaultMessage": "协议",
+    "description": "Label of how a relay is joined (Mastodon or LitePub), and term of it in a relay's details."
+  },
+  "admin.relays.protocol.auto": {
+    "defaultMessage": "自动检测",
+    "description": "Choice of the protocol of a new relay: the server picks LitePub when the URL serves an actor, else Mastodon."
+  },
+  "admin.relays.protocol.description": {
+    "defaultMessage": "自动检测时，如果 URL 提供 Actor，则选择 LitePub，否则选择 Mastodon。",
+    "description": "Help of the protocol of a new relay."
+  },
+  "admin.relays.protocol.litepub": {
+    "defaultMessage": "LitePub",
+    "description": "Protocol of a relay: joined at its actor, as Pleroma and Akkoma do."
+  },
+  "admin.relays.protocol.mastodon": {
+    "defaultMessage": "Mastodon",
+    "description": "Protocol of a relay: joined at its inbox, as Mastodon and Misskey do."
+  },
+  "admin.relays.receive": {
+    "defaultMessage": "接收来自中继的帖子",
+    "description": "Checkbox of a new relay: whether to take in the public posts it relays."
+  },
+  "admin.relays.receive.description": {
+    "defaultMessage": "中继转来的公开帖子会显示在联邦时间线和话题标签时间线中，并短期保留。不勾选时，服务器只发送。",
+    "description": "Help of the checkbox that takes in the posts of a new relay."
+  },
+  "admin.relays.receive.no": {
+    "defaultMessage": "仅发送",
+    "description": "Value of whether a relay is received: the server only sends to it."
+  },
+  "admin.relays.receive.term": {
+    "defaultMessage": "接收",
+    "description": "Term in a relay's details: whether the server takes in the posts it relays."
+  },
+  "admin.relays.receive.yes": {
+    "defaultMessage": "接收中继转来的帖子",
+    "description": "Value of whether a relay is received: the server takes in the posts it relays."
+  },
+  "admin.relays.relay": {
+    "defaultMessage": "中继",
+    "description": "Column of the list of relays: the host name of the relay, linking to its page."
+  },
+  "admin.relays.state": {
+    "defaultMessage": "状态",
+    "description": "Term in a relay's details: where its membership stands."
+  },
+  "admin.relays.state.accepted": {
+    "defaultMessage": "已加入",
+    "description": "State of a relay that accepted the server."
+  },
+  "admin.relays.state.left": {
+    "defaultMessage": "已退出",
+    "description": "State of a relay that the server left."
+  },
+  "admin.relays.state.pending": {
+    "defaultMessage": "等待中继回应",
+    "description": "State of a relay that the server asked to join and that has not answered."
+  },
+  "admin.relays.state.rejected": {
+    "defaultMessage": "已被中继拒绝",
+    "description": "State of a relay that rejected the server or ended its membership."
+  },
+  "admin.relays.state_changed_at": {
+    "defaultMessage": "状态起始时间",
+    "description": "Column of the list of relays: when the relay's state last changed."
+  },
+  "admin.relays.submit": {
+    "defaultMessage": "加入",
+    "description": "Button that registers and joins a relay."
+  },
+  "admin.relays.summary": {
+    "defaultMessage": "加入联邦中继，与更多服务器交换公开帖子。",
+    "description": "Description of the relays screen in the administration menu of the settings."
+  },
+  "admin.relays.taken": {
+    "defaultMessage": "已接收（最近 24 小时）",
+    "description": "Term in a relay's details: the activities it brought in during the last 24 hours that were taken in."
+  },
+  "admin.relays.title": {
+    "defaultMessage": "中继",
+    "description": "Heading of the relays screen, and its link in the administration menu."
+  },
+  "admin.relays.unfollow": {
+    "defaultMessage": "退出",
+    "description": "Button that leaves a relay that the server joined or asked to join."
+  },
+  "admin.relays.unfollow_relay": {
+    "defaultMessage": "退出 {name}",
+    "description": "Accessible name of the button that leaves a relay. {name} is the host name of its URL."
+  },
+  "admin.relays.unfollowed": {
+    "defaultMessage": "服务器已退出 {name}。",
+    "description": "Status after leaving a relay."
+  },
+  "admin.relays.url": {
+    "defaultMessage": "URL",
+    "description": "Label of the URL of a new relay, its inbox or its actor, and term of it in a relay's details."
+  },
+  "admin.relays.url.description": {
+    "defaultMessage": "Mastodon 中继填写其收件箱，LitePub 中继填写其 Actor，须为 https URL。",
+    "description": "Help of the URL of a new relay."
+  }
+}

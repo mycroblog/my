@@ -1,0 +1,366 @@
+{
+  "admin.webhooks.cancel": {
+    "defaultMessage": "取消",
+    "description": "Button that closes a dialog of a webhook without changing it."
+  },
+  "admin.webhooks.change_failed": {
+    "defaultMessage": "无法更改 Webhook：{reason}",
+    "description": "Error of a change of a webhook. {reason} is the server's reason."
+  },
+  "admin.webhooks.created": {
+    "defaultMessage": "{name} 已设置。",
+    "description": "Status after setting up a webhook. {name} is its description or host name."
+  },
+  "admin.webhooks.delete": {
+    "defaultMessage": "删除",
+    "description": "Button that deletes a webhook, and the confirming button of its dialog."
+  },
+  "admin.webhooks.delete.description": {
+    "defaultMessage": "它将不再接收任何内容，其投递记录也不再列出。此操作无法撤销。",
+    "description": "Description of the dialog that confirms deleting a webhook."
+  },
+  "admin.webhooks.delete.title": {
+    "defaultMessage": "删除 {name}？",
+    "description": "Title of the dialog that confirms deleting a webhook."
+  },
+  "admin.webhooks.deleted": {
+    "defaultMessage": "{name} 已删除。",
+    "description": "Status after deleting a webhook."
+  },
+  "admin.webhooks.deliveries.attempts.count": {
+    "defaultMessage": "{count, plural, other {# 次}}",
+    "description": "How many times a delivery was sent."
+  },
+  "admin.webhooks.deliveries.created_at": {
+    "defaultMessage": "创建时间",
+    "description": "Term in a delivery's details: when the message was made."
+  },
+  "admin.webhooks.deliveries.description": {
+    "defaultMessage": "过去 14 天的消息，最新的在前。失败的消息会在约 27 小时内重试 8 次。",
+    "description": "Description of the deliveries of a webhook."
+  },
+  "admin.webhooks.deliveries.empty": {
+    "defaultMessage": "过去 14 天没有投递",
+    "description": "Heading of the empty list of a webhook's deliveries."
+  },
+  "admin.webhooks.deliveries.outcome.connection_error": {
+    "defaultMessage": "无法连接",
+    "description": "Outcome of an attempt whose connection failed."
+  },
+  "admin.webhooks.deliveries.outcome.forbidden_destination": {
+    "defaultMessage": "不允许的目标",
+    "description": "Outcome of an attempt to a URL that the server may not reach (a private address not allowed in the configuration)."
+  },
+  "admin.webhooks.deliveries.outcome.http_error": {
+    "defaultMessage": "错误响应",
+    "description": "Outcome of an attempt that got another answer than 2xx, a redirect included."
+  },
+  "admin.webhooks.deliveries.outcome.succeeded": {
+    "defaultMessage": "成功",
+    "description": "Outcome of an attempt that got a 2xx answer."
+  },
+  "admin.webhooks.deliveries.outcome.timeout": {
+    "defaultMessage": "响应超时",
+    "description": "Outcome of an attempt without an answer within 15 seconds."
+  },
+  "admin.webhooks.deliveries.redeliver": {
+    "defaultMessage": "重新发送",
+    "description": "Button that sends a delivery of a webhook again."
+  },
+  "admin.webhooks.deliveries.redeliver_failed": {
+    "defaultMessage": "无法重新发送投递：{reason}",
+    "description": "Error of sending a delivery again. {reason} is the server's reason."
+  },
+  "admin.webhooks.deliveries.redeliver_of": {
+    "defaultMessage": "{action}：{event} {id}",
+    "description": "Accessible name of the button that sends a delivery again: it starts with the button's visible text, so that the visible label is in the name. {action} is the button's visible text ('Send again'), {event} the event's name and {id} the message ID."
+  },
+  "admin.webhooks.deliveries.redelivered": {
+    "defaultMessage": "已重新发送投递。",
+    "description": "Status after sending a delivery of a webhook again."
+  },
+  "admin.webhooks.deliveries.status": {
+    "defaultMessage": "结果",
+    "description": "Term in a delivery's details: whether it succeeded."
+  },
+  "admin.webhooks.deliveries.status.failing": {
+    "defaultMessage": "失败中",
+    "description": "Result of a delivery whose every attempt failed so far."
+  },
+  "admin.webhooks.deliveries.status.pending": {
+    "defaultMessage": "尚未发送",
+    "description": "Result of a delivery not sent yet."
+  },
+  "admin.webhooks.deliveries.status.succeeded": {
+    "defaultMessage": "成功",
+    "description": "Result of a delivery that an attempt succeeded."
+  },
+  "admin.webhooks.deliveries.status_code": {
+    "defaultMessage": "HTTP {code}",
+    "description": "The status code of an answer to a delivery attempt. {code} is a number such as 500."
+  },
+  "admin.webhooks.deliveries.title": {
+    "defaultMessage": "投递",
+    "description": "Heading of the deliveries of a webhook on its page."
+  },
+  "admin.webhooks.description": {
+    "defaultMessage": "描述",
+    "description": "Label of the description of a webhook: what it is for."
+  },
+  "admin.webhooks.description.description": {
+    "defaultMessage": "此 Webhook 的用途，最多 {max} 个字符。列表和审计日志会用它来指代此 Webhook。",
+    "description": "Help of the description of a webhook. {max} is the most characters."
+  },
+  "admin.webhooks.details.title": {
+    "defaultMessage": "设置",
+    "description": "Heading of the settings of a webhook on its page."
+  },
+  "admin.webhooks.disable": {
+    "defaultMessage": "停用",
+    "description": "Button that disables a webhook."
+  },
+  "admin.webhooks.disabled_status": {
+    "defaultMessage": "{name} 已停用。",
+    "description": "Status after disabling a webhook."
+  },
+  "admin.webhooks.empty": {
+    "defaultMessage": "尚无 Webhook",
+    "description": "Heading of the empty list of webhooks."
+  },
+  "admin.webhooks.empty.description": {
+    "defaultMessage": "Webhook 会将你选择的事件发送到某个 URL，例如聊天工具或自动化工具。",
+    "description": "Description of the empty list of webhooks."
+  },
+  "admin.webhooks.enable": {
+    "defaultMessage": "启用",
+    "description": "Button that enables a webhook."
+  },
+  "admin.webhooks.enabled_status": {
+    "defaultMessage": "{name} 已启用。",
+    "description": "Status after enabling a webhook."
+  },
+  "admin.webhooks.event.account_created": {
+    "defaultMessage": "账号已创建",
+    "description": "Name of a webhook event: a registration was approved and the account can be used."
+  },
+  "admin.webhooks.event.account_updated": {
+    "defaultMessage": "个人资料已更改",
+    "description": "Name of a webhook event: a local account changed its profile."
+  },
+  "admin.webhooks.event.appeal_created": {
+    "defaultMessage": "有人对操作提出申诉",
+    "description": "Name of a webhook event: a user appealed a moderation action."
+  },
+  "admin.webhooks.event.custom_emoji_created": {
+    "defaultMessage": "已添加自定义表情",
+    "description": "Name of a webhook event: an administrator added a custom emoji."
+  },
+  "admin.webhooks.event.custom_emoji_deleted": {
+    "defaultMessage": "已删除自定义表情",
+    "description": "Name of a webhook event: an administrator deleted a custom emoji."
+  },
+  "admin.webhooks.event.custom_emoji_updated": {
+    "defaultMessage": "已更改自定义表情",
+    "description": "Name of a webhook event: an administrator changed a custom emoji."
+  },
+  "admin.webhooks.event.domain_moderation_action_created": {
+    "defaultMessage": "已对域名采取操作",
+    "description": "Name of a webhook event: a moderation action on a domain was issued."
+  },
+  "admin.webhooks.event.domain_moderation_action_lifted": {
+    "defaultMessage": "已解除对域名的操作",
+    "description": "Name of a webhook event: a moderation action on a domain was lifted."
+  },
+  "admin.webhooks.event.error_group_created": {
+    "defaultMessage": "报告了新的错误",
+    "description": "Name of a webhook event: the server or the web client reported an error of a new kind."
+  },
+  "admin.webhooks.event.error_group_regressed": {
+    "defaultMessage": "已解决的错误再次发生",
+    "description": "Name of a webhook event: an error that an administrator marked resolved happened again with a newer version of the server."
+  },
+  "admin.webhooks.event.moderation_action_created": {
+    "defaultMessage": "已对账号采取操作",
+    "description": "Name of a webhook event: a moderation action on an account was issued."
+  },
+  "admin.webhooks.event.moderation_action_lifted": {
+    "defaultMessage": "已解除对账号的操作",
+    "description": "Name of a webhook event: a moderation action on an account was lifted."
+  },
+  "admin.webhooks.event.registration_pending": {
+    "defaultMessage": "有注册等待审批",
+    "description": "Name of a webhook event: a registration awaits a moderator."
+  },
+  "admin.webhooks.event.report_created": {
+    "defaultMessage": "有新的举报",
+    "description": "Name of a webhook event: a report was filed, locally or from another server."
+  },
+  "admin.webhooks.event.report_reopened": {
+    "defaultMessage": "举报已重新打开",
+    "description": "Name of a webhook event: a resolved report was reopened."
+  },
+  "admin.webhooks.event.report_resolved": {
+    "defaultMessage": "举报已解决",
+    "description": "Name of a webhook event: a report was resolved."
+  },
+  "admin.webhooks.event.status_created": {
+    "defaultMessage": "发布了公开帖子",
+    "description": "Name of a webhook event: a local user published a public post."
+  },
+  "admin.webhooks.event.webhook_test": {
+    "defaultMessage": "测试消息",
+    "description": "Name of a webhook event: the test message sent from the webhooks screen."
+  },
+  "admin.webhooks.events": {
+    "defaultMessage": "事件",
+    "description": "Label of the group of events that a webhook subscribes to, and term of them in its details."
+  },
+  "admin.webhooks.events.description": {
+    "defaultMessage": "至少选择一个。除了管理 Webhook 的权限外，每个事件还需要对应类型的权限。",
+    "description": "Help of the events of a webhook."
+  },
+  "admin.webhooks.events.separator": {
+    "defaultMessage": "、",
+    "description": "What separates the events of a webhook in its details."
+  },
+  "admin.webhooks.failure": {
+    "defaultMessage": "失败",
+    "description": "Term in a webhook's details: the attempts that failed since the last success."
+  },
+  "admin.webhooks.failure.count": {
+    "defaultMessage": "{count, plural, other {# 次失败尝试}}",
+    "description": "How many attempts of a webhook failed since its last success."
+  },
+  "admin.webhooks.failure.since": {
+    "defaultMessage": "始于",
+    "description": "Text before the time of the first failed attempt of a webhook since its last success."
+  },
+  "admin.webhooks.list.title": {
+    "defaultMessage": "此服务器的 Webhook",
+    "description": "Heading of the list of the webhooks."
+  },
+  "admin.webhooks.manage.title": {
+    "defaultMessage": "状态、测试和密钥",
+    "description": "Heading of the section of a webhook's page that enables, disables, tests, gives a new secret to or deletes it."
+  },
+  "admin.webhooks.missing_permissions": {
+    "defaultMessage": "缺少权限：{permissions}",
+    "description": "Line under the refusal of a webhook's events: the permissions the user lacks. {permissions} is a list of permission names such as manage_accounts."
+  },
+  "admin.webhooks.new.title": {
+    "defaultMessage": "添加 Webhook",
+    "description": "Heading of the page with the form that sets up a webhook, and the link to it."
+  },
+  "admin.webhooks.open": {
+    "defaultMessage": "打开 Webhook",
+    "description": "Link from the secret of a new webhook to the webhook's page."
+  },
+  "admin.webhooks.reason.admin": {
+    "defaultMessage": "由工作人员设置",
+    "description": "Why a webhook has its state: a staff member set it."
+  },
+  "admin.webhooks.reason.failing": {
+    "defaultMessage": "（投递持续失败）",
+    "description": "Why the server disabled a webhook: its deliveries kept failing for 72 hours and 20 attempts."
+  },
+  "admin.webhooks.reason.gone": {
+    "defaultMessage": "（端点回应已不存在）",
+    "description": "Why the server disabled a webhook: its endpoint answered 410 Gone."
+  },
+  "admin.webhooks.rotate": {
+    "defaultMessage": "新密钥",
+    "description": "Button that gives a webhook a new secret, and the confirming button of its dialog."
+  },
+  "admin.webhooks.rotate.description": {
+    "defaultMessage": "从现在起，新密钥将为每条消息签名。在 24 小时内，旧密钥也会同时签名，以便接收方切换到新密钥。",
+    "description": "Description of the dialog that confirms giving a webhook a new secret."
+  },
+  "admin.webhooks.rotate.title": {
+    "defaultMessage": "为 {name} 生成新密钥？",
+    "description": "Title of the dialog that confirms giving a webhook a new secret."
+  },
+  "admin.webhooks.rotated": {
+    "defaultMessage": "{name} 已使用新密钥。",
+    "description": "Status after giving a webhook a new secret."
+  },
+  "admin.webhooks.save": {
+    "defaultMessage": "保存",
+    "description": "Button that saves the changes of a webhook."
+  },
+  "admin.webhooks.save_failed": {
+    "defaultMessage": "无法保存 Webhook：{reason}",
+    "description": "Error of a webhook form that the server refused for another reason than a field. {reason} is the server's reason."
+  },
+  "admin.webhooks.secret.copied": {
+    "defaultMessage": "已复制密钥。",
+    "description": "Toast after copying the secret of a webhook."
+  },
+  "admin.webhooks.secret.copy": {
+    "defaultMessage": "复制密钥",
+    "description": "Button that copies the secret of a webhook to the clipboard."
+  },
+  "admin.webhooks.secret.copy_failed": {
+    "defaultMessage": "无法复制密钥。请选中后手动复制。",
+    "description": "Toast when the browser refused to copy the secret of a webhook."
+  },
+  "admin.webhooks.secret.notice": {
+    "defaultMessage": "请立即将其复制到接收方：它不会再次显示。接收方用它验证每条消息的签名（Standard Webhooks）。",
+    "description": "Note under the secret of a webhook, which is shown only once."
+  },
+  "admin.webhooks.secret.title": {
+    "defaultMessage": "{name} 的密钥",
+    "description": "Heading of the secret shown once after setting up a webhook or giving it a new secret. {name} is its description or host name."
+  },
+  "admin.webhooks.state": {
+    "defaultMessage": "状态",
+    "description": "Term in a webhook's details: enabled or disabled."
+  },
+  "admin.webhooks.state.disabled": {
+    "defaultMessage": "已停用",
+    "description": "State of a webhook that receives nothing."
+  },
+  "admin.webhooks.state.enabled": {
+    "defaultMessage": "已启用",
+    "description": "State of a webhook that receives messages."
+  },
+  "admin.webhooks.submit": {
+    "defaultMessage": "设置",
+    "description": "Button that sets up a new webhook."
+  },
+  "admin.webhooks.summary": {
+    "defaultMessage": "将此服务器上发生的事情签名后发送到其他服务。",
+    "description": "Description of the webhooks screen in the administration menu of the settings."
+  },
+  "admin.webhooks.test": {
+    "defaultMessage": "发送测试",
+    "description": "Button that sends a test message to a webhook."
+  },
+  "admin.webhooks.tested": {
+    "defaultMessage": "已向 {name} 发送测试消息。可在投递记录中查看结果。",
+    "description": "Status after sending a test message to a webhook."
+  },
+  "admin.webhooks.title": {
+    "defaultMessage": "Webhook",
+    "description": "Heading of the webhooks screen, and its link in the administration menu."
+  },
+  "admin.webhooks.updated": {
+    "defaultMessage": "{name} 已保存。",
+    "description": "Status after changing a webhook."
+  },
+  "admin.webhooks.updated_at": {
+    "defaultMessage": "更改时间",
+    "description": "Term in a webhook's details: when its URL, description or events last changed."
+  },
+  "admin.webhooks.url": {
+    "defaultMessage": "URL",
+    "description": "Label of the URL that a webhook posts its messages to."
+  },
+  "admin.webhooks.url.description": {
+    "defaultMessage": "接收消息的 https URL。只有运维人员在配置中允许时，才能使用此服务器自身网络中的目标。",
+    "description": "Help of the URL of a webhook."
+  },
+  "admin.webhooks.webhook": {
+    "defaultMessage": "Webhook",
+    "description": "Column of the list of webhooks: its description or host name, linking to its page."
+  }
+}

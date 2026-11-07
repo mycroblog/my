@@ -12,7 +12,8 @@
 
 var gonePaths = {{json .Paths}};
 var gonePrefixes = {{json .Prefixes}};
-var locales = {{json .Locales}};
+// The page of the first match: a tag alone, or with the tags under it when prefix is set.
+var matches = {{json .Matches}};
 
 function handler(event) {
   var request = event.request;
@@ -23,10 +24,10 @@ function handler(event) {
   var header = request.headers['accept-language'];
   var first = header ? header.value.split(',')[0].split(';')[0].trim().toLowerCase() : '';
   var page = '/index.html';
-  for (var i = 0; i < locales.length; i++) {
-    var l = locales[i].toLowerCase();
-    if (first === l || first.startsWith(l + '-')) {
-      page = '/' + locales[i] + '.html';
+  for (var i = 0; i < matches.length; i++) {
+    var tag = matches[i].tag.toLowerCase();
+    if (first === tag || (matches[i].prefix && first.startsWith(tag + '-'))) {
+      page = '/' + matches[i].locale + '.html';
       break;
     }
   }

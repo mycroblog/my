@@ -66,6 +66,25 @@ func TestClosureConfig(t *testing.T) {
 			}
 		}
 	}
+	// A page answers the tags that resolve to its locale (ADR-0009 §2): zh alone, not zh-TW.
+	zh := map[string][]string{
+		"nginx.conf": {`"~*^zh-CN(-|,|;|$)" /zh-CN.html;`, `"~*^zh-Hans(-|,|;|$)" /zh-CN.html;`, `"~*^zh-SG(-|,|;|$)" /zh-CN.html;`, `"~*^zh(,|;|$)" /zh-CN.html;`},
+		"Caddyfile":  {`~(?i)^zh-CN(-|,|;|$) /zh-CN.html`, `~(?i)^zh(,|;|$) /zh-CN.html`},
+		"cloudfront-function.js": {
+			`{"tag":"zh-CN","prefix":true,"locale":"zh-CN"}`, `{"tag":"zh","prefix":false,"locale":"zh-CN"}`,
+		},
+	}
+	for name, wants := range zh {
+		b, err := maintenance.ClosureConfig(name, "social.example", []string{"en", "zh-CN"})
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, want := range wants {
+			if !strings.Contains(string(b), want) {
+				t.Errorf("%s lacks %s:\n%s", name, want, b)
+			}
+		}
+	}
 	if _, err := maintenance.ClosureConfig("apache.conf", "social.example", []string{"en"}); err == nil {
 		t.Error("ClosureConfig wrote an unknown example")
 	}

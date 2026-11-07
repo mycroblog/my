@@ -206,7 +206,13 @@ function DisplayLanguageSelect({ control }: { control: PreferenceControl<string>
             </SelectItem>
           ) : (
             // The name is in its own language, so a screen reader reads it in that language.
-            <SelectItem id={item.id} textValue={item.name}>
+            <SelectItem
+              id={item.id}
+              textValue={item.name}
+              {...("machineTranslated" in item && item.machineTranslated
+                ? { description: t("client:settings.locale.machine_translated") }
+                : {})}
+            >
               <span lang={item.id}>{item.name}</span>
             </SelectItem>
           )

@@ -1,0 +1,142 @@
+---
+# source: 0579b8a800fd
+title: mycroblog
+description: 从小规模起步、随社区一同成长的联邦宇宙微博客。
+template: splash
+hero:
+  tagline: |
+    <p><strong>mycroblog</strong> — 从小规模起步、随社区一同成长的联邦宇宙微博客。</p>
+    <p>mycroblog 的服务器 <code>my</code> 使用 ActivityPub 进行联邦，用 Go 编写。你可以从一台小机器，或者一个可缩容到零的容器加 SQLite 起步。社区壮大后，可以迁移到 PostgreSQL、作业队列、流消息代理，以及分开的 Web 进程和 worker 进程：代码相同，数据也相同。</p>
+  image:
+    light: ../../assets/wordmark-light.svg
+    dark: ../../assets/wordmark-dark.svg
+    alt: mycroblog
+  actions:
+    # A document is named by its repository path; src/routeData.ts makes it the page's URL under the base path.
+    - text: 运行服务器
+      link: docs/operations/overview.md
+      icon: right-arrow
+      variant: primary
+    - text: GitHub 上的源代码
+      link: https://github.com/mycroblog/my
+      icon: github
+      variant: minimal
+---
+
+{/* SPDX-License-Identifier: AGPL-3.0-only */}
+
+import { Card, CardGrid } from "@astrojs/starlight/components";
+import DocLinks from "../../components/DocLinks.astro";
+import Screenshot from "../../components/Screenshot.astro";
+
+<Screenshot
+  name="home"
+  alt="mycroblog 的主页时间线：一条引用了湖泊和日落两张照片、带有自定义表情回应的帖子，下面是一条关于面包的日语帖子；旁边是导航、最新通知和服务器信息。"
+  eager
+/>
+
+## 功能
+
+<CardGrid>
+  <Card title="从小规模起步，按需扩展" icon="rocket">
+    在一台 5 美元的 VM 上运行一个二进制文件和 SQLite，或者使用可缩容到零的容器。之后可以扩展到 PostgreSQL、Cloud Tasks、Valkey、
+    Pub/Sub 或 SNS、CDN 后面的 S3 或 GCS，以及任意数量的 Web 进程和 worker 进程。
+  </Card>
+  <Card title="联邦互通" icon="random">
+    关注、帖子、引用帖子和自定义表情回应可以与 Mastodon、Misskey、GoToSocial 等互通。
+    “本站”可见范围让帖子只留在你的服务器和你的关注者之间。
+  </Card>
+  <Card title="支持者与公开账目" icon="heart">
+    通过 Stripe 或 PAY.JP 提供付费方案，授予角色、徽章和添加自定义表情的权利。记录服务器的开销，自动导入
+    AWS 和 Google Cloud 的账单，并向社区公开支出和收入。
+  </Card>
+  <Card title="语音房间" icon="comment">
+    为服务器上的人准备的实时语音房间，支持主持人、发言人、邀请和回应。小房间使用点对点连接，
+    大房间使用 LiveKit 或 Sora。
+  </Card>
+  <Card title="人人可用的 Web 应用" icon="laptop">
+    可安装的 Web 应用，支持推送通知和通行密钥，从第一天起就提供多语言版本。
+  </Card>
+  <Card title="内置审核" icon="approve-check-circle">
+    可申诉的举报、域名屏蔽、审计日志，以及决策钩子：在接受帖子和注册之前，让你自己的程序先进行审查。
+  </Card>
+  <Card title="扩展它" icon="puzzle">
+    基于版本化协议的插件、服务器 Webhook、OAuth 应用，以及 Go 和 TypeScript 的客户端库与机器人库。
+    帖子翻译通过你选择的插件进行。
+  </Card>
+</CardGrid>
+
+## 实际效果
+
+<CardGrid>
+  <Screenshot
+    name="post"
+    caption="联邦互通"
+    alt="一条引用了其他服务器上带两张照片的帖子的帖子，以及它的回复、转发、喜欢和自定义表情回应。"
+  />
+  <Screenshot
+    name="supporters"
+    caption="支持者与公开账目"
+    alt="服务器的支持者页面：付费方案 Coffee 和 A whole loaf of sourdough every month 各自的成员及其头像。"
+  />
+  <Screenshot
+    name="voice-room"
+    caption="语音房间"
+    alt="已开启 47 分钟的实时语音房间 Sunday baking club：台上有主持人、一位联合主持人和两位发言人，还有四位听众，其中一位举起了手。"
+  />
+  <Screenshot
+    name="reports"
+    caption="内置审核"
+    alt="审核员的举报队列：五条未处理的举报，列出了类别、举报人、处理人和已等待的时间。"
+  />
+</CardGrid>
+
+## 文档
+
+<CardGrid>
+  <DocLinks
+    title="运行服务器"
+    icon="setting"
+    links={[
+      { path: "docs/operations/overview.md", label: "mycroblog 服务器概览" },
+      { path: "docs/operations/running.md", label: "运行服务器" },
+      { path: "docs/operations/deploy-docker-compose.md", label: "使用 Docker Compose 部署" },
+      { path: "docs/operations/deploy-cloud-run.md", label: "在 Cloud Run 上部署" },
+      { path: "docs/operations/production-checklist.md", label: "生产环境检查清单" },
+    ]}
+  />
+  <DocLinks
+    title="使用 mycroblog"
+    icon="open-book"
+    links={[
+      { path: "docs/guide/signing-in.md", label: "注册和登录" },
+      { path: "docs/guide/posting.md", label: "发帖与可见范围" },
+      { path: "docs/guide/following.md", label: "关注他人与阅读时间线" },
+      { path: "docs/guide/voice-chat.md", label: "语音聊天" },
+    ]}
+  />
+  <DocLinks
+    title="基于 mycroblog 构建"
+    icon="pencil"
+    links={[
+      { path: "docs/developers/client-api.md", label: "客户端 API（英文）" },
+      { path: "api/openapi.yaml", label: "API 参考（英文）" },
+      { path: "docs/developers/libraries.md", label: "客户端库（英文）" },
+    ]}
+  />
+  <DocLinks
+    title="参考"
+    icon="list-format"
+    links={[
+      { path: "docs/reference/configuration.md", label: "配置参考（英文）" },
+      { path: "docs/reference/cli.md", label: "命令参考（英文）" },
+      { path: "docs/reference/jobs.md", label: "作业（英文）" },
+    ]}
+  />
+</CardGrid>
+
+**状态：开发中，尚未发布第一个版本（v0）。** 在 `v0.1.0` 之前，升级后数据可能无法保留，可能需要重新创建数据库。从 `v0.1.0` 起，版本之间的每次升级都会保留你的数据。
+
+## 许可证
+
+`my` 是依据 GNU Affero 通用公共许可证第 3 版（仅限该版本，AGPL-3.0-only）发布的自由软件。其 API 的客户端库采用 MIT 许可证。

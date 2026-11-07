@@ -1,0 +1,802 @@
+{
+  "voice.title": {
+    "defaultMessage": "语音聊天",
+    "description": "Heading and document title of the list of the open voice chat rooms, and its item in the main navigation."
+  },
+  "voice.unavailable": {
+    "defaultMessage": "此服务器不提供语音聊天。",
+    "description": "Shown on the voice chat pages when the server has voice chat turned off."
+  },
+  "voice.list.label": {
+    "defaultMessage": "开放中的房间",
+    "description": "Accessible name of the list of the open voice chat rooms."
+  },
+  "voice.list.empty": {
+    "defaultMessage": "目前没有开放中的房间",
+    "description": "Heading of the empty list of voice chat rooms."
+  },
+  "voice.list.empty.description": {
+    "defaultMessage": "你可以加入的房间在开放期间会显示在这里。",
+    "description": "Explanation under the heading of the empty list of voice chat rooms."
+  },
+  "voice.list.loading": {
+    "defaultMessage": "正在加载房间",
+    "description": "Visually hidden name of the busy list while the voice chat rooms or the voice chat history load."
+  },
+  "voice.list.failed": {
+    "defaultMessage": "无法加载房间",
+    "description": "Heading of the error when the voice chat rooms could not load."
+  },
+  "voice.list.retry": {
+    "defaultMessage": "重试",
+    "description": "Button that loads the voice chat rooms again after a failure."
+  },
+  "voice.list.more": {
+    "defaultMessage": "显示更多房间",
+    "description": "Button that loads the next page of voice chat rooms."
+  },
+  "voice.list.more_failed": {
+    "defaultMessage": "无法加载更多房间",
+    "description": "Error when the next page of voice chat rooms could not load."
+  },
+  "voice.room.participants_count": {
+    "defaultMessage": "{count, plural, other {# 人}}",
+    "description": "How many people are in a voice chat room, the host included."
+  },
+  "voice.room.hosted_by": {
+    "defaultMessage": "主持人",
+    "description": "Label before the host of a voice chat room in the room's card."
+  },
+  "voice.rail.title": {
+    "defaultMessage": "语音聊天",
+    "description": "Heading of the panel of open voice chat rooms in the third column of wide screens."
+  },
+  "voice.rail.all": {
+    "defaultMessage": "查看所有房间",
+    "description": "Link from the panel of voice chat rooms to the list of all open rooms."
+  },
+  "voice.tag.title": {
+    "defaultMessage": "带有 #{tag} 的语音聊天房间",
+    "description": "Heading of the open voice chat rooms with a hashtag, at the top of the hashtag's page. {tag} is the hashtag without the #."
+  },
+  "voice.start": {
+    "defaultMessage": "开启房间",
+    "description": "Button on the voice chat page that opens the form to start a new room."
+  },
+  "voice.form.new_title": {
+    "defaultMessage": "开启房间",
+    "description": "Title of the dialog with the form that starts a new voice chat room."
+  },
+  "voice.form.edit_title": {
+    "defaultMessage": "房间设置",
+    "description": "Title of the dialog with the settings of a voice chat room, and the host's button that opens it."
+  },
+  "voice.form.close": {
+    "defaultMessage": "关闭",
+    "description": "Accessible name of the close button of the dialog of a voice chat room's settings."
+  },
+  "voice.form.name": {
+    "defaultMessage": "名称",
+    "description": "Label of the field of a voice chat room's name."
+  },
+  "voice.form.name.invalid": {
+    "defaultMessage": "请输入不超过 {max} 个字符的单行名称。",
+    "description": "Error of the field of a voice chat room's name. {max} is the most characters it takes."
+  },
+  "voice.form.icon": {
+    "defaultMessage": "图标",
+    "description": "Legend of the group of a voice chat room's emoji icon in its settings dialog."
+  },
+  "voice.form.icon.description": {
+    "defaultMessage": "显示在房间名称前的表情。可选。",
+    "description": "Hint under the legend of a voice chat room's icon: one Unicode emoji or custom emoji of this server, shown before the name."
+  },
+  "voice.form.icon.choose": {
+    "defaultMessage": "选择表情",
+    "description": "Button that opens the emoji picker to choose a voice chat room's icon, while the room has none."
+  },
+  "voice.form.icon.change": {
+    "defaultMessage": "更改",
+    "description": "Button after the chosen emoji that opens the emoji picker to choose another icon for a voice chat room."
+  },
+  "voice.form.icon.remove": {
+    "defaultMessage": "移除图标",
+    "description": "Button that removes a voice chat room's icon, so that the name shows alone."
+  },
+  "voice.form.description": {
+    "defaultMessage": "说明",
+    "description": "Label of the field of a voice chat room's description."
+  },
+  "voice.form.characters_left": {
+    "defaultMessage": "{count, plural, other {还可输入 # 个字符}}",
+    "description": "How many more characters the description of a voice chat room takes."
+  },
+  "voice.form.characters_over": {
+    "defaultMessage": "{count, plural, other {超出 # 个字符}}",
+    "description": "How many characters the description of a voice chat room is over its limit."
+  },
+  "voice.form.hashtags": {
+    "defaultMessage": "话题标签",
+    "description": "Label of the field of a voice chat room's hashtags."
+  },
+  "voice.form.hashtags.description": {
+    "defaultMessage": "最多 {max} 个，用空格分隔。房间会显示在其话题标签的页面上。",
+    "description": "Explanation of the field of a voice chat room's hashtags. {max} is how many it takes."
+  },
+  "voice.form.hashtags.invalid": {
+    "defaultMessage": "最多可输入 {max} 个话题标签。",
+    "description": "Error of the field of a voice chat room's hashtags. {max} is how many it takes."
+  },
+  "voice.form.hashtags.too_long": {
+    "defaultMessage": "每个话题标签最多 {max} 个字符。",
+    "description": "Error of the field of a voice chat room's hashtags when one is too long. {max} is the most characters a hashtag has."
+  },
+  "voice.form.visibility": {
+    "defaultMessage": "谁可以查看和加入",
+    "description": "Label of the choice of who sees a voice chat room and may join it."
+  },
+  "voice.form.speakers": {
+    "defaultMessage": "谁无需申请即可发言",
+    "description": "Label of the choice of who may speak in a voice chat room without the hosts letting them."
+  },
+  "voice.visibility.local": {
+    "defaultMessage": "此服务器上的所有人",
+    "description": "Visibility of a voice chat room: every local user."
+  },
+  "voice.visibility.followers": {
+    "defaultMessage": "主持人的关注者",
+    "description": "Visibility of a voice chat room: the followers of its host."
+  },
+  "voice.visibility.mutuals": {
+    "defaultMessage": "与主持人互相关注的人",
+    "description": "Visibility of a voice chat room: those who follow the host and whom the host follows."
+  },
+  "voice.visibility.invited": {
+    "defaultMessage": "仅受邀的人",
+    "description": "Visibility of a voice chat room: only the people the hosts invite."
+  },
+  "voice.speakers.everyone": {
+    "defaultMessage": "所有加入的人",
+    "description": "Who may speak in a voice chat room without asking: everyone in it."
+  },
+  "voice.speakers.followers": {
+    "defaultMessage": "主持人的关注者",
+    "description": "Who may speak in a voice chat room without asking: the followers of the host."
+  },
+  "voice.speakers.mutuals": {
+    "defaultMessage": "与主持人互相关注的人",
+    "description": "Who may speak in a voice chat room without asking: the host's mutual follows."
+  },
+  "voice.speakers.manual": {
+    "defaultMessage": "仅主持人允许发言的人",
+    "description": "Who may speak in a voice chat room without asking: nobody, the host and the co-hosts let them."
+  },
+  "voice.form.post": {
+    "defaultMessage": "发布关于房间的帖子",
+    "description": "Switch in the form that starts a voice chat room: also post a post that links the room."
+  },
+  "voice.form.post.local": {
+    "defaultMessage": "本站帖子，此服务器上的所有人可见。",
+    "description": "Explanation of the start post of a room for every local user."
+  },
+  "voice.form.post.followers": {
+    "defaultMessage": "仅关注者可见的帖子。",
+    "description": "Explanation of the start post of a room for the host's followers."
+  },
+  "voice.form.post.text": {
+    "defaultMessage": "帖子正文",
+    "description": "Label of the text of the post that announces a new voice chat room."
+  },
+  "voice.form.post.text.description": {
+    "defaultMessage": "房间链接会添加在末尾。",
+    "description": "Explanation of the text of the post that announces a new voice chat room."
+  },
+  "voice.form.post.draft": {
+    "defaultMessage": "我开启了一个语音聊天房间：{name}",
+    "description": "The draft text of the post that announces a new voice chat room, which the host edits. {name} is the room's name."
+  },
+  "voice.form.submit_new": {
+    "defaultMessage": "开启房间",
+    "description": "Button that starts a new voice chat room."
+  },
+  "voice.form.submit_edit": {
+    "defaultMessage": "保存",
+    "description": "Button that saves the settings of a voice chat room."
+  },
+  "voice.form.start_failed": {
+    "defaultMessage": "无法开启房间：{reason}",
+    "description": "Error when a voice chat room could not start. {reason} is the server's explanation."
+  },
+  "voice.form.save_failed": {
+    "defaultMessage": "无法保存设置：{reason}",
+    "description": "Error when the settings of a voice chat room could not be saved. {reason} is the server's explanation."
+  },
+  "voice.form.saved": {
+    "defaultMessage": "已保存房间设置",
+    "description": "Message after the settings of a voice chat room were saved."
+  },
+  "voice.room.title": {
+    "defaultMessage": "语音聊天房间",
+    "description": "Heading of the page of a voice chat room whose name is not shown."
+  },
+  "voice.room.live": {
+    "defaultMessage": "直播中",
+    "description": "The pill at the head of the page of an open voice chat room."
+  },
+  "voice.room.stats": {
+    "defaultMessage": "{people} · {duration}",
+    "description": "How many are in a voice chat room and how long it has been open, beside the Live pill. {people} is the count of people (\"3 people\"), {duration} how long (\"38 min\")."
+  },
+  "voice.room.open_minutes": {
+    "defaultMessage": "{minutes, number} 分钟",
+    "description": "How long a voice chat room has been open, under an hour. {minutes} is the number of minutes."
+  },
+  "voice.room.open_hours": {
+    "defaultMessage": "{hours, number} 小时 {minutes, number} 分钟",
+    "description": "How long a voice chat room has been open, an hour or more. {hours} and {minutes} are the numbers of hours and minutes."
+  },
+  "voice.room.share": {
+    "defaultMessage": "分享",
+    "description": "Accessible name and tooltip of the icon button that shares the link of a voice chat room."
+  },
+  "voice.room.share.copied": {
+    "defaultMessage": "已复制房间链接",
+    "description": "Message after the link of a voice chat room was copied to the clipboard."
+  },
+  "voice.room.share.failed": {
+    "defaultMessage": "无法复制房间链接",
+    "description": "Message when the link of a voice chat room could not be copied."
+  },
+  "voice.room.more": {
+    "defaultMessage": "更多操作",
+    "description": "Accessible name and tooltip of the button and the name of the menu of a voice chat room for someone other than its host."
+  },
+  "voice.room.change_settings": {
+    "defaultMessage": "更改房间设置",
+    "description": "The host's button in the About the room panel of a voice chat room that opens its settings."
+  },
+  "voice.stage.speakers": {
+    "defaultMessage": "发言者 · {count, number}",
+    "description": "Heading of the speakers of a voice chat room on its page. {count} is how many."
+  },
+  "voice.stage.listeners": {
+    "defaultMessage": "听众 · {count, number}",
+    "description": "Heading of the listeners of a voice chat room on its page. {count} is how many."
+  },
+  "voice.room.listed_notice": {
+    "defaultMessage": "加入后，所有能看到此房间的人都会在列表中看到你的名字。",
+    "description": "Notice on the page of a voice chat room before joining it."
+  },
+  "voice.room.join": {
+    "defaultMessage": "加入",
+    "description": "Button that joins a voice chat room."
+  },
+  "voice.room.join_failed": {
+    "defaultMessage": "无法加入房间：{reason}",
+    "description": "Error when joining a voice chat room failed. {reason} is the server's explanation."
+  },
+  "voice.room.joined": {
+    "defaultMessage": "你在此房间中。",
+    "description": "Shown on the page of a voice chat room that the user is in."
+  },
+  "voice.room.joined_badge": {
+    "defaultMessage": "已加入",
+    "description": "Badge on the card of the voice chat room whose call the user is in, in the lists of rooms."
+  },
+  "voice.room.move_notice": {
+    "defaultMessage": "你在 {room} 中。加入此房间会离开该房间。",
+    "description": "Shown before joining a voice chat room while the user is in the call of another room. {room} is the other room's name."
+  },
+  "voice.room.move": {
+    "defaultMessage": "移到这里",
+    "description": "Button that leaves the voice chat room the user is in and joins this one."
+  },
+  "voice.room.details": {
+    "defaultMessage": "关于房间",
+    "description": "Heading of the panel about a voice chat room (its host, visibility, and speakers) in the third column of its page."
+  },
+  "voice.role.host": {
+    "defaultMessage": "主持人",
+    "description": "Label of the host of a voice chat room in its list of participants."
+  },
+  "voice.role.cohost": {
+    "defaultMessage": "联合主持人",
+    "description": "Label of a co-host of a voice chat room in its list of participants."
+  },
+  "voice.role.speaker": {
+    "defaultMessage": "发言者",
+    "description": "Label of a participant of a voice chat room who speaks."
+  },
+  "voice.role.listener": {
+    "defaultMessage": "听众",
+    "description": "Label of a participant of a voice chat room who listens."
+  },
+  "voice.room.local_only": {
+    "defaultMessage": "只有在此服务器上拥有账号的人才能加入其语音聊天房间。",
+    "description": "Notice on the page of a voice chat room for a visitor who is not signed in."
+  },
+  "voice.room.sign_in": {
+    "defaultMessage": "登录",
+    "description": "Link on the page of a voice chat room to the sign-in page, which returns to the room."
+  },
+  "voice.room.open": {
+    "defaultMessage": "此房间正在开放。",
+    "description": "Shown on the summary of an open voice chat room to a visitor who is not signed in."
+  },
+  "voice.room.ended": {
+    "defaultMessage": "此房间已结束",
+    "description": "Heading of the page of a voice chat room that ended."
+  },
+  "voice.room.ended.next": {
+    "defaultMessage": "查看当前开放的房间，或开启一个房间。",
+    "description": "Under the heading of the page of a voice chat room that ended: what the user can do next."
+  },
+  "voice.room.hidden": {
+    "defaultMessage": "你无法查看此房间。",
+    "description": "Shown on the page of an open voice chat room that the user may not see."
+  },
+  "voice.room.not_found": {
+    "defaultMessage": "没有这个房间",
+    "description": "Heading of the page of a voice chat room that does not exist."
+  },
+  "voice.room.failed": {
+    "defaultMessage": "无法加载房间",
+    "description": "Heading of the error when a voice chat room could not load."
+  },
+  "voice.room.loading": {
+    "defaultMessage": "正在加载房间",
+    "description": "Visually hidden name of the busy page while a voice chat room loads."
+  },
+  "voice.history.title": {
+    "defaultMessage": "语音聊天记录",
+    "description": "Heading of the settings page with the voice chat rooms the user hosted, and its item in the settings menu."
+  },
+  "voice.history.description": {
+    "defaultMessage": "你主持过的语音聊天房间，最新的在前。",
+    "description": "Explanation at the top of the voice chat history."
+  },
+  "voice.history.empty": {
+    "defaultMessage": "你还没有主持过房间",
+    "description": "Heading of the empty voice chat history."
+  },
+  "voice.history.opened": {
+    "defaultMessage": "开启时间",
+    "description": "Term of when a room of the voice chat history opened."
+  },
+  "voice.history.ended": {
+    "defaultMessage": "结束时间",
+    "description": "Term of when a room of the voice chat history ended."
+  },
+  "voice.history.still_open": {
+    "defaultMessage": "仍在开放",
+    "description": "Value of when a room of the voice chat history ended, while it is open."
+  },
+  "voice.history.reason": {
+    "defaultMessage": "结束原因",
+    "description": "Term of why a room of the voice chat history ended."
+  },
+  "voice.end_reason.host": {
+    "defaultMessage": "主持人结束了房间",
+    "description": "Why a voice chat room ended: its host ended it."
+  },
+  "voice.end_reason.empty": {
+    "defaultMessage": "所有人都已离开",
+    "description": "Why a voice chat room ended: nobody was left."
+  },
+  "voice.end_reason.host_disconnected": {
+    "defaultMessage": "主持人断开了连接",
+    "description": "Why a voice chat room ended: the host was disconnected and nobody could take over."
+  },
+  "voice.end_reason.host_ineligible": {
+    "defaultMessage": "主持人已无法继续主持",
+    "description": "Why a voice chat room ended: the host lost the right to host and nobody could take over."
+  },
+  "voice.end_reason.moderator": {
+    "defaultMessage": "审核员结束了房间",
+    "description": "Why a voice chat room ended: a moderator ended it."
+  },
+  "voice.end_reason.time_limit": {
+    "defaultMessage": "已达到时间上限",
+    "description": "Why a voice chat room ended: it was open for the longest time the server allows."
+  },
+  "voice.end_reason.disabled": {
+    "defaultMessage": "语音聊天已关闭",
+    "description": "Why a voice chat room ended: the server turned voice chat off."
+  },
+  "voice.end_reason.other": {
+    "defaultMessage": "其他",
+    "description": "Why a voice chat room ended, for a reason the app does not know."
+  },
+  "voice.room.report": {
+    "defaultMessage": "举报房间",
+    "description": "Button on the page of a voice chat room that opens the dialog reporting the room to the moderators."
+  },
+  "voice.call.connecting": {
+    "defaultMessage": "正在连接…",
+    "description": "State of the voice chat call until it connects."
+  },
+  "voice.call.live": {
+    "defaultMessage": "已连接",
+    "description": "State of the voice chat call while it is connected."
+  },
+  "voice.call.reconnecting": {
+    "defaultMessage": "正在重新连接…",
+    "description": "State of the voice chat call while the connection to the room is down."
+  },
+  "voice.call.join_here": {
+    "defaultMessage": "在此加入",
+    "description": "Button that joins a voice chat room on this device, when the user is in it from another device or tab."
+  },
+  "voice.call.unsupported_browser": {
+    "defaultMessage": "此浏览器无法加入语音聊天。请通过 HTTPS 在支持通话的浏览器中打开房间。",
+    "description": "Shown instead of the join button when the browser has no WebRTC or microphone access."
+  },
+  "voice.call.playback_blocked": {
+    "defaultMessage": "你的浏览器暂停了通话声音。",
+    "description": "Shown when the browser blocked the audio of the call from playing."
+  },
+  "voice.call.play_audio": {
+    "defaultMessage": "播放声音",
+    "description": "Button that starts the audio of the call after the browser blocked it."
+  },
+  "voice.call.microphone.turn_on": {
+    "defaultMessage": "打开麦克风",
+    "description": "Button in a voice chat call while the user's microphone is off: it turns the microphone on. Its icon is a slashed microphone."
+  },
+  "voice.call.microphone.turn_off": {
+    "defaultMessage": "关闭麦克风",
+    "description": "Button in a voice chat call while the user's microphone is on: it turns the microphone off. Its icon is a filled microphone."
+  },
+  "voice.call.microphone_failed": {
+    "defaultMessage": "无法使用麦克风。请重试。",
+    "description": "Error when the browser did not give the microphone."
+  },
+  "voice.call.speak": {
+    "defaultMessage": "发言",
+    "description": "Button that makes a listener of a voice chat room a speaker."
+  },
+  "voice.call.listen": {
+    "defaultMessage": "仅收听",
+    "description": "Button that makes a speaker of a voice chat room a listener again."
+  },
+  "voice.call.raise_hand": {
+    "defaultMessage": "举手",
+    "description": "Button that asks the hosts of a voice chat room for permission to speak."
+  },
+  "voice.call.leave": {
+    "defaultMessage": "离开",
+    "description": "Button that leaves the voice chat room, and the confirm button of the dialogs about leaving."
+  },
+  "voice.call.stay": {
+    "defaultMessage": "留下",
+    "description": "Button of the dialogs about leaving a voice chat room that keeps the user in it."
+  },
+  "voice.call.leave_confirm.title": {
+    "defaultMessage": "要离开 {room} 吗？",
+    "description": "Title of the dialog that asks before leaving a voice chat call from the mini-player. {room} is the room's name."
+  },
+  "voice.call.leave_confirm.description": {
+    "defaultMessage": "你的通话将结束。房间开放期间你可以再次加入。",
+    "description": "Explanation in the dialog that asks before leaving a voice chat call from the mini-player."
+  },
+  "voice.call.cancel": {
+    "defaultMessage": "取消",
+    "description": "Button that closes a dialog of a voice chat call without doing anything."
+  },
+  "voice.dock.label": {
+    "defaultMessage": "通话控制",
+    "description": "Accessible name of the toolbar of the controls of a voice chat call at the bottom of the room's page."
+  },
+  "voice.dock.hands": {
+    "defaultMessage": "举手",
+    "description": "The host's and co-hosts' button in the controls of a voice chat call that lists the raised hands."
+  },
+  "voice.dock.hands.counted": {
+    "defaultMessage": "举手，{count, plural, other {# 人举手}}",
+    "description": "Accessible name of the Hands button while it shows the number of raised hands as a badge. It starts with the word of voice.dock.hands, as it is shown."
+  },
+  "voice.hands.heading": {
+    "defaultMessage": "举手 · {count, number}",
+    "description": "Heading of the list of the raised hands in a voice chat room. {count} is how many."
+  },
+  "voice.hands.empty": {
+    "defaultMessage": "目前没有人举手。",
+    "description": "Shown in the list of raised hands of a voice chat room when nobody raised a hand."
+  },
+  "voice.hands.allow": {
+    "defaultMessage": "允许",
+    "description": "Button of a raised hand that lets the participant speak."
+  },
+  "voice.hands.allow.label": {
+    "defaultMessage": "允许 {name} 发言",
+    "description": "Accessible name of the Allow button of a raised hand. {name} is the participant's name."
+  },
+  "voice.hands.dismiss": {
+    "defaultMessage": "忽略",
+    "description": "Button of a raised hand that puts the hand down."
+  },
+  "voice.hands.dismiss.label": {
+    "defaultMessage": "忽略 {name} 的举手",
+    "description": "Accessible name of the Dismiss button of a raised hand. {name} is the participant's name."
+  },
+  "voice.call.action_failed": {
+    "defaultMessage": "无法执行此操作：{reason}",
+    "description": "Error of an operation in a voice chat call. {reason} is why, from the server."
+  },
+  "voice.call.leave_failed": {
+    "defaultMessage": "无法离开房间：{reason}",
+    "description": "Error when leaving a voice chat room failed. {reason} is why."
+  },
+  "voice.call.host_leave.title": {
+    "defaultMessage": "要离开你主持的房间吗？",
+    "description": "Title of the dialog where the host of a voice chat room leaves it."
+  },
+  "voice.call.host_leave.description": {
+    "defaultMessage": "请选择在你之后主持房间的人，或为所有人结束房间。只有可以开启房间的人才能主持。",
+    "description": "Explanation of the dialog where the host of a voice chat room leaves it."
+  },
+  "voice.call.host_leave.choice": {
+    "defaultMessage": "你离开时",
+    "description": "Label of the choice of the next host or the end of the room, in the host's leave dialog."
+  },
+  "voice.call.host_leave.next_host": {
+    "defaultMessage": "让 {name} 成为主持人",
+    "description": "Choice of the host's leave dialog that hands the room to a participant. {name} is the participant's name."
+  },
+  "voice.call.host_leave.end": {
+    "defaultMessage": "为所有人结束房间",
+    "description": "Choice of the host's leave dialog that ends the room."
+  },
+  "voice.call.ended": {
+    "defaultMessage": "房间已结束：{reason}",
+    "description": "Said and shown when the voice chat room the user was in ended. {reason} is why it ended."
+  },
+  "voice.call.replaced": {
+    "defaultMessage": "你已在另一台设备上加入此房间。",
+    "description": "Said and shown when the user joined the same room from another device, which ends the call here."
+  },
+  "voice.call.lost": {
+    "defaultMessage": "与房间的连接已断开。",
+    "description": "Said and shown when the call could not reconnect to the room."
+  },
+  "voice.call.unsupported": {
+    "defaultMessage": "此应用暂时无法连接此服务器的语音聊天。",
+    "description": "Shown when the server's voice chat method is not supported by this client."
+  },
+  "voice.call.removed": {
+    "defaultMessage": "你已被移出房间。",
+    "description": "Said and shown when a host or co-host removed the user from the voice chat room."
+  },
+  "voice.call.moved": {
+    "defaultMessage": "你加入了另一个房间。",
+    "description": "Said and shown when the user left this room by joining another one."
+  },
+  "voice.call.disconnected": {
+    "defaultMessage": "你已与房间断开连接。",
+    "description": "Said and shown when the server took the user out of the room after the connection was lost."
+  },
+  "voice.call.suspended": {
+    "defaultMessage": "由于你的账号已被封禁，你已离开房间。",
+    "description": "Said and shown when the user's account was suspended during a call."
+  },
+  "voice.call.left": {
+    "defaultMessage": "你已离开房间。",
+    "description": "Said and shown when the user's session left the room."
+  },
+  "voice.call.blocked": {
+    "defaultMessage": "由于你与房间主持人或联合主持人之间存在屏蔽，你已离开房间。",
+    "description": "Said and shown when a block between the user and a host or co-host took the user out of the room."
+  },
+  "voice.notice.speaker": {
+    "defaultMessage": "你现在可以发言了。打开麦克风即可说话。",
+    "description": "Announced when the user becomes a speaker in a voice chat room."
+  },
+  "voice.notice.listener": {
+    "defaultMessage": "你现在是听众。",
+    "description": "Announced when the user becomes a listener in a voice chat room."
+  },
+  "voice.notice.muted": {
+    "defaultMessage": "主持人关闭了你的麦克风。你可以重新打开。",
+    "description": "Announced when a host or co-host muted the user."
+  },
+  "voice.notice.hand_down": {
+    "defaultMessage": "你已放下手。",
+    "description": "Announced when the user's raised hand went down without the user becoming a speaker."
+  },
+  "voice.notice.cohost": {
+    "defaultMessage": "你现在是联合主持人。",
+    "description": "Announced when the host makes the user a co-host."
+  },
+  "voice.notice.cohost_removed": {
+    "defaultMessage": "你已不再是联合主持人。",
+    "description": "Announced when the host stops the user being a co-host."
+  },
+  "voice.notice.host": {
+    "defaultMessage": "你现在是主持人。",
+    "description": "Announced when the user becomes the host of the room."
+  },
+  "voice.notice.hand_raised": {
+    "defaultMessage": "{name} 举手了。",
+    "description": "Announced to the host and co-hosts when a participant raises a hand. {name} is the participant's name."
+  },
+  "voice.notice.reconnecting": {
+    "defaultMessage": "与房间的连接已断开。正在重新连接…",
+    "description": "Announced when the room stream of a call goes down."
+  },
+  "voice.notice.reconnected": {
+    "defaultMessage": "已重新连接到房间。",
+    "description": "Announced when the room stream of a call is back."
+  },
+  "voice.participant.you": {
+    "defaultMessage": "你",
+    "description": "Marker of the user's own row in the participants of a voice chat room."
+  },
+  "voice.participant.hand_raised": {
+    "defaultMessage": "已举手",
+    "description": "Marker of a participant who raised a hand."
+  },
+  "voice.participant.blocked": {
+    "defaultMessage": "已屏蔽",
+    "description": "Marker of a participant whom the user blocks or who blocks the user."
+  },
+  "voice.participant.talking": {
+    "defaultMessage": "正在说话",
+    "description": "Read by assistive technology for a participant of a voice chat room who is talking now (the ring around the avatar)."
+  },
+  "voice.participant.mic_off": {
+    "defaultMessage": "麦克风已关闭",
+    "description": "Read by assistive technology for a speaker of a voice chat room whose microphone is off (the badge on the avatar)."
+  },
+  "voice.participant.reacted_with": {
+    "defaultMessage": "回应了 {emoji}",
+    "description": "Read by assistive technology for the reaction a participant of a voice chat room just sent. {emoji} is the emoji."
+  },
+  "voice.participant.profile": {
+    "defaultMessage": "查看个人资料",
+    "description": "Item of the menu of a participant of a voice chat room that opens the participant's profile."
+  },
+  "voice.participant.caption_separator": {
+    "defaultMessage": " · ",
+    "description": "What separates the parts of the line under a participant's name on the stage of a voice chat room (\"Host · You\")."
+  },
+  "voice.moderate.menu": {
+    "defaultMessage": "对 {name} 的操作",
+    "description": "Accessible name of the menu of what a host or co-host does to a participant. {name} is the participant's name."
+  },
+  "voice.moderate.grant": {
+    "defaultMessage": "允许发言",
+    "description": "Menu item that lets a participant speak."
+  },
+  "voice.moderate.dismiss": {
+    "defaultMessage": "忽略举手",
+    "description": "Menu item that turns down a participant's raised hand."
+  },
+  "voice.moderate.revoke": {
+    "defaultMessage": "禁止发言",
+    "description": "Menu item that makes a speaker a listener and takes back the permission to speak."
+  },
+  "voice.moderate.mute": {
+    "defaultMessage": "关闭麦克风",
+    "description": "Menu item that mutes a speaker, who may turn the microphone on again."
+  },
+  "voice.moderate.remove": {
+    "defaultMessage": "移出房间",
+    "description": "Menu item and confirm button that removes a participant, who cannot join again."
+  },
+  "voice.moderate.cohost": {
+    "defaultMessage": "设为联合主持人",
+    "description": "Menu item of the host that makes a participant a co-host."
+  },
+  "voice.moderate.uncohost": {
+    "defaultMessage": "取消联合主持人",
+    "description": "Menu item of the host that stops a participant being a co-host."
+  },
+  "voice.moderate.hand_over": {
+    "defaultMessage": "设为主持人",
+    "description": "Menu item of the host that hands the room over to a participant."
+  },
+  "voice.moderate.remove.title": {
+    "defaultMessage": "要将 {name} 移出房间吗？",
+    "description": "Title of the dialog that confirms removing a participant. {name} is the participant's name."
+  },
+  "voice.moderate.remove.description": {
+    "defaultMessage": "对方将无法再查看或加入此房间。",
+    "description": "Explanation of the dialog that confirms removing a participant."
+  },
+  "voice.moderate.done.grant": {
+    "defaultMessage": "{name} 现在可以发言了。",
+    "description": "Announced after letting a participant speak."
+  },
+  "voice.moderate.done.dismiss": {
+    "defaultMessage": "已忽略 {name} 的举手。",
+    "description": "Announced after dismissing a raised hand."
+  },
+  "voice.moderate.done.revoke": {
+    "defaultMessage": "{name} 现在是听众。",
+    "description": "Announced after stopping a participant from speaking."
+  },
+  "voice.moderate.done.mute": {
+    "defaultMessage": "已关闭 {name} 的麦克风。",
+    "description": "Announced after muting a participant."
+  },
+  "voice.moderate.done.remove": {
+    "defaultMessage": "已将 {name} 移出房间。",
+    "description": "Announced after removing a participant."
+  },
+  "voice.moderate.done.cohost": {
+    "defaultMessage": "{name} 现在是联合主持人。",
+    "description": "Announced after making a participant a co-host."
+  },
+  "voice.moderate.done.uncohost": {
+    "defaultMessage": "{name} 已不再是联合主持人。",
+    "description": "Announced after stopping a participant being a co-host."
+  },
+  "voice.moderate.done.hand_over": {
+    "defaultMessage": "{name} 现在是主持人。",
+    "description": "Announced after handing the room over."
+  },
+  "voice.invite.button": {
+    "defaultMessage": "邀请",
+    "description": "Button of the host and co-hosts that opens the dialog to invite someone to the voice chat room."
+  },
+  "voice.invite.title": {
+    "defaultMessage": "邀请加入房间",
+    "description": "Title of the dialog that invites someone to a voice chat room."
+  },
+  "voice.invite.description": {
+    "defaultMessage": "你邀请的人从现在起可以看到此房间，并会收到通知。",
+    "description": "Explanation of the dialog that invites someone to a voice chat room."
+  },
+  "voice.invite.username": {
+    "defaultMessage": "此服务器上的用户名",
+    "description": "Label of the field of the username to invite to a voice chat room."
+  },
+  "voice.invite.role": {
+    "defaultMessage": "邀请身份",
+    "description": "Label of the choice of inviting as a listener or a speaker."
+  },
+  "voice.invite.role.listener": {
+    "defaultMessage": "听众",
+    "description": "Choice of inviting someone as a listener."
+  },
+  "voice.invite.role.speaker": {
+    "defaultMessage": "发言者",
+    "description": "Choice of inviting someone as a speaker."
+  },
+  "voice.invite.role.speaker.description": {
+    "defaultMessage": "对方无需申请即可发言。",
+    "description": "Explanation of inviting someone as a speaker."
+  },
+  "voice.invite.submit": {
+    "defaultMessage": "邀请",
+    "description": "Confirm button of the dialog that invites someone to a voice chat room."
+  },
+  "voice.invite.sent": {
+    "defaultMessage": "已邀请 {name}。",
+    "description": "Announced after inviting someone. {name} is their name."
+  },
+  "voice.invite.failed": {
+    "defaultMessage": "无法邀请：{reason}",
+    "description": "Error of the invitation. {reason} is why."
+  },
+  "voice.bar.label": {
+    "defaultMessage": "语音聊天通话",
+    "description": "Accessible name of the mini-player of the voice chat call that shows on every page while the user is in a call."
+  },
+  "voice.bar.talking": {
+    "defaultMessage": "{others, plural, =0 {{name} 正在说话} other {{name} 和其他 # 人正在说话}}",
+    "description": "Status line of the voice chat call's mini-player while someone talks. {name} is the first one talking; {others} is how many others talk with them."
+  },
+  "voice.call.microphone_denied": {
+    "defaultMessage": "此网站无权使用麦克风。请在浏览器设置中允许，然后重试。",
+    "description": "Error when the user or the browser refused the microphone."
+  },
+  "voice.call.microphone_missing": {
+    "defaultMessage": "未找到麦克风。请连接麦克风，然后重试。",
+    "description": "Error when the device has no microphone."
+  },
+  "voice.call.microphone_busy": {
+    "defaultMessage": "麦克风正被另一个应用使用。请关闭该应用，然后重试。",
+    "description": "Error when another app holds the microphone."
+  }
+}

@@ -8,9 +8,10 @@
 //                                      and its English text
 //   glossary [--locale ja] <source>    the UI terms the source quotes ("Write a post") and their text in the locale's
 //                                      catalog (locales/<locale>/), which the translation uses for them
-//   check [--locale ja]                the translation files are sound: their markers parse, each section starts with
-//                                      a heading of its English level, and a current section keeps the code blocks,
-//                                      code spans and link targets of its English text; files that translate nothing
+//   check [--locale ja]                the translation files of the locale, or of every locale without --locale, are
+//                                      sound: their markers parse, each section starts with a heading of its English
+//                                      level, and a current section keeps the code blocks, code spans and link targets
+//                                      of its English text; files that translate nothing
 //
 // A source is a repository path: docs/guide/posting.md, or app/docs/src/content/docs/index.mdx (the landing page).
 // status and todo always succeed; check fails on what it finds. A stale or missing section is never a failure: the
@@ -38,6 +39,7 @@ function usage(): never {
 const args = process.argv.slice(2);
 const command = args.shift() ?? usage();
 let locale: TranslationLocale = "ja";
+let localeGiven = false;
 const sources: string[] = [];
 while (args.length > 0) {
   const arg = args.shift() ?? "";
@@ -48,6 +50,7 @@ while (args.length > 0) {
       process.exit(2);
     }
     locale = value as TranslationLocale;
+    localeGiven = true;
   } else {
     sources.push(arg.replace(/^\.\//, ""));
   }
@@ -158,7 +161,7 @@ function glossary(): void {
   }
 }
 
-function check(): number {
+function check(locale: TranslationLocale): number {
   const errors: string[] = [];
   for (const file of strayTranslations(locale)) {
     errors.push(`${file}: translates no published document (moved or removed?)`);
@@ -233,7 +236,9 @@ switch (command) {
     glossary();
     break;
   case "check":
-    process.exit(check());
+    process.exit(
+      (localeGiven ? [locale] : translationLocales).map((each) => check(each)).reduce((a, b) => Math.max(a, b), 0),
+    );
     break;
   default:
     usage();

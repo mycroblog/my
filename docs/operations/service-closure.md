@@ -112,6 +112,7 @@ my admin closure export-html -out ./closure -lang ja,en # set the locales and th
   - Front-end configuration examples `nginx.conf`, `Caddyfile` and `cloudfront-function.js`. Each returns `410` with no body for the federation and discovery paths (`/ap/*`, `/inbox`, `/.well-known/webfinger`,
     `/.well-known/host-meta`, `/.well-known/host-meta.json`, `/.well-known/nodeinfo`, `/nodeinfo/*`) and for profiles (`/@*`),
     and for every other path returns the page of the first language in `Accept-Language` (or `index.html` if there is none).
+    A language reaches the page of the locale the app would show it in: `zh`, `zh-SG` and `zh-Hans` get `zh-CN.html`, while `zh-TW` does not.
 - The command refuses if the server has not closed (exit code 1). Before `delivery_completed`, it warns that deliveries continue (and still writes the files).
 
 Switch the front end. Put only the pages (`*.html`) in the public location, and adjust the host name, directory and certificate paths in the example to your environment.

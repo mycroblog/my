@@ -1,0 +1,50 @@
+{
+  "closure.announced.export": {
+    "defaultMessage": "导出你的数据",
+    "description": "Link in the notice of the server's closure to the page where the user asks for an archive of their data and downloads it."
+  },
+  "closure.announced.export_until": {
+    "defaultMessage": "关闭后，你仍可登录并导出数据，直到 {date}。",
+    "description": "Detail line of the notice of the server's closure: until when the user may sign in and export their data after the closure. {date} is a date in the user's locale and time zone."
+  },
+  "closure.announced.headline": {
+    "defaultMessage": "{instance} 将于 {date} 关闭。",
+    "description": "Headline of the notice kept at the top of every screen while the server's closure is announced. {instance} is the server's name; {date} is the closing date in the user's locale and time zone."
+  },
+  "closure.announced.move": {
+    "defaultMessage": "你也可以在关闭前将账号迁移到其他服务器，其他服务器上的关注者会随之关注你的新账号。",
+    "description": "Detail line of the notice of the server's closure: the user can move their account to another server (an ActivityPub Move) before the closure."
+  },
+  "closure.label": {
+    "defaultMessage": "服务器关闭通知",
+    "description": "Accessible name of the region that holds the notice of the server's closure, in the list of landmarks."
+  },
+  "closure.message_from": {
+    "defaultMessage": "运营者的留言：",
+    "description": "Label before the operators' own message in the notice of the server's closure and on the closed screen."
+  },
+  "closure.closed.body": {
+    "defaultMessage": "{instance} 已于 {date} 关闭，其他功能均已停用。在 {until} 之前，你仍可登录并带走你的数据。",
+    "description": "Text on the screen shown to a signed-in user after the server has closed. {instance} is the server's name; {date} is when it closed and {until} the end of the export period, both in the user's locale and time zone."
+  },
+  "closure.closed.headline": {
+    "defaultMessage": "{instance} 已关闭。",
+    "description": "Headline of the notice kept at the top of every screen, for a visitor who is not signed in, after the server has closed. {instance} is the server's name."
+  },
+  "closure.closed.sign_in": {
+    "defaultMessage": "登录以导出数据，截止 {until}。",
+    "description": "Detail line of the notice for a visitor who is not signed in after the server has closed. {until} is the end of the export period in the user's locale and time zone."
+  },
+  "closure.closed.sign_out": {
+    "defaultMessage": "退出登录",
+    "description": "Button on the screen of a closed server that signs the user out."
+  },
+  "closure.closed.title": {
+    "defaultMessage": "此服务器已关闭",
+    "description": "Heading of the screen shown to a signed-in user after the server has closed; also the page name in the browser tab."
+  },
+  "closure.closed.loading": {
+    "defaultMessage": "正在加载你的数据导出",
+    "description": "Accessible name of the loading indicator on the screen of a closed server while the list of data exports loads."
+  }
+}

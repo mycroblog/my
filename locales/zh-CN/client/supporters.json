@@ -1,0 +1,66 @@
+{
+  "supporters.about.title": {
+    "defaultMessage": "支持者",
+    "description": "Heading of the supporter section of the about page."
+  },
+  "supporters.about.description": {
+    "defaultMessage": "本服务器的用户可以通过以下方案支持它。",
+    "description": "Explanation of the supporter plans on the about page."
+  },
+  "supporters.about.subscribe": {
+    "defaultMessage": "查看方案并订阅",
+    "description": "Link from the about page to the page of the supporter plans."
+  },
+  "supporters.about.list": {
+    "defaultMessage": "查看支持者名单",
+    "description": "Link from the about page to the supporter list."
+  },
+  "supporters.list.title": {
+    "defaultMessage": "{instance} 的支持者",
+    "description": "Heading of the supporter list page. instance is the server's name."
+  },
+  "supporters.list.description": {
+    "defaultMessage": "按方案列出选择公开显示的方案成员。",
+    "description": "Explanation of the supporter list."
+  },
+  "supporters.list.empty": {
+    "defaultMessage": "还没有人列出。",
+    "description": "Shown when nobody is listed."
+  },
+  "supporters.list.hidden": {
+    "defaultMessage": "本服务器不公开支持者名单。",
+    "description": "Shown when the server does not publish the supporter list."
+  },
+  "supporters.list.about": {
+    "defaultMessage": "关于本服务器",
+    "description": "Link back to the about page."
+  },
+  "supporters.list.signed_in_only": {
+    "defaultMessage": "只有已登录用户才能查看支持者名单。",
+    "description": "Shown to visitors without a session when only signed-in users may read the list."
+  },
+  "supporters.list.sign_in": {
+    "defaultMessage": "登录",
+    "description": "Link to sign in to read the supporter list."
+  },
+  "supporters.list.loading": {
+    "defaultMessage": "正在加载支持者名单",
+    "description": "Label of the spinner while the list loads."
+  },
+  "supporters.list.failed": {
+    "defaultMessage": "无法加载支持者名单",
+    "description": "Heading when the list could not load."
+  },
+  "supporters.list.retry": {
+    "defaultMessage": "重试",
+    "description": "Button that loads the list again."
+  },
+  "supporters.list.more": {
+    "defaultMessage": "显示更多",
+    "description": "Button that loads more of the list."
+  },
+  "supporters.list.more_failed": {
+    "defaultMessage": "无法加载更多支持者",
+    "description": "Heading when more of the list could not load."
+  }
+}

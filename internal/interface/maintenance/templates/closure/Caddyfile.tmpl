@@ -16,8 +16,8 @@
 	handle {
 		root * {{.Root}}
 		map {header.Accept-Language} {closure_page} {
-{{- range .Locales}}
-			~(?i)^{{.}}(-|,|;|$) /{{.}}.html
+{{- range .Matches}}
+			~(?i)^{{.Tag}}({{if .Prefix}}-|{{end}},|;|$) /{{.Locale}}.html
 {{- end}}
 			default /index.html
 		}

@@ -20,14 +20,28 @@ import { join, posix } from "node:path";
 import GithubSlugger from "github-slugger";
 import { base, isPublished, type publishedDirs, repoRoot } from "./published";
 
-/** The locales the site is translated into, besides English at the root. */
-export const translationLocales = ["ja"] as const;
+/**
+ * The locales the site is translated into, besides English at the root, as the BCP 47 tags of their catalogs in
+ * locales/ and of their directories in app/docs/i18n/.
+ */
+export const translationLocales = ["ja", "zh-CN"] as const;
 export type TranslationLocale = (typeof translationLocales)[number];
 
-/** The locale of a page from its URL path (/next/ja/guide/posting/ is ja), or undefined for English. */
+/**
+ * The directory of a locale in the URL space and in src/content/docs/, which is its key in the `locales` of
+ * astro.config.ts: the tag in lower case (/zh-cn/ for zh-CN), as Starlight writes them.
+ */
+export function localeSegment(locale: TranslationLocale): string {
+  return locale.toLowerCase();
+}
+
+/** The locale of a page from its URL path (/next/ja/guide/posting/ is ja, /zh-cn/ is zh-CN), or undefined for English. */
 export function localeOf(pathname: string): TranslationLocale | undefined {
   const rest = pathname.startsWith(base) ? pathname.slice(base.length) : pathname.replace(/^\//, "");
-  return translationLocales.find((locale) => rest === locale || rest.startsWith(`${locale}/`));
+  return translationLocales.find((locale) => {
+    const segment = localeSegment(locale);
+    return rest === segment || rest.startsWith(`${segment}/`);
+  });
 }
 
 /** The landing page, written in the site rather than copied from docs/. */

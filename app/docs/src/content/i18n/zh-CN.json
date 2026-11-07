@@ -1,0 +1,12 @@
+{
+  "docs.translation.notice": "本页由英文页面机器翻译而来。内容以英文页面为准。",
+  "docs.translation.english": "阅读英文页面",
+  "docs.translation.legal": "本页由法律文书模板机器翻译而来。公开文本在使用前，请先请法律专业人士确认。",
+  "docs.translation.stale": "以下章节在翻译之后，英文页面已有变动。",
+  "docs.translation.untranslated": "以下章节尚未翻译，以英文显示。",
+  "docs.version.ended": "{{version}} 的支持已结束。",
+  "docs.version.latest": "在最新版中阅读本页",
+  "docs.version.label": "文档版本",
+  "docs.llms.lead": "供 LLM 和编程智能体使用：",
+  "docs.llms.page": "本页的 Markdown"
+}

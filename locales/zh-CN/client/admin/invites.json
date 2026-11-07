@@ -1,0 +1,170 @@
+{
+  "admin.invites.copied": {
+    "defaultMessage": "已复制邀请 {code} 的链接。",
+    "description": "Toast after an invite's link was copied. {code} is its code."
+  },
+  "admin.invites.copy": {
+    "defaultMessage": "复制链接",
+    "description": "Button that copies an invite's sign-up link."
+  },
+  "admin.invites.copy_failed": {
+    "defaultMessage": "无法复制链接。",
+    "description": "Toast when copying an invite's link failed."
+  },
+  "admin.invites.copy_invite": {
+    "defaultMessage": "{action}：{code}",
+    "description": "Accessible name of the copy button of an invite: it starts with the button's visible text, so that the visible label is in the name. {action} is the button's visible text ('Copy link') and {code} the invite's code."
+  },
+  "admin.invites.create": {
+    "defaultMessage": "创建邀请",
+    "description": "Button that creates an invite."
+  },
+  "admin.invites.create_failed": {
+    "defaultMessage": "无法创建邀请：{reason}",
+    "description": "Error when creating an invite failed. {reason} is why."
+  },
+  "admin.invites.created": {
+    "defaultMessage": "已创建邀请 {code}。",
+    "description": "Status after an invite was created. {code} is its code."
+  },
+  "admin.invites.duration.minutes": {
+    "defaultMessage": "{count, plural, other {# 分钟}}",
+    "description": "An option of how long an invite works, in minutes."
+  },
+  "admin.invites.empty": {
+    "defaultMessage": "暂无邀请",
+    "description": "Heading of the empty list of invites."
+  },
+  "admin.invites.empty.description": {
+    "defaultMessage": "使用上方的表单创建邀请。",
+    "description": "Description of the empty list of invites."
+  },
+  "admin.invites.expires_at": {
+    "defaultMessage": "过期时间",
+    "description": "Term of when an invite expires."
+  },
+  "admin.invites.expires_in": {
+    "defaultMessage": "有效期",
+    "description": "Label of the select of how long an invite works."
+  },
+  "admin.invites.link": {
+    "defaultMessage": "将此链接发送给你邀请的人：",
+    "description": "Text before the sign-up link of a new invite."
+  },
+  "admin.invites.list.title": {
+    "defaultMessage": "邀请",
+    "description": "Heading of the list of invites."
+  },
+  "admin.invites.max_uses": {
+    "defaultMessage": "注册人数",
+    "description": "Label of the select of how many sign-ups an invite allows."
+  },
+  "admin.invites.max_uses.description": {
+    "defaultMessage": "可使用此邀请码注册的人数。",
+    "description": "Help of the number of sign-ups of an invite."
+  },
+  "admin.invites.mode_notice": {
+    "defaultMessage": "服务器目前不接受新账号，因此任何人都无法通过邀请注册。管理员可以在服务器设置的“注册”页面中更改谁可以注册。",
+    "description": "Notice on the invites screen when the registration mode is closed: invites work in the open, approval, and invite modes."
+  },
+  "admin.invites.never": {
+    "defaultMessage": "永不",
+    "description": "An invite that never expires: an option and a value."
+  },
+  "admin.invites.new.title": {
+    "defaultMessage": "创建邀请",
+    "description": "Button on the list of invites that opens the form of a new one, and the heading of that page."
+  },
+  "admin.invites.revoke": {
+    "defaultMessage": "撤销",
+    "description": "Button that revokes an invite."
+  },
+  "admin.invites.revoke_failed": {
+    "defaultMessage": "无法撤销邀请：{reason}",
+    "description": "Toast when revoking an invite failed. {reason} is why."
+  },
+  "admin.invites.revoke_invite": {
+    "defaultMessage": "撤销 {date} 创建的邀请 {code}",
+    "description": "Accessible name of the revoke button of an invite. {code} is its code; {date} when it was created, formatted."
+  },
+  "admin.invites.revoked": {
+    "defaultMessage": "已撤销邀请 {code}。此后任何人都无法再用它注册。",
+    "description": "Status after an invite was revoked. {code} is its code."
+  },
+  "admin.invites.state": {
+    "defaultMessage": "状态",
+    "description": "Term of an invite's state."
+  },
+  "admin.invites.state.exhausted": {
+    "defaultMessage": "已用完",
+    "description": "State of an invite used as many times as it allows."
+  },
+  "admin.invites.state.expired": {
+    "defaultMessage": "已过期",
+    "description": "State of an expired invite."
+  },
+  "admin.invites.state.revoked": {
+    "defaultMessage": "已撤销",
+    "description": "State of a revoked invite."
+  },
+  "admin.invites.state.usable": {
+    "defaultMessage": "可用",
+    "description": "State of an invite that people may sign up with."
+  },
+  "admin.invites.state.creator_ineligible": {
+    "defaultMessage": "邀请人已无法邀请",
+    "description": "State of an invite that a member created who may no longer create invites (their permission ended, or their account is restricted or deleted). It works again when they may."
+  },
+  "admin.invites.summary": {
+    "defaultMessage": "由审核员和成员创建、可用于注册的邀请码。",
+    "description": "Description of the invites screen in the moderation menu."
+  },
+  "admin.invites.title": {
+    "defaultMessage": "邀请",
+    "description": "Title of the invites screen, in the moderation menu and as its heading."
+  },
+  "admin.invites.unlimited": {
+    "defaultMessage": "不限",
+    "description": "Option of an invite that any number of people may use."
+  },
+  "admin.invites.used.limited": {
+    "defaultMessage": "已注册 {uses, number} 人，上限 {max, number} 人",
+    "description": "How many people signed up with an invite, and how many it allows, under the invite's state. {uses} is the number; {max} the limit."
+  },
+  "admin.invites.used.unlimited": {
+    "defaultMessage": "已注册 {uses, number} 人（不限）",
+    "description": "How many people signed up with an invite without a limit, under the invite's state. {uses} is the number."
+  },
+  "admin.invites.uses": {
+    "defaultMessage": "{count, plural, other {# 人}}",
+    "description": "An option of the number of sign-ups of an invite."
+  },
+  "admin.invites.column.invite": {
+    "defaultMessage": "邀请码",
+    "description": "Header of the column of the invites table that holds the invite's code."
+  },
+  "admin.invites.created_by.cli": {
+    "defaultMessage": "命令行",
+    "description": "Who created an invite: an administrator with the command line."
+  },
+  "admin.invites.created_by.deleted": {
+    "defaultMessage": "已删除的账号",
+    "description": "Who created an invite: a user whose account no longer exists."
+  },
+  "admin.invites.creator_kind.staff": {
+    "defaultMessage": "审核员邀请",
+    "description": "Kind of an invite created on the moderation screen or with the command line, which no limit applies to."
+  },
+  "admin.invites.creator_kind.member": {
+    "defaultMessage": "成员邀请",
+    "description": "Kind of an invite that a member created on their settings page, which works only while they may create invites."
+  },
+  "admin.invites.new.form": {
+    "defaultMessage": "邀请",
+    "description": "Heading of the form on the page of a new invite."
+  },
+  "admin.invites.back": {
+    "defaultMessage": "返回邀请",
+    "description": "Link under the heading of the page of a new invite to the list of invites."
+  }
+}

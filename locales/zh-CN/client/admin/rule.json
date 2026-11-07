@@ -1,0 +1,30 @@
+{
+  "admin.rule.title": {
+    "defaultMessage": "规则",
+    "description": "Title of the page of one rule."
+  },
+  "admin.rule.back": {
+    "defaultMessage": "所有规则",
+    "description": "Link from the page of a rule, or of a new one, back to the list of rules."
+  },
+  "admin.rule.facts": {
+    "defaultMessage": "关于此规则",
+    "description": "Heading of the region of a rule's page with its text, hint, state and dates."
+  },
+  "admin.rule.state": {
+    "defaultMessage": "状态",
+    "description": "Term of whether a rule is in effect or retired, on its page."
+  },
+  "admin.rule.created_at": {
+    "defaultMessage": "添加时间",
+    "description": "Term of when a rule was added, on its page."
+  },
+  "admin.rule.no_hint": {
+    "defaultMessage": "无提示",
+    "description": "Value of the hint of a rule that has none, on its page."
+  },
+  "admin.rule.retire.title": {
+    "defaultMessage": "停用此规则",
+    "description": "Heading of the region of a rule's page that retires it."
+  }
+}

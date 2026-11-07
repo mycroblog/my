@@ -1,0 +1,46 @@
+{
+  "welcome.title": {
+    "defaultMessage": "欢迎",
+    "description": "Title of the welcome page shown after sign-up, in the browser tab."
+  },
+  "welcome.heading": {
+    "defaultMessage": "欢迎来到 {server}",
+    "description": "Heading of the welcome page after sign-up. {server} is the name of the server."
+  },
+  "welcome.lead": {
+    "defaultMessage": "先设置个人资料的基本信息，然后选择要在主页上关注的人。",
+    "description": "The line under the welcome heading that says what comes next."
+  },
+  "welcome.basics": {
+    "defaultMessage": "个人资料基本信息",
+    "description": "Heading of the section with the avatar and the display name on the welcome page."
+  },
+  "welcome.basics.description": {
+    "defaultMessage": "你可以稍后在个人资料设置中更改这些信息并添加简介。",
+    "description": "Note under the heading of the profile basics on the welcome page."
+  },
+  "welcome.avatar.choose": {
+    "defaultMessage": "选择头像",
+    "description": "Button that opens the file picker for the avatar on the welcome page."
+  },
+  "welcome.avatar.remove": {
+    "defaultMessage": "移除头像",
+    "description": "Button that removes the chosen avatar on the welcome page."
+  },
+  "welcome.display_name": {
+    "defaultMessage": "昵称",
+    "description": "Label of the display name field on the welcome page."
+  },
+  "welcome.display_name.description": {
+    "defaultMessage": "其他人看到的名字。留空则显示你的用户名 {username}。",
+    "description": "Help text of the display name field on the welcome page. {username} is the user's username."
+  },
+  "welcome.continue": {
+    "defaultMessage": "继续",
+    "description": "Primary button of the welcome page: saves the profile basics and opens the home timeline."
+  },
+  "welcome.later": {
+    "defaultMessage": "稍后",
+    "description": "Link on the welcome page that opens the home timeline without saving."
+  }
+}

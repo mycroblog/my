@@ -41,19 +41,31 @@ export const supportedLocales: readonly string[] = [...catalogLoaders.keys()].to
 /** Pseudo-locales are formatted with the source locale's CLDR rules, as in tools/i18n and internal/i18n. */
 const pseudoLocales: ReadonlySet<string> = new Set(["en-XA", "ar-XB"]);
 
-/** Traditional Chinese never falls back to zh (parentLocales in internal/i18n). */
+/**
+ * Parents that override dropping the last subtag, so that each tag reaches the one catalog locale of its language and
+ * script (parentLocales in internal/i18n, ADR-0009 §2): zh, zh-SG, zh-Hans(-*) → zh-CN; zh-HK, zh-MO, zh-Hant(-*) →
+ * zh-TW; pt, pt-PT → pt-BR. A catalog locale with a region ends its chain before the source locale, so that a missing
+ * message falls back to en and never to another locale.
+ */
 const parentLocales: Readonly<Record<string, string>> = {
-  "zh-Hant": "",
-  "zh-HK": "zh-Hant",
-  "zh-MO": "zh-Hant",
-  "zh-TW": "zh-Hant",
+  zh: "zh-CN",
+  "zh-SG": "zh-CN",
+  "zh-Hans": "zh-CN",
+  "zh-CN": "",
+  "zh-Hant": "zh-TW",
+  "zh-HK": "zh-TW",
+  "zh-MO": "zh-TW",
+  "zh-TW": "",
+  pt: "pt-BR",
+  "pt-PT": "pt-BR",
+  "pt-BR": "",
 };
 
-/** The locales `locale` falls back through, ending with the source locale: ja-JP → ja → en (ADR-0009 §2). */
+/** The locales `locale` falls back through, ending with the source locale: ja-JP → ja → en, zh-Hans → zh-CN → en (ADR-0009 §2). */
 export function fallbackChain(locale: string): string[] {
   const chain: string[] = [];
   let current = canonicalize(locale);
-  while (current !== "") {
+  while (current !== "" && !chain.includes(current)) {
     chain.push(current);
     const parent = parentLocales[current];
     if (parent !== undefined) {
