@@ -174,8 +174,9 @@ When many changes land at once, running the web E2E on every pull request costs 
 result more accurate: the PRs keep changing the same areas, so a per-PR run checks a state that `main` never has, and
 a spec that passes alone can still break elsewhere. Waiting for the web E2E on `main` after each group of PRs stalls
 the agents for the same reason. Parallel work therefore runs as a rolling queue: each PR is checked by the `check`
-gate only, the web E2E runs nightly on `main` without holding up the queue, and its failures are fixed together
-once the milestone's implementation issues are done. Single-issue work keeps the per-PR web E2E of §5.
+gate only, and the web E2E runs nightly on `main` without holding up the queue. A nightly failure is fixed as soon as
+it appears, before the batch takes more issues ([Failures on main](#failures-on-main-orchestrator)). Single-issue work
+keeps the per-PR web E2E of §5.
 
 ### Planning (orchestrator)
 
@@ -237,11 +238,10 @@ once the milestone's implementation issues are done. Single-issue work keeps the
   `main` by design; when a build or a test on `main` still breaks, fix it before starting more issues.
 - The slow suite (the full web E2E, the real PostgreSQL and broker contracts, the live federation test, the images,
   and CodeQL) runs nightly on `main` ([ADR-0079](../adr/0079-ci-single-gate-merge-queue.md)) and does not pause the
-  queue. Collect its failures from the Nightly runs as they appear
-  (`gh run list -R mycroblog/my --workflow nightly.yml --status failure`); a night on which `main` did not move runs only the image scan.
-- Once the milestone's implementation issues are done, run the slow suite on `main`
-  (`gh workflow run slow-suite.yml -R mycroblog/my --ref main`), group the collected failures by cause, file one
-  issue per cause, and fix them together.
+  queue, but a red Nightly stops the line ([ADR-0079](../adr/0079-ci-single-gate-merge-queue.md) §8): check the Nightly
+  runs every morning (`gh run list -R mycroblog/my --workflow nightly.yml --status failure`; a night on which `main`
+  did not move runs only the image scan), file one issue per cause with the failing jobs and the commits since the last
+  green run, and fix it before starting more issues. Do not collect failures for the end of the milestone.
 - A release needs the slow suite green: `release.yml` tags nothing while any of it fails
   ([releasing.md](releasing.md)). Fix every failure before cutting a release.
 
