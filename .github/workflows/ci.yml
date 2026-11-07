@@ -452,8 +452,10 @@ jobs:
       shards: 3
 
   contracts:
-    # The container contracts of the adapters the group changes (scripts/changed-contracts.sh, ADR-0079 §5), in one job
-    # as parallel steps; the Nightly runs all of them. Each starts its containers on the runner's Docker.
+    # The container contracts of the adapters the group changes (scripts/changed-contracts.sh, ADR-0079 §5), in one job,
+    # one after another: a change to tasks/go.yml selects all six, and their containers started at once on one runner
+    # left Elasticsearch unable to start in time. The Nightly runs all of them. Each starts its containers on the
+    # runner's Docker.
     needs: changes
     if: needs.changes.outputs.full == 'true' && needs.changes.outputs.contracts != ''
     runs-on: ubuntu-latest
@@ -466,25 +468,24 @@ jobs:
         uses: ./.github/actions/setup-task
       - name: Set up Go
         uses: ./.github/actions/setup-go
-      - parallel:
-          - name: go:test-postgres
-            if: contains(env.CONTRACTS, ' postgres ')
-            run: scripts/task.sh go:test-postgres
-          - name: go:test-stream
-            if: contains(env.CONTRACTS, ' stream ')
-            run: scripts/task.sh go:test-stream
-          - name: go:test-mail
-            if: contains(env.CONTRACTS, ' mail ')
-            run: scripts/task.sh go:test-mail
-          - name: go:test-blob
-            if: contains(env.CONTRACTS, ' blob ')
-            run: scripts/task.sh go:test-blob
-          - name: go:test-voice
-            if: contains(env.CONTRACTS, ' voice ')
-            run: scripts/task.sh go:test-voice
-          - name: go:test-search
-            if: contains(env.CONTRACTS, ' search ')
-            run: scripts/task.sh go:test-search
+      - name: go:test-postgres
+        if: contains(env.CONTRACTS, ' postgres ')
+        run: scripts/task.sh go:test-postgres
+      - name: go:test-stream
+        if: contains(env.CONTRACTS, ' stream ')
+        run: scripts/task.sh go:test-stream
+      - name: go:test-mail
+        if: contains(env.CONTRACTS, ' mail ')
+        run: scripts/task.sh go:test-mail
+      - name: go:test-blob
+        if: contains(env.CONTRACTS, ' blob ')
+        run: scripts/task.sh go:test-blob
+      - name: go:test-voice
+        if: contains(env.CONTRACTS, ' voice ')
+        run: scripts/task.sh go:test-voice
+      - name: go:test-search
+        if: contains(env.CONTRACTS, ' search ')
+        run: scripts/task.sh go:test-search
 
   client-static:
     needs: changes
