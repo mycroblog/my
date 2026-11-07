@@ -156,7 +156,7 @@ variable "backends" {
 
   validation {
     condition     = alltrue([for b in var.backends : b.service_ingress == null || b.service_ingress == "load-balancer"])
-    error_message = "A task has no public host of its own, and its address changes with every task, so traffic reaches this service only through a load balancer it is attached to, such as ingress-aws-alb. An ingress that connects from the internet to a host (all) or one for Cloud Run does not work here. Read the README."
+    error_message = "A task has no public host of its own, and its address changes with every task, so traffic reaches this service only through a load balancer it is attached to, such as ingress-aws-alb, with ingress-aws-cloudfront in front of it if you want CloudFront. An ingress that connects from the internet to a host (all) or one for Cloud Run does not work here. Read the README."
   }
 
   validation {

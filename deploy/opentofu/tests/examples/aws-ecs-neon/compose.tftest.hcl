@@ -67,6 +67,23 @@ mock_provider "aws" {
       zone_id  = "Z14GRHDCWA56QT"
     }
   }
+  mock_resource "aws_lb_listener" {
+    defaults = {
+      arn = "arn:aws:elasticloadbalancing:ap-northeast-1:111122223333:listener/app/my/abc/def"
+    }
+  }
+  mock_data "aws_ec2_managed_prefix_list" {
+    defaults = {
+      id      = "pl-cloudfront"
+      entries = [{ cidr = "130.176.0.0/18", description = "" }]
+    }
+  }
+  mock_resource "aws_cloudfront_distribution" {
+    defaults = {
+      domain_name    = "d111111abcdef8.cloudfront.net"
+      hosted_zone_id = "Z2FDTNDAQYW2N"
+    }
+  }
   mock_resource "aws_lb_target_group" {
     defaults = {
       arn = "arn:aws:elasticloadbalancing:ap-northeast-1:111122223333:targetgroup/my/abc"
@@ -143,6 +160,39 @@ run "composes_every_setting" {
   assert {
     condition     = !module.network.nat && module.network.platform == "aws"
     error_message = "public addresses on the tasks leave no NAT gateway to pay for"
+  }
+}
+
+# app-aws-ecs, ingress-aws-alb, and ingress-aws-cloudfront together: the load balancer is CloudFront's origin and admits nothing else.
+run "cloudfront_in_front_of_the_load_balancer" {
+  command = plan
+
+  variables {
+    cloudfront                 = true
+    cloudfront_certificate_arn = "arn:aws:acm:us-east-1:111122223333:certificate/abc"
+    origin_secret              = "0123456789abcdef0123456789abcdef"
+    route53_zone_id            = "Z0123456789ABCDEFGHIJ"
+  }
+
+  assert {
+    condition     = module.app.env["MY_TRUSTED_PROXIES"] == "10.0.0.0/20, 10.0.16.0/20, 130.176.0.0/18" && module.app.env["MY_TRUSTED_PROXY_HEADER"] == "x-forwarded-for"
+    error_message = "the server must trust the load balancer and CloudFront, which each append to X-Forwarded-For"
+  }
+
+  assert {
+    condition     = !contains(keys(module.app.env), "MY_ORIGIN_SECRET_HEADER") && !contains(keys(module.app.secret_env), "MY_ORIGIN_SECRET")
+    error_message = "the load balancer checks the header, so the server checks none"
+  }
+
+  # What the load balancer admits is in the tests of ingress-aws-alb, which see its resources.
+  assert {
+    condition     = module.ingress.cloudfront_origin.domain_name == "my-123.ap-northeast-1.elb.amazonaws.com" && module.ingress.cloudfront_origin.origin_secret_header == "x-my-origin-secret"
+    error_message = "CloudFront's origin is the load balancer, with the header that it checks"
+  }
+
+  assert {
+    condition     = length(module.ingress.dns_records) == 0 && length(output.dns_records) == 0 && output.domain_name == "d111111abcdef8.cloudfront.net"
+    error_message = "host points at the distribution, whose records the zone gets, not at the load balancer"
   }
 }
 

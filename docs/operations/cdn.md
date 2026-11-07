@@ -83,6 +83,7 @@ The three settings below close this. The CDN adds a secret header to every reque
   another server. A refused request gets `403` with `Cache-Control: no-store` and adds to `my.http.origin_refused`.
 
 Use it when the server has a public address that the platform cannot close to everything but the CDN. You do not need it when a firewall or the platform already limits who can connect, for example a server that listens only on a private network behind your load balancer.
+Nor when that load balancer checks the CDN's header itself and admits only the CDN's addresses, as an AWS Application Load Balancer behind CloudFront can with a listener rule and the managed prefix list `com.amazonaws.global.cloudfront.origin-facing`. Then list both the load balancer's and the CDN's addresses in `trusted_proxies`, since each appends to `X-Forwarded-For`.
 
 It cannot help when the platform's own feature forwards the traffic and adds no header you control, such as a Cloud Run domain mapping. Only a CDN or load balancer that can add a request header does.
 

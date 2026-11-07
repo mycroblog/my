@@ -68,6 +68,25 @@ variable "host_is_apex" {
   default     = false
 }
 
+variable "cloudfront" {
+  description = "Puts CloudFront in front of the load balancer, which then admits CloudFront alone. It needs cloudfront_certificate_arn and origin_secret."
+  type        = bool
+  default     = false
+}
+
+variable "cloudfront_certificate_arn" {
+  description = "With cloudfront, ARN of a validated certificate for host in us-east-1, the only region CloudFront takes one from. In us-east-1 it may be certificate_arn."
+  type        = string
+  default     = null
+}
+
+variable "origin_secret" {
+  description = "With cloudfront, the value of the header that CloudFront sends and the load balancer checks: openssl rand -hex 32. It lands in the state. Pass it with TF_VAR_origin_secret."
+  type        = string
+  default     = null
+  sensitive   = true
+}
+
 variable "database_url_secret_name" {
   description = "Secret that holds Neon's direct connection URL."
   type        = string
