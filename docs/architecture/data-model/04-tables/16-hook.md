@@ -4,7 +4,7 @@
 
 | テーブル | 分類 | 主な属性 | 備考 |
 | --- | --- | --- | --- |
-| `hook_decisions` | イベント | `id`, `hook`（`enum(inbound.status, inbound.follow, signup.check, media.check, local.status)`）, `subject_key`, `account_id?`, `mode`（`enum(observe, enforce)`）, `outcome`（`enum(allow, drop, flag, mark_sensitive, require_approval, reject, timeout, error, invalid, breaker_open)`）, `reason_code`, `note`, `latency_ms`, `decided_at` | `(hook, subject_key)` で一意で、ジョブの再実行は行を読みプラグインを呼ばない。`subject_key` は `inbound.*` では受信したアクティビティの URI。`account_id` は対象のアカウントで、保全とアカウントの消去の基準になる（なければ NULL）。`note` はプラグインのメモ（平文 200 文字まで）。インデックス `(decided_at, id)`（保持期間）、`(account_id)`（消去）、`outcome <> 'allow'` の部分インデックス `(id)`（管理画面の一覧。既定で `allow` を除き、`allow` だけを求めたときは別のクエリ）。`signup.check` の `reject` は、`hook_signup_check_reject` がオフの間は何も拒まないので `mode = observe` で記録する |
+| `hook_decisions` | イベント | `id`, `hook`（`enum(inbound.status, inbound.follow, signup.check, media.check, local.status, inbound.actor)`）, `subject_key`, `account_id?`, `mode`（`enum(observe, enforce)`）, `outcome`（`enum(allow, drop, flag, mark_sensitive, require_approval, reject, timeout, error, invalid, breaker_open)`）, `reason_code`, `note`, `latency_ms`, `decided_at` | `(hook, subject_key)` で一意で、ジョブの再実行は行を読みプラグインを呼ばない。`subject_key` は `inbound.*` では受信したアクティビティの URI。`account_id` は対象のアカウントで、保全とアカウントの消去の基準になる（なければ NULL）。`note` はプラグインのメモ（平文 200 文字まで）。インデックス `(decided_at, id)`（保持期間）、`(account_id)`（消去）、`outcome <> 'allow'` の部分インデックス `(id)`（管理画面の一覧。既定で `allow` を除き、`allow` だけを求めたときは別のクエリ）。`signup.check` の `reject` は、`hook_signup_check_reject` がオフの間は何も拒まないので `mode = observe` で記録する |
 | `hook_decision_statuses` | イベント（子） | `decision_id`, `status_id` | 判定の効果が及んだ投稿。`status_sensitivity_overrides` の再構築の元になる（ADR-0147 §8）。投稿の ID が決まるトランザクションで書く |
 | `hook_decision_overrides` | イベント | `decision_id`, `overridden_by_user_id?`（NULL = CLI）, `overridden_at` | モデレーターの取り消し。判定につき 1 行（ADR-0147 §9）。監査ログの `hook_decision_overridden` に対応する |
 | `hook_decision_appeals` | リソース | `id`, `decision_id`, `account_id`（作者 = 判定のアカウント）, `status_text`（投稿しようとした本文。1〜100,000 文字。空白だけは不可）, `comment`（モデレーターへの説明。2,000 文字まで。なければ空）, `submitted_at` | 一意 `(decision_id)`。`enforce` の `local.status` の新しい投稿の `reject` で取り消しのないものだけに（編集の `reject` は申し立てられない）、判定の `decided_at` から `appeal_window_days` の間（期限ちょうどまで）申し立てられる（ADR-0147 §9）。インデックス `(account_id)`（消去） |
@@ -22,6 +22,8 @@
 アカウントの消去（`account.erase_deleted`）は、そのアカウントの判定・申し立て・`hook_account_exemptions` の行を消します。消去は保全中のアカウントを飛ばします。
 
 `local.status` の `subject_key` は、作成がトランザクションの前に生成する投稿の ID です。編集では `<投稿の ID>#<新しい版の ID>` で、編集ごとに別の判定になります（ADR-0147 §2）。編集の `reject` は版を保存せず、申し立てられません。`flag` はその投稿を `hook_decision_statuses` に結び、通報を起票します。`reject` では投稿の行ができず、作者は申し立てが覆った後に投稿し直します。
+
+`inbound.actor` の `subject_key` は `<Actor の URI>#<送るプロフィールの SHA-256 の 16 進>` で、プロフィールの中身ごとに 1 つの判定になります（ADR-0147 §6）。ダイジェストは `remote_profile_revisions.profile_digest` と同じもので、今の版と同じプロフィールの取り直しはフックを呼びません。`account_id` は既知の Actor ならそのアカウント、初めての取得なら取り込みの前に生成するアカウントの ID です。`drop` は既知の Actor のプロフィールの版を前のまま残し（スナップショット・鍵・ハンドルと、`locked`・`bot`・`discoverable`・`indexable` は保存する）、初めての取得では `flag` として扱います。`flag` の通報は Actor を保存するトランザクションで書きます。`drop` の取り消しは `federation.refresh_actor` を積み、取り直しは取り消しのある判定を `allow` と読みます。
 
 `signup.check` の `subject_key` と `account_id` は、登録がトランザクションの前に生成するアカウントの ID です。メールアドレスも IP アドレスも含みません。`reject` や、後の検証で失敗した登録ではアカウントの行ができないので、その判定は保持期間で消えます。
 
