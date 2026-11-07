@@ -7,11 +7,11 @@ import (
 
 	"github.com/mycroblog/my/internal/adapter/search/fake"
 	"github.com/mycroblog/my/internal/app/search"
-	"github.com/mycroblog/my/pkg/testkit"
+	"github.com/mycroblog/my/pkg/testkit/searchtest"
 )
 
 func TestContract(t *testing.T) {
-	testkit.SearchIndexContract(t, func(*testing.T) search.Index { return fake.New() })
+	searchtest.SearchIndexContract(t, func(*testing.T) search.Index { return fake.New() })
 }
 
 // TestReplaceRefusesAVisibilityNeverIndexed makes a test fail when its code sends a status that

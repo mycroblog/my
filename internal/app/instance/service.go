@@ -64,7 +64,7 @@ func (e *SingleUserAccountsError) Error() string {
 
 // DocumentRenderer renders the Markdown of a document text to an HTML fragment that is safe to
 // insert into a page as it is. The adapter lives in internal/adapter/markdown and passes
-// testkit.DocumentRendererContract.
+// instancetest.DocumentRendererContract.
 type DocumentRenderer interface {
 	// RenderDocument returns the HTML of the Markdown src, reduced to the document allowlist:
 	// raw HTML is dropped, links keep only http, https, and mailto URLs, and the headings start

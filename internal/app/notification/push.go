@@ -27,7 +27,7 @@ import (
 
 // PushRepository is the persistence of the Web Push subscriptions (push_subscriptions and
 // push_subscription_alerts, data-model §4.7). The database adapters' notification repositories
-// implement it and pass testkit.PushSubscriptionContract.
+// implement it and pass notificationtest.PushSubscriptionContract.
 type PushRepository interface {
 	// SavePushSubscription stores s with its alerts, replacing the subscription of the same
 	// token family and the one with the same endpoint, if any, with their alerts.
@@ -84,7 +84,7 @@ type PushResult struct {
 
 // PushSender encrypts and sends Web Push messages. The adapter (internal/adapter/webpush)
 // holds the server's VAPID key pair, sends through kernel.HTTPClient, and passes
-// testkit.PushSenderContract.
+// notificationtest.PushSenderContract.
 type PushSender interface {
 	// ServerKey returns the server's VAPID public key, an uncompressed P-256 point in unpadded
 	// base64url: the applicationServerKey that browsers subscribe with (RFC 8292 §3.2).

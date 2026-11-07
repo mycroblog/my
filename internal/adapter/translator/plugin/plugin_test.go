@@ -17,7 +17,7 @@ import (
 	"github.com/mycroblog/my/internal/adapter/translator/fake"
 	translatorplugin "github.com/mycroblog/my/internal/adapter/translator/plugin"
 	"github.com/mycroblog/my/internal/app/translation"
-	"github.com/mycroblog/my/pkg/testkit"
+	"github.com/mycroblog/my/pkg/testkit/translationtest"
 )
 
 const secret = "the words of a private post"
@@ -72,11 +72,11 @@ func TestContract(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			testkit.TranslatorContract(t, func(t *testing.T) testkit.TranslatorHarness {
+			translationtest.TranslatorContract(t, func(t *testing.T) translationtest.TranslatorHarness {
 				t.Helper()
 				service := fake.New(fake.Options{Detected: "en", Unsupported: []string{"qaa"}})
 				h, _ := tc.fake(fakeplugin.Options{Translator: service})
-				return testkit.TranslatorHarness{
+				return translationtest.TranslatorHarness{
 					Translator: newTranslator(t, kind.Destination{Address: fakeplugin.ServeUnix(t, h), Protocol: tc.protocol}),
 					Source:     "en", Target: "ja", UnsupportedLanguage: "qaa",
 					FailNext: service.FailNext,

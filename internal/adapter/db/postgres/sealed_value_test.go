@@ -6,8 +6,8 @@ import (
 	"testing"
 
 	"github.com/mycroblog/my/internal/app/uow"
-	"github.com/mycroblog/my/pkg/testkit"
 	"github.com/mycroblog/my/pkg/testkit/pgtest"
+	"github.com/mycroblog/my/pkg/testkit/rewraptest"
 	"github.com/mycroblog/my/schema"
 )
 
@@ -22,13 +22,13 @@ var sealedValueInserts = map[string]string{ //nolint:gosec // G101: SQL statemen
 }
 
 func TestSealedValueStoreContract(t *testing.T) {
-	testkit.SealedValueStoreContract(t, func(t *testing.T) testkit.SealedValueHarness {
+	rewraptest.SealedValueStoreContract(t, func(t *testing.T) rewraptest.SealedValueHarness {
 		db, err := Open(t.Context(), pgtest.NewDatabase(t), uow.Options{})
 		if err != nil {
 			t.Fatalf("Open: %v", err)
 		}
 		t.Cleanup(db.Close)
-		return testkit.SealedValueHarness{
+		return rewraptest.SealedValueHarness{
 			UnitOfWork: db, Store: db.SealedValueStore(), Schema: schema.Postgres,
 			Insert: func(t *testing.T, column, rowID string, sealed []byte) {
 				t.Helper()

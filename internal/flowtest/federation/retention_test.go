@@ -8,14 +8,15 @@ import (
 	"github.com/mycroblog/my/internal/adapter/db/sqlite"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/flowtest"
-	"github.com/mycroblog/my/pkg/testkit"
+	"github.com/mycroblog/my/pkg/testkit/federationtest"
+	"github.com/mycroblog/my/pkg/testkit/identitytest"
 )
 
 // retentionHarness is the harness of the retention flows on db.
-func retentionHarness(db *sqlite.DB) testkit.RetentionHarness {
-	return testkit.RetentionHarness{
-		RemoteStatusHarness: testkit.RemoteStatusHarness{
-			AccountHarness: testkit.AccountHarness{UnitOfWork: db, Identity: db.IdentityRepository(), Accounts: db.AccountRepository()},
+func retentionHarness(db *sqlite.DB) federationtest.RetentionHarness {
+	return federationtest.RetentionHarness{
+		RemoteStatusHarness: federationtest.RemoteStatusHarness{
+			AccountHarness: identitytest.AccountHarness{UnitOfWork: db, Identity: db.IdentityRepository(), Accounts: db.AccountRepository()},
 			Graph:          db.GraphRepository(),
 			Statuses:       db.StatusRepository(),
 			Media:          db.MediaRepository(),
@@ -35,7 +36,7 @@ func retentionHarness(db *sqlite.DB) testkit.RetentionHarness {
 
 func TestRetentionFlows(t *testing.T) {
 	t.Parallel()
-	testkit.RetentionFlows(t, func(t *testing.T, opts uow.Options) testkit.RetentionHarness {
+	federationtest.RetentionFlows(t, func(t *testing.T, opts uow.Options) federationtest.RetentionHarness {
 		return retentionHarness(flowtest.SQLite(t, opts))
 	})
 }

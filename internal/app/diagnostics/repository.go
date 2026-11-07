@@ -4,7 +4,7 @@
 // Recorder that the ErrorReporter hands every report to, which groups the reports by their
 // fingerprint in the database, the resolve, mute, and unmute of a group, the regression of a
 // resolved group, and the daily prune of the hourly counts. The adapters of Repository live in
-// internal/adapter/db/*; their contract test suite is testkit.DiagnosticsRepositoryContract.
+// internal/adapter/db/*; their contract test suite is diagnosticstest.DiagnosticsRepositoryContract.
 package diagnostics
 
 import (

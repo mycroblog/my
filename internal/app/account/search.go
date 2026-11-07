@@ -32,7 +32,7 @@ type SearchQuery struct {
 }
 
 // SearchRepository is the part of the account module's persistence that the account search
-// reads. The database adapters implement it and pass testkit.AdminAccountContract.
+// reads. The database adapters implement it and pass identitytest.AdminAccountContract.
 type SearchRepository interface {
 	// SearchAccountIDs returns up to limit accounts that q selects, newest first, by ID.
 	SearchAccountIDs(ctx context.Context, q SearchQuery, limit int) ([]string, error)

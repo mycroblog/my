@@ -3,7 +3,7 @@
 // Package media defines the MediaProcessor port (ADR-0005, ADR-0019 §8): format detection
 // from content, size and dimension limits, metadata removal by re-encoding, resizing,
 // thumbnails, and blurhash. The adapters live in internal/adapter/media/* and pass
-// testkit.MediaProcessorContract.
+// mediatest.MediaProcessorContract.
 //
 // The accepted formats are JPEG, PNG (an APNG is read as its default image), GIF, and WebP,
 // the last two animated or not. Every file gets small, medium, and large still variants within

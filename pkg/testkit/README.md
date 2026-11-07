@@ -3,6 +3,21 @@
 Port contract test suites, deterministic fakes (`Clock`, `IDGenerator`), and fixtures for adapter authors and for this
 repository's own tests ([ADR-0015](../../docs/adr/0015-testing-strategy.md)).
 
+## Layout
+
+The contracts are split by module ([ADR-0153](../../docs/adr/0153-test-boundaries.md) §3), so that a change to one
+module's contracts reruns only the tests that use them:
+
+- `pkg/testkit/<module>test` holds the port contracts of one module of `internal/app`, the module whose port the
+  contract checks (`webhooktest.WebhookRepositoryContract`, `blobtest.BlobStoreContract`), and the flows across
+  modules that `internal/flowtest/<module>` runs (`webhooktest.WebhookFlows`). A harness that the contracts of several
+  modules embed lives with the lowest of them: `identitytest.AccountHarness` and `identitytest.AccountEnv`, which
+  register users, are the base of most database contracts.
+- `pkg/testkit` keeps what every module shares: `Clock`, `IDGenerator`, `NewKeyManager`, the in-memory blob store, KV
+  store, mailer, meter, and tracer, the media and federation fixtures, and the recorders of `flow_helpers.go`
+  (`EventLog`, `RecordingOutbox`, `Rendezvous`). It imports no `<module>test` package (depguard).
+- The other subpackages start the test servers (`pgtest`, `sqlitetest`, `valkeytest`, and the rest below).
+
 ## PostgreSQL test databases
 
 `pgtest.NewDatabase(t)` (package `pkg/testkit/pgtest`) returns the URL of a new database with the product schema, copied

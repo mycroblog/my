@@ -59,7 +59,7 @@ type Run struct {
 }
 
 // Repository records the steps that completed. The database adapters implement it on the
-// table data_upgrade_runs and pass testkit.DataUpgradeRepositoryContract.
+// table data_upgrade_runs and pass dbupgradetest.DataUpgradeRepositoryContract.
 type Repository interface {
 	// Runs returns the recorded steps, ordered by key. It returns ErrNoRecord when the database
 	// lacks the table of the record, and ErrEmptyDatabase when it holds no table at all.

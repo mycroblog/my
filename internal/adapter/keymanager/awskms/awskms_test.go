@@ -15,7 +15,7 @@ import (
 	"github.com/mycroblog/my/internal/adapter/keymanager/awskms"
 	"github.com/mycroblog/my/internal/adapter/keymanager/awskms/awskmstest"
 	"github.com/mycroblog/my/internal/app/kernel"
-	"github.com/mycroblog/my/pkg/testkit"
+	"github.com/mycroblog/my/pkg/testkit/kerneltest"
 )
 
 const (
@@ -41,9 +41,9 @@ func newKeyManager(t *testing.T, key string, previous ...string) (*awskms.KeyMan
 func TestContract(t *testing.T) {
 	t.Parallel()
 	km, _ := newKeyManager(t, keyA)
-	testkit.KeyManagerContract(t, km)
+	kerneltest.KeyManagerContract(t, km)
 	km2, _ := newKeyManager(t, keyB, keyA)
-	testkit.KeyManagerContract(t, km2)
+	kerneltest.KeyManagerContract(t, km2)
 }
 
 func TestKeyID(t *testing.T) {

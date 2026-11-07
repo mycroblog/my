@@ -12,7 +12,7 @@ import (
 
 	"github.com/mycroblog/my/internal/adapter/mail/none"
 	"github.com/mycroblog/my/internal/app/kernel"
-	"github.com/mycroblog/my/pkg/testkit"
+	"github.com/mycroblog/my/pkg/testkit/kerneltest"
 )
 
 // logBuffer collects the logger's JSON lines.
@@ -50,10 +50,10 @@ func (b *logBuffer) messages(t *testing.T) []kernel.MailMessage {
 }
 
 func TestMailerContract(t *testing.T) {
-	testkit.MailerContract(t, func(t *testing.T) testkit.MailerHarness {
+	kerneltest.MailerContract(t, func(t *testing.T) kerneltest.MailerHarness {
 		var out logBuffer
 		m := none.New(slog.New(slog.NewJSONHandler(&out, nil)), none.Options{LogMessages: true})
-		return testkit.MailerHarness{Mailer: m, Delivered: func() []kernel.MailMessage { return out.messages(t) }}
+		return kerneltest.MailerHarness{Mailer: m, Delivered: func() []kernel.MailMessage { return out.messages(t) }}
 	})
 }
 

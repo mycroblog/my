@@ -7,8 +7,9 @@ import (
 
 	"github.com/mycroblog/my/internal/app/blob"
 	"github.com/mycroblog/my/pkg/testkit"
+	"github.com/mycroblog/my/pkg/testkit/blobtest"
 )
 
 func TestMemoryBlobStoreContract(t *testing.T) {
-	testkit.BlobStoreContract(t, func(*testing.T) blob.Store { return testkit.NewMemoryBlobStore(testkit.NewClock(start)) })
+	blobtest.BlobStoreContract(t, func(*testing.T) blob.Store { return testkit.NewMemoryBlobStore(testkit.NewClock(start)) })
 }

@@ -12,8 +12,8 @@ import (
 
 	"github.com/mycroblog/my/internal/adapter/search/meilisearch"
 	"github.com/mycroblog/my/internal/app/search"
-	"github.com/mycroblog/my/pkg/testkit"
 	"github.com/mycroblog/my/pkg/testkit/meilisearchtest"
+	"github.com/mycroblog/my/pkg/testkit/searchtest"
 )
 
 func TestMain(m *testing.M) { os.Exit(meilisearchtest.Main(m)) }
@@ -46,7 +46,7 @@ const tunedSettings = `{
 
 // TestSearchServerContractWithSettingsFile runs the contract on an index tuned by a settings file.
 func TestSearchServerContractWithSettingsFile(t *testing.T) {
-	testkit.SearchIndexContract(t, func(t *testing.T) search.Index {
+	searchtest.SearchIndexContract(t, func(t *testing.T) search.Index {
 		return newServerIndexWith(t, meilisearchtest.New(t), []byte(tunedSettings))
 	})
 }
@@ -85,7 +85,7 @@ func TestSearchServerSettingsAreSentOnce(t *testing.T) {
 // TestSearchServerContract runs the contract on a real Meilisearch (scripts/task.sh go:test-search).
 // Every write waits for its task, so it shows in the next search without a wrapper.
 func TestSearchServerContract(t *testing.T) {
-	testkit.SearchIndexContract(t, func(t *testing.T) search.Index { return newServerIndex(t) })
+	searchtest.SearchIndexContract(t, func(t *testing.T) search.Index { return newServerIndex(t) })
 }
 
 // TestSearchServerJapanese checks what the operator documentation says of Japanese: the text of

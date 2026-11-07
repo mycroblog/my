@@ -70,7 +70,7 @@ type Page struct {
 }
 
 // Index is the port SearchIndex of a search engine (ADR-0149 §4). Calls run outside transactions
-// (ADR-0003). testkit.SearchIndexContract is its contract.
+// (ADR-0003). searchtest.SearchIndexContract is its contract.
 //
 // Every write can be repeated with the same result, since the jobs behind them are delivered at
 // least once: removing what is not there is not an error.

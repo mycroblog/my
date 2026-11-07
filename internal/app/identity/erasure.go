@@ -14,7 +14,7 @@ import (
 
 // ErasureRepository is the part of the identity module's persistence that the erasure of
 // deleted accounts uses (data-model §8). The database adapters' identity repositories implement
-// it and pass testkit.AccountErasureContract.
+// it and pass federationtest.AccountErasureContract.
 type ErasureRepository interface {
 	// EraseUserData deletes the user's email addresses with their verifications and the primary
 	// address, password credentials, one-time tokens with their redemptions, sessions with their

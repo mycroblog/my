@@ -13,11 +13,12 @@ import (
 	"github.com/mycroblog/my/internal/app/kernel"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/pkg/testkit"
+	"github.com/mycroblog/my/pkg/testkit/kerneltest"
 	"github.com/mycroblog/my/schema"
 )
 
 func TestSQLiteKeyValueStoreContract(t *testing.T) {
-	testkit.KeyValueStoreContract(t, func(t *testing.T, clock *testkit.Clock) kernel.KeyValueStore {
+	kerneltest.KeyValueStoreContract(t, func(t *testing.T, clock *testkit.Clock) kernel.KeyValueStore {
 		d, err := sqlite.Open(t.Context(), filepath.Join(t.TempDir(), "kv.db"), uow.Options{})
 		if err != nil {
 			t.Fatalf("Open: %v", err)

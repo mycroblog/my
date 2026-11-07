@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-// Package moderation_test runs the moderation flows (testkit.ModerationFlows, AuditLogFlows,
+// Package moderation_test runs the moderation flows (moderationtest.ModerationFlows, AuditLogFlows,
 // AppealFlows, ModerationRetentionFlows, and SignupBlockFlows) once, on SQLite (ADR-0153 §1).
 package moderation_test
 
@@ -9,35 +9,35 @@ import (
 
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/flowtest"
-	"github.com/mycroblog/my/pkg/testkit"
+	"github.com/mycroblog/my/pkg/testkit/moderationtest"
 )
 
-func harness(t *testing.T, opts uow.Options) testkit.ModerationHarness {
+func harness(t *testing.T, opts uow.Options) moderationtest.ModerationHarness {
 	db := flowtest.SQLite(t, opts)
-	return testkit.ModerationHarness{UnitOfWork: db, Moderation: db.ModerationRepository()}
+	return moderationtest.ModerationHarness{UnitOfWork: db, Moderation: db.ModerationRepository()}
 }
 
 func TestModerationFlows(t *testing.T) {
 	t.Parallel()
-	testkit.ModerationFlows(t, harness)
+	moderationtest.ModerationFlows(t, harness)
 }
 
 func TestAuditLogFlows(t *testing.T) {
 	t.Parallel()
-	testkit.AuditLogFlows(t, harness)
+	moderationtest.AuditLogFlows(t, harness)
 }
 
 func TestAppealFlows(t *testing.T) {
 	t.Parallel()
-	testkit.AppealFlows(t, harness)
+	moderationtest.AppealFlows(t, harness)
 }
 
 func TestModerationRetentionFlows(t *testing.T) {
 	t.Parallel()
-	testkit.ModerationRetentionFlows(t, harness)
+	moderationtest.ModerationRetentionFlows(t, harness)
 }
 
 func TestSignupBlockFlows(t *testing.T) {
 	t.Parallel()
-	testkit.SignupBlockFlows(t, harness)
+	moderationtest.SignupBlockFlows(t, harness)
 }

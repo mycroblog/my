@@ -30,23 +30,23 @@ while IFS= read -r path; do
       .github/workflows/postgres-contract.yml)
       selected[postgres]=1
       ;;&
-    internal/adapter/stream/* | pkg/testkit/stream_contract.go | pkg/testkit/stream_sweeper_contract.go | \
+    internal/adapter/stream/* | pkg/testkit/streamtest/* | \
       pkg/testkit/awstest/* | pkg/testkit/valkeytest/* | .github/workflows/stream-contract.yml)
       selected[stream]=1
       ;;&
-    internal/adapter/mail/smtp/* | pkg/testkit/mailer_contract.go | pkg/testkit/mailpittest/* | \
+    internal/adapter/mail/smtp/* | pkg/testkit/kerneltest/mailer_contract.go | pkg/testkit/mailpittest/* | \
       .github/workflows/mail-integration.yml)
       selected[mail]=1
       ;;&
-    internal/adapter/blob/s3/* | pkg/testkit/blob.go | pkg/testkit/blob_contract.go | pkg/testkit/s3test/* | \
+    internal/adapter/blob/s3/* | pkg/testkit/blob.go | pkg/testkit/blobtest/* | pkg/testkit/s3test/* | \
       .github/workflows/blob-contract.yml)
       selected[blob]=1
       ;;&
-    internal/adapter/voice/livekit/* | pkg/testkit/voice_transport_contract.go | pkg/testkit/livekittest/* | \
+    internal/adapter/voice/livekit/* | pkg/testkit/voicetest/voice_transport_contract.go | pkg/testkit/livekittest/* | \
       .github/workflows/voice-contract.yml)
       selected[voice]=1
       ;;&
-    internal/adapter/search/* | pkg/testkit/search_index_contract.go | pkg/testkit/elasticsearchtest/* | \
+    internal/adapter/search/* | pkg/testkit/searchtest/search_index_contract.go | pkg/testkit/elasticsearchtest/* | \
       pkg/testkit/meilisearchtest/* | .github/workflows/search-contract.yml)
       selected[search]=1
       ;;

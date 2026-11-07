@@ -8,11 +8,11 @@ import (
 
 	"github.com/mycroblog/my/internal/adapter/webauthn"
 	appidentity "github.com/mycroblog/my/internal/app/identity"
-	"github.com/mycroblog/my/pkg/testkit"
+	"github.com/mycroblog/my/pkg/testkit/identitytest"
 )
 
 func TestPasskeyCeremoniesContract(t *testing.T) {
-	testkit.PasskeyCeremoniesContract(t, func(t *testing.T, rp testkit.PasskeyRelyingParty) appidentity.PasskeyCeremonies {
+	identitytest.PasskeyCeremoniesContract(t, func(t *testing.T, rp identitytest.PasskeyRelyingParty) appidentity.PasskeyCeremonies {
 		c, err := webauthn.New(webauthn.Options{RPID: rp.ID, DisplayName: rp.Name, Origins: rp.Origins})
 		if err != nil {
 			t.Fatal(err)

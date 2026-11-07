@@ -60,7 +60,7 @@ const (
 
 // LinkCardRepository is the persistence port of the link cards (link_cards, link_card_media,
 // status_link_cards; data-model §4.4). The database adapters implement it and pass
-// testkit.LinkCardRepositoryContract. Methods that take a uow.Tx run inside that transaction;
+// contenttest.LinkCardRepositoryContract. Methods that take a uow.Tx run inside that transaction;
 // lookups that find nothing return an error wrapping ErrNotFound.
 type LinkCardRepository interface {
 	// UpsertStatusLinkCard sets the URL whose card a status shows.

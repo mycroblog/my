@@ -8,10 +8,11 @@ import (
 	"testing"
 
 	"github.com/mycroblog/my/pkg/testkit"
+	"github.com/mycroblog/my/pkg/testkit/mediatest"
 )
 
 func TestMediaProcessorContract(t *testing.T) {
-	testkit.MediaProcessorContract(t, New(Options{Concurrency: 2}))
+	mediatest.MediaProcessorContract(t, New(Options{Concurrency: 2}))
 }
 
 func TestBlurhashOfASolidColor(t *testing.T) {

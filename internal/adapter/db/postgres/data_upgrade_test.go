@@ -7,12 +7,12 @@ import (
 	"testing"
 
 	"github.com/mycroblog/my/internal/app/uow"
-	"github.com/mycroblog/my/pkg/testkit"
+	"github.com/mycroblog/my/pkg/testkit/dbupgradetest"
 	"github.com/mycroblog/my/pkg/testkit/pgtest"
 )
 
 func TestDataUpgradeRepositoryContract(t *testing.T) {
-	testkit.DataUpgradeRepositoryContract(t, func(t *testing.T) testkit.DataUpgradeHarness {
+	dbupgradetest.DataUpgradeRepositoryContract(t, func(t *testing.T) dbupgradetest.DataUpgradeHarness {
 		dbURL := pgtest.NewDatabase(t)
 		db, err := Open(t.Context(), dbURL, uow.Options{})
 		if err != nil {
@@ -35,7 +35,7 @@ func TestDataUpgradeRepositoryContract(t *testing.T) {
 			t.Fatalf("Open: %v", err)
 		}
 		t.Cleanup(empty.Close)
-		return testkit.DataUpgradeHarness{
+		return dbupgradetest.DataUpgradeHarness{
 			UnitOfWork: db, Repository: db.DataUpgradeRepository(), Empty: empty.DataUpgradeRepository(),
 			DropRecord: func(t *testing.T) {
 				if _, err := db.pool.Exec(t.Context(), "DROP TABLE data_upgrade_runs"); err != nil {

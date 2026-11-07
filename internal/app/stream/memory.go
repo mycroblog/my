@@ -17,7 +17,7 @@ const memoryListenerBuffer = 1024
 
 // MemoryBroker is an in-process broker for Buses, for tests: each Bus it returns stands for one
 // process, and a payload sent on any of them reaches the listeners of all. It passes
-// testkit.StreamBusContract, and tests can make it unreachable and break its listeners. It is
+// streamtest.StreamBusContract, and tests can make it unreachable and break its listeners. It is
 // safe for concurrent use.
 type MemoryBroker struct {
 	mu          sync.Mutex

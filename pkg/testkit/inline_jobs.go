@@ -57,9 +57,9 @@ func (q *InlineJobs) Results() []InlineResult {
 	return append([]InlineResult(nil), q.results...)
 }
 
-// inlineOutbox returns an Outbox on projectors that runs the jobs of a committed transaction at
+// InlineOutbox returns an Outbox on projectors that runs the jobs of a committed transaction at
 // once through a new registry, which it returns for the handlers.
-func inlineOutbox(projectors *uow.Projectors) (queue.Outbox, *InlineJobs) {
+func InlineOutbox(projectors *uow.Projectors) (queue.Outbox, *InlineJobs) {
 	jobs := &InlineJobs{Registry: &queue.JobHandlerRegistry{}}
 	return queue.AfterCommit(projectors, jobs, nil), jobs
 }

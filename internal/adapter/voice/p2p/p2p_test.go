@@ -14,6 +14,7 @@ import (
 	"github.com/mycroblog/my/internal/adapter/voice/p2p"
 	appvoice "github.com/mycroblog/my/internal/app/voice"
 	"github.com/mycroblog/my/pkg/testkit"
+	"github.com/mycroblog/my/pkg/testkit/voicetest"
 )
 
 // heartbeats is the live sessions of the rooms, as their heartbeats tell them.
@@ -29,11 +30,11 @@ func (h *heartbeats) LiveSessions(_ context.Context, roomID string) ([]appvoice.
 }
 
 func TestVoiceTransportContract(t *testing.T) {
-	testkit.VoiceTransportContract(t, func(*testing.T) testkit.VoiceTransportHarness {
-		clock := testkit.VoiceTransportClock()
+	voicetest.VoiceTransportContract(t, func(*testing.T) voicetest.VoiceTransportHarness {
+		clock := voicetest.VoiceTransportClock()
 		hb := &heartbeats{live: map[string][]appvoice.SessionRef{}}
 		tr := p2p.New(p2p.Options{STUNURLs: []string{"stun:stun.example.org:3478"}, Sessions: hb, Clock: clock})
-		return testkit.VoiceTransportHarness{
+		return voicetest.VoiceTransportHarness{
 			Transport: tr, Clock: clock,
 			Connect: func(_ *testing.T, room appvoice.RoomRef, s appvoice.Session) {
 				hb.mu.Lock()
@@ -46,7 +47,7 @@ func TestVoiceTransportContract(t *testing.T) {
 
 func TestGrant(t *testing.T) {
 	t.Parallel()
-	clock := testkit.VoiceTransportClock()
+	clock := voicetest.VoiceTransportClock()
 	tr := p2p.New(p2p.Options{STUNURLs: []string{"stun:a.example.org", "stuns:b.example.org"}, RelayOnly: true, Clock: clock})
 	g, err := tr.Grant(t.Context(), appvoice.RoomRef{ID: "r"}, appvoice.Session{ID: "s"}, true)
 	if err != nil {
@@ -122,7 +123,7 @@ func (s *turnSource) Revoke(_ context.Context, session appvoice.Session) error {
 func TestGrantWithTURN(t *testing.T) {
 	t.Parallel()
 	ctx := t.Context()
-	clock := testkit.VoiceTransportClock()
+	clock := voicetest.VoiceTransportClock()
 	meter := testkit.NewMeter()
 	src := &turnSource{expires: clock.Now().Add(90 * time.Minute)}
 	tr := p2p.New(p2p.Options{STUNURLs: []string{"stun:a.example.org"}, TURN: src, TTL: 2 * time.Hour, RelayOnly: true, Clock: clock, Meter: meter})
@@ -161,15 +162,15 @@ func TestGrantWithTURN(t *testing.T) {
 }
 
 func TestVoiceTransportContractWithCoturn(t *testing.T) {
-	testkit.VoiceTransportContract(t, func(*testing.T) testkit.VoiceTransportHarness {
-		clock := testkit.VoiceTransportClock()
+	voicetest.VoiceTransportContract(t, func(*testing.T) voicetest.VoiceTransportHarness {
+		clock := voicetest.VoiceTransportClock()
 		hb := &heartbeats{live: map[string][]appvoice.SessionRef{}}
 		turn, err := p2p.NewCoturn([]string{"turn:turn.example.org"}, "secret", clock)
 		if err != nil {
 			t.Fatal(err)
 		}
 		tr := p2p.New(p2p.Options{TURN: turn, Sessions: hb, Clock: clock, Meter: testkit.NewMeter()})
-		return testkit.VoiceTransportHarness{
+		return voicetest.VoiceTransportHarness{
 			Transport: tr, Clock: clock,
 			Connect: func(_ *testing.T, room appvoice.RoomRef, s appvoice.Session) {
 				hb.mu.Lock()

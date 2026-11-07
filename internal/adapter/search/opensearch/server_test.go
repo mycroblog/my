@@ -22,7 +22,7 @@ import (
 	"github.com/testcontainers/testcontainers-go/wait"
 
 	"github.com/mycroblog/my/internal/app/search"
-	"github.com/mycroblog/my/pkg/testkit"
+	"github.com/mycroblog/my/pkg/testkit/searchtest"
 )
 
 // The environment of the tests on a real engine: they run with TEST_SEARCH=container
@@ -164,7 +164,7 @@ func TestSearchServerContract(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			testkit.SearchIndexContract(t, func(t *testing.T) search.Index {
+			searchtest.SearchIndexContract(t, func(t *testing.T) search.Index {
 				x := newServerIndexWith(t, base, fmt.Sprintf("my-contract-%d", indexSeq.Add(1)), tc.settings)
 				if err := x.Ensure(t.Context()); err != nil {
 					t.Fatalf("Ensure: %v", err)

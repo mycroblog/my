@@ -14,7 +14,7 @@ import (
 
 	"github.com/mycroblog/my/internal/adapter/keymanager/local"
 	"github.com/mycroblog/my/internal/app/kernel"
-	"github.com/mycroblog/my/pkg/testkit"
+	"github.com/mycroblog/my/pkg/testkit/kerneltest"
 )
 
 // kek returns a fixed, distinct test KEK for each b.
@@ -32,8 +32,8 @@ func mustNew(t *testing.T, current []byte, previous ...[]byte) *local.KeyManager
 }
 
 func TestContract(t *testing.T) {
-	testkit.KeyManagerContract(t, mustNew(t, kek(1)))
-	testkit.KeyManagerContract(t, mustNew(t, kek(2), kek(1)))
+	kerneltest.KeyManagerContract(t, mustNew(t, kek(1)))
+	kerneltest.KeyManagerContract(t, mustNew(t, kek(2), kek(1)))
 }
 
 func TestKeyID(t *testing.T) {

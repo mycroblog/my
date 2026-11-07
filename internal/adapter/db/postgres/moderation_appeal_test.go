@@ -6,12 +6,12 @@ import (
 	"testing"
 
 	"github.com/mycroblog/my/internal/app/uow"
-	"github.com/mycroblog/my/pkg/testkit"
+	"github.com/mycroblog/my/pkg/testkit/moderationtest"
 )
 
 func TestAppealContract(t *testing.T) {
-	testkit.AppealContract(t, func(t *testing.T, opts uow.Options) testkit.ModerationHarness {
+	moderationtest.AppealContract(t, func(t *testing.T, opts uow.Options) moderationtest.ModerationHarness {
 		db := newTestDB(t, opts)
-		return testkit.ModerationHarness{UnitOfWork: db, Moderation: db.ModerationRepository()}
+		return moderationtest.ModerationHarness{UnitOfWork: db, Moderation: db.ModerationRepository()}
 	})
 }

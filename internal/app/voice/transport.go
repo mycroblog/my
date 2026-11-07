@@ -14,7 +14,7 @@ import (
 // The calls can be external I/O, so they never run inside a transaction: JobApply calls Open,
 // SetSpeaking, Mute, Remove, and Close after the change of the room committed, and the
 // requests call Grant and Unmute outside their transactions. The adapters live in
-// internal/adapter/voice/<name> and pass testkit.VoiceTransportContract.
+// internal/adapter/voice/<name> and pass voicetest.VoiceTransportContract.
 type Transport interface {
 	Capabilities() Capabilities
 	// Open prepares the media path of a room. Idempotent.

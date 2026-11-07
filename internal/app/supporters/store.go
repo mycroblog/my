@@ -179,8 +179,8 @@ type SubscriptionUser struct {
 // Repository is the persistence port of the supporter program, the plans, and the
 // subscriptions (ADR-0072 §15). Methods that take a uow.Tx run inside it; a nil tx, where a
 // method allows it, reads outside any transaction. Lookups that find nothing return an error
-// wrapping ErrNotFound. The database adapters pass testkit.SupporterRepositoryContract, and the
-// flows of the use cases on them are testkit.SupporterFlows (internal/flowtest/supporters).
+// wrapping ErrNotFound. The database adapters pass supporterstest.SupporterRepositoryContract, and the
+// flows of the use cases on them are supporterstest.SupporterFlows (internal/flowtest/supporters).
 type Repository interface {
 	// InsertProgramChange records the program enabled or disabled.
 	InsertProgramChange(ctx context.Context, tx uow.Tx, c ProgramChange) error

@@ -22,7 +22,7 @@ import (
 
 // SearchTermRepository is the part of the account module's persistence that keeps and reads the
 // account_search_terms projection. The database adapters implement it and pass
-// testkit.AccountSearchContract.
+// identitytest.AccountSearchContract.
 type SearchTermRepository interface {
 	// ReplaceSearchTerms replaces the search terms of an account with terms (none deletes them).
 	ReplaceSearchTerms(ctx context.Context, tx uow.Tx, accountID string, terms []account.SearchTerm) error

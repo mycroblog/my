@@ -31,6 +31,7 @@ import (
 	"github.com/mycroblog/my/internal/adapter/plugin/kind"
 	"github.com/mycroblog/my/internal/app/kernel"
 	"github.com/mycroblog/my/pkg/testkit"
+	"github.com/mycroblog/my/pkg/testkit/kerneltest"
 )
 
 const (
@@ -97,7 +98,7 @@ func TestContract(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			testkit.KeyManagerContract(t, m)
+			kerneltest.KeyManagerContract(t, m)
 		})
 	}
 }
@@ -417,7 +418,7 @@ func TestTLSWithAToken(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	testkit.KeyManagerContract(t, m)
+	kerneltest.KeyManagerContract(t, m)
 }
 
 func TestKeyIDs(t *testing.T) {

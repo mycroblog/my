@@ -2,7 +2,7 @@
 
 // Package blob defines the BlobStore port (ADR-0005): the storage of media and other files
 // that do not belong in the database. Every module that keeps files uses it; the adapters live
-// in internal/adapter/blob/* and pass testkit.BlobStoreContract.
+// in internal/adapter/blob/* and pass blobtest.BlobStoreContract.
 //
 // Keys are chosen by the server, never by users (ADR-0019 §8). ValidateKey states the key
 // syntax that every adapter accepts, so that a key never names a path outside the store.

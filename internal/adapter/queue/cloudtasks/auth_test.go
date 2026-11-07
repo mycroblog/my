@@ -12,26 +12,27 @@ import (
 	"github.com/mycroblog/my/internal/adapter/queue/cloudtasks"
 	"github.com/mycroblog/my/internal/app/queue"
 	"github.com/mycroblog/my/pkg/testkit"
+	"github.com/mycroblog/my/pkg/testkit/identitytest"
 )
 
 func TestAuthenticator(t *testing.T) {
 	t.Parallel()
-	provider := testkit.NewFakeOIDCProvider(t)
-	key := testkit.NewFakeOIDCSigner(t, "RS256")
+	provider := identitytest.NewFakeOIDCProvider(t)
+	key := identitytest.NewFakeOIDCSigner(t, "RS256")
 	provider.AddKey("tasks", "RS256", key)
-	ecKey := testkit.NewFakeOIDCSigner(t, "ES256")
+	ecKey := identitytest.NewFakeOIDCSigner(t, "ES256")
 	provider.AddKey("tasks-ec", "ES256", ecKey)
-	other := testkit.NewFakeOIDCSigner(t, "RS256")
+	other := identitytest.NewFakeOIDCSigner(t, "RS256")
 	clock := testkit.NewClock(now)
 	client := oidc.New(oidc.Options{HTTP: provider, Clock: clock})
 	newAuth := func(audience string) *cloudtasks.Authenticator {
 		return cloudtasks.NewAuthenticator(cloudtasks.AuthOptions{
 			OIDC: client, ServiceAccount: serviceAccount, Audience: audience,
-			JWKSURI: testkit.FakeOIDCIssuer + "/jwks", Issuers: []string{testkit.FakeOIDCIssuer},
+			JWKSURI: identitytest.FakeOIDCIssuer + "/jwks", Issuers: []string{identitytest.FakeOIDCIssuer},
 		})
 	}
 	valid := map[string]any{
-		"iss": testkit.FakeOIDCIssuer, "aud": jobsURL, "sub": "1234567890",
+		"iss": identitytest.FakeOIDCIssuer, "aud": jobsURL, "sub": "1234567890",
 		"email": serviceAccount, "email_verified": true,
 		"iat": now.Add(-time.Minute).Unix(), "exp": now.Add(time.Hour).Unix(),
 	}
@@ -44,7 +45,7 @@ func TestAuthenticator(t *testing.T) {
 		}
 		return c
 	}
-	sign := func(c map[string]any) string { return testkit.SignFakeIDToken(t, "RS256", "tasks", key, c) }
+	sign := func(c map[string]any) string { return identitytest.SignFakeIDToken(t, "RS256", "tasks", key, c) }
 
 	if err := newAuth("").Authenticate(t.Context(), sign(valid), jobsURL); err != nil {
 		t.Errorf("Authenticate(valid token, default audience) = %v, want nil", err)
@@ -57,9 +58,9 @@ func TestAuthenticator(t *testing.T) {
 	}
 
 	for name, token := range map[string]string{
-		"signature":           testkit.SignFakeIDToken(t, "RS256", "tasks", other, valid),
-		"alg ES256":           testkit.SignFakeIDToken(t, "ES256", "tasks-ec", ecKey, valid),
-		"alg none":            testkit.SignFakeIDToken(t, "none", "", nil, valid),
+		"signature":           identitytest.SignFakeIDToken(t, "RS256", "tasks", other, valid),
+		"alg ES256":           identitytest.SignFakeIDToken(t, "ES256", "tasks-ec", ecKey, valid),
+		"alg none":            identitytest.SignFakeIDToken(t, "none", "", nil, valid),
 		"iss":                 sign(with("iss", "https://accounts.example")),
 		"aud":                 sign(with("aud", "https://my.example/_internal/tick")),
 		"email":               sign(with("email", "someone@my-project.iam.gserviceaccount.com")),
@@ -83,7 +84,7 @@ func TestAuthenticator(t *testing.T) {
 	provider.Refuse()
 	unreachable := cloudtasks.NewAuthenticator(cloudtasks.AuthOptions{
 		OIDC: oidc.New(oidc.Options{HTTP: provider, Clock: clock}), ServiceAccount: serviceAccount,
-		JWKSURI: testkit.FakeOIDCIssuer + "/jwks", Issuers: []string{testkit.FakeOIDCIssuer},
+		JWKSURI: identitytest.FakeOIDCIssuer + "/jwks", Issuers: []string{identitytest.FakeOIDCIssuer},
 	})
 	err := unreachable.Authenticate(t.Context(), sign(valid), jobsURL)
 	if err == nil || errors.Is(err, queue.ErrPushUnauthenticated) {

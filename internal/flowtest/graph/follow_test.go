@@ -7,15 +7,16 @@ import (
 
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/flowtest"
-	"github.com/mycroblog/my/pkg/testkit"
+	"github.com/mycroblog/my/pkg/testkit/graphtest"
+	"github.com/mycroblog/my/pkg/testkit/identitytest"
 )
 
 func TestFollowFlows(t *testing.T) {
 	t.Parallel()
-	testkit.FollowFlows(t, func(t *testing.T, opts uow.Options) testkit.FollowHarness {
+	graphtest.FollowFlows(t, func(t *testing.T, opts uow.Options) graphtest.FollowHarness {
 		db := flowtest.SQLite(t, opts)
-		return testkit.FollowHarness{
-			AccountHarness: testkit.AccountHarness{UnitOfWork: db, Identity: db.IdentityRepository(), Accounts: db.AccountRepository()},
+		return graphtest.FollowHarness{
+			AccountHarness: identitytest.AccountHarness{UnitOfWork: db, Identity: db.IdentityRepository(), Accounts: db.AccountRepository()},
 			Graph:          db.GraphRepository(),
 		}
 	})

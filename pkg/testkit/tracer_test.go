@@ -7,10 +7,11 @@ import (
 
 	"github.com/mycroblog/my/internal/app/kernel"
 	"github.com/mycroblog/my/pkg/testkit"
+	"github.com/mycroblog/my/pkg/testkit/kerneltest"
 )
 
 func TestTracerContract(t *testing.T) {
-	testkit.TracerContract(t, func(*testing.T) kernel.Tracer { return testkit.NewTracer() })
+	kerneltest.TracerContract(t, func(*testing.T) kernel.Tracer { return testkit.NewTracer() })
 }
 
 func TestTracerReportsUndeclaredAttributes(t *testing.T) {
@@ -27,7 +28,7 @@ func TestTracerReportsUndeclaredAttributes(t *testing.T) {
 func TestTracerLinksAndParents(t *testing.T) {
 	tr := testkit.NewTracer()
 	spec := kernel.SpanSpec{Name: "my.test"}
-	ctx := tr.Continue(t.Context(), testkit.ContractTraceParent)
+	ctx := tr.Continue(t.Context(), kerneltest.ContractTraceParent)
 	ctx, req := tr.Start(ctx, spec.Named("POST /api/v1/statuses"), kernel.Attrs{})
 	tp := tr.Inject(ctx)
 	req.End("")

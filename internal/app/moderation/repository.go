@@ -20,8 +20,8 @@ var (
 
 // Repository is the persistence port of the moderation module: the actions on accounts and
 // domains, their lifts, the restrictions they impose, and reports (data-model §4.3). The
-// database adapters implement it and pass testkit.ModerationContract, and the flows of the use
-// cases on them are testkit.ModerationFlows (internal/flowtest/moderation).
+// database adapters implement it and pass moderationtest.ModerationContract, and the flows of the use
+// cases on them are moderationtest.ModerationFlows (internal/flowtest/moderation).
 //
 // Methods that take a uow.Tx run inside that transaction; the others read committed data outside
 // any transaction. Lookups that find nothing return an error wrapping ErrNotFound.

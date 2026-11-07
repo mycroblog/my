@@ -9,7 +9,7 @@ import (
 )
 
 // HumanVerifier checks the token that a CAPTCHA widget put into a form (ADR-0106). The adapter
-// lives in internal/adapter/captcha/siteverify and passes testkit.HumanVerifierContract. When the
+// lives in internal/adapter/captcha/siteverify and passes kerneltest.HumanVerifierContract. When the
 // captcha setting is none there is no HumanVerifier: callers receive nil and check nothing.
 //
 // Verify sends the token to the service through the HTTPClient (HTTPPurposeHumanCheck), so it

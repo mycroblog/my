@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-// Package notification_test runs the notification flows (testkit.NotificationFlows) and the flows
-// of the follows that suspensions cut (testkit.SeveranceFlows) once, on SQLite (ADR-0153 §1).
+// Package notification_test runs the notification flows (notificationtest.NotificationFlows) and the flows
+// of the follows that suspensions cut (notificationtest.SeveranceFlows) once, on SQLite (ADR-0153 §1).
 package notification_test
 
 import (
@@ -10,18 +10,21 @@ import (
 	"github.com/mycroblog/my/internal/adapter/db/sqlite"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/flowtest"
-	"github.com/mycroblog/my/pkg/testkit"
+	"github.com/mycroblog/my/pkg/testkit/federationtest"
+	"github.com/mycroblog/my/pkg/testkit/graphtest"
+	"github.com/mycroblog/my/pkg/testkit/identitytest"
+	"github.com/mycroblog/my/pkg/testkit/notificationtest"
 )
 
-func accountHarness(db *sqlite.DB) testkit.AccountHarness {
-	return testkit.AccountHarness{UnitOfWork: db, Identity: db.IdentityRepository(), Accounts: db.AccountRepository()}
+func accountHarness(db *sqlite.DB) identitytest.AccountHarness {
+	return identitytest.AccountHarness{UnitOfWork: db, Identity: db.IdentityRepository(), Accounts: db.AccountRepository()}
 }
 
 func TestNotificationFlows(t *testing.T) {
 	t.Parallel()
-	testkit.NotificationFlows(t, func(t *testing.T, opts uow.Options) testkit.NotificationHarness {
+	notificationtest.NotificationFlows(t, func(t *testing.T, opts uow.Options) notificationtest.NotificationHarness {
 		db := flowtest.SQLite(t, opts)
-		return testkit.NotificationHarness{
+		return notificationtest.NotificationHarness{
 			AccountHarness: accountHarness(db),
 			Graph:          db.GraphRepository(),
 			Statuses:       db.StatusRepository(),
@@ -33,12 +36,12 @@ func TestNotificationFlows(t *testing.T) {
 
 func TestSeveranceFlows(t *testing.T) {
 	t.Parallel()
-	testkit.SeveranceFlows(t, func(t *testing.T, opts uow.Options) testkit.SeveranceHarness {
+	notificationtest.SeveranceFlows(t, func(t *testing.T, opts uow.Options) notificationtest.SeveranceHarness {
 		db := flowtest.SQLite(t, opts)
 		feds := db.FederationRepository()
-		return testkit.SeveranceHarness{
-			RemoteFollowHarness: testkit.RemoteFollowHarness{
-				FollowHarness: testkit.FollowHarness{AccountHarness: accountHarness(db), Graph: db.GraphRepository()},
+		return notificationtest.SeveranceHarness{
+			RemoteFollowHarness: federationtest.RemoteFollowHarness{
+				FollowHarness: graphtest.FollowHarness{AccountHarness: accountHarness(db), Graph: db.GraphRepository()},
 				Notifications: db.NotificationRepository(),
 				Federation:    feds,
 				Inbox:         feds,

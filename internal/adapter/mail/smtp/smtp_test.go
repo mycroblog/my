@@ -20,7 +20,7 @@ import (
 	"github.com/mycroblog/my/internal/adapter/mail/internal/mailtest"
 	"github.com/mycroblog/my/internal/adapter/mail/smtp"
 	"github.com/mycroblog/my/internal/app/kernel"
-	"github.com/mycroblog/my/pkg/testkit"
+	"github.com/mycroblog/my/pkg/testkit/kerneltest"
 )
 
 // The recipients that the server refuses: as unknown at RCPT TO, as spam after DATA, and for
@@ -199,9 +199,9 @@ func newMailer(t *testing.T, s *server, tc *tls.Config) *smtp.Mailer {
 }
 
 func TestMailerContract(t *testing.T) {
-	testkit.MailerContract(t, func(t *testing.T) testkit.MailerHarness {
+	kerneltest.MailerContract(t, func(t *testing.T) kerneltest.MailerHarness {
 		s, tc := newServer(t, true)
-		return testkit.MailerHarness{
+		return kerneltest.MailerHarness{
 			Mailer: newMailer(t, s, tc), Delivered: s.messages,
 			UnknownRecipient: unknownRecipient, RejectedRecipient: rejectedRecipient, DeferredRecipient: deferredRecipient,
 		}

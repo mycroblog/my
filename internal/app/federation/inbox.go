@@ -65,9 +65,9 @@ func inboxJob(a federation.ReceivedActivity, relayID string) (queue.NewJob, erro
 
 // InboxRepository is the persistence port of received activities (data-model §4.8): the
 // deduplication row, the document as it arrived, and the tombstones of unknown objects. The
-// database adapters implement it and pass testkit.InboxContract and
-// testkit.InboxProcessingContract; the flows of the inbox on them are testkit.InboxFlows and
-// testkit.InboxProcessingFlows (internal/flowtest/federation). Lookups that find nothing return
+// database adapters implement it and pass federationtest.InboxContract and
+// federationtest.InboxProcessingContract; the flows of the inbox on them are federationtest.InboxFlows and
+// federationtest.InboxProcessingFlows (internal/flowtest/federation). Lookups that find nothing return
 // an error wrapping ErrNotFound.
 type InboxRepository interface {
 	// InsertReceivedActivity records a received activity unless one with its activity URI is

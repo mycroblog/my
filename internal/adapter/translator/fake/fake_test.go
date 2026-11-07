@@ -8,14 +8,14 @@ import (
 	"testing"
 
 	"github.com/mycroblog/my/internal/app/translation"
-	"github.com/mycroblog/my/pkg/testkit"
+	"github.com/mycroblog/my/pkg/testkit/translationtest"
 )
 
 func TestContract(t *testing.T) {
 	t.Parallel()
-	testkit.TranslatorContract(t, func(*testing.T) testkit.TranslatorHarness {
+	translationtest.TranslatorContract(t, func(*testing.T) translationtest.TranslatorHarness {
 		f := New(Options{Detected: "en", Unsupported: []string{"tlh"}})
-		return testkit.TranslatorHarness{
+		return translationtest.TranslatorHarness{
 			Translator:          f,
 			Source:              "en",
 			Target:              "ja",

@@ -20,6 +20,7 @@ import (
 	"github.com/mycroblog/my/internal/adapter/plugin/kind"
 	"github.com/mycroblog/my/internal/app/media"
 	"github.com/mycroblog/my/pkg/testkit"
+	"github.com/mycroblog/my/pkg/testkit/mediatest"
 )
 
 func mediaKind(t *testing.T, name string) kind.Kind {
@@ -94,7 +95,7 @@ func TestContract(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 			h, rec := fakeplugin.Connect(fakeplugin.Options{Media: native.New(native.Options{Concurrency: 2})})
-			testkit.MediaProcessorContract(t, newProcessor(t, kind.Destination{Address: tc.serve(t, h), Protocol: tc.protocol}, native.New(native.Options{Concurrency: 2})))
+			mediatest.MediaProcessorContract(t, newProcessor(t, kind.Destination{Address: tc.serve(t, h), Protocol: tc.protocol}, native.New(native.Options{Concurrency: 2})))
 			if rec.Calls() == 0 || rec.Proto() != "HTTP/2.0" {
 				t.Errorf("%d calls, the last over %s, want HTTP/2.0", rec.Calls(), rec.Proto())
 			}

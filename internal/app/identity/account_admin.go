@@ -88,7 +88,7 @@ type AccountRestrictions interface {
 }
 
 // AccountAdminRepository is the part of Repository that the account management reads. The
-// database adapters implement it and pass testkit.AdminAccountContract.
+// database adapters implement it and pass identitytest.AdminAccountContract.
 type AccountAdminRepository interface {
 	// ListUserIDsByEmailDomain returns up to limit users whose primary address is at domain
 	// (lowercase), newest first, by ID, whose ID is below before ("" for the first page).

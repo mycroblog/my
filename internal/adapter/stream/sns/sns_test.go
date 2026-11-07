@@ -22,6 +22,7 @@ import (
 	"github.com/mycroblog/my/internal/app/stream"
 	"github.com/mycroblog/my/pkg/testkit"
 	"github.com/mycroblog/my/pkg/testkit/awstest"
+	"github.com/mycroblog/my/pkg/testkit/streamtest"
 )
 
 // TestMain stops the emulator container of package awstest after the tests.
@@ -163,8 +164,8 @@ func (b *broker) deleteQueues(t *testing.T) {
 	}
 }
 
-func (b *broker) harness() testkit.StreamBus {
-	return testkit.StreamBus{
+func (b *broker) harness() streamtest.StreamBus {
+	return streamtest.StreamBus{
 		NewBus:      func(t *testing.T) stream.Bus { return b.newBus(t) },
 		Unreachable: func(t *testing.T) stream.Bus { return b.unreachable(t) },
 		Break:       b.deleteQueues,
@@ -174,18 +175,18 @@ func (b *broker) harness() testkit.StreamBus {
 }
 
 func TestStreamBusContract(t *testing.T) {
-	testkit.StreamBusContract(t, func(t *testing.T) testkit.StreamBus { return fakeBroker(t).harness() })
+	streamtest.StreamBusContract(t, func(t *testing.T) streamtest.StreamBus { return fakeBroker(t).harness() })
 }
 
 func TestStreamBusContractEmulator(t *testing.T) {
-	testkit.StreamBusContract(t, func(t *testing.T) testkit.StreamBus { return emulatorBroker(t).harness() })
+	streamtest.StreamBusContract(t, func(t *testing.T) streamtest.StreamBus { return emulatorBroker(t).harness() })
 }
 
 // sweeper is the harness of the sweeper contract: a process's resources are its queue and
 // its subscription.
-func (b *broker) sweeper() testkit.StreamSweeper {
-	h := testkit.StreamSweeper{
-		NewBus: func(t *testing.T) (testkit.SweepingBus, string) {
+func (b *broker) sweeper() streamtest.StreamSweeper {
+	h := streamtest.StreamSweeper{
+		NewBus: func(t *testing.T) (streamtest.SweepingBus, string) {
 			bus := b.newBus(t)
 			return bus, bus.ProcessID()
 		},
@@ -207,15 +208,15 @@ func (b *broker) sweeper() testkit.StreamSweeper {
 }
 
 func TestStreamSweeperContract(t *testing.T) {
-	testkit.StreamSweeperContract(t, func(t *testing.T) testkit.StreamSweeper { return fakeBroker(t).sweeper() })
+	streamtest.StreamSweeperContract(t, func(t *testing.T) streamtest.StreamSweeper { return fakeBroker(t).sweeper() })
 }
 
 func TestStreamSweeperContractEmulator(t *testing.T) {
-	testkit.StreamSweeperContract(t, func(t *testing.T) testkit.StreamSweeper { return emulatorBroker(t).sweeper() })
+	streamtest.StreamSweeperContract(t, func(t *testing.T) streamtest.StreamSweeper { return emulatorBroker(t).sweeper() })
 }
 
 func TestStreamBrokerContractRelay(t *testing.T) {
-	testkit.StreamBrokerContract(t, func(t *testing.T, o stream.HubOptions) testkit.StreamBroker {
+	streamtest.StreamBrokerContract(t, func(t *testing.T, o stream.HubOptions) streamtest.StreamBroker {
 		b := fakeBroker(t)
 		local := stream.NewRelay(b.newBus(t), stream.RelayOptions{Hub: o})
 		remote := stream.NewRelay(b.newBus(t), stream.RelayOptions{})
@@ -226,7 +227,7 @@ func TestStreamBrokerContractRelay(t *testing.T) {
 				}
 			})
 		}
-		return testkit.StreamBroker{
+		return streamtest.StreamBroker{
 			Publisher: local, Subscriber: local, Remote: remote,
 			Break: b.deleteQueues,
 		}

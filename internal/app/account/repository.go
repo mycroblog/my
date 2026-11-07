@@ -28,7 +28,7 @@ var (
 )
 
 // Repository is the persistence port of the account module (data-model §4.2). The database
-// adapters implement it and pass testkit.AccountRepositoryContract.
+// adapters implement it and pass identitytest.AccountRepositoryContract.
 //
 // Methods that take a uow.Tx run inside that transaction; the others read committed data outside
 // any transaction. Lookups that find nothing return an error wrapping ErrNotFound.

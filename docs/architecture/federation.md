@@ -13,8 +13,8 @@
 | `internal/domain/federation` | AS2 の正規化した型と、受信した JSON からの正規化（§4）。宛先から公開範囲への写像、配送先の算出規則、配送の結果の分類、サーキットブレーカーの規則。標準ライブラリだけを使う純粋な関数 |
 | `internal/app/federation` | ユースケース（受信 `Receive`、アクティビティの処理、配送の展開 `FanOut`、配送 `Deliver`、Actor / オブジェクトの取得 `Fetch`、解決 `Resolve`）、ジョブハンドラ、ポート（`Signer`・`Verifier`・リポジトリ） |
 | `internal/app/kernel` | `HTTPClient` ポート（連合のほか、メディアプロキシ・リンクプレビュー・Web Push も使うので全モジュール共通に置く） |
-| `internal/adapter/httpclient` | SSRF ガード付きの `HTTPClient`（ADR-0019 §1）。コントラクトテストは `testkit.HTTPClientContract` |
-| `internal/adapter/htmlsanitizer` | `kernel.HTMLSanitizer` ポートの実装（§5、ADR-0019 §2）。`bluemonday` はこの中に閉じ込める。ポリシーの版は定数 `PolicyVersion`。コントラクトテストは `testkit.HTMLSanitizerContract` |
+| `internal/adapter/httpclient` | SSRF ガード付きの `HTTPClient`（ADR-0019 §1）。コントラクトテストは `kerneltest.HTTPClientContract` |
+| `internal/adapter/htmlsanitizer` | `kernel.HTMLSanitizer` ポートの実装（§5、ADR-0019 §2）。`bluemonday` はこの中に閉じ込める。ポリシーの版は定数 `PolicyVersion`。コントラクトテストは `contenttest.HTMLSanitizerContract` |
 | `internal/adapter/httpsig` | `Signer` / `Verifier` の実装。RFC 9421 は `github.com/dadrus/httpsig`、draft-cavage-12 は `code.superseriousbusiness.org/httpsig`（ADR-0006）。ライブラリはこの中に閉じ込める |
 | `internal/interface/activitypub` | HTTP の入口（Inbox の `POST`、Actor・オブジェクト・コレクションの `GET`、WebFinger、NodeInfo）。ユースケースを呼ぶだけ |
 | `internal/interface/media` | メディアプロキシ `/media/proxy/…`（§9） |
@@ -66,7 +66,7 @@ ADR-0006 のプロファイルに従います。要点:
 
 | 型（`internal/app/federation`） | 役割 |
 | --- | --- |
-| `Verifier` / `Signer`（ポート） | 署名の解析・署名ベースの組み立て・暗号の検証と署名だけを行う。実装は `internal/adapter/httpsig`、コントラクトテストは `testkit.HTTPSignatureContract`（RFC 9421 付録 B のテストベクタ、Mastodon・GoToSocial 形式の draft-cavage の署名、拒否の各条件、double-knocking） |
+| `Verifier` / `Signer`（ポート） | 署名の解析・署名ベースの組み立て・暗号の検証と署名だけを行う。実装は `internal/adapter/httpsig`、コントラクトテストは `federationtest.HTTPSignatureContract`（RFC 9421 付録 B のテストベクタ、Mastodon・GoToSocial 形式の draft-cavage の署名、拒否の各条件、double-knocking） |
 | `SignatureVerifier` | 受信のポリシー。`Parse`（署名なし `401`、解析不能 `400`）→ `Check`（必須の対象・時間窓・宣言されたアルゴリズム・ダイジェスト。I/O なし）→ `Verify`（鍵の解決と検証、鍵の取り直し）。拒否は `SignatureError`（`Status` と、`401` なら `Accept-Signature` の値） |
 | `PublicKeyResolver`（ポート） | `keyId` から公開鍵と持ち主（`owner`）を返す。`refresh` で取り直す。取得できなければ `ErrPublicKeyNotFound`（`401`）、取得先が止まっていれば `ErrPublicKeyUnavailable`（`503`）。実装は `RemoteActors`（§6） |
 | `SignedHTTPClient` | 送信の double-knocking。`kernel.HTTPClient` の上で署名し、結果の方式（`delivery_attempts.signature_scheme`）を返す |
@@ -117,7 +117,7 @@ ADR-0006 の推奨案に従い、**署名の検証までを同期**、**処理�
 - `id` のホストが `actor` のホストと異なるアクティビティと、鍵の持ち主（`owner`）が `keyId` のホストに無いアクティビティは、`trust = refetch` にします。
 - 鍵の取得はトランザクションの外で行います（ADR-0003）。取得した Actor の書き込みは、受信の記録とは別の短いトランザクションです。
 - 手順 1・2 と、個人の inbox の宛先の確認（404）は `internal/interface/activitypub` が、手順 3〜14 は `federation.Inbox.Receive` が行います。拒否は `Received.Rejection` の `InboxRejection`（`Status`、`429` の `Retry-After`、`401` の `Accept-Signature`）で、想定外の失敗（500）とは別の戻り値で返します。拒否のログには、ヘッダーの値を引用するエラーではなく、決まった語彙の理由（`InboxRejection.Reason`）だけを出します（ADR-0019）。レート制限のストアが使えないときは、制限を掛けずに通します。
-- 受信の記録は `InboxRepository`（`received_activities` と `received_activity_documents`）に書きます。コントラクトテストは `testkit.InboxContract` です。
+- 受信の記録は `InboxRepository`（`received_activities` と `received_activity_documents`）に書きます。コントラクトテストは `federationtest.InboxContract` です。
 - 個人の inbox と shared inbox は同じ記録をします。誰宛てかはアクティビティの宛先が決めます。
 
 ### 3.2 非同期の部分
@@ -142,7 +142,7 @@ ADR-0006 の推奨案に従い、**署名の検証までを同期**、**処理�
   - `Undo` は取り消す活動の型ごとに `HandleUndo(型, ハンドラ)` で登録します（`Handle(Undo, …)` は使わない）。`object` に活動が埋め込まれていればその型のハンドラだけに、URI だけなら登録順にハンドラを呼び、`ErrUnknownObject` 以外を返したところで止めます。どれも対象を知らなければ tombstone です。埋め込みの型は振り分けにだけ使い、ハンドラは対象が主体のものであることを DB で確かめます。
   - ハンドラは、対象が無いことを `ErrUnknownObject`、捨てることを `ErrDropActivity`、処理できないことを `ErrUnprocessable`（`Fail`）で返します。取得の `ErrFetchNotFound` / `ErrFetchGone` / `ErrFetchRefused` は捨てる、`ErrFetchFailed` / `ErrFetchUnavailable` とその他のエラーは `Retry` です。
   - 記録や原本が無い・正規化できない・記録と主体が違うジョブは `Fail` です。
-  - 結果は `InboxOutcome`（`handled` / `unhandled` / `tombstoned` / `dropped`）です。コントラクトテストは `testkit.InboxProcessingContract` です。
+  - 結果は `InboxOutcome`（`handled` / `unhandled` / `tombstoned` / `dropped`）です。コントラクトテストは `federationtest.InboxProcessingContract` です。
 
 ### 3.3 順序と冪等性
 
@@ -212,7 +212,7 @@ ActivityPub の配送は順序を保証しません。ハンドラは、どの�
   - 移転元をブロックしている利用者は移転先もブロックし（`Block` を送る）、移転元をミュートしている利用者は、移転先をまだミュートしていなければ、同じ通知の扱いと期限で移転先をミュートします。
   - ジョブをもう一度動かしても、移ったフォロワーは移転元をフォローしておらず、ブロック・ミュートは既にあり、通知は移転ごとに 1 つ（重複排除キー）なので、何も増えません。
 - 移転元にこのサーバーの `limit` があれば（`moderation.FederationPolicy.AccountLimited`）、移転先へは引き継がず、`account.moved` から `manage_accounts` を持つモデレーターに通知 `admin_account_moved` を出します（§11）。
-- ブースト・お気に入り・絵文字リアクションのハンドラは `federation.RegisterInteractionHandlers` です。`Announce` の対象の取り込みは投稿のハンドラ（`StatusHandlers`）と同じ規則で行います。コントラクトテストは `testkit.RemoteInteractionContract` で、主要実装のフィクスチャの `Announce` / `Like` / `EmojiReact` / `Undo` を受け取り、お気に入りと絵文字リアクションの `Like` / `Undo Like` を送ります（`Like` の枠の付け替えでは、外したものの `Undo` が新しい `Like` の前に記録され、同じ inbox へその順に届く。§7.2 の順序キー）。
+- ブースト・お気に入り・絵文字リアクションのハンドラは `federation.RegisterInteractionHandlers` です。`Announce` の対象の取り込みは投稿のハンドラ（`StatusHandlers`）と同じ規則で行います。コントラクトテストは `federationtest.RemoteInteractionContract` で、主要実装のフィクスチャの `Announce` / `Like` / `EmojiReact` / `Undo` を受け取り、お気に入りと絵文字リアクションの `Like` / `Undo Like` を送ります（`Like` の枠の付け替えでは、外したものの `Undo` が新しい `Like` の前に記録され、同じ inbox へその順に届く。§7.2 の順序キー）。
 - リアクションの送信（ローカルの人のリアクション）はまだありません。リモートの人のリアクションはローカルの投稿へのものだけを記録し、何も送りません。
 
 ## 4. AS2 の正規化
@@ -273,7 +273,7 @@ ActivityPub の配送は順序を保証しません。ハンドラは、どの�
 - 410 で削除済みにした Actor は、消去ジョブが消す前に一度取得します（`RemoteActors.RecheckDeletion`）。もう一度 410 なら消します。文書が返り、`id` が同じなら、`reactivated`（`initiated_by = system`）を記録してその文書を保存し、Actor は表示に戻ります。ほかの答え（404・取得の失敗・連合の制限）では消さず、次の回に聞き直し、削除から 30 日（`account.ErasureRecheckLimit`）を過ぎたら消します。`Delete` を受けた Actor には聞き直しません。
 - ドメイン単位の `federation` の制限があるドメインと、自サーバーの URI からは取得しません。`instance_health` が `unavailable` のドメインからも取得しません（鍵の解決は `503`）。
   - リダイレクトの各ホップにも同じ制限を掛けます。`HTTPRequest.CheckRedirect` に `Fetcher` の検査を渡し、`HTTPClient` は自分の宛先の検査（SSRF ガード）の後にそれを呼んで、自サーバーと `federation` の制限があるドメインへのリダイレクトをたどらずに `ErrFetchRefused` で終えます。WebFinger と NodeInfo の取得も同じです。
-- 実装は `internal/app/federation` の `Fetcher`（取得の規則）と `RemoteActors`（Actor の解決・保存・ジョブ、`PublicKeyResolver`）です。コントラクトテストは `testkit.RemoteActorContract` です。
+- 実装は `internal/app/federation` の `Fetcher`（取得の規則）と `RemoteActors`（Actor の解決・保存・ジョブ、`PublicKeyResolver`）です。コントラクトテストは `federationtest.RemoteActorContract` です。
 
 ### 6.2 Actor とハンドル
 
@@ -301,7 +301,7 @@ ActivityPub の配送は順序を保証しません。ハンドラは、どの�
   - ジョブ（`StatusHandlers`）は、実行時にもアカウントの条件（有効なリモート・`federation` の制限なし・同じオリジンの `featured`）を確かめ直し、コレクションの項目か、無ければ `first` のページ（同じオリジンのものだけ。2 ページ目はたどらない）を読みます。
   - 項目の順に、埋め込みなら `attributedTo` がそのアカウントで宛先に `as:Public` を含む投稿、IRI ならアカウントと同じオリジンの投稿を 5 件（`FeaturedMaxPosts`）まで選び、保存済みでなければ §6.3 の outbox と同じく取得した投稿として取り込みます（返信先は取得しない）。1 回の文書はコレクション・ページ・投稿の合わせて 7 件（`FeaturedMaxDocuments`）までです。
   - 選んだ投稿で `content.Interactions.ReplaceRemotePins` がそのアカウントの `status_pins` を置き換えます（コレクションの順、新しいピン留めが先）。空のコレクションと `featured` を宣言しなくなった文書はピン留めを消し、コレクションが取得できなければピン留めを残してジョブを完了にします。ストアの失敗は `Retry` です。
-  - `GET /api/v1/accounts/{id}/statuses?pinned=true` はローカルと同じく `status_pins` を返すので、リモートのアカウントのプロフィールの先頭にも固定した投稿が出ます。コントラクトテストは `testkit.RemoteStatusContract` で、Mastodon・Misskey・GoToSocial の `featured.json` を取り込みます。
+  - `GET /api/v1/accounts/{id}/statuses?pinned=true` はローカルと同じく `status_pins` を返すので、リモートのアカウントのプロフィールの先頭にも固定した投稿が出ます。コントラクトテストは `federationtest.RemoteStatusContract` で、Mastodon・Misskey・GoToSocial の `featured.json` を取り込みます。
 - 判定フック `inbound.actor`（ADR-0147 §2）: Actor の文書を保存するとき（初めての取得・取り直し・Actor 自身の `Update`）、トランザクションの前に `account.ReviewRemoteProfile` が保存するとおりにサニタイズしたプロフィール（表示名・自己紹介・項目と、アイコンとヘッダーの URL）とそのダイジェストを求め、今の版のダイジェスト（`remote_profile_revisions.profile_digest`）と違うときだけフックに尋ねます。対象のキーは `<Actor の URI>#<ダイジェストの 16 進>` です。
   - `enforce` の `drop` は、既知の Actor では `RemoteActorInput.KeepProfile` で表示名・自己紹介・項目・アイコン・ヘッダーとそのカスタム絵文字を前の版のまま残し、スナップショット（inbox などのエンドポイント）・鍵・ハンドルと、`locked`・`bot`・`discoverable`・`indexable` は保存します。鍵とエンドポイントを捨てると署名の検証と配送が壊れ、`locked` と `indexable` はフォローの仕方と索引への同意を表すからです。初めての取得では、フォローとメンションの解決に行が要るので `drop` を `flag` として扱います。
   - `flag` は Actor を保存するトランザクションでアカウントへの通報を起票します（ADR-0147 §7）。初めての取得の判定は、取り込みの前に生成したアカウントの ID で記録し、そのアカウントを作ります。
@@ -317,7 +317,7 @@ ActivityPub の配送は順序を保証しません。ハンドラは、どの�
   3. 返信先がローカルの投稿か、返信先の `conversation_uri` に削除されていないローカルの投稿がある
   4. 参加中のリレーが運んだ（`relay_id` の付いた）`public` の投稿（§13）
   - どれにも当てはまらない `Create` は `ErrDropActivity` で捨て、受信の記録だけが残ります（`info` のログ）。未知のリモートの Actor へのメンションは、範囲に入ると決まってから取得します。
-- 書き込む行とメンション・ハッシュタグ・カスタム絵文字・添付・投票の扱いは [data-model §4.4 のリモート投稿のコマンド](data-model/04-tables/04-content.md#リモート投稿のコマンド) にあります。コントラクトテストは `testkit.RemoteStatusContract` で、主要実装のフィクスチャの `Note` を取り込みます。
+- 書き込む行とメンション・ハッシュタグ・カスタム絵文字・添付・投票の扱いは [data-model §4.4 のリモート投稿のコマンド](data-model/04-tables/04-content.md#リモート投稿のコマンド) にあります。コントラクトテストは `federationtest.RemoteStatusContract` で、主要実装のフィクスチャの `Note` を取り込みます。
 - 返信先は受信時に 1 段だけ非同期（`federation.fetch_object`、ペイロードに残りの深さ）で取得し、スレッドの祖先と返信の一覧は利用者がスレッドを開いたときに深さ 20・件数 100 まで取得します。
   - **取得した投稿**: 取得した文書が投稿で、`attributedTo` があり、そのオリジンが投稿の `id` と同じで、作者を解決でき（未知なら取得）、作者が有効なリモートのアカウントで、URI に削除（`status_deletions` の tombstone）も `remote_object_tombstones` も無いときだけ、`content.IngestRemoteStatus`（`activity_uri` は NULL）で取り込みます。取り込み範囲の判定はしません（受信した投稿の返信先・利用者が開いたスレッド・検索で解決した投稿・フォローされている人がブーストした投稿は ADR-0006 の範囲、利用者が開いたプロフィールの outbox の最初のページの公開投稿は ADR-0006 の範囲です）。`Announce` の対象・`fetch_object`・`fetch_outbox`・`Resolver` は、この取り込み（`StatusHandlers.fetched`）を共有します。`Announce` の対象と検索で解決した投稿は、受信した投稿と同じく返信先を 1 段だけ取得します。
   - **受信時**: 取り込んだ返信の親が未知（`conversation_uri` が NULL）でリモートなら、取り込みのトランザクションで `federation.fetch_object`（祖先 0）を `queue.Outbox` に投入します。取得した親の親は取得しません。
@@ -348,10 +348,10 @@ ActivityPub の配送は順序を保証しません。ハンドラは、どの�
     3. 選んだ投稿のうち保存済みのものは取得しません。埋め込みのものはその文書を、IRI のものは取得した文書（`attributedTo` がそのアカウントで宛先に `as:Public` を含むものだけ）を、§6.3 の取得した投稿として取り込みます。返信先は取得しません（利用者が投稿を開けばスレッドの取得が補う）。
   - **件数の上限**: 1 回の取得の文書は、outbox・ページ・投稿 20 件の合わせて 22 件までです（`OutboxMaxDocuments`）。取得の失敗と取り込まない文書は `info` のログを残して次の投稿に進み、outbox やページが取得できなければジョブを完了にします。ストアの失敗は `Retry` です。
   - 取り込んだ投稿は、ほかの取得した投稿と同じく保持期間（ADR-0006、`content.purge_remote_statuses`）の対象で、プロフィールのタイムラインに出ます。新しいテーブルは使いません。
-  - コントラクトテストは `testkit.RemoteStatusContract` で、Mastodon・Misskey・GoToSocial の outbox のフィクスチャ（`outbox.json`・`outbox-page.json`）を取り込みます。
+  - コントラクトテストは `federationtest.RemoteStatusContract` で、Mastodon・Misskey・GoToSocial の outbox のフィクスチャ（`outbox.json`・`outbox-page.json`）を取り込みます。
 - 投稿の ID は `published` から作った UUIDv7 です（[data-model §1.3](data-model/01-conventions.md#13-id-とキーセットページング)、#71）。
 - 保持期間を過ぎたリモートの投稿は `content.purge_remote_statuses` が、関係の無くなったリモートのアカウントの過去のプロフィールは `account.prune_remote_profiles` が、受信の原本・記録と配送の記録は `federation.purge_records` が、どこからも参照されなくなったリモートのカスタム絵文字（管理者が無効にしたものを除く）は `content.purge_remote_emojis`（1 日ごと、ADR-0051 §1）が、件数を区切って消します（ADR-0006、[data-model §4.4 のリモート投稿の保持期間](data-model/04-tables/04-content.md#リモート投稿の保持期間)、§4.2、§4.8）。
-  保持期間で消えた投稿（`origin = retention`）は tombstone にならないので、同じ URI の `Create` や取得でまた取り込めます。コントラクトテストは `testkit.RetentionContract` です。
+  保持期間で消えた投稿（`origin = retention`）は tombstone にならないので、同じ URI の `Create` や取得でまた取り込めます。コントラクトテストは `federationtest.RetentionContract` です。
 
 ### 6.4 投稿の取り直し
 
@@ -735,11 +735,11 @@ ADR-0005 の方針（既定はキャッシュしない）に従います。
 
 | 種類 | 内容 | 実行 |
 | --- | --- | --- |
-| リレー | `testkit.RelayContract`（登録・イベントと状態・照合・削除・再構築）、`testkit.RetentionContract` の `PurgesRelayedStatuses`、`testkit.CanonicalizerContract`（`internal/adapter/jsonld` の jsonld.js と同じ正規化と署名。`pkg/testkit/testdata/jsonld/sign.mjs` で作ったベクタ）、`internal/platform` の `TestRelays`（参加・`Accept`・送信と LD 署名・中継の取り直し・上限・LitePub の `Announce`・脱退・削除・監査ログ） | `scripts/task.sh check`（毎 PR） |
+| リレー | `federationtest.RelayContract`（登録・イベントと状態・照合・削除・再構築）、`federationtest.RetentionContract` の `PurgesRelayedStatuses`、`federationtest.CanonicalizerContract`（`internal/adapter/jsonld` の jsonld.js と同じ正規化と署名。`pkg/testkit/federationtest/testdata/jsonld/sign.mjs` で作ったベクタ）、`internal/platform` の `TestRelays`（参加・`Accept`・送信と LD 署名・中継の取り直し・上限・LitePub の `Announce`・脱退・削除・監査ログ） | `scripts/task.sh check`（毎 PR） |
 | フィクスチャの回帰テスト | 実サーバー（Mastodon・Misskey・GoToSocial・Akkoma）から採取したアクティビティ・Actor・オブジェクトの JSON（`pkg/testkit/fixtures/federation/<実装>/<版>/…`）を正規化・ハンドラに通し、結果（正規化した値・書いた行）を golden ファイルと比べる。送信する文書は主要実装の形と比べる（既存の `internal/interface/activitypub/testdata/peers`） | `scripts/task.sh check`（毎 PR） |
 | 署名のテストベクタ | RFC 9421 付録 B のテストベクタ、Mastodon と同じ形式の draft-cavage の署名、クエリ文字列・ダイジェストの改ざん | `scripts/task.sh check` |
-| 順序のテスト | 同じアクティビティ列の順序を入れ替え・重複させて処理し、最終的な行が同じになることを確かめる性質テスト（`testkit.InboxProcessingContract` の `OrderAndDuplicates`。ケースは `inboxOrderCases` で、ハンドラを足すときにケースも足す） | `scripts/task.sh check` |
-| SSRF ガード | `testkit.HTTPClientContract`（ADR-0019 §1） | `scripts/task.sh check` |
+| 順序のテスト | 同じアクティビティ列の順序を入れ替え・重複させて処理し、最終的な行が同じになることを確かめる性質テスト（`federationtest.InboxProcessingContract` の `OrderAndDuplicates`。ケースは `inboxOrderCases` で、ハンドラを足すときにケースも足す） | `scripts/task.sh check` |
+| SSRF ガード | `kerneltest.HTTPClientContract`（ADR-0019 §1） | `scripts/task.sh check` |
 | ライブの相互運用 | docker compose で Mastodon（secure mode）・GoToSocial・Misskey・Akkoma（LitePub 方式のリレーだけに使う）とこのサーバーを、私設 CA の TLS とコンテナのネットワークの DNS で立て、WebFinger・Actor の署名付き取得・フォロー（承認・解除）・投稿・返信・ブースト・お気に入り・削除・編集・公開範囲ごとの配送先（ADR-0017 の `local` のメンション先を含む）と、ADR-0006 の署名の各方式（プロキシが 401 を返して RFC 9421 への切り替えを起こす）を往復させ、ローカルのアカウントの凍結とその解除が Mastodon に表示されること（#44、§11.1）と、Activity-Relay のリレーを介して公開投稿が Mastodon と往復すること（Mastodon が LD 署名を検証する。§13）と、Akkoma のリレー用 Actor（LitePub 方式）への参加・脱退、そのフォローし返しへの `Accept`、リレー用 Actor の `Announce` と shared inbox への配送で公開投稿が Akkoma と往復すること（§13）を確かめる。構成・シナリオ・実装ごとの互換性の差異は `test/federation-live/`（README.md） | 遅い検査（リリースの関門・nightly）/ 手動（CI ジョブ `federation-live`、`scripts/task.sh docker:federation-live`） |
 
 - フィクスチャは採取したときのホスト・名前・本文・鍵を例の値に置き換えて保存し、実装と版をディレクトリ名に残します。新しい不具合を直すときは、その文書をフィクスチャに足します（ADR-0006）。

@@ -12,7 +12,7 @@ import (
 
 	"github.com/mycroblog/my/internal/app/supporters"
 	"github.com/mycroblog/my/internal/i18n"
-	"github.com/mycroblog/my/pkg/testkit"
+	"github.com/mycroblog/my/pkg/testkit/supporterstest"
 )
 
 const pagesHost = "my.example"
@@ -20,7 +20,7 @@ const pagesHost = "my.example"
 // A PageProvider passes the contract with its pages on the origin of the
 // success and return URLs.
 func TestPaymentProviderContractWithPages(t *testing.T) {
-	testkit.PaymentProviderContract(t, func(t *testing.T, s testkit.PaymentScenario) testkit.PaymentUnderTest {
+	supporterstest.PaymentProviderContract(t, func(t *testing.T, s supporterstest.PaymentScenario) supporterstest.PaymentUnderTest {
 		u := newOnScenario(t, s)
 		p := u.Provider.(*Provider)
 		p.o.Pages = true

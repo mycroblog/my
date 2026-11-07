@@ -81,7 +81,7 @@ type NewPasskey struct {
 // PublicKeyCredential.parseCreationOptionsFromJSON and parseRequestOptionsFromJSON read, the
 // responses it takes the JSON of PublicKeyCredential.toJSON, and the state the opaque record of
 // a ceremony that the service keeps sealed until the response comes. The webauthn adapter
-// implements it and passes testkit.PasskeyCeremoniesContract.
+// implements it and passes identitytest.PasskeyCeremoniesContract.
 type PasskeyCeremonies interface {
 	// BeginRegistration returns the options of a registration of a discoverable credential for
 	// user that is none of exclude, and its state.

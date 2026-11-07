@@ -7,11 +7,11 @@ import (
 	"time"
 
 	"github.com/mycroblog/my/internal/adapter/system"
-	"github.com/mycroblog/my/pkg/testkit"
+	"github.com/mycroblog/my/pkg/testkit/kerneltest"
 )
 
 func TestClockContract(t *testing.T) {
-	testkit.ClockContract(t, system.Clock{})
+	kerneltest.ClockContract(t, system.Clock{})
 }
 
 func TestClockTracksSystemTime(t *testing.T) {
@@ -25,14 +25,14 @@ func TestClockTracksSystemTime(t *testing.T) {
 }
 
 func TestIDGeneratorContract(t *testing.T) {
-	ids := testkit.IDGeneratorContract(t, system.IDGenerator{}, system.Clock{})
+	ids := kerneltest.IDGeneratorContract(t, system.IDGenerator{}, system.Clock{})
 
 	// The contract already checks strict ordering; make sure that check covered IDs
 	// sharing a millisecond, which is where ordering relies on the sub-millisecond counter.
 	sameMilli := 0
 	for i := 1; i < len(ids); i++ {
-		prev, _ := testkit.UUIDv7Millis(ids[i-1])
-		cur, _ := testkit.UUIDv7Millis(ids[i])
+		prev, _ := kerneltest.UUIDv7Millis(ids[i-1])
+		cur, _ := kerneltest.UUIDv7Millis(ids[i])
 		if prev == cur {
 			sameMilli++
 		}
@@ -47,8 +47,8 @@ func TestIDGeneratorStampsCurrentTime(t *testing.T) {
 	// other tests of the process made in a burst may have moved its floor past the clock: the
 	// ID before bounds that.
 	before := time.Now().Add(-time.Minute - time.Millisecond).UnixMilli()
-	floor, okFloor := testkit.UUIDv7Millis(system.IDGenerator{}.NewID())
-	ms, ok := testkit.UUIDv7Millis(system.IDGenerator{}.NewID())
+	floor, okFloor := kerneltest.UUIDv7Millis(system.IDGenerator{}.NewID())
+	ms, ok := kerneltest.UUIDv7Millis(system.IDGenerator{}.NewID())
 	after := max(time.Now().UnixMilli(), floor)
 	if !ok || !okFloor {
 		t.Fatal("NewID() returned a non-UUID")

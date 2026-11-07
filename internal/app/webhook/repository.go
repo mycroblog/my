@@ -4,8 +4,8 @@
 // endpoints that the holders of manage_webhooks set up, the messages that the events of the other
 // modules become in their transactions, and the webhook.deliver job that signs and sends them,
 // retries them, and disables an endpoint that keeps failing. The adapters of Repository live in
-// internal/adapter/db/*; their contract test suite is testkit.WebhookRepositoryContract, and the
-// flows of the use cases on them are testkit.WebhookFlows (internal/flowtest/webhook).
+// internal/adapter/db/*; their contract test suite is webhooktest.WebhookRepositoryContract, and the
+// flows of the use cases on them are webhooktest.WebhookFlows (internal/flowtest/webhook).
 package webhook
 
 import (

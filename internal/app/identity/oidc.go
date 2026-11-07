@@ -13,7 +13,7 @@ import (
 // configured (ADR-0106 §1 `oidc`, §5): Discovery, the provider's JWKS, and the verification of
 // an ID token (OpenID Connect Core 1.0 §3.1.3.7). Every request goes through kernel.HTTPClient
 // with kernel.HTTPPurposeLoginProvider. The adapter lives in internal/adapter/oidc and passes
-// testkit.OIDCClientContract.
+// identitytest.OIDCClientContract.
 type OIDCClient interface {
 	// Discover returns the metadata of the provider whose issuer identifier is issuer, from its
 	// /.well-known/openid-configuration (OpenID Connect Discovery 1.0 §4), reused as long as

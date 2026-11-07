@@ -13,13 +13,13 @@ import (
 	"github.com/mycroblog/my/internal/adapter/htmlsanitizer"
 	"github.com/mycroblog/my/internal/app/content"
 	"github.com/mycroblog/my/internal/app/kernel"
-	"github.com/mycroblog/my/pkg/testkit"
+	"github.com/mycroblog/my/pkg/testkit/contenttest"
 )
 
 var update = flag.Bool("update", false, "rewrite the golden files from the current output")
 
 func TestContract(t *testing.T) {
-	testkit.HTMLSanitizerContract(t, func(*testing.T) kernel.HTMLSanitizer { return htmlsanitizer.New() })
+	contenttest.HTMLSanitizerContract(t, func(*testing.T) kernel.HTMLSanitizer { return htmlsanitizer.New() })
 }
 
 // TestGolden sanitizes the content HTML that Mastodon, Misskey, GoToSocial, and Akkoma send
@@ -44,7 +44,7 @@ func TestGolden(t *testing.T) {
 				t.Fatal(err)
 			}
 			got := s.SanitizeHTML(strings.TrimSuffix(string(src), "\n")) + "\n"
-			testkit.CheckSanitizedHTML(t, got)
+			contenttest.CheckSanitizedHTML(t, got)
 			golden := strings.TrimSuffix(in, ".html") + ".golden.html"
 			if *update {
 				if err := os.WriteFile(golden, []byte(got), 0o600); err != nil { //nolint:gosec // G703: a fixture path derived from the glob above
@@ -85,7 +85,7 @@ func FuzzSanitizeHTML(f *testing.F) {
 	s := htmlsanitizer.New()
 	f.Fuzz(func(t *testing.T, in string) {
 		out := s.SanitizeHTML(in)
-		testkit.CheckSanitizedHTML(t, out)
+		contenttest.CheckSanitizedHTML(t, out)
 		if again := s.SanitizeHTML(out); again != out {
 			t.Fatalf("SanitizeHTML(%q) = %q, and sanitizing that gave %q", in, out, again)
 		}
@@ -95,7 +95,7 @@ func FuzzSanitizeHTML(f *testing.F) {
 // FuzzLocalHTML checks that the HTML of any local status passes the sanitizer unchanged
 // (federation.md §5: local HTML uses a subset of the allowlist).
 func FuzzLocalHTML(f *testing.F) {
-	for _, text := range testkit.LocalStatusTexts {
+	for _, text := range contenttest.LocalStatusTexts {
 		f.Add(text)
 	}
 	s := htmlsanitizer.New()
@@ -103,7 +103,7 @@ func FuzzLocalHTML(f *testing.F) {
 		if !utf8.ValidString(text) || strings.ContainsRune(text, 0) {
 			t.Skip("content.Service refuses this text")
 		}
-		h := content.ParseText(text).HTML(content.RenderOptions{Host: "social.example", Mentions: testkit.LocalStatusMentions})
+		h := content.ParseText(text).HTML(content.RenderOptions{Host: "social.example", Mentions: contenttest.LocalStatusMentions})
 		if got := s.SanitizeHTML(h); got != h {
 			t.Fatalf("SanitizeHTML changed the HTML of %q\n got %q\nwant %q", text, got, h)
 		}

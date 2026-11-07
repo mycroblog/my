@@ -2,7 +2,7 @@
 
 // Package translation translates posts on a reader's request (ADR-0148). It defines the
 // Translator port, which a provider implements: the adapters live in
-// internal/adapter/translator/<provider> and pass testkit.TranslatorContract.
+// internal/adapter/translator/<provider> and pass translationtest.TranslatorContract.
 package translation
 
 import (

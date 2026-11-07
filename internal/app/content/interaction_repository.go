@@ -24,7 +24,7 @@ var (
 // InteractionRepository is the persistence port of the interactions of accounts with statuses
 // (data-model §4.4): boosts with their retractions and the boost_edges projection, and the
 // current values favourites, bookmarks, and status_pins. The database adapters implement it and
-// pass testkit.InteractionRepositoryContract; testkit.InteractionFlows (internal/flowtest/content) drives the
+// pass contenttest.InteractionRepositoryContract; contenttest.InteractionFlows (internal/flowtest/content) drives the
 // Interactions use cases on them.
 //
 // Methods that take a uow.Tx run inside that transaction; the others read committed data outside

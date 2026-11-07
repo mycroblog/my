@@ -13,7 +13,7 @@ import (
 
 // ErasureRepository is the part of the graph module's persistence that the erasure of deleted
 // accounts uses (data-model §8). The database adapters' graph repositories implement it and
-// pass testkit.AccountErasureContract.
+// pass federationtest.AccountErasureContract.
 type ErasureRepository interface {
 	// ListEdgesToErase returns up to limit live follows into or out of the account.
 	ListEdgesToErase(ctx context.Context, tx uow.Tx, accountID string, limit int) ([]graph.Edge, error)

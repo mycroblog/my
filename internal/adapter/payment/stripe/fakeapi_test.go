@@ -23,7 +23,7 @@ import (
 	"time"
 
 	"github.com/mycroblog/my/internal/app/supporters"
-	"github.com/mycroblog/my/pkg/testkit"
+	"github.com/mycroblog/my/pkg/testkit/supporterstest"
 )
 
 // fakeAPI is an httptest server that answers the parts of Stripe's REST API that the adapter
@@ -145,7 +145,7 @@ func (f *fakeAPI) nextID(prefix string) string {
 }
 
 // load fills the fake with the account of a scenario.
-func (f *fakeAPI) load(s testkit.PaymentScenario) {
+func (f *fakeAPI) load(s supporterstest.PaymentScenario) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	f.timezone = s.Location.String()
@@ -225,7 +225,7 @@ func (f *fakeAPI) putSubscription(snap supporters.SubscriptionSnapshot) {
 // putMoney adds a movement as Stripe books it: a balance transaction whose source is a charge
 // (with its payment intent, invoice, and invoice payment), a refund, a dispute, or, for a fee,
 // nothing that expands. A pending payment is a charge without a balance transaction yet.
-func (f *fakeAPI) putMoney(s testkit.PaymentScenario, i int, m testkit.PaymentScenarioMoney, objects map[string]string) {
+func (f *fakeAPI) putMoney(s supporterstest.PaymentScenario, i int, m supporterstest.PaymentScenarioMoney, objects map[string]string) {
 	object := objects[m.ID]
 	cur := strings.ToLower(m.Currency)
 	btID := m.ID
@@ -350,8 +350,8 @@ func (f *fakeAPI) event(n supporters.Notice, live bool, created time.Time) obj {
 	}
 }
 
-// deliver signs a webhook delivery of n as Stripe does (testkit.PaymentDeliver).
-func (f *fakeAPI) deliver(secret string) testkit.PaymentDeliver {
+// deliver signs a webhook delivery of n as Stripe does (supporterstest.PaymentDeliver).
+func (f *fakeAPI) deliver(secret string) supporterstest.PaymentDeliver {
 	return func(n supporters.Notice, live bool, at time.Time, keys ...string) (http.Header, []byte) {
 		created := n.OccurredAt
 		if created.IsZero() {

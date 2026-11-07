@@ -14,7 +14,7 @@ import (
 	"time"
 
 	"github.com/mycroblog/my/internal/app/supporters"
-	"github.com/mycroblog/my/pkg/testkit"
+	"github.com/mycroblog/my/pkg/testkit/supporterstest"
 )
 
 const testToken = "whook_test_token"
@@ -100,12 +100,12 @@ func pad2(n int64) string {
 }
 
 // onScenario builds a fake PAY.JP that holds what it can of s, and the expectations of what the
-// adapter reports of it (testkit.PaymentExpected).
-func onScenario(t *testing.T, s testkit.PaymentScenario) testkit.PaymentUnderTest {
+// adapter reports of it (supporterstest.PaymentExpected).
+func onScenario(t *testing.T, s supporterstest.PaymentScenario) supporterstest.PaymentUnderTest {
 	p, f := newOnFake(t, s.Mode, s.Now)
 	f.addPlan("price_base", 500, "month", nil)
 	f.addPlan("price_lower", 300, "month", nil)
-	exp := &testkit.PaymentExpected{
+	exp := &supporterstest.PaymentExpected{
 		Currencies: []string{"JPY"}, Snapshots: map[supporters.SubscriptionRef]*supporters.SubscriptionSnapshot{},
 		Gone: func(ref supporters.SubscriptionRef) supporters.SubscriptionSnapshot {
 			return supporters.SubscriptionSnapshot{Ref: ref, Status: supporters.StatusCanceled}
@@ -175,7 +175,7 @@ func onScenario(t *testing.T, s testkit.PaymentScenario) testkit.PaymentUnderTes
 	if s.Failure != nil {
 		f.fail(statusOfFailure(s.Failure))
 	}
-	return testkit.PaymentUnderTest{
+	return supporterstest.PaymentUnderTest{
 		SignedPages: true,
 		Provider:    p, Deliver: deliver(s.Now), CheckoutHosts: []string{testHost}, PortalHosts: []string{testHost}, Expected: exp,
 		DeclineChanges: func(sub supporters.SubscriptionRef, declined bool) {
@@ -204,7 +204,7 @@ func onScenario(t *testing.T, s testkit.PaymentScenario) testkit.PaymentUnderTes
 // moneyOnFake puts the JPY payments, refunds, and chargebacks of s on f as charges and events,
 // and returns what the adapter reports of each of s.Money: none for a payment in another
 // currency, a reversal of a chargeback, or a fee of its own, which PAY.JP does not have.
-func moneyOnFake(t *testing.T, f *fakeAPI, s testkit.PaymentScenario) []supporters.MoneyMovement {
+func moneyOnFake(t *testing.T, f *fakeAPI, s supporterstest.PaymentScenario) []supporters.MoneyMovement {
 	out := make([]supporters.MoneyMovement, len(s.Money))
 	rates := map[string]string{}
 	charges := map[string]string{} // scenario ID → charge ID
@@ -257,16 +257,16 @@ func moneyOnFake(t *testing.T, f *fakeAPI, s testkit.PaymentScenario) []supporte
 	return out
 }
 
-func capturedAt(m testkit.PaymentScenarioMoney) int64 {
+func capturedAt(m supporterstest.PaymentScenarioMoney) int64 {
 	if m.Pending {
 		return 0
 	}
 	return m.OccurredAt.Unix()
 }
 
-// deliver returns the webhook deliveries of notices (testkit.PaymentDeliver): the token is the
+// deliver returns the webhook deliveries of notices (supporterstest.PaymentDeliver): the token is the
 // account's with no key or a key "", and the first other key otherwise.
-func deliver(now time.Time) testkit.PaymentDeliver {
+func deliver(now time.Time) supporterstest.PaymentDeliver {
 	return func(n supporters.Notice, live bool, _ time.Time, keys ...string) (http.Header, []byte) {
 		typ, object := "customer.updated", "customer"
 		switch n.Kind {
@@ -296,7 +296,7 @@ func deliver(now time.Time) testkit.PaymentDeliver {
 }
 
 func TestPaymentProviderContract(t *testing.T) {
-	testkit.PaymentProviderContract(t, onScenario)
+	supporterstest.PaymentProviderContract(t, onScenario)
 }
 
 // A refund takes the paid charges of the subscription alone, and a repeat refunds nothing twice.

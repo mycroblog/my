@@ -7,11 +7,11 @@ import (
 	"time"
 
 	"github.com/mycroblog/my/internal/app/supporters"
-	"github.com/mycroblog/my/pkg/testkit"
+	"github.com/mycroblog/my/pkg/testkit/supporterstest"
 )
 
 // newOnScenario returns a Provider whose side holds s.
-func newOnScenario(_ *testing.T, s testkit.PaymentScenario) testkit.PaymentUnderTest {
+func newOnScenario(_ *testing.T, s supporterstest.PaymentScenario) supporterstest.PaymentUnderTest {
 	p := New(Options{Mode: s.Mode, Location: s.Location, Now: func() time.Time { return s.Now }})
 	for _, sub := range s.Subscriptions {
 		p.PutSubscription(sub)
@@ -19,7 +19,7 @@ func newOnScenario(_ *testing.T, s testkit.PaymentScenario) testkit.PaymentUnder
 	for _, c := range s.Checkouts {
 		p.PutCheckout(c)
 	}
-	for i, m := range testkit.PaymentMovements(s) {
+	for i, m := range supporterstest.PaymentMovements(s) {
 		object := s.Money[i].Object
 		if object == "" {
 			object = m.ID
@@ -30,7 +30,7 @@ func newOnScenario(_ *testing.T, s testkit.PaymentScenario) testkit.PaymentUnder
 		p.PutChange(n)
 	}
 	p.Fail(s.Failure)
-	return testkit.PaymentUnderTest{
+	return supporterstest.PaymentUnderTest{
 		Provider: p, Deliver: p.Deliver, CheckoutHosts: []string{CheckoutHost}, PortalHosts: []string{PortalHost}, TimedSignature: true,
 		DeclineChanges: func(_ supporters.SubscriptionRef, declined bool) {
 			if declined {
@@ -44,9 +44,9 @@ func newOnScenario(_ *testing.T, s testkit.PaymentScenario) testkit.PaymentUnder
 }
 
 func TestPaymentProviderContract(t *testing.T) {
-	testkit.PaymentProviderContract(t, newOnScenario)
+	supporterstest.PaymentProviderContract(t, newOnScenario)
 	t.Run("WithoutTimedSignature", func(t *testing.T) {
-		testkit.PaymentProviderContract(t, func(t *testing.T, s testkit.PaymentScenario) testkit.PaymentUnderTest {
+		supporterstest.PaymentProviderContract(t, func(t *testing.T, s supporterstest.PaymentScenario) supporterstest.PaymentUnderTest {
 			u := newOnScenario(t, s)
 			u.TimedSignature = false
 			return u
@@ -58,7 +58,7 @@ func TestPaymentProviderContract(t *testing.T) {
 func TestPendingMoneyBecomesFinal(t *testing.T) {
 	p := New(Options{})
 	at := time.Date(2026, 10, 1, 0, 0, 0, 0, time.UTC)
-	m := testkit.PaymentMovements(testkit.PaymentScenario{Location: time.UTC, Money: []testkit.PaymentScenarioMoney{
+	m := supporterstest.PaymentMovements(supporterstest.PaymentScenario{Location: time.UTC, Money: []supporterstest.PaymentScenarioMoney{
 		{ID: "txn_1", Kind: "payment", OccurredAt: at, GrossMinor: 1000, Currency: "JPY", Pending: true},
 		{ID: "txn_2", Kind: "payment", OccurredAt: at.Add(time.Hour), GrossMinor: 1000, Currency: "JPY"},
 	}})

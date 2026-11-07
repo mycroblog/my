@@ -28,8 +28,8 @@ const (
 
 // EmojiPurgeRepository is the part of the content module's persistence that the purge of remote
 // custom emoji uses. The database adapters' custom emoji repositories implement it and pass
-// testkit.CustomEmojiRepositoryContract; the purge on top of it is a case of
-// testkit.RetentionContract (emoji_purge_flows.go).
+// contenttest.CustomEmojiRepositoryContract; the purge on top of it is a case of
+// federationtest.RetentionContract (emoji_purge_flows.go).
 type EmojiPurgeRepository interface {
 	// ListUnreferencedRemoteEmojis returns the IDs of up to limit remote custom emoji, in ID
 	// order after the cursor after, that no status revision and no reaction refers to and that

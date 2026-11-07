@@ -3,7 +3,7 @@
 package kernel
 
 // HTMLSanitizer cleans HTML that arrives from other servers (ADR-0019 §2, federation.md §5).
-// The adapter lives in internal/adapter/htmlsanitizer and passes testkit.HTMLSanitizerContract.
+// The adapter lives in internal/adapter/htmlsanitizer and passes contenttest.HTMLSanitizerContract.
 //
 // Remote HTML is sanitized once, when it is ingested, and stored together with the
 // PolicyVersion that produced it, so that stored HTML can be sanitized again after the policy

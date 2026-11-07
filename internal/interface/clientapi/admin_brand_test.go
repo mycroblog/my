@@ -18,10 +18,11 @@ import (
 	"github.com/mycroblog/my/internal/domain/instance"
 	"github.com/mycroblog/my/internal/interface/clientapi"
 	"github.com/mycroblog/my/pkg/testkit"
+	"github.com/mycroblog/my/pkg/testkit/instancetest"
 )
 
 // fakeBrands keeps the brand images with the checks of the domain, as appinstance.Service does;
-// testkit.InstanceRepositoryContract covers the storage, the audit log, and the projection.
+// instancetest.InstanceRepositoryContract covers the storage, the audit log, and the projection.
 type fakeBrands struct {
 	now     time.Time
 	current instance.Brands
@@ -105,7 +106,7 @@ func (e *authEnv) sendMultipart(t *testing.T, method, path, token string, parts 
 
 // brandParts returns the parts of a complete upload of kind.
 func brandParts(kind instance.BrandKind) []part {
-	in := testkit.BrandFixture(kind)
+	in := instancetest.BrandFixture(kind)
 	parts := []part{{name: "svg", filename: "logo.svg", contentType: "image/svg+xml", data: in.SVG}}
 	for _, r := range instance.BrandRenditions(kind) {
 		parts = append(parts, part{name: strings.ReplaceAll(string(r), "-", "_"), filename: string(r) + ".png", contentType: "image/png", data: in.Renditions[r]})
@@ -120,7 +121,7 @@ func TestBrandOperationsNeedAPermission(t *testing.T) {
 		parts        []part
 	}{
 		{http.MethodGet, "/admin/instance/brand", nil},
-		{http.MethodPost, "/admin/instance/brand/sanitize", []part{{name: "kind", data: []byte("icon")}, {name: "svg", data: testkit.BrandSVGFixture(instance.BrandIcon)}}},
+		{http.MethodPost, "/admin/instance/brand/sanitize", []part{{name: "kind", data: []byte("icon")}, {name: "svg", data: instancetest.BrandSVGFixture(instance.BrandIcon)}}},
 		{http.MethodPut, "/admin/instance/brand/icon", brandParts(instance.BrandIcon)},
 		{http.MethodDelete, "/admin/instance/brand/icon", nil},
 	} {
@@ -143,7 +144,7 @@ func TestBrandOperationsNeedAPermission(t *testing.T) {
 func TestSanitizeBrand(t *testing.T) {
 	e, f := newBrandEnv(t)
 	res := e.sendMultipart(t, http.MethodPost, "/admin/instance/brand/sanitize", "admin",
-		part{name: "kind", data: []byte("logo")}, part{name: "svg", filename: "logo.svg", data: testkit.BrandSVGFixture(instance.BrandLogo)})
+		part{name: "kind", data: []byte("logo")}, part{name: "svg", filename: "logo.svg", data: instancetest.BrandSVGFixture(instance.BrandLogo)})
 	if res.StatusCode != http.StatusOK || res.Header.Get("Cache-Control") != "no-store" {
 		t.Fatalf("sanitize = %d %s", res.StatusCode, res.Header.Get("Cache-Control"))
 	}
@@ -179,8 +180,8 @@ func TestSanitizeBrand(t *testing.T) {
 		}
 	}
 	for _, parts := range [][]part{
-		{{name: "svg", data: testkit.BrandSVGFixture(instance.BrandIcon)}},
-		{{name: "kind", data: []byte("banner")}, {name: "svg", data: testkit.BrandSVGFixture(instance.BrandIcon)}},
+		{{name: "svg", data: instancetest.BrandSVGFixture(instance.BrandIcon)}},
+		{{name: "kind", data: []byte("banner")}, {name: "svg", data: instancetest.BrandSVGFixture(instance.BrandIcon)}},
 		{{name: "kind", data: []byte("icon")}},
 		{{name: "kind", data: []byte("icon")}, {name: "svg", data: []byte("<svg/>")}, {name: "svg", data: []byte("<svg/>")}},
 	} {

@@ -14,7 +14,7 @@ import (
 
 	"github.com/mycroblog/my/internal/adapter/telemetry/otel"
 	"github.com/mycroblog/my/internal/app/kernel"
-	"github.com/mycroblog/my/pkg/testkit"
+	"github.com/mycroblog/my/pkg/testkit/kerneltest"
 )
 
 func newPrometheus(t *testing.T) *otel.Meter {
@@ -28,7 +28,7 @@ func newPrometheus(t *testing.T) *otel.Meter {
 }
 
 func TestMeterContract(t *testing.T) {
-	testkit.MeterContract(t, func(t *testing.T) kernel.Meter { return newPrometheus(t) })
+	kerneltest.MeterContract(t, func(t *testing.T) kernel.Meter { return newPrometheus(t) })
 }
 
 func scrape(t *testing.T, m *otel.Meter) string {

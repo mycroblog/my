@@ -15,7 +15,7 @@ const MaxPayloadSize = 1024
 
 // Bus broadcasts payloads to every process that listens on it: the port of the cross-process
 // brokers (ADR-0050 §1). Relay uses it to deliver the signals of one process to the streams of
-// every other. Every adapter passes testkit.StreamBusContract; MemoryBroker is the in-process
+// every other. Every adapter passes streamtest.StreamBusContract; MemoryBroker is the in-process
 // one, for tests.
 //
 // A payload is UTF-8 text without NUL bytes, at most MaxPayloadSize bytes; a Bus carries it
@@ -40,7 +40,7 @@ const MaxPayloadSize = 1024
 //     and the listener breaks when its subscription is gone.
 //   - MemoryBroker: every payload once, for tests.
 //
-// testkit.StreamBusContract checks these with bursts of payloads, cut by a break and not.
+// streamtest.StreamBusContract checks these with bursts of payloads, cut by a break and not.
 type Bus interface {
 	// Send hands payload to the broker for every listening process, including this one, and
 	// returns once the broker has it. It returns no later than ctx's deadline, with an error,
@@ -89,6 +89,6 @@ type Sweeper interface {
 	// alive, and returns how many it deleted. alive reports whether a process ID has a live
 	// marker; a resource whose process cannot be told is kept, and the error of alive is
 	// returned with the count. A resource that is already gone is not an error, so that two
-	// sweeps may run at once. Adapters pass testkit.StreamSweeperContract.
+	// sweeps may run at once. Adapters pass streamtest.StreamSweeperContract.
 	Sweep(ctx context.Context, minAge time.Duration, alive func(ctx context.Context, processID string) (bool, error)) (int, error)
 }

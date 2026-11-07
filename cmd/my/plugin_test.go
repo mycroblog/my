@@ -14,7 +14,7 @@ import (
 
 	"github.com/mycroblog/my/internal/adapter/plugin/fakeplugin"
 	appfinance "github.com/mycroblog/my/internal/app/finance"
-	"github.com/mycroblog/my/pkg/testkit"
+	"github.com/mycroblog/my/pkg/testkit/financetest"
 )
 
 func runPluginTest(args ...string) (code int, stdout, stderr string) {
@@ -53,7 +53,7 @@ func TestPluginTestReportsEachFailure(t *testing.T) {
 }
 
 func TestPluginTestBilling(t *testing.T) {
-	provider := testkit.NewFakeBillingSource(appfinance.SourcePlugin, time.UTC)
+	provider := financetest.NewFakeBillingSource(appfinance.SourcePlugin, time.UTC)
 	h, _ := fakeplugin.JSON(fakeplugin.Options{Billing: provider})
 	addr := fakeplugin.ServeTCP(t, h)
 

@@ -60,7 +60,7 @@ var (
 )
 
 // ExportRepository is the persistence of the data exports. The database adapters' identity
-// repositories implement it and pass testkit.AccountRepositoryContract.
+// repositories implement it and pass identitytest.AccountRepositoryContract.
 type ExportRepository interface {
 	InsertDataExport(ctx context.Context, tx uow.Tx, e identity.DataExport) error
 	// LockPendingDataExports makes the requests of a user's exports and imports that run tx

@@ -79,7 +79,7 @@ type AutoDeleteLimitView struct {
 
 // AutoDeleteRepository is the part of the content module's persistence that the automatic
 // deletion of old posts uses. The database adapters' status repositories implement it and pass
-// testkit.AutoDeleteContract; testkit.AutoDeleteFlows (internal/flowtest/content) drives the use
+// contenttest.AutoDeleteContract; contenttest.AutoDeleteFlows (internal/flowtest/content) drives the use
 // cases on them.
 type AutoDeleteRepository interface {
 	// FindAutoDeletePolicy returns the saved policy of the account, or ErrNotFound.

@@ -36,6 +36,7 @@ import (
 	domwebhook "github.com/mycroblog/my/internal/domain/webhook"
 	"github.com/mycroblog/my/internal/platform"
 	"github.com/mycroblog/my/pkg/testkit"
+	"github.com/mycroblog/my/pkg/testkit/financetest"
 )
 
 // TestProjectionsVerifyAndRebuild fills every projection through the services, on both
@@ -230,9 +231,9 @@ func fillWebhooks(t *testing.T, a *platform.App) {
 }
 
 // billingFixture is a source with two costs this month.
-func billingFixture() *testkit.FakeBillingSource {
-	src := testkit.NewFakeBillingSource("aws", time.UTC)
-	src.SetMonth(domfinance.YearMonthOf(domfinance.DateOf(time.Now().UTC())), testkit.FakeBillingMonth{Rows: []testkit.FakeBillingRow{
+func billingFixture() *financetest.FakeBillingSource {
+	src := financetest.NewFakeBillingSource("aws", time.UTC)
+	src.SetMonth(domfinance.YearMonthOf(domfinance.DateOf(time.Now().UTC())), financetest.FakeBillingMonth{Rows: []financetest.FakeBillingRow{
 		{Service: "Amazon Simple Storage Service", ChargeType: domfinance.ChargeUsage, Amount: "1.25", Currency: "USD"},
 		{Service: "Tax", ChargeType: domfinance.ChargeTax, Amount: "0.10", Currency: "USD"},
 	}})

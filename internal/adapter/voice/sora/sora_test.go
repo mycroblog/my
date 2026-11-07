@@ -18,6 +18,7 @@ import (
 
 	appvoice "github.com/mycroblog/my/internal/app/voice"
 	"github.com/mycroblog/my/pkg/testkit"
+	"github.com/mycroblog/my/pkg/testkit/voicetest"
 )
 
 const (
@@ -63,10 +64,10 @@ var modes = []string{ModeSelfHosted, ModeCloud}
 func TestVoiceTransportContract(t *testing.T) {
 	for _, mode := range modes {
 		t.Run(mode, func(t *testing.T) {
-			testkit.VoiceTransportContract(t, func(t *testing.T) testkit.VoiceTransportHarness {
-				clock := testkit.VoiceTransportClock()
+			voicetest.VoiceTransportContract(t, func(t *testing.T) voicetest.VoiceTransportHarness {
+				clock := voicetest.VoiceTransportClock()
 				tr, f := newTestTransport(t, mode, clock)
-				return testkit.VoiceTransportHarness{
+				return voicetest.VoiceTransportHarness{
 					Transport: tr, Clock: clock,
 					Connect: func(_ *testing.T, room appvoice.RoomRef, s appvoice.Session) { f.connect(tr.channel(room.ID), s.ID) },
 				}
@@ -79,7 +80,7 @@ func TestNew(t *testing.T) {
 	base := Options{
 		Mode: ModeSelfHosted, SignalingURLs: []string{"wss://sora.example.org/signaling"}, APIURL: "https://sora-api.example.org",
 		WebhookUsername: testUser, WebhookPassword: testPassword, JoinSecret: testJoinSecret, HTTPClient: &http.Client{},
-		Clock: testkit.VoiceTransportClock(),
+		Clock: voicetest.VoiceTransportClock(),
 	}
 	if _, err := New(base); err != nil {
 		t.Fatalf("New: %v", err)
@@ -110,7 +111,7 @@ func TestNew(t *testing.T) {
 
 func TestGrant(t *testing.T) {
 	for _, mode := range modes {
-		clock := testkit.VoiceTransportClock()
+		clock := voicetest.VoiceTransportClock()
 		tr, _ := newTestTransport(t, mode, clock)
 		room := appvoice.RoomRef{ID: "room-1"}
 		s := appvoice.Session{ID: "session-1", AccountID: "account-1"}
@@ -173,7 +174,7 @@ func decodeAccessToken(t *testing.T, token, key string) accessClaims {
 }
 
 func TestJoinValueRejects(t *testing.T) {
-	now := testkit.VoiceTransportClock().Now()
+	now := voicetest.VoiceTransportClock().Now()
 	good, err := signJoin(joinValue{Room: "r", Session: "s", Role: roleRecvOnly, ExpiresAt: now.Add(time.Minute).Unix()}, testJoinSecret)
 	if err != nil {
 		t.Fatal(err)
@@ -210,7 +211,7 @@ func TestJoinValueRejects(t *testing.T) {
 func TestSpeakingAndMute(t *testing.T) {
 	for _, mode := range modes {
 		t.Run(mode, func(t *testing.T) {
-			clock := testkit.VoiceTransportClock()
+			clock := voicetest.VoiceTransportClock()
 			tr, f := newTestTransport(t, mode, clock)
 			room := appvoice.RoomRef{ID: "room-2"}
 			ch := tr.channel(room.ID)
@@ -334,7 +335,7 @@ func jsonEqual(t *testing.T, a, b any) bool {
 }
 
 func TestFilterVersionConflict(t *testing.T) {
-	clock := testkit.VoiceTransportClock()
+	clock := voicetest.VoiceTransportClock()
 	tr, f := newTestTransport(t, ModeSelfHosted, clock)
 	room := appvoice.RoomRef{ID: "room-v"}
 	f.connect(room.ID, "s1")
@@ -374,7 +375,7 @@ func (v versionSwap) RoundTrip(r *http.Request) (*http.Response, error) {
 func TestRemoveCloseAndDuplicates(t *testing.T) {
 	for _, mode := range modes {
 		t.Run(mode, func(t *testing.T) {
-			clock := testkit.VoiceTransportClock()
+			clock := voicetest.VoiceTransportClock()
 			tr, f := newTestTransport(t, mode, clock)
 			room := appvoice.RoomRef{ID: "room-3"}
 			ch := tr.channel(room.ID)
@@ -422,7 +423,7 @@ func TestRemoveCloseAndDuplicates(t *testing.T) {
 }
 
 func TestCallFailure(t *testing.T) {
-	clock := testkit.VoiceTransportClock()
+	clock := voicetest.VoiceTransportClock()
 	for _, mode := range modes {
 		tr, _ := newTestTransport(t, mode, clock)
 		// The reverse proxy or Sora Cloud refuses a wrong credential.
@@ -463,7 +464,7 @@ func header(mode string, now time.Time, body []byte) http.Header {
 }
 
 func TestWebhookAuthentication(t *testing.T) {
-	clock := testkit.VoiceTransportClock()
+	clock := voicetest.VoiceTransportClock()
 	now := clock.Now()
 	body := []byte(`{"type":"connection.created","id":"EV_1","channel_id":"room-1@` + testProject + `","client_id":"session-1"}`)
 	tampered := []byte(strings.Replace(string(body), "session-1", "session-2", 1))
@@ -526,7 +527,7 @@ func allowAll(appvoice.ConnectAttempt) appvoice.ConnectDecision {
 func TestAuthorizeConnect(t *testing.T) {
 	for _, mode := range modes {
 		t.Run(mode, func(t *testing.T) {
-			clock := testkit.VoiceTransportClock()
+			clock := voicetest.VoiceTransportClock()
 			tr, _ := newTestTransport(t, mode, clock)
 			room := appvoice.RoomRef{ID: "room-4"}
 			s := appvoice.Session{ID: "session-4", AccountID: "account-4"}
@@ -644,7 +645,7 @@ func TestAuthorizeConnect(t *testing.T) {
 
 func TestParseEvents(t *testing.T) {
 	for _, mode := range modes {
-		clock := testkit.VoiceTransportClock()
+		clock := voicetest.VoiceTransportClock()
 		tr, _ := newTestTransport(t, mode, clock)
 		ch := tr.channel("room-5")
 		at := "2026-10-26T09:00:00.123456Z"
@@ -695,7 +696,7 @@ func TestParseEvents(t *testing.T) {
 		}
 	}
 	// A channel of another project of Sora Cloud is not a room.
-	clock := testkit.VoiceTransportClock()
+	clock := voicetest.VoiceTransportClock()
 	cloud, _ := newTestTransport(t, ModeCloud, clock)
 	body := []byte(`{"type":"connection.created","id":"EV_1","channel_id":"room-5@OTHER","client_id":"s"}`)
 	if _, err := cloud.ParseEvents(t.Context(), signed(testAPIKey, clock.Now(), body), body); !errors.Is(err, ErrWebhookBody) {
@@ -721,7 +722,7 @@ func TestTruncate(t *testing.T) {
 }
 
 func TestNotFoundIsDone(t *testing.T) {
-	clock := testkit.VoiceTransportClock()
+	clock := voicetest.VoiceTransportClock()
 	tr, _ := newTestTransport(t, ModeSelfHosted, clock)
 	// A connection that is gone already counts as disconnected.
 	if err := tr.disconnect(t.Context(), appvoice.RoomRef{ID: "room"}, "CONN-GONE"); err != nil {

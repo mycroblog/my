@@ -7,13 +7,13 @@ import (
 
 	"github.com/mycroblog/my/internal/adapter/hook/fake"
 	apphook "github.com/mycroblog/my/internal/app/hook"
-	"github.com/mycroblog/my/pkg/testkit"
+	"github.com/mycroblog/my/pkg/testkit/hooktest"
 )
 
 func TestContract(t *testing.T) {
-	testkit.HookPluginContract(t, func(*testing.T) testkit.HookPluginHarness {
+	hooktest.HookPluginContract(t, func(*testing.T) hooktest.HookPluginHarness {
 		p := fake.New()
-		return testkit.HookPluginHarness{
+		return hooktest.HookPluginHarness{
 			Plugin: p, Answer: p.Answer,
 			Fail: func() { p.Fail(apphook.ErrPluginFailed) },
 		}

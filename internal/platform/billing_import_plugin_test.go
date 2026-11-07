@@ -21,7 +21,7 @@ import (
 	"github.com/mycroblog/my/internal/interface/clientapi"
 	"github.com/mycroblog/my/internal/interface/clientapi/apitest"
 	"github.com/mycroblog/my/internal/platform"
-	"github.com/mycroblog/my/pkg/testkit"
+	"github.com/mycroblog/my/pkg/testkit/financetest"
 )
 
 // TestBillingImportsFromAPlugin runs billing_sources = plugin with the real adapter against a fake plugin, on SQLite with
@@ -34,9 +34,9 @@ func TestBillingImportsFromAPlugin(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	provider := testkit.NewFakeBillingSource(appfinance.SourcePlugin, tokyo)
+	provider := financetest.NewFakeBillingSource(appfinance.SourcePlugin, tokyo)
 	month := finance.YearMonthOf(finance.DateOf(time.Now().In(tokyo)))
-	provider.SetMonth(month, testkit.FakeBillingMonth{Rows: []testkit.FakeBillingRow{
+	provider.SetMonth(month, financetest.FakeBillingMonth{Rows: []financetest.FakeBillingRow{
 		{Service: "Hetzner Cloud", ChargeType: finance.ChargeUsage, Amount: "1.25", Currency: "USD"},
 	}})
 

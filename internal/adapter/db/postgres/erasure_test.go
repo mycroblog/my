@@ -6,16 +6,17 @@ import (
 	"testing"
 
 	"github.com/mycroblog/my/internal/app/uow"
-	"github.com/mycroblog/my/pkg/testkit"
+	"github.com/mycroblog/my/pkg/testkit/federationtest"
+	"github.com/mycroblog/my/pkg/testkit/identitytest"
 )
 
 func TestAccountErasureContract(t *testing.T) {
-	testkit.AccountErasureContract(t, func(t *testing.T, opts uow.Options) testkit.AccountErasureHarness {
+	federationtest.AccountErasureContract(t, func(t *testing.T, opts uow.Options) federationtest.AccountErasureHarness {
 		db := newTestDB(t, opts)
-		return testkit.AccountErasureHarness{
-			RetentionHarness: testkit.RetentionHarness{
-				RemoteStatusHarness: testkit.RemoteStatusHarness{
-					AccountHarness: testkit.AccountHarness{UnitOfWork: db, Identity: db.IdentityRepository(), Accounts: db.AccountRepository()},
+		return federationtest.AccountErasureHarness{
+			RetentionHarness: federationtest.RetentionHarness{
+				RemoteStatusHarness: federationtest.RemoteStatusHarness{
+					AccountHarness: identitytest.AccountHarness{UnitOfWork: db, Identity: db.IdentityRepository(), Accounts: db.AccountRepository()},
 					Graph:          db.GraphRepository(),
 					Statuses:       db.StatusRepository(),
 					Media:          db.MediaRepository(),

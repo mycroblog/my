@@ -6,10 +6,10 @@ import (
 	"testing"
 
 	"github.com/mycroblog/my/internal/adapter/httpsig"
-	"github.com/mycroblog/my/pkg/testkit"
+	"github.com/mycroblog/my/pkg/testkit/federationtest"
 )
 
 func TestContract(t *testing.T) {
 	a := httpsig.New()
-	testkit.HTTPSignatureContract(t, a, a)
+	federationtest.HTTPSignatureContract(t, a, a)
 }

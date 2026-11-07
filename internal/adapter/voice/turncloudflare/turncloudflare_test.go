@@ -17,6 +17,7 @@ import (
 	"github.com/mycroblog/my/internal/adapter/voice/turncloudflare"
 	appvoice "github.com/mycroblog/my/internal/app/voice"
 	"github.com/mycroblog/my/pkg/testkit"
+	"github.com/mycroblog/my/pkg/testkit/voicetest"
 )
 
 // fakeAPI is Cloudflare's TURN API as its documentation describes it.
@@ -79,7 +80,7 @@ func newHarness(t *testing.T) harness {
 	api := &fakeAPI{}
 	srv := httptest.NewServer(api)
 	t.Cleanup(srv.Close)
-	clock := testkit.VoiceTransportClock()
+	clock := voicetest.VoiceTransportClock()
 	s, err := turncloudflare.New(turncloudflare.Options{
 		KeyID: "key-1", APIToken: "token-1", KV: testkit.NewKeyValueStore(clock), Clock: clock,
 		HTTPClient: srv.Client(), BaseURL: srv.URL + "/v1",
@@ -212,7 +213,7 @@ func TestErrors(t *testing.T) {
 
 func TestNewNeedsTheKey(t *testing.T) {
 	t.Parallel()
-	clock := testkit.VoiceTransportClock()
+	clock := voicetest.VoiceTransportClock()
 	if _, err := turncloudflare.New(turncloudflare.Options{APIToken: "t", KV: testkit.NewKeyValueStore(clock), Clock: clock}); err == nil {
 		t.Error("New without a key ID = nil error")
 	}
@@ -240,7 +241,7 @@ func TestErrorsHideTheKeyID(t *testing.T) {
 	srv := httptest.NewServer(http.NotFoundHandler())
 	base := srv.URL
 	srv.Close() // every call fails to connect
-	clock := testkit.VoiceTransportClock()
+	clock := voicetest.VoiceTransportClock()
 	s, err := turncloudflare.New(turncloudflare.Options{
 		KeyID: "secret-key-id", APIToken: "token-1", KV: testkit.NewKeyValueStore(clock), Clock: clock, BaseURL: base,
 	})

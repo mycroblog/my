@@ -6,14 +6,14 @@ import (
 	"testing"
 
 	"github.com/mycroblog/my/internal/app/uow"
-	"github.com/mycroblog/my/pkg/testkit"
+	"github.com/mycroblog/my/pkg/testkit/metricstest"
 )
 
 func TestDatabaseSizerContract(t *testing.T) {
 	t.Parallel()
-	testkit.DatabaseSizerContract(t, func(t *testing.T) testkit.DatabaseSizerHarness {
+	metricstest.DatabaseSizerContract(t, func(t *testing.T) metricstest.DatabaseSizerHarness {
 		db, _ := newTestDB(t, "", uow.Options{})
-		return testkit.DatabaseSizerHarness{Sizer: db, Grow: func(t *testing.T) {
+		return metricstest.DatabaseSizerHarness{Sizer: db, Grow: func(t *testing.T) {
 			_, err := db.db.ExecContext(t.Context(), `CREATE TABLE size_probe AS
 				WITH RECURSIVE n(i) AS (SELECT 1 UNION ALL SELECT i + 1 FROM n WHERE i < 2048)
 				SELECT randomblob(1000) AS v FROM n`)

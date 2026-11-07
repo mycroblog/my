@@ -30,7 +30,7 @@
 // the guarantee.
 //
 // The adapters live in internal/adapter/queue/*; their shared contract test suite is
-// testkit.QueueContract in pkg/testkit.
+// queuetest.QueueContract in pkg/testkit/queuetest.
 package queue
 
 import (
@@ -247,7 +247,7 @@ type Backlog struct {
 
 // BacklogReader reads the backlog of a queue that the server can count: the database queue.
 // The queue of a platform (Cloud Tasks) has metrics of its own. Adapters pass
-// testkit.QueueBacklogContract.
+// queuetest.QueueBacklogContract.
 type BacklogReader interface {
 	Backlog(ctx context.Context, now time.Time) (Backlog, error)
 }

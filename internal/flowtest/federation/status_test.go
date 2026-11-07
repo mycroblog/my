@@ -7,15 +7,16 @@ import (
 
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/flowtest"
-	"github.com/mycroblog/my/pkg/testkit"
+	"github.com/mycroblog/my/pkg/testkit/federationtest"
+	"github.com/mycroblog/my/pkg/testkit/identitytest"
 )
 
 func TestRemoteStatusFlows(t *testing.T) {
 	t.Parallel()
-	testkit.RemoteStatusFlows(t, func(t *testing.T, opts uow.Options) testkit.RemoteStatusHarness {
+	federationtest.RemoteStatusFlows(t, func(t *testing.T, opts uow.Options) federationtest.RemoteStatusHarness {
 		db := flowtest.SQLite(t, opts)
-		return testkit.RemoteStatusHarness{
-			AccountHarness: testkit.AccountHarness{UnitOfWork: db, Identity: db.IdentityRepository(), Accounts: db.AccountRepository()},
+		return federationtest.RemoteStatusHarness{
+			AccountHarness: identitytest.AccountHarness{UnitOfWork: db, Identity: db.IdentityRepository(), Accounts: db.AccountRepository()},
 			Graph:          db.GraphRepository(),
 			Statuses:       db.StatusRepository(),
 			Media:          db.MediaRepository(),

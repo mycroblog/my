@@ -16,7 +16,7 @@ import (
 	domainidentity "github.com/mycroblog/my/internal/domain/identity"
 	"github.com/mycroblog/my/internal/interface/authpages"
 	"github.com/mycroblog/my/internal/interface/clientapi"
-	"github.com/mycroblog/my/pkg/testkit"
+	"github.com/mycroblog/my/pkg/testkit/identitytest"
 )
 
 // lifecycleOf returns the state of the account of a username.
@@ -149,13 +149,13 @@ func (e *deactivationEnv) marshal(v any) []byte {
 }
 
 // addPasskey registers a software authenticator on a user's account through the client API.
-func (e *deactivationEnv) addPasskey(user string) *testkit.SoftwarePasskey {
+func (e *deactivationEnv) addPasskey(user string) *identitytest.SoftwarePasskey {
 	e.t.Helper()
 	var begun clientapi.PasskeyRegistration
 	if res := e.do(user, http.MethodPost, "/passkeys/registration", map[string]any{"name": "phone", "password": deactivationPassword}, &begun); res.StatusCode != http.StatusOK {
 		e.t.Fatalf("POST /passkeys/registration = %d", res.StatusCode)
 	}
-	key := testkit.NewSoftwarePasskey(e.t, "example.test", "https://example.test")
+	key := identitytest.NewSoftwarePasskey(e.t, "example.test", "https://example.test")
 	if res := e.do(user, http.MethodPost, "/passkeys", map[string]any{
 		"registration_token": begun.RegistrationToken, "credential": json.RawMessage(key.Register(e.t, e.marshal(begun.Options))),
 	}, nil); res.StatusCode != http.StatusCreated {
@@ -165,7 +165,7 @@ func (e *deactivationEnv) addPasskey(user string) *testkit.SoftwarePasskey {
 }
 
 // passkeyBody asks the server for a confirmation as user, and answers it with key.
-func (e *deactivationEnv) passkeyBody(user string, key *testkit.SoftwarePasskey) map[string]any {
+func (e *deactivationEnv) passkeyBody(user string, key *identitytest.SoftwarePasskey) map[string]any {
 	e.t.Helper()
 	var c clientapi.PasskeyConfirmation
 	if res := e.do(user, http.MethodPost, "/passkeys/confirmation", nil, &c); res.StatusCode != http.StatusOK {
@@ -197,7 +197,7 @@ func TestSelfDeactivationConfirmedByAPasskey(t *testing.T) {
 			t.Errorf("%s: the state = %s, want active", what, st)
 		}
 	}
-	refused("a key that is not registered", e.passkeyBody("alice", testkit.NewSoftwarePasskey(t, "example.test", "https://example.test")), clientapi.ProblemTypeInvalidPasskey)
+	refused("a key that is not registered", e.passkeyBody("alice", identitytest.NewSoftwarePasskey(t, "example.test", "https://example.test")), clientapi.ProblemTypeInvalidPasskey)
 	refused("bob's key", e.passkeyBody("alice", bobKey), clientapi.ProblemTypeInvalidPasskey)
 	refused("a confirmation of bob's", e.passkeyBody("bob", bobKey), clientapi.ProblemTypePasskeyConfirmationExpired)
 	refused("an answer from another origin", e.passkeyBody("alice", key.At("https://evil.example")), clientapi.ProblemTypeInvalidPasskey)

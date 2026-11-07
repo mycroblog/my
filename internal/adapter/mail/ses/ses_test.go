@@ -19,7 +19,7 @@ import (
 	"github.com/mycroblog/my/internal/adapter/mail/internal/mailtest"
 	"github.com/mycroblog/my/internal/adapter/mail/ses"
 	"github.com/mycroblog/my/internal/app/kernel"
-	"github.com/mycroblog/my/pkg/testkit"
+	"github.com/mycroblog/my/pkg/testkit/kerneltest"
 )
 
 // The recipients for which the stand-in of SES answers with an error, by its code.
@@ -131,9 +131,9 @@ func newMailer(t *testing.T, o ses.Options) (*ses.Mailer, *server) {
 }
 
 func TestMailerContract(t *testing.T) {
-	testkit.MailerContract(t, func(t *testing.T) testkit.MailerHarness {
+	kerneltest.MailerContract(t, func(t *testing.T) kerneltest.MailerHarness {
 		m, s := newMailer(t, ses.Options{})
-		return testkit.MailerHarness{
+		return kerneltest.MailerHarness{
 			Mailer: m, Delivered: s.messages,
 			// SES accepts every address and reports the ones that do not exist later as bounces.
 			RejectedRecipient: "spammer@example.com", DeferredRecipient: "throttled@example.com",

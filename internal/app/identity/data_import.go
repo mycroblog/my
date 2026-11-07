@@ -57,7 +57,7 @@ const (
 var ErrImportInProgress = errors.New("identity: an import is being carried out")
 
 // ImportRepository is the persistence of the imports. The database adapters' identity
-// repositories implement it and pass testkit.AccountRepositoryContract.
+// repositories implement it and pass identitytest.AccountRepositoryContract.
 type ImportRepository interface {
 	InsertDataImport(ctx context.Context, tx uow.Tx, i identity.DataImport) error
 	// LockUnfinishedDataImports makes the requests of a user's exports and imports that run tx

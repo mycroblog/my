@@ -98,7 +98,7 @@ type RebuildStep struct {
 }
 
 // Repository is what the module keeps in the database: the progress of a rebuild, which is one row.
-// testkit.SearchRepositoryContract is its contract.
+// searchtest.SearchRepositoryContract is its contract.
 type Repository interface {
 	// StartRebuild writes r as the rebuild and removes the failures of any other, unless a rebuild is
 	// unfinished, when it changes nothing and returns false.

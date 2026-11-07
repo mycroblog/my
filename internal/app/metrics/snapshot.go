@@ -76,7 +76,7 @@ type Totals struct {
 }
 
 // DatabaseSizer measures the database. The database adapters implement it and pass
-// testkit.DatabaseSizerContract.
+// metricstest.DatabaseSizerContract.
 type DatabaseSizer interface {
 	// DatabaseSize returns the bytes that the database takes in its storage. It is cheap enough
 	// to run once per TotalsMaxAge.

@@ -15,7 +15,7 @@ import (
 	"time"
 
 	"github.com/mycroblog/my/internal/app/translation"
-	"github.com/mycroblog/my/pkg/testkit"
+	"github.com/mycroblog/my/pkg/testkit/translationtest"
 )
 
 const testKey = "0123abcd-4567-89ef-0123-456789abcdef:fx"
@@ -114,9 +114,9 @@ func newStandIn(t *testing.T) (*standIn, *Translator) {
 
 func TestContract(t *testing.T) {
 	t.Parallel()
-	testkit.TranslatorContract(t, func(t *testing.T) testkit.TranslatorHarness {
+	translationtest.TranslatorContract(t, func(t *testing.T) translationtest.TranslatorHarness {
 		s, tr := newStandIn(t)
-		return testkit.TranslatorHarness{
+		return translationtest.TranslatorHarness{
 			Translator:          tr,
 			Source:              "en",
 			Target:              "ja",

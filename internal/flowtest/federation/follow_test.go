@@ -10,15 +10,17 @@ import (
 	"github.com/mycroblog/my/internal/adapter/db/sqlite"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/flowtest"
-	"github.com/mycroblog/my/pkg/testkit"
+	"github.com/mycroblog/my/pkg/testkit/federationtest"
+	"github.com/mycroblog/my/pkg/testkit/graphtest"
+	"github.com/mycroblog/my/pkg/testkit/identitytest"
 )
 
 // remoteFollowHarness is the harness of the follow and move flows on db.
-func remoteFollowHarness(db *sqlite.DB) testkit.RemoteFollowHarness {
+func remoteFollowHarness(db *sqlite.DB) federationtest.RemoteFollowHarness {
 	feds := db.FederationRepository()
-	return testkit.RemoteFollowHarness{
-		FollowHarness: testkit.FollowHarness{
-			AccountHarness: testkit.AccountHarness{UnitOfWork: db, Identity: db.IdentityRepository(), Accounts: db.AccountRepository()},
+	return federationtest.RemoteFollowHarness{
+		FollowHarness: graphtest.FollowHarness{
+			AccountHarness: identitytest.AccountHarness{UnitOfWork: db, Identity: db.IdentityRepository(), Accounts: db.AccountRepository()},
 			Graph:          db.GraphRepository(),
 		},
 		Notifications: db.NotificationRepository(),
@@ -29,14 +31,14 @@ func remoteFollowHarness(db *sqlite.DB) testkit.RemoteFollowHarness {
 
 func TestRemoteFollowFlows(t *testing.T) {
 	t.Parallel()
-	testkit.RemoteFollowFlows(t, func(t *testing.T, opts uow.Options) testkit.RemoteFollowHarness {
+	federationtest.RemoteFollowFlows(t, func(t *testing.T, opts uow.Options) federationtest.RemoteFollowHarness {
 		return remoteFollowHarness(flowtest.SQLite(t, opts))
 	})
 }
 
 func TestAccountMoveFlows(t *testing.T) {
 	t.Parallel()
-	testkit.AccountMoveFlows(t, func(t *testing.T, opts uow.Options) testkit.RemoteFollowHarness {
+	federationtest.AccountMoveFlows(t, func(t *testing.T, opts uow.Options) federationtest.RemoteFollowHarness {
 		return remoteFollowHarness(flowtest.SQLite(t, opts))
 	})
 }

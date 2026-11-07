@@ -2,7 +2,7 @@
 
 // Package native implements the MediaProcessor port (internal/app/media) in pure Go, so that
 // the server keeps building with CGO_ENABLED=0 (ADR-0005). It passes
-// testkit.MediaProcessorContract.
+// mediatest.MediaProcessorContract.
 //
 // WebP is written with github.com/deepteams/webp, a pure-Go encoder, and animated WebP is read
 // with it too (ADR-0005 §5, §6); still WebP is read with golang.org/x/image/webp.

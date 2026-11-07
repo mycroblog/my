@@ -7,14 +7,14 @@ import (
 
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/flowtest"
-	"github.com/mycroblog/my/pkg/testkit"
+	"github.com/mycroblog/my/pkg/testkit/federationtest"
 )
 
 func TestRemoteActorFlows(t *testing.T) {
 	t.Parallel()
-	testkit.RemoteActorFlows(t, func(t *testing.T, opts uow.Options) testkit.RemoteActorHarness {
+	federationtest.RemoteActorFlows(t, func(t *testing.T, opts uow.Options) federationtest.RemoteActorHarness {
 		db := flowtest.SQLite(t, opts)
 		feds := db.FederationRepository()
-		return testkit.RemoteActorHarness{UnitOfWork: db, Accounts: db.AccountRepository(), Federation: feds, Instances: feds}
+		return federationtest.RemoteActorHarness{UnitOfWork: db, Accounts: db.AccountRepository(), Federation: feds, Instances: feds}
 	})
 }
