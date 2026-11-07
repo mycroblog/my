@@ -162,6 +162,13 @@ An instance setting that has never been set reads as its default, which is defin
 | [`payments_reconcile_interval`](#payments_reconcile_interval) | `MY_PAYMENTS_RECONCILE_INTERVAL` | `6h` | no | no |
 | [`payments_reconcile_max_requests`](#payments_reconcile_max_requests) | `MY_PAYMENTS_RECONCILE_MAX_REQUESTS` | `1000` | no | no |
 | [`search`](#search) | `MY_SEARCH` | `none` | no | no |
+| [`search_elasticsearch_url`](#search_elasticsearch_url) | `MY_SEARCH_ELASTICSEARCH_URL` | none | when `search = elasticsearch` | no |
+| [`search_elasticsearch_api_key`](#search_elasticsearch_api_key) | `MY_SEARCH_ELASTICSEARCH_API_KEY` | none | no | yes |
+| [`search_elasticsearch_username`](#search_elasticsearch_username) | `MY_SEARCH_ELASTICSEARCH_USERNAME` | none | no | no |
+| [`search_elasticsearch_password`](#search_elasticsearch_password) | `MY_SEARCH_ELASTICSEARCH_PASSWORD` | none | when `search_elasticsearch_username` is set | yes |
+| [`search_elasticsearch_index`](#search_elasticsearch_index) | `MY_SEARCH_ELASTICSEARCH_INDEX` | `my-statuses` | no | no |
+| [`search_elasticsearch_replicas`](#search_elasticsearch_replicas) | `MY_SEARCH_ELASTICSEARCH_REPLICAS` | the cluster's default, `1` unless the cluster changed it | no | no |
+| [`search_elasticsearch_ca_file`](#search_elasticsearch_ca_file) | `MY_SEARCH_ELASTICSEARCH_CA_FILE` | none | no | no |
 | [`voice`](#voice) | `MY_VOICE` | `off` | no | no |
 | [`voice_p2p_max_participants`](#voice_p2p_max_participants) | `MY_VOICE_P2P_MAX_PARTICIPANTS` | `10` | no | no |
 | [`voice_sfu_max_participants`](#voice_sfu_max_participants) | `MY_VOICE_SFU_MAX_PARTICIPANTS` | `10` | no | no |
@@ -1330,6 +1337,63 @@ The search engine of the full-text search of statuses. The search of accounts an
 | --- | --- |
 | `none` | No full-text search: the server connects to no engine and enqueues no search job, and `GET /api/v1/instance` tells clients that the search is not available. |
 | `fake` | Test builds only: a stand-in index in the server's memory, for end-to-end tests and demonstrations. Only a binary built with the build tag `e2e_fakes` has it, and that binary refuses it unless `profile = development`; released binaries and images never have it ([build tags](build-tags.md)). It needs no other setting. |
+| `elasticsearch` | An Elasticsearch cluster, version 8 or later, at `search_elasticsearch_url`, with `search_elasticsearch_api_key` or `search_elasticsearch_username` and `search_elasticsearch_password` when it has security on. The server creates and upgrades the index itself ([search engines](../operations/search-engines.md#elasticsearch)). The build tag `no_search_elasticsearch` leaves it out. |
+
+### `search_elasticsearch_url`
+
+The URL of the REST API of the Elasticsearch cluster of `search = elasticsearch`, such as `https://search.internal.example:9200`, without credentials, query, or fragment; a path is kept, for a proxy that serves the API under one. Use `https:` whenever the server sends credentials over a network that others share.
+
+- Environment variable: `MY_SEARCH_ELASTICSEARCH_URL`
+- Default: none
+- Required: when `search = elasticsearch`
+
+### `search_elasticsearch_api_key`
+
+The API key of `search = elasticsearch`, the `encoded` value that Elasticsearch returns when it creates the key, sent as `Authorization: ApiKey <key>`. Set it or `search_elasticsearch_username` and `search_elasticsearch_password`, not both; with neither, the server sends no credentials.
+
+- Environment variable: `MY_SEARCH_ELASTICSEARCH_API_KEY` or `MY_SEARCH_ELASTICSEARCH_API_KEY_FILE`
+- Default: none
+- Required: no
+
+### `search_elasticsearch_username`
+
+The user of `search = elasticsearch` for basic authentication, with `search_elasticsearch_password`, when `search_elasticsearch_api_key` is not set.
+
+- Environment variable: `MY_SEARCH_ELASTICSEARCH_USERNAME`
+- Default: none
+- Required: no
+
+### `search_elasticsearch_password`
+
+The password of `search_elasticsearch_username`.
+
+- Environment variable: `MY_SEARCH_ELASTICSEARCH_PASSWORD` or `MY_SEARCH_ELASTICSEARCH_PASSWORD_FILE`
+- Default: none
+- Required: when `search_elasticsearch_username` is set
+
+### `search_elasticsearch_index`
+
+The name of the alias that the index of `search = elasticsearch` lives behind; the server names the index behind it from this name with a suffix, such as `my-statuses-v1`. Up to 200 lowercase letters, digits, `-`, `_`, or `.`, starting with a letter or digit. Give each server that shares a cluster its own name.
+
+- Environment variable: `MY_SEARCH_ELASTICSEARCH_INDEX`
+- Default: `my-statuses`
+- Required: no
+
+### `search_elasticsearch_replicas`
+
+How many replicas of the index of `search = elasticsearch` the cluster keeps besides the primary. The server sets it when it creates the index and at each start. A cluster of one node cannot place a replica, so its index stays yellow with `1`; set `0` there.
+
+- Environment variable: `MY_SEARCH_ELASTICSEARCH_REPLICAS`
+- Default: the cluster's default, `1` unless the cluster changed it
+- Required: no
+
+### `search_elasticsearch_ca_file`
+
+PEM file of the certificate authorities that the TLS certificate of `search_elasticsearch_url` chains to, such as the `http_ca.crt` that Elasticsearch generates when it starts with security on. Empty uses the system roots; it needs an `https:` URL.
+
+- Environment variable: `MY_SEARCH_ELASTICSEARCH_CA_FILE`
+- Default: none
+- Required: no
 
 ### `voice`
 

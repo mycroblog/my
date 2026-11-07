@@ -215,6 +215,16 @@ type Config struct {
 	// Search is the search engine of the full-text search of statuses (ADR-0149 §3): "none" or a
 	// backend's name.
 	Search string
+	// The Elasticsearch cluster of search = elasticsearch: the URL of its REST API, an API key or
+	// a user and password, the alias of the index (empty for the adapter's default), its replicas
+	// (nil for the cluster's default), and a CA file for TLS.
+	SearchElasticsearchURL      string
+	SearchElasticsearchAPIKey   string
+	SearchElasticsearchUsername string
+	SearchElasticsearchPassword string
+	SearchElasticsearchIndex    string
+	SearchElasticsearchReplicas *int
+	SearchElasticsearchCAFile   string
 	// PaymentsProvider is the payment provider of the supporters (ADR-0074 §5): "none" or a
 	// provider's name. PaymentsReconcileInterval and PaymentsReconcileMaxRequests bound the
 	// reconciliation with it (§4).
@@ -446,6 +456,13 @@ func (c *Config) LogValue() slog.Value {
 		slog.Duration("payments_reconcile_interval", c.PaymentsReconcileInterval),
 		slog.Int("payments_reconcile_max_requests", c.PaymentsReconcileMaxRequests),
 		slog.String("search", c.Search),
+		slog.String("search_elasticsearch_url", c.SearchElasticsearchURL),
+		slog.String("search_elasticsearch_api_key", redact(c.SearchElasticsearchAPIKey != "")),
+		slog.String("search_elasticsearch_username", c.SearchElasticsearchUsername),
+		slog.String("search_elasticsearch_password", redact(c.SearchElasticsearchPassword != "")),
+		slog.String("search_elasticsearch_index", c.SearchElasticsearchIndex),
+		slog.Any("search_elasticsearch_replicas", c.SearchElasticsearchReplicas),
+		slog.String("search_elasticsearch_ca_file", c.SearchElasticsearchCAFile),
 		slog.String("voice", c.Voice),
 		slog.Int("voice_p2p_max_participants", c.VoiceP2PMaxParticipants),
 		slog.Int("voice_sfu_max_participants", c.VoiceMaxParticipants),

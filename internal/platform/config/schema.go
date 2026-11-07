@@ -1005,8 +1005,60 @@ var schema = []field{
 		choices: []choice{
 			{value: "none", doc: "No full-text search: the server connects to no engine and enqueues no search job, and `GET /api/v1/instance` tells clients that the search is not available."},
 			{value: "fake", doc: "Test builds only: a stand-in index in the server's memory, for end-to-end tests and demonstrations. Only a binary built with the build tag `e2e_fakes` has it, and that binary refuses it unless `profile = development`; released binaries and images never have it ([build tags](build-tags.md)). It needs no other setting."},
+			{value: "elasticsearch", doc: "An Elasticsearch cluster, version 8 or later, at `search_elasticsearch_url`, with `search_elasticsearch_api_key` or `search_elasticsearch_username` and `search_elasticsearch_password` when it has security on. The server creates and upgrades the index itself ([search engines](../operations/search-engines.md#elasticsearch)). The build tag `no_search_elasticsearch` leaves it out."},
 		},
 		set: func(c *Config, v string) { c.Search = v },
+	},
+	{
+		key:          "search_elasticsearch_url",
+		doc:          "The URL of the REST API of the Elasticsearch cluster of `search = elasticsearch`, such as `https://search.internal.example:9200`, without credentials, query, or fragment; a path is kept, for a proxy that serves the API under one. Use `https:` whenever the server sends credentials over a network that others share.",
+		requiredWhen: "when `search = elasticsearch`",
+		check:        checkSearchURL,
+		set:          func(c *Config, v string) { c.SearchElasticsearchURL = strings.TrimSpace(v) },
+	},
+	{
+		key:    "search_elasticsearch_api_key",
+		doc:    "The API key of `search = elasticsearch`, the `encoded` value that Elasticsearch returns when it creates the key, sent as `Authorization: ApiKey <key>`. Set it or `search_elasticsearch_username` and `search_elasticsearch_password`, not both; with neither, the server sends no credentials.",
+		secret: true,
+		check:  checkNotBlank,
+		set:    func(c *Config, v string) { c.SearchElasticsearchAPIKey = strings.TrimSpace(v) },
+	},
+	{
+		key:   "search_elasticsearch_username",
+		doc:   "The user of `search = elasticsearch` for basic authentication, with `search_elasticsearch_password`, when `search_elasticsearch_api_key` is not set.",
+		check: checkNotBlank,
+		set:   func(c *Config, v string) { c.SearchElasticsearchUsername = strings.TrimSpace(v) },
+	},
+	{
+		key:          "search_elasticsearch_password",
+		doc:          "The password of `search_elasticsearch_username`.",
+		secret:       true,
+		requiredWhen: "when `search_elasticsearch_username` is set",
+		check:        checkNotBlank,
+		set:          func(c *Config, v string) { c.SearchElasticsearchPassword = v },
+	},
+	{
+		key:    "search_elasticsearch_index",
+		doc:    "The name of the alias that the index of `search = elasticsearch` lives behind; the server names the index behind it from this name with a suffix, such as `my-statuses-v1`. Up to 200 lowercase letters, digits, `-`, `_`, or `.`, starting with a letter or digit. Give each server that shares a cluster its own name.",
+		defDoc: "`my-statuses`",
+		check:  checkElasticsearchIndex,
+		set:    func(c *Config, v string) { c.SearchElasticsearchIndex = strings.TrimSpace(v) },
+	},
+	{
+		key:    "search_elasticsearch_replicas",
+		doc:    "How many replicas of the index of `search = elasticsearch` the cluster keeps besides the primary. The server sets it when it creates the index and at each start. A cluster of one node cannot place a replica, so its index stays yellow with `1`; set `0` there.",
+		defDoc: "the cluster's default, `1` unless the cluster changed it",
+		check:  checkNonNegativeInt,
+		set: func(c *Config, v string) {
+			n, _ := strconv.Atoi(v)
+			c.SearchElasticsearchReplicas = &n
+		},
+	},
+	{
+		key:   "search_elasticsearch_ca_file",
+		doc:   "PEM file of the certificate authorities that the TLS certificate of `search_elasticsearch_url` chains to, such as the `http_ca.crt` that Elasticsearch generates when it starts with security on. Empty uses the system roots; it needs an `https:` URL.",
+		check: checkNotBlank,
+		set:   func(c *Config, v string) { c.SearchElasticsearchCAFile = strings.TrimSpace(v) },
 	},
 	{
 		key: "voice",
@@ -1443,6 +1495,7 @@ func crossChecks(vals map[string]string, present map[string]bool) []Issue {
 		}
 	}
 	issues = append(issues, voiceChecks(vals, present)...)
+	issues = append(issues, searchElasticsearchChecks(vals, present)...)
 	if vals["errors_exporter"] == "sentry" && !present["errors_sentry_dsn"] {
 		issues = append(issues, Issue{Key: "errors_sentry_dsn", Missing: true, Message: "required when errors_exporter is sentry"})
 	}
