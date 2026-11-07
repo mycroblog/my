@@ -38,18 +38,19 @@ type TimelineHarness struct {
 // The factory registers the cleanup of everything it creates with t.Cleanup.
 type TimelineFactory func(t *testing.T, opts uow.Options) TimelineHarness
 
-// TimelineContract verifies the timeline repository of a database adapter together with the
-// timeline module's projectors and Service, driven by the content and graph modules' commands:
-// the home timeline (follows, own posts and boosts, show_boosts, direct posts, the read window
-// and its widening), the local and hashtag timelines (local and anonymous viewers, discovery
-// restrictions of accounts and domains, projected from the moderation module's events), the
-// profile timeline (the visibilities each relation
-// allows), blocks and mutes (with expiry) everywhere, domain mutes (off the timelines other than
-// home, with the boosts of their posts off home), the language filter, keyset paging,
-// deletions of statuses and of accounts (local and remote), the tag_usage projection and the prefix
-// search of hashtags over it (ADR-0092 §1), the property that incrementally updated projections equal a rebuild from the
-// events the content and graph modules replay, and the lists with their timelines (ADR-0013, timeline_lists_contract.go).
-func TimelineContract(t *testing.T, newHarness TimelineFactory) {
+// TimelineFlows verifies the timeline module's projectors and Service driven by the content and
+// graph modules' commands, the flows of ADR-0153 §1, which internal/flowtest/timeline runs once on
+// SQLite; TimelineContract checks the timeline repository's methods on every adapter. The flows
+// cover the home timeline (follows, own posts and boosts, show_boosts, direct posts, the read
+// window and its widening), the local and hashtag timelines (local and anonymous viewers,
+// discovery restrictions of accounts and domains, projected from the moderation module's events),
+// the profile timeline (the visibilities each relation allows), blocks and mutes (with expiry)
+// everywhere, domain mutes (off the timelines other than home, with the boosts of their posts off
+// home), the language filter, keyset paging, deletions of statuses and of accounts (local and
+// remote), the tag_usage projection and the prefix search of hashtags over it (ADR-0092 §1), the
+// property that incrementally updated projections equal a rebuild from the events the content and
+// graph modules replay, and the lists with their timelines (ADR-0013, timeline_lists_flows.go).
+func TimelineFlows(t *testing.T, newHarness TimelineFactory) {
 	t.Helper()
 	cases := []struct {
 		name string

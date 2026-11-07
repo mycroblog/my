@@ -208,7 +208,8 @@ type Facts struct {
 
 // Repository is the persistence port of the timeline module (data-model §4.6). It reads and
 // writes only the feed_* tables, tag_usage, and the tables of lists. The database adapters implement it and pass
-// testkit.TimelineContract.
+// testkit.TimelineContract; testkit.TimelineFlows (internal/flowtest/timeline) drives the timeline use
+// cases and projectors on them.
 //
 // Methods that take a uow.Tx run inside that transaction; the others read committed data outside
 // any transaction. Lookups that find nothing return an error wrapping ErrNotFound.
