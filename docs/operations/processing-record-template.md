@@ -107,7 +107,7 @@ These names are used under the activities below. List each one you use.
 | Purposes | Delivering local activity to other servers, and receiving theirs |
 | Data subjects | People with an account, people on other servers |
 | Personal data | Sent: actor document, posts, follows, blocks, boosts, likes, reactions, poll votes, quotes, moves, forwarded report comments (without the reporter), lifecycle changes. Kept: copies of sent and received activities, delivery attempts |
-| Recipients | Federated servers, relays, follow review service |
+| Recipients | Federated servers, relays, follow review service, profile review service |
 | Erasure | Here: received 30 days and their documents 7 days. Sent 30 days, and the delivery of a post until 30 days after the post or its author is deleted. There: not under your control. `Delete` is sent, and other servers are expected but not forced to follow it |
 | Legal basis | {{e.g. contract, legitimate interests}} |
 

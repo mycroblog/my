@@ -2,6 +2,7 @@
 description: |
   A decision hook, where the server asks an external review before it accepts something:
   `inbound.status` (posts from other servers), `inbound.follow` (follows from other servers),
-  `signup.check` (sign-ups), `media.check` (uploaded media), `local.status` (local posts), `local.profile` (local profiles).
+  `signup.check` (sign-ups), `media.check` (uploaded media), `local.status` (local posts),
+  `inbound.actor` (profiles of accounts on other servers), `local.profile` (local profiles).
 type: string
-enum: [inbound.status, inbound.follow, signup.check, media.check, local.status, local.profile]
+enum: [inbound.status, inbound.follow, signup.check, media.check, local.status, inbound.actor, local.profile]

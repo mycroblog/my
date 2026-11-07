@@ -62,6 +62,7 @@ const policyKeys = [
   "hook_signup_check_mode",
   "hook_media_check_mode",
   "hook_local_status_mode",
+  "hook_inbound_actor_mode",
   "hook_local_profile_mode",
   "hook_inbound_status_on_failure",
   "hook_inbound_status_unfollowed_direct",
@@ -71,6 +72,7 @@ const policyKeys = [
   "hook_local_status_account_age_days",
   "hook_local_profile_account_age_days",
   "hook_media_check_on_failure",
+  "hook_inbound_actor_on_failure",
   "hook_decisions_retention_days",
 ] as const satisfies readonly InstanceSettingKey[];
 
@@ -121,6 +123,8 @@ const policyPages = {
     "hook_media_check_on_failure",
     "hook_local_status_mode",
     "hook_local_status_account_age_days",
+    "hook_inbound_actor_mode",
+    "hook_inbound_actor_on_failure",
     "hook_local_profile_mode",
     "hook_local_profile_account_age_days",
     "hook_decisions_retention_days",

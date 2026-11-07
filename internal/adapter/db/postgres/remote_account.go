@@ -97,6 +97,28 @@ func (r *AccountRepository) LatestRemoteSnapshot(ctx context.Context, tx uow.Tx,
 	return remoteSnapshotFrom(row), nil
 }
 
+// RemoteProfileDigest implements account.Repository.
+func (r *AccountRepository) RemoteProfileDigest(ctx context.Context, tx uow.Tx, accountID string) ([]byte, error) {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return nil, err
+	}
+	return remoteProfileDigest(ctx, q, accountID)
+}
+
+// FindRemoteProfileDigest implements account.Repository.
+func (r *AccountRepository) FindRemoteProfileDigest(ctx context.Context, accountID string) ([]byte, error) {
+	return remoteProfileDigest(ctx, r.db.reader(), accountID)
+}
+
+func remoteProfileDigest(ctx context.Context, q *postgresgen.Queries, accountID string) ([]byte, error) {
+	digest, err := q.GetCurrentRemoteProfileDigest(ctx, accountID)
+	if err != nil {
+		return nil, notFound(err, appaccount.ErrNotFound, "remote profile revision of "+accountID)
+	}
+	return digest, nil
+}
+
 // FindLatestRemoteSnapshot implements account.Repository.
 func (r *AccountRepository) FindLatestRemoteSnapshot(ctx context.Context, accountID string) (account.RemoteSnapshot, error) {
 	row, err := r.db.reader().GetLatestRemoteAccountSnapshot(ctx, accountID)

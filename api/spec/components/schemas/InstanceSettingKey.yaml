@@ -50,6 +50,7 @@ enum:
   - hook_signup_check_mode
   - hook_media_check_mode
   - hook_local_status_mode
+  - hook_inbound_actor_mode
   - hook_local_profile_mode
   - hook_inbound_status_on_failure
   - hook_inbound_status_unfollowed_direct
@@ -59,6 +60,7 @@ enum:
   - hook_local_status_account_age_days
   - hook_local_profile_account_age_days
   - hook_media_check_on_failure
+  - hook_inbound_actor_on_failure
   - hook_decisions_retention_days
   - invite_creators
   - member_invite_max_active

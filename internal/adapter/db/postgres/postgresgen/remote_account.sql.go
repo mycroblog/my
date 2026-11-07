@@ -116,6 +116,21 @@ func (q *Queries) GetCurrentAccountKey(ctx context.Context, keyID string) (Accou
 	return i, err
 }
 
+const getCurrentRemoteProfileDigest = `-- name: GetCurrentRemoteProfileDigest :one
+SELECT p.profile_digest
+FROM account_profile_heads h JOIN remote_profile_revisions p ON p.revision_id = h.revision_id
+WHERE h.account_id = $1
+`
+
+// GetCurrentRemoteProfileDigest returns the digest of the received profile that the current
+// profile revision of a remote account was made from.
+func (q *Queries) GetCurrentRemoteProfileDigest(ctx context.Context, accountID string) ([]byte, error) {
+	row := q.db.QueryRow(ctx, getCurrentRemoteProfileDigest, accountID)
+	var profile_digest []byte
+	err := row.Scan(&profile_digest)
+	return profile_digest, err
+}
+
 const getLatestRemoteAccountHandleVerification = `-- name: GetLatestRemoteAccountHandleVerification :one
 SELECT id, account_id, username, domain, outcome, checked_at FROM remote_account_handle_verifications
 WHERE account_id = $1::uuid ORDER BY id DESC LIMIT 1
@@ -305,18 +320,24 @@ func (q *Queries) InsertRemoteAccountSnapshot(ctx context.Context, arg InsertRem
 }
 
 const insertRemoteProfileRevision = `-- name: InsertRemoteProfileRevision :exec
-INSERT INTO remote_profile_revisions (revision_id, snapshot_id, html_policy_version)
-VALUES ($1, $2, $3)
+INSERT INTO remote_profile_revisions (revision_id, snapshot_id, html_policy_version, profile_digest)
+VALUES ($1, $2, $3, $4)
 `
 
 type InsertRemoteProfileRevisionParams struct {
 	RevisionID        string
 	SnapshotID        string
 	HtmlPolicyVersion int32
+	ProfileDigest     []byte
 }
 
 func (q *Queries) InsertRemoteProfileRevision(ctx context.Context, arg InsertRemoteProfileRevisionParams) error {
-	_, err := q.db.Exec(ctx, insertRemoteProfileRevision, arg.RevisionID, arg.SnapshotID, arg.HtmlPolicyVersion)
+	_, err := q.db.Exec(ctx, insertRemoteProfileRevision,
+		arg.RevisionID,
+		arg.SnapshotID,
+		arg.HtmlPolicyVersion,
+		arg.ProfileDigest,
+	)
 	return err
 }
 

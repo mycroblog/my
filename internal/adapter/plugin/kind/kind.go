@@ -57,6 +57,7 @@ const (
 	SignupCheck   = "signup.check"
 	MediaCheck    = "media.check"
 	LocalStatus   = "local.status"
+	InboundActor  = "inbound.actor"
 	LocalProfile  = "local.profile"
 )
 
@@ -97,6 +98,7 @@ var delegated = []Kind{
 	{Name: SignupCheck, Protocol: ProtocolJSON, InRequests: true, Timeout: 2 * time.Second, MaxSend: mib, MaxReceive: 64 * kib, Concurrency: DefaultConcurrency},
 	{Name: MediaCheck, Protocol: ProtocolJSON, PlainTCP: true, InRequests: true, Timeout: 10 * time.Second, MaxSend: mib, MaxReceive: 64 * kib, Concurrency: DefaultConcurrency},
 	{Name: LocalStatus, Protocol: ProtocolJSON, InRequests: true, Timeout: time.Second, MaxSend: mib, MaxReceive: 64 * kib, Concurrency: DefaultConcurrency},
+	{Name: InboundActor, Protocol: ProtocolJSON, PlainTCP: true, InRequests: true, Timeout: 3 * time.Second, MaxSend: mib, MaxReceive: 64 * kib, Concurrency: DefaultConcurrency},
 	{Name: LocalProfile, Protocol: ProtocolJSON, PlainTCP: true, InRequests: true, Timeout: time.Second, MaxSend: mib, MaxReceive: 64 * kib, Concurrency: DefaultConcurrency},
 }
 

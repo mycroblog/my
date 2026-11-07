@@ -121,8 +121,15 @@ WHERE k.account_id = sqlc.arg(account_id)::uuid
 ORDER BY k.id;
 
 -- name: InsertRemoteProfileRevision :exec
-INSERT INTO remote_profile_revisions (revision_id, snapshot_id, html_policy_version)
-VALUES (@revision_id, @snapshot_id, @html_policy_version);
+INSERT INTO remote_profile_revisions (revision_id, snapshot_id, html_policy_version, profile_digest)
+VALUES (@revision_id, @snapshot_id, @html_policy_version, @profile_digest);
+
+-- GetCurrentRemoteProfileDigest returns the digest of the received profile that the current
+-- profile revision of a remote account was made from.
+-- name: GetCurrentRemoteProfileDigest :one
+SELECT p.profile_digest
+FROM account_profile_heads h JOIN remote_profile_revisions p ON p.revision_id = h.revision_id
+WHERE h.account_id = @account_id;
 
 -- GetAccountKeyByKeyIDAndFingerprint finds a key fetched before, to tell a rotation apart.
 -- name: GetAccountKeyByKeyIDAndFingerprint :one

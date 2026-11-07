@@ -52,6 +52,11 @@ type RemoteRepository interface {
 
 	// CurrentProfile is FindCurrentProfile inside tx.
 	CurrentProfile(ctx context.Context, tx uow.Tx, accountID string) (account.ProfileRevision, error)
+	// RemoteProfileDigest returns inside tx the ProfileDigest of the current profile revision of a
+	// remote actor.
+	RemoteProfileDigest(ctx context.Context, tx uow.Tx, accountID string) ([]byte, error)
+	// FindRemoteProfileDigest is RemoteProfileDigest outside any transaction.
+	FindRemoteProfileDigest(ctx context.Context, accountID string) ([]byte, error)
 
 	// KeyByFingerprint returns the key with an IRI and a fingerprint, revoked or not.
 	KeyByFingerprint(ctx context.Context, tx uow.Tx, keyID string, fingerprint []byte) (account.Key, error)

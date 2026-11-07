@@ -121,11 +121,13 @@ const (
 	SettingHookSignupCheckMode        SettingKey = "hook_signup_check_mode"
 	SettingHookMediaCheckMode         SettingKey = "hook_media_check_mode"
 	SettingHookLocalStatusMode        SettingKey = "hook_local_status_mode"
+	SettingHookInboundActorMode       SettingKey = "hook_inbound_actor_mode"
 	SettingHookLocalProfileMode       SettingKey = "hook_local_profile_mode"
 	SettingHookInboundStatusOnFailure SettingKey = "hook_inbound_status_on_failure"
 	SettingHookInboundFollowOnFailure SettingKey = "hook_inbound_follow_on_failure"
 	SettingHookSignupCheckOnFailure   SettingKey = "hook_signup_check_on_failure"
 	SettingHookMediaCheckOnFailure    SettingKey = "hook_media_check_on_failure"
+	SettingHookInboundActorOnFailure  SettingKey = "hook_inbound_actor_on_failure"
 	// SettingHookSignupCheckReject lets a reject of the hook signup.check refuse a sign-up (ADR-0147 §2).
 	SettingHookSignupCheckReject      SettingKey = "hook_signup_check_reject"
 	SettingHookDecisionsRetentionDays SettingKey = "hook_decisions_retention_days"
@@ -645,11 +647,13 @@ var definitions = []Definition{
 	hookModeDefinition(SettingHookSignupCheckMode, "signup.check"),
 	hookModeDefinition(SettingHookMediaCheckMode, "media.check"),
 	hookModeDefinition(SettingHookLocalStatusMode, "local.status"),
+	hookModeDefinition(SettingHookInboundActorMode, "inbound.actor"),
 	hookModeDefinition(SettingHookLocalProfileMode, "local.profile"),
 	hookOnFailureDefinition(SettingHookInboundStatusOnFailure, "inbound.status", HookRetryOnFailure),
 	hookOnFailureDefinition(SettingHookInboundFollowOnFailure, "inbound.follow", HookRetryOnFailure),
 	hookOnFailureDefinition(SettingHookSignupCheckOnFailure, "signup.check", HookApproveOnFailure),
 	hookOnFailureDefinition(SettingHookMediaCheckOnFailure, "media.check", HookRetryOnFailure),
+	hookOnFailureDefinition(SettingHookInboundActorOnFailure, "inbound.actor", HookRetryOnFailure),
 	{
 		Key: SettingHookInboundStatusUnfollowedDirect, Kind: KindBool, Default: "false",
 		Doc: "Whether the decision hook inbound.status also sends the direct posts of authors no local account follows (ADR-0147 §10).",
@@ -1547,6 +1551,8 @@ func HookModeKey(hook string) (SettingKey, bool) {
 		return SettingHookMediaCheckMode, true
 	case "local.status":
 		return SettingHookLocalStatusMode, true
+	case "inbound.actor":
+		return SettingHookInboundActorMode, true
 	case "local.profile":
 		return SettingHookLocalProfileMode, true
 	}
@@ -1565,6 +1571,8 @@ func HookOnFailureKey(hook string) (SettingKey, bool) {
 		return SettingHookSignupCheckOnFailure, true
 	case "media.check":
 		return SettingHookMediaCheckOnFailure, true
+	case "inbound.actor":
+		return SettingHookInboundActorOnFailure, true
 	}
 	return "", false
 }
@@ -1585,7 +1593,7 @@ func (s Settings) CheckHookModeChange(key SettingKey, value string) error {
 func IsHookModeKey(key SettingKey) bool {
 	switch key {
 	case SettingHookInboundStatusMode, SettingHookInboundFollowMode, SettingHookSignupCheckMode, SettingHookMediaCheckMode, SettingHookLocalStatusMode,
-		SettingHookLocalProfileMode:
+		SettingHookInboundActorMode, SettingHookLocalProfileMode:
 		return true
 	}
 	return false

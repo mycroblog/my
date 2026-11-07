@@ -15480,7 +15480,8 @@ components:
           description: |
             For a `drop` of `inbound.status` or `inbound.follow`: until about when cancelling it processes the activity again,
             which needs the document as it was received. After that, cancelling records the cancellation
-            and brings nothing back. Absent for any other decision.
+            and brings nothing back. Absent for any other decision: cancelling a `drop` of
+            `inbound.actor` fetches the account again from its server, which stores its present profile.
           type: string
           format: date-time
         overridable:
@@ -15674,7 +15675,8 @@ components:
       description: |
         A decision hook, where the server asks an external review before it accepts something:
         `inbound.status` (posts from other servers), `inbound.follow` (follows from other servers),
-        `signup.check` (sign-ups), `media.check` (uploaded media), `local.status` (local posts), `local.profile` (local profiles).
+        `signup.check` (sign-ups), `media.check` (uploaded media), `local.status` (local posts),
+        `inbound.actor` (profiles of accounts on other servers), `local.profile` (local profiles).
       type: string
       enum:
         - inbound.status
@@ -15682,6 +15684,7 @@ components:
         - signup.check
         - media.check
         - local.status
+        - inbound.actor
         - local.profile
     HookOnFailure:
       description: |
@@ -19544,6 +19547,7 @@ components:
         - hook_signup_check_mode
         - hook_media_check_mode
         - hook_local_status_mode
+        - hook_inbound_actor_mode
         - hook_local_profile_mode
         - hook_inbound_status_on_failure
         - hook_inbound_status_unfollowed_direct
@@ -19553,6 +19557,7 @@ components:
         - hook_local_status_account_age_days
         - hook_local_profile_account_age_days
         - hook_media_check_on_failure
+        - hook_inbound_actor_on_failure
         - hook_decisions_retention_days
         - invite_creators
         - member_invite_max_active

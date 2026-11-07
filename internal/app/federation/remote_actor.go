@@ -48,6 +48,8 @@ type RemoteAccounts interface {
 	CurrentKey(ctx context.Context, keyID string) (appaccount.Key, error)
 	StaleRemoteActors(ctx context.Context, after appaccount.RemoteHead, limit int) ([]appaccount.RemoteHead, error)
 	UpsertRemoteActor(ctx context.Context, tx uow.Tx, in appaccount.RemoteActorInput) (appaccount.Account, error)
+	// ReviewRemoteProfile returns what the hook inbound.actor reviews of a fetched actor.
+	ReviewRemoteProfile(ctx context.Context, in appaccount.RemoteActorInput) (appaccount.RemoteProfileReview, error)
 	MarkRemoteDeleted(ctx context.Context, tx uow.Tx, accountID string) error
 	MarkRemoteGone(ctx context.Context, tx uow.Tx, accountID string) error
 	RestoreRemoteActor(ctx context.Context, tx uow.Tx, accountID string) error
@@ -79,6 +81,9 @@ type RemoteActorsDeps struct {
 	Clock     kernel.Clock
 	IDs       kernel.IDGenerator
 	Logger    *slog.Logger
+	// Review asks the hook inbound.actor about a changed profile before it is stored (ADR-0147
+	// §2); its zero value asks nothing.
+	Review ActorReview
 	// Batch is the number of stale actors one JobRefreshActors reads; 0 means
 	// RefreshActorsBatch.
 	Batch int
@@ -216,11 +221,16 @@ func (r *RemoteActors) store(ctx context.Context, actor *federation.Actor, raw [
 	return stored, err
 }
 
-// storeAfter runs before, when set, and stores a fetched actor in one transaction.
+// storeAfter asks the hook inbound.actor about the actor's profile, then runs before, when set,
+// and stores the fetched actor in one transaction.
 func (r *RemoteActors) storeAfter(ctx context.Context, actor *federation.Actor, raw []byte, before func(uow.Tx) error) (appaccount.Actor, error) {
 	in := r.input(ctx, actor, raw)
+	v, err := r.reviewActor(ctx, &in)
+	if err != nil {
+		return appaccount.Actor{}, err
+	}
 	var stored appaccount.Account
-	err := r.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+	err = r.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
 		if before != nil {
 			if err := before(tx); err != nil {
 				return err
@@ -228,6 +238,9 @@ func (r *RemoteActors) storeAfter(ctx context.Context, actor *federation.Actor, 
 		}
 		var err error
 		if stored, err = r.d.Accounts.UpsertRemoteActor(ctx, tx, in); err != nil {
+			return err
+		}
+		if err := r.applyActorVerdict(ctx, tx, v, stored.ID); err != nil {
 			return err
 		}
 		if err := enqueueFetchFeaturedTx(ctx, tx, r.d.Outbox, stored.ID, actor.ID, actor.Featured); err != nil {

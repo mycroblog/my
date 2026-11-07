@@ -2187,6 +2187,7 @@ func (e HookMode) Valid() bool {
 
 // Defines values for HookName.
 const (
+	HookNameInboundActor  HookName = "inbound.actor"
 	HookNameInboundFollow HookName = "inbound.follow"
 	HookNameInboundStatus HookName = "inbound.status"
 	HookNameLocalProfile  HookName = "local.profile"
@@ -2198,6 +2199,8 @@ const (
 // Valid indicates whether the value is a known member of the HookName enum.
 func (e HookName) Valid() bool {
 	switch e {
+	case HookNameInboundActor:
+		return true
 	case HookNameInboundFollow:
 		return true
 	case HookNameInboundStatus:
@@ -2520,6 +2523,8 @@ const (
 	InstanceSettingKeyFinanceViewerItemNames             InstanceSettingKey = "finance_viewer_item_names"
 	InstanceSettingKeyFinanceVisibility                  InstanceSettingKey = "finance_visibility"
 	InstanceSettingKeyHookDecisionsRetentionDays         InstanceSettingKey = "hook_decisions_retention_days"
+	InstanceSettingKeyHookInboundActorMode               InstanceSettingKey = "hook_inbound_actor_mode"
+	InstanceSettingKeyHookInboundActorOnFailure          InstanceSettingKey = "hook_inbound_actor_on_failure"
 	InstanceSettingKeyHookInboundFollowMode              InstanceSettingKey = "hook_inbound_follow_mode"
 	InstanceSettingKeyHookInboundFollowOnFailure         InstanceSettingKey = "hook_inbound_follow_on_failure"
 	InstanceSettingKeyHookInboundStatusMode              InstanceSettingKey = "hook_inbound_status_mode"
@@ -2617,6 +2622,10 @@ func (e InstanceSettingKey) Valid() bool {
 	case InstanceSettingKeyFinanceVisibility:
 		return true
 	case InstanceSettingKeyHookDecisionsRetentionDays:
+		return true
+	case InstanceSettingKeyHookInboundActorMode:
+		return true
+	case InstanceSettingKeyHookInboundActorOnFailure:
 		return true
 	case InstanceSettingKeyHookInboundFollowMode:
 		return true
@@ -5715,7 +5724,8 @@ type AdminHook struct {
 
 	// Hook A decision hook, where the server asks an external review before it accepts something:
 	// `inbound.status` (posts from other servers), `inbound.follow` (follows from other servers),
-	// `signup.check` (sign-ups), `media.check` (uploaded media), `local.status` (local posts), `local.profile` (local profiles).
+	// `signup.check` (sign-ups), `media.check` (uploaded media), `local.status` (local posts),
+	// `inbound.actor` (profiles of accounts on other servers), `local.profile` (local profiles).
 	Hook HookName `json:"hook"`
 
 	// Mode How far a decision hook acts: `off` calls nothing, `observe` records the verdict and acts on
@@ -5777,7 +5787,8 @@ type AdminHookDecision struct {
 
 	// Hook A decision hook, where the server asks an external review before it accepts something:
 	// `inbound.status` (posts from other servers), `inbound.follow` (follows from other servers),
-	// `signup.check` (sign-ups), `media.check` (uploaded media), `local.status` (local posts), `local.profile` (local profiles).
+	// `signup.check` (sign-ups), `media.check` (uploaded media), `local.status` (local posts),
+	// `inbound.actor` (profiles of accounts on other servers), `local.profile` (local profiles).
 	Hook HookName `json:"hook"`
 
 	// Id The ID of a resource, a UUIDv7 in its canonical string form.
@@ -5812,7 +5823,8 @@ type AdminHookDecision struct {
 
 	// RestorableUntil For a `drop` of `inbound.status` or `inbound.follow`: until about when cancelling it processes the activity again,
 	// which needs the document as it was received. After that, cancelling records the cancellation
-	// and brings nothing back. Absent for any other decision.
+	// and brings nothing back. Absent for any other decision: cancelling a `drop` of
+	// `inbound.actor` fetches the account again from its server, which stores its present profile.
 	RestorableUntil *time.Time `json:"restorable_until,omitempty"`
 
 	// SubjectKey What identifies the subject for the hook, such as the URI of a received activity.
@@ -6570,7 +6582,8 @@ type AdminReportHookOrigin struct {
 
 	// Hook A decision hook, where the server asks an external review before it accepts something:
 	// `inbound.status` (posts from other servers), `inbound.follow` (follows from other servers),
-	// `signup.check` (sign-ups), `media.check` (uploaded media), `local.status` (local posts), `local.profile` (local profiles).
+	// `signup.check` (sign-ups), `media.check` (uploaded media), `local.status` (local posts),
+	// `inbound.actor` (profiles of accounts on other servers), `local.profile` (local profiles).
 	Hook HookName `json:"hook"`
 
 	// Reason The coded reason of a verdict.
@@ -9468,7 +9481,8 @@ type HookMode string
 
 // HookName A decision hook, where the server asks an external review before it accepts something:
 // `inbound.status` (posts from other servers), `inbound.follow` (follows from other servers),
-// `signup.check` (sign-ups), `media.check` (uploaded media), `local.status` (local posts), `local.profile` (local profiles).
+// `signup.check` (sign-ups), `media.check` (uploaded media), `local.status` (local posts),
+// `inbound.actor` (profiles of accounts on other servers), `local.profile` (local profiles).
 type HookName string
 
 // HookOnFailure What a hook that enforces does when its plugin fails: `pass` lets the subject through, `retry`

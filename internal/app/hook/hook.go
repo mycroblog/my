@@ -38,6 +38,7 @@ const (
 	SignupCheck   = hook.SignupCheck
 	MediaCheck    = hook.MediaCheck
 	LocalStatus   = hook.LocalStatus
+	InboundActor  = hook.InboundActor
 	LocalProfile  = hook.LocalProfile
 )
 
@@ -102,6 +103,30 @@ type LocalStatusSubject struct {
 	Hashtags               []string
 	// MentionCount is how many accounts the post names.
 	MentionCount int
+}
+
+// ActorSubject is the Subject of InboundActor: the profile of a remote actor as the server would
+// store it, once it changed. It holds no bytes of the images and nothing of a local account.
+type ActorSubject struct {
+	ActorURI string
+	Domain   string
+	// Username is the actor's preferredUsername.
+	Username string
+	// New says that the actor is not stored yet, whose drop is taken for a flag.
+	New bool
+	// DisplayName is plain text; NoteHTML and the values of the fields are sanitized HTML.
+	DisplayName string
+	NoteHTML    string
+	Fields      []ActorField
+	// AvatarURL and HeaderURL are the images on the remote server, "" for none.
+	AvatarURL string
+	HeaderURL string
+}
+
+// ActorField is a field of a remote profile.
+type ActorField struct {
+	Name      string
+	ValueHTML string
 }
 
 // LocalProfileSubject is the Subject of LocalProfile: the profile of a local account as an update

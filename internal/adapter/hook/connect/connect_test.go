@@ -281,6 +281,49 @@ func TestLocalStatusSubject(t *testing.T) {
 	}
 }
 
+// The profile of inbound.actor reaches the plugin in its own fields, by the URLs of its images, and
+// the hook may use plain TCP: the profile is public.
+func TestInboundActorSubject(t *testing.T) {
+	t.Parallel()
+	got := make(chan *hookv1.CheckRequest, 1)
+	server := connect.NewServer()
+	hookv1connect.RegisterHookServiceHandler(server, &subjectPlugin{got: got})
+	mux := http.NewServeMux()
+	connecthttp.Mount(mux, server)
+	conn, err := client.New(client.Options{
+		Kind: mustKind(t, kind.InboundActor), Destination: kind.Destination{Address: fakeplugin.ServeUnix(t, mux), Protocol: kind.ProtocolJSON},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(conn.Close)
+	_, err = hookconnect.New(conn).Check(t.Context(), apphook.Request{
+		Hook: hook.InboundActor, SubjectKey: "https://remote.example/users/bob#00",
+		Subject: apphook.ActorSubject{
+			ActorURI: "https://remote.example/users/bob", Domain: "remote.example", Username: "bob", New: true,
+			DisplayName: "Bob", NoteHTML: "<p>cheap pills</p>", Fields: []apphook.ActorField{{Name: "site", ValueHTML: "<a>x</a>"}},
+			AvatarURL: "https://remote.example/a.png", HeaderURL: "https://remote.example/h.png",
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	sent := <-got
+	a := sent.GetInboundActor()
+	if a == nil || a.GetActorUri() != "https://remote.example/users/bob" || a.GetDomain() != "remote.example" || a.GetUsername() != "bob" ||
+		!a.GetNewActor() || a.GetDisplayName() != "Bob" || a.GetNoteHtml() != "<p>cheap pills</p>" || len(a.GetFields()) != 1 ||
+		a.GetFields()[0].GetName() != "site" || a.GetFields()[0].GetValueHtml() != "<a>x</a>" ||
+		a.GetAvatarUrl() != "https://remote.example/a.png" || a.GetHeaderUrl() != "https://remote.example/h.png" {
+		t.Errorf("sent %v", a)
+	}
+	if sent.GetSignup() != nil || sent.GetFollow() != nil || sent.GetInboundStatus() != nil || sent.GetLocalStatus() != nil || sent.GetMedia() != nil {
+		t.Error("another hook's subject was sent")
+	}
+	if _, err := client.New(client.Options{Kind: mustKind(t, kind.InboundActor), Destination: kind.Destination{Address: "http://plugin.example"}}); err != nil {
+		t.Errorf("inbound.actor refuses plain TCP: %v", err)
+	}
+}
+
 // The subject of local.profile reaches the plugin in its own fields, with no image.
 func TestLocalProfileSubject(t *testing.T) {
 	t.Parallel()

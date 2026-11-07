@@ -7,17 +7,19 @@ is stop one post, follow, sign-up, upload, or profile change, or file a report f
 Nothing is reviewed by default. A server with no hook address makes no call and spends no time on them. This version keeps
 the records, the modes, and the admin screens described here. Of the intake paths, posts from other servers ask
 `inbound.status`, follows from other servers ask `inbound.follow`, sign-ups ask `signup.check`, uploads ask
-`media.check`, posts of local accounts ask `local.status`, and profile changes of local accounts ask `local.profile`; the
-other hooks are not called yet.
+`media.check`, posts of local accounts ask `local.status`, profiles of accounts on other servers ask `inbound.actor`, and
+profile changes of local accounts ask `local.profile`; the other hooks are not called yet.
 
-![The path of a decision hook: a remote post, a remote follow, a sign-up, an upload, or a local post goes through the hook's mode to your plugin, whose verdict or failure leads to one recorded decision. The list below describes each step.](images/decision-hooks.svg)
+![The path of a decision hook: a remote post, a remote follow, a sign-up, an upload, a local post, or the changed profile of a remote actor goes through the hook's mode to your plugin, whose verdict or failure leads to one recorded decision. The list below describes each step.](images/decision-hooks.svg)
 
 From the top of the diagram down:
 
 1. **What is reviewed, and who waits.** A post from another server (`inbound.status`), a follow from another server
    (`inbound.follow`), and an upload (`media.check`) are reviewed in a job. A sign-up (`signup.check`) is reviewed while
    the applicant waits, a post of a local account (`local.status`) while its author waits, and a change of a local
-   account's profile (`local.profile`) while its owner waits.
+   account's profile (`local.profile`) while its owner waits. A profile from another server (`inbound.actor`) is
+   reviewed wherever the server fetches the account: in a job, and also while a request waits, such as one from a server
+   whose account is new here.
 2. **The mode**, `hook_<hook>_mode`: `off` makes no call, `observe` records the verdict and acts on nothing, and `enforce`
    acts on it ([Modes](#modes)).
 3. **Your plugin** gets `POST /my.plugin.hook.v1.HookService/Check`. The server waits up to `plugin_<hook>_timeout`, makes
@@ -40,6 +42,7 @@ From the top of the diagram down:
 | `signup.check` | Sign-ups, after the CAPTCHA and the block list | `allow`, `require_approval`, `reject` | `pass` (default) or `require_approval` |
 | `media.check` | Uploaded media, before anyone can use them | `allow`, `mark_sensitive`, `flag`, `reject` | `pass` (default) or `retry` |
 | `local.status` | Posts of local accounts, and their edits | `allow`, `flag`, `reject` | `pass` |
+| `inbound.actor` | Profiles of accounts on other servers, when they change | `allow`, `drop`, `flag` | `pass` (default) or `retry` |
 | `local.profile` | Profile changes of local accounts | `allow`, `flag`, `reject` | `pass` |
 
 Set `plugin_<hook>_address` to give a hook a plugin, with a dot in the name becoming `_`
@@ -48,11 +51,13 @@ plugin with `my plugin test --kind inbound.status <address>`. The call is `POST 
 
 What each answer does:
 
-- `drop` stops the subject and stores nothing of it. A wrong `drop` silently hides a post from its followers too, so read
+- `drop` stops the subject and stores nothing of it. On `inbound.actor` it keeps the profile stored before
+  ([below](#profiles-from-other-servers)). A wrong `drop` silently hides a post from its followers too, so read
   what a hook would drop in `observe` before you enforce it.
 - `flag` lets it through and files one report per decision. On `inbound.follow` the report is about the account that sent
   the follow, names no post, and is filed once the follow is recorded; its reporter, category, and comment are those of
-  [a post's report](#what-inboundstatus-reviews).
+  [a post's report](#what-inboundstatus-reviews). On `inbound.actor` the report is about the account whose profile it is,
+  in the same way.
 - `mark_sensitive` lets it through and shows its attachments as sensitive until a moderator cancels the decision.
 - `require_approval` holds the sign-up for approval.
 - `reject` refuses it, with fixed text that shows nothing of the plugin's answer. On `signup.check` this also takes
@@ -143,6 +148,42 @@ Applicants never see the reason or the note of a decision.
 The applicant's request waits for the plugin for up to `plugin_signup_check_timeout` (2 seconds by default; keep it short, as
 a person is waiting). The wait is not part of a database transaction. A sign-up that later fails, such as for a taken
 username, keeps its decision until the retention removes it.
+
+## Profiles from other servers
+
+`inbound.actor` reviews the profile of an account on another server where the server takes it in: the first time it fetches
+the account, when the account sends an `Update` of itself, and when the server fetches it again, as it does for the accounts
+your users follow once a day. It asks only when the profile differs from the one stored, so fetching an account again with
+the same profile makes no call. The profile it reviews is:
+
+- the display name, as plain text,
+- the bio and the profile fields, as the server stores them (sanitized HTML),
+- the addresses of the avatar and the header image on the other server. The server sends no image.
+
+The plugin also gets the account's address, its server, its username, and whether the account is new to your server. The
+key of a decision is the account's address, `#`, and a digest of the profile, so each distinct profile gets one decision, and
+the same profile sent again reads it.
+
+What the verdicts do:
+
+- `drop` keeps the profile stored before: the display name, the bio, the fields, the avatar, the header, and their custom
+  emoji stay as they were. The server still stores the rest of what it received: the account's keys, its inbox and other
+  addresses, its username, and whether it is locked, a bot, discoverable, and indexable. Without the keys and addresses the
+  server could neither verify the account's activities nor deliver to it, and the locked and indexable settings say how to
+  follow the account and whether its owner allows indexing. While the profile stays dropped, fetching it again reads the
+  same decision and keeps the stored one.
+- An account fetched for the first time is always stored, because follows and mentions need it, so its `drop` is taken for a
+  `flag`: the profile is stored and a report is filed. The decision still shows `drop`.
+- `flag` stores the profile and files one report on the account per decision.
+
+When the plugin fails, `pass` stores the profile unreviewed, and the server does not ask about it again until it changes.
+With `retry`, the server does not store an account whose profile changed while the plugin fails: an `Update` waits in its
+job, which holds back the other activities of that account as for [`inbound.status`](#when-the-plugin-fails), and a fetch
+made while a request waits fails, so a server whose account is new here has its delivery refused until the plugin is back
+and sends it again.
+
+Cancelling a `drop` of `inbound.actor` fetches the account again from its server, which stores the profile it serves now
+without calling the plugin when it is the dropped one, and asks about it when it changed since.
 
 ## Local posts
 
@@ -319,6 +360,9 @@ is one call, and every revision another. Review what you send before you turn a 
   `local.status` sends the fields listed under [Local posts](#local-posts). The message `InboundStatus` of the `HookService` protocol has the fields.
 - `signup.check` sends the email address and the IP address of each applicant, and refuses plain TCP.
 - `inbound.follow` sends the two parties of a follow.
+- `inbound.actor` sends the public profile of an account on another server, as listed under
+  [Profiles from other servers](#profiles-from-other-servers), and may use plain TCP. It is called whenever such a profile
+  changes, so its volume follows the number of accounts your server knows.
 - `media.check` sends the smallest processed image of each upload, never the original, with what the file is for, its
   kind, size, and length. It may use plain TCP, as it sends no text: a processed image can still show a person.
 - `local.profile` sends the public profile listed under [Local profiles](#local-profiles), and no image. It may use plain
