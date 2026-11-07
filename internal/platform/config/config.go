@@ -239,6 +239,9 @@ type Config struct {
 	PluginBillingProvider string
 	// PluginTranslatorName is what readers see on a translation by the plugin of the translator kind (ADR-0148 §14).
 	PluginTranslatorName string
+	// TranslatorAWSRegion is the region of Amazon Translate; set, it registers the translation
+	// provider aws (ADR-0148 §15).
+	TranslatorAWSRegion string
 	// Voice is how the voice chat rooms connect, "off" for no voice chat (ADR-0101 §1), and the
 	// Voice* limits bound the rooms; zero is no limit, except for VoiceP2PMaxParticipants.
 	Voice                   string
@@ -437,6 +440,7 @@ func (c *Config) LogValue() slog.Value {
 		slog.String("plugin_billing_location", c.PluginBillingLocation),
 		slog.String("plugin_billing_provider", c.PluginBillingProvider),
 		slog.String("plugin_translator_name", c.PluginTranslatorName),
+		slog.String("translator_aws_region", c.TranslatorAWSRegion),
 		slog.String("payments", c.PaymentsProvider),
 		slog.String("payments_stripe_secret_key", redact(c.PaymentsStripeSecretKey != "")),
 		slog.String("payments_stripe_webhook_secret", redact(c.PaymentsStripeWebhookSecret != "")),

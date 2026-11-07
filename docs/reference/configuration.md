@@ -290,6 +290,7 @@ An instance setting that has never been set reads as its default, which is defin
 | [`plugin_local_status_tls_cert_file`](#plugin_local_status_tls_cert_file) | `MY_PLUGIN_LOCAL_STATUS_TLS_CERT_FILE` | none | no | no |
 | [`plugin_local_status_tls_key_file`](#plugin_local_status_tls_key_file) | `MY_PLUGIN_LOCAL_STATUS_TLS_KEY_FILE` | none | no | no |
 | [`plugin_local_status_timeout`](#plugin_local_status_timeout) | `MY_PLUGIN_LOCAL_STATUS_TIMEOUT` | `1s` | no | no |
+| [`translator_aws_region`](#translator_aws_region) | `MY_TRANSLATOR_AWS_REGION` | none | no | no |
 
 ## Settings
 
@@ -2468,6 +2469,14 @@ Deadline of one call of the `local.status` plugin, less than `30s`.
 
 - Environment variable: `MY_PLUGIN_LOCAL_STATUS_TIMEOUT`
 - Default: `1s`
+- Required: no
+
+### `translator_aws_region`
+
+AWS region of Amazon Translate, such as `us-east-1`. Setting it makes Amazon Translate the translation provider `aws`, which the instance settings can then enable ([translation](../operations/translation.md)); the credentials come from the AWS SDK's default chain, such as the execution role. Empty leaves the provider out. The build tag `no_translator_aws` leaves it out.
+
+- Environment variable: `MY_TRANSLATOR_AWS_REGION`
+- Default: none
 - Required: no
 
 ## Renamed and removed settings

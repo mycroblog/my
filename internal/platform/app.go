@@ -575,7 +575,7 @@ func NewApp(ctx context.Context, cfg *config.Config, opts AppOptions) (_ *App, e
 	a.setUpInbox(cfg, repos.feds)
 	a.setUpFederationSever()
 	a.setUpStatusReader(repos.statuses, repos.interactions, repos.quotes)
-	if err := a.setUpTranslation(cfg, repos.translations, opts); err != nil {
+	if err := a.setUpTranslation(ctx, cfg, repos.translations, opts); err != nil {
 		return nil, err
 	}
 	a.setUpLocalReports(repos.mods)
