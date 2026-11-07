@@ -31,16 +31,16 @@ func InteractionRepositoryContract(t *testing.T, newHarness InteractionFactory) 
 	t.Helper()
 	cases := []struct {
 		name string
-		run  func(t *testing.T, r *interactionRepo)
+		run  func(t *testing.T, r *contentInteractionRepo)
 	}{
-		{"RecordsBoostsAndRetractions", interactionRepoBoosts},
-		{"KeepsOneBoostEdgePerPair", interactionRepoBoostEdges},
-		{"AddsToTheCounters", interactionRepoCounters},
-		{"KeepsFavouritesAndBookmarks", interactionRepoFavourites},
-		{"KeepsPinsInSlots", interactionRepoPins},
-		{"KeepsConcurrentPinsWithinTheSlots", interactionRepoConcurrentPins},
-		{"InsertsConcurrentFavouritesOnce", interactionRepoConcurrentFavourites},
-		{"KeepsReactionsAndTheirCounts", interactionRepoReactions},
+		{"RecordsBoostsAndRetractions", contentInteractionRepoBoosts},
+		{"KeepsOneBoostEdgePerPair", contentInteractionRepoBoostEdges},
+		{"AddsToTheCounters", contentInteractionRepoCounters},
+		{"KeepsFavouritesAndBookmarks", contentInteractionRepoFavourites},
+		{"KeepsPinsInSlots", contentInteractionRepoPins},
+		{"KeepsConcurrentPinsWithinTheSlots", contentInteractionRepoConcurrentPins},
+		{"InsertsConcurrentFavouritesOnce", contentInteractionRepoConcurrentFavourites},
+		{"KeepsReactionsAndTheirCounts", contentInteractionRepoReactions},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -49,35 +49,35 @@ func InteractionRepositoryContract(t *testing.T, newHarness InteractionFactory) 
 				h = newHarness(t, opts)
 				return StatusHarness{UnitOfWork: h.UnitOfWork, Statuses: h.Statuses}
 			})
-			tc.run(t, &interactionRepo{se: se, h: h, repo: h.Interactions})
+			tc.run(t, &contentInteractionRepo{se: se, h: h, repo: h.Interactions})
 		})
 	}
 }
 
-type interactionRepo struct {
+type contentInteractionRepo struct {
 	se   *statusEnv
 	h    InteractionHarness
 	repo appcontent.InteractionRepository
 }
 
-func (r *interactionRepo) tx(t *testing.T, fn func(ctx context.Context, tx uow.Tx) error) {
+func (r *contentInteractionRepo) tx(t *testing.T, fn func(ctx context.Context, tx uow.Tx) error) {
 	t.Helper()
 	if err := r.h.UnitOfWork.Tx(t.Context(), func(tx uow.Tx) error { return fn(t.Context(), tx) }); err != nil {
 		t.Fatal(err)
 	}
 }
 
-func (r *interactionRepo) id() string { return r.se.ids.NewID() }
+func (r *contentInteractionRepo) id() string { return r.se.ids.NewID() }
 
 // status stores a public local status with its first revision, mentioning mentions.
-func (r *interactionRepo) status(t *testing.T, mentions ...string) content.Status {
+func (r *contentInteractionRepo) status(t *testing.T, mentions ...string) content.Status {
 	t.Helper()
 	s := r.se.newStatus(r.id(), content.VisibilityPublic)
 	r.se.mustCreate(t, s, mentions...)
 	return s
 }
 
-func (r *interactionRepo) boost(t *testing.T, booster string, s content.Status, local bool) content.Boost {
+func (r *contentInteractionRepo) boost(t *testing.T, booster string, s content.Status, local bool) content.Boost {
 	t.Helper()
 	r.se.clock.Advance(time.Second)
 	id := r.id()
@@ -95,7 +95,7 @@ func (r *interactionRepo) boost(t *testing.T, booster string, s content.Status, 
 	return b
 }
 
-func interactionRepoBoosts(t *testing.T, r *interactionRepo) {
+func contentInteractionRepoBoosts(t *testing.T, r *contentInteractionRepo) {
 	ctx := t.Context()
 	s := r.status(t)
 	b := r.boost(t, r.id(), s, true)
@@ -141,7 +141,7 @@ func interactionRepoBoosts(t *testing.T, r *interactionRepo) {
 	})
 }
 
-func interactionRepoBoostEdges(t *testing.T, r *interactionRepo) {
+func contentInteractionRepoBoostEdges(t *testing.T, r *contentInteractionRepo) {
 	ctx := t.Context()
 	s, gone := r.status(t), r.status(t)
 	local, remote := r.id(), r.id()
@@ -198,7 +198,7 @@ func interactionRepoBoostEdges(t *testing.T, r *interactionRepo) {
 	}
 }
 
-func interactionRepoCounters(t *testing.T, r *interactionRepo) {
+func contentInteractionRepoCounters(t *testing.T, r *contentInteractionRepo) {
 	ctx := t.Context()
 	mentioned := r.id()
 	s, gone := r.status(t, mentioned), r.status(t)
@@ -249,7 +249,7 @@ func interactionRepoCounters(t *testing.T, r *interactionRepo) {
 	}
 }
 
-func interactionRepoFavourites(t *testing.T, r *interactionRepo) {
+func contentInteractionRepoFavourites(t *testing.T, r *contentInteractionRepo) {
 	ctx := t.Context()
 	account := r.id()
 	var statuses []content.Status
@@ -347,7 +347,7 @@ func interactionRepoFavourites(t *testing.T, r *interactionRepo) {
 	}
 }
 
-func interactionRepoPins(t *testing.T, r *interactionRepo) {
+func contentInteractionRepoPins(t *testing.T, r *contentInteractionRepo) {
 	ctx := t.Context()
 	account := r.id()
 	var pins []content.Pin
@@ -415,9 +415,9 @@ func interactionRepoPins(t *testing.T, r *interactionRepo) {
 	}
 }
 
-// interactionRepoConcurrentPins pins more statuses than there are slots, concurrently: the unique
+// contentInteractionRepoConcurrentPins pins more statuses than there are slots, concurrently: the unique
 // slot per account keeps the pins within content.MaxPins on every adapter.
-func interactionRepoConcurrentPins(t *testing.T, r *interactionRepo) {
+func contentInteractionRepoConcurrentPins(t *testing.T, r *contentInteractionRepo) {
 	ctx := t.Context()
 	account := r.id()
 	var wg sync.WaitGroup
@@ -450,9 +450,9 @@ func interactionRepoConcurrentPins(t *testing.T, r *interactionRepo) {
 	}
 }
 
-// interactionRepoConcurrentFavourites favourites one status by one account from several
+// contentInteractionRepoConcurrentFavourites favourites one status by one account from several
 // transactions at once: exactly one of them inserts the row, so the counter moves once.
-func interactionRepoConcurrentFavourites(t *testing.T, r *interactionRepo) {
+func contentInteractionRepoConcurrentFavourites(t *testing.T, r *contentInteractionRepo) {
 	ctx := t.Context()
 	s := r.status(t)
 	account := r.id()
@@ -487,7 +487,7 @@ func interactionRepoConcurrentFavourites(t *testing.T, r *interactionRepo) {
 	}
 }
 
-func interactionRepoReactions(t *testing.T, r *interactionRepo) {
+func contentInteractionRepoReactions(t *testing.T, r *contentInteractionRepo) {
 	ctx := t.Context()
 	s, gone := r.status(t), r.status(t)
 	alice, bob := r.id(), r.id()
