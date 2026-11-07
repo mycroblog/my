@@ -20,7 +20,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/federation"
 )
 
-// fedClosure is the service closure of the closure's contract: whether the server delivers the
+// fedClosure is the service closure of the closure's flows: whether the server delivers the
 // closure's Deletes, and how many times delivery_completed was recorded.
 type fedClosure struct {
 	mu        sync.Mutex
