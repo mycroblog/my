@@ -21,19 +21,20 @@ import (
 	"github.com/mycroblog/my/internal/domain/moderation"
 )
 
-// ModerationRetentionContract verifies the retention of the moderation records of a database
-// adapter's moderation repository through the moderation use cases (ADR-0058, data-model §4.3,
-// §8): an operator places holds on an account, each released once; the purge erases the actions
-// with their appeals once they ended longer ago than the period (an action without lasting
-// effect when it was issued, a lifted or expired one at its end, an appealed one not before the
-// decision; an indefinite one and one with a pending appeal stay), the resolved reports longer
-// ago than the period that no action follows from (with their notes and history), and the
-// audit log entries older than the period, all in bounded batches and safe to repeat; a hold
-// keeps every record of its account until it is released; the purge of statuses keeps those
-// that a report or an action points at and those of a held author; and the export of an
-// account's records holds the private notes and never the reporter. The accounts and statuses
-// are in-memory stand-ins.
-func ModerationRetentionContract(t *testing.T, newHarness ModerationFactory) {
+// ModerationRetentionFlows verifies the retention of the moderation records of a database adapter's
+// moderation repository through the moderation use cases (ADR-0058, data-model §4.3, §8): an
+// operator places holds on an account, each released once; the purge erases the actions with their
+// appeals once they ended longer ago than the period (an action without lasting effect when it was
+// issued, a lifted or expired one at its end, an appealed one not before the decision; an
+// indefinite one and one with a pending appeal stay), the resolved reports longer ago than the
+// period that no action follows from (with their notes and history), and the audit log entries
+// older than the period, all in bounded batches and safe to repeat; a hold keeps every record of
+// its account until it is released; the purge of statuses keeps those that a report or an action
+// points at and those of a held author; and the export of an account's records holds the private
+// notes and never the reporter. The accounts and statuses are in-memory stand-ins. These are the
+// flows of ADR-0153 §1, which internal/flowtest/moderation runs once on SQLite;
+// ModerationRetentionContract checks the repository's methods on every adapter.
+func ModerationRetentionFlows(t *testing.T, newHarness ModerationFactory) {
 	t.Helper()
 	cases := []struct {
 		name string

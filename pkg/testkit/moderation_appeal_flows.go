@@ -19,18 +19,20 @@ import (
 	"github.com/mycroblog/my/internal/domain/moderation"
 )
 
-// AppealContract verifies the appeals of a database adapter's moderation repository through the
-// moderation use cases (FR-707, ADR-0058): a local account appeals an action on it once, within
-// the instance's appeal window (a ban, also only before the account's deletion: no later than
+// AppealFlows verifies the appeals of a database adapter's moderation repository through the
+// moderation use cases (FR-707, ADR-0058): a local account appeals an action on it once, within the
+// instance's appeal window (a ban, also only before the account's deletion: no later than
 // moderation.BanDeletionDelay and never once the account is deleted), never an action on another
 // account, with a text of at most moderation.MaxAppealText characters; its own actions show the
-// appeal, the deadline, and whether it can still appeal; a moderator upholds an appeal, keeping
-// the action, or overturns it, lifting the action in the same transaction (the statuses that
-// delete_statuses deleted stay deleted; a ban's scheduled deletion is canceled and its
-// suspension ends, and a ban whose account is deleted is not overturned); each decision is audited and emitted once, and a decided appeal is not decided
-// otherwise; the moderators list the appeals newest first by state, in keyset pages, and count
-// the pending ones. The accounts and statuses are in-memory stand-ins.
-func AppealContract(t *testing.T, newHarness ModerationFactory) {
+// appeal, the deadline, and whether it can still appeal; a moderator upholds an appeal, keeping the
+// action, or overturns it, lifting the action in the same transaction (the statuses that
+// delete_statuses deleted stay deleted; a ban's scheduled deletion is canceled and its suspension
+// ends, and a ban whose account is deleted is not overturned); each decision is audited and emitted
+// once, and a decided appeal is not decided otherwise; the moderators list the appeals newest first
+// by state, in keyset pages, and count the pending ones. The accounts and statuses are in-memory
+// stand-ins. These are the flows of ADR-0153 §1, which internal/flowtest/moderation runs once on
+// SQLite; AppealContract checks the repository's methods on every adapter.
+func AppealFlows(t *testing.T, newHarness ModerationFactory) {
 	t.Helper()
 	cases := []struct {
 		name string

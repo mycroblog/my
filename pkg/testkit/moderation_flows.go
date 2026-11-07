@@ -30,28 +30,29 @@ type ModerationHarness struct {
 // factory registers the cleanup of everything it creates with t.Cleanup.
 type ModerationFactory func(t *testing.T, opts uow.Options) ModerationHarness
 
-// ModerationContract verifies the moderation repository of a database adapter through the
-// moderation use cases, moderation.FederationPolicy (federation.md §11), and
-// moderation.AccountPolicy (data-model §5.3): a domain action restricts the domain and its
-// subdomains until it expires or is lifted, a lift ends only its own action's restrictions,
-// actions on remote accounts restrict them, each kind of action on a local account takes away
-// its capabilities until it ends and may name a report of the account only, the actions on
-// statuses record and act on statuses of the account only and a ban schedules the deletion of
-// the account and is never lifted, kinds that do not apply to an account are refused, invalid actions are refused, each action is lifted once,
-// every change emits the restrictions in effect afterwards, a suspension and the lift or the
-// expiry of the last one are told once and the expiry job removes the expired rows, a received report is filed once,
-// open, with its statuses and its comment cut to the limit, a local report is filed open with
-// its statuses and cited rules only when the reporter may see those statuses of the target and
-// the rules are in effect, the actions on domains and on
-// accounts list newest first with their lifts and filters, the public list keeps only the
-// limits and suspensions in effect without their private notes, and moderators list, assign,
-// and resolve reports, each resolution emitting the report with it, and a reporter lists only
-// their own reports, newest first, with their states, a filed report tells whether it is the
-// target's only open one, and the open reports are counted. Moderators also write notes on a
-// report, reopen a resolved one, see its target's other reports and actions, and an action that
-// follows from a report resolves it as actioned once, each audited. The accounts are in-memory
-// stand-ins.
-func ModerationContract(t *testing.T, newHarness ModerationFactory) {
+// ModerationFlows verifies the moderation repository of a database adapter through the moderation
+// use cases, moderation.FederationPolicy (federation.md §11), and moderation.AccountPolicy
+// (data-model §5.3): a domain action restricts the domain and its subdomains until it expires or is
+// lifted, a lift ends only its own action's restrictions, actions on remote accounts restrict them,
+// each kind of action on a local account takes away its capabilities until it ends and may name a
+// report of the account only, the actions on statuses record and act on statuses of the account
+// only and a ban schedules the deletion of the account and is never lifted, kinds that do not apply
+// to an account are refused, invalid actions are refused, each action is lifted once, every change
+// emits the restrictions in effect afterwards, a suspension and the lift or the expiry of the last
+// one are told once and the expiry job removes the expired rows, a received report is filed once,
+// open, with its statuses and its comment cut to the limit, a local report is filed open with its
+// statuses and cited rules only when the reporter may see those statuses of the target and the
+// rules are in effect, the actions on domains and on accounts list newest first with their lifts
+// and filters, the public list keeps only the limits and suspensions in effect without their
+// private notes, and moderators list, assign, and resolve reports, each resolution emitting the
+// report with it, and a reporter lists only their own reports, newest first, with their states, a
+// filed report tells whether it is the target's only open one, and the open reports are counted.
+// Moderators also write notes on a report, reopen a resolved one, see its target's other reports
+// and actions, and an action that follows from a report resolves it as actioned once, each audited.
+// The accounts are in-memory stand-ins. These are the flows of ADR-0153 §1, which
+// internal/flowtest/moderation runs once on SQLite; ModerationContract checks the repository's
+// methods on every adapter.
+func ModerationFlows(t *testing.T, newHarness ModerationFactory) {
 	t.Helper()
 	cases := []struct {
 		name string
