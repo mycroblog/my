@@ -13,6 +13,7 @@ import (
 // TestTracing checks the database spans of ADR-0055 §13: one per transaction attempt and one
 // per query, named after the sqlc query, with the database system and the query's name only.
 func TestTracing(t *testing.T) {
+	t.Parallel()
 	db, _ := newTestDB(t, "", uow.Options{})
 	tr := testkit.NewTracer()
 	db.SetTracer(tr)

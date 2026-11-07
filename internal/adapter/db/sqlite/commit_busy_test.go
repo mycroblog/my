@@ -26,6 +26,7 @@ import (
 // holds a SHARED lock, and the pool has one connection, so the retry runs on the connection the
 // failed commit used.
 func TestRetriesACommitThatFailsWithBusy(t *testing.T) {
+	t.Parallel()
 	ctx := t.Context()
 	var (
 		retries []error

@@ -10,6 +10,7 @@ import (
 )
 
 func TestDatabaseSizerContract(t *testing.T) {
+	t.Parallel()
 	testkit.DatabaseSizerContract(t, func(t *testing.T) testkit.DatabaseSizerHarness {
 		db, _ := newTestDB(t, "", uow.Options{})
 		return testkit.DatabaseSizerHarness{Sizer: db, Grow: func(t *testing.T) {
