@@ -13635,11 +13635,14 @@ export interface components {
          *     `manage_login_providers`: the external identity providers that users sign in with (only the
          *     built-in admin role by default). `create_invites`: creating, listing, and revoking
          *     invites of one's own on `/invites` while the instance setting `invite_creators` is
-         *     `permitted`, a member permission (only the built-in admin role by default). The
-         *     others guard no client API operation yet.
+         *     `permitted`, a member permission (only the built-in admin role by default).
+         *     `keep_posts_longer`: keeping one's own posts past the server maximum of the automatic
+         *     deletion and turning it off on `/preferences/auto_delete` while the maximum is on, a member
+         *     permission (only the built-in admin role by default). The others guard no client API
+         *     operation yet.
          * @enum {string}
          */
-        Permission: "manage_reports" | "manage_accounts" | "manage_domains" | "manage_rules" | "manage_settings" | "manage_roles" | "manage_invites" | "view_audit" | "manage_jobs" | "manage_login_recovery" | "manage_custom_emojis" | "manage_webhooks" | "manage_announcements" | "manage_finance" | "view_finance" | "manage_supporters" | "create_custom_emojis" | "manage_oauth_apps" | "manage_service_closure" | "start_voice_rooms" | "manage_errors" | "manage_login_providers" | "create_invites";
+        Permission: "manage_reports" | "manage_accounts" | "manage_domains" | "manage_rules" | "manage_settings" | "manage_roles" | "manage_invites" | "view_audit" | "manage_jobs" | "manage_login_recovery" | "manage_custom_emojis" | "manage_webhooks" | "manage_announcements" | "manage_finance" | "view_finance" | "manage_supporters" | "create_custom_emojis" | "manage_oauth_apps" | "manage_service_closure" | "start_voice_rooms" | "manage_errors" | "manage_login_providers" | "create_invites" | "keep_posts_longer";
         /**
          * @description A local custom emoji that the picker offers. Picking it inserts
          *     `:shortcode:` into the text.

@@ -3528,6 +3528,7 @@ func (e PaymentStatusWarnings) Valid() bool {
 const (
 	PermissionCreateCustomEmojis   Permission = "create_custom_emojis"
 	PermissionCreateInvites        Permission = "create_invites"
+	PermissionKeepPostsLonger      Permission = "keep_posts_longer"
 	PermissionManageAccounts       Permission = "manage_accounts"
 	PermissionManageAnnouncements  Permission = "manage_announcements"
 	PermissionManageCustomEmojis   Permission = "manage_custom_emojis"
@@ -3557,6 +3558,8 @@ func (e Permission) Valid() bool {
 	case PermissionCreateCustomEmojis:
 		return true
 	case PermissionCreateInvites:
+		return true
+	case PermissionKeepPostsLonger:
 		return true
 	case PermissionManageAccounts:
 		return true
@@ -11771,8 +11774,11 @@ type PaymentStatusWarnings string
 // `manage_login_providers`: the external identity providers that users sign in with (only the
 // built-in admin role by default). `create_invites`: creating, listing, and revoking
 // invites of one's own on `/invites` while the instance setting `invite_creators` is
-// `permitted`, a member permission (only the built-in admin role by default). The
-// others guard no client API operation yet.
+// `permitted`, a member permission (only the built-in admin role by default).
+// `keep_posts_longer`: keeping one's own posts past the server maximum of the automatic
+// deletion and turning it off on `/preferences/auto_delete` while the maximum is on, a member
+// permission (only the built-in admin role by default). The others guard no client API
+// operation yet.
 type Permission string
 
 // PickerCustomEmoji A local custom emoji that the picker offers. Picking it inserts

@@ -123,6 +123,10 @@
     "defaultMessage": "Create invites",
     "description": "Name of the permission create_invites: creating, listing, and revoking invites of one's own, while the server lets only the holders of this permission create them."
   },
+  "admin.roles.permission.keep_posts_longer": {
+    "defaultMessage": "Keep posts longer",
+    "description": "Name of the permission keep_posts_longer: keeping one's own posts past the server's maximum of the automatic deletion of old posts, and turning that deletion off."
+  },
   "admin.roles.permission.manage_errors": {
     "defaultMessage": "Errors",
     "description": "Name of the permission manage_errors: the groups of the errors that the server and the web client report, resolving and muting them, and their notifications and webhook events."
