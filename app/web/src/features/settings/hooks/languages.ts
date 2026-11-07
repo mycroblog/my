@@ -9,6 +9,12 @@ const pseudoLocales: ReadonlySet<string> = new Set(["en-XA", "ar-XB"]);
 /** A choice of a select or a group of checkboxes: a language tag and its name. */
 export type LanguageOption = { id: string; name: string };
 
+/** The display languages whose catalogs people write; an agent machine-translates the others (ADR-0009 §8). */
+const humanTranslatedLocales: ReadonlySet<string> = new Set(["en", "ja"]);
+
+/** A display language, and whether its text is a machine translation, which the language select says. */
+export type DisplayLanguageOption = LanguageOption & { machineTranslated: boolean };
+
 /** `tag`'s name in `inLocale`, or the tag itself when the browser does not know it. */
 function languageName(tag: string, inLocale: string): string {
   try {
@@ -23,10 +29,14 @@ function languageName(tag: string, inLocale: string): string {
  * The display languages: every locale the client has a catalog for, each named in its own language (as a
  * language picker does, so that a user who cannot read the current one finds theirs), sorted by tag.
  */
-export function displayLanguageOptions(current: string): LanguageOption[] {
+export function displayLanguageOptions(current: string): DisplayLanguageOption[] {
   return supportedLocales
     .filter((locale) => !pseudoLocales.has(locale) || locale === current)
-    .map((locale) => ({ id: locale, name: languageName(locale, locale) }));
+    .map((locale) => ({
+      id: locale,
+      name: languageName(locale, locale),
+      machineTranslated: !humanTranslatedLocales.has(locale) && !pseudoLocales.has(locale),
+    }));
 }
 
 /** The display language a stored locale shows as: the supported locale closest to it (ja-JP → ja). */

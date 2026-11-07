@@ -391,6 +391,10 @@
     "defaultMessage": "Uses the browser's language, or this server's when the app is not available in it.",
     "description": "Description of the option that follows the browser's language."
   },
+  "settings.locale.machine_translated": {
+    "defaultMessage": "Machine translated",
+    "description": "Description of a language in the display language select whose text is a machine translation (every language but English and Japanese)."
+  },
   "settings.locale.label": {
     "defaultMessage": "Display language",
     "description": "Label of the select of the language the app is shown in."
