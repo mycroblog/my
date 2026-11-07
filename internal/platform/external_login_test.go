@@ -196,24 +196,22 @@ func (e *externalEnv) providerWith(settings domain.LoginProviderSettings) string
 	return id
 }
 
+// disable disables a provider through the command, and checks that a rebuild of the heads keeps it disabled.
 func (e *externalEnv) disable(providerID string) {
 	e.t.Helper()
+	// The command's state change has an ID of the server. The test's own IDs sort before those of the server, so a
+	// rebuild of the heads (projection.verify, which runs soon after the server starts) would take an enabling the
+	// server wrote for the latest change, and enable the provider again.
 	ctx := e.t.Context()
-	r := e.db.IdentityRepository()
-	err := e.db.Tx(ctx, func(tx uow.Tx) error {
-		h, err := r.LoginProviderHeadForUpdate(ctx, tx, providerID)
-		if err != nil {
-			return err
-		}
-		c := domain.LoginProviderStateChange{ID: e.id(), ProviderID: providerID, State: domain.LoginProviderDisabled, ChangedAt: time.Now()}
-		if err := r.InsertLoginProviderStateChange(ctx, tx, c); err != nil {
-			return err
-		}
-		h.State = domain.LoginProviderDisabled
-		return r.UpsertLoginProviderHead(ctx, tx, h)
-	})
+	if _, err := e.s.app.Identity.DisableLoginProvider(ctx, providerID, ""); err != nil {
+		e.t.Fatal(err)
+	}
+	p, err := e.s.app.Projections.Lookup("login_provider_heads")
 	if err != nil {
 		e.t.Fatal(err)
+	}
+	if r, err := e.s.app.Projections.Verify(ctx, p); err != nil || r.Drifted() {
+		e.t.Fatalf("Verify(%s) after disabling = %+v, %v; want no drift", p.Name, r.Tables, err)
 	}
 }
 
