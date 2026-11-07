@@ -883,6 +883,14 @@
     "defaultMessage": "Local posts",
     "description": "Label of the choice of the mode of the external review of this kind of submission."
   },
+  "admin.settings.hooks.inbound_actor.mode": {
+    "defaultMessage": "Profiles from other servers",
+    "description": "Label of the choice of the mode of the external review of this kind of submission."
+  },
+  "admin.settings.hooks.inbound_actor.on_failure": {
+    "defaultMessage": "Profiles from other servers: when the review fails",
+    "description": "Label of the choice of what happens when this external review fails while it enforces."
+  },
   "admin.settings.hooks.media_check.mode": {
     "defaultMessage": "Uploaded media",
     "description": "Label of the choice of the mode of the external review of this kind of submission."

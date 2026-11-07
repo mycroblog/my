@@ -10118,7 +10118,8 @@ export interface components {
              * Format: date-time
              * @description For a `drop` of `inbound.status` or `inbound.follow`: until about when cancelling it processes the activity again,
              *     which needs the document as it was received. After that, cancelling records the cancellation
-             *     and brings nothing back. Absent for any other decision.
+             *     and brings nothing back. Absent for any other decision: cancelling a `drop` of
+             *     `inbound.actor` fetches the account again from its server, which stores its present profile.
              */
             restorable_until?: string;
             /**
@@ -10236,10 +10237,11 @@ export interface components {
         /**
          * @description A decision hook, where the server asks an external review before it accepts something:
          *     `inbound.status` (posts from other servers), `inbound.follow` (follows from other servers),
-         *     `signup.check` (sign-ups), `media.check` (uploaded media), `local.status` (local posts).
+         *     `signup.check` (sign-ups), `media.check` (uploaded media), `local.status` (local posts),
+         *     `inbound.actor` (profiles of accounts on other servers).
          * @enum {string}
          */
-        HookName: "inbound.status" | "inbound.follow" | "signup.check" | "media.check" | "local.status";
+        HookName: "inbound.status" | "inbound.follow" | "signup.check" | "media.check" | "local.status" | "inbound.actor";
         /**
          * @description What a hook that enforces does when its plugin fails: `pass` lets the subject through, `retry`
          *     fails the job so that it runs again, and `require_approval` holds the sign-up for approval.
@@ -12527,7 +12529,7 @@ export interface components {
          *     added; clients show the ones they know.
          * @enum {string}
          */
-        InstanceSettingKey: "registration_mode" | "max_status_length" | "default_locale" | "local_timeline_visibility" | "federated_timeline_visibility" | "preview_image" | "contact_account" | "contact_email" | "thumbnail" | "remote_media_policy" | "remote_media_cache_ttl_seconds" | "authorized_fetch" | "domain_actions_visibility" | "domain_actions_rationale_visibility" | "appeal_window_days" | "session_origins_retention_days" | "registration_origins_retention_days" | "reports_retention_days" | "moderation_actions_retention_days" | "audit_log_retention_days" | "search_indexing" | "ai_usage" | "indexable_default" | "search_visibilities" | "security_contact" | "require_media_description" | "link_cards" | "link_cards_ignore_robots_txt" | "finance_visibility" | "finance_viewer_item_names" | "finance_viewer_item_memos" | "finance_viewer_income" | "supporter_list_visibility" | "income_visibility" | "federation_mode" | "user_app_registration" | "dynamic_client_registration" | "oauth_metadata_document_clients" | "voice_room_starters" | "voice_public_summary" | "voice_participants_retention_days" | "hook_inbound_status_mode" | "hook_inbound_follow_mode" | "hook_signup_check_mode" | "hook_media_check_mode" | "hook_local_status_mode" | "hook_inbound_status_on_failure" | "hook_inbound_status_unfollowed_direct" | "hook_inbound_follow_on_failure" | "hook_signup_check_on_failure" | "hook_signup_check_reject" | "hook_local_status_account_age_days" | "hook_media_check_on_failure" | "hook_decisions_retention_days" | "invite_creators" | "member_invite_max_active" | "member_invite_max_uses" | "member_invite_max_lifetime_seconds" | "public_counts" | "featured_accounts" | "login_providers_only" | "remote_media_cache_max_bytes" | "remote_status_retention_days" | "remote_status_max_retention_days" | "relay_status_retention_days" | "oauth_client_rate_limits" | "translation_providers" | "translation_provider_visibilities" | "translation_browser" | "translation_user_monthly_characters" | "translation_server_monthly_characters" | "translation_retention_days" | "translation_reports_to_server";
+        InstanceSettingKey: "registration_mode" | "max_status_length" | "default_locale" | "local_timeline_visibility" | "federated_timeline_visibility" | "preview_image" | "contact_account" | "contact_email" | "thumbnail" | "remote_media_policy" | "remote_media_cache_ttl_seconds" | "authorized_fetch" | "domain_actions_visibility" | "domain_actions_rationale_visibility" | "appeal_window_days" | "session_origins_retention_days" | "registration_origins_retention_days" | "reports_retention_days" | "moderation_actions_retention_days" | "audit_log_retention_days" | "search_indexing" | "ai_usage" | "indexable_default" | "search_visibilities" | "security_contact" | "require_media_description" | "link_cards" | "link_cards_ignore_robots_txt" | "finance_visibility" | "finance_viewer_item_names" | "finance_viewer_item_memos" | "finance_viewer_income" | "supporter_list_visibility" | "income_visibility" | "federation_mode" | "user_app_registration" | "dynamic_client_registration" | "oauth_metadata_document_clients" | "voice_room_starters" | "voice_public_summary" | "voice_participants_retention_days" | "hook_inbound_status_mode" | "hook_inbound_follow_mode" | "hook_signup_check_mode" | "hook_media_check_mode" | "hook_local_status_mode" | "hook_inbound_actor_mode" | "hook_inbound_status_on_failure" | "hook_inbound_status_unfollowed_direct" | "hook_inbound_follow_on_failure" | "hook_signup_check_on_failure" | "hook_signup_check_reject" | "hook_local_status_account_age_days" | "hook_media_check_on_failure" | "hook_inbound_actor_on_failure" | "hook_decisions_retention_days" | "invite_creators" | "member_invite_max_active" | "member_invite_max_uses" | "member_invite_max_lifetime_seconds" | "public_counts" | "featured_accounts" | "login_providers_only" | "remote_media_cache_max_bytes" | "remote_status_retention_days" | "remote_status_max_retention_days" | "relay_status_retention_days" | "oauth_client_rate_limits" | "translation_providers" | "translation_provider_visibilities" | "translation_browser" | "translation_user_monthly_characters" | "translation_server_monthly_characters" | "translation_retention_days" | "translation_reports_to_server";
         /**
          * @description The type of a setting's value. `bool`: `true` or `false`. `int`: a decimal integer from
          *     `minimum` to `maximum`. `enum`: one of `choices`. `locale`: a BCP 47 language tag.

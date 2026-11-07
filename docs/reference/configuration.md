@@ -315,6 +315,13 @@ An instance setting that has never been set reads as its default, which is defin
 | [`plugin_local_status_tls_cert_file`](#plugin_local_status_tls_cert_file) | `MY_PLUGIN_LOCAL_STATUS_TLS_CERT_FILE` | none | no | no |
 | [`plugin_local_status_tls_key_file`](#plugin_local_status_tls_key_file) | `MY_PLUGIN_LOCAL_STATUS_TLS_KEY_FILE` | none | no | no |
 | [`plugin_local_status_timeout`](#plugin_local_status_timeout) | `MY_PLUGIN_LOCAL_STATUS_TIMEOUT` | `1s` | no | no |
+| [`plugin_inbound_actor_address`](#plugin_inbound_actor_address) | `MY_PLUGIN_INBOUND_ACTOR_ADDRESS` | none | no | no |
+| [`plugin_inbound_actor_protocol`](#plugin_inbound_actor_protocol) | `MY_PLUGIN_INBOUND_ACTOR_PROTOCOL` | `json` | no | no |
+| [`plugin_inbound_actor_token`](#plugin_inbound_actor_token) | `MY_PLUGIN_INBOUND_ACTOR_TOKEN` | none | no | yes |
+| [`plugin_inbound_actor_tls_ca_file`](#plugin_inbound_actor_tls_ca_file) | `MY_PLUGIN_INBOUND_ACTOR_TLS_CA_FILE` | the system's roots | no | no |
+| [`plugin_inbound_actor_tls_cert_file`](#plugin_inbound_actor_tls_cert_file) | `MY_PLUGIN_INBOUND_ACTOR_TLS_CERT_FILE` | none | no | no |
+| [`plugin_inbound_actor_tls_key_file`](#plugin_inbound_actor_tls_key_file) | `MY_PLUGIN_INBOUND_ACTOR_TLS_KEY_FILE` | none | no | no |
+| [`plugin_inbound_actor_timeout`](#plugin_inbound_actor_timeout) | `MY_PLUGIN_INBOUND_ACTOR_TIMEOUT` | `3s` | no | no |
 
 ## Settings
 
@@ -2701,6 +2708,68 @@ Deadline of one call of the `local.status` plugin, less than `30s`.
 
 - Environment variable: `MY_PLUGIN_LOCAL_STATUS_TIMEOUT`
 - Default: `1s`
+- Required: no
+
+### `plugin_inbound_actor_address`
+
+Where the `inbound.actor` plugin listens: `unix:///path/to.sock`, `https://host[:port]`, or `http://host[:port]`, which is plain TCP: nothing encrypts or authenticates it, and the server warns at start. Empty delegates nothing, and the server opens no connection. Host names are resolved per connection. Restart to change it; no instance setting or API can.
+
+- Environment variable: `MY_PLUGIN_INBOUND_ACTOR_ADDRESS`
+- Default: none
+- Required: no
+
+### `plugin_inbound_actor_protocol`
+
+What the server sends to the `inbound.actor` plugin; it must be what the plugin accepts.
+
+- Environment variable: `MY_PLUGIN_INBOUND_ACTOR_PROTOCOL`
+- Default: `json`
+- Required: no
+
+| Value | Description |
+| --- | --- |
+| `json` | The Connect protocol with JSON, which a plugin of an HTTP server and a JSON library serves with no Connect library. |
+| `proto` | The Connect protocol with binary protobuf, for a server on a Connect library. |
+| `grpc` | gRPC, for a server that speaks only that. |
+
+### `plugin_inbound_actor_token`
+
+Bearer token that the server sends to the `inbound.actor` plugin, over `https://` or `unix://` only.
+
+- Environment variable: `MY_PLUGIN_INBOUND_ACTOR_TOKEN` or `MY_PLUGIN_INBOUND_ACTOR_TOKEN_FILE`
+- Default: none
+- Required: no
+
+### `plugin_inbound_actor_tls_ca_file`
+
+File of the CA that verifies the `inbound.actor` plugin at an `https://` address.
+
+- Environment variable: `MY_PLUGIN_INBOUND_ACTOR_TLS_CA_FILE`
+- Default: the system's roots
+- Required: no
+
+### `plugin_inbound_actor_tls_cert_file`
+
+File of the client certificate that the server shows the `inbound.actor` plugin at an `https://` address (mTLS), with its key file.
+
+- Environment variable: `MY_PLUGIN_INBOUND_ACTOR_TLS_CERT_FILE`
+- Default: none
+- Required: no
+
+### `plugin_inbound_actor_tls_key_file`
+
+File of the key of that client certificate of the `inbound.actor` plugin.
+
+- Environment variable: `MY_PLUGIN_INBOUND_ACTOR_TLS_KEY_FILE`
+- Default: none
+- Required: no
+
+### `plugin_inbound_actor_timeout`
+
+Deadline of one call of the `inbound.actor` plugin, less than `30s`.
+
+- Environment variable: `MY_PLUGIN_INBOUND_ACTOR_TIMEOUT`
+- Default: `3s`
 - Required: no
 
 ## Renamed and removed settings

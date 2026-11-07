@@ -194,6 +194,8 @@ function externalReviewText(t: Translate, hook: ExternalReviewHook, scope: Exter
       return t("client:about.external_review.media_check");
     case "local.status":
       return t("client:about.external_review.local_status", { days: scope?.local_status_account_age_days ?? 0 });
+    case "inbound.actor":
+      return t("client:about.external_review.inbound_actor");
   }
 }
 

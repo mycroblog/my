@@ -3,6 +3,7 @@
 package account
 
 import (
+	"bytes"
 	"context"
 	"crypto"
 	"crypto/ed25519"
@@ -20,6 +21,8 @@ import (
 // The account module's types that other modules name in their ports.
 type (
 	Account    = account.Account
+	// ReceivedProfile is what the decision hook inbound.actor reviews of a remote profile.
+	ReceivedProfile = account.ReceivedProfile
 	Key        = account.Key
 	RemoteHead = account.RemoteHead
 	Move       = account.Move
@@ -76,6 +79,75 @@ type RemoteActorInput struct {
 	Document []byte
 	// Handle is the result of the WebFinger check; its zero value keeps the stored handle.
 	Handle HandleCheck
+	// AccountID is the ID the account gets when the actor is new, "" for a fresh one. A review of
+	// the profile made before the account exists names the account by it.
+	AccountID string
+	// KeepProfile keeps the reviewed part of the stored profile (the display name, the note, the
+	// fields, the avatar and the header, and the custom emoji they use) of a known actor, because
+	// the decision hook inbound.actor dropped the received one (ADR-0147 §2). Everything else of
+	// the document is still stored: the snapshot with the inbox and the other endpoints, the keys,
+	// the handle, and the flags of the profile (locked, bot, discoverable, indexable), which the hook
+	// does not review and which say how to follow and whether to index the actor. It does nothing
+	// for an actor stored for the first time, whose profile is always stored.
+	KeepProfile bool
+}
+
+// ProfileReview is how a fetched remote profile stands to the stored one, for the decision hook
+// inbound.actor (ADR-0147 §2, §6).
+type ProfileReview struct {
+	// Profile is what the hook reviews, and Digest its digest, which names the subject.
+	Profile ReceivedProfile
+	Digest  []byte
+	// AccountID is the stored account of the actor, "" for an actor not stored yet.
+	AccountID string
+	// Changed says that Profile differs from the stored profile, always true for an actor not
+	// stored yet: an actor fetched again with the same profile is not reviewed again.
+	Changed bool
+}
+
+// ReviewProfile returns what the hook inbound.actor reviews of a fetched actor, outside any
+// transaction. The profile is sanitized as UpsertRemoteActor stores it. A local actor has nothing
+// to review, and UpsertRemoteActor refuses it.
+func (s *Service) ReviewProfile(ctx context.Context, in RemoteActorInput) (ProfileReview, error) {
+	if s.d.Sanitizer == nil {
+		return ProfileReview{}, errors.New("account: remote actors need an HTML sanitizer")
+	}
+	p := s.receivedProfile(in)
+	r := ProfileReview{Profile: p, Digest: p.Digest(), Changed: true}
+	a, err := s.d.Repository.FindAccountByURI(ctx, in.URI)
+	switch {
+	case errors.Is(err, ErrNotFound):
+		return r, nil
+	case err != nil:
+		return ProfileReview{}, err
+	case a.IsLocal():
+		return ProfileReview{}, nil
+	}
+	r.AccountID = a.ID
+	switch stored, err := s.d.Repository.FindRemoteProfileDigest(ctx, a.ID); {
+	case errors.Is(err, ErrNotFound):
+	case err != nil:
+		return ProfileReview{}, err
+	default:
+		r.Changed = !bytes.Equal(stored, r.Digest)
+	}
+	return r, nil
+}
+
+// receivedProfile is the reviewed part of the profile of in, sanitized as it is stored.
+func (s *Service) receivedProfile(in RemoteActorInput) account.ReceivedProfile {
+	san := s.d.Sanitizer
+	p := account.ReceivedProfile{
+		DisplayName: strings.TrimSpace(san.PlainText(in.Name)),
+		NoteHTML:    sanitizeOptional(san.SanitizeHTML, in.SummaryHTML),
+		AvatarURL:   in.AvatarURL, HeaderURL: in.HeaderURL,
+	}
+	for _, f := range in.Fields {
+		p.Fields = append(p.Fields, account.ReceivedProfileField{
+			Name: strings.TrimSpace(san.PlainText(f.Name)), ValueHTML: sanitizeOptional(san.SanitizeHTML, f.ValueHTML),
+		})
+	}
+	return p
 }
 
 // RemoteFieldInput is a PropertyValue of a remote profile, with its value as received.
@@ -161,8 +233,12 @@ func (s *Service) UpsertRemoteActor(ctx context.Context, tx uow.Tx, in RemoteAct
 	a, err := repo.AccountByURI(ctx, tx, in.URI)
 	switch {
 	case errors.Is(err, ErrNotFound):
+		id := in.AccountID
+		if id == "" {
+			id = s.d.IDs.NewID()
+		}
 		a = account.Account{
-			ID: s.d.IDs.NewID(), URI: in.URI, Domain: account.NormalizeDomain(in.Domain),
+			ID: id, URI: in.URI, Domain: account.NormalizeDomain(in.Domain),
 			ActorType: ActorTypeOf(in.Type), CreatedAt: now,
 		}
 		if err := repo.InsertAccount(ctx, tx, a); err != nil {
@@ -226,47 +302,54 @@ func (s *Service) recordSnapshot(ctx context.Context, tx uow.Tx, accountID strin
 }
 
 // reviseRemoteProfile records a revision when the sanitized profile differs from the current
-// one (data-model §4.2: remote revisions are made only when the content changed).
+// one (data-model §4.2: remote revisions are made only when the content changed). With
+// in.KeepProfile, a known actor's revision keeps the reviewed part of the current one and takes
+// only the flags of in.
 func (s *Service) reviseRemoteProfile(ctx context.Context, tx uow.Tx, accountID, snapshotID string, in RemoteActorInput, now time.Time) error {
-	san := s.d.Sanitizer
+	repo := s.d.Repository
+	cur, err := repo.CurrentProfile(ctx, tx, accountID)
+	first := errors.Is(err, ErrNotFound)
+	if err != nil && !first {
+		return err
+	}
 	rev := account.ProfileRevision{
-		AccountID:    accountID,
-		DisplayName:  strings.TrimSpace(san.PlainText(in.Name)),
-		NoteHTML:     sanitizeOptional(san.SanitizeHTML, in.SummaryHTML),
-		Locked:       in.Locked,
-		Bot:          in.Bot,
-		Discoverable: in.Discoverable,
-		Indexable:    in.Indexable,
+		AccountID: accountID, Locked: in.Locked, Bot: in.Bot, Discoverable: in.Discoverable, Indexable: in.Indexable,
 	}
-	for i, f := range in.Fields {
-		rev.Fields = append(rev.Fields, account.ProfileField{
-			Position: i, Name: strings.TrimSpace(san.PlainText(f.Name)), ValueHTML: sanitizeOptional(san.SanitizeHTML, f.ValueHTML),
-		})
-	}
-	var err error
-	if rev.AvatarMediaID, err = s.remoteImage(ctx, tx, accountID, in.AvatarURL, account.PropertyAvatar); err != nil {
-		return err
-	}
-	if rev.HeaderMediaID, err = s.remoteImage(ctx, tx, accountID, in.HeaderURL, account.PropertyHeader); err != nil {
-		return err
-	}
-	if len(in.Emojis) > 0 && s.d.RecordRemoteEmojis != nil {
-		if rev.EmojiIDs, err = s.d.RecordRemoteEmojis(ctx, tx, accountID, account.NormalizeDomain(in.Domain), in.Emojis); err != nil {
+	var digest []byte
+	if in.KeepProfile && !first {
+		rev.DisplayName, rev.NoteHTML, rev.Fields = cur.DisplayName, cur.NoteHTML, cur.Fields
+		rev.AvatarMediaID, rev.HeaderMediaID, rev.EmojiIDs = cur.AvatarMediaID, cur.HeaderMediaID, cur.EmojiIDs
+		switch digest, err = repo.RemoteProfileDigest(ctx, tx, accountID); {
+		case errors.Is(err, ErrNotFound):
+			digest = []byte{} // a digest of no profile, which every received one differs from
+		case err != nil:
 			return err
 		}
+	} else {
+		p := s.receivedProfile(in)
+		digest = p.Digest()
+		rev.DisplayName, rev.NoteHTML = p.DisplayName, p.NoteHTML
+		for i, f := range p.Fields {
+			rev.Fields = append(rev.Fields, account.ProfileField{Position: i, Name: f.Name, ValueHTML: f.ValueHTML})
+		}
+		if rev.AvatarMediaID, err = s.remoteImage(ctx, tx, accountID, in.AvatarURL, account.PropertyAvatar); err != nil {
+			return err
+		}
+		if rev.HeaderMediaID, err = s.remoteImage(ctx, tx, accountID, in.HeaderURL, account.PropertyHeader); err != nil {
+			return err
+		}
+		if len(in.Emojis) > 0 && s.d.RecordRemoteEmojis != nil {
+			if rev.EmojiIDs, err = s.d.RecordRemoteEmojis(ctx, tx, accountID, account.NormalizeDomain(in.Domain), in.Emojis); err != nil {
+				return err
+			}
+		}
 	}
-	cur, err := s.d.Repository.CurrentProfile(ctx, tx, accountID)
-	first := errors.Is(err, ErrNotFound)
-	switch {
-	case first:
-	case err != nil:
-		return err
-	case rev.SameContent(cur):
+	if !first && rev.SameContent(cur) {
 		return nil
 	}
 	rev.ID, rev.Seq, rev.RevisedAt = s.d.IDs.NewID(), cur.Seq+1, now
-	rev.Remote = &account.RemoteProfileSource{SnapshotID: snapshotID, HTMLPolicyVersion: san.PolicyVersion()}
-	if err := s.d.Repository.InsertProfileRevision(ctx, tx, rev); err != nil {
+	rev.Remote = &account.RemoteProfileSource{SnapshotID: snapshotID, HTMLPolicyVersion: s.d.Sanitizer.PolicyVersion(), ProfileDigest: digest}
+	if err := repo.InsertProfileRevision(ctx, tx, rev); err != nil {
 		return err
 	}
 	return tx.Emit(ctx, ProfileRevised{Revision: rev, IndexableChanged: !first && cur.Indexable != rev.Indexable})

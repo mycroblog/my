@@ -34,7 +34,9 @@ func IsOwnActorActivity(act *federation.Activity) bool {
 // document changed, a profile revision when the sanitized profile changed, the keys it declares,
 // and the handle checked again with WebFinger (account.UpsertRemoteActor). Any other Update of
 // the actor (an IRI only, or a document of another origin) makes the actor be fetched again from
-// its server.
+// its server. Either way, a changed profile asks the hook inbound.actor first (ADR-0147 §2): a drop
+// keeps the stored profile and stores the rest, and a plugin failure under the retry behaviour
+// fails the job with apphook.ErrRetryLater, which runs it again.
 //
 // The Update of an actor that is deleted, or local, is a no-op: deletion is final.
 //
@@ -62,9 +64,16 @@ func (r *RemoteActors) ReceiveActorUpdate(ctx context.Context, act *federation.A
 		return err
 	}
 	in := r.input(ctx, actor, doc)
+	v, err := r.reviewActor(ctx, &in)
+	if err != nil {
+		return err
+	}
 	err = r.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
 		stored, err := r.d.Accounts.UpsertRemoteActor(ctx, tx, in)
 		if err != nil {
+			return err
+		}
+		if err := r.applyActorVerdict(ctx, tx, v, stored.ID); err != nil {
 			return err
 		}
 		if err := enqueueFetchFeaturedTx(ctx, tx, r.d.Outbox, stored.ID, actor.ID, actor.Featured); err != nil {

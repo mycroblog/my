@@ -27,7 +27,8 @@ only when an earlier call failed, so a plugin should give the same answer again.
 
 ### `CheckRequest`
 
-- `hook` (`string`, field 1): The hook that asks: inbound.status, inbound.follow, signup.check, media.check, or local.status.
+- `hook` (`string`, field 1): The hook that asks: inbound.status, inbound.follow, signup.check, media.check, local.status, or
+  inbound.actor.
 - `subject_key` (`string`, field 2): What identifies the subject for the hook, such as the URI of a received activity.
 - `probe` (`bool`, field 3): True for a call of `my plugin test`, which is about no real subject and acts on nothing.
 - `inbound_status` ([`InboundStatus`](#inboundstatus), field 4): What inbound.status reviews; empty on the calls of the other hooks and on probes.
@@ -35,6 +36,7 @@ only when an earlier call failed, so a plugin should give the same answer again.
 - `signup` ([`SignupSubject`](#signupsubject), field 6): What signup.check reviews; empty on the calls of the other hooks and on probes.
 - `local_status` ([`LocalStatus`](#localstatus), field 7): What local.status reviews; empty on the calls of the other hooks and on probes.
 - `media` ([`MediaSubject`](#mediasubject), field 8): What media.check reviews; empty on the calls of the other hooks and on probes.
+- `inbound_actor` ([`InboundActor`](#inboundactor), field 9): What inbound.actor reviews; empty on the calls of the other hooks and on probes.
 
 ### `InboundStatus`
 
@@ -138,6 +140,34 @@ account or of a post is sent, not even the alt text.
 - `duration_ms` (`int64`, field 9): How long a video or audio file plays, in milliseconds; 0 for an image.
 - `animated` (`bool`, field 10): Whether the image moves: an animation, or a video. image holds its first frame or poster.
 
+### `InboundActor`
+
+The profile of an actor of another server, for inbound.actor. The server asks when it takes the
+actor in: the first time it fetches the actor, on an Update of the actor, and when it fetches the
+actor again, but only when the fields below differ from the profile it stored. The subject_key of
+the call is the actor's id, "#", and the SHA-256 of these fields in hex, so a profile sent again is
+the same subject and is not asked about again. The profile is public; nothing of a local account is
+sent.
+
+- `actor_uri` (`string`, field 1): The ActivityPub id of the actor.
+- `domain` (`string`, field 2): The host of the actor's server.
+- `username` (`string`, field 3): The actor's preferredUsername.
+- `new_actor` (`bool`, field 4): True when the server has not stored the actor yet. The server always stores a new actor, since
+  follows and mentions need its account, so a DROP of one is taken for a FLAG.
+- `display_name` (`string`, field 5): The display name, as plain text.
+- `note_html` (`string`, field 6): The bio, as sanitized HTML; empty for none.
+- `fields` (repeated [`InboundActor.Field`](#inboundactorfield), field 7): The profile fields in order.
+- `avatar_url` (`string`, field 8): The URLs of the avatar and the header image on the actor's server; empty for none. The server
+  sends no bytes of them.
+- `header_url` (`string`, field 9)
+
+### `InboundActor.Field`
+
+A profile field.
+
+- `name` (`string`, field 1): The name, as plain text.
+- `value_html` (`string`, field 2): The value, as sanitized HTML.
+
 ### `CheckResponse`
 
 - `verdict` ([`Verdict`](#verdict), field 1): A name in JSON. VERDICT_UNSPECIFIED, an empty response included, a name this version does not
@@ -157,6 +187,8 @@ inbound.follow: ALLOW, DROP, FLAG.
 signup.check: ALLOW, REQUIRE_APPROVAL, REJECT.
 media.check: ALLOW, MARK_SENSITIVE, FLAG, REJECT.
 local.status: ALLOW, FLAG, REJECT. A REJECT can be appealed by the author, which people review.
+inbound.actor: ALLOW, DROP, FLAG. A DROP keeps the profile stored before; the server still stores
+the rest of the actor, such as its keys and endpoints.
 
 - `VERDICT_UNSPECIFIED` = 0
 - `VERDICT_ALLOW` = 1: Go on as if the hook were not there.

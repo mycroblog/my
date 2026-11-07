@@ -77,6 +77,9 @@ func setSubject(req *hookv1.CheckRequest, subject any) error {
 	case apphook.MediaSubject:
 		req.Media = mediaSubject(s)
 		return nil
+	case apphook.ActorSubject:
+		req.InboundActor = inboundActor(s)
+		return nil
 	}
 	return fmt.Errorf("hook: no mapping of the subject %T", subject)
 }
@@ -96,6 +99,17 @@ func inboundStatus(s apphook.InboundStatusSubject) *hookv1.InboundStatus {
 	}
 	for _, a := range s.Attachments {
 		out.Attachments = append(out.Attachments, &hookv1.InboundStatus_Attachment{Type: a.Type, Url: a.URL, ContentType: a.ContentType, Description: a.Description})
+	}
+	return out
+}
+
+func inboundActor(s apphook.ActorSubject) *hookv1.InboundActor {
+	out := &hookv1.InboundActor{
+		ActorUri: s.ActorURI, Domain: s.Domain, Username: s.Username, NewActor: s.New,
+		DisplayName: s.DisplayName, NoteHtml: s.NoteHTML, AvatarUrl: s.AvatarURL, HeaderUrl: s.HeaderURL,
+	}
+	for _, f := range s.Fields {
+		out.Fields = append(out.Fields, &hookv1.InboundActor_Field{Name: f.Name, ValueHtml: f.ValueHTML})
 	}
 	return out
 }

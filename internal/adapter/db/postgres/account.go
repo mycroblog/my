@@ -117,7 +117,7 @@ func (r *AccountRepository) InsertProfileRevision(ctx context.Context, tx uow.Tx
 			return err
 		}
 		err = q.InsertRemoteProfileRevision(ctx, postgresgen.InsertRemoteProfileRevisionParams{
-			RevisionID: rev.ID, SnapshotID: rev.Remote.SnapshotID, HtmlPolicyVersion: version,
+			RevisionID: rev.ID, SnapshotID: rev.Remote.SnapshotID, HtmlPolicyVersion: version, ProfileDigest: rev.Remote.ProfileDigest,
 		})
 		if err != nil {
 			return wrap(err, "insert remote profile revision")

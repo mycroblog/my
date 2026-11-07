@@ -18,7 +18,7 @@
 -- to, which holds and erasures go by, NULL when there is none. reason_code and note are '' for none.
 CREATE TABLE hook_decisions (
   id uuid NOT NULL PRIMARY KEY,
-  hook text NOT NULL CHECK (hook IN ('inbound.status', 'inbound.follow', 'signup.check', 'media.check', 'local.status')),
+  hook text NOT NULL CHECK (hook IN ('inbound.status', 'inbound.follow', 'signup.check', 'media.check', 'local.status', 'inbound.actor')),
   subject_key text COLLATE "C" NOT NULL,
   account_id uuid,
   mode text NOT NULL CHECK (mode IN ('observe', 'enforce')),

@@ -200,7 +200,7 @@ func TestAHookPluginPasses(t *testing.T) {
 	jsonFake, _ := fakeplugin.JSON(fakeplugin.Options{})
 	for _, h := range []http.Handler{connectFake, jsonFake} {
 		// local.status refuses plain TCP, so this runs on a Unix socket like its sidecars.
-		for _, name := range []string{kind.InboundStatus, kind.InboundFollow, kind.SignupCheck, kind.MediaCheck, kind.LocalStatus} {
+		for _, name := range []string{kind.InboundStatus, kind.InboundFollow, kind.SignupCheck, kind.MediaCheck, kind.LocalStatus, kind.InboundActor} {
 			results := run(t, name, kind.Destination{Address: fakeplugin.ServeUnix(t, h)})
 			if results["verdict"].Outcome != contract.Pass {
 				t.Errorf("%s: %+v", name, results["verdict"])

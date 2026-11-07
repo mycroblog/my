@@ -10,6 +10,7 @@ import (
 	"github.com/mycroblog/my/internal/app/account"
 	"github.com/mycroblog/my/internal/app/content"
 	"github.com/mycroblog/my/internal/app/federation"
+	apphook "github.com/mycroblog/my/internal/app/hook"
 	"github.com/mycroblog/my/internal/app/kernel"
 	"github.com/mycroblog/my/internal/app/queue"
 	"github.com/mycroblog/my/internal/app/uow"
@@ -72,8 +73,10 @@ func (a *App) setUpRemoteActors(cfg *config.Config, repo federationRepository) {
 	a.RemoteActors = federation.NewRemoteActors(federation.RemoteActorsDeps{
 		UnitOfWork: a.UnitOfWork, Accounts: a.Accounts, Instances: repo, Fetcher: fetcher, HTTP: a.HTTPClient,
 		Jobs: a.Jobs, Outbox: outbox, Followers: a.Graph, Clock: a.Clock, IDs: a.IDs, Logger: a.Logger,
+		Review: federation.ActorReview{Gate: a.Hooks, Reports: a.Moderation},
 	})
 	a.RemoteActors.RegisterJobs(a.Handlers, a.Scheduler)
+	a.Hooks.RegisterOverrideEffect(apphook.InboundActor, federation.RefetchDroppedProfile(outbox))
 }
 
 // remoteMentions resolves the remote handles of local posts for the content module: handles

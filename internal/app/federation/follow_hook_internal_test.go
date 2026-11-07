@@ -6,6 +6,7 @@ import (
 	"context"
 	"testing"
 
+	appaccount "github.com/mycroblog/my/internal/app/account"
 	apphook "github.com/mycroblog/my/internal/app/hook"
 	"github.com/mycroblog/my/internal/app/uow"
 )
@@ -37,6 +38,20 @@ func TestReviewWithoutAPlugin(t *testing.T) {
 	for name, gate := range map[string]apphook.Gate{"no gate": nil, "no plugin": unconfiguredGate{t}} {
 		if _, err := (followHandlers{d: FollowHandlerDeps{Hooks: gate}}).review(t.Context(), &InboxActivity{}, "followee"); err != nil {
 			t.Errorf("%s: %v", name, err)
+		}
+	}
+}
+
+// TestActorReviewWithoutAPlugin checks that a server with no inbound.actor plugin reads and asks
+// nothing before it stores an actor, and leaves the input as it is.
+func TestActorReviewWithoutAPlugin(t *testing.T) {
+	t.Parallel()
+	for name, gate := range map[string]apphook.Gate{"no gate": nil, "no plugin": unconfiguredGate{t}} {
+		r := &RemoteActors{d: RemoteActorsDeps{Review: ActorReview{Gate: gate}}}
+		in := appaccount.RemoteActorInput{URI: "https://remote.example/users/bob"}
+		v, err := r.reviewActor(t.Context(), &in)
+		if err != nil || v.Effect != apphook.Allow || v.file || in.KeepProfile || in.AccountID != "" {
+			t.Errorf("%s: %+v, %v, input %+v", name, v, err, in)
 		}
 	}
 }

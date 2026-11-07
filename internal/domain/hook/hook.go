@@ -25,11 +25,12 @@ const (
 	SignupCheck   Name = "signup.check"
 	MediaCheck    Name = "media.check"
 	LocalStatus   Name = "local.status"
+	InboundActor  Name = "inbound.actor"
 )
 
 // Names lists the hooks in documentation order.
 func Names() []Name {
-	return []Name{InboundStatus, InboundFollow, SignupCheck, MediaCheck, LocalStatus}
+	return []Name{InboundStatus, InboundFollow, SignupCheck, MediaCheck, LocalStatus, InboundActor}
 }
 
 // Mode says how far a hook acts. Only a decision of ModeEnforce has an effect (ADR-0147 §5).
@@ -168,6 +169,12 @@ var specs = map[Name]Spec{
 	LocalStatus: {
 		Name: LocalStatus, Verdicts: []Outcome{Allow, Flag, Reject},
 		OnFailure: []OnFailure{PassOnFailure},
+	},
+	// A drop of inbound.actor keeps the stored profile of a known actor; an actor fetched for the
+	// first time is always stored, and its drop is taken for a flag (ADR-0147 §2).
+	InboundActor: {
+		Name: InboundActor, Verdicts: []Outcome{Allow, Drop, Flag},
+		OnFailure: []OnFailure{PassOnFailure, RetryOnFailure},
 	},
 }
 
