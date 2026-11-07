@@ -807,6 +807,11 @@ func (s *Service) CountLocalUsers(ctx context.Context) (int, error) {
 	return s.d.Repository.CountLocalAccounts(ctx)
 }
 
+// CountLocalUsersTx is CountLocalUsers read in tx.
+func (s *Service) CountLocalUsersTx(ctx context.Context, tx uow.Tx) (int, error) {
+	return s.d.Repository.CountLocalAccountsTx(ctx, tx)
+}
+
 // PrivateKey opens the sealed private key of a local actor's key.
 func (s *Service) PrivateKey(ctx context.Context, k account.Key) (crypto.Signer, error) {
 	sealed, err := s.d.Repository.FindSealedPrivateKey(ctx, k.ID)

@@ -102,6 +102,7 @@ func AccountRepositoryContract(t *testing.T, newHarness AccountFactory) {
 		{"StopsImportsRemovedWhileTheyRun", importsStopWhenRemoved},
 		{"ErasesCSVImportsWithTheAccount", importsAreErasedWithTheAccount},
 		{"CountsLocalUsers", accountCountsLocalUsers},
+		{"CountsTheAccountsOfAOnePersonServer", accountCountsSingleUserAccounts},
 		{"ReadsRemoteInboxes", accountReadsRemoteInboxes},
 		{"FindsAccountsByURIAndDomain", accountFindsByURIAndDomain},
 		{"EnsuresBuiltinRoles", accountEnsuresBuiltinRoles},
@@ -778,6 +779,60 @@ func accountCountsLocalUsers(t *testing.T, e *accountEnv) {
 	}
 	if n := count(); n != 1 {
 		t.Errorf("CountLocalUsers = %d, want 1 (the instance actor and deleted accounts are not counted)", n)
+	}
+}
+
+// accountCountsSingleUserAccounts checks the count that the setting single_user needs to be 1
+// (ADR-0152 §1): local accounts that are not deleted, those pending or deactivated included, without
+// those whose registration was rejected and without the instance actor.
+func accountCountsSingleUserAccounts(t *testing.T, e *accountEnv) {
+	ctx := t.Context()
+	count := func() int {
+		t.Helper()
+		var n int
+		err := e.h.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+			var err error
+			n, err = e.identity.CountSingleUserAccountsTx(ctx, tx)
+			return err
+		})
+		if err != nil {
+			t.Fatalf("CountSingleUserAccountsTx = %v", err)
+		}
+		return n
+	}
+	if n := count(); n != 0 {
+		t.Errorf("CountSingleUserAccountsTx on an empty database = %d, want 0", n)
+	}
+	if _, err := e.accounts.EnsureInstanceActor(ctx); err != nil {
+		t.Fatalf("EnsureInstanceActor = %v", err)
+	}
+	e.register(t, "owner")
+	pending, rejected, gone, away := e.register(t, "pending"), e.register(t, "rejected"), e.register(t, "gone"), e.register(t, "away")
+	states := map[string]identity.RegistrationState{
+		pending.User.ID: identity.RegistrationPending, rejected.User.ID: identity.RegistrationRejected, gone.User.ID: identity.RegistrationRejected,
+	}
+	err := e.h.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+		for user, state := range states {
+			if err := e.h.Identity.UpsertRegistrationState(ctx, tx, identity.UserRegistrationState{UserID: user, State: state, Since: e.clock.Now()}); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatalf("UpsertRegistrationState = %v", err)
+	}
+	for _, in := range []appaccount.LifecycleInput{
+		{AccountID: gone.AccountID, Kind: account.LifecycleDeleted, InitiatedBy: account.InitiatedBySelf},
+		{AccountID: away.AccountID, Kind: account.LifecycleDeactivated, InitiatedBy: account.InitiatedBySelf},
+	} {
+		if _, err := e.accounts.RecordLifecycleEvent(ctx, in); err != nil {
+			t.Fatalf("RecordLifecycleEvent(%s) = %v", in.Kind, err)
+		}
+	}
+	// owner, pending, and away count; rejected was rejected, and gone (rejected too) is deleted.
+	if n := count(); n != 3 {
+		t.Errorf("CountSingleUserAccountsTx = %d, want 3 (the pending and deactivated accounts, without the rejected and deleted ones)", n)
 	}
 }
 

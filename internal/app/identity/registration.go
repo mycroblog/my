@@ -406,6 +406,10 @@ func (s *Service) signUp(ctx context.Context, in SignUpInput, ext *externalSignU
 		}
 		return s.writeSession(ctx, tx, session)
 	})
+	if errors.Is(err, ErrSingleUserMode) {
+		// The server became a one-person server since the mode was read (ADR-0152 §3).
+		return SignedUp{}, ErrRegistrationClosed
+	}
 	if err != nil {
 		return SignedUp{}, err
 	}

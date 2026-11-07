@@ -41,6 +41,25 @@ type Deps struct {
 	Blobs blob.Store
 	// Sealer seals the secrets of the instance (MediaProxyKey); nil keeps none.
 	Sealer *kernel.Sealer
+	// SingleUserAccounts counts the local accounts that a one-person server allows only one of
+	// (ADR-0152 §1); nil refuses to turn the mode on.
+	SingleUserAccounts SingleUserAccounts
+}
+
+// SingleUserAccounts counts the local accounts for the setting single_user (ADR-0152 §1). The
+// composition root implements it over the identity and account modules.
+type SingleUserAccounts interface {
+	// CountSingleUserAccountsTx counts, inside tx, the local accounts that are not deleted, without
+	// those whose registration was rejected and without the instance actor.
+	CountSingleUserAccountsTx(ctx context.Context, tx uow.Tx) (int, error)
+}
+
+// SingleUserAccountsError refuses to turn single_user on while the server does not have exactly
+// one local account (ADR-0152 §1). Count is how many it has.
+type SingleUserAccountsError struct{ Count int }
+
+func (e *SingleUserAccountsError) Error() string {
+	return fmt.Sprintf("single_user can be turned on only while the server has exactly one local account; it has %d", e.Count)
 }
 
 // DocumentRenderer renders the Markdown of a document text to an HTML fragment that is safe to
@@ -100,8 +119,8 @@ func (s *Service) DefaultLocale(ctx context.Context) (string, error) {
 }
 
 // RegistrationMode returns the registration mode that sign-ups follow: the value of the
-// registration_mode setting, or closed from the announcement of the service closure on
-// (instance.EffectiveRegistrationMode). The setting keeps its value.
+// registration_mode setting, or closed from the announcement of the service closure on and on a
+// one-person server (instance.Settings.EffectiveRegistrationMode). The setting keeps its value.
 func (s *Service) RegistrationMode(ctx context.Context) (instance.RegistrationMode, error) {
 	settings, err := s.Settings(ctx)
 	if err != nil {
@@ -111,7 +130,27 @@ func (s *Service) RegistrationMode(ctx context.Context) (instance.RegistrationMo
 	if err != nil {
 		return "", err
 	}
-	return instance.EffectiveRegistrationMode(settings.RegistrationMode(), c.CurrentState()), nil
+	return settings.EffectiveRegistrationMode(c.CurrentState()), nil
+}
+
+// SingleUser returns the current value of the single_user setting (FR-811, ADR-0152), read at each
+// call so that a change applies at once.
+func (s *Service) SingleUser(ctx context.Context) (bool, error) {
+	settings, err := s.Settings(ctx)
+	if err != nil {
+		return false, err
+	}
+	return settings.SingleUser(), nil
+}
+
+// SingleUserTx is SingleUser inside tx, for the writes that the mode refuses (the creation of an
+// account) to read the setting again in their own transaction (ADR-0152 §3).
+func (s *Service) SingleUserTx(ctx context.Context, tx uow.Tx) (bool, error) {
+	cur, err := s.d.Repository.ListCurrentSettingsTx(ctx, tx)
+	if err != nil {
+		return false, err
+	}
+	return instance.NewSettings(cur).SingleUser(), nil
 }
 
 // MaxStatusLength returns the current value of the max_status_length setting (FR-101).
@@ -217,6 +256,9 @@ func (e *SettingError) Unwrap() error { return e.Err }
 // every value first and records nothing when one is rejected (a *SettingError naming the first
 // such key); otherwise it records the revisions and their audit entries in one transaction, in
 // the order of ins, so that a form of several settings is saved whole or not at all.
+//
+// Turning single_user on counts the local accounts again in that transaction and fails with a
+// *SingleUserAccountsError unless exactly one counts (ADR-0152 §1); turning it off always works.
 func (s *Service) SetSettings(ctx context.Context, ins []SetSettingInput) ([]instance.SettingRevision, error) {
 	now := s.d.Clock.Now()
 	revs := make([]instance.SettingRevision, 0, len(ins))
@@ -238,6 +280,9 @@ func (s *Service) SetSettings(ctx context.Context, ins []SetSettingInput) ([]ins
 		audits = append(audits, s.audit(appmoderation.AuditSettingChanged, appmoderation.AuditTargetSetting, string(in.Key), string(in.Key), rev.ID, in.RevisedByUserID, now))
 	}
 	err = s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+		if err := s.checkSingleUser(ctx, tx, revs); err != nil {
+			return err
+		}
 		for i, rev := range revs {
 			if err := s.d.Repository.InsertSettingRevision(ctx, tx, rev); err != nil {
 				return err
@@ -255,6 +300,25 @@ func (s *Service) SetSettings(ctx context.Context, ins []SetSettingInput) ([]ins
 		return nil, err
 	}
 	return revs, nil
+}
+
+// checkSingleUser fails with a *SingleUserAccountsError when revs turn single_user on while the
+// server does not have exactly one local account, counted in tx.
+func (s *Service) checkSingleUser(ctx context.Context, tx uow.Tx, revs []instance.SettingRevision) error {
+	if !slices.ContainsFunc(revs, func(r instance.SettingRevision) bool { return r.Key == instance.SettingSingleUser && r.Value == "true" }) {
+		return nil
+	}
+	if s.d.SingleUserAccounts == nil {
+		return &SingleUserAccountsError{}
+	}
+	n, err := s.d.SingleUserAccounts.CountSingleUserAccountsTx(ctx, tx)
+	if err != nil {
+		return fmt.Errorf("instance: count the local accounts: %w", err)
+	}
+	if n != 1 {
+		return &SingleUserAccountsError{Count: n}
+	}
+	return nil
 }
 
 // parseSetting returns the canonical value of in (instance.Definition.Parse), with a locale

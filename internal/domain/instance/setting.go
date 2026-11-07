@@ -191,6 +191,10 @@ const (
 	// server-side providers, which still receive only the visibilities that each is allowed; off,
 	// the text of a report reaches no provider (ADR-0148 §13).
 	SettingTranslationReportsToServer SettingKey = "translation_reports_to_server"
+	// SettingSingleUser makes the server a one-person server (FR-811, ADR-0152): it may be turned
+	// on only while exactly one local account counts (appinstance.Service.SetSettings), and while
+	// it is on Settings.SingleUser is the one predicate that every entry point reads.
+	SettingSingleUser SettingKey = "single_user"
 
 	// The server default of the automatic deletion of old posts (ADR-0151 §2): the policy that a
 	// new local account starts from, one key per field of the policy. Existing accounts keep
@@ -845,6 +849,10 @@ var definitions = []Definition{
 		Key: SettingAutoDeleteGraceDays, Kind: KindInt, Default: strconv.Itoa(DefaultAutoDeleteGraceDays), Min: 0, Max: MaxAutoDeleteGraceDays,
 		Doc: "How many days after its notice an account that the maximum newly binds (when the maximum is turned on or lowered, or the account loses keep_posts_longer) keeps its own policy; a change leaves the notices already given as they are (ADR-0151 §5).",
 	},
+	{
+		Key: SettingSingleUser, Kind: KindBool, Default: "false",
+		Doc: "Whether the server is a one-person server: registration stays closed, the local and federated timelines, invites, the review of registrations, the sign-up blocks, and the suggestions of accounts are off, and new posts cannot be local. It can be turned on only while exactly one local account exists (FR-811, ADR-0152).",
+	},
 }
 
 // autoDeleteDefaultKeep is the definition of an exception of the server default of the automatic
@@ -1164,16 +1172,38 @@ func (s Settings) DefaultLocale() string {
 	return v
 }
 
-// LocalTimelineVisibility returns the value of SettingLocalTimelineVisibility.
+// LocalTimelineVisibility returns the effective value of SettingLocalTimelineVisibility: off on a
+// one-person server (ADR-0152 §2), whose stored value Value still reads.
 func (s Settings) LocalTimelineVisibility() Audience {
+	if s.SingleUser() {
+		return AudienceOff
+	}
 	v, _ := s.Value(SettingLocalTimelineVisibility)
 	return Audience(v)
 }
 
-// FederatedTimelineVisibility returns the value of SettingFederatedTimelineVisibility.
+// FederatedTimelineVisibility returns the effective value of SettingFederatedTimelineVisibility:
+// off on a one-person server (ADR-0152 §2), whose stored value Value still reads.
 func (s Settings) FederatedTimelineVisibility() Audience {
+	if s.SingleUser() {
+		return AudienceOff
+	}
 	v, _ := s.Value(SettingFederatedTimelineVisibility)
 	return Audience(v)
+}
+
+// SingleUser returns the value of SettingSingleUser: whether the server is a one-person server
+// (FR-811, ADR-0152). It is the one predicate of the mode that every entry point reads.
+func (s Settings) SingleUser() bool { return s.boolValue(SettingSingleUser) }
+
+// EffectiveRegistrationMode returns the registration mode that sign-ups follow with the service
+// closure in state: closed on a one-person server (ADR-0152 §3), and otherwise
+// EffectiveRegistrationMode of the setting's value. The setting keeps its value.
+func (s Settings) EffectiveRegistrationMode(state ClosureState) RegistrationMode {
+	if s.SingleUser() {
+		return RegistrationClosed
+	}
+	return EffectiveRegistrationMode(s.RegistrationMode(), state)
 }
 
 // PreviewImageMediaID returns the value of SettingPreviewImage, "" when unset.
