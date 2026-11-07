@@ -9,6 +9,7 @@ import type { Browser, BrowserContext, Page } from "@playwright/test";
 import { axeBuilder, expect, expectNoAxeViolations, expectNoHorizontalScroll, localeDir, test } from "./fixtures";
 import { ownsServer, runMy } from "./server-cli.ts";
 import { admin, serverURL, thirdPartyClient } from "./server-origin.ts";
+import { primaryProject } from "./projects.ts";
 
 test.use({ baseURL: serverURL });
 
@@ -153,7 +154,7 @@ test.describe("without JavaScript", () => {
 
   test("creates an account and shows that it waits for approval", async ({ browser, context, page }, testInfo) => {
     // Every sign-up counts against a per-address limit (5 in 30 minutes), so one project creates the account.
-    test.skip(testInfo.project.name !== "en-320", "the sign-up rate limit allows only a few accounts per run");
+    test.skip(testInfo.project.name !== primaryProject, "the sign-up rate limit allows only a few accounts per run");
     const username = `e2e_${randomBytes(4).toString("hex")}`;
     await page.goto("/auth/sign_up");
     await page.locator('input[autocomplete="nickname"]').fill(username);
@@ -376,7 +377,7 @@ test.describe("two-factor sign-in", () => {
 
   test("signs in once with each recovery code", async ({ page }, testInfo) => {
     // A reused code counts against the sign-in rate limit of the address, so one project checks it.
-    test.skip(testInfo.project.name !== "en-320", "a refused code counts against the sign-in rate limit");
+    test.skip(testInfo.project.name !== primaryProject, "a refused code counts against the sign-in rate limit");
     const user = await twoFactorUser(page);
     const [recoveryCode = ""] = user.recoveryCodes;
     await signInWithPassword(page, user);

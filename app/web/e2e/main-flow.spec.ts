@@ -7,7 +7,7 @@
 // with axe, for horizontal scrolling and against an ARIA snapshot.
 //
 // The server allows only a few sign-ups per address in 30 minutes (identity.SignUpIPLimit), so only the
-// en-320 project signs its first user up through the sign-up page and has the registration approved with
+// primary project (e2e/projects.ts) signs its first user up through the sign-up page and has the registration approved with
 // `my registration approve`; the other users are created with `my admin create` (e2e/server-cli.ts).
 // Every user is new to the test (a random name), so a retry and the other projects never meet its posts
 // or follows. The pages are in the project's locale: the app shows itself in the user's locale, which the
@@ -28,6 +28,7 @@ import {
 import { ownsServer, runMy } from "./server-cli.ts";
 import { serverURL } from "./server-origin.ts";
 import { readCatalog } from "./catalog.ts";
+import { primaryProject } from "./projects.ts";
 
 /** The second user's page, in a browser context of its own with the project's options. */
 const test = base.extend<{ secondPage: Page }>({
@@ -206,7 +207,7 @@ test.describe("the main flow", () => {
     const run = randomBytes(3).toString("hex");
     const alice = newUser("a");
     const bob = newUser("b");
-    const signsUp = testInfo.project.name === "en-320";
+    const signsUp = testInfo.project.name === primaryProject;
 
     await test.step("the first user signs up and is approved", async () => {
       if (!signsUp) {

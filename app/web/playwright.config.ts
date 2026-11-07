@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Playwright E2E for the web client (ADR-0015, ADR-0110). Every test runs in one project per
-// viewport width × locale. E2E_MATRIX=full runs all of them (nightly); otherwise only the default subset
-// runs: every locale at the narrowest and widest width. The client's tests run against `vite preview` of
+// Playwright E2E for the web client (ADR-0015, ADR-0110). Every spec runs in the primary project (en, 1440 px), the
+// only one of a run without E2E_MATRIX=full; with E2E_MATRIX=full (the Nightly) the specs whose behaviour changes with
+// the width or the locale also run in the projects of those (see `widthSpecs` and `localeSpecs`). The client's tests run against `vite preview` of
 // the built app (`scripts/task.sh web:e2e` builds it first), or against E2E_BASE_URL when it is set. The tests of the
 // server-rendered pages (e2e/auth-pages.spec.ts) and of the main flow (e2e/main-flow.spec.ts) run against a real `my serve` on SQLite that
 // e2e/server.ts starts from bin/my with the pseudo-locales enabled, or against E2E_SERVER_URL when it is
@@ -10,14 +10,50 @@
 // run (E2E_PREVIEW_PORT and E2E_SERVER_PORT override them; e2e/server-origin.ts), and a run never reuses a
 // server it did not start, so runs in several worktrees on one machine stay apart.
 import { defineConfig, devices, type Project } from "@playwright/test";
+import { primaryProject } from "./e2e/projects.ts";
 import { previewOrigin, previewPort, serverPort, voiceServerPort } from "./e2e/server-origin.ts";
 
-/** Viewport widths in CSS px (ADR-0110). */
-const widths = [320, 390, 768, 1024, 1440] as const;
-/** The source locale, Japanese and the two pseudo-locales (ADR-0009, ADR-0015). */
-const locales = ["en", "ja", "en-XA", "ar-XB"] as const;
-/** Widths every PR runs: 320 px is where horizontal scrolling appears first (web-client/README.md D3). */
-const prWidths: ReadonlySet<number> = new Set([320, 1440]);
+/**
+ * The projects (ADR-0015 §1). Every spec runs in `primaryProject` (en, 1440 px): most specs are flows, whose result
+ * the width and the locale do not change, and the screen stories (ADR-0079 §13) check how each screen looks in every
+ * locale and at 320 px. With E2E_MATRIX=full (the Nightly), the specs below also run where their behaviour changes:
+ */
+const primary = { locale: "en", width: 1440 } as const;
+
+/**
+ * The specs whose behaviour changes with the width (the breakpoints md 768, lg 1024, and xl 1280, touch, the phones'
+ * tab bar): in en at the widths on either side of each breakpoint. 320 px is where horizontal scrolling appears first
+ * (web-client/README.md D3).
+ */
+const widthSpecs = [
+  "admin-entry",
+  "announcements",
+  "bookmarks",
+  "emoji-picker",
+  "federated",
+  "lists",
+  "profile-save",
+  "reactions",
+  "server-settings",
+  "settings",
+  "shell",
+  "status",
+] as const;
+const widths = [320, 768, 1024] as const;
+
+/**
+ * The specs whose behaviour changes with the locale: the shell's direction and navigation, the pages the server
+ * renders in the instance's locale, the choice of the display language, and the main flow end to end. They run in
+ * Japanese, in the pseudo-locale en-XA (long and bracketed text, at the narrowest width), and right to left in ar-XB
+ * at both ends of the widths (ADR-0009, ADR-0015).
+ */
+const localeSpecs = ["auth-pages", "main-flow", "settings", "shell"] as const;
+const localeProjects = [
+  { locale: "ja", width: 1440 },
+  { locale: "en-XA", width: 320 },
+  { locale: "ar-XB", width: 320 },
+  { locale: "ar-XB", width: 1440 },
+] as const;
 
 const fullMatrix = process.env["E2E_MATRIX"] === "full";
 const ci = process.env["CI"] !== undefined;
@@ -41,25 +77,40 @@ const demoSpec = /demo-[^/]*\.spec\.ts$/;
  */
 const demo = process.env["E2E_DEMO"] === "1" && !externalServer;
 
-const matrix: Project[] = widths
-  .filter((width) => fullMatrix || prWidths.has(width))
-  .flatMap((width) =>
-    locales.map((locale) => {
-      // Widths below the tablet breakpoint emulate a phone: touch, a coarse pointer and the mobile viewport.
-      const phone = width < 768;
-      return {
-        name: `${locale}-${width}`,
-        testIgnore: [emojiFontSpec, voiceP2PSpec, demoSpec],
-        use: {
-          ...devices["Desktop Chrome"],
-          viewport: { width, height: phone ? 800 : 900 },
-          isMobile: phone,
-          hasTouch: phone,
-          locale,
-        },
-      };
-    }),
-  );
+/** The specs of `names` as the testMatch of a project. */
+const specs = (names: readonly string[]): RegExp[] => names.map((name) => new RegExp(`/${name}\\.spec\\.ts$`));
+
+/** A project of the app in `locale` at `width`, named `<locale>-<width>`, which runs the specs of `testMatch`. */
+function appProject(locale: string, width: number, testMatch?: RegExp[]): Project {
+  // Widths below the tablet breakpoint emulate a phone: touch, a coarse pointer and the mobile viewport.
+  const phone = width < 768;
+  return {
+    name: `${locale}-${String(width)}`,
+    ...(testMatch === undefined ? {} : { testMatch }),
+    testIgnore: [emojiFontSpec, voiceP2PSpec, demoSpec],
+    use: {
+      ...devices["Desktop Chrome"],
+      viewport: { width, height: phone ? 800 : 900 },
+      isMobile: phone,
+      hasTouch: phone,
+      locale,
+    },
+  };
+}
+
+const primaryApp = appProject(primary.locale, primary.width);
+if (primaryApp.name !== primaryProject)
+  throw new Error(`the primary project is ${primaryApp.name}, not ${primaryProject}`);
+
+const matrix: Project[] = [
+  primaryApp,
+  ...(fullMatrix
+    ? [
+        ...widths.map((width) => appProject("en", width, specs(widthSpecs))),
+        ...localeProjects.map(({ locale, width }) => appProject(locale, width, specs(localeSpecs))),
+      ]
+    : []),
+];
 
 // The Noto Color Emoji web font (ADR-0091 §10) picks its format by the browser's tech() support: COLRv1 in Chromium and
 // Firefox, OpenType-SVG in WebKit, so its spec runs in all three engines (the pinned Playwright image has them).

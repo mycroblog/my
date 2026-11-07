@@ -200,8 +200,8 @@ tasks:
       - bun run test{{if .SHARD}} --shard={{.SHARD}}{{end}}
 
   # Playwright runs against `vite preview` of the fresh build, and the server-rendered pages against `my serve` on
-  # SQLite from the fresh bin/my (app/web/e2e/server.ts). E2E_MATRIX=full runs every width × locale project
-  # (the slow suite); the default is the default subset (app/web/playwright.config.ts). It runs every test in one go; CI
+  # SQLite from the fresh bin/my (app/web/e2e/server.ts). E2E_MATRIX=full also runs the width and locale
+  # projects (the slow suite); the default is the primary project alone (app/web/playwright.config.ts). It runs every test in one go; CI
   # (web-e2e.yml) builds once and runs the tests as Playwright shards in the pinned Playwright image. Locally,
   # install the browser once with web:e2e-install. Both servers listen on free ports picked per run
   # (E2E_PREVIEW_PORT / E2E_SERVER_PORT fix them), so parallel runs in several worktrees stay apart;
@@ -232,7 +232,7 @@ tasks:
       - bun run test:stories
 
   e2e:
-    desc: Run the web E2E tests with Playwright (E2E_MATRIX=full for the whole matrix)
+    desc: Run the web E2E tests with Playwright (E2E_MATRIX=full adds the width and locale projects)
     deps: [":go:bin"]
     dir: app/web
     cmds:

@@ -6,12 +6,13 @@
 import type { Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
 import { serverURL } from "./server-origin.ts";
+import { primaryProject } from "./projects.ts";
 
 test.use({ baseURL: serverURL, serviceWorkers: "allow" });
 
 test.beforeEach(({ browserName }, testInfo) => {
   test.skip(browserName !== "chromium", "Service Workers are observable in Chromium only");
-  test.skip(testInfo.project.name !== "en-1440", "the worker does not depend on the viewport or the locale");
+  test.skip(testInfo.project.name !== primaryProject, "the worker does not depend on the viewport or the locale");
 });
 
 /**

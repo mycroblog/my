@@ -258,7 +258,7 @@ export async function expectPageEndClearOfToasts(page: Page): Promise<void> {
 
 /**
  * The list of records of an admin screen (`RecordTable`, @my/ui's `ListTable`) inside `scope`: a table, or at narrow
- * widths (below 40rem of its container, the 320 and 390 px projects) a list of cards. Its `data-list-table` says which.
+ * widths (below 40rem of its container, the 320 px project) a list of cards. Its `data-list-table` says which.
  */
 export function recordTable(scope: Locator | Page): Locator {
   return scope.locator("[data-list-table]");
