@@ -4,11 +4,24 @@ package config
 
 import (
 	"errors"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 )
 
 func TestSearchOpenSearch(t *testing.T) {
+	dir := t.TempDir()
+	file := func(name, content string) string {
+		path := filepath.Join(dir, name)
+		if err := os.WriteFile(path, []byte(content), 0o600); err != nil {
+			t.Fatal(err)
+		}
+		return path
+	}
+	settings := file("settings.json", `{"analysis": {"analyzer": {"my_text": {"type": "standard"}, "my_text_search": {"type": "standard"}}}}`)
+	notObject := file("array.json", `["secret-looking content"]`)
+	withMapping := file("mapping.json", `{"mappings": {}}`)
 	opensearch := func(kv ...string) map[string]string {
 		return with(with(minimal(), "MY_SEARCH", "opensearch", "MY_SEARCH_OPENSEARCH_URL", "https://search.example.org:9200"), kv...)
 	}
@@ -17,12 +30,15 @@ func TestSearchOpenSearch(t *testing.T) {
 			opensearch(),
 			opensearch("MY_SEARCH_OPENSEARCH_URL", "http://opensearch:9200/prefix", "MY_SEARCH_OPENSEARCH_USERNAME", "my", "MY_SEARCH_OPENSEARCH_PASSWORD", "pw"),
 			opensearch("MY_SEARCH_OPENSEARCH_AWS_SIGNING", "es", "MY_SEARCH_OPENSEARCH_AWS_REGION", "ap-northeast-1", "MY_SEARCH_OPENSEARCH_INDEX", "social_2"),
+			opensearch("MY_SEARCH_OPENSEARCH_INDEX_SETTINGS_FILE", settings),
+			// Another search does not read the file.
+			with(minimal(), "MY_SEARCH_OPENSEARCH_INDEX_SETTINGS_FILE", filepath.Join(dir, "missing.json")),
 		} {
 			cfg, _, err := Load(source(env, nil))
 			if err != nil {
 				t.Fatalf("Load: %v", err)
 			}
-			if cfg.SearchOpenSearchURL == "" {
+			if cfg.SearchOpenSearchURL == "" && cfg.Search == "opensearch" {
 				t.Errorf("config %+v", cfg)
 			}
 		}
@@ -38,6 +54,9 @@ func TestSearchOpenSearch(t *testing.T) {
 		{"a password without a username", opensearch("MY_SEARCH_OPENSEARCH_PASSWORD", "pw"), []string{"search_opensearch_username (MY_SEARCH_OPENSEARCH_USERNAME): required when search_opensearch_password is set"}},
 		{"signing and a username", opensearch("MY_SEARCH_OPENSEARCH_AWS_SIGNING", "es", "MY_SEARCH_OPENSEARCH_USERNAME", "my", "MY_SEARCH_OPENSEARCH_PASSWORD", "pw"), []string{"search_opensearch_username (MY_SEARCH_OPENSEARCH_USERNAME): must be empty with search_opensearch_aws_signing = es"}},
 		{"Serverless", opensearch("MY_SEARCH_OPENSEARCH_AWS_SIGNING", "aoss"), []string{`search_opensearch_aws_signing (MY_SEARCH_OPENSEARCH_AWS_SIGNING): unknown value "aoss"`}},
+		{"a settings file that is not there", opensearch("MY_SEARCH_OPENSEARCH_INDEX_SETTINGS_FILE", filepath.Join(dir, "missing.json")), []string{"search_opensearch_index_settings_file (MY_SEARCH_OPENSEARCH_INDEX_SETTINGS_FILE): cannot be read"}},
+		{"a settings file that is not an object", opensearch("MY_SEARCH_OPENSEARCH_INDEX_SETTINGS_FILE", notObject), []string{"search_opensearch_index_settings_file (MY_SEARCH_OPENSEARCH_INDEX_SETTINGS_FILE): must hold a JSON object"}},
+		{"a settings file with a mapping", opensearch("MY_SEARCH_OPENSEARCH_INDEX_SETTINGS_FILE", withMapping), []string{"search_opensearch_index_settings_file (MY_SEARCH_OPENSEARCH_INDEX_SETTINGS_FILE): must hold the settings only"}},
 		{"an index name of capitals", opensearch("MY_SEARCH_OPENSEARCH_INDEX", "My"), []string{"search_opensearch_index (MY_SEARCH_OPENSEARCH_INDEX): must be 1 to 200 lowercase letters"}},
 		{"an index name with a leading underscore", opensearch("MY_SEARCH_OPENSEARCH_INDEX", "_my"), []string{"search_opensearch_index (MY_SEARCH_OPENSEARCH_INDEX): must be 1 to 200 lowercase letters"}},
 	} {
@@ -55,6 +74,9 @@ func TestSearchOpenSearch(t *testing.T) {
 				t.Fatalf("issues =\n%s\nwant\n%s", strings.Join(got, "\n"), strings.Join(tt.want, "\n"))
 			}
 			for i := range got {
+				if strings.Contains(got[i], "secret-looking") {
+					t.Errorf("issue %d quotes the file: %q", i, got[i])
+				}
 				if !strings.HasPrefix(got[i], tt.want[i]) {
 					t.Errorf("issue %d = %q, want prefix %q", i, got[i], tt.want[i])
 				}

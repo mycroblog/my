@@ -10,6 +10,7 @@ import (
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"strings"
 	"sync"
 	"testing"
@@ -181,7 +182,6 @@ func TestDeleteByQuery(t *testing.T) {
 	}{
 		{func(ctx context.Context) error { return x.RemoveByAuthor(ctx, "author") }, `{"term":{"author_id":"author"}}`},
 		{func(ctx context.Context) error { return x.RemoveByVisibility(ctx, search.VisibilityLocal) }, `{"term":{"visibility":"local"}}`},
-		{x.Clear, `{"match_all":{}}`},
 	} {
 		if err := tc.run(t.Context()); err != nil {
 			t.Fatal(err)
@@ -323,54 +323,134 @@ func TestAWSSigning(t *testing.T) {
 	}
 }
 
+// metaOf returns the response of GET <index>/_mapping of an index that Ensure created for x, of
+// the mapping version v.
+func metaOf(x *Index, index string, v int) string {
+	return `{"` + index + `":{"mappings":{"_meta":{"my_mapping_version":` + strconv.Itoa(v) + `,"my_settings_hash":"` + x.settingsHash + `"}}}}`
+}
+
 func TestEnsure(t *testing.T) {
 	t.Run("creates the index and the alias", func(t *testing.T) {
 		x, e := newTestIndex(t, Options{},
 			response{http.StatusNotFound, `{"error":"alias [my-statuses] missing","status":404}`},
 			response{http.StatusOK, `{"acknowledged":true}`},
+			response{http.StatusNotFound, `{"error":"alias [my-statuses] missing","status":404}`},
 			response{http.StatusOK, `{"acknowledged":true}`},
 		)
 		if err := x.Ensure(t.Context()); err != nil {
 			t.Fatal(err)
 		}
+		want := x.indexName("")
 		reqs := e.requests
-		if len(reqs) != 3 || reqs[0].Path != "/prefix/_alias/my-statuses" || reqs[1].Method != http.MethodPut || reqs[1].Path != "/prefix/my-statuses-v1" || reqs[2].Path != "/prefix/_aliases" {
+		if len(reqs) != 4 || reqs[1].Method != http.MethodPut || reqs[1].Path != "/prefix/"+want || reqs[3].Path != "/prefix/_aliases" {
 			t.Fatalf("requests %+v", reqs)
 		}
-		if got := mustJSON(reqs[2].Body); got != `{"actions":[{"add":{"alias":"my-statuses","index":"my-statuses-v1"}}]}` {
+		if !strings.HasPrefix(want, "my-statuses-v1-") {
+			t.Errorf("index name %s", want)
+		}
+		if got := mustJSON(reqs[3].Body); got != `{"actions":[{"add":{"alias":"my-statuses","index":"`+want+`"}}]}` {
 			t.Errorf("actions %s", got)
 		}
-		if mustJSON(reqs[1].Body["mappings"].(map[string]any)["dynamic"]) != `"strict"` {
-			t.Errorf("mapping %v", reqs[1].Body["mappings"])
+		mapping := reqs[1].Body["mappings"].(map[string]any)
+		if mapping["dynamic"] != "strict" || mustJSON(mapping["_meta"]) != `{"my_mapping_version":1,"my_settings_hash":"`+x.settingsHash+`"}` {
+			t.Errorf("mapping %v", mapping)
+		}
+		if got, want := mustJSON(reqs[1].Body["settings"]), string(DefaultSettings()); got != want {
+			t.Errorf("settings %s, want %s", got, want)
 		}
 	})
 	t.Run("does nothing when the alias points at the index", func(t *testing.T) {
-		x, e := newTestIndex(t, Options{}, response{http.StatusOK, `{"my-statuses-v1":{"aliases":{"my-statuses":{}}}}`})
-		if err := x.Ensure(t.Context()); err != nil || len(e.requests) != 1 {
+		x, e := newTestIndex(t, Options{}, response{http.StatusOK, `{"my-statuses-v1-x":{"aliases":{"my-statuses":{}}}}`})
+		e.responses = append(e.responses, response{http.StatusOK, metaOf(x, "my-statuses-v1-x", 1)})
+		if err := x.Ensure(t.Context()); err != nil || len(e.requests) != 2 {
 			t.Fatalf("Ensure: %v after %d requests", err, len(e.requests))
 		}
 	})
-	t.Run("moves the alias from an older version", func(t *testing.T) {
-		x, e := newTestIndex(t, Options{}, response{http.StatusOK, `{"my-statuses-v1":{"aliases":{"my-statuses":{}}}}`},
-			response{http.StatusBadRequest, `{"error":{"type":"resource_already_exists_exception"}}`})
-		x.version = 2
-		if err := x.Ensure(t.Context()); err != nil {
-			t.Fatal(err)
-		}
-		if got := mustJSON(e.last(t).Body); got != `{"actions":[{"remove":{"alias":"my-statuses","index":"my-statuses-v1"}},{"add":{"alias":"my-statuses","index":"my-statuses-v2"}}]}` {
-			t.Errorf("actions %s", got)
+	t.Run("moves the alias from an older version or other settings", func(t *testing.T) {
+		for _, tc := range []struct {
+			name         string
+			ours, theirs int
+			otherHash    bool
+		}{{"other settings", 1, 1, true}, {"an older version", 2, 1, false}} {
+			x, e := newTestIndex(t, Options{})
+			x.version = tc.ours
+			hash := x.settingsHash
+			if tc.otherHash {
+				hash = "other"
+			}
+			e.responses = []response{
+				{http.StatusOK, `{"my-statuses-old":{"aliases":{"my-statuses":{}}}}`},
+				{http.StatusOK, `{"my-statuses-old":{"mappings":{"_meta":{"my_mapping_version":` + strconv.Itoa(tc.theirs) + `,"my_settings_hash":"` + hash + `"}}}}`},
+				{http.StatusBadRequest, `{"error":{"type":"resource_already_exists_exception"}}`},
+				{http.StatusOK, `{"my-statuses-old":{"aliases":{"my-statuses":{}}}}`},
+			}
+			if err := x.Ensure(t.Context()); err != nil {
+				t.Fatalf("%s: %v", tc.name, err)
+			}
+			if got := mustJSON(e.last(t).Body); got != `{"actions":[{"add":{"alias":"my-statuses","index":"`+x.indexName("")+`"}},{"remove":{"alias":"my-statuses","index":"my-statuses-old"}}]}` {
+				t.Errorf("%s: actions %s", tc.name, got)
+			}
 		}
 	})
 	t.Run("leaves a newer version", func(t *testing.T) {
 		x, e := newTestIndex(t, Options{}, response{http.StatusOK, `{"my-statuses-v9":{"aliases":{"my-statuses":{}}}}`})
-		if err := x.Ensure(t.Context()); err != nil || len(e.requests) != 1 {
+		e.responses = append(e.responses, response{http.StatusOK, metaOf(x, "my-statuses-v9", 9)})
+		if err := x.Ensure(t.Context()); err != nil || len(e.requests) != 2 {
 			t.Fatalf("Ensure: %v after %d requests", err, len(e.requests))
 		}
 	})
-	t.Run("refuses an alias on an index it did not name", func(t *testing.T) {
-		x, _ := newTestIndex(t, Options{}, response{http.StatusOK, `{"someone-else":{"aliases":{"my-statuses":{}}}}`})
+	t.Run("refuses an alias on an index it did not create", func(t *testing.T) {
+		x, _ := newTestIndex(t, Options{}, response{http.StatusOK, `{"someone-else":{"aliases":{"my-statuses":{}}}}`},
+			response{http.StatusOK, `{"someone-else":{"mappings":{"properties":{}}}}`})
 		if err := x.Ensure(t.Context()); err == nil {
 			t.Fatal("Ensure succeeded")
 		}
 	})
+	t.Run("reports the reason of refused settings", func(t *testing.T) {
+		x, _ := newTestIndex(t, Options{Settings: json.RawMessage(`{"analysis":{}}`)},
+			response{http.StatusNotFound, `{"error":"alias [my-statuses] missing","status":404}`},
+			response{http.StatusBadRequest, `{"error":{"type":"mapper_parsing_exception","reason":"analyzer [my_text] has not been configured in mappings"}}`},
+		)
+		err := x.Ensure(t.Context())
+		if err == nil || !strings.Contains(err.Error(), "analyzer [my_text] has not been configured") || !strings.Contains(err.Error(), "my_text_search") {
+			t.Fatalf("Ensure: %v", err)
+		}
+	})
+}
+
+func TestClearSwapsToAnEmptyIndex(t *testing.T) {
+	x, e := newTestIndex(t, Options{},
+		response{http.StatusOK, `{"acknowledged":true}`},
+		response{http.StatusOK, `{"my-statuses-v1-a":{"aliases":{"my-statuses":{}}}}`},
+		response{http.StatusOK, `{"acknowledged":true}`},
+	)
+	if err := x.Clear(t.Context()); err != nil {
+		t.Fatal(err)
+	}
+	created := e.requests[0]
+	if created.Method != http.MethodPut || !strings.HasPrefix(created.Path, "/prefix/"+x.indexName("")+"-") {
+		t.Fatalf("created %s %s", created.Method, created.Path)
+	}
+	name := strings.TrimPrefix(created.Path, "/prefix/")
+	if got := mustJSON(e.last(t).Body); got != `{"actions":[{"add":{"alias":"my-statuses","index":"`+name+`"}},{"remove_index":{"index":"my-statuses-v1-a"}}]}` {
+		t.Errorf("actions %s", got)
+	}
+}
+
+func TestSettings(t *testing.T) {
+	a, _, err := parseSettings(json.RawMessage(`{"index": {"number_of_replicas": 0}, "analysis": {}}`))
+	if err != nil || a == nil {
+		t.Fatal(err)
+	}
+	_, h1, _ := parseSettings(json.RawMessage(`{"index": {"number_of_replicas": 0}, "analysis": {}}`))
+	_, h2, _ := parseSettings(json.RawMessage("{\"analysis\":{},\n \"index\":{\"number_of_replicas\":0}}"))
+	_, h3, _ := parseSettings(json.RawMessage(`{"index": {"number_of_replicas": 1}, "analysis": {}}`))
+	if h1 != h2 || h1 == h3 {
+		t.Errorf("hashes %s %s %s: the same settings must hash the same however formatted", h1, h2, h3)
+	}
+	for _, bad := range []string{`[]`, `null`, `"x"`, `{`, `{"mappings":{}}`} {
+		if _, _, err := parseSettings(json.RawMessage(bad)); err == nil {
+			t.Errorf("parseSettings(%s) succeeded", bad)
+		}
+	}
 }

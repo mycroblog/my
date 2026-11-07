@@ -4,6 +4,8 @@ package opensearch
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log/slog"
@@ -11,6 +13,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -30,6 +33,9 @@ const (
 	envSearch = "TEST_SEARCH"
 	envURL    = "TEST_OPENSEARCH_URL"
 	envImage  = "TEST_OPENSEARCH_IMAGE"
+	// envSettings names one more settings file for the contract, such as one with the kuromoji
+	// analyzers on an image that has the plugin.
+	envSettings = "TEST_OPENSEARCH_SETTINGS_FILE"
 )
 
 // defaultImage is the container image of the tests, pinned by tag and digest.
@@ -115,8 +121,23 @@ var indexSeq atomic.Int64
 
 func newServerIndex(t *testing.T, base, name string) *Index {
 	t.Helper()
+	return newServerIndexWith(t, base, name, nil)
+}
+
+// testSettings returns the settings file of the tests, n-grams of the built-in tokenizer.
+func testSettings(t *testing.T) json.RawMessage {
+	t.Helper()
+	b, err := os.ReadFile("testdata/ngram-settings.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	return b
+}
+
+func newServerIndexWith(t *testing.T, base, name string, settings json.RawMessage) *Index {
+	t.Helper()
 	x, err := New(Options{
-		URL: base, Index: name, HTTPClient: &http.Client{Timeout: time.Minute},
+		URL: base, Index: name, Settings: settings, HTTPClient: &http.Client{Timeout: time.Minute},
 		Logger: slog.New(slog.NewTextHandler(io.Discard, nil)),
 	})
 	if err != nil {
@@ -127,13 +148,31 @@ func newServerIndex(t *testing.T, base, name string) *Index {
 
 func TestSearchServerContract(t *testing.T) {
 	base := testServer(t)
-	testkit.SearchIndexContract(t, func(t *testing.T) search.Index {
-		x := newServerIndex(t, base, fmt.Sprintf("my-contract-%d", indexSeq.Add(1)))
-		if err := x.Ensure(t.Context()); err != nil {
-			t.Fatalf("Ensure: %v", err)
+	cases := []struct {
+		name     string
+		settings json.RawMessage
+	}{{"default settings", nil}, {"a settings file of n-grams", testSettings(t)}}
+	if path := os.Getenv(envSettings); path != "" {
+		b, err := os.ReadFile(path) //nolint:gosec // the path of the test's environment
+		if err != nil {
+			t.Fatal(err)
 		}
-		return refreshing{x}
-	})
+		cases = append(cases, struct {
+			name     string
+			settings json.RawMessage
+		}{"the settings file of " + envSettings, b})
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			testkit.SearchIndexContract(t, func(t *testing.T) search.Index {
+				x := newServerIndexWith(t, base, fmt.Sprintf("my-contract-%d", indexSeq.Add(1)), tc.settings)
+				if err := x.Ensure(t.Context()); err != nil {
+					t.Fatalf("Ensure: %v", err)
+				}
+				return refreshing{x}
+			})
+		})
+	}
 }
 
 func TestSearchServerEnsure(t *testing.T) {
@@ -159,8 +198,8 @@ func TestSearchServerEnsure(t *testing.T) {
 			}
 		}
 		targets, err := x.aliasTargets(ctx)
-		if err != nil || len(targets) != 1 || targets[0] != versionedName(name, mappingVersion) {
-			t.Fatalf("the alias points at %v (%v), want %s", targets, err, versionedName(name, mappingVersion))
+		if err != nil || len(targets) != 1 || targets[0] != x.indexName("") {
+			t.Fatalf("the alias points at %v (%v), want %s", targets, err, x.indexName(""))
 		}
 	})
 
@@ -178,7 +217,7 @@ func TestSearchServerEnsure(t *testing.T) {
 				t.Fatalf("Ensure of version %d: %v", y.version, err)
 			}
 			targets, err := y.aliasTargets(ctx)
-			if err != nil || len(targets) != 1 || targets[0] != versionedName(name, mappingVersion+1) {
+			if err != nil || len(targets) != 1 || targets[0] != next.indexName("") {
 				t.Fatalf("after Ensure of version %d the alias points at %v (%v)", y.version, targets, err)
 			}
 		}
@@ -187,6 +226,38 @@ func TestSearchServerEnsure(t *testing.T) {
 		if err != nil || len(page.StatusIDs) != 0 {
 			t.Fatalf("Search after the upgrade = %v, %v; want nothing", page, err)
 		}
+	})
+
+	t.Run("other settings move the alias, and Clear deletes the index", func(t *testing.T) {
+		other := newServerIndexWith(t, base, name, testSettings(t))
+		other.version = mappingVersion + 1
+		if err := other.Ensure(ctx); err != nil {
+			t.Fatal(err)
+		}
+		before, _ := other.aliasTargets(ctx)
+		if len(before) != 1 || before[0] != other.indexName("") {
+			t.Fatalf("the alias points at %v, want %s", before, other.indexName(""))
+		}
+		if err := other.Clear(ctx); err != nil {
+			t.Fatal(err)
+		}
+		after, _ := other.aliasTargets(ctx)
+		if len(after) != 1 || after[0] == before[0] {
+			t.Fatalf("after Clear the alias points at %v", after)
+		}
+		var e *Error
+		if err := other.call(ctx, "read", http.MethodGet, before[0], nil, nil, nil); !errors.As(err, &e) || e.Status != http.StatusNotFound {
+			t.Errorf("the cleared index: %v, want 404", err)
+		}
+	})
+
+	t.Run("settings without the analyzers are refused with the reason", func(t *testing.T) {
+		bad := newServerIndexWith(t, base, fmt.Sprintf("my-bad-%d", indexSeq.Add(1)), json.RawMessage(`{"analysis":{}}`))
+		err := bad.Ensure(ctx)
+		if err == nil || !strings.Contains(err.Error(), "my_text") {
+			t.Fatalf("Ensure: %v", err)
+		}
+		t.Logf("the error at start: %v", err)
 	})
 
 	t.Run("a name that is an index is refused", func(t *testing.T) {

@@ -27,6 +27,9 @@ type Error struct {
 	// Type is error.type of the response, empty when the response has none (a document that
 	// is not there answers 404 with no error).
 	Type string
+	// reason is error.reason of the response, which Error never prints: only createIndex
+	// shows it, for the settings of the operator.
+	reason string
 }
 
 func (e *Error) Error() string {
@@ -41,20 +44,25 @@ type errorResponse struct {
 	Error json.RawMessage `json:"error"`
 }
 
-// errorType returns error.type of an error response: an object in most responses, a string in a
-// few (such as a 404 of an alias).
-func errorType(b []byte) string {
+// parseError returns error.type and error.reason of an error response: an object in most
+// responses, a string in a few (such as a 404 of an alias).
+func parseError(b []byte) (string, string) {
 	var r errorResponse
 	if json.Unmarshal(b, &r) != nil || len(r.Error) == 0 {
-		return ""
+		return "", ""
 	}
 	var obj struct {
-		Type string `json:"type"`
+		Type   string `json:"type"`
+		Reason string `json:"reason"`
 	}
 	if json.Unmarshal(r.Error, &obj) == nil {
-		return safeType(obj.Type)
+		reason := obj.Reason
+		if len(reason) > 500 {
+			reason = reason[:500]
+		}
+		return safeType(obj.Type), reason
 	}
-	return "error"
+	return "error", ""
 }
 
 // safeType keeps an error type only when it looks like one (snake_case words), so that nothing
@@ -117,7 +125,8 @@ func (x *Index) call(ctx context.Context, op, method, path string, query url.Val
 		return fmt.Errorf("opensearch: %s: read the response: %w", op, transportError(err))
 	}
 	if resp.StatusCode/100 != 2 {
-		return &Error{Op: op, Status: resp.StatusCode, Type: errorType(b)}
+		typ, reason := parseError(b)
+		return &Error{Op: op, Status: resp.StatusCode, Type: typ, reason: reason}
 	}
 	if out == nil {
 		return nil

@@ -1017,11 +1017,16 @@ var schema = []field{
 		set:          func(c *Config, v string) { c.SearchOpenSearchURL = v },
 	},
 	{
-		key:   "search_opensearch_index",
-		doc:   "The name of the alias of the index of `search = opensearch`. The server keeps the documents in the index named after it with the version of its mapping, such as `my-statuses-v1`, and points the alias at it. Lowercase letters, digits, `-`, and `_`, starting with a letter or a digit.",
+		key:    "search_opensearch_index",
+		doc:    "The name of the alias of the index of `search = opensearch`. The server keeps the documents in the index named after it with the version of its mapping, such as `my-statuses-v1`, and points the alias at it. Lowercase letters, digits, `-`, and `_`, starting with a letter or a digit.",
 		defDoc: "`my-statuses`",
 		check:  checkSearchIndexName,
-		set:   func(c *Config, v string) { c.SearchOpenSearchIndex = v },
+		set:    func(c *Config, v string) { c.SearchOpenSearchIndex = v },
+	},
+	{
+		key: "search_opensearch_index_settings_file",
+		doc: "The path of a JSON file whose object the server uses as the `settings` of every index of `search = opensearch` that it creates: the analysis, the shards, the replicas, and any other index setting. It must define the analyzers `my_text`, of the text of the posts, and `my_text_search`, of the queries ([tuning the analysis](../operations/search-engines.md#tuning-the-analysis)). Empty uses the built-in settings. A change of the file takes effect at the next start, in a new empty index, so it needs a rebuild of the index.",
+		set: func(c *Config, v string) { c.SearchOpenSearchIndexSettingsFile = v },
 	},
 	{
 		key:   "search_opensearch_username",
@@ -1038,8 +1043,8 @@ var schema = []field{
 		set:          func(c *Config, v string) { c.SearchOpenSearchPassword = v },
 	},
 	{
-		key: "search_opensearch_aws_signing",
-		doc: "Whether the server signs the requests of `search = opensearch` with AWS Signature Version 4, as a domain of Amazon OpenSearch Service with an IAM access policy needs. The credentials come from the AWS SDK's default chain: the environment, the shared files, the execution role.",
+		key:    "search_opensearch_aws_signing",
+		doc:    "Whether the server signs the requests of `search = opensearch` with AWS Signature Version 4, as a domain of Amazon OpenSearch Service with an IAM access policy needs. The credentials come from the AWS SDK's default chain: the environment, the shared files, the execution role.",
 		defDoc: "`off`",
 		choices: []choice{
 			{value: "off", doc: "No signing."},

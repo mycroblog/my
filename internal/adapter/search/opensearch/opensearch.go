@@ -5,9 +5,12 @@
 // with net/http and encoding/json, without a client library, and signs the requests with AWS
 // Signature Version 4 when the domain needs it.
 //
-// The index is an alias, Options.Index, on the index Options.Index-v<mappingVersion> that holds
-// the documents. Ensure creates that index and points the alias at it; when a release changes the
-// mapping, it creates the index of the new version, moves the alias, and the operator rebuilds.
+// The index is an alias, Options.Index, on the index that holds the documents. my owns the
+// mapping: the fields it writes, filters, sorts, and pages on. The operator may own the settings
+// (Options.Settings): the analysis, which defines the analyzers that the mapping names
+// (TextAnalyzer, TextSearchAnalyzer), the shards, and the replicas. _meta of the mapping holds its
+// version and the hash of the settings; Ensure creates an index for each pair and points the
+// alias at it, so that a change of either starts an empty index, which the operator rebuilds.
 // Every write names the alias with require_alias, so that a missing alias never lets the engine
 // create an index of its own with a mapping it guesses.
 //
@@ -18,6 +21,7 @@ package opensearch
 import (
 	"context"
 	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -52,6 +56,10 @@ type Options struct {
 	AWS *AWSSigning
 	// Index is the name of the alias (search_opensearch_index).
 	Index string
+	// Settings are the settings of every index that Ensure and Clear create, a JSON object that
+	// defines the analyzers TextAnalyzer and TextSearchAnalyzer
+	// (search_opensearch_index_settings_file); nil is DefaultSettings.
+	Settings json.RawMessage
 	// HTTPClient calls the API: the operator configured the cluster, which may be on a private
 	// address, so it is the adapter's own client rather than the SSRF-guarded kernel.HTTPClient.
 	HTTPClient *http.Client
@@ -77,7 +85,9 @@ type Index struct {
 	o      Options
 	signer *signer
 	// version is the version of the mapping, mappingVersion but in the tests of an upgrade.
-	version int
+	version      int
+	settings     map[string]any
+	settingsHash string
 }
 
 var _ search.Index = (*Index)(nil)
@@ -99,7 +109,11 @@ func New(o Options) (*Index, error) {
 	case o.AWS != nil && o.Username != "":
 		return nil, errors.New("opensearch: AWS request signing and a username exclude each other")
 	}
-	x := &Index{base: strings.TrimSuffix(base.String(), "/"), o: o, version: mappingVersion}
+	settings, hash, err := parseSettings(o.Settings)
+	if err != nil {
+		return nil, err
+	}
+	x := &Index{base: strings.TrimSuffix(base.String(), "/"), o: o, version: mappingVersion, settings: settings, settingsHash: hash}
 	if o.AWS != nil {
 		s, err := newSigner(*o.AWS)
 		if err != nil {
@@ -158,11 +172,6 @@ func (x *Index) RemoveByAuthor(ctx context.Context, authorID string) error {
 // RemoveByVisibility implements search.Index.
 func (x *Index) RemoveByVisibility(ctx context.Context, visibility search.Visibility) error {
 	return x.deleteByQuery(ctx, "remove by visibility", term("visibility", string(visibility)))
-}
-
-// Clear implements search.Index. It keeps the index and its mapping.
-func (x *Index) Clear(ctx context.Context) error {
-	return x.deleteByQuery(ctx, "clear", map[string]any{"match_all": map[string]any{}})
 }
 
 func term(field, value string) map[string]any {

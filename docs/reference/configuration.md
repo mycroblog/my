@@ -164,6 +164,7 @@ An instance setting that has never been set reads as its default, which is defin
 | [`search`](#search) | `MY_SEARCH` | `none` | no | no |
 | [`search_opensearch_url`](#search_opensearch_url) | `MY_SEARCH_OPENSEARCH_URL` | none | when `search = opensearch` | no |
 | [`search_opensearch_index`](#search_opensearch_index) | `MY_SEARCH_OPENSEARCH_INDEX` | `my-statuses` | no | no |
+| [`search_opensearch_index_settings_file`](#search_opensearch_index_settings_file) | `MY_SEARCH_OPENSEARCH_INDEX_SETTINGS_FILE` | none | no | no |
 | [`search_opensearch_username`](#search_opensearch_username) | `MY_SEARCH_OPENSEARCH_USERNAME` | none | no | no |
 | [`search_opensearch_password`](#search_opensearch_password) | `MY_SEARCH_OPENSEARCH_PASSWORD` | none | when `search_opensearch_username` is set | yes |
 | [`search_opensearch_aws_signing`](#search_opensearch_aws_signing) | `MY_SEARCH_OPENSEARCH_AWS_SIGNING` | `off` | no | no |
@@ -1352,6 +1353,14 @@ The name of the alias of the index of `search = opensearch`. The server keeps th
 
 - Environment variable: `MY_SEARCH_OPENSEARCH_INDEX`
 - Default: `my-statuses`
+- Required: no
+
+### `search_opensearch_index_settings_file`
+
+The path of a JSON file whose object the server uses as the `settings` of every index of `search = opensearch` that it creates: the analysis, the shards, the replicas, and any other index setting. It must define the analyzers `my_text`, of the text of the posts, and `my_text_search`, of the queries ([tuning the analysis](../operations/search-engines.md#tuning-the-analysis)). Empty uses the built-in settings. A change of the file takes effect at the next start, in a new empty index, so it needs a rebuild of the index.
+
+- Environment variable: `MY_SEARCH_OPENSEARCH_INDEX_SETTINGS_FILE`
+- Default: none
 - Required: no
 
 ### `search_opensearch_username`
