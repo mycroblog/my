@@ -112,7 +112,7 @@ func (x *Index) Clear(ctx context.Context) error {
 // and nothing of the page is returned.
 func (x *Index) Search(ctx context.Context, q search.Query) (search.Page, error) {
 	limit := min(max(q.Limit, 1), 1<<31-1)
-	res, err := x.client.Search(ctx, &searchv1.SearchRequest{Text: q.Text, Cursor: q.Cursor, Limit: int32(limit)}) //nolint:gosec // bounded above
+	res, err := x.client.Search(ctx, &searchv1.SearchRequest{Text: q.Text, Cursor: q.Cursor, Limit: int32(limit)})
 	if err != nil {
 		return search.Page{}, failed("Search", "%w", err)
 	}

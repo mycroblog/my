@@ -47,8 +47,8 @@ func TestSearchCases(t *testing.T) {
 // and nothing else is found.
 func TestSearchCasesKeepARealIndex(t *testing.T) {
 	index := fake.New()
-	const real = "0190b000-0000-7000-8000-000000000001"
-	post := search.Document{StatusID: real, AuthorID: "0190a000-0000-7000-8000-00000000000a", Visibility: search.VisibilityLocal, PublishedAt: time.Now(), Text: "my plugin test of a real post"}
+	const realPost = "0190b000-0000-7000-8000-000000000001"
+	post := search.Document{StatusID: realPost, AuthorID: "0190a000-0000-7000-8000-00000000000a", Visibility: search.VisibilityLocal, PublishedAt: time.Now(), Text: "my plugin test of a real post"}
 	if err := index.Replace(t.Context(), post); err != nil {
 		t.Fatal(err)
 	}
@@ -67,8 +67,8 @@ func TestSearchCasesKeepARealIndex(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(page.StatusIDs) != 1 || page.StatusIDs[0] != real {
-		t.Errorf("the index holds %v after the cases, want only %s", page.StatusIDs, real)
+	if len(page.StatusIDs) != 1 || page.StatusIDs[0] != realPost {
+		t.Errorf("the index holds %v after the cases, want only %s", page.StatusIDs, realPost)
 	}
 }
 

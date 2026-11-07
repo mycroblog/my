@@ -90,7 +90,7 @@ func (f *searchFixture) replace(ctx context.Context, env Env, visibilities ...se
 			v = visibilities[i]
 		}
 		if err := f.index.Replace(ctx, f.doc(i, v, "my plugin test "+f.word)); err != nil {
-			return fmt.Errorf("Replace: %w", describeCallError(env, err))
+			return describeCallError(env, err)
 		}
 	}
 	return nil
@@ -111,7 +111,7 @@ func (f *searchFixture) find(ctx context.Context, env Env, text string, limit in
 	for range 100 {
 		page, err := f.index.Search(ctx, search.Query{Text: text, Cursor: cursor, Limit: limit})
 		if err != nil {
-			return nil, fmt.Errorf("Search: %w", describeCallError(env, err))
+			return nil, describeCallError(env, err)
 		}
 		found = append(found, page.StatusIDs...)
 		if page.Next == "" {
@@ -119,7 +119,7 @@ func (f *searchFixture) find(ctx context.Context, env Env, text string, limit in
 		}
 		cursor = page.Next
 	}
-	return nil, errors.New("Search: the pages do not end")
+	return nil, errors.New("the pages of a search do not end")
 }
 
 // want checks that a search of the fixture's word finds exactly these documents of it, newest first.
@@ -142,7 +142,7 @@ func (f *searchFixture) want(ctx context.Context, env Env, limit int, indexes ..
 func searchOnly(ctx context.Context, env Env, text string) (search.Page, error) {
 	page, err := searchplugin.New(env.Conn).Search(ctx, search.Query{Text: text, Limit: 10})
 	if err != nil {
-		return search.Page{}, fmt.Errorf("Search: %w", describeCallError(env, err))
+		return search.Page{}, describeCallError(env, err)
 	}
 	return page, nil
 }
@@ -185,7 +185,7 @@ func searchInvalidCursor(ctx context.Context, env Env) error {
 	case errors.Is(err, search.ErrInvalidCursor):
 		return nil
 	case err != nil:
-		return fmt.Errorf("Search: %w", describeCallError(env, err))
+		return describeCallError(env, err)
 	}
 	return errors.New("a cursor that the plugin did not issue: the outcome is OUTCOME_OK, not OUTCOME_INVALID_CURSOR")
 }
@@ -219,7 +219,7 @@ func searchReplaceReplaces(ctx context.Context, env Env) error {
 	}
 	for range 2 {
 		if err := f.index.Replace(ctx, f.doc(0, search.VisibilityPublic, "my plugin test "+f.other)); err != nil {
-			return fmt.Errorf("Replace: %w", describeCallError(env, err))
+			return describeCallError(env, err)
 		}
 	}
 	if err := f.want(ctx, env, 10); err != nil {
@@ -247,7 +247,7 @@ func searchRemove(ctx context.Context, env Env) error {
 	}
 	for _, id := range []string{f.ids[1], f.ids[1], new(system.IDGenerator).NewID()} {
 		if err := f.index.Remove(ctx, id); err != nil {
-			return fmt.Errorf("Remove: %w", describeCallError(env, err))
+			return describeCallError(env, err)
 		}
 	}
 	return f.want(ctx, env, 10, 0, 2)
@@ -265,7 +265,7 @@ func searchRemoveByAuthor(ctx context.Context, env Env) error {
 	}
 	for range 2 {
 		if err := f.index.RemoveByAuthor(ctx, f.author); err != nil {
-			return fmt.Errorf("RemoveByAuthor: %w", describeCallError(env, err))
+			return describeCallError(env, err)
 		}
 	}
 	return f.want(ctx, env, 10)
@@ -283,7 +283,7 @@ func searchRemoveByVisibility(ctx context.Context, env Env) error {
 	}
 	for range 2 {
 		if err := f.index.RemoveByVisibility(ctx, search.VisibilityLocal); err != nil {
-			return fmt.Errorf("RemoveByVisibility: %w", describeCallError(env, err))
+			return describeCallError(env, err)
 		}
 	}
 	return f.want(ctx, env, 10, 1)
@@ -301,7 +301,7 @@ func searchClear(ctx context.Context, env Env) error {
 	}
 	for range 2 {
 		if err := f.index.Clear(ctx); err != nil {
-			return fmt.Errorf("Clear: %w", describeCallError(env, err))
+			return describeCallError(env, err)
 		}
 	}
 	if err := f.want(ctx, env, 10); err != nil {
