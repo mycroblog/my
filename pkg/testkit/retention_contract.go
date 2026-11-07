@@ -24,11 +24,15 @@ import (
 // brought in; purging deleted statuses removes their rows and revisions and keeps their
 // deletions; the deletions by retention of purged statuses go in bounded batches; and the records
 // of received activities, their documents and answers, the tombstones, and the observations of
-// servers (all but the newest of each server) go after their retention, in bounded batches; and
-// the remote accounts with past profile revisions are listed in pages and pruned to their current
-// revision. The purges on top of it are RetentionFlows, which internal/flowtest/federation runs
-// once on SQLite; the purges of remote custom emoji, outbound activities, and handle checks are
-// checked there too.
+// servers (all but the newest of each server) go after their retention, in bounded batches; the
+// Creates of deleted statuses and actors go with their deliveries, attempts, documents, and
+// fan-out completions, and the other outbound activities after their retention, except the
+// service closure's Deletes and a Delete whose Create stays; the outbound documents and the
+// delivery attempts go after theirs; so do the handle checks, all but the newest of each account;
+// and the remote accounts with past profile revisions or snapshots are listed in pages and pruned
+// to their current revision, its snapshot, and the head's. The purges on top of it are
+// RetentionFlows, which internal/flowtest/federation runs once on SQLite; the purge of remote
+// custom emoji is checked there too.
 func RetentionContract(t *testing.T, newHarness RetentionFactory) {
 	t.Helper()
 	cases := []struct {
@@ -42,6 +46,10 @@ func RetentionContract(t *testing.T, newHarness RetentionFactory) {
 		{"DeletesTheRecordsOfTheInbox", retentionRepoInbox},
 		{"DeletesTheObservationsOfServers", retentionRepoObservations},
 		{"PrunesThePastProfilesOfRemoteAccounts", retentionRepoProfiles},
+		{"PrunesThePastSnapshotsOfRemoteAccounts", retentionRepoSnapshots},
+		{"PurgesTheOutboundActivities", retentionRepoOutbound},
+		{"DeletesTheBodiesOfOutboundActivities", retentionRepoOutboundBodies},
+		{"DeletesTheOldHandleChecks", retentionRepoHandleChecks},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
