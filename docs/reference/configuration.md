@@ -161,6 +161,8 @@ An instance setting that has never been set reads as its default, which is defin
 | [`payments_payjp_webhook_token`](#payments_payjp_webhook_token) | `MY_PAYMENTS_PAYJP_WEBHOOK_TOKEN` | none | when `payments = payjp` | yes |
 | [`payments_reconcile_interval`](#payments_reconcile_interval) | `MY_PAYMENTS_RECONCILE_INTERVAL` | `6h` | no | no |
 | [`payments_reconcile_max_requests`](#payments_reconcile_max_requests) | `MY_PAYMENTS_RECONCILE_MAX_REQUESTS` | `1000` | no | no |
+| [`translator_libretranslate_url`](#translator_libretranslate_url) | `MY_TRANSLATOR_LIBRETRANSLATE_URL` | none | no | no |
+| [`translator_libretranslate_api_key`](#translator_libretranslate_api_key) | `MY_TRANSLATOR_LIBRETRANSLATE_API_KEY` | none | no | yes |
 | [`search`](#search) | `MY_SEARCH` | `none` | no | no |
 | [`voice`](#voice) | `MY_VOICE` | `off` | no | no |
 | [`voice_p2p_max_participants`](#voice_p2p_max_participants) | `MY_VOICE_P2P_MAX_PARTICIPANTS` | `10` | no | no |
@@ -1316,6 +1318,22 @@ How many requests one reconciliation sends to `payments`, a page of a list count
 
 - Environment variable: `MY_PAYMENTS_RECONCILE_MAX_REQUESTS`
 - Default: `1000`
+- Required: no
+
+### `translator_libretranslate_url`
+
+The base URL of the LibreTranslate server of the translation provider `libretranslate`, such as `https://libretranslate.com` or a server you run on a private address, such as `http://libretranslate:5000`; `http:` is accepted on any host. Setting it registers the provider, which the instance setting `translation_providers` then enables.
+
+- Environment variable: `MY_TRANSLATOR_LIBRETRANSLATE_URL`
+- Default: none
+- Required: no
+
+### `translator_libretranslate_api_key`
+
+The API key of the LibreTranslate server of `translator_libretranslate_url`, when the server requires one, as `libretranslate.com` does. The server sends it with each translation and never shows it to clients.
+
+- Environment variable: `MY_TRANSLATOR_LIBRETRANSLATE_API_KEY` or `MY_TRANSLATOR_LIBRETRANSLATE_API_KEY_FILE`
+- Default: none
 - Required: no
 
 ### `search`
