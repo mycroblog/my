@@ -11,6 +11,9 @@
 skip:
   - "**/node_modules/**"
   - "**/testdata/**"
+  # The translations of the documentation site: their links are written as in the English source they translate, and
+  # `scripts/task.sh docs:site-translations-check` keeps each link target equal to the source's, whose links this checks.
+  - "app/docs/i18n/**"
 
 # Written in English only: no Japanese outside code spans, code blocks, and link destinations. A line that must
 # show Japanese (a UI string of the ja locale, say) carries `docs-lint: allow-japanese` in a comment on that line

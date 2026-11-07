@@ -1,0 +1,12 @@
+{
+  "docs.translation.notice": "This page is a machine translation of the English page, which is authoritative.",
+  "docs.translation.english": "Read the English page",
+  "docs.translation.legal": "This page is a machine translation of a template of a legal text. Have a legal expert review the text you publish before you use it.",
+  "docs.translation.stale": "The English page has changed since these sections were translated:",
+  "docs.translation.untranslated": "These sections are not translated yet and are shown in English:",
+  "docs.version.ended": "The support of {{version}} has ended.",
+  "docs.version.latest": "Read this page in the latest version",
+  "docs.version.label": "Documentation version",
+  "docs.llms.lead": "For LLMs and coding agents:",
+  "docs.llms.page": "this page as Markdown"
+}

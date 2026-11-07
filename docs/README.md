@@ -111,6 +111,7 @@ The protocol between the server and the plugins that do a job in its place, gene
 - [Writing an ADR (playbook)](agents/writing-adrs.md)
 - [Releasing (playbook)](agents/releasing.md)
 - [Drawing a diagram (playbook)](agents/diagrams.md)
+- [Translating the documentation site (playbook)](agents/translating-docs.md)
 - [Commands](reference/commands.md) (the development tasks and the pinned toolchain)
 
 ## Design (in Japanese)

@@ -109,6 +109,11 @@ Follow [docs/agents/workflow.md](docs/agents/workflow.md). Summary:
   and the issue and PR templates. Write English prose, not a translation; UI terms match `locales/en`.
   Japanese is fine inside code (an example of a `ja` string).
 - **Japanese during v0**: design documents — `docs/adr/`, `docs/requirements/`, `docs/architecture/`.
+- **Translations of the documentation site** live in `app/docs/i18n/<locale>/`, outside `docs/`: an agent writes them from the
+  English of `docs/guide/`, `docs/operations/`, and the site's landing page, section by section, following
+  [docs/agents/translating-docs.md](docs/agents/translating-docs.md) ([ADR-0150](docs/adr/0150-documentation-site.md) §9).
+  The English is authoritative: fix a fact in the English document, never only in a translation. A change to the English
+  needs no translation in the same PR; the page shows the sections that are stale.
 - **User and operator documents explain the behaviour themselves** (`README.md`, `docs/operations/`, `docs/reference/`
   except the contributor document `commands.md`, and user-facing text such as CLI help): no links to or citations of ADRs, `docs/requirements/`, `docs/architecture/`, or
   GitHub issues and PRs (`ADR-0002`, `FR-101`, `#123`). Link only the other user and operator documents a reader needs.

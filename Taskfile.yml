@@ -79,8 +79,8 @@ tasks:
   # app/docs selects no client context, so its tsc, Oxlint, knip, and bun fmt run here; CI runs them in the merge
   # queue's repo job (bun fmt also in the preflight).
   site:check:
-    desc: "Build the documentation site (app/docs), which fails on a broken link or #anchor between its pages or on a page that does not render, and run tsc, Oxlint, and knip on it and the TS formatting (web:fmt-check)"
-    deps: [docs:site-build, docs:site-typecheck, docs:site-lint, docs:site-knip, web:fmt-check]
+    desc: "Build the documentation site (app/docs), which fails on a broken link or #anchor between its pages or on a page that does not render, and run tsc, Oxlint, and knip on it, the check of its translations, and the TS formatting (web:fmt-check)"
+    deps: [docs:site-build, docs:site-typecheck, docs:site-lint, docs:site-knip, docs:site-translations-check, web:fmt-check]
 
   # The generated files Go reads are committed; the ones only the TS clients read are not, and the tasks that read
   # them generate them first (ADR-0081). Run this once after a clone for an editor's type checks.

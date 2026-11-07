@@ -66,6 +66,20 @@ tasks:
     cmds:
       - bun run dev
 
+  # The translations of the site (app/docs/i18n/, ADR-0150 §9; docs/agents/translating-docs.md). An agent writes them;
+  # this command lists what to translate and checks what it wrote.
+  site-translations:
+    desc: "Work on the translations of the documentation site (app/docs/i18n/<locale>/): `-- status [source...]` lists the sources and sections to translate, `-- todo <source>` prints the sections to translate with their markers, `-- glossary <source>` the UI terms it quotes in the locale's catalog, `-- check` checks the translations (--locale ja by default)"
+    dir: app/docs
+    cmds:
+      - bun scripts/translations.ts {{.CLI_ARGS}}
+
+  site-translations-check:
+    desc: "Fail when a translation of the documentation site (app/docs/i18n/) is malformed: a marker that does not parse, a section that does not start with its heading, a current section whose code blocks, code spans or link targets differ from the English text, or a file that translates nothing (stale and missing sections never fail; site:check runs it)"
+    dir: app/docs
+    cmds:
+      - bun scripts/translations.ts check
+
   screenshots:
     desc: Take the screenshots of the documentation site and the README (app/docs/src/assets/screenshots/*.webp) from the Showcase stories of the app/web Storybook in PLAYWRIGHT_IMAGE, light and dark (needs Docker); review and commit them
     deps: [":web:storybook-build"]

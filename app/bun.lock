@@ -54,8 +54,10 @@
     "docs": {
       "name": "@my/docs",
       "dependencies": {
+        "@astrojs/markdown-satteri": "0.4.6",
         "@astrojs/starlight": "0.42.8",
         "astro": "7.4.5",
+        "github-slugger": "2.0.0",
         "satteri": "0.10.5",
         "starlight-links-validator": "0.27.0",
         "starlight-llms-txt": "0.12.0",
