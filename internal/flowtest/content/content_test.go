@@ -29,3 +29,11 @@ func TestAutoDeleteFlows(t *testing.T) {
 		}
 	})
 }
+
+func TestMediaFlows(t *testing.T) {
+	t.Parallel()
+	testkit.MediaFlows(t, func(t *testing.T, opts uow.Options) testkit.MediaHarness {
+		db := flowtest.SQLite(t, opts)
+		return testkit.MediaHarness{UnitOfWork: db, Media: db.MediaRepository(), Statuses: db.StatusRepository()}
+	})
+}
