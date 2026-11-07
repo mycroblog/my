@@ -2,16 +2,16 @@ name: Web E2E
 
 # Playwright E2E of the web client (ADR-0015, ADR-0110) in three stages (ADR-0079): one build of app/web/dist and
 # bin/my, Playwright `--shard` jobs that all test that same build, and one HTML report merged from the shards' blob
-# reports. The slow suite (slow-suite.yml, ADR-0079) calls it with the full width × locale matrix
-# (app/web/playwright.config.ts) on 8 shards. Pull requests never start it on their own: run it by hand on any branch
-# with `gh workflow run web-e2e.yml --ref <branch>` (or the Actions tab), with the default subset (`matrix: pr`) on
-# 4 shards or `-f matrix=full`.
+# reports. The slow suite (slow-suite.yml, ADR-0079) calls it with the width and locale projects too
+# (`matrix: full`, app/web/playwright.config.ts) on 8 shards. Pull requests never start it on their own: run it by hand on any branch
+# with `gh workflow run web-e2e.yml --ref <branch>` (or the Actions tab), with the primary project alone (`matrix: pr`)
+# on 4 shards or `-f matrix=full`.
 
 on:
   workflow_call:
     inputs:
       matrix:
-        description: "`pr` for the default subset, `full` for every width × locale project."
+        description: "`pr` for the primary project alone, `full` with the width and locale projects (app/web/playwright.config.ts)."
         type: string
         required: true
       shards:
@@ -25,7 +25,7 @@ on:
   workflow_dispatch:
     inputs:
       matrix:
-        description: "`pr` for the default subset, `full` for every width × locale project."
+        description: "`pr` for the primary project alone, `full` with the width and locale projects (app/web/playwright.config.ts)."
         type: choice
         options: [pr, full]
         default: pr

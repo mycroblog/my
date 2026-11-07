@@ -84,7 +84,7 @@ Pull requests do not run the web E2E. In single-issue work, when the change touc
 locally, or run the workflow on the PR's branch and wait for it (in a parallel batch, see [§9](#9-parallel-batches) instead):
 
 ```sh
-gh workflow run web-e2e.yml -R mycroblog/my --ref <branch>   # add -f matrix=full for the full width × locale matrix
+gh workflow run web-e2e.yml -R mycroblog/my --ref <branch>   # add -f matrix=full for the width and locale projects too
 gh run list -R mycroblog/my --workflow web-e2e.yml --branch <branch> --limit 1
 ```
 
@@ -108,7 +108,7 @@ after the one task it runs (`scripts/task.sh go:vet`), so the failed step names 
 | Nightly (03:00 JST) | `nightly.yml` | The slow suite on the head of `main`, whose upgrade test starts from the latest release, skipped when `main` has not moved since the last successful full Nightly run (a run by hand of some of the jobs, titled like `Nightly (l4)`, does not count); every night, the Grype scan of the published images (`image-scan`), which fails on a fixable HIGH or above in a published version ([Vulnerability scan](releasing.md#vulnerability-scan)) |
 
 `slow-suite.yml`, `nightly.yml`, `web-e2e.yml`, `federation-live.yml`, `postgres-contract.yml`, `stream-contract.yml`,
-`mail-integration.yml`, `voice-contract.yml`, `blob-contract.yml`, and `codeql.yml` also run by hand on any branch (`gh workflow run <file> --ref <branch>`). The web E2E subset (`web-e2e.yml` with
+`mail-integration.yml`, `voice-contract.yml`, `blob-contract.yml`, and `codeql.yml` also run by hand on any branch (`gh workflow run <file> --ref <branch>`). The web E2E of the primary project alone (`web-e2e.yml` with
 `matrix: pr`, the default) runs only by hand.
 
 ## 6. Commit & PR

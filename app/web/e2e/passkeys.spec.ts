@@ -14,6 +14,7 @@ import { escapeRegExp, expect, expectNoAxeViolations, expectNoHorizontalScroll, 
 import { ownsServer, runMy } from "./server-cli.ts";
 import { serverURL } from "./server-origin.ts";
 import { readCatalog } from "./catalog.ts";
+import { primaryProject } from "./projects.ts";
 
 test.use({ baseURL: serverURL });
 
@@ -171,7 +172,7 @@ test.describe("passkeys", () => {
     // sign-ins of the other projects running at the same time: one project tries the password.
     await page.context().clearCookies();
     await page.goto("/auth/sign_in");
-    if (test.info().project.name === "en-1440") {
+    if (test.info().project.name === primaryProject) {
       await page.locator('input[type="email"][autocomplete="username"]').fill(user.email);
       await page.locator('input[type="password"][autocomplete="current-password"]').fill(user.password);
       await page.locator('main button[type="submit"]').first().click();
