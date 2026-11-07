@@ -36,11 +36,12 @@
 | リファレンス | `docs/reference/`（`commands.md` を除く） | 載せる。`configuration.md` は生成物のまま載せる |
 | 利用者向けガイド | 新設の `docs/guide/`（§8） | 載せる |
 | API を使う開発者向け | `api/openapi.yaml`、`pkg/mykit`・`pkg/mybot` の README、新設の `docs/developers/` | 載せる（§5） |
+| プラグインの作者向け | 新設の `docs/plugins/`。`overview.md` のほかは `api/plugin/` の `.proto` のコメントから生成する（`tools/protodoc`） | 載せる。API の開発者向けとは別の章にする |
 | 貢献者向け | `CONTRIBUTING.md`、`docs/agents/`、`docs/reference/commands.md` | 載せない。GitHub で読む |
 | 設計文書 | `docs/adr/`、`docs/architecture/`、`docs/requirements/` | 載せない。v0 の間は日本語であり、利用者と運営者の文書は設計文書を引用しない規則（AGENTS.md）と揃える |
 
 - サイトに載せる文書は、`docs/lint.yaml` で利用者・運営者向けの規則（設計文書と Issue を引用しない、`maintainer-terms` を含まない）が掛かるものに限る。
-  新設の `docs/guide/` と `docs/developers/` もその規則の対象に加える
+  新設の `docs/guide/`・`docs/developers/`・`docs/plugins/` もその規則の対象に加える。`docs/plugins/` の生成物も同じ規則に掛かるので、`.proto` のコメントもこれに従う
 
 ### 4. 原稿の取り込み
 

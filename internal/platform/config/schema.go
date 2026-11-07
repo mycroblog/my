@@ -20,6 +20,7 @@ import (
 	"unicode"
 	"unicode/utf8"
 
+	"github.com/mycroblog/my/internal/adapter/translator/libretranslate"
 	"github.com/mycroblog/my/internal/adapter/webpush"
 	"github.com/mycroblog/my/internal/app/supporters"
 	"github.com/mycroblog/my/internal/interface/mailevents"
@@ -999,6 +1000,52 @@ var schema = []field{
 		set:   func(c *Config, v string) { c.PaymentsReconcileMaxRequests, _ = strconv.Atoi(v) },
 	},
 	{
+		key:   "translator_libretranslate_url",
+		doc:   "The base URL of the LibreTranslate server of the translation provider `libretranslate`, such as `https://libretranslate.com` or a server you run on a private address, such as `http://libretranslate:5000`; `http:` is accepted on any host. Setting it registers the provider, which the instance setting `translation_providers` then enables.",
+		check: func(v string) error { return libretranslate.CheckURL(strings.TrimSpace(v)) },
+		set:   func(c *Config, v string) { c.TranslatorLibreTranslateURL = strings.TrimSpace(v) },
+	},
+	{
+		key:    "translator_libretranslate_api_key",
+		doc:    "The API key of the LibreTranslate server of `translator_libretranslate_url`, when the server requires one, as `libretranslate.com` does. The server sends it with each translation and never shows it to clients.",
+		secret: true,
+		check:  checkNotBlank,
+		set:    func(c *Config, v string) { c.TranslatorLibreTranslateAPIKey = strings.TrimSpace(v) },
+	},
+	{
+		key:    "translator_deepl_api_key",
+		doc:    "The authentication key of DeepL's API, which makes DeepL a translation provider that `translation_providers` can enable as `deepl` ([translation](../operations/translation.md#deepl)). A key of the free plan ends in `:fx`; DeepL may keep the text that the free plan translates.",
+		secret: true,
+		check:  checkNotBlank,
+		set:    func(c *Config, v string) { c.TranslatorDeepLAPIKey = strings.TrimSpace(v) },
+	},
+	{
+		key:    "translator_deepl_url",
+		doc:    "The `https:` URL of DeepL's API that the server calls, such as a proxy in front of it; `http:` is accepted for localhost only.",
+		defDoc: "`https://api-free.deepl.com` for a key of the free plan, `https://api.deepl.com` otherwise",
+		check:  checkVoiceHTTPURL,
+		set:    func(c *Config, v string) { c.TranslatorDeepLURL = strings.TrimRight(v, "/") },
+	},
+	{
+		key:   "translator_google_project",
+		doc:   "The Google Cloud project that the translations of the provider `google`, Google Cloud Translation, are billed to; the Cloud Translation API must be enabled in it, and the service account of the server needs `roles/cloudtranslate.user` on it. Setting it registers the provider, which the instance setting `translation_providers` enables; credentials come from Application Default Credentials ([translation providers](../operations/translation.md#google-cloud-translation)). The build tag `no_translator_google` leaves it out. Empty registers no such provider.",
+		check: checkTranslatorGoogleProject,
+		set:   func(c *Config, v string) { c.TranslatorGoogleProject = strings.TrimSpace(v) },
+	},
+	{
+		key:    "translator_google_location",
+		doc:    "The location of the requests of the provider `google`: `global`, or a location of Cloud Translation such as `us-central1` (`projects/{project}/locations/{location}`). Not every location serves the general translation model; see Google's list of the locations of Cloud Translation.",
+		defDoc: "`global`",
+		check:  checkTranslatorGoogleLocation,
+		set:    func(c *Config, v string) { c.TranslatorGoogleLocation = strings.TrimSpace(v) },
+	},
+	{
+		key:   "translator_aws_region",
+		doc:   "The AWS region of Amazon Translate, such as `us-east-1`. Setting it registers Amazon Translate as the translation provider `aws`, which the instance setting `translation_providers` enables ([translation providers](../operations/translation.md#amazon-translate)); the credentials come from the AWS SDK's default chain, such as the execution role. The build tag `no_translator_aws` leaves it out. Empty registers no such provider.",
+		check: checkTranslatorAWSRegion,
+		set:   func(c *Config, v string) { c.TranslatorAWSRegion = v },
+	},
+	{
 		key: "search",
 		doc: "The search engine of the full-text search of statuses. The search of accounts and hashtags uses the database and does not depend on this setting.",
 		def: "none",
@@ -1481,6 +1528,9 @@ func crossChecks(vals map[string]string, present map[string]bool) []Issue {
 	issues = append(issues, workerJobTypeChecks(vals)...)
 	issues = append(issues, workerJobConcurrencyChecks(vals)...)
 	issues = append(issues, queueRouteChecks(vals)...)
+	if present["translator_libretranslate_api_key"] && !present["translator_libretranslate_url"] {
+		issues = append(issues, Issue{Key: "translator_libretranslate_url", Missing: true, Message: "required when translator_libretranslate_api_key is set"})
+	}
 	return issues
 }
 
