@@ -5,7 +5,7 @@ package postgres
 import (
 	"context"
 
-	"github.com/mycroblog/my/internal/adapter/db/postgres/postgresgen"
+	"github.com/mycroblog/my/internal/adapter/db/postgres/federationgen"
 	appfederation "github.com/mycroblog/my/internal/app/federation"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/federation"
@@ -21,7 +21,7 @@ func (r *FederationRepository) InsertReceivedActivity(ctx context.Context, tx uo
 	if err != nil {
 		return false, err
 	}
-	n, err := q.InsertReceivedActivity(ctx, postgresgen.InsertReceivedActivityParams{
+	n, err := q.InsertReceivedActivity(ctx, federationgen.InsertReceivedActivityParams{
 		ActivityUri: string(a.ActivityURI), ActorUri: string(a.ActorURI), Type: a.Type,
 		SignatureScheme: a.Scheme, Trust: string(a.Trust), ReceivedAt: a.ReceivedAt,
 	})
@@ -34,7 +34,7 @@ func (r *FederationRepository) InsertReceivedDocument(ctx context.Context, tx uo
 	if err != nil {
 		return err
 	}
-	err = q.InsertReceivedActivityDocument(ctx, postgresgen.InsertReceivedActivityDocumentParams{
+	err = q.InsertReceivedActivityDocument(ctx, federationgen.InsertReceivedActivityDocumentParams{
 		ActivityUri: string(activityURI), Document: document,
 	})
 	return wrap(err, "insert received activity document")
@@ -99,7 +99,7 @@ func (r *FederationRepository) InsertRemoteObjectTombstone(ctx context.Context, 
 	if err != nil {
 		return false, err
 	}
-	n, err := q.InsertRemoteObjectTombstone(ctx, postgresgen.InsertRemoteObjectTombstoneParams{
+	n, err := q.InsertRemoteObjectTombstone(ctx, federationgen.InsertRemoteObjectTombstoneParams{
 		Uri: string(t.URI), ActorUri: string(t.ActorURI), ActivityUri: string(t.ActivityURI), ReceivedAt: t.ReceivedAt,
 	})
 	return n == 1, wrap(err, "insert remote object tombstone")
@@ -107,6 +107,6 @@ func (r *FederationRepository) InsertRemoteObjectTombstone(ctx context.Context, 
 
 // RemoteObjectTombstoned implements federation.InboxRepository.
 func (r *FederationRepository) RemoteObjectTombstoned(ctx context.Context, uri, actorURI federation.IRI) (bool, error) {
-	ok, err := r.db.reader().HasRemoteObjectTombstone(ctx, postgresgen.HasRemoteObjectTombstoneParams{Uri: string(uri), ActorUri: string(actorURI)})
+	ok, err := r.db.reader().HasRemoteObjectTombstone(ctx, federationgen.HasRemoteObjectTombstoneParams{Uri: string(uri), ActorUri: string(actorURI)})
 	return ok, wrap(err, "read remote object tombstone")
 }

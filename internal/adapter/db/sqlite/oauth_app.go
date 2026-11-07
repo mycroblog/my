@@ -8,14 +8,14 @@ import (
 	"errors"
 	"time"
 
-	"github.com/mycroblog/my/internal/adapter/db/sqlite/sqlitegen"
+	"github.com/mycroblog/my/internal/adapter/db/sqlite/identitygen"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/identity"
 )
 
 // currentOAuthClient returns c as its newest revision and secret rotation make it. Only the
 // clients users register have either, so the others are returned as they are.
-func currentOAuthClient(ctx context.Context, q *sqlitegen.Queries, c identity.OAuthClient) (identity.OAuthClient, error) {
+func currentOAuthClient(ctx context.Context, q *genQueries, c identity.OAuthClient) (identity.OAuthClient, error) {
 	if c.Registration != identity.ClientRegisteredByUser {
 		return c, nil
 	}
@@ -47,7 +47,7 @@ func (r *IdentityRepository) InsertOAuthClient(ctx context.Context, tx uow.Tx, c
 	if err != nil {
 		return err
 	}
-	err = q.InsertOAuthClient(ctx, sqlitegen.InsertOAuthClientParams{
+	err = q.InsertOAuthClient(ctx, identitygen.InsertOAuthClientParams{
 		ID: c.ID, ClientID: c.ClientID, ClientSecretHash: c.SecretHash, Name: c.Name, Website: toNullString(c.Website),
 		Scope: string(c.Scope), Registration: string(c.Registration), OwnerUserID: toNullString(c.OwnerUserID),
 		CreatedAt: toMillis(c.CreatedAt),
@@ -87,7 +87,7 @@ func (r *IdentityRepository) InsertOAuthClientRevision(ctx context.Context, tx u
 	if err != nil {
 		return err
 	}
-	err = q.InsertOAuthClientRevision(ctx, sqlitegen.InsertOAuthClientRevisionParams{
+	err = q.InsertOAuthClientRevision(ctx, identitygen.InsertOAuthClientRevisionParams{
 		ID: rev.ID, OauthClientID: rev.ClientID, Name: rev.Name, Website: toNullString(rev.Website), Scope: string(rev.Scope),
 		RevisedAt: toMillis(rev.RevisedAt),
 	})
@@ -100,7 +100,7 @@ func (r *IdentityRepository) InsertOAuthClientSecretRotation(ctx context.Context
 	if err != nil {
 		return err
 	}
-	err = q.InsertOAuthClientSecretRotation(ctx, sqlitegen.InsertOAuthClientSecretRotationParams{
+	err = q.InsertOAuthClientSecretRotation(ctx, identitygen.InsertOAuthClientSecretRotationParams{
 		ID: rot.ID, OauthClientID: rot.ClientID, SecretHash: rot.SecretHash, RotatedAt: toMillis(rot.RotatedAt),
 	})
 	return wrap(err, "insert oauth client secret rotation")
@@ -112,7 +112,7 @@ func (r *IdentityRepository) RevokeTokensOfOwnedClients(ctx context.Context, tx 
 	if err != nil {
 		return err
 	}
-	err = q.RevokeTokensOfOwnedClients(ctx, sqlitegen.RevokeTokensOfOwnedClientsParams{
+	err = q.RevokeTokensOfOwnedClients(ctx, identitygen.RevokeTokensOfOwnedClientsParams{
 		Reason: string(reason), RevokedAt: toMillis(at), OwnerUserID: toNullString(ownerUserID),
 	})
 	return wrap(err, "revoke the tokens of the clients of a user")

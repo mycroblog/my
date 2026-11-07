@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/mycroblog/my/internal/adapter/db/sqlite/sqlitegen"
+	"github.com/mycroblog/my/internal/adapter/db/sqlite/contentgen"
 	appcontent "github.com/mycroblog/my/internal/app/content"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/content"
@@ -31,7 +31,7 @@ func (r *StatusRepository) InsertStatus(ctx context.Context, tx uow.Tx, s conten
 	if err != nil {
 		return err
 	}
-	err = q.InsertStatus(ctx, sqlitegen.InsertStatusParams{
+	err = q.InsertStatus(ctx, contentgen.InsertStatusParams{
 		ID:              s.ID,
 		Uri:             s.URI,
 		Url:             toNullString(s.URL),
@@ -54,7 +54,7 @@ func (r *StatusRepository) InsertLocalStatus(ctx context.Context, tx uow.Tx, ls 
 	if err != nil {
 		return err
 	}
-	err = q.InsertLocalStatus(ctx, sqlitegen.InsertLocalStatusParams{
+	err = q.InsertLocalStatus(ctx, contentgen.InsertLocalStatusParams{
 		StatusID:        ls.StatusID,
 		AuthorAccountID: ls.AuthorAccountID,
 		OauthClientID:   toNullString(ls.ClientID),
@@ -72,7 +72,7 @@ func (r *StatusRepository) InsertRevision(ctx context.Context, tx uow.Tx, rev co
 	if err != nil {
 		return err
 	}
-	err = q.InsertStatusRevision(ctx, sqlitegen.InsertStatusRevisionParams{
+	err = q.InsertStatusRevision(ctx, contentgen.InsertStatusRevisionParams{
 		ID:          rev.ID,
 		StatusID:    rev.StatusID,
 		Seq:         int64(rev.Seq),
@@ -85,7 +85,7 @@ func (r *StatusRepository) InsertRevision(ctx context.Context, tx uow.Tx, rev co
 		return wrap(err, "insert status revision")
 	}
 	for _, b := range rev.Bodies {
-		err := q.InsertStatusRevisionBody(ctx, sqlitegen.InsertStatusRevisionBodyParams{
+		err := q.InsertStatusRevisionBody(ctx, contentgen.InsertStatusRevisionBodyParams{
 			RevisionID: rev.ID, Language: b.Language, ContentHtml: b.ContentHTML,
 		})
 		if err != nil {
@@ -93,7 +93,7 @@ func (r *StatusRepository) InsertRevision(ctx context.Context, tx uow.Tx, rev co
 		}
 	}
 	if rev.Source != nil {
-		err := q.InsertStatusRevisionSource(ctx, sqlitegen.InsertStatusRevisionSourceParams{
+		err := q.InsertStatusRevisionSource(ctx, contentgen.InsertStatusRevisionSourceParams{
 			RevisionID: rev.ID, SourceText: rev.Source.Text, SourceFormat: string(rev.Source.Format),
 		})
 		if err != nil {
@@ -101,7 +101,7 @@ func (r *StatusRepository) InsertRevision(ctx context.Context, tx uow.Tx, rev co
 		}
 	}
 	for _, a := range rev.Attachments {
-		err := q.InsertStatusRevisionAttachment(ctx, sqlitegen.InsertStatusRevisionAttachmentParams{
+		err := q.InsertStatusRevisionAttachment(ctx, contentgen.InsertStatusRevisionAttachmentParams{
 			RevisionID: rev.ID, Position: int64(a.Position), MediaID: a.MediaID, Description: toNullString(a.Description),
 		})
 		if err != nil {
@@ -109,18 +109,18 @@ func (r *StatusRepository) InsertRevision(ctx context.Context, tx uow.Tx, rev co
 		}
 	}
 	for _, id := range rev.MentionedAccountIDs {
-		err := q.InsertStatusRevisionMention(ctx, sqlitegen.InsertStatusRevisionMentionParams{RevisionID: rev.ID, AccountID: id})
+		err := q.InsertStatusRevisionMention(ctx, contentgen.InsertStatusRevisionMentionParams{RevisionID: rev.ID, AccountID: id})
 		if err != nil {
 			return wrap(err, "insert status revision mention")
 		}
 	}
 	for _, id := range rev.TagIDs {
-		if err := q.InsertStatusRevisionTag(ctx, sqlitegen.InsertStatusRevisionTagParams{RevisionID: rev.ID, TagID: id}); err != nil {
+		if err := q.InsertStatusRevisionTag(ctx, contentgen.InsertStatusRevisionTagParams{RevisionID: rev.ID, TagID: id}); err != nil {
 			return wrap(err, "insert status revision tag")
 		}
 	}
 	for _, id := range rev.EmojiIDs {
-		if err := q.InsertStatusRevisionEmoji(ctx, sqlitegen.InsertStatusRevisionEmojiParams{RevisionID: rev.ID, EmojiID: id}); err != nil {
+		if err := q.InsertStatusRevisionEmoji(ctx, contentgen.InsertStatusRevisionEmojiParams{RevisionID: rev.ID, EmojiID: id}); err != nil {
 			return wrap(err, "insert status revision emoji")
 		}
 	}
@@ -133,7 +133,7 @@ func (r *StatusRepository) InsertDeletion(ctx context.Context, tx uow.Tx, d cont
 	if err != nil {
 		return err
 	}
-	err = q.InsertStatusDeletion(ctx, sqlitegen.InsertStatusDeletionParams{
+	err = q.InsertStatusDeletion(ctx, contentgen.InsertStatusDeletionParams{
 		StatusID:           d.StatusID,
 		Uri:                d.URI,
 		AuthorAccountID:    d.AuthorAccountID,
@@ -153,7 +153,7 @@ func (r *StatusRepository) EnsureTag(ctx context.Context, tx uow.Tx, t content.T
 	if err != nil {
 		return content.Tag{}, err
 	}
-	err = q.InsertTagIfAbsent(ctx, sqlitegen.InsertTagIfAbsentParams{
+	err = q.InsertTagIfAbsent(ctx, contentgen.InsertTagIfAbsentParams{
 		ID: t.ID, Name: t.Name, NameNormalized: t.NameNormalized, CreatedAt: toMillis(t.CreatedAt),
 	})
 	if err != nil {
@@ -185,7 +185,7 @@ func (r *StatusRepository) UpsertHead(ctx context.Context, tx uow.Tx, h content.
 	if err != nil {
 		return err
 	}
-	err = q.UpsertStatusHead(ctx, sqlitegen.UpsertStatusHeadParams{
+	err = q.UpsertStatusHead(ctx, contentgen.UpsertStatusHeadParams{
 		StatusID: h.StatusID, RevisionID: h.RevisionID, Seq: int64(h.Seq), LastRevisedAt: toMillis(h.LastRevisedAt),
 	})
 	return wrap(err, "upsert status head")
@@ -201,7 +201,7 @@ func (r *StatusRepository) ReplaceMentions(ctx context.Context, tx uow.Tx, statu
 		return wrap(err, "delete status mentions")
 	}
 	for _, id := range accountIDs {
-		if err := q.InsertStatusMention(ctx, sqlitegen.InsertStatusMentionParams{AccountID: id, StatusID: statusID}); err != nil {
+		if err := q.InsertStatusMention(ctx, contentgen.InsertStatusMentionParams{AccountID: id, StatusID: statusID}); err != nil {
 			return wrap(err, "insert status mention")
 		}
 	}
@@ -258,7 +258,7 @@ func (r *StatusRepository) UpsertReplyLink(ctx context.Context, tx uow.Tx, l con
 	if err != nil {
 		return err
 	}
-	return wrap(q.UpsertStatusReplyLink(ctx, sqlitegen.UpsertStatusReplyLinkParams(l)), "upsert reply link")
+	return wrap(q.UpsertStatusReplyLink(ctx, contentgen.UpsertStatusReplyLinkParams(l)), "upsert reply link")
 }
 
 // ReplyLink implements content.Repository.
@@ -280,7 +280,7 @@ func (r *StatusRepository) InsertCounters(ctx context.Context, tx uow.Tx, c cont
 	if err != nil {
 		return err
 	}
-	return wrap(q.InsertStatusCounters(ctx, sqlitegen.InsertStatusCountersParams(c)), "insert status counters")
+	return wrap(q.InsertStatusCounters(ctx, contentgen.InsertStatusCountersParams(c)), "insert status counters")
 }
 
 // AddReplies implements content.Repository.
@@ -289,7 +289,7 @@ func (r *StatusRepository) AddReplies(ctx context.Context, tx uow.Tx, statusID s
 	if err != nil {
 		return err
 	}
-	return wrap(q.AddStatusReplies(ctx, sqlitegen.AddStatusRepliesParams{Delta: delta, StatusID: statusID}), "add replies")
+	return wrap(q.AddStatusReplies(ctx, contentgen.AddStatusRepliesParams{Delta: delta, StatusID: statusID}), "add replies")
 }
 
 // AddPost implements content.Repository.
@@ -298,7 +298,7 @@ func (r *StatusRepository) AddPost(ctx context.Context, tx uow.Tx, accountID str
 	if err != nil {
 		return err
 	}
-	err = q.AddAccountPost(ctx, sqlitegen.AddAccountPostParams{AccountID: accountID, LastStatusAt: toMillis(publishedAt)})
+	err = q.AddAccountPost(ctx, contentgen.AddAccountPostParams{AccountID: accountID, LastStatusAt: toMillis(publishedAt)})
 	return wrap(err, "add account post")
 }
 
@@ -315,7 +315,7 @@ func (r *StatusRepository) RemovePost(ctx context.Context, tx uow.Tx, accountID 
 	if err != nil {
 		return wrap(err, "latest status of "+accountID)
 	}
-	if err := q.RemoveAccountPost(ctx, sqlitegen.RemoveAccountPostParams{LastStatusAt: latest, AccountID: accountID}); err != nil {
+	if err := q.RemoveAccountPost(ctx, contentgen.RemoveAccountPostParams{LastStatusAt: latest, AccountID: accountID}); err != nil {
 		return wrap(err, "remove account post")
 	}
 	return wrap(q.DeleteEmptyAccountPostCounter(ctx, accountID), "delete empty account post counter")
@@ -344,7 +344,7 @@ func (r *StatusRepository) DeleteStatusProjections(ctx context.Context, tx uow.T
 	return nil
 }
 
-func (r *StatusRepository) rebuild(ctx context.Context, tx uow.Tx, what string, steps ...func(*sqlitegen.Queries, context.Context) error) error {
+func (r *StatusRepository) rebuild(ctx context.Context, tx uow.Tx, what string, steps ...func(*genQueries, context.Context) error) error {
 	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
@@ -359,27 +359,27 @@ func (r *StatusRepository) rebuild(ctx context.Context, tx uow.Tx, what string, 
 
 // RebuildHeads implements content.Repository.
 func (r *StatusRepository) RebuildHeads(ctx context.Context, tx uow.Tx) error {
-	return r.rebuild(ctx, tx, "status heads", (*sqlitegen.Queries).DeleteAllStatusHeads, (*sqlitegen.Queries).RebuildStatusHeads)
+	return r.rebuild(ctx, tx, "status heads", (*genQueries).DeleteAllStatusHeads, (*genQueries).RebuildStatusHeads)
 }
 
 // RebuildMentions implements content.Repository.
 func (r *StatusRepository) RebuildMentions(ctx context.Context, tx uow.Tx) error {
-	return r.rebuild(ctx, tx, "status mentions", (*sqlitegen.Queries).DeleteAllStatusMentions, (*sqlitegen.Queries).RebuildStatusMentions)
+	return r.rebuild(ctx, tx, "status mentions", (*genQueries).DeleteAllStatusMentions, (*genQueries).RebuildStatusMentions)
 }
 
 // RebuildReplyLinks implements content.Repository.
 func (r *StatusRepository) RebuildReplyLinks(ctx context.Context, tx uow.Tx) error {
-	return r.rebuild(ctx, tx, "reply links", (*sqlitegen.Queries).DeleteAllStatusReplyLinks, (*sqlitegen.Queries).RebuildStatusReplyLinks)
+	return r.rebuild(ctx, tx, "reply links", (*genQueries).DeleteAllStatusReplyLinks, (*genQueries).RebuildStatusReplyLinks)
 }
 
 // RebuildCounters implements content.Repository.
 func (r *StatusRepository) RebuildCounters(ctx context.Context, tx uow.Tx) error {
-	return r.rebuild(ctx, tx, "status counters", (*sqlitegen.Queries).DeleteAllStatusCounters, (*sqlitegen.Queries).RebuildStatusCounters)
+	return r.rebuild(ctx, tx, "status counters", (*genQueries).DeleteAllStatusCounters, (*genQueries).RebuildStatusCounters)
 }
 
 // RebuildPostCounters implements content.Repository.
 func (r *StatusRepository) RebuildPostCounters(ctx context.Context, tx uow.Tx) error {
-	return r.rebuild(ctx, tx, "account post counters", (*sqlitegen.Queries).DeleteAllAccountPostCounters, (*sqlitegen.Queries).RebuildAccountPostCounters)
+	return r.rebuild(ctx, tx, "account post counters", (*genQueries).DeleteAllAccountPostCounters, (*genQueries).RebuildAccountPostCounters)
 }
 
 // ListHeads implements content.Repository.
@@ -449,7 +449,7 @@ func (r *StatusRepository) ListPostCounters(ctx context.Context) ([]content.Post
 
 // ListSearchableStatusIDs implements content.Repository.
 func (r *StatusRepository) ListSearchableStatusIDs(ctx context.Context, after string, limit int) ([]string, error) {
-	out, err := r.db.reader().ListSearchableStatusIDs(ctx, sqlitegen.ListSearchableStatusIDsParams{After: after, PageLimit: int64(limit)})
+	out, err := r.db.reader().ListSearchableStatusIDs(ctx, contentgen.ListSearchableStatusIDsParams{After: after, PageLimit: int64(limit)})
 	if err != nil {
 		return nil, wrap(err, "list searchable statuses")
 	}
@@ -458,7 +458,7 @@ func (r *StatusRepository) ListSearchableStatusIDs(ctx context.Context, after st
 
 // ListAuthorSearchableStatusIDs implements content.Repository.
 func (r *StatusRepository) ListAuthorSearchableStatusIDs(ctx context.Context, authorAccountID, after string, limit int) ([]string, error) {
-	out, err := r.db.reader().ListAuthorSearchableStatusIDs(ctx, sqlitegen.ListAuthorSearchableStatusIDsParams{
+	out, err := r.db.reader().ListAuthorSearchableStatusIDs(ctx, contentgen.ListAuthorSearchableStatusIDsParams{
 		AuthorAccountID: authorAccountID, After: after, PageLimit: int64(limit),
 	})
 	if err != nil {
@@ -496,7 +496,7 @@ func (r *StatusRepository) FindLocalStatus(ctx context.Context, statusID string)
 
 // FindLocalStatusByIdempotencyKey implements content.Repository.
 func (r *StatusRepository) FindLocalStatusByIdempotencyKey(ctx context.Context, authorAccountID, key string) (content.LocalStatus, error) {
-	row, err := r.db.reader().GetLocalStatusByIdempotencyKey(ctx, sqlitegen.GetLocalStatusByIdempotencyKeyParams{
+	row, err := r.db.reader().GetLocalStatusByIdempotencyKey(ctx, contentgen.GetLocalStatusByIdempotencyKeyParams{
 		AuthorAccountID: authorAccountID, IdempotencyKey: toNullString(key),
 	})
 	if err != nil {
@@ -522,7 +522,7 @@ func (r *StatusRepository) ListCurrentPosts(ctx context.Context, tx uow.Tx) ([]a
 	}
 	out := make([]appcontent.Post, len(rows))
 	for i, row := range rows {
-		out[i].Status = statusFrom(sqlitegen.Status{
+		out[i].Status = statusFrom(contentgen.Status{
 			ID: row.ID, Uri: row.Uri, Url: row.Url, AuthorAccountID: row.AuthorAccountID, IsLocal: row.IsLocal,
 			Visibility: row.Visibility, InReplyToUri: row.InReplyToUri, ConversationUri: row.ConversationUri,
 			PublishedAt: row.PublishedAt,
@@ -535,7 +535,7 @@ func (r *StatusRepository) ListCurrentPosts(ctx context.Context, tx uow.Tx) ([]a
 }
 
 // findRevision returns a revision with its children.
-func findRevision(ctx context.Context, q *sqlitegen.Queries, id string) (content.Revision, error) {
+func findRevision(ctx context.Context, q *genQueries, id string) (content.Revision, error) {
 	row, err := q.GetStatusRevision(ctx, id)
 	if err != nil {
 		return content.Revision{}, notFound(err, appcontent.ErrNotFound, "status revision "+id)
@@ -636,7 +636,7 @@ func (r *StatusRepository) FindTagByName(ctx context.Context, nameNormalized str
 
 // ListTagsByPrefix implements content.Repository.
 func (r *StatusRepository) ListTagsByPrefix(ctx context.Context, low, high string, limit int) ([]content.Tag, error) {
-	rows, err := r.db.reader().ListTagsByPrefix(ctx, sqlitegen.ListTagsByPrefixParams{Low: low, High: high, Lim: int64(limit)})
+	rows, err := r.db.reader().ListTagsByPrefix(ctx, contentgen.ListTagsByPrefixParams{Low: low, High: high, Lim: int64(limit)})
 	if err != nil {
 		return nil, wrap(err, "list tags by prefix")
 	}
@@ -671,7 +671,7 @@ func (r *StatusRepository) ListReplies(ctx context.Context, uri string) ([]conte
 
 // ListLiveRemoteStatusIDs implements content.Repository.
 func (r *StatusRepository) ListLiveRemoteStatusIDs(ctx context.Context, authorAccountID, before string, limit int) ([]string, error) {
-	ids, err := r.db.reader().ListLiveRemoteStatusIDsOfAuthor(ctx, sqlitegen.ListLiveRemoteStatusIDsOfAuthorParams{
+	ids, err := r.db.reader().ListLiveRemoteStatusIDsOfAuthor(ctx, contentgen.ListLiveRemoteStatusIDsOfAuthorParams{
 		AuthorAccountID: authorAccountID, Before: before, Lim: int64(limit),
 	})
 	if err != nil {
@@ -698,7 +698,7 @@ func (r *StatusRepository) FindPostCounter(ctx context.Context, accountID string
 	return postCounterFrom(row), nil
 }
 
-func statusFrom(row sqlitegen.Status) content.Status {
+func statusFrom(row contentgen.Status) content.Status {
 	return content.Status{
 		ID:              row.ID,
 		URI:             row.Uri,
@@ -712,7 +712,7 @@ func statusFrom(row sqlitegen.Status) content.Status {
 	}
 }
 
-func localStatusFrom(row sqlitegen.LocalStatus) content.LocalStatus {
+func localStatusFrom(row contentgen.LocalStatus) content.LocalStatus {
 	return content.LocalStatus{
 		StatusID:        row.StatusID,
 		AuthorAccountID: row.AuthorAccountID,
@@ -721,7 +721,7 @@ func localStatusFrom(row sqlitegen.LocalStatus) content.LocalStatus {
 	}
 }
 
-func revisionFrom(row sqlitegen.StatusRevision) content.Revision {
+func revisionFrom(row contentgen.StatusRevision) content.Revision {
 	return content.Revision{
 		ID:          row.ID,
 		StatusID:    row.StatusID,
@@ -733,7 +733,7 @@ func revisionFrom(row sqlitegen.StatusRevision) content.Revision {
 	}
 }
 
-func deletionFrom(row sqlitegen.StatusDeletion) content.Deletion {
+func deletionFrom(row contentgen.StatusDeletion) content.Deletion {
 	return content.Deletion{
 		StatusID:           row.StatusID,
 		URI:                row.Uri,
@@ -744,17 +744,17 @@ func deletionFrom(row sqlitegen.StatusDeletion) content.Deletion {
 	}
 }
 
-func tagFrom(row sqlitegen.Tag) content.Tag {
+func tagFrom(row contentgen.Tag) content.Tag {
 	return content.Tag{ID: row.ID, Name: row.Name, NameNormalized: row.NameNormalized, CreatedAt: fromMillis(row.CreatedAt)}
 }
 
-func headFrom(row sqlitegen.StatusHead) content.Head {
+func headFrom(row contentgen.StatusHead) content.Head {
 	return content.Head{
 		StatusID: row.StatusID, RevisionID: row.RevisionID, Seq: int(row.Seq), LastRevisedAt: fromMillis(row.LastRevisedAt),
 	}
 }
 
-func postCounterFrom(row sqlitegen.AccountPostCounter) content.PostCounter {
+func postCounterFrom(row contentgen.AccountPostCounter) content.PostCounter {
 	return content.PostCounter{
 		AccountID: row.AccountID, StatusesCount: row.StatusesCount, LastStatusAt: fromMillis(row.LastStatusAt),
 	}

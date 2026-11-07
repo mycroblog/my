@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/mycroblog/my/internal/adapter/db/sqlite/sqlitegen"
+	"github.com/mycroblog/my/internal/adapter/db/sqlite/identitygen"
 	appidentity "github.com/mycroblog/my/internal/app/identity"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/identity"
@@ -19,7 +19,7 @@ func (r *IdentityRepository) InsertDataImport(ctx context.Context, tx uow.Tx, i 
 	if err != nil {
 		return err
 	}
-	return wrap(q.InsertDataImport(ctx, sqlitegen.InsertDataImportParams{
+	return wrap(q.InsertDataImport(ctx, identitygen.InsertDataImportParams{
 		ID: i.ID, UserID: i.UserID, AccountID: i.AccountID, Kind: string(i.Kind), Mode: string(i.Mode), CreatedAt: toMillis(i.CreatedAt),
 	}), "insert data import")
 }
@@ -31,7 +31,7 @@ func (r *IdentityRepository) InsertDataImportItems(ctx context.Context, tx uow.T
 		return err
 	}
 	for _, it := range items {
-		err := q.InsertDataImportItem(ctx, sqlitegen.InsertDataImportItemParams{
+		err := q.InsertDataImportItem(ctx, identitygen.InsertDataImportItemParams{
 			ImportID: it.ImportID, Position: int64(it.Position), Action: string(it.Action), Target: it.Target,
 			ShowBoosts: boolToInt(it.ShowBoosts), Notify: boolToInt(it.Notify), HideNotifications: boolToInt(it.HideNotifications),
 		})
@@ -55,7 +55,7 @@ func (r *IdentityRepository) LockUnfinishedDataImports(ctx context.Context, tx u
 
 // findDataImport fails with ErrNotFound when the import is gone. SQLite serializes write
 // transactions, so an import that tx finds stays until tx ends.
-func findDataImport(ctx context.Context, q *sqlitegen.Queries, importID string) error {
+func findDataImport(ctx context.Context, q *genQueries, importID string) error {
 	present, err := q.DataImportExists(ctx, importID)
 	if err != nil {
 		return wrap(err, "find data import")
@@ -75,7 +75,7 @@ func (r *IdentityRepository) InsertDataImportItemFailure(ctx context.Context, tx
 	if err := findDataImport(ctx, q, importID); err != nil {
 		return 0, err
 	}
-	n, err := q.InsertDataImportItemFailure(ctx, sqlitegen.InsertDataImportItemFailureParams{
+	n, err := q.InsertDataImportItemFailure(ctx, identitygen.InsertDataImportItemFailureParams{
 		ImportID: importID, Position: int64(position), FailedAt: toMillis(at),
 	})
 	return int(n), wrap(err, "insert data import item failure")
@@ -90,7 +90,7 @@ func (r *IdentityRepository) InsertDataImportResult(ctx context.Context, tx uow.
 	if err := findDataImport(ctx, q, res.ImportID); err != nil {
 		return err
 	}
-	return wrap(q.InsertDataImportItemResult(ctx, sqlitegen.InsertDataImportItemResultParams{
+	return wrap(q.InsertDataImportItemResult(ctx, identitygen.InsertDataImportItemResultParams{
 		ImportID: res.ImportID, Position: int64(res.Position), Outcome: string(res.Outcome),
 		Failure: toNullString(string(res.Failure)), ProcessedAt: toMillis(res.ProcessedAt),
 	}), "insert data import result")
@@ -102,12 +102,12 @@ func (r *IdentityRepository) FindDataImport(ctx context.Context, id string) (ide
 	if err != nil {
 		return identity.DataImportProgress{}, notFound(err, appidentity.ErrNotFound, "data import")
 	}
-	return dataImportProgress(sqlitegen.ListDataImportProgressRow(row)), nil
+	return dataImportProgress(identitygen.ListDataImportProgressRow(row)), nil
 }
 
 // ListDataImports implements identity.ImportRepository.
 func (r *IdentityRepository) ListDataImports(ctx context.Context, userID string, limit int) ([]identity.DataImportProgress, error) {
-	rows, err := r.db.reader().ListDataImportProgress(ctx, sqlitegen.ListDataImportProgressParams{UserID: userID, BatchLimit: int64(limit)})
+	rows, err := r.db.reader().ListDataImportProgress(ctx, identitygen.ListDataImportProgressParams{UserID: userID, BatchLimit: int64(limit)})
 	if err != nil {
 		return nil, wrap(err, "list data imports")
 	}
@@ -120,7 +120,7 @@ func (r *IdentityRepository) ListDataImports(ctx context.Context, userID string,
 
 // ListPendingDataImportItems implements identity.ImportRepository.
 func (r *IdentityRepository) ListPendingDataImportItems(ctx context.Context, importID string, limit int) ([]identity.DataImportItem, error) {
-	rows, err := r.db.reader().ListPendingDataImportItems(ctx, sqlitegen.ListPendingDataImportItemsParams{ImportID: importID, BatchLimit: int64(limit)})
+	rows, err := r.db.reader().ListPendingDataImportItems(ctx, identitygen.ListPendingDataImportItemsParams{ImportID: importID, BatchLimit: int64(limit)})
 	if err != nil {
 		return nil, wrap(err, "list pending data import items")
 	}
@@ -136,7 +136,7 @@ func (r *IdentityRepository) ListPendingDataImportItems(ctx context.Context, imp
 
 // ListDataImportsCreatedBefore implements identity.ImportRepository.
 func (r *IdentityRepository) ListDataImportsCreatedBefore(ctx context.Context, t time.Time, limit int) ([]string, error) {
-	ids, err := r.db.reader().ListDataImportsCreatedBefore(ctx, sqlitegen.ListDataImportsCreatedBeforeParams{
+	ids, err := r.db.reader().ListDataImportsCreatedBefore(ctx, identitygen.ListDataImportsCreatedBeforeParams{
 		CreatedBefore: toMillis(t), BatchLimit: int64(limit),
 	})
 	return ids, wrap(err, "list old data imports")
@@ -160,7 +160,7 @@ func (r *IdentityRepository) DeleteDataImport(ctx context.Context, tx uow.Tx, id
 	return wrap(q.DeleteDataImportItems(ctx, id), "delete data import items")
 }
 
-func dataImportProgress(row sqlitegen.ListDataImportProgressRow) identity.DataImportProgress {
+func dataImportProgress(row identitygen.ListDataImportProgressRow) identity.DataImportProgress {
 	return identity.DataImportProgress{
 		DataImport: identity.DataImport{
 			ID: row.ID, UserID: row.UserID, AccountID: row.AccountID, Kind: identity.ImportKind(row.Kind),

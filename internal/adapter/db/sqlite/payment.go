@@ -6,7 +6,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/mycroblog/my/internal/adapter/db/sqlite/sqlitegen"
+	"github.com/mycroblog/my/internal/adapter/db/sqlite/supportersgen"
 	"github.com/mycroblog/my/internal/app/supporters"
 	"github.com/mycroblog/my/internal/app/uow"
 )
@@ -27,7 +27,7 @@ func (r *PaymentRepository) InsertWebhookReceipt(ctx context.Context, tx uow.Tx,
 	if err != nil {
 		return false, err
 	}
-	n, err := q.InsertPaymentWebhookReceipt(ctx, sqlitegen.InsertPaymentWebhookReceiptParams{
+	n, err := q.InsertPaymentWebhookReceipt(ctx, supportersgen.InsertPaymentWebhookReceiptParams{
 		ID: w.ID, Provider: w.Provider, EventID: w.EventID, EventType: w.EventType, ObjectID: w.ObjectID,
 		ReceivedAt: toMillis(w.ReceivedAt),
 	})
@@ -61,7 +61,7 @@ func (r *PaymentRepository) PurgeWebhookReceipts(ctx context.Context, tx uow.Tx,
 	if err != nil {
 		return 0, err
 	}
-	n, err := q.PurgePaymentWebhookReceipts(ctx, sqlitegen.PurgePaymentWebhookReceiptsParams{BeforeAt: toMillis(before), Lim: int64(limit)})
+	n, err := q.PurgePaymentWebhookReceipts(ctx, supportersgen.PurgePaymentWebhookReceiptsParams{BeforeAt: toMillis(before), Lim: int64(limit)})
 	return n, wrap(err, "purge payment webhook receipts")
 }
 
@@ -71,7 +71,7 @@ func (r *PaymentRepository) InsertReconcileRun(ctx context.Context, tx uow.Tx, r
 	if err != nil {
 		return false, err
 	}
-	n, err := q.InsertPaymentReconcileRun(ctx, sqlitegen.InsertPaymentReconcileRunParams{
+	n, err := q.InsertPaymentReconcileRun(ctx, supportersgen.InsertPaymentReconcileRunParams{
 		ID: run.ID, Provider: run.Provider, RunKey: run.RunKey, Outcome: string(run.Outcome), ErrorKind: string(run.ErrorKind),
 		ChangesUntil: toMillis(run.ChangesUntil), ChangesCursor: run.ChangesCursor, MoneyCursor: run.MoneyCursor,
 		SweepCursor: run.SweepCursor, Requests: int64(run.Requests), CheckedSubscriptions: int64(run.CheckedSubscriptions),
@@ -82,7 +82,7 @@ func (r *PaymentRepository) InsertReconcileRun(ctx context.Context, tx uow.Tx, r
 
 // ReconcileRunKeyUsed implements supporters.PaymentRepository.
 func (r *PaymentRepository) ReconcileRunKeyUsed(ctx context.Context, provider, runKey string) (bool, error) {
-	n, err := r.db.reader().CountPaymentReconcileRunsByKey(ctx, sqlitegen.CountPaymentReconcileRunsByKeyParams{Provider: provider, RunKey: runKey})
+	n, err := r.db.reader().CountPaymentReconcileRunsByKey(ctx, supportersgen.CountPaymentReconcileRunsByKeyParams{Provider: provider, RunKey: runKey})
 	return n > 0, wrap(err, "count payment reconcile runs")
 }
 
@@ -92,7 +92,7 @@ func (r *PaymentRepository) LastReconcileRun(ctx context.Context, provider strin
 	if !resumable {
 		includeFailed = 1
 	}
-	row, err := r.db.reader().LastPaymentReconcileRun(ctx, sqlitegen.LastPaymentReconcileRunParams{Provider: provider, IncludeFailed: includeFailed})
+	row, err := r.db.reader().LastPaymentReconcileRun(ctx, supportersgen.LastPaymentReconcileRunParams{Provider: provider, IncludeFailed: includeFailed})
 	if err != nil {
 		return supporters.ReconcileRun{}, notFound(err, supporters.ErrNotFound, "payment reconcile run of "+provider)
 	}
@@ -111,7 +111,7 @@ func (r *PaymentRepository) ClaimCheckout(ctx context.Context, tx uow.Tx, c supp
 	if err != nil {
 		return false, err
 	}
-	n, err := q.ClaimPaymentCheckout(ctx, sqlitegen.ClaimPaymentCheckoutParams{
+	n, err := q.ClaimPaymentCheckout(ctx, supportersgen.ClaimPaymentCheckoutParams{
 		Provider: c.Provider, ProviderCheckoutID: c.CheckoutID, Holder: c.Holder, ClaimedAt: toMillis(c.ClaimedAt), ExpiresAt: toMillis(c.ExpiresAt),
 	})
 	return n > 0, wrap(err, "claim payment checkout")
@@ -123,7 +123,7 @@ func (r *PaymentRepository) ReleaseCheckout(ctx context.Context, tx uow.Tx, prov
 	if err != nil {
 		return err
 	}
-	return wrap(q.ReleasePaymentCheckout(ctx, sqlitegen.ReleasePaymentCheckoutParams{Provider: provider, ProviderCheckoutID: checkoutID, Holder: holder}),
+	return wrap(q.ReleasePaymentCheckout(ctx, supportersgen.ReleasePaymentCheckoutParams{Provider: provider, ProviderCheckoutID: checkoutID, Holder: holder}),
 		"release payment checkout")
 }
 

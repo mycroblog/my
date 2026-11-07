@@ -6,7 +6,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/mycroblog/my/internal/adapter/db/sqlite/sqlitegen"
+	"github.com/mycroblog/my/internal/adapter/db/sqlite/contentgen"
 	appcontent "github.com/mycroblog/my/internal/app/content"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/content"
@@ -20,7 +20,7 @@ func (r *StatusRepository) InsertQuote(ctx context.Context, tx uow.Tx, q content
 	if err != nil {
 		return false, err
 	}
-	n, err := qs.InsertStatusQuote(ctx, sqlitegen.InsertStatusQuoteParams{StatusID: q.StatusID, QuotedUri: q.QuotedURI, Form: string(q.Form)})
+	n, err := qs.InsertStatusQuote(ctx, contentgen.InsertStatusQuoteParams{StatusID: q.StatusID, QuotedUri: q.QuotedURI, Form: string(q.Form)})
 	return n > 0, wrap(err, "insert status quote")
 }
 
@@ -48,7 +48,7 @@ func (r *StatusRepository) ListQuotesAfter(ctx context.Context, tx uow.Tx, after
 	if err != nil {
 		return nil, err
 	}
-	rows, err := qs.ListStatusQuotesAfter(ctx, sqlitegen.ListStatusQuotesAfterParams{After: after, PageLimit: int64(limit)})
+	rows, err := qs.ListStatusQuotesAfter(ctx, contentgen.ListStatusQuotesAfterParams{After: after, PageLimit: int64(limit)})
 	if err != nil {
 		return nil, wrap(err, "list status quotes")
 	}
@@ -65,7 +65,7 @@ func (r *StatusRepository) InsertQuoteEvent(ctx context.Context, tx uow.Tx, e co
 	if err != nil {
 		return err
 	}
-	return wrap(qs.InsertStatusQuoteEvent(ctx, sqlitegen.InsertStatusQuoteEventParams{
+	return wrap(qs.InsertStatusQuoteEvent(ctx, contentgen.InsertStatusQuoteEventParams{
 		ID: e.ID, StatusID: e.StatusID, Kind: string(e.Kind), AuthorizationUri: toNullString(e.AuthorizationURI), OccurredAt: toMillis(e.OccurredAt),
 	}), "insert status quote event")
 }
@@ -96,7 +96,7 @@ func (r *StatusRepository) UpsertQuoteState(ctx context.Context, tx uow.Tx, s co
 	if err != nil {
 		return err
 	}
-	return wrap(qs.UpsertStatusQuoteState(ctx, sqlitegen.UpsertStatusQuoteStateParams{
+	return wrap(qs.UpsertStatusQuoteState(ctx, contentgen.UpsertStatusQuoteStateParams{
 		StatusID: s.StatusID, State: string(s.Approval), AuthorizationUri: toNullString(s.AuthorizationURI),
 	}), "upsert status quote state")
 }
@@ -146,15 +146,15 @@ func (r *StatusRepository) DeleteAllQuoteStates(ctx context.Context, tx uow.Tx) 
 	return wrap(qs.DeleteAllStatusQuoteStates(ctx), "delete status quote states")
 }
 
-func quoteFrom(row sqlitegen.StatusQuote) content.Quote {
+func quoteFrom(row contentgen.StatusQuote) content.Quote {
 	return content.Quote{StatusID: row.StatusID, QuotedURI: row.QuotedUri, Form: content.QuoteForm(row.Form)}
 }
 
-func quoteStateFrom(row sqlitegen.StatusQuoteState) content.QuoteState {
+func quoteStateFrom(row contentgen.StatusQuoteState) content.QuoteState {
 	return content.QuoteState{StatusID: row.StatusID, Approval: content.QuoteApproval(row.State), AuthorizationURI: row.AuthorizationUri.String}
 }
 
-func quoteStatesFrom(rows []sqlitegen.StatusQuoteState) []content.QuoteState {
+func quoteStatesFrom(rows []contentgen.StatusQuoteState) []content.QuoteState {
 	out := make([]content.QuoteState, 0, len(rows))
 	for _, row := range rows {
 		out = append(out, quoteStateFrom(row))
@@ -164,7 +164,7 @@ func quoteStatesFrom(rows []sqlitegen.StatusQuoteState) []content.QuoteState {
 
 // ListQuotesOf implements content.QuoteRepository.
 func (r *StatusRepository) ListQuotesOf(ctx context.Context, uri, before string, limit int) ([]content.Quote, error) {
-	rows, err := r.db.reader().ListStatusQuotesOf(ctx, sqlitegen.ListStatusQuotesOfParams{QuotedUri: uri, Before: before, PageLimit: int64(limit)})
+	rows, err := r.db.reader().ListStatusQuotesOf(ctx, contentgen.ListStatusQuotesOfParams{QuotedUri: uri, Before: before, PageLimit: int64(limit)})
 	if err != nil {
 		return nil, wrap(err, "list quotes of a status")
 	}
@@ -181,7 +181,7 @@ func (r *StatusRepository) UpsertQuotePolicy(ctx context.Context, tx uow.Tx, p c
 	if err != nil {
 		return err
 	}
-	return wrap(qs.UpsertStatusQuotePolicy(ctx, sqlitegen.UpsertStatusQuotePolicyParams{
+	return wrap(qs.UpsertStatusQuotePolicy(ctx, contentgen.UpsertStatusQuotePolicyParams{
 		StatusID: p.StatusID, Policy: string(p.Policy), UpdatedAt: toMillis(p.UpdatedAt),
 	}), "upsert status quote policy")
 }
@@ -210,7 +210,7 @@ func (r *StatusRepository) InsertQuoteAuthorization(ctx context.Context, tx uow.
 	if err != nil {
 		return false, err
 	}
-	n, err := qs.InsertQuoteAuthorization(ctx, sqlitegen.InsertQuoteAuthorizationParams{
+	n, err := qs.InsertQuoteAuthorization(ctx, contentgen.InsertQuoteAuthorizationParams{
 		ID: a.ID, QuotingUri: a.QuotingURI, QuotingAccountID: a.QuotingAccountID, QuotedStatusID: a.QuotedStatusID, CreatedAt: toMillis(a.CreatedAt),
 	})
 	return n > 0, wrap(err, "insert quote authorization")
@@ -222,12 +222,12 @@ func (r *StatusRepository) FindQuoteAuthorization(ctx context.Context, id string
 	if err != nil {
 		return content.QuoteAuthorization{}, notFound(err, appcontent.ErrNotFound, "quote authorization "+id)
 	}
-	return quoteAuthorizationFrom(sqlitegen.GetQuoteAuthorizationForRow(row)), nil
+	return quoteAuthorizationFrom(contentgen.GetQuoteAuthorizationForRow(row)), nil
 }
 
 // FindQuoteAuthorizationFor implements content.QuoteRepository.
 func (r *StatusRepository) FindQuoteAuthorizationFor(ctx context.Context, quotingURI, quotedStatusID string) (content.QuoteAuthorization, error) {
-	row, err := r.db.reader().GetQuoteAuthorizationFor(ctx, sqlitegen.GetQuoteAuthorizationForParams{QuotingUri: quotingURI, QuotedStatusID: quotedStatusID})
+	row, err := r.db.reader().GetQuoteAuthorizationFor(ctx, contentgen.GetQuoteAuthorizationForParams{QuotingUri: quotingURI, QuotedStatusID: quotedStatusID})
 	if err != nil {
 		return content.QuoteAuthorization{}, notFound(err, appcontent.ErrNotFound, "quote authorization of "+quotingURI)
 	}
@@ -240,11 +240,11 @@ func (r *StatusRepository) InsertQuoteAuthorizationRevocation(ctx context.Contex
 	if err != nil {
 		return false, err
 	}
-	n, err := qs.InsertQuoteAuthorizationRevocation(ctx, sqlitegen.InsertQuoteAuthorizationRevocationParams{AuthorizationID: authorizationID, RevokedAt: toMillis(at)})
+	n, err := qs.InsertQuoteAuthorizationRevocation(ctx, contentgen.InsertQuoteAuthorizationRevocationParams{AuthorizationID: authorizationID, RevokedAt: toMillis(at)})
 	return n > 0, wrap(err, "insert quote authorization revocation")
 }
 
-func quoteAuthorizationFrom(row sqlitegen.GetQuoteAuthorizationForRow) content.QuoteAuthorization {
+func quoteAuthorizationFrom(row contentgen.GetQuoteAuthorizationForRow) content.QuoteAuthorization {
 	return content.QuoteAuthorization{
 		ID: row.ID, QuotingURI: row.QuotingUri, QuotingAccountID: row.QuotingAccountID, QuotedStatusID: row.QuotedStatusID,
 		CreatedAt: fromMillis(row.CreatedAt), RevokedAt: fromNullMillis(row.RevokedAt),

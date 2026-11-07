@@ -7,7 +7,7 @@ import (
 	"database/sql"
 	"errors"
 
-	"github.com/mycroblog/my/internal/adapter/db/sqlite/sqlitegen"
+	"github.com/mycroblog/my/internal/adapter/db/sqlite/contentgen"
 	appcontent "github.com/mycroblog/my/internal/app/content"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/content"
@@ -43,7 +43,7 @@ func (r *CustomEmojiRepository) InsertCustomEmoji(ctx context.Context, tx uow.Tx
 			return appcontent.ErrShortcodeTaken
 		}
 	}
-	err = q.InsertCustomEmoji(ctx, sqlitegen.InsertCustomEmojiParams{
+	err = q.InsertCustomEmoji(ctx, contentgen.InsertCustomEmojiParams{
 		ID: e.ID, Shortcode: e.Shortcode, Domain: e.Domain, Uri: toNullString(e.URI), CreatedByUserID: toNullString(e.CreatedByUserID),
 		CreatedAt: toMillis(e.CreatedAt),
 	})
@@ -59,7 +59,7 @@ func (r *CustomEmojiRepository) InsertCustomEmojiImage(ctx context.Context, tx u
 	if err != nil {
 		return err
 	}
-	err = q.InsertCustomEmojiImage(ctx, sqlitegen.InsertCustomEmojiImageParams{
+	err = q.InsertCustomEmojiImage(ctx, contentgen.InsertCustomEmojiImageParams{
 		ID: img.ID, EmojiID: img.EmojiID, MediaID: img.MediaID, RevisedAt: toMillis(img.RevisedAt),
 	})
 	return wrap(err, "insert custom emoji image")
@@ -74,7 +74,7 @@ func (r *CustomEmojiRepository) SetCustomEmojiSettings(ctx context.Context, tx u
 	if s.IsDefault() {
 		return wrap(q.DeleteCustomEmojiSettings(ctx, s.EmojiID), "delete custom emoji settings")
 	}
-	err = q.UpsertCustomEmojiSettings(ctx, sqlitegen.UpsertCustomEmojiSettingsParams{
+	err = q.UpsertCustomEmojiSettings(ctx, contentgen.UpsertCustomEmojiSettingsParams{
 		EmojiID: s.EmojiID, Enabled: boolToInt(s.Enabled), VisibleInPicker: boolToInt(s.VisibleInPicker), Category: toNullString(s.Category),
 	})
 	return wrap(err, "upsert custom emoji settings")
@@ -90,7 +90,7 @@ func (r *CustomEmojiRepository) SetCustomEmojiAliases(ctx context.Context, tx uo
 		return wrap(err, "delete custom emoji aliases")
 	}
 	for _, a := range aliases {
-		if err := q.InsertCustomEmojiAlias(ctx, sqlitegen.InsertCustomEmojiAliasParams{EmojiID: emojiID, Alias: a}); err != nil {
+		if err := q.InsertCustomEmojiAlias(ctx, contentgen.InsertCustomEmojiAliasParams{EmojiID: emojiID, Alias: a}); err != nil {
 			return wrap(err, "insert custom emoji alias")
 		}
 	}
@@ -200,7 +200,7 @@ func (r *CustomEmojiRepository) records(ctx context.Context, rows []emojiRecordR
 
 // ListCustomEmojiRecords implements content.CustomEmojiRepository.
 func (r *CustomEmojiRepository) ListCustomEmojiRecords(ctx context.Context, q appcontent.CustomEmojiQuery, limit int) ([]content.CustomEmojiRecord, error) {
-	rows, err := r.db.reader().ListAdminCustomEmojis(ctx, sqlitegen.ListAdminCustomEmojisParams{
+	rows, err := r.db.reader().ListAdminCustomEmojis(ctx, contentgen.ListAdminCustomEmojisParams{
 		Locality: int64(q.Locality), Domain: q.Domain, Shortcode: q.Shortcode, CreatedBy: q.CreatedBy, BeforeID: q.Before,
 		RowLimit: int64(limit),
 	})
@@ -216,7 +216,7 @@ func (r *CustomEmojiRepository) ListCustomEmojiRecords(ctx context.Context, q ap
 
 // ListLocalCustomEmojis implements content.CustomEmojiRepository.
 func (r *CustomEmojiRepository) ListLocalCustomEmojis(ctx context.Context, shortcodes []string) ([]content.CustomEmojiRecord, error) {
-	params := sqlitegen.ListLocalCustomEmojisParams{AllShortcodes: boolToInt(shortcodes == nil), Shortcodes: "[]"}
+	params := contentgen.ListLocalCustomEmojisParams{AllShortcodes: boolToInt(shortcodes == nil), Shortcodes: "[]"}
 	if shortcodes != nil {
 		list, err := jsonList(shortcodes)
 		if err != nil {
@@ -237,7 +237,7 @@ func (r *CustomEmojiRepository) ListLocalCustomEmojis(ctx context.Context, short
 
 // ListUnreferencedRemoteEmojis implements content.EmojiPurgeRepository.
 func (r *CustomEmojiRepository) ListUnreferencedRemoteEmojis(ctx context.Context, after string, limit int) ([]string, error) {
-	ids, err := r.db.reader().ListUnreferencedRemoteEmojis(ctx, sqlitegen.ListUnreferencedRemoteEmojisParams{After: after, RowLimit: int64(limit)})
+	ids, err := r.db.reader().ListUnreferencedRemoteEmojis(ctx, contentgen.ListUnreferencedRemoteEmojisParams{After: after, RowLimit: int64(limit)})
 	return ids, wrap(err, "list unreferenced remote emoji")
 }
 

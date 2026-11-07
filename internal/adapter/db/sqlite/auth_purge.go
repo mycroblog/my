@@ -6,7 +6,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/mycroblog/my/internal/adapter/db/sqlite/sqlitegen"
+	"github.com/mycroblog/my/internal/adapter/db/sqlite/identitygen"
 	"github.com/mycroblog/my/internal/app/uow"
 )
 
@@ -17,7 +17,7 @@ func (r *IdentityRepository) DeleteExpiredTokenFamilies(ctx context.Context, tx 
 	if err != nil {
 		return 0, err
 	}
-	ids, err := q.ListExpiredTokenFamilies(ctx, sqlitegen.ListExpiredTokenFamiliesParams{ExpiredBefore: toMillis(t), BatchLimit: int64(limit)})
+	ids, err := q.ListExpiredTokenFamilies(ctx, identitygen.ListExpiredTokenFamiliesParams{ExpiredBefore: toMillis(t), BatchLimit: int64(limit)})
 	if err != nil {
 		return 0, wrap(err, "list expired token families")
 	}
@@ -39,7 +39,7 @@ func (r *IdentityRepository) DeleteExpiredUnredeemedCodes(ctx context.Context, t
 	if err != nil {
 		return 0, err
 	}
-	n, err := q.DeleteExpiredUnredeemedCodes(ctx, sqlitegen.DeleteExpiredUnredeemedCodesParams{ExpiredBefore: toMillis(t), BatchLimit: int64(limit)})
+	n, err := q.DeleteExpiredUnredeemedCodes(ctx, identitygen.DeleteExpiredUnredeemedCodesParams{ExpiredBefore: toMillis(t), BatchLimit: int64(limit)})
 	return n, wrap(err, "delete expired authorization codes")
 }
 
@@ -49,7 +49,7 @@ func (r *IdentityRepository) DeleteExpiredSessions(ctx context.Context, tx uow.T
 	if err != nil {
 		return 0, err
 	}
-	ids, err := q.ListExpiredSessions(ctx, sqlitegen.ListExpiredSessionsParams{ExpiredBefore: toMillis(t), BatchLimit: int64(limit)})
+	ids, err := q.ListExpiredSessions(ctx, identitygen.ListExpiredSessionsParams{ExpiredBefore: toMillis(t), BatchLimit: int64(limit)})
 	if err != nil {
 		return 0, wrap(err, "list expired sessions")
 	}
@@ -70,7 +70,7 @@ func (r *IdentityRepository) DeleteExpiredUserTokens(ctx context.Context, tx uow
 	if err != nil {
 		return 0, err
 	}
-	ids, err := q.ListExpiredUserTokens(ctx, sqlitegen.ListExpiredUserTokensParams{ExpiredBefore: toMillis(t), BatchLimit: int64(limit)})
+	ids, err := q.ListExpiredUserTokens(ctx, identitygen.ListExpiredUserTokensParams{ExpiredBefore: toMillis(t), BatchLimit: int64(limit)})
 	if err != nil {
 		return 0, wrap(err, "list expired user tokens")
 	}

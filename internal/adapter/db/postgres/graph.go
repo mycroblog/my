@@ -6,7 +6,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/mycroblog/my/internal/adapter/db/postgres/postgresgen"
+	"github.com/mycroblog/my/internal/adapter/db/postgres/graphgen"
 	appgraph "github.com/mycroblog/my/internal/app/graph"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/graph"
@@ -28,7 +28,7 @@ func (r *GraphRepository) InsertFollow(ctx context.Context, tx uow.Tx, f graph.F
 	if err != nil {
 		return err
 	}
-	return wrap(q.InsertFollow(ctx, postgresgen.InsertFollowParams{
+	return wrap(q.InsertFollow(ctx, graphgen.InsertFollowParams{
 		ID: f.ID, Uri: f.URI, FollowerAccountID: f.FollowerAccountID, FolloweeAccountID: f.FolloweeAccountID,
 		RequestedAt: f.RequestedAt,
 	}), "insert follow")
@@ -48,7 +48,7 @@ func (r *GraphRepository) InsertAcceptance(ctx context.Context, tx uow.Tx, a gra
 	if err != nil {
 		return err
 	}
-	err = q.InsertFollowAcceptance(ctx, postgresgen.InsertFollowAcceptanceParams{
+	err = q.InsertFollowAcceptance(ctx, graphgen.InsertFollowAcceptanceParams{
 		FollowID: a.FollowID, AcceptedBy: string(a.AcceptedBy), ActivityUri: toNullString(a.ActivityURI),
 		AcceptedAt: a.AcceptedAt,
 	})
@@ -61,7 +61,7 @@ func (r *GraphRepository) InsertRejection(ctx context.Context, tx uow.Tx, rej gr
 	if err != nil {
 		return err
 	}
-	err = q.InsertFollowRejection(ctx, postgresgen.InsertFollowRejectionParams{
+	err = q.InsertFollowRejection(ctx, graphgen.InsertFollowRejectionParams{
 		FollowID: rej.FollowID, RejectedBy: string(rej.RejectedBy), ActivityUri: toNullString(rej.ActivityURI),
 		RejectedAt: rej.RejectedAt,
 	})
@@ -74,7 +74,7 @@ func (r *GraphRepository) InsertTermination(ctx context.Context, tx uow.Tx, t gr
 	if err != nil {
 		return err
 	}
-	err = q.InsertFollowTermination(ctx, postgresgen.InsertFollowTerminationParams{
+	err = q.InsertFollowTermination(ctx, graphgen.InsertFollowTerminationParams{
 		FollowID: t.FollowID, Reason: string(t.Reason), TerminatedAt: t.TerminatedAt,
 	})
 	return alreadyRecorded(err, "follow_terminations", t.FollowID)
@@ -86,12 +86,12 @@ func (r *GraphRepository) UpsertPreferences(ctx context.Context, tx uow.Tx, p gr
 	if err != nil {
 		return err
 	}
-	return wrap(q.UpsertFollowPreferences(ctx, postgresgen.UpsertFollowPreferencesParams{
+	return wrap(q.UpsertFollowPreferences(ctx, graphgen.UpsertFollowPreferencesParams{
 		FollowID: p.FollowID, ShowBoosts: p.ShowBoosts,
 	}), "upsert follow preferences")
 }
 
-func followFrom(row postgresgen.Follow) graph.Follow {
+func followFrom(row graphgen.Follow) graph.Follow {
 	return graph.Follow{
 		ID: row.ID, URI: row.Uri, FollowerAccountID: row.FollowerAccountID, FolloweeAccountID: row.FolloweeAccountID,
 		RequestedAt: utc(row.RequestedAt),
@@ -133,7 +133,7 @@ func (r *GraphRepository) FindFollow(ctx context.Context, id string) (graph.Foll
 	return followFrom(row), nil
 }
 
-func preferencesFrom(row postgresgen.FollowPreference) graph.Preferences {
+func preferencesFrom(row graphgen.FollowPreference) graph.Preferences {
 	return graph.Preferences{FollowID: row.FollowID, ShowBoosts: row.ShowBoosts}
 }
 
@@ -151,7 +151,7 @@ func (r *GraphRepository) FindPreferences(ctx context.Context, followID string) 
 	return findPreferences(ctx, r.db.reader(), followID)
 }
 
-func findPreferences(ctx context.Context, q *postgresgen.Queries, followID string) (graph.Preferences, error) {
+func findPreferences(ctx context.Context, q *genQueries, followID string) (graph.Preferences, error) {
 	row, err := q.GetFollowPreferences(ctx, followID)
 	if err != nil {
 		return graph.Preferences{}, notFound(err, appgraph.ErrNotFound, "follow preferences "+followID)
@@ -159,14 +159,14 @@ func findPreferences(ctx context.Context, q *postgresgen.Queries, followID strin
 	return preferencesFrom(row), nil
 }
 
-func edgeFrom(row postgresgen.FollowEdge) graph.Edge {
+func edgeFrom(row graphgen.FollowEdge) graph.Edge {
 	return graph.Edge{
 		FollowerAccountID: row.FollowerAccountID, FolloweeAccountID: row.FolloweeAccountID, FollowID: row.FollowID,
 		State: graph.State(row.State), Since: utc(row.Since),
 	}
 }
 
-func edgesFrom(rows []postgresgen.FollowEdge) []graph.Edge {
+func edgesFrom(rows []graphgen.FollowEdge) []graph.Edge {
 	out := make([]graph.Edge, len(rows))
 	for i, row := range rows {
 		out[i] = edgeFrom(row)
@@ -201,8 +201,8 @@ func (r *GraphRepository) FindEdge(ctx context.Context, followerAccountID, follo
 	return findEdge(ctx, r.db.reader(), followerAccountID, followeeAccountID)
 }
 
-func findEdge(ctx context.Context, q *postgresgen.Queries, followerAccountID, followeeAccountID string) (graph.Edge, error) {
-	row, err := q.GetFollowEdge(ctx, postgresgen.GetFollowEdgeParams{
+func findEdge(ctx context.Context, q *genQueries, followerAccountID, followeeAccountID string) (graph.Edge, error) {
+	row, err := q.GetFollowEdge(ctx, graphgen.GetFollowEdgeParams{
 		FollowerAccountID: followerAccountID, FolloweeAccountID: followeeAccountID,
 	})
 	if err != nil {
@@ -217,7 +217,7 @@ func (r *GraphRepository) InsertEdge(ctx context.Context, tx uow.Tx, e graph.Edg
 	if err != nil {
 		return false, err
 	}
-	n, err := q.InsertFollowEdge(ctx, postgresgen.InsertFollowEdgeParams{
+	n, err := q.InsertFollowEdge(ctx, graphgen.InsertFollowEdgeParams{
 		FollowerAccountID: e.FollowerAccountID, FolloweeAccountID: e.FolloweeAccountID, FollowID: e.FollowID,
 		State: string(e.State), Since: e.Since,
 	})
@@ -233,7 +233,7 @@ func (r *GraphRepository) UpdateEdge(ctx context.Context, tx uow.Tx, e graph.Edg
 	if err != nil {
 		return false, err
 	}
-	n, err := q.UpdateFollowEdge(ctx, postgresgen.UpdateFollowEdgeParams{
+	n, err := q.UpdateFollowEdge(ctx, graphgen.UpdateFollowEdgeParams{
 		FollowerAccountID: e.FollowerAccountID, FolloweeAccountID: e.FolloweeAccountID, FollowID: e.FollowID,
 		State: string(e.State), Since: e.Since, FromState: string(from),
 	})
@@ -249,7 +249,7 @@ func (r *GraphRepository) DeleteEdge(ctx context.Context, tx uow.Tx, followerAcc
 	if err != nil {
 		return false, err
 	}
-	n, err := q.DeleteFollowEdge(ctx, postgresgen.DeleteFollowEdgeParams{
+	n, err := q.DeleteFollowEdge(ctx, graphgen.DeleteFollowEdgeParams{
 		FollowerAccountID: followerAccountID, FolloweeAccountID: followeeAccountID, FollowID: followID, State: string(state),
 	})
 	if err != nil {
@@ -273,14 +273,14 @@ func (r *GraphRepository) AddCounters(ctx context.Context, tx uow.Tx, accountID 
 	if err != nil {
 		return err
 	}
-	n, err := q.AddToFollowCounters(ctx, postgresgen.AddToFollowCountersParams{
+	n, err := q.AddToFollowCounters(ctx, graphgen.AddToFollowCountersParams{
 		AccountID: accountID, FollowersCount: followersDelta, FollowingCount: followingDelta,
 	})
 	if err != nil {
 		return wrap(err, "add to follow counters")
 	}
 	if n == 0 {
-		err = q.AddFollowCounters(ctx, postgresgen.AddFollowCountersParams{
+		err = q.AddFollowCounters(ctx, graphgen.AddFollowCountersParams{
 			AccountID: accountID, FollowersCount: followersDelta, FollowingCount: followingDelta,
 		})
 		if err != nil {
@@ -296,7 +296,7 @@ func (r *GraphRepository) UpsertCounters(ctx context.Context, tx uow.Tx, c graph
 	if err != nil {
 		return err
 	}
-	return wrap(q.UpsertFollowCounters(ctx, postgresgen.UpsertFollowCountersParams(c)), "upsert follow counters")
+	return wrap(q.UpsertFollowCounters(ctx, graphgen.UpsertFollowCountersParams(c)), "upsert follow counters")
 }
 
 // DeleteAllCounters implements graph.Repository.
@@ -380,7 +380,7 @@ func (r *GraphRepository) FindCounters(ctx context.Context, accountID string) (g
 
 // CountFollowers implements graph.Repository.
 func (r *GraphRepository) CountFollowers(ctx context.Context, followeeAccountID string, state graph.State) (int64, error) {
-	n, err := r.db.reader().CountFollowersInState(ctx, postgresgen.CountFollowersInStateParams{AccountID: followeeAccountID, State: string(state)})
+	n, err := r.db.reader().CountFollowersInState(ctx, graphgen.CountFollowersInStateParams{AccountID: followeeAccountID, State: string(state)})
 	if err != nil {
 		return 0, wrap(err, "count followers")
 	}
@@ -393,7 +393,7 @@ func (r *GraphRepository) ListFollowers(ctx context.Context, followeeAccountID s
 	if err != nil {
 		return nil, err
 	}
-	rows, err := r.db.reader().ListFollowersPage(ctx, postgresgen.ListFollowersPageParams{
+	rows, err := r.db.reader().ListFollowersPage(ctx, graphgen.ListFollowersPageParams{
 		AccountID: followeeAccountID, State: string(state), Before: toNullString(before), PageLimit: n,
 	})
 	if err != nil {
@@ -408,7 +408,7 @@ func (r *GraphRepository) ListFollowing(ctx context.Context, followerAccountID s
 	if err != nil {
 		return nil, err
 	}
-	rows, err := r.db.reader().ListFollowingPage(ctx, postgresgen.ListFollowingPageParams{
+	rows, err := r.db.reader().ListFollowingPage(ctx, graphgen.ListFollowingPageParams{
 		AccountID: followerAccountID, State: string(state), Before: toNullString(before), PageLimit: n,
 	})
 	if err != nil {

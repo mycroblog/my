@@ -6,7 +6,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/mycroblog/my/internal/adapter/db/sqlite/sqlitegen"
+	"github.com/mycroblog/my/internal/adapter/db/sqlite/identitygen"
 	appidentity "github.com/mycroblog/my/internal/app/identity"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/identity"
@@ -18,7 +18,7 @@ func (r *IdentityRepository) InsertSession(ctx context.Context, tx uow.Tx, s ide
 	if err != nil {
 		return err
 	}
-	err = q.InsertSession(ctx, sqlitegen.InsertSessionParams{
+	err = q.InsertSession(ctx, identitygen.InsertSessionParams{
 		ID: s.ID, UserID: s.UserID, TokenHash: s.TokenHash,
 		CreatedAt: toMillis(s.CreatedAt), ExpiresAt: toMillis(s.ExpiresAt),
 	})
@@ -31,7 +31,7 @@ func (r *IdentityRepository) InsertSessionRevocation(ctx context.Context, tx uow
 	if err != nil {
 		return err
 	}
-	err = q.InsertSessionRevocationIfAbsent(ctx, sqlitegen.InsertSessionRevocationIfAbsentParams{
+	err = q.InsertSessionRevocationIfAbsent(ctx, identitygen.InsertSessionRevocationIfAbsentParams{
 		SessionID: rev.SessionID, Reason: string(rev.Reason), RevokedAt: toMillis(rev.RevokedAt),
 	})
 	return wrap(err, "insert session revocation")
@@ -43,7 +43,7 @@ func (r *IdentityRepository) UpsertSessionActivity(ctx context.Context, tx uow.T
 	if err != nil {
 		return err
 	}
-	err = q.UpsertSessionActivity(ctx, sqlitegen.UpsertSessionActivityParams{SessionID: a.SessionID, LastSeenAt: toMillis(a.LastSeenAt)})
+	err = q.UpsertSessionActivity(ctx, identitygen.UpsertSessionActivityParams{SessionID: a.SessionID, LastSeenAt: toMillis(a.LastSeenAt)})
 	return wrap(err, "upsert session activity")
 }
 
@@ -70,6 +70,6 @@ func (r *IdentityRepository) RevokeSessionsOfUser(ctx context.Context, tx uow.Tx
 	if err != nil {
 		return err
 	}
-	err = q.RevokeSessionsOfUser(ctx, sqlitegen.RevokeSessionsOfUserParams{Reason: string(reason), RevokedAt: toMillis(at), UserID: userID})
+	err = q.RevokeSessionsOfUser(ctx, identitygen.RevokeSessionsOfUserParams{Reason: string(reason), RevokedAt: toMillis(at), UserID: userID})
 	return wrap(err, "revoke the sessions of a user")
 }

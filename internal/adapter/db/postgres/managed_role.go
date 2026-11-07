@@ -5,7 +5,7 @@ package postgres
 import (
 	"context"
 
-	"github.com/mycroblog/my/internal/adapter/db/postgres/postgresgen"
+	"github.com/mycroblog/my/internal/adapter/db/postgres/identitygen"
 	appidentity "github.com/mycroblog/my/internal/app/identity"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/identity"
@@ -39,7 +39,7 @@ func (r *IdentityRepository) InsertManagedRole(ctx context.Context, tx uow.Tx, m
 	if err != nil {
 		return err
 	}
-	return wrap(q.InsertManagedRole(ctx, postgresgen.InsertManagedRoleParams{
+	return wrap(q.InsertManagedRole(ctx, identitygen.InsertManagedRoleParams{
 		RoleID: m.RoleID, Manager: string(m.Manager), CreatedAt: m.CreatedAt,
 	}), "insert managed role")
 }

@@ -16,7 +16,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 
-	"github.com/mycroblog/my/internal/adapter/db/postgres/postgresgen"
+	"github.com/mycroblog/my/internal/adapter/db/postgres/identitygen"
 	"github.com/mycroblog/my/internal/adapter/payment/fake"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/pkg/testkit"
@@ -40,8 +40,8 @@ func newTestDB(t *testing.T, opts uow.Options) *DB {
 
 // The UnitOfWork contract uses users as its probe table: a row per key, keyed by id.
 
-func insertProbe(ctx context.Context, q *postgresgen.Queries, key string) error {
-	return q.InsertUser(ctx, postgresgen.InsertUserParams{ID: key, CreatedAt: time.UnixMilli(0)})
+func insertProbe(ctx context.Context, q *genQueries, key string) error {
+	return q.InsertUser(ctx, identitygen.InsertUserParams{ID: key, CreatedAt: time.UnixMilli(0)})
 }
 
 func probeKeys(ctx context.Context, db *DB) ([]string, error) {
@@ -318,7 +318,7 @@ func TestAccountSearchContract(t *testing.T) {
 }
 
 // TestAccountSearchUsesTermIndex checks that the range of the prefix search (SearchAccountTerms
-// in queries/postgres/account_search.sql) can read account_search_terms through its term index
+// in queries/postgres/account/account_search.sql) can read account_search_terms through its term index
 // in order (ADR-0092 §1): term is COLLATE "C", so the range and the order are the index's.
 // Sequential and bitmap scans are off, since the planner prefers them on an empty table.
 func TestAccountSearchUsesTermIndex(t *testing.T) {
@@ -511,7 +511,7 @@ func TestRetriesDeadlocks(t *testing.T) {
 		defer mu.Unlock()
 		retries = append(retries, err)
 	}}})
-	setup := postgresgen.New(db.pool)
+	setup := newGenQueries(db.pool)
 	x, y := testkit.NamedID("x"), testkit.NamedID("y")
 	for _, name := range []string{x, y} {
 		if err := insertProbe(t.Context(), setup, name); err != nil {

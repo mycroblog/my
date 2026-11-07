@@ -5,7 +5,7 @@ package sqlite
 import (
 	"context"
 
-	"github.com/mycroblog/my/internal/adapter/db/sqlite/sqlitegen"
+	"github.com/mycroblog/my/internal/adapter/db/sqlite/instancegen"
 	appinstance "github.com/mycroblog/my/internal/app/instance"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/instance"
@@ -17,7 +17,7 @@ func (r *InstanceRepository) InsertSecret(ctx context.Context, tx uow.Tx, s inst
 	if err != nil {
 		return false, err
 	}
-	n, err := q.InsertInstanceSecret(ctx, sqlitegen.InsertInstanceSecretParams{
+	n, err := q.InsertInstanceSecret(ctx, instancegen.InsertInstanceSecretParams{
 		ID: s.ID, Name: string(s.Name), SealedSecret: s.Sealed, CreatedAt: toMillis(s.CreatedAt),
 	})
 	return n > 0, wrap(err, "insert instance secret")

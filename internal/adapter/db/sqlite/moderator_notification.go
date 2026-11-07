@@ -6,7 +6,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/mycroblog/my/internal/adapter/db/sqlite/sqlitegen"
+	"github.com/mycroblog/my/internal/adapter/db/sqlite/moderationgen"
 	appmoderation "github.com/mycroblog/my/internal/app/moderation"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/identity"
@@ -22,7 +22,7 @@ func (r *ModerationRepository) HasOtherOpenReportOf(ctx context.Context, tx uow.
 	if err != nil {
 		return false, err
 	}
-	ok, err := q.HasOtherOpenReportOf(ctx, sqlitegen.HasOtherOpenReportOfParams{TargetAccountID: targetAccountID, ReportID: reportID})
+	ok, err := q.HasOtherOpenReportOf(ctx, moderationgen.HasOtherOpenReportOfParams{TargetAccountID: targetAccountID, ReportID: reportID})
 	return ok, wrap(err, "find other open reports")
 }
 

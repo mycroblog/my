@@ -6,7 +6,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/mycroblog/my/internal/adapter/db/postgres/postgresgen"
+	"github.com/mycroblog/my/internal/adapter/db/postgres/identitygen"
 	appidentity "github.com/mycroblog/my/internal/app/identity"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/identity"
@@ -18,7 +18,7 @@ func (r *IdentityRepository) InsertDataExport(ctx context.Context, tx uow.Tx, e 
 	if err != nil {
 		return err
 	}
-	err = q.InsertDataExport(ctx, postgresgen.InsertDataExportParams{ID: e.ID, UserID: e.UserID, RequestedAt: e.RequestedAt})
+	err = q.InsertDataExport(ctx, identitygen.InsertDataExportParams{ID: e.ID, UserID: e.UserID, RequestedAt: e.RequestedAt})
 	return wrap(err, "insert data export")
 }
 
@@ -47,7 +47,7 @@ func (r *IdentityRepository) InsertDataExportResult(ctx context.Context, tx uow.
 	if _, err := q.LockDataExport(ctx, res.ExportID); err != nil {
 		return false, notFound(err, appidentity.ErrNotFound, "data export")
 	}
-	p := postgresgen.InsertDataExportResultParams{
+	p := identitygen.InsertDataExportResultParams{
 		ExportID: res.ExportID, Outcome: string(res.Outcome), BlobKey: toNullString(res.BlobKey),
 		ExpiresAt: res.ExpiresAt, CompletedAt: res.CompletedAt,
 	}
@@ -65,7 +65,7 @@ func (r *IdentityRepository) ListStalePendingDataExports(ctx context.Context, t 
 	if err != nil {
 		return nil, err
 	}
-	ids, err := r.db.reader().ListStalePendingDataExports(ctx, postgresgen.ListStalePendingDataExportsParams{RequestedBefore: t, BatchLimit: n})
+	ids, err := r.db.reader().ListStalePendingDataExports(ctx, identitygen.ListStalePendingDataExportsParams{RequestedBefore: t, BatchLimit: n})
 	return ids, wrap(err, "list stale pending data exports")
 }
 
@@ -75,7 +75,7 @@ func (r *IdentityRepository) FindDataExport(ctx context.Context, id string) (ide
 	if err != nil {
 		return identity.DataExport{}, notFound(err, appidentity.ErrNotFound, "data export")
 	}
-	return dataExport(postgresgen.ListDataExportsRow(row)), nil
+	return dataExport(identitygen.ListDataExportsRow(row)), nil
 }
 
 // ListDataExports implements identity.ExportRepository.
@@ -84,7 +84,7 @@ func (r *IdentityRepository) ListDataExports(ctx context.Context, userID string,
 	if err != nil {
 		return nil, err
 	}
-	rows, err := r.db.reader().ListDataExports(ctx, postgresgen.ListDataExportsParams{UserID: userID, BatchLimit: n})
+	rows, err := r.db.reader().ListDataExports(ctx, identitygen.ListDataExportsParams{UserID: userID, BatchLimit: n})
 	if err != nil {
 		return nil, wrap(err, "list data exports")
 	}
@@ -101,14 +101,14 @@ func (r *IdentityRepository) ListExpiredDataExports(ctx context.Context, t time.
 	if err != nil {
 		return nil, err
 	}
-	rows, err := r.db.reader().ListExpiredDataExports(ctx, postgresgen.ListExpiredDataExportsParams{ExpiresBefore: t, BatchLimit: n})
+	rows, err := r.db.reader().ListExpiredDataExports(ctx, identitygen.ListExpiredDataExportsParams{ExpiresBefore: t, BatchLimit: n})
 	if err != nil {
 		return nil, wrap(err, "list expired data exports")
 	}
 	out := make([]identity.DataExport, 0, len(rows))
 	for _, row := range rows {
 		outcome, expires, completed := row.Outcome, row.ExpiresAt, row.CompletedAt
-		out = append(out, dataExport(postgresgen.ListDataExportsRow{
+		out = append(out, dataExport(identitygen.ListDataExportsRow{
 			ID: row.ID, UserID: row.UserID, RequestedAt: row.RequestedAt, Outcome: &outcome, BlobKey: row.BlobKey,
 			FileSize: row.FileSize, ExpiresAt: &expires, CompletedAt: &completed,
 		}))
@@ -130,7 +130,7 @@ func (r *IdentityRepository) DeleteDataExport(ctx context.Context, tx uow.Tx, id
 	return wrap(q.DeleteDataExportResult(ctx, id), "delete data export result")
 }
 
-func dataExport(row postgresgen.ListDataExportsRow) identity.DataExport {
+func dataExport(row identitygen.ListDataExportsRow) identity.DataExport {
 	e := identity.DataExport{ID: row.ID, UserID: row.UserID, RequestedAt: utc(row.RequestedAt)}
 	if row.Outcome != nil && row.ExpiresAt != nil && row.CompletedAt != nil {
 		res := &identity.DataExportResult{

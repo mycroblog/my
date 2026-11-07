@@ -12,7 +12,8 @@ nothing is left to apply (`db:check`). Never write migration SQL by hand.
   adapters own.
 - Atlas (`file://schema/<dialect>`), sqlc (`sqlc.yaml`), and the Go embedding (`schema.go`) read the files in name order, so a
   statement may only use what an earlier statement or file creates: an index or comment goes after its table. Number a new
-  module's file after the files it depends on.
+  module's file after the files it depends on. sqlc's entry of a module reads only the files of that module and of the modules
+  it depends on, so its queries can join only those tables; a new module gets an entry in `sqlc.yaml`.
 - A table, its indexes, and its comments go in the file of the module that owns the table, also when an index serves
   another module's queries.
 - Edit the same file in every dialect together: both directories have the same files, and each file declares the same

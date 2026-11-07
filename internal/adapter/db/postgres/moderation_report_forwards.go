@@ -5,7 +5,7 @@ package postgres
 import (
 	"context"
 
-	"github.com/mycroblog/my/internal/adapter/db/postgres/postgresgen"
+	"github.com/mycroblog/my/internal/adapter/db/postgres/moderationgen"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/moderation"
 )
@@ -16,7 +16,7 @@ func (r *ModerationRepository) InsertReportForward(ctx context.Context, tx uow.T
 	if err != nil {
 		return false, err
 	}
-	n, err := q.InsertReportForward(ctx, postgresgen.InsertReportForwardParams{
+	n, err := q.InsertReportForward(ctx, moderationgen.InsertReportForwardParams{
 		ID: f.ID, ReportID: f.ReportID, Comment: f.Comment, ForwardedByUserID: toNullString(f.ForwardedByUserID), ForwardedAt: f.ForwardedAt,
 	})
 	return n > 0, wrap(err, "insert report forward")

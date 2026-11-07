@@ -6,7 +6,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/mycroblog/my/internal/adapter/db/sqlite/sqlitegen"
+	"github.com/mycroblog/my/internal/adapter/db/sqlite/identitygen"
 	appidentity "github.com/mycroblog/my/internal/app/identity"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/identity"
@@ -18,7 +18,7 @@ func (r *IdentityRepository) UpsertOAuthClientMetadataDocument(ctx context.Conte
 	if err != nil {
 		return err
 	}
-	err = q.UpsertOAuthClientMetadataDocument(ctx, sqlitegen.UpsertOAuthClientMetadataDocumentParams{
+	err = q.UpsertOAuthClientMetadataDocument(ctx, identitygen.UpsertOAuthClientMetadataDocumentParams{
 		OauthClientID: d.ClientID, ClientName: d.Name, ClientUri: d.Website, LogoUri: d.LogoURI, Scope: string(d.Scope),
 		FetchedAt: toMillis(d.FetchedAt), ExpiresAt: toMillis(d.ExpiresAt),
 	})
@@ -43,7 +43,7 @@ func (r *IdentityRepository) InsertOAuthClientHostDenial(ctx context.Context, tx
 	if err != nil {
 		return false, err
 	}
-	n, err := q.InsertOAuthClientHostDenialIfAllowed(ctx, sqlitegen.InsertOAuthClientHostDenialIfAllowedParams{
+	n, err := q.InsertOAuthClientHostDenialIfAllowed(ctx, identitygen.InsertOAuthClientHostDenialIfAllowedParams{
 		ID: d.ID, Host: d.Host, DeniedByUserID: toNullString(d.DeniedByUserID), DeniedAt: toMillis(d.DeniedAt),
 	})
 	return n == 1, wrap(err, "insert oauth client host denial")
@@ -70,7 +70,7 @@ func (r *IdentityRepository) LiftOAuthClientHostDenials(ctx context.Context, tx 
 	if err != nil {
 		return false, err
 	}
-	n, err := q.LiftOAuthClientHostDenials(ctx, sqlitegen.LiftOAuthClientHostDenialsParams{
+	n, err := q.LiftOAuthClientHostDenials(ctx, identitygen.LiftOAuthClientHostDenialsParams{
 		LiftedByUserID: toNullString(byUserID), LiftedAt: toMillis(at), Host: host,
 	})
 	return n > 0, wrap(err, "lift oauth client host denials")
@@ -78,7 +78,7 @@ func (r *IdentityRepository) LiftOAuthClientHostDenials(ctx context.Context, tx 
 
 // ListOAuthClientHostDenials implements identity.Repository.
 func (r *IdentityRepository) ListOAuthClientHostDenials(ctx context.Context, before string, limit int) ([]identity.OAuthClientHostDenial, error) {
-	rows, err := r.db.reader().ListOAuthClientHostDenials(ctx, sqlitegen.ListOAuthClientHostDenialsParams{Before: before, PageLimit: int64(limit)})
+	rows, err := r.db.reader().ListOAuthClientHostDenials(ctx, identitygen.ListOAuthClientHostDenialsParams{Before: before, PageLimit: int64(limit)})
 	if err != nil {
 		return nil, wrap(err, "list oauth client host denials")
 	}

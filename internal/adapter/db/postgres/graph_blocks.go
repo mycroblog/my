@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/mycroblog/my/internal/adapter/db/postgres/postgresgen"
+	"github.com/mycroblog/my/internal/adapter/db/postgres/graphgen"
 	appgraph "github.com/mycroblog/my/internal/app/graph"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/graph"
@@ -32,7 +32,7 @@ func (r *GraphRepository) InsertBlock(ctx context.Context, tx uow.Tx, b graph.Bl
 	if err != nil {
 		return err
 	}
-	return wrap(q.InsertBlock(ctx, postgresgen.InsertBlockParams{
+	return wrap(q.InsertBlock(ctx, graphgen.InsertBlockParams{
 		ID: b.ID, Uri: toNullString(b.URI), BlockerAccountID: b.BlockerAccountID, BlockedAccountID: b.BlockedAccountID,
 		CreatedAt: b.CreatedAt,
 	}), "insert block")
@@ -44,7 +44,7 @@ func (r *GraphRepository) InsertBlockRetraction(ctx context.Context, tx uow.Tx, 
 	if err != nil {
 		return err
 	}
-	err = q.InsertBlockRetraction(ctx, postgresgen.InsertBlockRetractionParams{
+	err = q.InsertBlockRetraction(ctx, graphgen.InsertBlockRetractionParams{
 		BlockID: ret.BlockID, RetractedAt: ret.RetractedAt,
 	})
 	if isUniqueViolation(err, "block_retractions_pkey") {
@@ -53,7 +53,7 @@ func (r *GraphRepository) InsertBlockRetraction(ctx context.Context, tx uow.Tx, 
 	return wrap(err, "insert block_retractions")
 }
 
-func blockFrom(row postgresgen.Block) graph.Block {
+func blockFrom(row graphgen.Block) graph.Block {
 	return graph.Block{
 		ID: row.ID, URI: fromNullString(row.Uri), BlockerAccountID: row.BlockerAccountID, BlockedAccountID: row.BlockedAccountID,
 		CreatedAt: utc(row.CreatedAt),
@@ -73,7 +73,7 @@ func (r *GraphRepository) Block(ctx context.Context, tx uow.Tx, id string) (grap
 	return blockFrom(row), nil
 }
 
-func blockEdgesFrom(rows []postgresgen.BlockEdge) []graph.BlockEdge {
+func blockEdgesFrom(rows []graphgen.BlockEdge) []graph.BlockEdge {
 	out := make([]graph.BlockEdge, len(rows))
 	for i, row := range rows {
 		out[i] = graph.BlockEdge(row)
@@ -95,8 +95,8 @@ func (r *GraphRepository) FindBlockEdge(ctx context.Context, blockerAccountID, b
 	return findBlockEdge(ctx, r.db.reader(), blockerAccountID, blockedAccountID)
 }
 
-func findBlockEdge(ctx context.Context, q *postgresgen.Queries, blockerAccountID, blockedAccountID string) (graph.BlockEdge, error) {
-	row, err := q.GetBlockEdge(ctx, postgresgen.GetBlockEdgeParams{
+func findBlockEdge(ctx context.Context, q *genQueries, blockerAccountID, blockedAccountID string) (graph.BlockEdge, error) {
+	row, err := q.GetBlockEdge(ctx, graphgen.GetBlockEdgeParams{
 		BlockerAccountID: blockerAccountID, BlockedAccountID: blockedAccountID,
 	})
 	if err != nil {
@@ -111,7 +111,7 @@ func (r *GraphRepository) InsertBlockEdge(ctx context.Context, tx uow.Tx, e grap
 	if err != nil {
 		return false, err
 	}
-	n, err := q.InsertBlockEdge(ctx, postgresgen.InsertBlockEdgeParams(e))
+	n, err := q.InsertBlockEdge(ctx, graphgen.InsertBlockEdgeParams(e))
 	if err != nil {
 		return false, wrap(err, "insert block edge")
 	}
@@ -124,7 +124,7 @@ func (r *GraphRepository) DeleteBlockEdge(ctx context.Context, tx uow.Tx, blocke
 	if err != nil {
 		return err
 	}
-	return wrap(q.DeleteBlockEdge(ctx, postgresgen.DeleteBlockEdgeParams{
+	return wrap(q.DeleteBlockEdge(ctx, graphgen.DeleteBlockEdgeParams{
 		BlockerAccountID: blockerAccountID, BlockedAccountID: blockedAccountID, BlockID: blockID,
 	}), "delete block edge")
 }
@@ -150,7 +150,7 @@ func (r *GraphRepository) ListBlockHistories(ctx context.Context, tx uow.Tx) ([]
 	}
 	out := make([]graph.BlockHistory, len(rows))
 	for i, row := range rows {
-		h := graph.BlockHistory{Block: blockFrom(postgresgen.Block{
+		h := graph.BlockHistory{Block: blockFrom(graphgen.Block{
 			ID: row.ID, Uri: row.Uri, BlockerAccountID: row.BlockerAccountID, BlockedAccountID: row.BlockedAccountID,
 			CreatedAt: row.CreatedAt,
 		})}
@@ -177,7 +177,7 @@ func (r *GraphRepository) ListBlocking(ctx context.Context, blockerAccountID, be
 	if err != nil {
 		return nil, err
 	}
-	rows, err := r.db.reader().ListBlockingPage(ctx, postgresgen.ListBlockingPageParams{
+	rows, err := r.db.reader().ListBlockingPage(ctx, graphgen.ListBlockingPageParams{
 		AccountID: blockerAccountID, Before: toNullString(before), PageLimit: n,
 	})
 	if err != nil {
@@ -192,7 +192,7 @@ func (r *GraphRepository) UpsertMute(ctx context.Context, tx uow.Tx, m graph.Mut
 	if err != nil {
 		return err
 	}
-	return wrap(q.UpsertMute(ctx, postgresgen.UpsertMuteParams{
+	return wrap(q.UpsertMute(ctx, graphgen.UpsertMuteParams{
 		AccountID: m.AccountID, TargetAccountID: m.TargetAccountID, HideNotifications: m.HideNotifications,
 		ExpiresAt: m.ExpiresAt, CreatedAt: m.CreatedAt,
 	}), "upsert mute")
@@ -204,7 +204,7 @@ func (r *GraphRepository) DeleteMute(ctx context.Context, tx uow.Tx, accountID, 
 	if err != nil {
 		return false, err
 	}
-	rows, err := q.DeleteMute(ctx, postgresgen.DeleteMuteParams{AccountID: accountID, TargetAccountID: targetAccountID})
+	rows, err := q.DeleteMute(ctx, graphgen.DeleteMuteParams{AccountID: accountID, TargetAccountID: targetAccountID})
 	if err != nil {
 		return false, wrap(err, "delete mute")
 	}
@@ -221,7 +221,7 @@ func (r *GraphRepository) DeleteExpiredMutes(ctx context.Context, tx uow.Tx, now
 	if err != nil {
 		return nil, err
 	}
-	rows, err := q.DeleteExpiredMutes(ctx, postgresgen.DeleteExpiredMutesParams{Now: now, BatchLimit: n})
+	rows, err := q.DeleteExpiredMutes(ctx, graphgen.DeleteExpiredMutesParams{Now: now, BatchLimit: n})
 	if err != nil {
 		return nil, wrap(err, "delete expired mutes")
 	}
@@ -232,7 +232,7 @@ func (r *GraphRepository) DeleteExpiredMutes(ctx context.Context, tx uow.Tx, now
 	return out, nil
 }
 
-func muteFrom(row postgresgen.Mute) graph.Mute {
+func muteFrom(row graphgen.Mute) graph.Mute {
 	return graph.Mute{
 		AccountID: row.AccountID, TargetAccountID: row.TargetAccountID, HideNotifications: row.HideNotifications,
 		ExpiresAt: utcPtr(row.ExpiresAt), CreatedAt: utc(row.CreatedAt),
@@ -253,8 +253,8 @@ func (r *GraphRepository) FindMute(ctx context.Context, accountID, targetAccount
 	return activeMute(ctx, r.db.reader(), accountID, targetAccountID, now)
 }
 
-func activeMute(ctx context.Context, q *postgresgen.Queries, accountID, targetAccountID string, now time.Time) (graph.Mute, error) {
-	row, err := q.GetActiveMute(ctx, postgresgen.GetActiveMuteParams{
+func activeMute(ctx context.Context, q *genQueries, accountID, targetAccountID string, now time.Time) (graph.Mute, error) {
+	row, err := q.GetActiveMute(ctx, graphgen.GetActiveMuteParams{
 		AccountID: accountID, TargetAccountID: targetAccountID, Now: now,
 	})
 	if err != nil {
@@ -269,7 +269,7 @@ func (r *GraphRepository) ListMutes(ctx context.Context, accountID string, now t
 	if err != nil {
 		return nil, err
 	}
-	rows, err := r.db.reader().ListActiveMutesPage(ctx, postgresgen.ListActiveMutesPageParams{
+	rows, err := r.db.reader().ListActiveMutesPage(ctx, graphgen.ListActiveMutesPageParams{
 		AccountID: accountID, Now: now, BeforeTargetAccountID: toNullString(before.TargetAccountID),
 		BeforeCreatedAt: before.CreatedAt, PageLimit: n,
 	})
@@ -293,7 +293,7 @@ func (r *GraphRepository) BlockByURI(ctx context.Context, tx uow.Tx, uri string)
 	if err != nil {
 		return graph.BlockHistory{}, notFound(err, appgraph.ErrNotFound, "block "+uri)
 	}
-	h := graph.BlockHistory{Block: blockFrom(postgresgen.Block{
+	h := graph.BlockHistory{Block: blockFrom(graphgen.Block{
 		ID: row.ID, Uri: row.Uri, BlockerAccountID: row.BlockerAccountID, BlockedAccountID: row.BlockedAccountID,
 		CreatedAt: row.CreatedAt,
 	})}
@@ -318,7 +318,7 @@ func (r *GraphRepository) ListBlockers(ctx context.Context, blockedAccountID, af
 	if err != nil {
 		return nil, err
 	}
-	rows, err := r.db.reader().ListBlockersPage(ctx, postgresgen.ListBlockersPageParams{
+	rows, err := r.db.reader().ListBlockersPage(ctx, graphgen.ListBlockersPageParams{
 		AccountID: blockedAccountID, After: toNullString(after), PageLimit: n,
 	})
 	if err != nil {
@@ -333,7 +333,7 @@ func (r *GraphRepository) ListMuters(ctx context.Context, targetAccountID string
 	if err != nil {
 		return nil, err
 	}
-	rows, err := r.db.reader().ListActiveMutersPage(ctx, postgresgen.ListActiveMutersPageParams{
+	rows, err := r.db.reader().ListActiveMutersPage(ctx, graphgen.ListActiveMutersPageParams{
 		TargetAccountID: targetAccountID, Now: now, After: toNullString(after), PageLimit: n,
 	})
 	if err != nil {

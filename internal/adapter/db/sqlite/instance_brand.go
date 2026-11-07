@@ -5,7 +5,7 @@ package sqlite
 import (
 	"context"
 
-	"github.com/mycroblog/my/internal/adapter/db/sqlite/sqlitegen"
+	"github.com/mycroblog/my/internal/adapter/db/sqlite/instancegen"
 	appinstance "github.com/mycroblog/my/internal/app/instance"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/instance"
@@ -17,7 +17,7 @@ func (r *InstanceRepository) InsertBrandRevision(ctx context.Context, tx uow.Tx,
 	if err != nil {
 		return err
 	}
-	err = q.InsertInstanceBrandRevision(ctx, sqlitegen.InsertInstanceBrandRevisionParams{
+	err = q.InsertInstanceBrandRevision(ctx, instancegen.InsertInstanceBrandRevisionParams{
 		ID: rev.ID, Kind: string(rev.Kind), Action: string(rev.Action), BackgroundColor: toNullString(rev.Background),
 		RevisedByUserID: toNullString(rev.RevisedByUserID), RevisedAt: toMillis(rev.RevisedAt),
 	})
@@ -25,7 +25,7 @@ func (r *InstanceRepository) InsertBrandRevision(ctx context.Context, tx uow.Tx,
 		return wrap(err, "insert instance brand revision")
 	}
 	for _, f := range rev.Files {
-		err := q.InsertInstanceBrandFile(ctx, sqlitegen.InsertInstanceBrandFileParams{
+		err := q.InsertInstanceBrandFile(ctx, instancegen.InsertInstanceBrandFileParams{
 			RevisionID: rev.ID, Rendition: string(f.Rendition), BlobKey: f.Key, ContentType: f.ContentType,
 			Width: int64(f.Width), Height: int64(f.Height), FileSize: f.Size, Sha256: f.SHA256,
 		})
@@ -55,7 +55,7 @@ func (r *InstanceRepository) UpsertBrandHead(ctx context.Context, tx uow.Tx, h i
 	if err != nil {
 		return err
 	}
-	return wrap(q.UpsertInstanceBrandHead(ctx, sqlitegen.UpsertInstanceBrandHeadParams{Kind: string(h.Kind), RevisionID: h.RevisionID}), "upsert instance brand")
+	return wrap(q.UpsertInstanceBrandHead(ctx, instancegen.UpsertInstanceBrandHeadParams{Kind: string(h.Kind), RevisionID: h.RevisionID}), "upsert instance brand")
 }
 
 // DeleteBrandHead implements instance.BrandRepository.
@@ -116,7 +116,7 @@ func (r *InstanceRepository) FindBrandRevision(ctx context.Context, id string) (
 	return findBrandRevision(ctx, r.db.reader(), id)
 }
 
-func findBrandRevision(ctx context.Context, q *sqlitegen.Queries, id string) (instance.BrandRevision, error) {
+func findBrandRevision(ctx context.Context, q *genQueries, id string) (instance.BrandRevision, error) {
 	row, err := q.GetInstanceBrandRevision(ctx, id)
 	if err != nil {
 		return instance.BrandRevision{}, notFound(err, appinstance.ErrNotFound, "instance brand revision "+id)

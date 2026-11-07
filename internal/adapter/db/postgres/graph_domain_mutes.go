@@ -5,7 +5,7 @@ package postgres
 import (
 	"context"
 
-	"github.com/mycroblog/my/internal/adapter/db/postgres/postgresgen"
+	"github.com/mycroblog/my/internal/adapter/db/postgres/graphgen"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/graph"
 )
@@ -16,7 +16,7 @@ func (r *GraphRepository) InsertDomainMute(ctx context.Context, tx uow.Tx, m gra
 	if err != nil {
 		return false, err
 	}
-	rows, err := q.InsertDomainMute(ctx, postgresgen.InsertDomainMuteParams{AccountID: m.AccountID, Domain: m.Domain, CreatedAt: m.CreatedAt})
+	rows, err := q.InsertDomainMute(ctx, graphgen.InsertDomainMuteParams{AccountID: m.AccountID, Domain: m.Domain, CreatedAt: m.CreatedAt})
 	if err != nil {
 		return false, wrap(err, "insert domain mute")
 	}
@@ -29,7 +29,7 @@ func (r *GraphRepository) DeleteDomainMute(ctx context.Context, tx uow.Tx, accou
 	if err != nil {
 		return false, err
 	}
-	rows, err := q.DeleteDomainMute(ctx, postgresgen.DeleteDomainMuteParams{AccountID: accountID, Domain: domain})
+	rows, err := q.DeleteDomainMute(ctx, graphgen.DeleteDomainMuteParams{AccountID: accountID, Domain: domain})
 	if err != nil {
 		return false, wrap(err, "delete domain mute")
 	}
@@ -52,7 +52,7 @@ func (r *GraphRepository) ListDomainMutes(ctx context.Context, accountID, after 
 	if err != nil {
 		return nil, err
 	}
-	rows, err := r.db.reader().ListDomainMutesPage(ctx, postgresgen.ListDomainMutesPageParams{
+	rows, err := r.db.reader().ListDomainMutesPage(ctx, graphgen.ListDomainMutesPageParams{
 		AccountID: accountID, BeforeDomain: after, PageLimit: n,
 	})
 	if err != nil {
@@ -74,7 +74,7 @@ func (r *GraphRepository) ListAllDomainMutes(ctx context.Context, tx uow.Tx) ([]
 	return domainMutesFrom(rows), nil
 }
 
-func domainMutesFrom(rows []postgresgen.AccountDomainMute) []graph.DomainMute {
+func domainMutesFrom(rows []graphgen.AccountDomainMute) []graph.DomainMute {
 	out := make([]graph.DomainMute, len(rows))
 	for i, row := range rows {
 		out[i] = graph.DomainMute{AccountID: row.AccountID, Domain: row.Domain, CreatedAt: utc(row.CreatedAt)}
@@ -87,6 +87,6 @@ func (r *GraphRepository) MutesAnyDomain(ctx context.Context, accountID string, 
 	if len(domains) == 0 {
 		return false, nil
 	}
-	muted, err := r.db.reader().MutesAnyDomain(ctx, postgresgen.MutesAnyDomainParams{AccountID: accountID, Domains: domains})
+	muted, err := r.db.reader().MutesAnyDomain(ctx, graphgen.MutesAnyDomainParams{AccountID: accountID, Domains: domains})
 	return muted, wrap(err, "look up domain mutes")
 }

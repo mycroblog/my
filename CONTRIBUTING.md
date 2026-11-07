@@ -247,7 +247,9 @@ cd app/web && E2E_DEMO=1 bun run e2e --project=demo-chromium
 
 ## SQL and database tests
 
-- Queries are written per dialect in `queries/<dialect>/*.sql`, and [sqlc](https://sqlc.dev/) generates the Go code.
+- Queries are written per dialect and module in `queries/<dialect>/<module>/*.sql`, and [sqlc](https://sqlc.dev/)
+  generates the Go code of each module into `internal/adapter/db/<dialect>/<module>gen` (ADR-0153 §3). A query goes in
+  the module of the repository that runs it, and can read the tables of that module and of the modules it depends on.
   The configuration is `sqlc.yaml` and the sqlc version is pinned in `tools/go.mod`. The generated code is committed,
   and `scripts/task.sh check` fails when it is stale.
 

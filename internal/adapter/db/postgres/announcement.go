@@ -6,7 +6,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/mycroblog/my/internal/adapter/db/postgres/postgresgen"
+	"github.com/mycroblog/my/internal/adapter/db/postgres/instancegen"
 	appinstance "github.com/mycroblog/my/internal/app/instance"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/instance"
@@ -35,7 +35,7 @@ func (r *InstanceRepository) InsertAnnouncement(ctx context.Context, tx uow.Tx, 
 	if err != nil {
 		return err
 	}
-	return wrap(q.InsertAnnouncement(ctx, postgresgen.InsertAnnouncementParams{ID: id, CreatedAt: createdAt}), "insert announcement")
+	return wrap(q.InsertAnnouncement(ctx, instancegen.InsertAnnouncementParams{ID: id, CreatedAt: createdAt}), "insert announcement")
 }
 
 // InsertAnnouncementRevision implements appinstance.AnnouncementRepository.
@@ -44,7 +44,7 @@ func (r *InstanceRepository) InsertAnnouncementRevision(ctx context.Context, tx 
 	if err != nil {
 		return err
 	}
-	err = q.InsertAnnouncementRevision(ctx, postgresgen.InsertAnnouncementRevisionParams{
+	err = q.InsertAnnouncementRevision(ctx, instancegen.InsertAnnouncementRevisionParams{
 		ID: rev.ID, AnnouncementID: rev.AnnouncementID, Title: rev.Title, Body: rev.Body,
 		StartsAt: toNullTime(rev.StartsAt), EndsAt: toNullTime(rev.EndsAt),
 		RevisedByUserID: toNullString(rev.RevisedByUserID), RevisedAt: rev.RevisedAt,
@@ -58,7 +58,7 @@ func (r *InstanceRepository) InsertAnnouncementStateChange(ctx context.Context, 
 	if err != nil {
 		return err
 	}
-	err = q.InsertAnnouncementStateChange(ctx, postgresgen.InsertAnnouncementStateChangeParams{
+	err = q.InsertAnnouncementStateChange(ctx, instancegen.InsertAnnouncementStateChangeParams{
 		ID: c.ID, AnnouncementID: c.AnnouncementID, State: string(c.State),
 		ChangedByUserID: toNullString(c.ChangedByUserID), ChangedAt: c.ChangedAt,
 	})
@@ -87,7 +87,7 @@ func (r *InstanceRepository) UpsertAnnouncementHead(ctx context.Context, tx uow.
 	if err != nil {
 		return err
 	}
-	err = q.UpsertAnnouncementHead(ctx, postgresgen.UpsertAnnouncementHeadParams{
+	err = q.UpsertAnnouncementHead(ctx, instancegen.UpsertAnnouncementHeadParams{
 		AnnouncementID: h.AnnouncementID, RevisionID: h.RevisionID, State: string(h.State), PublishedAt: toNullTime(h.PublishedAt),
 	})
 	return wrap(err, "upsert announcement head")
@@ -153,25 +153,25 @@ func (r *InstanceRepository) FindAnnouncement(ctx context.Context, id string) (i
 	return findAnnouncement(ctx, r.db.reader(), id)
 }
 
-func findAnnouncement(ctx context.Context, q *postgresgen.Queries, id string) (instance.Announcement, error) {
+func findAnnouncement(ctx context.Context, q *genQueries, id string) (instance.Announcement, error) {
 	row, err := q.GetAnnouncement(ctx, id)
 	if err != nil {
 		return instance.Announcement{}, notFound(err, appinstance.ErrNotFound, "announcement "+id)
 	}
-	return announcementOf(postgresgen.ListAnnouncementsRow(row)), nil
+	return announcementOf(instancegen.ListAnnouncementsRow(row)), nil
 }
 
 // ListAnnouncements implements appinstance.AnnouncementRepository.
 func (r *InstanceRepository) ListAnnouncements(ctx context.Context, publishedOnly bool) ([]instance.Announcement, error) {
 	q := r.db.reader()
-	var rows []postgresgen.ListAnnouncementsRow
+	var rows []instancegen.ListAnnouncementsRow
 	if publishedOnly {
 		published, err := q.ListPublishedAnnouncements(ctx)
 		if err != nil {
 			return nil, wrap(err, "list published announcements")
 		}
 		for _, row := range published {
-			rows = append(rows, postgresgen.ListAnnouncementsRow(row))
+			rows = append(rows, instancegen.ListAnnouncementsRow(row))
 		}
 	} else {
 		var err error
@@ -192,7 +192,7 @@ func (r *InstanceRepository) ListAnnouncementPage(ctx context.Context, q appinst
 	if err != nil {
 		return nil, err
 	}
-	rows, err := r.db.reader().ListAnnouncementPage(ctx, postgresgen.ListAnnouncementPageParams{
+	rows, err := r.db.reader().ListAnnouncementPage(ctx, instancegen.ListAnnouncementPageParams{
 		BeforeID: toNullString(q.Before), Filter: string(q.Filter), Now: q.Now, RowLimit: n,
 	})
 	if err != nil {
@@ -200,12 +200,12 @@ func (r *InstanceRepository) ListAnnouncementPage(ctx context.Context, q appinst
 	}
 	out := make([]instance.Announcement, len(rows))
 	for i, row := range rows {
-		out[i] = announcementOf(postgresgen.ListAnnouncementsRow(row))
+		out[i] = announcementOf(instancegen.ListAnnouncementsRow(row))
 	}
 	return out, nil
 }
 
-func announcementOf(row postgresgen.ListAnnouncementsRow) instance.Announcement {
+func announcementOf(row instancegen.ListAnnouncementsRow) instance.Announcement {
 	return instance.Announcement{
 		ID: row.ID, CreatedAt: utc(row.CreatedAt),
 		State: instance.AnnouncementState(row.State), PublishedAt: fromNullTime(row.PublishedAt),
@@ -223,7 +223,7 @@ func (r *InstanceRepository) InsertAnnouncementRead(ctx context.Context, tx uow.
 	if err != nil {
 		return err
 	}
-	err = q.InsertAnnouncementRead(ctx, postgresgen.InsertAnnouncementReadParams{UserID: userID, AnnouncementID: announcementID, ReadAt: at})
+	err = q.InsertAnnouncementRead(ctx, instancegen.InsertAnnouncementReadParams{UserID: userID, AnnouncementID: announcementID, ReadAt: at})
 	return wrap(err, "insert announcement read")
 }
 
@@ -242,6 +242,6 @@ func (r *InstanceRepository) ListReadAnnouncementIDs(ctx context.Context, userID
 	if len(ids) == 0 {
 		return []string{}, nil
 	}
-	out, err := r.db.reader().ListReadAnnouncementIDs(ctx, postgresgen.ListReadAnnouncementIDsParams{UserID: userID, AnnouncementIds: ids})
+	out, err := r.db.reader().ListReadAnnouncementIDs(ctx, instancegen.ListReadAnnouncementIDsParams{UserID: userID, AnnouncementIds: ids})
 	return out, wrap(err, "list read announcements")
 }

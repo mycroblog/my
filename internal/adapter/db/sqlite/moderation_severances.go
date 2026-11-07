@@ -5,7 +5,7 @@ package sqlite
 import (
 	"context"
 
-	"github.com/mycroblog/my/internal/adapter/db/sqlite/sqlitegen"
+	"github.com/mycroblog/my/internal/adapter/db/sqlite/moderationgen"
 	appmoderation "github.com/mycroblog/my/internal/app/moderation"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/moderation"
@@ -17,7 +17,7 @@ func (r *ModerationRepository) InsertSeverance(ctx context.Context, tx uow.Tx, s
 	if err != nil {
 		return false, err
 	}
-	n, err := q.InsertRelationshipSeverance(ctx, sqlitegen.InsertRelationshipSeveranceParams{
+	n, err := q.InsertRelationshipSeverance(ctx, moderationgen.InsertRelationshipSeveranceParams{
 		ID: s.ID, DomainActionID: toNullString(s.DomainActionID), ActionID: toNullString(s.ActionID), AccountID: s.AccountID,
 		FollowersLost: int64(s.FollowersLost), FollowingLost: int64(s.FollowingLost), OccurredAt: toMillis(s.OccurredAt),
 	})
@@ -29,7 +29,7 @@ func (r *ModerationRepository) InsertSeverance(ctx context.Context, tx uow.Tx, s
 
 // FindSeverance implements moderation.SeveranceRepository.
 func (r *ModerationRepository) FindSeverance(ctx context.Context, accountID, id string) (moderation.SeveranceRecord, error) {
-	row, err := r.db.reader().GetRelationshipSeverance(ctx, sqlitegen.GetRelationshipSeveranceParams{ID: id, AccountID: accountID})
+	row, err := r.db.reader().GetRelationshipSeverance(ctx, moderationgen.GetRelationshipSeveranceParams{ID: id, AccountID: accountID})
 	if err != nil {
 		return moderation.SeveranceRecord{}, notFound(err, appmoderation.ErrNotFound, "relationship severance "+id)
 	}

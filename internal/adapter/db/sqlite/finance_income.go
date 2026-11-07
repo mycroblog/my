@@ -6,7 +6,7 @@ import (
 	"context"
 	"database/sql"
 
-	"github.com/mycroblog/my/internal/adapter/db/sqlite/sqlitegen"
+	"github.com/mycroblog/my/internal/adapter/db/sqlite/financegen"
 	appfinance "github.com/mycroblog/my/internal/app/finance"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/finance"
@@ -45,7 +45,7 @@ func (r *FinanceRepository) InsertIncome(ctx context.Context, tx uow.Tx, rec app
 		return false, err
 	}
 	starts, ends := toNullRange(rec.Covers)
-	n, err := q.InsertIncomeMovement(ctx, sqlitegen.InsertIncomeMovementParams{
+	n, err := q.InsertIncomeMovement(ctx, financegen.InsertIncomeMovementParams{
 		ID: rec.ID, Provider: rec.Provider, ProviderMovementID: rec.ProviderID, Kind: string(rec.Kind),
 		ParentMovementID: toNullString(rec.ParentMovementID), SubscriptionID: toNullString(rec.SubscriptionID),
 		OccurredAt: toMillis(rec.OccurredAt), OccurredOn: rec.OccurredOn.String(), CoversStartsOn: starts, CoversEndsOn: ends,
@@ -61,7 +61,7 @@ func (r *FinanceRepository) FindIncomeID(ctx context.Context, tx uow.Tx, provide
 	if err != nil {
 		return "", err
 	}
-	id, err := q.FindIncomeMovementID(ctx, sqlitegen.FindIncomeMovementIDParams{Provider: provider, ProviderMovementID: providerID})
+	id, err := q.FindIncomeMovementID(ctx, financegen.FindIncomeMovementIDParams{Provider: provider, ProviderMovementID: providerID})
 	if err != nil {
 		return "", notFound(err, appfinance.ErrNotFound, "income movement "+providerID)
 	}
@@ -77,13 +77,13 @@ func (r *FinanceRepository) KnownIncome(ctx context.Context, provider string, id
 	if err != nil {
 		return nil, err
 	}
-	out, err := r.db.reader().KnownIncomeMovements(ctx, sqlitegen.KnownIncomeMovementsParams{Provider: provider, Ids: list})
+	out, err := r.db.reader().KnownIncomeMovements(ctx, financegen.KnownIncomeMovementsParams{Provider: provider, Ids: list})
 	return out, wrap(err, "list known income movements")
 }
 
 // IncomeInWindow implements appfinance.Repository.
 func (r *FinanceRepository) IncomeInWindow(ctx context.Context, window finance.DateRange) ([]finance.IncomeMovement, error) {
-	rows, err := r.db.reader().ListIncomeMovementsInWindow(ctx, sqlitegen.ListIncomeMovementsInWindowParams{
+	rows, err := r.db.reader().ListIncomeMovementsInWindow(ctx, financegen.ListIncomeMovementsInWindowParams{
 		StartsOn: window.Start.String(), EndsOn: window.End.String(),
 	})
 	if err != nil {
@@ -113,7 +113,7 @@ func (r *FinanceRepository) IncomeInWindow(ctx context.Context, window finance.D
 
 // ListIncome implements appfinance.Repository.
 func (r *FinanceRepository) ListIncome(ctx context.Context, f appfinance.IncomeFilter, before string, limit int) ([]appfinance.IncomeRecord, error) {
-	rows, err := r.db.reader().ListIncomeMovements(ctx, sqlitegen.ListIncomeMovementsParams{
+	rows, err := r.db.reader().ListIncomeMovements(ctx, financegen.ListIncomeMovementsParams{
 		StartsOn: f.From.String(), EndsOn: f.To.String(), Kind: string(f.Kind), Before: before, Lim: int64(limit),
 	})
 	if err != nil {

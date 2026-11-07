@@ -189,7 +189,7 @@ func TestLocale(t *testing.T) {
 func TestKind(t *testing.T) {
 	for p, want := range map[string]string{
 		"internal/interface/clientapi/api.gen.go":              "",
-		"internal/adapter/db/sqlite/sqlitegen/queries.go":      "",
+		"internal/adapter/db/sqlite/accountgen/queries.go":     "",
 		"app/web/src/routeTree.gen.ts":                         "",
 		"app/web/src/App.tsx":                                  "ts",
 		"locales/en-XA/client/settings.json":                   "",

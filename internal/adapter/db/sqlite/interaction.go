@@ -6,7 +6,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/mycroblog/my/internal/adapter/db/sqlite/sqlitegen"
+	"github.com/mycroblog/my/internal/adapter/db/sqlite/contentgen"
 	appcontent "github.com/mycroblog/my/internal/app/content"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/content"
@@ -29,7 +29,7 @@ func (r *InteractionRepository) InsertBoost(ctx context.Context, tx uow.Tx, b co
 	if err != nil {
 		return err
 	}
-	err = q.InsertBoost(ctx, sqlitegen.InsertBoostParams{
+	err = q.InsertBoost(ctx, contentgen.InsertBoostParams{
 		ID: b.ID, Uri: b.URI, BoosterAccountID: b.BoosterAccountID, StatusID: b.StatusID,
 		Visibility: string(b.Visibility), IsLocal: boolToInt(b.IsLocal), BoostedAt: toMillis(b.BoostedAt),
 	})
@@ -45,7 +45,7 @@ func (r *InteractionRepository) InsertBoostRetraction(ctx context.Context, tx uo
 	if err != nil {
 		return err
 	}
-	err = q.InsertBoostRetraction(ctx, sqlitegen.InsertBoostRetractionParams{
+	err = q.InsertBoostRetraction(ctx, contentgen.InsertBoostRetractionParams{
 		BoostID: br.BoostID, Origin: string(br.Origin), RetractedAt: toMillis(br.RetractedAt),
 	})
 	if isUniqueViolation(err, "boost_retractions.boost_id") {
@@ -76,8 +76,8 @@ func (r *InteractionRepository) BoostEdge(ctx context.Context, tx uow.Tx, booste
 	return boostEdge(ctx, q, boosterAccountID, statusID)
 }
 
-func boostEdge(ctx context.Context, q *sqlitegen.Queries, boosterAccountID, statusID string) (content.BoostEdge, error) {
-	row, err := q.GetBoostEdge(ctx, sqlitegen.GetBoostEdgeParams{BoosterAccountID: boosterAccountID, StatusID: statusID})
+func boostEdge(ctx context.Context, q *genQueries, boosterAccountID, statusID string) (content.BoostEdge, error) {
+	row, err := q.GetBoostEdge(ctx, contentgen.GetBoostEdgeParams{BoosterAccountID: boosterAccountID, StatusID: statusID})
 	if err != nil {
 		return content.BoostEdge{}, notFound(err, appcontent.ErrNotFound, "boost edge of "+boosterAccountID+" on "+statusID)
 	}
@@ -90,7 +90,7 @@ func (r *InteractionRepository) InsertBoostEdge(ctx context.Context, tx uow.Tx, 
 	if err != nil {
 		return false, err
 	}
-	n, err := q.InsertBoostEdge(ctx, sqlitegen.InsertBoostEdgeParams(e))
+	n, err := q.InsertBoostEdge(ctx, contentgen.InsertBoostEdgeParams(e))
 	if err != nil {
 		return false, wrap(err, "insert boost edge")
 	}
@@ -103,7 +103,7 @@ func (r *InteractionRepository) DeleteBoostEdge(ctx context.Context, tx uow.Tx, 
 	if err != nil {
 		return false, err
 	}
-	n, err := q.DeleteBoostEdge(ctx, sqlitegen.DeleteBoostEdgeParams(e))
+	n, err := q.DeleteBoostEdge(ctx, contentgen.DeleteBoostEdgeParams(e))
 	if err != nil {
 		return false, wrap(err, "delete boost edge")
 	}
@@ -150,7 +150,7 @@ func (r *InteractionRepository) AddBoosts(ctx context.Context, tx uow.Tx, status
 	if err != nil {
 		return err
 	}
-	return wrap(q.AddStatusBoosts(ctx, sqlitegen.AddStatusBoostsParams{Delta: delta, StatusID: statusID}), "add boosts")
+	return wrap(q.AddStatusBoosts(ctx, contentgen.AddStatusBoostsParams{Delta: delta, StatusID: statusID}), "add boosts")
 }
 
 // AddFavourites implements content.InteractionRepository.
@@ -159,12 +159,12 @@ func (r *InteractionRepository) AddFavourites(ctx context.Context, tx uow.Tx, st
 	if err != nil {
 		return err
 	}
-	return wrap(q.AddStatusFavourites(ctx, sqlitegen.AddStatusFavouritesParams{Delta: delta, StatusID: statusID}), "add favourites")
+	return wrap(q.AddStatusFavourites(ctx, contentgen.AddStatusFavouritesParams{Delta: delta, StatusID: statusID}), "add favourites")
 }
 
 // Mentioned implements content.InteractionRepository.
 func (r *InteractionRepository) Mentioned(ctx context.Context, statusID, accountID string) (bool, error) {
-	n, err := r.db.reader().CountStatusMention(ctx, sqlitegen.CountStatusMentionParams{StatusID: statusID, AccountID: accountID})
+	n, err := r.db.reader().CountStatusMention(ctx, contentgen.CountStatusMentionParams{StatusID: statusID, AccountID: accountID})
 	if err != nil {
 		return false, wrap(err, "find mention")
 	}
@@ -177,7 +177,7 @@ func (r *InteractionRepository) InsertFavourite(ctx context.Context, tx uow.Tx, 
 	if err != nil {
 		return false, err
 	}
-	n, err := q.InsertFavourite(ctx, sqlitegen.InsertFavouriteParams{
+	n, err := q.InsertFavourite(ctx, contentgen.InsertFavouriteParams{
 		AccountID: f.AccountID, StatusID: f.StatusID, Uri: f.URI, CreatedAt: toMillis(f.CreatedAt), ID: f.ID,
 	})
 	if isUniqueViolation(err, "favourites.uri") {
@@ -195,7 +195,7 @@ func (r *InteractionRepository) DeleteFavourite(ctx context.Context, tx uow.Tx, 
 	if err != nil {
 		return content.Favourite{}, false, err
 	}
-	rows, err := q.DeleteFavourite(ctx, sqlitegen.DeleteFavouriteParams{AccountID: accountID, StatusID: statusID})
+	rows, err := q.DeleteFavourite(ctx, contentgen.DeleteFavouriteParams{AccountID: accountID, StatusID: statusID})
 	if err != nil {
 		return content.Favourite{}, false, wrap(err, "delete favourite")
 	}
@@ -211,7 +211,7 @@ func (r *InteractionRepository) InsertBookmark(ctx context.Context, tx uow.Tx, b
 	if err != nil {
 		return false, err
 	}
-	n, err := q.InsertBookmark(ctx, sqlitegen.InsertBookmarkParams{
+	n, err := q.InsertBookmark(ctx, contentgen.InsertBookmarkParams{
 		AccountID: b.AccountID, StatusID: b.StatusID, CreatedAt: toMillis(b.CreatedAt), ID: b.ID,
 	})
 	if err != nil {
@@ -226,7 +226,7 @@ func (r *InteractionRepository) DeleteBookmark(ctx context.Context, tx uow.Tx, a
 	if err != nil {
 		return false, err
 	}
-	n, err := q.DeleteBookmark(ctx, sqlitegen.DeleteBookmarkParams{AccountID: accountID, StatusID: statusID})
+	n, err := q.DeleteBookmark(ctx, contentgen.DeleteBookmarkParams{AccountID: accountID, StatusID: statusID})
 	if err != nil {
 		return false, wrap(err, "delete bookmark")
 	}
@@ -239,7 +239,7 @@ func (r *InteractionRepository) InsertPin(ctx context.Context, tx uow.Tx, p cont
 	if err != nil {
 		return false, err
 	}
-	n, err := q.InsertStatusPin(ctx, sqlitegen.InsertStatusPinParams{
+	n, err := q.InsertStatusPin(ctx, contentgen.InsertStatusPinParams{
 		AccountID: p.AccountID, StatusID: p.StatusID, CreatedAt: toMillis(p.CreatedAt), ID: p.ID, MaxSlot: content.MaxPins,
 	})
 	if err != nil {
@@ -254,7 +254,7 @@ func (r *InteractionRepository) HasPin(ctx context.Context, tx uow.Tx, accountID
 	if err != nil {
 		return false, err
 	}
-	ok, err := q.StatusPinExists(ctx, sqlitegen.StatusPinExistsParams{AccountID: accountID, StatusID: statusID})
+	ok, err := q.StatusPinExists(ctx, contentgen.StatusPinExistsParams{AccountID: accountID, StatusID: statusID})
 	return ok, wrap(err, "check status pin")
 }
 
@@ -264,7 +264,7 @@ func (r *InteractionRepository) DeletePin(ctx context.Context, tx uow.Tx, accoun
 	if err != nil {
 		return false, err
 	}
-	n, err := q.DeleteStatusPin(ctx, sqlitegen.DeleteStatusPinParams{AccountID: accountID, StatusID: statusID})
+	n, err := q.DeleteStatusPin(ctx, contentgen.DeleteStatusPinParams{AccountID: accountID, StatusID: statusID})
 	if err != nil {
 		return false, wrap(err, "delete status pin")
 	}
@@ -327,7 +327,7 @@ func (r *InteractionRepository) FindBoostEdge(ctx context.Context, boosterAccoun
 
 // FindFavourite implements content.InteractionRepository.
 func (r *InteractionRepository) FindFavourite(ctx context.Context, accountID, statusID string) (content.Favourite, error) {
-	row, err := r.db.reader().GetFavourite(ctx, sqlitegen.GetFavouriteParams{AccountID: accountID, StatusID: statusID})
+	row, err := r.db.reader().GetFavourite(ctx, contentgen.GetFavouriteParams{AccountID: accountID, StatusID: statusID})
 	if err != nil {
 		return content.Favourite{}, notFound(err, appcontent.ErrNotFound, "favourite of "+accountID+" on "+statusID)
 	}
@@ -345,7 +345,7 @@ func (r *InteractionRepository) FindFavouriteByURI(ctx context.Context, uri stri
 
 // FindBookmark implements content.InteractionRepository.
 func (r *InteractionRepository) FindBookmark(ctx context.Context, accountID, statusID string) (content.Bookmark, error) {
-	row, err := r.db.reader().GetBookmark(ctx, sqlitegen.GetBookmarkParams{AccountID: accountID, StatusID: statusID})
+	row, err := r.db.reader().GetBookmark(ctx, contentgen.GetBookmarkParams{AccountID: accountID, StatusID: statusID})
 	if err != nil {
 		return content.Bookmark{}, notFound(err, appcontent.ErrNotFound, "bookmark of "+accountID+" on "+statusID)
 	}
@@ -354,7 +354,7 @@ func (r *InteractionRepository) FindBookmark(ctx context.Context, accountID, sta
 
 // FindPin implements content.InteractionRepository.
 func (r *InteractionRepository) FindPin(ctx context.Context, accountID, statusID string) (content.Pin, error) {
-	row, err := r.db.reader().GetStatusPin(ctx, sqlitegen.GetStatusPinParams{AccountID: accountID, StatusID: statusID})
+	row, err := r.db.reader().GetStatusPin(ctx, contentgen.GetStatusPinParams{AccountID: accountID, StatusID: statusID})
 	if err != nil {
 		return content.Pin{}, notFound(err, appcontent.ErrNotFound, "pin of "+accountID+" on "+statusID)
 	}
@@ -363,7 +363,7 @@ func (r *InteractionRepository) FindPin(ctx context.Context, accountID, statusID
 
 // ListFavourites implements content.InteractionRepository.
 func (r *InteractionRepository) ListFavourites(ctx context.Context, accountID, before string, limit int) ([]content.Favourite, error) {
-	rows, err := r.db.reader().ListFavourites(ctx, sqlitegen.ListFavouritesParams{AccountID: accountID, Before: before, PageLimit: int64(limit)})
+	rows, err := r.db.reader().ListFavourites(ctx, contentgen.ListFavouritesParams{AccountID: accountID, Before: before, PageLimit: int64(limit)})
 	if err != nil {
 		return nil, wrap(err, "list favourites")
 	}
@@ -376,7 +376,7 @@ func (r *InteractionRepository) ListFavourites(ctx context.Context, accountID, b
 
 // ListBookmarks implements content.InteractionRepository.
 func (r *InteractionRepository) ListBookmarks(ctx context.Context, accountID, before string, limit int) ([]content.Bookmark, error) {
-	rows, err := r.db.reader().ListBookmarks(ctx, sqlitegen.ListBookmarksParams{AccountID: accountID, Before: before, PageLimit: int64(limit)})
+	rows, err := r.db.reader().ListBookmarks(ctx, contentgen.ListBookmarksParams{AccountID: accountID, Before: before, PageLimit: int64(limit)})
 	if err != nil {
 		return nil, wrap(err, "list bookmarks")
 	}
@@ -400,21 +400,21 @@ func (r *InteractionRepository) ListPins(ctx context.Context, accountID string) 
 	return out, nil
 }
 
-func boostFrom(row sqlitegen.Boost) content.Boost {
+func boostFrom(row contentgen.Boost) content.Boost {
 	return content.Boost{
 		ID: row.ID, URI: row.Uri, BoosterAccountID: row.BoosterAccountID, StatusID: row.StatusID,
 		Visibility: content.Visibility(row.Visibility), IsLocal: row.IsLocal == 1, BoostedAt: fromMillis(row.BoostedAt),
 	}
 }
 
-func favouriteFrom(row sqlitegen.Favourite) content.Favourite {
+func favouriteFrom(row contentgen.Favourite) content.Favourite {
 	return content.Favourite{ID: row.ID, AccountID: row.AccountID, StatusID: row.StatusID, URI: row.Uri, CreatedAt: fromMillis(row.CreatedAt)}
 }
 
-func bookmarkFrom(row sqlitegen.Bookmark) content.Bookmark {
+func bookmarkFrom(row contentgen.Bookmark) content.Bookmark {
 	return content.Bookmark{ID: row.ID, AccountID: row.AccountID, StatusID: row.StatusID, CreatedAt: fromMillis(row.CreatedAt)}
 }
 
-func pinFrom(row sqlitegen.StatusPin) content.Pin {
+func pinFrom(row contentgen.StatusPin) content.Pin {
 	return content.Pin{ID: row.ID, AccountID: row.AccountID, StatusID: row.StatusID, CreatedAt: fromMillis(row.CreatedAt)}
 }

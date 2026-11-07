@@ -5,7 +5,7 @@ package postgres
 import (
 	"context"
 
-	"github.com/mycroblog/my/internal/adapter/db/postgres/postgresgen"
+	"github.com/mycroblog/my/internal/adapter/db/postgres/federationgen"
 	appfederation "github.com/mycroblog/my/internal/app/federation"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/federation"
@@ -27,7 +27,7 @@ func (r *FederationRepository) InsertDeliveryAttempt(ctx context.Context, tx uow
 		}
 		status = &s
 	}
-	err = q.InsertDeliveryAttempt(ctx, postgresgen.InsertDeliveryAttemptParams{
+	err = q.InsertDeliveryAttempt(ctx, federationgen.InsertDeliveryAttemptParams{
 		ID: a.ID, DeliveryID: a.DeliveryID, Outcome: string(a.Outcome), SignatureScheme: toNullString(a.Scheme),
 		StatusCode: status, Error: toNullString(a.Error), AttemptedAt: a.AttemptedAt,
 	})
@@ -53,7 +53,7 @@ func (r *FederationRepository) InsertAvailabilityEvent(ctx context.Context, tx u
 	if err != nil {
 		return err
 	}
-	err = q.InsertInstanceAvailabilityEvent(ctx, postgresgen.InsertInstanceAvailabilityEventParams{
+	err = q.InsertInstanceAvailabilityEvent(ctx, federationgen.InsertInstanceAvailabilityEventParams{
 		ID: e.ID, Domain: e.Domain, Kind: string(e.Kind), Reason: string(e.Reason), OccurredAt: e.OccurredAt,
 	})
 	return wrap(err, "insert instance availability event")
@@ -107,7 +107,7 @@ func (r *FederationRepository) ListAvailabilityEvents(ctx context.Context, domai
 	if err != nil {
 		return nil, err
 	}
-	rows, err := r.db.reader().ListInstanceAvailabilityEvents(ctx, postgresgen.ListInstanceAvailabilityEventsParams{
+	rows, err := r.db.reader().ListInstanceAvailabilityEvents(ctx, federationgen.ListInstanceAvailabilityEventsParams{
 		Domain: domain, Before: toNullString(before), BatchLimit: n,
 	})
 	if err != nil {
@@ -129,7 +129,7 @@ func (r *FederationRepository) ListUnavailableInstances(ctx context.Context, aft
 	if err != nil {
 		return nil, err
 	}
-	rows, err := r.db.reader().ListUnavailableInstances(ctx, postgresgen.ListUnavailableInstancesParams{
+	rows, err := r.db.reader().ListUnavailableInstances(ctx, federationgen.ListUnavailableInstancesParams{
 		AfterDomain: after, BatchLimit: n,
 	})
 	if err != nil {
@@ -148,7 +148,7 @@ func (r *FederationRepository) ListInstanceHealth(ctx context.Context, state fed
 	if err != nil {
 		return nil, err
 	}
-	rows, err := r.db.reader().ListInstanceHealth(ctx, postgresgen.ListInstanceHealthParams{
+	rows, err := r.db.reader().ListInstanceHealth(ctx, federationgen.ListInstanceHealthParams{
 		State: string(state), AfterDomain: after, BatchLimit: n,
 	})
 	if err != nil {
@@ -174,7 +174,7 @@ func (r *FederationRepository) CountInstanceHealth(ctx context.Context) (map[fed
 	return out, nil
 }
 
-func instanceHealth(row postgresgen.InstanceHealth) federation.InstanceHealth {
+func instanceHealth(row federationgen.InstanceHealth) federation.InstanceHealth {
 	return federation.InstanceHealth{
 		Domain: row.Domain, State: federation.InstanceState(row.State), Since: utc(row.Since),
 		FailureDays: int(row.FailureDays), LastFailureDay: row.LastFailureDay,

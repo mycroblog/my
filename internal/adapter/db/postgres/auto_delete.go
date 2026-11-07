@@ -6,7 +6,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/mycroblog/my/internal/adapter/db/postgres/postgresgen"
+	"github.com/mycroblog/my/internal/adapter/db/postgres/contentgen"
 	appcontent "github.com/mycroblog/my/internal/app/content"
 	"github.com/mycroblog/my/internal/app/kernel"
 	"github.com/mycroblog/my/internal/app/uow"
@@ -35,7 +35,7 @@ func (r *StatusRepository) SaveAutoDeletePolicy(ctx context.Context, tx uow.Tx, 
 	if err != nil {
 		return err
 	}
-	err = q.UpsertStatusAutoDeletePolicy(ctx, postgresgen.UpsertStatusAutoDeletePolicyParams{
+	err = q.UpsertStatusAutoDeletePolicy(ctx, contentgen.UpsertStatusAutoDeletePolicyParams{
 		AccountID: p.AccountID, Enabled: p.Enabled, MinAgeDays: ints[0],
 		KeepPinned: p.KeepPinned, KeepBookmarked: p.KeepBookmarked, KeepFavourited: p.KeepFavourited,
 		KeepMedia: p.KeepMedia, KeepPolls: p.KeepPolls,
@@ -48,7 +48,7 @@ func (r *StatusRepository) SaveAutoDeletePolicy(ctx context.Context, tx uow.Tx, 
 		return wrap(err, "replace auto delete kept visibilities")
 	}
 	for _, v := range p.KeepVisibilities {
-		err := q.InsertStatusAutoDeleteKeptVisibility(ctx, postgresgen.InsertStatusAutoDeleteKeptVisibilityParams{
+		err := q.InsertStatusAutoDeleteKeptVisibility(ctx, contentgen.InsertStatusAutoDeleteKeptVisibilityParams{
 			AccountID: p.AccountID, Visibility: string(v),
 		})
 		if err != nil {
@@ -78,7 +78,7 @@ func (r *StatusRepository) ListEnabledAutoDeletePolicies(ctx context.Context, af
 		return nil, err
 	}
 	q := r.db.reader()
-	rows, err := q.ListEnabledStatusAutoDeletePolicies(ctx, postgresgen.ListEnabledStatusAutoDeletePoliciesParams{
+	rows, err := q.ListEnabledStatusAutoDeletePolicies(ctx, contentgen.ListEnabledStatusAutoDeletePoliciesParams{
 		After: toNullString(after), BatchLimit: n,
 	})
 	if err != nil {
@@ -119,7 +119,7 @@ func (r *StatusRepository) ListStatusesToAutoDelete(ctx context.Context, tx uow.
 	for _, v := range p.KeepVisibilities {
 		kept = append(kept, string(v))
 	}
-	rows, err := q.ListStatusesToAutoDelete(ctx, postgresgen.ListStatusesToAutoDeleteParams{
+	rows, err := q.ListStatusesToAutoDelete(ctx, contentgen.ListStatusesToAutoDeleteParams{
 		AccountID: p.AccountID, IDBefore: kernel.UUIDv7Floor(before.Add(time.Millisecond)), PublishedBefore: before,
 		KeptVisibilities: kept, KeepPinned: p.KeepPinned, KeepBookmarked: p.KeepBookmarked,
 		KeepFavourited: p.KeepFavourited, KeepMedia: p.KeepMedia, KeepPolls: p.KeepPolls,
@@ -135,7 +135,7 @@ func (r *StatusRepository) ListStatusesToAutoDelete(ctx context.Context, tx uow.
 	return out, nil
 }
 
-func autoDeletePolicyFrom(ctx context.Context, q *postgresgen.Queries, row postgresgen.StatusAutoDeletePolicy) (content.AutoDeletePolicy, error) {
+func autoDeletePolicyFrom(ctx context.Context, q *genQueries, row contentgen.StatusAutoDeletePolicy) (content.AutoDeletePolicy, error) {
 	vs, err := q.ListStatusAutoDeleteKeptVisibilities(ctx, row.AccountID)
 	if err != nil {
 		return content.AutoDeletePolicy{}, wrap(err, "list auto delete kept visibilities")
@@ -181,7 +181,7 @@ func (r *StatusRepository) FindAutoDeleteLimitTx(ctx context.Context, tx uow.Tx,
 	return autoDeleteLimit(ctx, q, accountID)
 }
 
-func autoDeleteLimit(ctx context.Context, q *postgresgen.Queries, accountID string) (content.AutoDeleteLimitNotice, error) {
+func autoDeleteLimit(ctx context.Context, q *genQueries, accountID string) (content.AutoDeleteLimitNotice, error) {
 	row, err := q.GetStatusAutoDeleteLimit(ctx, accountID)
 	if err != nil {
 		return content.AutoDeleteLimitNotice{}, notFound(err, appcontent.ErrNotFound, "auto delete limit of "+accountID)
@@ -201,13 +201,13 @@ func (r *StatusRepository) RecordAutoDeleteLimitNotice(ctx context.Context, tx u
 	if err != nil {
 		return err
 	}
-	err = q.InsertStatusAutoDeleteLimitNotice(ctx, postgresgen.InsertStatusAutoDeleteLimitNoticeParams{
+	err = q.InsertStatusAutoDeleteLimitNotice(ctx, contentgen.InsertStatusAutoDeleteLimitNoticeParams{
 		ID: n.ID, AccountID: n.AccountID, MaxAgeDays: days, NoticedAt: n.NoticedAt, EnforceFrom: n.EnforceFrom,
 	})
 	if err != nil {
 		return wrap(err, "insert auto delete limit notice")
 	}
-	err = q.UpsertStatusAutoDeleteLimit(ctx, postgresgen.UpsertStatusAutoDeleteLimitParams{
+	err = q.UpsertStatusAutoDeleteLimit(ctx, contentgen.UpsertStatusAutoDeleteLimitParams{
 		AccountID: n.AccountID, NoticeID: n.ID, MaxAgeDays: days, EnforceFrom: n.EnforceFrom,
 	})
 	return wrap(err, "upsert auto delete limit")

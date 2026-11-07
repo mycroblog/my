@@ -6,7 +6,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/mycroblog/my/internal/adapter/db/postgres/postgresgen"
+	"github.com/mycroblog/my/internal/adapter/db/postgres/dbupgradegen"
 	"github.com/mycroblog/my/internal/app/dbupgrade"
 	"github.com/mycroblog/my/internal/app/uow"
 )
@@ -61,6 +61,6 @@ func (r *DataUpgradeRepository) RecordRun(ctx context.Context, tx uow.Tx, key st
 	if err != nil {
 		return err
 	}
-	err = q.InsertDataUpgradeRun(ctx, postgresgen.InsertDataUpgradeRunParams{StepKey: key, CompletedAt: at})
+	err = q.InsertDataUpgradeRun(ctx, dbupgradegen.InsertDataUpgradeRunParams{StepKey: key, CompletedAt: at})
 	return wrap(err, "record data upgrade run")
 }

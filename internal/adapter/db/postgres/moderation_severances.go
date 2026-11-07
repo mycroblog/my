@@ -5,7 +5,7 @@ package postgres
 import (
 	"context"
 
-	"github.com/mycroblog/my/internal/adapter/db/postgres/postgresgen"
+	"github.com/mycroblog/my/internal/adapter/db/postgres/moderationgen"
 	appmoderation "github.com/mycroblog/my/internal/app/moderation"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/moderation"
@@ -25,7 +25,7 @@ func (r *ModerationRepository) InsertSeverance(ctx context.Context, tx uow.Tx, s
 	if err != nil {
 		return false, err
 	}
-	n, err := q.InsertRelationshipSeverance(ctx, postgresgen.InsertRelationshipSeveranceParams{
+	n, err := q.InsertRelationshipSeverance(ctx, moderationgen.InsertRelationshipSeveranceParams{
 		ID: s.ID, DomainActionID: toNullString(s.DomainActionID), ActionID: toNullString(s.ActionID), AccountID: s.AccountID,
 		FollowersLost: followers, FollowingLost: following, OccurredAt: s.OccurredAt,
 	})
@@ -37,7 +37,7 @@ func (r *ModerationRepository) InsertSeverance(ctx context.Context, tx uow.Tx, s
 
 // FindSeverance implements moderation.SeveranceRepository.
 func (r *ModerationRepository) FindSeverance(ctx context.Context, accountID, id string) (moderation.SeveranceRecord, error) {
-	row, err := r.db.reader().GetRelationshipSeverance(ctx, postgresgen.GetRelationshipSeveranceParams{ID: id, AccountID: accountID})
+	row, err := r.db.reader().GetRelationshipSeverance(ctx, moderationgen.GetRelationshipSeveranceParams{ID: id, AccountID: accountID})
 	if err != nil {
 		return moderation.SeveranceRecord{}, notFound(err, appmoderation.ErrNotFound, "relationship severance "+id)
 	}

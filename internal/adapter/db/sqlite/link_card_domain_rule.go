@@ -5,7 +5,7 @@ package sqlite
 import (
 	"context"
 
-	"github.com/mycroblog/my/internal/adapter/db/sqlite/sqlitegen"
+	"github.com/mycroblog/my/internal/adapter/db/sqlite/instancegen"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/instance"
 )
@@ -16,7 +16,7 @@ func (r *InstanceRepository) UpsertLinkCardDomainRule(ctx context.Context, tx uo
 	if err != nil {
 		return err
 	}
-	return wrap(q.UpsertLinkCardDomainRule(ctx, sqlitegen.UpsertLinkCardDomainRuleParams{
+	return wrap(q.UpsertLinkCardDomainRule(ctx, instancegen.UpsertLinkCardDomainRuleParams{
 		Domain: rule.Domain, Mode: string(rule.Mode), Note: rule.Note, UpdatedAt: toMillis(rule.UpdatedAt),
 	}), "upsert link card domain rule")
 }

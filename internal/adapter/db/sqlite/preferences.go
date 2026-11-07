@@ -8,7 +8,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/mycroblog/my/internal/adapter/db/sqlite/sqlitegen"
+	"github.com/mycroblog/my/internal/adapter/db/sqlite/identitygen"
 	appidentity "github.com/mycroblog/my/internal/app/identity"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/identity"
@@ -20,7 +20,7 @@ func (r *IdentityRepository) InsertPreferences(ctx context.Context, tx uow.Tx, p
 	if err != nil {
 		return err
 	}
-	err = q.InsertUserPreferences(ctx, sqlitegen.InsertUserPreferencesParams{
+	err = q.InsertUserPreferences(ctx, identitygen.InsertUserPreferencesParams{
 		UserID:                  p.UserID,
 		Locale:                  p.Locale,
 		DefaultVisibility:       string(p.DefaultVisibility),
@@ -45,7 +45,7 @@ func (r *IdentityRepository) UpdatePreferences(ctx context.Context, tx uow.Tx, p
 	if err != nil {
 		return err
 	}
-	n, err := q.UpdateUserPreferences(ctx, sqlitegen.UpdateUserPreferencesParams{
+	n, err := q.UpdateUserPreferences(ctx, identitygen.UpdateUserPreferencesParams{
 		Locale:                  p.Locale,
 		DefaultVisibility:       string(p.DefaultVisibility),
 		DefaultQuotePolicy:      string(p.DefaultQuotePolicy),
@@ -68,11 +68,11 @@ func (r *IdentityRepository) UpdatePreferences(ctx context.Context, tx uow.Tx, p
 }
 
 // setTimeZone stores the time zone of p when the user chose one (user_time_zones).
-func setTimeZone(ctx context.Context, q *sqlitegen.Queries, p identity.Preferences) error {
+func setTimeZone(ctx context.Context, q *genQueries, p identity.Preferences) error {
 	if !p.TimeZoneChosen {
 		return nil
 	}
-	err := q.UpsertUserTimeZone(ctx, sqlitegen.UpsertUserTimeZoneParams{UserID: p.UserID, TimeZone: p.TimeZone})
+	err := q.UpsertUserTimeZone(ctx, identitygen.UpsertUserTimeZoneParams{UserID: p.UserID, TimeZone: p.TimeZone})
 	return wrap(err, "set time zone")
 }
 
@@ -86,7 +86,7 @@ func (r *IdentityRepository) ReplaceTimelineLanguages(ctx context.Context, tx uo
 		return wrap(err, "delete timeline languages")
 	}
 	for _, l := range languages {
-		err := q.InsertUserTimelineLanguage(ctx, sqlitegen.InsertUserTimelineLanguageParams{UserID: userID, Language: l})
+		err := q.InsertUserTimelineLanguage(ctx, identitygen.InsertUserTimelineLanguageParams{UserID: userID, Language: l})
 		if err != nil {
 			return wrap(err, "insert timeline language")
 		}
@@ -128,7 +128,7 @@ func (r *IdentityRepository) FindPreferences(ctx context.Context, userID string)
 
 // userPreferencesFrom returns the preferences of row with the time zone the user chose, or
 // identity.DefaultTimeZone and TimeZoneChosen false when they have chosen none.
-func userPreferencesFrom(ctx context.Context, q *sqlitegen.Queries, row sqlitegen.UserPreference) (identity.Preferences, error) {
+func userPreferencesFrom(ctx context.Context, q *genQueries, row identitygen.UserPreference) (identity.Preferences, error) {
 	tz, chosen := identity.DefaultTimeZone, false
 	switch got, err := q.GetUserTimeZone(ctx, row.UserID); {
 	case err == nil:

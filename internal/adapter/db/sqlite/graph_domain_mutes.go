@@ -5,7 +5,7 @@ package sqlite
 import (
 	"context"
 
-	"github.com/mycroblog/my/internal/adapter/db/sqlite/sqlitegen"
+	"github.com/mycroblog/my/internal/adapter/db/sqlite/graphgen"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/graph"
 )
@@ -16,7 +16,7 @@ func (r *GraphRepository) InsertDomainMute(ctx context.Context, tx uow.Tx, m gra
 	if err != nil {
 		return false, err
 	}
-	rows, err := q.InsertDomainMute(ctx, sqlitegen.InsertDomainMuteParams{AccountID: m.AccountID, Domain: m.Domain, CreatedAt: toMillis(m.CreatedAt)})
+	rows, err := q.InsertDomainMute(ctx, graphgen.InsertDomainMuteParams{AccountID: m.AccountID, Domain: m.Domain, CreatedAt: toMillis(m.CreatedAt)})
 	if err != nil {
 		return false, wrap(err, "insert domain mute")
 	}
@@ -29,7 +29,7 @@ func (r *GraphRepository) DeleteDomainMute(ctx context.Context, tx uow.Tx, accou
 	if err != nil {
 		return false, err
 	}
-	rows, err := q.DeleteDomainMute(ctx, sqlitegen.DeleteDomainMuteParams{AccountID: accountID, Domain: domain})
+	rows, err := q.DeleteDomainMute(ctx, graphgen.DeleteDomainMuteParams{AccountID: accountID, Domain: domain})
 	if err != nil {
 		return false, wrap(err, "delete domain mute")
 	}
@@ -48,7 +48,7 @@ func (r *GraphRepository) CountDomainMutes(ctx context.Context, tx uow.Tx, accou
 
 // ListDomainMutes implements graph.Repository.
 func (r *GraphRepository) ListDomainMutes(ctx context.Context, accountID, after string, limit int) ([]graph.DomainMute, error) {
-	rows, err := r.db.reader().ListDomainMutesPage(ctx, sqlitegen.ListDomainMutesPageParams{
+	rows, err := r.db.reader().ListDomainMutesPage(ctx, graphgen.ListDomainMutesPageParams{
 		AccountID: accountID, BeforeDomain: after, PageLimit: int64(limit),
 	})
 	if err != nil {
@@ -70,7 +70,7 @@ func (r *GraphRepository) ListAllDomainMutes(ctx context.Context, tx uow.Tx) ([]
 	return domainMutesFrom(rows), nil
 }
 
-func domainMutesFrom(rows []sqlitegen.AccountDomainMute) []graph.DomainMute {
+func domainMutesFrom(rows []graphgen.AccountDomainMute) []graph.DomainMute {
 	out := make([]graph.DomainMute, len(rows))
 	for i, row := range rows {
 		out[i] = graph.DomainMute{AccountID: row.AccountID, Domain: row.Domain, CreatedAt: fromMillis(row.CreatedAt)}
@@ -87,6 +87,6 @@ func (r *GraphRepository) MutesAnyDomain(ctx context.Context, accountID string, 
 	if err != nil {
 		return false, err
 	}
-	muted, err := r.db.reader().MutesAnyDomain(ctx, sqlitegen.MutesAnyDomainParams{AccountID: accountID, Domains: list})
+	muted, err := r.db.reader().MutesAnyDomain(ctx, graphgen.MutesAnyDomainParams{AccountID: accountID, Domains: list})
 	return muted, wrap(err, "look up domain mutes")
 }

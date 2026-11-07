@@ -7,7 +7,7 @@ import (
 	"slices"
 	"time"
 
-	"github.com/mycroblog/my/internal/adapter/db/postgres/postgresgen"
+	"github.com/mycroblog/my/internal/adapter/db/postgres/identitygen"
 	appidentity "github.com/mycroblog/my/internal/app/identity"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/identity"
@@ -19,7 +19,7 @@ func (r *IdentityRepository) EnsureOAuthClient(ctx context.Context, tx uow.Tx, c
 	if err != nil {
 		return identity.OAuthClient{}, err
 	}
-	err = q.InsertOAuthClientIfAbsent(ctx, postgresgen.InsertOAuthClientIfAbsentParams{
+	err = q.InsertOAuthClientIfAbsent(ctx, identitygen.InsertOAuthClientIfAbsentParams{
 		ID: c.ID, ClientID: c.ClientID, ClientSecretHash: c.SecretHash, Name: c.Name, Website: toNullString(c.Website),
 		Scope: string(c.Scope), Registration: string(c.Registration), OwnerUserID: toNullString(c.OwnerUserID),
 		CreatedAt: c.CreatedAt,
@@ -48,13 +48,13 @@ func (r *IdentityRepository) ReplaceOAuthClientRedirectURIs(ctx context.Context,
 		if slices.Contains(uris, u) {
 			continue
 		}
-		err := q.DeleteOAuthClientRedirectURI(ctx, postgresgen.DeleteOAuthClientRedirectURIParams{OauthClientID: clientID, RedirectUri: u})
+		err := q.DeleteOAuthClientRedirectURI(ctx, identitygen.DeleteOAuthClientRedirectURIParams{OauthClientID: clientID, RedirectUri: u})
 		if err != nil {
 			return wrap(err, "delete oauth client redirect uri")
 		}
 	}
 	for _, u := range uris {
-		err := q.InsertOAuthClientRedirectURIIfAbsent(ctx, postgresgen.InsertOAuthClientRedirectURIIfAbsentParams{OauthClientID: clientID, RedirectUri: u})
+		err := q.InsertOAuthClientRedirectURIIfAbsent(ctx, identitygen.InsertOAuthClientRedirectURIIfAbsentParams{OauthClientID: clientID, RedirectUri: u})
 		if err != nil {
 			return wrap(err, "insert oauth client redirect uri")
 		}
@@ -68,7 +68,7 @@ func (r *IdentityRepository) InsertAuthorizationCode(ctx context.Context, tx uow
 	if err != nil {
 		return err
 	}
-	err = q.InsertAuthorizationCode(ctx, postgresgen.InsertAuthorizationCodeParams{
+	err = q.InsertAuthorizationCode(ctx, identitygen.InsertAuthorizationCodeParams{
 		CodeHash: c.CodeHash, OauthClientID: c.ClientID, UserID: c.UserID, RedirectUri: c.RedirectURI, Scope: string(c.Scope),
 		CodeChallenge: c.CodeChallenge, SessionID: toNullString(c.SessionID), IssuedAt: c.IssuedAt, ExpiresAt: c.ExpiresAt,
 	})
@@ -81,7 +81,7 @@ func (r *IdentityRepository) InsertAuthorizationCodeRedemption(ctx context.Conte
 	if err != nil {
 		return false, err
 	}
-	n, err := q.InsertAuthorizationCodeRedemptionIfAbsent(ctx, postgresgen.InsertAuthorizationCodeRedemptionIfAbsentParams{
+	n, err := q.InsertAuthorizationCodeRedemptionIfAbsent(ctx, identitygen.InsertAuthorizationCodeRedemptionIfAbsentParams{
 		CodeHash: red.CodeHash, TokenID: red.TokenID, RedeemedAt: red.RedeemedAt,
 	})
 	return n == 1, wrap(err, "insert authorization code redemption")
@@ -97,7 +97,7 @@ func (r *IdentityRepository) InsertAccessToken(ctx context.Context, tx uow.Tx, t
 	if t.RefreshTokenHash != nil {
 		refreshExpires = &t.RefreshExpiresAt
 	}
-	err = q.InsertAccessToken(ctx, postgresgen.InsertAccessTokenParams{
+	err = q.InsertAccessToken(ctx, identitygen.InsertAccessTokenParams{
 		ID: t.ID, FamilyID: t.FamilyID, OauthClientID: t.ClientID, UserID: t.UserID,
 		AccessTokenHash: t.AccessTokenHash, RefreshTokenHash: t.RefreshTokenHash, Scope: string(t.Scope),
 		RotatedFromTokenID: toNullString(t.RotatedFromTokenID), IssuedAt: t.IssuedAt,
@@ -112,7 +112,7 @@ func (r *IdentityRepository) InsertTokenRevocation(ctx context.Context, tx uow.T
 	if err != nil {
 		return false, err
 	}
-	n, err := q.InsertTokenRevocationIfAbsent(ctx, postgresgen.InsertTokenRevocationIfAbsentParams{
+	n, err := q.InsertTokenRevocationIfAbsent(ctx, identitygen.InsertTokenRevocationIfAbsentParams{
 		TokenID: rev.TokenID, Reason: string(rev.Reason), RevokedAt: rev.RevokedAt,
 	})
 	return n == 1, wrap(err, "insert token revocation")
@@ -124,7 +124,7 @@ func (r *IdentityRepository) RevokeTokenFamily(ctx context.Context, tx uow.Tx, f
 	if err != nil {
 		return err
 	}
-	err = q.RevokeTokenFamily(ctx, postgresgen.RevokeTokenFamilyParams{Reason: string(reason), RevokedAt: at, FamilyID: familyID})
+	err = q.RevokeTokenFamily(ctx, identitygen.RevokeTokenFamilyParams{Reason: string(reason), RevokedAt: at, FamilyID: familyID})
 	return wrap(err, "revoke token family")
 }
 
@@ -150,7 +150,7 @@ func (r *IdentityRepository) SessionRevoked(ctx context.Context, tx uow.Tx, sess
 
 // TokenFamilyActive implements identity.Repository.
 func (r *IdentityRepository) TokenFamilyActive(ctx context.Context, familyID string, now time.Time) (bool, error) {
-	active, err := r.db.reader().TokenFamilyActive(ctx, postgresgen.TokenFamilyActiveParams{FamilyID: familyID, Now: now})
+	active, err := r.db.reader().TokenFamilyActive(ctx, identitygen.TokenFamilyActiveParams{FamilyID: familyID, Now: now})
 	return active, wrap(err, "check token family")
 }
 
@@ -160,7 +160,7 @@ func (r *IdentityRepository) ListUnusedDynamicOAuthClients(ctx context.Context, 
 	if err != nil {
 		return nil, err
 	}
-	ids, err := r.db.reader().ListUnusedDynamicOAuthClients(ctx, postgresgen.ListUnusedDynamicOAuthClientsParams{
+	ids, err := r.db.reader().ListUnusedDynamicOAuthClients(ctx, identitygen.ListUnusedDynamicOAuthClientsParams{
 		UnredeemedBefore: unredeemedBefore, RecordsKeptSince: recordsKeptSince, IdleBefore: idleBefore, Now: now, BatchLimit: n,
 	})
 	return ids, wrap(err, "list unused dynamic oauth clients")
@@ -172,7 +172,7 @@ func (r *IdentityRepository) RevokeSessionOfTokenFamily(ctx context.Context, tx 
 	if err != nil {
 		return err
 	}
-	err = q.RevokeSessionOfTokenFamily(ctx, postgresgen.RevokeSessionOfTokenFamilyParams{Reason: string(reason), RevokedAt: at, FamilyID: familyID})
+	err = q.RevokeSessionOfTokenFamily(ctx, identitygen.RevokeSessionOfTokenFamilyParams{Reason: string(reason), RevokedAt: at, FamilyID: familyID})
 	return wrap(err, "revoke the session of a token family")
 }
 
@@ -244,10 +244,10 @@ func (r *IdentityRepository) FindAccessTokenByRefreshHash(ctx context.Context, h
 	state := identity.TokenState{
 		Revoked: row.Revoked, Client: identity.OAuthClientState{Disabled: row.ClientDisabled, Deleted: row.ClientDeleted},
 	}
-	return accessTokenFromRow(postgresgen.GetAccessTokenByAccessHashRow(row)), state, nil
+	return accessTokenFromRow(identitygen.GetAccessTokenByAccessHashRow(row)), state, nil
 }
 
-func oauthClientFromRow(row postgresgen.OauthClient) identity.OAuthClient {
+func oauthClientFromRow(row identitygen.OauthClient) identity.OAuthClient {
 	return identity.OAuthClient{
 		ID: row.ID, ClientID: row.ClientID, SecretHash: row.ClientSecretHash, Name: row.Name, Website: fromNullString(row.Website),
 		Scope: identity.Scope(row.Scope), Registration: identity.OAuthClientRegistration(row.Registration), OwnerUserID: fromNullString(row.OwnerUserID),
@@ -255,7 +255,7 @@ func oauthClientFromRow(row postgresgen.OauthClient) identity.OAuthClient {
 	}
 }
 
-func accessTokenFromRow(row postgresgen.GetAccessTokenByAccessHashRow) identity.AccessToken {
+func accessTokenFromRow(row identitygen.GetAccessTokenByAccessHashRow) identity.AccessToken {
 	t := identity.AccessToken{
 		ID: row.ID, FamilyID: row.FamilyID, ClientID: row.OauthClientID, UserID: row.UserID,
 		AccessTokenHash: row.AccessTokenHash, RefreshTokenHash: row.RefreshTokenHash, Scope: identity.Scope(row.Scope),
@@ -273,7 +273,7 @@ func (r *IdentityRepository) RevokeOtherTokensOfUser(ctx context.Context, tx uow
 	if err != nil {
 		return err
 	}
-	err = q.RevokeOtherTokensOfUser(ctx, postgresgen.RevokeOtherTokensOfUserParams{
+	err = q.RevokeOtherTokensOfUser(ctx, identitygen.RevokeOtherTokensOfUserParams{
 		Reason: string(reason), RevokedAt: at, UserID: userID, KeepFamilyID: keepFamilyID,
 	})
 	return wrap(err, "revoke the other tokens of a user")
@@ -285,7 +285,7 @@ func (r *IdentityRepository) RevokeTokensOfUser(ctx context.Context, tx uow.Tx, 
 	if err != nil {
 		return err
 	}
-	err = q.RevokeTokensOfUser(ctx, postgresgen.RevokeTokensOfUserParams{Reason: string(reason), RevokedAt: at, UserID: userID})
+	err = q.RevokeTokensOfUser(ctx, identitygen.RevokeTokensOfUserParams{Reason: string(reason), RevokedAt: at, UserID: userID})
 	return wrap(err, "revoke the tokens of a user")
 }
 
@@ -304,7 +304,7 @@ func (r *IdentityRepository) RevokeTokensOfClient(ctx context.Context, tx uow.Tx
 	if err != nil {
 		return err
 	}
-	err = q.RevokeTokensOfClient(ctx, postgresgen.RevokeTokensOfClientParams{Reason: string(reason), RevokedAt: at, OauthClientID: clientID})
+	err = q.RevokeTokensOfClient(ctx, identitygen.RevokeTokensOfClientParams{Reason: string(reason), RevokedAt: at, OauthClientID: clientID})
 	return wrap(err, "revoke the tokens of a client")
 }
 
@@ -314,7 +314,7 @@ func (r *IdentityRepository) ListOAuthClients(ctx context.Context, registration 
 	if err != nil {
 		return nil, err
 	}
-	rows, err := r.db.reader().ListOAuthClients(ctx, postgresgen.ListOAuthClientsParams{
+	rows, err := r.db.reader().ListOAuthClients(ctx, identitygen.ListOAuthClientsParams{
 		Registration: toNullString(string(registration)), Before: toNullString(before), PageLimit: n,
 	})
 	if err != nil {
@@ -323,7 +323,7 @@ func (r *IdentityRepository) ListOAuthClients(ctx context.Context, registration 
 	out := make([]identity.OAuthClientListing, len(rows))
 	for i, row := range rows {
 		out[i] = identity.OAuthClientListing{
-			OAuthClient: oauthClientFromRow(postgresgen.OauthClient{
+			OAuthClient: oauthClientFromRow(identitygen.OauthClient{
 				ID: row.ID, ClientID: row.ClientID, ClientSecretHash: row.ClientSecretHash, Name: row.Name, Website: row.Website,
 				Scope: row.Scope, Registration: row.Registration, OwnerUserID: row.OwnerUserID, CreatedAt: row.CreatedAt,
 			}),
@@ -339,7 +339,7 @@ func (r *IdentityRepository) InsertOAuthClientDisablement(ctx context.Context, t
 	if err != nil {
 		return false, err
 	}
-	n, err := q.InsertOAuthClientDisablementIfEnabled(ctx, postgresgen.InsertOAuthClientDisablementIfEnabledParams{
+	n, err := q.InsertOAuthClientDisablementIfEnabled(ctx, identitygen.InsertOAuthClientDisablementIfEnabledParams{
 		ID: dis.ID, OauthClientID: dis.ClientID, DisabledByUserID: toNullString(dis.DisabledByUserID), DisabledAt: dis.DisabledAt,
 	})
 	return n == 1, wrap(err, "insert oauth client disablement")
@@ -351,7 +351,7 @@ func (r *IdentityRepository) LiftOAuthClientDisablements(ctx context.Context, tx
 	if err != nil {
 		return false, err
 	}
-	n, err := q.LiftOAuthClientDisablements(ctx, postgresgen.LiftOAuthClientDisablementsParams{
+	n, err := q.LiftOAuthClientDisablements(ctx, identitygen.LiftOAuthClientDisablementsParams{
 		LiftedByUserID: toNullString(byUserID), LiftedAt: at, OauthClientID: clientID,
 	})
 	return n > 0, wrap(err, "lift oauth client disablements")
@@ -363,7 +363,7 @@ func (r *IdentityRepository) InsertOAuthClientDeletion(ctx context.Context, tx u
 	if err != nil {
 		return false, err
 	}
-	n, err := q.InsertOAuthClientDeletionIfAbsent(ctx, postgresgen.InsertOAuthClientDeletionIfAbsentParams{
+	n, err := q.InsertOAuthClientDeletionIfAbsent(ctx, identitygen.InsertOAuthClientDeletionIfAbsentParams{
 		OauthClientID: del.ClientID, Reason: string(del.Reason), DeletedByUserID: toNullString(del.DeletedByUserID), DeletedAt: del.DeletedAt,
 	})
 	return n == 1, wrap(err, "insert oauth client deletion")
@@ -375,13 +375,13 @@ func (r *IdentityRepository) UpsertTokenFamilyLastUsed(ctx context.Context, tx u
 	if err != nil {
 		return err
 	}
-	err = q.UpsertTokenFamilyLastUsed(ctx, postgresgen.UpsertTokenFamilyLastUsedParams{FamilyID: familyID, LastUsedAt: at})
+	err = q.UpsertTokenFamilyLastUsed(ctx, identitygen.UpsertTokenFamilyLastUsedParams{FamilyID: familyID, LastUsedAt: at})
 	return wrap(err, "record the last use of a token family")
 }
 
 // ListAuthorizedAppTokens implements identity.Repository.
 func (r *IdentityRepository) ListAuthorizedAppTokens(ctx context.Context, userID string, now time.Time) ([]identity.AuthorizedAppToken, error) {
-	rows, err := r.db.reader().ListAuthorizedAppTokens(ctx, postgresgen.ListAuthorizedAppTokensParams{UserID: userID, Now: now})
+	rows, err := r.db.reader().ListAuthorizedAppTokens(ctx, identitygen.ListAuthorizedAppTokensParams{UserID: userID, Now: now})
 	if err != nil {
 		return nil, wrap(err, "list authorized app tokens")
 	}
@@ -389,7 +389,7 @@ func (r *IdentityRepository) ListAuthorizedAppTokens(ctx context.Context, userID
 	for i, row := range rows {
 		t := identity.AuthorizedAppToken{
 			FamilyID: row.FamilyID, Scope: identity.Scope(row.TokenScope), AuthorizedAt: utc(row.AuthorizedAt),
-			Client: oauthClientFromRow(postgresgen.OauthClient{
+			Client: oauthClientFromRow(identitygen.OauthClient{
 				ID: row.ID, ClientID: row.ClientID, ClientSecretHash: row.ClientSecretHash, Name: row.Name, Website: row.Website,
 				Scope: row.Scope, Registration: row.Registration, OwnerUserID: row.OwnerUserID, CreatedAt: row.CreatedAt,
 			}),
@@ -409,13 +409,13 @@ func (r *IdentityRepository) RevokeTokensOfUserAndClient(ctx context.Context, tx
 	if err != nil {
 		return 0, err
 	}
-	n, err := q.RevokeTokensOfUserAndClient(ctx, postgresgen.RevokeTokensOfUserAndClientParams{Reason: string(reason), RevokedAt: at, UserID: userID, OauthClientID: clientID})
+	n, err := q.RevokeTokensOfUserAndClient(ctx, identitygen.RevokeTokensOfUserAndClientParams{Reason: string(reason), RevokedAt: at, UserID: userID, OauthClientID: clientID})
 	return n, wrap(err, "revoke the tokens of a user and a client")
 }
 
 // ListBrowserSessions implements identity.Repository.
 func (r *IdentityRepository) ListBrowserSessions(ctx context.Context, userID string, now time.Time) ([]identity.BrowserSession, error) {
-	rows, err := r.db.reader().ListBrowserSessions(ctx, postgresgen.ListBrowserSessionsParams{UserID: userID, Now: now})
+	rows, err := r.db.reader().ListBrowserSessions(ctx, identitygen.ListBrowserSessionsParams{UserID: userID, Now: now})
 	if err != nil {
 		return nil, wrap(err, "list browser sessions")
 	}
@@ -439,7 +439,7 @@ func (r *IdentityRepository) ListBrowserSessions(ctx context.Context, userID str
 
 // ListBrowserSessionFamilies implements identity.Repository.
 func (r *IdentityRepository) ListBrowserSessionFamilies(ctx context.Context, userID string, now time.Time) ([]identity.BrowserSessionFamily, error) {
-	rows, err := r.db.reader().ListBrowserSessionFamilies(ctx, postgresgen.ListBrowserSessionFamiliesParams{UserID: userID, Now: now})
+	rows, err := r.db.reader().ListBrowserSessionFamilies(ctx, identitygen.ListBrowserSessionFamiliesParams{UserID: userID, Now: now})
 	if err != nil {
 		return nil, wrap(err, "list browser session families")
 	}
@@ -464,6 +464,6 @@ func (r *IdentityRepository) RevokeFirstPartyTokensOfSession(ctx context.Context
 	if err != nil {
 		return err
 	}
-	err = q.RevokeFirstPartyTokensOfSession(ctx, postgresgen.RevokeFirstPartyTokensOfSessionParams{Reason: string(reason), RevokedAt: at, SessionID: &sessionID})
+	err = q.RevokeFirstPartyTokensOfSession(ctx, identitygen.RevokeFirstPartyTokensOfSessionParams{Reason: string(reason), RevokedAt: at, SessionID: &sessionID})
 	return wrap(err, "revoke the first-party tokens of a session")
 }

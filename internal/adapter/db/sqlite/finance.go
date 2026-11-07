@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"math"
 
-	"github.com/mycroblog/my/internal/adapter/db/sqlite/sqlitegen"
+	"github.com/mycroblog/my/internal/adapter/db/sqlite/financegen"
 	appfinance "github.com/mycroblog/my/internal/app/finance"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/finance"
@@ -55,7 +55,7 @@ func (r *FinanceRepository) InsertItem(ctx context.Context, tx uow.Tx, item fina
 	if err != nil {
 		return err
 	}
-	return wrap(q.InsertCostItem(ctx, sqlitegen.InsertCostItemParams{
+	return wrap(q.InsertCostItem(ctx, financegen.InsertCostItemParams{
 		ID: item.ID, Schedule: string(item.Recurrence.Schedule), Interval: int64(item.Recurrence.Interval),
 		StartsOn: item.StartsOn.String(), CreatedByUserID: toNullString(item.CreatedByUserID), CreatedAt: toMillis(item.CreatedAt),
 	}), "insert cost item")
@@ -67,7 +67,7 @@ func (r *FinanceRepository) InsertLabelRevision(ctx context.Context, tx uow.Tx, 
 	if err != nil {
 		return err
 	}
-	return wrap(q.InsertCostItemLabelRevision(ctx, sqlitegen.InsertCostItemLabelRevisionParams{
+	return wrap(q.InsertCostItemLabelRevision(ctx, financegen.InsertCostItemLabelRevisionParams{
 		ID: rev.ID, CostItemID: rev.CostItemID, Name: rev.Label.Name, Provider: rev.Label.Provider,
 		ProviderNormalized: rev.ProviderNormalized, Category: string(rev.Label.Category), Memo: rev.Label.Memo,
 		RevisedByUserID: toNullString(rev.RevisedByUserID), RevisedAt: toMillis(rev.RevisedAt),
@@ -81,7 +81,7 @@ func (r *FinanceRepository) InsertPriceRevision(ctx context.Context, tx uow.Tx, 
 		return err
 	}
 	p := rev.Revision
-	return wrap(q.InsertCostItemPriceRevision(ctx, sqlitegen.InsertCostItemPriceRevisionParams{
+	return wrap(q.InsertCostItemPriceRevision(ctx, financegen.InsertCostItemPriceRevisionParams{
 		ID: p.ID, CostItemID: rev.CostItemID, EffectiveOn: p.EffectiveOn.String(), AmountMinor: p.Price.Minor,
 		Currency: string(p.Price.Currency), RevisedByUserID: toNullString(rev.RevisedByUserID), RevisedAt: toMillis(p.RevisedAt),
 	}), "insert cost item price revision")
@@ -93,7 +93,7 @@ func (r *FinanceRepository) InsertEndChange(ctx context.Context, tx uow.Tx, c ap
 	if err != nil {
 		return err
 	}
-	return wrap(q.InsertCostItemEndChange(ctx, sqlitegen.InsertCostItemEndChangeParams{
+	return wrap(q.InsertCostItemEndChange(ctx, financegen.InsertCostItemEndChangeParams{
 		ID: c.ID, CostItemID: c.CostItemID, EndsOn: toNullDate(c.EndsOn), ChangedByUserID: toNullString(c.ChangedByUserID),
 		ChangedAt: toMillis(c.ChangedAt),
 	}), "insert cost item end change")
@@ -105,7 +105,7 @@ func (r *FinanceRepository) InsertCancellation(ctx context.Context, tx uow.Tx, c
 	if err != nil {
 		return err
 	}
-	return wrap(q.InsertCostItemCancellation(ctx, sqlitegen.InsertCostItemCancellationParams{
+	return wrap(q.InsertCostItemCancellation(ctx, financegen.InsertCostItemCancellationParams{
 		ID: c.ID, CostItemID: c.CostItemID, CanceledByUserID: toNullString(c.CanceledByUserID), CanceledAt: toMillis(c.CanceledAt),
 	}), "insert cost item cancellation")
 }
@@ -116,7 +116,7 @@ func (r *FinanceRepository) UpsertHead(ctx context.Context, tx uow.Tx, h appfina
 	if err != nil {
 		return err
 	}
-	return wrap(q.UpsertCostItemHead(ctx, sqlitegen.UpsertCostItemHeadParams{
+	return wrap(q.UpsertCostItemHead(ctx, financegen.UpsertCostItemHeadParams{
 		CostItemID: h.CostItemID, LabelRevisionID: h.LabelRevisionID, EndsOn: toNullDate(h.EndsOn),
 	}), "upsert cost item head")
 }
@@ -186,7 +186,7 @@ func (r *FinanceRepository) AllItems(ctx context.Context) ([]finance.CostItem, e
 
 func (r *FinanceRepository) items(ctx context.Context, id, before string, limit int64) ([]finance.CostItem, error) {
 	q := r.db.reader()
-	rows, err := q.ListCostItems(ctx, sqlitegen.ListCostItemsParams{ID: id, Before: before, Lim: limit})
+	rows, err := q.ListCostItems(ctx, financegen.ListCostItemsParams{ID: id, Before: before, Lim: limit})
 	if err != nil {
 		return nil, wrap(err, "list cost items")
 	}
@@ -242,5 +242,5 @@ func (r *FinanceRepository) items(ctx context.Context, id, before string, limit 
 // RebuildHeads implements appfinance.Repository.
 func (r *FinanceRepository) RebuildHeads(ctx context.Context, tx uow.Tx) error {
 	return r.db.execAll(ctx, tx, "rebuild cost item heads",
-		(*sqlitegen.Queries).DeleteAllCostItemHeads, (*sqlitegen.Queries).RebuildCostItemHeads)
+		(*genQueries).DeleteAllCostItemHeads, (*genQueries).RebuildCostItemHeads)
 }

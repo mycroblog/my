@@ -5,7 +5,7 @@ package postgres
 import (
 	"context"
 
-	"github.com/mycroblog/my/internal/adapter/db/postgres/postgresgen"
+	"github.com/mycroblog/my/internal/adapter/db/postgres/voicegen"
 	"github.com/mycroblog/my/internal/app/uow"
 	appvoice "github.com/mycroblog/my/internal/app/voice"
 	"github.com/mycroblog/my/internal/domain/voice"
@@ -22,7 +22,7 @@ var _ appvoice.Repository = (*VoiceRepository)(nil)
 func (d *DB) VoiceRepository() *VoiceRepository { return &VoiceRepository{db: d} }
 
 // q returns the queries in tx, or on the reader when tx is nil.
-func (r *VoiceRepository) q(tx uow.Tx) (*postgresgen.Queries, error) {
+func (r *VoiceRepository) q(tx uow.Tx) (*genQueries, error) {
 	if tx == nil {
 		return r.db.reader(), nil
 	}
@@ -35,7 +35,7 @@ func (r *VoiceRepository) InsertRoom(ctx context.Context, tx uow.Tx, room appvoi
 	if err != nil {
 		return err
 	}
-	return wrap(q.InsertVoiceRoom(ctx, postgresgen.InsertVoiceRoomParams{
+	return wrap(q.InsertVoiceRoom(ctx, voicegen.InsertVoiceRoomParams{
 		ID: room.ID, OpenedByAccountID: room.OpenedByAccountID, OpenedAt: room.OpenedAt, Transport: string(room.Transport),
 	}), "insert voice room")
 }
@@ -47,7 +47,7 @@ func (r *VoiceRepository) InsertRevision(ctx context.Context, tx uow.Tx, rev app
 		return err
 	}
 	s := rev.Settings
-	if err := q.InsertVoiceRoomRevision(ctx, postgresgen.InsertVoiceRoomRevisionParams{
+	if err := q.InsertVoiceRoomRevision(ctx, voicegen.InsertVoiceRoomRevisionParams{
 		ID: rev.ID, RoomID: rev.RoomID, Name: s.Name, Description: s.Description, Visibility: string(s.Visibility),
 		Speakers: string(s.Speakers), IconEmojiKey: s.Icon.Key(), IconCustomEmojiID: toNullString(s.Icon.CustomEmojiID),
 		RevisedByAccountID: rev.RevisedByAccountID, RevisedAt: rev.RevisedAt,
@@ -59,7 +59,7 @@ func (r *VoiceRepository) InsertRevision(ctx context.Context, tx uow.Tx, rev app
 		if err != nil {
 			return err
 		}
-		if err := q.InsertVoiceRoomRevisionHashtag(ctx, postgresgen.InsertVoiceRoomRevisionHashtagParams{
+		if err := q.InsertVoiceRoomRevisionHashtag(ctx, voicegen.InsertVoiceRoomRevisionHashtagParams{
 			RevisionID: rev.ID, Position: pos, Name: t.Name, NameNormalized: t.NameNormalized,
 		}); err != nil {
 			return wrap(err, "insert voice room hashtag")
@@ -74,7 +74,7 @@ func (r *VoiceRepository) InsertHostChange(ctx context.Context, tx uow.Tx, c app
 	if err != nil {
 		return err
 	}
-	return wrap(q.InsertVoiceRoomHostChange(ctx, postgresgen.InsertVoiceRoomHostChangeParams{
+	return wrap(q.InsertVoiceRoomHostChange(ctx, voicegen.InsertVoiceRoomHostChangeParams{
 		ID: c.ID, RoomID: c.RoomID, HostAccountID: c.HostAccountID, Reason: string(c.Reason), ChangedAt: c.ChangedAt,
 	}), "insert voice room host change")
 }
@@ -85,7 +85,7 @@ func (r *VoiceRepository) InsertCohostChange(ctx context.Context, tx uow.Tx, c a
 	if err != nil {
 		return err
 	}
-	return wrap(q.InsertVoiceRoomCohostChange(ctx, postgresgen.InsertVoiceRoomCohostChangeParams{
+	return wrap(q.InsertVoiceRoomCohostChange(ctx, voicegen.InsertVoiceRoomCohostChangeParams{
 		ID: c.ID, RoomID: c.RoomID, AccountID: c.AccountID, Change: string(c.Change), ChangedAt: c.ChangedAt,
 	}), "insert voice room co-host change")
 }
@@ -96,7 +96,7 @@ func (r *VoiceRepository) InsertParticipation(ctx context.Context, tx uow.Tx, p 
 	if err != nil {
 		return err
 	}
-	return wrap(q.InsertVoiceRoomParticipation(ctx, postgresgen.InsertVoiceRoomParticipationParams{
+	return wrap(q.InsertVoiceRoomParticipation(ctx, voicegen.InsertVoiceRoomParticipationParams{
 		ID: p.ID, RoomID: p.RoomID, AccountID: p.AccountID, JoinedAt: p.JoinedAt,
 	}), "insert voice room participation")
 }
@@ -107,7 +107,7 @@ func (r *VoiceRepository) InsertParticipationEnd(ctx context.Context, tx uow.Tx,
 	if err != nil {
 		return false, err
 	}
-	n, err := q.InsertVoiceRoomParticipationEnd(ctx, postgresgen.InsertVoiceRoomParticipationEndParams{
+	n, err := q.InsertVoiceRoomParticipationEnd(ctx, voicegen.InsertVoiceRoomParticipationEndParams{
 		ParticipationID: e.ParticipationID, Reason: string(e.Reason), EndedAt: e.EndedAt,
 	})
 	return n > 0, wrap(err, "insert voice room participation end")
@@ -119,7 +119,7 @@ func (r *VoiceRepository) InsertRoleChange(ctx context.Context, tx uow.Tx, c app
 	if err != nil {
 		return err
 	}
-	return wrap(q.InsertVoiceRoomRoleChange(ctx, postgresgen.InsertVoiceRoomRoleChangeParams{
+	return wrap(q.InsertVoiceRoomRoleChange(ctx, voicegen.InsertVoiceRoomRoleChangeParams{
 		ID: c.ID, ParticipationID: c.ParticipationID, Role: string(c.Role), ChangedByAccountID: c.ChangedByAccountID,
 		ChangedAt: c.ChangedAt,
 	}), "insert voice room role change")
@@ -131,7 +131,7 @@ func (r *VoiceRepository) InsertSpeakGrant(ctx context.Context, tx uow.Tx, g app
 	if err != nil {
 		return err
 	}
-	return wrap(q.InsertVoiceRoomSpeakGrant(ctx, postgresgen.InsertVoiceRoomSpeakGrantParams{
+	return wrap(q.InsertVoiceRoomSpeakGrant(ctx, voicegen.InsertVoiceRoomSpeakGrantParams{
 		ID: g.ID, RoomID: g.RoomID, AccountID: g.AccountID, Change: string(g.Change), ChangedByAccountID: g.ChangedByAccountID,
 		ChangedAt: g.ChangedAt,
 	}), "insert voice room speak grant")
@@ -143,7 +143,7 @@ func (r *VoiceRepository) InsertHandRaise(ctx context.Context, tx uow.Tx, h appv
 	if err != nil {
 		return err
 	}
-	return wrap(q.InsertVoiceRoomHandRaise(ctx, postgresgen.InsertVoiceRoomHandRaiseParams{
+	return wrap(q.InsertVoiceRoomHandRaise(ctx, voicegen.InsertVoiceRoomHandRaiseParams{
 		ID: h.ID, ParticipationID: h.ParticipationID, Change: string(h.Change), ChangedAt: h.ChangedAt,
 	}), "insert voice room hand raise")
 }
@@ -154,7 +154,7 @@ func (r *VoiceRepository) InsertInvitation(ctx context.Context, tx uow.Tx, i app
 	if err != nil {
 		return false, err
 	}
-	n, err := q.InsertVoiceRoomInvitation(ctx, postgresgen.InsertVoiceRoomInvitationParams{
+	n, err := q.InsertVoiceRoomInvitation(ctx, voicegen.InsertVoiceRoomInvitationParams{
 		ID: i.ID, RoomID: i.RoomID, InviteeAccountID: i.InviteeAccountID, Role: string(i.Role),
 		InvitedByAccountID: i.InvitedByAccountID, InvitedAt: i.InvitedAt,
 	})
@@ -167,7 +167,7 @@ func (r *VoiceRepository) InsertInvitationRevocation(ctx context.Context, tx uow
 	if err != nil {
 		return false, err
 	}
-	n, err := q.InsertVoiceRoomInvitationRevocation(ctx, postgresgen.InsertVoiceRoomInvitationRevocationParams{
+	n, err := q.InsertVoiceRoomInvitationRevocation(ctx, voicegen.InsertVoiceRoomInvitationRevocationParams{
 		InvitationID: rev.InvitationID, RevokedByAccountID: rev.RevokedByAccountID, RevokedAt: rev.RevokedAt,
 	})
 	return n > 0, wrap(err, "insert voice room invitation revocation")
@@ -179,7 +179,7 @@ func (r *VoiceRepository) InsertBan(ctx context.Context, tx uow.Tx, b appvoice.B
 	if err != nil {
 		return false, err
 	}
-	n, err := q.InsertVoiceRoomBan(ctx, postgresgen.InsertVoiceRoomBanParams{
+	n, err := q.InsertVoiceRoomBan(ctx, voicegen.InsertVoiceRoomBanParams{
 		ID: b.ID, RoomID: b.RoomID, AccountID: b.AccountID, BannedByAccountID: b.BannedByAccountID, BannedAt: b.BannedAt,
 	})
 	return n > 0, wrap(err, "insert voice room ban")
@@ -191,7 +191,7 @@ func (r *VoiceRepository) InsertEnding(ctx context.Context, tx uow.Tx, e appvoic
 	if err != nil {
 		return false, err
 	}
-	n, err := q.InsertVoiceRoomEnding(ctx, postgresgen.InsertVoiceRoomEndingParams{
+	n, err := q.InsertVoiceRoomEnding(ctx, voicegen.InsertVoiceRoomEndingParams{
 		RoomID: e.RoomID, Reason: string(e.Reason), EndedByAccountID: toNullString(e.EndedByAccountID), EndedAt: e.EndedAt,
 		Note: e.Note,
 	})
@@ -204,7 +204,7 @@ func (r *VoiceRepository) PutHostGrace(ctx context.Context, tx uow.Tx, g appvoic
 	if err != nil {
 		return err
 	}
-	return wrap(q.UpsertVoiceRoomHostGrace(ctx, postgresgen.UpsertVoiceRoomHostGraceParams{RoomID: g.RoomID, EndsAt: g.EndsAt}),
+	return wrap(q.UpsertVoiceRoomHostGrace(ctx, voicegen.UpsertVoiceRoomHostGraceParams{RoomID: g.RoomID, EndsAt: g.EndsAt}),
 		"put voice room host grace")
 }
 
@@ -244,7 +244,7 @@ func (r *VoiceRepository) FindParticipationEnd(ctx context.Context, tx uow.Tx, p
 	return appvoice.ParticipationEnd{ParticipationID: row.ParticipationID, Reason: voice.ParticipationEndReason(row.Reason), EndedAt: utc(row.EndedAt)}, nil
 }
 
-func voiceRoomRecord(row postgresgen.GetVoiceRoomRow) appvoice.RoomRecord {
+func voiceRoomRecord(row voicegen.GetVoiceRoomRow) appvoice.RoomRecord {
 	rec := appvoice.RoomRecord{
 		Room: appvoice.Room{
 			ID: row.ID, OpenedByAccountID: row.OpenedByAccountID, OpenedAt: utc(row.OpenedAt), Transport: voice.Transport(row.Transport),
@@ -272,7 +272,7 @@ func voiceRoomRecord(row postgresgen.GetVoiceRoomRow) appvoice.RoomRecord {
 }
 
 // withVoiceHashtags fills the hashtags of the revisions of recs.
-func withVoiceHashtags(ctx context.Context, q *postgresgen.Queries, recs []appvoice.RoomRecord) error {
+func withVoiceHashtags(ctx context.Context, q *genQueries, recs []appvoice.RoomRecord) error {
 	if len(recs) == 0 {
 		return nil
 	}
@@ -324,7 +324,7 @@ func (r *VoiceRepository) OpenRooms(ctx context.Context, tx uow.Tx, tagNormalize
 	}
 	recs := make([]appvoice.RoomRecord, len(rows))
 	for i, row := range rows {
-		recs[i] = voiceRoomRecord(postgresgen.GetVoiceRoomRow(row))
+		recs[i] = voiceRoomRecord(voicegen.GetVoiceRoomRow(row))
 	}
 	if err := withVoiceHashtags(ctx, q, recs); err != nil {
 		return nil, err
@@ -342,13 +342,13 @@ func (r *VoiceRepository) HostedRooms(ctx context.Context, tx uow.Tx, accountID,
 	if err != nil {
 		return nil, err
 	}
-	rows, err := q.ListHostedVoiceRooms(ctx, postgresgen.ListHostedVoiceRoomsParams{AccountID: accountID, Before: beforeID, RowLimit: n})
+	rows, err := q.ListHostedVoiceRooms(ctx, voicegen.ListHostedVoiceRoomsParams{AccountID: accountID, Before: beforeID, RowLimit: n})
 	if err != nil {
 		return nil, wrap(err, "list hosted voice rooms")
 	}
 	recs := make([]appvoice.RoomRecord, len(rows))
 	for i, row := range rows {
-		recs[i] = voiceRoomRecord(postgresgen.GetVoiceRoomRow(row))
+		recs[i] = voiceRoomRecord(voicegen.GetVoiceRoomRow(row))
 	}
 	if err := withVoiceHashtags(ctx, q, recs); err != nil {
 		return nil, err
@@ -356,7 +356,7 @@ func (r *VoiceRepository) HostedRooms(ctx context.Context, tx uow.Tx, accountID,
 	return recs, nil
 }
 
-func voiceParticipant(row postgresgen.VoiceRoomParticipant) appvoice.Participant {
+func voiceParticipant(row voicegen.VoiceRoomParticipant) appvoice.Participant {
 	return appvoice.Participant{
 		AccountID: row.AccountID, RoomID: row.RoomID, ParticipationID: row.ParticipationID, Role: voice.Role(row.Role),
 		CohostChangeID: fromNullString(row.CohostChangeID), HandRaised: row.HandRaised,
@@ -399,7 +399,7 @@ func (r *VoiceRepository) FindInvitation(ctx context.Context, tx uow.Tx, roomID,
 	if err != nil {
 		return appvoice.InvitationRecord{}, err
 	}
-	row, err := q.GetVoiceRoomInvitation(ctx, postgresgen.GetVoiceRoomInvitationParams{RoomID: roomID, InviteeAccountID: accountID})
+	row, err := q.GetVoiceRoomInvitation(ctx, voicegen.GetVoiceRoomInvitationParams{RoomID: roomID, InviteeAccountID: accountID})
 	if err != nil {
 		return appvoice.InvitationRecord{}, notFound(err, appvoice.ErrNotFound, "voice room invitation")
 	}
@@ -422,7 +422,7 @@ func (r *VoiceRepository) Invitations(ctx context.Context, tx uow.Tx, roomID, af
 	if err != nil {
 		return nil, err
 	}
-	rows, err := q.ListVoiceRoomInvitations(ctx, postgresgen.ListVoiceRoomInvitationsParams{RoomID: roomID, ID: afterID, RowLimit: n})
+	rows, err := q.ListVoiceRoomInvitations(ctx, voicegen.ListVoiceRoomInvitationsParams{RoomID: roomID, ID: afterID, RowLimit: n})
 	if err != nil {
 		return nil, wrap(err, "list voice room invitations")
 	}
@@ -442,7 +442,7 @@ func (r *VoiceRepository) Banned(ctx context.Context, tx uow.Tx, roomID, account
 	if err != nil {
 		return false, err
 	}
-	banned, err := q.IsVoiceRoomBanned(ctx, postgresgen.IsVoiceRoomBannedParams{RoomID: roomID, AccountID: accountID})
+	banned, err := q.IsVoiceRoomBanned(ctx, voicegen.IsVoiceRoomBannedParams{RoomID: roomID, AccountID: accountID})
 	return banned, wrap(err, "find voice room ban")
 }
 
@@ -452,7 +452,7 @@ func (r *VoiceRepository) SpeakGranted(ctx context.Context, tx uow.Tx, roomID, a
 	if err != nil {
 		return false, err
 	}
-	granted, err := q.IsVoiceRoomSpeakGranted(ctx, postgresgen.IsVoiceRoomSpeakGrantedParams{RoomID: roomID, AccountID: accountID})
+	granted, err := q.IsVoiceRoomSpeakGranted(ctx, voicegen.IsVoiceRoomSpeakGrantedParams{RoomID: roomID, AccountID: accountID})
 	return granted, wrap(err, "find voice room speak grant")
 }
 
@@ -474,10 +474,10 @@ func (r *VoiceRepository) RefreshParticipant(ctx context.Context, tx uow.Tx, roo
 	if err != nil {
 		return err
 	}
-	if err := q.DeleteVoiceRoomParticipant(ctx, postgresgen.DeleteVoiceRoomParticipantParams{RoomID: roomID, AccountID: accountID}); err != nil {
+	if err := q.DeleteVoiceRoomParticipant(ctx, voicegen.DeleteVoiceRoomParticipantParams{RoomID: roomID, AccountID: accountID}); err != nil {
 		return wrap(err, "delete voice room participant")
 	}
-	err = q.InsertVoiceRoomParticipant(ctx, postgresgen.InsertVoiceRoomParticipantParams{RoomID: roomID, AccountID: accountID})
+	err = q.InsertVoiceRoomParticipant(ctx, voicegen.InsertVoiceRoomParticipantParams{RoomID: roomID, AccountID: accountID})
 	if isUniqueViolation(err, "voice_room_participants_pkey") {
 		return appvoice.ErrInAnotherRoom
 	}
@@ -503,8 +503,8 @@ func (r *VoiceRepository) RefreshRoomParticipants(ctx context.Context, tx uow.Tx
 // RebuildProjections implements appvoice.Repository.
 func (r *VoiceRepository) RebuildProjections(ctx context.Context, tx uow.Tx) error {
 	return r.db.execAll(ctx, tx, "rebuild voice projections",
-		(*postgresgen.Queries).DeleteAllVoiceRoomHeads, (*postgresgen.Queries).RebuildVoiceRoomHeads,
-		(*postgresgen.Queries).DeleteAllVoiceRoomParticipants, (*postgresgen.Queries).RebuildVoiceRoomParticipants)
+		(*genQueries).DeleteAllVoiceRoomHeads, (*genQueries).RebuildVoiceRoomHeads,
+		(*genQueries).DeleteAllVoiceRoomParticipants, (*genQueries).RebuildVoiceRoomParticipants)
 }
 
 // LockRoom implements appvoice.Repository with a transaction-scoped advisory lock on the room.

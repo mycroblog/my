@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/mycroblog/my/internal/adapter/db/sqlite/sqlitegen"
+	"github.com/mycroblog/my/internal/adapter/db/sqlite/identitygen"
 	appidentity "github.com/mycroblog/my/internal/app/identity"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/identity"
@@ -20,7 +20,7 @@ func (r *IdentityRepository) InsertDataExport(ctx context.Context, tx uow.Tx, e 
 	if err != nil {
 		return err
 	}
-	err = q.InsertDataExport(ctx, sqlitegen.InsertDataExportParams{ID: e.ID, UserID: e.UserID, RequestedAt: toMillis(e.RequestedAt)})
+	err = q.InsertDataExport(ctx, identitygen.InsertDataExportParams{ID: e.ID, UserID: e.UserID, RequestedAt: toMillis(e.RequestedAt)})
 	return wrap(err, "insert data export")
 }
 
@@ -49,7 +49,7 @@ func (r *IdentityRepository) InsertDataExportResult(ctx context.Context, tx uow.
 	if !present {
 		return false, fmt.Errorf("data export %s: %w", res.ExportID, appidentity.ErrNotFound)
 	}
-	p := sqlitegen.InsertDataExportResultParams{
+	p := identitygen.InsertDataExportResultParams{
 		ExportID: res.ExportID, Outcome: string(res.Outcome), BlobKey: toNullString(res.BlobKey),
 		ExpiresAt: toMillis(res.ExpiresAt), CompletedAt: toMillis(res.CompletedAt),
 	}
@@ -62,7 +62,7 @@ func (r *IdentityRepository) InsertDataExportResult(ctx context.Context, tx uow.
 
 // ListStalePendingDataExports implements identity.ExportRepository.
 func (r *IdentityRepository) ListStalePendingDataExports(ctx context.Context, t time.Time, limit int) ([]string, error) {
-	ids, err := r.db.reader().ListStalePendingDataExports(ctx, sqlitegen.ListStalePendingDataExportsParams{
+	ids, err := r.db.reader().ListStalePendingDataExports(ctx, identitygen.ListStalePendingDataExportsParams{
 		RequestedBefore: toMillis(t), BatchLimit: int64(limit),
 	})
 	return ids, wrap(err, "list stale pending data exports")
@@ -74,12 +74,12 @@ func (r *IdentityRepository) FindDataExport(ctx context.Context, id string) (ide
 	if err != nil {
 		return identity.DataExport{}, notFound(err, appidentity.ErrNotFound, "data export")
 	}
-	return dataExport(sqlitegen.ListDataExportsRow(row)), nil
+	return dataExport(identitygen.ListDataExportsRow(row)), nil
 }
 
 // ListDataExports implements identity.ExportRepository.
 func (r *IdentityRepository) ListDataExports(ctx context.Context, userID string, limit int) ([]identity.DataExport, error) {
-	rows, err := r.db.reader().ListDataExports(ctx, sqlitegen.ListDataExportsParams{UserID: userID, BatchLimit: int64(limit)})
+	rows, err := r.db.reader().ListDataExports(ctx, identitygen.ListDataExportsParams{UserID: userID, BatchLimit: int64(limit)})
 	if err != nil {
 		return nil, wrap(err, "list data exports")
 	}
@@ -92,7 +92,7 @@ func (r *IdentityRepository) ListDataExports(ctx context.Context, userID string,
 
 // ListExpiredDataExports implements identity.ExportRepository.
 func (r *IdentityRepository) ListExpiredDataExports(ctx context.Context, t time.Time, limit int) ([]identity.DataExport, error) {
-	rows, err := r.db.reader().ListExpiredDataExports(ctx, sqlitegen.ListExpiredDataExportsParams{
+	rows, err := r.db.reader().ListExpiredDataExports(ctx, identitygen.ListExpiredDataExportsParams{
 		ExpiresBefore: toMillis(t), BatchLimit: int64(limit),
 	})
 	if err != nil {
@@ -100,7 +100,7 @@ func (r *IdentityRepository) ListExpiredDataExports(ctx context.Context, t time.
 	}
 	out := make([]identity.DataExport, 0, len(rows))
 	for _, row := range rows {
-		out = append(out, dataExport(sqlitegen.ListDataExportsRow{
+		out = append(out, dataExport(identitygen.ListDataExportsRow{
 			ID: row.ID, UserID: row.UserID, RequestedAt: row.RequestedAt,
 			Outcome: sql.NullString{String: row.Outcome, Valid: true}, BlobKey: row.BlobKey, FileSize: row.FileSize,
 			ExpiresAt: sql.NullInt64{Int64: row.ExpiresAt, Valid: true}, CompletedAt: sql.NullInt64{Int64: row.CompletedAt, Valid: true},
@@ -121,7 +121,7 @@ func (r *IdentityRepository) DeleteDataExport(ctx context.Context, tx uow.Tx, id
 	return wrap(q.DeleteDataExportResult(ctx, id), "delete data export result")
 }
 
-func dataExport(row sqlitegen.ListDataExportsRow) identity.DataExport {
+func dataExport(row identitygen.ListDataExportsRow) identity.DataExport {
 	e := identity.DataExport{ID: row.ID, UserID: row.UserID, RequestedAt: fromMillis(row.RequestedAt)}
 	if row.Outcome.Valid {
 		e.Result = &identity.DataExportResult{

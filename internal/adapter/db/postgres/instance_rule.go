@@ -6,7 +6,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/mycroblog/my/internal/adapter/db/postgres/postgresgen"
+	"github.com/mycroblog/my/internal/adapter/db/postgres/instancegen"
 	appinstance "github.com/mycroblog/my/internal/app/instance"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/instance"
@@ -18,7 +18,7 @@ func (r *InstanceRepository) InsertRule(ctx context.Context, tx uow.Tx, id strin
 	if err != nil {
 		return err
 	}
-	return wrap(q.InsertInstanceRule(ctx, postgresgen.InsertInstanceRuleParams{ID: id, CreatedAt: createdAt}), "insert instance rule")
+	return wrap(q.InsertInstanceRule(ctx, instancegen.InsertInstanceRuleParams{ID: id, CreatedAt: createdAt}), "insert instance rule")
 }
 
 // InsertRuleRevision implements instance.RuleRepository.
@@ -31,7 +31,7 @@ func (r *InstanceRepository) InsertRuleRevision(ctx context.Context, tx uow.Tx, 
 	if err != nil {
 		return err
 	}
-	err = q.InsertInstanceRuleRevision(ctx, postgresgen.InsertInstanceRuleRevisionParams{
+	err = q.InsertInstanceRuleRevision(ctx, instancegen.InsertInstanceRuleRevisionParams{
 		ID: rev.ID, RuleID: rev.RuleID, Position: position, Text: rev.Text, Hint: rev.Hint,
 		RevisedByUserID: toNullString(rev.RevisedByUserID), RevisedAt: rev.RevisedAt,
 	})
@@ -44,7 +44,7 @@ func (r *InstanceRepository) InsertRuleRetirement(ctx context.Context, tx uow.Tx
 	if err != nil {
 		return false, err
 	}
-	n, err := q.InsertInstanceRuleRetirement(ctx, postgresgen.InsertInstanceRuleRetirementParams{
+	n, err := q.InsertInstanceRuleRetirement(ctx, instancegen.InsertInstanceRuleRetirementParams{
 		RuleID: ret.RuleID, RetiredByUserID: toNullString(ret.RetiredByUserID), RetiredAt: ret.RetiredAt,
 	})
 	return n > 0, wrap(err, "insert instance rule retirement")
@@ -64,12 +64,12 @@ func (r *InstanceRepository) FindRule(ctx context.Context, id string) (instance.
 	return findRule(ctx, r.db.reader(), id)
 }
 
-func findRule(ctx context.Context, q *postgresgen.Queries, id string) (instance.Rule, error) {
+func findRule(ctx context.Context, q *genQueries, id string) (instance.Rule, error) {
 	row, err := q.GetInstanceRule(ctx, id)
 	if err != nil {
 		return instance.Rule{}, notFound(err, appinstance.ErrNotFound, "instance rule "+id)
 	}
-	return ruleOf(postgresgen.ListAllInstanceRulesRow(row)), nil
+	return ruleOf(instancegen.ListAllInstanceRulesRow(row)), nil
 }
 
 // ListRules implements instance.RuleRepository.
@@ -92,7 +92,7 @@ func (r *InstanceRepository) ListRules(ctx context.Context, includeRetired bool)
 		}
 		rules = make([]instance.Rule, len(rows))
 		for i, row := range rows {
-			rules[i] = ruleOf(postgresgen.ListAllInstanceRulesRow{
+			rules[i] = ruleOf(instancegen.ListAllInstanceRulesRow{
 				ID: row.ID, CreatedAt: row.CreatedAt, RevisionID: row.RevisionID, Position: row.Position, Text: row.Text, Hint: row.Hint,
 				RevisedByUserID: row.RevisedByUserID, RevisedAt: row.RevisedAt,
 			})
@@ -101,7 +101,7 @@ func (r *InstanceRepository) ListRules(ctx context.Context, includeRetired bool)
 	return rules, nil
 }
 
-func ruleOf(row postgresgen.ListAllInstanceRulesRow) instance.Rule {
+func ruleOf(row instancegen.ListAllInstanceRulesRow) instance.Rule {
 	rule := instance.Rule{
 		ID: row.ID, CreatedAt: utc(row.CreatedAt),
 		Revision: instance.RuleRevision{
@@ -140,7 +140,7 @@ func (r *InstanceRepository) UpsertRuleHead(ctx context.Context, tx uow.Tx, h in
 	if err != nil {
 		return err
 	}
-	err = q.UpsertInstanceRuleHead(ctx, postgresgen.UpsertInstanceRuleHeadParams{RuleID: h.RuleID, RevisionID: h.RevisionID, Position: position})
+	err = q.UpsertInstanceRuleHead(ctx, instancegen.UpsertInstanceRuleHeadParams{RuleID: h.RuleID, RevisionID: h.RevisionID, Position: position})
 	return wrap(err, "upsert instance rule head")
 }
 
@@ -206,6 +206,6 @@ func (r *InstanceRepository) ListRetiredRuleIDs(ctx context.Context, tx uow.Tx) 
 	return ids, wrap(err, "list retired instance rules")
 }
 
-func ruleHead(row postgresgen.InstanceRuleHead) instance.RuleHead {
+func ruleHead(row instancegen.InstanceRuleHead) instance.RuleHead {
 	return instance.RuleHead{RuleID: row.RuleID, RevisionID: row.RevisionID, Position: int(row.Position)}
 }

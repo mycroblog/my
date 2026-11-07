@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/mycroblog/my/internal/adapter/db/sqlite/sqlitegen"
+	"github.com/mycroblog/my/internal/adapter/db/sqlite/moderationgen"
 	"github.com/mycroblog/my/internal/app/kernel"
 	appmoderation "github.com/mycroblog/my/internal/app/moderation"
 	"github.com/mycroblog/my/internal/app/uow"
@@ -22,7 +22,7 @@ func (r *ModerationRepository) InsertRetentionHold(ctx context.Context, tx uow.T
 	if err != nil {
 		return err
 	}
-	return wrap(q.InsertRetentionHold(ctx, sqlitegen.InsertRetentionHoldParams{
+	return wrap(q.InsertRetentionHold(ctx, moderationgen.InsertRetentionHoldParams{
 		ID: h.ID, AccountID: h.AccountID, Reason: h.Reason, CreatedByUserID: toNullString(h.CreatedByUserID),
 		CreatedAt: toMillis(h.CreatedAt),
 	}), "insert retention hold")
@@ -34,7 +34,7 @@ func (r *ModerationRepository) InsertRetentionHoldRelease(ctx context.Context, t
 	if err != nil {
 		return err
 	}
-	n, err := q.InsertRetentionHoldRelease(ctx, sqlitegen.InsertRetentionHoldReleaseParams{
+	n, err := q.InsertRetentionHoldRelease(ctx, moderationgen.InsertRetentionHoldReleaseParams{
 		HoldID: rel.HoldID, ReleasedByUserID: toNullString(rel.ReleasedByUserID), ReleasedAt: toMillis(rel.ReleasedAt),
 	})
 	if err != nil {
@@ -67,12 +67,12 @@ func (r *ModerationRepository) ListRetentionHolds(ctx context.Context, accountID
 	}
 	out := make([]moderation.RetentionHoldRecord, len(rows))
 	for i, row := range rows {
-		out[i] = holdRecord(sqlitegen.GetRetentionHoldRow(row))
+		out[i] = holdRecord(moderationgen.GetRetentionHoldRow(row))
 	}
 	return out, nil
 }
 
-func holdRecord(row sqlitegen.GetRetentionHoldRow) moderation.RetentionHoldRecord {
+func holdRecord(row moderationgen.GetRetentionHoldRow) moderation.RetentionHoldRecord {
 	rec := moderation.RetentionHoldRecord{Hold: moderation.RetentionHold{
 		ID: row.ID, AccountID: row.AccountID, Reason: row.Reason, CreatedByUserID: row.CreatedByUserID.String,
 		CreatedAt: fromMillis(row.CreatedAt),
@@ -97,7 +97,7 @@ func (r *ModerationRepository) StatusRetained(ctx context.Context, tx uow.Tx, st
 	if err != nil {
 		return false, err
 	}
-	n, err := q.StatusRetained(ctx, sqlitegen.StatusRetainedParams{StatusID: statusID, AuthorAccountID: authorAccountID})
+	n, err := q.StatusRetained(ctx, moderationgen.StatusRetainedParams{StatusID: statusID, AuthorAccountID: authorAccountID})
 	return n != 0, wrap(err, "tell whether a status is retained")
 }
 
@@ -111,7 +111,7 @@ func (r *ModerationRepository) ListActionsToPurge(ctx context.Context, tx uow.Tx
 	if err != nil {
 		return nil, err
 	}
-	ids, err := q.ListModerationActionsToPurge(ctx, sqlitegen.ListModerationActionsToPurgeParams{
+	ids, err := q.ListModerationActionsToPurge(ctx, moderationgen.ListModerationActionsToPurgeParams{
 		IDBefore: idBelow(endedBefore), EndedBefore: toMillis(endedBefore), BatchLimit: int64(limit),
 	})
 	return ids, wrap(err, "list moderation actions to purge")
@@ -147,7 +147,7 @@ func (r *ModerationRepository) ListReportsToPurge(ctx context.Context, tx uow.Tx
 	if err != nil {
 		return nil, err
 	}
-	ids, err := q.ListReportsToPurge(ctx, sqlitegen.ListReportsToPurgeParams{
+	ids, err := q.ListReportsToPurge(ctx, moderationgen.ListReportsToPurgeParams{
 		IDBefore: idBelow(resolvedBefore), ResolvedBefore: toMillis(resolvedBefore), BatchLimit: int64(limit),
 	})
 	return ids, wrap(err, "list reports to purge")
@@ -198,7 +198,7 @@ func (r *ModerationRepository) ListSignupBlocksToPurge(ctx context.Context, tx u
 	if err != nil {
 		return nil, err
 	}
-	ids, err := q.ListSignupBlocksToPurge(ctx, sqlitegen.ListSignupBlocksToPurgeParams{
+	ids, err := q.ListSignupBlocksToPurge(ctx, moderationgen.ListSignupBlocksToPurgeParams{
 		IDBefore: idBelow(endedBefore), EndedBefore: toMillis(endedBefore), BatchLimit: int64(limit),
 	})
 	return ids, wrap(err, "list sign-up blocks to purge")
@@ -226,7 +226,7 @@ func (r *ModerationRepository) DeleteAuditEntriesBefore(ctx context.Context, tx 
 	if err != nil {
 		return 0, err
 	}
-	n, err := q.DeleteAuditLogEntriesBefore(ctx, sqlitegen.DeleteAuditLogEntriesBeforeParams{
+	n, err := q.DeleteAuditLogEntriesBefore(ctx, moderationgen.DeleteAuditLogEntriesBeforeParams{
 		IDBefore: idBelow(t), OccurredBefore: toMillis(t), BatchLimit: int64(limit),
 	})
 	return n, wrap(err, "delete audit log entries")
@@ -274,7 +274,7 @@ func (r *ModerationRepository) ListRetentionHoldsToPurge(ctx context.Context, tx
 	if err != nil {
 		return nil, err
 	}
-	ids, err := q.ListRetentionHoldsToPurge(ctx, sqlitegen.ListRetentionHoldsToPurgeParams{ReleasedBefore: toMillis(releasedBefore), BatchLimit: int64(limit)})
+	ids, err := q.ListRetentionHoldsToPurge(ctx, moderationgen.ListRetentionHoldsToPurgeParams{ReleasedBefore: toMillis(releasedBefore), BatchLimit: int64(limit)})
 	return ids, wrap(err, "list retention holds to purge")
 }
 

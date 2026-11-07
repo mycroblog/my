@@ -6,7 +6,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/mycroblog/my/internal/adapter/db/postgres/postgresgen"
+	"github.com/mycroblog/my/internal/adapter/db/postgres/identitygen"
 	"github.com/mycroblog/my/internal/app/uow"
 )
 
@@ -21,7 +21,7 @@ func (r *IdentityRepository) DeleteExpiredTokenFamilies(ctx context.Context, tx 
 	if err != nil {
 		return 0, err
 	}
-	ids, err := q.ListExpiredTokenFamilies(ctx, postgresgen.ListExpiredTokenFamiliesParams{ExpiredBefore: t, BatchLimit: batch})
+	ids, err := q.ListExpiredTokenFamilies(ctx, identitygen.ListExpiredTokenFamiliesParams{ExpiredBefore: t, BatchLimit: batch})
 	if err != nil {
 		return 0, wrap(err, "list expired token families")
 	}
@@ -43,7 +43,7 @@ func (r *IdentityRepository) DeleteExpiredUnredeemedCodes(ctx context.Context, t
 	if err != nil {
 		return 0, err
 	}
-	n, err := q.DeleteExpiredUnredeemedCodes(ctx, postgresgen.DeleteExpiredUnredeemedCodesParams{ExpiredBefore: t, BatchLimit: batch})
+	n, err := q.DeleteExpiredUnredeemedCodes(ctx, identitygen.DeleteExpiredUnredeemedCodesParams{ExpiredBefore: t, BatchLimit: batch})
 	return n, wrap(err, "delete expired authorization codes")
 }
 
@@ -57,7 +57,7 @@ func (r *IdentityRepository) DeleteExpiredSessions(ctx context.Context, tx uow.T
 	if err != nil {
 		return 0, err
 	}
-	ids, err := q.ListExpiredSessions(ctx, postgresgen.ListExpiredSessionsParams{ExpiredBefore: t, BatchLimit: batch})
+	ids, err := q.ListExpiredSessions(ctx, identitygen.ListExpiredSessionsParams{ExpiredBefore: t, BatchLimit: batch})
 	if err != nil {
 		return 0, wrap(err, "list expired sessions")
 	}
@@ -78,7 +78,7 @@ func (r *IdentityRepository) DeleteExpiredUserTokens(ctx context.Context, tx uow
 	if err != nil {
 		return 0, err
 	}
-	ids, err := q.ListExpiredUserTokens(ctx, postgresgen.ListExpiredUserTokensParams{ExpiredBefore: t, BatchLimit: batch})
+	ids, err := q.ListExpiredUserTokens(ctx, identitygen.ListExpiredUserTokensParams{ExpiredBefore: t, BatchLimit: batch})
 	if err != nil {
 		return 0, wrap(err, "list expired user tokens")
 	}

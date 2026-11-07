@@ -5,7 +5,7 @@ package sqlite
 import (
 	"context"
 
-	"github.com/mycroblog/my/internal/adapter/db/sqlite/sqlitegen"
+	"github.com/mycroblog/my/internal/adapter/db/sqlite/identitygen"
 	appidentity "github.com/mycroblog/my/internal/app/identity"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/identity"
@@ -39,7 +39,7 @@ func (r *IdentityRepository) InsertManagedRole(ctx context.Context, tx uow.Tx, m
 	if err != nil {
 		return err
 	}
-	return wrap(q.InsertManagedRole(ctx, sqlitegen.InsertManagedRoleParams{
+	return wrap(q.InsertManagedRole(ctx, identitygen.InsertManagedRoleParams{
 		RoleID: m.RoleID, Manager: string(m.Manager), CreatedAt: toMillis(m.CreatedAt),
 	}), "insert managed role")
 }

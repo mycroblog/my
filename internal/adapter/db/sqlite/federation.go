@@ -8,7 +8,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/mycroblog/my/internal/adapter/db/sqlite/sqlitegen"
+	"github.com/mycroblog/my/internal/adapter/db/sqlite/federationgen"
 	appfederation "github.com/mycroblog/my/internal/app/federation"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/federation"
@@ -30,7 +30,7 @@ func (r *FederationRepository) InsertOutboundActivity(ctx context.Context, tx uo
 	if err != nil {
 		return err
 	}
-	err = q.InsertOutboundActivity(ctx, sqlitegen.InsertOutboundActivityParams{
+	err = q.InsertOutboundActivity(ctx, federationgen.InsertOutboundActivityParams{
 		ID: a.ID, ActivityUri: string(a.ActivityURI), Type: string(a.Type), ActorAccountID: a.ActorAccountID,
 		ObjectType: string(a.ObjectKind), ObjectID: a.ObjectID, CreatedAt: toMillis(a.CreatedAt),
 	})
@@ -43,7 +43,7 @@ func (r *FederationRepository) InsertOutboundDocument(ctx context.Context, tx uo
 	if err != nil {
 		return false, err
 	}
-	n, err := q.InsertOutboundActivityDocument(ctx, sqlitegen.InsertOutboundActivityDocumentParams{
+	n, err := q.InsertOutboundActivityDocument(ctx, federationgen.InsertOutboundActivityDocumentParams{
 		OutboundActivityID: outboundActivityID, Document: document, BuiltAt: toMillis(builtAt),
 	})
 	return n == 1, wrap(err, "insert outbound activity document")
@@ -55,7 +55,7 @@ func (r *FederationRepository) InsertDelivery(ctx context.Context, tx uow.Tx, d 
 	if err != nil {
 		return false, err
 	}
-	n, err := q.InsertDelivery(ctx, sqlitegen.InsertDeliveryParams{
+	n, err := q.InsertDelivery(ctx, federationgen.InsertDeliveryParams{
 		ID: d.ID, OutboundActivityID: d.OutboundActivityID, InboxUrl: string(d.InboxURL), Domain: d.Domain,
 		CreatedAt: toMillis(d.CreatedAt),
 	})
@@ -68,7 +68,7 @@ func (r *FederationRepository) UpsertInstanceHealth(ctx context.Context, tx uow.
 	if err != nil {
 		return err
 	}
-	err = q.UpsertInstanceHealth(ctx, sqlitegen.UpsertInstanceHealthParams{
+	err = q.UpsertInstanceHealth(ctx, federationgen.UpsertInstanceHealthParams{
 		Domain: h.Domain, State: string(h.State), Since: toMillis(h.Since),
 		FailureDays: int64(h.FailureDays), LastFailureDay: h.LastFailureDay,
 	})
@@ -86,7 +86,7 @@ func (r *FederationRepository) FindOutboundActivity(ctx context.Context, id stri
 
 // ListOutboundActivitiesOf implements federation.Repository.
 func (r *FederationRepository) ListOutboundActivitiesOf(ctx context.Context, kind federation.OutboundObjectKind, objectID string) ([]federation.OutboundActivity, error) {
-	rows, err := r.db.reader().ListOutboundActivitiesOfObject(ctx, sqlitegen.ListOutboundActivitiesOfObjectParams{
+	rows, err := r.db.reader().ListOutboundActivitiesOfObject(ctx, federationgen.ListOutboundActivitiesOfObjectParams{
 		ObjectType: string(kind), ObjectID: objectID,
 	})
 	if err != nil {
@@ -99,7 +99,7 @@ func (r *FederationRepository) ListOutboundActivitiesOf(ctx context.Context, kin
 	return out, nil
 }
 
-func outboundActivity(row sqlitegen.OutboundActivity) federation.OutboundActivity {
+func outboundActivity(row federationgen.OutboundActivity) federation.OutboundActivity {
 	return federation.OutboundActivity{
 		ID: row.ID, ActivityURI: federation.IRI(row.ActivityUri), Type: federation.ActivityType(row.Type),
 		ActorAccountID: row.ActorAccountID, ObjectKind: federation.OutboundObjectKind(row.ObjectType),
@@ -118,7 +118,7 @@ func (r *FederationRepository) FindOutboundDocument(ctx context.Context, outboun
 
 // ListDeliveries implements federation.Repository.
 func (r *FederationRepository) ListDeliveries(ctx context.Context, outboundActivityID, after string, limit int) ([]federation.Delivery, error) {
-	rows, err := r.db.reader().ListDeliveriesOfOutboundActivity(ctx, sqlitegen.ListDeliveriesOfOutboundActivityParams{
+	rows, err := r.db.reader().ListDeliveriesOfOutboundActivity(ctx, federationgen.ListDeliveriesOfOutboundActivityParams{
 		OutboundActivityID: outboundActivityID, AfterID: after, BatchLimit: int64(limit),
 	})
 	if err != nil {

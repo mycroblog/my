@@ -6,7 +6,7 @@ import (
 	"context"
 	"slices"
 
-	"github.com/mycroblog/my/internal/adapter/db/sqlite/sqlitegen"
+	"github.com/mycroblog/my/internal/adapter/db/sqlite/identitygen"
 	appidentity "github.com/mycroblog/my/internal/app/identity"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/identity"
@@ -68,7 +68,7 @@ func (r *IdentityRepository) FindRoleGrantID(ctx context.Context, tx uow.Tx, use
 	if err != nil {
 		return "", err
 	}
-	id, err := q.GetUserRoleGrantID(ctx, sqlitegen.GetUserRoleGrantIDParams{UserID: userID, RoleID: roleID})
+	id, err := q.GetUserRoleGrantID(ctx, identitygen.GetUserRoleGrantIDParams{UserID: userID, RoleID: roleID})
 	if err != nil {
 		return "", notFound(err, appidentity.ErrNotFound, "role "+roleID+" of user "+userID)
 	}
@@ -91,7 +91,7 @@ func (r *IdentityRepository) InsertRoleRevocation(ctx context.Context, tx uow.Tx
 	if err != nil {
 		return err
 	}
-	err = q.InsertUserRoleRevocation(ctx, sqlitegen.InsertUserRoleRevocationParams{
+	err = q.InsertUserRoleRevocation(ctx, identitygen.InsertUserRoleRevocationParams{
 		GrantID: rev.GrantID, RevokedByUserID: toNullString(rev.RevokedByUserID), RevokedAt: toMillis(rev.RevokedAt),
 	})
 	if err != nil {
@@ -147,7 +147,7 @@ func (r *IdentityRepository) SetRolePermissions(ctx context.Context, tx uow.Tx, 
 		return wrap(err, "delete role permissions")
 	}
 	for _, p := range perms {
-		err := q.InsertRolePermissionIfAbsent(ctx, sqlitegen.InsertRolePermissionIfAbsentParams{RoleID: roleID, Permission: string(p)})
+		err := q.InsertRolePermissionIfAbsent(ctx, identitygen.InsertRolePermissionIfAbsentParams{RoleID: roleID, Permission: string(p)})
 		if err != nil {
 			return wrap(err, "insert role permission")
 		}
@@ -161,7 +161,7 @@ func (r *IdentityRepository) UpdateRolePosition(ctx context.Context, tx uow.Tx, 
 	if err != nil {
 		return err
 	}
-	return wrap(q.UpdateRolePosition(ctx, sqlitegen.UpdateRolePositionParams{ID: roleID, Position: int64(position)}), "update role position")
+	return wrap(q.UpdateRolePosition(ctx, identitygen.UpdateRolePositionParams{ID: roleID, Position: int64(position)}), "update role position")
 }
 
 // DeleteRole implements identity.RoleRepository.
