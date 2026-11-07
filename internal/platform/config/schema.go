@@ -1013,6 +1013,20 @@ var schema = []field{
 		set:    func(c *Config, v string) { c.TranslatorLibreTranslateAPIKey = strings.TrimSpace(v) },
 	},
 	{
+		key:    "translator_deepl_api_key",
+		doc:    "The authentication key of DeepL's API, which makes DeepL a translation provider that `translation_providers` can enable as `deepl` ([translation](../operations/translation.md#deepl)). A key of the free plan ends in `:fx`; DeepL may keep the text that the free plan translates.",
+		secret: true,
+		check:  checkNotBlank,
+		set:    func(c *Config, v string) { c.TranslatorDeepLAPIKey = strings.TrimSpace(v) },
+	},
+	{
+		key:    "translator_deepl_url",
+		doc:    "The `https:` URL of DeepL's API that the server calls, such as a proxy in front of it; `http:` is accepted for localhost only.",
+		defDoc: "`https://api-free.deepl.com` for a key of the free plan, `https://api.deepl.com` otherwise",
+		check:  checkVoiceHTTPURL,
+		set:    func(c *Config, v string) { c.TranslatorDeepLURL = strings.TrimRight(v, "/") },
+	},
+	{
 		key:   "translator_google_project",
 		doc:   "The Google Cloud project that the translations of the provider `google`, Google Cloud Translation, are billed to; the Cloud Translation API must be enabled in it, and the service account of the server needs `roles/cloudtranslate.user` on it. Setting it registers the provider, which the instance setting `translation_providers` enables; credentials come from Application Default Credentials ([translation providers](../operations/translation.md#google-cloud-translation)). The build tag `no_translator_google` leaves it out. Empty registers no such provider.",
 		check: checkTranslatorGoogleProject,
@@ -1040,20 +1054,6 @@ var schema = []field{
 			{value: "fake", doc: "Test builds only: a stand-in index in the server's memory, for end-to-end tests and demonstrations. Only a binary built with the build tag `e2e_fakes` has it, and that binary refuses it unless `profile = development`; released binaries and images never have it ([build tags](build-tags.md)). It needs no other setting."},
 		},
 		set: func(c *Config, v string) { c.Search = v },
-	},
-	{
-		key:    "translator_deepl_api_key",
-		doc:    "The authentication key of DeepL's API, which makes DeepL a translation provider that `translation_providers` can enable as `deepl` ([translation](../operations/translation.md#deepl)). A key of the free plan ends in `:fx`; DeepL may keep the text that the free plan translates.",
-		secret: true,
-		check:  checkNotBlank,
-		set:    func(c *Config, v string) { c.TranslatorDeepLAPIKey = strings.TrimSpace(v) },
-	},
-	{
-		key:    "translator_deepl_url",
-		doc:    "The `https:` URL of DeepL's API that the server calls, such as a proxy in front of it; `http:` is accepted for localhost only.",
-		defDoc: "`https://api-free.deepl.com` for a key of the free plan, `https://api.deepl.com` otherwise",
-		check:  checkVoiceHTTPURL,
-		set:    func(c *Config, v string) { c.TranslatorDeepLURL = strings.TrimRight(v, "/") },
 	},
 	{
 		key: "voice",
