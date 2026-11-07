@@ -22,9 +22,9 @@ import (
 	domain "github.com/mycroblog/my/internal/domain/supporters"
 )
 
-// SupporterHarness is what SupporterRepositoryContract needs from a database adapter: the
-// harness of the identity and account repositories, the supporters repository, and a
-// PaymentWorld for the provider's side.
+// SupporterHarness is what SupporterRepositoryContract and SupporterFlows need from a database
+// adapter: the harness of the identity and account repositories, the supporters repository, and
+// a PaymentWorld for the provider's side.
 type SupporterHarness struct {
 	AccountHarness
 	Supporters supporters.Repository
@@ -35,20 +35,22 @@ type SupporterHarness struct {
 // factory registers the cleanup of everything it creates with t.Cleanup.
 type SupporterFactory func(t *testing.T, opts uow.Options) SupporterHarness
 
-// SupporterRepositoryContract verifies the supporters repository of a database adapter through
-// the use cases of the supporter program (ADR-0072, FR-910 to FR-912) on the identity
-// repository's roles and the fake provider: the program is disabled by default, needs a provider
-// and email, and is not disabled while subscriptions go on, and nothing of it shows while it is
-// disabled; a plan takes only a role that nobody holds, with member permissions below every
-// staff role, which nobody grants, changes, or deletes by hand afterwards and below which no
-// staff role goes; the plans keep their order; a subscription follows the provider's snapshots
-// and our deadlines through every state with its role (the end of the period after a
-// cancellation, the 7-day grace, refunds and chargebacks, changes of plan at once and at the end
-// of the period); a user subscribes once at a time and only when eligible; new prices go to the
-// new subscriptions only; retiring a plan ends its subscriptions and frees its role; a staff
-// member cancels at once; the supporter list shows only the members who chose to be listed, by
-// plan, until their subscription ends; and the projections rebuild to what the use cases wrote.
-func SupporterRepositoryContract(t *testing.T, newHarness SupporterFactory) {
+// SupporterFlows verifies the supporters repository of a database adapter through the use cases of
+// the supporter program (ADR-0072, FR-910 to FR-912) on the identity repository's roles and the
+// fake provider: the program is disabled by default, needs a provider and email, and is not
+// disabled while subscriptions go on, and nothing of it shows while it is disabled; a plan takes
+// only a role that nobody holds, with member permissions below every staff role, which nobody
+// grants, changes, or deletes by hand afterwards and below which no staff role goes; the plans keep
+// their order; a subscription follows the provider's snapshots and our deadlines through every
+// state with its role (the end of the period after a cancellation, the 7-day grace, refunds and
+// chargebacks, changes of plan at once and at the end of the period); a user subscribes once at a
+// time and only when eligible; new prices go to the new subscriptions only; retiring a plan ends
+// its subscriptions and frees its role; a staff member cancels at once; the supporter list shows
+// only the members who chose to be listed, by plan, until their subscription ends; and the
+// projections rebuild to what the use cases wrote. These are the flows of ADR-0153 §1, which
+// internal/flowtest/supporters runs once on SQLite; SupporterRepositoryContract checks the
+// repository's methods on every adapter.
+func SupporterFlows(t *testing.T, newHarness SupporterFactory) {
 	t.Helper()
 	cases := []struct {
 		name string
