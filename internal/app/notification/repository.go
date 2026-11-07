@@ -17,9 +17,9 @@ var ErrNotFound = errors.New("notification: not found")
 
 // Repository is the persistence port of the notification module: notifications, their
 // dismissals, read markers, the exclusions projected from the graph module's blocks, mutes, and
-// domain mutes,
-// and the statuses that the content module deleted (data-model §4.7). The database adapters implement it and pass
-// testkit.NotificationContract.
+// domain mutes, and the statuses that the content module deleted (data-model §4.7). The database
+// adapters implement it and pass testkit.NotificationContract, and the flows of the use cases on
+// them are testkit.NotificationFlows (internal/flowtest/notification).
 //
 // Methods that take a uow.Tx run inside that transaction; the others read committed data outside
 // any transaction. Lookups that find nothing return an error wrapping ErrNotFound.

@@ -24,8 +24,9 @@ import (
 	"github.com/mycroblog/my/internal/domain/notification"
 )
 
-// NotificationHarness is one database under test: an empty database with the product schema,
-// its UnitOfWork, and the identity, account, graph, content, and notification repositories on it.
+// NotificationHarness is one database under test for NotificationContract and NotificationFlows:
+// an empty database with the product schema, its UnitOfWork, and the identity, account, graph,
+// content, and notification repositories on it.
 type NotificationHarness struct {
 	AccountHarness
 	Graph         appgraph.Repository
@@ -38,8 +39,10 @@ type NotificationHarness struct {
 // The factory registers the cleanup of everything it creates with t.Cleanup.
 type NotificationFactory func(t *testing.T, opts uow.Options) NotificationHarness
 
-// NotificationContract verifies the notification repository of a database adapter together
-// with the notification module's projectors and use cases, driven by the real follow, posting,
+// NotificationFlows verifies the notification module's projectors and use cases on a database
+// adapter, the flows of ADR-0153 §1, which internal/flowtest/notification runs once on SQLite;
+// NotificationContract checks the repository's methods on every adapter. The flows are driven by
+// the real follow, posting,
 // and interaction use cases: follow, follow request, and follow acceptance notifications;
 // mentions, also those an edit adds; boosts and favourites; never notifying an account of its
 // own actions or a remote recipient; the first resolution of a local reporter's report only;
@@ -55,7 +58,7 @@ type NotificationFactory func(t *testing.T, opts uow.Options) NotificationHarnes
 // defaults and fixed rows, and the types turned off in the app, which create nothing; the
 // emails of the notifications that stay unread; and the subscriptions to new posts with their
 // status notifications.
-func NotificationContract(t *testing.T, newHarness NotificationFactory) {
+func NotificationFlows(t *testing.T, newHarness NotificationFactory) {
 	t.Helper()
 	cases := []struct {
 		name string
