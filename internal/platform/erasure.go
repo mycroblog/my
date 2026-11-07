@@ -9,6 +9,7 @@ import (
 	"github.com/mycroblog/my/internal/app/account"
 	"github.com/mycroblog/my/internal/app/content"
 	"github.com/mycroblog/my/internal/app/graph"
+	apphook "github.com/mycroblog/my/internal/app/hook"
 	"github.com/mycroblog/my/internal/app/identity"
 	"github.com/mycroblog/my/internal/app/notification"
 	"github.com/mycroblog/my/internal/app/timeline"
@@ -55,7 +56,7 @@ func (a *App) setUpErasure(ids identity.Repository, accounts account.Repository,
 			// The follows it lost to suspensions.
 			a.Moderation,
 			// The decisions of the decision hooks on its subjects (ADR-0147 §6).
-			a.Hooks,
+			hookEraser{a.Hooks},
 			// Its pending custom emoji requests, before its uploads go.
 			a.CustomEmojis,
 			// The user's reads of the announcements (FR-726).
@@ -88,4 +89,18 @@ type deletionRecheck struct{ a *App }
 
 func (r deletionRecheck) RecheckDeletion(ctx context.Context, accountID string) (account.DeletionRecheck, error) {
 	return r.a.RemoteActors.RecheckDeletion(ctx, accountID)
+}
+
+// hookEraser erases the decisions of the decision hooks of a deleted account (ADR-0147 §6). The
+// hook module takes the account's ID alone, so that it does not import the account module, which
+// asks the hook local.profile.
+type hookEraser struct{ s *apphook.Service }
+
+// EraseAccountData implements account.DataEraser.
+func (e hookEraser) EraseAccountData(ctx context.Context, target account.ErasureTarget, _ string, limit int) (account.ErasureStep, error) {
+	done, err := e.s.EraseAccount(ctx, target.AccountID, limit)
+	if err != nil {
+		return account.ErasureStep{}, err
+	}
+	return account.ErasureStep{Done: done}, nil
 }
