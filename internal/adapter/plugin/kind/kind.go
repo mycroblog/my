@@ -58,6 +58,8 @@ const (
 	SignupCheck   = "signup.check"
 	MediaCheck    = "media.check"
 	LocalStatus   = "local.status"
+	InboundActor  = "inbound.actor"
+	LocalProfile  = "local.profile"
 )
 
 // Kind is one thing the server can delegate, and the limits of its calls.
@@ -98,6 +100,8 @@ var delegated = []Kind{
 	{Name: SignupCheck, Protocol: ProtocolJSON, InRequests: true, Timeout: 2 * time.Second, MaxSend: mib, MaxReceive: 64 * kib, Concurrency: DefaultConcurrency},
 	{Name: MediaCheck, Protocol: ProtocolJSON, PlainTCP: true, InRequests: true, Timeout: 10 * time.Second, MaxSend: mib, MaxReceive: 64 * kib, Concurrency: DefaultConcurrency},
 	{Name: LocalStatus, Protocol: ProtocolJSON, InRequests: true, Timeout: time.Second, MaxSend: mib, MaxReceive: 64 * kib, Concurrency: DefaultConcurrency},
+	{Name: InboundActor, Protocol: ProtocolJSON, PlainTCP: true, InRequests: true, Timeout: 3 * time.Second, MaxSend: mib, MaxReceive: 64 * kib, Concurrency: DefaultConcurrency},
+	{Name: LocalProfile, Protocol: ProtocolJSON, PlainTCP: true, InRequests: true, Timeout: time.Second, MaxSend: mib, MaxReceive: 64 * kib, Concurrency: DefaultConcurrency},
 }
 
 // probe has no destination in the configuration: it delegates nothing, and only `my plugin test` calls it.

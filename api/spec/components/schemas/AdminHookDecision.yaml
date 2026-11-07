@@ -38,7 +38,8 @@ properties:
     description: |
       For a `drop` of `inbound.status` or `inbound.follow`: until about when cancelling it processes the activity again,
       which needs the document as it was received. After that, cancelling records the cancellation
-      and brings nothing back. Absent for any other decision.
+      and brings nothing back. Absent for any other decision: cancelling a `drop` of
+      `inbound.actor` fetches the account again from its server, which stores its present profile.
     type: string
     format: date-time
   overridable:

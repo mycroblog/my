@@ -36,7 +36,7 @@
 | `account_profile_fields` | イベント（版の子） | `revision_id`, `position`（`int`）, `name`, `value_html` | PK `(revision_id, position)`（FR-006） |
 | `account_profile_revision_emojis` | イベント（版の子） | `revision_id`, `emoji_id` | PK `(revision_id, emoji_id)`。インデックス `(emoji_id)`（リモートの絵文字の消去）。表示名・自己紹介・補足情報のカスタム絵文字（ADR-0051）。`emoji_id` は `content` の `custom_emojis` の行で、`content` の公開 API で得る |
 | `account_profile_field_sources` | イベント（部分型） | `revision_id`, `position`, `value_source` | PK `(revision_id, position)`。ローカルのみ。入力されたままの補足情報の値 |
-| `remote_profile_revisions` | イベント（部分型） | `revision_id`（PK）, `snapshot_id`, `html_policy_version`（`int`） | リモートのみ。版を作った取得と、`note_html` / `value_html` をサニタイズしたポリシーの版（ADR-0019 §2） |
+| `remote_profile_revisions` | イベント（部分型） | `revision_id`（PK）, `snapshot_id`, `html_policy_version`（`int`）, `profile_digest`（`bytea`、既定は空） | リモートのみ。版を作った取得と、`note_html` / `value_html` をサニタイズしたポリシーの版（ADR-0019 §2）。`profile_digest` は、版の元になった受け取ったプロフィールのうち判定フック `inbound.actor` が見る部分（サニタイズした表示名・自己紹介・項目と、アイコンとヘッダーの URL）の SHA-256。受け取ったプロフィールのダイジェストが今の版のものと同じならフックを呼ばない（ADR-0147 §2、§6）。`drop` で前のプロフィールを残した版は、前の版のダイジェストを引き継ぐ。既定は空のバイト列で、ダイジェストを持つ前に保存した版を表す。空はどの受け取ったプロフィールとも一致しないので、その Actor のプロフィールは次の取得で 1 度だけ審査する |
 | `account_profile_heads` | 投影 | `account_id`（PK）, `revision_id` | `seq` が最大の版を指す |
 
 - 鍵アカウント（`locked`）・bot などのフラグはプロフィールの一部として版を持ちます。いつから鍵アカウントだったかが分かります。

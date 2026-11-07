@@ -100,6 +100,7 @@ func (r *AccountRepository) InsertProfileRevision(ctx context.Context, tx uow.Tx
 	if rev.Remote != nil {
 		err := q.InsertRemoteProfileRevision(ctx, sqlitegen.InsertRemoteProfileRevisionParams{
 			RevisionID: rev.ID, SnapshotID: rev.Remote.SnapshotID, HtmlPolicyVersion: int64(rev.Remote.HTMLPolicyVersion),
+			ProfileDigest: rev.Remote.ProfileDigest,
 		})
 		if err != nil {
 			return wrap(err, "insert remote profile revision")

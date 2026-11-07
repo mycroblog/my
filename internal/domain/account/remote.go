@@ -4,6 +4,8 @@ package account
 
 import (
 	"bytes"
+	"crypto/sha256"
+	"encoding/binary"
 	"time"
 )
 
@@ -110,6 +112,52 @@ func (v HandleVerification) Handle() (Handle, bool) {
 type RemoteProfileSource struct {
 	SnapshotID        string
 	HTMLPolicyVersion int
+	// ProfileDigest is the Digest of the ReceivedProfile the revision was made from. A revision
+	// that kept the profile before it keeps that revision's digest.
+	ProfileDigest []byte
+}
+
+// ReceivedProfile is the part of a remote actor's profile that the decision hook inbound.actor
+// reviews (ADR-0147 §2): the display name, the note, and the fields as sanitized, and the URLs of
+// the avatar and the header as received. The server sends no bytes of the images.
+type ReceivedProfile struct {
+	DisplayName string
+	NoteHTML    string
+	Fields      []ReceivedProfileField
+	AvatarURL   string
+	HeaderURL   string
+}
+
+// ReceivedProfileField is a field of a ReceivedProfile.
+type ReceivedProfileField struct {
+	Name      string
+	ValueHTML string
+}
+
+// receivedProfileVersion names the encoding of Digest; changing what the digest covers changes it.
+const receivedProfileVersion = "inbound.actor/1"
+
+// Digest returns the SHA-256 of the profile in an encoding where each value has its length, so
+// that no two profiles share one. Two profiles with the same digest are the same review subject:
+// a profile fetched again unchanged asks no plugin (ADR-0147 §6).
+func (p ReceivedProfile) Digest() []byte {
+	var b []byte
+	add := func(s string) {
+		b = binary.AppendUvarint(b, uint64(len(s)))
+		b = append(b, s...)
+	}
+	add(receivedProfileVersion)
+	add(p.DisplayName)
+	add(p.NoteHTML)
+	b = binary.AppendUvarint(b, uint64(len(p.Fields)))
+	for _, f := range p.Fields {
+		add(f.Name)
+		add(f.ValueHTML)
+	}
+	add(p.AvatarURL)
+	add(p.HeaderURL)
+	sum := sha256.Sum256(b)
+	return sum[:]
 }
 
 // KeyRevocation records that a key was replaced or withdrawn (the account_key_revocations

@@ -38,8 +38,9 @@ type ProfileUpdate struct {
 // with the changes of in. The typed note and field values are kept as the revision's source
 // and rendered to HTML like the text of a post. It fails with an error wrapping
 // account.ErrInvalidProfile (a *account.ProfileError) for invalid content or an image that
-// the account cannot use, with ErrNotLocal for an account that is not a local user's, and
-// with ErrNotFound for an unknown account.
+// the account cannot use, with ErrNotLocal for an account that is not a local user's, with
+// ErrNotFound for an unknown account, and with ErrProfileRejected when the decision hook
+// local.profile refused the update, which leaves the profile as it was.
 //
 // The update applies to the current revision when it commits: when another revision becomes
 // current while the update is prepared, it starts again from that revision, so that concurrent
@@ -141,7 +142,17 @@ func (s *Service) updateProfile(ctx context.Context, accountID string, in Profil
 		}
 	}
 
-	rev, err := s.reviseProfile(ctx, accountID, next, &cur.Seq)
+	// The ID of the new revision is fixed before the transaction: it is the subject of
+	// local.profile, which is asked outside it (profile_review.go).
+	revisionID := s.d.IDs.NewID()
+	v, err := s.reviewProfile(ctx, a, cur, next, revisionID)
+	if err != nil {
+		return Actor{}, err
+	}
+	rev, err := s.reviseProfile(ctx, accountID, next, reviseOptions{
+		baseSeq: &cur.Seq, id: revisionID,
+		inTx: func(ctx context.Context, tx uow.Tx) error { return s.profileReviewed(ctx, tx, v, accountID) },
+	})
 	if err != nil {
 		return Actor{}, err
 	}

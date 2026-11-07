@@ -209,8 +209,8 @@ func (s *Server) GetInstance(ctx context.Context, _ GetInstanceRequestObject) (G
 }
 
 // externalReviewScope presents the settings that narrow what the hooks in use send (ADR-0147
-// §12): the account age of local.status and whether inbound.status sends the direct posts of
-// unfollowed authors, each only while its hook is in use; nil when neither is.
+// §12): the account ages of local.status and local.profile and whether inbound.status sends the
+// direct posts of unfollowed authors, each only while its hook is in use; nil when none is.
 func externalReviewScope(used []hook.Name, settings instance.Settings) *InstanceExternalReviewScope {
 	var out InstanceExternalReviewScope
 	for _, n := range used {
@@ -218,13 +218,16 @@ func externalReviewScope(used []hook.Name, settings instance.Settings) *Instance
 		case hook.LocalStatus:
 			days := int64(settings.HookLocalStatusAccountAge() / (24 * time.Hour))
 			out.LocalStatusAccountAgeDays = &days
+		case hook.LocalProfile:
+			days := int64(settings.HookLocalProfileAccountAge() / (24 * time.Hour))
+			out.LocalProfileAccountAgeDays = &days
 		case hook.InboundStatus:
 			value, _ := settings.Value(instance.SettingHookInboundStatusUnfollowedDirect)
 			unfollowed := value == "true"
 			out.InboundStatusUnfollowedDirect = &unfollowed
 		}
 	}
-	if out.LocalStatusAccountAgeDays == nil && out.InboundStatusUnfollowedDirect == nil {
+	if out.LocalStatusAccountAgeDays == nil && out.LocalProfileAccountAgeDays == nil && out.InboundStatusUnfollowedDirect == nil {
 		return nil
 	}
 	return &out

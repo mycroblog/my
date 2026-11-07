@@ -25,11 +25,13 @@ const (
 	SignupCheck   Name = "signup.check"
 	MediaCheck    Name = "media.check"
 	LocalStatus   Name = "local.status"
+	InboundActor  Name = "inbound.actor"
+	LocalProfile  Name = "local.profile"
 )
 
 // Names lists the hooks in documentation order.
 func Names() []Name {
-	return []Name{InboundStatus, InboundFollow, SignupCheck, MediaCheck, LocalStatus}
+	return []Name{InboundStatus, InboundFollow, SignupCheck, MediaCheck, LocalStatus, InboundActor, LocalProfile}
 }
 
 // Mode says how far a hook acts. Only a decision of ModeEnforce has an effect (ADR-0147 §5).
@@ -167,6 +169,18 @@ var specs = map[Name]Spec{
 	},
 	LocalStatus: {
 		Name: LocalStatus, Verdicts: []Outcome{Allow, Flag, Reject},
+		OnFailure: []OnFailure{PassOnFailure},
+	},
+	// A drop of inbound.actor keeps the stored profile of a known actor; an actor fetched for the
+	// first time is always stored, and its drop is taken for a flag (ADR-0147 §2).
+	InboundActor: {
+		Name: InboundActor, Verdicts: []Outcome{Allow, Drop, Flag},
+		OnFailure: []OnFailure{PassOnFailure, RetryOnFailure},
+	},
+	// A reject of local.profile refuses one update of a profile, which stays as it was; it cannot be
+	// appealed, since the user may change the profile and save it again (ADR-0147 §2).
+	LocalProfile: {
+		Name: LocalProfile, Verdicts: []Outcome{Allow, Flag, Reject},
 		OnFailure: []OnFailure{PassOnFailure},
 	},
 }
@@ -338,6 +352,10 @@ func (p RetentionPolicy) Keeps(e Expired) bool {
 // EditSubjectKey is the subject key of local.status for an edit of a local post: the post and the
 // new revision, so that each edit is its own subject (ADR-0147 §2). A post's own key is its ID.
 func EditSubjectKey(statusID, revisionID string) string { return statusID + "#" + revisionID }
+
+// ProfileSubjectKey is the subject key of local.profile: the account and the ID of the profile
+// revision that the update would store, so that each update is its own subject (ADR-0147 §6).
+func ProfileSubjectKey(accountID, revisionID string) string { return accountID + "#" + revisionID }
 
 // IsEditSubject reports whether a subject key of local.status is that of an edit
 // (EditSubjectKey). A reject of an edit refuses that edit only and cannot be appealed.

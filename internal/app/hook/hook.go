@@ -38,6 +38,8 @@ const (
 	SignupCheck   = hook.SignupCheck
 	MediaCheck    = hook.MediaCheck
 	LocalStatus   = hook.LocalStatus
+	InboundActor  = hook.InboundActor
+	LocalProfile  = hook.LocalProfile
 )
 
 // The effects a module acts on.
@@ -101,6 +103,60 @@ type LocalStatusSubject struct {
 	Hashtags               []string
 	// MentionCount is how many accounts the post names.
 	MentionCount int
+}
+
+// ActorSubject is the Subject of InboundActor: the profile of a remote actor as the server would
+// store it, once it changed. It holds no bytes of the images and nothing of a local account.
+type ActorSubject struct {
+	ActorURI string
+	Domain   string
+	// Username is the actor's preferredUsername.
+	Username string
+	// New says that the actor is not stored yet, whose drop is taken for a flag.
+	New bool
+	// DisplayName is plain text; NoteHTML and the values of the fields are sanitized HTML.
+	DisplayName string
+	NoteHTML    string
+	Fields      []ActorField
+	// AvatarURL and HeaderURL are the images on the remote server, "" for none.
+	AvatarURL string
+	HeaderURL string
+}
+
+// ActorField is a field of a remote profile.
+type ActorField struct {
+	Name      string
+	ValueHTML string
+}
+
+// LocalProfileSubject is the Subject of LocalProfile: the profile of a local account as an update
+// would store it. The profile is public; no image is sent, only whether the update changes it.
+type LocalProfileSubject struct {
+	AccountURI string
+	// Username is the account's local username.
+	Username         string
+	AccountCreatedAt time.Time
+	DisplayName      string
+	// Note is the bio as the user typed it; NoteHTML is how the server renders it.
+	Note     string
+	NoteHTML string
+	Fields   []LocalProfileField
+	// AvatarChanged and HeaderChanged say that the update sets, replaces, or removes the image.
+	AvatarChanged bool
+	HeaderChanged bool
+}
+
+// LocalProfileField is one field of a LocalProfileSubject: the value as typed and as rendered.
+type LocalProfileField struct {
+	Name      string
+	Value     string
+	ValueHTML string
+}
+
+// ProfileSubjectKey is hook.ProfileSubjectKey: the subject key of local.profile for an update of a
+// profile that would store the revision.
+func ProfileSubjectKey(accountID, revisionID string) string {
+	return hook.ProfileSubjectKey(accountID, revisionID)
 }
 
 // SignupSubject is what signup.check sends about a sign-up. Only the plugin receives it: a decision

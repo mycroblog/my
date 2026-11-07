@@ -355,6 +355,14 @@
     "defaultMessage": "‮⅄on ɥɐʌǝ ɐs ɯɐuʎ dɐssʞǝʎs ɐs ɐʅʅoʍǝp. ᴚǝɯoʌǝ ouǝ ɟıɹsʇ.‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
+  "errors.profile.rejected": {
+    "defaultMessage": "‮⊥ɥıs ɔɥɐuƃǝ oɟ ʎonɹ dɹoɟıʅǝ ʍɐs uoʇ sɐʌǝp.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.profile.rejected.detail": {
+    "defaultMessage": "‮⊥ɥıs sǝɹʌǝɹ's ɐnʇoɯɐʇǝp ɹǝʌıǝʍ pıp uoʇ ɐɔɔǝdʇ ʇɥıs ɔɥɐuƃǝ. ⅄onɹ dɹoɟıʅǝ sʇɐʎs ɐs ıʇ ʍɐs.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
   "errors.rate_limited": {
     "defaultMessage": "‮⊥oo ɯɐuʎ ɹǝbnǝsʇs.‬",
     "description": "Generated from en by tools/i18n; do not edit."

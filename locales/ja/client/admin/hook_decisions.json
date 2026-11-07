@@ -51,6 +51,14 @@
     "defaultMessage": "このサーバーの投稿",
     "description": "Name of the external review of posts by accounts of this server."
   },
+  "admin.hook_decisions.hook.inbound_actor": {
+    "defaultMessage": "ほかのサーバーのプロフィール",
+    "description": "Name of the external review of the profiles of accounts on other servers."
+  },
+  "admin.hook_decisions.hook.local_profile": {
+    "defaultMessage": "このサーバーのプロフィール",
+    "description": "Name of the external review of the profiles of accounts of this server."
+  },
   "admin.hook_decisions.hook.media_check": {
     "defaultMessage": "アップロードされたメディア",
     "description": "Name of the external review of uploaded media."

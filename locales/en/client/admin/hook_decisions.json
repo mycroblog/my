@@ -51,6 +51,14 @@
     "defaultMessage": "Local posts",
     "description": "Name of the external review of posts by accounts of this server."
   },
+  "admin.hook_decisions.hook.inbound_actor": {
+    "defaultMessage": "Profiles from other servers",
+    "description": "Name of the external review of the profiles of accounts on other servers."
+  },
+  "admin.hook_decisions.hook.local_profile": {
+    "defaultMessage": "Local profiles",
+    "description": "Name of the external review of the profiles of accounts of this server."
+  },
   "admin.hook_decisions.hook.media_check": {
     "defaultMessage": "Uploaded media",
     "description": "Name of the external review of uploaded media."

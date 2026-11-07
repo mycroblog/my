@@ -17,7 +17,6 @@ import (
 	"time"
 
 	"github.com/mycroblog/my/internal/adapter/plugin/fakeplugin"
-	appaccount "github.com/mycroblog/my/internal/app/account"
 	apphook "github.com/mycroblog/my/internal/app/hook"
 	appidentity "github.com/mycroblog/my/internal/app/identity"
 	appinstance "github.com/mycroblog/my/internal/app/instance"
@@ -299,7 +298,7 @@ func TestSignupCheck(t *testing.T) {
 		if _, ok := e.decisionOf(got.AccountID, hook.RequireApproval); !ok {
 			t.Fatal("no decision")
 		}
-		if _, err := e.app.Hooks.EraseAccountData(ctx, appaccount.ErasureTarget{AccountID: got.AccountID}, "", 100); err != nil {
+		if _, err := e.app.Hooks.EraseAccount(ctx, got.AccountID, 100); err != nil {
 			t.Fatal(err)
 		}
 		if _, ok := e.decisionOf(got.AccountID, hook.RequireApproval); ok {

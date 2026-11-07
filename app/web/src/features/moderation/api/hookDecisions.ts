@@ -29,6 +29,8 @@ const hookNames = [
   "signup.check",
   "media.check",
   "local.status",
+  "inbound.actor",
+  "local.profile",
 ] as const satisfies readonly HookName[];
 
 /** The filters of the list: a hook, or every one. */

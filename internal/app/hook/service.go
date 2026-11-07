@@ -10,7 +10,6 @@ import (
 	"slices"
 	"time"
 
-	appaccount "github.com/mycroblog/my/internal/app/account"
 	"github.com/mycroblog/my/internal/app/kernel"
 	"github.com/mycroblog/my/internal/app/queue"
 	"github.com/mycroblog/my/internal/app/uow"
@@ -554,20 +553,22 @@ func (s *Service) purgeable(ctx context.Context, policy hook.RetentionPolicy, ex
 	return out, nil
 }
 
-// EraseAccountData implements appaccount.DataEraser: it removes the decisions of a deleted account
-// with their appeals, and its appeals and exemptions. The erasure skips an account that a hold
-// preserves, so a held account keeps them.
-func (s *Service) EraseAccountData(ctx context.Context, target appaccount.ErasureTarget, _ string, limit int) (appaccount.ErasureStep, error) {
+// EraseAccount removes up to limit decisions of a deleted account with their appeals, and in its
+// last step the account's appeals and exemptions; done reports that nothing is left. The account
+// module runs it as one of its erasers (internal/platform), which skips an account that a hold
+// preserves, so a held account keeps them. It takes the account's ID alone so that this module
+// does not import the account module, which asks the hook local.profile.
+func (s *Service) EraseAccount(ctx context.Context, accountID string, limit int) (bool, error) {
 	var ids []string
 	err := s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
 		var err error
-		ids, err = s.d.Repository.DecisionIDsOfAccount(ctx, tx, target.AccountID, limit)
+		ids, err = s.d.Repository.DecisionIDsOfAccount(ctx, tx, accountID, limit)
 		if err != nil {
 			return err
 		}
 		if len(ids) < limit {
 			// The last step: what no decision of the account holds goes too.
-			if err := s.d.Repository.DeleteAppealsOfAccount(ctx, tx, target.AccountID); err != nil {
+			if err := s.d.Repository.DeleteAppealsOfAccount(ctx, tx, accountID); err != nil {
 				return err
 			}
 		}
@@ -577,7 +578,7 @@ func (s *Service) EraseAccountData(ctx context.Context, target appaccount.Erasur
 		return s.d.Repository.DeleteDecisions(ctx, tx, ids)
 	})
 	if err != nil {
-		return appaccount.ErasureStep{}, err
+		return false, err
 	}
-	return appaccount.ErasureStep{Done: len(ids) < limit}, nil
+	return len(ids) < limit, nil
 }

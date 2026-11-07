@@ -217,6 +217,7 @@ export function hookSummaryFixture(): Schemas["AdminHookSummary"] {
       { hook: "signup.check", configured: false, mode: "observe", on_failure: "pass", outcomes: [] },
       { hook: "media.check", configured: false, mode: "observe", on_failure: "pass", outcomes: [] },
       { hook: "local.status", configured: false, mode: "observe", on_failure: "pass", outcomes: [] },
+      { hook: "inbound.actor", configured: false, mode: "observe", on_failure: "pass", outcomes: [] },
     ],
   };
 }

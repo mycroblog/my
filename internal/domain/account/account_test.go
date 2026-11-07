@@ -3,6 +3,7 @@
 package account_test
 
 import (
+	"bytes"
 	"errors"
 	"strings"
 	"testing"
@@ -126,5 +127,37 @@ func TestProfileSupersedes(t *testing.T) {
 	head := account.ProfileHead{RevisionID: revision2, Seq: 2}
 	if (account.ProfileRevision{ID: revision1, Seq: 1}).Supersedes(head) || !(account.ProfileRevision{ID: revision3, Seq: 3}).Supersedes(head) {
 		t.Error("Supersedes does not follow seq")
+	}
+}
+
+// The digest of a received profile tells every part apart, a value moved between fields included,
+// and is the same for the same profile.
+func TestReceivedProfileDigest(t *testing.T) {
+	t.Parallel()
+	base := account.ReceivedProfile{
+		DisplayName: "Bob", NoteHTML: "<p>hi</p>", AvatarURL: "https://r.example/a.png", HeaderURL: "https://r.example/h.png",
+		Fields: []account.ReceivedProfileField{{Name: "site", ValueHTML: "x"}},
+	}
+	if !bytes.Equal(base.Digest(), base.Digest()) || len(base.Digest()) != 32 {
+		t.Fatalf("Digest is not stable: %x", base.Digest())
+	}
+	variants := map[string]account.ReceivedProfile{}
+	v := base
+	v.DisplayName = "Bo"
+	v.NoteHTML = "b<p>hi</p>"
+	variants["a letter moved from the name to the note"] = v
+	v = base
+	v.AvatarURL, v.HeaderURL = base.HeaderURL, base.AvatarURL
+	variants["the images swapped"] = v
+	v = base
+	v.Fields = []account.ReceivedProfileField{{Name: "sitex", ValueHTML: ""}}
+	variants["a value moved into the name of a field"] = v
+	v = base
+	v.Fields = nil
+	variants["no fields"] = v
+	for name, p := range variants {
+		if bytes.Equal(p.Digest(), base.Digest()) {
+			t.Errorf("%s: the same digest", name)
+		}
 	}
 }

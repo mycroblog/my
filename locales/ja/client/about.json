@@ -359,6 +359,14 @@
     "defaultMessage": "{days, plural, =0 {このサーバーのすべてのアカウントの投稿とその編集: 本文と投稿者のユーザー名。フォロワー向けとメンションした人向けの投稿は送りません。} other {このサーバーの、作成から # 日以内のアカウントの投稿とその編集: 本文と投稿者のユーザー名。フォロワー向けとメンションした人向けの投稿は送りません。}}",
     "description": "What the external review of local posts and their edits covers and what is sent to it. {days} is how many days after its creation an account's posts and edits are sent; 0 means the posts of every account are."
   },
+  "about.external_review.inbound_actor": {
+    "defaultMessage": "ほかのサーバーのアカウントのプロフィール (変わったとき): 表示名、自己紹介、プロフィールの項目、アイコンとヘッダー画像のアドレス。",
+    "description": "What the external review of the profiles of accounts on other servers covers and what is sent to it."
+  },
+  "about.external_review.local_profile": {
+    "defaultMessage": "{days, plural, =0 {このサーバーのすべてのアカウントのプロフィールの変更: 表示名、自己紹介、プロフィールの項目、アイコンとヘッダーを変えたかどうか。画像は送りません。} other {このサーバーの、作成から # 日以内のアカウントのプロフィールの変更: 表示名、自己紹介、プロフィールの項目、アイコンとヘッダーを変えたかどうか。画像は送りません。}}",
+    "description": "What the external review of local profiles covers and what is sent to it. {days} is how many days after its creation an account's profile changes are sent; 0 means those of every account are."
+  },
   "about.external_review.media_check": {
     "defaultMessage": "アップロードされたメディア: 処理後の小さな版。原本は送りません。",
     "description": "What the external review of uploaded media covers and what is sent to it."

@@ -143,7 +143,7 @@ CREATE INDEX report_voice_rooms_room_id ON report_voice_rooms (room_id);
 CREATE TABLE report_hook_origins (
   report_id TEXT NOT NULL PRIMARY KEY,
   hook_decision_id TEXT NOT NULL,
-  hook TEXT NOT NULL CHECK (hook IN ('inbound.status', 'inbound.follow', 'signup.check', 'media.check', 'local.status')),
+  hook TEXT NOT NULL CHECK (hook IN ('inbound.status', 'inbound.follow', 'signup.check', 'media.check', 'local.status', 'inbound.actor', 'local.profile')),
   reason_code TEXT NOT NULL CHECK (reason_code IN ('', 'spam', 'harassment', 'sexual', 'violence', 'illegal', 'malware', 'other'))
 ) STRICT;
 CREATE UNIQUE INDEX report_hook_origins_hook_decision_id ON report_hook_origins (hook_decision_id);

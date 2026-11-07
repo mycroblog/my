@@ -20,7 +20,7 @@ decision hooks all share one package.
 | [Mailer](mailer.md) | `my.plugin.mailer.v1` | `mailer` |
 | [Media](media.md) | `my.plugin.media.v1` | `media_image`, `media_video`, `media_audio` |
 | [Key manager](key-manager.md) | `my.plugin.key_manager.v1` | `key_manager` |
-| [Decision hooks](hooks.md) | `my.plugin.hook.v1` | `inbound.status`, `inbound.follow`, `signup.check`, `media.check`, `local.status` |
+| [Decision hooks](hooks.md) | `my.plugin.hook.v1` | `inbound.status`, `inbound.follow`, `signup.check`, `media.check`, `local.status`, `inbound.actor`, `local.profile` |
 
 The pages are generated from the comments of the `.proto` files, which are the contract: what each call does, the order
 of the messages of a stream, the limits, and what each field and value means.

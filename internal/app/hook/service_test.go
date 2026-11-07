@@ -12,7 +12,6 @@ import (
 	"testing"
 	"time"
 
-	appaccount "github.com/mycroblog/my/internal/app/account"
 	apphook "github.com/mycroblog/my/internal/app/hook"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/hook"
@@ -643,16 +642,16 @@ func TestPurgeWalksPastKeptDecisions(t *testing.T) {
 	}
 }
 
-func TestEraseAccountData(t *testing.T) {
+func TestEraseAccount(t *testing.T) {
 	h := newHarness(hook.ModeEnforce, hook.PassOnFailure)
 	h.decide(t, "a")
 	h.decide(t, "b")
-	step, err := h.s.EraseAccountData(t.Context(), appaccount.ErasureTarget{AccountID: "account"}, "", 1)
-	if err != nil || step.Done || len(h.mem.records) != 1 {
-		t.Fatalf("step %+v, %v, %d left", step, err, len(h.mem.records))
+	done, err := h.s.EraseAccount(t.Context(), "account", 1)
+	if err != nil || done || len(h.mem.records) != 1 {
+		t.Fatalf("done %v, %v, %d left", done, err, len(h.mem.records))
 	}
-	step, err = h.s.EraseAccountData(t.Context(), appaccount.ErasureTarget{AccountID: "account"}, "", 2)
-	if err != nil || !step.Done || len(h.mem.records) != 0 {
-		t.Fatalf("step %+v, %v, %d left", step, err, len(h.mem.records))
+	done, err = h.s.EraseAccount(t.Context(), "account", 2)
+	if err != nil || !done || len(h.mem.records) != 0 {
+		t.Fatalf("done %v, %v, %d left", done, err, len(h.mem.records))
 	}
 }

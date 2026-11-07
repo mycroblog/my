@@ -359,6 +359,14 @@
     "defaultMessage": "{days, plural, =0 {Posts by every account of this server, and their edits: their text and the author's username. Posts for followers and for mentioned people are not sent.} one {Posts by accounts of this server created in the last day, and their edits: their text and the author's username. Posts for followers and for mentioned people are not sent.} other {Posts by accounts of this server created in the last # days, and their edits: their text and the author's username. Posts for followers and for mentioned people are not sent.}}",
     "description": "What the external review of local posts and their edits covers and what is sent to it. {days} is how many days after its creation an account's posts and edits are sent; 0 means the posts of every account are."
   },
+  "about.external_review.inbound_actor": {
+    "defaultMessage": "Profiles of accounts on other servers, when they change: the display name, the bio, the profile fields, and the addresses of the avatar and the header image.",
+    "description": "What the external review of the profiles of accounts on other servers covers and what is sent to it."
+  },
+  "about.external_review.local_profile": {
+    "defaultMessage": "{days, plural, =0 {Changes to the profile of every account of this server: the display name, the bio, the profile fields, and whether the avatar or header changed. The images are not sent.} one {Changes to the profiles of accounts of this server created in the last day: the display name, the bio, the profile fields, and whether the avatar or header changed. The images are not sent.} other {Changes to the profiles of accounts of this server created in the last # days: the display name, the bio, the profile fields, and whether the avatar or header changed. The images are not sent.}}",
+    "description": "What the external review of local profiles covers and what is sent to it. {days} is how many days after its creation an account's profile changes are sent; 0 means those of every account are."
+  },
   "about.external_review.media_check": {
     "defaultMessage": "Uploaded media: a small processed version, never the original.",
     "description": "What the external review of uploaded media covers and what is sent to it."
