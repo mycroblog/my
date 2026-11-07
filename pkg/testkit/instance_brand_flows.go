@@ -18,7 +18,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/instance"
 )
 
-// instanceBrandCases are the cases of InstanceRepositoryContract about the brand images
+// instanceBrandCases are the cases of InstanceFlows about the brand images
 // (ADR-0059): nothing until one is set, revisions that keep their files and stay readable after a
 // newer one or a clear, rejected uploads that write nothing, and the instance_brands projection
 // equal to a rebuild.

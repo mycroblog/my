@@ -11,7 +11,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/instance"
 )
 
-// instanceClosureCases are the cases of InstanceRepositoryContract about the service closure
+// instanceClosureCases are the cases of InstanceFlows about the service closure
 // (ADR-0088 §1): no closure until one is announced, an announcement with its schedule, a change
 // of its dates, a withdrawal and a new announcement after it, refused transitions that write
 // nothing, and the service_closure_heads projection equal to a rebuild.

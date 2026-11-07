@@ -18,7 +18,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/instance"
 )
 
-// instanceAnnouncementCases are the cases of InstanceRepositoryContract about the server-wide
+// instanceAnnouncementCases are the cases of InstanceFlows about the server-wide
 // announcements (FR-726): drafts, publication, revisions, and withdrawal, the window in which
 // the users see one, the list with the past ones, the administrators' pages of them by state, the times at which their notifications are
 // scheduled, each user's reads and their erasure, invalid input that writes nothing, and the

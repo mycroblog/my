@@ -15,7 +15,8 @@ var ErrNotFound = errors.New("instance: not found")
 
 // Repository is the persistence port of the instance module's settings, texts, rules, theme, brand images,
 // announcements, service closure, secrets, and domains (data-model §4.9). The database adapters implement it and
-// pass testkit.InstanceRepositoryContract.
+// pass testkit.InstanceRepositoryContract; the flows of the use cases on them are testkit.InstanceFlows
+// (internal/flowtest/instance).
 //
 // Methods that take a uow.Tx run inside that transaction; the others read committed data
 // outside any transaction. Lookups that find nothing return an error wrapping ErrNotFound.

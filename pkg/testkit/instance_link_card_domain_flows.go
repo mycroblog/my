@@ -14,7 +14,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/instance"
 )
 
-// instanceLinkCardDomainCases are the cases of InstanceRepositoryContract about the rules of the
+// instanceLinkCardDomainCases are the cases of InstanceFlows about the rules of the
 // link card crawler: one rule per domain, listed by domain, removed at once, read by a host and
 // its parents, bounded, and written only when valid.
 var instanceLinkCardDomainCases = []struct {
