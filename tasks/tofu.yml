@@ -9,6 +9,9 @@ vars:
     sh: printf '%s\n' deploy/opentofu/modules/* | tr '\n' ' '
   # One copy of the providers for every directory: each is over 100 MB.
   TF_PLUGIN_CACHE_DIR: "{{.ROOT_DIR}}/.tmp/tofu-plugins"
+  # The modules that validate and test run at once. init stays one module at a time: it fills the shared plugin cache,
+  # which concurrent inits could write at once; validate and test only read the providers init installed.
+  TOFU_JOBS: '{{.TOFU_JOBS | default "4"}}'
 
 env:
   TF_PLUGIN_CACHE_DIR: "{{.TF_PLUGIN_CACHE_DIR}}"
@@ -54,18 +57,16 @@ tasks:
         cmd: tofu -chdir={{.DIR}} init -backend=false -input=false >/dev/null
 
   validate:
-    desc: Run tofu validate on each module of deploy/opentofu
+    desc: Run tofu validate on each module of deploy/opentofu, TOFU_JOBS modules at a time
     deps: [init]
     cmds:
-      - for: { var: TOFU_DIRS, as: DIR }
-        cmd: tofu -chdir={{.DIR}} validate
+      - printf '%s\n' {{.TOFU_DIRS}} | xargs -P {{.TOFU_JOBS}} -I {} scripts/tofu-each.sh {} validate
 
   test:
-    desc: Run the tests of deploy/opentofu, on mocked providers
+    desc: Run the tests of deploy/opentofu (each module with a tests directory), on mocked providers, TOFU_JOBS modules at a time
     deps: [init]
     cmds:
-      - for: [deploy/opentofu/modules/app-aws-ecs, deploy/opentofu/modules/app-gcp-cloud-run, deploy/opentofu/modules/billing-aws, deploy/opentofu/modules/billing-gcp, deploy/opentofu/modules/blob-cloudflare-r2, deploy/opentofu/modules/blob-s3, deploy/opentofu/modules/db-aws-rds, deploy/opentofu/modules/db-external, deploy/opentofu/modules/db-gcp-cloud-sql, deploy/opentofu/modules/db-neon, deploy/opentofu/modules/ingress-aws-alb, deploy/opentofu/modules/ingress-aws-cloudfront, deploy/opentofu/modules/ingress-cloudflare-app, deploy/opentofu/modules/ingress-cloudflare-media, deploy/opentofu/modules/kek-aws-kms, deploy/opentofu/modules/kek-aws-secrets-manager, deploy/opentofu/modules/kv-aws-elasticache, deploy/opentofu/modules/kv-external, deploy/opentofu/modules/kv-gcp-memorystore, deploy/opentofu/modules/mail-aws-ses, deploy/opentofu/modules/mail-smtp, deploy/opentofu/modules/monitoring-aws, deploy/opentofu/modules/monitoring-gcp, deploy/opentofu/modules/network-aws-vpc, deploy/opentofu/modules/network-gcp-vpc, deploy/opentofu/modules/queue-db, deploy/opentofu/modules/queue-gcp-cloud-tasks, deploy/opentofu/modules/secrets-aws-secrets-manager, deploy/opentofu/modules/secrets-gcp-secret-manager, deploy/opentofu/modules/stream-aws-sns, deploy/opentofu/modules/stream-postgres, deploy/opentofu/modules/stream-valkey, deploy/opentofu/modules/workers]
-        cmd: tofu -chdir={{.ITEM}} test
+      - printf '%s\n' deploy/opentofu/modules/*/tests | xargs -n 1 dirname | xargs -P {{.TOFU_JOBS}} -I {} scripts/tofu-each.sh {} test
 
   state-test:
     desc: Prove against a local stub of Secret Manager that generated secrets have the right formats and reach neither the plan nor the state
