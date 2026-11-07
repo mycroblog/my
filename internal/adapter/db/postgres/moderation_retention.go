@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/mycroblog/my/internal/adapter/db/postgres/postgresgen"
+	"github.com/mycroblog/my/internal/adapter/db/postgres/moderationgen"
 	"github.com/mycroblog/my/internal/app/kernel"
 	appmoderation "github.com/mycroblog/my/internal/app/moderation"
 	"github.com/mycroblog/my/internal/app/uow"
@@ -22,7 +22,7 @@ func (r *ModerationRepository) InsertRetentionHold(ctx context.Context, tx uow.T
 	if err != nil {
 		return err
 	}
-	return wrap(q.InsertRetentionHold(ctx, postgresgen.InsertRetentionHoldParams{
+	return wrap(q.InsertRetentionHold(ctx, moderationgen.InsertRetentionHoldParams{
 		ID: h.ID, AccountID: h.AccountID, Reason: h.Reason, CreatedByUserID: toNullString(h.CreatedByUserID),
 		CreatedAt: h.CreatedAt,
 	}), "insert retention hold")
@@ -34,7 +34,7 @@ func (r *ModerationRepository) InsertRetentionHoldRelease(ctx context.Context, t
 	if err != nil {
 		return err
 	}
-	n, err := q.InsertRetentionHoldRelease(ctx, postgresgen.InsertRetentionHoldReleaseParams{
+	n, err := q.InsertRetentionHoldRelease(ctx, moderationgen.InsertRetentionHoldReleaseParams{
 		HoldID: rel.HoldID, ReleasedByUserID: toNullString(rel.ReleasedByUserID), ReleasedAt: rel.ReleasedAt,
 	})
 	if err != nil {
@@ -67,12 +67,12 @@ func (r *ModerationRepository) ListRetentionHolds(ctx context.Context, accountID
 	}
 	out := make([]moderation.RetentionHoldRecord, len(rows))
 	for i, row := range rows {
-		out[i] = holdRecord(postgresgen.GetRetentionHoldRow(row))
+		out[i] = holdRecord(moderationgen.GetRetentionHoldRow(row))
 	}
 	return out, nil
 }
 
-func holdRecord(row postgresgen.GetRetentionHoldRow) moderation.RetentionHoldRecord {
+func holdRecord(row moderationgen.GetRetentionHoldRow) moderation.RetentionHoldRecord {
 	rec := moderation.RetentionHoldRecord{Hold: moderation.RetentionHold{
 		ID: row.ID, AccountID: row.AccountID, Reason: row.Reason, CreatedByUserID: fromNullString(row.CreatedByUserID),
 		CreatedAt: utc(row.CreatedAt),
@@ -97,7 +97,7 @@ func (r *ModerationRepository) StatusRetained(ctx context.Context, tx uow.Tx, st
 	if err != nil {
 		return false, err
 	}
-	retained, err := q.StatusRetained(ctx, postgresgen.StatusRetainedParams{StatusID: statusID, AuthorAccountID: authorAccountID})
+	retained, err := q.StatusRetained(ctx, moderationgen.StatusRetainedParams{StatusID: statusID, AuthorAccountID: authorAccountID})
 	return retained, wrap(err, "tell whether a status is retained")
 }
 
@@ -115,7 +115,7 @@ func (r *ModerationRepository) ListActionsToPurge(ctx context.Context, tx uow.Tx
 	if err != nil {
 		return nil, err
 	}
-	ids, err := q.ListModerationActionsToPurge(ctx, postgresgen.ListModerationActionsToPurgeParams{
+	ids, err := q.ListModerationActionsToPurge(ctx, moderationgen.ListModerationActionsToPurgeParams{
 		IDBefore: idBelow(endedBefore), EndedBefore: endedBefore, BatchLimit: batch,
 	})
 	return ids, wrap(err, "list moderation actions to purge")
@@ -152,7 +152,7 @@ func (r *ModerationRepository) ListReportsToPurge(ctx context.Context, tx uow.Tx
 	if err != nil {
 		return nil, err
 	}
-	ids, err := q.ListReportsToPurge(ctx, postgresgen.ListReportsToPurgeParams{
+	ids, err := q.ListReportsToPurge(ctx, moderationgen.ListReportsToPurgeParams{
 		IDBefore: idBelow(resolvedBefore), ResolvedBefore: resolvedBefore, BatchLimit: batch,
 	})
 	return ids, wrap(err, "list reports to purge")
@@ -201,7 +201,7 @@ func (r *ModerationRepository) ListSignupBlocksToPurge(ctx context.Context, tx u
 	if err != nil {
 		return nil, err
 	}
-	ids, err := q.ListSignupBlocksToPurge(ctx, postgresgen.ListSignupBlocksToPurgeParams{
+	ids, err := q.ListSignupBlocksToPurge(ctx, moderationgen.ListSignupBlocksToPurgeParams{
 		IDBefore: idBelow(endedBefore), EndedBefore: endedBefore, BatchLimit: batch,
 	})
 	return ids, wrap(err, "list sign-up blocks to purge")
@@ -230,7 +230,7 @@ func (r *ModerationRepository) DeleteAuditEntriesBefore(ctx context.Context, tx 
 	if err != nil {
 		return 0, err
 	}
-	n, err := q.DeleteAuditLogEntriesBefore(ctx, postgresgen.DeleteAuditLogEntriesBeforeParams{
+	n, err := q.DeleteAuditLogEntriesBefore(ctx, moderationgen.DeleteAuditLogEntriesBeforeParams{
 		IDBefore: idBelow(t), OccurredBefore: t, BatchLimit: batch,
 	})
 	return n, wrap(err, "delete audit log entries")
@@ -282,7 +282,7 @@ func (r *ModerationRepository) ListRetentionHoldsToPurge(ctx context.Context, tx
 	if err != nil {
 		return nil, err
 	}
-	ids, err := q.ListRetentionHoldsToPurge(ctx, postgresgen.ListRetentionHoldsToPurgeParams{ReleasedBefore: releasedBefore, BatchLimit: batch})
+	ids, err := q.ListRetentionHoldsToPurge(ctx, moderationgen.ListRetentionHoldsToPurgeParams{ReleasedBefore: releasedBefore, BatchLimit: batch})
 	return ids, wrap(err, "list retention holds to purge")
 }
 

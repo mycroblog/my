@@ -5,7 +5,7 @@ package postgres
 import (
 	"context"
 
-	"github.com/mycroblog/my/internal/adapter/db/postgres/postgresgen"
+	"github.com/mycroblog/my/internal/adapter/db/postgres/identitygen"
 	appidentity "github.com/mycroblog/my/internal/app/identity"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/identity"
@@ -17,7 +17,7 @@ func (r *IdentityRepository) InsertEmailDeliveryFailure(ctx context.Context, tx 
 	if err != nil {
 		return false, err
 	}
-	n, err := q.InsertEmailDeliveryFailure(ctx, postgresgen.InsertEmailDeliveryFailureParams{
+	n, err := q.InsertEmailDeliveryFailure(ctx, identitygen.InsertEmailDeliveryFailureParams{
 		ID: f.ID, EmailAddressID: f.EmailAddressID, Kind: string(f.Kind), Source: string(f.Source), FeedbackKey: f.FeedbackKey,
 		EnhancedStatus: toNullString(f.EnhancedStatus), OccurredAt: f.OccurredAt,
 	})
@@ -30,7 +30,7 @@ func (r *IdentityRepository) InsertEmailSuppressionLift(ctx context.Context, tx 
 	if err != nil {
 		return err
 	}
-	err = q.InsertEmailSuppressionLift(ctx, postgresgen.InsertEmailSuppressionLiftParams{
+	err = q.InsertEmailSuppressionLift(ctx, identitygen.InsertEmailSuppressionLiftParams{
 		ID: l.ID, EmailAddressID: l.EmailAddressID, Reason: string(l.Reason), LiftedAt: l.LiftedAt,
 	})
 	return wrap(err, "insert email suppression lift")
@@ -70,5 +70,5 @@ func (r *IdentityRepository) FindPrimaryEmailAddressID(ctx context.Context, norm
 
 // RebuildEmailSuppressions implements identity.Repository.
 func (r *IdentityRepository) RebuildEmailSuppressions(ctx context.Context, tx uow.Tx) error {
-	return r.db.execAll(ctx, tx, "rebuild email suppressions", (*postgresgen.Queries).DeleteAllEmailSuppressions, (*postgresgen.Queries).RebuildEmailSuppressions)
+	return r.db.execAll(ctx, tx, "rebuild email suppressions", (*genQueries).DeleteAllEmailSuppressions, (*genQueries).RebuildEmailSuppressions)
 }

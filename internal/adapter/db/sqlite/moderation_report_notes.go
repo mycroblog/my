@@ -5,7 +5,7 @@ package sqlite
 import (
 	"context"
 
-	"github.com/mycroblog/my/internal/adapter/db/sqlite/sqlitegen"
+	"github.com/mycroblog/my/internal/adapter/db/sqlite/moderationgen"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/moderation"
 )
@@ -16,7 +16,7 @@ func (r *ModerationRepository) InsertReportReopening(ctx context.Context, tx uow
 	if err != nil {
 		return err
 	}
-	return wrap(q.InsertReportReopening(ctx, sqlitegen.InsertReportReopeningParams{
+	return wrap(q.InsertReportReopening(ctx, moderationgen.InsertReportReopeningParams{
 		ID: ro.ID, ReportID: ro.ReportID, ReopenedByUserID: toNullString(ro.ReopenedByUserID), ReopenedAt: toMillis(ro.ReopenedAt),
 	}), "insert report reopening")
 }
@@ -27,7 +27,7 @@ func (r *ModerationRepository) InsertReportNote(ctx context.Context, tx uow.Tx, 
 	if err != nil {
 		return err
 	}
-	return wrap(q.InsertReportNote(ctx, sqlitegen.InsertReportNoteParams{
+	return wrap(q.InsertReportNote(ctx, moderationgen.InsertReportNoteParams{
 		ID: n.ID, ReportID: n.ReportID, AuthorUserID: toNullString(n.AuthorUserID), Body: n.Body, WrittenAt: toMillis(n.WrittenAt),
 	}), "insert report note")
 }
@@ -49,7 +49,7 @@ func (r *ModerationRepository) ListReportNotes(ctx context.Context, reportID str
 
 // CountOtherReportsOf implements moderation.ReportNoteRepository.
 func (r *ModerationRepository) CountOtherReportsOf(ctx context.Context, targetAccountID, reportID string) (int64, error) {
-	n, err := r.db.reader().CountOtherReportsOfTarget(ctx, sqlitegen.CountOtherReportsOfTargetParams{
+	n, err := r.db.reader().CountOtherReportsOfTarget(ctx, moderationgen.CountOtherReportsOfTargetParams{
 		TargetAccountID: targetAccountID, ReportID: reportID,
 	})
 	return n, wrap(err, "count reports")

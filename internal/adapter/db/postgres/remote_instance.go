@@ -6,7 +6,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/mycroblog/my/internal/adapter/db/postgres/postgresgen"
+	"github.com/mycroblog/my/internal/adapter/db/postgres/federationgen"
 	appfederation "github.com/mycroblog/my/internal/app/federation"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/federation"
@@ -20,7 +20,7 @@ func (r *FederationRepository) InsertRemoteInstance(ctx context.Context, tx uow.
 	if err != nil {
 		return false, err
 	}
-	n, err := q.InsertRemoteInstance(ctx, postgresgen.InsertRemoteInstanceParams{Domain: domain, FirstSeenAt: firstSeenAt})
+	n, err := q.InsertRemoteInstance(ctx, federationgen.InsertRemoteInstanceParams{Domain: domain, FirstSeenAt: firstSeenAt})
 	return n > 0, wrap(err, "insert remote instance")
 }
 
@@ -46,7 +46,7 @@ func (r *FederationRepository) InsertNodeInfoObservation(ctx context.Context, tx
 	if err != nil {
 		return err
 	}
-	err = q.InsertInstanceNodeinfoObservation(ctx, postgresgen.InsertInstanceNodeinfoObservationParams{
+	err = q.InsertInstanceNodeinfoObservation(ctx, federationgen.InsertInstanceNodeinfoObservationParams{
 		ID: o.ID, Domain: o.Domain, SoftwareName: o.SoftwareName, SoftwareVersion: o.SoftwareVersion,
 		ObservedAt: o.ObservedAt,
 	})

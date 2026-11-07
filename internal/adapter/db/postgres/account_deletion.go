@@ -6,7 +6,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/mycroblog/my/internal/adapter/db/postgres/postgresgen"
+	"github.com/mycroblog/my/internal/adapter/db/postgres/accountgen"
 	appaccount "github.com/mycroblog/my/internal/app/account"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/account"
@@ -18,7 +18,7 @@ func (r *AccountRepository) ListDueDeletions(ctx context.Context, now time.Time,
 	if err != nil {
 		return nil, err
 	}
-	rows, err := r.db.reader().ListDueDeletions(ctx, postgresgen.ListDueDeletionsParams{Now: now, Lim: lim})
+	rows, err := r.db.reader().ListDueDeletions(ctx, accountgen.ListDueDeletionsParams{Now: now, Lim: lim})
 	if err != nil {
 		return nil, wrap(err, "list due deletions")
 	}
@@ -35,7 +35,7 @@ func (r *AccountRepository) ListDueDeactivations(ctx context.Context, cutoff tim
 	if err != nil {
 		return nil, err
 	}
-	rows, err := r.db.reader().ListDueDeactivations(ctx, postgresgen.ListDueDeactivationsParams{Cutoff: cutoff, Lim: lim})
+	rows, err := r.db.reader().ListDueDeactivations(ctx, accountgen.ListDueDeactivationsParams{Cutoff: cutoff, Lim: lim})
 	if err != nil {
 		return nil, wrap(err, "list due deactivations")
 	}

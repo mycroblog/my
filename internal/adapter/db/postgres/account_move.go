@@ -5,7 +5,7 @@ package postgres
 import (
 	"context"
 
-	"github.com/mycroblog/my/internal/adapter/db/postgres/postgresgen"
+	"github.com/mycroblog/my/internal/adapter/db/postgres/accountgen"
 	appaccount "github.com/mycroblog/my/internal/app/account"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/account"
@@ -17,14 +17,14 @@ func (r *AccountRepository) InsertMove(ctx context.Context, tx uow.Tx, m account
 	if err != nil {
 		return false, err
 	}
-	n, err := q.InsertAccountMove(ctx, postgresgen.InsertAccountMoveParams{
+	n, err := q.InsertAccountMove(ctx, accountgen.InsertAccountMoveParams{
 		ID: m.ID, AccountID: m.AccountID, TargetAccountID: m.TargetAccountID, InitiatedBy: string(m.InitiatedBy),
 		ActivityUri: toNullString(m.ActivityURI), OccurredAt: m.OccurredAt,
 	})
 	return n > 0, wrap(err, "insert account move")
 }
 
-func moveFrom(row postgresgen.AccountMove) account.Move {
+func moveFrom(row accountgen.AccountMove) account.Move {
 	return account.Move{
 		ID: row.ID, AccountID: row.AccountID, TargetAccountID: row.TargetAccountID,
 		InitiatedBy: account.MoveInitiator(row.InitiatedBy), ActivityURI: fromNullString(row.ActivityUri), OccurredAt: utc(row.OccurredAt),
@@ -59,7 +59,7 @@ func (r *AccountRepository) UpsertMoveState(ctx context.Context, tx uow.Tx, s ac
 	if err != nil {
 		return err
 	}
-	err = q.UpsertAccountMoveState(ctx, postgresgen.UpsertAccountMoveStateParams{
+	err = q.UpsertAccountMoveState(ctx, accountgen.UpsertAccountMoveStateParams{
 		AccountID: s.AccountID, MoveID: s.MoveID, TargetAccountID: s.TargetAccountID, Since: s.Since,
 	})
 	return wrap(err, "upsert account move state")
@@ -74,7 +74,7 @@ func (r *AccountRepository) DeleteAllMoveStates(ctx context.Context, tx uow.Tx) 
 	return wrap(q.DeleteAllAccountMoveStates(ctx), "delete account move states")
 }
 
-func moveStateFrom(row postgresgen.AccountMoveState) account.MoveState {
+func moveStateFrom(row accountgen.AccountMoveState) account.MoveState {
 	return account.MoveState{AccountID: row.AccountID, MoveID: row.MoveID, TargetAccountID: row.TargetAccountID, Since: utc(row.Since)}
 }
 
@@ -100,7 +100,7 @@ func (r *AccountRepository) ListMoveRecords(ctx context.Context, tx uow.Tx) ([]a
 	out := make([]account.MoveRecord, len(rows))
 	for i, row := range rows {
 		out[i] = account.MoveRecord{
-			Move: moveFrom(postgresgen.AccountMove{
+			Move: moveFrom(accountgen.AccountMove{
 				ID: row.ID, AccountID: row.AccountID, TargetAccountID: row.TargetAccountID, InitiatedBy: row.InitiatedBy,
 				ActivityUri: row.ActivityUri, OccurredAt: row.OccurredAt,
 			}),
@@ -142,7 +142,7 @@ func (r *AccountRepository) InsertMoveCancellation(ctx context.Context, tx uow.T
 	if err != nil {
 		return false, err
 	}
-	n, err := q.InsertAccountMoveCancellation(ctx, postgresgen.InsertAccountMoveCancellationParams{MoveID: c.MoveID, CanceledAt: c.CanceledAt})
+	n, err := q.InsertAccountMoveCancellation(ctx, accountgen.InsertAccountMoveCancellationParams{MoveID: c.MoveID, CanceledAt: c.CanceledAt})
 	return n > 0, wrap(err, "insert account move cancellation")
 }
 

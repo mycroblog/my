@@ -165,8 +165,8 @@ tasks:
       - scripts/sqlc.sh
       - tools/go.mod
     generates:
-      - internal/adapter/db/sqlite/sqlitegen/*.go
-      - internal/adapter/db/postgres/postgresgen/*.go
+      - internal/adapter/db/sqlite/*gen/*.go
+      - internal/adapter/db/postgres/*gen/*.go
       - internal/adapter/queue/db/internal/sqlitequeue/*.go
       - internal/adapter/queue/db/internal/postgresqueue/*.go
       - internal/adapter/kv/db/internal/sqlitekv/*.go

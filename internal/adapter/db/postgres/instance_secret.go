@@ -5,7 +5,7 @@ package postgres
 import (
 	"context"
 
-	"github.com/mycroblog/my/internal/adapter/db/postgres/postgresgen"
+	"github.com/mycroblog/my/internal/adapter/db/postgres/instancegen"
 	appinstance "github.com/mycroblog/my/internal/app/instance"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/instance"
@@ -17,7 +17,7 @@ func (r *InstanceRepository) InsertSecret(ctx context.Context, tx uow.Tx, s inst
 	if err != nil {
 		return false, err
 	}
-	n, err := q.InsertInstanceSecret(ctx, postgresgen.InsertInstanceSecretParams{
+	n, err := q.InsertInstanceSecret(ctx, instancegen.InsertInstanceSecretParams{
 		ID: s.ID, Name: string(s.Name), SealedSecret: s.Sealed, CreatedAt: s.CreatedAt,
 	})
 	return n > 0, wrap(err, "insert instance secret")

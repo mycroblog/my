@@ -5,7 +5,7 @@ package postgres
 import (
 	"context"
 
-	"github.com/mycroblog/my/internal/adapter/db/postgres/postgresgen"
+	"github.com/mycroblog/my/internal/adapter/db/postgres/notificationgen"
 	appnotification "github.com/mycroblog/my/internal/app/notification"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/notification"
@@ -19,7 +19,7 @@ func (r *NotificationRepository) InsertSubscription(ctx context.Context, tx uow.
 	if err != nil {
 		return false, err
 	}
-	n, err := q.InsertPostSubscription(ctx, postgresgen.InsertPostSubscriptionParams{
+	n, err := q.InsertPostSubscription(ctx, notificationgen.InsertPostSubscriptionParams{
 		AccountID: s.AccountID, TargetAccountID: s.TargetAccountID, CreatedAt: s.CreatedAt,
 	})
 	return n > 0, wrap(err, "insert post subscription")
@@ -31,7 +31,7 @@ func (r *NotificationRepository) DeleteSubscription(ctx context.Context, tx uow.
 	if err != nil {
 		return false, err
 	}
-	n, err := q.DeletePostSubscription(ctx, postgresgen.DeletePostSubscriptionParams{AccountID: accountID, TargetAccountID: targetAccountID})
+	n, err := q.DeletePostSubscription(ctx, notificationgen.DeletePostSubscriptionParams{AccountID: accountID, TargetAccountID: targetAccountID})
 	return n > 0, wrap(err, "delete post subscription")
 }
 
@@ -47,7 +47,7 @@ func (r *NotificationRepository) CountSubscriptions(ctx context.Context, tx uow.
 
 // Subscribed implements notification.SubscriptionRepository.
 func (r *NotificationRepository) Subscribed(ctx context.Context, accountID, targetAccountID string) (bool, error) {
-	ok, err := r.db.reader().PostSubscriptionExists(ctx, postgresgen.PostSubscriptionExistsParams{AccountID: accountID, TargetAccountID: targetAccountID})
+	ok, err := r.db.reader().PostSubscriptionExists(ctx, notificationgen.PostSubscriptionExistsParams{AccountID: accountID, TargetAccountID: targetAccountID})
 	return ok, wrap(err, "check post subscription")
 }
 
@@ -67,7 +67,7 @@ func (r *NotificationRepository) ListSubscriptions(ctx context.Context, accountI
 	if err != nil {
 		return nil, err
 	}
-	rows, err := r.db.reader().ListPostSubscriptionsPage(ctx, postgresgen.ListPostSubscriptionsPageParams{
+	rows, err := r.db.reader().ListPostSubscriptionsPage(ctx, notificationgen.ListPostSubscriptionsPageParams{
 		AccountID: accountID, BeforeTargetAccountID: toNullString(before.TargetAccountID), BeforeCreatedAt: before.CreatedAt,
 		PageLimit: n,
 	})
@@ -93,7 +93,7 @@ func (r *NotificationRepository) ListSubscribers(ctx context.Context, targetAcco
 	if err != nil {
 		return nil, err
 	}
-	ids, err := r.db.reader().ListPostSubscribersPage(ctx, postgresgen.ListPostSubscribersPageParams{
+	ids, err := r.db.reader().ListPostSubscribersPage(ctx, notificationgen.ListPostSubscribersPageParams{
 		TargetAccountID: targetAccountID, After: toNullString(after), PageLimit: n,
 	})
 	return ids, wrap(err, "list post subscribers")
@@ -105,7 +105,7 @@ func (r *NotificationRepository) InsertSubscriptionRequest(ctx context.Context, 
 	if err != nil {
 		return err
 	}
-	return wrap(q.UpsertPostSubscriptionRequest(ctx, postgresgen.UpsertPostSubscriptionRequestParams{
+	return wrap(q.UpsertPostSubscriptionRequest(ctx, notificationgen.UpsertPostSubscriptionRequestParams{
 		AccountID: s.AccountID, TargetAccountID: s.TargetAccountID, CreatedAt: s.CreatedAt,
 	}), "insert post subscription request")
 }
@@ -116,12 +116,12 @@ func (r *NotificationRepository) DeleteSubscriptionRequest(ctx context.Context, 
 	if err != nil {
 		return false, err
 	}
-	n, err := q.DeletePostSubscriptionRequest(ctx, postgresgen.DeletePostSubscriptionRequestParams{AccountID: accountID, TargetAccountID: targetAccountID})
+	n, err := q.DeletePostSubscriptionRequest(ctx, notificationgen.DeletePostSubscriptionRequestParams{AccountID: accountID, TargetAccountID: targetAccountID})
 	return n > 0, wrap(err, "delete post subscription request")
 }
 
 // SubscriptionRequested implements notification.SubscriptionRepository.
 func (r *NotificationRepository) SubscriptionRequested(ctx context.Context, accountID, targetAccountID string) (bool, error) {
-	ok, err := r.db.reader().PostSubscriptionRequestExists(ctx, postgresgen.PostSubscriptionRequestExistsParams{AccountID: accountID, TargetAccountID: targetAccountID})
+	ok, err := r.db.reader().PostSubscriptionRequestExists(ctx, notificationgen.PostSubscriptionRequestExistsParams{AccountID: accountID, TargetAccountID: targetAccountID})
 	return ok, wrap(err, "check post subscription request")
 }

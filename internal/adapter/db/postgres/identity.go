@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/mycroblog/my/internal/adapter/db/postgres/postgresgen"
+	"github.com/mycroblog/my/internal/adapter/db/postgres/identitygen"
 	appidentity "github.com/mycroblog/my/internal/app/identity"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/identity"
@@ -29,7 +29,7 @@ func (r *IdentityRepository) InsertUser(ctx context.Context, tx uow.Tx, u identi
 	if err != nil {
 		return err
 	}
-	return wrap(q.InsertUser(ctx, postgresgen.InsertUserParams{ID: u.ID, CreatedAt: u.CreatedAt}), "insert user")
+	return wrap(q.InsertUser(ctx, identitygen.InsertUserParams{ID: u.ID, CreatedAt: u.CreatedAt}), "insert user")
 }
 
 // InsertPasswordCredential implements identity.Repository.
@@ -38,7 +38,7 @@ func (r *IdentityRepository) InsertPasswordCredential(ctx context.Context, tx uo
 	if err != nil {
 		return err
 	}
-	err = q.InsertPasswordCredential(ctx, postgresgen.InsertPasswordCredentialParams{
+	err = q.InsertPasswordCredential(ctx, identitygen.InsertPasswordCredentialParams{
 		ID: c.ID, UserID: c.UserID, PasswordHash: c.Hash, SetAt: c.SetAt,
 	})
 	return wrap(err, "insert password credential")
@@ -54,7 +54,7 @@ func (r *IdentityRepository) EnsureRole(ctx context.Context, tx uow.Tx, role ide
 	if err != nil {
 		return identity.Role{}, err
 	}
-	err = q.InsertRoleIfAbsent(ctx, postgresgen.InsertRoleIfAbsentParams{
+	err = q.InsertRoleIfAbsent(ctx, identitygen.InsertRoleIfAbsentParams{
 		ID: role.ID, Key: role.Key, Position: pos, CreatedAt: role.CreatedAt,
 	})
 	if err != nil {
@@ -68,7 +68,7 @@ func (r *IdentityRepository) EnsureRole(ctx context.Context, tx uow.Tx, role ide
 		return roleFrom(row), nil
 	}
 	for _, p := range perms {
-		err := q.InsertRolePermissionIfAbsent(ctx, postgresgen.InsertRolePermissionIfAbsentParams{RoleID: row.ID, Permission: string(p)})
+		err := q.InsertRolePermissionIfAbsent(ctx, identitygen.InsertRolePermissionIfAbsentParams{RoleID: row.ID, Permission: string(p)})
 		if err != nil {
 			return identity.Role{}, wrap(err, "insert role permission")
 		}
@@ -76,7 +76,7 @@ func (r *IdentityRepository) EnsureRole(ctx context.Context, tx uow.Tx, role ide
 	return roleFrom(row), nil
 }
 
-func roleFrom(row postgresgen.Role) identity.Role {
+func roleFrom(row identitygen.Role) identity.Role {
 	return identity.Role{ID: row.ID, Key: row.Key, Position: int(row.Position), CreatedAt: utc(row.CreatedAt)}
 }
 
@@ -126,7 +126,7 @@ func (r *IdentityRepository) InsertPasswordCredentialRemoval(ctx context.Context
 	if err != nil {
 		return err
 	}
-	err = q.InsertPasswordCredentialRemoval(ctx, postgresgen.InsertPasswordCredentialRemovalParams{
+	err = q.InsertPasswordCredentialRemoval(ctx, identitygen.InsertPasswordCredentialRemovalParams{
 		PasswordCredentialID: rem.PasswordCredentialID, RemovedAt: rem.RemovedAt,
 	})
 	return wrap(err, "insert password credential removal")
@@ -166,7 +166,7 @@ func (r *IdentityRepository) InsertEmailAddress(ctx context.Context, tx uow.Tx, 
 	if err != nil {
 		return err
 	}
-	err = q.InsertEmailAddress(ctx, postgresgen.InsertEmailAddressParams{
+	err = q.InsertEmailAddress(ctx, identitygen.InsertEmailAddressParams{
 		ID: e.ID, UserID: e.UserID, Address: e.Address, AddressNormalized: e.AddressNormalized, AddedAt: e.AddedAt,
 	})
 	return wrap(err, "insert email address")
@@ -178,7 +178,7 @@ func (r *IdentityRepository) InsertPrimaryEmail(ctx context.Context, tx uow.Tx, 
 	if err != nil {
 		return err
 	}
-	err = q.InsertPrimaryEmail(ctx, postgresgen.InsertPrimaryEmailParams{
+	err = q.InsertPrimaryEmail(ctx, identitygen.InsertPrimaryEmailParams{
 		UserID: e.UserID, EmailAddressID: e.ID, AddressNormalized: e.AddressNormalized,
 	})
 	if isUniqueViolation(err, "user_primary_emails_address_normalized") {
@@ -193,13 +193,13 @@ func (r *IdentityRepository) InsertRoleGrant(ctx context.Context, tx uow.Tx, g i
 	if err != nil {
 		return err
 	}
-	err = q.InsertUserRoleGrant(ctx, postgresgen.InsertUserRoleGrantParams{
+	err = q.InsertUserRoleGrant(ctx, identitygen.InsertUserRoleGrantParams{
 		ID: g.ID, UserID: g.UserID, RoleID: g.RoleID, GrantedByUserID: toNullString(g.GrantedByUserID), GrantedAt: g.GrantedAt,
 	})
 	if err != nil {
 		return wrap(err, "insert role grant")
 	}
-	return wrap(q.InsertUserRole(ctx, postgresgen.InsertUserRoleParams{UserID: g.UserID, RoleID: g.RoleID, GrantID: g.ID}), "insert user role")
+	return wrap(q.InsertUserRole(ctx, identitygen.InsertUserRoleParams{UserID: g.UserID, RoleID: g.RoleID, GrantID: g.ID}), "insert user role")
 }
 
 // FindUserIDByEmail implements identity.Repository.

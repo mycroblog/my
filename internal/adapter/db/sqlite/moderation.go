@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/mycroblog/my/internal/adapter/db/sqlite/sqlitegen"
+	"github.com/mycroblog/my/internal/adapter/db/sqlite/moderationgen"
 	appmoderation "github.com/mycroblog/my/internal/app/moderation"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/moderation"
@@ -30,7 +30,7 @@ func (r *ModerationRepository) InsertAction(ctx context.Context, tx uow.Tx, a mo
 	if err != nil {
 		return err
 	}
-	err = q.InsertModerationAction(ctx, sqlitegen.InsertModerationActionParams{
+	err = q.InsertModerationAction(ctx, moderationgen.InsertModerationActionParams{
 		ID: a.ID, TargetAccountID: a.TargetAccountID, Kind: string(a.Kind), ReasonCategory: string(a.ReasonCategory),
 		PublicReason: toNullString(a.PublicReason), PrivateNote: toNullString(a.PrivateNote), ReportID: toNullString(a.ReportID),
 		Issuer: string(a.Issuer), IssuedByUserID: toNullString(a.IssuedByUserID), NotifyTarget: boolToInt(a.NotifyTarget),
@@ -40,7 +40,7 @@ func (r *ModerationRepository) InsertAction(ctx context.Context, tx uow.Tx, a mo
 		return wrap(err, "insert moderation action")
 	}
 	for _, id := range a.StatusIDs {
-		if err := q.InsertModerationActionStatus(ctx, sqlitegen.InsertModerationActionStatusParams{ActionID: a.ID, StatusID: id}); err != nil {
+		if err := q.InsertModerationActionStatus(ctx, moderationgen.InsertModerationActionStatusParams{ActionID: a.ID, StatusID: id}); err != nil {
 			return wrap(err, "insert moderation action status")
 		}
 	}
@@ -48,7 +48,7 @@ func (r *ModerationRepository) InsertAction(ctx context.Context, tx uow.Tx, a mo
 }
 
 // actionStatusIDs returns the statuses of an action on statuses, nil for none.
-func actionStatusIDs(ctx context.Context, q *sqlitegen.Queries, actionID string) ([]string, error) {
+func actionStatusIDs(ctx context.Context, q *genQueries, actionID string) ([]string, error) {
 	ids, err := q.ListModerationActionStatusIDs(ctx, actionID)
 	if err != nil {
 		return nil, wrap(err, "list moderation action statuses")
@@ -88,7 +88,7 @@ func (r *ModerationRepository) InsertActionLift(ctx context.Context, tx uow.Tx, 
 	if err != nil {
 		return err
 	}
-	n, err := q.InsertModerationActionLift(ctx, sqlitegen.InsertModerationActionLiftParams{
+	n, err := q.InsertModerationActionLift(ctx, moderationgen.InsertModerationActionLiftParams{
 		ActionID: l.ActionID, LiftedByUserID: toNullString(l.LiftedByUserID), Reason: toNullString(l.Reason),
 		LiftedAt: toMillis(l.LiftedAt),
 	})
@@ -107,7 +107,7 @@ func (r *ModerationRepository) InsertDomainAction(ctx context.Context, tx uow.Tx
 	if err != nil {
 		return err
 	}
-	return wrap(q.InsertDomainModerationAction(ctx, sqlitegen.InsertDomainModerationActionParams{
+	return wrap(q.InsertDomainModerationAction(ctx, moderationgen.InsertDomainModerationActionParams{
 		ID: a.ID, Domain: a.Domain, Kind: string(a.Kind), PublicComment: toNullString(a.PublicComment),
 		PrivateNote: toNullString(a.PrivateNote), Obfuscate: boolToInt(a.Obfuscate),
 		IssuedByUserID: toNullString(a.IssuedByUserID), ExpiresAt: toNullMillis(a.ExpiresAt), IssuedAt: toMillis(a.IssuedAt),
@@ -137,7 +137,7 @@ func (r *ModerationRepository) InsertDomainActionLift(ctx context.Context, tx uo
 	if err != nil {
 		return err
 	}
-	n, err := q.InsertDomainModerationActionLift(ctx, sqlitegen.InsertDomainModerationActionLiftParams{
+	n, err := q.InsertDomainModerationActionLift(ctx, moderationgen.InsertDomainModerationActionLiftParams{
 		ActionID: l.ActionID, LiftedByUserID: toNullString(l.LiftedByUserID), LiftedAt: toMillis(l.LiftedAt),
 	})
 	if err != nil {
@@ -158,14 +158,14 @@ func (r *ModerationRepository) InsertReport(ctx context.Context, tx uow.Tx, rep 
 	// The origin goes first: its unique decision is what keeps a job that runs again from filing a
 	// second report, and the report has no other key for it.
 	if o := rep.HookOrigin; o != nil {
-		n, err := q.InsertReportHookOrigin(ctx, sqlitegen.InsertReportHookOriginParams{
+		n, err := q.InsertReportHookOrigin(ctx, moderationgen.InsertReportHookOriginParams{
 			ReportID: rep.ID, HookDecisionID: o.DecisionID, Hook: o.Hook, ReasonCode: o.ReasonCode,
 		})
 		if err != nil || n == 0 {
 			return false, wrap(err, "insert report hook origin")
 		}
 	}
-	n, err := q.InsertReport(ctx, sqlitegen.InsertReportParams{
+	n, err := q.InsertReport(ctx, moderationgen.InsertReportParams{
 		ID: rep.ID, Uri: toNullString(rep.URI), ReporterAccountID: rep.ReporterAccountID, TargetAccountID: rep.TargetAccountID,
 		Category: string(rep.Category), Comment: rep.Comment, Forwarded: boolToInt(rep.Forwarded), FiledAt: toMillis(rep.FiledAt),
 	})
@@ -173,17 +173,17 @@ func (r *ModerationRepository) InsertReport(ctx context.Context, tx uow.Tx, rep 
 		return false, wrap(err, "insert report")
 	}
 	for _, id := range rep.StatusIDs {
-		if err := q.InsertReportStatus(ctx, sqlitegen.InsertReportStatusParams{ReportID: rep.ID, StatusID: id}); err != nil {
+		if err := q.InsertReportStatus(ctx, moderationgen.InsertReportStatusParams{ReportID: rep.ID, StatusID: id}); err != nil {
 			return false, wrap(err, "insert report status")
 		}
 	}
 	for _, id := range rep.RuleIDs {
-		if err := q.InsertReportRuleCitation(ctx, sqlitegen.InsertReportRuleCitationParams{ReportID: rep.ID, RuleID: id}); err != nil {
+		if err := q.InsertReportRuleCitation(ctx, moderationgen.InsertReportRuleCitationParams{ReportID: rep.ID, RuleID: id}); err != nil {
 			return false, wrap(err, "insert report rule citation")
 		}
 	}
 	if v := rep.VoiceRoom; v != nil {
-		err := q.InsertReportVoiceRoom(ctx, sqlitegen.InsertReportVoiceRoomParams{ReportID: rep.ID, RoomID: v.RoomID, RevisionID: v.RevisionID})
+		err := q.InsertReportVoiceRoom(ctx, moderationgen.InsertReportVoiceRoomParams{ReportID: rep.ID, RoomID: v.RoomID, RevisionID: v.RevisionID})
 		if err != nil {
 			return false, wrap(err, "insert report voice room")
 		}
@@ -203,7 +203,7 @@ func (r *ModerationRepository) InsertAccountRestriction(ctx context.Context, tx 
 	if err != nil {
 		return err
 	}
-	return wrap(q.InsertAccountRestriction(ctx, sqlitegen.InsertAccountRestrictionParams{
+	return wrap(q.InsertAccountRestriction(ctx, moderationgen.InsertAccountRestrictionParams{
 		AccountID: row.Target, Restriction: string(row.Restriction), SourceActionID: row.SourceActionID,
 		EffectiveUntil: toNullMillis(row.EffectiveUntil),
 	}), "insert account restriction")
@@ -253,7 +253,7 @@ func (r *ModerationRepository) DeleteExpiredAccountRestrictions(ctx context.Cont
 	if err != nil {
 		return nil, err
 	}
-	rows, err := q.DeleteExpiredAccountRestrictions(ctx, sqlitegen.DeleteExpiredAccountRestrictionsParams{Now: toMillis(now), BatchLimit: int64(limit)})
+	rows, err := q.DeleteExpiredAccountRestrictions(ctx, moderationgen.DeleteExpiredAccountRestrictionsParams{Now: toMillis(now), BatchLimit: int64(limit)})
 	if err != nil {
 		return nil, wrap(err, "delete expired account restrictions")
 	}
@@ -270,7 +270,7 @@ func (r *ModerationRepository) DeleteExpiredDomainRestrictions(ctx context.Conte
 	if err != nil {
 		return nil, err
 	}
-	rows, err := q.DeleteExpiredDomainRestrictions(ctx, sqlitegen.DeleteExpiredDomainRestrictionsParams{Now: toMillis(now), BatchLimit: int64(limit)})
+	rows, err := q.DeleteExpiredDomainRestrictions(ctx, moderationgen.DeleteExpiredDomainRestrictionsParams{Now: toMillis(now), BatchLimit: int64(limit)})
 	if err != nil {
 		return nil, wrap(err, "delete expired domain restrictions")
 	}
@@ -287,7 +287,7 @@ func (r *ModerationRepository) InsertDomainRestriction(ctx context.Context, tx u
 	if err != nil {
 		return err
 	}
-	return wrap(q.InsertDomainRestriction(ctx, sqlitegen.InsertDomainRestrictionParams{
+	return wrap(q.InsertDomainRestriction(ctx, moderationgen.InsertDomainRestrictionParams{
 		Domain: row.Target, Restriction: string(row.Restriction), SourceActionID: row.SourceActionID,
 		EffectiveUntil: toNullMillis(row.EffectiveUntil),
 	}), "insert domain restriction")
@@ -325,7 +325,7 @@ func (r *ModerationRepository) UpsertReportStatus(ctx context.Context, tx uow.Tx
 	if err != nil {
 		return err
 	}
-	return wrap(q.UpsertReportState(ctx, sqlitegen.UpsertReportStateParams{
+	return wrap(q.UpsertReportState(ctx, moderationgen.UpsertReportStateParams{
 		ReportID: s.ReportID, State: string(s.State), Outcome: toNullString(string(s.Outcome)),
 		AssigneeUserID: toNullString(s.AssigneeUserID), Since: toMillis(s.Since),
 	}), "upsert report state")
@@ -341,7 +341,7 @@ func restrictionsFrom(rows []string) []moderation.Restriction {
 
 // AccountRestrictionsInEffect implements moderation.Repository.
 func (r *ModerationRepository) AccountRestrictionsInEffect(ctx context.Context, accountID string, now time.Time) ([]moderation.Restriction, error) {
-	rows, err := r.db.reader().ListAccountRestrictionsInEffect(ctx, sqlitegen.ListAccountRestrictionsInEffectParams{
+	rows, err := r.db.reader().ListAccountRestrictionsInEffect(ctx, moderationgen.ListAccountRestrictionsInEffectParams{
 		AccountID: accountID, Now: toMillis(now),
 	})
 	if err != nil {
@@ -356,7 +356,7 @@ func (r *ModerationRepository) DomainRestrictionsInEffect(ctx context.Context, d
 	if err != nil {
 		return nil, err
 	}
-	rows, err := r.db.reader().ListDomainRestrictionsInEffect(ctx, sqlitegen.ListDomainRestrictionsInEffectParams{
+	rows, err := r.db.reader().ListDomainRestrictionsInEffect(ctx, moderationgen.ListDomainRestrictionsInEffectParams{
 		Domains: list, Now: toMillis(now),
 	})
 	if err != nil {
@@ -365,7 +365,7 @@ func (r *ModerationRepository) DomainRestrictionsInEffect(ctx context.Context, d
 	return restrictionsFrom(rows), nil
 }
 
-func (r *ModerationRepository) reportFrom(ctx context.Context, row sqlitegen.Report) (moderation.Report, error) {
+func (r *ModerationRepository) reportFrom(ctx context.Context, row moderationgen.Report) (moderation.Report, error) {
 	ids, err := r.db.reader().ListReportStatusIDs(ctx, row.ID)
 	if err != nil {
 		return moderation.Report{}, wrap(err, "list report statuses")
@@ -428,7 +428,7 @@ func (r *ModerationRepository) FindReportStatus(ctx context.Context, reportID st
 	return reportStatusFrom(row), nil
 }
 
-func reportStatusFrom(row sqlitegen.ReportState) moderation.ReportStatus {
+func reportStatusFrom(row moderationgen.ReportState) moderation.ReportStatus {
 	return moderation.ReportStatus{
 		ReportID: row.ReportID, State: moderation.ReportState(row.State), Outcome: moderation.ReportOutcome(row.Outcome.String),
 		AssigneeUserID: row.AssigneeUserID.String, Since: fromMillis(row.Since),
@@ -456,7 +456,7 @@ func (r *ModerationRepository) InsertReportAssignment(ctx context.Context, tx uo
 	if err != nil {
 		return err
 	}
-	return wrap(q.InsertReportAssignment(ctx, sqlitegen.InsertReportAssignmentParams{
+	return wrap(q.InsertReportAssignment(ctx, moderationgen.InsertReportAssignmentParams{
 		ID: a.ID, ReportID: a.ReportID, AssigneeUserID: toNullString(a.AssigneeUserID),
 		AssignedByUserID: toNullString(a.AssignedByUserID), AssignedAt: toMillis(a.AssignedAt),
 	}), "insert report assignment")
@@ -468,7 +468,7 @@ func (r *ModerationRepository) InsertReportResolution(ctx context.Context, tx uo
 	if err != nil {
 		return err
 	}
-	return wrap(q.InsertReportResolution(ctx, sqlitegen.InsertReportResolutionParams{
+	return wrap(q.InsertReportResolution(ctx, moderationgen.InsertReportResolutionParams{
 		ID: res.ID, ReportID: res.ReportID, Outcome: string(res.Outcome),
 		ResolvedByUserID: toNullString(res.ResolvedByUserID), ResolvedAt: toMillis(res.ResolvedAt),
 	}), "insert report resolution")
@@ -490,19 +490,19 @@ func (r *ModerationRepository) ReportStatusForUpdate(ctx context.Context, tx uow
 
 // ListReports implements moderation.Repository.
 func (r *ModerationRepository) ListReports(ctx context.Context, q appmoderation.ReportQuery, limit int) ([]moderation.ReportRecord, error) {
-	var rows []sqlitegen.ListReportsRow
+	var rows []moderationgen.ListReportsRow
 	var err error
 	if q.OldestFirst {
-		var oldest []sqlitegen.ListReportsOldestFirstRow
-		oldest, err = r.db.reader().ListReportsOldestFirst(ctx, sqlitegen.ListReportsOldestFirstParams{
+		var oldest []moderationgen.ListReportsOldestFirstRow
+		oldest, err = r.db.reader().ListReportsOldestFirst(ctx, moderationgen.ListReportsOldestFirstParams{
 			State: string(q.State), Category: string(q.Category), Assignee: q.AssigneeUserID, Unassigned: boolToInt(q.Unassigned),
 			After: q.After, Lim: int64(limit),
 		})
 		for _, row := range oldest {
-			rows = append(rows, sqlitegen.ListReportsRow(row))
+			rows = append(rows, moderationgen.ListReportsRow(row))
 		}
 	} else {
-		rows, err = r.db.reader().ListReports(ctx, sqlitegen.ListReportsParams{
+		rows, err = r.db.reader().ListReports(ctx, moderationgen.ListReportsParams{
 			State: string(q.State), Category: string(q.Category), Assignee: q.AssigneeUserID, Unassigned: boolToInt(q.Unassigned),
 			Before: q.After, Lim: int64(limit),
 		})
@@ -520,22 +520,22 @@ func (r *ModerationRepository) ListReports(ctx context.Context, q appmoderation.
 }
 
 // reportRecordFrom reads the statuses and rules of the report of row.
-func (r *ModerationRepository) reportRecordFrom(ctx context.Context, row sqlitegen.ListReportsRow) (moderation.ReportRecord, error) {
-	rep, err := r.reportFrom(ctx, sqlitegen.Report{
+func (r *ModerationRepository) reportRecordFrom(ctx context.Context, row moderationgen.ListReportsRow) (moderation.ReportRecord, error) {
+	rep, err := r.reportFrom(ctx, moderationgen.Report{
 		ID: row.ID, Uri: row.Uri, ReporterAccountID: row.ReporterAccountID, TargetAccountID: row.TargetAccountID,
 		Category: row.Category, Comment: row.Comment, Forwarded: row.Forwarded, FiledAt: row.FiledAt,
 	})
 	if err != nil {
 		return moderation.ReportRecord{}, err
 	}
-	return moderation.ReportRecord{Report: rep, Status: reportStatusFrom(sqlitegen.ReportState{
+	return moderation.ReportRecord{Report: rep, Status: reportStatusFrom(moderationgen.ReportState{
 		ReportID: row.ID, State: row.State, Outcome: row.Outcome, AssigneeUserID: row.AssigneeUserID, Since: row.Since,
 	})}, nil
 }
 
 // ListReportsByReporter implements moderation.Repository.
 func (r *ModerationRepository) ListReportsByReporter(ctx context.Context, reporterAccountID, before string, limit int) ([]moderation.ReportRecord, error) {
-	rows, err := r.db.reader().ListReportsByReporter(ctx, sqlitegen.ListReportsByReporterParams{
+	rows, err := r.db.reader().ListReportsByReporter(ctx, moderationgen.ListReportsByReporterParams{
 		ReporterAccountID: reporterAccountID, Before: before, Lim: int64(limit),
 	})
 	if err != nil {
@@ -543,14 +543,14 @@ func (r *ModerationRepository) ListReportsByReporter(ctx context.Context, report
 	}
 	out := make([]moderation.ReportRecord, len(rows))
 	for i, row := range rows {
-		if out[i], err = r.reportRecordFrom(ctx, sqlitegen.ListReportsRow(row)); err != nil {
+		if out[i], err = r.reportRecordFrom(ctx, moderationgen.ListReportsRow(row)); err != nil {
 			return nil, err
 		}
 	}
 	return out, nil
 }
 
-func domainActionRecordFrom(row sqlitegen.ListDomainModerationActionsRow) moderation.DomainActionRecord {
+func domainActionRecordFrom(row moderationgen.ListDomainModerationActionsRow) moderation.DomainActionRecord {
 	rec := moderation.DomainActionRecord{Action: moderation.DomainAction{
 		ID: row.ID, Domain: row.Domain, Kind: moderation.DomainActionKind(row.Kind), PublicComment: row.PublicComment.String,
 		PrivateNote: row.PrivateNote.String, Obfuscate: row.Obfuscate != 0, IssuedByUserID: row.IssuedByUserID.String,
@@ -568,7 +568,7 @@ func (r *ModerationRepository) FindDomainActionRecord(ctx context.Context, id st
 	if err != nil {
 		return moderation.DomainActionRecord{}, notFound(err, appmoderation.ErrNotFound, "domain moderation action "+id)
 	}
-	return domainActionRecordFrom(sqlitegen.ListDomainModerationActionsRow(row)), nil
+	return domainActionRecordFrom(moderationgen.ListDomainModerationActionsRow(row)), nil
 }
 
 // ListDomainActions implements moderation.Repository.
@@ -584,7 +584,7 @@ func (r *ModerationRepository) ListDomainActions(ctx context.Context, q appmoder
 			return nil, err
 		}
 	}
-	rows, err := r.db.reader().ListDomainModerationActions(ctx, sqlitegen.ListDomainModerationActionsParams{
+	rows, err := r.db.reader().ListDomainModerationActions(ctx, moderationgen.ListDomainModerationActionsParams{
 		Domain: q.Domain, Kinds: kinds, InEffectAt: at, Before: q.Before, Lim: int64(limit),
 	})
 	if err != nil {
@@ -597,7 +597,7 @@ func (r *ModerationRepository) ListDomainActions(ctx context.Context, q appmoder
 	return out, nil
 }
 
-func actionRecordFrom(row sqlitegen.ListModerationActionsRow) moderation.ActionRecord {
+func actionRecordFrom(row moderationgen.ListModerationActionsRow) moderation.ActionRecord {
 	rec := moderation.ActionRecord{Action: moderation.Action{
 		ID: row.ID, TargetAccountID: row.TargetAccountID, Kind: moderation.ActionKind(row.Kind),
 		ReasonCategory: moderation.Category(row.ReasonCategory), PublicReason: row.PublicReason.String,
@@ -620,7 +620,7 @@ func (r *ModerationRepository) FindActionRecord(ctx context.Context, id string) 
 	if err != nil {
 		return moderation.ActionRecord{}, notFound(err, appmoderation.ErrNotFound, "moderation action "+id)
 	}
-	rec := actionRecordFrom(sqlitegen.ListModerationActionsRow(row))
+	rec := actionRecordFrom(moderationgen.ListModerationActionsRow(row))
 	if rec.Action.StatusIDs, err = actionStatusIDs(ctx, r.db.reader(), id); err != nil {
 		return moderation.ActionRecord{}, err
 	}
@@ -633,7 +633,7 @@ func (r *ModerationRepository) ListActions(ctx context.Context, q appmoderation.
 	if q.InEffectAt != nil {
 		at = toMillis(*q.InEffectAt)
 	}
-	rows, err := r.db.reader().ListModerationActions(ctx, sqlitegen.ListModerationActionsParams{
+	rows, err := r.db.reader().ListModerationActions(ctx, moderationgen.ListModerationActionsParams{
 		AccountID: q.AccountID, InEffectAt: at, Before: q.Before, Lim: int64(limit),
 	})
 	if err != nil {

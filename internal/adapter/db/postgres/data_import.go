@@ -6,7 +6,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/mycroblog/my/internal/adapter/db/postgres/postgresgen"
+	"github.com/mycroblog/my/internal/adapter/db/postgres/identitygen"
 	appidentity "github.com/mycroblog/my/internal/app/identity"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/identity"
@@ -18,7 +18,7 @@ func (r *IdentityRepository) InsertDataImport(ctx context.Context, tx uow.Tx, i 
 	if err != nil {
 		return err
 	}
-	return wrap(q.InsertDataImport(ctx, postgresgen.InsertDataImportParams{
+	return wrap(q.InsertDataImport(ctx, identitygen.InsertDataImportParams{
 		ID: i.ID, UserID: i.UserID, AccountID: i.AccountID, Kind: string(i.Kind), Mode: string(i.Mode), CreatedAt: i.CreatedAt,
 	}), "insert data import")
 }
@@ -30,12 +30,12 @@ func (r *IdentityRepository) InsertDataImportItems(ctx context.Context, tx uow.T
 	if err != nil {
 		return err
 	}
-	byImport := map[string]*postgresgen.InsertDataImportItemsParams{}
+	byImport := map[string]*identitygen.InsertDataImportItemsParams{}
 	var order []string
 	for _, it := range items {
 		p := byImport[it.ImportID]
 		if p == nil {
-			p = &postgresgen.InsertDataImportItemsParams{ImportID: it.ImportID}
+			p = &identitygen.InsertDataImportItemsParams{ImportID: it.ImportID}
 			byImport[it.ImportID] = p
 			order = append(order, it.ImportID)
 		}
@@ -75,7 +75,7 @@ func (r *IdentityRepository) LockUnfinishedDataImports(ctx context.Context, tx u
 // lockDataImport locks an import with SELECT ... FOR KEY SHARE, so that DeleteDataImport, which
 // deletes the import's row first, waits for tx; it fails with ErrNotFound when the import is
 // gone.
-func lockDataImport(ctx context.Context, q *postgresgen.Queries, importID string) error {
+func lockDataImport(ctx context.Context, q *genQueries, importID string) error {
 	if _, err := q.LockDataImport(ctx, importID); err != nil {
 		return notFound(err, appidentity.ErrNotFound, "data import")
 	}
@@ -95,7 +95,7 @@ func (r *IdentityRepository) InsertDataImportItemFailure(ctx context.Context, tx
 	if err := lockDataImport(ctx, q, importID); err != nil {
 		return 0, err
 	}
-	n, err := q.InsertDataImportItemFailure(ctx, postgresgen.InsertDataImportItemFailureParams{ImportID: importID, Position: pos, FailedAt: at})
+	n, err := q.InsertDataImportItemFailure(ctx, identitygen.InsertDataImportItemFailureParams{ImportID: importID, Position: pos, FailedAt: at})
 	return int(n), wrap(err, "insert data import item failure")
 }
 
@@ -112,7 +112,7 @@ func (r *IdentityRepository) InsertDataImportResult(ctx context.Context, tx uow.
 	if err != nil {
 		return err
 	}
-	return wrap(q.InsertDataImportItemResult(ctx, postgresgen.InsertDataImportItemResultParams{
+	return wrap(q.InsertDataImportItemResult(ctx, identitygen.InsertDataImportItemResultParams{
 		ImportID: res.ImportID, Position: pos, Outcome: string(res.Outcome),
 		Failure: toNullString(string(res.Failure)), ProcessedAt: res.ProcessedAt,
 	}), "insert data import result")
@@ -124,7 +124,7 @@ func (r *IdentityRepository) FindDataImport(ctx context.Context, id string) (ide
 	if err != nil {
 		return identity.DataImportProgress{}, notFound(err, appidentity.ErrNotFound, "data import")
 	}
-	return dataImportProgress(postgresgen.ListDataImportProgressRow(row)), nil
+	return dataImportProgress(identitygen.ListDataImportProgressRow(row)), nil
 }
 
 // ListDataImports implements identity.ImportRepository.
@@ -133,7 +133,7 @@ func (r *IdentityRepository) ListDataImports(ctx context.Context, userID string,
 	if err != nil {
 		return nil, err
 	}
-	rows, err := r.db.reader().ListDataImportProgress(ctx, postgresgen.ListDataImportProgressParams{UserID: userID, BatchLimit: n})
+	rows, err := r.db.reader().ListDataImportProgress(ctx, identitygen.ListDataImportProgressParams{UserID: userID, BatchLimit: n})
 	if err != nil {
 		return nil, wrap(err, "list data imports")
 	}
@@ -150,7 +150,7 @@ func (r *IdentityRepository) ListPendingDataImportItems(ctx context.Context, imp
 	if err != nil {
 		return nil, err
 	}
-	rows, err := r.db.reader().ListPendingDataImportItems(ctx, postgresgen.ListPendingDataImportItemsParams{ImportID: importID, BatchLimit: n})
+	rows, err := r.db.reader().ListPendingDataImportItems(ctx, identitygen.ListPendingDataImportItemsParams{ImportID: importID, BatchLimit: n})
 	if err != nil {
 		return nil, wrap(err, "list pending data import items")
 	}
@@ -170,7 +170,7 @@ func (r *IdentityRepository) ListDataImportsCreatedBefore(ctx context.Context, t
 	if err != nil {
 		return nil, err
 	}
-	ids, err := r.db.reader().ListDataImportsCreatedBefore(ctx, postgresgen.ListDataImportsCreatedBeforeParams{CreatedBefore: t, BatchLimit: n})
+	ids, err := r.db.reader().ListDataImportsCreatedBefore(ctx, identitygen.ListDataImportsCreatedBeforeParams{CreatedBefore: t, BatchLimit: n})
 	return ids, wrap(err, "list old data imports")
 }
 
@@ -194,7 +194,7 @@ func (r *IdentityRepository) DeleteDataImport(ctx context.Context, tx uow.Tx, id
 	return wrap(q.DeleteDataImportItems(ctx, id), "delete data import items")
 }
 
-func dataImportProgress(row postgresgen.ListDataImportProgressRow) identity.DataImportProgress {
+func dataImportProgress(row identitygen.ListDataImportProgressRow) identity.DataImportProgress {
 	return identity.DataImportProgress{
 		DataImport: identity.DataImport{
 			ID: row.ID, UserID: row.UserID, AccountID: row.AccountID, Kind: identity.ImportKind(row.Kind),

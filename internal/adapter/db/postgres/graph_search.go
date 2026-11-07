@@ -6,7 +6,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/mycroblog/my/internal/adapter/db/postgres/postgresgen"
+	"github.com/mycroblog/my/internal/adapter/db/postgres/graphgen"
 	appgraph "github.com/mycroblog/my/internal/app/graph"
 	"github.com/mycroblog/my/internal/domain/graph"
 )
@@ -19,16 +19,16 @@ func (r *GraphRepository) RelationsAmong(ctx context.Context, accountID string, 
 	}
 	q := r.db.reader()
 	var err error
-	if out.Blocked, err = q.ListBlockedAmong(ctx, postgresgen.ListBlockedAmongParams{Viewer: accountID, Ids: ids}); err != nil {
+	if out.Blocked, err = q.ListBlockedAmong(ctx, graphgen.ListBlockedAmongParams{Viewer: accountID, Ids: ids}); err != nil {
 		return out, wrap(err, "list blocked accounts among candidates")
 	}
-	if out.BlockedBy, err = q.ListBlockersAmong(ctx, postgresgen.ListBlockersAmongParams{Viewer: accountID, Ids: ids}); err != nil {
+	if out.BlockedBy, err = q.ListBlockersAmong(ctx, graphgen.ListBlockersAmongParams{Viewer: accountID, Ids: ids}); err != nil {
 		return out, wrap(err, "list blocking accounts among candidates")
 	}
-	if out.Muted, err = q.ListMutedAmong(ctx, postgresgen.ListMutedAmongParams{Viewer: accountID, Ids: ids, Now: now}); err != nil {
+	if out.Muted, err = q.ListMutedAmong(ctx, graphgen.ListMutedAmongParams{Viewer: accountID, Ids: ids, Now: now}); err != nil {
 		return out, wrap(err, "list muted accounts among candidates")
 	}
-	if out.Following, err = q.ListFollowedAmong(ctx, postgresgen.ListFollowedAmongParams{Viewer: accountID, Ids: ids}); err != nil {
+	if out.Following, err = q.ListFollowedAmong(ctx, graphgen.ListFollowedAmongParams{Viewer: accountID, Ids: ids}); err != nil {
 		return out, wrap(err, "list followed accounts among candidates")
 	}
 	rows, err := q.ListFollowCountersAmong(ctx, ids)

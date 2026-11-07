@@ -8,7 +8,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
-	"github.com/mycroblog/my/internal/adapter/db/postgres/postgresgen"
+	"github.com/mycroblog/my/internal/adapter/db/postgres/contentgen"
 	appcontent "github.com/mycroblog/my/internal/app/content"
 	"github.com/mycroblog/my/internal/app/kernel"
 	"github.com/mycroblog/my/internal/app/uow"
@@ -47,7 +47,7 @@ func (r *MediaRepository) InsertMediaFile(ctx context.Context, tx uow.Tx, m cont
 	if err != nil {
 		return err
 	}
-	return wrap(q.InsertMediaFile(ctx, postgresgen.InsertMediaFileParams{
+	return wrap(q.InsertMediaFile(ctx, contentgen.InsertMediaFileParams{
 		ID: m.ID, OwnerAccountID: toNullString(m.OwnerAccountID), Origin: string(m.Origin), CreatedAt: m.CreatedAt,
 	}), "insert media file")
 }
@@ -58,7 +58,7 @@ func (r *MediaRepository) InsertUploadedMedia(ctx context.Context, tx uow.Tx, u 
 	if err != nil {
 		return err
 	}
-	return wrap(q.InsertUploadedMedia(ctx, postgresgen.InsertUploadedMediaParams{
+	return wrap(q.InsertUploadedMedia(ctx, contentgen.InsertUploadedMediaParams{
 		MediaID: u.MediaID, BlobKey: u.BlobKey, ContentType: u.ContentType, FileSize: u.FileSize,
 	}), "insert uploaded media")
 }
@@ -69,7 +69,7 @@ func (r *MediaRepository) InsertProcessingResult(ctx context.Context, tx uow.Tx,
 	if err != nil {
 		return err
 	}
-	p := postgresgen.InsertMediaProcessingResultParams{
+	p := contentgen.InsertMediaProcessingResultParams{
 		ID: res.ID, MediaID: res.MediaID, Purpose: string(res.Purpose), Outcome: string(res.Outcome), MediaType: string(res.MediaType),
 		Blurhash: toNullString(res.Blurhash), ProcessedAt: res.ProcessedAt,
 	}
@@ -95,7 +95,7 @@ func (r *MediaRepository) InsertProcessingResult(ctx context.Context, tx uow.Tx,
 		if err != nil {
 			return err
 		}
-		err = q.InsertMediaVariant(ctx, postgresgen.InsertMediaVariantParams{
+		err = q.InsertMediaVariant(ctx, contentgen.InsertMediaVariantParams{
 			ResultID: res.ID, Size: string(v.Size), Motion: string(v.Motion), BlobKey: v.BlobKey, ContentType: v.ContentType, FileSize: v.FileSize,
 			Width: w, Height: h,
 		})
@@ -112,7 +112,7 @@ func (r *MediaRepository) HasProcessingResult(ctx context.Context, tx uow.Tx, me
 	if err != nil {
 		return false, err
 	}
-	ok, err := q.HasCurrentMediaProcessingResult(ctx, postgresgen.HasCurrentMediaProcessingResultParams{Purpose: string(purpose), MediaID: mediaID})
+	ok, err := q.HasCurrentMediaProcessingResult(ctx, contentgen.HasCurrentMediaProcessingResultParams{Purpose: string(purpose), MediaID: mediaID})
 	return ok, wrap(err, "look up media processing result")
 }
 
@@ -122,7 +122,7 @@ func (r *MediaRepository) UpsertFocus(ctx context.Context, tx uow.Tx, f content.
 	if err != nil {
 		return err
 	}
-	return wrap(q.UpsertMediaFocus(ctx, postgresgen.UpsertMediaFocusParams{MediaID: f.MediaID, FocusX: f.X, FocusY: f.Y}), "upsert media focus")
+	return wrap(q.UpsertMediaFocus(ctx, contentgen.UpsertMediaFocusParams{MediaID: f.MediaID, FocusX: f.X, FocusY: f.Y}), "upsert media focus")
 }
 
 // DeleteUnattachedMedia implements content.MediaRepository.
@@ -246,7 +246,7 @@ func (r *MediaRepository) ListUnattachedUploads(ctx context.Context, afterID str
 	if err != nil {
 		return nil, err
 	}
-	ids, err := r.db.reader().ListUnattachedUploads(ctx, postgresgen.ListUnattachedUploadsParams{
+	ids, err := r.db.reader().ListUnattachedUploads(ctx, contentgen.ListUnattachedUploadsParams{
 		AfterID: toNullString(afterID), BeforeID: kernel.UUIDv7Floor(createdBefore), RowLimit: n,
 	})
 	return ids, wrap(err, "list unattached uploads")
@@ -258,7 +258,7 @@ func (r *MediaRepository) ListOwnerUploads(ctx context.Context, ownerAccountID, 
 	if err != nil {
 		return nil, err
 	}
-	rows, err := r.db.reader().ListOwnerUploads(ctx, postgresgen.ListOwnerUploadsParams{
+	rows, err := r.db.reader().ListOwnerUploads(ctx, contentgen.ListOwnerUploadsParams{
 		OwnerAccountID: toNullString(ownerAccountID), AfterID: toNullString(afterID), RowLimit: n,
 	})
 	if err != nil {
@@ -277,7 +277,7 @@ func (r *MediaRepository) UpsertDescription(ctx context.Context, tx uow.Tx, d co
 	if err != nil {
 		return err
 	}
-	return wrap(q.UpsertMediaDescription(ctx, postgresgen.UpsertMediaDescriptionParams{MediaID: d.MediaID, Description: d.Text}), "upsert media description")
+	return wrap(q.UpsertMediaDescription(ctx, contentgen.UpsertMediaDescriptionParams{MediaID: d.MediaID, Description: d.Text}), "upsert media description")
 }
 
 // DeleteDescription implements content.MediaRepository.
@@ -314,7 +314,7 @@ func (r *MediaRepository) HasNewerProcessingResult(ctx context.Context, tx uow.T
 	if err != nil {
 		return false, err
 	}
-	ok, err := q.HasNewerMediaProcessingResult(ctx, postgresgen.HasNewerMediaProcessingResultParams{MediaID: mediaID, ResultID: resultID})
+	ok, err := q.HasNewerMediaProcessingResult(ctx, contentgen.HasNewerMediaProcessingResultParams{MediaID: mediaID, ResultID: resultID})
 	return ok, wrap(err, "look up newer media processing result")
 }
 
@@ -337,7 +337,7 @@ func (r *MediaRepository) ListReplacedProcessingResults(ctx context.Context, aft
 	if err != nil {
 		return nil, err
 	}
-	ids, err := r.db.reader().ListReplacedMediaProcessingResults(ctx, postgresgen.ListReplacedMediaProcessingResultsParams{
+	ids, err := r.db.reader().ListReplacedMediaProcessingResults(ctx, contentgen.ListReplacedMediaProcessingResultsParams{
 		AfterID: toNullString(afterID), ReplacedBefore: replacedBefore, RowLimit: n,
 	})
 	return ids, wrap(err, "list replaced media processing results")
@@ -349,7 +349,7 @@ func (r *MediaRepository) ListReprocessableUploads(ctx context.Context, afterID 
 	if err != nil {
 		return nil, err
 	}
-	ids, err := r.db.reader().ListReprocessableUploads(ctx, postgresgen.ListReprocessableUploadsParams{
+	ids, err := r.db.reader().ListReprocessableUploads(ctx, contentgen.ListReprocessableUploadsParams{
 		AfterID: toNullString(afterID), ProcessedBefore: processedBefore, RowLimit: n,
 	})
 	return ids, wrap(err, "list reprocessable uploads")

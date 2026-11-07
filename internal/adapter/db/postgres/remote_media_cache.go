@@ -6,7 +6,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/mycroblog/my/internal/adapter/db/postgres/postgresgen"
+	"github.com/mycroblog/my/internal/adapter/db/postgres/contentgen"
 	appcontent "github.com/mycroblog/my/internal/app/content"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/content"
@@ -18,7 +18,7 @@ func (r *MediaRepository) UpsertRemoteMediaCache(ctx context.Context, tx uow.Tx,
 	if err != nil {
 		return err
 	}
-	return wrap(q.UpsertRemoteMediaCache(ctx, postgresgen.UpsertRemoteMediaCacheParams{
+	return wrap(q.UpsertRemoteMediaCache(ctx, contentgen.UpsertRemoteMediaCacheParams{
 		Url: e.URL, BlobKey: e.BlobKey, ContentType: e.ContentType, FileSize: e.FileSize,
 		FetchedAt: e.FetchedAt, ExpiresAt: e.ExpiresAt, LastAccessedAt: e.LastAccessedAt,
 	}), "upsert remote media cache")
@@ -30,7 +30,7 @@ func (r *MediaRepository) TouchRemoteMediaCache(ctx context.Context, tx uow.Tx, 
 	if err != nil {
 		return err
 	}
-	return wrap(q.TouchRemoteMediaCache(ctx, postgresgen.TouchRemoteMediaCacheParams{Url: url, LastAccessedAt: at}), "touch remote media cache")
+	return wrap(q.TouchRemoteMediaCache(ctx, contentgen.TouchRemoteMediaCacheParams{Url: url, LastAccessedAt: at}), "touch remote media cache")
 }
 
 // DeleteRemoteMediaCache implements content.MediaRepository.
@@ -39,7 +39,7 @@ func (r *MediaRepository) DeleteRemoteMediaCache(ctx context.Context, tx uow.Tx,
 	if err != nil {
 		return false, err
 	}
-	n, err := q.DeleteRemoteMediaCache(ctx, postgresgen.DeleteRemoteMediaCacheParams{Url: url, FetchedAt: fetchedAt})
+	n, err := q.DeleteRemoteMediaCache(ctx, contentgen.DeleteRemoteMediaCacheParams{Url: url, FetchedAt: fetchedAt})
 	return n > 0, wrap(err, "delete remote media cache")
 }
 
@@ -58,7 +58,7 @@ func (r *MediaRepository) ListExpiredRemoteMediaCache(ctx context.Context, now t
 	if err != nil {
 		return nil, err
 	}
-	rows, err := r.db.reader().ListExpiredRemoteMediaCache(ctx, postgresgen.ListExpiredRemoteMediaCacheParams{Now: now, BatchLimit: n})
+	rows, err := r.db.reader().ListExpiredRemoteMediaCache(ctx, contentgen.ListExpiredRemoteMediaCacheParams{Now: now, BatchLimit: n})
 	if err != nil {
 		return nil, wrap(err, "list expired remote media cache")
 	}
@@ -96,7 +96,7 @@ func (r *MediaRepository) IsCustomEmojiImage(ctx context.Context, mediaID string
 	return ok, wrap(err, "is custom emoji image")
 }
 
-func remoteMediaCacheEntries(rows []postgresgen.RemoteMediaCache) []content.RemoteMediaCacheEntry {
+func remoteMediaCacheEntries(rows []contentgen.RemoteMediaCache) []content.RemoteMediaCacheEntry {
 	out := make([]content.RemoteMediaCacheEntry, 0, len(rows))
 	for _, row := range rows {
 		out = append(out, remoteMediaCacheEntry(row))
@@ -104,7 +104,7 @@ func remoteMediaCacheEntries(rows []postgresgen.RemoteMediaCache) []content.Remo
 	return out
 }
 
-func remoteMediaCacheEntry(row postgresgen.RemoteMediaCache) content.RemoteMediaCacheEntry {
+func remoteMediaCacheEntry(row contentgen.RemoteMediaCache) content.RemoteMediaCacheEntry {
 	return content.RemoteMediaCacheEntry{
 		URL: row.Url, BlobKey: row.BlobKey, ContentType: row.ContentType, FileSize: row.FileSize,
 		FetchedAt: utc(row.FetchedAt), ExpiresAt: utc(row.ExpiresAt), LastAccessedAt: utc(row.LastAccessedAt),
@@ -141,7 +141,7 @@ func (r *MediaRepository) InsertRemoteMediaCache(ctx context.Context, tx uow.Tx,
 	if err != nil {
 		return false, err
 	}
-	n, err := q.InsertRemoteMediaCache(ctx, postgresgen.InsertRemoteMediaCacheParams{
+	n, err := q.InsertRemoteMediaCache(ctx, contentgen.InsertRemoteMediaCacheParams{
 		Url: e.URL, BlobKey: e.BlobKey, ContentType: e.ContentType, FileSize: e.FileSize,
 		FetchedAt: e.FetchedAt, ExpiresAt: e.ExpiresAt, LastAccessedAt: e.LastAccessedAt,
 	})
@@ -167,7 +167,7 @@ func (r *MediaRepository) RecordBlobDeletion(ctx context.Context, tx uow.Tx, key
 	if err != nil {
 		return err
 	}
-	return wrap(q.UpsertMediaBlobDeletion(ctx, postgresgen.UpsertMediaBlobDeletionParams{BlobKey: key, DeleteAfter: deleteAfter}), "record blob deletion")
+	return wrap(q.UpsertMediaBlobDeletion(ctx, contentgen.UpsertMediaBlobDeletionParams{BlobKey: key, DeleteAfter: deleteAfter}), "record blob deletion")
 }
 
 // ForgetBlobDeletion implements content.MediaRepository.
@@ -186,6 +186,6 @@ func (r *MediaRepository) ListDueBlobDeletions(ctx context.Context, now time.Tim
 	if err != nil {
 		return nil, err
 	}
-	keys, err := r.db.reader().ListDueMediaBlobDeletions(ctx, postgresgen.ListDueMediaBlobDeletionsParams{Now: now, BatchLimit: n})
+	keys, err := r.db.reader().ListDueMediaBlobDeletions(ctx, contentgen.ListDueMediaBlobDeletionsParams{Now: now, BatchLimit: n})
 	return keys, wrap(err, "list due blob deletions")
 }

@@ -9,7 +9,7 @@ import (
 	"slices"
 	"time"
 
-	"github.com/mycroblog/my/internal/adapter/db/sqlite/sqlitegen"
+	"github.com/mycroblog/my/internal/adapter/db/sqlite/timelinegen"
 	appcontent "github.com/mycroblog/my/internal/app/content"
 	apptimeline "github.com/mycroblog/my/internal/app/timeline"
 	"github.com/mycroblog/my/internal/app/uow"
@@ -32,7 +32,7 @@ func (r *TimelineRepository) InsertEntry(ctx context.Context, tx uow.Tx, e appti
 	if err != nil {
 		return false, err
 	}
-	n, err := q.InsertFeedEntry(ctx, sqlitegen.InsertFeedEntryParams{
+	n, err := q.InsertFeedEntry(ctx, timelinegen.InsertFeedEntryParams{
 		ID: e.ID, Kind: string(e.Kind), StatusID: e.StatusID,
 		AuthorAccountID: e.AuthorAccountID, AuthorDomain: e.AuthorDomain,
 		OriginalAuthorAccountID: e.OriginalAuthorAccountID, OriginalAuthorDomain: e.OriginalAuthorDomain,
@@ -64,7 +64,7 @@ func (r *TimelineRepository) UpdateRevision(ctx context.Context, tx uow.Tx, stat
 	if err != nil {
 		return err
 	}
-	_, err = q.UpdateFeedEntriesRevision(ctx, sqlitegen.UpdateFeedEntriesRevisionParams{
+	_, err = q.UpdateFeedEntriesRevision(ctx, timelinegen.UpdateFeedEntriesRevisionParams{
 		Language: language, RevisionSeq: int64(seq), StatusID: statusID,
 	})
 	return wrap(err, "update the revision of feed entries")
@@ -95,7 +95,7 @@ func (r *TimelineRepository) DeleteStatusEntries(ctx context.Context, tx uow.Tx,
 	return wrap(q.DeleteFeedEntriesOfStatus(ctx, statusID), "delete feed entries of a status")
 }
 
-func deleteEntryChildren(ctx context.Context, q *sqlitegen.Queries, entryID string) error {
+func deleteEntryChildren(ctx context.Context, q *genQueries, entryID string) error {
 	if err := q.DeleteFeedDirectRecipients(ctx, entryID); err != nil {
 		return wrap(err, "delete feed direct recipients")
 	}
@@ -116,19 +116,19 @@ func deleteEntryChildren(ctx context.Context, q *sqlitegen.Queries, entryID stri
 // applyTagUsage adds deltas[tag] posts to the usage of each tag, in tag order, after
 // feed_tag_entries has changed, and reads its last_used_at again (tag_usage, ADR-0092 §1). A
 // tag's usage that drops to zero is deleted.
-func applyTagUsage(ctx context.Context, q *sqlitegen.Queries, deltas map[string]int64) error {
+func applyTagUsage(ctx context.Context, q *genQueries, deltas map[string]int64) error {
 	for _, id := range slices.Sorted(maps.Keys(deltas)) {
 		d := deltas[id]
 		var err error
 		switch {
 		case d > 0:
-			err = q.AddTagUsage(ctx, sqlitegen.AddTagUsageParams{TagID: id, N: d})
+			err = q.AddTagUsage(ctx, timelinegen.AddTagUsageParams{TagID: id, N: d})
 		case d < 0:
-			if err = q.DeleteDrainedTagUsage(ctx, sqlitegen.DeleteDrainedTagUsageParams{TagID: id, N: -d}); err == nil {
-				err = q.AdjustTagUsage(ctx, sqlitegen.AdjustTagUsageParams{TagID: id, Delta: d})
+			if err = q.DeleteDrainedTagUsage(ctx, timelinegen.DeleteDrainedTagUsageParams{TagID: id, N: -d}); err == nil {
+				err = q.AdjustTagUsage(ctx, timelinegen.AdjustTagUsageParams{TagID: id, Delta: d})
 			}
 		default:
-			err = q.AdjustTagUsage(ctx, sqlitegen.AdjustTagUsageParams{TagID: id})
+			err = q.AdjustTagUsage(ctx, timelinegen.AdjustTagUsageParams{TagID: id})
 		}
 		if err != nil {
 			return wrap(err, "update tag usage")
@@ -147,7 +147,7 @@ func (r *TimelineRepository) ReplaceDirectRecipients(ctx context.Context, tx uow
 		return wrap(err, "delete feed direct recipients")
 	}
 	for _, id := range accountIDs {
-		if err := q.InsertFeedDirectRecipient(ctx, sqlitegen.InsertFeedDirectRecipientParams{EntryID: entryID, RecipientAccountID: id}); err != nil {
+		if err := q.InsertFeedDirectRecipient(ctx, timelinegen.InsertFeedDirectRecipientParams{EntryID: entryID, RecipientAccountID: id}); err != nil {
 			return wrap(err, "insert feed direct recipient")
 		}
 	}
@@ -174,7 +174,7 @@ func (r *TimelineRepository) ReplaceTags(ctx context.Context, tx uow.Tx, e appti
 	counts := apptimeline.CountsTagUsage(e.Visibility)
 	added := map[string]bool{}
 	for _, id := range tagIDs {
-		err := q.InsertFeedTagEntry(ctx, sqlitegen.InsertFeedTagEntryParams{
+		err := q.InsertFeedTagEntry(ctx, timelinegen.InsertFeedTagEntryParams{
 			TagID: id, EntryID: e.ID, AuthorAccountID: e.AuthorAccountID, Visibility: string(e.Visibility), IsLocal: boolToInt(e.IsLocal),
 			RevisedAt: toMillis(revisedAt),
 		})
@@ -195,7 +195,7 @@ func (r *TimelineRepository) UpsertFollowEdge(ctx context.Context, tx uow.Tx, e 
 	if err != nil {
 		return err
 	}
-	return wrap(q.UpsertFeedFollowEdge(ctx, sqlitegen.UpsertFeedFollowEdgeParams{
+	return wrap(q.UpsertFeedFollowEdge(ctx, timelinegen.UpsertFeedFollowEdgeParams{
 		FollowerAccountID: e.FollowerAccountID, FolloweeAccountID: e.FolloweeAccountID, ShowBoosts: boolToInt(e.ShowBoosts),
 	}), "upsert feed follow edge")
 }
@@ -206,7 +206,7 @@ func (r *TimelineRepository) DeleteFollowEdge(ctx context.Context, tx uow.Tx, fo
 	if err != nil {
 		return err
 	}
-	return wrap(q.DeleteFeedFollowEdge(ctx, sqlitegen.DeleteFeedFollowEdgeParams{
+	return wrap(q.DeleteFeedFollowEdge(ctx, timelinegen.DeleteFeedFollowEdgeParams{
 		FollowerAccountID: followerAccountID, FolloweeAccountID: followeeAccountID,
 	}), "delete feed follow edge")
 }
@@ -217,7 +217,7 @@ func (r *TimelineRepository) UpsertExclusion(ctx context.Context, tx uow.Tx, x a
 	if err != nil {
 		return err
 	}
-	return wrap(q.UpsertFeedExclusion(ctx, sqlitegen.UpsertFeedExclusionParams{
+	return wrap(q.UpsertFeedExclusion(ctx, timelinegen.UpsertFeedExclusionParams{
 		ViewerAccountID: x.ViewerAccountID, TargetAccountID: x.TargetAccountID, Reason: string(x.Reason), ExpiresAt: toNullMillis(x.ExpiresAt),
 	}), "upsert feed exclusion")
 }
@@ -228,7 +228,7 @@ func (r *TimelineRepository) DeleteExclusion(ctx context.Context, tx uow.Tx, vie
 	if err != nil {
 		return err
 	}
-	return wrap(q.DeleteFeedExclusion(ctx, sqlitegen.DeleteFeedExclusionParams{
+	return wrap(q.DeleteFeedExclusion(ctx, timelinegen.DeleteFeedExclusionParams{
 		ViewerAccountID: viewerAccountID, TargetAccountID: targetAccountID, Reason: string(reason),
 	}), "delete feed exclusion")
 }
@@ -239,7 +239,7 @@ func (r *TimelineRepository) UpsertAuthorRestriction(ctx context.Context, tx uow
 	if err != nil {
 		return err
 	}
-	return wrap(q.UpsertFeedAuthorRestriction(ctx, sqlitegen.UpsertFeedAuthorRestrictionParams{
+	return wrap(q.UpsertFeedAuthorRestriction(ctx, timelinegen.UpsertFeedAuthorRestrictionParams{
 		AccountID: ar.AccountID, Restriction: string(ar.Restriction), EffectiveUntil: toNullMillis(ar.EffectiveUntil),
 	}), "upsert feed author restriction")
 }
@@ -250,7 +250,7 @@ func (r *TimelineRepository) DeleteAuthorRestriction(ctx context.Context, tx uow
 	if err != nil {
 		return err
 	}
-	return wrap(q.DeleteFeedAuthorRestriction(ctx, sqlitegen.DeleteFeedAuthorRestrictionParams{
+	return wrap(q.DeleteFeedAuthorRestriction(ctx, timelinegen.DeleteFeedAuthorRestrictionParams{
 		AccountID: accountID, Restriction: string(restriction),
 	}), "delete feed author restriction")
 }
@@ -261,7 +261,7 @@ func (r *TimelineRepository) UpsertDomainRestriction(ctx context.Context, tx uow
 	if err != nil {
 		return err
 	}
-	return wrap(q.UpsertFeedDomainRestriction(ctx, sqlitegen.UpsertFeedDomainRestrictionParams{
+	return wrap(q.UpsertFeedDomainRestriction(ctx, timelinegen.UpsertFeedDomainRestrictionParams{
 		Domain: dr.Domain, Restriction: string(dr.Restriction), EffectiveUntil: toNullMillis(dr.EffectiveUntil),
 	}), "upsert feed domain restriction")
 }
@@ -272,7 +272,7 @@ func (r *TimelineRepository) DeleteDomainRestriction(ctx context.Context, tx uow
 	if err != nil {
 		return err
 	}
-	return wrap(q.DeleteFeedDomainRestriction(ctx, sqlitegen.DeleteFeedDomainRestrictionParams{
+	return wrap(q.DeleteFeedDomainRestriction(ctx, timelinegen.DeleteFeedDomainRestrictionParams{
 		Domain: domain, Restriction: string(restriction),
 	}), "delete feed domain restriction")
 }
@@ -283,7 +283,7 @@ func (r *TimelineRepository) InsertDomainMute(ctx context.Context, tx uow.Tx, m 
 	if err != nil {
 		return err
 	}
-	return wrap(q.InsertFeedDomainMute(ctx, sqlitegen.InsertFeedDomainMuteParams{
+	return wrap(q.InsertFeedDomainMute(ctx, timelinegen.InsertFeedDomainMuteParams{
 		ViewerAccountID: m.ViewerAccountID, Domain: m.Domain,
 	}), "insert feed domain mute")
 }
@@ -294,7 +294,7 @@ func (r *TimelineRepository) DeleteDomainMute(ctx context.Context, tx uow.Tx, vi
 	if err != nil {
 		return err
 	}
-	return wrap(q.DeleteFeedDomainMute(ctx, sqlitegen.DeleteFeedDomainMuteParams{
+	return wrap(q.DeleteFeedDomainMute(ctx, timelinegen.DeleteFeedDomainMuteParams{
 		ViewerAccountID: viewerAccountID, Domain: domain,
 	}), "delete feed domain mute")
 }
@@ -322,7 +322,7 @@ func (r *TimelineRepository) ListHome(ctx context.Context, hq apptimeline.HomeQu
 	if err != nil {
 		return nil, err
 	}
-	rows, err := r.db.reader().ListHomeEntries(ctx, sqlitegen.ListHomeEntriesParams{
+	rows, err := r.db.reader().ListHomeEntries(ctx, timelinegen.ListHomeEntriesParams{
 		Viewer: hq.ViewerAccountID, Before: hq.Before, WindowFloor: hq.Floor, Now: toMillis(hq.Now),
 		AllLanguages: all, Languages: langs, PageLimit: int64(hq.Limit),
 	})
@@ -335,7 +335,7 @@ func (r *TimelineRepository) ListLocal(ctx context.Context, lq apptimeline.Local
 	if err != nil {
 		return nil, err
 	}
-	rows, err := r.db.reader().ListLocalEntries(ctx, sqlitegen.ListLocalEntriesParams{
+	rows, err := r.db.reader().ListLocalEntries(ctx, timelinegen.ListLocalEntriesParams{
 		IncludeLocal: boolToInt(lq.IncludeLocal), Before: lq.Before, WindowFloor: lq.Floor, Now: toMillis(lq.Now), Viewer: lq.ViewerAccountID,
 		AllLanguages: all, Languages: langs, PageLimit: int64(lq.Limit),
 	})
@@ -348,7 +348,7 @@ func (r *TimelineRepository) ListPublic(ctx context.Context, pq apptimeline.Publ
 	if err != nil {
 		return nil, err
 	}
-	rows, err := r.db.reader().ListPublicEntries(ctx, sqlitegen.ListPublicEntriesParams{
+	rows, err := r.db.reader().ListPublicEntries(ctx, timelinegen.ListPublicEntriesParams{
 		Before: pq.Before, WindowFloor: pq.Floor, Now: toMillis(pq.Now), Viewer: pq.ViewerAccountID,
 		AllLanguages: all, Languages: langs, PageLimit: int64(pq.Limit),
 	})
@@ -361,7 +361,7 @@ func (r *TimelineRepository) ListTag(ctx context.Context, tq apptimeline.TagQuer
 	if err != nil {
 		return nil, err
 	}
-	rows, err := r.db.reader().ListTagEntries(ctx, sqlitegen.ListTagEntriesParams{
+	rows, err := r.db.reader().ListTagEntries(ctx, timelinegen.ListTagEntriesParams{
 		TagID: tq.TagID, IncludeLocal: boolToInt(tq.IncludeLocal), Before: tq.Before, Now: toMillis(tq.Now),
 		Viewer: tq.ViewerAccountID, AllLanguages: all, Languages: langs, PageLimit: int64(tq.Limit),
 	})
@@ -382,7 +382,7 @@ func (r *TimelineRepository) ListProfile(ctx context.Context, pq apptimeline.Pro
 		}
 		return 0
 	}
-	rows, err := r.db.reader().ListProfileEntries(ctx, sqlitegen.ListProfileEntriesParams{
+	rows, err := r.db.reader().ListProfileEntries(ctx, timelinegen.ListProfileEntriesParams{
 		Author: pq.AuthorAccountID, Before: pq.Before,
 		IncludePublic: has(appcontent.VisibilityPublic), IncludeLocal: has(appcontent.VisibilityLocal),
 		IncludeUnlisted: has(appcontent.VisibilityUnlisted), IncludePrivate: has(appcontent.VisibilityPrivate),
@@ -407,14 +407,14 @@ func (r *TimelineRepository) Facts(ctx context.Context, fq apptimeline.FactsQuer
 	}
 	now := toMillis(fq.Now)
 	if fq.ViewerAccountID != "" {
-		followed, err := q.ListFeedFollowedAmong(ctx, sqlitegen.ListFeedFollowedAmongParams{Viewer: fq.ViewerAccountID, AccountIds: accounts})
+		followed, err := q.ListFeedFollowedAmong(ctx, timelinegen.ListFeedFollowedAmongParams{Viewer: fq.ViewerAccountID, AccountIds: accounts})
 		if err != nil {
 			return f, wrap(err, "list followed accounts")
 		}
 		for _, id := range followed {
 			f.Followed[id] = true
 		}
-		exclusions, err := q.ListFeedExclusionsAmong(ctx, sqlitegen.ListFeedExclusionsAmongParams{
+		exclusions, err := q.ListFeedExclusionsAmong(ctx, timelinegen.ListFeedExclusionsAmongParams{
 			Viewer: fq.ViewerAccountID, Now: now, AccountIds: accounts,
 		})
 		if err != nil {
@@ -427,7 +427,7 @@ func (r *TimelineRepository) Facts(ctx context.Context, fq apptimeline.FactsQuer
 		if err != nil {
 			return f, err
 		}
-		direct, err := q.ListFeedDirectEntriesAmong(ctx, sqlitegen.ListFeedDirectEntriesAmongParams{Viewer: fq.ViewerAccountID, EntryIds: entries})
+		direct, err := q.ListFeedDirectEntriesAmong(ctx, timelinegen.ListFeedDirectEntriesAmongParams{Viewer: fq.ViewerAccountID, EntryIds: entries})
 		if err != nil {
 			return f, wrap(err, "list direct entries")
 		}
@@ -435,7 +435,7 @@ func (r *TimelineRepository) Facts(ctx context.Context, fq apptimeline.FactsQuer
 			f.Direct[id] = true
 		}
 	}
-	restrictions, err := q.ListFeedAuthorRestrictionsAmong(ctx, sqlitegen.ListFeedAuthorRestrictionsAmongParams{Now: now, AccountIds: accounts})
+	restrictions, err := q.ListFeedAuthorRestrictionsAmong(ctx, timelinegen.ListFeedAuthorRestrictionsAmongParams{Now: now, AccountIds: accounts})
 	if err != nil {
 		return f, wrap(err, "list author restrictions")
 	}
@@ -446,7 +446,7 @@ func (r *TimelineRepository) Facts(ctx context.Context, fq apptimeline.FactsQuer
 	if err != nil {
 		return f, err
 	}
-	domainRestrictions, err := q.ListFeedDomainRestrictionsAmong(ctx, sqlitegen.ListFeedDomainRestrictionsAmongParams{Now: now, Domains: domains})
+	domainRestrictions, err := q.ListFeedDomainRestrictionsAmong(ctx, timelinegen.ListFeedDomainRestrictionsAmongParams{Now: now, Domains: domains})
 	if err != nil {
 		return f, wrap(err, "list domain restrictions")
 	}
@@ -462,7 +462,7 @@ func (r *TimelineRepository) MutedDomains(ctx context.Context, viewerAccountID s
 	if err != nil {
 		return nil, err
 	}
-	muted, err := r.db.reader().ListFeedDomainMutesAmong(ctx, sqlitegen.ListFeedDomainMutesAmongParams{Viewer: viewerAccountID, Domains: list})
+	muted, err := r.db.reader().ListFeedDomainMutesAmong(ctx, timelinegen.ListFeedDomainMutesAmongParams{Viewer: viewerAccountID, Domains: list})
 	return muted, wrap(err, "list domain mutes")
 }
 
@@ -525,7 +525,7 @@ func (r *TimelineRepository) Snapshot(ctx context.Context) (apptimeline.Projecti
 	return p, nil
 }
 
-func entryFrom(row sqlitegen.FeedEntry) apptimeline.Entry {
+func entryFrom(row timelinegen.FeedEntry) apptimeline.Entry {
 	return apptimeline.Entry{
 		ID: row.ID, Kind: timeline.Kind(row.Kind), StatusID: row.StatusID,
 		AuthorAccountID: row.AuthorAccountID, AuthorDomain: row.AuthorDomain,
@@ -535,7 +535,7 @@ func entryFrom(row sqlitegen.FeedEntry) apptimeline.Entry {
 	}
 }
 
-func entriesFrom(rows []sqlitegen.FeedEntry, err error, what string) ([]apptimeline.Entry, error) {
+func entriesFrom(rows []timelinegen.FeedEntry, err error, what string) ([]apptimeline.Entry, error) {
 	if err != nil {
 		return nil, wrap(err, what)
 	}
@@ -579,7 +579,7 @@ func (r *TimelineRepository) TagUsageOf(ctx context.Context, tagIDs []string) ([
 	return tagUsageFrom(rows), nil
 }
 
-func tagUsageFrom(rows []sqlitegen.TagUsage) []apptimeline.TagUsage {
+func tagUsageFrom(rows []timelinegen.TagUsage) []apptimeline.TagUsage {
 	var out []apptimeline.TagUsage
 	for _, row := range rows {
 		out = append(out, apptimeline.TagUsage{TagID: row.TagID, StatusesCount: row.StatusesCount, LastUsedAt: fromMillis(row.LastUsedAt)})

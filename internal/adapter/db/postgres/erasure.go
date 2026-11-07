@@ -7,7 +7,11 @@ import (
 	"math"
 	"time"
 
-	"github.com/mycroblog/my/internal/adapter/db/postgres/postgresgen"
+	"github.com/mycroblog/my/internal/adapter/db/postgres/accountgen"
+	"github.com/mycroblog/my/internal/adapter/db/postgres/contentgen"
+	"github.com/mycroblog/my/internal/adapter/db/postgres/graphgen"
+	"github.com/mycroblog/my/internal/adapter/db/postgres/notificationgen"
+	"github.com/mycroblog/my/internal/adapter/db/postgres/timelinegen"
 	appaccount "github.com/mycroblog/my/internal/app/account"
 	appcontent "github.com/mycroblog/my/internal/app/content"
 	appgraph "github.com/mycroblog/my/internal/app/graph"
@@ -31,7 +35,7 @@ var (
 
 // ListAccountsToErase implements account.ErasureRepository.
 func (r *AccountRepository) ListAccountsToErase(ctx context.Context, deletedBefore time.Time, after string, limit int) ([]appaccount.ErasureTarget, error) {
-	rows, err := r.db.reader().ListAccountsToErase(ctx, postgresgen.ListAccountsToEraseParams{
+	rows, err := r.db.reader().ListAccountsToErase(ctx, accountgen.ListAccountsToEraseParams{
 		DeletedBefore: deletedBefore, After: toNullString(after), Lim: batchLimit(limit),
 	})
 	if err != nil {
@@ -62,7 +66,7 @@ func (r *AccountRepository) InsertErasure(ctx context.Context, tx uow.Tx, accoun
 	if err != nil {
 		return err
 	}
-	return wrap(q.InsertAccountErasure(ctx, postgresgen.InsertAccountErasureParams{AccountID: accountID, ErasedAt: at}), "insert account erasure")
+	return wrap(q.InsertAccountErasure(ctx, accountgen.InsertAccountErasureParams{AccountID: accountID, ErasedAt: at}), "insert account erasure")
 }
 
 // AccountErased implements account.ErasureRepository.
@@ -115,7 +119,7 @@ func (r *StatusRepository) ListAuthorStatusesToErase(ctx context.Context, tx uow
 	if err != nil {
 		return nil, err
 	}
-	rows, err := q.ListAuthorStatusesToErase(ctx, postgresgen.ListAuthorStatusesToEraseParams{
+	rows, err := q.ListAuthorStatusesToErase(ctx, contentgen.ListAuthorStatusesToEraseParams{
 		AuthorAccountID: authorAccountID, After: toNullString(after), Lim: batchLimit(limit),
 	})
 	if err != nil {
@@ -124,7 +128,7 @@ func (r *StatusRepository) ListAuthorStatusesToErase(ctx context.Context, tx uow
 	out := make([]appcontent.ErasableStatus, len(rows))
 	for i, row := range rows {
 		out[i] = appcontent.ErasableStatus{
-			Status: statusFrom(postgresgen.Status{
+			Status: statusFrom(contentgen.Status{
 				ID: row.ID, Uri: row.Uri, Url: row.Url, AuthorAccountID: row.AuthorAccountID, IsLocal: row.IsLocal,
 				Visibility: row.Visibility, InReplyToUri: row.InReplyToUri, ConversationUri: row.ConversationUri,
 				PublishedAt: row.PublishedAt,
@@ -165,29 +169,29 @@ func (r *StatusRepository) EraseInteractionsBy(ctx context.Context, tx uow.Tx, a
 	}
 	steps := []func() error{
 		func() error {
-			return q.UncountFavouritesBy(ctx, postgresgen.UncountFavouritesByParams{AccountID: accountID, Lim: lim})
+			return q.UncountFavouritesBy(ctx, contentgen.UncountFavouritesByParams{AccountID: accountID, Lim: lim})
 		},
 		func() error {
-			return keep(q.EraseFavouritesBy(ctx, postgresgen.EraseFavouritesByParams{AccountID: accountID, Lim: lim}))
+			return keep(q.EraseFavouritesBy(ctx, contentgen.EraseFavouritesByParams{AccountID: accountID, Lim: lim}))
 		},
 		func() error {
-			return q.DeleteSingleReactionCountsBy(ctx, postgresgen.DeleteSingleReactionCountsByParams{AccountID: accountID, Lim: lim})
+			return q.DeleteSingleReactionCountsBy(ctx, contentgen.DeleteSingleReactionCountsByParams{AccountID: accountID, Lim: lim})
 		},
 		func() error {
-			return q.UncountReactionsBy(ctx, postgresgen.UncountReactionsByParams{AccountID: accountID, Lim: lim})
+			return q.UncountReactionsBy(ctx, contentgen.UncountReactionsByParams{AccountID: accountID, Lim: lim})
 		},
 		func() error {
-			return keep(q.EraseReactionsBy(ctx, postgresgen.EraseReactionsByParams{AccountID: accountID, Lim: lim}))
+			return keep(q.EraseReactionsBy(ctx, contentgen.EraseReactionsByParams{AccountID: accountID, Lim: lim}))
 		},
 		func() error {
-			return keep(q.EraseBookmarksBy(ctx, postgresgen.EraseBookmarksByParams{AccountID: accountID, Lim: lim}))
+			return keep(q.EraseBookmarksBy(ctx, contentgen.EraseBookmarksByParams{AccountID: accountID, Lim: lim}))
 		},
 		func() error {
-			return keep(q.ErasePollVotesBy(ctx, postgresgen.ErasePollVotesByParams{AccountID: accountID, Lim: lim}))
+			return keep(q.ErasePollVotesBy(ctx, contentgen.ErasePollVotesByParams{AccountID: accountID, Lim: lim}))
 		},
 		func() error { return keep(q.ErasePinsBy(ctx, accountID)) },
 		func() error {
-			ids, err := q.ListRemoteMediaToErase(ctx, postgresgen.ListRemoteMediaToEraseParams{AccountID: accountID, Lim: lim})
+			ids, err := q.ListRemoteMediaToErase(ctx, contentgen.ListRemoteMediaToEraseParams{AccountID: accountID, Lim: lim})
 			if err != nil {
 				return err
 			}
@@ -209,21 +213,21 @@ func (r *StatusRepository) EraseInteractionsBy(ctx context.Context, tx uow.Tx, a
 		func() error { return q.EraseAutoDeleteLimitBy(ctx, accountID) },
 		func() error { return q.EraseAutoDeleteLimitNoticesBy(ctx, accountID) },
 		func() error {
-			return q.UncountBoostsBy(ctx, postgresgen.UncountBoostsByParams{AccountID: accountID, Lim: lim})
+			return q.UncountBoostsBy(ctx, contentgen.UncountBoostsByParams{AccountID: accountID, Lim: lim})
 		},
 		func() error {
 			// The boosts in force count as the account's local posts too (local_post_counters).
-			n, err := q.EraseBoostEdgesBy(ctx, postgresgen.EraseBoostEdgesByParams{AccountID: accountID, Lim: lim})
+			n, err := q.EraseBoostEdgesBy(ctx, contentgen.EraseBoostEdgesByParams{AccountID: accountID, Lim: lim})
 			if err := keep(n, err); err != nil {
 				return err
 			}
 			return r.db.addLocalPosts(ctx, tx, accountID, -n)
 		},
 		func() error {
-			return q.EraseBoostRetractionsBy(ctx, postgresgen.EraseBoostRetractionsByParams{AccountID: accountID, Lim: lim})
+			return q.EraseBoostRetractionsBy(ctx, contentgen.EraseBoostRetractionsByParams{AccountID: accountID, Lim: lim})
 		},
 		func() error {
-			return keep(q.EraseBoostsBy(ctx, postgresgen.EraseBoostsByParams{AccountID: accountID, Lim: lim}))
+			return keep(q.EraseBoostsBy(ctx, contentgen.EraseBoostsByParams{AccountID: accountID, Lim: lim}))
 		},
 	}
 	for _, step := range steps {
@@ -240,7 +244,7 @@ func (r *GraphRepository) ListEdgesToErase(ctx context.Context, tx uow.Tx, accou
 	if err != nil {
 		return nil, err
 	}
-	rows, err := q.ListFollowEdgesToErase(ctx, postgresgen.ListFollowEdgesToEraseParams{AccountID: accountID, Lim: batchLimit(limit)})
+	rows, err := q.ListFollowEdgesToErase(ctx, graphgen.ListFollowEdgesToEraseParams{AccountID: accountID, Lim: batchLimit(limit)})
 	if err != nil {
 		return nil, wrap(err, "list follow edges to erase")
 	}
@@ -253,7 +257,7 @@ func (r *GraphRepository) EraseFollowsOf(ctx context.Context, tx uow.Tx, account
 	if err != nil {
 		return 0, err
 	}
-	list, err := q.ListFollowIDsToErase(ctx, postgresgen.ListFollowIDsToEraseParams{AccountID: accountID, Lim: batchLimit(limit)})
+	list, err := q.ListFollowIDsToErase(ctx, graphgen.ListFollowIDsToEraseParams{AccountID: accountID, Lim: batchLimit(limit)})
 	if err != nil || len(list) == 0 {
 		return 0, wrap(err, "list follows to erase")
 	}
@@ -270,7 +274,7 @@ func (r *GraphRepository) EraseBlocksOf(ctx context.Context, tx uow.Tx, accountI
 	if err != nil {
 		return 0, err
 	}
-	list, err := q.ListBlockIDsToErase(ctx, postgresgen.ListBlockIDsToEraseParams{AccountID: accountID, Lim: batchLimit(limit)})
+	list, err := q.ListBlockIDsToErase(ctx, graphgen.ListBlockIDsToEraseParams{AccountID: accountID, Lim: batchLimit(limit)})
 	if err != nil || len(list) == 0 {
 		return 0, wrap(err, "list blocks to erase")
 	}
@@ -285,15 +289,15 @@ func (r *GraphRepository) EraseMutesOf(ctx context.Context, tx uow.Tx, accountID
 	if err != nil {
 		return 0, err
 	}
-	by, err := q.EraseMutesBy(ctx, postgresgen.EraseMutesByParams{AccountID: accountID, Lim: batchLimit(limit)})
+	by, err := q.EraseMutesBy(ctx, graphgen.EraseMutesByParams{AccountID: accountID, Lim: batchLimit(limit)})
 	if err != nil {
 		return 0, wrap(err, "erase mutes")
 	}
-	of, err := q.EraseMutesOf(ctx, postgresgen.EraseMutesOfParams{AccountID: accountID, Lim: batchLimit(limit)})
+	of, err := q.EraseMutesOf(ctx, graphgen.EraseMutesOfParams{AccountID: accountID, Lim: batchLimit(limit)})
 	if err != nil {
 		return 0, wrap(err, "erase mutes")
 	}
-	domains, err := q.EraseDomainMutesBy(ctx, postgresgen.EraseDomainMutesByParams{AccountID: accountID, Lim: batchLimit(limit)})
+	domains, err := q.EraseDomainMutesBy(ctx, graphgen.EraseDomainMutesByParams{AccountID: accountID, Lim: batchLimit(limit)})
 	return max(by, of, domains), wrap(err, "erase domain mutes")
 }
 
@@ -313,7 +317,7 @@ func (r *TimelineRepository) EraseFeedsOf(ctx context.Context, tx uow.Tx, accoun
 		return 0, err
 	}
 	lim := batchLimit(limit)
-	entries, err := q.ListFeedEntryIDsToErase(ctx, postgresgen.ListFeedEntryIDsToEraseParams{AccountID: accountID, Lim: lim})
+	entries, err := q.ListFeedEntryIDsToErase(ctx, timelinegen.ListFeedEntryIDsToEraseParams{AccountID: accountID, Lim: lim})
 	if err != nil {
 		return 0, wrap(err, "list feed entries to erase")
 	}
@@ -338,34 +342,34 @@ func (r *TimelineRepository) EraseFeedsOf(ctx context.Context, tx uow.Tx, accoun
 	}
 	for _, step := range []func(context.Context, string, int32) (int64, error){
 		func(ctx context.Context, a string, n int32) (int64, error) {
-			return q.EraseFeedDirectRecipientsOf(ctx, postgresgen.EraseFeedDirectRecipientsOfParams{AccountID: a, Lim: n})
+			return q.EraseFeedDirectRecipientsOf(ctx, timelinegen.EraseFeedDirectRecipientsOfParams{AccountID: a, Lim: n})
 		},
 		func(ctx context.Context, a string, n int32) (int64, error) {
-			return q.EraseFeedFollowEdgesAsFollower(ctx, postgresgen.EraseFeedFollowEdgesAsFollowerParams{AccountID: a, Lim: n})
+			return q.EraseFeedFollowEdgesAsFollower(ctx, timelinegen.EraseFeedFollowEdgesAsFollowerParams{AccountID: a, Lim: n})
 		},
 		func(ctx context.Context, a string, n int32) (int64, error) {
-			return q.EraseFeedFollowEdgesAsFollowee(ctx, postgresgen.EraseFeedFollowEdgesAsFolloweeParams{AccountID: a, Lim: n})
+			return q.EraseFeedFollowEdgesAsFollowee(ctx, timelinegen.EraseFeedFollowEdgesAsFolloweeParams{AccountID: a, Lim: n})
 		},
 		func(ctx context.Context, a string, n int32) (int64, error) {
-			return q.EraseFeedExclusionsAsViewer(ctx, postgresgen.EraseFeedExclusionsAsViewerParams{AccountID: a, Lim: n})
+			return q.EraseFeedExclusionsAsViewer(ctx, timelinegen.EraseFeedExclusionsAsViewerParams{AccountID: a, Lim: n})
 		},
 		func(ctx context.Context, a string, n int32) (int64, error) {
-			return q.EraseFeedExclusionsAsTarget(ctx, postgresgen.EraseFeedExclusionsAsTargetParams{AccountID: a, Lim: n})
+			return q.EraseFeedExclusionsAsTarget(ctx, timelinegen.EraseFeedExclusionsAsTargetParams{AccountID: a, Lim: n})
 		},
 		func(ctx context.Context, a string, n int32) (int64, error) {
-			return q.EraseFeedDomainMutesOf(ctx, postgresgen.EraseFeedDomainMutesOfParams{AccountID: a, Lim: n})
+			return q.EraseFeedDomainMutesOf(ctx, timelinegen.EraseFeedDomainMutesOfParams{AccountID: a, Lim: n})
 		},
 		func(ctx context.Context, a string, n int32) (int64, error) {
-			return q.EraseListMembersAsOwner(ctx, postgresgen.EraseListMembersAsOwnerParams{AccountID: a, Lim: n})
+			return q.EraseListMembersAsOwner(ctx, timelinegen.EraseListMembersAsOwnerParams{AccountID: a, Lim: n})
 		},
 		func(ctx context.Context, a string, n int32) (int64, error) {
-			return q.EraseListMembersAsMember(ctx, postgresgen.EraseListMembersAsMemberParams{AccountID: a, Lim: n})
+			return q.EraseListMembersAsMember(ctx, timelinegen.EraseListMembersAsMemberParams{AccountID: a, Lim: n})
 		},
 		func(ctx context.Context, a string, n int32) (int64, error) {
-			return q.EraseListNamesOf(ctx, postgresgen.EraseListNamesOfParams{AccountID: a, Lim: n})
+			return q.EraseListNamesOf(ctx, timelinegen.EraseListNamesOfParams{AccountID: a, Lim: n})
 		},
 		func(ctx context.Context, a string, n int32) (int64, error) {
-			return q.EraseListsOf(ctx, postgresgen.EraseListsOfParams{AccountID: a, Lim: n})
+			return q.EraseListsOf(ctx, timelinegen.EraseListsOfParams{AccountID: a, Lim: n})
 		},
 	} {
 		n, err := step(ctx, accountID, lim)
@@ -384,7 +388,7 @@ func (r *NotificationRepository) EraseNotificationsOf(ctx context.Context, tx uo
 		return 0, err
 	}
 	lim := batchLimit(limit)
-	list, err := q.ListNotificationIDsToErase(ctx, postgresgen.ListNotificationIDsToEraseParams{
+	list, err := q.ListNotificationIDsToErase(ctx, notificationgen.ListNotificationIDsToEraseParams{
 		AccountID: accountID, UserID: toNullString(userID), Lim: lim,
 	})
 	if err != nil {
@@ -406,26 +410,26 @@ func (r *NotificationRepository) EraseNotificationsOf(ctx context.Context, tx uo
 	if err := runSteps(ctx, accountID, "erase push subscriptions", q.ErasePushSubscriptionAlertsOf, q.ErasePushSubscriptionsOf); err != nil {
 		return 0, err
 	}
-	viewer, err := q.EraseNotificationExclusionsAsViewer(ctx, postgresgen.EraseNotificationExclusionsAsViewerParams{AccountID: accountID, Lim: lim})
+	viewer, err := q.EraseNotificationExclusionsAsViewer(ctx, notificationgen.EraseNotificationExclusionsAsViewerParams{AccountID: accountID, Lim: lim})
 	if err != nil {
 		return 0, wrap(err, "erase notification exclusions")
 	}
-	target, err := q.EraseNotificationExclusionsAsTarget(ctx, postgresgen.EraseNotificationExclusionsAsTargetParams{AccountID: accountID, Lim: lim})
+	target, err := q.EraseNotificationExclusionsAsTarget(ctx, notificationgen.EraseNotificationExclusionsAsTargetParams{AccountID: accountID, Lim: lim})
 	if err != nil {
 		return 0, wrap(err, "erase notification exclusions")
 	}
-	domains, err := q.EraseNotificationDomainExclusionsOf(ctx, postgresgen.EraseNotificationDomainExclusionsOfParams{AccountID: accountID, Lim: lim})
+	domains, err := q.EraseNotificationDomainExclusionsOf(ctx, notificationgen.EraseNotificationDomainExclusionsOfParams{AccountID: accountID, Lim: lim})
 	if err != nil {
 		return 0, wrap(err, "erase notification domain exclusions")
 	}
 	if err := runSteps(ctx, accountID, "erase post subscriptions", q.ErasePostSubscriptionsOf, q.ErasePostSubscriptionRequestsOf); err != nil {
 		return 0, err
 	}
-	subscribers, err := q.ErasePostSubscriptionsAsTarget(ctx, postgresgen.ErasePostSubscriptionsAsTargetParams{AccountID: accountID, Lim: lim})
+	subscribers, err := q.ErasePostSubscriptionsAsTarget(ctx, notificationgen.ErasePostSubscriptionsAsTargetParams{AccountID: accountID, Lim: lim})
 	if err != nil {
 		return 0, wrap(err, "erase post subscriptions")
 	}
-	requesters, err := q.ErasePostSubscriptionRequestsAsTarget(ctx, postgresgen.ErasePostSubscriptionRequestsAsTargetParams{AccountID: accountID, Lim: lim})
+	requesters, err := q.ErasePostSubscriptionRequestsAsTarget(ctx, notificationgen.ErasePostSubscriptionRequestsAsTargetParams{AccountID: accountID, Lim: lim})
 	if err != nil {
 		return 0, wrap(err, "erase post subscription requests")
 	}

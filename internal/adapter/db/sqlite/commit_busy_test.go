@@ -12,7 +12,6 @@ import (
 	msqlite "modernc.org/sqlite"
 	sqlite3 "modernc.org/sqlite/lib"
 
-	"github.com/mycroblog/my/internal/adapter/db/sqlite/sqlitegen"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/pkg/testkit"
 )
@@ -81,7 +80,7 @@ func TestRetriesACommitThatFailsWithBusy(t *testing.T) {
 	attempts := 0
 	err = db.Tx(ctx, func(tx uow.Tx) error {
 		attempts++
-		return insertProbe(ctx, sqlitegen.New(tx.(*Tx).tx), testkit.NamedID("a"))
+		return insertProbe(ctx, newGenQueries(tx.(*Tx).tx), testkit.NamedID("a"))
 	})
 	if err != nil {
 		t.Fatalf("Tx = %v", err)

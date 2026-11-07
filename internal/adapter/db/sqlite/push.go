@@ -5,7 +5,7 @@ package sqlite
 import (
 	"context"
 
-	"github.com/mycroblog/my/internal/adapter/db/sqlite/sqlitegen"
+	"github.com/mycroblog/my/internal/adapter/db/sqlite/notificationgen"
 	appnotification "github.com/mycroblog/my/internal/app/notification"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/notification"
@@ -19,14 +19,14 @@ func (r *NotificationRepository) SavePushSubscription(ctx context.Context, tx uo
 	if err != nil {
 		return err
 	}
-	replaced := sqlitegen.DeletePushSubscriptionAlertsReplacedByParams{OauthTokenFamilyID: s.TokenFamilyID, Endpoint: s.Endpoint}
+	replaced := notificationgen.DeletePushSubscriptionAlertsReplacedByParams{OauthTokenFamilyID: s.TokenFamilyID, Endpoint: s.Endpoint}
 	if err := q.DeletePushSubscriptionAlertsReplacedBy(ctx, replaced); err != nil {
 		return wrap(err, "delete replaced push subscription alerts")
 	}
-	if err := q.DeletePushSubscriptionsReplacedBy(ctx, sqlitegen.DeletePushSubscriptionsReplacedByParams(replaced)); err != nil {
+	if err := q.DeletePushSubscriptionsReplacedBy(ctx, notificationgen.DeletePushSubscriptionsReplacedByParams(replaced)); err != nil {
 		return wrap(err, "delete replaced push subscriptions")
 	}
-	err = q.InsertPushSubscription(ctx, sqlitegen.InsertPushSubscriptionParams{
+	err = q.InsertPushSubscription(ctx, notificationgen.InsertPushSubscriptionParams{
 		ID: s.ID, AccountID: s.AccountID, OauthTokenFamilyID: s.TokenFamilyID, Endpoint: s.Endpoint,
 		KeyP256dh: s.KeyP256DH, KeyAuth: s.KeyAuth, CreatedAt: toMillis(s.CreatedAt), UpdatedAt: toMillis(s.UpdatedAt),
 	})
@@ -34,7 +34,7 @@ func (r *NotificationRepository) SavePushSubscription(ctx context.Context, tx uo
 		return wrap(err, "insert push subscription")
 	}
 	for _, t := range s.Alerts {
-		err := q.InsertPushSubscriptionAlert(ctx, sqlitegen.InsertPushSubscriptionAlertParams{SubscriptionID: s.ID, NotificationType: string(t)})
+		err := q.InsertPushSubscriptionAlert(ctx, notificationgen.InsertPushSubscriptionAlertParams{SubscriptionID: s.ID, NotificationType: string(t)})
 		if err != nil {
 			return wrap(err, "insert push subscription alert")
 		}
@@ -64,7 +64,7 @@ func (r *NotificationRepository) PushSubscriptionIDs(ctx context.Context, tx uow
 	if err != nil {
 		return nil, err
 	}
-	ids, err := q.ListPushSubscriptionIDsForAlert(ctx, sqlitegen.ListPushSubscriptionIDsForAlertParams{AccountID: accountID, NotificationType: string(t)})
+	ids, err := q.ListPushSubscriptionIDsForAlert(ctx, notificationgen.ListPushSubscriptionIDsForAlertParams{AccountID: accountID, NotificationType: string(t)})
 	return ids, wrap(err, "list push subscriptions")
 }
 
@@ -87,7 +87,7 @@ func (r *NotificationRepository) FindPushSubscriptionOfFamily(ctx context.Contex
 }
 
 // pushSubscription reads the alerts of row and puts them in the order of notification.Types.
-func (r *NotificationRepository) pushSubscription(ctx context.Context, row sqlitegen.PushSubscription) (notification.PushSubscription, error) {
+func (r *NotificationRepository) pushSubscription(ctx context.Context, row notificationgen.PushSubscription) (notification.PushSubscription, error) {
 	types, err := r.db.reader().ListPushSubscriptionAlerts(ctx, row.ID)
 	if err != nil {
 		return notification.PushSubscription{}, wrap(err, "list push subscription alerts")

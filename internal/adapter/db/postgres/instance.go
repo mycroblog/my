@@ -5,7 +5,7 @@ package postgres
 import (
 	"context"
 
-	"github.com/mycroblog/my/internal/adapter/db/postgres/postgresgen"
+	"github.com/mycroblog/my/internal/adapter/db/postgres/instancegen"
 	appinstance "github.com/mycroblog/my/internal/app/instance"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/instance"
@@ -27,7 +27,7 @@ func (r *InstanceRepository) InsertSettingRevision(ctx context.Context, tx uow.T
 	if err != nil {
 		return err
 	}
-	err = q.InsertInstanceSettingRevision(ctx, postgresgen.InsertInstanceSettingRevisionParams{
+	err = q.InsertInstanceSettingRevision(ctx, instancegen.InsertInstanceSettingRevisionParams{
 		ID: rev.ID, Key: string(rev.Key), Value: rev.Value,
 		RevisedByUserID: toNullString(rev.RevisedByUserID), RevisedAt: rev.RevisedAt,
 	})
@@ -53,7 +53,7 @@ func (r *InstanceRepository) UpsertCurrentSetting(ctx context.Context, tx uow.Tx
 	if err != nil {
 		return err
 	}
-	err = q.UpsertInstanceSetting(ctx, postgresgen.UpsertInstanceSettingParams{Key: string(c.Key), RevisionID: c.RevisionID, Value: c.Value})
+	err = q.UpsertInstanceSetting(ctx, instancegen.UpsertInstanceSettingParams{Key: string(c.Key), RevisionID: c.RevisionID, Value: c.Value})
 	return wrap(err, "upsert instance setting")
 }
 
@@ -85,7 +85,7 @@ func (r *InstanceRepository) InsertTextRevision(ctx context.Context, tx uow.Tx, 
 	if err != nil {
 		return err
 	}
-	err = q.InsertInstanceTextRevision(ctx, postgresgen.InsertInstanceTextRevisionParams{
+	err = q.InsertInstanceTextRevision(ctx, instancegen.InsertInstanceTextRevisionParams{
 		ID: rev.ID, Key: string(rev.Key), Body: rev.Body,
 		RevisedByUserID: toNullString(rev.RevisedByUserID), RevisedAt: rev.RevisedAt,
 	})
@@ -111,7 +111,7 @@ func (r *InstanceRepository) UpsertCurrentText(ctx context.Context, tx uow.Tx, c
 	if err != nil {
 		return err
 	}
-	err = q.UpsertInstanceText(ctx, postgresgen.UpsertInstanceTextParams{Key: string(c.Key), RevisionID: c.RevisionID})
+	err = q.UpsertInstanceText(ctx, instancegen.UpsertInstanceTextParams{Key: string(c.Key), RevisionID: c.RevisionID})
 	return wrap(err, "upsert instance text")
 }
 
@@ -160,7 +160,7 @@ func (r *InstanceRepository) ListSettingHistory(ctx context.Context, key instanc
 	if err != nil {
 		return nil, err
 	}
-	rows, err := r.db.reader().ListInstanceSettingHistory(ctx, postgresgen.ListInstanceSettingHistoryParams{Key: string(key), Limit: n})
+	rows, err := r.db.reader().ListInstanceSettingHistory(ctx, instancegen.ListInstanceSettingHistoryParams{Key: string(key), Limit: n})
 	if err != nil {
 		return nil, wrap(err, "list instance setting history")
 	}
@@ -173,7 +173,7 @@ func (r *InstanceRepository) FindCurrentText(ctx context.Context, key instance.T
 	if err != nil {
 		return instance.Text{}, notFound(err, appinstance.ErrNotFound, "instance text "+string(key))
 	}
-	return currentText(postgresgen.ListAllCurrentInstanceTextsRow(row)), nil
+	return currentText(instancegen.ListAllCurrentInstanceTextsRow(row)), nil
 }
 
 // ListAllCurrentTexts implements instance.Repository.
@@ -195,7 +195,7 @@ func (r *InstanceRepository) ListTextHistory(ctx context.Context, key instance.T
 	if err != nil {
 		return nil, err
 	}
-	rows, err := r.db.reader().ListInstanceTextHistory(ctx, postgresgen.ListInstanceTextHistoryParams{
+	rows, err := r.db.reader().ListInstanceTextHistory(ctx, instancegen.ListInstanceTextHistoryParams{
 		Key: string(key), Limit: n,
 	})
 	if err != nil {
@@ -211,18 +211,18 @@ func (r *InstanceRepository) ListTextHistory(ctx context.Context, key instance.T
 	return out, nil
 }
 
-func currentSetting(row postgresgen.InstanceSetting) instance.CurrentSetting {
+func currentSetting(row instancegen.InstanceSetting) instance.CurrentSetting {
 	return instance.CurrentSetting{Key: instance.SettingKey(row.Key), RevisionID: row.RevisionID, Value: row.Value}
 }
 
-func currentText(row postgresgen.ListAllCurrentInstanceTextsRow) instance.Text {
+func currentText(row instancegen.ListAllCurrentInstanceTextsRow) instance.Text {
 	return instance.Text{
 		Key: instance.TextKey(row.Key), Body: row.Body,
 		RevisionID: row.RevisionID, RevisedAt: utc(row.RevisedAt),
 	}
 }
 
-func settingRevisions(rows []postgresgen.InstanceSettingRevision) []instance.SettingRevision {
+func settingRevisions(rows []instancegen.InstanceSettingRevision) []instance.SettingRevision {
 	out := make([]instance.SettingRevision, len(rows))
 	for i, row := range rows {
 		out[i] = instance.SettingRevision{
@@ -235,6 +235,6 @@ func settingRevisions(rows []postgresgen.InstanceSettingRevision) []instance.Set
 
 // IsSettingValueUsed implements instance.Repository.
 func (r *InstanceRepository) IsSettingValueUsed(ctx context.Context, key instance.SettingKey, value string) (bool, error) {
-	ok, err := r.db.reader().IsInstanceSettingValueUsed(ctx, postgresgen.IsInstanceSettingValueUsedParams{Key: string(key), Value: value})
+	ok, err := r.db.reader().IsInstanceSettingValueUsed(ctx, instancegen.IsInstanceSettingValueUsedParams{Key: string(key), Value: value})
 	return ok, wrap(err, "look up instance setting value")
 }

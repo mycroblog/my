@@ -8,7 +8,7 @@ import (
 	"slices"
 	"time"
 
-	"github.com/mycroblog/my/internal/adapter/db/postgres/postgresgen"
+	"github.com/mycroblog/my/internal/adapter/db/postgres/timelinegen"
 	appcontent "github.com/mycroblog/my/internal/app/content"
 	apptimeline "github.com/mycroblog/my/internal/app/timeline"
 	"github.com/mycroblog/my/internal/app/uow"
@@ -35,7 +35,7 @@ func (r *TimelineRepository) InsertEntry(ctx context.Context, tx uow.Tx, e appti
 	if err != nil {
 		return false, err
 	}
-	n, err := q.InsertFeedEntry(ctx, postgresgen.InsertFeedEntryParams{
+	n, err := q.InsertFeedEntry(ctx, timelinegen.InsertFeedEntryParams{
 		ID: e.ID, Kind: string(e.Kind), StatusID: e.StatusID,
 		AuthorAccountID: e.AuthorAccountID, AuthorDomain: e.AuthorDomain,
 		OriginalAuthorAccountID: e.OriginalAuthorAccountID, OriginalAuthorDomain: e.OriginalAuthorDomain,
@@ -71,7 +71,7 @@ func (r *TimelineRepository) UpdateRevision(ctx context.Context, tx uow.Tx, stat
 	if err != nil {
 		return err
 	}
-	_, err = q.UpdateFeedEntriesRevision(ctx, postgresgen.UpdateFeedEntriesRevisionParams{
+	_, err = q.UpdateFeedEntriesRevision(ctx, timelinegen.UpdateFeedEntriesRevisionParams{
 		Language: language, RevisionSeq: n, StatusID: statusID,
 	})
 	return wrap(err, "update the revision of feed entries")
@@ -102,7 +102,7 @@ func (r *TimelineRepository) DeleteStatusEntries(ctx context.Context, tx uow.Tx,
 	return wrap(q.DeleteFeedEntriesOfStatus(ctx, statusID), "delete feed entries of a status")
 }
 
-func deleteEntryChildren(ctx context.Context, q *postgresgen.Queries, entryID string) error {
+func deleteEntryChildren(ctx context.Context, q *genQueries, entryID string) error {
 	if err := q.DeleteFeedDirectRecipients(ctx, entryID); err != nil {
 		return wrap(err, "delete feed direct recipients")
 	}
@@ -123,19 +123,19 @@ func deleteEntryChildren(ctx context.Context, q *postgresgen.Queries, entryID st
 // applyTagUsage adds deltas[tag] posts to the usage of each tag, in tag order, after
 // feed_tag_entries has changed, and reads its last_used_at again (tag_usage, ADR-0092 §1). A
 // tag's usage that drops to zero is deleted.
-func applyTagUsage(ctx context.Context, q *postgresgen.Queries, deltas map[string]int64) error {
+func applyTagUsage(ctx context.Context, q *genQueries, deltas map[string]int64) error {
 	for _, id := range slices.Sorted(maps.Keys(deltas)) {
 		d := deltas[id]
 		var err error
 		switch {
 		case d > 0:
-			err = q.AddTagUsage(ctx, postgresgen.AddTagUsageParams{TagID: id, N: d})
+			err = q.AddTagUsage(ctx, timelinegen.AddTagUsageParams{TagID: id, N: d})
 		case d < 0:
-			if err = q.DeleteDrainedTagUsage(ctx, postgresgen.DeleteDrainedTagUsageParams{TagID: id, N: -d}); err == nil {
-				err = q.AdjustTagUsage(ctx, postgresgen.AdjustTagUsageParams{TagID: id, Delta: d})
+			if err = q.DeleteDrainedTagUsage(ctx, timelinegen.DeleteDrainedTagUsageParams{TagID: id, N: -d}); err == nil {
+				err = q.AdjustTagUsage(ctx, timelinegen.AdjustTagUsageParams{TagID: id, Delta: d})
 			}
 		default:
-			err = q.AdjustTagUsage(ctx, postgresgen.AdjustTagUsageParams{TagID: id})
+			err = q.AdjustTagUsage(ctx, timelinegen.AdjustTagUsageParams{TagID: id})
 		}
 		if err != nil {
 			return wrap(err, "update tag usage")
@@ -154,7 +154,7 @@ func (r *TimelineRepository) ReplaceDirectRecipients(ctx context.Context, tx uow
 		return wrap(err, "delete feed direct recipients")
 	}
 	for _, id := range accountIDs {
-		if err := q.InsertFeedDirectRecipient(ctx, postgresgen.InsertFeedDirectRecipientParams{EntryID: entryID, RecipientAccountID: id}); err != nil {
+		if err := q.InsertFeedDirectRecipient(ctx, timelinegen.InsertFeedDirectRecipientParams{EntryID: entryID, RecipientAccountID: id}); err != nil {
 			return wrap(err, "insert feed direct recipient")
 		}
 	}
@@ -181,7 +181,7 @@ func (r *TimelineRepository) ReplaceTags(ctx context.Context, tx uow.Tx, e appti
 	counts := apptimeline.CountsTagUsage(e.Visibility)
 	added := map[string]bool{}
 	for _, id := range tagIDs {
-		err := q.InsertFeedTagEntry(ctx, postgresgen.InsertFeedTagEntryParams{
+		err := q.InsertFeedTagEntry(ctx, timelinegen.InsertFeedTagEntryParams{
 			TagID: id, EntryID: e.ID, AuthorAccountID: e.AuthorAccountID, Visibility: string(e.Visibility), IsLocal: e.IsLocal,
 			RevisedAt: utc(revisedAt),
 		})
@@ -202,7 +202,7 @@ func (r *TimelineRepository) UpsertFollowEdge(ctx context.Context, tx uow.Tx, e 
 	if err != nil {
 		return err
 	}
-	return wrap(q.UpsertFeedFollowEdge(ctx, postgresgen.UpsertFeedFollowEdgeParams{
+	return wrap(q.UpsertFeedFollowEdge(ctx, timelinegen.UpsertFeedFollowEdgeParams{
 		FollowerAccountID: e.FollowerAccountID, FolloweeAccountID: e.FolloweeAccountID, ShowBoosts: e.ShowBoosts,
 	}), "upsert feed follow edge")
 }
@@ -213,7 +213,7 @@ func (r *TimelineRepository) DeleteFollowEdge(ctx context.Context, tx uow.Tx, fo
 	if err != nil {
 		return err
 	}
-	return wrap(q.DeleteFeedFollowEdge(ctx, postgresgen.DeleteFeedFollowEdgeParams{
+	return wrap(q.DeleteFeedFollowEdge(ctx, timelinegen.DeleteFeedFollowEdgeParams{
 		FollowerAccountID: followerAccountID, FolloweeAccountID: followeeAccountID,
 	}), "delete feed follow edge")
 }
@@ -224,7 +224,7 @@ func (r *TimelineRepository) UpsertExclusion(ctx context.Context, tx uow.Tx, x a
 	if err != nil {
 		return err
 	}
-	return wrap(q.UpsertFeedExclusion(ctx, postgresgen.UpsertFeedExclusionParams{
+	return wrap(q.UpsertFeedExclusion(ctx, timelinegen.UpsertFeedExclusionParams{
 		ViewerAccountID: x.ViewerAccountID, TargetAccountID: x.TargetAccountID, Reason: string(x.Reason), ExpiresAt: (x.ExpiresAt),
 	}), "upsert feed exclusion")
 }
@@ -235,7 +235,7 @@ func (r *TimelineRepository) DeleteExclusion(ctx context.Context, tx uow.Tx, vie
 	if err != nil {
 		return err
 	}
-	return wrap(q.DeleteFeedExclusion(ctx, postgresgen.DeleteFeedExclusionParams{
+	return wrap(q.DeleteFeedExclusion(ctx, timelinegen.DeleteFeedExclusionParams{
 		ViewerAccountID: viewerAccountID, TargetAccountID: targetAccountID, Reason: string(reason),
 	}), "delete feed exclusion")
 }
@@ -246,7 +246,7 @@ func (r *TimelineRepository) UpsertAuthorRestriction(ctx context.Context, tx uow
 	if err != nil {
 		return err
 	}
-	return wrap(q.UpsertFeedAuthorRestriction(ctx, postgresgen.UpsertFeedAuthorRestrictionParams{
+	return wrap(q.UpsertFeedAuthorRestriction(ctx, timelinegen.UpsertFeedAuthorRestrictionParams{
 		AccountID: ar.AccountID, Restriction: string(ar.Restriction), EffectiveUntil: (ar.EffectiveUntil),
 	}), "upsert feed author restriction")
 }
@@ -257,7 +257,7 @@ func (r *TimelineRepository) DeleteAuthorRestriction(ctx context.Context, tx uow
 	if err != nil {
 		return err
 	}
-	return wrap(q.DeleteFeedAuthorRestriction(ctx, postgresgen.DeleteFeedAuthorRestrictionParams{
+	return wrap(q.DeleteFeedAuthorRestriction(ctx, timelinegen.DeleteFeedAuthorRestrictionParams{
 		AccountID: accountID, Restriction: string(restriction),
 	}), "delete feed author restriction")
 }
@@ -268,7 +268,7 @@ func (r *TimelineRepository) UpsertDomainRestriction(ctx context.Context, tx uow
 	if err != nil {
 		return err
 	}
-	return wrap(q.UpsertFeedDomainRestriction(ctx, postgresgen.UpsertFeedDomainRestrictionParams{
+	return wrap(q.UpsertFeedDomainRestriction(ctx, timelinegen.UpsertFeedDomainRestrictionParams{
 		Domain: dr.Domain, Restriction: string(dr.Restriction), EffectiveUntil: (dr.EffectiveUntil),
 	}), "upsert feed domain restriction")
 }
@@ -279,7 +279,7 @@ func (r *TimelineRepository) DeleteDomainRestriction(ctx context.Context, tx uow
 	if err != nil {
 		return err
 	}
-	return wrap(q.DeleteFeedDomainRestriction(ctx, postgresgen.DeleteFeedDomainRestrictionParams{
+	return wrap(q.DeleteFeedDomainRestriction(ctx, timelinegen.DeleteFeedDomainRestrictionParams{
 		Domain: domain, Restriction: string(restriction),
 	}), "delete feed domain restriction")
 }
@@ -290,7 +290,7 @@ func (r *TimelineRepository) InsertDomainMute(ctx context.Context, tx uow.Tx, m 
 	if err != nil {
 		return err
 	}
-	return wrap(q.InsertFeedDomainMute(ctx, postgresgen.InsertFeedDomainMuteParams{
+	return wrap(q.InsertFeedDomainMute(ctx, timelinegen.InsertFeedDomainMuteParams{
 		ViewerAccountID: m.ViewerAccountID, Domain: m.Domain,
 	}), "insert feed domain mute")
 }
@@ -301,7 +301,7 @@ func (r *TimelineRepository) DeleteDomainMute(ctx context.Context, tx uow.Tx, vi
 	if err != nil {
 		return err
 	}
-	return wrap(q.DeleteFeedDomainMute(ctx, postgresgen.DeleteFeedDomainMuteParams{
+	return wrap(q.DeleteFeedDomainMute(ctx, timelinegen.DeleteFeedDomainMuteParams{
 		ViewerAccountID: viewerAccountID, Domain: domain,
 	}), "delete feed domain mute")
 }
@@ -330,7 +330,7 @@ func (r *TimelineRepository) ListHome(ctx context.Context, hq apptimeline.HomeQu
 	if err != nil {
 		return nil, err
 	}
-	rows, err := r.db.reader().ListHomeEntries(ctx, postgresgen.ListHomeEntriesParams{
+	rows, err := r.db.reader().ListHomeEntries(ctx, timelinegen.ListHomeEntriesParams{
 		Viewer: hq.ViewerAccountID, Before: toNullString(hq.Before), WindowFloor: toNullString(hq.Floor), Now: hq.Now,
 		AllLanguages: all, Languages: langs, PageLimit: limit,
 	})
@@ -344,7 +344,7 @@ func (r *TimelineRepository) ListLocal(ctx context.Context, lq apptimeline.Local
 	if err != nil {
 		return nil, err
 	}
-	rows, err := r.db.reader().ListLocalEntries(ctx, postgresgen.ListLocalEntriesParams{
+	rows, err := r.db.reader().ListLocalEntries(ctx, timelinegen.ListLocalEntriesParams{
 		IncludeLocal: lq.IncludeLocal, Before: toNullString(lq.Before), WindowFloor: toNullString(lq.Floor), Now: lq.Now, Viewer: toNullString(lq.ViewerAccountID),
 		AllLanguages: all, Languages: langs, PageLimit: limit,
 	})
@@ -358,7 +358,7 @@ func (r *TimelineRepository) ListPublic(ctx context.Context, pq apptimeline.Publ
 	if err != nil {
 		return nil, err
 	}
-	rows, err := r.db.reader().ListPublicEntries(ctx, postgresgen.ListPublicEntriesParams{
+	rows, err := r.db.reader().ListPublicEntries(ctx, timelinegen.ListPublicEntriesParams{
 		Before: toNullString(pq.Before), WindowFloor: toNullString(pq.Floor), Now: pq.Now, Viewer: toNullString(pq.ViewerAccountID),
 		AllLanguages: all, Languages: langs, PageLimit: limit,
 	})
@@ -372,7 +372,7 @@ func (r *TimelineRepository) ListTag(ctx context.Context, tq apptimeline.TagQuer
 	if err != nil {
 		return nil, err
 	}
-	rows, err := r.db.reader().ListTagEntries(ctx, postgresgen.ListTagEntriesParams{
+	rows, err := r.db.reader().ListTagEntries(ctx, timelinegen.ListTagEntriesParams{
 		TagID: tq.TagID, IncludeLocal: tq.IncludeLocal, Before: toNullString(tq.Before), Now: tq.Now,
 		Viewer: toNullString(tq.ViewerAccountID), AllLanguages: all, Languages: langs, PageLimit: limit,
 	})
@@ -387,7 +387,7 @@ func (r *TimelineRepository) ListProfile(ctx context.Context, pq apptimeline.Pro
 		return nil, err
 	}
 	has := func(v appcontent.Visibility) bool { return slices.Contains(pq.Visibilities, v) }
-	rows, err := r.db.reader().ListProfileEntries(ctx, postgresgen.ListProfileEntriesParams{
+	rows, err := r.db.reader().ListProfileEntries(ctx, timelinegen.ListProfileEntriesParams{
 		Author: pq.AuthorAccountID, Before: toNullString(pq.Before),
 		IncludePublic: has(appcontent.VisibilityPublic), IncludeLocal: has(appcontent.VisibilityLocal),
 		IncludeUnlisted: has(appcontent.VisibilityUnlisted), IncludePrivate: has(appcontent.VisibilityPrivate),
@@ -409,14 +409,14 @@ func (r *TimelineRepository) Facts(ctx context.Context, fq apptimeline.FactsQuer
 	accounts := textArray(fq.AccountIDs)
 	now := fq.Now
 	if fq.ViewerAccountID != "" {
-		followed, err := q.ListFeedFollowedAmong(ctx, postgresgen.ListFeedFollowedAmongParams{Viewer: fq.ViewerAccountID, AccountIds: accounts})
+		followed, err := q.ListFeedFollowedAmong(ctx, timelinegen.ListFeedFollowedAmongParams{Viewer: fq.ViewerAccountID, AccountIds: accounts})
 		if err != nil {
 			return f, wrap(err, "list followed accounts")
 		}
 		for _, id := range followed {
 			f.Followed[id] = true
 		}
-		exclusions, err := q.ListFeedExclusionsAmong(ctx, postgresgen.ListFeedExclusionsAmongParams{
+		exclusions, err := q.ListFeedExclusionsAmong(ctx, timelinegen.ListFeedExclusionsAmongParams{
 			Viewer: fq.ViewerAccountID, Now: now, AccountIds: accounts,
 		})
 		if err != nil {
@@ -426,7 +426,7 @@ func (r *TimelineRepository) Facts(ctx context.Context, fq apptimeline.FactsQuer
 			f.Exclusions[x.TargetAccountID] = append(f.Exclusions[x.TargetAccountID], timeline.ExclusionReason(x.Reason))
 		}
 		entries := textArray(fq.EntryIDs)
-		direct, err := q.ListFeedDirectEntriesAmong(ctx, postgresgen.ListFeedDirectEntriesAmongParams{Viewer: fq.ViewerAccountID, EntryIds: entries})
+		direct, err := q.ListFeedDirectEntriesAmong(ctx, timelinegen.ListFeedDirectEntriesAmongParams{Viewer: fq.ViewerAccountID, EntryIds: entries})
 		if err != nil {
 			return f, wrap(err, "list direct entries")
 		}
@@ -434,7 +434,7 @@ func (r *TimelineRepository) Facts(ctx context.Context, fq apptimeline.FactsQuer
 			f.Direct[id] = true
 		}
 	}
-	restrictions, err := q.ListFeedAuthorRestrictionsAmong(ctx, postgresgen.ListFeedAuthorRestrictionsAmongParams{Now: now, AccountIds: accounts})
+	restrictions, err := q.ListFeedAuthorRestrictionsAmong(ctx, timelinegen.ListFeedAuthorRestrictionsAmongParams{Now: now, AccountIds: accounts})
 	if err != nil {
 		return f, wrap(err, "list author restrictions")
 	}
@@ -442,7 +442,7 @@ func (r *TimelineRepository) Facts(ctx context.Context, fq apptimeline.FactsQuer
 		f.AccountRestrictions[ar.AccountID] = append(f.AccountRestrictions[ar.AccountID], timeline.Restriction(ar.Restriction))
 	}
 	domains := textArray(fq.Domains)
-	domainRestrictions, err := q.ListFeedDomainRestrictionsAmong(ctx, postgresgen.ListFeedDomainRestrictionsAmongParams{Now: now, Domains: domains})
+	domainRestrictions, err := q.ListFeedDomainRestrictionsAmong(ctx, timelinegen.ListFeedDomainRestrictionsAmongParams{Now: now, Domains: domains})
 	if err != nil {
 		return f, wrap(err, "list domain restrictions")
 	}
@@ -454,7 +454,7 @@ func (r *TimelineRepository) Facts(ctx context.Context, fq apptimeline.FactsQuer
 
 // MutedDomains implements timeline.Repository.
 func (r *TimelineRepository) MutedDomains(ctx context.Context, viewerAccountID string, domains []string) ([]string, error) {
-	muted, err := r.db.reader().ListFeedDomainMutesAmong(ctx, postgresgen.ListFeedDomainMutesAmongParams{Viewer: viewerAccountID, Domains: textArray(domains)})
+	muted, err := r.db.reader().ListFeedDomainMutesAmong(ctx, timelinegen.ListFeedDomainMutesAmongParams{Viewer: viewerAccountID, Domains: textArray(domains)})
 	return muted, wrap(err, "list domain mutes")
 }
 
@@ -517,7 +517,7 @@ func (r *TimelineRepository) Snapshot(ctx context.Context) (apptimeline.Projecti
 	return p, nil
 }
 
-func entryFrom(row postgresgen.FeedEntry) apptimeline.Entry {
+func entryFrom(row timelinegen.FeedEntry) apptimeline.Entry {
 	return apptimeline.Entry{
 		ID: row.ID, Kind: timeline.Kind(row.Kind), StatusID: row.StatusID,
 		AuthorAccountID: row.AuthorAccountID, AuthorDomain: row.AuthorDomain,
@@ -527,7 +527,7 @@ func entryFrom(row postgresgen.FeedEntry) apptimeline.Entry {
 	}
 }
 
-func entriesFrom(rows []postgresgen.FeedEntry, err error, what string) ([]apptimeline.Entry, error) {
+func entriesFrom(rows []timelinegen.FeedEntry, err error, what string) ([]apptimeline.Entry, error) {
 	if err != nil {
 		return nil, wrap(err, what)
 	}
@@ -564,7 +564,7 @@ func (r *TimelineRepository) TagUsageOf(ctx context.Context, tagIDs []string) ([
 	return tagUsageFrom(rows), nil
 }
 
-func tagUsageFrom(rows []postgresgen.TagUsage) []apptimeline.TagUsage {
+func tagUsageFrom(rows []timelinegen.TagUsage) []apptimeline.TagUsage {
 	var out []apptimeline.TagUsage
 	for _, row := range rows {
 		out = append(out, apptimeline.TagUsage{TagID: row.TagID, StatusesCount: row.StatusesCount, LastUsedAt: utc(row.LastUsedAt)})

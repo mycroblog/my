@@ -32,7 +32,7 @@ expect "the s3 test server" "blob" pkg/testkit/s3test/s3test.go
 expect "the BlobStore contract" "blob" pkg/testkit/blob_contract.go
 expect "the postgres adapter" "postgres" internal/adapter/db/postgres/account.go
 expect "the postgres schema" "postgres" schema/postgres/09-instance.sql
-expect "the postgres queries" "postgres" queries/postgres/hook.sql
+expect "the postgres queries" "postgres" queries/postgres/hook/hook.sql
 expect "the stream adapter on postgres" "postgres stream" internal/adapter/stream/postgres/bus.go
 expect "the valkey stream" "stream" internal/adapter/stream/valkey/bus.go
 expect "the smtp mailer" "mail" internal/adapter/mail/smtp/smtp.go

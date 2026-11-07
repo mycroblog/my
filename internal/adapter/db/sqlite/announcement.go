@@ -7,7 +7,7 @@ import (
 	"database/sql"
 	"time"
 
-	"github.com/mycroblog/my/internal/adapter/db/sqlite/sqlitegen"
+	"github.com/mycroblog/my/internal/adapter/db/sqlite/instancegen"
 	appinstance "github.com/mycroblog/my/internal/app/instance"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/instance"
@@ -36,7 +36,7 @@ func (r *InstanceRepository) InsertAnnouncement(ctx context.Context, tx uow.Tx, 
 	if err != nil {
 		return err
 	}
-	return wrap(q.InsertAnnouncement(ctx, sqlitegen.InsertAnnouncementParams{ID: id, CreatedAt: toMillis(createdAt)}), "insert announcement")
+	return wrap(q.InsertAnnouncement(ctx, instancegen.InsertAnnouncementParams{ID: id, CreatedAt: toMillis(createdAt)}), "insert announcement")
 }
 
 // InsertAnnouncementRevision implements appinstance.AnnouncementRepository.
@@ -45,7 +45,7 @@ func (r *InstanceRepository) InsertAnnouncementRevision(ctx context.Context, tx 
 	if err != nil {
 		return err
 	}
-	err = q.InsertAnnouncementRevision(ctx, sqlitegen.InsertAnnouncementRevisionParams{
+	err = q.InsertAnnouncementRevision(ctx, instancegen.InsertAnnouncementRevisionParams{
 		ID: rev.ID, AnnouncementID: rev.AnnouncementID, Title: rev.Title, Body: rev.Body,
 		StartsAt: toNullTime(rev.StartsAt), EndsAt: toNullTime(rev.EndsAt),
 		RevisedByUserID: toNullString(rev.RevisedByUserID), RevisedAt: toMillis(rev.RevisedAt),
@@ -59,7 +59,7 @@ func (r *InstanceRepository) InsertAnnouncementStateChange(ctx context.Context, 
 	if err != nil {
 		return err
 	}
-	err = q.InsertAnnouncementStateChange(ctx, sqlitegen.InsertAnnouncementStateChangeParams{
+	err = q.InsertAnnouncementStateChange(ctx, instancegen.InsertAnnouncementStateChangeParams{
 		ID: c.ID, AnnouncementID: c.AnnouncementID, State: string(c.State),
 		ChangedByUserID: toNullString(c.ChangedByUserID), ChangedAt: toMillis(c.ChangedAt),
 	})
@@ -88,7 +88,7 @@ func (r *InstanceRepository) UpsertAnnouncementHead(ctx context.Context, tx uow.
 	if err != nil {
 		return err
 	}
-	err = q.UpsertAnnouncementHead(ctx, sqlitegen.UpsertAnnouncementHeadParams{
+	err = q.UpsertAnnouncementHead(ctx, instancegen.UpsertAnnouncementHeadParams{
 		AnnouncementID: h.AnnouncementID, RevisionID: h.RevisionID, State: string(h.State), PublishedAt: toNullTime(h.PublishedAt),
 	})
 	return wrap(err, "upsert announcement head")
@@ -154,25 +154,25 @@ func (r *InstanceRepository) FindAnnouncement(ctx context.Context, id string) (i
 	return findAnnouncement(ctx, r.db.reader(), id)
 }
 
-func findAnnouncement(ctx context.Context, q *sqlitegen.Queries, id string) (instance.Announcement, error) {
+func findAnnouncement(ctx context.Context, q *genQueries, id string) (instance.Announcement, error) {
 	row, err := q.GetAnnouncement(ctx, id)
 	if err != nil {
 		return instance.Announcement{}, notFound(err, appinstance.ErrNotFound, "announcement "+id)
 	}
-	return announcementOf(sqlitegen.ListAnnouncementsRow(row)), nil
+	return announcementOf(instancegen.ListAnnouncementsRow(row)), nil
 }
 
 // ListAnnouncements implements appinstance.AnnouncementRepository.
 func (r *InstanceRepository) ListAnnouncements(ctx context.Context, publishedOnly bool) ([]instance.Announcement, error) {
 	q := r.db.reader()
-	var rows []sqlitegen.ListAnnouncementsRow
+	var rows []instancegen.ListAnnouncementsRow
 	if publishedOnly {
 		published, err := q.ListPublishedAnnouncements(ctx)
 		if err != nil {
 			return nil, wrap(err, "list published announcements")
 		}
 		for _, row := range published {
-			rows = append(rows, sqlitegen.ListAnnouncementsRow(row))
+			rows = append(rows, instancegen.ListAnnouncementsRow(row))
 		}
 	} else {
 		var err error
@@ -189,7 +189,7 @@ func (r *InstanceRepository) ListAnnouncements(ctx context.Context, publishedOnl
 
 // ListAnnouncementPage implements appinstance.AnnouncementRepository.
 func (r *InstanceRepository) ListAnnouncementPage(ctx context.Context, q appinstance.AnnouncementQuery, limit int) ([]instance.Announcement, error) {
-	rows, err := r.db.reader().ListAnnouncementPage(ctx, sqlitegen.ListAnnouncementPageParams{
+	rows, err := r.db.reader().ListAnnouncementPage(ctx, instancegen.ListAnnouncementPageParams{
 		BeforeID: q.Before, Filter: string(q.Filter), Now: toMillis(q.Now), RowLimit: int64(limit),
 	})
 	if err != nil {
@@ -197,12 +197,12 @@ func (r *InstanceRepository) ListAnnouncementPage(ctx context.Context, q appinst
 	}
 	out := make([]instance.Announcement, len(rows))
 	for i, row := range rows {
-		out[i] = announcementOf(sqlitegen.ListAnnouncementsRow(row))
+		out[i] = announcementOf(instancegen.ListAnnouncementsRow(row))
 	}
 	return out, nil
 }
 
-func announcementOf(row sqlitegen.ListAnnouncementsRow) instance.Announcement {
+func announcementOf(row instancegen.ListAnnouncementsRow) instance.Announcement {
 	return instance.Announcement{
 		ID: row.ID, CreatedAt: fromMillis(row.CreatedAt),
 		State: instance.AnnouncementState(row.State), PublishedAt: fromNullTime(row.PublishedAt),
@@ -220,7 +220,7 @@ func (r *InstanceRepository) InsertAnnouncementRead(ctx context.Context, tx uow.
 	if err != nil {
 		return err
 	}
-	err = q.InsertAnnouncementRead(ctx, sqlitegen.InsertAnnouncementReadParams{UserID: userID, AnnouncementID: announcementID, ReadAt: toMillis(at)})
+	err = q.InsertAnnouncementRead(ctx, instancegen.InsertAnnouncementReadParams{UserID: userID, AnnouncementID: announcementID, ReadAt: toMillis(at)})
 	return wrap(err, "insert announcement read")
 }
 
@@ -239,6 +239,6 @@ func (r *InstanceRepository) ListReadAnnouncementIDs(ctx context.Context, userID
 	if len(ids) == 0 {
 		return []string{}, nil
 	}
-	out, err := r.db.reader().ListReadAnnouncementIDs(ctx, sqlitegen.ListReadAnnouncementIDsParams{UserID: userID, AnnouncementIds: ids})
+	out, err := r.db.reader().ListReadAnnouncementIDs(ctx, instancegen.ListReadAnnouncementIDsParams{UserID: userID, AnnouncementIds: ids})
 	return out, wrap(err, "list read announcements")
 }

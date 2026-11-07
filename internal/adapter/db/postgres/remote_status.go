@@ -8,16 +8,16 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
-	"github.com/mycroblog/my/internal/adapter/db/postgres/postgresgen"
+	"github.com/mycroblog/my/internal/adapter/db/postgres/contentgen"
 	appcontent "github.com/mycroblog/my/internal/app/content"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/content"
 )
 
 // insertRemoteRevisionParts writes the poll and the remote subtype of a revision.
-func insertRemoteRevisionParts(ctx context.Context, q *postgresgen.Queries, rev content.Revision) error {
+func insertRemoteRevisionParts(ctx context.Context, q *genQueries, rev content.Revision) error {
 	if p := rev.Poll; p != nil {
-		err := q.InsertPoll(ctx, postgresgen.InsertPollParams{
+		err := q.InsertPoll(ctx, contentgen.InsertPollParams{
 			ID: p.ID, RevisionID: rev.ID, Multiple: p.Multiple, HideTotals: p.HideTotals, ClosesAt: utcPtr(p.ClosesAt),
 		})
 		if err != nil {
@@ -28,7 +28,7 @@ func insertRemoteRevisionParts(ctx context.Context, q *postgresgen.Queries, rev 
 			if err != nil {
 				return err
 			}
-			err = q.InsertPollOption(ctx, postgresgen.InsertPollOptionParams{PollID: p.ID, Position: pos, Title: o.Title})
+			err = q.InsertPollOption(ctx, contentgen.InsertPollOptionParams{PollID: p.ID, Position: pos, Title: o.Title})
 			if err != nil {
 				return wrap(err, "insert poll option")
 			}
@@ -43,7 +43,7 @@ func insertRemoteRevisionParts(ctx context.Context, q *postgresgen.Queries, rev 
 		if err != nil {
 			return err
 		}
-		err = q.InsertRemoteStatusRevision(ctx, postgresgen.InsertRemoteStatusRevisionParams{
+		err = q.InsertRemoteStatusRevision(ctx, contentgen.InsertRemoteStatusRevisionParams{
 			RevisionID: rev.ID, ActivityUri: toNullString(r.ActivityURI), HtmlPolicyVersion: version, OmittedAttachmentCount: omitted,
 		})
 		if err != nil {
@@ -54,7 +54,7 @@ func insertRemoteRevisionParts(ctx context.Context, q *postgresgen.Queries, rev 
 }
 
 // findRemoteRevisionParts reads the poll and the remote subtype of rev.
-func findRemoteRevisionParts(ctx context.Context, q *postgresgen.Queries, rev *content.Revision) error {
+func findRemoteRevisionParts(ctx context.Context, q *genQueries, rev *content.Revision) error {
 	poll, err := q.GetPollByRevision(ctx, rev.ID)
 	switch {
 	case errors.Is(err, pgx.ErrNoRows):
@@ -99,14 +99,14 @@ func (r *StatusRepository) EnsureCustomEmoji(ctx context.Context, tx uow.Tx, e c
 	if err != nil {
 		return content.CustomEmoji{}, err
 	}
-	params := postgresgen.InsertCustomEmojiIfAbsentParams{
+	params := contentgen.InsertCustomEmojiIfAbsentParams{
 		ID: e.ID, Shortcode: e.Shortcode, Domain: e.Domain, Uri: toNullString(e.URI), CreatedAt: utc(e.CreatedAt),
 	}
 	for range 2 {
 		if err := q.InsertCustomEmojiIfAbsent(ctx, params); err != nil {
 			return content.CustomEmoji{}, wrap(err, "insert custom emoji")
 		}
-		row, err := q.GetCustomEmojiByShortcode(ctx, postgresgen.GetCustomEmojiByShortcodeParams{Shortcode: e.Shortcode, Domain: e.Domain})
+		row, err := q.GetCustomEmojiByShortcode(ctx, contentgen.GetCustomEmojiByShortcodeParams{Shortcode: e.Shortcode, Domain: e.Domain})
 		if err == nil {
 			return customEmojiFrom(row), nil
 		}
@@ -138,7 +138,7 @@ func (r *StatusRepository) InsertCustomEmojiImage(ctx context.Context, tx uow.Tx
 	if err != nil {
 		return err
 	}
-	err = q.InsertCustomEmojiImage(ctx, postgresgen.InsertCustomEmojiImageParams{
+	err = q.InsertCustomEmojiImage(ctx, contentgen.InsertCustomEmojiImageParams{
 		ID: img.ID, EmojiID: img.EmojiID, MediaID: img.MediaID, RevisedAt: utc(img.RevisedAt),
 	})
 	return wrap(err, "insert custom emoji image")
@@ -173,7 +173,7 @@ func (r *StatusRepository) InsertPollObservation(ctx context.Context, tx uow.Tx,
 	if err != nil {
 		return err
 	}
-	err = q.InsertPollTallyObservation(ctx, postgresgen.InsertPollTallyObservationParams{
+	err = q.InsertPollTallyObservation(ctx, contentgen.InsertPollTallyObservationParams{
 		ID: o.ID, PollID: o.PollID, VotersCount: o.VotersCount, ObservedAt: utc(o.ObservedAt),
 	})
 	if err != nil {
@@ -184,7 +184,7 @@ func (r *StatusRepository) InsertPollObservation(ctx context.Context, tx uow.Tx,
 		if err != nil {
 			return err
 		}
-		err = q.InsertPollTallyObservationCount(ctx, postgresgen.InsertPollTallyObservationCountParams{
+		err = q.InsertPollTallyObservationCount(ctx, contentgen.InsertPollTallyObservationCountParams{
 			ObservationID: o.ID, Position: pos, Votes: v,
 		})
 		if err != nil {
@@ -208,7 +208,7 @@ func (r *StatusRepository) ReplacePollTallies(ctx context.Context, tx uow.Tx, po
 		if err != nil {
 			return err
 		}
-		err = q.InsertPollTally(ctx, postgresgen.InsertPollTallyParams{
+		err = q.InsertPollTally(ctx, contentgen.InsertPollTallyParams{
 			PollID: pollID, Position: pos, Votes: t.Votes, VotersCount: t.VotersCount,
 		})
 		if err != nil {
@@ -229,7 +229,7 @@ func (r *StatusRepository) FindCustomEmoji(ctx context.Context, id string) (cont
 
 // FindCustomEmojiByShortcode implements content.Repository.
 func (r *StatusRepository) FindCustomEmojiByShortcode(ctx context.Context, shortcode, domain string) (content.CustomEmoji, error) {
-	row, err := r.db.reader().GetCustomEmojiByShortcode(ctx, postgresgen.GetCustomEmojiByShortcodeParams{Shortcode: shortcode, Domain: domain})
+	row, err := r.db.reader().GetCustomEmojiByShortcode(ctx, contentgen.GetCustomEmojiByShortcodeParams{Shortcode: shortcode, Domain: domain})
 	if err != nil {
 		return content.CustomEmoji{}, notFound(err, appcontent.ErrNotFound, "custom emoji "+shortcode+"@"+domain)
 	}
@@ -258,14 +258,14 @@ func (r *StatusRepository) FindPollTallies(ctx context.Context, pollID string) (
 	return out, nil
 }
 
-func customEmojiFrom(row postgresgen.CustomEmoji) content.CustomEmoji {
+func customEmojiFrom(row contentgen.CustomEmoji) content.CustomEmoji {
 	return content.CustomEmoji{
 		ID: row.ID, Shortcode: row.Shortcode, Domain: row.Domain, URI: fromNullString(row.Uri), CreatedByUserID: fromNullString(row.CreatedByUserID),
 		CreatedAt: utc(row.CreatedAt),
 	}
 }
 
-func customEmojiImageFrom(row postgresgen.CustomEmojiImage) content.CustomEmojiImage {
+func customEmojiImageFrom(row contentgen.CustomEmojiImage) content.CustomEmojiImage {
 	return content.CustomEmojiImage{ID: row.ID, EmojiID: row.EmojiID, MediaID: row.MediaID, RevisedAt: utc(row.RevisedAt)}
 }
 
@@ -279,7 +279,7 @@ func (r *StatusRepository) InsertPollVote(ctx context.Context, tx uow.Tx, v cont
 	if err != nil {
 		return false, err
 	}
-	n, err := q.InsertPollVote(ctx, postgresgen.InsertPollVoteParams{
+	n, err := q.InsertPollVote(ctx, contentgen.InsertPollVoteParams{
 		ID: v.ID, PollID: v.PollID, AccountID: v.AccountID, Position: pos, Uri: toNullString(v.URI), VotedAt: v.VotedAt,
 	})
 	if err != nil {
@@ -290,7 +290,7 @@ func (r *StatusRepository) InsertPollVote(ctx context.Context, tx uow.Tx, v cont
 
 // ListPollVotes implements content.Repository.
 func (r *StatusRepository) ListPollVotes(ctx context.Context, pollID, accountID string) ([]content.PollVote, error) {
-	rows, err := r.db.reader().ListPollVotesOfAccount(ctx, postgresgen.ListPollVotesOfAccountParams{PollID: pollID, AccountID: accountID})
+	rows, err := r.db.reader().ListPollVotesOfAccount(ctx, contentgen.ListPollVotesOfAccountParams{PollID: pollID, AccountID: accountID})
 	if err != nil {
 		return nil, wrap(err, "list poll votes")
 	}
@@ -360,7 +360,7 @@ func (r *StatusRepository) ListPollVoterIDs(ctx context.Context, pollID, after s
 	if err != nil {
 		return nil, err
 	}
-	ids, err := r.db.reader().ListPollVoterIDs(ctx, postgresgen.ListPollVoterIDsParams{PollID: pollID, After: toNullString(after), Lim: lim})
+	ids, err := r.db.reader().ListPollVoterIDs(ctx, contentgen.ListPollVoterIDsParams{PollID: pollID, After: toNullString(after), Lim: lim})
 	if err != nil {
 		return nil, wrap(err, "list poll voters")
 	}

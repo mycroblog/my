@@ -1,0 +1,81 @@
+-- SPDX-License-Identifier: AGPL-3.0-only
+
+-- The sources and the emptying of the projections of moderation, identity, content (the
+-- sensitivity overrides and the poll tallies), and timeline (the restrictions) that
+-- `my projection rebuild` derives again (data-model section 9). The Rebuild queries state the
+-- rules of the commands and projectors in SQL.
+
+-- name: DeleteAllUserRoles :exec
+DELETE FROM user_roles;
+
+-- RebuildUserRoles states the rule of the role commands: the grants without a revocation.
+-- name: RebuildUserRoles :exec
+INSERT INTO user_roles (user_id, role_id, grant_id)
+SELECT g.user_id, g.role_id, g.id FROM user_role_grants g
+WHERE NOT EXISTS (SELECT 1 FROM user_role_revocations v WHERE v.grant_id = g.id);
+
+-- name: DeleteAllUserRegistrationStates :exec
+DELETE FROM user_registration_states;
+
+-- RebuildUserRegistrationStates states the rule of the registration commands: pending since the
+-- application, then the latest decision since it was made.
+-- name: RebuildUserRegistrationStates :exec
+INSERT INTO user_registration_states (user_id, state, since)
+SELECT a.user_id,
+  COALESCE((SELECT d.decision FROM registration_decisions d WHERE d.application_id = a.id ORDER BY d.id DESC LIMIT 1), 'pending'),
+  COALESCE((SELECT d.decided_at FROM registration_decisions d WHERE d.application_id = a.id ORDER BY d.id DESC LIMIT 1), a.submitted_at)
+FROM registration_applications a;
+
+-- name: DeleteAllUserPrimaryEmails :exec
+DELETE FROM user_primary_emails;
+
+-- RebuildUserPrimaryEmails states the rule of the commands that create users: the first email
+-- address of each user is its primary one.
+-- name: RebuildUserPrimaryEmails :exec
+INSERT INTO user_primary_emails (user_id, email_address_id, address_normalized)
+SELECT e.user_id, e.id, e.address_normalized FROM user_email_addresses e
+WHERE NOT EXISTS (SELECT 1 FROM user_email_addresses o WHERE o.user_id = e.user_id AND o.id < e.id);
+
+-- name: DeleteAllEmailSuppressions :exec
+DELETE FROM email_suppressions;
+
+-- The rule of email_suppressions (data-model 4.1): of the failures of an address after its last
+-- lift, the earliest hard bounce, or the earliest complaint when there is no hard bounce.
+-- name: RebuildEmailSuppressions :exec
+INSERT INTO email_suppressions (email_address_id, kind, failure_id)
+SELECT f.email_address_id, f.kind, f.id FROM email_delivery_failures f
+WHERE NOT EXISTS (
+    SELECT 1 FROM email_suppression_lifts l1 WHERE l1.email_address_id = f.email_address_id AND l1.lifted_at >= f.occurred_at)
+  AND (f.kind = 'hard_bounce' OR NOT EXISTS (
+    SELECT 1 FROM email_delivery_failures h WHERE h.email_address_id = f.email_address_id AND h.kind = 'hard_bounce'
+      AND NOT EXISTS (
+        SELECT 1 FROM email_suppression_lifts l2 WHERE l2.email_address_id = h.email_address_id AND l2.lifted_at >= h.occurred_at)))
+  AND NOT EXISTS (
+    SELECT 1 FROM email_delivery_failures o WHERE o.email_address_id = f.email_address_id AND o.kind = f.kind
+      AND (o.occurred_at < f.occurred_at OR (o.occurred_at = f.occurred_at AND o.id < f.id))
+      AND NOT EXISTS (
+        SELECT 1 FROM email_suppression_lifts l3 WHERE l3.email_address_id = o.email_address_id AND l3.lifted_at >= o.occurred_at));
+
+-- name: DeleteAllLoginProviderHeads :exec
+DELETE FROM login_provider_heads;
+
+-- RebuildLoginProviderHeads states the rule of the provider commands: the newest revision,
+-- state change, and secret of each provider, which the commands write together with it.
+-- name: RebuildLoginProviderHeads :exec
+INSERT INTO login_provider_heads (provider_id, revision_id, state, secret_id)
+SELECT p.id,
+  (SELECT r.id FROM login_provider_revisions r WHERE r.provider_id = p.id ORDER BY r.id DESC LIMIT 1),
+  (SELECT c.state FROM login_provider_state_changes c WHERE c.provider_id = p.id ORDER BY c.id DESC LIMIT 1),
+  (SELECT s.id FROM login_provider_secrets s WHERE s.provider_id = p.id ORDER BY s.id DESC LIMIT 1)
+FROM login_providers p;
+
+-- name: DeleteAllUserExternalIdentities :exec
+DELETE FROM user_external_identities;
+
+-- RebuildUserExternalIdentities states the rule of the link commands: the links without an
+-- unlink.
+-- name: RebuildUserExternalIdentities :exec
+INSERT INTO user_external_identities (external_identity_id, link_id, user_id, provider_id)
+SELECT l.external_identity_id, l.id, l.user_id, x.provider_id
+FROM external_identity_links l JOIN external_identities x ON x.id = l.external_identity_id
+WHERE NOT EXISTS (SELECT 1 FROM external_identity_unlinks u WHERE u.link_id = l.id);

@@ -6,7 +6,11 @@ import (
 	"context"
 	"time"
 
-	"github.com/mycroblog/my/internal/adapter/db/sqlite/sqlitegen"
+	"github.com/mycroblog/my/internal/adapter/db/sqlite/accountgen"
+	"github.com/mycroblog/my/internal/adapter/db/sqlite/contentgen"
+	"github.com/mycroblog/my/internal/adapter/db/sqlite/graphgen"
+	"github.com/mycroblog/my/internal/adapter/db/sqlite/notificationgen"
+	"github.com/mycroblog/my/internal/adapter/db/sqlite/timelinegen"
 	appaccount "github.com/mycroblog/my/internal/app/account"
 	appcontent "github.com/mycroblog/my/internal/app/content"
 	appgraph "github.com/mycroblog/my/internal/app/graph"
@@ -30,7 +34,7 @@ var (
 
 // ListAccountsToErase implements account.ErasureRepository.
 func (r *AccountRepository) ListAccountsToErase(ctx context.Context, deletedBefore time.Time, after string, limit int) ([]appaccount.ErasureTarget, error) {
-	rows, err := r.db.reader().ListAccountsToErase(ctx, sqlitegen.ListAccountsToEraseParams{
+	rows, err := r.db.reader().ListAccountsToErase(ctx, accountgen.ListAccountsToEraseParams{
 		DeletedBefore: toMillis(deletedBefore), After: after, Lim: int64(limit),
 	})
 	if err != nil {
@@ -61,7 +65,7 @@ func (r *AccountRepository) InsertErasure(ctx context.Context, tx uow.Tx, accoun
 	if err != nil {
 		return err
 	}
-	return wrap(q.InsertAccountErasure(ctx, sqlitegen.InsertAccountErasureParams{AccountID: accountID, ErasedAt: toMillis(at)}), "insert account erasure")
+	return wrap(q.InsertAccountErasure(ctx, accountgen.InsertAccountErasureParams{AccountID: accountID, ErasedAt: toMillis(at)}), "insert account erasure")
 }
 
 // AccountErased implements account.ErasureRepository.
@@ -117,7 +121,7 @@ func (r *StatusRepository) ListAuthorStatusesToErase(ctx context.Context, tx uow
 	if err != nil {
 		return nil, err
 	}
-	rows, err := q.ListAuthorStatusesToErase(ctx, sqlitegen.ListAuthorStatusesToEraseParams{
+	rows, err := q.ListAuthorStatusesToErase(ctx, contentgen.ListAuthorStatusesToEraseParams{
 		AuthorAccountID: authorAccountID, After: after, Lim: int64(limit),
 	})
 	if err != nil {
@@ -126,7 +130,7 @@ func (r *StatusRepository) ListAuthorStatusesToErase(ctx context.Context, tx uow
 	out := make([]appcontent.ErasableStatus, len(rows))
 	for i, row := range rows {
 		out[i] = appcontent.ErasableStatus{
-			Status: statusFrom(sqlitegen.Status{
+			Status: statusFrom(contentgen.Status{
 				ID: row.ID, Uri: row.Uri, Url: row.Url, AuthorAccountID: row.AuthorAccountID, IsLocal: row.IsLocal,
 				Visibility: row.Visibility, InReplyToUri: row.InReplyToUri, ConversationUri: row.ConversationUri,
 				PublishedAt: row.PublishedAt,
@@ -170,29 +174,29 @@ func (r *StatusRepository) EraseInteractionsBy(ctx context.Context, tx uow.Tx, a
 	}
 	steps := []func() error{
 		func() error {
-			return q.UncountFavouritesBy(ctx, sqlitegen.UncountFavouritesByParams{AccountID: accountID, Lim: lim})
+			return q.UncountFavouritesBy(ctx, contentgen.UncountFavouritesByParams{AccountID: accountID, Lim: lim})
 		},
 		func() error {
-			return keep(q.EraseFavouritesBy(ctx, sqlitegen.EraseFavouritesByParams{AccountID: accountID, Lim: lim}))
+			return keep(q.EraseFavouritesBy(ctx, contentgen.EraseFavouritesByParams{AccountID: accountID, Lim: lim}))
 		},
 		func() error {
-			return q.DeleteSingleReactionCountsBy(ctx, sqlitegen.DeleteSingleReactionCountsByParams{AccountID: accountID, Lim: lim})
+			return q.DeleteSingleReactionCountsBy(ctx, contentgen.DeleteSingleReactionCountsByParams{AccountID: accountID, Lim: lim})
 		},
 		func() error {
-			return q.UncountReactionsBy(ctx, sqlitegen.UncountReactionsByParams{AccountID: accountID, Lim: lim})
+			return q.UncountReactionsBy(ctx, contentgen.UncountReactionsByParams{AccountID: accountID, Lim: lim})
 		},
 		func() error {
-			return keep(q.EraseReactionsBy(ctx, sqlitegen.EraseReactionsByParams{AccountID: accountID, Lim: lim}))
+			return keep(q.EraseReactionsBy(ctx, contentgen.EraseReactionsByParams{AccountID: accountID, Lim: lim}))
 		},
 		func() error {
-			return keep(q.EraseBookmarksBy(ctx, sqlitegen.EraseBookmarksByParams{AccountID: accountID, Lim: lim}))
+			return keep(q.EraseBookmarksBy(ctx, contentgen.EraseBookmarksByParams{AccountID: accountID, Lim: lim}))
 		},
 		func() error {
-			return keep(q.ErasePollVotesBy(ctx, sqlitegen.ErasePollVotesByParams{AccountID: accountID, Lim: lim}))
+			return keep(q.ErasePollVotesBy(ctx, contentgen.ErasePollVotesByParams{AccountID: accountID, Lim: lim}))
 		},
 		func() error { return keep(q.ErasePinsBy(ctx, accountID)) },
 		func() error {
-			ids, err := q.ListRemoteMediaToErase(ctx, sqlitegen.ListRemoteMediaToEraseParams{AccountID: accountID, Lim: lim})
+			ids, err := q.ListRemoteMediaToErase(ctx, contentgen.ListRemoteMediaToEraseParams{AccountID: accountID, Lim: lim})
 			if err != nil {
 				return err
 			}
@@ -214,21 +218,21 @@ func (r *StatusRepository) EraseInteractionsBy(ctx context.Context, tx uow.Tx, a
 		func() error { return q.EraseAutoDeleteLimitBy(ctx, accountID) },
 		func() error { return q.EraseAutoDeleteLimitNoticesBy(ctx, accountID) },
 		func() error {
-			return q.UncountBoostsBy(ctx, sqlitegen.UncountBoostsByParams{AccountID: accountID, Lim: lim})
+			return q.UncountBoostsBy(ctx, contentgen.UncountBoostsByParams{AccountID: accountID, Lim: lim})
 		},
 		func() error {
 			// The boosts in force count as the account's local posts too (local_post_counters).
-			n, err := q.EraseBoostEdgesBy(ctx, sqlitegen.EraseBoostEdgesByParams{AccountID: accountID, Lim: lim})
+			n, err := q.EraseBoostEdgesBy(ctx, contentgen.EraseBoostEdgesByParams{AccountID: accountID, Lim: lim})
 			if err := keep(n, err); err != nil {
 				return err
 			}
 			return r.db.addLocalPosts(ctx, tx, accountID, -n)
 		},
 		func() error {
-			return q.EraseBoostRetractionsBy(ctx, sqlitegen.EraseBoostRetractionsByParams{AccountID: accountID, Lim: lim})
+			return q.EraseBoostRetractionsBy(ctx, contentgen.EraseBoostRetractionsByParams{AccountID: accountID, Lim: lim})
 		},
 		func() error {
-			return keep(q.EraseBoostsBy(ctx, sqlitegen.EraseBoostsByParams{AccountID: accountID, Lim: lim}))
+			return keep(q.EraseBoostsBy(ctx, contentgen.EraseBoostsByParams{AccountID: accountID, Lim: lim}))
 		},
 	}
 	for _, step := range steps {
@@ -245,7 +249,7 @@ func (r *GraphRepository) ListEdgesToErase(ctx context.Context, tx uow.Tx, accou
 	if err != nil {
 		return nil, err
 	}
-	rows, err := q.ListFollowEdgesToErase(ctx, sqlitegen.ListFollowEdgesToEraseParams{AccountID: accountID, Lim: int64(limit)})
+	rows, err := q.ListFollowEdgesToErase(ctx, graphgen.ListFollowEdgesToEraseParams{AccountID: accountID, Lim: int64(limit)})
 	if err != nil {
 		return nil, wrap(err, "list follow edges to erase")
 	}
@@ -258,7 +262,7 @@ func (r *GraphRepository) EraseFollowsOf(ctx context.Context, tx uow.Tx, account
 	if err != nil {
 		return 0, err
 	}
-	list, err := q.ListFollowIDsToErase(ctx, sqlitegen.ListFollowIDsToEraseParams{AccountID: accountID, Lim: int64(limit)})
+	list, err := q.ListFollowIDsToErase(ctx, graphgen.ListFollowIDsToEraseParams{AccountID: accountID, Lim: int64(limit)})
 	if err != nil || len(list) == 0 {
 		return 0, wrap(err, "list follows to erase")
 	}
@@ -278,7 +282,7 @@ func (r *GraphRepository) EraseBlocksOf(ctx context.Context, tx uow.Tx, accountI
 	if err != nil {
 		return 0, err
 	}
-	list, err := q.ListBlockIDsToErase(ctx, sqlitegen.ListBlockIDsToEraseParams{AccountID: accountID, Lim: int64(limit)})
+	list, err := q.ListBlockIDsToErase(ctx, graphgen.ListBlockIDsToEraseParams{AccountID: accountID, Lim: int64(limit)})
 	if err != nil || len(list) == 0 {
 		return 0, wrap(err, "list blocks to erase")
 	}
@@ -296,15 +300,15 @@ func (r *GraphRepository) EraseMutesOf(ctx context.Context, tx uow.Tx, accountID
 	if err != nil {
 		return 0, err
 	}
-	by, err := q.EraseMutesBy(ctx, sqlitegen.EraseMutesByParams{AccountID: accountID, Lim: int64(limit)})
+	by, err := q.EraseMutesBy(ctx, graphgen.EraseMutesByParams{AccountID: accountID, Lim: int64(limit)})
 	if err != nil {
 		return 0, wrap(err, "erase mutes")
 	}
-	of, err := q.EraseMutesOf(ctx, sqlitegen.EraseMutesOfParams{AccountID: accountID, Lim: int64(limit)})
+	of, err := q.EraseMutesOf(ctx, graphgen.EraseMutesOfParams{AccountID: accountID, Lim: int64(limit)})
 	if err != nil {
 		return 0, wrap(err, "erase mutes")
 	}
-	domains, err := q.EraseDomainMutesBy(ctx, sqlitegen.EraseDomainMutesByParams{AccountID: accountID, Lim: int64(limit)})
+	domains, err := q.EraseDomainMutesBy(ctx, graphgen.EraseDomainMutesByParams{AccountID: accountID, Lim: int64(limit)})
 	return max(by, of, domains), wrap(err, "erase domain mutes")
 }
 
@@ -324,7 +328,7 @@ func (r *TimelineRepository) EraseFeedsOf(ctx context.Context, tx uow.Tx, accoun
 		return 0, err
 	}
 	lim := int64(limit)
-	entries, err := q.ListFeedEntryIDsToErase(ctx, sqlitegen.ListFeedEntryIDsToEraseParams{AccountID: accountID, Lim: lim})
+	entries, err := q.ListFeedEntryIDsToErase(ctx, timelinegen.ListFeedEntryIDsToEraseParams{AccountID: accountID, Lim: lim})
 	if err != nil {
 		return 0, wrap(err, "list feed entries to erase")
 	}
@@ -352,34 +356,34 @@ func (r *TimelineRepository) EraseFeedsOf(ctx context.Context, tx uow.Tx, accoun
 	}
 	for _, step := range []func(context.Context, string, int64) (int64, error){
 		func(ctx context.Context, a string, n int64) (int64, error) {
-			return q.EraseFeedDirectRecipientsOf(ctx, sqlitegen.EraseFeedDirectRecipientsOfParams{AccountID: a, Lim: n})
+			return q.EraseFeedDirectRecipientsOf(ctx, timelinegen.EraseFeedDirectRecipientsOfParams{AccountID: a, Lim: n})
 		},
 		func(ctx context.Context, a string, n int64) (int64, error) {
-			return q.EraseFeedFollowEdgesAsFollower(ctx, sqlitegen.EraseFeedFollowEdgesAsFollowerParams{AccountID: a, Lim: n})
+			return q.EraseFeedFollowEdgesAsFollower(ctx, timelinegen.EraseFeedFollowEdgesAsFollowerParams{AccountID: a, Lim: n})
 		},
 		func(ctx context.Context, a string, n int64) (int64, error) {
-			return q.EraseFeedFollowEdgesAsFollowee(ctx, sqlitegen.EraseFeedFollowEdgesAsFolloweeParams{AccountID: a, Lim: n})
+			return q.EraseFeedFollowEdgesAsFollowee(ctx, timelinegen.EraseFeedFollowEdgesAsFolloweeParams{AccountID: a, Lim: n})
 		},
 		func(ctx context.Context, a string, n int64) (int64, error) {
-			return q.EraseFeedExclusionsAsViewer(ctx, sqlitegen.EraseFeedExclusionsAsViewerParams{AccountID: a, Lim: n})
+			return q.EraseFeedExclusionsAsViewer(ctx, timelinegen.EraseFeedExclusionsAsViewerParams{AccountID: a, Lim: n})
 		},
 		func(ctx context.Context, a string, n int64) (int64, error) {
-			return q.EraseFeedExclusionsAsTarget(ctx, sqlitegen.EraseFeedExclusionsAsTargetParams{AccountID: a, Lim: n})
+			return q.EraseFeedExclusionsAsTarget(ctx, timelinegen.EraseFeedExclusionsAsTargetParams{AccountID: a, Lim: n})
 		},
 		func(ctx context.Context, a string, n int64) (int64, error) {
-			return q.EraseFeedDomainMutesOf(ctx, sqlitegen.EraseFeedDomainMutesOfParams{AccountID: a, Lim: n})
+			return q.EraseFeedDomainMutesOf(ctx, timelinegen.EraseFeedDomainMutesOfParams{AccountID: a, Lim: n})
 		},
 		func(ctx context.Context, a string, n int64) (int64, error) {
-			return q.EraseListMembersAsOwner(ctx, sqlitegen.EraseListMembersAsOwnerParams{AccountID: a, Lim: n})
+			return q.EraseListMembersAsOwner(ctx, timelinegen.EraseListMembersAsOwnerParams{AccountID: a, Lim: n})
 		},
 		func(ctx context.Context, a string, n int64) (int64, error) {
-			return q.EraseListMembersAsMember(ctx, sqlitegen.EraseListMembersAsMemberParams{AccountID: a, Lim: n})
+			return q.EraseListMembersAsMember(ctx, timelinegen.EraseListMembersAsMemberParams{AccountID: a, Lim: n})
 		},
 		func(ctx context.Context, a string, n int64) (int64, error) {
-			return q.EraseListNamesOf(ctx, sqlitegen.EraseListNamesOfParams{AccountID: a, Lim: n})
+			return q.EraseListNamesOf(ctx, timelinegen.EraseListNamesOfParams{AccountID: a, Lim: n})
 		},
 		func(ctx context.Context, a string, n int64) (int64, error) {
-			return q.EraseListsOf(ctx, sqlitegen.EraseListsOfParams{AccountID: a, Lim: n})
+			return q.EraseListsOf(ctx, timelinegen.EraseListsOfParams{AccountID: a, Lim: n})
 		},
 	} {
 		n, err := step(ctx, accountID, lim)
@@ -398,7 +402,7 @@ func (r *NotificationRepository) EraseNotificationsOf(ctx context.Context, tx uo
 		return 0, err
 	}
 	lim := int64(limit)
-	list, err := q.ListNotificationIDsToErase(ctx, sqlitegen.ListNotificationIDsToEraseParams{
+	list, err := q.ListNotificationIDsToErase(ctx, notificationgen.ListNotificationIDsToEraseParams{
 		AccountID: accountID, UserID: toNullString(userID), Lim: lim,
 	})
 	if err != nil {
@@ -423,26 +427,26 @@ func (r *NotificationRepository) EraseNotificationsOf(ctx context.Context, tx uo
 	if err := runSteps(ctx, accountID, "erase push subscriptions", q.ErasePushSubscriptionAlertsOf, q.ErasePushSubscriptionsOf); err != nil {
 		return 0, err
 	}
-	viewer, err := q.EraseNotificationExclusionsAsViewer(ctx, sqlitegen.EraseNotificationExclusionsAsViewerParams{AccountID: accountID, Lim: lim})
+	viewer, err := q.EraseNotificationExclusionsAsViewer(ctx, notificationgen.EraseNotificationExclusionsAsViewerParams{AccountID: accountID, Lim: lim})
 	if err != nil {
 		return 0, wrap(err, "erase notification exclusions")
 	}
-	target, err := q.EraseNotificationExclusionsAsTarget(ctx, sqlitegen.EraseNotificationExclusionsAsTargetParams{AccountID: accountID, Lim: lim})
+	target, err := q.EraseNotificationExclusionsAsTarget(ctx, notificationgen.EraseNotificationExclusionsAsTargetParams{AccountID: accountID, Lim: lim})
 	if err != nil {
 		return 0, wrap(err, "erase notification exclusions")
 	}
-	domains, err := q.EraseNotificationDomainExclusionsOf(ctx, sqlitegen.EraseNotificationDomainExclusionsOfParams{AccountID: accountID, Lim: lim})
+	domains, err := q.EraseNotificationDomainExclusionsOf(ctx, notificationgen.EraseNotificationDomainExclusionsOfParams{AccountID: accountID, Lim: lim})
 	if err != nil {
 		return 0, wrap(err, "erase notification domain exclusions")
 	}
 	if err := runSteps(ctx, accountID, "erase post subscriptions", q.ErasePostSubscriptionsOf, q.ErasePostSubscriptionRequestsOf); err != nil {
 		return 0, err
 	}
-	subscribers, err := q.ErasePostSubscriptionsAsTarget(ctx, sqlitegen.ErasePostSubscriptionsAsTargetParams{AccountID: accountID, Lim: lim})
+	subscribers, err := q.ErasePostSubscriptionsAsTarget(ctx, notificationgen.ErasePostSubscriptionsAsTargetParams{AccountID: accountID, Lim: lim})
 	if err != nil {
 		return 0, wrap(err, "erase post subscriptions")
 	}
-	requesters, err := q.ErasePostSubscriptionRequestsAsTarget(ctx, sqlitegen.ErasePostSubscriptionRequestsAsTargetParams{AccountID: accountID, Lim: lim})
+	requesters, err := q.ErasePostSubscriptionRequestsAsTarget(ctx, notificationgen.ErasePostSubscriptionRequestsAsTargetParams{AccountID: accountID, Lim: lim})
 	if err != nil {
 		return 0, wrap(err, "erase post subscription requests")
 	}

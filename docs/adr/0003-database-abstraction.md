@@ -27,7 +27,7 @@ libSQL / Turso は v0.1.0 では対応せず、将来の候補とする。v0.1.0
   - 一括処理は短いトランザクションのジョブに分割する。
   - ジョブは at-least-once なので、書き込みは引き続き一意制約 + upsert（`INSERT ... ON CONFLICT`）・冪等キーで重複に強くする。
   - カウンタ（フォロワー数・お気に入り数など）は加算 SQL（`SET n = n + 1`）を使い、定期ジョブで再集計して補正する。
-- SQL の扱い（Go）: **sqlc を方言ごとに生成**（`queries/sqlite/*.sql`, `queries/postgres/*.sql`）し、方言別アダプタがリポジトリポートを実装する。
+- SQL の扱い（Go）: **sqlc を方言ごとに生成**（`queries/sqlite/<module>/*.sql`, `queries/postgres/<module>/*.sql`。モジュールごとの出力は ADR-0153 §3）し、方言別アダプタがリポジトリポートを実装する。
   方言差（FTS、JSON 関数、日付関数、プレースホルダ）はアダプタ内に閉じ込める。根拠は [#17 の調査報告](https://github.com/mycroblog/my/issues/17#issuecomment-6209364365)。
 - ドライバ: SQLite は `modernc.org/sqlite`（cgo 不要）、PostgreSQL は `pgx/v5`。
 - トランザクションの設定:

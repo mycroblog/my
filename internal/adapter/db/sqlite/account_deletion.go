@@ -6,7 +6,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/mycroblog/my/internal/adapter/db/sqlite/sqlitegen"
+	"github.com/mycroblog/my/internal/adapter/db/sqlite/accountgen"
 	appaccount "github.com/mycroblog/my/internal/app/account"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/account"
@@ -14,7 +14,7 @@ import (
 
 // ListDueDeletions implements account.Repository.
 func (r *AccountRepository) ListDueDeletions(ctx context.Context, now time.Time, limit int) ([]account.LifecycleState, error) {
-	rows, err := r.db.reader().ListDueDeletions(ctx, sqlitegen.ListDueDeletionsParams{Now: toMillis(now), Lim: int64(limit)})
+	rows, err := r.db.reader().ListDueDeletions(ctx, accountgen.ListDueDeletionsParams{Now: toMillis(now), Lim: int64(limit)})
 	if err != nil {
 		return nil, wrap(err, "list due deletions")
 	}
@@ -27,7 +27,7 @@ func (r *AccountRepository) ListDueDeletions(ctx context.Context, now time.Time,
 
 // ListDueDeactivations implements account.Repository.
 func (r *AccountRepository) ListDueDeactivations(ctx context.Context, cutoff time.Time, limit int) ([]account.LifecycleState, error) {
-	rows, err := r.db.reader().ListDueDeactivations(ctx, sqlitegen.ListDueDeactivationsParams{Cutoff: toMillis(cutoff), Lim: int64(limit)})
+	rows, err := r.db.reader().ListDueDeactivations(ctx, accountgen.ListDueDeactivationsParams{Cutoff: toMillis(cutoff), Lim: int64(limit)})
 	if err != nil {
 		return nil, wrap(err, "list due deactivations")
 	}

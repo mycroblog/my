@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/mycroblog/my/internal/adapter/db/postgres/postgresgen"
+	"github.com/mycroblog/my/internal/adapter/db/postgres/financegen"
 	appfinance "github.com/mycroblog/my/internal/app/finance"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/finance"
@@ -32,7 +32,7 @@ func (r *FinanceRepository) InsertRun(ctx context.Context, tx uow.Tx, run appfin
 	if err != nil {
 		return err
 	}
-	return wrap(q.InsertBillingImportRun(ctx, postgresgen.InsertBillingImportRunParams{
+	return wrap(q.InsertBillingImportRun(ctx, financegen.InsertBillingImportRunParams{
 		ID: run.ID, Source: run.Source, RunKey: run.RunKey, Outcome: runOutcome(run), ErrorKind: string(run.ErrorKind),
 		Requests: requests, BytesBilled: run.BytesBilled, OccurredAt: run.OccurredAt,
 	}), "insert billing import run")
@@ -40,7 +40,7 @@ func (r *FinanceRepository) InsertRun(ctx context.Context, tx uow.Tx, run appfin
 
 // SumRuns implements appfinance.Repository.
 func (r *FinanceRepository) SumRuns(ctx context.Context, source string, from, until time.Time) (int, int64, error) {
-	row, err := r.db.reader().SumBillingImportRuns(ctx, postgresgen.SumBillingImportRunsParams{Source: source, FromAt: from, UntilAt: until})
+	row, err := r.db.reader().SumBillingImportRuns(ctx, financegen.SumBillingImportRunsParams{Source: source, FromAt: from, UntilAt: until})
 	if err != nil {
 		return 0, 0, wrap(err, "sum billing import runs")
 	}
@@ -53,7 +53,7 @@ func (r *FinanceRepository) SumRunsTx(ctx context.Context, tx uow.Tx, source str
 	if err != nil {
 		return 0, 0, err
 	}
-	row, err := q.SumBillingImportRuns(ctx, postgresgen.SumBillingImportRunsParams{Source: source, FromAt: from, UntilAt: until})
+	row, err := q.SumBillingImportRuns(ctx, financegen.SumBillingImportRunsParams{Source: source, FromAt: from, UntilAt: until})
 	if err != nil {
 		return 0, 0, wrap(err, "sum billing import runs")
 	}
@@ -80,7 +80,7 @@ func (r *FinanceRepository) InsertReservation(ctx context.Context, tx uow.Tx, re
 	if err != nil {
 		return err
 	}
-	return wrap(q.InsertBillingImportReservation(ctx, postgresgen.InsertBillingImportReservationParams{
+	return wrap(q.InsertBillingImportReservation(ctx, financegen.InsertBillingImportReservationParams{
 		ID: res.ID, Source: res.Source, Requests: requests, ReservedAt: res.ReservedAt,
 	}), "insert billing import reservation")
 }
@@ -91,7 +91,7 @@ func (r *FinanceRepository) ImportRunning(ctx context.Context, tx uow.Tx, source
 	if err != nil {
 		return false, err
 	}
-	v, err := q.PendingBillingImportReservation(ctx, postgresgen.PendingBillingImportReservationParams{Source: source, Since: since})
+	v, err := q.PendingBillingImportReservation(ctx, financegen.PendingBillingImportReservationParams{Source: source, Since: since})
 	return v, wrap(err, "find a pending billing import reservation")
 }
 
@@ -101,19 +101,19 @@ func (r *FinanceRepository) RunKeySucceeded(ctx context.Context, tx uow.Tx, sour
 	if err != nil {
 		return false, err
 	}
-	v, err := q.BillingImportRunKeySucceeded(ctx, postgresgen.BillingImportRunKeySucceededParams{Source: source, RunKey: runKey})
+	v, err := q.BillingImportRunKeySucceeded(ctx, financegen.BillingImportRunKeySucceededParams{Source: source, RunKey: runKey})
 	return v, wrap(err, "find a succeeded billing import run")
 }
 
 // RunKeyUsed implements appfinance.Repository.
 func (r *FinanceRepository) RunKeyUsed(ctx context.Context, source, runKey string) (bool, error) {
-	n, err := r.db.reader().CountBillingImportRunsByKey(ctx, postgresgen.CountBillingImportRunsByKeyParams{Source: source, RunKey: runKey})
+	n, err := r.db.reader().CountBillingImportRunsByKey(ctx, financegen.CountBillingImportRunsByKeyParams{Source: source, RunKey: runKey})
 	return n > 0, wrap(err, "count billing import runs")
 }
 
 // LastRun implements appfinance.Repository.
 func (r *FinanceRepository) LastRun(ctx context.Context, source string, succeeded bool) (appfinance.Run, error) {
-	row, err := r.db.reader().LastBillingImportRun(ctx, postgresgen.LastBillingImportRunParams{Source: source, IncludeFailed: !succeeded})
+	row, err := r.db.reader().LastBillingImportRun(ctx, financegen.LastBillingImportRunParams{Source: source, IncludeFailed: !succeeded})
 	if err != nil {
 		return appfinance.Run{}, notFound(err, appfinance.ErrNotFound, "billing import run of "+source)
 	}
@@ -131,8 +131,8 @@ func monthStrings(months []finance.YearMonth) []string {
 	return out
 }
 
-func importedHeads(ctx context.Context, q *postgresgen.Queries, source string, months []finance.YearMonth) ([]appfinance.ImportedRevision, error) {
-	rows, err := q.ListImportedCostHeads(ctx, postgresgen.ListImportedCostHeadsParams{Source: source, Months: monthStrings(months)})
+func importedHeads(ctx context.Context, q *genQueries, source string, months []finance.YearMonth) ([]appfinance.ImportedRevision, error) {
+	rows, err := q.ListImportedCostHeads(ctx, financegen.ListImportedCostHeadsParams{Source: source, Months: monthStrings(months)})
 	if err != nil {
 		return nil, wrap(err, "list imported cost heads")
 	}
@@ -177,7 +177,7 @@ func (r *FinanceRepository) ImportedHeadsForUpdate(ctx context.Context, tx uow.T
 	if err != nil {
 		return nil, err
 	}
-	if err := q.LockImportedCostHeads(ctx, postgresgen.LockImportedCostHeadsParams{Source: source, Months: monthStrings(months)}); err != nil {
+	if err := q.LockImportedCostHeads(ctx, financegen.LockImportedCostHeadsParams{Source: source, Months: monthStrings(months)}); err != nil {
 		return nil, wrap(err, "lock imported cost heads")
 	}
 	return importedHeads(ctx, q, source, months)
@@ -189,7 +189,7 @@ func (r *FinanceRepository) InsertImportedRevision(ctx context.Context, tx uow.T
 	if err != nil {
 		return false, err
 	}
-	n, err := q.InsertImportedCostRevision(ctx, postgresgen.InsertImportedCostRevisionParams{
+	n, err := q.InsertImportedCostRevision(ctx, financegen.InsertImportedCostRevisionParams{
 		ID: rev.ID, Source: rev.Key.Source, BillingMonth: rev.Key.Month.String(), Service: rev.Key.Service,
 		ChargeType: string(rev.Key.ChargeType), Category: string(rev.Category), StartsOn: toDate(rev.Covered.Start),
 		EndsOn: toDate(rev.Covered.End), AmountMinor: rev.Amount.Minor, Currency: string(rev.Amount.Currency),
@@ -204,7 +204,7 @@ func (r *FinanceRepository) UpsertImportedHead(ctx context.Context, tx uow.Tx, r
 	if err != nil {
 		return err
 	}
-	return wrap(q.UpsertImportedCostHead(ctx, postgresgen.UpsertImportedCostHeadParams{
+	return wrap(q.UpsertImportedCostHead(ctx, financegen.UpsertImportedCostHeadParams{
 		Source: rev.Key.Source, BillingMonth: rev.Key.Month.String(), Service: rev.Key.Service,
 		ChargeType: string(rev.Key.ChargeType), RevisionID: rev.ID,
 	}), "upsert imported cost head")
@@ -213,5 +213,5 @@ func (r *FinanceRepository) UpsertImportedHead(ctx context.Context, tx uow.Tx, r
 // RebuildImportedHeads implements appfinance.Repository.
 func (r *FinanceRepository) RebuildImportedHeads(ctx context.Context, tx uow.Tx) error {
 	return r.db.execAll(ctx, tx, "rebuild imported cost heads",
-		(*postgresgen.Queries).DeleteAllImportedCostHeads, (*postgresgen.Queries).RebuildImportedCostHeads)
+		(*genQueries).DeleteAllImportedCostHeads, (*genQueries).RebuildImportedCostHeads)
 }

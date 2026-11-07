@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/mycroblog/my/internal/adapter/db/sqlite/sqlitegen"
+	"github.com/mycroblog/my/internal/adapter/db/sqlite/graphgen"
 	appgraph "github.com/mycroblog/my/internal/app/graph"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/graph"
@@ -23,7 +23,7 @@ func (r *GraphRepository) InsertBlock(ctx context.Context, tx uow.Tx, b graph.Bl
 	if err != nil {
 		return err
 	}
-	return wrap(q.InsertBlock(ctx, sqlitegen.InsertBlockParams{
+	return wrap(q.InsertBlock(ctx, graphgen.InsertBlockParams{
 		ID: b.ID, Uri: toNullString(b.URI), BlockerAccountID: b.BlockerAccountID, BlockedAccountID: b.BlockedAccountID,
 		CreatedAt: toMillis(b.CreatedAt),
 	}), "insert block")
@@ -35,7 +35,7 @@ func (r *GraphRepository) InsertBlockRetraction(ctx context.Context, tx uow.Tx, 
 	if err != nil {
 		return err
 	}
-	err = q.InsertBlockRetraction(ctx, sqlitegen.InsertBlockRetractionParams{
+	err = q.InsertBlockRetraction(ctx, graphgen.InsertBlockRetractionParams{
 		BlockID: ret.BlockID, RetractedAt: toMillis(ret.RetractedAt),
 	})
 	if isUniqueViolation(err, "block_retractions.block_id") {
@@ -44,7 +44,7 @@ func (r *GraphRepository) InsertBlockRetraction(ctx context.Context, tx uow.Tx, 
 	return wrap(err, "insert block_retractions")
 }
 
-func blockFrom(row sqlitegen.Block) graph.Block {
+func blockFrom(row graphgen.Block) graph.Block {
 	return graph.Block{
 		ID: row.ID, URI: row.Uri.String, BlockerAccountID: row.BlockerAccountID, BlockedAccountID: row.BlockedAccountID,
 		CreatedAt: fromMillis(row.CreatedAt),
@@ -64,7 +64,7 @@ func (r *GraphRepository) Block(ctx context.Context, tx uow.Tx, id string) (grap
 	return blockFrom(row), nil
 }
 
-func blockEdgesFrom(rows []sqlitegen.BlockEdge) []graph.BlockEdge {
+func blockEdgesFrom(rows []graphgen.BlockEdge) []graph.BlockEdge {
 	out := make([]graph.BlockEdge, len(rows))
 	for i, row := range rows {
 		out[i] = graph.BlockEdge(row)
@@ -86,8 +86,8 @@ func (r *GraphRepository) FindBlockEdge(ctx context.Context, blockerAccountID, b
 	return findBlockEdge(ctx, r.db.reader(), blockerAccountID, blockedAccountID)
 }
 
-func findBlockEdge(ctx context.Context, q *sqlitegen.Queries, blockerAccountID, blockedAccountID string) (graph.BlockEdge, error) {
-	row, err := q.GetBlockEdge(ctx, sqlitegen.GetBlockEdgeParams{
+func findBlockEdge(ctx context.Context, q *genQueries, blockerAccountID, blockedAccountID string) (graph.BlockEdge, error) {
+	row, err := q.GetBlockEdge(ctx, graphgen.GetBlockEdgeParams{
 		BlockerAccountID: blockerAccountID, BlockedAccountID: blockedAccountID,
 	})
 	if err != nil {
@@ -102,7 +102,7 @@ func (r *GraphRepository) InsertBlockEdge(ctx context.Context, tx uow.Tx, e grap
 	if err != nil {
 		return false, err
 	}
-	n, err := q.InsertBlockEdge(ctx, sqlitegen.InsertBlockEdgeParams(e))
+	n, err := q.InsertBlockEdge(ctx, graphgen.InsertBlockEdgeParams(e))
 	if err != nil {
 		return false, wrap(err, "insert block edge")
 	}
@@ -115,7 +115,7 @@ func (r *GraphRepository) DeleteBlockEdge(ctx context.Context, tx uow.Tx, blocke
 	if err != nil {
 		return err
 	}
-	return wrap(q.DeleteBlockEdge(ctx, sqlitegen.DeleteBlockEdgeParams{
+	return wrap(q.DeleteBlockEdge(ctx, graphgen.DeleteBlockEdgeParams{
 		BlockerAccountID: blockerAccountID, BlockedAccountID: blockedAccountID, BlockID: blockID,
 	}), "delete block edge")
 }
@@ -141,7 +141,7 @@ func (r *GraphRepository) ListBlockHistories(ctx context.Context, tx uow.Tx) ([]
 	}
 	out := make([]graph.BlockHistory, len(rows))
 	for i, row := range rows {
-		h := graph.BlockHistory{Block: blockFrom(sqlitegen.Block{
+		h := graph.BlockHistory{Block: blockFrom(graphgen.Block{
 			ID: row.ID, Uri: row.Uri, BlockerAccountID: row.BlockerAccountID, BlockedAccountID: row.BlockedAccountID,
 			CreatedAt: row.CreatedAt,
 		})}
@@ -164,7 +164,7 @@ func (r *GraphRepository) ListBlockEdges(ctx context.Context) ([]graph.BlockEdge
 
 // ListBlocking implements graph.Repository.
 func (r *GraphRepository) ListBlocking(ctx context.Context, blockerAccountID, before string, limit int) ([]graph.BlockEdge, error) {
-	rows, err := r.db.reader().ListBlockingPage(ctx, sqlitegen.ListBlockingPageParams{
+	rows, err := r.db.reader().ListBlockingPage(ctx, graphgen.ListBlockingPageParams{
 		AccountID: blockerAccountID, Before: before, PageLimit: int64(limit),
 	})
 	if err != nil {
@@ -179,7 +179,7 @@ func (r *GraphRepository) UpsertMute(ctx context.Context, tx uow.Tx, m graph.Mut
 	if err != nil {
 		return err
 	}
-	return wrap(q.UpsertMute(ctx, sqlitegen.UpsertMuteParams{
+	return wrap(q.UpsertMute(ctx, graphgen.UpsertMuteParams{
 		AccountID: m.AccountID, TargetAccountID: m.TargetAccountID, HideNotifications: boolToInt(m.HideNotifications),
 		ExpiresAt: toNullMillis(m.ExpiresAt), CreatedAt: toMillis(m.CreatedAt),
 	}), "upsert mute")
@@ -191,7 +191,7 @@ func (r *GraphRepository) DeleteMute(ctx context.Context, tx uow.Tx, accountID, 
 	if err != nil {
 		return false, err
 	}
-	rows, err := q.DeleteMute(ctx, sqlitegen.DeleteMuteParams{AccountID: accountID, TargetAccountID: targetAccountID})
+	rows, err := q.DeleteMute(ctx, graphgen.DeleteMuteParams{AccountID: accountID, TargetAccountID: targetAccountID})
 	if err != nil {
 		return false, wrap(err, "delete mute")
 	}
@@ -204,7 +204,7 @@ func (r *GraphRepository) DeleteExpiredMutes(ctx context.Context, tx uow.Tx, now
 	if err != nil {
 		return nil, err
 	}
-	rows, err := q.DeleteExpiredMutes(ctx, sqlitegen.DeleteExpiredMutesParams{Now: toMillis(now), BatchLimit: int64(limit)})
+	rows, err := q.DeleteExpiredMutes(ctx, graphgen.DeleteExpiredMutesParams{Now: toMillis(now), BatchLimit: int64(limit)})
 	if err != nil {
 		return nil, wrap(err, "delete expired mutes")
 	}
@@ -215,7 +215,7 @@ func (r *GraphRepository) DeleteExpiredMutes(ctx context.Context, tx uow.Tx, now
 	return out, nil
 }
 
-func muteFrom(row sqlitegen.Mute) graph.Mute {
+func muteFrom(row graphgen.Mute) graph.Mute {
 	return graph.Mute{
 		AccountID: row.AccountID, TargetAccountID: row.TargetAccountID, HideNotifications: row.HideNotifications != 0,
 		ExpiresAt: fromNullMillis(row.ExpiresAt), CreatedAt: fromMillis(row.CreatedAt),
@@ -236,8 +236,8 @@ func (r *GraphRepository) FindMute(ctx context.Context, accountID, targetAccount
 	return activeMute(ctx, r.db.reader(), accountID, targetAccountID, now)
 }
 
-func activeMute(ctx context.Context, q *sqlitegen.Queries, accountID, targetAccountID string, now time.Time) (graph.Mute, error) {
-	row, err := q.GetActiveMute(ctx, sqlitegen.GetActiveMuteParams{
+func activeMute(ctx context.Context, q *genQueries, accountID, targetAccountID string, now time.Time) (graph.Mute, error) {
+	row, err := q.GetActiveMute(ctx, graphgen.GetActiveMuteParams{
 		AccountID: accountID, TargetAccountID: targetAccountID, Now: toMillis(now),
 	})
 	if err != nil {
@@ -248,7 +248,7 @@ func activeMute(ctx context.Context, q *sqlitegen.Queries, accountID, targetAcco
 
 // ListMutes implements graph.Repository.
 func (r *GraphRepository) ListMutes(ctx context.Context, accountID string, now time.Time, before appgraph.MuteCursor, limit int) ([]graph.Mute, error) {
-	rows, err := r.db.reader().ListActiveMutesPage(ctx, sqlitegen.ListActiveMutesPageParams{
+	rows, err := r.db.reader().ListActiveMutesPage(ctx, graphgen.ListActiveMutesPageParams{
 		AccountID: accountID, Now: toMillis(now), BeforeTargetAccountID: before.TargetAccountID,
 		BeforeCreatedAt: toMillis(before.CreatedAt), PageLimit: int64(limit),
 	})
@@ -272,7 +272,7 @@ func (r *GraphRepository) BlockByURI(ctx context.Context, tx uow.Tx, uri string)
 	if err != nil {
 		return graph.BlockHistory{}, notFound(err, appgraph.ErrNotFound, "block "+uri)
 	}
-	h := graph.BlockHistory{Block: blockFrom(sqlitegen.Block{
+	h := graph.BlockHistory{Block: blockFrom(graphgen.Block{
 		ID: row.ID, Uri: row.Uri, BlockerAccountID: row.BlockerAccountID, BlockedAccountID: row.BlockedAccountID,
 		CreatedAt: row.CreatedAt,
 	})}
@@ -293,7 +293,7 @@ func (r *GraphRepository) FindBlock(ctx context.Context, id string) (graph.Block
 
 // ListBlockers implements graph.Repository.
 func (r *GraphRepository) ListBlockers(ctx context.Context, blockedAccountID, after string, limit int) ([]graph.BlockEdge, error) {
-	rows, err := r.db.reader().ListBlockersPage(ctx, sqlitegen.ListBlockersPageParams{
+	rows, err := r.db.reader().ListBlockersPage(ctx, graphgen.ListBlockersPageParams{
 		AccountID: blockedAccountID, After: after, PageLimit: int64(limit),
 	})
 	if err != nil {
@@ -304,7 +304,7 @@ func (r *GraphRepository) ListBlockers(ctx context.Context, blockedAccountID, af
 
 // ListMuters implements graph.Repository.
 func (r *GraphRepository) ListMuters(ctx context.Context, targetAccountID string, now time.Time, after string, limit int) ([]graph.Mute, error) {
-	rows, err := r.db.reader().ListActiveMutersPage(ctx, sqlitegen.ListActiveMutersPageParams{
+	rows, err := r.db.reader().ListActiveMutersPage(ctx, graphgen.ListActiveMutersPageParams{
 		TargetAccountID: targetAccountID, Now: toMillis(now), After: after, PageLimit: int64(limit),
 	})
 	if err != nil {

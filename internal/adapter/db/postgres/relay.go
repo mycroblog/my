@@ -6,7 +6,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/mycroblog/my/internal/adapter/db/postgres/postgresgen"
+	"github.com/mycroblog/my/internal/adapter/db/postgres/federationgen"
 	appfederation "github.com/mycroblog/my/internal/app/federation"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/federation"
@@ -16,7 +16,7 @@ var _ appfederation.RelayRepository = (*FederationRepository)(nil)
 
 // relayRow is the shape of every query that reads a relay with its state; the state's columns
 // are NULL for a relay without one.
-type relayRow = postgresgen.GetRelayRow
+type relayRow = federationgen.GetRelayRow
 
 func relayRecord(row relayRow) appfederation.RelayRecord {
 	rec := appfederation.RelayRecord{Relay: federation.Relay{
@@ -42,7 +42,7 @@ func (r *FederationRepository) InsertRelay(ctx context.Context, tx uow.Tx, rl fe
 	if err != nil {
 		return err
 	}
-	err = q.InsertRelay(ctx, postgresgen.InsertRelayParams{
+	err = q.InsertRelay(ctx, federationgen.InsertRelayParams{
 		ID: rl.ID, Protocol: string(rl.Protocol), Url: string(rl.URL), InboxUrl: string(rl.InboxURL), Receive: rl.Receive,
 		CreatedByUserID: toNullString(rl.CreatedByUserID), CreatedAt: rl.CreatedAt,
 	})
@@ -71,7 +71,7 @@ func (r *FederationRepository) InsertRelayEvent(ctx context.Context, tx uow.Tx, 
 	if err != nil {
 		return false, err
 	}
-	n, err := q.InsertRelayEvent(ctx, postgresgen.InsertRelayEventParams{
+	n, err := q.InsertRelayEvent(ctx, federationgen.InsertRelayEventParams{
 		ID: e.ID, RelayID: e.RelayID, Kind: string(e.Kind), FollowActivityUri: string(e.FollowActivityURI),
 		RelayActorUri: toNullString(string(e.RelayActorURI)), ActorUserID: toNullString(e.ActorUserID), OccurredAt: e.OccurredAt,
 	})
@@ -84,7 +84,7 @@ func (r *FederationRepository) UpsertRelayState(ctx context.Context, tx uow.Tx, 
 	if err != nil {
 		return err
 	}
-	err = q.UpsertRelayState(ctx, postgresgen.UpsertRelayStateParams{
+	err = q.UpsertRelayState(ctx, federationgen.UpsertRelayStateParams{
 		RelayID: s.RelayID, State: string(s.State), FollowActivityUri: string(s.FollowActivityURI),
 		RelayActorUri: toNullString(string(s.RelayActorURI)), Since: s.Since,
 	})

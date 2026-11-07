@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"slices"
 
-	"github.com/mycroblog/my/internal/adapter/db/sqlite/sqlitegen"
+	"github.com/mycroblog/my/internal/adapter/db/sqlite/accountgen"
 	appaccount "github.com/mycroblog/my/internal/app/account"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/account"
@@ -31,7 +31,7 @@ func (r *AccountRepository) InsertAccount(ctx context.Context, tx uow.Tx, a acco
 	if err != nil {
 		return err
 	}
-	err = q.InsertAccount(ctx, sqlitegen.InsertAccountParams{
+	err = q.InsertAccount(ctx, accountgen.InsertAccountParams{
 		ID: a.ID, Uri: a.URI, Domain: a.Domain, ActorType: string(a.ActorType), CreatedAt: toMillis(a.CreatedAt),
 	})
 	if isUniqueViolation(err, "accounts.domain, accounts.actor_type") {
@@ -50,7 +50,7 @@ func (r *AccountRepository) InsertLocalAccount(ctx context.Context, tx uow.Tx, l
 	if err != nil {
 		return err
 	}
-	err = q.InsertLocalAccount(ctx, sqlitegen.InsertLocalAccountParams{
+	err = q.InsertLocalAccount(ctx, accountgen.InsertLocalAccountParams{
 		AccountID: la.AccountID, UserID: la.UserID, Username: la.Username, UsernameNormalized: la.UsernameNormalized,
 	})
 	if isUniqueViolation(err, "local_accounts.username_normalized") {
@@ -65,7 +65,7 @@ func (r *AccountRepository) InsertProfileRevision(ctx context.Context, tx uow.Tx
 	if err != nil {
 		return err
 	}
-	err = q.InsertProfileRevision(ctx, sqlitegen.InsertProfileRevisionParams{
+	err = q.InsertProfileRevision(ctx, accountgen.InsertProfileRevisionParams{
 		ID:            rev.ID,
 		AccountID:     rev.AccountID,
 		Seq:           int64(rev.Seq),
@@ -84,7 +84,7 @@ func (r *AccountRepository) InsertProfileRevision(ctx context.Context, tx uow.Tx
 		return wrap(err, "insert profile revision")
 	}
 	for _, f := range rev.Fields {
-		err := q.InsertProfileField(ctx, sqlitegen.InsertProfileFieldParams{
+		err := q.InsertProfileField(ctx, accountgen.InsertProfileFieldParams{
 			RevisionID: rev.ID, Position: int64(f.Position), Name: f.Name, ValueHtml: f.ValueHTML,
 		})
 		if err != nil {
@@ -92,13 +92,13 @@ func (r *AccountRepository) InsertProfileRevision(ctx context.Context, tx uow.Tx
 		}
 	}
 	for _, id := range rev.EmojiIDs {
-		err := q.InsertProfileRevisionEmoji(ctx, sqlitegen.InsertProfileRevisionEmojiParams{RevisionID: rev.ID, EmojiID: id})
+		err := q.InsertProfileRevisionEmoji(ctx, accountgen.InsertProfileRevisionEmojiParams{RevisionID: rev.ID, EmojiID: id})
 		if err != nil {
 			return wrap(err, "insert profile revision emoji")
 		}
 	}
 	if rev.Remote != nil {
-		err := q.InsertRemoteProfileRevision(ctx, sqlitegen.InsertRemoteProfileRevisionParams{
+		err := q.InsertRemoteProfileRevision(ctx, accountgen.InsertRemoteProfileRevisionParams{
 			RevisionID: rev.ID, SnapshotID: rev.Remote.SnapshotID, HtmlPolicyVersion: int64(rev.Remote.HTMLPolicyVersion),
 			ProfileDigest: rev.Remote.ProfileDigest,
 		})
@@ -109,7 +109,7 @@ func (r *AccountRepository) InsertProfileRevision(ctx context.Context, tx uow.Tx
 	if rev.Source == nil {
 		return nil
 	}
-	if err := q.InsertProfileRevisionSource(ctx, sqlitegen.InsertProfileRevisionSourceParams{
+	if err := q.InsertProfileRevisionSource(ctx, accountgen.InsertProfileRevisionSourceParams{
 		RevisionID: rev.ID, NoteSource: rev.Source.Note,
 	}); err != nil {
 		return wrap(err, "insert profile revision source")
@@ -118,7 +118,7 @@ func (r *AccountRepository) InsertProfileRevision(ctx context.Context, tx uow.Tx
 		if i >= len(rev.Fields) {
 			return fmt.Errorf("profile revision %s: %d field sources for %d fields", rev.ID, len(rev.Source.FieldValues), len(rev.Fields))
 		}
-		err := q.InsertProfileFieldSource(ctx, sqlitegen.InsertProfileFieldSourceParams{
+		err := q.InsertProfileFieldSource(ctx, accountgen.InsertProfileFieldSourceParams{
 			RevisionID: rev.ID, Position: int64(rev.Fields[i].Position), ValueSource: v,
 		})
 		if err != nil {
@@ -134,7 +134,7 @@ func (r *AccountRepository) InsertKey(ctx context.Context, tx uow.Tx, k account.
 	if err != nil {
 		return err
 	}
-	err = q.InsertAccountKey(ctx, sqlitegen.InsertAccountKeyParams{
+	err = q.InsertAccountKey(ctx, accountgen.InsertAccountKeyParams{
 		ID: k.ID, AccountID: k.AccountID, KeyID: k.KeyID, Algorithm: string(k.Algorithm),
 		PublicKeyPem: k.PublicKeyPEM, Fingerprint: k.Fingerprint, CreatedAt: toMillis(k.CreatedAt),
 	})
@@ -148,7 +148,7 @@ func (r *AccountRepository) InsertKey(ctx context.Context, tx uow.Tx, k account.
 	if sealedPrivateKey == nil {
 		return nil
 	}
-	err = q.InsertLocalAccountPrivateKey(ctx, sqlitegen.InsertLocalAccountPrivateKeyParams{
+	err = q.InsertLocalAccountPrivateKey(ctx, accountgen.InsertLocalAccountPrivateKeyParams{
 		AccountKeyID: k.ID, PrivateKeyEnc: sealedPrivateKey,
 	})
 	return wrap(err, "insert private key")
@@ -160,7 +160,7 @@ func (r *AccountRepository) InsertLifecycleEvent(ctx context.Context, tx uow.Tx,
 	if err != nil {
 		return err
 	}
-	err = q.InsertLifecycleEvent(ctx, sqlitegen.InsertLifecycleEventParams{
+	err = q.InsertLifecycleEvent(ctx, accountgen.InsertLifecycleEventParams{
 		ID:                 e.ID,
 		AccountID:          e.AccountID,
 		Kind:               string(e.Kind),
@@ -178,7 +178,7 @@ func (r *AccountRepository) UpsertHandle(ctx context.Context, tx uow.Tx, h accou
 	if err != nil {
 		return err
 	}
-	return wrap(q.UpsertAccountHandle(ctx, sqlitegen.UpsertAccountHandleParams(h)), "upsert account handle")
+	return wrap(q.UpsertAccountHandle(ctx, accountgen.UpsertAccountHandleParams(h)), "upsert account handle")
 }
 
 // DeleteAllHandles implements account.Repository.
@@ -209,7 +209,7 @@ func (r *AccountRepository) UpsertProfileHead(ctx context.Context, tx uow.Tx, h 
 	if err != nil {
 		return err
 	}
-	err = q.UpsertProfileHead(ctx, sqlitegen.UpsertProfileHeadParams{AccountID: h.AccountID, RevisionID: h.RevisionID})
+	err = q.UpsertProfileHead(ctx, accountgen.UpsertProfileHeadParams{AccountID: h.AccountID, RevisionID: h.RevisionID})
 	return wrap(err, "upsert profile head")
 }
 
@@ -235,7 +235,7 @@ func (r *AccountRepository) LifecycleState(ctx context.Context, tx uow.Tx, accou
 	return lifecycleState(row), nil
 }
 
-func lifecycleState(row sqlitegen.AccountLifecycleState) account.LifecycleState {
+func lifecycleState(row accountgen.AccountLifecycleState) account.LifecycleState {
 	return account.LifecycleState{
 		AccountID:     row.AccountID,
 		State:         account.LifecycleStateName(row.State),
@@ -269,7 +269,7 @@ func (r *AccountRepository) UpsertLifecycleState(ctx context.Context, tx uow.Tx,
 	if err != nil {
 		return err
 	}
-	err = q.UpsertLifecycleState(ctx, sqlitegen.UpsertLifecycleStateParams{
+	err = q.UpsertLifecycleState(ctx, accountgen.UpsertLifecycleStateParams{
 		AccountID: s.AccountID, State: string(s.State), Since: toMillis(s.Since), DeletionDueAt: toNullMillis(s.DeletionDueAt),
 	})
 	return wrap(err, "upsert lifecycle state")
@@ -382,7 +382,7 @@ func (r *AccountRepository) ListLifecycleStates(ctx context.Context) ([]account.
 	return out, nil
 }
 
-func accountFrom(row sqlitegen.Account) account.Account {
+func accountFrom(row accountgen.Account) account.Account {
 	return account.Account{
 		ID: row.ID, URI: row.Uri, Domain: row.Domain, ActorType: account.ActorType(row.ActorType), CreatedAt: fromMillis(row.CreatedAt),
 	}
@@ -428,7 +428,7 @@ func (r *AccountRepository) AnyAccountOnDomain(ctx context.Context, domain strin
 	if err != nil {
 		return false, err
 	}
-	found, err := r.db.reader().AnyAccountOnDomain(ctx, sqlitegen.AnyAccountOnDomainParams{Domain: domain, Ids: list})
+	found, err := r.db.reader().AnyAccountOnDomain(ctx, accountgen.AnyAccountOnDomainParams{Domain: domain, Ids: list})
 	if err != nil {
 		return false, wrap(err, "find accounts on "+domain)
 	}
@@ -464,7 +464,7 @@ func (r *AccountRepository) AccountsOnDomain(ctx context.Context, tx uow.Tx, dom
 	if err != nil {
 		return nil, err
 	}
-	out, err := q.ListAccountsOnDomain(ctx, sqlitegen.ListAccountsOnDomainParams{Domain: domain, Ids: list})
+	out, err := q.ListAccountsOnDomain(ctx, accountgen.ListAccountsOnDomainParams{Domain: domain, Ids: list})
 	if err != nil {
 		return nil, wrap(err, "list accounts on "+domain)
 	}
@@ -473,7 +473,7 @@ func (r *AccountRepository) AccountsOnDomain(ctx context.Context, tx uow.Tx, dom
 
 // ListAccountIDsOnDomain implements account.Repository.
 func (r *AccountRepository) ListAccountIDsOnDomain(ctx context.Context, domain, after string, limit int) ([]string, error) {
-	out, err := r.db.reader().ListAccountIDsOnDomainAfter(ctx, sqlitegen.ListAccountIDsOnDomainAfterParams{Domain: domain, After: after, PageLimit: int64(limit)})
+	out, err := r.db.reader().ListAccountIDsOnDomainAfter(ctx, accountgen.ListAccountIDsOnDomainAfterParams{Domain: domain, After: after, PageLimit: int64(limit)})
 	if err != nil {
 		return nil, wrap(err, "list accounts on "+domain)
 	}
@@ -482,7 +482,7 @@ func (r *AccountRepository) ListAccountIDsOnDomain(ctx context.Context, domain, 
 
 // ListLocalAccountIDs implements account.Repository.
 func (r *AccountRepository) ListLocalAccountIDs(ctx context.Context, after string, limit int) ([]string, error) {
-	out, err := r.db.reader().ListLocalAccountIDsAfter(ctx, sqlitegen.ListLocalAccountIDsAfterParams{After: after, PageLimit: int64(limit)})
+	out, err := r.db.reader().ListLocalAccountIDsAfter(ctx, accountgen.ListLocalAccountIDsAfterParams{After: after, PageLimit: int64(limit)})
 	if err != nil {
 		return nil, wrap(err, "list local account ids")
 	}
@@ -518,7 +518,7 @@ func (r *AccountRepository) FindLocalAccountByUser(ctx context.Context, userID s
 
 // FindHandle implements account.Repository.
 func (r *AccountRepository) FindHandle(ctx context.Context, usernameNormalized, domain string) (account.Handle, error) {
-	row, err := r.db.reader().GetAccountHandleByName(ctx, sqlitegen.GetAccountHandleByNameParams{
+	row, err := r.db.reader().GetAccountHandleByName(ctx, accountgen.GetAccountHandleByNameParams{
 		UsernameNormalized: usernameNormalized, Domain: domain,
 	})
 	if err != nil {
@@ -550,7 +550,7 @@ func (r *AccountRepository) CurrentProfile(ctx context.Context, tx uow.Tx, accou
 	return currentProfile(ctx, q, accountID)
 }
 
-func currentProfile(ctx context.Context, q *sqlitegen.Queries, accountID string) (account.ProfileRevision, error) {
+func currentProfile(ctx context.Context, q *genQueries, accountID string) (account.ProfileRevision, error) {
 	head, err := q.GetProfileHead(ctx, accountID)
 	if err != nil {
 		return account.ProfileRevision{}, notFound(err, appaccount.ErrNotFound, "profile head of "+accountID)

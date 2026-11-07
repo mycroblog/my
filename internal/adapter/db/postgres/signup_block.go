@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/mycroblog/my/internal/adapter/db/postgres/postgresgen"
+	"github.com/mycroblog/my/internal/adapter/db/postgres/moderationgen"
 	appmoderation "github.com/mycroblog/my/internal/app/moderation"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/moderation"
@@ -21,14 +21,14 @@ func (r *ModerationRepository) InsertSignupBlock(ctx context.Context, tx uow.Tx,
 	if err != nil {
 		return err
 	}
-	return wrap(q.InsertSignupBlock(ctx, postgresgen.InsertSignupBlockParams{
+	return wrap(q.InsertSignupBlock(ctx, moderationgen.InsertSignupBlockParams{
 		ID: b.ID, Kind: string(b.Kind), Value: b.Value, Severity: string(b.Severity), Comment: toNullString(b.Comment),
 		ModerationActionID: toNullString(b.ModerationActionID), CreatedByUserID: toNullString(b.CreatedByUserID),
 		ExpiresAt: b.ExpiresAt, CreatedAt: b.CreatedAt,
 	}), "insert signup block")
 }
 
-func signupBlockFrom(row postgresgen.SignupBlock) moderation.SignupBlock {
+func signupBlockFrom(row moderationgen.SignupBlock) moderation.SignupBlock {
 	return moderation.SignupBlock{
 		ID: row.ID, Kind: moderation.SignupBlockKind(row.Kind), Value: row.Value, Severity: moderation.SignupBlockSeverity(row.Severity),
 		Comment: fromNullString(row.Comment), ModerationActionID: fromNullString(row.ModerationActionID),
@@ -55,7 +55,7 @@ func (r *ModerationRepository) InsertSignupBlockLift(ctx context.Context, tx uow
 	if err != nil {
 		return err
 	}
-	n, err := q.InsertSignupBlockLift(ctx, postgresgen.InsertSignupBlockLiftParams{
+	n, err := q.InsertSignupBlockLift(ctx, moderationgen.InsertSignupBlockLiftParams{
 		BlockID: l.BlockID, LiftedByUserID: toNullString(l.LiftedByUserID), LiftedAt: l.LiftedAt,
 	})
 	if err != nil {
@@ -67,8 +67,8 @@ func (r *ModerationRepository) InsertSignupBlockLift(ctx context.Context, tx uow
 	return nil
 }
 
-func signupBlockRecordFrom(row postgresgen.ListSignupBlocksRow) moderation.SignupBlockRecord {
-	rec := moderation.SignupBlockRecord{Block: signupBlockFrom(postgresgen.SignupBlock{
+func signupBlockRecordFrom(row moderationgen.ListSignupBlocksRow) moderation.SignupBlockRecord {
+	rec := moderation.SignupBlockRecord{Block: signupBlockFrom(moderationgen.SignupBlock{
 		ID: row.ID, Kind: row.Kind, Value: row.Value, Severity: row.Severity, Comment: row.Comment,
 		ModerationActionID: row.ModerationActionID, CreatedByUserID: row.CreatedByUserID, ExpiresAt: row.ExpiresAt,
 		CreatedAt: row.CreatedAt,
@@ -85,7 +85,7 @@ func (r *ModerationRepository) FindSignupBlockRecord(ctx context.Context, id str
 	if err != nil {
 		return moderation.SignupBlockRecord{}, notFound(err, appmoderation.ErrNotFound, "signup block "+id)
 	}
-	return signupBlockRecordFrom(postgresgen.ListSignupBlocksRow(row)), nil
+	return signupBlockRecordFrom(moderationgen.ListSignupBlocksRow(row)), nil
 }
 
 // ListSignupBlocks implements moderation.SignupBlockRepository.
@@ -94,7 +94,7 @@ func (r *ModerationRepository) ListSignupBlocks(ctx context.Context, q appmodera
 	if err != nil {
 		return nil, err
 	}
-	rows, err := r.db.reader().ListSignupBlocks(ctx, postgresgen.ListSignupBlocksParams{
+	rows, err := r.db.reader().ListSignupBlocks(ctx, moderationgen.ListSignupBlocksParams{
 		Kind: string(q.Kind), InEffectAt: q.InEffectAt, Before: toNullString(q.Before), Lim: lim,
 	})
 	if err != nil {
@@ -113,7 +113,7 @@ func (r *ModerationRepository) SignupBlocksInEffect(ctx context.Context, m appmo
 	if domains == nil {
 		domains = []string{}
 	}
-	rows, err := r.db.reader().ListSignupBlocksInEffect(ctx, postgresgen.ListSignupBlocksInEffectParams{
+	rows, err := r.db.reader().ListSignupBlocksInEffect(ctx, moderationgen.ListSignupBlocksInEffectParams{
 		Now: now, Domains: domains, EmailHash: m.EmailHash,
 	})
 	if err != nil {
@@ -135,7 +135,7 @@ func (r *ModerationRepository) SignupBlocksInEffectOf(ctx context.Context, tx uo
 	if values == nil {
 		values = []string{}
 	}
-	rows, err := q.ListSignupBlocksInEffectOfValues(ctx, postgresgen.ListSignupBlocksInEffectOfValuesParams{
+	rows, err := q.ListSignupBlocksInEffectOfValues(ctx, moderationgen.ListSignupBlocksInEffectOfValuesParams{
 		Kind: string(kind), Vals: values, Now: now,
 	})
 	if err != nil {

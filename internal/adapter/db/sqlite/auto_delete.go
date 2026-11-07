@@ -6,7 +6,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/mycroblog/my/internal/adapter/db/sqlite/sqlitegen"
+	"github.com/mycroblog/my/internal/adapter/db/sqlite/contentgen"
 	appcontent "github.com/mycroblog/my/internal/app/content"
 	"github.com/mycroblog/my/internal/app/kernel"
 	"github.com/mycroblog/my/internal/app/uow"
@@ -31,7 +31,7 @@ func (r *StatusRepository) SaveAutoDeletePolicy(ctx context.Context, tx uow.Tx, 
 	if err != nil {
 		return err
 	}
-	err = q.UpsertStatusAutoDeletePolicy(ctx, sqlitegen.UpsertStatusAutoDeletePolicyParams{
+	err = q.UpsertStatusAutoDeletePolicy(ctx, contentgen.UpsertStatusAutoDeletePolicyParams{
 		AccountID: p.AccountID, Enabled: boolToInt(p.Enabled), MinAgeDays: int64(p.MinAgeDays),
 		KeepPinned: boolToInt(p.KeepPinned), KeepBookmarked: boolToInt(p.KeepBookmarked),
 		KeepFavourited: boolToInt(p.KeepFavourited), KeepMedia: boolToInt(p.KeepMedia), KeepPolls: boolToInt(p.KeepPolls),
@@ -44,7 +44,7 @@ func (r *StatusRepository) SaveAutoDeletePolicy(ctx context.Context, tx uow.Tx, 
 		return wrap(err, "replace auto delete kept visibilities")
 	}
 	for _, v := range p.KeepVisibilities {
-		err := q.InsertStatusAutoDeleteKeptVisibility(ctx, sqlitegen.InsertStatusAutoDeleteKeptVisibilityParams{
+		err := q.InsertStatusAutoDeleteKeptVisibility(ctx, contentgen.InsertStatusAutoDeleteKeptVisibilityParams{
 			AccountID: p.AccountID, Visibility: string(v),
 		})
 		if err != nil {
@@ -57,7 +57,7 @@ func (r *StatusRepository) SaveAutoDeletePolicy(ctx context.Context, tx uow.Tx, 
 // ListEnabledAutoDeletePolicies implements content.AutoDeleteRepository.
 func (r *StatusRepository) ListEnabledAutoDeletePolicies(ctx context.Context, after string, limit int) ([]content.AutoDeletePolicy, error) {
 	q := r.db.reader()
-	rows, err := q.ListEnabledStatusAutoDeletePolicies(ctx, sqlitegen.ListEnabledStatusAutoDeletePoliciesParams{
+	rows, err := q.ListEnabledStatusAutoDeletePolicies(ctx, contentgen.ListEnabledStatusAutoDeletePoliciesParams{
 		After: after, BatchLimit: int64(limit),
 	})
 	if err != nil {
@@ -90,7 +90,7 @@ func (r *StatusRepository) ListStatusesToAutoDelete(ctx context.Context, tx uow.
 	if err != nil {
 		return nil, err
 	}
-	rows, err := q.ListStatusesToAutoDelete(ctx, sqlitegen.ListStatusesToAutoDeleteParams{
+	rows, err := q.ListStatusesToAutoDelete(ctx, contentgen.ListStatusesToAutoDeleteParams{
 		AccountID: p.AccountID, IDBefore: kernel.UUIDv7Floor(before.Add(time.Millisecond)), PublishedBefore: toMillis(before),
 		KeptVisibilities: keptJSON, KeepPinned: boolToInt(p.KeepPinned), KeepBookmarked: boolToInt(p.KeepBookmarked),
 		KeepFavourited: boolToInt(p.KeepFavourited), KeepMedia: boolToInt(p.KeepMedia), KeepPolls: boolToInt(p.KeepPolls),
@@ -107,7 +107,7 @@ func (r *StatusRepository) ListStatusesToAutoDelete(ctx context.Context, tx uow.
 	return out, nil
 }
 
-func autoDeletePolicyFrom(ctx context.Context, q *sqlitegen.Queries, row sqlitegen.StatusAutoDeletePolicy) (content.AutoDeletePolicy, error) {
+func autoDeletePolicyFrom(ctx context.Context, q *genQueries, row contentgen.StatusAutoDeletePolicy) (content.AutoDeletePolicy, error) {
 	vs, err := q.ListStatusAutoDeleteKeptVisibilities(ctx, row.AccountID)
 	if err != nil {
 		return content.AutoDeletePolicy{}, wrap(err, "list auto delete kept visibilities")
@@ -153,7 +153,7 @@ func (r *StatusRepository) FindAutoDeleteLimitTx(ctx context.Context, tx uow.Tx,
 	return autoDeleteLimit(ctx, q, accountID)
 }
 
-func autoDeleteLimit(ctx context.Context, q *sqlitegen.Queries, accountID string) (content.AutoDeleteLimitNotice, error) {
+func autoDeleteLimit(ctx context.Context, q *genQueries, accountID string) (content.AutoDeleteLimitNotice, error) {
 	row, err := q.GetStatusAutoDeleteLimit(ctx, accountID)
 	if err != nil {
 		return content.AutoDeleteLimitNotice{}, notFound(err, appcontent.ErrNotFound, "auto delete limit of "+accountID)
@@ -169,13 +169,13 @@ func (r *StatusRepository) RecordAutoDeleteLimitNotice(ctx context.Context, tx u
 	if err != nil {
 		return err
 	}
-	err = q.InsertStatusAutoDeleteLimitNotice(ctx, sqlitegen.InsertStatusAutoDeleteLimitNoticeParams{
+	err = q.InsertStatusAutoDeleteLimitNotice(ctx, contentgen.InsertStatusAutoDeleteLimitNoticeParams{
 		ID: n.ID, AccountID: n.AccountID, MaxAgeDays: int64(n.MaxAgeDays), NoticedAt: toMillis(n.NoticedAt), EnforceFrom: toMillis(n.EnforceFrom),
 	})
 	if err != nil {
 		return wrap(err, "insert auto delete limit notice")
 	}
-	err = q.UpsertStatusAutoDeleteLimit(ctx, sqlitegen.UpsertStatusAutoDeleteLimitParams{
+	err = q.UpsertStatusAutoDeleteLimit(ctx, contentgen.UpsertStatusAutoDeleteLimitParams{
 		AccountID: n.AccountID, NoticeID: n.ID, MaxAgeDays: int64(n.MaxAgeDays), EnforceFrom: toMillis(n.EnforceFrom),
 	})
 	return wrap(err, "upsert auto delete limit")

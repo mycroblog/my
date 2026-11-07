@@ -3,9 +3,18 @@
 # sqlc configuration (ADR-0003). The sqlc version is pinned in tools/go.mod. Regenerate with
 # `scripts/task.sh go:sqlc`; `scripts/task.sh go:sqlc-check` (part of `scripts/task.sh check`) fails when the committed code is stale.
 #
-# Product queries live in queries/<dialect>/*.sql, read the files of schema/<dialect>/, and generate into
-# internal/adapter/db/<dialect>/<dialect>gen. Comments above a query become the doc comment of
-# its generated method.
+# Product queries are split by module (ADR-0153 §3): one entry per module and dialect reads
+# queries/<dialect>/<module>/*.sql and generates the package internal/adapter/db/<dialect>/<module>gen,
+# so a change to one module's queries regenerates only that package. An entry's schema is the files
+# of schema/<dialect>/ of the module and of the modules it depends on (the imports of
+# internal/app/<module>, with the queue's tables in 10-infrastructure.sql), so a query can join the
+# tables of those modules. omit_unused_structs keeps a package's models.go to the tables that its
+# own queries return whole, and every query names its tables, so the other files of the schema
+# add no code. The one exception: content's retention query keeps a status deletion while a
+# notification names the status, so the content entries also read 07-notification.sql. The first
+# entry of a dialect holds its generator options (&sqlite-go, &postgres-go); the others merge them
+# and set their own package and out.
+# Comments above a query become the doc comment of its generated method.
 #
 # The queue entries generate the queries of the database job queue (internal/adapter/queue/db)
 # from queries/<dialect>/queue/*.sql into internal/adapter/queue/db/internal/<dialect>queue.
@@ -14,24 +23,298 @@
 # multi-byte character, which cuts generated queries short or rejects sqlc.arg / @name rewrites.
 version: "2"
 sql:
-  - name: sqlite
+  - name: sqlite-account
     engine: sqlite
-    schema: schema/sqlite
-    queries: queries/sqlite
+    schema:
+      - schema/sqlite/02-account.sql
+      - schema/sqlite/10-infrastructure.sql
+      - schema/sqlite/16-hook.sql
+    queries: queries/sqlite/account
     gen:
-      go:
-        package: sqlitegen
-        out: internal/adapter/db/sqlite/sqlitegen
+      go: &sqlite-go
+        package: accountgen
+        out: internal/adapter/db/sqlite/accountgen
         emit_empty_slices: true
         omit_unused_structs: true
-  - name: postgres
-    engine: postgresql
-    schema: schema/postgres
-    queries: queries/postgres
+  - name: sqlite-content
+    engine: sqlite
+    schema:
+      - schema/sqlite/02-account.sql
+      - schema/sqlite/04-content.sql
+      - schema/sqlite/05-graph.sql
+      - schema/sqlite/07-notification.sql
+      - schema/sqlite/10-infrastructure.sql
+      - schema/sqlite/16-hook.sql
+    queries: queries/sqlite/content
     gen:
       go:
-        package: postgresgen
-        out: internal/adapter/db/postgres/postgresgen
+        <<: *sqlite-go
+        package: contentgen
+        out: internal/adapter/db/sqlite/contentgen
+  - name: sqlite-dbupgrade
+    engine: sqlite
+    schema:
+      - schema/sqlite/10-infrastructure.sql
+    queries: queries/sqlite/dbupgrade
+    gen:
+      go:
+        <<: *sqlite-go
+        package: dbupgradegen
+        out: internal/adapter/db/sqlite/dbupgradegen
+  - name: sqlite-diagnostics
+    engine: sqlite
+    schema:
+      - schema/sqlite/10-infrastructure.sql
+      - schema/sqlite/15-diagnostics.sql
+    queries: queries/sqlite/diagnostics
+    gen:
+      go:
+        <<: *sqlite-go
+        package: diagnosticsgen
+        out: internal/adapter/db/sqlite/diagnosticsgen
+  - name: sqlite-federation
+    engine: sqlite
+    schema:
+      - schema/sqlite/02-account.sql
+      - schema/sqlite/03-moderation.sql
+      - schema/sqlite/04-content.sql
+      - schema/sqlite/05-graph.sql
+      - schema/sqlite/06-timeline.sql
+      - schema/sqlite/08-federation.sql
+      - schema/sqlite/09-instance.sql
+      - schema/sqlite/10-infrastructure.sql
+      - schema/sqlite/16-hook.sql
+    queries: queries/sqlite/federation
+    gen:
+      go:
+        <<: *sqlite-go
+        package: federationgen
+        out: internal/adapter/db/sqlite/federationgen
+  - name: sqlite-finance
+    engine: sqlite
+    schema:
+      - schema/sqlite/02-account.sql
+      - schema/sqlite/03-moderation.sql
+      - schema/sqlite/04-content.sql
+      - schema/sqlite/05-graph.sql
+      - schema/sqlite/10-infrastructure.sql
+      - schema/sqlite/12-finance.sql
+      - schema/sqlite/16-hook.sql
+    queries: queries/sqlite/finance
+    gen:
+      go:
+        <<: *sqlite-go
+        package: financegen
+        out: internal/adapter/db/sqlite/financegen
+  - name: sqlite-graph
+    engine: sqlite
+    schema:
+      - schema/sqlite/02-account.sql
+      - schema/sqlite/05-graph.sql
+      - schema/sqlite/10-infrastructure.sql
+      - schema/sqlite/16-hook.sql
+    queries: queries/sqlite/graph
+    gen:
+      go:
+        <<: *sqlite-go
+        package: graphgen
+        out: internal/adapter/db/sqlite/graphgen
+  - name: sqlite-hook
+    engine: sqlite
+    schema:
+      - schema/sqlite/10-infrastructure.sql
+      - schema/sqlite/16-hook.sql
+    queries: queries/sqlite/hook
+    gen:
+      go:
+        <<: *sqlite-go
+        package: hookgen
+        out: internal/adapter/db/sqlite/hookgen
+  - name: sqlite-identity
+    engine: sqlite
+    schema:
+      - schema/sqlite/01-identity.sql
+      - schema/sqlite/02-account.sql
+      - schema/sqlite/03-moderation.sql
+      - schema/sqlite/04-content.sql
+      - schema/sqlite/05-graph.sql
+      - schema/sqlite/09-instance.sql
+      - schema/sqlite/10-infrastructure.sql
+      - schema/sqlite/16-hook.sql
+    queries: queries/sqlite/identity
+    gen:
+      go:
+        <<: *sqlite-go
+        package: identitygen
+        out: internal/adapter/db/sqlite/identitygen
+  - name: sqlite-instance
+    engine: sqlite
+    schema:
+      - schema/sqlite/02-account.sql
+      - schema/sqlite/03-moderation.sql
+      - schema/sqlite/04-content.sql
+      - schema/sqlite/05-graph.sql
+      - schema/sqlite/09-instance.sql
+      - schema/sqlite/10-infrastructure.sql
+      - schema/sqlite/16-hook.sql
+    queries: queries/sqlite/instance
+    gen:
+      go:
+        <<: *sqlite-go
+        package: instancegen
+        out: internal/adapter/db/sqlite/instancegen
+  - name: sqlite-moderation
+    engine: sqlite
+    schema:
+      - schema/sqlite/02-account.sql
+      - schema/sqlite/03-moderation.sql
+      - schema/sqlite/04-content.sql
+      - schema/sqlite/05-graph.sql
+      - schema/sqlite/10-infrastructure.sql
+      - schema/sqlite/16-hook.sql
+    queries: queries/sqlite/moderation
+    gen:
+      go:
+        <<: *sqlite-go
+        package: moderationgen
+        out: internal/adapter/db/sqlite/moderationgen
+  - name: sqlite-notification
+    engine: sqlite
+    schema:
+      - schema/sqlite/01-identity.sql
+      - schema/sqlite/02-account.sql
+      - schema/sqlite/03-moderation.sql
+      - schema/sqlite/04-content.sql
+      - schema/sqlite/05-graph.sql
+      - schema/sqlite/07-notification.sql
+      - schema/sqlite/09-instance.sql
+      - schema/sqlite/10-infrastructure.sql
+      - schema/sqlite/11-webhook.sql
+      - schema/sqlite/12-finance.sql
+      - schema/sqlite/13-supporters.sql
+      - schema/sqlite/15-diagnostics.sql
+      - schema/sqlite/16-hook.sql
+    queries: queries/sqlite/notification
+    gen:
+      go:
+        <<: *sqlite-go
+        package: notificationgen
+        out: internal/adapter/db/sqlite/notificationgen
+  - name: sqlite-search
+    engine: sqlite
+    schema:
+      - schema/sqlite/02-account.sql
+      - schema/sqlite/03-moderation.sql
+      - schema/sqlite/04-content.sql
+      - schema/sqlite/05-graph.sql
+      - schema/sqlite/06-timeline.sql
+      - schema/sqlite/09-instance.sql
+      - schema/sqlite/10-infrastructure.sql
+      - schema/sqlite/16-hook.sql
+      - schema/sqlite/18-search.sql
+    queries: queries/sqlite/search
+    gen:
+      go:
+        <<: *sqlite-go
+        package: searchgen
+        out: internal/adapter/db/sqlite/searchgen
+  - name: sqlite-supporters
+    engine: sqlite
+    schema:
+      - schema/sqlite/01-identity.sql
+      - schema/sqlite/02-account.sql
+      - schema/sqlite/03-moderation.sql
+      - schema/sqlite/04-content.sql
+      - schema/sqlite/05-graph.sql
+      - schema/sqlite/09-instance.sql
+      - schema/sqlite/10-infrastructure.sql
+      - schema/sqlite/12-finance.sql
+      - schema/sqlite/13-supporters.sql
+      - schema/sqlite/16-hook.sql
+    queries: queries/sqlite/supporters
+    gen:
+      go:
+        <<: *sqlite-go
+        package: supportersgen
+        out: internal/adapter/db/sqlite/supportersgen
+  - name: sqlite-timeline
+    engine: sqlite
+    schema:
+      - schema/sqlite/02-account.sql
+      - schema/sqlite/03-moderation.sql
+      - schema/sqlite/04-content.sql
+      - schema/sqlite/05-graph.sql
+      - schema/sqlite/06-timeline.sql
+      - schema/sqlite/10-infrastructure.sql
+      - schema/sqlite/16-hook.sql
+    queries: queries/sqlite/timeline
+    gen:
+      go:
+        <<: *sqlite-go
+        package: timelinegen
+        out: internal/adapter/db/sqlite/timelinegen
+  - name: sqlite-translation
+    engine: sqlite
+    schema:
+      - schema/sqlite/02-account.sql
+      - schema/sqlite/04-content.sql
+      - schema/sqlite/05-graph.sql
+      - schema/sqlite/10-infrastructure.sql
+      - schema/sqlite/16-hook.sql
+      - schema/sqlite/17-translation.sql
+    queries: queries/sqlite/translation
+    gen:
+      go:
+        <<: *sqlite-go
+        package: translationgen
+        out: internal/adapter/db/sqlite/translationgen
+  - name: sqlite-voice
+    engine: sqlite
+    schema:
+      - schema/sqlite/02-account.sql
+      - schema/sqlite/03-moderation.sql
+      - schema/sqlite/04-content.sql
+      - schema/sqlite/05-graph.sql
+      - schema/sqlite/09-instance.sql
+      - schema/sqlite/10-infrastructure.sql
+      - schema/sqlite/14-voice.sql
+      - schema/sqlite/16-hook.sql
+    queries: queries/sqlite/voice
+    gen:
+      go:
+        <<: *sqlite-go
+        package: voicegen
+        out: internal/adapter/db/sqlite/voicegen
+  - name: sqlite-webhook
+    engine: sqlite
+    schema:
+      - schema/sqlite/01-identity.sql
+      - schema/sqlite/02-account.sql
+      - schema/sqlite/03-moderation.sql
+      - schema/sqlite/04-content.sql
+      - schema/sqlite/05-graph.sql
+      - schema/sqlite/09-instance.sql
+      - schema/sqlite/10-infrastructure.sql
+      - schema/sqlite/11-webhook.sql
+      - schema/sqlite/15-diagnostics.sql
+      - schema/sqlite/16-hook.sql
+    queries: queries/sqlite/webhook
+    gen:
+      go:
+        <<: *sqlite-go
+        package: webhookgen
+        out: internal/adapter/db/sqlite/webhookgen
+  - name: postgres-account
+    engine: postgresql
+    schema:
+      - schema/postgres/02-account.sql
+      - schema/postgres/10-infrastructure.sql
+      - schema/postgres/16-hook.sql
+    queries: queries/postgres/account
+    gen:
+      go: &postgres-go
+        package: accountgen
+        out: internal/adapter/db/postgres/accountgen
         sql_package: pgx/v5
         emit_empty_slices: true
         omit_unused_structs: true
@@ -51,6 +334,275 @@ sql:
             go_type:
               type: time.Time
               pointer: true
+  - name: postgres-content
+    engine: postgresql
+    schema:
+      - schema/postgres/02-account.sql
+      - schema/postgres/04-content.sql
+      - schema/postgres/05-graph.sql
+      - schema/postgres/07-notification.sql
+      - schema/postgres/10-infrastructure.sql
+      - schema/postgres/16-hook.sql
+    queries: queries/postgres/content
+    gen:
+      go:
+        <<: *postgres-go
+        package: contentgen
+        out: internal/adapter/db/postgres/contentgen
+  - name: postgres-dbupgrade
+    engine: postgresql
+    schema:
+      - schema/postgres/10-infrastructure.sql
+    queries: queries/postgres/dbupgrade
+    gen:
+      go:
+        <<: *postgres-go
+        package: dbupgradegen
+        out: internal/adapter/db/postgres/dbupgradegen
+  - name: postgres-diagnostics
+    engine: postgresql
+    schema:
+      - schema/postgres/10-infrastructure.sql
+      - schema/postgres/15-diagnostics.sql
+    queries: queries/postgres/diagnostics
+    gen:
+      go:
+        <<: *postgres-go
+        package: diagnosticsgen
+        out: internal/adapter/db/postgres/diagnosticsgen
+  - name: postgres-federation
+    engine: postgresql
+    schema:
+      - schema/postgres/02-account.sql
+      - schema/postgres/03-moderation.sql
+      - schema/postgres/04-content.sql
+      - schema/postgres/05-graph.sql
+      - schema/postgres/06-timeline.sql
+      - schema/postgres/08-federation.sql
+      - schema/postgres/09-instance.sql
+      - schema/postgres/10-infrastructure.sql
+      - schema/postgres/16-hook.sql
+    queries: queries/postgres/federation
+    gen:
+      go:
+        <<: *postgres-go
+        package: federationgen
+        out: internal/adapter/db/postgres/federationgen
+  - name: postgres-finance
+    engine: postgresql
+    schema:
+      - schema/postgres/02-account.sql
+      - schema/postgres/03-moderation.sql
+      - schema/postgres/04-content.sql
+      - schema/postgres/05-graph.sql
+      - schema/postgres/10-infrastructure.sql
+      - schema/postgres/12-finance.sql
+      - schema/postgres/16-hook.sql
+    queries: queries/postgres/finance
+    gen:
+      go:
+        <<: *postgres-go
+        package: financegen
+        out: internal/adapter/db/postgres/financegen
+  - name: postgres-graph
+    engine: postgresql
+    schema:
+      - schema/postgres/02-account.sql
+      - schema/postgres/05-graph.sql
+      - schema/postgres/10-infrastructure.sql
+      - schema/postgres/16-hook.sql
+    queries: queries/postgres/graph
+    gen:
+      go:
+        <<: *postgres-go
+        package: graphgen
+        out: internal/adapter/db/postgres/graphgen
+  - name: postgres-hook
+    engine: postgresql
+    schema:
+      - schema/postgres/10-infrastructure.sql
+      - schema/postgres/16-hook.sql
+    queries: queries/postgres/hook
+    gen:
+      go:
+        <<: *postgres-go
+        package: hookgen
+        out: internal/adapter/db/postgres/hookgen
+  - name: postgres-identity
+    engine: postgresql
+    schema:
+      - schema/postgres/01-identity.sql
+      - schema/postgres/02-account.sql
+      - schema/postgres/03-moderation.sql
+      - schema/postgres/04-content.sql
+      - schema/postgres/05-graph.sql
+      - schema/postgres/09-instance.sql
+      - schema/postgres/10-infrastructure.sql
+      - schema/postgres/16-hook.sql
+    queries: queries/postgres/identity
+    gen:
+      go:
+        <<: *postgres-go
+        package: identitygen
+        out: internal/adapter/db/postgres/identitygen
+  - name: postgres-instance
+    engine: postgresql
+    schema:
+      - schema/postgres/02-account.sql
+      - schema/postgres/03-moderation.sql
+      - schema/postgres/04-content.sql
+      - schema/postgres/05-graph.sql
+      - schema/postgres/09-instance.sql
+      - schema/postgres/10-infrastructure.sql
+      - schema/postgres/16-hook.sql
+    queries: queries/postgres/instance
+    gen:
+      go:
+        <<: *postgres-go
+        package: instancegen
+        out: internal/adapter/db/postgres/instancegen
+  - name: postgres-moderation
+    engine: postgresql
+    schema:
+      - schema/postgres/02-account.sql
+      - schema/postgres/03-moderation.sql
+      - schema/postgres/04-content.sql
+      - schema/postgres/05-graph.sql
+      - schema/postgres/10-infrastructure.sql
+      - schema/postgres/16-hook.sql
+    queries: queries/postgres/moderation
+    gen:
+      go:
+        <<: *postgres-go
+        package: moderationgen
+        out: internal/adapter/db/postgres/moderationgen
+  - name: postgres-notification
+    engine: postgresql
+    schema:
+      - schema/postgres/01-identity.sql
+      - schema/postgres/02-account.sql
+      - schema/postgres/03-moderation.sql
+      - schema/postgres/04-content.sql
+      - schema/postgres/05-graph.sql
+      - schema/postgres/07-notification.sql
+      - schema/postgres/09-instance.sql
+      - schema/postgres/10-infrastructure.sql
+      - schema/postgres/11-webhook.sql
+      - schema/postgres/12-finance.sql
+      - schema/postgres/13-supporters.sql
+      - schema/postgres/15-diagnostics.sql
+      - schema/postgres/16-hook.sql
+    queries: queries/postgres/notification
+    gen:
+      go:
+        <<: *postgres-go
+        package: notificationgen
+        out: internal/adapter/db/postgres/notificationgen
+  - name: postgres-search
+    engine: postgresql
+    schema:
+      - schema/postgres/02-account.sql
+      - schema/postgres/03-moderation.sql
+      - schema/postgres/04-content.sql
+      - schema/postgres/05-graph.sql
+      - schema/postgres/06-timeline.sql
+      - schema/postgres/09-instance.sql
+      - schema/postgres/10-infrastructure.sql
+      - schema/postgres/16-hook.sql
+      - schema/postgres/18-search.sql
+    queries: queries/postgres/search
+    gen:
+      go:
+        <<: *postgres-go
+        package: searchgen
+        out: internal/adapter/db/postgres/searchgen
+  - name: postgres-supporters
+    engine: postgresql
+    schema:
+      - schema/postgres/01-identity.sql
+      - schema/postgres/02-account.sql
+      - schema/postgres/03-moderation.sql
+      - schema/postgres/04-content.sql
+      - schema/postgres/05-graph.sql
+      - schema/postgres/09-instance.sql
+      - schema/postgres/10-infrastructure.sql
+      - schema/postgres/12-finance.sql
+      - schema/postgres/13-supporters.sql
+      - schema/postgres/16-hook.sql
+    queries: queries/postgres/supporters
+    gen:
+      go:
+        <<: *postgres-go
+        package: supportersgen
+        out: internal/adapter/db/postgres/supportersgen
+  - name: postgres-timeline
+    engine: postgresql
+    schema:
+      - schema/postgres/02-account.sql
+      - schema/postgres/03-moderation.sql
+      - schema/postgres/04-content.sql
+      - schema/postgres/05-graph.sql
+      - schema/postgres/06-timeline.sql
+      - schema/postgres/10-infrastructure.sql
+      - schema/postgres/16-hook.sql
+    queries: queries/postgres/timeline
+    gen:
+      go:
+        <<: *postgres-go
+        package: timelinegen
+        out: internal/adapter/db/postgres/timelinegen
+  - name: postgres-translation
+    engine: postgresql
+    schema:
+      - schema/postgres/02-account.sql
+      - schema/postgres/04-content.sql
+      - schema/postgres/05-graph.sql
+      - schema/postgres/10-infrastructure.sql
+      - schema/postgres/16-hook.sql
+      - schema/postgres/17-translation.sql
+    queries: queries/postgres/translation
+    gen:
+      go:
+        <<: *postgres-go
+        package: translationgen
+        out: internal/adapter/db/postgres/translationgen
+  - name: postgres-voice
+    engine: postgresql
+    schema:
+      - schema/postgres/02-account.sql
+      - schema/postgres/03-moderation.sql
+      - schema/postgres/04-content.sql
+      - schema/postgres/05-graph.sql
+      - schema/postgres/09-instance.sql
+      - schema/postgres/10-infrastructure.sql
+      - schema/postgres/14-voice.sql
+      - schema/postgres/16-hook.sql
+    queries: queries/postgres/voice
+    gen:
+      go:
+        <<: *postgres-go
+        package: voicegen
+        out: internal/adapter/db/postgres/voicegen
+  - name: postgres-webhook
+    engine: postgresql
+    schema:
+      - schema/postgres/01-identity.sql
+      - schema/postgres/02-account.sql
+      - schema/postgres/03-moderation.sql
+      - schema/postgres/04-content.sql
+      - schema/postgres/05-graph.sql
+      - schema/postgres/09-instance.sql
+      - schema/postgres/10-infrastructure.sql
+      - schema/postgres/11-webhook.sql
+      - schema/postgres/15-diagnostics.sql
+      - schema/postgres/16-hook.sql
+    queries: queries/postgres/webhook
+    gen:
+      go:
+        <<: *postgres-go
+        package: webhookgen
+        out: internal/adapter/db/postgres/webhookgen
+
   - name: sqlite-queue
     engine: sqlite
     schema: schema/sqlite

@@ -6,7 +6,7 @@ import (
 	"context"
 	"database/sql"
 
-	"github.com/mycroblog/my/internal/adapter/db/sqlite/sqlitegen"
+	"github.com/mycroblog/my/internal/adapter/db/sqlite/federationgen"
 	appfederation "github.com/mycroblog/my/internal/app/federation"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/federation"
@@ -21,7 +21,7 @@ func (r *FederationRepository) InsertDeliveryAttempt(ctx context.Context, tx uow
 		return err
 	}
 	status := sql.NullInt64{Int64: int64(a.HTTPStatus), Valid: a.HTTPStatus != 0}
-	err = q.InsertDeliveryAttempt(ctx, sqlitegen.InsertDeliveryAttemptParams{
+	err = q.InsertDeliveryAttempt(ctx, federationgen.InsertDeliveryAttemptParams{
 		ID: a.ID, DeliveryID: a.DeliveryID, Outcome: string(a.Outcome), SignatureScheme: toNullString(a.Scheme),
 		StatusCode: status, Error: toNullString(a.Error), AttemptedAt: toMillis(a.AttemptedAt),
 	})
@@ -48,7 +48,7 @@ func (r *FederationRepository) InsertAvailabilityEvent(ctx context.Context, tx u
 	if err != nil {
 		return err
 	}
-	err = q.InsertInstanceAvailabilityEvent(ctx, sqlitegen.InsertInstanceAvailabilityEventParams{
+	err = q.InsertInstanceAvailabilityEvent(ctx, federationgen.InsertInstanceAvailabilityEventParams{
 		ID: e.ID, Domain: e.Domain, Kind: string(e.Kind), Reason: string(e.Reason), OccurredAt: toMillis(e.OccurredAt),
 	})
 	return wrap(err, "insert instance availability event")
@@ -94,7 +94,7 @@ func (r *FederationRepository) FindInstanceHealth(ctx context.Context, domain st
 
 // ListAvailabilityEvents implements federation.Repository.
 func (r *FederationRepository) ListAvailabilityEvents(ctx context.Context, domain, before string, limit int) ([]federation.AvailabilityEvent, error) {
-	rows, err := r.db.reader().ListInstanceAvailabilityEvents(ctx, sqlitegen.ListInstanceAvailabilityEventsParams{
+	rows, err := r.db.reader().ListInstanceAvailabilityEvents(ctx, federationgen.ListInstanceAvailabilityEventsParams{
 		Domain: domain, Before: before, BatchLimit: int64(limit),
 	})
 	if err != nil {
@@ -112,7 +112,7 @@ func (r *FederationRepository) ListAvailabilityEvents(ctx context.Context, domai
 
 // ListUnavailableInstances implements federation.Repository.
 func (r *FederationRepository) ListUnavailableInstances(ctx context.Context, after string, limit int) ([]federation.InstanceHealth, error) {
-	rows, err := r.db.reader().ListUnavailableInstances(ctx, sqlitegen.ListUnavailableInstancesParams{
+	rows, err := r.db.reader().ListUnavailableInstances(ctx, federationgen.ListUnavailableInstancesParams{
 		AfterDomain: after, BatchLimit: int64(limit),
 	})
 	if err != nil {
@@ -127,7 +127,7 @@ func (r *FederationRepository) ListUnavailableInstances(ctx context.Context, aft
 
 // ListInstanceHealth implements federation.Repository.
 func (r *FederationRepository) ListInstanceHealth(ctx context.Context, state federation.InstanceState, after string, limit int) ([]federation.InstanceHealth, error) {
-	rows, err := r.db.reader().ListInstanceHealth(ctx, sqlitegen.ListInstanceHealthParams{
+	rows, err := r.db.reader().ListInstanceHealth(ctx, federationgen.ListInstanceHealthParams{
 		State: string(state), AfterDomain: after, BatchLimit: int64(limit),
 	})
 	if err != nil {
@@ -153,7 +153,7 @@ func (r *FederationRepository) CountInstanceHealth(ctx context.Context) (map[fed
 	return out, nil
 }
 
-func instanceHealth(row sqlitegen.InstanceHealth) federation.InstanceHealth {
+func instanceHealth(row federationgen.InstanceHealth) federation.InstanceHealth {
 	return federation.InstanceHealth{
 		Domain: row.Domain, State: federation.InstanceState(row.State), Since: fromMillis(row.Since),
 		FailureDays: int(row.FailureDays), LastFailureDay: row.LastFailureDay,

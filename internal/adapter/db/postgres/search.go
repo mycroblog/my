@@ -9,7 +9,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
-	"github.com/mycroblog/my/internal/adapter/db/postgres/postgresgen"
+	"github.com/mycroblog/my/internal/adapter/db/postgres/searchgen"
 	"github.com/mycroblog/my/internal/app/search"
 	"github.com/mycroblog/my/internal/app/uow"
 )
@@ -32,7 +32,7 @@ func (r *SearchRepository) StartRebuild(ctx context.Context, tx uow.Tx, b search
 	if err != nil {
 		return false, err
 	}
-	n, err := q.StartSearchRebuild(ctx, postgresgen.StartSearchRebuildParams{
+	n, err := q.StartSearchRebuild(ctx, searchgen.StartSearchRebuildParams{
 		RebuildID: b.ID, Mode: string(b.Mode), Phase: string(b.Phase), Rate: rate, StartedAt: b.StartedAt,
 	})
 	if err != nil {
@@ -69,7 +69,7 @@ func (r *SearchRepository) StepRebuild(ctx context.Context, tx uow.Tx, step sear
 	if err != nil {
 		return false, err
 	}
-	n, err := q.StepSearchRebuild(ctx, postgresgen.StepSearchRebuildParams{
+	n, err := q.StepSearchRebuild(ctx, searchgen.StepSearchRebuildParams{
 		Phase: string(step.Phase), AfterStatusID: step.After, Processed: step.Processed, Failed: step.Failed,
 		LastError: step.LastError, UpdatedAt: step.UpdatedAt,
 		RebuildID: step.ID, FromPhase: string(step.FromPhase), FromAfter: step.FromAfter,
@@ -90,7 +90,7 @@ func (r *SearchRepository) SetRebuildRate(ctx context.Context, tx uow.Tx, id str
 	if err != nil {
 		return err
 	}
-	return wrap(q.SetSearchRebuildRate(ctx, postgresgen.SetSearchRebuildRateParams{Rate: pgRate, RebuildID: id}), "set search rebuild rate")
+	return wrap(q.SetSearchRebuildRate(ctx, searchgen.SetSearchRebuildRateParams{Rate: pgRate, RebuildID: id}), "set search rebuild rate")
 }
 
 // SetRebuildError implements search.Repository.
@@ -99,7 +99,7 @@ func (r *SearchRepository) SetRebuildError(ctx context.Context, tx uow.Tx, id, m
 	if err != nil {
 		return err
 	}
-	return wrap(q.SetSearchRebuildError(ctx, postgresgen.SetSearchRebuildErrorParams{LastError: message, UpdatedAt: at, RebuildID: id}), "set search rebuild error")
+	return wrap(q.SetSearchRebuildError(ctx, searchgen.SetSearchRebuildErrorParams{LastError: message, UpdatedAt: at, RebuildID: id}), "set search rebuild error")
 }
 
 // AddRebuildFailures implements search.Repository.
@@ -109,7 +109,7 @@ func (r *SearchRepository) AddRebuildFailures(ctx context.Context, tx uow.Tx, id
 		return err
 	}
 	for _, f := range failures {
-		err := q.AddSearchRebuildFailure(ctx, postgresgen.AddSearchRebuildFailureParams{
+		err := q.AddSearchRebuildFailure(ctx, searchgen.AddSearchRebuildFailureParams{
 			RebuildID: id, StatusID: f.StatusID, Message: f.Message, FailedAt: f.FailedAt,
 		})
 		if err != nil {
@@ -125,7 +125,7 @@ func (r *SearchRepository) ListRebuildFailures(ctx context.Context, id string, l
 	if err != nil {
 		return nil, err
 	}
-	rows, err := r.db.reader().ListSearchRebuildFailures(ctx, postgresgen.ListSearchRebuildFailuresParams{RebuildID: id, PageLimit: pageLimit})
+	rows, err := r.db.reader().ListSearchRebuildFailures(ctx, searchgen.ListSearchRebuildFailuresParams{RebuildID: id, PageLimit: pageLimit})
 	if err != nil {
 		return nil, wrap(err, "list search rebuild failures")
 	}

@@ -9,7 +9,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
-	"github.com/mycroblog/my/internal/adapter/db/postgres/postgresgen"
+	"github.com/mycroblog/my/internal/adapter/db/postgres/federationgen"
 	appfederation "github.com/mycroblog/my/internal/app/federation"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/federation"
@@ -31,7 +31,7 @@ func (r *FederationRepository) InsertOutboundActivity(ctx context.Context, tx uo
 	if err != nil {
 		return err
 	}
-	err = q.InsertOutboundActivity(ctx, postgresgen.InsertOutboundActivityParams{
+	err = q.InsertOutboundActivity(ctx, federationgen.InsertOutboundActivityParams{
 		ID: a.ID, ActivityUri: string(a.ActivityURI), Type: string(a.Type), ActorAccountID: a.ActorAccountID,
 		ObjectType: string(a.ObjectKind), ObjectID: a.ObjectID, CreatedAt: a.CreatedAt,
 	})
@@ -44,7 +44,7 @@ func (r *FederationRepository) InsertOutboundDocument(ctx context.Context, tx uo
 	if err != nil {
 		return false, err
 	}
-	n, err := q.InsertOutboundActivityDocument(ctx, postgresgen.InsertOutboundActivityDocumentParams{
+	n, err := q.InsertOutboundActivityDocument(ctx, federationgen.InsertOutboundActivityDocumentParams{
 		OutboundActivityID: outboundActivityID, Document: document, BuiltAt: builtAt,
 	})
 	return n == 1, wrap(err, "insert outbound activity document")
@@ -56,7 +56,7 @@ func (r *FederationRepository) InsertDelivery(ctx context.Context, tx uow.Tx, d 
 	if err != nil {
 		return false, err
 	}
-	n, err := q.InsertDelivery(ctx, postgresgen.InsertDeliveryParams{
+	n, err := q.InsertDelivery(ctx, federationgen.InsertDeliveryParams{
 		ID: d.ID, OutboundActivityID: d.OutboundActivityID, InboxUrl: string(d.InboxURL), Domain: d.Domain,
 		CreatedAt: d.CreatedAt,
 	})
@@ -73,7 +73,7 @@ func (r *FederationRepository) UpsertInstanceHealth(ctx context.Context, tx uow.
 	if err != nil {
 		return err
 	}
-	err = q.UpsertInstanceHealth(ctx, postgresgen.UpsertInstanceHealthParams{
+	err = q.UpsertInstanceHealth(ctx, federationgen.UpsertInstanceHealthParams{
 		Domain: h.Domain, State: string(h.State), Since: h.Since, FailureDays: days, LastFailureDay: h.LastFailureDay,
 	})
 	return wrap(err, "upsert instance health")
@@ -90,7 +90,7 @@ func (r *FederationRepository) FindOutboundActivity(ctx context.Context, id stri
 
 // ListOutboundActivitiesOf implements federation.Repository.
 func (r *FederationRepository) ListOutboundActivitiesOf(ctx context.Context, kind federation.OutboundObjectKind, objectID string) ([]federation.OutboundActivity, error) {
-	rows, err := r.db.reader().ListOutboundActivitiesOfObject(ctx, postgresgen.ListOutboundActivitiesOfObjectParams{
+	rows, err := r.db.reader().ListOutboundActivitiesOfObject(ctx, federationgen.ListOutboundActivitiesOfObjectParams{
 		ObjectType: string(kind), ObjectID: objectID,
 	})
 	if err != nil {
@@ -103,7 +103,7 @@ func (r *FederationRepository) ListOutboundActivitiesOf(ctx context.Context, kin
 	return out, nil
 }
 
-func outboundActivity(row postgresgen.OutboundActivity) federation.OutboundActivity {
+func outboundActivity(row federationgen.OutboundActivity) federation.OutboundActivity {
 	return federation.OutboundActivity{
 		ID: row.ID, ActivityURI: federation.IRI(row.ActivityUri), Type: federation.ActivityType(row.Type),
 		ActorAccountID: row.ActorAccountID, ObjectKind: federation.OutboundObjectKind(row.ObjectType),
@@ -126,7 +126,7 @@ func (r *FederationRepository) ListDeliveries(ctx context.Context, outboundActiv
 	if err != nil {
 		return nil, err
 	}
-	rows, err := r.db.reader().ListDeliveriesOfOutboundActivity(ctx, postgresgen.ListDeliveriesOfOutboundActivityParams{
+	rows, err := r.db.reader().ListDeliveriesOfOutboundActivity(ctx, federationgen.ListDeliveriesOfOutboundActivityParams{
 		OutboundActivityID: outboundActivityID, AfterID: toNullString(after), BatchLimit: n,
 	})
 	if err != nil {

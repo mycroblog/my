@@ -5,7 +5,7 @@ package sqlite
 import (
 	"context"
 
-	"github.com/mycroblog/my/internal/adapter/db/sqlite/sqlitegen"
+	"github.com/mycroblog/my/internal/adapter/db/sqlite/timelinegen"
 	apptimeline "github.com/mycroblog/my/internal/app/timeline"
 	"github.com/mycroblog/my/internal/app/uow"
 )
@@ -16,10 +16,10 @@ func (r *TimelineRepository) InsertList(ctx context.Context, tx uow.Tx, l apptim
 	if err != nil {
 		return err
 	}
-	if err := q.InsertList(ctx, sqlitegen.InsertListParams{ID: l.ID, OwnerAccountID: l.OwnerAccountID, CreatedAt: toMillis(l.CreatedAt)}); err != nil {
+	if err := q.InsertList(ctx, timelinegen.InsertListParams{ID: l.ID, OwnerAccountID: l.OwnerAccountID, CreatedAt: toMillis(l.CreatedAt)}); err != nil {
 		return wrap(err, "insert list")
 	}
-	return wrap(q.UpsertListName(ctx, sqlitegen.UpsertListNameParams{ListID: l.ID, Name: l.Name}), "insert list name")
+	return wrap(q.UpsertListName(ctx, timelinegen.UpsertListNameParams{ListID: l.ID, Name: l.Name}), "insert list name")
 }
 
 // RenameList implements timeline.Repository.
@@ -28,7 +28,7 @@ func (r *TimelineRepository) RenameList(ctx context.Context, tx uow.Tx, id, name
 	if err != nil {
 		return err
 	}
-	return wrap(q.UpsertListName(ctx, sqlitegen.UpsertListNameParams{ListID: id, Name: name}), "rename list")
+	return wrap(q.UpsertListName(ctx, timelinegen.UpsertListNameParams{ListID: id, Name: name}), "rename list")
 }
 
 // DeleteList implements timeline.Repository.
@@ -59,7 +59,7 @@ func (r *TimelineRepository) List(ctx context.Context, id string) (apptimeline.L
 	return listFrom(r.db.reader().GetList(ctx, id))
 }
 
-func listFrom(row sqlitegen.GetListRow, err error) (apptimeline.List, error) {
+func listFrom(row timelinegen.GetListRow, err error) (apptimeline.List, error) {
 	if err != nil {
 		return apptimeline.List{}, notFound(err, apptimeline.ErrNotFound, "list")
 	}
@@ -82,7 +82,7 @@ func (r *TimelineRepository) Following(ctx context.Context, tx uow.Tx, followerA
 	if err != nil {
 		return false, err
 	}
-	ok, err := q.FeedFollowEdgeExists(ctx, sqlitegen.FeedFollowEdgeExistsParams{
+	ok, err := q.FeedFollowEdgeExists(ctx, timelinegen.FeedFollowEdgeExistsParams{
 		FollowerAccountID: followerAccountID, FolloweeAccountID: followeeAccountID,
 	})
 	return ok, wrap(err, "look up feed follow edge")
@@ -94,7 +94,7 @@ func (r *TimelineRepository) InsertListMember(ctx context.Context, tx uow.Tx, m 
 	if err != nil {
 		return false, err
 	}
-	n, err := q.InsertListMember(ctx, sqlitegen.InsertListMemberParams{
+	n, err := q.InsertListMember(ctx, timelinegen.InsertListMemberParams{
 		ListID: m.ListID, MemberAccountID: m.MemberAccountID, OwnerAccountID: m.OwnerAccountID, AddedAt: toMillis(m.AddedAt),
 	})
 	return n == 1, wrap(err, "insert list member")
@@ -106,7 +106,7 @@ func (r *TimelineRepository) DeleteListMember(ctx context.Context, tx uow.Tx, li
 	if err != nil {
 		return err
 	}
-	return wrap(q.DeleteListMember(ctx, sqlitegen.DeleteListMemberParams{ListID: listID, MemberAccountID: memberAccountID}), "delete list member")
+	return wrap(q.DeleteListMember(ctx, timelinegen.DeleteListMemberParams{ListID: listID, MemberAccountID: memberAccountID}), "delete list member")
 }
 
 // CountListMembers implements timeline.Repository.
@@ -125,7 +125,7 @@ func (r *TimelineRepository) DeleteListMembersOfFollow(ctx context.Context, tx u
 	if err != nil {
 		return err
 	}
-	return wrap(q.DeleteListMembersOfFollow(ctx, sqlitegen.DeleteListMembersOfFollowParams{
+	return wrap(q.DeleteListMembersOfFollow(ctx, timelinegen.DeleteListMembersOfFollowParams{
 		OwnerAccountID: ownerAccountID, MemberAccountID: memberAccountID,
 	}), "delete list members of a follow")
 }
@@ -154,13 +154,13 @@ func (r *TimelineRepository) ListsOf(ctx context.Context, ownerAccountID string)
 
 // ListMembers implements timeline.Repository.
 func (r *TimelineRepository) ListMembers(ctx context.Context, listID, after string, limit int) ([]string, error) {
-	ids, err := r.db.reader().ListListMembers(ctx, sqlitegen.ListListMembersParams{ListID: listID, After: after, PageLimit: int64(limit)})
+	ids, err := r.db.reader().ListListMembers(ctx, timelinegen.ListListMembersParams{ListID: listID, After: after, PageLimit: int64(limit)})
 	return ids, wrap(err, "list list members")
 }
 
 // ListIDsWithMember implements timeline.Repository.
 func (r *TimelineRepository) ListIDsWithMember(ctx context.Context, ownerAccountID, memberAccountID string) ([]string, error) {
-	ids, err := r.db.reader().ListListIDsWithMember(ctx, sqlitegen.ListListIDsWithMemberParams{
+	ids, err := r.db.reader().ListListIDsWithMember(ctx, timelinegen.ListListIDsWithMemberParams{
 		OwnerAccountID: ownerAccountID, MemberAccountID: memberAccountID,
 	})
 	return ids, wrap(err, "list the lists with a member")
@@ -187,7 +187,7 @@ func (r *TimelineRepository) ListListEntries(ctx context.Context, lq apptimeline
 	if err != nil {
 		return nil, err
 	}
-	rows, err := r.db.reader().ListListEntries(ctx, sqlitegen.ListListEntriesParams{
+	rows, err := r.db.reader().ListListEntries(ctx, timelinegen.ListListEntriesParams{
 		ListID: lq.ListID, Viewer: lq.ViewerAccountID, Before: lq.Before, WindowFloor: lq.Floor, Now: toMillis(lq.Now),
 		AllLanguages: all, Languages: langs, PageLimit: int64(lq.Limit),
 	})
