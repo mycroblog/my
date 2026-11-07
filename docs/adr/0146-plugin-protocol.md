@@ -295,7 +295,7 @@ proto の版はパッケージごとの `v1` で、`my` の Go のインター�
   - `mailer` は `--mail-to` を要求し、指定がなければ送る事例を飛ばす
   - `billing` は `max_requests = 0` の事例だけを既定にし、課金される事例は `--billed` で足す
   - `key_manager` は使い捨ての DEK だけを使う
-  - `media_image` と `media_audio` はテストの画像と音声だけを送る。位置情報やタグが除去されて返ることも確かめる
+  - `media_image`・`media_video`・`media_audio` はテストの画像・動画・音声だけを送る。位置情報やタグが除去されて返ることも確かめる
 - 接続の設定は `plugin_<kind>_*` と同じ意味のフラグで渡す
 
 ### 17. ライセンス

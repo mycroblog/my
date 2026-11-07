@@ -58,6 +58,7 @@ var table = map[string][]Case{
 	kind.Translator:    translatorCases,
 	kind.Search:        searchCases,
 	kind.MediaImage:    mediaImageCases,
+	kind.MediaVideo:    mediaVideoCases,
 	kind.MediaAudio:    mediaAudioCases,
 	kind.KeyManager:    keyManagerCases,
 	kind.InboundStatus: hookCases(kind.InboundStatus, hookv1.Verdict_VERDICT_ALLOW, hookv1.Verdict_VERDICT_DROP, hookv1.Verdict_VERDICT_FLAG, hookv1.Verdict_VERDICT_MARK_SENSITIVE),
