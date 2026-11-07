@@ -31,8 +31,10 @@ type AutoDeleteHarness struct {
 // The factory registers the cleanup of everything it creates with t.Cleanup.
 type AutoDeleteFactory func(t *testing.T, opts uow.Options) AutoDeleteHarness
 
-// AutoDeleteContract verifies the automatic deletion of local accounts' own old posts (FR-118)
-// on a database adapter, with the content module's projectors and use cases: the policies are
+// AutoDeleteFlows verifies the automatic deletion of local accounts' own old posts (FR-118) on a
+// database adapter, with the content module's projectors and use cases, the flows of ADR-0153 §1,
+// which internal/flowtest/content runs once on SQLite; AutoDeleteContract checks the repository's
+// methods on every adapter. The policies are
 // saved and read back (the default one before any is saved) and listed while enabled; a preview
 // counts what an unsaved policy would delete without deleting it; a run deletes the account's
 // local posts published before the policy's age with origin auto_delete and a
@@ -41,7 +43,7 @@ type AutoDeleteFactory func(t *testing.T, opts uow.Options) AutoDeleteHarness
 // kept visibility, or the boosts or favourites thresholds); it deletes nothing of a disabled
 // policy or of an account that is not active; and it deletes a bounded number of posts per
 // account and run, the rest in the following runs.
-func AutoDeleteContract(t *testing.T, newHarness AutoDeleteFactory) {
+func AutoDeleteFlows(t *testing.T, newHarness AutoDeleteFactory) {
 	t.Helper()
 	cases := []struct {
 		name string
