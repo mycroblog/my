@@ -7,6 +7,7 @@ package moderation_test
 import (
 	"testing"
 
+	sqlitemoderation "github.com/mycroblog/my/internal/adapter/db/sqlite/moderation"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/flowtest"
 	"github.com/mycroblog/my/pkg/testkit/moderationtest"
@@ -14,7 +15,7 @@ import (
 
 func harness(t *testing.T, opts uow.Options) moderationtest.ModerationHarness {
 	db := flowtest.SQLite(t, opts)
-	return moderationtest.ModerationHarness{UnitOfWork: db, Moderation: db.ModerationRepository()}
+	return moderationtest.ModerationHarness{UnitOfWork: db, Moderation: sqlitemoderation.NewRepository(db)}
 }
 
 func TestModerationFlows(t *testing.T) {

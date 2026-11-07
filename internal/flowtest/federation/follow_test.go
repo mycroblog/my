@@ -8,6 +8,11 @@ import (
 	"testing"
 
 	"github.com/mycroblog/my/internal/adapter/db/sqlite"
+	sqliteaccount "github.com/mycroblog/my/internal/adapter/db/sqlite/account"
+	sqlitefederation "github.com/mycroblog/my/internal/adapter/db/sqlite/federation"
+	sqlitegraph "github.com/mycroblog/my/internal/adapter/db/sqlite/graph"
+	sqliteidentity "github.com/mycroblog/my/internal/adapter/db/sqlite/identity"
+	sqlitenotification "github.com/mycroblog/my/internal/adapter/db/sqlite/notification"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/flowtest"
 	"github.com/mycroblog/my/pkg/testkit/federationtest"
@@ -17,13 +22,13 @@ import (
 
 // remoteFollowHarness is the harness of the follow and move flows on db.
 func remoteFollowHarness(db *sqlite.DB) federationtest.RemoteFollowHarness {
-	feds := db.FederationRepository()
+	feds := sqlitefederation.NewRepository(db)
 	return federationtest.RemoteFollowHarness{
 		FollowHarness: graphtest.FollowHarness{
-			AccountHarness: identitytest.AccountHarness{UnitOfWork: db, Identity: db.IdentityRepository(), Accounts: db.AccountRepository()},
-			Graph:          db.GraphRepository(),
+			AccountHarness: identitytest.AccountHarness{UnitOfWork: db, Identity: sqliteidentity.NewRepository(db), Accounts: sqliteaccount.NewRepository(db)},
+			Graph:          sqlitegraph.NewRepository(db),
 		},
-		Notifications: db.NotificationRepository(),
+		Notifications: sqlitenotification.NewRepository(db),
 		Federation:    feds,
 		Inbox:         feds,
 	}

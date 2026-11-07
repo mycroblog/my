@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"github.com/mycroblog/my/internal/adapter/db/sqlite"
+	sqliteidentity "github.com/mycroblog/my/internal/adapter/db/sqlite/identity"
 	"github.com/mycroblog/my/internal/app/kernel"
 	"github.com/mycroblog/my/internal/app/uow"
 	domain "github.com/mycroblog/my/internal/domain/identity"
@@ -154,7 +155,7 @@ func (e *externalEnv) insertProvider(settings domain.LoginProviderSettings, clie
 		e.t.Fatal(err)
 	}
 	now := time.Now()
-	r := e.db.IdentityRepository()
+	r := sqliteidentity.NewRepository(e.db)
 	err = e.db.Tx(ctx, func(tx uow.Tx) error {
 		if err := r.InsertLoginProvider(ctx, tx, id, "", now); err != nil {
 			return err
@@ -202,7 +203,7 @@ func TestGitHubSignIn(t *testing.T) {
 	orgs := e.githubProvider(false, "acme", "labs")
 	e.link(open, "1001", alice)
 	e.link(orgs, "1001", alice)
-	repo := e.db.IdentityRepository()
+	repo := sqliteidentity.NewRepository(e.db)
 
 	t.Run("authorization request", func(t *testing.T) {
 		u, err := url.Parse(begin(e.client(), open))

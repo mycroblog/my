@@ -6,6 +6,13 @@ import (
 	"testing"
 
 	"github.com/mycroblog/my/internal/adapter/db/sqlite"
+	sqliteaccount "github.com/mycroblog/my/internal/adapter/db/sqlite/account"
+	sqlitecontent "github.com/mycroblog/my/internal/adapter/db/sqlite/content"
+	sqlitefederation "github.com/mycroblog/my/internal/adapter/db/sqlite/federation"
+	sqlitegraph "github.com/mycroblog/my/internal/adapter/db/sqlite/graph"
+	sqliteidentity "github.com/mycroblog/my/internal/adapter/db/sqlite/identity"
+	sqlitenotification "github.com/mycroblog/my/internal/adapter/db/sqlite/notification"
+	sqlitetimeline "github.com/mycroblog/my/internal/adapter/db/sqlite/timeline"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/flowtest"
 	"github.com/mycroblog/my/pkg/testkit/federationtest"
@@ -16,21 +23,21 @@ import (
 func retentionHarness(db *sqlite.DB) federationtest.RetentionHarness {
 	return federationtest.RetentionHarness{
 		RemoteStatusHarness: federationtest.RemoteStatusHarness{
-			AccountHarness: identitytest.AccountHarness{UnitOfWork: db, Identity: db.IdentityRepository(), Accounts: db.AccountRepository()},
-			Graph:          db.GraphRepository(),
-			Statuses:       db.StatusRepository(),
-			Media:          db.MediaRepository(),
-			Timeline:       db.TimelineRepository(),
-			Notifications:  db.NotificationRepository(),
-			Inbox:          db.FederationRepository(),
+			AccountHarness: identitytest.AccountHarness{UnitOfWork: db, Identity: sqliteidentity.NewRepository(db), Accounts: sqliteaccount.NewRepository(db)},
+			Graph:          sqlitegraph.NewRepository(db),
+			Statuses:       sqlitecontent.NewStatusRepository(db),
+			Media:          sqlitecontent.NewMediaRepository(db),
+			Timeline:       sqlitetimeline.NewRepository(db),
+			Notifications:  sqlitenotification.NewRepository(db),
+			Inbox:          sqlitefederation.NewRepository(db),
 		},
-		Interactions: db.InteractionRepository(),
-		Federation:   db.FederationRepository(),
-		Retention:    db.StatusRepository(),
-		Purges:       db.FederationRepository(),
-		Instances:    db.FederationRepository(),
-		Profiles:     db.AccountRepository(),
-		Emojis:       db.CustomEmojiRepository(),
+		Interactions: sqlitecontent.NewInteractionRepository(db),
+		Federation:   sqlitefederation.NewRepository(db),
+		Retention:    sqlitecontent.NewStatusRepository(db),
+		Purges:       sqlitefederation.NewRepository(db),
+		Instances:    sqlitefederation.NewRepository(db),
+		Profiles:     sqliteaccount.NewRepository(db),
+		Emojis:       sqlitecontent.NewCustomEmojiRepository(db),
 	}
 }
 

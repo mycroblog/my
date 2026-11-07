@@ -1,0 +1,453 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+
+package identity
+
+import (
+	"context"
+	"database/sql"
+	"slices"
+	"time"
+
+	"github.com/mycroblog/my/internal/adapter/db/sqlite"
+	"github.com/mycroblog/my/internal/adapter/db/sqlite/identitygen"
+	appidentity "github.com/mycroblog/my/internal/app/identity"
+	"github.com/mycroblog/my/internal/app/uow"
+	"github.com/mycroblog/my/internal/domain/identity"
+)
+
+// EnsureOAuthClient implements identity.Repository.
+func (r *Repository) EnsureOAuthClient(ctx context.Context, tx uow.Tx, c identity.OAuthClient) (identity.OAuthClient, error) {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return identity.OAuthClient{}, err
+	}
+	err = q.InsertOAuthClientIfAbsent(ctx, identitygen.InsertOAuthClientIfAbsentParams{
+		ID: c.ID, ClientID: c.ClientID, ClientSecretHash: c.SecretHash, Name: c.Name, Website: sqlite.ToNullString(c.Website),
+		Scope: string(c.Scope), Registration: string(c.Registration), OwnerUserID: sqlite.ToNullString(c.OwnerUserID),
+		CreatedAt: sqlite.ToMillis(c.CreatedAt),
+	})
+	if err != nil {
+		return identity.OAuthClient{}, sqlite.Wrap(err, "insert oauth client")
+	}
+	row, err := q.GetOAuthClientByClientID(ctx, c.ClientID)
+	if err != nil {
+		return identity.OAuthClient{}, sqlite.Wrap(err, "get oauth client")
+	}
+	return oauthClientFromRow(row), nil
+}
+
+// ReplaceOAuthClientRedirectURIs implements identity.Repository.
+func (r *Repository) ReplaceOAuthClientRedirectURIs(ctx context.Context, tx uow.Tx, clientID string, uris []string) error {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return err
+	}
+	current, err := q.ListOAuthClientRedirectURIs(ctx, clientID)
+	if err != nil {
+		return sqlite.Wrap(err, "list oauth client redirect uris")
+	}
+	for _, u := range current {
+		if slices.Contains(uris, u) {
+			continue
+		}
+		err := q.DeleteOAuthClientRedirectURI(ctx, identitygen.DeleteOAuthClientRedirectURIParams{OauthClientID: clientID, RedirectUri: u})
+		if err != nil {
+			return sqlite.Wrap(err, "delete oauth client redirect uri")
+		}
+	}
+	for _, u := range uris {
+		err := q.InsertOAuthClientRedirectURIIfAbsent(ctx, identitygen.InsertOAuthClientRedirectURIIfAbsentParams{OauthClientID: clientID, RedirectUri: u})
+		if err != nil {
+			return sqlite.Wrap(err, "insert oauth client redirect uri")
+		}
+	}
+	return nil
+}
+
+// InsertAuthorizationCode implements identity.Repository.
+func (r *Repository) InsertAuthorizationCode(ctx context.Context, tx uow.Tx, c identity.AuthorizationCode) error {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return err
+	}
+	err = q.InsertAuthorizationCode(ctx, identitygen.InsertAuthorizationCodeParams{
+		CodeHash: c.CodeHash, OauthClientID: c.ClientID, UserID: c.UserID, RedirectUri: c.RedirectURI, Scope: string(c.Scope),
+		CodeChallenge: c.CodeChallenge, SessionID: sqlite.ToNullString(c.SessionID), IssuedAt: sqlite.ToMillis(c.IssuedAt), ExpiresAt: sqlite.ToMillis(c.ExpiresAt),
+	})
+	return sqlite.Wrap(err, "insert authorization code")
+}
+
+// InsertAuthorizationCodeRedemption implements identity.Repository.
+func (r *Repository) InsertAuthorizationCodeRedemption(ctx context.Context, tx uow.Tx, red identity.AuthorizationCodeRedemption) (bool, error) {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return false, err
+	}
+	n, err := q.InsertAuthorizationCodeRedemptionIfAbsent(ctx, identitygen.InsertAuthorizationCodeRedemptionIfAbsentParams{
+		CodeHash: red.CodeHash, TokenID: red.TokenID, RedeemedAt: sqlite.ToMillis(red.RedeemedAt),
+	})
+	return n == 1, sqlite.Wrap(err, "insert authorization code redemption")
+}
+
+// InsertAccessToken implements identity.Repository.
+func (r *Repository) InsertAccessToken(ctx context.Context, tx uow.Tx, t identity.AccessToken) error {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return err
+	}
+	var refreshExpires *time.Time
+	if t.RefreshTokenHash != nil {
+		refreshExpires = &t.RefreshExpiresAt
+	}
+	err = q.InsertAccessToken(ctx, identitygen.InsertAccessTokenParams{
+		ID: t.ID, FamilyID: t.FamilyID, OauthClientID: t.ClientID, UserID: t.UserID,
+		AccessTokenHash: t.AccessTokenHash, RefreshTokenHash: t.RefreshTokenHash, Scope: string(t.Scope),
+		RotatedFromTokenID: sqlite.ToNullString(t.RotatedFromTokenID), IssuedAt: sqlite.ToMillis(t.IssuedAt),
+		ExpiresAt: sqlite.ToMillis(t.ExpiresAt), RefreshExpiresAt: sqlite.ToNullMillis(refreshExpires),
+	})
+	return sqlite.Wrap(err, "insert access token")
+}
+
+// InsertTokenRevocation implements identity.Repository.
+func (r *Repository) InsertTokenRevocation(ctx context.Context, tx uow.Tx, rev identity.TokenRevocation) (bool, error) {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return false, err
+	}
+	n, err := q.InsertTokenRevocationIfAbsent(ctx, identitygen.InsertTokenRevocationIfAbsentParams{
+		TokenID: rev.TokenID, Reason: string(rev.Reason), RevokedAt: sqlite.ToMillis(rev.RevokedAt),
+	})
+	return n == 1, sqlite.Wrap(err, "insert token revocation")
+}
+
+// RevokeTokenFamily implements identity.Repository.
+func (r *Repository) RevokeTokenFamily(ctx context.Context, tx uow.Tx, familyID string, reason identity.TokenRevocationReason, at time.Time) error {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return err
+	}
+	err = q.RevokeTokenFamily(ctx, identitygen.RevokeTokenFamilyParams{Reason: string(reason), RevokedAt: sqlite.ToMillis(at), FamilyID: familyID})
+	return sqlite.Wrap(err, "revoke token family")
+}
+
+// LockTokenGrants implements identity.Repository. It does nothing: SQLite runs one write
+// transaction at a time (BEGIN IMMEDIATE).
+func (r *Repository) LockTokenGrants(context.Context, uow.Tx, string) error { return nil }
+
+// SessionRevoked implements identity.Repository.
+func (r *Repository) SessionRevoked(ctx context.Context, tx uow.Tx, sessionID string) (bool, error) {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return false, err
+	}
+	revoked, err := q.SessionRevoked(ctx, sessionID)
+	return revoked, sqlite.Wrap(err, "check session revocation")
+}
+
+// TokenFamilyActive implements identity.Repository.
+func (r *Repository) TokenFamilyActive(ctx context.Context, familyID string, now time.Time) (bool, error) {
+	active, err := r.db.reader().TokenFamilyActive(ctx, identitygen.TokenFamilyActiveParams{FamilyID: familyID, Now: sqlite.ToMillis(now)})
+	return active, sqlite.Wrap(err, "check token family")
+}
+
+// ListUnusedDynamicOAuthClients implements identity.Repository.
+func (r *Repository) ListUnusedDynamicOAuthClients(ctx context.Context, unredeemedBefore, recordsKeptSince, idleBefore, now time.Time, limit int) ([]string, error) {
+	ids, err := r.db.reader().ListUnusedDynamicOAuthClients(ctx, identitygen.ListUnusedDynamicOAuthClientsParams{
+		UnredeemedBefore: sqlite.ToMillis(unredeemedBefore), RecordsKeptSince: sqlite.ToMillis(recordsKeptSince), IdleBefore: sqlite.ToMillis(idleBefore), Now: sqlite.ToMillis(now), BatchLimit: int64(limit),
+	})
+	return ids, sqlite.Wrap(err, "list unused dynamic oauth clients")
+}
+
+// RevokeSessionOfTokenFamily implements identity.Repository.
+func (r *Repository) RevokeSessionOfTokenFamily(ctx context.Context, tx uow.Tx, familyID string, reason identity.RevocationReason, at time.Time) error {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return err
+	}
+	err = q.RevokeSessionOfTokenFamily(ctx, identitygen.RevokeSessionOfTokenFamilyParams{Reason: string(reason), RevokedAt: sqlite.ToMillis(at), FamilyID: familyID})
+	return sqlite.Wrap(err, "revoke the session of a token family")
+}
+
+// FindOAuthClient implements identity.Repository.
+func (r *Repository) FindOAuthClient(ctx context.Context, clientID string) (identity.OAuthClient, []string, error) {
+	q := r.db.reader()
+	row, err := q.GetOAuthClientByClientID(ctx, clientID)
+	if err != nil {
+		return identity.OAuthClient{}, nil, sqlite.NotFound(err, appidentity.ErrNotFound, "oauth client")
+	}
+	uris, err := q.ListOAuthClientRedirectURIs(ctx, row.ID)
+	if err != nil {
+		return identity.OAuthClient{}, nil, sqlite.Wrap(err, "list oauth client redirect uris")
+	}
+	c, err := currentOAuthClient(ctx, q, oauthClientFromRow(row))
+	return c, uris, err
+}
+
+// FindOAuthClientByID implements identity.Repository.
+func (r *Repository) FindOAuthClientByID(ctx context.Context, id string) (identity.OAuthClient, error) {
+	q := r.db.reader()
+	row, err := q.GetOAuthClientByID(ctx, id)
+	if err != nil {
+		return identity.OAuthClient{}, sqlite.NotFound(err, appidentity.ErrNotFound, "oauth client")
+	}
+	return currentOAuthClient(ctx, q, oauthClientFromRow(row))
+}
+
+// FindAuthorizationCode implements identity.Repository.
+func (r *Repository) FindAuthorizationCode(ctx context.Context, codeHash []byte) (identity.AuthorizationCode, error) {
+	row, err := r.db.reader().GetAuthorizationCode(ctx, codeHash)
+	if err != nil {
+		return identity.AuthorizationCode{}, sqlite.NotFound(err, appidentity.ErrNotFound, "authorization code")
+	}
+	return identity.AuthorizationCode{
+		CodeHash: row.CodeHash, ClientID: row.OauthClientID, UserID: row.UserID, RedirectURI: row.RedirectUri,
+		Scope: identity.Scope(row.Scope), CodeChallenge: row.CodeChallenge, SessionID: row.SessionID.String,
+		IssuedAt: sqlite.FromMillis(row.IssuedAt), ExpiresAt: sqlite.FromMillis(row.ExpiresAt),
+	}, nil
+}
+
+// FindAuthorizationCodeRedemption implements identity.Repository.
+func (r *Repository) FindAuthorizationCodeRedemption(ctx context.Context, codeHash []byte) (identity.AuthorizationCodeRedemption, error) {
+	row, err := r.db.reader().GetAuthorizationCodeRedemption(ctx, codeHash)
+	if err != nil {
+		return identity.AuthorizationCodeRedemption{}, sqlite.NotFound(err, appidentity.ErrNotFound, "authorization code redemption")
+	}
+	return identity.AuthorizationCodeRedemption{CodeHash: row.CodeHash, TokenID: row.TokenID, RedeemedAt: sqlite.FromMillis(row.RedeemedAt)}, nil
+}
+
+// FindAccessTokenByAccessHash implements identity.Repository.
+func (r *Repository) FindAccessTokenByAccessHash(ctx context.Context, hash []byte) (identity.AccessToken, identity.TokenState, error) {
+	row, err := r.db.reader().GetAccessTokenByAccessHash(ctx, hash)
+	if err != nil {
+		return identity.AccessToken{}, identity.TokenState{}, sqlite.NotFound(err, appidentity.ErrNotFound, "access token")
+	}
+	state := identity.TokenState{
+		Revoked: row.Revoked, Client: identity.OAuthClientState{Disabled: row.ClientDisabled, Deleted: row.ClientDeleted},
+	}
+	return accessTokenFromRow(row), state, nil
+}
+
+// FindAccessTokenByRefreshHash implements identity.Repository.
+func (r *Repository) FindAccessTokenByRefreshHash(ctx context.Context, hash []byte) (identity.AccessToken, identity.TokenState, error) {
+	row, err := r.db.reader().GetAccessTokenByRefreshHash(ctx, hash)
+	if err != nil {
+		return identity.AccessToken{}, identity.TokenState{}, sqlite.NotFound(err, appidentity.ErrNotFound, "access token")
+	}
+	state := identity.TokenState{
+		Revoked: row.Revoked, Client: identity.OAuthClientState{Disabled: row.ClientDisabled, Deleted: row.ClientDeleted},
+	}
+	return accessTokenFromRow(identitygen.GetAccessTokenByAccessHashRow(row)), state, nil
+}
+
+func oauthClientFromRow(row identitygen.OauthClient) identity.OAuthClient {
+	return identity.OAuthClient{
+		ID: row.ID, ClientID: row.ClientID, SecretHash: row.ClientSecretHash, Name: row.Name, Website: row.Website.String,
+		Scope: identity.Scope(row.Scope), Registration: identity.OAuthClientRegistration(row.Registration), OwnerUserID: row.OwnerUserID.String,
+		CreatedAt: sqlite.FromMillis(row.CreatedAt),
+	}
+}
+
+func accessTokenFromRow(row identitygen.GetAccessTokenByAccessHashRow) identity.AccessToken {
+	t := identity.AccessToken{
+		ID: row.ID, FamilyID: row.FamilyID, ClientID: row.OauthClientID, UserID: row.UserID,
+		AccessTokenHash: row.AccessTokenHash, RefreshTokenHash: row.RefreshTokenHash, Scope: identity.Scope(row.Scope),
+		RotatedFromTokenID: row.RotatedFromTokenID.String, IssuedAt: sqlite.FromMillis(row.IssuedAt), ExpiresAt: sqlite.FromMillis(row.ExpiresAt),
+	}
+	if row.RefreshExpiresAt.Valid {
+		t.RefreshExpiresAt = sqlite.FromMillis(row.RefreshExpiresAt.Int64)
+	}
+	return t
+}
+
+// RevokeOtherTokensOfUser implements identity.Repository.
+func (r *Repository) RevokeOtherTokensOfUser(ctx context.Context, tx uow.Tx, userID, keepFamilyID string, reason identity.TokenRevocationReason, at time.Time) error {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return err
+	}
+	err = q.RevokeOtherTokensOfUser(ctx, identitygen.RevokeOtherTokensOfUserParams{
+		Reason: string(reason), RevokedAt: sqlite.ToMillis(at), UserID: userID, KeepFamilyID: keepFamilyID,
+	})
+	return sqlite.Wrap(err, "revoke the other tokens of a user")
+}
+
+// RevokeTokensOfUser implements identity.Repository.
+func (r *Repository) RevokeTokensOfUser(ctx context.Context, tx uow.Tx, userID string, reason identity.TokenRevocationReason, at time.Time) error {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return err
+	}
+	err = q.RevokeTokensOfUser(ctx, identitygen.RevokeTokensOfUserParams{Reason: string(reason), RevokedAt: sqlite.ToMillis(at), UserID: userID})
+	return sqlite.Wrap(err, "revoke the tokens of a user")
+}
+
+// FindOAuthClientState implements identity.Repository.
+func (r *Repository) FindOAuthClientState(ctx context.Context, clientID string) (identity.OAuthClientState, error) {
+	row, err := r.db.reader().GetOAuthClientState(ctx, clientID)
+	if err != nil {
+		return identity.OAuthClientState{}, sqlite.NotFound(err, appidentity.ErrNotFound, "oauth client")
+	}
+	return identity.OAuthClientState{Disabled: row.Disabled, Deleted: row.Deleted}, nil
+}
+
+// RevokeTokensOfClient implements identity.Repository.
+func (r *Repository) RevokeTokensOfClient(ctx context.Context, tx uow.Tx, clientID string, reason identity.TokenRevocationReason, at time.Time) error {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return err
+	}
+	err = q.RevokeTokensOfClient(ctx, identitygen.RevokeTokensOfClientParams{Reason: string(reason), RevokedAt: sqlite.ToMillis(at), OauthClientID: clientID})
+	return sqlite.Wrap(err, "revoke the tokens of a client")
+}
+
+// ListOAuthClients implements identity.Repository.
+func (r *Repository) ListOAuthClients(ctx context.Context, registration identity.OAuthClientRegistration, before string, limit int) ([]identity.OAuthClientListing, error) {
+	rows, err := r.db.reader().ListOAuthClients(ctx, identitygen.ListOAuthClientsParams{
+		Registration: string(registration), Before: before, PageLimit: int64(limit),
+	})
+	if err != nil {
+		return nil, sqlite.Wrap(err, "list oauth clients")
+	}
+	out := make([]identity.OAuthClientListing, len(rows))
+	for i, row := range rows {
+		out[i] = identity.OAuthClientListing{
+			OAuthClient: oauthClientFromRow(identitygen.OauthClient{
+				ID: row.ID, ClientID: row.ClientID, ClientSecretHash: row.ClientSecretHash, Name: row.Name, Website: row.Website,
+				Scope: row.Scope, Registration: row.Registration, OwnerUserID: row.OwnerUserID, CreatedAt: row.CreatedAt,
+			}),
+			Disabled: row.Disabled,
+		}
+	}
+	return out, nil
+}
+
+// InsertOAuthClientDisablement implements identity.Repository.
+func (r *Repository) InsertOAuthClientDisablement(ctx context.Context, tx uow.Tx, dis identity.OAuthClientDisablement) (bool, error) {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return false, err
+	}
+	n, err := q.InsertOAuthClientDisablementIfEnabled(ctx, identitygen.InsertOAuthClientDisablementIfEnabledParams{
+		ID: dis.ID, OauthClientID: dis.ClientID, DisabledByUserID: sqlite.ToNullString(dis.DisabledByUserID), DisabledAt: sqlite.ToMillis(dis.DisabledAt),
+	})
+	return n == 1, sqlite.Wrap(err, "insert oauth client disablement")
+}
+
+// LiftOAuthClientDisablements implements identity.Repository.
+func (r *Repository) LiftOAuthClientDisablements(ctx context.Context, tx uow.Tx, clientID, byUserID string, at time.Time) (bool, error) {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return false, err
+	}
+	n, err := q.LiftOAuthClientDisablements(ctx, identitygen.LiftOAuthClientDisablementsParams{
+		LiftedByUserID: sqlite.ToNullString(byUserID), LiftedAt: sqlite.ToMillis(at), OauthClientID: clientID,
+	})
+	return n > 0, sqlite.Wrap(err, "lift oauth client disablements")
+}
+
+// InsertOAuthClientDeletion implements identity.Repository.
+func (r *Repository) InsertOAuthClientDeletion(ctx context.Context, tx uow.Tx, del identity.OAuthClientDeletion) (bool, error) {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return false, err
+	}
+	n, err := q.InsertOAuthClientDeletionIfAbsent(ctx, identitygen.InsertOAuthClientDeletionIfAbsentParams{
+		OauthClientID: del.ClientID, Reason: string(del.Reason), DeletedByUserID: sqlite.ToNullString(del.DeletedByUserID), DeletedAt: sqlite.ToMillis(del.DeletedAt),
+	})
+	return n == 1, sqlite.Wrap(err, "insert oauth client deletion")
+}
+
+// UpsertTokenFamilyLastUsed implements identity.Repository.
+func (r *Repository) UpsertTokenFamilyLastUsed(ctx context.Context, tx uow.Tx, familyID string, at time.Time) error {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return err
+	}
+	err = q.UpsertTokenFamilyLastUsed(ctx, identitygen.UpsertTokenFamilyLastUsedParams{FamilyID: familyID, LastUsedAt: sqlite.ToMillis(at)})
+	return sqlite.Wrap(err, "record the last use of a token family")
+}
+
+// ListAuthorizedAppTokens implements identity.Repository.
+func (r *Repository) ListAuthorizedAppTokens(ctx context.Context, userID string, now time.Time) ([]identity.AuthorizedAppToken, error) {
+	rows, err := r.db.reader().ListAuthorizedAppTokens(ctx, identitygen.ListAuthorizedAppTokensParams{UserID: userID, Now: sqlite.ToMillis(now)})
+	if err != nil {
+		return nil, sqlite.Wrap(err, "list authorized app tokens")
+	}
+	out := make([]identity.AuthorizedAppToken, len(rows))
+	for i, row := range rows {
+		t := identity.AuthorizedAppToken{
+			FamilyID: row.FamilyID, Scope: identity.Scope(row.TokenScope), AuthorizedAt: sqlite.FromMillis(row.AuthorizedAt),
+			Client: oauthClientFromRow(identitygen.OauthClient{
+				ID: row.ID, ClientID: row.ClientID, ClientSecretHash: row.ClientSecretHash, Name: row.Name, Website: row.Website,
+				Scope: row.Scope, Registration: row.Registration, OwnerUserID: row.OwnerUserID, CreatedAt: row.CreatedAt,
+			}),
+		}
+		if row.LastUsedAt.Valid {
+			u := sqlite.FromMillis(row.LastUsedAt.Int64)
+			t.LastUsedAt = &u
+		}
+		out[i] = t
+	}
+	return out, nil
+}
+
+// RevokeTokensOfUserAndClient implements identity.Repository.
+func (r *Repository) RevokeTokensOfUserAndClient(ctx context.Context, tx uow.Tx, userID, clientID string, reason identity.TokenRevocationReason, at time.Time) (int64, error) {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return 0, err
+	}
+	n, err := q.RevokeTokensOfUserAndClient(ctx, identitygen.RevokeTokensOfUserAndClientParams{Reason: string(reason), RevokedAt: sqlite.ToMillis(at), UserID: userID, OauthClientID: clientID})
+	return n, sqlite.Wrap(err, "revoke the tokens of a user and a client")
+}
+
+// ListBrowserSessions implements identity.Repository.
+func (r *Repository) ListBrowserSessions(ctx context.Context, userID string, now time.Time) ([]identity.BrowserSession, error) {
+	rows, err := r.db.reader().ListBrowserSessions(ctx, identitygen.ListBrowserSessionsParams{UserID: userID, Now: sqlite.ToMillis(now)})
+	if err != nil {
+		return nil, sqlite.Wrap(err, "list browser sessions")
+	}
+	out := make([]identity.BrowserSession, len(rows))
+	for i, row := range rows {
+		s := identity.BrowserSession{ID: row.ID, IP: row.Ip.String, UserAgent: row.UserAgent.String, CreatedAt: sqlite.FromMillis(row.CreatedAt)}
+		if row.LastSeenAt.Valid {
+			at := sqlite.FromMillis(row.LastSeenAt.Int64)
+			s.LastSeenAt = &at
+		}
+		out[i] = s
+	}
+	return out, nil
+}
+
+// ListBrowserSessionFamilies implements identity.Repository.
+func (r *Repository) ListBrowserSessionFamilies(ctx context.Context, userID string, now time.Time) ([]identity.BrowserSessionFamily, error) {
+	rows, err := r.db.reader().ListBrowserSessionFamilies(ctx, identitygen.ListBrowserSessionFamiliesParams{UserID: userID, Now: sqlite.ToMillis(now)})
+	if err != nil {
+		return nil, sqlite.Wrap(err, "list browser session families")
+	}
+	out := make([]identity.BrowserSessionFamily, 0, len(rows))
+	for _, row := range rows {
+		if !row.SessionID.Valid {
+			continue
+		}
+		f := identity.BrowserSessionFamily{SessionID: row.SessionID.String, FamilyID: row.FamilyID}
+		if row.LastUsedAt.Valid {
+			at := sqlite.FromMillis(row.LastUsedAt.Int64)
+			f.LastUsedAt = &at
+		}
+		out = append(out, f)
+	}
+	return out, nil
+}
+
+// RevokeFirstPartyTokensOfSession implements identity.Repository.
+func (r *Repository) RevokeFirstPartyTokensOfSession(ctx context.Context, tx uow.Tx, sessionID string, reason identity.TokenRevocationReason, at time.Time) error {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return err
+	}
+	err = q.RevokeFirstPartyTokensOfSession(ctx, identitygen.RevokeFirstPartyTokensOfSessionParams{
+		Reason: string(reason), RevokedAt: sqlite.ToMillis(at), SessionID: sql.NullString{String: sessionID, Valid: true},
+	})
+	return sqlite.Wrap(err, "revoke the first-party tokens of a session")
+}

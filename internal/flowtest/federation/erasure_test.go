@@ -7,6 +7,12 @@ import (
 	"testing"
 
 	"github.com/mycroblog/my/internal/adapter/db/sqlite"
+	sqliteaccount "github.com/mycroblog/my/internal/adapter/db/sqlite/account"
+	sqlitecontent "github.com/mycroblog/my/internal/adapter/db/sqlite/content"
+	sqlitegraph "github.com/mycroblog/my/internal/adapter/db/sqlite/graph"
+	sqliteidentity "github.com/mycroblog/my/internal/adapter/db/sqlite/identity"
+	sqlitenotification "github.com/mycroblog/my/internal/adapter/db/sqlite/notification"
+	sqlitetimeline "github.com/mycroblog/my/internal/adapter/db/sqlite/timeline"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/pkg/testkit/federationtest"
 	"github.com/mycroblog/my/pkg/testkit/sqlitetest"
@@ -29,12 +35,12 @@ func TestAccountErasureFlows(t *testing.T) {
 		t.Cleanup(func() { _ = raw.Close() })
 		return federationtest.AccountErasureHarness{
 			RetentionHarness:    retentionHarness(db),
-			AccountErasure:      db.AccountRepository(),
-			IdentityErasure:     db.IdentityRepository(),
-			ContentErasure:      db.StatusRepository(),
-			GraphErasure:        db.GraphRepository(),
-			TimelineErasure:     db.TimelineRepository(),
-			NotificationErasure: db.NotificationRepository(),
+			AccountErasure:      sqliteaccount.NewRepository(db),
+			IdentityErasure:     sqliteidentity.NewRepository(db),
+			ContentErasure:      sqlitecontent.NewStatusRepository(db),
+			GraphErasure:        sqlitegraph.NewRepository(db),
+			TimelineErasure:     sqlitetimeline.NewRepository(db),
+			NotificationErasure: sqlitenotification.NewRepository(db),
 			Rows: func(t *testing.T, table, column, value string) int {
 				t.Helper()
 				var n int

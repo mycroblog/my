@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"github.com/mycroblog/my/internal/adapter/db/sqlite"
+	sqliteidentity "github.com/mycroblog/my/internal/adapter/db/sqlite/identity"
 	"github.com/mycroblog/my/internal/app/identity"
 	appinstance "github.com/mycroblog/my/internal/app/instance"
 	"github.com/mycroblog/my/internal/app/kernel"
@@ -174,7 +175,7 @@ func (e *externalEnv) providerWith(settings domain.LoginProviderSettings) string
 	}
 	settings.Issuer, settings.ClientID = identitytest.FakeOIDCIssuer, idpClientID
 	now := time.Now()
-	r := e.db.IdentityRepository()
+	r := sqliteidentity.NewRepository(e.db)
 	err = e.db.Tx(ctx, func(tx uow.Tx) error {
 		if err := r.InsertLoginProvider(ctx, tx, id, "", now); err != nil {
 			return err
@@ -219,7 +220,7 @@ func (e *externalEnv) disable(providerID string) {
 func (e *externalEnv) link(providerID, subject, userID string) {
 	e.t.Helper()
 	ctx := e.t.Context()
-	r := e.db.IdentityRepository()
+	r := sqliteidentity.NewRepository(e.db)
 	err := e.db.Tx(ctx, func(tx uow.Tx) error {
 		x, err := r.EnsureExternalIdentity(ctx, tx, domain.ExternalIdentity{ID: e.id(), ProviderID: providerID, Subject: subject, CreatedAt: time.Now()})
 		if err != nil {
@@ -475,7 +476,7 @@ func TestExternalSignUp(t *testing.T) {
 	e.user("alice", "alice@example.com")
 	id := e.provider("IdP", true)
 	noSignup := e.provider("Closed IdP", false)
-	repo := e.db.IdentityRepository()
+	repo := sqliteidentity.NewRepository(e.db)
 
 	// signUp runs a sign-in of subject and sends the registration form with fields.
 	signUp := func(c *authClient, subject string, claims map[string]any, fields ...string) (*http.Response, string) {

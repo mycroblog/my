@@ -18,6 +18,7 @@ import (
 	"testing"
 
 	"github.com/mycroblog/my/internal/adapter/db/sqlite"
+	sqliteidentity "github.com/mycroblog/my/internal/adapter/db/sqlite/identity"
 	"github.com/mycroblog/my/internal/app/identity"
 	"github.com/mycroblog/my/internal/app/kernel"
 	appmoderation "github.com/mycroblog/my/internal/app/moderation"
@@ -203,7 +204,7 @@ func TestMastodonLoginProviderRegistration(t *testing.T) {
 		app.Get("client_name") != "example.test" {
 		t.Errorf("registration = %v", app)
 	}
-	sec, err := e.db.IdentityRepository().FindLoginProviderSecret(ctx, p.ID)
+	sec, err := sqliteidentity.NewRepository(e.db).FindLoginProviderSecret(ctx, p.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -333,7 +334,7 @@ func TestMastodonSignUp(t *testing.T) {
 		t.Fatalf("sign-up = %d\n%s", resp.StatusCode, body)
 	}
 	bob := e.sessionUser(c)
-	if l, err := e.db.IdentityRepository().FindLinkedExternalIdentity(ctx, id, "42"); err != nil || l.UserID != bob || bob == "" {
+	if l, err := sqliteidentity.NewRepository(e.db).FindLinkedExternalIdentity(ctx, id, "42"); err != nil || l.UserID != bob || bob == "" {
 		t.Errorf("link = %+v, %v; want %q", l, err, bob)
 	}
 	if access, err := e.s.app.Identity.UserAccess(ctx, bob); err != nil || access.EmailVerified {

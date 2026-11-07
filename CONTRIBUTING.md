@@ -276,6 +276,13 @@ scripts/task.sh go:sqlc-check  # fail when the generated code is stale (part of 
   keeps what every module shares (`Clock`, `IDGenerator`, the fakes, the fixtures) and imports none of them. Test
   databases get the desired-state files of `schema/<dialect>/` run directly, in name order (the same SQL Atlas applies
   to an empty database).
+- A database adapter is a base per dialect and a package per module. `internal/adapter/db/<dialect>` holds the
+  connections, the transactions and their retries, and the helpers of the queries; `internal/adapter/db/<dialect>/<module>`
+  holds the repositories of one module of `internal/app`, which run that module's `<module>gen` queries over the base
+  (ADR-0153 §3). A module's package imports the base, its own `<module>gen`, and the packages of the modules its module
+  depends on in `internal/app`; the base imports none of them (depguard `db-base`, `db-<module>`). Move a helper that two
+  modules need into the base. A contract test goes in the package of the module whose `pkg/testkit/<module>test` holds
+  the contract.
 - The SQLite tests get their database from `pkg/testkit/sqlitetest`: `sqlitetest.NewFile(t)` copies a file that the
   test binary made once with the schema applied, and `sqlitetest.ApplySchema` runs a schema in one transaction. Do not
   execute `schema.SQLite` outside a transaction: SQLite then commits and syncs the file after each of its hundreds of

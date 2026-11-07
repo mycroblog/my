@@ -6,6 +6,7 @@ package content_test
 import (
 	"testing"
 
+	sqlitecontent "github.com/mycroblog/my/internal/adapter/db/sqlite/content"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/flowtest"
 	"github.com/mycroblog/my/pkg/testkit/contenttest"
@@ -15,7 +16,7 @@ func TestInteractionFlows(t *testing.T) {
 	t.Parallel()
 	contenttest.InteractionFlows(t, func(t *testing.T, opts uow.Options) contenttest.InteractionHarness {
 		db := flowtest.SQLite(t, opts)
-		return contenttest.InteractionHarness{UnitOfWork: db, Statuses: db.StatusRepository(), Interactions: db.InteractionRepository()}
+		return contenttest.InteractionHarness{UnitOfWork: db, Statuses: sqlitecontent.NewStatusRepository(db), Interactions: sqlitecontent.NewInteractionRepository(db)}
 	})
 }
 
@@ -24,8 +25,8 @@ func TestAutoDeleteFlows(t *testing.T) {
 	contenttest.AutoDeleteFlows(t, func(t *testing.T, opts uow.Options) contenttest.AutoDeleteHarness {
 		db := flowtest.SQLite(t, opts)
 		return contenttest.AutoDeleteHarness{
-			InteractionHarness: contenttest.InteractionHarness{UnitOfWork: db, Statuses: db.StatusRepository(), Interactions: db.InteractionRepository()},
-			AutoDeletes:        db.StatusRepository(),
+			InteractionHarness: contenttest.InteractionHarness{UnitOfWork: db, Statuses: sqlitecontent.NewStatusRepository(db), Interactions: sqlitecontent.NewInteractionRepository(db)},
+			AutoDeletes:        sqlitecontent.NewStatusRepository(db),
 		}
 	})
 }
@@ -34,7 +35,7 @@ func TestMediaFlows(t *testing.T) {
 	t.Parallel()
 	contenttest.MediaFlows(t, func(t *testing.T, opts uow.Options) contenttest.MediaHarness {
 		db := flowtest.SQLite(t, opts)
-		return contenttest.MediaHarness{UnitOfWork: db, Media: db.MediaRepository(), Statuses: db.StatusRepository()}
+		return contenttest.MediaHarness{UnitOfWork: db, Media: sqlitecontent.NewMediaRepository(db), Statuses: sqlitecontent.NewStatusRepository(db)}
 	})
 }
 
@@ -43,7 +44,7 @@ func TestCustomEmojiFlows(t *testing.T) {
 	contenttest.CustomEmojiFlows(t, func(t *testing.T, opts uow.Options) contenttest.CustomEmojiHarness {
 		db := flowtest.SQLite(t, opts)
 		return contenttest.CustomEmojiHarness{
-			UnitOfWork: db, Media: db.MediaRepository(), Statuses: db.StatusRepository(), Emojis: db.CustomEmojiRepository(),
+			UnitOfWork: db, Media: sqlitecontent.NewMediaRepository(db), Statuses: sqlitecontent.NewStatusRepository(db), Emojis: sqlitecontent.NewCustomEmojiRepository(db),
 		}
 	})
 }

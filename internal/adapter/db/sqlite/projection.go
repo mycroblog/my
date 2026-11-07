@@ -48,7 +48,7 @@ func (s *ProjectionStore) Rows(ctx context.Context, tx uow.Tx, table string, off
 	q := fmt.Sprintf("SELECT %s FROM %s ORDER BY %s LIMIT ? OFFSET ?", list, quote(table), list)
 	rows, err := sqlTx.QueryContext(ctx, q, limit, offset)
 	if err != nil {
-		return nil, nil, wrap(err, "read "+table)
+		return nil, nil, Wrap(err, "read "+table)
 	}
 	defer func() { _ = rows.Close() }()
 	var out [][]any
@@ -59,12 +59,12 @@ func (s *ProjectionStore) Rows(ctx context.Context, tx uow.Tx, table string, off
 			ptrs[i] = &values[i]
 		}
 		if err := rows.Scan(ptrs...); err != nil {
-			return nil, nil, wrap(err, "read "+table)
+			return nil, nil, Wrap(err, "read "+table)
 		}
 		out = append(out, values)
 	}
 	if err := rows.Err(); err != nil {
-		return nil, nil, wrap(err, "read "+table)
+		return nil, nil, Wrap(err, "read "+table)
 	}
 	return cols, out, nil
 }
@@ -106,18 +106,18 @@ func execRows(ctx context.Context, tx *sql.Tx, q string, rows [][]any, what stri
 	}
 	stmt, err := tx.PrepareContext(ctx, q)
 	if err != nil {
-		return 0, wrap(err, what)
+		return 0, Wrap(err, what)
 	}
 	defer func() { _ = stmt.Close() }()
 	var total int64
 	for _, r := range rows {
 		res, err := stmt.ExecContext(ctx, r...)
 		if err != nil {
-			return total, wrap(err, what)
+			return total, Wrap(err, what)
 		}
 		n, err := res.RowsAffected()
 		if err != nil {
-			return total, wrap(err, what)
+			return total, Wrap(err, what)
 		}
 		total += n
 	}
@@ -149,18 +149,18 @@ func (s *ProjectionStore) tableColumns(ctx context.Context, tx *sql.Tx, table st
 	}
 	rows, err := tx.QueryContext(ctx, "SELECT name FROM pragma_table_info(?) ORDER BY cid", table)
 	if err != nil {
-		return nil, wrap(err, "read the columns of "+table)
+		return nil, Wrap(err, "read the columns of "+table)
 	}
 	defer func() { _ = rows.Close() }()
 	for rows.Next() {
 		var name string
 		if err := rows.Scan(&name); err != nil {
-			return nil, wrap(err, "read the columns of "+table)
+			return nil, Wrap(err, "read the columns of "+table)
 		}
 		cols = append(cols, name)
 	}
 	if err := rows.Err(); err != nil {
-		return nil, wrap(err, "read the columns of "+table)
+		return nil, Wrap(err, "read the columns of "+table)
 	}
 	if len(cols) == 0 {
 		return nil, fmt.Errorf("sqlite: table %q does not exist", table)

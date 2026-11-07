@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"github.com/mycroblog/my/internal/adapter/db/sqlite"
+	sqliteidentity "github.com/mycroblog/my/internal/adapter/db/sqlite/identity"
 	"github.com/mycroblog/my/internal/app/kernel"
 	"github.com/mycroblog/my/internal/app/uow"
 	domain "github.com/mycroblog/my/internal/domain/identity"
@@ -175,7 +176,7 @@ func TestDiscordSignIn(t *testing.T) {
 	guilds := e.discordProvider(false, guildB, guildA)
 	e.link(open, aliceID, alice)
 	e.link(guilds, aliceID, alice)
-	repo := e.db.IdentityRepository()
+	repo := sqliteidentity.NewRepository(e.db)
 
 	t.Run("authorization request", func(t *testing.T) {
 		u, err := url.Parse(begin(e.client(), open))

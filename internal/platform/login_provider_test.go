@@ -12,6 +12,7 @@ import (
 	"testing"
 
 	"github.com/mycroblog/my/internal/adapter/db/sqlite"
+	sqliteidentity "github.com/mycroblog/my/internal/adapter/db/sqlite/identity"
 	"github.com/mycroblog/my/internal/app/identity"
 	"github.com/mycroblog/my/internal/app/kernel"
 	"github.com/mycroblog/my/internal/app/uow"
@@ -131,7 +132,7 @@ func TestAdminLoginProviders(t *testing.T) {
 			t.Fatal(err)
 		}
 		defer func() { _ = db.Close() }()
-		s, err := db.IdentityRepository().FindLoginProviderSecret(ctx, id)
+		s, err := sqliteidentity.NewRepository(db).FindLoginProviderSecret(ctx, id)
 		if err != nil {
 			t.Fatal(err)
 		}

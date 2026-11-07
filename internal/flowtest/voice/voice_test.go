@@ -7,6 +7,7 @@ package voice_test
 import (
 	"testing"
 
+	sqlitevoice "github.com/mycroblog/my/internal/adapter/db/sqlite/voice"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/flowtest"
 	"github.com/mycroblog/my/pkg/testkit/voicetest"
@@ -16,6 +17,6 @@ func TestVoiceRoomsFlows(t *testing.T) {
 	t.Parallel()
 	voicetest.VoiceRoomsFlows(t, func(t *testing.T, opts uow.Options) voicetest.VoiceHarness {
 		db := flowtest.SQLite(t, opts)
-		return voicetest.VoiceHarness{UnitOfWork: db, Voice: db.VoiceRepository()}
+		return voicetest.VoiceHarness{UnitOfWork: db, Voice: sqlitevoice.NewRepository(db)}
 	})
 }

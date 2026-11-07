@@ -1,7 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-// Package sqlite implements the persistence ports on a local SQLite file with modernc.org/sqlite,
-// which needs no cgo (ADR-0003).
+// Package sqlite is the base of the persistence adapter on a local SQLite file with modernc.org/sqlite,
+// which needs no cgo (ADR-0003): the connections, the transactions and their retries, and the helpers
+// of the queries. The repositories of each module are in the sub-package of the module,
+// internal/adapter/db/sqlite/<module>, over the DB of this package and the queries that sqlc generates
+// for the module (<module>gen); this package imports none of them (ADR-0153 §3).
 //
 // Every connection uses WAL journaling and a busy timeout, and every transaction starts with
 // BEGIN IMMEDIATE, so that writers queue on the database lock instead of failing when a read

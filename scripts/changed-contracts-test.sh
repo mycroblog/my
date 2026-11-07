@@ -40,7 +40,7 @@ expect "the livekit transport" "voice" internal/adapter/voice/livekit/transport.
 expect "a search backend" "search" internal/adapter/search/meilisearch/index.go
 expect "a contract workflow" "voice" .github/workflows/voice-contract.yml
 expect "the tasks of the contracts" "postgres stream mail blob voice search" tasks/go.yml
-expect "the sqlite adapter" "" internal/adapter/db/sqlite/account.go
+expect "the sqlite adapter" "" internal/adapter/db/sqlite/account/account.go
 expect "the sqlite schema" "" schema/sqlite/09-instance.sql
 expect "a module of the application" "" internal/app/content/status.go
 expect "the composition root" "" internal/platform/app.go

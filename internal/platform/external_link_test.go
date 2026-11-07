@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	sqliteidentity "github.com/mycroblog/my/internal/adapter/db/sqlite/identity"
 	"github.com/mycroblog/my/internal/app/identity"
 	domain "github.com/mycroblog/my/internal/domain/identity"
 	"github.com/mycroblog/my/internal/interface/authpages"
@@ -101,7 +102,7 @@ func TestExternalLink(t *testing.T) {
 	if out.Get("linked") != id {
 		t.Fatalf("link outcome = %v", out)
 	}
-	if l, err := e.db.IdentityRepository().FindLinkedExternalIdentity(ctx, id, "subject-alice"); err != nil || l.UserID != alice {
+	if l, err := sqliteidentity.NewRepository(e.db).FindLinkedExternalIdentity(ctx, id, "subject-alice"); err != nil || l.UserID != alice {
 		t.Errorf("FindLinkedExternalIdentity = %+v, %v", l, err)
 	}
 	list, err := svc.LinkedIdentities(ctx, alice)
@@ -126,7 +127,7 @@ func TestExternalLink(t *testing.T) {
 	if _, out := e.runIntent(e.signedIn("bob@example.com"), start, id, map[string]any{"sub": "subject-alice"}); out.Get("external_error") != "linked_elsewhere" {
 		t.Errorf("link of alice's account by bob = %v", out)
 	}
-	if l, _ := e.db.IdentityRepository().FindLinkedExternalIdentity(ctx, id, "subject-alice"); l.UserID != alice {
+	if l, _ := sqliteidentity.NewRepository(e.db).FindLinkedExternalIdentity(ctx, id, "subject-alice"); l.UserID != alice {
 		t.Errorf("subject-alice is linked to %q", l.UserID)
 	}
 }
@@ -226,7 +227,7 @@ func TestExternalConfirmation(t *testing.T) {
 		if err := svc.UnlinkExternalIdentity(ctx, carol, list.Links[0].LinkID); err != nil {
 			t.Errorf("UnlinkExternalIdentity = %v", err)
 		}
-		if _, err := e.db.IdentityRepository().FindLinkedExternalIdentity(ctx, id, "subject-carol"); !errors.Is(err, identity.ErrNotFound) {
+		if _, err := sqliteidentity.NewRepository(e.db).FindLinkedExternalIdentity(ctx, id, "subject-carol"); !errors.Is(err, identity.ErrNotFound) {
 			t.Errorf("FindLinkedExternalIdentity after the unlink = %v", err)
 		}
 	})
