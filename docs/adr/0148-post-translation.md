@@ -184,6 +184,7 @@ LLM を翻訳の提供元にしない。どの版でも同梱しない。
 足すのは次だけで、**ポート・サービス・テーブル・API・Web クライアントは変わらない**。
 
 - `internal/adapter/translator/<提供元>/` と、コントラクトテストの通過
+- 提供元のエラーとポートのエラーの対応: レート制限とクォータは `ErrProviderLimit`、扱わない言語は `ErrUnsupportedLanguage`、それ以外（届かない・時間切れ・提供元のその他のエラー）は `ErrTemporary`。エラーには API キーも投稿の文字も含めない
 - 設定の鍵（API キーは config に置き、API では返さない）と、`tools/agentkit/context-map.yaml` の項目
 - 登録情報: ID・表示名・リンク・ロゴ。応答とインスタンスの情報で配るので、クライアントは提供元の種類を知らずに表示できる
 - `docs/operations/` の運営者向けの文書（ひな形の「選ぶサービス」に受け取るものを足す）

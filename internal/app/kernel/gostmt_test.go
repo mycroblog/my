@@ -21,6 +21,7 @@ var goStatementAllowed = []string{
 	"internal/app/kernel/errorreport.go",
 	"internal/adapter/keymanager/gcpkms/gcpkmstest/",
 	"internal/adapter/plugin/fakeplugin/",
+	"internal/adapter/translator/google/googletest/",
 	"internal/platform/platformtest/",
 }
 

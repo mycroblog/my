@@ -42,6 +42,7 @@ Read the groups in order: start with the overview, then configure the instance b
 - [Domain blocks and handling reports](operations/moderation.md)
 - [Federation relays](operations/relays.md)
 - [Server webhooks](operations/webhooks.md)
+- [Translating posts (LibreTranslate, DeepL, Google Cloud Translation, Amazon Translate)](operations/translation.md)
 - [Plugins (destinations, authentication, protocols, `my plugin test`, a plugin with no library)](operations/plugins.md)
 - [Decision hooks](operations/decision-hooks.md): ask a plugin of yours before accepting posts, follows, sign-ups, and media
 - [Voice chat (choosing P2P, LiveKit or Sora, STUN and TURN, deployment, moderation)](operations/voice.md)

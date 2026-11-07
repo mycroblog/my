@@ -239,6 +239,22 @@ type Config struct {
 	PluginBillingProvider string
 	// PluginTranslatorName is what readers see on a translation by the plugin of the translator kind (ADR-0148 §14).
 	PluginTranslatorName string
+	// TranslatorLibreTranslateURL and TranslatorLibreTranslateAPIKey are the LibreTranslate server that the provider
+	// libretranslate calls, empty for none, and its optional API key (ADR-0148 §15).
+	TranslatorLibreTranslateURL    string
+	TranslatorLibreTranslateAPIKey string
+	// TranslatorDeepLAPIKey is the key of DeepL's API, which registers DeepL as a translation provider (ADR-0148 §15),
+	// and TranslatorDeepLURL its API, empty for the one of the key's plan.
+	TranslatorDeepLAPIKey string
+	TranslatorDeepLURL    string
+	// TranslatorGoogleProject and TranslatorGoogleLocation are the Google Cloud project and the location of the requests
+	// of the translation provider google (ADR-0148 §15); an empty project registers no such provider, and an empty
+	// location is the global one.
+	TranslatorGoogleProject  string
+	TranslatorGoogleLocation string
+	// TranslatorAWSRegion is the region of Amazon Translate; set, it registers the translation
+	// provider aws (ADR-0148 §15).
+	TranslatorAWSRegion string
 	// Voice is how the voice chat rooms connect, "off" for no voice chat (ADR-0101 §1), and the
 	// Voice* limits bound the rooms; zero is no limit, except for VoiceP2PMaxParticipants.
 	Voice                   string
@@ -437,6 +453,11 @@ func (c *Config) LogValue() slog.Value {
 		slog.String("plugin_billing_location", c.PluginBillingLocation),
 		slog.String("plugin_billing_provider", c.PluginBillingProvider),
 		slog.String("plugin_translator_name", c.PluginTranslatorName),
+		slog.String("translator_libretranslate_url", c.TranslatorLibreTranslateURL),
+		slog.String("translator_libretranslate_api_key", redact(c.TranslatorLibreTranslateAPIKey != "")),
+		slog.String("translator_google_project", c.TranslatorGoogleProject),
+		slog.String("translator_google_location", c.TranslatorGoogleLocation),
+		slog.String("translator_aws_region", c.TranslatorAWSRegion),
 		slog.String("payments", c.PaymentsProvider),
 		slog.String("payments_stripe_secret_key", redact(c.PaymentsStripeSecretKey != "")),
 		slog.String("payments_stripe_webhook_secret", redact(c.PaymentsStripeWebhookSecret != "")),
@@ -446,6 +467,8 @@ func (c *Config) LogValue() slog.Value {
 		slog.Duration("payments_reconcile_interval", c.PaymentsReconcileInterval),
 		slog.Int("payments_reconcile_max_requests", c.PaymentsReconcileMaxRequests),
 		slog.String("search", c.Search),
+		slog.String("translator_deepl_api_key", redact(c.TranslatorDeepLAPIKey != "")),
+		slog.String("translator_deepl_url", c.TranslatorDeepLURL),
 		slog.String("voice", c.Voice),
 		slog.Int("voice_p2p_max_participants", c.VoiceP2PMaxParticipants),
 		slog.Int("voice_sfu_max_participants", c.VoiceMaxParticipants),

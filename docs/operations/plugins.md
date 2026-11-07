@@ -183,10 +183,11 @@ protocol, and the authentication before you write the rest of the plugin.
 
 ## Translating posts
 
-A plugin of the kind `translator` lets the server translate a post when a reader asks, through a service you choose. It is
-the only server-side provider in this version. Without one, the only translation is the one built into the reader's browser,
-which exists only in desktop Chrome, Edge, and Opera: readers on a phone, in Firefox, or in Safari get no translate button
-until you enable a server-side provider.
+A plugin of the kind `translator` lets the server translate a post when a reader asks, through a service you choose
+other than the [built-in providers](translation.md) (LibreTranslate, DeepL, Google Cloud Translation, and Amazon
+Translate). Without a server-side provider, the only translation is the one built into the reader's browser, which exists
+only in desktop Chrome, Edge, and Opera: readers on a phone, in Firefox, or in Safari get no translate button until you
+enable one.
 
 ```sh
 MY_PLUGIN_TRANSLATOR_ADDRESS=unix:///run/my/translator.sock
