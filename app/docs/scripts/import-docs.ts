@@ -48,6 +48,7 @@ import {
   headingOf,
   landingPage,
   legalTemplates,
+  localeSegment,
   type PageTranslation,
   translationLocales,
   translationOf,
@@ -61,6 +62,7 @@ const handWritten = new Set(["index.mdx"]);
 /** What a page is written as: a page of the site (in a locale, for a translation) or the plain Markdown form. */
 interface Output {
   absolute: boolean;
+  /** The directory of the locale in the URL space (localeSegment), for a page of a locale. */
   locale?: string;
 }
 
@@ -221,7 +223,7 @@ function translatedPage(page: PageTranslation): string {
     return [...text, ""];
   });
   const { title, rest } = takeTitle(page.file, lines);
-  const body = rewriteBody(page.source, rest, { absolute: false, locale: page.locale });
+  const body = rewriteBody(page.source, rest, { absolute: false, locale: localeSegment(page.locale) });
   const frontmatter = [
     "---",
     `title: ${JSON.stringify(title)}`,
@@ -279,7 +281,7 @@ for (const locale of translationLocales) {
       throw new Error(page.errors.join("\n"));
     }
     const landing = source === landingPage;
-    const out = join(contentDir, locale, landing ? "index.mdx" : `${slugOf(source)}.md`);
+    const out = join(contentDir, localeSegment(locale), landing ? "index.mdx" : `${slugOf(source)}.md`);
     mkdirSync(dirname(out), { recursive: true });
     writeFileSync(out, landing ? translatedLanding(page) : translatedPage(page));
     translated++;
