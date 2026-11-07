@@ -21,6 +21,7 @@ func (a *App) setUpAccount(cfg *config.Config, repo account.Repository) {
 	a.setUpAccountSearch(repo)
 	a.Accounts = account.NewService(account.Deps{
 		UnitOfWork: a.UnitOfWork, Repository: repo, Clock: a.Clock, IDs: a.IDs, Sealer: a.Sealer, Host: cfg.Host,
+		GenerateKey: generateKey,
 		// Profiles are rendered and their images checked by the content module, built below; the
 		// account module does not import it, since the content module imports the account module.
 		RenderProfileText: func(ctx context.Context, text string) (string, error) {

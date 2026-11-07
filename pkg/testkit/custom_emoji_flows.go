@@ -31,8 +31,10 @@ type CustomEmojiHarness struct {
 // factory registers the cleanup of everything it creates with t.Cleanup.
 type CustomEmojiFactory func(t *testing.T, opts uow.Options) CustomEmojiHarness
 
-// CustomEmojiRepositoryContract verifies the custom emoji repository of a database adapter
-// through the use cases that drive it (ADR-0051): local emoji registered with a processed upload
+// CustomEmojiFlows verifies the custom emoji use cases (ADR-0051) on a database adapter, the
+// flows of ADR-0153 §1, which internal/flowtest/content runs once on SQLite;
+// CustomEmojiRepositoryContract checks the repositories' methods on every adapter. The flows cover
+// local emoji registered with a processed upload
 // of the administrator and refused when the shortcode, an alias, the category, or the image
 // breaks a rule; settings and aliases as current values, with the disabled and hidden emoji left
 // out of the picker, the views, the Emoji tags, and the emoji of local texts; new images as new
@@ -42,8 +44,8 @@ type CustomEmojiFactory func(t *testing.T, opts uow.Options) CustomEmojiHarness
 // trace when the image cannot be fetched or does not qualify;
 // the administrators' list with its filters
 // and pages; every operation audited by an event in its transaction; and the requests of the
-// holders of create_custom_emojis (custom_emoji_request_contract.go, ADR-0070).
-func CustomEmojiRepositoryContract(t *testing.T, newHarness CustomEmojiFactory) {
+// holders of create_custom_emojis (custom_emoji_request_flows.go, ADR-0070).
+func CustomEmojiFlows(t *testing.T, newHarness CustomEmojiFactory) {
 	t.Helper()
 	cases := []struct {
 		name string

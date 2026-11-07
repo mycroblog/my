@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-// Package graph_test runs the graph flows (testkit.BlockFlows) once, on SQLite (ADR-0153 §1).
+// Package graph_test runs the graph flows (testkit.BlockFlows, testkit.FollowFlows) once, on SQLite (ADR-0153 §1).
 package graph_test
 
 import (

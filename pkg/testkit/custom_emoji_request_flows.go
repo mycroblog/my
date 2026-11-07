@@ -18,7 +18,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/content"
 )
 
-// The cases of CustomEmojiRepositoryContract on the requests of the holders of
+// The cases of CustomEmojiFlows on the requests of the holders of
 // create_custom_emojis (ADR-0070 §2, §3, §4): a request is no emoji until it is approved; the
 // approval makes the emoji with the requester as its creator and a copy of the image owned by
 // the instance actor; a pending request to create reserves its shortcode; the creators change

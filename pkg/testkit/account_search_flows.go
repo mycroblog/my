@@ -32,7 +32,10 @@ type AccountSearchHarness struct {
 // The factory registers the cleanup of everything it creates with t.Cleanup.
 type AccountSearchFactory func(t *testing.T, opts uow.Options) AccountSearchHarness
 
-// AccountSearchContract verifies the search of accounts (ADR-0092 §1, FR-307) on a database
+// AccountSearchFlows verifies the search of accounts on a database adapter, the flows of ADR-0153
+// §1, which internal/flowtest/identity runs once on SQLite; AccountSearchContract checks the
+// account_search_terms methods of the account repository on every adapter. The flows check the
+// search of accounts (ADR-0092 §1, FR-307) on a database
 // adapter, through appaccount.PrefixSearch wired to the graph and moderation modules as the
 // composition root wires them: the account_search_terms projection matches the username,
 // username@domain, and the display name whole and word by word (NFKC and lowercase, without
@@ -43,7 +46,7 @@ type AccountSearchFactory func(t *testing.T, opts uow.Options) AccountSearchHarn
 // deleted, and suspended accounts, and accounts of a suspended domain are left out, but not
 // accounts that are not indexable; profile revisions, handle checks, and a suspension and its
 // lift update the projection; and a rebuild derives the same rows.
-func AccountSearchContract(t *testing.T, newHarness AccountSearchFactory) {
+func AccountSearchFlows(t *testing.T, newHarness AccountSearchFactory) {
 	t.Helper()
 	cases := []struct {
 		name string

@@ -21,7 +21,9 @@ import (
 )
 
 // FollowHarness is one database under test: an empty database with the product schema, its
-// UnitOfWork, and the identity, account, and graph repositories on it.
+// UnitOfWork, and the identity, account, and graph repositories on it. The port contracts
+// FollowRepositoryContract and BlockRepositoryContract and the flows FollowFlows and BlockFlows
+// use it, as do the suites that build on followEnv.
 type FollowHarness struct {
 	AccountHarness
 	Graph appgraph.Repository
@@ -31,14 +33,16 @@ type FollowHarness struct {
 // The factory registers the cleanup of everything it creates with t.Cleanup.
 type FollowFactory func(t *testing.T, opts uow.Options) FollowHarness
 
-// FollowRepositoryContract verifies the graph repository of a database adapter through the
-// follow use cases between local accounts: following an unlocked account at once, a locked
+// FollowFlows verifies the follow use cases between local accounts on a database adapter, the
+// flows of ADR-0153 §1, which internal/flowtest/graph runs once on SQLite;
+// FollowRepositoryContract checks the graph repository's methods on every adapter: following an
+// unlocked account at once, a locked
 // account through a request that stays pending until accepted, rejecting and withdrawing
 // requests, unfollowing and removing followers, following again as a new follow that keeps the
 // earlier one on record, follow preferences, paging, rejecting invalid follows, recording each
 // transition once, concurrent follows of one pair, the emitted domain events, and the property
 // that follow_edges and follow_counters equal a rebuild from the follows and their events.
-func FollowRepositoryContract(t *testing.T, newHarness FollowFactory) {
+func FollowFlows(t *testing.T, newHarness FollowFactory) {
 	t.Helper()
 	cases := []struct {
 		name string

@@ -265,7 +265,9 @@ scripts/task.sh go:sqlc-check  # fail when the generated code is stale (part of 
     `internal/flowtest/<module>`, the most dependent module it goes through (`testkit.WebhookFlows` in
     `internal/flowtest/webhook`, with `flowtest.SQLite`). depguard keeps these packages off `internal/interface`,
     `internal/platform`, and the postgres adapter.
-  - The **composition root** (`internal/platform`, `cmd/my`) checks the wiring.
+  - The **composition root** (`internal/platform`, `cmd/my`) checks the wiring, and holds the tests that drive the
+    assembled app through its HTTP API. They depend on everything and run on every change, so keep them fast: lower
+    the costs a test does not check (password hashes, key generation, the schema).
 
   When a contract of `pkg/testkit` builds the services of other modules, move that part to a flow and keep the
   repository's methods in a port contract that every adapter runs.

@@ -39,7 +39,9 @@ type PostingHarness struct {
 // The factory registers the cleanup of everything it creates with t.Cleanup.
 type PostingFactory func(t *testing.T, opts uow.Options) PostingHarness
 
-// PostingContract verifies the content module's posting use cases on a database adapter:
+// PostingFlows verifies the content module's posting use cases on a database adapter, the flows
+// of ADR-0153 §1, which internal/flowtest/content runs once on SQLite; PostingContract checks the
+// repository methods they rely on that StatusRepositoryContract does not, on every adapter:
 // posting with mentions, hashtags, and links rendered to HTML; mentions of remote accounts, the
 // unknown ones resolved before the transaction and within bounds; returning the same status for a
 // repeated Idempotency-Key, also under concurrency; the max_status_length setting; rejecting
@@ -48,7 +50,7 @@ type PostingFactory func(t *testing.T, opts uow.Options) PostingHarness
 // author may see; attaching only the author's own processed uploads; the default post language; editing into new revisions that move the head;
 // deleting into a tombstone that removes the status from the projections; the deletion and
 // the sensitivity that moderation actions on statuses record; and the emitted domain events.
-func PostingContract(t *testing.T, newHarness PostingFactory) {
+func PostingFlows(t *testing.T, newHarness PostingFactory) {
 	t.Helper()
 	cases := []struct {
 		name string

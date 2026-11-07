@@ -23,7 +23,10 @@ import (
 	"github.com/mycroblog/my/internal/domain/moderation"
 )
 
-// RegistrationRepositoryContract verifies the registration persistence of a database adapter's
+// RegistrationFlows verifies the sign-up use cases on a database adapter, the flows of ADR-0153
+// §1, which internal/flowtest/identity runs once on SQLite; RegistrationRepositoryContract checks
+// the registration methods of the identity repository on every adapter. The flows check the
+// registration persistence of the
 // identity repository (data-model §4.1) through the sign-up use cases, one case per
 // registration mode: open mode approves at once (or waits for a moderator when email cannot be
 // verified), approval mode waits for a moderator's decision, invite mode needs a valid invite,
@@ -35,7 +38,7 @@ import (
 // a permission with where their moderator notifications are emailed, and the invites that members
 // create (ADR-0106): who may, the caps, and the check of their creator at every sign-up in the
 // open, approval, and invite modes. It uses the same harness as AccountRepositoryContract.
-func RegistrationRepositoryContract(t *testing.T, newHarness AccountFactory) {
+func RegistrationFlows(t *testing.T, newHarness AccountFactory) {
 	t.Helper()
 	cases := []struct {
 		name string
