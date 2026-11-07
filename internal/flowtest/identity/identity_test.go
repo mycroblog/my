@@ -1,0 +1,23 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+
+// Package identity_test runs the identity and account flows once, on SQLite (ADR-0153 §1).
+package identity_test
+
+import (
+	"testing"
+
+	"github.com/mycroblog/my/internal/app/uow"
+	"github.com/mycroblog/my/internal/flowtest"
+	"github.com/mycroblog/my/pkg/testkit"
+)
+
+// accountHarness is the harness of the flows that use the identity and account repositories.
+func accountHarness(t *testing.T, opts uow.Options) testkit.AccountHarness {
+	db := flowtest.SQLite(t, opts)
+	return testkit.AccountHarness{UnitOfWork: db, Identity: db.IdentityRepository(), Accounts: db.AccountRepository()}
+}
+
+func TestRoleFlows(t *testing.T) {
+	t.Parallel()
+	testkit.RoleFlows(t, accountHarness)
+}
