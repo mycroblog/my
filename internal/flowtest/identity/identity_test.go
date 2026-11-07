@@ -26,3 +26,13 @@ func TestRegistrationFlows(t *testing.T) {
 	t.Parallel()
 	testkit.RegistrationFlows(t, accountHarness)
 }
+
+func TestAdminAccountFlows(t *testing.T) {
+	t.Parallel()
+	testkit.AdminAccountFlows(t, func(t *testing.T, opts uow.Options) testkit.AdminAccountHarness {
+		db := flowtest.SQLite(t, opts)
+		return testkit.AdminAccountHarness{
+			UnitOfWork: db, Identity: db.IdentityRepository(), Accounts: db.AccountRepository(), Moderation: db.ModerationRepository(),
+		}
+	})
+}

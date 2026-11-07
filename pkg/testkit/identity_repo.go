@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/mycroblog/my/internal/app/uow"
+	"github.com/mycroblog/my/internal/domain/account"
 	"github.com/mycroblog/my/internal/domain/identity"
 )
 
@@ -61,6 +62,50 @@ func (r *identityRepo) grant(t *testing.T, userID, roleID string) identity.RoleG
 	g := identity.RoleGrant{ID: r.ids.NewID(), UserID: userID, RoleID: roleID, GrantedAt: r.clock.Now()}
 	r.tx(t, func(ctx context.Context, tx uow.Tx) error { return r.h.Identity.InsertRoleGrant(ctx, tx, g) })
 	return g
+}
+
+// localAccount inserts the local account of userID with username and its handle, and returns
+// its ID.
+func (r *identityRepo) localAccount(t *testing.T, userID, username string) string {
+	t.Helper()
+	r.clock.Advance(time.Second)
+	id := r.ids.NewID()
+	normalized := account.NormalizeUsername(username)
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+		a := account.Account{ID: id, URI: "https://" + contractHost + "/ap/actors/" + id, Domain: account.LocalDomain, ActorType: account.ActorPerson, CreatedAt: r.clock.Now()}
+		if err := r.h.Accounts.InsertAccount(ctx, tx, a); err != nil {
+			return err
+		}
+		if err := r.h.Accounts.InsertLocalAccount(ctx, tx, account.LocalAccount{AccountID: id, UserID: userID, Username: username, UsernameNormalized: normalized}); err != nil {
+			return err
+		}
+		return r.h.Accounts.UpsertHandle(ctx, tx, account.Handle{AccountID: id, Username: username, UsernameNormalized: normalized, Domain: account.LocalDomain})
+	})
+	return id
+}
+
+// remoteAccount inserts a remote account of domain, with a handle when username is not "", and
+// returns its ID.
+func (r *identityRepo) remoteAccount(t *testing.T, domain, username string) string {
+	t.Helper()
+	r.clock.Advance(time.Second)
+	id := r.ids.NewID()
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+		a := account.Account{ID: id, URI: "https://" + domain + "/users/" + id, Domain: domain, ActorType: account.ActorPerson, CreatedAt: r.clock.Now()}
+		if err := r.h.Accounts.InsertAccount(ctx, tx, a); err != nil || username == "" {
+			return err
+		}
+		return r.h.Accounts.UpsertHandle(ctx, tx, account.Handle{AccountID: id, Username: username, UsernameNormalized: account.NormalizeUsername(username), Domain: domain})
+	})
+	return id
+}
+
+// lifecycle puts an account in a lifecycle state, as the account module's projector does.
+func (r *identityRepo) lifecycle(t *testing.T, accountID string, state account.LifecycleStateName) {
+	t.Helper()
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+		return r.h.Accounts.UpsertLifecycleState(ctx, tx, account.LifecycleState{AccountID: accountID, State: state, Since: r.clock.Now()})
+	})
 }
 
 // revoke revokes a grant.
