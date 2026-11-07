@@ -1071,6 +1071,7 @@ func TestLoadSettingsRedactSecrets(t *testing.T) {
 		"MY_VOICE_SORA_API_HEADER_VALUE", "Basic abc", "MY_VOICE_SORA_WEBHOOK_PASSWORD", "pw", "MY_VOICE_SORA_CLOUD_API_KEY", "key",
 		"MY_VOICE_SORA_JOIN_SECRET", "0123456789abcdef0123456789abcdef", "MY_ERRORS_SENTRY_DSN", "https://key@o0.ingest.sentry.io/1",
 		"MY_BLOB_S3_ACCESS_KEY_ID", "AKIAEXAMPLE", "MY_BLOB_S3_SECRET_ACCESS_KEY", "s3cr3t",
+		"MY_TRANSLATOR_LIBRETRANSLATE_URL", "http://libretranslate:5000", "MY_TRANSLATOR_LIBRETRANSLATE_API_KEY", "lt-key",
 		"MY_ORIGIN_SECRET", "0123456789abcdef0123456789abcdef", "MY_ORIGIN_SECRET_PREVIOUS", "fedcba9876543210fedcba9876543210", "MY_ORIGIN_SECRET_HEADER", "X-Via-Cdn"), nil))
 	if err != nil {
 		t.Fatal(err)

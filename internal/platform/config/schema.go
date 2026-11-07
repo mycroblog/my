@@ -20,6 +20,7 @@ import (
 	"unicode"
 	"unicode/utf8"
 
+	"github.com/mycroblog/my/internal/adapter/translator/libretranslate"
 	"github.com/mycroblog/my/internal/adapter/webpush"
 	"github.com/mycroblog/my/internal/app/supporters"
 	"github.com/mycroblog/my/internal/interface/mailevents"
@@ -999,6 +1000,19 @@ var schema = []field{
 		set:   func(c *Config, v string) { c.PaymentsReconcileMaxRequests, _ = strconv.Atoi(v) },
 	},
 	{
+		key:   "translator_libretranslate_url",
+		doc:   "The base URL of the LibreTranslate server of the translation provider `libretranslate`, such as `https://libretranslate.com` or a server you run on a private address, such as `http://libretranslate:5000`; `http:` is accepted on any host. Setting it registers the provider, which the instance setting `translation_providers` then enables.",
+		check: func(v string) error { return libretranslate.CheckURL(strings.TrimSpace(v)) },
+		set:   func(c *Config, v string) { c.TranslatorLibreTranslateURL = strings.TrimSpace(v) },
+	},
+	{
+		key:    "translator_libretranslate_api_key",
+		doc:    "The API key of the LibreTranslate server of `translator_libretranslate_url`, when the server requires one, as `libretranslate.com` does. The server sends it with each translation and never shows it to clients.",
+		secret: true,
+		check:  checkNotBlank,
+		set:    func(c *Config, v string) { c.TranslatorLibreTranslateAPIKey = strings.TrimSpace(v) },
+	},
+	{
 		key: "search",
 		doc: "The search engine of the full-text search of statuses. The search of accounts and hashtags uses the database and does not depend on this setting.",
 		def: "none",
@@ -1481,6 +1495,9 @@ func crossChecks(vals map[string]string, present map[string]bool) []Issue {
 	issues = append(issues, workerJobTypeChecks(vals)...)
 	issues = append(issues, workerJobConcurrencyChecks(vals)...)
 	issues = append(issues, queueRouteChecks(vals)...)
+	if present["translator_libretranslate_api_key"] && !present["translator_libretranslate_url"] {
+		issues = append(issues, Issue{Key: "translator_libretranslate_url", Missing: true, Message: "required when translator_libretranslate_api_key is set"})
+	}
 	return issues
 }
 

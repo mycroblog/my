@@ -20,7 +20,11 @@ func (a *App) setUpTranslation(cfg *config.Config, repo translation.Repository, 
 	if err != nil {
 		return err
 	}
-	registered := slices.Concat(opts.TranslationRegistered, plugin)
+	libre, err := libreTranslateProviders(cfg)
+	if err != nil {
+		return err
+	}
+	registered := slices.Concat(opts.TranslationRegistered, plugin, libre)
 	var providers translation.Providers = translation.ConfiguredProviders{
 		Registered: registered,
 		Settings: func(ctx context.Context) (translation.ProviderSettings, error) {

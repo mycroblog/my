@@ -239,6 +239,10 @@ type Config struct {
 	PluginBillingProvider string
 	// PluginTranslatorName is what readers see on a translation by the plugin of the translator kind (ADR-0148 §14).
 	PluginTranslatorName string
+	// TranslatorLibreTranslateURL and TranslatorLibreTranslateAPIKey are the LibreTranslate server that the provider
+	// libretranslate calls, empty for none, and its optional API key (ADR-0148 §15).
+	TranslatorLibreTranslateURL    string
+	TranslatorLibreTranslateAPIKey string
 	// Voice is how the voice chat rooms connect, "off" for no voice chat (ADR-0101 §1), and the
 	// Voice* limits bound the rooms; zero is no limit, except for VoiceP2PMaxParticipants.
 	Voice                   string
@@ -437,6 +441,8 @@ func (c *Config) LogValue() slog.Value {
 		slog.String("plugin_billing_location", c.PluginBillingLocation),
 		slog.String("plugin_billing_provider", c.PluginBillingProvider),
 		slog.String("plugin_translator_name", c.PluginTranslatorName),
+		slog.String("translator_libretranslate_url", c.TranslatorLibreTranslateURL),
+		slog.String("translator_libretranslate_api_key", redact(c.TranslatorLibreTranslateAPIKey != "")),
 		slog.String("payments", c.PaymentsProvider),
 		slog.String("payments_stripe_secret_key", redact(c.PaymentsStripeSecretKey != "")),
 		slog.String("payments_stripe_webhook_secret", redact(c.PaymentsStripeWebhookSecret != "")),
