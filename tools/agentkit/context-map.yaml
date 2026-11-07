@@ -345,7 +345,7 @@ entries:
     docs: ["docs/architecture/data-model/04-tables/07-notification.md#47-notification"]
     userdocs: ["docs/guide/notifications.md"]
   - name: post-subscriptions
-    paths: ["internal/domain/notification/subscription.go", "internal/app/notification/subscription.go", "internal/adapter/db/*/notification_subscription.go", "queries/*/notification_subscription.sql", "internal/interface/clientapi/subscriptions.go", "api/spec/paths/accounts_{id}_subscribe.yaml", "api/spec/paths/accounts_{id}_unsubscribe.yaml", "api/spec/paths/subscriptions.yaml", "pkg/testkit/post_subscription_contract.go", "internal/platform/post_subscriptions_test.go"]
+    paths: ["internal/domain/notification/subscription.go", "internal/app/notification/subscription.go", "internal/adapter/db/*/notification_subscription.go", "queries/*/notification_subscription.sql", "internal/interface/clientapi/subscriptions.go", "api/spec/paths/accounts_{id}_subscribe.yaml", "api/spec/paths/accounts_{id}_unsubscribe.yaml", "api/spec/paths/subscriptions.yaml", "pkg/testkit/post_subscription_flows.go", "internal/platform/post_subscriptions_test.go"]
     docs: ["docs/adr/0086-email-delivery.md#14-投稿の通知の購読", "docs/architecture/data-model/04-tables/07-notification.md#47-notification"]
     notes:
       - "A local account is subscribed to with or without a follow, a remote one only while graph.Follows is true; a notify with a pending follow of a remote account is a post_subscription_requests row that graph.follow_accepted turns into the subscription."

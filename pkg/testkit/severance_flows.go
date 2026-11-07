@@ -19,8 +19,8 @@ import (
 	"github.com/mycroblog/my/internal/domain/notification"
 )
 
-// SeveranceHarness is one database under test: the harness of RemoteFollowContract and the
-// moderation repository on the same database.
+// SeveranceHarness is one database under test for SeveranceContract and SeveranceFlows: the
+// harness of RemoteFollowContract and the moderation repository on the same database.
 type SeveranceHarness struct {
 	RemoteFollowHarness
 	Moderation appmoderation.Repository
@@ -30,9 +30,10 @@ type SeveranceHarness struct {
 // factory registers the cleanup of everything it creates with t.Cleanup.
 type SeveranceFactory func(t *testing.T, opts uow.Options) SeveranceHarness
 
-// SeveranceContract verifies the follows that suspensions cut (FR-717, ADR-0058) on a database
-// adapter, through the real account, graph, moderation, notification, and federation use cases
-// and projectors: the suspension of a remote account ends its follows with the local accounts
+// SeveranceFlows verifies the follows that suspensions cut (FR-717, ADR-0058) on a database
+// adapter, the flows of ADR-0153 §1, which internal/flowtest/notification runs once on SQLite;
+// SeveranceContract checks the repositories' methods on every adapter. The flows go through the
+// real account, graph, moderation, notification, and federation use cases and projectors: the suspension of a remote account ends its follows with the local accounts
 // in both directions in the action's transaction and sends a Reject of each of its follows and
 // an Undo of each local follow of it; the suspension of a domain ends, in its job, the follows
 // between the local accounts and the accounts of the domain and its subdomains, and sends
@@ -40,7 +41,7 @@ type SeveranceFactory func(t *testing.T, opts uow.Options) SeveranceHarness
 // notification whose severance counts what it lost, a lost follow request counts nothing, the
 // follows stay ended after the lift, and processing the same suspension again, or another
 // suspension of the same account, records and notifies nothing more.
-func SeveranceContract(t *testing.T, newHarness SeveranceFactory) {
+func SeveranceFlows(t *testing.T, newHarness SeveranceFactory) {
 	t.Helper()
 	cases := []struct {
 		name string
