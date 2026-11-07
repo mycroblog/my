@@ -135,7 +135,8 @@ step.
   `scripts/task.sh check:changed` locally is optional (to reproduce a failure or to iterate).
   To investigate a merge queue failure on the pull request, or to check an outside contribution early, add the label
   `ci:full` to the pull request.
-- Pull requests do not run the web E2E automatically. For a pull request that touches the web client, run
+- Pull requests do not run the web E2E automatically; the merge queue runs it on the primary project (`en`, 1440 px)
+  when the client changes. To see a failure earlier, for a pull request that touches the web client, run
   `scripts/task.sh web:e2e` locally, or run `gh workflow run web-e2e.yml -R mycroblog/my --ref <branch>` against its
   branch (add `-f matrix=full` for the width and locale projects too; the Actions tab can start it too).
 - `slow-suite.yml`, `nightly.yml`, `web-e2e.yml`, `federation-live.yml`, `postgres-contract.yml`,
