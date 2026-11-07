@@ -6,29 +6,24 @@ import (
 	"bytes"
 	"context"
 	"crypto/rand"
-	"database/sql"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io"
 	"log/slog"
 	"net"
 	"net/http"
-	"os"
 	"path/filepath"
 	"strings"
 	"sync"
 	"testing"
 	"time"
 
-	_ "modernc.org/sqlite" // registers the "sqlite" driver for applying the schema
-
 	"github.com/mycroblog/my/internal/app/queue"
 	"github.com/mycroblog/my/internal/domain/instance"
 	"github.com/mycroblog/my/internal/platform"
 	"github.com/mycroblog/my/internal/platform/config"
-	"github.com/mycroblog/my/schema"
+	"github.com/mycroblog/my/pkg/testkit/sqlitetest"
 )
 
 // syncBuffer is a bytes.Buffer safe for the concurrent writes of a logger.
@@ -49,40 +44,6 @@ func (b *syncBuffer) String() string {
 	return b.buf.String()
 }
 
-// sqliteTemplate is the SQLite database file with the schema applied that newDatabase copies,
-// created once per test binary: applying the schema commits every statement on its own, which
-// costs more than the rest of most tests. TestMain removes its directory.
-var sqliteTemplate struct {
-	once sync.Once
-	dir  string
-	path string
-	err  error
-}
-
-func createSQLiteTemplate() {
-	s := &sqliteTemplate
-	if s.dir, s.err = os.MkdirTemp("", "platform-sqlite-template-"); s.err != nil {
-		return
-	}
-	s.path = filepath.Join(s.dir, "my.db")
-	db, err := sql.Open("sqlite", s.path)
-	if err != nil {
-		s.err = err
-		return
-	}
-	defer func() { _ = db.Close() }()
-	if _, err := db.ExecContext(context.Background(), schema.SQLite); err != nil {
-		s.err = fmt.Errorf("apply schema: %w", err)
-	}
-}
-
-// removeSQLiteTemplate removes the template that newDatabase created, if any.
-func removeSQLiteTemplate() {
-	if sqliteTemplate.dir != "" {
-		_ = os.RemoveAll(sqliteTemplate.dir)
-	}
-}
-
 // steadyClock tells the wall time at its start plus the time since on the monotonic clock, so
 // that it never goes back. The wall clock does go back when the host steps it (WSL 2 steps it
 // back by half a second every 30 seconds under load), which breaks a test that issues something
@@ -98,28 +59,10 @@ func (c steadyClock) Now() time.Time { return c.start.Round(0).Add(time.Since(c.
 // schema applied when applied is true, and a path to no file yet otherwise.
 func newDatabase(t *testing.T, applied bool) string {
 	t.Helper()
-	dir := t.TempDir()
-	path := filepath.Join(dir, "my.db")
 	if !applied {
-		return path
+		return filepath.Join(t.TempDir(), "my.db")
 	}
-	sqliteTemplate.once.Do(createSQLiteTemplate)
-	if sqliteTemplate.err != nil {
-		t.Fatalf("SQLite template: %v", sqliteTemplate.err)
-	}
-	b, err := os.ReadFile(sqliteTemplate.path)
-	if err != nil {
-		t.Fatal(err)
-	}
-	root, err := os.OpenRoot(dir)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer func() { _ = root.Close() }()
-	if err := root.WriteFile("my.db", b, 0o600); err != nil {
-		t.Fatal(err)
-	}
-	return path
+	return sqlitetest.NewFile(t)
 }
 
 // loadConfig loads a configuration from env alone, with the required settings filled in.

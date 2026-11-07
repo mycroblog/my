@@ -18,22 +18,20 @@ import (
 	"github.com/mycroblog/my/internal/adapter/payment/fake"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/pkg/testkit"
-	"github.com/mycroblog/my/schema"
+	"github.com/mycroblog/my/pkg/testkit/sqlitetest"
 )
 
-// newTestDB opens a new database file under t.TempDir() with the product schema applied
-// (see package schema for why executing the file matches an Atlas apply).
+// newTestDB opens a new database file under t.TempDir() with the product schema applied, a copy of
+// the template of package sqlitetest (see package schema for why executing the file matches an
+// Atlas apply).
 func newTestDB(t *testing.T, dsnSuffix string, opts uow.Options) (*DB, string) {
 	t.Helper()
-	path := filepath.Join(t.TempDir(), "test.db")
+	path := sqlitetest.NewFile(t)
 	db, err := Open(t.Context(), path+dsnSuffix, opts)
 	if err != nil {
 		t.Fatalf("Open: %v", err)
 	}
 	t.Cleanup(func() { _ = db.Close() })
-	if _, err := db.db.ExecContext(t.Context(), schema.SQLite); err != nil {
-		t.Fatalf("apply schema: %v", err)
-	}
 	return db, path
 }
 

@@ -258,6 +258,10 @@ scripts/task.sh go:sqlc-check  # fail when the generated code is stale (part of 
 - Database adapters pass the contract tests of `pkg/testkit` (`testkit.UnitOfWorkContract`, for example) on both
   SQLite and PostgreSQL. Test databases get the desired-state files of `schema/<dialect>/` run directly, in name order
   (the same SQL Atlas applies to an empty database).
+- The SQLite tests get their database from `pkg/testkit/sqlitetest`: `sqlitetest.NewFile(t)` copies a file that the
+  test binary made once with the schema applied, and `sqlitetest.ApplySchema` runs a schema in one transaction. Do not
+  execute `schema.SQLite` outside a transaction: SQLite then commits and syncs the file after each of its hundreds of
+  statements, which takes seconds per database and far longer on a loaded machine.
 - The PostgreSQL tests get their server from `pkg/testkit/pgtest`. By default it starts pgmem (PostgreSQL in memory)
   inside the test process, so no Docker is needed: one server per test binary, and each test copies a template
   database with the schema applied.

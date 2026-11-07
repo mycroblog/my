@@ -16,25 +16,20 @@ package platformtest
 import (
 	"context"
 	"crypto/rand"
-	"database/sql"
 	"encoding/base64"
-	"fmt"
 	"log/slog"
 	"net"
 	"os"
 	"path/filepath"
-	"sync"
 	"testing"
 	"time"
-
-	_ "modernc.org/sqlite" // registers the "sqlite" driver for applying the schema
 
 	"github.com/mycroblog/my/internal/app/identity"
 	"github.com/mycroblog/my/internal/app/kernel"
 	domain "github.com/mycroblog/my/internal/domain/identity"
 	"github.com/mycroblog/my/internal/platform"
 	"github.com/mycroblog/my/internal/platform/config"
-	"github.com/mycroblog/my/schema"
+	"github.com/mycroblog/my/pkg/testkit/sqlitetest"
 )
 
 // WebOrigin is the origin of the web client that Start configures; the authorization codes of
@@ -163,53 +158,19 @@ func (s *Server) AuthorizationCode(t testing.TB, u User, scope, codeChallenge st
 	return code
 }
 
-// sqliteTemplate is the SQLite database file with the schema applied that newDatabase copies,
-// created once per test binary: applying the schema costs more than most tests.
-var sqliteTemplate struct {
-	once sync.Once
-	b    []byte
-	err  error
-}
-
-func createSQLiteTemplate() {
-	s := &sqliteTemplate
-	dir, err := os.MkdirTemp("", "platformtest-sqlite-")
-	if err != nil {
-		s.err = err
-		return
-	}
-	defer func() { _ = os.RemoveAll(dir) }()
-	path := filepath.Join(dir, "my.db")
-	db, err := sql.Open("sqlite", path)
-	if err != nil {
-		s.err = err
-		return
-	}
-	if _, err := db.ExecContext(context.Background(), schema.SQLite); err != nil {
-		_ = db.Close()
-		s.err = fmt.Errorf("apply schema: %w", err)
-		return
-	}
-	if err := db.Close(); err != nil {
-		s.err = err
-		return
-	}
-	s.b, s.err = os.ReadFile(path) //nolint:gosec // G304: the file this function just created
-}
-
 // newDatabase writes a copy of the template into dir and returns its path.
 func newDatabase(t testing.TB, dir string) string {
 	t.Helper()
-	sqliteTemplate.once.Do(createSQLiteTemplate)
-	if sqliteTemplate.err != nil {
-		t.Fatalf("platformtest: SQLite template: %v", sqliteTemplate.err)
+	b, err := sqlitetest.Template()
+	if err != nil {
+		t.Fatalf("platformtest: SQLite template: %v", err)
 	}
 	root, err := os.OpenRoot(dir)
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer func() { _ = root.Close() }()
-	if err := root.WriteFile("my.db", sqliteTemplate.b, 0o600); err != nil {
+	if err := root.WriteFile("my.db", b, 0o600); err != nil {
 		t.Fatal(err)
 	}
 	return filepath.Join(dir, "my.db")

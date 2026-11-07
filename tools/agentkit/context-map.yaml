@@ -624,7 +624,7 @@ entries:
     paths: ["pkg/testkit/**"]
     docs: ["docs/adr/0015-testing-strategy.md", "docs/adr/0015-testing-strategy.md"]
   - name: testkit-backends
-    paths: ["pkg/testkit/pgtest/**", "pkg/testkit/valkeytest/**", "pkg/testkit/awstest/**", "pkg/testkit/mailpittest/**", "pkg/testkit/fixtures/**"]
+    paths: ["pkg/testkit/pgtest/**", "pkg/testkit/sqlitetest/**", "pkg/testkit/valkeytest/**", "pkg/testkit/awstest/**", "pkg/testkit/mailpittest/**", "pkg/testkit/fixtures/**"]
     docs: ["docs/adr/0015-testing-strategy.md"]
 
   # --- Client libraries -----------------------------------------------------------------------------------
