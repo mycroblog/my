@@ -1,9 +1,9 @@
 name: PostgreSQL contract
 
-# The PostgreSQL tests (the repository contracts of internal/adapter/db/postgres, the kv and queue adapters, and the
-# dual-dialect tests of internal/platform) on a real postgres container instead of pgmem (ADR-0015). Part of the slow
-# suite (slow-suite.yml, ADR-0079) and runnable by hand on any branch; pull requests and merge groups run the same
-# tests on pgmem.
+# The PostgreSQL tests whose result can differ between pgmem and a real server (go:test-postgres: the pool, Atlas,
+# isolation and locks between connections, SKIP LOCKED and LISTEN/NOTIFY) on a real postgres container (ADR-0015 §3).
+# Part of the slow suite (slow-suite.yml, ADR-0079), run by the merge queue when the PostgreSQL adapters change
+# (ci.yml's contracts job), and runnable by hand on any branch; merge groups run every PostgreSQL test on pgmem.
 
 on:
   workflow_call:
