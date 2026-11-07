@@ -13,7 +13,7 @@ import (
 	"github.com/mycroblog/my/internal/adapter/translator/google"
 	"github.com/mycroblog/my/internal/adapter/translator/google/googletest"
 	"github.com/mycroblog/my/internal/app/translation"
-	"github.com/mycroblog/my/pkg/testkit"
+	"github.com/mycroblog/my/pkg/testkit/translationtest"
 )
 
 const secret = "the words of a private post"
@@ -32,10 +32,10 @@ func newTranslator(t *testing.T) (*google.Translator, *googletest.Server) {
 // The adapter passes the contract of the port against the stand-in of Cloud Translation.
 func TestContract(t *testing.T) {
 	t.Parallel()
-	testkit.TranslatorContract(t, func(t *testing.T) testkit.TranslatorHarness {
+	translationtest.TranslatorContract(t, func(t *testing.T) translationtest.TranslatorHarness {
 		t.Helper()
 		tr, s := newTranslator(t)
-		return testkit.TranslatorHarness{
+		return translationtest.TranslatorHarness{
 			Translator: tr, Source: "en", Target: "ja", UnsupportedLanguage: "qaa",
 			FailNext: func(err error) {
 				if errors.Is(err, translation.ErrProviderLimit) {

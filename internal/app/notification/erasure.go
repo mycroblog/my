@@ -11,7 +11,7 @@ import (
 
 // ErasureRepository is the part of the notification module's persistence that the erasure of
 // deleted accounts uses (data-model §8). The database adapters' notification repositories
-// implement it and pass testkit.AccountErasureContract.
+// implement it and pass federationtest.AccountErasureContract.
 type ErasureRepository interface {
 	// EraseNotificationsOf deletes up to limit notifications to or from the account or about its
 	// user, with their dismissals, its read marker, notification settings, Web Push

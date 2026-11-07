@@ -63,7 +63,7 @@ type Limits struct {
 }
 
 // Repository is the module's persistence. The database adapters implement it and pass
-// testkit.TranslationRepositoryContract.
+// translationtest.TranslationRepositoryContract.
 type Repository interface {
 	// InsertTranslation stores t with its child rows and reports whether it did: a translation
 	// of the same revision, target language, and provider stays, with its child rows.

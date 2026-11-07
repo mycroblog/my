@@ -16,10 +16,11 @@ import (
 	appidentity "github.com/mycroblog/my/internal/app/identity"
 	"github.com/mycroblog/my/internal/app/kernel"
 	"github.com/mycroblog/my/pkg/testkit"
+	"github.com/mycroblog/my/pkg/testkit/identitytest"
 )
 
 func TestContract(t *testing.T) {
-	testkit.OIDCClientContract(t, func(_ *testing.T, h kernel.HTTPClient, clock kernel.Clock) appidentity.OIDCClient {
+	identitytest.OIDCClientContract(t, func(_ *testing.T, h kernel.HTTPClient, clock kernel.Clock) appidentity.OIDCClient {
 		return oidc.New(oidc.Options{HTTP: h, Clock: clock})
 	})
 }

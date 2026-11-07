@@ -8,8 +8,8 @@
 // Result in, acts on Result.Effect with its own code, and calls LinkStatus and Applied in that
 // transaction. A verdict never does anything here: this module owns no post, follow, or account.
 //
-// The adapters of Plugin live in internal/adapter/hook and pass testkit.HookPluginContract; those
-// of Repository in internal/adapter/db/* and pass testkit.HookRepositoryContract.
+// The adapters of Plugin live in internal/adapter/hook and pass hooktest.HookPluginContract; those
+// of Repository in internal/adapter/db/* and pass hooktest.HookRepositoryContract.
 package hook
 
 import (

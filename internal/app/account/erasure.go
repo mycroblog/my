@@ -88,7 +88,7 @@ type DataEraser interface {
 }
 
 // ErasureRepository is the part of the account module's persistence that the erasure uses. The
-// database adapters' account repositories implement it and pass testkit.AccountErasureContract.
+// database adapters' account repositories implement it and pass federationtest.AccountErasureContract.
 type ErasureRepository interface {
 	// ListAccountsToErase returns, outside any transaction, up to limit accounts, local or
 	// remote, in ID order after the account ID after that were deleted at or before deletedBefore

@@ -13,23 +13,24 @@ import (
 	"github.com/mycroblog/my/internal/adapter/queue/inline"
 	"github.com/mycroblog/my/internal/app/queue"
 	"github.com/mycroblog/my/pkg/testkit"
+	"github.com/mycroblog/my/pkg/testkit/queuetest"
 )
 
-func factory(maxDelay time.Duration) testkit.QueueFactory {
-	return func(_ *testing.T, clock *testkit.Clock) testkit.QueueHarness {
+func factory(maxDelay time.Duration) queuetest.QueueFactory {
+	return func(_ *testing.T, clock *testkit.Clock) queuetest.QueueHarness {
 		q := inline.New(inline.Options{Clock: clock, IDs: testkit.NewIDGenerator(clock), MaxDelay: maxDelay})
-		return testkit.QueueHarness{Queue: q, Source: q, DeadJobs: q, MaxDelay: maxDelay, Inspector: q}
+		return queuetest.QueueHarness{Queue: q, Source: q, DeadJobs: q, MaxDelay: maxDelay, Inspector: q}
 	}
 }
 
 func TestQueueContract(t *testing.T) {
-	testkit.QueueContract(t, factory(0))
+	queuetest.QueueContract(t, factory(0))
 }
 
 // TestQueueContractWithDelayLimit emulates the 15-minute delay limit of SQS, which exercises
 // the re-enqueue chain.
 func TestQueueContractWithDelayLimit(t *testing.T) {
-	testkit.QueueContract(t, factory(15*time.Minute))
+	queuetest.QueueContract(t, factory(15*time.Minute))
 }
 
 func TestRunSynchronously(t *testing.T) {

@@ -14,6 +14,7 @@ import (
 	"github.com/mycroblog/my/internal/adapter/telemetry/emf"
 	"github.com/mycroblog/my/internal/app/kernel"
 	"github.com/mycroblog/my/pkg/testkit"
+	"github.com/mycroblog/my/pkg/testkit/kerneltest"
 )
 
 // buffer collects the written lines.
@@ -59,7 +60,7 @@ func newMeter(w *buffer) *emf.Meter {
 }
 
 func TestMeterContract(t *testing.T) {
-	testkit.MeterContract(t, func(*testing.T) kernel.Meter { return newMeter(&buffer{}) })
+	kerneltest.MeterContract(t, func(*testing.T) kernel.Meter { return newMeter(&buffer{}) })
 }
 
 func TestWritesOneLinePerLabelSetAtTheEnd(t *testing.T) {

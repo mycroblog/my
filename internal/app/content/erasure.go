@@ -20,7 +20,7 @@ type ErasableStatus struct {
 
 // ErasureRepository is the part of the content module's persistence that the erasure of deleted
 // accounts uses (data-model §8). The database adapters' status repositories implement it and
-// pass testkit.AccountErasureContract.
+// pass federationtest.AccountErasureContract.
 type ErasureRepository interface {
 	// ListAuthorStatusesToErase returns up to limit statuses of the author in ID order after the
 	// status ID after, deleted or not.

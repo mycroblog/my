@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/mycroblog/my/internal/app/uow"
-	"github.com/mycroblog/my/pkg/testkit"
+	"github.com/mycroblog/my/pkg/testkit/rewraptest"
 	"github.com/mycroblog/my/schema"
 )
 
@@ -22,9 +22,9 @@ var sealedValueInserts = map[string]string{ //nolint:gosec // G101: SQL statemen
 
 func TestSealedValueStoreContract(t *testing.T) {
 	t.Parallel()
-	testkit.SealedValueStoreContract(t, func(t *testing.T) testkit.SealedValueHarness {
+	rewraptest.SealedValueStoreContract(t, func(t *testing.T) rewraptest.SealedValueHarness {
 		db, _ := newTestDB(t, "", uow.Options{})
-		return testkit.SealedValueHarness{
+		return rewraptest.SealedValueHarness{
 			UnitOfWork: db, Store: db.SealedValueStore(), Schema: schema.SQLite,
 			Insert: func(t *testing.T, column, rowID string, sealed []byte) {
 				t.Helper()

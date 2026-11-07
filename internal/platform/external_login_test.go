@@ -30,7 +30,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/instance"
 	"github.com/mycroblog/my/internal/interface/authpages"
 	"github.com/mycroblog/my/internal/platform"
-	"github.com/mycroblog/my/pkg/testkit"
+	"github.com/mycroblog/my/pkg/testkit/identitytest"
 )
 
 // Credentials of the providers that the tests set up at the fake OpenID Connect provider.
@@ -39,11 +39,11 @@ const (
 	idpClientSecret = "s3cret value&more"
 )
 
-// fakeOIDC is an OpenID Connect provider behind the App's HTTPClient: testkit.FakeOIDCProvider
+// fakeOIDC is an OpenID Connect provider behind the App's HTTPClient: identitytest.FakeOIDCProvider
 // with a token endpoint that redeems the codes that issue registers, once, for a client with
 // idpClientID and idpClientSecret, the PKCE verifier, and the redirect URI of the code.
 type fakeOIDC struct {
-	*testkit.FakeOIDCProvider
+	*identitytest.FakeOIDCProvider
 	t      *testing.T
 	signer crypto.Signer
 
@@ -56,7 +56,7 @@ type idpCode struct {
 }
 
 func newFakeOIDC(t *testing.T) *fakeOIDC {
-	p := &fakeOIDC{FakeOIDCProvider: testkit.NewFakeOIDCProvider(t), t: t, signer: testkit.NewFakeOIDCSigner(t, "ES256"), codes: map[string]idpCode{}}
+	p := &fakeOIDC{FakeOIDCProvider: identitytest.NewFakeOIDCProvider(t), t: t, signer: identitytest.NewFakeOIDCSigner(t, "ES256"), codes: map[string]idpCode{}}
 	p.AddKey("test", "ES256", p.signer)
 	return p
 }
@@ -72,7 +72,7 @@ func (p *fakeOIDC) issue(authURL string, claims map[string]any) string {
 	q := u.Query()
 	now := time.Now()
 	all := map[string]any{
-		"iss": testkit.FakeOIDCIssuer, "aud": idpClientID, "sub": "subject-1",
+		"iss": identitytest.FakeOIDCIssuer, "aud": idpClientID, "sub": "subject-1",
 		"iat": now.Unix(), "exp": now.Add(5 * time.Minute).Unix(), "nonce": q.Get("nonce"),
 	}
 	for k, v := range claims {
@@ -82,14 +82,14 @@ func (p *fakeOIDC) issue(authURL string, claims map[string]any) string {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	p.codes[code] = idpCode{
-		idToken:   testkit.SignFakeIDToken(p.t, "ES256", "test", p.signer, all),
+		idToken:   identitytest.SignFakeIDToken(p.t, "ES256", "test", p.signer, all),
 		challenge: q.Get("code_challenge"), redirectURI: q.Get("redirect_uri"),
 	}
 	return code
 }
 
 func (p *fakeOIDC) Do(ctx context.Context, req *kernel.HTTPRequest) (*kernel.HTTPResponse, error) {
-	if req.Method != http.MethodPost || req.URL != testkit.FakeOIDCIssuer+"/token" {
+	if req.Method != http.MethodPost || req.URL != identitytest.FakeOIDCIssuer+"/token" {
 		return p.FakeOIDCProvider.Do(ctx, req)
 	}
 	answer := func(status int, v any) (*kernel.HTTPResponse, error) {
@@ -172,7 +172,7 @@ func (e *externalEnv) providerWith(settings domain.LoginProviderSettings) string
 	if err != nil {
 		e.t.Fatal(err)
 	}
-	settings.Issuer, settings.ClientID = testkit.FakeOIDCIssuer, idpClientID
+	settings.Issuer, settings.ClientID = identitytest.FakeOIDCIssuer, idpClientID
 	now := time.Now()
 	r := e.db.IdentityRepository()
 	err = e.db.Tx(ctx, func(tx uow.Tx) error {
@@ -314,7 +314,7 @@ func TestExternalSignIn(t *testing.T) {
 			t.Fatal(err)
 		}
 		q := u.Query()
-		if u.Scheme+"://"+u.Host+u.Path != testkit.FakeOIDCIssuer+"/authorize" || q.Get("response_type") != "code" ||
+		if u.Scheme+"://"+u.Host+u.Path != identitytest.FakeOIDCIssuer+"/authorize" || q.Get("response_type") != "code" ||
 			q.Get("client_id") != idpClientID || q.Get("redirect_uri") != "https://example.test/auth/external/"+id+"/callback" ||
 			q.Get("scope") != "openid email profile" || q.Get("code_challenge_method") != "S256" ||
 			len(q.Get("state")) < 43 || len(q.Get("nonce")) < 43 || len(q.Get("code_challenge")) != 43 || q.Has("hd") {

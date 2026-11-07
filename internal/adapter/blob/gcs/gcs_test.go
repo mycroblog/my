@@ -24,7 +24,7 @@ import (
 
 	blobgcs "github.com/mycroblog/my/internal/adapter/blob/gcs"
 	"github.com/mycroblog/my/internal/app/blob"
-	"github.com/mycroblog/my/pkg/testkit"
+	"github.com/mycroblog/my/pkg/testkit/blobtest"
 )
 
 // newKey returns an RSA key of the service account.
@@ -60,7 +60,7 @@ func newFakeStore(t *testing.T, chunkSize int, opts ...option.ClientOption) (*bl
 }
 
 func TestBlobStoreContract(t *testing.T) {
-	testkit.BlobStoreContract(t, func(t *testing.T) blob.Store {
+	blobtest.BlobStoreContract(t, func(t *testing.T) blob.Store {
 		s, _ := newFakeStore(t, 0)
 		return s
 	})

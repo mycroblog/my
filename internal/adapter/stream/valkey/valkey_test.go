@@ -21,7 +21,7 @@ import (
 	streamvalkey "github.com/mycroblog/my/internal/adapter/stream/valkey"
 	"github.com/mycroblog/my/internal/adapter/valkey"
 	"github.com/mycroblog/my/internal/app/stream"
-	"github.com/mycroblog/my/pkg/testkit"
+	"github.com/mycroblog/my/pkg/testkit/streamtest"
 	"github.com/mycroblog/my/pkg/testkit/valkeytest"
 )
 
@@ -32,10 +32,10 @@ func TestMain(m *testing.M) {
 
 // The contract on miniredis needs neither Docker nor a server.
 func TestStreamBusContractMiniredis(t *testing.T) {
-	testkit.StreamBusContract(t, func(t *testing.T) testkit.StreamBus {
+	streamtest.StreamBusContract(t, func(t *testing.T) streamtest.StreamBus {
 		m := miniredis.RunT(t)
 		c := open(t, "redis://"+m.Addr())
-		return testkit.StreamBus{
+		return streamtest.StreamBus{
 			NewBus:      func(*testing.T) stream.Bus { return streamvalkey.New(c, "", nil) },
 			Unreachable: unreachable,
 			// Closing the server cuts every connection; the publishers reconnect to the restarted one.
@@ -56,13 +56,13 @@ func TestStreamBusContractValkey(t *testing.T) {
 	if os.Getenv("TEST_STREAM") != "container" {
 		t.Skip("the Valkey server runs with TEST_STREAM=container (scripts/task.sh go:test-stream)")
 	}
-	testkit.StreamBusContract(t, func(t *testing.T) testkit.StreamBus {
+	streamtest.StreamBusContract(t, func(t *testing.T) streamtest.StreamBus {
 		s := valkeytest.New(t)
 		// The connections of the test carry a name of the test's own, by which Break finds the
 		// listeners to cut on the shared server.
 		name := strings.TrimSuffix(strings.ReplaceAll(s.KeyPrefix, ":", "-"), "-")
 		c := openNamed(t, s.URL, name)
-		return testkit.StreamBus{
+		return streamtest.StreamBus{
 			NewBus:      func(*testing.T) stream.Bus { return streamvalkey.New(c, s.KeyPrefix, nil) },
 			Unreachable: unreachable,
 			Break:       func(t *testing.T) { killSubscribers(t, c, name) },
@@ -73,7 +73,7 @@ func TestStreamBusContractValkey(t *testing.T) {
 
 // Relays on Buses of one server carry each other's signals.
 func TestStreamBrokerContractRelay(t *testing.T) {
-	testkit.StreamBrokerContract(t, func(t *testing.T, o stream.HubOptions) testkit.StreamBroker {
+	streamtest.StreamBrokerContract(t, func(t *testing.T, o stream.HubOptions) streamtest.StreamBroker {
 		m := miniredis.RunT(t)
 		c := open(t, "redis://"+m.Addr())
 		local := stream.NewRelay(streamvalkey.New(c, "", nil), stream.RelayOptions{Hub: o})
@@ -85,7 +85,7 @@ func TestStreamBrokerContractRelay(t *testing.T) {
 				}
 			})
 		}
-		return testkit.StreamBroker{
+		return streamtest.StreamBroker{
 			Publisher: local, Subscriber: local, Remote: remote,
 			Break: func(t *testing.T) {
 				m.Close()

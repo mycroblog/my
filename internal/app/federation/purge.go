@@ -49,7 +49,7 @@ const (
 // PurgeRepository is the part of the federation module's persistence that the purge uses; each
 // method deletes inside tx at most limit rows, the oldest first, in one statement, and returns
 // how many it deleted. The database adapters' federation repositories implement it and pass
-// testkit.RetentionContract.
+// federationtest.RetentionContract.
 type PurgeRepository interface {
 	// DeleteReceivedDocumentsBefore deletes the documents of activities received before t.
 	DeleteReceivedDocumentsBefore(ctx context.Context, tx uow.Tx, t time.Time, limit int) (int64, error)

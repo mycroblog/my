@@ -8,13 +8,13 @@ import (
 
 	"github.com/mycroblog/my/internal/adapter/db/sqlite"
 	"github.com/mycroblog/my/internal/app/uow"
-	"github.com/mycroblog/my/pkg/testkit"
+	"github.com/mycroblog/my/pkg/testkit/federationtest"
 	"github.com/mycroblog/my/pkg/testkit/sqlitetest"
 )
 
 func TestAccountErasureFlows(t *testing.T) {
 	t.Parallel()
-	testkit.AccountErasureFlows(t, func(t *testing.T, opts uow.Options) testkit.AccountErasureHarness {
+	federationtest.AccountErasureFlows(t, func(t *testing.T, opts uow.Options) federationtest.AccountErasureHarness {
 		path := sqlitetest.NewFile(t)
 		db, err := sqlite.Open(t.Context(), path, opts)
 		if err != nil {
@@ -27,7 +27,7 @@ func TestAccountErasureFlows(t *testing.T) {
 			t.Fatalf("open SQLite: %v", err)
 		}
 		t.Cleanup(func() { _ = raw.Close() })
-		return testkit.AccountErasureHarness{
+		return federationtest.AccountErasureHarness{
 			RetentionHarness:    retentionHarness(db),
 			AccountErasure:      db.AccountRepository(),
 			IdentityErasure:     db.IdentityRepository(),

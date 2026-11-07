@@ -14,7 +14,7 @@ import (
 	"github.com/mycroblog/my/internal/adapter/plugin/kind"
 	appfinance "github.com/mycroblog/my/internal/app/finance"
 	"github.com/mycroblog/my/internal/domain/finance"
-	"github.com/mycroblog/my/pkg/testkit"
+	"github.com/mycroblog/my/pkg/testkit/financetest"
 )
 
 func run(t *testing.T, name string, d kind.Destination) map[string]contract.Result {
@@ -145,9 +145,9 @@ func runBilling(t *testing.T, o fakeplugin.Options, billed bool) map[string]cont
 
 // The billing kind runs what may cost money only when asked, and a plugin's mistake fails its case.
 func TestBillingCases(t *testing.T) {
-	provider := testkit.NewFakeBillingSource(appfinance.SourcePlugin, time.UTC)
+	provider := financetest.NewFakeBillingSource(appfinance.SourcePlugin, time.UTC)
 	month := finance.YearMonthOf(finance.DateOf(time.Now().UTC()))
-	provider.SetMonth(month, testkit.FakeBillingMonth{Rows: []testkit.FakeBillingRow{
+	provider.SetMonth(month, financetest.FakeBillingMonth{Rows: []financetest.FakeBillingRow{
 		{Service: "Hetzner Cloud", ChargeType: finance.ChargeUsage, Amount: "1.25", Currency: "USD"},
 	}})
 

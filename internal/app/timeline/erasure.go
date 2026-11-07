@@ -11,7 +11,7 @@ import (
 
 // ErasureRepository is the part of the timeline module's persistence that the erasure of
 // deleted accounts uses (data-model §8). The database adapters' timeline repositories implement
-// it and pass testkit.AccountErasureContract.
+// it and pass federationtest.AccountErasureContract.
 type ErasureRepository interface {
 	// EraseFeedsOf deletes up to limit of each of: the entries by the account or of its
 	// statuses (with their recipients and hashtags), the direct entries to it, the follows into

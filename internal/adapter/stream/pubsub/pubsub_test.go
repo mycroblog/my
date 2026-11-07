@@ -27,6 +27,7 @@ import (
 	pubsub "github.com/mycroblog/my/internal/adapter/stream/pubsub"
 	"github.com/mycroblog/my/internal/app/stream"
 	"github.com/mycroblog/my/pkg/testkit"
+	"github.com/mycroblog/my/pkg/testkit/streamtest"
 )
 
 // The environment variables of the emulator tests: TEST_STREAM=container runs the contract on
@@ -60,7 +61,7 @@ func TestMain(m *testing.M) {
 }
 
 func TestBusContractPstest(t *testing.T) {
-	testkit.StreamBusContract(t, func(t *testing.T) testkit.StreamBus {
+	streamtest.StreamBusContract(t, func(t *testing.T) streamtest.StreamBus {
 		srv := pstest.NewServer()
 		srv.SetStreamTimeout(pstestStreamTimeout)
 		t.Cleanup(func() { _ = srv.Close() })
@@ -70,11 +71,11 @@ func TestBusContractPstest(t *testing.T) {
 
 func TestBusContractEmulator(t *testing.T) {
 	addr := emulatorAddr(t)
-	testkit.StreamBusContract(t, func(t *testing.T) testkit.StreamBus { return harness(t, addr) })
+	streamtest.StreamBusContract(t, func(t *testing.T) streamtest.StreamBus { return harness(t, addr) })
 }
 
 func TestSweeperContractPstest(t *testing.T) {
-	testkit.StreamSweeperContract(t, func(t *testing.T) testkit.StreamSweeper {
+	streamtest.StreamSweeperContract(t, func(t *testing.T) streamtest.StreamSweeper {
 		srv := pstest.NewServer()
 		srv.SetStreamTimeout(pstestStreamTimeout)
 		t.Cleanup(func() { _ = srv.Close() })
@@ -84,17 +85,17 @@ func TestSweeperContractPstest(t *testing.T) {
 
 func TestSweeperContractEmulator(t *testing.T) {
 	addr := emulatorAddr(t)
-	testkit.StreamSweeperContract(t, func(t *testing.T) testkit.StreamSweeper { return sweeperHarness(t, addr) })
+	streamtest.StreamSweeperContract(t, func(t *testing.T) streamtest.StreamSweeper { return sweeperHarness(t, addr) })
 }
 
 // sweeperHarness is the harness of the sweeper contract: a process's resources are its
 // subscriptions, labeled with their creation time by the harness's clock.
-func sweeperHarness(t *testing.T, addr string) testkit.StreamSweeper {
+func sweeperHarness(t *testing.T, addr string) streamtest.StreamSweeper {
 	t.Helper()
 	b := newBroker(t, addr)
 	clock := testkit.NewClock(time.Date(2026, 10, 20, 12, 0, 0, 0, time.UTC))
-	return testkit.StreamSweeper{
-		NewBus: func(t *testing.T) (testkit.SweepingBus, string) {
+	return streamtest.StreamSweeper{
+		NewBus: func(t *testing.T) (streamtest.SweepingBus, string) {
 			bus := b.bus(t, addr, clock.Now)
 			return bus, bus.ProcessID()
 		},
@@ -113,7 +114,7 @@ func sweeperHarness(t *testing.T, addr string) testkit.StreamSweeper {
 }
 
 func TestStreamBrokerContractRelay(t *testing.T) {
-	testkit.StreamBrokerContract(t, func(t *testing.T, o stream.HubOptions) testkit.StreamBroker {
+	streamtest.StreamBrokerContract(t, func(t *testing.T, o stream.HubOptions) streamtest.StreamBroker {
 		srv := pstest.NewServer()
 		srv.SetStreamTimeout(pstestStreamTimeout)
 		t.Cleanup(func() { _ = srv.Close() })
@@ -127,7 +128,7 @@ func TestStreamBrokerContractRelay(t *testing.T) {
 				}
 			})
 		}
-		return testkit.StreamBroker{Publisher: local, Subscriber: local, Remote: remote, Break: h.Break}
+		return streamtest.StreamBroker{Publisher: local, Subscriber: local, Remote: remote, Break: h.Break}
 	})
 }
 
@@ -197,10 +198,10 @@ func (b broker) subscriptions(t *testing.T) []string {
 	}
 }
 
-func harness(t *testing.T, addr string) testkit.StreamBus {
+func harness(t *testing.T, addr string) streamtest.StreamBus {
 	t.Helper()
 	b := newBroker(t, addr)
-	return testkit.StreamBus{
+	return streamtest.StreamBus{
 		NewBus: func(t *testing.T) stream.Bus { return b.bus(t, addr, nil) },
 		Unreachable: func(t *testing.T) stream.Bus {
 			return b.bus(t, closedAddr(t), nil)

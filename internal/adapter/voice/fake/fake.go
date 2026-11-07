@@ -2,7 +2,7 @@
 
 // Package fake is an in-memory voice.Transport for tests (ADR-0101 §2): a media path that
 // enforces the server side as an SFU does. A session is on the media path once Connect saw it,
-// until Remove or Close. It records every call, passes testkit.VoiceTransportContract, and is
+// until Remove or Close. It records every call, passes voicetest.VoiceTransportContract, and is
 // safe for concurrent use.
 package fake
 

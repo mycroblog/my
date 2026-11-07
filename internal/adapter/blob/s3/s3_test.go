@@ -17,7 +17,7 @@ import (
 
 	blobs3 "github.com/mycroblog/my/internal/adapter/blob/s3"
 	"github.com/mycroblog/my/internal/app/blob"
-	"github.com/mycroblog/my/pkg/testkit"
+	"github.com/mycroblog/my/pkg/testkit/blobtest"
 	"github.com/mycroblog/my/pkg/testkit/s3test"
 )
 
@@ -44,7 +44,7 @@ func newFakeStore(t *testing.T, partSize int64) (*blobs3.Store, *fakeS3) {
 }
 
 func TestBlobStoreContract(t *testing.T) {
-	testkit.BlobStoreContract(t, func(t *testing.T) blob.Store {
+	blobtest.BlobStoreContract(t, func(t *testing.T) blob.Store {
 		s, _ := newFakeStore(t, 0)
 		return s
 	})
@@ -53,7 +53,7 @@ func TestBlobStoreContract(t *testing.T) {
 // The contract on a real S3-compatible server (s3test), with TEST_S3=container.
 func TestBlobStoreContractOnS3Server(t *testing.T) {
 	srv := s3test.New(t)
-	testkit.BlobStoreContract(t, func(t *testing.T) blob.Store {
+	blobtest.BlobStoreContract(t, func(t *testing.T) blob.Store {
 		s, err := blobs3.New(awsConfig(s3test.Region, s3test.AccessKeyID, s3test.SecretAccessKey), blobs3.Options{
 			Bucket: srv.NewBucket(t), Endpoint: srv.Endpoint, PathStyle: true, BaseURL: "https://example.com",
 		})

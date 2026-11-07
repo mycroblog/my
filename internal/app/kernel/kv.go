@@ -23,7 +23,7 @@ var ErrKeyNotFound = errors.New("kernel: key not found")
 // one call stays a short transaction on a large store.
 //
 // The production adapters live in internal/adapter/kv; their shared contract test suite is
-// testkit.KeyValueStoreContract in pkg/testkit.
+// kerneltest.KeyValueStoreContract in pkg/testkit/kerneltest.
 type KeyValueStore interface {
 	// Get returns the value of a live entry, or an error wrapping ErrKeyNotFound.
 	Get(ctx context.Context, namespace, key string) ([]byte, error)

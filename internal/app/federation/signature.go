@@ -136,7 +136,7 @@ type VerifyOptions struct {
 // RFC 9421). It builds the signature base and checks the signature, nothing more: which
 // components are required, the time window, the digests, and the keys are the
 // SignatureVerifier's policy (federation.md §1.1). The adapter lives in internal/adapter/httpsig
-// and passes testkit.HTTPSignatureContract.
+// and passes federationtest.HTTPSignatureContract.
 type Verifier interface {
 	// Parse reads the signature of r: RFC 9421 when a Signature-Input header is present (the
 	// first signature in it), draft-cavage otherwise. It fails with an error wrapping
@@ -189,7 +189,7 @@ type RequestedSignature struct {
 
 // Signer signs outbound requests. Draft-cavage signatures cover the Date header that the
 // caller sets; RFC 9421 signatures take created from the system clock. The adapter lives in
-// internal/adapter/httpsig and passes testkit.HTTPSignatureContract.
+// internal/adapter/httpsig and passes federationtest.HTTPSignatureContract.
 type Signer interface {
 	// Sign adds the signature headers, and the digest header the components ask for, to req.
 	// It replaces any signature or digest headers req already has.

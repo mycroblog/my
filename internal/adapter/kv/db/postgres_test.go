@@ -13,6 +13,7 @@ import (
 	"github.com/mycroblog/my/internal/app/kernel"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/pkg/testkit"
+	"github.com/mycroblog/my/pkg/testkit/kerneltest"
 	"github.com/mycroblog/my/pkg/testkit/pgtest"
 )
 
@@ -29,7 +30,7 @@ func newDatabase(t *testing.T) string {
 }
 
 func TestPostgresKeyValueStoreContract(t *testing.T) {
-	testkit.KeyValueStoreContract(t, func(t *testing.T, clock *testkit.Clock) kernel.KeyValueStore {
+	kerneltest.KeyValueStoreContract(t, func(t *testing.T, clock *testkit.Clock) kernel.KeyValueStore {
 		d, err := postgres.Open(t.Context(), newDatabase(t), uow.Options{})
 		if err != nil {
 			t.Fatalf("Open: %v", err)

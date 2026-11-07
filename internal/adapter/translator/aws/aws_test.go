@@ -17,7 +17,7 @@ import (
 	nethtml "golang.org/x/net/html"
 
 	"github.com/mycroblog/my/internal/app/translation"
-	"github.com/mycroblog/my/pkg/testkit"
+	"github.com/mycroblog/my/pkg/testkit/translationtest"
 )
 
 // standIn is a stand-in of the TranslateText operation of Amazon Translate in the protocol of the
@@ -168,9 +168,9 @@ func newStandIn(t *testing.T) (*Translator, *standIn) {
 
 func TestContract(t *testing.T) {
 	t.Parallel()
-	testkit.TranslatorContract(t, func(t *testing.T) testkit.TranslatorHarness {
+	translationtest.TranslatorContract(t, func(t *testing.T) translationtest.TranslatorHarness {
 		tr, s := newStandIn(t)
-		return testkit.TranslatorHarness{
+		return translationtest.TranslatorHarness{
 			Translator: tr, Source: "en", Target: "ja", UnsupportedLanguage: "xx", FailNext: s.FailNext,
 		}
 	})

@@ -11,6 +11,7 @@ import (
 	"github.com/mycroblog/my/internal/adapter/webpush"
 	appnotification "github.com/mycroblog/my/internal/app/notification"
 	"github.com/mycroblog/my/pkg/testkit"
+	"github.com/mycroblog/my/pkg/testkit/notificationtest"
 )
 
 func b64(t *testing.T, s string) []byte {
@@ -52,7 +53,7 @@ func TestEncryptMatchesRFC8291(t *testing.T) {
 
 // TestPushSenderContract runs the port's contract against a fake push service.
 func TestPushSenderContract(t *testing.T) {
-	testkit.PushSenderContract(t, func(t *testing.T, s testkit.PushService) appnotification.PushSender {
+	notificationtest.PushSenderContract(t, func(t *testing.T, s notificationtest.PushService) appnotification.PushSender {
 		t.Helper()
 		priv, pub, err := webpush.GenerateKey()
 		if err != nil {

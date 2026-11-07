@@ -15,8 +15,8 @@ import (
 
 	streampostgres "github.com/mycroblog/my/internal/adapter/stream/postgres"
 	"github.com/mycroblog/my/internal/app/stream"
-	"github.com/mycroblog/my/pkg/testkit"
 	"github.com/mycroblog/my/pkg/testkit/pgtest"
+	"github.com/mycroblog/my/pkg/testkit/streamtest"
 )
 
 // TestMain stops the PostgreSQL server of package pgtest after the tests.
@@ -27,13 +27,13 @@ func TestMain(m *testing.M) {
 func TestStreamBusContract(t *testing.T) {
 	for name, listenURL := range map[string]bool{"PoolSettings": false, "ListenURL": true} {
 		t.Run(name, func(t *testing.T) {
-			testkit.StreamBusContract(t, func(t *testing.T) testkit.StreamBus {
+			streamtest.StreamBusContract(t, func(t *testing.T) streamtest.StreamBus {
 				url := pgtest.NewDatabase(t)
 				o := streampostgres.Options{}
 				if listenURL {
 					o.ListenURL = url
 				}
-				return testkit.StreamBus{
+				return streamtest.StreamBus{
 					NewBus: func(t *testing.T) stream.Bus { return newBus(t, url, o) },
 					Unreachable: func(t *testing.T) stream.Bus {
 						u := silentServerURL(t)
@@ -57,7 +57,7 @@ func TestStreamBusContract(t *testing.T) {
 
 // Relay on two Buses of one database, standing for two processes, routes the signals of both.
 func TestStreamBrokerContract(t *testing.T) {
-	testkit.StreamBrokerContract(t, func(t *testing.T, o stream.HubOptions) testkit.StreamBroker {
+	streamtest.StreamBrokerContract(t, func(t *testing.T, o stream.HubOptions) streamtest.StreamBroker {
 		url := pgtest.NewDatabase(t)
 		local := stream.NewRelay(newBus(t, url, streampostgres.Options{}), stream.RelayOptions{Hub: o})
 		other := stream.NewRelay(newBus(t, url, streampostgres.Options{}), stream.RelayOptions{})
@@ -68,7 +68,7 @@ func TestStreamBrokerContract(t *testing.T) {
 				}
 			})
 		}
-		return testkit.StreamBroker{
+		return streamtest.StreamBroker{
 			Publisher: local, Subscriber: local, Remote: other,
 			Break: func(t *testing.T) { terminateListeners(t, url) },
 		}

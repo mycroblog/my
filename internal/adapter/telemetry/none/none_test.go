@@ -7,11 +7,11 @@ import (
 
 	"github.com/mycroblog/my/internal/adapter/telemetry/none"
 	"github.com/mycroblog/my/internal/app/kernel"
-	"github.com/mycroblog/my/pkg/testkit"
+	"github.com/mycroblog/my/pkg/testkit/kerneltest"
 )
 
 func TestMeterContract(t *testing.T) {
-	testkit.MeterContract(t, func(*testing.T) kernel.Meter { return none.New() })
+	kerneltest.MeterContract(t, func(*testing.T) kernel.Meter { return none.New() })
 }
 
 // BenchmarkRecord measures what a measurement costs with metrics_exporter = none: one call on
@@ -31,7 +31,7 @@ func BenchmarkRecord(b *testing.B) {
 }
 
 func TestTracerContract(t *testing.T) {
-	testkit.TracerContract(t, func(*testing.T) kernel.Tracer { return none.NewTracer() })
+	kerneltest.TracerContract(t, func(*testing.T) kernel.Tracer { return none.NewTracer() })
 }
 
 // spanSpec is a span as the job runner declares it.

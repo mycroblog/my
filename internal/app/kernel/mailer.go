@@ -15,7 +15,7 @@ import (
 // Mailer sends email (overview §3, the Mailer port). The adapters live in internal/adapter/mail:
 // mail/none logs messages instead of sending them, mail/smtp sends them over SMTP, mail/ses through
 // the SES API, and mail/plugin through an operator's plugin. Every adapter passes
-// testkit.MailerContract.
+// kerneltest.MailerContract.
 //
 // Only job handlers call Send (ADR-0086 §1): a use case enqueues a job of its purpose in the
 // transaction of the fact that the email tells, and the handler builds the message and sends

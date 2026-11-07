@@ -6,7 +6,7 @@
 // that run inside the command's transaction (ADR-0020 rule 7).
 //
 // The production implementations live in internal/adapter/db/*; their shared contract test
-// suite is testkit.UnitOfWorkContract in pkg/testkit.
+// suite is uowtest.UnitOfWorkContract in pkg/testkit/uowtest.
 package uow
 
 import "context"

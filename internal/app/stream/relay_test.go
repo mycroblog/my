@@ -19,7 +19,7 @@ import (
 )
 
 // The routing, limits, slow subscribers, and broken listeners of Relay are verified by
-// testkit.StreamBrokerContract (pkg/testkit/stream_test.go); these tests cover what is its
+// streamtest.StreamBrokerContract (pkg/testkit/streamtest/stream_test.go); these tests cover what is its
 // own, on a fake clock.
 
 func closeRelay(t *testing.T, r *stream.Relay) {

@@ -34,7 +34,7 @@ const (
 )
 
 // ProfilePruneRepository is the part of the account module's persistence that the prune uses.
-// The database adapters' account repositories implement it and pass testkit.RetentionContract.
+// The database adapters' account repositories implement it and pass federationtest.RetentionContract.
 type ProfilePruneRepository interface {
 	// ListRemoteAccountsWithPastProfiles returns, outside any transaction, up to limit remote
 	// accounts in ID order after the account ID after that keep a profile revision other than

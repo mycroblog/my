@@ -22,7 +22,7 @@ import (
 	"github.com/mycroblog/my/internal/adapter/search/fake"
 	searchplugin "github.com/mycroblog/my/internal/adapter/search/plugin"
 	"github.com/mycroblog/my/internal/app/search"
-	"github.com/mycroblog/my/pkg/testkit"
+	"github.com/mycroblog/my/pkg/testkit/searchtest"
 )
 
 // secret stands for the text of a post and a query, which no error may hold.
@@ -54,7 +54,7 @@ func TestContract(t *testing.T) {
 	for _, protocol := range kind.Protocols() {
 		t.Run(protocol, func(t *testing.T) {
 			t.Parallel()
-			testkit.SearchIndexContract(t, func(t *testing.T) search.Index {
+			searchtest.SearchIndexContract(t, func(t *testing.T) search.Index {
 				t.Helper()
 				h, _ := fakeplugin.Connect(fakeplugin.Options{Search: fake.New()})
 				return newIndex(t, kind.Destination{Address: fakeplugin.ServeUnix(t, h), Protocol: protocol})

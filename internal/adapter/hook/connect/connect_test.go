@@ -21,7 +21,7 @@ import (
 	"github.com/mycroblog/my/internal/adapter/plugin/kind"
 	apphook "github.com/mycroblog/my/internal/app/hook"
 	"github.com/mycroblog/my/internal/domain/hook"
-	"github.com/mycroblog/my/pkg/testkit"
+	"github.com/mycroblog/my/pkg/testkit/hooktest"
 )
 
 // behaviour is what the plugins of these tests do next.
@@ -104,7 +104,7 @@ func TestContract(t *testing.T) {
 		"plain json":    {jsonPlugin, kind.ProtocolJSON},
 	} {
 		t.Run(name, func(t *testing.T) {
-			testkit.HookPluginContract(t, func(t *testing.T) testkit.HookPluginHarness {
+			hooktest.HookPluginContract(t, func(t *testing.T) hooktest.HookPluginHarness {
 				next := new(atomic.Pointer[behaviour])
 				next.Store(&behaviour{answer: apphook.Answer{Verdict: hook.Allow}})
 				k, ok := kind.ByName(kind.InboundStatus)
@@ -118,7 +118,7 @@ func TestContract(t *testing.T) {
 					t.Fatal(err)
 				}
 				t.Cleanup(conn.Close)
-				return testkit.HookPluginHarness{
+				return hooktest.HookPluginHarness{
 					Plugin: hookconnect.New(conn),
 					Answer: func(a apphook.Answer) { next.Store(&behaviour{answer: a}) },
 					Broken: func() { next.Store(&behaviour{broken: true}) },

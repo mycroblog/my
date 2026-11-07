@@ -23,7 +23,7 @@ import (
 	billinggcp "github.com/mycroblog/my/internal/adapter/billing/gcp"
 	appfinance "github.com/mycroblog/my/internal/app/finance"
 	"github.com/mycroblog/my/internal/domain/finance"
-	"github.com/mycroblog/my/pkg/testkit"
+	"github.com/mycroblog/my/pkg/testkit/financetest"
 )
 
 const table = "my-billing.billing_export.gcp_billing_export_v1_012345_6789AB_CDEF01"
@@ -84,7 +84,7 @@ func (r queryRequest) param(name string) []string {
 // maximumBytesBilled, or answers with the scenario's failure.
 type fakeBigQuery struct {
 	t        *testing.T
-	scenario testkit.BillingScenario
+	scenario financetest.BillingScenario
 	// bytes is what a query bills; 10 MB, BigQuery's minimum, when 0.
 	bytes int64
 	// incomplete makes jobs.query answer before the job completes.
@@ -313,7 +313,7 @@ func (f *fakeBigQuery) run(months []string) [][]string {
 	return out
 }
 
-func newFake(t *testing.T, s testkit.BillingScenario, o billinggcp.BigQueryOptions) (*billinggcp.BigQuerySource, *fakeBigQuery) {
+func newFake(t *testing.T, s financetest.BillingScenario, o billinggcp.BigQueryOptions) (*billinggcp.BigQuerySource, *fakeBigQuery) {
 	t.Helper()
 	fake := &fakeBigQuery{t: t, scenario: s}
 	srv := httptest.NewServer(fake)
@@ -331,7 +331,7 @@ func newFake(t *testing.T, s testkit.BillingScenario, o billinggcp.BigQueryOptio
 }
 
 func TestBillingSourceContract(t *testing.T) {
-	testkit.BillingSourceContract(t, func(t *testing.T, s testkit.BillingScenario) appfinance.BillingSource {
+	financetest.BillingSourceContract(t, func(t *testing.T, s financetest.BillingScenario) appfinance.BillingSource {
 		src, _ := newFake(t, s, billinggcp.BigQueryOptions{})
 		return src
 	})
@@ -355,9 +355,9 @@ func date(t *testing.T, s string) finance.Date {
 	return d
 }
 
-func oneMonth(t *testing.T) testkit.BillingScenario {
-	return testkit.BillingScenario{Location: time.UTC, Pages: 1, Months: []testkit.BillingScenarioMonth{
-		{Month: month(t, "2026-10"), Through: date(t, "2026-10-20"), Rows: []testkit.FakeBillingRow{
+func oneMonth(t *testing.T) financetest.BillingScenario {
+	return financetest.BillingScenario{Location: time.UTC, Pages: 1, Months: []financetest.BillingScenarioMonth{
+		{Month: month(t, "2026-10"), Through: date(t, "2026-10-20"), Rows: []financetest.FakeBillingRow{
 			{Service: "Cloud Run", ChargeType: finance.ChargeUsage, Amount: "0.10", Currency: "JPY"},
 		}},
 	}}
@@ -519,7 +519,7 @@ func TestFetchFinalByTheFifth(t *testing.T) {
 
 func TestFetchSumsCostTypesAndRejectsMixedCurrencies(t *testing.T) {
 	s := oneMonth(t)
-	s.Months[0].Rows = []testkit.FakeBillingRow{
+	s.Months[0].Rows = []financetest.FakeBillingRow{
 		{Service: "Cloud SQL", ChargeType: finance.ChargeUsage, Amount: "12.000000001", Currency: "JPY"},
 		{Service: "Cloud SQL", ChargeType: finance.ChargeAdjustment, Amount: "-0.000000001", Currency: "JPY"},
 		{Service: "Cloud SQL", ChargeType: finance.ChargeCredit, Amount: "-12", Currency: "JPY"},
@@ -540,7 +540,7 @@ func TestFetchSumsCostTypesAndRejectsMixedCurrencies(t *testing.T) {
 		t.Errorf("adjustment = %+v", l)
 	}
 
-	s.Months[0].Rows = append(s.Months[0].Rows, testkit.FakeBillingRow{Service: "Cloud Storage", ChargeType: finance.ChargeUsage, Amount: "1", Currency: "USD"})
+	s.Months[0].Rows = append(s.Months[0].Rows, financetest.FakeBillingRow{Service: "Cloud Storage", ChargeType: finance.ChargeUsage, Amount: "1", Currency: "USD"})
 	src, _ = newFake(t, s, billinggcp.BigQueryOptions{})
 	if _, err := fetch(t, src, 4, "2026-10"); !errors.Is(err, appfinance.ErrInvalidBillingResponse) {
 		t.Errorf("Fetch of a month in two currencies = %v, want ErrInvalidBillingResponse", err)

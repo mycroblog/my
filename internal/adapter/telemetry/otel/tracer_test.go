@@ -14,7 +14,7 @@ import (
 	"github.com/mycroblog/my/internal/adapter/telemetry/otel"
 	"github.com/mycroblog/my/internal/adapter/telemetry/otel/otlptest"
 	"github.com/mycroblog/my/internal/app/kernel"
-	"github.com/mycroblog/my/pkg/testkit"
+	"github.com/mycroblog/my/pkg/testkit/kerneltest"
 )
 
 func newTracer(t *testing.T, ratio float64, flush string) (*otel.Tracer, *tracetest.InMemoryExporter) {
@@ -30,10 +30,10 @@ func newTracer(t *testing.T, ratio float64, flush string) (*otel.Tracer, *tracet
 
 func TestTracerContract(t *testing.T) {
 	t.Run("Sampled", func(t *testing.T) {
-		testkit.TracerContract(t, func(t *testing.T) kernel.Tracer { tr, _ := newTracer(t, 1, otel.FlushBatch); return tr })
+		kerneltest.TracerContract(t, func(t *testing.T) kernel.Tracer { tr, _ := newTracer(t, 1, otel.FlushBatch); return tr })
 	})
 	t.Run("NotSampled", func(t *testing.T) {
-		testkit.TracerContract(t, func(t *testing.T) kernel.Tracer { tr, _ := newTracer(t, 0, otel.FlushUnit); return tr })
+		kerneltest.TracerContract(t, func(t *testing.T) kernel.Tracer { tr, _ := newTracer(t, 0, otel.FlushUnit); return tr })
 	})
 }
 
@@ -103,7 +103,7 @@ func TestTracerLinksJobsToTheirRequest(t *testing.T) {
 	tr, exp := newTracer(t, 0, otel.FlushBatch)
 	spec := kernel.SpanSpec{Name: "POST /api/v1/statuses", Kind: kernel.SpanServer}
 	// A trusted proxy's sampled parent makes the request recorded.
-	ctx, req := tr.Start(tr.Continue(t.Context(), testkit.ContractTraceParent), spec, kernel.Attrs{})
+	ctx, req := tr.Start(tr.Continue(t.Context(), kerneltest.ContractTraceParent), spec, kernel.Attrs{})
 	tp := tr.Inject(ctx)
 	req.End("")
 	if tp == "" {

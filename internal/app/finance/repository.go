@@ -4,7 +4,7 @@
 // cost items that are recorded with their schedule, label, prices, and end, their cancellation,
 // and the totals by week, month, and year that the domain computes from them on every read. The
 // adapters of Repository live in internal/adapter/db/*; their contract test suite is
-// testkit.FinanceRepositoryContract.
+// financetest.FinanceRepositoryContract.
 package finance
 
 import (

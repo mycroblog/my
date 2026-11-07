@@ -35,7 +35,7 @@ const (
 
 // RetentionRepository is the part of the content module's persistence that the retention purge
 // uses. The database adapters' status repositories implement it and pass
-// testkit.RetentionContract.
+// federationtest.RetentionContract.
 type RetentionRepository interface {
 	// ListRemoteStatusesToPurge returns up to q.Limit remote statuses that are not deleted, in
 	// ID order after q.After, that were published before q.Before regardless of references, or

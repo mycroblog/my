@@ -19,7 +19,7 @@ import (
 	"github.com/mycroblog/my/internal/interface/clientapi"
 	"github.com/mycroblog/my/internal/interface/clientapi/apitest"
 	"github.com/mycroblog/my/internal/platform"
-	"github.com/mycroblog/my/pkg/testkit"
+	"github.com/mycroblog/my/pkg/testkit/financetest"
 )
 
 // TestBillingImports enables billing_sources = aws on SQLite with the inline queue and a fake
@@ -31,9 +31,9 @@ func TestBillingImports(t *testing.T) {
 		"MY_DATABASE_URL": newDatabase(t, true), "MY_WEB_ORIGIN": webOrigin, "MY_QUEUE": "inline", "MY_BILLING_SOURCES": "aws",
 		"MY_BILLING_AWS_MAX_REQUESTS_PER_DAY": "3",
 	})
-	aws := testkit.NewFakeBillingSource("aws", time.UTC)
+	aws := financetest.NewFakeBillingSource("aws", time.UTC)
 	month := finance.YearMonthOf(finance.DateOf(time.Now().UTC()))
-	aws.SetMonth(month, testkit.FakeBillingMonth{Rows: []testkit.FakeBillingRow{
+	aws.SetMonth(month, financetest.FakeBillingMonth{Rows: []financetest.FakeBillingRow{
 		{Service: "Amazon Simple Storage Service", ChargeType: finance.ChargeUsage, Amount: "1.25", Currency: "USD"},
 	}})
 	app, err := platform.NewApp(t.Context(), cfg, platform.AppOptions{

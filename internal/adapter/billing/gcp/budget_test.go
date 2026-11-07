@@ -24,7 +24,7 @@ import (
 	billinggcp "github.com/mycroblog/my/internal/adapter/billing/gcp"
 	appfinance "github.com/mycroblog/my/internal/app/finance"
 	"github.com/mycroblog/my/internal/domain/finance"
-	"github.com/mycroblog/my/pkg/testkit"
+	"github.com/mycroblog/my/pkg/testkit/financetest"
 )
 
 const (
@@ -166,7 +166,7 @@ func (f *budgetFake) source(t *testing.T, o billinggcp.BudgetOptions) *billinggc
 }
 
 // scenarioTotal sums the rows of a month of a scenario exactly.
-func scenarioTotal(t *testing.T, rows []testkit.FakeBillingRow) (string, string) {
+func scenarioTotal(t *testing.T, rows []financetest.FakeBillingRow) (string, string) {
 	t.Helper()
 	sum, scale, currency := new(big.Rat), 0, ""
 	for _, r := range rows {
@@ -207,7 +207,7 @@ func pstestFailure(t *testing.T, kind appfinance.ImportErrorKind) []pstest.Serve
 }
 
 func TestBudgetBillingSourceContract(t *testing.T) {
-	testkit.BillingTotalsSourceContract(t, func(t *testing.T, s testkit.BillingScenario) appfinance.BillingSource {
+	financetest.BillingTotalsSourceContract(t, func(t *testing.T, s financetest.BillingScenario) appfinance.BillingSource {
 		if s.Failure == appfinance.ImportErrorBytesCap {
 			t.Skip("Pub/Sub bills no bytes scanned")
 		}

@@ -258,9 +258,9 @@ scripts/task.sh go:sqlc-check  # fail when the generated code is stale (part of 
 
 - Tests come in three layers ([ADR-0153](docs/adr/0153-test-boundaries.md)):
   - A **port contract** checks the methods of one repository on every adapter, with no service of another module
-    (`testkit.WebhookRepositoryContract`).
+    (`webhooktest.WebhookRepositoryContract`).
   - A **flow** drives the use cases of the modules it crosses. It runs once, on SQLite, in
-    `internal/flowtest/<module>`, the most dependent module it goes through (`testkit.WebhookFlows` in
+    `internal/flowtest/<module>`, the most dependent module it goes through (`webhooktest.WebhookFlows` in
     `internal/flowtest/webhook`, with `flowtest.SQLite`). depguard keeps these packages off `internal/interface`,
     `internal/platform`, and the postgres adapter.
   - The **composition root** (`internal/platform`, `cmd/my`) checks the wiring, and holds the tests that drive the
@@ -269,9 +269,11 @@ scripts/task.sh go:sqlc-check  # fail when the generated code is stale (part of 
 
   When a contract of `pkg/testkit` builds the services of other modules, move that part to a flow and keep the
   repository's methods in a port contract that every adapter runs.
-- Database adapters pass the contract tests of `pkg/testkit` (`testkit.UnitOfWorkContract`, for example) on both
-  SQLite and PostgreSQL. Test databases get the desired-state files of `schema/<dialect>/` run directly, in name order
-  (the same SQL Atlas applies to an empty database).
+- Database adapters pass the contract tests of `pkg/testkit` on both SQLite and PostgreSQL. Each module's contracts
+  and flows are in `pkg/testkit/<module>test` (`uowtest.UnitOfWorkContract`, `webhooktest.WebhookFlows`); `pkg/testkit`
+  keeps what every module shares (`Clock`, `IDGenerator`, the fakes, the fixtures) and imports none of them. Test
+  databases get the desired-state files of `schema/<dialect>/` run directly, in name order (the same SQL Atlas applies
+  to an empty database).
 - The SQLite tests get their database from `pkg/testkit/sqlitetest`: `sqlitetest.NewFile(t)` copies a file that the
   test binary made once with the schema applied, and `sqlitetest.ApplySchema` runs a schema in one transaction. Do not
   execute `schema.SQLite` outside a transaction: SQLite then commits and syncs the file after each of its hundreds of

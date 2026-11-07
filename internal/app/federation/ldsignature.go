@@ -27,7 +27,7 @@ import (
 // Canonicalizer canonicalizes JSON-LD documents (URDNA2015, as N-Quads), resolving their
 // contexts only from the documents bundled with the server, never from the network. The
 // implementation is internal/adapter/jsonld; it keeps the JSON-LD library out of this package
-// and passes testkit.CanonicalizerContract.
+// and passes federationtest.CanonicalizerContract.
 type Canonicalizer interface {
 	Canonicalize(document map[string]any) (string, error)
 }

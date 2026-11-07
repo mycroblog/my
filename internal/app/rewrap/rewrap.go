@@ -38,7 +38,7 @@ type Value struct {
 }
 
 // Store reads and replaces the sealed values of the columns it knows. The database adapters
-// implement it and pass testkit.SealedValueStoreContract.
+// implement it and pass rewraptest.SealedValueStoreContract.
 type Store interface {
 	// Columns returns the names of the sealed columns, as "table.column", sorted.
 	Columns() []string

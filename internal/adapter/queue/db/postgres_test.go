@@ -14,6 +14,7 @@ import (
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/pkg/testkit"
 	"github.com/mycroblog/my/pkg/testkit/pgtest"
+	"github.com/mycroblog/my/pkg/testkit/queuetest"
 )
 
 // TestMain stops the PostgreSQL server of package pgtest after the tests.
@@ -28,7 +29,7 @@ func newDatabase(t *testing.T) string {
 	return pgtest.NewDatabase(t)
 }
 
-func postgresHarness(t *testing.T, clock *testkit.Clock, dsn string) testkit.QueueHarness {
+func postgresHarness(t *testing.T, clock *testkit.Clock, dsn string) queuetest.QueueHarness {
 	t.Helper()
 	d, err := postgres.Open(t.Context(), dsn, uow.Options{})
 	if err != nil {
@@ -37,8 +38,8 @@ func postgresHarness(t *testing.T, clock *testkit.Clock, dsn string) testkit.Que
 	t.Cleanup(d.Close)
 	opts := queuedb.Options{Clock: clock, IDs: testkit.NewIDGenerator(clock)}
 	q := queuedb.NewPostgres(d, opts)
-	h := testkit.QueueHarness{Queue: q, Source: q, DeadJobs: q, UnitOfWork: d, Outbox: q, Inspector: q, Attempts: q}
-	h.Restart = func(t *testing.T) testkit.QueueHarness {
+	h := queuetest.QueueHarness{Queue: q, Source: q, DeadJobs: q, UnitOfWork: d, Outbox: q, Inspector: q, Attempts: q}
+	h.Restart = func(t *testing.T) queuetest.QueueHarness {
 		d.Close()
 		return postgresHarness(t, clock, dsn)
 	}
@@ -46,13 +47,13 @@ func postgresHarness(t *testing.T, clock *testkit.Clock, dsn string) testkit.Que
 }
 
 func TestPostgresQueueContract(t *testing.T) {
-	testkit.QueueContract(t, func(t *testing.T, clock *testkit.Clock) testkit.QueueHarness {
+	queuetest.QueueContract(t, func(t *testing.T, clock *testkit.Clock) queuetest.QueueHarness {
 		return postgresHarness(t, clock, newDatabase(t))
 	})
 }
 
 func TestPostgresWakeContract(t *testing.T) {
-	testkit.QueueWakeContract(t, func(t *testing.T, clock *testkit.Clock, waker queue.Waker) testkit.QueueWakeHarness {
+	queuetest.QueueWakeContract(t, func(t *testing.T, clock *testkit.Clock, waker queue.Waker) queuetest.QueueWakeHarness {
 		projectors := &uow.Projectors{}
 		d, err := postgres.Open(t.Context(), newDatabase(t), uow.Options{Projectors: projectors})
 		if err != nil {
@@ -62,19 +63,19 @@ func TestPostgresWakeContract(t *testing.T) {
 		q := queuedb.NewPostgres(d, queuedb.Options{
 			Clock: clock, IDs: testkit.NewIDGenerator(clock), Waker: waker, Projectors: projectors, Logger: discardLogger(),
 		})
-		return testkit.QueueWakeHarness{Queue: q, Source: q, DeadJobs: q, Finder: q, UnitOfWork: d, Outbox: q}
+		return queuetest.QueueWakeHarness{Queue: q, Source: q, DeadJobs: q, Finder: q, UnitOfWork: d, Outbox: q}
 	})
 }
 
 func TestPostgresTypesContract(t *testing.T) {
-	testkit.QueueTypesContract(t, func(t *testing.T, clock *testkit.Clock) (testkit.QueueHarness, testkit.QueueTypesSource) {
+	queuetest.QueueTypesContract(t, func(t *testing.T, clock *testkit.Clock) (queuetest.QueueHarness, queuetest.QueueTypesSource) {
 		h := postgresHarness(t, clock, newDatabase(t))
 		return h, h.Queue.(*queuedb.Queue).OnlyTypes
 	})
 }
 
 func TestPostgresBacklogContract(t *testing.T) {
-	testkit.QueueBacklogContract(t, func(t *testing.T, clock *testkit.Clock) testkit.QueueHarness {
+	queuetest.QueueBacklogContract(t, func(t *testing.T, clock *testkit.Clock) queuetest.QueueHarness {
 		return postgresHarness(t, clock, newDatabase(t))
 	})
 }

@@ -18,6 +18,7 @@ import (
 	appvoice "github.com/mycroblog/my/internal/app/voice"
 	"github.com/mycroblog/my/pkg/testkit"
 	"github.com/mycroblog/my/pkg/testkit/livekittest"
+	"github.com/mycroblog/my/pkg/testkit/voicetest"
 )
 
 const (
@@ -39,10 +40,10 @@ func newTestTransport(t *testing.T, clock *testkit.Clock) (*Transport, *fakeServ
 }
 
 func TestVoiceTransportContract(t *testing.T) {
-	testkit.VoiceTransportContract(t, func(t *testing.T) testkit.VoiceTransportHarness {
-		clock := testkit.VoiceTransportClock()
+	voicetest.VoiceTransportContract(t, func(t *testing.T) voicetest.VoiceTransportHarness {
+		clock := voicetest.VoiceTransportClock()
 		tr, f := newTestTransport(t, clock)
-		return testkit.VoiceTransportHarness{
+		return voicetest.VoiceTransportHarness{
 			Transport: tr, Clock: clock,
 			Connect: func(_ *testing.T, room appvoice.RoomRef, s appvoice.Session) { f.connect(room.ID, s.ID) },
 		}
@@ -54,7 +55,7 @@ func TestVoiceTransportContract(t *testing.T) {
 // runs without Connect: it checks the calls of the API on rooms without participants.
 func TestVoiceTransportContractLiveKitServer(t *testing.T) {
 	srv := livekittest.New(t)
-	testkit.VoiceTransportContract(t, func(t *testing.T) testkit.VoiceTransportHarness {
+	voicetest.VoiceTransportContract(t, func(t *testing.T) voicetest.VoiceTransportHarness {
 		clock := testkit.NewClock(time.Now())
 		tr, err := New(Options{
 			URL: srv.URL, APIURL: srv.APIURL, APIKey: livekittest.APIKey, APISecret: livekittest.APISecret,
@@ -63,7 +64,7 @@ func TestVoiceTransportContractLiveKitServer(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		return testkit.VoiceTransportHarness{Transport: tr, Clock: clock}
+		return voicetest.VoiceTransportHarness{Transport: tr, Clock: clock}
 	})
 	t.Run("CreatesTheRoomWithItsOptions", func(t *testing.T) {
 		tr, err := New(Options{
@@ -100,7 +101,7 @@ func TestVoiceTransportContractLiveKitServer(t *testing.T) {
 
 func decodeClaims(t *testing.T, token string) claims {
 	t.Helper()
-	c, err := verify(token, testKey, testSecret, testkit.VoiceTransportClock().Now())
+	c, err := verify(token, testKey, testSecret, voicetest.VoiceTransportClock().Now())
 	if err != nil {
 		t.Fatalf("verify: %v", err)
 	}
@@ -108,7 +109,7 @@ func decodeClaims(t *testing.T, token string) claims {
 }
 
 func TestGrant(t *testing.T) {
-	clock := testkit.VoiceTransportClock()
+	clock := voicetest.VoiceTransportClock()
 	tr, _ := newTestTransport(t, clock)
 	room := appvoice.RoomRef{ID: "room-1"}
 	s := appvoice.Session{ID: "session-1", AccountID: "account-1"}
@@ -142,7 +143,7 @@ func TestGrant(t *testing.T) {
 }
 
 func TestOpenSetSpeakingMute(t *testing.T) {
-	clock := testkit.VoiceTransportClock()
+	clock := voicetest.VoiceTransportClock()
 	tr, f := newTestTransport(t, clock)
 	room := appvoice.RoomRef{ID: "room-2"}
 	s := appvoice.Session{ID: "session-2"}
@@ -195,7 +196,7 @@ func anyStrings(v any) []string {
 }
 
 func TestCallFailure(t *testing.T) {
-	clock := testkit.VoiceTransportClock()
+	clock := voicetest.VoiceTransportClock()
 	tr, _ := newTestTransport(t, clock)
 	// A wrong secret: the API refuses the token.
 	tr.o.APISecret = "another secret"
@@ -219,7 +220,7 @@ func TestNotFoundIsTheTwirpCode(t *testing.T) {
 		}))
 		tr, err := New(Options{
 			URL: "wss://livekit.example.org", APIURL: srv.URL, APIKey: testKey, APISecret: testSecret,
-			HTTPClient: srv.Client(), Clock: testkit.VoiceTransportClock(),
+			HTTPClient: srv.Client(), Clock: voicetest.VoiceTransportClock(),
 		})
 		if err != nil {
 			t.Fatal(err)
@@ -259,7 +260,7 @@ func webhook(t *testing.T, key, secret string, now time.Time, event map[string]a
 }
 
 func TestParseEvents(t *testing.T) {
-	clock := testkit.VoiceTransportClock()
+	clock := voicetest.VoiceTransportClock()
 	tr, _ := newTestTransport(t, clock)
 	now := clock.Now()
 	joined := map[string]any{
@@ -304,7 +305,7 @@ func TestParseEvents(t *testing.T) {
 }
 
 func TestParseEventsRejects(t *testing.T) {
-	clock := testkit.VoiceTransportClock()
+	clock := voicetest.VoiceTransportClock()
 	tr, _ := newTestTransport(t, clock)
 	now := clock.Now()
 	event := map[string]any{

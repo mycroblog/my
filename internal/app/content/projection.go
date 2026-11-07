@@ -24,7 +24,7 @@ import (
 //     boosts are counted by RegisterInteractionProjectors).
 //
 // The rebuild queries of the Repository state the same rules in SQL; the property test in
-// testkit.StatusRepositoryContract checks that both agree.
+// contenttest.StatusRepositoryContract checks that both agree.
 func RegisterProjectors(r *uow.Projectors, repo Repository) {
 	r.Register(EventStatusCreated, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
 		ev := e.(StatusCreated)

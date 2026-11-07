@@ -7,9 +7,9 @@ import (
 
 	"github.com/mycroblog/my/internal/adapter/markdown"
 	"github.com/mycroblog/my/internal/app/instance"
-	"github.com/mycroblog/my/pkg/testkit"
+	"github.com/mycroblog/my/pkg/testkit/instancetest"
 )
 
 func TestContract(t *testing.T) {
-	testkit.DocumentRendererContract(t, func(*testing.T) instance.DocumentRenderer { return markdown.New() })
+	instancetest.DocumentRendererContract(t, func(*testing.T) instance.DocumentRenderer { return markdown.New() })
 }

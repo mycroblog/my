@@ -15,7 +15,7 @@ import (
 
 	"github.com/mycroblog/my/internal/adapter/blob/fs"
 	"github.com/mycroblog/my/internal/app/blob"
-	"github.com/mycroblog/my/pkg/testkit"
+	"github.com/mycroblog/my/pkg/testkit/blobtest"
 )
 
 func newStore(t *testing.T, dir string) *fs.Store {
@@ -36,7 +36,7 @@ func objectFile(dir, key string) string {
 }
 
 func TestBlobStoreContract(t *testing.T) {
-	testkit.BlobStoreContract(t, func(t *testing.T) blob.Store { return newStore(t, t.TempDir()) })
+	blobtest.BlobStoreContract(t, func(t *testing.T) blob.Store { return newStore(t, t.TempDir()) })
 }
 
 func TestPublicURLJoinsTheBaseURL(t *testing.T) {

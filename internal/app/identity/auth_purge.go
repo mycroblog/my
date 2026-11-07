@@ -32,7 +32,7 @@ const (
 
 // AuthRecordPurgeRepository is the part of the identity module's persistence that the purge uses.
 // Each method deletes inside tx at most limit parent rows with their children and returns how many
-// parents it deleted. The database adapters implement it and pass testkit.AccountErasureContract.
+// parents it deleted. The database adapters implement it and pass federationtest.AccountErasureContract.
 type AuthRecordPurgeRepository interface {
 	// DeleteExpiredTokenFamilies deletes the token families whose every access and refresh token
 	// expired before t, with their revocations, last use, and the authorization code that started

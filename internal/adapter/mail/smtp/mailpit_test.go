@@ -16,7 +16,7 @@ import (
 	"github.com/mycroblog/my/internal/adapter/mail/internal/mailtest"
 	"github.com/mycroblog/my/internal/adapter/mail/smtp"
 	"github.com/mycroblog/my/internal/app/kernel"
-	"github.com/mycroblog/my/pkg/testkit"
+	"github.com/mycroblog/my/pkg/testkit/kerneltest"
 	"github.com/mycroblog/my/pkg/testkit/mailpittest"
 )
 
@@ -54,10 +54,10 @@ func mailpitDelivered(t *testing.T, s *mailpittest.Server) []kernel.MailMessage 
 }
 
 func TestMailpitMailerContract(t *testing.T) {
-	testkit.MailerContract(t, func(t *testing.T) testkit.MailerHarness {
+	kerneltest.MailerContract(t, func(t *testing.T) kerneltest.MailerHarness {
 		s := mailpittest.New(t, mailpittest.Options{STARTTLS: true})
 		// Mailpit accepts every recipient, so the cases of the rejections skip.
-		return testkit.MailerHarness{
+		return kerneltest.MailerHarness{
 			Mailer:    mailpitMailer(t, s, "", "", s.TLSConfig),
 			Delivered: func() []kernel.MailMessage { return mailpitDelivered(t, s) },
 		}

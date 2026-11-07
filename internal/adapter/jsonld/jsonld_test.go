@@ -10,13 +10,13 @@ import (
 
 	"github.com/mycroblog/my/internal/adapter/jsonld"
 	appfederation "github.com/mycroblog/my/internal/app/federation"
-	"github.com/mycroblog/my/pkg/testkit"
+	"github.com/mycroblog/my/pkg/testkit/federationtest"
 )
 
 // TestCanonicalizerContract compares the canonicalization and the linked data signature with
 // jsonld.js, the processor of Misskey, on the bundled contexts.
 func TestCanonicalizerContract(t *testing.T) {
-	testkit.CanonicalizerContract(t, func(t *testing.T) appfederation.Canonicalizer {
+	federationtest.CanonicalizerContract(t, func(t *testing.T) appfederation.Canonicalizer {
 		c, err := jsonld.New()
 		if err != nil {
 			t.Fatalf("New = %v", err)

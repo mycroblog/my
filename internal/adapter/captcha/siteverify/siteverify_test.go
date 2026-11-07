@@ -16,14 +16,14 @@ import (
 
 	"github.com/mycroblog/my/internal/adapter/httpclient"
 	"github.com/mycroblog/my/internal/app/kernel"
-	"github.com/mycroblog/my/pkg/testkit"
+	"github.com/mycroblog/my/pkg/testkit/kerneltest"
 )
 
 func TestContract(t *testing.T) {
 	for _, s := range Services() {
 		t.Run(string(s), func(t *testing.T) {
-			svc := testkit.HumanVerifierService{ReportsAction: ReportsAction(s), SendsSiteKey: SendsSiteKey(s)}
-			testkit.HumanVerifierContract(t, svc, func(t *testing.T, stub testkit.HumanVerifierStub) kernel.HumanVerifier {
+			svc := kerneltest.HumanVerifierService{ReportsAction: ReportsAction(s), SendsSiteKey: SendsSiteKey(s)}
+			kerneltest.HumanVerifierContract(t, svc, func(t *testing.T, stub kerneltest.HumanVerifierStub) kernel.HumanVerifier {
 				v, err := New(Options{
 					Service: s, SiteKey: stub.SiteKey, SecretKey: Secret(stub.SecretKey), Host: stub.Host,
 					HTTP: httpclient.New(httpclient.Options{

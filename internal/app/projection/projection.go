@@ -47,7 +47,7 @@ type Projection struct {
 
 // Store is the port through which the service reads and writes projection tables without
 // knowing their columns. The database adapters implement it for the tables of their schema
-// and pass testkit.ProjectionStoreContract. A table that the schema does not declare is an
+// and pass projectiontest.ProjectionStoreContract. A table that the schema does not declare is an
 // error.
 type Store interface {
 	// Rows returns up to limit rows of table inside tx, skipping offset rows, in the order of

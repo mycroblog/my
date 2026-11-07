@@ -20,7 +20,7 @@ import (
 	"github.com/mycroblog/my/internal/adapter/plugin/kind"
 	appfinance "github.com/mycroblog/my/internal/app/finance"
 	"github.com/mycroblog/my/internal/domain/finance"
-	"github.com/mycroblog/my/pkg/testkit"
+	"github.com/mycroblog/my/pkg/testkit/financetest"
 )
 
 func newSource(t *testing.T, d kind.Destination, loc *time.Location) *billingplugin.Source {
@@ -52,10 +52,10 @@ var failures = map[appfinance.ImportErrorKind]error{
 	appfinance.ImportErrorUnavailable:     appfinance.ErrBillingUnavailable,
 }
 
-func providerOf(s testkit.BillingScenario) *testkit.FakeBillingSource {
-	provider := testkit.NewFakeBillingSource(appfinance.SourcePlugin, s.Location)
+func providerOf(s financetest.BillingScenario) *financetest.FakeBillingSource {
+	provider := financetest.NewFakeBillingSource(appfinance.SourcePlugin, s.Location)
 	for _, m := range s.Months {
-		provider.SetMonth(m.Month, testkit.FakeBillingMonth{Final: m.Final, Through: m.Through, Rows: m.Rows})
+		provider.SetMonth(m.Month, financetest.FakeBillingMonth{Final: m.Final, Through: m.Through, Rows: m.Rows})
 	}
 	provider.SetPages(s.Pages)
 	if s.Failure != "" {
@@ -79,7 +79,7 @@ func TestContract(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			testkit.BillingSourceContract(t, func(t *testing.T, s testkit.BillingScenario) appfinance.BillingSource {
+			financetest.BillingSourceContract(t, func(t *testing.T, s financetest.BillingScenario) appfinance.BillingSource {
 				t.Helper()
 				h, _ := tc.fake(fakeplugin.Options{Billing: providerOf(s)})
 				return newSource(t, kind.Destination{Address: fakeplugin.ServeUnix(t, h), Protocol: tc.protocol}, time.UTC)
@@ -234,7 +234,7 @@ func TestAnInvalidLineLeavesItsText(t *testing.T) {
 
 func TestADeadlineIsAFailureToRetry(t *testing.T) {
 	t.Parallel()
-	h, _ := fakeplugin.JSON(fakeplugin.Options{Block: true, Billing: testkit.NewFakeBillingSource(appfinance.SourcePlugin, time.UTC)})
+	h, _ := fakeplugin.JSON(fakeplugin.Options{Block: true, Billing: financetest.NewFakeBillingSource(appfinance.SourcePlugin, time.UTC)})
 	src := newSource(t, kind.Destination{Address: fakeplugin.ServeUnix(t, h), Timeout: 50 * time.Millisecond}, time.UTC)
 	_, err := fetch(t, src, 10)
 	if got := appfinance.ImportErrorKindOf(err); got != appfinance.ImportErrorUnavailable || !got.Retried() {
@@ -244,7 +244,7 @@ func TestADeadlineIsAFailureToRetry(t *testing.T) {
 
 func TestACancelDuringTheCallIsTheContexts(t *testing.T) {
 	t.Parallel()
-	h, _ := fakeplugin.JSON(fakeplugin.Options{Block: true, Billing: testkit.NewFakeBillingSource(appfinance.SourcePlugin, time.UTC)})
+	h, _ := fakeplugin.JSON(fakeplugin.Options{Block: true, Billing: financetest.NewFakeBillingSource(appfinance.SourcePlugin, time.UTC)})
 	src := newSource(t, kind.Destination{Address: fakeplugin.ServeUnix(t, h)}, time.UTC)
 	ctx, cancel := context.WithTimeout(t.Context(), 50*time.Millisecond)
 	defer cancel()
@@ -280,7 +280,7 @@ func TestNoCapStaysNoCap(t *testing.T) {
 // No request allowed makes no call, whatever the plugin would do with it.
 func TestNoRequestMakesNoCall(t *testing.T) {
 	t.Parallel()
-	h, rec := fakeplugin.JSON(fakeplugin.Options{Billing: testkit.NewFakeBillingSource(appfinance.SourcePlugin, time.UTC)})
+	h, rec := fakeplugin.JSON(fakeplugin.Options{Billing: financetest.NewFakeBillingSource(appfinance.SourcePlugin, time.UTC)})
 	_, err := fetch(t, newSource(t, kind.Destination{Address: fakeplugin.ServeUnix(t, h)}, time.UTC), 0)
 	if !errors.Is(err, appfinance.ErrRequestCap) || rec.Calls() != 0 {
 		t.Errorf("err = %v, %d calls", err, rec.Calls())

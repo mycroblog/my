@@ -15,7 +15,7 @@ import (
 	nethtml "golang.org/x/net/html"
 
 	"github.com/mycroblog/my/internal/app/translation"
-	"github.com/mycroblog/my/pkg/testkit"
+	"github.com/mycroblog/my/pkg/testkit/translationtest"
 )
 
 const testKey = "lt-secret-key-0123456789"
@@ -115,9 +115,9 @@ func upperText(in string) string {
 
 func TestContract(t *testing.T) {
 	t.Parallel()
-	testkit.TranslatorContract(t, func(t *testing.T) testkit.TranslatorHarness {
+	translationtest.TranslatorContract(t, func(t *testing.T) translationtest.TranslatorHarness {
 		s := newStandIn(t)
-		return testkit.TranslatorHarness{
+		return translationtest.TranslatorHarness{
 			Translator:          s.translator(t, testKey),
 			Source:              "en",
 			Target:              "ja",

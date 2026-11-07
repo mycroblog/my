@@ -529,6 +529,7 @@ linters:
               desc: adapters implement application ports and never call inbound interfaces
             - pkg: github.com/mycroblog/my/internal/platform
               desc: only cmd imports the composition root
+        # pkg/testkit and the contracts of each module in pkg/testkit/<module>test (ADR-0153 §3).
         testkit:
           list-mode: lax
           files:
@@ -540,6 +541,16 @@ linters:
               desc: testkit depends only on application ports and domain types
             - pkg: github.com/mycroblog/my/internal/platform
               desc: testkit depends only on application ports and domain types
+        # pkg/testkit itself keeps what every module shares (clock, IDs, fakes, fixtures); the module packages
+        # import it, never the other way round, so a change to one module's contracts reruns only its tests.
+        testkit-shared:
+          list-mode: lax
+          files:
+            - "**/pkg/testkit/*.go"
+            - "!**/pkg/testkit/*_test.go"
+          deny:
+            - pkg: github.com/mycroblog/my/pkg/testkit/
+              desc: the shared parts of testkit import no module's contracts (ADR-0153 §3)
         # The tests of the flows across modules (ADR-0153 §1) drive the application layer on the SQLite adapter.
         flowtest:
           list-mode: lax

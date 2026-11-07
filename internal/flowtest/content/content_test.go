@@ -8,23 +8,23 @@ import (
 
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/flowtest"
-	"github.com/mycroblog/my/pkg/testkit"
+	"github.com/mycroblog/my/pkg/testkit/contenttest"
 )
 
 func TestInteractionFlows(t *testing.T) {
 	t.Parallel()
-	testkit.InteractionFlows(t, func(t *testing.T, opts uow.Options) testkit.InteractionHarness {
+	contenttest.InteractionFlows(t, func(t *testing.T, opts uow.Options) contenttest.InteractionHarness {
 		db := flowtest.SQLite(t, opts)
-		return testkit.InteractionHarness{UnitOfWork: db, Statuses: db.StatusRepository(), Interactions: db.InteractionRepository()}
+		return contenttest.InteractionHarness{UnitOfWork: db, Statuses: db.StatusRepository(), Interactions: db.InteractionRepository()}
 	})
 }
 
 func TestAutoDeleteFlows(t *testing.T) {
 	t.Parallel()
-	testkit.AutoDeleteFlows(t, func(t *testing.T, opts uow.Options) testkit.AutoDeleteHarness {
+	contenttest.AutoDeleteFlows(t, func(t *testing.T, opts uow.Options) contenttest.AutoDeleteHarness {
 		db := flowtest.SQLite(t, opts)
-		return testkit.AutoDeleteHarness{
-			InteractionHarness: testkit.InteractionHarness{UnitOfWork: db, Statuses: db.StatusRepository(), Interactions: db.InteractionRepository()},
+		return contenttest.AutoDeleteHarness{
+			InteractionHarness: contenttest.InteractionHarness{UnitOfWork: db, Statuses: db.StatusRepository(), Interactions: db.InteractionRepository()},
 			AutoDeletes:        db.StatusRepository(),
 		}
 	})
@@ -32,17 +32,17 @@ func TestAutoDeleteFlows(t *testing.T) {
 
 func TestMediaFlows(t *testing.T) {
 	t.Parallel()
-	testkit.MediaFlows(t, func(t *testing.T, opts uow.Options) testkit.MediaHarness {
+	contenttest.MediaFlows(t, func(t *testing.T, opts uow.Options) contenttest.MediaHarness {
 		db := flowtest.SQLite(t, opts)
-		return testkit.MediaHarness{UnitOfWork: db, Media: db.MediaRepository(), Statuses: db.StatusRepository()}
+		return contenttest.MediaHarness{UnitOfWork: db, Media: db.MediaRepository(), Statuses: db.StatusRepository()}
 	})
 }
 
 func TestCustomEmojiFlows(t *testing.T) {
 	t.Parallel()
-	testkit.CustomEmojiFlows(t, func(t *testing.T, opts uow.Options) testkit.CustomEmojiHarness {
+	contenttest.CustomEmojiFlows(t, func(t *testing.T, opts uow.Options) contenttest.CustomEmojiHarness {
 		db := flowtest.SQLite(t, opts)
-		return testkit.CustomEmojiHarness{
+		return contenttest.CustomEmojiHarness{
 			UnitOfWork: db, Media: db.MediaRepository(), Statuses: db.StatusRepository(), Emojis: db.CustomEmojiRepository(),
 		}
 	})

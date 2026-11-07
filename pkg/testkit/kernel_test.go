@@ -10,16 +10,17 @@ import (
 
 	"github.com/mycroblog/my/internal/app/kernel"
 	"github.com/mycroblog/my/pkg/testkit"
+	"github.com/mycroblog/my/pkg/testkit/kerneltest"
 )
 
 var start = time.Date(2026, 10, 16, 12, 0, 0, 0, time.UTC)
 
 func TestClockContract(t *testing.T) {
-	testkit.ClockContract(t, testkit.NewClock(start))
+	kerneltest.ClockContract(t, testkit.NewClock(start))
 }
 
 func TestKeyManagerContract(t *testing.T) {
-	testkit.KeyManagerContract(t, testkit.NewKeyManager("test"))
+	kerneltest.KeyManagerContract(t, testkit.NewKeyManager("test"))
 }
 
 func TestClockStandsStillUntilMoved(t *testing.T) {
@@ -47,9 +48,9 @@ func TestClockStandsStillUntilMoved(t *testing.T) {
 func TestIDGeneratorContract(t *testing.T) {
 	// A stopped clock puts every ID in the same millisecond.
 	c := testkit.NewClock(start)
-	ids := testkit.IDGeneratorContract(t, testkit.NewIDGenerator(c), c)
+	ids := kerneltest.IDGeneratorContract(t, testkit.NewIDGenerator(c), c)
 	for _, id := range ids {
-		if ms, _ := testkit.UUIDv7Millis(id); ms != start.UnixMilli() {
+		if ms, _ := kerneltest.UUIDv7Millis(id); ms != start.UnixMilli() {
 			t.Fatalf("ID %q has timestamp %d, want %d", id, ms, start.UnixMilli())
 		}
 	}
@@ -105,7 +106,7 @@ func TestIDGeneratorStampsClockTime(t *testing.T) {
 	g := testkit.NewIDGenerator(c)
 	c.Advance(90 * time.Minute)
 	id := g.NewID()
-	if ms, _ := testkit.UUIDv7Millis(id); ms != c.Now().UnixMilli() {
+	if ms, _ := kerneltest.UUIDv7Millis(id); ms != c.Now().UnixMilli() {
 		t.Errorf("ID %q has timestamp %d, want %d", id, ms, c.Now().UnixMilli())
 	}
 	if floor := kernel.UUIDv7Floor(c.Now()); id <= floor {
@@ -137,7 +138,7 @@ func TestIDGeneratorConcurrentIDsAreUnique(t *testing.T) {
 }
 
 func TestKeyValueStoreContract(t *testing.T) {
-	testkit.KeyValueStoreContract(t, func(_ *testing.T, clock *testkit.Clock) kernel.KeyValueStore {
+	kerneltest.KeyValueStoreContract(t, func(_ *testing.T, clock *testkit.Clock) kernel.KeyValueStore {
 		return testkit.NewKeyValueStore(clock)
 	})
 }

@@ -6,13 +6,13 @@ import (
 	"testing"
 
 	"github.com/mycroblog/my/internal/app/uow"
-	"github.com/mycroblog/my/pkg/testkit"
+	"github.com/mycroblog/my/pkg/testkit/projectiontest"
 )
 
 func TestProjectionStoreContract(t *testing.T) {
 	t.Parallel()
-	testkit.ProjectionStoreContract(t, func(t *testing.T) testkit.ProjectionStoreHarness {
+	projectiontest.ProjectionStoreContract(t, func(t *testing.T) projectiontest.ProjectionStoreHarness {
 		db, _ := newTestDB(t, "", uow.Options{})
-		return testkit.ProjectionStoreHarness{UnitOfWork: db, Store: db.ProjectionStore()}
+		return projectiontest.ProjectionStoreHarness{UnitOfWork: db, Store: db.ProjectionStore()}
 	})
 }

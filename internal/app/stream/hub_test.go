@@ -9,8 +9,8 @@ import (
 	"github.com/mycroblog/my/internal/app/stream"
 )
 
-// The routing, limits, and slow subscribers of Hub are verified by testkit.StreamBrokerContract
-// (pkg/testkit/stream_test.go).
+// The routing, limits, and slow subscribers of Hub are verified by streamtest.StreamBrokerContract
+// (pkg/testkit/streamtest/stream_test.go).
 
 func isDone(s stream.Subscription) bool {
 	select {

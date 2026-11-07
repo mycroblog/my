@@ -17,7 +17,7 @@ import (
 
 	"github.com/mycroblog/my/internal/app/supporters"
 	"github.com/mycroblog/my/internal/domain/finance"
-	"github.com/mycroblog/my/pkg/testkit"
+	"github.com/mycroblog/my/pkg/testkit/supporterstest"
 )
 
 const testSigningKey = "whsec_test_secret"
@@ -36,7 +36,7 @@ func (s *sleeps) sleep(ctx context.Context, d time.Duration) error {
 }
 
 // newOnFake returns a Provider on a fake API whose account holds s.
-func newOnFake(t *testing.T, s testkit.PaymentScenario) (*Provider, *fakeAPI, *sleeps) {
+func newOnFake(t *testing.T, s supporterstest.PaymentScenario) (*Provider, *fakeAPI, *sleeps) {
 	t.Helper()
 	now := func() time.Time { return s.Now }
 	f := newFakeAPI(t, now)
@@ -57,9 +57,9 @@ func newOnFake(t *testing.T, s testkit.PaymentScenario) (*Provider, *fakeAPI, *s
 }
 
 func TestPaymentProviderContract(t *testing.T) {
-	testkit.PaymentProviderContract(t, func(t *testing.T, s testkit.PaymentScenario) testkit.PaymentUnderTest {
+	supporterstest.PaymentProviderContract(t, func(t *testing.T, s supporterstest.PaymentScenario) supporterstest.PaymentUnderTest {
 		p, f, _ := newOnFake(t, s)
-		return testkit.PaymentUnderTest{
+		return supporterstest.PaymentUnderTest{
 			Provider: p, Deliver: f.deliver(testSigningKey), CheckoutHosts: []string{CheckoutHost}, PortalHosts: []string{PortalHost},
 			TimedSignature: true,
 			DeclineChanges: func(sub supporters.SubscriptionRef, declined bool) {
@@ -79,8 +79,8 @@ func TestPaymentProviderContract(t *testing.T) {
 	})
 }
 
-func scenario() testkit.PaymentScenario {
-	return testkit.PaymentScenario{Mode: supporters.ModeTest, Location: time.UTC, Now: time.Date(2026, 10, 22, 3, 0, 0, 0, time.UTC)}
+func scenario() supporterstest.PaymentScenario {
+	return supporterstest.PaymentScenario{Mode: supporters.ModeTest, Location: time.UTC, Now: time.Date(2026, 10, 22, 3, 0, 0, 0, time.UTC)}
 }
 
 func TestNewRefusesKeys(t *testing.T) {
@@ -697,7 +697,7 @@ func TestFailedRenewalIsLate(t *testing.T) {
 // of invoices name their subscriptions.
 func TestResolveInvoice(t *testing.T) {
 	s := scenario()
-	s.Money = []testkit.PaymentScenarioMoney{{
+	s.Money = []supporterstest.PaymentScenarioMoney{{
 		ID: "txn_1", Object: "ch_1", Kind: supporters.MoneyPayment, Subscription: "sub_1", OccurredAt: s.Now.Add(-time.Hour),
 		Covers:     supporters.DateRange{Start: supporters.Date{Year: 2026, Month: 10, Day: 22}, End: supporters.Date{Year: 2026, Month: 11, Day: 21}},
 		GrossMinor: 1250, FeeMinor: 66, Currency: "USD",

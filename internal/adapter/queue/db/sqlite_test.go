@@ -13,6 +13,7 @@ import (
 	"github.com/mycroblog/my/internal/app/queue"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/pkg/testkit"
+	"github.com/mycroblog/my/pkg/testkit/queuetest"
 	"github.com/mycroblog/my/schema"
 )
 
@@ -46,13 +47,13 @@ func openSQLiteWith(t *testing.T, path string, apply bool, opts uow.Options) *sq
 	return d
 }
 
-func sqliteHarness(t *testing.T, clock *testkit.Clock, path string, apply bool) testkit.QueueHarness {
+func sqliteHarness(t *testing.T, clock *testkit.Clock, path string, apply bool) queuetest.QueueHarness {
 	t.Helper()
 	d := openSQLite(t, path, apply)
 	opts := queuedb.Options{Clock: clock, IDs: testkit.NewIDGenerator(clock)}
 	q := queuedb.NewSQLite(d, opts)
-	h := testkit.QueueHarness{Queue: q, Source: q, DeadJobs: q, UnitOfWork: d, Outbox: q, Inspector: q, Attempts: q}
-	h.Restart = func(t *testing.T) testkit.QueueHarness {
+	h := queuetest.QueueHarness{Queue: q, Source: q, DeadJobs: q, UnitOfWork: d, Outbox: q, Inspector: q, Attempts: q}
+	h.Restart = func(t *testing.T) queuetest.QueueHarness {
 		_ = d.Close()
 		return sqliteHarness(t, clock, path, false)
 	}
@@ -60,31 +61,31 @@ func sqliteHarness(t *testing.T, clock *testkit.Clock, path string, apply bool) 
 }
 
 func TestSQLiteBacklogContract(t *testing.T) {
-	testkit.QueueBacklogContract(t, func(t *testing.T, clock *testkit.Clock) testkit.QueueHarness {
+	queuetest.QueueBacklogContract(t, func(t *testing.T, clock *testkit.Clock) queuetest.QueueHarness {
 		return sqliteHarness(t, clock, filepath.Join(t.TempDir(), "queue.db"), true)
 	})
 }
 
 func TestSQLiteTypesContract(t *testing.T) {
-	testkit.QueueTypesContract(t, func(t *testing.T, clock *testkit.Clock) (testkit.QueueHarness, testkit.QueueTypesSource) {
+	queuetest.QueueTypesContract(t, func(t *testing.T, clock *testkit.Clock) (queuetest.QueueHarness, queuetest.QueueTypesSource) {
 		h := sqliteHarness(t, clock, filepath.Join(t.TempDir(), "queue.db"), true)
 		return h, h.Queue.(*queuedb.Queue).OnlyTypes
 	})
 }
 
 func TestSQLiteWakeContract(t *testing.T) {
-	testkit.QueueWakeContract(t, func(t *testing.T, clock *testkit.Clock, waker queue.Waker) testkit.QueueWakeHarness {
+	queuetest.QueueWakeContract(t, func(t *testing.T, clock *testkit.Clock, waker queue.Waker) queuetest.QueueWakeHarness {
 		projectors := &uow.Projectors{}
 		d := openSQLiteWith(t, filepath.Join(t.TempDir(), "queue.db"), true, uow.Options{Projectors: projectors})
 		q := queuedb.NewSQLite(d, queuedb.Options{
 			Clock: clock, IDs: testkit.NewIDGenerator(clock), Waker: waker, Projectors: projectors, Logger: discardLogger(),
 		})
-		return testkit.QueueWakeHarness{Queue: q, Source: q, DeadJobs: q, Finder: q, UnitOfWork: d, Outbox: q}
+		return queuetest.QueueWakeHarness{Queue: q, Source: q, DeadJobs: q, Finder: q, UnitOfWork: d, Outbox: q}
 	})
 }
 
 func TestSQLiteQueueContract(t *testing.T) {
-	testkit.QueueContract(t, func(t *testing.T, clock *testkit.Clock) testkit.QueueHarness {
+	queuetest.QueueContract(t, func(t *testing.T, clock *testkit.Clock) queuetest.QueueHarness {
 		return sqliteHarness(t, clock, filepath.Join(t.TempDir(), "queue.db"), true)
 	})
 }

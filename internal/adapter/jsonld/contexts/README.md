@@ -9,5 +9,5 @@ canonicalization never fetches a context from the network. Mastodon and Misskey 
 | `security-v1.jsonld` | `https://w3id.org/security/v1` | served at the URL (W3C Credentials Community Group) |
 | `identity-v1.jsonld` | `https://w3id.org/identity/v1` | `contexts/identity-v1.jsonld` of the `web-payments/web-payments.org` repository, which the URL redirects to and which no longer answers |
 
-Replace a file only with the document its URL serves, and run `go test ./internal/adapter/jsonld`: `testkit.CanonicalizerContract` compares the
-canonicalization with jsonld.js (`pkg/testkit/testdata/jsonld/sign.mjs`).
+Replace a file only with the document its URL serves, and run `go test ./internal/adapter/jsonld`: `federationtest.CanonicalizerContract` compares the
+canonicalization with jsonld.js (`pkg/testkit/federationtest/testdata/jsonld/sign.mjs`).

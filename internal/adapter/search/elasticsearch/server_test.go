@@ -15,8 +15,8 @@ import (
 	"time"
 
 	"github.com/mycroblog/my/internal/app/search"
-	"github.com/mycroblog/my/pkg/testkit"
 	"github.com/mycroblog/my/pkg/testkit/elasticsearchtest"
+	"github.com/mycroblog/my/pkg/testkit/searchtest"
 )
 
 // refreshing is the Index of the contract: each write is followed by a refresh, since the contract
@@ -80,7 +80,7 @@ func TestSearchServerElasticsearch(t *testing.T) {
 	}
 	for _, file := range files {
 		t.Run("contract "+cmp.Or(file, "default settings"), func(t *testing.T) {
-			testkit.SearchIndexContract(t, func(t *testing.T) search.Index {
+			searchtest.SearchIndexContract(t, func(t *testing.T) search.Index {
 				return refreshing{openServerIndex(t, url, file)}
 			})
 		})

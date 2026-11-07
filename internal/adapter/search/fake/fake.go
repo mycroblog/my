@@ -2,7 +2,7 @@
 
 // Package fake is a search.Index that keeps its documents in memory, for tests (ADR-0149 §3). It
 // is separate from search = none, which has no backend. Go tests inject it with
-// platform.AppOptions.SearchIndex; its tests run testkit.SearchIndexContract on it.
+// platform.AppOptions.SearchIndex; its tests run searchtest.SearchIndexContract on it.
 //
 // A word matches anywhere in a document, ignoring case, whatever the language.
 //

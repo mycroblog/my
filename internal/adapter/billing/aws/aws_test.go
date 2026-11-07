@@ -23,7 +23,7 @@ import (
 	billingaws "github.com/mycroblog/my/internal/adapter/billing/aws"
 	appfinance "github.com/mycroblog/my/internal/app/finance"
 	"github.com/mycroblog/my/internal/domain/finance"
-	"github.com/mycroblog/my/pkg/testkit"
+	"github.com/mycroblog/my/pkg/testkit/financetest"
 )
 
 // now is the time of the tests: the data of October 2026 is through the 20th.
@@ -71,7 +71,7 @@ type ceResult struct {
 // the scenario's pages, or answers with the scenario's failure.
 type fakeCostExplorer struct {
 	t        *testing.T
-	scenario testkit.BillingScenario
+	scenario financetest.BillingScenario
 	metric   string
 
 	mu       sync.Mutex
@@ -182,7 +182,7 @@ func (f *fakeCostExplorer) page(req ceRequest, n int) []ceResult {
 // groups turns the rows of a month into the groups of Cost Explorer: one per (SERVICE,
 // RECORD_TYPE), the rows of a charge type taking its record types in turn and the rows beyond
 // them summed into the last, as Cost Explorer sums the line items of a group.
-func groups(rows []testkit.FakeBillingRow, metric string) []ceGroup {
+func groups(rows []financetest.FakeBillingRow, metric string) []ceGroup {
 	type key struct{ service, record string }
 	var order []key
 	sums := map[key]*big.Rat{}
@@ -213,7 +213,7 @@ func groups(rows []testkit.FakeBillingRow, metric string) []ceGroup {
 	return out
 }
 
-func newFake(t *testing.T, s testkit.BillingScenario, o billingaws.Options) (*billingaws.Source, *fakeCostExplorer) {
+func newFake(t *testing.T, s financetest.BillingScenario, o billingaws.Options) (*billingaws.Source, *fakeCostExplorer) {
 	t.Helper()
 	fake := &fakeCostExplorer{t: t, scenario: s, metric: o.Metric}
 	if fake.metric == "" {
@@ -240,7 +240,7 @@ func newFake(t *testing.T, s testkit.BillingScenario, o billingaws.Options) (*bi
 }
 
 func TestBillingSourceContract(t *testing.T) {
-	testkit.BillingSourceContract(t, func(t *testing.T, s testkit.BillingScenario) appfinance.BillingSource {
+	financetest.BillingSourceContract(t, func(t *testing.T, s financetest.BillingScenario) appfinance.BillingSource {
 		if s.Failure == appfinance.ImportErrorBytesCap {
 			t.Skip("Cost Explorer bills requests, not bytes")
 		}
@@ -258,9 +258,9 @@ func month(t *testing.T, s string) finance.YearMonth {
 	return m
 }
 
-func oneMonth(t *testing.T) testkit.BillingScenario {
-	return testkit.BillingScenario{Location: time.UTC, Pages: 1, Months: []testkit.BillingScenarioMonth{
-		{Month: month(t, "2026-10"), Rows: []testkit.FakeBillingRow{
+func oneMonth(t *testing.T) financetest.BillingScenario {
+	return financetest.BillingScenario{Location: time.UTC, Pages: 1, Months: []financetest.BillingScenarioMonth{
+		{Month: month(t, "2026-10"), Rows: []financetest.FakeBillingRow{
 			{Service: "Amazon Simple Storage Service", ChargeType: finance.ChargeUsage, Amount: "0.10", Currency: "USD"},
 		}},
 	}}

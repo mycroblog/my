@@ -29,7 +29,7 @@ expect() {
 
 expect "the s3 adapter" "blob" internal/adapter/blob/s3/s3.go
 expect "the s3 test server" "blob" pkg/testkit/s3test/s3test.go
-expect "the BlobStore contract" "blob" pkg/testkit/blob_contract.go
+expect "the BlobStore contract" "blob" pkg/testkit/blobtest/blob_contract.go
 expect "the postgres adapter" "postgres" internal/adapter/db/postgres/account.go
 expect "the postgres schema" "postgres" schema/postgres/09-instance.sql
 expect "the postgres queries" "postgres" queries/postgres/hook.sql

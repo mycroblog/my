@@ -15,6 +15,7 @@ import (
 	"github.com/mycroblog/my/internal/adapter/valkey"
 	"github.com/mycroblog/my/internal/app/kernel"
 	"github.com/mycroblog/my/pkg/testkit"
+	"github.com/mycroblog/my/pkg/testkit/kerneltest"
 	"github.com/mycroblog/my/pkg/testkit/valkeytest"
 )
 
@@ -24,7 +25,7 @@ func TestMain(m *testing.M) {
 }
 
 func TestKeyValueStoreContract(t *testing.T) {
-	testkit.KeyValueStoreContract(t, func(t *testing.T, clock *testkit.Clock) kernel.KeyValueStore {
+	kerneltest.KeyValueStoreContract(t, func(t *testing.T, clock *testkit.Clock) kernel.KeyValueStore {
 		s := valkeytest.New(t)
 		return kvvalkey.New(open(t, s), s.KeyPrefix, clock)
 	})

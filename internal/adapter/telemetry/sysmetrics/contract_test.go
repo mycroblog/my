@@ -13,6 +13,10 @@ import (
 	"github.com/mycroblog/my/internal/app/kernel"
 	"github.com/mycroblog/my/internal/app/stream"
 	"github.com/mycroblog/my/pkg/testkit"
+	"github.com/mycroblog/my/pkg/testkit/blobtest"
+	"github.com/mycroblog/my/pkg/testkit/kerneltest"
+	"github.com/mycroblog/my/pkg/testkit/queuetest"
+	"github.com/mycroblog/my/pkg/testkit/streamtest"
 )
 
 // The decorators stand in for the adapters they wrap, so each passes the contract of its port
@@ -26,23 +30,23 @@ func recordingMeter(t *testing.T) *testkit.Meter {
 }
 
 func TestKVContract(t *testing.T) {
-	testkit.KeyValueStoreContract(t, func(t *testing.T, clock *testkit.Clock) kernel.KeyValueStore {
+	kerneltest.KeyValueStoreContract(t, func(t *testing.T, clock *testkit.Clock) kernel.KeyValueStore {
 		return sysmetrics.KV(memory.New(clock), recordingMeter(t), "kv.memory")
 	})
 }
 
 func TestBlobsContract(t *testing.T) {
-	testkit.BlobStoreContract(t, func(t *testing.T) blob.Store {
+	blobtest.BlobStoreContract(t, func(t *testing.T) blob.Store {
 		store := testkit.NewMemoryBlobStore(testkit.NewClock(time.Date(2026, 1, 2, 3, 4, 5, 0, time.UTC)))
 		return sysmetrics.Blobs(store, recordingMeter(t), "blob.memory")
 	})
 }
 
 func TestJobsAndSourceContract(t *testing.T) {
-	testkit.QueueContract(t, func(t *testing.T, clock *testkit.Clock) testkit.QueueHarness {
+	queuetest.QueueContract(t, func(t *testing.T, clock *testkit.Clock) queuetest.QueueHarness {
 		q := inline.New(inline.Options{Clock: clock, IDs: testkit.NewIDGenerator(clock)})
 		m := recordingMeter(t)
-		return testkit.QueueHarness{
+		return queuetest.QueueHarness{
 			Queue:    sysmetrics.Jobs(q, m, "queue.inline"),
 			Source:   sysmetrics.Source(q, m, "queue.inline"),
 			DeadJobs: q,
@@ -51,10 +55,10 @@ func TestJobsAndSourceContract(t *testing.T) {
 }
 
 func TestBusContract(t *testing.T) {
-	testkit.StreamBusContract(t, func(t *testing.T) testkit.StreamBus {
+	streamtest.StreamBusContract(t, func(t *testing.T) streamtest.StreamBus {
 		broker := stream.NewMemoryBroker()
 		m := recordingMeter(t)
-		return testkit.StreamBus{
+		return streamtest.StreamBus{
 			NewBus: func(*testing.T) stream.Bus { return sysmetrics.Bus(broker.Bus(), m, "stream.memory", nil) },
 			Unreachable: func(*testing.T) stream.Bus {
 				unreachable := stream.NewMemoryBroker()

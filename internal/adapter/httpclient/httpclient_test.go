@@ -15,11 +15,11 @@ import (
 	"time"
 
 	"github.com/mycroblog/my/internal/app/kernel"
-	"github.com/mycroblog/my/pkg/testkit"
+	"github.com/mycroblog/my/pkg/testkit/kerneltest"
 )
 
 func TestContract(t *testing.T) {
-	testkit.HTTPClientContract(t, func(_ *testing.T, n testkit.HTTPClientNetwork) kernel.HTTPClient {
+	kerneltest.HTTPClientContract(t, func(_ *testing.T, n kerneltest.HTTPClientNetwork) kernel.HTTPClient {
 		return New(Options{
 			UserAgent:       "my/test (+https://social.example/)",
 			AllowHTTP:       n.AllowHTTP,

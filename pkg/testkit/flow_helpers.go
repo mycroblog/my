@@ -2,6 +2,8 @@
 
 package testkit
 
+// The recorders and stand-ins that the contracts and flows of several modules share.
+
 import (
 	"context"
 	"regexp"
@@ -14,85 +16,95 @@ import (
 	"github.com/mycroblog/my/internal/app/uow"
 )
 
-const contractHost = "social.example"
+// ContractHost is the host of the instance that the contracts and flows run on.
+const ContractHost = "social.example"
 
-// eventLog records the graph events that commands emit (committed or not).
-type eventLog struct {
-	mu     sync.Mutex
-	events []uow.Event
+// EventLog records the graph events that commands emit (committed or not).
+type EventLog struct {
+	Mu     sync.Mutex
+	Events []uow.Event
 }
 
-// record is a projector that logs e.
-func (l *eventLog) record(_ context.Context, _ uow.Tx, e uow.Event) error {
-	l.mu.Lock()
-	defer l.mu.Unlock()
-	l.events = append(l.events, e)
+// Record is a projector that logs e.
+func (l *EventLog) Record(_ context.Context, _ uow.Tx, e uow.Event) error {
+	l.Mu.Lock()
+	defer l.Mu.Unlock()
+	l.Events = append(l.Events, e)
 	return nil
 }
 
-func (l *eventLog) take() []uow.Event {
-	l.mu.Lock()
-	defer l.mu.Unlock()
-	out := l.events
-	l.events = nil
+// Take returns the events logged since the last Take and forgets them.
+func (l *EventLog) Take() []uow.Event {
+	l.Mu.Lock()
+	defer l.Mu.Unlock()
+	out := l.Events
+	l.Events = nil
 	return out
 }
 
-// recordingOutbox is a queue.Outbox that keeps the jobs it is given.
-type recordingOutbox struct {
+// RecordingOutbox is a queue.Outbox that keeps the jobs it is given.
+type RecordingOutbox struct {
 	mu   sync.Mutex
-	jobs []queue.NewJob
+	Jobs []queue.NewJob
 }
 
-func (o *recordingOutbox) EnqueueTx(_ context.Context, _ uow.Tx, jobs ...queue.NewJob) error {
+// EnqueueTx keeps jobs.
+func (o *RecordingOutbox) EnqueueTx(_ context.Context, _ uow.Tx, jobs ...queue.NewJob) error {
 	o.mu.Lock()
 	defer o.mu.Unlock()
-	o.jobs = append(o.jobs, jobs...)
+	o.Jobs = append(o.Jobs, jobs...)
 	return nil
 }
 
-func (o *recordingOutbox) take() []queue.NewJob {
+// Take returns the jobs kept since the last Take and forgets them.
+func (o *RecordingOutbox) Take() []queue.NewJob {
 	o.mu.Lock()
 	defer o.mu.Unlock()
-	out := o.jobs
-	o.jobs = nil
+	out := o.Jobs
+	o.Jobs = nil
 	return out
 }
 
-// remoteSanitizer stands in for the HTML sanitizer: it drops script elements and records
+// RemoteSanitizer stands in for the HTML sanitizer: it drops script elements and records
 // version 7, so that the contract sees that remote HTML went through it.
-type remoteSanitizer struct{}
+type RemoteSanitizer struct{}
 
 var (
 	remoteScripts = regexp.MustCompile(`(?s)<script.*?</script>`)
 	remoteTags    = regexp.MustCompile(`<[^>]*>`)
 )
 
-func (remoteSanitizer) SanitizeHTML(s string) string { return remoteScripts.ReplaceAllString(s, "") }
+// SanitizeHTML drops the script elements of s.
+func (RemoteSanitizer) SanitizeHTML(s string) string { return remoteScripts.ReplaceAllString(s, "") }
 
-func (remoteSanitizer) PlainText(s string) string { return remoteTags.ReplaceAllString(s, "") }
+// PlainText drops the tags of s.
+func (RemoteSanitizer) PlainText(s string) string { return remoteTags.ReplaceAllString(s, "") }
 
-func (remoteSanitizer) PolicyVersion() int { return 7 }
+// PolicyVersion is 7.
+func (RemoteSanitizer) PolicyVersion() int { return 7 }
 
-func sortedIDs(ids ...string) []string {
+// SortedIDs sorts ids in place and returns them.
+func SortedIDs(ids ...string) []string {
 	slices.Sort(ids)
 	return ids
 }
 
-// rendezvous lets each of n transactions wait, inside the transaction, until all n reach it or
+// Rendezvous lets each of n transactions wait, inside the transaction, until all n reach it or
 // patience runs out. A transaction that waits for a lock that another one holds never reaches
 // it, so patience bounds the wait; the transactions then go on in the order the database allows.
-type rendezvous struct {
+type Rendezvous struct {
 	arrived  chan struct{}
 	n        int
 	patience time.Duration
 }
 
-func newRendezvous(n int) *rendezvous {
-	return &rendezvous{arrived: make(chan struct{}, n), n: n, patience: 300 * time.Millisecond}
+// NewRendezvous returns a rendezvous of n transactions.
+func NewRendezvous(n int) *Rendezvous {
+	return &Rendezvous{arrived: make(chan struct{}, n), n: n, patience: 300 * time.Millisecond}
 }
 
-func (r *rendezvous) wait() {
+// Wait blocks until all n transactions reach the rendezvous or patience runs out.
+func (r *Rendezvous) Wait() {
 	r.arrived <- struct{}{}
 	deadline := time.After(r.patience)
 	for {
@@ -107,9 +119,9 @@ func (r *rendezvous) wait() {
 	}
 }
 
-// inTransactionOf registers on projectors a projector of eventType that runs check in the
+// InTransactionOf registers on projectors a projector of eventType that runs check in the
 // transaction of each such event, and returns how many times it ran.
-func inTransactionOf(projectors *uow.Projectors, eventType string, check func(ctx context.Context, tx uow.Tx, ev uow.Event)) *int {
+func InTransactionOf(projectors *uow.Projectors, eventType string, check func(ctx context.Context, tx uow.Tx, ev uow.Event)) *int {
 	n := new(int)
 	projectors.Register(eventType, func(ctx context.Context, tx uow.Tx, ev uow.Event) error {
 		*n++
@@ -119,7 +131,8 @@ func inTransactionOf(projectors *uow.Projectors, eventType string, check func(ct
 	return n
 }
 
-func wantRan(t *testing.T, what string, n *int) {
+// WantRan fails t when the reads counted by n, from InTransactionOf, never ran.
+func WantRan(t *testing.T, what string, n *int) {
 	t.Helper()
 	if *n == 0 {
 		t.Errorf("%s: the reads in the transaction did not run", what)

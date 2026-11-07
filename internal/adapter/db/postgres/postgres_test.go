@@ -20,7 +20,24 @@ import (
 	"github.com/mycroblog/my/internal/adapter/payment/fake"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/pkg/testkit"
+	"github.com/mycroblog/my/pkg/testkit/contenttest"
+	"github.com/mycroblog/my/pkg/testkit/diagnosticstest"
+	"github.com/mycroblog/my/pkg/testkit/federationtest"
+	"github.com/mycroblog/my/pkg/testkit/financetest"
+	"github.com/mycroblog/my/pkg/testkit/graphtest"
+	"github.com/mycroblog/my/pkg/testkit/hooktest"
+	"github.com/mycroblog/my/pkg/testkit/identitytest"
+	"github.com/mycroblog/my/pkg/testkit/instancetest"
+	"github.com/mycroblog/my/pkg/testkit/moderationtest"
+	"github.com/mycroblog/my/pkg/testkit/notificationtest"
 	"github.com/mycroblog/my/pkg/testkit/pgtest"
+	"github.com/mycroblog/my/pkg/testkit/searchtest"
+	"github.com/mycroblog/my/pkg/testkit/supporterstest"
+	"github.com/mycroblog/my/pkg/testkit/timelinetest"
+	"github.com/mycroblog/my/pkg/testkit/translationtest"
+	"github.com/mycroblog/my/pkg/testkit/uowtest"
+	"github.com/mycroblog/my/pkg/testkit/voicetest"
+	"github.com/mycroblog/my/pkg/testkit/webhooktest"
 )
 
 func TestMain(m *testing.M) {
@@ -57,127 +74,127 @@ func probeKeys(ctx context.Context, db *DB) ([]string, error) {
 }
 
 func TestAccountRepositoryContract(t *testing.T) {
-	testkit.AccountRepositoryContract(t, func(t *testing.T, opts uow.Options) testkit.AccountHarness {
+	identitytest.AccountRepositoryContract(t, func(t *testing.T, opts uow.Options) identitytest.AccountHarness {
 		db := newTestDB(t, opts)
-		return testkit.AccountHarness{UnitOfWork: db, Identity: db.IdentityRepository(), Accounts: db.AccountRepository()}
+		return identitytest.AccountHarness{UnitOfWork: db, Identity: db.IdentityRepository(), Accounts: db.AccountRepository()}
 	})
 }
 
 func TestMediaRepositoryContract(t *testing.T) {
-	testkit.MediaRepositoryContract(t, func(t *testing.T, opts uow.Options) testkit.MediaHarness {
+	contenttest.MediaRepositoryContract(t, func(t *testing.T, opts uow.Options) contenttest.MediaHarness {
 		db := newTestDB(t, opts)
-		return testkit.MediaHarness{UnitOfWork: db, Media: db.MediaRepository(), Statuses: db.StatusRepository()}
+		return contenttest.MediaHarness{UnitOfWork: db, Media: db.MediaRepository(), Statuses: db.StatusRepository()}
 	})
 }
 
 func TestLinkCardRepositoryContract(t *testing.T) {
-	testkit.LinkCardRepositoryContract(t, func(t *testing.T, opts uow.Options) testkit.LinkCardHarness {
+	contenttest.LinkCardRepositoryContract(t, func(t *testing.T, opts uow.Options) contenttest.LinkCardHarness {
 		db := newTestDB(t, opts)
-		return testkit.LinkCardHarness{UnitOfWork: db, Cards: db.StatusRepository(), Media: db.MediaRepository()}
+		return contenttest.LinkCardHarness{UnitOfWork: db, Cards: db.StatusRepository(), Media: db.MediaRepository()}
 	})
 }
 
 func TestTranslationRepositoryContract(t *testing.T) {
-	testkit.TranslationRepositoryContract(t, func(t *testing.T) testkit.TranslationHarness {
+	translationtest.TranslationRepositoryContract(t, func(t *testing.T) translationtest.TranslationHarness {
 		db := newTestDB(t, uow.Options{})
-		return testkit.TranslationHarness{UnitOfWork: db, Repository: db.TranslationRepository()}
+		return translationtest.TranslationHarness{UnitOfWork: db, Repository: db.TranslationRepository()}
 	})
 }
 
 func TestSearchRepositoryContract(t *testing.T) {
-	testkit.SearchRepositoryContract(t, func(t *testing.T) testkit.SearchHarness {
+	searchtest.SearchRepositoryContract(t, func(t *testing.T) searchtest.SearchHarness {
 		db := newTestDB(t, uow.Options{})
-		return testkit.SearchHarness{UnitOfWork: db, Repository: db.SearchRepository()}
+		return searchtest.SearchHarness{UnitOfWork: db, Repository: db.SearchRepository()}
 	})
 }
 
 func TestCustomEmojiRepositoryContract(t *testing.T) {
-	testkit.CustomEmojiRepositoryContract(t, func(t *testing.T, opts uow.Options) testkit.CustomEmojiHarness {
+	contenttest.CustomEmojiRepositoryContract(t, func(t *testing.T, opts uow.Options) contenttest.CustomEmojiHarness {
 		db := newTestDB(t, opts)
-		return testkit.CustomEmojiHarness{
+		return contenttest.CustomEmojiHarness{
 			UnitOfWork: db, Media: db.MediaRepository(), Statuses: db.StatusRepository(), Emojis: db.CustomEmojiRepository(),
 		}
 	})
 }
 
 func TestWebhookRepositoryContract(t *testing.T) {
-	testkit.WebhookRepositoryContract(t, func(t *testing.T, opts uow.Options) testkit.WebhookHarness {
+	webhooktest.WebhookRepositoryContract(t, func(t *testing.T, opts uow.Options) webhooktest.WebhookHarness {
 		db := newTestDB(t, opts)
-		return testkit.WebhookHarness{UnitOfWork: db, Webhooks: db.WebhookRepository(), Moderation: db.ModerationRepository()}
+		return webhooktest.WebhookHarness{UnitOfWork: db, Webhooks: db.WebhookRepository(), Moderation: db.ModerationRepository()}
 	})
 }
 
 func TestFinanceRepositoryContract(t *testing.T) {
-	testkit.FinanceRepositoryContract(t, func(t *testing.T, opts uow.Options) testkit.FinanceHarness {
+	financetest.FinanceRepositoryContract(t, func(t *testing.T, opts uow.Options) financetest.FinanceHarness {
 		db := newTestDB(t, opts)
-		return testkit.FinanceHarness{UnitOfWork: db, Finance: db.FinanceRepository()}
+		return financetest.FinanceHarness{UnitOfWork: db, Finance: db.FinanceRepository()}
 	})
 }
 
 func TestVoiceRepositoryContract(t *testing.T) {
-	testkit.VoiceRepositoryContract(t, func(t *testing.T, opts uow.Options) testkit.VoiceHarness {
+	voicetest.VoiceRepositoryContract(t, func(t *testing.T, opts uow.Options) voicetest.VoiceHarness {
 		db := newTestDB(t, opts)
-		return testkit.VoiceHarness{UnitOfWork: db, Voice: db.VoiceRepository()}
+		return voicetest.VoiceHarness{UnitOfWork: db, Voice: db.VoiceRepository()}
 	})
 }
 
 func TestVoiceRoomsContract(t *testing.T) {
-	testkit.VoiceRoomsContract(t, func(t *testing.T, opts uow.Options) testkit.VoiceHarness {
+	voicetest.VoiceRoomsContract(t, func(t *testing.T, opts uow.Options) voicetest.VoiceHarness {
 		db := newTestDB(t, opts)
-		return testkit.VoiceHarness{UnitOfWork: db, Voice: db.VoiceRepository()}
+		return voicetest.VoiceHarness{UnitOfWork: db, Voice: db.VoiceRepository()}
 	})
 }
 
 // newPaymentWorld is the provider's side of PaymentRepositoryContract: the fake adapter.
-func newPaymentWorld(o testkit.PaymentWorldOptions) testkit.PaymentWorld {
+func newPaymentWorld(o supporterstest.PaymentWorldOptions) supporterstest.PaymentWorld {
 	return fake.New(fake.Options{Name: o.Name, Mode: o.Mode, Now: o.Now, PageSize: o.PageSize})
 }
 
 func TestSupporterRepositoryContract(t *testing.T) {
-	testkit.SupporterRepositoryContract(t, func(t *testing.T, opts uow.Options) testkit.SupporterHarness {
+	supporterstest.SupporterRepositoryContract(t, func(t *testing.T, opts uow.Options) supporterstest.SupporterHarness {
 		db := newTestDB(t, opts)
-		return testkit.SupporterHarness{
-			AccountHarness: testkit.AccountHarness{UnitOfWork: db, Identity: db.IdentityRepository(), Accounts: db.AccountRepository()},
+		return supporterstest.SupporterHarness{
+			AccountHarness: identitytest.AccountHarness{UnitOfWork: db, Identity: db.IdentityRepository(), Accounts: db.AccountRepository()},
 			Supporters:     db.SupporterRepository(), NewWorld: newPaymentWorld,
 		}
 	})
 }
 
 func TestPaymentRepositoryContract(t *testing.T) {
-	testkit.PaymentRepositoryContract(t, func(t *testing.T, opts uow.Options) testkit.PaymentHarness {
+	supporterstest.PaymentRepositoryContract(t, func(t *testing.T, opts uow.Options) supporterstest.PaymentHarness {
 		db := newTestDB(t, opts)
-		return testkit.PaymentHarness{UnitOfWork: db, Payments: db.PaymentRepository(), NewWorld: newPaymentWorld}
+		return supporterstest.PaymentHarness{UnitOfWork: db, Payments: db.PaymentRepository(), NewWorld: newPaymentWorld}
 	})
 }
 
 func TestStatusRepositoryContract(t *testing.T) {
-	testkit.StatusRepositoryContract(t, func(t *testing.T, opts uow.Options) testkit.StatusHarness {
+	contenttest.StatusRepositoryContract(t, func(t *testing.T, opts uow.Options) contenttest.StatusHarness {
 		db := newTestDB(t, opts)
-		return testkit.StatusHarness{UnitOfWork: db, Statuses: db.StatusRepository()}
+		return contenttest.StatusHarness{UnitOfWork: db, Statuses: db.StatusRepository()}
 	})
 }
 
 func TestInteractionRepositoryContract(t *testing.T) {
-	testkit.InteractionRepositoryContract(t, func(t *testing.T, opts uow.Options) testkit.InteractionHarness {
+	contenttest.InteractionRepositoryContract(t, func(t *testing.T, opts uow.Options) contenttest.InteractionHarness {
 		db := newTestDB(t, opts)
-		return testkit.InteractionHarness{UnitOfWork: db, Statuses: db.StatusRepository(), Interactions: db.InteractionRepository()}
+		return contenttest.InteractionHarness{UnitOfWork: db, Statuses: db.StatusRepository(), Interactions: db.InteractionRepository()}
 	})
 }
 
 func TestAutoDeleteContract(t *testing.T) {
-	testkit.AutoDeleteContract(t, func(t *testing.T, opts uow.Options) testkit.AutoDeleteHarness {
+	contenttest.AutoDeleteContract(t, func(t *testing.T, opts uow.Options) contenttest.AutoDeleteHarness {
 		db := newTestDB(t, opts)
-		return testkit.AutoDeleteHarness{
-			InteractionHarness: testkit.InteractionHarness{UnitOfWork: db, Statuses: db.StatusRepository(), Interactions: db.InteractionRepository()},
+		return contenttest.AutoDeleteHarness{
+			InteractionHarness: contenttest.InteractionHarness{UnitOfWork: db, Statuses: db.StatusRepository(), Interactions: db.InteractionRepository()},
 			AutoDeletes:        db.StatusRepository(),
 		}
 	})
 }
 
 func TestTimelineContract(t *testing.T) {
-	testkit.TimelineContract(t, func(t *testing.T, opts uow.Options) testkit.TimelineHarness {
+	timelinetest.TimelineContract(t, func(t *testing.T, opts uow.Options) timelinetest.TimelineHarness {
 		db := newTestDB(t, opts)
-		return testkit.TimelineHarness{
+		return timelinetest.TimelineHarness{
 			UnitOfWork: db, Statuses: db.StatusRepository(), Interactions: db.InteractionRepository(),
 			Graph: db.GraphRepository(), Timeline: db.TimelineRepository(),
 		}
@@ -185,10 +202,10 @@ func TestTimelineContract(t *testing.T) {
 }
 
 func TestNotificationContract(t *testing.T) {
-	testkit.NotificationContract(t, func(t *testing.T, opts uow.Options) testkit.NotificationHarness {
+	notificationtest.NotificationContract(t, func(t *testing.T, opts uow.Options) notificationtest.NotificationHarness {
 		db := newTestDB(t, opts)
-		return testkit.NotificationHarness{
-			AccountHarness: testkit.AccountHarness{UnitOfWork: db, Identity: db.IdentityRepository(), Accounts: db.AccountRepository()},
+		return notificationtest.NotificationHarness{
+			AccountHarness: identitytest.AccountHarness{UnitOfWork: db, Identity: db.IdentityRepository(), Accounts: db.AccountRepository()},
 			Graph:          db.GraphRepository(),
 			Statuses:       db.StatusRepository(),
 			Interactions:   db.InteractionRepository(),
@@ -198,27 +215,27 @@ func TestNotificationContract(t *testing.T) {
 }
 
 func TestPushSubscriptionContract(t *testing.T) {
-	testkit.PushSubscriptionContract(t, func(t *testing.T) testkit.PushHarness {
+	notificationtest.PushSubscriptionContract(t, func(t *testing.T) notificationtest.PushHarness {
 		db := newTestDB(t, uow.Options{})
-		return testkit.PushHarness{UnitOfWork: db, Push: db.NotificationRepository()}
+		return notificationtest.PushHarness{UnitOfWork: db, Push: db.NotificationRepository()}
 	})
 }
 
 func TestFollowRepositoryContract(t *testing.T) {
-	testkit.FollowRepositoryContract(t, func(t *testing.T, opts uow.Options) testkit.FollowHarness {
+	graphtest.FollowRepositoryContract(t, func(t *testing.T, opts uow.Options) graphtest.FollowHarness {
 		db := newTestDB(t, opts)
-		return testkit.FollowHarness{
-			AccountHarness: testkit.AccountHarness{UnitOfWork: db, Identity: db.IdentityRepository(), Accounts: db.AccountRepository()},
+		return graphtest.FollowHarness{
+			AccountHarness: identitytest.AccountHarness{UnitOfWork: db, Identity: db.IdentityRepository(), Accounts: db.AccountRepository()},
 			Graph:          db.GraphRepository(),
 		}
 	})
 }
 
 func TestPostingContract(t *testing.T) {
-	testkit.PostingContract(t, func(t *testing.T, opts uow.Options) testkit.PostingHarness {
+	contenttest.PostingContract(t, func(t *testing.T, opts uow.Options) contenttest.PostingHarness {
 		db := newTestDB(t, opts)
-		return testkit.PostingHarness{
-			AccountHarness: testkit.AccountHarness{UnitOfWork: db, Identity: db.IdentityRepository(), Accounts: db.AccountRepository()},
+		return contenttest.PostingHarness{
+			AccountHarness: identitytest.AccountHarness{UnitOfWork: db, Identity: db.IdentityRepository(), Accounts: db.AccountRepository()},
 			Graph:          db.GraphRepository(),
 			Instance:       db.InstanceRepository(),
 			Statuses:       db.StatusRepository(),
@@ -228,70 +245,70 @@ func TestPostingContract(t *testing.T) {
 }
 
 func TestBlockRepositoryContract(t *testing.T) {
-	testkit.BlockRepositoryContract(t, func(t *testing.T, opts uow.Options) testkit.FollowHarness {
+	graphtest.BlockRepositoryContract(t, func(t *testing.T, opts uow.Options) graphtest.FollowHarness {
 		db := newTestDB(t, opts)
-		return testkit.FollowHarness{
-			AccountHarness: testkit.AccountHarness{UnitOfWork: db, Identity: db.IdentityRepository(), Accounts: db.AccountRepository()},
+		return graphtest.FollowHarness{
+			AccountHarness: identitytest.AccountHarness{UnitOfWork: db, Identity: db.IdentityRepository(), Accounts: db.AccountRepository()},
 			Graph:          db.GraphRepository(),
 		}
 	})
 }
 
 func TestPreferencesRepositoryContract(t *testing.T) {
-	testkit.PreferencesRepositoryContract(t, func(t *testing.T, opts uow.Options) testkit.AccountHarness {
+	identitytest.PreferencesRepositoryContract(t, func(t *testing.T, opts uow.Options) identitytest.AccountHarness {
 		db := newTestDB(t, opts)
-		return testkit.AccountHarness{UnitOfWork: db, Identity: db.IdentityRepository(), Accounts: db.AccountRepository()}
+		return identitytest.AccountHarness{UnitOfWork: db, Identity: db.IdentityRepository(), Accounts: db.AccountRepository()}
 	})
 }
 
 func TestRegistrationRepositoryContract(t *testing.T) {
-	testkit.RegistrationRepositoryContract(t, func(t *testing.T, opts uow.Options) testkit.AccountHarness {
+	identitytest.RegistrationRepositoryContract(t, func(t *testing.T, opts uow.Options) identitytest.AccountHarness {
 		db := newTestDB(t, opts)
-		return testkit.AccountHarness{UnitOfWork: db, Identity: db.IdentityRepository(), Accounts: db.AccountRepository()}
+		return identitytest.AccountHarness{UnitOfWork: db, Identity: db.IdentityRepository(), Accounts: db.AccountRepository()}
 	})
 }
 
 func TestRoleRepositoryContract(t *testing.T) {
-	testkit.RoleRepositoryContract(t, func(t *testing.T, opts uow.Options) testkit.AccountHarness {
+	identitytest.RoleRepositoryContract(t, func(t *testing.T, opts uow.Options) identitytest.AccountHarness {
 		db := newTestDB(t, opts)
-		return testkit.AccountHarness{UnitOfWork: db, Identity: db.IdentityRepository(), Accounts: db.AccountRepository()}
+		return identitytest.AccountHarness{UnitOfWork: db, Identity: db.IdentityRepository(), Accounts: db.AccountRepository()}
 	})
 }
 
 func TestInstanceRepositoryContract(t *testing.T) {
-	testkit.InstanceRepositoryContract(t, func(t *testing.T, opts uow.Options) testkit.InstanceHarness {
+	instancetest.InstanceRepositoryContract(t, func(t *testing.T, opts uow.Options) instancetest.InstanceHarness {
 		db := newTestDB(t, opts)
-		return testkit.InstanceHarness{UnitOfWork: db, Instance: db.InstanceRepository()}
+		return instancetest.InstanceHarness{UnitOfWork: db, Instance: db.InstanceRepository()}
 	})
 }
 
 func TestRelayContract(t *testing.T) {
-	testkit.RelayContract(t, func(t *testing.T, opts uow.Options) testkit.RelayHarness {
+	federationtest.RelayContract(t, func(t *testing.T, opts uow.Options) federationtest.RelayHarness {
 		db := newTestDB(t, opts)
-		return testkit.RelayHarness{UnitOfWork: db, Relays: db.FederationRepository()}
+		return federationtest.RelayHarness{UnitOfWork: db, Relays: db.FederationRepository()}
 	})
 }
 
 func TestFederationRepositoryContract(t *testing.T) {
-	testkit.FederationRepositoryContract(t, func(t *testing.T, opts uow.Options) testkit.FederationHarness {
+	federationtest.FederationRepositoryContract(t, func(t *testing.T, opts uow.Options) federationtest.FederationHarness {
 		db := newTestDB(t, opts)
-		return testkit.FederationHarness{UnitOfWork: db, Federation: db.FederationRepository()}
+		return federationtest.FederationHarness{UnitOfWork: db, Federation: db.FederationRepository()}
 	})
 }
 
 func TestInboxContract(t *testing.T) {
-	testkit.InboxContract(t, func(t *testing.T, opts uow.Options) testkit.InboxHarness {
+	federationtest.InboxContract(t, func(t *testing.T, opts uow.Options) federationtest.InboxHarness {
 		db := newTestDB(t, opts)
 		feds := db.FederationRepository()
-		return testkit.InboxHarness{UnitOfWork: db, Inbox: feds, Federation: feds, Instances: feds, Accounts: db.AccountRepository()}
+		return federationtest.InboxHarness{UnitOfWork: db, Inbox: feds, Federation: feds, Instances: feds, Accounts: db.AccountRepository()}
 	})
 }
 
 func TestInboxProcessingContract(t *testing.T) {
-	testkit.InboxProcessingContract(t, func(t *testing.T, opts uow.Options) testkit.InboxHarness {
+	federationtest.InboxProcessingContract(t, func(t *testing.T, opts uow.Options) federationtest.InboxHarness {
 		db := newTestDB(t, opts)
 		feds := db.FederationRepository()
-		return testkit.InboxHarness{
+		return federationtest.InboxHarness{
 			UnitOfWork: db, Inbox: feds, Federation: feds, Instances: feds, Accounts: db.AccountRepository(), Statuses: db.StatusRepository(),
 			Graph: db.GraphRepository(), Moderation: db.ModerationRepository(),
 		}
@@ -299,18 +316,18 @@ func TestInboxProcessingContract(t *testing.T) {
 }
 
 func TestAdminAccountContract(t *testing.T) {
-	testkit.AdminAccountContract(t, func(t *testing.T, opts uow.Options) testkit.AdminAccountHarness {
+	identitytest.AdminAccountContract(t, func(t *testing.T, opts uow.Options) identitytest.AdminAccountHarness {
 		db := newTestDB(t, opts)
-		return testkit.AdminAccountHarness{
+		return identitytest.AdminAccountHarness{
 			UnitOfWork: db, Identity: db.IdentityRepository(), Accounts: db.AccountRepository(), Moderation: db.ModerationRepository(),
 		}
 	})
 }
 
 func TestAccountSearchContract(t *testing.T) {
-	testkit.AccountSearchContract(t, func(t *testing.T, opts uow.Options) testkit.AccountSearchHarness {
+	identitytest.AccountSearchContract(t, func(t *testing.T, opts uow.Options) identitytest.AccountSearchHarness {
 		db := newTestDB(t, opts)
-		return testkit.AccountSearchHarness{
+		return identitytest.AccountSearchHarness{
 			UnitOfWork: db, Identity: db.IdentityRepository(), Accounts: db.AccountRepository(),
 			Graph: db.GraphRepository(), Moderation: db.ModerationRepository(),
 		}
@@ -353,17 +370,17 @@ LIMIT $3`, "al", "al\U0010FFFF", 100)
 }
 
 func TestModerationContract(t *testing.T) {
-	testkit.ModerationContract(t, func(t *testing.T, opts uow.Options) testkit.ModerationHarness {
+	moderationtest.ModerationContract(t, func(t *testing.T, opts uow.Options) moderationtest.ModerationHarness {
 		db := newTestDB(t, opts)
-		return testkit.ModerationHarness{UnitOfWork: db, Moderation: db.ModerationRepository()}
+		return moderationtest.ModerationHarness{UnitOfWork: db, Moderation: db.ModerationRepository()}
 	})
 }
 
 func TestRemoteStatusContract(t *testing.T) {
-	testkit.RemoteStatusContract(t, func(t *testing.T, opts uow.Options) testkit.RemoteStatusHarness {
+	federationtest.RemoteStatusContract(t, func(t *testing.T, opts uow.Options) federationtest.RemoteStatusHarness {
 		db := newTestDB(t, opts)
-		return testkit.RemoteStatusHarness{
-			AccountHarness: testkit.AccountHarness{UnitOfWork: db, Identity: db.IdentityRepository(), Accounts: db.AccountRepository()},
+		return federationtest.RemoteStatusHarness{
+			AccountHarness: identitytest.AccountHarness{UnitOfWork: db, Identity: db.IdentityRepository(), Accounts: db.AccountRepository()},
 			Graph:          db.GraphRepository(),
 			Statuses:       db.StatusRepository(),
 			Media:          db.MediaRepository(),
@@ -379,11 +396,11 @@ func TestRemoteStatusContract(t *testing.T) {
 }
 
 func TestRetentionContract(t *testing.T) {
-	testkit.RetentionContract(t, func(t *testing.T, opts uow.Options) testkit.RetentionHarness {
+	federationtest.RetentionContract(t, func(t *testing.T, opts uow.Options) federationtest.RetentionHarness {
 		db := newTestDB(t, opts)
-		return testkit.RetentionHarness{
-			RemoteStatusHarness: testkit.RemoteStatusHarness{
-				AccountHarness: testkit.AccountHarness{UnitOfWork: db, Identity: db.IdentityRepository(), Accounts: db.AccountRepository()},
+		return federationtest.RetentionHarness{
+			RemoteStatusHarness: federationtest.RemoteStatusHarness{
+				AccountHarness: identitytest.AccountHarness{UnitOfWork: db, Identity: db.IdentityRepository(), Accounts: db.AccountRepository()},
 				Graph:          db.GraphRepository(),
 				Statuses:       db.StatusRepository(),
 				Media:          db.MediaRepository(),
@@ -403,12 +420,12 @@ func TestRetentionContract(t *testing.T) {
 }
 
 func TestRemoteFollowContract(t *testing.T) {
-	testkit.RemoteFollowContract(t, func(t *testing.T, opts uow.Options) testkit.RemoteFollowHarness {
+	federationtest.RemoteFollowContract(t, func(t *testing.T, opts uow.Options) federationtest.RemoteFollowHarness {
 		db := newTestDB(t, opts)
 		feds := db.FederationRepository()
-		return testkit.RemoteFollowHarness{
-			FollowHarness: testkit.FollowHarness{
-				AccountHarness: testkit.AccountHarness{UnitOfWork: db, Identity: db.IdentityRepository(), Accounts: db.AccountRepository()},
+		return federationtest.RemoteFollowHarness{
+			FollowHarness: graphtest.FollowHarness{
+				AccountHarness: identitytest.AccountHarness{UnitOfWork: db, Identity: db.IdentityRepository(), Accounts: db.AccountRepository()},
 				Graph:          db.GraphRepository(),
 			},
 			Notifications: db.NotificationRepository(),
@@ -419,12 +436,12 @@ func TestRemoteFollowContract(t *testing.T) {
 }
 
 func TestAccountMoveContract(t *testing.T) {
-	testkit.AccountMoveContract(t, func(t *testing.T, opts uow.Options) testkit.RemoteFollowHarness {
+	federationtest.AccountMoveContract(t, func(t *testing.T, opts uow.Options) federationtest.RemoteFollowHarness {
 		db := newTestDB(t, opts)
 		feds := db.FederationRepository()
-		return testkit.RemoteFollowHarness{
-			FollowHarness: testkit.FollowHarness{
-				AccountHarness: testkit.AccountHarness{UnitOfWork: db, Identity: db.IdentityRepository(), Accounts: db.AccountRepository()},
+		return federationtest.RemoteFollowHarness{
+			FollowHarness: graphtest.FollowHarness{
+				AccountHarness: identitytest.AccountHarness{UnitOfWork: db, Identity: db.IdentityRepository(), Accounts: db.AccountRepository()},
 				Graph:          db.GraphRepository(),
 			},
 			Notifications: db.NotificationRepository(),
@@ -435,13 +452,13 @@ func TestAccountMoveContract(t *testing.T) {
 }
 
 func TestSeveranceContract(t *testing.T) {
-	testkit.SeveranceContract(t, func(t *testing.T, opts uow.Options) testkit.SeveranceHarness {
+	notificationtest.SeveranceContract(t, func(t *testing.T, opts uow.Options) notificationtest.SeveranceHarness {
 		db := newTestDB(t, opts)
 		feds := db.FederationRepository()
-		return testkit.SeveranceHarness{
-			RemoteFollowHarness: testkit.RemoteFollowHarness{
-				FollowHarness: testkit.FollowHarness{
-					AccountHarness: testkit.AccountHarness{UnitOfWork: db, Identity: db.IdentityRepository(), Accounts: db.AccountRepository()},
+		return notificationtest.SeveranceHarness{
+			RemoteFollowHarness: federationtest.RemoteFollowHarness{
+				FollowHarness: graphtest.FollowHarness{
+					AccountHarness: identitytest.AccountHarness{UnitOfWork: db, Identity: db.IdentityRepository(), Accounts: db.AccountRepository()},
 					Graph:          db.GraphRepository(),
 				},
 				Notifications: db.NotificationRepository(),
@@ -454,17 +471,17 @@ func TestSeveranceContract(t *testing.T) {
 }
 
 func TestRemoteActorContract(t *testing.T) {
-	testkit.RemoteActorContract(t, func(t *testing.T, opts uow.Options) testkit.RemoteActorHarness {
+	federationtest.RemoteActorContract(t, func(t *testing.T, opts uow.Options) federationtest.RemoteActorHarness {
 		db := newTestDB(t, opts)
 		feds := db.FederationRepository()
-		return testkit.RemoteActorHarness{UnitOfWork: db, Accounts: db.AccountRepository(), Federation: feds, Instances: feds}
+		return federationtest.RemoteActorHarness{UnitOfWork: db, Accounts: db.AccountRepository(), Federation: feds, Instances: feds}
 	})
 }
 
 func TestUnitOfWorkContract(t *testing.T) {
-	testkit.UnitOfWorkContract(t, func(t *testing.T, opts uow.Options) testkit.UnitOfWorkHarness {
+	uowtest.UnitOfWorkContract(t, func(t *testing.T, opts uow.Options) uowtest.UnitOfWorkHarness {
 		db := newTestDB(t, opts)
-		return testkit.UnitOfWorkHarness{
+		return uowtest.UnitOfWorkHarness{
 			UnitOfWork: db,
 			Insert: func(ctx context.Context, tx uow.Tx, name string) error {
 				q, err := db.queries(tx)
@@ -630,12 +647,12 @@ func TestReady(t *testing.T) {
 }
 
 func TestRemoteInteractionContract(t *testing.T) {
-	testkit.RemoteInteractionContract(t, func(t *testing.T, opts uow.Options) testkit.RemoteInteractionHarness {
+	federationtest.RemoteInteractionContract(t, func(t *testing.T, opts uow.Options) federationtest.RemoteInteractionHarness {
 		db := newTestDB(t, opts)
 		feds := db.FederationRepository()
-		return testkit.RemoteInteractionHarness{
-			RemoteStatusHarness: testkit.RemoteStatusHarness{
-				AccountHarness: testkit.AccountHarness{UnitOfWork: db, Identity: db.IdentityRepository(), Accounts: db.AccountRepository()},
+		return federationtest.RemoteInteractionHarness{
+			RemoteStatusHarness: federationtest.RemoteStatusHarness{
+				AccountHarness: identitytest.AccountHarness{UnitOfWork: db, Identity: db.IdentityRepository(), Accounts: db.AccountRepository()},
 				Graph:          db.GraphRepository(),
 				Statuses:       db.StatusRepository(),
 				Media:          db.MediaRepository(),
@@ -651,22 +668,22 @@ func TestRemoteInteractionContract(t *testing.T) {
 }
 
 func TestHookRepositoryContract(t *testing.T) {
-	testkit.HookRepositoryContract(t, func(t *testing.T) testkit.HookHarness {
+	hooktest.HookRepositoryContract(t, func(t *testing.T) hooktest.HookHarness {
 		db := newTestDB(t, uow.Options{})
-		return testkit.HookHarness{UnitOfWork: db, Repository: db.HookRepository()}
+		return hooktest.HookHarness{UnitOfWork: db, Repository: db.HookRepository()}
 	})
 }
 
 func TestDiagnosticsRepositoryContract(t *testing.T) {
-	testkit.DiagnosticsRepositoryContract(t, func(t *testing.T, opts uow.Options) testkit.DiagnosticsHarness {
+	diagnosticstest.DiagnosticsRepositoryContract(t, func(t *testing.T, opts uow.Options) diagnosticstest.DiagnosticsHarness {
 		db := newTestDB(t, opts)
-		return testkit.DiagnosticsHarness{UnitOfWork: db, Diagnostics: db.DiagnosticsRepository()}
+		return diagnosticstest.DiagnosticsHarness{UnitOfWork: db, Diagnostics: db.DiagnosticsRepository()}
 	})
 }
 
 func TestLoginProviderRepositoryContract(t *testing.T) {
-	testkit.LoginProviderRepositoryContract(t, func(t *testing.T) testkit.LoginProviderHarness {
+	identitytest.LoginProviderRepositoryContract(t, func(t *testing.T) identitytest.LoginProviderHarness {
 		db := newTestDB(t, uow.Options{})
-		return testkit.LoginProviderHarness{UnitOfWork: db, Identity: db.IdentityRepository()}
+		return identitytest.LoginProviderHarness{UnitOfWork: db, Identity: db.IdentityRepository()}
 	})
 }

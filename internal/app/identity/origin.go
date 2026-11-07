@@ -34,7 +34,7 @@ const (
 
 // OriginRepository is the part of the identity module's persistence that records where sign-ins
 // and registrations came from. The database adapters implement it and pass
-// testkit.AdminAccountContract, which reads them.
+// identitytest.AdminAccountContract, which reads them.
 type OriginRepository interface {
 	InsertSessionOrigin(ctx context.Context, tx uow.Tx, o identity.SessionOrigin) error
 	// InsertRegistrationOrigin records the origin of a registration; the user has none yet.

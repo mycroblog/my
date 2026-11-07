@@ -385,7 +385,7 @@ type AppOptions struct {
 	// selects. Tests only, to inspect the spans with testkit.Tracer.
 	Tracer kernel.Tracer
 	// BillingSources, by name, stand in for the adapters of the names of cfg.BillingSources.
-	// Tests only, to import from testkit.FakeBillingSource.
+	// Tests only, to import from financetest.FakeBillingSource.
 	BillingSources map[string]finance.BillingSource
 	// PaymentProvider stands in for the adapter of payments, and SupporterSync, when
 	// set, for the subscriptions of the supporters module that apply its facts. Tests only, with

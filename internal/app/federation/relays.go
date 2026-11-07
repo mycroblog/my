@@ -61,7 +61,7 @@ type RelayRecord struct {
 }
 
 // RelayRepository is the persistence port of the relays (relays, relay_events, relay_states,
-// data-model §4.8). The database adapters implement it and pass testkit.RelayContract. Methods
+// data-model §4.8). The database adapters implement it and pass federationtest.RelayContract. Methods
 // that take a uow.Tx run inside that transaction; the others read committed data. Lookups that
 // find nothing return an error wrapping ErrNotFound.
 type RelayRepository interface {

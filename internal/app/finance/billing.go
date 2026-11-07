@@ -14,7 +14,7 @@ import (
 // (internal/adapter/billing/*) returns the charges of the billing months it is asked for; the
 // scheduled job JobImportBilling records the charges that changed as revisions, and the totals
 // spread the newest revision of each key over the days it covers. The contract test suite of
-// the adapters is testkit.BillingSourceContract.
+// the adapters is financetest.BillingSourceContract.
 
 // BillingSource is the port of a provider's billing data (ADR-0068 §1). Its types are of the
 // standard library and the finance domain only.

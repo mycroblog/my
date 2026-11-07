@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 // Package fake is a supporters.PaymentProvider that keeps the provider's side in memory, for
-// tests (ADR-0074 §1, §6). Its tests run testkit.PaymentProviderContract on it; the tests of the
+// tests (ADR-0074 §1, §6). Its tests run supporterstest.PaymentProviderContract on it; the tests of the
 // supporters module drive the provider's side through its methods (PutSubscription, PutMoney,
 // PutChange, Fail) and send it webhook deliveries signed by Deliver.
 //

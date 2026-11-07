@@ -24,7 +24,7 @@ var (
 )
 
 // Repository is the persistence port of the content module's statuses (data-model §4.4). The
-// database adapters implement it and pass testkit.StatusRepositoryContract.
+// database adapters implement it and pass contenttest.StatusRepositoryContract.
 //
 // Methods that take a uow.Tx run inside that transaction; the others read committed data outside
 // any transaction. Lookups that find nothing return an error wrapping ErrNotFound.

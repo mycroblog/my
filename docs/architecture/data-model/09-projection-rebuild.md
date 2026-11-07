@@ -47,7 +47,7 @@
     余分な行を消してから欠けた行を入れるので、読み手が空の投影を見ることはなく、正しい行は書き直しません。
     消すのは全列が一致する行だけ、入れるのはキーが重なる行のない行だけなので、比較と書き込みの間に変わった行は新しい値のまま残り、次の検証が残ったずれを見つけます。
   - 定期ジョブ `projection.verify`（1 日ごと）は、すべての投影に `rebuild` と同じことをし、ずれていた投影をログに残します。
-  - 表を列に依存せず読み書きするのはアダプタの `projection.Store` です（`testkit.ProjectionStoreContract`）。
+  - 表を列に依存せず読み書きするのはアダプタの `projection.Store` です（`projectiontest.ProjectionStoreContract`）。
   - `remote_account_heads` の取得の状態（`last_fetched_at`、`consecutive_fetch_failures`）はイベントに残らないので、再構築は既存の行の値を残し、
     行のない Actor には最新のスナップショットの取得時刻と 0 を入れます。`snapshot_id` と配送先は最新のスナップショットから作ります。
   - `notification_deleted_statuses` は、通知の対象の投稿のうち `content` の公開 API が削除済みと答えるものから作ります。

@@ -19,7 +19,7 @@ import (
 	mailerv1 "github.com/mycroblog/my/internal/adapter/plugin/gen/my/plugin/mailer/v1"
 	"github.com/mycroblog/my/internal/adapter/plugin/kind"
 	"github.com/mycroblog/my/internal/app/kernel"
-	"github.com/mycroblog/my/pkg/testkit"
+	"github.com/mycroblog/my/pkg/testkit/kerneltest"
 )
 
 const sender = "noreply@social.example"
@@ -70,7 +70,7 @@ func TestContract(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			testkit.MailerContract(t, func(t *testing.T) testkit.MailerHarness {
+			kerneltest.MailerContract(t, func(t *testing.T) kerneltest.MailerHarness {
 				t.Helper()
 				box := &fakeplugin.Mailbox{Answers: map[string]*mailerv1.SendResponse{
 					unknown:  {Outcome: mailerv1.Outcome_OUTCOME_RECIPIENT_REJECTED, EnhancedStatus: "5.1.1"},
@@ -78,7 +78,7 @@ func TestContract(t *testing.T) {
 					deferred: {Outcome: mailerv1.Outcome_OUTCOME_TEMPORARY, EnhancedStatus: "4.3.0"},
 				}}
 				h, _ := tc.fake(fakeplugin.Options{Mailbox: box})
-				return testkit.MailerHarness{
+				return kerneltest.MailerHarness{
 					Mailer: newMailer(t, kind.Destination{Address: fakeplugin.ServeUnix(t, h), Protocol: tc.protocol}),
 					Delivered: func() []kernel.MailMessage {
 						var out []kernel.MailMessage

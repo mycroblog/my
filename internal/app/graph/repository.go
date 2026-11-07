@@ -22,8 +22,8 @@ var (
 
 // Repository is the persistence port of the graph module: follows, blocks, mutes, and domain
 // mutes
-// (data-model §4.5). The database adapters implement it and pass testkit.FollowRepositoryContract
-// and testkit.BlockRepositoryContract.
+// (data-model §4.5). The database adapters implement it and pass graphtest.FollowRepositoryContract
+// and graphtest.BlockRepositoryContract.
 //
 // Methods that take a uow.Tx run inside that transaction; the others read committed data outside
 // any transaction. Lookups that find nothing return an error wrapping ErrNotFound.

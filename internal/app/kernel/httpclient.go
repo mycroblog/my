@@ -14,7 +14,7 @@ import (
 // HTTPClient sends every outbound HTTP request of the server: federation fetches and
 // deliveries, WebFinger, NodeInfo, the media proxy, link previews, Web Push, CAPTCHA
 // verification, and the metadata documents of OAuth clients (ADR-0019 §1, ADR-0106 §9, docs/architecture/federation.md §1.1). The adapter
-// lives in internal/adapter/httpclient and passes testkit.HTTPClientContract.
+// lives in internal/adapter/httpclient and passes kerneltest.HTTPClientContract.
 //
 // The adapter refuses destinations that are not public: addresses outside the global unicast
 // space or in the special-purpose ranges of ADR-0019 §1 (checked on the address it actually
