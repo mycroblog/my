@@ -15,6 +15,7 @@ import (
 )
 
 func TestBackupTo(t *testing.T) {
+	t.Parallel()
 	ctx := t.Context()
 	db, _ := newTestDB(t, "", uow.Options{})
 	want := []string{testkit.NamedID("a"), testkit.NamedID("b")}

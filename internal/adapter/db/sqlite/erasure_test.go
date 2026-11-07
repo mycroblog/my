@@ -10,6 +10,7 @@ import (
 )
 
 func TestAccountErasureContract(t *testing.T) {
+	t.Parallel()
 	testkit.AccountErasureContract(t, func(t *testing.T, opts uow.Options) testkit.AccountErasureHarness {
 		db, _ := newTestDB(t, "", opts)
 		return testkit.AccountErasureHarness{

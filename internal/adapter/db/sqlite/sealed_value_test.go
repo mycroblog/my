@@ -21,6 +21,7 @@ var sealedValueInserts = map[string]string{ //nolint:gosec // G101: SQL statemen
 }
 
 func TestSealedValueStoreContract(t *testing.T) {
+	t.Parallel()
 	testkit.SealedValueStoreContract(t, func(t *testing.T) testkit.SealedValueHarness {
 		db, _ := newTestDB(t, "", uow.Options{})
 		return testkit.SealedValueHarness{

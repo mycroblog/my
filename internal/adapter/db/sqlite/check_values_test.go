@@ -13,6 +13,7 @@ import (
 // writes, on projections too: growing a list later is additive, while a value nothing writes only
 // misleads.
 func TestChecksRejectValuesNothingWrites(t *testing.T) {
+	t.Parallel()
 	db, _ := newTestDB(t, "", uow.Options{})
 	const id = "0192f0c1-0000-7000-8000-000000000001"
 	for _, tc := range []struct {

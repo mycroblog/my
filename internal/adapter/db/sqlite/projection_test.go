@@ -10,6 +10,7 @@ import (
 )
 
 func TestProjectionStoreContract(t *testing.T) {
+	t.Parallel()
 	testkit.ProjectionStoreContract(t, func(t *testing.T) testkit.ProjectionStoreHarness {
 		db, _ := newTestDB(t, "", uow.Options{})
 		return testkit.ProjectionStoreHarness{UnitOfWork: db, Store: db.ProjectionStore()}

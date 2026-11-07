@@ -10,6 +10,7 @@ import (
 )
 
 func TestSignupBlockContract(t *testing.T) {
+	t.Parallel()
 	testkit.SignupBlockContract(t, func(t *testing.T, opts uow.Options) testkit.ModerationHarness {
 		db, _ := newTestDB(t, "", opts)
 		return testkit.ModerationHarness{UnitOfWork: db, Moderation: db.ModerationRepository()}

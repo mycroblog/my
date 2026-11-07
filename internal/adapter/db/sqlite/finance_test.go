@@ -11,6 +11,7 @@ import (
 // The logical type date is TEXT that date() gives back unchanged (data-model §1.2): the CHECK
 // takes a real YYYY-MM-DD only.
 func TestDateCheck(t *testing.T) {
+	t.Parallel()
 	db, _ := newTestDB(t, "", uow.Options{})
 	for _, tc := range []struct {
 		date string
