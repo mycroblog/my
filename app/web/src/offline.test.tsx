@@ -96,7 +96,10 @@ describe("the offline bar", () => {
     unreachable = false;
     await user.click(screen.getByRole("button", { name: "Try again" }));
     expect(await screen.findByRole("feed", { name: "Local timeline" })).toBeInTheDocument();
-    expectOfflineBar(false);
+    // The bar goes after the answer settles, which can come a render after the feed under load.
+    await waitFor(() => {
+      expectOfflineBar(false);
+    });
   });
 
   /** Serves an instance with a status page; offline, no request gets a response, as noResponseOffline does. */
