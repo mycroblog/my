@@ -302,6 +302,8 @@ type App struct {
 	billingClosers []io.Closer
 	// keyManagerClosers release the clients of the KMS key managers.
 	keyManagerClosers []io.Closer
+	// translatorClosers release the clients of the translation providers that hold one (ADR-0148 §15).
+	translatorClosers []io.Closer
 	// valkey is the connection to the Valkey server that the adapters configured with
 	// valkey_url share, nil until one of them connects it.
 	valkey valkeyServer
@@ -575,7 +577,7 @@ func NewApp(ctx context.Context, cfg *config.Config, opts AppOptions) (_ *App, e
 	a.setUpInbox(cfg, repos.feds)
 	a.setUpFederationSever()
 	a.setUpStatusReader(repos.statuses, repos.interactions, repos.quotes)
-	if err := a.setUpTranslation(cfg, repos.translations, opts); err != nil {
+	if err := a.setUpTranslation(ctx, cfg, repos.translations, opts); err != nil {
 		return nil, err
 	}
 	a.setUpLocalReports(repos.mods)
@@ -839,6 +841,10 @@ func (a *App) Close() error {
 		_ = c.Close()
 	}
 	a.keyManagerClosers = nil
+	for _, c := range a.translatorClosers {
+		_ = c.Close()
+	}
+	a.translatorClosers = nil
 	if a.closeWaker != nil {
 		_ = a.closeWaker.Close()
 		a.closeWaker = nil

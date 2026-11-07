@@ -9,6 +9,7 @@ require (
 	cloud.google.com/go/kms v1.36.1
 	cloud.google.com/go/pubsub/v2 v2.8.0
 	cloud.google.com/go/storage v1.70.0
+	cloud.google.com/go/translate v1.20.1
 	code.superseriousbusiness.org/httpsig v1.5.0
 	connectrpc.com/connect/v2 v2.0.2
 	github.com/alicebob/miniredis/v2 v2.40.0

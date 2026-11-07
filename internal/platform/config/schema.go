@@ -1013,6 +1013,19 @@ var schema = []field{
 		set:    func(c *Config, v string) { c.TranslatorLibreTranslateAPIKey = strings.TrimSpace(v) },
 	},
 	{
+		key:   "translator_google_project",
+		doc:   "The Google Cloud project that the translations of the provider `google`, Google Cloud Translation, are billed to; the Cloud Translation API must be enabled in it, and the service account of the server needs `roles/cloudtranslate.user` on it. Setting it registers the provider, which the instance setting `translation_providers` enables; credentials come from Application Default Credentials ([translation providers](../operations/translation.md#google-cloud-translation)). The build tag `no_translator_google` leaves it out. Empty registers no such provider.",
+		check: checkTranslatorGoogleProject,
+		set:   func(c *Config, v string) { c.TranslatorGoogleProject = strings.TrimSpace(v) },
+	},
+	{
+		key:    "translator_google_location",
+		doc:    "The location of the requests of the provider `google`: `global`, or a location of Cloud Translation such as `us-central1` (`projects/{project}/locations/{location}`). Not every location serves the general translation model; see Google's list of the locations of Cloud Translation.",
+		defDoc: "`global`",
+		check:  checkTranslatorGoogleLocation,
+		set:    func(c *Config, v string) { c.TranslatorGoogleLocation = strings.TrimSpace(v) },
+	},
+	{
 		key: "search",
 		doc: "The search engine of the full-text search of statuses. The search of accounts and hashtags uses the database and does not depend on this setting.",
 		def: "none",

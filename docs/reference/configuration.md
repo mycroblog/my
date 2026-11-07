@@ -163,6 +163,8 @@ An instance setting that has never been set reads as its default, which is defin
 | [`payments_reconcile_max_requests`](#payments_reconcile_max_requests) | `MY_PAYMENTS_RECONCILE_MAX_REQUESTS` | `1000` | no | no |
 | [`translator_libretranslate_url`](#translator_libretranslate_url) | `MY_TRANSLATOR_LIBRETRANSLATE_URL` | none | no | no |
 | [`translator_libretranslate_api_key`](#translator_libretranslate_api_key) | `MY_TRANSLATOR_LIBRETRANSLATE_API_KEY` | none | no | yes |
+| [`translator_google_project`](#translator_google_project) | `MY_TRANSLATOR_GOOGLE_PROJECT` | none | no | no |
+| [`translator_google_location`](#translator_google_location) | `MY_TRANSLATOR_GOOGLE_LOCATION` | `global` | no | no |
 | [`search`](#search) | `MY_SEARCH` | `none` | no | no |
 | [`translator_deepl_api_key`](#translator_deepl_api_key) | `MY_TRANSLATOR_DEEPL_API_KEY` | none | no | yes |
 | [`translator_deepl_url`](#translator_deepl_url) | `MY_TRANSLATOR_DEEPL_URL` | `https://api-free.deepl.com` for a key of the free plan, `https://api.deepl.com` otherwise | no | no |
@@ -1336,6 +1338,22 @@ The API key of the LibreTranslate server of `translator_libretranslate_url`, whe
 
 - Environment variable: `MY_TRANSLATOR_LIBRETRANSLATE_API_KEY` or `MY_TRANSLATOR_LIBRETRANSLATE_API_KEY_FILE`
 - Default: none
+- Required: no
+
+### `translator_google_project`
+
+The Google Cloud project that the translations of the provider `google`, Google Cloud Translation, are billed to; the Cloud Translation API must be enabled in it, and the service account of the server needs `roles/cloudtranslate.user` on it. Setting it registers the provider, which the instance setting `translation_providers` enables; credentials come from Application Default Credentials ([translation providers](../operations/translation.md#google-cloud-translation)). The build tag `no_translator_google` leaves it out. Empty registers no such provider.
+
+- Environment variable: `MY_TRANSLATOR_GOOGLE_PROJECT`
+- Default: none
+- Required: no
+
+### `translator_google_location`
+
+The location of the requests of the provider `google`: `global`, or a location of Cloud Translation such as `us-central1` (`projects/{project}/locations/{location}`). Not every location serves the general translation model; see Google's list of the locations of Cloud Translation.
+
+- Environment variable: `MY_TRANSLATOR_GOOGLE_LOCATION`
+- Default: `global`
 - Required: no
 
 ### `search`

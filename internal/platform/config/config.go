@@ -247,6 +247,11 @@ type Config struct {
 	// and TranslatorDeepLURL its API, empty for the one of the key's plan.
 	TranslatorDeepLAPIKey string
 	TranslatorDeepLURL    string
+	// TranslatorGoogleProject and TranslatorGoogleLocation are the Google Cloud project and the location of the requests
+	// of the translation provider google (ADR-0148 §15); an empty project registers no such provider, and an empty
+	// location is the global one.
+	TranslatorGoogleProject  string
+	TranslatorGoogleLocation string
 	// Voice is how the voice chat rooms connect, "off" for no voice chat (ADR-0101 §1), and the
 	// Voice* limits bound the rooms; zero is no limit, except for VoiceP2PMaxParticipants.
 	Voice                   string
@@ -447,6 +452,8 @@ func (c *Config) LogValue() slog.Value {
 		slog.String("plugin_translator_name", c.PluginTranslatorName),
 		slog.String("translator_libretranslate_url", c.TranslatorLibreTranslateURL),
 		slog.String("translator_libretranslate_api_key", redact(c.TranslatorLibreTranslateAPIKey != "")),
+		slog.String("translator_google_project", c.TranslatorGoogleProject),
+		slog.String("translator_google_location", c.TranslatorGoogleLocation),
 		slog.String("payments", c.PaymentsProvider),
 		slog.String("payments_stripe_secret_key", redact(c.PaymentsStripeSecretKey != "")),
 		slog.String("payments_stripe_webhook_secret", redact(c.PaymentsStripeWebhookSecret != "")),

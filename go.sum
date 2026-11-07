@@ -31,6 +31,8 @@ cloud.google.com/go/storage v1.70.0 h1:LQNHn0rRF94jVFfF3e416IzdQqIufa5GfF6HilQxb
 cloud.google.com/go/storage v1.70.0/go.mod h1:W84cNa070TZIegvTW67CBY+f5rxux8EJMb7YyiHdrls=
 cloud.google.com/go/trace v1.16.0 h1:GmQovzFc5F0CNfl0VLgL64aoTtu7xsM0YajW2GlG9+E=
 cloud.google.com/go/trace v1.16.0/go.mod h1:r+bdAn16dKLSV1G2D5v3e58IlQlizfxWrUfjx7kM7X0=
+cloud.google.com/go/translate v1.20.1 h1:lRllKvEZWH4+QSb9MWJu7sLshFE3tuayWnmX7RO/Ex8=
+cloud.google.com/go/translate v1.20.1/go.mod h1:RQtmJa5CCE8XgnVUiMlmihae61tn+fjl9AGAwRECdgc=
 code.superseriousbusiness.org/httpsig v1.5.0 h1:jw/qc//yYWSoOYytTZXHvW7yh8kceCipNIBfUeXQghA=
 code.superseriousbusiness.org/httpsig v1.5.0/go.mod h1:i2AKpj/WbA/o/UTvia9TAREzt0jP1AH3T1Uxjyhdzlw=
 connectrpc.com/connect/v2 v2.0.2 h1:PoPDmOlhc46elsuCdKCKTxjNBb3HJlKF+s/sP2oucPw=
