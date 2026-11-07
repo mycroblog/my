@@ -93,6 +93,7 @@ const instance: Instance = {
   voice_room_starters: "permitted",
   full_text_search: { available: false, visibilities: [] },
   translation: { browser: false, providers: [] },
+  single_user: false,
   rules: [],
   status_page_url: statusPageUrl,
 };

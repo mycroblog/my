@@ -88,6 +88,7 @@ async function serveInstance(page: Page, origin: string, overrides: Partial<Inst
     voice_room_starters: "permitted",
     full_text_search: { available: false, visibilities: [] },
     translation: { browser: false, providers: [] },
+    single_user: false,
     rules: [
       { id: "0192f0c4-7a8e-7000-8000-0000000000e1", text: "Be kind", hint: "No insults, no harassment." },
       { id: "0192f0c4-7a8e-7000-8000-0000000000e2", text: "Mark sensitive media" },

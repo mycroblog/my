@@ -139,6 +139,7 @@ async function serveCosts(
     voice_room_starters: "permitted",
     full_text_search: { available: false, visibilities: [] },
     translation: { browser: false, providers: [] },
+    single_user: false,
     rules: [],
   };
   await page.route("**/api/v1/instance", (route) => route.fulfill({ json: instance }));
