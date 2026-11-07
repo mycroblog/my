@@ -19,7 +19,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/moderation"
 )
 
-// stubModerationStatuses stands in for the content module in ModerationContract: live statuses
+// stubModerationStatuses stands in for the content module in ModerationFlows: live statuses
 // by ID, the statuses deleted by moderation (status ID → action ID), and the statuses each
 // mark_statuses_sensitive action marks.
 type stubModerationStatuses struct {
@@ -74,7 +74,7 @@ func (s *stubModerationStatuses) ClearSensitivityOf(_ context.Context, _ uow.Tx,
 	return nil
 }
 
-// stubLifecycles stands in for the account module in ModerationContract: the due time of each
+// stubLifecycles stands in for the account module in ModerationFlows: the due time of each
 // account's scheduled deletion and the action that scheduled it, the deleted accounts, and the
 // cancellations (account ID -> the action that canceled).
 type stubLifecycles struct {

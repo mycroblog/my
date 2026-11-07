@@ -18,19 +18,20 @@ import (
 	"github.com/mycroblog/my/internal/domain/moderation"
 )
 
-// SignupBlockContract verifies the sign-up block list of a database adapter's moderation
-// repository (FR-719, data-model §4.3) through the moderation use cases: blocks are stored in the
-// canonical form of their kind and invalid ones are refused, a sign-up is screened against the
-// blocks in effect only (neither lifted nor expired) by the domain of its email address and its
-// parents, the hash of its canonical address, and the IP range of its client, the strongest
-// severity wins, a lift is recorded once, a ban can add the block of the banned user's email
-// address in its transaction, the blocks list newest first with their lifts and filters, every
-// addition and lift is audited once, and the purge of the moderation records erases a block with
-// its lift moderation.SignupBlockRetention after it ends (the earlier of its lift and expiry),
-// keeps one in effect and one made by the ban of a held account, and is safe to repeat; an import
-// of a list adds and audits a block per new value across transactions and skips the invalid,
-// repeated, and already blocked ones.
-func SignupBlockContract(t *testing.T, newHarness ModerationFactory) {
+// SignupBlockFlows verifies the sign-up block list of a database adapter's moderation repository
+// (FR-719, data-model §4.3) through the moderation use cases: blocks are stored in the canonical
+// form of their kind and invalid ones are refused, a sign-up is screened against the blocks in
+// effect only (neither lifted nor expired) by the domain of its email address and its parents, the
+// hash of its canonical address, and the IP range of its client, the strongest severity wins, a
+// lift is recorded once, a ban can add the block of the banned user's email address in its
+// transaction, the blocks list newest first with their lifts and filters, every addition and lift
+// is audited once, and the purge of the moderation records erases a block with its lift
+// moderation.SignupBlockRetention after it ends (the earlier of its lift and expiry), keeps one in
+// effect and one made by the ban of a held account, and is safe to repeat; an import of a list adds
+// and audits a block per new value across transactions and skips the invalid, repeated, and already
+// blocked ones. These are the flows of ADR-0153 §1, which internal/flowtest/moderation runs once on
+// SQLite; SignupBlockContract checks the repository's methods on every adapter.
+func SignupBlockFlows(t *testing.T, newHarness ModerationFactory) {
 	t.Helper()
 	cases := []struct {
 		name string

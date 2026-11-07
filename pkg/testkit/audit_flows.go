@@ -18,16 +18,17 @@ import (
 	"github.com/mycroblog/my/internal/domain/moderation"
 )
 
-// AuditLogContract verifies the audit log of a database adapter's moderation repository
-// (ADR-0058) through the moderation use cases and appmoderation.RegisterAuditProjector: the
-// moderators' operations on domains and reports each record one entry in their transaction, with
-// the actor (a user, or the CLI) and the target's label, and operations that change nothing
-// record none; an entry rolls back with its transaction and an invalid one fails it; the schema
-// accepts every action and kind of target; and the log lists newest first, filtered by actor,
-// action, kind of target, and target, in keyset pages, with the labels it recorded whether the
-// targets still exist or not; and it tells which accounts, reports, appeals, and sign-up blocks
-// of its entries are gone.
-func AuditLogContract(t *testing.T, newHarness ModerationFactory) {
+// AuditLogFlows verifies the audit log of a database adapter's moderation repository (ADR-0058)
+// through the moderation use cases and appmoderation.RegisterAuditProjector: the moderators'
+// operations on domains and reports each record one entry in their transaction, with the actor (a
+// user, or the CLI) and the target's label, and operations that change nothing record none; an
+// entry rolls back with its transaction and an invalid one fails it; the schema accepts every
+// action and kind of target; and the log lists newest first, filtered by actor, action, kind of
+// target, and target, in keyset pages, with the labels it recorded whether the targets still exist
+// or not; and it tells which accounts, reports, appeals, and sign-up blocks of its entries are
+// gone. These are the flows of ADR-0153 §1, which internal/flowtest/moderation runs once on SQLite;
+// AuditLogContract checks the repository's methods on every adapter.
+func AuditLogFlows(t *testing.T, newHarness ModerationFactory) {
 	t.Helper()
 	cases := []struct {
 		name string
