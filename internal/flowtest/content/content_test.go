@@ -37,3 +37,13 @@ func TestMediaFlows(t *testing.T) {
 		return testkit.MediaHarness{UnitOfWork: db, Media: db.MediaRepository(), Statuses: db.StatusRepository()}
 	})
 }
+
+func TestCustomEmojiFlows(t *testing.T) {
+	t.Parallel()
+	testkit.CustomEmojiFlows(t, func(t *testing.T, opts uow.Options) testkit.CustomEmojiHarness {
+		db := flowtest.SQLite(t, opts)
+		return testkit.CustomEmojiHarness{
+			UnitOfWork: db, Media: db.MediaRepository(), Statuses: db.StatusRepository(), Emojis: db.CustomEmojiRepository(),
+		}
+	})
+}
