@@ -255,7 +255,9 @@ Change them on the General page of the admin screen of the web client ("Server s
 
 ### One-person server
 
-A server of its operator alone, the operator's own home in the fediverse, is a one-person server: turn on `single_user`.
+A server of its operator alone, the operator's own home in the fediverse, is a one-person server: turn on `single_user`. In the web client,
+an administrator turns it on and off with **Make this a one-person server** on the **Registration** page of **Server settings**,
+which says why the server refused when it has more than one local account.
 
 ```sh
 my instance set single_user true
@@ -284,7 +286,14 @@ While it is on:
   of "This server" reads as "Followers" and cannot be saved, and a voice chat room for the people of this server announces
   itself in a post for the followers. Posts that are already local stay local.
 - **The server says what it is.** `single_user` in `GET /api/v1/instance` is `true`, with the effective registration mode
-  and timelines, and NodeInfo answers `openRegistrations: false` with `metadata.singleUser: true`.
+  and timelines and the operator's account as `single_user_account`, and NodeInfo answers `openRegistrations: false` with
+  `metadata.singleUser: true`.
+- **The front page is the operator's profile.** People who are not signed in and open the server's address see the profile
+  of its one account, with the way to sign in and links to the about page, the terms of service, and the privacy policy
+  that the server publishes. The web client hides what the server does not offer, from its navigation, menus, and
+  administration screens: the local and federated timelines, signing up, suggested accounts, invites, the review of
+  registrations, the sign-up blocks, the visibility "This server", and the settings of registration, invites, the public
+  timelines, the landing page, and suggested accounts.
 
 Federation, moderation, the full-text search, the supporter program, the documents, and the admin screens work as on any
 server.
