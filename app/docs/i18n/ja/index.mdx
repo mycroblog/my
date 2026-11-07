@@ -1,0 +1,145 @@
+---
+# source: 0579b8a800fd
+title: mycroblog
+description: 小さく始めて、コミュニティとともに育つ、Fediverse のマイクロブログ。
+template: splash
+hero:
+  tagline: |
+    <p><strong>mycroblog</strong> — 小さく始めて、コミュニティとともに育つ、Fediverse のマイクロブログ。</p>
+    <p>mycroblog のサーバーである <code>my</code> は、ActivityPub で連合し、Go で書かれています。小さなマシン 1 台か、ゼロまでスケールするコンテナと SQLite で始められます。コミュニティが育ったら、PostgreSQL、ジョブキュー、ストリームのブローカー、分けた Web とワーカーのプロセスへ移れます。コードもデータも同じままです。</p>
+  image:
+    light: ../../assets/wordmark-light.svg
+    dark: ../../assets/wordmark-dark.svg
+    alt: mycroblog
+  actions:
+    # A document is named by its repository path; src/routeData.ts makes it the page's URL under the base path.
+    - text: サーバーを動かす
+      link: docs/operations/overview.md
+      icon: right-arrow
+      variant: primary
+    - text: GitHub のソースコード
+      link: https://github.com/mycroblog/my
+      icon: github
+      variant: minimal
+---
+
+{/* SPDX-License-Identifier: AGPL-3.0-only */}
+
+import { Card, CardGrid } from "@astrojs/starlight/components";
+import DocLinks from "../../components/DocLinks.astro";
+import Screenshot from "../../components/Screenshot.astro";
+
+<Screenshot
+  name="home"
+  alt="mycroblog のホームタイムライン。湖と夕日の 2 枚の写真を引用した投稿にカスタム絵文字のリアクションが付き、その下にパンについての日本語の投稿があります。横にはナビゲーション、最新の通知、サーバーの情報が並んでいます。"
+  eager
+/>
+
+## できること
+
+<CardGrid>
+  <Card title="小さく始めて、スケールアウト" icon="rocket">
+    5 ドルの VM で 1 つのバイナリと SQLite、またはゼロまでスケールするコンテナで始められます。PostgreSQL、Cloud Tasks、Valkey、
+    Pub/Sub や SNS、CDN の背後の S3 や GCS へ、必要なだけの Web とワーカーのプロセスへと育てられます。
+  </Card>
+  <Card title="連合する" icon="random">
+    フォロー、投稿、引用、カスタム絵文字のリアクションが、Mastodon、Misskey、GoToSocial などとやりとりされます。
+    公開範囲「このサーバー」を使うと、投稿をあなたのサーバーとフォロワーの中にとどめられます。
+  </Card>
+  <Card title="サポーターと開かれた会計" icon="heart">
+    Stripe や PAY.JP による有料プランで、ロール、バッジ、カスタム絵文字を追加する権利を付与できます。サーバーにかかる費用を記録し、
+    AWS と Google Cloud の請求を自動で取り込み、費用と収入をコミュニティに公開できます。
+  </Card>
+  <Card title="通話のルーム" icon="comment">
+    サーバーの人たちのための、ホスト、スピーカー、招待、リアクションのある音声のルームです。小さなルームは P2P で、
+    大きなルームは LiveKit や Sora で動きます。
+  </Card>
+  <Card title="誰でも使える Web アプリ" icon="laptop">
+    プッシュ通知とパスキーに対応した、インストールできる Web アプリです。最初から多言語に対応しています。
+  </Card>
+  <Card title="モデレーションを内蔵" icon="approve-check-circle">
+    異議申し立てのできる通報、ドメインのブロック、監査ログ、そして投稿や登録を受け付ける前にあなた自身のプログラムで審査できる
+    判定フックがあります。
+  </Card>
+  <Card title="拡張する" icon="puzzle">
+    バージョン付きのプロトコルで動くプラグイン、サーバーの Webhook、OAuth アプリ、Go と TypeScript のクライアントとボットのライブラリがあります。
+    投稿の翻訳は、選んだプラグインを通して行います。
+  </Card>
+</CardGrid>
+
+## 動いているところ
+
+<CardGrid>
+  <Screenshot
+    name="post"
+    caption="連合する"
+    alt="ほかのサーバーの投稿を 2 枚の写真付きで引用した投稿と、その返信、ブースト、お気に入り、カスタム絵文字のリアクション。"
+  />
+  <Screenshot
+    name="supporters"
+    caption="サポーターと開かれた会計"
+    alt="サーバーのサポーターのページ。有料プラン「Coffee」と「A whole loaf of sourdough every month」のそれぞれのメンバーがアバターとともに並んでいます。"
+  />
+  <Screenshot
+    name="voice-room"
+    caption="通話のルーム"
+    alt="開いてから 47 分たった通話のルーム「Sunday baking club」。ステージにホスト、共同ホスト、2 人のスピーカーがいて、4 人のリスナーのうち 1 人が手を挙げています。"
+  />
+  <Screenshot
+    name="reports"
+    caption="モデレーションを内蔵"
+    alt="モデレーターの通報の一覧。未対応の 5 件の通報が、分類、通報した人、担当者、待っている時間とともに並んでいます。"
+  />
+</CardGrid>
+
+## ドキュメント
+
+<CardGrid>
+  <DocLinks
+    title="サーバーを動かす"
+    icon="setting"
+    links={[
+      { path: "docs/operations/overview.md", label: "mycroblog のサーバーの概要" },
+      { path: "docs/operations/running.md", label: "サーバーを動かす" },
+      { path: "docs/operations/deploy-docker-compose.md", label: "Docker Compose でデプロイする" },
+      { path: "docs/operations/deploy-cloud-run.md", label: "Cloud Run にデプロイする" },
+      { path: "docs/operations/production-checklist.md", label: "本番運用のチェックリスト" },
+    ]}
+  />
+  <DocLinks
+    title="mycroblog を使う"
+    icon="open-book"
+    links={[
+      { path: "docs/guide/signing-in.md", label: "新規登録とログイン" },
+      { path: "docs/guide/posting.md", label: "投稿と公開範囲" },
+      { path: "docs/guide/following.md", label: "フォローとタイムライン" },
+      { path: "docs/guide/voice-chat.md", label: "通話" },
+    ]}
+  />
+  <DocLinks
+    title="mycroblog の上に作る"
+    icon="pencil"
+    links={[
+      { path: "docs/developers/client-api.md", label: "クライアント API（英語）" },
+      { path: "api/openapi.yaml", label: "API リファレンス（英語）" },
+      { path: "docs/developers/libraries.md", label: "クライアントライブラリ（英語）" },
+    ]}
+  />
+  <DocLinks
+    title="リファレンス"
+    icon="list-format"
+    links={[
+      { path: "docs/reference/configuration.md", label: "設定のリファレンス（英語）" },
+      { path: "docs/reference/cli.md", label: "コマンドのリファレンス（英語）" },
+      { path: "docs/reference/jobs.md", label: "ジョブ（英語）" },
+    ]}
+  />
+</CardGrid>
+
+**状態: 開発中で、最初のリリース（v0）の前です。** `v0.1.0` より前は、アップグレードでデータが残らないことがあり、データベースを作り直す必要が
+あるかもしれません。`v0.1.0` からは、リリースの間のどのアップグレードでもデータが保たれます。
+
+## ライセンス
+
+`my` は、GNU Affero General Public License バージョン 3 のみ（AGPL-3.0-only）のもとで配布されるフリーソフトウェアです。その API の
+クライアントライブラリは MIT License です。
