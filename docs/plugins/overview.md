@@ -1,7 +1,7 @@
 # The plugin protocol
 
 A plugin is a program of yours that the server calls to do a job in place of a built-in part, such as translating posts,
-sending mail, converting media, or deciding whether to accept a post. This chapter describes the calls and messages of
+sending mail, searching posts, converting media, or deciding whether to accept a post. This chapter describes the calls and messages of
 each kind of plugin, as the protocol's definitions state them. [Plugins](../operations/plugins.md) explains how an
 operator connects one: its settings, the kinds, authentication, plain TCP, and what happens when a call fails.
 
@@ -15,6 +15,7 @@ decision hooks all share one package.
 | --- | --- | --- |
 | [Probe](probe.md) | `my.plugin.probe.v1` | `probe`, which every plugin may serve to check its connection |
 | [Translator](translator.md) | `my.plugin.translator.v1` | `translator` |
+| [Search](search.md) | `my.plugin.search.v1` | `search` |
 | [Billing](billing.md) | `my.plugin.billing.v1` | `billing` |
 | [Mailer](mailer.md) | `my.plugin.mailer.v1` | `mailer` |
 | [Media](media.md) | `my.plugin.media.v1` | `media_image`, `media_video`, `media_audio` |

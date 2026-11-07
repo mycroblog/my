@@ -98,6 +98,7 @@ The protocol between the server and the plugins that do a job in its place, gene
 - [The plugin protocol](plugins/overview.md) (the packages, calls, JSON, testing, versions)
 - [Probe](plugins/probe.md)
 - [Translator](plugins/translator.md)
+- [Search](plugins/search.md)
 - [Billing](plugins/billing.md)
 - [Mailer](plugins/mailer.md)
 - [Media](plugins/media.md)
