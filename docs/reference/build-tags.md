@@ -23,9 +23,10 @@ The adapters that need nothing beyond the standard library and the packages the 
 | `no_payments_stripe` | The Stripe adapter of the supporters' payments (`stripe-go`) | `payments = stripe` |
 | `no_payments_payjp` | The PAY.JP adapter of the supporters' payments and its checkout and card pages (no third-party library) | `payments = payjp` |
 | `no_voice_livekit` | The LiveKit adapter of the voice chat and the endpoint of its events (no third-party library) | `voice = livekit` |
-| `no_search_opensearch` | The OpenSearch adapter of the full-text search of posts (no library of its own: its AWS request signing uses the AWS SDK that the AWS adapters share) | `search = opensearch` |
 | `no_voice_sora` | The Sora adapter of the voice chat and the endpoints of its auth, event, and session webhooks (no third-party library) | `voice = sora` |
 | `no_search_elasticsearch` | The Elasticsearch adapter of the full-text search of posts (no third-party library) | `search = elasticsearch` |
+| `no_search_opensearch` | The OpenSearch adapter of the full-text search of posts (no library of its own: its AWS request signing uses the AWS SDK that the AWS adapters share) | `search = opensearch` |
+| `no_search_meilisearch` | The Meilisearch adapter of the full-text search of posts (no third-party library) | `search = meilisearch` |
 | `no_plugins` | The plugin client (`connect/v2`), the adapters of the plugins, and `my plugin test` | Every `plugin_<kind>_address`, `billing_sources = plugin`, `mail = plugin`, `key_manager = plugin`, `media_image = plugin`, `media_video = plugin`, `media_audio = plugin` |
 | `no_otel` | The OpenTelemetry SDK and its Prometheus and OTLP exporters, of the metrics, the traces, and the error reports | `metrics_exporter = prometheus`, `metrics_exporter = otlp`, `traces_exporter = otlp`, `errors_exporter = otlp` |
 
@@ -81,4 +82,4 @@ Before each release, each of these sets is built and vetted, and the check fails
 | --- | --- |
 | `no_postgres,no_valkey,no_sns,no_ses,no_s3,no_gcs,no_pubsub,no_gcpkms,no_awskms,no_cloudtasks,no_otel,no_billing_aws,no_billing_gcp,no_payments_stripe,no_plugins,no_search_elasticsearch,no_search_opensearch` | A self-hosted instance on SQLite, without the Elasticsearch and OpenSearch search engines |
 | `no_sqlite,no_valkey,no_gcs,no_pubsub,no_gcpkms,no_cloudtasks,no_otel,no_billing_gcp,no_payments_payjp,no_voice_sora` | AWS: PostgreSQL, the SNS broker, SES, the EMF metrics, the AWS KMS key manager, and the Stripe payments, without the Sora voice chat |
-| `no_sqlite,no_valkey,no_sns,no_ses,no_awskms,no_billing_aws,no_voice_livekit` | Google Cloud: PostgreSQL, the Pub/Sub broker, the Cloud KMS key manager, and the Cloud Tasks queue, without the LiveKit voice chat |
+| `no_sqlite,no_valkey,no_sns,no_ses,no_awskms,no_billing_aws,no_voice_livekit,no_search_meilisearch` | Google Cloud: PostgreSQL, the Pub/Sub broker, the Cloud KMS key manager, and the Cloud Tasks queue, without the LiveKit voice chat and the Meilisearch search |

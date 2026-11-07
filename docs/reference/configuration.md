@@ -176,6 +176,10 @@ An instance setting that has never been set reads as its default, which is defin
 | [`search_opensearch_password`](#search_opensearch_password) | `MY_SEARCH_OPENSEARCH_PASSWORD` | none | when `search_opensearch_username` is set | yes |
 | [`search_opensearch_aws_signing`](#search_opensearch_aws_signing) | `MY_SEARCH_OPENSEARCH_AWS_SIGNING` | `off` | no | no |
 | [`search_opensearch_aws_region`](#search_opensearch_aws_region) | `MY_SEARCH_OPENSEARCH_AWS_REGION` | the region of the AWS SDK's default chain (`AWS_REGION`) | no | no |
+| [`search_meilisearch_url`](#search_meilisearch_url) | `MY_SEARCH_MEILISEARCH_URL` | none | when `search = meilisearch` | no |
+| [`search_meilisearch_api_key`](#search_meilisearch_api_key) | `MY_SEARCH_MEILISEARCH_API_KEY` | none | no | yes |
+| [`search_meilisearch_index`](#search_meilisearch_index) | `MY_SEARCH_MEILISEARCH_INDEX` | `my_statuses` | no | no |
+| [`search_meilisearch_settings_file`](#search_meilisearch_settings_file) | `MY_SEARCH_MEILISEARCH_SETTINGS_FILE` | none | no | no |
 | [`voice`](#voice) | `MY_VOICE` | `off` | no | no |
 | [`voice_p2p_max_participants`](#voice_p2p_max_participants) | `MY_VOICE_P2P_MAX_PARTICIPANTS` | `10` | no | no |
 | [`voice_sfu_max_participants`](#voice_sfu_max_participants) | `MY_VOICE_SFU_MAX_PARTICIPANTS` | `10` | no | no |
@@ -1346,6 +1350,7 @@ The search engine of the full-text search of statuses. The search of accounts an
 | `fake` | Test builds only: a stand-in index in the server's memory, for end-to-end tests and demonstrations. Only a binary built with the build tag `e2e_fakes` has it, and that binary refuses it unless `profile = development`; released binaries and images never have it ([build tags](build-tags.md)). It needs no other setting. |
 | `elasticsearch` | An Elasticsearch cluster, version 8 or later, at `search_elasticsearch_url`, with `search_elasticsearch_api_key` or `search_elasticsearch_username` and `search_elasticsearch_password` when it has security on. The server creates and upgrades the index itself ([search engines](../operations/search-engines.md#elasticsearch)). The build tag `no_search_elasticsearch` leaves it out. |
 | `opensearch` | An OpenSearch cluster, or a domain of Amazon OpenSearch Service, at `search_opensearch_url` ([search engines](../operations/search-engines.md#opensearch)). The server creates its index at start. The build tag `no_search_opensearch` leaves it out. |
+| `meilisearch` | A Meilisearch server (self-hosted or Meilisearch Cloud) at `search_meilisearch_url`, with `search_meilisearch_api_key`. The server creates the index `search_meilisearch_index` and its settings. The build tag `no_search_meilisearch` leaves it out. |
 
 ### `search_elasticsearch_url`
 
@@ -1462,6 +1467,38 @@ The AWS region of the domain of `search_opensearch_aws_signing = es`, such as `u
 
 - Environment variable: `MY_SEARCH_OPENSEARCH_AWS_REGION`
 - Default: the region of the AWS SDK's default chain (`AWS_REGION`)
+- Required: no
+
+### `search_meilisearch_url`
+
+The base URL of the Meilisearch server of `search = meilisearch`, such as `https://meilisearch.example.org` or `http://meilisearch:7700` on a private network. It holds no credentials: the key goes in `search_meilisearch_api_key`.
+
+- Environment variable: `MY_SEARCH_MEILISEARCH_URL`
+- Default: none
+- Required: when `search = meilisearch`
+
+### `search_meilisearch_api_key`
+
+The master key of the Meilisearch server, or an API key with the actions `search`, `documents.add`, `documents.get`, `documents.delete`, `indexes.create`, `indexes.get`, `indexes.delete`, `settings.update`, and `tasks.get` on `search_meilisearch_index`. Empty sends no key, for a server without a master key.
+
+- Environment variable: `MY_SEARCH_MEILISEARCH_API_KEY` or `MY_SEARCH_MEILISEARCH_API_KEY_FILE`
+- Default: none
+- Required: no
+
+### `search_meilisearch_index`
+
+The uid of the Meilisearch index of the posts, which the server creates when it does not exist: letters, digits, hyphens, and underscores. Servers that share a Meilisearch server need different ones.
+
+- Environment variable: `MY_SEARCH_MEILISEARCH_INDEX`
+- Default: `my_statuses`
+- Required: no
+
+### `search_meilisearch_settings_file`
+
+The path of a JSON object of Meilisearch index settings, to tune the engine: `rankingRules` (which must start with `sort`), `typoTolerance`, `stopWords`, `synonyms`, `dictionary`, `separatorTokens`, `nonSeparatorTokens`, `localizedAttributes`, `proximityPrecision`, `pagination`, and the like. The server sets `searchableAttributes`, `displayedAttributes`, `filterableAttributes`, and `sortableAttributes` itself and refuses a file that sets them. A setting the file leaves out takes the server's default. The server reads the file at start and sends the settings when they differ from what the index has. Empty uses the server's defaults.
+
+- Environment variable: `MY_SEARCH_MEILISEARCH_SETTINGS_FILE`
+- Default: none
 - Required: no
 
 ### `voice`

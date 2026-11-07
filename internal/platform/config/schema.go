@@ -1007,6 +1007,7 @@ var schema = []field{
 			{value: "fake", doc: "Test builds only: a stand-in index in the server's memory, for end-to-end tests and demonstrations. Only a binary built with the build tag `e2e_fakes` has it, and that binary refuses it unless `profile = development`; released binaries and images never have it ([build tags](build-tags.md)). It needs no other setting."},
 			{value: "elasticsearch", doc: "An Elasticsearch cluster, version 8 or later, at `search_elasticsearch_url`, with `search_elasticsearch_api_key` or `search_elasticsearch_username` and `search_elasticsearch_password` when it has security on. The server creates and upgrades the index itself ([search engines](../operations/search-engines.md#elasticsearch)). The build tag `no_search_elasticsearch` leaves it out."},
 			{value: "opensearch", doc: "An OpenSearch cluster, or a domain of Amazon OpenSearch Service, at `search_opensearch_url` ([search engines](../operations/search-engines.md#opensearch)). The server creates its index at start. The build tag `no_search_opensearch` leaves it out."},
+			{value: "meilisearch", doc: "A Meilisearch server (self-hosted or Meilisearch Cloud) at `search_meilisearch_url`, with `search_meilisearch_api_key`. The server creates the index `search_meilisearch_index` and its settings. The build tag `no_search_meilisearch` leaves it out."},
 		},
 		set: func(c *Config, v string) { c.Search = v },
 	},
@@ -1106,6 +1107,31 @@ var schema = []field{
 		defDoc: "the region of the AWS SDK's default chain (`AWS_REGION`)",
 		check:  checkNotBlank,
 		set:    func(c *Config, v string) { c.SearchOpenSearchAWSRegion = strings.TrimSpace(v) },
+	},
+	{
+		key:          "search_meilisearch_url",
+		doc:          "The base URL of the Meilisearch server of `search = meilisearch`, such as `https://meilisearch.example.org` or `http://meilisearch:7700` on a private network. It holds no credentials: the key goes in `search_meilisearch_api_key`.",
+		requiredWhen: "when `search = meilisearch`",
+		check:        checkMeilisearchURL,
+		set:          func(c *Config, v string) { c.SearchMeilisearchURL = v },
+	},
+	{
+		key:    "search_meilisearch_api_key",
+		doc:    "The master key of the Meilisearch server, or an API key with the actions `search`, `documents.add`, `documents.get`, `documents.delete`, `indexes.create`, `indexes.get`, `indexes.delete`, `settings.update`, and `tasks.get` on `search_meilisearch_index`. Empty sends no key, for a server without a master key.",
+		secret: true,
+		set:    func(c *Config, v string) { c.SearchMeilisearchAPIKey = strings.TrimSpace(v) },
+	},
+	{
+		key:    "search_meilisearch_index",
+		doc:    "The uid of the Meilisearch index of the posts, which the server creates when it does not exist: letters, digits, hyphens, and underscores. Servers that share a Meilisearch server need different ones.",
+		defDoc: "`my_statuses`",
+		check:  checkMeilisearchIndex,
+		set:    func(c *Config, v string) { c.SearchMeilisearchIndex = v },
+	},
+	{
+		key: "search_meilisearch_settings_file",
+		doc: "The path of a JSON object of Meilisearch index settings, to tune the engine: `rankingRules` (which must start with `sort`), `typoTolerance`, `stopWords`, `synonyms`, `dictionary`, `separatorTokens`, `nonSeparatorTokens`, `localizedAttributes`, `proximityPrecision`, `pagination`, and the like. The server sets `searchableAttributes`, `displayedAttributes`, `filterableAttributes`, and `sortableAttributes` itself and refuses a file that sets them. A setting the file leaves out takes the server's default. The server reads the file at start and sends the settings when they differ from what the index has. Empty uses the server's defaults.",
+		set: func(c *Config, v string) { c.SearchMeilisearchSettingsFile = v },
 	},
 	{
 		key: "voice",
@@ -1544,6 +1570,7 @@ func crossChecks(vals map[string]string, present map[string]bool) []Issue {
 	issues = append(issues, voiceChecks(vals, present)...)
 	issues = append(issues, searchElasticsearchChecks(vals, present)...)
 	issues = append(issues, searchOpenSearchChecks(vals, present)...)
+	issues = append(issues, searchMeilisearchChecks(vals, present)...)
 	if vals["errors_exporter"] == "sentry" && !present["errors_sentry_dsn"] {
 		issues = append(issues, Issue{Key: "errors_sentry_dsn", Missing: true, Message: "required when errors_exporter is sentry"})
 	}

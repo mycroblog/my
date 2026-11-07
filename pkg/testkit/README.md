@@ -18,6 +18,15 @@ test's own, whose keys are deleted when the test ends. The server is a `valkey/v
 testcontainers-go on the first call, unless `TEST_VALKEY_URL` names an existing server; without Docker the tests are
 skipped, or fail when `TEST_VALKEY_REQUIRED` is set (CI). The package's `TestMain` calls `os.Exit(valkeytest.Main(m))`.
 
+## Meilisearch test servers
+
+`meilisearchtest.New(t)` (package `pkg/testkit/meilisearchtest`) returns the URL and master key of a Meilisearch
+server and an index uid of the test's own, which is deleted when the test ends. With `TEST_SEARCH=container`
+(`scripts/task.sh go:test-search`) the server is a `getmeili/meilisearch` container started with testcontainers-go on
+the first call, and a Docker that cannot start it fails the tests; `TEST_MEILISEARCH_URL` (with `TEST_MEILISEARCH_KEY`)
+names an existing server instead. Otherwise the tests are skipped. The package's `TestMain` calls
+`os.Exit(meilisearchtest.Main(m))`.
+
 ## Amazon SNS and SQS
 
 `awstest.NewFake(clock)` (package `pkg/testkit/awstest`) is SNS and SQS in memory, with the aws-sdk-go-v2 signatures of
