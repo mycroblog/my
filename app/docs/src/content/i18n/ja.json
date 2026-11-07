@@ -1,0 +1,12 @@
+{
+  "docs.translation.notice": "このページは英語のページを機械翻訳したものです。内容は英語のページが正です。",
+  "docs.translation.english": "英語のページを読む",
+  "docs.translation.legal": "このページは法的文書のテンプレートを機械翻訳したものです。公開する文面は、使う前に法律の専門家に確認してもらってください。",
+  "docs.translation.stale": "次の節は、翻訳した後に英語のページが変わっています。",
+  "docs.translation.untranslated": "次の節はまだ翻訳されておらず、英語のまま表示しています。",
+  "docs.version.ended": "{{version}} のサポートは終了しました。",
+  "docs.version.latest": "最新版でこのページを読む",
+  "docs.version.label": "ドキュメントの版",
+  "docs.llms.lead": "LLM とコーディングエージェント向け:",
+  "docs.llms.page": "このページの Markdown"
+}

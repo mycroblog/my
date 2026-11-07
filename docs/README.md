@@ -42,6 +42,7 @@ Read the groups in order: start with the overview, then configure the instance b
 - [Domain blocks and handling reports](operations/moderation.md)
 - [Federation relays](operations/relays.md)
 - [Server webhooks](operations/webhooks.md)
+- [Translating posts (LibreTranslate, DeepL, Google Cloud Translation, Amazon Translate)](operations/translation.md)
 - [Plugins (destinations, authentication, protocols, `my plugin test`, a plugin with no library)](operations/plugins.md)
 - [Decision hooks](operations/decision-hooks.md): ask a plugin of yours before accepting posts, follows, sign-ups, and media
 - [Voice chat (choosing P2P, LiveKit or Sora, STUN and TURN, deployment, moderation)](operations/voice.md)
@@ -90,6 +91,19 @@ Guides for people who build clients and bots against the client API.
 - [Client libraries](developers/libraries.md) (getting started with mykit and mybot in Go and TypeScript)
 - [Stability of the API](developers/stability.md) (what changes without notice and what is announced)
 
+## Plugin developers
+
+The protocol between the server and the plugins that do a job in its place, generated from its definitions.
+
+- [The plugin protocol](plugins/overview.md) (the packages, calls, JSON, testing, versions)
+- [Probe](plugins/probe.md)
+- [Translator](plugins/translator.md)
+- [Billing](plugins/billing.md)
+- [Mailer](plugins/mailer.md)
+- [Media](plugins/media.md)
+- [Key manager](plugins/key-manager.md)
+- [Decision hooks](plugins/hooks.md)
+
 ## Contributing
 
 - [Contributing guide](../CONTRIBUTING.md)
@@ -98,6 +112,7 @@ Guides for people who build clients and bots against the client API.
 - [Writing an ADR (playbook)](agents/writing-adrs.md)
 - [Releasing (playbook)](agents/releasing.md)
 - [Drawing a diagram (playbook)](agents/diagrams.md)
+- [Translating the documentation site (playbook)](agents/translating-docs.md)
 - [Commands](reference/commands.md) (the development tasks and the pinned toolchain)
 
 ## Design (in Japanese)

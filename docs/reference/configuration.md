@@ -161,6 +161,13 @@ An instance setting that has never been set reads as its default, which is defin
 | [`payments_payjp_webhook_token`](#payments_payjp_webhook_token) | `MY_PAYMENTS_PAYJP_WEBHOOK_TOKEN` | none | when `payments = payjp` | yes |
 | [`payments_reconcile_interval`](#payments_reconcile_interval) | `MY_PAYMENTS_RECONCILE_INTERVAL` | `6h` | no | no |
 | [`payments_reconcile_max_requests`](#payments_reconcile_max_requests) | `MY_PAYMENTS_RECONCILE_MAX_REQUESTS` | `1000` | no | no |
+| [`translator_libretranslate_url`](#translator_libretranslate_url) | `MY_TRANSLATOR_LIBRETRANSLATE_URL` | none | no | no |
+| [`translator_libretranslate_api_key`](#translator_libretranslate_api_key) | `MY_TRANSLATOR_LIBRETRANSLATE_API_KEY` | none | no | yes |
+| [`translator_deepl_api_key`](#translator_deepl_api_key) | `MY_TRANSLATOR_DEEPL_API_KEY` | none | no | yes |
+| [`translator_deepl_url`](#translator_deepl_url) | `MY_TRANSLATOR_DEEPL_URL` | `https://api-free.deepl.com` for a key of the free plan, `https://api.deepl.com` otherwise | no | no |
+| [`translator_google_project`](#translator_google_project) | `MY_TRANSLATOR_GOOGLE_PROJECT` | none | no | no |
+| [`translator_google_location`](#translator_google_location) | `MY_TRANSLATOR_GOOGLE_LOCATION` | `global` | no | no |
+| [`translator_aws_region`](#translator_aws_region) | `MY_TRANSLATOR_AWS_REGION` | none | no | no |
 | [`search`](#search) | `MY_SEARCH` | `none` | no | no |
 | [`search_elasticsearch_url`](#search_elasticsearch_url) | `MY_SEARCH_ELASTICSEARCH_URL` | none | when `search = elasticsearch` | no |
 | [`search_elasticsearch_api_key`](#search_elasticsearch_api_key) | `MY_SEARCH_ELASTICSEARCH_API_KEY` | none | no | yes |
@@ -1334,6 +1341,62 @@ How many requests one reconciliation sends to `payments`, a page of a list count
 
 - Environment variable: `MY_PAYMENTS_RECONCILE_MAX_REQUESTS`
 - Default: `1000`
+- Required: no
+
+### `translator_libretranslate_url`
+
+The base URL of the LibreTranslate server of the translation provider `libretranslate`, such as `https://libretranslate.com` or a server you run on a private address, such as `http://libretranslate:5000`; `http:` is accepted on any host. Setting it registers the provider, which the instance setting `translation_providers` then enables.
+
+- Environment variable: `MY_TRANSLATOR_LIBRETRANSLATE_URL`
+- Default: none
+- Required: no
+
+### `translator_libretranslate_api_key`
+
+The API key of the LibreTranslate server of `translator_libretranslate_url`, when the server requires one, as `libretranslate.com` does. The server sends it with each translation and never shows it to clients.
+
+- Environment variable: `MY_TRANSLATOR_LIBRETRANSLATE_API_KEY` or `MY_TRANSLATOR_LIBRETRANSLATE_API_KEY_FILE`
+- Default: none
+- Required: no
+
+### `translator_deepl_api_key`
+
+The authentication key of DeepL's API, which makes DeepL a translation provider that `translation_providers` can enable as `deepl` ([translation](../operations/translation.md#deepl)). A key of the free plan ends in `:fx`; DeepL may keep the text that the free plan translates.
+
+- Environment variable: `MY_TRANSLATOR_DEEPL_API_KEY` or `MY_TRANSLATOR_DEEPL_API_KEY_FILE`
+- Default: none
+- Required: no
+
+### `translator_deepl_url`
+
+The `https:` URL of DeepL's API that the server calls, such as a proxy in front of it; `http:` is accepted for localhost only.
+
+- Environment variable: `MY_TRANSLATOR_DEEPL_URL`
+- Default: `https://api-free.deepl.com` for a key of the free plan, `https://api.deepl.com` otherwise
+- Required: no
+
+### `translator_google_project`
+
+The Google Cloud project that the translations of the provider `google`, Google Cloud Translation, are billed to; the Cloud Translation API must be enabled in it, and the service account of the server needs `roles/cloudtranslate.user` on it. Setting it registers the provider, which the instance setting `translation_providers` enables; credentials come from Application Default Credentials ([translation providers](../operations/translation.md#google-cloud-translation)). The build tag `no_translator_google` leaves it out. Empty registers no such provider.
+
+- Environment variable: `MY_TRANSLATOR_GOOGLE_PROJECT`
+- Default: none
+- Required: no
+
+### `translator_google_location`
+
+The location of the requests of the provider `google`: `global`, or a location of Cloud Translation such as `us-central1` (`projects/{project}/locations/{location}`). Not every location serves the general translation model; see Google's list of the locations of Cloud Translation.
+
+- Environment variable: `MY_TRANSLATOR_GOOGLE_LOCATION`
+- Default: `global`
+- Required: no
+
+### `translator_aws_region`
+
+The AWS region of Amazon Translate, such as `us-east-1`. Setting it registers Amazon Translate as the translation provider `aws`, which the instance setting `translation_providers` enables ([translation providers](../operations/translation.md#amazon-translate)); the credentials come from the AWS SDK's default chain, such as the execution role. The build tag `no_translator_aws` leaves it out. Empty registers no such provider.
+
+- Environment variable: `MY_TRANSLATOR_AWS_REGION`
+- Default: none
 - Required: no
 
 ### `search`

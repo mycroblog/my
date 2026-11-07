@@ -1,7 +1,10 @@
 ---
 // SPDX-License-Identifier: AGPL-3.0-only
 // Starlight's Banner, preceded on every page of a version whose support ended by the end-of-support banner, which
-// links the same page under /latest/ (ADR-0150 §6).
+// links the same page under /latest/ (ADR-0150 §6), and on every translated page by the notice that it is a machine
+// translation (ADR-0150 §9): a link to the English page, the extra notice of a legal template, and the sections that
+// are stale or not translated yet, each linked on the English page (the frontmatter's `translation`, set by
+// scripts/import-docs.ts).
 import Default from "@astrojs/starlight/components/Banner.astro";
 import { base } from "../published";
 import { currentVersion, supportEnded, versionBase } from "../versions";
@@ -9,12 +12,52 @@ import { currentVersion, supportEnded, versionBase } from "../versions";
 const ended = supportEnded();
 const path = Astro.url.pathname;
 const latest = `${versionBase("latest")}${path.startsWith(base) ? path.slice(base.length) : ""}`;
+const translation = Astro.locals.starlightRoute.entry.data.translation;
+const t = Astro.locals.t;
 ---
 
 {
   ended && (
     <div class="docs-ended" data-pagefind-ignore>
-      The support of {currentVersion} has ended. <a href={latest}>Read this page in the latest version</a>.
+      {t("docs.version.ended", { version: currentVersion })} <a href={latest}>{t("docs.version.latest")}</a>.
+    </div>
+  )
+}
+{
+  translation !== undefined && (
+    <div class="docs-translation" data-pagefind-ignore>
+      <p>
+        {t("docs.translation.notice")} <a href={translation.english}>{t("docs.translation.english")}</a>
+      </p>
+      {translation.legal && <p class="docs-translation-legal">{t("docs.translation.legal")}</p>}
+      {translation.stale.length > 0 && (
+        <>
+          <p>{t("docs.translation.stale")}</p>
+          <ul>
+            {translation.stale.map((section) => (
+              <li>
+                <a href={section.href} lang="en" dir="ltr">
+                  {section.heading}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+      {translation.untranslated.length > 0 && (
+        <>
+          <p>{t("docs.translation.untranslated")}</p>
+          <ul>
+            {translation.untranslated.map((section) => (
+              <li>
+                <a href={section.href} lang="en" dir="ltr">
+                  {section.heading}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
     </div>
   )
 }
@@ -31,5 +74,24 @@ const latest = `${versionBase("latest")}${path.startsWith(base) ? path.slice(bas
   }
   .docs-ended a {
     color: inherit;
+  }
+  .docs-translation {
+    padding: var(--sl-nav-pad-y) var(--sl-nav-pad-x);
+    background-color: var(--sl-color-blue-low);
+    color: var(--sl-color-blue-high);
+    line-height: var(--sl-line-height-headings);
+  }
+  .docs-translation a {
+    color: inherit;
+  }
+  .docs-translation p,
+  .docs-translation ul {
+    margin: 0;
+  }
+  .docs-translation ul {
+    padding-inline-start: 1.5rem;
+  }
+  .docs-translation-legal {
+    font-weight: 600;
   }
 </style>

@@ -20,6 +20,7 @@ The adapters that need nothing beyond the standard library and the packages the 
 | `no_cloudtasks` | The Google Cloud Tasks queue (Cloud Tasks client library) and its `/_internal/jobs` and `/_internal/tick` endpoints | `queue = cloudtasks` |
 | `no_billing_aws` | The import of the AWS usage charges (AWS Cost Explorer SDK) | `billing_sources = aws` |
 | `no_billing_gcp` | The import of the Google Cloud usage charges (BigQuery REST client; with `no_pubsub`, the Pub/Sub client library of `billing_gcp_method = budget`) | `billing_sources = gcp` |
+| `no_translator_google` | The Google Cloud Translation provider of the translation of posts (Cloud Translation client library) | `translator_google_project` |
 | `no_payments_stripe` | The Stripe adapter of the supporters' payments (`stripe-go`) | `payments = stripe` |
 | `no_payments_payjp` | The PAY.JP adapter of the supporters' payments and its checkout and card pages (no third-party library) | `payments = payjp` |
 | `no_voice_livekit` | The LiveKit adapter of the voice chat and the endpoint of its events (no third-party library) | `voice = livekit` |
@@ -28,6 +29,7 @@ The adapters that need nothing beyond the standard library and the packages the 
 | `no_search_opensearch` | The OpenSearch adapter of the full-text search of posts (no library of its own: its AWS request signing uses the AWS SDK that the AWS adapters share) | `search = opensearch` |
 | `no_search_meilisearch` | The Meilisearch adapter of the full-text search of posts (no third-party library) | `search = meilisearch` |
 | `no_plugins` | The plugin client (`connect/v2`), the adapters of the plugins, and `my plugin test` | Every `plugin_<kind>_address`, `billing_sources = plugin`, `mail = plugin`, `key_manager = plugin`, `media_image = plugin`, `media_video = plugin`, `media_audio = plugin` |
+| `no_translator_aws` | The Amazon Translate provider of the translation of posts (AWS SDK for Amazon Translate) | `translator_aws_region` |
 | `no_otel` | The OpenTelemetry SDK and its Prometheus and OTLP exporters, of the metrics, the traces, and the error reports | `metrics_exporter = prometheus`, `metrics_exporter = otlp`, `traces_exporter = otlp`, `errors_exporter = otlp` |
 
 Leave out the database that the instance does not use, but keep at least one of `no_sqlite` and `no_postgres` off:
@@ -62,7 +64,7 @@ Pass the tags, separated by commas, to the Go build or to the container build. A
 ([Web client](../operations/running.md#web-client)); the container build includes it.
 
 ```sh
-CGO_ENABLED=0 go build -tags no_postgres,no_valkey,no_sns,no_ses,no_pubsub,no_gcpkms,no_awskms,no_cloudtasks,no_otel,no_billing_aws,no_billing_gcp,no_payments_stripe ./cmd/my
+CGO_ENABLED=0 go build -tags no_postgres,no_valkey,no_sns,no_ses,no_pubsub,no_gcpkms,no_awskms,no_cloudtasks,no_otel,no_billing_aws,no_billing_gcp,no_payments_stripe,no_translator_aws,no_translator_google ./cmd/my
 docker build --build-arg GO_TAGS=no_sqlite,no_valkey,no_sns -t my .
 ```
 
@@ -80,6 +82,6 @@ Before each release, each of these sets is built and vetted, and the check fails
 
 | Set | Fits |
 | --- | --- |
-| `no_postgres,no_valkey,no_sns,no_ses,no_s3,no_gcs,no_pubsub,no_gcpkms,no_awskms,no_cloudtasks,no_otel,no_billing_aws,no_billing_gcp,no_payments_stripe,no_plugins,no_search_elasticsearch,no_search_opensearch` | A self-hosted instance on SQLite, without the Elasticsearch and OpenSearch search engines |
-| `no_sqlite,no_valkey,no_gcs,no_pubsub,no_gcpkms,no_cloudtasks,no_otel,no_billing_gcp,no_payments_payjp,no_voice_sora` | AWS: PostgreSQL, the SNS broker, SES, the EMF metrics, the AWS KMS key manager, and the Stripe payments, without the Sora voice chat |
-| `no_sqlite,no_valkey,no_sns,no_ses,no_awskms,no_billing_aws,no_voice_livekit,no_search_meilisearch` | Google Cloud: PostgreSQL, the Pub/Sub broker, the Cloud KMS key manager, and the Cloud Tasks queue, without the LiveKit voice chat and the Meilisearch search |
+| `no_postgres,no_valkey,no_sns,no_ses,no_s3,no_gcs,no_pubsub,no_gcpkms,no_awskms,no_cloudtasks,no_otel,no_billing_aws,no_billing_gcp,no_payments_stripe,no_plugins,no_translator_aws,no_translator_google,no_search_elasticsearch,no_search_opensearch` | A self-hosted instance on SQLite, without the Elasticsearch and OpenSearch search engines |
+| `no_sqlite,no_valkey,no_gcs,no_pubsub,no_gcpkms,no_cloudtasks,no_otel,no_billing_gcp,no_payments_payjp,no_voice_sora,no_translator_google` | AWS: PostgreSQL, the SNS broker, SES, the EMF metrics, the AWS KMS key manager, and the Stripe payments, without the Sora voice chat or Google Cloud Translation |
+| `no_sqlite,no_valkey,no_sns,no_ses,no_awskms,no_billing_aws,no_voice_livekit,no_translator_aws,no_search_meilisearch` | Google Cloud: PostgreSQL, the Pub/Sub broker, the Cloud KMS key manager, and the Cloud Tasks queue, without the LiveKit voice chat, Amazon Translate, or the Meilisearch search |

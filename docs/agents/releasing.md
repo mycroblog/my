@@ -34,6 +34,9 @@ only when every job passes, tags that commit, drafts a GitHub Release, publishes
    For the first stable version of a minor version (`vX.Y.0`), add the minor version to the top of `app/docs/versions.json` in the same change,
    and mark a minor version whose support ends with it as `ended` ([The documentation site](#the-documentation-site)). Every deploy of the site fails while a published release's minor version is not listed.
 
+   Translate the documents again before the release ([Translating the documentation site](translating-docs.md#before-a-release)), so that the tag carries
+   current translations: `scripts/task.sh docs:site-translations -- status` lists what is stale. Stale translations do not block the release.
+
 3. Run `release.yml` on `main`. The head commit of `main` at that moment is the commit that is checked and tagged.
 
    ```sh
@@ -275,7 +278,8 @@ There is no `0` and no `latest` during v0, because both would cross a minor vers
 1. `image` builds both platforms from the tested commit, with no cache and `VERSION` set to the version, and pushes them **by digest, with no tag**. It adds the OCI labels and annotations
    (`scripts/release-image.sh metadata`) and an SBOM of the image and of the `web` stage. Buildx's provenance is off, because the signed one below replaces it.
 2. `image-check` runs on a runner of each platform: it takes the binary out of the image, runs `scripts/check-release-build.sh` on it, which fails on the test-only build tag `e2e_fakes`, and checks what `my version` prints.
-3. `image-attest` signs the digest's provenance with `actions/attest` (keyless, through Sigstore's public instance, which ties the workflow and the commit to the digest), pushes it next to the image, and attaches the digest to the draft as `image-digest.txt`. `release-notes-image` then writes the image in the draft's notes.
+3. `image-attest` signs the digest's provenance with `actions/attest` (keyless, through Sigstore's public instance, which ties the workflow and the commit to the digest), stores it in the repository's attestations, and attaches the digest to the draft as `image-digest.txt`.
+   The attestation is not pushed to `ghcr.io`: the registry has no referrers API, so it would become a tag `sha256-<digest>` beside the version tags. `gh attestation verify` reads it from GitHub. `release-notes-image` then writes the image in the draft's notes.
 4. `image-scan` reports what Grype finds in both platforms in the job's summary. It stops nothing.
 
 `release-image.yml`, when the Release is published (a prerelease too), never builds:
@@ -342,6 +346,7 @@ The documentation site (`app/docs`) is served by the Cloudflare Worker `my-docs`
 | `/` | the landing page and the 404 page of `/latest/` |
 
 Each version is built from its own tag's tree, so the documents of a version are those of its tag; nothing keeps copies of old documents on `main`.
+The translations (`app/docs/i18n/`, served under `/<locale>/` of each version) are part of that tree too: a version publishes the translations of its tag.
 Before the first stable release, `/` is the landing page of `/next/` and `/latest/` redirects to `/next/`.
 
 - `docs-site-deploy.yml` runs on a push to `main` that changes the published documents or `app/docs/`, when a stable release is published, and by hand
@@ -407,7 +412,7 @@ gh workflow run release.yml -R mycroblog/my --ref <branch> -f version=v0.0.0-tes
   gh api -X DELETE orgs/mycroblog/packages/container/my/versions/<id>
   ```
 
-  An attestation or an untagged platform manifest shows as an untagged version on that page; a test digest's are deleted the same way, by the digest in `name`. Never delete an untagged version of a real release, because it can be a part of the image. A version published to npm can be withdrawn within 72 hours with `npm unpublish @mycroblog/mybot@0.0.0-test.1` (and the same for `mykit`), but its number can never be used again.
+  An untagged platform manifest shows as an untagged version on that page; a test digest's are deleted the same way, by the digest in `name`. Never delete an untagged version of a real release, because it can be a part of the image. A version published to npm can be withdrawn within 72 hours with `npm unpublish @mycroblog/mybot@0.0.0-test.1` (and the same for `mykit`), but its number can never be used again.
   A Go version that proxy.golang.org already fetched stays there after the tag is deleted. Use `v0.0.0-test.N` numbers, which never collide with real versions.
 
 ## What a release produces

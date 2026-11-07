@@ -1,0 +1,8 @@
+// The translations of the documentation site (ADR-0150 §9): each heading takes the anchor of its English heading on the
+// site ({#id}, app/docs/scripts/import-docs.ts), so a link to an #anchor names the English anchor, which markdownlint
+// cannot see. docs:site-translations-check keeps the links equal to the English source's, and the site build checks them.
+{
+  "config": {
+    "MD051": false
+  }
+}

@@ -26,7 +26,7 @@
 #   tofu the OpenTofu modules of deploy/opentofu          (tofu:check)
 #   site    the documentation site app/docs and what it publishes: docs/operations, docs/reference, docs/guide,
 #           docs/developers, docs/README.md (its sidebar), and api/openapi.yaml; app/docs selects no other context
-#           (site:check: the build of docs:site-build and the tsc, Oxlint, and knip of app/docs)
+#           (site:check: the build of docs:site-build, the tsc, Oxlint, and knip of app/docs, and the check of its translations)
 #
 # A change to shared configuration (Taskfile.yml and tasks/, .tool-versions, tools/go.mod, the workflows and their
 # actions) selects every context, and so does any path no rule below knows: a new kind of file runs everything until a

@@ -2,11 +2,13 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // A card of the landing page that lists documents: each link names the repository path of a published document (or a
 // file of sitePages), and siteLink turns it into the page's URL under the base path. starlight-links-validator does not
-// see the links of a component, so a document without a page fails the build here.
+// see the links of a component, so a document without a page fails the build here. On the landing page of a locale, the
+// links lead to the pages of that locale, which are the English pages where the locale has no translation.
 import { Card } from "@astrojs/starlight/components";
 import type { ComponentProps } from "astro/types";
 import { getEntry } from "astro:content";
 import { isPublished, siteLink, slugOf } from "../published";
+import { localeOf } from "../translations";
 
 interface Props {
   title: string;
@@ -16,6 +18,8 @@ interface Props {
 }
 
 const { title, icon, links } = Astro.props;
+// From the URL, not Starlight's route: the llms-full.txt of the site renders the landing page outside a route.
+const locale = localeOf(Astro.url.pathname);
 for (const { path } of links) {
   if (isPublished(path) && (await getEntry("docs", slugOf(path))) === undefined) {
     throw new Error(`the landing page links ${path}, which has no page`);
@@ -29,7 +33,7 @@ for (const { path } of links) {
     {
       links.map(({ path, label }) => (
         <li>
-          <a href={siteLink(path)}>{label}</a>
+          <a href={siteLink(path, locale)}>{label}</a>
         </li>
       ))
     }
