@@ -286,6 +286,7 @@ const settingDefaults: readonly Omit<Schemas["AdminSetting"], "value" | "stored"
   { key: "search_visibilities", kind: "enum", default: "public", choices: ["public", "local", "public,local"] },
   { key: "security_contact", kind: "uri", default: "" },
   { key: "require_media_description", kind: "bool", default: "false" },
+  { key: "single_user", kind: "bool", default: "false" },
   { key: "link_cards", kind: "bool", default: "true" },
   { key: "link_cards_ignore_robots_txt", kind: "bool", default: "false" },
   { key: "finance_visibility", kind: "enum", default: "private", choices: ["private", "totals", "breakdown"] },

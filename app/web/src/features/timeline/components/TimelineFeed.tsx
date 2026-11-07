@@ -4,6 +4,7 @@ import type { ReactNode, Ref } from "react";
 import { useT } from "../../../lib/i18n";
 import type { Status, Timeline } from "../api/timelines";
 import { useTimeline } from "../hooks/useTimeline";
+import { useTimelineAvailability } from "../hooks/useTimelineAvailability";
 import { StatusCard } from "../../status";
 
 export type TimelineFeedProps = {
@@ -152,21 +153,37 @@ export function StatusFeed({
   );
 }
 
+/**
+ * The empty home timeline, which leads to people to follow: on the local timeline while the server offers it, and to the
+ * search otherwise (a one-person server has none, ADR-0152 §2).
+ */
+function HomeEmpty() {
+  const t = useT();
+  const { local } = useTimelineAvailability();
+  return (
+    <EmptyState
+      heading={t("client:timeline.empty.home.heading")}
+      description={t("client:timeline.empty.home.description")}
+      action={
+        local ? (
+          <Link href="/local" variant="standalone">
+            {t("client:timeline.empty.home.action")}
+          </Link>
+        ) : (
+          <Link href="/search" variant="standalone">
+            {t("client:timeline.empty.home.search")}
+          </Link>
+        )
+      }
+    />
+  );
+}
+
 function TimelineEmpty({ timeline, origin }: { timeline: Timeline; origin: TimelineFeedProps["origin"] }) {
   const t = useT();
   switch (timeline.kind) {
     case "home":
-      return (
-        <EmptyState
-          heading={t("client:timeline.empty.home.heading")}
-          description={t("client:timeline.empty.home.description")}
-          action={
-            <Link href="/local" variant="standalone">
-              {t("client:timeline.empty.home.action")}
-            </Link>
-          }
-        />
-      );
+      return <HomeEmpty />;
     case "local":
       return (
         <EmptyState

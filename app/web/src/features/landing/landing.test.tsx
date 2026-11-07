@@ -5,7 +5,7 @@ import { screen, waitFor, within } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import type { Instance, InstanceOverview } from "./api/landing";
-import { instanceFixture, statusPage, timelineStatusFixture } from "../../test/fixtures";
+import { instanceFixture, otherAccountFixture, statusPage, timelineStatusFixture } from "../../test/fixtures";
 import { apiBase, problem, signedInHandler } from "../../test/msw/http";
 import { server } from "../../test/msw/server";
 import { renderApp } from "../../test/render";
@@ -328,6 +328,56 @@ describe("the landing page", () => {
   });
 
   test("sends signed-in users to their home timeline", async () => {
+    server.use(signedInHandler);
+    const { router } = await renderApp({ path: "/" });
+    expect(await screen.findByRole("heading", { level: 1, name: "Home" })).toBeInTheDocument();
+    expect(router.state.location.pathname).toBe("/home");
+  });
+});
+
+describe("the front page of a one-person server", () => {
+  const oneUser = {
+    single_user: true,
+    single_user_account: otherAccountFixture,
+    registrations: { mode: "closed" },
+    timelines: { local: "off", federated: "off" },
+    terms_url: "http://localhost:3000/about/terms",
+    privacy_policy_url: "http://localhost:3000/about/privacy",
+  } satisfies Partial<Instance>;
+
+  test("is the operator's profile, with signing in, the server's information and its documents", async () => {
+    serveInstance(oneUser);
+    const { router } = await renderApp({ path: "/" });
+
+    expect(await screen.findByRole("heading", { level: 1, name: "Bob" })).toBeInTheDocument();
+    expect(router.state.location.pathname).toBe("/@bob");
+    const navigation = screen.getByRole("navigation", { name: "Main" });
+    // The bar's call to action is signing in (no sign-up), and the public timelines are off.
+    expect(within(navigation).getAllByRole("link").map(visibleText)).toEqual([
+      "my example",
+      "Sign in",
+      "Search",
+      "About",
+      "Sign in",
+    ]);
+    expect(screen.getByRole("link", { name: "More about this server" })).toHaveAttribute("href", "/about");
+    const documents = screen.getByRole("navigation", { name: "Terms and policies" });
+    expect(within(documents).getAllByRole("link").map(visibleText)).toEqual(["Terms of service", "Privacy policy"]);
+    // Nothing of the landing page, which invites people to join.
+    expect(screen.queryByRole("region", { name: "How do I join?" })).not.toBeInTheDocument();
+  });
+
+  test("is the landing page while the server does not name its operator", async () => {
+    const { single_user_account: _operator, ...withoutOperator } = oneUser;
+    serveInstance(withoutOperator);
+    const { router } = await renderApp({ path: "/" });
+
+    expect(await screen.findByRole("heading", { level: 1, name: "my example" })).toBeInTheDocument();
+    expect(router.state.location.pathname).toBe("/");
+  });
+
+  test("still sends signed-in users to their home timeline", async () => {
+    serveInstance(oneUser);
     server.use(signedInHandler);
     const { router } = await renderApp({ path: "/" });
     expect(await screen.findByRole("heading", { level: 1, name: "Home" })).toBeInTheDocument();

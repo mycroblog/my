@@ -555,6 +555,26 @@
     "defaultMessage": "Registration",
     "description": "Heading of the section of who may sign up on the server settings screen."
   },
+  "admin.settings.single_user.title": {
+    "defaultMessage": "One-person server",
+    "description": "Heading of the section of the instance setting single_user (ADR-0152) on the registration page of the server settings: the server of its operator alone."
+  },
+  "admin.settings.single_user.description": {
+    "defaultMessage": "A server of one person, your own home in the fediverse. While it is on, nobody can sign up, and the server offers only the home timeline of its timelines: the local and federated timelines, invites, the review of sign-ups, the sign-up block list, and suggested accounts are hidden, and new posts cannot be for “This server”. Visitors see your profile on the front page. Turning it on or off deletes nothing.",
+    "description": "Help of the section of the one-person server: what the mode hides and that it deletes nothing. “This server” is the name of the visibility local (client:compose.visibility.local)."
+  },
+  "admin.settings.single_user.label": {
+    "defaultMessage": "Make this a one-person server",
+    "description": "Label of the checkbox of the instance setting single_user."
+  },
+  "admin.settings.single_user.label.description": {
+    "defaultMessage": "It can be turned on only while the server has exactly one local account. Accounts that wait for approval, are deactivated, or are suspended count too; those whose sign-up was rejected do not. It can be turned off at any time.",
+    "description": "Description of the checkbox of the one-person server: the condition of exactly one local account, which accounts count, and that it can always be turned off."
+  },
+  "admin.settings.single_user.refused": {
+    "defaultMessage": "{reason} {detail}",
+    "description": "The reason why the server refused to turn the one-person server on, put inside client:admin.settings.policies.save_failed. {reason} is the server's localized sentence that a one-person server can have only one local account, {detail} its localized sentence of how many local accounts the server has. Keep the space between the sentences as the language separates sentences."
+  },
   "admin.settings.remote_media.all": {
     "defaultMessage": "Everything",
     "description": "Remote media policy all."

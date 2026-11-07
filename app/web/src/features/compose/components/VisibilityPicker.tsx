@@ -15,7 +15,8 @@ import { useId, useState } from "react";
 import { useT } from "../../../lib/i18n";
 import type { PostingLimits, Visibility } from "../api/compose";
 import { useTranslationDisclosure } from "../hooks/useTranslationDisclosure";
-import { isVisibility, visibilities, visibilityDescription, visibilityLabel } from "../hooks/visibilityMessages";
+import { useOfferedVisibilities } from "../hooks/useOfferedVisibilities";
+import { isVisibility, visibilityDescription, visibilityLabel } from "../hooks/visibilityMessages";
 
 export type VisibilityPickerProps = {
   value: Visibility;
@@ -29,7 +30,7 @@ export type VisibilityPickerProps = {
  * The visibility of the post: a button of the form's tools that shows the current choice with its icon (named "Visibility:
  * <choice>" and described by who can see it) and opens a popover with the five
  * visibilities as a radio group, each with who can see it (ADR-0017; WAI-ARIA APG radio group and dialog
- * patterns). Choosing does not close the popover, because the arrow keys choose as they move.
+ * patterns), without `local` on a one-person server (ADR-0152 §5). Choosing does not close the popover, because the arrow keys choose as they move.
  * While a restriction narrows what the account can post, the wider visibilities are disabled and the
  * group says why (data-model/05-states-and-policies.md §5.4). On a server that allows a translation provider a
  * narrow visibility, the group also says that a reader's request can send the text there (ADR-0148 §6).
@@ -44,6 +45,7 @@ export function VisibilityPicker({ value, onChange, limits, isDisabled = false }
       ? undefined
       : t("client:compose.visibility.ceiling", { visibility: t(visibilityLabel[limits.visibility_ceiling]) });
   const translationNote = useTranslationDisclosure();
+  const offered = useOfferedVisibilities();
   const buttonLabel = t("client:compose.visibility.button", { visibility: t(visibilityLabel[value]) });
   return (
     <PopoverTrigger isOpen={isOpen} onOpenChange={setIsOpen}>
@@ -80,7 +82,7 @@ export function VisibilityPicker({ value, onChange, limits, isDisabled = false }
                 if (isVisibility(next)) onChange(next);
               }}
             >
-              {visibilities.map((visibility) => (
+              {offered.map((visibility) => (
                 <Radio
                   key={visibility}
                   value={visibility}

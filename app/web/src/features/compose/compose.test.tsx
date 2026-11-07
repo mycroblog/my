@@ -557,6 +557,31 @@ describe("hints before posting", () => {
     expect(sent[0]?.body).toMatchObject({ visibility: "private" });
   });
 
+  test("a one-person server offers no “This server”, and an unrestricted account sees no ceiling", async () => {
+    signedIn();
+    server.use(
+      http.get(`${apiBase}/instance`, () => HttpResponse.json({ ...instanceFixture, single_user: true })),
+      http.get(`${apiBase}/accounts/verify_credentials`, () =>
+        HttpResponse.json({
+          ...viewerFixture,
+          posting: { visibility_ceiling: "public", visibilities: ["public", "unlisted", "private", "direct"] },
+        }),
+      ),
+    );
+    const { user } = await renderApp();
+    const sheet = await openSheet(user);
+
+    await user.click(await within(sheet).findByRole("button", { name: "Visibility: Public" }));
+    const choices = await screen.findByRole("radiogroup", { name: "Who can see this post?" });
+    expect(
+      within(choices)
+        .getAllByRole("radio")
+        .map((radio) => radio.getAttribute("value")),
+    ).toEqual(["public", "unlisted", "private", "direct"]);
+    for (const radio of within(choices).getAllByRole("radio")) expect(radio).toBeEnabled();
+    expect(choices).not.toHaveAccessibleDescription(/at most/u);
+  });
+
   test("a local post warns about the mentioned accounts of other servers that do not follow the viewer", async () => {
     signedIn();
     const asked: string[][] = [];
@@ -1166,6 +1191,31 @@ describe("replies", () => {
       language: "en",
       in_reply_to_id: localPost.id,
     });
+  });
+
+  test("to a local post on a one-person server are for the followers, which local means there", async () => {
+    signedIn();
+    server.use(
+      http.get(`${apiBase}/instance`, () => HttpResponse.json({ ...instanceFixture, single_user: true })),
+      http.get(`${apiBase}/accounts/verify_credentials`, () =>
+        HttpResponse.json({
+          ...viewerFixture,
+          posting: { visibility_ceiling: "public", visibilities: ["public", "unlisted", "private", "direct"] },
+        }),
+      ),
+    );
+    const sent = recordPosts();
+    const { user } = await renderApp({ createRouter: createReplyRouter });
+
+    await user.click(await screen.findByRole("button", { name: "Reply to Bob" }));
+    const sheet = await screen.findByRole("dialog", { name: "New post" });
+    expect(await within(sheet).findByRole("button", { name: "Visibility: Followers" })).toBeInTheDocument();
+
+    await user.type(within(sheet).getByRole("textbox", { name: "Your post" }), "Here!");
+    await user.click(within(sheet).getByRole("button", { name: "Reply" }));
+
+    expect(await findToast("Posted.")).toBeInTheDocument();
+    expect(sent[0]?.body).toMatchObject({ visibility: "private", in_reply_to_id: localPost.id });
   });
 
   test("can be turned into a normal post", async () => {

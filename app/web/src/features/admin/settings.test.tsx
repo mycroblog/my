@@ -645,6 +645,77 @@ describe("the server's policies", () => {
     expect(settings.patches).toEqual([{ values: { federation_mode: "both" } }]);
   });
 
+  describe("the one-person server", () => {
+    const label = "Make this a one-person server";
+
+    test("says when it can be turned on, and turns it on with the registration page's other changes", async () => {
+      const settings = settingsServer();
+      const { user } = await renderApp({ path: "/admin/settings/registration" });
+      const section = await screen.findByRole("region", { name: "One-person server" });
+      const checkbox = within(section).getByRole("checkbox", { name: label });
+      expect(checkbox).not.toBeChecked();
+      expect(checkbox).toHaveAccessibleDescription(/only while the server has exactly one local account/u);
+
+      await user.click(checkbox);
+      await user.click(screen.getByRole("button", { name: "Save the settings" }));
+      expect(
+        await screen.findByText("Saved the settings. They take effect at once, and the audit log records each change."),
+      ).toBeInTheDocument();
+      expect(settings.patches).toEqual([{ values: { single_user: "true" } }]);
+    });
+
+    test("says why it cannot be turned on while a second local account exists", async () => {
+      const refusal: Schemas["Problem"] = {
+        type: "/api/v1/problems/single-user-requires-one-account",
+        title: "A one-person server can have only one local account.",
+        status: 422,
+        detail: "This server has 2 local accounts.",
+      };
+      server.use(
+        http.patch(`${apiBase}/admin/settings`, () =>
+          HttpResponse.json(refusal, { status: 422, headers: { "Content-Type": "application/problem+json" } }),
+        ),
+      );
+      const { user } = await renderApp({ path: "/admin/settings/registration" });
+      await user.click(await screen.findByRole("checkbox", { name: label }));
+      await user.click(screen.getByRole("button", { name: "Save the settings" }));
+
+      expect(
+        await screen.findByText(
+          "Could not save the settings; nothing was changed: A one-person server can have only one local account. This server has 2 local accounts.",
+        ),
+      ).toBeInTheDocument();
+      expect(screen.getByRole("checkbox", { name: label })).toBeChecked();
+    });
+
+    test("leaves out what makes no sense for one person while it is on, and keeps the switch to turn it off", async () => {
+      server.use(
+        http.get(`${apiBase}/admin/settings`, () =>
+          HttpResponse.json(instanceSettingsFixture({ single_user: "true" })),
+        ),
+      );
+      const { user } = await renderApp({ path: "/admin/settings/registration" });
+      expect(await screen.findByRole("checkbox", { name: label })).toBeChecked();
+      const registration = screen.getByRole("region", { name: "Registration" });
+      expect(within(registration).queryByRole("radiogroup", { name: "Who may sign up" })).not.toBeInTheDocument();
+      // Signing in with a login provider stays.
+      expect(
+        within(registration).getByRole("checkbox", {
+          name: "Allow sign-in and registration only through login providers",
+        }),
+      ).toBeInTheDocument();
+      expect(screen.queryByRole("region", { name: "Member invites" })).not.toBeInTheDocument();
+      expect(screen.getByRole("region", { name: "Apps" })).toBeInTheDocument();
+
+      await user.click(screen.getByRole("link", { name: "Content" }));
+      expect(await screen.findByRole("region", { name: "Language" })).toBeInTheDocument();
+      for (const name of ["Timelines", "Landing page", "Suggested accounts"]) {
+        expect(screen.queryByRole("region", { name })).not.toBeInTheDocument();
+      }
+      expect(screen.getByRole("region", { name: "Posts" })).toBeInTheDocument();
+    });
+  });
+
   test("shows why a save failed, keeps the choices and changes nothing", async () => {
     const refusal: Schemas["Problem"] = {
       type: "about:blank",

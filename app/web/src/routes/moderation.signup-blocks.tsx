@@ -9,6 +9,7 @@ import {
   signupBlocksQueryOptions,
 } from "../features/moderation";
 import { requireSignIn } from "../lib/auth/requireSignIn";
+import { notFoundOnSingleUser } from "../lib/singleUser";
 import { useT } from "../lib/i18n";
 import { AdminError, loadWithPermission } from "./-admin/adminRoute";
 import { PageHeading } from "./-layout/PageHeading";
@@ -23,7 +24,11 @@ export const Route = createFileRoute("/moderation/signup-blocks")({
   validateSearch: searchSchema,
   loaderDeps: ({ search: { filter } }): { filter: SignupBlockFilter } => ({ filter: filter ?? "active" }),
   staticData: { title: "client:admin.signup_blocks.title" },
-  beforeLoad: requireSignIn,
+  // A one-person server has none of this (ADR-0152 §4): the address is not found there.
+  beforeLoad: async (match) => {
+    await requireSignIn(match);
+    await notFoundOnSingleUser(match);
+  },
   loader: ({ context, deps }) =>
     loadWithPermission(context, "manage_accounts", () =>
       context.queryClient.infiniteQuery({ ...signupBlocksQueryOptions(context.api, deps.filter), staleTime: Infinity }),

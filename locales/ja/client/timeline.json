@@ -23,6 +23,10 @@
     "defaultMessage": "ローカルタイムラインを見る",
     "description": "Link from the empty home timeline to the local timeline, where the user can find people to follow."
   },
+  "timeline.empty.home.search": {
+    "defaultMessage": "フォローする人を探す",
+    "description": "Link from the empty home timeline to the search, where the user can find people to follow, on a server that does not offer the local timeline."
+  },
   "timeline.empty.home.description": {
     "defaultMessage": "自分の投稿と、フォローしている人の投稿がここに表示されます。",
     "description": "Text under the heading of the empty home timeline."

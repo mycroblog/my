@@ -16,6 +16,7 @@ import { useApi, useSessionStatus } from "../../../lib/auth/SessionProvider";
 import { errorMessage } from "../../../lib/errors";
 import { useT } from "../../../lib/i18n";
 import { shellQueryRetry } from "../../../lib/query";
+import { useCommunityOffered } from "../../../lib/singleUser";
 import { type PagedList, toPagedList } from "../../moderation";
 import {
   cacheRevokedOwnInvite,
@@ -59,13 +60,16 @@ function withinCap(choices: readonly number[], cap: number, preset: number): num
 
 /**
  * Whether the settings list the page of the user's invites: the user may create invites now (ADR-0106 §18). False
- * while signed out, while it loads, and when it fails; the page itself still opens from its address.
+ * while signed out, while it loads, when it fails, and on a one-person server; the page itself still opens from its
+ * address on any other server.
  */
 export function useOwnInvitesEntry(): boolean {
   const api = useApi();
+  // A one-person server has no invites (ADR-0152 §4): their list is not asked for there.
   const signedIn = useSessionStatus() === "signed-in";
-  const query = useInfiniteQuery({ ...ownInvitesQueryOptions(api), enabled: signedIn, retry: shellQueryRetry });
-  return signedIn && query.data?.pages[0]?.can_create === true;
+  const offered = useCommunityOffered() && signedIn;
+  const query = useInfiniteQuery({ ...ownInvitesQueryOptions(api), enabled: offered, retry: shellQueryRetry });
+  return offered && query.data?.pages[0]?.can_create === true;
 }
 
 /** The user's invites, newest first, with whether they may create one, how many usable ones they hold, and the caps. */

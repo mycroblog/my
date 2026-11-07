@@ -4,6 +4,7 @@ import { createFileRoute, type ErrorComponentProps } from "@tanstack/react-route
 import { z } from "zod";
 import { SignupBlockDetail, signupBlockQueryOptions, SignupBlockTitle } from "../features/moderation";
 import { requireSignIn } from "../lib/auth/requireSignIn";
+import { notFoundOnSingleUser } from "../lib/singleUser";
 import { useT } from "../lib/i18n";
 import { AdminError, loadWithPermission } from "./-admin/adminRoute";
 import { PageHeading } from "./-layout/PageHeading";
@@ -15,7 +16,11 @@ const paramsSchema = z.object({ id: z.string().min(1).max(64) });
 export const Route = createFileRoute("/moderation/signup-blocks_/$id")({
   staticData: { title: "client:admin.signup_blocks.detail.title" },
   params: { parse: (params) => paramsSchema.parse(params) },
-  beforeLoad: requireSignIn,
+  // A one-person server has none of this (ADR-0152 §4): the address is not found there.
+  beforeLoad: async (match) => {
+    await requireSignIn(match);
+    await notFoundOnSingleUser(match);
+  },
   loader: ({ context, params: { id } }) =>
     loadWithPermission(context, "manage_accounts", () =>
       context.queryClient.query({ ...signupBlockQueryOptions(context.api, id), staleTime: Infinity }),

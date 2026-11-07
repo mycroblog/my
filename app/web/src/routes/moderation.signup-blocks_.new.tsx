@@ -3,6 +3,7 @@ import { Link, Stack } from "@my/ui";
 import { createFileRoute, type ErrorComponentProps } from "@tanstack/react-router";
 import { NewSignupBlock } from "../features/moderation";
 import { requireSignIn } from "../lib/auth/requireSignIn";
+import { notFoundOnSingleUser } from "../lib/singleUser";
 import { useT } from "../lib/i18n";
 import { AdminError, loadWithPermission } from "./-admin/adminRoute";
 import { PageHeading } from "./-layout/PageHeading";
@@ -10,7 +11,11 @@ import { PageHeading } from "./-layout/PageHeading";
 /** The form of a new block on sign-ups (FR-719), for manage_accounts. The `_` keeps it out of the list's layout. */
 export const Route = createFileRoute("/moderation/signup-blocks_/new")({
   staticData: { title: "client:admin.signup_blocks.new.title" },
-  beforeLoad: requireSignIn,
+  // A one-person server has none of this (ADR-0152 §4): the address is not found there.
+  beforeLoad: async (match) => {
+    await requireSignIn(match);
+    await notFoundOnSingleUser(match);
+  },
   loader: ({ context }) => loadWithPermission(context, "manage_accounts", () => Promise.resolve()),
   component: NewSignupBlockPage,
   errorComponent: NewSignupBlockError,

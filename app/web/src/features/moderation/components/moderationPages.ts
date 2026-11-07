@@ -16,7 +16,8 @@ import type { StaffPage } from "./StaffPages";
 
 /**
  * The moderation screens, in the order of the menu, with the permission each needs, the icon of their link and the
- * group of the menu they are in (none: the area's own group, with its overview).
+ * group of the menu they are in (none: the area's own group, with its overview). The registrations, the sign-up blocks
+ * and the invites are not listed on a one-person server (ADR-0152 §4).
  */
 export const moderationPages: readonly StaffPage[] = [
   {
@@ -62,6 +63,7 @@ export const moderationPages: readonly StaffPage[] = [
     description: "client:admin.registrations.summary",
     icon: RegistrationIcon,
     group: "client:admin.menu.group.accounts",
+    community: true,
   },
   {
     href: "/moderation/signup-blocks",
@@ -70,6 +72,7 @@ export const moderationPages: readonly StaffPage[] = [
     description: "client:admin.signup_blocks.summary",
     icon: SignUpBlockIcon,
     group: "client:admin.menu.group.accounts",
+    community: true,
   },
   {
     href: "/moderation/invites",
@@ -78,6 +81,7 @@ export const moderationPages: readonly StaffPage[] = [
     description: "client:admin.invites.summary",
     icon: InviteIcon,
     group: "client:admin.menu.group.accounts",
+    community: true,
   },
   {
     href: "/moderation/domain-actions",

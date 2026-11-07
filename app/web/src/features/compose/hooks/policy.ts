@@ -22,10 +22,16 @@ export function defaultVisibility(preference: Visibility, replyTo: Status | unde
 /**
  * The visibility a post gets: the chosen one when the account's posting limits keep it, and their
  * ceiling otherwise. The server decides the limits and applies the same rule when it posts (PostingLimits
- * in api/openapi.yaml); without limits (not loaded yet) the choice stands.
+ * in api/openapi.yaml); without limits (not loaded yet) the choice stands. On a one-person server, `local` (a draft's,
+ * or a reply's to a local post) is `private`, which it means there and which the server takes (ADR-0152 §5).
  */
-export function postedVisibility(chosen: Visibility, limits: PostingLimits | undefined): Visibility {
-  return limits === undefined || limits.visibilities.includes(chosen) ? chosen : limits.visibility_ceiling;
+export function postedVisibility(
+  chosen: Visibility,
+  limits: PostingLimits | undefined,
+  singleUser = false,
+): Visibility {
+  const asked = singleUser && chosen === "local" ? "private" : chosen;
+  return limits === undefined || limits.visibilities.includes(asked) ? asked : limits.visibility_ceiling;
 }
 
 /**

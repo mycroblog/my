@@ -2,6 +2,7 @@
 import { createFileRoute, type ErrorComponentProps } from "@tanstack/react-router";
 import { RegistrationList, registrationsQueryOptions } from "../features/moderation";
 import { requireSignIn } from "../lib/auth/requireSignIn";
+import { notFoundOnSingleUser } from "../lib/singleUser";
 import { useT } from "../lib/i18n";
 import { AdminError, loadWithPermission } from "./-admin/adminRoute";
 import { PageHeading } from "./-layout/PageHeading";
@@ -9,7 +10,11 @@ import { PageHeading } from "./-layout/PageHeading";
 /** The registrations that await approval, and approving or rejecting them (FR-721), for manage_accounts. */
 export const Route = createFileRoute("/moderation/registrations")({
   staticData: { title: "client:admin.registrations.title" },
-  beforeLoad: requireSignIn,
+  // A one-person server has none of this (ADR-0152 §4): the address is not found there.
+  beforeLoad: async (match) => {
+    await requireSignIn(match);
+    await notFoundOnSingleUser(match);
+  },
   loader: ({ context }) =>
     loadWithPermission(context, "manage_accounts", () =>
       context.queryClient.infiniteQuery({ ...registrationsQueryOptions(context.api), staleTime: Infinity }),

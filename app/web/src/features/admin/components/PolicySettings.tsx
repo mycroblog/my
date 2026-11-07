@@ -1,10 +1,13 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The pages of the server's policies (manage_settings, FR-705, web-client/14-admin.md), each one form of the settings
 // of its topic with one save that sends only its own settings (useServerPolicies, policyPages):
-// - registration: who may sign up and whether sign-in is limited to login providers (which asks first), who may create
-//   invites of their own and their caps (ADR-0106 §14, §15), and the routes by which apps register (ADR-0090 §1);
+// - registration: whether the server is a one-person server (ADR-0152 §1), who may sign up and whether sign-in is limited
+//   to login providers (which asks first), who may create invites of their own and their caps (ADR-0106 §14, §15), and
+//   the routes by which apps register (ADR-0090 §1);
 // - content: the default language, the public timelines, whether images need a description, the landing page and the
 //   featured accounts;
+// a one-person server, as saved, leaves out who may sign up, the invites, the public timelines, the landing page and the
+// featured accounts, which make no sense for one person (ADR-0152 §8).
 // - federation: its direction (which asks before it narrows, ADR-0006), remote media and link cards, who may read the
 //   list of the domain actions, and the decision hooks (ADR-0147);
 // - discovery: what the server states to search engines and AI crawlers, and which posts the post search covers while
@@ -713,13 +716,26 @@ function RegistrationSections({ form }: { form: PolicyForm }) {
   const t = useT();
   return (
     <>
-      <Section surface="card" title={t("client:admin.settings.registration.title")}>
-        <PolicyRadios
+      {/* The one-person server (ADR-0152 §1) comes first: while it is on, it is why nobody may sign up. */}
+      <Section surface="card" title={t("client:admin.settings.single_user.title")}>
+        <Hint size="inherit">{t("client:admin.settings.single_user.description")}</Hint>
+        <PolicyCheckbox
           form={form}
-          setting="registration_mode"
-          label={t("client:admin.settings.registration.mode")}
-          description={t("client:admin.settings.registration.description")}
+          setting="single_user"
+          label={t("client:admin.settings.single_user.label")}
+          description={t("client:admin.settings.single_user.label.description")}
         />
+      </Section>
+      <Section surface="card" title={t("client:admin.settings.registration.title")}>
+        {/* A one-person server keeps the registration closed whatever the mode stores (ADR-0152 §3). */}
+        {!form.singleUser && (
+          <PolicyRadios
+            form={form}
+            setting="registration_mode"
+            label={t("client:admin.settings.registration.mode")}
+            description={t("client:admin.settings.registration.description")}
+          />
+        )}
         <PolicyCheckbox
           form={form}
           setting="login_providers_only"
@@ -727,37 +743,40 @@ function RegistrationSections({ form }: { form: PolicyForm }) {
           description={t("client:admin.settings.login_providers_only.description")}
         />
       </Section>
-      <Section surface="card" title={t("client:admin.settings.invites.title")}>
-        <Hint size="inherit">{t("client:admin.settings.invites.description")}</Hint>
-        <PolicyRadios form={form} setting="invite_creators" label={t("client:admin.settings.invites.creators")} />
-        <NumberPolicyField
-          form={form}
-          setting="member_invite_max_active"
-          label={t("client:admin.settings.invites.max_active")}
-          description={(range) => t("client:admin.settings.invites.max_active.description", range)}
-        />
-        <NumberPolicyField
-          form={form}
-          setting="member_invite_max_uses"
-          label={t("client:admin.settings.invites.max_uses")}
-          description={(range) => t("client:admin.settings.invites.max_uses.description", range)}
-        />
-        <Select
-          label={t("client:admin.settings.invites.max_expires_in")}
-          description={t("client:admin.settings.invites.max_expires_in.description")}
-          value={form.value("member_invite_max_lifetime_seconds")}
-          onChange={(key) => {
-            if (typeof key === "string") form.change("member_invite_max_lifetime_seconds", key);
-          }}
-          items={form.inviteExpiryChoices.map((choice) => ({ id: choice.value, name: choice.label }))}
-        >
-          {(choice) => (
-            <SelectItem id={choice.id} textValue={choice.name}>
-              {choice.name}
-            </SelectItem>
-          )}
-        </Select>
-      </Section>
+      {/* A one-person server has no invites (ADR-0152 §4). */}
+      {!form.singleUser && (
+        <Section surface="card" title={t("client:admin.settings.invites.title")}>
+          <Hint size="inherit">{t("client:admin.settings.invites.description")}</Hint>
+          <PolicyRadios form={form} setting="invite_creators" label={t("client:admin.settings.invites.creators")} />
+          <NumberPolicyField
+            form={form}
+            setting="member_invite_max_active"
+            label={t("client:admin.settings.invites.max_active")}
+            description={(range) => t("client:admin.settings.invites.max_active.description", range)}
+          />
+          <NumberPolicyField
+            form={form}
+            setting="member_invite_max_uses"
+            label={t("client:admin.settings.invites.max_uses")}
+            description={(range) => t("client:admin.settings.invites.max_uses.description", range)}
+          />
+          <Select
+            label={t("client:admin.settings.invites.max_expires_in")}
+            description={t("client:admin.settings.invites.max_expires_in.description")}
+            value={form.value("member_invite_max_lifetime_seconds")}
+            onChange={(key) => {
+              if (typeof key === "string") form.change("member_invite_max_lifetime_seconds", key);
+            }}
+            items={form.inviteExpiryChoices.map((choice) => ({ id: choice.value, name: choice.label }))}
+          >
+            {(choice) => (
+              <SelectItem id={choice.id} textValue={choice.name}>
+                {choice.name}
+              </SelectItem>
+            )}
+          </Select>
+        </Section>
+      )}
       <Section surface="card" title={t("client:admin.settings.oauth_apps.title")}>
         <Hint size="inherit">{t("client:admin.settings.oauth_apps.description")}</Hint>
         <PolicyCheckbox
@@ -804,20 +823,23 @@ function ContentSections({ form }: { form: PolicyForm }) {
           )}
         </Select>
       </Section>
-      <Section surface="card" title={t("client:admin.settings.timelines.title")}>
-        <PolicyRadios
-          form={form}
-          setting="local_timeline_visibility"
-          label={t("client:admin.settings.timelines.local")}
-          description={t("client:admin.settings.timelines.local.description")}
-        />
-        <PolicyRadios
-          form={form}
-          setting="federated_timeline_visibility"
-          label={t("client:admin.settings.timelines.federated")}
-          description={t("client:admin.settings.timelines.federated.description")}
-        />
-      </Section>
+      {/* A one-person server has only the home timeline (ADR-0152 §2). */}
+      {!form.singleUser && (
+        <Section surface="card" title={t("client:admin.settings.timelines.title")}>
+          <PolicyRadios
+            form={form}
+            setting="local_timeline_visibility"
+            label={t("client:admin.settings.timelines.local")}
+            description={t("client:admin.settings.timelines.local.description")}
+          />
+          <PolicyRadios
+            form={form}
+            setting="federated_timeline_visibility"
+            label={t("client:admin.settings.timelines.federated")}
+            description={t("client:admin.settings.timelines.federated.description")}
+          />
+        </Section>
+      )}
       <Section surface="card" title={t("client:admin.settings.posts.title")}>
         <PolicyCheckbox
           form={form}
@@ -826,30 +848,35 @@ function ContentSections({ form }: { form: PolicyForm }) {
           description={t("client:admin.settings.posts.require_media_description.description")}
         />
       </Section>
-      <Section surface="card" title={t("client:admin.settings.landing.title")}>
-        <Hint size="inherit">{t("client:admin.settings.landing.description")}</Hint>
-        <PolicyCheckbox
-          form={form}
-          setting="public_counts"
-          label={t("client:admin.settings.landing.counts")}
-          description={t("client:admin.settings.landing.counts.description")}
-        />
-      </Section>
-      {/* The accounts that the suggestions to follow show first, in this order (FR-308). */}
-      <Section surface="card" title={t("client:admin.settings.featured.title")}>
-        <Hint size="inherit">{t("client:admin.settings.featured.description")}</Hint>
-        <TextField
-          label={t("client:admin.settings.featured.accounts")}
-          description={t("client:admin.settings.featured.accounts.description")}
-          value={form.value("featured_accounts")}
-          onChange={(value) => {
-            form.change("featured_accounts", value);
-          }}
-          autoComplete="off"
-          autoCorrect="off"
-          spellCheck="false"
-        />
-      </Section>
+      {/* A one-person server's front page is its operator's profile, not the landing page (ADR-0152 §7). */}
+      {!form.singleUser && (
+        <Section surface="card" title={t("client:admin.settings.landing.title")}>
+          <Hint size="inherit">{t("client:admin.settings.landing.description")}</Hint>
+          <PolicyCheckbox
+            form={form}
+            setting="public_counts"
+            label={t("client:admin.settings.landing.counts")}
+            description={t("client:admin.settings.landing.counts.description")}
+          />
+        </Section>
+      )}
+      {/* The accounts that the suggestions to follow show first, in this order (FR-308); a one-person server suggests none (ADR-0152 §4). */}
+      {!form.singleUser && (
+        <Section surface="card" title={t("client:admin.settings.featured.title")}>
+          <Hint size="inherit">{t("client:admin.settings.featured.description")}</Hint>
+          <TextField
+            label={t("client:admin.settings.featured.accounts")}
+            description={t("client:admin.settings.featured.accounts.description")}
+            value={form.value("featured_accounts")}
+            onChange={(value) => {
+              form.change("featured_accounts", value);
+            }}
+            autoComplete="off"
+            autoCorrect="off"
+            spellCheck="false"
+          />
+        </Section>
+      )}
     </>
   );
 }

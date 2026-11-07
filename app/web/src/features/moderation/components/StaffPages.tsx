@@ -5,6 +5,7 @@
 // screen and shown by its digits, not by color alone.
 import type { ComponentType } from "react";
 import type { ClientMessageKey } from "../../../lib/i18n";
+import { useSingleUser } from "../../../lib/singleUser";
 import type { Permission } from "../api/staff";
 import { useViewerPermissions } from "../hooks/usePermissions";
 
@@ -18,13 +19,16 @@ export type StaffPage = {
   icon: ComponentType;
   /** The heading of its group in the mode's menu; none for the area's own group, which starts with the overview. */
   group?: ClientMessageKey;
+  /** The screen manages what a one-person server does not offer (ADR-0152 §4), so it is not listed there. */
+  community?: true;
 };
 
 /** The badge of a screen's link: the count and its words, or none. */
 export type StaffPageBadge = (page: StaffPage) => { count: number; label: string } | null;
 
-/** The screens of `pages` that the viewer's roles allow, in their order. */
+/** The screens of `pages` that the viewer's roles allow and the server offers, in their order. */
 export function useShownStaffPages(pages: readonly StaffPage[]): readonly StaffPage[] {
   const permissions = useViewerPermissions();
-  return pages.filter((page) => permissions.includes(page.permission));
+  const singleUser = useSingleUser();
+  return pages.filter((page) => permissions.includes(page.permission) && !(singleUser && page.community === true));
 }

@@ -23,6 +23,10 @@
     "defaultMessage": "Browse the local timeline",
     "description": "Link from the empty home timeline to the local timeline, where the user can find people to follow."
   },
+  "timeline.empty.home.search": {
+    "defaultMessage": "Find people to follow",
+    "description": "Link from the empty home timeline to the search, where the user can find people to follow, on a server that does not offer the local timeline."
+  },
   "timeline.empty.home.description": {
     "defaultMessage": "Your posts and the posts of the people you follow appear here.",
     "description": "Text under the heading of the empty home timeline."

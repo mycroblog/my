@@ -3,7 +3,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { http, HttpResponse } from "msw";
 import { expect } from "storybook/test";
-import { type Schemas, statusPage } from "../../test/fixtures";
+import { otherAccountFixture, type Schemas, statusPage } from "../../test/fixtures";
 import { apiBase } from "../../test/msw/http";
 import {
   answering,
@@ -68,6 +68,18 @@ export const Empty: Story = answering(
     } satisfies Schemas["InstanceOverview"]),
   ),
   http.get(`${apiBase}/timelines/local`, () => HttpResponse.json(statusPage([]))),
+);
+
+/** A one-person server, whose front page is its operator's profile (ADR-0152 §7), with its documents in the footer. */
+export const OnePersonServer: Story = answering(
+  instanceWith({
+    single_user: true,
+    single_user_account: otherAccountFixture,
+    registrations: { mode: "closed" },
+    timelines: { local: "off", federated: "off" },
+    terms_url: "http://localhost:3000/about/terms",
+    privacy_policy_url: "http://localhost:3000/about/privacy",
+  }),
 );
 
 /** The server's counts have not arrived yet. */

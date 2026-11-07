@@ -18,6 +18,7 @@ import { AppLocale } from "./locale";
 import { Maintenance } from "./maintenance";
 import { startConnectivity } from "./network";
 import { createQueryClient } from "./query";
+import { refetchInstanceOnSingleUserMode } from "./singleUser";
 
 export type AppServices = {
   queryClient: QueryClient;
@@ -64,6 +65,8 @@ export function createAppServices(
   refetchInstanceOnFederationRestricted(queryClient, api);
   // So can the search of posts stop being there.
   refetchInstanceOnSearchUnavailable(queryClient, api);
+  // And the server can become a one-person server, which offers less.
+  refetchInstanceOnSingleUserMode(queryClient, api);
   const errors = new ErrorReporter({ api, apiOrigin: config.apiOrigin, release: config.version });
   return { queryClient, api, session, leaveApp, locale, maintenance, errors };
 }
