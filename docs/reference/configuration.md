@@ -161,6 +161,8 @@ An instance setting that has never been set reads as its default, which is defin
 | [`payments_payjp_webhook_token`](#payments_payjp_webhook_token) | `MY_PAYMENTS_PAYJP_WEBHOOK_TOKEN` | none | when `payments = payjp` | yes |
 | [`payments_reconcile_interval`](#payments_reconcile_interval) | `MY_PAYMENTS_RECONCILE_INTERVAL` | `6h` | no | no |
 | [`payments_reconcile_max_requests`](#payments_reconcile_max_requests) | `MY_PAYMENTS_RECONCILE_MAX_REQUESTS` | `1000` | no | no |
+| [`translator_google_project`](#translator_google_project) | `MY_TRANSLATOR_GOOGLE_PROJECT` | none | no | no |
+| [`translator_google_location`](#translator_google_location) | `MY_TRANSLATOR_GOOGLE_LOCATION` | `global` | no | no |
 | [`search`](#search) | `MY_SEARCH` | `none` | no | no |
 | [`voice`](#voice) | `MY_VOICE` | `off` | no | no |
 | [`voice_p2p_max_participants`](#voice_p2p_max_participants) | `MY_VOICE_P2P_MAX_PARTICIPANTS` | `10` | no | no |
@@ -1316,6 +1318,22 @@ How many requests one reconciliation sends to `payments`, a page of a list count
 
 - Environment variable: `MY_PAYMENTS_RECONCILE_MAX_REQUESTS`
 - Default: `1000`
+- Required: no
+
+### `translator_google_project`
+
+The Google Cloud project that the translations of the provider `google`, Google Cloud Translation, are billed to; the Cloud Translation API must be enabled in it, and the service account of the server needs `roles/cloudtranslate.user` on it. Setting it registers the provider, which the instance setting `translation_providers` enables; credentials come from Application Default Credentials ([translation providers](../operations/translation.md#google-cloud-translation)). The build tag `no_translator_google` leaves it out. Empty registers no such provider.
+
+- Environment variable: `MY_TRANSLATOR_GOOGLE_PROJECT`
+- Default: none
+- Required: no
+
+### `translator_google_location`
+
+The location of the requests of the provider `google`: `global`, or a location of Cloud Translation such as `us-central1` (`projects/{project}/locations/{location}`). Not every location serves the general translation model; see Google's list of the locations of Cloud Translation.
+
+- Environment variable: `MY_TRANSLATOR_GOOGLE_LOCATION`
+- Default: `global`
 - Required: no
 
 ### `search`

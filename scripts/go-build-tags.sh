@@ -18,9 +18,9 @@ set -euo pipefail
 # The representative sets: together they use every tag.
 sets=(
   # A self-hosted instance on SQLite with the fs blob store, without a broker or a metrics exporter.
-  "no_postgres,no_valkey,no_sns,no_ses,no_s3,no_gcs,no_pubsub,no_gcpkms,no_awskms,no_cloudtasks,no_otel,no_billing_aws,no_billing_gcp,no_payments_stripe,no_plugins"
+  "no_postgres,no_valkey,no_sns,no_ses,no_s3,no_gcs,no_pubsub,no_gcpkms,no_awskms,no_cloudtasks,no_otel,no_billing_aws,no_billing_gcp,no_payments_stripe,no_plugins,no_translator_google"
   # AWS: PostgreSQL, the SNS broker, SES, the EMF metrics, AWS KMS, the Stripe payments, without the Sora voice chat.
-  "no_sqlite,no_valkey,no_gcs,no_pubsub,no_gcpkms,no_cloudtasks,no_otel,no_billing_gcp,no_payments_payjp,no_voice_sora"
+  "no_sqlite,no_valkey,no_gcs,no_pubsub,no_gcpkms,no_cloudtasks,no_otel,no_billing_gcp,no_payments_payjp,no_voice_sora,no_translator_google"
   # Google Cloud: PostgreSQL, the Pub/Sub broker, Cloud KMS, Cloud Tasks, without the LiveKit voice chat.
   "no_sqlite,no_valkey,no_sns,no_ses,no_awskms,no_billing_aws,no_voice_livekit"
   # The test build of the end-to-end tests and the demonstration.
@@ -53,6 +53,7 @@ excluded_packages() {
     no_awskms) echo "$m/keymanager/awskms github.com/aws/aws-sdk-go-v2/service/kms" ;;
     no_billing_aws) echo "$m/billing/aws github.com/aws/aws-sdk-go-v2/service/costexplorer" ;;
     no_billing_gcp) echo "$m/billing/gcp google.golang.org/api/bigquery/v2" ;;
+    no_translator_google) echo "$m/translator/google cloud.google.com/go/translate/apiv3" ;;
     no_payments_stripe) echo "$m/payment/stripe github.com/stripe/stripe-go/v87" ;;
     no_payments_payjp) echo "$m/payment/payjp" ;;
     no_voice_livekit) echo "$m/voice/livekit" ;;

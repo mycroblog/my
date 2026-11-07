@@ -13,14 +13,21 @@ import (
 // setUpTranslation builds the translation of posts (ADR-0148): the instance settings choose among
 // the registered providers and set the limits, read per request. It comes after the status reader,
 // and its projector after the content module's, whose lock it relies on.
-func (a *App) setUpTranslation(cfg *config.Config, repo translation.Repository, opts AppOptions) error {
+func (a *App) setUpTranslation(ctx context.Context, cfg *config.Config, repo translation.Repository, opts AppOptions) error {
 	// An adapter adds itself to this list, with its API key from the deployment configuration, so
 	// that no key reaches the settings or the API (ADR-0148 §15).
 	plugin, err := pluginTranslationProviders(cfg, a.Meter)
 	if err != nil {
 		return err
 	}
-	registered := slices.Concat(opts.TranslationRegistered, plugin)
+	google, closeGoogle, err := googleTranslationProviders(ctx, cfg)
+	if err != nil {
+		return err
+	}
+	if closeGoogle != nil {
+		a.translatorClosers = append(a.translatorClosers, closeGoogle)
+	}
+	registered := slices.Concat(opts.TranslationRegistered, plugin, google)
 	var providers translation.Providers = translation.ConfiguredProviders{
 		Registered: registered,
 		Settings: func(ctx context.Context) (translation.ProviderSettings, error) {
