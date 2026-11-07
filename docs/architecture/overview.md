@@ -245,7 +245,7 @@ internal/
     authpages/       # ログイン・ログアウト・登録・メール確認の画面（html/template、JavaScript なし。ADR-0090。CAPTCHA を有効にしたときだけ、ログインと登録の画面がサービスのウィジェットを読む。ADR-0106。ログインの画面は、パスキーに対応したブラウザでだけパスキーのボタンを出す Web ビルドのスクリプトを読む。FR-004）
     web/             # Web クライアントの HTML の外枠（ランディングページ・インスタンスの情報ページ・プロフィール・投稿のリンクプレビューを含む）・ビルド成果物（dist/ を埋め込む）・Web アプリマニフェスト（ADR-0028）
   adapter/
-    db/{sqlite,postgres}/
+    db/{sqlite,postgres}/  # 方言ごとの土台（接続・トランザクション・再試行・クエリの補助）と、モジュールごとのサブパッケージ <module>/（そのモジュールの <module>gen を使うリポジトリ。ADR-0153 §3）
     queue/{db,inline,cloudtasks}/
     blob/{fs,s3}/
     media/{native,plugin}/
@@ -282,7 +282,7 @@ pkg/
   mybot/             # mykit の上のボット制作ライブラリ（MIT。別の Go モジュール。ADR-0093）
 api/                 # spec/（クライアント API の正。パス・components の項目ごとのファイル）、そのバンドル openapi.yaml（生成物）と lint 設定 redocly.yaml。規約は client-api.md。plugin/ はプラグインの proto（ADR-0146）
 schema/              # 目標スキーマ sqlite/・postgres/（モジュールごとのファイル。my に埋め込み、my schema apply が Atlas の Go ライブラリで宣言的に適用）と準備 SQL postgres.bootstrap.sql（ADR-0023・ADR-0081・ADR-0023）
-queries/             # sqlc 用クエリ（方言別。設定は sqlc.yaml、生成先は internal/adapter/db/<dialect>/。queue/ は internal/adapter/queue/db 用）
+queries/             # sqlc 用クエリ（方言別。設定は sqlc.yaml、生成先は internal/adapter/db/<dialect>/<module>gen/。queue/ は internal/adapter/queue/db 用）
 locales/             # ICU MessageFormat カタログ（en がソース。Go と TS で共有。en-XA / ar-XB は生成物）
 tools/               # 開発ツール（Go ツールの go.mod、i18n の生成器・検査を持つ Bun パッケージ tools/i18n）
 app/                 # クライアントの Bun ワークスペース（アプリと共有パッケージ。ADR-0025）

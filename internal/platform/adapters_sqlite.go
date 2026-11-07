@@ -8,6 +8,25 @@ import (
 	"context"
 
 	"github.com/mycroblog/my/internal/adapter/db/sqlite"
+	sqliteaccount "github.com/mycroblog/my/internal/adapter/db/sqlite/account"
+	sqlitecontent "github.com/mycroblog/my/internal/adapter/db/sqlite/content"
+	sqlitedbupgrade "github.com/mycroblog/my/internal/adapter/db/sqlite/dbupgrade"
+	sqlitediagnostics "github.com/mycroblog/my/internal/adapter/db/sqlite/diagnostics"
+	sqlitefederation "github.com/mycroblog/my/internal/adapter/db/sqlite/federation"
+	sqlitefinance "github.com/mycroblog/my/internal/adapter/db/sqlite/finance"
+	sqlitegraph "github.com/mycroblog/my/internal/adapter/db/sqlite/graph"
+	sqlitehook "github.com/mycroblog/my/internal/adapter/db/sqlite/hook"
+	sqliteidentity "github.com/mycroblog/my/internal/adapter/db/sqlite/identity"
+	sqliteinstance "github.com/mycroblog/my/internal/adapter/db/sqlite/instance"
+	sqlitemoderation "github.com/mycroblog/my/internal/adapter/db/sqlite/moderation"
+	sqlitenotification "github.com/mycroblog/my/internal/adapter/db/sqlite/notification"
+	sqliterewrap "github.com/mycroblog/my/internal/adapter/db/sqlite/rewrap"
+	sqlitesearch "github.com/mycroblog/my/internal/adapter/db/sqlite/search"
+	sqlitesupporters "github.com/mycroblog/my/internal/adapter/db/sqlite/supporters"
+	sqlitetimeline "github.com/mycroblog/my/internal/adapter/db/sqlite/timeline"
+	sqlitetranslation "github.com/mycroblog/my/internal/adapter/db/sqlite/translation"
+	sqlitevoice "github.com/mycroblog/my/internal/adapter/db/sqlite/voice"
+	sqlitewebhook "github.com/mycroblog/my/internal/adapter/db/sqlite/webhook"
 	kvdb "github.com/mycroblog/my/internal/adapter/kv/db"
 	queuedb "github.com/mycroblog/my/internal/adapter/queue/db"
 	"github.com/mycroblog/my/internal/app/uow"
@@ -35,20 +54,20 @@ func (a *App) openSQLite(ctx context.Context, cfg *config.Config, queueOpts queu
 		a.KV = kvdb.NewSQLite(d, a.Clock)
 	}
 	return &repositories{
-		identities: d.IdentityRepository(), accounts: d.AccountRepository(), instances: d.InstanceRepository(),
-		follows: d.GraphRepository(), statuses: d.StatusRepository(), linkCards: d.StatusRepository(), quotes: d.StatusRepository(),
-		interactions: d.InteractionRepository(), feeds: d.TimelineRepository(),
-		notifs: d.NotificationRepository(), pushes: d.NotificationRepository(),
-		medias: d.MediaRepository(), emojis: d.CustomEmojiRepository(),
-		feds: d.FederationRepository(), mods: d.ModerationRepository(), hooks: d.WebhookRepository(),
-		finance: d.FinanceRepository(), payments: d.PaymentRepository(), supporters: d.SupporterRepository(),
-		voice: d.VoiceRepository(), diagnostics: d.DiagnosticsRepository(), translations: d.TranslationRepository(), search: d.SearchRepository(),
-		decisions: d.HookRepository(), existingStatuses: d.StatusRepository(),
+		identities: sqliteidentity.NewRepository(d), accounts: sqliteaccount.NewRepository(d), instances: sqliteinstance.NewRepository(d),
+		follows: sqlitegraph.NewRepository(d), statuses: sqlitecontent.NewStatusRepository(d), linkCards: sqlitecontent.NewStatusRepository(d), quotes: sqlitecontent.NewStatusRepository(d),
+		interactions: sqlitecontent.NewInteractionRepository(d), feeds: sqlitetimeline.NewRepository(d),
+		notifs: sqlitenotification.NewRepository(d), pushes: sqlitenotification.NewRepository(d),
+		medias: sqlitecontent.NewMediaRepository(d), emojis: sqlitecontent.NewCustomEmojiRepository(d),
+		feds: sqlitefederation.NewRepository(d), mods: sqlitemoderation.NewRepository(d), hooks: sqlitewebhook.NewRepository(d),
+		finance: sqlitefinance.NewRepository(d), payments: sqlitesupporters.NewPaymentRepository(d), supporters: sqlitesupporters.NewSupporterRepository(d),
+		voice: sqlitevoice.NewRepository(d), diagnostics: sqlitediagnostics.NewRepository(d), translations: sqlitetranslation.NewRepository(d), search: sqlitesearch.NewRepository(d),
+		decisions: sqlitehook.NewRepository(d), existingStatuses: sqlitecontent.NewStatusRepository(d),
 		retention: retentionRepositories{
-			statuses: d.StatusRepository(), purges: d.FederationRepository(), profiles: d.AccountRepository(), emojis: d.CustomEmojiRepository(),
-			autoDeletes: d.StatusRepository(),
+			statuses: sqlitecontent.NewStatusRepository(d), purges: sqlitefederation.NewRepository(d), profiles: sqliteaccount.NewRepository(d), emojis: sqlitecontent.NewCustomEmojiRepository(d),
+			autoDeletes: sqlitecontent.NewStatusRepository(d),
 		},
-		projections: d.ProjectionStore(), dataUpgrades: d.DataUpgradeRepository(),
-		sealedValues: d.SealedValueStore(),
+		projections: d.ProjectionStore(), dataUpgrades: sqlitedbupgrade.NewDataUpgradeRepository(d),
+		sealedValues: sqliterewrap.NewSealedValueStore(d),
 	}, nil
 }

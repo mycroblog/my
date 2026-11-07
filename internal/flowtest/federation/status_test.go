@@ -5,6 +5,13 @@ package federation_test
 import (
 	"testing"
 
+	sqliteaccount "github.com/mycroblog/my/internal/adapter/db/sqlite/account"
+	sqlitecontent "github.com/mycroblog/my/internal/adapter/db/sqlite/content"
+	sqlitefederation "github.com/mycroblog/my/internal/adapter/db/sqlite/federation"
+	sqlitegraph "github.com/mycroblog/my/internal/adapter/db/sqlite/graph"
+	sqliteidentity "github.com/mycroblog/my/internal/adapter/db/sqlite/identity"
+	sqlitenotification "github.com/mycroblog/my/internal/adapter/db/sqlite/notification"
+	sqlitetimeline "github.com/mycroblog/my/internal/adapter/db/sqlite/timeline"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/flowtest"
 	"github.com/mycroblog/my/pkg/testkit/federationtest"
@@ -16,17 +23,17 @@ func TestRemoteStatusFlows(t *testing.T) {
 	federationtest.RemoteStatusFlows(t, func(t *testing.T, opts uow.Options) federationtest.RemoteStatusHarness {
 		db := flowtest.SQLite(t, opts)
 		return federationtest.RemoteStatusHarness{
-			AccountHarness: identitytest.AccountHarness{UnitOfWork: db, Identity: db.IdentityRepository(), Accounts: db.AccountRepository()},
-			Graph:          db.GraphRepository(),
-			Statuses:       db.StatusRepository(),
-			Media:          db.MediaRepository(),
-			Timeline:       db.TimelineRepository(),
-			Notifications:  db.NotificationRepository(),
-			Inbox:          db.FederationRepository(),
-			Federation:     db.FederationRepository(),
-			Instances:      db.FederationRepository(),
-			Pins:           db.InteractionRepository(),
-			Quotes:         db.StatusRepository(),
+			AccountHarness: identitytest.AccountHarness{UnitOfWork: db, Identity: sqliteidentity.NewRepository(db), Accounts: sqliteaccount.NewRepository(db)},
+			Graph:          sqlitegraph.NewRepository(db),
+			Statuses:       sqlitecontent.NewStatusRepository(db),
+			Media:          sqlitecontent.NewMediaRepository(db),
+			Timeline:       sqlitetimeline.NewRepository(db),
+			Notifications:  sqlitenotification.NewRepository(db),
+			Inbox:          sqlitefederation.NewRepository(db),
+			Federation:     sqlitefederation.NewRepository(db),
+			Instances:      sqlitefederation.NewRepository(db),
+			Pins:           sqlitecontent.NewInteractionRepository(db),
+			Quotes:         sqlitecontent.NewStatusRepository(db),
 		}
 	})
 }

@@ -1,0 +1,140 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+
+package instance
+
+import (
+	"context"
+
+	"github.com/mycroblog/my/internal/adapter/db/sqlite"
+	"github.com/mycroblog/my/internal/adapter/db/sqlite/instancegen"
+	appinstance "github.com/mycroblog/my/internal/app/instance"
+	"github.com/mycroblog/my/internal/app/uow"
+	"github.com/mycroblog/my/internal/domain/instance"
+)
+
+// InsertBrandRevision implements instance.BrandRepository.
+func (r *Repository) InsertBrandRevision(ctx context.Context, tx uow.Tx, rev instance.BrandRevision) error {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return err
+	}
+	err = q.InsertInstanceBrandRevision(ctx, instancegen.InsertInstanceBrandRevisionParams{
+		ID: rev.ID, Kind: string(rev.Kind), Action: string(rev.Action), BackgroundColor: sqlite.ToNullString(rev.Background),
+		RevisedByUserID: sqlite.ToNullString(rev.RevisedByUserID), RevisedAt: sqlite.ToMillis(rev.RevisedAt),
+	})
+	if err != nil {
+		return sqlite.Wrap(err, "insert instance brand revision")
+	}
+	for _, f := range rev.Files {
+		err := q.InsertInstanceBrandFile(ctx, instancegen.InsertInstanceBrandFileParams{
+			RevisionID: rev.ID, Rendition: string(f.Rendition), BlobKey: f.Key, ContentType: f.ContentType,
+			Width: int64(f.Width), Height: int64(f.Height), FileSize: f.Size, Sha256: f.SHA256,
+		})
+		if err != nil {
+			return sqlite.Wrap(err, "insert instance brand file")
+		}
+	}
+	return nil
+}
+
+// BrandHead implements instance.BrandRepository.
+func (r *Repository) BrandHead(ctx context.Context, tx uow.Tx, kind instance.BrandKind) (instance.BrandHead, error) {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return instance.BrandHead{}, err
+	}
+	id, err := q.GetInstanceBrandHead(ctx, string(kind))
+	if err != nil {
+		return instance.BrandHead{}, sqlite.NotFound(err, appinstance.ErrNotFound, "instance brand "+string(kind))
+	}
+	return instance.BrandHead{Kind: kind, RevisionID: id}, nil
+}
+
+// UpsertBrandHead implements instance.BrandRepository.
+func (r *Repository) UpsertBrandHead(ctx context.Context, tx uow.Tx, h instance.BrandHead) error {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return err
+	}
+	return sqlite.Wrap(q.UpsertInstanceBrandHead(ctx, instancegen.UpsertInstanceBrandHeadParams{Kind: string(h.Kind), RevisionID: h.RevisionID}), "upsert instance brand")
+}
+
+// DeleteBrandHead implements instance.BrandRepository.
+func (r *Repository) DeleteBrandHead(ctx context.Context, tx uow.Tx, kind instance.BrandKind) error {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return err
+	}
+	return sqlite.Wrap(q.DeleteInstanceBrandHead(ctx, string(kind)), "delete instance brand")
+}
+
+// DeleteAllBrandHeads implements instance.BrandRepository.
+func (r *Repository) DeleteAllBrandHeads(ctx context.Context, tx uow.Tx) error {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return err
+	}
+	return sqlite.Wrap(q.DeleteAllInstanceBrandHeads(ctx), "delete instance brands")
+}
+
+// ListBrandRevisionHeads implements instance.BrandRepository.
+func (r *Repository) ListBrandRevisionHeads(ctx context.Context, tx uow.Tx) ([]instance.BrandRevision, error) {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return nil, err
+	}
+	rows, err := q.ListInstanceBrandRevisionHeads(ctx)
+	if err != nil {
+		return nil, sqlite.Wrap(err, "list instance brand revisions")
+	}
+	out := make([]instance.BrandRevision, len(rows))
+	for i, row := range rows {
+		out[i] = instance.BrandRevision{ID: row.ID, Kind: instance.BrandKind(row.Kind), Action: instance.BrandAction(row.Action)}
+	}
+	return out, nil
+}
+
+// CurrentBrands implements instance.BrandRepository.
+func (r *Repository) CurrentBrands(ctx context.Context) (instance.Brands, error) {
+	q := r.db.reader()
+	heads, err := q.ListInstanceBrandHeads(ctx)
+	if err != nil {
+		return instance.Brands{}, sqlite.Wrap(err, "list instance brands")
+	}
+	var out instance.Brands
+	for _, h := range heads {
+		rev, err := findBrandRevision(ctx, q, h.RevisionID)
+		if err != nil {
+			return instance.Brands{}, err
+		}
+		out.Set(&rev)
+	}
+	return out, nil
+}
+
+// FindBrandRevision implements instance.BrandRepository.
+func (r *Repository) FindBrandRevision(ctx context.Context, id string) (instance.BrandRevision, error) {
+	return findBrandRevision(ctx, r.db.reader(), id)
+}
+
+func findBrandRevision(ctx context.Context, q *instancegen.Queries, id string) (instance.BrandRevision, error) {
+	row, err := q.GetInstanceBrandRevision(ctx, id)
+	if err != nil {
+		return instance.BrandRevision{}, sqlite.NotFound(err, appinstance.ErrNotFound, "instance brand revision "+id)
+	}
+	files, err := q.ListInstanceBrandFiles(ctx, id)
+	if err != nil {
+		return instance.BrandRevision{}, sqlite.Wrap(err, "list instance brand files")
+	}
+	rev := instance.BrandRevision{
+		ID: row.ID, Kind: instance.BrandKind(row.Kind), Action: instance.BrandAction(row.Action),
+		Background: row.BackgroundColor.String, RevisedByUserID: row.RevisedByUserID.String, RevisedAt: sqlite.FromMillis(row.RevisedAt),
+	}
+	for _, f := range files {
+		rev.Files = append(rev.Files, instance.BrandFile{
+			Rendition: instance.BrandRendition(f.Rendition), Key: f.BlobKey, ContentType: f.ContentType,
+			Width: int(f.Width), Height: int(f.Height), Size: f.FileSize, SHA256: f.Sha256,
+		})
+	}
+	return rev, nil
+}

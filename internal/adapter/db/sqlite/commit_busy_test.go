@@ -9,6 +9,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/mycroblog/my/internal/adapter/db/sqlite/identitygen"
+
 	msqlite "modernc.org/sqlite"
 	sqlite3 "modernc.org/sqlite/lib"
 
@@ -80,7 +82,7 @@ func TestRetriesACommitThatFailsWithBusy(t *testing.T) {
 	attempts := 0
 	err = db.Tx(ctx, func(tx uow.Tx) error {
 		attempts++
-		return insertProbe(ctx, newGenQueries(tx.(*Tx).tx), testkit.NamedID("a"))
+		return insertProbe(ctx, identitygen.New(tx.(*Tx).tx), testkit.NamedID("a"))
 	})
 	if err != nil {
 		t.Fatalf("Tx = %v", err)

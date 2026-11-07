@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/mycroblog/my/internal/adapter/db/sqlite"
+	sqliteidentity "github.com/mycroblog/my/internal/adapter/db/sqlite/identity"
 	appidentity "github.com/mycroblog/my/internal/app/identity"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/identity"
@@ -56,7 +57,7 @@ func TestAdminCreate(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer func() { _ = db.Close() }()
-	repo := db.IdentityRepository()
+	repo := sqliteidentity.NewRepository(db)
 	userID, err := repo.FindUserIDByEmail(t.Context(), "root@example.com")
 	if err != nil {
 		t.Fatalf("FindUserIDByEmail = %v", err)

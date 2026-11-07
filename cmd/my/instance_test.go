@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/mycroblog/my/internal/adapter/db/sqlite"
+	sqliteidentity "github.com/mycroblog/my/internal/adapter/db/sqlite/identity"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/pkg/testkit"
 )
@@ -158,7 +159,7 @@ func TestNewUsersGetTheInstanceDefaultLocale(t *testing.T) {
 			t.Fatal(err)
 		}
 		defer func() { _ = db.Close() }()
-		repo := db.IdentityRepository()
+		repo := sqliteidentity.NewRepository(db)
 		userID, err := repo.FindUserIDByEmail(t.Context(), name+"@example.com")
 		if err != nil {
 			t.Fatal(err)

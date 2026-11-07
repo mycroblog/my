@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/mycroblog/my/internal/adapter/db/sqlite"
+	sqliteidentity "github.com/mycroblog/my/internal/adapter/db/sqlite/identity"
 	"github.com/mycroblog/my/internal/app/dbupgrade"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/platform"
@@ -113,7 +114,7 @@ func TestDBBackup(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := copied.IdentityRepository().FindUserIDByEmail(t.Context(), "alice@example.com"); err != nil {
+	if _, err := sqliteidentity.NewRepository(copied).FindUserIDByEmail(t.Context(), "alice@example.com"); err != nil {
 		t.Errorf("alice in the copy: %v", err)
 	}
 	_ = copied.Close()

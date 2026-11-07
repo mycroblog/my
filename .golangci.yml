@@ -563,6 +563,315 @@ linters:
               desc: flow tests assemble only the modules they cross, not the composition root (ADR-0153 §1)
             - pkg: github.com/mycroblog/my/internal/adapter/db/postgres
               desc: flow tests run once, on SQLite; the port contracts cover PostgreSQL (ADR-0153 §1)
+        # The database adapters are a shared base per dialect (internal/adapter/db/<dialect>: connections,
+        # transactions, retries, the helpers of the queries) and a sub-package per module
+        # (internal/adapter/db/<dialect>/<module>) that implements the module's ports with its own generated
+        # queries (<module>gen), ADR-0153 §3. The base imports no sub-package.
+        db-base:
+          list-mode: lax
+          files:
+            - "**/internal/adapter/db/sqlite/*.go"
+            - "!$test"
+          deny:
+            - pkg: github.com/mycroblog/my/internal/adapter/db/sqlite/
+              desc: the base of the adapter is below the modules; move what a module needs into the base, or the code into the module
+        # A module's sub-package imports the base, its own generated queries, and the sub-packages of the modules that
+        # its module imports (transitively) in internal/app, never another module's generated queries: a helper that
+        # a lower module needs goes into the base. A change to a module's imports in internal/app updates its rule.
+        db-account:
+          list-mode: strict
+          files:
+            - "**/internal/adapter/db/sqlite/account/**"
+            - "!$test"
+          allow:
+            - $gostd
+            - github.com/mycroblog/my/internal/app
+            - github.com/mycroblog/my/internal/domain
+            - github.com/mycroblog/my/internal/adapter/db/sqlite$
+            - github.com/mycroblog/my/internal/adapter/db/sqlite/accountgen$
+            - github.com/mycroblog/my/internal/adapter/db/sqlite/hook$
+        db-content:
+          list-mode: strict
+          files:
+            - "**/internal/adapter/db/sqlite/content/**"
+            - "!$test"
+          allow:
+            - $gostd
+            - github.com/mycroblog/my/internal/app
+            - github.com/mycroblog/my/internal/domain
+            - github.com/mycroblog/my/internal/adapter/db/sqlite$
+            - github.com/mycroblog/my/internal/adapter/db/sqlite/contentgen$
+            - github.com/mycroblog/my/internal/adapter/db/sqlite/account$
+            - github.com/mycroblog/my/internal/adapter/db/sqlite/graph$
+            - github.com/mycroblog/my/internal/adapter/db/sqlite/hook$
+        db-dbupgrade:
+          list-mode: strict
+          files:
+            - "**/internal/adapter/db/sqlite/dbupgrade/**"
+            - "!$test"
+          allow:
+            - $gostd
+            - github.com/mycroblog/my/internal/app
+            - github.com/mycroblog/my/internal/domain
+            - github.com/mycroblog/my/internal/adapter/db/sqlite$
+            - github.com/mycroblog/my/internal/adapter/db/sqlite/dbupgradegen$
+        db-diagnostics:
+          list-mode: strict
+          files:
+            - "**/internal/adapter/db/sqlite/diagnostics/**"
+            - "!$test"
+          allow:
+            - $gostd
+            - github.com/mycroblog/my/internal/app
+            - github.com/mycroblog/my/internal/domain
+            - github.com/mycroblog/my/internal/adapter/db/sqlite$
+            - github.com/mycroblog/my/internal/adapter/db/sqlite/diagnosticsgen$
+        db-federation:
+          list-mode: strict
+          files:
+            - "**/internal/adapter/db/sqlite/federation/**"
+            - "!$test"
+          allow:
+            - $gostd
+            - github.com/mycroblog/my/internal/app
+            - github.com/mycroblog/my/internal/domain
+            - github.com/mycroblog/my/internal/adapter/db/sqlite$
+            - github.com/mycroblog/my/internal/adapter/db/sqlite/federationgen$
+            - github.com/mycroblog/my/internal/adapter/db/sqlite/account$
+            - github.com/mycroblog/my/internal/adapter/db/sqlite/content$
+            - github.com/mycroblog/my/internal/adapter/db/sqlite/graph$
+            - github.com/mycroblog/my/internal/adapter/db/sqlite/hook$
+            - github.com/mycroblog/my/internal/adapter/db/sqlite/instance$
+            - github.com/mycroblog/my/internal/adapter/db/sqlite/moderation$
+            - github.com/mycroblog/my/internal/adapter/db/sqlite/timeline$
+        db-finance:
+          list-mode: strict
+          files:
+            - "**/internal/adapter/db/sqlite/finance/**"
+            - "!$test"
+          allow:
+            - $gostd
+            - github.com/mycroblog/my/internal/app
+            - github.com/mycroblog/my/internal/domain
+            - github.com/mycroblog/my/internal/adapter/db/sqlite$
+            - github.com/mycroblog/my/internal/adapter/db/sqlite/financegen$
+            - github.com/mycroblog/my/internal/adapter/db/sqlite/account$
+            - github.com/mycroblog/my/internal/adapter/db/sqlite/content$
+            - github.com/mycroblog/my/internal/adapter/db/sqlite/graph$
+            - github.com/mycroblog/my/internal/adapter/db/sqlite/hook$
+            - github.com/mycroblog/my/internal/adapter/db/sqlite/moderation$
+        db-graph:
+          list-mode: strict
+          files:
+            - "**/internal/adapter/db/sqlite/graph/**"
+            - "!$test"
+          allow:
+            - $gostd
+            - github.com/mycroblog/my/internal/app
+            - github.com/mycroblog/my/internal/domain
+            - github.com/mycroblog/my/internal/adapter/db/sqlite$
+            - github.com/mycroblog/my/internal/adapter/db/sqlite/graphgen$
+            - github.com/mycroblog/my/internal/adapter/db/sqlite/account$
+            - github.com/mycroblog/my/internal/adapter/db/sqlite/hook$
+        db-hook:
+          list-mode: strict
+          files:
+            - "**/internal/adapter/db/sqlite/hook/**"
+            - "!$test"
+          allow:
+            - $gostd
+            - github.com/mycroblog/my/internal/app
+            - github.com/mycroblog/my/internal/domain
+            - github.com/mycroblog/my/internal/adapter/db/sqlite$
+            - github.com/mycroblog/my/internal/adapter/db/sqlite/hookgen$
+        db-identity:
+          list-mode: strict
+          files:
+            - "**/internal/adapter/db/sqlite/identity/**"
+            - "!$test"
+          allow:
+            - $gostd
+            - github.com/mycroblog/my/internal/app
+            - github.com/mycroblog/my/internal/domain
+            - github.com/mycroblog/my/internal/adapter/db/sqlite$
+            - github.com/mycroblog/my/internal/adapter/db/sqlite/identitygen$
+            - github.com/mycroblog/my/internal/adapter/db/sqlite/account$
+            - github.com/mycroblog/my/internal/adapter/db/sqlite/content$
+            - github.com/mycroblog/my/internal/adapter/db/sqlite/graph$
+            - github.com/mycroblog/my/internal/adapter/db/sqlite/hook$
+            - github.com/mycroblog/my/internal/adapter/db/sqlite/instance$
+            - github.com/mycroblog/my/internal/adapter/db/sqlite/moderation$
+        db-instance:
+          list-mode: strict
+          files:
+            - "**/internal/adapter/db/sqlite/instance/**"
+            - "!$test"
+          allow:
+            - $gostd
+            - github.com/mycroblog/my/internal/app
+            - github.com/mycroblog/my/internal/domain
+            - github.com/mycroblog/my/internal/adapter/db/sqlite$
+            - github.com/mycroblog/my/internal/adapter/db/sqlite/instancegen$
+            - github.com/mycroblog/my/internal/adapter/db/sqlite/account$
+            - github.com/mycroblog/my/internal/adapter/db/sqlite/content$
+            - github.com/mycroblog/my/internal/adapter/db/sqlite/graph$
+            - github.com/mycroblog/my/internal/adapter/db/sqlite/hook$
+            - github.com/mycroblog/my/internal/adapter/db/sqlite/moderation$
+        db-moderation:
+          list-mode: strict
+          files:
+            - "**/internal/adapter/db/sqlite/moderation/**"
+            - "!$test"
+          allow:
+            - $gostd
+            - github.com/mycroblog/my/internal/app
+            - github.com/mycroblog/my/internal/domain
+            - github.com/mycroblog/my/internal/adapter/db/sqlite$
+            - github.com/mycroblog/my/internal/adapter/db/sqlite/moderationgen$
+            - github.com/mycroblog/my/internal/adapter/db/sqlite/account$
+            - github.com/mycroblog/my/internal/adapter/db/sqlite/content$
+            - github.com/mycroblog/my/internal/adapter/db/sqlite/graph$
+            - github.com/mycroblog/my/internal/adapter/db/sqlite/hook$
+        db-notification:
+          list-mode: strict
+          files:
+            - "**/internal/adapter/db/sqlite/notification/**"
+            - "!$test"
+          allow:
+            - $gostd
+            - github.com/mycroblog/my/internal/app
+            - github.com/mycroblog/my/internal/domain
+            - github.com/mycroblog/my/internal/adapter/db/sqlite$
+            - github.com/mycroblog/my/internal/adapter/db/sqlite/notificationgen$
+            - github.com/mycroblog/my/internal/adapter/db/sqlite/account$
+            - github.com/mycroblog/my/internal/adapter/db/sqlite/content$
+            - github.com/mycroblog/my/internal/adapter/db/sqlite/diagnostics$
+            - github.com/mycroblog/my/internal/adapter/db/sqlite/finance$
+            - github.com/mycroblog/my/internal/adapter/db/sqlite/graph$
+            - github.com/mycroblog/my/internal/adapter/db/sqlite/hook$
+            - github.com/mycroblog/my/internal/adapter/db/sqlite/identity$
+            - github.com/mycroblog/my/internal/adapter/db/sqlite/instance$
+            - github.com/mycroblog/my/internal/adapter/db/sqlite/moderation$
+            - github.com/mycroblog/my/internal/adapter/db/sqlite/supporters$
+            - github.com/mycroblog/my/internal/adapter/db/sqlite/webhook$
+        db-search:
+          list-mode: strict
+          files:
+            - "**/internal/adapter/db/sqlite/search/**"
+            - "!$test"
+          allow:
+            - $gostd
+            - github.com/mycroblog/my/internal/app
+            - github.com/mycroblog/my/internal/domain
+            - github.com/mycroblog/my/internal/adapter/db/sqlite$
+            - github.com/mycroblog/my/internal/adapter/db/sqlite/searchgen$
+            - github.com/mycroblog/my/internal/adapter/db/sqlite/account$
+            - github.com/mycroblog/my/internal/adapter/db/sqlite/content$
+            - github.com/mycroblog/my/internal/adapter/db/sqlite/graph$
+            - github.com/mycroblog/my/internal/adapter/db/sqlite/hook$
+            - github.com/mycroblog/my/internal/adapter/db/sqlite/instance$
+            - github.com/mycroblog/my/internal/adapter/db/sqlite/moderation$
+            - github.com/mycroblog/my/internal/adapter/db/sqlite/timeline$
+        db-supporters:
+          list-mode: strict
+          files:
+            - "**/internal/adapter/db/sqlite/supporters/**"
+            - "!$test"
+          allow:
+            - $gostd
+            - github.com/mycroblog/my/internal/app
+            - github.com/mycroblog/my/internal/domain
+            - github.com/mycroblog/my/internal/adapter/db/sqlite$
+            - github.com/mycroblog/my/internal/adapter/db/sqlite/supportersgen$
+            - github.com/mycroblog/my/internal/adapter/db/sqlite/account$
+            - github.com/mycroblog/my/internal/adapter/db/sqlite/content$
+            - github.com/mycroblog/my/internal/adapter/db/sqlite/finance$
+            - github.com/mycroblog/my/internal/adapter/db/sqlite/graph$
+            - github.com/mycroblog/my/internal/adapter/db/sqlite/hook$
+            - github.com/mycroblog/my/internal/adapter/db/sqlite/identity$
+            - github.com/mycroblog/my/internal/adapter/db/sqlite/instance$
+            - github.com/mycroblog/my/internal/adapter/db/sqlite/moderation$
+        db-timeline:
+          list-mode: strict
+          files:
+            - "**/internal/adapter/db/sqlite/timeline/**"
+            - "!$test"
+          allow:
+            - $gostd
+            - github.com/mycroblog/my/internal/app
+            - github.com/mycroblog/my/internal/domain
+            - github.com/mycroblog/my/internal/adapter/db/sqlite$
+            - github.com/mycroblog/my/internal/adapter/db/sqlite/timelinegen$
+            - github.com/mycroblog/my/internal/adapter/db/sqlite/account$
+            - github.com/mycroblog/my/internal/adapter/db/sqlite/content$
+            - github.com/mycroblog/my/internal/adapter/db/sqlite/graph$
+            - github.com/mycroblog/my/internal/adapter/db/sqlite/hook$
+            - github.com/mycroblog/my/internal/adapter/db/sqlite/moderation$
+        db-translation:
+          list-mode: strict
+          files:
+            - "**/internal/adapter/db/sqlite/translation/**"
+            - "!$test"
+          allow:
+            - $gostd
+            - github.com/mycroblog/my/internal/app
+            - github.com/mycroblog/my/internal/domain
+            - github.com/mycroblog/my/internal/adapter/db/sqlite$
+            - github.com/mycroblog/my/internal/adapter/db/sqlite/translationgen$
+            - github.com/mycroblog/my/internal/adapter/db/sqlite/account$
+            - github.com/mycroblog/my/internal/adapter/db/sqlite/content$
+            - github.com/mycroblog/my/internal/adapter/db/sqlite/graph$
+            - github.com/mycroblog/my/internal/adapter/db/sqlite/hook$
+        db-voice:
+          list-mode: strict
+          files:
+            - "**/internal/adapter/db/sqlite/voice/**"
+            - "!$test"
+          allow:
+            - $gostd
+            - github.com/mycroblog/my/internal/app
+            - github.com/mycroblog/my/internal/domain
+            - github.com/mycroblog/my/internal/adapter/db/sqlite$
+            - github.com/mycroblog/my/internal/adapter/db/sqlite/voicegen$
+            - github.com/mycroblog/my/internal/adapter/db/sqlite/account$
+            - github.com/mycroblog/my/internal/adapter/db/sqlite/content$
+            - github.com/mycroblog/my/internal/adapter/db/sqlite/graph$
+            - github.com/mycroblog/my/internal/adapter/db/sqlite/hook$
+            - github.com/mycroblog/my/internal/adapter/db/sqlite/instance$
+            - github.com/mycroblog/my/internal/adapter/db/sqlite/moderation$
+        db-webhook:
+          list-mode: strict
+          files:
+            - "**/internal/adapter/db/sqlite/webhook/**"
+            - "!$test"
+          allow:
+            - $gostd
+            - github.com/mycroblog/my/internal/app
+            - github.com/mycroblog/my/internal/domain
+            - github.com/mycroblog/my/internal/adapter/db/sqlite$
+            - github.com/mycroblog/my/internal/adapter/db/sqlite/webhookgen$
+            - github.com/mycroblog/my/internal/adapter/db/sqlite/account$
+            - github.com/mycroblog/my/internal/adapter/db/sqlite/content$
+            - github.com/mycroblog/my/internal/adapter/db/sqlite/diagnostics$
+            - github.com/mycroblog/my/internal/adapter/db/sqlite/graph$
+            - github.com/mycroblog/my/internal/adapter/db/sqlite/hook$
+            - github.com/mycroblog/my/internal/adapter/db/sqlite/identity$
+            - github.com/mycroblog/my/internal/adapter/db/sqlite/instance$
+            - github.com/mycroblog/my/internal/adapter/db/sqlite/moderation$
+        # The store of the sealed values (`my kek rewrap`) gathers the sealed columns of the modules that own them.
+        db-rewrap:
+          list-mode: strict
+          files:
+            - "**/internal/adapter/db/sqlite/rewrap/**"
+            - "!$test"
+          allow:
+            - $gostd
+            - github.com/mycroblog/my/internal/app
+            - github.com/mycroblog/my/internal/adapter/db/sqlite$
+            - github.com/mycroblog/my/internal/adapter/db/sqlite/account$
+            - github.com/mycroblog/my/internal/adapter/db/sqlite/identity$
+            - github.com/mycroblog/my/internal/adapter/db/sqlite/instance$
+            - github.com/mycroblog/my/internal/adapter/db/sqlite/webhook$
         # The fake payment provider records payments as paid without any money moving: besides the tests, only the
         # test builds (build tag e2e_fakes) link it, through one file (ADR-0015 §6; scripts/go-build-tags.sh checks it).
         payment-fake:
