@@ -23,8 +23,10 @@ import (
 	"github.com/mycroblog/my/internal/domain/federation"
 )
 
-// InboxProcessingContract verifies the asynchronous part of the inbox (federation.md §3.2,
-// §3.3) on the inbox repository of a database adapter: activities of unknown types complete, a
+// InboxProcessingFlows verifies the asynchronous part of the inbox (federation.md §3.2, §3.3) on
+// a database adapter, the flows of ADR-0153 §1, which internal/flowtest/federation runs once on
+// SQLite (InboxProcessingContract checks the inbox repository's methods that the processing uses
+// on every adapter): activities of unknown types complete, a
 // Delete or Undo of an unknown target leaves a tombstone (only for objects of the actor's origin)
 // that drops the Create or Follow arriving later (for an Undo of an embedded Follow, the next
 // Follow of its pair), restricted actors are dropped except for what
@@ -38,7 +40,7 @@ import (
 // final rows must be the same. The tasks that add inbox handlers add their cases to
 // inboxOrderCases. The actors, fetches, restrictions, and the handlers of notes and follows
 // are in-memory stand-ins.
-func InboxProcessingContract(t *testing.T, newHarness InboxFactory) {
+func InboxProcessingFlows(t *testing.T, newHarness InboxFactory) {
 	t.Helper()
 	cases := []struct {
 		name string
