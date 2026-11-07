@@ -1005,8 +1005,54 @@ var schema = []field{
 		choices: []choice{
 			{value: "none", doc: "No full-text search: the server connects to no engine and enqueues no search job, and `GET /api/v1/instance` tells clients that the search is not available."},
 			{value: "fake", doc: "Test builds only: a stand-in index in the server's memory, for end-to-end tests and demonstrations. Only a binary built with the build tag `e2e_fakes` has it, and that binary refuses it unless `profile = development`; released binaries and images never have it ([build tags](build-tags.md)). It needs no other setting."},
+			{value: "opensearch", doc: "An OpenSearch cluster, or a domain of Amazon OpenSearch Service, at `search_opensearch_url` ([search engines](../operations/search-engines.md#opensearch)). The server creates its index at start. The build tag `no_search_opensearch` leaves it out."},
 		},
 		set: func(c *Config, v string) { c.Search = v },
+	},
+	{
+		key:          "search_opensearch_url",
+		doc:          "The URL of the REST API of the OpenSearch cluster of `search = opensearch`, such as `https://search.example.org:9200`, with no credentials, query, or fragment; a path is kept, for a cluster behind a reverse proxy.",
+		requiredWhen: "when `search = opensearch`",
+		check:        checkSearchEngineURL,
+		set:          func(c *Config, v string) { c.SearchOpenSearchURL = v },
+	},
+	{
+		key:   "search_opensearch_index",
+		doc:   "The name of the alias of the index of `search = opensearch`. The server keeps the documents in the index named after it with the version of its mapping, such as `my-statuses-v1`, and points the alias at it. Lowercase letters, digits, `-`, and `_`, starting with a letter or a digit.",
+		def:   "my-statuses",
+		check: checkSearchIndexName,
+		set:   func(c *Config, v string) { c.SearchOpenSearchIndex = v },
+	},
+	{
+		key:   "search_opensearch_username",
+		doc:   "The user of the HTTP Basic authentication of `search = opensearch`, such as a user of the OpenSearch security plugin or the master user of an Amazon OpenSearch Service domain with fine-grained access control. Empty sends no credentials. It excludes `search_opensearch_aws_signing`.",
+		check: checkNotBlank,
+		set:   func(c *Config, v string) { c.SearchOpenSearchUsername = strings.TrimSpace(v) },
+	},
+	{
+		key:          "search_opensearch_password",
+		doc:          "The password of `search_opensearch_username`.",
+		secret:       true,
+		requiredWhen: "when `search_opensearch_username` is set",
+		check:        checkNotBlank,
+		set:          func(c *Config, v string) { c.SearchOpenSearchPassword = v },
+	},
+	{
+		key: "search_opensearch_aws_signing",
+		doc: "Whether the server signs the requests of `search = opensearch` with AWS Signature Version 4, as a domain of Amazon OpenSearch Service with an IAM access policy needs. The credentials come from the AWS SDK's default chain: the environment, the shared files, the execution role.",
+		def: "off",
+		choices: []choice{
+			{value: "off", doc: "No signing."},
+			{value: "es", doc: "Sign for a domain of Amazon OpenSearch Service (the service name `es`) in `search_opensearch_aws_region`. OpenSearch Serverless (`aoss`) is not supported."},
+		},
+		set: func(c *Config, v string) { c.SearchOpenSearchAWSSigning = v },
+	},
+	{
+		key:    "search_opensearch_aws_region",
+		doc:    "The AWS region of the domain of `search_opensearch_aws_signing = es`, such as `us-east-1`.",
+		defDoc: "the region of the AWS SDK's default chain (`AWS_REGION`)",
+		check:  checkNotBlank,
+		set:    func(c *Config, v string) { c.SearchOpenSearchAWSRegion = strings.TrimSpace(v) },
 	},
 	{
 		key: "voice",
@@ -1443,6 +1489,7 @@ func crossChecks(vals map[string]string, present map[string]bool) []Issue {
 		}
 	}
 	issues = append(issues, voiceChecks(vals, present)...)
+	issues = append(issues, searchOpenSearchChecks(vals, present)...)
 	if vals["errors_exporter"] == "sentry" && !present["errors_sentry_dsn"] {
 		issues = append(issues, Issue{Key: "errors_sentry_dsn", Missing: true, Message: "required when errors_exporter is sentry"})
 	}

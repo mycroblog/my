@@ -162,6 +162,12 @@ An instance setting that has never been set reads as its default, which is defin
 | [`payments_reconcile_interval`](#payments_reconcile_interval) | `MY_PAYMENTS_RECONCILE_INTERVAL` | `6h` | no | no |
 | [`payments_reconcile_max_requests`](#payments_reconcile_max_requests) | `MY_PAYMENTS_RECONCILE_MAX_REQUESTS` | `1000` | no | no |
 | [`search`](#search) | `MY_SEARCH` | `none` | no | no |
+| [`search_opensearch_url`](#search_opensearch_url) | `MY_SEARCH_OPENSEARCH_URL` | none | when `search = opensearch` | no |
+| [`search_opensearch_index`](#search_opensearch_index) | `MY_SEARCH_OPENSEARCH_INDEX` | `my-statuses` | no | no |
+| [`search_opensearch_username`](#search_opensearch_username) | `MY_SEARCH_OPENSEARCH_USERNAME` | none | no | no |
+| [`search_opensearch_password`](#search_opensearch_password) | `MY_SEARCH_OPENSEARCH_PASSWORD` | none | when `search_opensearch_username` is set | yes |
+| [`search_opensearch_aws_signing`](#search_opensearch_aws_signing) | `MY_SEARCH_OPENSEARCH_AWS_SIGNING` | `off` | no | no |
+| [`search_opensearch_aws_region`](#search_opensearch_aws_region) | `MY_SEARCH_OPENSEARCH_AWS_REGION` | the region of the AWS SDK's default chain (`AWS_REGION`) | no | no |
 | [`voice`](#voice) | `MY_VOICE` | `off` | no | no |
 | [`voice_p2p_max_participants`](#voice_p2p_max_participants) | `MY_VOICE_P2P_MAX_PARTICIPANTS` | `10` | no | no |
 | [`voice_sfu_max_participants`](#voice_sfu_max_participants) | `MY_VOICE_SFU_MAX_PARTICIPANTS` | `10` | no | no |
@@ -1330,6 +1336,60 @@ The search engine of the full-text search of statuses. The search of accounts an
 | --- | --- |
 | `none` | No full-text search: the server connects to no engine and enqueues no search job, and `GET /api/v1/instance` tells clients that the search is not available. |
 | `fake` | Test builds only: a stand-in index in the server's memory, for end-to-end tests and demonstrations. Only a binary built with the build tag `e2e_fakes` has it, and that binary refuses it unless `profile = development`; released binaries and images never have it ([build tags](build-tags.md)). It needs no other setting. |
+| `opensearch` | An OpenSearch cluster, or a domain of Amazon OpenSearch Service, at `search_opensearch_url` ([search engines](../operations/search-engines.md#opensearch)). The server creates its index at start. The build tag `no_search_opensearch` leaves it out. |
+
+### `search_opensearch_url`
+
+The URL of the REST API of the OpenSearch cluster of `search = opensearch`, such as `https://search.example.org:9200`, with no credentials, query, or fragment; a path is kept, for a cluster behind a reverse proxy.
+
+- Environment variable: `MY_SEARCH_OPENSEARCH_URL`
+- Default: none
+- Required: when `search = opensearch`
+
+### `search_opensearch_index`
+
+The name of the alias of the index of `search = opensearch`. The server keeps the documents in the index named after it with the version of its mapping, such as `my-statuses-v1`, and points the alias at it. Lowercase letters, digits, `-`, and `_`, starting with a letter or a digit.
+
+- Environment variable: `MY_SEARCH_OPENSEARCH_INDEX`
+- Default: `my-statuses`
+- Required: no
+
+### `search_opensearch_username`
+
+The user of the HTTP Basic authentication of `search = opensearch`, such as a user of the OpenSearch security plugin or the master user of an Amazon OpenSearch Service domain with fine-grained access control. Empty sends no credentials. It excludes `search_opensearch_aws_signing`.
+
+- Environment variable: `MY_SEARCH_OPENSEARCH_USERNAME`
+- Default: none
+- Required: no
+
+### `search_opensearch_password`
+
+The password of `search_opensearch_username`.
+
+- Environment variable: `MY_SEARCH_OPENSEARCH_PASSWORD` or `MY_SEARCH_OPENSEARCH_PASSWORD_FILE`
+- Default: none
+- Required: when `search_opensearch_username` is set
+
+### `search_opensearch_aws_signing`
+
+Whether the server signs the requests of `search = opensearch` with AWS Signature Version 4, as a domain of Amazon OpenSearch Service with an IAM access policy needs. The credentials come from the AWS SDK's default chain: the environment, the shared files, the execution role.
+
+- Environment variable: `MY_SEARCH_OPENSEARCH_AWS_SIGNING`
+- Default: `off`
+- Required: no
+
+| Value | Description |
+| --- | --- |
+| `off` | No signing. |
+| `es` | Sign for a domain of Amazon OpenSearch Service (the service name `es`) in `search_opensearch_aws_region`. OpenSearch Serverless (`aoss`) is not supported. |
+
+### `search_opensearch_aws_region`
+
+The AWS region of the domain of `search_opensearch_aws_signing = es`, such as `us-east-1`.
+
+- Environment variable: `MY_SEARCH_OPENSEARCH_AWS_REGION`
+- Default: the region of the AWS SDK's default chain (`AWS_REGION`)
+- Required: no
 
 ### `voice`
 

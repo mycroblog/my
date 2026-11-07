@@ -215,6 +215,15 @@ type Config struct {
 	// Search is the search engine of the full-text search of statuses (ADR-0149 §3): "none" or a
 	// backend's name.
 	Search string
+	// The cluster of search = opensearch: the URL of its REST API, the alias of the index, the
+	// HTTP Basic authentication, and the AWS request signing ("off" or "es") with its region,
+	// empty for the SDK's.
+	SearchOpenSearchURL        string
+	SearchOpenSearchIndex      string
+	SearchOpenSearchUsername   string
+	SearchOpenSearchPassword   string
+	SearchOpenSearchAWSSigning string
+	SearchOpenSearchAWSRegion  string
 	// PaymentsProvider is the payment provider of the supporters (ADR-0074 §5): "none" or a
 	// provider's name. PaymentsReconcileInterval and PaymentsReconcileMaxRequests bound the
 	// reconciliation with it (§4).
@@ -446,6 +455,12 @@ func (c *Config) LogValue() slog.Value {
 		slog.Duration("payments_reconcile_interval", c.PaymentsReconcileInterval),
 		slog.Int("payments_reconcile_max_requests", c.PaymentsReconcileMaxRequests),
 		slog.String("search", c.Search),
+		slog.String("search_opensearch_url", c.SearchOpenSearchURL),
+		slog.String("search_opensearch_index", c.SearchOpenSearchIndex),
+		slog.String("search_opensearch_username", c.SearchOpenSearchUsername),
+		slog.String("search_opensearch_password", redact(c.SearchOpenSearchPassword != "")),
+		slog.String("search_opensearch_aws_signing", c.SearchOpenSearchAWSSigning),
+		slog.String("search_opensearch_aws_region", c.SearchOpenSearchAWSRegion),
 		slog.String("voice", c.Voice),
 		slog.Int("voice_p2p_max_participants", c.VoiceP2PMaxParticipants),
 		slog.Int("voice_sfu_max_participants", c.VoiceMaxParticipants),
