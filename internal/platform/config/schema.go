@@ -1009,6 +1009,20 @@ var schema = []field{
 		set: func(c *Config, v string) { c.Search = v },
 	},
 	{
+		key:    "translator_deepl_api_key",
+		doc:    "The authentication key of DeepL's API, which makes DeepL a translation provider that `translation_providers` can enable as `deepl` ([translation](../operations/translation.md#deepl)). A key of the free plan ends in `:fx`; DeepL may keep the text that the free plan translates.",
+		secret: true,
+		check:  checkNotBlank,
+		set:    func(c *Config, v string) { c.TranslatorDeepLAPIKey = strings.TrimSpace(v) },
+	},
+	{
+		key:    "translator_deepl_url",
+		doc:    "The `https:` URL of DeepL's API that the server calls, such as a proxy in front of it; `http:` is accepted for localhost only.",
+		defDoc: "`https://api-free.deepl.com` for a key of the free plan, `https://api.deepl.com` otherwise",
+		check:  checkVoiceHTTPURL,
+		set:    func(c *Config, v string) { c.TranslatorDeepLURL = strings.TrimRight(v, "/") },
+	},
+	{
 		key: "voice",
 		doc: "How the voice chat rooms connect their participants. With `off`, the voice chat API answers 404, the web client shows no voice chat, and the other `voice_*` settings are not checked at start.",
 		def: "off",

@@ -21,6 +21,7 @@ func (a *App) setUpTranslation(cfg *config.Config, repo translation.Repository, 
 		return err
 	}
 	registered := slices.Concat(opts.TranslationRegistered, plugin)
+	registered = append(registered, deeplTranslationProviders(cfg)...)
 	var providers translation.Providers = translation.ConfiguredProviders{
 		Registered: registered,
 		Settings: func(ctx context.Context) (translation.ProviderSettings, error) {
