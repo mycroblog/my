@@ -93,9 +93,9 @@ type RemoteActorInput struct {
 	KeepProfile bool
 }
 
-// ProfileReview is how a fetched remote profile stands to the stored one, for the decision hook
+// RemoteProfileReview is how a fetched remote profile stands to the stored one, for the decision hook
 // inbound.actor (ADR-0147 §2, §6).
-type ProfileReview struct {
+type RemoteProfileReview struct {
 	// Profile is what the hook reviews, and Digest its digest, which names the subject.
 	Profile ReceivedProfile
 	Digest  []byte
@@ -106,29 +106,29 @@ type ProfileReview struct {
 	Changed bool
 }
 
-// ReviewProfile returns what the hook inbound.actor reviews of a fetched actor, outside any
+// ReviewRemoteProfile returns what the hook inbound.actor reviews of a fetched actor, outside any
 // transaction. The profile is sanitized as UpsertRemoteActor stores it. A local actor has nothing
 // to review, and UpsertRemoteActor refuses it.
-func (s *Service) ReviewProfile(ctx context.Context, in RemoteActorInput) (ProfileReview, error) {
+func (s *Service) ReviewRemoteProfile(ctx context.Context, in RemoteActorInput) (RemoteProfileReview, error) {
 	if s.d.Sanitizer == nil {
-		return ProfileReview{}, errors.New("account: remote actors need an HTML sanitizer")
+		return RemoteProfileReview{}, errors.New("account: remote actors need an HTML sanitizer")
 	}
 	p := s.receivedProfile(in)
-	r := ProfileReview{Profile: p, Digest: p.Digest(), Changed: true}
+	r := RemoteProfileReview{Profile: p, Digest: p.Digest(), Changed: true}
 	a, err := s.d.Repository.FindAccountByURI(ctx, in.URI)
 	switch {
 	case errors.Is(err, ErrNotFound):
 		return r, nil
 	case err != nil:
-		return ProfileReview{}, err
+		return RemoteProfileReview{}, err
 	case a.IsLocal():
-		return ProfileReview{}, nil
+		return RemoteProfileReview{}, nil
 	}
 	r.AccountID = a.ID
 	switch stored, err := s.d.Repository.FindRemoteProfileDigest(ctx, a.ID); {
 	case errors.Is(err, ErrNotFound):
 	case err != nil:
-		return ProfileReview{}, err
+		return RemoteProfileReview{}, err
 	default:
 		r.Changed = !bytes.Equal(stored, r.Digest)
 	}

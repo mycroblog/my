@@ -51,7 +51,7 @@ func (r *RemoteActors) reviewActor(ctx context.Context, in *appaccount.RemoteAct
 	if active, err := gate.Active(ctx, apphook.InboundActor); err != nil || !active {
 		return none, err
 	}
-	review, err := r.d.Accounts.ReviewProfile(ctx, *in)
+	review, err := r.d.Accounts.ReviewRemoteProfile(ctx, *in)
 	if err != nil || !review.Changed {
 		return none, err
 	}

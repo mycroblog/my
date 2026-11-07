@@ -48,8 +48,8 @@ type RemoteAccounts interface {
 	CurrentKey(ctx context.Context, keyID string) (appaccount.Key, error)
 	StaleRemoteActors(ctx context.Context, after appaccount.RemoteHead, limit int) ([]appaccount.RemoteHead, error)
 	UpsertRemoteActor(ctx context.Context, tx uow.Tx, in appaccount.RemoteActorInput) (appaccount.Account, error)
-	// ReviewProfile returns what the hook inbound.actor reviews of a fetched actor.
-	ReviewProfile(ctx context.Context, in appaccount.RemoteActorInput) (appaccount.ProfileReview, error)
+	// ReviewRemoteProfile returns what the hook inbound.actor reviews of a fetched actor.
+	ReviewRemoteProfile(ctx context.Context, in appaccount.RemoteActorInput) (appaccount.RemoteProfileReview, error)
 	MarkRemoteDeleted(ctx context.Context, tx uow.Tx, accountID string) error
 	MarkRemoteGone(ctx context.Context, tx uow.Tx, accountID string) error
 	RestoreRemoteActor(ctx context.Context, tx uow.Tx, accountID string) error
