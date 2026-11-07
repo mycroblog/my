@@ -48,6 +48,7 @@ userdocs:
     - "docs/reference/*.md"
     - "docs/guide/*.md"
     - "docs/developers/*.md"
+    - "docs/plugins/*.md"
   # Changed paths that no document describes, which `agentkit docs impact` passes over: tests, their fixtures and
   # stories, and the test-only deployments.
   skip:
@@ -135,6 +136,14 @@ entries:
     notes:
       - "docs/reference/configuration.md is generated: `scripts/task.sh go:config-docs`. docs/reference/cli.md is generated: `scripts/task.sh go:cli-docs`."
       - "English only, and no links to or citations of ADRs, docs/requirements, docs/architecture, or issues and PRs (AGENTS.md#documentation)."
+  - name: plugin-docs
+    paths: ["docs/plugins/**", "tools/protodoc/**"]
+    docs: ["docs/adr/0150-documentation-site.md#3-原稿の範囲", "docs/adr/0146-plugin-protocol.md", "AGENTS.md#documentation"]
+    userdocs: ["docs/plugins/overview.md"]
+    checks: [docs, api]
+    notes:
+      - "docs/plugins/ is the chapter for plugin authors on the documentation site. overview.md is hand-written; every other page is generated from the comments of api/plugin/**/*.proto by tools/protodoc (a protoc plugin run by buf from api/plugin/buf.gen.yaml) through `scripts/task.sh api:plugin-generate`, and `api:plugin-generate-check` fails when one is stale. A generated page starts with the marker line of tools/protodoc; a new proto package needs an entry in its pages table."
+      - "The pages follow the rules of the user documents (AGENTS.md#documentation), so the .proto comments must too: English, no ADR, issue, or design-document citations, none of the maintainer-terms of docs/lint.yaml."
   - name: developers-docs
     paths: ["docs/developers/**"]
     docs: ["docs/adr/0150-documentation-site.md#5-api-を使う開発者向けの文書", "AGENTS.md#documentation"]
@@ -186,7 +195,7 @@ entries:
       - "Versions (ADR-0150 §6): docs-site-deploy.yml builds /next/ from main and /latest/ and /vX.Y/ from the tags of app/docs/versions.json with scripts/docs-site.sh, combines them, and deploys the Worker my-docs in the environment doc-site. Each build reads main's resolved list (DOCS_SITE_VERSIONS) through src/versions.ts, so keep the DOCS_SITE_* variables and the resolved format backward compatible: old tags are built with them. The Worker config declares no routes or domains (mycroblog.dev is bound in mycroblog/infra)."
       - "Previews (ADR-0150 §7, like the UI preview): docs-site-preview.yml builds /next/ of a pull request without secrets (`scripts/docs-site.sh build-preview`); docs-site-preview-deploy.yml (workflow_run, main's checkout, environment doc-site) treats that artifact as data only: `stage-preview` checks it is plain files, and `deploy-pr` publishes it on the Preview pr-<number> with main's config and redirects and writes the one comment. Never run anything of the artifact; docs-site-preview-cleanup.yml deletes the Previews of closed pull requests."
       - "The documentation site (@my/docs): Astro Starlight, built by `scripts/task.sh docs:site-build`, previewed by `docs:site-dev`. It imports nothing from app/web or app/ui (copy an asset instead) and adds no analytics or external service; search is Starlight's Pagefind."
-      - "The site holds no hand-written documents: scripts/import-docs.ts copies the published directories of src/published.ts (docs/operations, docs/reference but commands.md, docs/guide, docs/developers) into the git-ignored src/content/docs/, except the landing page src/content/docs/index.mdx. English only, with the root locale `en`."
+      - "The site holds no hand-written documents: scripts/import-docs.ts copies the published directories of src/published.ts (docs/operations, docs/reference but commands.md, docs/guide, docs/developers, docs/plugins) into the git-ignored src/content/docs/, except the landing page src/content/docs/index.mdx. English only, with the root locale `en`."
       - "The sidebar is built from the sections of docs/README.md (src/sidebar.ts), each `### Heading` of a section a nested group: add a page there, not here. Images of a page live next to it (docs/operations/images/) and the import copies them beside the page. Links in the pages start with the base path (DOCS_SITE_BASE), and starlight-links-validator fails the build on a broken link or #anchor."
       - "The landing page (src/content/docs/index.mdx, MDX for Starlight's cards) names documents by their repository path, never by a URL: DocLinks and the hero's buttons (src/routeData.ts) turn the path into the page's URL under the base path with siteLink, so the links work under every version."
       - "Screenshots (src/assets/screenshots/<name>-light.webp and -dark.webp, committed; the README shows them too): `scripts/task.sh docs:screenshots` builds the app/web Storybook and captures the Showcase story of each screen (app/web/src/test/showcase.ts, fictional people and drawn pictures) in PLAYWRIGHT_IMAGE with app/web/scripts/screenshots.ts. Retake them when those screens change; change what a shot shows in its story, not in the script."
@@ -369,7 +378,7 @@ entries:
       - "Destinations are settings of the configuration file and the environment only (ADR-0146 §5). A new kind is one row of kind.Delegated, which adds the keys; plain TCP is refused only for key_manager, mailer, translator, inbound.status, local.status, and signup.check (§6)."
       - "api/plugin/ is MIT and holds one package per port kind with no shared types, imports, or well-known types; all decision hooks share my.plugin.hook.v1 (§8). `scripts/task.sh api:plugin-generate` writes internal/adapter/plugin/gen as AGPL-3.0-only; buf is pinned in tools/buf/go.mod apart from tools/go.mod."
       - "A port's adapter goes in internal/adapter/<port>/plugin, takes a *client.Conn from platform.NewPluginConn in a !no_plugins file of internal/platform, and reads the `outcome` of the response; its contract cases go in a file of internal/adapter/plugin/contract and one entry of its table, and fakeplugin gains the kind."
-    userdocs: ["docs/operations/plugins.md", "docs/reference/build-tags.md", "docs/operations/running.md"]
+    userdocs: ["docs/operations/plugins.md", "docs/reference/build-tags.md", "docs/operations/running.md", "docs/plugins/overview.md", "docs/plugins/probe.md", "docs/plugins/translator.md", "docs/plugins/billing.md", "docs/plugins/mailer.md", "docs/plugins/media.md", "docs/plugins/key-manager.md", "docs/plugins/hooks.md"]
   - name: module-voice
     paths: ["internal/domain/voice/**", "internal/app/voice/**", "internal/platform/voice.go", "internal/adapter/voice/**", "internal/adapter/db/*/voice.go", "internal/interface/voice/**", "schema/*/14-voice.sql", "queries/*/voice.sql", "pkg/testkit/voice_*contract.go", "pkg/testkit/livekittest/**", "internal/platform/adapters_*voice_livekit.go", "internal/platform/adapters_*voice_sora.go", "internal/platform/config/adapters_no_voice_*.go", "internal/interface/clientapi/voice*.go", "api/spec/paths/voice_*.yaml", "api/spec/components/*/Voice*.yaml", "app/web/src/features/voice/**"]
     docs: ["docs/architecture/data-model/04-tables/14-voice.md#414-voice", "docs/architecture/data-model/05-states-and-policies.md#55-通話のルームの判定", "docs/adr/0100-voice-chat-rooms.md", "docs/adr/0101-voice-chat-transport.md", "docs/adr/0101-voice-chat-transport.md"]

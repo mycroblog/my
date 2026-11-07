@@ -12,7 +12,7 @@ export const repoRoot = fileURLToPath(new URL("../../../", import.meta.url));
  * docs/agents are never published: a directory missing here is not published, and one that does not exist yet
  * (docs/guide before its first page) is skipped.
  */
-export const publishedDirs = ["operations", "reference", "guide", "developers"] as const;
+export const publishedDirs = ["operations", "reference", "guide", "developers", "plugins"] as const;
 
 /** The documents of a published directory that are for contributors, read on GitHub. */
 const unpublishedFiles = new Set(["docs/reference/commands.md"]);

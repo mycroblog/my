@@ -22,7 +22,7 @@ tasks:
 
   check:
     desc: Check and lint the client API spec and fail on a stale bundle or generated Go code, in parallel
-    deps: [spec-check, license-scope, live-calls, lint, generate-check, plugin-lint, plugin-generate-check, plugin-breaking]
+    deps: [spec-check, license-scope, live-calls, lint, generate-check, plugin-lint, plugin-generate-check, plugin-breaking, plugin-docs-test]
 
   generate:
     desc: Bundle api/spec into api/openapi.yaml and regenerate the client API code from it (scripts/generate.sh)
@@ -66,21 +66,31 @@ tasks:
       - "{{.REDOCLY}} lint --config api/redocly.yaml api/spec/openapi.yaml"
 
   plugin-generate:
-    desc: Regenerate the Go code of the plugin protocol in internal/adapter/plugin/gen from api/plugin (scripts/plugin-generate.sh)
+    desc: Regenerate the Go code of the plugin protocol in internal/adapter/plugin/gen and its reference pages in docs/plugins from api/plugin (scripts/plugin-generate.sh)
     sources:
       - "api/plugin/**/*"
       - scripts/plugin-generate.sh
+      - "tools/protodoc/*.go"
       - tools/go.mod
       - tools/buf/go.mod
     generates:
       - "internal/adapter/plugin/gen/**/*.go"
+      - "docs/plugins/*.md"
     cmds:
       - scripts/plugin-generate.sh
 
   plugin-generate-check:
-    desc: Fail if the committed Go code of the plugin protocol is stale
+    desc: Fail if the committed Go code of the plugin protocol or its reference pages in docs/plugins are stale
     cmds:
       - scripts/plugin-generate.sh --check
+
+  plugin-docs-test:
+    desc: Test tools/protodoc, the generator of the reference pages of the plugin protocol
+    dir: tools
+    env:
+      GOWORK: "off"
+    cmds:
+      - go test ./protodoc/...
 
   plugin-lint:
     desc: Lint the plugin protocol in api/plugin with buf (pinned in tools/buf/go.mod)

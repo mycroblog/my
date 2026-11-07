@@ -45,6 +45,7 @@ coverage/
 /app/docs/public/reference/
 /app/docs/public/guide/
 /app/docs/public/developers/
+/app/docs/public/plugins/
 /app/docs/public/*.md
 
 # Playwright output (app/web)

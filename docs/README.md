@@ -90,6 +90,19 @@ Guides for people who build clients and bots against the client API.
 - [Client libraries](developers/libraries.md) (getting started with mykit and mybot in Go and TypeScript)
 - [Stability of the API](developers/stability.md) (what changes without notice and what is announced)
 
+## Plugin developers
+
+The protocol between the server and the plugins that do a job in its place, generated from its definitions.
+
+- [The plugin protocol](plugins/overview.md) (the packages, calls, JSON, testing, versions)
+- [Probe](plugins/probe.md)
+- [Translator](plugins/translator.md)
+- [Billing](plugins/billing.md)
+- [Mailer](plugins/mailer.md)
+- [Media](plugins/media.md)
+- [Key manager](plugins/key-manager.md)
+- [Decision hooks](plugins/hooks.md)
+
 ## Contributing
 
 - [Contributing guide](../CONTRIBUTING.md)

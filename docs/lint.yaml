@@ -23,6 +23,7 @@ english:
   - "docs/guide/**"
   - "docs/reference/**"
   - "docs/developers/**"
+  - "docs/plugins/**"
   - "schema/README.md"
   - "deploy/**/*.md"
   - "deploy/**/*.yaml"
@@ -48,6 +49,7 @@ operator:
   - "docs/guide/**"
   - "docs/reference/**"
   - "docs/developers/**"
+  - "docs/plugins/**"
   # The development tasks, for contributors: it may cite the ADR a task's rule comes from.
   - "!docs/reference/commands.md"
 
@@ -61,6 +63,7 @@ maintainer-terms:
     - "docs/guide/**"
     - "docs/reference/**"
     - "docs/developers/**"
+    - "docs/plugins/**"
     # The development tasks, for contributors.
     - "!docs/reference/commands.md"
     # SECURITY.md tells a reporter not to open a public pull request, which is the word it needs; it is not in the
@@ -87,6 +90,7 @@ openings:
     - "docs/guide/**"
     - "docs/reference/**"
     - "docs/developers/**"
+    - "docs/plugins/**"
   reject:
     # "A guide for operators.", "An explanation and verification guide for operators.", "A template for operators: ..."
     - '^an? [^.:]*\b(guide|reference|explanation|template|page|document)s? for\b'
@@ -103,6 +107,7 @@ index:
     - "docs/guide/*.md"
     - "docs/reference/*.md"
     - "docs/developers/*.md"
+    - "docs/plugins/*.md"
 
 # Files that do not follow a rule yet. Never add a file: write a new file to the rules. When you add or rewrite a
 # section of a listed file, convert the whole file and remove it here; the check fails while a listed file already
