@@ -10,6 +10,7 @@ run-name: ${{ inputs.jobs && inputs.jobs != 'all' && format('Nightly ({0})', inp
 # the screens (ADR-0015). A scheduled run is skipped when main has not moved since the last successful full run; a run
 # by hand always runs (`gh workflow run nightly.yml`, with `-f jobs=l4`, `-f jobs=demo-e2e`, `-f jobs=slow-suite`, or
 # `-f jobs=image-scan` for one of them). The scan of the published images runs every night, whether or not main moved.
+# The report job files the failures of a full run on main as an issue (scripts/nightly-report.sh).
 
 on:
   schedule:
@@ -82,6 +83,42 @@ jobs:
       actions: read
       contents: read
       security-events: write
+
+  # A red Nightly stops the line (ADR-0079 §8): on a full run of main, opens the issue of the failing Nightly or comments
+  # on the open one, with the failed jobs and the commits since the last green run, and closes it when the Nightly
+  # passes again (scripts/nightly-report.sh). It also lists the E2E tests that passed only on a retry. A partial run
+  # by hand, a run on another branch, and a run that a newer one cancelled report nothing.
+  report:
+    needs: [changes, slow-suite, demo-e2e]
+    if: ${{ always() && needs.changes.outputs.run == 'true' && (inputs.jobs == '' || inputs.jobs == 'all') && github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      issues: write
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Download the list of flaky tests
+        continue-on-error: true
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: e2e-flaky-full
+          path: ${{ runner.temp }}/flaky
+      - name: Report the Nightly
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RESULTS: ${{ toJSON(needs) }}
+          RUN_ID: ${{ github.run_id }}
+          SHA: ${{ github.sha }}
+          SINCE: ${{ needs.changes.outputs.since }}
+          FLAKY: ${{ runner.temp }}/flaky/flaky.txt
+        run: |
+          # The changes job itself is not a check of main.
+          RESULTS="$(jq 'del(.changes)' <<< "$RESULTS")" scripts/nightly-report.sh
 
   # The published images of the two latest minor versions, which operators upgrade through: a failure means a fixable
   # HIGH or above in a published version, not a fault of main, and the answer is a patch release (ADR-0010 §8). It runs

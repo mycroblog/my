@@ -199,6 +199,24 @@ jobs:
       - name: playwright merge-reports
         working-directory: app/web
         run: bun run playwright merge-reports --reporter html "$RUNNER_TEMP/blob-reports"
+      # The tests that failed and then passed on a retry: the flaky candidates that the Nightly's report lists
+      # (scripts/nightly-report.sh). An empty file when there is none.
+      - name: List the flaky tests
+        working-directory: app/web
+        run: |
+          bun run playwright merge-reports --reporter json "$RUNNER_TEMP/blob-reports" > "$RUNNER_TEMP/results.json"
+          jq -r '[.. | objects | select(has("specs")) | .specs[]? | . as $s | .tests[]?
+            | select(.status == "flaky") | "\($s.file) › \($s.title) (\(.projectName))"] | unique | .[]' \
+            "$RUNNER_TEMP/results.json" > "$RUNNER_TEMP/flaky.txt"
+          if [ -s "$RUNNER_TEMP/flaky.txt" ]; then
+            { echo "### Flaky tests"; echo; sed 's/^/- /' "$RUNNER_TEMP/flaky.txt"; } >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Upload the list of flaky tests
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: e2e-flaky-${{ inputs.matrix }}
+          path: ${{ runner.temp }}/flaky.txt
+          retention-days: 7
       # The merged report holds every shard's results and the traces of the failed tests.
       - name: Upload the Playwright report
         if: ${{ needs.shard.result != 'success' }}
