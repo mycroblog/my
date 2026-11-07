@@ -62,6 +62,16 @@ const (
 // DefaultImage is the container image of TEST_POSTGRES=container, the one `scripts/task.sh db:up` uses.
 const DefaultImage = "postgres:18-alpine"
 
+// RequireRealServer skips t on pgmem, the default server: the test checks what only a real
+// PostgreSQL server shows beyond pgmem, which is PostgreSQL itself (ADR-0015 §3), and runs in
+// `scripts/task.sh go:test-postgres` (postgres-contract) on a container, or against TEST_POSTGRES_URL.
+func RequireRealServer(t testing.TB) {
+	t.Helper()
+	if os.Getenv(EnvURL) == "" && os.Getenv(EnvServer) != ServerContainer {
+		t.Skipf("on pgmem: runs on a real server (%s=%s, scripts/task.sh go:test-postgres)", EnvServer, ServerContainer)
+	}
+}
+
 // server is the PostgreSQL server of this test binary and its template database.
 var server struct {
 	once     sync.Once

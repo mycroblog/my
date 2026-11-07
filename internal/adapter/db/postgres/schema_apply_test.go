@@ -104,6 +104,7 @@ func assertSyncedWithCLI(t *testing.T, url, devURL string) {
 }
 
 func TestApplySchemaToAnEmptyDatabase(t *testing.T) {
+	pgtest.RequireRealServer(t)
 	url := pgtest.NewEmptyDatabase(t)
 	r, err := ApplySchema(t.Context(), url, "", schemaapply.Options{})
 	if err != nil {
@@ -138,6 +139,7 @@ func TestApplySchemaToAnEmptyDatabase(t *testing.T) {
 }
 
 func TestApplySchemaWithADevDatabase(t *testing.T) {
+	pgtest.RequireRealServer(t)
 	url, devURL := pgtest.NewEmptyDatabase(t), pgtest.NewEmptyDatabase(t)
 	r, err := ApplySchema(t.Context(), url, devURL, schemaapply.Options{})
 	if err != nil || !r.Applied {
@@ -161,6 +163,7 @@ func TestApplySchemaWithADevDatabase(t *testing.T) {
 // A URL the server starts on must also apply the schema: PostgreSQL refuses a startup parameter
 // it does not know, which is what pool_max_conns becomes unless it is taken out first.
 func TestApplySchemaTakesTheParametersOfThePool(t *testing.T) {
+	pgtest.RequireRealServer(t)
 	url, devURL := pgtest.NewEmptyDatabase(t), pgtest.NewEmptyDatabase(t)
 	t.Log(query(t, url, "SELECT version()"))
 	const params = "pool_max_conns=4&pool_min_conns=1&pool_max_conn_lifetime=1h"
@@ -189,6 +192,7 @@ func withParams(url, params string) string {
 }
 
 func TestApplySchemaAddsAColumn(t *testing.T) {
+	pgtest.RequireRealServer(t)
 	url := pgtest.NewEmptyDatabase(t)
 	mustApply(t, url, schema.Postgres, schemaapply.Options{})
 	table := schema.Tables(schema.Postgres)[0]
@@ -202,6 +206,7 @@ func TestApplySchemaAddsAColumn(t *testing.T) {
 }
 
 func TestApplySchemaRefusesDropsUnlessAllowed(t *testing.T) {
+	pgtest.RequireRealServer(t)
 	url := pgtest.NewEmptyDatabase(t)
 	table := schema.Tables(schema.Postgres)[0]
 	mustApply(t, url, schema.Postgres+"\nCREATE TABLE probe_extra (id bigint PRIMARY KEY);\nALTER TABLE "+table+" ADD COLUMN probe_extra text;\n", schemaapply.Options{})
@@ -233,6 +238,7 @@ func TestApplySchemaRefusesDropsUnlessAllowed(t *testing.T) {
 }
 
 func TestApplySchemaDryRunChangesNothing(t *testing.T) {
+	pgtest.RequireRealServer(t)
 	url := pgtest.NewEmptyDatabase(t)
 	r, err := ApplySchema(t.Context(), url, "", schemaapply.Options{DryRun: true})
 	if err != nil {
@@ -250,6 +256,7 @@ func TestApplySchemaDryRunChangesNothing(t *testing.T) {
 }
 
 func TestApplySchemaDropsTheTemporarySchemaOnFailure(t *testing.T) {
+	pgtest.RequireRealServer(t)
 	url := pgtest.NewEmptyDatabase(t)
 	if _, err := applySchema(t.Context(), url, "", schema.Postgres+"\nCREATE TABLE probe_broken (id no_such_type);\n", schemaapply.Options{}); err == nil {
 		t.Fatal("applySchema of a broken schema succeeded")
@@ -263,6 +270,7 @@ func TestApplySchemaDropsTheTemporarySchemaOnFailure(t *testing.T) {
 }
 
 func TestApplySchemaRollsBackAFailedPlan(t *testing.T) {
+	pgtest.RequireRealServer(t)
 	url := pgtest.NewEmptyDatabase(t)
 	mustApply(t, url, schema.Postgres, schemaapply.Options{})
 	table := schema.Tables(schema.Postgres)[0]
@@ -289,6 +297,7 @@ func TestApplySchemaRollsBackAFailedPlan(t *testing.T) {
 }
 
 func TestApplySchemaConcurrently(t *testing.T) {
+	pgtest.RequireRealServer(t)
 	url := pgtest.NewEmptyDatabase(t)
 	var wg sync.WaitGroup
 	errs := make([]error, 2)
