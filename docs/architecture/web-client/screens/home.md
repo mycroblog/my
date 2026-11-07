@@ -2,6 +2,7 @@
 start: "/home"
 persona: "yuki"
 paths: ["app/web/src/routes/home.tsx", "app/web/src/features/timeline/**", "app/web/src/features/status/components/**", "app/ui/src/RailItem.tsx"]
+unavailable: {"待っている新しい投稿を表示して、いちばん新しい投稿を読む": "posts wait behind the button only when they stream in while the page is open and timeline_auto_insert is off; the demo server posts nothing during a task (newPosts.test.tsx and e2e/main-flow.spec.ts cover the button)"}
 ---
 
 ## ホームタイムライン（`/home`）
