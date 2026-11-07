@@ -5,787 +5,452 @@ package testkit
 import (
 	"context"
 	"errors"
-	"fmt"
 	"slices"
 	"testing"
 	"time"
 
-	appaccount "github.com/mycroblog/my/internal/app/account"
 	appcontent "github.com/mycroblog/my/internal/app/content"
 	appfederation "github.com/mycroblog/my/internal/app/federation"
-	appnotification "github.com/mycroblog/my/internal/app/notification"
-	apptimeline "github.com/mycroblog/my/internal/app/timeline"
 	"github.com/mycroblog/my/internal/app/uow"
+	"github.com/mycroblog/my/internal/domain/account"
 	"github.com/mycroblog/my/internal/domain/content"
 	"github.com/mycroblog/my/internal/domain/federation"
 )
 
-// RetentionHarness is one database under test for the purges of federated data: the harness of
-// the remote status contract, plus the interaction and federation repositories and the
-// repositories of the purges on the same database.
-type RetentionHarness struct {
-	RemoteStatusHarness
-	Interactions appcontent.InteractionRepository
-	Federation   appfederation.Repository
-	Retention    appcontent.RetentionRepository
-	Purges       appfederation.PurgeRepository
-	Instances    appfederation.InstanceRepository
-	Profiles     appaccount.ProfilePruneRepository
-	Emojis       EmojiPurgeStore
-}
-
-// EmojiPurgeStore is the content module's custom emoji repository, which the purge of remote
-// custom emoji uses.
-type EmojiPurgeStore interface {
-	appcontent.CustomEmojiRepository
-	appcontent.EmojiPurgeRepository
-}
-
-// RetentionFactory returns a harness on a new, empty database whose UnitOfWork uses opts.
-// The factory registers the cleanup of everything it creates with t.Cleanup.
-type RetentionFactory func(t *testing.T, opts uow.Options) RetentionHarness
-
-// RetentionContract verifies the purges of federated data (ADR-0006, FR-803) on a database
-// adapter, with the real content, account, graph, timeline, notification, and federation
-// modules: remote statuses past remote_status_retention_days that nothing local refers to are
-// deleted with origin retention and their rows purged, while those a local reply, thread, boost,
-// favourite, bookmark, or notification refers to stay; past remote_status_max_retention_days every
-// remote status goes, leaving the local accounts' interactions, except those that the moderation
-// records retain (a reported status, a held author); the deletion of a purged status stays while a
-// notification names it, so that rebuilding the notifications' projection keeps it hidden; each transaction deletes a
-// bounded batch; a purged status can be fetched and deleted again; the inbox and delivery records
-// and the tombstones of unknown objects and Follows go after their retention; unrelated remote accounts keep only their current profile;
-// and the remote custom emoji that no status, profile, or reaction refers to any more go with the
-// remote media of their images, while the referenced and the disabled ones stay, and a disabled
-// one stays disabled when it arrives again. The statuses that only a relay brought in go after
-// relay_status_retention_days unless something local refers to them or a local account follows their
-// author (ADR-0006).
+// RetentionContract verifies the repository methods of the purges of federated data on a database
+// adapter, by those methods alone, the port contract of ADR-0153 §1: the remote statuses to purge
+// are listed in ID order and in pages, past the period when nothing local refers to them and past
+// the maximum regardless, never the deleted ones nor local ones; so are the statuses only a relay
+// brought in; purging deleted statuses removes their rows and revisions and keeps their
+// deletions; the deletions by retention of purged statuses go in bounded batches; and the records
+// of received activities, their documents and answers, the tombstones, and the observations of
+// servers (all but the newest of each server) go after their retention, in bounded batches; the
+// Creates of deleted statuses and actors go with their deliveries, attempts, documents, and
+// fan-out completions, and the other outbound activities after their retention, except the
+// service closure's Deletes and a Delete whose Create stays; the outbound documents and the
+// delivery attempts go after theirs; so do the handle checks, all but the newest of each account;
+// and the remote accounts with past profile revisions or snapshots are listed in pages and pruned
+// to their current revision, its snapshot, and the head's. The purges on top of it are
+// RetentionFlows, which internal/flowtest/federation runs once on SQLite; the purge of remote
+// custom emoji is checked there too.
 func RetentionContract(t *testing.T, newHarness RetentionFactory) {
 	t.Helper()
 	cases := []struct {
 		name string
-		run  func(t *testing.T, e *retentionEnv)
+		run  func(t *testing.T, r *retentionRepo)
 	}{
-		{"PurgesUnreferencedRemoteStatuses", retentionPurgesUnreferenced},
-		{"KeepsReferencedRemoteStatuses", retentionKeepsReferenced},
-		{"PurgesEveryRemoteStatusPastTheMaximum", retentionMaximum},
-		{"KeepsTheDeletionOfANotifiedStatusThroughARebuild", retentionNotifiedDeletion},
-		{"KeepsTheEvidenceOfModeration", retentionKeepsModerationEvidence},
-		{"PurgesInBoundedBatches", retentionBatches},
-		{"IngestsAPurgedStatusAgain", retentionRefetch},
-		{"PurgesInboxAndDeliveryRecords", retentionFederationRecords},
-		{"PrunesProfilesOfUnrelatedRemoteAccounts", retentionProfiles},
-		{"PurgesUnreferencedRemoteEmoji", retentionEmojis},
-		{"PurgesRelayedStatuses", retentionRelayed},
-		{"PurgesOutboundActivities", retentionOutboundActivities},
-		{"PurgesObservationsOfServers", retentionObservations},
-		{"PurgesDeletionsByRetention", retentionDeletions},
-		{"PurgesHandleVerifications", retentionHandleVerifications},
+		{"ListsTheRemoteStatusesToPurge", retentionRepoRemoteStatuses},
+		{"ListsTheRelayedStatusesToPurge", retentionRepoRelayed},
+		{"PurgesDeletedStatuses", retentionRepoPurgeStatuses},
+		{"DeletesTheDeletionsByRetention", retentionRepoDeletions},
+		{"DeletesTheRecordsOfTheInbox", retentionRepoInbox},
+		{"DeletesTheObservationsOfServers", retentionRepoObservations},
+		{"PrunesThePastProfilesOfRemoteAccounts", retentionRepoProfiles},
+		{"PrunesThePastSnapshotsOfRemoteAccounts", retentionRepoSnapshots},
+		{"PurgesTheOutboundActivities", retentionRepoOutbound},
+		{"DeletesTheBodiesOfOutboundActivities", retentionRepoOutboundBodies},
+		{"DeletesTheOldHandleChecks", retentionRepoHandleChecks},
 	}
 	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) { tc.run(t, newRetentionEnv(t, newHarness)) })
-	}
-}
-
-type retentionEnv struct {
-	*remoteStatusEnv
-	rh           RetentionHarness
-	interactions *appcontent.Interactions
-}
-
-func newRetentionEnv(t *testing.T, newHarness RetentionFactory) *retentionEnv {
-	t.Helper()
-	var (
-		rh       RetentionHarness
-		captured uow.Options
-	)
-	e := newRemoteStatusEnv(t, func(t *testing.T, opts uow.Options) RemoteStatusHarness {
-		captured = opts
-		rh = newHarness(t, opts)
-		return rh.RemoteStatusHarness
-	})
-	appcontent.RegisterInteractionProjectors(captured.Projectors, rh.Interactions)
-	interactions := appcontent.NewInteractions(appcontent.InteractionDeps{
-		UnitOfWork: rh.UnitOfWork, Statuses: rh.Statuses, Interactions: rh.Interactions,
-		Accounts: e.accounts, Relationships: e.graph, Clock: e.clock, IDs: e.ids, Host: contractHost,
-	})
-	return &retentionEnv{remoteStatusEnv: e, rh: rh, interactions: interactions}
-}
-
-// retention returns the purge of remote statuses with the retention period and maximum.
-func (e *retentionEnv) retention(period, maxPeriod time.Duration, batch int) *appcontent.Retention {
-	return e.retentionWith(period, maxPeriod, batch, nil)
-}
-
-// retentionWith is retention with the moderation records' evidence (nil: none).
-func (e *retentionEnv) retentionWith(period, maxPeriod time.Duration, batch int, evidence appcontent.RetainedStatuses) *appcontent.Retention {
-	return appcontent.NewRetention(appcontent.RetentionDeps{
-		UnitOfWork: e.rh.UnitOfWork, Repository: e.rh.Statuses, Retention: e.rh.Retention, Notifications: e.notifications,
-		Evidence: evidence, Clock: e.clock, Batch: batch,
-		Periods: func(context.Context) (appcontent.RetentionPeriods, error) {
-			return appcontent.RetentionPeriods{Period: period, MaxPeriod: maxPeriod}, nil
-		},
-	})
-}
-
-// stubEvidence stands in for the moderation module: the statuses that a report or an action
-// points at, and the held authors.
-type stubEvidence struct{ statuses, authors map[string]bool }
-
-// StatusRetained implements appcontent.RetainedStatuses.
-func (s stubEvidence) StatusRetained(_ context.Context, _ uow.Tx, statusID, authorAccountID string) (bool, error) {
-	return s.statuses[statusID] || s.authors[authorAccountID], nil
-}
-
-func retentionKeepsModerationEvidence(t *testing.T, e *retentionEnv) {
-	const alice, bob = "https://remote.example/users/alice", "https://remote.example/users/bob"
-	aliceID, bobID := e.actor(t, alice), e.actor(t, bob)
-	reader := e.user(t, "reader")
-	e.follow(t, reader, aliceID)
-	e.follow(t, reader, bobID)
-	reported := e.note(t, alice, alice+"/notes/reported", 400*24*time.Hour, nil)
-	held := e.note(t, bob, bob+"/notes/held", 400*24*time.Hour, nil)
-	plain := e.note(t, alice, alice+"/notes/plain", 400*24*time.Hour, nil)
-	plainRev := e.post(t, plain.URI).Revision.ID
-	evidence := stubEvidence{statuses: map[string]bool{reported.ID: true}, authors: map[string]bool{bobID: true}}
-	// Even past the maximum period, the evidence stays.
-	if n := e.purgeAll(t, e.retentionWith(retentionPeriod, 180*24*time.Hour, 0, evidence)); n != 1 {
-		t.Errorf("purged %d statuses, want 1", n)
-	}
-	e.purged(t, plain, plainRev)
-	e.kept(t, reported)
-	e.kept(t, held)
-	// Once the records are gone, so are the statuses.
-	if n := e.purgeAll(t, e.retentionWith(retentionPeriod, 180*24*time.Hour, 0, stubEvidence{})); n != 2 {
-		t.Errorf("purged %d statuses after the records went, want 2", n)
-	}
-}
-
-// purgeAll runs the purge until it reaches the end and returns how many statuses it purged.
-func (e *retentionEnv) purgeAll(t *testing.T, r *appcontent.Retention) int {
-	t.Helper()
-	total, after := 0, ""
-	for range 100 {
-		next, n, err := r.Run(t.Context(), after)
-		if err != nil {
-			t.Fatalf("Run(%q) = %v", after, err)
-		}
-		total += n
-		if next == "" {
-			return total
-		}
-		after = next
-	}
-	t.Fatal("the purge did not reach the end")
-	return total
-}
-
-// note delivers the Create of a public note of author published age ago, with fields added,
-// and returns the stored status.
-func (e *retentionEnv) note(t *testing.T, author, id string, age time.Duration, fields map[string]any) content.Status {
-	t.Helper()
-	e.expect(t, remoteActivity(t, "Create", id+"/activity", author, remoteNote(id, author, remoteNow.Add(-age), fields)), appfederation.InboxHandled)
-	return e.post(t, id).Status
-}
-
-// purged fails unless the status is gone with a deletion by retention and its revisions purged.
-func (e *retentionEnv) purged(t *testing.T, st content.Status, revisionID string) {
-	t.Helper()
-	ctx := t.Context()
-	if e.stored(t, st.URI) {
-		t.Errorf("status %s is still stored", st.URI)
-	}
-	d, err := e.rh.Statuses.FindDeletion(ctx, st.ID)
-	if err != nil || d.Origin != content.DeletedByRetention || d.URI != st.URI {
-		t.Errorf("FindDeletion(%s) = %+v, %v; want a deletion by retention", st.URI, d, err)
-	}
-	if tomb, err := e.content.Tombstoned(ctx, st.URI); err != nil || tomb {
-		t.Errorf("Tombstoned(%s) = %v, %v; want false (a purged status may come back)", st.URI, tomb, err)
-	}
-	if _, err := e.rh.Statuses.FindRevision(ctx, revisionID); !errors.Is(err, appcontent.ErrNotFound) {
-		t.Errorf("FindRevision(%s) = %v; want ErrNotFound", revisionID, err)
-	}
-}
-
-// kept fails unless the status is stored and not deleted.
-func (e *retentionEnv) kept(t *testing.T, st content.Status) {
-	t.Helper()
-	if !e.stored(t, st.URI) {
-		t.Errorf("status %s is gone, want it kept", st.URI)
-		return
-	}
-	if _, err := e.rh.Statuses.FindDeletion(t.Context(), st.ID); !errors.Is(err, appcontent.ErrNotFound) {
-		t.Errorf("FindDeletion(%s) = %v; want ErrNotFound", st.URI, err)
-	}
-}
-
-const retentionPeriod = 90 * 24 * time.Hour
-
-func retentionPurgesUnreferenced(t *testing.T, e *retentionEnv) {
-	const alice = "https://remote.example/users/alice"
-	aliceID := e.actor(t, alice)
-	reader := e.user(t, "reader")
-	e.follow(t, reader, aliceID)
-	old := e.note(t, alice, alice+"/notes/old", 100*24*time.Hour, map[string]any{
-		"tag":        []any{map[string]any{"type": "Hashtag", "name": "#retention"}},
-		"attachment": []any{map[string]any{"type": "Document", "mediaType": "image/png", "url": "https://remote.example/media/1.png"}},
-	})
-	oldRev := e.post(t, old.URI).Revision
-	poll := alice + "/questions/old"
-	e.expect(t, remoteActivity(t, "Create", poll+"/activity", alice, remoteNote(poll, alice, remoteNow.Add(-95*24*time.Hour), map[string]any{
-		"type": "Question", "oneOf": []any{
-			map[string]any{"type": "Note", "name": "yes", "replies": map[string]any{"type": "Collection", "totalItems": 3}},
-			map[string]any{"type": "Note", "name": "no", "replies": map[string]any{"type": "Collection", "totalItems": 1}},
-		},
-	})), appfederation.InboxHandled)
-	question := e.post(t, poll)
-	if question.Revision.Poll == nil {
-		t.Fatalf("the question has no poll: %+v", question.Revision)
-	}
-	recent := e.note(t, alice, alice+"/notes/recent", 10*24*time.Hour, nil)
-
-	if n := e.purgeAll(t, e.retention(retentionPeriod, 0, 0)); n != 2 {
-		t.Errorf("purged %d statuses, want 2", n)
-	}
-	e.purged(t, old, oldRev.ID)
-	e.purged(t, question.Status, question.Revision.ID)
-	e.kept(t, recent)
-	if tallies, err := e.content.PollTallies(t.Context(), question.Revision.Poll.ID); err != nil || len(tallies) != 0 {
-		t.Errorf("PollTallies of the purged poll = %+v, %v; want none", tallies, err)
-	}
-	if posts, err := e.h.Statuses.FindPostCounter(t.Context(), aliceID); err != nil || posts.StatusesCount != 1 {
-		t.Errorf("post counter of alice = %+v, %v; want 1", posts, err)
-	}
-	home, err := e.timeline.Home(t.Context(), appcontent.Viewer{Kind: appcontent.ViewerLocal, AccountID: reader}, apptimeline.Query{Limit: apptimeline.MaxLimit})
-	if err != nil || slices.ContainsFunc(home.Entries, func(en apptimeline.Entry) bool { return en.StatusID == old.ID || en.StatusID == question.Status.ID }) {
-		t.Errorf("home of the follower = %+v, %v; want the purged statuses gone", home.Entries, err)
-	}
-	// Running again finds nothing more.
-	if n := e.purgeAll(t, e.retention(retentionPeriod, 0, 0)); n != 0 {
-		t.Errorf("the second run purged %d statuses, want 0", n)
-	}
-}
-
-// referencedStatuses posts the remote statuses that something local refers to, all published
-// 200 days ago, and returns them by what refers to them, with the local account that replied,
-// boosted, favourited, and bookmarked, and the one mentioned.
-func (e *retentionEnv) referencedStatuses(t *testing.T) (statuses map[string]content.Status, reader, mentioned string) {
-	t.Helper()
-	ctx := t.Context()
-	const alice = "https://remote.example/users/alice"
-	aliceID := e.actor(t, alice)
-	reader, mentioned = e.user(t, "reader"), e.user(t, "mentioned")
-	e.follow(t, reader, aliceID)
-	age := 200 * 24 * time.Hour
-	out := map[string]content.Status{}
-	for _, name := range []string{"reply", "thread", "boost", "favourite", "bookmark", "unrelated"} {
-		out[name] = e.note(t, alice, alice+"/notes/"+name, age, nil)
-	}
-	out["mention"] = e.note(t, alice, alice+"/notes/mention", age, map[string]any{
-		"cc":  []string{alice + "/followers", e.localIRI(mentioned)},
-		"tag": []any{map[string]any{"type": "Mention", "href": e.localIRI(mentioned)}},
-	})
-	// A remote reply in the thread of a remote post that a local account replied to.
-	out["in-thread"] = e.note(t, alice, alice+"/notes/in-thread", age, map[string]any{"inReplyTo": out["thread"].URI})
-	for _, name := range []string{"reply", "thread"} {
-		if _, err := e.content.Create(ctx, appcontent.CreateInput{
-			AuthorAccountID: reader, TextInput: appcontent.TextInput{Text: "re"}, Visibility: content.VisibilityPublic, InReplyToID: out[name].ID,
-		}); err != nil {
-			t.Fatalf("reply to %s: %v", name, err)
-		}
-	}
-	if _, err := e.interactions.Boost(ctx, reader, out["boost"].ID); err != nil {
-		t.Fatalf("Boost: %v", err)
-	}
-	if _, err := e.interactions.Favourite(ctx, reader, out["favourite"].ID); err != nil {
-		t.Fatalf("Favourite: %v", err)
-	}
-	if err := e.interactions.Bookmark(ctx, reader, out["bookmark"].ID); err != nil {
-		t.Fatalf("Bookmark: %v", err)
-	}
-	return out, reader, mentioned
-}
-
-func retentionKeepsReferenced(t *testing.T, e *retentionEnv) {
-	statuses, reader, _ := e.referencedStatuses(t)
-	// A boost that the local account retracted no longer refers to its status.
-	retracted := e.note(t, "https://remote.example/users/alice", "https://remote.example/users/alice/notes/retracted", 200*24*time.Hour, nil)
-	retractedRev := e.post(t, retracted.URI).Revision
-	if _, err := e.interactions.Boost(t.Context(), reader, retracted.ID); err != nil {
-		t.Fatal(err)
-	}
-	if err := e.interactions.Unboost(t.Context(), reader, retracted.ID); err != nil {
-		t.Fatal(err)
-	}
-	unrelatedRev := e.post(t, statuses["unrelated"].URI).Revision
-
-	if n := e.purgeAll(t, e.retention(retentionPeriod, 0, 0)); n != 2 {
-		t.Errorf("purged %d statuses, want 2 (the unrelated one and the one of the retracted boost)", n)
-	}
-	e.purged(t, statuses["unrelated"], unrelatedRev.ID)
-	e.purged(t, retracted, retractedRev.ID)
-	for name, st := range statuses {
-		if name == "unrelated" {
-			continue
-		}
-		t.Run(name, func(t *testing.T) { e.kept(t, st) })
-	}
-}
-
-func retentionMaximum(t *testing.T, e *retentionEnv) {
-	ctx := t.Context()
-	statuses, reader, mentioned := e.referencedStatuses(t)
-	recent := e.note(t, "https://remote.example/users/alice", "https://remote.example/users/alice/notes/recent", 100*24*time.Hour, nil)
-	if err := e.interactions.Bookmark(ctx, reader, recent.ID); err != nil {
-		t.Fatal(err)
-	}
-	revisions := map[string]string{}
-	for name, st := range statuses {
-		revisions[name] = e.post(t, st.URI).Revision.ID
-	}
-
-	if n := e.purgeAll(t, e.retention(retentionPeriod, 180*24*time.Hour, 0)); n != len(statuses) {
-		t.Errorf("purged %d statuses, want %d", n, len(statuses))
-	}
-	for name, st := range statuses {
-		t.Run(name, func(t *testing.T) { e.purged(t, st, revisions[name]) })
-	}
-	e.kept(t, recent)
-	// The local accounts' interactions stay, and their statuses read as deleted.
-	if _, err := e.rh.Interactions.FindFavourite(ctx, reader, statuses["favourite"].ID); err != nil {
-		t.Errorf("FindFavourite of the purged status = %v; want the favourite kept", err)
-	}
-	if _, err := e.rh.Interactions.FindBookmark(ctx, reader, statuses["bookmark"].ID); err != nil {
-		t.Errorf("FindBookmark of the purged status = %v; want the bookmark kept", err)
-	}
-	marks, err := e.rh.Interactions.ListBookmarks(ctx, reader, "", 10)
-	if err != nil || len(marks) != 2 {
-		t.Errorf("bookmarks = %+v, %v; want both kept", marks, err)
-	}
-	page, err := e.statusReader().Bookmarks(ctx, appcontent.Viewer{Kind: appcontent.ViewerLocal, AccountID: reader}, "", 10)
-	if err != nil || len(page.Statuses) != 1 || page.Statuses[0].Status.ID != recent.ID {
-		t.Errorf("bookmarked statuses = %+v, %v; want only the kept one (the purged one reads as deleted)", page.Statuses, err)
-	}
-	ns, err := e.notifications.List(ctx, mentioned, appnotification.Query{Limit: appnotification.MaxPageLimit})
-	if err != nil || len(ns) != 0 {
-		t.Errorf("notifications of the mentioned account = %+v, %v; want the mention hidden", ns, err)
-	}
-}
-
-// retentionNotifiedDeletion purges a status past the maximum period while a notification names it,
-// lets the record of its deletion pass its own retention, and rebuilds
-// notification_deleted_statuses: the notification stays hidden, since its status has no row.
-func retentionNotifiedDeletion(t *testing.T, e *retentionEnv) {
-	ctx := t.Context()
-	const alice = "https://remote.example/users/alice"
-	aliceID := e.actor(t, alice)
-	reader, mentioned := e.user(t, "reader"), e.user(t, "mentioned")
-	e.follow(t, reader, aliceID)
-	age := 200 * 24 * time.Hour
-	notified := e.note(t, alice, alice+"/notes/mention", age, map[string]any{
-		"cc":  []string{alice + "/followers", e.localIRI(mentioned)},
-		"tag": []any{map[string]any{"type": "Mention", "href": e.localIRI(mentioned)}},
-	})
-	plain := e.note(t, alice, alice+"/notes/plain", age, nil)
-	listed := func(when string) {
-		t.Helper()
-		ns, err := e.notifications.List(ctx, mentioned, appnotification.Query{Limit: appnotification.MaxPageLimit})
-		if err != nil || len(ns) != 0 {
-			t.Errorf("notifications %s = %+v, %v; want the mention hidden", when, ns, err)
-		}
-		if n, err := e.notifications.UnreadCount(ctx, mentioned, false); err != nil || n != 0 {
-			t.Errorf("unread count %s = %d, %v; want 0", when, n, err)
-		}
-	}
-	deleted := func(id string) bool {
-		t.Helper()
-		var got bool
-		if err := e.rh.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
-			var err error
-			got, err = e.content.IsDeleted(ctx, tx, id)
-			return err
-		}); err != nil {
-			t.Fatal(err)
-		}
-		return got
-	}
-
-	r := e.retention(retentionPeriod, 180*24*time.Hour, 0)
-	if n := e.purgeAll(t, r); n != 2 {
-		t.Fatalf("purged %d statuses, want 2", n)
-	}
-	listed("after the purge")
-	if !deleted(notified.ID) || !deleted(plain.ID) {
-		t.Fatalf("a purged status does not read as deleted")
-	}
-
-	e.clock.Advance(appcontent.RetentionDeletionRetention + time.Hour)
-	e.purgeAll(t, r)
-	if deleted(plain.ID) {
-		t.Errorf("the deletion of a status that nothing names is still there past its retention")
-	}
-	if !deleted(notified.ID) {
-		t.Errorf("the deletion of a status that a notification names went")
-	}
-
-	if err := appnotification.RebuildDeletedStatuses(ctx, e.rh.UnitOfWork, e.rh.Notifications, e.content); err != nil {
-		t.Fatal(err)
-	}
-	listed("after the rebuild")
-}
-
-func retentionBatches(t *testing.T, e *retentionEnv) {
-	const alice = "https://remote.example/users/alice"
-	aliceID := e.actor(t, alice)
-	e.follow(t, e.user(t, "reader"), aliceID)
-	const total, batch = 25, 2
-	for i := range total {
-		e.note(t, alice, fmt.Sprintf("%s/notes/%d", alice, i), 100*24*time.Hour+time.Duration(i)*time.Minute, nil)
-	}
-	r := e.retention(retentionPeriod, 0, batch)
-	next, n, err := r.Run(t.Context(), "")
-	// One run has a bounded number of batches of batch statuses each.
-	if err != nil || next == "" || n == 0 || n%batch != 0 || n >= total {
-		t.Fatalf("Run = %q, %d, %v; want a cursor and part of the %d statuses in batches of %d", next, n, err, total, batch)
-	}
-	if rest := e.purgeAll(t, r); rest != total-n {
-		t.Errorf("the later runs purged %d statuses, want %d", rest, total-n)
-	}
-	if posts, err := e.h.Statuses.FindPostCounter(t.Context(), aliceID); !errors.Is(err, appcontent.ErrNotFound) {
-		t.Errorf("post counter of alice = %+v, %v; want none", posts, err)
-	}
-}
-
-func retentionRefetch(t *testing.T, e *retentionEnv) {
-	const alice = "https://remote.example/users/alice"
-	aliceID := e.actor(t, alice)
-	e.follow(t, e.user(t, "reader"), aliceID)
-	id := alice + "/notes/1"
-	first := e.note(t, alice, id, 100*24*time.Hour, nil)
-	if n := e.purgeAll(t, e.retention(retentionPeriod, 0, 0)); n != 1 {
-		t.Fatalf("purged %d statuses, want 1", n)
-	}
-	// The same post arrives again: a deletion by retention does not keep it out.
-	e.expect(t, remoteActivity(t, "Create", id+"/activity-again", alice, remoteNote(id, alice, remoteNow.Add(-100*24*time.Hour), nil)), appfederation.InboxHandled)
-	again := e.post(t, id).Status
-	if again.ID == first.ID {
-		t.Errorf("the status came back with its purged ID %s", again.ID)
-	}
-	// Its author's Delete still deletes it into a tombstone.
-	e.expect(t, remoteActivity(t, "Delete", id+"#delete", alice, id), appfederation.InboxHandled)
-	if tomb, err := e.content.Tombstoned(t.Context(), id); err != nil || !tomb {
-		t.Errorf("Tombstoned after the Delete = %v, %v; want true", tomb, err)
-	}
-	d, err := e.rh.Statuses.FindDeletionByURI(t.Context(), id)
-	if err != nil || d.Origin != content.DeletedByRemote || d.StatusID != again.ID {
-		t.Errorf("FindDeletionByURI = %+v, %v; want the author's deletion of %s", d, err, again.ID)
-	}
-	// A Delete of a purged post, which no status has now, leaves a tombstone for a late Create.
-	other := alice + "/notes/2"
-	e.note(t, alice, other, 100*24*time.Hour, nil)
-	if n := e.purgeAll(t, e.retention(retentionPeriod, 0, 0)); n != 1 {
-		t.Fatalf("purged %d statuses, want 1", n)
-	}
-	e.expect(t, remoteActivity(t, "Delete", other+"#delete", alice, other), appfederation.InboxTombstoned)
-}
-
-func retentionFederationRecords(t *testing.T, e *retentionEnv) {
-	ctx := t.Context()
-	local := e.user(t, "sender")
-	type record struct {
-		received          federation.IRI
-		outboundID        string
-		delivery, attempt string
-	}
-	day := 24 * time.Hour
-	// write records the inbox and delivery rows of one age.
-	write := func(name string, age time.Duration) record {
-		t.Helper()
-		at := remoteNow.Add(-age)
-		e.clock.Set(at)
-		defer e.clock.Set(remoteNow)
-		r := record{received: federation.IRI("https://remote.example/activities/" + name)}
-		act := federation.OutboundActivity{
-			ID: e.ids.NewID(), Type: federation.ActivityCreate, ActorAccountID: local,
-			ObjectKind: federation.OutboundStatus, ObjectID: e.ids.NewID(), CreatedAt: at,
-		}
-		act.ActivityURI = federation.IRI("https://" + contractHost + "/ap/activities/" + act.ID)
-		r.outboundID = act.ID
-		del := federation.Delivery{ID: e.ids.NewID(), OutboundActivityID: act.ID, InboxURL: "https://remote.example/inbox", Domain: "remote.example", CreatedAt: at}
-		attempt := federation.DeliveryAttempt{ID: e.ids.NewID(), DeliveryID: del.ID, Outcome: federation.DeliverySucceeded, Scheme: "cavage", HTTPStatus: 202, AttemptedAt: at}
-		r.delivery, r.attempt = del.ID, attempt.ID
-		err := e.rh.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
-			if _, err := e.rh.Inbox.InsertReceivedActivity(ctx, tx, federation.ReceivedActivity{
-				ActivityURI: r.received, ActorURI: "https://remote.example/users/alice", Type: "Like", Scheme: "cavage", Trust: federation.TrustSigned, ReceivedAt: at,
-			}); err != nil {
-				return err
-			}
-			if err := e.rh.Inbox.InsertReceivedDocument(ctx, tx, r.received, []byte(`{"id":"`+string(r.received)+`"}`)); err != nil {
-				return err
-			}
-			if _, err := e.rh.Inbox.InsertRemoteObjectTombstone(ctx, tx, federation.RemoteObjectTombstone{
-				URI: r.received + "/object", ActorURI: "https://remote.example/users/alice", ActivityURI: r.received, ReceivedAt: at,
-			}); err != nil {
-				return err
-			}
-			if _, err := e.rh.Inbox.InsertRemoteFollowTombstone(ctx, tx, federation.RemoteFollowTombstone{
-				ActivityURI: r.received + "#undo", ActorURI: "https://remote.example/users/alice", ObjectURI: r.received + "/followee", ReceivedAt: at,
-			}); err != nil {
-				return err
-			}
-			switch first, err := e.rh.Federation.InsertReceivedActivityAnswer(ctx, tx, r.received, at); {
-			case err != nil:
-				return err
-			case !first:
-				t.Errorf("InsertReceivedActivityAnswer(%s) = false, want the first answer", r.received)
-			}
-			if err := e.rh.Federation.InsertOutboundActivity(ctx, tx, act); err != nil {
-				return err
-			}
-			if _, err := e.rh.Federation.InsertOutboundDocument(ctx, tx, act.ID, []byte(`{"id":"`+string(act.ActivityURI)+`"}`), at); err != nil {
-				return err
-			}
-			if _, err := e.rh.Federation.InsertDelivery(ctx, tx, del); err != nil {
-				return err
-			}
-			return e.rh.Federation.InsertDeliveryAttempt(ctx, tx, attempt)
-		})
-		if err != nil {
-			t.Fatalf("record %s: %v", name, err)
-		}
-		return r
-	}
-	fresh, week, month := write("fresh", day), write("week", 8*day), write("month", 31*day)
-	// A stale tombstone that another actor left for the URI of a fresh one goes alone.
-	if err := e.rh.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
-		_, err := e.rh.Inbox.InsertRemoteObjectTombstone(ctx, tx, federation.RemoteObjectTombstone{
-			URI: fresh.received + "/object", ActorURI: "https://remote.example/users/bob", ActivityURI: fresh.received + "#bob", ReceivedAt: remoteNow.Add(-31 * day),
-		})
-		return err
-	}); err != nil {
-		t.Fatalf("record another actor's tombstone: %v", err)
-	}
-	purger := appfederation.NewPurger(appfederation.PurgeDeps{UnitOfWork: e.rh.UnitOfWork, Repository: e.rh.Purges, Clock: e.clock, Batch: 1})
-	if _, err := purger.Run(ctx); err != nil {
-		t.Fatalf("Run = %v", err)
-	}
-	type want struct{ document, activity, tombstone, followTombstone, outbound, attempt bool }
-	for _, tc := range []struct {
-		name string
-		r    record
-		want want
-	}{
-		{"fresh", fresh, want{true, true, true, true, true, true}},
-		{"week", week, want{false, true, true, true, true, true}},
-		{"month", month, want{false, false, false, false, false, false}},
-	} {
 		t.Run(tc.name, func(t *testing.T) {
-			var got want
-			_, err := e.rh.Inbox.FindReceivedDocument(ctx, tc.r.received)
-			got.document = err == nil
-			_, err = e.rh.Inbox.FindReceivedActivity(ctx, tc.r.received)
-			got.activity = err == nil
-			got.tombstone, err = e.rh.Inbox.RemoteObjectTombstoned(ctx, tc.r.received+"/object", "https://remote.example/users/alice")
-			if err != nil {
-				t.Fatal(err)
+			h := newHarness(t, uow.Options{})
+			clock := NewClock(time.Date(2026, 11, 7, 12, 0, 0, 0, time.UTC))
+			tc.run(t, &retentionRepo{h: h, clock: clock, ids: NewIDGenerator(clock)})
+		})
+	}
+}
+
+type retentionRepo struct {
+	h     RetentionHarness
+	clock *Clock
+	ids   *IDGenerator
+}
+
+func (r *retentionRepo) tx(t *testing.T, fn func(ctx context.Context, tx uow.Tx) error) {
+	t.Helper()
+	if err := r.h.UnitOfWork.Tx(t.Context(), func(tx uow.Tx) error { return fn(t.Context(), tx) }); err != nil {
+		t.Fatal(err)
+	}
+}
+
+// status inserts a status published age ago, with an ID of that time (as remote statuses are
+// ingested), its first revision, and its head; it replies to inReplyTo ("" for none).
+func (r *retentionRepo) status(t *testing.T, local bool, age time.Duration, inReplyTo string) content.Status {
+	t.Helper()
+	published := r.clock.Now().Add(-age)
+	id := r.ids.NewIDAt(published)
+	s := content.Status{
+		ID: id, URI: "https://remote.example/notes/" + id, AuthorAccountID: r.ids.NewID(),
+		Visibility: content.VisibilityPublic, InReplyToURI: inReplyTo, PublishedAt: published,
+	}
+	if local {
+		s.IsLocal, s.URI = true, "https://"+contractHost+"/statuses/"+id
+	}
+	rev := content.Revision{ID: r.ids.NewID(), StatusID: id, Seq: 1, RevisedAt: s.PublishedAt, Bodies: []content.Body{{ContentHTML: "<p>hi</p>"}}}
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+		return errors.Join(
+			r.h.Statuses.InsertStatus(ctx, tx, s),
+			r.h.Statuses.InsertRevision(ctx, tx, rev),
+			r.h.Statuses.UpsertHead(ctx, tx, content.Head{StatusID: id, RevisionID: rev.ID, Seq: 1, LastRevisedAt: rev.RevisedAt}),
+		)
+	})
+	return s
+}
+
+// deleteStatus records the deletion of s with origin now.
+func (r *retentionRepo) deleteStatus(t *testing.T, s content.Status, origin content.DeletionOrigin) content.Deletion {
+	t.Helper()
+	d := content.Deletion{StatusID: s.ID, URI: s.URI, AuthorAccountID: s.AuthorAccountID, Origin: origin, DeletedAt: r.clock.Now()}
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error { return r.h.Statuses.InsertDeletion(ctx, tx, d) })
+	return d
+}
+
+func statusIDs(statuses []content.Status) []string {
+	ids := make([]string, len(statuses))
+	for i, s := range statuses {
+		ids[i] = s.ID
+	}
+	return ids
+}
+
+func retentionRepoRemoteStatuses(t *testing.T, r *retentionRepo) {
+	const day = 24 * time.Hour
+	old := r.status(t, false, 10*day, "")
+	referenced := r.status(t, false, 10*day, "")
+	r.status(t, true, 9*day, referenced.URI)
+	recent := r.status(t, false, day, "")
+	deleted := r.status(t, false, 10*day, "")
+	r.deleteStatus(t, deleted, content.DeletedByRemote)
+	older := r.status(t, false, 20*day, "")
+	r.status(t, true, 20*day, "")
+
+	list := func(q appcontent.PurgeQuery) []string {
+		var got []content.Status
+		r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+			var err error
+			got, err = r.h.Retention.ListRemoteStatusesToPurge(ctx, tx, q)
+			return err
+		})
+		return statusIDs(got)
+	}
+	period := r.clock.Now().Add(-5 * day)
+	if got, want := list(appcontent.PurgeQuery{UnreferencedBefore: period, Limit: 10}), []string{older.ID, old.ID}; !slices.Equal(got, want) {
+		t.Errorf("past the period = %v, want the unreferenced %v in ID order", got, want)
+	}
+	if got, want := list(appcontent.PurgeQuery{UnreferencedBefore: period, Limit: 1}), []string{older.ID}; !slices.Equal(got, want) {
+		t.Errorf("the first page = %v, want %v", got, want)
+	}
+	if got, want := list(appcontent.PurgeQuery{After: older.ID, UnreferencedBefore: period, Limit: 1}), []string{old.ID}; !slices.Equal(got, want) {
+		t.Errorf("the page after the first = %v, want %v", got, want)
+	}
+	if got, want := list(appcontent.PurgeQuery{UnreferencedBefore: period, Before: period, Limit: 10}), []string{older.ID, old.ID, referenced.ID}; !slices.Equal(got, want) {
+		t.Errorf("past the maximum = %v, want the referenced one too: %v", got, want)
+	}
+	if got := list(appcontent.PurgeQuery{UnreferencedBefore: r.clock.Now().Add(-30 * day), Limit: 10}); len(got) != 0 {
+		t.Errorf("before every status = %v, want none (recent %s)", got, recent.ID)
+	}
+}
+
+func retentionRepoRelayed(t *testing.T, r *retentionRepo) {
+	const day = 24 * time.Hour
+	relayID := r.ids.NewID()
+	relayed := func(age time.Duration) content.Status {
+		s := r.status(t, false, age, "")
+		r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+			return r.h.Statuses.InsertRelayedStatus(ctx, tx, s.ID, relayID, s.PublishedAt)
+		})
+		return s
+	}
+	first := relayed(10 * day)
+	referenced := relayed(10 * day)
+	r.status(t, true, 9*day, referenced.URI)
+	relayed(day)
+	second := relayed(10 * day)
+	r.status(t, false, 10*day, "")
+	// Recording a relayed status again changes nothing.
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+		return r.h.Statuses.InsertRelayedStatus(ctx, tx, first.ID, relayID, r.clock.Now())
+	})
+
+	list := func(q appcontent.RelayedPurgeQuery) []string {
+		var got []content.Status
+		r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+			var err error
+			got, err = r.h.Retention.ListRelayedStatusesToPurge(ctx, tx, q)
+			return err
+		})
+		return statusIDs(got)
+	}
+	before := r.clock.Now().Add(-5 * day)
+	if got, want := list(appcontent.RelayedPurgeQuery{Before: before, Limit: 10}), []string{first.ID, second.ID}; !slices.Equal(got, want) {
+		t.Errorf("ListRelayedStatusesToPurge = %v, want the old unreferenced relayed statuses %v", got, want)
+	}
+	if got, want := list(appcontent.RelayedPurgeQuery{After: first.ID, Before: before, Limit: 1}), []string{second.ID}; !slices.Equal(got, want) {
+		t.Errorf("the page after the first = %v, want %v", got, want)
+	}
+}
+
+func retentionRepoPurgeStatuses(t *testing.T, r *retentionRepo) {
+	ctx := t.Context()
+	purged := r.status(t, false, time.Hour, "")
+	kept := r.status(t, false, time.Hour, "")
+	deletion := r.deleteStatus(t, purged, content.DeletedByRetention)
+	rev, err := r.h.Statuses.FindCurrentRevision(ctx, purged.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+		return r.h.Retention.PurgeStatuses(ctx, tx, []string{purged.ID})
+	})
+
+	if _, err := r.h.Statuses.FindStatus(ctx, purged.ID); !errors.Is(err, appcontent.ErrNotFound) {
+		t.Errorf("FindStatus(purged) = %v, want ErrNotFound", err)
+	}
+	if _, err := r.h.Statuses.FindRevision(ctx, rev.ID); !errors.Is(err, appcontent.ErrNotFound) {
+		t.Errorf("FindRevision(of the purged status) = %v, want ErrNotFound", err)
+	}
+	if got, err := r.h.Statuses.FindDeletion(ctx, purged.ID); err != nil || got.Origin != deletion.Origin || got.URI != deletion.URI {
+		t.Errorf("FindDeletion(purged) = %+v, %v; want the deletion %+v kept", got, err, deletion)
+	}
+	if _, err := r.h.Statuses.FindStatus(ctx, kept.ID); err != nil {
+		t.Errorf("FindStatus(another status) = %v, want it kept", err)
+	}
+}
+
+func retentionRepoDeletions(t *testing.T, r *retentionRepo) {
+	ctx := t.Context()
+	purge := func(origin content.DeletionOrigin) content.Deletion {
+		s := r.status(t, false, time.Hour, "")
+		d := r.deleteStatus(t, s, origin)
+		r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+			return r.h.Retention.PurgeStatuses(ctx, tx, []string{s.ID})
+		})
+		return d
+	}
+	first, second := purge(content.DeletedByRetention), purge(content.DeletedByRetention)
+	byRemote := purge(content.DeletedByRemote)
+	unpurged := r.deleteStatus(t, r.status(t, false, time.Hour, ""), content.DeletedByRetention)
+	r.clock.Advance(time.Hour)
+	recent := purge(content.DeletedByRetention)
+
+	cutoff := r.clock.Now().Add(-time.Minute)
+	for i, want := range []int64{1, 1, 0} {
+		r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+			n, err := r.h.Retention.DeleteRetentionDeletionsBefore(ctx, tx, cutoff, 1)
+			if err == nil && n != want {
+				t.Errorf("DeleteRetentionDeletionsBefore #%d = %d, want %d", i+1, n, want)
 			}
-			err = e.rh.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
-				_, err := e.rh.Inbox.LiveRemoteFollowTombstone(ctx, tx, "https://remote.example/users/alice", tc.r.received+"/followee")
+			return err
+		})
+	}
+	for _, d := range []content.Deletion{first, second} {
+		if _, err := r.h.Statuses.FindDeletion(ctx, d.StatusID); !errors.Is(err, appcontent.ErrNotFound) {
+			t.Errorf("FindDeletion(an old deletion by retention) = %v, want ErrNotFound", err)
+		}
+	}
+	for name, d := range map[string]content.Deletion{"by the remote server": byRemote, "of a status not purged": unpurged, "recent": recent} {
+		if _, err := r.h.Statuses.FindDeletion(ctx, d.StatusID); err != nil {
+			t.Errorf("FindDeletion(the deletion %s) = %v, want it kept", name, err)
+		}
+	}
+}
+
+func retentionRepoInbox(t *testing.T, r *retentionRepo) {
+	ctx := t.Context()
+	const actor = federation.IRI("https://remote.example/users/alice")
+	received := func(n string) federation.IRI {
+		uri := actor + "/activities/" + federation.IRI(n)
+		r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+			if _, err := r.h.Inbox.InsertReceivedActivity(ctx, tx, federation.ReceivedActivity{
+				ActivityURI: uri, ActorURI: actor, Type: "Create", Scheme: "rfc9421", Trust: federation.TrustSigned, ReceivedAt: r.clock.Now(),
+			}); err != nil {
+				return err
+			}
+			if err := r.h.Inbox.InsertReceivedDocument(ctx, tx, uri, []byte(`{"type":"Create"}`)); err != nil {
+				return err
+			}
+			if _, err := r.h.Federation.InsertReceivedActivityAnswer(ctx, tx, uri, r.clock.Now()); err != nil {
+				return err
+			}
+			if _, err := r.h.Inbox.InsertRemoteObjectTombstone(ctx, tx, federation.RemoteObjectTombstone{
+				URI: actor + "/notes/" + federation.IRI(n), ActorURI: actor, ActivityURI: uri + "/delete", ReceivedAt: r.clock.Now(),
+			}); err != nil {
+				return err
+			}
+			_, err := r.h.Inbox.InsertRemoteFollowTombstone(ctx, tx, federation.RemoteFollowTombstone{
+				ActivityURI: uri, ActorURI: actor, ObjectURI: "https://" + contractHost + "/users/" + federation.IRI(n), ReceivedAt: r.clock.Now(),
+			})
+			return err
+		})
+		return uri
+	}
+	first, second := received("1"), received("2")
+	r.clock.Advance(time.Hour)
+	recent := received("3")
+	cutoff := r.clock.Now().Add(-time.Minute)
+
+	type purge struct {
+		name string
+		fn   func(ctx context.Context, tx uow.Tx, t time.Time, limit int) (int64, error)
+	}
+	// The records of activities go after their documents.
+	for _, p := range []purge{
+		{"DeleteReceivedDocumentsBefore", r.h.Purges.DeleteReceivedDocumentsBefore},
+		{"DeleteReceivedActivityAnswersBefore", r.h.Purges.DeleteReceivedActivityAnswersBefore},
+		{"DeleteReceivedActivitiesBefore", r.h.Purges.DeleteReceivedActivitiesBefore},
+		{"DeleteRemoteObjectTombstonesBefore", r.h.Purges.DeleteRemoteObjectTombstonesBefore},
+		{"DeleteRemoteFollowTombstonesBefore", r.h.Purges.DeleteRemoteFollowTombstonesBefore},
+	} {
+		for i, want := range []int64{1, 1, 0} {
+			r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+				n, err := p.fn(ctx, tx, cutoff, 1)
+				if err == nil && n != want {
+					t.Errorf("%s #%d = %d, want %d", p.name, i+1, n, want)
+				}
 				return err
 			})
-			switch {
-			case err == nil:
-				got.followTombstone = true
-			case !errors.Is(err, appfederation.ErrNotFound):
-				t.Fatal(err)
-			}
-			_, err = e.rh.Federation.FindOutboundDocument(ctx, tc.r.outboundID)
-			got.outbound = err == nil
-			attempts, err := e.rh.Federation.ListDeliveryAttempts(ctx, tc.r.delivery)
-			if err != nil {
-				t.Fatal(err)
-			}
-			got.attempt = slices.ContainsFunc(attempts, func(a federation.DeliveryAttempt) bool { return a.ID == tc.r.attempt })
-			if got != tc.want {
-				t.Errorf("kept %+v, want %+v", got, tc.want)
-			}
-		})
+		}
 	}
-	// The record of an answer stays as long as the activity's: an answer within it is not the first.
-	for _, tc := range []struct {
-		r     record
-		first bool
-	}{{fresh, false}, {week, false}, {month, true}} {
-		if err := e.rh.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
-			first, err := e.rh.Federation.InsertReceivedActivityAnswer(ctx, tx, tc.r.received, e.clock.Now())
-			if err == nil && first != tc.first {
-				t.Errorf("InsertReceivedActivityAnswer(%s) after the purge = %t, want %t", tc.r.received, first, tc.first)
-			}
+	for _, uri := range []federation.IRI{first, second} {
+		if _, err := r.h.Inbox.FindReceivedActivity(ctx, uri); !errors.Is(err, appfederation.ErrNotFound) {
+			t.Errorf("FindReceivedActivity(%s) = %v, want ErrNotFound", uri, err)
+		}
+		if ok, err := r.h.Inbox.RemoteObjectTombstoned(ctx, actor+"/notes/"+uri[len(uri)-1:], actor); err != nil || ok {
+			t.Errorf("RemoteObjectTombstoned(an old tombstone) = %v, %v; want false", ok, err)
+		}
+	}
+	if doc, err := r.h.Inbox.FindReceivedDocument(ctx, recent); err != nil || len(doc) == 0 {
+		t.Errorf("FindReceivedDocument(recent) = %s, %v; want it kept", doc, err)
+	}
+	if ok, err := r.h.Inbox.RemoteObjectTombstoned(ctx, actor+"/notes/3", actor); err != nil || !ok {
+		t.Errorf("RemoteObjectTombstoned(a recent tombstone) = %v, %v; want true", ok, err)
+	}
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+		if got, err := r.h.Inbox.LiveRemoteFollowTombstone(ctx, tx, actor, "https://"+contractHost+"/users/3"); err != nil || got.ActivityURI != recent {
+			t.Errorf("LiveRemoteFollowTombstone(recent) = %+v, %v; want it kept", got, err)
+		}
+		return nil
+	})
+}
+
+func retentionRepoObservations(t *testing.T, r *retentionRepo) {
+	ctx := t.Context()
+	domains := []string{"one.example", "two.example"}
+	var observations []federation.NodeInfoObservation
+	var events []federation.AvailabilityEvent
+	for _, domain := range domains {
+		r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+			_, err := r.h.Instances.InsertRemoteInstance(ctx, tx, domain, r.clock.Now())
 			return err
-		}); err != nil {
-			t.Fatal(err)
+		})
+		for range 2 {
+			o := federation.NodeInfoObservation{ID: r.ids.NewID(), Domain: domain, SoftwareName: "mastodon", SoftwareVersion: "4.3.0", ObservedAt: r.clock.Now()}
+			e := federation.AvailabilityEvent{ID: r.ids.NewID(), Domain: domain, Kind: federation.MarkedUnavailable, Reason: federation.ReasonFailureDays, OccurredAt: r.clock.Now()}
+			r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+				return errors.Join(r.h.Instances.InsertNodeInfoObservation(ctx, tx, o), r.h.Federation.InsertAvailabilityEvent(ctx, tx, e))
+			})
+			observations, events = append(observations, o), append(events, e)
+			r.clock.Advance(time.Second)
 		}
 	}
-	if ok, err := e.rh.Inbox.RemoteObjectTombstoned(ctx, fresh.received+"/object", "https://remote.example/users/bob"); err != nil || ok {
-		t.Errorf("RemoteObjectTombstoned(another actor's stale tombstone) = %t, %v; want false", ok, err)
+	cutoff := r.clock.Now()
+	for _, p := range []struct {
+		name string
+		fn   func(ctx context.Context, tx uow.Tx, t time.Time, limit int) (int64, error)
+	}{
+		{"DeleteNodeInfoObservationsBefore", r.h.Purges.DeleteNodeInfoObservationsBefore},
+		{"DeleteAvailabilityEventsBefore", r.h.Purges.DeleteAvailabilityEventsBefore},
+	} {
+		for i, want := range []int64{1, 1, 0} {
+			r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+				n, err := p.fn(ctx, tx, cutoff, 1)
+				if err == nil && n != want {
+					t.Errorf("%s #%d = %d, want %d: all but the newest of each server", p.name, i+1, n, want)
+				}
+				return err
+			})
+		}
+	}
+	for i, domain := range domains {
+		newest := observations[2*i+1]
+		r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+			if got, err := r.h.Instances.LatestNodeInfoObservation(ctx, tx, domain); err != nil || got.ID != newest.ID {
+				t.Errorf("LatestNodeInfoObservation(%s) = %+v, %v; want the newest %s kept", domain, got, err, newest.ID)
+			}
+			return nil
+		})
+		got, err := r.h.Federation.ListAvailabilityEvents(ctx, domain, "", 10)
+		if err != nil || len(got) != 1 || got[0].ID != events[2*i+1].ID {
+			t.Errorf("ListAvailabilityEvents(%s) = %+v, %v; want only the newest %s", domain, got, err, events[2*i+1].ID)
+		}
 	}
 }
 
-func retentionProfiles(t *testing.T, e *retentionEnv) {
+func retentionRepoProfiles(t *testing.T, r *retentionRepo) {
 	ctx := t.Context()
-	reader := e.user(t, "reader")
-	mentioned := e.user(t, "mentioned")
-	save := func(uri string, n int) appaccount.Actor {
-		t.Helper()
-		e.actors.serve(uri)
-		in := e.actors.served[uri]
-		in.Name = fmt.Sprintf("name %d", n)
-		in.Document = fmt.Appendf(nil, `{"id":%q,"name":"name %d"}`, uri, n)
-		a, err := e.remote.SaveRemoteActor(ctx, in)
-		if err != nil {
-			t.Fatalf("SaveRemoteActor(%s) = %v", uri, err)
+	// remote inserts a remote account with seqs profile revisions, the last one its head unless
+	// head is false.
+	remote := func(name string, seqs int, head bool) (string, []account.ProfileRevision) {
+		a := account.Account{
+			ID: r.ids.NewID(), URI: "https://remote.example/users/" + name, Domain: "remote.example",
+			ActorType: account.ActorPerson, CreatedAt: r.clock.Now(),
 		}
-		return a
-	}
-	accounts := map[string]string{}
-	for _, name := range []string{"unrelated", "followed", "follower", "poster"} {
-		uri := "https://remote.example/users/" + name
-		for n := 1; n <= 3; n++ {
-			accounts[name] = save(uri, n).Account.ID
-		}
-	}
-	e.follow(t, reader, accounts["followed"])
-	e.follow(t, accounts["follower"], reader)
-	e.note(t, "https://remote.example/users/poster", "https://remote.example/users/poster/notes/1", time.Hour, map[string]any{
-		"cc":  []string{e.localIRI(mentioned)},
-		"tag": []any{map[string]any{"type": "Mention", "href": e.localIRI(mentioned)}},
-	})
-	before, err := e.rh.Accounts.FindLatestRemoteSnapshot(ctx, accounts["unrelated"])
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	pruner := appaccount.NewProfilePruner(appaccount.PruneDeps{
-		UnitOfWork: e.rh.UnitOfWork, Repository: e.rh.Profiles, Relations: retentionRelations{e}, Clock: e.clock, Batch: 1,
-	})
-	after := ""
-	for range 20 {
-		next, _, err := pruner.Run(ctx, after)
-		if err != nil {
-			t.Fatalf("Run(%q) = %v", after, err)
-		}
-		if next == "" {
-			break
-		}
-		after = next
-	}
-	listed, err := e.rh.Profiles.ListRemoteAccountsWithPastProfiles(ctx, "", 100)
-	if err != nil {
-		t.Fatal(err)
-	}
-	want := []string{accounts["followed"], accounts["follower"], accounts["poster"]}
-	slices.Sort(want)
-	if !slices.Equal(listed, want) {
-		t.Errorf("accounts with past profiles = %v, want %v (the related ones)", listed, want)
-	}
-	actor, err := e.remote.FindByURI(ctx, "https://remote.example/users/unrelated")
-	if err != nil || actor.Profile == nil || actor.Profile.DisplayName != "name 3" {
-		t.Errorf("the pruned account = %+v, %v; want its current profile kept", actor.Profile, err)
-	}
-	if latest, err := e.rh.Accounts.FindLatestRemoteSnapshot(ctx, accounts["unrelated"]); err != nil || latest.ID != before.ID {
-		t.Errorf("latest snapshot = %+v, %v; want %s kept", latest, err, before.ID)
-	}
-	// A later fetch revises the profile again.
-	save("https://remote.example/users/unrelated", 4)
-	if actor, err := e.remote.FindByURI(ctx, "https://remote.example/users/unrelated"); err != nil || actor.Profile.DisplayName != "name 4" || actor.Profile.Seq != 4 {
-		t.Errorf("after a new fetch = %+v, %v; want name 4 at seq 4", actor.Profile, err)
-	}
-}
-
-// retentionRelations relates a remote account to local data as the composition root does: a
-// follow either way, or a stored status.
-type retentionRelations struct{ e *retentionEnv }
-
-func (r retentionRelations) RelatedToLocal(ctx context.Context, accountID string) (bool, error) {
-	c, err := r.e.graph.Counters(ctx, accountID)
-	if err != nil || c.FollowersCount > 0 || c.FollowingCount > 0 {
-		return err == nil, err
-	}
-	n, err := r.e.content.PostCount(ctx, accountID)
-	return n > 0, err
-}
-
-// statusReader returns the reader of statuses on the harness, without media.
-func (e *retentionEnv) statusReader() *appcontent.Reader {
-	return appcontent.NewReader(appcontent.ReaderDeps{
-		Statuses: e.rh.Statuses, Interactions: e.rh.Interactions, Accounts: e.accounts, Relationships: e.graph,
-	})
-}
-
-// stubFollows stands in for the graph module: the remote authors that a local account follows.
-type stubFollows map[string]bool
-
-// AuthorFollowed implements appcontent.FollowedAuthors.
-func (s stubFollows) AuthorFollowed(_ context.Context, accountID string) (bool, error) {
-	return s[accountID], nil
-}
-
-func retentionRelayed(t *testing.T, e *retentionEnv) {
-	ctx := t.Context()
-	const alice, bob = "https://remote.example/users/alice", "https://remote.example/users/bob"
-	aliceID, bobID := e.actor(t, alice), e.actor(t, bob)
-	reader := e.user(t, "reader")
-	e.follow(t, reader, aliceID)
-	e.follow(t, reader, bobID)
-	old := e.note(t, alice, alice+"/notes/old", 10*24*time.Hour, nil)
-	oldRev := e.post(t, old.URI).Revision.ID
-	older := e.note(t, alice, alice+"/notes/older", 20*24*time.Hour, nil)
-	olderRev := e.post(t, older.URI).Revision.ID
-	young := e.note(t, alice, alice+"/notes/young", 3*24*time.Hour, nil)
-	ofFollowed := e.note(t, bob, bob+"/notes/old", 10*24*time.Hour, nil)
-	favourited := e.note(t, alice, alice+"/notes/favourited", 10*24*time.Hour, nil)
-	plain := e.note(t, alice, alice+"/notes/plain", 10*24*time.Hour, nil)
-	err := e.rh.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
-		for _, st := range []content.Status{old, older, young, ofFollowed, favourited} {
-			if err := e.content.RecordRelayedStatus(ctx, tx, st.ID, NamedID("relay-1"), remoteNow); err != nil {
+		var revs []account.ProfileRevision
+		r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+			if err := r.h.Accounts.InsertAccount(ctx, tx, a); err != nil {
 				return err
 			}
-		}
-		// Recording again changes nothing.
-		return e.content.RecordRelayedStatus(ctx, tx, old.ID, NamedID("relay-2"), remoteNow)
+			if _, err := r.h.Accounts.InsertRemoteAccount(ctx, tx, account.RemoteAccount{AccountID: a.ID, FirstSeenAt: a.CreatedAt}); err != nil {
+				return err
+			}
+			for seq := 1; seq <= seqs; seq++ {
+				rev := account.ProfileRevision{ID: r.ids.NewID(), AccountID: a.ID, Seq: seq, DisplayName: name, RevisedAt: r.clock.Now()}
+				if err := r.h.Accounts.InsertProfileRevision(ctx, tx, rev); err != nil {
+					return err
+				}
+				revs = append(revs, rev)
+			}
+			if !head {
+				return nil
+			}
+			last := revs[len(revs)-1]
+			return r.h.Accounts.UpsertProfileHead(ctx, tx, account.ProfileHead{AccountID: a.ID, RevisionID: last.ID, Seq: last.Seq})
+		})
+		return a.ID, revs
+	}
+	first, firstRevs := remote("first", 3, true)
+	second, _ := remote("second", 2, true)
+	remote("current", 1, true)
+	headless, headlessRevs := remote("headless", 2, false)
+
+	listed, err := r.h.Profiles.ListRemoteAccountsWithPastProfiles(ctx, "", 10)
+	if want := []string{first, second}; err != nil || !slices.Equal(listed, want) {
+		t.Errorf("ListRemoteAccountsWithPastProfiles = %v, %v; want %v in ID order", listed, err, want)
+	}
+	if page, err := r.h.Profiles.ListRemoteAccountsWithPastProfiles(ctx, first, 1); err != nil || !slices.Equal(page, []string{second}) {
+		t.Errorf("the page after the first = %v, %v; want [%s]", page, err, second)
+	}
+
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+		return errors.Join(
+			r.h.Profiles.PrunePastProfiles(ctx, tx, first),
+			r.h.Profiles.PrunePastProfiles(ctx, tx, headless),
+		)
 	})
-	if err != nil {
-		t.Fatalf("RecordRelayedStatus = %v", err)
+	listed, err = r.h.Profiles.ListRemoteAccountsWithPastProfiles(ctx, "", 10)
+	if want := []string{second}; err != nil || !slices.Equal(listed, want) {
+		t.Errorf("after PrunePastProfiles = %v, %v; want %v", listed, err, want)
 	}
-	if _, err := e.interactions.Favourite(ctx, reader, favourited.ID); err != nil {
-		t.Fatal(err)
+	if cur, err := r.h.Accounts.FindCurrentProfile(ctx, first); err != nil || cur.ID != firstRevs[2].ID {
+		t.Errorf("FindCurrentProfile(pruned) = %+v, %v; want the current revision %s kept", cur, err, firstRevs[2].ID)
 	}
-	r := appcontent.NewRelayedRetention(appcontent.RelayedRetentionDeps{
-		UnitOfWork: e.rh.UnitOfWork, Repository: e.rh.Statuses, Retention: e.rh.Retention, Notifications: e.notifications,
-		Follows: stubFollows{bobID: true}, Clock: e.clock, Batch: 1,
-		Period: func(context.Context) (time.Duration, error) { return 7 * 24 * time.Hour, nil },
+	// An account without a head keeps everything: a head now makes its past revision listed.
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+		last := headlessRevs[len(headlessRevs)-1]
+		return r.h.Accounts.UpsertProfileHead(ctx, tx, account.ProfileHead{AccountID: headless, RevisionID: last.ID, Seq: last.Seq})
 	})
-	total, after := 0, ""
-	for range 100 {
-		next, n, err := r.Run(ctx, after)
-		if err != nil {
-			t.Fatalf("Run(%q) = %v", after, err)
-		}
-		total += n
-		if after = next; next == "" {
-			break
-		}
-	}
-	if total != 2 {
-		t.Errorf("purged %d relayed statuses, want 2", total)
-	}
-	e.purged(t, old, oldRev)
-	e.purged(t, older, olderRev)
-	for _, st := range []content.Status{young, ofFollowed, favourited, plain} {
-		e.kept(t, st)
-	}
-	// The purge of every remote status leaves them to their own retention.
-	if n := e.purgeAll(t, e.retention(retentionPeriod, 0, 0)); n != 0 {
-		t.Errorf("the retention purge took %d statuses, want 0", n)
+	listed, err = r.h.Profiles.ListRemoteAccountsWithPastProfiles(ctx, "", 10)
+	if want := []string{second, headless}; err != nil || !slices.Equal(listed, want) {
+		t.Errorf("after the head of the account without one = %v, %v; want %v", listed, err, want)
 	}
 }

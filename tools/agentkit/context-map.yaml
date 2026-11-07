@@ -334,7 +334,7 @@ entries:
     docs: ["docs/architecture/data-model/04-tables/06-timeline.md#46-timeline", "docs/architecture/data-model/06-timeline-queries.md#6-タイムラインのクエリ", "docs/adr/0013-timeline-strategy.md"]
     userdocs: ["docs/guide/following.md"]
   - name: lists
-    paths: ["internal/domain/timeline/list.go", "internal/app/timeline/lists.go", "internal/adapter/db/*/timeline_lists.go", "internal/interface/clientapi/lists.go", "pkg/testkit/timeline_lists_contract.go", "api/spec/paths/lists*.yaml", "api/spec/paths/accounts_{id}_lists.yaml", "api/spec/paths/timelines_list_{id}.yaml", "app/web/src/features/lists/**", "app/web/src/routes/lists.tsx", "app/web/src/routes/lists_.$id.tsx", "app/web/e2e/lists.spec.ts"]
+    paths: ["internal/domain/timeline/list.go", "internal/app/timeline/lists.go", "internal/adapter/db/*/timeline_lists.go", "internal/interface/clientapi/lists.go", "pkg/testkit/timeline_lists_flows.go", "api/spec/paths/lists*.yaml", "api/spec/paths/accounts_{id}_lists.yaml", "api/spec/paths/timelines_list_{id}.yaml", "app/web/src/features/lists/**", "app/web/src/routes/lists.tsx", "app/web/src/routes/lists_.$id.tsx", "app/web/e2e/lists.spec.ts"]
     docs: ["docs/adr/0013-timeline-strategy.md#decision決定", "docs/architecture/data-model/04-tables/06-timeline.md#リスト", "docs/architecture/web-client/screens/lists.md", "docs/architecture/web-client/screens/list-timeline.md"]
     userdocs: ["docs/guide/following.md"]
     notes:
@@ -345,7 +345,7 @@ entries:
     docs: ["docs/architecture/data-model/04-tables/07-notification.md#47-notification"]
     userdocs: ["docs/guide/notifications.md"]
   - name: post-subscriptions
-    paths: ["internal/domain/notification/subscription.go", "internal/app/notification/subscription.go", "internal/adapter/db/*/notification_subscription.go", "queries/*/notification_subscription.sql", "internal/interface/clientapi/subscriptions.go", "api/spec/paths/accounts_{id}_subscribe.yaml", "api/spec/paths/accounts_{id}_unsubscribe.yaml", "api/spec/paths/subscriptions.yaml", "pkg/testkit/post_subscription_contract.go", "internal/platform/post_subscriptions_test.go"]
+    paths: ["internal/domain/notification/subscription.go", "internal/app/notification/subscription.go", "internal/adapter/db/*/notification_subscription.go", "queries/*/notification_subscription.sql", "internal/interface/clientapi/subscriptions.go", "api/spec/paths/accounts_{id}_subscribe.yaml", "api/spec/paths/accounts_{id}_unsubscribe.yaml", "api/spec/paths/subscriptions.yaml", "pkg/testkit/post_subscription_flows.go", "internal/platform/post_subscriptions_test.go"]
     docs: ["docs/adr/0086-email-delivery.md#14-投稿の通知の購読", "docs/architecture/data-model/04-tables/07-notification.md#47-notification"]
     notes:
       - "A local account is subscribed to with or without a follow, a remote one only while graph.Follows is true; a notify with a pending follow of a remote account is a post_subscription_requests row that graph.follow_accepted turns into the subscription."

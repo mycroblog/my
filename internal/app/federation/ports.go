@@ -20,7 +20,8 @@ var ErrNotFound = errors.New("federation: not found")
 // Repository is the persistence port of the federation module's outbound side: outbound
 // activities, their documents, their deliveries, and the health of remote servers
 // (data-model §4.8). The database adapters implement it and pass
-// testkit.FederationRepositoryContract.
+// testkit.FederationRepositoryContract; the outbound use cases on it are testkit.FederationFlows
+// (internal/flowtest/federation).
 //
 // Methods that take a uow.Tx run inside that transaction; the others read committed data outside
 // any transaction. Lookups that find nothing return an error wrapping ErrNotFound.

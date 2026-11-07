@@ -1,0 +1,2142 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+
+package testkit
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"reflect"
+	"slices"
+	"sync"
+	"testing"
+	"time"
+
+	appidentity "github.com/mycroblog/my/internal/app/identity"
+	appmoderation "github.com/mycroblog/my/internal/app/moderation"
+	"github.com/mycroblog/my/internal/app/queue"
+	"github.com/mycroblog/my/internal/app/supporters"
+	"github.com/mycroblog/my/internal/app/uow"
+	"github.com/mycroblog/my/internal/domain/identity"
+	"github.com/mycroblog/my/internal/domain/moderation"
+	domain "github.com/mycroblog/my/internal/domain/supporters"
+)
+
+// SupporterHarness is what SupporterRepositoryContract and SupporterFlows need from a database
+// adapter: the harness of the identity and account repositories, the supporters repository, and
+// a PaymentWorld for the provider's side.
+type SupporterHarness struct {
+	AccountHarness
+	Supporters supporters.Repository
+	NewWorld   func(o PaymentWorldOptions) PaymentWorld
+}
+
+// SupporterFactory returns a harness on a new, empty database whose UnitOfWork uses opts. The
+// factory registers the cleanup of everything it creates with t.Cleanup.
+type SupporterFactory func(t *testing.T, opts uow.Options) SupporterHarness
+
+// SupporterFlows verifies the supporters repository of a database adapter through the use cases of
+// the supporter program (ADR-0072, FR-910 to FR-912) on the identity repository's roles and the
+// fake provider: the program is disabled by default, needs a provider and email, and is not
+// disabled while subscriptions go on, and nothing of it shows while it is disabled; a plan takes
+// only a role that nobody holds, with member permissions below every staff role, which nobody
+// grants, changes, or deletes by hand afterwards and below which no staff role goes; the plans keep
+// their order; a subscription follows the provider's snapshots and our deadlines through every
+// state with its role (the end of the period after a cancellation, the 7-day grace, refunds and
+// chargebacks, changes of plan at once and at the end of the period); a user subscribes once at a
+// time and only when eligible; new prices go to the new subscriptions only; retiring a plan ends
+// its subscriptions and frees its role; a staff member cancels at once; the supporter list shows
+// only the members who chose to be listed, by plan, until their subscription ends; and the
+// projections rebuild to what the use cases wrote. These are the flows of ADR-0153 §1, which
+// internal/flowtest/supporters runs once on SQLite; SupporterRepositoryContract checks the
+// repository's methods on every adapter.
+func SupporterFlows(t *testing.T, newHarness SupporterFactory) {
+	t.Helper()
+	cases := []struct {
+		name string
+		run  func(t *testing.T, e *supporterEnv)
+	}{
+		{"EnablesOnlyWithAProviderAndEmail", supporterProgram},
+		{"ShowsNothingWhileDisabled", supporterDisabled},
+		{"TakesOnlyFitRolesAndGuardsThem", supporterSafetyRail},
+		{"KeepsTheOrderOfThePlans", supporterTiers},
+		{"GrantsTheRoleToThePeriodEnd", supporterCancel},
+		{"KeepsTheRoleThroughTheGrace", supporterGrace},
+		{"RevokesOnFullRefundsAndChargebacks", supporterReversals},
+		{"ChangesPlansAtOnceOrAtThePeriodEnd", supporterChanges},
+		{"RetriesAChangeWithItsKey", supporterChangeRetry},
+		{"MakesAWithdrawnChangeAgain", supporterChangeAgain},
+		{"KeepsThePlanWhenTheChangesPaymentFails", supporterChangePayment},
+		{"DropsWhatAFailedChangeLeftCollectible", supporterUnpaidChange},
+		{"RefusesAChangeThatMeetsACancellationAtTheProvider", supporterChangeMeetsCancellation},
+		{"SendsACancellationAgainWithANewKey", supporterCancelRetry},
+		{"AppliesNoSnapshotOlderThanTheApplied", supporterSnapshotOrder},
+		{"AbandonsUnpaidCheckouts", supporterAbandon},
+		{"StartsACheckoutTwiceInTheSameHour", supporterCheckoutAgain},
+		{"LeavesOnePageOfACheckoutPayable", supporterOnePayablePage},
+		{"MakesANewPageWhenTheOpenOneIsAboutToExpire", supporterResumeNearExpiry},
+		{"AnswersAStartAfterThePaymentWithTheReturn", supporterStartAfterPaid},
+		{"GivesNoSecondPageWhenAnExpiryMeetsAPayment", supporterExpiryMeetsPayment},
+		{"LeavesOnePageOfTwoStartsSideBySide", supporterStartsSideBySide},
+		{"CancelsAndRefundsASecondSubscription", supporterSecondSubscription},
+		{"CancelsAndRefundsAPaymentAfterTheClose", supporterPaidAfterClose},
+		{"RefundsASecondSubscriptionTheProviderDeleted", supporterRefundAfterDeletion},
+		{"RefundsWhatWasPaidWhenALinkedPendingCloses", supporterLinkedPendingCloses},
+		{"KeepsTheRefundWhenABillingStopFollowsAFailedRead", supporterOrphanAfterFailedRead},
+		{"RefundsALinkedPendingThatStaffCancelsAfterAFailedRead", supporterStaffCancelsLinkedPending},
+		{"LinksNoSubscriptionThatEnded", supporterEndedTakesNoLink},
+		{"LeavesASecondSubscriptionThatEndedBeforeItsJob", supporterEndedBeforeTheJob},
+		{"MakesNoPageForASubscriptionThatClosesMeanwhile", supporterStartMeetsClose},
+		{"SubscribesOnceAndOnlyWhenEligible", supporterEligibility},
+		{"ChargesNewPricesToNewSubscriptions", supporterPrices},
+		{"RetiresPlans", supporterRetire},
+		{"CancelsByStaff", supporterStaffCancel},
+		{"ListsOnlyTheMembersWhoChoseTo", supporterListings},
+		{"RebuildsItsProjections", supporterRebuild},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) { tc.run(t, newSupporterEnv(t, newHarness)) })
+	}
+}
+
+// supporterUsers is the users of the contract, by ID.
+type supporterUsers struct {
+	mu    sync.Mutex
+	users map[string]supporters.User
+}
+
+func (u *supporterUsers) SupporterUser(_ context.Context, id string) (supporters.User, error) {
+	u.mu.Lock()
+	defer u.mu.Unlock()
+	user, ok := u.users[id]
+	if !ok {
+		return supporters.User{}, fmt.Errorf("%w: user %s", supporters.ErrNotFound, id)
+	}
+	return user, nil
+}
+
+func (u *supporterUsers) AccountIDs(_ context.Context, ids []string) (map[string]string, error) {
+	u.mu.Lock()
+	defer u.mu.Unlock()
+	out := map[string]string{}
+	for _, id := range ids {
+		if user, ok := u.users[id]; ok {
+			out[id] = user.AccountID
+		}
+	}
+	return out, nil
+}
+
+func (u *supporterUsers) put(user supporters.User) {
+	u.mu.Lock()
+	defer u.mu.Unlock()
+	u.users[user.ID] = user
+}
+
+// subscriptionWorld is the provider's side of the contract: the fake adapter.
+type subscriptionWorld interface {
+	PaymentWorld
+	Subscription(ref supporters.SubscriptionRef) (supporters.SubscriptionSnapshot, bool)
+}
+
+// refundControl is the world's control of the refunds of second subscriptions.
+type refundControl interface {
+	FailRefunds(err error)
+	Refunded(sub supporters.SubscriptionRef) bool
+	DeleteCanceled(listsCharges bool)
+	FailSubscriptionReads(err error)
+}
+
+// changePayments is the world's control of the payments of changes at once.
+type changePayments interface {
+	FailChangePayments(err error)
+	ChangeCharges() int
+}
+
+type supporterEnv struct {
+	*accountEnv
+	h        SupporterHarness
+	world    subscriptionWorld
+	users    *supporterUsers
+	jobs     *paymentJobs
+	handlers *queue.JobHandlerRegistry
+	audit    *auditRecorder
+	svc      *supporters.Service
+	deps     supporters.Deps
+	seq      int
+}
+
+func newSupporterEnv(t *testing.T, newHarness SupporterFactory) *supporterEnv {
+	t.Helper()
+	projectors := &uow.Projectors{}
+	h := newHarness(t, uow.Options{Retry: uow.RetryPolicy{MaxAttempts: 20}, Projectors: projectors})
+	rec := &auditRecorder{}
+	ae := newAccountEnvOn(h.AccountHarness, projectors, func(p *uow.Projectors) {
+		p.Register(appmoderation.EventAuditRecorded, func(_ context.Context, _ uow.Tx, ev uow.Event) error {
+			rec.add(ev.(appmoderation.AuditRecorded).Entry)
+			return nil
+		})
+	})
+	world, ok := h.NewWorld(PaymentWorldOptions{Name: paymentProvider, Mode: supporters.ModeTest, Now: ae.clock.Now}).(subscriptionWorld)
+	if !ok {
+		t.Fatal("the payment world does not report its subscriptions")
+	}
+	e := &supporterEnv{
+		accountEnv: ae, h: h, world: world, users: &supporterUsers{users: map[string]supporters.User{}},
+		jobs: &paymentJobs{pending: map[string]bool{}}, handlers: &queue.JobHandlerRegistry{}, audit: rec,
+	}
+	e.deps = supporters.Deps{
+		UnitOfWork: h.UnitOfWork, Repository: h.Supporters, Roles: ae.identity, Users: e.users, Provider: world, SendsEmail: true,
+		Outbox: queue.AfterCommit(projectors, e.jobs, nil), Clock: ae.clock, IDs: ae.ids, Logger: discardLogger(),
+	}
+	e.svc = supporters.NewService(e.deps)
+	e.svc.RegisterJobs(e.handlers, nil)
+	return e
+}
+
+// run runs the queued jobs, the ones they queue included, and fails the test on one that does
+// not end done.
+func (e *supporterEnv) run(t *testing.T) {
+	t.Helper()
+	for i := 0; ; i++ {
+		job, ok := e.jobs.next()
+		if !ok {
+			return
+		}
+		h, _, found := e.handlers.Lookup(job.Type)
+		if !found {
+			t.Fatalf("no handler of %s", job.Type)
+		}
+		r := h(t.Context(), queue.Job{
+			ID: fmt.Sprintf("job-%d", i), Type: job.Type, Payload: job.Payload, IdempotencyKey: job.IdempotencyKey,
+			OrderingKey: job.OrderingKey, Attempt: 1, RunAt: job.RunAt, CreatedAt: e.clock.Now(),
+		})
+		if !r.IsDone() {
+			t.Fatalf("job %s (%s) did not end done: %v", job.Type, job.IdempotencyKey, r.Err())
+		}
+		e.jobs.done(job)
+	}
+}
+
+func (e *supporterEnv) enable(t *testing.T) {
+	t.Helper()
+	if _, err := e.svc.SetProgram(t.Context(), true, ""); err != nil {
+		t.Fatalf("SetProgram(true) = %v", err)
+	}
+}
+
+// role creates a role of the CLI.
+func (e *supporterEnv) role(t *testing.T, key string, position int, perms ...identity.Permission) appidentity.RoleWithPermissions {
+	t.Helper()
+	r, err := e.identity.CreateRole(t.Context(), appidentity.CreateRoleInput{Key: key, Position: position, Permissions: perms})
+	if err != nil {
+		t.Fatalf("CreateRole(%s) = %v", key, err)
+	}
+	return r
+}
+
+func terms(name string, rank int, monthly int64) domain.PlanTerms {
+	return domain.PlanTerms{Name: name, MonthlyAmountMinor: monthly, AnnualDiscountPercent: 10, EmojiLimit: 5, Rank: rank, Visibility: domain.VisibilityPublic}
+}
+
+// plan creates a plan on a new role and makes its prices.
+func (e *supporterEnv) plan(t *testing.T, key string, rank, position int, monthly int64) supporters.PlanView {
+	t.Helper()
+	e.role(t, key, position)
+	p, err := e.svc.CreatePlan(t.Context(), supporters.PlanInput{RoleKey: key, Currency: "JPY", Terms: terms(key, rank, monthly)})
+	if err != nil {
+		t.Fatalf("CreatePlan(%s) = %v", key, err)
+	}
+	e.run(t)
+	return e.planOf(t, p.ID)
+}
+
+func (e *supporterEnv) planOf(t *testing.T, id string) supporters.PlanView {
+	t.Helper()
+	p, err := e.svc.Plan(t.Context(), id)
+	if err != nil {
+		t.Fatalf("Plan(%s) = %v", id, err)
+	}
+	return p
+}
+
+// user adds an eligible user.
+func (e *supporterEnv) user(name string) string {
+	id := e.ids.NewID()
+	e.users.put(supporters.User{ID: id, AccountID: NamedID("acct-" + name), Handle: "@" + name, Email: name + "@example.com", EmailVerified: true, Locale: "en"})
+	return id
+}
+
+// subscribe starts a subscription, completes its checkout at the provider with an active
+// subscription on the plan's price, and applies it as the return from the checkout does. It
+// returns our subscription and the provider's.
+func (e *supporterEnv) subscribe(t *testing.T, userID string, plan supporters.PlanView, interval domain.Interval) (string, supporters.SubscriptionRef) {
+	t.Helper()
+	co, err := e.svc.StartCheckout(t.Context(), supporters.CheckoutInput{
+		UserID: userID, PlanID: plan.ID, Interval: interval, SuccessURL: "https://" + contractHost + "/ok", CancelURL: "https://" + contractHost + "/no",
+	})
+	if err != nil {
+		t.Fatalf("StartCheckout = %v", err)
+	}
+	sub, err := e.svc.Subscription(t.Context(), co.SubscriptionID)
+	if err != nil || sub.Checkout == nil {
+		t.Fatalf("the subscription after the checkout: %+v, %v", sub, err)
+	}
+	e.seq++
+	ref := supporters.SubscriptionRef(fmt.Sprintf("sub_%d", e.seq))
+	e.world.PutCheckout(supporters.CheckoutResult{
+		Ref: sub.Checkout.Ref, Status: supporters.CheckoutCompleted, LocalID: co.SubscriptionID,
+		Customer: supporters.CustomerRef(fmt.Sprintf("cus_%d", e.seq)), Subscription: ref,
+	})
+	e.world.PutSubscription(supporters.SubscriptionSnapshot{
+		Ref: ref, Customer: supporters.CustomerRef(fmt.Sprintf("cus_%d", e.seq)), LocalID: co.SubscriptionID,
+		Price: plan.Prices[interval].Ref, Status: supporters.StatusActive,
+		PeriodStart: e.clock.Now(), PeriodEnd: e.clock.Now().Add(30 * 24 * time.Hour),
+	})
+	e.sync(t, co.SubscriptionID)
+	return co.SubscriptionID, ref
+}
+
+// sync queues and runs the JobSync of a subscription, as a webhook or a deadline does.
+func (e *supporterEnv) sync(t *testing.T, id string) {
+	t.Helper()
+	e.seq++
+	if err := e.jobs.Enqueue(t.Context(), supporters.SyncJob(id, fmt.Sprintf("test-%d", e.seq))); err != nil {
+		t.Fatal(err)
+	}
+	e.run(t)
+}
+
+// change changes the provider's subscription and syncs ours.
+func (e *supporterEnv) change(t *testing.T, id string, ref supporters.SubscriptionRef, f func(*supporters.SubscriptionSnapshot)) {
+	t.Helper()
+	s, ok := e.world.Subscription(ref)
+	if !ok {
+		t.Fatalf("no subscription %s at the provider", ref)
+	}
+	f(&s)
+	e.world.PutSubscription(s)
+	e.sync(t, id)
+}
+
+func (e *supporterEnv) sub(t *testing.T, id string) supporters.SubscriptionView {
+	t.Helper()
+	v, err := e.svc.Subscription(t.Context(), id)
+	if err != nil {
+		t.Fatalf("Subscription(%s) = %v", id, err)
+	}
+	return v
+}
+
+// expect checks the state of a subscription and whether its user holds the plan's role.
+func (e *supporterEnv) expect(t *testing.T, id string, want domain.State, plan supporters.PlanView, holds bool) supporters.SubscriptionView {
+	t.Helper()
+	v := e.sub(t, id)
+	if v.Current.State != want {
+		t.Fatalf("state %s, want %s", v.Current.State, want)
+	}
+	if got := e.holds(t, v.UserID, plan.RoleID); got != holds {
+		t.Fatalf("holds the role of %s: %v, want %v (state %s)", plan.Revision.Name, got, holds, v.Current.State)
+	}
+	return v
+}
+
+func (e *supporterEnv) holds(t *testing.T, userID, roleID string) bool {
+	t.Helper()
+	ids, err := e.identity.UserRoleIDs(t.Context(), userID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return slices.Contains(ids, roleID)
+}
+
+func (e *supporterEnv) managed(t *testing.T, roleID string) bool {
+	t.Helper()
+	ids, err := e.identity.ManagedRoleIDs(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+	return slices.Contains(ids, roleID)
+}
+
+func (e *supporterEnv) actions() []moderation.AuditAction {
+	var out []moderation.AuditAction
+	for _, a := range e.audit.all() {
+		out = append(out, a.Action)
+	}
+	return out
+}
+
+func supporterProgram(t *testing.T, e *supporterEnv) {
+	ctx := t.Context()
+	p, err := e.svc.Program(ctx)
+	if err != nil || p.Enabled || !p.CanEnable() || p.ConfiguredProvider != paymentProvider {
+		t.Fatalf("the program by default: %+v, %v", p, err)
+	}
+	noProvider := e.deps
+	noProvider.Provider = nil
+	if _, err := supporters.NewService(noProvider).SetProgram(ctx, true, ""); !errors.Is(err, supporters.ErrNoProvider) {
+		t.Errorf("enabled without a provider: %v", err)
+	}
+	noMail := e.deps
+	noMail.SendsEmail = false
+	if _, err := supporters.NewService(noMail).SetProgram(ctx, true, ""); !errors.Is(err, supporters.ErrNoMail) {
+		t.Errorf("enabled without email: %v", err)
+	}
+	e.enable(t)
+	e.enable(t) // again: nothing more
+	if p, _ := e.svc.Program(ctx); !p.Enabled || p.Provider != paymentProvider || p.ProviderMismatch() {
+		t.Fatalf("the enabled program: %+v", p)
+	}
+	plan := e.plan(t, "supporter", 1, 10, 500)
+	id, _ := e.subscribe(t, e.user("alice"), plan, domain.IntervalMonth)
+	if _, err := e.svc.SetProgram(ctx, false, ""); !errors.Is(err, supporters.ErrLiveSubscriptions) {
+		t.Fatalf("disabled with a subscription: %v", err)
+	}
+	if err := e.svc.CancelByStaff(ctx, id, ""); err != nil {
+		t.Fatal(err)
+	}
+	e.run(t)
+	if p, err := e.svc.SetProgram(ctx, false, ""); err != nil || p.Enabled {
+		t.Fatalf("disabled after the subscription ended: %+v, %v", p, err)
+	}
+	var program []moderation.AuditAction
+	for _, a := range e.actions() {
+		if t, _ := a.Target(); t == moderation.AuditTargetSupporterProgram {
+			program = append(program, a)
+		}
+	}
+	if !reflect.DeepEqual(program, []moderation.AuditAction{moderation.AuditSupporterProgramEnabled, moderation.AuditSupporterProgramDisabled}) {
+		t.Errorf("audit log of the program: %v", program)
+	}
+	// Another provider than the program's refuses new subscriptions until it is enabled again.
+	e.enable(t)
+	other := e.deps
+	other.Provider = renamedProvider{e.world, "other"}
+	if err := mismatchCheckout(ctx, supporters.NewService(other), e.user("bob"), plan.ID); !errors.Is(err, supporters.ErrProviderMismatch) {
+		t.Errorf("a checkout on another provider: %v", err)
+	}
+}
+
+func mismatchCheckout(ctx context.Context, svc *supporters.Service, userID, planID string) error {
+	_, err := svc.StartCheckout(ctx, supporters.CheckoutInput{UserID: userID, PlanID: planID, Interval: domain.IntervalMonth})
+	return err
+}
+
+// renamedProvider is a provider under another name.
+type renamedProvider struct {
+	supporters.PaymentProvider
+	name string
+}
+
+func (p renamedProvider) Name() string { return p.name }
+
+func supporterDisabled(t *testing.T, e *supporterEnv) {
+	ctx := t.Context()
+	plan := e.plan(t, "supporter", 1, 10, 500)
+	if !plan.Ready() {
+		t.Fatalf("the plan has no prices after its job: %+v", plan.Prices)
+	}
+	if _, err := e.svc.OfferedPlans(ctx); !errors.Is(err, supporters.ErrDisabled) {
+		t.Errorf("OfferedPlans while disabled: %v", err)
+	}
+	alice := e.user("alice")
+	if _, err := e.svc.StartCheckout(ctx, supporters.CheckoutInput{UserID: alice, PlanID: plan.ID, Interval: domain.IntervalMonth}); !errors.Is(err, supporters.ErrDisabled) {
+		t.Errorf("StartCheckout while disabled: %v", err)
+	}
+	if _, err := e.svc.OwnSubscription(ctx, alice); !errors.Is(err, supporters.ErrDisabled) {
+		t.Errorf("OwnSubscription while disabled: %v", err)
+	}
+	if counts, err := e.svc.PlanCounts(ctx); err != nil || len(counts) != 0 {
+		t.Errorf("PlanCounts while disabled: %v, %v", counts, err)
+	}
+	if _, limited, err := e.svc.EmojiLimit(ctx, alice); err != nil || limited {
+		t.Errorf("EmojiLimit while disabled: %v, %v", limited, err)
+	}
+	e.enable(t)
+	offered, err := e.svc.OfferedPlans(ctx)
+	if err != nil || len(offered) != 1 || offered[0].ID != plan.ID {
+		t.Fatalf("OfferedPlans: %v, %v", offered, err)
+	}
+	hidden := domain.VisibilityHidden
+	if _, err := e.svc.RevisePlan(ctx, supporters.PlanUpdate{ID: plan.ID, Visibility: &hidden}); err != nil {
+		t.Fatal(err)
+	}
+	if offered, _ := e.svc.OfferedPlans(ctx); len(offered) != 0 {
+		t.Errorf("a hidden plan is offered: %v", offered)
+	}
+	if _, err := e.svc.StartCheckout(ctx, supporters.CheckoutInput{UserID: alice, PlanID: plan.ID, Interval: domain.IntervalMonth}); !errors.Is(err, supporters.ErrPlanUnavailable) {
+		t.Errorf("StartCheckout of a hidden plan: %v", err)
+	}
+}
+
+func supporterSafetyRail(t *testing.T, e *supporterEnv) {
+	ctx := t.Context()
+	// The first administrator brings the built-in roles.
+	admin, err := e.identity.CreateAdmin(ctx, appidentity.CreateAdminInput{
+		Username: "root", Email: "root@example.com", Password: "correct horse battery staple",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	create := func(key string) error {
+		_, err := e.svc.CreatePlan(ctx, supporters.PlanInput{RoleKey: key, Currency: "JPY", Terms: terms(key, len(key), 500)})
+		return err
+	}
+	rule := func(err error) identity.ManageRule {
+		var ue *appidentity.UnmanageableRoleError
+		if errors.As(err, &ue) {
+			return ue.Rule
+		}
+		return ""
+	}
+	if got := rule(create(identity.RoleModerator)); got != identity.RuleBuiltin {
+		t.Errorf("moderator as a plan's role: %s", got)
+	}
+	e.role(t, "helper", 60, identity.PermManageReports)
+	if got := rule(create("helper")); got != identity.RulePermissions {
+		t.Errorf("a role with a staff permission: %s", got)
+	}
+	e.role(t, "high", 100)
+	if got := rule(create("high")); got != identity.RulePosition {
+		t.Errorf("a role at the moderator's position: %s", got)
+	}
+	e.role(t, "held", 5)
+	if _, err := e.identity.GrantRole(ctx, appidentity.RoleChangeInput{UserID: admin.User.ID, RoleKey: "held"}); err != nil {
+		t.Fatal(err)
+	}
+	if got := rule(create("held")); got != identity.RuleHeld {
+		t.Errorf("a held role: %s", got)
+	}
+	if _, err := e.svc.CreatePlan(ctx, supporters.PlanInput{RoleKey: "missing", Currency: "JPY", Terms: terms("x", 1, 500)}); !errors.Is(err, appidentity.ErrNotFound) {
+		t.Errorf("an unknown role: %v", err)
+	}
+	if plans, _ := e.svc.Plans(ctx); len(plans) != 0 {
+		t.Fatalf("refused plans were recorded: %v", plans)
+	}
+	plan := e.plan(t, "supporter", 1, 10, 500)
+	if !e.managed(t, plan.RoleID) {
+		t.Fatal("the plan's role is not managed")
+	}
+	if got := rule(create("supporter")); got != identity.RuleManaged {
+		t.Errorf("the role of another plan: %s", got)
+	}
+	// Nobody grants, revokes, changes, or deletes the plan's role by hand.
+	dave := admin.User.ID
+	if _, err := e.identity.GrantRole(ctx, appidentity.RoleChangeInput{UserID: dave, RoleKey: "supporter"}); !errors.Is(err, appidentity.ErrRoleManagedByPlan) {
+		t.Errorf("GrantRole of a plan's role: %v", err)
+	}
+	if _, err := e.identity.RevokeRole(ctx, appidentity.RoleChangeInput{UserID: dave, RoleKey: "supporter"}); !errors.Is(err, appidentity.ErrRoleManagedByPlan) {
+		t.Errorf("RevokeRole of a plan's role: %v", err)
+	}
+	pos := 20
+	if _, err := e.identity.UpdateRole(ctx, appidentity.UpdateRoleInput{Key: "supporter", Position: &pos}); !errors.Is(err, appidentity.ErrRoleManagedByPlan) {
+		t.Errorf("UpdateRole of a plan's role: %v", err)
+	}
+	if _, err := e.identity.UpdateRole(ctx, appidentity.UpdateRoleInput{
+		Key: "supporter", SetPermissions: true, Permissions: []identity.Permission{identity.PermManageReports},
+	}); !errors.Is(err, appidentity.ErrRoleManagedByPlan) {
+		t.Errorf("a staff permission on a plan's role: %v", err)
+	}
+	if err := e.identity.DeleteRole(ctx, "supporter", ""); !errors.Is(err, appidentity.ErrRoleManagedByPlan) {
+		t.Errorf("DeleteRole of a plan's role: %v", err)
+	}
+	// No staff role goes at or below the plan's role.
+	low := 10
+	if _, err := e.identity.UpdateRole(ctx, appidentity.UpdateRoleInput{Key: identity.RoleModerator, Position: &low}); !errors.Is(err, appidentity.ErrBreaksManagedRoles) {
+		t.Errorf("the moderator moved onto the plan's role: %v", err)
+	}
+	if _, err := e.identity.UpdateRole(ctx, appidentity.UpdateRoleInput{
+		Key: "held", SetPermissions: true, Permissions: []identity.Permission{identity.PermViewAudit},
+	}); !errors.Is(err, appidentity.ErrBreaksManagedRoles) {
+		t.Errorf("a staff permission below the plan's role: %v", err)
+	}
+	if _, err := e.identity.CreateRole(ctx, appidentity.CreateRoleInput{Key: "lowstaff", Position: 3, Permissions: []identity.Permission{identity.PermManageJobs}}); !errors.Is(err, appidentity.ErrBreaksManagedRoles) {
+		t.Errorf("a new staff role below the plan's role: %v", err)
+	}
+	// The plan form changes the role, within the rail.
+	staff := []appidentity.Permission{identity.PermManageReports}
+	if _, err := e.svc.RevisePlan(ctx, supporters.PlanUpdate{ID: plan.ID, SetRolePermissions: true, RolePermissions: staff}); rule(err) != identity.RulePermissions {
+		t.Errorf("a staff permission from the plan form: %v", err)
+	}
+	high := 100
+	if _, err := e.svc.RevisePlan(ctx, supporters.PlanUpdate{ID: plan.ID, RolePosition: &high}); rule(err) != identity.RulePosition {
+		t.Errorf("the plan's role moved to the moderator's position: %v", err)
+	}
+	ok := 40
+	if p, err := e.svc.RevisePlan(ctx, supporters.PlanUpdate{ID: plan.ID, RolePosition: &ok}); err != nil || p.Role.Position != 40 {
+		t.Errorf("the plan's role moved within the rail: %+v, %v", p.Role, err)
+	}
+	if !slices.Contains(e.actions(), moderation.AuditRoleUpdated) || !slices.Contains(e.actions(), moderation.AuditSupporterPlanCreated) {
+		t.Errorf("audit log: %v", e.actions())
+	}
+}
+
+func supporterTiers(t *testing.T, e *supporterEnv) {
+	ctx := t.Context()
+	basic := e.plan(t, "basic", 1, 10, 500)
+	e.role(t, "gold", 20)
+	if _, err := e.svc.CreatePlan(ctx, supporters.PlanInput{RoleKey: "gold", Currency: "JPY", Terms: terms("gold", 1, 1000)}); !errors.Is(err, supporters.ErrTiersOutOfOrder) {
+		t.Errorf("a plan of the same rank: %v", err)
+	}
+	e.role(t, "silver", 5)
+	var te *domain.TierError
+	if _, err := e.svc.CreatePlan(ctx, supporters.PlanInput{RoleKey: "silver", Currency: "JPY", Terms: terms("silver", 2, 800)}); !errors.As(err, &te) || te.Rule != domain.TierPosition {
+		t.Errorf("a higher plan on a lower role: %v", err)
+	}
+	gold, err := e.svc.CreatePlan(ctx, supporters.PlanInput{RoleKey: "gold", Currency: "JPY", Terms: terms("gold", 2, 1000)})
+	if err != nil {
+		t.Fatal(err)
+	}
+	low := 15
+	if _, err := e.svc.RevisePlan(ctx, supporters.PlanUpdate{ID: basic.ID, RolePosition: &low}); err != nil {
+		t.Errorf("the lower plan's role below the higher one's: %v", err)
+	}
+	above := 30
+	if _, err := e.svc.RevisePlan(ctx, supporters.PlanUpdate{ID: basic.ID, RolePosition: &above}); !errors.As(err, &te) || te.Rule != domain.TierPosition {
+		t.Errorf("the lower plan's role above the higher one's: %v", err)
+	}
+	three := 3
+	if _, err := e.svc.RevisePlan(ctx, supporters.PlanUpdate{ID: basic.ID, Rank: &three}); !errors.As(err, &te) || te.Rule != domain.TierPosition {
+		t.Errorf("the lower plan ranked above the higher one: %v", err)
+	}
+	if _, err := e.svc.CreatePlan(ctx, supporters.PlanInput{RoleKey: "silver", Currency: "XXX", Terms: terms("silver", 3, 800)}); !errors.Is(err, supporters.ErrInvalidPlan) {
+		t.Errorf("a currency the provider does not take: %v", err)
+	}
+	if _, err := e.svc.CreatePlan(ctx, supporters.PlanInput{RoleKey: "silver", Currency: "JPY", Terms: terms("silver", 3, 10)}); !errors.Is(err, supporters.ErrInvalidPlan) {
+		t.Errorf("a price below the provider's minimum: %v", err)
+	}
+	plans, _ := e.svc.Plans(ctx)
+	if len(plans) != 2 || plans[0].ID != basic.ID || plans[1].ID != gold.ID {
+		t.Errorf("plans by rank: %v", plans)
+	}
+}
+
+func supporterCancel(t *testing.T, e *supporterEnv) {
+	ctx := t.Context()
+	e.enable(t)
+	plan := e.plan(t, "supporter", 1, 10, 500)
+	alice := e.user("alice")
+	id, ref := e.subscribe(t, alice, plan, domain.IntervalMonth)
+	v := e.expect(t, id, domain.StateActive, plan, true)
+	if v.Link != ref || v.Price.AmountMinor != 500 {
+		t.Fatalf("the active subscription: %+v", v)
+	}
+	if own, err := e.svc.OwnSubscription(ctx, alice); err != nil || own.ID != id {
+		t.Fatalf("OwnSubscription = %+v, %v", own, err)
+	}
+	if counts, _ := e.svc.PlanCounts(ctx); len(counts) != 1 || counts[0].Members != 1 {
+		t.Errorf("PlanCounts: %v", counts)
+	}
+	if users, _ := e.svc.SubscriptionUsers(ctx, []string{id, NamedID("unknown")}); len(users) != 1 || users[0].UserID != alice {
+		t.Errorf("SubscriptionUsers: %v", users)
+	}
+	if _, err := e.svc.Cancel(ctx, alice); err != nil {
+		t.Fatalf("Cancel = %v", err)
+	}
+	e.expect(t, id, domain.StateCanceling, plan, true)
+	if _, err := e.svc.Resume(ctx, alice); err != nil {
+		t.Fatalf("Resume = %v", err)
+	}
+	e.expect(t, id, domain.StateActive, plan, true)
+	if _, err := e.svc.Cancel(ctx, alice); err != nil {
+		t.Fatal(err)
+	}
+	// The same snapshot again changes nothing.
+	before := e.sub(t, id).Current.ID
+	e.sync(t, id)
+	if e.sub(t, id).Current.ID != before {
+		t.Error("the same snapshot recorded a transition")
+	}
+	// The period ends: the provider's subscription ends.
+	e.clock.Advance(31 * 24 * time.Hour)
+	e.change(t, id, ref, func(s *supporters.SubscriptionSnapshot) { s.Status = supporters.StatusCanceled })
+	e.expect(t, id, domain.StateExpired, plan, false)
+	if _, err := e.svc.OwnSubscription(ctx, alice); !errors.Is(err, supporters.ErrNoLiveSubscription) {
+		t.Errorf("OwnSubscription after the end: %v", err)
+	}
+	var system []moderation.AuditAction
+	for _, a := range e.audit.all() {
+		if a.ActorKind == moderation.AuditActorSystem {
+			system = append(system, a.Action)
+		}
+	}
+	if !reflect.DeepEqual(system, []moderation.AuditAction{moderation.AuditRoleGranted, moderation.AuditRoleRevoked}) {
+		t.Errorf("the system's audit log: %v", system)
+	}
+}
+
+func supporterGrace(t *testing.T, e *supporterEnv) {
+	e.enable(t)
+	plan := e.plan(t, "supporter", 1, 10, 500)
+	id, ref := e.subscribe(t, e.user("alice"), plan, domain.IntervalMonth)
+	failed := e.clock.Advance(30 * 24 * time.Hour)
+	e.change(t, id, ref, func(s *supporters.SubscriptionSnapshot) {
+		s.Status, s.LatestPaymentFailed, s.PeriodEnd = supporters.StatusPastDue, failed, failed.Add(30*24*time.Hour)
+	})
+	v := e.expect(t, id, domain.StatePastDue, plan, true)
+	if v.Current.Grace == nil || !v.Current.Grace.EndsAt.Equal(failed.Add(domain.GracePeriod).UTC().Truncate(time.Millisecond)) {
+		t.Fatalf("grace %+v", v.Current.Grace)
+	}
+	// Six days later the deadline is not due.
+	e.clock.Advance(6 * 24 * time.Hour)
+	if err := e.svc.QueueDeadlines(t.Context()); err != nil {
+		t.Fatal(err)
+	}
+	e.run(t)
+	e.expect(t, id, domain.StatePastDue, plan, true)
+	// Seven days after the failure the Scheduler's deadline takes the role away; the provider
+	// still retries.
+	e.clock.Advance(24 * time.Hour)
+	if err := e.svc.QueueDeadlines(t.Context()); err != nil {
+		t.Fatal(err)
+	}
+	e.run(t)
+	v = e.expect(t, id, domain.StateLapsed, plan, false)
+	if v.Current.Reason != domain.ReasonGraceExpired {
+		t.Errorf("reason %s", v.Current.Reason)
+	}
+	// The provider's retry succeeds: the role comes back.
+	e.change(t, id, ref, func(s *supporters.SubscriptionSnapshot) {
+		s.Status, s.LatestPaymentFailed = supporters.StatusActive, time.Time{}
+	})
+	e.expect(t, id, domain.StateActive, plan, true)
+}
+
+func supporterReversals(t *testing.T, e *supporterEnv) {
+	ctx := t.Context()
+	e.enable(t)
+	plan := e.plan(t, "supporter", 1, 10, 500)
+	id, ref := e.subscribe(t, e.user("alice"), plan, domain.IntervalMonth)
+	refund := func(mid, gross, parent string, kind supporters.MoneyKind, sub supporters.SubscriptionRef) supporters.MoneyMovement {
+		return supporters.MoneyMovement{
+			ID: mid, Kind: kind, ParentID: "txn_pay", ParentGross: parent, Subscription: sub, OccurredAt: e.clock.Now(),
+			Gross: gross, Fee: "0", Net: gross, Currency: "JPY", Final: true,
+		}
+	}
+	if err := e.svc.RecordMoney(ctx, paymentProvider, []supporters.MoneyMovement{refund("txn_r1", "-200", "500", supporters.MoneyRefund, ref)}); err != nil {
+		t.Fatal(err)
+	}
+	e.run(t)
+	e.expect(t, id, domain.StateActive, plan, true)
+	known, err := e.svc.KnownMoney(ctx, paymentProvider, []string{"txn_r1", "txn_pay"})
+	if err != nil || !known["txn_r1"] || known["txn_pay"] {
+		t.Errorf("KnownMoney = %v, %v", known, err)
+	}
+	full := refund("txn_r2", "-500", "500", supporters.MoneyRefund, ref)
+	for range 2 {
+		if err := e.svc.RecordMoney(ctx, paymentProvider, []supporters.MoneyMovement{full}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	e.run(t)
+	v := e.expect(t, id, domain.StateRevoked, plan, false)
+	if v.Current.Reason != domain.ReasonReversed {
+		t.Errorf("reason %s", v.Current.Reason)
+	}
+	if s, _ := e.world.Subscription(ref); s.Status != supporters.StatusCanceled {
+		t.Errorf("the provider's subscription after a full refund: %s", s.Status)
+	}
+	// A won dispute gives nothing back; a later snapshot changes nothing either.
+	if err := e.svc.RecordMoney(ctx, paymentProvider, []supporters.MoneyMovement{refund("txn_r3", "500", "500", supporters.MoneyChargebackReversal, ref)}); err != nil {
+		t.Fatal(err)
+	}
+	e.sync(t, id)
+	e.expect(t, id, domain.StateRevoked, plan, false)
+	// A chargeback revokes another subscription.
+	bob := e.user("bob")
+	id2, ref2 := e.subscribe(t, bob, plan, domain.IntervalYear)
+	if err := e.svc.RecordMoney(ctx, paymentProvider, []supporters.MoneyMovement{refund("txn_c1", "-5400", "5400", supporters.MoneyChargeback, ref2)}); err != nil {
+		t.Fatal(err)
+	}
+	e.run(t)
+	e.expect(t, id2, domain.StateRevoked, plan, false)
+	// The user subscribes again.
+	if _, err := e.svc.StartCheckout(ctx, supporters.CheckoutInput{UserID: bob, PlanID: plan.ID, Interval: domain.IntervalMonth}); err != nil {
+		t.Errorf("StartCheckout after a revocation: %v", err)
+	}
+}
+
+func supporterChanges(t *testing.T, e *supporterEnv) {
+	ctx := t.Context()
+	e.enable(t)
+	basic := e.plan(t, "basic", 1, 10, 500)
+	gold := e.plan(t, "gold", 2, 20, 1000)
+	alice := e.user("alice")
+	id, ref := e.subscribe(t, alice, basic, domain.IntervalMonth)
+	if _, err := e.svc.ChangePlan(ctx, alice, basic.ID, domain.IntervalMonth); !errors.Is(err, supporters.ErrSameChoice) {
+		t.Errorf("a change to the same choice: %v", err)
+	}
+	// An upgrade applies at once: the role is replaced.
+	if _, err := e.svc.ChangePlan(ctx, alice, gold.ID, domain.IntervalMonth); err != nil {
+		t.Fatalf("ChangePlan up = %v", err)
+	}
+	v := e.expect(t, id, domain.StateActive, gold, true)
+	if e.holds(t, alice, basic.RoleID) || v.Current.PlanID != gold.ID {
+		t.Fatalf("after the upgrade: %+v, holds basic %v", v.Current, e.holds(t, alice, basic.RoleID))
+	}
+	// A downgrade waits for the end of the period.
+	if _, err := e.svc.ChangePlan(ctx, alice, basic.ID, domain.IntervalMonth); err != nil {
+		t.Fatalf("ChangePlan down = %v", err)
+	}
+	v = e.expect(t, id, domain.StateActive, gold, true)
+	if v.Current.Scheduled == nil || v.ScheduledPrice == nil || v.ScheduledPrice.PlanID != basic.ID {
+		t.Fatalf("the scheduled downgrade: %+v", v.Current.Scheduled)
+	}
+	if _, err := e.svc.CancelScheduledChange(ctx, alice); err != nil {
+		t.Fatal(err)
+	}
+	if v = e.sub(t, id); v.Current.Scheduled != nil {
+		t.Fatalf("the downgrade was not withdrawn: %+v", v.Current.Scheduled)
+	}
+	// Yearly to monthly also waits; monthly to yearly applies at once.
+	if _, err := e.svc.ChangePlan(ctx, alice, gold.ID, domain.IntervalYear); err != nil {
+		t.Fatal(err)
+	}
+	if v = e.sub(t, id); v.Price.Interval != domain.IntervalYear || v.Current.Scheduled != nil {
+		t.Fatalf("monthly to yearly: %+v", v.Price)
+	}
+	if _, err := e.svc.ChangePlan(ctx, alice, gold.ID, domain.IntervalMonth); err != nil {
+		t.Fatal(err)
+	}
+	if v = e.sub(t, id); v.Price.Interval != domain.IntervalYear || v.Current.Scheduled == nil {
+		t.Fatalf("yearly to monthly: %+v %+v", v.Price, v.Current.Scheduled)
+	}
+	// The period ends: the provider switches to the scheduled price.
+	e.change(t, id, ref, func(s *supporters.SubscriptionSnapshot) {
+		s.Price, s.ScheduledPrice = gold.Prices[domain.IntervalMonth].Ref, ""
+	})
+	if v = e.expect(t, id, domain.StateActive, gold, true); v.Price.Interval != domain.IntervalMonth || v.Current.Scheduled != nil {
+		t.Fatalf("after the scheduled change: %+v %+v", v.Price, v.Current.Scheduled)
+	}
+	// A downgrade to the lower plan takes effect at the period's end, with its role.
+	if _, err := e.svc.ChangePlan(ctx, alice, basic.ID, domain.IntervalMonth); err != nil {
+		t.Fatal(err)
+	}
+	e.expect(t, id, domain.StateActive, gold, true)
+	e.change(t, id, ref, func(s *supporters.SubscriptionSnapshot) {
+		s.Price, s.ScheduledPrice = basic.Prices[domain.IntervalMonth].Ref, ""
+	})
+	v = e.expect(t, id, domain.StateActive, basic, true)
+	if e.holds(t, alice, gold.RoleID) {
+		t.Error("the role of the higher plan stayed after the downgrade")
+	}
+	// A change needs an active subscription.
+	if _, err := e.svc.Cancel(ctx, alice); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := e.svc.ChangePlan(ctx, alice, gold.ID, domain.IntervalMonth); !errors.Is(err, supporters.ErrSubscriptionState) {
+		t.Errorf("a change while canceling: %v", err)
+	}
+}
+
+// supporterSnapshotOrder applies two snapshots read at the same time in the wrong order: the one
+// read first, with the older state, does not replace the newer one.
+func supporterSnapshotOrder(t *testing.T, e *supporterEnv) {
+	ctx := t.Context()
+	e.enable(t)
+	basic := e.plan(t, "basic", 1, 10, 500)
+	gold := e.plan(t, "gold", 2, 20, 1000)
+	alice := e.user("alice")
+	id, ref := e.subscribe(t, alice, basic, domain.IntervalMonth)
+	older, ok := e.world.Subscription(ref)
+	if !ok {
+		t.Fatalf("no subscription %s at the provider", ref)
+	}
+	e.clock.Advance(time.Minute)
+	older.ReadAt = e.clock.Now()
+	newer := older
+	newer.Price = gold.Prices[domain.IntervalMonth].Ref
+	newer.ReadAt = e.clock.Now().Add(time.Second)
+	e.clock.Advance(time.Minute)
+	if _, err := e.svc.SyncSubscription(ctx, paymentProvider, newer); err != nil {
+		t.Fatal(err)
+	}
+	if changed, err := e.svc.SyncSubscription(ctx, paymentProvider, older); err != nil || changed {
+		t.Fatalf("SyncSubscription of the older snapshot = %v, %v; want no change", changed, err)
+	}
+	if v := e.expect(t, id, domain.StateActive, gold, true); v.Current.PlanID != gold.ID {
+		t.Fatalf("plan after the older snapshot = %s, want gold", v.Current.PlanID)
+	}
+	// A snapshot read later applies.
+	later := older
+	later.ReadAt = e.clock.Now()
+	if changed, err := e.svc.SyncSubscription(ctx, paymentProvider, later); err != nil || !changed {
+		t.Fatalf("SyncSubscription of a later snapshot = %v, %v; want a change", changed, err)
+	}
+	e.expect(t, id, domain.StateActive, basic, true)
+}
+
+// changeRecorder is a provider that records the keys of ChangePrice and fails the next call
+// while fail is set, as a change that failed part of the way.
+type changeRecorder struct {
+	supporters.PaymentProvider
+	keys []string
+	fail bool
+}
+
+func (r *changeRecorder) ChangePrice(ctx context.Context, ref supporters.SubscriptionRef, to supporters.PriceRef, when supporters.ChangeTiming, key string) error {
+	r.keys = append(r.keys, key)
+	if r.fail {
+		r.fail = false
+		return fmt.Errorf("%w: the plan was not switched", supporters.ErrPaymentUnavailable)
+	}
+	return r.PaymentProvider.ChangePrice(ctx, ref, to, when, key)
+}
+
+// supporterChangeRetry sends a change again with the key of its failed attempt, so that the
+// provider charges the difference once, and another change with another key.
+func supporterChangeRetry(t *testing.T, e *supporterEnv) {
+	ctx := t.Context()
+	e.enable(t)
+	basic := e.plan(t, "basic", 1, 10, 500)
+	gold := e.plan(t, "gold", 2, 20, 1000)
+	alice := e.user("alice")
+	id, _ := e.subscribe(t, alice, basic, domain.IntervalMonth)
+	rec := &changeRecorder{PaymentProvider: e.world, fail: true}
+	deps := e.deps
+	deps.Provider = rec
+	svc := supporters.NewService(deps)
+	if _, err := svc.ChangePlan(ctx, alice, gold.ID, domain.IntervalMonth); !errors.Is(err, supporters.ErrPaymentUnavailable) {
+		t.Fatalf("ChangePlan with a failure = %v", err)
+	}
+	if _, err := svc.ChangePlan(ctx, alice, gold.ID, domain.IntervalMonth); err != nil {
+		t.Fatalf("ChangePlan again = %v", err)
+	}
+	if len(rec.keys) != 2 || rec.keys[0] != rec.keys[1] || rec.keys[0] == "" {
+		t.Fatalf("keys of the attempts of one change = %q, want the same key twice", rec.keys)
+	}
+	e.expect(t, id, domain.StateActive, gold, true)
+	if _, err := svc.ChangePlan(ctx, alice, gold.ID, domain.IntervalYear); err != nil {
+		t.Fatal(err)
+	}
+	if len(rec.keys) != 3 || rec.keys[2] == rec.keys[0] {
+		t.Errorf("key of another change = %q, want a new one", rec.keys)
+	}
+}
+
+// supporterChangePayment changes to a higher plan with a card that fails: the subscription, its
+// role, and its waiting change stay, with no grace period; a good card then moves it. A payment
+// that has not settled leaves the plan too, until the provider reports the new price.
+func supporterChangePayment(t *testing.T, e *supporterEnv) {
+	ctx := t.Context()
+	e.enable(t)
+	lower := e.plan(t, "lower", 1, 10, 300)
+	basic := e.plan(t, "basic", 2, 20, 500)
+	gold := e.plan(t, "gold", 3, 30, 1000)
+	alice := e.user("alice")
+	id, ref := e.subscribe(t, alice, basic, domain.IntervalMonth)
+	if _, err := e.svc.ChangePlan(ctx, alice, lower.ID, domain.IntervalMonth); err != nil {
+		t.Fatal(err)
+	}
+	world := e.world.(changePayments)
+	world.FailChangePayments(supporters.ErrPaymentDeclined)
+	for range 2 {
+		if _, err := e.svc.ChangePlan(ctx, alice, gold.ID, domain.IntervalMonth); !errors.Is(err, supporters.ErrPaymentDeclined) {
+			t.Fatalf("ChangePlan with a declining card = %v", err)
+		}
+		v := e.expect(t, id, domain.StateActive, basic, true)
+		if v.Current.Grace != nil || v.Current.Scheduled == nil || e.holds(t, alice, gold.RoleID) {
+			t.Fatalf("after the declined payment: %+v, holds gold %v", v.Current, e.holds(t, alice, gold.RoleID))
+		}
+	}
+	e.sync(t, id)
+	e.expect(t, id, domain.StateActive, basic, true)
+	world.FailChangePayments(supporters.ErrPaymentProcessing)
+	if _, err := e.svc.ChangePlan(ctx, alice, gold.ID, domain.IntervalMonth); !errors.Is(err, supporters.ErrPaymentProcessing) {
+		t.Fatalf("ChangePlan with a slow payment = %v", err)
+	}
+	e.expect(t, id, domain.StateActive, basic, true)
+	world.FailChangePayments(nil)
+	if _, err := e.svc.ChangePlan(ctx, alice, gold.ID, domain.IntervalMonth); err != nil {
+		t.Fatalf("ChangePlan with a good card = %v", err)
+	}
+	v := e.expect(t, id, domain.StateActive, gold, true)
+	if v.Current.Scheduled != nil || e.holds(t, alice, basic.RoleID) {
+		t.Errorf("after the paid change: %+v", v.Current)
+	}
+	if n := world.ChangeCharges(); n != 1 {
+		t.Errorf("%d payments of the change, want 1", n)
+	}
+	// A renewal that fails still starts the grace period.
+	e.change(t, id, ref, func(s *supporters.SubscriptionSnapshot) {
+		s.Status, s.LatestPaymentFailed = supporters.StatusPastDue, e.clock.Now()
+	})
+	if v := e.expect(t, id, domain.StatePastDue, gold, true); v.Current.Grace == nil {
+		t.Errorf("a failed renewal has no grace period: %+v", v.Current)
+	}
+}
+
+// supporterUnpaidChange re-reads a subscription with an unpaid change that its use case could not
+// clean up, as a webhook or the reconciliation does: a job removes it, and the state stays.
+func supporterUnpaidChange(t *testing.T, e *supporterEnv) {
+	e.enable(t)
+	basic := e.plan(t, "basic", 1, 10, 500)
+	alice := e.user("alice")
+	id, ref := e.subscribe(t, alice, basic, domain.IntervalMonth)
+	before := e.sub(t, id)
+	e.change(t, id, ref, func(s *supporters.SubscriptionSnapshot) { s.UnpaidChange = "in_change" })
+	e.run(t)
+	s, _ := e.world.Subscription(ref)
+	if s.UnpaidChange != "" {
+		t.Errorf("the unpaid change stayed: %+v", s)
+	}
+	after := e.expect(t, id, domain.StateActive, basic, true)
+	if after.Current.ID != before.Current.ID {
+		t.Errorf("the unpaid change recorded a transition: %+v", after.Current)
+	}
+}
+
+// supporterChangeMeetsCancellation changes the plan after the provider's portal canceled the
+// subscription and before our state saw it: the change fails as one on a canceling subscription
+// does, and the state catches up.
+func supporterChangeMeetsCancellation(t *testing.T, e *supporterEnv) {
+	ctx := t.Context()
+	e.enable(t)
+	basic := e.plan(t, "basic", 1, 10, 500)
+	gold := e.plan(t, "gold", 2, 20, 1000)
+	alice := e.user("alice")
+	id, ref := e.subscribe(t, alice, basic, domain.IntervalMonth)
+	s, ok := e.world.Subscription(ref)
+	if !ok {
+		t.Fatalf("no subscription %s at the provider", ref)
+	}
+	s.CancelAtPeriodEnd = true
+	e.world.PutSubscription(s)
+	if _, err := e.svc.ChangePlan(ctx, alice, gold.ID, domain.IntervalMonth); !errors.Is(err, supporters.ErrSubscriptionState) {
+		t.Errorf("a change after the portal's cancellation: %v", err)
+	}
+	e.expect(t, id, domain.StateCanceling, basic, true)
+	if _, err := e.svc.Resume(ctx, alice); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := e.svc.ChangePlan(ctx, alice, gold.ID, domain.IntervalMonth); err != nil {
+		t.Errorf("the change after the resumption: %v", err)
+	}
+	e.expect(t, id, domain.StateActive, gold, true)
+}
+
+// supporterChangeAgain withdraws a change at the period's end and makes it again in the same
+// period: it is scheduled again, under a new key, since the provider would replay the first
+// change, whose schedule is gone, or refuse its key.
+func supporterChangeAgain(t *testing.T, e *supporterEnv) {
+	ctx := t.Context()
+	e.enable(t)
+	basic := e.plan(t, "basic", 1, 10, 500)
+	gold := e.plan(t, "gold", 2, 20, 1000)
+	alice := e.user("alice")
+	id, _ := e.subscribe(t, alice, gold, domain.IntervalMonth)
+	rec := &changeRecorder{PaymentProvider: e.world}
+	deps := e.deps
+	deps.Provider = rec
+	svc := supporters.NewService(deps)
+	for i := range 2 {
+		if _, err := svc.ChangePlan(ctx, alice, basic.ID, domain.IntervalMonth); err != nil {
+			t.Fatalf("ChangePlan %d = %v", i+1, err)
+		}
+		v := e.expect(t, id, domain.StateActive, gold, true)
+		if v.Current.Scheduled == nil || v.ScheduledPrice == nil || v.ScheduledPrice.PlanID != basic.ID {
+			t.Fatalf("the change %d is not scheduled: %+v", i+1, v.Current.Scheduled)
+		}
+		if _, err := svc.CancelScheduledChange(ctx, alice); err != nil {
+			t.Fatal(err)
+		}
+		if v := e.sub(t, id); v.Current.Scheduled != nil {
+			t.Fatalf("the change %d was not withdrawn: %+v", i+1, v.Current.Scheduled)
+		}
+	}
+	if len(rec.keys) != 2 || rec.keys[0] == rec.keys[1] || rec.keys[0] == "" {
+		t.Errorf("keys of the two changes = %q, want two different keys", rec.keys)
+	}
+}
+
+// cancelRecorder is a provider that records the keys of the writes of a cancellation at the
+// period's end, and fails the next read while failRead is set, as a job that fails after them.
+type cancelRecorder struct {
+	supporters.PaymentProvider
+	keys     []string
+	failRead bool
+}
+
+func (r *cancelRecorder) CancelScheduledChange(ctx context.Context, ref supporters.SubscriptionRef, key string) error {
+	r.keys = append(r.keys, key)
+	return r.PaymentProvider.CancelScheduledChange(ctx, ref, key)
+}
+
+func (r *cancelRecorder) CancelAtPeriodEnd(ctx context.Context, ref supporters.SubscriptionRef, key string) error {
+	r.keys = append(r.keys, key)
+	return r.PaymentProvider.CancelAtPeriodEnd(ctx, ref, key)
+}
+
+func (r *cancelRecorder) GetSubscription(ctx context.Context, ref supporters.SubscriptionRef) (supporters.SubscriptionSnapshot, error) {
+	if r.failRead {
+		r.failRead = false
+		return supporters.SubscriptionSnapshot{}, fmt.Errorf("%w: the read failed", supporters.ErrPaymentUnavailable)
+	}
+	return r.PaymentProvider.GetSubscription(ctx, ref)
+}
+
+// supporterCancelRetry runs a job of a cancellation at the period's end twice, as a retry: no key
+// repeats, since the user may resume between the attempts and the provider would replay the first
+// attempt's cancellation instead of canceling again.
+func supporterCancelRetry(t *testing.T, e *supporterEnv) {
+	ctx := t.Context()
+	e.enable(t)
+	plan := e.plan(t, "basic", 1, 10, 500)
+	alice := e.user("alice")
+	id, _ := e.subscribe(t, alice, plan, domain.IntervalMonth)
+	rec := &cancelRecorder{PaymentProvider: e.world, failRead: true}
+	deps := e.deps
+	deps.Provider = rec
+	handlers := &queue.JobHandlerRegistry{}
+	supporters.NewService(deps).RegisterJobs(handlers, nil)
+	run, _, ok := handlers.Lookup(supporters.JobCommand)
+	if !ok {
+		t.Fatalf("no handler of %s", supporters.JobCommand)
+	}
+	job := queue.Job{
+		ID: "job-1", Type: supporters.JobCommand, IdempotencyKey: "command:" + id,
+		Payload: fmt.Appendf(nil, `{"subscription_id":%q,"command":%q}`, id, supporters.CommandCancelAtPeriodEnd),
+	}
+	if r := run(ctx, job); r.IsDone() {
+		t.Fatal("the job ended done with the read failing")
+	}
+	if r := run(ctx, job); !r.IsDone() {
+		t.Fatalf("the retry = %v", r.Err())
+	}
+	if len(rec.keys) != 4 {
+		t.Fatalf("keys = %q, want two writes per attempt", rec.keys)
+	}
+	seen := map[string]bool{}
+	for _, k := range rec.keys {
+		if k == "" || seen[k] {
+			t.Errorf("keys = %q, want four different keys", rec.keys)
+		}
+		seen[k] = true
+	}
+	e.expect(t, id, domain.StateCanceling, plan, true)
+}
+
+func supporterAbandon(t *testing.T, e *supporterEnv) {
+	ctx := t.Context()
+	e.enable(t)
+	plan := e.plan(t, "supporter", 1, 10, 500)
+	alice := e.user("alice")
+	co, err := e.svc.StartCheckout(ctx, supporters.CheckoutInput{UserID: alice, PlanID: plan.ID, Interval: domain.IntervalMonth})
+	if err != nil || co.RedirectURL == "" {
+		t.Fatalf("StartCheckout = %+v, %v", co, err)
+	}
+	// Starting again while pending makes a new checkout of the same subscription.
+	again, err := e.svc.StartCheckout(ctx, supporters.CheckoutInput{UserID: alice, PlanID: plan.ID, Interval: domain.IntervalMonth})
+	if err != nil || again.SubscriptionID != co.SubscriptionID {
+		t.Fatalf("StartCheckout again = %+v, %v", again, err)
+	}
+	e.expect(t, co.SubscriptionID, domain.StatePending, plan, false)
+	if refs, _ := e.svc.OpenCheckouts(ctx, paymentProvider, e.clock.Now()); len(refs) != 1 {
+		t.Errorf("OpenCheckouts = %v", refs)
+	}
+	e.clock.Advance(domain.CheckoutTimeout)
+	if err := e.svc.QueueDeadlines(ctx); err != nil {
+		t.Fatal(err)
+	}
+	e.run(t)
+	e.expect(t, co.SubscriptionID, domain.StateAbandoned, plan, false)
+	if _, err := e.svc.StartCheckout(ctx, supporters.CheckoutInput{UserID: alice, PlanID: plan.ID, Interval: domain.IntervalMonth}); err != nil {
+		t.Errorf("StartCheckout after an abandoned one: %v", err)
+	}
+}
+
+// repeatingCheckouts is a provider whose checkouts of one subscription keep one ref until the test
+// clears it, as PAY.JP's do within an hour, and that records what it was asked. As PAY.JP's, its
+// pages cannot be continued or expired.
+type repeatingCheckouts struct {
+	supporters.PaymentProvider
+	ref  supporters.CheckoutRef
+	reqs []supporters.CheckoutRequest
+}
+
+func (r *repeatingCheckouts) ResumeCheckout(ctx context.Context, ref supporters.CheckoutRef, _ supporters.CheckoutRequest) (supporters.CheckoutResult, *supporters.Checkout, error) {
+	res, err := r.GetCheckout(ctx, ref)
+	return res, nil, err
+}
+
+func (r *repeatingCheckouts) ExpireCheckout(ctx context.Context, ref supporters.CheckoutRef) (supporters.CheckoutResult, error) {
+	return r.GetCheckout(ctx, ref)
+}
+
+func (r *repeatingCheckouts) StartCheckout(ctx context.Context, req supporters.CheckoutRequest) (supporters.Checkout, error) {
+	c, err := r.PaymentProvider.StartCheckout(ctx, req)
+	if err != nil {
+		return c, err
+	}
+	r.reqs = append(r.reqs, req)
+	if r.ref == "" {
+		r.ref = c.Ref
+	}
+	c.Ref = r.ref
+	return c, nil
+}
+
+// supporterCheckoutAgain starts the checkout of a pending subscription again with a provider that
+// returns the same ref: the user reaches a page each time and one checkout is recorded. Starting
+// on another plan asks the provider for that plan's price while the pending subscription keeps its
+// plan, and the payment moves the subscription to what was paid for.
+func supporterCheckoutAgain(t *testing.T, e *supporterEnv) {
+	ctx := t.Context()
+	e.enable(t)
+	basic := e.plan(t, "basic", 1, 10, 500)
+	gold := e.plan(t, "gold", 2, 20, 1000)
+	alice := e.user("alice")
+	rec := &repeatingCheckouts{PaymentProvider: e.world}
+	deps := e.deps
+	deps.Provider = rec
+	svc := supporters.NewService(deps)
+	start := func(plan supporters.PlanView, interval domain.Interval) supporters.StartedCheckout {
+		t.Helper()
+		co, err := svc.StartCheckout(ctx, supporters.CheckoutInput{
+			UserID: alice, PlanID: plan.ID, Interval: interval, SuccessURL: "https://" + contractHost + "/ok", CancelURL: "https://" + contractHost + "/no",
+		})
+		if err != nil || co.RedirectURL == "" {
+			t.Fatalf("StartCheckout of %s = %+v, %v, want a page to go to", plan.ID, co, err)
+		}
+		return co
+	}
+	first := start(basic, domain.IntervalMonth)
+	opens := func() {
+		t.Helper()
+		refs, err := svc.OpenCheckouts(ctx, paymentProvider, e.clock.Now())
+		if err != nil || !slices.Equal(refs, []supporters.CheckoutRef{rec.ref}) {
+			t.Errorf("OpenCheckouts = %v, %v, want only %s", refs, err, rec.ref)
+		}
+		if sub := e.sub(t, first.SubscriptionID); sub.Checkout == nil || sub.Checkout.Ref != rec.ref {
+			t.Errorf("latest checkout = %+v, want %s", sub.Checkout, rec.ref)
+		}
+	}
+	if again := start(basic, domain.IntervalMonth); again.SubscriptionID != first.SubscriptionID {
+		t.Errorf("subscription of the second start = %s, want %s", again.SubscriptionID, first.SubscriptionID)
+	}
+	opens()
+	if again := start(gold, domain.IntervalYear); again.SubscriptionID != first.SubscriptionID {
+		t.Errorf("subscription of the start on another plan = %s, want %s", again.SubscriptionID, first.SubscriptionID)
+	}
+	if got, want := rec.reqs[2].Price, gold.Prices[domain.IntervalYear].Ref; got != want {
+		t.Errorf("price of the start on another plan = %s, want %s", got, want)
+	}
+	opens()
+	e.expect(t, first.SubscriptionID, domain.StatePending, basic, false)
+	// The next hour's ref is another checkout, which becomes the latest.
+	rec.ref = ""
+	start(gold, domain.IntervalYear)
+	opens()
+	e.seq++
+	ref := supporters.SubscriptionRef(fmt.Sprintf("sub_%d", e.seq))
+	cus := supporters.CustomerRef(fmt.Sprintf("cus_%d", e.seq))
+	e.world.PutCheckout(supporters.CheckoutResult{Ref: rec.ref, Status: supporters.CheckoutCompleted, LocalID: first.SubscriptionID, Customer: cus, Subscription: ref})
+	e.world.PutSubscription(supporters.SubscriptionSnapshot{
+		Ref: ref, Customer: cus, LocalID: first.SubscriptionID, Price: gold.Prices[domain.IntervalYear].Ref, Status: supporters.StatusActive,
+		PeriodStart: e.clock.Now(), PeriodEnd: e.clock.Now().Add(365 * 24 * time.Hour),
+	})
+	e.sync(t, first.SubscriptionID)
+	e.expect(t, first.SubscriptionID, domain.StateActive, gold, true)
+}
+
+// supporterOnePayablePage starts the checkout of a pending subscription again: the same plan
+// continues the page that is open, and another plan makes the earlier page unpayable.
+func supporterOnePayablePage(t *testing.T, e *supporterEnv) {
+	ctx := t.Context()
+	e.enable(t)
+	basic := e.plan(t, "basic", 1, 10, 500)
+	gold := e.plan(t, "gold", 2, 20, 1000)
+	alice := e.user("alice")
+	start := func(plan supporters.PlanView, interval domain.Interval) (supporters.StartedCheckout, supporters.CheckoutRef) {
+		t.Helper()
+		co, err := e.svc.StartCheckout(ctx, supporters.CheckoutInput{
+			UserID: alice, PlanID: plan.ID, Interval: interval, SuccessURL: "https://" + contractHost + "/ok", CancelURL: "https://" + contractHost + "/no",
+		})
+		if err != nil {
+			t.Fatalf("StartCheckout = %v", err)
+		}
+		return co, e.sub(t, co.SubscriptionID).Checkout.Ref
+	}
+	first, firstRef := start(basic, domain.IntervalMonth)
+	again, againRef := start(basic, domain.IntervalMonth)
+	if again.RedirectURL != first.RedirectURL || againRef != firstRef {
+		t.Errorf("a start again on the same plan = %s (%s), want the open page %s (%s)", again.RedirectURL, againRef, first.RedirectURL, firstRef)
+	}
+	other, otherRef := start(gold, domain.IntervalMonth)
+	if other.RedirectURL == first.RedirectURL || otherRef == firstRef {
+		t.Errorf("a start on another plan = %s, want another page", other.RedirectURL)
+	}
+	if got, err := e.world.GetCheckout(ctx, firstRef); err != nil || got.Status != supporters.CheckoutExpired {
+		t.Errorf("the earlier page after a start on another plan = %+v, %v, want expired", got, err)
+	}
+	yearly, yearlyRef := start(gold, domain.IntervalYear)
+	if yearly.RedirectURL == other.RedirectURL {
+		t.Errorf("a start on another interval = %s, want another page", yearly.RedirectURL)
+	}
+	if got, err := e.world.GetCheckout(ctx, otherRef); err != nil || got.Status != supporters.CheckoutExpired {
+		t.Errorf("the earlier page after a start on another interval = %+v, %v, want expired", got, err)
+	}
+	if got, err := e.world.GetCheckout(ctx, yearlyRef); err != nil || got.Status != supporters.CheckoutOpen {
+		t.Errorf("the page of the last start = %+v, %v, want open", got, err)
+	}
+}
+
+// startPaged starts a checkout with return URLs.
+func (e *supporterEnv) startPaged(t *testing.T, svc *supporters.Service, user string, plan supporters.PlanView, interval domain.Interval) (supporters.StartedCheckout, supporters.CheckoutRef) {
+	t.Helper()
+	co, err := svc.StartCheckout(t.Context(), supporters.CheckoutInput{
+		UserID: user, PlanID: plan.ID, Interval: interval, SuccessURL: "https://" + contractHost + "/ok", CancelURL: "https://" + contractHost + "/no",
+	})
+	if err != nil {
+		t.Fatalf("StartCheckout = %v", err)
+	}
+	return co, e.sub(t, co.SubscriptionID).Checkout.Ref
+}
+
+// checkoutIs fails the test unless the provider reports a checkout in the status.
+func (e *supporterEnv) checkoutIs(t *testing.T, ref supporters.CheckoutRef, want supporters.CheckoutStatus) {
+	t.Helper()
+	if got, err := e.world.GetCheckout(t.Context(), ref); err != nil || got.Status != want {
+		t.Errorf("checkout %s = %+v, %v, want %s", ref, got, err, want)
+	}
+}
+
+// supporterResumeNearExpiry starts again with little time left on the page: the customer gets a
+// fresh page, and the old one is expired.
+func supporterResumeNearExpiry(t *testing.T, e *supporterEnv) {
+	e.enable(t)
+	plan := e.plan(t, "supporter", 1, 10, 500)
+	alice := e.user("alice")
+	_, first := e.startPaged(t, e.svc, alice, plan, domain.IntervalMonth)
+	e.clock.Advance(time.Hour - supporters.CheckoutResumeMinimum + time.Minute)
+	_, second := e.startPaged(t, e.svc, alice, plan, domain.IntervalMonth)
+	if second == first {
+		t.Error("a page about to expire was continued")
+	}
+	e.checkoutIs(t, first, supporters.CheckoutExpired)
+	e.checkoutIs(t, second, supporters.CheckoutOpen)
+}
+
+// supporterStartAfterPaid starts again after a page was paid, before any webhook: no second page,
+// the return from the payment, and the subscription linked to what was paid.
+func supporterStartAfterPaid(t *testing.T, e *supporterEnv) {
+	e.enable(t)
+	plan := e.plan(t, "supporter", 1, 10, 500)
+	alice := e.user("alice")
+	co, ref := e.startPaged(t, e.svc, alice, plan, domain.IntervalMonth)
+	e.world.PutCheckout(supporters.CheckoutResult{Ref: ref, Status: supporters.CheckoutCompleted, LocalID: co.SubscriptionID, Customer: "cus_a", Subscription: "sub_a"})
+	e.world.PutSubscription(supporters.SubscriptionSnapshot{
+		Ref: "sub_a", Customer: "cus_a", LocalID: co.SubscriptionID, Price: plan.Prices[domain.IntervalMonth].Ref, Status: supporters.StatusActive,
+		PeriodStart: e.clock.Now(), PeriodEnd: e.clock.Now().Add(30 * 24 * time.Hour),
+	})
+	again, latest := e.startPaged(t, e.svc, alice, plan, domain.IntervalMonth)
+	if want := "https://" + contractHost + "/ok"; again.RedirectURL != want || latest != ref {
+		t.Errorf("a start after the payment = %s (%s), want the return %s and no other checkout", again.RedirectURL, latest, want)
+	}
+	e.run(t)
+	e.expect(t, co.SubscriptionID, domain.StateActive, plan, true)
+}
+
+// completingExpiry is a provider on which the page completes just as the server expires it: it
+// reports it open on the read, and completed on the refused expiry.
+type completingExpiry struct {
+	supporters.PaymentProvider
+	done supporters.CheckoutResult
+}
+
+func (c *completingExpiry) ResumeCheckout(ctx context.Context, ref supporters.CheckoutRef, _ supporters.CheckoutRequest) (supporters.CheckoutResult, *supporters.Checkout, error) {
+	res, err := c.GetCheckout(ctx, ref)
+	return res, nil, err
+}
+
+func (c *completingExpiry) ExpireCheckout(context.Context, supporters.CheckoutRef) (supporters.CheckoutResult, error) {
+	return c.done, nil
+}
+
+// failingExpiry refuses to expire a page, and counts the pages made.
+type failingExpiry struct {
+	supporters.PaymentProvider
+	starts int
+}
+
+func (f *failingExpiry) ResumeCheckout(ctx context.Context, ref supporters.CheckoutRef, _ supporters.CheckoutRequest) (supporters.CheckoutResult, *supporters.Checkout, error) {
+	res, err := f.GetCheckout(ctx, ref)
+	return res, nil, err
+}
+
+func (f *failingExpiry) ExpireCheckout(context.Context, supporters.CheckoutRef) (supporters.CheckoutResult, error) {
+	return supporters.CheckoutResult{}, supporters.ErrPaymentUnavailable
+}
+
+func (f *failingExpiry) StartCheckout(ctx context.Context, req supporters.CheckoutRequest) (supporters.Checkout, error) {
+	f.starts++
+	return f.PaymentProvider.StartCheckout(ctx, req)
+}
+
+// supporterExpiryMeetsPayment expires an earlier page that was just paid: the user gets no second
+// page. An expiry that fails gives no second page either, since the earlier one may still be paid.
+func supporterExpiryMeetsPayment(t *testing.T, e *supporterEnv) {
+	ctx := t.Context()
+	e.enable(t)
+	plan := e.plan(t, "supporter", 1, 10, 500)
+	alice := e.user("alice")
+	co, ref := e.startPaged(t, e.svc, alice, plan, domain.IntervalMonth)
+
+	failing := &failingExpiry{PaymentProvider: e.world}
+	deps := e.deps
+	deps.Provider = failing
+	_, err := supporters.NewService(deps).StartCheckout(ctx, supporters.CheckoutInput{
+		UserID: alice, PlanID: plan.ID, Interval: domain.IntervalMonth, SuccessURL: "https://" + contractHost + "/ok", CancelURL: "https://" + contractHost + "/no",
+	})
+	if !errors.Is(err, supporters.ErrPaymentUnavailable) || failing.starts != 0 {
+		t.Errorf("a start whose expiry failed = %v with %d pages, want the failure and none", err, failing.starts)
+	}
+
+	done := supporters.CheckoutResult{Ref: ref, Status: supporters.CheckoutCompleted, LocalID: co.SubscriptionID, Customer: "cus_a", Subscription: "sub_a"}
+	e.world.PutSubscription(supporters.SubscriptionSnapshot{
+		Ref: "sub_a", Customer: "cus_a", LocalID: co.SubscriptionID, Price: plan.Prices[domain.IntervalMonth].Ref, Status: supporters.StatusActive,
+		PeriodStart: e.clock.Now(), PeriodEnd: e.clock.Now().Add(30 * 24 * time.Hour),
+	})
+	deps.Provider = &completingExpiry{PaymentProvider: e.world, done: done}
+	again, latest := e.startPaged(t, supporters.NewService(deps), alice, plan, domain.IntervalMonth)
+	if want := "https://" + contractHost + "/ok"; again.RedirectURL != want || latest != ref {
+		t.Errorf("a start that met the payment = %s (%s), want the return %s and no other checkout", again.RedirectURL, latest, want)
+	}
+	if got := e.sub(t, co.SubscriptionID); got.Link != "sub_a" {
+		t.Errorf("link = %q, want the subscription of the paid page", got.Link)
+	}
+}
+
+// sideBySide is a provider on which another start of the same subscription finishes while this one
+// makes its page.
+type sideBySide struct {
+	supporters.PaymentProvider
+	other func()
+}
+
+func (s *sideBySide) StartCheckout(ctx context.Context, req supporters.CheckoutRequest) (supporters.Checkout, error) {
+	if f := s.other; f != nil {
+		s.other = nil
+		f()
+	}
+	return s.PaymentProvider.StartCheckout(ctx, req)
+}
+
+// supporterStartsSideBySide runs two starts that both found no page: the one recorded later expires
+// the other, and one page stays payable.
+func supporterStartsSideBySide(t *testing.T, e *supporterEnv) {
+	e.enable(t)
+	basic := e.plan(t, "basic", 1, 10, 500)
+	gold := e.plan(t, "gold", 2, 20, 1000)
+	alice := e.user("alice")
+	var firstRef supporters.CheckoutRef
+	prov := &sideBySide{PaymentProvider: e.world}
+	prov.other = func() { _, firstRef = e.startPaged(t, e.svc, alice, gold, domain.IntervalMonth) }
+	deps := e.deps
+	deps.Provider = prov
+	_, later := e.startPaged(t, supporters.NewService(deps), alice, basic, domain.IntervalMonth)
+	if later == firstRef {
+		t.Fatalf("both starts made %s", later)
+	}
+	e.checkoutIs(t, firstRef, supporters.CheckoutExpired)
+	e.checkoutIs(t, later, supporters.CheckoutOpen)
+}
+
+// supporterSecondSubscription pays two pages of one subscription: the one linked first stays, and
+// the other is canceled and refunded, also when the key first lacks the permission to refund, and
+// once only.
+func supporterSecondSubscription(t *testing.T, e *supporterEnv) {
+	ctx := t.Context()
+	e.enable(t)
+	plan := e.plan(t, "supporter", 1, 10, 500)
+	alice := e.user("alice")
+	id, first := e.subscribe(t, alice, plan, domain.IntervalMonth)
+	second := supporters.SubscriptionRef("sub_second")
+	put := func(ref supporters.SubscriptionRef, status supporters.SubscriptionStatus) supporters.SubscriptionSnapshot {
+		e.world.PutSubscription(supporters.SubscriptionSnapshot{
+			Ref: ref, Customer: "cus_second", LocalID: id, Price: plan.Prices[domain.IntervalMonth].Ref, Status: status,
+			PeriodStart: e.clock.Now(), PeriodEnd: e.clock.Now().Add(30 * 24 * time.Hour),
+		})
+		snap, _ := e.world.Subscription(ref)
+		return snap
+	}
+	refunds, ok := e.world.(refundControl)
+	if !ok {
+		t.Fatal("the payment world does not report its refunds")
+	}
+	unsettled := func() int {
+		t.Helper()
+		ds, err := e.h.Supporters.UnsettledDuplicates(ctx, paymentProvider)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return len(ds)
+	}
+	refunds.FailRefunds(supporters.ErrPaymentPermission)
+	snap := put(second, supporters.StatusActive)
+	if _, err := e.svc.SyncSubscription(ctx, paymentProvider, snap); err != nil {
+		t.Fatal(err)
+	}
+	e.run(t)
+	if got, _ := e.world.Subscription(second); got.Status != supporters.StatusCanceled {
+		t.Errorf("the second subscription = %s, want canceled", got.Status)
+	}
+	if refunds.Refunded(second) || unsettled() != 1 {
+		t.Errorf("with the refund refused: refunded %v, %d unsettled, want none and one for the administrators", refunds.Refunded(second), unsettled())
+	}
+	// The snapshot that the cancellation caused queues nothing more.
+	snap, _ = e.world.Subscription(second)
+	if _, err := e.svc.SyncSubscription(ctx, paymentProvider, snap); err != nil {
+		t.Fatal(err)
+	}
+	e.run(t)
+
+	refunds.FailRefunds(nil)
+	if err := e.svc.RetryDuplicates(ctx, paymentProvider, "run-1"); err != nil {
+		t.Fatal(err)
+	}
+	e.run(t)
+	if !refunds.Refunded(second) || unsettled() != 0 {
+		t.Errorf("after the retry: refunded %v, %d unsettled, want refunded and none", refunds.Refunded(second), unsettled())
+	}
+	if got, _ := e.world.Subscription(first); got.Status != supporters.StatusActive || refunds.Refunded(first) {
+		t.Errorf("the linked subscription = %s, refunded %v, want active and not refunded", got.Status, refunds.Refunded(first))
+	}
+	e.expect(t, id, domain.StateActive, plan, true)
+
+	// A subscription someone already ended at the provider is left as it is.
+	third := supporters.SubscriptionRef("sub_third")
+	snap = put(third, supporters.StatusCanceled)
+	if _, err := e.svc.SyncSubscription(ctx, paymentProvider, snap); err != nil {
+		t.Fatal(err)
+	}
+	e.run(t)
+	if refunds.Refunded(third) || unsettled() != 0 {
+		t.Errorf("a subscription ended by hand: refunded %v, %d unsettled, want neither", refunds.Refunded(third), unsettled())
+	}
+}
+
+// supporterPaidAfterClose closes a pending subscription: its page expires, and a page that was
+// paid anyway charged for nothing, so it is canceled and refunded.
+func supporterPaidAfterClose(t *testing.T, e *supporterEnv) {
+	ctx := t.Context()
+	e.enable(t)
+	plan := e.plan(t, "supporter", 1, 10, 500)
+	bob := e.user("bob")
+	co, ref := e.startPaged(t, e.svc, bob, plan, domain.IntervalMonth)
+	if err := e.svc.RetirePlan(ctx, plan.ID, ""); err != nil {
+		t.Fatal(err)
+	}
+	e.run(t)
+	e.expect(t, co.SubscriptionID, domain.StateAbandoned, plan, false)
+	e.checkoutIs(t, ref, supporters.CheckoutExpired)
+
+	refunds, ok := e.world.(refundControl)
+	if !ok {
+		t.Fatal("the payment world does not report its refunds")
+	}
+	e.world.PutSubscription(supporters.SubscriptionSnapshot{
+		Ref: "sub_late", Customer: "cus_late", LocalID: co.SubscriptionID, Price: plan.Prices[domain.IntervalMonth].Ref, Status: supporters.StatusActive,
+		PeriodStart: e.clock.Now(), PeriodEnd: e.clock.Now().Add(30 * 24 * time.Hour),
+	})
+	snap, _ := e.world.Subscription("sub_late")
+	if _, err := e.svc.SyncSubscription(ctx, paymentProvider, snap); err != nil {
+		t.Fatal(err)
+	}
+	e.run(t)
+	if got, _ := e.world.Subscription("sub_late"); got.Status != supporters.StatusCanceled || !refunds.Refunded("sub_late") {
+		t.Errorf("a payment after the close = %s, refunded %v, want canceled and refunded", got.Status, refunds.Refunded("sub_late"))
+	}
+	e.expect(t, co.SubscriptionID, domain.StateAbandoned, plan, false)
+}
+
+// refunds returns the world's control of the refunds.
+func (e *supporterEnv) refunds(t *testing.T) refundControl {
+	t.Helper()
+	c, ok := e.world.(refundControl)
+	if !ok {
+		t.Fatal("the payment world does not report its refunds")
+	}
+	return c
+}
+
+// unsettled returns how many duplicates wait for the server.
+func (e *supporterEnv) unsettled(t *testing.T) int {
+	t.Helper()
+	ds, err := e.h.Supporters.UnsettledDuplicates(t.Context(), paymentProvider)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return len(ds)
+}
+
+// paidSubscription puts a subscription of ours at the provider and returns what it reports of it.
+func (e *supporterEnv) paidSubscription(id string, plan supporters.PlanView, ref supporters.SubscriptionRef, status supporters.SubscriptionStatus) supporters.SubscriptionSnapshot {
+	snap := supporters.SubscriptionSnapshot{
+		Ref: ref, Customer: supporters.CustomerRef("cus_" + string(ref)), LocalID: id, Price: plan.Prices[domain.IntervalMonth].Ref, Status: status,
+		PeriodStart: e.clock.Now(), PeriodEnd: e.clock.Now().Add(30 * 24 * time.Hour),
+	}
+	e.world.PutSubscription(snap)
+	return snap
+}
+
+// supporterRefundAfterDeletion settles second subscriptions on a provider that deletes what it
+// cancels, as PAY.JP does. The refund comes before the deletion. After a refused refund the next
+// attempts cannot read our ID any more, and go on: they refund when the provider still lists the
+// charges, and otherwise the record stays unsettled, never settled as refunded.
+func supporterRefundAfterDeletion(t *testing.T, e *supporterEnv) {
+	ctx := t.Context()
+	e.enable(t)
+	plan := e.plan(t, "supporter", 1, 10, 500)
+	id, _ := e.subscribe(t, e.user("alice"), plan, domain.IntervalMonth)
+	refunds := e.refunds(t)
+	refunds.DeleteCanceled(false)
+	second := func(ref supporters.SubscriptionRef) {
+		t.Helper()
+		if _, err := e.svc.SyncSubscription(ctx, paymentProvider, e.paidSubscription(id, plan, ref, supporters.StatusActive)); err != nil {
+			t.Fatal(err)
+		}
+		e.run(t)
+	}
+	retry := func(cause string) {
+		t.Helper()
+		if err := e.svc.RetryDuplicates(ctx, paymentProvider, cause); err != nil {
+			t.Fatal(err)
+		}
+		e.run(t)
+	}
+	second("sub_plain")
+	if got, _ := e.world.Subscription("sub_plain"); got.Status != supporters.StatusCanceled || !refunds.Refunded("sub_plain") || e.unsettled(t) != 0 {
+		t.Errorf("a second subscription = %s, refunded %v, %d unsettled, want canceled and refunded", got.Status, refunds.Refunded("sub_plain"), e.unsettled(t))
+	}
+
+	refunds.FailRefunds(supporters.ErrPaymentPermission)
+	second("sub_refused")
+	if got, _ := e.world.Subscription("sub_refused"); got.Status != supporters.StatusCanceled || refunds.Refunded("sub_refused") || e.unsettled(t) != 1 {
+		t.Fatalf("with the refund refused = %s, refunded %v, %d unsettled, want canceled, not refunded, and one", got.Status, refunds.Refunded("sub_refused"), e.unsettled(t))
+	}
+	refunds.FailRefunds(nil)
+	retry("no-list")
+	if refunds.Refunded("sub_refused") || e.unsettled(t) != 1 {
+		t.Errorf("with no charges to list: refunded %v, %d unsettled, want not refunded and one", refunds.Refunded("sub_refused"), e.unsettled(t))
+	}
+	refunds.DeleteCanceled(true)
+	retry("listed")
+	if !refunds.Refunded("sub_refused") || e.unsettled(t) != 0 {
+		t.Errorf("with the charges listed: refunded %v, %d unsettled, want refunded and none", refunds.Refunded("sub_refused"), e.unsettled(t))
+	}
+}
+
+// supporterStaffCancelsLinkedPending cancels a pending subscription whose payment linked, while the
+// settling cannot read the provider's subscription: no cancellation of ours may overtake it and pass
+// for one by hand, and the refund still happens.
+func supporterStaffCancelsLinkedPending(t *testing.T, e *supporterEnv) {
+	ctx := t.Context()
+	e.enable(t)
+	plan := e.plan(t, "supporter", 1, 10, 500)
+	co, ref := e.startPaged(t, e.svc, e.user("alice"), plan, domain.IntervalMonth)
+	snap := e.paidSubscription(co.SubscriptionID, plan, "sub_a", supporters.StatusActive)
+	res := supporters.CheckoutResult{Ref: ref, Status: supporters.CheckoutCompleted, LocalID: co.SubscriptionID, Customer: snap.Customer, Subscription: "sub_a"}
+	e.world.PutCheckout(res)
+	if _, err := e.svc.SyncCheckout(ctx, paymentProvider, res); err != nil {
+		t.Fatal(err)
+	}
+	refunds := e.refunds(t)
+	refunds.FailSubscriptionReads(supporters.ErrInvalidPaymentResponse)
+	if err := e.svc.CancelByStaff(ctx, co.SubscriptionID, ""); err != nil {
+		t.Fatal(err)
+	}
+	e.run(t)
+	refunds.FailSubscriptionReads(nil)
+	if got, _ := e.world.Subscription("sub_a"); got.Status != supporters.StatusActive || e.unsettled(t) != 1 {
+		t.Errorf("after the failed read = %s, %d unsettled, want still active and one", got.Status, e.unsettled(t))
+	}
+	if err := e.svc.RetryDuplicates(ctx, paymentProvider, "run-1"); err != nil {
+		t.Fatal(err)
+	}
+	e.run(t)
+	if got, _ := e.world.Subscription("sub_a"); got.Status != supporters.StatusCanceled || !refunds.Refunded("sub_a") || e.unsettled(t) != 0 {
+		t.Errorf("after the retry = %s, refunded %v, %d unsettled, want canceled and refunded", got.Status, refunds.Refunded("sub_a"), e.unsettled(t))
+	}
+}
+
+// supporterLinkedPendingCloses retires the plan of a subscription whose payment linked, before a
+// snapshot made it active: the user got nothing, so the payment is canceled and refunded, whatever
+// arrives next.
+func supporterLinkedPendingCloses(t *testing.T, e *supporterEnv) {
+	ctx := t.Context()
+	e.enable(t)
+	plan := e.plan(t, "supporter", 1, 10, 500)
+	co, ref := e.startPaged(t, e.svc, e.user("alice"), plan, domain.IntervalMonth)
+	snap := e.paidSubscription(co.SubscriptionID, plan, "sub_a", supporters.StatusActive)
+	res := supporters.CheckoutResult{Ref: ref, Status: supporters.CheckoutCompleted, LocalID: co.SubscriptionID, Customer: snap.Customer, Subscription: "sub_a"}
+	e.world.PutCheckout(res)
+	if _, err := e.svc.SyncCheckout(ctx, paymentProvider, res); err != nil {
+		t.Fatal(err)
+	}
+	e.expect(t, co.SubscriptionID, domain.StatePending, plan, false)
+	if err := e.svc.RetirePlan(ctx, plan.ID, ""); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := e.svc.SyncSubscription(ctx, paymentProvider, snap); err != nil {
+		t.Fatal(err)
+	}
+	e.run(t)
+	refunds := e.refunds(t)
+	if got, _ := e.world.Subscription("sub_a"); got.Status != supporters.StatusCanceled || !refunds.Refunded("sub_a") || e.unsettled(t) != 0 {
+		t.Errorf("a payment of a subscription that closed = %s, refunded %v, %d unsettled, want canceled and refunded", got.Status, refunds.Refunded("sub_a"), e.unsettled(t))
+	}
+	e.expect(t, co.SubscriptionID, domain.StateAbandoned, plan, false)
+}
+
+// supporterOrphanAfterFailedRead fails the first read of a payment that a close left to refund: the
+// next snapshot must not cancel it as a mere orphan, which would look like a cancellation by hand
+// and lose the refund.
+func supporterOrphanAfterFailedRead(t *testing.T, e *supporterEnv) {
+	ctx := t.Context()
+	e.enable(t)
+	plan := e.plan(t, "supporter", 1, 10, 500)
+	co, ref := e.startPaged(t, e.svc, e.user("alice"), plan, domain.IntervalMonth)
+	snap := e.paidSubscription(co.SubscriptionID, plan, "sub_a", supporters.StatusActive)
+	res := supporters.CheckoutResult{Ref: ref, Status: supporters.CheckoutCompleted, LocalID: co.SubscriptionID, Customer: snap.Customer, Subscription: "sub_a"}
+	e.world.PutCheckout(res)
+	if _, err := e.svc.SyncCheckout(ctx, paymentProvider, res); err != nil {
+		t.Fatal(err)
+	}
+	if err := e.svc.RetirePlan(ctx, plan.ID, ""); err != nil {
+		t.Fatal(err)
+	}
+	e.world.Fail(supporters.ErrPaymentPermission)
+	e.run(t)
+	e.world.Fail(nil)
+	if _, err := e.svc.SyncSubscription(ctx, paymentProvider, snap); err != nil {
+		t.Fatal(err)
+	}
+	e.run(t)
+	if err := e.svc.RetryDuplicates(ctx, paymentProvider, "run-1"); err != nil {
+		t.Fatal(err)
+	}
+	e.run(t)
+	refunds := e.refunds(t)
+	if got, _ := e.world.Subscription("sub_a"); got.Status != supporters.StatusCanceled || !refunds.Refunded("sub_a") || e.unsettled(t) != 0 {
+		t.Errorf("the payment = %s, refunded %v, %d unsettled, want canceled and refunded", got.Status, refunds.Refunded("sub_a"), e.unsettled(t))
+	}
+}
+
+// supporterEndedTakesNoLink has an operator cancel one of two paid subscriptions before the server
+// saw either: the live one stays the user's, and nothing is refunded. With nothing live, the
+// deadline still closes the pending subscription.
+func supporterEndedTakesNoLink(t *testing.T, e *supporterEnv) {
+	ctx := t.Context()
+	e.enable(t)
+	plan := e.plan(t, "supporter", 1, 10, 500)
+	alice, bob := e.user("alice"), e.user("bob")
+	co, ref := e.startPaged(t, e.svc, alice, plan, domain.IntervalMonth)
+	dead := e.paidSubscription(co.SubscriptionID, plan, "sub_dead", supporters.StatusCanceled)
+	if _, err := e.svc.SyncSubscription(ctx, paymentProvider, dead); err != nil {
+		t.Fatal(err)
+	}
+	res := supporters.CheckoutResult{Ref: ref, Status: supporters.CheckoutCompleted, LocalID: co.SubscriptionID, Customer: dead.Customer, Subscription: "sub_dead"}
+	if _, err := e.svc.SyncCheckout(ctx, paymentProvider, res); err != nil {
+		t.Fatal(err)
+	}
+	live := e.paidSubscription(co.SubscriptionID, plan, "sub_live", supporters.StatusActive)
+	if _, err := e.svc.SyncSubscription(ctx, paymentProvider, live); err != nil {
+		t.Fatal(err)
+	}
+	e.run(t)
+	refunds := e.refunds(t)
+	if got, _ := e.world.Subscription("sub_live"); got.Status != supporters.StatusActive || refunds.Refunded("sub_live") {
+		t.Errorf("the live subscription = %s, refunded %v, want active and not refunded", got.Status, refunds.Refunded("sub_live"))
+	}
+	e.expect(t, co.SubscriptionID, domain.StateActive, plan, true)
+
+	other, otherRef := e.startPaged(t, e.svc, bob, plan, domain.IntervalMonth)
+	e.world.PutCheckout(supporters.CheckoutResult{Ref: otherRef, Status: supporters.CheckoutCompleted, LocalID: other.SubscriptionID, Customer: "cus_b", Subscription: "sub_b"})
+	e.paidSubscription(other.SubscriptionID, plan, "sub_b", supporters.StatusCanceled)
+	e.clock.Advance(25 * time.Hour)
+	e.sync(t, other.SubscriptionID)
+	e.expect(t, other.SubscriptionID, domain.StateAbandoned, plan, false)
+}
+
+// supporterEndedBeforeTheJob ends a second subscription at the provider between its record and its
+// job: its charges stay as they are, and nothing is left for the administrators. So does a completed
+// checkout of a closed subscription whose subscription ended.
+func supporterEndedBeforeTheJob(t *testing.T, e *supporterEnv) {
+	ctx := t.Context()
+	e.enable(t)
+	plan := e.plan(t, "supporter", 1, 10, 500)
+	id, _ := e.subscribe(t, e.user("alice"), plan, domain.IntervalMonth)
+	refunds := e.refunds(t)
+	snap := e.paidSubscription(id, plan, "sub_second", supporters.StatusActive)
+	if _, err := e.svc.SyncSubscription(ctx, paymentProvider, snap); err != nil {
+		t.Fatal(err)
+	}
+	if e.unsettled(t) != 1 {
+		t.Fatalf("%d unsettled, want one", e.unsettled(t))
+	}
+	e.paidSubscription(id, plan, "sub_second", supporters.StatusCanceled)
+	e.run(t)
+	if refunds.Refunded("sub_second") || e.unsettled(t) != 0 {
+		t.Errorf("a subscription ended before its job: refunded %v, %d unsettled, want neither", refunds.Refunded("sub_second"), e.unsettled(t))
+	}
+
+	co, ref := e.startPaged(t, e.svc, e.user("bob"), plan, domain.IntervalMonth)
+	if err := e.svc.RetirePlan(ctx, plan.ID, ""); err != nil {
+		t.Fatal(err)
+	}
+	e.run(t)
+	dead := e.paidSubscription(co.SubscriptionID, plan, "sub_dead", supporters.StatusCanceled)
+	res := supporters.CheckoutResult{Ref: ref, Status: supporters.CheckoutCompleted, LocalID: co.SubscriptionID, Customer: dead.Customer, Subscription: "sub_dead"}
+	if _, err := e.svc.SyncCheckout(ctx, paymentProvider, res); err != nil {
+		t.Fatal(err)
+	}
+	e.run(t)
+	if refunds.Refunded("sub_dead") || e.unsettled(t) != 0 {
+		t.Errorf("a checkout of a subscription that ended: refunded %v, %d unsettled, want neither", refunds.Refunded("sub_dead"), e.unsettled(t))
+	}
+}
+
+// closingStart is a provider on which the pending subscription closes while it makes the page.
+type closingStart struct {
+	supporters.PaymentProvider
+	closing func()
+	made    supporters.CheckoutRef
+}
+
+func (c *closingStart) StartCheckout(ctx context.Context, req supporters.CheckoutRequest) (supporters.Checkout, error) {
+	if f := c.closing; f != nil {
+		c.closing = nil
+		f()
+	}
+	co, err := c.PaymentProvider.StartCheckout(ctx, req)
+	c.made = co.Ref
+	return co, err
+}
+
+// supporterStartMeetsClose closes a pending subscription during its start again: no page goes back,
+// and the page made is expired.
+func supporterStartMeetsClose(t *testing.T, e *supporterEnv) {
+	ctx := t.Context()
+	e.enable(t)
+	basic := e.plan(t, "basic", 1, 10, 500)
+	gold := e.plan(t, "gold", 2, 20, 1000)
+	alice := e.user("alice")
+	first, _ := e.startPaged(t, e.svc, alice, basic, domain.IntervalMonth)
+	prov := &closingStart{PaymentProvider: e.world, closing: func() {
+		if err := e.svc.RetirePlan(ctx, basic.ID, ""); err != nil {
+			t.Error(err)
+		}
+		e.run(t)
+	}}
+	deps := e.deps
+	deps.Provider = prov
+	co, err := supporters.NewService(deps).StartCheckout(ctx, supporters.CheckoutInput{
+		UserID: alice, PlanID: gold.ID, Interval: domain.IntervalMonth, SuccessURL: "https://" + contractHost + "/ok", CancelURL: "https://" + contractHost + "/no",
+	})
+	if !errors.Is(err, supporters.ErrSubscriptionState) {
+		t.Errorf("a start that met the close = %+v, %v, want ErrSubscriptionState", co, err)
+	}
+	e.checkoutIs(t, prov.made, supporters.CheckoutExpired)
+	e.expect(t, first.SubscriptionID, domain.StateAbandoned, basic, false)
+}
+
+func supporterEligibility(t *testing.T, e *supporterEnv) {
+	ctx := t.Context()
+	e.enable(t)
+	plan := e.plan(t, "supporter", 1, 10, 500)
+	start := func(userID string) error {
+		_, err := e.svc.StartCheckout(ctx, supporters.CheckoutInput{UserID: userID, PlanID: plan.ID, Interval: domain.IntervalMonth})
+		return err
+	}
+	reason := func(err error) supporters.Eligibility {
+		var ie *supporters.IneligibleError
+		if errors.As(err, &ie) {
+			return ie.Reason
+		}
+		return ""
+	}
+	if got := reason(start(NamedID("nobody"))); got != supporters.IneligibleNotLocal {
+		t.Errorf("an unknown user: %s", got)
+	}
+	e.users.put(supporters.User{ID: NamedID("unverified"), Handle: "@u", Email: "u@example.com"})
+	if got := reason(start(NamedID("unverified"))); got != supporters.IneligibleEmail {
+		t.Errorf("an unverified address: %s", got)
+	}
+	e.users.put(supporters.User{ID: NamedID("suspended"), Handle: "@s", Email: "s@example.com", EmailVerified: true, Suspended: true})
+	if got := reason(start(NamedID("suspended"))); got != supporters.IneligibleRestricted {
+		t.Errorf("a suspended account: %s", got)
+	}
+	alice := e.user("alice")
+	e.subscribe(t, alice, plan, domain.IntervalMonth)
+	if err := start(alice); !errors.Is(err, supporters.ErrLiveSubscription) {
+		t.Errorf("a second subscription: %v", err)
+	}
+}
+
+func supporterPrices(t *testing.T, e *supporterEnv) {
+	ctx := t.Context()
+	e.enable(t)
+	plan := e.plan(t, "supporter", 1, 10, 500)
+	if y := plan.Prices[domain.IntervalYear]; y.AmountMinor != 5400 {
+		t.Fatalf("the yearly price: %d", y.AmountMinor)
+	}
+	alice := e.user("alice")
+	id, _ := e.subscribe(t, alice, plan, domain.IntervalMonth)
+	monthly := int64(800)
+	revised, err := e.svc.RevisePlan(ctx, supporters.PlanUpdate{ID: plan.ID, MonthlyAmountMinor: &monthly})
+	if err != nil || revised.Ready() {
+		t.Fatalf("RevisePlan = ready %v, %v", revised.Ready(), err)
+	}
+	e.run(t)
+	now := e.planOf(t, plan.ID)
+	if !now.Ready() || now.Prices[domain.IntervalMonth].AmountMinor != 800 || now.Prices[domain.IntervalYear].AmountMinor != 8640 {
+		t.Fatalf("the new prices: %+v", now.Prices)
+	}
+	// The subscription keeps its price (V1); a new one takes the new one.
+	e.sync(t, id)
+	if v := e.expect(t, id, domain.StateActive, plan, true); v.Price.AmountMinor != 500 {
+		t.Errorf("the subscription's price: %d", v.Price.AmountMinor)
+	}
+	bobID, _ := e.subscribe(t, e.user("bob"), now, domain.IntervalMonth)
+	if v := e.sub(t, bobID); v.Price.AmountMinor != 800 {
+		t.Errorf("the new subscription's price: %d", v.Price.AmountMinor)
+	}
+	if !slices.Contains(e.actions(), moderation.AuditSupporterPlanRevised) {
+		t.Errorf("audit log: %v", e.actions())
+	}
+}
+
+func supporterRetire(t *testing.T, e *supporterEnv) {
+	ctx := t.Context()
+	e.enable(t)
+	plan := e.plan(t, "supporter", 1, 10, 500)
+	alice, bob := e.user("alice"), e.user("bob")
+	id, ref := e.subscribe(t, alice, plan, domain.IntervalMonth)
+	co, err := e.svc.StartCheckout(ctx, supporters.CheckoutInput{UserID: bob, PlanID: plan.ID, Interval: domain.IntervalMonth})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := e.svc.RetirePlan(ctx, plan.ID, ""); err != nil {
+		t.Fatalf("RetirePlan = %v", err)
+	}
+	e.run(t)
+	if err := e.svc.RetirePlan(ctx, plan.ID, ""); !errors.Is(err, supporters.ErrPlanRetired) {
+		t.Errorf("RetirePlan again = %v", err)
+	}
+	e.expect(t, co.SubscriptionID, domain.StateAbandoned, plan, false)
+	v := e.expect(t, id, domain.StateCanceling, plan, true)
+	if v.Current.Reason != domain.ReasonPlanRetired {
+		t.Errorf("reason %s", v.Current.Reason)
+	}
+	if offered, _ := e.svc.OfferedPlans(ctx); len(offered) != 0 {
+		t.Errorf("a retired plan is offered: %v", offered)
+	}
+	if !e.managed(t, plan.RoleID) {
+		t.Fatal("the role is not managed while held")
+	}
+	e.clock.Advance(31 * 24 * time.Hour)
+	e.change(t, id, ref, func(s *supporters.SubscriptionSnapshot) { s.Status = supporters.StatusCanceled })
+	e.expect(t, id, domain.StateExpired, plan, false)
+	if e.managed(t, plan.RoleID) {
+		t.Error("the role stays managed after the last subscription ended")
+	}
+	if err := e.identity.DeleteRole(ctx, "supporter", ""); err != nil {
+		t.Errorf("DeleteRole after the plan retired = %v", err)
+	}
+	five := 5
+	if _, err := e.svc.RevisePlan(ctx, supporters.PlanUpdate{ID: plan.ID, Rank: &five}); !errors.Is(err, supporters.ErrPlanRetired) {
+		t.Errorf("RevisePlan of a retired plan = %v", err)
+	}
+}
+
+func supporterStaffCancel(t *testing.T, e *supporterEnv) {
+	ctx := t.Context()
+	e.enable(t)
+	plan := e.plan(t, "supporter", 1, 10, 500)
+	id, ref := e.subscribe(t, e.user("alice"), plan, domain.IntervalMonth)
+	if err := e.svc.CancelByStaff(ctx, id, ""); err != nil {
+		t.Fatalf("CancelByStaff = %v", err)
+	}
+	e.run(t)
+	v := e.expect(t, id, domain.StateExpired, plan, false)
+	if v.Current.Reason != domain.ReasonStaff {
+		t.Errorf("reason %s", v.Current.Reason)
+	}
+	if s, _ := e.world.Subscription(ref); s.Status != supporters.StatusCanceled {
+		t.Errorf("the provider's subscription: %s", s.Status)
+	}
+	if err := e.svc.CancelByStaff(ctx, id, ""); !errors.Is(err, supporters.ErrNoLiveSubscription) {
+		t.Errorf("CancelByStaff again = %v", err)
+	}
+	if !slices.Contains(e.actions(), moderation.AuditSupporterSubscriptionEnded) {
+		t.Errorf("audit log: %v", e.actions())
+	}
+	page, err := e.svc.Subscriptions(ctx, supporters.SubscriptionFilter{State: domain.StateExpired, Limit: 10})
+	if err != nil || len(page) != 1 || page[0].ID != id {
+		t.Errorf("Subscriptions(expired) = %v, %v", page, err)
+	}
+	if page, _ := e.svc.Subscriptions(ctx, supporters.SubscriptionFilter{State: domain.StateActive, Limit: 10}); len(page) != 0 {
+		t.Errorf("Subscriptions(active) = %v", page)
+	}
+}
+
+func supporterRebuild(t *testing.T, e *supporterEnv) {
+	ctx := t.Context()
+	e.enable(t)
+	basic := e.plan(t, "basic", 1, 10, 500)
+	gold := e.plan(t, "gold", 2, 20, 1000)
+	ida, _ := e.subscribe(t, e.user("alice"), basic, domain.IntervalMonth)
+	idb, refb := e.subscribe(t, e.user("bob"), gold, domain.IntervalYear)
+	failed := e.clock.Now()
+	e.change(t, idb, refb, func(s *supporters.SubscriptionSnapshot) {
+		s.Status, s.LatestPaymentFailed = supporters.StatusPastDue, failed
+	})
+	co, err := e.svc.StartCheckout(ctx, supporters.CheckoutInput{UserID: e.user("carol"), PlanID: basic.ID, Interval: domain.IntervalMonth})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := e.svc.RetirePlan(ctx, gold.ID, ""); err != nil {
+		t.Fatal(err)
+	}
+	e.run(t)
+	snapshot := func() []any {
+		plans, err := e.svc.Plans(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		subs, err := e.svc.Subscriptions(ctx, supporters.SubscriptionFilter{Limit: 10})
+		if err != nil {
+			t.Fatal(err)
+		}
+		due, err := e.h.Supporters.DueDeadlines(ctx, e.clock.Now().Add(365*24*time.Hour), 10)
+		if err != nil {
+			t.Fatal(err)
+		}
+		live, err := e.h.Supporters.CountLiveSubscriptions(ctx, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		var liveIDs []string
+		if err := e.h.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+			liveIDs, err = e.h.Supporters.LiveSubscriptionIDs(ctx, tx)
+			return err
+		}); err != nil {
+			t.Fatal(err)
+		}
+		if int64(len(liveIDs)) != live {
+			t.Errorf("LiveSubscriptionIDs = %v, want the %d of CountLiveSubscriptions", liveIDs, live)
+		}
+		return []any{plans, subs, due, live, liveIDs}
+	}
+	before := snapshot()
+	if err := supporters.RebuildProjections(ctx, e.h.UnitOfWork, e.h.Supporters); err != nil {
+		t.Fatal(err)
+	}
+	if after := snapshot(); !reflect.DeepEqual(before, after) {
+		t.Errorf("the projections differ after the rebuild:\nbefore %+v\nafter  %+v", before, after)
+	}
+	_, _ = ida, co
+}
+
+// supporterListings checks the supporter list (ADR-0070 §13, §15): only a member chooses to be
+// listed; the list shows the listed members of the plans that are not retired, by the plan's
+// rank and newest first, page by page; and the end of a subscription takes its member off.
+func supporterListings(t *testing.T, e *supporterEnv) {
+	ctx := t.Context()
+	e.enable(t)
+	small, large := e.plan(t, "small", 1, 10, 500), e.plan(t, "large", 2, 11, 1000)
+	alice, bob, carol, dave := e.user("alice"), e.user("bob"), e.user("carol"), e.user("dave")
+	names := map[string]string{alice: "alice", bob: "bob", carol: "carol"}
+	e.subscribe(t, alice, small, domain.IntervalMonth)
+	e.subscribe(t, bob, small, domain.IntervalYear)
+	carolID, carolRef := e.subscribe(t, carol, large, domain.IntervalMonth)
+	if _, err := e.svc.StartCheckout(ctx, supporters.CheckoutInput{UserID: dave, PlanID: small.ID, Interval: domain.IntervalMonth}); err != nil {
+		t.Fatal(err)
+	}
+	for _, id := range []string{dave, NamedID("nobody")} {
+		if _, err := e.svc.SetListed(ctx, id, true); !errors.Is(err, supporters.ErrNotMember) {
+			t.Errorf("SetListed(%s) = %v, want ErrNotMember", id, err)
+		}
+		if _, err := e.svc.Listed(ctx, id); !errors.Is(err, supporters.ErrNotMember) {
+			t.Errorf("Listed(%s) = %v, want ErrNotMember", id, err)
+		}
+	}
+	if listed, err := e.svc.Listed(ctx, alice); err != nil || listed {
+		t.Fatalf("Listed before choosing = %v, %v; nobody is listed by default", listed, err)
+	}
+	for _, id := range []string{alice, bob, carol, alice} {
+		if listed, err := e.svc.SetListed(ctx, id, true); err != nil || !listed {
+			t.Fatalf("SetListed(%s) = %v, %v", id, listed, err)
+		}
+		e.clock.Advance(time.Second)
+	}
+	page := func(f supporters.ListingFilter) ([]string, *supporters.Listing) {
+		t.Helper()
+		l, err := e.svc.SupporterList(ctx, f)
+		if err != nil {
+			t.Fatalf("SupporterList(%+v) = %v", f, err)
+		}
+		var out []string
+		for _, m := range l.Members {
+			if want := NamedID("acct-" + names[m.UserID]); m.AccountID != want {
+				t.Errorf("the account of %s: %q, want %q", m.UserID, m.AccountID, want)
+			}
+			out = append(out, m.UserID)
+		}
+		return out, l.Last
+	}
+	if got, last := page(supporters.ListingFilter{Limit: 10}); !reflect.DeepEqual(got, []string{bob, alice, carol}) || last != nil {
+		t.Errorf("the list: %v (last %v), want bob and alice of the small plan, newest first, then carol", got, last)
+	}
+	var walked []string
+	var after *supporters.Listing
+	for range 4 {
+		got, last := page(supporters.ListingFilter{After: after, Limit: 1})
+		walked = append(walked, got...)
+		if last == nil {
+			break
+		}
+		after = last
+	}
+	if !reflect.DeepEqual(walked, []string{bob, alice, carol}) {
+		t.Errorf("the pages: %v", walked)
+	}
+	if got, _ := page(supporters.ListingFilter{PlanID: large.ID, Limit: 10}); !reflect.DeepEqual(got, []string{carol}) {
+		t.Errorf("the large plan: %v", got)
+	}
+	if l, _ := e.svc.SupporterList(ctx, supporters.ListingFilter{Limit: 10}); len(l.Plans) != 2 || l.Plans[0].ID != small.ID || l.Plans[1].ID != large.ID {
+		t.Errorf("the plans of the list: %+v", l.Plans)
+	}
+	if listed, err := e.svc.SetListed(ctx, bob, false); err != nil || listed {
+		t.Fatalf("SetListed(bob, false) = %v, %v", listed, err)
+	}
+	if got, _ := page(supporters.ListingFilter{Limit: 10}); !reflect.DeepEqual(got, []string{alice, carol}) {
+		t.Errorf("after bob left the list: %v", got)
+	}
+	// The end of a subscription takes its member off the list for good.
+	if _, err := e.svc.Cancel(ctx, carol); err != nil {
+		t.Fatal(err)
+	}
+	if got, _ := page(supporters.ListingFilter{Limit: 10}); !reflect.DeepEqual(got, []string{alice, carol}) {
+		t.Errorf("a canceling member is a member until the period's end: %v", got)
+	}
+	e.clock.Advance(31 * 24 * time.Hour)
+	e.change(t, carolID, carolRef, func(s *supporters.SubscriptionSnapshot) { s.Status = supporters.StatusCanceled })
+	if got, _ := page(supporters.ListingFilter{Limit: 10}); !reflect.DeepEqual(got, []string{alice}) {
+		t.Errorf("after carol's subscription ended: %v", got)
+	}
+	if listed, err := e.h.Supporters.HasListing(ctx, nil, carol); err != nil || listed {
+		t.Errorf("carol's choice stays after the end: %v, %v", listed, err)
+	}
+	// A retired plan leaves the list with its members, who stay listed until the period's end.
+	if err := e.svc.RetirePlan(ctx, small.ID, ""); err != nil {
+		t.Fatal(err)
+	}
+	e.run(t)
+	l, err := e.svc.SupporterList(ctx, supporters.ListingFilter{Limit: 10})
+	if err != nil || len(l.Members) != 0 || len(l.Plans) != 1 || l.Plans[0].ID != large.ID {
+		t.Errorf("the list after the small plan retired: %+v, %v", l, err)
+	}
+}

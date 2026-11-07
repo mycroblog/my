@@ -4,501 +4,362 @@ package testkit
 
 import (
 	"context"
-	"fmt"
-	"reflect"
+	"errors"
 	"slices"
 	"strings"
 	"testing"
 	"time"
 
 	appaccount "github.com/mycroblog/my/internal/app/account"
-	appfederation "github.com/mycroblog/my/internal/app/federation"
 	appgraph "github.com/mycroblog/my/internal/app/graph"
-	appnotification "github.com/mycroblog/my/internal/app/notification"
-	"github.com/mycroblog/my/internal/app/queue"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/account"
-	"github.com/mycroblog/my/internal/domain/federation"
 	"github.com/mycroblog/my/internal/domain/graph"
-	"github.com/mycroblog/my/internal/domain/notification"
 )
 
-// AccountMoveContract verifies the Move of a remote account (ADR-0089, FR-414, federation.md
-// §3.4) on a database adapter, through the real account, graph, notification, and federation use
-// cases and projectors: a Move whose target names its actor among its aliases is recorded once,
-// in account_moves and account_move_states, however often it arrives; a Move of someone else, to
-// a target without the alias, to a target that moved itself, or of a suspended account is
-// dropped, with its reason in my.move.activities; and the migration job moves the local
-// followers to the target (a Follow to the target and an Undo Follow to the source), keeps the
-// follow of a follower that blocks the target, copies the blocks and mutes of the source to the
-// target, notifies each follower once with account_moved, and changes nothing when it runs
-// again; the Move that Akkoma sends, to a target with the actor that Akkoma renders (fixtures
-// akkoma/3.20/move and actor-also-known-as), migrates the follows too. The moves of local accounts are verified too (account_move_out_contract.go), and so are
-// the aliases of local accounts (account_aliases, aliasesAddAndRemove) and that a Move to a local
-// account is recorded only when that account names the source among its aliases. The target is
-// fetched from a fake origin; nothing goes over the network.
+// AccountMoveContract verifies the repository methods that the moves of accounts use on a database
+// adapter, by those methods alone, the port contract of ADR-0153 §1: a move is recorded once per
+// account and target, found by ID and as the newest of its account, and canceled once; the moves
+// are listed with their cancellations in the order of their accounts, times, and IDs; the moves in
+// force are upserted, found, listed, and deleted; the aliases of an account are recorded once,
+// counted, listed oldest first, and removed; and the follows, blocks, and mutes that the migration
+// moves are listed in their orders and pages. The use cases on top of it are AccountMoveFlows,
+// which internal/flowtest/federation runs once on SQLite.
 func AccountMoveContract(t *testing.T, newHarness RemoteFollowFactory) {
 	t.Helper()
 	cases := []struct {
 		name string
-		run  func(t *testing.T, e *moveEnv)
+		run  func(t *testing.T, r *moveRepo)
 	}{
-		{"RecordsAVerifiedMoveOnce", movesRecordOnce},
-		{"DropsUnverifiedMoves", movesDropUnverified},
-		{"MigratesTheLocalRelationships", movesMigrate},
-		{"KeepsTheAliasesOfLocalAccounts", aliasesAddAndRemove},
-		{"AcceptsAMoveToALocalAccountWithTheAlias", movesToLocalAlias},
-		{"SendsALocalMove", movesSendLocal},
-		{"RefusesAndCancelsLocalMoves", movesRefuseAndCancelLocal},
-		{"MovesWithinTheServer", movesWithinTheServer},
-		{"AcceptsTheMoveOfAkkoma", movesFromAkkoma},
+		{"RecordsAndCancelsMovesOnce", moveRepoMoves},
+		{"KeepsTheMovesInForce", moveRepoStates},
+		{"KeepsAliases", moveRepoAliases},
+		{"ListsTheRelationshipsToMigrate", moveRepoRelationships},
 	}
 	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) { tc.run(t, newMoveEnv(t, newHarness)) })
+		t.Run(tc.name, func(t *testing.T) {
+			h := newHarness(t, uow.Options{})
+			clock := NewClock(time.Date(2026, 11, 7, 12, 0, 0, 0, time.UTC))
+			tc.run(t, &moveRepo{h: h, clock: clock, ids: NewIDGenerator(clock)})
+		})
 	}
 }
 
-const (
-	moveSource = "https://old.example/users/alice"
-	moveTarget = "https://new.example/users/alice"
-)
-
-type moveEnv struct {
-	*remoteFollowEnv
-	moves     *appgraph.Service
-	targets   *moveTargets
-	suspended map[string]bool
-	meter     *Meter
+type moveRepo struct {
+	h     RemoteFollowHarness
+	clock *Clock
+	ids   *IDGenerator
 }
 
-func newMoveEnv(t *testing.T, newHarness RemoteFollowFactory) *moveEnv {
+func (r *moveRepo) tx(t *testing.T, fn func(ctx context.Context, tx uow.Tx) error) {
 	t.Helper()
-	e := &moveEnv{remoteFollowEnv: newRemoteFollowEnv(t, newHarness), suspended: map[string]bool{}, meter: NewMeter()}
-	outbox := queue.AfterCommit(e.projectors, e.jobs, nil)
-	e.moves = appgraph.NewService(appgraph.Deps{
-		UnitOfWork: e.h.UnitOfWork, Repository: e.h.Graph, Accounts: e.accounts, Clock: e.clock, IDs: e.ids, Host: contractHost,
-		Outbox: outbox, Jobs: e.jobs,
-	})
-	e.moves.RegisterMoveProjector(e.projectors)
-	e.moves.RegisterJobs(e.handlers, &queue.Scheduler{})
-	e.targets = &moveTargets{e: e, docs: map[federation.IRI]*federation.Actor{}}
-	appfederation.RegisterMoveHandler(e.processor, appfederation.MoveHandlerDeps{
-		Targets: e.targets, Accounts: e.accounts, Suspensions: moveSuspensions(e.suspended), Aliases: e.accounts,
-		Host: contractHost, Meter: e.meter,
-	})
-	return e
-}
-
-// moveTargets serves the actors that Moves name as their targets, as their origin would.
-type moveTargets struct {
-	e    *moveEnv
-	t    *testing.T
-	docs map[federation.IRI]*federation.Actor
-}
-
-func (m *moveTargets) RefreshActor(ctx context.Context, uri string) (appaccount.Actor, *federation.Actor, error) {
-	doc, ok := m.docs[federation.IRI(uri)]
-	if !ok {
-		return appaccount.Actor{}, nil, fmt.Errorf("%w: %s", appfederation.ErrFetchNotFound, uri)
-	}
-	m.e.remote(m.t, uri)
-	a, err := m.e.accounts.FindByURI(ctx, uri)
-	return a, doc, err
-}
-
-// serve makes the origin of uri serve an actor with the aliases aka that moved to movedTo ("" for
-// none).
-func (e *moveEnv) serve(t *testing.T, uri string, movedTo federation.IRI, aka ...federation.IRI) {
-	e.targets.t = t
-	e.targets.docs[federation.IRI(uri)] = &federation.Actor{
-		ID: federation.IRI(uri), Type: federation.ActorPerson, Inbox: federation.IRI(uri + "/inbox"), AlsoKnownAs: aka, MovedTo: movedTo,
+	if err := r.h.UnitOfWork.Tx(t.Context(), func(tx uow.Tx) error { return fn(t.Context(), tx) }); err != nil {
+		t.Fatal(err)
 	}
 }
 
-type moveSuspensions map[string]bool
-
-func (s moveSuspensions) AccountFederationSuspended(_ context.Context, accountID string) (bool, error) {
-	return s[accountID], nil
-}
-
-// moveDoc returns a Move by actor of object to target, with the id suffix n.
-func moveDoc(actor, object, target string, n int) []byte {
-	return fmt.Appendf(nil, `{"@context":"https://www.w3.org/ns/activitystreams","id":"%s#moves/%d","type":"Move",`+
-		`"actor":"%s","object":"%s","target":"%s","to":"%s/followers"}`, actor, n, actor, object, target, actor)
-}
-
-// moveOutcomes returns the number of Moves counted with each outcome.
-func (e *moveEnv) moveOutcomes(outcome string) float64 {
-	return e.meter.Sum(appfederation.MoveActivities.Name, map[string]string{appfederation.LabelOutcome: outcome})
-}
-
-// moveRecords returns every recorded move.
-func (e *moveEnv) moveRecords(t *testing.T) []account.MoveRecord {
+// account inserts a remote account named name and returns its ID.
+func (r *moveRepo) account(t *testing.T, name string) string {
 	t.Helper()
-	var out []account.MoveRecord
-	err := e.h.UnitOfWork.Tx(t.Context(), func(tx uow.Tx) error {
+	a := account.Account{
+		ID: r.ids.NewID(), URI: "https://remote.example/users/" + name, Domain: "remote.example",
+		ActorType: account.ActorPerson, CreatedAt: r.clock.Now(),
+	}
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error { return r.h.Accounts.InsertAccount(ctx, tx, a) })
+	return a.ID
+}
+
+// insertMove records a remote move of from to to now and reports whether it recorded one.
+func (r *moveRepo) insertMove(t *testing.T, from, to string) (account.Move, bool) {
+	t.Helper()
+	m := account.Move{
+		ID: r.ids.NewID(), AccountID: from, TargetAccountID: to, InitiatedBy: account.MoveInitiatedByRemote,
+		ActivityURI: "https://remote.example/moves/" + r.ids.NewID(), OccurredAt: r.clock.Now(),
+	}
+	var ok bool
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
 		var err error
-		out, err = e.h.Accounts.ListMoveRecords(t.Context(), tx)
+		ok, err = r.h.Accounts.InsertMove(ctx, tx, m)
 		return err
 	})
-	if err != nil {
-		t.Fatalf("ListMoveRecords: %v", err)
-	}
-	return out
+	r.clock.Advance(time.Second)
+	return m, ok
 }
 
-// follow makes the local account follow the remote one, accepted by its server.
-func (e *moveEnv) follow(t *testing.T, local, remote string) graph.Follow {
-	t.Helper()
-	if _, err := e.graph.Follow(t.Context(), local, remote); err != nil {
-		t.Fatalf("Follow(%s, %s): %v", local, remote, err)
-	}
-	f := e.liveFollow(t, local, remote)
-	if err := e.graph.AcceptRemote(t.Context(), appgraph.RemoteResponse{FollowURI: f.URI, FolloweeID: remote, FollowerID: local}); err != nil {
-		t.Fatalf("AcceptRemote: %v", err)
-	}
-	return f
-}
-
-// migrate runs the pending migration jobs, and the pages they enqueue, leaving the other jobs.
-func (e *moveEnv) migrate(t *testing.T) int {
-	t.Helper()
-	handle, _, ok := e.handlers.Lookup(appgraph.JobMigrateFollows)
+func moveRepoMoves(t *testing.T, r *moveRepo) {
+	ctx := t.Context()
+	alice, bob, carol, dave := r.account(t, "alice"), r.account(t, "bob"), r.account(t, "carol"), r.account(t, "dave")
+	first, ok := r.insertMove(t, alice, bob)
 	if !ok {
-		t.Fatal("no handler for " + appgraph.JobMigrateFollows)
+		t.Fatal("InsertMove = false for a new move")
 	}
-	ran := 0
-	for {
-		e.jobs.mu.Lock()
-		var mine, rest []queue.NewJob
-		for _, j := range e.jobs.pending {
-			if j.Type == appgraph.JobMigrateFollows {
-				mine = append(mine, j)
-			} else {
-				rest = append(rest, j)
-			}
+	if _, ok := r.insertMove(t, alice, bob); ok {
+		t.Error("InsertMove to the same target again = true, want false")
+	}
+	second, _ := r.insertMove(t, alice, carol)
+	self := account.Move{ID: r.ids.NewID(), AccountID: dave, TargetAccountID: bob, InitiatedBy: account.MoveInitiatedBySelf, OccurredAt: r.clock.Now()}
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+		_, err := r.h.Accounts.InsertMove(ctx, tx, self)
+		return err
+	})
+
+	for _, want := range []account.Move{first, second, self} {
+		if got, err := r.h.Accounts.FindMove(ctx, want.ID); err != nil || got != want {
+			t.Errorf("FindMove(%s) = %+v, %v; want %+v", want.ID, got, err, want)
 		}
-		e.jobs.pending = rest
-		e.jobs.mu.Unlock()
-		if len(mine) == 0 {
-			return ran
+	}
+	if _, err := r.h.Accounts.FindMove(ctx, r.ids.NewID()); !errors.Is(err, appaccount.ErrNotFound) {
+		t.Errorf("FindMove(unknown) = %v, want ErrNotFound", err)
+	}
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+		if got, err := r.h.Accounts.FindMoveTx(ctx, tx, second.ID); err != nil || got != second {
+			t.Errorf("FindMoveTx = %+v, %v; want %+v", got, err, second)
 		}
-		for _, nj := range mine {
-			j, err := nj.Build(e.ids.NewID(), e.clock.Now())
-			if err != nil {
-				t.Fatal(err)
-			}
-			if r := handle(t.Context(), j); !r.IsDone() {
-				t.Fatalf("%s %s = %+v (%v), want Done", j.Type, j.Payload, r, r.Err())
-			}
-			ran++
+		if got, err := r.h.Accounts.LatestMove(ctx, tx, alice); err != nil || got != second {
+			t.Errorf("LatestMove(alice) = %+v, %v; want the newer move %+v", got, err, second)
 		}
+		if _, err := r.h.Accounts.LatestMove(ctx, tx, bob); !errors.Is(err, appaccount.ErrNotFound) {
+			t.Errorf("LatestMove(an account that never moved) = %v, want ErrNotFound", err)
+		}
+		return nil
+	})
+
+	cancel := account.MoveCancellation{MoveID: first.ID, CanceledAt: r.clock.Now()}
+	for i, want := range []bool{true, false} {
+		r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+			ok, err := r.h.Accounts.InsertMoveCancellation(ctx, tx, cancel)
+			if err == nil && ok != want {
+				t.Errorf("InsertMoveCancellation #%d = %v, want %v", i+1, ok, want)
+			}
+			return err
+		})
+	}
+
+	var records []account.MoveRecord
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+		var err error
+		records, err = r.h.Accounts.ListMoveRecords(ctx, tx)
+		return err
+	})
+	want := []account.MoveRecord{{Move: first, Canceled: true}, {Move: second}, {Move: self}}
+	if !slices.Equal(records, want) {
+		t.Errorf("ListMoveRecords =\n%+v\nwant\n%+v", records, want)
 	}
 }
 
-func movesRecordOnce(t *testing.T, e *moveEnv) {
+func moveRepoStates(t *testing.T, r *moveRepo) {
 	ctx := t.Context()
-	source := e.remote(t, moveSource)
-	e.serve(t, moveTarget, "", moveSource)
-	if got := e.receive(t, moveDoc(moveSource, moveSource, moveTarget, 1)); got != appfederation.InboxHandled {
-		t.Fatalf("Move = %q, want handled", got)
+	alice, bob, carol := r.account(t, "alice"), r.account(t, "bob"), r.account(t, "carol")
+	toBob, _ := r.insertMove(t, alice, bob)
+	toCarol, _ := r.insertMove(t, alice, carol)
+	bobMove, _ := r.insertMove(t, bob, carol)
+
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+		return errors.Join(
+			r.h.Accounts.UpsertMoveState(ctx, tx, account.StateOf(toBob)),
+			r.h.Accounts.UpsertMoveState(ctx, tx, account.StateOf(toCarol)),
+			r.h.Accounts.UpsertMoveState(ctx, tx, account.StateOf(bobMove)),
+		)
+	})
+	if got, err := r.h.Accounts.FindMoveState(ctx, alice); err != nil || got != account.StateOf(toCarol) {
+		t.Errorf("FindMoveState(alice) = %+v, %v; want the upserted %+v", got, err, account.StateOf(toCarol))
 	}
-	target, err := e.accounts.FindByURI(ctx, moveTarget)
-	if err != nil {
-		t.Fatalf("the target was not stored: %v", err)
+	if _, err := r.h.Accounts.FindMoveState(ctx, carol); !errors.Is(err, appaccount.ErrNotFound) {
+		t.Errorf("FindMoveState(an account that never moved) = %v, want ErrNotFound", err)
 	}
-	st, err := e.accounts.MoveState(ctx, source)
-	if err != nil || st.TargetAccountID != target.Account.ID {
-		t.Fatalf("MoveState = %+v, %v, want the target %s", st, err, target.Account.ID)
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+		if got, err := r.h.Accounts.FindMoveStateTx(ctx, tx, bob); err != nil || got != account.StateOf(bobMove) {
+			t.Errorf("FindMoveStateTx(bob) = %+v, %v; want %+v", got, err, account.StateOf(bobMove))
+		}
+		return nil
+	})
+	states, err := r.h.Accounts.ListMoveStates(ctx)
+	if want := []account.MoveState{account.StateOf(toCarol), account.StateOf(bobMove)}; err != nil || !slices.Equal(states, want) {
+		t.Errorf("ListMoveStates = %+v, %v; want %+v in account order", states, err, want)
 	}
-	// The same Move again, and another Move to the same target, change nothing.
-	e.receive(t, moveDoc(moveSource, moveSource, moveTarget, 1))
-	e.receive(t, moveDoc(moveSource, moveSource, moveTarget, 2))
-	recs := e.moveRecords(t)
-	if len(recs) != 1 || recs[0].Move.AccountID != source || recs[0].Move.TargetAccountID != target.Account.ID ||
-		recs[0].Move.InitiatedBy != account.MoveInitiatedByRemote || !strings.HasPrefix(recs[0].Move.ActivityURI, moveSource+"#moves/") {
-		t.Errorf("moves = %+v, want one remote move of %s to %s", recs, source, target.Account.ID)
+
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error { return r.h.Accounts.DeleteMoveState(ctx, tx, alice) })
+	if _, err := r.h.Accounts.FindMoveState(ctx, alice); !errors.Is(err, appaccount.ErrNotFound) {
+		t.Errorf("FindMoveState after DeleteMoveState = %v, want ErrNotFound", err)
 	}
-	if again, err := e.accounts.MoveState(ctx, source); err != nil || again != st {
-		t.Errorf("MoveState after the Move again = %+v, %v, want %+v", again, err, st)
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error { return r.h.Accounts.DeleteAllMoveStates(ctx, tx) })
+	if states, err := r.h.Accounts.ListMoveStates(ctx); err != nil || len(states) != 0 {
+		t.Errorf("ListMoveStates after DeleteAllMoveStates = %+v, %v; want none", states, err)
 	}
-	if got := e.moveOutcomes(appfederation.MoveOutcomeRecorded); got != 1 {
-		t.Errorf("recorded Moves = %v, want 1", got)
-	}
-	if got := e.moveOutcomes(appfederation.MoveOutcomeDuplicate); got != 2 {
-		t.Errorf("duplicate Moves = %v, want 2", got)
-	}
-	// A Move to yet another target within the interval is dropped.
-	const third = "https://third.example/users/alice"
-	e.serve(t, third, "", moveSource)
-	if got := e.receive(t, moveDoc(moveSource, moveSource, third, 3)); got != appfederation.InboxDropped {
-		t.Errorf("Move to another target too soon = %q, want dropped", got)
-	}
-	if got := e.moveOutcomes(appfederation.MoveOutcomeTooSoon); got != 1 {
-		t.Errorf("too_soon Moves = %v, want 1", got)
-	}
-	// After the interval, it moves on.
-	e.clock.Advance(account.RemoteMoveInterval)
-	if got := e.receive(t, moveDoc(moveSource, moveSource, third, 4)); got != appfederation.InboxHandled {
-		t.Errorf("Move to another target after the interval = %q, want handled", got)
-	}
-	if st, err := e.accounts.MoveState(ctx, source); err != nil || st.TargetAccountID == target.Account.ID {
-		t.Errorf("MoveState after the second move = %+v, %v, want the third account", st, err)
-	}
-	// account_move_states is rebuilt from the moves as it was projected.
-	incremental := snapshotAccountProjections(t, e.h.Accounts)
-	if len(incremental.moves) != 1 {
-		t.Fatalf("move states = %+v, want one", incremental.moves)
-	}
-	if err := appaccount.RebuildProjections(ctx, e.h.UnitOfWork, e.h.Accounts); err != nil {
-		t.Fatalf("RebuildProjections = %v", err)
-	}
-	if rebuilt := snapshotAccountProjections(t, e.h.Accounts); !reflect.DeepEqual(rebuilt.moves, incremental.moves) {
-		t.Errorf("rebuilt move states = %+v, want %+v", rebuilt.moves, incremental.moves)
-	}
-	if err := e.meter.Err(); err != nil {
-		t.Error(err)
+	if _, err := r.h.Accounts.FindMove(ctx, toBob.ID); err != nil {
+		t.Errorf("FindMove after DeleteAllMoveStates = %v, want the move kept", err)
 	}
 }
 
-func movesDropUnverified(t *testing.T, e *moveEnv) {
-	source := e.remote(t, moveSource)
+func moveRepoAliases(t *testing.T, r *moveRepo) {
+	ctx := t.Context()
+	alice, bob := r.account(t, "alice"), r.account(t, "bob")
 	const (
-		noAlias = "https://new.example/users/noalias"
-		moved   = "https://new.example/users/moved"
-		blocked = "https://new.example/users/blocked"
+		oldURI   = "https://old.example/users/alice"
+		otherURI = "https://other.example/users/alice"
 	)
-	e.serve(t, moveTarget, "", moveSource)
-	e.serve(t, noAlias, "", "https://other.example/users/bob")
-	e.serve(t, moved, "https://elsewhere.example/users/alice", moveSource)
-	e.serve(t, blocked, "", moveSource)
-	e.suspended[e.remote(t, blocked)] = true
-	for _, tc := range []struct {
-		name    string
-		doc     []byte
-		outcome string
-	}{
-		{"a Move of someone else", moveDoc(moveSource, "https://other.example/users/bob", moveTarget, 1), appfederation.MoveOutcomeNotOwnActor},
-		{"a Move to itself", moveDoc(moveSource, moveSource, moveSource, 2), appfederation.MoveOutcomeSameAccount},
-		{"a target without the alias", moveDoc(moveSource, moveSource, noAlias, 3), appfederation.MoveOutcomeAliasMissing},
-		{"a target that moved", moveDoc(moveSource, moveSource, moved, 4), appfederation.MoveOutcomeTargetMoved},
-		{"a suspended target", moveDoc(moveSource, moveSource, blocked, 5), appfederation.MoveOutcomeSuspended},
-		{"an unknown target", moveDoc(moveSource, moveSource, "https://gone.example/users/alice", 6), appfederation.MoveOutcomeTargetUnavailable},
-	} {
-		if got := e.receive(t, tc.doc); got != appfederation.InboxDropped {
-			t.Errorf("%s = %q, want dropped", tc.name, got)
+	insert := func(a account.Alias) bool {
+		var ok bool
+		r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+			var err error
+			ok, err = r.h.Accounts.InsertAlias(ctx, tx, a)
+			return err
+		})
+		r.clock.Advance(time.Second)
+		return ok
+	}
+	first := account.Alias{AccountID: alice, URI: otherURI, AddedAt: r.clock.Now()}
+	if !insert(first) {
+		t.Fatal("InsertAlias = false for a new alias")
+	}
+	second := account.Alias{AccountID: alice, URI: oldURI, AddedAt: r.clock.Now()}
+	insert(second)
+	if insert(account.Alias{AccountID: alice, URI: oldURI, AddedAt: r.clock.Now()}) {
+		t.Error("InsertAlias of an alias the account has = true, want false")
+	}
+	insert(account.Alias{AccountID: bob, URI: oldURI, AddedAt: r.clock.Now()})
+
+	if got, err := r.h.Accounts.ListAliases(ctx, alice); err != nil || !slices.Equal(got, []account.Alias{first, second}) {
+		t.Errorf("ListAliases(alice) = %+v, %v; want %+v oldest first", got, err, []account.Alias{first, second})
+	}
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+		if n, err := r.h.Accounts.CountAliases(ctx, tx, alice); err != nil || n != 2 {
+			t.Errorf("CountAliases(alice) = %d, %v; want 2", n, err)
 		}
-		if got := e.moveOutcomes(tc.outcome); got != 1 {
-			t.Errorf("%s: %s Moves = %v, want 1", tc.name, tc.outcome, got)
+		if ok, err := r.h.Accounts.HasAliasTx(ctx, tx, alice, oldURI); err != nil || !ok {
+			t.Errorf("HasAliasTx(alice, old) = %v, %v; want true", ok, err)
 		}
-	}
-	e.suspended[source] = true
-	if got := e.receive(t, moveDoc(moveSource, moveSource, moveTarget, 7)); got != appfederation.InboxDropped {
-		t.Errorf("a Move of a suspended account = %q, want dropped", got)
-	}
-	if recs := e.moveRecords(t); len(recs) != 0 {
-		t.Errorf("moves = %+v, want none", recs)
-	}
-	if _, err := e.accounts.MoveState(t.Context(), source); err == nil {
-		t.Error("the source has a move state")
-	}
-	if err := e.meter.Err(); err != nil {
-		t.Error(err)
-	}
-}
-
-func movesMigrate(t *testing.T, e *moveEnv) {
-	ctx := t.Context()
-	source := e.remote(t, moveSource)
-	follower := e.register(t, "follower").AccountID
-	blocker := e.register(t, "blocker").AccountID
-	sourceBlocker := e.register(t, "sourceblocker").AccountID
-	muter := e.register(t, "muter").AccountID
-	e.serve(t, moveTarget, "", moveSource)
-	target := e.remote(t, moveTarget)
-
-	old := e.follow(t, follower, source)
-	if _, err := e.graph.UpdatePreferences(ctx, follower, source, appgraph.PreferencesInput{ShowBoosts: false}); err != nil {
-		t.Fatal(err)
-	}
-	kept := e.follow(t, blocker, source)
-	if _, err := e.graph.Block(ctx, blocker, target); err != nil {
-		t.Fatal(err)
-	}
-	if _, err := e.graph.Block(ctx, sourceBlocker, source); err != nil {
-		t.Fatal(err)
-	}
-	if _, err := e.graph.Mute(ctx, muter, source, appgraph.MuteInput{HideNotifications: true, Duration: 48 * time.Hour}); err != nil {
-		t.Fatal(err)
-	}
-	e.sent(t, old.ID) // the Follows so far
-
-	if got := e.receive(t, moveDoc(moveSource, moveSource, moveTarget, 1)); got != appfederation.InboxHandled {
-		t.Fatalf("Move = %q, want handled", got)
-	}
-	if ran := e.migrate(t); ran == 0 {
-		t.Fatal("the Move enqueued no migration")
+		return nil
+	})
+	if ok, err := r.h.Accounts.HasAlias(ctx, alice, "https://nowhere.example/users/alice"); err != nil || ok {
+		t.Errorf("HasAlias(an unknown URI) = %v, %v; want false", ok, err)
 	}
 
-	// The follower follows the target, pending its server's Accept, with the preferences of
-	// its follow of the source, which ended.
-	r := e.relationship(t, follower, target)
-	if r.Following != graph.StatePending || r.ShowBoosts {
-		t.Errorf("follower → target = %+v, want a pending follow with show_boosts off", r)
-	}
-	if r := e.relationship(t, follower, source); r.Following != graph.StateNone {
-		t.Errorf("follower → source = %q, want none", r.Following)
-	}
-	if got := types(e.sent(t, old.ID)); !reflect.DeepEqual(got, []federation.ActivityType{federation.ActivityFollow, federation.ActivityUndo}) {
-		t.Errorf("activities of the follow of the source = %v, want Follow, Undo", got)
-	}
-	moved := e.liveFollow(t, follower, target)
-	sent := e.sent(t, moved.ID)
-	if !reflect.DeepEqual(types(sent), []federation.ActivityType{federation.ActivityFollow}) || !slices.Equal(sent[0].Inboxes, []string{moveTarget + "/inbox"}) {
-		t.Errorf("activities of the follow of the target = %+v, want a Follow to %s/inbox", sent, moveTarget)
-	}
-	// The follower that blocks the target keeps following the source.
-	if r := e.relationship(t, blocker, source); !r.ActivelyFollowing() {
-		t.Errorf("blocker → source = %q, want the follow kept", r.Following)
-	}
-	if e.liveFollow(t, blocker, source).ID != kept.ID {
-		t.Error("the kept follow was replaced")
-	}
-	// The block and the mute of the source apply to the target too.
-	if r := e.relationship(t, sourceBlocker, target); !r.Blocking {
-		t.Error("the blocker of the source does not block the target")
-	}
-	if r := e.relationship(t, muter, target); !r.Muting || !r.MutingNotifications {
-		t.Errorf("muter → target = %+v, want a mute that hides notifications", r)
-	}
-	mute, err := e.h.Graph.FindMute(ctx, muter, target, e.clock.Now())
-	if err != nil || mute.ExpiresAt == nil {
-		t.Fatalf("FindMute = %+v, %v, want a mute with an expiry", mute, err)
-	}
-	sourceMute, err := e.h.Graph.FindMute(ctx, muter, source, e.clock.Now())
-	if err != nil || !sourceMute.ExpiresAt.Equal(*mute.ExpiresAt) {
-		t.Errorf("the mute of the target expires at %v, want %v", mute.ExpiresAt, sourceMute.ExpiresAt)
-	}
-
-	notified := func() map[string][]notification.Notification {
-		out := map[string][]notification.Notification{}
-		for _, id := range []string{follower, blocker, sourceBlocker, muter} {
-			ns, err := e.notifs.List(ctx, id, appnotification.Query{Types: []notification.Type{notification.TypeAccountMoved}})
-			if err != nil {
-				t.Fatal(err)
+	for i, want := range []bool{true, false} {
+		r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+			ok, err := r.h.Accounts.DeleteAlias(ctx, tx, alice, oldURI)
+			if err == nil && ok != want {
+				t.Errorf("DeleteAlias #%d = %v, want %v", i+1, ok, want)
 			}
-			out[id] = ns
-		}
-		return out
+			return err
+		})
 	}
-	first := notified()
-	if ns := first[follower]; len(ns) != 1 || ns[0].SourceAccountID != source || ns[0].AccountMoveOutcome != notification.MoveRequested {
-		t.Errorf("notifications of the follower = %+v, want one account_moved from the source, requested", ns)
+	if ok, err := r.h.Accounts.HasAlias(ctx, alice, oldURI); err != nil || ok {
+		t.Errorf("HasAlias after DeleteAlias = %v, %v; want false", ok, err)
 	}
-	if ns := first[blocker]; len(ns) != 1 || ns[0].AccountMoveOutcome != notification.MoveBlocking {
-		t.Errorf("notifications of the follower that blocks the target = %+v, want one account_moved, blocking", ns)
-	}
-	if len(first[sourceBlocker])+len(first[muter]) != 0 {
-		t.Errorf("accounts that only block or mute the source were notified: %+v", first)
-	}
-
-	// Running the migration again changes nothing.
-	edges, err := e.h.Graph.ListEdges(ctx)
-	if err != nil {
-		t.Fatal(err)
-	}
-	blocks, err := e.h.Graph.ListBlockEdges(ctx)
-	if err != nil {
-		t.Fatal(err)
-	}
-	recs := e.moveRecords(t)
-	if len(recs) != 1 {
-		t.Fatalf("moves = %+v, want one", recs)
-	}
-	if err := e.moves.MigrateFollows(ctx, recs[0].Move.ID, source, target); err != nil {
-		t.Fatalf("MigrateFollows again: %v", err)
-	}
-	if again, err := e.h.Graph.ListEdges(ctx); err != nil || !reflect.DeepEqual(again, edges) {
-		t.Errorf("edges after the migration again = %+v, %v, want %+v", again, err, edges)
-	}
-	if again, err := e.h.Graph.ListBlockEdges(ctx); err != nil || !reflect.DeepEqual(again, blocks) {
-		t.Errorf("blocks after the migration again = %+v, %v, want %+v", again, err, blocks)
-	}
-	if again, err := e.h.Graph.FindMute(ctx, muter, target, e.clock.Now()); err != nil || !again.CreatedAt.Equal(mute.CreatedAt) {
-		t.Errorf("the mute of the target after the migration again = %+v, %v, want it kept", again, err)
-	}
-	if again := notified(); !reflect.DeepEqual(again, first) {
-		t.Errorf("notifications after the migration again = %+v, want %+v", again, first)
+	if ok, err := r.h.Accounts.HasAlias(ctx, bob, oldURI); err != nil || !ok {
+		t.Errorf("HasAlias of another account with the URI = %v, %v; want true", ok, err)
 	}
 }
 
-// movesFromAkkoma receives the Move that Akkoma sends (akkoma/3.20/move: to as an array, with
-// published and context) to a target with the actor that Akkoma renders, naming the source in
-// alsoKnownAs (akkoma/3.20/actor-also-known-as). Akkoma is not in the live interoperability test,
-// so this is its regression test (ADR-0089 §10).
-func movesFromAkkoma(t *testing.T, e *moveEnv) {
+func moveRepoRelationships(t *testing.T, r *moveRepo) {
 	ctx := t.Context()
-	const (
-		source = "https://akkoma.example/users/akko"
-		target = "https://remote.example/users/akko"
-	)
-	doc, err := federation.Normalize(federationFixture(t, "akkoma/3.20/actor-also-known-as"), e.clock.Now(), appfederation.CanonicalHost)
-	if err != nil || doc.Actor == nil || doc.Actor.ID != target {
-		t.Fatalf("Normalize(actor-also-known-as) = %+v, %v, want the actor %s", doc, err, target)
+	source := r.account(t, "source")
+	followers := []string{r.account(t, "f1"), r.account(t, "f2"), r.account(t, "f3"), r.account(t, "pending")}
+	var edges []graph.Edge
+	for i, f := range followers {
+		follow := graph.Follow{
+			ID: r.ids.NewID(), URI: "https://remote.example/follows/" + r.ids.NewID(),
+			FollowerAccountID: f, FolloweeAccountID: source, RequestedAt: r.clock.Now(),
+		}
+		edge := graph.Edge{FollowerAccountID: f, FolloweeAccountID: source, FollowID: follow.ID, State: graph.StateActive, Since: r.clock.Now()}
+		if i == len(followers)-1 {
+			edge.State = graph.StatePending
+		}
+		r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+			if err := r.h.Graph.LockPair(ctx, tx, f, source); err != nil {
+				return err
+			}
+			if err := r.h.Graph.InsertFollow(ctx, tx, follow); err != nil {
+				return err
+			}
+			_, err := r.h.Graph.InsertEdge(ctx, tx, edge)
+			return err
+		})
+		edges = append(edges, edge)
+		r.clock.Advance(time.Second)
 	}
-	e.targets.t = t
-	e.targets.docs[doc.Actor.ID] = doc.Actor
-	sourceID := e.remote(t, source)
-	follower := e.register(t, "follower").AccountID
-	e.follow(t, follower, sourceID)
+	got, err := r.h.Graph.ListFollowers(ctx, source, graph.StateActive, "", 2)
+	if want := []graph.Edge{edges[2], edges[1]}; err != nil || !slices.Equal(got, want) {
+		t.Errorf("ListFollowers(active, first page) = %+v, %v; want %+v newest first", got, err, want)
+	}
+	got, err = r.h.Graph.ListFollowers(ctx, source, graph.StateActive, edges[1].FollowID, 2)
+	if want := []graph.Edge{edges[0]}; err != nil || !slices.Equal(got, want) {
+		t.Errorf("ListFollowers(active, after the second) = %+v, %v; want %+v", got, err, want)
+	}
+	got, err = r.h.Graph.ListFollowers(ctx, source, graph.StatePending, "", 10)
+	if want := []graph.Edge{edges[3]}; err != nil || !slices.Equal(got, want) {
+		t.Errorf("ListFollowers(pending) = %+v, %v; want %+v", got, err, want)
+	}
 
-	if got := e.receive(t, federationFixture(t, "akkoma/3.20/move")); got != appfederation.InboxHandled {
-		t.Fatalf("the Move of Akkoma = %q, want handled", got)
+	var blocks []graph.BlockEdge
+	for _, blocker := range followers[:3] {
+		b := graph.Block{ID: r.ids.NewID(), BlockerAccountID: blocker, BlockedAccountID: source, CreatedAt: r.clock.Now()}
+		be := graph.BlockEdge{BlockerAccountID: blocker, BlockedAccountID: source, BlockID: b.ID}
+		r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+			if err := r.h.Graph.InsertBlock(ctx, tx, b); err != nil {
+				return err
+			}
+			_, err := r.h.Graph.InsertBlockEdge(ctx, tx, be)
+			return err
+		})
+		blocks = append(blocks, be)
+		r.clock.Advance(time.Second)
 	}
-	moved, err := e.accounts.FindByURI(ctx, target)
-	if err != nil {
-		t.Fatalf("the target was not stored: %v", err)
+	gotBlocks, err := r.h.Graph.ListBlockers(ctx, source, "", 2)
+	if want := blocks[:2]; err != nil || !slices.Equal(gotBlocks, want) {
+		t.Errorf("ListBlockers(first page) = %+v, %v; want %+v in block order", gotBlocks, err, want)
 	}
-	if st, err := e.accounts.MoveState(ctx, sourceID); err != nil || st.TargetAccountID != moved.Account.ID {
-		t.Fatalf("MoveState = %+v, %v, want the target %s", st, err, moved.Account.ID)
+	gotBlocks, err = r.h.Graph.ListBlockers(ctx, source, blocks[1].BlockID, 2)
+	if want := blocks[2:]; err != nil || !slices.Equal(gotBlocks, want) {
+		t.Errorf("ListBlockers(after the second) = %+v, %v; want %+v", gotBlocks, err, want)
 	}
-	if ran := e.migrate(t); ran == 0 {
-		t.Fatal("the Move enqueued no migration")
+
+	now := r.clock.Now()
+	expired := now.Add(-time.Second)
+	later := now.Add(time.Hour)
+	mutes := []graph.Mute{
+		{AccountID: followers[0], TargetAccountID: source, HideNotifications: true, CreatedAt: now},
+		{AccountID: followers[1], TargetAccountID: source, ExpiresAt: &later, CreatedAt: now},
+		{AccountID: followers[2], TargetAccountID: source, ExpiresAt: &expired, CreatedAt: now.Add(-time.Hour)},
+		{AccountID: followers[3], TargetAccountID: source, CreatedAt: now},
 	}
-	if r := e.relationship(t, follower, moved.Account.ID); r.Following != graph.StatePending {
-		t.Errorf("follower → target = %q, want pending", r.Following)
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+		for _, m := range mutes {
+			if err := r.h.Graph.UpsertMute(ctx, tx, m); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+	sortedMuters := []graph.Mute{mutes[0], mutes[1], mutes[3]}
+	slices.SortFunc(sortedMuters, func(a, b graph.Mute) int { return strings.Compare(a.AccountID, b.AccountID) })
+	gotMutes, err := r.h.Graph.ListMuters(ctx, source, now, "", 2)
+	if err != nil || !equalMutes(gotMutes, sortedMuters[:2]) {
+		t.Errorf("ListMuters(first page) = %+v, %v; want %+v, without the expired mute", gotMutes, err, sortedMuters[:2])
 	}
-	if r := e.relationship(t, follower, sourceID); r.Following != graph.StateNone {
-		t.Errorf("follower → source = %q, want none", r.Following)
+	gotMutes, err = r.h.Graph.ListMuters(ctx, source, now, sortedMuters[1].AccountID, 2)
+	if err != nil || !equalMutes(gotMutes, sortedMuters[2:]) {
+		t.Errorf("ListMuters(after the second) = %+v, %v; want %+v", gotMutes, err, sortedMuters[2:])
 	}
-	ns, err := e.notifs.List(ctx, follower, appnotification.Query{Types: []notification.Type{notification.TypeAccountMoved}})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(ns) != 1 || ns[0].SourceAccountID != sourceID || ns[0].AccountMoveOutcome != notification.MoveRequested {
-		t.Errorf("notifications of the follower = %+v, want one account_moved from the source, requested", ns)
-	}
-	if got := e.moveOutcomes(appfederation.MoveOutcomeRecorded); got != 1 {
-		t.Errorf("recorded Moves = %v, want 1", got)
-	}
-	if err := e.meter.Err(); err != nil {
-		t.Error(err)
-	}
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+		if got, err := r.h.Graph.Mute(ctx, tx, followers[1], source, now); err != nil || !equalMutes([]graph.Mute{got}, mutes[1:2]) {
+			t.Errorf("Mute(in force) = %+v, %v; want %+v", got, err, mutes[1])
+		}
+		if _, err := r.h.Graph.Mute(ctx, tx, followers[2], source, now); !errors.Is(err, appgraph.ErrNotFound) {
+			t.Errorf("Mute(expired) = %v, want ErrNotFound", err)
+		}
+		return nil
+	})
 }
 
-// federationFixture returns the JSON of the federation fixture at path
-// (<implementation>/<version>/<name>).
-func federationFixture(t *testing.T, path string) []byte {
-	t.Helper()
-	fixtures, err := FederationFixtures()
-	if err != nil {
-		t.Fatal(err)
-	}
-	for _, f := range fixtures {
-		if f.Path() == path {
-			return f.JSON
+// equalMutes compares mutes by their fields and the instants of their expiries.
+func equalMutes(got, want []graph.Mute) bool {
+	return slices.EqualFunc(got, want, func(a, b graph.Mute) bool {
+		if (a.ExpiresAt == nil) != (b.ExpiresAt == nil) || (a.ExpiresAt != nil && !a.ExpiresAt.Equal(*b.ExpiresAt)) {
+			return false
 		}
-	}
-	t.Fatalf("no federation fixture %s", path)
-	return nil
+		return a.AccountID == b.AccountID && a.TargetAccountID == b.TargetAccountID &&
+			a.HideNotifications == b.HideNotifications && a.CreatedAt.Equal(b.CreatedAt)
+	})
 }
