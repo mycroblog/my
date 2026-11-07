@@ -22,9 +22,9 @@ dir="${1:-$root/deploy/opentofu}"
 # Outputs that the operator reads, or hands to another block by name, and that never go through backends. A new output
 # that the app should take goes in the contract instead.
 for_the_operator="
-  alarm_metrics alerts arn_suffix budget_topic canary_name connection_name connection_uri connection_uri_pooler
-  dns_note dns_records domain_name hosted_zone_id ids ip_address notification_channels project_id role_arn rules
-  topic_arn uptime_check_id url_without_password
+  alarm_metrics alerts arn_suffix budget_topic canary_name cloudfront_origin connection_name connection_uri
+  connection_uri_pooler dns_note dns_records domain_name hosted_zone_id ids ip_address notification_channels
+  origin_secret project_id role_arn rules topic_arn uptime_check_id url_without_password
 "
 
 # The first column of the first table of a section, named with its hashes, without a marker such as "(optional)".

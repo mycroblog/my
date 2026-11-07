@@ -100,7 +100,8 @@ module "mail" {
   password_secret_id = module.secrets.ids["smtp_password"]
 }
 
-# The only way in: the tasks admit nothing else, so no origin secret is involved.
+# The only way in: the tasks admit nothing else, so the server checks no origin secret. With cloudfront, the load balancer admits
+# CloudFront alone and forwards only what carries origin_secret, and the records of host belong to the block below.
 module "ingress" {
   source = "git::https://github.com/mycroblog/my.git//deploy/opentofu/modules/ingress-aws-alb?ref=v0.1.0&depth=1"
 
@@ -108,8 +109,28 @@ module "ingress" {
   network         = module.network
   certificate_arn = var.certificate_arn
   # With a hosted zone in Route 53 the module creates the records, at an apex too. Without one, dns_records says what to create.
+  route53_zone_id = var.cloudfront ? null : var.route53_zone_id
+  host_is_apex    = var.host_is_apex
+
+  behind_cloudfront = var.cloudfront
+  origin_secret     = var.origin_secret
+}
+
+# CloudFront at host, in front of the load balancer, with /media/ cached. It is no backend: the block above names what the
+# server trusts.
+module "cdn" {
+  source = "git::https://github.com/mycroblog/my.git//deploy/opentofu/modules/ingress-aws-cloudfront?ref=v0.1.0&depth=1"
+
+  host            = var.host
+  origin          = module.ingress.cloudfront_origin
+  origin_secret   = module.ingress.origin_secret
+  certificate_arn = var.cloudfront_certificate_arn
   route53_zone_id = var.route53_zone_id
   host_is_apex    = var.host_is_apex
+
+  lifecycle {
+    enabled = var.cloudfront
+  }
 }
 
 # To give a kind of job its own service, set the same value on the queue above and on this block, which derive every name from the

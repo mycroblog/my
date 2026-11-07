@@ -55,6 +55,8 @@ module "app" {
 
 Only through a load balancer that the service attaches to, which `ingress-aws-alb` provides. A task's address changes with every task and it has no TLS, so **this app has no host of its own**: `origin_host` is null, and a module that takes one as its origin, such as `ingress-cloudflare-app`, fails the plan. So does `service_ingress` of anything but `load-balancer`. There is no `service_ingress` input, because there is nothing to choose.
 
+To serve `host` from CloudFront, put [`ingress-aws-cloudfront`](../ingress-aws-cloudfront/README.md) in front of the load balancer, with `behind_cloudfront` of `ingress-aws-alb`. `backends` still names the load balancer's module alone: it returns the trust of both hops and closes itself to all but CloudFront, so nothing of this app changes.
+
 Without an ingress the service runs with no inbound rule and only the process's own start decides whether a deployment passes. To put something else in front, add a rule to `security_group_id`, and pass the app a backend of `{ service_ingress = "load-balancer", trusted_proxies = [...], load_balancer = { target_group_arn = "...", security_group_id = "..." } }`.
 
 ## Jobs

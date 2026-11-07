@@ -66,7 +66,7 @@ variable "origin_secret" {
 }
 
 variable "origin_secret_id" {
-  description = "Reference to the same value in the platform's secret store, when this module is what names the server's settings. Null when another module names them, such as ingress-aws-cloudfront, and this one only sends the header."
+  description = "Reference to the same value in the platform's secret store, when this module is what names the server's settings. Null when something else names them, and this one only sends the header."
   type        = string
   default     = null
 }

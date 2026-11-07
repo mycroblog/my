@@ -18,6 +18,12 @@ assign_public_ip = true
 # Otherwise, whether host is the apex of its zone, where a plain CNAME cannot be used. tofu output dns_records says what to create.
 # host_is_apex = true
 
+# To put CloudFront in front of the load balancer, with /media/ cached at its edges. The load balancer then admits CloudFront
+# alone. The certificate must be in us-east-1. Pass the header's value with TF_VAR_origin_secret="$(openssl rand -hex 32)": it
+# lands in the state.
+# cloudfront                 = true
+# cloudfront_certificate_arn = "arn:aws:acm:us-east-1:111122223333:certificate/00000000-0000-0000-0000-000000000000"
+
 mail_from          = "noreply@social.example.org"
 mail_smtp_host     = "smtp.example.org"
 mail_smtp_username = "my-smtp-user"

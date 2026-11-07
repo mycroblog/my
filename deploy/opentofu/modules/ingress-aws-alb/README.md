@@ -26,14 +26,19 @@ module "ingress" {
 | `idle_timeout` | `60` | Above the 30 seconds between a stream's heartbeats, and below the 120 for which the server keeps an idle connection |
 | `deregistration_delay` | `30` | How long a leaving task keeps its connections. An open stream lasts to the end of it, and clients reconnect |
 | `health_check_path` | `/readyz` | What the load balancer asks. Read [Health checks](#health-checks) |
-| `route53_zone_id` | null | Public hosted zone of `host`. Set, the module creates the records: recommended |
+| `route53_zone_id` | null | Public hosted zone of `host`. Set, the module creates the records: recommended. Refused with `behind_cloudfront` |
 | `host_is_apex` | `false` | Whether `host` is the apex of its zone, for what `dns_records` asks while `route53_zone_id` is null |
+| `behind_cloudfront` | `false` | Puts [`ingress-aws-cloudfront`](../ingress-aws-cloudfront/README.md) in front: read [Behind CloudFront](#behind-cloudfront) |
+| `origin_secret` | null | With `behind_cloudfront`, required: the value of the header that the listener checks, **which lands in the state**. Pass it with `TF_VAR_origin_secret` |
+| `origin_secret_previous` | null | A second accepted value, only [while the value rotates](../ingress-aws-cloudfront/README.md#rotate-the-value) |
+| `origin_secret_header` | `x-my-origin-secret` | The header's name |
 
 | Output | Value |
 | --- | --- |
 | `env` | `MY_TRUSTED_PROXY_HEADER` |
 | `secret_env`, `permissions` | Empty |
-| `trusted_proxies` | The ranges of the public subnets |
+| `trusted_proxies` | The ranges of the public subnets, and behind CloudFront the entries of its prefix list |
+| `cloudfront_origin`, `origin_secret` | What `ingress-aws-cloudfront` takes, or null without `behind_cloudfront` |
 | `service_ingress` | `load-balancer`, which only an app that attaches to one accepts |
 | `load_balancer` | The target group and the security group that the app attaches to |
 | `dns_records` | What to create elsewhere, as [`ingress-aws-cloudfront`](../ingress-aws-cloudfront/README.md#dns) does |
@@ -52,11 +57,22 @@ A task in an Availability Zone that the public subnets do not cover gets no traf
 - The security group of the tasks admits port 8080 from the load balancer's security group alone, whether a task has a public address or not. Nobody on the internet can connect to a task, so no one can reach the server without passing the load balancer.
 - A load balancer could not send a secret anyway. [What AWS documents](https://docs.aws.amazon.com/elasticloadbalancing/latest/application/header-modification.html) for requests is renaming the headers it generates for mutual TLS and TLS; it lists no way to add a header of your own.
 
-So `origin_secret` stays empty, and nothing lands in the state, unlike `ingress-aws-cloudfront` and `ingress-cloudflare-app`. To put a CDN in front of the load balancer is another shape, in which the load balancer itself would be the open origin. This module does not do that, and two ingresses that both name `trusted_proxies` fail the plan.
+So the server's `origin_secret` stays unset, and without `behind_cloudfront` nothing lands in the state, unlike `ingress-cloudflare-app`.
+
+## Behind CloudFront
+
+With `behind_cloudfront`, [`ingress-aws-cloudfront`](../ingress-aws-cloudfront/README.md) serves `host` and this load balancer is its origin, which must not be open:
+
+- The security group admits port 443 from AWS's prefix list `com.amazonaws.global.cloudfront.origin-facing` alone, and nothing on port 80.
+- The HTTPS listener answers `403` by default, and a rule forwards only a request whose `origin_secret_header` is `origin_secret` (or `origin_secret_previous`), which CloudFront sends. Every distribution, of any account, connects from the same addresses, so the security group alone would not do.
+- `trusted_proxies` adds the entries of the prefix list, since CloudFront appends the viewer's address to `X-Forwarded-For` before the load balancer appends CloudFront's: [Client addresses](../ingress-aws-cloudfront/README.md#client-addresses) of that module has the chain.
+- No DNS record, since `host` points at the distribution: `route53_zone_id` fails the plan here, and goes to that module. `ip_address_type` stays `ipv4`, since CloudFront reaches the load balancer over IPv4.
+
+The value is checked by the listener, not by the server, so it lands in the state of the listener rule. The app's `backends` still names this module alone.
 
 ## Client addresses
 
-The load balancer's nodes connect from addresses in its subnets, so `trusted_proxies` is their ranges and nothing else can connect from there to a task on that port. The module sets `xff_header_processing_mode` to `append`, the default, which adds the client's address to whatever `X-Forwarded-For` arrived, and leaves the client port out. The server takes the rightmost address that is not a proxy, so a forged header does not help a client.
+The load balancer's nodes connect from addresses in its subnets, so `trusted_proxies` is their ranges and nothing else can connect from there to a task on that port. The module sets `xff_header_processing_mode` to `append`, the default, which adds the client's address to whatever `X-Forwarded-For` arrived, and leaves the client port out. The server takes the rightmost address that is not a proxy, so a forged header does not help a client. Behind CloudFront the client of the load balancer is CloudFront, and the viewer's address is the one before it.
 
 The ranges cover the whole of those subnets, so a task in the same subnet is trusted too. That is harmless with these modules, but anything else you run there and open to the tasks could write the header.
 

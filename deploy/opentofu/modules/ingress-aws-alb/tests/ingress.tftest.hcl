@@ -8,11 +8,25 @@ mock_provider "aws" {
       region = "ap-northeast-1"
     }
   }
+  mock_data "aws_ec2_managed_prefix_list" {
+    defaults = {
+      id = "pl-cloudfront"
+      entries = [
+        { cidr = "15.158.0.0/16", description = "" },
+        { cidr = "130.176.0.0/18", description = "" },
+      ]
+    }
+  }
   mock_resource "aws_lb" {
     defaults = {
       arn      = "arn:aws:elasticloadbalancing:ap-northeast-1:111122223333:loadbalancer/app/my/abc"
       dns_name = "my-123.ap-northeast-1.elb.amazonaws.com"
       zone_id  = "Z14GRHDCWA56QT"
+    }
+  }
+  mock_resource "aws_lb_listener" {
+    defaults = {
+      arn = "arn:aws:elasticloadbalancing:ap-northeast-1:111122223333:listener/app/my/abc/def"
     }
   }
   mock_resource "aws_lb_target_group" {
@@ -201,6 +215,115 @@ run "an_idle_timeout_beyond_the_servers_fails" {
   }
 
   expect_failures = [var.idle_timeout]
+}
+
+# Behind CloudFront: the load balancer is the origin that must stay closed to all but CloudFront.
+run "behind_cloudfront_admits_cloudfront_alone" {
+  command = plan
+
+  variables {
+    behind_cloudfront = true
+    origin_secret     = "0123456789abcdef0123456789abcdef"
+  }
+
+  assert {
+    condition     = length(aws_vpc_security_group_ingress_rule.internet) == 0 && aws_vpc_security_group_ingress_rule.cloudfront.prefix_list_id == "pl-cloudfront" && aws_vpc_security_group_ingress_rule.cloudfront.from_port == 443
+    error_message = "nothing but CloudFront's origin-facing addresses may connect, and only on 443"
+  }
+
+  assert {
+    condition     = aws_lb_listener.https.default_action[0].type == "fixed-response" && aws_lb_listener.https.default_action[0].fixed_response[0].status_code == "403"
+    error_message = "another distribution connects from the same addresses, so the listener must refuse what lacks the header"
+  }
+
+  assert {
+    condition     = nonsensitive(one(one(aws_lb_listener_rule.cloudfront.condition).http_header).http_header_name) == "x-my-origin-secret" && aws_lb_listener_rule.cloudfront.action[0].type == "forward"
+    error_message = "only a request with CloudFront's header is forwarded"
+  }
+
+  assert {
+    condition     = output.trusted_proxies == tolist(["10.0.0.0/24", "10.0.1.0/24", "130.176.0.0/18", "15.158.0.0/16"])
+    error_message = "CloudFront appends the viewer's address and the load balancer appends CloudFront's, so both are trusted"
+  }
+
+  assert {
+    condition     = output.cloudfront_origin.domain_name == "my-123.ap-northeast-1.elb.amazonaws.com" && output.cloudfront_origin.origin_secret_header == "x-my-origin-secret" && output.cloudfront_origin.idle_timeout == 60
+    error_message = "ingress-aws-cloudfront takes the load balancer from here"
+  }
+
+  assert {
+    condition     = length(output.dns_records) == 0 && output.dns_note == null && length(aws_route53_record.alias) == 0
+    error_message = "host points at CloudFront, not at the load balancer"
+  }
+}
+
+run "behind_cloudfront_a_rotation_accepts_both_values" {
+  command = plan
+
+  variables {
+    behind_cloudfront      = true
+    origin_secret          = "0123456789abcdef0123456789abcdef"
+    origin_secret_previous = "fedcba9876543210fedcba9876543210"
+  }
+
+  assert {
+    condition     = length(nonsensitive(one(one(aws_lb_listener_rule.cloudfront.condition).http_header).values)) == 2
+    error_message = "while the value rotates, the listener accepts the old and the new"
+  }
+}
+
+run "the_internet_mode_has_no_listener_rule" {
+  command = plan
+
+  assert {
+    condition     = aws_lb_listener_rule.cloudfront == null && output.cloudfront_origin == null
+    error_message = "without CloudFront the listener forwards everything, and the security group of the tasks closes the origin"
+  }
+}
+
+run "behind_cloudfront_without_a_secret_fails" {
+  command = plan
+
+  variables {
+    behind_cloudfront = true
+  }
+
+  expect_failures = [var.origin_secret]
+}
+
+run "a_secret_with_a_wildcard_fails" {
+  command = plan
+
+  variables {
+    behind_cloudfront = true
+    origin_secret     = "0123456789abcdef0123456789abcde*"
+  }
+
+  expect_failures = [var.origin_secret]
+}
+
+run "behind_cloudfront_a_zone_fails" {
+  command = plan
+
+  variables {
+    behind_cloudfront = true
+    origin_secret     = "0123456789abcdef0123456789abcdef"
+    route53_zone_id   = "Z0123456789"
+  }
+
+  expect_failures = [var.route53_zone_id]
+}
+
+run "behind_cloudfront_dualstack_fails" {
+  command = plan
+
+  variables {
+    behind_cloudfront = true
+    origin_secret     = "0123456789abcdef0123456789abcdef"
+    ip_address_type   = "dualstack"
+  }
+
+  expect_failures = [var.ip_address_type]
 }
 
 run "a_network_of_another_platform_fails" {

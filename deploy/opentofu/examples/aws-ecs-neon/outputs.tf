@@ -1,18 +1,18 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 
 output "domain_name" {
-  description = "Domain name of the load balancer."
-  value       = module.ingress.domain_name
+  description = "Domain name of what host points at: the distribution with cloudfront, the load balancer otherwise."
+  value       = var.cloudfront ? module.cdn.domain_name : module.ingress.domain_name
 }
 
 output "dns_records" {
   description = "What to add at the DNS provider."
-  value       = module.ingress.dns_records
+  value       = var.cloudfront ? module.cdn.dns_records : module.ingress.dns_records
 }
 
 output "dns_note" {
   description = "What dns_records cannot say, or null."
-  value       = module.ingress.dns_note
+  value       = var.cloudfront ? module.cdn.dns_note : module.ingress.dns_note
 }
 
 output "console" {

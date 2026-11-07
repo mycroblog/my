@@ -1,7 +1,8 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 
 # Traffic reaches the app through an Application Load Balancer with TLS. The security group of the tasks admits only this load
-# balancer, so the origin is closed on the platform and needs no secret header. This module has never been applied: read the README.
+# balancer, so the tasks are closed on the platform and need no secret header. With behind_cloudfront the load balancer itself
+# admits only CloudFront, and forwards only what carries CloudFront's header. This module has never been applied: read the README.
 
 terraform {
   required_version = ">= 1.11"
@@ -99,6 +100,60 @@ variable "ip_address_type" {
     condition     = contains(["ipv4", "dualstack"], var.ip_address_type)
     error_message = "ip_address_type must be ipv4 or dualstack."
   }
+
+  validation {
+    condition     = !var.behind_cloudfront || var.ip_address_type == "ipv4"
+    error_message = "Behind CloudFront, viewers reach CloudFront over IPv6 too, and CloudFront reaches the load balancer over IPv4: leave ip_address_type at ipv4."
+  }
+}
+
+variable "behind_cloudfront" {
+  description = "Puts ingress-aws-cloudfront in front: the load balancer admits CloudFront's origin-facing addresses alone, forwards only a request that carries origin_secret in origin_secret_header, answers 403 to the rest, and creates no DNS record, since host points at CloudFront."
+  type        = bool
+  default     = false
+  nullable    = false
+}
+
+variable "origin_secret" {
+  description = "With behind_cloudfront, the value of the header that CloudFront sends and the listener checks. THE PROVIDER HAS NO WRITE-ONLY FORM OF EITHER, SO IT LANDS IN THE STATE: keep the state private. Pass it with TF_VAR_origin_secret."
+  type        = string
+  default     = null
+  sensitive   = true
+
+  validation {
+    condition     = (var.origin_secret == null) == !var.behind_cloudfront
+    error_message = "origin_secret is required with behind_cloudfront, and has no use without it."
+  }
+
+  # A listener matches a header's value up to 128 characters, without case, and reads * and ? as wildcards.
+  validation {
+    condition     = var.origin_secret == null || can(regex("^[A-Za-z0-9_-]{32,128}$", var.origin_secret))
+    error_message = "origin_secret must be 32 to 128 letters, digits, hyphens, and underscores: openssl rand -hex 32."
+  }
+}
+
+variable "origin_secret_previous" {
+  description = "A second value that the listener accepts, only while the value rotates. Read the README."
+  type        = string
+  default     = null
+  sensitive   = true
+
+  validation {
+    condition     = var.origin_secret_previous == null || (var.behind_cloudfront && can(regex("^[A-Za-z0-9_-]{32,128}$", var.origin_secret_previous)))
+    error_message = "origin_secret_previous needs behind_cloudfront, and must be 32 to 128 letters, digits, hyphens, and underscores."
+  }
+}
+
+variable "origin_secret_header" {
+  description = "Name of the header that carries origin_secret, which nothing else uses."
+  type        = string
+  default     = "x-my-origin-secret"
+  nullable    = false
+
+  validation {
+    condition     = length(var.origin_secret_header) <= 40 && can(regex("^[A-Za-z0-9]+(-[A-Za-z0-9]+)*$", var.origin_secret_header)) && !can(regex("(?i)^(cf-|x-cf-|x-forwarded-|x-amz|x-amzn-|x-edge-|sec-|proxy-|if-|access-control-|host$)", var.origin_secret_header))
+    error_message = "origin_secret_header must be up to 40 letters, digits, and inner hyphens, and must not be a name that CloudFront, the load balancer, or a browser sets, such as x-forwarded-*."
+  }
 }
 
 variable "idle_timeout" {
@@ -131,6 +186,11 @@ variable "route53_zone_id" {
   description = "Public Route 53 hosted zone of host. Set, the module creates alias records, which work at a zone apex and on a subdomain. Null, you create the records that dns_records lists."
   type        = string
   default     = null
+
+  validation {
+    condition     = var.route53_zone_id == null || !var.behind_cloudfront
+    error_message = "Behind CloudFront, host points at the distribution: give route53_zone_id to ingress-aws-cloudfront instead."
+  }
 }
 
 variable "host_is_apex" {
@@ -149,16 +209,27 @@ locals {
     var.ip_address_type == "dualstack" ? { ipv6 = { cidr_ipv4 = null, cidr_ipv6 = "::/0" } } : {},
   )
   listener_ports = { http = 80, https = 443 }
-  ingress_rules = {
+  ingress_rules = var.behind_cloudfront ? {} : {
     for pair in setproduct(keys(local.listener_ports), keys(local.open_to)) : "${pair[0]}-${pair[1]}" => {
       port      = local.listener_ports[pair[0]]
       cidr_ipv4 = local.open_to[pair[1]].cidr_ipv4
       cidr_ipv6 = local.open_to[pair[1]].cidr_ipv6
     }
   }
+
+  # What connects to the load balancer from CloudFront, which appends the viewer's address to X-Forwarded-For before the
+  # load balancer appends CloudFront's.
+  cloudfront_ranges = var.behind_cloudfront ? sort([for e in data.aws_ec2_managed_prefix_list.cloudfront[0].entries : e.cidr]) : []
 }
 
 data "aws_region" "current" {}
+
+# AWS's list of the addresses that CloudFront connects to an origin from, which a security group can name as one rule.
+data "aws_ec2_managed_prefix_list" "cloudfront" {
+  count = var.behind_cloudfront ? 1 : 0
+
+  name = "com.amazonaws.global.cloudfront.origin-facing"
+}
 
 resource "aws_security_group" "load_balancer" {
   name        = "${var.name}-alb"
@@ -176,6 +247,20 @@ resource "aws_vpc_security_group_ingress_rule" "internet" {
   to_port           = each.value.port
   cidr_ipv4         = each.value.cidr_ipv4
   cidr_ipv6         = each.value.cidr_ipv6
+}
+
+# CloudFront reaches the origin over HTTPS alone, so port 80 stays closed.
+resource "aws_vpc_security_group_ingress_rule" "cloudfront" {
+  security_group_id = aws_security_group.load_balancer.id
+  description       = "From CloudFront"
+  ip_protocol       = "tcp"
+  from_port         = 443
+  to_port           = 443
+  prefix_list_id    = data.aws_ec2_managed_prefix_list.cloudfront[0].id
+
+  lifecycle {
+    enabled = var.behind_cloudfront
+  }
 }
 
 # The tasks are found by address. The VPC's primary range, since which subnets the tasks take is the app's choice.
@@ -232,9 +317,19 @@ resource "aws_lb_listener" "https" {
   ssl_policy        = var.ssl_policy
   certificate_arn   = var.certificate_arn
 
+  # Behind CloudFront, only the rule below forwards: another distribution, of another account, connects from the same addresses.
   default_action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.this.arn
+    type             = var.behind_cloudfront ? "fixed-response" : "forward"
+    target_group_arn = var.behind_cloudfront ? null : aws_lb_target_group.this.arn
+
+    dynamic "fixed_response" {
+      for_each = var.behind_cloudfront ? [1] : []
+      content {
+        content_type = "text/plain"
+        message_body = "Forbidden"
+        status_code  = "403"
+      }
+    }
   }
 
   lifecycle {
@@ -242,6 +337,28 @@ resource "aws_lb_listener" "https" {
       condition     = strcontains(var.certificate_arn, ":acm:${data.aws_region.current.region}:")
       error_message = "certificate_arn must be in ${data.aws_region.current.region}, the region of the load balancer."
     }
+  }
+}
+
+# A request with the header CloudFront sends, which replaces whatever a viewer sent under that name.
+resource "aws_lb_listener_rule" "cloudfront" {
+  listener_arn = aws_lb_listener.https.arn
+  priority     = 1
+
+  action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.this.arn
+  }
+
+  condition {
+    http_header {
+      http_header_name = var.origin_secret_header
+      values           = var.origin_secret_previous == null ? [var.origin_secret] : [var.origin_secret, var.origin_secret_previous]
+    }
+  }
+
+  lifecycle {
+    enabled = var.behind_cloudfront
   }
 }
 
@@ -299,8 +416,8 @@ output "permissions" {
 }
 
 output "trusted_proxies" {
-  description = "What connects to the tasks: the load balancer's nodes, from the ranges of its subnets."
-  value       = var.network.public_subnet_cidrs
+  description = "What connects to the tasks: the load balancer's nodes, from the ranges of its subnets, and behind CloudFront what connects to the load balancer."
+  value       = tolist(concat(var.network.public_subnet_cidrs, local.cloudfront_ranges))
 }
 
 output "service_ingress" {
@@ -314,19 +431,34 @@ output "load_balancer" {
     target_group_arn  = aws_lb_target_group.this.arn
     security_group_id = aws_security_group.load_balancer.id
   }
-  depends_on = [aws_lb_listener.https, aws_lb_listener.http]
+  depends_on = [aws_lb_listener.https, aws_lb_listener.http, aws_lb_listener_rule.cloudfront]
+}
+
+output "cloudfront_origin" {
+  description = "What ingress-aws-cloudfront takes as origin, or null without behind_cloudfront."
+  value = var.behind_cloudfront ? {
+    domain_name          = aws_lb.this.dns_name
+    origin_secret_header = var.origin_secret_header
+    idle_timeout         = var.idle_timeout
+  } : null
+}
+
+output "origin_secret" {
+  description = "The value that ingress-aws-cloudfront sends, so that it is given once."
+  value       = var.origin_secret
+  sensitive   = true
 }
 
 output "dns_records" {
-  description = "What to add at the DNS provider: nothing with route53_zone_id, a CNAME for a subdomain, and for an apex an ALIAS or ANAME, the name depending on the provider, since DNS allows no CNAME there."
-  value = var.route53_zone_id != null ? [] : [
+  description = "What to add at the DNS provider: nothing with route53_zone_id or behind CloudFront, a CNAME for a subdomain, and for an apex an ALIAS or ANAME, the name depending on the provider, since DNS allows no CNAME there."
+  value = var.route53_zone_id != null || var.behind_cloudfront ? [] : [
     { name = var.host, type = var.host_is_apex ? "ALIAS" : "CNAME", rrdata = aws_lb.this.dns_name },
   ]
 }
 
 output "dns_note" {
   description = "What dns_records cannot say, or null."
-  value       = var.route53_zone_id == null && var.host_is_apex ? "A plain CNAME cannot be used at a zone apex. Create an ALIAS or ANAME record, or a flattened CNAME, at your DNS provider. Not every provider has one: without one, move the zone to a provider that does, such as Route 53 with route53_zone_id." : null
+  value       = var.route53_zone_id == null && var.host_is_apex && !var.behind_cloudfront ? "A plain CNAME cannot be used at a zone apex. Create an ALIAS or ANAME record, or a flattened CNAME, at your DNS provider. Not every provider has one: without one, move the zone to a provider that does, such as Route 53 with route53_zone_id." : null
 }
 
 output "domain_name" {
