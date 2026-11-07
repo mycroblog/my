@@ -492,8 +492,10 @@ export interface paths {
         };
         /**
          * Get the authenticated user's automatic deletion of old posts
-         * @description The policy that deletes the user's own posts some days after their publication.
-         *     A user who has never saved one gets the default policy, which is disabled.
+         * @description The policy that deletes the user's own posts some days after their publication, with
+         *     the server maximum in `server_limit` when it applies to the user. A user who has never
+         *     saved one gets the default policy, which is disabled; a user who signed up after the
+         *     operator set a server default got that default as their own policy.
          */
         get: operations["getAutoDeletePolicy"];
         /**
@@ -502,8 +504,10 @@ export interface paths {
          *     published more than `min_age_days` days ago, unless an exception keeps them, as the user
          *     would delete them: each deletion is sent to the servers the post went to. A run deletes
          *     at most 100 posts of a user, so a policy that finds more spreads their deletion over the
-         *     following hours. Boosts are not deleted. A 422 problem names the property that is invalid
-         *     in `detail`.
+         *     following hours. Boosts are not deleted. While the server maximum applies to the user,
+         *     a policy that is disabled, keeps posts longer than the maximum, or uses an exception that
+         *     the maximum does not allow is refused. A 422 problem names the property that is invalid or
+         *     over the maximum in `detail`.
          */
         put: operations["updateAutoDeletePolicy"];
         post?: never;
@@ -528,7 +532,10 @@ export interface paths {
          *     as if it were enabled (`enabled` is ignored): posts published more than `min_age_days`
          *     days ago that none of the exceptions keeps. The count stops at 1000 (`more` is then
          *     true), so the call stays cheap enough to repeat as the user edits the policy. The
-         *     response also shows the oldest of those posts. A 422 problem names the property that
+         *     response also shows the oldest of those posts. While the server maximum applies to the
+         *     user, it counts what the policy deletes under the maximum (`server_limit.effective` of
+         *     `getAutoDeletePolicy` for the saved policy), so the preview of the saved policy of a bound
+         *     user shows what goes once the grace period ends. A 422 problem names the property that
          *     is invalid in `detail`.
          */
         post: operations["previewAutoDeletePolicy"];
@@ -10762,6 +10769,35 @@ export interface components {
             text: string;
         };
         /**
+         * @description The server maximum of the automatic deletion of old posts: while it is on, the automatic
+         *     deletion of every local user without the permission `keep_posts_longer` is on, deletes a post
+         *     at most `max_age_days` days after its publication, and keeps posts only by the exceptions that
+         *     the operator allows.
+         */
+        AutoDeleteLimit: {
+            /** @description The most days after its publication that a post is kept. */
+            max_age_days: number;
+            /** @description Whether pinned posts may be kept (`keep_pinned`). */
+            allow_pinned: boolean;
+            /**
+             * @description How many pins keep posts, the most recently pinned first; 5, the most pins of an account,
+             *     keeps every pinned post.
+             */
+            kept_pins: number;
+            /** @description Whether the posts that the user bookmarked may be kept (`keep_bookmarked`). */
+            allow_bookmarked: boolean;
+            /** @description Whether the posts that the user favourited may be kept (`keep_favourited`). */
+            allow_favourited: boolean;
+            /** @description Whether the posts with media attachments may be kept (`keep_media`). */
+            allow_media: boolean;
+            /** @description Whether the posts with a poll may be kept (`keep_polls`). */
+            allow_polls: boolean;
+            /** @description Whether posts may be kept by their visibility (`keep_visibilities`). */
+            allow_visibilities: boolean;
+            /** @description Whether posts may be kept by their boosts and favourites (`keep_min_boosts`, `keep_min_favourites`). */
+            allow_thresholds: boolean;
+        };
+        /**
          * @description The authenticated user's automatic deletion of their own old posts. A post is
          *     deleted once it was published more than `min_age_days` days ago, unless one of the
          *     exceptions (the `keep_` properties) keeps it.
@@ -10799,6 +10835,41 @@ export interface components {
             more: boolean;
             /** @description Up to 3 of those posts, oldest first. */
             examples: components["schemas"]["Status"][];
+        };
+        /**
+         * @description The server maximum as it applies to the authenticated user, and the policy that the automatic
+         *     deletion uses under it.
+         */
+        AutoDeleteServerLimit: components["schemas"]["AutoDeleteLimit"] & {
+            /**
+             * @description The policy that deletes the user's posts under the maximum: it is on, its days are the
+             *     saved ones or the maximum, whichever is fewer (the maximum when the saved policy is
+             *     off), and it keeps only the saved exceptions that the maximum allows, with at most
+             *     `kept_pins` pins.
+             */
+            effective: components["schemas"]["AutoDeletePolicy"];
+            /**
+             * @description Whether `effective` deletes posts that the saved policy keeps. A user whom the maximum
+             *     newly binds is told in advance and keeps the saved policy until `enforce_from`.
+             */
+            bound: boolean;
+            /**
+             * Format: date-time
+             * @description When `effective` starts to delete the posts of a bound user, after the grace period;
+             *     absent while the user is not bound, and until the hourly job has told them.
+             */
+            enforce_from?: string;
+        };
+        /**
+         * @description The authenticated user's automatic deletion of their own old posts as they saved it, with the
+         *     server maximum when it applies to them.
+         */
+        AutoDeleteSettings: components["schemas"]["AutoDeletePolicy"] & {
+            /**
+             * @description The server maximum and what it makes of the policy; absent when the server sets no
+             *     maximum or the user has the permission `keep_posts_longer`.
+             */
+            server_limit?: components["schemas"]["AutoDeleteServerLimit"];
         };
         /**
          * @description A role that the authenticated user holds and that has a badge, with whether the user shows
@@ -11941,6 +12012,20 @@ export interface components {
          */
         ExternalConfirmationToken: string;
         /**
+         * @description The notice that the server maximum of the automatic deletion of old posts binds the user: the
+         *     maximum it told of and when the user's posts start to go by it. The settings of the automatic
+         *     deletion (`getAutoDeletePolicy`) show the maximum in effect now, and their preview what goes.
+         */
+        NotificationAutoDeleteLimit: {
+            /** @description The most days after its publication that a post is kept, as of the notice. */
+            max_age_days: number;
+            /**
+             * Format: date-time
+             * @description When the maximum starts to delete the user's posts, at the end of the grace period.
+             */
+            enforce_from: string;
+        };
+        /**
          * @description What an `admin_error_group` tells of: a new error group (`created`, with `group_id`), a
          *     resolved group that happened again on another version (`regressed`, with `group_id`), or the
          *     new and regressed groups of an hour beyond the 10 that the server notifies of one by one
@@ -12303,6 +12388,11 @@ export interface components {
              */
             link_cards_ignore_robots_txt: boolean;
             translation: components["schemas"]["InstanceTranslation"];
+            /**
+             * @description The server maximum of the automatic deletion of old posts, which the about page shows so
+             *     that people know it before they sign up; absent when the server sets none.
+             */
+            auto_delete_limit?: components["schemas"]["AutoDeleteLimit"];
             finance_visibility: components["schemas"]["FinanceVisibility"];
             income_visibility: components["schemas"]["IncomeVisibility"];
         };
@@ -12538,7 +12628,7 @@ export interface components {
          *     added; clients show the ones they know.
          * @enum {string}
          */
-        InstanceSettingKey: "registration_mode" | "max_status_length" | "default_locale" | "local_timeline_visibility" | "federated_timeline_visibility" | "preview_image" | "contact_account" | "contact_email" | "thumbnail" | "remote_media_policy" | "remote_media_cache_ttl_seconds" | "authorized_fetch" | "domain_actions_visibility" | "domain_actions_rationale_visibility" | "appeal_window_days" | "session_origins_retention_days" | "registration_origins_retention_days" | "reports_retention_days" | "moderation_actions_retention_days" | "audit_log_retention_days" | "search_indexing" | "ai_usage" | "indexable_default" | "search_visibilities" | "security_contact" | "require_media_description" | "link_cards" | "link_cards_ignore_robots_txt" | "finance_visibility" | "finance_viewer_item_names" | "finance_viewer_item_memos" | "finance_viewer_income" | "supporter_list_visibility" | "income_visibility" | "federation_mode" | "user_app_registration" | "dynamic_client_registration" | "oauth_metadata_document_clients" | "voice_room_starters" | "voice_public_summary" | "voice_participants_retention_days" | "hook_inbound_status_mode" | "hook_inbound_follow_mode" | "hook_signup_check_mode" | "hook_media_check_mode" | "hook_local_status_mode" | "hook_inbound_actor_mode" | "hook_local_profile_mode" | "hook_inbound_status_on_failure" | "hook_inbound_status_unfollowed_direct" | "hook_inbound_follow_on_failure" | "hook_signup_check_on_failure" | "hook_signup_check_reject" | "hook_local_status_account_age_days" | "hook_local_profile_account_age_days" | "hook_media_check_on_failure" | "hook_inbound_actor_on_failure" | "hook_decisions_retention_days" | "invite_creators" | "member_invite_max_active" | "member_invite_max_uses" | "member_invite_max_lifetime_seconds" | "public_counts" | "featured_accounts" | "login_providers_only" | "remote_media_cache_max_bytes" | "remote_status_retention_days" | "remote_status_max_retention_days" | "relay_status_retention_days" | "oauth_client_rate_limits" | "translation_providers" | "translation_provider_visibilities" | "translation_browser" | "translation_user_monthly_characters" | "translation_server_monthly_characters" | "translation_retention_days" | "translation_reports_to_server" | "auto_delete_default_enabled" | "auto_delete_default_min_age_days" | "auto_delete_default_keep_pinned" | "auto_delete_default_keep_bookmarked" | "auto_delete_default_keep_favourited" | "auto_delete_default_keep_media" | "auto_delete_default_keep_polls" | "auto_delete_default_keep_public" | "auto_delete_default_keep_local" | "auto_delete_default_keep_unlisted" | "auto_delete_default_keep_private" | "auto_delete_default_keep_direct" | "auto_delete_default_keep_min_boosts" | "auto_delete_default_keep_min_favourites";
+        InstanceSettingKey: "registration_mode" | "max_status_length" | "default_locale" | "local_timeline_visibility" | "federated_timeline_visibility" | "preview_image" | "contact_account" | "contact_email" | "thumbnail" | "remote_media_policy" | "remote_media_cache_ttl_seconds" | "authorized_fetch" | "domain_actions_visibility" | "domain_actions_rationale_visibility" | "appeal_window_days" | "session_origins_retention_days" | "registration_origins_retention_days" | "reports_retention_days" | "moderation_actions_retention_days" | "audit_log_retention_days" | "search_indexing" | "ai_usage" | "indexable_default" | "search_visibilities" | "security_contact" | "require_media_description" | "link_cards" | "link_cards_ignore_robots_txt" | "finance_visibility" | "finance_viewer_item_names" | "finance_viewer_item_memos" | "finance_viewer_income" | "supporter_list_visibility" | "income_visibility" | "federation_mode" | "user_app_registration" | "dynamic_client_registration" | "oauth_metadata_document_clients" | "voice_room_starters" | "voice_public_summary" | "voice_participants_retention_days" | "hook_inbound_status_mode" | "hook_inbound_follow_mode" | "hook_signup_check_mode" | "hook_media_check_mode" | "hook_local_status_mode" | "hook_inbound_actor_mode" | "hook_local_profile_mode" | "hook_inbound_status_on_failure" | "hook_inbound_status_unfollowed_direct" | "hook_inbound_follow_on_failure" | "hook_signup_check_on_failure" | "hook_signup_check_reject" | "hook_local_status_account_age_days" | "hook_local_profile_account_age_days" | "hook_media_check_on_failure" | "hook_inbound_actor_on_failure" | "hook_decisions_retention_days" | "invite_creators" | "member_invite_max_active" | "member_invite_max_uses" | "member_invite_max_lifetime_seconds" | "public_counts" | "featured_accounts" | "login_providers_only" | "remote_media_cache_max_bytes" | "remote_status_retention_days" | "remote_status_max_retention_days" | "relay_status_retention_days" | "oauth_client_rate_limits" | "translation_providers" | "translation_provider_visibilities" | "translation_browser" | "translation_user_monthly_characters" | "translation_server_monthly_characters" | "translation_retention_days" | "translation_reports_to_server" | "auto_delete_default_enabled" | "auto_delete_default_min_age_days" | "auto_delete_default_keep_pinned" | "auto_delete_default_keep_bookmarked" | "auto_delete_default_keep_favourited" | "auto_delete_default_keep_media" | "auto_delete_default_keep_polls" | "auto_delete_default_keep_public" | "auto_delete_default_keep_local" | "auto_delete_default_keep_unlisted" | "auto_delete_default_keep_private" | "auto_delete_default_keep_direct" | "auto_delete_default_keep_min_boosts" | "auto_delete_default_keep_min_favourites" | "auto_delete_max_age_days" | "auto_delete_max_allow_pinned" | "auto_delete_max_kept_pins" | "auto_delete_max_allow_bookmarked" | "auto_delete_max_allow_favourited" | "auto_delete_max_allow_media" | "auto_delete_max_allow_polls" | "auto_delete_max_allow_visibilities" | "auto_delete_max_allow_thresholds" | "auto_delete_grace_days";
         /**
          * @description The type of a setting's value. `bool`: `true` or `false`. `int`: a decimal integer from
          *     `minimum` to `maximum`. `enum`: one of `choices`. `locale`: a BCP 47 language tag.
@@ -13091,6 +13181,8 @@ export interface components {
             error_group?: components["schemas"]["NotificationErrorGroup"];
             /** @description The announcement that an `announcement` tells of, as the user sees it; omitted for the other types. */
             announcement?: components["schemas"]["Announcement"];
+            /** @description What an `auto_delete_limit` tells of; omitted for the other types. */
+            auto_delete_limit?: components["schemas"]["NotificationAutoDeleteLimit"];
         };
         /**
          * @description A row of the notification settings: one or more notification types that the user turns on
@@ -13103,11 +13195,12 @@ export interface components {
          *     notices to the user are `moderation` (`moderation_notice`, `report_resolved`,
          *     `appeal_decided`, `relationships_severed`, `custom_emoji_request_decided`,
          *     `hook_appeal_decided`),
-         *     `service_closure`, `supporter` (the `supporter_*` types), and `announcement`, the only one of
-         *     them that the user turns off in the app (on by default); it has no `email` channel.
+         *     `service_closure`, `supporter` (the `supporter_*` types), `announcement`, which the user
+         *     turns off in the app (on by default) and which has no `email` channel, and
+         *     `auto_delete_limit`, whose app and email channels the user chooses, both on by default.
          * @enum {string}
          */
-        NotificationGroup: "mention" | "follow" | "follow_request" | "follow_accepted" | "boost" | "favourite" | "reaction" | "quote" | "poll_closed" | "account_moved" | "voice" | "status" | "admin_report" | "admin_sign_up" | "admin_appeal" | "admin_webhook_disabled" | "admin_hook_failing" | "admin_hook_appeal" | "admin_custom_emoji_request" | "admin_account_moved" | "admin_service_closure_due" | "admin_error_group" | "moderation" | "service_closure" | "supporter" | "announcement";
+        NotificationGroup: "mention" | "follow" | "follow_request" | "follow_accepted" | "boost" | "favourite" | "reaction" | "quote" | "poll_closed" | "account_moved" | "voice" | "status" | "admin_report" | "admin_sign_up" | "admin_appeal" | "admin_webhook_disabled" | "admin_hook_failing" | "admin_hook_appeal" | "admin_custom_emoji_request" | "admin_account_moved" | "admin_service_closure_due" | "admin_error_group" | "moderation" | "service_closure" | "supporter" | "announcement" | "auto_delete_limit";
         /** @description How far the authenticated user has read the notifications, across all clients. */
         NotificationMarker: {
             /** @description The newest notification read; omitted when the user has read none. */
@@ -13141,8 +13234,8 @@ export interface components {
          *     turned off, the row's notifications are not created, so neither Web Push nor email delivers
          *     them, and clients show the row's other channels disabled; the notifications from before stay.
          *     `email` sends each notification to the primary address once it is confirmed and while emails
-         *     reach it (`Preferences.email_suppression`). The ordinary notifications and `moderation` are
-         *     emailed one by one 15 minutes after they arrive, and only while they stay unread (newer than
+         *     reach it (`Preferences.email_suppression`). The ordinary notifications, `moderation`, and
+         *     `auto_delete_limit` are emailed one by one 15 minutes after they arrive, and only while they stay unread (newer than
          *     the read marker and not dismissed); the moderator notifications are emailed at once. Clients
          *     offer the email column only when `Instance.sends_email` is true. A row without `email` (`status`,
          *     `announcement`) is never emailed, and clients show no email cell for it. Web Push stays the choice of each
@@ -13154,7 +13247,7 @@ export interface components {
              * @description The kind of the row: `ordinary` (what other users did; in the app on and email off by
              *     default), `moderator` (to the holders of the permission it needs; both on by default),
              *     or `instance` (the instance's notices to the user; always in the app, but for
-             *     `announcement`, which is on by default).
+             *     `announcement` and `auto_delete_limit`, which are on by default).
              * @enum {string}
              */
             section: "ordinary" | "moderator" | "instance";
@@ -13259,9 +13352,14 @@ export interface components {
          *     `announcement` carries it, and it has no `account`. Editing the announcement afterwards sends
          *     nothing again, and the notification leaves the list and the unread count once the
          *     announcement is withdrawn or its window ends.
+         *     `auto_delete_limit` comes from the instance: the server maximum of the automatic deletion of
+         *     old posts now binds the user (it was turned on or lowered, or the user lost the permission
+         *     `keep_posts_longer`), and after a grace period it deletes the user's posts that their own
+         *     policy keeps. Its `auto_delete_limit` carries the maximum and when it starts to apply, and it
+         *     has no `account`. It is sent once per notice.
          * @enum {string}
          */
-        NotificationType: "follow" | "follow_request" | "follow_accepted" | "mention" | "boost" | "favourite" | "reaction" | "quote" | "poll_closed" | "moderation_notice" | "report_resolved" | "admin_report" | "admin_sign_up" | "relationships_severed" | "appeal_decided" | "admin_appeal" | "admin_webhook_disabled" | "admin_hook_failing" | "admin_custom_emoji_request" | "custom_emoji_request_decided" | "supporter_payment_failed" | "supporter_subscription_ended" | "supporter_plan_retired" | "account_moved" | "admin_account_moved" | "service_closure" | "admin_service_closure_due" | "supporter_service_closure" | "voice_room_started" | "voice_room_invited" | "admin_error_group" | "status" | "announcement" | "admin_hook_appeal" | "hook_appeal_decided";
+        NotificationType: "follow" | "follow_request" | "follow_accepted" | "mention" | "boost" | "favourite" | "reaction" | "quote" | "poll_closed" | "moderation_notice" | "report_resolved" | "admin_report" | "admin_sign_up" | "relationships_severed" | "appeal_decided" | "admin_appeal" | "admin_webhook_disabled" | "admin_hook_failing" | "admin_custom_emoji_request" | "custom_emoji_request_decided" | "supporter_payment_failed" | "supporter_subscription_ended" | "supporter_plan_retired" | "account_moved" | "admin_account_moved" | "service_closure" | "admin_service_closure_due" | "supporter_service_closure" | "voice_room_started" | "voice_room_invited" | "admin_error_group" | "status" | "announcement" | "admin_hook_appeal" | "hook_appeal_decided" | "auto_delete_limit";
         /**
          * @description An OAuth app that the authenticated user registered. Like every third-party app,
          *     it gets no first-party-only scope and calls no account security operation.
@@ -16845,7 +16943,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AutoDeletePolicy"];
+                    "application/json": components["schemas"]["AutoDeleteSettings"];
                 };
             };
             default: components["responses"]["Problem"];
@@ -16871,7 +16969,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AutoDeletePolicy"];
+                    "application/json": components["schemas"]["AutoDeleteSettings"];
                 };
             };
             default: components["responses"]["Problem"];

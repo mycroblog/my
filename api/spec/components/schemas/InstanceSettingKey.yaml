@@ -95,3 +95,13 @@ enum:
   - auto_delete_default_keep_direct
   - auto_delete_default_keep_min_boosts
   - auto_delete_default_keep_min_favourites
+  - auto_delete_max_age_days
+  - auto_delete_max_allow_pinned
+  - auto_delete_max_kept_pins
+  - auto_delete_max_allow_bookmarked
+  - auto_delete_max_allow_favourited
+  - auto_delete_max_allow_media
+  - auto_delete_max_allow_polls
+  - auto_delete_max_allow_visibilities
+  - auto_delete_max_allow_thresholds
+  - auto_delete_grace_days

@@ -207,6 +207,10 @@
     "defaultMessage": "The administrators posted an announcement",
     "description": "Notification sentence to every user: the administrators of the server published an announcement, which the notification shows by its title."
   },
+  "notifications.type.auto_delete_limit": {
+    "defaultMessage": "The server's maximum for keeping posts will apply to your posts",
+    "description": "Notification sentence: the server's maximum of the automatic deletion of old posts now applies to the user's posts, and after a grace period it deletes the posts that the user's own settings keep. The settings of the automatic deletion show which posts will go."
+  },
   "notifications.type.supporter_payment_failed": {
     "defaultMessage": "A payment for your supporter plan failed",
     "description": "Notification sentence: a payment for the user's supporter plan failed and the grace period began."

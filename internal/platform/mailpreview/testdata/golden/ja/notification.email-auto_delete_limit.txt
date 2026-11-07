@@ -1,0 +1,14 @@
+Example Social: 公開から90 日を過ぎた投稿が30 日後から自動で削除されます
+
+それまではあなたの設定のとおりです。どの投稿が削除されるかは自動削除の設定で確かめられ、設定はサーバーの上限の内で変えられます。削除した投稿は元に戻せません。
+
+開く
+https://social.example/settings/auto-delete
+
+-- 
+Example Social
+https://social.example
+連絡先: admin@social.example
+
+通知の設定で「投稿の自動削除のお知らせ」のメールを受け取るようにしているため、このメールを送りました。設定から止められます。
+このメールを止める: https://social.example/mail/unsubscribe?token=sample-unsubscribe-token

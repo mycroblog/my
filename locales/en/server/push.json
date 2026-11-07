@@ -31,6 +31,10 @@
     "defaultMessage": "Announcement from {instance}: {title}",
     "description": "Web Push notification of a new announcement of the server to every local user. {title} is the announcement's title, as the administrators wrote it. {instance} is the server's display name, or its domain name when it has none."
   },
+  "push.auto_delete_limit": {
+    "defaultMessage": "{instance}: posts older than {days, plural, one {# day} other {# days}} will be deleted automatically {daysLeft, plural, =0 {from now on} one {in # day} other {in # days}}",
+    "description": "Web Push notification, and the subject of its email, telling a local user that the server's maximum of the automatic deletion of old posts now applies to their posts. {days} is the most days after its publication that a post is kept; {daysLeft} is the days of the grace period until the maximum applies (0 when it applies at once). {instance} is the server's display name, or its domain name when it has none."
+  },
   "push.appeal_decided": {
     "defaultMessage": "The moderators of {instance} decided your appeal",
     "description": "Web Push notification: the moderators upheld or overturned the user's appeal. {instance} is the server's display name, or its domain name when it has none."

@@ -692,6 +692,7 @@ type Notification struct {
 	ErrorGroupHour          sql.NullInt64
 	AnnouncementID          sql.NullString
 	HookAppealID            sql.NullString
+	AutoDeleteLimitNoticeID sql.NullString
 	DedupeKey               string
 	CreatedAt               int64
 }
@@ -1092,6 +1093,21 @@ type Status struct {
 	InReplyToUri    sql.NullString
 	ConversationUri sql.NullString
 	PublishedAt     int64
+}
+
+type StatusAutoDeleteLimit struct {
+	AccountID   string
+	NoticeID    string
+	MaxAgeDays  int64
+	EnforceFrom int64
+}
+
+type StatusAutoDeleteLimitNotice struct {
+	ID          string
+	AccountID   string
+	MaxAgeDays  int64
+	NoticedAt   int64
+	EnforceFrom int64
 }
 
 type StatusAutoDeletePolicy struct {

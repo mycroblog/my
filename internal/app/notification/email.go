@@ -47,10 +47,11 @@ type EmailScheduler struct {
 	Clock  kernel.Clock
 }
 
-// enqueue enqueues JobNotificationEmail of n, to run notification.EmailDelay from now, when n's
-// group is emailed after the delay and c turns its email on. The idempotency key is the
-// notification's, so that a retried transaction enqueues the job once.
-func (m *EmailScheduler) enqueue(ctx context.Context, tx uow.Tx, n notification.Notification, c notification.Choices) error {
+// enqueueWith enqueues JobNotificationEmail of n, to run notification.EmailDelay from now, when
+// n's group is emailed after the delay and c turns its email on, with the payload completed by
+// complete (nil completes nothing): what words the email that the notification row does not hold.
+// The idempotency key is the notification's, so that a retried transaction enqueues the job once.
+func (m *EmailScheduler) enqueueWith(ctx context.Context, tx uow.Tx, n notification.Notification, c notification.Choices, complete func(*pushJob)) error {
 	if m == nil || m.Outbox == nil {
 		return nil
 	}
@@ -58,7 +59,11 @@ func (m *EmailScheduler) enqueue(ctx context.Context, tx uow.Tx, n notification.
 	if !ok || !g.DelayedEmail() || !c.Enabled(g.Group, notification.ChannelEmail) {
 		return nil
 	}
-	payload, err := json.Marshal(jobOf(n, ""))
+	job := jobOf(n, "")
+	if complete != nil {
+		complete(&job)
+	}
+	payload, err := json.Marshal(job)
 	if err != nil {
 		return err
 	}

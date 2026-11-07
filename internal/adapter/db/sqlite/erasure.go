@@ -207,9 +207,12 @@ func (r *StatusRepository) EraseInteractionsBy(ctx context.Context, tx uow.Tx, a
 			most = max(most, int64(len(ids)))
 			return nil
 		},
-		// The automatic deletion policy (FR-118) is a setting of the account.
+		// The automatic deletion policy (FR-118) is a setting of the account; its notices of the
+		// server maximum (ADR-0151 §5) go with it.
 		func() error { return q.EraseAutoDeleteKeptVisibilitiesBy(ctx, accountID) },
 		func() error { return q.EraseAutoDeletePolicyBy(ctx, accountID) },
+		func() error { return q.EraseAutoDeleteLimitBy(ctx, accountID) },
+		func() error { return q.EraseAutoDeleteLimitNoticesBy(ctx, accountID) },
 		func() error {
 			return q.UncountBoostsBy(ctx, sqlitegen.UncountBoostsByParams{AccountID: accountID, Lim: lim})
 		},

@@ -115,6 +115,10 @@
     "defaultMessage": "‮∀ ʍǝqɥooʞ oɟ {instance} ʍɐs ʇnɹuǝp oɟɟ‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
+  "mail.auto_delete_limit.detail": {
+    "defaultMessage": "‮∩uʇıʅ ʇɥǝu, ʎonɹ oʍu sǝʇʇıuƃs ɐddʅʎ. ⊥ɥǝ sǝʇʇıuƃs oɟ ʇɥǝ ɐnʇoɯɐʇıɔ pǝʅǝʇıou sɥoʍ ʍɥıɔɥ oɟ ʎonɹ dosʇs ʍıʅʅ qǝ pǝʅǝʇǝp, ɐup ʎon ɔɐu ɔɥɐuƃǝ ʇɥǝɯ ʍıʇɥıu ʇɥǝ sǝɹʌǝɹ's ɯɐxıɯnɯ. ᗡǝʅǝʇǝp dosʇs ɔɐuuoʇ qǝ ɹǝsʇoɹǝp.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
   "mail.group.account_moved": {
     "defaultMessage": "‮∀ɔɔonuʇs ʎon ɟoʅʅoʍ ɯoʌıuƃ‬",
     "description": "Generated from en by tools/i18n; do not edit."
@@ -157,6 +161,10 @@
   },
   "mail.group.admin_webhook_disabled": {
     "defaultMessage": "‮ᗡısɐqʅǝp ʍǝqɥooʞs‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "mail.group.auto_delete_limit": {
+    "defaultMessage": "‮Noʇıɔǝs oɟ ʇɥǝ ɐnʇoɯɐʇıɔ pǝʅǝʇıou oɟ dosʇs‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "mail.group.boost": {

@@ -2383,6 +2383,10 @@
     "defaultMessage": "お知らせ",
     "description": "Row of the notification settings table: a new announcement of the server's administrators to every user."
   },
+  "settings.notifications.group.auto_delete_limit": {
+    "defaultMessage": "投稿の自動削除",
+    "description": "Row of the notification settings table: the notices that the server's maximum of the automatic deletion of old posts will apply to the user's posts."
+  },
   "settings.notifications.sound.title": {
     "defaultMessage": "通知音",
     "description": "Heading of the section of the notification settings about the sound this device plays for new notifications."

@@ -61,7 +61,8 @@ func (r *NotificationRepository) InsertNotification(ctx context.Context, tx uow.
 		AccountMoveID: toNullString(n.AccountMoveID), AccountMoveOutcome: toNullString(string(n.AccountMoveOutcome)),
 		ServiceClosureEventID: toNullString(n.ServiceClosureEventID), ServiceClosureChange: toNullString(string(n.ServiceClosureChange)), VoiceRoomID: toNullString(n.VoiceRoomID),
 		ErrorGroupChange: toNullString(string(n.ErrorGroupChange)), ErrorGroupID: toNullString(n.ErrorGroupID), ErrorGroupHour: toNullTime(n.ErrorGroupHour),
-		AnnouncementID: toNullString(n.AnnouncementID), HookAppealID: toNullString(n.HookAppealID), DedupeKey: n.DedupeKey, CreatedAt: toMillis(n.CreatedAt),
+		AnnouncementID: toNullString(n.AnnouncementID), HookAppealID: toNullString(n.HookAppealID),
+		AutoDeleteLimitNoticeID: toNullString(n.AutoDeleteLimitNoticeID), DedupeKey: n.DedupeKey, CreatedAt: toMillis(n.CreatedAt),
 	})
 	if err != nil {
 		return false, wrap(err, "insert notification")
@@ -241,7 +242,8 @@ func notificationFrom(row sqlitegen.Notification) notification.Notification {
 		AccountMoveID: row.AccountMoveID.String, AccountMoveOutcome: notification.MoveOutcome(row.AccountMoveOutcome.String),
 		ServiceClosureEventID: row.ServiceClosureEventID.String, ServiceClosureChange: notification.ClosureChange(row.ServiceClosureChange.String), VoiceRoomID: row.VoiceRoomID.String,
 		ErrorGroupChange: notification.ErrorGroupChange(row.ErrorGroupChange.String), ErrorGroupID: row.ErrorGroupID.String, ErrorGroupHour: fromNullTime(row.ErrorGroupHour),
-		AnnouncementID: row.AnnouncementID.String, HookAppealID: row.HookAppealID.String, DedupeKey: row.DedupeKey, CreatedAt: fromMillis(row.CreatedAt),
+		AnnouncementID: row.AnnouncementID.String, HookAppealID: row.HookAppealID.String,
+		AutoDeleteLimitNoticeID: row.AutoDeleteLimitNoticeID.String, DedupeKey: row.DedupeKey, CreatedAt: fromMillis(row.CreatedAt),
 	}
 }
 

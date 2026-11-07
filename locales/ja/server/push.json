@@ -31,6 +31,10 @@
     "defaultMessage": "{instance}からのお知らせ: {title}",
     "description": "Web Push notification of a new announcement of the server to every local user. {title} is the announcement's title, as the administrators wrote it. {instance} is the server's display name, or its domain name when it has none."
   },
+  "push.auto_delete_limit": {
+    "defaultMessage": "{instance}: 公開から{days, plural, other {# 日}}を過ぎた投稿が{daysLeft, plural, =0 {これから} other {# 日後から}}自動で削除されます",
+    "description": "Web Push notification, and the subject of its email, telling a local user that the server's maximum of the automatic deletion of old posts now applies to their posts. {days} is the most days after its publication that a post is kept; {daysLeft} is the days of the grace period until the maximum applies (0 when it applies at once). {instance} is the server's display name, or its domain name when it has none."
+  },
   "push.appeal_decided": {
     "defaultMessage": "{instance} のモデレーターがあなたの異議申し立てを審査しました",
     "description": "Web Push notification: the moderators upheld or overturned the user's appeal. {instance} is the server's display name, or its domain name when it has none."

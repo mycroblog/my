@@ -13,6 +13,7 @@ import (
 	appinstance "github.com/mycroblog/my/internal/app/instance"
 	appmoderation "github.com/mycroblog/my/internal/app/moderation"
 	appnotification "github.com/mycroblog/my/internal/app/notification"
+	"github.com/mycroblog/my/internal/domain/content"
 	"github.com/mycroblog/my/internal/domain/identity"
 	"github.com/mycroblog/my/internal/domain/instance"
 	"github.com/mycroblog/my/internal/domain/moderation"
@@ -132,6 +133,10 @@ func (s *Server) newNotifications(ctx context.Context, viewer Viewer, ns []notif
 		return nil, err
 	}
 	moves, err := s.notifiedMoves(ctx, ns)
+	if err != nil {
+		return nil, err
+	}
+	limitNotices, err := s.notifiedAutoDeleteLimits(ctx, accountID, ns)
 	if err != nil {
 		return nil, err
 	}
@@ -293,6 +298,9 @@ func (s *Server) newNotifications(ctx context.Context, viewer Viewer, ns []notif
 			if item.ErrorGroup, err = s.notifiedErrorGroup(ctx, n); err != nil {
 				return nil, err
 			}
+		}
+		if notice, ok := limitNotices[n.AutoDeleteLimitNoticeID]; ok && n.Type == notification.TypeAutoDeleteLimit {
+			item.AutoDeleteLimit = &NotificationAutoDeleteLimit{MaxAgeDays: notice.MaxAgeDays, EnforceFrom: notice.EnforceFrom.UTC()}
 		}
 		if n.AnnouncementID != "" && s.o.Announcements != nil {
 			a, ok, err := s.o.Announcements.ShownAnnouncement(ctx, viewer.UserID, n.AnnouncementID)
@@ -639,4 +647,23 @@ func (s *Server) notifiedErrorGroup(ctx context.Context, n notification.Notifica
 		out.Count = &count
 	}
 	return out, nil
+}
+
+// notifiedAutoDeleteLimits returns the notices of the server maximum of the automatic deletion
+// that the auto_delete_limit notifications among ns tell the account of, by ID.
+func (s *Server) notifiedAutoDeleteLimits(ctx context.Context, accountID string, ns []notification.Notification) (map[string]content.AutoDeleteLimitNotice, error) {
+	var ids []string
+	for _, n := range ns {
+		if n.Type == notification.TypeAutoDeleteLimit {
+			ids = append(ids, n.AutoDeleteLimitNoticeID)
+		}
+	}
+	if len(ids) == 0 || s.o.AutoDelete == nil {
+		return nil, nil
+	}
+	notices, err := s.o.AutoDelete.LimitNotices(ctx, accountID, ids)
+	if err != nil {
+		return nil, fmt.Errorf("clientapi: the auto delete notices of %s: %w", accountID, err)
+	}
+	return notices, nil
 }

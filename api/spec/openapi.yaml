@@ -1380,10 +1380,16 @@ components:
       $ref: ./components/schemas/AnnouncementPage.yaml
     AppealModerationActionRequest:
       $ref: ./components/schemas/AppealModerationActionRequest.yaml
+    AutoDeleteLimit:
+      $ref: ./components/schemas/AutoDeleteLimit.yaml
     AutoDeletePolicy:
       $ref: ./components/schemas/AutoDeletePolicy.yaml
     AutoDeletePreview:
       $ref: ./components/schemas/AutoDeletePreview.yaml
+    AutoDeleteServerLimit:
+      $ref: ./components/schemas/AutoDeleteServerLimit.yaml
+    AutoDeleteSettings:
+      $ref: ./components/schemas/AutoDeleteSettings.yaml
     BadgeChoice:
       $ref: ./components/schemas/BadgeChoice.yaml
     BadgeChoiceList:
@@ -1568,6 +1574,8 @@ components:
       $ref: ./components/schemas/ExternalConfirmationRequest.yaml
     ExternalConfirmationToken:
       $ref: ./components/schemas/ExternalConfirmationToken.yaml
+    NotificationAutoDeleteLimit:
+      $ref: ./components/schemas/NotificationAutoDeleteLimit.yaml
     NotificationErrorGroup:
       $ref: ./components/schemas/NotificationErrorGroup.yaml
     FinanceCostItemLine:

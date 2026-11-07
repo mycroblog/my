@@ -326,6 +326,12 @@ DELETE FROM status_auto_delete_kept_visibilities WHERE account_id = sqlc.arg(acc
 -- name: EraseAutoDeletePolicyBy :exec
 DELETE FROM status_auto_delete_policies WHERE account_id = sqlc.arg(account_id);
 
+-- name: EraseAutoDeleteLimitBy :exec
+DELETE FROM status_auto_delete_limits WHERE account_id = sqlc.arg(account_id);
+
+-- name: EraseAutoDeleteLimitNoticesBy :exec
+DELETE FROM status_auto_delete_limit_notices WHERE account_id = sqlc.arg(account_id);
+
 -- The account's boosts in force: the counts go down with their edges, then every boost of the
 -- account goes with its retraction.
 

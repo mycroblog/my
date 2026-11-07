@@ -24,7 +24,7 @@ CREATE TABLE notifications (
     'account_moved', 'admin_account_moved',
     'service_closure', 'admin_service_closure_due', 'supporter_service_closure',
     'voice_room_started', 'voice_room_invited', 'admin_error_group', 'admin_hook_failing', 'status', 'announcement',
-    'admin_hook_appeal', 'hook_appeal_decided'
+    'admin_hook_appeal', 'hook_appeal_decided', 'auto_delete_limit'
   )),
   source_account_id uuid,
   -- the domain of a remote source account; NULL for a local source or none.
@@ -68,6 +68,8 @@ CREATE TABLE notifications (
   announcement_id uuid,
   -- admin_hook_appeal, hook_appeal_decided: the hook_decision_appeals row.
   hook_appeal_id uuid,
+  -- auto_delete_limit: the status_auto_delete_limit_notices row.
+  auto_delete_limit_notice_id uuid,
   dedupe_key text NOT NULL,
   created_at timestamptz NOT NULL,
   -- nobody is notified of their own actions.
@@ -154,7 +156,7 @@ CREATE TABLE push_subscription_alerts (
     'account_moved', 'admin_account_moved',
     'service_closure', 'admin_service_closure_due', 'supporter_service_closure',
     'voice_room_started', 'voice_room_invited', 'admin_error_group', 'admin_hook_failing', 'status', 'announcement',
-    'admin_hook_appeal', 'hook_appeal_decided'
+    'admin_hook_appeal', 'hook_appeal_decided', 'auto_delete_limit'
   )),
   PRIMARY KEY (subscription_id, notification_type)
 );
@@ -171,7 +173,7 @@ CREATE TABLE notification_settings (
     'account_moved', 'voice',
     'admin_report', 'admin_sign_up', 'admin_appeal', 'admin_webhook_disabled', 'admin_custom_emoji_request',
     'admin_account_moved', 'admin_service_closure_due', 'admin_error_group', 'admin_hook_failing', 'admin_hook_appeal',
-    'moderation', 'status', 'announcement'
+    'moderation', 'status', 'announcement', 'auto_delete_limit'
   )),
   channel text NOT NULL CHECK (channel IN ('in_app', 'email')),
   enabled boolean NOT NULL,

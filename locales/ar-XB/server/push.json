@@ -59,6 +59,10 @@
     "defaultMessage": "‮⊥ɥǝ ɯopǝɹɐʇoɹs oɟ {instance} pǝɔıpǝp ʎonɹ ɐddǝɐʅ‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
+  "push.auto_delete_limit": {
+    "defaultMessage": "‮{instance}: dosʇs oʅpǝɹ ʇɥɐu {days,plural,one{# pɐʎ} other{# pɐʎs}} ʍıʅʅ qǝ pǝʅǝʇǝp ɐnʇoɯɐʇıɔɐʅʅʎ {daysLeft,plural,one{ıu # pɐʎ} other{ıu # pɐʎs} =0{ɟɹoɯ uoʍ ou}}‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
   "push.boost": {
     "defaultMessage": "‮{name} qoosʇǝp ʎonɹ dosʇ‬",
     "description": "Generated from en by tools/i18n; do not edit."

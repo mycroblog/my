@@ -694,6 +694,7 @@ type Notification struct {
 	ErrorGroupHour          *time.Time
 	AnnouncementID          *string
 	HookAppealID            *string
+	AutoDeleteLimitNoticeID *string
 	DedupeKey               string
 	CreatedAt               time.Time
 }
@@ -1094,6 +1095,21 @@ type Status struct {
 	InReplyToUri    *string
 	ConversationUri *string
 	PublishedAt     time.Time
+}
+
+type StatusAutoDeleteLimit struct {
+	AccountID   string
+	NoticeID    string
+	MaxAgeDays  int32
+	EnforceFrom time.Time
+}
+
+type StatusAutoDeleteLimitNotice struct {
+	ID          string
+	AccountID   string
+	MaxAgeDays  int32
+	NoticedAt   time.Time
+	EnforceFrom time.Time
 }
 
 type StatusAutoDeletePolicy struct {

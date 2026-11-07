@@ -1,0 +1,17 @@
+# SPDX-License-Identifier: MIT
+description: |
+  The notice that the server maximum of the automatic deletion of old posts binds the user: the
+  maximum it told of and when the user's posts start to go by it. The settings of the automatic
+  deletion (`getAutoDeletePolicy`) show the maximum in effect now, and their preview what goes.
+type: object
+required: [max_age_days, enforce_from]
+properties:
+  max_age_days:
+    description: The most days after its publication that a post is kept, as of the notice.
+    type: integer
+    minimum: 1
+    maximum: 3650
+  enforce_from:
+    description: When the maximum starts to delete the user's posts, at the end of the grace period.
+    type: string
+    format: date-time

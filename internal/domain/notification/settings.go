@@ -79,6 +79,10 @@ const (
 	// of the instance, the user turns it off in the app (on by default), and it has no email
 	// channel.
 	GroupAnnouncement Group = "announcement"
+	// GroupAutoDeleteLimit is the notices of the server maximum of the automatic deletion
+	// (ADR-0151 §7): posts are about to go for good, so it is emailed by default, even to those who
+	// rarely sign in, and the user may turn either channel off.
+	GroupAutoDeleteLimit Group = "auto_delete_limit"
 )
 
 // Section is the kind of a group, which decides its defaults and how its emails are sent.
@@ -135,9 +139,10 @@ func (g GroupSpec) Rule(c Channel) Rule {
 // EmailDelay for them to stay unread: the ordinary notifications with an email channel and the
 // moderation notices.
 // The moderator notifications are emailed at once, and the service closure and supporter
-// notifications by their own transactional emails.
+// notifications by their own transactional emails. The notices of the maximum of the automatic
+// deletion wait as the moderation notices do.
 func (g GroupSpec) DelayedEmail() bool {
-	return !g.Email.Absent && (g.Section == SectionOrdinary || g.Group == GroupModeration)
+	return !g.Email.Absent && (g.Section == SectionOrdinary || g.Group == GroupModeration || g.Group == GroupAutoDeleteLimit)
 }
 
 // Unsubscribable reports whether the emails of g carry an unsubscribe link, which turns off the
@@ -204,6 +209,10 @@ var Groups = []GroupSpec{
 	{
 		Group: GroupAnnouncement, Section: SectionInstance, Types: []Type{TypeAnnouncement},
 		InApp: Rule{Default: true}, Email: Rule{Absent: true},
+	},
+	{
+		Group: GroupAutoDeleteLimit, Section: SectionInstance, Types: []Type{TypeAutoDeleteLimit},
+		InApp: Rule{Default: true}, Email: Rule{Default: true},
 	},
 }
 

@@ -70,6 +70,11 @@ description: |
   `announcement` carries it, and it has no `account`. Editing the announcement afterwards sends
   nothing again, and the notification leaves the list and the unread count once the
   announcement is withdrawn or its window ends.
+  `auto_delete_limit` comes from the instance: the server maximum of the automatic deletion of
+  old posts now binds the user (it was turned on or lowered, or the user lost the permission
+  `keep_posts_longer`), and after a grace period it deletes the user's posts that their own
+  policy keeps. Its `auto_delete_limit` carries the maximum and when it starts to apply, and it
+  has no `account`. It is sent once per notice.
 type: string
 enum:
   - follow
@@ -107,3 +112,4 @@ enum:
   - announcement
   - admin_hook_appeal
   - hook_appeal_decided
+  - auto_delete_limit

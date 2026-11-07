@@ -1,0 +1,27 @@
+# SPDX-License-Identifier: MIT
+description: |
+  The server maximum as it applies to the authenticated user, and the policy that the automatic
+  deletion uses under it.
+allOf:
+  - $ref: ./AutoDeleteLimit.yaml
+  - type: object
+    required: [effective, bound]
+    properties:
+      effective:
+        description: |
+          The policy that deletes the user's posts under the maximum: it is on, its days are the
+          saved ones or the maximum, whichever is fewer (the maximum when the saved policy is
+          off), and it keeps only the saved exceptions that the maximum allows, with at most
+          `kept_pins` pins.
+        $ref: ./AutoDeletePolicy.yaml
+      bound:
+        description: |
+          Whether `effective` deletes posts that the saved policy keeps. A user whom the maximum
+          newly binds is told in advance and keeps the saved policy until `enforce_from`.
+        type: boolean
+      enforce_from:
+        description: |
+          When `effective` starts to delete the posts of a bound user, after the grace period;
+          absent while the user is not bound, and until the hourly job has told them.
+        type: string
+        format: date-time

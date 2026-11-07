@@ -3222,6 +3222,13 @@ func (l *Localizer) ServerMailAdminWebhookDisabledSubject(instance string) strin
 	return l.format("server:mail.admin_webhook_disabled.subject", map[string]any{"instance": instance})
 }
 
+// ServerMailAutoDeleteLimitDetail formats "server:mail.auto_delete_limit.detail". Second paragraph of the email that tells a local user that the server's maximum of the automatic deletion of old posts will apply to their posts; the first paragraph is the notification itself, with the days. The button below opens the user's settings of the automatic deletion.
+//
+//	en: Until then, your own settings apply. The settings of the automatic deletion show which of your posts will be deleted, and you can change them within the server's maximum. Deleted posts cannot be restored.
+func (l *Localizer) ServerMailAutoDeleteLimitDetail() string {
+	return l.format("server:mail.auto_delete_limit.detail", nil)
+}
+
 // ServerMailGroupAccountMoved formats "server:mail.group.account_moved". Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings.
 //
 //	en: Accounts you follow moving
@@ -3297,6 +3304,13 @@ func (l *Localizer) ServerMailGroupAdminSignUp() string {
 //	en: Disabled webhooks
 func (l *Localizer) ServerMailGroupAdminWebhookDisabled() string {
 	return l.format("server:mail.group.admin_webhook_disabled", nil)
+}
+
+// ServerMailGroupAutoDeleteLimit formats "server:mail.group.auto_delete_limit". Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page: the notices that the server's maximum of the automatic deletion of old posts applies to the user's posts. Matches the row of the web client's notification settings.
+//
+//	en: Notices of the automatic deletion of posts
+func (l *Localizer) ServerMailGroupAutoDeleteLimit() string {
+	return l.format("server:mail.group.auto_delete_limit", nil)
 }
 
 // ServerMailGroupBoost formats "server:mail.group.boost". Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings.
@@ -4469,6 +4483,23 @@ func (l *Localizer) ServerPushAnnouncement(args ServerPushAnnouncementArgs) stri
 //	en: The moderators of {instance} decided your appeal
 func (l *Localizer) ServerPushAppealDecided(instance string) string {
 	return l.format("server:push.appeal_decided", map[string]any{"instance": instance})
+}
+
+// ServerPushAutoDeleteLimitArgs holds the arguments of ServerPushAutoDeleteLimit, passed by name.
+//
+//exhaustruct:enforce
+type ServerPushAutoDeleteLimitArgs struct {
+	_        struct{} // forces keyed fields
+	Days     int
+	DaysLeft int
+	Instance string
+}
+
+// ServerPushAutoDeleteLimit formats "server:push.auto_delete_limit". Web Push notification, and the subject of its email, telling a local user that the server's maximum of the automatic deletion of old posts now applies to their posts. {days} is the most days after its publication that a post is kept; {daysLeft} is the days of the grace period until the maximum applies (0 when it applies at once). {instance} is the server's display name, or its domain name when it has none.
+//
+//	en: {instance}: posts older than {days, plural, one {# day} other {# days}} will be deleted automatically {daysLeft, plural, =0 {from now on} one {in # day} other {in # days}}
+func (l *Localizer) ServerPushAutoDeleteLimit(args ServerPushAutoDeleteLimitArgs) string {
+	return l.format("server:push.auto_delete_limit", map[string]any{"days": args.Days, "daysLeft": args.DaysLeft, "instance": args.Instance})
 }
 
 // ServerPushBoost formats "server:push.boost". Web Push notification. {name} is the display name, or the @handle, of the account that boosted the user's post.

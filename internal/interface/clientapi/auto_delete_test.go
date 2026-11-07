@@ -17,10 +17,28 @@ import (
 
 // fakeAutoDeletes holds the policies by account, validating them as the content module does.
 // Its preview returns preview for any valid policy and records the policy it got.
+// With limit set, the maximum applies to every account, as to one without keep_posts_longer.
 type fakeAutoDeletes struct {
 	byAccount map[string]content.AutoDeletePolicy
 	preview   appcontent.AutoDeletePreview
 	previewed []content.AutoDeletePolicy
+	limit     *content.AutoDeleteLimit
+	enforce   time.Time
+}
+
+func (f *fakeAutoDeletes) view(p content.AutoDeletePolicy) appcontent.AutoDeleteView {
+	v := appcontent.AutoDeleteView{Policy: p}
+	if f.limit != nil {
+		eff := content.EffectiveAutoDeletePolicy(p, *f.limit, false)
+		v.Limit = &appcontent.AutoDeleteLimitView{
+			AutoDeleteLimit: *f.limit, Effective: eff, Bound: content.AutoDeleteBound(p, eff, 0), EnforceFrom: f.enforce,
+		}
+	}
+	return v
+}
+
+func (f *fakeAutoDeletes) LimitNotices(context.Context, string, []string) (map[string]content.AutoDeleteLimitNotice, error) {
+	return nil, nil
 }
 
 func (f *fakeAutoDeletes) PreviewAutoDeletePolicy(_ context.Context, accountID string, p content.AutoDeletePolicy) (appcontent.AutoDeletePreview, error) {
@@ -33,21 +51,26 @@ func (f *fakeAutoDeletes) PreviewAutoDeletePolicy(_ context.Context, accountID s
 	return f.preview, nil
 }
 
-func (f *fakeAutoDeletes) AutoDeletePolicy(_ context.Context, accountID string) (content.AutoDeletePolicy, error) {
+func (f *fakeAutoDeletes) AutoDeletePolicy(_ context.Context, accountID string) (appcontent.AutoDeleteView, error) {
 	if p, ok := f.byAccount[accountID]; ok {
-		return p, nil
+		return f.view(p), nil
 	}
-	return content.DefaultAutoDeletePolicy(accountID), nil
+	return f.view(content.DefaultAutoDeletePolicy(accountID)), nil
 }
 
-func (f *fakeAutoDeletes) UpdateAutoDeletePolicy(_ context.Context, accountID string, p content.AutoDeletePolicy) (content.AutoDeletePolicy, error) {
+func (f *fakeAutoDeletes) UpdateAutoDeletePolicy(_ context.Context, accountID string, p content.AutoDeletePolicy) (appcontent.AutoDeleteView, error) {
 	p.AccountID = accountID
 	p, err := p.Normalize()
 	if err != nil {
-		return content.AutoDeletePolicy{}, err
+		return appcontent.AutoDeleteView{}, err
+	}
+	if f.limit != nil {
+		if err := f.limit.Check(p); err != nil {
+			return appcontent.AutoDeleteView{}, err
+		}
 	}
 	f.byAccount[accountID] = p
-	return p, nil
+	return f.view(p), nil
 }
 
 func newAutoDeleteEnv(t *testing.T) (*authEnv, *fakeAutoDeletes) {
@@ -62,11 +85,11 @@ func TestGetAutoDeletePolicy(t *testing.T) {
 	if res.StatusCode != http.StatusOK {
 		t.Fatalf("status = %d, want 200", res.StatusCode)
 	}
-	var got clientapi.AutoDeletePolicy
+	var got clientapi.AutoDeleteSettings
 	if err := json.NewDecoder(res.Body).Decode(&got); err != nil {
 		t.Fatal(err)
 	}
-	want := clientapi.AutoDeletePolicy{
+	want := clientapi.AutoDeleteSettings{
 		MinAgeDays: content.DefaultAutoDeleteAgeDays, KeepPinned: true, KeepBookmarked: true, KeepFavourited: true,
 		KeepVisibilities: []clientapi.Visibility{clientapi.VisibilityDirect},
 	}
@@ -91,11 +114,11 @@ func TestUpdateAutoDeletePolicy(t *testing.T) {
 	if res.StatusCode != http.StatusOK {
 		t.Fatalf("status = %d, want 200", res.StatusCode)
 	}
-	var got clientapi.AutoDeletePolicy
+	var got clientapi.AutoDeleteSettings
 	if err := json.NewDecoder(res.Body).Decode(&got); err != nil {
 		t.Fatal(err)
 	}
-	want := clientapi.AutoDeletePolicy{
+	want := clientapi.AutoDeleteSettings{
 		Enabled: true, MinAgeDays: 14, KeepPinned: true, KeepMedia: true,
 		KeepVisibilities: []clientapi.Visibility{clientapi.VisibilityPrivate, clientapi.VisibilityDirect}, KeepMinBoosts: 5,
 	}
@@ -118,6 +141,41 @@ func TestUpdateAutoDeletePolicy(t *testing.T) {
 	}
 	if p := decodeProblem(t, res); p.Detail == nil || *p.Detail != "keep_visibilities の値が正しくありません。" {
 		t.Errorf("problem = %+v (detail %v), want keep_visibilities named", p, p.Detail)
+	}
+}
+
+// TestAutoDeletePolicyServerLimit checks ADR-0151 §8: the policy carries the server maximum that
+// applies to the viewer, with the effective policy and when it starts, and a policy over the
+// maximum is refused naming the property.
+func TestAutoDeletePolicyServerLimit(t *testing.T) {
+	e, f := newAutoDeleteEnv(t)
+	f.limit = &content.AutoDeleteLimit{MaxAgeDays: 30, AllowPinned: true, KeptPins: 3, GraceDays: 30}
+	f.enforce = time.Date(2026, 12, 1, 0, 0, 0, 0, time.UTC)
+	res := e.get(t, "/preferences/auto_delete", map[string]string{"Authorization": "Bearer read-accounts"})
+	var got clientapi.AutoDeleteSettings
+	if err := json.NewDecoder(res.Body).Decode(&got); err != nil {
+		t.Fatal(err)
+	}
+	want := &clientapi.AutoDeleteServerLimit{
+		MaxAgeDays: 30, AllowPinned: true, KeptPins: 3, Bound: true, EnforceFrom: &f.enforce,
+		Effective: clientapi.AutoDeletePolicy{Enabled: true, MinAgeDays: 30, KeepPinned: true, KeepVisibilities: []clientapi.Visibility{}},
+	}
+	if got.Enabled || !reflect.DeepEqual(got.ServerLimit, want) {
+		t.Errorf("server_limit = %+v, want %+v", got.ServerLimit, want)
+	}
+
+	res = e.sendJSON(t, http.MethodPut, "/preferences/auto_delete", "write", `{
+		"enabled": true, "min_age_days": 60, "keep_pinned": true, "keep_bookmarked": false, "keep_favourited": false,
+		"keep_media": false, "keep_polls": false, "keep_visibilities": [], "keep_min_boosts": 0, "keep_min_favourites": 0
+	}`)
+	if res.StatusCode != http.StatusUnprocessableEntity {
+		t.Fatalf("over the maximum: status = %d, want 422", res.StatusCode)
+	}
+	if p := decodeProblem(t, res); p.Detail == nil || *p.Detail != "min_age_days の値が正しくありません。" {
+		t.Errorf("problem = %+v (detail %v), want min_age_days named", p, p.Detail)
+	}
+	if _, ok := f.byAccount[aliceAccountID]; ok {
+		t.Error("a policy over the maximum was saved")
 	}
 }
 

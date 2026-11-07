@@ -51,6 +51,11 @@ func TestGroupDefaults(t *testing.T) {
 			if !inApp || email || !g.InApp.Fixed || g.Email.Fixed || !g.DelayedEmail() {
 				t.Errorf("%s: in app %v, email %v, %+v; want fixed on, chosen off", g.Group, inApp, email, g)
 			}
+		case g.Group == GroupAutoDeleteLimit:
+			// Posts are about to go for good (ADR-0151 §7): both on by default, both chosen.
+			if !inApp || !email || g.InApp.Fixed || g.Email.Fixed || !g.Unsubscribable() || !g.DelayedEmail() {
+				t.Errorf("%s: in app %v, email %v, %+v; want on, on, both chosen, emailed after the delay", g.Group, inApp, email, g)
+			}
 		default:
 			if !inApp || !email || !g.InApp.Fixed || !g.Email.Fixed || g.Unsubscribable() {
 				t.Errorf("%s: in app %v, email %v, %+v; want both fixed on", g.Group, inApp, email, g)

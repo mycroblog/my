@@ -371,6 +371,14 @@
     "defaultMessage": "Notices from the moderators",
     "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
   },
+  "mail.group.auto_delete_limit": {
+    "defaultMessage": "Notices of the automatic deletion of posts",
+    "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page: the notices that the server's maximum of the automatic deletion of old posts applies to the user's posts. Matches the row of the web client's notification settings."
+  },
+  "mail.auto_delete_limit.detail": {
+    "defaultMessage": "Until then, your own settings apply. The settings of the automatic deletion show which of your posts will be deleted, and you can change them within the server's maximum. Deleted posts cannot be restored.",
+    "description": "Second paragraph of the email that tells a local user that the server's maximum of the automatic deletion of old posts will apply to their posts; the first paragraph is the notification itself, with the days. The button below opens the user's settings of the automatic deletion."
+  },
   "mail.action.sign_in": {
     "defaultMessage": "Sign in",
     "description": "Label of the link in an email that opens the sign-in page."
