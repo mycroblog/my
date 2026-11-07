@@ -383,3 +383,63 @@ describe("the external review", () => {
     expect(screen.queryByRole("heading", { name: "External review" })).not.toBeInTheDocument();
   });
 });
+
+describe("the server's maximum of how long posts are kept", () => {
+  const limit: NonNullable<Instance["auto_delete_limit"]> = {
+    max_age_days: 90,
+    allow_pinned: true,
+    kept_pins: 2,
+    allow_bookmarked: false,
+    allow_favourited: false,
+    allow_media: true,
+    allow_polls: false,
+    allow_visibilities: false,
+    allow_thresholds: true,
+  };
+
+  test("states the days and what members can keep longer, after the terms and policies", async () => {
+    serveInstance({
+      auto_delete_limit: limit,
+      terms_url: "http://localhost:3000/about/terms",
+      contact: { email: "admin@my.example" },
+    });
+    await renderApp({ path: "/about" });
+    const section = await screen.findByRole("region", { name: "How long posts are kept" });
+    expect(section).toHaveTextContent(
+      "On this server, posts are deleted automatically at most 90 days after they're published.",
+    );
+    expect(
+      within(section)
+        .getAllByRole("listitem")
+        .map((item) => item.textContent),
+    ).toEqual([
+      "Posts pinned to a profile, the 2 most recently pinned",
+      "Posts with images or other media",
+      "Posts with many boosts or favourites",
+    ]);
+    const headings = within(screen.getByRole("main"))
+      .getAllByRole("region")
+      .map((region) => within(region).getByRole("heading", { level: 2 }).textContent);
+    expect(headings.slice(headings.indexOf("Terms and policies"), headings.indexOf("Terms and policies") + 3)).toEqual([
+      "Terms and policies",
+      "How long posts are kept",
+      "Contact",
+    ]);
+  });
+
+  test("says no post is kept longer when no exception is allowed", async () => {
+    serveInstance({
+      auto_delete_limit: { ...limit, allow_pinned: false, allow_media: false, allow_thresholds: false },
+    });
+    await renderApp({ path: "/about" });
+    const section = await screen.findByRole("region", { name: "How long posts are kept" });
+    expect(within(section).getByText("No post is kept longer.")).toBeVisible();
+    expect(within(section).queryByRole("list")).not.toBeInTheDocument();
+  });
+
+  test("has no section when the server sets no maximum", async () => {
+    await renderApp({ path: "/about" });
+    await screen.findByRole("heading", { level: 1 });
+    expect(screen.queryByRole("heading", { name: "How long posts are kept" })).not.toBeInTheDocument();
+  });
+});

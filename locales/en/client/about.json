@@ -430,5 +430,53 @@
   "about.title": {
     "defaultMessage": "About {instance}",
     "description": "Heading and document title of the server's information page, which everyone may read. {instance} is the name of this server."
+  },
+  "about.retention.title": {
+    "defaultMessage": "How long posts are kept",
+    "description": "Heading of the section of the about page that states the server's maximum of how long local posts are kept."
+  },
+  "about.retention.description": {
+    "defaultMessage": "On this server, posts are deleted automatically at most {days, plural, one {# day} other {# days}} after they're published. Members can choose a shorter time but cannot turn this off.",
+    "description": "The server's maximum of the automatic deletion of old posts on the about page. {days} is the most days a post is kept."
+  },
+  "about.retention.allowed": {
+    "defaultMessage": "Members can keep these posts longer:",
+    "description": "Before the list of the exceptions that the server's maximum of the automatic deletion allows, on the about page."
+  },
+  "about.retention.none": {
+    "defaultMessage": "No post is kept longer.",
+    "description": "On the about page, when the server's maximum of the automatic deletion allows no exception."
+  },
+  "about.retention.pinned": {
+    "defaultMessage": "Posts pinned to a profile",
+    "description": "Exception the server's maximum of the automatic deletion allows, on the about page: pinned posts."
+  },
+  "about.retention.pinned_newest": {
+    "defaultMessage": "Posts pinned to a profile, {count, plural, one {only the most recently pinned} other {the # most recently pinned}}",
+    "description": "Exception the server's maximum of the automatic deletion allows, on the about page: the newest pinned posts. {count} is how many."
+  },
+  "about.retention.bookmarked": {
+    "defaultMessage": "Posts the author bookmarked",
+    "description": "Exception the server's maximum of the automatic deletion allows, on the about page."
+  },
+  "about.retention.favourited": {
+    "defaultMessage": "Posts the author favourited",
+    "description": "Exception the server's maximum of the automatic deletion allows, on the about page."
+  },
+  "about.retention.media": {
+    "defaultMessage": "Posts with images or other media",
+    "description": "Exception the server's maximum of the automatic deletion allows, on the about page."
+  },
+  "about.retention.polls": {
+    "defaultMessage": "Posts with a poll",
+    "description": "Exception the server's maximum of the automatic deletion allows, on the about page."
+  },
+  "about.retention.visibilities": {
+    "defaultMessage": "Posts with the visibilities the author chooses",
+    "description": "Exception the server's maximum of the automatic deletion allows, on the about page: keeping posts by visibility."
+  },
+  "about.retention.thresholds": {
+    "defaultMessage": "Posts with many boosts or favourites",
+    "description": "Exception the server's maximum of the automatic deletion allows, on the about page: keeping posts by their reactions."
   }
 }
