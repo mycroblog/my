@@ -40,7 +40,9 @@
 # Environment: CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID (deploy, deploy-pr, and the Cloudflare API of cleanup);
 # GH_TOKEN and GITHUB_REPOSITORY (build, resolve without <releases>, comment, cleanup); DOCS_SITE_WORK, the work dir
 # (default .tmp/docs-site); DOCS_SITE_RELEASES, a <releases> file for `build` instead of the API; HEAD_SHA, the commit
-# the preview comment names. DRY_RUN=1 runs `deploy` and `deploy-pr` as `wrangler deploy --dry-run`, which checks the
+# the preview comment names; DOCS_SITE_CF_BEACON_TOKEN, the site token of Cloudflare Web Analytics, which `build` puts
+# in the head of every page (app/docs/src/analytics.ts; only docs-site-deploy.yml sets it, and `build-preview` drops
+# it, so a preview never has the beacon). DRY_RUN=1 runs `deploy` and `deploy-pr` as `wrangler deploy --dry-run`, which checks the
 # config and the assets without an account, with https://pr-<pr>-my-docs.example.workers.dev as the Preview URL, and
 # prints the wrangler and gh commands of deploy-pr, comment, and cleanup instead of running them (cleanup still lists
 # the Previews and reads the pull requests, both read-only):
@@ -225,6 +227,8 @@ build_preview() {
   mkdir -p "$work"
   # The Preview serves /next/ alone, so its version switcher lists no released version.
   resolve "$root/app/docs/versions.json" /dev/null >"$resolved"
+  # A preview is not the production site: its pages have no analytics beacon, whatever the environment holds.
+  unset DOCS_SITE_CF_BEACON_TOKEN
   rm -rf "$out"
   mkdir -p "$out"
   build_tree "$root" next /next/ main "$resolved" "$out/next"

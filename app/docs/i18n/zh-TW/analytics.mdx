@@ -1,0 +1,42 @@
+---
+# source: 71a4aefa4377
+title: 本站的流量分析
+description: mycroblog.dev 的頁面會傳送哪些資料給 Cloudflare Web Analytics，以及不會傳送什麼。
+---
+
+{/* SPDX-License-Identifier: AGPL-3.0-only */}
+
+本站 mycroblog.dev 使用 Cloudflare Web Analytics 統計頁面的閱讀情形：大家開啟了哪些頁面、哪些語言與哪些版本的文件，
+以及從哪裡來。專案用這些數字決定接下來要寫什麼、翻譯什麼。本頁只說明本站；執行 `my` 的各個伺服器有各自的政策。
+
+## 頁面會傳送什麼
+
+開啟本站的頁面時，你的瀏覽器會從 `static.cloudflareinsights.com` 載入一個小指令碼，並將以下內容傳送到
+`cloudflareinsights.com`：
+
+- 頁面的網址，不含查詢字串；
+- 你來自的頁面的網址（參照網址）；
+- 瀏覽器的使用者代理程式字串，其中寫有瀏覽器與作業系統的名稱；
+- 瀏覽器測得的頁面載入與繪製所花的時間。
+
+和任何請求一樣，Cloudflare 從你的 IP 位址收到這些內容，並據此推斷所在國家。
+
+## 不會做什麼
+
+- 不設定 Cookie，也不在瀏覽器中儲存任何內容：不使用本機儲存空間、工作階段儲存空間或 IndexedDB。
+- Cloudflare 表示，它不會為了顯示統計數字而透過 IP 位址、使用者代理程式或其他任何資訊對訪客進行指紋辨識，也不會將資料用於廣告。
+- 專案只能在 Cloudflare 的儀表板中看到總數，看不到任何一次造訪的紀錄。
+
+本站自身會為自己的頁面在你的瀏覽器中儲存兩項內容：配色主題，以及側邊欄中哪些群組是展開的。它們從不會離開你的瀏覽器。
+
+## 誰會收到
+
+為本站提供服務的 Cloudflare, Inc. 會收到這些資料，並依照 [Cloudflare 隱私權政策](https://www.cloudflare.com/privacypolicy/)處理。
+
+## 如何關閉
+
+用瀏覽器或內容封鎖工具封鎖 `static.cloudflareinsights.com`，指令碼就不會執行。沒有它，每個頁面一樣可以正常使用。
+
+## 聯絡方式
+
+關於本說明的問題，請寄信至 [hello@mycroblog.dev](mailto:hello@mycroblog.dev)。

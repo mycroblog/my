@@ -366,6 +366,10 @@ Before the first stable release, `/` is the landing page of `/next/` and `/lates
 - The deploy job runs in the environment `doc-site` (deployment refs `main` and the tags `v*`), which holds the secret `CLOUDFLARE_API_TOKEN` (Workers Scripts: Edit) and the variable `CLOUDFLARE_ACCOUNT_ID`.
   The Worker config (`scripts/docs-site/wrangler.jsonc`) declares no routes and no custom domain: `mycroblog.dev` is bound to the Worker, with its DNS records, in the infrastructure repository `mycroblog/infra`,
   after the Worker exists from a first deploy on `workers.dev`.
+- The build job passes the repository variable `DOCS_SITE_CF_BEACON_TOKEN` (the site token of the Cloudflare Web Analytics site for `mycroblog.dev`,
+  public in every page, so not a secret) to the build, which puts the beacon in the head of every page of every version and locale, and the footer links the notice page `/analytics/`.
+  Keep the dashboard's automatic injection off for the site, or every page is counted twice. A build without the variable, local, in the merge queue, or a preview, has no beacon.
+  A version built from a tag older than the beacon has none either.
 - A pull request that changes a published document, `app/docs/`, or `api/openapi.yaml` gets `/next/` alone on the Workers Preview `pr-<number>` of `my-docs`
   (`https://pr-<number>-my-docs.<subdomain>.workers.dev/next/`, where `/` and `/latest/` redirect to `/next/`), and one comment with its URL that later pushes update:
   `docs-site-preview.yml` builds it without secrets, and `docs-site-preview-deploy.yml` publishes it from `main`'s checkout in the environment `doc-site`,

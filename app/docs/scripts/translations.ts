@@ -13,12 +13,13 @@
 //                                      level, and a current section keeps the code blocks, code spans and link targets
 //                                      of its English text; files that translate nothing
 //
-// A source is a repository path: docs/guide/posting.md, or app/docs/src/content/docs/index.mdx (the landing page).
+// A source is a repository path: docs/guide/posting.md, or a page written in the site: app/docs/src/content/docs/index.mdx
+// (the landing page) or app/docs/src/content/docs/analytics.mdx (the analytics notice).
 // status and todo always succeed; check fails on what it finds. A stale or missing section is never a failure: the
 // page keeps the old translation, or shows the English text, and says so.
 import {
   headingOf,
-  landingPage,
+  isHandWritten,
   protectedParts,
   quotedPhrases,
   sourceSections,
@@ -60,7 +61,7 @@ const known = new Set(translatableSources());
 for (const source of sources) {
   if (!known.has(source)) {
     console.error(
-      `translations.ts: ${source} is not a document the site translates (docs/guide, docs/operations, the landing page)`,
+      `translations.ts: ${source} is not a document the site translates (docs/guide, docs/operations, the pages written in the site)`,
     );
     process.exit(2);
   }
@@ -106,7 +107,7 @@ function todo(): void {
     usage();
   }
   const page = translationOf(locale, source);
-  const landing = source === landingPage;
+  const landing = isHandWritten(source);
   const sections = page?.sections ?? sourceSections(source).map((section) => ({ section, state: "missing" as const }));
   console.log(`# Translate into ${translationPath(locale, source)}, keeping the sections in the order below.`);
   if (page === undefined) {
@@ -173,7 +174,7 @@ function check(locale: TranslationLocale): number {
     }
     errors.push(...page.errors);
     for (const { section, translation, state } of page.sections) {
-      if (translation === undefined || source === landingPage) {
+      if (translation === undefined || isHandWritten(source)) {
         continue;
       }
       const where = `${page.file}:${translation.line}`;

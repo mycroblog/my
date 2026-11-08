@@ -8,8 +8,8 @@
 //   ## 公開範囲
 //
 // A section whose English text has changed since is stale: the page keeps its old translation and lists it at the
-// top. A section with no translation is shown in English. The landing page (MDX) is one section: the hash is the first
-// line of its frontmatter (`# source: 3f2a9c1b0d4e`).
+// top. A section with no translation is shown in English. A page written in the site (MDX: the landing page and the
+// analytics notice) is one section: the hash is the first line of its frontmatter (`# source: 3f2a9c1b0d4e`).
 //
 // The copy step (scripts/import-docs.ts) builds the pages of a locale from this module, and the command of
 // scripts/translations.ts (`scripts/task.sh docs:site-translations`) lists what to translate and checks a translation
@@ -46,6 +46,20 @@ export function localeOf(pathname: string): TranslationLocale | undefined {
 
 /** The landing page, written in the site rather than copied from docs/. */
 export const landingPage = "app/docs/src/content/docs/index.mdx";
+
+/** The notice of the site's analytics (ADR-0150 §7), written in the site like the landing page. */
+const analyticsPage = "app/docs/src/content/docs/analytics.mdx";
+
+/**
+ * The pages written in the site (MDX, each translated as one section), by repository path. A translation is
+ * app/docs/i18n/<locale>/<file name>, and the page of a locale src/content/docs/<locale>/<file name>.
+ */
+export const handWrittenPages: readonly string[] = [landingPage, analyticsPage];
+
+/** Whether a source is a page written in the site (handWrittenPages) rather than a document of docs/. */
+export function isHandWritten(source: string): boolean {
+  return handWrittenPages.includes(source);
+}
 
 /** The published documents that are templates of legal texts: their translations carry an extra notice. */
 export const legalTemplates: ReadonlySet<string> = new Set([
@@ -164,8 +178,8 @@ export function sourceSections(source: string): Section[] {
 
 /** The repository path of the translation of `source` into `locale`. */
 export function translationPath(locale: TranslationLocale, source: string): string {
-  if (source === landingPage) {
-    return `app/docs/i18n/${locale}/index.mdx`;
+  if (isHandWritten(source)) {
+    return `app/docs/i18n/${locale}/${posix.basename(source)}`;
   }
   return `app/docs/i18n/${locale}/${source.slice("docs/".length)}`;
 }
@@ -260,9 +274,9 @@ export function filesIn(dir: string, suffix: RegExp): string[] {
  */
 const translatedDirs: readonly (typeof publishedDirs)[number][] = ["guide", "operations"];
 
-/** Every source a locale translates: the landing page and the published documents of translatedDirs. */
+/** Every source a locale translates: the pages written in the site and the published documents of translatedDirs. */
 export function translatableSources(): string[] {
-  return [landingPage, ...translatedDirs.flatMap((dir) => filesIn(`docs/${dir}`, /\.md$/)).filter(isPublished)];
+  return [...handWrittenPages, ...translatedDirs.flatMap((dir) => filesIn(`docs/${dir}`, /\.md$/)).filter(isPublished)];
 }
 
 /** The files under app/docs/i18n/<locale>/ that translate no source: a source that was moved or removed. */

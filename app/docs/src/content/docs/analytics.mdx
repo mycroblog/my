@@ -1,0 +1,46 @@
+---
+title: Analytics on this site
+description: What the pages of mycroblog.dev send to Cloudflare Web Analytics, and what they do not.
+---
+
+{/* SPDX-License-Identifier: AGPL-3.0-only */}
+
+This site, mycroblog.dev, counts how its pages are read with Cloudflare Web Analytics: which pages, languages and
+versions of the documentation people open, and where they come from. The project uses the counts to decide what to
+write and translate next. The page is about this site only; servers running `my` have their own policies.
+
+## What a page sends
+
+When a page of this site opens, your browser loads a small script from `static.cloudflareinsights.com` and sends these
+to `cloudflareinsights.com`:
+
+- the address of the page, without its query string;
+- the address of the page you came from (the referrer);
+- your browser's user agent, which names the browser and the operating system;
+- how long the page took to load and to render, as the browser measures it.
+
+As with any request, Cloudflare receives it from your IP address and derives the country from it.
+
+## What it does not do
+
+- It sets no cookie and stores nothing in your browser: no local storage, session storage or IndexedDB.
+- Cloudflare states that it does not fingerprint visitors by their IP address, user agent or anything else to show
+  the counts, and that it does not use the data for advertising.
+- The project sees only the totals in the Cloudflare dashboard, never a record of one visit.
+
+The site itself keeps two things in your browser for its own pages, the colour theme and which groups of the sidebar
+are open. They never leave your browser.
+
+## Who receives it
+
+Cloudflare, Inc., which also serves this site, receives the data and keeps it under the
+[Cloudflare Privacy Policy](https://www.cloudflare.com/privacypolicy/).
+
+## Turning it off
+
+Blocking `static.cloudflareinsights.com` with your browser or a content blocker stops the script. Every page works
+the same without it.
+
+## Contact
+
+Write to [hello@mycroblog.dev](mailto:hello@mycroblog.dev) about this notice.

@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Copies the published documents of the repository (src/published.ts) into src/content/docs/ before a build or the
 // dev server (ADR-0150 §4): `bun run import` from package.json's build and dev scripts. The copies are generated and
-// git-ignored; the hand-written landing page src/content/docs/index.mdx stays. Each copy differs from its source in:
+// git-ignored; the pages written in the site (the landing page src/content/docs/index.mdx and the analytics notice
+// src/content/docs/analytics.mdx) stay. Each copy differs from its source in:
 //   - the first `# Heading`, which becomes the `title` of the frontmatter (Starlight renders it as the page heading);
 //   - relative links to published documents, which become site URLs under the base path, #anchors kept;
 //   - relative links to a file with a page of its own (sitePages), which become that page;
@@ -46,6 +47,8 @@ import {
 import {
   filesIn,
   headingOf,
+  handWrittenPages,
+  isHandWritten,
   landingPage,
   legalTemplates,
   localeSegment,
@@ -57,7 +60,7 @@ import {
 
 const contentDir = join(repoRoot, "app/docs/src/content/docs");
 const publicDir = join(repoRoot, "app/docs/public");
-const handWritten = new Set(["index.mdx"]);
+const handWritten = new Set(handWrittenPages.map((path) => posix.basename(path)));
 
 /** What a page is written as: a page of the site (in a locale, for a translation) or the plain Markdown form. */
 interface Output {
@@ -235,13 +238,15 @@ function translatedPage(page: PageTranslation): string {
 }
 
 /**
- * The landing page of a locale: its translation, with the `# source:` line of its frontmatter replaced by the
- * `translation` the Banner reads, and the paths to the site's components and assets one directory deeper.
+ * A page written in the site (the landing page, the analytics notice) in a locale: its translation, with the
+ * `# source:` line of its frontmatter replaced by the `translation` the Banner reads, and the paths to the site's
+ * components and assets one directory deeper.
  */
-function translatedLanding(page: PageTranslation): string {
+function translatedHandWritten(page: PageTranslation): string {
   const source = readFileSync(join(repoRoot, page.file), "utf8");
   const lines = source.split("\n");
-  lines[1] = `translation: ${JSON.stringify(translationData(page, base))}`;
+  const english = page.source === landingPage ? base : `${base}${posix.basename(page.source, ".mdx")}/`;
+  lines[1] = `translation: ${JSON.stringify(translationData(page, english))}`;
   return lines.join("\n").replace(/(["'\s])\.\.\/\.\.\/(components|assets)\//g, "$1../../../$2/");
 }
 
@@ -280,10 +285,10 @@ for (const locale of translationLocales) {
     if (page.errors.length > 0) {
       throw new Error(page.errors.join("\n"));
     }
-    const landing = source === landingPage;
-    const out = join(contentDir, localeSegment(locale), landing ? "index.mdx" : `${slugOf(source)}.md`);
+    const written = isHandWritten(source);
+    const out = join(contentDir, localeSegment(locale), written ? posix.basename(source) : `${slugOf(source)}.md`);
     mkdirSync(dirname(out), { recursive: true });
-    writeFileSync(out, landing ? translatedLanding(page) : translatedPage(page));
+    writeFileSync(out, written ? translatedHandWritten(page) : translatedPage(page));
     translated++;
   }
 }

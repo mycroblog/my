@@ -42,6 +42,7 @@ export const collections = {
           "docs.version.label": z.string(),
           "docs.llms.lead": z.string(),
           "docs.llms.page": z.string(),
+          "docs.analytics.link": z.string(),
         })
         .partial(),
     }),

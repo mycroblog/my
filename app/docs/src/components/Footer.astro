@@ -1,12 +1,16 @@
 ---
 // SPDX-License-Identifier: AGPL-3.0-only
 // Starlight's Footer with the plain-text forms for LLMs: this page as Markdown (src/page-markdown.ts) and this version
-// of the site (src/llms-txt.ts).
+// of the site (src/llms-txt.ts); and the link to the notice of the site's analytics (src/content/docs/analytics.mdx)
+// in the locale of the page.
 import Default from "@astrojs/starlight/components/Footer.astro";
 import { markdownURL } from "../page-markdown";
 import { base } from "../published";
+import { localeOf, localeSegment } from "../translations";
 
 const markdown = markdownURL(Astro.locals.starlightRoute.id);
+const locale = localeOf(Astro.url.pathname);
+const analytics = `${base}${locale === undefined ? "" : `${localeSegment(locale)}/`}analytics/`;
 const t = Astro.locals.t;
 ---
 
@@ -17,9 +21,13 @@ const t = Astro.locals.t;
   <a href={`${base}llms.txt`}>llms.txt</a>,
   <a href={`${base}llms-full.txt`}>llms-full.txt</a>, <a href={`${base}llms-small.txt`}>llms-small.txt</a>
 </p>
+<p class="docs-analytics" data-pagefind-ignore>
+  <a href={analytics}>{t("docs.analytics.link")}</a>
+</p>
 
 <style>
-  .docs-llms {
+  .docs-llms,
+  .docs-analytics {
     margin-block-start: 1rem;
     color: var(--sl-color-gray-3);
     font-size: var(--sl-text-sm);

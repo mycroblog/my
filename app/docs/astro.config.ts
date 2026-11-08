@@ -1,8 +1,11 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The documentation site (ADR-0150): Astro Starlight, built to static files in dist/ by `scripts/task.sh docs:site-build`.
 // The site is a build tool, not where the documents live: the pages under src/content/docs/ are copied there from the
-// Markdown of the repository before the build, and only the landing page (src/content/docs/index.mdx) is written here.
-// Search is Starlight's built-in Pagefind; the site loads no analytics and no external service (ADR-0150 §7).
+// Markdown of the repository before the build; only the landing page (src/content/docs/index.mdx) and the notice of the
+// site's analytics (src/content/docs/analytics.mdx) are written here.
+// Search is Starlight's built-in Pagefind. The one external service is Cloudflare Web Analytics on the production site
+// (ADR-0150 §7, src/analytics.ts): its beacon is in the head of every page only when DOCS_SITE_CF_BEACON_TOKEN is set,
+// which docs-site-deploy.yml alone does, so local builds, the merge queue and the previews of pull requests have none.
 import { satteri } from "@astrojs/markdown-satteri";
 import starlight from "@astrojs/starlight";
 import { defineConfig } from "astro/config";
@@ -11,6 +14,7 @@ import { base, sitePageLinks } from "./src/published";
 import { docsSidebar } from "./src/sidebar";
 import { apiReferencePlugin, apiReferenceSidebar } from "./src/api-reference";
 import { llmsTxtPlugin } from "./src/llms-txt";
+import { analyticsHead } from "./src/analytics";
 
 export default defineConfig({
   site: "https://mycroblog.dev",
@@ -32,6 +36,7 @@ export default defineConfig({
         replacesTitle: true,
       },
       favicon: "/favicon.svg",
+      head: analyticsHead(process.env["DOCS_SITE_CF_BEACON_TOKEN"]),
       social: [{ icon: "github", label: "GitHub", href: "https://github.com/mycroblog/my" }],
       // The version switcher before the social links, and the end-of-support banner of an ended version (src/versions.ts).
       components: {

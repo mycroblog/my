@@ -1,0 +1,50 @@
+---
+# source: 71a4aefa4377
+title: Mesure d’audience de ce site
+description: Ce que les pages de mycroblog.dev envoient à Cloudflare Web Analytics, et ce qu’elles n’envoient pas.
+---
+
+{/* SPDX-License-Identifier: AGPL-3.0-only */}
+
+Ce site, mycroblog.dev, mesure la lecture de ses pages avec Cloudflare Web Analytics : quelles pages, langues et
+versions de la documentation sont ouvertes, et d’où viennent les lecteurs. Le projet s’appuie sur ces chiffres pour
+décider de ce qu’il faut écrire et traduire ensuite. Cette page ne concerne que ce site ; les serveurs qui font tourner
+`my` ont leurs propres politiques.
+
+## Ce qu’une page envoie
+
+Lorsque vous ouvrez une page de ce site, votre navigateur charge un petit script depuis
+`static.cloudflareinsights.com` et envoie à `cloudflareinsights.com` :
+
+- l’adresse de la page, sans sa chaîne de requête ;
+- l’adresse de la page d’où vous venez (le référent) ;
+- l’agent utilisateur de votre navigateur, qui indique le navigateur et le système d’exploitation ;
+- le temps de chargement et d’affichage de la page, tel que le navigateur le mesure.
+
+Comme pour toute requête, Cloudflare la reçoit depuis votre adresse IP et en déduit le pays.
+
+## Ce qu’elle ne fait pas
+
+- Elle ne dépose aucun cookie et n’enregistre rien dans votre navigateur : ni stockage local, ni stockage de session,
+  ni IndexedDB.
+- Cloudflare indique ne pas identifier les visiteurs par empreinte à partir de leur adresse IP, de leur agent
+  utilisateur ou de toute autre donnée pour établir les chiffres, et ne pas utiliser les données à des fins
+  publicitaires.
+- Le projet ne voit que les totaux dans le tableau de bord de Cloudflare, jamais l’enregistrement d’une visite.
+
+Le site lui-même conserve deux informations dans votre navigateur pour ses propres pages : le thème de couleurs et les
+groupes de la barre latérale qui sont ouverts. Elles ne quittent jamais votre navigateur.
+
+## Qui reçoit les données
+
+Cloudflare, Inc., qui sert aussi ce site, reçoit les données et les traite conformément à la
+[politique de confidentialité de Cloudflare](https://www.cloudflare.com/privacypolicy/).
+
+## Désactiver la mesure
+
+Bloquer `static.cloudflareinsights.com` dans votre navigateur ou avec un bloqueur de contenu arrête le script. Toutes
+les pages fonctionnent de la même façon sans lui.
+
+## Contact
+
+Écrivez à [hello@mycroblog.dev](mailto:hello@mycroblog.dev) pour toute question sur cette page.

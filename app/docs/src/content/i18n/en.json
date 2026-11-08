@@ -8,5 +8,6 @@
   "docs.version.latest": "Read this page in the latest version",
   "docs.version.label": "Documentation version",
   "docs.llms.lead": "For LLMs and coding agents:",
-  "docs.llms.page": "this page as Markdown"
+  "docs.llms.page": "this page as Markdown",
+  "docs.analytics.link": "Analytics on this site"
 }

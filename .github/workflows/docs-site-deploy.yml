@@ -67,6 +67,10 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           DOCS_SITE_WORK: ${{ runner.temp }}/docs-site
+          # The site token of Cloudflare Web Analytics (ADR-0150 §7): a repository variable, not a secret, since every
+          # page carries it. Only this build of the production site gets it; local builds, the merge queue and the
+          # previews of pull requests have no beacon.
+          DOCS_SITE_CF_BEACON_TOKEN: ${{ vars.DOCS_SITE_CF_BEACON_TOKEN }}
         run: scripts/docs-site.sh build "$RUNNER_TEMP/docs-site/site"
       - name: Upload the site
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
