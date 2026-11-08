@@ -1,0 +1,12 @@
+{
+  "docs.translation.notice": "本頁由英文頁面機器翻譯而成。內容以英文頁面為準。",
+  "docs.translation.english": "閱讀英文頁面",
+  "docs.translation.legal": "本頁由法律文件範本機器翻譯而成。公開文本在使用前，請先請法律專業人士確認。",
+  "docs.translation.stale": "以下章節在翻譯之後，英文頁面已有變動。",
+  "docs.translation.untranslated": "以下章節尚未翻譯，以英文顯示。",
+  "docs.version.ended": "{{version}} 的支援已結束。",
+  "docs.version.latest": "在最新版中閱讀本頁",
+  "docs.version.label": "文件版本",
+  "docs.llms.lead": "供 LLM 與程式設計代理使用：",
+  "docs.llms.page": "本頁的 Markdown"
+}

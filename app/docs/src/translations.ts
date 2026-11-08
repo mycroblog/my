@@ -24,7 +24,7 @@ import { base, isPublished, type publishedDirs, repoRoot } from "./published";
  * The locales the site is translated into, besides English at the root, as the BCP 47 tags of their catalogs in
  * locales/ and of their directories in app/docs/i18n/.
  */
-export const translationLocales = ["ja", "zh-CN"] as const;
+export const translationLocales = ["ja", "zh-CN", "zh-TW"] as const;
 export type TranslationLocale = (typeof translationLocales)[number];
 
 /**

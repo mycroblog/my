@@ -47,6 +47,7 @@ export default defineConfig({
         root: { label: "English", lang: "en" },
         ja: { label: "日本語", lang: "ja" },
         "zh-cn": { label: "简体中文", lang: "zh-CN" },
+        "zh-tw": { label: "繁體中文", lang: "zh-TW" },
       },
       // Starlight's own lastUpdated reads the git history of the copied files, which says nothing about the documents.
       lastUpdated: false,
