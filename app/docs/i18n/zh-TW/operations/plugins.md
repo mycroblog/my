@@ -1,16 +1,16 @@
 <!-- source: plugins 4a60f7abbec9 -->
 # 外掛
 
-外掛是由你執行的獨立程式或服務，伺服器會透過網路把一項範圍明確的工作交給它。伺服器只會連線到一個位址：它不會啟動、停止或監看外掛。請以 sidecar、在 systemd 底下，或在另一台機器上執行它。
+外掛是由你執行的獨立程式或服務，伺服器會透過網路把一項範圍明確的任務交給它。伺服器只會連線到一個位址：它不會啟動、停止或監看外掛。請以 sidecar、在 systemd 底下，或在另一台機器上執行它。
 
-預設不會委派任何工作。沒有外掛位址的伺服器不會開啟任何連線，也不會啟動任何程序。建置標籤 [`no_plugins`](../reference/build-tags.md) 會把外掛用戶端從執行檔中移除。
+預設不會委派任何任務。沒有外掛位址的伺服器不會開啟任何連線，也不會啟動任何程序。建置標籤 [`no_plugins`](../reference/build-tags.md) 會把外掛用戶端從執行檔中移除。
 
 ![外掛的位置：my 程序把六個 port 交給外掛，並詢問五個決策 hook，全都透過一個連線到你所執行外掛的外掛用戶端；圖的下方顯示呼叫失敗時各自的處理方式。下方清單說明每個部分。](images/plugins.svg)
 
 由上而下說明這張圖：
 
 - **my 程序**不論 `role` 為何，都會對外掛進行兩種呼叫。
-  - **交出的 port**：外掛代替內建的部分執行一項工作，只有在設定指定 `plugin` 時才會啟用：`translator`（實例設定 `translation_providers = plugin`）、`billing`（`billing_sources` 包含 `plugin`）、`mailer`（`mail = plugin`）、`media_image`、`media_video` 和 `media_audio`（`media_image = plugin` 等）、`key_manager`（`key_manager = plugin`），以及 `search`（`search = plugin`）。
+  - **交出的 port**：外掛代替內建的部分執行一項任務，只有在設定指定 `plugin` 時才會啟用：`translator`（實例設定 `translation_providers = plugin`）、`billing`（`billing_sources` 包含 `plugin`）、`mailer`（`mail = plugin`）、`media_image`、`media_video` 和 `media_audio`（`media_image = plugin` 等）、`key_manager`（`key_manager = plugin`），以及 `search`（`search = plugin`）。
   - **[決策 hook](decision-hooks.md)**：外掛回答是否接受某件事，除非 hook 的模式 `hook_<hook>_mode` 為 `off`，否則都會詢問它：`inbound.status` 用於其他伺服器的貼文，`inbound.follow` 用於其他伺服器的追蹤，`signup.check` 用於註冊，`media.check` 用於上傳，`local.status` 用於本站帳號的貼文，`inbound.actor` 用於其他伺服器上帳號的個人檔案，`local.profile` 則用於本站帳號的個人檔案變更。
 - **外掛用戶端**負責所有呼叫。每個種類有一個目的地 `plugin_<kind>_address` 和一個期限 `plugin_<kind>_timeout`，同時最多執行 8 個呼叫（每個媒體種類為 2 個）。它透過 Unix socket、`https://`，或者（僅限[部分種類](#plain-tcp)）`http://` 連線。
 - **你的外掛**是你執行的獨立程式，可以是 sidecar、在 systemd 底下，或在另一台機器上。伺服器只會連線到它們。
@@ -134,7 +134,7 @@ FAIL echo_empty: the outcome is OUTCOME_UNSPECIFIED, not OUTCOME_OK
 
 `--kind key_manager` 會執行伺服器每次啟動時執行的檢查，並檢查外掛會拒絕被竄改的值和它不持有的 KEK。它只傳送自行產生、用完即丟的金鑰，因此對真正的金鑰儲存也很安全，但金鑰儲存可能會對呼叫計費。它檢查的是回應的格式是否正確，而不是外掛如何保管它的 KEK。[管理金鑰](key-management.md#a-plugin)收錄了這個種類的契約。
 
-`probe` 是最小的種類，伺服器不會委派任何工作給它。請先提供它，在撰寫外掛的其餘部分之前，先確認傳輸、協定和驗證。
+`probe` 是最小的種類，伺服器不會委派任何任務給它。請先提供它，在撰寫外掛的其餘部分之前，先確認傳輸、協定和驗證。
 
 <!-- source: translating-posts c9d31b2b9157 -->
 ## 翻譯貼文
@@ -296,7 +296,7 @@ Content-Type: application/json
 - `media_video` 重新封裝（remux）影片：帶有影像軌的檔案，不論有沒有聲音。
 - `media_audio` 重新封裝只有音訊的檔案。
 
-其餘的工作仍由伺服器自己處理。它會偵測每個上傳檔案的格式、區分影片和音訊檔案、在上傳到達時依上限檢查，並製作遠端媒體的預覽。設定維持 `native` 的種類會在伺服器中處理。
+其餘的任務仍由伺服器自己處理。它會偵測每個上傳檔案的格式、區分影片和音訊檔案、在上傳到達時依上限檢查，並製作遠端媒體的預覽。設定維持 `native` 的種類會在伺服器中處理。
 
 ```sh
 # Only videos go to a plugin, on a machine of its own; images and audio stay in the server.
@@ -306,7 +306,7 @@ MY_PLUGIN_MEDIA_VIDEO_ADDRESS=https://media.internal:9000
 
 為每個要交出的種類設定 `media_<kind> = plugin` 和 `plugin_media_<kind>_address`，然後重新啟動。一個外掛可以負責多個種類：為每個種類設定相同的位址即可。每個種類同時最多執行兩個呼叫，每個呼叫最多持續 `plugin_media_<kind>_timeout`（預設 4 分鐘），因此處理緩慢的影片不會耽誤圖片。
 
-- **移除中繼資料是外掛的工作**。上傳檔案會以送來時的原樣到達外掛，包含其 EXIF 資料和標籤，其中可能含有照片的拍攝地點。伺服器會檢查每個輸出的格式和大小，但無法判斷中繼資料是否已完全清除。`my plugin test --kind media_image` 會檢查其測試檔案的位置不會再出現；其餘部分請在外掛中確認。
+- **移除中繼資料是外掛的任務**。上傳檔案會以送來時的原樣到達外掛，包含其 EXIF 資料和標籤，其中可能含有照片的拍攝地點。伺服器會檢查每個輸出的格式和大小，但無法判斷中繼資料是否已完全清除。`my plugin test --kind media_image` 會檢查其測試檔案的位置不會再出現；其餘部分請在外掛中確認。
 - **純 TCP 會以未加密的方式傳送上傳檔案**。媒體種類接受 `http://`，並在啟動時發出警告。這時上傳檔案及其中繼資料會以明文通過網路，而且兩端都沒有驗證：該網路上的任何人都可以讀取它們，或冒充外掛回應。除非網路只屬於你，否則請使用 Unix socket 或 `https://`。
 - **伺服器不信任輸出**。它會從內容偵測每個輸出的格式，絕不依據外掛的宣告，並以該格式的內容類型和副檔名提供。它會在與上傳相同的上限下解碼每個輸出，並檢查其大小是否相符。如果輸出比宣告的大或超過這些上限、格式不是外掛宣告的格式，或是該變體不接受的格式，上傳就會以伺服器無法處理的檔案失敗。
 - **失敗只會造成延遲**。外掛停止運作或失敗時，任務會在稍後重試，與內建處理器相同。需要立即取得自訂表情符號圖片的操作（例如複製遠端表情符號，或接受表情符號申請），在外掛失敗期間會失敗。

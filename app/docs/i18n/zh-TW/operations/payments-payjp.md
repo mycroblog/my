@@ -72,7 +72,7 @@ PAY.JP 的 Webhook 以帳號的 **來源權杖**（`whook_...`，放在標頭 `X
 - `dispute.created`
 - `statement.created`
 
-PAY.JP 只會每 3 分鐘重送一次通知，最多 3 次，超過之後的通知在你從儀表板重送之前都不會送達。對帳會修補漏接的部分，所以 **建議把 `payments_reconcile_interval` 設為 1 小時**。服務提供者的狀態（模式、最後一次 Webhook 送達的時間，以及最後一次對帳的結果）會顯示在管理介面 `/admin/supporters` 的「付款服務提供者」區段中。
+PAY.JP 只會每 3 分鐘重送一次通知，最多 3 次，超過之後的通知在你從儀表板重送之前都不會送達。對帳會修補漏接的部分，所以 **建議把 `payments_reconcile_interval` 設為 1 小時**。服務提供者的狀態（模式、最後一次 Webhook 送達的時間，以及最後一次對帳的結果）會顯示在管理介面 `/admin/supporters` 的「金流服務商」區段中。
 
 <!-- source: 4-configure-the-server b0d24c7a2da0 -->
 ## 4. 設定伺服器
@@ -118,7 +118,7 @@ PAY.JP 的 Webhook 會送到公開的 URL，所以要在你自己電腦上的伺
 ## 7. 營運
 
 - 種類為 `permission` 的對帳失敗表示祕密金鑰錯誤。
-- 「付款服務提供者」區段的警告中出現 `duplicate_charge`，表示伺服器無法完成已關閉訂閱的付款退款。日誌行 `a second subscription could not be canceled and refunded` 會指出該訂閱，每次對帳都會再試一次，即使訂閱已刪除也一樣。如果情況持續，請在儀表板中退還該筆扣款：只要 PAY.JP 仍然列出已刪除訂閱的扣款（請參閱[待驗證的項目](#items-to-verify)），下一次嘗試就會發現它已退款並清除警告。超過 180 天的扣款無法退款：伺服器會記錄下來並繼續進行。
+- 「金流服務商」區段的警告中出現 `duplicate_charge`，表示伺服器無法完成已關閉訂閱的付款退款。日誌行 `a second subscription could not be canceled and refunded` 會指出該訂閱，每次對帳都會再試一次，即使訂閱已刪除也一樣。如果情況持續，請在儀表板中退還該筆扣款：只要 PAY.JP 仍然列出已刪除訂閱的扣款（請參閱[待驗證的項目](#items-to-verify)），下一次嘗試就會發現它已退款並清除警告。超過 180 天的扣款無法退款：伺服器會記錄下來並繼續進行。
 - 其他退款請在 PAY.JP 儀表板中處理。全額退款和退單會立即移除角色並刪除訂閱，部分退款則不會移除角色。
 - **退單的撤銷** 不會自動記錄，因為 PAY.JP 既不會為此發出事件，也沒有對應的 API。發生時，請在成本頁面（`finance`）的收入畫面上記錄撤銷的金額。角色不會自動恢復。
 - **PAY.JP 付費方案的費用和匯款手續費** 不會從收入中扣除。請在 `finance` 中把它們記錄為成本。

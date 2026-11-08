@@ -78,7 +78,7 @@ my admin closure close
 my admin closure status
 ```
 
-- `accounts with a Delete` 是已記錄 `Delete` 的帳號數，`fan-outs pending` 是剩下的分送工作，`deliveries <state>` 則是各狀態的投遞數。
+- `accounts with a Delete` 是已記錄 `Delete` 的帳號數，`fan-outs pending` 是剩下的分送任務，`deliveries <state>` 則是各狀態的投遞數。
 - 投遞會依一般策略重試（約 4 天內最多 9 次）。全部結束後，每 10 分鐘執行一次的檢查會記錄 `delivery_completed`（`state: delivery_completed`）。從那時起，本站 Actor 和實例 Actor 也會回傳 `410`。
 - 變成 `dead` 的投遞不會自動重試。要重試它，請使用 `my job retry`。
 

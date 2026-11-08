@@ -64,7 +64,7 @@ docker compose exec -T my my admin create -username alice -email alice@example.c
 <!-- source: other-platforms 5f4cdac7fe7a -->
 ### 其他平台
 
-不使用 Compose 時，請以與伺服器相同的資料庫設定，將伺服器映像檔的 `my schema apply` 作為一次性任務執行（Kubernetes Job 或 init 容器、Cloud Run 工作等）：
+不使用 Compose 時，請以與伺服器相同的資料庫設定，將伺服器映像檔的 `my schema apply` 作為一次性任務執行（Kubernetes Job 或 init 容器、Cloud Run 任務等）：
 
 ```sh
 # SQLite: mount the volume that holds the database file at /data
@@ -189,7 +189,7 @@ kubectl rollout status deployment/my
 
 使用 OpenTofu 模組時，[在 Cloud Run 上部署](deploy-cloud-run.md#upgrading)中的指令碼會執行這些步驟。手動進行時：
 
-Cloud Run 工作各自只執行一個容器，因此請為每個步驟建立一個工作，並以 `--wait` 依序執行，工作失敗時它也會失敗。請給這些工作與服務相同的環境變數與密鑰。
+Cloud Run 任務各自只執行一個容器，因此請為每個步驟建立一個任務，並以 `--wait` 依序執行，任務失敗時它也會失敗。請給這些任務與服務相同的環境變數與密鑰。
 
 ```sh
 gcloud run services update my --region=asia-northeast1 --update-env-vars=MY_MAINTENANCE=true
@@ -208,7 +208,7 @@ gcloud run jobs execute my-upgrade-check --region=asia-northeast1 --wait &&
   gcloud run deploy my --region=asia-northeast1 --image=ghcr.io/mycroblog/my:0.2.0 --remove-env-vars=MY_MAINTENANCE
 ```
 
-若要先檢查 SQL，請以 `--args=schema,apply,-dry-run` 部署 schema 工作並執行，閱讀它的日誌之後，再為了套用而重新部署它。
+若要先檢查 SQL，請以 `--args=schema,apply,-dry-run` 部署 schema 任務並執行，閱讀它的日誌之後，再為了套用而重新部署它。
 
 <!-- source: backing-up b597d3139c2b -->
 ### 備份

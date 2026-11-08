@@ -34,7 +34,7 @@
 | 檢舉 | 365 天 | `reports_retention_days` | 180-3650 | 最後一次處理完成時 |
 | 對帳號的處置及申訴 | 365 天 | `moderation_actions_retention_days` | 180-3650 | 處置結束時 |
 | 稽核日誌 | 730 天 | `audit_log_retention_days` | 365-3650 | 記錄時 |
-| 誰參與了語音聊天房間 | 90 天 | `voice_participants_retention_days` | 30-3650 | 房間結束時 |
+| 誰參與了語音聊天聊天室 | 90 天 | `voice_participants_retention_days` | 30-3650 | 聊天室結束時 |
 | 外部審查的決定（有使用時） | 90 天 | `hook_decisions_retention_days` | 30-3650 | 決定時 |
 | 本站沒有任何內容參照的遠端貼文 | 90 天 | `remote_status_retention_days` | 1-3650 | 貼文發布時 |
 | 任何遠端貼文 | 無限制（`0`） | `remote_status_max_retention_days` | 0-3650 | 貼文發布時 |
@@ -75,7 +75,7 @@
 伺服器只有在帳號被抹除時才會移除這些紀錄，或者從不移除。法律可能會要求你說明保留它們的理由，或以其他方式移除它們，因此請決定你的政策要如何描述每一項。
 
 - 有效帳號的資料列：電子郵件地址、過去的個人檔案版本、過去的貼文版本、通知、追蹤關係，以及被拒絕之使用者的註冊申請。沒有人刪除的帳號會一直保留。
-- 抹除之後仍然保留的內容：帳號的 URI 和使用者名稱（以免兩者被重複使用）、帳號的生命週期事件、貼文已被刪除的紀錄、審核紀錄（直到其各自的期間結束）、邀請與角色授予、帳號搬家紀錄、已移除名稱與說明的語音聊天房間。
+- 抹除之後仍然保留的內容：帳號的 URI 和使用者名稱（以免兩者被重複使用）、帳號的生命週期事件、貼文已被刪除的紀錄、審核紀錄（直到其各自的期間結束）、邀請與角色授予、帳號搬家紀錄、已移除名稱與說明的語音聊天聊天室。
 - 支持者紀錄（訂閱、狀態變化、付款、退款、退單），為了會計以及與付款服務提供者對帳而保存。伺服器不會刪除付款服務提供者那邊的客戶：如果你的義務允許，請在提供者的儀表板中刪除。
 - 沒有結束時間的處置（`ban`，或沒有結束時間的 `suspend`），直到解除為止。尚未處理完的檢舉。
 - 遠端帳號，直到其伺服器刪除它們為止。
@@ -99,7 +99,7 @@
 | `{{IF payjp}}` | `payments = payjp` | 電子郵件地址和方案。瀏覽器會在伺服器的付款頁面上載入 payjp.js，卡片資料會輸入到 PAY.JP 的 iframe 中，姓名和電子郵件地址則會為了 3-D Secure 送到 PAY.JP（[PAY.JP](payments-payjp.md#card-data-and-pci-dss)）。 |
 | `{{IF error reports}}` | `errors_exporter` | 已清理、不含帳號、IP 位址、內文或標頭的報告。清理是依模式比對的，因此可能會殘留部分使用者文字（[錯誤回報](error-reporting.md#what-scrubbing-does-and-does-not-guarantee)）。 |
 | `{{IF telemetry}}` | `metrics_exporter`、`traces_exporter` | 不含帳號或用戶端 IP 位址的指標和 span。對外請求的 span 會包含遠端伺服器的主機名稱（[執行](running.md)）。 |
-| `{{IF voice media server}}` | `voice` 為 `livekit` 或 `sora` | 參與者的 IP 位址、他們發言時的音訊、工作階段 ID 和房間 ID。不會送出帳號的 ID（[語音聊天](voice.md)）。 |
+| `{{IF voice media server}}` | `voice` 為 `livekit` 或 `sora` | 參與者的 IP 位址、他們發言時的音訊、工作階段 ID 和聊天室 ID。不會送出帳號的 ID（[語音聊天](voice.md)）。 |
 | `{{IF turn}}` | `voice_stun_urls`、`voice_turn` | STUN 和 TURN 伺服器會看到參與者的 IP 位址，TURN 伺服器還會轉送他們加密過的音訊。 |
 | `{{IF webhooks}}` | [伺服器 webhook](webhooks.md) | 你的接收端會收到事件內容。部分事件包含申請者的電子郵件地址或檢舉的留言。 |
 | `{{IF follow review}}` | 已設定 `plugin_inbound_follow_address` 且 `hook_inbound_follow_mode` 不是 `off` | 來自其他伺服器的每個追蹤所涉及的兩個帳號的位址，在追蹤送達時由伺服器送出（[決策掛鉤](decision-hooks.md)）。記錄的決定會保存該活動的位址以及是哪個帳號送出的。 |

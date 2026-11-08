@@ -1,7 +1,7 @@
 <!-- source: external-login-providers 48a582ab87ec -->
 # 外部登入服務
 
-外部登入服務讓使用者可以用他們在其他地方的帳號登入：OpenID Connect 服務（Google Workspace、Microsoft Entra ID、Keycloak 等）、GitHub、Discord，或一個 Mastodon 伺服器。你可以在擁有伺服器設定的主機上使用 `my login-provider` 指令設定登入服務，或透過管理 API（`/api/v1/admin/login_providers`）以 `manage_login_providers` 權限設定，而只有內建的 `admin` 角色擁有這個權限。這個指令在任何管理員能登入之前就能使用，所以可以用來進行初次設定。在 Web 用戶端中，擁有該權限的管理員可以使用管理選單中的「登入服務」。清單會顯示每個服務的類型、狀態，以及是否允許註冊；「新增服務」會開啟建立服務的表單。選擇某個服務會開啟它的頁面，頁面上顯示它的回呼 URL（附有複製按鈕）與已連結的使用者人數，你也可以在這裡變更它的設定、設定新的用戶端密鑰，以及啟用、停用和刪除它。
+外部登入服務讓使用者可以用他們在其他地方的帳號登入：OpenID Connect 服務（Google Workspace、Microsoft Entra ID、Keycloak 等）、GitHub、Discord，或一個 Mastodon 伺服器。你可以在擁有伺服器設定的主機上使用 `my login-provider` 指令設定登入服務，或透過管理 API（`/api/v1/admin/login_providers`）以 `manage_login_providers` 權限設定，而只有內建的 `admin` 角色擁有這個權限。這個指令在任何管理員能登入之前就能使用，所以可以用來進行初次設定。在 Web 用戶端中，擁有該權限的管理員可以使用管理選單中的「登入服務」。清單會顯示每個服務的類型、狀態，以及是否允許註冊；「新增供應商」會開啟建立服務的表單。選擇某個服務會開啟它的頁面，頁面上顯示它的回呼 URL（附有複製按鈕）與已連結的使用者人數，你也可以在這裡變更它的設定、設定新的用戶端密鑰，以及啟用、停用和刪除它。
 
 <!-- source: what-external-sign-in-does 25fa37e22a50 -->
 ## 外部登入會做什麼

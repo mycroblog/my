@@ -76,7 +76,7 @@
   gcloud tasks queues resume my-jobs --location=asia-northeast1
   ```
 
-  也請暫停 `/_internal/tick` 的 Cloud Scheduler 工作（`gcloud scheduler jobs pause` / `resume`），或讓它的呼叫在這段期間以 `503` 失敗。任務本身存放在資料庫中：用完嘗試次數的 Cloud Tasks 任務只會失去它的觸發訊號，作業結束後的第一次 tick 會再次觸發所有到期的任務。
+  也請暫停 `/_internal/tick` 的 Cloud Scheduler 任務（`gcloud scheduler jobs pause` / `resume`），或讓它的呼叫在這段期間以 `503` 失敗。任務本身存放在資料庫中：用完嘗試次數的 Cloud Tasks 任務只會失去它的觸發訊號，作業結束後的第一次 tick 會再次觸發所有到期的任務。
 
 <!-- source: per-target 4e060394be4b -->
 ## 各部署目標的做法

@@ -19,7 +19,7 @@ my version        # print the version of the binary
 
 在 `production` 設定檔中，`my config check` 還會檢查有效的設定是否適合正式環境的實例：錯誤（例如其他伺服器無法連線的 `host`，或不是隨機的 KEK）會讓它以 1 結束，而警告（例如 `mail = none`）則不會。`my serve` 啟動時會把兩者都記錄為警告，但仍會啟動，所以請把 `my config check` 當作部署的一個步驟來執行。[正式環境檢查清單](production-checklist.md)列出了這些檢查，以及上線前需要手動確認的事項。
 
-| `role` | HTTP | 任務工作程序 |
+| `role` | HTTP | 任務任務程序 |
 | --- | --- | --- |
 | `all`（預設） | 所有路由 | 執行 |
 | `web` | 所有路由 | 不執行 |
@@ -206,7 +206,7 @@ docker buildx imagetools inspect ghcr.io/mycroblog/my@sha256:... --format '{{ js
 | `my.hook.decisions` | 計數器 | `hook`、`mode`、`outcome`（[決策掛鉤](decision-hooks.md)所記錄的決策） |
 | `my.hook.failures` | 計數器 | `hook`、`outcome`（`timeout`、`error`、`invalid` 或 `breaker_open`） |
 | `my.hook.duration` | 直方圖 | `hook`（每次呼叫外掛的秒數） |
-| `my.job.duration` | 直方圖，秒 | `my.job.type`（已註冊的任務類型，或 `other`）、`my.outcome`（`success` / `retry` / `dead` / `postponed`：`postponed` 是沒有做任何工作、也不消耗任務嘗試次數的執行，例如等待其主機的連結卡片擷取） |
+| `my.job.duration` | 直方圖，秒 | `my.job.type`（已註冊的任務類型，或 `other`）、`my.outcome`（`success` / `retry` / `dead` / `postponed`：`postponed` 是沒有做任何任務、也不消耗任務嘗試次數的執行，例如等待其主機的連結卡片擷取） |
 | `my.job.wait` | 直方圖，秒 | `my.job.type` |
 | `my.link_card.host_pauses` | 計數器 | `http.response.status_code`（`429` / `503`）。每次暫停從某個主機擷取連結卡片時計一次；請參閱[連結預覽](link-previews.md#limits-per-host) |
 | `my.translation.requests` | 計數器 | `my.outcome`（`author` / `cache` / `provider` / `no_provider` / `limit` / `unsupported` / `failed`）。每次請求翻譯檢視者可以看到的貼文，或版主要求翻譯檢舉的貼文或留言時計一次：由作者自己的文字、保留的翻譯或服務提供者回答，或因沒有服務提供者可以接收該貼文、已達每月上限、沒有服務提供者支援該語言，或沒有服務提供者傳回可用的翻譯而拒絕。 |
@@ -260,7 +260,7 @@ docker buildx imagetools inspect ghcr.io/mycroblog/my@sha256:... --format '{{ js
 
 - Go 執行階段指標（`go.*`）只由 `prometheus` 和 `otlp` 匯出。使用 `emf` 時，定期的快照任務會寫入程序和連線池的量測計與 Observable Counter。
 - 連線池等待和 CPU 時間是 Observable Counter：連線池和核心會保存自啟動以來的總計，並在收集時讀取。在 Prometheus 中它們是 `_total` 計數器（例如 `process_cpu_time_seconds_total`），在 OTLP 中是單調遞增的總和，你可以用 PromQL 的 `rate()` 查看其增長。`emf` 沒有總計型的計數器，所以它會寫入自上次寫入以來的增加量（用 CloudWatch 的 Sum 統計值加總）。
-- 佇列的 `claim` 只在取得任務或失敗時才會量測。等待中的工作程序的輪詢不會記錄任何東西。
+- 佇列的 `claim` 只在取得任務或失敗時才會量測。等待中的任務程序的輪詢不會記錄任何東西。
 - `db.client.connection.pending_requests` 不會匯出：pgx 和 `database/sql` 的統計資料不會回報有多少請求在等待，所以改以等待的次數和時間代替。
 - 請針對 `go.memory.used` 的總和與 `go.memory.limit` 的比率，以及 `db.client.connection.wait_time` 的增長（表示已達連線池上限）設定警示。
 
@@ -324,7 +324,7 @@ docker buildx imagetools inspect ghcr.io/mycroblog/my@sha256:... --format '{{ js
 
 1. 停止接受新的連線和取得任務。
 2. 最多等待 25 秒，讓處理中的請求和執行中的任務完成。
-3. 25 秒後，取消剩餘請求和任務的 context 並關閉連線。接著再給被取消的任務最多 3 秒記錄其結果，然後以代碼 1 結束（總計最多 28 秒，在 Kubernetes 和 ECS 預設的 30 秒寬限期之內）。被取消的任務會重試。在這 3 秒內沒有停止，或在中途被終止的任務會被放棄，並在其租約到期時由工作程序重新取得，所以可能會執行兩次。
+3. 25 秒後，取消剩餘請求和任務的 context 並關閉連線。接著再給被取消的任務最多 3 秒記錄其結果，然後以代碼 1 結束（總計最多 28 秒，在 Kubernetes 和 ECS 預設的 30 秒寬限期之內）。被取消的任務會重試。在這 3 秒內沒有停止，或在中途被終止的任務會被放棄，並在其租約到期時由任務程序重新取得，所以可能會執行兩次。
 
 伺服器的背景作業發生 panic 時，也會啟動相同的關機流程，讓伺服器絕不會在損壞的狀態下繼續執行。`serve failed` 日誌行會指出該作業，程序會以代碼 1 結束，由平台或程序管理工具重新啟動它。
 
@@ -339,7 +339,7 @@ docker buildx imagetools inspect ghcr.io/mycroblog/my@sha256:... --format '{{ js
 
 - **佇列狀態**（`/admin/jobs`）：各狀態、各類型與狀態的數量，各類型讓任務等待的時間，以及最舊的等待中任務已等待的時間。
 - **任務**（`/admin/jobs/list`）：某個狀態（待處理、等待中、執行中、等待重試、失敗）的任務表格，分頁顯示，包含類型、狀態、排定或失敗的時間，以及嘗試次數。失敗的任務有 **重新執行**。
-- **單一任務**（`/admin/jobs/<id>`，從表格中的類型進入）：任務的所有資訊、最後一次錯誤、鍵和酬載、未成功嘗試的記錄（每次嘗試的結果、錯誤、工作程序，以及開始和結束時間），以及失敗任務的 **重新執行**。
+- **單一任務**（`/admin/jobs/<id>`，從表格中的類型進入）：任務的所有資訊、最後一次錯誤、鍵和酬載、未成功嘗試的記錄（每次嘗試的結果、錯誤、任務程序，以及開始和結束時間），以及失敗任務的 **重新執行**。
 
 管理 API 為 `GET /api/v1/admin/queue`、`GET /api/v1/admin/jobs?state=&type=`、`GET /api/v1/admin/jobs/{id}`、`GET /api/v1/admin/jobs/{id}/attempts` 和 `POST /api/v1/admin/jobs/{id}/retry`。已完成的任務不再位於佇列中，所以找不到它的頁面。
 
@@ -361,9 +361,9 @@ my job types                 # print every job type of this release
 - `queue = inline` 的 dead 任務存放在伺服器程序的記憶體中，所以 `my job` 無法處理它們（結束代碼 1）。
 
 <!-- source: splitting-workers-by-job-type 89ced36a3c80 -->
-### 依任務類型分開工作程序
+### 依任務類型分開任務程序
 
-預設情況下，每個工作程序都會執行所有任務類型，依任務到期的順序，每個程序一次執行一個任務（請參閱[同時執行多個任務](#running-several-jobs-at-once)）。這樣一來，大量的傳送會延誤電子郵件和通知，而你新增的任何工作程序也會把時間分給所有類型。使用 `queue = db` 時，你可以讓某些類型擁有自己的工作程序：
+預設情況下，每個任務程序都會執行所有任務類型，依任務到期的順序，每個程序一次執行一個任務（請參閱[同時執行多個任務](#running-several-jobs-at-once)）。這樣一來，大量的傳送會延誤電子郵件和通知，而你新增的任何任務程序也會把時間分給所有類型。使用 `queue = db` 時，你可以讓某些類型擁有自己的任務程序：
 
 - [`worker_job_types`](../reference/configuration.md#worker_job_types)：這個程序只執行這些類型。
 - [`worker_job_types_except`](../reference/configuration.md#worker_job_types_except)：這個程序執行除了這些以外的所有類型。
@@ -378,7 +378,7 @@ my job types                 # print every job type of this release
 histogram_quantile(0.95, sum by (my_job_type, le) (rate(my_job_wait_seconds_bucket[15m])))
 ```
 
-`sum by (my_job_type) (rate(my_job_duration_seconds_sum[1h]))` 會顯示每種類型使用的工作程序時間，這也大致代表它需要多少個程序。佔用大部分時間並讓其他類型等待的類型，就是應該移出去的那一個。
+`sum by (my_job_type) (rate(my_job_duration_seconds_sum[1h]))` 會顯示每種類型使用的任務程序時間，這也大致代表它需要多少個程序。佔用大部分時間並讓其他類型等待的類型，就是應該移出去的那一個。
 
 三種常見的配置，程序數量由你決定：
 
@@ -386,11 +386,11 @@ histogram_quantile(0.95, sum by (my_job_type, le) (rate(my_job_wait_seconds_buck
 | --- | --- |
 | 避免傳送延誤其他任務 | 傳送用 `worker_job_types = federation.fanout,federation.deliver`，其他所有任務用 `worker_job_types_except = federation.fanout,federation.deliver`。大量傳送時，為第一組增加程序。 |
 | 避免搜尋後端延誤其他任務 | 搜尋任務用 `worker_job_types = search.*`，其他所有任務用 `worker_job_types_except = search.*`（[避免搜尋延誤其他任務](search.md#keeping-search-from-delaying-other-jobs)）。 |
-| 讓電子郵件和通知保持快速 | 這些類型用 `worker_job_types = identity.verification_email,identity.password_reset_email,identity.password_notice_email,identity.closure_email,identity.deactivation_email,notification.email,notification.moderator_email,notification.supporter_email,notification.push,notification.post_subscribers,instance.notify_announcement,voice.notify_started`，再加上一個沒有設定的工作程序處理所有任務，它在空閒時也會協助處理這些類型。請略去你尚未設定之設定項目的類型，否則啟動會中止：`notification.push` 需要 `vapid_private_key`，而 `notification.email`、`notification.moderator_email` 和 `notification.supporter_email` 需要 `mail`。請參閱[依賴設定的任務](../reference/jobs.md#jobs-that-depend-on-settings)。 |
+| 讓電子郵件和通知保持快速 | 這些類型用 `worker_job_types = identity.verification_email,identity.password_reset_email,identity.password_notice_email,identity.closure_email,identity.deactivation_email,notification.email,notification.moderator_email,notification.supporter_email,notification.push,notification.post_subscribers,instance.notify_announcement,voice.notify_started`，再加上一個沒有設定的任務程序處理所有任務，它在空閒時也會協助處理這些類型。請略去你尚未設定之設定項目的類型，否則啟動會中止：`notification.push` 需要 `vapid_private_key`，而 `notification.email`、`notification.moderator_email` 和 `notification.supporter_email` 需要 `mail`。請參閱[依賴設定的任務](../reference/jobs.md#jobs-that-depend-on-settings)。 |
 
-像 `identity.*` 這樣的前綴代表擁有這些類型的程式碼模組，而不是一種工作。`identity.*` 也會包含資料匯出、匯入和到期任務，卻漏掉 `instance.notify_announcement` 和 `voice.notify_started`，所以針對某一種工作的配置會逐一指名每個類型。
+像 `identity.*` 這樣的前綴代表擁有這些類型的程式碼模組，而不是一種任務。`identity.*` 也會包含資料匯出、匯入和到期任務，卻漏掉 `instance.notify_announcement` 和 `voice.notify_started`，所以針對某一種任務的配置會逐一指名每個類型。
 
-請把以下類型放在一起，交給設定相同的工作程序。同一個排序鍵的任務無論類型為何都會依序執行，所以如果沒有程序執行較早的任務，較晚的任務也會等待；如果較早任務所屬的群組積壓，較晚的任務就會等它：
+請把以下類型放在一起，交給設定相同的任務程序。同一個排序鍵的任務無論類型為何都會依序執行，所以如果沒有程序執行較早的任務，較晚的任務也會等待；如果較早任務所屬的群組積壓，較晚的任務就會等它：
 
 | 類型 | 維持順序的對象 |
 | --- | --- |
@@ -403,7 +403,7 @@ histogram_quantile(0.95, sum by (my_job_type, le) (rate(my_job_wait_seconds_buck
 - 設定了 `worker_job_types` 的程序不會執行新版本新增的類型。請查看版本發布說明和日誌中被略過的類型。設定了 `worker_job_types_except` 的程序會執行它們，所以它是處理其他所有任務較安全的地方。
 - 被改名的類型會中止啟動，所以請先閱讀版本發布說明。
 
-要推出分開的配置，請先啟動新的工作程序，再把設定加到舊的工作程序上。要還原，請先從一個群組移除設定，再停止另一個群組。任務會留在佇列中，所以不會遺失任何東西，暫時沒有程序執行的類型只會等待。
+要推出分開的配置，請先啟動新的任務程序，再把設定加到舊的任務程序上。要還原，請先從一個群組移除設定，再停止另一個群組。任務會留在佇列中，所以不會遺失任何東西，暫時沒有程序執行的類型只會等待。
 
 **偵測沒有任何程序執行的類型**。這種類型的任務會等待，所以該類型的 `my.queue.oldest_ready_age` 會增長，而 `MyQueueBacklog` 和 `MyQueueStalled` 警示會針對等待最久的類型觸發。若要查看是哪一個，或依類型設定警示：
 
@@ -411,18 +411,18 @@ histogram_quantile(0.95, sum by (my_job_type, le) (rate(my_job_wait_seconds_buck
 max by (my_job_type) (my_queue_oldest_ready_age_seconds) > 1800
 ```
 
-管理介面的任務頁面會依類型顯示相同的等待時間。設定了其中一項的工作程序也不會處理完全沒有處理常式之類型的任務（它在指標中計入 `other`），所以如果沒有不帶設定的工作程序，這種任務會一直等待，而不會變成 dead 任務。
+管理介面的任務頁面會依類型顯示相同的等待時間。設定了其中一項的任務程序也不會處理完全沒有處理常式之類型的任務（它在指標中計入 `other`），所以如果沒有不帶設定的任務程序，這種任務會一直等待，而不會變成 dead 任務。
 
 <!-- source: running-several-jobs-at-once 91e5181261b2 -->
 ### 同時執行多個任務
 
 [`worker_job_concurrency`](../reference/configuration.md#worker_job_concurrency) 設定一個程序同時執行多少個任務，範圍為 1 到 128。它適用於 `queue = db`；使用 Cloud Tasks 時由平台決定。預設是一次一個任務，設為 1 的行為也相同。
 
-對於大部分時間都在等待其他伺服器的任務（例如 `federation.deliver`），請調高這個值。這類任務每個只使用很少的記憶體和資料庫連線，所以一個程序就能做許多程序的工作：在一項本機測試中，任務只等待 200 毫秒的回應，一個有 32 個槽位的程序與 32 個各有一個槽位的程序表現相當，而只使用了一小部分的記憶體。那些任務沒有做其他任何事，所以請在你自己的實例上量測。請搭配 `worker_job_types` 使用，並讓每種任務有一個設定了自己數值的程序。
+對於大部分時間都在等待其他伺服器的任務（例如 `federation.deliver`），請調高這個值。這類任務每個只使用很少的記憶體和資料庫連線，所以一個程序就能做許多程序的任務：在一項本機測試中，任務只等待 200 毫秒的回應，一個有 32 個槽位的程序與 32 個各有一個槽位的程序表現相當，而只使用了一小部分的記憶體。那些任務沒有做其他任何事，所以請在你自己的實例上量測。請搭配 `worker_job_types` 使用，並讓每種任務有一個設定了自己數值的程序。
 
 請記住以下限制：
 
-- **資料庫連線**：任務在被取得、執行自己的工作以及記錄結果時都需要連線。使用 `database = postgres` 時，這個設定必須低於連線池的上限，否則伺服器不會啟動。上限是 `database_url` 中的 `pool_max_conns`，預設為 4 和 CPU 數之中較大者，所以在你調高之前，一個 vCPU 允許 3。請確認你的資料庫或連線池管理工具能接受所有程序的連線。
+- **資料庫連線**：任務在被取得、執行自己的任務以及記錄結果時都需要連線。使用 `database = postgres` 時，這個設定必須低於連線池的上限，否則伺服器不會啟動。上限是 `database_url` 中的 `pool_max_conns`，預設為 4 和 CPU 數之中較大者，所以在你調高之前，一個 vCPU 允許 3。請確認你的資料庫或連線池管理工具能接受所有程序的連線。
 - **SQLite**：它一次只寫入一個交易。超過 32 時伺服器會記錄警告，在一項本機測試中，SQLite 在 128 時比 32 時還慢。
 - **耗用大量 CPU 的任務**：槽位共用一個程序的 CPU 和記憶體。`media.process` 預設會在 CPU 數一半的上限下等待輪到自己，而等待時間會計入任務 5 分鐘的租約，所以充滿 `media.process` 的程序可能會超過租約而重新開始。請讓這類任務使用槽位較少的程序。
 - **一次一台伺服器**：一個程序對任何一個主機最多建立 8 個連線，所以無論有多少槽位，一個程序對單一伺服器的傳送速度都不會超過 8 個連線所允許的速度。在大部分傳送都送往少數大型伺服器的情況下，增加程序有幫助，增加槽位則沒有。
@@ -448,7 +448,7 @@ max by (my_job_type) (my_queue_oldest_ready_age_seconds) > 1800
 預設值是伺服器 60 秒的寫入逾時：等待更久的請求反正也無法送出回應，所以預設值不會讓任何原本還能成功的請求失敗。請依照你的實例的運作方式選擇值：
 
 - **調低它** 可以快速卸載負載：用戶端會在 `Retry-After` 之後重試，而不是讓請求一直保持開啟。請讓它比你最慢的一般交易更長，否則短暫的流量高峰就會開始回應 `503`。
-- **先調整連線池的大小**。一個程序需要的連線數大約等於它同時執行的工作數。`database_url` 中的 `pool_max_conns` 預設為 4 和 CPU 數之中較大者，而所有程序合計必須低於資料庫的連線上限。
+- **先調整連線池的大小**。一個程序需要的連線數大約等於它同時執行的任務數。`database_url` 中的 `pool_max_conns` 預設為 4 和 CPU 數之中較大者，而所有程序合計必須低於資料庫的連線上限。
   - 使用 [`worker_job_concurrency`](#running-several-jobs-at-once) 時，槽位也會等待連線，而且這個設定必須低於連線池的上限。
   - 在 Cloud Run 上，服務預設每個執行個體接受 80 個同時請求。連線池為 4 時，一波緩慢的請求會在這裡排隊，所以請調高 `pool_max_conns`、降低服務的並行數，或兩者都做。
 - **頻繁出現 `503` 或 `db.client.connection.timeouts`** 表示連線池太小或查詢變慢了；更長的逾時只會掩蓋問題。請依照 [`MyDBPoolSaturated`](alerts.md#mydbpoolsaturated) 處理。
@@ -460,9 +460,9 @@ max by (my_job_type) (my_queue_oldest_ready_age_seconds) > 1800
 
 使用 `queue = cloudtasks` 時，任務留在資料庫中（`database = postgres`），Google Cloud Tasks 只負責為每個任務喚醒伺服器：
 
-- 對於伺服器儲存、重試或放回的每個任務，伺服器會在交易提交後於 `queue_cloudtasks_queue` 中建立一個 Cloud Tasks 工作。這個工作會在任務到期時，以任務的 ID 為內文，帶著 `queue_cloudtasks_service_account` 的 OIDC ID 權杖呼叫 `POST {queue_cloudtasks_url}/_internal/jobs`。到期時間在 30 天以後的任務，會在 30 天時發出訊號，並在該工作送達時再次發出訊號。
-- 收到工作的程序會執行任務，並在記錄其結果後回應 `204`，即使任務已經執行過或尚未到期也一樣。失敗的任務會由伺服器在下一次嘗試時間重試，而不是由 Cloud Tasks 重試。Cloud Tasks 只在回應為 `5xx`（無法連線到資料庫）或 `401`（伺服器拒絕的權杖）時才會重試工作，所以它的 `retryConfig` 不需要調整。
-- 沒有程序會輪詢資料表，也沒有程序會自行執行定期任務。請建立一個 Cloud Scheduler 工作，每分鐘（`* * * * *`）以同一個服務帳號的 OIDC 權杖（設定了 `queue_cloudtasks_audience` 時，並帶有該對象）呼叫 `POST {queue_cloudtasks_url}/_internal/tick`。每次 tick 都會把已到週期的定期任務放入佇列，整個實例只放一次（週期會在 KV 中被佔用，所以 `kv` 必須是 `db` 或 `valkey`），並再次為已到期超過 2 分鐘仍未執行的任務發出訊號，以補救遺失的訊號。
+- 對於伺服器儲存、重試或放回的每個任務，伺服器會在交易提交後於 `queue_cloudtasks_queue` 中建立一個 Cloud Tasks 任務。這個任務會在任務到期時，以任務的 ID 為內文，帶著 `queue_cloudtasks_service_account` 的 OIDC ID 權杖呼叫 `POST {queue_cloudtasks_url}/_internal/jobs`。到期時間在 30 天以後的任務，會在 30 天時發出訊號，並在該任務送達時再次發出訊號。
+- 收到任務的程序會執行任務，並在記錄其結果後回應 `204`，即使任務已經執行過或尚未到期也一樣。失敗的任務會由伺服器在下一次嘗試時間重試，而不是由 Cloud Tasks 重試。Cloud Tasks 只在回應為 `5xx`（無法連線到資料庫）或 `401`（伺服器拒絕的權杖）時才會重試任務，所以它的 `retryConfig` 不需要調整。
+- 沒有程序會輪詢資料表，也沒有程序會自行執行定期任務。請建立一個 Cloud Scheduler 任務，每分鐘（`* * * * *`）以同一個服務帳號的 OIDC 權杖（設定了 `queue_cloudtasks_audience` 時，並帶有該對象）呼叫 `POST {queue_cloudtasks_url}/_internal/tick`。每次 tick 都會把已到週期的定期任務放入佇列，整個實例只放一次（週期會在 KV 中被佔用，所以 `kv` 必須是 `db` 或 `valkey`），並再次為已到期超過 2 分鐘仍未執行的任務發出訊號，以補救遺失的訊號。
 - `/_internal/jobs` 和 `/_internal/tick` 由 `role = all` 或 `worker` 的程序提供，只接受由 Google 為 `queue_cloudtasks_service_account` 簽署、電子郵件已驗證，且對象為 `queue_cloudtasks_audience`（預設為被呼叫的 URL）的權杖。其他任何請求都是 `401`。
 - 一次投遞執行一個任務，最多持續 5 分鐘的租約。請讓 `queue_cloudtasks_dispatch_deadline`（預設 10 分鐘）和 Cloud Run 服務的請求逾時比這更長。
 - 伺服器自己的服務帳號需要佇列上的 `roles/cloudtasks.enqueuer`，以及 `queue_cloudtasks_service_account` 上的 `roles/iam.serviceAccountUser`。它以 Application Default Credentials 進行驗證。
@@ -470,13 +470,13 @@ max by (my_job_type) (my_queue_oldest_ready_age_seconds) > 1800
 <!-- source: routing-job-types-to-their-own-queues 292b3f6071a8 -->
 ### 把任務類型路由到各自的佇列
 
-使用 `queue = cloudtasks` 時，工作程序無法選擇它執行的任務：`worker_job_types` 只適用於 `queue = db`，因為由平台決定誰接收訊號。若要讓某些任務類型擁有自己的容量，請把它們的訊號送到它們自己的佇列，並在平台上設定該佇列的容量。只要你沒有設定路由，就不會有任何改變。
+使用 `queue = cloudtasks` 時，任務程序無法選擇它執行的任務：`worker_job_types` 只適用於 `queue = db`，因為由平台決定誰接收訊號。若要讓某些任務類型擁有自己的容量，請把它們的訊號送到它們自己的佇列，並在平台上設定該佇列的容量。只要你沒有設定路由，就不會有任何改變。
 
 [`queue_cloudtasks_routes`](../reference/configuration.md#queue_cloudtasks_routes)：`federation.*=projects/p/locations/l/queues/my-federation@https://federation-worker.example.com,notification.email=projects/p/locations/l/queues/my-mail`。沒有 `@` 和 URL 的路由會呼叫 `queue_cloudtasks_url`。
 
 左邊是[任務參考](../reference/jobs.md)中的任務類型或前綴。名稱優先於前綴，較長的前綴優先於較短的前綴。不符合任何路由的類型（包括之後的版本新增的類型）會使用預設佇列（`queue_cloudtasks_queue`），所以它們會繼續執行。`my config check` 會檢查路由的格式；不符合任何任務類型的左邊會讓 `my serve` 在啟動時中止。
 
-**讓每個程序都使用相同的路由，包括 `role = web`**。訊號由儲存任務的程序發出：使用者大部分的操作（例如貼文的第一個任務）由 web 程序發出，而任務所儲存的任務、重試、排序鍵的下一個任務，以及遺失訊號的清查，則由工作程序發出。在每種角色有各自設定的環境中（例如 Cloud Run 服務），請把相同的值傳給所有角色：
+**讓每個程序都使用相同的路由，包括 `role = web`**。訊號由儲存任務的程序發出：使用者大部分的操作（例如貼文的第一個任務）由 web 程序發出，而任務所儲存的任務、重試、排序鍵的下一個任務，以及遺失訊號的清查，則由任務程序發出。在每種角色有各自設定的環境中（例如 Cloud Run 服務），請把相同的值傳給所有角色：
 
 ```sh
 routes='federation.*=projects/p/locations/l/queues/my-federation@https://federation-worker.example.com'
@@ -507,7 +507,7 @@ gcloud run services update my-federation-worker --update-env-vars "^|^MY_QUEUE_C
 
 1. 建立佇列及其接收端，並讓每個程序都有權限傳送到它。
 2. 在每個程序上變更路由。在路由不一致的期間，訊號會送到任一個佇列，任務會在兩個地方執行。
-3. 要移除佇列，請先從每個地方的路由中拿掉它，並等它清空後再刪除。被刪除之佇列中的訊號會遺失，但任務不會：一旦任務到期滿 2 分鐘，清查就會再次為它發出訊號。Cloud Tasks 的工作可以為最多 30 天後才到期的任務保存訊號，所以到期時間晚於等待時間的任務，只會在時候到了時由清查發出訊號。
+3. 要移除佇列，請先從每個地方的路由中拿掉它，並等它清空後再刪除。被刪除之佇列中的訊號會遺失，但任務不會：一旦任務到期滿 2 分鐘，清查就會再次為它發出訊號。Cloud Tasks 的任務可以為最多 30 天後才到期的任務保存訊號，所以到期時間晚於等待時間的任務，只會在時候到了時由清查發出訊號。
 
 <!-- source: health-checks 06a8834ade0d -->
 ## 健康檢查

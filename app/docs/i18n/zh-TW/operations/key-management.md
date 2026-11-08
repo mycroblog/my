@@ -99,7 +99,7 @@ my kek rewrap   # re-wrap every secret that a key of kek_previous wraps with kek
 
 - 把 `kms_key` 設為金鑰的資源名稱，不含版本：`projects/{project}/locations/{location}/keyRings/{ring}/cryptoKeys/{key}`。超過 248 位元組的名稱在啟動時會被拒絕。已存放機密的金鑰 ID 是 `gcpkms:` 加上這個名稱。
 - 伺服器以 Application Default Credentials 進行驗證：在 Cloud Run 上是該服務的服務帳號；其他環境則是 `GOOGLE_APPLICATION_CREDENTIALS`。
-- 在金鑰上（而不是在專案上）授予該服務帳號 `roles/cloudkms.cryptoKeyEncrypterDecrypter`，供每個程序（例如 web 和 worker）以及 `my kek status` 和 `my kek rewrap` 指令使用。沒有這個角色時，讀取機密會失敗，錯誤會指出該角色；金鑰版本不存在或已停用時也會同樣失敗，而且在設定修正之前不會重試這些錯誤。配額錯誤或 Cloud KMS 無法使用屬於暫時性問題，需要該機密的工作會重試。
+- 在金鑰上（而不是在專案上）授予該服務帳號 `roles/cloudkms.cryptoKeyEncrypterDecrypter`，供每個程序（例如 web 和 worker）以及 `my kek status` 和 `my kek rewrap` 指令使用。沒有這個角色時，讀取機密會失敗，錯誤會指出該角色；金鑰版本不存在或已停用時也會同樣失敗，而且在設定修正之前不會重試這些錯誤。配額錯誤或 Cloud KMS 無法使用屬於暫時性問題，需要該機密的任務會重試。
 - 伺服器會把 Cloud KMS 解密的資料加密金鑰保留 `kms_dek_cache_ttl`（預設 `10m`），所以大多數的機密讀取都不會呼叫 Cloud KMS。
 - 建置標籤 `no_gcpkms` 會把這個轉接器排除在二進位檔之外（[建置標籤](../reference/build-tags.md)）。
 
@@ -133,7 +133,7 @@ my kek rewrap   # re-wrap every secret that a key of kek_previous wraps with kek
   ```
 
   即使 `kms_key` 是別名，資源也要寫金鑰的 ARN。金鑰政策也必須允許該帳號的 IAM 政策授予存取權（預設的金鑰政策就是如此）。
-- 當金鑰不存在、已停用或等待刪除，或不是對稱加密金鑰時，伺服器會無法啟動。之後，若缺少權限或金鑰被停用，讀取機密會失敗，錯誤會指出原因，而且在設定修正之前不會重試這些錯誤。節流（`ThrottlingException`）或 AWS KMS 無法使用屬於暫時性問題，需要該機密的工作會重試。
+- 當金鑰不存在、已停用或等待刪除，或不是對稱加密金鑰時，伺服器會無法啟動。之後，若缺少權限或金鑰被停用，讀取機密會失敗，錯誤會指出原因，而且在設定修正之前不會重試這些錯誤。節流（`ThrottlingException`）或 AWS KMS 無法使用屬於暫時性問題，需要該機密的任務會重試。
 - 每次呼叫的加密內容會包含機密的列 ID 和欄位名稱（`{"my-aad": ...}`，以 base64url 編碼）。CloudTrail 會以明文記錄它；其中不含任何機密。
 - 費用：AWS 會對每把客戶管理金鑰收取月費（撰寫本文時為 USD 1，金鑰材料的前兩次輪替各另加相同金額），並對超出每月免費額度的請求按次收費（請參閱 [AWS KMS 定價](https://aws.amazon.com/kms/pricing/)）。伺服器會把 AWS KMS 解密的資料加密金鑰保留 `kms_dek_cache_ttl`（預設 `10m`），所以一台有十個持續傳送的 actor 的伺服器，每個程序每月約發出 43,000 次請求，超出免費額度的部分只要幾美分。
 - 建置標籤 `no_awskms` 會把這個轉接器排除在二進位檔之外（[建置標籤](../reference/build-tags.md)）。

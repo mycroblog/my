@@ -20,8 +20,8 @@ my admin relay delete <relay id>                                  # delete a rel
    - **Mastodon**：中繼站的 **inbox URL**（例如 `https://relay.example/inbox`）。包括 pub-relay 和 Activity-Relay 在內，許多中繼站都接受這種方式。
    - **LitePub**：中繼站的 **actor URL**（例如 `https://relay.example/relay`）。這是 Pleroma 和 Akkoma 中繼站使用的協定。
    如果你沒有選擇協定（「自動偵測」），當該 URL 提供 actor 文件時，伺服器會使用 LitePub，否則使用 Mastodon。
-2. 登錄之後，實例 actor 會向中繼站送出 `Follow`，狀態為「等待中繼站回應」（`pending`）。中繼站接受後，狀態會變成「已加入」（`accepted`）；拒絕時則為「被中繼站拒絕」（`rejected`）。有些中繼站由營運者逐一手動核准申請，因此可能需要一段時間。
-3. 如果登錄時關閉「接收來自中繼站的貼文」，伺服器就只會送出。要變更這項設定，請退出中繼站後重新登錄。
+2. 登錄之後，實例 actor 會向中繼站送出 `Follow`，狀態為「等待中繼站回應」（`pending`）。中繼站接受後，狀態會變成「已加入」（`accepted`）；拒絕時則為「已被中繼站拒絕」（`rejected`）。有些中繼站由營運者逐一手動核准申請，因此可能需要一段時間。
+3. 如果登錄時關閉「接收中繼站的貼文」，伺服器就只會送出。要變更這項設定，請退出中繼站後重新登錄。
 
 你無法登錄受到網域處置（`suspend`）的伺服器上的中繼站。如果已加入的中繼站所在的伺服器之後被停權，狀態不會改變，但伺服器不會再與該中繼站互相傳送任何內容，管理區也會顯示警告。
 

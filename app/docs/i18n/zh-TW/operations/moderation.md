@@ -29,7 +29,7 @@ Web 用戶端把工作人員的畫面分成兩組。導覽列只會對角色至�
 
 - 「審核」上的徽章是待處理檢舉、等待核准的註冊申請與等待審查的申訴的總數（[給版主的通知與待處理數量](#notifications-for-moderators-and-the-pending-counts)）。「管理」不顯示數量。
 - 每個群組都會先開啟概覽；畫面本身位於旁邊的選單中。審核概覽中，你的角色會計算的每個佇列（待處理檢舉、等待核准的註冊申請、等待決定的申訴）各有一個方塊，分別連結到該佇列；另有一個方塊顯示最舊的待處理檢舉已等待多久（連結到依最舊排序的檢舉清單），並從整個佇列中列出應優先處理的待處理檢舉：先是違法內容，再來是等待最久的檢舉，並顯示每件已等待多久與由誰處理。檢舉清單可以依狀態、類別與負責人（你自己或無人）篩選，並依最新或最舊排序；篩選條件會保留在頁面的網址中。管理概覽會顯示伺服器的健康狀態：失敗的任務、任務佇列中最舊的任務已等待多久，以及未處理的錯誤；每個方塊都連結到對應的畫面，需要注意時會加上標示。
-- 內建的 `moderator` 只有 `manage_reports`、`manage_accounts` 與 `view_audit`，看不到「管理」。它也看不到網域處置與遠端伺服器畫面（`manage_domains`），因此若要委派這些工作，請建立具有該權限的角色並授予它（[授予與撤銷角色](admin-cli.md#granting-and-revoking-roles)）。
+- 內建的 `moderator` 只有 `manage_reports`、`manage_accounts` 與 `view_audit`，看不到「管理」。它也看不到網域處置與遠端伺服器畫面（`manage_domains`），因此若要委派這些任務，請建立具有該權限的角色並授予它（[授予與撤銷角色](admin-cli.md#granting-and-revoking-roles)）。
 - 不論屬於哪個群組，管理 API 的路徑都是 `/api/v1/admin/...`，範圍也都是同一組 `admin:read` / `admin:write`。在 API 參考中，群組以標籤區分（`admin-moderation`、`admin-server`）。
 - 還有第三組權限「使用者功能」（`view_finance`、`create_custom_emojis`、`start_voice_rooms`、`create_invites`、`keep_posts_longer`），它位於工作人員畫面之外。只有這些權限的人既看不到「審核」也看不到「管理」；擁有 `view_finance` 的人，導覽列會在「設定」之後顯示「財務」（`/finance`）。它的 API 位於使用者命名空間（`GET /api/v1/finance/cost_totals` 與 `GET /api/v1/finance/income_totals`，範圍 `read:finance`），不需要 `admin:*` 範圍。它顯示的內容由[實例設定](instance-settings.md)中的 `finance_viewer_*` 決定。
 
@@ -142,7 +142,7 @@ my admin appeal overturn -reason "Sorry, our mistake." <appeal id>
 - `GET /api/v1/admin/accounts/{id}` 會回傳狀態與限制；若是本站帳號，還會回傳註冊申請與審查、電子郵件確認、角色，以及最多 20 件依最新排序的處置與檢舉。
 - `POST /api/v1/admin/accounts/{id}/reveal` 會回傳本站帳號的電子郵件地址、註冊與登入時的 IP 位址與 User-Agent（20 筆，依最新排序），以及使用相同 IP 位址的其他帳號（每個 IP 位址最多 20 個）。每次呼叫都會在稽核記錄中記下 `revealed_private_data`，只有在紀錄能寫入時才會回傳資料。IP 位址會在保留期間（預設 180 天）過後移除，因此無法顯示比這更早的登入來源。
 - `GET /api/v1/admin/accounts/{id}` 中的 `two_factor_enabled` 顯示本站帳號的使用者是否使用兩步驟驗證（TOTP）。同時遺失驗證器應用程式與復原碼的使用者，在你以 `POST /api/v1/admin/accounts/{id}/two_factor/disable` 移除兩步驟驗證後，就能只用密碼登入。只有擁有 `manage_login_recovery` 權限的使用者可以進行這項操作，預設只有內建的管理員角色擁有它（它屬於伺服器管理；Web 用戶端只對他們顯示這個區塊）。移除時會在稽核記錄中記下 `two_factor_disabled`。移除前，請透過電子郵件等其他管道確認對方是帳號的擁有者。當沒有其他管理員的管理員遺失它時，營運者可以用 CLI 指令 `my admin account disable-two-factor @alice` 移除（稽核記錄的執行者為 CLI）。
-- 在會寄送郵件的伺服器上，忘記密碼的使用者可以從登入頁面的「忘記密碼？」收到設定新密碼的連結郵件。對於不寄送郵件的伺服器（`mail = none`），或郵件無法送達的使用者，則由管理員核發連結並轉交。在管理畫面中，於帳號的管理頁面（`/moderation/accounts/{id}/manage`，`POST /api/v1/admin/accounts/{id}/password_reset_link`）使用「密碼重設」核發。只有擁有與移除兩步驟驗證相同權限 `manage_login_recovery` 的使用者可以核發，預設只有內建的管理員角色擁有它（持有連結的人就能進入帳號，因此版主的 `manage_accounts` 並不足夠）。核發的連結只會當場顯示一次，並可以複製。伺服器只儲存連結的雜湊值，所以之後無法再查看；需要時請再次核發。沒有可用的管理員或無法使用管理畫面時，營運者可以用 CLI 指令 `my admin account password-reset-link @alice` 核發（稽核記錄的執行者為 CLI）。在[登入僅限登入服務](login-providers.md#limit-sign-in-to-login-providers)期間，兩者仍會核發連結，並說明在限制解除前連結無法使用。連結的有效期限為 1 小時且只能使用一次，若之後密碼經由其他管道變更，連結就會失效。不論以哪種方式核發，都會在稽核記錄中記下 `password_reset_link_issued`。任何持有連結的人都能設定密碼，因此請透過電子郵件等其他管道確認對方身分，並只把連結交給本人。設定新密碼會撤銷該使用者所有的工作階段與應用程式權杖。通行金鑰與兩步驟驗證會保留。
+- 在會寄送郵件的伺服器上，忘記密碼的使用者可以從登入頁面的「忘記密碼了嗎？」收到設定新密碼的連結郵件。對於不寄送郵件的伺服器（`mail = none`），或郵件無法送達的使用者，則由管理員核發連結並轉交。在管理畫面中，於帳號的管理頁面（`/moderation/accounts/{id}/manage`，`POST /api/v1/admin/accounts/{id}/password_reset_link`）使用「重設密碼」核發。只有擁有與移除兩步驟驗證相同權限 `manage_login_recovery` 的使用者可以核發，預設只有內建的管理員角色擁有它（持有連結的人就能進入帳號，因此版主的 `manage_accounts` 並不足夠）。核發的連結只會當場顯示一次，並可以複製。伺服器只儲存連結的雜湊值，所以之後無法再查看；需要時請再次核發。沒有可用的管理員或無法使用管理畫面時，營運者可以用 CLI 指令 `my admin account password-reset-link @alice` 核發（稽核記錄的執行者為 CLI）。在[登入僅限登入服務](login-providers.md#limit-sign-in-to-login-providers)期間，兩者仍會核發連結，並說明在限制解除前連結無法使用。連結的有效期限為 1 小時且只能使用一次，若之後密碼經由其他管道變更，連結就會失效。不論以哪種方式核發，都會在稽核記錄中記下 `password_reset_link_issued`。任何持有連結的人都能設定密碼，因此請透過電子郵件等其他管道確認對方身分，並只把連結交給本人。設定新密碼會撤銷該使用者所有的工作階段與應用程式權杖。通行金鑰與兩步驟驗證會保留。
 - `GET /api/v1/admin/accounts/{id}` 中的 `email_suppression` 表示已停止寄送到本站帳號的主要地址。`hard_bounce`（收件地址不存在）會停止確認郵件以外的所有郵件，`complaint`（被回報為垃圾郵件）則只停止通知與公告郵件。密碼重設郵件也會停止，因此需要時請核發上述連結並轉交。當使用者要求確認郵件並再次確認地址時，hard bounce 的停止寄送就會解除。若你已確認寄送沒有問題（例如使用者已修正信箱），請以 `POST /api/v1/admin/accounts/{id}/email_suppression/lift`（權限 `manage_accounts`）解除。這會在稽核記錄中記下 `email_suppression_lifted`。
 - 一次搜尋最多會讀取 400 個帳號來填滿一頁。符合的帳號很少時，即使是很短或空白的頁面也可能帶有 `next_cursor`，因此請繼續讀取。
 
@@ -270,7 +270,7 @@ my admin report forward -comment "Spam account, see the linked posts" <report id
 - 從檢舉發出處置時（處置的 `report_id` / `-report`），檢舉會在同一個操作中以 `actioned` 解決。
 - 筆記（`note`）是只有版主看得到的內部筆記，最多 2,000 個字元。目標與檢舉者都看不到它。筆記無法編輯或刪除。
 - 重新開啟（`reopen`）會讓已解決的檢舉回到 `open`（指派會保留）。待處理的檢舉無法重新開啟（在管理 API 中為 `409`）。
-- 轉送（`forward`，檢舉詳細資料中的按鈕**轉送到對方伺服器**）會把關於其他伺服器上帳號的檢舉，以你的實例 actor 發出的 `Flag` 傳送給該伺服器，附上該帳號與仍然存在的被檢舉貼文。它唯一攜帶的文字，是你轉送時寫給該伺服器版主的內容（`-comment`、管理 API 中的 `comment`，或檢舉頁面上的**給對方版主的文字**；最多 1,000 個字元，預設為無）。檢舉者的留言與[外部審查](#reports-that-an-external-review-filed)的筆記絕不會以這種方式離開你的伺服器，也不會傳送任何關於檢舉者的資訊。檢舉者在提出檢舉時選擇轉送的檢舉，已經附上檢舉者的留言立即送出。轉送適用於在這個伺服器上由人或[外部審查](#reports-that-an-external-review-filed)提出、待處理或已解決、尚未轉送過的檢舉；從其他伺服器收到的檢舉，或關於語音聊天房間的檢舉無法轉送（在管理 API 中為 `409` `report-not-forwardable`，檢舉詳細資料也不會顯示按鈕）。檢舉只會傳送一次：再次轉送（無論附上什麼文字），或轉送檢舉者提出時已轉送過的檢舉，都不會有任何變更。管理 API 中的 `forwarded` 表示是否已傳送，`forwardable` 則表示現在是否可以傳送。
+- 轉送（`forward`，檢舉詳細資料中的按鈕**轉送到對方伺服器**）會把關於其他伺服器上帳號的檢舉，以你的實例 actor 發出的 `Flag` 傳送給該伺服器，附上該帳號與仍然存在的被檢舉貼文。它唯一攜帶的文字，是你轉送時寫給該伺服器版主的內容（`-comment`、管理 API 中的 `comment`，或檢舉頁面上的**給對方版主的文字**；最多 1,000 個字元，預設為無）。檢舉者的留言與[外部審查](#reports-that-an-external-review-filed)的筆記絕不會以這種方式離開你的伺服器，也不會傳送任何關於檢舉者的資訊。檢舉者在提出檢舉時選擇轉送的檢舉，已經附上檢舉者的留言立即送出。轉送適用於在這個伺服器上由人或[外部審查](#reports-that-an-external-review-filed)提出、待處理或已解決、尚未轉送過的檢舉；從其他伺服器收到的檢舉，或關於語音聊天聊天室的檢舉無法轉送（在管理 API 中為 `409` `report-not-forwardable`，檢舉詳細資料也不會顯示按鈕）。檢舉只會傳送一次：再次轉送（無論附上什麼文字），或轉送檢舉者提出時已轉送過的檢舉，都不會有任何變更。管理 API 中的 `forwarded` 表示是否已傳送，`forwardable` 則表示現在是否可以傳送。
 - 檢舉詳細資料（`show`、`GET .../{id}`）會依最舊排序回傳筆記，以及關於該目標的其他檢舉數量與對該目標的處置數量（包括已解除與已到期的處置）。清單不會回傳筆記。
 - 指派、解決、重新開啟、筆記與轉送都會保存為事件（`report_assignments`、`report_resolutions`、`report_reopenings`、`report_notes`、`report_forwards`），`report_states` 則保存目前的狀態。
 - 版主可以在檢舉頁面上翻譯被檢舉的貼文與檢舉者的留言，或使用 `POST .../{id}/statuses/{status_id}/translation` 與 `POST .../{id}/comment/translation`（本文 `{"target_language": "en"}`）。只有在[實例設定](instance-settings.md) `translation_reports_to_server` 開啟時，文字才會送到翻譯服務，而且只會送到獲准處理該貼文可見範圍的服務：版主的存取權限不會擴大任何範圍，因此私訊貼文只會送到獲准處理 `direct` 的服務，留言則視為 `private`。留言的翻譯不會保留，已刪除貼文的翻譯也不會保留，字元數只計入伺服器的每月上限。開啟 `translation_browser` 時，瀏覽器內建的翻譯功能不論 `translation_reports_to_server` 為何，都能用於檢舉。
@@ -283,11 +283,11 @@ my admin report forward -comment "Spam account, see the linked posts" <report id
 回答 `flag` 的[決策 hook](decision-hooks.md) 會以你的實例 actor 作為檢舉者提出檢舉。檢舉會標示這一點：管理 API 與 `report.created` webhook 中的 `hook_origin`、檢舉詳細資料中的一行說明，以及 `my admin report show` 中的 `automated`。它的留言是外掛的筆記，類別則來自理由。它在提出時不會被轉送，解決時也不會通知任何人。當目標位於其他伺服器時，你可以自行轉送（`forward`）：外掛的筆記會留在你的伺服器上，只有你寫的文字會送出。取消該決策不會影響檢舉。
 
 <!-- source: voice-chat-rooms 7fd142752b07 -->
-### 語音聊天房間
+### 語音聊天聊天室
 
-- 本站使用者可以檢舉自己看得到的開放中語音聊天房間（`POST /api/v1/reports`，帶有 `voice_room_id`，並把 `account_id` 設為房間的主持人）。檢舉的目標是當時的主持人，並指向當時的房間設定（名稱與說明）。它不指向任何貼文，也絕不會被轉送到其他伺服器。
-- 檢舉詳細資料（`GET /api/v1/admin/reports/{id}`）會顯示房間（`voice_room`）：其設定的每次變更、誰參與過以及何時離開、誰被移出，以及房間如何結束。參與者的紀錄會在房間結束後保留 90 天（`voice_participants_retention_days`），只要有檢舉指向該房間就會一直保留（[紀錄保留](#record-retention-and-holds)）。沒有錄音也沒有文字聊天，因此這些紀錄是唯一的證據。
-- 擁有 `manage_reports` 的人可以用 `POST /api/v1/admin/voice_rooms/{id}/end`（本文 `{"reason": "..."}`，可省略，最多 500 個字元）為所有參與者結束開放中的房間。理由只給版主看；參與者只會看到房間已結束。語音聊天關閉時也能使用，稽核記錄會記下 `voice_room_ended`。
+- 本站使用者可以檢舉自己看得到的開放中語音聊天聊天室（`POST /api/v1/reports`，帶有 `voice_room_id`，並把 `account_id` 設為聊天室的主持人）。檢舉的目標是當時的主持人，並指向當時的聊天室設定（名稱與說明）。它不指向任何貼文，也絕不會被轉送到其他伺服器。
+- 檢舉詳細資料（`GET /api/v1/admin/reports/{id}`）會顯示聊天室（`voice_room`）：其設定的每次變更、誰參與過以及何時離開、誰被移出，以及聊天室如何結束。參與者的紀錄會在聊天室結束後保留 90 天（`voice_participants_retention_days`），只要有檢舉指向該聊天室就會一直保留（[紀錄保留](#record-retention-and-holds)）。沒有錄音也沒有文字聊天，因此這些紀錄是唯一的證據。
+- 擁有 `manage_reports` 的人可以用 `POST /api/v1/admin/voice_rooms/{id}/end`（本文 `{"reason": "..."}`，可省略，最多 500 個字元）為所有參與者結束開放中的聊天室。理由只給版主看；參與者只會看到聊天室已結束。語音聊天關閉時也能使用，稽核記錄會記下 `voice_room_ended`。
 
 <!-- source: notifications-for-moderators-and-the-pending-counts 7b83fa4097b2 -->
 ## 給版主的通知與待處理數量
@@ -340,7 +340,7 @@ my admin report forward -comment "Spam account, see the linked posts" <report id
 | `oauth_client` | `oauth_client_disabled`、`oauth_client_enabled`（停用與撤銷停用 OAuth 用戶端；停用會撤銷其所有權杖；目標名稱為用戶端名稱與 `client_id`） |
 | `oauth_client_host` | `oauth_client_host_denied`、`oauth_client_host_allowed`（拒絕與撤銷拒絕 Client ID Metadata Document 的主機；拒絕會撤銷該主機用戶端的權杖；目標名稱為主機） |
 | `instance` | `service_closure_announced`、`service_closure_withdrawn`、`service_closure_closed`、`service_closure_delivery_completed`（公告服務關閉或變更日期、撤回公告、關閉，以及完成關閉通知的傳送；目標名稱為 `service_closure`） |
-| `voice_room` | `voice_room_ended`（版主結束了開放中的語音聊天房間；由於撰寫名稱的帳號被清除時名稱也會消失，目標名稱為房間 ID；檢舉詳細資料會顯示名稱） |
+| `voice_room` | `voice_room_ended`（版主結束了開放中的語音聊天聊天室；由於撰寫名稱的帳號被清除時名稱也會消失，目標名稱為聊天室 ID；檢舉詳細資料會顯示名稱） |
 | `link_card_domain` | `link_card_domain_fetch_stopped`、`link_card_domain_images_stopped`、`link_card_domain_rule_removed`（為網域設定連結卡片爬蟲的規則，以及移除規則；請參閱[連結卡片網域](instance-settings.md#link-card-domains)） |
 | `login_provider` | `login_provider_created`、`login_provider_updated`、`login_provider_deleted`、`login_provider_enabled`、`login_provider_disabled`、`login_provider_secret_rotated`（新增、變更、刪除、啟用與停用外部登入服務，以及替換其用戶端密鑰；目標名稱為服務的顯示名稱） |
 
@@ -373,14 +373,14 @@ my admin audit list -target-kind domain -target-id spam.example
 | 對帳號的處置（理由、筆記、目標貼文、解除）與申訴 | `moderation_actions_retention_days` | 365 天 | 180 天 | 處置結束時 |
 | 稽核記錄 | `audit_log_retention_days` | 730 天 | 365 天 | 記錄時 |
 | 註冊封鎖 | 無（無法變更） | 30 天 | 不適用 | 解除與到期中較早者 |
-| 語音聊天房間的參與者（參與、發言者與聽眾、舉手、邀請、移出） | `voice_participants_retention_days` | 90 天 | 30 天 | 房間結束時 |
+| 語音聊天聊天室的參與者（參與、發言者與聽眾、舉手、邀請、移出） | `voice_participants_retention_days` | 90 天 | 30 天 | 聊天室結束時 |
 | [決策 hook](decision-hooks.md#the-decisions) 的決策 | `hook_decisions_retention_days` | 90 天 | 30 天 | 決策時 |
 
 - 待處理的檢舉絕不會被移除。處置所引用的檢舉（處置的 `report_id`）會保留到該處置被移除為止。
 - 處置的結束是解除與到期中較早者。對於已申訴的處置，若審查比那更晚，則結束時間為審查時間，而申訴等待審查期間處置會被保留。`warn` 與 `delete_statuses` 沒有持續的效果，因此結束時間就是發出的時間。沒有結束的處置（`ban`、沒有結束時間的 `suspend` 等）在解除前不會被移除。
 - 檢舉或處置所指向的貼文，即使作者已刪除（從畫面上消失），在該檢舉或處置被移除之前，清除任務也不會連同附加的媒體實際刪除它們。遠端貼文也會保留超過保留期間（包括實例設定 `remote_status_max_retention_days`）。
 - 既沒有解除也沒有結束時間的註冊封鎖，在生效期間會一直保留。
-- 檢舉所指向的語音聊天房間的參與者紀錄，會保留到該檢舉被移除為止。房間本身（名稱、說明、主持人以及如何結束）絕不會被移除。
+- 檢舉所指向的語音聊天聊天室的參與者紀錄，會保留到該檢舉被移除為止。聊天室本身（名稱、說明、主持人以及如何結束）絕不會被移除。
 - 一次任務執行每種紀錄只會移除有上限的列數（處置、檢舉與註冊封鎖為每次 100 列、共 20 次；稽核記錄為每次 1,000 列、共 20 次）。其餘的由下一次執行移除。
 
 <!-- source: holds f3bf57c2c258 -->
@@ -394,10 +394,10 @@ my admin retention list -account @alice
 my admin retention release <hold id>
 ```
 
-- 對於受到保全的帳號，其處置與申訴、關於它的檢舉與它提出的檢舉、這些的稽核記錄、登入與註冊的 IP 位址、它的貼文，以及它參與或有所行動的語音聊天房間紀錄，都不會在保留期間過後移除。從該帳號的永久停權建立的註冊封鎖，在解除或到期 30 天後也會保留。
+- 對於受到保全的帳號，其處置與申訴、關於它的檢舉與它提出的檢舉、這些的稽核記錄、登入與註冊的 IP 位址、它的貼文，以及它參與或有所行動的語音聊天聊天室紀錄，都不會在保留期間過後移除。從該帳號的永久停權建立的註冊封鎖，在解除或到期 30 天後也會保留。
 - 你可以對一個帳號設定多個保全。全部解除後，超過期間的紀錄會在下一次執行時移除。解除已解除的保全不會有任何變更。
 - 保全與解除只能透過 CLI 進行，紀錄中的執行者為 CLI。
-- 已刪除帳號（`ban` 到期的帳號、使用者自行刪除的帳號，或被其伺服器刪除的遠端帳號）的資料，會在刪除 7 天後由每小時執行的任務 `account.erase_deleted` 清除。遠端帳號的貼文也會一併清除，包括本站使用者加入書籤或回覆過的貼文。只因擷取時回應 `410 Gone`、而沒有收到其本身簽章的 `Delete` 而被標示為已刪除的遠端帳號，會先再擷取一次。第二次 `410` 就會清除它。若其伺服器再次提供它，它會連同貼文一起回來，什麼都不會被清除。其他任何回應（`404` 或沒有回應）會等待之後的執行，刪除 30 天後無論如何都會清除該帳號。受到保全的帳號不會被清除。檢舉或處置所指向的貼文會保留到該紀錄被移除為止。帳號的 URI、使用者名稱與處置紀錄會保留。該帳號為其語音聊天房間設定的名稱與說明會被清空；房間本身會保留。
+- 已刪除帳號（`ban` 到期的帳號、使用者自行刪除的帳號，或被其伺服器刪除的遠端帳號）的資料，會在刪除 7 天後由每小時執行的任務 `account.erase_deleted` 清除。遠端帳號的貼文也會一併清除，包括本站使用者加入書籤或回覆過的貼文。只因擷取時回應 `410 Gone`、而沒有收到其本身簽章的 `Delete` 而被標示為已刪除的遠端帳號，會先再擷取一次。第二次 `410` 就會清除它。若其伺服器再次提供它，它會連同貼文一起回來，什麼都不會被清除。其他任何回應（`404` 或沒有回應）會等待之後的執行，刪除 30 天後無論如何都會清除該帳號。受到保全的帳號不會被清除。檢舉或處置所指向的貼文會保留到該紀錄被移除為止。帳號的 URI、使用者名稱與處置紀錄會保留。該帳號為其語音聊天聊天室設定的名稱與說明會被清空；聊天室本身會保留。
 
 <!-- source: exporting-for-disclosure-requests 89f1074dd950 -->
 ### 為揭露請求匯出

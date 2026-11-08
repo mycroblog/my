@@ -85,7 +85,7 @@ Stripe 也會依帳號分配讀取請求的額度：以 30 天計算，平均每
 
 端點會驗證簽章（`Stripe-Signature` 中的 HMAC-SHA256）和時間戳記（前後 5 分鐘以內），並以 `400` 拒絕用正式金鑰收到的測試事件（反之亦然）。它會依 ID 記錄每個事件一次，把任務排入佇列，然後回傳 `2xx`。無法寫入資料庫時，它會回傳 `503`，Stripe 就會再次傳送該事件。內容的上限為 1 MiB。輪替簽署密鑰期間，Stripe 會同時以舊的和新的密鑰簽署，因此只要把新的密鑰放進設定即可。
 
-付款服務提供者的狀態（模式、最後一次收到 webhook 的時間，以及最後一次對帳的結果和失敗類型），會顯示在管理介面 `/admin/supporters` 的「付款服務提供者」區塊中，也可以透過管理 API `GET /api/v1/admin/payment_status`（權限 `manage_supporters`）取得。該區塊會說明如何修正各種對帳失敗。`warnings` 會列出 `no_webhook`（從未記錄過任何 webhook）和 `reconciliation_corrected`（最後一次對帳修復了某筆訂閱）。出現其中任何一項時，請懷疑 webhook 的設定有誤。它也會列出 `duplicate_charge`：第二筆訂閱尚未被取消並退款。請參閱[營運](#7-operation)。該區塊中的「立即對帳」（`POST /api/v1/admin/payment_reconciliation/runs`）會立即對帳，而不必等待排程的執行。它每個 UTC 小時只能執行一次（同一小時內的第二次呼叫會回傳 `429`），稽核日誌會記錄 `payment_reconcile_queued`。
+付款服務提供者的狀態（模式、最後一次收到 webhook 的時間，以及最後一次對帳的結果和失敗類型），會顯示在管理介面 `/admin/supporters` 的「金流服務商」區塊中，也可以透過管理 API `GET /api/v1/admin/payment_status`（權限 `manage_supporters`）取得。該區塊會說明如何修正各種對帳失敗。`warnings` 會列出 `no_webhook`（從未記錄過任何 webhook）和 `reconciliation_corrected`（最後一次對帳修復了某筆訂閱）。出現其中任何一項時，請懷疑 webhook 的設定有誤。它也會列出 `duplicate_charge`：第二筆訂閱尚未被取消並退款。請參閱[營運](#7-operation)。該區塊中的「立即對帳」（`POST /api/v1/admin/payment_reconciliation/runs`）會立即對帳，而不必等待排程的執行。它每個 UTC 小時只能執行一次（同一小時內的第二次呼叫會回傳 `429`），稽核日誌會記錄 `payment_reconcile_queued`。
 
 <!-- source: 4-configure-the-server 7b3f7d01839f -->
 ## 4. 設定伺服器
