@@ -66,16 +66,20 @@ func TestClosureConfig(t *testing.T) {
 			}
 		}
 	}
-	// A page answers the tags that resolve to its locale (ADR-0009 §2): zh alone, not zh-TW.
+	// A page answers the tags that resolve to its locale (ADR-0009 §2): zh alone to zh-CN, zh-Hant, zh-HK and zh-MO to zh-TW.
 	zh := map[string][]string{
-		"nginx.conf": {`"~*^zh-CN(-|,|;|$)" /zh-CN.html;`, `"~*^zh-Hans(-|,|;|$)" /zh-CN.html;`, `"~*^zh-SG(-|,|;|$)" /zh-CN.html;`, `"~*^zh(,|;|$)" /zh-CN.html;`},
-		"Caddyfile":  {`~(?i)^zh-CN(-|,|;|$) /zh-CN.html`, `~(?i)^zh(,|;|$) /zh-CN.html`},
+		"nginx.conf": {
+			`"~*^zh-CN(-|,|;|$)" /zh-CN.html;`, `"~*^zh-Hans(-|,|;|$)" /zh-CN.html;`, `"~*^zh-SG(-|,|;|$)" /zh-CN.html;`, `"~*^zh(,|;|$)" /zh-CN.html;`,
+			`"~*^zh-TW(-|,|;|$)" /zh-TW.html;`, `"~*^zh-Hant(-|,|;|$)" /zh-TW.html;`, `"~*^zh-HK(-|,|;|$)" /zh-TW.html;`, `"~*^zh-MO(-|,|;|$)" /zh-TW.html;`,
+		},
+		"Caddyfile": {`~(?i)^zh-CN(-|,|;|$) /zh-CN.html`, `~(?i)^zh(,|;|$) /zh-CN.html`, `~(?i)^zh-Hant(-|,|;|$) /zh-TW.html`},
 		"cloudfront-function.js": {
 			`{"tag":"zh-CN","prefix":true,"locale":"zh-CN"}`, `{"tag":"zh","prefix":false,"locale":"zh-CN"}`,
+			`{"tag":"zh-Hant","prefix":true,"locale":"zh-TW"}`,
 		},
 	}
 	for name, wants := range zh {
-		b, err := maintenance.ClosureConfig(name, "social.example", []string{"en", "zh-CN"})
+		b, err := maintenance.ClosureConfig(name, "social.example", []string{"en", "zh-CN", "zh-TW"})
 		if err != nil {
 			t.Fatal(err)
 		}

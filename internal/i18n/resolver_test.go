@@ -38,7 +38,7 @@ func TestResolverLocale(t *testing.T) {
 		{"accept-language before instance default", "", "en-GB", "ja", "en"},
 		{"instance default without accept-language", "", "", "ja", "ja"},
 		{"unsupported accept-language uses instance default", "", "fr, de", "ja", "ja"},
-		{"unsupported user setting is skipped", "zh-Hant-TW", "", "ja", "ja"},
+		{"unsupported user setting is skipped", "fr-CA", "", "ja", "ja"},
 		{"unsupported instance default falls back to en", "", "fr", "de", "en"},
 		{"malformed values are skipped", "!!", "*, ja_jp", "en", "ja"},
 		{"malformed instance default falls back to en", "", "", "!!", "en"},
@@ -48,7 +48,14 @@ func TestResolverLocale(t *testing.T) {
 		{"zh-Hans resolves to zh-CN", "", "zh-Hans", "", "zh-CN"},
 		{"zh-Hans with a region resolves to zh-CN", "", "zh-Hans-SG", "", "zh-CN"},
 		{"zh-CN user setting", "zh-CN", "ja", "", "zh-CN"},
-		{"Traditional Chinese never resolves to zh-CN", "", "zh-TW, zh-HK, zh-Hant", "ja", "ja"},
+		{"zh-TW", "", "zh-TW", "", "zh-TW"},
+		{"zh-HK resolves to zh-TW", "", "zh-HK, ja;q=0.5", "", "zh-TW"},
+		{"zh-MO resolves to zh-TW", "", "zh-MO", "", "zh-TW"},
+		{"zh-Hant resolves to zh-TW", "", "zh-Hant", "", "zh-TW"},
+		{"zh-Hant with a region resolves to zh-TW", "", "zh-Hant-HK", "", "zh-TW"},
+		{"zh-TW user setting", "zh-Hant-TW", "zh-CN", "", "zh-TW"},
+		{"Traditional Chinese never resolves to zh-CN", "", "zh-Hant, zh;q=0.5", "", "zh-TW"},
+		{"Simplified Chinese never resolves to zh-TW", "", "zh-Hans, zh-TW;q=0.5", "", "zh-CN"},
 	}
 	for _, tt := range tests {
 		r := &Resolver{
@@ -115,6 +122,7 @@ func TestResolverRequestedLocale(t *testing.T) {
 		{"instance default with region", "", "fr", "ja-JP", "ja", "ja-JP"},
 		{"nothing matches", "", "fr-CA", "de", "en", "en"},
 		{"Simplified Chinese with a script", "", "zh-Hans-CN", "", "zh-CN", "zh-Hans-CN"},
+		{"Traditional Chinese with a script", "", "zh-Hant-TW", "", "zh-TW", "zh-Hant-TW"},
 	}
 	for _, tt := range tests {
 		r := &Resolver{
@@ -148,7 +156,7 @@ func TestResolverUserLocalizer(t *testing.T) {
 	r := &Resolver{Bundle: load(t), InstanceDefault: func(context.Context) string { return "ja" }}
 	req := httptest.NewRequest(http.MethodGet, "/", nil)
 	req.Header.Set("Accept-Language", "en")
-	for user, want := range map[string]string{"ja": "ja", "": "en", "zh-Hant-TW": "en", "!!": "en"} {
+	for user, want := range map[string]string{"ja": "ja", "": "en", "zh-Hant-TW": "zh-TW", "fr": "en", "!!": "en"} {
 		if got := r.UserLocalizer(req, user).Locale(); got != want {
 			t.Errorf("UserLocalizer(Accept-Language en, user %q) = %q, want %q", user, got, want)
 		}
