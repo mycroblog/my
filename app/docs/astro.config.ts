@@ -10,7 +10,7 @@ import { satteri } from "@astrojs/markdown-satteri";
 import starlight from "@astrojs/starlight";
 import { defineConfig } from "astro/config";
 import starlightLinksValidator from "starlight-links-validator";
-import { base, sitePageLinks } from "./src/published";
+import { base, site, sitePageLinks } from "./src/published";
 import { docsSidebar } from "./src/sidebar";
 import { apiReferencePlugin, apiReferenceSidebar } from "./src/api-reference";
 import { llmsTxtPlugin } from "./src/llms-txt";
@@ -36,7 +36,16 @@ export default defineConfig({
         replacesTitle: true,
       },
       favicon: "/favicon.svg",
-      head: analyticsHead(process.env["DOCS_SITE_CF_BEACON_TOKEN"]),
+      // The link preview of every page: the wordmark on white (public/og-image.png, rendered by
+      // scripts/docs-og-image.sh), by its absolute URL in the version being built, which the copy of the landing page
+      // at the root of the domain names too. Starlight already sets twitter:card to summary_large_image.
+      head: [
+        { tag: "meta", attrs: { property: "og:image", content: `${site}${base}og-image.png` } },
+        { tag: "meta", attrs: { property: "og:image:width", content: "1200" } },
+        { tag: "meta", attrs: { property: "og:image:height", content: "630" } },
+        { tag: "meta", attrs: { property: "og:image:alt", content: "The my wordmark" } },
+        ...analyticsHead(process.env["DOCS_SITE_CF_BEACON_TOKEN"]),
+      ],
       social: [{ icon: "github", label: "GitHub", href: "https://github.com/mycroblog/my" }],
       // The version switcher before the social links, and the end-of-support banner of an ended version (src/versions.ts).
       components: {
