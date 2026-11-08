@@ -484,6 +484,9 @@ describe("EmojiPicker", () => {
 describe("searchEmojis", () => {
   it("compares in NFKC, lower case and hiragana", () => {
     expect(normalizeEmojiSearch(" ：ＦＯＸ： ")).toBe("fox");
+    expect(normalizeEmojiSearch("::a:b::")).toBe("a:b");
+    expect(normalizeEmojiSearch(":::")).toBe("");
+    expect(normalizeEmojiSearch(`${":".repeat(100_000)}x`)).toBe("x");
     expect(normalizeEmojiSearch("フォックス")).toBe("ふぉっくす");
     expect(searchEmojis([thumbsUp, fox], "ﾌｫｯｸｽ")).toEqual([fox]);
     expect(searchEmojis([thumbsUp, fox], "キツネ")).toEqual([fox]);
