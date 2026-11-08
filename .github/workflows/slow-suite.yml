@@ -22,7 +22,8 @@ run-name: ${{ inputs.scope == 'release' && 'Slow suite (release)' || 'Slow suite
 # The inputs choose the release that the upgrade job upgrades from (docs/agents/releasing.md, "The upgrade test"):
 # `version`, the candidate, upgrades from the latest patch of the previous minor version; with no `version` (nightly),
 # from the latest release. `previous` names the tag instead, for a pre-release tried from a branch:
-# `gh workflow run slow-suite.yml --ref <branch> -f previous=v0.0.0-test.1`.
+# `gh workflow run slow-suite.yml --ref <branch> -f previous=v0.0.0-test.1`. `allow_destructive` applies the schema
+# with -allow-destructive in the upgrade, for a pre-release before v0.1.0 that drops a column or a table on purpose.
 on:
   workflow_call:
     inputs:
@@ -38,6 +39,10 @@ on:
         description: "`all` runs every job; `release` runs only the jobs that check this commit's images for a release (upgrade, restore-drill), for a commit whose suite already passed."
         type: string
         default: all
+      allow_destructive:
+        description: "The upgrade job applies the schema with -allow-destructive, for a pre-release whose notes call for it."
+        type: boolean
+        default: false
   workflow_dispatch:
     inputs:
       version:
@@ -53,6 +58,10 @@ on:
         type: choice
         options: [all, release]
         default: all
+      allow_destructive:
+        description: "The upgrade job applies the schema with -allow-destructive, for a pre-release whose notes call for it."
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -157,6 +166,7 @@ jobs:
         if: steps.previous.outputs.tag != ''
         env:
           PREVIOUS: ${{ steps.previous.outputs.tag }}
+          UPGRADE_TEST_ALLOW_DESTRUCTIVE: ${{ inputs.allow_destructive && '1' || '' }}
         run: |
           image="ghcr.io/mycroblog/my:${PREVIOUS#v}"
           if docker buildx imagetools inspect "$image" > /dev/null 2>&1; then
