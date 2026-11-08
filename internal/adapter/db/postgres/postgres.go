@@ -19,6 +19,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/mycroblog/my/internal/adapter/telemetry/dbtrace"
@@ -58,6 +59,7 @@ func Open(ctx context.Context, url string, opts uow.Options) (*DB, error) {
 	}
 	ref := &tracerRef{}
 	cfg.ConnConfig.Tracer = queryTracer{ref: ref}
+	cfg.AfterConnect = scanTimestampsInUTC
 	pool, err := pgxpool.NewWithConfig(ctx, cfg)
 	if err != nil {
 		return nil, fmt.Errorf("postgres: open: %w", err)
@@ -206,3 +208,14 @@ func (d *DB) txOf(tx uow.Tx) (pgx.Tx, error) {
 // their tables in this database (the database job queue, internal/adapter/queue/db).
 // It fails with ErrForeignTx for a Tx that d's database did not begin.
 func (d *DB) PgxTx(tx uow.Tx) (pgx.Tx, error) { return d.txOf(tx) }
+
+// scanTimestampsInUTC makes a connection return timestamptz values in UTC, as the SQLite adapter
+// returns them. pgx returns them in the process's local time zone otherwise, so a repository that
+// did not convert a time itself returned it in another zone than one that did (#2508). The instant
+// does not change.
+func scanTimestampsInUTC(_ context.Context, conn *pgx.Conn) error {
+	conn.TypeMap().RegisterType(&pgtype.Type{
+		Name: "timestamptz", OID: pgtype.TimestamptzOID, Codec: &pgtype.TimestamptzCodec{ScanLocation: time.UTC},
+	})
+	return nil
+}
