@@ -9,10 +9,11 @@ import (
 
 	"github.com/mycroblog/my/internal/adapter/db/postgres"
 	"github.com/mycroblog/my/internal/adapter/db/schemaapply"
+	"github.com/mycroblog/my/schema"
 )
 
 // applyPostgresSchema applies the embedded schema to the PostgreSQL database of databaseURL,
 // building the desired schema in the database of devURL when it is not empty.
 func applyPostgresSchema(ctx context.Context, databaseURL, devURL string, opts schemaapply.Options) (schemaapply.Result, error) {
-	return postgres.ApplySchema(ctx, databaseURL, devURL, opts)
+	return postgres.ApplySchema(ctx, databaseURL, devURL, schema.Postgres, opts)
 }

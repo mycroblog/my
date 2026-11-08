@@ -25,7 +25,10 @@ import (
 	"github.com/mycroblog/my/internal/adapter/telemetry/dbtrace"
 	"github.com/mycroblog/my/internal/app/kernel"
 	"github.com/mycroblog/my/internal/app/uow"
-	"github.com/mycroblog/my/schema"
+
+	// Links the tables of kernel, uow, and queue, which this package and every module use, into
+	// the test databases of pkg/testkit/sqlitetest (package ddl).
+	_ "github.com/mycroblog/my/schema/10-infrastructure"
 )
 
 // DefaultBusyTimeoutMillis is how long a connection waits for the database lock before a
@@ -108,10 +111,10 @@ func normalizeDSN(dsn string) (string, error) {
 func (d *DB) Close() error { return d.db.Close() }
 
 // Ready reports whether the database is reachable and its schema is applied, for the
-// readiness check. The schema counts as applied when every table that schema/sqlite
-// declares exists; Atlas applies the schema as a whole (ADR-0023), so a missing table means the
-// schema was never applied or is out of date.
-func (d *DB) Ready(ctx context.Context) error {
+// readiness check. The schema counts as applied when every table of tables exists (the caller
+// passes the tables of the whole schema, schema.Tables(schema.SQLite)); Atlas applies the schema
+// as a whole (ADR-0023), so a missing table means the schema was never applied or is out of date.
+func (d *DB) Ready(ctx context.Context, tables []string) error {
 	rows, err := d.db.QueryContext(ctx, "SELECT name FROM sqlite_schema WHERE type = 'table'")
 	if err != nil {
 		return fmt.Errorf("sqlite: ready: %w", err)
@@ -129,7 +132,7 @@ func (d *DB) Ready(ctx context.Context) error {
 		return fmt.Errorf("sqlite: ready: %w", err)
 	}
 	var missing []string
-	for _, t := range schema.Tables(schema.SQLite) {
+	for _, t := range tables {
 		if !present[t] {
 			missing = append(missing, t)
 		}

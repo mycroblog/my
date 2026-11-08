@@ -132,7 +132,7 @@ const (
 
 func TestSQL(t *testing.T) {
 	schema := "-- Requests.\nCREATE TABLE custom_emoji_requests (\n  id TEXT PRIMARY KEY,\n  emoji_id TEXT REFERENCES custom_emojis(id)\n);\n"
-	r := Schema("schema/sqlite/04-content.sql", []byte(schema))
+	r := Schema("schema/04-content/sqlite.sql", []byte(schema))
 	if n := ids(r)["table:custom_emoji_requests"]; n.Start != 1 || n.End != 5 {
 		t.Errorf("table = %+v", n)
 	}
@@ -197,8 +197,8 @@ func TestKind(t *testing.T) {
 		"queries/sqlite/queue/jobs.sql":                        "query",
 		"docs/architecture/data-model/04-tables/04-content.md": "md",
 		"internal/app/content/custom_emoji_request_test.go":    "go",
-		"schema/postgres/04-content.sql":                       "schema",
-		"schema/postgres.bootstrap.sql":                        "",
+		"schema/04-content/postgres.sql":                       "schema",
+		"schema/ddl/postgres.bootstrap.sql":                    "",
 	} {
 		if got := Kind(p); got != want {
 			t.Errorf("Kind(%q) = %q, want %q", p, got, want)

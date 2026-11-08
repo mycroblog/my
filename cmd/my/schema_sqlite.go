@@ -9,9 +9,10 @@ import (
 
 	"github.com/mycroblog/my/internal/adapter/db/schemaapply"
 	"github.com/mycroblog/my/internal/adapter/db/sqlite"
+	"github.com/mycroblog/my/schema"
 )
 
 // applySQLiteSchema applies the embedded schema to the SQLite database of databaseURL.
 func applySQLiteSchema(ctx context.Context, databaseURL string, opts schemaapply.Options) (schemaapply.Result, error) {
-	return sqlite.ApplySchema(ctx, databaseURL, opts)
+	return sqlite.ApplySchema(ctx, databaseURL, schema.SQLite, opts)
 }

@@ -14,11 +14,12 @@ import (
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/pkg/testkit"
 	"github.com/mycroblog/my/pkg/testkit/queuetest"
-	"github.com/mycroblog/my/schema"
+	infrastructure "github.com/mycroblog/my/schema/10-infrastructure"
 )
 
-// openSQLite opens the database file at path, applying the product schema when apply is set
-// (see package schema for why executing the file matches an Atlas apply).
+// openSQLite opens the database file at path, applying the schema of the queue's tables
+// (10-infrastructure) when apply is set (see package schema for why executing the files matches
+// an Atlas apply).
 func openSQLite(t *testing.T, path string, apply bool) *sqlite.DB {
 	t.Helper()
 	return openSQLiteWith(t, path, apply, uow.Options{})
@@ -37,7 +38,7 @@ func openSQLiteWith(t *testing.T, path string, apply bool, opts uow.Options) *sq
 			if err != nil {
 				return err
 			}
-			_, err = sqlTx.ExecContext(t.Context(), schema.SQLite)
+			_, err = sqlTx.ExecContext(t.Context(), infrastructure.Module.SQLite)
 			return err
 		})
 		if err != nil {

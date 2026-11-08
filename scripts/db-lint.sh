@@ -7,9 +7,9 @@
 #   scripts/db-lint.sh [options]
 #     --dialect sqlite|postgres  the dialect (required)
 #     --dev-url URL              an empty dev database that Atlas may write to (required)
-#     --base REF                 compare with schema/<dialect>/ at the merge base of REF and HEAD (default: origin/main)
+#     --base REF                 compare with the dialect's schema at the merge base of REF and HEAD (default: origin/main)
 #     --base-dir DIR             compare with the schema files in DIR instead (tests)
-#     --target-dir DIR           the schema to check (default: schema/<dialect>/ of the working tree)
+#     --target-dir DIR           the schema files to check (default: the dialect's schema of the working tree)
 #     --allow-destructive        report destructive changes but do not fail on them; the target must still apply
 #     --atlas PATH               the Atlas binary (default: bin/atlas)
 #
@@ -49,11 +49,10 @@ while [ "$#" -gt 0 ]; do
 done
 case "$dialect" in sqlite | postgres) ;; *) usage ;; esac
 [ -n "$dev_url" ] || usage
-[ -n "$target_dir" ] || target_dir="$root/schema/$dialect"
 
 work="$(mktemp -d)"
 trap 'rm -rf "$work"' EXIT
-mkdir -p "$work/base" "$work/target" "$work/migrations" "$work/tmp"
+mkdir -p "$work/base" "$work/target" "$work/migrations" "$work/tmp" "$work/tree"
 
 # Atlas locks a SQLite dev database with a file in the temporary directory, named after the operation, so two runs at
 # once (the CI steps of db:lint and db:lint-test) would wait on each other's lock and fail: give each run its own
@@ -65,7 +64,8 @@ if [ "$dialect" = sqlite ]; then
   esac
 fi
 
-# The base: the files of DIR, or of schema/<dialect>/ at the commit BASE (none when the commit has no such directory).
+# The base: the files of DIR, or the dialect's schema at the commit BASE (scripts/schema-files.sh; none when the commit
+# has no schema).
 if [ -n "$base_dir" ]; then
   cp "$base_dir"/*.sql "$work/base/"
   label="$base_dir"
@@ -74,12 +74,18 @@ else
   # branch undoing it. A shallow clone without the history (the merge queue's) compares with BASE itself.
   ref="$base"
   base="$(git -C "$root" merge-base "$base" HEAD 2> /dev/null || echo "$base")"
-  if git -C "$root" cat-file -e "$base:schema/$dialect" 2> /dev/null; then
-    git -C "$root" archive --format=tar "$base" "schema/$dialect" | tar -x -C "$work/base" --strip-components=2
+  if git -C "$root" cat-file -e "$base:schema" 2> /dev/null; then
+    git -C "$root" archive --format=tar "$base" schema | tar -x -C "$work/tree"
+    "$root/scripts/schema-files.sh" "$dialect" "$work/base" "$work/tree"
   fi
   label="$ref (merge base $(git -C "$root" rev-parse --short "$base^{commit}"))"
 fi
-cp "$target_dir"/*.sql "$work/target/"
+if [ -n "$target_dir" ]; then
+  cp "$target_dir"/*.sql "$work/target/"
+else
+  "$root/scripts/schema-files.sh" "$dialect" "$work/target"
+  target_dir="the working tree"
+fi
 echo "db:lint ($dialect): $label -> $target_dir"
 
 # Atlas reads an empty directory as an empty schema, but `migrate diff` needs a file to read.

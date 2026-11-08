@@ -5,19 +5,20 @@
 #
 # Product queries are split by module (ADR-0153 §3): one entry per module and dialect reads
 # queries/<dialect>/<module>/*.sql and generates the package internal/adapter/db/<dialect>/<module>gen,
-# so a change to one module's queries regenerates only that package. An entry's schema is the files
-# of schema/<dialect>/ of the module and of the modules it depends on (the imports of
-# internal/app/<module>, with the queue's tables in 10-infrastructure.sql), so a query can join the
-# tables of those modules. omit_unused_structs keeps a package's models.go to the tables that its
+# so a change to one module's queries regenerates only that package. An entry's schema is the
+# dialect's files schema/<NN>-<module>/<dialect>.sql of the module and of the modules it depends on
+# (the imports of internal/app/<module>, with the queue's tables in 10-infrastructure), so a query
+# can join the tables of those modules. omit_unused_structs keeps a package's models.go to the tables that its
 # own queries return whole, and every query names its tables, so the other files of the schema
 # add no code. The one exception: content's retention query keeps a status deletion while a
-# notification names the status, so the content entries also read 07-notification.sql. The first
+# notification names the status, so the content entries also read 07-notification. The first
 # entry of a dialect holds its generator options (&sqlite-go, &postgres-go); the others merge them
 # and set their own package and out.
 # Comments above a query become the doc comment of its generated method.
 #
 # The queue entries generate the queries of the database job queue (internal/adapter/queue/db)
-# from queries/<dialect>/queue/*.sql into internal/adapter/queue/db/internal/<dialect>queue.
+# from queries/<dialect>/queue/*.sql into internal/adapter/queue/db/internal/<dialect>queue; they
+# and the kv entries read the tables of 10-infrastructure.
 #
 # Keep query files ASCII-only: the sqlite engine of sqlc miscounts byte offsets after a
 # multi-byte character, which cuts generated queries short or rejects sqlc.arg / @name rewrites.
@@ -26,9 +27,9 @@ sql:
   - name: sqlite-account
     engine: sqlite
     schema:
-      - schema/sqlite/02-account.sql
-      - schema/sqlite/10-infrastructure.sql
-      - schema/sqlite/16-hook.sql
+      - schema/02-account/sqlite.sql
+      - schema/10-infrastructure/sqlite.sql
+      - schema/16-hook/sqlite.sql
     queries: queries/sqlite/account
     gen:
       go: &sqlite-go
@@ -39,12 +40,12 @@ sql:
   - name: sqlite-content
     engine: sqlite
     schema:
-      - schema/sqlite/02-account.sql
-      - schema/sqlite/04-content.sql
-      - schema/sqlite/05-graph.sql
-      - schema/sqlite/07-notification.sql
-      - schema/sqlite/10-infrastructure.sql
-      - schema/sqlite/16-hook.sql
+      - schema/02-account/sqlite.sql
+      - schema/04-content/sqlite.sql
+      - schema/05-graph/sqlite.sql
+      - schema/07-notification/sqlite.sql
+      - schema/10-infrastructure/sqlite.sql
+      - schema/16-hook/sqlite.sql
     queries: queries/sqlite/content
     gen:
       go:
@@ -54,7 +55,7 @@ sql:
   - name: sqlite-dbupgrade
     engine: sqlite
     schema:
-      - schema/sqlite/10-infrastructure.sql
+      - schema/10-infrastructure/sqlite.sql
     queries: queries/sqlite/dbupgrade
     gen:
       go:
@@ -64,8 +65,8 @@ sql:
   - name: sqlite-diagnostics
     engine: sqlite
     schema:
-      - schema/sqlite/10-infrastructure.sql
-      - schema/sqlite/15-diagnostics.sql
+      - schema/10-infrastructure/sqlite.sql
+      - schema/15-diagnostics/sqlite.sql
     queries: queries/sqlite/diagnostics
     gen:
       go:
@@ -75,15 +76,15 @@ sql:
   - name: sqlite-federation
     engine: sqlite
     schema:
-      - schema/sqlite/02-account.sql
-      - schema/sqlite/03-moderation.sql
-      - schema/sqlite/04-content.sql
-      - schema/sqlite/05-graph.sql
-      - schema/sqlite/06-timeline.sql
-      - schema/sqlite/08-federation.sql
-      - schema/sqlite/09-instance.sql
-      - schema/sqlite/10-infrastructure.sql
-      - schema/sqlite/16-hook.sql
+      - schema/02-account/sqlite.sql
+      - schema/03-moderation/sqlite.sql
+      - schema/04-content/sqlite.sql
+      - schema/05-graph/sqlite.sql
+      - schema/06-timeline/sqlite.sql
+      - schema/08-federation/sqlite.sql
+      - schema/09-instance/sqlite.sql
+      - schema/10-infrastructure/sqlite.sql
+      - schema/16-hook/sqlite.sql
     queries: queries/sqlite/federation
     gen:
       go:
@@ -93,13 +94,13 @@ sql:
   - name: sqlite-finance
     engine: sqlite
     schema:
-      - schema/sqlite/02-account.sql
-      - schema/sqlite/03-moderation.sql
-      - schema/sqlite/04-content.sql
-      - schema/sqlite/05-graph.sql
-      - schema/sqlite/10-infrastructure.sql
-      - schema/sqlite/12-finance.sql
-      - schema/sqlite/16-hook.sql
+      - schema/02-account/sqlite.sql
+      - schema/03-moderation/sqlite.sql
+      - schema/04-content/sqlite.sql
+      - schema/05-graph/sqlite.sql
+      - schema/10-infrastructure/sqlite.sql
+      - schema/12-finance/sqlite.sql
+      - schema/16-hook/sqlite.sql
     queries: queries/sqlite/finance
     gen:
       go:
@@ -109,10 +110,10 @@ sql:
   - name: sqlite-graph
     engine: sqlite
     schema:
-      - schema/sqlite/02-account.sql
-      - schema/sqlite/05-graph.sql
-      - schema/sqlite/10-infrastructure.sql
-      - schema/sqlite/16-hook.sql
+      - schema/02-account/sqlite.sql
+      - schema/05-graph/sqlite.sql
+      - schema/10-infrastructure/sqlite.sql
+      - schema/16-hook/sqlite.sql
     queries: queries/sqlite/graph
     gen:
       go:
@@ -122,8 +123,8 @@ sql:
   - name: sqlite-hook
     engine: sqlite
     schema:
-      - schema/sqlite/10-infrastructure.sql
-      - schema/sqlite/16-hook.sql
+      - schema/10-infrastructure/sqlite.sql
+      - schema/16-hook/sqlite.sql
     queries: queries/sqlite/hook
     gen:
       go:
@@ -133,14 +134,14 @@ sql:
   - name: sqlite-identity
     engine: sqlite
     schema:
-      - schema/sqlite/01-identity.sql
-      - schema/sqlite/02-account.sql
-      - schema/sqlite/03-moderation.sql
-      - schema/sqlite/04-content.sql
-      - schema/sqlite/05-graph.sql
-      - schema/sqlite/09-instance.sql
-      - schema/sqlite/10-infrastructure.sql
-      - schema/sqlite/16-hook.sql
+      - schema/01-identity/sqlite.sql
+      - schema/02-account/sqlite.sql
+      - schema/03-moderation/sqlite.sql
+      - schema/04-content/sqlite.sql
+      - schema/05-graph/sqlite.sql
+      - schema/09-instance/sqlite.sql
+      - schema/10-infrastructure/sqlite.sql
+      - schema/16-hook/sqlite.sql
     queries: queries/sqlite/identity
     gen:
       go:
@@ -150,13 +151,13 @@ sql:
   - name: sqlite-instance
     engine: sqlite
     schema:
-      - schema/sqlite/02-account.sql
-      - schema/sqlite/03-moderation.sql
-      - schema/sqlite/04-content.sql
-      - schema/sqlite/05-graph.sql
-      - schema/sqlite/09-instance.sql
-      - schema/sqlite/10-infrastructure.sql
-      - schema/sqlite/16-hook.sql
+      - schema/02-account/sqlite.sql
+      - schema/03-moderation/sqlite.sql
+      - schema/04-content/sqlite.sql
+      - schema/05-graph/sqlite.sql
+      - schema/09-instance/sqlite.sql
+      - schema/10-infrastructure/sqlite.sql
+      - schema/16-hook/sqlite.sql
     queries: queries/sqlite/instance
     gen:
       go:
@@ -166,12 +167,12 @@ sql:
   - name: sqlite-moderation
     engine: sqlite
     schema:
-      - schema/sqlite/02-account.sql
-      - schema/sqlite/03-moderation.sql
-      - schema/sqlite/04-content.sql
-      - schema/sqlite/05-graph.sql
-      - schema/sqlite/10-infrastructure.sql
-      - schema/sqlite/16-hook.sql
+      - schema/02-account/sqlite.sql
+      - schema/03-moderation/sqlite.sql
+      - schema/04-content/sqlite.sql
+      - schema/05-graph/sqlite.sql
+      - schema/10-infrastructure/sqlite.sql
+      - schema/16-hook/sqlite.sql
     queries: queries/sqlite/moderation
     gen:
       go:
@@ -181,19 +182,19 @@ sql:
   - name: sqlite-notification
     engine: sqlite
     schema:
-      - schema/sqlite/01-identity.sql
-      - schema/sqlite/02-account.sql
-      - schema/sqlite/03-moderation.sql
-      - schema/sqlite/04-content.sql
-      - schema/sqlite/05-graph.sql
-      - schema/sqlite/07-notification.sql
-      - schema/sqlite/09-instance.sql
-      - schema/sqlite/10-infrastructure.sql
-      - schema/sqlite/11-webhook.sql
-      - schema/sqlite/12-finance.sql
-      - schema/sqlite/13-supporters.sql
-      - schema/sqlite/15-diagnostics.sql
-      - schema/sqlite/16-hook.sql
+      - schema/01-identity/sqlite.sql
+      - schema/02-account/sqlite.sql
+      - schema/03-moderation/sqlite.sql
+      - schema/04-content/sqlite.sql
+      - schema/05-graph/sqlite.sql
+      - schema/07-notification/sqlite.sql
+      - schema/09-instance/sqlite.sql
+      - schema/10-infrastructure/sqlite.sql
+      - schema/11-webhook/sqlite.sql
+      - schema/12-finance/sqlite.sql
+      - schema/13-supporters/sqlite.sql
+      - schema/15-diagnostics/sqlite.sql
+      - schema/16-hook/sqlite.sql
     queries: queries/sqlite/notification
     gen:
       go:
@@ -203,15 +204,15 @@ sql:
   - name: sqlite-search
     engine: sqlite
     schema:
-      - schema/sqlite/02-account.sql
-      - schema/sqlite/03-moderation.sql
-      - schema/sqlite/04-content.sql
-      - schema/sqlite/05-graph.sql
-      - schema/sqlite/06-timeline.sql
-      - schema/sqlite/09-instance.sql
-      - schema/sqlite/10-infrastructure.sql
-      - schema/sqlite/16-hook.sql
-      - schema/sqlite/18-search.sql
+      - schema/02-account/sqlite.sql
+      - schema/03-moderation/sqlite.sql
+      - schema/04-content/sqlite.sql
+      - schema/05-graph/sqlite.sql
+      - schema/06-timeline/sqlite.sql
+      - schema/09-instance/sqlite.sql
+      - schema/10-infrastructure/sqlite.sql
+      - schema/16-hook/sqlite.sql
+      - schema/18-search/sqlite.sql
     queries: queries/sqlite/search
     gen:
       go:
@@ -221,16 +222,16 @@ sql:
   - name: sqlite-supporters
     engine: sqlite
     schema:
-      - schema/sqlite/01-identity.sql
-      - schema/sqlite/02-account.sql
-      - schema/sqlite/03-moderation.sql
-      - schema/sqlite/04-content.sql
-      - schema/sqlite/05-graph.sql
-      - schema/sqlite/09-instance.sql
-      - schema/sqlite/10-infrastructure.sql
-      - schema/sqlite/12-finance.sql
-      - schema/sqlite/13-supporters.sql
-      - schema/sqlite/16-hook.sql
+      - schema/01-identity/sqlite.sql
+      - schema/02-account/sqlite.sql
+      - schema/03-moderation/sqlite.sql
+      - schema/04-content/sqlite.sql
+      - schema/05-graph/sqlite.sql
+      - schema/09-instance/sqlite.sql
+      - schema/10-infrastructure/sqlite.sql
+      - schema/12-finance/sqlite.sql
+      - schema/13-supporters/sqlite.sql
+      - schema/16-hook/sqlite.sql
     queries: queries/sqlite/supporters
     gen:
       go:
@@ -240,13 +241,13 @@ sql:
   - name: sqlite-timeline
     engine: sqlite
     schema:
-      - schema/sqlite/02-account.sql
-      - schema/sqlite/03-moderation.sql
-      - schema/sqlite/04-content.sql
-      - schema/sqlite/05-graph.sql
-      - schema/sqlite/06-timeline.sql
-      - schema/sqlite/10-infrastructure.sql
-      - schema/sqlite/16-hook.sql
+      - schema/02-account/sqlite.sql
+      - schema/03-moderation/sqlite.sql
+      - schema/04-content/sqlite.sql
+      - schema/05-graph/sqlite.sql
+      - schema/06-timeline/sqlite.sql
+      - schema/10-infrastructure/sqlite.sql
+      - schema/16-hook/sqlite.sql
     queries: queries/sqlite/timeline
     gen:
       go:
@@ -256,12 +257,12 @@ sql:
   - name: sqlite-translation
     engine: sqlite
     schema:
-      - schema/sqlite/02-account.sql
-      - schema/sqlite/04-content.sql
-      - schema/sqlite/05-graph.sql
-      - schema/sqlite/10-infrastructure.sql
-      - schema/sqlite/16-hook.sql
-      - schema/sqlite/17-translation.sql
+      - schema/02-account/sqlite.sql
+      - schema/04-content/sqlite.sql
+      - schema/05-graph/sqlite.sql
+      - schema/10-infrastructure/sqlite.sql
+      - schema/16-hook/sqlite.sql
+      - schema/17-translation/sqlite.sql
     queries: queries/sqlite/translation
     gen:
       go:
@@ -271,14 +272,14 @@ sql:
   - name: sqlite-voice
     engine: sqlite
     schema:
-      - schema/sqlite/02-account.sql
-      - schema/sqlite/03-moderation.sql
-      - schema/sqlite/04-content.sql
-      - schema/sqlite/05-graph.sql
-      - schema/sqlite/09-instance.sql
-      - schema/sqlite/10-infrastructure.sql
-      - schema/sqlite/14-voice.sql
-      - schema/sqlite/16-hook.sql
+      - schema/02-account/sqlite.sql
+      - schema/03-moderation/sqlite.sql
+      - schema/04-content/sqlite.sql
+      - schema/05-graph/sqlite.sql
+      - schema/09-instance/sqlite.sql
+      - schema/10-infrastructure/sqlite.sql
+      - schema/14-voice/sqlite.sql
+      - schema/16-hook/sqlite.sql
     queries: queries/sqlite/voice
     gen:
       go:
@@ -288,16 +289,16 @@ sql:
   - name: sqlite-webhook
     engine: sqlite
     schema:
-      - schema/sqlite/01-identity.sql
-      - schema/sqlite/02-account.sql
-      - schema/sqlite/03-moderation.sql
-      - schema/sqlite/04-content.sql
-      - schema/sqlite/05-graph.sql
-      - schema/sqlite/09-instance.sql
-      - schema/sqlite/10-infrastructure.sql
-      - schema/sqlite/11-webhook.sql
-      - schema/sqlite/15-diagnostics.sql
-      - schema/sqlite/16-hook.sql
+      - schema/01-identity/sqlite.sql
+      - schema/02-account/sqlite.sql
+      - schema/03-moderation/sqlite.sql
+      - schema/04-content/sqlite.sql
+      - schema/05-graph/sqlite.sql
+      - schema/09-instance/sqlite.sql
+      - schema/10-infrastructure/sqlite.sql
+      - schema/11-webhook/sqlite.sql
+      - schema/15-diagnostics/sqlite.sql
+      - schema/16-hook/sqlite.sql
     queries: queries/sqlite/webhook
     gen:
       go:
@@ -307,9 +308,9 @@ sql:
   - name: postgres-account
     engine: postgresql
     schema:
-      - schema/postgres/02-account.sql
-      - schema/postgres/10-infrastructure.sql
-      - schema/postgres/16-hook.sql
+      - schema/02-account/postgres.sql
+      - schema/10-infrastructure/postgres.sql
+      - schema/16-hook/postgres.sql
     queries: queries/postgres/account
     gen:
       go: &postgres-go
@@ -337,12 +338,12 @@ sql:
   - name: postgres-content
     engine: postgresql
     schema:
-      - schema/postgres/02-account.sql
-      - schema/postgres/04-content.sql
-      - schema/postgres/05-graph.sql
-      - schema/postgres/07-notification.sql
-      - schema/postgres/10-infrastructure.sql
-      - schema/postgres/16-hook.sql
+      - schema/02-account/postgres.sql
+      - schema/04-content/postgres.sql
+      - schema/05-graph/postgres.sql
+      - schema/07-notification/postgres.sql
+      - schema/10-infrastructure/postgres.sql
+      - schema/16-hook/postgres.sql
     queries: queries/postgres/content
     gen:
       go:
@@ -352,7 +353,7 @@ sql:
   - name: postgres-dbupgrade
     engine: postgresql
     schema:
-      - schema/postgres/10-infrastructure.sql
+      - schema/10-infrastructure/postgres.sql
     queries: queries/postgres/dbupgrade
     gen:
       go:
@@ -362,8 +363,8 @@ sql:
   - name: postgres-diagnostics
     engine: postgresql
     schema:
-      - schema/postgres/10-infrastructure.sql
-      - schema/postgres/15-diagnostics.sql
+      - schema/10-infrastructure/postgres.sql
+      - schema/15-diagnostics/postgres.sql
     queries: queries/postgres/diagnostics
     gen:
       go:
@@ -373,15 +374,15 @@ sql:
   - name: postgres-federation
     engine: postgresql
     schema:
-      - schema/postgres/02-account.sql
-      - schema/postgres/03-moderation.sql
-      - schema/postgres/04-content.sql
-      - schema/postgres/05-graph.sql
-      - schema/postgres/06-timeline.sql
-      - schema/postgres/08-federation.sql
-      - schema/postgres/09-instance.sql
-      - schema/postgres/10-infrastructure.sql
-      - schema/postgres/16-hook.sql
+      - schema/02-account/postgres.sql
+      - schema/03-moderation/postgres.sql
+      - schema/04-content/postgres.sql
+      - schema/05-graph/postgres.sql
+      - schema/06-timeline/postgres.sql
+      - schema/08-federation/postgres.sql
+      - schema/09-instance/postgres.sql
+      - schema/10-infrastructure/postgres.sql
+      - schema/16-hook/postgres.sql
     queries: queries/postgres/federation
     gen:
       go:
@@ -391,13 +392,13 @@ sql:
   - name: postgres-finance
     engine: postgresql
     schema:
-      - schema/postgres/02-account.sql
-      - schema/postgres/03-moderation.sql
-      - schema/postgres/04-content.sql
-      - schema/postgres/05-graph.sql
-      - schema/postgres/10-infrastructure.sql
-      - schema/postgres/12-finance.sql
-      - schema/postgres/16-hook.sql
+      - schema/02-account/postgres.sql
+      - schema/03-moderation/postgres.sql
+      - schema/04-content/postgres.sql
+      - schema/05-graph/postgres.sql
+      - schema/10-infrastructure/postgres.sql
+      - schema/12-finance/postgres.sql
+      - schema/16-hook/postgres.sql
     queries: queries/postgres/finance
     gen:
       go:
@@ -407,10 +408,10 @@ sql:
   - name: postgres-graph
     engine: postgresql
     schema:
-      - schema/postgres/02-account.sql
-      - schema/postgres/05-graph.sql
-      - schema/postgres/10-infrastructure.sql
-      - schema/postgres/16-hook.sql
+      - schema/02-account/postgres.sql
+      - schema/05-graph/postgres.sql
+      - schema/10-infrastructure/postgres.sql
+      - schema/16-hook/postgres.sql
     queries: queries/postgres/graph
     gen:
       go:
@@ -420,8 +421,8 @@ sql:
   - name: postgres-hook
     engine: postgresql
     schema:
-      - schema/postgres/10-infrastructure.sql
-      - schema/postgres/16-hook.sql
+      - schema/10-infrastructure/postgres.sql
+      - schema/16-hook/postgres.sql
     queries: queries/postgres/hook
     gen:
       go:
@@ -431,14 +432,14 @@ sql:
   - name: postgres-identity
     engine: postgresql
     schema:
-      - schema/postgres/01-identity.sql
-      - schema/postgres/02-account.sql
-      - schema/postgres/03-moderation.sql
-      - schema/postgres/04-content.sql
-      - schema/postgres/05-graph.sql
-      - schema/postgres/09-instance.sql
-      - schema/postgres/10-infrastructure.sql
-      - schema/postgres/16-hook.sql
+      - schema/01-identity/postgres.sql
+      - schema/02-account/postgres.sql
+      - schema/03-moderation/postgres.sql
+      - schema/04-content/postgres.sql
+      - schema/05-graph/postgres.sql
+      - schema/09-instance/postgres.sql
+      - schema/10-infrastructure/postgres.sql
+      - schema/16-hook/postgres.sql
     queries: queries/postgres/identity
     gen:
       go:
@@ -448,13 +449,13 @@ sql:
   - name: postgres-instance
     engine: postgresql
     schema:
-      - schema/postgres/02-account.sql
-      - schema/postgres/03-moderation.sql
-      - schema/postgres/04-content.sql
-      - schema/postgres/05-graph.sql
-      - schema/postgres/09-instance.sql
-      - schema/postgres/10-infrastructure.sql
-      - schema/postgres/16-hook.sql
+      - schema/02-account/postgres.sql
+      - schema/03-moderation/postgres.sql
+      - schema/04-content/postgres.sql
+      - schema/05-graph/postgres.sql
+      - schema/09-instance/postgres.sql
+      - schema/10-infrastructure/postgres.sql
+      - schema/16-hook/postgres.sql
     queries: queries/postgres/instance
     gen:
       go:
@@ -464,12 +465,12 @@ sql:
   - name: postgres-moderation
     engine: postgresql
     schema:
-      - schema/postgres/02-account.sql
-      - schema/postgres/03-moderation.sql
-      - schema/postgres/04-content.sql
-      - schema/postgres/05-graph.sql
-      - schema/postgres/10-infrastructure.sql
-      - schema/postgres/16-hook.sql
+      - schema/02-account/postgres.sql
+      - schema/03-moderation/postgres.sql
+      - schema/04-content/postgres.sql
+      - schema/05-graph/postgres.sql
+      - schema/10-infrastructure/postgres.sql
+      - schema/16-hook/postgres.sql
     queries: queries/postgres/moderation
     gen:
       go:
@@ -479,19 +480,19 @@ sql:
   - name: postgres-notification
     engine: postgresql
     schema:
-      - schema/postgres/01-identity.sql
-      - schema/postgres/02-account.sql
-      - schema/postgres/03-moderation.sql
-      - schema/postgres/04-content.sql
-      - schema/postgres/05-graph.sql
-      - schema/postgres/07-notification.sql
-      - schema/postgres/09-instance.sql
-      - schema/postgres/10-infrastructure.sql
-      - schema/postgres/11-webhook.sql
-      - schema/postgres/12-finance.sql
-      - schema/postgres/13-supporters.sql
-      - schema/postgres/15-diagnostics.sql
-      - schema/postgres/16-hook.sql
+      - schema/01-identity/postgres.sql
+      - schema/02-account/postgres.sql
+      - schema/03-moderation/postgres.sql
+      - schema/04-content/postgres.sql
+      - schema/05-graph/postgres.sql
+      - schema/07-notification/postgres.sql
+      - schema/09-instance/postgres.sql
+      - schema/10-infrastructure/postgres.sql
+      - schema/11-webhook/postgres.sql
+      - schema/12-finance/postgres.sql
+      - schema/13-supporters/postgres.sql
+      - schema/15-diagnostics/postgres.sql
+      - schema/16-hook/postgres.sql
     queries: queries/postgres/notification
     gen:
       go:
@@ -501,15 +502,15 @@ sql:
   - name: postgres-search
     engine: postgresql
     schema:
-      - schema/postgres/02-account.sql
-      - schema/postgres/03-moderation.sql
-      - schema/postgres/04-content.sql
-      - schema/postgres/05-graph.sql
-      - schema/postgres/06-timeline.sql
-      - schema/postgres/09-instance.sql
-      - schema/postgres/10-infrastructure.sql
-      - schema/postgres/16-hook.sql
-      - schema/postgres/18-search.sql
+      - schema/02-account/postgres.sql
+      - schema/03-moderation/postgres.sql
+      - schema/04-content/postgres.sql
+      - schema/05-graph/postgres.sql
+      - schema/06-timeline/postgres.sql
+      - schema/09-instance/postgres.sql
+      - schema/10-infrastructure/postgres.sql
+      - schema/16-hook/postgres.sql
+      - schema/18-search/postgres.sql
     queries: queries/postgres/search
     gen:
       go:
@@ -519,16 +520,16 @@ sql:
   - name: postgres-supporters
     engine: postgresql
     schema:
-      - schema/postgres/01-identity.sql
-      - schema/postgres/02-account.sql
-      - schema/postgres/03-moderation.sql
-      - schema/postgres/04-content.sql
-      - schema/postgres/05-graph.sql
-      - schema/postgres/09-instance.sql
-      - schema/postgres/10-infrastructure.sql
-      - schema/postgres/12-finance.sql
-      - schema/postgres/13-supporters.sql
-      - schema/postgres/16-hook.sql
+      - schema/01-identity/postgres.sql
+      - schema/02-account/postgres.sql
+      - schema/03-moderation/postgres.sql
+      - schema/04-content/postgres.sql
+      - schema/05-graph/postgres.sql
+      - schema/09-instance/postgres.sql
+      - schema/10-infrastructure/postgres.sql
+      - schema/12-finance/postgres.sql
+      - schema/13-supporters/postgres.sql
+      - schema/16-hook/postgres.sql
     queries: queries/postgres/supporters
     gen:
       go:
@@ -538,13 +539,13 @@ sql:
   - name: postgres-timeline
     engine: postgresql
     schema:
-      - schema/postgres/02-account.sql
-      - schema/postgres/03-moderation.sql
-      - schema/postgres/04-content.sql
-      - schema/postgres/05-graph.sql
-      - schema/postgres/06-timeline.sql
-      - schema/postgres/10-infrastructure.sql
-      - schema/postgres/16-hook.sql
+      - schema/02-account/postgres.sql
+      - schema/03-moderation/postgres.sql
+      - schema/04-content/postgres.sql
+      - schema/05-graph/postgres.sql
+      - schema/06-timeline/postgres.sql
+      - schema/10-infrastructure/postgres.sql
+      - schema/16-hook/postgres.sql
     queries: queries/postgres/timeline
     gen:
       go:
@@ -554,12 +555,12 @@ sql:
   - name: postgres-translation
     engine: postgresql
     schema:
-      - schema/postgres/02-account.sql
-      - schema/postgres/04-content.sql
-      - schema/postgres/05-graph.sql
-      - schema/postgres/10-infrastructure.sql
-      - schema/postgres/16-hook.sql
-      - schema/postgres/17-translation.sql
+      - schema/02-account/postgres.sql
+      - schema/04-content/postgres.sql
+      - schema/05-graph/postgres.sql
+      - schema/10-infrastructure/postgres.sql
+      - schema/16-hook/postgres.sql
+      - schema/17-translation/postgres.sql
     queries: queries/postgres/translation
     gen:
       go:
@@ -569,14 +570,14 @@ sql:
   - name: postgres-voice
     engine: postgresql
     schema:
-      - schema/postgres/02-account.sql
-      - schema/postgres/03-moderation.sql
-      - schema/postgres/04-content.sql
-      - schema/postgres/05-graph.sql
-      - schema/postgres/09-instance.sql
-      - schema/postgres/10-infrastructure.sql
-      - schema/postgres/14-voice.sql
-      - schema/postgres/16-hook.sql
+      - schema/02-account/postgres.sql
+      - schema/03-moderation/postgres.sql
+      - schema/04-content/postgres.sql
+      - schema/05-graph/postgres.sql
+      - schema/09-instance/postgres.sql
+      - schema/10-infrastructure/postgres.sql
+      - schema/14-voice/postgres.sql
+      - schema/16-hook/postgres.sql
     queries: queries/postgres/voice
     gen:
       go:
@@ -586,16 +587,16 @@ sql:
   - name: postgres-webhook
     engine: postgresql
     schema:
-      - schema/postgres/01-identity.sql
-      - schema/postgres/02-account.sql
-      - schema/postgres/03-moderation.sql
-      - schema/postgres/04-content.sql
-      - schema/postgres/05-graph.sql
-      - schema/postgres/09-instance.sql
-      - schema/postgres/10-infrastructure.sql
-      - schema/postgres/11-webhook.sql
-      - schema/postgres/15-diagnostics.sql
-      - schema/postgres/16-hook.sql
+      - schema/01-identity/postgres.sql
+      - schema/02-account/postgres.sql
+      - schema/03-moderation/postgres.sql
+      - schema/04-content/postgres.sql
+      - schema/05-graph/postgres.sql
+      - schema/09-instance/postgres.sql
+      - schema/10-infrastructure/postgres.sql
+      - schema/11-webhook/postgres.sql
+      - schema/15-diagnostics/postgres.sql
+      - schema/16-hook/postgres.sql
     queries: queries/postgres/webhook
     gen:
       go:
@@ -605,7 +606,7 @@ sql:
 
   - name: sqlite-queue
     engine: sqlite
-    schema: schema/sqlite
+    schema: schema/10-infrastructure/sqlite.sql
     queries: queries/sqlite/queue
     gen:
       go:
@@ -615,7 +616,7 @@ sql:
         omit_unused_structs: true
   - name: postgres-queue
     engine: postgresql
-    schema: schema/postgres
+    schema: schema/10-infrastructure/postgres.sql
     queries: queries/postgres/queue
     gen:
       go:
@@ -637,7 +638,7 @@ sql:
             go_type: time.Time
   - name: sqlite-kv
     engine: sqlite
-    schema: schema/sqlite
+    schema: schema/10-infrastructure/sqlite.sql
     queries: queries/sqlite/kv
     gen:
       go:
@@ -647,7 +648,7 @@ sql:
         omit_unused_structs: true
   - name: postgres-kv
     engine: postgresql
-    schema: schema/postgres
+    schema: schema/10-infrastructure/postgres.sql
     queries: queries/postgres/kv
     gen:
       go:

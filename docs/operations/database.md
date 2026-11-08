@@ -2,7 +2,7 @@
 
 How operators create the database, upgrade it to a new release, and, on development and test instances only, erase it.
 
-The schema lives in `schema/<dialect>/` (one file per module). The server binary holds the schema of its release, and
+The schema lives in `schema/`, one directory per module with a file per database (`schema/<NN>-<module>/sqlite.sql` and `postgres.sql`). The server binary holds the schema of its release, and
 `my schema apply` applies it: every deployment runs it as a one-off job before the server, with the server image and the server's
 database settings, so the server image is the only image an instance needs.
 `my serve` never applies the schema. Started on a database without it, the server answers `503` on `/readyz` (see [Start the server](running.md#start-the-server)).

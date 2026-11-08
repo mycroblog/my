@@ -21,6 +21,7 @@ import (
 	"github.com/mycroblog/my/pkg/testkit"
 	"github.com/mycroblog/my/pkg/testkit/pgtest"
 	"github.com/mycroblog/my/pkg/testkit/uowtest"
+	"github.com/mycroblog/my/schema"
 )
 
 func TestMain(m *testing.M) {
@@ -218,17 +219,17 @@ func (foreignTx) Emit(context.Context, uow.Event) error { return nil }
 
 func TestReady(t *testing.T) {
 	db := newTestDB(t, uow.Options{})
-	if err := db.Ready(t.Context()); err != nil {
+	if err := db.Ready(t.Context(), schema.Tables(schema.Postgres)); err != nil {
 		t.Fatalf("Ready on an applied schema = %v", err)
 	}
 	if _, err := db.pool.Exec(t.Context(), "DROP TABLE dead_jobs"); err != nil {
 		t.Fatal(err)
 	}
-	if err := db.Ready(t.Context()); err == nil || !strings.Contains(err.Error(), "dead_jobs") {
+	if err := db.Ready(t.Context(), schema.Tables(schema.Postgres)); err == nil || !strings.Contains(err.Error(), "dead_jobs") {
 		t.Errorf("Ready with a missing table = %v, want an error naming dead_jobs", err)
 	}
 	db.Close()
-	if err := db.Ready(t.Context()); err == nil {
+	if err := db.Ready(t.Context(), schema.Tables(schema.Postgres)); err == nil {
 		t.Error("Ready on a closed pool = nil, want an error")
 	}
 }

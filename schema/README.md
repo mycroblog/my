@@ -1,25 +1,36 @@
 # Desired-state schema
 
-The database schema of each dialect (ADR-0023). `my schema apply` embeds it, diffs it against the target database
+The database schema of each dialect, one directory per module (ADR-0023). `my schema apply` embeds it, diffs it against the target database
 with the Atlas Go library (Community Edition), and applies the difference (`scripts/task.sh db:apply DB_DIALECT=sqlite|postgres`;
 for PostgreSQL, against the `public` schema of the target database). The Atlas CLI checks changes to it (`db:lint`) and that
 nothing is left to apply (`db:check`). Never write migration SQL by hand.
 
 ## Layout
 
-- `sqlite/` and `postgres/` hold one file per module, `<NN>-<module>.sql` (ADR-0081). The modules and their numbers are those
-  of [data-model §4](../docs/architecture/data-model/04-tables/README.md); `10-infrastructure.sql` holds the tables that
-  adapters own.
-- Atlas (`file://schema/<dialect>`), sqlc (`sqlc.yaml`), and the Go embedding (`schema.go`) read the files in name order, so a
-  statement may only use what an earlier statement or file creates: an index or comment goes after its table. Number a new
-  module's file after the files it depends on. sqlc's entry of a module reads only the files of that module and of the modules
-  it depends on, so its queries can join only those tables; a new module gets an entry in `sqlc.yaml`.
+- Each module has a directory `<NN>-<module>/` with one file per dialect, `sqlite.sql` and `postgres.sql` (ADR-0023,
+  ADR-0081). The modules and their numbers are those of
+  [data-model §4](../docs/architecture/data-model/04-tables/README.md); `10-infrastructure/` holds the tables that
+  adapters own (kernel, uow, and queue).
+- Each module's directory is also a Go package (`schema.go`) that embeds its two files and declares the module with
+  `ddl.New`, naming the modules it depends on: the modules that `internal/app/<module>` imports, and `10-infrastructure`
+  when it imports kernel, uow, or queue (`schema_test.go` checks the list). Package `schema` (`schema.go`) imports every
+  module and concatenates their files in name order for `my schema apply`. The test databases of
+  `pkg/testkit/sqlitetest` and `pgtest` hold only the modules their test binary links (ADR-0153 §3): a module's database
+  adapter packages import its package, so a change to one module's files rebuilds only the tests that use the module.
+  A test that reads the tables of a module it does not otherwise link adds a blank import of that module's package.
+- The files run in name order: Atlas (`scripts/schema-files.sh` copies the dialect's files of every module into one
+  directory as `<NN>-<module>.sql`, since Atlas Community Edition reads one directory or one file), sqlc (`sqlc.yaml`),
+  and the Go embedding. A module's files use only what they create themselves (there are no foreign keys, and an index
+  or a comment goes after its table in the same file), so that a module applies with only the modules it depends on.
+  sqlc's entry of a module reads only the files of that module and of the modules it depends on, so its queries can join
+  only those tables.
+- A new module gets a directory with its `schema.go`, a line in `schema.go` of package `schema`, a blank import in the
+  module's database adapter packages, and an entry in `sqlc.yaml`.
 - A table, its indexes, and its comments go in the file of the module that owns the table, also when an index serves
   another module's queries.
-- Edit the same file in every dialect together: both directories have the same files, and each file declares the same
-  tables in the same order (`schema_test.go`).
-- `postgres.bootstrap.sql` runs before the schema on every PostgreSQL database: `my schema apply` runs it on the target,
-  and `scripts/task.sh db:up` on Atlas's dev databases.
+- Edit both files of a module together: each declares the same tables in the same order (`schema_test.go`).
+- `ddl/postgres.bootstrap.sql` runs before the schema on every PostgreSQL database: `my schema apply` runs it on the
+  target, and `scripts/task.sh db:up` on Atlas's dev databases.
 
 ## Conventions
 
@@ -65,7 +76,7 @@ The two steps of C:
 
 ### db:lint
 
-`scripts/task.sh db:lint` (`scripts/db-lint.sh`) compares `schema/<dialect>/` of the working tree with the same directory
+`scripts/task.sh db:lint` (`scripts/db-lint.sh`) compares the dialect's files of the working tree with the same files
 at the merge base of `BASE` (default `origin/main`) and `HEAD`. It writes the migrations empty → base and base → working tree into a temporary
 directory with `atlas migrate diff` and lints the second with `atlas migrate lint`, which also runs it on a dev database;
 no migration file stays in the repository. It fails when:

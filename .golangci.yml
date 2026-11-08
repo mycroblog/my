@@ -578,9 +578,13 @@ linters:
               desc: the base of the adapter is below the modules; move what a module needs into the base, or the code into the module
             - pkg: github.com/mycroblog/my/internal/adapter/db/postgres/
               desc: the base of the adapter is below the modules; move what a module needs into the base, or the code into the module
+            - pkg: github.com/mycroblog/my/schema$
+              desc: the base takes the whole schema from its caller, so that a change to one module's schema reruns only the tests that use the module (ADR-0153 §3)
         # A module's sub-package imports the base, its own generated queries, and the sub-packages of the modules that
         # its module imports (transitively) in internal/app, never another module's generated queries: a helper that
         # a lower module needs goes into the base. A change to a module's imports in internal/app updates its rule.
+        # It also imports its module's package of the schema (schema/<NN>-<module>), which links the module's tables
+        # into the test databases.
         db-account:
           list-mode: strict
           files:
@@ -598,6 +602,7 @@ linters:
             - github.com/mycroblog/my/internal/adapter/db/postgres$
             - github.com/mycroblog/my/internal/adapter/db/postgres/accountgen$
             - github.com/mycroblog/my/internal/adapter/db/postgres/hook$
+            - github.com/mycroblog/my/schema/02-account$
         db-content:
           list-mode: strict
           files:
@@ -619,6 +624,7 @@ linters:
             - github.com/mycroblog/my/internal/adapter/db/postgres/account$
             - github.com/mycroblog/my/internal/adapter/db/postgres/graph$
             - github.com/mycroblog/my/internal/adapter/db/postgres/hook$
+            - github.com/mycroblog/my/schema/04-content$
         db-dbupgrade:
           list-mode: strict
           files:
@@ -649,6 +655,7 @@ linters:
             - github.com/mycroblog/my/internal/adapter/db/sqlite/diagnosticsgen$
             - github.com/mycroblog/my/internal/adapter/db/postgres$
             - github.com/mycroblog/my/internal/adapter/db/postgres/diagnosticsgen$
+            - github.com/mycroblog/my/schema/15-diagnostics$
         db-federation:
           list-mode: strict
           files:
@@ -678,6 +685,7 @@ linters:
             - github.com/mycroblog/my/internal/adapter/db/postgres/instance$
             - github.com/mycroblog/my/internal/adapter/db/postgres/moderation$
             - github.com/mycroblog/my/internal/adapter/db/postgres/timeline$
+            - github.com/mycroblog/my/schema/08-federation$
         db-finance:
           list-mode: strict
           files:
@@ -703,6 +711,7 @@ linters:
             - github.com/mycroblog/my/internal/adapter/db/postgres/graph$
             - github.com/mycroblog/my/internal/adapter/db/postgres/hook$
             - github.com/mycroblog/my/internal/adapter/db/postgres/moderation$
+            - github.com/mycroblog/my/schema/12-finance$
         db-graph:
           list-mode: strict
           files:
@@ -722,6 +731,7 @@ linters:
             - github.com/mycroblog/my/internal/adapter/db/postgres/graphgen$
             - github.com/mycroblog/my/internal/adapter/db/postgres/account$
             - github.com/mycroblog/my/internal/adapter/db/postgres/hook$
+            - github.com/mycroblog/my/schema/05-graph$
         db-hook:
           list-mode: strict
           files:
@@ -737,6 +747,7 @@ linters:
             - github.com/mycroblog/my/internal/adapter/db/sqlite/hookgen$
             - github.com/mycroblog/my/internal/adapter/db/postgres$
             - github.com/mycroblog/my/internal/adapter/db/postgres/hookgen$
+            - github.com/mycroblog/my/schema/16-hook$
         db-identity:
           list-mode: strict
           files:
@@ -764,6 +775,7 @@ linters:
             - github.com/mycroblog/my/internal/adapter/db/postgres/hook$
             - github.com/mycroblog/my/internal/adapter/db/postgres/instance$
             - github.com/mycroblog/my/internal/adapter/db/postgres/moderation$
+            - github.com/mycroblog/my/schema/01-identity$
         db-instance:
           list-mode: strict
           files:
@@ -789,6 +801,7 @@ linters:
             - github.com/mycroblog/my/internal/adapter/db/postgres/graph$
             - github.com/mycroblog/my/internal/adapter/db/postgres/hook$
             - github.com/mycroblog/my/internal/adapter/db/postgres/moderation$
+            - github.com/mycroblog/my/schema/09-instance$
         db-moderation:
           list-mode: strict
           files:
@@ -812,6 +825,7 @@ linters:
             - github.com/mycroblog/my/internal/adapter/db/postgres/content$
             - github.com/mycroblog/my/internal/adapter/db/postgres/graph$
             - github.com/mycroblog/my/internal/adapter/db/postgres/hook$
+            - github.com/mycroblog/my/schema/03-moderation$
         db-notification:
           list-mode: strict
           files:
@@ -849,6 +863,7 @@ linters:
             - github.com/mycroblog/my/internal/adapter/db/postgres/moderation$
             - github.com/mycroblog/my/internal/adapter/db/postgres/supporters$
             - github.com/mycroblog/my/internal/adapter/db/postgres/webhook$
+            - github.com/mycroblog/my/schema/07-notification$
         db-search:
           list-mode: strict
           files:
@@ -878,6 +893,7 @@ linters:
             - github.com/mycroblog/my/internal/adapter/db/postgres/instance$
             - github.com/mycroblog/my/internal/adapter/db/postgres/moderation$
             - github.com/mycroblog/my/internal/adapter/db/postgres/timeline$
+            - github.com/mycroblog/my/schema/18-search$
         db-supporters:
           list-mode: strict
           files:
@@ -909,6 +925,7 @@ linters:
             - github.com/mycroblog/my/internal/adapter/db/postgres/identity$
             - github.com/mycroblog/my/internal/adapter/db/postgres/instance$
             - github.com/mycroblog/my/internal/adapter/db/postgres/moderation$
+            - github.com/mycroblog/my/schema/13-supporters$
         db-timeline:
           list-mode: strict
           files:
@@ -934,6 +951,7 @@ linters:
             - github.com/mycroblog/my/internal/adapter/db/postgres/graph$
             - github.com/mycroblog/my/internal/adapter/db/postgres/hook$
             - github.com/mycroblog/my/internal/adapter/db/postgres/moderation$
+            - github.com/mycroblog/my/schema/06-timeline$
         db-translation:
           list-mode: strict
           files:
@@ -957,6 +975,7 @@ linters:
             - github.com/mycroblog/my/internal/adapter/db/postgres/content$
             - github.com/mycroblog/my/internal/adapter/db/postgres/graph$
             - github.com/mycroblog/my/internal/adapter/db/postgres/hook$
+            - github.com/mycroblog/my/schema/17-translation$
         db-voice:
           list-mode: strict
           files:
@@ -984,6 +1003,7 @@ linters:
             - github.com/mycroblog/my/internal/adapter/db/postgres/hook$
             - github.com/mycroblog/my/internal/adapter/db/postgres/instance$
             - github.com/mycroblog/my/internal/adapter/db/postgres/moderation$
+            - github.com/mycroblog/my/schema/14-voice$
         db-webhook:
           list-mode: strict
           files:
@@ -1015,6 +1035,7 @@ linters:
             - github.com/mycroblog/my/internal/adapter/db/postgres/identity$
             - github.com/mycroblog/my/internal/adapter/db/postgres/instance$
             - github.com/mycroblog/my/internal/adapter/db/postgres/moderation$
+            - github.com/mycroblog/my/schema/11-webhook$
         # The store of the sealed values (`my kek rewrap`) gathers the sealed columns of the modules that own them.
         db-rewrap:
           list-mode: strict

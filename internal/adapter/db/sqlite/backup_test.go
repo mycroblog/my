@@ -13,6 +13,7 @@ import (
 
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/pkg/testkit"
+	"github.com/mycroblog/my/schema"
 )
 
 func TestBackupTo(t *testing.T) {
@@ -52,7 +53,7 @@ func TestBackupTo(t *testing.T) {
 		t.Fatalf("open the copy: %v", err)
 	}
 	defer func() { _ = restored.Close() }()
-	if err := restored.Ready(ctx); err != nil {
+	if err := restored.Ready(ctx, schema.Tables(schema.SQLite)); err != nil {
 		t.Errorf("the copy is not ready: %v", err)
 	}
 	if keys, err := probeKeys(ctx, restored); err != nil || !slices.Equal(keys, want) {

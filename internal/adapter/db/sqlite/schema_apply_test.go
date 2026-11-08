@@ -27,7 +27,7 @@ func newEmptyFile(t *testing.T) string {
 // mustApply runs applySchema and fails t on an error.
 func mustApply(t *testing.T, path, ddl string, opts schemaapply.Options) schemaapply.Result {
 	t.Helper()
-	r, err := applySchema(t.Context(), path, ddl, opts)
+	r, err := ApplySchema(t.Context(), path, ddl, opts)
 	if err != nil {
 		t.Fatalf("applySchema: %v", err)
 	}
@@ -65,8 +65,8 @@ func objects(t *testing.T, path string) []string {
 	return out
 }
 
-// assertSyncedWithCLI checks with the Atlas CLI that the database at path matches
-// schema/sqlite. It skips the check when the CLI is not installed (scripts/task.sh db:atlas, or
+// assertSyncedWithCLI checks with the Atlas CLI that the database at path matches the SQLite
+// schema, written to one file (the CLI reads one directory or one file). It skips the check when the CLI is not installed (scripts/task.sh db:atlas, or
 // the ATLAS variable).
 func assertSyncedWithCLI(t *testing.T, path string) {
 	t.Helper()
@@ -82,8 +82,12 @@ func assertSyncedWithCLI(t *testing.T, path string) {
 		t.Logf("the Atlas CLI is not installed (%v); the comparison with atlas schema diff is skipped", err)
 		return
 	}
+	desired := filepath.Join(t.TempDir(), "schema.sql")
+	if err := os.WriteFile(desired, []byte(schema.SQLite), 0o600); err != nil {
+		t.Fatal(err)
+	}
 	out, err := exec.CommandContext(t.Context(), atlas, "schema", "diff", //nolint:gosec // G204: the CLI the developer or CI installed
-		"--from", "sqlite://"+path, "--to", "file://"+filepath.Join(root, "schema", "sqlite"),
+		"--from", "sqlite://"+path, "--to", "file://"+desired,
 		"--dev-url", "sqlite://dev?mode=memory").CombinedOutput()
 	if err != nil {
 		t.Fatalf("atlas schema diff: %v\n%s", err, out)
@@ -96,7 +100,7 @@ func assertSyncedWithCLI(t *testing.T, path string) {
 func TestApplySchemaToAnEmptyDatabase(t *testing.T) {
 	t.Parallel()
 	path := newEmptyFile(t)
-	r, err := ApplySchema(t.Context(), path, schemaapply.Options{})
+	r, err := ApplySchema(t.Context(), path, schema.SQLite, schemaapply.Options{})
 	if err != nil {
 		t.Fatalf("ApplySchema: %v", err)
 	}
@@ -109,11 +113,11 @@ func TestApplySchemaToAnEmptyDatabase(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer func() { _ = db.Close() }()
-	if err := db.Ready(t.Context()); err != nil {
+	if err := db.Ready(t.Context(), schema.Tables(schema.SQLite)); err != nil {
 		t.Errorf("Ready after the apply: %v", err)
 	}
 
-	again, err := ApplySchema(t.Context(), path, schemaapply.Options{})
+	again, err := ApplySchema(t.Context(), path, schema.SQLite, schemaapply.Options{})
 	if err != nil {
 		t.Fatalf("ApplySchema again: %v", err)
 	}
@@ -143,7 +147,7 @@ func TestApplySchemaRefusesDropsUnlessAllowed(t *testing.T) {
 	mustApply(t, path, schema.SQLite+"\nCREATE TABLE probe_extra (id INTEGER PRIMARY KEY);\nALTER TABLE "+table+" ADD COLUMN probe_extra TEXT;\n", schemaapply.Options{})
 	before := objects(t, path)
 
-	r, err := ApplySchema(t.Context(), path, schemaapply.Options{})
+	r, err := ApplySchema(t.Context(), path, schema.SQLite, schemaapply.Options{})
 	var de *schemaapply.DestructiveError
 	if !errors.As(err, &de) {
 		t.Fatalf("ApplySchema of drops without AllowDestructive: err = %v, want a DestructiveError", err)
@@ -158,7 +162,7 @@ func TestApplySchemaRefusesDropsUnlessAllowed(t *testing.T) {
 		t.Errorf("the refused apply changed the database:\nbefore %q\nafter  %q", before, after)
 	}
 
-	r, err = ApplySchema(t.Context(), path, schemaapply.Options{AllowDestructive: true})
+	r, err = ApplySchema(t.Context(), path, schema.SQLite, schemaapply.Options{AllowDestructive: true})
 	if err != nil || !r.Applied {
 		t.Fatalf("ApplySchema with AllowDestructive = %+v, %v; want it applied", r, err)
 	}
@@ -172,7 +176,7 @@ func TestApplySchemaRefusesDropsUnlessAllowed(t *testing.T) {
 func TestApplySchemaDryRunChangesNothing(t *testing.T) {
 	t.Parallel()
 	path := newEmptyFile(t)
-	r, err := ApplySchema(t.Context(), path, schemaapply.Options{DryRun: true})
+	r, err := ApplySchema(t.Context(), path, schema.SQLite, schemaapply.Options{DryRun: true})
 	if err != nil {
 		t.Fatalf("ApplySchema dry run: %v", err)
 	}
@@ -206,7 +210,7 @@ func TestApplySchemaRollsBackAFailedPlan(t *testing.T) {
 	if _, err := db.ExecContext(ctx, "INSERT INTO zz_probe_rows (id) VALUES (1)"); err != nil {
 		t.Fatal(err)
 	}
-	_, err = applySchema(t.Context(), path, schema.SQLite+"\nCREATE TABLE zz_probe_rows (id INTEGER PRIMARY KEY, v TEXT NOT NULL);\nALTER TABLE "+table+" ADD COLUMN probe_added TEXT;\n", schemaapply.Options{})
+	_, err = ApplySchema(t.Context(), path, schema.SQLite+"\nCREATE TABLE zz_probe_rows (id INTEGER PRIMARY KEY, v TEXT NOT NULL);\nALTER TABLE "+table+" ADD COLUMN probe_added TEXT;\n", schemaapply.Options{})
 	if err == nil {
 		t.Fatal("applySchema of a column that the rows cannot take succeeded")
 	}

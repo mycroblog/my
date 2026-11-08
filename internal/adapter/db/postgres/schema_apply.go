@@ -17,7 +17,7 @@ import (
 	"github.com/jackc/pgx/v5/stdlib"
 
 	"github.com/mycroblog/my/internal/adapter/db/schemaapply"
-	"github.com/mycroblog/my/schema"
+	schemaddl "github.com/mycroblog/my/schema/ddl"
 )
 
 // schemaApplyLock is the key of the session-scoped advisory lock that ApplySchema holds, so
@@ -27,15 +27,15 @@ const schemaApplyLock = "my schema apply"
 // devSchemaPrefix starts the name of the temporary schema of a run.
 const devSchemaPrefix = "my_schema_apply_"
 
-// ApplySchema brings the PostgreSQL database of url (the database_url setting) to the embedded
-// schema (schema.Postgres) with the Atlas library (ADR-0023 §10). Holding a session-scoped
-// advisory lock, it runs the bootstrap SQL (schema.PostgresBootstrap), executes the schema in
-// a temporary schema of its own (in the database of devURL when it is not empty, else in the
-// target database) and inspects it, inspects the target's current schema, plans the
-// difference, and applies it in one transaction. The temporary schema is dropped whether the
-// run succeeds or not. A database that matches the schema is left unchanged.
-func ApplySchema(ctx context.Context, url, devURL string, opts schemaapply.Options) (schemaapply.Result, error) {
-	r, err := applySchema(ctx, url, devURL, schema.Postgres, opts)
+// ApplySchema brings the PostgreSQL database of url (the database_url setting) to the desired
+// schema desired (the embedded schema.Postgres) with the Atlas library (ADR-0023 §10). Holding a
+// session-scoped advisory lock, it runs the bootstrap SQL (schema.PostgresBootstrap), executes the
+// schema in a temporary schema of its own (in the database of devURL when it is not empty, else
+// in the target database) and inspects it, inspects the target's current schema, plans the
+// difference, and applies it in one transaction. The temporary schema is dropped whether the run
+// succeeds or not. A database that matches the schema is left unchanged.
+func ApplySchema(ctx context.Context, url, devURL, desired string, opts schemaapply.Options) (schemaapply.Result, error) {
+	r, err := applySchema(ctx, url, devURL, desired, opts)
 	if err != nil {
 		return r, fmt.Errorf("postgres: schema apply: %w", err)
 	}
@@ -60,7 +60,7 @@ func applySchema(ctx context.Context, url, devURL, ddl string, opts schemaapply.
 	defer func() {
 		_, _ = conn.ExecContext(context.WithoutCancel(ctx), "SELECT pg_advisory_unlock(hashtextextended($1, 0))", schemaApplyLock)
 	}()
-	if _, err := conn.ExecContext(ctx, schema.PostgresBootstrap); err != nil {
+	if _, err := conn.ExecContext(ctx, schemaddl.PostgresBootstrap); err != nil {
 		return schemaapply.Result{}, fmt.Errorf("bootstrap: %w", err)
 	}
 	var target string
@@ -79,7 +79,7 @@ func applySchema(ctx context.Context, url, devURL, ddl string, opts schemaapply.
 			return schemaapply.Result{}, fmt.Errorf("dev database: %w", err)
 		}
 		defer func() { _ = dev.Close() }()
-		if _, err := dev.ExecContext(ctx, schema.PostgresBootstrap); err != nil {
+		if _, err := dev.ExecContext(ctx, schemaddl.PostgresBootstrap); err != nil {
 			return schemaapply.Result{}, fmt.Errorf("bootstrap the dev database: %w", err)
 		}
 	}

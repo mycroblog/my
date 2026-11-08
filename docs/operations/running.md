@@ -586,7 +586,7 @@ So a queue that cannot keep up gets up to 500 duplicate signals a minute. They d
   Its `title` is translated according to `Accept-Language` and contains no internal detail. The cause (a connection error, or the names of missing tables) goes to the log.
 - One readiness check is cut off after 3 seconds.
 - Readiness also requires that the database holds the configured `host` and `account_domain`, or that the process could record them.
-- **Schema applied** means every table that the files in `schema/<dialect>/` declare with `CREATE TABLE` exists
+- **Schema applied** means every table that the database's schema files (`schema/<NN>-<module>/<dialect>.sql`) declare with `CREATE TABLE` exists
   (SQLite is checked through `sqlite_schema`, PostgreSQL through the connection's `current_schema()`). `my schema apply` applies the whole schema, so a missing table means the schema is not applied or is older than the binary.
   Column and index differences are not checked; `my schema apply -dry-run` prints what would change.
 

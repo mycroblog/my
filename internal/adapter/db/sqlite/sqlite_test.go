@@ -19,6 +19,7 @@ import (
 	"github.com/mycroblog/my/pkg/testkit"
 	"github.com/mycroblog/my/pkg/testkit/sqlitetest"
 	"github.com/mycroblog/my/pkg/testkit/uowtest"
+	"github.com/mycroblog/my/schema"
 )
 
 // newTestDB opens a new database file under t.TempDir() with the product schema applied, a copy of
@@ -206,13 +207,13 @@ func (foreignTx) Emit(context.Context, uow.Event) error { return nil }
 func TestReady(t *testing.T) {
 	t.Parallel()
 	db, _ := newTestDB(t, "", uow.Options{})
-	if err := db.Ready(t.Context()); err != nil {
+	if err := db.Ready(t.Context(), schema.Tables(schema.SQLite)); err != nil {
 		t.Fatalf("Ready on an applied schema = %v", err)
 	}
 	if _, err := db.db.ExecContext(t.Context(), "DROP TABLE dead_jobs"); err != nil {
 		t.Fatal(err)
 	}
-	if err := db.Ready(t.Context()); err == nil || !strings.Contains(err.Error(), "dead_jobs") {
+	if err := db.Ready(t.Context(), schema.Tables(schema.SQLite)); err == nil || !strings.Contains(err.Error(), "dead_jobs") {
 		t.Errorf("Ready with a missing table = %v, want an error naming dead_jobs", err)
 	}
 
@@ -220,11 +221,11 @@ func TestReady(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := empty.Ready(t.Context()); err == nil {
+	if err := empty.Ready(t.Context(), schema.Tables(schema.SQLite)); err == nil {
 		t.Error("Ready on an empty database = nil, want an error")
 	}
 	_ = empty.Close()
-	if err := empty.Ready(t.Context()); err == nil {
+	if err := empty.Ready(t.Context(), schema.Tables(schema.SQLite)); err == nil {
 		t.Error("Ready on a closed database = nil, want an error")
 	}
 }

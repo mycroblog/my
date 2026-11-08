@@ -26,7 +26,7 @@ while IFS= read -r path; do
       for c in "${ALL[@]}"; do selected[$c]=1; done
       ;;
     internal/adapter/db/postgres/* | internal/adapter/kv/db/* | internal/adapter/queue/db/* | \
-      internal/adapter/stream/postgres/* | schema/postgres/* | queries/postgres/* | pkg/testkit/pgtest/* | \
+      internal/adapter/stream/postgres/* | schema/*/postgres.sql | queries/postgres/* | pkg/testkit/pgtest/* | \
       .github/workflows/postgres-contract.yml)
       selected[postgres]=1
       ;;&

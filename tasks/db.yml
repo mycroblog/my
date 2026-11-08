@@ -29,16 +29,18 @@ vars:
   # db:lint's dev database, apart from DB_DEV_URL so that db:lint and db:check can run at once.
   DB_LINT_DEV_URL: >-
     {{if .DB_LINT_DEV_URL}}{{.DB_LINT_DEV_URL}}{{else if eq .DB_DIALECT "postgres"}}postgres://my:my@localhost:{{.PG_PORT}}/my_lint?sslmode=disable&search_path=public{{else}}sqlite://lint?mode=memory{{end}}
-  # The dialect's schema: one file per module, which Atlas executes in name order (ADR-0081).
-  DB_SCHEMA: schema/{{.DB_DIALECT}}
 
 tasks:
   check:
-    desc: Reset DB_URL, apply schema/<DB_DIALECT>/ with my schema apply, and fail if Atlas finds any diff left
+    desc: Reset DB_URL, apply the DB_DIALECT schema with my schema apply, and fail if Atlas finds any diff left
+    # Atlas reads the dialect's file of every module, copied in name order into one directory (scripts/schema-files.sh,
+    # ADR-0081 §8).
     deps: [reset]
     cmds:
       - |
-        diff="$({{.ATLAS}} schema diff --from '{{.DB_URL}}' --to 'file://{{.DB_SCHEMA}}' --dev-url '{{.DB_DEV_URL}}' --format '{{"{{"}} sql . {{"}}"}}')"
+        dir="$(mktemp -d)" && trap 'rm -rf "$dir"' EXIT
+        scripts/schema-files.sh '{{.DB_DIALECT}}' "$dir"
+        diff="$({{.ATLAS}} schema diff --from '{{.DB_URL}}' --to "file://$dir" --dev-url '{{.DB_DEV_URL}}' --format '{{"{{"}} sql . {{"}}"}}')"
         if [ -n "$diff" ]; then printf 'schema diff is not empty after apply:\n%s\n' "$diff" >&2; exit 1; fi
       - "echo '{{.DB_DIALECT}}: schema applies cleanly and leaves no diff'"
 
@@ -80,7 +82,7 @@ tasks:
       # my schema apply runs the bootstrap SQL on `my` itself; Atlas's dev databases need it before Atlas runs.
       - |
         for db in my_dev my_lint; do
-          docker exec -i -e PGOPTIONS=--client-min-messages=warning {{.PG_CONTAINER}} psql -v ON_ERROR_STOP=1 -q -U my -d $db < schema/postgres.bootstrap.sql || exit 1
+          docker exec -i -e PGOPTIONS=--client-min-messages=warning {{.PG_CONTAINER}} psql -v ON_ERROR_STOP=1 -q -U my -d $db < schema/ddl/postgres.bootstrap.sql || exit 1
         done
       - echo "PostgreSQL is up in container {{.PG_CONTAINER}} on localhost:{{.PG_PORT}}"
 
@@ -97,7 +99,7 @@ tasks:
       - go build -o {{.MY}} ./cmd/my
 
   apply:
-    desc: Apply schema/<DB_DIALECT>/ to DB_URL with my schema apply (DB_DIALECT=sqlite|postgres; ALLOW_DESTRUCTIVE=true)
+    desc: Apply the DB_DIALECT schema to DB_URL with my schema apply (DB_DIALECT=sqlite|postgres; ALLOW_DESTRUCTIVE=true)
     preconditions: &dialect
       - sh: case '{{.DB_DIALECT}}' in sqlite|postgres) true;; *) false;; esac
         msg: DB_DIALECT must be sqlite or postgres, got "{{.DB_DIALECT}}"
@@ -106,7 +108,7 @@ tasks:
       - '{{.MY_ENV}} {{.MY}} schema apply{{if eq (.ALLOW_DESTRUCTIVE | default "") "true"}} -allow-destructive{{end}}'
 
   diff:
-    desc: Print the SQL that would bring DB_URL to schema/<DB_DIALECT>/ (my schema apply -dry-run)
+    desc: Print the SQL that would bring DB_URL to the DB_DIALECT schema (my schema apply -dry-run)
     deps: [my]
     preconditions: *dialect
     cmds:
@@ -121,7 +123,7 @@ tasks:
       - task: apply
 
   lint:
-    desc: Fail on a change of schema/<DB_DIALECT>/ since BASE (default origin/main) that can lose or rewrite data
+    desc: Fail on a change of the DB_DIALECT schema since BASE (default origin/main) that can lose or rewrite data
     # scripts/db-lint.sh. PostgreSQL needs the db:up container (its my_lint database) or DB_LINT_DEV_URL.
     # ALLOW_DESTRUCTIVE=true reports destructive changes without failing on them; the change must still apply. CI sets
     # it from the db:destructive label on pull requests, and always in the merge queue.

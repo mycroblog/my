@@ -1,6 +1,6 @@
 -- SPDX-License-Identifier: AGPL-3.0-only
 --
--- Idempotent setup that runs before Atlas applies schema/postgres, on both the target
+-- Idempotent setup that runs before Atlas applies the PostgreSQL schema, on both the target
 -- and the dev database (ADR-0023). It holds what Atlas Community Edition cannot manage.
 -- Every statement must be safe to run repeatedly.
 -- The schema needs no extension at present.
