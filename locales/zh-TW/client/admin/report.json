@@ -1,0 +1,562 @@
+{
+  "admin.report.account.deleted": {
+    "defaultMessage": "已刪除的帳號",
+    "description": "An account of a report that no longer exists."
+  },
+  "admin.report.account.loading": {
+    "defaultMessage": "載入中…",
+    "description": "While the name of a moderator loads."
+  },
+  "admin.report.action.deleted": {
+    "defaultMessage": "此帳號已不存在，因此無法執行處置。",
+    "description": "Instead of the action form when the reported account no longer exists."
+  },
+  "admin.report.action.issued": {
+    "defaultMessage": "已執行處置（{kind}）。此檢舉已結案。",
+    "description": "Status message after taking an account action from a report; kind is the kind of action."
+  },
+  "admin.report.action.missing_permission": {
+    "defaultMessage": "對帳號執行處置需要 manage_accounts 權限。",
+    "description": "Instead of the action form for a moderator without manage_accounts."
+  },
+  "admin.report.action.title": {
+    "defaultMessage": "對帳號執行處置",
+    "description": "Heading of the form of an account action on a report's page."
+  },
+  "admin.report.assign": {
+    "defaultMessage": "指派給我",
+    "description": "Button that makes the viewer the moderator who handles a report."
+  },
+  "admin.report.assign.take_over": {
+    "defaultMessage": "接手",
+    "description": "Button that makes the viewer the moderator who handles a report that another moderator handles."
+  },
+  "admin.report.assign_failed": {
+    "defaultMessage": "無法將檢舉指派給你：{reason}",
+    "description": "Toast when taking a report fails."
+  },
+  "admin.report.assigned": {
+    "defaultMessage": "現在由你處理此檢舉。",
+    "description": "Status message after taking a report."
+  },
+  "admin.report.assignee": {
+    "defaultMessage": "負責人",
+    "description": "Term: the moderator who handles a report."
+  },
+  "admin.report.assignee.none": {
+    "defaultMessage": "無人",
+    "description": "Nobody handles the report."
+  },
+  "admin.report.assignee.title": {
+    "defaultMessage": "負責人",
+    "description": "Heading of the region of a report's page with the moderator who handles it."
+  },
+  "admin.report.assignee.you": {
+    "defaultMessage": "你",
+    "description": "The viewer handles the report, or wrote the note."
+  },
+  "admin.report.back": {
+    "defaultMessage": "返回檢舉",
+    "description": "Link from a report's page back to the queue."
+  },
+  "admin.report.category": {
+    "defaultMessage": "分類",
+    "description": "Term: the category of a report."
+  },
+  "admin.report.comment": {
+    "defaultMessage": "留言",
+    "description": "Term: the reporter's comment."
+  },
+  "admin.report.comment.none": {
+    "defaultMessage": "沒有留言",
+    "description": "A report without a comment."
+  },
+  "admin.report.filed_at": {
+    "defaultMessage": "檢舉時間",
+    "description": "Term: when a report was filed."
+  },
+  "admin.report.forward": {
+    "defaultMessage": "轉送到對方伺服器",
+    "description": "Button that forwards a report to the server of the reported remote account."
+  },
+  "admin.report.forward.description": {
+    "defaultMessage": "將你的伺服器的檢舉傳送到該帳號的伺服器，內容包含帳號、貼文與下方的文字。不會傳送任何檢舉者的資訊。只會傳送一次。",
+    "description": "Help of the button that forwards a report to the server of the reported account."
+  },
+  "admin.report.forward_failed": {
+    "defaultMessage": "無法轉送檢舉：{reason}",
+    "description": "Toast when forwarding a report fails."
+  },
+  "admin.report.forwarded": {
+    "defaultMessage": "已轉送",
+    "description": "Term: whether the report was forwarded to the target's server."
+  },
+  "admin.report.hook_origin": {
+    "defaultMessage": "自動審查",
+    "description": "Term of a report: the external review that filed it, instead of a person."
+  },
+  "admin.report.hook_origin.value": {
+    "defaultMessage": "由 {hook} 的審查提出，而非由人提出。",
+    "description": "Value of the term of a report filed by an external review. {hook} is the name of the review."
+  },
+  "admin.report.hook_origin.reason": {
+    "defaultMessage": "審查的理由：{reason}",
+    "description": "The coded reason the external review gave. {reason} is the label of the code, such as Spam."
+  },
+  "admin.report.forwarded.no": {
+    "defaultMessage": "否",
+    "description": "The report was not forwarded."
+  },
+  "admin.report.forwarded.yes": {
+    "defaultMessage": "已轉送到該帳號的伺服器",
+    "description": "The report was forwarded to the target's server."
+  },
+  "admin.report.forwarded_now": {
+    "defaultMessage": "已將檢舉轉送到該帳號的伺服器。",
+    "description": "Status message after forwarding a report."
+  },
+  "admin.report.history.empty": {
+    "defaultMessage": "此帳號還沒有任何處置",
+    "description": "Empty state of the actions on a report's target."
+  },
+  "admin.report.history.failed": {
+    "defaultMessage": "無法載入處置",
+    "description": "Error of the list of actions on a report's target."
+  },
+  "admin.report.history.loading": {
+    "defaultMessage": "正在載入處置",
+    "description": "While the actions on a report's target load."
+  },
+  "admin.report.history.title": {
+    "defaultMessage": "對此帳號的處置",
+    "description": "Heading of the list of moderation actions on a report's target."
+  },
+  "admin.report.notes.added": {
+    "defaultMessage": "已新增備註。",
+    "description": "Status message after adding a note to a report."
+  },
+  "admin.report.notes.blank": {
+    "defaultMessage": "請撰寫備註。",
+    "description": "Error of an empty note."
+  },
+  "admin.report.notes.cli": {
+    "defaultMessage": "命令列",
+    "description": "The author of a note added from the command line."
+  },
+  "admin.report.notes.empty": {
+    "defaultMessage": "還沒有備註。",
+    "description": "A report without notes."
+  },
+  "admin.report.notes.failed": {
+    "defaultMessage": "無法新增備註：{reason}",
+    "description": "Error under the note field when adding fails."
+  },
+  "admin.report.notes.new": {
+    "defaultMessage": "新備註",
+    "description": "Label of the field of a new note on a report."
+  },
+  "admin.report.notes.new.description": {
+    "defaultMessage": "只有版主看得到備註。備註無法變更或移除。",
+    "description": "Help of the field of a new note."
+  },
+  "admin.report.notes.submit": {
+    "defaultMessage": "新增備註",
+    "description": "Button that adds a note to a report."
+  },
+  "admin.report.notes.title": {
+    "defaultMessage": "備註",
+    "description": "Heading of the moderators' notes on a report."
+  },
+  "admin.report.notes.too_long": {
+    "defaultMessage": "最多只能使用 {max, number} 個字元",
+    "description": "Error of a note that is too long."
+  },
+  "admin.report.of": {
+    "defaultMessage": "對 {target} 的檢舉",
+    "description": "Heading of a report in the queue; target is the reported account's @handle."
+  },
+  "admin.report.of_deleted": {
+    "defaultMessage": "對已刪除帳號的檢舉",
+    "description": "Heading of a report in the queue whose target no longer exists."
+  },
+  "admin.report.origin": {
+    "defaultMessage": "來源",
+    "description": "Term: where the report came from."
+  },
+  "admin.report.origin.local": {
+    "defaultMessage": "此伺服器",
+    "description": "A report filed by a user of this server."
+  },
+  "admin.report.origin.remote": {
+    "defaultMessage": "其他伺服器",
+    "description": "A report sent by another server."
+  },
+  "admin.report.outcome": {
+    "defaultMessage": "結果",
+    "description": "Term: how a report was resolved."
+  },
+  "admin.report.posts": {
+    "defaultMessage": "貼文",
+    "description": "Term: the posts a report points at."
+  },
+  "admin.report.posts.count": {
+    "defaultMessage": "{count, plural, =0 {無} other {# 則貼文}}",
+    "description": "Number of posts a report points at."
+  },
+  "admin.report.posts.deleted": {
+    "defaultMessage": "已於 {date} 刪除。為此檢舉保留。",
+    "description": "Above a reported post that was deleted, which the report keeps for the moderators; date is when it was deleted, formatted."
+  },
+  "admin.report.posts.missing": {
+    "defaultMessage": "伺服器已不再保有這則貼文。",
+    "description": "A reported post that the server no longer has (it was deleted and erased)."
+  },
+  "admin.report.posts.none": {
+    "defaultMessage": "此檢舉沒有指向任何貼文。",
+    "description": "A report without posts."
+  },
+  "admin.report.posts.title": {
+    "defaultMessage": "被檢舉的貼文",
+    "description": "Heading of the posts of a report."
+  },
+  "admin.report.reopen": {
+    "defaultMessage": "重新開啟",
+    "description": "Button that puts a resolved report back in the queue."
+  },
+  "admin.report.reopen.description": {
+    "defaultMessage": "重新開啟會將檢舉放回未處理的檢舉中。結案時不會再次通知檢舉者。",
+    "description": "Help of the reopen button."
+  },
+  "admin.report.reopen_failed": {
+    "defaultMessage": "無法重新開啟檢舉：{reason}",
+    "description": "Toast when reopening fails."
+  },
+  "admin.report.reopened": {
+    "defaultMessage": "檢舉已重新開啟。",
+    "description": "Status message after reopening."
+  },
+  "admin.report.reporter": {
+    "defaultMessage": "檢舉者",
+    "description": "Term: the account that filed the report."
+  },
+  "admin.report.resolution.title": {
+    "defaultMessage": "處理",
+    "description": "Heading of the region of a report's page where it is resolved or reopened."
+  },
+  "admin.report.resolve.actioned": {
+    "defaultMessage": "標記為已在其他地方處置",
+    "description": "Button that resolves a report as actioned, with the action taken elsewhere."
+  },
+  "admin.report.resolve.description": {
+    "defaultMessage": "若不需要任何處置，請駁回檢舉。若已在其他畫面（例如帳號頁面）執行處置，請標記為已處置。",
+    "description": "Help of the buttons that resolve a report without an action."
+  },
+  "admin.report.resolve.dismissed": {
+    "defaultMessage": "駁回檢舉",
+    "description": "Button that resolves a report as dismissed."
+  },
+  "admin.report.resolve.title": {
+    "defaultMessage": "不在此處執行處置即結案",
+    "description": "Heading of the buttons that resolve a report without an action."
+  },
+  "admin.report.resolve_failed": {
+    "defaultMessage": "無法結案：{reason}",
+    "description": "Toast when resolving fails."
+  },
+  "admin.report.resolved": {
+    "defaultMessage": "檢舉已結案：{outcome}。",
+    "description": "Status message after resolving; outcome is how it was resolved."
+  },
+  "admin.report.resolved_at": {
+    "defaultMessage": "結案時間",
+    "description": "Term: when the report was resolved."
+  },
+  "admin.report.rules": {
+    "defaultMessage": "引用的規則",
+    "description": "Term: the instance rules the report cites."
+  },
+  "admin.report.rules.loading": {
+    "defaultMessage": "正在載入規則",
+    "description": "While the cited rules load."
+  },
+  "admin.report.rules.retired": {
+    "defaultMessage": "已不再生效的規則",
+    "description": "A cited rule that the instance no longer has."
+  },
+  "admin.report.state": {
+    "defaultMessage": "狀態",
+    "description": "Term: whether the report is open or resolved."
+  },
+  "admin.report.summary.title": {
+    "defaultMessage": "檢舉",
+    "description": "Heading of the region of a report's page with the report itself."
+  },
+  "admin.report.target.actions": {
+    "defaultMessage": "對此帳號的處置",
+    "description": "Term: the number of moderation actions on the target."
+  },
+  "admin.report.target.actions.count": {
+    "defaultMessage": "{count, plural, =0 {無} other {# 項處置}}",
+    "description": "Number of moderation actions on the target."
+  },
+  "admin.report.target.admin": {
+    "defaultMessage": "開啟帳號的管理頁面",
+    "description": "Link to the target's admin page."
+  },
+  "admin.report.target.audit": {
+    "defaultMessage": "在稽核日誌中顯示對此帳號的操作",
+    "description": "Link to the audit log filtered to the target."
+  },
+  "admin.report.target.deleted": {
+    "defaultMessage": "被檢舉的帳號已刪除。",
+    "description": "A report whose target no longer exists."
+  },
+  "admin.report.target.profile": {
+    "defaultMessage": "開啟個人檔案",
+    "description": "Link to the target's profile."
+  },
+  "admin.report.target.reports": {
+    "defaultMessage": "其他檢舉",
+    "description": "Term: the number of the target's other reports."
+  },
+  "admin.report.target.reports.count": {
+    "defaultMessage": "{count, plural, =0 {無} other {# 則檢舉}}",
+    "description": "Number of the target's other reports."
+  },
+  "admin.report.target.title": {
+    "defaultMessage": "被檢舉的帳號",
+    "description": "Heading of the region of a report's page with its target."
+  },
+  "admin.report.title": {
+    "defaultMessage": "檢舉",
+    "description": "Heading and title of a report's page."
+  },
+  "admin.report.unassign": {
+    "defaultMessage": "取消指派",
+    "description": "Button that leaves a report to nobody."
+  },
+  "admin.report.unassign_failed": {
+    "defaultMessage": "無法取消指派檢舉：{reason}",
+    "description": "Toast when unassigning fails."
+  },
+  "admin.report.unassigned": {
+    "defaultMessage": "現在沒有人處理此檢舉。",
+    "description": "Status message after unassigning."
+  },
+  "admin.report.voice.title": {
+    "defaultMessage": "語音聊天室",
+    "description": "Heading of the section of a report's page about the reported voice chat room."
+  },
+  "admin.report.voice.state": {
+    "defaultMessage": "狀態",
+    "description": "Term: whether the reported voice chat room is open or ended."
+  },
+  "admin.report.voice.state.open": {
+    "defaultMessage": "進行中",
+    "description": "Value: the voice chat room is open."
+  },
+  "admin.report.voice.state.ended": {
+    "defaultMessage": "已結束",
+    "description": "Value: the voice chat room has ended."
+  },
+  "admin.report.voice.opened_at": {
+    "defaultMessage": "開啟時間",
+    "description": "Term: when the voice chat room was opened."
+  },
+  "admin.report.voice.ended_at": {
+    "defaultMessage": "結束時間",
+    "description": "Term: when the voice chat room ended."
+  },
+  "admin.report.voice.end_reason": {
+    "defaultMessage": "結束原因",
+    "description": "Term: why the voice chat room ended."
+  },
+  "admin.report.voice.ended_by": {
+    "defaultMessage": "結束者",
+    "description": "Term: who ended the voice chat room."
+  },
+  "admin.report.voice.end_note": {
+    "defaultMessage": "版主的理由",
+    "description": "Term: the reason a moderator gave for ending the voice chat room."
+  },
+  "admin.report.voice.records": {
+    "defaultMessage": "聊天室結束後，伺服器會保留參與者的紀錄一段時間；只要仍有檢舉指向此聊天室，也會持續保留。",
+    "description": "Explanation under the heading of the reported voice chat room."
+  },
+  "admin.report.voice.revisions": {
+    "defaultMessage": "設定的修訂紀錄",
+    "description": "Heading of the list of the revisions of the settings of the reported voice chat room, oldest first."
+  },
+  "admin.report.voice.revision.reported": {
+    "defaultMessage": "檢舉當時",
+    "description": "Tag on the revision of the settings that was in effect when the voice chat room was reported."
+  },
+  "admin.report.voice.revision.name": {
+    "defaultMessage": "名稱",
+    "description": "Term: the name of the voice chat room in a revision."
+  },
+  "admin.report.voice.revision.description": {
+    "defaultMessage": "說明",
+    "description": "Term: the description of the voice chat room in a revision."
+  },
+  "admin.report.voice.revision.hashtags": {
+    "defaultMessage": "主題標籤",
+    "description": "Term: the hashtags of the voice chat room in a revision."
+  },
+  "admin.report.voice.revision.visibility": {
+    "defaultMessage": "誰可以查看與加入",
+    "description": "Term: the visibility of the voice chat room in a revision."
+  },
+  "admin.report.voice.revision.speakers": {
+    "defaultMessage": "誰可以不經請求發言",
+    "description": "Term: who may speak in the voice chat room in a revision."
+  },
+  "admin.report.voice.revision.by": {
+    "defaultMessage": "設定者",
+    "description": "Term: who set this revision of the settings of the voice chat room."
+  },
+  "admin.report.voice.revision.at": {
+    "defaultMessage": "設定時間",
+    "description": "Term: when this revision of the settings of the voice chat room was set."
+  },
+  "admin.report.voice.revision.erased": {
+    "defaultMessage": "已隨撰寫者的帳號一併清除",
+    "description": "Value of a name or description of a voice chat room erased with its author's account."
+  },
+  "admin.report.voice.revision.none": {
+    "defaultMessage": "無",
+    "description": "Value of an empty description or of no hashtags of a voice chat room."
+  },
+  "admin.report.voice.participations": {
+    "defaultMessage": "參與者",
+    "description": "Heading of the records of who took part in the reported voice chat room."
+  },
+  "admin.report.voice.participations.empty": {
+    "defaultMessage": "沒有保留參與者的紀錄。",
+    "description": "Shown when no records of the participants of the reported voice chat room remain."
+  },
+  "admin.report.voice.joined_at": {
+    "defaultMessage": "加入時間",
+    "description": "Term: when the account joined the voice chat room."
+  },
+  "admin.report.voice.left_at": {
+    "defaultMessage": "離開時間",
+    "description": "Term: when the account left the voice chat room."
+  },
+  "admin.report.voice.still_in": {
+    "defaultMessage": "仍在聊天室中",
+    "description": "Value of when an account left a voice chat room, while it is still in it."
+  },
+  "admin.report.voice.leave_reason": {
+    "defaultMessage": "離開原因",
+    "description": "Term: why the account left the voice chat room."
+  },
+  "admin.report.voice.leave_reason.left": {
+    "defaultMessage": "自行離開",
+    "description": "Why an account left a voice chat room: it left."
+  },
+  "admin.report.voice.leave_reason.moved": {
+    "defaultMessage": "加入了其他聊天室",
+    "description": "Why an account left a voice chat room: it joined another one."
+  },
+  "admin.report.voice.leave_reason.disconnected": {
+    "defaultMessage": "連線中斷",
+    "description": "Why an account left a voice chat room: its connection was lost."
+  },
+  "admin.report.voice.leave_reason.removed": {
+    "defaultMessage": "被主持人移除",
+    "description": "Why an account left a voice chat room: a host removed it."
+  },
+  "admin.report.voice.leave_reason.blocked": {
+    "defaultMessage": "與主持人之間有封鎖",
+    "description": "Why an account left a voice chat room: it and the host blocked each other one way or the other."
+  },
+  "admin.report.voice.leave_reason.suspended": {
+    "defaultMessage": "帳號已停權",
+    "description": "Why an account left a voice chat room: the account was suspended."
+  },
+  "admin.report.voice.leave_reason.room_ended": {
+    "defaultMessage": "聊天室已結束",
+    "description": "Why an account left a voice chat room: the room ended."
+  },
+  "admin.report.voice.leave_reason.other": {
+    "defaultMessage": "其他",
+    "description": "Why an account left a voice chat room, for a reason this app does not know."
+  },
+  "admin.report.voice.bans": {
+    "defaultMessage": "已從聊天室移除",
+    "description": "Heading of the accounts removed from the reported voice chat room, who may not join again."
+  },
+  "admin.report.voice.bans.empty": {
+    "defaultMessage": "沒有人被從聊天室移除。",
+    "description": "Shown when no account was removed from the reported voice chat room."
+  },
+  "admin.report.voice.banned_by": {
+    "defaultMessage": "移除者",
+    "description": "Term: who removed the account from the voice chat room."
+  },
+  "admin.report.voice.banned_at": {
+    "defaultMessage": "移除時間",
+    "description": "Term: when the account was removed from the voice chat room."
+  },
+  "admin.report.voice.end": {
+    "defaultMessage": "結束聊天室",
+    "description": "Button that ends the reported voice chat room for everyone in it, and the confirm button of its dialog."
+  },
+  "admin.report.voice.end.description": {
+    "defaultMessage": "為聊天室中的所有人結束通話。稽核日誌會記錄此操作。",
+    "description": "Explanation next to the button that ends the reported voice chat room."
+  },
+  "admin.report.voice.end.confirm.title": {
+    "defaultMessage": "要結束這個聊天室嗎？",
+    "description": "Title of the confirmation before a moderator ends a voice chat room."
+  },
+  "admin.report.voice.end.confirm.description": {
+    "defaultMessage": "聊天室中的所有人都會中斷連線，且聊天室無法再次開啟。",
+    "description": "Description of the confirmation before a moderator ends a voice chat room."
+  },
+  "admin.report.voice.end.note_field": {
+    "defaultMessage": "理由（選填）",
+    "description": "Label of the optional reason a moderator gives for ending a voice chat room."
+  },
+  "admin.report.voice.end.note_field.description": {
+    "defaultMessage": "只有版主看得到，參與者永遠看不到。",
+    "description": "Description of the reason for ending a voice chat room."
+  },
+  "admin.report.voice.end.note_field.too_long": {
+    "defaultMessage": "請輸入最多 {max} 個字元的理由。",
+    "description": "Error of the reason for ending a voice chat room when it is too long."
+  },
+  "admin.report.voice.end.cancel": {
+    "defaultMessage": "取消",
+    "description": "Button that closes the confirmation of ending a voice chat room without ending it."
+  },
+  "admin.report.voice.end.failed": {
+    "defaultMessage": "無法結束聊天室：{reason}",
+    "description": "Error in the confirmation when ending a voice chat room failed. {reason} is why."
+  },
+  "admin.report.voice.ended": {
+    "defaultMessage": "已結束聊天室。",
+    "description": "Message after a moderator ended the reported voice chat room."
+  },
+  "admin.report.assignee.other": {
+    "defaultMessage": "已指派",
+    "description": "Badge of an open report that another moderator handles; their name follows it."
+  },
+  "admin.report.assignee.unassigned": {
+    "defaultMessage": "未指派",
+    "description": "Badge of an open report that nobody handles yet."
+  },
+  "admin.report.forward.comment": {
+    "defaultMessage": "給對方版主的文字",
+    "description": "Label of the optional field whose text is sent with a report forwarded to the reported account's server."
+  },
+  "admin.report.forward.comment.description": {
+    "defaultMessage": "選填。這是唯一會傳送的文字：檢舉者的留言會留在此伺服器。",
+    "description": "Help of the field whose text is sent with a forwarded report."
+  },
+  "admin.report.forward.comment.too_long": {
+    "defaultMessage": "最多只能使用 {max, number} 個字元",
+    "description": "Error of the field of a forwarded report's text when it is too long. {max} is the limit."
+  }
+}

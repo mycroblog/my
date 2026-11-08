@@ -1,0 +1,254 @@
+{
+  "admin.announcements.announcement_title": {
+    "defaultMessage": "標題",
+    "description": "Label of the field of an announcement's title."
+  },
+  "admin.announcements.announcement_title.description": {
+    "defaultMessage": "純文字，會作為列表、通知與側欄中的標題。{count, plural, other {還剩 # 個字元}}",
+    "description": "Description of the field of an announcement's title. {count} is how many characters may still be added, out of 100."
+  },
+  "admin.announcements.back": {
+    "defaultMessage": "返回公告",
+    "description": "Link from the page of an announcement, or the page that writes one, back to the list of announcements."
+  },
+  "admin.announcements.cancel": {
+    "defaultMessage": "取消",
+    "description": "Button that leaves the dialog that withdraws an announcement without changing anything."
+  },
+  "admin.announcements.change_failed": {
+    "defaultMessage": "無法變更公告：{reason}",
+    "description": "Error after a change of an announcement failed. {reason} is why."
+  },
+  "admin.announcements.column.announcement": {
+    "defaultMessage": "公告",
+    "description": "Column header of the table of announcements: the title of each, a link to its page."
+  },
+  "admin.announcements.column.period": {
+    "defaultMessage": "顯示期間",
+    "description": "Column header of the table of announcements: when each shows."
+  },
+  "admin.announcements.create_draft": {
+    "defaultMessage": "儲存為草稿",
+    "description": "Button that writes a new announcement as a draft."
+  },
+  "admin.announcements.create_failed": {
+    "defaultMessage": "無法撰寫公告：{reason}",
+    "description": "Error after writing an announcement failed. {reason} is why."
+  },
+  "admin.announcements.create_published": {
+    "defaultMessage": "發布公告",
+    "description": "Button that writes a new announcement and publishes it."
+  },
+  "admin.announcements.created_at": {
+    "defaultMessage": "撰寫時間",
+    "description": "Term of when an announcement was written."
+  },
+  "admin.announcements.description": {
+    "defaultMessage": "公告會顯示給此伺服器上的所有人。在你發布公告或公告開始顯示時（以較晚者為準），所有人都會收到通知。稽核日誌會記錄每次變更。",
+    "description": "Description at the top of the admin screen of the announcements."
+  },
+  "admin.announcements.detail.title": {
+    "defaultMessage": "公告",
+    "description": "Title of the page of one announcement in the admin screens."
+  },
+  "admin.announcements.duration": {
+    "defaultMessage": "顯示期間",
+    "description": "Label of how long a new announcement shows."
+  },
+  "admin.announcements.duration.description": {
+    "defaultMessage": "從撰寫時開始計算，期滿後即停止顯示。",
+    "description": "Description of how long a new announcement shows."
+  },
+  "admin.announcements.edit.description": {
+    "defaultMessage": "變更已發布的公告不會再次通知任何人。",
+    "description": "Note on the region of an announcement's page that edits its title and text."
+  },
+  "admin.announcements.edit.title": {
+    "defaultMessage": "編輯公告",
+    "description": "Heading of the region of an announcement's page that edits its title and text."
+  },
+  "admin.announcements.empty": {
+    "defaultMessage": "沒有公告",
+    "description": "Heading of the table of every announcement when there are none."
+  },
+  "admin.announcements.empty.description": {
+    "defaultMessage": "你撰寫的公告會顯示在這裡。",
+    "description": "Description of the table of every announcement when there are none."
+  },
+  "admin.announcements.empty.filtered": {
+    "defaultMessage": "此列表中沒有公告",
+    "description": "Heading of the table of announcements when none is in the selected state."
+  },
+  "admin.announcements.ends_at": {
+    "defaultMessage": "顯示至",
+    "description": "Term of when an announcement stops showing."
+  },
+  "admin.announcements.filter.all": {
+    "defaultMessage": "所有公告",
+    "description": "Filter of the announcements: every one, in any state."
+  },
+  "admin.announcements.filter.draft": {
+    "defaultMessage": "草稿",
+    "description": "Filter of the announcements: the drafts."
+  },
+  "admin.announcements.filter.ended": {
+    "defaultMessage": "已結束",
+    "description": "Filter of the announcements: the published ones whose time to show has ended."
+  },
+  "admin.announcements.filter.label": {
+    "defaultMessage": "依狀態篩選公告",
+    "description": "Accessible name of the list that selects which announcements the table shows."
+  },
+  "admin.announcements.filter.scheduled": {
+    "defaultMessage": "已排程",
+    "description": "Filter of the announcements: the published ones whose time to show has not started yet."
+  },
+  "admin.announcements.filter.showing": {
+    "defaultMessage": "顯示中",
+    "description": "Filter of the announcements: the published ones everyone sees now."
+  },
+  "admin.announcements.filter.withdrawn": {
+    "defaultMessage": "已撤回",
+    "description": "Filter of the announcements: the withdrawn ones."
+  },
+  "admin.announcements.new.title": {
+    "defaultMessage": "撰寫公告",
+    "description": "Title of the page that writes a new announcement, and of the link to it from the list."
+  },
+  "admin.announcements.period.from": {
+    "defaultMessage": "自 {date} 起",
+    "description": "When an announcement starts to show, in the table of announcements. {date} is a date and time."
+  },
+  "admin.announcements.period.on_publication": {
+    "defaultMessage": "自發布時起",
+    "description": "When a draft announcement will start to show: as soon as it is published."
+  },
+  "admin.announcements.period.until": {
+    "defaultMessage": "至 {date} 止",
+    "description": "When an announcement stops showing, in the table of announcements. {date} is a date and time."
+  },
+  "admin.announcements.phase.draft": {
+    "defaultMessage": "草稿",
+    "description": "State of an announcement that is a draft, which only the administrators see."
+  },
+  "admin.announcements.phase.ended": {
+    "defaultMessage": "已結束",
+    "description": "State of a published announcement whose time to show has ended."
+  },
+  "admin.announcements.phase.scheduled": {
+    "defaultMessage": "已排程",
+    "description": "State of a published announcement whose time to show has not started yet."
+  },
+  "admin.announcements.phase.showing": {
+    "defaultMessage": "顯示中",
+    "description": "State of a published announcement that everyone sees now."
+  },
+  "admin.announcements.phase.withdrawn": {
+    "defaultMessage": "已撤回",
+    "description": "State of an announcement withdrawn for good."
+  },
+  "admin.announcements.preview": {
+    "defaultMessage": "所有人看到的樣子",
+    "description": "Heading of the region of an announcement's page with its title and text as the users see them."
+  },
+  "admin.announcements.preview.description": {
+    "defaultMessage": "標題與內文在此伺服器上對所有人顯示的樣子。",
+    "description": "Description of the region of an announcement's page with its title and text as the users see them."
+  },
+  "admin.announcements.publish": {
+    "defaultMessage": "發布",
+    "description": "Button on the page of a draft announcement that publishes it."
+  },
+  "admin.announcements.publish_now": {
+    "defaultMessage": "立即發布",
+    "description": "Checkbox that publishes a new announcement at once."
+  },
+  "admin.announcements.publish_now.description": {
+    "defaultMessage": "若不勾選，公告會保留為只有管理員看得到的草稿。",
+    "description": "Description of the checkbox that publishes a new announcement at once."
+  },
+  "admin.announcements.published_at": {
+    "defaultMessage": "發布時間",
+    "description": "Term of when an announcement was published."
+  },
+  "admin.announcements.published_one": {
+    "defaultMessage": "已發布 {announcement}。稽核日誌已記錄此變更。",
+    "description": "Status after a draft announcement was published. {announcement} is the first line of its text."
+  },
+  "admin.announcements.revised_at": {
+    "defaultMessage": "最後變更",
+    "description": "Term of when the title, the text or the time to show of an announcement last changed."
+  },
+  "admin.announcements.save": {
+    "defaultMessage": "儲存",
+    "description": "Button that saves the text of an announcement."
+  },
+  "admin.announcements.starts_at": {
+    "defaultMessage": "顯示自",
+    "description": "Term of when an announcement starts to show."
+  },
+  "admin.announcements.state": {
+    "defaultMessage": "狀態",
+    "description": "Term and column header of where an announcement is in its life (draft, scheduled, showing, ended, withdrawn)."
+  },
+  "admin.announcements.summary": {
+    "defaultMessage": "向此伺服器上的所有人告知維護與變更事項。",
+    "description": "Description of the announcements screen in the administration menu."
+  },
+  "admin.announcements.text": {
+    "defaultMessage": "內文",
+    "description": "Label of the text of an announcement."
+  },
+  "admin.announcements.text.description": {
+    "defaultMessage": "Markdown：段落、強調、列表、引用、程式碼與連結。原始 HTML 會被移除。",
+    "description": "Description of the text field of an announcement: which Markdown it takes."
+  },
+  "admin.announcements.text_required": {
+    "defaultMessage": "請撰寫公告內容。",
+    "description": "Error of an announcement without text."
+  },
+  "admin.announcements.title": {
+    "defaultMessage": "公告",
+    "description": "Title of the announcements screen, in the administration menu and as its heading."
+  },
+  "admin.announcements.title_required": {
+    "defaultMessage": "請為公告加上標題。",
+    "description": "Error of the field of an announcement's title when it is empty."
+  },
+  "admin.announcements.too_long": {
+    "defaultMessage": "最多只能使用 {max} 個字元。",
+    "description": "Error of the text of an announcement longer than its limit. {max} is the limit."
+  },
+  "admin.announcements.until_withdrawn": {
+    "defaultMessage": "直到撤回",
+    "description": "Choice of an announcement that shows until it is withdrawn, and the end of such an announcement."
+  },
+  "admin.announcements.updated": {
+    "defaultMessage": "已變更 {announcement}。稽核日誌已記錄此變更。",
+    "description": "Status after the text of an announcement was changed. {announcement} is the first line of its new text."
+  },
+  "admin.announcements.withdraw": {
+    "defaultMessage": "撤回",
+    "description": "Button that withdraws an announcement, and the confirming button of its dialog."
+  },
+  "admin.announcements.withdraw.description": {
+    "defaultMessage": "任何人都不會再看到這則公告，也無法再發布或變更它。",
+    "description": "Description of the dialog that confirms withdrawing an announcement."
+  },
+  "admin.announcements.withdraw.section": {
+    "defaultMessage": "撤回公告",
+    "description": "Heading of the region of an announcement's page that withdraws it for good."
+  },
+  "admin.announcements.withdraw.title": {
+    "defaultMessage": "要撤回 {announcement} 嗎？",
+    "description": "Title of the dialog that confirms withdrawing an announcement. {announcement} is the first line of its text."
+  },
+  "admin.announcements.withdrawn": {
+    "defaultMessage": "已撤回 {announcement}。稽核日誌已記錄此變更。",
+    "description": "Status after an announcement was withdrawn. {announcement} is the first line of its text."
+  },
+  "admin.announcements.withdrawn.description": {
+    "defaultMessage": "已撤回的公告無法再發布或變更。",
+    "description": "Note on the page of a withdrawn announcement."
+  }
+}

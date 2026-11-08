@@ -94,5 +94,127 @@
       "avoid": ["电话"],
       "note": "A narrow screen where the bottom tab bar is the navigation (\"phone\" in en)."
     }
+  ],
+  "zh-TW": [
+    {
+      "use": "你",
+      "avoid": ["您"],
+      "note": "How the copy addresses the user: the plain 你, as Taiwanese apps with a casual tone do (web-client G19)."
+    },
+    {
+      "use": "貼文",
+      "avoid": ["嘟文", "推文", "帖子"],
+      "note": "A post. Not the names of other services' posts; 推文 is also a reply on PTT."
+    },
+    {
+      "use": "轉發",
+      "avoid": ["轉嘟", "轉推"],
+      "note": "A boost."
+    },
+    {
+      "use": "喜歡",
+      "avoid": ["按讚", "點讚"],
+      "note": "A favourite."
+    },
+    {
+      "use": "帳號",
+      "avoid": ["賬號", "帳戶", "賬戶"],
+      "note": "An account. One spelling everywhere, as Taiwan writes it."
+    },
+    {
+      "use": "登入",
+      "avoid": ["登錄", "登陸"],
+      "note": "Starting a session."
+    },
+    {
+      "use": "登出",
+      "avoid": ["退出登錄", "註銷登錄"],
+      "note": "Ending a session. 註銷 is not used for it either."
+    },
+    {
+      "use": "追蹤",
+      "avoid": ["關注"],
+      "note": "Following an account, and a follower (追蹤者), as Taiwan says it."
+    },
+    {
+      "use": "追蹤者",
+      "avoid": ["粉絲"],
+      "note": "A follower."
+    },
+    {
+      "use": "靜音",
+      "avoid": ["屏蔽"],
+      "note": "Muting an account or a word."
+    },
+    {
+      "use": "封鎖",
+      "avoid": ["拉黑"],
+      "note": "Blocking an account or a domain."
+    },
+    {
+      "use": "檢舉",
+      "avoid": ["舉報"],
+      "note": "Reporting an account or a post to the moderators."
+    },
+    {
+      "use": "行動裝置",
+      "avoid": ["電話"],
+      "note": "A narrow screen where the bottom tab bar is the navigation (\"phone\" in en)."
+    },
+    {
+      "use": "使用者",
+      "avoid": ["用戶(?!端)"],
+      "note": "A person who uses the service. Taiwan's word, not the mainland's. 用戶端 (a client app) stays."
+    },
+    {
+      "use": "訊息",
+      "avoid": ["信息"],
+      "note": "A message or a piece of information (資訊 for information in general)."
+    },
+    {
+      "use": "預設",
+      "avoid": ["默認"],
+      "note": "A default value or setting."
+    },
+    {
+      "use": "伺服器",
+      "avoid": ["服務器"],
+      "note": "A server."
+    },
+    {
+      "use": "網路",
+      "avoid": ["網絡"],
+      "note": "A network or the internet."
+    },
+    {
+      "use": "軟體",
+      "avoid": ["軟件"],
+      "note": "Software."
+    },
+    {
+      "use": "資料庫",
+      "avoid": ["數據庫"],
+      "note": "A database."
+    },
+    {
+      "use": "連結",
+      "avoid": ["鏈接"],
+      "note": "A link."
+    },
+    {
+      "use": "載入",
+      "avoid": ["加載"],
+      "note": "Loading content."
+    },
+    {
+      "use": "搜尋",
+      "avoid": ["搜索"],
+      "note": "Searching."
+    },
+    {
+      "use": "影片",
+      "avoid": ["視頻"],
+      "note": "A video."
+    }
   ]
 }

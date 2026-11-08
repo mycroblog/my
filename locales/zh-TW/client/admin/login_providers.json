@@ -1,0 +1,374 @@
+{
+  "admin.login_providers.allow_link": {
+    "defaultMessage": "使用者可以連結帳號",
+    "description": "Checkbox: whether users may link their accounts to the provider."
+  },
+  "admin.login_providers.allow_link.description": {
+    "defaultMessage": "已登入的使用者可以在帳號設定中連結這個供應商，之後即可用它登入。",
+    "description": "Description of the checkbox that allows linking accounts to a login provider."
+  },
+  "admin.login_providers.allow_signup": {
+    "defaultMessage": "新使用者可以註冊",
+    "description": "Checkbox: whether new users may sign up with the provider."
+  },
+  "admin.login_providers.allow_signup.description": {
+    "defaultMessage": "沒有帳號的人可以在伺服器的註冊模式允許的範圍內，用這個供應商註冊。",
+    "description": "Description of the checkbox that allows signing up with a login provider."
+  },
+  "admin.login_providers.back": {
+    "defaultMessage": "返回登入服務",
+    "description": "Link from the page of a login provider, or of the form of a new one, back to the list."
+  },
+  "admin.login_providers.callback": {
+    "defaultMessage": "回呼 URL",
+    "description": "Label of a login provider's callback URL."
+  },
+  "admin.login_providers.callback.copied": {
+    "defaultMessage": "已複製回呼 URL。",
+    "description": "Toast after copying a callback URL."
+  },
+  "admin.login_providers.callback.copy": {
+    "defaultMessage": "複製",
+    "description": "Button that copies a login provider's callback URL."
+  },
+  "admin.login_providers.callback.copy_failed": {
+    "defaultMessage": "無法複製回呼 URL。",
+    "description": "Toast when copying a callback URL failed."
+  },
+  "admin.login_providers.callback.copy_of": {
+    "defaultMessage": "複製 {name} 的回呼 URL",
+    "description": "Accessible name of the button that copies a login provider's callback URL. {name} is its display name."
+  },
+  "admin.login_providers.callback.notice": {
+    "defaultMessage": "請在供應商端將這個回呼 URL 註冊為重新導向 URI。",
+    "description": "Notice after setting up a login provider, above its callback URL."
+  },
+  "admin.login_providers.cancel": {
+    "defaultMessage": "取消",
+    "description": "Button that closes a dialog of a login provider without changing it."
+  },
+  "admin.login_providers.change_failed": {
+    "defaultMessage": "無法變更登入服務：{reason}",
+    "description": "Error of a change of a login provider. {reason} is the server's reason."
+  },
+  "admin.login_providers.claims": {
+    "defaultMessage": "條件",
+    "description": "Legend of the conditions on the claims of an OpenID Connect provider."
+  },
+  "admin.login_providers.claims.add": {
+    "defaultMessage": "新增條件",
+    "description": "Button that adds a row of a claim condition."
+  },
+  "admin.login_providers.claims.claim": {
+    "defaultMessage": "條件 {number} 的 claim",
+    "description": "Label of the claim name of a condition row. {number} is the row's number."
+  },
+  "admin.login_providers.claims.description": {
+    "defaultMessage": "只有 ID 權杖中每個 claim 都符合其中一個值的使用者才能登入，例如用 hd 指定 Google Workspace 網域。若沒有條件，供應商的所有使用者都能登入。",
+    "description": "Description of the claim conditions of an OpenID Connect provider."
+  },
+  "admin.login_providers.claims.remove": {
+    "defaultMessage": "移除條件 {number}",
+    "description": "Button that removes a condition row. {number} is the row's number."
+  },
+  "admin.login_providers.claims.row": {
+    "defaultMessage": "條件 {number}",
+    "description": "Heading of a condition row. {number} is its number."
+  },
+  "admin.login_providers.claims.values": {
+    "defaultMessage": "條件 {number} 允許的值",
+    "description": "Label of the allowed values of a condition row, separated by commas. {number} is the row's number."
+  },
+  "admin.login_providers.client_id": {
+    "defaultMessage": "用戶端 ID",
+    "description": "Label of the client ID of a login provider."
+  },
+  "admin.login_providers.client_id.description_mastodon": {
+    "defaultMessage": "若要在該伺服器註冊用戶端，請將用戶端 ID 與密鑰留空；若該伺服器限制註冊，請輸入這兩項。",
+    "description": "Description of the client ID of a new Mastodon provider."
+  },
+  "admin.login_providers.client_secret": {
+    "defaultMessage": "用戶端密鑰",
+    "description": "Label of the client secret of a login provider."
+  },
+  "admin.login_providers.client_secret.description": {
+    "defaultMessage": "供應商發給你的密鑰。之後不會再顯示。",
+    "description": "Description of the client secret field."
+  },
+  "admin.login_providers.close": {
+    "defaultMessage": "關閉",
+    "description": "Accessible name of the button that closes a dialog of a login provider."
+  },
+  "admin.login_providers.conditions.incomplete": {
+    "defaultMessage": "每個條件都需要一個 claim 與至少一個值。",
+    "description": "Error of a condition row without its claim or values."
+  },
+  "admin.login_providers.created_at": {
+    "defaultMessage": "設定時間",
+    "description": "Column and term of when a login provider was set up."
+  },
+  "admin.login_providers.delete": {
+    "defaultMessage": "刪除",
+    "description": "Button that deletes a login provider, and the confirming button of its dialog."
+  },
+  "admin.login_providers.delete.description": {
+    "defaultMessage": "{count, plural, =0 {沒有使用者連結帳號到這個供應商。此操作無法復原。} other {# 位已連結的使用者將無法再用它登入；沒有密碼、通行金鑰或其他供應商的使用者將完全無法登入。此操作無法復原。}}",
+    "description": "Description of the dialog that confirms deleting a login provider. {count} is the number of linked users."
+  },
+  "admin.login_providers.delete.title": {
+    "defaultMessage": "要刪除 {name} 嗎？",
+    "description": "Title of the dialog that confirms deleting a login provider."
+  },
+  "admin.login_providers.deleted": {
+    "defaultMessage": "已刪除 {name}。",
+    "description": "Status after deleting a login provider."
+  },
+  "admin.login_providers.detail.title": {
+    "defaultMessage": "登入服務",
+    "description": "Heading of the page of one login provider."
+  },
+  "admin.login_providers.disable": {
+    "defaultMessage": "停用",
+    "description": "Button that disables a login provider, and the confirming button of its dialog."
+  },
+  "admin.login_providers.disable.description": {
+    "defaultMessage": "{count, plural, =0 {在重新啟用之前，任何人都無法用它登入、註冊或連結帳號。沒有使用者連結帳號到這個供應商。} other {在重新啟用之前，任何人都無法用它登入、註冊或連結帳號。# 位已連結的使用者將無法再用它登入；沒有密碼、通行金鑰或其他供應商的使用者將完全無法登入。}}",
+    "description": "Description of the dialog that confirms disabling a login provider. {count} is the number of linked users."
+  },
+  "admin.login_providers.disable.title": {
+    "defaultMessage": "要停用 {name} 嗎？",
+    "description": "Title of the dialog that confirms disabling a login provider."
+  },
+  "admin.login_providers.disabled_status": {
+    "defaultMessage": "已停用 {name}。",
+    "description": "Status after disabling a login provider."
+  },
+  "admin.login_providers.display_name": {
+    "defaultMessage": "顯示名稱",
+    "description": "Label of the display name of a login provider."
+  },
+  "admin.login_providers.display_name.description": {
+    "defaultMessage": "在管理畫面上顯示的名稱。",
+    "description": "Description of the display name of a GitHub or Mastodon provider."
+  },
+  "admin.login_providers.display_name.description_oidc": {
+    "defaultMessage": "在管理畫面上顯示的名稱，也會原樣顯示在登入按鈕上。",
+    "description": "Description of the display name of an OpenID Connect provider."
+  },
+  "admin.login_providers.edit.kind": {
+    "defaultMessage": "類型：{kind}",
+    "description": "The kind of the provider in its edit dialog, which cannot change. {kind} is the kind's name."
+  },
+  "admin.login_providers.empty": {
+    "defaultMessage": "尚無登入服務",
+    "description": "Heading of the empty list of login providers."
+  },
+  "admin.login_providers.empty.description": {
+    "defaultMessage": "使用者只能用密碼或通行金鑰登入。",
+    "description": "Description of the empty list of login providers."
+  },
+  "admin.login_providers.enable": {
+    "defaultMessage": "啟用",
+    "description": "Button that enables a login provider."
+  },
+  "admin.login_providers.enabled_status": {
+    "defaultMessage": "已啟用 {name}。",
+    "description": "Status after enabling a login provider."
+  },
+  "admin.login_providers.guilds": {
+    "defaultMessage": "Discord 伺服器",
+    "description": "Label of the Discord servers (guilds) a user must belong to."
+  },
+  "admin.login_providers.guilds.description": {
+    "defaultMessage": "只有其中一個 Discord 伺服器的成員才能登入；請輸入伺服器 ID，以逗號或空格分隔。若留空，所有 Discord 使用者都能登入。",
+    "description": "Description of the Discord servers field."
+  },
+  "admin.login_providers.guilds.invalid": {
+    "defaultMessage": "Discord 伺服器 ID 是最多 20 位數的數字。",
+    "description": "Error of a Discord server ID that is not a number."
+  },
+  "admin.login_providers.issuer": {
+    "defaultMessage": "簽發者",
+    "description": "Label of the OpenID Connect issuer URL of a login provider."
+  },
+  "admin.login_providers.issuer.description": {
+    "defaultMessage": "ID 權杖中指定為簽發者的 https URL，例如 https://accounts.google.com。",
+    "description": "Description of the issuer field."
+  },
+  "admin.login_providers.kind": {
+    "defaultMessage": "類型",
+    "description": "Label of the kind of a login provider, and the column of the list."
+  },
+  "admin.login_providers.kind.discord": {
+    "defaultMessage": "Discord",
+    "description": "Kind of login provider: discord.com."
+  },
+  "admin.login_providers.kind.github": {
+    "defaultMessage": "GitHub",
+    "description": "Kind of login provider: github.com."
+  },
+  "admin.login_providers.kind.mastodon": {
+    "defaultMessage": "Mastodon",
+    "description": "Kind of login provider: one Mastodon server."
+  },
+  "admin.login_providers.kind.oidc": {
+    "defaultMessage": "OpenID Connect",
+    "description": "Kind of login provider: an OpenID Connect provider."
+  },
+  "admin.login_providers.limit_start.affected": {
+    "defaultMessage": "{count, plural, =0 {所有活躍使用者都已連結這個供應商。} other {# 位活躍使用者沒有連結這個供應商，在工作階段結束後將無法登入。}}",
+    "description": "In the dialog: how many active users would have no link to a login provider once this one starts the limit."
+  },
+  "admin.login_providers.limit_start.confirm_add": {
+    "defaultMessage": "設定並開始限制",
+    "description": "Button of the dialog: sets up the provider, which starts the limit."
+  },
+  "admin.login_providers.limit_start.confirm_enable": {
+    "defaultMessage": "啟用並開始限制",
+    "description": "Button of the dialog: enables the provider, which starts the limit."
+  },
+  "admin.login_providers.limit_start.failed": {
+    "defaultMessage": "伺服器無法判斷這是否會開始限制只能透過登入服務登入。如果已設定此限制，且目前還沒有可用的供應商，限制會立即開始，沒有連結的使用者在工作階段結束後將無法登入。",
+    "description": "In the dialog when the count could not be read before setting up or enabling a login provider."
+  },
+  "admin.login_providers.limit_start.lead": {
+    "defaultMessage": "登入已設定為只能透過登入服務進行，而目前還沒有可用的供應商，因此這個供應商會立即開始限制：密碼與通行金鑰將無法再登入，密碼也無法再用於註冊或重設。",
+    "description": "First part of the dialog before a login provider starts the limit of sign-in to login providers."
+  },
+  "admin.login_providers.limit_start.recovery": {
+    "defaultMessage": "若要復原，請在伺服器設定的「註冊」頁面關閉此限制，或在伺服器上執行「my instance set login_providers_only false」。",
+    "description": "In the dialog: how to undo the limit."
+  },
+  "admin.login_providers.limit_start.self": {
+    "defaultMessage": "你也是其中之一：請在工作階段結束前，於「已連結的帳號」中連結這個供應商。",
+    "description": "In the dialog when the administrator who confirms would have no link to a login provider."
+  },
+  "admin.login_providers.limit_start.title": {
+    "defaultMessage": "要開始限制只能透過登入服務登入嗎？",
+    "description": "Title of the dialog before setting up or enabling a login provider starts the limit of sign-in to login providers."
+  },
+  "admin.login_providers.linked_users": {
+    "defaultMessage": "已連結的使用者",
+    "description": "Column of the list: the number of users linked to a login provider."
+  },
+  "admin.login_providers.linked_users.count": {
+    "defaultMessage": "{count, plural, other {# 位使用者}}",
+    "description": "The number of users linked to a login provider."
+  },
+  "admin.login_providers.list.title": {
+    "defaultMessage": "這個伺服器的登入服務",
+    "description": "Heading of the list of login providers."
+  },
+  "admin.login_providers.manage.title": {
+    "defaultMessage": "密鑰與狀態",
+    "description": "Heading of the section of a login provider's page that gives it a new client secret, enables, disables or deletes it."
+  },
+  "admin.login_providers.mastodon.conditions": {
+    "defaultMessage": "該伺服器的所有使用者都能用它登入。",
+    "description": "Note that a Mastodon provider has no conditions."
+  },
+  "admin.login_providers.new.title": {
+    "defaultMessage": "新增供應商",
+    "description": "Heading of the page with the form that sets up a login provider, and the link to it."
+  },
+  "admin.login_providers.organizations": {
+    "defaultMessage": "Organizations",
+    "description": "Label of the GitHub Organizations a user must belong to."
+  },
+  "admin.login_providers.organizations.description": {
+    "defaultMessage": "只有其中一個 GitHub Organization 的成員才能登入；請以逗號或空格分隔。若留空，所有 GitHub 使用者都能登入。",
+    "description": "Description of the Organizations field."
+  },
+  "admin.login_providers.provider": {
+    "defaultMessage": "供應商",
+    "description": "Column of the list: the display name, issuer and callback URL of a login provider."
+  },
+  "admin.login_providers.rotate": {
+    "defaultMessage": "新密鑰",
+    "description": "Button that opens the dialog that gives a login provider a new client secret."
+  },
+  "admin.login_providers.rotate.description": {
+    "defaultMessage": "請輸入供應商發給你的新用戶端密鑰。之前的密鑰將不再使用。",
+    "description": "Description of the dialog that gives a login provider a new client secret."
+  },
+  "admin.login_providers.rotate.submit": {
+    "defaultMessage": "儲存密鑰",
+    "description": "Button that saves a new client secret."
+  },
+  "admin.login_providers.rotate.title": {
+    "defaultMessage": "{name} 的新用戶端密鑰",
+    "description": "Title of the dialog that gives a login provider a new client secret."
+  },
+  "admin.login_providers.rotated": {
+    "defaultMessage": "{name} 已設定新的用戶端密鑰。",
+    "description": "Status after giving a login provider a new client secret."
+  },
+  "admin.login_providers.save": {
+    "defaultMessage": "儲存",
+    "description": "Button that saves the changes of a login provider."
+  },
+  "admin.login_providers.save_failed": {
+    "defaultMessage": "無法儲存登入服務：{reason}",
+    "description": "Error of a refused login provider. {reason} is the server's reason."
+  },
+  "admin.login_providers.scopes": {
+    "defaultMessage": "額外的 scope",
+    "description": "Label of the extra scopes of a login provider."
+  },
+  "admin.login_providers.scopes.description": {
+    "defaultMessage": "除了該類型所需的 scope 之外要額外要求的 scope，以空格分隔。",
+    "description": "Description of the extra scopes field."
+  },
+  "admin.login_providers.server": {
+    "defaultMessage": "伺服器",
+    "description": "Label of the Mastodon server of a login provider."
+  },
+  "admin.login_providers.server.description": {
+    "defaultMessage": "Mastodon 伺服器的網域，例如 mastodon.social。",
+    "description": "Description of the Mastodon server field."
+  },
+  "admin.login_providers.settings.title": {
+    "defaultMessage": "設定",
+    "description": "Heading of the section of a login provider's page with the form of its settings."
+  },
+  "admin.login_providers.signup": {
+    "defaultMessage": "註冊",
+    "description": "Term in a login provider's details: whether people may sign up with it."
+  },
+  "admin.login_providers.state": {
+    "defaultMessage": "狀態",
+    "description": "Column of the list: whether a login provider is enabled."
+  },
+  "admin.login_providers.state.disabled": {
+    "defaultMessage": "已停用",
+    "description": "State of a disabled login provider."
+  },
+  "admin.login_providers.state.enabled": {
+    "defaultMessage": "已啟用",
+    "description": "State of an enabled login provider."
+  },
+  "admin.login_providers.state.signup_allowed": {
+    "defaultMessage": "允許註冊",
+    "description": "Note that new users may sign up with a login provider."
+  },
+  "admin.login_providers.state.signup_closed": {
+    "defaultMessage": "僅限登入",
+    "description": "Note that new users may not sign up with a login provider."
+  },
+  "admin.login_providers.submit": {
+    "defaultMessage": "設定",
+    "description": "Button that sets up a login provider."
+  },
+  "admin.login_providers.summary": {
+    "defaultMessage": "讓使用者透過 OpenID Connect、GitHub、Discord 或 Mastodon 伺服器登入。",
+    "description": "Description of the login providers screen in the administration menu."
+  },
+  "admin.login_providers.title": {
+    "defaultMessage": "登入服務",
+    "description": "Heading of the login providers screen, and its link in the administration menu."
+  },
+  "admin.login_providers.updated": {
+    "defaultMessage": "已儲存 {name}。",
+    "description": "Status after changing a login provider."
+  }
+}

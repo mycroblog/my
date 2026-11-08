@@ -1,0 +1,1282 @@
+{
+  "admin.settings.audience.everyone": {
+    "defaultMessage": "所有人",
+    "description": "Choice of who may read something: everyone, visitors included."
+  },
+  "admin.settings.audience.off": {
+    "defaultMessage": "沒有人",
+    "description": "Choice of who may read something: nobody."
+  },
+  "admin.settings.audience.signed_in": {
+    "defaultMessage": "已登入的使用者",
+    "description": "Choice of who may read something: the server's signed-in users."
+  },
+  "admin.settings.characters_left": {
+    "defaultMessage": "{count, plural, other {還可輸入 # 個字元}}",
+    "description": "Character count under a text of the server settings and the rules while the text is within its limit."
+  },
+  "admin.settings.characters_over": {
+    "defaultMessage": "{count, plural, other {超出 # 個字元}}",
+    "description": "Character count under a text of the server settings and the rules when the text is over its limit."
+  },
+  "admin.settings.contact.account": {
+    "defaultMessage": "聯絡帳號",
+    "description": "Label of the field of the username of the account to contact about the server."
+  },
+  "admin.settings.contact.account.description": {
+    "defaultMessage": "這個伺服器上某個帳號的使用者名稱，例如 admin。",
+    "description": "Help under the field of the contact account: what to type in it."
+  },
+  "admin.settings.contact.description": {
+    "defaultMessage": "大家如何聯絡營運這個伺服器的人，以及代表這個伺服器的圖片。關於頁面、歡迎訪客的頁面以及其他伺服器（NodeInfo）都會顯示這些資訊。欄位留空則不顯示。",
+    "description": "Explanation above the fields of the server's contact and thumbnail on the server settings screen."
+  },
+  "admin.settings.contact.email": {
+    "defaultMessage": "聯絡電子郵件地址",
+    "description": "Label of the field of the email address to contact about the server."
+  },
+  "admin.settings.contact.email.description": {
+    "defaultMessage": "無論是否登入，所有人都看得到。",
+    "description": "Help under the field of the contact email address: who can see it."
+  },
+  "admin.settings.contact.email.invalid": {
+    "defaultMessage": "請輸入電子郵件地址，例如 admin@example.com。",
+    "description": "Error under the field of the contact email address when it is not an email address."
+  },
+  "admin.settings.contact.thumbnail": {
+    "defaultMessage": "縮圖",
+    "description": "Heading of the part of the form with the image that represents the server."
+  },
+  "admin.settings.contact.thumbnail.alt": {
+    "defaultMessage": "圖片描述",
+    "description": "Label of the alt text of the server's thumbnail."
+  },
+  "admin.settings.contact.thumbnail.choose": {
+    "defaultMessage": "選擇圖片",
+    "description": "Button that opens the file picker to choose the server's thumbnail."
+  },
+  "admin.settings.contact.thumbnail.description": {
+    "defaultMessage": "寬幅圖片，例如 1600 × 900 像素，顯示在關於頁面和歡迎訪客頁面的頂端。",
+    "description": "Help about the server's thumbnail: where it shows and what size suits it."
+  },
+  "admin.settings.contact.thumbnail.failed": {
+    "defaultMessage": "伺服器無法處理這張圖片。請改用其他圖片。",
+    "description": "Error when the chosen thumbnail could not be processed."
+  },
+  "admin.settings.contact.thumbnail.remove": {
+    "defaultMessage": "移除圖片",
+    "description": "Button that removes the server's thumbnail when the form is saved."
+  },
+  "admin.settings.contact.title": {
+    "defaultMessage": "聯絡資訊與縮圖",
+    "description": "Heading of the section of the server's contact and thumbnail on the server settings screen."
+  },
+  "admin.settings.descriptions.description": {
+    "defaultMessage": "簡短說明是一段文字，會在關於頁面和其他應用程式中顯示在伺服器名稱旁邊；完整說明則在關於頁面中提供更多資訊。以任何語言撰寫一次即可：無論應用程式使用哪種語言，所有人看到的都是原文。",
+    "description": "Description of the server's descriptions."
+  },
+  "admin.settings.descriptions.full": {
+    "defaultMessage": "說明",
+    "description": "Label of the server's full description."
+  },
+  "admin.settings.descriptions.short": {
+    "defaultMessage": "簡短說明",
+    "description": "Label of the server's short description."
+  },
+  "admin.settings.descriptions.title": {
+    "defaultMessage": "說明",
+    "description": "Heading of the section of the server's descriptions on the server settings screen."
+  },
+  "admin.settings.domain_actions.comments": {
+    "defaultMessage": "誰可以閱讀公開備註",
+    "description": "Label of the radio buttons of who may read the public comments of the domain actions."
+  },
+  "admin.settings.domain_actions.comments.everyone": {
+    "defaultMessage": "所有可以閱讀列表的人都看得到備註。",
+    "description": "Description of showing the comments of the domain actions to everyone."
+  },
+  "admin.settings.finance.title": {
+    "defaultMessage": "營運成本",
+    "description": "Heading of the section of the publication of the running costs in the server settings."
+  },
+  "admin.settings.finance.description": {
+    "defaultMessage": "關於頁面和 API 可以公開「成本」畫面中記錄的成本總額。項目的名稱、備註以及個別付款絕不會公開。",
+    "description": "Explanation of the publication of the running costs in the server settings."
+  },
+  "admin.settings.finance.visibility": {
+    "defaultMessage": "要公開的內容",
+    "description": "Label of the radio buttons of how much of the running costs the server publishes."
+  },
+  "admin.settings.finance.private": {
+    "defaultMessage": "不公開",
+    "description": "Choice of not publishing the running costs."
+  },
+  "admin.settings.finance.private.description": {
+    "defaultMessage": "只有管理成本的人看得到。",
+    "description": "Description of not publishing the running costs."
+  },
+  "admin.settings.finance.totals": {
+    "defaultMessage": "總額",
+    "description": "Choice of publishing the totals of the running costs only."
+  },
+  "admin.settings.finance.totals.description": {
+    "defaultMessage": "所有人都看得到每種貨幣的每週、每月和每年總額。",
+    "description": "Description of publishing the totals of the running costs only."
+  },
+  "admin.settings.finance.breakdown": {
+    "defaultMessage": "總額與明細",
+    "description": "Choice of publishing the running costs with their breakdown by provider and category."
+  },
+  "admin.settings.finance.breakdown.description": {
+    "defaultMessage": "所有人也看得到依服務商和類別區分的總額。這會透露營運這個伺服器所使用的服務商，例如雲端服務。",
+    "description": "Description of publishing the running costs with their breakdown, which reveals the providers that run the server."
+  },
+  "admin.settings.finance.viewer.description": {
+    "defaultMessage": "角色允許閱讀財務資訊的人，無論公開設定為何，都能在財務頁面上看到總額及依服務商和類別區分的明細。請選擇他們還能看到哪些內容。",
+    "description": "Introduction of the settings of what the holders of the view_finance permission see, in the costs section of the server settings."
+  },
+  "admin.settings.finance.viewer.item_names": {
+    "defaultMessage": "顯示項目名稱",
+    "description": "Checkbox of the server setting finance_viewer_item_names."
+  },
+  "admin.settings.finance.viewer.item_names.description": {
+    "defaultMessage": "記錄的成本名稱和匯入費用的服務名稱，以及其金額。",
+    "description": "Description of the checkbox of the server setting finance_viewer_item_names."
+  },
+  "admin.settings.finance.viewer.item_memos": {
+    "defaultMessage": "顯示項目備忘",
+    "description": "Checkbox of the server setting finance_viewer_item_memos."
+  },
+  "admin.settings.finance.viewer.item_memos.description": {
+    "defaultMessage": "記錄的成本備忘及其金額。備忘中可能含有只給營運者看的筆記。",
+    "description": "Description of the checkbox of the server setting finance_viewer_item_memos."
+  },
+  "admin.settings.finance.viewer.income": {
+    "defaultMessage": "收入",
+    "description": "Label of the choice of the server setting finance_viewer_income: how much of the income the holders of view_finance see."
+  },
+  "admin.settings.finance.viewer.income.totals": {
+    "defaultMessage": "僅總額",
+    "description": "Choice of showing the totals of the income only to the holders of view_finance."
+  },
+  "admin.settings.finance.viewer.income.totals.description": {
+    "defaultMessage": "每種貨幣的每週、每月和每年總額。",
+    "description": "Description of showing the totals of the income only."
+  },
+  "admin.settings.finance.viewer.income.plans": {
+    "defaultMessage": "總額與各方案的成員數",
+    "description": "Choice of showing the totals of the income and the number of members of each plan to the holders of view_finance."
+  },
+  "admin.settings.finance.viewer.income.plans.description": {
+    "defaultMessage": "也包含各方案的成員數，但絕不包含金額或成員身分。",
+    "description": "Description of showing the number of members of each plan too."
+  },
+  "admin.settings.income.title": {
+    "defaultMessage": "收入",
+    "description": "Heading of the section of the publication of the income in the server settings."
+  },
+  "admin.settings.income.description": {
+    "defaultMessage": "關於頁面和 API 可以公開支持者方案扣除金流服務商手續費和退款後的收入。付款人、每人付款金額、各方案的金額以及手續費絕不會公開。同時公開成本與收入時，收支結餘也會一併公開。",
+    "description": "Explanation of the publication of the income in the server settings."
+  },
+  "admin.settings.income.visibility": {
+    "defaultMessage": "要公開的內容",
+    "description": "Label of the radio buttons of how much of the income the server publishes."
+  },
+  "admin.settings.income.private": {
+    "defaultMessage": "不公開",
+    "description": "Choice of not publishing the income."
+  },
+  "admin.settings.income.private.description": {
+    "defaultMessage": "只有管理或可以閱讀財務資訊的人看得到。",
+    "description": "Description of not publishing the income."
+  },
+  "admin.settings.income.totals": {
+    "defaultMessage": "總額",
+    "description": "Choice of publishing the totals of the income only."
+  },
+  "admin.settings.income.totals.description": {
+    "defaultMessage": "所有人都看得到每種貨幣的每週、每月和每年收入。",
+    "description": "Description of publishing the totals of the income only."
+  },
+  "admin.settings.income.plans": {
+    "defaultMessage": "總額與各方案的成員數",
+    "description": "Choice of publishing the totals of the income and the number of members of each plan."
+  },
+  "admin.settings.income.plans.description": {
+    "defaultMessage": "所有人也看得到各方案目前的成員數，但絕不包含金額。成員較少的方案，可能會讓人猜出成員是誰。",
+    "description": "Description of publishing the number of members of each plan too, which may let people guess the members of a small plan."
+  },
+  "admin.settings.supporter_list.title": {
+    "defaultMessage": "支持者列表",
+    "description": "Heading of the section of the supporter list in the server settings."
+  },
+  "admin.settings.supporter_list.description": {
+    "defaultMessage": "/about/supporters 上的支持者列表會依方案顯示選擇列名的成員：只顯示其大頭貼、名稱和帳號代碼，絕不顯示金額或日期。一律要求搜尋引擎不要建立其索引。",
+    "description": "Explanation of the supporter list setting."
+  },
+  "admin.settings.supporter_list.visibility": {
+    "defaultMessage": "誰可以閱讀支持者列表",
+    "description": "Label of the choice of who may read the supporter list."
+  },
+  "admin.settings.supporter_list.off": {
+    "defaultMessage": "沒有人",
+    "description": "Choice: nobody may read the supporter list."
+  },
+  "admin.settings.supporter_list.off.description": {
+    "defaultMessage": "不公開列表，關於頁面也不會連結到它。",
+    "description": "Description of not publishing the supporter list."
+  },
+  "admin.settings.supporter_list.everyone": {
+    "defaultMessage": "所有人",
+    "description": "Choice: everyone may read the supporter list."
+  },
+  "admin.settings.supporter_list.everyone.description": {
+    "defaultMessage": "無論是否登入，任何人都可以閱讀列表。",
+    "description": "Description of publishing the supporter list to everyone."
+  },
+  "admin.settings.supporter_list.signed_in": {
+    "defaultMessage": "已登入的使用者",
+    "description": "Choice: only signed-in users may read the supporter list."
+  },
+  "admin.settings.supporter_list.signed_in.description": {
+    "defaultMessage": "只有已登入這個伺服器的人可以閱讀列表。",
+    "description": "Description of publishing the supporter list to signed-in users only."
+  },
+  "admin.settings.crawlers.title": {
+    "defaultMessage": "搜尋引擎與 AI",
+    "description": "Heading of the section of the server settings about search engines and AI crawlers."
+  },
+  "admin.settings.crawlers.description": {
+    "defaultMessage": "伺服器向搜尋引擎和 AI 爬蟲聲明的內容。在完成設定之前，伺服器會拒絕兩者。伺服器會根據這些設定和內建的已知 AI 爬蟲列表產生 robots.txt，並在每個頁面上聲明。每個帳號可以為自己的頁面拒絕更多，但不能更少。",
+    "description": "Explanation of the section of the server settings about search engines and AI crawlers."
+  },
+  "admin.settings.crawlers.search": {
+    "defaultMessage": "搜尋引擎",
+    "description": "Label of the radio group of whether search engines may index the server's pages (search_indexing)."
+  },
+  "admin.settings.crawlers.search.allow": {
+    "defaultMessage": "允許建立索引",
+    "description": "Choice that lets search engines index the pages of the accounts that allow it."
+  },
+  "admin.settings.crawlers.search.allow.description": {
+    "defaultMessage": "搜尋引擎可以為允許的帳號建立個人檔案和公開貼文的索引。其他頁面不會被建立索引。",
+    "description": "Description of letting search engines index pages."
+  },
+  "admin.settings.crawlers.search.deny": {
+    "defaultMessage": "拒絕建立索引",
+    "description": "Choice that asks search engines not to index any page."
+  },
+  "admin.settings.crawlers.search.deny.description": {
+    "defaultMessage": "每個頁面都會要求搜尋引擎不要建立索引（noindex）。連結預覽仍可正常運作。",
+    "description": "Description of asking search engines not to index any page."
+  },
+  "admin.settings.crawlers.indexable_default": {
+    "defaultMessage": "新帳號允許搜尋引擎建立索引",
+    "description": "Label of the checkbox of whether new accounts allow search indexing (indexable_default)."
+  },
+  "admin.settings.crawlers.indexable_default.description": {
+    "defaultMessage": "從現在起註冊的帳號會以這個設定作為初始值。現有帳號會保留各自的選擇。",
+    "description": "Help text of the indexable default checkbox."
+  },
+  "admin.settings.crawlers.ai": {
+    "defaultMessage": "AI",
+    "description": "Label of the radio group of what the server states to AI crawlers (ai_usage)."
+  },
+  "admin.settings.crawlers.ai.allow": {
+    "defaultMessage": "允許",
+    "description": "Choice that reserves nothing against AI."
+  },
+  "admin.settings.crawlers.ai.allow.description": {
+    "defaultMessage": "伺服器不對 AI 做任何保留。帳號仍可為自己的頁面拒絕 AI。",
+    "description": "Description of reserving nothing against AI."
+  },
+  "admin.settings.crawlers.ai.deny_training": {
+    "defaultMessage": "拒絕訓練",
+    "description": "Choice that denies the training of AI models only."
+  },
+  "admin.settings.crawlers.ai.deny_training.description": {
+    "defaultMessage": "拒絕為訓練 AI 模型而收集資料的爬蟲。不拒絕使用者要求讀取頁面的 AI 搜尋和助理。",
+    "description": "Description of denying the training of AI models only."
+  },
+  "admin.settings.crawlers.ai.deny": {
+    "defaultMessage": "拒絕訓練與使用",
+    "description": "Choice that denies both the training and the use by AI."
+  },
+  "admin.settings.crawlers.ai.deny.description": {
+    "defaultMessage": "拒絕 AI 爬蟲，包括使用者要求讀取頁面的 AI 搜尋、助理和代理程式。",
+    "description": "Description of denying both the training and the use by AI."
+  },
+  "admin.settings.crawlers.security_contact": {
+    "defaultMessage": "安全性聯絡方式",
+    "description": "Label of the field of the address to report vulnerabilities to (security_contact)."
+  },
+  "admin.settings.crawlers.security_contact.description": {
+    "defaultMessage": "回報安全漏洞的位置：https: 或 mailto: 地址，例如 mailto:security@example.com。只有設定後，伺服器才會提供 /.well-known/security.txt。",
+    "description": "Help text of the security contact field."
+  },
+  "admin.settings.domain_actions.comments.off": {
+    "defaultMessage": "不顯示備註。",
+    "description": "Description of not showing the comments of the domain actions."
+  },
+  "admin.settings.domain_actions.comments.signed_in": {
+    "defaultMessage": "可以閱讀列表的已登入使用者看得到備註。",
+    "description": "Description of showing the comments of the domain actions to signed-in users."
+  },
+  "admin.settings.domain_actions.description": {
+    "defaultMessage": "關於頁面和 API 可以列出這個伺服器限制或停權的伺服器，以及處置的公開備註。",
+    "description": "Explanation of the publication of the domain actions."
+  },
+  "admin.settings.domain_actions.list": {
+    "defaultMessage": "誰可以閱讀列表",
+    "description": "Label of the radio buttons of who may read the list of domain actions."
+  },
+  "admin.settings.domain_actions.list.everyone": {
+    "defaultMessage": "任何人無需登入即可看到列表。",
+    "description": "Description of publishing the list of domain actions to everyone."
+  },
+  "admin.settings.domain_actions.list.off": {
+    "defaultMessage": "不公開列表。",
+    "description": "Description of not publishing the list of domain actions."
+  },
+  "admin.settings.domain_actions.list.signed_in": {
+    "defaultMessage": "只有已登入這個伺服器的使用者看得到列表。",
+    "description": "Description of publishing the list of domain actions to signed-in users."
+  },
+  "admin.settings.domain_actions.title": {
+    "defaultMessage": "受限制與停權的伺服器",
+    "description": "Heading of the section of the publication of the domain actions."
+  },
+  "admin.settings.duration.days": {
+    "defaultMessage": "{count, plural, other {# 天}}",
+    "description": "A length of time in days."
+  },
+  "admin.settings.duration.hours": {
+    "defaultMessage": "{count, plural, other {# 小時}}",
+    "description": "A length of time in hours."
+  },
+  "admin.settings.duration.seconds": {
+    "defaultMessage": "{count, plural, other {# 秒}}",
+    "description": "A length of time in seconds."
+  },
+  "admin.settings.federation.authorized_fetch": {
+    "defaultMessage": "要求簽署的請求（authorized fetch）",
+    "description": "Checkbox of the authorized fetch setting."
+  },
+  "admin.settings.federation.authorized_fetch.description": {
+    "defaultMessage": "其他伺服器只有在簽章經過驗證後才能讀取貼文和集合，因此被停權的伺服器無法讀取。部分軟體將無法再讀取。",
+    "description": "Description of the authorized fetch checkbox."
+  },
+  "admin.settings.federation.link_cards": {
+    "defaultMessage": "顯示貼文中連結的卡片",
+    "description": "Checkbox of the link_cards setting: whether posts show the cards (title, description, image) of the pages they link to."
+  },
+  "admin.settings.federation.link_cards.description": {
+    "defaultMessage": "無論誰能看到貼文，伺服器都會擷取每則貼文中第一個連結的頁面，並在下方顯示其標題、描述和圖片。被連結的網站會知道連結的發布時間，但不會知道發布者。",
+    "description": "Description of the link cards checkbox."
+  },
+  "admin.settings.federation.link_cards_ignore_robots_txt": {
+    "defaultMessage": "擷取連結卡片時不檢查 robots.txt",
+    "description": "Checkbox of the link_cards_ignore_robots_txt setting: whether the fetches of link cards skip the robots.txt of the linked sites."
+  },
+  "admin.settings.federation.link_cards_ignore_robots_txt.description": {
+    "defaultMessage": "被連結的網站將無法再透過 robots.txt 拒絕產生卡片，而伺服器仍會以 my-linkcard 名義擷取。頁面本身的 robots 指令和連結卡片網域規則仍然適用。請只在有很多卡片缺漏時開啟。",
+    "description": "Description of the checkbox that makes the fetches of link cards skip robots.txt. my-linkcard is the crawler's name in robots.txt and is not translated."
+  },
+  "admin.settings.federation.mode": {
+    "defaultMessage": "聯邦方向",
+    "description": "Label of the radio buttons of the federation direction setting (federation_mode, ADR-0006): which way posts flow between this server and other servers."
+  },
+  "admin.settings.federation.mode.description": {
+    "defaultMessage": "貼文、追蹤和互動在這個伺服器與其他伺服器之間的流向。變更會立即生效。",
+    "description": "Description of the federation direction radio buttons."
+  },
+  "admin.settings.federation.mode.both": {
+    "defaultMessage": "雙向",
+    "description": "Federation direction choice: send to and receive from other servers (the default)."
+  },
+  "admin.settings.federation.mode.both.description": {
+    "defaultMessage": "使用者可以追蹤和閱讀其他伺服器的帳號，這個伺服器也會將其貼文傳送給那些伺服器上的追蹤者。",
+    "description": "Description of the federation direction choice 'Both ways'."
+  },
+  "admin.settings.federation.mode.inbound": {
+    "defaultMessage": "僅接收",
+    "description": "Federation direction choice: only receive from other servers."
+  },
+  "admin.settings.federation.mode.inbound.description": {
+    "defaultMessage": "使用者可以追蹤和閱讀其他伺服器的帳號，但這個伺服器的貼文、個人檔案和互動不會傳出，來自其他伺服器的追蹤也會被拒絕。",
+    "description": "Description of the federation direction choice 'Receive only'."
+  },
+  "admin.settings.federation.mode.outbound": {
+    "defaultMessage": "僅傳送",
+    "description": "Federation direction choice: only send to other servers."
+  },
+  "admin.settings.federation.mode.outbound.description": {
+    "defaultMessage": "其他伺服器的帳號可以追蹤這裡的使用者並收到其貼文，但不會接收其他伺服器的貼文和互動，使用者也無法追蹤或查詢其他伺服器的帳號。",
+    "description": "Description of the federation direction choice 'Send only'."
+  },
+  "admin.settings.federation.mode.off": {
+    "defaultMessage": "關閉",
+    "description": "Federation direction choice: no federation at all."
+  },
+  "admin.settings.federation.mode.off.description": {
+    "defaultMessage": "不會傳送任何內容給其他伺服器，也不會從其他伺服器接收任何內容。這個伺服器會獨立運作。",
+    "description": "Description of the federation direction choice 'Off'."
+  },
+  "admin.settings.federation.narrow.title": {
+    "defaultMessage": "要將聯邦方向變更為「{mode}」嗎？",
+    "description": "Title of the confirmation before saving a federation direction that stops something from flowing. {mode} is the chosen direction, such as 'Receive only'."
+  },
+  "admin.settings.federation.narrow.description": {
+    "defaultMessage": "從「{from}」變更為「{to}」會在儲存後立即生效：",
+    "description": "First sentence of the confirmation before narrowing the federation direction, followed by a list of what changes. {from} and {to} are the saved and the chosen directions."
+  },
+  "admin.settings.federation.narrow.sending": {
+    "defaultMessage": "這個伺服器的貼文、個人檔案和互動將不再傳送到其他伺服器。那些伺服器上的追蹤者會保留，但不會收到任何內容，期間發布的內容之後也不會補送。",
+    "description": "Item of the list in the confirmation before narrowing the federation direction, when the new direction stops sending to other servers."
+  },
+  "admin.settings.federation.narrow.receiving": {
+    "defaultMessage": "來自其他伺服器的貼文和互動將不再傳入，使用者也無法再追蹤或查詢其他伺服器的帳號。他們對遠端帳號的追蹤會保留，但不再更新。",
+    "description": "Item of the list in the confirmation before narrowing the federation direction, when the new direction stops receiving from other servers."
+  },
+  "admin.settings.federation.narrow.deletions": {
+    "defaultMessage": "聯邦關閉期間刪除的貼文和帳號，不會在其他伺服器上刪除：那裡的副本會保留。",
+    "description": "Item of the list in the confirmation before turning federation off."
+  },
+  "admin.settings.federation.narrow.relations": {
+    "defaultMessage": "與其他伺服器之間的追蹤關係、已接收的貼文以及傳送紀錄都會保留，也不會傳送任何結束追蹤的訊息。",
+    "description": "Last item of the list in the confirmation before narrowing the federation direction."
+  },
+  "admin.settings.federation.narrow.widen": {
+    "defaultMessage": "之後再次放寬方向時，會從那時起恢復流動。",
+    "description": "Note under the list in the confirmation before narrowing the federation direction."
+  },
+  "admin.settings.federation.narrow.cancel": {
+    "defaultMessage": "取消",
+    "description": "Button that closes the confirmation before narrowing the federation direction without saving."
+  },
+  "admin.settings.federation.narrow.confirm": {
+    "defaultMessage": "變更並儲存",
+    "description": "Button that saves the settings with the narrower federation direction."
+  },
+  "admin.settings.federation.title": {
+    "defaultMessage": "聯邦",
+    "description": "Heading of the section of the federation settings."
+  },
+  "admin.settings.language.default": {
+    "defaultMessage": "預設語言",
+    "description": "Label of the select of the server's default language."
+  },
+  "admin.settings.language.description": {
+    "defaultMessage": "新帳號的語言，以及應用程式不支援其語言之訪客所使用的語言。",
+    "description": "Help of the server's default language."
+  },
+  "admin.settings.language.title": {
+    "defaultMessage": "語言",
+    "description": "Heading of the section of the server's default language."
+  },
+  "admin.settings.name.blank": {
+    "defaultMessage": "請輸入包含文字的名稱，或將欄位留空。",
+    "description": "Error of a field of the server's name that holds only spaces."
+  },
+  "admin.settings.name.description": {
+    "defaultMessage": "在應用程式稱呼這個伺服器的地方，大家會看到這個名稱，而不是網域 {domain}：側邊欄、瀏覽器分頁、登入頁面、電子郵件和連結預覽。以任何語言撰寫一次即可：無論應用程式使用哪種語言，所有人看到的都是相同的名稱。沒有名稱時會顯示網域。帳號代碼和連結一律使用網域。",
+    "description": "Explanation above the fields of the server's name on the server settings screen. {domain} is the server's domain name."
+  },
+  "admin.settings.name.field": {
+    "defaultMessage": "名稱",
+    "description": "Label of the server's name."
+  },
+  "admin.settings.name.title": {
+    "defaultMessage": "名稱",
+    "description": "Heading of the section of the server's name on the server settings screen."
+  },
+  "admin.settings.name.too_long": {
+    "defaultMessage": "最多可輸入 {max} 個字元。",
+    "description": "Error of a field of the server's name whose text is longer than its limit. {max} is the limit."
+  },
+  "admin.settings.policies.save": {
+    "defaultMessage": "儲存設定",
+    "description": "Button that saves the registration, language, timeline, federation and domain action settings together."
+  },
+  "admin.settings.policies.save_failed": {
+    "defaultMessage": "無法儲存設定，未做任何變更：{reason}",
+    "description": "Error when saving the server's settings failed. {reason} is the server's localized reason, which names the setting at fault."
+  },
+  "admin.settings.policies.saved": {
+    "defaultMessage": "已儲存設定。設定會立即生效，稽核紀錄會記錄每項變更。",
+    "description": "Status after the server's settings were saved."
+  },
+  "admin.settings.policies.unchanged": {
+    "defaultMessage": "設定已經儲存。",
+    "description": "Status after pressing the save button of the settings without changing one."
+  },
+  "admin.settings.registration.approval": {
+    "defaultMessage": "需要核准",
+    "description": "Registration mode approval."
+  },
+  "admin.settings.registration.approval.description": {
+    "defaultMessage": "任何人都可以附上理由註冊，帳號經版主核准後即可使用。使用邀請註冊的人會立即獲得核准。",
+    "description": "Description of the registration mode approval: a usable invite skips the review."
+  },
+  "admin.settings.registration.closed": {
+    "defaultMessage": "沒有人",
+    "description": "Registration mode closed."
+  },
+  "admin.settings.registration.closed.description": {
+    "defaultMessage": "沒有人可以註冊；由管理員透過命令列建立帳號。",
+    "description": "Description of the registration mode closed."
+  },
+  "admin.settings.registration.description": {
+    "defaultMessage": "版主會在審核畫面中審核等待核准的註冊，並建立邀請。",
+    "description": "Help of the registration mode: where the sign-ups and the invites are handled."
+  },
+  "admin.settings.registration.invite": {
+    "defaultMessage": "需要邀請",
+    "description": "Registration mode invite."
+  },
+  "admin.settings.registration.invite.description": {
+    "defaultMessage": "只有持有邀請碼的人可以註冊。",
+    "description": "Description of the registration mode invite."
+  },
+  "admin.settings.registration.mode": {
+    "defaultMessage": "誰可以註冊",
+    "description": "Label of the radio buttons of the registration mode."
+  },
+  "admin.settings.registration.open": {
+    "defaultMessage": "所有人",
+    "description": "Registration mode open."
+  },
+  "admin.settings.registration.open.description": {
+    "defaultMessage": "任何人都可以註冊，並立即使用帳號。",
+    "description": "Description of the registration mode open."
+  },
+  "admin.settings.registration.title": {
+    "defaultMessage": "註冊",
+    "description": "Heading of the section of who may sign up on the server settings screen."
+  },
+  "admin.settings.single_user.title": {
+    "defaultMessage": "單人伺服器",
+    "description": "Heading of the section of the instance setting single_user (ADR-0152) on the registration page of the server settings: the server of its operator alone."
+  },
+  "admin.settings.single_user.description": {
+    "defaultMessage": "只有一個人的伺服器，是你在聯邦宇宙中的家。開啟期間沒有人可以註冊，伺服器的時間軸只提供首頁時間軸：本站與聯邦時間軸、邀請、註冊審核、註冊封鎖列表以及推薦帳號都會隱藏，新貼文也無法設為「本站」。訪客會在首頁看到你的個人檔案。開啟或關閉都不會刪除任何資料。",
+    "description": "Help of the section of the one-person server: what the mode hides and that it deletes nothing. “This server” is the name of the visibility local (client:compose.visibility.local)."
+  },
+  "admin.settings.single_user.label": {
+    "defaultMessage": "將這個伺服器設為單人伺服器",
+    "description": "Label of the checkbox of the instance setting single_user."
+  },
+  "admin.settings.single_user.label.description": {
+    "defaultMessage": "只有在伺服器剛好有一個本站帳號時才能開啟。等待核准、已停用或已停權的帳號也會計算在內；註冊遭拒的帳號則不計算。隨時都可以關閉。",
+    "description": "Description of the checkbox of the one-person server: the condition of exactly one local account, which accounts count, and that it can always be turned off."
+  },
+  "admin.settings.single_user.refused": {
+    "defaultMessage": "{reason} {detail}",
+    "description": "The reason why the server refused to turn the one-person server on, put inside client:admin.settings.policies.save_failed. {reason} is the server's localized sentence that a one-person server can have only one local account, {detail} its localized sentence of how many local accounts the server has. Keep the space between the sentences as the language separates sentences."
+  },
+  "admin.settings.remote_media.all": {
+    "defaultMessage": "全部",
+    "description": "Remote media policy all."
+  },
+  "admin.settings.remote_media.all.description": {
+    "defaultMessage": "在下方設定的期間內保留所有檔案的副本。",
+    "description": "Description of the remote media policy all."
+  },
+  "admin.settings.remote_media.avatars": {
+    "defaultMessage": "大頭貼與封面圖片",
+    "description": "Remote media policy avatars."
+  },
+  "admin.settings.remote_media.avatars.description": {
+    "defaultMessage": "在下方設定的期間內保留大頭貼、封面圖片和自訂表情符號的副本。",
+    "description": "Description of the remote media policy avatars."
+  },
+  "admin.settings.remote_media.none": {
+    "defaultMessage": "不保留",
+    "description": "Remote media policy none."
+  },
+  "admin.settings.remote_media.none.description": {
+    "defaultMessage": "媒體代理每次都會從原伺服器轉送所有檔案。",
+    "description": "Description of the remote media policy none."
+  },
+  "admin.settings.remote_media.policy": {
+    "defaultMessage": "其他伺服器媒體的副本",
+    "description": "Label of the radio buttons of the remote media policy."
+  },
+  "admin.settings.remote_media.ttl": {
+    "defaultMessage": "其他伺服器媒體的保留時間",
+    "description": "Label of the select of the remote media cache time."
+  },
+  "admin.settings.remote_media.ttl.description": {
+    "defaultMessage": "瀏覽器和 CDN 也會保留檔案這麼久。",
+    "description": "Help of the remote media cache time."
+  },
+  "admin.settings.summary": {
+    "defaultMessage": "伺服器的名稱和說明、誰可以註冊、預設語言、時間軸和聯邦。",
+    "description": "Description of the server settings screen in the administration menu."
+  },
+  "admin.settings.timelines.federated": {
+    "defaultMessage": "聯邦時間軸",
+    "description": "Label of the radio group that chooses who may read the federated timeline."
+  },
+  "admin.settings.timelines.federated.description": {
+    "defaultMessage": "傳到這個伺服器的公開貼文，也包含來自其他伺服器的貼文。誰可以閱讀？",
+    "description": "Description of the radio group that chooses who may read the federated timeline."
+  },
+  "admin.settings.timelines.access.everyone": {
+    "defaultMessage": "所有人",
+    "description": "Choice of who may read a public timeline: everyone, visitors who are not signed in included."
+  },
+  "admin.settings.timelines.access.everyone.description": {
+    "defaultMessage": "未登入的訪客也可以閱讀，首頁也會顯示部分本站時間軸的內容。",
+    "description": "Description of the choice that lets everyone read a public timeline."
+  },
+  "admin.settings.timelines.access.signed_in": {
+    "defaultMessage": "已登入的使用者",
+    "description": "Choice of who may read a public timeline: only the users signed in to this server."
+  },
+  "admin.settings.timelines.access.signed_in.description": {
+    "defaultMessage": "只有已登入這個伺服器的使用者可以閱讀。訪客會被要求登入。",
+    "description": "Description of the choice that lets only signed-in users read a public timeline."
+  },
+  "admin.settings.timelines.access.off": {
+    "defaultMessage": "沒有人",
+    "description": "Choice of who may read a public timeline: nobody, the timeline is off."
+  },
+  "admin.settings.timelines.access.off.description": {
+    "defaultMessage": "關閉這個時間軸，不對任何人提供。",
+    "description": "Description of the choice that turns a public timeline off."
+  },
+  "admin.settings.timelines.local": {
+    "defaultMessage": "本站時間軸",
+    "description": "Label of the radio group that chooses who may read the local timeline."
+  },
+  "admin.settings.timelines.local.description": {
+    "defaultMessage": "這個伺服器帳號的公開貼文。誰可以閱讀？",
+    "description": "Description of the radio group that chooses who may read the local timeline."
+  },
+  "admin.settings.timelines.title": {
+    "defaultMessage": "時間軸",
+    "description": "Heading of the section of the public timelines on the server settings screen."
+  },
+  "admin.settings.posts.title": {
+    "defaultMessage": "貼文",
+    "description": "Heading of the section of the server settings about posts."
+  },
+  "admin.settings.posts.require_media_description": {
+    "defaultMessage": "要求每張圖片都要有描述",
+    "description": "Checkbox of the instance setting require_media_description: whether every image attached to a post needs an alternative text."
+  },
+  "admin.settings.posts.require_media_description.description": {
+    "defaultMessage": "含有未加描述（替代文字）的圖片的貼文和編輯會被拒絕，讓看不到圖片的人也能理解每則貼文。",
+    "description": "Description of the checkbox that requires a description of every image."
+  },
+  "admin.settings.title": {
+    "defaultMessage": "伺服器設定",
+    "description": "Title of the server settings screen (the server's name), in the administration menu and as its heading."
+  },
+  "admin.settings.oauth_apps.title": {
+    "defaultMessage": "應用程式",
+    "description": "Heading of the section of how apps may register on the server settings screen."
+  },
+  "admin.settings.oauth_apps.description": {
+    "defaultMessage": "應用程式可以透過哪些方式取得用戶端 ID。全部關閉時，只有伺服器本身的應用程式可以運作。關閉某種方式不會停用已註冊的應用程式。",
+    "description": "Explains the section of how apps may register."
+  },
+  "admin.settings.oauth_apps.user": {
+    "defaultMessage": "使用者註冊應用程式",
+    "description": "Checkbox of letting signed-in users register apps."
+  },
+  "admin.settings.oauth_apps.user.description": {
+    "defaultMessage": "已登入的使用者可以在設定中註冊應用程式，用於自己的機器人和指令碼。",
+    "description": "Description of the checkbox of letting users register apps."
+  },
+  "admin.settings.oauth_apps.metadata_document": {
+    "defaultMessage": "Client ID Metadata Documents",
+    "description": "Checkbox of accepting apps whose client ID is the URL of a metadata document."
+  },
+  "admin.settings.oauth_apps.metadata_document.description": {
+    "defaultMessage": "應用程式以其託管的中繼資料文件 URL 作為用戶端 ID。伺服器會擷取該文件。",
+    "description": "Description of the checkbox of accepting metadata document apps."
+  },
+  "admin.settings.oauth_apps.dynamic": {
+    "defaultMessage": "動態用戶端註冊",
+    "description": "Checkbox of letting apps register themselves."
+  },
+  "admin.settings.oauth_apps.dynamic.description": {
+    "defaultMessage": "應用程式不需登入即可自行註冊（RFC 7591），適用於無法使用中繼資料文件的工具。",
+    "description": "Description of the checkbox of dynamic client registration."
+  },
+  "admin.settings.voice.title": {
+    "defaultMessage": "語音聊天",
+    "description": "Heading of the voice chat section of the server settings."
+  },
+  "admin.settings.voice.starters": {
+    "defaultMessage": "誰可以開啟聊天室",
+    "description": "Label of the choice of who may start voice chat rooms."
+  },
+  "admin.settings.voice.starters.everyone": {
+    "defaultMessage": "這個伺服器的所有人",
+    "description": "Choice of who may start voice chat rooms: every local user."
+  },
+  "admin.settings.voice.starters.everyone.description": {
+    "defaultMessage": "這個伺服器的所有已登入使用者都可以開啟聊天室。",
+    "description": "Explanation of the choice that every local user may start voice chat rooms."
+  },
+  "admin.settings.voice.starters.permitted": {
+    "defaultMessage": "僅限具有權限的人",
+    "description": "Choice of who may start voice chat rooms: the holders of the permission."
+  },
+  "admin.settings.voice.starters.permitted.description": {
+    "defaultMessage": "只有角色具有開啟語音聊天室權限的人可以開啟。",
+    "description": "Explanation of the choice that only the holders of the permission may start voice chat rooms."
+  },
+  "admin.settings.voice.public_summary": {
+    "defaultMessage": "向訪客顯示聊天室摘要",
+    "description": "Checkbox of whether the summary of a voice chat room shows to people who are not signed in."
+  },
+  "admin.settings.voice.public_summary.description": {
+    "defaultMessage": "對於開放給這個伺服器所有人的聊天室，未登入的人和其他伺服器的人可以看到其名稱、描述、主持人以及是否開放，連結預覽中也是如此。他們絕不會看到有誰在聊天室中。",
+    "description": "Explanation of the checkbox that shows the summary of voice chat rooms to visitors."
+  },
+  "admin.settings.voice.retention": {
+    "defaultMessage": "參與者紀錄的保留天數",
+    "description": "Label of the field of how many days the records of the participants of a voice chat room are kept."
+  },
+  "admin.settings.voice.retention.description": {
+    "defaultMessage": "聊天室結束後，伺服器保留誰加入、離開、發言和被移出之紀錄的期間：{min} 到 {max} 天。被檢舉的聊天室紀錄會與檢舉保留同樣長的時間。",
+    "description": "Description of the field of how many days the records of the participants of voice chat rooms are kept. {min} and {max} are the bounds."
+  },
+  "admin.settings.voice.retention.invalid": {
+    "defaultMessage": "請輸入 {min} 到 {max} 之間的整數天數。",
+    "description": "Error of the field of how many days the records of voice chat participants are kept."
+  },
+  "admin.settings.invites.title": {
+    "defaultMessage": "成員邀請",
+    "description": "Heading of the section of the invites that members create on the server settings screen."
+  },
+  "admin.settings.invites.description": {
+    "defaultMessage": "成員可以在自己的設定頁面建立邀請。這些限制只適用於成員的邀請，不適用於版主的邀請，調低限制也不會改變現有的邀請。",
+    "description": "Help of the section of member invites on the server settings screen."
+  },
+  "admin.settings.invites.creators": {
+    "defaultMessage": "誰可以建立邀請",
+    "description": "Label of the choice of who may create invites of their own."
+  },
+  "admin.settings.invites.creators.everyone": {
+    "defaultMessage": "這個伺服器的所有人",
+    "description": "Choice of who may create invites: every local user."
+  },
+  "admin.settings.invites.creators.everyone.description": {
+    "defaultMessage": "這個伺服器所有未被停權或限制的已登入使用者都可以建立邀請。當註冊需要核准時，他們邀請的人會略過審核，因此這等於讓每位使用者都能核准新帳號。",
+    "description": "Explanation of the choice that every local user may create invites, with its effect in the approval registration mode."
+  },
+  "admin.settings.invites.creators.permitted": {
+    "defaultMessage": "僅限具有權限的人",
+    "description": "Choice of who may create invites: the holders of the permission."
+  },
+  "admin.settings.invites.creators.permitted.description": {
+    "defaultMessage": "只有角色具有建立邀請權限的人可以建立邀請。",
+    "description": "Explanation of the choice that only the holders of the permission create_invites may create invites."
+  },
+  "admin.settings.invites.max_active": {
+    "defaultMessage": "每人可持有的有效邀請數",
+    "description": "Label of the field of how many usable invites one member may hold at once."
+  },
+  "admin.settings.invites.max_active.description": {
+    "defaultMessage": "每人同時可持有的有效邀請數：{min} 到 {max}。設為 0 則沒有人可以建立邀請。",
+    "description": "Description of the field of how many usable invites one member may hold. {min} and {max} are the bounds."
+  },
+  "admin.settings.invites.max_uses": {
+    "defaultMessage": "每個邀請的註冊人數",
+    "description": "Label of the field of how many people may sign up with one invite a member creates."
+  },
+  "admin.settings.invites.max_uses.description": {
+    "defaultMessage": "每個邀請最多可註冊的人數：{min} 到 {max}。",
+    "description": "Description of the field of how many sign-ups one member invite may allow. {min} and {max} are the bounds."
+  },
+  "admin.settings.invites.number.invalid": {
+    "defaultMessage": "請輸入 {min} 到 {max} 之間的整數。",
+    "description": "Error of a field of the member invites that holds a number out of its bounds."
+  },
+  "admin.settings.invites.max_expires_in": {
+    "defaultMessage": "邀請的最長有效期間",
+    "description": "Label of the choice of how long one invite that a member creates may work at most."
+  },
+  "admin.settings.invites.max_expires_in.description": {
+    "defaultMessage": "成員可以為每個邀請選擇有效期間，最長為此設定值。",
+    "description": "Description of the choice of how long a member invite may work at most."
+  },
+  "admin.settings.landing.title": {
+    "defaultMessage": "首頁",
+    "description": "Heading of the section of the server settings about what the landing page (the root address, for people who are not signed in) shows."
+  },
+  "admin.settings.landing.description": {
+    "defaultMessage": "除了名稱、說明和規則之外，這個伺服器網址的頁面要向未登入的人顯示哪些內容。",
+    "description": "Explanation of the landing page section of the server settings."
+  },
+  "admin.settings.landing.counts": {
+    "defaultMessage": "顯示伺服器的數據",
+    "description": "Checkbox of whether the landing page shows how many members the server has, its public posts of the last 7 days, and since when it runs."
+  },
+  "admin.settings.landing.counts.description": {
+    "defaultMessage": "伺服器的成員數、成員在最近 7 天每天發布的公開貼文數，以及伺服器的運作起始時間。只計算公開貼文，數據每隔幾分鐘更新一次。",
+    "description": "Explanation of the checkbox that shows the numbers of the server on the landing page."
+  },
+  "admin.settings.featured.title": {
+    "defaultMessage": "推薦帳號",
+    "description": "Heading of the section of the server settings about the accounts suggested to follow."
+  },
+  "admin.settings.featured.description": {
+    "defaultMessage": "新使用者和回訪的使用者會看到推薦追蹤的人：先依序顯示下方的帳號，再顯示這個伺服器最近有發文的人。關閉被推薦的人不會出現。",
+    "description": "Note of the suggested accounts section of the server settings."
+  },
+  "admin.settings.featured.accounts": {
+    "defaultMessage": "優先推薦的帳號",
+    "description": "Label of the field with the usernames of the accounts that the suggestions show first."
+  },
+  "admin.settings.featured.accounts.description": {
+    "defaultMessage": "這個伺服器最多 20 個帳號的使用者名稱，以空格分隔。",
+    "description": "Help text of the field of the accounts that the suggestions show first."
+  },
+  "admin.settings.hooks.description": {
+    "defaultMessage": "只有在伺服器營運者設定好外掛程式後，審核才會執行。從「關閉」切換到「強制執行」時必須先經過「觀察」，讓你可以先看看審核會擋下哪些內容。",
+    "description": "Explanation of the section of the server settings about the external reviews."
+  },
+  "admin.settings.hooks.failure.pass": {
+    "defaultMessage": "直接放行",
+    "description": "Choice of what happens when an external review fails."
+  },
+  "admin.settings.hooks.failure.pass.description": {
+    "defaultMessage": "未經審核即接受。審核服務停擺期間，垃圾訊息可能會混入。",
+    "description": "Description of letting a submission through when its external review fails."
+  },
+  "admin.settings.hooks.failure.require_approval": {
+    "defaultMessage": "保留待核准",
+    "description": "Choice of what happens when the external review of sign-ups fails."
+  },
+  "admin.settings.hooks.failure.require_approval.description": {
+    "defaultMessage": "註冊會等待版主處理。",
+    "description": "Description of holding a sign-up for approval when its external review fails."
+  },
+  "admin.settings.hooks.failure.retry": {
+    "defaultMessage": "重試",
+    "description": "Choice of what happens when an external review fails."
+  },
+  "admin.settings.hooks.failure.retry.description": {
+    "defaultMessage": "任務會再次執行；對貼文和追蹤而言，這也會讓同一傳送者之後的所有內容（包括刪除）暫緩處理，最長約 4 小時。",
+    "description": "Description of retrying when an external review fails."
+  },
+  "admin.settings.hooks.inbound_follow.mode": {
+    "defaultMessage": "來自其他伺服器的追蹤",
+    "description": "Label of the choice of the mode of the external review of this kind of submission."
+  },
+  "admin.settings.hooks.inbound_follow.on_failure": {
+    "defaultMessage": "來自其他伺服器的追蹤：審核失敗時",
+    "description": "Label of the choice of what happens when this external review fails while it enforces."
+  },
+  "admin.settings.hooks.inbound_status.mode": {
+    "defaultMessage": "來自其他伺服器的貼文",
+    "description": "Label of the choice of the mode of the external review of this kind of submission."
+  },
+  "admin.settings.hooks.inbound_status.on_failure": {
+    "defaultMessage": "來自其他伺服器的貼文：審核失敗時",
+    "description": "Label of the choice of what happens when this external review fails while it enforces."
+  },
+  "admin.settings.hooks.local_status.account_age": {
+    "defaultMessage": "審核建立未滿以下天數之帳號的貼文",
+    "description": "Label of the number of days after its creation that an account's posts go to the external review of local posts."
+  },
+  "admin.settings.hooks.local_status.account_age.description": {
+    "defaultMessage": "{min} 到 {max} 天；設為 0 則審核所有帳號的貼文。僅追蹤者和私訊貼文絕不會送出，版主已接受其申訴之帳號的貼文也不會。",
+    "description": "Description of the number of days an account's posts go to the external review. {min} and {max} are the bounds."
+  },
+  "admin.settings.hooks.local_profile.account_age": {
+    "defaultMessage": "審核建立未滿以下天數之帳號的個人檔案",
+    "description": "Label of the number of days after its creation that an account's profile changes go to the external review of local profiles."
+  },
+  "admin.settings.hooks.local_profile.account_age.description": {
+    "defaultMessage": "{min} 到 {max} 天；設為 0 則審核所有帳號的個人檔案。",
+    "description": "Description of the number of days an account's profile changes go to the external review. {min} and {max} are the bounds."
+  },
+  "admin.settings.hooks.inbound_status.unfollowed_direct": {
+    "defaultMessage": "也審核來自本站無人追蹤之作者的私訊",
+    "description": "Label of the setting that sends direct posts from unfollowed authors to the external review."
+  },
+  "admin.settings.hooks.inbound_status.unfollowed_direct.description": {
+    "defaultMessage": "私訊只有被提及的人看得到。關閉時，來自本站無人追蹤之作者的私訊會未經審核送達收件人；開啟時，其內文會送交外部審核。",
+    "description": "Help of the setting that sends direct posts from unfollowed authors to the external review."
+  },
+  "admin.settings.hooks.local_status.mode": {
+    "defaultMessage": "本站貼文",
+    "description": "Label of the choice of the mode of the external review of this kind of submission."
+  },
+  "admin.settings.hooks.inbound_actor.mode": {
+    "defaultMessage": "來自其他伺服器的個人檔案",
+    "description": "Label of the choice of the mode of the external review of this kind of submission."
+  },
+  "admin.settings.hooks.inbound_actor.on_failure": {
+    "defaultMessage": "來自其他伺服器的個人檔案：審核失敗時",
+    "description": "Label of the choice of what happens when this external review fails while it enforces."
+  },
+  "admin.settings.hooks.local_profile.mode": {
+    "defaultMessage": "本站個人檔案",
+    "description": "Label of the choice of the mode of the external review of this kind of submission."
+  },
+  "admin.settings.hooks.media_check.mode": {
+    "defaultMessage": "上傳的媒體",
+    "description": "Label of the choice of the mode of the external review of this kind of submission."
+  },
+  "admin.settings.hooks.media_check.on_failure": {
+    "defaultMessage": "上傳的媒體：審核失敗時",
+    "description": "Label of the choice of what happens when this external review fails while it enforces."
+  },
+  "admin.settings.hooks.mode.enforce": {
+    "defaultMessage": "強制執行",
+    "description": "Choice of the mode of an external review."
+  },
+  "admin.settings.hooks.mode.enforce.description": {
+    "defaultMessage": "依判定結果採取行動。",
+    "description": "Description of the Enforce mode of an external review."
+  },
+  "admin.settings.hooks.mode.observe": {
+    "defaultMessage": "觀察",
+    "description": "Choice of the mode of an external review."
+  },
+  "admin.settings.hooks.mode.observe.description": {
+    "defaultMessage": "只記錄判定結果，不採取任何行動。",
+    "description": "Description of the Observe mode of an external review."
+  },
+  "admin.settings.hooks.mode.off": {
+    "defaultMessage": "關閉",
+    "description": "Choice of the mode of an external review."
+  },
+  "admin.settings.hooks.mode.off.description": {
+    "defaultMessage": "不呼叫任何服務。",
+    "description": "Description of the Off mode of an external review."
+  },
+  "admin.settings.hooks.retention": {
+    "defaultMessage": "決定的保留天數",
+    "description": "Label of the number of days the records of the decisions of the external reviews stay."
+  },
+  "admin.settings.hooks.retention.description": {
+    "defaultMessage": "{min} 到 {max} 天。若決定仍附有敏感標記、其帳號受保全措施保留，或作者仍可申訴，則會保留更久。",
+    "description": "Description of the number of days the records of decisions stay. {min} and {max} are the bounds."
+  },
+  "admin.settings.hooks.retention.invalid": {
+    "defaultMessage": "請輸入 {min} 到 {max} 之間的整數天數。",
+    "description": "Error of the number of days the records of decisions stay: not a whole number within {min} and {max}."
+  },
+  "admin.settings.hooks.signup_check.mode": {
+    "defaultMessage": "註冊",
+    "description": "Label of the choice of the mode of the external review of this kind of submission."
+  },
+  "admin.settings.hooks.signup_check.on_failure": {
+    "defaultMessage": "註冊：審核失敗時",
+    "description": "Label of the choice of what happens when this external review fails while it enforces."
+  },
+  "admin.settings.hooks.signup_check.reject": {
+    "defaultMessage": "註冊：允許審核拒絕註冊",
+    "description": "Label of the checkbox that lets the external review of sign-ups refuse a sign-up."
+  },
+  "admin.settings.hooks.signup_check.reject.description": {
+    "defaultMessage": "當審核處於強制執行模式並回應拒絕時，申請者會看到伺服器無法接受註冊的固定訊息。關閉時，該回應只會被記錄，註冊會繼續進行。",
+    "description": "Help text of the checkbox that lets the external review of sign-ups refuse a sign-up."
+  },
+  "admin.settings.hooks.title": {
+    "defaultMessage": "外部審核",
+    "description": "Heading of the section of the server settings about the external reviews of submissions."
+  },
+  "admin.settings.login_providers_only.confirm.affected": {
+    "defaultMessage": "{count, plural, =0 {所有活躍使用者都已連結登入服務。} other {有 # 位活躍使用者未連結登入服務，在其工作階段結束後將無法登入。}}",
+    "description": "In the confirmation dialog: how many active users have no link to an enabled login provider."
+  },
+  "admin.settings.login_providers_only.confirm.cancel": {
+    "defaultMessage": "取消",
+    "description": "Button in the confirmation dialog that keeps the form as it is."
+  },
+  "admin.settings.login_providers_only.confirm.confirm": {
+    "defaultMessage": "限制登入",
+    "description": "Button in the confirmation dialog that saves the limit."
+  },
+  "admin.settings.login_providers_only.confirm.failed": {
+    "defaultMessage": "無法讀取將無法登入的使用者人數。未連結登入服務的使用者，在其工作階段結束後將無法登入。",
+    "description": "In the confirmation dialog when the count of affected users could not be read."
+  },
+  "admin.settings.login_providers_only.confirm.loading": {
+    "defaultMessage": "正在計算將無法登入的使用者人數…",
+    "description": "In the confirmation dialog while the count of affected users loads."
+  },
+  "admin.settings.login_providers_only.confirm.no_provider": {
+    "defaultMessage": "目前沒有啟用任何登入服務，因此現在不會有任何變化。啟用登入服務後，限制才會開始生效。",
+    "description": "In the confirmation dialog when no login provider is enabled."
+  },
+  "admin.settings.login_providers_only.confirm.recovery": {
+    "defaultMessage": "若要復原，請在這裡關閉，或在伺服器上執行「my instance set login_providers_only false」。",
+    "description": "In the confirmation dialog: how to undo the limit."
+  },
+  "admin.settings.login_providers_only.confirm.self": {
+    "defaultMessage": "你也是其中之一。請在工作階段結束前，於「已連結的帳號」中連結登入服務。",
+    "description": "In the confirmation dialog when the administrator who confirms has no link to an enabled login provider."
+  },
+  "admin.settings.login_providers_only.confirm.sessions": {
+    "defaultMessage": "已登入的工作階段和應用程式會繼續運作，使用者可以在這段期間連結登入服務。",
+    "description": "In the confirmation dialog: what keeps working."
+  },
+  "admin.settings.login_providers_only.confirm.stops": {
+    "defaultMessage": "將無法再使用密碼和通行密鑰登入，也無法再使用密碼註冊或重設密碼。",
+    "description": "In the confirmation dialog: what stops."
+  },
+  "admin.settings.login_providers_only.confirm.title": {
+    "defaultMessage": "要限制只能透過登入服務登入嗎？",
+    "description": "Title of the dialog that confirms limiting sign-in to login providers."
+  },
+  "admin.settings.login_providers_only.description": {
+    "defaultMessage": "只要啟用了至少一個登入服務，就無法再使用密碼和通行密鑰登入，也無法再使用密碼註冊或重設密碼。沒有啟用任何登入服務時，此設定不適用。",
+    "description": "Description of the checkbox that limits sign-in and registration to login providers."
+  },
+  "admin.settings.login_providers_only.label": {
+    "defaultMessage": "只允許透過登入服務登入和註冊",
+    "description": "Checkbox in the registration section of the server settings: limits sign-in and registration to login providers."
+  },
+  "admin.settings.search.title": {
+    "defaultMessage": "貼文搜尋",
+    "description": "Heading of the section of the server settings about the search of posts, shown only on a server with a search engine."
+  },
+  "admin.settings.search.description": {
+    "defaultMessage": "已登入這個伺服器的人可以依文字找到哪些貼文。只涵蓋允許搜尋的帳號，不公開列出、僅追蹤者和私訊貼文一律不涵蓋。伺服器向搜尋引擎聲明的內容是另一項設定。",
+    "description": "Explanation of the section of the server settings about the search of posts."
+  },
+  "admin.settings.search.visibilities": {
+    "defaultMessage": "涵蓋的貼文",
+    "description": "Label of the radio group of which posts the search covers (search_visibilities)."
+  },
+  "admin.settings.search.visibilities.description": {
+    "defaultMessage": "移除某種貼文會將其貼文從搜尋中移除。新增某種貼文只會找到其新貼文：在你重建索引（在伺服器上執行「my search rebuild --keep」）之前，找不到較舊的貼文。",
+    "description": "Help text of which posts the search covers: narrowing takes effect, widening reaches older posts only after a rebuild."
+  },
+  "admin.settings.search.public": {
+    "defaultMessage": "公開貼文",
+    "description": "Choice of search_visibilities: public posts only."
+  },
+  "admin.settings.search.public.description": {
+    "defaultMessage": "這個伺服器以及它所知的其他伺服器帳號的公開貼文。",
+    "description": "Description of covering public posts."
+  },
+  "admin.settings.search.local": {
+    "defaultMessage": "本站貼文",
+    "description": "Choice of search_visibilities: posts with the visibility 'This server' only."
+  },
+  "admin.settings.search.local.description": {
+    "defaultMessage": "可見範圍為「本站」的貼文，不含公開貼文。已允許搜尋的帳號不會被再次詢問，請先告知你的使用者。",
+    "description": "Description of covering posts with the visibility 'This server' only."
+  },
+  "admin.settings.search.public_local": {
+    "defaultMessage": "兩者",
+    "description": "Choice of search_visibilities: public posts and posts with the visibility 'This server'."
+  },
+  "admin.settings.search.public_local.description": {
+    "defaultMessage": "公開貼文以及可見範圍為「本站」的貼文。已允許搜尋的帳號不會被再次詢問，請先告知你的使用者。",
+    "description": "Description of covering public posts and posts with the visibility 'This server'."
+  },
+  "admin.settings.pages": {
+    "defaultMessage": "伺服器設定頁面",
+    "description": "Name of the navigation of the pages of the server settings screen, under its heading."
+  },
+  "admin.settings.page.general": {
+    "defaultMessage": "一般",
+    "description": "Link to the page of the server settings with the server's name, descriptions, contact and thumbnail."
+  },
+  "admin.settings.page.branding": {
+    "defaultMessage": "圖示與標誌",
+    "description": "Link to the page of the server settings with the server's icon and logos."
+  },
+  "admin.settings.page.registration": {
+    "defaultMessage": "註冊",
+    "description": "Link to the page of the server settings with who may sign up, the members' invites and the registration of apps."
+  },
+  "admin.settings.page.content": {
+    "defaultMessage": "內容",
+    "description": "Link to the page of the server settings with the default language, the public timelines, the posts, the landing page and the featured accounts."
+  },
+  "admin.settings.page.federation": {
+    "defaultMessage": "聯邦",
+    "description": "Link to the page of the server settings with the federation, the list of domain actions and the external review."
+  },
+  "admin.settings.page.discovery": {
+    "defaultMessage": "搜尋與爬蟲",
+    "description": "Link to the page of the server settings with what the server states to search engines and AI, and the post search."
+  },
+  "admin.settings.page.voice": {
+    "defaultMessage": "語音聊天",
+    "description": "Link to the page of the server settings with the voice chat settings."
+  },
+  "admin.settings.general.save": {
+    "defaultMessage": "儲存",
+    "description": "Button that saves the name, the descriptions, the contact and the thumbnail of the server together."
+  },
+  "admin.settings.general.saved": {
+    "defaultMessage": "已儲存。稽核紀錄已記錄這項變更。",
+    "description": "Result beside the save button of the general page of the server settings after a save."
+  },
+  "admin.settings.general.unchanged": {
+    "defaultMessage": "這個頁面的所有內容都已儲存。",
+    "description": "Result beside the save button of the general page of the server settings when nothing changed."
+  },
+  "admin.settings.general.save_failed": {
+    "defaultMessage": "無法儲存：{reason}",
+    "description": "Result beside the save button of the general page of the server settings when the save failed; the reason follows."
+  },
+  "admin.settings.voice.unavailable": {
+    "defaultMessage": "這個伺服器未提供語音聊天，因此這裡沒有可設定的項目。",
+    "description": "Text of the voice chat page of the server settings while the server does not offer voice chat."
+  },
+  "admin.settings.page.auto_delete": {
+    "defaultMessage": "貼文刪除",
+    "description": "Link to the page of the server settings with the default and the maximum of the automatic deletion of old posts."
+  },
+  "admin.settings.auto_delete.number.invalid": {
+    "defaultMessage": "請輸入 {min} 到 {max} 之間的整數。",
+    "description": "Error under a number field of the automatic deletion settings when its value is not a whole number in range."
+  },
+  "admin.settings.auto_delete.default.title": {
+    "defaultMessage": "新帳號的預設值",
+    "description": "Heading of the section of the server's default policy of the automatic deletion of old posts."
+  },
+  "admin.settings.auto_delete.default.description": {
+    "defaultMessage": "每個新帳號都會以這些設定作為自己的初始設定，並可自行變更。變更這些設定不會影響現有帳號。",
+    "description": "Help of the section of the server's default policy of the automatic deletion: it is copied at sign-up."
+  },
+  "admin.settings.auto_delete.default.enabled": {
+    "defaultMessage": "自動刪除舊貼文",
+    "description": "Checkbox of the server's default: new accounts start with the automatic deletion turned on."
+  },
+  "admin.settings.auto_delete.default.age": {
+    "defaultMessage": "刪除超過以下天數的貼文",
+    "description": "Label of the number field of the default age in days after which posts are deleted."
+  },
+  "admin.settings.auto_delete.days.description": {
+    "defaultMessage": "從每則貼文發布時開始計算：{min} 到 {max} 天。",
+    "description": "Help of the default age of the automatic deletion. {min} and {max} are the bounds."
+  },
+  "admin.settings.auto_delete.default.keep": {
+    "defaultMessage": "保留這些貼文",
+    "description": "Label of the group of the exceptions of the server's default policy."
+  },
+  "admin.settings.auto_delete.default.visibilities": {
+    "defaultMessage": "保留以下可見範圍的貼文",
+    "description": "Label of the group of the visibilities that the server's default policy keeps."
+  },
+  "admin.settings.auto_delete.default.min_boosts": {
+    "defaultMessage": "保留轉發次數至少達到以下次數的貼文",
+    "description": "Label of the number field of the default threshold of boosts that keeps a post."
+  },
+  "admin.settings.auto_delete.default.min_favourites": {
+    "defaultMessage": "保留喜歡次數至少達到以下次數的貼文",
+    "description": "Label of the number field of the default threshold of favourites that keeps a post."
+  },
+  "admin.settings.auto_delete.threshold.description": {
+    "defaultMessage": "設為 0 則不因此保留任何貼文。{min} 到 {max}。",
+    "description": "Help of a threshold of the server's default policy. {min} and {max} are the bounds."
+  },
+  "admin.settings.auto_delete.pinned": {
+    "defaultMessage": "已釘選到個人檔案",
+    "description": "Exception of the automatic deletion in the server settings: posts pinned to the profile."
+  },
+  "admin.settings.auto_delete.bookmarked": {
+    "defaultMessage": "作者已加入書籤",
+    "description": "Exception of the automatic deletion in the server settings: posts the author bookmarked."
+  },
+  "admin.settings.auto_delete.favourited": {
+    "defaultMessage": "作者已按喜歡",
+    "description": "Exception of the automatic deletion in the server settings: posts the author favourited."
+  },
+  "admin.settings.auto_delete.media": {
+    "defaultMessage": "含有圖片或其他媒體",
+    "description": "Exception of the automatic deletion in the server settings: posts with media attachments."
+  },
+  "admin.settings.auto_delete.polls": {
+    "defaultMessage": "含有投票",
+    "description": "Exception of the automatic deletion in the server settings: posts with a poll."
+  },
+  "admin.settings.auto_delete.max.title": {
+    "defaultMessage": "上限",
+    "description": "Heading of the section of the server's maximum of how long local posts are kept."
+  },
+  "admin.settings.auto_delete.max.description": {
+    "defaultMessage": "上限開啟期間，每個本站帳號最遲會在貼文發布後的這個天數內刪除貼文，且無法關閉自動刪除。角色具有延長保留貼文權限的帳號不受此限。關於頁面會顯示這個上限。",
+    "description": "Help of the section of the server's maximum of the automatic deletion."
+  },
+  "admin.settings.auto_delete.max.age": {
+    "defaultMessage": "貼文最多保留天數",
+    "description": "Label of the number field of the server's maximum in days."
+  },
+  "admin.settings.auto_delete.max.age.description": {
+    "defaultMessage": "設為 0 則不設上限。最多 {max} 天。",
+    "description": "Help of the maximum's days. {max} is the upper bound; {min} is 0 and not shown."
+  },
+  "admin.settings.auto_delete.max.allow": {
+    "defaultMessage": "上限下允許的例外",
+    "description": "Label of the group of the exceptions that the maximum lets accounts keep posts by."
+  },
+  "admin.settings.auto_delete.max.allow.description": {
+    "defaultMessage": "勾選的例外在適用期間，可以讓貼文保留超過上限。",
+    "description": "Help of the group of the exceptions allowed under the maximum."
+  },
+  "admin.settings.auto_delete.max.allow.visibilities": {
+    "defaultMessage": "依可見範圍保留貼文",
+    "description": "Allowance of the maximum: posts may be kept by their visibility."
+  },
+  "admin.settings.auto_delete.max.allow.thresholds": {
+    "defaultMessage": "保留轉發或喜歡次數多的貼文",
+    "description": "Allowance of the maximum: posts may be kept by their numbers of boosts and favourites."
+  },
+  "admin.settings.auto_delete.max.kept_pins": {
+    "defaultMessage": "上限下保留的釘選數",
+    "description": "Label of the number field of how many of an account's pins keep posts under the maximum."
+  },
+  "admin.settings.auto_delete.max.kept_pins.description": {
+    "defaultMessage": "從最近釘選的開始算：{min} 到 {max}。設為 {max} 則保留所有釘選的貼文。",
+    "description": "Help of the number of pins kept under the maximum. {min} and {max} are the bounds; {max} is the most pins of an account."
+  },
+  "admin.settings.auto_delete.grace": {
+    "defaultMessage": "寬限期（天）",
+    "description": "Label of the number field of the grace period of an account newly bound by the maximum."
+  },
+  "admin.settings.auto_delete.grace.description": {
+    "defaultMessage": "新受上限約束的帳號在收到通知後，可保留自己設定的期間：{min} 到 {max} 天。變更此值不會影響已通知的日期。",
+    "description": "Help of the grace period of the maximum. {min} and {max} are the bounds."
+  },
+  "admin.settings.auto_delete.confirm.title_on": {
+    "defaultMessage": "要將貼文最多保留 {days, plural, other {# 天}}嗎？",
+    "description": "Title of the dialog that asks before turning the maximum of the automatic deletion on. {days} is the maximum."
+  },
+  "admin.settings.auto_delete.confirm.title_stricter": {
+    "defaultMessage": "要將上限調得更嚴格，改為 {days, plural, other {# 天}}嗎？",
+    "description": "Title of the dialog that asks before lowering the maximum or allowing fewer exceptions or pins. {days} is the maximum."
+  },
+  "admin.settings.auto_delete.confirm.notify": {
+    "defaultMessage": "一小時內，所有設定保留貼文較久的本站帳號都會透過應用程式和電子郵件收到通知。",
+    "description": "In the dialog before turning on or tightening the maximum: who is notified and how."
+  },
+  "admin.settings.auto_delete.confirm.grace": {
+    "defaultMessage": "{days, plural, =0 {其貼文會立即開始依上限刪除。} other {其貼文會在通知後 # 天開始依上限刪除。}}",
+    "description": "In the dialog before turning on or tightening the maximum: when the posts of the notified accounts start to go. {days} is the grace period."
+  },
+  "admin.settings.auto_delete.confirm.permanent": {
+    "defaultMessage": "刪除的貼文無法復原，無論是在這裡還是在已傳送到的伺服器上。",
+    "description": "In the dialog before turning on or tightening the maximum: deletions are permanent."
+  },
+  "admin.settings.auto_delete.confirm.exempt": {
+    "defaultMessage": "具有延長保留貼文權限的帳號不受影響。在此之前將設定改為上限以內的帳號，會保留自己的設定。",
+    "description": "Note in the dialog before turning on or tightening the maximum."
+  },
+  "admin.settings.auto_delete.confirm.cancel": {
+    "defaultMessage": "取消",
+    "description": "Button that closes the dialog without saving the maximum."
+  },
+  "admin.settings.auto_delete.confirm.confirm": {
+    "defaultMessage": "儲存並通知",
+    "description": "Button that saves the stricter maximum, which notifies the bound accounts."
+  }
+}

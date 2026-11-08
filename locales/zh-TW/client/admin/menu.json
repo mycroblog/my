@@ -1,0 +1,38 @@
+{
+  "admin.menu.open_reports": {
+    "defaultMessage": "{count, plural, other {# 則未處理的檢舉}}",
+    "description": "Badge of the reports item of the administration menu: how many reports are open."
+  },
+  "admin.menu.pending_appeals": {
+    "defaultMessage": "{count, plural, other {# 件待決定}}",
+    "description": "Badge of the appeals item of the administration menu: how many appeals of moderation actions await a decision."
+  },
+  "admin.menu.pending_registrations": {
+    "defaultMessage": "{count, plural, other {# 件待核准}}",
+    "description": "Badge of the registrations item of the administration menu: how many registrations await approval."
+  },
+  "admin.menu.title": {
+    "defaultMessage": "管理",
+    "description": "Heading of the links to the server administration screens (settings, documents, failed jobs) on the settings page and title of their page, shown only to users with a server administration permission."
+  },
+  "admin.menu.group.accounts": {
+    "defaultMessage": "帳號與註冊",
+    "description": "Heading of a group of the admin and moderation menu: the accounts, the registrations, the blocked sign-ups and the invites."
+  },
+  "admin.menu.group.federation": {
+    "defaultMessage": "聯邦",
+    "description": "Heading of a group of the admin and moderation menu: the actions on other servers and the list of other servers."
+  },
+  "admin.menu.group.connections": {
+    "defaultMessage": "連線",
+    "description": "Heading of a group of the admin and moderation menu: the relays, the webhooks, the login providers and the OAuth apps of the server."
+  },
+  "admin.menu.group.funding": {
+    "defaultMessage": "資金",
+    "description": "Heading of a group of the admin and moderation menu: the finances and the supporters."
+  },
+  "admin.menu.group.operations": {
+    "defaultMessage": "營運",
+    "description": "Heading of a group of the admin and moderation menu: the roles, the background jobs, the errors and closing the service."
+  }
+}

@@ -1,0 +1,662 @@
+{
+  "admin.supporters.title": {
+    "defaultMessage": "支持者",
+    "description": "Title of the supporters screen (manage_supporters) and of its entry in the administration menu."
+  },
+  "admin.supporters.summary": {
+    "defaultMessage": "啟用支持者計畫、設定方案，並查看訂閱。",
+    "description": "Description of the supporters screen in the administration menu."
+  },
+  "admin.supporters.program.title": {
+    "defaultMessage": "支持者計畫",
+    "description": "Heading of the section of the supporters screen about the program."
+  },
+  "admin.supporters.program.description": {
+    "defaultMessage": "使用者訂閱方案後，在付費期間會擁有該方案的角色。在你啟用之前，這個計畫都是關閉的；啟用需要在伺服器設定中指定金流服務，且伺服器要能寄送電子郵件。",
+    "description": "Explanation of the supporter program on the supporters screen."
+  },
+  "admin.supporters.program.provider": {
+    "defaultMessage": "計畫使用的金流服務",
+    "description": "Term of the payment provider that the program was enabled with."
+  },
+  "admin.supporters.program.configured_provider": {
+    "defaultMessage": "已設定的金流服務",
+    "description": "Term of the payment provider of the server's configuration."
+  },
+  "admin.supporters.program.none": {
+    "defaultMessage": "無",
+    "description": "Value of a payment provider term when there is none."
+  },
+  "admin.supporters.program.live_subscriptions": {
+    "defaultMessage": "持續中的訂閱",
+    "description": "Term of the count of the subscriptions that have not ended."
+  },
+  "admin.supporters.program.subscription_count": {
+    "defaultMessage": "{count, plural, other {# 筆訂閱}}",
+    "description": "A number of subscriptions."
+  },
+  "admin.supporters.program.changed_at": {
+    "defaultMessage": "上次啟用或停用",
+    "description": "Term of when the program was last enabled or disabled."
+  },
+  "admin.supporters.program.never": {
+    "defaultMessage": "從未",
+    "description": "Value of the last change of the program when it never changed."
+  },
+  "admin.supporters.program.switch": {
+    "defaultMessage": "啟用支持者計畫",
+    "description": "Label of the checkbox of the program's form that enables or disables the supporter program."
+  },
+  "admin.supporters.program.switch.description": {
+    "defaultMessage": "有持續中的訂閱時無法停用：請先停止提供所有方案，並等待其訂閱結束。",
+    "description": "Description of the checkbox that enables or disables the supporter program."
+  },
+  "admin.supporters.program.failed": {
+    "defaultMessage": "無法儲存：{reason}",
+    "description": "Shown beside the save button of the program's form when the program or the supporter list's setting could not be saved, with the server's reason."
+  },
+  "admin.supporters.warning.no_provider": {
+    "defaultMessage": "尚未設定金流服務，因此無法啟用計畫。",
+    "description": "Warning of the program screen: no payment provider in the configuration."
+  },
+  "admin.supporters.warning.no_email": {
+    "defaultMessage": "伺服器不會寄送電子郵件，因此沒有人能驗證電子郵件地址來訂閱。",
+    "description": "Warning of the program screen: the server sends no email."
+  },
+  "admin.supporters.warning.provider_mismatch": {
+    "defaultMessage": "已設定的金流服務與啟用計畫時使用的不同。在你停用並重新啟用計畫之前，新的訂閱和變更都會被拒絕；之後訂閱者需要重新訂閱。",
+    "description": "Warning of the program screen: the configured provider differs from the program's."
+  },
+  "admin.supporters.warning.no_commerce_disclosure": {
+    "defaultMessage": "伺服器沒有公開商業交易相關揭露事項。",
+    "description": "Warning of the program screen: the commerce disclosures text is empty."
+  },
+  "admin.supporters.warning.no_commerce_disclosure.link": {
+    "defaultMessage": "在條款與政策中撰寫",
+    "description": "Link from the warning to the terms and policies screen."
+  },
+  "admin.supporters.payment.title": {
+    "defaultMessage": "金流服務",
+    "description": "Heading of the section of the payment provider's state on the supporters screen."
+  },
+  "admin.supporters.payment.description": {
+    "defaultMessage": "伺服器設定中的金流服務：它的模式、它傳送的 Webhook，以及每隔幾小時重新讀取訂閱與金流紀錄的對帳。",
+    "description": "Description of the payment provider section."
+  },
+  "admin.supporters.payment.provider": {
+    "defaultMessage": "服務商",
+    "description": "Term of the payment provider's name."
+  },
+  "admin.supporters.payment.mode": {
+    "defaultMessage": "模式",
+    "description": "Term of the payment provider's mode (test or live)."
+  },
+  "admin.supporters.payment.mode.test": {
+    "defaultMessage": "測試：不會實際收費",
+    "description": "Value of the mode for test credentials."
+  },
+  "admin.supporters.payment.mode.live": {
+    "defaultMessage": "正式",
+    "description": "Value of the mode for live credentials."
+  },
+  "admin.supporters.payment.time_zone": {
+    "defaultMessage": "報表的時區",
+    "description": "Term of the time zone in which the provider's income is dated."
+  },
+  "admin.supporters.payment.last_webhook": {
+    "defaultMessage": "最近一次 Webhook",
+    "description": "Term of when the newest webhook delivery was received."
+  },
+  "admin.supporters.payment.no_webhook": {
+    "defaultMessage": "過去 45 天內沒有",
+    "description": "Value of the last webhook when no delivery is recorded (deliveries are kept 45 days)."
+  },
+  "admin.supporters.payment.last_reconcile": {
+    "defaultMessage": "最近一次對帳",
+    "description": "Term of the last reconciliation attempt with its outcome."
+  },
+  "admin.supporters.payment.never": {
+    "defaultMessage": "從未",
+    "description": "Value of the last reconciliation before the first."
+  },
+  "admin.supporters.payment.outcome.succeeded": {
+    "defaultMessage": "成功",
+    "description": "Outcome of a reconciliation that succeeded."
+  },
+  "admin.supporters.payment.outcome.partial": {
+    "defaultMessage": "部分完成：將由後續作業接手",
+    "description": "Outcome of a reconciliation that used its request cap; a continuation goes on."
+  },
+  "admin.supporters.payment.outcome.failed": {
+    "defaultMessage": "失敗",
+    "description": "Outcome of a reconciliation that failed."
+  },
+  "admin.supporters.payment.requests": {
+    "defaultMessage": "向服務商發出的請求",
+    "description": "Term of the requests the last reconciliation sent."
+  },
+  "admin.supporters.payment.checked": {
+    "defaultMessage": "重新讀取的訂閱",
+    "description": "Term of the subscriptions the last reconciliation read again."
+  },
+  "admin.supporters.payment.corrected": {
+    "defaultMessage": "已修正的訂閱",
+    "description": "Term of the subscriptions whose state the last reconciliation changed."
+  },
+  "admin.supporters.payment.error.request_cap": {
+    "defaultMessage": "已用完單次執行的 payments_reconcile_max_requests 個請求，後續作業會在一分鐘後接手。如果大多數執行都發生這種情況，請提高 payments_reconcile_max_requests 或延長 payments_reconcile_interval。",
+    "description": "How to fix a reconciliation that stopped at its request cap."
+  },
+  "admin.supporters.payment.error.permission": {
+    "defaultMessage": "服務商拒絕了 API 金鑰：金鑰錯誤或權限不足。請檢查伺服器環境中的私密金鑰，以及受限金鑰的權限，然後重新部署。",
+    "description": "How to fix a reconciliation refused for the API key."
+  },
+  "admin.supporters.payment.error.not_found": {
+    "defaultMessage": "服務商找不到伺服器要求的項目。請確認金鑰屬於伺服器一直使用的帳號，且其產品和價格沒有在服務商的控制台中被刪除。",
+    "description": "How to fix a reconciliation that failed for a missing object."
+  },
+  "admin.supporters.payment.error.invalid_request": {
+    "defaultMessage": "服務商拒絕了伺服器的請求。請在伺服器的記錄和服務商的控制台中找出這個請求；如果持續發生，請回報給 mycroblog 的開發者。",
+    "description": "How to fix a reconciliation that failed for an invalid request."
+  },
+  "admin.supporters.payment.error.throttled": {
+    "defaultMessage": "服務商限制了伺服器的請求。下次對帳時會再試一次；除非持續發生，否則不需要處理。",
+    "description": "How to fix a reconciliation that was rate limited."
+  },
+  "admin.supporters.payment.error.unavailable": {
+    "defaultMessage": "服務商忙碌中或無法連線。下次對帳時會再試一次；如果持續發生，請檢查伺服器的網路和服務商的狀態頁面。",
+    "description": "How to fix a reconciliation that failed because the provider was unavailable."
+  },
+  "admin.supporters.payment.error.invalid_signature": {
+    "defaultMessage": "簽章不符。請確認伺服器環境中的 Webhook 簽署密鑰，就是在服務商註冊的端點所使用的密鑰。",
+    "description": "How to fix a failure for an invalid signature."
+  },
+  "admin.supporters.payment.error.stale_signature": {
+    "defaultMessage": "簽章的時間相差超過五分鐘。請確認伺服器的時鐘已同步。",
+    "description": "How to fix a failure for a stale signature."
+  },
+  "admin.supporters.payment.error.mode_mismatch": {
+    "defaultMessage": "API 金鑰的模式（測試或正式）與服務商的不同。請使用相同模式的 API 金鑰和 Webhook 簽署密鑰，然後重新部署。",
+    "description": "How to fix a failure for a mode mismatch."
+  },
+  "admin.supporters.payment.error.invalid_response": {
+    "defaultMessage": "服務商回應的格式伺服器無法讀取。下次對帳時會再試一次；如果持續發生，請回報給 mycroblog 的開發者。",
+    "description": "How to fix a failure for an unreadable response."
+  },
+  "admin.supporters.payment.warning.duplicate_charge": {
+    "defaultMessage": "同一筆付款產生的第二筆訂閱尚未取消並退款。每次對帳都會再試一次。伺服器的記錄中會寫出該訂閱和原因。如果是金鑰權限不足，請給予它寫入退款的權限；否則請在服務商的控制台中退還這筆款項。",
+    "description": "Warning of the payment provider section: a member paid twice and the server could not cancel and refund the second subscription."
+  },
+  "admin.supporters.payment.warning.no_webhook": {
+    "defaultMessage": "過去 45 天內沒有任何 Webhook 紀錄。請確認已在服務商以這個伺服器的網址註冊 Webhook 端點，且其簽署密鑰已設定在伺服器環境中。",
+    "description": "Warning of the payment provider section: no webhook delivery is recorded."
+  },
+  "admin.supporters.payment.warning.reconcile_corrected": {
+    "defaultMessage": "最近一次對帳修正了應該由 Webhook 更新的訂閱。請檢查 Webhook 端點的網址、事件和簽署密鑰。",
+    "description": "Warning of the payment provider section: the last reconciliation corrected subscriptions."
+  },
+  "admin.supporters.payment.reconcile.description": {
+    "defaultMessage": "除了定期對帳之外，立即重新從服務商讀取訂閱和金流紀錄。每小時（UTC）可以執行一次，稽核記錄會記下這項操作。",
+    "description": "Description of the button that reconciles with the payment provider now."
+  },
+  "admin.supporters.payment.reconcile.run": {
+    "defaultMessage": "立即對帳",
+    "description": "Button that reconciles with the payment provider now."
+  },
+  "admin.supporters.payment.reconcile.queued": {
+    "defaultMessage": "已將對帳排入佇列。執行後結果會顯示在這裡。",
+    "description": "Status message after queueing a reconciliation."
+  },
+  "admin.supporters.payment.reconcile.too_soon": {
+    "defaultMessage": "這個小時（UTC）已經對帳過了。請在下一個小時再試一次。",
+    "description": "Error of a reconciliation started again within the same UTC hour."
+  },
+  "admin.supporters.payment.reconcile.failed": {
+    "defaultMessage": "無法開始對帳：{reason}",
+    "description": "Error of starting a reconciliation, with the server's reason."
+  },
+  "admin.supporters.new.title": {
+    "defaultMessage": "建立方案",
+    "description": "Link to the page that creates a plan, and the title of that page."
+  },
+  "admin.supporters.new.description": {
+    "defaultMessage": "方案會給予訂閱者一個尚無人擁有的角色，只有一般成員的權限，且位於所有管理團隊角色之下。等級越高的方案越高階，必須包含所有較低方案的內容。儲存後會在金流服務建立價格；價格準備好後，方案即可接受訂閱。",
+    "description": "Explanation of the form of a new plan."
+  },
+  "admin.supporters.new.submit": {
+    "defaultMessage": "建立方案",
+    "description": "Submit button of the form of a new plan."
+  },
+  "admin.supporters.plan.role": {
+    "defaultMessage": "角色",
+    "description": "Label of the role of a plan, and its term in the list."
+  },
+  "admin.supporters.plan.role.description": {
+    "defaultMessage": "尚無人擁有的角色的鍵值。之後無法變更。",
+    "description": "Description of the role field of a new plan."
+  },
+  "admin.supporters.plan.role.required": {
+    "defaultMessage": "請輸入角色的鍵值。",
+    "description": "Error of the role field of a new plan when it is empty."
+  },
+  "admin.supporters.plan.role_value": {
+    "defaultMessage": "{role}，位置 {position}",
+    "description": "The role of a plan in the list: its key and position."
+  },
+  "admin.supporters.plan.role.no_permissions": {
+    "defaultMessage": "沒有權限",
+    "description": "Value of the permissions of a plan's role when it has none."
+  },
+  "admin.supporters.plan.permissions": {
+    "defaultMessage": "角色權限",
+    "description": "Term of the permissions of a plan's role."
+  },
+  "admin.supporters.plan.name": {
+    "defaultMessage": "名稱",
+    "description": "Label of the name of a plan."
+  },
+  "admin.supporters.plan.name.invalid": {
+    "defaultMessage": "請輸入 1 到 {max} 個字元、單行的名稱。",
+    "description": "Error of the name of a plan."
+  },
+  "admin.supporters.plan.description": {
+    "defaultMessage": "說明",
+    "description": "Label of the description of a plan."
+  },
+  "admin.supporters.plan.description.description": {
+    "defaultMessage": "純文字，會和方案一起顯示。可以留空。",
+    "description": "Description of the description field of a plan."
+  },
+  "admin.supporters.plan.characters_left": {
+    "defaultMessage": "{count, plural, other {還剩 # 個字元}}",
+    "description": "Characters left in the description of a plan."
+  },
+  "admin.supporters.plan.characters_over": {
+    "defaultMessage": "{count, plural, other {超過 # 個字元}}",
+    "description": "Characters over the limit in the description of a plan."
+  },
+  "admin.supporters.plan.amount": {
+    "defaultMessage": "月費",
+    "description": "Label of the monthly price of a plan."
+  },
+  "admin.supporters.plan.amount.description": {
+    "defaultMessage": "以貨幣的主要單位輸入，例如 500 或 4.99。",
+    "description": "Description of the monthly price field."
+  },
+  "admin.supporters.plan.amount.invalid": {
+    "defaultMessage": "請輸入金額，例如 500 或 4.99。",
+    "description": "Error of the monthly price field."
+  },
+  "admin.supporters.plan.currency": {
+    "defaultMessage": "貨幣",
+    "description": "Label of the currency of a new plan."
+  },
+  "admin.supporters.plan.currency.description": {
+    "defaultMessage": "ISO 4217 代碼，例如 JPY 或 USD。之後無法變更。",
+    "description": "Description of the currency field."
+  },
+  "admin.supporters.plan.currency.invalid": {
+    "defaultMessage": "請輸入三個字母的代碼，例如 JPY。",
+    "description": "Error of the currency field."
+  },
+  "admin.supporters.plan.discount": {
+    "defaultMessage": "年繳折扣（%）",
+    "description": "Label of the discount of the yearly price."
+  },
+  "admin.supporters.plan.discount.description": {
+    "defaultMessage": "年費為月費 × 12 再扣除這個百分比，無條件捨去。",
+    "description": "Description of the yearly discount field."
+  },
+  "admin.supporters.plan.emoji_limit": {
+    "defaultMessage": "自訂表情符號上限（每月）",
+    "description": "Label of the monthly custom emoji limit of a plan, and its term in the list."
+  },
+  "admin.supporters.plan.emoji_limit.description": {
+    "defaultMessage": "在角色允許時，訂閱者每月（UTC）可以建立的自訂表情符號數量。",
+    "description": "Description of the monthly custom emoji limit field."
+  },
+  "admin.supporters.plan.rank": {
+    "defaultMessage": "等級",
+    "description": "Label of the rank of a plan, and its term in the list."
+  },
+  "admin.supporters.plan.rank.description": {
+    "defaultMessage": "等級越高的方案越高階；每個方案的等級都不同。",
+    "description": "Description of the rank field."
+  },
+  "admin.supporters.plan.role_position": {
+    "defaultMessage": "角色位置",
+    "description": "Label of the position of a plan's role in the dialog that changes the plan."
+  },
+  "admin.supporters.plan.role_position.description": {
+    "defaultMessage": "位於所有管理團隊角色之下，並高於下一級方案的角色。",
+    "description": "Description of the role position field."
+  },
+  "admin.supporters.plan.number.invalid": {
+    "defaultMessage": "請輸入 0 到 {max} 的整數。",
+    "description": "Error of a number field of a plan."
+  },
+  "admin.supporters.plan.visibility": {
+    "defaultMessage": "可見範圍",
+    "description": "Label of the visibility of a plan."
+  },
+  "admin.supporters.plan.visibility.public": {
+    "defaultMessage": "公開",
+    "description": "Visibility of a plan that takes new subscriptions."
+  },
+  "admin.supporters.plan.visibility.hidden": {
+    "defaultMessage": "隱藏",
+    "description": "Visibility of a plan that takes no new subscriptions; its subscriptions go on."
+  },
+  "admin.supporters.plan.save_failed": {
+    "defaultMessage": "無法儲存方案：{reason}",
+    "description": "Error of saving a plan, with the server's reason."
+  },
+  "admin.supporters.plan.created": {
+    "defaultMessage": "已建立方案 {name}。稽核記錄會記下這項操作。",
+    "description": "Status message after creating a plan."
+  },
+  "admin.supporters.plan.updated": {
+    "defaultMessage": "已儲存方案 {name}。稽核記錄會記下這項操作。",
+    "description": "Status message after changing a plan."
+  },
+  "admin.supporters.plan.retired_done": {
+    "defaultMessage": "已停止提供方案 {name}。它的訂閱會在各自的期間結束時終止。",
+    "description": "Status message after retiring a plan."
+  },
+  "admin.supporters.plan.change_failed": {
+    "defaultMessage": "無法變更方案：{reason}",
+    "description": "Error of retiring a plan, with the server's reason."
+  },
+  "admin.supporters.plans.title": {
+    "defaultMessage": "方案",
+    "description": "Caption of the table of plans."
+  },
+  "admin.supporters.plans.empty": {
+    "defaultMessage": "還沒有方案",
+    "description": "Empty state of the list of plans."
+  },
+  "admin.supporters.plans.empty.description": {
+    "defaultMessage": "建立方案即可開始接受訂閱。",
+    "description": "Description of the empty list of plans; the button that creates one is above the list."
+  },
+  "admin.supporters.plan.preparing": {
+    "defaultMessage": "正在準備價格",
+    "description": "State of a plan whose prices the payment provider has not made yet; it takes no subscriptions until then."
+  },
+  "admin.supporters.plan.monthly": {
+    "defaultMessage": "月繳",
+    "description": "Term of the monthly price of a plan."
+  },
+  "admin.supporters.plan.yearly": {
+    "defaultMessage": "年繳",
+    "description": "Term of the yearly price of a plan."
+  },
+  "admin.supporters.plan.yearly_value": {
+    "defaultMessage": "{amount}（折扣 {discount}%）",
+    "description": "The yearly price of a plan and its discount in percent."
+  },
+  "admin.supporters.plan.members": {
+    "defaultMessage": "成員",
+    "description": "Term of the count of the subscriptions of a plan that hold its role."
+  },
+  "admin.supporters.plan.retired_at": {
+    "defaultMessage": "停止提供時間",
+    "description": "Term of when a plan was retired."
+  },
+  "admin.supporters.plan.edit.title": {
+    "defaultMessage": "編輯方案",
+    "description": "Heading of the section of a plan's page with the form that changes it."
+  },
+  "admin.supporters.plan.edit.description": {
+    "defaultMessage": "新價格適用於新的訂閱和方案變更；目前的訂閱者維持原本的價格。",
+    "description": "Explanation in the dialog that changes a plan."
+  },
+  "admin.supporters.plan.retire": {
+    "defaultMessage": "停止提供",
+    "description": "Button that retires a plan on its page, and the confirm button of its dialog."
+  },
+  "admin.supporters.plan.retire.title": {
+    "defaultMessage": "要停止提供 {name} 嗎？",
+    "description": "Title of the confirmation before retiring a plan."
+  },
+  "admin.supporters.plan.retire.description": {
+    "defaultMessage": "這項操作無法復原。方案將不再接受新的訂閱，而它的每筆訂閱都會在期間結束時終止（尚未付款的會立即終止）。",
+    "description": "Explanation in the confirmation before retiring a plan."
+  },
+  "admin.supporters.cancel": {
+    "defaultMessage": "取消",
+    "description": "Button that closes a dialog of the supporters screen, or leaves the page of a new plan, without doing anything."
+  },
+  "admin.supporters.save": {
+    "defaultMessage": "儲存",
+    "description": "Submit button of the program's form and of the form that changes a plan."
+  },
+  "admin.supporters.subscriptions.title": {
+    "defaultMessage": "訂閱",
+    "description": "Caption of the table of subscriptions."
+  },
+  "admin.supporters.subscriptions.empty": {
+    "defaultMessage": "沒有訂閱",
+    "description": "Empty state of the list of subscriptions."
+  },
+  "admin.supporters.filter.plan": {
+    "defaultMessage": "方案",
+    "description": "Label of the filter of the subscriptions by plan."
+  },
+  "admin.supporters.filter.any_plan": {
+    "defaultMessage": "所有方案",
+    "description": "Choice of the plan filter that shows every plan."
+  },
+  "admin.supporters.filter.state": {
+    "defaultMessage": "狀態",
+    "description": "Label of the filter of the subscriptions by state."
+  },
+  "admin.supporters.filter.any_state": {
+    "defaultMessage": "所有狀態",
+    "description": "Choice of the state filter that shows every state."
+  },
+  "admin.supporters.state.pending": {
+    "defaultMessage": "尚未付款",
+    "description": "State of a subscription that has started and is not paid yet."
+  },
+  "admin.supporters.state.active": {
+    "defaultMessage": "有效",
+    "description": "State of a paid subscription."
+  },
+  "admin.supporters.state.canceling": {
+    "defaultMessage": "期間結束時終止",
+    "description": "State of a subscription canceled at the end of its period."
+  },
+  "admin.supporters.state.past_due": {
+    "defaultMessage": "付款失敗",
+    "description": "State of a subscription whose payment failed less than 7 days ago; it keeps its role."
+  },
+  "admin.supporters.state.lapsed": {
+    "defaultMessage": "已失效",
+    "description": "State of a subscription whose payment failed more than 7 days ago, or paused; no role."
+  },
+  "admin.supporters.state.expired": {
+    "defaultMessage": "已結束",
+    "description": "State of a subscription that ended."
+  },
+  "admin.supporters.state.revoked": {
+    "defaultMessage": "已退款或遭拒付",
+    "description": "State of a subscription revoked by a full refund or a chargeback."
+  },
+  "admin.supporters.state.abandoned": {
+    "defaultMessage": "已放棄",
+    "description": "State of a subscription that ended before its first payment."
+  },
+  "admin.supporters.subscription.deleted_account": {
+    "defaultMessage": "已刪除的帳號",
+    "description": "Heading of a subscription whose subscriber's account is erased."
+  },
+  "admin.supporters.subscription.state": {
+    "defaultMessage": "狀態",
+    "description": "Term of the state of a subscription."
+  },
+  "admin.supporters.subscription.account": {
+    "defaultMessage": "帳號",
+    "description": "Header of the account column in the table of supporter subscriptions."
+  },
+  "admin.supporters.subscription.plan": {
+    "defaultMessage": "方案",
+    "description": "Term of the plan of a subscription."
+  },
+  "admin.supporters.subscription.price": {
+    "defaultMessage": "價格",
+    "description": "Term of the price of a subscription."
+  },
+  "admin.supporters.subscription.per_month": {
+    "defaultMessage": "每月 {amount}",
+    "description": "Price of a monthly subscription."
+  },
+  "admin.supporters.subscription.per_year": {
+    "defaultMessage": "每年 {amount}",
+    "description": "Price of a yearly subscription."
+  },
+  "admin.supporters.subscription.started_at": {
+    "defaultMessage": "開始時間",
+    "description": "Term of when a subscription started."
+  },
+  "admin.supporters.subscription.period_ends_at": {
+    "defaultMessage": "期間結束",
+    "description": "Column header and term of the end of the current period of a subscription."
+  },
+  "admin.supporters.subscription.grace_ends_at": {
+    "defaultMessage": "角色保留至",
+    "description": "Term of the end of the grace period of a subscription whose payment failed."
+  },
+  "admin.supporters.subscription.scheduled": {
+    "defaultMessage": "預定的變更",
+    "description": "Term of the change of a subscription that waits for the end of its period."
+  },
+  "admin.supporters.subscription.scheduled_month": {
+    "defaultMessage": "期間結束時改為月繳",
+    "description": "A scheduled change to a monthly price."
+  },
+  "admin.supporters.subscription.scheduled_year": {
+    "defaultMessage": "期間結束時改為年繳",
+    "description": "A scheduled change to a yearly price."
+  },
+  "admin.supporters.subscription.cancel": {
+    "defaultMessage": "立即終止",
+    "description": "Button that ends a subscription at once on its page, and the confirm button of its dialog."
+  },
+  "admin.supporters.subscription.cancel.title": {
+    "defaultMessage": "要立即終止 {name} 的訂閱嗎？",
+    "description": "Title of the confirmation before ending a subscription at once."
+  },
+  "admin.supporters.subscription.cancel.description": {
+    "defaultMessage": "角色會立即移除，金流服務也會停止收費。不會退還任何款項，但仍在等待中的訂閱的付款除外，因為它沒有提供任何內容：必要時請在金流服務中退款。這項操作無法復原。",
+    "description": "Explanation in the confirmation before ending a subscription at once."
+  },
+  "admin.supporters.subscription.canceled": {
+    "defaultMessage": "已終止 {plan} 的一筆訂閱。稽核記錄會記下這項操作。",
+    "description": "Status message after ending a subscription at once."
+  },
+  "admin.supporters.subscription.cancel_failed": {
+    "defaultMessage": "無法終止訂閱：{reason}",
+    "description": "Error of ending a subscription, with the server's reason."
+  },
+  "admin.supporters.list_visibility": {
+    "defaultMessage": "{visibility, select, everyone {所有人都可以查看支持者列表。} signed_in {已登入的使用者可以查看支持者列表。} other {沒有人可以查看支持者列表。}}",
+    "description": "Who may read the supporter list, on the supporters screen, by the server setting supporter_list_visibility (off, signed_in, or everyone); shown to viewers who may not change the server settings."
+  },
+  "admin.supporters.pages": {
+    "defaultMessage": "支持者頁面",
+    "description": "Name of the navigation between the pages of the supporters screen, under its heading."
+  },
+  "admin.supporters.pages.program": {
+    "defaultMessage": "計畫",
+    "description": "Link to the first page of the supporters screen: the program and the payment provider."
+  },
+  "admin.supporters.pages.plans": {
+    "defaultMessage": "方案",
+    "description": "Link to the page of the supporters screen with the plans."
+  },
+  "admin.supporters.pages.subscriptions": {
+    "defaultMessage": "訂閱",
+    "description": "Link to the page of the supporters screen with the subscriptions."
+  },
+  "admin.supporters.plans.page_title": {
+    "defaultMessage": "支持者方案",
+    "description": "Title of the page of the supporters screen with the list of plans."
+  },
+  "admin.supporters.subscriptions.page_title": {
+    "defaultMessage": "支持者訂閱",
+    "description": "Title of the page of the supporters screen with the list of subscriptions."
+  },
+  "admin.supporters.plan.page_title": {
+    "defaultMessage": "支持者方案",
+    "description": "Title of the page of one supporter plan."
+  },
+  "admin.supporters.plan.back": {
+    "defaultMessage": "返回方案",
+    "description": "Link from the page of one plan, or of a new plan, to the list of plans."
+  },
+  "admin.supporters.subscription.page_title": {
+    "defaultMessage": "支持者訂閱",
+    "description": "Title of the page of one subscription."
+  },
+  "admin.supporters.subscription.back": {
+    "defaultMessage": "返回訂閱",
+    "description": "Link from the page of one subscription to the list of subscriptions."
+  },
+  "admin.supporters.program.saved": {
+    "defaultMessage": "已儲存。稽核記錄會記下每項變更。",
+    "description": "Shown beside the save button of the program's form after it is saved."
+  },
+  "admin.supporters.program.unchanged": {
+    "defaultMessage": "沒有任何變更。",
+    "description": "Shown beside the save button of the program's form when it is saved without a change."
+  },
+  "admin.supporters.plan.unchanged": {
+    "defaultMessage": "沒有任何變更。",
+    "description": "Shown beside the save button of a plan's form when it is saved without a change."
+  },
+  "admin.supporters.plan.state": {
+    "defaultMessage": "狀態",
+    "description": "Column header and term of the state of a plan: in effect, preparing its prices, hidden or retired."
+  },
+  "admin.supporters.plan.state.in_effect": {
+    "defaultMessage": "有效",
+    "description": "State of a plan that takes subscriptions, and the choice of the plans' filter for the plans that are not retired."
+  },
+  "admin.supporters.plan.state.hidden": {
+    "defaultMessage": "有效，已隱藏",
+    "description": "State of a plan that takes subscriptions but is not listed to users."
+  },
+  "admin.supporters.plan.state.retired": {
+    "defaultMessage": "已停止提供",
+    "description": "State of a retired plan, and the choice of the plans' filter for the retired plans."
+  },
+  "admin.supporters.plan.created_at": {
+    "defaultMessage": "建立時間",
+    "description": "Column header and term of when a plan was created."
+  },
+  "admin.supporters.plans.none_in_state": {
+    "defaultMessage": "沒有這個狀態的方案",
+    "description": "Shown instead of the list of plans when the filter leaves none."
+  },
+  "admin.supporters.plan.preparing.description": {
+    "defaultMessage": "金流服務正在建立價格。價格準備好後，方案即可接受訂閱。",
+    "description": "Shown on the page of a plan whose prices the payment provider has not made yet."
+  },
+  "admin.supporters.plan.retired_note": {
+    "defaultMessage": "這個方案已停止提供：它不接受訂閱，也無法變更。",
+    "description": "Shown on the page of a retired plan."
+  },
+  "admin.supporters.plan.retire.section": {
+    "defaultMessage": "停止提供方案",
+    "description": "Heading of the section of a plan's page that retires it."
+  },
+  "admin.supporters.subscription.end.section": {
+    "defaultMessage": "終止訂閱",
+    "description": "Heading of the section of a subscription's page that ends it at once."
+  },
+  "admin.supporters.subscription.no_period": {
+    "defaultMessage": "無",
+    "description": "Shown for the end of the period of a subscription that has no paid period yet."
+  }
+}

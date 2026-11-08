@@ -16,9 +16,9 @@ import (
 	"github.com/mycroblog/my/internal/i18n"
 )
 
-// Locales are the locales that the preview renders: the source locale, Japanese, Simplified
-// Chinese, and the pseudo-locales that stretch the text (en-XA) and mirror it (ar-XB).
-var Locales = []string{"en", "ja", "zh-CN", i18n.PseudoLocaleLong, i18n.PseudoLocaleRTL}
+// Locales are the locales that the preview renders: the source locale, Japanese, Simplified and
+// Traditional Chinese, and the pseudo-locales that stretch the text (en-XA) and mirror it (ar-XB).
+var Locales = []string{"en", "ja", "zh-CN", "zh-TW", i18n.PseudoLocaleLong, i18n.PseudoLocaleRTL}
 
 // sampleFrom is the sender's address of the preview's From header.
 const sampleFrom = "noreply@" + sampleHost

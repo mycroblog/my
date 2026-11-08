@@ -25,9 +25,11 @@ describe("fallbackChain", () => {
   test("matches internal/i18n FallbackChain", () => {
     expect(fallbackChain("en")).toEqual(["en"]);
     expect(fallbackChain("ja-JP")).toEqual(["ja-JP", "ja", "en"]);
-    expect(fallbackChain("zh-Hant-TW")).toEqual(["zh-Hant-TW", "zh-Hant", "en"]);
-    expect(fallbackChain("zh-TW")).toEqual(["zh-TW", "zh-Hant", "en"]);
-    expect(fallbackChain("zh-Hans-CN")).toEqual(["zh-Hans-CN", "zh-Hans", "zh", "en"]);
+    expect(fallbackChain("zh-Hant-TW")).toEqual(["zh-Hant-TW", "zh-Hant", "zh-TW", "en"]);
+    expect(fallbackChain("zh-HK")).toEqual(["zh-HK", "zh-TW", "en"]);
+    expect(fallbackChain("zh-TW")).toEqual(["zh-TW", "en"]);
+    expect(fallbackChain("zh-Hans-CN")).toEqual(["zh-Hans-CN", "zh-Hans", "zh-CN", "en"]);
+    expect(fallbackChain("pt-PT")).toEqual(["pt-PT", "pt-BR", "en"]);
   });
 });
 

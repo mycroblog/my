@@ -1,0 +1,30 @@
+{
+  "session.account.failed": {
+    "defaultMessage": "無法載入你的帳號",
+    "description": "Heading of the error in the account section of the settings when the signed-in account failed to load; the reason follows."
+  },
+  "session.account.retry": {
+    "defaultMessage": "再試一次",
+    "description": "Button that loads the signed-in account again after it failed to load."
+  },
+  "session.account.title": {
+    "defaultMessage": "帳號",
+    "description": "Heading of the section of the settings page about the signed-in account."
+  },
+  "session.sign_in": {
+    "defaultMessage": "登入",
+    "description": "Link in the account section of the settings page that opens the sign-in page."
+  },
+  "session.sign_out": {
+    "defaultMessage": "登出",
+    "description": "Button that signs the user out of the app in every tab."
+  },
+  "session.sign_out.failed": {
+    "defaultMessage": "你已在這裡登出，但無法連上伺服器。重新載入頁面時，你的工作階段可能會恢復。",
+    "description": "Notice after signing out when the server could not be told; the browser may still hold the session."
+  },
+  "session.signed_out": {
+    "defaultMessage": "你尚未登入。",
+    "description": "Text in the account section of the settings page when nobody is signed in."
+  }
+}

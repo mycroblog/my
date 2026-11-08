@@ -14,7 +14,8 @@
 //   error: copy outside the tone and punctuation rules (web-client/16-look-states-and-wording.md G19, G20): an exclamation mark
 //          in any non-pseudo locale; a full-width colon, semicolon or parenthesis, or an ASCII comma, in Japanese text
 //          (use ":", ";", "()" and "、"); in Simplified Chinese, an ASCII comma, semicolon, colon, question mark or
-//          parenthesis next to a Han character, corner brackets 「」『』, or kana
+//          parenthesis next to a Han character, corner brackets 「」『』, or kana; in Traditional Chinese, the same ASCII
+//          punctuation, curly quotation marks “”‘’ (use 「」『』), kana, or a character only Simplified Chinese writes
 //   error: a variant the glossary (tools/i18n/glossary.json, G21) bans in the locale's text, in any namespace
 //   warn:  untranslated key (falls back to en at runtime)
 //   warn:  translation drops a source argument (sometimes legitimate)
@@ -90,7 +91,13 @@ function copyStyleFindings(locale: string, text: string): string[] {
       out.push('use "、" instead of an ASCII comma in Japanese (web-client/16-look-states-and-wording.md G20)');
   }
   if (isSimplifiedChinese(locale)) out.push(...simplifiedChineseFindings(text));
+  if (isTraditionalChinese(locale)) out.push(...traditionalChineseFindings(text));
   return out;
+}
+
+/** zh-TW and the tags that resolve to it (ADR-0009 §2). */
+function isTraditionalChinese(locale: string): boolean {
+  return new Intl.Locale(locale).language === "zh" && !isSimplifiedChinese(locale);
 }
 
 /** zh-CN and the tags that resolve to it (ADR-0009 §2). */
@@ -115,6 +122,34 @@ function simplifiedChineseFindings(text: string): string[] {
     );
   if (/[\p{Script=Hiragana}\p{Script=Katakana}]/u.test(text))
     out.push("no kana in Simplified Chinese (web-client/16-look-states-and-wording.md G20)");
+  return out;
+}
+
+/**
+ * Characters only Simplified Chinese writes: each one's Traditional form is another code point, and Traditional text
+ * never uses it (a converted or mixed-up string). Common UI words only; review catches the rest.
+ */
+const SIMPLIFIED_ONLY =
+  /[们这个说发书设认关账号录图视频网络软据库应该对开从过还进选择删让请时间问题错误页动态码为务当将无与实现点击显户级员复帮览项织线绑权验证读写传输]/u;
+
+/** The punctuation and script rules of Traditional Chinese (web-client/16-look-states-and-wording.md G20). */
+function traditionalChineseFindings(text: string): string[] {
+  const out: string[] = [];
+  if (ZH_ASCII_PUNCTUATION.test(text))
+    out.push(
+      'use the full-width "，", "；", "：", "？" and "（）" next to Chinese text in Traditional Chinese (web-client/16-look-states-and-wording.md G20)',
+    );
+  if (/[“”‘’]/u.test(text))
+    out.push(
+      'use "「…」" and "『…』" as quotation marks in Traditional Chinese, not "“”" or "‘’" (web-client/16-look-states-and-wording.md G20)',
+    );
+  if (/[\p{Script=Hiragana}\p{Script=Katakana}]/u.test(text))
+    out.push("no kana in Traditional Chinese (web-client/16-look-states-and-wording.md G20)");
+  const simplified = text.match(SIMPLIFIED_ONLY);
+  if (simplified)
+    out.push(
+      `"${simplified[0]}" is a Simplified Chinese character; write Traditional Chinese (web-client/16-look-states-and-wording.md G20)`,
+    );
   return out;
 }
 

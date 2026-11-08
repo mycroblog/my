@@ -1,0 +1,334 @@
+{
+  "admin.roles.builtin.admin": {
+    "defaultMessage": "擁有所有權限的內建角色。只能變更它的徽章，且無法刪除。",
+    "description": "Note on the built-in admin role on its page."
+  },
+  "admin.roles.builtin.moderator": {
+    "defaultMessage": "內建角色。可以變更它的位階和權限，但無法刪除。",
+    "description": "Note on the built-in moderator role on its page."
+  },
+  "admin.roles.cancel": {
+    "defaultMessage": "取消",
+    "description": "Button that closes the confirmation of deleting a role without deleting it."
+  },
+  "admin.roles.category.moderation": {
+    "defaultMessage": "審核",
+    "description": "Label of the group of moderation permissions, and the term of them in the list of roles."
+  },
+  "admin.roles.category.server": {
+    "defaultMessage": "伺服器管理",
+    "description": "Label of the group of server administration permissions, and the term of them in the list of roles."
+  },
+  "admin.roles.category.member": {
+    "defaultMessage": "成員功能",
+    "description": "Label of the group of member permissions (features of the user's side, such as reading the finances), and the term of them in the list of roles."
+  },
+  "admin.roles.created": {
+    "defaultMessage": "已建立角色 {role}。稽核日誌已記錄這項操作。",
+    "description": "Result after creating a role. {role} is its key (isolated)."
+  },
+  "admin.roles.delete": {
+    "defaultMessage": "刪除",
+    "description": "Button that deletes a role (and the confirmation's button)."
+  },
+  "admin.roles.delete.description": {
+    "defaultMessage": "這個操作無法復原。有人擁有的角色無法刪除：請先撤銷他們的這個角色。",
+    "description": "Body of the confirmation of deleting a role."
+  },
+  "admin.roles.delete.title": {
+    "defaultMessage": "要刪除角色 {role} 嗎？",
+    "description": "Title of the confirmation of deleting a role. {role} is its key (isolated)."
+  },
+  "admin.roles.delete_failed": {
+    "defaultMessage": "無法刪除角色：{reason}",
+    "description": "Error in the confirmation when deleting a role failed. {reason} is the server's explanation."
+  },
+  "admin.roles.deleted": {
+    "defaultMessage": "已刪除角色 {role}。稽核日誌已記錄這項操作。",
+    "description": "Result after deleting a role. {role} is its key (isolated)."
+  },
+  "admin.roles.failed.outranked": {
+    "defaultMessage": "這個角色現在高於你的最高角色，所以你無法變更它。",
+    "description": "Error when the server refused a change of a role above the viewer's highest role (their roles changed since the page loaded)."
+  },
+  "admin.roles.key": {
+    "defaultMessage": "鍵值",
+    "description": "Label of the field of a new role's key, its name."
+  },
+  "admin.roles.key.description": {
+    "defaultMessage": "最多 {max} 個小寫英文字母、數字、底線或連字號，不可為「new」。之後無法變更。",
+    "description": "Description of the key field. {max} is the length limit."
+  },
+  "admin.roles.key.invalid": {
+    "defaultMessage": "請輸入最多 {max} 個小寫英文字母、數字、底線或連字號。",
+    "description": "Error of the key field when the key is empty or has other characters. {max} is the length limit."
+  },
+  "admin.roles.key.reserved": {
+    "defaultMessage": "「new」不能作為角色的鍵值。請選擇其他鍵值。",
+    "description": "Error of the key field when the key is \"new\", which the address of the page that creates a role uses."
+  },
+  "admin.roles.list.title": {
+    "defaultMessage": "這個伺服器的角色",
+    "description": "Caption of the table of roles, highest position first."
+  },
+  "admin.roles.missing_permissions": {
+    "defaultMessage": "你的角色未授予的權限：{permissions}",
+    "description": "Error under the permissions of a role that the server refused. {permissions} lists the permissions (identifiers, isolated)."
+  },
+  "admin.roles.new.accounts": {
+    "defaultMessage": "尋找帳號",
+    "description": "Link from the roles screen to the account search, where a role is granted."
+  },
+  "admin.roles.new.description": {
+    "defaultMessage": "新角色不會有任何人擁有。請在帳號的管理頁面上授予它。",
+    "description": "Text above the form that creates a role: how a role is granted. A link to the accounts follows."
+  },
+  "admin.roles.new.no_role": {
+    "defaultMessage": "你沒有任何角色，所以無法建立角色。",
+    "description": "Text instead of the form when the viewer holds no role (they may create none)."
+  },
+  "admin.roles.new.title": {
+    "defaultMessage": "建立角色",
+    "description": "Title of the page that creates a role, and the link to it from the list of roles."
+  },
+  "admin.roles.outranked": {
+    "defaultMessage": "高於你的最高角色 {role}，所以你無法變更它。",
+    "description": "Note on the page of a role above the viewer's highest role. {role} is the viewer's highest role (isolated)."
+  },
+  "admin.roles.permission.manage_accounts": {
+    "defaultMessage": "帳號與註冊",
+    "description": "Name of the permission manage_accounts: the accounts and their moderation actions, registrations, sign-up blocks, and appeals."
+  },
+  "admin.roles.permission.manage_announcements": {
+    "defaultMessage": "公告",
+    "description": "Name of the permission manage_announcements: the server's announcements to every local user."
+  },
+  "admin.roles.permission.manage_finance": {
+    "defaultMessage": "費用",
+    "description": "Name of the permission manage_finance: the instance's costs, their totals, and the imports of the cloud providers' usage charges."
+  },
+  "admin.roles.permission.view_finance": {
+    "defaultMessage": "查看財務",
+    "description": "Name of the permission view_finance: reading the totals of the instance's costs on the finances page, without recording or changing them."
+  },
+  "admin.roles.permission.create_custom_emojis": {
+    "defaultMessage": "申請自訂表情符號",
+    "description": "Name of the permission create_custom_emojis: requesting new custom emoji, which an administrator approves, and changing and deleting the ones the user made."
+  },
+  "admin.roles.permission.start_voice_rooms": {
+    "defaultMessage": "開啟語音聊天室",
+    "description": "Name of the permission start_voice_rooms: opening voice chat rooms and hosting them, while the server lets only the holders of this permission open them."
+  },
+  "admin.roles.permission.create_invites": {
+    "defaultMessage": "建立邀請",
+    "description": "Name of the permission create_invites: creating, listing, and revoking invites of one's own, while the server lets only the holders of this permission create them."
+  },
+  "admin.roles.permission.keep_posts_longer": {
+    "defaultMessage": "延長貼文保留時間",
+    "description": "Name of the permission keep_posts_longer: keeping one's own posts past the server's maximum of the automatic deletion of old posts, and turning that deletion off."
+  },
+  "admin.roles.permission.manage_errors": {
+    "defaultMessage": "錯誤",
+    "description": "Name of the permission manage_errors: the groups of the errors that the server and the web client report, resolving and muting them, and their notifications and webhook events."
+  },
+  "admin.roles.permission.manage_login_providers": {
+    "defaultMessage": "登入服務",
+    "description": "Name of the permission manage_login_providers: setting up, changing, disabling, and deleting the external identity providers (OpenID Connect, GitHub, Mastodon) that users sign in and sign up with."
+  },
+  "admin.roles.permission.manage_oauth_apps": {
+    "defaultMessage": "OAuth App",
+    "description": "Name of the permission manage_oauth_apps: all the OAuth clients, disabling them, and denying the hosts of client metadata documents."
+  },
+  "admin.roles.permission.manage_service_closure": {
+    "defaultMessage": "服務關閉",
+    "description": "Name of the permission manage_service_closure: announcing the closure of the service, changing its dates, withdrawing it, and closing the server."
+  },
+  "admin.roles.permission.manage_supporters": {
+    "defaultMessage": "支持者",
+    "description": "Name of the permission manage_supporters: the supporter program, its plans, and their subscriptions."
+  },
+  "admin.roles.permission.manage_custom_emojis": {
+    "defaultMessage": "自訂表情符號",
+    "description": "Name of the permission manage_custom_emojis: the custom emoji."
+  },
+  "admin.roles.permission.manage_domains": {
+    "defaultMessage": "其他伺服器",
+    "description": "Name of the permission manage_domains: the moderation actions on domains and the health of remote servers."
+  },
+  "admin.roles.permission.manage_invites": {
+    "defaultMessage": "邀請",
+    "description": "Name of the permission manage_invites: the invites."
+  },
+  "admin.roles.permission.manage_jobs": {
+    "defaultMessage": "失敗的任務",
+    "description": "Name of the permission manage_jobs: the dead jobs of the job queue."
+  },
+  "admin.roles.permission.manage_reports": {
+    "defaultMessage": "檢舉",
+    "description": "Name of the permission manage_reports: handling reports."
+  },
+  "admin.roles.permission.manage_roles": {
+    "defaultMessage": "角色",
+    "description": "Name of the permission manage_roles: the roles and granting them."
+  },
+  "admin.roles.permission.manage_rules": {
+    "defaultMessage": "伺服器規則",
+    "description": "Name of the permission manage_rules: the instance rules."
+  },
+  "admin.roles.permission.manage_settings": {
+    "defaultMessage": "伺服器設定",
+    "description": "Name of the permission manage_settings: the instance's settings, theme, terms, and privacy policy."
+  },
+  "admin.roles.permission.manage_login_recovery": {
+    "defaultMessage": "登入復原",
+    "description": "Name of the permission manage_login_recovery: recovering a user's sign-in, by removing their two-factor authentication or issuing a password reset link."
+  },
+  "admin.roles.permission.manage_webhooks": {
+    "defaultMessage": "Webhook",
+    "description": "Name of the permission manage_webhooks: the webhooks."
+  },
+  "admin.roles.permission.view_audit": {
+    "defaultMessage": "稽核日誌",
+    "description": "Name of the permission view_audit: reading the audit log."
+  },
+  "admin.roles.permissions.description": {
+    "defaultMessage": "選擇這個角色授予的權限。你只能授予或移除你自己的角色所授予的權限。",
+    "description": "Text above the groups of permission checkboxes of a role."
+  },
+  "admin.roles.permissions.none": {
+    "defaultMessage": "無",
+    "description": "Value of a permission area in the list of roles when the role has none of its permissions."
+  },
+  "admin.roles.permissions.separator": {
+    "defaultMessage": "、",
+    "description": "Separator between the names of permissions in a list of them."
+  },
+  "admin.roles.position": {
+    "defaultMessage": "位階",
+    "description": "Label of the field of a role's position (its rank), and the term of the position in the list."
+  },
+  "admin.roles.position.description": {
+    "defaultMessage": "0 到 {max} 之間的整數。位階高的角色優先於位階低的角色；你只能管理位階等於或低於你的最高角色的角色。",
+    "description": "Description of the position field. {max} is the highest position the viewer may give."
+  },
+  "admin.roles.position.invalid": {
+    "defaultMessage": "請輸入 0 到 {max} 之間的整數。",
+    "description": "Error of the position field when it is not a whole number in range. {max} is the highest position the viewer may give."
+  },
+  "admin.roles.save": {
+    "defaultMessage": "儲存",
+    "description": "Button that saves a role's position, permissions and badge on its page."
+  },
+  "admin.roles.save_failed": {
+    "defaultMessage": "無法儲存角色：{reason}",
+    "description": "Error of the role form or dialog. {reason} is the server's explanation."
+  },
+  "admin.roles.submit": {
+    "defaultMessage": "建立角色",
+    "description": "Button that creates a role."
+  },
+  "admin.roles.summary": {
+    "defaultMessage": "建立角色，並選擇它們的位階和權限。",
+    "description": "Description of the roles screen in the administration menu of the settings."
+  },
+  "admin.roles.title": {
+    "defaultMessage": "角色",
+    "description": "Title of the roles screen, in the administration menu and as its heading."
+  },
+  "admin.roles.updated": {
+    "defaultMessage": "已變更角色 {role}。擁有這個角色的人會在下一次請求時套用變更。稽核日誌已記錄這項操作。",
+    "description": "Result after changing a role. {role} is its key (isolated)."
+  },
+  "admin.roles.badge": {
+    "defaultMessage": "徽章",
+    "description": "Term of a role's badge (ADR-0070) on the roles screen, and the heading of its field."
+  },
+  "admin.roles.badge.none": {
+    "defaultMessage": "沒有徽章",
+    "description": "The value of the badge term when a role has no badge."
+  },
+  "admin.roles.badge.description": {
+    "defaultMessage": "擁有這個角色的人可以在個人檔案上顯示徽章。在每個人自行選擇顯示之前，徽章都會隱藏，其他伺服器也永遠看不到。",
+    "description": "Explanation at the top of the badge dialog."
+  },
+  "admin.roles.badge.label": {
+    "defaultMessage": "名稱",
+    "description": "Label of the field of the badge's name."
+  },
+  "admin.roles.badge.label.description": {
+    "defaultMessage": "單行最多 {max} 個字元。在所有語言中都會照原樣顯示。留空則沒有徽章。",
+    "description": "Description of the name field of a role's badge. {max} is the length limit."
+  },
+  "admin.roles.badge.label.invalid": {
+    "defaultMessage": "最多只能使用 {max} 個字元。",
+    "description": "Error of the name field of a badge longer than its limit. {max} is the limit."
+  },
+  "admin.roles.badge.color": {
+    "defaultMessage": "顏色",
+    "description": "Label of the radio group of the badge's color."
+  },
+  "admin.roles.badge.color.description": {
+    "defaultMessage": "顏色只用來裝飾徽章；徽章的意義由名稱表達。",
+    "description": "Hint of the badge's color."
+  },
+  "admin.roles.badge.color.neutral": {
+    "defaultMessage": "灰色",
+    "description": "Name of the badge color neutral, a choice of the radio group."
+  },
+  "admin.roles.badge.color.red": {
+    "defaultMessage": "紅色",
+    "description": "Name of the badge color red, a choice of the radio group."
+  },
+  "admin.roles.badge.color.orange": {
+    "defaultMessage": "橘色",
+    "description": "Name of the badge color orange, a choice of the radio group."
+  },
+  "admin.roles.badge.color.yellow": {
+    "defaultMessage": "黃色",
+    "description": "Name of the badge color yellow, a choice of the radio group."
+  },
+  "admin.roles.badge.color.green": {
+    "defaultMessage": "綠色",
+    "description": "Name of the badge color green, a choice of the radio group."
+  },
+  "admin.roles.badge.color.teal": {
+    "defaultMessage": "藍綠色",
+    "description": "Name of the badge color teal, a choice of the radio group."
+  },
+  "admin.roles.badge.color.blue": {
+    "defaultMessage": "藍色",
+    "description": "Name of the badge color blue, a choice of the radio group."
+  },
+  "admin.roles.badge.color.purple": {
+    "defaultMessage": "紫色",
+    "description": "Name of the badge color purple, a choice of the radio group."
+  },
+  "admin.roles.badge.color.pink": {
+    "defaultMessage": "粉紅色",
+    "description": "Name of the badge color pink, a choice of the radio group."
+  },
+  "admin.roles.badge.sample": {
+    "defaultMessage": "預覽",
+    "description": "Label above the sample of the badge being edited."
+  },
+  "admin.roles.badge.sample.empty": {
+    "defaultMessage": "輸入名稱即可預覽徽章。",
+    "description": "Shown instead of the sample while the badge's name is empty."
+  },
+  "admin.roles.description": {
+    "defaultMessage": "每個角色都會把它的權限授予擁有它的帳號。位階高的角色優先於位階低的角色。",
+    "description": "Text at the top of the list of roles: what a role is."
+  },
+  "admin.roles.permissions": {
+    "defaultMessage": "權限",
+    "description": "Header of the column of the list of roles that counts the permissions of each role by area."
+  },
+  "admin.roles.permission_count": {
+    "defaultMessage": "{area}：{count, number}",
+    "description": "How many permissions a role grants in one area, in the list of roles. {area} is the area's name; {count} the number."
+  },
+  "admin.roles.empty": {
+    "defaultMessage": "沒有角色",
+    "description": "Heading of the empty list of roles."
+  }
+}

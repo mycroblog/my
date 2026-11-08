@@ -1,0 +1,58 @@
+{
+  "reaction.picker.button": {
+    "defaultMessage": "回應",
+    "description": "Accessible name and tooltip of the icon button in a post's action bar that opens the picker of emoji to react to the post with."
+  },
+  "reaction.picker.title": {
+    "defaultMessage": "用來回應的表情符號",
+    "description": "Accessible name of the popover that holds the picker of emoji to react to a post with."
+  },
+  "reaction.picker.grid": {
+    "defaultMessage": "用來回應的表情符號",
+    "description": "Accessible name of the grid of emoji in the picker of reactions."
+  },
+  "reaction.toggle": {
+    "defaultMessage": "{emoji} {count}，用這個表情符號回應",
+    "description": "Accessible name of a toggle under a post that reacts to it with an emoji that others reacted with, or takes the reaction back when pressed again. It starts with what the toggle shows, the emoji and the number, so that the name contains them. {emoji} is the emoji itself or its :shortcode:; {count} is the number of reactions as it is shown (\"1.2K\")."
+  },
+  "reaction.list.label": {
+    "defaultMessage": "回應",
+    "description": "Accessible name of the group of emoji reactions under a post."
+  },
+  "reaction.list.open": {
+    "defaultMessage": "查看誰回應了",
+    "description": "Button after the emoji reactions under a post that opens the list of the accounts that reacted."
+  },
+  "reaction.list.title": {
+    "defaultMessage": "誰回應了",
+    "description": "Title of the dialog that lists the accounts that reacted to a post, each with its emoji."
+  },
+  "reaction.list.close": {
+    "defaultMessage": "關閉",
+    "description": "Accessible name of the × button that closes the dialog of the accounts that reacted to a post."
+  },
+  "reaction.list.loading": {
+    "defaultMessage": "正在載入回應",
+    "description": "Shown in the dialog of the accounts that reacted to a post while the first page loads."
+  },
+  "reaction.list.failed": {
+    "defaultMessage": "無法載入回應",
+    "description": "Heading of the error in the dialog of the accounts that reacted to a post when the first page failed to load, above the reason and the button to try again."
+  },
+  "reaction.list.retry": {
+    "defaultMessage": "再試一次",
+    "description": "Button that loads the list of the accounts that reacted to a post again after it failed."
+  },
+  "reaction.list.empty": {
+    "defaultMessage": "還沒有人回應。",
+    "description": "Shown in the dialog of the accounts that reacted to a post when there are none (the reactions were taken back meanwhile)."
+  },
+  "reaction.list.load_more": {
+    "defaultMessage": "顯示更多",
+    "description": "Button at the end of the list of the accounts that reacted to a post that loads the next ones."
+  },
+  "reaction.list.load_more_failed": {
+    "defaultMessage": "無法載入更多回應：{reason}",
+    "description": "Shown and announced when the next page of the accounts that reacted to a post failed to load. {reason} is the error message."
+  }
+}

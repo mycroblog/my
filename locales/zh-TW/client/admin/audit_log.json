@@ -1,0 +1,634 @@
+{
+  "admin.audit_log.action.account_action_issued": {
+    "defaultMessage": "已對帳號採取處置",
+    "description": "Heading of an audit log entry: a moderator took an action (a suspension, a limit…) on an account."
+  },
+  "admin.audit_log.action.account_action_lifted": {
+    "defaultMessage": "已解除帳號處置",
+    "description": "Heading of an audit log entry: a moderator lifted an action on an account."
+  },
+  "admin.audit_log.action.account_deletion_canceled": {
+    "defaultMessage": "已取消刪除帳號",
+    "description": "Heading of an audit log entry: overturning a user's appeal of a ban cancelled the scheduled deletion of their account."
+  },
+  "admin.audit_log.action.announcement_created": {
+    "defaultMessage": "已撰寫公告",
+    "description": "Kind of an audited operation: an administrator wrote an announcement."
+  },
+  "admin.audit_log.action.announcement_published": {
+    "defaultMessage": "已發布公告",
+    "description": "Kind of an audited operation: an administrator published an announcement."
+  },
+  "admin.audit_log.action.announcement_updated": {
+    "defaultMessage": "已變更公告",
+    "description": "Kind of an audited operation: an administrator changed the text or window of an announcement."
+  },
+  "admin.audit_log.action.announcement_withdrawn": {
+    "defaultMessage": "已撤回公告",
+    "description": "Kind of an audited operation: an administrator withdrew an announcement."
+  },
+  "admin.audit_log.action.appeal_overturned": {
+    "defaultMessage": "已推翻申訴的原決定",
+    "description": "Heading of an audit log entry: a moderator granted a user's appeal and lifted the action it appealed."
+  },
+  "admin.audit_log.action.appeal_upheld": {
+    "defaultMessage": "已維持申訴的原決定",
+    "description": "Heading of an audit log entry: a moderator rejected a user's appeal and kept the action it appealed."
+  },
+  "admin.audit_log.action.domain_action_issued": {
+    "defaultMessage": "已採取網域處置",
+    "description": "Heading of an audit log entry: a moderator took an action on a remote domain."
+  },
+  "admin.audit_log.action.domain_action_lifted": {
+    "defaultMessage": "已解除網域處置",
+    "description": "Heading of an audit log entry: a moderator lifted an action on a remote domain."
+  },
+  "admin.audit_log.action.registration_approved": {
+    "defaultMessage": "已核准註冊",
+    "description": "Heading of an audit log entry: a moderator approved a sign-up."
+  },
+  "admin.audit_log.action.registration_rejected": {
+    "defaultMessage": "已拒絕註冊",
+    "description": "Heading of an audit log entry: a moderator rejected a sign-up."
+  },
+  "admin.audit_log.action.relay_accepted": {
+    "defaultMessage": "中繼站已接受這個伺服器",
+    "description": "Kind of an audited operation: a relay accepted the server's request to join it."
+  },
+  "admin.audit_log.action.relay_added": {
+    "defaultMessage": "已註冊中繼站",
+    "description": "Kind of an audited operation: an administrator registered a relay and asked to join it."
+  },
+  "admin.audit_log.action.relay_followed": {
+    "defaultMessage": "已重新加入中繼站",
+    "description": "Kind of an audited operation: an administrator asked to join a relay again that was left or rejected the server."
+  },
+  "admin.audit_log.action.relay_rejected": {
+    "defaultMessage": "中繼站已拒絕這個伺服器",
+    "description": "Kind of an audited operation: a relay rejected the server's request to join it, or ended its membership."
+  },
+  "admin.audit_log.action.status_refetch_queued": {
+    "defaultMessage": "已要求重新擷取貼文",
+    "description": "Kind of an audited operation: a moderator asked to fetch a remote post again from its server."
+  },
+  "admin.audit_log.action.account_statuses_refetch_queued": {
+    "defaultMessage": "已要求重新擷取帳號的貼文",
+    "description": "Kind of an audited operation: a moderator asked to fetch the stored posts of a remote account again from its server."
+  },
+  "admin.audit_log.action.domain_statuses_refetch_queued": {
+    "defaultMessage": "已要求重新擷取伺服器的貼文",
+    "description": "Kind of an audited operation: a moderator asked to fetch the stored posts of the accounts of a remote server again."
+  },
+  "admin.audit_log.action.billing_import_queued": {
+    "defaultMessage": "已開始匯入帳單",
+    "description": "Kind of an audited operation: an administrator started an import of a cloud provider's usage charges (AWS, Google Cloud) now, besides the daily one."
+  },
+  "admin.audit_log.action.relay_removed": {
+    "defaultMessage": "已刪除中繼站",
+    "description": "Kind of an audited operation: an administrator deleted the registration of a relay."
+  },
+  "admin.audit_log.action.relay_unfollowed": {
+    "defaultMessage": "已退出中繼站",
+    "description": "Kind of an audited operation: an administrator left a relay."
+  },
+  "admin.audit_log.action.report_assigned": {
+    "defaultMessage": "已指派檢舉",
+    "description": "Heading of an audit log entry: a report was assigned to a moderator."
+  },
+  "admin.audit_log.action.report_note_added": {
+    "defaultMessage": "已在檢舉中加入備註",
+    "description": "Heading of an audit log entry: a moderator wrote an internal note on a report."
+  },
+  "admin.audit_log.action.report_forwarded": {
+    "defaultMessage": "已轉送檢舉",
+    "description": "Heading of an audit log entry: a moderator forwarded a report to the server of the reported account."
+  },
+  "admin.audit_log.action.report_reopened": {
+    "defaultMessage": "已重新開啟檢舉",
+    "description": "Heading of an audit log entry: a moderator reopened a resolved report."
+  },
+  "admin.audit_log.action.report_resolved": {
+    "defaultMessage": "已處理檢舉",
+    "description": "Heading of an audit log entry: a moderator resolved a report."
+  },
+  "admin.audit_log.action.report_unassigned": {
+    "defaultMessage": "已取消指派檢舉",
+    "description": "Heading of an audit log entry: a report was left without an assigned moderator."
+  },
+  "admin.audit_log.action.revealed_private_data": {
+    "defaultMessage": "已顯示私人資料",
+    "description": "Heading of an audit log entry: a moderator was shown the email address and the IP addresses of a local account."
+  },
+  "admin.audit_log.action.role_created": {
+    "defaultMessage": "已建立角色",
+    "description": "Heading of an audit log entry: an administrator created a role."
+  },
+  "admin.audit_log.action.role_deleted": {
+    "defaultMessage": "已刪除角色",
+    "description": "Heading of an audit log entry: an administrator deleted a role."
+  },
+  "admin.audit_log.action.role_granted": {
+    "defaultMessage": "已授予角色",
+    "description": "Heading of an audit log entry: an administrator granted a role to a user."
+  },
+  "admin.audit_log.action.role_revoked": {
+    "defaultMessage": "已撤銷角色",
+    "description": "Heading of an audit log entry: an administrator revoked a role from a user."
+  },
+  "admin.audit_log.action.role_updated": {
+    "defaultMessage": "已變更角色",
+    "description": "Heading of an audit log entry: an administrator changed the position or the permissions of a role."
+  },
+  "admin.audit_log.action.rule_added": {
+    "defaultMessage": "已新增規則",
+    "description": "Heading of an audit log entry: an administrator added a server rule."
+  },
+  "admin.audit_log.action.rule_moved": {
+    "defaultMessage": "已移動規則",
+    "description": "Heading of an audit log entry: an administrator moved a server rule in the list."
+  },
+  "admin.audit_log.action.rule_retired": {
+    "defaultMessage": "已停用規則",
+    "description": "Heading of an audit log entry: an administrator retired a server rule."
+  },
+  "admin.audit_log.action.rule_revised": {
+    "defaultMessage": "已修訂規則",
+    "description": "Heading of an audit log entry: an administrator revised a server rule."
+  },
+  "admin.audit_log.action.setting_changed": {
+    "defaultMessage": "已變更設定",
+    "description": "Heading of an audit log entry: an administrator changed an instance setting."
+  },
+  "admin.audit_log.action.signup_block_added": {
+    "defaultMessage": "已新增註冊封鎖",
+    "description": "Heading of an audit log entry: a moderator added a block on sign-ups by email domain, email address, or IP range."
+  },
+  "admin.audit_log.action.signup_block_lifted": {
+    "defaultMessage": "已解除註冊封鎖",
+    "description": "Heading of an audit log entry: a moderator lifted a block on sign-ups."
+  },
+  "admin.audit_log.action.two_factor_disabled": {
+    "defaultMessage": "已移除兩步驟驗證",
+    "description": "Heading of an audit log entry: an administrator removed the two-factor authentication of a local account."
+  },
+  "admin.audit_log.action.account_moved": {
+    "defaultMessage": "受限帳號已搬家",
+    "description": "Heading of an audit log entry: a local account that moderation limits moved to another local account, which does not inherit the limit; a moderator decides whether to limit the target."
+  },
+  "admin.audit_log.action.password_reset_link_issued": {
+    "defaultMessage": "已發出密碼重設連結",
+    "description": "Heading of an audit log entry: an administrator issued a password reset link for the user of a local account."
+  },
+  "admin.audit_log.action.email_suppression_lifted": {
+    "defaultMessage": "已恢復寄送電子郵件",
+    "description": "Heading of an audit log entry: a moderator lifted the suppression of the primary email address of a local account, so that emails are sent to it again."
+  },
+  "admin.audit_log.action.text_changed": {
+    "defaultMessage": "已變更文字",
+    "description": "Heading of an audit log entry: an administrator changed an instance text (such as the terms) in one language."
+  },
+  "admin.audit_log.action.webhook_created": {
+    "defaultMessage": "已設定 Webhook",
+    "description": "Kind of an audited operation: an administrator set up a webhook."
+  },
+  "admin.audit_log.action.webhook_deleted": {
+    "defaultMessage": "已刪除 Webhook",
+    "description": "Kind of an audited operation: an administrator deleted a webhook."
+  },
+  "admin.audit_log.action.webhook_disabled": {
+    "defaultMessage": "已停用 Webhook",
+    "description": "Kind of an audited operation: an administrator, or the server after failures, disabled a webhook."
+  },
+  "admin.audit_log.action.webhook_enabled": {
+    "defaultMessage": "已啟用 Webhook",
+    "description": "Kind of an audited operation: an administrator enabled a webhook."
+  },
+  "admin.audit_log.action.webhook_secret_rotated": {
+    "defaultMessage": "已更新 Webhook 密鑰",
+    "description": "Kind of an audited operation: an administrator gave a webhook a new secret."
+  },
+  "admin.audit_log.action.invite_created": {
+    "defaultMessage": "已建立邀請",
+    "description": "Kind of an audited operation: a moderator or an administrator created an invite code."
+  },
+  "admin.audit_log.action.invite_revoked": {
+    "defaultMessage": "已撤銷邀請",
+    "description": "Kind of an audited operation: a moderator or an administrator revoked an invite code."
+  },
+  "admin.audit_log.action.webhook_updated": {
+    "defaultMessage": "已變更 Webhook",
+    "description": "Kind of an audited operation: an administrator changed the URL, description or events of a webhook."
+  },
+  "admin.audit_log.actor": {
+    "defaultMessage": "執行者",
+    "description": "Term in an audit log entry: who performed the operation."
+  },
+  "admin.audit_log.actor.cli": {
+    "defaultMessage": "命令列",
+    "description": "Who performed an audited operation: the server operator with the my command line, as no user."
+  },
+  "admin.audit_log.actor.deleted_user": {
+    "defaultMessage": "已刪除的帳號",
+    "description": "Who performed an audited operation, when the account of that moderator or administrator is gone."
+  },
+  "admin.audit_log.actor.remote": {
+    "defaultMessage": "其他伺服器",
+    "description": "Who performed an audited operation: another server of the federation."
+  },
+  "admin.audit_log.actor.system": {
+    "defaultMessage": "本伺服器",
+    "description": "Who performed an audited operation: the server itself, automatically."
+  },
+  "admin.audit_log.empty": {
+    "defaultMessage": "還沒有任何操作",
+    "description": "Heading of the audit log when nothing has been recorded."
+  },
+  "admin.audit_log.empty.description": {
+    "defaultMessage": "版主和管理員在這個伺服器上所做的操作都會列在這裡。",
+    "description": "Text of the empty audit log."
+  },
+  "admin.audit_log.empty.filtered": {
+    "defaultMessage": "沒有符合篩選條件的操作",
+    "description": "Heading of the audit log when no operation matches the chosen filters."
+  },
+  "admin.audit_log.empty.filtered.description": {
+    "defaultMessage": "請選擇其他篩選條件，或清除篩選條件以查看所有操作。",
+    "description": "Text of the audit log when no operation matches the chosen filters."
+  },
+  "admin.audit_log.every_actor": {
+    "defaultMessage": "顯示所有人的操作",
+    "description": "Link in an audit log entry, while the log is filtered by its actor, that lets go of that filter."
+  },
+  "admin.audit_log.every_target": {
+    "defaultMessage": "顯示對所有對象的操作",
+    "description": "Link in an audit log entry, while the log is filtered by its target, that lets go of that filter."
+  },
+  "admin.audit_log.filter.action": {
+    "defaultMessage": "操作",
+    "description": "Label of the select that keeps one kind of operation in the audit log."
+  },
+  "admin.audit_log.filter.action.all": {
+    "defaultMessage": "所有操作",
+    "description": "Option of the operation select of the audit log that keeps every kind of operation."
+  },
+  "admin.audit_log.filter.actor": {
+    "defaultMessage": "執行者",
+    "description": "Term of the audit log filter that keeps the operations of one moderator or administrator; their name follows."
+  },
+  "admin.audit_log.filter.actor.clear": {
+    "defaultMessage": "顯示所有人",
+    "description": "Link next to the account the audit log is filtered by that lets go of that filter."
+  },
+  "admin.audit_log.filter.actor.unknown": {
+    "defaultMessage": "所選的帳號",
+    "description": "Shown in place of the name of the account the audit log is filtered by, when no loaded entry shows that account."
+  },
+  "admin.audit_log.filter.clear": {
+    "defaultMessage": "清除篩選條件",
+    "description": "Link that shows the whole audit log again, without any filter."
+  },
+  "admin.audit_log.filter.target": {
+    "defaultMessage": "操作對象",
+    "description": "Term of the audit log filter that keeps the operations on one target; the target follows."
+  },
+  "admin.audit_log.filter.target.clear": {
+    "defaultMessage": "顯示所有對象",
+    "description": "Link next to the target the audit log is filtered by that lets go of that filter."
+  },
+  "admin.audit_log.filter.target_kind": {
+    "defaultMessage": "對象",
+    "description": "Label of the select that keeps the operations on one kind of target (an account, a domain, a report…) in the audit log."
+  },
+  "admin.audit_log.filter.target_kind.all": {
+    "defaultMessage": "所有對象",
+    "description": "Option of the target select of the audit log that keeps every kind of target."
+  },
+  "admin.audit_log.filter.title": {
+    "defaultMessage": "篩選條件",
+    "description": "Heading of the filters of the audit log."
+  },
+  "admin.audit_log.list.title": {
+    "defaultMessage": "操作",
+    "description": "Heading of the list of operations in the audit log, newest first."
+  },
+  "admin.audit_log.more_failed": {
+    "defaultMessage": "無法載入更多操作",
+    "description": "Shown under the loaded part of the audit log when its next page failed to load; the reason follows, and the show more button tries again."
+  },
+  "admin.audit_log.occurred_at": {
+    "defaultMessage": "時間",
+    "description": "Term in an audit log entry: when the operation happened."
+  },
+  "admin.audit_log.only_actor": {
+    "defaultMessage": "只顯示 {name} 的操作",
+    "description": "Link in an audit log entry that keeps only the operations of its actor. {name} is the actor’s display name."
+  },
+  "admin.audit_log.only_target": {
+    "defaultMessage": "只顯示對 {target} 的操作",
+    "description": "Link in an audit log entry that keeps only the operations on its target. {target} is the target’s name, such as @alice or a domain."
+  },
+  "admin.audit_log.summary": {
+    "defaultMessage": "誰在什麼時候做了哪些管理操作。",
+    "description": "Description of the audit log screen in the administration menu."
+  },
+  "admin.audit_log.target_kind.account": {
+    "defaultMessage": "帳號",
+    "description": "A kind of target of audited operations, also the term of the target in an entry."
+  },
+  "admin.audit_log.target_kind.appeal": {
+    "defaultMessage": "申訴",
+    "description": "A kind of target of audited operations, also the term of the target in an entry."
+  },
+  "admin.audit_log.target_kind.domain": {
+    "defaultMessage": "網域",
+    "description": "A kind of target of audited operations, also the term of the target in an entry."
+  },
+  "admin.audit_log.target_kind.relay": {
+    "defaultMessage": "中繼站",
+    "description": "Kind of target of an audited operation: a federation relay, shown by its URL."
+  },
+  "admin.audit_log.target_kind.billing_source": {
+    "defaultMessage": "帳單來源",
+    "description": "Kind of target of an audited operation: a cloud provider whose usage charges are imported into the costs, shown by its name (AWS, Google Cloud)."
+  },
+  "admin.audit_log.target_kind.report": {
+    "defaultMessage": "檢舉",
+    "description": "A kind of target of audited operations, also the term of the target in an entry. The entry names the reported account."
+  },
+  "admin.audit_log.target_kind.role": {
+    "defaultMessage": "角色",
+    "description": "A kind of target of audited operations, also the term of the target in an entry."
+  },
+  "admin.audit_log.target_kind.rule": {
+    "defaultMessage": "規則",
+    "description": "A kind of target of audited operations (a server rule), also the term of the target in an entry."
+  },
+  "admin.audit_log.target_kind.setting": {
+    "defaultMessage": "設定",
+    "description": "A kind of target of audited operations (an instance setting or text), also the term of the target in an entry."
+  },
+  "admin.audit_log.target_kind.signup_block": {
+    "defaultMessage": "註冊封鎖",
+    "description": "A kind of target of audited operations (a blocked e-mail domain or IP range for sign-ups), also the term of the target in an entry."
+  },
+  "admin.audit_log.target_kind.status": {
+    "defaultMessage": "貼文",
+    "description": "A kind of target of audited operations, also the term of the target in an entry."
+  },
+  "admin.audit_log.target_kind.user": {
+    "defaultMessage": "註冊",
+    "description": "A kind of target of audited operations (a user whose sign-up was reviewed), also the term of the target in an entry."
+  },
+  "admin.audit_log.target_kind.webhook": {
+    "defaultMessage": "Webhook",
+    "description": "Kind of target of an audited operation: a webhook, shown by its description and host name."
+  },
+  "admin.audit_log.target_kind.invite": {
+    "defaultMessage": "邀請",
+    "description": "Kind of target of an audited operation: an invite, shown by the first characters of its code."
+  },
+  "admin.audit_log.title": {
+    "defaultMessage": "稽核日誌",
+    "description": "Heading of the admin screen that lists what moderators and administrators did."
+  },
+  "admin.audit_log.action.custom_emoji_created": {
+    "defaultMessage": "已新增自訂表情符號",
+    "description": "Kind of an audited operation: an administrator registered a custom emoji of this server."
+  },
+  "admin.audit_log.action.custom_emoji_image_replaced": {
+    "defaultMessage": "已替換自訂表情符號圖片",
+    "description": "Kind of an audited operation: an administrator replaced the image of a custom emoji."
+  },
+  "admin.audit_log.action.custom_emoji_copied": {
+    "defaultMessage": "已從其他伺服器複製自訂表情符號",
+    "description": "Kind of an audited operation: an administrator copied another server's custom emoji into a new emoji of this server."
+  },
+  "admin.audit_log.action.custom_emoji_updated": {
+    "defaultMessage": "已變更自訂表情符號",
+    "description": "Kind of an audited operation: an administrator changed the category, other names, or place in the picker of a custom emoji."
+  },
+  "admin.audit_log.action.custom_emoji_enabled": {
+    "defaultMessage": "已啟用自訂表情符號",
+    "description": "Kind of an audited operation: an administrator enabled a custom emoji, which is shown again."
+  },
+  "admin.audit_log.action.custom_emoji_disabled": {
+    "defaultMessage": "已停用自訂表情符號",
+    "description": "Kind of an audited operation: an administrator disabled a custom emoji, which is shown nowhere."
+  },
+  "admin.audit_log.action.custom_emoji_deleted": {
+    "defaultMessage": "已刪除自訂表情符號",
+    "description": "Kind of an audited operation: an administrator deleted a custom emoji of this server."
+  },
+  "admin.audit_log.target_kind.announcement": {
+    "defaultMessage": "公告",
+    "description": "Kind of target of an audited operation: an announcement, shown by the first line of its text."
+  },
+  "admin.audit_log.target_kind.custom_emoji": {
+    "defaultMessage": "自訂表情符號",
+    "description": "Kind of target of an audited operation: a custom emoji, shown as :shortcode:."
+  },
+  "admin.audit_log.action.cost_item_created": {
+    "defaultMessage": "已記錄費用",
+    "description": "Kind of an audited operation: an administrator recorded a cost of the instance."
+  },
+  "admin.audit_log.action.cost_item_relabeled": {
+    "defaultMessage": "已變更費用",
+    "description": "Kind of an audited operation: an administrator changed the name, provider, category, or memo of a cost."
+  },
+  "admin.audit_log.action.cost_item_price_revised": {
+    "defaultMessage": "已變更費用金額",
+    "description": "Kind of an audited operation: an administrator changed the price of a cost from a date on."
+  },
+  "admin.audit_log.action.cost_item_end_changed": {
+    "defaultMessage": "已變更費用結束日期",
+    "description": "Kind of an audited operation: an administrator set or removed the end of a regular cost."
+  },
+  "admin.audit_log.action.cost_item_deleted": {
+    "defaultMessage": "已刪除費用",
+    "description": "Kind of an audited operation: an administrator removed a cost recorded by mistake from every period."
+  },
+  "admin.audit_log.target_kind.cost_item": {
+    "defaultMessage": "費用",
+    "description": "Kind of target of an audited operation: a cost of the instance, shown by its name."
+  },
+  "admin.audit_log.action.supporter_program_enabled": {
+    "defaultMessage": "已啟用支持者計畫",
+    "description": "Kind of an audited operation: an administrator enabled the supporter program."
+  },
+  "admin.audit_log.action.supporter_program_disabled": {
+    "defaultMessage": "已停用支持者計畫",
+    "description": "Kind of an audited operation: an administrator disabled the supporter program."
+  },
+  "admin.audit_log.action.supporter_plan_created": {
+    "defaultMessage": "已建立支持者方案",
+    "description": "Kind of an audited operation: an administrator created a supporter plan."
+  },
+  "admin.audit_log.action.supporter_plan_revised": {
+    "defaultMessage": "已變更支持者方案",
+    "description": "Kind of an audited operation: an administrator changed the terms of a supporter plan or its role."
+  },
+  "admin.audit_log.action.supporter_plan_retired": {
+    "defaultMessage": "已停止提供支持者方案",
+    "description": "Kind of an audited operation: an administrator retired a supporter plan."
+  },
+  "admin.audit_log.action.supporter_subscription_ended": {
+    "defaultMessage": "已結束訂閱",
+    "description": "Kind of an audited operation: an administrator ended a subscription to a supporter plan at once, without a refund."
+  },
+  "admin.audit_log.target_kind.supporter_program": {
+    "defaultMessage": "支持者計畫",
+    "description": "Kind of target of an audited operation: the supporter program, shown by its payment provider."
+  },
+  "admin.audit_log.target_kind.supporter_plan": {
+    "defaultMessage": "支持者方案",
+    "description": "Kind of target of an audited operation: a supporter plan, shown by its name."
+  },
+  "admin.audit_log.target_kind.supporter_subscription": {
+    "defaultMessage": "訂閱",
+    "description": "Kind of target of an audited operation: a subscription to a supporter plan, shown by the plan's name and the subscriber's handle."
+  },
+  "admin.audit_log.action.custom_emoji_request_submitted": {
+    "defaultMessage": "已申請自訂表情符號",
+    "description": "Kind of an audited operation: a holder of create_custom_emojis requested a custom emoji or a new image of one they made."
+  },
+  "admin.audit_log.action.custom_emoji_request_withdrawn": {
+    "defaultMessage": "已撤回自訂表情符號申請",
+    "description": "Kind of an audited operation: the requester withdrew a pending custom emoji request."
+  },
+  "admin.audit_log.action.custom_emoji_request_approved": {
+    "defaultMessage": "已核准自訂表情符號申請",
+    "description": "Kind of an audited operation: an administrator approved a custom emoji request, which made the emoji or gave it the new image."
+  },
+  "admin.audit_log.action.custom_emoji_request_rejected": {
+    "defaultMessage": "已拒絕自訂表情符號申請",
+    "description": "Kind of an audited operation: an administrator rejected a custom emoji request."
+  },
+  "admin.audit_log.action.hook_decision_applied": {
+    "defaultMessage": "已套用自動審核",
+    "description": "Heading of an audit log entry: the server acted on the verdict of an external review and left state: a sensitive mark, a filed report, or a sign-up held for approval."
+  },
+  "admin.audit_log.action.hook_decision_overridden": {
+    "defaultMessage": "已取消自動審核",
+    "description": "Heading of an audit log entry: a moderator cancelled a decision of an external review."
+  },
+  "admin.audit_log.action.hook_appeal_upheld": {
+    "defaultMessage": "已維持被拒絕貼文申訴的原決定",
+    "description": "Heading of an audit log entry: a moderator upheld a user's appeal of a post that the automated review refused, so the refusal stays."
+  },
+  "admin.audit_log.target_kind.custom_emoji_request": {
+    "defaultMessage": "自訂表情符號申請",
+    "description": "Kind of target of an audited operation: a request for a custom emoji or a new image of one, shown as the :shortcode: of the emoji."
+  },
+  "admin.audit_log.action.payment_reconcile_queued": {
+    "defaultMessage": "已開始與金流服務商對帳",
+    "description": "Kind of an audited operation: an administrator started a reconciliation with the payment provider of the supporter program (Stripe) now, besides the periodic one."
+  },
+  "admin.audit_log.target_kind.payment_provider": {
+    "defaultMessage": "金流服務商",
+    "description": "Kind of target of an audited operation: the payment provider of the supporter program, shown by its name (stripe)."
+  },
+  "admin.audit_log.action.oauth_client_disabled": {
+    "defaultMessage": "已停用 OAuth App",
+    "description": "Kind of an audited operation: an administrator disabled an OAuth client, which revoked all its tokens."
+  },
+  "admin.audit_log.action.oauth_client_enabled": {
+    "defaultMessage": "已重新啟用 OAuth App",
+    "description": "Kind of an audited operation: an administrator lifted the disablement of an OAuth client."
+  },
+  "admin.audit_log.action.oauth_client_host_denied": {
+    "defaultMessage": "已拒絕 OAuth App 主機",
+    "description": "Kind of an audited operation: an administrator denied the client metadata documents of a host, which revoked the tokens of its clients."
+  },
+  "admin.audit_log.action.oauth_client_host_allowed": {
+    "defaultMessage": "已允許 OAuth App 主機",
+    "description": "Kind of an audited operation: an administrator lifted the denial of a host of client metadata documents."
+  },
+  "admin.audit_log.action.service_closure_announced": {
+    "defaultMessage": "已宣布服務關閉",
+    "description": "Kind of an audited operation: an administrator announced the closure of the service or changed its dates."
+  },
+  "admin.audit_log.action.service_closure_withdrawn": {
+    "defaultMessage": "已撤回服務關閉",
+    "description": "Kind of an audited operation: an administrator withdrew the announcement of the closure of the service."
+  },
+  "admin.audit_log.action.service_closure_closed": {
+    "defaultMessage": "服務已關閉",
+    "description": "Kind of an audited operation: an administrator closed the server for good (the closure of the service)."
+  },
+  "admin.audit_log.action.service_closure_delivery_completed": {
+    "defaultMessage": "已完成關閉時的帳號刪除傳送",
+    "description": "Kind of an audited operation: the server recorded that the Delete of every local account, sent at the closure of the service, was delivered."
+  },
+  "admin.audit_log.action.voice_room_ended": {
+    "defaultMessage": "已結束語音聊天室",
+    "description": "Kind of an audited operation: a moderator ended an open voice chat room."
+  },
+  "admin.audit_log.action.login_provider_created": {
+    "defaultMessage": "已新增登入服務",
+    "description": "Kind of an audited operation: an administrator set up an external login provider."
+  },
+  "admin.audit_log.action.login_provider_updated": {
+    "defaultMessage": "已變更登入服務",
+    "description": "Kind of an audited operation: the settings of an external login provider changed."
+  },
+  "admin.audit_log.action.login_provider_deleted": {
+    "defaultMessage": "已刪除登入服務",
+    "description": "Kind of an audited operation: an external login provider was deleted."
+  },
+  "admin.audit_log.action.login_provider_enabled": {
+    "defaultMessage": "已啟用登入服務",
+    "description": "Kind of an audited operation: an external login provider was enabled."
+  },
+  "admin.audit_log.action.login_provider_disabled": {
+    "defaultMessage": "已停用登入服務",
+    "description": "Kind of an audited operation: an external login provider was disabled."
+  },
+  "admin.audit_log.action.login_provider_secret_rotated": {
+    "defaultMessage": "已替換登入服務密鑰",
+    "description": "Kind of an audited operation: an external login provider got a new client secret."
+  },
+  "admin.audit_log.target_kind.oauth_client": {
+    "defaultMessage": "OAuth App",
+    "description": "Kind of target of an audited operation: an OAuth client, shown by its name and client_id."
+  },
+  "admin.audit_log.target_kind.oauth_client_host": {
+    "defaultMessage": "OAuth App 主機",
+    "description": "Kind of target of an audited operation: a host whose client metadata documents were denied, shown by the host name."
+  },
+  "admin.audit_log.target_kind.instance": {
+    "defaultMessage": "實例",
+    "description": "Kind of target of an audited operation: the instance itself, for the closure of the service, shown as service_closure."
+  },
+  "admin.audit_log.target_kind.voice_room": {
+    "defaultMessage": "語音聊天室",
+    "description": "Kind of target of an audited operation: a voice chat room, shown by its ID."
+  },
+  "admin.audit_log.action.link_card_domain_fetch_stopped": {
+    "defaultMessage": "已停止擷取連結卡片",
+    "description": "Kind of an audited operation: an administrator set a rule by which the link card crawler fetches nothing from a domain."
+  },
+  "admin.audit_log.action.link_card_domain_images_stopped": {
+    "defaultMessage": "已停止擷取連結卡片圖片",
+    "description": "Kind of an audited operation: an administrator set a rule by which the link card crawler fetches no images from a domain."
+  },
+  "admin.audit_log.action.instance_marked_available": {
+    "defaultMessage": "已將伺服器標為可用",
+    "description": "Kind of an audited operation: an operator cleared the delivery failures of a remote server, so that deliveries to it resume."
+  },
+  "admin.audit_log.action.link_card_domain_rule_removed": {
+    "defaultMessage": "已移除連結卡片規則",
+    "description": "Kind of an audited operation: an administrator removed the rule of the link card crawler on a domain."
+  },
+  "admin.audit_log.target_kind.hook_decision": {
+    "defaultMessage": "自動審核",
+    "description": "Filter of the audit log, and the kind of what an entry acted on: a decision of an external review of submissions."
+  },
+  "admin.audit_log.target_kind.link_card_domain": {
+    "defaultMessage": "連結卡片網域",
+    "description": "Kind of target of an audited operation: a domain with a rule of the link card crawler."
+  },
+  "admin.audit_log.target_kind.login_provider": {
+    "defaultMessage": "登入服務",
+    "description": "Kind of target of an audited operation: an external identity provider that users sign in with, shown by its display name."
+  }
+}

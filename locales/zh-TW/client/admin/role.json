@@ -1,0 +1,30 @@
+{
+  "admin.role.title": {
+    "defaultMessage": "角色",
+    "description": "Title of the page of one role."
+  },
+  "admin.role.back": {
+    "defaultMessage": "所有角色",
+    "description": "Link from the page of a role, or of a new one, back to the list of roles."
+  },
+  "admin.role.facts": {
+    "defaultMessage": "關於這個角色",
+    "description": "Heading of the region of a role's page with its key, position, permissions and badge."
+  },
+  "admin.role.holders": {
+    "defaultMessage": "角色要在帳號的管理頁面上授予和撤銷。",
+    "description": "Text on a role's page above the link to the account search, where the role is granted."
+  },
+  "admin.role.edit.title": {
+    "defaultMessage": "編輯角色",
+    "description": "Heading of the form of a role's page that changes its position, permissions and badge."
+  },
+  "admin.role.delete.title": {
+    "defaultMessage": "刪除角色",
+    "description": "Heading of the region of a role's page that deletes it."
+  },
+  "admin.role.gone": {
+    "defaultMessage": "這個角色已不存在。",
+    "description": "Text on the page of a role that was deleted while the page was open."
+  }
+}

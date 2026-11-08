@@ -1,0 +1,6 @@
+{
+  "health.unavailable": {
+    "defaultMessage": "伺服器尚未準備好接受請求。",
+    "description": "Body of the readiness check response (HTTP 503) while a dependency such as the database is unavailable."
+  }
+}

@@ -1,0 +1,114 @@
+{
+  "emoji.picker.button": {
+    "defaultMessage": "加入表情符號",
+    "description": "Accessible name and tooltip of the icon button in the corner of the post's text that opens the emoji picker."
+  },
+  "emoji.picker.title": {
+    "defaultMessage": "表情符號",
+    "description": "Accessible name of the popover of the emoji picker (Unicode emoji and the server's custom emoji)."
+  },
+  "emoji.picker.search": {
+    "defaultMessage": "搜尋表情符號",
+    "description": "Label of the search field of the emoji picker; it finds emoji by name, keyword, shortcode or other name."
+  },
+  "emoji.picker.grid": {
+    "defaultMessage": "表情符號",
+    "description": "Accessible name of the grid of emoji in the emoji picker."
+  },
+  "emoji.picker.loading": {
+    "defaultMessage": "正在載入表情符號",
+    "description": "What the emoji picker tells assistive technology while its emoji load, the first time it opens."
+  },
+  "emoji.picker.load_failed": {
+    "defaultMessage": "無法載入表情符號。請關閉選擇器後再開啟一次以重試。",
+    "description": "What the emoji picker says above its grid when the Unicode emoji could not be loaded; the server's custom emoji are still offered."
+  },
+  "emoji.picker.frequent": {
+    "defaultMessage": "常用",
+    "description": "Heading of the emoji used most often and most lately on this device, first in the picker."
+  },
+  "emoji.picker.uncategorized": {
+    "defaultMessage": "其他",
+    "description": "Heading of the custom emoji without a category in the picker."
+  },
+  "emoji.picker.empty": {
+    "defaultMessage": "找不到表情符號",
+    "description": "What the emoji picker shows when nothing matches the search."
+  },
+  "emoji.picker.categories": {
+    "defaultMessage": "表情符號分類",
+    "description": "Accessible name of the row of icon buttons above the emoji grid of the picker; each button scrolls to one section (frequently used, a category)."
+  },
+  "emoji.picker.results": {
+    "defaultMessage": "搜尋結果",
+    "description": "Heading of the one section of emoji that match the search in the emoji picker."
+  },
+  "emoji.picker.result_count": {
+    "defaultMessage": "{count, plural, =0 {找不到表情符號。} other {找到 # 個表情符號。}}",
+    "description": "Read out by screen readers once typing in the search field of the emoji picker pauses: the number of emoji that match."
+  },
+  "emoji.picker.group.smileys_emotion": {
+    "defaultMessage": "笑臉與情緒",
+    "description": "Heading of the section of the Unicode emoji group Smileys & Emotion (faces, hearts) in the emoji picker, also the name of its button."
+  },
+  "emoji.picker.group.people_body": {
+    "defaultMessage": "人物與身體",
+    "description": "Heading of the section of the Unicode emoji group People & Body (hands, people, jobs) in the emoji picker, also the name of its button."
+  },
+  "emoji.picker.group.animals_nature": {
+    "defaultMessage": "動物與自然",
+    "description": "Heading of the section of the Unicode emoji group Animals & Nature in the emoji picker, also the name of its button."
+  },
+  "emoji.picker.group.food_drink": {
+    "defaultMessage": "食物與飲料",
+    "description": "Heading of the section of the Unicode emoji group Food & Drink in the emoji picker, also the name of its button."
+  },
+  "emoji.picker.group.travel_places": {
+    "defaultMessage": "旅遊與地點",
+    "description": "Heading of the section of the Unicode emoji group Travel & Places (vehicles, buildings, weather) in the emoji picker, also the name of its button."
+  },
+  "emoji.picker.group.activities": {
+    "defaultMessage": "活動",
+    "description": "Heading of the section of the Unicode emoji group Activities (sports, games, events) in the emoji picker, also the name of its button."
+  },
+  "emoji.picker.group.objects": {
+    "defaultMessage": "物品",
+    "description": "Heading of the section of the Unicode emoji group Objects in the emoji picker, also the name of its button."
+  },
+  "emoji.picker.group.symbols": {
+    "defaultMessage": "符號",
+    "description": "Heading of the section of the Unicode emoji group Symbols in the emoji picker, also the name of its button."
+  },
+  "emoji.picker.group.flags": {
+    "defaultMessage": "旗幟",
+    "description": "Heading of the section of the Unicode emoji group Flags in the emoji picker, also the name of its button."
+  },
+  "emoji.picker.skin_tone": {
+    "defaultMessage": "膚色",
+    "description": "Accessible name and tooltip of the button beside the search field of the emoji picker that opens the menu of skin tones, and the name of that menu."
+  },
+  "emoji.picker.skin_tone.none": {
+    "defaultMessage": "預設膚色",
+    "description": "The default (yellow) skin tone in the skin tone menu of the emoji picker."
+  },
+  "emoji.picker.skin_tone.light": {
+    "defaultMessage": "淺膚色",
+    "description": "A skin tone in the skin tone menu of the emoji picker: the CLDR name of the modifier U+1F3FB."
+  },
+  "emoji.picker.skin_tone.medium_light": {
+    "defaultMessage": "中淺膚色",
+    "description": "A skin tone in the skin tone menu of the emoji picker: the CLDR name of the modifier U+1F3FC."
+  },
+  "emoji.picker.skin_tone.medium": {
+    "defaultMessage": "中等膚色",
+    "description": "A skin tone in the skin tone menu of the emoji picker: the CLDR name of the modifier U+1F3FD."
+  },
+  "emoji.picker.skin_tone.medium_dark": {
+    "defaultMessage": "中深膚色",
+    "description": "A skin tone in the skin tone menu of the emoji picker: the CLDR name of the modifier U+1F3FE."
+  },
+  "emoji.picker.skin_tone.dark": {
+    "defaultMessage": "深膚色",
+    "description": "A skin tone in the skin tone menu of the emoji picker: the CLDR name of the modifier U+1F3FF."
+  }
+}

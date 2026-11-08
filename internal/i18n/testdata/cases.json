@@ -25,6 +25,7 @@
     { "locale": "en", "message": "It''s {name}''s turn. Type '{braces}' to insert literal braces.", "args": { "name": "Alice" } },
     { "locale": "ja", "message": "{count, plural, other {#件}}の{n, number}", "args": { "count": 1234, "n": 1234.5 } },
     { "locale": "zh-CN", "message": "{count, plural, =0 {没有帖子} other {共 # 条帖子}}，{n, number}", "args": { "count": 1234, "n": 1234.5 } },
+    { "locale": "zh-TW", "message": "{count, plural, =0 {沒有貼文} other {共 # 則貼文}}，{n, number}", "args": { "count": 1234, "n": 1234.5 } },
     { "locale": "fr", "message": "{n, number} {n, plural, one {abonné} many {d’abonnés} other {abonnés}}", "args": { "n": 1000000 } },
     { "locale": "ar", "message": "{n, plural, zero {لا شيء} one {واحد} two {اثنان} few {# قليل} many {# كثير} other {# آخر}}", "args": { "n": 11 } }
   ]

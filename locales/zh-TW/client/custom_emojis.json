@@ -1,0 +1,242 @@
+{
+  "custom_emojis.title": {
+    "defaultMessage": "你的自訂表情符號",
+    "description": "Title of the settings page of the custom emoji that the user requests and made."
+  },
+  "custom_emojis.description": {
+    "defaultMessage": "你的角色允許你在這個伺服器新增自訂表情符號。每個申請都會先經過管理員審查，表情符號才會顯示出來。只要你的角色允許，你就可以變更和刪除自己建立的表情符號。上限是以你每月送出的申請數計算，因此刪除表情符號不會空出名額。",
+    "description": "Explanation at the top of the user's custom emoji page (ADR-0070)."
+  },
+  "custom_emojis.new.title": {
+    "defaultMessage": "申請自訂表情符號",
+    "description": "Heading of the region of the form that requests a new custom emoji."
+  },
+  "custom_emojis.usage.label": {
+    "defaultMessage": "本月已建立",
+    "description": "Label of the meter of how many custom emoji the user requested this month (UTC) against their monthly limit."
+  },
+  "custom_emojis.usage.value": {
+    "defaultMessage": "{full, select, true {{used, number} / {limit, number}，已達上限{pending, plural, =0 {} other {，其中 # 個待審查}}} other {{used, number} / {limit, number}{pending, plural, =0 {} other {，其中 # 個待審查}}}}",
+    "description": "The value of the meter of the requests to create a custom emoji that the user submitted this month (UTC). {used} counts the approved and pending ones; {pending} is how many of them are pending; {limit} is how many they may submit in a month; {full} is true when they reached it."
+  },
+  "custom_emojis.usage.unlimited": {
+    "defaultMessage": "{used, plural, other {你本月申請了 # 個自訂表情符號}}{pending, plural, =0 {} other {，其中 # 個待審查}}。你的角色沒有設定上限。",
+    "description": "How many custom emoji the user requested this month (UTC) when their roles set no limit. {used} counts the approved and pending requests to create one; {pending} is how many of them are pending."
+  },
+  "custom_emojis.usage.resets": {
+    "defaultMessage": "將於 {date} 重設",
+    "description": "When the count of the monthly custom emoji limit resets, under its meter. {date} is the formatted date and time in the viewer's time zone, for example 'November 1, 2026 at 9:00 AM'."
+  },
+  "custom_emojis.image": {
+    "defaultMessage": "圖片",
+    "description": "Label of the image of a requested custom emoji."
+  },
+  "custom_emojis.image.description": {
+    "defaultMessage": "PNG、GIF 或 WebP，每邊最多 1,024 像素。會以 256 像素以內顯示；動態 PNG 只會顯示第一格。",
+    "description": "Rules of the image of a requested custom emoji."
+  },
+  "custom_emojis.image.choose": {
+    "defaultMessage": "選擇圖片",
+    "description": "Button that opens the file picker for the image of a requested custom emoji."
+  },
+  "custom_emojis.image.chosen": {
+    "defaultMessage": "已選擇：{name}",
+    "description": "The chosen image file. {name} is its file name."
+  },
+  "custom_emojis.image.large_hint": {
+    "defaultMessage": "這張圖片大於 100 KB。有些伺服器（GoToSocial 預設如此）不會顯示這麼大的自訂表情符號。",
+    "description": "Hint for an image of a requested custom emoji larger than 100 KB."
+  },
+  "custom_emojis.image.required": {
+    "defaultMessage": "請選擇圖片。",
+    "description": "Error of a request without an image."
+  },
+  "custom_emojis.image_failed": {
+    "defaultMessage": "伺服器無法處理這張圖片。",
+    "description": "Error when the server could not process the uploaded image of a custom emoji request."
+  },
+  "custom_emojis.shortcode": {
+    "defaultMessage": "短代碼",
+    "description": "Label of the shortcode of a requested custom emoji."
+  },
+  "custom_emojis.shortcode.description": {
+    "defaultMessage": "2 到 30 個英文字母（A 到 Z）、數字和底線；區分大小寫。使用時以冒號包住，例如 :blobcat:。之後無法變更。",
+    "description": "Rules of the shortcode of a requested custom emoji."
+  },
+  "custom_emojis.shortcode.invalid": {
+    "defaultMessage": "請使用 2 到 30 個英文字母（A 到 Z）、數字和底線。",
+    "description": "Error of a shortcode that breaks the rules."
+  },
+  "custom_emojis.submit": {
+    "defaultMessage": "送出申請",
+    "description": "Button that sends a request for a new custom emoji."
+  },
+  "custom_emojis.requested": {
+    "defaultMessage": "已申請 {emoji}。管理員會進行審查。",
+    "description": "Status after requesting a custom emoji. {emoji} is its :shortcode:."
+  },
+  "custom_emojis.request_failed": {
+    "defaultMessage": "無法送出申請：{reason}",
+    "description": "Error of a custom emoji request that failed. {reason} is the server's explanation, such as a taken shortcode or a reached limit."
+  },
+  "custom_emojis.requests.title": {
+    "defaultMessage": "你的申請",
+    "description": "Heading of the region of the user's custom emoji requests."
+  },
+  "custom_emojis.requests.empty": {
+    "defaultMessage": "還沒有申請",
+    "description": "Empty state of the user's custom emoji requests."
+  },
+  "custom_emojis.withdraw": {
+    "defaultMessage": "撤回",
+    "description": "Button that withdraws a pending custom emoji request."
+  },
+  "custom_emojis.withdraw_request": {
+    "defaultMessage": "撤回 {emoji} 的申請",
+    "description": "Accessible name of the button that withdraws a pending custom emoji request. {emoji} is the :shortcode: of the requested emoji."
+  },
+  "custom_emojis.withdrawn": {
+    "defaultMessage": "已撤回 {emoji} 的申請。",
+    "description": "Status after withdrawing a custom emoji request."
+  },
+  "custom_emojis.withdraw_failed": {
+    "defaultMessage": "無法撤回申請：{reason}",
+    "description": "Error after withdrawing a custom emoji request failed. {reason} is the server's explanation."
+  },
+  "custom_emojis.list.title": {
+    "defaultMessage": "你建立的自訂表情符號",
+    "description": "Heading of the region of the custom emoji that the user made."
+  },
+  "custom_emojis.empty": {
+    "defaultMessage": "你還沒有建立任何自訂表情符號",
+    "description": "Empty state of the custom emoji that the user made."
+  },
+  "custom_emojis.empty.description": {
+    "defaultMessage": "核准的申請會顯示在這裡。",
+    "description": "Description of the empty state of the custom emoji that the user made."
+  },
+  "custom_emojis.state": {
+    "defaultMessage": "狀態",
+    "description": "Term of the description list of the user's custom emoji: whether it is shown."
+  },
+  "custom_emojis.state.enabled": {
+    "defaultMessage": "已啟用",
+    "description": "State of an enabled custom emoji."
+  },
+  "custom_emojis.state.disabled": {
+    "defaultMessage": "已被管理員停用：以文字顯示",
+    "description": "State of a custom emoji that an administrator disabled."
+  },
+  "custom_emojis.picker": {
+    "defaultMessage": "選擇器",
+    "description": "Term of the description list of the user's custom emoji: whether the picker offers it."
+  },
+  "custom_emojis.picker.shown": {
+    "defaultMessage": "顯示",
+    "description": "The picker offers the emoji."
+  },
+  "custom_emojis.picker.hidden": {
+    "defaultMessage": "隱藏",
+    "description": "The picker does not offer the emoji."
+  },
+  "custom_emojis.category": {
+    "defaultMessage": "分類",
+    "description": "Label of the category of a custom emoji."
+  },
+  "custom_emojis.category.description": {
+    "defaultMessage": "在選擇器中將表情符號分組。選填，最多 {max} 個字元。",
+    "description": "Description of the category of a custom emoji. {max} is the limit."
+  },
+  "custom_emojis.aliases": {
+    "defaultMessage": "其他名稱",
+    "description": "Label of the other names of a custom emoji."
+  },
+  "custom_emojis.aliases.description": {
+    "defaultMessage": "選擇器搜尋時也能用來找到這個表情符號的名稱，以空格或逗號分隔；最多 {max} 個，格式同短代碼。",
+    "description": "Description of the other names of a custom emoji. {max} is the limit."
+  },
+  "custom_emojis.aliases.too_many": {
+    "defaultMessage": "其他名稱最多 {max} 個。",
+    "description": "Error of too many other names."
+  },
+  "custom_emojis.visible_in_picker": {
+    "defaultMessage": "在選擇器中顯示",
+    "description": "Checkbox: whether the picker offers the emoji."
+  },
+  "custom_emojis.visible_in_picker.description": {
+    "defaultMessage": "即使在選擇器中隱藏，仍然可以輸入 :shortcode: 使用。",
+    "description": "Description of the checkbox of the picker."
+  },
+  "custom_emojis.none": {
+    "defaultMessage": "無",
+    "description": "Value of an empty category or empty other names."
+  },
+  "custom_emojis.updated_at": {
+    "defaultMessage": "圖片設定時間",
+    "description": "Term of the description list of the user's custom emoji: when its current image was set."
+  },
+  "custom_emojis.edit": {
+    "defaultMessage": "編輯",
+    "description": "Button that opens the dialog of the settings of the user's custom emoji."
+  },
+  "custom_emojis.edit_emoji": {
+    "defaultMessage": "編輯 {emoji}",
+    "description": "Accessible name of the edit button. {emoji} is the emoji's :shortcode:."
+  },
+  "custom_emojis.edit.title": {
+    "defaultMessage": "編輯 {emoji}",
+    "description": "Title of the dialog of the settings of the user's custom emoji."
+  },
+  "custom_emojis.edit.close": {
+    "defaultMessage": "關閉",
+    "description": "Close button of the edit dialog."
+  },
+  "custom_emojis.save": {
+    "defaultMessage": "儲存",
+    "description": "Button that saves the settings of the user's custom emoji."
+  },
+  "custom_emojis.cancel": {
+    "defaultMessage": "取消",
+    "description": "Button that closes a dialog of the user's custom emoji."
+  },
+  "custom_emojis.updated": {
+    "defaultMessage": "已儲存 {emoji}。",
+    "description": "Status after saving the settings of the user's custom emoji."
+  },
+  "custom_emojis.request_image": {
+    "defaultMessage": "申請新圖片",
+    "description": "Button that picks a new image of the user's custom emoji and requests it."
+  },
+  "custom_emojis.request_image_of": {
+    "defaultMessage": "申請 {emoji} 的新圖片",
+    "description": "Accessible name of the button that requests a new image. {emoji} is the emoji's :shortcode:."
+  },
+  "custom_emojis.image_requested": {
+    "defaultMessage": "已申請 {emoji} 的新圖片。管理員會進行審查；在此之前表情符號會維持原本的圖片。",
+    "description": "Status after requesting a new image of the user's custom emoji."
+  },
+  "custom_emojis.delete": {
+    "defaultMessage": "刪除",
+    "description": "Button that deletes the user's custom emoji, and the confirm button of its dialog."
+  },
+  "custom_emojis.delete_emoji": {
+    "defaultMessage": "刪除 {emoji}",
+    "description": "Accessible name of the delete button. {emoji} is the emoji's :shortcode:."
+  },
+  "custom_emojis.delete.title": {
+    "defaultMessage": "要刪除 {emoji} 嗎？",
+    "description": "Title of the dialog that confirms deleting the user's custom emoji."
+  },
+  "custom_emojis.delete.description": {
+    "defaultMessage": "使用它的貼文和個人檔案會將 {emoji} 顯示為文字，它也不再計入你的上限。這項操作無法復原。",
+    "description": "Description of the dialog that confirms deleting the user's custom emoji."
+  },
+  "custom_emojis.deleted": {
+    "defaultMessage": "已刪除 {emoji}。",
+    "description": "Status after deleting the user's custom emoji."
+  },
+  "custom_emojis.change_failed": {
+    "defaultMessage": "無法變更自訂表情符號：{reason}",
+    "description": "Error after a change of the user's custom emoji failed. {reason} is the server's explanation."
+  }
+}

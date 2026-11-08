@@ -1,0 +1,262 @@
+{
+  "admin.account_actions.block_email": {
+    "defaultMessage": "封鎖使用此電子郵件地址的註冊",
+    "description": "Checkbox of a ban of a local account: whether it also rejects sign-ups with the email address of the account's user."
+  },
+  "admin.account_actions.block_email.description": {
+    "defaultMessage": "使用此帳號使用者電子郵件地址的新註冊也會被拒絕。這項封鎖會顯示在註冊封鎖列表中，可以在那裡解除。",
+    "description": "Help of the checkbox of blocking the email address of a banned account."
+  },
+  "admin.account_actions.category": {
+    "defaultMessage": "原因",
+    "description": "Label of the select of the category of the reason for a moderation action on an account."
+  },
+  "admin.account_actions.category.description": {
+    "defaultMessage": "告知帳號的原因類型，會與公開原因一起顯示。",
+    "description": "Help under the select of the category of the reason for an account action."
+  },
+  "admin.account_actions.characters_left": {
+    "defaultMessage": "{count, plural, other {還剩 # 個字元}}",
+    "description": "Character count under a moderator's text field of the report screens."
+  },
+  "admin.account_actions.characters_over": {
+    "defaultMessage": "{count, plural, other {超過 # 個字元}}",
+    "description": "Character count under a moderator's text field of the report screens, when it is over the limit."
+  },
+  "admin.account_actions.confirm.cancel": {
+    "defaultMessage": "取消",
+    "description": "Button that closes the confirmation of an account action without taking it."
+  },
+  "admin.account_actions.confirm_ban.confirm": {
+    "defaultMessage": "永久停權",
+    "description": "Button of the confirmation that bans an account."
+  },
+  "admin.account_actions.confirm_ban.description": {
+    "defaultMessage": "帳號會被永久停權，並在 30 天後刪除。此操作無法復原。",
+    "description": "Description of the confirmation of a ban of an account."
+  },
+  "admin.account_actions.confirm_ban.title": {
+    "defaultMessage": "要永久停權 {handle} 嗎？",
+    "description": "Title of the confirmation of a ban; handle is the account's @handle."
+  },
+  "admin.account_actions.confirm_delete_statuses.confirm": {
+    "defaultMessage": "刪除",
+    "description": "Button of the confirmation that deletes posts of an account."
+  },
+  "admin.account_actions.confirm_delete_statuses.description": {
+    "defaultMessage": "貼文會對所有人刪除，包括此帳號本身，刪除也會傳送到其他伺服器。此操作無法復原。",
+    "description": "Description of the confirmation of deleting posts of an account."
+  },
+  "admin.account_actions.confirm_delete_statuses.title": {
+    "defaultMessage": "{count, plural, other {要刪除 {handle} 的 # 則貼文嗎？}}",
+    "description": "Title of the confirmation of deleting posts; handle is the account's @handle, count the number of posts."
+  },
+  "admin.account_actions.duration": {
+    "defaultMessage": "期間",
+    "description": "Label of the select of how long an account action lasts."
+  },
+  "admin.account_actions.duration.days": {
+    "defaultMessage": "{count, plural, other {# 天}}",
+    "description": "A duration of an account action in days."
+  },
+  "admin.account_actions.duration.description": {
+    "defaultMessage": "處置會在此期間後自動結束。",
+    "description": "Help under the duration of an account action."
+  },
+  "admin.account_actions.duration.indefinite": {
+    "defaultMessage": "直到解除",
+    "description": "The duration of an account action without an end, and the end of one in a list."
+  },
+  "admin.account_actions.expires_at": {
+    "defaultMessage": "結束時間",
+    "description": "Term of a list of account actions: when the action ends."
+  },
+  "admin.account_actions.issue_failed": {
+    "defaultMessage": "無法執行處置：{reason}",
+    "description": "Error when a moderation action on an account fails; reason is the server's localized message."
+  },
+  "admin.account_actions.issued_at": {
+    "defaultMessage": "執行時間",
+    "description": "Term of a list of account actions: when the action was taken."
+  },
+  "admin.account_actions.kind": {
+    "defaultMessage": "處置",
+    "description": "Label of the choice of the kind of moderation action on an account."
+  },
+  "admin.account_actions.kind.ban": {
+    "defaultMessage": "永久停權",
+    "description": "Kind of account action: a suspension that never ends, with the deletion of the account."
+  },
+  "admin.account_actions.kind.ban.description": {
+    "defaultMessage": "永久停權此帳號，並在 30 天後刪除。",
+    "description": "What a ban does, under its choice."
+  },
+  "admin.account_actions.kind.delete_statuses": {
+    "defaultMessage": "刪除貼文",
+    "description": "Kind of account action: deleting chosen posts of the account."
+  },
+  "admin.account_actions.kind.delete_statuses.description": {
+    "defaultMessage": "對所有人刪除選取的貼文。",
+    "description": "What deleting posts does, under its choice."
+  },
+  "admin.account_actions.kind.disable_login": {
+    "defaultMessage": "停用登入",
+    "description": "Kind of account action: the account cannot log in."
+  },
+  "admin.account_actions.kind.disable_login.description": {
+    "defaultMessage": "結束此帳號的工作階段，並使其無法登入。",
+    "description": "What disabling login does, under its choice."
+  },
+  "admin.account_actions.kind.force_sensitive": {
+    "defaultMessage": "將媒體標為敏感內容",
+    "description": "Kind of account action: all its media are shown as sensitive."
+  },
+  "admin.account_actions.kind.force_sensitive.description": {
+    "defaultMessage": "此帳號的所有附件都會隱藏在警告之後。",
+    "description": "What marking media sensitive does, under its choice."
+  },
+  "admin.account_actions.kind.limit": {
+    "defaultMessage": "限制",
+    "description": "Kind of account action: posts are followers-only and kept off the public timelines."
+  },
+  "admin.account_actions.kind.limit.description": {
+    "defaultMessage": "其貼文（包括過去的貼文）只會送達追蹤者，且不會出現在公開時間軸上。",
+    "description": "What limiting does, under its choice."
+  },
+  "admin.account_actions.kind.mark_statuses_sensitive": {
+    "defaultMessage": "將貼文標為敏感內容",
+    "description": "Kind of account action: the media of chosen posts are shown as sensitive."
+  },
+  "admin.account_actions.kind.mark_statuses_sensitive.description": {
+    "defaultMessage": "選取貼文的媒體會隱藏在警告之後。",
+    "description": "What marking posts sensitive does, under its choice."
+  },
+  "admin.account_actions.kind.remote": {
+    "defaultMessage": "其他伺服器的帳號只能執行這些處置。",
+    "description": "Help of the kinds of action, for an account of another server."
+  },
+  "admin.account_actions.kind.required": {
+    "defaultMessage": "請選擇處置。",
+    "description": "Error when no kind of account action is chosen."
+  },
+  "admin.account_actions.kind.restrict_interaction": {
+    "defaultMessage": "限制互動",
+    "description": "Kind of account action: no following, favouriting, boosting, or replying."
+  },
+  "admin.account_actions.kind.restrict_interaction.description": {
+    "defaultMessage": "使其無法追蹤、喜歡、轉發與回覆。",
+    "description": "What restricting interaction does, under its choice."
+  },
+  "admin.account_actions.kind.restrict_posting": {
+    "defaultMessage": "限制發文",
+    "description": "Kind of account action: no posting, replying, boosting, or editing."
+  },
+  "admin.account_actions.kind.restrict_posting.description": {
+    "defaultMessage": "使其無法發文、回覆、轉發與編輯。",
+    "description": "What restricting posting does, under its choice."
+  },
+  "admin.account_actions.kind.suspend": {
+    "defaultMessage": "停權",
+    "description": "Kind of account action: the account cannot be used and its profile and posts are hidden."
+  },
+  "admin.account_actions.kind.suspend.description": {
+    "defaultMessage": "包含以上所有限制，並對其他所有人隱藏其個人檔案與貼文。",
+    "description": "What suspending does, under its choice."
+  },
+  "admin.account_actions.kind.warn": {
+    "defaultMessage": "警告",
+    "description": "Kind of account action: a notice to the account only."
+  },
+  "admin.account_actions.kind.warn.description": {
+    "defaultMessage": "只通知此帳號。",
+    "description": "What a warning does, under its choice."
+  },
+  "admin.account_actions.notify": {
+    "defaultMessage": "通知此帳號",
+    "description": "Checkbox of whether the account is told of the action."
+  },
+  "admin.account_actions.notify.description": {
+    "defaultMessage": "此帳號會看到這項處置、其原因與結束時間。",
+    "description": "Help of the checkbox of telling the account."
+  },
+  "admin.account_actions.posts": {
+    "defaultMessage": "貼文",
+    "description": "Label of the group of the posts an action on posts acts on."
+  },
+  "admin.account_actions.posts.content_warning": {
+    "defaultMessage": "內容警告：{text}",
+    "description": "Description of a post with a content warning in the choice of posts; text is the warning."
+  },
+  "admin.account_actions.posts.item": {
+    "defaultMessage": "{date} 的貼文",
+    "description": "Name of the checkbox of a post in the choice of posts; date is when it was posted."
+  },
+  "admin.account_actions.posts.required": {
+    "defaultMessage": "請至少選擇一則貼文。",
+    "description": "Error when an action on posts has no post chosen."
+  },
+  "admin.account_actions.private_note": {
+    "defaultMessage": "私人備註",
+    "description": "Label of the moderators' note of an account action."
+  },
+  "admin.account_actions.private_note.description": {
+    "defaultMessage": "只有版主看得到。",
+    "description": "Help of the private note of an account action."
+  },
+  "admin.account_actions.public_reason": {
+    "defaultMessage": "公開原因",
+    "description": "Label of the reason of an account action that the account sees."
+  },
+  "admin.account_actions.public_reason.description": {
+    "defaultMessage": "此帳號會與處置一起看到這段文字。",
+    "description": "Help of the public reason of an account action."
+  },
+  "admin.account_actions.report": {
+    "defaultMessage": "檢舉",
+    "description": "Term of a list of account actions: the report the action follows from."
+  },
+  "admin.account_actions.report.other": {
+    "defaultMessage": "開啟檢舉",
+    "description": "Link to the report another account action follows from."
+  },
+  "admin.account_actions.report.this": {
+    "defaultMessage": "此檢舉",
+    "description": "The report an account action follows from, when it is the report on screen."
+  },
+  "admin.account_actions.state": {
+    "defaultMessage": "狀態",
+    "description": "Term of a list of account actions: whether it is in effect."
+  },
+  "admin.account_actions.state.active": {
+    "defaultMessage": "生效中",
+    "description": "State of an account action in effect."
+  },
+  "admin.account_actions.state.expired": {
+    "defaultMessage": "已結束",
+    "description": "State of an account action that ended by itself."
+  },
+  "admin.account_actions.state.lifted": {
+    "defaultMessage": "已解除",
+    "description": "State of an account action that a moderator lifted."
+  },
+  "admin.account_actions.submit": {
+    "defaultMessage": "執行處置",
+    "description": "Button that takes a moderation action on an account."
+  },
+  "admin.account_actions.submit_and_resolve": {
+    "defaultMessage": "執行處置並結案",
+    "description": "Button that takes a moderation action on the reported account and resolves the report."
+  },
+  "admin.account_actions.too_long": {
+    "defaultMessage": "最多只能使用 {max, number} 個字元",
+    "description": "Error of a text of an account action that is too long."
+  },
+  "admin.account_actions.severity": {
+    "defaultMessage": "嚴重程度 {level, number}/{max, number}",
+    "description": "Hidden words after the name of a kind of moderation action: where it stands on the scale from the lightest (1) to the heaviest; level and max are numbers."
+  },
+  "admin.account_actions.irreversible": {
+    "defaultMessage": "無法復原",
+    "description": "Badge after the name of a kind of moderation action that cannot be undone (a ban, deleting posts)."
+  }
+}

@@ -37,6 +37,8 @@ func TestAccessors(t *testing.T) {
 		{"ar-XB", func(l *Localizer) string { return l.ServerConfigInvalid("MY_DATABASE") }, "\u202e⊥ɥǝ sǝʇʇıuƃ MY_DATABASE ɥɐs ɐu ıuʌɐʅıp ʌɐʅnǝ.\u202c"},
 		{"zh-CN", func(l *Localizer) string { return l.ServerConfigErrors(1234) }, "发现 1,234 个配置错误。"},
 		{"zh-Hans-SG", func(l *Localizer) string { return l.ServerErrorsNotFound() }, "找不到请求的资源。"},
+		{"zh-TW", func(l *Localizer) string { return l.ServerConfigErrors(1234) }, "發現 1,234 個設定錯誤。"},
+		{"zh-Hant-HK", func(l *Localizer) string { return l.ServerErrorsNotFound() }, "找不到要求的資源。"},
 		// Locales without a catalog fall back to en.
 		{"fr", func(l *Localizer) string { return l.ServerErrorsNotFound() }, "The requested resource was not found."},
 		{"ja-JP", func(l *Localizer) string { return l.ServerErrorsNotFound() }, "指定されたリソースが見つかりません。"},
@@ -49,10 +51,10 @@ func TestAccessors(t *testing.T) {
 }
 
 func TestLocales(t *testing.T) {
-	if got, want := load(t).Locales(), []string{"en", "ja", "zh-CN"}; !slices.Equal(got, want) {
+	if got, want := load(t).Locales(), []string{"en", "ja", "zh-CN", "zh-TW"}; !slices.Equal(got, want) {
 		t.Errorf("Locales() = %v, want %v", got, want)
 	}
-	if got, want := load(t, WithPseudoLocales()).Locales(), []string{"ar-XB", "en", "en-XA", "ja", "zh-CN"}; !slices.Equal(got, want) {
+	if got, want := load(t, WithPseudoLocales()).Locales(), []string{"ar-XB", "en", "en-XA", "ja", "zh-CN", "zh-TW"}; !slices.Equal(got, want) {
 		t.Errorf("Locales() with pseudo-locales = %v, want %v", got, want)
 	}
 }

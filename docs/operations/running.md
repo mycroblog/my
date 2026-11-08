@@ -416,7 +416,7 @@ histogram_quantile(0.95, sum by (my_job_type, le) (rate(my_job_wait_seconds_buck
 
 `sum by (my_job_type) (rate(my_job_duration_seconds_sum[1h]))` shows the worker time each type uses, which is also about how many processes it needs. A type that uses most of the time and makes the others wait is the one to move.
 
-Two common layouts, with the number of processes of your choosing:
+Three common layouts, with the number of processes of your choosing:
 
 | Layout | Processes |
 | --- | --- |

@@ -1,0 +1,126 @@
+{
+  "admin.documents.body": {
+    "defaultMessage": "內文",
+    "description": "Label of the text area of a document."
+  },
+  "admin.documents.body.description": {
+    "defaultMessage": "使用 Markdown 撰寫：標題（#）、列表（-）、連結（[文字](URL)）和強調（**粗體**）。每次換行都會開始新的一行。只要用任一種語言寫一次：不論 App 的語言為何，所有人看到的都是同一份內文。儲存為空白即可移除內文。",
+    "description": "Description of the text area of a document: the Markdown it takes, that one text serves every language, and how to remove the text."
+  },
+  "admin.documents.characters_left": {
+    "defaultMessage": "{count, plural, other {還剩 # 個字元}}",
+    "description": "Character count under the text area of a document."
+  },
+  "admin.documents.characters_over": {
+    "defaultMessage": "{count, plural, other {超過 # 個字元}}",
+    "description": "Character count under the text area of a document when the text is too long."
+  },
+  "admin.documents.confirm_remove.cancel": {
+    "defaultMessage": "取消",
+    "description": "Button of the dialog that keeps a document in a language."
+  },
+  "admin.documents.confirm_remove.confirm": {
+    "defaultMessage": "移除",
+    "description": "Button of the dialog that removes a document in a language."
+  },
+  "admin.documents.confirm_remove.description": {
+    "defaultMessage": "在重新撰寫內文之前，這個頁面和它的連結都會隱藏。",
+    "description": "Description of the question before removing a document's text."
+  },
+  "admin.documents.confirm_remove.privacy_policy": {
+    "defaultMessage": "要移除隱私權政策嗎？",
+    "description": "Title of the question before removing the privacy policy."
+  },
+  "admin.documents.confirm_remove.terms": {
+    "defaultMessage": "要移除服務條款嗎？",
+    "description": "Title of the question before removing the terms of service."
+  },
+  "admin.documents.privacy_policy": {
+    "defaultMessage": "隱私權政策",
+    "description": "Heading of the section of the privacy policy on the terms and policies screen."
+  },
+  "admin.documents.removed": {
+    "defaultMessage": "已移除內文。稽核日誌已記錄這項變更。",
+    "description": "Status after a document's text was removed."
+  },
+  "admin.documents.save": {
+    "defaultMessage": "儲存",
+    "description": "Button that saves the text of a document in the selected language."
+  },
+  "admin.documents.save_failed": {
+    "defaultMessage": "無法儲存內文：{reason}",
+    "description": "Error under a document's form when saving failed."
+  },
+  "admin.documents.saved": {
+    "defaultMessage": "已儲存內文。稽核日誌已記錄這項變更。",
+    "description": "Status after a document's text was saved."
+  },
+  "admin.documents.saved_at": {
+    "defaultMessage": "上次儲存",
+    "description": "Term of when the text of a document was last saved, on the terms and policies screen."
+  },
+  "admin.documents.saved_at.never": {
+    "defaultMessage": "尚未撰寫，因此頁面和它的連結都已隱藏",
+    "description": "Value of the last save of a document that has no text."
+  },
+  "admin.documents.summary": {
+    "defaultMessage": "任何人都能閱讀、且註冊時要同意的服務條款和隱私權政策。",
+    "description": "Description of the terms and policies screen in the admin menu."
+  },
+  "admin.documents.terms": {
+    "defaultMessage": "服務條款",
+    "description": "Heading of the section of the terms of service on the terms and policies screen."
+  },
+  "admin.documents.title": {
+    "defaultMessage": "條款與政策",
+    "description": "Title and heading of the admin screen where administrators write the terms of service and the privacy policy, and its link in the admin menu."
+  },
+  "admin.documents.too_long": {
+    "defaultMessage": "最多只能使用 {max, number} 個字元",
+    "description": "Error of the text area of a document when the text is too long."
+  },
+  "admin.documents.unsaved.description": {
+    "defaultMessage": "你對這份內文所做的變更將會遺失。",
+    "description": "Body of the dialog that asks before leaving the terms and policies screen with unsaved texts."
+  },
+  "admin.documents.unsaved.leave": {
+    "defaultMessage": "捨棄變更",
+    "description": "Button that leaves the terms and policies screen, losing the unsaved texts."
+  },
+  "admin.documents.unsaved.stay": {
+    "defaultMessage": "繼續編輯",
+    "description": "Button that stays on the terms and policies screen with the unsaved texts."
+  },
+  "admin.documents.unsaved.title": {
+    "defaultMessage": "要不儲存內文就離開嗎？",
+    "description": "Title of the dialog that asks before leaving the terms and policies screen with unsaved texts."
+  },
+  "admin.documents.view_privacy_policy": {
+    "defaultMessage": "開啟隱私權政策頁面",
+    "description": "Link from the terms and policies screen to the public page of the privacy policy."
+  },
+  "admin.documents.commerce_disclosure": {
+    "defaultMessage": "商業資訊揭露",
+    "description": "Heading of the section of the terms and policies screen where administrators write the commerce disclosures of the supporter plans (ADR-0072 §13)."
+  },
+  "admin.documents.commerce_disclosure.description": {
+    "defaultMessage": "你所在國家的法律要求賣方揭露的事項，例如日本依《特定商取引法》所需的標示。這些內容會公開於 /about/commerce，支持者相關畫面也會連結到這裡。伺服器不會檢查或保證內容符合法律：請自行確認法律的要求。",
+    "description": "Description of the commerce disclosures on the terms and policies screen: what they are, where they are published, and that the software does not guarantee their legal correctness."
+  },
+  "admin.documents.view_commerce_disclosure": {
+    "defaultMessage": "開啟商業資訊揭露頁面",
+    "description": "Link from the terms and policies screen to the public page of the commerce disclosures."
+  },
+  "admin.documents.confirm_remove.commerce_disclosure": {
+    "defaultMessage": "要移除商業資訊揭露嗎？",
+    "description": "Title of the confirmation before saving the commerce disclosures empty, which removes them."
+  },
+  "admin.documents.view_terms": {
+    "defaultMessage": "開啟服務條款頁面",
+    "description": "Link from the terms and policies screen to the public page of the terms of service."
+  },
+  "admin.documents.pages": {
+    "defaultMessage": "條款與政策頁面",
+    "description": "Name of the navigation of the pages of the terms and policies screen, one per document, under its heading."
+  }
+}

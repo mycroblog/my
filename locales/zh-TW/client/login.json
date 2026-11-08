@@ -1,0 +1,26 @@
+{
+  "login.failed.denied": {
+    "defaultMessage": "已在伺服器的畫面上取消登入。",
+    "description": "Why signing in failed: the user declined on the server's authorization screen."
+  },
+  "login.failed.invalid_state": {
+    "defaultMessage": "這次登入不是在這個分頁開始的，或已經完成。請重新開始。",
+    "description": "Why signing in failed: the answer from the server does not belong to a sign-in that this browser tab started."
+  },
+  "login.failed.rejected": {
+    "defaultMessage": "伺服器不接受這次登入。請重新開始。",
+    "description": "Why signing in failed: the server refused to finish it (for example, it took too long)."
+  },
+  "login.failed.try_again": {
+    "defaultMessage": "重新登入",
+    "description": "Link from the failed sign-in page back to the sign-in page."
+  },
+  "login.failed.title": {
+    "defaultMessage": "無法登入",
+    "description": "Heading and document title of the page shown when signing in failed on the way back from the server's sign-in screen."
+  },
+  "login.title": {
+    "defaultMessage": "登入",
+    "description": "Document title and the busy indicator's label of /login, which starts signing in at once and sends the browser to the server's sign-in screen."
+  }
+}

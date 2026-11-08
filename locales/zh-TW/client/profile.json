@@ -1,0 +1,282 @@
+{
+  "profile.change_failed": {
+    "defaultMessage": "無法變更你與這個帳號的關係：{reason}",
+    "description": "Toast when following, blocking, muting or undoing one of them failed. {reason} is the error message."
+  },
+  "profile.confirm.block.action": {
+    "defaultMessage": "封鎖",
+    "description": "Button of the dialog that blocks the account."
+  },
+  "profile.confirm.block.body": {
+    "defaultMessage": "你們將互相取消追蹤，在你解除封鎖之前，雙方都無法追蹤對方。",
+    "description": "Text of the dialog that confirms blocking: what a block does."
+  },
+  "profile.confirm.block.title": {
+    "defaultMessage": "要封鎖 {name} 嗎？",
+    "description": "Title of the dialog that confirms blocking. {name} is the account's display name."
+  },
+  "profile.confirm.cancel": {
+    "defaultMessage": "取消",
+    "description": "Button of a confirmation dialog on a profile that closes it and changes nothing."
+  },
+  "profile.confirm.unblock.action": {
+    "defaultMessage": "解除封鎖",
+    "description": "Button of the dialog that unblocks the account."
+  },
+  "profile.confirm.unblock.body": {
+    "defaultMessage": "因封鎖而解除的追蹤關係不會恢復。",
+    "description": "Text of the dialog that confirms unblocking."
+  },
+  "profile.confirm.unblock.title": {
+    "defaultMessage": "要解除封鎖 {name} 嗎？",
+    "description": "Title of the dialog that confirms unblocking. {name} is the account's display name."
+  },
+  "profile.confirm.unfollow.action": {
+    "defaultMessage": "取消追蹤",
+    "description": "Button of the dialog that unfollows the account."
+  },
+  "profile.confirm.unfollow.body": {
+    "defaultMessage": "對方的貼文將不再出現在你的首頁時間軸上。",
+    "description": "Text of the dialog that confirms unfollowing."
+  },
+  "profile.confirm.unfollow.title": {
+    "defaultMessage": "要取消追蹤 {name} 嗎？",
+    "description": "Title of the dialog that confirms unfollowing. {name} is the account's display name."
+  },
+  "profile.confirm.withdraw.action": {
+    "defaultMessage": "撤回請求",
+    "description": "Button of the dialog that withdraws the follow request."
+  },
+  "profile.confirm.withdraw.body": {
+    "defaultMessage": "你之後可以重新送出請求。",
+    "description": "Text of the dialog that confirms withdrawing a follow request."
+  },
+  "profile.confirm.withdraw.title": {
+    "defaultMessage": "要撤回對 {name} 的追蹤請求嗎？",
+    "description": "Title of the dialog that confirms withdrawing a pending follow request. {name} is the account's display name."
+  },
+  "profile.done.blocked": {
+    "defaultMessage": "已封鎖 {name}。",
+    "description": "Announced to screen readers when blocking succeeded. {name} is the account's display name."
+  },
+  "profile.done.followed": {
+    "defaultMessage": "你已追蹤 {name}。",
+    "description": "Announced to screen readers when following succeeded. {name} is the account's display name."
+  },
+  "profile.done.muted": {
+    "defaultMessage": "已將 {name} 靜音。",
+    "description": "Announced to screen readers when muting succeeded. {name} is the account's display name."
+  },
+  "profile.done.requested": {
+    "defaultMessage": "已向 {name} 送出追蹤請求。",
+    "description": "Announced to screen readers when a follow request was sent. {name} is the account's display name."
+  },
+  "profile.done.subscribed": {
+    "defaultMessage": "{name} 發布新貼文時會通知你。",
+    "description": "Announced to screen readers when turning on the notifications of an account's new posts succeeded. {name} is the account's display name."
+  },
+  "profile.done.unblocked": {
+    "defaultMessage": "已解除封鎖 {name}。",
+    "description": "Announced to screen readers when unblocking succeeded. {name} is the account's display name."
+  },
+  "profile.done.unfollowed": {
+    "defaultMessage": "你已不再追蹤 {name}。",
+    "description": "Announced to screen readers when unfollowing or withdrawing a request succeeded. {name} is the account's display name."
+  },
+  "profile.done.unmuted": {
+    "defaultMessage": "已取消 {name} 的靜音。",
+    "description": "Announced to screen readers when unmuting succeeded. {name} is the account's display name."
+  },
+  "profile.done.unsubscribed": {
+    "defaultMessage": "{name} 發布新貼文時將不再通知你。",
+    "description": "Announced to screen readers when turning off the notifications of an account's new posts succeeded. {name} is the account's display name."
+  },
+  "profile.edit": {
+    "defaultMessage": "編輯個人檔案",
+    "description": "Link on the user's own profile to the settings where they edit it."
+  },
+  "profile.follow": {
+    "defaultMessage": "追蹤",
+    "description": "Button on a profile that follows the account."
+  },
+  "profile.follow.back": {
+    "defaultMessage": "回追蹤",
+    "description": "Button on a profile of an account that follows the user, which follows it in turn."
+  },
+  "profile.follow.blocked": {
+    "defaultMessage": "已封鎖",
+    "description": "Button on a profile of an account the user blocks; pressing it offers to unblock."
+  },
+  "profile.follow.following": {
+    "defaultMessage": "追蹤中",
+    "description": "Button on a profile of an account the user follows; pressing it offers to unfollow."
+  },
+  "profile.follow.pending_remote": {
+    "defaultMessage": "正在等待 {host} 接受你的追蹤請求。",
+    "description": "Shown under the follow button of an account on another server while the user's follow request awaits that server's answer. {host} is the server's host name."
+  },
+  "profile.follow.federation_restricted": {
+    "defaultMessage": "這個伺服器目前不追蹤其他伺服器的帳號。",
+    "description": "Shown in place of the follow button on the profile of an account of another server while this server does not follow other servers (federation direction 'Send only' or 'Off', ADR-0006)."
+  },
+  "profile.follow.request": {
+    "defaultMessage": "請求追蹤",
+    "description": "Button on a profile of an account that approves its followers: it sends a follow request."
+  },
+  "profile.follow.requested": {
+    "defaultMessage": "已送出請求",
+    "description": "Button on a profile while the user's follow request awaits approval; pressing it offers to withdraw the request."
+  },
+  "profile.followers.empty": {
+    "defaultMessage": "還沒有追蹤者",
+    "description": "Shown instead of the list of followers when there are none."
+  },
+  "profile.followers.title": {
+    "defaultMessage": "{name} 的追蹤者",
+    "description": "Heading and document title of the list of an account's followers. {name} is the account's display name."
+  },
+  "profile.followers_count": {
+    "defaultMessage": "{count, plural, other {# 位追蹤者}}",
+    "description": "Link on a profile to the accounts that follow it, with their number."
+  },
+  "profile.following.empty": {
+    "defaultMessage": "還沒有追蹤任何人",
+    "description": "Shown instead of the list of followed accounts when there are none."
+  },
+  "profile.following.title": {
+    "defaultMessage": "{name} 追蹤中的帳號",
+    "description": "Heading and document title of the list of the accounts an account follows. {name} is the account's display name."
+  },
+  "profile.following_count": {
+    "defaultMessage": "{count, plural, other {# 個追蹤中}}",
+    "description": "Link on a profile to the accounts it follows, with their number."
+  },
+  "profile.joined": {
+    "defaultMessage": "於 {date} 加入",
+    "description": "When the account was created, on its profile. {date} is the formatted date, for example 'October 1, 2026'."
+  },
+  "profile.badges": {
+    "defaultMessage": "徽章",
+    "description": "Accessible name of the list of the role badges on a profile (ADR-0070)."
+  },
+  "profile.list.back": {
+    "defaultMessage": "返回 {name} 的個人檔案",
+    "description": "Link from a follow list to the account's profile. {name} is the account's display name."
+  },
+  "profile.list.load_more": {
+    "defaultMessage": "顯示更多",
+    "description": "Button at the end of a follow list that loads the next accounts."
+  },
+  "profile.list.load_more_failed": {
+    "defaultMessage": "無法載入更多帳號：{reason}",
+    "description": "Shown and announced when the next page of a follow list failed to load. {reason} is the error message."
+  },
+  "profile.list.load_more.failed.heading": {
+    "defaultMessage": "無法載入更多帳號",
+    "description": "Heading of the error shown at the end of a follow list when the next accounts failed to load, above the reason and the button to try again."
+  },
+  "profile.list.loading": {
+    "defaultMessage": "正在載入帳號",
+    "description": "Visually hidden text that names the busy follow list while its first page loads."
+  },
+  "profile.list.retry": {
+    "defaultMessage": "再試一次",
+    "description": "Button at the end of a follow list after the next accounts failed to load."
+  },
+  "profile.menu.block": {
+    "defaultMessage": "封鎖",
+    "description": "Menu item that asks to block the account of the profile."
+  },
+  "profile.menu.mute": {
+    "defaultMessage": "靜音",
+    "description": "Menu item that mutes the account of the profile."
+  },
+  "profile.menu.unblock": {
+    "defaultMessage": "解除封鎖",
+    "description": "Menu item that asks to unblock the account of the profile."
+  },
+  "profile.menu.unmute": {
+    "defaultMessage": "取消靜音",
+    "description": "Menu item that ends the mute of the account of the profile."
+  },
+  "profile.more": {
+    "defaultMessage": "{name} 的更多操作",
+    "description": "Accessible name of the menu button with mute and block on a profile. {name} is the account's display name."
+  },
+  "profile.not_found.body": {
+    "defaultMessage": "沒有使用這個位址的帳號，或你無法查看它。",
+    "description": "Text below the heading of a profile that was not found."
+  },
+  "profile.not_found.title": {
+    "defaultMessage": "找不到帳號",
+    "description": "Heading and document title of a profile address that names no account the user may see."
+  },
+  "profile.relationship_failed": {
+    "defaultMessage": "無法載入你是否追蹤這個帳號：{reason}",
+    "description": "Shown on a profile instead of the follow button when the relationship failed to load. {reason} is the error message."
+  },
+  "profile.remote.fetching": {
+    "defaultMessage": "正在從原始伺服器取得最近的貼文。",
+    "description": "Shown above the posts of a profile of an account of another server while this server fetches its recent posts from that server; the posts are read again a few seconds later."
+  },
+  "profile.remote.notice": {
+    "defaultMessage": "只會顯示這個伺服器已收到的貼文。",
+    "description": "Shown above the posts of a profile of an account of another server, and in the empty state of its posts: this server lists only the posts it has received, which may not be all of them."
+  },
+  "profile.remote.original": {
+    "defaultMessage": "在 {host} 上查看",
+    "description": "Link next to the notice above the posts of a profile of an account of another server, to its profile page on that server. {host} is that server's host name, for example 'mastodon.social'."
+  },
+  "profile.sign_in_to_follow": {
+    "defaultMessage": "登入以追蹤",
+    "description": "Link on a profile when nobody is signed in: it opens the sign-in page and comes back."
+  },
+  "profile.subscribe": {
+    "defaultMessage": "有新貼文時通知我",
+    "description": "Name and tooltip of the bell toggle button on a profile: while it is on, each new post of the account is a notification. The name stays the same on and off."
+  },
+  "profile.subscribe.follow_first": {
+    "defaultMessage": "追蹤這個帳號，即可在它發布新貼文時收到通知。",
+    "description": "Shown under the turned-off bell button on the profile of an account of another server that the user does not follow: the user must follow it before its new posts can be notified."
+  },
+  "profile.tab.no_boosts": {
+    "defaultMessage": "不含轉發",
+    "description": "Tab of a profile: only the posts the account wrote itself, without replies and boosts."
+  },
+  "profile.tab.posts": {
+    "defaultMessage": "貼文",
+    "description": "Tab of a profile: the account's posts and boosts, without its replies."
+  },
+  "profile.tab.replies": {
+    "defaultMessage": "貼文與回覆",
+    "description": "Tab of a profile: the account's posts, boosts and replies."
+  },
+  "profile.tabs": {
+    "defaultMessage": "{name} 的貼文",
+    "description": "Accessible name of the tab list that switches between the posts of a profile. {name} is the account's display name."
+  },
+  "profile.tag.bot": {
+    "defaultMessage": "機器人",
+    "description": "Label on a profile: the account is automated."
+  },
+  "profile.tag.follows_you": {
+    "defaultMessage": "追蹤了你",
+    "description": "Label on a profile: the account follows the user."
+  },
+  "profile.tag.locked": {
+    "defaultMessage": "需核准追蹤者",
+    "description": "Label on a profile: the account approves each follow request."
+  },
+  "profile.tag.muted": {
+    "defaultMessage": "已靜音",
+    "description": "Label on a profile: the user mutes the account."
+  },
+  "profile.tag.requested_you": {
+    "defaultMessage": "想要追蹤你",
+    "description": "Label on a profile: the account has asked to follow the user and awaits approval."
+  },
+  "profile.title": {
+    "defaultMessage": "個人檔案",
+    "description": "Heading and document title of the signed-in user's own profile page."
+  }
+}
