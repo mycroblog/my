@@ -360,7 +360,7 @@ my job types                 # print every job type of this release
 - 沒有人重試的 dead 任務，會在失敗後經過 `dead_job_retention`（預設 30 天；請參閱[該設定](../reference/configuration.md#dead_job_retention)）時由每小時的清理移除。
 - `queue = inline` 的 dead 任務存放在伺服器程序的記憶體中，所以 `my job` 無法處理它們（結束代碼 1）。
 
-<!-- source: splitting-workers-by-job-type 2ec73f050551 -->
+<!-- source: splitting-workers-by-job-type 89ced36a3c80 -->
 ### 依任務類型分開工作程序
 
 預設情況下，每個工作程序都會執行所有任務類型，依任務到期的順序，每個程序一次執行一個任務（請參閱[同時執行多個任務](#running-several-jobs-at-once)）。這樣一來，大量的傳送會延誤電子郵件和通知，而你新增的任何工作程序也會把時間分給所有類型。使用 `queue = db` 時，你可以讓某些類型擁有自己的工作程序：
@@ -380,7 +380,7 @@ histogram_quantile(0.95, sum by (my_job_type, le) (rate(my_job_wait_seconds_buck
 
 `sum by (my_job_type) (rate(my_job_duration_seconds_sum[1h]))` 會顯示每種類型使用的工作程序時間，這也大致代表它需要多少個程序。佔用大部分時間並讓其他類型等待的類型，就是應該移出去的那一個。
 
-兩種常見的配置，程序數量由你決定：
+三種常見的配置，程序數量由你決定：
 
 | 配置 | 程序 |
 | --- | --- |
