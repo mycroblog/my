@@ -71,6 +71,9 @@ jobs:
           install-only: true
       - name: Build the packages and the Go tools
         run: scripts/task.sh go:warm agentkit:warm mykit:warm
+      # The files' mtimes from their content, as server-test sets them: Go keys a file a test opens on its mtime.
+      - name: Set the files' mtimes from their content
+        run: scripts/stable-mtime.py
       # As server-test runs it, so that the results match what a merge group looks up.
       - name: go:test (for the test result cache)
         env:

@@ -435,6 +435,10 @@ jobs:
         uses: ./.github/actions/setup-task
       - name: Set up Go
         uses: ./.github/actions/setup-go
+      # Go keys a file that a test opens on its mtime, which the checkout sets to now: give each file an mtime from its
+      # content, as main.yml does when it builds the test result cache.
+      - name: Set the files' mtimes from their content
+        run: scripts/stable-mtime.py
       - name: go:test
         run: scripts/task.sh go:test
         env:
