@@ -439,10 +439,15 @@ jobs:
       # content, as main.yml does when it builds the test result cache.
       - name: Set the files' mtimes from their content
         run: scripts/stable-mtime.py
+      - name: Untracked files before go:test (measurement)
+        run: git status --short --ignored --untracked-files=all | head -50; ls -la --time-style=full-iso . locales locales/ar-XB | head -60
       - name: go:test
         run: scripts/task.sh go:test
         env:
           TEST_VALKEY_REQUIRED: "1"
+      - name: Untracked files after go:test (measurement)
+        if: always()
+        run: git status --short --ignored --untracked-files=all | head -80; ls -la --time-style=full-iso locales locales/ar-XB | head -40
 
   e2e:
     # The web E2E of the primary project (ADR-0079 §5, ADR-0015 §1: every spec, en at 1440 px; the width and locale
