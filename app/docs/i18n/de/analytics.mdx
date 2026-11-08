@@ -1,0 +1,49 @@
+---
+# source: 71a4aefa4377
+title: Analyse auf dieser Website
+description: Was die Seiten von mycroblog.dev an Cloudflare Web Analytics senden und was nicht.
+---
+
+{/* SPDX-License-Identifier: AGPL-3.0-only */}
+
+Diese Website, mycroblog.dev, zählt mit Cloudflare Web Analytics, wie ihre Seiten gelesen werden: welche Seiten,
+Sprachen und Versionen der Dokumentation geöffnet werden und woher die Leserinnen und Leser kommen. Das Projekt
+entscheidet anhand dieser Zahlen, was als Nächstes geschrieben und übersetzt wird. Diese Seite gilt nur für diese
+Website; Server, auf denen `my` läuft, haben ihre eigenen Richtlinien.
+
+## Was eine Seite sendet
+
+Wenn du eine Seite dieser Website öffnest, lädt dein Browser ein kleines Skript von `static.cloudflareinsights.com`
+und sendet Folgendes an `cloudflareinsights.com`:
+
+- die Adresse der Seite, ohne ihren Query-String;
+- die Adresse der Seite, von der du gekommen bist (den Referrer);
+- den User-Agent deines Browsers, der Browser und Betriebssystem nennt;
+- wie lange die Seite zum Laden und Darstellen gebraucht hat, so wie der Browser es misst.
+
+Wie bei jeder Anfrage empfängt Cloudflare sie von deiner IP-Adresse und leitet daraus das Land ab.
+
+## Was sie nicht tut
+
+- Sie setzt kein Cookie und speichert nichts in deinem Browser: weder Local Storage noch Session Storage noch
+  IndexedDB.
+- Cloudflare gibt an, Besucherinnen und Besucher für die Zählung nicht anhand von IP-Adresse, User-Agent oder anderen
+  Merkmalen per Fingerprinting zu erkennen und die Daten nicht für Werbung zu nutzen.
+- Das Projekt sieht im Cloudflare-Dashboard nur die Summen, nie die Aufzeichnung eines einzelnen Besuchs.
+
+Die Website selbst speichert für ihre eigenen Seiten zwei Dinge in deinem Browser: das Farbschema und welche Gruppen
+der Seitenleiste geöffnet sind. Sie verlassen deinen Browser nie.
+
+## Wer die Daten empfängt
+
+Cloudflare, Inc., das auch diese Website ausliefert, empfängt die Daten und verarbeitet sie gemäß der
+[Datenschutzrichtlinie von Cloudflare](https://www.cloudflare.com/privacypolicy/).
+
+## Abschalten
+
+Wenn du `static.cloudflareinsights.com` in deinem Browser oder mit einem Content-Blocker sperrst, wird das Skript
+nicht mehr geladen. Jede Seite funktioniert ohne es genauso.
+
+## Kontakt
+
+Schreib an [hello@mycroblog.dev](mailto:hello@mycroblog.dev), wenn du Fragen zu diesem Hinweis hast.
