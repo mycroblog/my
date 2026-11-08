@@ -680,7 +680,7 @@
     "description": "Heading of the section of how apps may register on the server settings screen."
   },
   "admin.settings.oauth_apps.description": {
-    "defaultMessage": "應用程式可以透過哪些方式取得客戶端 ID。全部關閉時，只有伺服器本身的應用程式可以運作。關閉某種方式不會停用已註冊的應用程式。",
+    "defaultMessage": "應用程式可以透過哪些方式取得用戶端 ID。全部關閉時，只有伺服器本身的應用程式可以運作。關閉某種方式不會停用已註冊的應用程式。",
     "description": "Explains the section of how apps may register."
   },
   "admin.settings.oauth_apps.user": {
@@ -696,11 +696,11 @@
     "description": "Checkbox of accepting apps whose client ID is the URL of a metadata document."
   },
   "admin.settings.oauth_apps.metadata_document.description": {
-    "defaultMessage": "應用程式以其託管的中繼資料文件 URL 作為客戶端 ID。伺服器會擷取該文件。",
+    "defaultMessage": "應用程式以其託管的中繼資料文件 URL 作為用戶端 ID。伺服器會擷取該文件。",
     "description": "Description of the checkbox of accepting metadata document apps."
   },
   "admin.settings.oauth_apps.dynamic": {
-    "defaultMessage": "動態客戶端註冊",
+    "defaultMessage": "動態用戶端註冊",
     "description": "Checkbox of letting apps register themselves."
   },
   "admin.settings.oauth_apps.dynamic.description": {

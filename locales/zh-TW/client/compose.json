@@ -1,0 +1,502 @@
+{
+  "compose.close": {
+    "defaultMessage": "關閉",
+    "description": "Accessible name of the × button that closes the new-post sheet. The draft is kept."
+  },
+  "compose.completion.suggestions": {
+    "defaultMessage": "建議",
+    "description": "Accessible name of the list of suggestions that opens under the text of a post, a content warning or a profile while the user types a mention after @, a hashtag after # or an emoji after : (ADR-0092)."
+  },
+  "compose.completion.count": {
+    "defaultMessage": "{count, plural, other {# 個建議}}",
+    "description": "Announced to screen readers when the list of suggestions for the typed mention, hashtag or emoji opens or changes. {count} is how many suggestions it shows."
+  },
+  "compose.completion.loading": {
+    "defaultMessage": "正在載入建議…",
+    "description": "Shown in the place of the suggestions, and announced, while the suggestions for the typed mention or hashtag take a moment to arrive."
+  },
+  "compose.completion.empty": {
+    "defaultMessage": "沒有建議",
+    "description": "Shown in the place of the suggestions, and announced, when nothing matches the typed mention, hashtag or emoji."
+  },
+  "compose.completion.tag_posts": {
+    "defaultMessage": "{count, plural, other {# 則貼文}}",
+    "description": "How many public posts carry a hashtag, shown after the hashtag in the list of suggestions while the user types a hashtag. {count} is the number of posts."
+  },
+  "compose.failed": {
+    "defaultMessage": "無法發布貼文：{reason}",
+    "description": "Error after publishing a post failed. The draft is kept. {reason} is the error message."
+  },
+  "compose.language.label": {
+    "defaultMessage": "語言",
+    "description": "Label of the choice of the language a post is written in."
+  },
+  "compose.language.und": {
+    "defaultMessage": "未指定",
+    "description": "Choice of post language when the user does not say which language the post is in."
+  },
+  "compose.media.add": {
+    "defaultMessage": "加入圖片、影片或音訊",
+    "description": "Button that opens the file picker to attach images, a video, or an audio file to a post."
+  },
+  "compose.media.count": {
+    "defaultMessage": "{count, plural, other {已附加 # 個檔案}}",
+    "description": "Description of the button that attaches media, while the post has some. {count} is how many files."
+  },
+  "compose.media.description.hint": {
+    "defaultMessage": "為看不到或聽不到的人描述內容。",
+    "description": "Help text under the alternative text field of an attached image, video, or audio file."
+  },
+  "compose.media.description.label": {
+    "defaultMessage": "附件 {position} 的說明",
+    "description": "Label of the alternative text field of an attached image, video, or audio file. {position} is its number in the post, from 1."
+  },
+  "compose.media.description.required": {
+    "defaultMessage": "為看不到或聽不到的人描述內容。你的設定要求每個附件都要有說明。",
+    "description": "Help text under the alternative text field of an attachment when the user's settings ask for a description of every attachment."
+  },
+  "compose.media.description.server_required": {
+    "defaultMessage": "為看不到或聽不到的人描述內容。這個伺服器要求每個附件都要有說明。",
+    "description": "Help text under the alternative text field of an attached image, video, or audio file when the server requires a description of every image (the instance setting require_media_description)."
+  },
+  "compose.media.description.missing": {
+    "defaultMessage": "請為這個附件加上說明。這個伺服器要求每個附件都要有說明。",
+    "description": "Error of the alternative text field of an attached image, video, or audio file that has no description while the server requires one for every image."
+  },
+  "compose.media.drop": {
+    "defaultMessage": "將檔案拖放到這裡以附加",
+    "description": "Shown over the new-post form while the user drags files over it: dropping them attaches them to the post."
+  },
+  "compose.media.failed": {
+    "defaultMessage": "無法附加檔案：{reason}",
+    "description": "State of an attached file whose upload failed. {reason} is the error message."
+  },
+  "compose.media.failed_processing": {
+    "defaultMessage": "伺服器無法處理這個檔案。",
+    "description": "Why an attached file failed: the server could not process it."
+  },
+  "compose.media.hint": {
+    "defaultMessage": "最多 {max, plural, other {# 個檔案}}：JPEG、PNG、GIF 或 WebP 圖片，MP4 或 WebM 影片，或 MP3、Ogg 或 M4A 音訊。位置和其他中繼資料會被移除。",
+    "description": "Help text next to the button that attaches media. {max} is the most files a post can have. JPEG, PNG, GIF, WebP, MP4, WebM, MP3, Ogg, M4A are format names (not translated)."
+  },
+  "compose.media.list": {
+    "defaultMessage": "已附加的媒體",
+    "description": "Accessible name of the list of images, videos, and audio files attached to the post being written."
+  },
+  "compose.media.processing": {
+    "defaultMessage": "處理中…",
+    "description": "State of an attached file while the server prepares it."
+  },
+  "compose.media.remove": {
+    "defaultMessage": "移除附件 {position}",
+    "description": "Button that removes an attached file from the post. {position} is its number in the post, from 1."
+  },
+  "compose.media.too_many": {
+    "defaultMessage": "一則貼文最多只能有 {max, plural, other {# 個檔案}}。其餘的檔案沒有加入。",
+    "description": "Notice when the user picked more files than a post can have. {max} is the most files a post can have."
+  },
+  "compose.media.unsupported": {
+    "defaultMessage": "{name} 不是 JPEG、PNG、GIF 或 WebP 圖片，也不是 MP4 或 WebM 影片，或 MP3、Ogg 或 M4A 音訊檔案。",
+    "description": "Notice when a picked file is not a type the server accepts. {name} is the file name. The format names are not translated."
+  },
+  "compose.media.uploading": {
+    "defaultMessage": "上傳中…",
+    "description": "State of an attached file while it is being sent to the server."
+  },
+  "compose.mention.unreached": {
+    "defaultMessage": "{count, plural, other {{accounts} 在其他伺服器上且沒有追蹤你，因此不會收到這則貼文。在這個伺服器以外，「本站」貼文只會送達你的追蹤者，他們會將這些提及看成一般連結。}}",
+    "description": "Warning under a post with the visibility 'This server' that mentions accounts of other servers that do not follow the author (ADR-0017): those accounts do not receive the post, and the author's followers on other servers see the mention as a plain link, not as a mention. {accounts} is the list of their handles, for example '@carol@remote.example and @dave@other.example'; {count} is how many there are."
+  },
+  "compose.federation.stays_local": {
+    "defaultMessage": "這則貼文不會送達其他伺服器：這個伺服器目前不會將貼文傳送給它們，因此你回覆或提及的其他伺服器帳號不會收到。",
+    "description": "Warning under a post that replies to or mentions an account of another server while this server sends nothing to other servers (federation direction 'Receive only' or 'Off', ADR-0006)."
+  },
+  "compose.missing_description.add": {
+    "defaultMessage": "加入說明",
+    "description": "Button of the confirmation that goes back to the form to describe the images."
+  },
+  "compose.missing_description.body": {
+    "defaultMessage": "{count, plural, other {有 # 張圖片沒有說明。}}看不到圖片的人將無法得知圖片的內容。",
+    "description": "Text of the confirmation about images without a description. {count} is how many images have none."
+  },
+  "compose.missing_description.post": {
+    "defaultMessage": "仍要發布",
+    "description": "Button of the confirmation that posts without the descriptions."
+  },
+  "compose.missing_description.title": {
+    "defaultMessage": "要在沒有圖片說明的情況下發布嗎？",
+    "description": "Title of the confirmation shown when attached images have no description and the user's settings ask for one."
+  },
+  "compose.open": {
+    "defaultMessage": "撰寫貼文",
+    "description": "The coral button in the phones' tab bar and the button in the side rail that open the form for a new post. In the compact rail (tablets) only its icon shows and this is its accessible name; keep it short."
+  },
+  "compose.outbox.discard": {
+    "defaultMessage": "捨棄",
+    "description": "Button that throws away a post that could not be sent."
+  },
+  "compose.outbox.edit": {
+    "defaultMessage": "編輯",
+    "description": "Button that puts a post that could not be sent back into the form."
+  },
+  "compose.outbox.failed": {
+    "defaultMessage": "無法發布貼文：{reason}",
+    "description": "State of a post that could not be sent. {reason} is the error message."
+  },
+  "compose.outbox.label": {
+    "defaultMessage": "傳送中的貼文",
+    "description": "Accessible name of the list of posts that are being sent or could not be sent."
+  },
+  "compose.outbox.resend": {
+    "defaultMessage": "重新傳送",
+    "description": "Button that sends a post that could not be sent again."
+  },
+  "compose.outbox.sending": {
+    "defaultMessage": "傳送中…",
+    "description": "State of a post that is being sent."
+  },
+  "compose.outbox.unsent": {
+    "defaultMessage": "尚未傳送。",
+    "description": "State of a post whose sending was interrupted (for example by reloading the page)."
+  },
+  "compose.over": {
+    "defaultMessage": "{count, plural, other {超過 # 個字元}}",
+    "description": "Counter under a text field when the text is longer than allowed. {count} is how many characters are over."
+  },
+  "compose.poll.toggle": {
+    "defaultMessage": "加入投票",
+    "description": "Toggle button (an icon) that adds a poll to the new post, or removes it. A post with a poll attaches no files."
+  },
+  "compose.poll.legend": {
+    "defaultMessage": "投票",
+    "description": "Name of the group of fields of the poll of the new post: its options, how long it lasts, and its settings."
+  },
+  "compose.poll.option": {
+    "defaultMessage": "選項 {number}",
+    "description": "Label of a text field of the poll of the new post: one option the readers can vote for. {number} is its position, from 1."
+  },
+  "compose.poll.option.remove": {
+    "defaultMessage": "移除選項 {number}",
+    "description": "Button (an icon) that removes an option of the poll of the new post. {number} is its position, from 1."
+  },
+  "compose.poll.option.add": {
+    "defaultMessage": "新增選項",
+    "description": "Button that adds an empty option to the poll of the new post."
+  },
+  "compose.poll.duplicate": {
+    "defaultMessage": "每個選項都必須不同。",
+    "description": "Error under the options of the poll of the new post when two of them are the same."
+  },
+  "compose.poll.duration": {
+    "defaultMessage": "期間",
+    "description": "Label of the select of how long the poll of the new post takes votes."
+  },
+  "compose.poll.duration.minutes": {
+    "defaultMessage": "{count, plural, other {# 分鐘}}",
+    "description": "Option of how long a poll takes votes. {count} is a number of minutes."
+  },
+  "compose.poll.duration.hours": {
+    "defaultMessage": "{count, plural, other {# 小時}}",
+    "description": "Option of how long a poll takes votes. {count} is a number of hours."
+  },
+  "compose.poll.duration.days": {
+    "defaultMessage": "{count, plural, other {# 天}}",
+    "description": "Option of how long a poll takes votes. {count} is a number of days."
+  },
+  "compose.poll.multiple": {
+    "defaultMessage": "允許選擇多個選項",
+    "description": "Checkbox of the poll of the new post: a vote may choose several options."
+  },
+  "compose.poll.hide_totals": {
+    "defaultMessage": "投票結束前隱藏票數",
+    "description": "Checkbox of the poll of the new post: nobody sees the votes of each option until the poll ends."
+  },
+  "compose.posted": {
+    "defaultMessage": "已發布。",
+    "description": "Notice after a post was published."
+  },
+  "compose.posted.first": {
+    "defaultMessage": "已發布你的第一則貼文。歡迎加入。",
+    "description": "Notice after the account's first post was published: the post is done, and the account has started posting."
+  },
+  "compose.remaining": {
+    "defaultMessage": "{count, plural, other {還剩 # 個字元}}",
+    "description": "Counter under a text field: how many more characters fit. {count} is a number."
+  },
+  "compose.reply.cancel": {
+    "defaultMessage": "取消回覆",
+    "description": "Button that turns the reply being written into a normal post."
+  },
+  "compose.reply.label": {
+    "defaultMessage": "回覆 {name}",
+    "description": "Above the new-post form: the post being replied to. {name} is the author's display name or handle."
+  },
+  "compose.reply.unavailable": {
+    "defaultMessage": "無法顯示你要回覆的貼文。",
+    "description": "Shown instead of the post being replied to when it could not be loaded."
+  },
+  "compose.sensitive": {
+    "defaultMessage": "隱藏圖片，直到讀者選擇顯示",
+    "description": "Checkbox that marks the attached images as sensitive."
+  },
+  "compose.submit": {
+    "defaultMessage": "發布",
+    "description": "Button that publishes the new post."
+  },
+  "compose.submit.reply": {
+    "defaultMessage": "回覆",
+    "description": "Button that publishes the reply being written."
+  },
+  "compose.text.label": {
+    "defaultMessage": "你的貼文",
+    "description": "Label of the text area where the user writes the text of a post."
+  },
+  "compose.title": {
+    "defaultMessage": "新貼文",
+    "description": "Heading of the form that writes a new post (the side panel on wide screens, the sheet on phones)."
+  },
+  "compose.visibility.button": {
+    "defaultMessage": "可見範圍：{visibility}",
+    "description": "Button that opens the choice of who can see the post. {visibility} is the current choice, for example 'Public'."
+  },
+  "compose.visibility.ceiling": {
+    "defaultMessage": "你的帳號目前最多只能以「{visibility}」發布。選擇更廣的範圍時會以「{visibility}」發布。",
+    "description": "Hint in the choice of visibility while a restriction on the account narrows what it can post. {visibility} is the widest visibility it can use, for example 'Followers'."
+  },
+  "compose.visibility.direct": {
+    "defaultMessage": "私訊",
+    "description": "Visibility of a post: only the mentioned people."
+  },
+  "compose.visibility.direct.description": {
+    "defaultMessage": "只有你提及的人。",
+    "description": "Explanation of the 'Mentioned people' visibility."
+  },
+  "compose.visibility.done": {
+    "defaultMessage": "完成",
+    "description": "Button that closes the list of visibility choices."
+  },
+  "compose.visibility.limited": {
+    "defaultMessage": "已以「{visibility}」的可見範圍發布：你的帳號目前無法以更廣的範圍發布。",
+    "description": "Notice after posting when the server narrowed the chosen visibility because of a restriction on the account. {visibility} is the visibility the post got, for example 'Followers'."
+  },
+  "compose.visibility.local": {
+    "defaultMessage": "本站",
+    "description": "Visibility of a post: signed-in people of this server and the author's followers. Not the same as 'local only' in other software: followers on other servers receive it."
+  },
+  "compose.visibility.local.description": {
+    "defaultMessage": "在這裡登入的人，以及你在其他伺服器上的追蹤者。會顯示在這個伺服器的本站時間軸上。",
+    "description": "Explanation of the 'This server' visibility (ADR-0017)."
+  },
+  "compose.visibility.private": {
+    "defaultMessage": "僅追蹤者",
+    "description": "Visibility of a post: the author's followers and the mentioned people."
+  },
+  "compose.visibility.private.description": {
+    "defaultMessage": "只有你的追蹤者和你提及的人。",
+    "description": "Explanation of the 'Followers' visibility."
+  },
+  "compose.visibility.public": {
+    "defaultMessage": "公開",
+    "description": "Visibility of a post: everyone, and listed on the public timelines."
+  },
+  "compose.visibility.public.description": {
+    "defaultMessage": "任何人，包括這裡和其他伺服器上的人。會顯示在公開時間軸上。",
+    "description": "Explanation of the 'Public' visibility."
+  },
+  "compose.visibility.title": {
+    "defaultMessage": "誰可以看到這則貼文？",
+    "description": "Label of the list of visibility choices for a post."
+  },
+  "compose.visibility.translation.both": {
+    "defaultMessage": "讀者要求翻譯時，「{first}」或「{second}」貼文的文字可能會傳送給 {providers}。",
+    "description": "In the visibility picker, on a server that allows a translation provider both narrow visibilities: what can happen to such a post. {first} and {second} are visibility names, {providers} the names of the providers as a list."
+  },
+  "compose.visibility.translation.one": {
+    "defaultMessage": "讀者要求翻譯時，「{visibility}」貼文的文字可能會傳送給 {providers}。",
+    "description": "In the visibility picker, on a server that allows a translation provider one narrow visibility: what can happen to such a post. {visibility} is the visibility's name, {providers} the names of the providers as a list."
+  },
+  "compose.visibility.unlisted": {
+    "defaultMessage": "不公開列出",
+    "description": "Visibility of a post: everyone, but kept off the public timelines."
+  },
+  "compose.visibility.unlisted.description": {
+    "defaultMessage": "任何有連結的人都能看到，但不會顯示在公開時間軸上。",
+    "description": "Explanation of the 'Unlisted' visibility."
+  },
+  "compose.warning.description": {
+    "defaultMessage": "讀者會先看到這段文字，再決定是否顯示貼文。",
+    "description": "Help text under the content warning field."
+  },
+  "compose.warning.label": {
+    "defaultMessage": "內容警告",
+    "description": "Label of the field with the content warning text of a post."
+  },
+  "compose.warning.toggle": {
+    "defaultMessage": "加入內容警告",
+    "description": "Toggle button (an icon) that adds a content warning: a short text shown instead of the post until the reader opens it."
+  },
+  "compose.quote.label": {
+    "defaultMessage": "引用 {name}",
+    "description": "Heading above the new-post form of the post being quoted. {name} is the display name, or the @handle, of its author."
+  },
+  "compose.quote.cancel": {
+    "defaultMessage": "不引用",
+    "description": "Button under the post being quoted in the new-post form; the draft then quotes nothing."
+  },
+  "compose.quote.unavailable": {
+    "defaultMessage": "無法載入要引用的貼文。",
+    "description": "Shown in place of the post being quoted in the new-post form when it could not be loaded."
+  },
+  "compose.quote_policy.label": {
+    "defaultMessage": "誰可以引用",
+    "description": "Accessible name of the select in the new-post form that chooses who may quote the post."
+  },
+  "compose.quote_policy.public": {
+    "defaultMessage": "任何人",
+    "description": "Quote policy: anyone who can see the post may quote it."
+  },
+  "compose.quote_policy.public.description": {
+    "defaultMessage": "任何能看到這則貼文的人都可以引用。",
+    "description": "Description of the quote policy 'Anyone'."
+  },
+  "compose.quote_policy.followers": {
+    "defaultMessage": "追蹤者",
+    "description": "Quote policy: only the author's followers may quote the post."
+  },
+  "compose.quote_policy.followers.description": {
+    "defaultMessage": "只有你的追蹤者可以引用。",
+    "description": "Description of the quote policy 'Followers'."
+  },
+  "compose.quote_policy.nobody": {
+    "defaultMessage": "只有你",
+    "description": "Quote policy: only the author may quote the post."
+  },
+  "compose.quote_policy.nobody.description": {
+    "defaultMessage": "除了你以外，沒有人可以引用。",
+    "description": "Description of the quote policy 'Only you'."
+  },
+  "compose.quote_policy.tooltip": {
+    "defaultMessage": "引用：{value}",
+    "description": "Tooltip of the select that chooses who may quote the post, shown on hover and keyboard focus. {value} is the current choice, for example 'Followers'."
+  },
+  "compose.language.tooltip": {
+    "defaultMessage": "語言：{value}",
+    "description": "Tooltip of the select that chooses the language of the post, shown on hover and keyboard focus. {value} is the current language, for example 'English'."
+  },
+  "compose.blocked.empty": {
+    "defaultMessage": "請輸入內容後再發布。",
+    "description": "Beside the submit button of the new-post form, after it was pressed with an empty text: why the post was not sent. The focus moves to the text."
+  },
+  "compose.blocked.too_long": {
+    "defaultMessage": "文字太長。請縮短後再發布。",
+    "description": "Beside the submit button of the new-post form, after it was pressed with a text over the character limit: why the post was not sent. The counter under the text shows by how much."
+  },
+  "compose.blocked.uploading": {
+    "defaultMessage": "附件仍在上傳中。請在準備好後再發布。",
+    "description": "Beside the submit button of the new-post form, after it was pressed while attached files were still uploading or being processed: why the post was not sent."
+  },
+  "compose.blocked.upload_failed": {
+    "defaultMessage": "有附件無法上傳。請移除後再發布。",
+    "description": "Beside the submit button of the new-post form, after it was pressed while an attached file had failed: why the post was not sent."
+  },
+  "compose.blocked.poll": {
+    "defaultMessage": "請修正投票選項後再發布。",
+    "description": "Beside the submit button of the new-post form, after it was pressed while the poll had an empty or repeated option: why the post was not sent. The poll shows which."
+  },
+  "compose.blocked.loading_target": {
+    "defaultMessage": "你要回覆或引用的貼文仍在載入中。請在顯示後再發布。",
+    "description": "Beside the submit button of the new-post form, after it was pressed while the post replied to or quoted was still loading: why the post was not sent."
+  },
+  "compose.rejected.appeal.already_appealed": {
+    "defaultMessage": "你已經對這項決定提出申訴。版主會進行審查。",
+    "description": "Shown in place of the appeal button when the user already appealed the automated review's refusal of their post."
+  },
+  "compose.rejected.appeal.cancel": {
+    "defaultMessage": "取消",
+    "description": "Button of the appeal dialog of a refused post: closes it without appealing. The draft is kept."
+  },
+  "compose.rejected.appeal.characters_left": {
+    "defaultMessage": "{count, plural, other {還剩 # 個字元}}",
+    "description": "Count under a field of the appeal of a refused post. {count} is how many more characters fit."
+  },
+  "compose.rejected.appeal.characters_over": {
+    "defaultMessage": "{count, plural, other {超過 # 個字元}}",
+    "description": "Count under a field of the appeal of a refused post that is too long. {count} is how many characters are over."
+  },
+  "compose.rejected.appeal.closed": {
+    "defaultMessage": "申訴期限已於 {date} 結束。",
+    "description": "Shown in place of the appeal button once the deadline to appeal the refusal of a post passed. {date} is the deadline."
+  },
+  "compose.rejected.appeal.comment.description": {
+    "defaultMessage": "選填。告訴版主為什麼這則貼文應該被允許。",
+    "description": "Description of the comment field of the appeal of a refused post."
+  },
+  "compose.rejected.appeal.comment.label": {
+    "defaultMessage": "給版主的意見",
+    "description": "Label of the optional comment field of the appeal of a post the automated review refused."
+  },
+  "compose.rejected.appeal.comment.too_long": {
+    "defaultMessage": "請輸入 {max, number} 個字元以內。",
+    "description": "Error of the comment of the appeal of a refused post that is too long. {max} is the limit."
+  },
+  "compose.rejected.appeal.confirm.description": {
+    "defaultMessage": "版主會閱讀貼文內容和你的意見。申訴不會發布貼文：如果版主取消決定，你可以再次發布。申訴送出後就無法變更。",
+    "description": "Description of the appeal dialog of a post the automated review refused."
+  },
+  "compose.rejected.appeal.confirm.title": {
+    "defaultMessage": "要對這項決定提出申訴嗎？",
+    "description": "Title of the dialog that appeals the automated review's refusal of a post."
+  },
+  "compose.rejected.appeal.failed": {
+    "defaultMessage": "無法送出申訴：{reason}",
+    "description": "Error in the appeal dialog of a refused post when sending failed; the dialog stays open. {reason} says why."
+  },
+  "compose.rejected.appeal.not_appealable": {
+    "defaultMessage": "這項決定無法申訴。",
+    "description": "Shown in place of the appeal button when the server says the refusal of the post cannot be appealed."
+  },
+  "compose.rejected.appeal.open": {
+    "defaultMessage": "提出申訴",
+    "description": "Button under the notice of a post the automated review refused: opens the appeal dialog."
+  },
+  "compose.rejected.appeal.send": {
+    "defaultMessage": "送出申訴",
+    "description": "Button of the appeal dialog of a refused post that sends the appeal."
+  },
+  "compose.rejected.appeal.sent": {
+    "defaultMessage": "已送出你的申訴。版主審查後會通知你；如果版主取消決定，你就可以再次發布。",
+    "description": "Shown in the notice of a refused post after the appeal was sent."
+  },
+  "compose.rejected.appeal.upheld": {
+    "defaultMessage": "版主已於 {date} 維持這項決定。這則貼文仍不會發布。",
+    "description": "Notice of the composer after the author appealed a refused post: a moderator reviewed the appeal and kept the refusal. {date} is the date and time of the review."
+  },
+  "compose.rejected.appeal.overturned": {
+    "defaultMessage": "版主已於 {date} 取消這項決定。你可以再次發布。",
+    "description": "Notice of the composer after the author appealed a refused post: a moderator overturned the refusal. The post is not restored; the author posts again. {date} is the date and time of the review."
+  },
+  "compose.rejected.appeal.text.description": {
+    "defaultMessage": "你嘗試發布的文字。版主會以純文字閱讀。",
+    "description": "Description of the text field of the appeal of a refused post, which starts with the text that was sent."
+  },
+  "compose.rejected.appeal.text.label": {
+    "defaultMessage": "貼文的文字",
+    "description": "Label of the text field of the appeal of a post the automated review refused."
+  },
+  "compose.rejected.appeal.text.required": {
+    "defaultMessage": "請輸入貼文的文字。",
+    "description": "Error of the appeal of a refused post whose text is empty."
+  },
+  "compose.rejected.appeal.text.too_long": {
+    "defaultMessage": "請輸入 {max, number} 個字元以內。",
+    "description": "Error of the text of the appeal of a refused post that is too long. {max} is the limit."
+  },
+  "compose.rejected.appeal.until": {
+    "defaultMessage": "你可以在 {date} 之前提出申訴。",
+    "description": "Shown above the appeal button of a post the automated review refused. {date} is the deadline."
+  },
+  "compose.rejected.appeal.window_closed": {
+    "defaultMessage": "這項決定的申訴期限已經結束。",
+    "description": "Shown in place of the appeal button when the server says the deadline to appeal the refusal of the post passed."
+  }
+}

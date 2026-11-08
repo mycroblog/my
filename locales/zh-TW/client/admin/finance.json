@@ -1,0 +1,558 @@
+{
+  "admin.finance.title": {
+    "defaultMessage": "費用",
+    "description": "Heading of the costs screen (the instance's running costs), and its link in the administration menu."
+  },
+  "admin.finance.summary": {
+    "defaultMessage": "記錄營運伺服器的費用，並查看每週、每月與每年的總計。",
+    "description": "Description of the costs screen in the administration menu of the settings."
+  },
+  "admin.finance.description": {
+    "defaultMessage": "查看營運此伺服器的費用與收入總計。其他頁面會列出付款與退款、記錄費用、顯示帳單匯入狀況，並設定要公開的內容。記錄的項目、名稱與備註絕不會公開。",
+    "description": "Description of the costs screen, on its overview page under the links to its pages."
+  },
+  "admin.finance.visibility": {
+    "defaultMessage": "{visibility, select, totals {關於頁面會公開這些費用的總計，但不含明細。} breakdown {關於頁面會公開這些費用的總計，以及依供應商與分類的明細。} other {這些費用不會公開。}}",
+    "description": "What the server publishes of the costs on its information page, on the costs screen, by the server setting finance_visibility (private, totals, or breakdown)."
+  },
+  "admin.finance.income_visibility": {
+    "defaultMessage": "{visibility, select, totals {關於頁面會公開收入的總計。} plans {關於頁面會公開收入的總計與各方案的成員。} other {收入不會公開。}}",
+    "description": "What the server publishes of the income on its information page, on the costs screen, by the server setting income_visibility (private, totals, or plans)."
+  },
+  "admin.finance.viewer": {
+    "defaultMessage": "{names, select, shown {可以讀取財務資料的人看得到項目名稱、} other {可以讀取財務資料的人看不到項目名稱、}}{memos, select, shown {看得到其備註，} other {看不到其備註，}}{income, select, plans {並可看到收入與各方案的成員。} other {且只能看到收入的總計。}}",
+    "description": "What the holders of the view_finance permission see on the finances page, on the costs screen, by the server settings finance_viewer_item_names and finance_viewer_item_memos (shown or hidden) and finance_viewer_income (totals or plans)."
+  },
+  "admin.finance.totals.title": {
+    "defaultMessage": "總計",
+    "description": "Heading of the section with the totals by period on the costs screen."
+  },
+  "admin.finance.movements.title": {
+    "defaultMessage": "付款與退款",
+    "description": "Heading of the list of the payment provider's money movements of the income on its page of the costs screen."
+  },
+  "admin.finance.movements.description": {
+    "defaultMessage": "金流服務商記錄的金流，最新的在前。只有管理財務的人看得到，絕不會公開。",
+    "description": "Explanation of the list of the money movements of the income on the costs screen."
+  },
+  "admin.finance.movements.empty": {
+    "defaultMessage": "還沒有付款",
+    "description": "Heading of the empty list of the money movements of the income."
+  },
+  "admin.finance.movements.empty.description": {
+    "defaultMessage": "金流服務商記錄贊助方案的付款後，就會顯示在這裡。",
+    "description": "Explanation of the empty list of the money movements of the income."
+  },
+  "admin.finance.movements.kind.payment": {
+    "defaultMessage": "付款",
+    "description": "Kind of a money movement of the income: a payment of a subscription."
+  },
+  "admin.finance.movements.kind.refund": {
+    "defaultMessage": "退款",
+    "description": "Kind of a money movement of the income: a refund of a payment."
+  },
+  "admin.finance.movements.kind.chargeback": {
+    "defaultMessage": "退單",
+    "description": "Kind of a money movement of the income: a chargeback (dispute) of a payment."
+  },
+  "admin.finance.movements.kind.chargeback_reversal": {
+    "defaultMessage": "退單已撤銷",
+    "description": "Kind of a money movement of the income: a chargeback given back."
+  },
+  "admin.finance.movements.kind.fee": {
+    "defaultMessage": "服務商手續費",
+    "description": "Kind of a money movement of the income: a fee of the payment provider that belongs to no payment."
+  },
+  "admin.finance.movements.occurred_at": {
+    "defaultMessage": "入帳時間",
+    "description": "Term of the time the payment provider booked a money movement."
+  },
+  "admin.finance.movements.covers": {
+    "defaultMessage": "付費期間",
+    "description": "Term of the billing period that a payment pays for."
+  },
+  "admin.finance.movements.parent": {
+    "defaultMessage": "所屬付款",
+    "description": "Term of the payment provider's ID of the payment that a refund, a chargeback, or a reversal belongs to."
+  },
+  "admin.finance.movements.subscriber": {
+    "defaultMessage": "訂閱者",
+    "description": "Term of the subscriber's account of a money movement."
+  },
+  "admin.finance.movements.no_subscriber": {
+    "defaultMessage": "無",
+    "description": "What the subscriber term says of a money movement of no subscription, such as a provider fee."
+  },
+  "admin.finance.movements.deleted_account": {
+    "defaultMessage": "已刪除的帳號",
+    "description": "What the subscriber term says of a money movement whose subscriber's account has been deleted."
+  },
+  "admin.finance.movements.empty.filtered": {
+    "defaultMessage": "沒有符合篩選條件的金流",
+    "description": "Heading of the empty list of money movements when the kind or dates filter leaves none."
+  },
+  "admin.finance.movements.empty.filtered.description": {
+    "defaultMessage": "請選擇其他類型或日期，或清除篩選條件。",
+    "description": "Explains the empty list of money movements under a filter."
+  },
+  "admin.finance.movements.filter.kind": {
+    "defaultMessage": "類型",
+    "description": "Label of the select that narrows the money movements to one kind."
+  },
+  "admin.finance.movements.filter.any_kind": {
+    "defaultMessage": "所有類型",
+    "description": "Choice of the kind select that shows money movements of every kind."
+  },
+  "admin.finance.movements.filter.from": {
+    "defaultMessage": "計入起始日",
+    "description": "Label of the date field: only the money movements counted on or after this date."
+  },
+  "admin.finance.movements.filter.to": {
+    "defaultMessage": "計入截止日",
+    "description": "Label of the date field: only the money movements counted on or before this date."
+  },
+  "admin.finance.movements.filter.to_before_from": {
+    "defaultMessage": "截止日早於起始日。",
+    "description": "Error of the last date field when it is before the first date."
+  },
+  "admin.finance.movements.filter.apply": {
+    "defaultMessage": "顯示這段日期",
+    "description": "Button that narrows the money movements to the typed dates."
+  },
+  "admin.finance.movements.filter.clear": {
+    "defaultMessage": "清除篩選條件",
+    "description": "Button that removes the kind and dates filters of the money movements."
+  },
+  "admin.finance.new.title": {
+    "defaultMessage": "記錄費用",
+    "description": "Heading of the page of the form of a new cost, and the button on the list of recorded costs that leads to it."
+  },
+  "admin.finance.name": {
+    "defaultMessage": "名稱",
+    "description": "Label of the name of a cost (such as a domain or a server plan) on the costs screen."
+  },
+  "admin.finance.name.description": {
+    "defaultMessage": "費用的內容，例如 example.com 或主伺服器。最多 {max} 個字元。",
+    "description": "Explanation of the name of a cost on the costs screen."
+  },
+  "admin.finance.provider": {
+    "defaultMessage": "供應商",
+    "description": "Label of who is paid for a cost on the costs screen."
+  },
+  "admin.finance.provider.description": {
+    "defaultMessage": "你付款的對象。明細會將同一供應商歸為一組，不論大小寫。",
+    "description": "Explanation of the provider of a cost on the costs screen."
+  },
+  "admin.finance.memo": {
+    "defaultMessage": "備註",
+    "description": "Label of the operator's note on a cost, never published, on the costs screen."
+  },
+  "admin.finance.memo.description": {
+    "defaultMessage": "僅供管理員查看，絕不會公開。",
+    "description": "Explanation of the memo of a cost on the costs screen."
+  },
+  "admin.finance.schedule": {
+    "defaultMessage": "付款",
+    "description": "Label of how often a cost is paid on the costs screen."
+  },
+  "admin.finance.schedule.description": {
+    "defaultMessage": "定期付款從起始日開始計算：每月 31 日的付款，在較短的月份會落在當月最後一天。若之後要變更付款週期，請結束此費用並記錄一筆新的費用。",
+    "description": "Explanation of the payment schedule on the costs screen."
+  },
+  "admin.finance.schedule.once": {
+    "defaultMessage": "一次",
+    "description": "Choice of a cost paid once."
+  },
+  "admin.finance.schedule.weeks": {
+    "defaultMessage": "每隔幾週",
+    "description": "Choice of a cost paid every N weeks."
+  },
+  "admin.finance.schedule.months": {
+    "defaultMessage": "每隔幾個月",
+    "description": "Choice of a cost paid every N months."
+  },
+  "admin.finance.schedule.years": {
+    "defaultMessage": "每隔幾年",
+    "description": "Choice of a cost paid every N years, such as a domain renewal."
+  },
+  "admin.finance.interval": {
+    "defaultMessage": "間隔",
+    "description": "Label of the N of a payment every N weeks, months, or years on the costs screen."
+  },
+  "admin.finance.interval.description": {
+    "defaultMessage": "1 代表每週、每月或每年；3 代表每 3 個月。最多 {max}。",
+    "description": "Explanation of the interval of a payment on the costs screen."
+  },
+  "admin.finance.interval.invalid": {
+    "defaultMessage": "請輸入 1 到 {max} 的整數。",
+    "description": "Error of an interval that is not a whole number in range on the costs screen."
+  },
+  "admin.finance.starts_on": {
+    "defaultMessage": "首次付款",
+    "description": "Label of the date of the first payment of a regular cost on the costs screen."
+  },
+  "admin.finance.starts_on.description": {
+    "defaultMessage": "帳單或發票上的日期。",
+    "description": "Explanation of the first payment date on the costs screen."
+  },
+  "admin.finance.paid_on": {
+    "defaultMessage": "付款日期",
+    "description": "Label of the date of a cost paid once on the costs screen."
+  },
+  "admin.finance.paid_on.description": {
+    "defaultMessage": "帳單或發票上的日期。",
+    "description": "Explanation of the date of a cost paid once on the costs screen."
+  },
+  "admin.finance.ends_on": {
+    "defaultMessage": "最後付款期限",
+    "description": "Label of the last date a regular payment can fall on, after which it stops, on the costs screen."
+  },
+  "admin.finance.ends_on.description": {
+    "defaultMessage": "選填。此日期之後的付款將停止；若仍持續付款，請留空。",
+    "description": "Explanation of the end of a regular cost on the costs screen."
+  },
+  "admin.finance.ends_on.before_start": {
+    "defaultMessage": "結束日期不能早於首次付款。",
+    "description": "Error of an end before the start on the costs screen."
+  },
+  "admin.finance.no_end": {
+    "defaultMessage": "直到結束",
+    "description": "Value of the end of a regular cost without one on the costs screen."
+  },
+  "admin.finance.amount": {
+    "defaultMessage": "金額",
+    "description": "Label of the amount of a payment on the costs screen."
+  },
+  "admin.finance.amount.description": {
+    "defaultMessage": "以該貨幣的主要單位填寫，例如日圓填 1650、美元填 12.34。",
+    "description": "Explanation of the amount of a payment on the costs screen."
+  },
+  "admin.finance.amount.invalid": {
+    "defaultMessage": "請輸入金額，例如 1650 或 12.34。",
+    "description": "Error of an amount that is not a plain decimal number on the costs screen."
+  },
+  "admin.finance.currency": {
+    "defaultMessage": "貨幣",
+    "description": "Label of the currency code of a payment on the costs screen."
+  },
+  "admin.finance.currency.description": {
+    "defaultMessage": "三個字母的貨幣代碼，例如 JPY 或 USD。",
+    "description": "Explanation of the ISO 4217 currency code on the costs screen."
+  },
+  "admin.finance.currency.invalid": {
+    "defaultMessage": "請輸入三個字母的貨幣代碼，例如 JPY。",
+    "description": "Error of a currency that is not three letters on the costs screen."
+  },
+  "admin.finance.required": {
+    "defaultMessage": "請填寫此欄位。",
+    "description": "Error of a required field left empty on the costs screen."
+  },
+  "admin.finance.too_long": {
+    "defaultMessage": "最多只能使用 {max} 個字元。",
+    "description": "Error of a text that is too long on the costs screen."
+  },
+  "admin.finance.create": {
+    "defaultMessage": "記錄費用",
+    "description": "Submit button of the form that records a cost."
+  },
+  "admin.finance.cancel": {
+    "defaultMessage": "取消",
+    "description": "Link from the form of a new cost back to the list of recorded costs, without recording it."
+  },
+  "admin.finance.create_failed": {
+    "defaultMessage": "無法記錄費用：{reason}",
+    "description": "Error below the form of a new cost on the costs screen, with the server's reason."
+  },
+  "admin.finance.created": {
+    "defaultMessage": "已記錄 {name}。稽核日誌已記錄此變更。",
+    "description": "Result of recording a cost on the costs screen."
+  },
+  "admin.finance.list.title": {
+    "defaultMessage": "已記錄的費用",
+    "description": "Heading of the list of recorded costs on its page of the costs screen."
+  },
+  "admin.finance.empty": {
+    "defaultMessage": "還沒有費用",
+    "description": "Heading of the empty list of costs on the costs screen."
+  },
+  "admin.finance.empty.description": {
+    "defaultMessage": "記錄伺服器的費用，即可查看其總計。",
+    "description": "Description of the empty list of recorded costs, above the button that records one."
+  },
+  "admin.finance.every.once": {
+    "defaultMessage": "一次",
+    "description": "How often a cost is paid: once."
+  },
+  "admin.finance.every.weeks": {
+    "defaultMessage": "{count, plural, =1 {每週} other {每 # 週}}",
+    "description": "How often a cost is paid: every N weeks."
+  },
+  "admin.finance.every.months": {
+    "defaultMessage": "{count, plural, =1 {每月} other {每 # 個月}}",
+    "description": "How often a cost is paid: every N months."
+  },
+  "admin.finance.every.years": {
+    "defaultMessage": "{count, plural, =1 {每年} other {每 # 年}}",
+    "description": "How often a cost is paid: every N years."
+  },
+  "admin.finance.price": {
+    "defaultMessage": "目前價格",
+    "description": "Term of the price of a payment today on the costs screen."
+  },
+  "admin.finance.prices": {
+    "defaultMessage": "價格變動",
+    "description": "Term of the list of the prices of a cost by date on the costs screen."
+  },
+  "admin.finance.price_from": {
+    "defaultMessage": "自 {date} 起 {amount}",
+    "description": "A price of a cost from a date on on the costs screen."
+  },
+  "admin.finance.created_at": {
+    "defaultMessage": "記錄時間",
+    "description": "Term of when a cost was recorded on the costs screen."
+  },
+  "admin.finance.edit.title": {
+    "defaultMessage": "編輯費用",
+    "description": "Heading of the section of the page of one cost that changes its name, provider, category, and memo."
+  },
+  "admin.finance.revise": {
+    "defaultMessage": "變更價格",
+    "description": "Submit button of the form of a new price on the page of one cost."
+  },
+  "admin.finance.revise.title": {
+    "defaultMessage": "變更 {name} 的價格",
+    "description": "Heading of the section of the page of one cost that sets a new price from a date on."
+  },
+  "admin.finance.effective_on": {
+    "defaultMessage": "生效日期",
+    "description": "Label of the date from which a new price applies on the costs screen."
+  },
+  "admin.finance.effective_on.description": {
+    "defaultMessage": "此日期當天或之後的付款會使用新價格。若要全面修正錯誤，請使用首次付款日期。",
+    "description": "Explanation of the date of a new price on the costs screen."
+  },
+  "admin.finance.effective_on.before_start": {
+    "defaultMessage": "日期不能早於首次付款。",
+    "description": "Error of a price change before the start on the costs screen."
+  },
+  "admin.finance.end": {
+    "defaultMessage": "設定結束",
+    "description": "Submit button of the form of the end of a regular cost on the page of one cost."
+  },
+  "admin.finance.end.title": {
+    "defaultMessage": "結束 {name}",
+    "description": "Heading of the section of the page of one regular cost that sets its last payment date."
+  },
+  "admin.finance.end.description": {
+    "defaultMessage": "此日期之後的付款將停止，過去的付款仍保留在總計中。若要持續付款，請留空。",
+    "description": "Explanation of the end in its form on the page of one cost."
+  },
+  "admin.finance.ended": {
+    "defaultMessage": "已設定 {name} 的結束日期。稽核日誌已記錄此變更。",
+    "description": "Result of setting the end of a cost on the costs screen."
+  },
+  "admin.finance.end_removed": {
+    "defaultMessage": "{name} 現在沒有結束日期。稽核日誌已記錄此變更。",
+    "description": "Result of removing the end of a cost on the costs screen."
+  },
+  "admin.finance.relabeled": {
+    "defaultMessage": "已變更 {name}。稽核日誌已記錄此變更。",
+    "description": "Result of changing the label of a cost on the costs screen."
+  },
+  "admin.finance.revised": {
+    "defaultMessage": "已變更 {name} 的價格。稽核日誌已記錄此變更。",
+    "description": "Result of a new price on the costs screen."
+  },
+  "admin.finance.cancel_item": {
+    "defaultMessage": "刪除",
+    "description": "Button that removes a cost recorded by mistake from every period on the costs screen."
+  },
+  "admin.finance.cancel.title": {
+    "defaultMessage": "要刪除 {name} 嗎？",
+    "description": "Title of the confirmation of deleting a cost on the costs screen."
+  },
+  "admin.finance.cancel.description": {
+    "defaultMessage": "它會從所有期間（包括過去的期間）中移除，且無法復原。若要停止訂閱並保留過去的付款，請改為設定其結束日期。",
+    "description": "Explanation in the confirmation of deleting a cost on the costs screen."
+  },
+  "admin.finance.canceled": {
+    "defaultMessage": "已刪除 {name}。稽核日誌已記錄此變更。",
+    "description": "Result of deleting a cost on the costs screen."
+  },
+  "admin.finance.change_failed": {
+    "defaultMessage": "無法變更費用：{reason}",
+    "description": "Error of a change of a cost on the costs screen, with the server's reason."
+  },
+  "admin.finance.cancel_dialog": {
+    "defaultMessage": "取消",
+    "description": "Button that closes the confirmation of deleting a cost without deleting it."
+  },
+  "admin.finance.save": {
+    "defaultMessage": "儲存",
+    "description": "Submit button of the form that changes the name, provider, category, and memo on the page of one cost."
+  },
+  "admin.finance.imports.title": {
+    "defaultMessage": "帳單匯入",
+    "description": "Heading of the state of the billing imports on its page of the costs screen."
+  },
+  "admin.finance.imports.none": {
+    "defaultMessage": "沒有帳單匯入",
+    "description": "Heading when no cloud provider's charges are imported on the costs screen."
+  },
+  "admin.finance.imports.none.description": {
+    "defaultMessage": "伺服器營運者可在部署設定（billing_sources）中開啟。",
+    "description": "Explanation of how to turn the billing imports on on the costs screen."
+  },
+  "admin.finance.imports.time_zone": {
+    "defaultMessage": "帳單月份",
+    "description": "Term of the time zone that cuts a provider's billing months on the costs screen."
+  },
+  "admin.finance.imports.last_success": {
+    "defaultMessage": "上次成功匯入",
+    "description": "Term of when the charges were last imported on the costs screen."
+  },
+  "admin.finance.imports.last_run": {
+    "defaultMessage": "上次嘗試",
+    "description": "Term of the last attempt to import the charges and its result on the costs screen."
+  },
+  "admin.finance.imports.never": {
+    "defaultMessage": "從未",
+    "description": "Value of an import that has not happened on the costs screen."
+  },
+  "admin.finance.imports.requests_today": {
+    "defaultMessage": "今日計費請求數（UTC）",
+    "description": "Term of the billed requests to the provider this UTC day, with the cap, on the costs screen."
+  },
+  "admin.finance.imports.requests_month": {
+    "defaultMessage": "本月計費請求數（UTC）",
+    "description": "Term of the billed requests to the provider this UTC month, with the cap, on the costs screen."
+  },
+  "admin.finance.imports.used_of": {
+    "defaultMessage": "{used}/{max}",
+    "description": "Requests made and their cap on the costs screen."
+  },
+  "admin.finance.imports.bytes": {
+    "defaultMessage": "本月計費位元組數",
+    "description": "Term of the BigQuery bytes billed this month on the costs screen."
+  },
+  "admin.finance.imports.method.budget": {
+    "defaultMessage": "根據預算通知估算：總計以估計值為準，不含各服務的明細。",
+    "description": "Note under a provider on the costs screen when Google Cloud is imported from its budget notifications (billing_gcp_method = budget): the figures are approximate."
+  },
+  "admin.finance.imports.months": {
+    "defaultMessage": "{provider} 的帳單月份",
+    "description": "Accessible name of the list of a provider's imported billing months on the costs screen."
+  },
+  "admin.finance.imports.kind.estimate": {
+    "defaultMessage": "估計",
+    "description": "State of an imported billing month that its provider has not closed."
+  },
+  "admin.finance.imports.kind.final": {
+    "defaultMessage": "確定",
+    "description": "State of an imported billing month that its provider has closed."
+  },
+  "admin.finance.imports.kind.correction": {
+    "defaultMessage": "已更正",
+    "description": "State of an imported billing month whose amount changed after it was closed."
+  },
+  "admin.finance.imports.error.none": {
+    "defaultMessage": "成功",
+    "description": "Result of an import attempt that succeeded."
+  },
+  "admin.finance.imports.error.permission": {
+    "defaultMessage": "失敗：憑證可能沒有讀取帳單資料的權限。請將權限授予伺服器的角色或服務帳號。",
+    "description": "Result of an import attempt refused for lack of permission, with how to fix it."
+  },
+  "admin.finance.imports.error.not_enabled": {
+    "defaultMessage": "失敗：此帳號未啟用帳單資料。請在供應商處開啟。",
+    "description": "Result of an import attempt whose billing data is not enabled, with how to fix it."
+  },
+  "admin.finance.imports.error.not_found": {
+    "defaultMessage": "失敗：找不到帳單資料。請檢查部署設定中的資料集或資料表。",
+    "description": "Result of an import attempt that found no billing data, with how to fix it."
+  },
+  "admin.finance.imports.error.throttled": {
+    "defaultMessage": "失敗：供應商限制了請求頻率。稍後會再試一次。",
+    "description": "Result of an import attempt that was throttled; it is retried."
+  },
+  "admin.finance.imports.error.request_cap": {
+    "defaultMessage": "已略過：已達計費請求數的上限。隔天或下個月的匯入會再試一次。",
+    "description": "Result of an import attempt that called nothing because the cap of billed requests is reached."
+  },
+  "admin.finance.imports.error.bytes_cap": {
+    "defaultMessage": "失敗：查詢掃描的資料量會超過計費位元組數的上限。",
+    "description": "Result of an import attempt whose query would scan too much."
+  },
+  "admin.finance.imports.error.invalid_response": {
+    "defaultMessage": "失敗：無法讀取供應商的回應。",
+    "description": "Result of an import attempt with an unusable answer."
+  },
+  "admin.finance.imports.error.unavailable": {
+    "defaultMessage": "失敗：供應商沒有回應。稍後會再試一次。",
+    "description": "Result of an import attempt whose provider did not answer; it is retried."
+  },
+  "admin.finance.imports.run": {
+    "defaultMessage": "立即匯入",
+    "description": "Button that imports a provider's charges now, besides the daily import, on the costs screen."
+  },
+  "admin.finance.imports.run_one": {
+    "defaultMessage": "立即匯入：{provider}",
+    "description": "Accessible name of the import button of a provider on the costs screen."
+  },
+  "admin.finance.imports.queued": {
+    "defaultMessage": "已開始匯入 {provider}。稽核日誌已記錄此操作。",
+    "description": "Result of starting an import on the costs screen."
+  },
+  "admin.finance.imports.too_soon": {
+    "defaultMessage": "此供應商在過去一小時內已執行過匯入。請稍後再試。",
+    "description": "Error of an import started again within the hour on the costs screen."
+  },
+  "admin.finance.imports.failed": {
+    "defaultMessage": "無法開始匯入：{reason}",
+    "description": "Error of starting an import on the costs screen, with the server's reason."
+  },
+  "admin.finance.publication.title": {
+    "defaultMessage": "公開設定",
+    "description": "Heading of the page of the costs screen with what the server publishes of the costs and the income, and what the holders of view_finance see."
+  },
+  "admin.finance.pages": {
+    "defaultMessage": "費用頁面",
+    "description": "Accessible name of the navigation between the pages of the costs screen."
+  },
+  "admin.finance.pages.overview": {
+    "defaultMessage": "概覽",
+    "description": "Link to the page of the costs screen with the totals of the costs and the income."
+  },
+  "admin.finance.pages.income": {
+    "defaultMessage": "付款與退款",
+    "description": "Link to the page of the costs screen with the payment provider's money movements of the income."
+  },
+  "admin.finance.pages.costs": {
+    "defaultMessage": "已記錄的費用",
+    "description": "Link to the page of the costs screen with the list of recorded costs."
+  },
+  "admin.finance.pages.imports": {
+    "defaultMessage": "帳單匯入",
+    "description": "Link to the page of the costs screen with the state of the billing imports."
+  },
+  "admin.finance.pages.publication": {
+    "defaultMessage": "公開設定",
+    "description": "Link to the page of the costs screen with what the server publishes of the costs and the income."
+  },
+  "admin.finance.item.title": {
+    "defaultMessage": "已記錄的費用",
+    "description": "Heading of the page of one recorded cost."
+  },
+  "admin.finance.item.back": {
+    "defaultMessage": "返回已記錄的費用",
+    "description": "Link from the page of one cost, or of a new one, back to the list of recorded costs."
+  },
+  "admin.finance.item.delete": {
+    "defaultMessage": "刪除費用",
+    "description": "Heading of the section of the page of one cost that deletes it for good."
+  },
+  "admin.finance.movements.gross_fee": {
+    "defaultMessage": "總額 {gross}，手續費 {fee}",
+    "description": "Under the net amount of a money movement on the payments and refunds page. {gross} and {fee} are formatted amounts."
+  }
+}

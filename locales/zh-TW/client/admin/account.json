@@ -1,0 +1,546 @@
+{
+  "admin.account.action.deleted": {
+    "defaultMessage": "這個帳號已刪除。",
+    "description": "Text instead of the action form for a deleted account."
+  },
+  "admin.account.action.issued": {
+    "defaultMessage": "已採取處置（{kind}）。",
+    "description": "Status after an action was taken on an account; kind is its kind."
+  },
+  "admin.account.action.posts": {
+    "defaultMessage": "若要對貼文採取處置，請從針對這些貼文的檢舉中進行。",
+    "description": "Help above the form of an action on an account's page."
+  },
+  "admin.account.action.post.chosen": {
+    "defaultMessage": "刪除貼文或將其標記為敏感內容時，會套用到這則貼文。",
+    "description": "Help under the post that an account's moderation page starts from, above the form of an action."
+  },
+  "admin.account.action.post.failed": {
+    "defaultMessage": "無法載入貼文：{reason} 若要對貼文採取處置，請從針對這些貼文的檢舉中進行。",
+    "description": "Help above the form of an action when the post that an account's moderation page starts from failed to load or is gone. {reason} is the error message."
+  },
+  "admin.account.action.post.label": {
+    "defaultMessage": "你來源的貼文",
+    "description": "Accessible name of the post that an account's moderation page starts from."
+  },
+  "admin.account.action.post.loading": {
+    "defaultMessage": "正在載入貼文…",
+    "description": "Help above the form of an action while the post that an account's moderation page starts from loads."
+  },
+  "admin.account.action.post.remote": {
+    "defaultMessage": "其他伺服器的帳號無法針對單則貼文採取處置。",
+    "description": "Help under the post that an account's moderation page starts from, for an account of another server."
+  },
+  "admin.account.action.title": {
+    "defaultMessage": "採取處置",
+    "description": "Heading of the region of an account's admin page with the form of a new action."
+  },
+  "admin.account.actions.confirm_lift.description": {
+    "defaultMessage": "它的限制會立即結束。對這個帳號的其他處置仍然有效，已刪除的貼文與已結束的工作階段維持原狀。",
+    "description": "Description of the confirmation of lifting an account action."
+  },
+  "admin.account.actions.confirm_lift.title": {
+    "defaultMessage": "要解除 {handle} 的 {kind} 嗎？",
+    "description": "Title of the confirmation of lifting an account action; handle is the account's @handle."
+  },
+  "admin.account.actions.issuer": {
+    "defaultMessage": "執行者",
+    "description": "Term of an account action: who took it."
+  },
+  "admin.account.actions.issuer.cli": {
+    "defaultMessage": "命令列",
+    "description": "Who took an account action: a moderator on the command line."
+  },
+  "admin.account.actions.lift": {
+    "defaultMessage": "解除",
+    "description": "Button that lifts a moderation action on an account, and the confirmation's button."
+  },
+  "admin.account.actions.lift_action": {
+    "defaultMessage": "解除 {date} 採取的 {kind}",
+    "description": "Accessible name of the button that lifts an account action; kind is the kind, date when it was taken."
+  },
+  "admin.account.actions.lift_failed": {
+    "defaultMessage": "無法解除處置：{reason}",
+    "description": "Error in the lift confirmation; reason is the server's localized message."
+  },
+  "admin.account.actions.lift_reason": {
+    "defaultMessage": "解除原因",
+    "description": "Label of the optional reason of lifting an account action, and term of it in the list."
+  },
+  "admin.account.actions.lift_reason.description": {
+    "defaultMessage": "選填。會與處置一起保存，供版主參考。",
+    "description": "Help under the reason of lifting an account action."
+  },
+  "admin.account.actions.lifted": {
+    "defaultMessage": "已解除 {kind}。",
+    "description": "Status after an account action was lifted; kind is its kind."
+  },
+  "admin.account.actions.lifted_at": {
+    "defaultMessage": "解除時間",
+    "description": "Term of an account action: when it was lifted."
+  },
+  "admin.account.actions.notified": {
+    "defaultMessage": "已通知帳號",
+    "description": "Term of an account action: whether the account was told."
+  },
+  "admin.account.actions.notified.no": {
+    "defaultMessage": "否",
+    "description": "The account was not told of the action."
+  },
+  "admin.account.actions.notified.yes": {
+    "defaultMessage": "是",
+    "description": "The account was told of the action."
+  },
+  "admin.account.actions.title": {
+    "defaultMessage": "對帳號的處置",
+    "description": "Heading of the region of an account's admin page with the moderation actions on it."
+  },
+  "admin.account.audit": {
+    "defaultMessage": "在稽核記錄中顯示對這個帳號的操作",
+    "description": "Link from an account's admin page to the audit log filtered to it."
+  },
+  "admin.account.back": {
+    "defaultMessage": "返回帳號列表",
+    "description": "Link from an account's admin page to the account search."
+  },
+  "admin.account.email.none": {
+    "defaultMessage": "沒有電子郵件地址",
+    "description": "A local account has no email address."
+  },
+  "admin.account.email_verified": {
+    "defaultMessage": "電子郵件",
+    "description": "Term of a local account: whether its email address is verified."
+  },
+  "admin.account.email_verified.no": {
+    "defaultMessage": "未驗證",
+    "description": "The email address of an account is not verified."
+  },
+  "admin.account.email_verified.yes": {
+    "defaultMessage": "已驗證",
+    "description": "The email address of an account is verified."
+  },
+  "admin.account.private.description": {
+    "defaultMessage": "只有在你要求時才會顯示。每次顯示都會記錄在稽核記錄中。",
+    "description": "Text next to the button that shows the email and IP addresses."
+  },
+  "admin.account.private.email": {
+    "defaultMessage": "電子郵件地址",
+    "description": "Term of the private data: the primary email address."
+  },
+  "admin.account.private.failed": {
+    "defaultMessage": "無法顯示電子郵件地址與 IP 位址：{reason}",
+    "description": "Toast when showing the email and IP addresses failed; reason is the server's localized message."
+  },
+  "admin.account.private.ip": {
+    "defaultMessage": "IP 位址",
+    "description": "Term of a sign-in: the IP address."
+  },
+  "admin.account.private.registration_ip": {
+    "defaultMessage": "註冊來源",
+    "description": "Term of the private data: the IP address the account registered from."
+  },
+  "admin.account.private.reveal": {
+    "defaultMessage": "顯示電子郵件地址與 IP 位址",
+    "description": "Button that shows the email address and IP addresses of a local account."
+  },
+  "admin.account.private.same_ip": {
+    "defaultMessage": "使用相同 IP 位址的其他帳號",
+    "description": "Heading of the list of other accounts that used the same IP addresses."
+  },
+  "admin.account.private.same_ip.none": {
+    "defaultMessage": "沒有其他帳號使用過這些 IP 位址。",
+    "description": "Text when no other account used the same IP addresses."
+  },
+  "admin.account.private.search_email_domain": {
+    "defaultMessage": "搜尋電子郵件位於 {domain} 的帳號",
+    "description": "Link to the account search by an email domain; domain is the domain."
+  },
+  "admin.account.private.search_ip": {
+    "defaultMessage": "搜尋 {ip} 的帳號",
+    "description": "Link to the account search by an IP address; ip is the address."
+  },
+  "admin.account.private.shown": {
+    "defaultMessage": "已顯示電子郵件地址與 IP 位址。此操作已記錄在稽核記錄中。",
+    "description": "Status after the email and IP addresses were shown."
+  },
+  "admin.account.private.sign_ins": {
+    "defaultMessage": "最近的登入",
+    "description": "Heading of the list of the newest sign-ins of an account."
+  },
+  "admin.account.private.sign_ins.none": {
+    "defaultMessage": "沒有保存任何登入記錄。",
+    "description": "Text when no sign-ins are kept."
+  },
+  "admin.account.private.signed_in_at": {
+    "defaultMessage": "登入時間",
+    "description": "Term of a sign-in: when."
+  },
+  "admin.account.private.title": {
+    "defaultMessage": "電子郵件地址與 IP 位址",
+    "description": "Heading of the region of a local account's admin page with its email address and IP addresses."
+  },
+  "admin.account.private.unknown": {
+    "defaultMessage": "不明",
+    "description": "An IP address, User-Agent or registration origin that is not kept."
+  },
+  "admin.account.private.user_agent": {
+    "defaultMessage": "瀏覽器或應用程式",
+    "description": "Term of a sign-in: the User-Agent it came with."
+  },
+  "admin.account.profile": {
+    "defaultMessage": "開啟個人檔案",
+    "description": "Link from an account's admin page to its profile."
+  },
+  "admin.account.registration.decision_note": {
+    "defaultMessage": "決定時的備註",
+    "description": "Label of the note a moderator wrote when deciding on the account's registration."
+  },
+  "admin.account.registration.invite": {
+    "defaultMessage": "邀請",
+    "description": "Term of a local account: whether it registered with an invite."
+  },
+  "admin.account.registration.invite.none": {
+    "defaultMessage": "無",
+    "description": "Value of the invite term: no invite."
+  },
+  "admin.account.registration.invite.used": {
+    "defaultMessage": "透過邀請註冊",
+    "description": "Value of the invite term: registered with one."
+  },
+  "admin.account.registration.reason": {
+    "defaultMessage": "加入原因",
+    "description": "Term of a local account: why the applicant wanted to join."
+  },
+  "admin.account.registration.state_changed_at": {
+    "defaultMessage": "註冊審核時間",
+    "description": "Term of a local account: when its registration entered its state."
+  },
+  "admin.account.registration.submitted_at": {
+    "defaultMessage": "申請時間",
+    "description": "Term of a local account: when its registration was submitted."
+  },
+  "admin.account.reports.empty": {
+    "defaultMessage": "沒有針對這個帳號的檢舉",
+    "description": "Heading when an account has no reports."
+  },
+  "admin.account.reports.item": {
+    "defaultMessage": "{date} 的檢舉",
+    "description": "Heading of a report on an account; date is when it was filed."
+  },
+  "admin.account.reports.title": {
+    "defaultMessage": "針對這個帳號的檢舉",
+    "description": "Heading of the region of an account's admin page with the reports on it."
+  },
+  "admin.account.restrictions.none": {
+    "defaultMessage": "這個帳號目前沒有因處置而受到任何限制。",
+    "description": "Text when an account has no restrictions."
+  },
+  "admin.account.restrictions.title": {
+    "defaultMessage": "限制",
+    "description": "Heading of the region of an account's admin page with what its actions take away now."
+  },
+  "admin.account.roles": {
+    "defaultMessage": "角色",
+    "description": "Term of a local account: the roles of its user."
+  },
+  "admin.account.roles.confirm_grant.description": {
+    "defaultMessage": "這個帳號的使用者從下一次請求起會獲得該角色的權限。你之後可以撤銷。",
+    "description": "Description of the confirmation of granting a role."
+  },
+  "admin.account.roles.confirm_grant.title": {
+    "defaultMessage": "要將 {role} 授予 {handle} 嗎？",
+    "description": "Title of the confirmation of granting a role; role is its key, handle the account's @handle."
+  },
+  "admin.account.roles.confirm_revoke.description": {
+    "defaultMessage": "這個帳號的使用者從下一次請求起會失去該角色的權限。你之後可以再次授予。",
+    "description": "Description of the confirmation of revoking a role other than admin."
+  },
+  "admin.account.roles.confirm_revoke.description_admin": {
+    "defaultMessage": "這個帳號的使用者從下一次請求起會失去所有管理員權限。伺服器至少要保留一位管理員，因此無法從唯一的持有者撤銷這個角色。",
+    "description": "Description of the confirmation of revoking the admin role."
+  },
+  "admin.account.roles.confirm_revoke.title": {
+    "defaultMessage": "要撤銷 {handle} 的 {role} 嗎？",
+    "description": "Title of the confirmation of revoking a role; role is its key, handle the account's @handle."
+  },
+  "admin.account.roles.description": {
+    "defaultMessage": "角色會賦予帳號的使用者使用管理畫面的權限。你可以授予與撤銷不高於你最高角色的角色。每次變更都會記錄在稽核記錄中。",
+    "description": "Text at the top of the roles region of a local account's admin page."
+  },
+  "admin.account.roles.empty": {
+    "defaultMessage": "這個伺服器沒有任何角色",
+    "description": "Heading when the instance has no roles at all."
+  },
+  "admin.account.roles.failed": {
+    "defaultMessage": "無法變更角色：{reason}",
+    "description": "Error in the confirmation of a role change; reason is the server's localized message."
+  },
+  "admin.account.roles.failed.last_admin": {
+    "defaultMessage": "無法撤銷角色：這個帳號是這個伺服器唯一的管理員。請先將管理員授予另一個帳號。",
+    "description": "Error in the confirmation of revoking admin that the server refused because the account is the only admin."
+  },
+  "admin.account.roles.failed.outranked": {
+    "defaultMessage": "無法變更角色：它高於你的最高角色，或含有你沒有的權限。你只能授予與撤銷不高於你最高角色的角色，且只能授予你擁有其全部權限的角色。",
+    "description": "Error in the confirmation of a role change that the server refused because the role is above the viewer's highest role."
+  },
+  "admin.account.roles.grant": {
+    "defaultMessage": "授予",
+    "description": "Button that grants a role to an account, and the confirmation's button."
+  },
+  "admin.account.roles.grant_role": {
+    "defaultMessage": "授予 {role}",
+    "description": "Accessible name of the button that grants a role; role is its key."
+  },
+  "admin.account.roles.granted": {
+    "defaultMessage": "已將 {role} 授予 {handle}。此變更已記錄在稽核記錄中。",
+    "description": "Status after a role was granted; role is its key, handle the account's @handle."
+  },
+  "admin.account.roles.held": {
+    "defaultMessage": "這個帳號",
+    "description": "Term of a role in an account's roles region: whether the account's user holds the role."
+  },
+  "admin.account.roles.held.no": {
+    "defaultMessage": "沒有這個角色",
+    "description": "The account's user does not hold the role."
+  },
+  "admin.account.roles.held.yes": {
+    "defaultMessage": "擁有這個角色",
+    "description": "The account's user holds the role."
+  },
+  "admin.account.roles.load_failed": {
+    "defaultMessage": "無法載入角色",
+    "description": "Heading of the error when the roles of an account could not be loaded."
+  },
+  "admin.account.roles.loading": {
+    "defaultMessage": "正在載入角色",
+    "description": "Accessible name of the spinner while the roles of an account load."
+  },
+  "admin.account.roles.missing_permissions": {
+    "defaultMessage": "你無法授予這個角色：它需要你沒有的權限（{permissions}）。",
+    "description": "Why a role has no grant button: the viewer lacks some of the role's permissions; permissions lists them, comma separated."
+  },
+  "admin.account.roles.none": {
+    "defaultMessage": "無",
+    "description": "A local account's user has no roles."
+  },
+  "admin.account.roles.outranked": {
+    "defaultMessage": "這個角色高於你的最高角色 {role}，因此你無法授予或撤銷它。",
+    "description": "Why a role has no grant or revoke button; role is the key of the viewer's highest role."
+  },
+  "admin.account.roles.permissions": {
+    "defaultMessage": "權限",
+    "description": "Term of a role: the permissions it grants."
+  },
+  "admin.account.roles.permissions.none": {
+    "defaultMessage": "無",
+    "description": "A role grants no permissions."
+  },
+  "admin.account.roles.retry": {
+    "defaultMessage": "再試一次",
+    "description": "Button that loads the roles of an account again after a failure."
+  },
+  "admin.account.roles.revoke": {
+    "defaultMessage": "撤銷",
+    "description": "Button that revokes a role from an account, and the confirmation's button."
+  },
+  "admin.account.roles.revoke_role": {
+    "defaultMessage": "撤銷 {role}",
+    "description": "Accessible name of the button that revokes a role; role is its key."
+  },
+  "admin.account.roles.revoked": {
+    "defaultMessage": "已撤銷 {handle} 的 {role}。此變更已記錄在稽核記錄中。",
+    "description": "Status after a role was revoked; role is its key, handle the account's @handle."
+  },
+  "admin.account.roles.title": {
+    "defaultMessage": "角色",
+    "description": "Heading of the region of a local account's admin page where a user with manage_roles grants and revokes its roles."
+  },
+  "admin.account.summary.title": {
+    "defaultMessage": "帳號",
+    "description": "Heading of the region of an account's admin page with the account itself."
+  },
+  "admin.account.title": {
+    "defaultMessage": "帳號",
+    "description": "Title of an account's admin page."
+  },
+  "admin.account.two_factor.title": {
+    "defaultMessage": "兩步驟驗證",
+    "description": "Heading of the region of a local account's admin page about its two-factor authentication."
+  },
+  "admin.account.two_factor.on": {
+    "defaultMessage": "開啟：登入時會要求輸入驗證器應用程式的代碼。",
+    "description": "Text while the account's user has two-factor authentication."
+  },
+  "admin.account.two_factor.off": {
+    "defaultMessage": "關閉。",
+    "description": "Text while the account's user has no two-factor authentication."
+  },
+  "admin.account.two_factor.remove": {
+    "defaultMessage": "移除兩步驟驗證",
+    "description": "Button (and the confirmation's button) that removes the two-factor authentication of the account."
+  },
+  "admin.account.two_factor.remove.description": {
+    "defaultMessage": "適用於遺失驗證器應用程式與復原碼的使用者。請先確認請求來自帳號的擁有者。移除操作會記錄在稽核記錄中。",
+    "description": "Explanation above the button that removes the two-factor authentication of an account."
+  },
+  "admin.account.two_factor.confirm.title": {
+    "defaultMessage": "要移除 {handle} 的兩步驟驗證嗎？",
+    "description": "Title of the confirmation of removing the two-factor authentication. {handle} is the account's handle."
+  },
+  "admin.account.two_factor.confirm.description": {
+    "defaultMessage": "在重新設定之前，對方只需密碼即可登入。此操作無法復原。",
+    "description": "Body of the confirmation of removing the two-factor authentication."
+  },
+  "admin.account.two_factor.removed": {
+    "defaultMessage": "已移除 {handle} 的兩步驟驗證。",
+    "description": "Status message after removing the two-factor authentication of the account {handle}."
+  },
+  "admin.account.two_factor.failed": {
+    "defaultMessage": "無法移除兩步驟驗證：{reason}",
+    "description": "Error in the confirmation when the removal failed. {reason} is the server's explanation."
+  },
+  "admin.account.password_reset.title": {
+    "defaultMessage": "重設密碼",
+    "description": "Heading of the region of a local account's admin page about issuing a password reset link."
+  },
+  "admin.account.password_reset.description": {
+    "defaultMessage": "產生一個為這位使用者設定新密碼的連結，在電子郵件無法送達時交給對方。連結只能使用一次，有效期限為一小時。任何持有連結的人都能設定密碼：請先透過其他管道確認請求者的身分，並只交給帳號的擁有者。產生連結的操作會記錄在稽核記錄中。",
+    "description": "Explanation above the button that issues a password reset link for an account."
+  },
+  "admin.account.password_reset.issue": {
+    "defaultMessage": "產生重設密碼連結",
+    "description": "Button (and the confirmation's button) that issues a password reset link for the account."
+  },
+  "admin.account.password_reset.confirm.title": {
+    "defaultMessage": "要為 {handle} 產生重設密碼連結嗎？",
+    "description": "Title of the confirmation of issuing a password reset link. {handle} is the account's handle."
+  },
+  "admin.account.password_reset.confirm.description": {
+    "defaultMessage": "連結只會在這裡顯示一次。在有人開啟連結並設定新密碼之前，密碼不會變更。",
+    "description": "Body of the confirmation of issuing a password reset link."
+  },
+  "admin.account.password_reset.issued": {
+    "defaultMessage": "已為 {handle} 產生重設密碼連結。",
+    "description": "Status message after issuing a password reset link for the account {handle}."
+  },
+  "admin.account.password_reset.failed": {
+    "defaultMessage": "無法產生連結：{reason}",
+    "description": "Error in the confirmation when issuing the link failed. {reason} is the server's explanation."
+  },
+  "admin.account.password_reset.link": {
+    "defaultMessage": "重設密碼連結",
+    "description": "Label of the password reset link that was just issued."
+  },
+  "admin.account.password_reset.link.notice": {
+    "defaultMessage": "這個連結不會再次顯示。它只能使用一次，有效期限至 {expiresAt}。",
+    "description": "Note under the label of the issued link. {expiresAt} is the formatted date and time when the link stops working."
+  },
+  "admin.account.password_reset.copy": {
+    "defaultMessage": "複製連結",
+    "description": "Button that copies the issued password reset link to the clipboard."
+  },
+  "admin.account.password_reset.copied": {
+    "defaultMessage": "已複製重設密碼連結。",
+    "description": "Toast after copying the password reset link."
+  },
+  "admin.account.password_reset.copy_failed": {
+    "defaultMessage": "無法複製連結。",
+    "description": "Toast when copying the password reset link failed."
+  },
+  "admin.account.email_suppression.title": {
+    "defaultMessage": "電子郵件寄送",
+    "description": "Heading of the region of a local account's admin page about the suppression of its email address (emails no longer reach it)."
+  },
+  "admin.account.email_suppression.hard_bounce": {
+    "defaultMessage": "電子郵件無法送達這個地址：寄給它的郵件遭到退回。除了使用者要求的驗證郵件之外，伺服器不會再寄送任何郵件。",
+    "description": "Text while the account's primary address is suppressed after a hard bounce."
+  },
+  "admin.account.email_suppression.complaint": {
+    "defaultMessage": "收件者將一封郵件標記為垃圾郵件。伺服器不會再寄送通知郵件，但仍會寄送登入與保護帳號安全所需的郵件。",
+    "description": "Text while the account's primary address is suppressed after a spam complaint."
+  },
+  "admin.account.email_suppression.since": {
+    "defaultMessage": "自 {since} 起",
+    "description": "When the suppression started. {since} is a formatted date and time."
+  },
+  "admin.account.email_suppression.lift": {
+    "defaultMessage": "解除停止寄送",
+    "description": "Button (and the confirmation's button) that lifts the email suppression of the account."
+  },
+  "admin.account.email_suppression.lift.description": {
+    "defaultMessage": "請在使用者修好信箱後使用。如果這個地址再次失敗，會再次停止寄送。解除操作會記錄在稽核記錄中。",
+    "description": "Explanation above the button that lifts the email suppression. The lift is recorded in the audit log."
+  },
+  "admin.account.email_suppression.confirm.title": {
+    "defaultMessage": "要解除 {handle} 的電子郵件停止寄送嗎？",
+    "description": "Title of the confirmation of lifting the email suppression. {handle} is the account's handle."
+  },
+  "admin.account.email_suppression.confirm.description": {
+    "defaultMessage": "伺服器會再次寄送電子郵件到這個地址。",
+    "description": "Body of the confirmation of lifting the email suppression."
+  },
+  "admin.account.email_suppression.lifted": {
+    "defaultMessage": "已解除 {handle} 的電子郵件停止寄送。",
+    "description": "Status message after lifting the email suppression of the account {handle}."
+  },
+  "admin.account.email_suppression.failed": {
+    "defaultMessage": "無法解除停止寄送：{reason}",
+    "description": "Error in the confirmation when the lift failed. {reason} is the server's explanation."
+  },
+  "admin.account.password_reset.login_providers_only": {
+    "defaultMessage": "這個連結目前無法使用：這個伺服器只允許透過登入服務供應商登入。只有在連結過期前解除這項限制，連結才能使用。",
+    "description": "Under a password reset link issued while the instance limits sign-in to login providers."
+  },
+  "admin.account.registration.invited_by": {
+    "defaultMessage": "邀請者",
+    "description": "Term of a local account that registered with an invite: who created the invite."
+  },
+  "admin.account.pages": {
+    "defaultMessage": "帳號頁面",
+    "description": "Accessible name of the navigation between the pages of an account's moderation screen."
+  },
+  "admin.account.pages.review": {
+    "defaultMessage": "審查",
+    "description": "Link of the navigation of an account's pages to its review page, with its summary, the form of an action and the evidence."
+  },
+  "admin.account.pages.actions": {
+    "defaultMessage": "處置",
+    "description": "Link of the navigation of an account's pages to the list of every moderation action on it."
+  },
+  "admin.account.pages.manage": {
+    "defaultMessage": "管理",
+    "description": "Link of the navigation of an account's pages to the management of a local account: roles, sign-in recovery, email and IP addresses."
+  },
+  "admin.account.manage.title": {
+    "defaultMessage": "帳號管理",
+    "description": "Title of the page of a local account with its roles, sign-in recovery, and email and IP addresses."
+  },
+  "admin.account.manage.remote": {
+    "defaultMessage": "其他伺服器的帳號沒有可管理的項目",
+    "description": "Heading on the management page of a remote account, which has none of its regions."
+  },
+  "admin.account.manage.remote.description": {
+    "defaultMessage": "角色、登入復原，以及電子郵件地址與 IP 位址只適用於這個伺服器的使用者。",
+    "description": "Text under the heading on the management page of a remote account."
+  },
+  "admin.account.actions.all": {
+    "defaultMessage": "對這個帳號的所有處置",
+    "description": "Link under the newest actions on an account's review page to the list of every action on it."
+  },
+  "admin.account.actions.column.kind": {
+    "defaultMessage": "處置",
+    "description": "Header of the column of the table of an account's actions with the kind of each, linking to its page."
+  },
+  "admin.account.action_page.title": {
+    "defaultMessage": "處置詳細資料",
+    "description": "Title of the page of one moderation action on an account."
+  },
+  "admin.account.action_page.back": {
+    "defaultMessage": "返回處置列表",
+    "description": "Link from the page of one action to the list of the actions on its account."
+  },
+  "admin.account.reports.cap": {
+    "defaultMessage": "{count, plural, other {針對這個帳號最新的 # 則檢舉。}}",
+    "description": "Text above the reports on an account's review page: the API gives only the newest ones; count is how many at most."
+  }
+}

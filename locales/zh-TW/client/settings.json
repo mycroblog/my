@@ -1416,7 +1416,7 @@
     "description": "Title of the settings page where the user registers OAuth apps of their own, and its entry in the settings menu."
   },
   "settings.apps.description": {
-    "defaultMessage": "註冊你自己的應用程式，例如機器人、腳本或客戶端，並取得它們使用你帳號所需的資訊。其他人授權你註冊的應用程式時，就像授權任何未經這個伺服器驗證的應用程式一樣。",
+    "defaultMessage": "註冊你自己的應用程式，例如機器人、腳本或用戶端，並取得它們使用你帳號所需的資訊。其他人授權你註冊的應用程式時，就像授權任何未經這個伺服器驗證的應用程式一樣。",
     "description": "Explanation at the top of the development settings page."
   },
   "settings.apps.new.title": {
@@ -1508,7 +1508,7 @@
     "description": "Empty state of the list of the user's OAuth apps."
   },
   "settings.apps.client_id": {
-    "defaultMessage": "客戶端 ID",
+    "defaultMessage": "用戶端 ID",
     "description": "Label of the client ID of an OAuth app."
   },
   "settings.apps.type.public": {
@@ -1648,7 +1648,7 @@
     "description": "The scopes of the issued tokens. {scope} is a list of scopes."
   },
   "settings.apps.secret.title": {
-    "defaultMessage": "{name}的客戶端密鑰",
+    "defaultMessage": "{name}的用戶端密鑰",
     "description": "Heading of the notice that shows the secret of an OAuth app once. {name} is the app's name."
   },
   "settings.apps.secret.notice": {
@@ -1656,11 +1656,11 @@
     "description": "Notice that the secret of an OAuth app is shown once."
   },
   "settings.apps.secret.public": {
-    "defaultMessage": "應用程式「{name}」沒有密鑰。它的客戶端 ID 顯示在下方。",
+    "defaultMessage": "應用程式「{name}」沒有密鑰。它的用戶端 ID 顯示在下方。",
     "description": "Notice after a public OAuth app was registered. {name} is the app's name."
   },
   "settings.apps.secret.client_secret": {
-    "defaultMessage": "客戶端密鑰",
+    "defaultMessage": "用戶端密鑰",
     "description": "Label of the secret of an OAuth app."
   },
   "settings.apps.copy": {

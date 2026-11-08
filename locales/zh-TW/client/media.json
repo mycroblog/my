@@ -1,0 +1,14 @@
+{
+  "media.loading": {
+    "defaultMessage": "正在載入媒體",
+    "description": "Accessible name of the progress while a picture of a post loads in the image viewer, and the words read while an audio attachment loads after Play."
+  },
+  "media.failed": {
+    "defaultMessage": "無法載入這個媒體。",
+    "description": "Shown over a picture or an audio attachment of a post that could not load."
+  },
+  "media.reload": {
+    "defaultMessage": "再試一次",
+    "description": "Button over a picture or an audio attachment of a post that could not load: it loads it again."
+  }
+}

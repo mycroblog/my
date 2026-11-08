@@ -1,0 +1,22 @@
+{
+  "local.disabled.body": {
+    "defaultMessage": "這個伺服器不會將其帳號的公開貼文集中顯示在一個時間軸中。",
+    "description": "Text below the heading of the local timeline's page when the server's operators have turned that timeline off."
+  },
+  "local.disabled.title": {
+    "defaultMessage": "本站時間軸已關閉",
+    "description": "Heading and document title of the local timeline's page when the server's operators have turned that timeline off."
+  },
+  "local.sign_in_required.body": {
+    "defaultMessage": "登入後即可閱讀這個伺服器帳號的公開貼文。",
+    "description": "Description of the sign-in state on the local timeline's page for visitors who are not signed in, under its heading and above the link to sign in."
+  },
+  "local.sign_in_required.title": {
+    "defaultMessage": "本站時間軸僅供已登入的使用者使用",
+    "description": "Heading of the sign-in state on the local timeline's page for visitors who are not signed in, when the server shows that timeline only to signed-in users."
+  },
+  "local.title": {
+    "defaultMessage": "本站時間軸",
+    "description": "Heading and document title of the page with the public posts of this server's accounts."
+  }
+}

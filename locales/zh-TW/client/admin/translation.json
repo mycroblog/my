@@ -1,0 +1,170 @@
+{
+  "admin.translation.browser": {
+    "defaultMessage": "允許使用瀏覽器內建的翻譯",
+    "description": "Checkbox that enables the translation built into the reader's browser."
+  },
+  "admin.translation.browser.description": {
+    "defaultMessage": "在讀者的瀏覽器中翻譯（如果瀏覽器有這項功能），適用於所有可見範圍。不會傳送任何內容到這個伺服器或翻譯服務提供者，也不會計入用量上限。",
+    "description": "Explains the browser's built-in translation."
+  },
+  "admin.translation.limits.description": {
+    "defaultMessage": "設為 0 時，不會傳送任何內容給提供者。沒有「無限制」的值：請改為輸入一個很大的數字。超過上限時，會告知讀者，且不會呼叫提供者。",
+    "description": "Explains the monthly limits of translation."
+  },
+  "admin.translation.limits.server": {
+    "defaultMessage": "整個伺服器每月字元數",
+    "description": "Label of the monthly limit of characters of the whole server."
+  },
+  "admin.translation.limits.title": {
+    "defaultMessage": "上限與保留期間",
+    "description": "Heading of the section with the monthly limits of translation and how long translations are kept."
+  },
+  "admin.translation.limits.user": {
+    "defaultMessage": "每位使用者每月字元數",
+    "description": "Label of the monthly limit of characters of one user."
+  },
+  "admin.translation.move_down": {
+    "defaultMessage": "下移",
+    "description": "Button that moves a translation provider later in the order of priority."
+  },
+  "admin.translation.move_down_provider": {
+    "defaultMessage": "下移：{provider}",
+    "description": "Accessible name of the button that moves a translation provider later in the order: the button's text, then the provider."
+  },
+  "admin.translation.move_up": {
+    "defaultMessage": "上移",
+    "description": "Button that moves a translation provider earlier in the order of priority."
+  },
+  "admin.translation.move_up_provider": {
+    "defaultMessage": "上移：{provider}",
+    "description": "Accessible name of the button that moves a translation provider earlier in the order: the button's text, then the provider."
+  },
+  "admin.translation.number.invalid": {
+    "defaultMessage": "請輸入 {min} 到 {max} 之間的整數。",
+    "description": "Error of a number field of the translation settings."
+  },
+  "admin.translation.number.range": {
+    "defaultMessage": "{min} 到 {max} 之間的整數。",
+    "description": "Hint of a number field of the translation settings."
+  },
+  "admin.translation.providers.none.description": {
+    "defaultMessage": "必須先把提供者加入伺服器的部署，並在設定中填入它的金鑰。金鑰絕不會顯示在這個畫面上。",
+    "description": "Explains how a translation provider gets to the server."
+  },
+  "admin.translation.providers.none.heading": {
+    "defaultMessage": "這個伺服器沒有伺服器端的提供者",
+    "description": "Heading shown when the server has no translation provider to enable."
+  },
+  "admin.translation.providers.privacy": {
+    "defaultMessage": "啟用伺服器端的提供者之前，請先更新你的隱私權政策。讀者要求翻譯時，貼文的內文會傳送給提供者，僅在這個伺服器上可見的貼文也一樣，而傳送給提供者的內文無法收回。",
+    "description": "Warning at the top of the translation providers: the privacy policy must change first."
+  },
+  "admin.translation.providers.privacy.link": {
+    "defaultMessage": "開啟條款與政策",
+    "description": "Link from the warning about the privacy policy to the screen of the documents."
+  },
+  "admin.translation.providers.title": {
+    "defaultMessage": "提供者",
+    "description": "Heading of the section that enables translation providers."
+  },
+  "admin.translation.reports": {
+    "defaultMessage": "將檢舉傳送給提供者",
+    "description": "Checkbox that lets moderators translate reports with the server-side providers."
+  },
+  "admin.translation.reports.description": {
+    "defaultMessage": "版主就能使用上方的提供者翻譯檢舉中的貼文和檢舉者的留言。每個提供者仍只會收到為它勾選的可見範圍，而留言會被視為僅追蹤者可見的貼文。留言的翻譯不會保留，字元數只計入伺服器的上限。無論如何，瀏覽器內建的翻譯都可用於檢舉。",
+    "description": "Explains what sending reports to the translation providers does."
+  },
+  "admin.translation.retention": {
+    "defaultMessage": "翻譯保留天數",
+    "description": "Label of how many days a translation is kept."
+  },
+  "admin.translation.save": {
+    "defaultMessage": "儲存翻譯設定",
+    "description": "Button that saves the translation settings."
+  },
+  "admin.translation.save_failed": {
+    "defaultMessage": "無法儲存翻譯設定：{reason}",
+    "description": "Shown beside the save button when the translation settings could not be saved; reason is the server's localized reason."
+  },
+  "admin.translation.saved": {
+    "defaultMessage": "已儲存翻譯設定。",
+    "description": "Shown beside the save button after the translation settings are saved."
+  },
+  "admin.translation.settings.loading": {
+    "defaultMessage": "正在載入翻譯設定",
+    "description": "Label of the spinner shown while the translation settings load."
+  },
+  "admin.translation.summary": {
+    "defaultMessage": "選擇由誰翻譯貼文、可以接收哪些內容，以及每月上限。",
+    "description": "What the translation screen is for, in the menu of server administration."
+  },
+  "admin.translation.title": {
+    "defaultMessage": "翻譯",
+    "description": "Heading and menu entry of the screen with the settings of the translation of posts."
+  },
+  "admin.translation.unchanged": {
+    "defaultMessage": "沒有需要儲存的內容。",
+    "description": "Shown beside the save button of the translation settings when nothing was changed."
+  },
+  "admin.translation.use.characters": {
+    "defaultMessage": "已傳送字元數（{month}）",
+    "description": "Label of the number of characters sent to translation providers in a month. {month} is the month and year."
+  },
+  "admin.translation.use.description": {
+    "defaultMessage": "字元數以 UTC 月份計算，不含代替提及和連結的標記。每次呼叫提供者都會計入，失敗的呼叫也一樣，因此可能和提供者的計費不同。",
+    "description": "Explains the number of characters sent to translation providers."
+  },
+  "admin.translation.use.failed": {
+    "defaultMessage": "無法載入本月用量",
+    "description": "Heading of the failure of loading the use of translation."
+  },
+  "admin.translation.use.hit_rate": {
+    "defaultMessage": "快取命中率",
+    "description": "Label of the share of translation requests answered from a kept translation."
+  },
+  "admin.translation.use.hit_rate.none": {
+    "defaultMessage": "還沒有任何請求",
+    "description": "Shown as the cache hit rate before any translation request this month."
+  },
+  "admin.translation.use.loading": {
+    "defaultMessage": "正在載入本月用量",
+    "description": "Label of the spinner of the section with the use of translation."
+  },
+  "admin.translation.use.retry": {
+    "defaultMessage": "再試一次",
+    "description": "Button that loads the use of translation again."
+  },
+  "admin.translation.use.title": {
+    "defaultMessage": "本月",
+    "description": "Heading of the section with how translation was used in the current month."
+  },
+  "admin.translation.visibilities": {
+    "defaultMessage": "{provider} 可以接收的內容",
+    "description": "Legend of the visibilities of the posts that a translation provider may receive."
+  },
+  "admin.translation.visibilities.description": {
+    "defaultMessage": "只有在你的隱私權政策有說明時，才允許「僅追蹤者」和「私訊」。",
+    "description": "Warning under the visibilities that a translation provider may receive."
+  },
+  "admin.translation.visibility.direct": {
+    "defaultMessage": "私訊",
+    "description": "Checkbox: a translation provider may receive posts of this visibility, named as in the visibility picker."
+  },
+  "admin.translation.visibility.local": {
+    "defaultMessage": "本站",
+    "description": "Checkbox: a translation provider may receive posts of this visibility, named as in the visibility picker."
+  },
+  "admin.translation.visibility.private": {
+    "defaultMessage": "僅追蹤者",
+    "description": "Checkbox: a translation provider may receive posts of this visibility, named as in the visibility picker."
+  },
+  "admin.translation.visibility.public": {
+    "defaultMessage": "公開",
+    "description": "Checkbox: a translation provider may receive posts of this visibility, named as in the visibility picker."
+  },
+  "admin.translation.visibility.unlisted": {
+    "defaultMessage": "不公開列出",
+    "description": "Checkbox: a translation provider may receive posts of this visibility, named as in the visibility picker."
+  }
+}

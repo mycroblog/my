@@ -1,0 +1,482 @@
+{
+  "about.contact.account": {
+    "defaultMessage": "帳號",
+    "description": "Term before the account of this server to contact about the server, on the server's information page."
+  },
+  "about.contact.email": {
+    "defaultMessage": "電子郵件",
+    "description": "Term before the email address to contact about the server, on the server's information page."
+  },
+  "about.contact.title": {
+    "defaultMessage": "聯絡方式",
+    "description": "Heading of the section of the server's information page with how to reach the server's operators."
+  },
+  "about.status.title": {
+    "defaultMessage": "伺服器狀態",
+    "description": "Heading of the section of the server's information page that links to the server's status page, on another site."
+  },
+  "about.status.description": {
+    "defaultMessage": "營運者會在狀態頁面公告這個伺服器的故障與維護。即使這個伺服器沒有回應，狀態頁面仍可開啟。",
+    "description": "Paragraph in the server status section of the server's information page: what the status page is for."
+  },
+  "about.status.link": {
+    "defaultMessage": "查看狀態頁面",
+    "description": "Link to the server's status page, on another site, on the server's information page. The link leaves the app."
+  },
+  "about.description.title": {
+    "defaultMessage": "說明",
+    "description": "Heading of the section of the server's information page with the server's description."
+  },
+  "about.domains.empty": {
+    "defaultMessage": "沒有受審核的伺服器",
+    "description": "Shown in place of the list of moderated servers when there are none."
+  },
+  "about.domains.failed": {
+    "defaultMessage": "無法載入受審核的伺服器",
+    "description": "Heading shown in place of the list of moderated servers when it could not be loaded."
+  },
+  "about.domains.intro": {
+    "defaultMessage": "這個伺服器限制或停止了與下列伺服器的聯邦。",
+    "description": "Explanation under the heading of the list of moderated servers on the server's information page."
+  },
+  "about.domains.kind.limit": {
+    "defaultMessage": "已限制：它的貼文不會出現在公開時間軸",
+    "description": "Next to a server in the list of moderated servers: its posts stay off the public timelines and its accounts reach only their followers."
+  },
+  "about.domains.kind.suspend": {
+    "defaultMessage": "已停權：完全不聯邦",
+    "description": "Next to a server in the list of moderated servers: this server does not federate with it at all."
+  },
+  "about.domains.loading": {
+    "defaultMessage": "正在載入受審核的伺服器",
+    "description": "Accessible name of the progress indicator while the list of moderated servers loads."
+  },
+  "about.domains.more": {
+    "defaultMessage": "顯示更多",
+    "description": "Button under the list of moderated servers that loads more of them."
+  },
+  "about.domains.more_failed": {
+    "defaultMessage": "無法載入更多伺服器",
+    "description": "Shown under the list of moderated servers when its next page could not be loaded."
+  },
+  "about.domains.obfuscated": {
+    "defaultMessage": "部分伺服器名稱已用 * 隱藏一部分。",
+    "description": "Note above the list of moderated servers when the moderators hid part of some servers' names."
+  },
+  "about.domains.retry": {
+    "defaultMessage": "再試一次",
+    "description": "Button that tries again to load the list of moderated servers after a failure."
+  },
+  "about.domains.sign_in": {
+    "defaultMessage": "登入",
+    "description": "Link after the note that only signed-in users can see the list of moderated servers; it opens the sign-in screen."
+  },
+  "about.domains.signed_in_only": {
+    "defaultMessage": "只有已登入的使用者可以查看這份列表。",
+    "description": "Shown in place of the list of moderated servers to a visitor who is not signed in, when the server shows it to signed-in users only."
+  },
+  "about.domains.title": {
+    "defaultMessage": "受審核的伺服器",
+    "description": "Heading of the section of the server's information page that lists the other servers whose federation this server limits or suspends."
+  },
+  "about.crawlers.title": {
+    "defaultMessage": "搜尋引擎與 AI",
+    "description": "Heading of the section of the server's information page that says what the server states to search engines and AI crawlers."
+  },
+  "about.crawlers.search": {
+    "defaultMessage": "{setting, select, allow {搜尋引擎可以為允許索引的帳號的個人檔案與公開貼文建立索引。} other {這個伺服器要求搜尋引擎不要為它的任何頁面建立索引。}}",
+    "description": "What the server states to search engines, by the server setting search_indexing (allow or deny)."
+  },
+  "about.crawlers.ai": {
+    "defaultMessage": "{setting, select, allow {這個伺服器不對 AI 設任何保留：AI 可以使用它的頁面並以其訓練，但選擇退出的帳號的頁面除外。} deny_training {這個伺服器保留其頁面，不供訓練 AI 模型。AI 搜尋與助理仍可使用這些頁面，但選擇退出的帳號的頁面除外。} other {這個伺服器保留其頁面，不供訓練 AI 模型，也不供 AI 搜尋、助理與代理使用。}}",
+    "description": "What the server states to AI crawlers, by the server setting ai_usage (allow, deny_training, or deny)."
+  },
+  "about.crawlers.details": {
+    "defaultMessage": "伺服器如何表明，以及在法律上的意義",
+    "description": "Summary of the folded details under the server's statements to search engines and AI: how it states them, the accounts' own choices, and their legal meaning."
+  },
+  "about.crawlers.how": {
+    "defaultMessage": "伺服器透過 robots.txt（附上已知 AI 爬蟲的列表）、頁面的 robots meta 標籤與 X-Robots-Tag、Content-Usage、tdm-reservation 標頭，以及 /.well-known/tdmrep.json 表明這些設定。這些只是請求：知名爬蟲表示會遵守其中一部分，但技術上無法阻止不遵守的爬蟲。",
+    "description": "How the server states its search and AI settings: the machine-readable means it uses."
+  },
+  "about.crawlers.accounts": {
+    "defaultMessage": "每個帳號也可以讓自己在這個伺服器上的頁面不被搜尋引擎收錄，或拒絕 AI。帳號無法允許伺服器拒絕的事項。媒體檔案以及其他伺服器上的貼文副本不會帶有帳號的選擇。",
+    "description": "That each account can narrow the server's statement for its own pages, but never widen it."
+  },
+  "about.crawlers.legal": {
+    "defaultMessage": "這類聲明在法律上的意義因國家而異，許多營運者會自願遵守這類聲明。本文不構成法律建議。",
+    "description": "The legal note under the server's AI statement. Must not promise a legal effect."
+  },
+  "about.link_card_crawler.title": {
+    "defaultMessage": "{instance} 的連結卡片爬蟲",
+    "description": "Heading (h1) of the page that tells the operators of other websites about the crawler that fetches the links in posts. {instance} is the server's name."
+  },
+  "about.link_card_crawler.intro": {
+    "defaultMessage": "當這個伺服器上的貼文連結到網頁時，伺服器會擷取該頁面，以顯示含有標題、說明與圖片的卡片。本頁說明這些請求的內容，以及網站營運者如何拒絕。",
+    "description": "Opening paragraph of the page about the link card crawler."
+  },
+  "about.link_card_crawler.state.obeys": {
+    "defaultMessage": "在這個伺服器上，爬蟲已開啟，並會遵守 robots.txt。",
+    "description": "What the crawler does on this server, in its usual settings: at the top of the page about the crawler."
+  },
+  "about.link_card_crawler.state.ignores": {
+    "defaultMessage": "在這個伺服器上，爬蟲已開啟，且依營運者的選擇不讀取 robots.txt。網站無法在這裡用 robots.txt 拒絕它。頁面的指令仍然有效，營運者也可以停止擷取某個網域。",
+    "description": "What the crawler does on a server whose setting link_cards_ignore_robots_txt is on: at the top of the page about the crawler."
+  },
+  "about.link_card_crawler.state.off": {
+    "defaultMessage": "在這個伺服器上，連結卡片已關閉，因此爬蟲目前不會擷取任何內容。本頁其餘部分說明開啟時它會做什麼。",
+    "description": "What the crawler does on a server whose setting link_cards is off: at the top of the page about the crawler."
+  },
+  "about.link_card_crawler.loading": {
+    "defaultMessage": "正在載入這個伺服器的設定",
+    "description": "Label of the spinner while the page about the crawler loads the settings of the server."
+  },
+  "about.link_card_crawler.failed": {
+    "defaultMessage": "無法載入爬蟲在這個伺服器上的行為",
+    "description": "Heading of the error in place of the page about the crawler when the settings of the server cannot be read."
+  },
+  "about.link_card_crawler.retry": {
+    "defaultMessage": "再試一次",
+    "description": "Button that loads the settings of the server again after a failure, on the page about the crawler."
+  },
+  "about.link_card_crawler.identity.title": {
+    "defaultMessage": "如何辨識",
+    "description": "Heading of the section with the User-Agent of the link card crawler."
+  },
+  "about.link_card_crawler.identity.user_agent": {
+    "defaultMessage": "它的請求帶有這個 User-Agent：",
+    "description": "Sentence before the User-Agent of the crawler, shown as code."
+  },
+  "about.link_card_crawler.identity.token": {
+    "defaultMessage": "其中的位址就是這個伺服器。在 robots.txt 與頁面的指令中，這個爬蟲的名稱是 my-linkcard。",
+    "description": "Explains the User-Agent of the crawler and the name it goes by. my-linkcard is a literal name: do not translate it."
+  },
+  "about.link_card_crawler.identity.others": {
+    "defaultMessage": "這個伺服器還會以 my/ 的名稱發出其他請求，例如聯邦，本頁不涵蓋這些請求。其中有兩種可能在卡片之後發生：為了向讀者顯示，它可能會以 my/ 再次擷取卡片的圖片，也會查詢頁面所指定的 fediverse:creator 帳號。",
+    "description": "Other requests of the server that a site operator can see, under the server's general User-Agent. my/ and fediverse:creator are literal: do not translate them."
+  },
+  "about.link_card_crawler.trigger.title": {
+    "defaultMessage": "什麼會觸發擷取",
+    "description": "Heading of the section that says what makes the crawler fetch a URL."
+  },
+  "about.link_card_crawler.trigger.post": {
+    "defaultMessage": "連結到該 URL 的貼文。無論貼文的可見範圍為何，伺服器都會用貼文內文的第一個連結建立卡片，若沒有該頁面的近期卡片就會擷取頁面。",
+    "description": "What makes the crawler fetch a URL."
+  },
+  "about.link_card_crawler.trigger.remote": {
+    "defaultMessage": "這也包括從其他伺服器送來的貼文，而不只是在這裡撰寫的貼文，因此收到請求並不代表這裡有人讀過你的頁面。",
+    "description": "That posts federated from other servers cause fetches too."
+  },
+  "about.link_card_crawler.fetches.title": {
+    "defaultMessage": "它會擷取什麼",
+    "description": "Heading of the section that lists what the crawler requests from a website."
+  },
+  "about.link_card_crawler.fetches.page": {
+    "defaultMessage": "頁面本身。它只讀取頁面的 head，最多跟隨 5 次重新導向，且不執行頁面中的任何內容。",
+    "description": "What the crawler fetches: the linked page."
+  },
+  "about.link_card_crawler.fetches.image": {
+    "defaultMessage": "一張圖片，也就是頁面 head 所指定的那張。",
+    "description": "What the crawler fetches: the page's image."
+  },
+  "about.link_card_crawler.fetches.robots": {
+    "defaultMessage": "在請求頁面與圖片之前，先擷取其來源的 robots.txt。",
+    "description": "What the crawler fetches: robots.txt. Shown only while the server reads it."
+  },
+  "about.link_card_crawler.fetches.nothing_else": {
+    "defaultMessage": "它不會跟隨任何連結，因此不會爬取你網站的其他部分。",
+    "description": "That the crawler does not crawl a whole website."
+  },
+  "about.link_card_crawler.sends.title": {
+    "defaultMessage": "它會傳送什麼",
+    "description": "Heading of the section that says what the crawler's requests carry."
+  },
+  "about.link_card_crawler.sends.headers": {
+    "defaultMessage": "上述的 User-Agent、它接受的內容類型，以及擷取頁面時在 Accept-Language 中帶上這個伺服器的預設語言。",
+    "description": "What the crawler's requests carry."
+  },
+  "about.link_card_crawler.sends.not": {
+    "defaultMessage": "它不會傳送 Cookie 或 Referer，也不會透露是哪個帳號或哪則貼文連結了該頁面。",
+    "description": "What the crawler's requests do not carry."
+  },
+  "about.link_card_crawler.frequency.title": {
+    "defaultMessage": "頻率",
+    "description": "Heading of the section that says how often the crawler requests a URL."
+  },
+  "about.link_card_crawler.frequency.once": {
+    "defaultMessage": "每個 URL 只擷取一次，連結到它的貼文會共用同一張卡片。只有在上次擷取已過 14 天以上時，貼文才會再次擷取；伺服器不會自行重新檢查它的卡片。",
+    "description": "How often the crawler requests a page."
+  },
+  "about.link_card_crawler.frequency.failure": {
+    "defaultMessage": "擷取失敗的 URL 在 24 小時內不會再次請求。",
+    "description": "That the crawler remembers failures."
+  },
+  "about.link_card_crawler.frequency.host": {
+    "defaultMessage": "它對同一主機一次只發出一個請求，請求之間至少間隔一秒。只有請求的重新導向及所需的 robots.txt 會隨之一起發出。",
+    "description": "The limit of the crawler per host."
+  },
+  "about.link_card_crawler.frequency.throttled": {
+    "defaultMessage": "當主機回應 429 或 503 時，爬蟲會在 Retry-After 指定的時間內（最多一小時）不向它請求任何內容；若沒有 Retry-After 則暫停一分鐘。同一 URL 收到 5 次這類回應後，就會視為擷取失敗。",
+    "description": "That the crawler stops for a host that asks it to. 429, 503 and Retry-After are literal."
+  },
+  "about.link_card_crawler.frequency.robots": {
+    "defaultMessage": "每個來源（scheme、主機與連接埠）的 robots.txt 大約每天讀取一次。無法讀取時（429、5xx 或網路故障），爬蟲不會從該來源擷取任何內容，並在一小時後重試。",
+    "description": "How often the crawler reads robots.txt. Shown only while the server reads it."
+  },
+  "about.link_card_crawler.opt_out.title": {
+    "defaultMessage": "如何拒絕",
+    "description": "Heading of the section that says how a website refuses the crawler."
+  },
+  "about.link_card_crawler.opt_out.robots.title": {
+    "defaultMessage": "拒絕擷取：robots.txt",
+    "description": "Heading (h3) of the part about refusing the crawler in robots.txt. robots.txt is literal."
+  },
+  "about.link_card_crawler.opt_out.robots.intro": {
+    "defaultMessage": "若要拒絕對你網站的所有擷取，請在 robots.txt 中加入以下內容：",
+    "description": "Sentence before the robots.txt example that refuses the crawler."
+  },
+  "about.link_card_crawler.opt_out.robots.star": {
+    "defaultMessage": "若沒有該名稱的群組，爬蟲會遵循 * 的群組。它依 RFC 9309 讀取 Allow、Disallow、* 與 $，因此你也可以只拒絕部分路徑。",
+    "description": "How the crawler reads robots.txt. Allow, Disallow, *, $ and RFC 9309 are literal."
+  },
+  "about.link_card_crawler.opt_out.robots.timing": {
+    "defaultMessage": "爬蟲會在一天內遵守新的規則。已有的卡片會在貼文再次擷取其 URL 時移除；若你向營運者提出要求，則會更早移除。",
+    "description": "When a change of robots.txt takes effect."
+  },
+  "about.link_card_crawler.opt_out.robots.ignored": {
+    "defaultMessage": "這個伺服器不讀取 robots.txt，因此這條規則在這裡無效。它在遵守 robots.txt 的伺服器上有效。",
+    "description": "Under the robots.txt part, on a server whose setting link_cards_ignore_robots_txt is on."
+  },
+  "about.link_card_crawler.opt_out.directives.title": {
+    "defaultMessage": "限制卡片內容：頁面的指令",
+    "description": "Heading (h3) of the part about the page directives that change a card."
+  },
+  "about.link_card_crawler.opt_out.directives.intro": {
+    "defaultMessage": "頁面可以讓卡片不顯示其說明或圖片。爬蟲仍會請求頁面，因為它要從頁面得知這些指令。無論這個伺服器對 robots.txt 的設定為何，這些指令都有效：",
+    "description": "Sentence before the table of page directives."
+  },
+  "about.link_card_crawler.opt_out.directives.caption": {
+    "defaultMessage": "各指令對卡片的影響",
+    "description": "Visually hidden name of the table of page directives."
+  },
+  "about.link_card_crawler.opt_out.directives.directive": {
+    "defaultMessage": "指令",
+    "description": "Column header: a page directive."
+  },
+  "about.link_card_crawler.opt_out.directives.effect": {
+    "defaultMessage": "卡片",
+    "description": "Column header: what the directive does to the card."
+  },
+  "about.link_card_crawler.opt_out.directives.nosnippet": {
+    "defaultMessage": "不顯示說明。",
+    "description": "What the directives nosnippet and max-snippet:0 do to a card."
+  },
+  "about.link_card_crawler.opt_out.directives.noimageindex": {
+    "defaultMessage": "不顯示圖片，也不請求圖片。",
+    "description": "What the directives noimageindex and max-image-preview:none do to a card."
+  },
+  "about.link_card_crawler.opt_out.directives.noindex": {
+    "defaultMessage": "沒有變化。這些指令要求不出現在搜尋結果中，而卡片並非搜尋結果：卡片只會因為有人在貼文中放了連結而出現，而許多不出現在搜尋結果中的頁面本來就是要被分享的。若要拒絕，請使用 robots.txt。",
+    "description": "What the directives noindex and none do to a card, with the reason in plain words."
+  },
+  "about.link_card_crawler.opt_out.directives.noindex_ignored": {
+    "defaultMessage": "沒有變化。這些指令要求不出現在搜尋結果中，而卡片並非搜尋結果：卡片只會因為有人在貼文中放了連結而出現，而許多不出現在搜尋結果中的頁面本來就是要被分享的。若要在這個伺服器上拒絕，請聯絡營運者。",
+    "description": "What the directives noindex and none do to a card, on a server that does not read robots.txt."
+  },
+  "about.link_card_crawler.opt_out.directives.rest": {
+    "defaultMessage": "無論使用哪個指令，標題、網站名稱與作者都會保留。",
+    "description": "What no page directive removes from a card."
+  },
+  "about.link_card_crawler.opt_out.directives.where": {
+    "defaultMessage": "請將指令寫在頁面 head 中名為 robots 或 my-linkcard 的 meta 標籤，或寫在 X-Robots-Tag 標頭中：",
+    "description": "Sentence before the examples of where a directive goes. robots, my-linkcard and X-Robots-Tag are literal."
+  },
+  "about.link_card_crawler.contact.title": {
+    "defaultMessage": "聯絡這個伺服器的營運者",
+    "description": "Heading of the section with how to reach the operators of the server that runs the crawler."
+  },
+  "about.link_card_crawler.contact.intro": {
+    "defaultMessage": "營運者可以針對某個網域及其子網域停止爬蟲，或只停止擷取圖片。這會立即生效，也適用於伺服器已有的卡片，因此若你需要停止擷取或移除卡片，請聯絡他們。",
+    "description": "That the operators of the server can stop the crawler per domain, and that a site operator can ask them."
+  },
+  "about.link_card_crawler.contact.none": {
+    "defaultMessage": "這個伺服器沒有公開聯絡方式。",
+    "description": "In place of the contact details when the server has none."
+  },
+  "about.link_card_crawler.contact.about": {
+    "defaultMessage": "進一步了解這個伺服器",
+    "description": "Link from the page about the crawler to the server's information page."
+  },
+  "about.crawlers.link_cards": {
+    "defaultMessage": "伺服器也會以爬蟲 my-linkcard 的身分，擷取貼文所連結的頁面，以顯示其卡片。",
+    "description": "In the section of the server's information page about crawlers: that the server itself runs a crawler too, for link cards. my-linkcard is a literal name."
+  },
+  "about.crawlers.link_cards_link": {
+    "defaultMessage": "該爬蟲做什麼，以及網站如何拒絕它",
+    "description": "Link to the page about the server's own crawler (/about/crawler) from the server's information page."
+  },
+  "about.costs.title": {
+    "defaultMessage": "營運成本",
+    "description": "Heading of the section of the server's information page about what running the server costs, shown when the server publishes its costs."
+  },
+  "about.costs.description": {
+    "defaultMessage": "{visibility, select, breakdown {這個伺服器按週、月、年公開營運成本，並依供應商與類別列出明細。項目名稱、備註與個別付款不會公開。} other {這個伺服器按週、月、年公開營運成本的總額。用途、項目名稱與個別付款不會公開。}}",
+    "description": "What the server publishes of its running costs, by the server setting finance_visibility (totals or breakdown)."
+  },
+  "about.income.description": {
+    "defaultMessage": "{visibility, select, plans {這個伺服器按週、月、年公開來自支持者的收入（已扣除付款服務商的手續費與退款），以及各方案目前的會員人數。誰付款、各付了多少不會公開。} other {這個伺服器按週、月、年公開來自支持者的收入總額（已扣除付款服務商的手續費與退款）。誰付款、各付了多少不會公開。}}",
+    "description": "What the server publishes of its income from the supporter plans, by the server setting income_visibility (totals or plans)."
+  },
+  "about.income.balance": {
+    "defaultMessage": "它也會公開收支餘額：收入減去成本。",
+    "description": "Note on the server's information page that the balance (income less costs) is published, shown when both the costs and the income are published."
+  },
+  "about.costs.link": {
+    "defaultMessage": "{shown, select, both {查看營運成本與收入} income {查看收入} other {查看營運成本}}",
+    "description": "Link from the server's information page to the page of the server's running costs and income, by what the server publishes: both, the income only, or the costs only."
+  },
+  "about.commerce.title": {
+    "defaultMessage": "商業揭露事項",
+    "description": "Heading of the section of the information page that links to the server's page of the commerce disclosures of its supporter plans (ADR-0072 §13)."
+  },
+  "about.commerce.link": {
+    "defaultMessage": "閱讀商業揭露事項",
+    "description": "Link from the information page to the server's page of the commerce disclosures of its supporter plans."
+  },
+  "about.external_review.inbound_follow": {
+    "defaultMessage": "來自其他伺服器的追蹤：誰追蹤了誰。",
+    "description": "What the external review of follows covers and what is sent to it."
+  },
+  "about.external_review.inbound_status": {
+    "defaultMessage": "{unfollowedDirect, select, true {這個伺服器接收的其他伺服器貼文，包括僅限追蹤者與僅限被提及者的貼文：其內文、發送者，以及這裡是否有人追蹤該發送者。} other {這個伺服器接收的其他伺服器貼文，包括僅限追蹤者的貼文：其內文、發送者，以及這裡是否有人追蹤該發送者。僅限被提及者的貼文只有在這裡有人追蹤該發送者時才會送出。}}",
+    "description": "What the external review of posts from other servers covers and what is sent to it. {unfollowedDirect} is true when posts for mentioned people are sent also from senders no one on this server follows."
+  },
+  "about.external_review.intro": {
+    "defaultMessage": "這個伺服器在接受下列內容之前，會請外部服務審查。審查只能阻止或標記它所審查的內容，而對帳號採取任何處置都由人來決定。",
+    "description": "Introduction of the section of the information page about the external review."
+  },
+  "about.external_review.local_status": {
+    "defaultMessage": "{days, plural, =0 {這個伺服器所有帳號的貼文及其編輯：內文與作者的使用者名稱。僅限追蹤者與僅限被提及者的貼文不會送出。} other {這個伺服器在過去 # 天內建立的帳號的貼文及其編輯：內文與作者的使用者名稱。僅限追蹤者與僅限被提及者的貼文不會送出。}}",
+    "description": "What the external review of local posts and their edits covers and what is sent to it. {days} is how many days after its creation an account's posts and edits are sent; 0 means the posts of every account are."
+  },
+  "about.external_review.inbound_actor": {
+    "defaultMessage": "其他伺服器帳號的個人檔案變更時：顯示名稱、自我介紹、個人檔案欄位，以及大頭貼與封面圖片的位址。",
+    "description": "What the external review of the profiles of accounts on other servers covers and what is sent to it."
+  },
+  "about.external_review.local_profile": {
+    "defaultMessage": "{days, plural, =0 {這個伺服器所有帳號的個人檔案變更：顯示名稱、自我介紹、個人檔案欄位，以及大頭貼或封面是否有變更。圖片本身不會送出。} other {這個伺服器在過去 # 天內建立的帳號的個人檔案變更：顯示名稱、自我介紹、個人檔案欄位，以及大頭貼或封面是否有變更。圖片本身不會送出。}}",
+    "description": "What the external review of local profiles covers and what is sent to it. {days} is how many days after its creation an account's profile changes are sent; 0 means those of every account are."
+  },
+  "about.external_review.media_check": {
+    "defaultMessage": "上傳的媒體：處理過的縮小版本，絕不送出原始檔案。",
+    "description": "What the external review of uploaded media covers and what is sent to it."
+  },
+  "about.external_review.signup_check": {
+    "defaultMessage": "註冊：電子郵件地址與 IP 位址。",
+    "description": "What the external review of sign-ups covers and what is sent to it."
+  },
+  "about.external_review.title": {
+    "defaultMessage": "外部審查",
+    "description": "Heading of the section of the information page that says the server uses an external review of submissions."
+  },
+  "about.licenses.title": {
+    "defaultMessage": "授權條款",
+    "description": "Heading of the section of the server's information page that links to the license notices of the third-party software, data and fonts that the web app bundles."
+  },
+  "about.licenses.intro": {
+    "defaultMessage": "這個網頁應用程式內含他人製作的軟體、資料與字型，各自採用其授權條款；以下為其授權聲明。",
+    "description": "Paragraph before the list of links to the license notices of the third-party software, data and fonts that the web app bundles, on the server's information page."
+  },
+  "about.licenses.npm": {
+    "defaultMessage": "應用程式中的 npm 套件",
+    "description": "Link to the plain-text license notices of the npm packages bundled into the web app's code, on the server's information page."
+  },
+  "about.licenses.npm_sw": {
+    "defaultMessage": "離線支援（Service Worker）中的 npm 套件",
+    "description": "Link to the plain-text license notices of the npm packages bundled into the web app's Service Worker, which keeps the app working offline, on the server's information page."
+  },
+  "about.licenses.unicode": {
+    "defaultMessage": "Unicode 表情符號資料與 CLDR 表情符號名稱（Unicode License v3）",
+    "description": "Link to the plain-text Unicode License v3, under which the emoji list (emoji-test.txt) and the CLDR emoji names and keywords bundled in the emoji picker are distributed, on the server's information page. Keep 'Unicode License v3' and 'CLDR' as they are."
+  },
+  "about.licenses.noto": {
+    "defaultMessage": "Noto Color Emoji 字型（SIL Open Font License 1.1）",
+    "description": "Link to the plain-text SIL Open Font License 1.1, under which the Noto Color Emoji font that draws emoji is distributed, on the server's information page. Keep 'Noto Color Emoji' and 'SIL Open Font License 1.1' as they are."
+  },
+  "about.rules.title": {
+    "defaultMessage": "規則",
+    "description": "Heading of the section of the server's information page with the server's rules."
+  },
+  "about.source.title": {
+    "defaultMessage": "原始碼",
+    "description": "Heading of the section of the server's information page that tells where to get the source code of the server's software."
+  },
+  "about.source.license": {
+    "defaultMessage": "這個伺服器執行的是以 GNU Affero 通用公共授權條款第 3 版（AGPL-3.0）發布的自由軟體。所有使用這個伺服器的人都可以取得它所執行的原始碼。",
+    "description": "Paragraph in the source code section of the server's information page: the license of the server's software and the right of its users to get the source code."
+  },
+  "about.source.view": {
+    "defaultMessage": "查看原始碼",
+    "description": "Link to the web page where the source code of the server's software is published, on the server's information page and the landing page. The link leaves the app."
+  },
+  "about.source.request": {
+    "defaultMessage": "以電子郵件索取原始碼",
+    "description": "Link that writes an email to the address where the server's operators take requests for the source code of the server's software, on the server's information page and the landing page."
+  },
+  "about.source.address": {
+    "defaultMessage": "索取用的電子郵件地址",
+    "description": "Term before the email address that takes requests for the source code, in the source code section of the server's information page."
+  },
+  "about.title": {
+    "defaultMessage": "關於 {instance}",
+    "description": "Heading and document title of the server's information page, which everyone may read. {instance} is the name of this server."
+  },
+  "about.retention.title": {
+    "defaultMessage": "貼文保留期限",
+    "description": "Heading of the section of the about page that states the server's maximum of how long local posts are kept."
+  },
+  "about.retention.description": {
+    "defaultMessage": "在這個伺服器上，貼文最晚會在發布後 {days, plural, other {# 天}}自動刪除。成員可以選擇更短的期限，但無法關閉此功能。",
+    "description": "The server's maximum of the automatic deletion of old posts on the about page. {days} is the most days a post is kept."
+  },
+  "about.retention.allowed": {
+    "defaultMessage": "成員可以讓下列貼文保留更久：",
+    "description": "Before the list of the exceptions that the server's maximum of the automatic deletion allows, on the about page."
+  },
+  "about.retention.none": {
+    "defaultMessage": "沒有可保留更久的貼文。",
+    "description": "On the about page, when the server's maximum of the automatic deletion allows no exception."
+  },
+  "about.retention.pinned": {
+    "defaultMessage": "釘選在個人檔案的貼文",
+    "description": "Exception the server's maximum of the automatic deletion allows, on the about page: pinned posts."
+  },
+  "about.retention.pinned_newest": {
+    "defaultMessage": "釘選在個人檔案的貼文，{count, plural, other {僅限最近釘選的 # 則}}",
+    "description": "Exception the server's maximum of the automatic deletion allows, on the about page: the newest pinned posts. {count} is how many."
+  },
+  "about.retention.bookmarked": {
+    "defaultMessage": "作者加入書籤的貼文",
+    "description": "Exception the server's maximum of the automatic deletion allows, on the about page."
+  },
+  "about.retention.favourited": {
+    "defaultMessage": "作者喜歡的貼文",
+    "description": "Exception the server's maximum of the automatic deletion allows, on the about page."
+  },
+  "about.retention.media": {
+    "defaultMessage": "含有圖片或其他媒體的貼文",
+    "description": "Exception the server's maximum of the automatic deletion allows, on the about page."
+  },
+  "about.retention.polls": {
+    "defaultMessage": "含有投票的貼文",
+    "description": "Exception the server's maximum of the automatic deletion allows, on the about page."
+  },
+  "about.retention.visibilities": {
+    "defaultMessage": "作者所選可見範圍的貼文",
+    "description": "Exception the server's maximum of the automatic deletion allows, on the about page: keeping posts by visibility."
+  },
+  "about.retention.thresholds": {
+    "defaultMessage": "獲得許多轉發或喜歡的貼文",
+    "description": "Exception the server's maximum of the automatic deletion allows, on the about page: keeping posts by their reactions."
+  }
+}

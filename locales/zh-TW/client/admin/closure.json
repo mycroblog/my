@@ -1,0 +1,266 @@
+{
+  "admin.closure.announce": {
+    "defaultMessage": "公告終止服務",
+    "description": "Button that announces the closure of the service."
+  },
+  "admin.closure.announce.title": {
+    "defaultMessage": "公告終止服務",
+    "description": "Heading of the form that announces the closure of the service."
+  },
+  "admin.closure.announce_failed": {
+    "defaultMessage": "無法儲存公告：{reason}",
+    "description": "Error after announcing or changing the closure failed. {reason} is why."
+  },
+  "admin.closure.announced": {
+    "defaultMessage": "已公告終止服務。使用者現在會看到通知。",
+    "description": "Status after the closure was announced."
+  },
+  "admin.closure.announced_at": {
+    "defaultMessage": "公告時間",
+    "description": "Label of when the closure was announced or its dates last changed."
+  },
+  "admin.closure.cancel": {
+    "defaultMessage": "取消",
+    "description": "Button that leaves a dialog of the closure screen without changing anything."
+  },
+  "admin.closure.change": {
+    "defaultMessage": "儲存變更",
+    "description": "Button that changes the announcement of the closure."
+  },
+  "admin.closure.change.title": {
+    "defaultMessage": "變更公告",
+    "description": "Heading of the form that changes the dates and message of the announced closure."
+  },
+  "admin.closure.changed": {
+    "defaultMessage": "已變更公告，並已通知使用者。",
+    "description": "Status after the announcement of the closure was changed."
+  },
+  "admin.closure.check.deletes": {
+    "defaultMessage": "要傳送的 Delete",
+    "description": "Label of the estimate of the deliveries of the closure."
+  },
+  "admin.closure.check.deletes.value": {
+    "defaultMessage": "約 {deletes} 則（{accounts} 個帳號，{inboxes} 個收件匣）",
+    "description": "Estimate of the closure's Delete deliveries. {deletes}, {accounts} and {inboxes} are numbers."
+  },
+  "admin.closure.check.federation": {
+    "defaultMessage": "無論聯邦模式為何，Delete 都會送出，但不會送往已停權的網域。關站後，伺服器會拒絕聯邦請求。",
+    "description": "Note on how the closure treats the federation mode."
+  },
+  "admin.closure.check.holds": {
+    "defaultMessage": "受保留措施約束的帳號",
+    "description": "Label of the number of accounts under a retention hold."
+  },
+  "admin.closure.check.holds.warning": {
+    "defaultMessage": "在捨棄已關閉伺服器的資料之前，請先用 CLI 匯出這些帳號的記錄。",
+    "description": "Warning when accounts are under a retention hold."
+  },
+  "admin.closure.check.migrations": {
+    "defaultMessage": "尚未結束的帳號搬遷",
+    "description": "Label of the number of account migrations that have not ended."
+  },
+  "admin.closure.check.migrations.warning": {
+    "defaultMessage": "請等搬遷結束後再關站；關站會在搬遷之後才送出 Delete。",
+    "description": "Warning when account migrations have not ended."
+  },
+  "admin.closure.check.subscriptions": {
+    "defaultMessage": "仍在持續的支持者訂閱",
+    "description": "Label of the number of supporter subscriptions that closing cancels."
+  },
+  "admin.closure.check.subscriptions.warning": {
+    "defaultMessage": "關站會立即取消這些訂閱，且不予退款；但仍在處理中、尚未提供任何內容的付款除外。",
+    "description": "Warning when supporter subscriptions go on."
+  },
+  "admin.closure.check.title": {
+    "defaultMessage": "關站會結束的項目",
+    "description": "Heading of the check before the closing."
+  },
+  "admin.closure.close": {
+    "defaultMessage": "關閉伺服器",
+    "description": "Button that opens the dialog that closes the server."
+  },
+  "admin.closure.close.confirm": {
+    "defaultMessage": "關閉伺服器",
+    "description": "Verb of the dialog that closes the server."
+  },
+  "admin.closure.close.confirm.description": {
+    "defaultMessage": "此操作無法復原。使用者只能登入並匯出資料，{domain} 會向其他伺服器送出所有本站帳號的刪除通知。若要繼續，請輸入伺服器的網域。",
+    "description": "What closing does, in the dialog. {domain} is the server's domain."
+  },
+  "admin.closure.close.confirm.title": {
+    "defaultMessage": "要永久關閉伺服器嗎？",
+    "description": "Question of the dialog that closes the server."
+  },
+  "admin.closure.close.description": {
+    "defaultMessage": "關站會終止服務：使用者只能登入並匯出資料，伺服器會從其他伺服器刪除所有本站帳號。此操作無法復原。請先檢視關站會結束的項目。",
+    "description": "Explanation above the check in the section that closes the server."
+  },
+  "admin.closure.close.domain": {
+    "defaultMessage": "伺服器的網域",
+    "description": "Label of the field where the administrator types the server's domain to confirm the closing."
+  },
+  "admin.closure.close.domain.description": {
+    "defaultMessage": "請輸入 {domain}。",
+    "description": "Hint of the domain field. {domain} is the server's domain."
+  },
+  "admin.closure.close.domain.mismatch": {
+    "defaultMessage": "這不是伺服器的網域。",
+    "description": "Error when the typed text is not the server's domain."
+  },
+  "admin.closure.close.not_yet": {
+    "defaultMessage": "伺服器自 {date} 起可以關閉。",
+    "description": "Note when the closing date has not come. {date} is the closing date and time."
+  },
+  "admin.closure.close.title": {
+    "defaultMessage": "關閉伺服器",
+    "description": "Heading of the section where the administrator checks and closes the server."
+  },
+  "admin.closure.close_failed": {
+    "defaultMessage": "無法關閉伺服器：{reason}",
+    "description": "Error in the dialog after closing failed. {reason} is why."
+  },
+  "admin.closure.closed": {
+    "defaultMessage": "伺服器已關閉，現在開始傳送。",
+    "description": "Status after the server was closed."
+  },
+  "admin.closure.closed.title": {
+    "defaultMessage": "已關閉的伺服器",
+    "description": "Heading of the section that shows the schedule of the closed server."
+  },
+  "admin.closure.closes_at": {
+    "defaultMessage": "關站日期",
+    "description": "Label of the date and time when the server closes, in the form and in the list of facts. Shown in the administrator's time zone."
+  },
+  "admin.closure.closes_at.description": {
+    "defaultMessage": "以你的時區為準。可以設定任何日期；伺服器不會自行關閉，請在日期過後於這裡關閉。",
+    "description": "Hint of the closing date field."
+  },
+  "admin.closure.closes_at.required": {
+    "defaultMessage": "請輸入關站日期。",
+    "description": "Error when the closing date is empty or not a date."
+  },
+  "admin.closure.current.title": {
+    "defaultMessage": "生效中的公告",
+    "description": "Heading of the section that shows the announced closure of the service."
+  },
+  "admin.closure.description": {
+    "defaultMessage": "公告這個伺服器的關站時間，讓使用者可以匯出資料並搬遷帳號。公告期間，伺服器照常運作，所有使用者都會看到通知。關站後無法復原。",
+    "description": "Explanation at the top of the service closure screen."
+  },
+  "admin.closure.due": {
+    "defaultMessage": "已過關站日期。請檢視下方的檢查項目並關閉伺服器。",
+    "description": "Note when the closing date of the announced closure has passed."
+  },
+  "admin.closure.export_until": {
+    "defaultMessage": "匯出期限",
+    "description": "Label of the date and time until which the users may sign in and export their data after the closure."
+  },
+  "admin.closure.export_until.before": {
+    "defaultMessage": "匯出期限不能早於關站日期。",
+    "description": "Error when the export deadline is before the closing date."
+  },
+  "admin.closure.export_until.description": {
+    "defaultMessage": "使用者可以登入並匯出資料的期限。若留空，則為關站日期後 {days} 天。",
+    "description": "Hint of the export deadline field. {days} is a number of days."
+  },
+  "admin.closure.export_until.invalid": {
+    "defaultMessage": "請輸入日期與時間，或留空。",
+    "description": "Error when the export deadline is not a date."
+  },
+  "admin.closure.message": {
+    "defaultMessage": "給使用者的訊息",
+    "description": "Label of the operators' message in the form and in the list of facts."
+  },
+  "admin.closure.message.description": {
+    "defaultMessage": "純文字，會顯示在通知與關站畫面上。選填。",
+    "description": "Hint of the operators' message field."
+  },
+  "admin.closure.message.too_long": {
+    "defaultMessage": "訊息太長。最多可使用 {max} 個字元。",
+    "description": "Error when the operators' message is too long. {max} is the limit."
+  },
+  "admin.closure.progress.accounts": {
+    "defaultMessage": "已記錄 Delete 的帳號",
+    "description": "Label of the number of local accounts whose Delete is recorded."
+  },
+  "admin.closure.progress.completed": {
+    "defaultMessage": "所有傳送都已結束。你現在可以停止伺服器。",
+    "description": "Note after the closure's deliveries have all ended."
+  },
+  "admin.closure.progress.dead": {
+    "defaultMessage": "已用完重試次數",
+    "description": "Label of the deliveries that used up their attempts."
+  },
+  "admin.closure.progress.fanouts_pending": {
+    "defaultMessage": "正在展開至收件匣的 Delete",
+    "description": "Label of the number of recorded Deletes whose inboxes are still being computed."
+  },
+  "admin.closure.progress.meter": {
+    "defaultMessage": "已結束的傳送",
+    "description": "Label of the progress bar of the deliveries of the Deletes after the server closed: the deliveries that ended (delivered, refused, skipped or out of attempts)."
+  },
+  "admin.closure.progress.meter.value": {
+    "defaultMessage": "{done, number} / {total, plural, other {# 次傳送}}",
+    "description": "Value of the progress bar of the deliveries after the server closed: how many of the recorded deliveries ended."
+  },
+  "admin.closure.progress.none": {
+    "defaultMessage": "尚未開始傳送。",
+    "description": "Note when the progress of the deliveries is not known yet."
+  },
+  "admin.closure.progress.pending": {
+    "defaultMessage": "等待中或重試中",
+    "description": "Label of the deliveries not attempted yet or failed and attempted again later."
+  },
+  "admin.closure.progress.permanent_failure": {
+    "defaultMessage": "已被永久拒絕",
+    "description": "Label of the deliveries refused for good."
+  },
+  "admin.closure.progress.running": {
+    "defaultMessage": "傳送進行中。請讓 worker 持續執行；停止 worker 會停止傳送。這個頁面每隔幾秒會重新讀取。",
+    "description": "Note while the closure's deliveries go on."
+  },
+  "admin.closure.progress.skipped": {
+    "defaultMessage": "已略過",
+    "description": "Label of the deliveries not sent because the domain was suspended or the server unavailable."
+  },
+  "admin.closure.progress.succeeded": {
+    "defaultMessage": "已送達",
+    "description": "Label of the deliveries accepted by the inbox."
+  },
+  "admin.closure.progress.title": {
+    "defaultMessage": "傳送進度",
+    "description": "Heading of the progress of the closure's Delete deliveries."
+  },
+  "admin.closure.short_notice": {
+    "defaultMessage": "這只給使用者不到 {days} 天的時間，他們可能來不及匯出資料並搬遷帳號。",
+    "description": "Warning when the closing date is less than the days of a short notice away. {days} is a number of days."
+  },
+  "admin.closure.summary": {
+    "defaultMessage": "公告這個伺服器終止服務、檢查關站會結束的項目、關閉伺服器，並追蹤傳送進度。",
+    "description": "Description of the service closure screen in the administration menu."
+  },
+  "admin.closure.title": {
+    "defaultMessage": "終止服務",
+    "description": "Title of the service closure screen in the administration and its menu entry."
+  },
+  "admin.closure.withdraw": {
+    "defaultMessage": "撤回公告",
+    "description": "Button, and the verb of its dialog, that withdraws the announcement of the closure."
+  },
+  "admin.closure.withdraw.description": {
+    "defaultMessage": "通知會消失，註冊與邀請會恢復運作，使用者也會收到伺服器將繼續營運的通知。你可以再次公告終止服務。",
+    "description": "What withdrawing the announcement of the closure does."
+  },
+  "admin.closure.withdraw.title": {
+    "defaultMessage": "要撤回公告嗎？",
+    "description": "Question of the dialog that withdraws the announcement of the closure."
+  },
+  "admin.closure.withdraw_failed": {
+    "defaultMessage": "無法撤回公告：{reason}",
+    "description": "Error in the dialog after withdrawing failed. {reason} is why."
+  },
+  "admin.closure.withdrawn": {
+    "defaultMessage": "已撤回公告。伺服器照常營運。",
+    "description": "Status after the announcement of the closure was withdrawn."
+  }
+}

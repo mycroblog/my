@@ -1,0 +1,246 @@
+{
+  "admin.hook_decisions.cancelled": {
+    "defaultMessage": "已取消",
+    "description": "State of a decision in the list of decisions: a moderator cancelled it."
+  },
+  "admin.hook_decisions.column.decided_at": {
+    "defaultMessage": "決定時間",
+    "description": "Column of the list of decisions: when the review answered."
+  },
+  "admin.hook_decisions.column.hook": {
+    "defaultMessage": "審核",
+    "description": "Column of the tables of the automated reviews screen: which external review."
+  },
+  "admin.hook_decisions.column.mode": {
+    "defaultMessage": "模式",
+    "description": "Column of the tables of the automated reviews screen: off, observe, or enforce."
+  },
+  "admin.hook_decisions.column.outcome": {
+    "defaultMessage": "結果",
+    "description": "Column of the list of decisions: the verdict, or the kind of failure."
+  },
+  "admin.hook_decisions.column.outcomes": {
+    "defaultMessage": "決定",
+    "description": "Column of the table of external reviews: the counts of decisions per outcome."
+  },
+  "admin.hook_decisions.column.subject": {
+    "defaultMessage": "對象",
+    "description": "Column of the list of decisions: what identifies the post, follow, sign-up, or file."
+  },
+  "admin.hook_decisions.empty": {
+    "defaultMessage": "沒有任何內容被攔下",
+    "description": "Empty list of decisions: no external review stopped anything or failed."
+  },
+  "admin.hook_decisions.filter.all": {
+    "defaultMessage": "所有審核",
+    "description": "Option of the select that keeps the decisions of one external review: every review."
+  },
+  "admin.hook_decisions.filter.label": {
+    "defaultMessage": "審核",
+    "description": "Accessible name of the select that keeps the decisions of one external review."
+  },
+  "admin.hook_decisions.hook.inbound_follow": {
+    "defaultMessage": "來自其他伺服器的追蹤",
+    "description": "Name of the external review of follows that arrive from other servers."
+  },
+  "admin.hook_decisions.hook.inbound_status": {
+    "defaultMessage": "來自其他伺服器的貼文",
+    "description": "Name of the external review of posts that arrive from other servers."
+  },
+  "admin.hook_decisions.hook.local_status": {
+    "defaultMessage": "本站貼文",
+    "description": "Name of the external review of posts by accounts of this server."
+  },
+  "admin.hook_decisions.hook.inbound_actor": {
+    "defaultMessage": "來自其他伺服器的個人檔案",
+    "description": "Name of the external review of the profiles of accounts on other servers."
+  },
+  "admin.hook_decisions.hook.local_profile": {
+    "defaultMessage": "本站個人檔案",
+    "description": "Name of the external review of the profiles of accounts of this server."
+  },
+  "admin.hook_decisions.hook.media_check": {
+    "defaultMessage": "上傳的媒體",
+    "description": "Name of the external review of uploaded media."
+  },
+  "admin.hook_decisions.hook.signup_check": {
+    "defaultMessage": "註冊",
+    "description": "Name of the external review of sign-ups."
+  },
+  "admin.hook_decisions.account": {
+    "defaultMessage": "帳號",
+    "description": "Term of a decision: the account its subject belongs to, such as the author of the post or the account that signed up."
+  },
+  "admin.hook_decisions.latency": {
+    "defaultMessage": "等待時間",
+    "description": "Term of a decision: how long the call of the review took."
+  },
+  "admin.hook_decisions.latency.value": {
+    "defaultMessage": "{value} ms",
+    "description": "Value of how long the call of the review took, in milliseconds."
+  },
+  "admin.hook_decisions.list.title": {
+    "defaultMessage": "決定",
+    "description": "Heading of the list of decisions on the automated reviews screen, and the caption of its table."
+  },
+  "admin.hook_decisions.menu": {
+    "defaultMessage": "外部審核攔下或無法檢查的內容。",
+    "description": "Summary of the automated reviews screen in the moderation menu."
+  },
+  "admin.hook_decisions.mode.enforce": {
+    "defaultMessage": "執行",
+    "description": "Mode of an external review: it acts on the verdict."
+  },
+  "admin.hook_decisions.mode.observe": {
+    "defaultMessage": "觀察",
+    "description": "Mode of an external review: it records the verdict and acts on nothing."
+  },
+  "admin.hook_decisions.mode.off": {
+    "defaultMessage": "關閉",
+    "description": "Mode of an external review: it calls nothing."
+  },
+  "admin.hook_decisions.not_configured": {
+    "defaultMessage": "未設定",
+    "description": "Mode cell of an external review that has no plugin on this server: it calls nothing."
+  },
+  "admin.hook_decisions.note": {
+    "defaultMessage": "審核的備註",
+    "description": "Term of a decision: the short plain-text note the review left for moderators."
+  },
+  "admin.hook_decisions.pages": {
+    "defaultMessage": "自動審核頁面",
+    "description": "Accessible name of the navigation between the pages of the automated reviews screen: the decisions and the appeals of refused posts."
+  },
+  "admin.hook_decisions.pages.appeals": {
+    "defaultMessage": "被拒絕貼文的申訴",
+    "description": "Link of the navigation of the automated reviews screen to the page of the authors' appeals of refused local posts."
+  },
+  "admin.hook_decisions.pages.decisions": {
+    "defaultMessage": "決定",
+    "description": "Link of the navigation of the automated reviews screen to its first page: the counts per review and the list of decisions."
+  },
+  "admin.hook_decisions.outcome.allow": {
+    "defaultMessage": "已允許",
+    "description": "Outcome of a decision: the review let it through."
+  },
+  "admin.hook_decisions.outcome.breaker_open": {
+    "defaultMessage": "多次失敗後已略過",
+    "description": "Outcome of a decision: the server skipped the review after repeated failures. A failure, not a verdict."
+  },
+  "admin.hook_decisions.outcome.drop": {
+    "defaultMessage": "已捨棄",
+    "description": "Outcome of a decision: the review stopped it and nothing is stored."
+  },
+  "admin.hook_decisions.outcome.error": {
+    "defaultMessage": "失敗",
+    "description": "Outcome of a decision: the call of the review failed. A failure, not a verdict."
+  },
+  "admin.hook_decisions.outcome.flag": {
+    "defaultMessage": "已檢舉",
+    "description": "Outcome of a decision: the review let it through and files a report."
+  },
+  "admin.hook_decisions.outcome.invalid": {
+    "defaultMessage": "無效的回應",
+    "description": "Outcome of a decision: the answer of the review was outside its vocabulary. A failure, not a verdict."
+  },
+  "admin.hook_decisions.outcome.mark_sensitive": {
+    "defaultMessage": "已標為敏感內容",
+    "description": "Outcome of a decision: the review let it through and its attachments show as sensitive."
+  },
+  "admin.hook_decisions.outcome.reject": {
+    "defaultMessage": "已拒絕",
+    "description": "Outcome of a decision: the review refused it."
+  },
+  "admin.hook_decisions.outcome.require_approval": {
+    "defaultMessage": "等待核准",
+    "description": "Outcome of a decision: the review holds a sign-up for approval."
+  },
+  "admin.hook_decisions.outcome.timeout": {
+    "defaultMessage": "逾時",
+    "description": "Outcome of a decision: the call of the review ran past its deadline. A failure, not a verdict."
+  },
+  "admin.hook_decisions.overridden": {
+    "defaultMessage": "已取消 {hook} 的決定：{outcome}。",
+    "description": "Status message after a moderator cancelled a decision."
+  },
+  "admin.hook_decisions.overridden_at": {
+    "defaultMessage": "取消時間",
+    "description": "Term of a decision: when a moderator cancelled it."
+  },
+  "admin.hook_decisions.restorable_until": {
+    "defaultMessage": "可復原期限",
+    "description": "Term of a dropped post: until when cancelling the decision takes the post in again."
+  },
+  "admin.hook_decisions.restorable_gone": {
+    "defaultMessage": "收到的副本已不存在，所以取消只會記錄這次取消，無法復原任何內容。",
+    "description": "Shown on a dropped post whose received copy is gone: cancelling cannot bring it back."
+  },
+  "admin.hook_decisions.override": {
+    "defaultMessage": "取消決定",
+    "description": "Button of a row of the list of decisions: cancels the decision."
+  },
+  "admin.hook_decisions.override_action": {
+    "defaultMessage": "取消 {hook} 於 {date} 做出的決定：{outcome}",
+    "description": "Accessible name of the button that cancels a decision. {hook} names the review, {outcome} the outcome, and {date} when it decided."
+  },
+  "admin.hook_decisions.override_failed": {
+    "defaultMessage": "無法取消決定：{reason}",
+    "description": "Toast when cancelling a decision failed. {reason} says why."
+  },
+  "admin.hook_decisions.reason": {
+    "defaultMessage": "原因代碼",
+    "description": "Term of a decision: the coded reason the review gave."
+  },
+  "admin.hook_decisions.reason.spam": {
+    "defaultMessage": "垃圾訊息",
+    "description": "Coded reason an external review gave for its verdict: spam."
+  },
+  "admin.hook_decisions.reason.harassment": {
+    "defaultMessage": "騷擾",
+    "description": "Coded reason an external review gave for its verdict: harassment."
+  },
+  "admin.hook_decisions.reason.sexual": {
+    "defaultMessage": "性相關內容",
+    "description": "Coded reason an external review gave for its verdict: sexual content."
+  },
+  "admin.hook_decisions.reason.violence": {
+    "defaultMessage": "暴力",
+    "description": "Coded reason an external review gave for its verdict: violence."
+  },
+  "admin.hook_decisions.reason.illegal": {
+    "defaultMessage": "違法內容",
+    "description": "Coded reason an external review gave for its verdict: illegal content."
+  },
+  "admin.hook_decisions.reason.malware": {
+    "defaultMessage": "惡意軟體",
+    "description": "Coded reason an external review gave for its verdict: malware."
+  },
+  "admin.hook_decisions.reason.other": {
+    "defaultMessage": "其他",
+    "description": "Coded reason an external review gave for its verdict: a reason none of the other codes names."
+  },
+  "admin.hook_decisions.summary.count": {
+    "defaultMessage": "{count, plural, other {# 項決定}}，平均 {average} ms，最長 {max} ms",
+    "description": "Value of a count of decisions, with how long the calls took in milliseconds."
+  },
+  "admin.hook_decisions.summary.none": {
+    "defaultMessage": "沒有決定",
+    "description": "Cell of the table of external reviews: a review that made no decisions in the period."
+  },
+  "admin.hook_decisions.summary.outcome": {
+    "defaultMessage": "{outcome}（{mode}）",
+    "description": "Term of a count of decisions. {outcome} is what the review answered; {mode} is the mode it ran in."
+  },
+  "admin.hook_decisions.summary.period": {
+    "defaultMessage": "最近 7 天的次數和等待時間。",
+    "description": "Note above the table of external reviews: the period the numbers cover."
+  },
+  "admin.hook_decisions.summary.title": {
+    "defaultMessage": "審核",
+    "description": "Heading of the section of the automated reviews screen with one row per external review."
+  },
+  "admin.hook_decisions.title": {
+    "defaultMessage": "自動審核",
+    "description": "Heading and menu entry of the moderation screen that lists what the external reviews of submissions said."
+  }
+}

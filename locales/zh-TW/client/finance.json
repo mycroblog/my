@@ -1,0 +1,30 @@
+{
+  "finance.title": {
+    "defaultMessage": "財務",
+    "description": "Heading and document title of the finances page, where the holders of the view_finance permission read the server's costs."
+  },
+  "finance.description": {
+    "defaultMessage": "這個伺服器的營運成本，依營運者的記錄加總，並依供應商與類別列出用途；以及來自支持者的收入與收支餘額。不同幣別的金額會各自加總，絕不換算。不會顯示任何人的付款。",
+    "description": "Introduction of the finances page."
+  },
+  "finance.items_shown": {
+    "defaultMessage": "{shown, select, both {這個伺服器會顯示項目的名稱與備註。} names {這個伺服器會顯示項目的名稱，但不顯示備註。} memos {這個伺服器會顯示項目的備註，但不顯示名稱。} other {這個伺服器不會顯示項目的名稱或備註。}}",
+    "description": "What the finances page shows of the cost items, by the server settings finance_viewer_item_names and finance_viewer_item_memos: both, names, memos, or none."
+  },
+  "finance.costs.title": {
+    "defaultMessage": "成本",
+    "description": "Heading of the section of the totals of the costs on the finances page."
+  },
+  "finance.loading": {
+    "defaultMessage": "正在載入財務資料",
+    "description": "Accessible name of the progress indicator while the totals load on the finances page."
+  },
+  "finance.failed": {
+    "defaultMessage": "無法載入財務資料",
+    "description": "Heading shown in place of the totals on the finances page when they could not be loaded."
+  },
+  "finance.retry": {
+    "defaultMessage": "再試一次",
+    "description": "Button that tries again to load the totals of the finances page after a failure."
+  }
+}

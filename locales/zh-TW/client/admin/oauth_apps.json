@@ -1,0 +1,218 @@
+{
+  "admin.oauth_apps.cancel": {
+    "defaultMessage": "取消",
+    "description": "Button that closes a dialog of the OAuth apps screen without changing anything."
+  },
+  "admin.oauth_apps.change_failed": {
+    "defaultMessage": "無法變更 App：{reason}",
+    "description": "Error of disabling or enabling an app, or of denying or allowing a host. {reason} says why."
+  },
+  "admin.oauth_apps.column.app": {
+    "defaultMessage": "App",
+    "description": "Column header of the app's name."
+  },
+  "admin.oauth_apps.column.created": {
+    "defaultMessage": "註冊時間",
+    "description": "Column header of when an app was registered."
+  },
+  "admin.oauth_apps.column.registration": {
+    "defaultMessage": "註冊方式",
+    "description": "Column header of the registration route."
+  },
+  "admin.oauth_apps.confidential": {
+    "defaultMessage": "有密鑰",
+    "description": "An app that is a confidential client."
+  },
+  "admin.oauth_apps.deny_host": {
+    "defaultMessage": "拒絕主機",
+    "description": "Button on an app that denies the host of its metadata document."
+  },
+  "admin.oauth_apps.deny_host_of": {
+    "defaultMessage": "拒絕主機：{host}",
+    "description": "Accessible name of the button that denies the host of an app's metadata document. {host} is the host name."
+  },
+  "admin.oauth_apps.disable": {
+    "defaultMessage": "停用",
+    "description": "Button that disables an app, and the confirming button of its dialog."
+  },
+  "admin.oauth_apps.disable.description": {
+    "defaultMessage": "這個 App 的所有權杖會立即撤銷，它的登入、權杖交換和更新也都會被拒絕。之後重新啟用這個 App 時，已撤銷的權杖仍維持撤銷：使用者需要重新登入。",
+    "description": "Description of the dialog that confirms disabling an app."
+  },
+  "admin.oauth_apps.disable.title": {
+    "defaultMessage": "要停用 {name} 嗎？",
+    "description": "Title of the dialog that confirms disabling an app. {name} is the app's name."
+  },
+  "admin.oauth_apps.disable_app": {
+    "defaultMessage": "停用 {name}",
+    "description": "Accessible name of the button that disables an app. {name} is the app's name."
+  },
+  "admin.oauth_apps.disabled": {
+    "defaultMessage": "已停用",
+    "description": "Marks an app that an administrator disabled."
+  },
+  "admin.oauth_apps.disabled_done": {
+    "defaultMessage": "已停用 {name}，它的權杖也已撤銷。",
+    "description": "Status after disabling an app. {name} is the app's name."
+  },
+  "admin.oauth_apps.empty": {
+    "defaultMessage": "沒有 App",
+    "description": "Heading of the empty list of OAuth apps."
+  },
+  "admin.oauth_apps.empty.description": {
+    "defaultMessage": "沒有透過這種方式註冊的 App。",
+    "description": "Description of the empty list of OAuth apps."
+  },
+  "admin.oauth_apps.enable": {
+    "defaultMessage": "啟用",
+    "description": "Button that lifts the disablement of an app."
+  },
+  "admin.oauth_apps.enable_app": {
+    "defaultMessage": "啟用 {name}",
+    "description": "Accessible name of the button that lifts the disablement of an app. {name} is the app's name."
+  },
+  "admin.oauth_apps.enabled_done": {
+    "defaultMessage": "已啟用 {name}。",
+    "description": "Status after enabling an app. {name} is the app's name."
+  },
+  "admin.oauth_apps.filter.all": {
+    "defaultMessage": "所有方式",
+    "description": "Choice of the filter that keeps every app."
+  },
+  "admin.oauth_apps.filter.label": {
+    "defaultMessage": "註冊方式",
+    "description": "Label of the filter that keeps the apps of one registration route."
+  },
+  "admin.oauth_apps.first_party_note": {
+    "defaultMessage": "無法停用",
+    "description": "Says that the server's own app has no disable button."
+  },
+  "admin.oauth_apps.hosts.allow": {
+    "defaultMessage": "允許",
+    "description": "Button that lifts the denial of a host."
+  },
+  "admin.oauth_apps.hosts.allow_host": {
+    "defaultMessage": "允許主機 {host}",
+    "description": "Accessible name of the button that lifts the denial of a host. {host} is the host name."
+  },
+  "admin.oauth_apps.hosts.allowed_done": {
+    "defaultMessage": "已重新允許 {host}。",
+    "description": "Status after lifting the denial of a host. {host} is the host name."
+  },
+  "admin.oauth_apps.hosts.column.denied": {
+    "defaultMessage": "拒絕時間",
+    "description": "Column header of when a host was denied."
+  },
+  "admin.oauth_apps.hosts.column.host": {
+    "defaultMessage": "主機",
+    "description": "Column header of a denied host."
+  },
+  "admin.oauth_apps.hosts.denied_done": {
+    "defaultMessage": "已拒絕 {host}，它的 App 的權杖也已撤銷。",
+    "description": "Status after denying a host. {host} is the host name."
+  },
+  "admin.oauth_apps.hosts.deny": {
+    "defaultMessage": "拒絕",
+    "description": "Confirming button of the dialog that denies a host."
+  },
+  "admin.oauth_apps.hosts.deny.description": {
+    "defaultMessage": "從現在起，不會再擷取或接受這個主機上的任何用戶端 ID URL。這個主機的 App 的權杖會立即撤銷，之後重新允許這個主機時，權杖仍維持撤銷。",
+    "description": "Description of the dialog that confirms denying a host."
+  },
+  "admin.oauth_apps.hosts.deny.title": {
+    "defaultMessage": "要拒絕 {host} 嗎？",
+    "description": "Title of the dialog that confirms denying a host. {host} is the host name."
+  },
+  "admin.oauth_apps.hosts.deny_new": {
+    "defaultMessage": "拒絕主機",
+    "description": "Button that opens the dialog that denies a host by its name."
+  },
+  "admin.oauth_apps.hosts.deny_new.title": {
+    "defaultMessage": "拒絕主機",
+    "description": "Title of the dialog that denies a host by its name."
+  },
+  "admin.oauth_apps.hosts.description": {
+    "defaultMessage": "不會擷取或接受被拒絕主機上的任何用戶端 ID URL，該主機的 App 也無法登入。",
+    "description": "Explains the list of denied hosts."
+  },
+  "admin.oauth_apps.hosts.empty": {
+    "defaultMessage": "沒有被拒絕的主機",
+    "description": "Heading of the empty list of denied hosts."
+  },
+  "admin.oauth_apps.hosts.empty.description": {
+    "defaultMessage": "拒絕主機即可阻止使用其中繼資料文件的 App。",
+    "description": "Description of the empty list of denied hosts."
+  },
+  "admin.oauth_apps.hosts.host": {
+    "defaultMessage": "主機名稱",
+    "description": "Label of the field of the host to deny."
+  },
+  "admin.oauth_apps.hosts.host.description": {
+    "defaultMessage": "用戶端 ID URL 的主機，例如 app.example，不含通訊協定、連接埠或路徑。",
+    "description": "Description of the field of the host to deny."
+  },
+  "admin.oauth_apps.hosts.title": {
+    "defaultMessage": "被拒絕的主機",
+    "description": "Heading of the list of denied hosts, and its table caption."
+  },
+  "admin.oauth_apps.list.description": {
+    "defaultMessage": "所有未刪除的 App，最新的在前。停用 App 會立即撤銷它的權杖，並在重新啟用前拒絕它的登入。",
+    "description": "Explains the list of OAuth apps."
+  },
+  "admin.oauth_apps.list.title": {
+    "defaultMessage": "App",
+    "description": "Heading of the list of OAuth apps, and its table caption."
+  },
+  "admin.oauth_apps.owner": {
+    "defaultMessage": "由 {handle} 註冊",
+    "description": "Who registered an app. {handle} is the handle of the user's account."
+  },
+  "admin.oauth_apps.owner.deleted": {
+    "defaultMessage": "由已刪除的帳號註冊",
+    "description": "Who registered an app, when the account of the user who did is gone."
+  },
+  "admin.oauth_apps.pages": {
+    "defaultMessage": "OAuth App 頁面",
+    "description": "Name of the local navigation between the pages of the OAuth apps screen."
+  },
+  "admin.oauth_apps.pages.apps": {
+    "defaultMessage": "App",
+    "description": "Link of the local navigation to the list of apps."
+  },
+  "admin.oauth_apps.pages.hosts": {
+    "defaultMessage": "被拒絕的主機",
+    "description": "Link of the local navigation to the denied hosts of app metadata documents."
+  },
+  "admin.oauth_apps.public": {
+    "defaultMessage": "無密鑰",
+    "description": "An app that is a public client."
+  },
+  "admin.oauth_apps.registration.dynamic": {
+    "defaultMessage": "動態註冊",
+    "description": "Registration route of an app that registered itself (RFC 7591)."
+  },
+  "admin.oauth_apps.registration.first_party": {
+    "defaultMessage": "本伺服器",
+    "description": "Registration route of the server's own apps."
+  },
+  "admin.oauth_apps.registration.metadata_document": {
+    "defaultMessage": "中繼資料文件",
+    "description": "Registration route of an app whose client ID is the URL of its metadata document."
+  },
+  "admin.oauth_apps.registration.user": {
+    "defaultMessage": "使用者",
+    "description": "Registration route of an app that a signed-in user registered."
+  },
+  "admin.oauth_apps.scope": {
+    "defaultMessage": "最多可授予：{scope}",
+    "description": "Under an app's name: the scopes it may be granted at most. {scope} is the space-separated scopes."
+  },
+  "admin.oauth_apps.summary": {
+    "defaultMessage": "查看所有可以登入這個伺服器的 App、停用 App，以及拒絕 App 中繼資料文件的主機。",
+    "description": "Description of the OAuth apps screen in the administration menu."
+  },
+  "admin.oauth_apps.title": {
+    "defaultMessage": "OAuth App",
+    "description": "Heading of the OAuth apps screen, and its link in the administration menu."
+  }
+}

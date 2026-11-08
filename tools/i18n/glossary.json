@@ -163,8 +163,8 @@
     },
     {
       "use": "使用者",
-      "avoid": ["用戶"],
-      "note": "A person who uses the service. Taiwan's word, not the mainland's."
+      "avoid": ["用戶(?!端)"],
+      "note": "A person who uses the service. Taiwan's word, not the mainland's. 用戶端 (a client app) stays."
     },
     {
       "use": "訊息",
