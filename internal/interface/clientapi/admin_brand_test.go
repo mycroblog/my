@@ -22,7 +22,8 @@ import (
 )
 
 // fakeBrands keeps the brand images with the checks of the domain, as appinstance.Service does;
-// instancetest.InstanceRepositoryContract covers the storage, the audit log, and the projection.
+// instancetest.InstanceRepositoryContract covers the storage on every adapter, and
+// instancetest.InstanceFlows the audit log and the projection (internal/flowtest/instance).
 type fakeBrands struct {
 	now     time.Time
 	current instance.Brands
