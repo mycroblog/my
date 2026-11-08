@@ -11,6 +11,7 @@ translation follows them and never adds, drops, or corrects a fact. A wrong fact
 | `docs/guide/*.md` | `app/docs/i18n/<locale>/guide/*.md` | yes |
 | `docs/operations/*.md` | `app/docs/i18n/<locale>/operations/*.md` | yes |
 | `app/docs/src/content/docs/index.mdx` (the landing page) | `app/docs/i18n/<locale>/index.mdx` | yes, as one section |
+| `app/docs/src/content/docs/analytics.mdx` (the notice of the site's analytics) | `app/docs/i18n/<locale>/analytics.mdx` | yes, as one section |
 | The `## Headings` and `### Headings` of `docs/README.md` (the sidebar groups) | `app/docs/i18n/<locale>/sidebar.json` | yes |
 | `docs/reference/`, `docs/developers/`, `docs/plugins/` | none: the site shows the English page with a notice | no |
 
@@ -38,7 +39,7 @@ The translated text of the section.
 - Keep the sections in the order of the English document.
 - Text before the first marker is an error.
 
-The landing page is one section. Its translation is a copy of `index.mdx` with the prose translated (the frontmatter's
+The landing page is one section, and so is the analytics notice, translated the same way. The landing page's translation is a copy of `index.mdx` with the prose translated (the frontmatter's
 `description`, the hero's `tagline` and the `text` of its buttons, the cards, the alt texts, the labels of `DocLinks`),
 and the first line of its frontmatter is the marker `# source: <hash>`. Keep its imports, component names, `path`s, and
 the paths of its images as in English; the site adjusts them.

@@ -1,0 +1,48 @@
+---
+# source: 339496feab7f
+title: Análise de acesso deste site
+description: O que as páginas de mycroblog.dev enviam ao Cloudflare Web Analytics, e o que não enviam.
+---
+
+{/* SPDX-License-Identifier: AGPL-3.0-only */}
+
+Este site, mycroblog.dev, conta como as suas páginas são lidas com o Cloudflare Web Analytics: quais páginas, idiomas e
+versões da documentação as pessoas abrem, e de onde elas vêm. O projeto usa esses números para decidir o que escrever e
+traduzir em seguida. Esta página trata só deste site; os servidores que rodam o `my` têm as suas próprias políticas.
+
+## O que uma página envia
+
+Quando uma página deste site abre, o seu navegador carrega um pequeno script de `static.cloudflareinsights.com` e envia
+o seguinte para `cloudflareinsights.com`:
+
+- o endereço da página, sem a sua query string;
+- o endereço da página de onde você veio (o referenciador);
+- o user agent do seu navegador, que informa o navegador e o sistema operacional;
+- quanto tempo a página levou para carregar e para ser exibida, conforme o navegador mede.
+
+Como em qualquer requisição, a Cloudflare a recebe a partir do seu endereço IP e deduz dele o país.
+
+## O que ele não faz
+
+- Não define nenhum cookie e não guarda nada no seu navegador: nem armazenamento local, nem armazenamento de sessão,
+  nem IndexedDB.
+- A Cloudflare declara que não identifica visitantes por impressão digital a partir do endereço IP, do user agent ou de
+  qualquer outro dado para exibir os números, e que não usa os dados para publicidade.
+- O projeto vê apenas os totais no painel da Cloudflare, nunca o registro de uma visita.
+
+O próprio site guarda duas coisas no seu navegador para as suas páginas: o tema de cores e quais grupos da barra
+lateral estão abertos. Elas nunca saem do seu navegador.
+
+## Quem recebe
+
+A Cloudflare, Inc., que também serve este site, recebe os dados e os trata conforme a
+[Política de Privacidade da Cloudflare](https://www.cloudflare.com/privacypolicy/).
+
+## Como desativar
+
+Bloquear `static.cloudflareinsights.com` no seu navegador ou com um bloqueador de conteúdo impede o script. Todas as
+páginas funcionam do mesmo jeito sem ele.
+
+## Contato
+
+Tire dúvidas sobre este aviso nas [issues do repositório do mycroblog](https://github.com/mycroblog/my/issues) no GitHub.

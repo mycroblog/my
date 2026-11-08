@@ -8,5 +8,6 @@
   "docs.version.latest": "在最新版中閱讀本頁",
   "docs.version.label": "文件版本",
   "docs.llms.lead": "供 LLM 與程式設計代理使用：",
-  "docs.llms.page": "本頁的 Markdown"
+  "docs.llms.page": "本頁的 Markdown",
+  "docs.analytics.link": "本站的流量分析"
 }

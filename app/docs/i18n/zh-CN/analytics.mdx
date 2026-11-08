@@ -1,0 +1,42 @@
+---
+# source: 339496feab7f
+title: 本站的访问分析
+description: mycroblog.dev 的页面会向 Cloudflare Web Analytics 发送什么，以及不会发送什么。
+---
+
+{/* SPDX-License-Identifier: AGPL-3.0-only */}
+
+本站 mycroblog.dev 使用 Cloudflare Web Analytics 统计页面的阅读情况：大家打开了哪些页面、哪些语言和哪些版本的文档，
+以及从哪里来。项目用这些数字决定接下来写什么、翻译什么。本页只说明本站；运行 `my` 的各个服务器有各自的政策。
+
+## 页面会发送什么
+
+打开本站的页面时，你的浏览器会从 `static.cloudflareinsights.com` 加载一个小脚本，并向 `cloudflareinsights.com`
+发送以下内容：
+
+- 页面的地址，不含查询字符串；
+- 你来自的页面的地址（引荐来源）；
+- 浏览器的用户代理，其中写有浏览器和操作系统的名称；
+- 浏览器测得的页面加载和渲染所用的时间。
+
+和任何请求一样，Cloudflare 从你的 IP 地址收到这些内容，并据此推断所在国家。
+
+## 不会做什么
+
+- 不设置 Cookie，也不在浏览器中保存任何内容：不使用本地存储、会话存储或 IndexedDB。
+- Cloudflare 声明，它不会为了显示统计数字而通过 IP 地址、用户代理或其他任何信息对访客进行指纹识别，也不会把数据用于广告。
+- 项目只能在 Cloudflare 的控制台中看到总数，看不到任何一次访问的记录。
+
+本站自身会为自己的页面在你的浏览器中保存两项内容：配色主题，以及侧边栏中哪些分组是展开的。它们从不会离开你的浏览器。
+
+## 谁会收到
+
+为本站提供服务的 Cloudflare, Inc. 会收到这些数据，并按照 [Cloudflare 隐私政策](https://www.cloudflare.com/privacypolicy/)处理。
+
+## 如何关闭
+
+用浏览器或内容拦截器屏蔽 `static.cloudflareinsights.com`，脚本就不会运行。没有它，每个页面照样可以正常使用。
+
+## 联系方式
+
+关于本说明的问题，请在 GitHub 上的 [mycroblog 仓库的 Issue](https://github.com/mycroblog/my/issues) 中提出。
