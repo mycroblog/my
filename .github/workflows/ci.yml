@@ -442,7 +442,6 @@ jobs:
       - name: go:test
         run: scripts/task.sh go:test
         env:
-          GODEBUG: gocachetest=1
           TEST_VALKEY_REQUIRED: "1"
 
   e2e:
