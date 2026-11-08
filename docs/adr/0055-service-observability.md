@@ -218,7 +218,7 @@ NFR-OPS-2 の「任意で有効化」は、メトリクスは §2 の `otlp`、�
 ### 14. ジョブへの引き継ぎ（新しいトレース + link）
 
 - `queue.Job`・`queue.NewJob` は `TraceParent`（W3C `traceparent` の文字列、空も可）を持つ。`JobQueue.Enqueue` と `Outbox.EnqueueTx` は、呼び出しの `ctx` から `Tracer.Inject` で埋める（呼び出し側は何もしない）
-- 保存の場所: 表 `jobs`・`dead_jobs` の列 `trace_parent text`（null 許容。`schema/<dialect>/10-infrastructure.sql`）。`Outbox.EnqueueTx` も `jobs` に行を足す（ADR-0004）。
+- 保存の場所: 表 `jobs`・`dead_jobs` の列 `trace_parent text`（null 許容。`schema/10-infrastructure/<dialect>.sql`）。`Outbox.EnqueueTx` も `jobs` に行を足す（ADR-0004）。
   これは状態でなくジョブの属性で、ADR-0020 の「状態を null 許容の時刻で表さない」に当たらない。
   Cloud Tasks の合図は `traceparent` を運ばない。ジョブの行にあるので、伝播は DB の列で足りる（ADR-0004 §9）
 - runner はジョブの実行の span（種類 consumer）を **新しいトレースの根** として作り、`TraceParent` への link を持たせる。再試行は試行ごとに別の span で、属性 `my.job.attempt` を持つ

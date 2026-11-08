@@ -119,7 +119,7 @@ Mastodon と同じ形にする。凍結は `Update(Actor)` に `suspended: true`
 処分のイベントとは別の、追記専用の記録にする。
 
 - `audit_log_entries` は `moderation` が持つ【イベント】で、カラムは `id`, `actor_kind`（`enum(user, cli, system, remote)`）, `actor_user_id`（NULL 可）, `action`（操作の enum）, `target_kind`, `target_id`, `target_label`（記録時の対象の表示名の写し。`@user@host`・ドメイン・設定のキーなど）, `source_event_id`（元のイベントの行の ID）, `occurred_at`。
-- `target_kind` は `enum(account, status, domain, report, appeal, user, role, setting, rule, signup_block)` に、機能が足す値を加えたものである（ADR-0051 の `custom_emoji`、ADR-0060 の `webhook`、ADR-0006 の `relay`、ADR-0067 の `cost_item`、ADR-0070 の `custom_emoji_request`、ADR-0072 の `supporter_program`・`supporter_plan`・`supporter_subscription`、ADR-0088 の `instance`、ADR-0147 の `hook_decision`、ほかに `announcement`・`invite`・`billing_source`・`payment_provider`・`oauth_client`・`oauth_client_host`・`voice_room`・`login_provider`・`link_card_domain`）。全部の値は `schema/<dialect>/03-moderation.sql` にある。
+- `target_kind` は `enum(account, status, domain, report, appeal, user, role, setting, rule, signup_block)` に、機能が足す値を加えたものである（ADR-0051 の `custom_emoji`、ADR-0060 の `webhook`、ADR-0006 の `relay`、ADR-0067 の `cost_item`、ADR-0070 の `custom_emoji_request`、ADR-0072 の `supporter_program`・`supporter_plan`・`supporter_subscription`、ADR-0088 の `instance`、ADR-0147 の `hook_decision`、ほかに `announcement`・`invite`・`billing_source`・`payment_provider`・`oauth_client`・`oauth_client_host`・`voice_room`・`login_provider`・`link_card_domain`）。全部の値は `schema/03-moderation/<dialect>.sql` にある。
 - 各モジュールのユースケースは、元のイベントと同じトランザクションで `AuditRecorded` のドメインイベントを発行し、`moderation` の購読者がそれを書く（`uow.Event`。他のモジュールの `internal/app` を呼ぶ既存の経路だけを使う）。
 - 理由・メモの本文は写さず、`source_event_id` で元のイベントから引く。監査ログ自体には IP アドレスを残さない。
 - 更新・削除の API と CLI を持たない。消去は §8 の保持期間を過ぎた行を消す定期ジョブだけが行う。

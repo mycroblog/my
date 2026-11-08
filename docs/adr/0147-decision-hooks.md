@@ -72,7 +72,7 @@
 
 ### 6. 判定の記録
 
-ADR-0020 の分類で次を足す。`schema/<dialect>/16-hook.sql` に置き、`internal/app/hook` が所有する。
+ADR-0020 の分類で次を足す。`schema/16-hook/<dialect>.sql` に置き、`internal/app/hook` が所有する。
 
 - `hook_decisions`（イベント）: フック、対象のキー、モード、結果（判定または失敗の種類）、理由コード、メモ、待ち時間、日時。`(hook, subject_key)` で一意。本文・メールアドレス・IP は持たない。`inbound.*` の対象のキーは受信したアクティビティの URI で、`Update` の版ごとに別の判定になる。`local.status` のキーは新しい投稿ではその投稿の ID、編集では `<投稿の ID>#<新しい版の ID>` で、編集ごとに別の判定になる（§2）。`inbound.actor` のキーは `<Actor の URI>#<送るプロフィールのハッシュ>` で、プロフィールの中身ごとに 1 つの判定になり、同じプロフィールの再取得はプラグインを呼ばない。`local.profile` のキーは `<アカウントの ID>#<プロフィールの版の ID>` である。
 - `hook_decision_statuses`（イベントの子）: 効果が及んだ投稿。`moderation_action_statuses` に対応し、§8 の投影の元になる。`Create` では投稿の ID が決まる取り込みのトランザクションで書く。

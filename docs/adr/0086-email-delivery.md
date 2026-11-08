@@ -75,7 +75,7 @@
   - すべてのアダプタ: 送信時の宛先の拒否（`ErrRecipientRejected`）。ハンドラがジョブを `Fail` にするのと一緒に、ハードバウンスとして記録する
   - `mail/ses`: SES の通知を SNS の HTTPS の購読で受ける（下記）。`Permanent` のバウンス（`General`・`Suppressed`・`OnAccountSuppressionList` などの副種別）をハードバウンス、苦情を苦情として記録する。`Transient`・`Undetermined` のバウンスは記録しない
   - `mail/smtp`: 送信時の拒否だけを記録する。非同期の DSN・フィードバックループは受けない（受信のメールボックスを持たない）
-- **データの形**（ADR-0020。identity が所有し、`schema/<dialect>/01-identity.sql` に置く）
+- **データの形**（ADR-0020。identity が所有し、`schema/01-identity/<dialect>.sql` に置く）
 
   | 表 | 分類 | 列 |
   | --- | --- | --- |

@@ -1,6 +1,6 @@
 # 論理データモデル（v0）
 
-> 方言に依存しない **論理スキーマ** です。方言別の `schema/<dialect>/<NN>-<module>.sql`（[§4](04-tables/README.md) のモジュールごとのファイル）はこの文書に従って書き、乖離は CI で検査します（[ADR-0003](../../adr/0003-database-abstraction.md)）。
+> 方言に依存しない **論理スキーマ** です。方言別の `schema/<NN>-<module>/<dialect>.sql`（[§4](04-tables/README.md) のモジュールごとのディレクトリ）はこの文書に従って書き、乖離は CI で検査します（[ADR-0003](../../adr/0003-database-abstraction.md)）。
 > モデリングの規約は [ADR-0020](../../adr/0020-data-modeling-principles.md)（リソース・イベント・投影の分離と、状態の直交分解）です。この文書はその適用結果です。
 > 前提にしている ADR: [ADR-0002](../../adr/0002-modular-monolith-hexagonal.md)、[ADR-0003](../../adr/0003-database-abstraction.md)、[ADR-0004](../../adr/0004-job-queue-abstraction.md)、[ADR-0016](../../adr/0016-client-api-style.md)、[ADR-0013](../../adr/0013-timeline-strategy.md)、[ADR-0017](../../adr/0017-visibility-local.md)、[ADR-0018](../../adr/0018-federated-uris.md)。
 > マイグレーション履歴は持ちません。`v0.1.0` より前は作り直し、以降はデータを失わない変更だけを許します（[ADR-0023](../../adr/0023-declarative-schema-management.md)）。
