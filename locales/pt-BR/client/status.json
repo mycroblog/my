@@ -1,0 +1,590 @@
+{
+  "status.action.bookmark": {
+    "defaultMessage": "Salvar",
+    "description": "Toggle button under a post that bookmarks it or removes the bookmark. Bookmarks are private. The same text is used in both states."
+  },
+  "status.action.boost": {
+    "defaultMessage": "Impulsionar",
+    "description": "Toggle button under a post that shares (boosts) it with the user's followers, or retracts the boost. The same text is used in both states."
+  },
+  "status.action.counted": {
+    "defaultMessage": "{action}, {count}",
+    "description": "Accessible name of a boost, favourite or bookmark toggle under a post while it shows its count beside the icon, so that the name contains the number that is shown. {action} is the toggle's name (Boost, Favourite, Bookmark; also its tooltip); {count} is the number as it is shown (\"1.2K\")."
+  },
+  "status.action.copy_link": {
+    "defaultMessage": "Copiar link",
+    "description": "Menu item that copies the address of a post to the clipboard."
+  },
+  "status.action.delete": {
+    "defaultMessage": "Excluir",
+    "description": "Menu item, on the user's own post, that asks to delete it."
+  },
+  "status.action.edit": {
+    "defaultMessage": "Editar",
+    "description": "Item of a post's More actions menu, for the user's own posts: opens the dialog that edits the post."
+  },
+  "status.action.failed": {
+    "defaultMessage": "Não foi possível salvar a alteração: {reason}",
+    "description": "Toast when boosting, favouriting or bookmarking a post failed; the button is set back. {reason} is the error message, a full sentence."
+  },
+  "status.action.favourite": {
+    "defaultMessage": "Favoritar",
+    "description": "Toggle button under a post that adds it to or removes it from the user's favourites. The same text is used in both states."
+  },
+  "status.action.more": {
+    "defaultMessage": "Mais ações",
+    "description": "Button under a post that opens a menu with more actions on it, and the name of that menu."
+  },
+  "status.action.reply": {
+    "defaultMessage": "Responder",
+    "description": "Button under a post that starts a reply to it."
+  },
+  "status.author.block": {
+    "defaultMessage": "Bloquear {handle}",
+    "description": "Item of a post's menu that blocks the post's author, after a confirmation. {handle} is the author's short handle."
+  },
+  "status.author.direct_message": {
+    "defaultMessage": "Enviar mensagem direta a {handle}",
+    "description": "Item of a post's menu that opens the new-post form as a direct message to the post's author. {handle} is the author's short handle."
+  },
+  "status.author.follow": {
+    "defaultMessage": "Seguir {handle}",
+    "description": "Item of a post's menu that follows the post's author. {handle} is the author's short handle."
+  },
+  "status.author.follow_back": {
+    "defaultMessage": "Seguir {handle} de volta",
+    "description": "Item of a post's menu that follows the post's author, who follows the user. {handle} is the author's short handle."
+  },
+  "status.author.mute": {
+    "defaultMessage": "Silenciar {handle}",
+    "description": "Item of a post's menu that mutes the post's author. {handle} is the author's short handle."
+  },
+  "status.author.relationship_failed": {
+    "defaultMessage": "Não foi possível carregar se você segue {handle}: {reason} Escolha esta opção para tentar novamente.",
+    "description": "Item of a post's menu shown in place of follow, mute and block when the relationship failed to load; choosing it loads it again. {handle} is the author's short handle, {reason} the error message."
+  },
+  "status.author.request": {
+    "defaultMessage": "Pedir para seguir {handle}",
+    "description": "Item of a post's menu that asks to follow the post's author, whose account approves its followers. {handle} is the author's short handle."
+  },
+  "status.author.unblock": {
+    "defaultMessage": "Desbloquear {handle}",
+    "description": "Item of a post's menu that unblocks the post's author, after a confirmation. {handle} is the author's short handle."
+  },
+  "status.author.unfollow": {
+    "defaultMessage": "Deixar de seguir {handle}",
+    "description": "Item of a post's menu that stops following the post's author, after a confirmation. {handle} is the author's short handle."
+  },
+  "status.author.unmute": {
+    "defaultMessage": "Reativar {handle}",
+    "description": "Item of a post's menu that unmutes the post's author. {handle} is the author's short handle."
+  },
+  "status.author.withdraw": {
+    "defaultMessage": "Cancelar pedido para seguir {handle}",
+    "description": "Item of a post's menu that withdraws the user's pending follow request, after a confirmation. {handle} is the author's short handle."
+  },
+  "status.moderation.account": {
+    "defaultMessage": "Abrir esta conta na moderação",
+    "description": "Item of a post's menu, for moderators, that opens the moderation page of the post's author."
+  },
+  "status.moderation.post": {
+    "defaultMessage": "Abrir esta publicação na moderação",
+    "description": "Item of a post's menu, for moderators, that opens the moderation page of the post's author, starting from this post."
+  },
+  "status.bookmark.off": {
+    "defaultMessage": "Removida dos itens salvos",
+    "description": "Read out by screen readers after the user removed the bookmark of a post."
+  },
+  "status.bookmark.on": {
+    "defaultMessage": "Salva",
+    "description": "Read out by screen readers after the user bookmarked a post."
+  },
+  "status.boost.off": {
+    "defaultMessage": "Impulso desfeito",
+    "description": "Read out by screen readers after the user retracted the boost of a post."
+  },
+  "status.boost.on": {
+    "defaultMessage": "Impulsionada",
+    "description": "Read out by screen readers after the user boosted a post."
+  },
+  "status.delete.cancel": {
+    "defaultMessage": "Cancelar",
+    "description": "Button in the delete confirmation dialog that keeps the post."
+  },
+  "status.delete.confirm": {
+    "defaultMessage": "Excluir",
+    "description": "Button in the delete confirmation dialog that deletes the post."
+  },
+  "status.delete.description": {
+    "defaultMessage": "Ela será removida para todos, junto com seus impulsos e favoritos. Você não pode desfazer isso.",
+    "description": "Text of the dialog that asks the user to confirm deleting their post."
+  },
+  "status.delete.done": {
+    "defaultMessage": "Publicação excluída",
+    "description": "Toast after the user's post was deleted."
+  },
+  "status.delete.failed": {
+    "defaultMessage": "Não foi possível excluir a publicação: {reason}",
+    "description": "Toast when deleting the user's post failed. {reason} is the error message, a full sentence."
+  },
+  "status.delete.title": {
+    "defaultMessage": "Excluir esta publicação?",
+    "description": "Heading of the dialog that asks the user to confirm deleting their post."
+  },
+  "status.edit.cancel": {
+    "defaultMessage": "Cancelar",
+    "description": "Button of the dialog that edits the user's post: closes it without saving."
+  },
+  "status.edit.close": {
+    "defaultMessage": "Fechar",
+    "description": "Accessible name of the close (x) button of the dialog that edits the user's post."
+  },
+  "status.edit.done": {
+    "defaultMessage": "Publicação editada",
+    "description": "Toast after the user's post was edited and saved."
+  },
+  "status.edit.failed": {
+    "defaultMessage": "Não foi possível salvar a edição: {reason}",
+    "description": "Shown in the dialog that edits the user's post when saving failed. {reason} is the error message, a full sentence."
+  },
+  "status.edit.fixed": {
+    "defaultMessage": "A visibilidade e a publicação à qual esta responde continuam como estão.",
+    "description": "Note in the dialog that edits the user's post: an edit cannot change these."
+  },
+  "status.edit.load_failed": {
+    "defaultMessage": "Não foi possível carregar a publicação para editar",
+    "description": "Heading of the error in the dialog that edits the user's post when its text failed to load, above the reason and the button to try again."
+  },
+  "status.edit.blocked.empty": {
+    "defaultMessage": "Escreva algo para salvar.",
+    "description": "Shown beside the save button of the dialog that edits a post when it is pressed while the text is empty."
+  },
+  "status.edit.blocked.too_long": {
+    "defaultMessage": "O texto está longo demais. Encurte-o para salvar.",
+    "description": "Shown beside the save button of the dialog that edits a post when it is pressed while the text is longer than the limit."
+  },
+  "status.edit.loading": {
+    "defaultMessage": "Carregando a publicação…",
+    "description": "Accessible name of the spinner while the dialog that edits the user's post loads its text."
+  },
+  "status.edit.retry": {
+    "defaultMessage": "Tentar novamente",
+    "description": "Button that loads the post to edit again after it failed."
+  },
+  "status.edit.save": {
+    "defaultMessage": "Salvar",
+    "description": "Submit button of the dialog that edits the user's post."
+  },
+  "status.edit.title": {
+    "defaultMessage": "Editar publicação",
+    "description": "Heading of the dialog that edits the user's post, and the name of its form."
+  },
+  "status.edited": {
+    "defaultMessage": "Editada",
+    "description": "Link under an edited post to its edit history."
+  },
+  "status.federation.stays_local": {
+    "defaultMessage": "Não chegará ao servidor dela",
+    "description": "Short note at the end of the action bar of a post of another server while this server sends nothing to other servers (federation direction 'Receive only' or 'Off', ADR-0006): replies, boosts, favourites and reactions are recorded on this server but do not reach the post's server. It also describes those buttons."
+  },
+  "status.favourite.off": {
+    "defaultMessage": "Removida dos favoritos",
+    "description": "Read out by screen readers after the user removed a post from their favourites."
+  },
+  "status.favourite.on": {
+    "defaultMessage": "Adicionada aos favoritos",
+    "description": "Read out by screen readers after the user favourited a post."
+  },
+  "status.focused.boosts": {
+    "defaultMessage": "{count, plural, one {# impulso} other {# impulsos}}",
+    "description": "Under the body of the post a page is about: how many times it was boosted. Shown only when it was."
+  },
+  "status.focused.favourites": {
+    "defaultMessage": "{count, plural, one {# favorito} other {# favoritos}}",
+    "description": "Under the body of the post a page is about: how many people favourited it. Shown only when someone did."
+  },
+  "status.focused.label": {
+    "defaultMessage": "Publicação aberta",
+    "description": "Not shown: read out by screen readers before the author and time of the post a page is about, to tell it apart from the posts of its thread."
+  },
+  "status.history.back": {
+    "defaultMessage": "Voltar à publicação",
+    "description": "Link from a post's edit history to the post's page."
+  },
+  "status.history.change.media": {
+    "defaultMessage": "mídia",
+    "description": "One of the changes a revision made, joined into {changes} of status.history.changes: the attached media or their descriptions."
+  },
+  "status.history.change.sensitive": {
+    "defaultMessage": "mídia sensível",
+    "description": "One of the changes a revision made, joined into {changes} of status.history.changes: whether the media are marked sensitive."
+  },
+  "status.history.change.text": {
+    "defaultMessage": "texto",
+    "description": "One of the changes a revision made, joined into {changes} of status.history.changes: the text of the post."
+  },
+  "status.history.change.warning": {
+    "defaultMessage": "aviso de conteúdo",
+    "description": "One of the changes a revision made, joined into {changes} of status.history.changes: the content warning."
+  },
+  "status.history.changes": {
+    "defaultMessage": "Alterado: {changes}",
+    "description": "What a revision of a post changed from the one before. {changes} is a list of the changes, like text, content warning."
+  },
+  "status.history.current": {
+    "defaultMessage": "Versão atual",
+    "description": "Label of the revision that is the post's content now, in the edit history."
+  },
+  "status.history.list": {
+    "defaultMessage": "Versões",
+    "description": "Accessible name of the list of the revisions of a post."
+  },
+  "status.history.original": {
+    "defaultMessage": "Publicação original",
+    "description": "Label of the revision that is the post as first written, in the edit history."
+  },
+  "status.history.title": {
+    "defaultMessage": "Histórico de edições",
+    "description": "Heading and title of the page that lists the revisions of a post."
+  },
+  "status.link.copied": {
+    "defaultMessage": "Link copiado",
+    "description": "Toast after the address of a post was copied to the clipboard."
+  },
+  "status.link.failed": {
+    "defaultMessage": "Não foi possível copiar o link.",
+    "description": "Toast when the browser refused to copy the address of a post to the clipboard."
+  },
+  "status.not_found.body": {
+    "defaultMessage": "Esta publicação não existe ou você não pode vê-la.",
+    "description": "Text under the heading of the page of a post that does not exist or that the user may not see."
+  },
+  "status.not_found.title": {
+    "defaultMessage": "Publicação não encontrada",
+    "description": "Heading of the page of a post that does not exist or that the user may not see."
+  },
+  "status.original": {
+    "defaultMessage": "Abrir a publicação original em {host}",
+    "description": "Accessible name of the link on a post of another server to its page on that server; the link shows only {host}, that server's host name, for example 'mastodon.social'."
+  },
+  "status.pin.action": {
+    "defaultMessage": "Fixar no perfil",
+    "description": "Menu item, on the user's own post, that pins it to the top of their profile."
+  },
+  "status.pin.done": {
+    "defaultMessage": "Publicação fixada no seu perfil",
+    "description": "Toast after the user pinned their post to their profile."
+  },
+  "status.pin.failed": {
+    "defaultMessage": "Não foi possível fixar a publicação: {reason}",
+    "description": "Toast when pinning the user's post failed, for example because they already pinned as many posts as allowed. {reason} is the error message, a full sentence."
+  },
+  "status.pin.label": {
+    "defaultMessage": "Publicação fixada",
+    "description": "Line above a post at the top of a profile that the account pinned there."
+  },
+  "status.poll.choose_many": {
+    "defaultMessage": "Escolha uma ou mais opções.",
+    "description": "Hint above the options of a poll that lets the user choose several of them."
+  },
+  "status.poll.choose_one": {
+    "defaultMessage": "Escolha uma opção.",
+    "description": "Hint under the options of a poll that lets the user choose one of them."
+  },
+  "status.poll.closed": {
+    "defaultMessage": "Encerrada",
+    "description": "Under a poll whose end has passed: it takes no more votes and shows its results."
+  },
+  "status.poll.ends": {
+    "defaultMessage": "Termina {time}",
+    "description": "Under a poll: when it ends. {time} is a relative time ahead, such as \"in 3 hr.\" or \"in 2 days\"."
+  },
+  "status.poll.hidden": {
+    "defaultMessage": "Os votos de cada opção são mostrados quando a enquete termina.",
+    "description": "Under a poll whose author hides the votes of each option until it ends, in place of the shares of the votes."
+  },
+  "status.poll.label": {
+    "defaultMessage": "Enquete",
+    "description": "Accessible name of the poll of a post: its options or results and how many voted."
+  },
+  "status.poll.options": {
+    "defaultMessage": "Opções da enquete",
+    "description": "Accessible name of the group of radio buttons or checkboxes the user chooses from to vote in a poll."
+  },
+  "status.poll.own_vote": {
+    "defaultMessage": "Seu voto",
+    "description": "After an option in the results of a poll that the user voted for."
+  },
+  "status.poll.remote_counts": {
+    "defaultMessage": "Contagens como {host} informou pela última vez",
+    "description": "Under the results of a poll of a post from another server: the counts are those that server sent last, and a vote of the user shows in them once it sends them again. {host} is that server's host name."
+  },
+  "status.poll.results": {
+    "defaultMessage": "Resultados da enquete",
+    "description": "Accessible name of the list of the options of a poll with their share of the votes."
+  },
+  "status.poll.vote": {
+    "defaultMessage": "Votar",
+    "description": "Button under the options of a poll that sends the user's choice."
+  },
+  "status.poll.vote_failed": {
+    "defaultMessage": "Não foi possível votar: {reason}",
+    "description": "Toast when the user's vote in a poll failed, for example because the poll has ended. {reason} is the error message, a full sentence."
+  },
+  "status.poll.voted": {
+    "defaultMessage": "Voto enviado",
+    "description": "Toast after the user voted in a poll."
+  },
+  "status.poll.voters": {
+    "defaultMessage": "{count, plural, one {# pessoa} other {# pessoas}}",
+    "description": "Under a poll: how many accounts voted."
+  },
+  "status.poll.votes": {
+    "defaultMessage": "{count, plural, one {# voto} other {# votos}}",
+    "description": "Under a poll whose number of voters is unknown: how many votes it has, one per chosen option."
+  },
+  "status.translation.action": {
+    "defaultMessage": "Traduzir",
+    "description": "Button under a post in another language: translates it in place."
+  },
+  "status.translation.author": {
+    "defaultMessage": "Não é tradução automática: este é o texto original de quem escreveu.",
+    "description": "Line above a post after the reader asked for a translation and the server answered with the words the author wrote, so nothing was machine translated."
+  },
+  "status.translation.browser_failed": {
+    "defaultMessage": "Seu navegador não conseguiu traduzir esta publicação. Tente novamente.",
+    "description": "Next to the translate button: the translator built into the browser failed, or lost a mention or a link of the post on the way. The original stays in view."
+  },
+  "status.translation.browser_model": {
+    "defaultMessage": "Seu navegador não conseguiu preparar o modelo de tradução, então esta publicação não foi traduzida. Verifique sua conexão e tente novamente.",
+    "description": "Next to the translate button: the browser's translation model failed to download or to start. The original stays in view."
+  },
+  "status.translation.browser_not_allowed": {
+    "defaultMessage": "Seu navegador não permitiu esta tradução. Tente novamente e, se isso continuar, verifique as configurações dele.",
+    "description": "Next to the translate button: the browser refused, because it disabled the feature or because a download needs a fresh press of the button. The original stays in view."
+  },
+  "status.translation.browser_same_language": {
+    "defaultMessage": "Seu navegador percebeu que esta publicação já está no seu idioma, então não há nada a traduzir.",
+    "description": "Next to the translate button: the post did not say its language, and the browser detected the language of the app. The original stays in view."
+  },
+  "status.translation.browser_undetected": {
+    "defaultMessage": "Seu navegador não conseguiu identificar o idioma desta publicação, então ela não foi traduzida.",
+    "description": "Next to the translate button: the post did not say its language, and the browser could not detect it. The original stays in view."
+  },
+  "status.translation.browser_unsupported": {
+    "defaultMessage": "Seu navegador não consegue traduzir o idioma desta publicação.",
+    "description": "Next to the translate button: the browser detected the language of the post and has no translation from it. The original stays in view."
+  },
+  "status.translation.by": {
+    "defaultMessage": "Tradução automática de {provider}",
+    "description": "Line above a translated post, and what a screen reader hears when the translation appears. {provider} is the name of the translation service."
+  },
+  "status.translation.by_browser": {
+    "defaultMessage": "Tradução automática do seu navegador ({browser})",
+    "description": "Line above a post that the reader's own browser translated, and what a screen reader hears when the translation appears. {browser} is the browser's product name."
+  },
+  "status.translation.by_browser_unnamed": {
+    "defaultMessage": "Tradução automática do seu navegador",
+    "description": "Line above a post that the reader's own browser translated, for a browser whose name is not known, and what a screen reader hears when the translation appears."
+  },
+  "status.translation.downloading": {
+    "defaultMessage": "Baixando o modelo de tradução… {progress, number, ::percent}",
+    "description": "The translate button while the browser downloads its translation model, which happens once. {progress} is how much has come, as a percentage."
+  },
+  "status.translation.failed": {
+    "defaultMessage": "Não foi possível traduzir esta publicação agora. Tente novamente em instantes.",
+    "description": "Next to the translate button: the translation service gave no usable answer, which may pass. The original stays in view."
+  },
+  "status.translation.failed_reason": {
+    "defaultMessage": "Não foi possível traduzir esta publicação: {reason}",
+    "description": "Next to the translate button: the request failed for another reason, such as no connection. {reason} is the localized reason."
+  },
+  "status.translation.limit": {
+    "defaultMessage": "O limite mensal de traduções foi atingido, então esta publicação não foi traduzida. Você poderá traduzir de novo no próximo mês.",
+    "description": "Next to the translate button: the limit of the reader or of the server on translated characters is used up until the next month. The original stays in view."
+  },
+  "status.translation.original_shown": {
+    "defaultMessage": "Mostrando a publicação original.",
+    "description": "What a screen reader hears after the reader went back from a translation to the original."
+  },
+  "status.translation.pending": {
+    "defaultMessage": "Traduzindo…",
+    "description": "The translate button while the translation is on its way."
+  },
+  "status.translation.show_original": {
+    "defaultMessage": "Mostrar original",
+    "description": "Button under a translated post: goes back to the author's words."
+  },
+  "status.translation.unavailable": {
+    "defaultMessage": "Este servidor não pode traduzir esta publicação.",
+    "description": "Next to the translate button: no translation service of the server may receive this post."
+  },
+  "status.translation.unsupported": {
+    "defaultMessage": "O serviço de tradução deste servidor não oferece suporte a este idioma.",
+    "description": "Next to the translate button: the translation services do not translate this language."
+  },
+  "status.unpin.action": {
+    "defaultMessage": "Desafixar do perfil",
+    "description": "Menu item, on the user's own pinned post, that removes it from the top of their profile."
+  },
+  "status.unpin.done": {
+    "defaultMessage": "Publicação desafixada do seu perfil",
+    "description": "Toast after the user unpinned their post from their profile."
+  },
+  "status.unpin.failed": {
+    "defaultMessage": "Não foi possível desafixar a publicação: {reason}",
+    "description": "Toast when unpinning the user's post failed. {reason} is the error message, a full sentence."
+  },
+  "status.thread.ancestors": {
+    "defaultMessage": "Antes na conversa",
+    "description": "Heading above the posts that the post of the page replies to, oldest first."
+  },
+  "status.thread.loading": {
+    "defaultMessage": "Carregando as respostas…",
+    "description": "Visually hidden text that names the busy replies section while the thread around a post loads."
+  },
+  "status.thread.no_replies": {
+    "defaultMessage": "Ainda não há respostas",
+    "description": "Heading of the empty state of the Replies section of a post's page when the post has no replies."
+  },
+  "status.thread.replies": {
+    "defaultMessage": "Respostas",
+    "description": "Heading above the replies to the post of the page."
+  },
+  "status.thread.retry": {
+    "defaultMessage": "Tentar novamente",
+    "description": "Button that loads the thread around a post again after a failure."
+  },
+  "status.title": {
+    "defaultMessage": "Publicação",
+    "description": "Heading of the page of one post and the thread around it."
+  },
+  "status.reaction.on": {
+    "defaultMessage": "Reagiu com {emoji}",
+    "description": "Read out by screen readers after the user reacted to a post with an emoji. {emoji} is the emoji itself or its :shortcode:."
+  },
+  "status.reaction.off": {
+    "defaultMessage": "Reação removida",
+    "description": "Read out by screen readers after the user took back their emoji reaction to a post."
+  },
+  "status.quote.label": {
+    "defaultMessage": "Publicação citada",
+    "description": "Accessible name of the box in a post that shows the post it quotes."
+  },
+  "status.quote.pending": {
+    "defaultMessage": "A publicação citada ainda não está disponível.",
+    "description": "Shown in place of a quoted post whose author has not approved the quote yet, or that this server has not received yet."
+  },
+  "status.quote.rejected": {
+    "defaultMessage": "Quem escreveu a publicação citada não permitiu esta citação.",
+    "description": "Shown in place of a quoted post whose author refused the quote."
+  },
+  "status.quote.revoked": {
+    "defaultMessage": "Quem escreveu a publicação citada a retirou desta citação.",
+    "description": "Shown in place of a quoted post whose author withdrew the approval of the quote."
+  },
+  "status.quote.deleted": {
+    "defaultMessage": "A publicação citada foi excluída.",
+    "description": "Shown in place of a quoted post that was deleted."
+  },
+  "status.quote.unauthorized": {
+    "defaultMessage": "Você não pode ver a publicação citada.",
+    "description": "Shown in place of a quoted post that the viewer is not allowed to see, such as a followers-only post."
+  },
+  "status.quote.blocked_account": {
+    "defaultMessage": "A publicação citada está oculta por causa de um bloqueio.",
+    "description": "Shown in place of a quoted post whose author the viewer blocks, or who blocks the viewer."
+  },
+  "status.quote.muted_account": {
+    "defaultMessage": "Você silenciou quem escreveu a publicação citada.",
+    "description": "Shown in place of a quoted post whose author the viewer muted; a button next to it shows the post."
+  },
+  "status.quote.blocked_domain": {
+    "defaultMessage": "Você silenciou o servidor da publicação citada.",
+    "description": "Shown in place of a quoted post from a server that the viewer muted; a button next to it shows the post."
+  },
+  "status.quote.reveal": {
+    "defaultMessage": "Mostrar a publicação citada",
+    "description": "Button next to the notice of a muted author or server, in place of a quoted post, that shows the post."
+  },
+  "status.action.quote": {
+    "defaultMessage": "Citar",
+    "description": "Accessible name of the button in a post's action bar that starts a new post quoting it."
+  },
+  "status.quote_policy.action": {
+    "defaultMessage": "Alterar quem pode citar",
+    "description": "Item of the menu of the user's own post that opens the dialog choosing who may quote it."
+  },
+  "status.quote_policy.title": {
+    "defaultMessage": "Quem pode citar esta publicação",
+    "description": "Title of the dialog that chooses who may quote one of the user's posts."
+  },
+  "status.quote_policy.close": {
+    "defaultMessage": "Fechar",
+    "description": "Accessible name of the close button of the dialog that chooses who may quote a post."
+  },
+  "status.quote_policy.label": {
+    "defaultMessage": "Quem pode citar",
+    "description": "Label of the choices of who may quote a post, in its dialog."
+  },
+  "status.quote_policy.description": {
+    "defaultMessage": "As citações aprovadas antes continuam. Para tirar sua publicação de uma delas, use o menu da publicação que a cita.",
+    "description": "Description of the choices of who may quote a post."
+  },
+  "status.quote_policy.done": {
+    "defaultMessage": "Alterado quem pode citar a publicação",
+    "description": "Toast after the user changed who may quote one of their posts."
+  },
+  "status.quote_policy.failed": {
+    "defaultMessage": "Não foi possível alterar quem pode citar a publicação: {reason}",
+    "description": "Toast when the change of who may quote a post failed. {reason} is the server's reason."
+  },
+  "status.quotes.action": {
+    "defaultMessage": "Publicações que citam esta",
+    "description": "Item of the menu of the user's own post that opens the list of the posts that quote it."
+  },
+  "status.quotes.title": {
+    "defaultMessage": "Citações da sua publicação",
+    "description": "Title of the page that lists the posts that quote one of the user's posts."
+  },
+  "status.quote.revoke.action": {
+    "defaultMessage": "Remover minha publicação desta citação",
+    "description": "Item of the menu of a post that quotes one of the user's posts; it withdraws the approval of the quote."
+  },
+  "status.quote.revoke.done": {
+    "defaultMessage": "Sua publicação foi removida da citação",
+    "description": "Toast after the user withdrew the approval of a quote of their post."
+  },
+  "status.quote.revoke.failed": {
+    "defaultMessage": "Não foi possível remover sua publicação da citação: {reason}",
+    "description": "Toast when the withdrawal of the approval of a quote failed. {reason} is the server's reason."
+  },
+  "status.edit.remove_quote": {
+    "defaultMessage": "Remover a publicação citada",
+    "description": "Checkbox of the edit dialog of a post that quotes another: the edit takes the quote away."
+  },
+  "status.edit.remove_quote.description": {
+    "defaultMessage": "Uma citação removida não pode ser adicionada de volta.",
+    "description": "Description of the checkbox that removes the quote of a post in its edit dialog."
+  },
+  "status.action.read_replies": {
+    "defaultMessage": "{count, plural, one {Ler {shown} resposta} other {Ler {shown} respostas}}",
+    "description": "Name and tooltip of the link in a post's action bar that opens the post's page to read its replies; the link shows a speech bubble and the number. {count} is the number of replies (at least 1), {shown} the same number as the link shows it (compact, such as 1.2K)."
+  },
+  "status.thread.failed.heading": {
+    "defaultMessage": "Não foi possível carregar as respostas",
+    "description": "Heading of the error shown in the Replies section of a post's page when the thread failed to load, above the reason and the button to try again."
+  },
+  "status.thread.no_replies.description": {
+    "defaultMessage": "Comece a conversa com a primeira resposta.",
+    "description": "Description of the empty state of the Replies section of a post's page, above the button that starts a reply; shown to signed-in users."
+  },
+  "status.thread.no_replies.action": {
+    "defaultMessage": "Responder",
+    "description": "Button in the empty state of the Replies section of a post's page that opens the form to reply to the post."
+  },
+  "status.focused.replies": {
+    "defaultMessage": "{count, plural, one {# resposta} other {# respostas}}",
+    "description": "Under the body of the post a page is about: how many replies it has. Shown only when it has any."
+  }
+}

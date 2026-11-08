@@ -20,6 +20,9 @@ describe("createTranslator", () => {
     expect(createTranslator(catalogs, "es")("server:config.errors", { count: 1234 })).toBe(
       "Se encontraron 1.234 errores de configuración.",
     );
+    expect(createTranslator(catalogs, "pt-BR")("server:config.errors", { count: 1234 })).toBe(
+      "Foram encontrados 1.234 erros de configuração.",
+    );
   });
 
   test("falls back along the locale chain to en", () => {

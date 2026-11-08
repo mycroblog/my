@@ -1,0 +1,162 @@
+{
+  "payments.back": {
+    "defaultMessage": "Voltar",
+    "description": "Link from the PAY.JP checkout or card page back to where the user came from (ADR-0074 §11)."
+  },
+  "payments.card": {
+    "defaultMessage": "Cartão",
+    "description": "Label of PAY.JP's card form (number, expiry, security code) on the checkout and card pages."
+  },
+  "payments.card_note": {
+    "defaultMessage": "Os dados do cartão vão para o formulário da PAY.JP e nunca chegam a este servidor.",
+    "description": "Note under the card form of the PAY.JP checkout and card pages."
+  },
+  "payments.checkout.price_month": {
+    "defaultMessage": "{amount, number} ienes por mês",
+    "description": "Price of a monthly plan on the PAY.JP checkout page. {amount} is in yen."
+  },
+  "payments.checkout.price_year": {
+    "defaultMessage": "{amount, number} ienes por ano",
+    "description": "Price of a yearly plan on the PAY.JP checkout page. {amount} is in yen."
+  },
+  "payments.checkout.submit": {
+    "defaultMessage": "Assinar",
+    "description": "Button of the PAY.JP checkout page that verifies the card (3-D Secure) and starts the subscription."
+  },
+  "payments.checkout.title": {
+    "defaultMessage": "Assinar {plan}",
+    "description": "Title of the PAY.JP checkout page. {plan} is the name of the plan."
+  },
+  "payments.email": {
+    "defaultMessage": "Endereço de e-mail",
+    "description": "Label of the email field of the PAY.JP checkout and card pages, which the card's 3-D Secure needs."
+  },
+  "payments.error.declined": {
+    "defaultMessage": "O cartão foi recusado. Tente outro cartão.",
+    "description": "Error of the PAY.JP checkout and card pages when the payment with the card failed."
+  },
+  "payments.error.form": {
+    "defaultMessage": "Verifique o e-mail, o nome no cartão e o cartão.",
+    "description": "Error of the PAY.JP checkout and card pages when a field is missing or invalid."
+  },
+  "payments.error.state": {
+    "defaultMessage": "Esta página expirou. Comece de novo pela tela de onde você veio.",
+    "description": "Error of the PAY.JP checkout and card pages when their link is expired or altered."
+  },
+  "payments.error.three_d_secure": {
+    "defaultMessage": "Não foi possível verificar o cartão (3-D Secure). Tente de novo ou use outro cartão.",
+    "description": "Error of the PAY.JP checkout and card pages when the 3-D Secure of the card failed."
+  },
+  "payments.error.title": {
+    "defaultMessage": "Pagamento",
+    "description": "Title of the error page of the PAY.JP checkout and card pages."
+  },
+  "payments.error.unavailable": {
+    "defaultMessage": "A PAY.JP não está respondendo. Tente de novo daqui a pouco.",
+    "description": "Error of the PAY.JP checkout and card pages when PAY.JP failed or did not answer."
+  },
+  "payments.fake.cancel": {
+    "defaultMessage": "Cancelar",
+    "description": "Button of the fake provider's checkout page that goes back without subscribing."
+  },
+  "payments.fake.fail": {
+    "defaultMessage": "Fazer o pagamento falhar",
+    "description": "Button of the fake provider's checkout page that makes the payment fail, to test the failure."
+  },
+  "payments.fake.failed": {
+    "defaultMessage": "O pagamento falhou, como pedido. Pague ou cancele.",
+    "description": "Alert of the fake provider's checkout page after its fail button."
+  },
+  "payments.fake.notice": {
+    "defaultMessage": "Versão de teste: este checkout substitui um provedor de pagamento, e nenhum dinheiro é movimentado.",
+    "description": "Notice of the checkout and portal pages of the fake payment provider, which only test builds have (ADR-0015 §6)."
+  },
+  "payments.fake.pay": {
+    "defaultMessage": "Pagar",
+    "description": "Button of the fake provider's checkout page that records the subscription as paid."
+  },
+  "payments.fake.portal": {
+    "defaultMessage": "Esta versão de teste não tem formas de pagamento nem faturas para gerenciar.",
+    "description": "Text of the fake provider's portal page."
+  },
+  "payments.fake.price_month": {
+    "defaultMessage": "{amount} {currency} por mês",
+    "description": "Price of a monthly plan on the fake provider's checkout page. {amount} is the amount in major units, already formatted; {currency} is its ISO 4217 code."
+  },
+  "payments.fake.price_year": {
+    "defaultMessage": "{amount} {currency} por ano",
+    "description": "Price of a yearly plan on the fake provider's checkout page. {amount} is the amount in major units, already formatted; {currency} is its ISO 4217 code."
+  },
+  "payments.name": {
+    "defaultMessage": "Nome no cartão",
+    "description": "Label of the card holder's name field of the PAY.JP checkout and card pages."
+  },
+  "payments.name_hint": {
+    "defaultMessage": "Como impresso no cartão, em letras latinas.",
+    "description": "Hint under the card holder's name field of the PAY.JP checkout and card pages."
+  },
+  "payments.portal.amount": {
+    "defaultMessage": "Valor",
+    "description": "Column heading of the payments table of the PAY.JP card page."
+  },
+  "payments.portal.amount_value": {
+    "defaultMessage": "{amount, number} ienes",
+    "description": "An amount in the payments table of the PAY.JP card page. {amount} is in yen."
+  },
+  "payments.portal.card": {
+    "defaultMessage": "Cartão em uso",
+    "description": "Heading of the card on the PAY.JP card page."
+  },
+  "payments.portal.card_value": {
+    "defaultMessage": "{brand} com final {last4}, vence em {month}/{year}",
+    "description": "The card on the PAY.JP card page: its brand, last four digits, and expiry month and year."
+  },
+  "payments.portal.change_card": {
+    "defaultMessage": "Trocar o cartão",
+    "description": "Heading and button of the card change form on the PAY.JP card page."
+  },
+  "payments.portal.changed": {
+    "defaultMessage": "O cartão foi trocado.",
+    "description": "Notice of the PAY.JP card page after a card change."
+  },
+  "payments.portal.date": {
+    "defaultMessage": "Data",
+    "description": "Column heading of the payments table of the PAY.JP card page."
+  },
+  "payments.portal.history": {
+    "defaultMessage": "Pagamentos recentes",
+    "description": "Heading of the payments table of the PAY.JP card page."
+  },
+  "payments.portal.history_empty": {
+    "defaultMessage": "Nenhum pagamento ainda.",
+    "description": "Text of the PAY.JP card page without payments."
+  },
+  "payments.portal.no_card": {
+    "defaultMessage": "Nenhum cartão registrado.",
+    "description": "Text of the PAY.JP card page without a card."
+  },
+  "payments.portal.paused": {
+    "defaultMessage": "O último pagamento falhou, então a assinatura está pausada. Trocar o cartão efetua o pagamento e a retoma.",
+    "description": "Alert of the PAY.JP card page while a subscription is paused after a failed payment."
+  },
+  "payments.portal.refunded": {
+    "defaultMessage": "Reembolsado",
+    "description": "Column heading of the payments table of the PAY.JP card page: the refunded amount."
+  },
+  "payments.portal.resume_failed": {
+    "defaultMessage": "O cartão foi trocado, mas o pagamento falhou. Tente outro cartão.",
+    "description": "Alert of the PAY.JP card page when the payment that resumes a paused subscription failed."
+  },
+  "payments.portal.resumed": {
+    "defaultMessage": "O cartão foi trocado e a assinatura foi retomada.",
+    "description": "Notice of the PAY.JP card page after a card change resumed a paused subscription."
+  },
+  "payments.portal.title": {
+    "defaultMessage": "Forma de pagamento e histórico",
+    "description": "Title of the PAY.JP card page (the customer portal)."
+  },
+  "payments.test_mode": {
+    "defaultMessage": "Modo de teste: nada é cobrado.",
+    "description": "Banner of the PAY.JP checkout and card pages with test keys."
+  }
+}

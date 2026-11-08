@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 // Command mail-preview writes every email that the server sends, rendered from sample inputs in
-// en, ja, zh-CN, zh-TW, es, en-XA, and ar-XB, to a directory with an index.html that shows them, and prints the
+// en, ja, zh-CN, zh-TW, es, pt-BR, en-XA, and ar-XB, to a directory with an index.html that shows them, and prints the
 // path of index.html. It needs no database, server, or mail server. `scripts/task.sh mail:preview`
 // runs it:
 //

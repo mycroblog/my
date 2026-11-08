@@ -1,0 +1,54 @@
+{
+  "admin.appeals.empty.decided": {
+    "defaultMessage": "Nenhum recurso foi analisado ainda",
+    "description": "Heading of the appeals screen's reviewed tab when it is empty."
+  },
+  "admin.appeals.empty.pending": {
+    "defaultMessage": "Nenhum recurso aguarda análise",
+    "description": "Heading of the appeals screen's pending tab when it is empty."
+  },
+  "admin.appeals.empty.pending.description": {
+    "defaultMessage": "Os recursos que os usuários apresentam contra as ações em suas contas aparecem aqui.",
+    "description": "Text under the heading of the empty pending tab of the appeals screen."
+  },
+  "admin.appeals.filter.decided": {
+    "defaultMessage": "Analisados",
+    "description": "Tab of the appeals that were upheld or overturned."
+  },
+  "admin.appeals.filter.label": {
+    "defaultMessage": "Recursos por situação",
+    "description": "Accessible name of the tabs of the appeals admin screen."
+  },
+  "admin.appeals.filter.pending": {
+    "defaultMessage": "Aguardando análise",
+    "description": "Tab of the appeals that await a decision."
+  },
+  "admin.appeals.of": {
+    "defaultMessage": "Recurso de {kind}",
+    "description": "Heading of an appeal in the list, a link to its page. {kind} is the kind of the moderation action, such as Suspend."
+  },
+  "admin.appeals.state.overturned": {
+    "defaultMessage": "Revertido",
+    "description": "State of an appeal whose action the moderators lifted."
+  },
+  "admin.appeals.state.pending": {
+    "defaultMessage": "Aguardando análise",
+    "description": "State of an appeal that awaits a decision."
+  },
+  "admin.appeals.state.upheld": {
+    "defaultMessage": "Mantido",
+    "description": "State of an appeal whose action the moderators kept."
+  },
+  "admin.appeals.summary": {
+    "defaultMessage": "Analise os recursos contra ações de moderação e mantenha ou reverta cada uma.",
+    "description": "Description of the appeals screen in the admin menu."
+  },
+  "admin.appeals.title": {
+    "defaultMessage": "Recursos",
+    "description": "Heading of the admin screen of the appeals of moderation actions, and its link in the admin menu."
+  },
+  "admin.appeals.column.appeal": {
+    "defaultMessage": "Recurso",
+    "description": "Header of the column of the appeals table that names the appeal and links to it."
+  }
+}

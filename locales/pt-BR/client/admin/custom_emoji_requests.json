@@ -1,0 +1,90 @@
+{
+  "admin.custom_emoji_requests.title": {
+    "defaultMessage": "Solicitações de emoji personalizado",
+    "description": "Heading of the region of the requests tab of the custom emoji screen."
+  },
+  "admin.custom_emoji_requests.description": {
+    "defaultMessage": "Usuários cujas funções permitem criar emoji personalizados solicitam novos emoji e novas imagens dos que criaram. Uma solicitação não é um emoji até ser aprovada: nada mostra a imagem dela. Aprovar cria o emoji, no seletor; rejeitar libera o shortcode, e quem solicitou vê o motivo.",
+    "description": "Explanation at the top of the requests tab of the custom emoji screen (ADR-0070)."
+  },
+  "admin.custom_emoji_requests.state": {
+    "defaultMessage": "Mostrar",
+    "description": "Label of the select of the state of the listed custom emoji requests."
+  },
+  "admin.custom_emoji_requests.empty.pending": {
+    "defaultMessage": "Nenhuma solicitação aguarda análise",
+    "description": "Empty state of the pending custom emoji requests."
+  },
+  "admin.custom_emoji_requests.empty": {
+    "defaultMessage": "Nenhuma solicitação neste estado",
+    "description": "Empty state of the custom emoji requests in a state other than pending."
+  },
+  "admin.custom_emoji_requests.requester": {
+    "defaultMessage": "Solicitado por",
+    "description": "Term of the description list of a custom emoji request: the requester's account."
+  },
+  "admin.custom_emoji_requests.requester.deleted": {
+    "defaultMessage": "Uma conta excluída",
+    "description": "Value of 'Requested by' when the requester's account is deleted."
+  },
+  "admin.custom_emoji_requests.approve": {
+    "defaultMessage": "Aprovar",
+    "description": "Button that approves a custom emoji request."
+  },
+  "admin.custom_emoji_requests.approve_request": {
+    "defaultMessage": "Aprovar a solicitação de {emoji}",
+    "description": "Accessible name of the button that approves a custom emoji request. {emoji} is the :shortcode: of the requested emoji."
+  },
+  "admin.custom_emoji_requests.approved": {
+    "defaultMessage": "A solicitação de {emoji} foi aprovada.",
+    "description": "Status after approving a custom emoji request. {emoji} is the :shortcode: of the emoji."
+  },
+  "admin.custom_emoji_requests.reject": {
+    "defaultMessage": "Rejeitar",
+    "description": "Button that rejects a custom emoji request, and the confirm button of its dialog."
+  },
+  "admin.custom_emoji_requests.reject_request": {
+    "defaultMessage": "Rejeitar a solicitação de {emoji}",
+    "description": "Accessible name of the button that rejects a custom emoji request. {emoji} is the :shortcode: of the requested emoji."
+  },
+  "admin.custom_emoji_requests.reject.title": {
+    "defaultMessage": "Rejeitar a solicitação de {emoji}?",
+    "description": "Title of the dialog that confirms rejecting a custom emoji request."
+  },
+  "admin.custom_emoji_requests.reject.description": {
+    "defaultMessage": "Quem solicitou é notificado e vê o motivo, se você informar um. O shortcode volta a ficar livre.",
+    "description": "Description of the dialog that confirms rejecting a custom emoji request."
+  },
+  "admin.custom_emoji_requests.rejected": {
+    "defaultMessage": "A solicitação de {emoji} foi rejeitada.",
+    "description": "Status after rejecting a custom emoji request. {emoji} is the :shortcode: of the emoji."
+  },
+  "admin.custom_emoji_requests.reason": {
+    "defaultMessage": "Motivo",
+    "description": "Label of the optional reason of a rejection of a custom emoji request."
+  },
+  "admin.custom_emoji_requests.reason.description": {
+    "defaultMessage": "Opcional. Quem solicitou o vê.",
+    "description": "Description of the reason of a rejection of a custom emoji request."
+  },
+  "admin.custom_emoji_requests.reason.too_long": {
+    "defaultMessage": "Um motivo tem no máximo {max} caracteres.",
+    "description": "Error of a reason of a rejection that is too long. {max} is the limit."
+  },
+  "admin.custom_emoji_requests.characters_left": {
+    "defaultMessage": "{count, plural, one {Resta # caractere} other {Restam # caracteres}}",
+    "description": "Characters left in the reason of a rejection of a custom emoji request."
+  },
+  "admin.custom_emoji_requests.characters_over": {
+    "defaultMessage": "{count, plural, one {# caractere a mais} other {# caracteres a mais}}",
+    "description": "Characters over the limit of the reason of a rejection of a custom emoji request."
+  },
+  "admin.custom_emoji_requests.cancel": {
+    "defaultMessage": "Cancelar",
+    "description": "Button that closes the dialog that rejects a custom emoji request."
+  },
+  "admin.custom_emoji_requests.decide_failed": {
+    "defaultMessage": "Não foi possível decidir a solicitação: {reason}",
+    "description": "Error after approving or rejecting a custom emoji request failed. {reason} is the server's explanation."
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "login.failed.denied": {
+    "defaultMessage": "O login foi cancelado na tela do servidor.",
+    "description": "Why signing in failed: the user declined on the server's authorization screen."
+  },
+  "login.failed.invalid_state": {
+    "defaultMessage": "Este login não foi iniciado nesta aba ou já foi concluído. Comece de novo.",
+    "description": "Why signing in failed: the answer from the server does not belong to a sign-in that this browser tab started."
+  },
+  "login.failed.rejected": {
+    "defaultMessage": "O servidor não aceitou o login. Comece de novo.",
+    "description": "Why signing in failed: the server refused to finish it (for example, it took too long)."
+  },
+  "login.failed.try_again": {
+    "defaultMessage": "Entrar de novo",
+    "description": "Link from the failed sign-in page back to the sign-in page."
+  },
+  "login.failed.title": {
+    "defaultMessage": "Não foi possível entrar",
+    "description": "Heading and document title of the page shown when signing in failed on the way back from the server's sign-in screen."
+  },
+  "login.title": {
+    "defaultMessage": "Entrar",
+    "description": "Document title and the busy indicator's label of /login, which starts signing in at once and sends the browser to the server's sign-in screen."
+  }
+}

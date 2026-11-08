@@ -42,6 +42,9 @@ func TestAccessors(t *testing.T) {
 		{"es", func(l *Localizer) string { return l.ServerConfigErrors(1) }, "Se encontró 1 error de configuración."},
 		{"es", func(l *Localizer) string { return l.ServerConfigErrors(1234) }, "Se encontraron 1.234 errores de configuración."},
 		{"es-419", func(l *Localizer) string { return l.ServerErrorsNotFound() }, "No se encontró el recurso solicitado."},
+		{"pt-BR", func(l *Localizer) string { return l.ServerConfigErrors(1) }, "Foi encontrado 1 erro de configuração."},
+		{"pt-BR", func(l *Localizer) string { return l.ServerConfigErrors(1234) }, "Foram encontrados 1.234 erros de configuração."},
+		{"pt-PT", func(l *Localizer) string { return l.ServerErrorsNotFound() }, "O recurso solicitado não foi encontrado."},
 		// Locales without a catalog fall back to en.
 		{"fr", func(l *Localizer) string { return l.ServerErrorsNotFound() }, "The requested resource was not found."},
 		{"ja-JP", func(l *Localizer) string { return l.ServerErrorsNotFound() }, "指定されたリソースが見つかりません。"},
@@ -54,10 +57,10 @@ func TestAccessors(t *testing.T) {
 }
 
 func TestLocales(t *testing.T) {
-	if got, want := load(t).Locales(), []string{"en", "es", "ja", "zh-CN", "zh-TW"}; !slices.Equal(got, want) {
+	if got, want := load(t).Locales(), []string{"en", "es", "ja", "pt-BR", "zh-CN", "zh-TW"}; !slices.Equal(got, want) {
 		t.Errorf("Locales() = %v, want %v", got, want)
 	}
-	if got, want := load(t, WithPseudoLocales()).Locales(), []string{"ar-XB", "en", "en-XA", "es", "ja", "zh-CN", "zh-TW"}; !slices.Equal(got, want) {
+	if got, want := load(t, WithPseudoLocales()).Locales(), []string{"ar-XB", "en", "en-XA", "es", "ja", "pt-BR", "zh-CN", "zh-TW"}; !slices.Equal(got, want) {
 		t.Errorf("Locales() with pseudo-locales = %v, want %v", got, want)
 	}
 }

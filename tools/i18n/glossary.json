@@ -323,5 +323,122 @@
       "avoid": ["\\b[Vv]et(?:ar|ad[oa]s?|os?)\\b", "\\b[Bb]aneo", "\\b[Bb]anear"],
       "note": "Banning an account: the moderation action that removes it from the server."
     }
+  ],
+  "pt-BR": [
+    {
+      "use": "você",
+      "avoid": ["\\b[Tt]u\\b", "\\b[Tt]eus?\\b", "\\b[Tt]uas?\\b", "\\b[Vv]ós\\b", "\\b[Vv]oss[oa]s?\\b"],
+      "note": "How the copy addresses the user: você, as Brazilian apps do; never tu, vós or their possessives (teu, vosso), which read as European Portuguese (web-client G19)."
+    },
+    {
+      "use": "publicação",
+      "avoid": ["\\b[Pp]osts?\\b", "\\b[Tt]o?ots?\\b", "\\b[Tt]u[ií]tes?\\b"],
+      "note": "A post (publicar for the action). Not the names of other services' posts."
+    },
+    {
+      "use": "impulsionar / impulso",
+      "avoid": ["\\b[Rr]eblog", "\\b[Rr]etu[ií]t", "\\b[Rr]eto?ot", "\\b[Bb]oosts?\\b", "\\b[Bb]oostar"],
+      "note": "A boost: impulsionar for the action, impulso for the thing."
+    },
+    {
+      "use": "favorito",
+      "avoid": ["\\b[Cc]urtir\\b", "\\b[Cc]urtid[ao]s?\\b", "\\b[Cc]urtidas?\\b", "\\b[Ll]ikes?\\b"],
+      "note": "A favourite: favoritar, remover dos favoritos."
+    },
+    {
+      "use": "salvar / itens salvos",
+      "avoid": ["\\b[Bb]ookmarks?\\b", "\\b[Mm]arcadores?\\b"],
+      "note": "A bookmark: salvar a publicação, the list of itens salvos (\"Favoritos\" is taken by favourites)."
+    },
+    {
+      "use": "entrar",
+      "avoid": ["\\b[Ll]ogar\\b", "\\b[Ll]ogad[oa]s?\\b", "\\b[Ll]og(?:ged )?[ -]?in\\b(?! providers?\\b)(?= (?:to|with|again)\\b)", "\\b[Ss]ign[ -]in\\b", "\\b[Ii]niciar sessão\\b"],
+      "note": "Starting a session: entrar for the action (Entrar, entrar na conta). Login as a noun reads well in Brazil (fazer login, login desativado, provedor de login); logar does not."
+    },
+    {
+      "use": "sair",
+      "avoid": ["\\b[Dd]eslogar\\b", "\\b[Ll]ogout\\b", "\\b[Tt]erminar sessão\\b"],
+      "note": "Ending a session (sair, sair da conta)."
+    },
+    {
+      "use": "seguir / seguidor",
+      "avoid": ["\\b[Ff]ollowers?\\b"],
+      "note": "Following an account (seguir {handle}) and a follower."
+    },
+    {
+      "use": "silenciar",
+      "avoid": ["\\b[Mm]utar\\b", "\\b[Mm]utad[oa]s?\\b", "\\b[Mm]ute\\b"],
+      "note": "Muting an account or a word."
+    },
+    {
+      "use": "denunciar / denúncia",
+      "avoid": ["\\b[Rr]eportar\\b", "\\b[Rr]eportad[oa]s?\\b"],
+      "note": "Reporting an account or a post to the moderators. Reportar is an anglicism in this sense."
+    },
+    {
+      "use": "aviso de conteúdo",
+      "avoid": ["\\b[Aa]lerta de conteúdo\\b", "\\b[Aa]dvertência de conteúdo\\b"],
+      "note": "A content warning (CW)."
+    },
+    {
+      "use": "banir / banimento",
+      "avoid": ["\\b[Bb]anear\\b", "\\b[Bb]anid[oa]s? permanentemente\\b"],
+      "note": "Banning an account: the moderation action that removes it from the server."
+    },
+    {
+      "use": "função",
+      "avoid": ["\\b[Pp]ap(?:el|éis)\\b", "\\b[Cc]argos?\\b"],
+      "note": "A role of an account (funções for the list); the word is feminine."
+    },
+    {
+      "use": "apoiador",
+      "avoid": ["\\b[Pp]atrocinador(?:a|es|as)?\\b", "\\b[Cc]olaborador(?:a|es|as)?\\b"],
+      "note": "A supporter who pays for the instance; a supporter plan is a plano de apoio."
+    },
+    {
+      "use": "configurações",
+      "avoid": ["\\b[Dd]efinições\\b", "\\b[Aa]justes\\b"],
+      "note": "The settings of an account or an instance. Definições is European Portuguese."
+    },
+    {
+      "use": "usuário",
+      "avoid": ["\\b[Uu]tilizador(?:a|es|as)?\\b"],
+      "note": "A user. Utilizador is European Portuguese."
+    },
+    {
+      "use": "tela",
+      "avoid": ["\\b[Ee]crãs?(?!\\p{L})"],
+      "note": "A screen. Ecrã is European Portuguese."
+    },
+    {
+      "use": "arquivo",
+      "avoid": ["\\b[Ff]icheiros?\\b"],
+      "note": "A file. Ficheiro is European Portuguese."
+    },
+    {
+      "use": "senha",
+      "avoid": ["\\b[Pp]alavras?-passe\\b"],
+      "note": "A password. Palavra-passe is European Portuguese."
+    },
+    {
+      "use": "celular",
+      "avoid": ["\\b[Tt]elemóve(?:l|is)\\b", "\\b[Tt]elefones?\\b"],
+      "note": "A narrow screen where the bottom tab bar is the navigation (\"phone\" in en); dispositivo móvel also reads well."
+    },
+    {
+      "use": "registrar / contato",
+      "avoid": ["\\b[Rr]egist(?:ar|o|os|ad[oa]s?)\\b", "\\b[Cc]ontactos?\\b", "\\b[Ff]actos?\\b", "\\b[Aa]ctua(?:l|is|lizar)\\b", "\\b[Rr]eceção\\b", "(?<!\\p{L})[Óó]ptim[oa]s?\\b"],
+      "note": "Brazilian spelling: registrar, registro, contato, fato, atual, recepção, ótimo; never the European forms."
+    },
+    {
+      "use": "custos",
+      "avoid": ["\\b[Gg]astos operacionais\\b"],
+      "note": "The costs of running the instance."
+    },
+    {
+      "use": "vídeo",
+      "avoid": ["\\b[Vv]ideos?\\b"],
+      "note": "A video, written with the accent as Brazilian Portuguese does."
+    }
   ]
 }

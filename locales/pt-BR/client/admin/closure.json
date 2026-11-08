@@ -1,0 +1,266 @@
+{
+  "admin.closure.announce": {
+    "defaultMessage": "Anunciar o encerramento",
+    "description": "Button that announces the closure of the service."
+  },
+  "admin.closure.announce.title": {
+    "defaultMessage": "Anunciar o encerramento",
+    "description": "Heading of the form that announces the closure of the service."
+  },
+  "admin.closure.announce_failed": {
+    "defaultMessage": "Não foi possível salvar o anúncio: {reason}",
+    "description": "Error after announcing or changing the closure failed. {reason} is why."
+  },
+  "admin.closure.announced": {
+    "defaultMessage": "O encerramento foi anunciado. Os usuários já veem o aviso.",
+    "description": "Status after the closure was announced."
+  },
+  "admin.closure.announced_at": {
+    "defaultMessage": "Anunciado em",
+    "description": "Label of when the closure was announced or its dates last changed."
+  },
+  "admin.closure.cancel": {
+    "defaultMessage": "Cancelar",
+    "description": "Button that leaves a dialog of the closure screen without changing anything."
+  },
+  "admin.closure.change": {
+    "defaultMessage": "Salvar as alterações",
+    "description": "Button that changes the announcement of the closure."
+  },
+  "admin.closure.change.title": {
+    "defaultMessage": "Alterar o anúncio",
+    "description": "Heading of the form that changes the dates and message of the announced closure."
+  },
+  "admin.closure.changed": {
+    "defaultMessage": "O anúncio foi alterado. Os usuários foram avisados.",
+    "description": "Status after the announcement of the closure was changed."
+  },
+  "admin.closure.check.deletes": {
+    "defaultMessage": "Atividades Delete a enviar",
+    "description": "Label of the estimate of the deliveries of the closure."
+  },
+  "admin.closure.check.deletes.value": {
+    "defaultMessage": "Cerca de {deletes} ({accounts} contas, {inboxes} caixas de entrada)",
+    "description": "Estimate of the closure's Delete deliveries. {deletes}, {accounts} and {inboxes} are numbers."
+  },
+  "admin.closure.check.federation": {
+    "defaultMessage": "As atividades Delete são enviadas qualquer que seja o modo de federação, exceto para domínios suspensos. Depois do encerramento, as requisições de federação são recusadas.",
+    "description": "Note on how the closure treats the federation mode."
+  },
+  "admin.closure.check.holds": {
+    "defaultMessage": "Contas com retenção",
+    "description": "Label of the number of accounts under a retention hold."
+  },
+  "admin.closure.check.holds.warning": {
+    "defaultMessage": "Exporte os registros delas pela CLI antes de descartar os dados do servidor encerrado.",
+    "description": "Warning when accounts are under a retention hold."
+  },
+  "admin.closure.check.migrations": {
+    "defaultMessage": "Migrações de conta não concluídas",
+    "description": "Label of the number of account migrations that have not ended."
+  },
+  "admin.closure.check.migrations.warning": {
+    "defaultMessage": "Deixe as migrações terminarem antes de encerrar; o encerramento envia suas atividades Delete depois delas.",
+    "description": "Warning when account migrations have not ended."
+  },
+  "admin.closure.check.subscriptions": {
+    "defaultMessage": "Assinaturas de apoiadores que continuam",
+    "description": "Label of the number of supporter subscriptions that closing cancels."
+  },
+  "admin.closure.check.subscriptions.warning": {
+    "defaultMessage": "O encerramento cancela essas assinaturas de uma vez, sem reembolso, exceto um pagamento ainda pendente, que não deu nada em troca.",
+    "description": "Warning when supporter subscriptions go on."
+  },
+  "admin.closure.check.title": {
+    "defaultMessage": "O que o encerramento termina",
+    "description": "Heading of the check before the closing."
+  },
+  "admin.closure.close": {
+    "defaultMessage": "Encerrar o servidor",
+    "description": "Button that opens the dialog that closes the server."
+  },
+  "admin.closure.close.confirm": {
+    "defaultMessage": "Encerrar o servidor",
+    "description": "Verb of the dialog that closes the server."
+  },
+  "admin.closure.close.confirm.description": {
+    "defaultMessage": "Isto não pode ser desfeito. Os usuários só poderão entrar e exportar seus dados, e {domain} enviará aos outros servidores a exclusão de todas as contas locais. Para continuar, digite o domínio do servidor.",
+    "description": "What closing does, in the dialog. {domain} is the server's domain."
+  },
+  "admin.closure.close.confirm.title": {
+    "defaultMessage": "Encerrar o servidor definitivamente?",
+    "description": "Question of the dialog that closes the server."
+  },
+  "admin.closure.close.description": {
+    "defaultMessage": "O encerramento termina o serviço: os usuários só poderão entrar e exportar seus dados, e o servidor exclui todas as contas locais dos outros servidores. Isto não pode ser desfeito. Analise antes o que ele termina.",
+    "description": "Explanation above the check in the section that closes the server."
+  },
+  "admin.closure.close.domain": {
+    "defaultMessage": "Domínio do servidor",
+    "description": "Label of the field where the administrator types the server's domain to confirm the closing."
+  },
+  "admin.closure.close.domain.description": {
+    "defaultMessage": "Digite {domain}.",
+    "description": "Hint of the domain field. {domain} is the server's domain."
+  },
+  "admin.closure.close.domain.mismatch": {
+    "defaultMessage": "Este não é o domínio do servidor.",
+    "description": "Error when the typed text is not the server's domain."
+  },
+  "admin.closure.close.not_yet": {
+    "defaultMessage": "O servidor poderá ser encerrado a partir de {date}.",
+    "description": "Note when the closing date has not come. {date} is the closing date and time."
+  },
+  "admin.closure.close.title": {
+    "defaultMessage": "Encerrar o servidor",
+    "description": "Heading of the section where the administrator checks and closes the server."
+  },
+  "admin.closure.close_failed": {
+    "defaultMessage": "Não foi possível encerrar o servidor: {reason}",
+    "description": "Error in the dialog after closing failed. {reason} is why."
+  },
+  "admin.closure.closed": {
+    "defaultMessage": "O servidor foi encerrado. As entregas começam agora.",
+    "description": "Status after the server was closed."
+  },
+  "admin.closure.closed.title": {
+    "defaultMessage": "Servidor encerrado",
+    "description": "Heading of the section that shows the schedule of the closed server."
+  },
+  "admin.closure.closes_at": {
+    "defaultMessage": "Data de encerramento",
+    "description": "Label of the date and time when the server closes, in the form and in the list of facts. Shown in the administrator's time zone."
+  },
+  "admin.closure.closes_at.description": {
+    "defaultMessage": "No seu fuso horário. Qualquer data é permitida; o servidor não se encerra sozinho, e você o encerra aqui depois que a data passar.",
+    "description": "Hint of the closing date field."
+  },
+  "admin.closure.closes_at.required": {
+    "defaultMessage": "Informe a data de encerramento.",
+    "description": "Error when the closing date is empty or not a date."
+  },
+  "admin.closure.current.title": {
+    "defaultMessage": "Anúncio em vigor",
+    "description": "Heading of the section that shows the announced closure of the service."
+  },
+  "admin.closure.description": {
+    "defaultMessage": "Anuncie quando este servidor será encerrado para que os usuários possam exportar seus dados e migrar suas contas. Enquanto estiver anunciado, o servidor funciona como antes e todos os usuários veem um aviso. O encerramento não pode ser desfeito.",
+    "description": "Explanation at the top of the service closure screen."
+  },
+  "admin.closure.due": {
+    "defaultMessage": "A data de encerramento passou. Analise a verificação abaixo e encerre o servidor.",
+    "description": "Note when the closing date of the announced closure has passed."
+  },
+  "admin.closure.export_until": {
+    "defaultMessage": "Prazo de exportação",
+    "description": "Label of the date and time until which the users may sign in and export their data after the closure."
+  },
+  "admin.closure.export_until.before": {
+    "defaultMessage": "O prazo de exportação não pode ser anterior à data de encerramento.",
+    "description": "Error when the export deadline is before the closing date."
+  },
+  "admin.closure.export_until.description": {
+    "defaultMessage": "Até quando os usuários podem entrar e exportar seus dados. Se ficar vazio, será {days} dias depois da data de encerramento.",
+    "description": "Hint of the export deadline field. {days} is a number of days."
+  },
+  "admin.closure.export_until.invalid": {
+    "defaultMessage": "Informe uma data e hora, ou deixe vazio.",
+    "description": "Error when the export deadline is not a date."
+  },
+  "admin.closure.message": {
+    "defaultMessage": "Mensagem para os usuários",
+    "description": "Label of the operators' message in the form and in the list of facts."
+  },
+  "admin.closure.message.description": {
+    "defaultMessage": "Texto simples, exibido no aviso e na tela de encerramento. Opcional.",
+    "description": "Hint of the operators' message field."
+  },
+  "admin.closure.message.too_long": {
+    "defaultMessage": "A mensagem é longa demais. Use no máximo {max} caracteres.",
+    "description": "Error when the operators' message is too long. {max} is the limit."
+  },
+  "admin.closure.progress.accounts": {
+    "defaultMessage": "Contas com o Delete registrado",
+    "description": "Label of the number of local accounts whose Delete is recorded."
+  },
+  "admin.closure.progress.completed": {
+    "defaultMessage": "Todas as entregas terminaram. Você já pode parar o servidor.",
+    "description": "Note after the closure's deliveries have all ended."
+  },
+  "admin.closure.progress.dead": {
+    "defaultMessage": "Sem tentativas restantes",
+    "description": "Label of the deliveries that used up their attempts."
+  },
+  "admin.closure.progress.fanouts_pending": {
+    "defaultMessage": "Atividades Delete sendo expandidas para caixas de entrada",
+    "description": "Label of the number of recorded Deletes whose inboxes are still being computed."
+  },
+  "admin.closure.progress.meter": {
+    "defaultMessage": "Entregas concluídas",
+    "description": "Label of the progress bar of the deliveries of the Deletes after the server closed: the deliveries that ended (delivered, refused, skipped or out of attempts)."
+  },
+  "admin.closure.progress.meter.value": {
+    "defaultMessage": "{done, number} de {total, plural, one {# entrega} other {# entregas}}",
+    "description": "Value of the progress bar of the deliveries after the server closed: how many of the recorded deliveries ended."
+  },
+  "admin.closure.progress.none": {
+    "defaultMessage": "As entregas ainda não começaram.",
+    "description": "Note when the progress of the deliveries is not known yet."
+  },
+  "admin.closure.progress.pending": {
+    "defaultMessage": "Aguardando ou tentando de novo",
+    "description": "Label of the deliveries not attempted yet or failed and attempted again later."
+  },
+  "admin.closure.progress.permanent_failure": {
+    "defaultMessage": "Recusadas definitivamente",
+    "description": "Label of the deliveries refused for good."
+  },
+  "admin.closure.progress.running": {
+    "defaultMessage": "As entregas estão em andamento. Mantenha os workers em execução; pará-los interrompe as entregas. Esta página é recarregada a cada poucos segundos.",
+    "description": "Note while the closure's deliveries go on."
+  },
+  "admin.closure.progress.skipped": {
+    "defaultMessage": "Ignoradas",
+    "description": "Label of the deliveries not sent because the domain was suspended or the server unavailable."
+  },
+  "admin.closure.progress.succeeded": {
+    "defaultMessage": "Entregues",
+    "description": "Label of the deliveries accepted by the inbox."
+  },
+  "admin.closure.progress.title": {
+    "defaultMessage": "Andamento das entregas",
+    "description": "Heading of the progress of the closure's Delete deliveries."
+  },
+  "admin.closure.short_notice": {
+    "defaultMessage": "Isto dá aos usuários menos de {days} dias. Eles podem não ter tempo de exportar seus dados e migrar suas contas.",
+    "description": "Warning when the closing date is less than the days of a short notice away. {days} is a number of days."
+  },
+  "admin.closure.summary": {
+    "defaultMessage": "Anuncie o encerramento deste servidor, verifique o que ele termina, encerre-o e acompanhe as entregas.",
+    "description": "Description of the service closure screen in the administration menu."
+  },
+  "admin.closure.title": {
+    "defaultMessage": "Encerramento do serviço",
+    "description": "Title of the service closure screen in the administration and its menu entry."
+  },
+  "admin.closure.withdraw": {
+    "defaultMessage": "Retirar o anúncio",
+    "description": "Button, and the verb of its dialog, that withdraws the announcement of the closure."
+  },
+  "admin.closure.withdraw.description": {
+    "defaultMessage": "O aviso desaparece, os cadastros e os convites voltam a funcionar, e os usuários são informados de que o servidor continua. Você pode anunciar o encerramento de novo.",
+    "description": "What withdrawing the announcement of the closure does."
+  },
+  "admin.closure.withdraw.title": {
+    "defaultMessage": "Retirar o anúncio?",
+    "description": "Question of the dialog that withdraws the announcement of the closure."
+  },
+  "admin.closure.withdraw_failed": {
+    "defaultMessage": "Não foi possível retirar o anúncio: {reason}",
+    "description": "Error in the dialog after withdrawing failed. {reason} is why."
+  },
+  "admin.closure.withdrawn": {
+    "defaultMessage": "O anúncio foi retirado. O servidor continua como antes.",
+    "description": "Status after the announcement of the closure was withdrawn."
+  }
+}

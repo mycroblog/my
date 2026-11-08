@@ -1,0 +1,6 @@
+{
+  "bookmarks.title": {
+    "defaultMessage": "Itens salvos",
+    "description": "Heading and document title of the page that lists the posts the user bookmarked. Bookmarks are private."
+  }
+}

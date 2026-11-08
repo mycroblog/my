@@ -1,0 +1,118 @@
+{
+  "admin.instance.back": {
+    "defaultMessage": "Voltar para servidores remotos",
+    "description": "Link under the heading of a remote server's page that opens the list of remote servers."
+  },
+  "admin.instance.event.marked_available": {
+    "defaultMessage": "Entregas retomadas",
+    "description": "Heading of an entry of a remote server's history: deliveries to it resumed."
+  },
+  "admin.instance.event.marked_unavailable": {
+    "defaultMessage": "Entregas pausadas",
+    "description": "Heading of an entry of a remote server's history: deliveries to it were paused."
+  },
+  "admin.instance.failure_days": {
+    "defaultMessage": "Dias com entregas que falharam",
+    "description": "Term in a remote server's details: on how many different days deliveries to it failed in a row."
+  },
+  "admin.instance.failure_days.value": {
+    "defaultMessage": "{count, plural, one {# dia} other {# dias}}",
+    "description": "The number of days with failed deliveries to a remote server."
+  },
+  "admin.instance.history.empty": {
+    "defaultMessage": "As entregas para este servidor nunca foram pausadas",
+    "description": "Text of a remote server's history when deliveries to it were never paused or resumed."
+  },
+  "admin.instance.history.title": {
+    "defaultMessage": "Histórico",
+    "description": "Heading of the history of a remote server: when deliveries to it were paused and resumed, and why."
+  },
+  "admin.instance.last_failure": {
+    "defaultMessage": "Última entrega que falhou",
+    "description": "Term in a remote server's details: the last day a delivery to it failed."
+  },
+  "admin.instance.last_resumed": {
+    "defaultMessage": "Última retomada das entregas",
+    "description": "Term in a remote server's details: the last time deliveries to it resumed after a pause."
+  },
+  "admin.instance.mark_available": {
+    "defaultMessage": "Retomar entregas",
+    "description": "Button on a remote server's page that clears its failures and resumes deliveries to it."
+  },
+  "admin.instance.mark_available.description": {
+    "defaultMessage": "Limpa os dias de falha, para que o servidor volte a receber todas as entregas.",
+    "description": "Description under the button that resumes deliveries to a remote server."
+  },
+  "admin.instance.mark_failed": {
+    "defaultMessage": "Não foi possível retomar as entregas: {reason}",
+    "description": "Error toast when deliveries to a remote server could not be resumed. {reason} is the server's localized reason."
+  },
+  "admin.instance.marked_available": {
+    "defaultMessage": "As entregas para {domain} serão retomadas.",
+    "description": "Announcement after an operator resumed deliveries to a remote server. {domain} is its domain."
+  },
+  "admin.instance.moderation.description": {
+    "defaultMessage": "Veja as ações de moderação sobre o domínio deste servidor ou tome uma nova.",
+    "description": "Help text under the link from a remote server's page to its domain actions."
+  },
+  "admin.instance.moderation.link": {
+    "defaultMessage": "Ações sobre o domínio",
+    "description": "Link on a remote server's page that opens the domain actions of its domain."
+  },
+  "admin.instance.moderation.title": {
+    "defaultMessage": "Moderação",
+    "description": "Heading of the section of a remote server's page that links to its domain actions."
+  },
+  "admin.instance.none": {
+    "defaultMessage": "Nenhum",
+    "description": "Value of a term in a remote server's details that has nothing to show, such as the last failure of a server without failures."
+  },
+  "admin.instance.reason": {
+    "defaultMessage": "Motivo",
+    "description": "Term in a remote server's details: why deliveries to it were last paused or resumed."
+  },
+  "admin.instance.reason.delivery_succeeded": {
+    "defaultMessage": "Uma entrega ao servidor foi bem-sucedida.",
+    "description": "Why deliveries to a remote server resumed: a delivery to it succeeded."
+  },
+  "admin.instance.reason.failure_days": {
+    "defaultMessage": "As entregas falharam em 7 dias diferentes.",
+    "description": "Why deliveries to a remote server were paused: they failed on 7 different days."
+  },
+  "admin.instance.reason.inbound_request": {
+    "defaultMessage": "O servidor enviou uma requisição assinada.",
+    "description": "Why deliveries to a remote server resumed: it sent this server a signed request."
+  },
+  "admin.instance.reason.operator": {
+    "defaultMessage": "Um operador retomou as entregas.",
+    "description": "Why deliveries to a remote server resumed: an operator resumed them."
+  },
+  "admin.instance.reason.probe_succeeded": {
+    "defaultMessage": "A verificação diária alcançou o servidor.",
+    "description": "Why deliveries to a remote server resumed: the daily check reached it."
+  },
+  "admin.instance.since": {
+    "defaultMessage": "Desde",
+    "description": "Term in a remote server's details: since when it is in its state."
+  },
+  "admin.instance.state": {
+    "defaultMessage": "Estado",
+    "description": "Term in a remote server's details: whether deliveries go to it."
+  },
+  "admin.instance.state.available": {
+    "defaultMessage": "Recebendo entregas",
+    "description": "State of a remote server that gets every delivery."
+  },
+  "admin.instance.state.unavailable": {
+    "defaultMessage": "Pausado",
+    "description": "State of a remote server that gets only follow requests and their answers, because deliveries to it kept failing."
+  },
+  "admin.instance.column.event": {
+    "defaultMessage": "Evento",
+    "description": "Header of the column of a remote server's availability history that names what happened."
+  },
+  "admin.instance.column.occurred_at": {
+    "defaultMessage": "Quando",
+    "description": "Header of the column of a remote server's availability history that holds when it happened."
+  }
+}
