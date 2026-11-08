@@ -1,0 +1,137 @@
+---
+# source: 0579b8a800fd
+title: mycroblog
+description: 從小規模起步、隨著社群一起成長的聯邦宇宙微網誌。
+template: splash
+hero:
+  tagline: |
+    <p><strong>mycroblog</strong> — 從小規模起步、隨著社群一起成長的聯邦宇宙微網誌。</p>
+    <p>mycroblog 的伺服器 <code>my</code> 支援 ActivityPub，以 Go 撰寫。你可以從一台小型機器，或是一個可縮減到零的容器搭配 SQLite 開始。社群成長之後，再移轉到 PostgreSQL、任務佇列、串流代理（stream broker），以及分開的 Web 與 worker 程序：程式碼相同，資料也相同。</p>
+  image:
+    light: ../../assets/wordmark-light.svg
+    dark: ../../assets/wordmark-dark.svg
+    alt: mycroblog
+  actions:
+    # A document is named by its repository path; src/routeData.ts makes it the page's URL under the base path.
+    - text: 架設伺服器
+      link: docs/operations/overview.md
+      icon: right-arrow
+      variant: primary
+    - text: GitHub 上的原始碼
+      link: https://github.com/mycroblog/my
+      icon: github
+      variant: minimal
+---
+
+{/* SPDX-License-Identifier: AGPL-3.0-only */}
+
+import { Card, CardGrid } from "@astrojs/starlight/components";
+import DocLinks from "../../components/DocLinks.astro";
+import Screenshot from "../../components/Screenshot.astro";
+
+<Screenshot
+  name="home"
+  alt="mycroblog 的首頁時間軸：一則引用了湖泊與夕陽兩張照片、帶有自訂表情符號回應的貼文，接著是一則關於麵包的日文貼文；旁邊是導覽列、最新通知與伺服器資訊。"
+  eager
+/>
+
+## 功能
+
+<CardGrid>
+  <Card title="從小處起步，向外擴展" icon="rocket">
+    一個執行檔加上 SQLite，跑在每月 5 美元的 VM 上，或是一個可縮減到零的容器。之後可以成長到 PostgreSQL、Cloud Tasks、Valkey、Pub/Sub 或 SNS、置於 CDN 後方的 S3 或 GCS，以及你需要的任意數量的 Web 與 worker 程序。
+  </Card>
+  <Card title="聯邦互通" icon="random">
+    追蹤、貼文、引用貼文與自訂表情符號回應，都能與 Mastodon、Misskey、GoToSocial 等伺服器互相往來。「本站」可見範圍讓貼文只留在你的伺服器與你的追蹤者之間。
+  </Card>
+  <Card title="支持者與公開帳目" icon="heart">
+    透過 Stripe 或 PAY.JP 提供付費方案，授予角色、徽章以及新增自訂表情符號的權限。記錄伺服器的花費，自動匯入 AWS 與 Google Cloud 的帳單，並向社群公開支出與收入。
+  </Card>
+  <Card title="語音房間" icon="comment">
+    為你伺服器上的人提供即時語音房間，具備主持人、發言者、邀請與回應。小房間採用點對點連線，大房間則使用 LiveKit 或 Sora。
+  </Card>
+  <Card title="人人都能用的 Web 應用程式" icon="laptop">
+    可安裝的 Web 應用程式，支援推播通知與通行金鑰，從第一天起就提供多語系翻譯。
+  </Card>
+  <Card title="內建審核功能" icon="approve-check-circle">
+    可申訴的檢舉、網域封鎖、稽核記錄，以及讓你自己的程式在接受貼文與註冊之前先行審查的決策 hook。
+  </Card>
+  <Card title="自行擴充" icon="puzzle">
+    透過有版本的協定運作的外掛、伺服器 webhook、OAuth 應用程式，以及 Go 與 TypeScript 的用戶端與機器人函式庫。貼文翻譯則透過你選擇的外掛執行。
+  </Card>
+</CardGrid>
+
+## 實際畫面
+
+<CardGrid>
+  <Screenshot
+    name="post"
+    caption="聯邦互通"
+    alt="一則引用其他伺服器貼文的貼文，附有兩張照片，以及它的回覆、轉發、喜歡與自訂表情符號回應。"
+  />
+  <Screenshot
+    name="supporters"
+    caption="支持者與公開帳目"
+    alt="某個伺服器的支持者頁面：各付費方案「Coffee」與「A whole loaf of sourdough every month」的成員及其大頭貼。"
+  />
+  <Screenshot
+    name="voice-room"
+    caption="語音房間"
+    alt="一個已開啟 47 分鐘的即時語音房間「Sunday baking club」：台上有主持人、共同主持人與兩位發言者，另有四位聽眾，其中一位舉手。"
+  />
+  <Screenshot
+    name="reports"
+    caption="內建審核功能"
+    alt="版主的檢舉佇列：五件待處理的檢舉，列出類別、檢舉者、負責處理者，以及已等待多久。"
+  />
+</CardGrid>
+
+## 文件
+
+<CardGrid>
+  <DocLinks
+    title="架設伺服器"
+    icon="setting"
+    links={[
+      { path: "docs/operations/overview.md", label: "mycroblog 伺服器概覽" },
+      { path: "docs/operations/running.md", label: "執行伺服器" },
+      { path: "docs/operations/deploy-docker-compose.md", label: "使用 Docker Compose 部署" },
+      { path: "docs/operations/deploy-cloud-run.md", label: "在 Cloud Run 上部署" },
+      { path: "docs/operations/production-checklist.md", label: "正式環境檢查清單" },
+    ]}
+  />
+  <DocLinks
+    title="使用 mycroblog"
+    icon="open-book"
+    links={[
+      { path: "docs/guide/signing-in.md", label: "註冊與登入" },
+      { path: "docs/guide/posting.md", label: "發文與選擇誰能看到貼文" },
+      { path: "docs/guide/following.md", label: "追蹤他人與閱讀時間軸" },
+      { path: "docs/guide/voice-chat.md", label: "語音聊天" },
+    ]}
+  />
+  <DocLinks
+    title="以 mycroblog 為基礎開發"
+    icon="pencil"
+    links={[
+      { path: "docs/developers/client-api.md", label: "用戶端 API（英文）" },
+      { path: "api/openapi.yaml", label: "API 參考（英文）" },
+      { path: "docs/developers/libraries.md", label: "用戶端函式庫（英文）" },
+    ]}
+  />
+  <DocLinks
+    title="參考"
+    icon="list-format"
+    links={[
+      { path: "docs/reference/configuration.md", label: "設定參考（英文）" },
+      { path: "docs/reference/cli.md", label: "指令參考（英文）" },
+      { path: "docs/reference/jobs.md", label: "任務（英文）" },
+    ]}
+  />
+</CardGrid>
+
+**狀態：開發中，尚未發布第一個版本（v0）**。在 `v0.1.0` 之前，升級後資料可能無法保留：資料庫可能需要重新建立。從 `v0.1.0` 開始，版本之間的每次升級都會保留你的資料。
+
+## 授權條款
+
+`my` 是採用 GNU Affero 通用公共授權條款第 3 版（僅限此版本，AGPL-3.0-only）的自由軟體。其 API 的用戶端函式庫採用 MIT 授權條款。
