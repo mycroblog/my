@@ -212,15 +212,15 @@
     "description": "Notification sentence: the server's maximum of the automatic deletion of old posts now applies to the user's posts, and after a grace period it deletes the posts that the user's own settings keep. The settings of the automatic deletion show which posts will go."
   },
   "notifications.type.supporter_payment_failed": {
-    "defaultMessage": "你的贊助方案付款失敗",
+    "defaultMessage": "你的支持者方案付款失敗",
     "description": "Notification sentence: a payment for the user's supporter plan failed and the grace period began."
   },
   "notifications.type.supporter_subscription_ended": {
-    "defaultMessage": "你的贊助方案已結束",
+    "defaultMessage": "你的支持者方案已結束",
     "description": "Notification sentence: the user's supporter subscription ended, and the plan's benefits with it."
   },
   "notifications.type.supporter_plan_retired": {
-    "defaultMessage": "管理員已停止提供你的贊助方案",
+    "defaultMessage": "管理員已停止提供你的支持者方案",
     "description": "Notification sentence: the administrators retired the user's supporter plan."
   },
   "notifications.supporter.grace": {
@@ -240,7 +240,7 @@
     "description": "Link in the notification of a failed payment for a supporter plan to the supporter page, where the user fixes the payment method. Not shown in the mobile app."
   },
   "notifications.link.supporter": {
-    "defaultMessage": "開啟你的贊助方案",
+    "defaultMessage": "開啟你的支持者方案",
     "description": "Link in the notification of an ended supporter subscription or a retired plan to the supporter page. Not shown in the mobile app."
   },
   "notifications.custom_emoji_request.reason": {

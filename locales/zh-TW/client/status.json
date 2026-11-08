@@ -268,19 +268,19 @@
     "description": "Accessible name of the link on a post of another server to its page on that server; the link shows only {host}, that server's host name, for example 'mastodon.social'."
   },
   "status.pin.action": {
-    "defaultMessage": "置頂到個人檔案",
+    "defaultMessage": "釘選到個人檔案",
     "description": "Menu item, on the user's own post, that pins it to the top of their profile."
   },
   "status.pin.done": {
-    "defaultMessage": "已將貼文置頂到你的個人檔案",
+    "defaultMessage": "已將貼文釘選到你的個人檔案",
     "description": "Toast after the user pinned their post to their profile."
   },
   "status.pin.failed": {
-    "defaultMessage": "無法置頂貼文：{reason}",
+    "defaultMessage": "無法釘選貼文：{reason}",
     "description": "Toast when pinning the user's post failed, for example because they already pinned as many posts as allowed. {reason} is the error message, a full sentence."
   },
   "status.pin.label": {
-    "defaultMessage": "置頂貼文",
+    "defaultMessage": "釘選貼文",
     "description": "Line above a post at the top of a profile that the account pinned there."
   },
   "status.poll.choose_many": {
@@ -424,15 +424,15 @@
     "description": "Next to the translate button: the translation services do not translate this language."
   },
   "status.unpin.action": {
-    "defaultMessage": "從個人檔案取消置頂",
+    "defaultMessage": "從個人檔案取消釘選",
     "description": "Menu item, on the user's own pinned post, that removes it from the top of their profile."
   },
   "status.unpin.done": {
-    "defaultMessage": "已從你的個人檔案取消置頂貼文",
+    "defaultMessage": "已從你的個人檔案取消釘選貼文",
     "description": "Toast after the user unpinned their post from their profile."
   },
   "status.unpin.failed": {
-    "defaultMessage": "無法取消置頂貼文：{reason}",
+    "defaultMessage": "無法取消釘選貼文：{reason}",
     "description": "Toast when unpinning the user's post failed. {reason} is the error message, a full sentence."
   },
   "status.thread.ancestors": {

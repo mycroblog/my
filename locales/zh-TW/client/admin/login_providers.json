@@ -16,7 +16,7 @@
     "description": "Description of the checkbox that allows signing up with a login provider."
   },
   "admin.login_providers.back": {
-    "defaultMessage": "返回登入服務供應商",
+    "defaultMessage": "返回登入服務",
     "description": "Link from the page of a login provider, or of the form of a new one, back to the list."
   },
   "admin.login_providers.callback": {
@@ -48,7 +48,7 @@
     "description": "Button that closes a dialog of a login provider without changing it."
   },
   "admin.login_providers.change_failed": {
-    "defaultMessage": "無法變更登入服務供應商：{reason}",
+    "defaultMessage": "無法變更登入服務：{reason}",
     "description": "Error of a change of a login provider. {reason} is the server's reason."
   },
   "admin.login_providers.claims": {
@@ -124,7 +124,7 @@
     "description": "Status after deleting a login provider."
   },
   "admin.login_providers.detail.title": {
-    "defaultMessage": "登入服務供應商",
+    "defaultMessage": "登入服務",
     "description": "Heading of the page of one login provider."
   },
   "admin.login_providers.disable": {
@@ -160,7 +160,7 @@
     "description": "The kind of the provider in its edit dialog, which cannot change. {kind} is the kind's name."
   },
   "admin.login_providers.empty": {
-    "defaultMessage": "尚無登入服務供應商",
+    "defaultMessage": "尚無登入服務",
     "description": "Heading of the empty list of login providers."
   },
   "admin.login_providers.empty.description": {
@@ -228,11 +228,11 @@
     "description": "Button of the dialog: enables the provider, which starts the limit."
   },
   "admin.login_providers.limit_start.failed": {
-    "defaultMessage": "伺服器無法判斷這是否會開始限制只能透過登入服務供應商登入。如果已設定此限制，且目前還沒有可用的供應商，限制會立即開始，沒有連結的使用者在工作階段結束後將無法登入。",
+    "defaultMessage": "伺服器無法判斷這是否會開始限制只能透過登入服務登入。如果已設定此限制，且目前還沒有可用的供應商，限制會立即開始，沒有連結的使用者在工作階段結束後將無法登入。",
     "description": "In the dialog when the count could not be read before setting up or enabling a login provider."
   },
   "admin.login_providers.limit_start.lead": {
-    "defaultMessage": "登入已設定為只能透過登入服務供應商進行，而目前還沒有可用的供應商，因此這個供應商會立即開始限制：密碼與通行金鑰將無法再登入，密碼也無法再用於註冊或重設。",
+    "defaultMessage": "登入已設定為只能透過登入服務進行，而目前還沒有可用的供應商，因此這個供應商會立即開始限制：密碼與通行金鑰將無法再登入，密碼也無法再用於註冊或重設。",
     "description": "First part of the dialog before a login provider starts the limit of sign-in to login providers."
   },
   "admin.login_providers.limit_start.recovery": {
@@ -244,7 +244,7 @@
     "description": "In the dialog when the administrator who confirms would have no link to a login provider."
   },
   "admin.login_providers.limit_start.title": {
-    "defaultMessage": "要開始限制只能透過登入服務供應商登入嗎？",
+    "defaultMessage": "要開始限制只能透過登入服務登入嗎？",
     "description": "Title of the dialog before setting up or enabling a login provider starts the limit of sign-in to login providers."
   },
   "admin.login_providers.linked_users": {
@@ -256,7 +256,7 @@
     "description": "The number of users linked to a login provider."
   },
   "admin.login_providers.list.title": {
-    "defaultMessage": "這個伺服器的登入服務供應商",
+    "defaultMessage": "這個伺服器的登入服務",
     "description": "Heading of the list of login providers."
   },
   "admin.login_providers.manage.title": {
@@ -308,7 +308,7 @@
     "description": "Button that saves the changes of a login provider."
   },
   "admin.login_providers.save_failed": {
-    "defaultMessage": "無法儲存登入服務供應商：{reason}",
+    "defaultMessage": "無法儲存登入服務：{reason}",
     "description": "Error of a refused login provider. {reason} is the server's reason."
   },
   "admin.login_providers.scopes": {
@@ -364,7 +364,7 @@
     "description": "Description of the login providers screen in the administration menu."
   },
   "admin.login_providers.title": {
-    "defaultMessage": "登入服務供應商",
+    "defaultMessage": "登入服務",
     "description": "Heading of the login providers screen, and its link in the administration menu."
   },
   "admin.login_providers.updated": {

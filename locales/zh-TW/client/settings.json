@@ -644,7 +644,7 @@
     "description": "Heading and document title of the settings page that edits the user's profile."
   },
   "settings.badges.title": {
-    "defaultMessage": "徽章與贊助者列表",
+    "defaultMessage": "徽章與支持者列表",
     "description": "Heading and document title of the settings page that chooses the role badges the profile shows and whether the user is on the supporter list."
   },
   "settings.badges.none": {
@@ -1460,7 +1460,7 @@
     "description": "Label of the field of the scopes of an OAuth app."
   },
   "settings.apps.scope.description": {
-    "defaultMessage": "應用程式最多可以要求的範圍，以空格分隔，例如「read write」。應用程式無法使用管理和贊助者範圍。",
+    "defaultMessage": "應用程式最多可以要求的範圍，以空格分隔，例如「read write」。應用程式無法使用管理和支持者範圍。",
     "description": "Description of the scopes field of an OAuth app."
   },
   "settings.apps.scope.required": {
@@ -2380,7 +2380,7 @@
     "description": "Row of the notification settings table: the closure of the service was announced, rescheduled or withdrawn."
   },
   "settings.notifications.group.supporter": {
-    "defaultMessage": "你的贊助方案",
+    "defaultMessage": "你的支持者方案",
     "description": "Row of the notification settings table: a failed payment for the user's supporter plan, its end, and its retirement. Not shown in the mobile app."
   },
   "settings.notifications.group.announcement": {

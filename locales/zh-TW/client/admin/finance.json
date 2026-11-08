@@ -40,7 +40,7 @@
     "description": "Heading of the empty list of the money movements of the income."
   },
   "admin.finance.movements.empty.description": {
-    "defaultMessage": "金流服務商記錄贊助方案的付款後，就會顯示在這裡。",
+    "defaultMessage": "金流服務商記錄支持者方案的付款後，就會顯示在這裡。",
     "description": "Explanation of the empty list of the money movements of the income."
   },
   "admin.finance.movements.kind.payment": {

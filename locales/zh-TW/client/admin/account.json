@@ -488,7 +488,7 @@
     "description": "Error in the confirmation when the lift failed. {reason} is the server's explanation."
   },
   "admin.account.password_reset.login_providers_only": {
-    "defaultMessage": "這個連結目前無法使用：這個伺服器只允許透過登入服務供應商登入。只有在連結過期前解除這項限制，連結才能使用。",
+    "defaultMessage": "這個連結目前無法使用：這個伺服器只允許透過登入服務登入。只有在連結過期前解除這項限制，連結才能使用。",
     "description": "Under a password reset link issued while the instance limits sign-in to login providers."
   },
   "admin.account.registration.invited_by": {

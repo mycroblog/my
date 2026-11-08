@@ -104,7 +104,7 @@
     "description": "Heading of the section of the terms and policies screen where administrators write the commerce disclosures of the supporter plans (ADR-0072 §13)."
   },
   "admin.documents.commerce_disclosure.description": {
-    "defaultMessage": "你所在國家的法律要求賣方揭露的事項，例如日本依《特定商取引法》所需的標示。這些內容會公開於 /about/commerce，贊助者相關畫面也會連結到這裡。伺服器不會檢查或保證內容符合法律：請自行確認法律的要求。",
+    "defaultMessage": "你所在國家的法律要求賣方揭露的事項，例如日本依《特定商取引法》所需的標示。這些內容會公開於 /about/commerce，支持者相關畫面也會連結到這裡。伺服器不會檢查或保證內容符合法律：請自行確認法律的要求。",
     "description": "Description of the commerce disclosures on the terms and policies screen: what they are, where they are published, and that the software does not guarantee their legal correctness."
   },
   "admin.documents.view_commerce_disclosure": {

@@ -4,7 +4,7 @@
     "description": "Term in a job's details: how many times the job ran."
   },
   "admin.jobs.back": {
-    "defaultMessage": "返回工作列表",
+    "defaultMessage": "返回任務列表",
     "description": "Link from the page of one job back to the job list."
   },
   "admin.jobs.column.type": {
@@ -20,15 +20,15 @@
     "description": "Heading of the section of a job's page with its type, creation time, worker, lease and keys, and its last error."
   },
   "admin.jobs.detail_title": {
-    "defaultMessage": "工作",
+    "defaultMessage": "任務",
     "description": "Title and heading of the page of one job of the job queue."
   },
   "admin.jobs.empty": {
-    "defaultMessage": "沒有工作",
+    "defaultMessage": "沒有任務",
     "description": "Heading of the job list when no job is in the selected state."
   },
   "admin.jobs.empty.dead": {
-    "defaultMessage": "沒有失敗的工作",
+    "defaultMessage": "沒有失敗的任務",
     "description": "Heading of the job list of failed jobs when no job failed for good."
   },
   "admin.jobs.failed_at": {
@@ -36,7 +36,7 @@
     "description": "Term in a failed job's details: when the job failed for good."
   },
   "admin.jobs.filter.label": {
-    "defaultMessage": "工作狀態",
+    "defaultMessage": "任務狀態",
     "description": "Accessible name of the select of the job list that filters the jobs by state."
   },
   "admin.jobs.filter.pending": {
@@ -96,7 +96,7 @@
     "description": "Term in a job's details: why the job's last run failed."
   },
   "admin.jobs.list.caption": {
-    "defaultMessage": "工作：{filter}",
+    "defaultMessage": "任務：{filter}",
     "description": "Visually hidden caption of the job table. {filter} is the selected state filter, such as admin.jobs.state.dead."
   },
   "admin.jobs.locked_until": {
@@ -116,7 +116,7 @@
     "description": "Outcome of a failed run of a job that runs again, in the heading of its record."
   },
   "admin.jobs.page.list": {
-    "defaultMessage": "工作列表",
+    "defaultMessage": "任務列表",
     "description": "Link of the local navigation of the jobs screen to the table of the jobs of one state; also the title of that page."
   },
   "admin.jobs.page.queue": {
@@ -124,7 +124,7 @@
     "description": "Link of the local navigation of the jobs screen to its first page: the state of the job queue."
   },
   "admin.jobs.pages": {
-    "defaultMessage": "工作頁面",
+    "defaultMessage": "任務頁面",
     "description": "Name of the local navigation between the pages of the jobs screen (the queue's state and the job list)."
   },
   "admin.jobs.payload": {
@@ -136,11 +136,11 @@
     "description": "Term in the queue's details: the kind of job queue the server runs, such as db or cloudtasks."
   },
   "admin.jobs.queue.by_state": {
-    "defaultMessage": "依狀態分類的工作",
+    "defaultMessage": "依狀態分類的任務",
     "description": "Accessible name of the tiles of the jobs screen: the longest wait and the count of the jobs of each state."
   },
   "admin.jobs.queue.by_type": {
-    "defaultMessage": "依類型分類的工作",
+    "defaultMessage": "依類型分類的任務",
     "description": "Accessible name of the list of the counts of the jobs of each job type."
   },
   "admin.jobs.queue.heading": {
@@ -148,15 +148,15 @@
     "description": "Heading of the region of the jobs screen with the counts of the jobs of the queue."
   },
   "admin.jobs.queue.no_listing": {
-    "defaultMessage": "這個佇列無法列出等待中、執行中與重試中的工作：請在平台的指標中查看其積壓量。失敗的工作及其嘗試記錄會列出。",
+    "defaultMessage": "這個佇列無法列出等待中、執行中與重試中的任務：請在平台的指標中查看其積壓量。失敗的任務及其嘗試記錄會列出。",
     "description": "Note of the queue region when the queue (Cloud Tasks) cannot list its pending jobs."
   },
   "admin.jobs.retried": {
-    "defaultMessage": "工作 {type} 已排入佇列，將再次執行。",
+    "defaultMessage": "任務 {type} 已排入佇列，將再次執行。",
     "description": "Announcement after an operator ran a failed job again. {type} is the job type, such as federation.deliver."
   },
   "admin.jobs.retry_failed": {
-    "defaultMessage": "無法再次執行工作：{reason}",
+    "defaultMessage": "無法再次執行任務：{reason}",
     "description": "Error toast when a failed job could not be run again. {reason} is the server's localized reason."
   },
   "admin.jobs.retry_job": {
@@ -192,19 +192,19 @@
     "description": "State of a job that a worker runs now; also a tab and a count."
   },
   "admin.jobs.summary": {
-    "defaultMessage": "等待中、執行中、重試中與失敗的背景工作、失敗原因，以及再次執行失敗的工作。",
+    "defaultMessage": "等待中、執行中、重試中與失敗的背景任務、失敗原因，以及再次執行失敗的任務。",
     "description": "Description of the jobs screen in the administration menu of the settings."
   },
   "admin.jobs.title": {
-    "defaultMessage": "工作",
+    "defaultMessage": "任務",
     "description": "Heading of the admin screen of the background job queue (waiting, running, retrying and failed jobs), and its link in the administration menu."
   },
   "admin.jobs.unlisted": {
-    "defaultMessage": "這個佇列無法列出這些工作",
+    "defaultMessage": "這個佇列無法列出這些任務",
     "description": "Heading in place of the list of pending jobs when the queue (Cloud Tasks) cannot list them."
   },
   "admin.jobs.unlisted.description": {
-    "defaultMessage": "請在平台的指標中查看積壓量。失敗的工作會列在「失敗」之下。",
+    "defaultMessage": "請在平台的指標中查看積壓量。失敗的任務會列在「失敗」之下。",
     "description": "Description in place of the list of pending jobs when the queue cannot list them."
   },
   "admin.jobs.worker": {

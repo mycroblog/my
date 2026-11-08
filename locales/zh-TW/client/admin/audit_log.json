@@ -452,23 +452,23 @@
     "description": "Kind of target of an audited operation: a cost of the instance, shown by its name."
   },
   "admin.audit_log.action.supporter_program_enabled": {
-    "defaultMessage": "已啟用贊助者計畫",
+    "defaultMessage": "已啟用支持者計畫",
     "description": "Kind of an audited operation: an administrator enabled the supporter program."
   },
   "admin.audit_log.action.supporter_program_disabled": {
-    "defaultMessage": "已停用贊助者計畫",
+    "defaultMessage": "已停用支持者計畫",
     "description": "Kind of an audited operation: an administrator disabled the supporter program."
   },
   "admin.audit_log.action.supporter_plan_created": {
-    "defaultMessage": "已建立贊助方案",
+    "defaultMessage": "已建立支持者方案",
     "description": "Kind of an audited operation: an administrator created a supporter plan."
   },
   "admin.audit_log.action.supporter_plan_revised": {
-    "defaultMessage": "已變更贊助方案",
+    "defaultMessage": "已變更支持者方案",
     "description": "Kind of an audited operation: an administrator changed the terms of a supporter plan or its role."
   },
   "admin.audit_log.action.supporter_plan_retired": {
-    "defaultMessage": "已停止提供贊助方案",
+    "defaultMessage": "已停止提供支持者方案",
     "description": "Kind of an audited operation: an administrator retired a supporter plan."
   },
   "admin.audit_log.action.supporter_subscription_ended": {
@@ -476,11 +476,11 @@
     "description": "Kind of an audited operation: an administrator ended a subscription to a supporter plan at once, without a refund."
   },
   "admin.audit_log.target_kind.supporter_program": {
-    "defaultMessage": "贊助者計畫",
+    "defaultMessage": "支持者計畫",
     "description": "Kind of target of an audited operation: the supporter program, shown by its payment provider."
   },
   "admin.audit_log.target_kind.supporter_plan": {
-    "defaultMessage": "贊助方案",
+    "defaultMessage": "支持者方案",
     "description": "Kind of target of an audited operation: a supporter plan, shown by its name."
   },
   "admin.audit_log.target_kind.supporter_subscription": {
@@ -564,27 +564,27 @@
     "description": "Kind of an audited operation: a moderator ended an open voice chat room."
   },
   "admin.audit_log.action.login_provider_created": {
-    "defaultMessage": "已新增登入提供者",
+    "defaultMessage": "已新增登入服務",
     "description": "Kind of an audited operation: an administrator set up an external login provider."
   },
   "admin.audit_log.action.login_provider_updated": {
-    "defaultMessage": "已變更登入提供者",
+    "defaultMessage": "已變更登入服務",
     "description": "Kind of an audited operation: the settings of an external login provider changed."
   },
   "admin.audit_log.action.login_provider_deleted": {
-    "defaultMessage": "已刪除登入提供者",
+    "defaultMessage": "已刪除登入服務",
     "description": "Kind of an audited operation: an external login provider was deleted."
   },
   "admin.audit_log.action.login_provider_enabled": {
-    "defaultMessage": "已啟用登入提供者",
+    "defaultMessage": "已啟用登入服務",
     "description": "Kind of an audited operation: an external login provider was enabled."
   },
   "admin.audit_log.action.login_provider_disabled": {
-    "defaultMessage": "已停用登入提供者",
+    "defaultMessage": "已停用登入服務",
     "description": "Kind of an audited operation: an external login provider was disabled."
   },
   "admin.audit_log.action.login_provider_secret_rotated": {
-    "defaultMessage": "已替換登入提供者密鑰",
+    "defaultMessage": "已替換登入服務密鑰",
     "description": "Kind of an audited operation: an external login provider got a new client secret."
   },
   "admin.audit_log.target_kind.oauth_client": {
@@ -628,7 +628,7 @@
     "description": "Kind of target of an audited operation: a domain with a rule of the link card crawler."
   },
   "admin.audit_log.target_kind.login_provider": {
-    "defaultMessage": "登入提供者",
+    "defaultMessage": "登入服務",
     "description": "Kind of target of an audited operation: an external identity provider that users sign in with, shown by its display name."
   }
 }

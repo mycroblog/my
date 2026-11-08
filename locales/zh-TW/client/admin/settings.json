@@ -864,7 +864,7 @@
     "description": "Choice of what happens when an external review fails."
   },
   "admin.settings.hooks.failure.retry.description": {
-    "defaultMessage": "工作會再次執行；對貼文和追蹤而言，這也會讓同一傳送者之後的所有內容（包括刪除）暫緩處理，最長約 4 小時。",
+    "defaultMessage": "任務會再次執行；對貼文和追蹤而言，這也會讓同一傳送者之後的所有內容（包括刪除）暫緩處理，最長約 4 小時。",
     "description": "Description of retrying when an external review fails."
   },
   "admin.settings.hooks.inbound_follow.mode": {

@@ -132,7 +132,7 @@
     "description": "Name of the permission manage_errors: the groups of the errors that the server and the web client report, resolving and muting them, and their notifications and webhook events."
   },
   "admin.roles.permission.manage_login_providers": {
-    "defaultMessage": "登入提供者",
+    "defaultMessage": "登入服務",
     "description": "Name of the permission manage_login_providers: setting up, changing, disabling, and deleting the external identity providers (OpenID Connect, GitHub, Mastodon) that users sign in and sign up with."
   },
   "admin.roles.permission.manage_oauth_apps": {
@@ -144,7 +144,7 @@
     "description": "Name of the permission manage_service_closure: announcing the closure of the service, changing its dates, withdrawing it, and closing the server."
   },
   "admin.roles.permission.manage_supporters": {
-    "defaultMessage": "贊助者",
+    "defaultMessage": "支持者",
     "description": "Name of the permission manage_supporters: the supporter program, its plans, and their subscriptions."
   },
   "admin.roles.permission.manage_custom_emojis": {
@@ -160,7 +160,7 @@
     "description": "Name of the permission manage_invites: the invites."
   },
   "admin.roles.permission.manage_jobs": {
-    "defaultMessage": "失敗的工作",
+    "defaultMessage": "失敗的任務",
     "description": "Name of the permission manage_jobs: the dead jobs of the job queue."
   },
   "admin.roles.permission.manage_reports": {

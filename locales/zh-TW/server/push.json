@@ -100,15 +100,15 @@
     "description": "Web Push notification. {name} is the display name, or the @handle, of an account that the user subscribes to, which made a new post."
   },
   "push.supporter_payment_failed": {
-    "defaultMessage": "你在 {instance} 的贊助方案付款失敗",
+    "defaultMessage": "你在 {instance} 的支持者方案付款失敗",
     "description": "Web Push notification: a payment for the user's supporter plan failed. It never says where to pay (the app shows no way to pay). {instance} is the server's display name, or its domain name when it has none."
   },
   "push.supporter_plan_retired": {
-    "defaultMessage": "你在 {instance} 的贊助方案已停止提供",
+    "defaultMessage": "你在 {instance} 的支持者方案已停止提供",
     "description": "Web Push notification: the administrators retired the user's supporter plan, whose subscription ends with its period. {instance} is the server's display name, or its domain name when it has none."
   },
   "push.supporter_subscription_ended": {
-    "defaultMessage": "你在 {instance} 的贊助方案已結束",
+    "defaultMessage": "你在 {instance} 的支持者方案已結束",
     "description": "Web Push notification: the user's supporter subscription ended (a payment kept failing, a refund, a retired plan, or a cancellation). {instance} is the server's display name, or its domain name when it has none."
   },
   "push.service_closure_announced": {

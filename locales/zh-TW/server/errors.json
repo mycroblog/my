@@ -224,7 +224,7 @@
     "description": "API error detail for HTTP 422 when a change to a role breaks a rule. {reason} is key, key_taken, position, permissions, builtin, held, missing_permission, badge_label, or badge_color."
   },
   "errors.role.managed_by_plan": {
-    "defaultMessage": "這個角色屬於贊助方案。",
+    "defaultMessage": "這個角色屬於支持者方案。",
     "description": "API error title for HTTP 409 when a change to a role is refused because a supporter plan manages it (ADR-0072 §5)."
   },
   "errors.role.managed_by_plan_detail": {
@@ -232,7 +232,7 @@
     "description": "API error detail for HTTP 409 when a role of a supporter plan is granted, revoked, changed, or deleted by hand."
   },
   "errors.role.breaks_supporter_roles": {
-    "defaultMessage": "管理人員的角色必須高於贊助方案的角色。",
+    "defaultMessage": "管理人員的角色必須高於支持者方案的角色。",
     "description": "API error title for HTTP 409 when a change would put a role with a moderation or server permission at or below the role of a supporter plan (ADR-0072 §5)."
   },
   "errors.subscription_blocked": {
@@ -248,15 +248,15 @@
     "description": "Detail of the HTTP 422 API error when the user subscribes to the new posts of an account on another server that they do not follow; subscribing to such an account needs a follow."
   },
   "errors.supporters.unavailable": {
-    "defaultMessage": "這個伺服器無法使用贊助者計畫。",
+    "defaultMessage": "這個伺服器無法使用支持者計畫。",
     "description": "API error title for HTTP 409 when the supporter program cannot be enabled or used: no payment provider is configured, the server sends no email, or the configured provider is not the program's (ADR-0072 §2)."
   },
   "errors.supporters.unavailable_detail": {
-    "defaultMessage": "{reason, select, no_provider {請先在伺服器的設定中設定金流服務商。} no_email {伺服器必須能寄送電子郵件，訂閱者才能驗證他們的地址。} provider_mismatch {目前設定的金流服務商不是啟用計畫時所用的服務商。請停用計畫後再重新啟用。} other {目前無法使用贊助者計畫。}}",
+    "defaultMessage": "{reason, select, no_provider {請先在伺服器的設定中設定金流服務商。} no_email {伺服器必須能寄送電子郵件，訂閱者才能驗證他們的地址。} provider_mismatch {目前設定的金流服務商不是啟用計畫時所用的服務商。請停用計畫後再重新啟用。} other {目前無法使用支持者計畫。}}",
     "description": "API error detail for HTTP 409 when the supporter program is unavailable. {reason} is no_provider, no_email, or provider_mismatch."
   },
   "errors.supporters.live_subscriptions": {
-    "defaultMessage": "贊助方案仍有訂閱在進行中。",
+    "defaultMessage": "支持者方案仍有訂閱在進行中。",
     "description": "API error title for HTTP 409 when an administrator disables the supporter program while subscriptions go on (ADR-0072 §2)."
   },
   "errors.supporters.live_subscriptions_detail": {
@@ -264,7 +264,7 @@
     "description": "API error detail for HTTP 409 when the supporter program is disabled while subscriptions go on."
   },
   "errors.supporters.plan_invalid": {
-    "defaultMessage": "無法儲存贊助方案。",
+    "defaultMessage": "無法儲存支持者方案。",
     "description": "API error title for HTTP 422 when a supporter plan breaks a rule; the detail says which (ADR-0072 §3 to §5)."
   },
   "errors.supporters.plan_invalid_detail": {
@@ -272,7 +272,7 @@
     "description": "API error detail for HTTP 422 when a supporter plan breaks a rule. {reason} is name, description, monthly_price, currency, annual_discount_percent, emoji_limit, rank, visibility, role_builtin, role_taken, role_held, role_permissions, role_position, order_rank, order_position, order_permissions, or order_emoji_limit."
   },
   "errors.supporters.plan_retired": {
-    "defaultMessage": "這個贊助方案已停止提供。",
+    "defaultMessage": "這個支持者方案已停止提供。",
     "description": "API error title for HTTP 409 when an administrator changes or retires a supporter plan that is retired."
   },
   "errors.supporters.subscription_ended": {
@@ -280,7 +280,7 @@
     "description": "API error title for HTTP 409 when an administrator cancels a subscription to a supporter plan that has ended."
   },
   "errors.supporters.ineligible": {
-    "defaultMessage": "你無法訂閱贊助方案。",
+    "defaultMessage": "你無法訂閱支持者方案。",
     "description": "API error title for HTTP 422 when a user who may not subscribe starts a subscription to a supporter plan (ADR-0072 §6); the detail says why."
   },
   "errors.supporters.ineligible_detail": {
@@ -296,7 +296,7 @@
     "description": "API error detail for HTTP 409 when a user who has a subscription starts another one."
   },
   "errors.supporters.plan_unavailable": {
-    "defaultMessage": "這個贊助方案不接受訂閱。",
+    "defaultMessage": "這個支持者方案不接受訂閱。",
     "description": "API error title for HTTP 422 when a user subscribes or changes to a supporter plan that takes no subscriptions (hidden, retired, not ready, or of another currency)."
   },
   "errors.service_closed": {
@@ -628,7 +628,7 @@
     "description": "API error title for HTTP 409 when the closure of the server is announced (ADR-0088 §2), which stops new registrations and supporter subscriptions."
   },
   "errors.service_closing_detail": {
-    "defaultMessage": "宣布關閉期間，會停止新的註冊和贊助者訂閱。",
+    "defaultMessage": "宣布關閉期間，會停止新的註冊和支持者訂閱。",
     "description": "API error detail for HTTP 409 when the closure of the server is announced: what stops."
   },
   "errors.account_moved": {
@@ -736,7 +736,7 @@
     "description": "Title of the HTTP 409 API error when the user links an account at an external login provider where they already have a linked account."
   },
   "errors.login_providers_only": {
-    "defaultMessage": "這個伺服器只能透過登入提供者登入，因此無法在這裡設定密碼和通行金鑰。",
+    "defaultMessage": "這個伺服器只能透過登入服務登入，因此無法在這裡設定密碼和通行金鑰。",
     "description": "Title of the HTTP 403 API error when a user sets a password or adds a passkey while the instance limits registration and sign-in to login providers."
   },
   "errors.deactivation.refused": {
@@ -764,7 +764,7 @@
     "description": "API error detail: the account cannot be deactivated because its registration waits for review."
   },
   "errors.deactivation.paid_subscription": {
-    "defaultMessage": "請先取消你的贊助者訂閱。",
+    "defaultMessage": "請先取消你的支持者訂閱。",
     "description": "API error detail: the account cannot be deactivated while a paid supporter subscription goes on."
   },
   "errors.deactivation.recently_reactivated": {
