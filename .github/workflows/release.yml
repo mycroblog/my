@@ -32,7 +32,9 @@ name: Release
 # The version is vX.Y.Z or vX.Y.Z-<pre-release>. A ref other than main takes a pre-release version only, so that the
 # gate can be tried on a branch without making a release of it. The suite's upgrade job upgrades from the latest patch
 # of the previous minor version; a pre-release may name another tag in `previous`, so that the job runs before any
-# minor version exists (`-f version=v0.0.0-test.2 -f previous=v0.0.0-test.1`).
+# minor version exists (`-f version=v0.0.0-test.2 -f previous=v0.0.0-test.1`). A pre-release before v0.1.0 that drops
+# a column or a table on purpose passes `allow_destructive`, so that the upgrade applies the schema with
+# -allow-destructive as its operators will; its notes must say so.
 
 on:
   workflow_dispatch:
@@ -45,6 +47,10 @@ on:
         description: "Pre-releases only: the tag the upgrade test upgrades from instead of the previous minor version's latest patch."
         type: string
         default: ""
+      allow_destructive:
+        description: "Pre-releases before v0.1.0 only: the upgrade test applies the schema with -allow-destructive, as the notes tell operators to."
+        type: boolean
+        default: false
 
 permissions: {}
 
@@ -74,6 +80,7 @@ jobs:
           GH_REPO: ${{ github.repository }}
           VERSION: ${{ inputs.version }}
           PREVIOUS: ${{ inputs.previous }}
+          ALLOW_DESTRUCTIVE: ${{ inputs.allow_destructive }}
           REF: ${{ github.ref }}
         run: |
           if ! [[ "$VERSION" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-[0-9A-Za-z]+(\.[0-9A-Za-z]+)*)?$ ]]; then
@@ -86,6 +93,10 @@ jobs:
           fi
           if [ -n "$PREVIOUS" ] && [[ "$VERSION" != *-* ]]; then
             echo "::error::previous is for pre-releases only: $VERSION upgrades from the previous minor version."
+            exit 1
+          fi
+          if [ "$ALLOW_DESTRUCTIVE" = true ] && ! [[ "$VERSION" =~ ^v0\.(0\.[0-9]+|1\.0)- ]]; then
+            echo "::error::allow_destructive is for pre-releases before v0.1.0 only: from v0.1.0 an upgrade keeps every column and table."
             exit 1
           fi
           for tag in "$VERSION" "pkg/mykit/$VERSION" "pkg/mybot/$VERSION"; do
@@ -133,6 +144,7 @@ jobs:
       version: ${{ inputs.version }}
       previous: ${{ inputs.previous }}
       scope: ${{ needs.gate.outputs.scope }}
+      allow_destructive: ${{ inputs.allow_destructive }}
     # The permissions of slow-suite.yml's CodeQL job.
     permissions:
       actions: read

@@ -106,6 +106,15 @@ When it fails, the job prints every container's logs. A failure in `my db upgrad
 that the previous release's data does not satisfy; a failure in the reads means data that the upgrade did not carry over.
 Fix it on `main` before releasing: [Versions](#versions) promises this upgrade.
 
+A pre-release before `v0.1.0` may drop a column or a table on purpose (a commit marked `!`), and `my schema apply` then refuses the plan
+with "the plan drops ... nothing was applied". Its operators run `my schema apply -allow-destructive`, and the test does the same when the
+run passes `allow_destructive`; `release.yml` refuses it for any other version. Say so in the release notes' **For operators** section.
+
+```sh
+gh workflow run release.yml -R mycroblog/my --ref main -f version=v0.1.0-rc.4 -f previous=v0.1.0-rc.3 -f allow_destructive=true
+UPGRADE_TEST_ALLOW_DESTRUCTIVE=1 scripts/task.sh docker:upgrade-test PREVIOUS=v0.1.0-rc.3   # locally
+```
+
 ## Release notes
 
 Every Release has the prose for its three readers, the sections below, and a link to the comparison with the previous release, which stands for the list of changes.

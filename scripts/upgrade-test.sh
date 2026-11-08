@@ -16,6 +16,12 @@
 #   scripts/upgrade-test.sh v0.1.3                    # SQLite and PostgreSQL
 #   scripts/upgrade-test.sh v0.1.3 postgres
 #
+# A pre-release before v0.1.0 may drop a column or a table on purpose; operators then run `my schema apply
+# -allow-destructive`, as its release notes say. UPGRADE_TEST_ALLOW_DESTRUCTIVE=1 makes the candidate's apply do the
+# same (the release workflow's input allow_destructive); without it, a plan that drops anything fails the test.
+#
+#   UPGRADE_TEST_ALLOW_DESTRUCTIVE=1 scripts/upgrade-test.sh v0.1.0-rc.3
+#
 # Needs docker with compose, git (with the tags), curl, jq, openssl.
 # The jq filters take their values as $variables (--arg), not from the shell.
 # shellcheck disable=SC2016
@@ -187,6 +193,9 @@ run() {
 	# The candidate: stop the previous server, then upgrade-check, my schema apply, upgrade, and the new server, in order.
 	"${compose[@]}" stop my >/dev/null
 	export MY_IMAGE="$candidate_image"
+	if [[ "${UPGRADE_TEST_ALLOW_DESTRUCTIVE:-}" == 1 ]]; then
+		export UPGRADE_TEST_SCHEMA_APPLY_FLAGS=-allow-destructive
+	fi
 	"${compose[@]}" up -d my
 	wait_ready
 	local svc id state

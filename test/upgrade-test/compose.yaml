@@ -82,7 +82,9 @@ services:
       <<: *app-deps
       upgrade-check:
         condition: service_completed_successfully
-    command: [schema, apply]
+    # UPGRADE_TEST_SCHEMA_APPLY_FLAGS: -allow-destructive for the candidate of a release whose notes call for it,
+    # set by scripts/upgrade-test.sh (UPGRADE_TEST_ALLOW_DESTRUCTIVE); never for the previous release's own apply.
+    command: schema apply ${UPGRADE_TEST_SCHEMA_APPLY_FLAGS:-}
     restart: "no"
 
   # A previous release's schema image (Atlas Community Edition and that release's schema/), for the previous phase of
