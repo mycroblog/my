@@ -10,7 +10,8 @@
 #               newest one
 #   /latest/    the newest of those, from the same tag
 #   /           the landing page and the 404 page of /latest/ (of /next/ before the first release, when /latest/
-#               redirects to /next/)
+#               redirects to /next/), robots.txt, and the one sitemap of the pages search engines index: the root and
+#               the pages of that same version; the pages of every other version carry noindex
 #
 # A pull request gets /next/ alone on the Workers Preview pr-<number> of the same Worker: docs-site-preview.yml builds
 # it from the pull request's checkout without secrets (build-preview), and docs-site-preview-deploy.yml publishes it
@@ -23,6 +24,9 @@
 #   scripts/docs-site.sh build <out dir>                        build every version and combine them in <out dir>
 #   scripts/docs-site.sh deploy <site dir>                      publish the combined site as the Worker
 #   scripts/docs-site.sh build-preview <out dir>                build /next/ of this checkout alone into <out dir>/next
+#   scripts/docs-site.sh index-site <site dir>                  write robots.txt and the root sitemap (build runs it)
+#   scripts/docs-site.sh check-site <site dir>                  check what a combined site tells search engines
+#   scripts/docs-site.sh check-preview <build dir>              check that no page of a preview build is indexed
 #   scripts/docs-site.sh stage-preview <build dir> <work dir>   check a preview build, copy it to <work dir>/site
 #   scripts/docs-site.sh pages <site dir> <url> <changed files> the Markdown list of the pages the changed files make
 #   scripts/docs-site.sh deploy-pr <build dir> <pr> [<changed files>]
@@ -75,7 +79,7 @@ die() {
 }
 
 usage() {
-  sed -n '22,32p' "$0" | sed 's/^# \{0,1\}//' >&2
+  sed -n '23,36p' "$0" | sed 's/^# \{0,1\}//' >&2
   exit 2
 }
 
@@ -119,13 +123,13 @@ resolve() {
   jq -n --argjson v "$entries" '{latest: ($v[0].minor // null), versions: $v}'
 }
 
-# build_tree TREE VERSION BASE REF RESOLVED DEST builds the site of the checkout TREE as VERSION under BASE and copies
-# it to DEST.
+# build_tree TREE VERSION BASE REF RESOLVED DEST [PREVIEW] builds the site of the checkout TREE as VERSION under BASE
+# and copies it to DEST; PREVIEW=1 builds it as a pull request's Preview, which no search engine indexes.
 build_tree() {
-  local tree="$1" version="$2" base="$3" ref="$4" resolved="$5" dest="$6"
+  local tree="$1" version="$2" base="$3" ref="$4" resolved="$5" dest="$6" preview="${7:-}"
   echo "docs-site: building $version ($ref) under $base" >&2
   (cd "$tree" && DOCS_SITE_VERSION="$version" DOCS_SITE_BASE="$base" DOCS_SITE_REF="$ref" DOCS_SITE_VERSIONS="$resolved" \
-    scripts/task.sh docs:site-build)
+    DOCS_SITE_PREVIEW="$preview" scripts/task.sh docs:site-build)
   [[ -f "$tree/app/docs/dist/index.html" ]] || die "the build of $version has no index.html"
   mkdir -p "$(dirname "$dest")"
   rm -rf "$dest"
@@ -173,7 +177,9 @@ build() {
   fi
   cp "$out/$home/index.html" "$out/index.html"
   [[ ! -f "$out/$home/404.html" ]] || cp "$out/$home/404.html" "$out/404.html"
+  index_site "$out"
   check "$out"
+  check_site "$out"
   echo "docs-site: built next and $count released version(s) in $out" >&2
 }
 
@@ -184,6 +190,143 @@ check() {
   ((count <= max_files)) || die "the site has $count files, more than $max_files"
   bad="$(find "$site" -type f -size +"$max_file_bytes"c -print -quit)"
   [[ -z "$bad" ]] || die "${bad#"$site"/} is larger than $max_file_bytes bytes"
+}
+
+# What search engines read (app/docs/src/indexing.ts): one version is indexed, /latest/ once a release exists and
+# /next/ before the first one; the pages of the other versions carry noindex, and the landing page of the indexed
+# version is the root of the domain. index_site writes robots.txt and the one sitemap at the root, and check_site and
+# check_preview fail a build that breaks any of it.
+origin="https://mycroblog.dev"
+noindex='<meta name="robots" content="noindex, follow"'
+robots="$(printf '%s\n' 'User-agent: *' 'Allow: /' '' "Sitemap: $origin/sitemap-index.xml")"
+sitemap_index="<?xml version=\"1.0\" encoding=\"UTF-8\"?><sitemapindex xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\"><sitemap><loc>$origin/sitemap-0.xml</loc></sitemap></sitemapindex>"
+urlset_open='<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
+
+# indexed_version SITE prints the version of the combined site SITE that search engines index.
+indexed_version() {
+  if [[ -d "$1/latest" ]]; then echo latest; else echo next; fi
+}
+
+# canonicals DIR prints, for each page DIR/**/index.html, its path under DIR and the URL of its canonical link.
+canonicals() {
+  (cd "$1" || exit 1; grep -r -o -m 1 --include=index.html '<link rel="canonical" href="[^"]*"' . || true) |
+    sed -E 's#^\./##; s#:<link rel="canonical" href="([^"]*)"$# \1#' | sort
+}
+
+# noindexed DIR prints the path under DIR of each HTML page that carries noindex.
+noindexed() {
+  (cd "$1" || exit 1; grep -r -l -F --include='*.html' "$noindex" . || true) | sed 's#^\./##' | sort
+}
+
+# indexable_urls SITE prints the URLs of the combined site SITE that search engines index: the root and each page of
+# the indexed version that is its own canonical and has no noindex.
+indexable_urls() {
+  local site="$1" version page href url
+  version="$(indexed_version "$site")"
+  {
+    href="$(grep -o -m 1 '<link rel="canonical" href="[^"]*"' "$site/index.html" | sed -E 's#.*href="([^"]*)"#\1#')" || true
+    [[ "$href" != "$origin/" ]] || grep -qF "$noindex" "$site/index.html" || echo "$origin/"
+    while read -r page href; do
+      url="$origin/$version/${page%index.html}"
+      [[ "$href" == "$url" ]] || continue
+      grep -qF "$noindex" "$site/$version/$page" || echo "$url"
+    done < <(canonicals "$site/$version")
+  } | sort -u
+}
+
+# sed_quote TEXT prints TEXT with the characters a sed regular expression or replacement reads escaped.
+sed_quote() {
+  printf '%s' "$1" | sed 's/[][\.*^$#&/]/\\&/g'
+}
+
+# index_site SITE points the canonical links of the versions SITE does not index at the same page of /latest/, removes
+# the sitemaps of each version, and writes robots.txt and the root sitemap of the indexed pages.
+index_site() {
+  local site="$1" dir page href target from to
+  local -A latest=()
+  if [[ "$(indexed_version "$site")" == latest ]]; then
+    while read -r page href; do
+      latest[$page]="$href"
+    done < <(canonicals "$site/latest")
+    for dir in "$site"/*/; do
+      dir="${dir%/}"
+      [[ "${dir##*/}" != latest && -f "$dir/index.html" ]] || continue
+      while read -r page href; do
+        target="${latest[$page]:-}"
+        [[ -n "$target" && "$target" != "$href" ]] || continue
+        from="$(sed_quote "$href")"
+        to="$(sed_quote "$target")"
+        sed -i -e "s#<link rel=\"canonical\" href=\"$from\"#<link rel=\"canonical\" href=\"$to\"#" \
+          -e "s#<meta property=\"og:url\" content=\"$from\"#<meta property=\"og:url\" content=\"$to\"#" "$dir/$page"
+      done < <(canonicals "$dir")
+    done
+  fi
+  find "$site" -mindepth 2 -maxdepth 2 -type f -name 'sitemap-*.xml' -delete
+  printf '%s\n' "$robots" >"$site/robots.txt"
+  printf '%s\n' "$sitemap_index" >"$site/sitemap-index.xml"
+  {
+    printf '%s' "$urlset_open"
+    indexable_urls "$site" | sed 's#.*#<url><loc>&</loc></url>#' | tr -d '\n'
+    printf '</urlset>\n'
+  } >"$site/sitemap-0.xml"
+}
+
+# check_pages DIR fails when an HTML page of DIR has no meta description or no Open Graph title, description or URL.
+check_pages() {
+  local dir="$1" pattern bad
+  for pattern in '<meta name="description" content="[^"]' '<meta property="og:title" content="[^"]' \
+    '<meta property="og:description" content="[^"]' "<meta property=\"og:url\" content=\"$origin/"; do
+    bad="$(cd "$dir" && grep -r -L --include='*.html' "$pattern" . | head -n 1)" || true
+    [[ -z "$bad" ]] || die "${dir}/${bad#./} has no ${pattern%% content=*}> with content"
+  done
+}
+
+# check_site SITE fails when the combined site SITE does not say what search engines may index: robots.txt, the root
+# sitemap of the indexed pages only, noindex on every page of the other versions, their canonical links to /latest/,
+# and the description and Open Graph tags of every page.
+check_site() {
+  local site="$1" version dir page href sitemap listed want bad
+  local url_re='<url><loc>https://mycroblog\.dev/[A-Za-z0-9._~/-]*</loc></url>'
+  version="$(indexed_version "$site")"
+  [[ "$(cat "$site/robots.txt" 2>/dev/null)" == "$robots" ]] || die "$site/robots.txt is not: $robots"
+  [[ "$(cat "$site/sitemap-index.xml" 2>/dev/null)" == "$sitemap_index" ]] ||
+    die "$site/sitemap-index.xml does not list $origin/sitemap-0.xml alone"
+  [[ -z "$(noindexed "$site/$version")" ]] || die "a page of the indexed /$version/ carries noindex: $(noindexed "$site/$version" | head -n 1)"
+  ! grep -qF "$noindex" "$site/index.html" || die "the root landing page carries noindex"
+  sitemap="$(cat "$site/sitemap-0.xml" 2>/dev/null)" || die "$site has no sitemap-0.xml"
+  [[ "$sitemap" =~ ^"$urlset_open"($url_re)+"</urlset>"$ ]] ||
+    die "$site/sitemap-0.xml is not a sitemap of $origin URLs"
+  listed="$(grep -o '<loc>[^<]*</loc>' <<<"$sitemap" | sed -E 's#</?loc>##g' | sort)"
+  want="$(indexable_urls "$site")"
+  [[ "$listed" == "$want" ]] || die "$site/sitemap-0.xml does not list the indexed pages of /$version/ and the root:
+$(diff <(echo "$listed") <(echo "$want") | head -n 10)"
+  grep -qxF "$origin/" <<<"$listed" || die "$site/sitemap-0.xml does not list the root, $origin/"
+  bad="$(find "$site" -mindepth 2 -maxdepth 2 -name 'sitemap-*.xml' -printf '%P\n' -quit)"
+  [[ -z "$bad" ]] || die "$site has the sitemap $bad of a version"
+  for dir in "$site"/*/; do
+    dir="${dir%/}"
+    [[ "${dir##*/}" != "$version" && -f "$dir/index.html" ]] || continue
+    bad="$(comm -23 <(cd "$dir" && find . -name index.html -printf '%P\n' | sort) <(noindexed "$dir") | head -n 1)"
+    [[ -z "$bad" ]] || die "$dir/$bad carries no noindex, though /$version/ is the indexed version"
+    [[ "$version" == latest ]] || continue
+    while read -r page href; do
+      [[ ! -f "$site/latest/$page" ]] && continue
+      want="$(grep -o -m 1 '<link rel="canonical" href="[^"]*"' "$site/latest/$page" | sed -E 's#.*href="([^"]*)"#\1#')"
+      [[ "$href" == "$want" ]] || die "the canonical link of $dir/$page is $href, not $want of /latest/"
+    done < <(canonicals "$dir")
+  done
+  check_pages "$site"
+}
+
+# check_preview BUILD fails when a page of the preview build BUILD (build-preview) could be indexed, or lacks the
+# description and Open Graph tags; a Preview has no robots.txt and no sitemap.
+check_preview() {
+  local build="$1" bad
+  bad="$(comm -23 <(cd "$build" && find . -name '*.html' -printf '%P\n' | sort) <(noindexed "$build") | head -n 1)"
+  [[ -z "$bad" ]] || die "$build/$bad of the preview carries no noindex"
+  bad="$(find "$build" \( -name robots.txt -o -name 'sitemap-*.xml' \) -printf '%P\n' -quit)"
+  [[ -z "$bad" ]] || die "the preview has $bad"
+  check_pages "$build"
 }
 
 # deploy SITE publishes SITE as the Worker, from a work dir that holds only the Worker config and site/.
@@ -231,8 +374,11 @@ build_preview() {
   unset DOCS_SITE_CF_BEACON_TOKEN
   rm -rf "$out"
   mkdir -p "$out"
-  build_tree "$root" next /next/ main "$resolved" "$out/next"
+  build_tree "$root" next /next/ main "$resolved" "$out/next" 1
+  # Nothing of a Preview is indexed, so it has no sitemap.
+  find "$out" -type f -name 'sitemap-*.xml' -delete
   check "$out"
+  check_preview "$out"
 }
 
 # stage_preview BUILD DEST checks that BUILD is a preview build of plain files (build-preview) and copies it to
@@ -389,6 +535,9 @@ case "$cmd" in
   build) [[ $# -eq 1 ]] || usage; build "$@" ;;
   deploy) [[ $# -eq 1 ]] || usage; deploy "$@" ;;
   build-preview) [[ $# -eq 1 ]] || usage; build_preview "$@" ;;
+  index-site) [[ $# -eq 1 ]] || usage; index_site "$@" ;;
+  check-site) [[ $# -eq 1 ]] || usage; check_site "$@" ;;
+  check-preview) [[ $# -eq 1 ]] || usage; check_preview "$@" ;;
   stage-preview) [[ $# -eq 2 ]] || usage; stage_preview "$@" ;;
   pages) [[ $# -eq 3 ]] || usage; pages "$@" ;;
   deploy-pr) [[ $# -ge 2 && $# -le 3 ]] || usage; deploy_pr "$@" ;;

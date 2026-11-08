@@ -3,7 +3,8 @@
 // dev server (ADR-0150 §4): `bun run import` from package.json's build and dev scripts. The copies are generated and
 // git-ignored; the pages written in the site (the landing page src/content/docs/index.mdx and the analytics notice
 // src/content/docs/analytics.mdx) stay. Each copy differs from its source in:
-//   - the first `# Heading`, which becomes the `title` of the frontmatter (Starlight renders it as the page heading);
+//   - the first `# Heading`, which becomes the `title` of the frontmatter (Starlight renders it as the page heading),
+//     and the first paragraph after it, which becomes the `description` (the meta description and og:description);
 //   - relative links to published documents, which become site URLs under the base path, #anchors kept;
 //   - relative links to a file with a page of its own (sitePages), which become that page;
 //   - relative links to an image of a published directory (docs/operations/images/architecture.svg), which is copied
@@ -158,8 +159,44 @@ function rewriteBody(from: string, lines: string[], out: Output): string[] {
   });
 }
 
-/** The title of a document from its first `# Heading`, and its lines without that heading. */
-function takeTitle(path: string, lines: string[]): { title: string; rest: string[] } {
+/** The longest description a page takes from its first paragraph, in characters, before it is cut at a word. */
+const maxDescription = 200;
+
+/**
+ * The description of a page (its meta description and og:description): the first paragraph after the title as plain
+ * text, since a published document opens with what it is about (AGENTS.md). Undefined when the title is followed by
+ * something else (a list, a table, code, HTML), and the page then has the site's description.
+ */
+function descriptionOf(lines: string[]): string | undefined {
+  const start = lines.findIndex((line) => line.trim() !== "");
+  const first = lines[start];
+  if (first === undefined || /^\s*([#<>|!*+-]|\d+[.)]\s|`{3}|~{3}|:::)/.test(first)) {
+    return undefined;
+  }
+  const end = lines.findIndex((line, i) => i > start && line.trim() === "");
+  const text = lines
+    .slice(start, end === -1 ? undefined : end)
+    .join(" ")
+    .replace(/!\[(?:[^\]\\]|\\.)*\]\([^)]*\)/g, "")
+    .replace(/\[((?:[^\]\\]|\\.)*)\](?:\([^)]*\)|\[[^\]]*\])/g, "$1")
+    .replace(/(`+)(.*?)\1/g, "$2")
+    .replace(/(\*\*|__)(.+?)\1/g, "$2")
+    .replace(/\\([\\`*_[\]()#+.!-])/g, "$1")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (text === "") {
+    return undefined;
+  }
+  if (text.length <= maxDescription) {
+    return text;
+  }
+  const cut = text.slice(0, maxDescription);
+  const space = cut.lastIndexOf(" ");
+  return `${(space > maxDescription / 2 ? cut.slice(0, space) : cut).replace(/[\s,;:]+$/, "")}…`;
+}
+
+/** The title of a document from its first `# Heading`, its lines without that heading, and its description. */
+function takeTitle(path: string, lines: string[]): { title: string; rest: string[]; description: string | undefined } {
   const titleAt = lines.findIndex((line) => /^# +\S/.test(line));
   if (titleAt === -1) {
     throw new Error(`${path}: no "# Heading" to take the title from`);
@@ -168,7 +205,19 @@ function takeTitle(path: string, lines: string[]): { title: string; rest: string
     .replace(/^# +/, "")
     .replace(/\s*\{#[^}]*\}\s*$/, "")
     .trim();
-  return { title, rest: [...lines.slice(0, titleAt), ...lines.slice(titleAt + 1)] };
+  return {
+    title,
+    rest: [...lines.slice(0, titleAt), ...lines.slice(titleAt + 1)],
+    description: descriptionOf(lines.slice(titleAt + 1)),
+  };
+}
+
+/** The frontmatter lines of a page's title and, when it has one, its description. */
+function titleLines(title: string, description: string | undefined): string[] {
+  return [
+    `title: ${JSON.stringify(title)}`,
+    ...(description === undefined ? [] : [`description: ${JSON.stringify(description)}`]),
+  ];
 }
 
 /**
@@ -176,14 +225,14 @@ function takeTitle(path: string, lines: string[]): { title: string; rest: string
  * `absolute`, the plain Markdown form instead (the title as its first heading, no frontmatter, links with the origin).
  */
 function transform(path: string, source: string, absolute: boolean): string {
-  const { title, rest } = takeTitle(path, source.split("\n"));
+  const { title, rest, description } = takeTitle(path, source.split("\n"));
   const body = rewriteBody(path, rest, { absolute });
   if (absolute) {
     return [`# ${title}`, ...body].join("\n").replace(/\n*$/, "\n");
   }
   const frontmatter = [
     "---",
-    `title: ${JSON.stringify(title)}`,
+    ...titleLines(title, description),
     `# Generated from ${path} by app/docs/scripts/import-docs.ts.`,
     "---",
   ];
@@ -225,11 +274,11 @@ function translatedPage(page: PageTranslation): string {
     }
     return [...text, ""];
   });
-  const { title, rest } = takeTitle(page.file, lines);
+  const { title, rest, description } = takeTitle(page.file, lines);
   const body = rewriteBody(page.source, rest, { absolute: false, locale: localeSegment(page.locale) });
   const frontmatter = [
     "---",
-    `title: ${JSON.stringify(title)}`,
+    ...titleLines(title, description),
     `translation: ${JSON.stringify(translationData(page, pageURL(page.source)))}`,
     `# Generated from ${page.file} and ${page.source} by app/docs/scripts/import-docs.ts.`,
     "---",

@@ -349,7 +349,7 @@ The documentation site (`app/docs`) is served by the Cloudflare Worker `my-docs`
 | `/next/` | `main` |
 | `/latest/` | the tag of the newest published stable release of the first minor version of `app/docs/versions.json` that has one |
 | `/vX.Y/` | the tag of the newest published stable release of `vX.Y`, for each minor version of `app/docs/versions.json` that has one |
-| `/` | the landing page and the 404 page of `/latest/` |
+| `/` | the landing page and the 404 page of `/latest/`, `robots.txt`, and the sitemap of the indexed pages |
 
 Each version is built from its own tag's tree, so the documents of a version are those of its tag; nothing keeps copies of old documents on `main`.
 The translations (`app/docs/i18n/`, served under `/<locale>/` of each version) are part of that tree too: a version publishes the translations of its tag.
@@ -363,6 +363,10 @@ Before the first stable release, `/` is the landing page of `/next/` and `/lates
   and the support status of old versions follow `main`. The switcher opens the same page in the chosen version when that version has it, and the version's landing page otherwise.
 - `app/docs/versions.json` lists the released minor versions, newest first, each `supported` or `ended`. A minor version whose support ends stays on the site:
   set it to `ended`, and every page of it carries an end-of-support banner with a link to the same page under `/latest/`. Its tags are never deleted, since its pages are built from them.
+- Search engines index one version: `/latest/` (and `/` in place of its landing page), or `/next/` before the first stable release.
+  Every page of `/vX.Y/`, of `/next/` once a release exists, and of a pull request's Preview carries `noindex, follow`, and a page that `/latest/` also has names it as the canonical URL.
+  The build writes `robots.txt` and the one sitemap at the root, `https://mycroblog.dev/sitemap-index.xml`, which lists the indexed pages only, and fails when any of it is missing.
+  Submitting the sitemap to search engines (Search Console) is done outside the repository.
 - The deploy job runs in the environment `doc-site` (deployment refs `main` and the tags `v*`), which holds the secret `CLOUDFLARE_API_TOKEN` (Workers Scripts: Edit) and the variable `CLOUDFLARE_ACCOUNT_ID`.
   The Worker config (`scripts/docs-site/wrangler.jsonc`) declares no routes and no custom domain: `mycroblog.dev` is bound to the Worker, with its DNS records, in the infrastructure repository `mycroblog/infra`,
   after the Worker exists from a first deploy on `workers.dev`.

@@ -59,6 +59,16 @@ tasks:
     cmds:
       - bun run build
 
+  # The combined build of a deploy before any release (/next/ and the root), which also checks what the site tells
+  # search engines; a Preview's build (build-preview) checks its own noindex.
+  site-index-check:
+    desc: "Build the documentation site as the deploy combines it, from this checkout alone (/next/ and the root, as before the first release), and fail when its robots.txt, root sitemap, noindex and canonical links, meta descriptions, or Open Graph tags are missing or wrong (site:check runs it)"
+    deps: [":web:install"]
+    env:
+      DOCS_SITE_RELEASES: /dev/null
+    cmds:
+      - scripts/docs-site.sh build .tmp/docs-site/check
+
   site-dev:
     desc: Copy the published documents into the documentation site (app/docs) and start its Astro dev server on http://localhost:4321
     deps: [":web:install"]

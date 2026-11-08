@@ -616,12 +616,12 @@ jobs:
           # Also in preflight; here it checks the merge group, where one pull request's spec meets another's live test.
           - name: api:live-calls
             run: scripts/task.sh api:live-calls
-          # The check of the site context (site:check): copy the published documents in and build the site, and run
-          # tsc, Oxlint, and knip on app/docs, which selects no client context (its bun fmt is web:fmt-check above),
-          # and the check of its translations.
-          - name: docs:site-build
+          # The check of the site context (site:check): copy the published documents in and build the site as the
+          # deploy combines it, checking what it tells search engines, and run tsc, Oxlint, and knip on app/docs, which
+          # selects no client context (its bun fmt is web:fmt-check above), and the check of its translations.
+          - name: docs:site-index-check
             if: needs.changes.outputs.site == 'true'
-            run: scripts/task.sh docs:site-build
+            run: scripts/task.sh docs:site-index-check
           - name: docs:site-typecheck
             if: needs.changes.outputs.site == 'true'
             run: scripts/task.sh docs:site-typecheck
