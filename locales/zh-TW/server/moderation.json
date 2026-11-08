@@ -1,0 +1,10 @@
+{
+  "moderation.action.category": {
+    "defaultMessage": "{category, select, spam {垃圾訊息} legal {法律因素} violation {違反實例規則} other {其他}}",
+    "description": "Label of the reason category that a moderator chose for an action on the user's own account. {category} is the category."
+  },
+  "moderation.action.kind": {
+    "defaultMessage": "{kind, select, warn {警告} mark_statuses_sensitive {貼文已標記為敏感內容} delete_statuses {貼文已刪除} force_sensitive {媒體一律標記為敏感內容} limit {已限制：貼文僅向追蹤者顯示，且不會出現在公開時間軸} restrict_posting {禁止發文、回覆、轉發或編輯} restrict_interaction {禁止追蹤、喜歡、轉發或回覆} disable_login {已停用登入} suspend {已停權：無法使用應用程式，個人檔案與貼文皆已隱藏} ban {已封禁：帳號已刪除} other {審核處置}}",
+    "description": "Label of the kind of a moderation action on the user's own account, in the notice of the action and the list of the user's actions. {kind} is the kind; the label must make sense whether or not the action is still in effect."
+  }
+}

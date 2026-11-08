@@ -1,0 +1,10 @@
+{
+  "admin.home.none.description": {
+    "defaultMessage": "你的角色沒有伺服器管理畫面所需的任何權限。管理員可以授予你這些權限。",
+    "description": "Description on the server administration page of a user whose roles grant none of the server administration screens' permissions."
+  },
+  "admin.home.none.heading": {
+    "defaultMessage": "你的角色沒有可用的伺服器管理畫面",
+    "description": "Heading on the server administration page of a user whose roles grant none of the server administration screens' permissions."
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "admin.moderation.none.description": {
+    "defaultMessage": "你的角色沒有審核畫面所需的任何權限。管理員可以授予這些權限。",
+    "description": "Description on the moderation page of a user whose roles grant none of the moderation screens' permissions."
+  },
+  "admin.moderation.none.heading": {
+    "defaultMessage": "你的角色沒有可用的審核畫面",
+    "description": "Heading on the moderation page of a user whose roles grant none of the moderation screens' permissions."
+  },
+  "admin.moderation.title": {
+    "defaultMessage": "審核",
+    "description": "Heading of the links to the moderation screens (reports, appeals, accounts, registrations, sign-up blocks, domain actions, remote servers, audit log) on the settings page and title of their page, shown only to users with a moderation permission."
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "admin.missing_permission.description": {
+    "defaultMessage": "你的角色沒有 {permission} 權限。請向這個伺服器的管理員申請。",
+    "description": "Text of an admin screen for a user whose roles lack its permission. {permission} is the permission's code, such as manage_jobs."
+  },
+  "admin.missing_permission.heading": {
+    "defaultMessage": "你無法使用這個畫面",
+    "description": "Heading of an admin screen for a user whose roles lack its permission."
+  }
+}

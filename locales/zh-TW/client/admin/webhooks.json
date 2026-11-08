@@ -1,0 +1,366 @@
+{
+  "admin.webhooks.cancel": {
+    "defaultMessage": "取消",
+    "description": "Button that closes a dialog of a webhook without changing it."
+  },
+  "admin.webhooks.change_failed": {
+    "defaultMessage": "無法變更 Webhook：{reason}",
+    "description": "Error of a change of a webhook. {reason} is the server's reason."
+  },
+  "admin.webhooks.created": {
+    "defaultMessage": "已設定 {name}。",
+    "description": "Status after setting up a webhook. {name} is its description or host name."
+  },
+  "admin.webhooks.delete": {
+    "defaultMessage": "刪除",
+    "description": "Button that deletes a webhook, and the confirming button of its dialog."
+  },
+  "admin.webhooks.delete.description": {
+    "defaultMessage": "它將不再接收任何訊息，其傳送紀錄也不再列出。這個操作無法復原。",
+    "description": "Description of the dialog that confirms deleting a webhook."
+  },
+  "admin.webhooks.delete.title": {
+    "defaultMessage": "要刪除 {name} 嗎？",
+    "description": "Title of the dialog that confirms deleting a webhook."
+  },
+  "admin.webhooks.deleted": {
+    "defaultMessage": "已刪除 {name}。",
+    "description": "Status after deleting a webhook."
+  },
+  "admin.webhooks.deliveries.attempts.count": {
+    "defaultMessage": "{count, plural, other {# 次}}",
+    "description": "How many times a delivery was sent."
+  },
+  "admin.webhooks.deliveries.created_at": {
+    "defaultMessage": "建立時間",
+    "description": "Term in a delivery's details: when the message was made."
+  },
+  "admin.webhooks.deliveries.description": {
+    "defaultMessage": "最近 14 天的訊息，由新到舊排列。失敗的訊息會在約 27 小時內重試 8 次。",
+    "description": "Description of the deliveries of a webhook."
+  },
+  "admin.webhooks.deliveries.empty": {
+    "defaultMessage": "最近 14 天沒有傳送紀錄",
+    "description": "Heading of the empty list of a webhook's deliveries."
+  },
+  "admin.webhooks.deliveries.outcome.connection_error": {
+    "defaultMessage": "無法連線",
+    "description": "Outcome of an attempt whose connection failed."
+  },
+  "admin.webhooks.deliveries.outcome.forbidden_destination": {
+    "defaultMessage": "不允許的目的地",
+    "description": "Outcome of an attempt to a URL that the server may not reach (a private address not allowed in the configuration)."
+  },
+  "admin.webhooks.deliveries.outcome.http_error": {
+    "defaultMessage": "錯誤回應",
+    "description": "Outcome of an attempt that got another answer than 2xx, a redirect included."
+  },
+  "admin.webhooks.deliveries.outcome.succeeded": {
+    "defaultMessage": "成功",
+    "description": "Outcome of an attempt that got a 2xx answer."
+  },
+  "admin.webhooks.deliveries.outcome.timeout": {
+    "defaultMessage": "未在時限內回應",
+    "description": "Outcome of an attempt without an answer within 15 seconds."
+  },
+  "admin.webhooks.deliveries.redeliver": {
+    "defaultMessage": "重新傳送",
+    "description": "Button that sends a delivery of a webhook again."
+  },
+  "admin.webhooks.deliveries.redeliver_failed": {
+    "defaultMessage": "無法重新傳送：{reason}",
+    "description": "Error of sending a delivery again. {reason} is the server's reason."
+  },
+  "admin.webhooks.deliveries.redeliver_of": {
+    "defaultMessage": "{action}：{event} {id}",
+    "description": "Accessible name of the button that sends a delivery again: it starts with the button's visible text, so that the visible label is in the name. {action} is the button's visible text ('Send again'), {event} the event's name and {id} the message ID."
+  },
+  "admin.webhooks.deliveries.redelivered": {
+    "defaultMessage": "已重新傳送。",
+    "description": "Status after sending a delivery of a webhook again."
+  },
+  "admin.webhooks.deliveries.status": {
+    "defaultMessage": "結果",
+    "description": "Term in a delivery's details: whether it succeeded."
+  },
+  "admin.webhooks.deliveries.status.failing": {
+    "defaultMessage": "失敗中",
+    "description": "Result of a delivery whose every attempt failed so far."
+  },
+  "admin.webhooks.deliveries.status.pending": {
+    "defaultMessage": "尚未傳送",
+    "description": "Result of a delivery not sent yet."
+  },
+  "admin.webhooks.deliveries.status.succeeded": {
+    "defaultMessage": "成功",
+    "description": "Result of a delivery that an attempt succeeded."
+  },
+  "admin.webhooks.deliveries.status_code": {
+    "defaultMessage": "HTTP {code}",
+    "description": "The status code of an answer to a delivery attempt. {code} is a number such as 500."
+  },
+  "admin.webhooks.deliveries.title": {
+    "defaultMessage": "傳送紀錄",
+    "description": "Heading of the deliveries of a webhook on its page."
+  },
+  "admin.webhooks.description": {
+    "defaultMessage": "說明",
+    "description": "Label of the description of a webhook: what it is for."
+  },
+  "admin.webhooks.description.description": {
+    "defaultMessage": "這個 Webhook 的用途，最多 {max} 個字元。列表和稽核紀錄會以此稱呼它。",
+    "description": "Help of the description of a webhook. {max} is the most characters."
+  },
+  "admin.webhooks.details.title": {
+    "defaultMessage": "設定",
+    "description": "Heading of the settings of a webhook on its page."
+  },
+  "admin.webhooks.disable": {
+    "defaultMessage": "停用",
+    "description": "Button that disables a webhook."
+  },
+  "admin.webhooks.disabled_status": {
+    "defaultMessage": "已停用 {name}。",
+    "description": "Status after disabling a webhook."
+  },
+  "admin.webhooks.empty": {
+    "defaultMessage": "目前還沒有 Webhook",
+    "description": "Heading of the empty list of webhooks."
+  },
+  "admin.webhooks.empty.description": {
+    "defaultMessage": "Webhook 會將你選擇的事件傳送到某個 URL，例如聊天工具或自動化工具。",
+    "description": "Description of the empty list of webhooks."
+  },
+  "admin.webhooks.enable": {
+    "defaultMessage": "啟用",
+    "description": "Button that enables a webhook."
+  },
+  "admin.webhooks.enabled_status": {
+    "defaultMessage": "已啟用 {name}。",
+    "description": "Status after enabling a webhook."
+  },
+  "admin.webhooks.event.account_created": {
+    "defaultMessage": "帳號已建立",
+    "description": "Name of a webhook event: a registration was approved and the account can be used."
+  },
+  "admin.webhooks.event.account_updated": {
+    "defaultMessage": "個人檔案已變更",
+    "description": "Name of a webhook event: a local account changed its profile."
+  },
+  "admin.webhooks.event.appeal_created": {
+    "defaultMessage": "處置遭到申訴",
+    "description": "Name of a webhook event: a user appealed a moderation action."
+  },
+  "admin.webhooks.event.custom_emoji_created": {
+    "defaultMessage": "自訂表情符號已新增",
+    "description": "Name of a webhook event: an administrator added a custom emoji."
+  },
+  "admin.webhooks.event.custom_emoji_deleted": {
+    "defaultMessage": "自訂表情符號已刪除",
+    "description": "Name of a webhook event: an administrator deleted a custom emoji."
+  },
+  "admin.webhooks.event.custom_emoji_updated": {
+    "defaultMessage": "自訂表情符號已變更",
+    "description": "Name of a webhook event: an administrator changed a custom emoji."
+  },
+  "admin.webhooks.event.domain_moderation_action_created": {
+    "defaultMessage": "已執行網域處置",
+    "description": "Name of a webhook event: a moderation action on a domain was issued."
+  },
+  "admin.webhooks.event.domain_moderation_action_lifted": {
+    "defaultMessage": "網域處置已解除",
+    "description": "Name of a webhook event: a moderation action on a domain was lifted."
+  },
+  "admin.webhooks.event.error_group_created": {
+    "defaultMessage": "有新的錯誤回報",
+    "description": "Name of a webhook event: the server or the web client reported an error of a new kind."
+  },
+  "admin.webhooks.event.error_group_regressed": {
+    "defaultMessage": "已解決的錯誤再次發生",
+    "description": "Name of a webhook event: an error that an administrator marked resolved happened again with a newer version of the server."
+  },
+  "admin.webhooks.event.moderation_action_created": {
+    "defaultMessage": "已執行帳號處置",
+    "description": "Name of a webhook event: a moderation action on an account was issued."
+  },
+  "admin.webhooks.event.moderation_action_lifted": {
+    "defaultMessage": "帳號處置已解除",
+    "description": "Name of a webhook event: a moderation action on an account was lifted."
+  },
+  "admin.webhooks.event.registration_pending": {
+    "defaultMessage": "有註冊等待核准",
+    "description": "Name of a webhook event: a registration awaits a moderator."
+  },
+  "admin.webhooks.event.report_created": {
+    "defaultMessage": "有新的檢舉",
+    "description": "Name of a webhook event: a report was filed, locally or from another server."
+  },
+  "admin.webhooks.event.report_reopened": {
+    "defaultMessage": "檢舉已重新開啟",
+    "description": "Name of a webhook event: a resolved report was reopened."
+  },
+  "admin.webhooks.event.report_resolved": {
+    "defaultMessage": "檢舉已處理完畢",
+    "description": "Name of a webhook event: a report was resolved."
+  },
+  "admin.webhooks.event.status_created": {
+    "defaultMessage": "已發布公開貼文",
+    "description": "Name of a webhook event: a local user published a public post."
+  },
+  "admin.webhooks.event.webhook_test": {
+    "defaultMessage": "測試訊息",
+    "description": "Name of a webhook event: the test message sent from the webhooks screen."
+  },
+  "admin.webhooks.events": {
+    "defaultMessage": "事件",
+    "description": "Label of the group of events that a webhook subscribes to, and term of them in its details."
+  },
+  "admin.webhooks.events.description": {
+    "defaultMessage": "請至少選擇一個。除了管理 Webhook 的權限外，每個事件還需要對應類型的權限。",
+    "description": "Help of the events of a webhook."
+  },
+  "admin.webhooks.events.separator": {
+    "defaultMessage": "、",
+    "description": "What separates the events of a webhook in its details."
+  },
+  "admin.webhooks.failure": {
+    "defaultMessage": "失敗",
+    "description": "Term in a webhook's details: the attempts that failed since the last success."
+  },
+  "admin.webhooks.failure.count": {
+    "defaultMessage": "{count, plural, other {# 次嘗試失敗}}",
+    "description": "How many attempts of a webhook failed since its last success."
+  },
+  "admin.webhooks.failure.since": {
+    "defaultMessage": "首次失敗：",
+    "description": "Text before the time of the first failed attempt of a webhook since its last success."
+  },
+  "admin.webhooks.list.title": {
+    "defaultMessage": "這個伺服器的 Webhook",
+    "description": "Heading of the list of the webhooks."
+  },
+  "admin.webhooks.manage.title": {
+    "defaultMessage": "狀態、測試與密鑰",
+    "description": "Heading of the section of a webhook's page that enables, disables, tests, gives a new secret to or deletes it."
+  },
+  "admin.webhooks.missing_permissions": {
+    "defaultMessage": "缺少的權限：{permissions}",
+    "description": "Line under the refusal of a webhook's events: the permissions the user lacks. {permissions} is a list of permission names such as manage_accounts."
+  },
+  "admin.webhooks.new.title": {
+    "defaultMessage": "新增 Webhook",
+    "description": "Heading of the page with the form that sets up a webhook, and the link to it."
+  },
+  "admin.webhooks.open": {
+    "defaultMessage": "開啟 Webhook",
+    "description": "Link from the secret of a new webhook to the webhook's page."
+  },
+  "admin.webhooks.reason.admin": {
+    "defaultMessage": "由工作人員設定",
+    "description": "Why a webhook has its state: a staff member set it."
+  },
+  "admin.webhooks.reason.failing": {
+    "defaultMessage": "（傳送持續失敗）",
+    "description": "Why the server disabled a webhook: its deliveries kept failing for 72 hours and 20 attempts."
+  },
+  "admin.webhooks.reason.gone": {
+    "defaultMessage": "（端點回應已不存在）",
+    "description": "Why the server disabled a webhook: its endpoint answered 410 Gone."
+  },
+  "admin.webhooks.rotate": {
+    "defaultMessage": "產生新密鑰",
+    "description": "Button that gives a webhook a new secret, and the confirming button of its dialog."
+  },
+  "admin.webhooks.rotate.description": {
+    "defaultMessage": "從現在起，新密鑰會簽署每則訊息。24 小時內舊密鑰也會一併簽署，讓接收端可以切換到新密鑰。",
+    "description": "Description of the dialog that confirms giving a webhook a new secret."
+  },
+  "admin.webhooks.rotate.title": {
+    "defaultMessage": "要為 {name} 產生新密鑰嗎？",
+    "description": "Title of the dialog that confirms giving a webhook a new secret."
+  },
+  "admin.webhooks.rotated": {
+    "defaultMessage": "已為 {name} 產生新密鑰。",
+    "description": "Status after giving a webhook a new secret."
+  },
+  "admin.webhooks.save": {
+    "defaultMessage": "儲存",
+    "description": "Button that saves the changes of a webhook."
+  },
+  "admin.webhooks.save_failed": {
+    "defaultMessage": "無法儲存 Webhook：{reason}",
+    "description": "Error of a webhook form that the server refused for another reason than a field. {reason} is the server's reason."
+  },
+  "admin.webhooks.secret.copied": {
+    "defaultMessage": "已複製密鑰。",
+    "description": "Toast after copying the secret of a webhook."
+  },
+  "admin.webhooks.secret.copy": {
+    "defaultMessage": "複製密鑰",
+    "description": "Button that copies the secret of a webhook to the clipboard."
+  },
+  "admin.webhooks.secret.copy_failed": {
+    "defaultMessage": "無法複製密鑰。請選取後自行複製。",
+    "description": "Toast when the browser refused to copy the secret of a webhook."
+  },
+  "admin.webhooks.secret.notice": {
+    "defaultMessage": "請立即將它複製到接收端：它不會再次顯示。接收端會用它驗證每則訊息的簽章（Standard Webhooks）。",
+    "description": "Note under the secret of a webhook, which is shown only once."
+  },
+  "admin.webhooks.secret.title": {
+    "defaultMessage": "{name} 的密鑰",
+    "description": "Heading of the secret shown once after setting up a webhook or giving it a new secret. {name} is its description or host name."
+  },
+  "admin.webhooks.state": {
+    "defaultMessage": "狀態",
+    "description": "Term in a webhook's details: enabled or disabled."
+  },
+  "admin.webhooks.state.disabled": {
+    "defaultMessage": "已停用",
+    "description": "State of a webhook that receives nothing."
+  },
+  "admin.webhooks.state.enabled": {
+    "defaultMessage": "已啟用",
+    "description": "State of a webhook that receives messages."
+  },
+  "admin.webhooks.submit": {
+    "defaultMessage": "設定",
+    "description": "Button that sets up a new webhook."
+  },
+  "admin.webhooks.summary": {
+    "defaultMessage": "將這個伺服器上發生的事以簽署訊息傳送到其他服務。",
+    "description": "Description of the webhooks screen in the administration menu of the settings."
+  },
+  "admin.webhooks.test": {
+    "defaultMessage": "傳送測試",
+    "description": "Button that sends a test message to a webhook."
+  },
+  "admin.webhooks.tested": {
+    "defaultMessage": "已傳送測試訊息給 {name}。可在傳送紀錄中查看結果。",
+    "description": "Status after sending a test message to a webhook."
+  },
+  "admin.webhooks.title": {
+    "defaultMessage": "Webhook",
+    "description": "Heading of the webhooks screen, and its link in the administration menu."
+  },
+  "admin.webhooks.updated": {
+    "defaultMessage": "已儲存 {name}。",
+    "description": "Status after changing a webhook."
+  },
+  "admin.webhooks.updated_at": {
+    "defaultMessage": "變更時間",
+    "description": "Term in a webhook's details: when its URL, description or events last changed."
+  },
+  "admin.webhooks.url": {
+    "defaultMessage": "URL",
+    "description": "Label of the URL that a webhook posts its messages to."
+  },
+  "admin.webhooks.url.description": {
+    "defaultMessage": "訊息傳送的目的地，須為 https URL。只有在營運者於設定中允許時，才能使用這個伺服器自身網路上的目的地。",
+    "description": "Help of the URL of a webhook."
+  },
+  "admin.webhooks.webhook": {
+    "defaultMessage": "Webhook",
+    "description": "Column of the list of webhooks: its description or host name, linking to its page."
+  }
+}

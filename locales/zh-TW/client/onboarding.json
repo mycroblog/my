@@ -1,0 +1,78 @@
+{
+  "onboarding.checklist": {
+    "defaultMessage": "開始使用",
+    "description": "Heading of the checklist of first steps on the home timeline of a new user."
+  },
+  "onboarding.progress": {
+    "defaultMessage": "已完成的步驟",
+    "description": "Label of the progress bar of the first steps."
+  },
+  "onboarding.progress.value": {
+    "defaultMessage": "已完成 {done}/{total}",
+    "description": "How many of the first steps are done, next to the progress bar."
+  },
+  "onboarding.step.profile": {
+    "defaultMessage": "設定你的個人檔案",
+    "description": "First step of the checklist: set an avatar or a display name."
+  },
+  "onboarding.step.follow": {
+    "defaultMessage": "追蹤某個人",
+    "description": "Second step of the checklist: follow an account."
+  },
+  "onboarding.step.post": {
+    "defaultMessage": "撰寫你的第一則貼文",
+    "description": "Third step of the checklist: write a post."
+  },
+  "onboarding.done": {
+    "defaultMessage": "已完成",
+    "description": "Badge of a step of the checklist that is done."
+  },
+  "onboarding.todo": {
+    "defaultMessage": "待完成",
+    "description": "Badge of a step of the checklist that is not done yet."
+  },
+  "onboarding.action.profile": {
+    "defaultMessage": "編輯個人檔案",
+    "description": "Link of the profile step to the profile settings."
+  },
+  "onboarding.action.follow": {
+    "defaultMessage": "查看推薦",
+    "description": "Link of the follow step to the suggested accounts below."
+  },
+  "onboarding.action.search": {
+    "defaultMessage": "尋找使用者",
+    "description": "Link of the follow step to the account search, when there are no suggestions."
+  },
+  "onboarding.action.post": {
+    "defaultMessage": "撰寫貼文",
+    "description": "Button of the post step that opens the post form."
+  },
+  "onboarding.dismiss": {
+    "defaultMessage": "隱藏這些步驟",
+    "description": "Button that closes the checklist of first steps on this browser."
+  },
+  "onboarding.suggestions": {
+    "defaultMessage": "推薦帳號",
+    "description": "Heading of the accounts suggested to follow on the home timeline."
+  },
+  "onboarding.suggestions.more": {
+    "defaultMessage": "尋找更多使用者",
+    "description": "Link under the suggested accounts to the account search."
+  },
+  "onboarding.suggestions.failed": {
+    "defaultMessage": "無法載入推薦帳號",
+    "description": "Heading of the error shown when the suggested accounts fail to load, above the reason and the button to try again."
+  },
+  "onboarding.suggestions.retry": {
+    "defaultMessage": "重試",
+    "description": "Button that loads the suggested accounts again."
+  },
+  "onboarding.reason.featured": {
+    "defaultMessage": "伺服器精選",
+    "description": "Badge of a suggested account that the administrators feature."
+  },
+  "onboarding.reason.recently_active": {
+    "defaultMessage": "最近有發文",
+    "description": "Badge of a suggested account that posted recently."
+  }
+}

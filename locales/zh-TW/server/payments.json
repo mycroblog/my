@@ -1,0 +1,162 @@
+{
+  "payments.back": {
+    "defaultMessage": "返回",
+    "description": "Link from the PAY.JP checkout or card page back to where the user came from (ADR-0074 §11)."
+  },
+  "payments.card": {
+    "defaultMessage": "信用卡",
+    "description": "Label of PAY.JP's card form (number, expiry, security code) on the checkout and card pages."
+  },
+  "payments.card_note": {
+    "defaultMessage": "信用卡資料會輸入到 PAY.JP 的表單，不會傳到這個伺服器。",
+    "description": "Note under the card form of the PAY.JP checkout and card pages."
+  },
+  "payments.checkout.price_month": {
+    "defaultMessage": "每月 {amount, number} 日圓",
+    "description": "Price of a monthly plan on the PAY.JP checkout page. {amount} is in yen."
+  },
+  "payments.checkout.price_year": {
+    "defaultMessage": "每年 {amount, number} 日圓",
+    "description": "Price of a yearly plan on the PAY.JP checkout page. {amount} is in yen."
+  },
+  "payments.checkout.submit": {
+    "defaultMessage": "訂閱",
+    "description": "Button of the PAY.JP checkout page that verifies the card (3-D Secure) and starts the subscription."
+  },
+  "payments.checkout.title": {
+    "defaultMessage": "訂閱 {plan}",
+    "description": "Title of the PAY.JP checkout page. {plan} is the name of the plan."
+  },
+  "payments.email": {
+    "defaultMessage": "電子郵件地址",
+    "description": "Label of the email field of the PAY.JP checkout and card pages, which the card's 3-D Secure needs."
+  },
+  "payments.error.declined": {
+    "defaultMessage": "這張卡被拒絕了。請換一張卡再試。",
+    "description": "Error of the PAY.JP checkout and card pages when the payment with the card failed."
+  },
+  "payments.error.form": {
+    "defaultMessage": "請檢查電子郵件地址、持卡人姓名和信用卡資料。",
+    "description": "Error of the PAY.JP checkout and card pages when a field is missing or invalid."
+  },
+  "payments.error.state": {
+    "defaultMessage": "這個頁面已過期。請從你原本的畫面重新開始。",
+    "description": "Error of the PAY.JP checkout and card pages when their link is expired or altered."
+  },
+  "payments.error.three_d_secure": {
+    "defaultMessage": "無法驗證這張卡（3-D Secure）。請再試一次，或改用其他卡。",
+    "description": "Error of the PAY.JP checkout and card pages when the 3-D Secure of the card failed."
+  },
+  "payments.error.title": {
+    "defaultMessage": "付款",
+    "description": "Title of the error page of the PAY.JP checkout and card pages."
+  },
+  "payments.error.unavailable": {
+    "defaultMessage": "PAY.JP 沒有回應。請稍後再試。",
+    "description": "Error of the PAY.JP checkout and card pages when PAY.JP failed or did not answer."
+  },
+  "payments.fake.cancel": {
+    "defaultMessage": "取消",
+    "description": "Button of the fake provider's checkout page that goes back without subscribing."
+  },
+  "payments.fake.fail": {
+    "defaultMessage": "讓付款失敗",
+    "description": "Button of the fake provider's checkout page that makes the payment fail, to test the failure."
+  },
+  "payments.fake.failed": {
+    "defaultMessage": "已依要求讓付款失敗。請付款或取消。",
+    "description": "Alert of the fake provider's checkout page after its fail button."
+  },
+  "payments.fake.notice": {
+    "defaultMessage": "測試版本：這個結帳頁面代替付款服務商，不會有任何金錢往來。",
+    "description": "Notice of the checkout and portal pages of the fake payment provider, which only test builds have (ADR-0015 §6)."
+  },
+  "payments.fake.pay": {
+    "defaultMessage": "付款",
+    "description": "Button of the fake provider's checkout page that records the subscription as paid."
+  },
+  "payments.fake.portal": {
+    "defaultMessage": "這個測試版本沒有可管理的付款方式或帳單。",
+    "description": "Text of the fake provider's portal page."
+  },
+  "payments.fake.price_month": {
+    "defaultMessage": "每月 {amount} {currency}",
+    "description": "Price of a monthly plan on the fake provider's checkout page. {amount} is the amount in major units, already formatted; {currency} is its ISO 4217 code."
+  },
+  "payments.fake.price_year": {
+    "defaultMessage": "每年 {amount} {currency}",
+    "description": "Price of a yearly plan on the fake provider's checkout page. {amount} is the amount in major units, already formatted; {currency} is its ISO 4217 code."
+  },
+  "payments.name": {
+    "defaultMessage": "持卡人姓名",
+    "description": "Label of the card holder's name field of the PAY.JP checkout and card pages."
+  },
+  "payments.name_hint": {
+    "defaultMessage": "請依卡片上印的英文字母填寫。",
+    "description": "Hint under the card holder's name field of the PAY.JP checkout and card pages."
+  },
+  "payments.portal.amount": {
+    "defaultMessage": "金額",
+    "description": "Column heading of the payments table of the PAY.JP card page."
+  },
+  "payments.portal.amount_value": {
+    "defaultMessage": "{amount, number} 日圓",
+    "description": "An amount in the payments table of the PAY.JP card page. {amount} is in yen."
+  },
+  "payments.portal.card": {
+    "defaultMessage": "使用中的卡",
+    "description": "Heading of the card on the PAY.JP card page."
+  },
+  "payments.portal.card_value": {
+    "defaultMessage": "{brand} 末四碼 {last4}，有效期限 {month}/{year}",
+    "description": "The card on the PAY.JP card page: its brand, last four digits, and expiry month and year."
+  },
+  "payments.portal.change_card": {
+    "defaultMessage": "更換信用卡",
+    "description": "Heading and button of the card change form on the PAY.JP card page."
+  },
+  "payments.portal.changed": {
+    "defaultMessage": "已更換信用卡。",
+    "description": "Notice of the PAY.JP card page after a card change."
+  },
+  "payments.portal.date": {
+    "defaultMessage": "日期",
+    "description": "Column heading of the payments table of the PAY.JP card page."
+  },
+  "payments.portal.history": {
+    "defaultMessage": "最近的付款",
+    "description": "Heading of the payments table of the PAY.JP card page."
+  },
+  "payments.portal.history_empty": {
+    "defaultMessage": "還沒有付款紀錄。",
+    "description": "Text of the PAY.JP card page without payments."
+  },
+  "payments.portal.no_card": {
+    "defaultMessage": "尚未登記信用卡。",
+    "description": "Text of the PAY.JP card page without a card."
+  },
+  "payments.portal.paused": {
+    "defaultMessage": "上次付款失敗，所以訂閱已暫停。更換信用卡後會完成付款並恢復訂閱。",
+    "description": "Alert of the PAY.JP card page while a subscription is paused after a failed payment."
+  },
+  "payments.portal.refunded": {
+    "defaultMessage": "已退款",
+    "description": "Column heading of the payments table of the PAY.JP card page: the refunded amount."
+  },
+  "payments.portal.resume_failed": {
+    "defaultMessage": "已更換信用卡，但付款失敗。請改用其他卡。",
+    "description": "Alert of the PAY.JP card page when the payment that resumes a paused subscription failed."
+  },
+  "payments.portal.resumed": {
+    "defaultMessage": "已更換信用卡，訂閱已恢復。",
+    "description": "Notice of the PAY.JP card page after a card change resumed a paused subscription."
+  },
+  "payments.portal.title": {
+    "defaultMessage": "付款方式與紀錄",
+    "description": "Title of the PAY.JP card page (the customer portal)."
+  },
+  "payments.test_mode": {
+    "defaultMessage": "測試模式：不會收取任何費用。",
+    "description": "Banner of the PAY.JP checkout and card pages with test keys."
+  }
+}

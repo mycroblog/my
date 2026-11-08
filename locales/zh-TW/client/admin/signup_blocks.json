@@ -1,0 +1,374 @@
+{
+  "admin.signup_blocks.add_failed": {
+    "defaultMessage": "無法新增封鎖：{reason}",
+    "description": "Error under the form of a new sign-up block when the server refused it. {reason} is why."
+  },
+  "admin.signup_blocks.added": {
+    "defaultMessage": "已對 {kind} {value} 套用「{severity}」。",
+    "description": "Status after a new sign-up block took effect. {severity} is its effect, such as Refuse; {kind} is its kind, such as Email domain; {value} what it matches."
+  },
+  "admin.signup_blocks.characters_left": {
+    "defaultMessage": "{count, plural, other {還可輸入 # 個字元}}",
+    "description": "Character count under the comment of a sign-up block while the text is within the limit."
+  },
+  "admin.signup_blocks.characters_over": {
+    "defaultMessage": "{count, plural, other {超出 # 個字元}}",
+    "description": "Character count under the comment of a sign-up block when the text is longer than the limit."
+  },
+  "admin.signup_blocks.comment": {
+    "defaultMessage": "備註",
+    "description": "Label of the moderators' comment of a sign-up block, and its term in the list."
+  },
+  "admin.signup_blocks.comment.description": {
+    "defaultMessage": "只有版主看得到。",
+    "description": "Help text under the comment of a new sign-up block."
+  },
+  "admin.signup_blocks.created_at": {
+    "defaultMessage": "新增時間",
+    "description": "Term of when a sign-up block was added."
+  },
+  "admin.signup_blocks.duration": {
+    "defaultMessage": "期限",
+    "description": "Label of the duration of a new sign-up block."
+  },
+  "admin.signup_blocks.duration.days": {
+    "defaultMessage": "{count, plural, other {# 天}}",
+    "description": "An option of the duration of a sign-up block, in days."
+  },
+  "admin.signup_blocks.duration.description": {
+    "defaultMessage": "到期後封鎖會自動結束。",
+    "description": "Help text under the duration of a new sign-up block."
+  },
+  "admin.signup_blocks.duration.indefinite": {
+    "defaultMessage": "直到解除為止",
+    "description": "The option of a sign-up block that lasts until it is lifted, and the end of such a block in the list."
+  },
+  "admin.signup_blocks.empty.active": {
+    "defaultMessage": "沒有生效中的註冊封鎖",
+    "description": "Heading of the empty list of sign-up blocks in effect."
+  },
+  "admin.signup_blocks.empty.active.description": {
+    "defaultMessage": "註冊封鎖會顯示在這裡，直到到期或被解除。",
+    "description": "Text of the empty list of sign-up blocks in effect."
+  },
+  "admin.signup_blocks.empty.all": {
+    "defaultMessage": "目前還沒有註冊封鎖",
+    "description": "Heading of the empty list of every sign-up block."
+  },
+  "admin.signup_blocks.expires_at": {
+    "defaultMessage": "結束時間",
+    "description": "Term of when a sign-up block ends."
+  },
+  "admin.signup_blocks.filter.active": {
+    "defaultMessage": "生效中",
+    "description": "Tab of the sign-up blocks in effect."
+  },
+  "admin.signup_blocks.filter.all": {
+    "defaultMessage": "全部",
+    "description": "Tab of every sign-up block, ended ones included."
+  },
+  "admin.signup_blocks.filter.label": {
+    "defaultMessage": "要顯示的封鎖",
+    "description": "Accessible name of the tabs that filter the list of sign-up blocks."
+  },
+  "admin.signup_blocks.import.comment.description": {
+    "defaultMessage": "只有版主看得到。列表中的每個封鎖都會套用這則備註。",
+    "description": "Help text under the comment of an import of a list of sign-up blocks."
+  },
+  "admin.signup_blocks.import.description": {
+    "defaultMessage": "為列表中的每個值新增封鎖，例如公開的拋棄式電子郵件網域列表。每個封鎖都會使用相同的比對方式、效果、期限和備註。",
+    "description": "Text at the top of the section that imports a list of sign-up blocks."
+  },
+  "admin.signup_blocks.import.done": {
+    "defaultMessage": "{added, plural, =0 {未新增任何封鎖} other {已新增 # 個封鎖}}：{kind}，{severity}。{skipped, plural, =0 {沒有略過任何一行。} other {已略過 # 行。}}",
+    "description": "Status after an import of a list of sign-up blocks. {added} is the number of blocks added; {skipped} the number of lines skipped; {kind} the kind of the list, such as Email domain; {severity} the effect, such as Refuse."
+  },
+  "admin.signup_blocks.import.failed": {
+    "defaultMessage": "無法新增封鎖：{reason}",
+    "description": "Error under the import form of sign-up blocks when the server refused the list. {reason} is why."
+  },
+  "admin.signup_blocks.import.file": {
+    "defaultMessage": "選擇文字檔",
+    "description": "Button that opens the file picker to read a list of sign-up blocks from a text or CSV file."
+  },
+  "admin.signup_blocks.import.file.description": {
+    "defaultMessage": "文字檔或 CSV 檔。其內容會取代上方的列表。",
+    "description": "Help text next to the button that reads a list of sign-up blocks from a file."
+  },
+  "admin.signup_blocks.import.file.failed": {
+    "defaultMessage": "無法讀取 {name}。請重新選擇檔案。",
+    "description": "Error when the browser could not read the chosen file of a list of sign-up blocks. {name} is the file name."
+  },
+  "admin.signup_blocks.import.file.read": {
+    "defaultMessage": "已讀取 {name}：{count, plural, other {# 個值}}。",
+    "description": "Status after the chosen file of a list of sign-up blocks was read into the list. {name} is the file name; {count} the number of values in it."
+  },
+  "admin.signup_blocks.import.file.too_large": {
+    "defaultMessage": "{name} 大於 {max, number} MB。請將列表拆分成較小的檔案。",
+    "description": "Error when the chosen file of a list of sign-up blocks is too large to send. {name} is the file name; {max} the limit in megabytes."
+  },
+  "admin.signup_blocks.import.list": {
+    "defaultMessage": "列表",
+    "description": "Label of the text area of a list of sign-up block values."
+  },
+  "admin.signup_blocks.import.list.description": {
+    "defaultMessage": "每行一個值，最多 {max, number} 個。CSV 的每一列以第一個欄位作為值。空白行和以 # 開頭的行會被忽略。",
+    "description": "Help text under the list of an import of sign-up blocks. {max} is the most values one import holds."
+  },
+  "admin.signup_blocks.import.list.required": {
+    "defaultMessage": "請至少輸入一個值，或選擇檔案",
+    "description": "Error under the list of an import of sign-up blocks when it has no value."
+  },
+  "admin.signup_blocks.import.list.too_large": {
+    "defaultMessage": "列表大於 {max, number} MB。請將它拆分成較小的列表",
+    "description": "Error under the list of an import of sign-up blocks when it has too many bytes to send. {max} is the limit in megabytes."
+  },
+  "admin.signup_blocks.import.list.too_many": {
+    "defaultMessage": "列表中有 {count, number} 個值。請輸入不超過 {max, number} 個，其餘的請另外匯入",
+    "description": "Error under the list of an import of sign-up blocks when it has more values than one import holds. {count} is how many it has; {max} the limit."
+  },
+  "admin.signup_blocks.import.reason.already_blocked": {
+    "defaultMessage": "已封鎖",
+    "description": "Why a line of an imported list of sign-up blocks was not added: a block in effect with an effect at least as strong covers it."
+  },
+  "admin.signup_blocks.import.reason.duplicate": {
+    "defaultMessage": "與前面的行相同",
+    "description": "Why a line of an imported list of sign-up blocks was not added: an earlier line has the same value."
+  },
+  "admin.signup_blocks.import.reason.invalid": {
+    "defaultMessage": "不是這種比對方式的有效值",
+    "description": "Why a line of an imported list of sign-up blocks was not added: the value is not a valid domain, email address or IP range."
+  },
+  "admin.signup_blocks.import.skipped.line": {
+    "defaultMessage": "行",
+    "description": "Column header of the line number of a skipped line of an imported list of sign-up blocks."
+  },
+  "admin.signup_blocks.import.skipped.line_number": {
+    "defaultMessage": "{line, number}",
+    "description": "The line number of a skipped line of an imported list of sign-up blocks, in its table."
+  },
+  "admin.signup_blocks.import.skipped.lines": {
+    "defaultMessage": "{count, plural, other {# 行}}",
+    "description": "The number of skipped lines of an imported list of sign-up blocks for one reason."
+  },
+  "admin.signup_blocks.import.skipped.reason": {
+    "defaultMessage": "原因",
+    "description": "Column header of why a line of an imported list of sign-up blocks was skipped."
+  },
+  "admin.signup_blocks.import.skipped.show_all": {
+    "defaultMessage": "顯示全部 {count, plural, other {# 行}}",
+    "description": "Button that shows every skipped line of an imported list of sign-up blocks. {count} is how many there are."
+  },
+  "admin.signup_blocks.import.skipped.shown": {
+    "defaultMessage": "目前顯示 {count, number} 行中的前 {shown, number} 行。",
+    "description": "Text above the button that shows every skipped line of an imported list of sign-up blocks."
+  },
+  "admin.signup_blocks.import.skipped.title": {
+    "defaultMessage": "未新增的行",
+    "description": "Heading of the lines of an imported list of sign-up blocks that were skipped, and the name of their table."
+  },
+  "admin.signup_blocks.import.skipped.value": {
+    "defaultMessage": "值",
+    "description": "Column header of the value of a skipped line of an imported list of sign-up blocks."
+  },
+  "admin.signup_blocks.import.submit": {
+    "defaultMessage": "新增封鎖",
+    "description": "Submit button of the import of a list of sign-up blocks."
+  },
+  "admin.signup_blocks.import.title": {
+    "defaultMessage": "從列表新增",
+    "description": "Heading of the section that imports a list of sign-up blocks at once."
+  },
+  "admin.signup_blocks.kind": {
+    "defaultMessage": "比對方式",
+    "description": "Label of the choice of what a sign-up block matches (email domain, email address, IP range), and the term of that in a listed block."
+  },
+  "admin.signup_blocks.kind.email_domain": {
+    "defaultMessage": "電子郵件網域",
+    "description": "A kind of sign-up block: the domain of the email address, with its subdomains."
+  },
+  "admin.signup_blocks.kind.email_domain.description": {
+    "defaultMessage": "使用此網域或其子網域電子郵件地址的註冊，例如拋棄式電子郵件服務。",
+    "description": "Help text of the email domain kind of a new sign-up block."
+  },
+  "admin.signup_blocks.kind.email_hash": {
+    "defaultMessage": "電子郵件地址",
+    "description": "A kind of sign-up block: one email address, kept as a hash."
+  },
+  "admin.signup_blocks.kind.email_hash.description": {
+    "defaultMessage": "使用某個電子郵件地址的註冊。只會保留其雜湊值。",
+    "description": "Help text of the email address kind of a new sign-up block."
+  },
+  "admin.signup_blocks.kind.ip_range": {
+    "defaultMessage": "IP 範圍",
+    "description": "A kind of sign-up block: the client addresses in a CIDR range."
+  },
+  "admin.signup_blocks.kind.ip_range.description": {
+    "defaultMessage": "來自某個 IP 位址或 IP 範圍的註冊。",
+    "description": "Help text of the IP range kind of a new sign-up block."
+  },
+  "admin.signup_blocks.lift": {
+    "defaultMessage": "解除",
+    "description": "Button that lifts a sign-up block."
+  },
+  "admin.signup_blocks.lift_failed": {
+    "defaultMessage": "無法解除封鎖：{reason}",
+    "description": "Toast when lifting a sign-up block failed. {reason} is why."
+  },
+  "admin.signup_blocks.lifted": {
+    "defaultMessage": "已解除對 {kind} {value} 的封鎖。",
+    "description": "Status after a sign-up block was lifted. {kind} is its kind, such as Email domain; {value} what it matches."
+  },
+  "admin.signup_blocks.lifted_at": {
+    "defaultMessage": "解除時間",
+    "description": "Term of when a sign-up block was lifted."
+  },
+  "admin.signup_blocks.list.title": {
+    "defaultMessage": "封鎖",
+    "description": "Heading of the section with the list of sign-up blocks."
+  },
+  "admin.signup_blocks.new.title": {
+    "defaultMessage": "新增封鎖",
+    "description": "Button on the list of sign-up blocks that opens the form of a new one, and the heading of that page."
+  },
+  "admin.signup_blocks.severity": {
+    "defaultMessage": "效果",
+    "description": "Label of the choice of what a sign-up block does, and the term of that in a listed block."
+  },
+  "admin.signup_blocks.severity.reject": {
+    "defaultMessage": "拒絕",
+    "description": "A severity of sign-up block: the sign-up is refused."
+  },
+  "admin.signup_blocks.severity.reject.description": {
+    "defaultMessage": "註冊會被拒絕。頁面不會說明原因。",
+    "description": "Help text of the refuse severity of a new sign-up block."
+  },
+  "admin.signup_blocks.severity.require_approval": {
+    "defaultMessage": "需要核准",
+    "description": "A severity of sign-up block: the registration waits for a moderator."
+  },
+  "admin.signup_blocks.severity.require_approval.description": {
+    "defaultMessage": "無論註冊模式為何，註冊都需等待版主核准。",
+    "description": "Help text of the require approval severity of a new sign-up block."
+  },
+  "admin.signup_blocks.severity.required": {
+    "defaultMessage": "請選擇效果",
+    "description": "Error under the effect of a new sign-up block when none is chosen."
+  },
+  "admin.signup_blocks.source": {
+    "defaultMessage": "來源",
+    "description": "Term of how a sign-up block was added: on its own or with a ban."
+  },
+  "admin.signup_blocks.source.ban": {
+    "defaultMessage": "隨封禁新增",
+    "description": "A sign-up block made from a ban of an account."
+  },
+  "admin.signup_blocks.source.manual": {
+    "defaultMessage": "單獨新增",
+    "description": "A sign-up block added from this screen or the command line."
+  },
+  "admin.signup_blocks.state": {
+    "defaultMessage": "狀態",
+    "description": "Term of the state of a sign-up block in the list."
+  },
+  "admin.signup_blocks.state.active": {
+    "defaultMessage": "生效中",
+    "description": "State of a sign-up block in effect."
+  },
+  "admin.signup_blocks.state.expired": {
+    "defaultMessage": "已結束",
+    "description": "State of a sign-up block that ended at its end date."
+  },
+  "admin.signup_blocks.state.lifted": {
+    "defaultMessage": "已解除",
+    "description": "State of a sign-up block a moderator lifted."
+  },
+  "admin.signup_blocks.submit": {
+    "defaultMessage": "新增封鎖",
+    "description": "Submit button of the form of a new sign-up block."
+  },
+  "admin.signup_blocks.summary": {
+    "defaultMessage": "註冊會被拒絕或需要核准的電子郵件網域、電子郵件地址和 IP 範圍。",
+    "description": "Description of the sign-up blocks screen in the administration menu."
+  },
+  "admin.signup_blocks.title": {
+    "defaultMessage": "註冊封鎖",
+    "description": "Heading of the screen of the blocks on sign-ups by email domain, email address or IP range, and its link in the administration menu."
+  },
+  "admin.signup_blocks.too_long": {
+    "defaultMessage": "請輸入不超過 {max, number} 個字元",
+    "description": "Error under the comment of a sign-up block when it is too long. {max} is the limit."
+  },
+  "admin.signup_blocks.value.email_domain": {
+    "defaultMessage": "網域",
+    "description": "Label of the value field of a new sign-up block on an email domain."
+  },
+  "admin.signup_blocks.value.email_domain.description": {
+    "defaultMessage": "例如 mail.example。非拉丁字母的網域可以直接輸入。",
+    "description": "Help text under the domain field of a new sign-up block on an email domain."
+  },
+  "admin.signup_blocks.value.email_domain.required": {
+    "defaultMessage": "請輸入網域",
+    "description": "Error under the domain field of a new sign-up block when it is empty."
+  },
+  "admin.signup_blocks.value.email_hash": {
+    "defaultMessage": "電子郵件地址",
+    "description": "Label of the value field of a new sign-up block on one email address."
+  },
+  "admin.signup_blocks.value.email_hash.description": {
+    "defaultMessage": "電子郵件地址，或其 SHA-256 十六進位值。大小寫以及本地部分中 + 之後的內容會被忽略。",
+    "description": "Help text under the email address field of a new sign-up block."
+  },
+  "admin.signup_blocks.value.email_hash.required": {
+    "defaultMessage": "請輸入電子郵件地址",
+    "description": "Error under the email address field of a new sign-up block when it is empty."
+  },
+  "admin.signup_blocks.value.ip_range": {
+    "defaultMessage": "IP 位址或範圍",
+    "description": "Label of the value field of a new sign-up block on an IP range."
+  },
+  "admin.signup_blocks.value.ip_range.description": {
+    "defaultMessage": "CIDR 範圍，例如 192.0.2.0/24 或 2001:db8::/32，或單一 IP 位址。",
+    "description": "Help text under the IP range field of a new sign-up block."
+  },
+  "admin.signup_blocks.value.ip_range.required": {
+    "defaultMessage": "請輸入 IP 位址或範圍",
+    "description": "Error under the IP range field of a new sign-up block when it is empty."
+  },
+  "admin.signup_blocks.column.value": {
+    "defaultMessage": "封鎖對象",
+    "description": "Header of the column of the sign-up blocks table that holds what the block matches."
+  },
+  "admin.signup_blocks.pages": {
+    "defaultMessage": "註冊封鎖頁面",
+    "description": "Accessible name of the navigation between the pages of the sign-up blocks screen: the list and the import from a list."
+  },
+  "admin.signup_blocks.new.form": {
+    "defaultMessage": "封鎖內容",
+    "description": "Heading of the form on the page of a new sign-up block."
+  },
+  "admin.signup_blocks.back": {
+    "defaultMessage": "返回註冊封鎖",
+    "description": "Link under the heading of a page of one sign-up block, or of the form of a new one, to the list of sign-up blocks."
+  },
+  "admin.signup_blocks.detail.title": {
+    "defaultMessage": "註冊封鎖",
+    "description": "Title of the page of one sign-up block, before the block has loaded or when the viewer may not see it."
+  },
+  "admin.signup_blocks.detail.heading": {
+    "defaultMessage": "對 {kind} {value} 的封鎖",
+    "description": "Heading of the page of one sign-up block. {kind} is the kind, such as Email domain; {value} what it matches."
+  },
+  "admin.signup_blocks.detail.details": {
+    "defaultMessage": "詳細資訊",
+    "description": "Heading of the region of a sign-up block's page with what it matches, its effect, and its comment."
+  },
+  "admin.signup_blocks.detail.no_comment": {
+    "defaultMessage": "無",
+    "description": "The comment of a sign-up block that has none."
+  },
+  "admin.signup_blocks.lift.description": {
+    "defaultMessage": "從現在起，原本被這個封鎖阻擋的註冊將再次允許。其紀錄會保留，並顯示為已解除。",
+    "description": "Help text under the button that lifts a sign-up block."
+  }
+}
