@@ -102,7 +102,7 @@ my admin closure status
 サーバーが自分でデータを削除することはないため、期限を過ぎても、あなたが止めるまで動き続けます。
 保存義務による保留の対象の記録（§3）をまだエクスポートしていなければ、ここで行ってください。
 
-<!-- source: 6-switching-to-the-static-page 50a7f30c0ee4 -->
+<!-- source: 6-switching-to-the-static-page 9795c9aea7ae -->
 ## 6. 静的ページに切り替える
 
 エクスポートの期限を過ぎたら、終了ページを書き出します。**これは DB を読むため、`my serve` を止めて DB を破棄する前に実行してください。**
@@ -119,6 +119,7 @@ my admin closure export-html -out ./closure -lang ja,en # set the locales and th
   - フロントエンドの設定例 `nginx.conf`、`Caddyfile`、`cloudfront-function.js`。どれも、連合と探索のパス（`/ap/*`、`/inbox`、`/.well-known/webfinger`、
     `/.well-known/host-meta`、`/.well-known/host-meta.json`、`/.well-known/nodeinfo`、`/nodeinfo/*`）とプロフィール（`/@*`）には本文なしの `410` を返し、
     それ以外のパスには `Accept-Language` の最初の言語のページ（なければ `index.html`）を返します。
+    言語は、アプリがその言語を表示するときのロケールのページに届きます。`zh`、`zh-SG`、`zh-Hans` は `zh-CN.html` に、`zh-Hant`、`zh-HK`、`zh-MO` は `zh-TW.html` になります。
 - サーバーが終了していなければ、コマンドは実行を拒否します（終了コード 1）。`delivery_completed` より前なら、配送が続いていることを警告します（ファイルは書き出します）。
 
 フロントエンドを切り替えます。公開する場所にはページ（`*.html`）だけを置き、例のホスト名、ディレクトリ、証明書のパスを自分の環境に合わせてください。

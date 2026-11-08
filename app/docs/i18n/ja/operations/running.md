@@ -414,7 +414,7 @@ my job types                 # print every job type of this release
 - 誰も再試行しない dead ジョブは、失敗してから `dead_job_retention` (既定値 30 日。[設定](../reference/configuration.md#dead_job_retention)を参照) がたつと、1 時間ごとの掃除で削除されます。
 - `queue = inline` の dead ジョブはサーバーのプロセスのメモリにあるので、`my job` では扱えません (終了コード 1)。
 
-<!-- source: splitting-workers-by-job-type 2ec73f050551 -->
+<!-- source: splitting-workers-by-job-type 89ced36a3c80 -->
 ### ジョブの種類ごとにワーカーを分ける
 
 既定では、どのワーカーもすべてのジョブの種類を、期限が来た順に、プロセスごとに 1 件ずつ実行します ([複数のジョブを同時に実行する](#running-several-jobs-at-once)を参照)。そのため配送が集中するとメールや通知が遅れ、ワーカーを足してもその時間はすべての種類で分け合うことになります。`queue = db` なら、一部の種類に専用のワーカーを割り当てられます。
@@ -434,7 +434,7 @@ histogram_quantile(0.95, sum by (my_job_type, le) (rate(my_job_wait_seconds_buck
 
 `sum by (my_job_type) (rate(my_job_duration_seconds_sum[1h]))` は、種類ごとに使っているワーカーの時間を示し、これはおおよそその種類に必要なプロセスの数でもあります。時間の大半を使ってほかの種類を待たせている種類が、移すべき種類です。
 
-よくある構成を挙げます。プロセスの数は自由に決めてください。
+よくある 3 つの構成を挙げます。プロセスの数は自由に決めてください。
 
 | 構成 | プロセス |
 | --- | --- |
@@ -589,7 +589,7 @@ tick が必要なのは既定のキューだけです。
 3. キューを取り除くには、まずすべての場所で振り分けからそのキューを外し、空になるのを待ってから削除します。削除したキューにある通知は失われますが、ジョブは失われません。ジョブが期限から 2 分たつと、掃き出しがもう一度通知します。
    Cloud Tasks のタスクは 30 日先までのジョブの通知を保持できるので、待つ期間より後に期限が来るジョブは、その時が来たときに掃き出しが通知するだけです。
 
-<!-- source: health-checks 924644f30f58 -->
+<!-- source: health-checks 06a8834ade0d -->
 ## ヘルスチェック
 
 | パス | 種類 | 200 を返すとき |
@@ -608,7 +608,7 @@ tick が必要なのは既定のキューだけです。
   その `title` は `Accept-Language` に従って翻訳され、内部の詳細は含みません。原因 (接続のエラーや、ないテーブルの名前) はログに出ます。
 - 1 回の readiness の確認は 3 秒で打ち切ります。
 - readiness には、設定した `host` と `account_domain` がデータベースにあるか、プロセスがそれを記録できたことも必要です。
-- **スキーマが適用されている**とは、`schema/<dialect>/` のファイルが `CREATE TABLE` で宣言するすべてのテーブルがあることです
+- **スキーマが適用されている**とは、そのデータベースのスキーマのファイル (`schema/<NN>-<module>/<dialect>.sql`) が `CREATE TABLE` で宣言するすべてのテーブルがあることです
   (SQLite は `sqlite_schema` で、PostgreSQL は接続の `current_schema()` で確認します)。`my schema apply` はスキーマ全体を適用するので、テーブルがないなら、スキーマが適用されていないか、バイナリより古いということです。
   列とインデックスの違いは確認しません。`my schema apply -dry-run` で、何が変わるかを表示できます。
 
