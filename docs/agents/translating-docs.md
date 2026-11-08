@@ -15,9 +15,9 @@ translation follows them and never adds, drops, or corrects a fact. A wrong fact
 | `docs/reference/`, `docs/developers/`, `docs/plugins/` | none: the site shows the English page with a notice | no |
 
 The site serves a translation under `/<locale>/`, the locale's tag in lower case (`/next/ja/guide/posting/`,
-`/next/zh-cn/guide/posting/`, `/next/zh-tw/guide/posting/`). A page with no translation file, and a section with no translation, is shown in English.
+`/next/zh-cn/guide/posting/`, `/next/zh-tw/guide/posting/`, `/next/es/guide/posting/`). A page with no translation file, and a section with no translation, is shown in English.
 The locales are listed in `app/docs/src/translations.ts` (`translationLocales`), by the tag of their catalog in
-`locales/` (`ja`, `zh-CN`, `zh-TW`); the commands and the directories of `app/docs/i18n/` use that tag.
+`locales/` (`ja`, `zh-CN`, `zh-TW`, `es`); the commands and the directories of `app/docs/i18n/` use that tag.
 
 ## How a translation is written
 
@@ -49,10 +49,12 @@ the paths of its images as in English; the site adjusts them.
   (`です・ます`) for every page. For `zh-CN`, address the reader as `你`, use full-width punctuation in Chinese text,
   and put a half-width space between Chinese and Latin letters, digits, or code. For `zh-TW`, do the same in
   Traditional Chinese with the words and usage of Taiwan (`伺服器`, `設定`, `使用者`), never a character conversion of
-  the `zh-CN` translation.
+  the `zh-CN` translation. For `es`, write a neutral Spanish that reads well in Spain and Latin America (no
+  regional words such as `ordenador` or `computadora`), address the reader as `tú` (never `usted` or `vosotros`), and
+  open questions with `¿`.
 - Name the UI by its text in the locale's catalog (`locales/<locale>/`): the English documents quote it
   (`"Write a post"`), and `glossary` prints its text in the locale. Quote it as the locale does (for `ja`, `「…」`;
-  for `zh-CN`, `“…”`; for `zh-TW`, `「…」`).
+  for `zh-CN`, `“…”`; for `zh-TW`, `「…」`; for `es`, `«…»`).
   When `glossary` offers more than one text, pick the one of the screen the sentence is about. A phrase with no UI
   string is translated like any other text.
 - Keep names of products, commands, settings, environment variables, metrics, and job types in English.

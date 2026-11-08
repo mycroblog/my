@@ -1,0 +1,502 @@
+{
+  "compose.close": {
+    "defaultMessage": "Cerrar",
+    "description": "Accessible name of the × button that closes the new-post sheet. The draft is kept."
+  },
+  "compose.completion.suggestions": {
+    "defaultMessage": "Sugerencias",
+    "description": "Accessible name of the list of suggestions that opens under the text of a post, a content warning or a profile while the user types a mention after @, a hashtag after # or an emoji after : (ADR-0092)."
+  },
+  "compose.completion.count": {
+    "defaultMessage": "{count, plural, one {# sugerencia} other {# sugerencias}}",
+    "description": "Announced to screen readers when the list of suggestions for the typed mention, hashtag or emoji opens or changes. {count} is how many suggestions it shows."
+  },
+  "compose.completion.loading": {
+    "defaultMessage": "Cargando sugerencias…",
+    "description": "Shown in the place of the suggestions, and announced, while the suggestions for the typed mention or hashtag take a moment to arrive."
+  },
+  "compose.completion.empty": {
+    "defaultMessage": "Sin sugerencias",
+    "description": "Shown in the place of the suggestions, and announced, when nothing matches the typed mention, hashtag or emoji."
+  },
+  "compose.completion.tag_posts": {
+    "defaultMessage": "{count, plural, one {# publicación} other {# publicaciones}}",
+    "description": "How many public posts carry a hashtag, shown after the hashtag in the list of suggestions while the user types a hashtag. {count} is the number of posts."
+  },
+  "compose.failed": {
+    "defaultMessage": "No se pudo enviar la publicación: {reason}",
+    "description": "Error after publishing a post failed. The draft is kept. {reason} is the error message."
+  },
+  "compose.language.label": {
+    "defaultMessage": "Idioma",
+    "description": "Label of the choice of the language a post is written in."
+  },
+  "compose.language.und": {
+    "defaultMessage": "Sin especificar",
+    "description": "Choice of post language when the user does not say which language the post is in."
+  },
+  "compose.media.add": {
+    "defaultMessage": "Añadir imágenes, video o audio",
+    "description": "Button that opens the file picker to attach images, a video, or an audio file to a post."
+  },
+  "compose.media.count": {
+    "defaultMessage": "{count, plural, one {# archivo adjunto} other {# archivos adjuntos}}",
+    "description": "Description of the button that attaches media, while the post has some. {count} is how many files."
+  },
+  "compose.media.description.hint": {
+    "defaultMessage": "Descríbelo para quienes no pueden verlo ni oírlo.",
+    "description": "Help text under the alternative text field of an attached image, video, or audio file."
+  },
+  "compose.media.description.label": {
+    "defaultMessage": "Descripción del adjunto {position}",
+    "description": "Label of the alternative text field of an attached image, video, or audio file. {position} is its number in the post, from 1."
+  },
+  "compose.media.description.required": {
+    "defaultMessage": "Descríbelo para quienes no pueden verlo ni oírlo. Tu configuración pide una descripción de cada adjunto.",
+    "description": "Help text under the alternative text field of an attachment when the user's settings ask for a description of every attachment."
+  },
+  "compose.media.description.server_required": {
+    "defaultMessage": "Descríbelo para quienes no pueden verlo ni oírlo. Este servidor exige una descripción de cada adjunto.",
+    "description": "Help text under the alternative text field of an attached image, video, or audio file when the server requires a description of every image (the instance setting require_media_description)."
+  },
+  "compose.media.description.missing": {
+    "defaultMessage": "Añade una descripción de este adjunto. Este servidor la exige para cada adjunto.",
+    "description": "Error of the alternative text field of an attached image, video, or audio file that has no description while the server requires one for every image."
+  },
+  "compose.media.drop": {
+    "defaultMessage": "Suelta los archivos para adjuntarlos",
+    "description": "Shown over the new-post form while the user drags files over it: dropping them attaches them to the post."
+  },
+  "compose.media.failed": {
+    "defaultMessage": "No se pudo adjuntar el archivo: {reason}",
+    "description": "State of an attached file whose upload failed. {reason} is the error message."
+  },
+  "compose.media.failed_processing": {
+    "defaultMessage": "El servidor no pudo procesar este archivo.",
+    "description": "Why an attached file failed: the server could not process it."
+  },
+  "compose.media.hint": {
+    "defaultMessage": "Hasta {max, plural, other {# archivos}}: imágenes JPEG, PNG, GIF o WebP, video MP4 o WebM, o audio MP3, Ogg o M4A. Se eliminan la ubicación y otros metadatos.",
+    "description": "Help text next to the button that attaches media. {max} is the most files a post can have. JPEG, PNG, GIF, WebP, MP4, WebM, MP3, Ogg, M4A are format names (not translated)."
+  },
+  "compose.media.list": {
+    "defaultMessage": "Multimedia adjunta",
+    "description": "Accessible name of the list of images, videos, and audio files attached to the post being written."
+  },
+  "compose.media.processing": {
+    "defaultMessage": "Procesando…",
+    "description": "State of an attached file while the server prepares it."
+  },
+  "compose.media.remove": {
+    "defaultMessage": "Quitar el adjunto {position}",
+    "description": "Button that removes an attached file from the post. {position} is its number in the post, from 1."
+  },
+  "compose.media.too_many": {
+    "defaultMessage": "Una publicación puede tener como máximo {max, plural, other {# archivos}}. No se añadieron los demás.",
+    "description": "Notice when the user picked more files than a post can have. {max} is the most files a post can have."
+  },
+  "compose.media.unsupported": {
+    "defaultMessage": "{name} no es una imagen JPEG, PNG, GIF o WebP, un video MP4 o WebM, ni un archivo de audio MP3, Ogg o M4A.",
+    "description": "Notice when a picked file is not a type the server accepts. {name} is the file name. The format names are not translated."
+  },
+  "compose.media.uploading": {
+    "defaultMessage": "Subiendo…",
+    "description": "State of an attached file while it is being sent to the server."
+  },
+  "compose.mention.unreached": {
+    "defaultMessage": "{count, plural, one {{accounts} está en otro servidor y no te sigue, así que no recibirá esta publicación. Fuera de este servidor, las publicaciones de «Este servidor» solo llegan a tus seguidores, que ven esta mención como un enlace simple.} other {{accounts} están en otros servidores y no te siguen, así que no recibirán esta publicación. Fuera de este servidor, las publicaciones de «Este servidor» solo llegan a tus seguidores, que ven estas menciones como enlaces simples.}}",
+    "description": "Warning under a post with the visibility 'This server' that mentions accounts of other servers that do not follow the author (ADR-0017): those accounts do not receive the post, and the author's followers on other servers see the mention as a plain link, not as a mention. {accounts} is the list of their handles, for example '@carol@remote.example and @dave@other.example'; {count} is how many there are."
+  },
+  "compose.federation.stays_local": {
+    "defaultMessage": "Esto no llegará a otros servidores: este servidor no les envía publicaciones por ahora, así que las cuentas de otros servidores a las que esto responde o menciona no la recibirán.",
+    "description": "Warning under a post that replies to or mentions an account of another server while this server sends nothing to other servers (federation direction 'Receive only' or 'Off', ADR-0006)."
+  },
+  "compose.missing_description.add": {
+    "defaultMessage": "Añadir descripciones",
+    "description": "Button of the confirmation that goes back to the form to describe the images."
+  },
+  "compose.missing_description.body": {
+    "defaultMessage": "{count, plural, one {# imagen no tiene descripción.} other {# imágenes no tienen descripción.}} Quienes no pueden ver las imágenes no sabrán qué muestran.",
+    "description": "Text of the confirmation about images without a description. {count} is how many images have none."
+  },
+  "compose.missing_description.post": {
+    "defaultMessage": "Publicar de todos modos",
+    "description": "Button of the confirmation that posts without the descriptions."
+  },
+  "compose.missing_description.title": {
+    "defaultMessage": "¿Publicar sin descripciones de las imágenes?",
+    "description": "Title of the confirmation shown when attached images have no description and the user's settings ask for one."
+  },
+  "compose.open": {
+    "defaultMessage": "Escribir una publicación",
+    "description": "The coral button in the phones' tab bar and the button in the side rail that open the form for a new post. In the compact rail (tablets) only its icon shows and this is its accessible name; keep it short."
+  },
+  "compose.outbox.discard": {
+    "defaultMessage": "Descartar",
+    "description": "Button that throws away a post that could not be sent."
+  },
+  "compose.outbox.edit": {
+    "defaultMessage": "Editar",
+    "description": "Button that puts a post that could not be sent back into the form."
+  },
+  "compose.outbox.failed": {
+    "defaultMessage": "No se pudo enviar la publicación: {reason}",
+    "description": "State of a post that could not be sent. {reason} is the error message."
+  },
+  "compose.outbox.label": {
+    "defaultMessage": "Publicaciones en envío",
+    "description": "Accessible name of the list of posts that are being sent or could not be sent."
+  },
+  "compose.outbox.resend": {
+    "defaultMessage": "Enviar de nuevo",
+    "description": "Button that sends a post that could not be sent again."
+  },
+  "compose.outbox.sending": {
+    "defaultMessage": "Enviando…",
+    "description": "State of a post that is being sent."
+  },
+  "compose.outbox.unsent": {
+    "defaultMessage": "Aún sin enviar.",
+    "description": "State of a post whose sending was interrupted (for example by reloading the page)."
+  },
+  "compose.over": {
+    "defaultMessage": "{count, plural, one {Sobra # carácter} other {Sobran # caracteres}}",
+    "description": "Counter under a text field when the text is longer than allowed. {count} is how many characters are over."
+  },
+  "compose.poll.toggle": {
+    "defaultMessage": "Añadir una encuesta",
+    "description": "Toggle button (an icon) that adds a poll to the new post, or removes it. A post with a poll attaches no files."
+  },
+  "compose.poll.legend": {
+    "defaultMessage": "Encuesta",
+    "description": "Name of the group of fields of the poll of the new post: its options, how long it lasts, and its settings."
+  },
+  "compose.poll.option": {
+    "defaultMessage": "Opción {number}",
+    "description": "Label of a text field of the poll of the new post: one option the readers can vote for. {number} is its position, from 1."
+  },
+  "compose.poll.option.remove": {
+    "defaultMessage": "Quitar la opción {number}",
+    "description": "Button (an icon) that removes an option of the poll of the new post. {number} is its position, from 1."
+  },
+  "compose.poll.option.add": {
+    "defaultMessage": "Añadir una opción",
+    "description": "Button that adds an empty option to the poll of the new post."
+  },
+  "compose.poll.duplicate": {
+    "defaultMessage": "Cada opción debe ser distinta.",
+    "description": "Error under the options of the poll of the new post when two of them are the same."
+  },
+  "compose.poll.duration": {
+    "defaultMessage": "Duración",
+    "description": "Label of the select of how long the poll of the new post takes votes."
+  },
+  "compose.poll.duration.minutes": {
+    "defaultMessage": "{count, plural, one {# minuto} other {# minutos}}",
+    "description": "Option of how long a poll takes votes. {count} is a number of minutes."
+  },
+  "compose.poll.duration.hours": {
+    "defaultMessage": "{count, plural, one {# hora} other {# horas}}",
+    "description": "Option of how long a poll takes votes. {count} is a number of hours."
+  },
+  "compose.poll.duration.days": {
+    "defaultMessage": "{count, plural, one {# día} other {# días}}",
+    "description": "Option of how long a poll takes votes. {count} is a number of days."
+  },
+  "compose.poll.multiple": {
+    "defaultMessage": "Permitir elegir varias opciones",
+    "description": "Checkbox of the poll of the new post: a vote may choose several options."
+  },
+  "compose.poll.hide_totals": {
+    "defaultMessage": "Ocultar los votos hasta que termine la encuesta",
+    "description": "Checkbox of the poll of the new post: nobody sees the votes of each option until the poll ends."
+  },
+  "compose.posted": {
+    "defaultMessage": "Publicado.",
+    "description": "Notice after a post was published."
+  },
+  "compose.posted.first": {
+    "defaultMessage": "Publicaste tu primera publicación. Te damos la bienvenida.",
+    "description": "Notice after the account's first post was published: the post is done, and the account has started posting."
+  },
+  "compose.remaining": {
+    "defaultMessage": "{count, plural, one {Queda # carácter} other {Quedan # caracteres}}",
+    "description": "Counter under a text field: how many more characters fit. {count} is a number."
+  },
+  "compose.reply.cancel": {
+    "defaultMessage": "Cancelar respuesta",
+    "description": "Button that turns the reply being written into a normal post."
+  },
+  "compose.reply.label": {
+    "defaultMessage": "Respondiendo a {name}",
+    "description": "Above the new-post form: the post being replied to. {name} is the author's display name or handle."
+  },
+  "compose.reply.unavailable": {
+    "defaultMessage": "No se puede mostrar la publicación a la que respondes.",
+    "description": "Shown instead of the post being replied to when it could not be loaded."
+  },
+  "compose.sensitive": {
+    "defaultMessage": "Ocultar las imágenes hasta que los lectores las muestren",
+    "description": "Checkbox that marks the attached images as sensitive."
+  },
+  "compose.submit": {
+    "defaultMessage": "Publicar",
+    "description": "Button that publishes the new post."
+  },
+  "compose.submit.reply": {
+    "defaultMessage": "Responder",
+    "description": "Button that publishes the reply being written."
+  },
+  "compose.text.label": {
+    "defaultMessage": "Tu publicación",
+    "description": "Label of the text area where the user writes the text of a post."
+  },
+  "compose.title": {
+    "defaultMessage": "Nueva publicación",
+    "description": "Heading of the form that writes a new post (the side panel on wide screens, the sheet on phones)."
+  },
+  "compose.visibility.button": {
+    "defaultMessage": "Visibilidad: {visibility}",
+    "description": "Button that opens the choice of who can see the post. {visibility} is the current choice, for example 'Public'."
+  },
+  "compose.visibility.ceiling": {
+    "defaultMessage": "Ahora tu cuenta puede publicar como máximo con la visibilidad «{visibility}». Una opción más amplia se publica como «{visibility}».",
+    "description": "Hint in the choice of visibility while a restriction on the account narrows what it can post. {visibility} is the widest visibility it can use, for example 'Followers'."
+  },
+  "compose.visibility.direct": {
+    "defaultMessage": "Personas mencionadas",
+    "description": "Visibility of a post: only the mentioned people."
+  },
+  "compose.visibility.direct.description": {
+    "defaultMessage": "Solo las personas que menciones.",
+    "description": "Explanation of the 'Mentioned people' visibility."
+  },
+  "compose.visibility.done": {
+    "defaultMessage": "Listo",
+    "description": "Button that closes the list of visibility choices."
+  },
+  "compose.visibility.limited": {
+    "defaultMessage": "Publicado con la visibilidad «{visibility}»: ahora tu cuenta no puede publicar con una más amplia.",
+    "description": "Notice after posting when the server narrowed the chosen visibility because of a restriction on the account. {visibility} is the visibility the post got, for example 'Followers'."
+  },
+  "compose.visibility.local": {
+    "defaultMessage": "Este servidor",
+    "description": "Visibility of a post: signed-in people of this server and the author's followers. Not the same as 'local only' in other software: followers on other servers receive it."
+  },
+  "compose.visibility.local.description": {
+    "defaultMessage": "Personas con sesión iniciada aquí y tus seguidores de otros servidores. Se muestra en la cronología local de este servidor.",
+    "description": "Explanation of the 'This server' visibility (ADR-0017)."
+  },
+  "compose.visibility.private": {
+    "defaultMessage": "Seguidores",
+    "description": "Visibility of a post: the author's followers and the mentioned people."
+  },
+  "compose.visibility.private.description": {
+    "defaultMessage": "Solo tus seguidores y las personas que menciones.",
+    "description": "Explanation of the 'Followers' visibility."
+  },
+  "compose.visibility.public": {
+    "defaultMessage": "Pública",
+    "description": "Visibility of a post: everyone, and listed on the public timelines."
+  },
+  "compose.visibility.public.description": {
+    "defaultMessage": "Cualquiera, aquí y en otros servidores. Se muestra en las cronologías públicas.",
+    "description": "Explanation of the 'Public' visibility."
+  },
+  "compose.visibility.title": {
+    "defaultMessage": "¿Quién puede ver esta publicación?",
+    "description": "Label of the list of visibility choices for a post."
+  },
+  "compose.visibility.translation.both": {
+    "defaultMessage": "Cuando un lector pide una traducción, el texto de una publicación «{first}» o «{second}» puede enviarse a {providers}.",
+    "description": "In the visibility picker, on a server that allows a translation provider both narrow visibilities: what can happen to such a post. {first} and {second} are visibility names, {providers} the names of the providers as a list."
+  },
+  "compose.visibility.translation.one": {
+    "defaultMessage": "Cuando un lector pide una traducción, el texto de una publicación «{visibility}» puede enviarse a {providers}.",
+    "description": "In the visibility picker, on a server that allows a translation provider one narrow visibility: what can happen to such a post. {visibility} is the visibility's name, {providers} the names of the providers as a list."
+  },
+  "compose.visibility.unlisted": {
+    "defaultMessage": "No listada",
+    "description": "Visibility of a post: everyone, but kept off the public timelines."
+  },
+  "compose.visibility.unlisted.description": {
+    "defaultMessage": "Cualquiera con el enlace, pero no se muestra en las cronologías públicas.",
+    "description": "Explanation of the 'Unlisted' visibility."
+  },
+  "compose.warning.description": {
+    "defaultMessage": "Los lectores ven esto primero y deciden si muestran la publicación.",
+    "description": "Help text under the content warning field."
+  },
+  "compose.warning.label": {
+    "defaultMessage": "Advertencia de contenido",
+    "description": "Label of the field with the content warning text of a post."
+  },
+  "compose.warning.toggle": {
+    "defaultMessage": "Añadir una advertencia de contenido",
+    "description": "Toggle button (an icon) that adds a content warning: a short text shown instead of the post until the reader opens it."
+  },
+  "compose.quote.label": {
+    "defaultMessage": "Citando a {name}",
+    "description": "Heading above the new-post form of the post being quoted. {name} is the display name, or the @handle, of its author."
+  },
+  "compose.quote.cancel": {
+    "defaultMessage": "No citar",
+    "description": "Button under the post being quoted in the new-post form; the draft then quotes nothing."
+  },
+  "compose.quote.unavailable": {
+    "defaultMessage": "No se pudo cargar la publicación que se va a citar.",
+    "description": "Shown in place of the post being quoted in the new-post form when it could not be loaded."
+  },
+  "compose.quote_policy.label": {
+    "defaultMessage": "Quién puede citar",
+    "description": "Accessible name of the select in the new-post form that chooses who may quote the post."
+  },
+  "compose.quote_policy.public": {
+    "defaultMessage": "Cualquiera",
+    "description": "Quote policy: anyone who can see the post may quote it."
+  },
+  "compose.quote_policy.public.description": {
+    "defaultMessage": "Cualquiera que pueda ver la publicación puede citarla.",
+    "description": "Description of the quote policy 'Anyone'."
+  },
+  "compose.quote_policy.followers": {
+    "defaultMessage": "Seguidores",
+    "description": "Quote policy: only the author's followers may quote the post."
+  },
+  "compose.quote_policy.followers.description": {
+    "defaultMessage": "Solo tus seguidores pueden citarla.",
+    "description": "Description of the quote policy 'Followers'."
+  },
+  "compose.quote_policy.nobody": {
+    "defaultMessage": "Solo tú",
+    "description": "Quote policy: only the author may quote the post."
+  },
+  "compose.quote_policy.nobody.description": {
+    "defaultMessage": "Nadie más que tú puede citarla.",
+    "description": "Description of the quote policy 'Only you'."
+  },
+  "compose.quote_policy.tooltip": {
+    "defaultMessage": "Cita: {value}",
+    "description": "Tooltip of the select that chooses who may quote the post, shown on hover and keyboard focus. {value} is the current choice, for example 'Followers'."
+  },
+  "compose.language.tooltip": {
+    "defaultMessage": "Idioma: {value}",
+    "description": "Tooltip of the select that chooses the language of the post, shown on hover and keyboard focus. {value} is the current language, for example 'English'."
+  },
+  "compose.blocked.empty": {
+    "defaultMessage": "Escribe algo para publicar.",
+    "description": "Beside the submit button of the new-post form, after it was pressed with an empty text: why the post was not sent. The focus moves to the text."
+  },
+  "compose.blocked.too_long": {
+    "defaultMessage": "El texto es demasiado largo. Acórtalo para publicar.",
+    "description": "Beside the submit button of the new-post form, after it was pressed with a text over the character limit: why the post was not sent. The counter under the text shows by how much."
+  },
+  "compose.blocked.uploading": {
+    "defaultMessage": "Los adjuntos aún se están subiendo. Publica cuando estén listos.",
+    "description": "Beside the submit button of the new-post form, after it was pressed while attached files were still uploading or being processed: why the post was not sent."
+  },
+  "compose.blocked.upload_failed": {
+    "defaultMessage": "No se pudo subir un adjunto. Quítalo para publicar.",
+    "description": "Beside the submit button of the new-post form, after it was pressed while an attached file had failed: why the post was not sent."
+  },
+  "compose.blocked.poll": {
+    "defaultMessage": "Corrige las opciones de la encuesta para publicar.",
+    "description": "Beside the submit button of the new-post form, after it was pressed while the poll had an empty or repeated option: why the post was not sent. The poll shows which."
+  },
+  "compose.blocked.loading_target": {
+    "defaultMessage": "La publicación a la que respondes o que citas aún se está cargando. Publica cuando se muestre.",
+    "description": "Beside the submit button of the new-post form, after it was pressed while the post replied to or quoted was still loading: why the post was not sent."
+  },
+  "compose.rejected.appeal.already_appealed": {
+    "defaultMessage": "Ya apelaste esta decisión. Un moderador la revisará.",
+    "description": "Shown in place of the appeal button when the user already appealed the automated review's refusal of their post."
+  },
+  "compose.rejected.appeal.cancel": {
+    "defaultMessage": "Cancelar",
+    "description": "Button of the appeal dialog of a refused post: closes it without appealing. The draft is kept."
+  },
+  "compose.rejected.appeal.characters_left": {
+    "defaultMessage": "{count, plural, one {Queda # carácter} other {Quedan # caracteres}}",
+    "description": "Count under a field of the appeal of a refused post. {count} is how many more characters fit."
+  },
+  "compose.rejected.appeal.characters_over": {
+    "defaultMessage": "{count, plural, one {Sobra # carácter} other {Sobran # caracteres}}",
+    "description": "Count under a field of the appeal of a refused post that is too long. {count} is how many characters are over."
+  },
+  "compose.rejected.appeal.closed": {
+    "defaultMessage": "El plazo para apelar terminó el {date}.",
+    "description": "Shown in place of the appeal button once the deadline to appeal the refusal of a post passed. {date} is the deadline."
+  },
+  "compose.rejected.appeal.comment.description": {
+    "defaultMessage": "Opcional. Explica a los moderadores por qué se debería permitir la publicación.",
+    "description": "Description of the comment field of the appeal of a refused post."
+  },
+  "compose.rejected.appeal.comment.label": {
+    "defaultMessage": "Comentario para los moderadores",
+    "description": "Label of the optional comment field of the appeal of a post the automated review refused."
+  },
+  "compose.rejected.appeal.comment.too_long": {
+    "defaultMessage": "Escribe {max, number} caracteres o menos.",
+    "description": "Error of the comment of the appeal of a refused post that is too long. {max} is the limit."
+  },
+  "compose.rejected.appeal.confirm.description": {
+    "defaultMessage": "Un moderador leerá el texto y tu comentario. La apelación no publica la publicación: si el moderador anula la decisión, podrás publicarla de nuevo. No podrás cambiar la apelación después de enviarla.",
+    "description": "Description of the appeal dialog of a post the automated review refused."
+  },
+  "compose.rejected.appeal.confirm.title": {
+    "defaultMessage": "¿Apelar esta decisión?",
+    "description": "Title of the dialog that appeals the automated review's refusal of a post."
+  },
+  "compose.rejected.appeal.failed": {
+    "defaultMessage": "No se pudo enviar la apelación: {reason}",
+    "description": "Error in the appeal dialog of a refused post when sending failed; the dialog stays open. {reason} says why."
+  },
+  "compose.rejected.appeal.not_appealable": {
+    "defaultMessage": "Esta decisión no se puede apelar.",
+    "description": "Shown in place of the appeal button when the server says the refusal of the post cannot be appealed."
+  },
+  "compose.rejected.appeal.open": {
+    "defaultMessage": "Apelar",
+    "description": "Button under the notice of a post the automated review refused: opens the appeal dialog."
+  },
+  "compose.rejected.appeal.send": {
+    "defaultMessage": "Enviar apelación",
+    "description": "Button of the appeal dialog of a refused post that sends the appeal."
+  },
+  "compose.rejected.appeal.sent": {
+    "defaultMessage": "Tu apelación se envió. Un moderador la revisará y recibirás una notificación; si anula la decisión, podrás publicar de nuevo.",
+    "description": "Shown in the notice of a refused post after the appeal was sent."
+  },
+  "compose.rejected.appeal.upheld": {
+    "defaultMessage": "Un moderador mantuvo la decisión el {date}. Esta publicación sigue sin publicarse.",
+    "description": "Notice of the composer after the author appealed a refused post: a moderator reviewed the appeal and kept the refusal. {date} is the date and time of the review."
+  },
+  "compose.rejected.appeal.overturned": {
+    "defaultMessage": "Un moderador anuló la decisión el {date}. Puedes publicar de nuevo.",
+    "description": "Notice of the composer after the author appealed a refused post: a moderator overturned the refusal. The post is not restored; the author posts again. {date} is the date and time of the review."
+  },
+  "compose.rejected.appeal.text.description": {
+    "defaultMessage": "El texto que intentaste publicar. Los moderadores lo leen como texto simple.",
+    "description": "Description of the text field of the appeal of a refused post, which starts with the text that was sent."
+  },
+  "compose.rejected.appeal.text.label": {
+    "defaultMessage": "Texto de la publicación",
+    "description": "Label of the text field of the appeal of a post the automated review refused."
+  },
+  "compose.rejected.appeal.text.required": {
+    "defaultMessage": "Introduce el texto de la publicación.",
+    "description": "Error of the appeal of a refused post whose text is empty."
+  },
+  "compose.rejected.appeal.text.too_long": {
+    "defaultMessage": "Escribe {max, number} caracteres o menos.",
+    "description": "Error of the text of the appeal of a refused post that is too long. {max} is the limit."
+  },
+  "compose.rejected.appeal.until": {
+    "defaultMessage": "Puedes apelar hasta el {date}.",
+    "description": "Shown above the appeal button of a post the automated review refused. {date} is the deadline."
+  },
+  "compose.rejected.appeal.window_closed": {
+    "defaultMessage": "El plazo para apelar esta decisión ha terminado.",
+    "description": "Shown in place of the appeal button when the server says the deadline to appeal the refusal of the post passed."
+  }
+}

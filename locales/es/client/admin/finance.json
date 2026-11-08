@@ -1,0 +1,558 @@
+{
+  "admin.finance.title": {
+    "defaultMessage": "Costos",
+    "description": "Heading of the costs screen (the instance's running costs), and its link in the administration menu."
+  },
+  "admin.finance.summary": {
+    "defaultMessage": "Registra lo que cuesta mantener el servidor y consulta los totales por semana, mes y año.",
+    "description": "Description of the costs screen in the administration menu of the settings."
+  },
+  "admin.finance.description": {
+    "defaultMessage": "Consulta los totales de los costos de mantener este servidor y de sus ingresos. Las demás páginas listan los pagos y reembolsos, registran los costos, muestran las importaciones de facturación y definen lo que se publica. Los elementos registrados, sus nombres y sus notas nunca se publican.",
+    "description": "Description of the costs screen, on its overview page under the links to its pages."
+  },
+  "admin.finance.visibility": {
+    "defaultMessage": "{visibility, select, totals {La página de información publica los totales de estos costos, sin desglose.} breakdown {La página de información publica los totales de estos costos y su desglose por proveedor y categoría.} other {Estos costos no se publican.}}",
+    "description": "What the server publishes of the costs on its information page, on the costs screen, by the server setting finance_visibility (private, totals, or breakdown)."
+  },
+  "admin.finance.income_visibility": {
+    "defaultMessage": "{visibility, select, totals {La página de información publica los totales de los ingresos.} plans {La página de información publica los totales de los ingresos y los miembros de cada plan.} other {Los ingresos no se publican.}}",
+    "description": "What the server publishes of the income on its information page, on the costs screen, by the server setting income_visibility (private, totals, or plans)."
+  },
+  "admin.finance.viewer": {
+    "defaultMessage": "{names, select, shown {Quienes pueden leer las finanzas ven los nombres de los elementos,} other {Quienes pueden leer las finanzas no ven los nombres de los elementos,}} {memos, select, shown {ven sus notas,} other {no ven sus notas,}} {income, select, plans {y ven los ingresos con los miembros de cada plan.} other {y ven solo los totales de los ingresos.}}",
+    "description": "What the holders of the view_finance permission see on the finances page, on the costs screen, by the server settings finance_viewer_item_names and finance_viewer_item_memos (shown or hidden) and finance_viewer_income (totals or plans)."
+  },
+  "admin.finance.totals.title": {
+    "defaultMessage": "Totales",
+    "description": "Heading of the section with the totals by period on the costs screen."
+  },
+  "admin.finance.movements.title": {
+    "defaultMessage": "Pagos y reembolsos",
+    "description": "Heading of the list of the payment provider's money movements of the income on its page of the costs screen."
+  },
+  "admin.finance.movements.description": {
+    "defaultMessage": "Los movimientos de dinero que registró el proveedor de pagos, del más reciente al más antiguo. Solo los ven quienes gestionan las finanzas; nunca se publican.",
+    "description": "Explanation of the list of the money movements of the income on the costs screen."
+  },
+  "admin.finance.movements.empty": {
+    "defaultMessage": "Aún no hay pagos",
+    "description": "Heading of the empty list of the money movements of the income."
+  },
+  "admin.finance.movements.empty.description": {
+    "defaultMessage": "Los pagos de los planes de apoyo aparecerán aquí cuando el proveedor de pagos los registre.",
+    "description": "Explanation of the empty list of the money movements of the income."
+  },
+  "admin.finance.movements.kind.payment": {
+    "defaultMessage": "Pago",
+    "description": "Kind of a money movement of the income: a payment of a subscription."
+  },
+  "admin.finance.movements.kind.refund": {
+    "defaultMessage": "Reembolso",
+    "description": "Kind of a money movement of the income: a refund of a payment."
+  },
+  "admin.finance.movements.kind.chargeback": {
+    "defaultMessage": "Contracargo",
+    "description": "Kind of a money movement of the income: a chargeback (dispute) of a payment."
+  },
+  "admin.finance.movements.kind.chargeback_reversal": {
+    "defaultMessage": "Contracargo revertido",
+    "description": "Kind of a money movement of the income: a chargeback given back."
+  },
+  "admin.finance.movements.kind.fee": {
+    "defaultMessage": "Comisión del proveedor",
+    "description": "Kind of a money movement of the income: a fee of the payment provider that belongs to no payment."
+  },
+  "admin.finance.movements.occurred_at": {
+    "defaultMessage": "Contabilizado el",
+    "description": "Term of the time the payment provider booked a money movement."
+  },
+  "admin.finance.movements.covers": {
+    "defaultMessage": "Periodo pagado",
+    "description": "Term of the billing period that a payment pays for."
+  },
+  "admin.finance.movements.parent": {
+    "defaultMessage": "Del pago",
+    "description": "Term of the payment provider's ID of the payment that a refund, a chargeback, or a reversal belongs to."
+  },
+  "admin.finance.movements.subscriber": {
+    "defaultMessage": "Suscriptor",
+    "description": "Term of the subscriber's account of a money movement."
+  },
+  "admin.finance.movements.no_subscriber": {
+    "defaultMessage": "Ninguno",
+    "description": "What the subscriber term says of a money movement of no subscription, such as a provider fee."
+  },
+  "admin.finance.movements.deleted_account": {
+    "defaultMessage": "Cuenta eliminada",
+    "description": "What the subscriber term says of a money movement whose subscriber's account has been deleted."
+  },
+  "admin.finance.movements.empty.filtered": {
+    "defaultMessage": "Ningún movimiento coincide con los filtros",
+    "description": "Heading of the empty list of money movements when the kind or dates filter leaves none."
+  },
+  "admin.finance.movements.empty.filtered.description": {
+    "defaultMessage": "Elige otro tipo u otras fechas, o quita los filtros.",
+    "description": "Explains the empty list of money movements under a filter."
+  },
+  "admin.finance.movements.filter.kind": {
+    "defaultMessage": "Tipo",
+    "description": "Label of the select that narrows the money movements to one kind."
+  },
+  "admin.finance.movements.filter.any_kind": {
+    "defaultMessage": "Todos los tipos",
+    "description": "Choice of the kind select that shows money movements of every kind."
+  },
+  "admin.finance.movements.filter.from": {
+    "defaultMessage": "Contado desde",
+    "description": "Label of the date field: only the money movements counted on or after this date."
+  },
+  "admin.finance.movements.filter.to": {
+    "defaultMessage": "Contado hasta",
+    "description": "Label of the date field: only the money movements counted on or before this date."
+  },
+  "admin.finance.movements.filter.to_before_from": {
+    "defaultMessage": "La última fecha es anterior a la primera.",
+    "description": "Error of the last date field when it is before the first date."
+  },
+  "admin.finance.movements.filter.apply": {
+    "defaultMessage": "Mostrar estas fechas",
+    "description": "Button that narrows the money movements to the typed dates."
+  },
+  "admin.finance.movements.filter.clear": {
+    "defaultMessage": "Quitar los filtros",
+    "description": "Button that removes the kind and dates filters of the money movements."
+  },
+  "admin.finance.new.title": {
+    "defaultMessage": "Registrar un costo",
+    "description": "Heading of the page of the form of a new cost, and the button on the list of recorded costs that leads to it."
+  },
+  "admin.finance.name": {
+    "defaultMessage": "Nombre",
+    "description": "Label of the name of a cost (such as a domain or a server plan) on the costs screen."
+  },
+  "admin.finance.name.description": {
+    "defaultMessage": "Qué es, como example.com o el servidor principal. Hasta {max} caracteres.",
+    "description": "Explanation of the name of a cost on the costs screen."
+  },
+  "admin.finance.provider": {
+    "defaultMessage": "Proveedor",
+    "description": "Label of who is paid for a cost on the costs screen."
+  },
+  "admin.finance.provider.description": {
+    "defaultMessage": "A quién pagas. El desglose agrupa el mismo proveedor aunque se escriba con otras mayúsculas.",
+    "description": "Explanation of the provider of a cost on the costs screen."
+  },
+  "admin.finance.memo": {
+    "defaultMessage": "Nota",
+    "description": "Label of the operator's note on a cost, never published, on the costs screen."
+  },
+  "admin.finance.memo.description": {
+    "defaultMessage": "Solo para los administradores; nunca se publica.",
+    "description": "Explanation of the memo of a cost on the costs screen."
+  },
+  "admin.finance.schedule": {
+    "defaultMessage": "Pago",
+    "description": "Label of how often a cost is paid on the costs screen."
+  },
+  "admin.finance.schedule.description": {
+    "defaultMessage": "Los pagos periódicos se cuentan desde la fecha de inicio: un pago mensual el día 31 cae el último día de los meses más cortos. Para cambiar la periodicidad más adelante, termina el costo y registra uno nuevo.",
+    "description": "Explanation of the payment schedule on the costs screen."
+  },
+  "admin.finance.schedule.once": {
+    "defaultMessage": "Una vez",
+    "description": "Choice of a cost paid once."
+  },
+  "admin.finance.schedule.weeks": {
+    "defaultMessage": "Cada varias semanas",
+    "description": "Choice of a cost paid every N weeks."
+  },
+  "admin.finance.schedule.months": {
+    "defaultMessage": "Cada varios meses",
+    "description": "Choice of a cost paid every N months."
+  },
+  "admin.finance.schedule.years": {
+    "defaultMessage": "Cada varios años",
+    "description": "Choice of a cost paid every N years, such as a domain renewal."
+  },
+  "admin.finance.interval": {
+    "defaultMessage": "Cada cuánto",
+    "description": "Label of the N of a payment every N weeks, months, or years on the costs screen."
+  },
+  "admin.finance.interval.description": {
+    "defaultMessage": "1 para cada semana, mes o año; 3 para cada 3 meses. Hasta {max}.",
+    "description": "Explanation of the interval of a payment on the costs screen."
+  },
+  "admin.finance.interval.invalid": {
+    "defaultMessage": "Escribe un número entero de 1 a {max}.",
+    "description": "Error of an interval that is not a whole number in range on the costs screen."
+  },
+  "admin.finance.starts_on": {
+    "defaultMessage": "Primer pago",
+    "description": "Label of the date of the first payment of a regular cost on the costs screen."
+  },
+  "admin.finance.starts_on.description": {
+    "defaultMessage": "La fecha que figura en el extracto o la factura.",
+    "description": "Explanation of the first payment date on the costs screen."
+  },
+  "admin.finance.paid_on": {
+    "defaultMessage": "Fecha de pago",
+    "description": "Label of the date of a cost paid once on the costs screen."
+  },
+  "admin.finance.paid_on.description": {
+    "defaultMessage": "La fecha que figura en el extracto o la factura.",
+    "description": "Explanation of the date of a cost paid once on the costs screen."
+  },
+  "admin.finance.ends_on": {
+    "defaultMessage": "Último pago hasta",
+    "description": "Label of the last date a regular payment can fall on, after which it stops, on the costs screen."
+  },
+  "admin.finance.ends_on.description": {
+    "defaultMessage": "Opcional. Los pagos posteriores a esta fecha se detienen; déjala vacía mientras sigas pagando.",
+    "description": "Explanation of the end of a regular cost on the costs screen."
+  },
+  "admin.finance.ends_on.before_start": {
+    "defaultMessage": "El fin no puede ser anterior al primer pago.",
+    "description": "Error of an end before the start on the costs screen."
+  },
+  "admin.finance.no_end": {
+    "defaultMessage": "Hasta que se termine",
+    "description": "Value of the end of a regular cost without one on the costs screen."
+  },
+  "admin.finance.amount": {
+    "defaultMessage": "Importe",
+    "description": "Label of the amount of a payment on the costs screen."
+  },
+  "admin.finance.amount.description": {
+    "defaultMessage": "En la unidad principal de la moneda, como 1650 para yenes o 12.34 para dólares.",
+    "description": "Explanation of the amount of a payment on the costs screen."
+  },
+  "admin.finance.amount.invalid": {
+    "defaultMessage": "Escribe un importe como 1650 o 12.34.",
+    "description": "Error of an amount that is not a plain decimal number on the costs screen."
+  },
+  "admin.finance.currency": {
+    "defaultMessage": "Moneda",
+    "description": "Label of the currency code of a payment on the costs screen."
+  },
+  "admin.finance.currency.description": {
+    "defaultMessage": "Su código de tres letras, como JPY o USD.",
+    "description": "Explanation of the ISO 4217 currency code on the costs screen."
+  },
+  "admin.finance.currency.invalid": {
+    "defaultMessage": "Escribe un código de moneda de tres letras, como JPY.",
+    "description": "Error of a currency that is not three letters on the costs screen."
+  },
+  "admin.finance.required": {
+    "defaultMessage": "Rellena este campo.",
+    "description": "Error of a required field left empty on the costs screen."
+  },
+  "admin.finance.too_long": {
+    "defaultMessage": "Usa como máximo {max} caracteres.",
+    "description": "Error of a text that is too long on the costs screen."
+  },
+  "admin.finance.create": {
+    "defaultMessage": "Registrar el costo",
+    "description": "Submit button of the form that records a cost."
+  },
+  "admin.finance.cancel": {
+    "defaultMessage": "Cancelar",
+    "description": "Link from the form of a new cost back to the list of recorded costs, without recording it."
+  },
+  "admin.finance.create_failed": {
+    "defaultMessage": "No se pudo registrar el costo: {reason}",
+    "description": "Error below the form of a new cost on the costs screen, with the server's reason."
+  },
+  "admin.finance.created": {
+    "defaultMessage": "Se registró {name}. El registro de auditoría anota el cambio.",
+    "description": "Result of recording a cost on the costs screen."
+  },
+  "admin.finance.list.title": {
+    "defaultMessage": "Costos registrados",
+    "description": "Heading of the list of recorded costs on its page of the costs screen."
+  },
+  "admin.finance.empty": {
+    "defaultMessage": "Aún no hay costos",
+    "description": "Heading of the empty list of costs on the costs screen."
+  },
+  "admin.finance.empty.description": {
+    "defaultMessage": "Registra lo que cuesta el servidor para ver sus totales.",
+    "description": "Description of the empty list of recorded costs, above the button that records one."
+  },
+  "admin.finance.every.once": {
+    "defaultMessage": "Una vez",
+    "description": "How often a cost is paid: once."
+  },
+  "admin.finance.every.weeks": {
+    "defaultMessage": "{count, plural, one {Cada semana} other {Cada # semanas}}",
+    "description": "How often a cost is paid: every N weeks."
+  },
+  "admin.finance.every.months": {
+    "defaultMessage": "{count, plural, one {Cada mes} other {Cada # meses}}",
+    "description": "How often a cost is paid: every N months."
+  },
+  "admin.finance.every.years": {
+    "defaultMessage": "{count, plural, one {Cada año} other {Cada # años}}",
+    "description": "How often a cost is paid: every N years."
+  },
+  "admin.finance.price": {
+    "defaultMessage": "Precio actual",
+    "description": "Term of the price of a payment today on the costs screen."
+  },
+  "admin.finance.prices": {
+    "defaultMessage": "Cambios de precio",
+    "description": "Term of the list of the prices of a cost by date on the costs screen."
+  },
+  "admin.finance.price_from": {
+    "defaultMessage": "{amount} desde el {date}",
+    "description": "A price of a cost from a date on on the costs screen."
+  },
+  "admin.finance.created_at": {
+    "defaultMessage": "Registrado",
+    "description": "Term of when a cost was recorded on the costs screen."
+  },
+  "admin.finance.edit.title": {
+    "defaultMessage": "Editar el costo",
+    "description": "Heading of the section of the page of one cost that changes its name, provider, category, and memo."
+  },
+  "admin.finance.revise": {
+    "defaultMessage": "Cambiar el precio",
+    "description": "Submit button of the form of a new price on the page of one cost."
+  },
+  "admin.finance.revise.title": {
+    "defaultMessage": "Cambiar el precio de {name}",
+    "description": "Heading of the section of the page of one cost that sets a new price from a date on."
+  },
+  "admin.finance.effective_on": {
+    "defaultMessage": "Desde",
+    "description": "Label of the date from which a new price applies on the costs screen."
+  },
+  "admin.finance.effective_on.description": {
+    "defaultMessage": "Los pagos a partir de esta fecha usan el nuevo precio. Para corregir un error en todos los pagos, usa la fecha del primer pago.",
+    "description": "Explanation of the date of a new price on the costs screen."
+  },
+  "admin.finance.effective_on.before_start": {
+    "defaultMessage": "La fecha no puede ser anterior al primer pago.",
+    "description": "Error of a price change before the start on the costs screen."
+  },
+  "admin.finance.end": {
+    "defaultMessage": "Definir el fin",
+    "description": "Submit button of the form of the end of a regular cost on the page of one cost."
+  },
+  "admin.finance.end.title": {
+    "defaultMessage": "Terminar {name}",
+    "description": "Heading of the section of the page of one regular cost that sets its last payment date."
+  },
+  "admin.finance.end.description": {
+    "defaultMessage": "Los pagos posteriores a esta fecha se detienen; los pasados siguen en los totales. Déjala vacía para seguir pagando.",
+    "description": "Explanation of the end in its form on the page of one cost."
+  },
+  "admin.finance.ended": {
+    "defaultMessage": "Se definió el fin de {name}. El registro de auditoría anota el cambio.",
+    "description": "Result of setting the end of a cost on the costs screen."
+  },
+  "admin.finance.end_removed": {
+    "defaultMessage": "{name} ya no tiene fin. El registro de auditoría anota el cambio.",
+    "description": "Result of removing the end of a cost on the costs screen."
+  },
+  "admin.finance.relabeled": {
+    "defaultMessage": "Se cambió {name}. El registro de auditoría anota el cambio.",
+    "description": "Result of changing the label of a cost on the costs screen."
+  },
+  "admin.finance.revised": {
+    "defaultMessage": "Se cambió el precio de {name}. El registro de auditoría anota el cambio.",
+    "description": "Result of a new price on the costs screen."
+  },
+  "admin.finance.cancel_item": {
+    "defaultMessage": "Eliminar",
+    "description": "Button that removes a cost recorded by mistake from every period on the costs screen."
+  },
+  "admin.finance.cancel.title": {
+    "defaultMessage": "¿Eliminar {name}?",
+    "description": "Title of the confirmation of deleting a cost on the costs screen."
+  },
+  "admin.finance.cancel.description": {
+    "defaultMessage": "Desaparece de todos los periodos, incluidos los pasados, y no se puede deshacer. Para detener una suscripción y conservar sus pagos pasados, define su fin.",
+    "description": "Explanation in the confirmation of deleting a cost on the costs screen."
+  },
+  "admin.finance.canceled": {
+    "defaultMessage": "Se eliminó {name}. El registro de auditoría anota el cambio.",
+    "description": "Result of deleting a cost on the costs screen."
+  },
+  "admin.finance.change_failed": {
+    "defaultMessage": "No se pudo cambiar el costo: {reason}",
+    "description": "Error of a change of a cost on the costs screen, with the server's reason."
+  },
+  "admin.finance.cancel_dialog": {
+    "defaultMessage": "Cancelar",
+    "description": "Button that closes the confirmation of deleting a cost without deleting it."
+  },
+  "admin.finance.save": {
+    "defaultMessage": "Guardar",
+    "description": "Submit button of the form that changes the name, provider, category, and memo on the page of one cost."
+  },
+  "admin.finance.imports.title": {
+    "defaultMessage": "Importaciones de facturación",
+    "description": "Heading of the state of the billing imports on its page of the costs screen."
+  },
+  "admin.finance.imports.none": {
+    "defaultMessage": "No hay importaciones de facturación",
+    "description": "Heading when no cloud provider's charges are imported on the costs screen."
+  },
+  "admin.finance.imports.none.description": {
+    "defaultMessage": "El operador del servidor las activa en la configuración del despliegue (billing_sources).",
+    "description": "Explanation of how to turn the billing imports on on the costs screen."
+  },
+  "admin.finance.imports.time_zone": {
+    "defaultMessage": "Meses de facturación",
+    "description": "Term of the time zone that cuts a provider's billing months on the costs screen."
+  },
+  "admin.finance.imports.last_success": {
+    "defaultMessage": "Última importación correcta",
+    "description": "Term of when the charges were last imported on the costs screen."
+  },
+  "admin.finance.imports.last_run": {
+    "defaultMessage": "Último intento",
+    "description": "Term of the last attempt to import the charges and its result on the costs screen."
+  },
+  "admin.finance.imports.never": {
+    "defaultMessage": "Nunca",
+    "description": "Value of an import that has not happened on the costs screen."
+  },
+  "admin.finance.imports.requests_today": {
+    "defaultMessage": "Solicitudes facturadas hoy (UTC)",
+    "description": "Term of the billed requests to the provider this UTC day, with the cap, on the costs screen."
+  },
+  "admin.finance.imports.requests_month": {
+    "defaultMessage": "Solicitudes facturadas este mes (UTC)",
+    "description": "Term of the billed requests to the provider this UTC month, with the cap, on the costs screen."
+  },
+  "admin.finance.imports.used_of": {
+    "defaultMessage": "{used} de {max}",
+    "description": "Requests made and their cap on the costs screen."
+  },
+  "admin.finance.imports.bytes": {
+    "defaultMessage": "Bytes facturados este mes",
+    "description": "Term of the BigQuery bytes billed this month on the costs screen."
+  },
+  "admin.finance.imports.method.budget": {
+    "defaultMessage": "Una aproximación a partir de las notificaciones de presupuesto: totales basados en estimaciones, sin desglose por servicio.",
+    "description": "Note under a provider on the costs screen when Google Cloud is imported from its budget notifications (billing_gcp_method = budget): the figures are approximate."
+  },
+  "admin.finance.imports.months": {
+    "defaultMessage": "Meses de facturación de {provider}",
+    "description": "Accessible name of the list of a provider's imported billing months on the costs screen."
+  },
+  "admin.finance.imports.kind.estimate": {
+    "defaultMessage": "Estimación",
+    "description": "State of an imported billing month that its provider has not closed."
+  },
+  "admin.finance.imports.kind.final": {
+    "defaultMessage": "Definitivo",
+    "description": "State of an imported billing month that its provider has closed."
+  },
+  "admin.finance.imports.kind.correction": {
+    "defaultMessage": "Corregido",
+    "description": "State of an imported billing month whose amount changed after it was closed."
+  },
+  "admin.finance.imports.error.none": {
+    "defaultMessage": "Correcta",
+    "description": "Result of an import attempt that succeeded."
+  },
+  "admin.finance.imports.error.permission": {
+    "defaultMessage": "Error: puede que las credenciales no puedan leer los datos de facturación. Concede el permiso al rol o a la cuenta de servicio del servidor.",
+    "description": "Result of an import attempt refused for lack of permission, with how to fix it."
+  },
+  "admin.finance.imports.error.not_enabled": {
+    "defaultMessage": "Error: los datos de facturación no están activados para la cuenta. Actívalos en el proveedor.",
+    "description": "Result of an import attempt whose billing data is not enabled, with how to fix it."
+  },
+  "admin.finance.imports.error.not_found": {
+    "defaultMessage": "Error: no se encontraron los datos de facturación. Revisa el conjunto de datos o la tabla en la configuración del despliegue.",
+    "description": "Result of an import attempt that found no billing data, with how to fix it."
+  },
+  "admin.finance.imports.error.throttled": {
+    "defaultMessage": "Error: el proveedor limitó las solicitudes. Se volverá a intentar.",
+    "description": "Result of an import attempt that was throttled; it is retried."
+  },
+  "admin.finance.imports.error.request_cap": {
+    "defaultMessage": "Omitida: se alcanzó el límite de solicitudes facturadas. La importación del día o mes siguiente lo intenta de nuevo.",
+    "description": "Result of an import attempt that called nothing because the cap of billed requests is reached."
+  },
+  "admin.finance.imports.error.bytes_cap": {
+    "defaultMessage": "Error: la consulta analizaría más bytes facturados que su límite.",
+    "description": "Result of an import attempt whose query would scan too much."
+  },
+  "admin.finance.imports.error.invalid_response": {
+    "defaultMessage": "Error: no se pudo leer la respuesta del proveedor.",
+    "description": "Result of an import attempt with an unusable answer."
+  },
+  "admin.finance.imports.error.unavailable": {
+    "defaultMessage": "Error: el proveedor no respondió. Se volverá a intentar.",
+    "description": "Result of an import attempt whose provider did not answer; it is retried."
+  },
+  "admin.finance.imports.run": {
+    "defaultMessage": "Importar ahora",
+    "description": "Button that imports a provider's charges now, besides the daily import, on the costs screen."
+  },
+  "admin.finance.imports.run_one": {
+    "defaultMessage": "Importar ahora: {provider}",
+    "description": "Accessible name of the import button of a provider on the costs screen."
+  },
+  "admin.finance.imports.queued": {
+    "defaultMessage": "Se inició una importación de {provider}. El registro de auditoría la anota.",
+    "description": "Result of starting an import on the costs screen."
+  },
+  "admin.finance.imports.too_soon": {
+    "defaultMessage": "Ya se ejecutó una importación de este proveedor en la última hora. Inténtalo más tarde.",
+    "description": "Error of an import started again within the hour on the costs screen."
+  },
+  "admin.finance.imports.failed": {
+    "defaultMessage": "No se pudo iniciar la importación: {reason}",
+    "description": "Error of starting an import on the costs screen, with the server's reason."
+  },
+  "admin.finance.publication.title": {
+    "defaultMessage": "Publicación",
+    "description": "Heading of the page of the costs screen with what the server publishes of the costs and the income, and what the holders of view_finance see."
+  },
+  "admin.finance.pages": {
+    "defaultMessage": "Páginas de costos",
+    "description": "Accessible name of the navigation between the pages of the costs screen."
+  },
+  "admin.finance.pages.overview": {
+    "defaultMessage": "Resumen",
+    "description": "Link to the page of the costs screen with the totals of the costs and the income."
+  },
+  "admin.finance.pages.income": {
+    "defaultMessage": "Pagos y reembolsos",
+    "description": "Link to the page of the costs screen with the payment provider's money movements of the income."
+  },
+  "admin.finance.pages.costs": {
+    "defaultMessage": "Costos registrados",
+    "description": "Link to the page of the costs screen with the list of recorded costs."
+  },
+  "admin.finance.pages.imports": {
+    "defaultMessage": "Importaciones de facturación",
+    "description": "Link to the page of the costs screen with the state of the billing imports."
+  },
+  "admin.finance.pages.publication": {
+    "defaultMessage": "Publicación",
+    "description": "Link to the page of the costs screen with what the server publishes of the costs and the income."
+  },
+  "admin.finance.item.title": {
+    "defaultMessage": "Costo registrado",
+    "description": "Heading of the page of one recorded cost."
+  },
+  "admin.finance.item.back": {
+    "defaultMessage": "Volver a los costos registrados",
+    "description": "Link from the page of one cost, or of a new one, back to the list of recorded costs."
+  },
+  "admin.finance.item.delete": {
+    "defaultMessage": "Eliminar el costo",
+    "description": "Heading of the section of the page of one cost that deletes it for good."
+  },
+  "admin.finance.movements.gross_fee": {
+    "defaultMessage": "Bruto {gross}, comisión {fee}",
+    "description": "Under the net amount of a money movement on the payments and refunds page. {gross} and {fee} are formatted amounts."
+  }
+}

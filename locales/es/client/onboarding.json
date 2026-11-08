@@ -1,0 +1,78 @@
+{
+  "onboarding.checklist": {
+    "defaultMessage": "Primeros pasos",
+    "description": "Heading of the checklist of first steps on the home timeline of a new user."
+  },
+  "onboarding.progress": {
+    "defaultMessage": "Pasos completados",
+    "description": "Label of the progress bar of the first steps."
+  },
+  "onboarding.progress.value": {
+    "defaultMessage": "{done} de {total} completados",
+    "description": "How many of the first steps are done, next to the progress bar."
+  },
+  "onboarding.step.profile": {
+    "defaultMessage": "Configura tu perfil",
+    "description": "First step of the checklist: set an avatar or a display name."
+  },
+  "onboarding.step.follow": {
+    "defaultMessage": "Sigue a alguien",
+    "description": "Second step of the checklist: follow an account."
+  },
+  "onboarding.step.post": {
+    "defaultMessage": "Escribe tu primera publicación",
+    "description": "Third step of the checklist: write a post."
+  },
+  "onboarding.done": {
+    "defaultMessage": "Hecho",
+    "description": "Badge of a step of the checklist that is done."
+  },
+  "onboarding.todo": {
+    "defaultMessage": "Pendiente",
+    "description": "Badge of a step of the checklist that is not done yet."
+  },
+  "onboarding.action.profile": {
+    "defaultMessage": "Editar perfil",
+    "description": "Link of the profile step to the profile settings."
+  },
+  "onboarding.action.follow": {
+    "defaultMessage": "Ver sugerencias",
+    "description": "Link of the follow step to the suggested accounts below."
+  },
+  "onboarding.action.search": {
+    "defaultMessage": "Buscar personas",
+    "description": "Link of the follow step to the account search, when there are no suggestions."
+  },
+  "onboarding.action.post": {
+    "defaultMessage": "Escribir una publicación",
+    "description": "Button of the post step that opens the post form."
+  },
+  "onboarding.dismiss": {
+    "defaultMessage": "Ocultar estos pasos",
+    "description": "Button that closes the checklist of first steps on this browser."
+  },
+  "onboarding.suggestions": {
+    "defaultMessage": "Cuentas sugeridas",
+    "description": "Heading of the accounts suggested to follow on the home timeline."
+  },
+  "onboarding.suggestions.more": {
+    "defaultMessage": "Buscar más personas",
+    "description": "Link under the suggested accounts to the account search."
+  },
+  "onboarding.suggestions.failed": {
+    "defaultMessage": "No se pudieron cargar las sugerencias",
+    "description": "Heading of the error shown when the suggested accounts fail to load, above the reason and the button to try again."
+  },
+  "onboarding.suggestions.retry": {
+    "defaultMessage": "Intentar de nuevo",
+    "description": "Button that loads the suggested accounts again."
+  },
+  "onboarding.reason.featured": {
+    "defaultMessage": "Destacada por el servidor",
+    "description": "Badge of a suggested account that the administrators feature."
+  },
+  "onboarding.reason.recently_active": {
+    "defaultMessage": "Ha publicado hace poco",
+    "description": "Badge of a suggested account that posted recently."
+  }
+}

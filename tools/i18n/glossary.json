@@ -216,5 +216,112 @@
       "avoid": ["視頻"],
       "note": "A video."
     }
+  ],
+  "es": [
+    {
+      "use": "tú",
+      "avoid": ["\\b[Uu]sted(?:es)?\\b", "\\b[Vv]osotr[oa]s\\b", "\\b[Vv]uestr[oa]s?\\b"],
+      "note": "How the copy addresses the user: tú, as neutral Spanish apps do in Spain and Latin America; never usted, vosotros or voseo (web-client G19)."
+    },
+    {
+      "use": "publicación",
+      "avoid": ["\\b[Pp]osts?\\b", "\\b[Tt]o?ots?\\b", "\\b[Tt]uits?\\b"],
+      "note": "A post (publicar for the action). Not the names of other services' posts."
+    },
+    {
+      "use": "impulsar / impulso",
+      "avoid": ["\\b[Rr]eblog", "\\b[Rr]etu?it", "\\b[Rr]eto?ot", "\\b[Bb]oosts?\\b"],
+      "note": "A boost: impulsar for the action, impulso for the thing."
+    },
+    {
+      "use": "favorito",
+      "avoid": ["\\b[Mm]e gusta\\b", "\\b[Ll]ikes?\\b"],
+      "note": "A favourite: marcar como favorito, quitar de favoritos."
+    },
+    {
+      "use": "marcador",
+      "avoid": ["\\b[Bb]ookmarks?\\b"],
+      "note": "A bookmark: guardar en marcadores."
+    },
+    {
+      "use": "iniciar sesión",
+      "avoid": ["\\b[Ll]ogue", "\\b[Ll]ogin\\b(?! providers?\\b)", "\\b[Ss]ign[ -]in\\b"],
+      "note": "Starting a session. \"Login provider\", the name of the admin feature, is translated as proveedor de inicio de sesión."
+    },
+    {
+      "use": "cerrar sesión",
+      "avoid": ["\\b[Dd]eslogue", "\\b[Ll]ogout\\b"],
+      "note": "Ending a session."
+    },
+    {
+      "use": "seguir / seguidor",
+      "avoid": ["\\b[Ff]ollowers?\\b"],
+      "note": "Following an account (seguir a {handle}) and a follower."
+    },
+    {
+      "use": "silenciar",
+      "avoid": ["\\b[Mm]ute", "\\b[Mm]utear"],
+      "note": "Muting an account or a word."
+    },
+    {
+      "use": "denunciar / denuncia",
+      "avoid": ["\\b[Rr]eport(?:ar|e|es|ado|ada)\\b"],
+      "note": "Reporting an account or a post to the moderators. Reportar is an anglicism in this sense."
+    },
+    {
+      "use": "advertencia de contenido",
+      "avoid": ["\\b[Aa]viso de contenido\\b"],
+      "note": "A content warning (CW)."
+    },
+    {
+      "use": "configuración",
+      "avoid": ["\\b[Aa]justes\\b"],
+      "note": "The settings of an account or an instance."
+    },
+    {
+      "use": "dispositivo móvil",
+      "avoid": ["\\b[Cc]elulares?\\b", "\\b[Tt]eléfonos?\\b"],
+      "note": "A narrow screen where the bottom tab bar is the navigation (\"phone\" in en); móvil alone also reads well everywhere."
+    },
+    {
+      "use": "equipo / dispositivo",
+      "avoid": ["\\b[Oo]rdenador(?:es)?\\b", "\\b[Cc]omputadoras?\\b"],
+      "note": "A computer: each word is regional."
+    },
+    {
+      "use": "correo electrónico",
+      "avoid": ["\\b[Ee]-mails?\\b", "\\b[Ee]mails?\\b", "\\b[Mm]ails?\\b"],
+      "note": "An email, or correo for short."
+    },
+    {
+      "use": "enlace",
+      "avoid": ["\\b[Ll]inks?\\b", "\\b[Vv]ínculos?\\b"],
+      "note": "A link."
+    },
+    {
+      "use": "video",
+      "avoid": ["\\b[Vv]ídeos?\\b"],
+      "note": "A video, written without the accent as most of the Spanish-speaking world does."
+    },
+    {
+      "use": "etiqueta",
+      "avoid": ["\\b[Hh]ashtags?\\b"],
+      "note": "A hashtag."
+    },
+    {
+      "use": "mecenas",
+      "avoid": ["\\b[Cc]olaborador(?:a|es|as)?\\b", "\\b[Pp]atrocinador(?:a|es|as)?\\b"],
+      "note": "A supporter who pays for the instance; a supporter plan is a plan de apoyo."
+    },
+    {
+      "use": "costos",
+      "avoid": ["\\b[Cc]ostes?\\b"],
+      "note": "The costs of running the instance (costo is understood everywhere)."
+    },
+    {
+      "use": "expulsar / expulsión",
+      "avoid": ["\\b[Vv]et(?:ar|ad[oa]s?|os?)\\b", "\\b[Bb]aneo", "\\b[Bb]anear"],
+      "note": "Banning an account: the moderation action that removes it from the server."
+    }
   ]
 }

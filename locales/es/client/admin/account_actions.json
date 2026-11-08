@@ -1,0 +1,262 @@
+{
+  "admin.account_actions.block_email": {
+    "defaultMessage": "Bloquear registros con esta dirección de correo electrónico",
+    "description": "Checkbox of a ban of a local account: whether it also rejects sign-ups with the email address of the account's user."
+  },
+  "admin.account_actions.block_email.description": {
+    "defaultMessage": "También se rechazan los registros nuevos con la dirección de correo electrónico del usuario de la cuenta. El bloqueo aparece en la lista de bloqueos de registro, donde se puede quitar.",
+    "description": "Help of the checkbox of blocking the email address of a banned account."
+  },
+  "admin.account_actions.category": {
+    "defaultMessage": "Motivo",
+    "description": "Label of the select of the category of the reason for a moderation action on an account."
+  },
+  "admin.account_actions.category.description": {
+    "defaultMessage": "El tipo de motivo que se comunica a la cuenta, junto con el motivo público.",
+    "description": "Help under the select of the category of the reason for an account action."
+  },
+  "admin.account_actions.characters_left": {
+    "defaultMessage": "{count, plural, one {# carácter restante} other {# caracteres restantes}}",
+    "description": "Character count under a moderator's text field of the report screens."
+  },
+  "admin.account_actions.characters_over": {
+    "defaultMessage": "{count, plural, one {# carácter de más} other {# caracteres de más}}",
+    "description": "Character count under a moderator's text field of the report screens, when it is over the limit."
+  },
+  "admin.account_actions.confirm.cancel": {
+    "defaultMessage": "Cancelar",
+    "description": "Button that closes the confirmation of an account action without taking it."
+  },
+  "admin.account_actions.confirm_ban.confirm": {
+    "defaultMessage": "Expulsar",
+    "description": "Button of the confirmation that bans an account."
+  },
+  "admin.account_actions.confirm_ban.description": {
+    "defaultMessage": "La cuenta queda suspendida de forma permanente y se elimina dentro de 30 días. Esto no se puede deshacer.",
+    "description": "Description of the confirmation of a ban of an account."
+  },
+  "admin.account_actions.confirm_ban.title": {
+    "defaultMessage": "¿Expulsar a {handle}?",
+    "description": "Title of the confirmation of a ban; handle is the account's @handle."
+  },
+  "admin.account_actions.confirm_delete_statuses.confirm": {
+    "defaultMessage": "Eliminar",
+    "description": "Button of the confirmation that deletes posts of an account."
+  },
+  "admin.account_actions.confirm_delete_statuses.description": {
+    "defaultMessage": "Las publicaciones se eliminan para todos, al igual que la cuenta, y su eliminación se envía a otros servidores. Esto no se puede deshacer.",
+    "description": "Description of the confirmation of deleting posts of an account."
+  },
+  "admin.account_actions.confirm_delete_statuses.title": {
+    "defaultMessage": "{count, plural, one {¿Eliminar # publicación de {handle}?} other {¿Eliminar # publicaciones de {handle}?}}",
+    "description": "Title of the confirmation of deleting posts; handle is the account's @handle, count the number of posts."
+  },
+  "admin.account_actions.duration": {
+    "defaultMessage": "Duración",
+    "description": "Label of the select of how long an account action lasts."
+  },
+  "admin.account_actions.duration.days": {
+    "defaultMessage": "{count, plural, one {# día} other {# días}}",
+    "description": "A duration of an account action in days."
+  },
+  "admin.account_actions.duration.description": {
+    "defaultMessage": "La acción termina sola después de este plazo.",
+    "description": "Help under the duration of an account action."
+  },
+  "admin.account_actions.duration.indefinite": {
+    "defaultMessage": "Hasta que se levante",
+    "description": "The duration of an account action without an end, and the end of one in a list."
+  },
+  "admin.account_actions.expires_at": {
+    "defaultMessage": "Termina",
+    "description": "Term of a list of account actions: when the action ends."
+  },
+  "admin.account_actions.issue_failed": {
+    "defaultMessage": "No se pudo aplicar la acción: {reason}",
+    "description": "Error when a moderation action on an account fails; reason is the server's localized message."
+  },
+  "admin.account_actions.issued_at": {
+    "defaultMessage": "Aplicada",
+    "description": "Term of a list of account actions: when the action was taken."
+  },
+  "admin.account_actions.kind": {
+    "defaultMessage": "Acción",
+    "description": "Label of the choice of the kind of moderation action on an account."
+  },
+  "admin.account_actions.kind.ban": {
+    "defaultMessage": "Expulsar",
+    "description": "Kind of account action: a suspension that never ends, with the deletion of the account."
+  },
+  "admin.account_actions.kind.ban.description": {
+    "defaultMessage": "Suspende la cuenta de forma permanente y la elimina 30 días después.",
+    "description": "What a ban does, under its choice."
+  },
+  "admin.account_actions.kind.delete_statuses": {
+    "defaultMessage": "Eliminar publicaciones",
+    "description": "Kind of account action: deleting chosen posts of the account."
+  },
+  "admin.account_actions.kind.delete_statuses.description": {
+    "defaultMessage": "Elimina las publicaciones elegidas para todos.",
+    "description": "What deleting posts does, under its choice."
+  },
+  "admin.account_actions.kind.disable_login": {
+    "defaultMessage": "Desactivar el inicio de sesión",
+    "description": "Kind of account action: the account cannot log in."
+  },
+  "admin.account_actions.kind.disable_login.description": {
+    "defaultMessage": "Cierra las sesiones de la cuenta y le impide iniciar sesión.",
+    "description": "What disabling login does, under its choice."
+  },
+  "admin.account_actions.kind.force_sensitive": {
+    "defaultMessage": "Marcar el contenido multimedia como sensible",
+    "description": "Kind of account action: all its media are shown as sensitive."
+  },
+  "admin.account_actions.kind.force_sensitive.description": {
+    "defaultMessage": "Cada archivo adjunto de la cuenta queda oculto tras una advertencia.",
+    "description": "What marking media sensitive does, under its choice."
+  },
+  "admin.account_actions.kind.limit": {
+    "defaultMessage": "Limitar",
+    "description": "Kind of account action: posts are followers-only and kept off the public timelines."
+  },
+  "admin.account_actions.kind.limit.description": {
+    "defaultMessage": "Sus publicaciones, también las anteriores, solo llegan a sus seguidores y quedan fuera de las líneas temporales públicas.",
+    "description": "What limiting does, under its choice."
+  },
+  "admin.account_actions.kind.mark_statuses_sensitive": {
+    "defaultMessage": "Marcar publicaciones como sensibles",
+    "description": "Kind of account action: the media of chosen posts are shown as sensitive."
+  },
+  "admin.account_actions.kind.mark_statuses_sensitive.description": {
+    "defaultMessage": "El contenido multimedia de las publicaciones elegidas queda oculto tras una advertencia.",
+    "description": "What marking posts sensitive does, under its choice."
+  },
+  "admin.account_actions.kind.remote": {
+    "defaultMessage": "Una cuenta de otro servidor solo puede recibir estas acciones.",
+    "description": "Help of the kinds of action, for an account of another server."
+  },
+  "admin.account_actions.kind.required": {
+    "defaultMessage": "Elige una acción.",
+    "description": "Error when no kind of account action is chosen."
+  },
+  "admin.account_actions.kind.restrict_interaction": {
+    "defaultMessage": "Restringir la interacción",
+    "description": "Kind of account action: no following, favouriting, boosting, or replying."
+  },
+  "admin.account_actions.kind.restrict_interaction.description": {
+    "defaultMessage": "Le impide seguir, marcar como favorito, impulsar y responder.",
+    "description": "What restricting interaction does, under its choice."
+  },
+  "admin.account_actions.kind.restrict_posting": {
+    "defaultMessage": "Restringir la publicación",
+    "description": "Kind of account action: no posting, replying, boosting, or editing."
+  },
+  "admin.account_actions.kind.restrict_posting.description": {
+    "defaultMessage": "Le impide publicar, responder, impulsar y editar.",
+    "description": "What restricting posting does, under its choice."
+  },
+  "admin.account_actions.kind.suspend": {
+    "defaultMessage": "Suspender",
+    "description": "Kind of account action: the account cannot be used and its profile and posts are hidden."
+  },
+  "admin.account_actions.kind.suspend.description": {
+    "defaultMessage": "Aplica todas estas restricciones y oculta su perfil y sus publicaciones a los demás.",
+    "description": "What suspending does, under its choice."
+  },
+  "admin.account_actions.kind.warn": {
+    "defaultMessage": "Advertir",
+    "description": "Kind of account action: a notice to the account only."
+  },
+  "admin.account_actions.kind.warn.description": {
+    "defaultMessage": "Solo avisa a la cuenta.",
+    "description": "What a warning does, under its choice."
+  },
+  "admin.account_actions.notify": {
+    "defaultMessage": "Avisar a la cuenta",
+    "description": "Checkbox of whether the account is told of the action."
+  },
+  "admin.account_actions.notify.description": {
+    "defaultMessage": "La cuenta ve la acción, su motivo y cuándo termina.",
+    "description": "Help of the checkbox of telling the account."
+  },
+  "admin.account_actions.posts": {
+    "defaultMessage": "Publicaciones",
+    "description": "Label of the group of the posts an action on posts acts on."
+  },
+  "admin.account_actions.posts.content_warning": {
+    "defaultMessage": "AC: {text}",
+    "description": "Description of a post with a content warning in the choice of posts; text is the warning."
+  },
+  "admin.account_actions.posts.item": {
+    "defaultMessage": "Publicación del {date}",
+    "description": "Name of the checkbox of a post in the choice of posts; date is when it was posted."
+  },
+  "admin.account_actions.posts.required": {
+    "defaultMessage": "Elige al menos una publicación.",
+    "description": "Error when an action on posts has no post chosen."
+  },
+  "admin.account_actions.private_note": {
+    "defaultMessage": "Nota privada",
+    "description": "Label of the moderators' note of an account action."
+  },
+  "admin.account_actions.private_note.description": {
+    "defaultMessage": "Solo la ven los moderadores.",
+    "description": "Help of the private note of an account action."
+  },
+  "admin.account_actions.public_reason": {
+    "defaultMessage": "Motivo público",
+    "description": "Label of the reason of an account action that the account sees."
+  },
+  "admin.account_actions.public_reason.description": {
+    "defaultMessage": "La cuenta lo ve junto con la acción.",
+    "description": "Help of the public reason of an account action."
+  },
+  "admin.account_actions.report": {
+    "defaultMessage": "Denuncia",
+    "description": "Term of a list of account actions: the report the action follows from."
+  },
+  "admin.account_actions.report.other": {
+    "defaultMessage": "Abrir la denuncia",
+    "description": "Link to the report another account action follows from."
+  },
+  "admin.account_actions.report.this": {
+    "defaultMessage": "Esta denuncia",
+    "description": "The report an account action follows from, when it is the report on screen."
+  },
+  "admin.account_actions.state": {
+    "defaultMessage": "Estado",
+    "description": "Term of a list of account actions: whether it is in effect."
+  },
+  "admin.account_actions.state.active": {
+    "defaultMessage": "Vigente",
+    "description": "State of an account action in effect."
+  },
+  "admin.account_actions.state.expired": {
+    "defaultMessage": "Terminada",
+    "description": "State of an account action that ended by itself."
+  },
+  "admin.account_actions.state.lifted": {
+    "defaultMessage": "Levantada",
+    "description": "State of an account action that a moderator lifted."
+  },
+  "admin.account_actions.submit": {
+    "defaultMessage": "Aplicar acción",
+    "description": "Button that takes a moderation action on an account."
+  },
+  "admin.account_actions.submit_and_resolve": {
+    "defaultMessage": "Aplicar acción y resolver",
+    "description": "Button that takes a moderation action on the reported account and resolves the report."
+  },
+  "admin.account_actions.too_long": {
+    "defaultMessage": "Usa como máximo {max, number} caracteres",
+    "description": "Error of a text of an account action that is too long."
+  },
+  "admin.account_actions.severity": {
+    "defaultMessage": "Gravedad {level, number} de {max, number}",
+    "description": "Hidden words after the name of a kind of moderation action: where it stands on the scale from the lightest (1) to the heaviest; level and max are numbers."
+  },
+  "admin.account_actions.irreversible": {
+    "defaultMessage": "No se puede deshacer",
+    "description": "Badge after the name of a kind of moderation action that cannot be undone (a ban, deleting posts)."
+  }
+}

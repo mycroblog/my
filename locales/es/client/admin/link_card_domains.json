@@ -1,0 +1,182 @@
+{
+  "admin.link_card_domains.back": {
+    "defaultMessage": "Volver a las reglas",
+    "description": "Link from the page of a rule, or of the form of a new one, back to the list."
+  },
+  "admin.link_card_domains.cancel": {
+    "defaultMessage": "Cancelar",
+    "description": "Button that closes the dialog of removing a rule of the link card crawler without removing it."
+  },
+  "admin.link_card_domains.characters_left": {
+    "defaultMessage": "{count, plural, one {# carácter restante} other {# caracteres restantes}}",
+    "description": "How many characters the note of a rule can still take."
+  },
+  "admin.link_card_domains.characters_over": {
+    "defaultMessage": "{count, plural, one {# carácter de más} other {# caracteres de más}}",
+    "description": "How many characters the note of a rule is over its limit."
+  },
+  "admin.link_card_domains.detail.title": {
+    "defaultMessage": "Regla de tarjetas de enlace",
+    "description": "Heading of the page of one rule of the link card crawler."
+  },
+  "admin.link_card_domains.domain": {
+    "defaultMessage": "Dominio",
+    "description": "Label of the domain of a rule of the link card crawler, in the form and as the column of the list."
+  },
+  "admin.link_card_domains.domain.description": {
+    "defaultMessage": "Un nombre de host, como ejemplo.com. La regla también cubre sus subdominios. Un dominio que tiene una regla recibe esta en su lugar.",
+    "description": "Help under the domain of a new rule of the link card crawler."
+  },
+  "admin.link_card_domains.domain.invalid": {
+    "defaultMessage": "Escribe solo un nombre de host, sin https:// ni ruta.",
+    "description": "Error of a domain of a rule that holds a space or a part of a URL."
+  },
+  "admin.link_card_domains.empty": {
+    "defaultMessage": "Todavía no hay reglas",
+    "description": "Heading of the list of the rules of the link card crawler when there are none."
+  },
+  "admin.link_card_domains.empty.description": {
+    "defaultMessage": "El servidor descarga las tarjetas de los enlaces de todos los dominios, salvo los que una acción sobre el dominio suspende.",
+    "description": "What the server does while the list of the rules of the link card crawler is empty."
+  },
+  "admin.link_card_domains.failed": {
+    "defaultMessage": "No se pudieron cargar las reglas",
+    "description": "Heading of the error in place of the list of the rules of the link card crawler."
+  },
+  "admin.link_card_domains.list.title": {
+    "defaultMessage": "Reglas",
+    "description": "Heading of the section with the list of the rules of the link card crawler."
+  },
+  "admin.link_card_domains.loading": {
+    "defaultMessage": "Cargando las reglas…",
+    "description": "Label of the spinner while the rules of the link card crawler load."
+  },
+  "admin.link_card_domains.mode": {
+    "defaultMessage": "Qué detener",
+    "description": "Label of the mode of a rule of the link card crawler, in the form and as the column of the list."
+  },
+  "admin.link_card_domains.mode.no_fetch": {
+    "defaultMessage": "Detener la descarga",
+    "description": "Mode of a rule: the link card crawler fetches nothing from the domain."
+  },
+  "admin.link_card_domains.mode.no_fetch.description": {
+    "defaultMessage": "El servidor no descarga ni páginas ni imágenes de este dominio para las tarjetas de enlace. Las tarjetas que ya tiene de este dominio quedan ocultas.",
+    "description": "What the mode that stops fetching does."
+  },
+  "admin.link_card_domains.mode.no_images": {
+    "defaultMessage": "Detener solo las imágenes",
+    "description": "Mode of a rule: the link card crawler fetches pages but no images from the domain."
+  },
+  "admin.link_card_domains.mode.no_images.description": {
+    "defaultMessage": "El servidor sigue descargando páginas de este dominio, pero no imágenes. Sus tarjetas se muestran sin imagen, también las que ya tiene.",
+    "description": "What the mode that stops only images does."
+  },
+  "admin.link_card_domains.new.description": {
+    "defaultMessage": "Estas reglas solo afectan a las tarjetas de los enlaces de las publicaciones: el dominio sigue federado, y el contenido multimedia de sus publicaciones se descarga como siempre. Para cortar un servidor, usa una acción sobre el dominio.",
+    "description": "Introduction of the form of a rule of the link card crawler, which sets it apart from a domain action."
+  },
+  "admin.link_card_domains.new.title": {
+    "defaultMessage": "Añadir una regla",
+    "description": "Heading of the page with the form of a new rule of the link card crawler, and the link to it."
+  },
+  "admin.link_card_domains.not_found": {
+    "defaultMessage": "{domain} no tiene ninguna regla",
+    "description": "Heading of the page of a rule that does not exist, such as a removed one. {domain} is the domain of the address."
+  },
+  "admin.link_card_domains.not_found.description": {
+    "defaultMessage": "El servidor descarga las tarjetas de sus enlaces como de costumbre. Añade una regla para detenerlo.",
+    "description": "Description of the page of a domain that has no rule."
+  },
+  "admin.link_card_domains.note": {
+    "defaultMessage": "Nota",
+    "description": "Label of the note of a rule of the link card crawler."
+  },
+  "admin.link_card_domains.note.description": {
+    "defaultMessage": "Por qué existe esta regla. Solo lo ven las personas que pueden abrir esta pantalla.",
+    "description": "Help under the note of a rule of the link card crawler."
+  },
+  "admin.link_card_domains.remove": {
+    "defaultMessage": "Eliminar",
+    "description": "Button that removes a rule of the link card crawler, and the confirming button of its dialog."
+  },
+  "admin.link_card_domains.remove.description": {
+    "defaultMessage": "Las tarjetas que el servidor ya tiene de este dominio se muestran como antes. Un enlace que el servidor omitió recibe su tarjeta la próxima vez que una publicación la necesite. La nota se pierde.",
+    "description": "Description of the dialog that confirms removing a rule of the link card crawler."
+  },
+  "admin.link_card_domains.remove.section": {
+    "defaultMessage": "Eliminar la regla",
+    "description": "Heading of the section of a rule's page that removes it."
+  },
+  "admin.link_card_domains.remove.title": {
+    "defaultMessage": "¿Eliminar la regla de {domain}?",
+    "description": "Title of the dialog that confirms removing a rule. {domain} is its domain."
+  },
+  "admin.link_card_domains.remove_failed": {
+    "defaultMessage": "No se pudo eliminar la regla: {reason}",
+    "description": "Error of removing a rule of the link card crawler. {reason} says why."
+  },
+  "admin.link_card_domains.remove_rule": {
+    "defaultMessage": "Eliminar la regla de {domain}",
+    "description": "Accessible name of the button that removes a rule. {domain} is its domain."
+  },
+  "admin.link_card_domains.removed": {
+    "defaultMessage": "Se eliminó la regla de {domain}.",
+    "description": "Status after removing a rule of the link card crawler. {domain} is its domain."
+  },
+  "admin.link_card_domains.retry": {
+    "defaultMessage": "Intentar de nuevo",
+    "description": "Button that loads the rules of the link card crawler again after a failure."
+  },
+  "admin.link_card_domains.save": {
+    "defaultMessage": "Guardar",
+    "description": "Button that saves what a rule stops and its note, on the rule's page."
+  },
+  "admin.link_card_domains.save_failed": {
+    "defaultMessage": "No se pudo guardar la regla: {reason}",
+    "description": "Error of the form of a rule, for another reason than its values. {reason} says why."
+  },
+  "admin.link_card_domains.saved": {
+    "defaultMessage": "Se guardó la regla de {domain}.",
+    "description": "Status after saving a rule of the link card crawler. {domain} is its domain."
+  },
+  "admin.link_card_domains.search.clear": {
+    "defaultMessage": "Borrar la búsqueda",
+    "description": "Button that clears the search of the rules."
+  },
+  "admin.link_card_domains.search.domain": {
+    "defaultMessage": "El dominio contiene",
+    "description": "Label of the search field of the rules: a part of the domain."
+  },
+  "admin.link_card_domains.search.empty": {
+    "defaultMessage": "Ningún dominio de regla contiene {search}",
+    "description": "Heading of the list of rules when the search finds none. {search} is what was searched."
+  },
+  "admin.link_card_domains.search.label": {
+    "defaultMessage": "Buscar reglas",
+    "description": "Accessible name of the search form above the list of the rules of the link card crawler."
+  },
+  "admin.link_card_domains.search.submit": {
+    "defaultMessage": "Buscar",
+    "description": "Button that searches the rules by domain."
+  },
+  "admin.link_card_domains.submit": {
+    "defaultMessage": "Guardar regla",
+    "description": "Button that saves the form of a rule of the link card crawler."
+  },
+  "admin.link_card_domains.summary": {
+    "defaultMessage": "Detener el rastreador de tarjetas de enlace en ciertos dominios, o detener solo sus imágenes.",
+    "description": "What the link card domains screen is for, in the menu of server administration."
+  },
+  "admin.link_card_domains.title": {
+    "defaultMessage": "Dominios de tarjetas de enlace",
+    "description": "Heading and menu entry of the screen with the rules of the link card crawler per domain."
+  },
+  "admin.link_card_domains.too_long": {
+    "defaultMessage": "Una nota puede tener como máximo {max, number} caracteres.",
+    "description": "Error of a note of a rule that is too long. {max} is the limit."
+  },
+  "admin.link_card_domains.updated": {
+    "defaultMessage": "Último cambio",
+    "description": "Column of the list of rules: when the rule was last set."
+  }
+}

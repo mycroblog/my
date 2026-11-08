@@ -18,7 +18,6 @@ import { join } from "node:path";
 import {
   type Catalog,
   catalogFile,
-  formattingLocale,
   goPackageDir,
   goTestdataDir,
   isClientNamespace,
@@ -28,7 +27,7 @@ import {
   toJSON,
 } from "./catalog";
 import { type ArgType, extractArgs, parseMessage } from "./icu";
-import { createTranslator } from "./runtime/translator";
+import { compileMessage, createTranslator } from "./runtime/translator";
 
 export const runtimeDir = join(import.meta.dir, "runtime");
 
@@ -216,9 +215,26 @@ type Cases = {
   /** Standalone messages covering the shared-subset syntax. */
   syntax: { locale: string; message: string; args: Record<string, Value> }[];
 };
-export const GOLDEN_LOCALES = [SOURCE, "ja", "zh-CN", "zh-TW", "en-XA", "ar-XB"];
+export const GOLDEN_LOCALES = [SOURCE, "ja", "zh-CN", "zh-TW", "es", "en-XA", "ar-XB"];
 /** Locales with non-trivial CLDR plural rules or number formats, for the drift test. */
-const CLDR_LOCALES = ["en", "ja", "fr", "pt-PT", "ru", "pl", "cy", "ar", "he", "zh-CN", "zh-TW", "zh-Hant", "de", "hi"];
+const CLDR_LOCALES = [
+  "en",
+  "ja",
+  "fr",
+  "pt-PT",
+  "ru",
+  "pl",
+  "cy",
+  "ar",
+  "he",
+  "zh-CN",
+  "zh-TW",
+  "zh-Hant",
+  "de",
+  "hi",
+  "es",
+  "es-419",
+];
 const CLDR_NUMBERS = [0, 1, 2, 3, 5, 11, 21, 22, 101, 1000000, 1.5];
 
 function golden(catalog: Catalog): string {
@@ -232,9 +248,7 @@ function golden(catalog: Catalog): string {
       return t(key, args);
     });
   }
-  const syntax = cases.syntax.map(({ locale, message, args }) =>
-    String(new IntlMessageFormat(message, formattingLocale(locale)).format(args)),
-  );
+  const syntax = cases.syntax.map(({ locale, message, args }) => String(compileMessage(message, locale).format(args)));
   const categories = (type: "plural" | "selectordinal", cats: string[]) =>
     `{n, ${type}, ${cats.map((c) => `${c} {${c}:#}`).join(" ")}}`;
   const cldr = CLDR_LOCALES.map((locale) => {

@@ -1,0 +1,150 @@
+{
+  "landing.sign_in": {
+    "defaultMessage": "Iniciar sesión",
+    "description": "Button at the top end of the landing page's calling card that opens the server's sign-in screen."
+  },
+  "landing.join": {
+    "defaultMessage": "Unirse",
+    "description": "Link in the landing page's calling card that moves down to the section on how to join; the primary action of the page while the server takes new accounts."
+  },
+  "landing.elsewhere.link": {
+    "defaultMessage": "¿Tienes una cuenta en otro servidor? Sigue desde allí",
+    "description": "Link in the landing page's calling card that moves down to the steps for following people of this server from an account on another server (Mastodon, Misskey, …)."
+  },
+  "landing.registrations.closed": {
+    "defaultMessage": "Este servidor no acepta cuentas nuevas.",
+    "description": "Text on the landing page, in the calling card and in the section on how to join, when nobody may sign up."
+  },
+  "landing.members": {
+    "defaultMessage": "{count, plural, one {# miembro} other {# miembros}}",
+    "description": "Count in the landing page's calling card: how many accounts this server has."
+  },
+  "landing.since": {
+    "defaultMessage": "Desde el {date}",
+    "description": "In the landing page's masthead: since when the server runs. {date} is the formatted month and year, for example 'March 2026'."
+  },
+  "landing.contact.fact": {
+    "defaultMessage": "Contacto: {name}",
+    "description": "Link in the landing page's masthead to the account people contact about the server (the setting contact_account). {name} is its display name."
+  },
+  "landing.progress.label": {
+    "defaultMessage": "Partes de esta página",
+    "description": "Accessible name of the landing page's progress line, which links to its three sections."
+  },
+  "landing.place.title": {
+    "defaultMessage": "¿Qué tipo de lugar es este?",
+    "description": "Heading of the first section of the landing page: the server's description, whom to contact, and what people post."
+  },
+  "landing.contact.title": {
+    "defaultMessage": "Contacto",
+    "description": "Heading of the account people contact about the server, on the landing page."
+  },
+  "landing.activity.title": {
+    "defaultMessage": "Qué publica la gente",
+    "description": "Heading of the part of the landing page with the number of recent public posts and a few of them."
+  },
+  "landing.activity.week": {
+    "defaultMessage": "Publicaciones públicas de los últimos 7 días",
+    "description": "Label of the number of public posts that this server's users made in the last 7 days, on the landing page."
+  },
+  "landing.posts.more": {
+    "defaultMessage": "Ver la cronología local",
+    "description": "Link under the recent posts of the landing page to the local timeline."
+  },
+  "landing.posts.failed": {
+    "defaultMessage": "No se pudieron cargar las publicaciones recientes",
+    "description": "Heading shown in place of the recent posts of the landing page when they could not be loaded."
+  },
+  "landing.promise.title": {
+    "defaultMessage": "¿Qué acordamos?",
+    "description": "Heading of the second section of the landing page: the server's rules."
+  },
+  "landing.rules.none": {
+    "defaultMessage": "Este servidor no ha publicado ninguna regla.",
+    "description": "Text in the section of the landing page on the rules, when the server has none."
+  },
+  "landing.join.title": {
+    "defaultMessage": "¿Cómo me uno?",
+    "description": "Heading of the third section of the landing page: what happens after joining, in the way the server allows, and how to follow from another server."
+  },
+  "landing.sign_up.open": {
+    "defaultMessage": "Crear una cuenta",
+    "description": "Link at the end of the steps of joining, to the server's registration page, when anyone may sign up."
+  },
+  "landing.sign_up.approval": {
+    "defaultMessage": "Solicitar una cuenta",
+    "description": "Link at the end of the steps of joining, to the server's registration page, when moderators approve each sign-up."
+  },
+  "landing.sign_up.invite": {
+    "defaultMessage": "Crear una cuenta con una invitación",
+    "description": "Link at the end of the steps of joining, to the server's registration page, when only people with an invite may sign up."
+  },
+  "landing.steps.form": {
+    "defaultMessage": "Introduce un nombre de usuario, un correo electrónico y una contraseña",
+    "description": "Step of joining a server that anyone may join."
+  },
+  "landing.steps.confirm_email": {
+    "defaultMessage": "Confirma tu correo electrónico desde el mensaje que recibas",
+    "description": "Step of joining, on a server that sends email."
+  },
+  "landing.steps.review": {
+    "defaultMessage": "Un moderador revisa tu cuenta",
+    "description": "Step of joining: a moderator approves the new account before it can be used."
+  },
+  "landing.steps.start": {
+    "defaultMessage": "Inicia sesión y empieza a publicar",
+    "description": "Last step of joining."
+  },
+  "landing.steps.apply": {
+    "defaultMessage": "Solicítala indicando por qué quieres unirte",
+    "description": "First step of joining a server where moderators approve each sign-up."
+  },
+  "landing.steps.approved_email": {
+    "defaultMessage": "Recibirás un correo electrónico cuando te aprueben",
+    "description": "Last step of joining a server where moderators approve each sign-up, when the server sends email."
+  },
+  "landing.steps.approved_sign_in": {
+    "defaultMessage": "Inicia sesión para ver si te han aprobado",
+    "description": "Last step of joining a server where moderators approve each sign-up, when the server sends no email."
+  },
+  "landing.steps.invite_get": {
+    "defaultMessage": "Pide un enlace de invitación a alguien de este servidor",
+    "description": "First step of joining a server where only people with an invite may sign up."
+  },
+  "landing.steps.invite_open": {
+    "defaultMessage": "Abre el enlace y crea tu cuenta",
+    "description": "Second step of joining a server where only people with an invite may sign up."
+  },
+  "landing.here.title": {
+    "defaultMessage": "Con una cuenta en este servidor",
+    "description": "Heading of the steps for joining this server with an account of its own, beside the steps for following from another server, on the landing page."
+  },
+  "landing.elsewhere.title": {
+    "defaultMessage": "Con una cuenta en otro servidor",
+    "description": "Heading of the steps for following people of this server from an account on another server, on the landing page."
+  },
+  "landing.elsewhere.find": {
+    "defaultMessage": "Busca aquí a alguien a quien quieras seguir",
+    "description": "Step of following from another server."
+  },
+  "landing.elsewhere.copy": {
+    "defaultMessage": "Copia su identificador, como {handle}",
+    "description": "Step of following from another server. {handle} is an example handle of this server, such as '@alice@example.social'."
+  },
+  "landing.elsewhere.copy_plain": {
+    "defaultMessage": "Copia su identificador, el @nombre@dominio bajo su nombre",
+    "description": "Step of following from another server, when the page has no example handle to show."
+  },
+  "landing.elsewhere.search": {
+    "defaultMessage": "Búscalo en tu propio servidor y sigue",
+    "description": "Step of following from another server."
+  },
+  "landing.elsewhere.search.detail": {
+    "defaultMessage": "Mastodon, Misskey y otros servidores que hablan ActivityPub pueden seguir a las personas de aquí.",
+    "description": "Note under the step of searching on one's own server."
+  },
+  "landing.powered_by": {
+    "defaultMessage": "Funciona con mycroblog, software libre bajo la AGPL-3.0",
+    "description": "Line in the footer of the landing page that names the software the server runs and its license, before the link to its source code."
+  }
+}

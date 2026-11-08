@@ -15,7 +15,8 @@
 //          in any non-pseudo locale; a full-width colon, semicolon or parenthesis, or an ASCII comma, in Japanese text
 //          (use ":", ";", "()" and "、"); in Simplified Chinese, an ASCII comma, semicolon, colon, question mark or
 //          parenthesis next to a Han character, corner brackets 「」『』, or kana; in Traditional Chinese, the same ASCII
-//          punctuation, curly quotation marks “”‘’ (use 「」『』), kana, or a character only Simplified Chinese writes
+//          punctuation, curly quotation marks “”‘’ (use 「」『』), kana, or a character only Simplified Chinese writes;
+//          in Spanish, a question mark without its opening "¿", or ASCII double quotation marks (use «…»)
 //   error: a variant the glossary (tools/i18n/glossary.json, G21) bans in the locale's text, in any namespace
 //   warn:  untranslated key (falls back to en at runtime)
 //   warn:  translation drops a source argument (sometimes legitimate)
@@ -81,7 +82,7 @@ function analyze(locale: string, ns: string, key: string, message: unknown): Arg
 function copyStyleFindings(locale: string, text: string): string[] {
   if (isPseudo(locale)) return [];
   const out: string[] = glossaryFindings(glossary, locale, text);
-  if (/[!！]/.test(text)) out.push("no exclamation marks in UI copy (web-client/16-look-states-and-wording.md G19)");
+  if (/[!！¡]/.test(text)) out.push("no exclamation marks in UI copy (web-client/16-look-states-and-wording.md G19)");
   if (new Intl.Locale(locale).language === "ja") {
     if (/[：；（）]/u.test(text))
       out.push(
@@ -92,6 +93,19 @@ function copyStyleFindings(locale: string, text: string): string[] {
   }
   if (isSimplifiedChinese(locale)) out.push(...simplifiedChineseFindings(text));
   if (isTraditionalChinese(locale)) out.push(...traditionalChineseFindings(text));
+  if (new Intl.Locale(locale).language === "es") out.push(...spanishFindings(text));
+  return out;
+}
+
+/** The punctuation rules of Spanish (web-client/16-look-states-and-wording.md G20). */
+function spanishFindings(text: string): string[] {
+  const out: string[] = [];
+  if ((text.match(/\?/g) ?? []).length !== (text.match(/¿/g) ?? []).length)
+    out.push('open each question with "¿" in Spanish (web-client/16-look-states-and-wording.md G20)');
+  if (text.includes('"'))
+    out.push(
+      'use "«…»" (and "“…”" inside them) as quotation marks in Spanish, not ASCII double quotation marks (web-client/16-look-states-and-wording.md G20)',
+    );
   return out;
 }
 

@@ -1,0 +1,802 @@
+{
+  "voice.title": {
+    "defaultMessage": "Chat de voz",
+    "description": "Heading and document title of the list of the open voice chat rooms, and its item in the main navigation."
+  },
+  "voice.unavailable": {
+    "defaultMessage": "Este servidor no ofrece chat de voz.",
+    "description": "Shown on the voice chat pages when the server has voice chat turned off."
+  },
+  "voice.list.label": {
+    "defaultMessage": "Salas abiertas",
+    "description": "Accessible name of the list of the open voice chat rooms."
+  },
+  "voice.list.empty": {
+    "defaultMessage": "No hay salas abiertas ahora",
+    "description": "Heading of the empty list of voice chat rooms."
+  },
+  "voice.list.empty.description": {
+    "defaultMessage": "Las salas a las que puedes unirte aparecen aquí mientras están abiertas.",
+    "description": "Explanation under the heading of the empty list of voice chat rooms."
+  },
+  "voice.list.loading": {
+    "defaultMessage": "Cargando las salas",
+    "description": "Visually hidden name of the busy list while the voice chat rooms or the voice chat history load."
+  },
+  "voice.list.failed": {
+    "defaultMessage": "No se pudieron cargar las salas",
+    "description": "Heading of the error when the voice chat rooms could not load."
+  },
+  "voice.list.retry": {
+    "defaultMessage": "Reintentar",
+    "description": "Button that loads the voice chat rooms again after a failure."
+  },
+  "voice.list.more": {
+    "defaultMessage": "Mostrar más salas",
+    "description": "Button that loads the next page of voice chat rooms."
+  },
+  "voice.list.more_failed": {
+    "defaultMessage": "No se pudieron cargar más salas",
+    "description": "Error when the next page of voice chat rooms could not load."
+  },
+  "voice.room.participants_count": {
+    "defaultMessage": "{count, plural, one {# persona} other {# personas}}",
+    "description": "How many people are in a voice chat room, the host included."
+  },
+  "voice.room.hosted_by": {
+    "defaultMessage": "Anfitrión",
+    "description": "Label before the host of a voice chat room in the room's card."
+  },
+  "voice.rail.title": {
+    "defaultMessage": "Chat de voz",
+    "description": "Heading of the panel of open voice chat rooms in the third column of wide screens."
+  },
+  "voice.rail.all": {
+    "defaultMessage": "Ver todas las salas",
+    "description": "Link from the panel of voice chat rooms to the list of all open rooms."
+  },
+  "voice.tag.title": {
+    "defaultMessage": "Salas de chat de voz con #{tag}",
+    "description": "Heading of the open voice chat rooms with a hashtag, at the top of the hashtag's page. {tag} is the hashtag without the #."
+  },
+  "voice.start": {
+    "defaultMessage": "Abrir una sala",
+    "description": "Button on the voice chat page that opens the form to start a new room."
+  },
+  "voice.form.new_title": {
+    "defaultMessage": "Abrir una sala",
+    "description": "Title of the dialog with the form that starts a new voice chat room."
+  },
+  "voice.form.edit_title": {
+    "defaultMessage": "Configuración de la sala",
+    "description": "Title of the dialog with the settings of a voice chat room, and the host's button that opens it."
+  },
+  "voice.form.close": {
+    "defaultMessage": "Cerrar",
+    "description": "Accessible name of the close button of the dialog of a voice chat room's settings."
+  },
+  "voice.form.name": {
+    "defaultMessage": "Nombre",
+    "description": "Label of the field of a voice chat room's name."
+  },
+  "voice.form.name.invalid": {
+    "defaultMessage": "Introduce un nombre de hasta {max} caracteres en una sola línea.",
+    "description": "Error of the field of a voice chat room's name. {max} is the most characters it takes."
+  },
+  "voice.form.icon": {
+    "defaultMessage": "Icono",
+    "description": "Legend of the group of a voice chat room's emoji icon in its settings dialog."
+  },
+  "voice.form.icon.description": {
+    "defaultMessage": "Un emoji que se muestra antes del nombre de la sala. Opcional.",
+    "description": "Hint under the legend of a voice chat room's icon: one Unicode emoji or custom emoji of this server, shown before the name."
+  },
+  "voice.form.icon.choose": {
+    "defaultMessage": "Elegir un emoji",
+    "description": "Button that opens the emoji picker to choose a voice chat room's icon, while the room has none."
+  },
+  "voice.form.icon.change": {
+    "defaultMessage": "Cambiar",
+    "description": "Button after the chosen emoji that opens the emoji picker to choose another icon for a voice chat room."
+  },
+  "voice.form.icon.remove": {
+    "defaultMessage": "Quitar icono",
+    "description": "Button that removes a voice chat room's icon, so that the name shows alone."
+  },
+  "voice.form.description": {
+    "defaultMessage": "Descripción",
+    "description": "Label of the field of a voice chat room's description."
+  },
+  "voice.form.characters_left": {
+    "defaultMessage": "{count, plural, one {Queda # carácter} other {Quedan # caracteres}}",
+    "description": "How many more characters the description of a voice chat room takes."
+  },
+  "voice.form.characters_over": {
+    "defaultMessage": "{count, plural, one {Sobra # carácter} other {Sobran # caracteres}}",
+    "description": "How many characters the description of a voice chat room is over its limit."
+  },
+  "voice.form.hashtags": {
+    "defaultMessage": "Etiquetas",
+    "description": "Label of the field of a voice chat room's hashtags."
+  },
+  "voice.form.hashtags.description": {
+    "defaultMessage": "Hasta {max}, separadas por espacios. La sala se muestra en las páginas de sus etiquetas.",
+    "description": "Explanation of the field of a voice chat room's hashtags. {max} is how many it takes."
+  },
+  "voice.form.hashtags.invalid": {
+    "defaultMessage": "Introduce hasta {max} etiquetas.",
+    "description": "Error of the field of a voice chat room's hashtags. {max} is how many it takes."
+  },
+  "voice.form.hashtags.too_long": {
+    "defaultMessage": "Cada etiqueta puede tener hasta {max} caracteres.",
+    "description": "Error of the field of a voice chat room's hashtags when one is too long. {max} is the most characters a hashtag has."
+  },
+  "voice.form.visibility": {
+    "defaultMessage": "Quién puede verla y unirse",
+    "description": "Label of the choice of who sees a voice chat room and may join it."
+  },
+  "voice.form.speakers": {
+    "defaultMessage": "Quién puede hablar sin pedirlo",
+    "description": "Label of the choice of who may speak in a voice chat room without the hosts letting them."
+  },
+  "voice.visibility.local": {
+    "defaultMessage": "Todos en este servidor",
+    "description": "Visibility of a voice chat room: every local user."
+  },
+  "voice.visibility.followers": {
+    "defaultMessage": "Seguidores del anfitrión",
+    "description": "Visibility of a voice chat room: the followers of its host."
+  },
+  "voice.visibility.mutuals": {
+    "defaultMessage": "Seguidores mutuos del anfitrión",
+    "description": "Visibility of a voice chat room: those who follow the host and whom the host follows."
+  },
+  "voice.visibility.invited": {
+    "defaultMessage": "Solo personas invitadas",
+    "description": "Visibility of a voice chat room: only the people the hosts invite."
+  },
+  "voice.speakers.everyone": {
+    "defaultMessage": "Todos los que se unen",
+    "description": "Who may speak in a voice chat room without asking: everyone in it."
+  },
+  "voice.speakers.followers": {
+    "defaultMessage": "Seguidores del anfitrión",
+    "description": "Who may speak in a voice chat room without asking: the followers of the host."
+  },
+  "voice.speakers.mutuals": {
+    "defaultMessage": "Seguidores mutuos del anfitrión",
+    "description": "Who may speak in a voice chat room without asking: the host's mutual follows."
+  },
+  "voice.speakers.manual": {
+    "defaultMessage": "Solo las personas a las que los anfitriones dejan hablar",
+    "description": "Who may speak in a voice chat room without asking: nobody, the host and the co-hosts let them."
+  },
+  "voice.form.post": {
+    "defaultMessage": "Publicar sobre la sala",
+    "description": "Switch in the form that starts a voice chat room: also post a post that links the room."
+  },
+  "voice.form.post.local": {
+    "defaultMessage": "Una publicación local, visible para todos en este servidor.",
+    "description": "Explanation of the start post of a room for every local user."
+  },
+  "voice.form.post.followers": {
+    "defaultMessage": "Una publicación solo para tus seguidores.",
+    "description": "Explanation of the start post of a room for the host's followers."
+  },
+  "voice.form.post.text": {
+    "defaultMessage": "Texto de la publicación",
+    "description": "Label of the text of the post that announces a new voice chat room."
+  },
+  "voice.form.post.text.description": {
+    "defaultMessage": "El enlace a la sala se añade al final.",
+    "description": "Explanation of the text of the post that announces a new voice chat room."
+  },
+  "voice.form.post.draft": {
+    "defaultMessage": "Abrí una sala de chat de voz: {name}",
+    "description": "The draft text of the post that announces a new voice chat room, which the host edits. {name} is the room's name."
+  },
+  "voice.form.submit_new": {
+    "defaultMessage": "Abrir la sala",
+    "description": "Button that starts a new voice chat room."
+  },
+  "voice.form.submit_edit": {
+    "defaultMessage": "Guardar",
+    "description": "Button that saves the settings of a voice chat room."
+  },
+  "voice.form.start_failed": {
+    "defaultMessage": "No se pudo abrir la sala: {reason}",
+    "description": "Error when a voice chat room could not start. {reason} is the server's explanation."
+  },
+  "voice.form.save_failed": {
+    "defaultMessage": "No se pudo guardar la configuración: {reason}",
+    "description": "Error when the settings of a voice chat room could not be saved. {reason} is the server's explanation."
+  },
+  "voice.form.saved": {
+    "defaultMessage": "Se guardó la configuración de la sala",
+    "description": "Message after the settings of a voice chat room were saved."
+  },
+  "voice.room.title": {
+    "defaultMessage": "Sala de chat de voz",
+    "description": "Heading of the page of a voice chat room whose name is not shown."
+  },
+  "voice.room.live": {
+    "defaultMessage": "En directo",
+    "description": "The pill at the head of the page of an open voice chat room."
+  },
+  "voice.room.stats": {
+    "defaultMessage": "{people} · {duration}",
+    "description": "How many are in a voice chat room and how long it has been open, beside the Live pill. {people} is the count of people (\"3 people\"), {duration} how long (\"38 min\")."
+  },
+  "voice.room.open_minutes": {
+    "defaultMessage": "{minutes, number} min",
+    "description": "How long a voice chat room has been open, under an hour. {minutes} is the number of minutes."
+  },
+  "voice.room.open_hours": {
+    "defaultMessage": "{hours, number} h {minutes, number} min",
+    "description": "How long a voice chat room has been open, an hour or more. {hours} and {minutes} are the numbers of hours and minutes."
+  },
+  "voice.room.share": {
+    "defaultMessage": "Compartir",
+    "description": "Accessible name and tooltip of the icon button that shares the link of a voice chat room."
+  },
+  "voice.room.share.copied": {
+    "defaultMessage": "Se copió el enlace de la sala",
+    "description": "Message after the link of a voice chat room was copied to the clipboard."
+  },
+  "voice.room.share.failed": {
+    "defaultMessage": "No se pudo copiar el enlace de la sala",
+    "description": "Message when the link of a voice chat room could not be copied."
+  },
+  "voice.room.more": {
+    "defaultMessage": "Más acciones",
+    "description": "Accessible name and tooltip of the button and the name of the menu of a voice chat room for someone other than its host."
+  },
+  "voice.room.change_settings": {
+    "defaultMessage": "Cambiar la configuración de la sala",
+    "description": "The host's button in the About the room panel of a voice chat room that opens its settings."
+  },
+  "voice.stage.speakers": {
+    "defaultMessage": "Oradores · {count, number}",
+    "description": "Heading of the speakers of a voice chat room on its page. {count} is how many."
+  },
+  "voice.stage.listeners": {
+    "defaultMessage": "Oyentes · {count, number}",
+    "description": "Heading of the listeners of a voice chat room on its page. {count} is how many."
+  },
+  "voice.room.listed_notice": {
+    "defaultMessage": "Al unirte, tu nombre aparece en la lista para todos los que pueden ver esta sala.",
+    "description": "Notice on the page of a voice chat room before joining it."
+  },
+  "voice.room.join": {
+    "defaultMessage": "Unirse",
+    "description": "Button that joins a voice chat room."
+  },
+  "voice.room.join_failed": {
+    "defaultMessage": "No se pudo unir a la sala: {reason}",
+    "description": "Error when joining a voice chat room failed. {reason} is the server's explanation."
+  },
+  "voice.room.joined": {
+    "defaultMessage": "Estás en esta sala.",
+    "description": "Shown on the page of a voice chat room that the user is in."
+  },
+  "voice.room.joined_badge": {
+    "defaultMessage": "Dentro",
+    "description": "Badge on the card of the voice chat room whose call the user is in, in the lists of rooms."
+  },
+  "voice.room.move_notice": {
+    "defaultMessage": "Estás en {room}. Al unirte a esta sala saldrás de aquella.",
+    "description": "Shown before joining a voice chat room while the user is in the call of another room. {room} is the other room's name."
+  },
+  "voice.room.move": {
+    "defaultMessage": "Pasar aquí",
+    "description": "Button that leaves the voice chat room the user is in and joins this one."
+  },
+  "voice.room.details": {
+    "defaultMessage": "Acerca de la sala",
+    "description": "Heading of the panel about a voice chat room (its host, visibility, and speakers) in the third column of its page."
+  },
+  "voice.role.host": {
+    "defaultMessage": "Anfitrión",
+    "description": "Label of the host of a voice chat room in its list of participants."
+  },
+  "voice.role.cohost": {
+    "defaultMessage": "Coanfitrión",
+    "description": "Label of a co-host of a voice chat room in its list of participants."
+  },
+  "voice.role.speaker": {
+    "defaultMessage": "Orador",
+    "description": "Label of a participant of a voice chat room who speaks."
+  },
+  "voice.role.listener": {
+    "defaultMessage": "Oyente",
+    "description": "Label of a participant of a voice chat room who listens."
+  },
+  "voice.room.local_only": {
+    "defaultMessage": "Solo las personas con una cuenta en este servidor pueden unirse a sus salas de chat de voz.",
+    "description": "Notice on the page of a voice chat room for a visitor who is not signed in."
+  },
+  "voice.room.sign_in": {
+    "defaultMessage": "Iniciar sesión",
+    "description": "Link on the page of a voice chat room to the sign-in page, which returns to the room."
+  },
+  "voice.room.open": {
+    "defaultMessage": "Esta sala está abierta ahora.",
+    "description": "Shown on the summary of an open voice chat room to a visitor who is not signed in."
+  },
+  "voice.room.ended": {
+    "defaultMessage": "Esta sala ha terminado",
+    "description": "Heading of the page of a voice chat room that ended."
+  },
+  "voice.room.ended.next": {
+    "defaultMessage": "Consulta las salas abiertas ahora o abre una.",
+    "description": "Under the heading of the page of a voice chat room that ended: what the user can do next."
+  },
+  "voice.room.hidden": {
+    "defaultMessage": "No puedes ver esta sala.",
+    "description": "Shown on the page of an open voice chat room that the user may not see."
+  },
+  "voice.room.not_found": {
+    "defaultMessage": "No existe esa sala",
+    "description": "Heading of the page of a voice chat room that does not exist."
+  },
+  "voice.room.failed": {
+    "defaultMessage": "No se pudo cargar la sala",
+    "description": "Heading of the error when a voice chat room could not load."
+  },
+  "voice.room.loading": {
+    "defaultMessage": "Cargando la sala",
+    "description": "Visually hidden name of the busy page while a voice chat room loads."
+  },
+  "voice.history.title": {
+    "defaultMessage": "Historial de chat de voz",
+    "description": "Heading of the settings page with the voice chat rooms the user hosted, and its item in the settings menu."
+  },
+  "voice.history.description": {
+    "defaultMessage": "Las salas de chat de voz que has organizado, de la más reciente a la más antigua.",
+    "description": "Explanation at the top of the voice chat history."
+  },
+  "voice.history.empty": {
+    "defaultMessage": "Aún no has organizado ninguna sala",
+    "description": "Heading of the empty voice chat history."
+  },
+  "voice.history.opened": {
+    "defaultMessage": "Abierta",
+    "description": "Term of when a room of the voice chat history opened."
+  },
+  "voice.history.ended": {
+    "defaultMessage": "Terminada",
+    "description": "Term of when a room of the voice chat history ended."
+  },
+  "voice.history.still_open": {
+    "defaultMessage": "Aún abierta",
+    "description": "Value of when a room of the voice chat history ended, while it is open."
+  },
+  "voice.history.reason": {
+    "defaultMessage": "Por qué terminó",
+    "description": "Term of why a room of the voice chat history ended."
+  },
+  "voice.end_reason.host": {
+    "defaultMessage": "La terminó el anfitrión",
+    "description": "Why a voice chat room ended: its host ended it."
+  },
+  "voice.end_reason.empty": {
+    "defaultMessage": "Todos se fueron",
+    "description": "Why a voice chat room ended: nobody was left."
+  },
+  "voice.end_reason.host_disconnected": {
+    "defaultMessage": "El anfitrión se desconectó",
+    "description": "Why a voice chat room ended: the host was disconnected and nobody could take over."
+  },
+  "voice.end_reason.host_ineligible": {
+    "defaultMessage": "El anfitrión ya no podía organizarla",
+    "description": "Why a voice chat room ended: the host lost the right to host and nobody could take over."
+  },
+  "voice.end_reason.moderator": {
+    "defaultMessage": "La terminó un moderador",
+    "description": "Why a voice chat room ended: a moderator ended it."
+  },
+  "voice.end_reason.time_limit": {
+    "defaultMessage": "Alcanzó el límite de tiempo",
+    "description": "Why a voice chat room ended: it was open for the longest time the server allows."
+  },
+  "voice.end_reason.disabled": {
+    "defaultMessage": "Se desactivó el chat de voz",
+    "description": "Why a voice chat room ended: the server turned voice chat off."
+  },
+  "voice.end_reason.other": {
+    "defaultMessage": "Otro",
+    "description": "Why a voice chat room ended, for a reason the app does not know."
+  },
+  "voice.room.report": {
+    "defaultMessage": "Denunciar sala",
+    "description": "Button on the page of a voice chat room that opens the dialog reporting the room to the moderators."
+  },
+  "voice.call.connecting": {
+    "defaultMessage": "Conectando…",
+    "description": "State of the voice chat call until it connects."
+  },
+  "voice.call.live": {
+    "defaultMessage": "Conectado",
+    "description": "State of the voice chat call while it is connected."
+  },
+  "voice.call.reconnecting": {
+    "defaultMessage": "Reconectando…",
+    "description": "State of the voice chat call while the connection to the room is down."
+  },
+  "voice.call.join_here": {
+    "defaultMessage": "Unirse aquí",
+    "description": "Button that joins a voice chat room on this device, when the user is in it from another device or tab."
+  },
+  "voice.call.unsupported_browser": {
+    "defaultMessage": "Este navegador no puede unirse al chat de voz. Abre la sala en un navegador compatible con llamadas, mediante HTTPS.",
+    "description": "Shown instead of the join button when the browser has no WebRTC or microphone access."
+  },
+  "voice.call.playback_blocked": {
+    "defaultMessage": "Tu navegador pausó el sonido de la llamada.",
+    "description": "Shown when the browser blocked the audio of the call from playing."
+  },
+  "voice.call.play_audio": {
+    "defaultMessage": "Activar el sonido",
+    "description": "Button that starts the audio of the call after the browser blocked it."
+  },
+  "voice.call.microphone.turn_on": {
+    "defaultMessage": "Activar micrófono",
+    "description": "Button in a voice chat call while the user's microphone is off: it turns the microphone on. Its icon is a slashed microphone."
+  },
+  "voice.call.microphone.turn_off": {
+    "defaultMessage": "Desactivar micrófono",
+    "description": "Button in a voice chat call while the user's microphone is on: it turns the microphone off. Its icon is a filled microphone."
+  },
+  "voice.call.microphone_failed": {
+    "defaultMessage": "No se pudo usar el micrófono. Inténtalo de nuevo.",
+    "description": "Error when the browser did not give the microphone."
+  },
+  "voice.call.speak": {
+    "defaultMessage": "Hablar",
+    "description": "Button that makes a listener of a voice chat room a speaker."
+  },
+  "voice.call.listen": {
+    "defaultMessage": "Solo escuchar",
+    "description": "Button that makes a speaker of a voice chat room a listener again."
+  },
+  "voice.call.raise_hand": {
+    "defaultMessage": "Levantar la mano",
+    "description": "Button that asks the hosts of a voice chat room for permission to speak."
+  },
+  "voice.call.leave": {
+    "defaultMessage": "Salir",
+    "description": "Button that leaves the voice chat room, and the confirm button of the dialogs about leaving."
+  },
+  "voice.call.stay": {
+    "defaultMessage": "Quedarme",
+    "description": "Button of the dialogs about leaving a voice chat room that keeps the user in it."
+  },
+  "voice.call.leave_confirm.title": {
+    "defaultMessage": "¿Salir de {room}?",
+    "description": "Title of the dialog that asks before leaving a voice chat call from the mini-player. {room} is the room's name."
+  },
+  "voice.call.leave_confirm.description": {
+    "defaultMessage": "Tu llamada termina. Puedes volver a unirte mientras la sala esté abierta.",
+    "description": "Explanation in the dialog that asks before leaving a voice chat call from the mini-player."
+  },
+  "voice.call.cancel": {
+    "defaultMessage": "Cancelar",
+    "description": "Button that closes a dialog of a voice chat call without doing anything."
+  },
+  "voice.dock.label": {
+    "defaultMessage": "Controles de la llamada",
+    "description": "Accessible name of the toolbar of the controls of a voice chat call at the bottom of the room's page."
+  },
+  "voice.dock.hands": {
+    "defaultMessage": "Manos",
+    "description": "The host's and co-hosts' button in the controls of a voice chat call that lists the raised hands."
+  },
+  "voice.dock.hands.counted": {
+    "defaultMessage": "Manos, {count, plural, one {# mano levantada} other {# manos levantadas}}",
+    "description": "Accessible name of the Hands button while it shows the number of raised hands as a badge. It starts with the word of voice.dock.hands, as it is shown."
+  },
+  "voice.hands.heading": {
+    "defaultMessage": "Manos levantadas · {count, number}",
+    "description": "Heading of the list of the raised hands in a voice chat room. {count} is how many."
+  },
+  "voice.hands.empty": {
+    "defaultMessage": "No hay manos levantadas ahora.",
+    "description": "Shown in the list of raised hands of a voice chat room when nobody raised a hand."
+  },
+  "voice.hands.allow": {
+    "defaultMessage": "Permitir",
+    "description": "Button of a raised hand that lets the participant speak."
+  },
+  "voice.hands.allow.label": {
+    "defaultMessage": "Permitir que {name} hable",
+    "description": "Accessible name of the Allow button of a raised hand. {name} is the participant's name."
+  },
+  "voice.hands.dismiss": {
+    "defaultMessage": "Descartar",
+    "description": "Button of a raised hand that puts the hand down."
+  },
+  "voice.hands.dismiss.label": {
+    "defaultMessage": "Descartar la mano levantada de {name}",
+    "description": "Accessible name of the Dismiss button of a raised hand. {name} is the participant's name."
+  },
+  "voice.call.action_failed": {
+    "defaultMessage": "No se pudo hacer: {reason}",
+    "description": "Error of an operation in a voice chat call. {reason} is why, from the server."
+  },
+  "voice.call.leave_failed": {
+    "defaultMessage": "No se pudo salir de la sala: {reason}",
+    "description": "Error when leaving a voice chat room failed. {reason} is why."
+  },
+  "voice.call.host_leave.title": {
+    "defaultMessage": "¿Salir de la sala que organizas?",
+    "description": "Title of the dialog where the host of a voice chat room leaves it."
+  },
+  "voice.call.host_leave.description": {
+    "defaultMessage": "Elige quién será el anfitrión después de ti o termínala para todos. Solo pueden organizar las personas que pueden abrir salas.",
+    "description": "Explanation of the dialog where the host of a voice chat room leaves it."
+  },
+  "voice.call.host_leave.choice": {
+    "defaultMessage": "Cuando salgas",
+    "description": "Label of the choice of the next host or the end of the room, in the host's leave dialog."
+  },
+  "voice.call.host_leave.next_host": {
+    "defaultMessage": "Nombrar anfitrión a {name}",
+    "description": "Choice of the host's leave dialog that hands the room to a participant. {name} is the participant's name."
+  },
+  "voice.call.host_leave.end": {
+    "defaultMessage": "Terminar la sala para todos",
+    "description": "Choice of the host's leave dialog that ends the room."
+  },
+  "voice.call.ended": {
+    "defaultMessage": "La sala terminó: {reason}",
+    "description": "Said and shown when the voice chat room the user was in ended. {reason} is why it ended."
+  },
+  "voice.call.replaced": {
+    "defaultMessage": "Te uniste a esta sala desde otro dispositivo.",
+    "description": "Said and shown when the user joined the same room from another device, which ends the call here."
+  },
+  "voice.call.lost": {
+    "defaultMessage": "Se perdió la conexión con la sala.",
+    "description": "Said and shown when the call could not reconnect to the room."
+  },
+  "voice.call.unsupported": {
+    "defaultMessage": "Esta aplicación aún no puede conectarse al chat de voz de este servidor.",
+    "description": "Shown when the server's voice chat method is not supported by this client."
+  },
+  "voice.call.removed": {
+    "defaultMessage": "Te sacaron de la sala.",
+    "description": "Said and shown when a host or co-host removed the user from the voice chat room."
+  },
+  "voice.call.moved": {
+    "defaultMessage": "Te uniste a otra sala.",
+    "description": "Said and shown when the user left this room by joining another one."
+  },
+  "voice.call.disconnected": {
+    "defaultMessage": "Te desconectaron de la sala.",
+    "description": "Said and shown when the server took the user out of the room after the connection was lost."
+  },
+  "voice.call.suspended": {
+    "defaultMessage": "Saliste de la sala porque tu cuenta está suspendida.",
+    "description": "Said and shown when the user's account was suspended during a call."
+  },
+  "voice.call.left": {
+    "defaultMessage": "Saliste de la sala.",
+    "description": "Said and shown when the user's session left the room."
+  },
+  "voice.call.blocked": {
+    "defaultMessage": "Saliste de la sala por un bloqueo con su anfitrión o un coanfitrión.",
+    "description": "Said and shown when a block between the user and a host or co-host took the user out of the room."
+  },
+  "voice.notice.speaker": {
+    "defaultMessage": "Ya puedes hablar. Activa el micrófono para hablar.",
+    "description": "Announced when the user becomes a speaker in a voice chat room."
+  },
+  "voice.notice.listener": {
+    "defaultMessage": "Ahora estás escuchando.",
+    "description": "Announced when the user becomes a listener in a voice chat room."
+  },
+  "voice.notice.muted": {
+    "defaultMessage": "Un anfitrión desactivó tu micrófono. Puedes volver a activarlo.",
+    "description": "Announced when a host or co-host muted the user."
+  },
+  "voice.notice.hand_down": {
+    "defaultMessage": "Tu mano está bajada.",
+    "description": "Announced when the user's raised hand went down without the user becoming a speaker."
+  },
+  "voice.notice.cohost": {
+    "defaultMessage": "Ahora eres coanfitrión.",
+    "description": "Announced when the host makes the user a co-host."
+  },
+  "voice.notice.cohost_removed": {
+    "defaultMessage": "Ya no eres coanfitrión.",
+    "description": "Announced when the host stops the user being a co-host."
+  },
+  "voice.notice.host": {
+    "defaultMessage": "Ahora eres el anfitrión.",
+    "description": "Announced when the user becomes the host of the room."
+  },
+  "voice.notice.hand_raised": {
+    "defaultMessage": "{name} levantó la mano.",
+    "description": "Announced to the host and co-hosts when a participant raises a hand. {name} is the participant's name."
+  },
+  "voice.notice.reconnecting": {
+    "defaultMessage": "Se perdió la conexión con la sala. Reconectando…",
+    "description": "Announced when the room stream of a call goes down."
+  },
+  "voice.notice.reconnected": {
+    "defaultMessage": "Se restableció la conexión con la sala.",
+    "description": "Announced when the room stream of a call is back."
+  },
+  "voice.participant.you": {
+    "defaultMessage": "Tú",
+    "description": "Marker of the user's own row in the participants of a voice chat room."
+  },
+  "voice.participant.hand_raised": {
+    "defaultMessage": "Mano levantada",
+    "description": "Marker of a participant who raised a hand."
+  },
+  "voice.participant.blocked": {
+    "defaultMessage": "Bloqueada",
+    "description": "Marker of a participant whom the user blocks or who blocks the user."
+  },
+  "voice.participant.talking": {
+    "defaultMessage": "Hablando",
+    "description": "Read by assistive technology for a participant of a voice chat room who is talking now (the ring around the avatar)."
+  },
+  "voice.participant.mic_off": {
+    "defaultMessage": "Micrófono desactivado",
+    "description": "Read by assistive technology for a speaker of a voice chat room whose microphone is off (the badge on the avatar)."
+  },
+  "voice.participant.reacted_with": {
+    "defaultMessage": "Reaccionó con {emoji}",
+    "description": "Read by assistive technology for the reaction a participant of a voice chat room just sent. {emoji} is the emoji."
+  },
+  "voice.participant.profile": {
+    "defaultMessage": "Ver perfil",
+    "description": "Item of the menu of a participant of a voice chat room that opens the participant's profile."
+  },
+  "voice.participant.caption_separator": {
+    "defaultMessage": " · ",
+    "description": "What separates the parts of the line under a participant's name on the stage of a voice chat room (\"Host · You\")."
+  },
+  "voice.moderate.menu": {
+    "defaultMessage": "Acciones para {name}",
+    "description": "Accessible name of the menu of what a host or co-host does to a participant. {name} is the participant's name."
+  },
+  "voice.moderate.grant": {
+    "defaultMessage": "Dejar hablar",
+    "description": "Menu item that lets a participant speak."
+  },
+  "voice.moderate.dismiss": {
+    "defaultMessage": "Descartar mano levantada",
+    "description": "Menu item that turns down a participant's raised hand."
+  },
+  "voice.moderate.revoke": {
+    "defaultMessage": "Quitar la palabra",
+    "description": "Menu item that makes a speaker a listener and takes back the permission to speak."
+  },
+  "voice.moderate.mute": {
+    "defaultMessage": "Desactivar micrófono",
+    "description": "Menu item that mutes a speaker, who may turn the microphone on again."
+  },
+  "voice.moderate.remove": {
+    "defaultMessage": "Sacar de la sala",
+    "description": "Menu item and confirm button that removes a participant, who cannot join again."
+  },
+  "voice.moderate.cohost": {
+    "defaultMessage": "Nombrar coanfitrión",
+    "description": "Menu item of the host that makes a participant a co-host."
+  },
+  "voice.moderate.uncohost": {
+    "defaultMessage": "Quitar de coanfitrión",
+    "description": "Menu item of the host that stops a participant being a co-host."
+  },
+  "voice.moderate.hand_over": {
+    "defaultMessage": "Nombrar anfitrión",
+    "description": "Menu item of the host that hands the room over to a participant."
+  },
+  "voice.moderate.remove.title": {
+    "defaultMessage": "¿Sacar a {name} de la sala?",
+    "description": "Title of the dialog that confirms removing a participant. {name} is the participant's name."
+  },
+  "voice.moderate.remove.description": {
+    "defaultMessage": "No podrá volver a ver esta sala ni unirse a ella.",
+    "description": "Explanation of the dialog that confirms removing a participant."
+  },
+  "voice.moderate.done.grant": {
+    "defaultMessage": "{name} ya puede hablar.",
+    "description": "Announced after letting a participant speak."
+  },
+  "voice.moderate.done.dismiss": {
+    "defaultMessage": "Se descartó la mano levantada de {name}.",
+    "description": "Announced after dismissing a raised hand."
+  },
+  "voice.moderate.done.revoke": {
+    "defaultMessage": "{name} está escuchando ahora.",
+    "description": "Announced after stopping a participant from speaking."
+  },
+  "voice.moderate.done.mute": {
+    "defaultMessage": "Se desactivó el micrófono de {name}.",
+    "description": "Announced after muting a participant."
+  },
+  "voice.moderate.done.remove": {
+    "defaultMessage": "Se sacó a {name} de la sala.",
+    "description": "Announced after removing a participant."
+  },
+  "voice.moderate.done.cohost": {
+    "defaultMessage": "{name} es ahora coanfitrión.",
+    "description": "Announced after making a participant a co-host."
+  },
+  "voice.moderate.done.uncohost": {
+    "defaultMessage": "{name} ya no es coanfitrión.",
+    "description": "Announced after stopping a participant being a co-host."
+  },
+  "voice.moderate.done.hand_over": {
+    "defaultMessage": "{name} es ahora el anfitrión.",
+    "description": "Announced after handing the room over."
+  },
+  "voice.invite.button": {
+    "defaultMessage": "Invitar",
+    "description": "Button of the host and co-hosts that opens the dialog to invite someone to the voice chat room."
+  },
+  "voice.invite.title": {
+    "defaultMessage": "Invitar a la sala",
+    "description": "Title of the dialog that invites someone to a voice chat room."
+  },
+  "voice.invite.description": {
+    "defaultMessage": "La persona a la que invites podrá ver la sala desde ahora y recibirá una notificación.",
+    "description": "Explanation of the dialog that invites someone to a voice chat room."
+  },
+  "voice.invite.username": {
+    "defaultMessage": "Nombre de usuario en este servidor",
+    "description": "Label of the field of the username to invite to a voice chat room."
+  },
+  "voice.invite.role": {
+    "defaultMessage": "Invitar como",
+    "description": "Label of the choice of inviting as a listener or a speaker."
+  },
+  "voice.invite.role.listener": {
+    "defaultMessage": "Oyente",
+    "description": "Choice of inviting someone as a listener."
+  },
+  "voice.invite.role.speaker": {
+    "defaultMessage": "Orador",
+    "description": "Choice of inviting someone as a speaker."
+  },
+  "voice.invite.role.speaker.description": {
+    "defaultMessage": "Puede hablar sin pedirlo.",
+    "description": "Explanation of inviting someone as a speaker."
+  },
+  "voice.invite.submit": {
+    "defaultMessage": "Invitar",
+    "description": "Confirm button of the dialog that invites someone to a voice chat room."
+  },
+  "voice.invite.sent": {
+    "defaultMessage": "Se invitó a {name}.",
+    "description": "Announced after inviting someone. {name} is their name."
+  },
+  "voice.invite.failed": {
+    "defaultMessage": "No se pudo invitar: {reason}",
+    "description": "Error of the invitation. {reason} is why."
+  },
+  "voice.bar.label": {
+    "defaultMessage": "Llamada de chat de voz",
+    "description": "Accessible name of the mini-player of the voice chat call that shows on every page while the user is in a call."
+  },
+  "voice.bar.talking": {
+    "defaultMessage": "{others, plural, =0 {{name} está hablando} one {{name} y # más están hablando} other {{name} y # más están hablando}}",
+    "description": "Status line of the voice chat call's mini-player while someone talks. {name} is the first one talking; {others} is how many others talk with them."
+  },
+  "voice.call.microphone_denied": {
+    "defaultMessage": "Este sitio no puede usar el micrófono. Permítelo en la configuración de tu navegador e inténtalo de nuevo.",
+    "description": "Error when the user or the browser refused the microphone."
+  },
+  "voice.call.microphone_missing": {
+    "defaultMessage": "No se encontró ningún micrófono. Conecta uno e inténtalo de nuevo.",
+    "description": "Error when the device has no microphone."
+  },
+  "voice.call.microphone_busy": {
+    "defaultMessage": "Otra aplicación está usando el micrófono. Ciérrala e inténtalo de nuevo.",
+    "description": "Error when another app holds the microphone."
+  }
+}

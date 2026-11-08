@@ -52,6 +52,19 @@
       "找不到要求的資源。",
       "伺服器尚未準備好接受請求。"
     ],
+    "es": [
+      "Se encontraron 0 errores de configuración.",
+      "Se encontró 1 error de configuración.",
+      "Se encontraron 2 errores de configuración.",
+      "Se encontraron 1.234 errores de configuración.",
+      "La opción de configuración MY_DATABASE tiene un valor no válido.",
+      "La opción de configuración obligatoria MY_DATABASE_URL no está definida.",
+      "La solicitud no es válida.",
+      "Ha ocurrido un error inesperado. Inténtalo de nuevo más tarde.",
+      "El método DELETE no está permitido para este recurso.",
+      "No se encontró el recurso solicitado.",
+      "El servidor aún no está listo para aceptar solicitudes."
+    ],
     "en-XA": [
       "[Ƒǿǿŭŭƞḓ 0 ƈǿǿƞƒīɠŭŭřȧȧŧīǿǿƞ ḗḗřřǿǿřş.]",
       "[Ƒǿǿŭŭƞḓ 1 ƈǿǿƞƒīɠŭŭřȧȧŧīǿǿƞ ḗḗřřǿǿř.]",
@@ -93,6 +106,7 @@
     "1,234件の1,234.5",
     "共 1,234 条帖子，1,234.5",
     "共 1,234 則貼文，1,234.5",
+    "1.000.000 de seguidores, 1.234,5",
     "1 000 000 d’abonnés",
     "11 كثير"
   ],
@@ -790,6 +804,106 @@
         {
           "n": 1000000,
           "want": "other:10,00,000 | other:10,00,000 | 10,00,000"
+        },
+        {
+          "n": 1.5,
+          "want": "other:1.5 | other:1.5 | 1.5"
+        }
+      ]
+    },
+    {
+      "locale": "es",
+      "message": "{n, plural, one {one:#} many {many:#} other {other:#}} | {n, selectordinal, other {other:#}} | {n, number}",
+      "outputs": [
+        {
+          "n": 0,
+          "want": "other:0 | other:0 | 0"
+        },
+        {
+          "n": 1,
+          "want": "one:1 | other:1 | 1"
+        },
+        {
+          "n": 2,
+          "want": "other:2 | other:2 | 2"
+        },
+        {
+          "n": 3,
+          "want": "other:3 | other:3 | 3"
+        },
+        {
+          "n": 5,
+          "want": "other:5 | other:5 | 5"
+        },
+        {
+          "n": 11,
+          "want": "other:11 | other:11 | 11"
+        },
+        {
+          "n": 21,
+          "want": "other:21 | other:21 | 21"
+        },
+        {
+          "n": 22,
+          "want": "other:22 | other:22 | 22"
+        },
+        {
+          "n": 101,
+          "want": "other:101 | other:101 | 101"
+        },
+        {
+          "n": 1000000,
+          "want": "many:1.000.000 | other:1.000.000 | 1.000.000"
+        },
+        {
+          "n": 1.5,
+          "want": "other:1,5 | other:1,5 | 1,5"
+        }
+      ]
+    },
+    {
+      "locale": "es-419",
+      "message": "{n, plural, one {one:#} many {many:#} other {other:#}} | {n, selectordinal, other {other:#}} | {n, number}",
+      "outputs": [
+        {
+          "n": 0,
+          "want": "other:0 | other:0 | 0"
+        },
+        {
+          "n": 1,
+          "want": "one:1 | other:1 | 1"
+        },
+        {
+          "n": 2,
+          "want": "other:2 | other:2 | 2"
+        },
+        {
+          "n": 3,
+          "want": "other:3 | other:3 | 3"
+        },
+        {
+          "n": 5,
+          "want": "other:5 | other:5 | 5"
+        },
+        {
+          "n": 11,
+          "want": "other:11 | other:11 | 11"
+        },
+        {
+          "n": 21,
+          "want": "other:21 | other:21 | 21"
+        },
+        {
+          "n": 22,
+          "want": "other:22 | other:22 | 22"
+        },
+        {
+          "n": 101,
+          "want": "other:101 | other:101 | 101"
+        },
+        {
+          "n": 1000000,
+          "want": "many:1,000,000 | other:1,000,000 | 1,000,000"
         },
         {
           "n": 1.5,

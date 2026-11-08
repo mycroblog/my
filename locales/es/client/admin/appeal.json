@@ -1,0 +1,150 @@
+{
+  "admin.appeal.account": {
+    "defaultMessage": "Cuenta",
+    "description": "Term of the account that appealed, which the action is on."
+  },
+  "admin.appeal.account.admin": {
+    "defaultMessage": "Abrir la cuenta en los paneles de administración",
+    "description": "Link from an appeal's page to the admin page of the account that appealed."
+  },
+  "admin.appeal.action.kind": {
+    "defaultMessage": "Acción",
+    "description": "Term of the kind of the moderation action on an appeal's page."
+  },
+  "admin.appeal.action.lifted_at": {
+    "defaultMessage": "Levantada",
+    "description": "Term of when the action was lifted."
+  },
+  "admin.appeal.action.report": {
+    "defaultMessage": "Abrir la denuncia",
+    "description": "Link from an appeal's page to the report the action follows from."
+  },
+  "admin.appeal.action.title": {
+    "defaultMessage": "Acción de moderación",
+    "description": "Heading of the region of an appeal's page with the action it is of."
+  },
+  "admin.appeal.action_state": {
+    "defaultMessage": "Estado de la acción",
+    "description": "Term of the state of the action an appeal is of, in the list of appeals."
+  },
+  "admin.appeal.already_decided": {
+    "defaultMessage": "Otro moderador ya revisó esta apelación. Su decisión sigue vigente.",
+    "description": "Status when a moderator decided an appeal that another moderator had decided the other way first."
+  },
+  "admin.appeal.appeal.title": {
+    "defaultMessage": "Apelación",
+    "description": "Heading of the region of an appeal's page with what the user wrote."
+  },
+  "admin.appeal.back": {
+    "defaultMessage": "Volver a las apelaciones",
+    "description": "Link from an appeal's page to the list of appeals."
+  },
+  "admin.appeal.cancel": {
+    "defaultMessage": "Cancelar",
+    "description": "Button of the confirmation of a decision on an appeal that closes it without deciding."
+  },
+  "admin.appeal.confirm_overturn.description": {
+    "defaultMessage": "La acción «{kind}» se levanta ahora. Las publicaciones eliminadas siguen eliminadas. La decisión no se puede cambiar después.",
+    "description": "Text of the confirmation before overturning an appeal. {kind} is the kind of the action."
+  },
+  "admin.appeal.confirm_overturn.description_ban": {
+    "defaultMessage": "La expulsión se levanta ahora y la cuenta deja de eliminarse. La decisión no se puede cambiar después.",
+    "description": "Text of the confirmation before overturning the appeal of a ban."
+  },
+  "admin.appeal.confirm_overturn.title": {
+    "defaultMessage": "¿Aceptar esta apelación?",
+    "description": "Title of the confirmation before overturning an appeal."
+  },
+  "admin.appeal.confirm_uphold.description": {
+    "defaultMessage": "La acción «{kind}» se mantiene. La decisión no se puede cambiar después.",
+    "description": "Text of the confirmation before upholding an appeal. {kind} is the kind of the action."
+  },
+  "admin.appeal.confirm_uphold.title": {
+    "defaultMessage": "¿Desestimar esta apelación?",
+    "description": "Title of the confirmation before upholding an appeal."
+  },
+  "admin.appeal.decide_failed": {
+    "defaultMessage": "No se pudo guardar la decisión: {reason}",
+    "description": "Error in the confirmation of a decision on an appeal when the request failed. {reason} is why."
+  },
+  "admin.appeal.decided_at": {
+    "defaultMessage": "Revisada",
+    "description": "Term of when a moderator decided an appeal."
+  },
+  "admin.appeal.decided_by": {
+    "defaultMessage": "Revisada por",
+    "description": "Term of the moderator who decided an appeal."
+  },
+  "admin.appeal.decided_by.cli": {
+    "defaultMessage": "La línea de comandos",
+    "description": "Value of who decided an appeal when it was decided from the command line."
+  },
+  "admin.appeal.decision": {
+    "defaultMessage": "Decisión",
+    "description": "Term of the decision on an appeal."
+  },
+  "admin.appeal.decision.description": {
+    "defaultMessage": "Desestimar mantiene la acción. Aceptar la levanta. Se informa al usuario de la decisión, con tu explicación.",
+    "description": "Text above the uphold and overturn buttons of a pending appeal."
+  },
+  "admin.appeal.decision.title": {
+    "defaultMessage": "Revisión",
+    "description": "Heading of the region of an appeal's page where it is decided."
+  },
+  "admin.appeal.decision_reason": {
+    "defaultMessage": "Explicación para el usuario",
+    "description": "Term of the explanation of a decision that the user was shown."
+  },
+  "admin.appeal.none": {
+    "defaultMessage": "Ninguno",
+    "description": "Value of a moderator's text on an appeal's page when there is none."
+  },
+  "admin.appeal.overturn": {
+    "defaultMessage": "Aceptar apelación",
+    "description": "Button of a pending appeal that opens the confirmation of overturning it, and the confirmation's button that overturns it."
+  },
+  "admin.appeal.overturned": {
+    "defaultMessage": "La apelación se acepta y la acción se levanta.",
+    "description": "Status after a moderator overturned an appeal, which lifted its action."
+  },
+  "admin.appeal.overturned_ended": {
+    "defaultMessage": "La apelación se acepta. La acción ya había terminado.",
+    "description": "Status after a moderator overturned an appeal whose action had already ended or been lifted."
+  },
+  "admin.appeal.reason": {
+    "defaultMessage": "Explicación para el usuario",
+    "description": "Label of the optional explanation in the confirmation of a decision on an appeal."
+  },
+  "admin.appeal.reason.description": {
+    "defaultMessage": "Opcional. El usuario que apeló la ve junto con la decisión.",
+    "description": "Hint under the explanation of a decision on an appeal."
+  },
+  "admin.appeal.reason.too_long": {
+    "defaultMessage": "Usa como máximo {max, number} caracteres",
+    "description": "Error under the explanation of a decision on an appeal when it is too long. {max} is the limit."
+  },
+  "admin.appeal.state": {
+    "defaultMessage": "Estado",
+    "description": "Term of an appeal's state."
+  },
+  "admin.appeal.submitted_at": {
+    "defaultMessage": "Apelada",
+    "description": "Term of when the user appealed."
+  },
+  "admin.appeal.text": {
+    "defaultMessage": "Lo que escribió el usuario",
+    "description": "Term of the text of an appeal, written by the user."
+  },
+  "admin.appeal.title": {
+    "defaultMessage": "Apelación",
+    "description": "Heading of the page of one appeal of a moderation action."
+  },
+  "admin.appeal.upheld": {
+    "defaultMessage": "La apelación se desestima. La acción se mantiene.",
+    "description": "Status after a moderator upheld an appeal."
+  },
+  "admin.appeal.uphold": {
+    "defaultMessage": "Desestimar apelación",
+    "description": "Button of a pending appeal that opens the confirmation of upholding it, and the confirmation's button that upholds it."
+  }
+}

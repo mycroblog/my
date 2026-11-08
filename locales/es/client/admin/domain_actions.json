@@ -1,0 +1,414 @@
+{
+  "admin.domain_actions.characters_left": {
+    "defaultMessage": "{count, plural, one {# carácter restante} other {# caracteres restantes}}",
+    "description": "Character count under the public comment or private note of a domain action while the text is within the limit."
+  },
+  "admin.domain_actions.characters_over": {
+    "defaultMessage": "{count, plural, one {# carácter de más} other {# caracteres de más}}",
+    "description": "Character count under the public comment or private note of a domain action when the text is longer than the limit."
+  },
+  "admin.domain_actions.confirm_suspend.cancel": {
+    "defaultMessage": "Cancelar",
+    "description": "Button of the confirmation of a domain suspension that closes it without suspending."
+  },
+  "admin.domain_actions.confirm_suspend.confirm": {
+    "defaultMessage": "Suspender",
+    "description": "Button of the confirmation of a domain suspension that suspends the domain."
+  },
+  "admin.domain_actions.confirm_suspend.description": {
+    "defaultMessage": "No se envía nada a este dominio ni a sus subdominios ni se acepta nada de ellos, y sus cuentas y publicaciones quedan ocultas. Se terminan los seguimientos entre las personas de aquí y sus cuentas, y levantar la suspensión no los restablece.",
+    "description": "Text of the confirmation before suspending a remote domain: what the suspension does and what it cannot undo."
+  },
+  "admin.domain_actions.confirm_suspend.title": {
+    "defaultMessage": "¿Suspender {domain}?",
+    "description": "Title of the confirmation before suspending a remote domain. {domain} is the domain."
+  },
+  "admin.domain_actions.domain": {
+    "defaultMessage": "Dominio",
+    "description": "Label of the domain field of a new domain action."
+  },
+  "admin.domain_actions.domain.description": {
+    "defaultMessage": "Un dominio remoto, como spam.example. La medida también abarca sus subdominios. Un dominio con letras no latinas se puede escribir tal cual.",
+    "description": "Help text under the domain field of a new domain action."
+  },
+  "admin.domain_actions.domain.required": {
+    "defaultMessage": "Escribe un dominio",
+    "description": "Error under the domain field of a new domain action when it is empty."
+  },
+  "admin.domain_actions.duration": {
+    "defaultMessage": "Duración",
+    "description": "Label of the select of how long a new domain action lasts."
+  },
+  "admin.domain_actions.duration.days": {
+    "defaultMessage": "{count, plural, one {# día} other {# días}}",
+    "description": "An option of the duration of a domain action, in days."
+  },
+  "admin.domain_actions.duration.description": {
+    "defaultMessage": "La medida termina sola pasado este tiempo.",
+    "description": "Help text under the duration of a new domain action."
+  },
+  "admin.domain_actions.duration.indefinite": {
+    "defaultMessage": "Hasta que se levante",
+    "description": "The duration option of a domain action without an end, and the end of such an action in its details."
+  },
+  "admin.domain_actions.empty.active": {
+    "defaultMessage": "No hay medidas de dominio vigentes",
+    "description": "Heading of the list of domain actions in effect when there is none."
+  },
+  "admin.domain_actions.empty.active.description": {
+    "defaultMessage": "Las medidas aplicadas a dominios remotos aparecen aquí hasta que terminen o se levanten.",
+    "description": "Text of the empty list of domain actions in effect."
+  },
+  "admin.domain_actions.empty.all": {
+    "defaultMessage": "Aún no hay medidas de dominio",
+    "description": "Heading of the list of every domain action when there is none."
+  },
+  "admin.domain_actions.expires_at": {
+    "defaultMessage": "Termina",
+    "description": "Term in a domain action's details: when the action ends by itself."
+  },
+  "admin.domain_actions.filter.active": {
+    "defaultMessage": "Vigentes",
+    "description": "Tab of the domain actions that lists those in effect now."
+  },
+  "admin.domain_actions.filter.all": {
+    "defaultMessage": "Todas",
+    "description": "Tab of the domain actions that lists every action, lifted and expired ones too."
+  },
+  "admin.domain_actions.filter.label": {
+    "defaultMessage": "Mostrar medidas de dominio",
+    "description": "Accessible name of the tabs that filter the domain actions."
+  },
+  "admin.domain_actions.issue_failed": {
+    "defaultMessage": "No se pudo aplicar la medida: {reason}",
+    "description": "Error when a new domain action failed. {reason} is the server's localized reason, which names the field at fault."
+  },
+  "admin.domain_actions.issued": {
+    "defaultMessage": "{kind} está vigente para {domain}.",
+    "description": "Status after a new domain action took effect. {kind} is the kind of action, such as Suspend; {domain} is the domain."
+  },
+  "admin.domain_actions.issued_at": {
+    "defaultMessage": "Aplicada el",
+    "description": "Term in a domain action's details: when the action was taken."
+  },
+  "admin.domain_actions.kind": {
+    "defaultMessage": "Medida",
+    "description": "Label of the choice of the kind of a new domain action, and term in a domain action's details."
+  },
+  "admin.domain_actions.kind.force_sensitive": {
+    "defaultMessage": "Marcar multimedia como sensible",
+    "description": "Kind of domain action: the domain's media are marked sensitive."
+  },
+  "admin.domain_actions.kind.force_sensitive.description": {
+    "defaultMessage": "El contenido multimedia del dominio queda oculto tras una advertencia.",
+    "description": "Description of the domain action that marks the domain's media sensitive."
+  },
+  "admin.domain_actions.kind.limit": {
+    "defaultMessage": "Limitar",
+    "description": "Kind of domain action: the domain's posts stay off the public timelines and its accounts reach only their followers."
+  },
+  "admin.domain_actions.kind.limit.description": {
+    "defaultMessage": "Sus publicaciones no aparecen en las cronologías públicas y sus cuentas solo llegan a quienes las siguen.",
+    "description": "Description of the domain action that limits a domain."
+  },
+  "admin.domain_actions.kind.reject_media": {
+    "defaultMessage": "Rechazar multimedia",
+    "description": "Kind of domain action: the domain's media are not fetched."
+  },
+  "admin.domain_actions.kind.reject_media.description": {
+    "defaultMessage": "El contenido multimedia del dominio no se obtiene ni se muestra.",
+    "description": "Description of the domain action that rejects the domain's media."
+  },
+  "admin.domain_actions.kind.reject_reports": {
+    "defaultMessage": "Rechazar denuncias",
+    "description": "Kind of domain action: the reports the domain sends are dropped."
+  },
+  "admin.domain_actions.kind.reject_reports.description": {
+    "defaultMessage": "Las denuncias enviadas desde el dominio se descartan.",
+    "description": "Description of the domain action that rejects the domain's reports."
+  },
+  "admin.domain_actions.kind.required": {
+    "defaultMessage": "Elige una medida",
+    "description": "Error under the choice of the kind of a new domain action when none is chosen."
+  },
+  "admin.domain_actions.kind.suspend": {
+    "defaultMessage": "Suspender",
+    "description": "Kind of domain action: no federation with the domain at all."
+  },
+  "admin.domain_actions.kind.suspend.description": {
+    "defaultMessage": "No se envía nada al dominio ni se acepta nada de él, y sus cuentas y publicaciones quedan ocultas.",
+    "description": "Description of the domain action that suspends a domain."
+  },
+  "admin.domain_actions.lift": {
+    "defaultMessage": "Levantar",
+    "description": "Button of a domain action in effect that lifts it."
+  },
+  "admin.domain_actions.lift_failed": {
+    "defaultMessage": "No se pudo levantar la medida: {reason}",
+    "description": "Error toast when a domain action could not be lifted. {reason} is the server's localized reason."
+  },
+  "admin.domain_actions.lifted": {
+    "defaultMessage": "{kind} para {domain} se ha levantado.",
+    "description": "Status after a domain action was lifted. {kind} is the kind of action; {domain} is the domain."
+  },
+  "admin.domain_actions.lifted_at": {
+    "defaultMessage": "Levantada el",
+    "description": "Term in a domain action's details: when the action was lifted."
+  },
+  "admin.domain_actions.list.every_domain": {
+    "defaultMessage": "Mostrar todos los dominios",
+    "description": "Link next to the list of one domain's actions that lists the actions of every domain."
+  },
+  "admin.domain_actions.list.of_domain": {
+    "defaultMessage": "Mostrando las medidas sobre {domain}.",
+    "description": "Text above the list of domain actions when it shows the actions of one domain only. {domain} is the domain."
+  },
+  "admin.domain_actions.list.title": {
+    "defaultMessage": "Medidas",
+    "description": "Heading of the list of domain actions."
+  },
+  "admin.domain_actions.new.title": {
+    "defaultMessage": "Nueva medida",
+    "description": "Button on the list of domain actions that opens the form of a new one, and the heading of that page."
+  },
+  "admin.domain_actions.obfuscate": {
+    "defaultMessage": "Ocultar parte del dominio en la lista pública",
+    "description": "Checkbox of a new domain action: the public list of moderated domains shows the domain partly hidden."
+  },
+  "admin.domain_actions.obfuscate.description": {
+    "defaultMessage": "Cuando este servidor publica la lista de sus dominios moderados, la parte central de este dominio se sustituye por asteriscos.",
+    "description": "Help text of the checkbox that hides part of the domain in the public list."
+  },
+  "admin.domain_actions.obfuscate.no": {
+    "defaultMessage": "Completo",
+    "description": "Value of a domain action's detail: the public list shows the whole domain."
+  },
+  "admin.domain_actions.obfuscate.term": {
+    "defaultMessage": "Lista pública",
+    "description": "Term in a domain action's details: how the public list of moderated domains shows the domain."
+  },
+  "admin.domain_actions.obfuscate.yes": {
+    "defaultMessage": "Parcialmente oculto",
+    "description": "Value of a domain action's detail: the public list shows the domain partly hidden."
+  },
+  "admin.domain_actions.private_note": {
+    "defaultMessage": "Nota privada",
+    "description": "Label of the private note of a new domain action, and term in its details."
+  },
+  "admin.domain_actions.private_note.description": {
+    "defaultMessage": "Solo la ven los moderadores.",
+    "description": "Help text under the private note of a new domain action."
+  },
+  "admin.domain_actions.public_comment": {
+    "defaultMessage": "Comentario público",
+    "description": "Label of the public comment of a new domain action, and term in its details."
+  },
+  "admin.domain_actions.public_comment.description": {
+    "defaultMessage": "El motivo, que puede mostrarse públicamente junto al dominio.",
+    "description": "Help text under the public comment of a new domain action."
+  },
+  "admin.domain_actions.state": {
+    "defaultMessage": "Estado",
+    "description": "Term in a domain action's details: whether it is in effect, ended, or lifted."
+  },
+  "admin.domain_actions.state.active": {
+    "defaultMessage": "Vigente",
+    "description": "State of a domain action that is in effect now."
+  },
+  "admin.domain_actions.state.expired": {
+    "defaultMessage": "Terminada",
+    "description": "State of a domain action that ended at its end date."
+  },
+  "admin.domain_actions.state.lifted": {
+    "defaultMessage": "Levantada",
+    "description": "State of a domain action that a moderator lifted."
+  },
+  "admin.domain_actions.submit": {
+    "defaultMessage": "Aplicar medida",
+    "description": "Submit button of the form of a new domain action."
+  },
+  "admin.domain_actions.summary": {
+    "defaultMessage": "Limitar, suspender y otras medidas sobre dominios remotos, y levantarlas.",
+    "description": "Description of the domain actions screen in the administration menu of the settings."
+  },
+  "admin.domain_actions.title": {
+    "defaultMessage": "Medidas de dominio",
+    "description": "Heading of the screen of moderation actions on remote domains, and its link in the administration menu."
+  },
+  "admin.domain_actions.too_long": {
+    "defaultMessage": "Usa como máximo {max, number} caracteres",
+    "description": "Error under the public comment or private note of a domain action when it is too long. {max} is the limit."
+  },
+  "admin.domain_actions.csv.confirm.confirm": {
+    "defaultMessage": "Importar y suspender",
+    "description": "Confirm button of an import of a domain block CSV that suspends domains."
+  },
+  "admin.domain_actions.csv.confirm.title": {
+    "defaultMessage": "¿Suspender {count, plural, one {# dominio} other {# dominios}}?",
+    "description": "Title of the confirmation of an import of a domain block CSV that suspends domains. {count} is how many."
+  },
+  "admin.domain_actions.csv.csv": {
+    "defaultMessage": "CSV",
+    "description": "Label of the text area of a domain block CSV to import."
+  },
+  "admin.domain_actions.csv.csv.description": {
+    "defaultMessage": "Un CSV de bloqueo de dominios exportado por Mastodon, con {max, number} filas como máximo. Un archivo sin la cabecera #domain se lee como una lista de dominios que suspender.",
+    "description": "Help text under the text area of a domain block CSV. {max} is the most rows one import holds."
+  },
+  "admin.domain_actions.csv.csv.required": {
+    "defaultMessage": "Pega un CSV o elige un archivo",
+    "description": "Error under the text area of a domain block CSV when it is empty."
+  },
+  "admin.domain_actions.csv.csv.too_large": {
+    "defaultMessage": "El CSV supera los {max, number} KB. Divídelo en archivos más pequeños",
+    "description": "Error under the text area of a domain block CSV when it has too many bytes to send. {max} is the limit in kilobytes."
+  },
+  "admin.domain_actions.csv.description": {
+    "defaultMessage": "Exporta las medidas vigentes como el CSV de bloqueo de dominios que importa Mastodon, o importa un CSV exportado por Mastodon. El silenciamiento de Mastodon equivale aquí a una limitación. Los dominios con solo la marca de multimedia sensible no se exportan, y tampoco las notas privadas ni las fechas de fin.",
+    "description": "Text at the top of the section that exports and imports Mastodon's domain block CSV."
+  },
+  "admin.domain_actions.csv.export": {
+    "defaultMessage": "Exportar CSV",
+    "description": "Button that saves the domain actions in effect as Mastodon's domain block CSV."
+  },
+  "admin.domain_actions.csv.export.done": {
+    "defaultMessage": "Se guardó {name}.",
+    "description": "Status after the domain block CSV was saved. {name} is the file name."
+  },
+  "admin.domain_actions.csv.export.failed": {
+    "defaultMessage": "No se pudo exportar el CSV: {reason}",
+    "description": "Error when the domain block CSV could not be exported. {reason} is why."
+  },
+  "admin.domain_actions.csv.file": {
+    "defaultMessage": "Elegir un archivo CSV",
+    "description": "Button that opens the file picker to read a domain block CSV."
+  },
+  "admin.domain_actions.csv.file.description": {
+    "defaultMessage": "Su texto sustituye al CSV de arriba.",
+    "description": "Help text next to the button that reads a domain block CSV from a file."
+  },
+  "admin.domain_actions.csv.file.failed": {
+    "defaultMessage": "No se pudo leer {name}. Elige el archivo de nuevo.",
+    "description": "Error when the browser could not read the chosen domain block CSV. {name} is the file name."
+  },
+  "admin.domain_actions.csv.file.read": {
+    "defaultMessage": "Se leyó {name}.",
+    "description": "Status after the chosen domain block CSV was read into the text area. {name} is the file name."
+  },
+  "admin.domain_actions.csv.file.too_large": {
+    "defaultMessage": "{name} supera los {max, number} KB. Divídelo en archivos más pequeños.",
+    "description": "Error when the chosen domain block CSV is too large to send. {name} is the file name; {max} the limit in kilobytes."
+  },
+  "admin.domain_actions.csv.import.done": {
+    "defaultMessage": "{issued, plural, =0 {No se aplicó ninguna medida.} one {Se aplicó # medida.} other {Se aplicaron # medidas.}} {skipped, plural, =0 {No se omitió ninguna fila.} one {Se omitió # fila.} other {Se omitieron # filas.}}",
+    "description": "Status after an import of a domain block CSV. {issued} is the number of actions taken; {skipped} the number of rows that took none."
+  },
+  "admin.domain_actions.csv.import.failed": {
+    "defaultMessage": "No se pudieron importar las filas: {reason}",
+    "description": "Error when the server refused the import of the chosen rows of a domain block CSV. {reason} is why."
+  },
+  "admin.domain_actions.csv.import.title": {
+    "defaultMessage": "Importar un CSV",
+    "description": "Heading of the form that imports Mastodon's domain block CSV."
+  },
+  "admin.domain_actions.csv.none_selected": {
+    "defaultMessage": "Elige al menos una fila para importar",
+    "description": "Error when the import of a domain block CSV is sent with no row chosen."
+  },
+  "admin.domain_actions.csv.preview": {
+    "defaultMessage": "Vista previa",
+    "description": "Submit button that shows what importing each row of a domain block CSV would do, without changing anything."
+  },
+  "admin.domain_actions.csv.preview.failed": {
+    "defaultMessage": "No se pudo leer el CSV: {reason}",
+    "description": "Error under the import form when the server refused the domain block CSV. {reason} is why."
+  },
+  "admin.domain_actions.csv.preview.summary": {
+    "defaultMessage": "Se pueden importar {importable, number} de {count, plural, one {# fila} other {# filas}}. Desmarca las filas que no quieras.",
+    "description": "Text above the preview table of a domain block CSV. {count} is the number of rows; {importable} how many issue an action."
+  },
+  "admin.domain_actions.csv.preview.title": {
+    "defaultMessage": "Filas del CSV",
+    "description": "Heading of the preview of a domain block CSV, and the name of its table."
+  },
+  "admin.domain_actions.csv.private_note.description": {
+    "defaultMessage": "Solo la ven los moderadores. Todas las medidas de la importación llevan esta nota.",
+    "description": "Help text under the private note of an import of a domain block CSV."
+  },
+  "admin.domain_actions.csv.row.issue": {
+    "defaultMessage": "Línea {line, number}. Aplica: {kinds}",
+    "description": "What importing a row of a domain block CSV does, under the checkbox that chooses it. {line} is its line; {kinds} the list of the kinds of action, such as Suspend and Reject reports."
+  },
+  "admin.domain_actions.csv.row.skipped": {
+    "defaultMessage": "Línea {line, number}. {reason}",
+    "description": "A row of a domain block CSV that takes no action. {line} is its line; {reason} why, such as Already in effect."
+  },
+  "admin.domain_actions.csv.status.own_domain": {
+    "defaultMessage": "Dominio de este servidor",
+    "description": "Why a row of a domain block CSV takes no action: the domain is the domain of this server."
+  },
+  "admin.domain_actions.csv.status.already_applied": {
+    "defaultMessage": "Ya vigente",
+    "description": "Why a row of a domain block CSV takes no action: actions in effect on the domain or a parent domain cover it."
+  },
+  "admin.domain_actions.csv.status.duplicate": {
+    "defaultMessage": "Mismo dominio que una fila anterior",
+    "description": "Why a row of a domain block CSV takes no action: an earlier row has the same domain."
+  },
+  "admin.domain_actions.csv.status.invalid": {
+    "defaultMessage": "Fila no válida",
+    "description": "Why a row of a domain block CSV takes no action: its domain, severity or comment is not valid."
+  },
+  "admin.domain_actions.csv.status.no_action": {
+    "defaultMessage": "Sin medida",
+    "description": "Why a row of a domain block CSV takes no action: a noop row without rejections."
+  },
+  "admin.domain_actions.csv.submit": {
+    "defaultMessage": "Importar {count, plural, one {# fila} other {# filas}}",
+    "description": "Button that imports the chosen rows of a domain block CSV. {count} is how many are chosen."
+  },
+  "admin.domain_actions.csv.title": {
+    "defaultMessage": "CSV de Mastodon",
+    "description": "Heading of the section of the domain actions screen that exports and imports Mastodon's domain block CSV."
+  },
+  "admin.domain_actions.column.domain": {
+    "defaultMessage": "Dominio",
+    "description": "Header of the column of the domain actions table that names the domain."
+  },
+  "admin.domain_actions.pages": {
+    "defaultMessage": "Páginas de medidas de dominio",
+    "description": "Accessible name of the navigation between the pages of the domain actions screen: the list and the CSV."
+  },
+  "admin.domain_actions.new.form": {
+    "defaultMessage": "La medida",
+    "description": "Heading of the form on the page of a new domain action."
+  },
+  "admin.domain_actions.back": {
+    "defaultMessage": "Volver a las medidas de dominio",
+    "description": "Link under the heading of a page of one domain action, or of the form of a new one, to the list of domain actions."
+  },
+  "admin.domain_actions.detail.title": {
+    "defaultMessage": "Medida de dominio",
+    "description": "Title of the page of one domain action, before the action has loaded or when the viewer may not see it."
+  },
+  "admin.domain_actions.detail.heading": {
+    "defaultMessage": "{kind} para {domain}",
+    "description": "Heading of the page of one domain action. {kind} is the kind of action, such as Suspend; {domain} is the domain."
+  },
+  "admin.domain_actions.detail.details": {
+    "defaultMessage": "Detalles",
+    "description": "Heading of the region of a domain action's page with its domain, kind, and comments."
+  },
+  "admin.domain_actions.detail.of_domain": {
+    "defaultMessage": "Todas las medidas sobre este dominio",
+    "description": "Link on a domain action's page to the list of every action on its domain, lifted and ended ones too."
+  },
+  "admin.domain_actions.detail.no_text": {
+    "defaultMessage": "Ninguna",
+    "description": "The public comment or private note of a domain action that has none."
+  },
+  "admin.domain_actions.lift.description": {
+    "defaultMessage": "La medida termina ahora. Su registro se conserva, marcado como levantada.",
+    "description": "Help text under the button that lifts a domain action."
+  }
+}

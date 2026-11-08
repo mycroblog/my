@@ -1,0 +1,634 @@
+{
+  "admin.audit_log.action.account_action_issued": {
+    "defaultMessage": "Acción sobre una cuenta aplicada",
+    "description": "Heading of an audit log entry: a moderator took an action (a suspension, a limit…) on an account."
+  },
+  "admin.audit_log.action.account_action_lifted": {
+    "defaultMessage": "Acción sobre una cuenta levantada",
+    "description": "Heading of an audit log entry: a moderator lifted an action on an account."
+  },
+  "admin.audit_log.action.account_deletion_canceled": {
+    "defaultMessage": "Eliminación de la cuenta cancelada",
+    "description": "Heading of an audit log entry: overturning a user's appeal of a ban cancelled the scheduled deletion of their account."
+  },
+  "admin.audit_log.action.announcement_created": {
+    "defaultMessage": "Anuncio escrito",
+    "description": "Kind of an audited operation: an administrator wrote an announcement."
+  },
+  "admin.audit_log.action.announcement_published": {
+    "defaultMessage": "Anuncio publicado",
+    "description": "Kind of an audited operation: an administrator published an announcement."
+  },
+  "admin.audit_log.action.announcement_updated": {
+    "defaultMessage": "Anuncio cambiado",
+    "description": "Kind of an audited operation: an administrator changed the text or window of an announcement."
+  },
+  "admin.audit_log.action.announcement_withdrawn": {
+    "defaultMessage": "Anuncio retirado",
+    "description": "Kind of an audited operation: an administrator withdrew an announcement."
+  },
+  "admin.audit_log.action.appeal_overturned": {
+    "defaultMessage": "Apelación aceptada",
+    "description": "Heading of an audit log entry: a moderator granted a user's appeal and lifted the action it appealed."
+  },
+  "admin.audit_log.action.appeal_upheld": {
+    "defaultMessage": "Apelación desestimada",
+    "description": "Heading of an audit log entry: a moderator rejected a user's appeal and kept the action it appealed."
+  },
+  "admin.audit_log.action.domain_action_issued": {
+    "defaultMessage": "Acción sobre un dominio aplicada",
+    "description": "Heading of an audit log entry: a moderator took an action on a remote domain."
+  },
+  "admin.audit_log.action.domain_action_lifted": {
+    "defaultMessage": "Acción sobre un dominio levantada",
+    "description": "Heading of an audit log entry: a moderator lifted an action on a remote domain."
+  },
+  "admin.audit_log.action.registration_approved": {
+    "defaultMessage": "Registro aprobado",
+    "description": "Heading of an audit log entry: a moderator approved a sign-up."
+  },
+  "admin.audit_log.action.registration_rejected": {
+    "defaultMessage": "Registro rechazado",
+    "description": "Heading of an audit log entry: a moderator rejected a sign-up."
+  },
+  "admin.audit_log.action.relay_accepted": {
+    "defaultMessage": "El relé aceptó el servidor",
+    "description": "Kind of an audited operation: a relay accepted the server's request to join it."
+  },
+  "admin.audit_log.action.relay_added": {
+    "defaultMessage": "Relé registrado",
+    "description": "Kind of an audited operation: an administrator registered a relay and asked to join it."
+  },
+  "admin.audit_log.action.relay_followed": {
+    "defaultMessage": "Relé unido de nuevo",
+    "description": "Kind of an audited operation: an administrator asked to join a relay again that was left or rejected the server."
+  },
+  "admin.audit_log.action.relay_rejected": {
+    "defaultMessage": "El relé rechazó el servidor",
+    "description": "Kind of an audited operation: a relay rejected the server's request to join it, or ended its membership."
+  },
+  "admin.audit_log.action.status_refetch_queued": {
+    "defaultMessage": "Solicitada una nueva descarga de una publicación",
+    "description": "Kind of an audited operation: a moderator asked to fetch a remote post again from its server."
+  },
+  "admin.audit_log.action.account_statuses_refetch_queued": {
+    "defaultMessage": "Solicitada una nueva descarga de las publicaciones de una cuenta",
+    "description": "Kind of an audited operation: a moderator asked to fetch the stored posts of a remote account again from its server."
+  },
+  "admin.audit_log.action.domain_statuses_refetch_queued": {
+    "defaultMessage": "Solicitada una nueva descarga de las publicaciones de un servidor",
+    "description": "Kind of an audited operation: a moderator asked to fetch the stored posts of the accounts of a remote server again."
+  },
+  "admin.audit_log.action.billing_import_queued": {
+    "defaultMessage": "Importación de facturación iniciada",
+    "description": "Kind of an audited operation: an administrator started an import of a cloud provider's usage charges (AWS, Google Cloud) now, besides the daily one."
+  },
+  "admin.audit_log.action.relay_removed": {
+    "defaultMessage": "Relé eliminado",
+    "description": "Kind of an audited operation: an administrator deleted the registration of a relay."
+  },
+  "admin.audit_log.action.relay_unfollowed": {
+    "defaultMessage": "Relé abandonado",
+    "description": "Kind of an audited operation: an administrator left a relay."
+  },
+  "admin.audit_log.action.report_assigned": {
+    "defaultMessage": "Denuncia asignada",
+    "description": "Heading of an audit log entry: a report was assigned to a moderator."
+  },
+  "admin.audit_log.action.report_note_added": {
+    "defaultMessage": "Nota añadida a una denuncia",
+    "description": "Heading of an audit log entry: a moderator wrote an internal note on a report."
+  },
+  "admin.audit_log.action.report_forwarded": {
+    "defaultMessage": "Denuncia reenviada",
+    "description": "Heading of an audit log entry: a moderator forwarded a report to the server of the reported account."
+  },
+  "admin.audit_log.action.report_reopened": {
+    "defaultMessage": "Denuncia reabierta",
+    "description": "Heading of an audit log entry: a moderator reopened a resolved report."
+  },
+  "admin.audit_log.action.report_resolved": {
+    "defaultMessage": "Denuncia resuelta",
+    "description": "Heading of an audit log entry: a moderator resolved a report."
+  },
+  "admin.audit_log.action.report_unassigned": {
+    "defaultMessage": "Denuncia sin asignar",
+    "description": "Heading of an audit log entry: a report was left without an assigned moderator."
+  },
+  "admin.audit_log.action.revealed_private_data": {
+    "defaultMessage": "Datos privados mostrados",
+    "description": "Heading of an audit log entry: a moderator was shown the email address and the IP addresses of a local account."
+  },
+  "admin.audit_log.action.role_created": {
+    "defaultMessage": "Rol creado",
+    "description": "Heading of an audit log entry: an administrator created a role."
+  },
+  "admin.audit_log.action.role_deleted": {
+    "defaultMessage": "Rol eliminado",
+    "description": "Heading of an audit log entry: an administrator deleted a role."
+  },
+  "admin.audit_log.action.role_granted": {
+    "defaultMessage": "Rol concedido",
+    "description": "Heading of an audit log entry: an administrator granted a role to a user."
+  },
+  "admin.audit_log.action.role_revoked": {
+    "defaultMessage": "Rol retirado",
+    "description": "Heading of an audit log entry: an administrator revoked a role from a user."
+  },
+  "admin.audit_log.action.role_updated": {
+    "defaultMessage": "Rol cambiado",
+    "description": "Heading of an audit log entry: an administrator changed the position or the permissions of a role."
+  },
+  "admin.audit_log.action.rule_added": {
+    "defaultMessage": "Norma añadida",
+    "description": "Heading of an audit log entry: an administrator added a server rule."
+  },
+  "admin.audit_log.action.rule_moved": {
+    "defaultMessage": "Norma movida",
+    "description": "Heading of an audit log entry: an administrator moved a server rule in the list."
+  },
+  "admin.audit_log.action.rule_retired": {
+    "defaultMessage": "Norma retirada",
+    "description": "Heading of an audit log entry: an administrator retired a server rule."
+  },
+  "admin.audit_log.action.rule_revised": {
+    "defaultMessage": "Norma revisada",
+    "description": "Heading of an audit log entry: an administrator revised a server rule."
+  },
+  "admin.audit_log.action.setting_changed": {
+    "defaultMessage": "Configuración cambiada",
+    "description": "Heading of an audit log entry: an administrator changed an instance setting."
+  },
+  "admin.audit_log.action.signup_block_added": {
+    "defaultMessage": "Bloqueo de registro añadido",
+    "description": "Heading of an audit log entry: a moderator added a block on sign-ups by email domain, email address, or IP range."
+  },
+  "admin.audit_log.action.signup_block_lifted": {
+    "defaultMessage": "Bloqueo de registro levantado",
+    "description": "Heading of an audit log entry: a moderator lifted a block on sign-ups."
+  },
+  "admin.audit_log.action.two_factor_disabled": {
+    "defaultMessage": "Autenticación en dos pasos eliminada",
+    "description": "Heading of an audit log entry: an administrator removed the two-factor authentication of a local account."
+  },
+  "admin.audit_log.action.account_moved": {
+    "defaultMessage": "Cuenta limitada mudada",
+    "description": "Heading of an audit log entry: a local account that moderation limits moved to another local account, which does not inherit the limit; a moderator decides whether to limit the target."
+  },
+  "admin.audit_log.action.password_reset_link_issued": {
+    "defaultMessage": "Enlace para restablecer la contraseña emitido",
+    "description": "Heading of an audit log entry: an administrator issued a password reset link for the user of a local account."
+  },
+  "admin.audit_log.action.email_suppression_lifted": {
+    "defaultMessage": "Supresión del correo electrónico levantada",
+    "description": "Heading of an audit log entry: a moderator lifted the suppression of the primary email address of a local account, so that emails are sent to it again."
+  },
+  "admin.audit_log.action.text_changed": {
+    "defaultMessage": "Texto cambiado",
+    "description": "Heading of an audit log entry: an administrator changed an instance text (such as the terms) in one language."
+  },
+  "admin.audit_log.action.webhook_created": {
+    "defaultMessage": "Webhook configurado",
+    "description": "Kind of an audited operation: an administrator set up a webhook."
+  },
+  "admin.audit_log.action.webhook_deleted": {
+    "defaultMessage": "Webhook eliminado",
+    "description": "Kind of an audited operation: an administrator deleted a webhook."
+  },
+  "admin.audit_log.action.webhook_disabled": {
+    "defaultMessage": "Webhook desactivado",
+    "description": "Kind of an audited operation: an administrator, or the server after failures, disabled a webhook."
+  },
+  "admin.audit_log.action.webhook_enabled": {
+    "defaultMessage": "Webhook activado",
+    "description": "Kind of an audited operation: an administrator enabled a webhook."
+  },
+  "admin.audit_log.action.webhook_secret_rotated": {
+    "defaultMessage": "Secreto del webhook renovado",
+    "description": "Kind of an audited operation: an administrator gave a webhook a new secret."
+  },
+  "admin.audit_log.action.invite_created": {
+    "defaultMessage": "Invitación creada",
+    "description": "Kind of an audited operation: a moderator or an administrator created an invite code."
+  },
+  "admin.audit_log.action.invite_revoked": {
+    "defaultMessage": "Invitación revocada",
+    "description": "Kind of an audited operation: a moderator or an administrator revoked an invite code."
+  },
+  "admin.audit_log.action.webhook_updated": {
+    "defaultMessage": "Webhook cambiado",
+    "description": "Kind of an audited operation: an administrator changed the URL, description or events of a webhook."
+  },
+  "admin.audit_log.actor": {
+    "defaultMessage": "Por",
+    "description": "Term in an audit log entry: who performed the operation."
+  },
+  "admin.audit_log.actor.cli": {
+    "defaultMessage": "Línea de comandos",
+    "description": "Who performed an audited operation: the server operator with the my command line, as no user."
+  },
+  "admin.audit_log.actor.deleted_user": {
+    "defaultMessage": "Una cuenta eliminada",
+    "description": "Who performed an audited operation, when the account of that moderator or administrator is gone."
+  },
+  "admin.audit_log.actor.remote": {
+    "defaultMessage": "Otro servidor",
+    "description": "Who performed an audited operation: another server of the federation."
+  },
+  "admin.audit_log.actor.system": {
+    "defaultMessage": "Este servidor",
+    "description": "Who performed an audited operation: the server itself, automatically."
+  },
+  "admin.audit_log.empty": {
+    "defaultMessage": "Todavía no hay operaciones",
+    "description": "Heading of the audit log when nothing has been recorded."
+  },
+  "admin.audit_log.empty.description": {
+    "defaultMessage": "Aquí aparecen las acciones que hacen los moderadores y los administradores en este servidor.",
+    "description": "Text of the empty audit log."
+  },
+  "admin.audit_log.empty.filtered": {
+    "defaultMessage": "Ninguna operación coincide con los filtros",
+    "description": "Heading of the audit log when no operation matches the chosen filters."
+  },
+  "admin.audit_log.empty.filtered.description": {
+    "defaultMessage": "Elige otros filtros o quítalos para ver todas las operaciones.",
+    "description": "Text of the audit log when no operation matches the chosen filters."
+  },
+  "admin.audit_log.every_actor": {
+    "defaultMessage": "Mostrar las operaciones de todas las personas",
+    "description": "Link in an audit log entry, while the log is filtered by its actor, that lets go of that filter."
+  },
+  "admin.audit_log.every_target": {
+    "defaultMessage": "Mostrar las operaciones sobre todos los objetivos",
+    "description": "Link in an audit log entry, while the log is filtered by its target, that lets go of that filter."
+  },
+  "admin.audit_log.filter.action": {
+    "defaultMessage": "Operación",
+    "description": "Label of the select that keeps one kind of operation in the audit log."
+  },
+  "admin.audit_log.filter.action.all": {
+    "defaultMessage": "Todas las operaciones",
+    "description": "Option of the operation select of the audit log that keeps every kind of operation."
+  },
+  "admin.audit_log.filter.actor": {
+    "defaultMessage": "Operaciones de",
+    "description": "Term of the audit log filter that keeps the operations of one moderator or administrator; their name follows."
+  },
+  "admin.audit_log.filter.actor.clear": {
+    "defaultMessage": "Mostrar a todas las personas",
+    "description": "Link next to the account the audit log is filtered by that lets go of that filter."
+  },
+  "admin.audit_log.filter.actor.unknown": {
+    "defaultMessage": "La cuenta elegida",
+    "description": "Shown in place of the name of the account the audit log is filtered by, when no loaded entry shows that account."
+  },
+  "admin.audit_log.filter.clear": {
+    "defaultMessage": "Quitar filtros",
+    "description": "Link that shows the whole audit log again, without any filter."
+  },
+  "admin.audit_log.filter.target": {
+    "defaultMessage": "Operaciones sobre",
+    "description": "Term of the audit log filter that keeps the operations on one target; the target follows."
+  },
+  "admin.audit_log.filter.target.clear": {
+    "defaultMessage": "Mostrar todos los objetivos",
+    "description": "Link next to the target the audit log is filtered by that lets go of that filter."
+  },
+  "admin.audit_log.filter.target_kind": {
+    "defaultMessage": "Objetivo",
+    "description": "Label of the select that keeps the operations on one kind of target (an account, a domain, a report…) in the audit log."
+  },
+  "admin.audit_log.filter.target_kind.all": {
+    "defaultMessage": "Todos los objetivos",
+    "description": "Option of the target select of the audit log that keeps every kind of target."
+  },
+  "admin.audit_log.filter.title": {
+    "defaultMessage": "Filtros",
+    "description": "Heading of the filters of the audit log."
+  },
+  "admin.audit_log.list.title": {
+    "defaultMessage": "Operaciones",
+    "description": "Heading of the list of operations in the audit log, newest first."
+  },
+  "admin.audit_log.more_failed": {
+    "defaultMessage": "No se pudieron cargar más operaciones",
+    "description": "Shown under the loaded part of the audit log when its next page failed to load; the reason follows, and the show more button tries again."
+  },
+  "admin.audit_log.occurred_at": {
+    "defaultMessage": "Cuándo",
+    "description": "Term in an audit log entry: when the operation happened."
+  },
+  "admin.audit_log.only_actor": {
+    "defaultMessage": "Mostrar solo las operaciones de {name}",
+    "description": "Link in an audit log entry that keeps only the operations of its actor. {name} is the actor’s display name."
+  },
+  "admin.audit_log.only_target": {
+    "defaultMessage": "Mostrar solo las operaciones sobre {target}",
+    "description": "Link in an audit log entry that keeps only the operations on its target. {target} is the target’s name, such as @alice or a domain."
+  },
+  "admin.audit_log.summary": {
+    "defaultMessage": "Quién hizo qué en la administración, y cuándo.",
+    "description": "Description of the audit log screen in the administration menu."
+  },
+  "admin.audit_log.target_kind.account": {
+    "defaultMessage": "Cuenta",
+    "description": "A kind of target of audited operations, also the term of the target in an entry."
+  },
+  "admin.audit_log.target_kind.appeal": {
+    "defaultMessage": "Apelación",
+    "description": "A kind of target of audited operations, also the term of the target in an entry."
+  },
+  "admin.audit_log.target_kind.domain": {
+    "defaultMessage": "Dominio",
+    "description": "A kind of target of audited operations, also the term of the target in an entry."
+  },
+  "admin.audit_log.target_kind.relay": {
+    "defaultMessage": "Relé",
+    "description": "Kind of target of an audited operation: a federation relay, shown by its URL."
+  },
+  "admin.audit_log.target_kind.billing_source": {
+    "defaultMessage": "Fuente de facturación",
+    "description": "Kind of target of an audited operation: a cloud provider whose usage charges are imported into the costs, shown by its name (AWS, Google Cloud)."
+  },
+  "admin.audit_log.target_kind.report": {
+    "defaultMessage": "Denuncia",
+    "description": "A kind of target of audited operations, also the term of the target in an entry. The entry names the reported account."
+  },
+  "admin.audit_log.target_kind.role": {
+    "defaultMessage": "Rol",
+    "description": "A kind of target of audited operations, also the term of the target in an entry."
+  },
+  "admin.audit_log.target_kind.rule": {
+    "defaultMessage": "Norma",
+    "description": "A kind of target of audited operations (a server rule), also the term of the target in an entry."
+  },
+  "admin.audit_log.target_kind.setting": {
+    "defaultMessage": "Configuración",
+    "description": "A kind of target of audited operations (an instance setting or text), also the term of the target in an entry."
+  },
+  "admin.audit_log.target_kind.signup_block": {
+    "defaultMessage": "Bloqueo de registro",
+    "description": "A kind of target of audited operations (a blocked e-mail domain or IP range for sign-ups), also the term of the target in an entry."
+  },
+  "admin.audit_log.target_kind.status": {
+    "defaultMessage": "Publicación",
+    "description": "A kind of target of audited operations, also the term of the target in an entry."
+  },
+  "admin.audit_log.target_kind.user": {
+    "defaultMessage": "Registro",
+    "description": "A kind of target of audited operations (a user whose sign-up was reviewed), also the term of the target in an entry."
+  },
+  "admin.audit_log.target_kind.webhook": {
+    "defaultMessage": "Webhook",
+    "description": "Kind of target of an audited operation: a webhook, shown by its description and host name."
+  },
+  "admin.audit_log.target_kind.invite": {
+    "defaultMessage": "Invitación",
+    "description": "Kind of target of an audited operation: an invite, shown by the first characters of its code."
+  },
+  "admin.audit_log.title": {
+    "defaultMessage": "Registro de auditoría",
+    "description": "Heading of the admin screen that lists what moderators and administrators did."
+  },
+  "admin.audit_log.action.custom_emoji_created": {
+    "defaultMessage": "Emoji personalizado registrado",
+    "description": "Kind of an audited operation: an administrator registered a custom emoji of this server."
+  },
+  "admin.audit_log.action.custom_emoji_image_replaced": {
+    "defaultMessage": "Imagen del emoji personalizado reemplazada",
+    "description": "Kind of an audited operation: an administrator replaced the image of a custom emoji."
+  },
+  "admin.audit_log.action.custom_emoji_copied": {
+    "defaultMessage": "Emoji personalizado copiado de otro servidor",
+    "description": "Kind of an audited operation: an administrator copied another server's custom emoji into a new emoji of this server."
+  },
+  "admin.audit_log.action.custom_emoji_updated": {
+    "defaultMessage": "Emoji personalizado cambiado",
+    "description": "Kind of an audited operation: an administrator changed the category, other names, or place in the picker of a custom emoji."
+  },
+  "admin.audit_log.action.custom_emoji_enabled": {
+    "defaultMessage": "Emoji personalizado activado",
+    "description": "Kind of an audited operation: an administrator enabled a custom emoji, which is shown again."
+  },
+  "admin.audit_log.action.custom_emoji_disabled": {
+    "defaultMessage": "Emoji personalizado desactivado",
+    "description": "Kind of an audited operation: an administrator disabled a custom emoji, which is shown nowhere."
+  },
+  "admin.audit_log.action.custom_emoji_deleted": {
+    "defaultMessage": "Emoji personalizado eliminado",
+    "description": "Kind of an audited operation: an administrator deleted a custom emoji of this server."
+  },
+  "admin.audit_log.target_kind.announcement": {
+    "defaultMessage": "Anuncio",
+    "description": "Kind of target of an audited operation: an announcement, shown by the first line of its text."
+  },
+  "admin.audit_log.target_kind.custom_emoji": {
+    "defaultMessage": "Emoji personalizado",
+    "description": "Kind of target of an audited operation: a custom emoji, shown as :shortcode:."
+  },
+  "admin.audit_log.action.cost_item_created": {
+    "defaultMessage": "Costo registrado",
+    "description": "Kind of an audited operation: an administrator recorded a cost of the instance."
+  },
+  "admin.audit_log.action.cost_item_relabeled": {
+    "defaultMessage": "Costo cambiado",
+    "description": "Kind of an audited operation: an administrator changed the name, provider, category, or memo of a cost."
+  },
+  "admin.audit_log.action.cost_item_price_revised": {
+    "defaultMessage": "Precio del costo cambiado",
+    "description": "Kind of an audited operation: an administrator changed the price of a cost from a date on."
+  },
+  "admin.audit_log.action.cost_item_end_changed": {
+    "defaultMessage": "Fin del costo cambiado",
+    "description": "Kind of an audited operation: an administrator set or removed the end of a regular cost."
+  },
+  "admin.audit_log.action.cost_item_deleted": {
+    "defaultMessage": "Costo eliminado",
+    "description": "Kind of an audited operation: an administrator removed a cost recorded by mistake from every period."
+  },
+  "admin.audit_log.target_kind.cost_item": {
+    "defaultMessage": "Costo",
+    "description": "Kind of target of an audited operation: a cost of the instance, shown by its name."
+  },
+  "admin.audit_log.action.supporter_program_enabled": {
+    "defaultMessage": "Programa de mecenas activado",
+    "description": "Kind of an audited operation: an administrator enabled the supporter program."
+  },
+  "admin.audit_log.action.supporter_program_disabled": {
+    "defaultMessage": "Programa de mecenas desactivado",
+    "description": "Kind of an audited operation: an administrator disabled the supporter program."
+  },
+  "admin.audit_log.action.supporter_plan_created": {
+    "defaultMessage": "Plan de apoyo creado",
+    "description": "Kind of an audited operation: an administrator created a supporter plan."
+  },
+  "admin.audit_log.action.supporter_plan_revised": {
+    "defaultMessage": "Plan de apoyo cambiado",
+    "description": "Kind of an audited operation: an administrator changed the terms of a supporter plan or its role."
+  },
+  "admin.audit_log.action.supporter_plan_retired": {
+    "defaultMessage": "Plan de apoyo retirado",
+    "description": "Kind of an audited operation: an administrator retired a supporter plan."
+  },
+  "admin.audit_log.action.supporter_subscription_ended": {
+    "defaultMessage": "Suscripción terminada",
+    "description": "Kind of an audited operation: an administrator ended a subscription to a supporter plan at once, without a refund."
+  },
+  "admin.audit_log.target_kind.supporter_program": {
+    "defaultMessage": "Programa de mecenas",
+    "description": "Kind of target of an audited operation: the supporter program, shown by its payment provider."
+  },
+  "admin.audit_log.target_kind.supporter_plan": {
+    "defaultMessage": "Plan de apoyo",
+    "description": "Kind of target of an audited operation: a supporter plan, shown by its name."
+  },
+  "admin.audit_log.target_kind.supporter_subscription": {
+    "defaultMessage": "Suscripción",
+    "description": "Kind of target of an audited operation: a subscription to a supporter plan, shown by the plan's name and the subscriber's handle."
+  },
+  "admin.audit_log.action.custom_emoji_request_submitted": {
+    "defaultMessage": "Emoji personalizado solicitado",
+    "description": "Kind of an audited operation: a holder of create_custom_emojis requested a custom emoji or a new image of one they made."
+  },
+  "admin.audit_log.action.custom_emoji_request_withdrawn": {
+    "defaultMessage": "Solicitud de emoji personalizado retirada",
+    "description": "Kind of an audited operation: the requester withdrew a pending custom emoji request."
+  },
+  "admin.audit_log.action.custom_emoji_request_approved": {
+    "defaultMessage": "Solicitud de emoji personalizado aprobada",
+    "description": "Kind of an audited operation: an administrator approved a custom emoji request, which made the emoji or gave it the new image."
+  },
+  "admin.audit_log.action.custom_emoji_request_rejected": {
+    "defaultMessage": "Solicitud de emoji personalizado rechazada",
+    "description": "Kind of an audited operation: an administrator rejected a custom emoji request."
+  },
+  "admin.audit_log.action.hook_decision_applied": {
+    "defaultMessage": "Revisión automática aplicada",
+    "description": "Heading of an audit log entry: the server acted on the verdict of an external review and left state: a sensitive mark, a filed report, or a sign-up held for approval."
+  },
+  "admin.audit_log.action.hook_decision_overridden": {
+    "defaultMessage": "Revisión automática cancelada",
+    "description": "Heading of an audit log entry: a moderator cancelled a decision of an external review."
+  },
+  "admin.audit_log.action.hook_appeal_upheld": {
+    "defaultMessage": "Apelación de una publicación rechazada desestimada",
+    "description": "Heading of an audit log entry: a moderator upheld a user's appeal of a post that the automated review refused, so the refusal stays."
+  },
+  "admin.audit_log.target_kind.custom_emoji_request": {
+    "defaultMessage": "Solicitud de emoji personalizado",
+    "description": "Kind of target of an audited operation: a request for a custom emoji or a new image of one, shown as the :shortcode: of the emoji."
+  },
+  "admin.audit_log.action.payment_reconcile_queued": {
+    "defaultMessage": "Conciliación con el proveedor de pagos iniciada",
+    "description": "Kind of an audited operation: an administrator started a reconciliation with the payment provider of the supporter program (Stripe) now, besides the periodic one."
+  },
+  "admin.audit_log.target_kind.payment_provider": {
+    "defaultMessage": "Proveedor de pagos",
+    "description": "Kind of target of an audited operation: the payment provider of the supporter program, shown by its name (stripe)."
+  },
+  "admin.audit_log.action.oauth_client_disabled": {
+    "defaultMessage": "App OAuth desactivada",
+    "description": "Kind of an audited operation: an administrator disabled an OAuth client, which revoked all its tokens."
+  },
+  "admin.audit_log.action.oauth_client_enabled": {
+    "defaultMessage": "App OAuth activada de nuevo",
+    "description": "Kind of an audited operation: an administrator lifted the disablement of an OAuth client."
+  },
+  "admin.audit_log.action.oauth_client_host_denied": {
+    "defaultMessage": "Anfitrión de apps OAuth denegado",
+    "description": "Kind of an audited operation: an administrator denied the client metadata documents of a host, which revoked the tokens of its clients."
+  },
+  "admin.audit_log.action.oauth_client_host_allowed": {
+    "defaultMessage": "Anfitrión de apps OAuth permitido",
+    "description": "Kind of an audited operation: an administrator lifted the denial of a host of client metadata documents."
+  },
+  "admin.audit_log.action.service_closure_announced": {
+    "defaultMessage": "Cierre del servicio anunciado",
+    "description": "Kind of an audited operation: an administrator announced the closure of the service or changed its dates."
+  },
+  "admin.audit_log.action.service_closure_withdrawn": {
+    "defaultMessage": "Cierre del servicio retirado",
+    "description": "Kind of an audited operation: an administrator withdrew the announcement of the closure of the service."
+  },
+  "admin.audit_log.action.service_closure_closed": {
+    "defaultMessage": "Servicio cerrado",
+    "description": "Kind of an audited operation: an administrator closed the server for good (the closure of the service)."
+  },
+  "admin.audit_log.action.service_closure_delivery_completed": {
+    "defaultMessage": "Envío del cierre completado",
+    "description": "Kind of an audited operation: the server recorded that the Delete of every local account, sent at the closure of the service, was delivered."
+  },
+  "admin.audit_log.action.voice_room_ended": {
+    "defaultMessage": "Sala de chat de voz terminada",
+    "description": "Kind of an audited operation: a moderator ended an open voice chat room."
+  },
+  "admin.audit_log.action.login_provider_created": {
+    "defaultMessage": "Proveedor de inicio de sesión añadido",
+    "description": "Kind of an audited operation: an administrator set up an external login provider."
+  },
+  "admin.audit_log.action.login_provider_updated": {
+    "defaultMessage": "Proveedor de inicio de sesión cambiado",
+    "description": "Kind of an audited operation: the settings of an external login provider changed."
+  },
+  "admin.audit_log.action.login_provider_deleted": {
+    "defaultMessage": "Proveedor de inicio de sesión eliminado",
+    "description": "Kind of an audited operation: an external login provider was deleted."
+  },
+  "admin.audit_log.action.login_provider_enabled": {
+    "defaultMessage": "Proveedor de inicio de sesión activado",
+    "description": "Kind of an audited operation: an external login provider was enabled."
+  },
+  "admin.audit_log.action.login_provider_disabled": {
+    "defaultMessage": "Proveedor de inicio de sesión desactivado",
+    "description": "Kind of an audited operation: an external login provider was disabled."
+  },
+  "admin.audit_log.action.login_provider_secret_rotated": {
+    "defaultMessage": "Secreto del proveedor de inicio de sesión reemplazado",
+    "description": "Kind of an audited operation: an external login provider got a new client secret."
+  },
+  "admin.audit_log.target_kind.oauth_client": {
+    "defaultMessage": "App OAuth",
+    "description": "Kind of target of an audited operation: an OAuth client, shown by its name and client_id."
+  },
+  "admin.audit_log.target_kind.oauth_client_host": {
+    "defaultMessage": "Anfitrión de apps OAuth",
+    "description": "Kind of target of an audited operation: a host whose client metadata documents were denied, shown by the host name."
+  },
+  "admin.audit_log.target_kind.instance": {
+    "defaultMessage": "Instancia",
+    "description": "Kind of target of an audited operation: the instance itself, for the closure of the service, shown as service_closure."
+  },
+  "admin.audit_log.target_kind.voice_room": {
+    "defaultMessage": "Sala de chat de voz",
+    "description": "Kind of target of an audited operation: a voice chat room, shown by its ID."
+  },
+  "admin.audit_log.action.link_card_domain_fetch_stopped": {
+    "defaultMessage": "Descarga de tarjetas de enlace detenida",
+    "description": "Kind of an audited operation: an administrator set a rule by which the link card crawler fetches nothing from a domain."
+  },
+  "admin.audit_log.action.link_card_domain_images_stopped": {
+    "defaultMessage": "Imágenes de tarjetas de enlace detenidas",
+    "description": "Kind of an audited operation: an administrator set a rule by which the link card crawler fetches no images from a domain."
+  },
+  "admin.audit_log.action.instance_marked_available": {
+    "defaultMessage": "Servidor marcado como disponible",
+    "description": "Kind of an audited operation: an operator cleared the delivery failures of a remote server, so that deliveries to it resume."
+  },
+  "admin.audit_log.action.link_card_domain_rule_removed": {
+    "defaultMessage": "Regla de tarjetas de enlace eliminada",
+    "description": "Kind of an audited operation: an administrator removed the rule of the link card crawler on a domain."
+  },
+  "admin.audit_log.target_kind.hook_decision": {
+    "defaultMessage": "Revisión automática",
+    "description": "Filter of the audit log, and the kind of what an entry acted on: a decision of an external review of submissions."
+  },
+  "admin.audit_log.target_kind.link_card_domain": {
+    "defaultMessage": "Dominio de tarjetas de enlace",
+    "description": "Kind of target of an audited operation: a domain with a rule of the link card crawler."
+  },
+  "admin.audit_log.target_kind.login_provider": {
+    "defaultMessage": "Proveedor de inicio de sesión",
+    "description": "Kind of target of an audited operation: an external identity provider that users sign in with, shown by its display name."
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "moderation.action.category": {
+    "defaultMessage": "{category, select, spam {Spam} legal {Motivos legales} violation {Incumplimiento de las reglas de la instancia} other {Otro}}",
+    "description": "Label of the reason category that a moderator chose for an action on the user's own account. {category} is the category."
+  },
+  "moderation.action.kind": {
+    "defaultMessage": "{kind, select, warn {Advertencia} mark_statuses_sensitive {Publicaciones marcadas como sensibles} delete_statuses {Publicaciones eliminadas} force_sensitive {Multimedia siempre marcada como sensible} limit {Limitada: publicaciones visibles solo para los seguidores y fuera de las líneas de tiempo públicas} restrict_posting {Sin publicar, responder, impulsar ni editar} restrict_interaction {Sin seguir, marcar como favorito, impulsar ni responder} disable_login {Inicio de sesión desactivado} suspend {Suspendida: sin uso de la aplicación, con el perfil y las publicaciones ocultos} ban {Expulsada: la cuenta se elimina} other {Acción de moderación}}",
+    "description": "Label of the kind of a moderation action on the user's own account, in the notice of the action and the list of the user's actions. {kind} is the kind; the label must make sense whether or not the action is still in effect."
+  }
+}

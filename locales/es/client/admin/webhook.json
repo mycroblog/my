@@ -1,0 +1,10 @@
+{
+  "admin.webhook.back": {
+    "defaultMessage": "Volver a los webhooks",
+    "description": "Link from the page of one webhook back to the webhooks screen."
+  },
+  "admin.webhook.title": {
+    "defaultMessage": "Webhook",
+    "description": "Heading of the page of one webhook and its deliveries."
+  }
+}

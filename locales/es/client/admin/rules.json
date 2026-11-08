@@ -1,0 +1,158 @@
+{
+  "admin.rules.add": {
+    "defaultMessage": "Añadir la norma",
+    "description": "Button that adds a new rule after the others."
+  },
+  "admin.rules.add_failed": {
+    "defaultMessage": "No se pudo añadir la norma: {reason}",
+    "description": "Error when adding a rule failed. {reason} is why."
+  },
+  "admin.rules.added": {
+    "defaultMessage": "Se añadió la norma «{rule}». El registro de auditoría anota el cambio.",
+    "description": "Toast after a rule was added, on the page of the new rule. {rule} is its text."
+  },
+  "admin.rules.cancel": {
+    "defaultMessage": "Cancelar",
+    "description": "Button that closes the confirmation of retiring a rule without retiring it."
+  },
+  "admin.rules.change_failed": {
+    "defaultMessage": "No se pudo cambiar la norma: {reason}",
+    "description": "Error when changing, moving or retiring a rule failed. {reason} is why."
+  },
+  "admin.rules.description": {
+    "defaultMessage": "La página Acerca de y el formulario de denuncia muestran las normas. Cada norma tiene un texto de una línea y una pista opcional, escritos una sola vez en cualquier idioma: todos las ven tal como están, sea cual sea el idioma de su app. Una norma retirada deja de estar vigente, y las denuncias que la citan la conservan.",
+    "description": "Description of the rules screen."
+  },
+  "admin.rules.edit.title": {
+    "defaultMessage": "Editar la norma",
+    "description": "Heading of the form of a rule's page that changes its text and hint."
+  },
+  "admin.rules.empty": {
+    "defaultMessage": "Todavía no hay normas",
+    "description": "Heading of the empty list of rules."
+  },
+  "admin.rules.empty.description": {
+    "defaultMessage": "Añade las normas que las personas aceptan con «Añadir una norma».",
+    "description": "Description of the empty list of the rules in effect."
+  },
+  "admin.rules.hint": {
+    "defaultMessage": "Pista",
+    "description": "Label of the optional hint of a rule."
+  },
+  "admin.rules.list.title": {
+    "defaultMessage": "Normas vigentes",
+    "description": "Heading and caption of the list of the rules in effect."
+  },
+  "admin.rules.move_down": {
+    "defaultMessage": "Bajar",
+    "description": "Button that moves a rule one place down."
+  },
+  "admin.rules.move_down_rule": {
+    "defaultMessage": "Bajar: {rule}",
+    "description": "Accessible name of the button that moves a rule down. {rule} is its text."
+  },
+  "admin.rules.move_up": {
+    "defaultMessage": "Subir",
+    "description": "Button that moves a rule one place up."
+  },
+  "admin.rules.move_up_rule": {
+    "defaultMessage": "Subir: {rule}",
+    "description": "Accessible name of the button that moves a rule up. {rule} is its text."
+  },
+  "admin.rules.moved": {
+    "defaultMessage": "«{rule}» se movió al puesto {position}.",
+    "description": "Status after a rule was moved. {rule} is its text; {position} its new place, from 1."
+  },
+  "admin.rules.new.title": {
+    "defaultMessage": "Añadir una norma",
+    "description": "Title of the page of a new rule, and the link to it from the list of rules."
+  },
+  "admin.rules.no_text": {
+    "defaultMessage": "Escribe la norma.",
+    "description": "Error of a rule's text left empty or blank."
+  },
+  "admin.rules.retire": {
+    "defaultMessage": "Retirar",
+    "description": "Button that retires a rule, and the confirm button of its dialog."
+  },
+  "admin.rules.retire.description": {
+    "defaultMessage": "La norma sale de la lista de normas para siempre. Las denuncias que la citan la conservan.",
+    "description": "Description of the dialog that confirms retiring a rule."
+  },
+  "admin.rules.retire.title": {
+    "defaultMessage": "¿Retirar «{rule}»?",
+    "description": "Question of the dialog that confirms retiring a rule. {rule} is its text."
+  },
+  "admin.rules.retired": {
+    "defaultMessage": "Se retiró «{rule}».",
+    "description": "Status after a rule was retired. {rule} is its text."
+  },
+  "admin.rules.save": {
+    "defaultMessage": "Guardar",
+    "description": "Button that saves a rule's text and hint on its page."
+  },
+  "admin.rules.summary": {
+    "defaultMessage": "Las normas que las personas aceptan y que citan las denuncias.",
+    "description": "Description of the rules screen in the administration menu."
+  },
+  "admin.rules.text": {
+    "defaultMessage": "Norma",
+    "description": "Label of the text of a rule."
+  },
+  "admin.rules.text.description": {
+    "defaultMessage": "Una línea de como máximo {max} caracteres.",
+    "description": "Help of the text of a rule. {max} is the limit."
+  },
+  "admin.rules.title": {
+    "defaultMessage": "Normas",
+    "description": "Title of the rules screen, in the administration menu and as its heading."
+  },
+  "admin.rules.too_long": {
+    "defaultMessage": "Usa como máximo {max} caracteres.",
+    "description": "Error of a text or hint of a rule longer than its limit. {max} is the limit."
+  },
+  "admin.rules.updated": {
+    "defaultMessage": "Se guardó «{rule}». El registro de auditoría anota el cambio.",
+    "description": "Status after a rule's texts were saved. {rule} is its text."
+  },
+  "admin.rules.filter.label": {
+    "defaultMessage": "Normas que mostrar",
+    "description": "Accessible name of the filter of the list of rules: the rules in effect or the retired ones."
+  },
+  "admin.rules.filter.active": {
+    "defaultMessage": "Vigentes",
+    "description": "Option of the filter of the list of rules, and the state of a rule in effect on its page."
+  },
+  "admin.rules.filter.retired": {
+    "defaultMessage": "Retiradas",
+    "description": "Option of the filter of the list of rules, and the state of a retired rule on its page."
+  },
+  "admin.rules.retired.title": {
+    "defaultMessage": "Normas retiradas",
+    "description": "Heading and caption of the list of the retired rules."
+  },
+  "admin.rules.retired.empty": {
+    "defaultMessage": "No hay normas retiradas",
+    "description": "Heading of the empty list of retired rules."
+  },
+  "admin.rules.retired.empty.description": {
+    "defaultMessage": "Aquí aparece una norma retirada, y las denuncias que la citan la conservan.",
+    "description": "Description of the empty list of retired rules."
+  },
+  "admin.rules.place": {
+    "defaultMessage": "Puesto",
+    "description": "Header of the column of a rule's place among the rules in effect, from 1, and the term of it on a rule's page."
+  },
+  "admin.rules.revised_at": {
+    "defaultMessage": "Último cambio",
+    "description": "Header of the column of when a rule's text or hint last changed, and the term of it on a rule's page."
+  },
+  "admin.rules.retired_at": {
+    "defaultMessage": "Retirada",
+    "description": "Header of the column of when a rule was retired, and the term of it on a rule's page."
+  },
+  "admin.rules.new.description": {
+    "defaultMessage": "La norma se añade después de las demás. Puedes moverla en la lista de normas.",
+    "description": "Text at the top of the page of a new rule."
+  }
+}
