@@ -14,10 +14,9 @@ import (
 
 	"github.com/mycroblog/my/internal/app/projection"
 	"github.com/mycroblog/my/internal/app/uow"
-	"github.com/mycroblog/my/schema"
 )
 
-// ProjectionStore implements projection.Store on the tables of schema/postgres. Its
+// ProjectionStore implements projection.Store on the tables of the schema. Its
 // queries are built at run time, since they serve any table; table names come from the schema
 // and column names from the table, and both are quoted.
 type ProjectionStore struct {
@@ -30,9 +29,10 @@ type ProjectionStore struct {
 
 var _ projection.Store = (*ProjectionStore)(nil)
 
-// ProjectionStore returns the store of the projection tables.
-func (d *DB) ProjectionStore() *ProjectionStore {
-	return &ProjectionStore{db: d, tables: schema.Tables(schema.Postgres), columns: map[string][]string{}}
+// ProjectionStore returns the store of the projection tables among tables, the tables of the
+// schema (schema.Tables(schema.Postgres)).
+func (d *DB) ProjectionStore(tables []string) *ProjectionStore {
+	return &ProjectionStore{db: d, tables: tables, columns: map[string][]string{}}
 }
 
 // Rows implements projection.Store. Timestamps are in UTC.

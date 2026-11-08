@@ -160,8 +160,7 @@ tasks:
     sources:
       - sqlc.yaml
       - "queries/**/*.sql"
-      - "schema/sqlite/*.sql"
-      - "schema/postgres/*.sql"
+      - "schema/*/*.sql"
       - scripts/sqlc.sh
       - tools/go.mod
     generates:

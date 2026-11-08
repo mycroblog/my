@@ -65,7 +65,7 @@ func mustApply(t *testing.T, url, ddl string, opts schemaapply.Options) schemaap
 }
 
 // assertSyncedWithCLI checks with the Atlas CLI that the database at url matches
-// schema/postgres, using devURL as its dev database. It skips the check when the CLI is not
+// PostgreSQL schema, using devURL as its dev database. It skips the check when the CLI is not
 // installed (scripts/task.sh db:atlas, or the ATLAS variable).
 func assertSyncedWithCLI(t *testing.T, url, devURL string) {
 	t.Helper()
@@ -92,8 +92,13 @@ func assertSyncedWithCLI(t *testing.T, url, devURL string) {
 		t.Fatal(err)
 	}
 	scoped := func(u string) string { return u + "&search_path=public" }
+	// The CLI reads one directory or one file: the schema, written to one file.
+	desired := filepath.Join(t.TempDir(), "schema.sql")
+	if err := os.WriteFile(desired, []byte(schema.Postgres), 0o600); err != nil {
+		t.Fatal(err)
+	}
 	out, err := exec.CommandContext(t.Context(), atlas, "schema", "diff", //nolint:gosec // G204: the CLI the developer or CI installed
-		"--from", scoped(url), "--to", "file://"+filepath.Join(root, "schema", "postgres"),
+		"--from", scoped(url), "--to", "file://"+desired,
 		"--dev-url", scoped(devURL)).CombinedOutput()
 	if err != nil {
 		t.Fatalf("atlas schema diff: %v\n%s", err, out)
@@ -106,7 +111,7 @@ func assertSyncedWithCLI(t *testing.T, url, devURL string) {
 func TestApplySchemaToAnEmptyDatabase(t *testing.T) {
 	pgtest.RequireRealServer(t)
 	url := pgtest.NewEmptyDatabase(t)
-	r, err := ApplySchema(t.Context(), url, "", schemaapply.Options{})
+	r, err := ApplySchema(t.Context(), url, "", schema.Postgres, schemaapply.Options{})
 	if err != nil {
 		t.Fatalf("ApplySchema: %v", err)
 	}
@@ -125,11 +130,11 @@ func TestApplySchemaToAnEmptyDatabase(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer db.Close()
-	if err := db.Ready(t.Context()); err != nil {
+	if err := db.Ready(t.Context(), schema.Tables(schema.Postgres)); err != nil {
 		t.Errorf("Ready after the apply: %v", err)
 	}
 
-	again, err := ApplySchema(t.Context(), url, "", schemaapply.Options{})
+	again, err := ApplySchema(t.Context(), url, "", schema.Postgres, schemaapply.Options{})
 	if err != nil {
 		t.Fatalf("ApplySchema again: %v", err)
 	}
@@ -141,7 +146,7 @@ func TestApplySchemaToAnEmptyDatabase(t *testing.T) {
 func TestApplySchemaWithADevDatabase(t *testing.T) {
 	pgtest.RequireRealServer(t)
 	url, devURL := pgtest.NewEmptyDatabase(t), pgtest.NewEmptyDatabase(t)
-	r, err := ApplySchema(t.Context(), url, devURL, schemaapply.Options{})
+	r, err := ApplySchema(t.Context(), url, devURL, schema.Postgres, schemaapply.Options{})
 	if err != nil || !r.Applied {
 		t.Fatalf("ApplySchema with a dev database = %+v, %v; want it applied", r, err)
 	}
@@ -154,7 +159,7 @@ func TestApplySchemaWithADevDatabase(t *testing.T) {
 	if got := columns(t, devURL); len(got) > 0 {
 		t.Errorf("the dev database's public schema holds %q", got)
 	}
-	again, err := ApplySchema(t.Context(), url, devURL, schemaapply.Options{})
+	again, err := ApplySchema(t.Context(), url, devURL, schema.Postgres, schemaapply.Options{})
 	if err != nil || len(again.Statements) > 0 {
 		t.Errorf("ApplySchema again = %+v, %v; want nothing to do", again, err)
 	}
@@ -167,7 +172,7 @@ func TestApplySchemaTakesTheParametersOfThePool(t *testing.T) {
 	url, devURL := pgtest.NewEmptyDatabase(t), pgtest.NewEmptyDatabase(t)
 	t.Log(query(t, url, "SELECT version()"))
 	const params = "pool_max_conns=4&pool_min_conns=1&pool_max_conn_lifetime=1h"
-	r, err := ApplySchema(t.Context(), withParams(url, params), withParams(devURL, params), schemaapply.Options{})
+	r, err := ApplySchema(t.Context(), withParams(url, params), withParams(devURL, params), schema.Postgres, schemaapply.Options{})
 	if err != nil || !r.Applied {
 		t.Fatalf("ApplySchema = %+v, %v; want it applied", r, err)
 	}
@@ -212,7 +217,7 @@ func TestApplySchemaRefusesDropsUnlessAllowed(t *testing.T) {
 	mustApply(t, url, schema.Postgres+"\nCREATE TABLE probe_extra (id bigint PRIMARY KEY);\nALTER TABLE "+table+" ADD COLUMN probe_extra text;\n", schemaapply.Options{})
 	before := columns(t, url)
 
-	r, err := ApplySchema(t.Context(), url, "", schemaapply.Options{})
+	r, err := ApplySchema(t.Context(), url, "", schema.Postgres, schemaapply.Options{})
 	var de *schemaapply.DestructiveError
 	if !errors.As(err, &de) {
 		t.Fatalf("ApplySchema of drops without AllowDestructive: err = %v, want a DestructiveError", err)
@@ -227,7 +232,7 @@ func TestApplySchemaRefusesDropsUnlessAllowed(t *testing.T) {
 		t.Errorf("the refused apply changed the database:\nbefore %q\nafter  %q", before, after)
 	}
 
-	r, err = ApplySchema(t.Context(), url, "", schemaapply.Options{AllowDestructive: true})
+	r, err = ApplySchema(t.Context(), url, "", schema.Postgres, schemaapply.Options{AllowDestructive: true})
 	if err != nil || !r.Applied {
 		t.Fatalf("ApplySchema with AllowDestructive = %+v, %v; want it applied", r, err)
 	}
@@ -240,7 +245,7 @@ func TestApplySchemaRefusesDropsUnlessAllowed(t *testing.T) {
 func TestApplySchemaDryRunChangesNothing(t *testing.T) {
 	pgtest.RequireRealServer(t)
 	url := pgtest.NewEmptyDatabase(t)
-	r, err := ApplySchema(t.Context(), url, "", schemaapply.Options{DryRun: true})
+	r, err := ApplySchema(t.Context(), url, "", schema.Postgres, schemaapply.Options{DryRun: true})
 	if err != nil {
 		t.Fatalf("ApplySchema dry run: %v", err)
 	}
@@ -303,7 +308,7 @@ func TestApplySchemaConcurrently(t *testing.T) {
 	errs := make([]error, 2)
 	for i := range errs {
 		wg.Go(func() {
-			_, errs[i] = ApplySchema(t.Context(), url, "", schemaapply.Options{})
+			_, errs[i] = ApplySchema(t.Context(), url, "", schema.Postgres, schemaapply.Options{})
 		})
 	}
 	wg.Wait()
@@ -312,7 +317,7 @@ func TestApplySchemaConcurrently(t *testing.T) {
 			t.Errorf("run %d: %v", i, err)
 		}
 	}
-	r, err := ApplySchema(t.Context(), url, "", schemaapply.Options{DryRun: true})
+	r, err := ApplySchema(t.Context(), url, "", schema.Postgres, schemaapply.Options{DryRun: true})
 	if err != nil || len(r.Statements) > 0 {
 		t.Errorf("the plan after both runs = %+v, %v; want none", r, err)
 	}

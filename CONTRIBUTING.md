@@ -147,12 +147,12 @@ step.
 The desired-state schema files of each dialect are the source of truth. `my schema apply` applies them with the
 [Atlas](https://atlasgo.io/) Go library (Community Edition), and the Atlas CLI checks changes to them. Nobody writes migration SQL.
 
-- The desired state is one file per module, `schema/<dialect>/<NN>-<module>.sql` ([schema/README.md](schema/README.md)).
-  Edit the file of the module that owns the table, in both `schema/sqlite/` and `schema/postgres/`, in the same pull
-  request. Tables follow the [logical data model](docs/architecture/data-model/README.md), whose
+- The desired state is one directory per module, `schema/<NN>-<module>/`, with a file per dialect, `sqlite.sql` and
+  `postgres.sql` ([schema/README.md](schema/README.md)). Edit both files of the module that owns the table in the same
+  pull request. Tables follow the [logical data model](docs/architecture/data-model/README.md), whose
   [§1.2](docs/architecture/data-model/01-conventions.md#12-論理型) maps the logical types to each dialect's types.
 - What Atlas Community Edition cannot handle (extensions, sequences, views, triggers) stays out of the desired state.
-  PostgreSQL extensions go into `schema/postgres.bootstrap.sql`, an idempotent bootstrap script.
+  PostgreSQL extensions go into `schema/ddl/postgres.bootstrap.sql`, an idempotent bootstrap script.
 - `scripts/install-atlas.sh` installs the Atlas CLI into `bin/atlas` with a pinned version and checksum, the version of the
   library in `go.mod` (`scripts/task.sh db:atlas`; the `db:*` tasks run it for you). Nothing uses the features that need `atlas login`.
 
@@ -274,8 +274,11 @@ scripts/task.sh go:sqlc-check  # fail when the generated code is stale (part of 
 - Database adapters pass the contract tests of `pkg/testkit` on both SQLite and PostgreSQL. Each module's contracts
   and flows are in `pkg/testkit/<module>test` (`uowtest.UnitOfWorkContract`, `webhooktest.WebhookFlows`); `pkg/testkit`
   keeps what every module shares (`Clock`, `IDGenerator`, the fakes, the fixtures) and imports none of them. Test
-  databases get the desired-state files of `schema/<dialect>/` run directly, in name order (the same SQL Atlas applies
-  to an empty database).
+  databases get the desired-state files run directly, in name order (the same SQL Atlas applies to an empty
+  database), but only those of the modules the test binary links: each `schema/<NN>-<module>` is a package that
+  imports the packages of the modules it depends on, and a module's database adapter packages import it, so a change
+  to one module's files reruns only the tests that use the module (ADR-0153 §3). A test that reads the tables of a
+  module it does not import adds a blank import of that module's `schema` package.
 - A database adapter is a base per dialect and a package per module. `internal/adapter/db/<dialect>` holds the
   connections, the transactions and their retries, and the helpers of the queries; `internal/adapter/db/<dialect>/<module>`
   holds the repositories of one module of `internal/app`, which run that module's `<module>gen` queries over the base
@@ -284,7 +287,7 @@ scripts/task.sh go:sqlc-check  # fail when the generated code is stale (part of 
   modules need into the base. A contract test goes in the package of the module whose `pkg/testkit/<module>test` holds
   the contract.
 - The SQLite tests get their database from `pkg/testkit/sqlitetest`: `sqlitetest.NewFile(t)` copies a file that the
-  test binary made once with the schema applied, and `sqlitetest.ApplySchema` runs a schema in one transaction. Do not
+  test binary made once with the schema of its linked modules applied, and `sqlitetest.ApplySchema` runs a schema in one transaction. Do not
   execute `schema.SQLite` outside a transaction: SQLite then commits and syncs the file after each of its hundreds of
   statements, which takes seconds per database and far longer on a loaded machine.
 - The PostgreSQL tests get their server from `pkg/testkit/pgtest`. By default it starts pgmem (PostgreSQL in memory)

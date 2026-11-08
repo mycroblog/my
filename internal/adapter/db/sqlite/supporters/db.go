@@ -8,6 +8,10 @@ import (
 	"github.com/mycroblog/my/internal/adapter/db/sqlite"
 	"github.com/mycroblog/my/internal/adapter/db/sqlite/supportersgen"
 	"github.com/mycroblog/my/internal/app/uow"
+
+	// Links the module's tables, and those of the modules it depends on, into the test
+	// databases (package ddl).
+	_ "github.com/mycroblog/my/schema/13-supporters"
 )
 
 // moduleDB is the database with the queries of this module.

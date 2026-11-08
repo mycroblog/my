@@ -99,7 +99,9 @@ docker build -q --build-arg "VERSION=$candidate" --target app -t "$candidate_ima
 remote_test_files "$work"
 certs="$work/certs"
 remote="$work/remote"
-git -C "$root" show "$previous:schema/postgres.bootstrap.sql" >"$work/postgres.bootstrap.sql"
+# Releases before the schema's directories per module keep it in schema/postgres.bootstrap.sql.
+git -C "$root" show "$previous:schema/ddl/postgres.bootstrap.sql" >"$work/postgres.bootstrap.sql" 2>/dev/null ||
+	git -C "$root" show "$previous:schema/postgres.bootstrap.sql" >"$work/postgres.bootstrap.sql"
 chmod 0644 "$work/postgres.bootstrap.sql"
 export UPGRADE_TEST_CERTS="$certs" UPGRADE_TEST_REMOTE="$remote" UPGRADE_TEST_BOOTSTRAP="$work/postgres.bootstrap.sql"
 

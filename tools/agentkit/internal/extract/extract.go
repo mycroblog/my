@@ -8,7 +8,7 @@
 //	doc:<path>#<anchor>     a Markdown section (also ADR-0016#<anchor>, FR-001, NFR-COST-1)
 //	sym:<dir>.<Name>        a Go declaration (sym:<dir>.<Recv>.<Name> for methods)
 //	ts:<path>:<Name>        a top-level TypeScript declaration
-//	table:<name>            a table of schema/<dialect>/*.sql
+//	table:<name>            a table of schema/<NN>-<module>/<dialect>.sql
 //	query:<Name>            a sqlc query
 //	op:<operationId>        a client API operation
 //	schema:<Name>           a client API component
@@ -70,7 +70,7 @@ func Kind(p string) string {
 			return ""
 		}
 		return "ts"
-	case (path.Dir(p) == "schema/sqlite" || path.Dir(p) == "schema/postgres") && strings.HasSuffix(p, ".sql"):
+	case path.Dir(path.Dir(p)) == "schema" && (base == "sqlite.sql" || base == "postgres.sql"):
 		return "schema"
 	case strings.HasPrefix(p, "queries/") && strings.HasSuffix(p, ".sql"):
 		return "query"

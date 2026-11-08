@@ -100,7 +100,7 @@ expect_not "no patch note for a minor version" "$same" "A patch release is compa
 mkdir "$work/fixture"
 cd "$work/fixture"
 git init -q
-mkdir -p internal/platform/config docs/reference api schema/postgres pkg/mykit/ts/src pkg/mybot
+mkdir -p internal/platform/config docs/reference api schema/10-t pkg/mykit/ts/src pkg/mybot
 
 upgrades() {
   cat > internal/platform/setup_dbupgrade.go << EOF
@@ -199,7 +199,7 @@ components:
       properties:
         x: {type: string}
 EOF
-echo "CREATE TABLE t (id int);" > schema/postgres/10-t.sql
+echo "CREATE TABLE t (id int);" > schema/10-t/postgres.sql
 echo "# docs" > schema/README.md
 commit "chore: start"
 git tag v0.1.0
@@ -296,7 +296,7 @@ components:
         x: {type: string}
 EOF
 commit "feat(api)!: reshape the things"
-echo "CREATE TABLE t (id bigint);" > schema/postgres/10-t.sql
+echo "CREATE TABLE t (id bigint);" > schema/10-t/postgres.sql
 echo "# changed docs" > schema/README.md
 commit "feat(db,api)!: widen the id"
 echo "// x" > pkg/mykit/client.go
@@ -336,7 +336,7 @@ expect_has "settings" "$broken" \
   '`vanished` is gone without an entry' '`listen`: the default changed from `:8080` to `:9090`' \
   '`token`: required changed from no to when `x = y`'
 expect_has "client API" "$broken" '`getRemovedBad`' '`Thing.dropped`' '`Thing.id`: integer, required, was string, required' 'scope `old:scope`'
-expect_has "schema" "$broken" '`schema/postgres/10-t.sql` changed'
+expect_has "schema" "$broken" '`schema/10-t/postgres.sql` changed'
 expect_not "only the schema's SQL" "$broken" "schema/README.md"
 expect_has "commits by area" "$broken" \
   $'- api\n' $'- db\n' $'- general\n' $'- mybot\n' $'- web\n' "feat(api)!: reshape the things" \

@@ -187,8 +187,8 @@ keeps the per-PR web E2E of §5.
 - For each candidate issue, list the shared files it is likely to touch:
   - the sources of committed generated code: `api/spec/` (its root `api/spec/openapi.yaml` and the files of the paths and components),
     the area files of `locales/<locale>/<namespace>/` (a key goes in the file of its area: its first segment, or its first two under
-    `admin`, such as `client/settings.json` and `client/admin/report.json`; a new area is a new file), the module files of
-    `schema/<dialect>/` and the sqlc queries, the config schema;
+    `admin`, such as `client/settings.json` and `client/admin/report.json`; a new area is a new file), the module directories
+    `schema/<NN>-<module>/` and the sqlc queries, the config schema;
   - the tables many changes edit: the FR table in
     [01-functional.md](../requirements/01-functional.md), the files under `docs/architecture/`. In
     `docs/architecture/web-client/` and `docs/architecture/data-model/`, each section is a file of its own: two issues

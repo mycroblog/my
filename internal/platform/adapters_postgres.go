@@ -33,6 +33,7 @@ import (
 	"github.com/mycroblog/my/internal/app/stream"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/platform/config"
+	"github.com/mycroblog/my/schema"
 )
 
 // openPostgres opens the PostgreSQL database of database = postgres and, when cfg selects them, the
@@ -43,7 +44,9 @@ func (a *App) openPostgres(ctx context.Context, cfg *config.Config, queueOpts qu
 		return nil, err
 	}
 	d.SetAcquireTimeout(cfg.DatabaseAcquireTimeout)
-	a.UnitOfWork, a.ready, a.closer = d, d.Ready, func() error { d.Close(); return nil }
+	tables := schema.Tables(schema.Postgres)
+	a.UnitOfWork, a.closer = d, func() error { d.Close(); return nil }
+	a.ready = func(ctx context.Context) error { return d.Ready(ctx, tables) }
 	pool := d.Pool()
 	a.dbPoolMax = int(pool.Config().MaxConns)
 	a.newPostgresBus = func(listenURL string) (stream.Bus, error) {
@@ -75,7 +78,7 @@ func (a *App) openPostgres(ctx context.Context, cfg *config.Config, queueOpts qu
 			statuses: postgrescontent.NewStatusRepository(d), purges: postgresfederation.NewRepository(d), profiles: postgresaccount.NewRepository(d), emojis: postgrescontent.NewCustomEmojiRepository(d),
 			autoDeletes: postgrescontent.NewStatusRepository(d),
 		},
-		projections: d.ProjectionStore(), dataUpgrades: postgresdbupgrade.NewDataUpgradeRepository(d),
+		projections: d.ProjectionStore(tables), dataUpgrades: postgresdbupgrade.NewDataUpgradeRepository(d),
 		sealedValues: postgresrewrap.NewSealedValueStore(d),
 	}, nil
 }

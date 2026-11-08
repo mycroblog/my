@@ -34,7 +34,7 @@ func fixture(t *testing.T) *KB {
 		"internal/adapter/db/sqlite/requests.go":                 "package sqlite\n\nfunc (r *Repo) InsertCustomEmojiRequest() error {\n\treturn r.q.InsertCustomEmojiRequest()\n}\n",
 		"internal/adapter/system/clock.go":                       "package system\n\nfunc (Clock) Now() int { return 0 }\n",
 		"queries/sqlite/requests.sql":                            "-- name: InsertCustomEmojiRequest :exec\nINSERT INTO custom_emoji_requests (id) VALUES (?);\n",
-		"schema/sqlite/04-content.sql":                           "CREATE TABLE custom_emoji_requests (\n  id TEXT PRIMARY KEY\n);\n",
+		"schema/04-content/sqlite.sql":                           "CREATE TABLE custom_emoji_requests (\n  id TEXT PRIMARY KEY\n);\n",
 	}
 	for p, c := range files {
 		full := filepath.Join(root, p)
@@ -73,7 +73,7 @@ func TestResolveAndShow(t *testing.T) {
 		"custom_emoji_requests":            "CREATE TABLE custom_emoji_requests",
 		"op:createCustomEmojiRequest":      "operationId: createCustomEmojiRequest",
 		"SubmitRequest":                    "func (s *Service) SubmitRequest",
-		"schema/sqlite/04-content.sql:2-2": "id TEXT PRIMARY KEY",
+		"schema/04-content/sqlite.sql:2-2": "id TEXT PRIMARY KEY",
 		// A document split into one file per section: the section number, an anchor, or the name finds the file.
 		"web-client§14.2":                   "スタッフの画面は 2 つの区分に分ける",
 		"web-client.md§1":                   "フックの規則",

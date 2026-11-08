@@ -159,7 +159,7 @@ SVG を受け付けない場所のために、管理画面が次の PNG を描�
 
 ### 11. 保存（ADR-0020）
 
-instance モジュールが持つ。テーブルの形は `docs/architecture/data-model/04-tables/09-instance.md` と `schema/<dialect>/09-instance.sql` に書く。
+instance モジュールが持つ。テーブルの形は `docs/architecture/data-model/04-tables/09-instance.md` と `schema/09-instance/<dialect>.sql` に書く。
 
 - **イベント（リビジョン）** `instance_brand_revisions`: `id`・`kind`（CHECK で `icon` / `logo` / `logo_dark`）・`action`（CHECK で `set` / `clear`）・`revised_by_user_id`（CLI からは NULL）・`revised_at`。
 - **イベントの子** `instance_brand_files`: リビジョン・版（CHECK で `svg` と §10 の版）・BlobStore のキー・`content_type`・幅・高さ・バイト数・SHA-256。`clear` のリビジョンは子を持たない。

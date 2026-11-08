@@ -12,7 +12,7 @@
 
 ### 1. モジュールと依存の向き
 
-- `internal/domain/voice` と `internal/app/voice` を置き、スキーマは `schema/<dialect>/14-voice.sql`。ルーム・設定・役割・参加・招待・挙手・終了を `voice` だけが書く。
+- `internal/domain/voice` と `internal/app/voice` を置き、スキーマは `schema/14-voice/<dialect>.sql`。ルーム・設定・役割・参加・招待・挙手・終了を `voice` だけが書く。
 - `internal/app/voice` が import する他のモジュールの `internal/app`（ADR-0002 の唯一のモジュール間の経路）:
   - `graph`: ホストとのフォロー（承認済み）・相互フォロー・ブロックの判定
   - `identity`: 権限 `start_voice_rooms` の検査と、インスタンス設定 §2 の読み出し

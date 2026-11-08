@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-// Package sqlitetest gives tests SQLite databases with the product schema applied (ADR-0015).
+// Package sqlitetest gives tests SQLite databases with the product schema applied (ADR-0015):
+// the modules of the schema that the test binary links (package ddl, ADR-0153 §3). A test binary
+// links a module by importing the database adapter of the module or the module's package of
+// schema, so a change to one module's files reruns only the tests that use the module.
 //
 // Executing the schema outside a transaction commits each of its several hundred statements on its
 // own, and SQLite syncs the file after every commit: seconds for one database, more on a loaded
@@ -19,11 +22,11 @@ import (
 
 	_ "modernc.org/sqlite" // registers the "sqlite" driver
 
-	"github.com/mycroblog/my/schema"
+	"github.com/mycroblog/my/schema/ddl"
 )
 
-// ApplySchema executes ddl, the product schema (schema.SQLite) or a variant of it, on db in one
-// transaction.
+// ApplySchema executes ddl, the product schema (schema.SQLite), a part of it, or a variant of it,
+// on db in one transaction.
 func ApplySchema(ctx context.Context, db *sql.DB, ddl string) error {
 	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
@@ -36,8 +39,8 @@ func ApplySchema(ctx context.Context, db *sql.DB, ddl string) error {
 	return tx.Commit()
 }
 
-// template is the content of a database file with the product schema applied, made once per test
-// binary.
+// template is the content of a database file with the linked modules' schema applied, made once
+// per test binary.
 var template struct {
 	once sync.Once
 	b    []byte
@@ -57,7 +60,7 @@ func createTemplate() {
 		template.err = err
 		return
 	}
-	if err := ApplySchema(context.Background(), db, schema.SQLite); err != nil {
+	if err := ApplySchema(context.Background(), db, ddl.SQLite(ddl.Linked())); err != nil {
 		_ = db.Close()
 		template.err = fmt.Errorf("apply schema: %w", err)
 		return
@@ -69,8 +72,9 @@ func createTemplate() {
 	template.b, template.err = os.ReadFile(path) //nolint:gosec // G304: the file this function just created
 }
 
-// Template returns the content of a SQLite database file with the product schema applied. Every
-// call returns the same bytes, which the caller must not change.
+// Template returns the content of a SQLite database file with the schema of every module the test
+// binary links applied (ddl.Linked), in name order. Every call returns the same bytes, which the
+// caller must not change.
 func Template() ([]byte, error) {
 	template.once.Do(createTemplate)
 	return template.b, template.err

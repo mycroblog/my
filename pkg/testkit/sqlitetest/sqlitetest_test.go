@@ -9,7 +9,8 @@ import (
 	"testing"
 
 	"github.com/mycroblog/my/pkg/testkit/sqlitetest"
-	"github.com/mycroblog/my/schema"
+	hook "github.com/mycroblog/my/schema/16-hook"
+	"github.com/mycroblog/my/schema/ddl"
 )
 
 func tables(t *testing.T, db *sql.DB) []string {
@@ -44,9 +45,14 @@ func open(t *testing.T, path string) *sql.DB {
 	return db
 }
 
-func TestNewFileHasEveryTableOfTheSchema(t *testing.T) {
+// This test binary links the module 16-hook alone, which depends on 10-infrastructure: the
+// template has their tables and no other.
+func TestNewFileHasTheTablesOfTheLinkedModules(t *testing.T) {
 	t.Parallel()
-	want := schema.Tables(schema.SQLite)
+	if linked := ddl.Linked(); !slices.Equal(linked, hook.Module.Closure()) {
+		t.Fatalf("the binary links %d modules, want 16-hook and its dependencies", len(linked))
+	}
+	want := ddl.Tables(ddl.SQLite(hook.Module.Closure()))
 	slices.Sort(want)
 	a, b := sqlitetest.NewFile(t), sqlitetest.NewFile(t)
 	if a == b {
@@ -79,14 +85,15 @@ func BenchmarkNewFile(b *testing.B) {
 	}
 }
 
-// BenchmarkApplySchema measures the schema applied in one transaction to a new file.
+// BenchmarkApplySchema measures the linked modules' schema applied in one transaction to a new
+// file.
 func BenchmarkApplySchema(b *testing.B) {
 	for b.Loop() {
 		db, err := sql.Open("sqlite", filepath.Join(b.TempDir(), "my.db"))
 		if err != nil {
 			b.Fatal(err)
 		}
-		if err := sqlitetest.ApplySchema(b.Context(), db, schema.SQLite); err != nil {
+		if err := sqlitetest.ApplySchema(b.Context(), db, ddl.SQLite(ddl.Linked())); err != nil {
 			b.Fatal(err)
 		}
 		_ = db.Close()

@@ -31,7 +31,7 @@ expect "the s3 adapter" "blob" internal/adapter/blob/s3/s3.go
 expect "the s3 test server" "blob" pkg/testkit/s3test/s3test.go
 expect "the BlobStore contract" "blob" pkg/testkit/blobtest/blob_contract.go
 expect "the postgres adapter" "postgres" internal/adapter/db/postgres/account/account.go
-expect "the postgres schema" "postgres" schema/postgres/09-instance.sql
+expect "the postgres schema" "postgres" schema/09-instance/postgres.sql
 expect "the postgres queries" "postgres" queries/postgres/hook/hook.sql
 expect "the stream adapter on postgres" "postgres stream" internal/adapter/stream/postgres/bus.go
 expect "the valkey stream" "stream" internal/adapter/stream/valkey/bus.go
@@ -41,7 +41,7 @@ expect "a search backend" "search" internal/adapter/search/meilisearch/index.go
 expect "a contract workflow" "voice" .github/workflows/voice-contract.yml
 expect "the tasks of the contracts" "postgres stream mail blob voice search" tasks/go.yml
 expect "the sqlite adapter" "" internal/adapter/db/sqlite/account/account.go
-expect "the sqlite schema" "" schema/sqlite/09-instance.sql
+expect "the sqlite schema" "" schema/09-instance/sqlite.sql
 expect "a module of the application" "" internal/app/content/status.go
 expect "the composition root" "" internal/platform/app.go
 expect "a dependency update" "" go.mod go.sum

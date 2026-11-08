@@ -14,7 +14,7 @@ import (
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/pkg/testkit"
 	"github.com/mycroblog/my/pkg/testkit/kerneltest"
-	"github.com/mycroblog/my/schema"
+	infrastructure "github.com/mycroblog/my/schema/10-infrastructure"
 )
 
 func TestSQLiteKeyValueStoreContract(t *testing.T) {
@@ -29,7 +29,7 @@ func TestSQLiteKeyValueStoreContract(t *testing.T) {
 			if err != nil {
 				return err
 			}
-			_, err = sqlTx.ExecContext(t.Context(), schema.SQLite)
+			_, err = sqlTx.ExecContext(t.Context(), infrastructure.Module.SQLite)
 			return err
 		})
 		if err != nil {

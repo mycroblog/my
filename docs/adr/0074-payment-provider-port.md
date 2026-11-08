@@ -411,7 +411,7 @@ v1 にホスト型の画面がないので、adapter が Stripe のホスト型�
 ### 16. build tag とデータモデル
 
 - `no_payments_payjp` は `internal/adapter/payment/payjp` を外し、`payments = payjp` を拒む（[build-tags.md](../reference/build-tags.md)）。依存を増やさないので、代表の組み合わせはどれも含めたまま build を確かめる。
-- `schema/<dialect>/12-finance.sql`（`income_movements`）と `13-supporters.sql` の `provider` の値は `payjp` を含む。表は増えない。FR-910 の決済の事業者は Stripe か PAY.JP である。
+- `schema/12-finance/<dialect>.sql`（`income_movements`）と `13-supporters.sql` の `provider` の値は `payjp` を含む。表は増えない。FR-910 の決済の事業者は Stripe か PAY.JP である。
 
 ### 17. テストのしかた
 

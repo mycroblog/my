@@ -110,13 +110,15 @@ tasks/
 | Web クライアントの設計文書 | `docs/architecture/web-client/<NN>-<slug>.md`（節ごと。`14-admin.md` など） | `web-client/README.md` に節の一覧と、節をまたぐ原則を置く |
 | データモデルの設計文書 | `docs/architecture/data-model/<NN>-<slug>.md`（同上） | `data-model/README.md` |
 | `internal/platform` の `NewApp` | `internal/platform/setup_<module>.go` ごとに、モジュールの配線を `(a *App) setUp<Module>(...)` にまとめる | `NewApp` はモジュールの `setUp*` を依存の順に呼ぶだけにする |
-| スキーマ | `schema/<dialect>/<NN>-<module>.sql`（番号は外部キーと索引の依存の順） | Atlas にはディレクトリ（`file://schema/<dialect>`）をそのまま渡す。Go の埋め込みは同じ名前の順に連結する |
+| スキーマ | `schema/<NN>-<module>/<dialect>.sql`（モジュールのディレクトリは Go のパッケージ。ADR-0153 §3） | Atlas には `scripts/schema-files.sh` が方言のファイルを 1 つのディレクトリに `<NN>-<module>.sql` として写して渡す（`db:check`・`db:lint`）。Go はパッケージ `schema` が各モジュールのパッケージを import し、名前の順に連結する。モジュールを足すときは `schema.go` に 1 行足す |
 
 - カタログの分け方の実測: `en` の `client`（約 3,000 キー）をこの規則で分けると 70 ファイルになり、最大は `settings` の 352 キー、中央値は 30 キーだった。
   14 日間の衝突でカタログの中の変わった行は、`admin/report`・`admin/account`・`admin/accounts`・`account_status`・`admin/appeal` に集まっていた。そのため、`admin` は 2 つ目の区切りまで分ける。
 - Atlas Community Edition 1.3.0 は、`file://` にディレクトリを渡すと、中の SQL ファイルを名前の順に dev データベースで実行して desired state を作る。
+  下のディレクトリは読まず（`contains neither SQL nor HCL files`）、`schema diff` と `migrate diff` に `--to file://…` を 2 つ渡すと `the provided SQL state must be either a single schema file or a migration directory` で拒む（2026-11-08 に SQLite で確認）。そのため、モジュールごとのディレクトリから 1 つのディレクトリに写して渡す。
   スキーマを `CREATE TABLE` の区切りで 3 ファイルに分けて `schema inspect` で比べると、両方言とも 1 ファイルのときと同じ結果になった。
   名前の順を逆にすると、PostgreSQL では後のファイルの表を参照する索引で失敗した（2026-10-23）。番号の順は、`db-check` でそのまま検査できる。
+  モジュールのファイルは自分で作るものだけを使う（外部キーはなく、索引と注釈は同じファイルの表の後に置く）ので、依存するモジュールだけを当てたテストの DB でも通る（`schema_test.go` が各モジュールで確かめる）。
 - 翻訳のプラットフォームの候補（ADR-0009）は、どちらも分けたカタログを扱える。Weblate は Component discovery のアドオンが、名前付きのグループ（`language`・`component`）を持つ正規表現でファイルを探し、コンポーネントを自動で足し引きする（[Add-ons](https://docs.weblate.org/en/latest/admin/addons.html)）。
   Crowdin は `crowdin.yml` の `source` に `**` を、`translation` に `%locale%` を書ける（[Configuration file](https://support.crowdin.com/configuration-file/)）。いずれも 2026-10-23 確認。
 - 節の参照: agentkit の `show web-client§14.2` と `data-model§4.4` は、節の番号から分けたファイルを引く。
@@ -220,6 +222,9 @@ Dependabot の Go の更新は、ルートだけを上げると `integration` �
 - agentkit にタスクの実行を持たせる: リポジトリの文脈を知っているが、エージェント向けの道具がビルドの要になり、並列とキャッシュを自前で作ることになる。
 - ファイルを分けず、共有のファイルに触る issue を同時に走らせない: 何も移さずに済むが、並行の数がそのファイルで決まる。
 - 対象のファイルだけ分け、規則にしない: 今の衝突は減るが、新しい一覧やカタログが 1 本のファイルとして生まれ、同じ問題を繰り返す。
+- スキーマのファイルを方言ごとのディレクトリに残し、モジュールごとの Go のパッケージには生成した写しをコミットする: ADR-0023 §1 の置き場所を変えずに済むが、同じ SQL が 2 つずつあり、生成の検査が要る。
+- スキーマのファイルを実行時に読む: 埋め込まずに済むが、Go のテストの結果のキャッシュは、テストが開いたファイルを大きさと更新時刻で見るので（Go 1.27 の `cmd/go/internal/test` の `hashOpen`、2026-11-08 確認）、チェックアウトのたびに外れる。
+- モジュールのパッケージからシンボリックリンクで方言のディレクトリのファイルを指す: 置き場所は変わらないが、Go の埋め込みはシンボリックリンクを拒む（GODEBUG の `embedfollowsymlinks=1` が要る）。
 - Prettier: 同じ書き方にできるが、依存を 1 つ足し、JavaScript で 1 回に数秒かかる。
 - oxfmt: 同じ書き方にできるが、依存を 1 つ足し、0.x 版（2026-10-28 に 0.75.0）で出力が版ごとに変わりうる（要検証）。
 - 整形器を入れない: 何も足さないが、幅と折り返しのばらつきが残る。

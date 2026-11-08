@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Starts the real server for the E2E of the server-rendered pages (ADR-0090) and of the main flow: a fresh
-// SQLite database in the run's temporary directory (e2e/server-origin.ts) with schema/sqlite applied,
+// SQLite database in the run's temporary directory (e2e/server-origin.ts) with the SQLite schema applied,
 // the admin, the documents, and the third-party OAuth client of e2e/server-origin.ts, then
 // `my serve -pseudo-locales` (so that the en-XA and ar-XB projects get their locale) until Playwright stops it.
 // With the argument `voice` (`node e2e/server.ts voice`) it starts the server of e2e/voice-p2p.spec.ts instead:
@@ -98,13 +98,14 @@ if (which === "demo") {
   writeFileSync(demoVAPIDKeyFile, vapid, { mode: 0o600 });
 }
 
-// The schema files are plain SQL, executed in name order as Atlas does in production (ADR-0023, ADR-0081).
-const schemaDir = join(root, "schema/sqlite");
+// The schema files are plain SQL, one directory per module (schema/<NN>-<module>/sqlite.sql), executed in name
+// order as Atlas does in production (ADR-0023, ADR-0081).
+const schemaDir = join(root, "schema");
 const db = new DatabaseSync(database);
 for (const name of readdirSync(schemaDir)
-  .filter((n) => n.endsWith(".sql"))
+  .filter((n) => /^\d\d-/.test(n))
   .toSorted()) {
-  db.exec(readFileSync(join(schemaDir, name), "utf8"));
+  db.exec(readFileSync(join(schemaDir, name, "sqlite.sql"), "utf8"));
 }
 db.close();
 

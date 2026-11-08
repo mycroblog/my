@@ -4,7 +4,9 @@
 //
 // One server serves every test of a test binary, and every test gets its own database, copied
 // with CREATE DATABASE ... TEMPLATE from a template database that holds the bootstrap SQL and the
-// product schema (see package schema for why executing the files matches an Atlas apply).
+// schema of the modules the test binary links (package ddl; see package schema for why executing
+// the files matches an Atlas apply). A test binary links a module by importing the database
+// adapter of the module or the module's package of schema.
 // Environment variables choose the server:
 //
 //   - TEST_POSTGRES_URL: an existing server, as a postgres:// URL whose user may create databases.
@@ -42,7 +44,7 @@ import (
 	"github.com/testcontainers/testcontainers-go"
 	tcpostgres "github.com/testcontainers/testcontainers-go/modules/postgres"
 
-	"github.com/mycroblog/my/schema"
+	"github.com/mycroblog/my/schema/ddl"
 )
 
 // The environment variables that choose the server; see the package documentation.
@@ -297,8 +299,8 @@ func createTemplate(ctx context.Context) (string, error) {
 		return "", fmt.Errorf("connect to the template: %w", err)
 	}
 	defer func() { _ = conn.Close(ctx) }()
-	for _, ddl := range []string{schema.PostgresBootstrap, schema.Postgres} {
-		if _, err := conn.Exec(ctx, ddl); err != nil {
+	for _, sql := range []string{ddl.PostgresBootstrap, ddl.Postgres(ddl.Linked())} {
+		if _, err := conn.Exec(ctx, sql); err != nil {
 			return "", fmt.Errorf("apply schema to the template: %w", err)
 		}
 	}

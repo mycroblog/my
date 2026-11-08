@@ -33,7 +33,7 @@ libSQL / Turso は v0.1.0 では対応せず、将来の候補とする。v0.1.0
 - トランザクションの設定:
   - SQLite は `BEGIN IMMEDIATE`（`_txlock=immediate`）+ `busy_timeout` + WAL を必須とする。遅延ロックのままだと書き込みの競合でリトライが多発する。
   - PostgreSQL は READ COMMITTED を既定とし、直列化失敗・デッドロックは `UnitOfWork` のリトライで吸収する。
-- スキーマは方言ごとに `schema/<dialect>/` を持つ（ADR-0023、ADR-0081）。
+- スキーマは、モジュールごとのディレクトリに方言ごとのファイル `schema/<NN>-<module>/<dialect>.sql` を持つ（ADR-0023、ADR-0081）。
 - **コントラクトテスト**: リポジトリポートごとに単一のテストスイートを書き、SQLite（インメモリ / 一時ファイル）・PostgreSQL で実行する。PostgreSQL の実行環境と頻度は ADR-0015 と ADR-0079 が決める。
 
 ### 3. 型・ID・時刻の共通規約
@@ -80,7 +80,7 @@ PostgreSQL の UUIDv7 の列を `uuid` 型にし、SQLite と Go の型は変え
 - sqlc は PostgreSQL の `uuid` を `string` に対応させる（`sqlc.yaml` の `overrides` に `db_type: uuid`・`go_type: string`、NULL 可は `*string`）。
   pgx/v5 は `string` を `uuid` の引数に渡せ、`uuid` の列を `string` に読める（`pgtype.UUIDCodec` の text の経路。pgx v5 で確認、2026-10-23）。
   そのため `pgtype.UUID` も Go 1.27 の `uuid.UUID`（`driver.Valuer` / `sql.Scanner` を実装しない、#17）も、アダプタの外に出ない
-- 方言の差は `schema/<dialect>/`・`queries/<dialect>/`・`sqlc.yaml` に閉じ込める。リポジトリのポートと契約テスト（`pkg/testkit`）のシグネチャは方言に依らない
+- 方言の差は `schema/<NN>-<module>/<dialect>.sql`・`queries/<dialect>/`・`sqlc.yaml` に閉じ込める。リポジトリのポートと契約テスト（`pkg/testkit`）のシグネチャは方言に依らない
 - 「無し」を空文字 `''` で表す ID の引数・列は `uuid` に入らないので、次のようにする
   - クエリの任意の引数は、NULL 可の引数（`sqlc.narg`）にする
   - 列（リモートのリンクカードの画像の `media_files.owner_account_id` など）は、任意の関連として NULL 可にする（ADR-0020 規約 4 の「任意の関連」）

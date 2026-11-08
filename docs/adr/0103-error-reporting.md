@@ -117,7 +117,7 @@ ADR-0055 §16（span に `RecordError` とエラーの文字列を出さない�
 
 ### 7. データモデル（ADR-0020）
 
-モジュール `diagnostics`（`internal/domain/diagnostics`・`internal/app/diagnostics`）が所有する。スキーマは `schema/<dialect>/NN-diagnostics.sql`。
+モジュール `diagnostics`（`internal/domain/diagnostics`・`internal/app/diagnostics`）が所有する。スキーマは `schema/NN-diagnostics/<dialect>.sql`。
 
 | テーブル | 分類 | 内容 |
 | --- | --- | --- |

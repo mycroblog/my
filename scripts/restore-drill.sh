@@ -70,7 +70,7 @@ export MY_IMAGE="my-restore-drill:$version"
 docker build -q --build-arg "VERSION=$version" --target app -t "$MY_IMAGE" "$root" >/dev/null
 
 remote_test_files "$work"
-cp "$root/schema/postgres.bootstrap.sql" "$work/postgres.bootstrap.sql"
+cp "$root/schema/ddl/postgres.bootstrap.sql" "$work/postgres.bootstrap.sql"
 chmod 0644 "$work/postgres.bootstrap.sql"
 export UPGRADE_TEST_CERTS="$work/certs" UPGRADE_TEST_REMOTE="$work/remote" UPGRADE_TEST_BOOTSTRAP="$work/postgres.bootstrap.sql"
 backup="$work/backup"

@@ -31,6 +31,7 @@ import (
 	queuedb "github.com/mycroblog/my/internal/adapter/queue/db"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/platform/config"
+	"github.com/mycroblog/my/schema"
 )
 
 // openSQLite opens the SQLite database of database = sqlite and, when cfg selects them, the
@@ -40,7 +41,9 @@ func (a *App) openSQLite(ctx context.Context, cfg *config.Config, queueOpts queu
 	if err != nil {
 		return nil, err
 	}
-	a.UnitOfWork, a.ready, a.closer = d, d.Ready, d.Close
+	tables := schema.Tables(schema.SQLite)
+	a.UnitOfWork, a.closer = d, d.Close
+	a.ready = func(ctx context.Context) error { return d.Ready(ctx, tables) }
 	d.RegisterMetrics(a.Meter)
 	a.dbSize = d
 	d.SetTracer(a.Tracer)
@@ -67,7 +70,7 @@ func (a *App) openSQLite(ctx context.Context, cfg *config.Config, queueOpts queu
 			statuses: sqlitecontent.NewStatusRepository(d), purges: sqlitefederation.NewRepository(d), profiles: sqliteaccount.NewRepository(d), emojis: sqlitecontent.NewCustomEmojiRepository(d),
 			autoDeletes: sqlitecontent.NewStatusRepository(d),
 		},
-		projections: d.ProjectionStore(), dataUpgrades: sqlitedbupgrade.NewDataUpgradeRepository(d),
+		projections: d.ProjectionStore(tables), dataUpgrades: sqlitedbupgrade.NewDataUpgradeRepository(d),
 		sealedValues: sqliterewrap.NewSealedValueStore(d),
 	}, nil
 }

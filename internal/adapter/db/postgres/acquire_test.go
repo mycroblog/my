@@ -12,6 +12,7 @@ import (
 	"github.com/mycroblog/my/internal/app/kernel"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/pkg/testkit/pgtest"
+	"github.com/mycroblog/my/schema"
 )
 
 // newBoundedDB opens a database with a pool of one connection and the bound on waiting for it.
@@ -78,7 +79,7 @@ func TestAcquireTimeoutEndsTheWaitForAConnection(t *testing.T) {
 		"Tx": func(ctx context.Context) error {
 			return db.Tx(ctx, func(uow.Tx) error { return nil })
 		},
-		"Ready": db.Ready,
+		"Ready": func(ctx context.Context) error { return db.Ready(ctx, schema.Tables(schema.Postgres)) },
 	} {
 		t.Run(name, func(t *testing.T) {
 			ctx, busy := kernel.WithDatabaseBusyNote(t.Context())

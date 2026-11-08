@@ -25,7 +25,7 @@ func TestBuild(t *testing.T) {
 		"docs/architecture/data-model/README.md":               "# データモデル\n\n## 節の一覧\n\n- [4. テーブル](04-tables/README.md)\n",
 		"docs/architecture/data-model/04-tables/README.md":     "## 4. テーブル\n\n- [4.4 content](04-content.md)\n",
 		"docs/architecture/data-model/04-tables/04-content.md": "### 4.4 content\n\n#### 申請\n\n`custom_emoji_requests` は申請。\n",
-		"schema/sqlite/04-content.sql":                         "CREATE TABLE custom_emoji_requests (\n  id TEXT PRIMARY KEY\n);\n",
+		"schema/04-content/sqlite.sql":                         "CREATE TABLE custom_emoji_requests (\n  id TEXT PRIMARY KEY\n);\n",
 	}
 	for p, c := range files {
 		full := filepath.Join(root, p)

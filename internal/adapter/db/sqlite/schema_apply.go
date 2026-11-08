@@ -11,27 +11,21 @@ import (
 	atlassqlite "ariga.io/atlas/sql/sqlite"
 
 	"github.com/mycroblog/my/internal/adapter/db/schemaapply"
-	"github.com/mycroblog/my/schema"
 )
 
 // devDSN is the dev database of ApplySchema: in memory, a new one for each connection.
 const devDSN = "file:my_schema_apply_dev?mode=memory"
 
 // ApplySchema brings the SQLite database of dsn (the database_url setting, in the form Open
-// takes) to the embedded schema (schema.SQLite) with the Atlas library: it executes the schema
-// on an in-memory dev database, inspects both, plans the difference, and applies it in one
-// transaction (ADR-0023 §10). The transaction runs with the foreign keys unenforced, so that
+// takes) to the desired schema ddl (the embedded schema.SQLite) with the Atlas library: it
+// executes the schema on an in-memory dev database, inspects both, plans the difference, and
+// applies it in one transaction (ADR-0023 §10). The transaction runs with the foreign keys unenforced, so that
 // Atlas can rebuild a table, and fails on commit when it adds a foreign key violation. A
 // database that matches the schema is left unchanged. The file is created if it does not exist.
-func ApplySchema(ctx context.Context, dsn string, opts schemaapply.Options) (schemaapply.Result, error) {
-	return applySchema(ctx, dsn, schema.SQLite, opts)
-}
-
-// applySchema is ApplySchema with the desired schema ddl.
-func applySchema(ctx context.Context, dsn, ddl string, opts schemaapply.Options) (schemaapply.Result, error) {
+func ApplySchema(ctx context.Context, dsn, ddl string, opts schemaapply.Options) (schemaapply.Result, error) {
 	desired, err := inspectDesired(ctx, ddl)
 	if err != nil {
-		return schemaapply.Result{}, fmt.Errorf("sqlite: schema apply: the embedded schema: %w", err)
+		return schemaapply.Result{}, fmt.Errorf("sqlite: schema apply: the desired schema: %w", err)
 	}
 	name, err := normalizeDSN(dsn)
 	if err != nil {

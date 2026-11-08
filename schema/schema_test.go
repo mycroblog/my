@@ -3,18 +3,24 @@
 package schema_test
 
 import (
+	"database/sql"
+	"go/parser"
+	"go/token"
 	"io/fs"
 	"os"
-	"path"
+	"path/filepath"
 	"regexp"
 	"slices"
+	"strconv"
 	"strings"
 	"testing"
 
 	"github.com/mycroblog/my/internal/app/supporters"
 	"github.com/mycroblog/my/internal/domain/finance"
 	"github.com/mycroblog/my/internal/domain/instance"
+	"github.com/mycroblog/my/pkg/testkit/sqlitetest"
 	"github.com/mycroblog/my/schema"
+	"github.com/mycroblog/my/schema/ddl"
 )
 
 func TestTables(t *testing.T) {
@@ -29,63 +35,157 @@ func TestTables(t *testing.T) {
 func TestTablesMatchAcrossDialects(t *testing.T) {
 	sqlite, postgres := schema.Tables(schema.SQLite), schema.Tables(schema.Postgres)
 	if len(sqlite) == 0 {
-		t.Fatal("schema/sqlite declares no tables")
+		t.Fatal("the schema declares no tables")
 	}
 	if !slices.Equal(sqlite, postgres) {
 		t.Errorf("tables differ:\n sqlite:   %v\n postgres: %v", sqlite, postgres)
 	}
 }
 
-// SQLite and Postgres are the files of their directories concatenated in name order, the order in
-// which Atlas executes them.
-func TestDialectsConcatenateTheirFilesInNameOrder(t *testing.T) {
-	dirFS := os.DirFS(".")
-	for dir, got := range map[string]string{"sqlite": schema.SQLite, "postgres": schema.Postgres} {
-		names, err := fs.Glob(dirFS, dir+"/*.sql")
-		if err != nil || len(names) == 0 {
-			t.Fatalf("%s: no files (%v)", dir, err)
-		}
-		slices.Sort(names)
-		var want strings.Builder
-		for _, name := range names {
-			data, err := fs.ReadFile(dirFS, name)
+// moduleDirs returns the directories <NN>-<module> of the schema, in name order.
+func moduleDirs(t *testing.T) []string {
+	t.Helper()
+	dirs, err := fs.Glob(os.DirFS("."), "[0-9][0-9]-*")
+	if err != nil || len(dirs) == 0 {
+		t.Fatalf("no module directories (%v)", err)
+	}
+	slices.Sort(dirs)
+	return dirs
+}
+
+// Modules is every directory <NN>-<module>, in name order, each with the files of the directory;
+// SQLite and Postgres are those files concatenated in name order, the order in which Atlas
+// executes them; and the binary links no other module.
+func TestModulesAreTheDirectoriesInNameOrder(t *testing.T) {
+	dirs := moduleDirs(t)
+	var names []string
+	for _, m := range schema.Modules {
+		names = append(names, m.Name)
+	}
+	if !slices.Equal(names, dirs) {
+		t.Fatalf("Modules = %v, want the directories %v", names, dirs)
+	}
+	if linked := ddl.Linked(); !slices.Equal(linked, schema.Modules) {
+		t.Errorf("Linked differs from Modules")
+	}
+	var sqlite, postgres strings.Builder
+	for i, dir := range dirs {
+		for name, got := range map[string]string{"sqlite.sql": schema.Modules[i].SQLite, "postgres.sql": schema.Modules[i].Postgres} {
+			want, err := os.ReadFile(filepath.Join(dir, name)) //nolint:gosec // G304: a file of this directory
 			if err != nil {
 				t.Fatal(err)
 			}
-			want.Write(data)
+			if got != string(want) {
+				t.Errorf("%s: the embedded %s is not the file", dir, name)
+			}
 		}
-		if got != want.String() {
-			t.Errorf("%s: the embedded schema is not the files concatenated in name order", dir)
+		sqlite.WriteString(schema.Modules[i].SQLite)
+		postgres.WriteString(schema.Modules[i].Postgres)
+	}
+	if schema.SQLite != sqlite.String() || schema.Postgres != postgres.String() {
+		t.Error("SQLite and Postgres are not the files of the modules concatenated in name order")
+	}
+}
+
+// Each module has its file in every dialect, and both declare the same tables in the same order,
+// so that a module's tables are in its own directory.
+func TestFilesMatchAcrossDialects(t *testing.T) {
+	for _, dir := range moduleDirs(t) {
+		names, err := fs.Glob(os.DirFS(dir), "*.sql")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if want := []string{"postgres.sql", "sqlite.sql"}; !slices.Equal(names, want) {
+			t.Errorf("%s: files %v, want %v", dir, names, want)
+		}
+	}
+	for _, m := range schema.Modules {
+		if a, b := schema.Tables(m.SQLite), schema.Tables(m.Postgres); !slices.Equal(a, b) {
+			t.Errorf("%s: tables differ:\n sqlite:   %v\n postgres: %v", m.Name, a, b)
 		}
 	}
 }
 
-// Every dialect has the same files, and each file declares the same tables in every dialect, so
-// that a module's tables are in the file of the same name.
-func TestFilesMatchAcrossDialects(t *testing.T) {
-	dirFS := os.DirFS(".")
-	sqlite, _ := fs.Glob(dirFS, "sqlite/*.sql")
-	postgres, _ := fs.Glob(dirFS, "postgres/*.sql")
-	for i := range sqlite {
-		sqlite[i] = path.Base(sqlite[i])
+// A test binary applies only the modules it links (pkg/testkit/sqlitetest): every module, with
+// the modules it depends on, applies in name order on an empty database.
+func TestEachModuleAppliesWithItsDependencies(t *testing.T) {
+	for _, m := range schema.Modules {
+		t.Run(m.Name, func(t *testing.T) {
+			t.Parallel()
+			db, err := sql.Open("sqlite", filepath.Join(t.TempDir(), "my.db"))
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer func() { _ = db.Close() }()
+			if err := sqlitetest.ApplySchema(t.Context(), db, ddl.SQLite(m.Closure())); err != nil {
+				t.Fatal(err)
+			}
+		})
 	}
-	for i := range postgres {
-		postgres[i] = path.Base(postgres[i])
+}
+
+// infrastructure is the module of the tables that adapters own, which the shared packages
+// kernel, uow, and queue of internal/app use.
+const infrastructure = "10-infrastructure"
+
+// A module requires exactly the modules that its package of internal/app imports, and
+// 10-infrastructure when it imports kernel, uow, or queue, so that a test of the module links
+// the tables its repositories may read.
+func TestRequiresMatchTheImportsOfTheApplicationLayer(t *testing.T) {
+	const prefix = "github.com/mycroblog/my/internal/app/"
+	byModule := map[string]string{}
+	for _, m := range schema.Modules {
+		byModule[strings.SplitN(m.Name, "-", 2)[1]] = m.Name
 	}
-	if !slices.Equal(sqlite, postgres) {
-		t.Fatalf("files differ:\n sqlite:   %v\n postgres: %v", sqlite, postgres)
-	}
-	for _, name := range sqlite {
-		s, err := fs.ReadFile(dirFS, "sqlite/"+name)
-		if err != nil {
-			t.Fatal(err)
+	for _, m := range schema.Modules {
+		if m.Name == infrastructure {
+			if len(m.Requires) != 0 {
+				t.Errorf("%s requires %d modules, want none", m.Name, len(m.Requires))
+			}
+			continue
 		}
-		p, err := fs.ReadFile(dirFS, "postgres/"+name)
-		if err != nil {
-			t.Fatal(err)
+		module := strings.SplitN(m.Name, "-", 2)[1]
+		files, err := filepath.Glob(filepath.Join("..", "internal", "app", module, "*.go"))
+		if err != nil || len(files) == 0 {
+			t.Fatalf("%s: no package internal/app/%s (%v)", m.Name, module, err)
 		}
-		if a, b := schema.Tables(string(s)), schema.Tables(string(p)); !slices.Equal(a, b) {
-			t.Errorf("%s: tables differ:\n sqlite:   %v\n postgres: %v", name, a, b)
+		want := map[string]bool{}
+		for _, f := range files {
+			if strings.HasSuffix(f, "_test.go") {
+				continue
+			}
+			file, err := parser.ParseFile(token.NewFileSet(), f, nil, parser.ImportsOnly)
+			if err != nil {
+				t.Fatal(err)
+			}
+			for _, imp := range file.Imports {
+				p, _ := strconv.Unquote(imp.Path.Value)
+				dep, ok := strings.CutPrefix(p, prefix)
+				if !ok || strings.Contains(dep, "/") {
+					continue
+				}
+				switch dep {
+				case "kernel", "uow", "queue":
+					want[infrastructure] = true
+				default:
+					if name, ok := byModule[dep]; ok && name != m.Name {
+						want[name] = true
+					}
+				}
+			}
+		}
+		var got []string
+		for _, r := range m.Requires {
+			got = append(got, r.Name)
+		}
+		slices.Sort(got)
+		wantNames := make([]string, 0, len(want))
+		for name := range want {
+			wantNames = append(wantNames, name)
+		}
+		slices.Sort(wantNames)
+		if !slices.Equal(got, wantNames) {
+			t.Errorf("%s requires %v, want the imports of internal/app/%s: %v", m.Name, got, module, wantNames)
 		}
 	}
 }
@@ -162,20 +262,8 @@ func TestPaymentErrorKindCheckMatchesTheModule(t *testing.T) {
 // TestSQLiteTablesAreStrict checks that every SQLite table declares STRICT, which a table cannot
 // gain later without being rebuilt.
 func TestSQLiteTablesAreStrict(t *testing.T) {
-	var sql strings.Builder
-	files, err := fs.Glob(os.DirFS("sqlite"), "*.sql")
-	if err != nil {
-		t.Fatal(err)
-	}
-	for _, name := range files {
-		b, err := fs.ReadFile(os.DirFS("sqlite"), name)
-		if err != nil {
-			t.Fatal(err)
-		}
-		sql.Write(b)
-	}
 	table := regexp.MustCompile(`(?ms)^CREATE TABLE (\w+) \(.*?^\)([^;]*);`)
-	matches := table.FindAllStringSubmatch(sql.String(), -1)
+	matches := table.FindAllStringSubmatch(schema.SQLite, -1)
 	if len(matches) == 0 {
 		t.Fatal("found no tables")
 	}

@@ -24,7 +24,10 @@ import (
 	"github.com/mycroblog/my/internal/adapter/telemetry/dbtrace"
 	"github.com/mycroblog/my/internal/app/kernel"
 	"github.com/mycroblog/my/internal/app/uow"
-	"github.com/mycroblog/my/schema"
+
+	// Links the tables of kernel, uow, and queue, which this package and every module use, into
+	// the test databases of pkg/testkit/pgtest (package ddl).
+	_ "github.com/mycroblog/my/schema/10-infrastructure"
 )
 
 // DB is a PostgreSQL connection pool. It implements uow.UnitOfWork.
@@ -90,11 +93,11 @@ func (d *DB) Exec(ctx context.Context, sql string, args ...any) (pgconn.CommandT
 }
 
 // Ready reports whether the database is reachable and its schema is applied, for the
-// readiness check. The schema counts as applied when every table that schema/postgres
-// declares exists in the connection's current schema; Atlas applies the schema as a whole
-// (ADR-0023), so a missing table means the schema was never applied or is out of date.
-func (d *DB) Ready(ctx context.Context) error {
-	want := schema.Tables(schema.Postgres)
+// readiness check. The schema counts as applied when every table of want exists in the
+// connection's current schema (the caller passes the tables of the whole schema,
+// schema.Tables(schema.Postgres)); Atlas applies the schema as a whole (ADR-0023), so a missing
+// table means the schema was never applied or is out of date.
+func (d *DB) Ready(ctx context.Context, want []string) error {
 	rows, err := d.conns.Query(ctx,
 		"SELECT table_name::text FROM information_schema.tables WHERE table_schema = current_schema() AND table_name = ANY($1)", want)
 	if err != nil {
