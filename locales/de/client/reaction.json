@@ -1,0 +1,58 @@
+{
+  "reaction.picker.button": {
+    "defaultMessage": "Reagieren",
+    "description": "Accessible name and tooltip of the icon button in a post's action bar that opens the picker of emoji to react to the post with."
+  },
+  "reaction.picker.title": {
+    "defaultMessage": "Emoji zum Reagieren",
+    "description": "Accessible name of the popover that holds the picker of emoji to react to a post with."
+  },
+  "reaction.picker.grid": {
+    "defaultMessage": "Emoji zum Reagieren",
+    "description": "Accessible name of the grid of emoji in the picker of reactions."
+  },
+  "reaction.toggle": {
+    "defaultMessage": "{emoji} {count}, mit diesem Emoji reagieren",
+    "description": "Accessible name of a toggle under a post that reacts to it with an emoji that others reacted with, or takes the reaction back when pressed again. It starts with what the toggle shows, the emoji and the number, so that the name contains them. {emoji} is the emoji itself or its :shortcode:; {count} is the number of reactions as it is shown (\"1.2K\")."
+  },
+  "reaction.list.label": {
+    "defaultMessage": "Reaktionen",
+    "description": "Accessible name of the group of emoji reactions under a post."
+  },
+  "reaction.list.open": {
+    "defaultMessage": "Wer hat reagiert",
+    "description": "Button after the emoji reactions under a post that opens the list of the accounts that reacted."
+  },
+  "reaction.list.title": {
+    "defaultMessage": "Wer hat reagiert",
+    "description": "Title of the dialog that lists the accounts that reacted to a post, each with its emoji."
+  },
+  "reaction.list.close": {
+    "defaultMessage": "Schließen",
+    "description": "Accessible name of the × button that closes the dialog of the accounts that reacted to a post."
+  },
+  "reaction.list.loading": {
+    "defaultMessage": "Reaktionen werden geladen",
+    "description": "Shown in the dialog of the accounts that reacted to a post while the first page loads."
+  },
+  "reaction.list.failed": {
+    "defaultMessage": "Reaktionen konnten nicht geladen werden",
+    "description": "Heading of the error in the dialog of the accounts that reacted to a post when the first page failed to load, above the reason and the button to try again."
+  },
+  "reaction.list.retry": {
+    "defaultMessage": "Erneut versuchen",
+    "description": "Button that loads the list of the accounts that reacted to a post again after it failed."
+  },
+  "reaction.list.empty": {
+    "defaultMessage": "Noch niemand hat reagiert.",
+    "description": "Shown in the dialog of the accounts that reacted to a post when there are none (the reactions were taken back meanwhile)."
+  },
+  "reaction.list.load_more": {
+    "defaultMessage": "Mehr anzeigen",
+    "description": "Button at the end of the list of the accounts that reacted to a post that loads the next ones."
+  },
+  "reaction.list.load_more_failed": {
+    "defaultMessage": "Weitere Reaktionen konnten nicht geladen werden: {reason}",
+    "description": "Shown and announced when the next page of the accounts that reacted to a post failed to load. {reason} is the error message."
+  }
+}

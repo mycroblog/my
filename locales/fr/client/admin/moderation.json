@@ -1,0 +1,14 @@
+{
+  "admin.moderation.none.description": {
+    "defaultMessage": "Vos rôles n’accordent aucune des permissions dont les écrans de modération ont besoin. Un administrateur peut vous les accorder.",
+    "description": "Description on the moderation page of a user whose roles grant none of the moderation screens' permissions."
+  },
+  "admin.moderation.none.heading": {
+    "defaultMessage": "Aucun écran de modération pour vos rôles",
+    "description": "Heading on the moderation page of a user whose roles grant none of the moderation screens' permissions."
+  },
+  "admin.moderation.title": {
+    "defaultMessage": "Modération",
+    "description": "Heading of the links to the moderation screens (reports, appeals, accounts, registrations, sign-up blocks, domain actions, remote servers, audit log) on the settings page and title of their page, shown only to users with a moderation permission."
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "session.account.failed": {
+    "defaultMessage": "Dein Konto konnte nicht geladen werden",
+    "description": "Heading of the error in the account section of the settings when the signed-in account failed to load; the reason follows."
+  },
+  "session.account.retry": {
+    "defaultMessage": "Erneut versuchen",
+    "description": "Button that loads the signed-in account again after it failed to load."
+  },
+  "session.account.title": {
+    "defaultMessage": "Konto",
+    "description": "Heading of the section of the settings page about the signed-in account."
+  },
+  "session.sign_in": {
+    "defaultMessage": "Anmelden",
+    "description": "Link in the account section of the settings page that opens the sign-in page."
+  },
+  "session.sign_out": {
+    "defaultMessage": "Abmelden",
+    "description": "Button that signs the user out of the app in every tab."
+  },
+  "session.sign_out.failed": {
+    "defaultMessage": "Du bist hier abgemeldet, aber der Server war nicht erreichbar. Deine Sitzung wird möglicherweise fortgesetzt, wenn du die Seite neu lädst.",
+    "description": "Notice after signing out when the server could not be told; the browser may still hold the session."
+  },
+  "session.signed_out": {
+    "defaultMessage": "Du bist nicht angemeldet.",
+    "description": "Text in the account section of the settings page when nobody is signed in."
+  }
+}

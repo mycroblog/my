@@ -1,0 +1,82 @@
+{
+  "income.title": {
+    "defaultMessage": "Revenus",
+    "description": "Heading of the section of the income from the supporter plans on the finances page, the public page of the running costs, and the costs screen."
+  },
+  "income.public.no_balance": {
+    "defaultMessage": "Le solde n’est pas publié, car ce serveur ne publie pas ses coûts.",
+    "description": "Note in the income section of the public page of the running costs when the server publishes its income but not its costs, so the balance is not published."
+  },
+  "income.loading": {
+    "defaultMessage": "Chargement des revenus",
+    "description": "Accessible name of the progress indicator while the income totals load."
+  },
+  "income.failed": {
+    "defaultMessage": "Impossible de charger les revenus",
+    "description": "Heading shown in place of the income totals when they could not be loaded."
+  },
+  "income.retry": {
+    "defaultMessage": "Réessayer",
+    "description": "Button that tries again to load the income totals after a failure."
+  },
+  "income.totals.caption": {
+    "defaultMessage": "Revenus par {granularity}, {basis}",
+    "description": "Accessible caption of the table of the income totals: the chosen period kind and the way payments are counted."
+  },
+  "income.totals.gross": {
+    "defaultMessage": "Brut",
+    "description": "Column header and term of what the supporters paid before the payment provider's fees, on the costs screen only."
+  },
+  "income.totals.fee": {
+    "defaultMessage": "Frais",
+    "description": "Column header and term of the payment provider's fees, on the costs screen only."
+  },
+  "income.totals.net": {
+    "defaultMessage": "Revenus après frais",
+    "description": "Column header and term of the income after the payment provider's fees and the refunds."
+  },
+  "income.totals.balance": {
+    "defaultMessage": "Solde",
+    "description": "Column header of the balance: the income less the costs of the same period and currency."
+  },
+  "income.plans.title": {
+    "defaultMessage": "Membres de chaque formule",
+    "description": "Heading of the number of members of each supporter plan now, next to the income totals."
+  },
+  "income.plans.description": {
+    "defaultMessage": "Les membres actuels, et non ceux de chaque période. Les montants de chaque formule ne sont pas affichés.",
+    "description": "Explanation of the number of members of each supporter plan next to the income totals."
+  },
+  "income.plans.empty": {
+    "defaultMessage": "Aucune formule n’a de membres.",
+    "description": "What the list of the members of each plan says when no plan has members."
+  },
+  "income.plans.members": {
+    "defaultMessage": "{count, plural, one {# membre} other {# membres}}",
+    "description": "The number of members of a supporter plan now."
+  },
+  "income.rules.title": {
+    "defaultMessage": "Comment les revenus sont comptés",
+    "description": "Heading of the rules that date and place the payments in the income totals."
+  },
+  "income.rules.net": {
+    "defaultMessage": "Les revenus correspondent à ce que les soutiens ont payé, moins les frais du prestataire de paiement. Un remboursement ou une rétrofacturation est déduit sur la période où il survient.",
+    "description": "Rule of the income totals: what the income is."
+  },
+  "income.rules.provider": {
+    "defaultMessage": "{provider} date ses paiements selon le fuseau horaire {timeZone}.",
+    "description": "Rule of the income totals: the time zone in which a payment provider (such as stripe) dates its money movements (UTC, Asia/Tokyo)."
+  },
+  "income.rules.amortized": {
+    "defaultMessage": "Un paiement couvrant plus de {days} jours, comme une formule annuelle, est réparti par jour sur les jours qu’il couvre. Son remboursement déduit les jours précédents le jour du remboursement et annule les jours suivants. Les autres paiements sont comptés à leur date.",
+    "description": "Rule of the spread income totals. {days} is the number of days a payment must cover to be spread, such as 31."
+  },
+  "income.rules.cash": {
+    "defaultMessage": "Chaque paiement, remboursement et frais est compté à sa date.",
+    "description": "Rule of the income totals on the payment date."
+  },
+  "income.rules.balance": {
+    "defaultMessage": "Le solde correspond aux revenus moins les coûts de chaque devise, comptés de la même façon. Les devises ne sont jamais converties.",
+    "description": "Rule of the income totals: what the balance is."
+  }
+}

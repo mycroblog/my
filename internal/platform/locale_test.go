@@ -53,7 +53,7 @@ func TestDefaultLocaleAppliesWithoutRestart(t *testing.T) {
 	}
 	check("ja", nil)
 	check("en", map[string]string{"Accept-Language": "en-US"})
-	check("ja", map[string]string{"Accept-Language": "fr"})
+	check("ja", map[string]string{"Accept-Language": "it"})
 }
 
 // TestPseudoLocales checks that the pseudo-locales are selectable on the sign-in screen only

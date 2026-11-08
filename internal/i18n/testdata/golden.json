@@ -78,6 +78,32 @@
       "O recurso solicitado não foi encontrado.",
       "O servidor não está pronto para aceitar solicitações."
     ],
+    "de": [
+      "0 Konfigurationsfehler gefunden.",
+      "1 Konfigurationsfehler gefunden.",
+      "2 Konfigurationsfehler gefunden.",
+      "1.234 Konfigurationsfehler gefunden.",
+      "Die Einstellung MY_DATABASE hat einen ungültigen Wert.",
+      "Die erforderliche Einstellung MY_DATABASE_URL ist nicht gesetzt.",
+      "Die Anfrage ist ungültig.",
+      "Ein unerwarteter Fehler ist aufgetreten. Versuche es später erneut.",
+      "Die Methode DELETE ist für diese Ressource nicht erlaubt.",
+      "Die angeforderte Ressource wurde nicht gefunden.",
+      "Der Server ist noch nicht bereit, Anfragen anzunehmen."
+    ],
+    "fr": [
+      "0 erreur de configuration détectée.",
+      "1 erreur de configuration détectée.",
+      "2 erreurs de configuration détectées.",
+      "1 234 erreurs de configuration détectées.",
+      "Le paramètre MY_DATABASE a une valeur non valide.",
+      "Le paramètre obligatoire MY_DATABASE_URL n’est pas défini.",
+      "La requête n’est pas valide.",
+      "Une erreur inattendue s’est produite. Réessayez plus tard.",
+      "La méthode DELETE n’est pas autorisée pour cette ressource.",
+      "La ressource demandée est introuvable.",
+      "Le serveur n’est pas prêt à accepter des requêtes."
+    ],
     "en-XA": [
       "[Ƒǿǿŭŭƞḓ 0 ƈǿǿƞƒīɠŭŭřȧȧŧīǿǿƞ ḗḗřřǿǿřş.]",
       "[Ƒǿǿŭŭƞḓ 1 ƈǿǿƞƒīɠŭŭřȧȧŧīǿǿƞ ḗḗřřǿǿř.]",
@@ -121,6 +147,8 @@
     "共 1,234 則貼文，1,234.5",
     "1.000.000 de seguidores, 1.234,5",
     "1.234 publicações, 1.234,5",
+    "1.234 Beiträge, 1.234,5",
+    "0 publication, 1 234,5",
     "1 000 000 d’abonnés",
     "11 كثير"
   ],

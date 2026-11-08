@@ -1,0 +1,386 @@
+{
+  "supporter.title": {
+    "defaultMessage": "Formules de soutien",
+    "description": "Title of the user's page of the supporter plans, and its entry in the settings menu."
+  },
+  "supporter.app": {
+    "defaultMessage": "Cette page n’est pas disponible dans l’application.",
+    "description": "Shown in the mobile app instead of the supporter plans page."
+  },
+  "supporter.disabled": {
+    "defaultMessage": "Ce serveur ne propose pas de formules de soutien.",
+    "description": "Shown when the server offers no supporter plans."
+  },
+  "supporter.loading": {
+    "defaultMessage": "Chargement des formules de soutien",
+    "description": "Label of the spinner while the supporter plans load."
+  },
+  "supporter.failed": {
+    "defaultMessage": "Impossible de charger les formules de soutien",
+    "description": "Heading when the supporter plans could not load."
+  },
+  "supporter.retry": {
+    "defaultMessage": "Réessayer",
+    "description": "Button that loads the supporter plans again."
+  },
+  "supporter.return.canceled": {
+    "defaultMessage": "Vous avez quitté la page de paiement. Rien n’a été débité.",
+    "description": "Shown when the user left the payment page without paying."
+  },
+  "supporter.return.confirming": {
+    "defaultMessage": "Confirmation de votre paiement auprès du prestataire de paiement. Cela prend quelques secondes.",
+    "description": "Shown after the payment page returned, while the server waits for the payment provider's confirmation."
+  },
+  "supporter.return.started": {
+    "defaultMessage": "Merci pour votre soutien. Votre souscription est confirmée.",
+    "description": "Shown after the payment page returned and the subscription is confirmed."
+  },
+  "supporter.plans.title": {
+    "defaultMessage": "Choisir une formule",
+    "description": "Heading of the list of supporter plans to choose from."
+  },
+  "supporter.plans.description": {
+    "defaultMessage": "Une formule contribue au fonctionnement de ce serveur. Une formule supérieure inclut tout ce que proposent les inférieures. Vous ne pouvez souscrire qu’à une formule à la fois.",
+    "description": "Explanation above the supporter plans."
+  },
+  "supporter.plans.empty": {
+    "defaultMessage": "Aucune formule n’accepte de souscription pour le moment.",
+    "description": "Shown when no supporter plan takes subscriptions now."
+  },
+  "supporter.plans.plan": {
+    "defaultMessage": "Formule",
+    "description": "Label of the radio group of the plans."
+  },
+  "supporter.plans.interval": {
+    "defaultMessage": "Paiement",
+    "description": "Label of the radio group of monthly or yearly payment."
+  },
+  "supporter.plans.prices": {
+    "defaultMessage": "{monthly} ou {yearly}",
+    "description": "The monthly and the yearly prices of a plan. monthly and yearly are amounts per interval."
+  },
+  "supporter.per_month": {
+    "defaultMessage": "{amount} par mois",
+    "description": "An amount paid every month. amount is formatted money."
+  },
+  "supporter.per_year": {
+    "defaultMessage": "{amount} par an",
+    "description": "An amount paid every year. amount is formatted money."
+  },
+  "supporter.interval.month": {
+    "defaultMessage": "Mensuel",
+    "description": "Choice: pay every month."
+  },
+  "supporter.interval.year": {
+    "defaultMessage": "Annuel",
+    "description": "Choice: pay every year."
+  },
+  "supporter.ineligible.not_local": {
+    "defaultMessage": "Seuls les utilisateurs de ce serveur peuvent souscrire.",
+    "description": "Why the user cannot subscribe: the account is not of this server."
+  },
+  "supporter.ineligible.email_unverified": {
+    "defaultMessage": "Pour souscrire, vérifiez d’abord votre adresse e-mail avec le lien de l’e-mail que le serveur vous a envoyé.",
+    "description": "Why the user cannot subscribe: their primary email address is not verified."
+  },
+  "supporter.ineligible.restricted": {
+    "defaultMessage": "Votre compte ne peut pas souscrire tant qu’il est suspendu ou en cours de suppression.",
+    "description": "Why the user cannot subscribe: the account is suspended or being deleted."
+  },
+  "supporter.subscribe": {
+    "defaultMessage": "Souscrire",
+    "description": "Button that opens the final confirmation of a subscription."
+  },
+  "supporter.confirm.title": {
+    "defaultMessage": "Souscrire à {plan} ?",
+    "description": "Title of the final confirmation before the payment page. plan is the plan's name."
+  },
+  "supporter.confirm.description": {
+    "defaultMessage": "Vérifiez les conditions ci-dessous. Vous saisissez vos informations de paiement sur la page du prestataire de paiement, pas sur ce serveur.",
+    "description": "Explanation in the final confirmation before the payment page."
+  },
+  "supporter.confirm.plan": {
+    "defaultMessage": "Formule",
+    "description": "Term: the plan in the final confirmation."
+  },
+  "supporter.confirm.amount": {
+    "defaultMessage": "Montant",
+    "description": "Term: the amount in the final confirmation."
+  },
+  "supporter.confirm.amount.value": {
+    "defaultMessage": "{price}, identique à chaque renouvellement",
+    "description": "The amount of the subscription. price is an amount per interval."
+  },
+  "supporter.confirm.payments": {
+    "defaultMessage": "Paiements",
+    "description": "Term: when the payments are made."
+  },
+  "supporter.confirm.payments.value": {
+    "defaultMessage": "{interval, select, year {Maintenant, puis chaque année} other {Maintenant, puis chaque mois}}",
+    "description": "When the payments of a subscription are made."
+  },
+  "supporter.confirm.benefits": {
+    "defaultMessage": "Avantages",
+    "description": "Term: when the benefits start."
+  },
+  "supporter.confirm.benefits.value": {
+    "defaultMessage": "Ils commencent dès la confirmation du paiement",
+    "description": "When the benefits of a plan start."
+  },
+  "supporter.confirm.cancel": {
+    "defaultMessage": "Résiliation",
+    "description": "Term: how to cancel."
+  },
+  "supporter.confirm.cancel.value": {
+    "defaultMessage": "Résiliez à tout moment sur cette page. Les avantages restent acquis jusqu’à la fin de la période payée, et aucun autre paiement n’est effectué.",
+    "description": "How to cancel a subscription and what it does."
+  },
+  "supporter.confirm.go": {
+    "defaultMessage": "Passer au paiement",
+    "description": "Button that goes to the payment provider's page."
+  },
+  "supporter.confirm.failed": {
+    "defaultMessage": "Impossible d’ouvrir la page de paiement : {reason}",
+    "description": "Why the payment page could not open."
+  },
+  "supporter.commerce": {
+    "defaultMessage": "Mentions légales commerciales",
+    "description": "Link to the server's page of commerce disclosures."
+  },
+  "supporter.cancel": {
+    "defaultMessage": "Annuler",
+    "description": "Button that closes a dialog of the supporter plans without doing anything."
+  },
+  "supporter.subscription.title": {
+    "defaultMessage": "Votre souscription",
+    "description": "Heading of the user's subscription."
+  },
+  "supporter.subscription.plan": {
+    "defaultMessage": "Formule",
+    "description": "Term: the plan of the subscription."
+  },
+  "supporter.subscription.state": {
+    "defaultMessage": "État",
+    "description": "Term: the state of the subscription."
+  },
+  "supporter.subscription.price": {
+    "defaultMessage": "Prix",
+    "description": "Term: what the subscription renews at."
+  },
+  "supporter.subscription.renews_at": {
+    "defaultMessage": "Renouvelée le",
+    "description": "Term: when the subscription renews."
+  },
+  "supporter.subscription.ends_at": {
+    "defaultMessage": "Se termine le",
+    "description": "Term: when a cancelled subscription ends."
+  },
+  "supporter.subscription.grace_ends_at": {
+    "defaultMessage": "Fin des avantages le",
+    "description": "Term: when a subscription whose payment failed loses its benefits."
+  },
+  "supporter.subscription.scheduled": {
+    "defaultMessage": "Changement programmé",
+    "description": "Term: a change that waits for the end of the period."
+  },
+  "supporter.subscription.scheduled.value": {
+    "defaultMessage": "Vers {plan} à {price} le {date}",
+    "description": "The scheduled change. plan is the new plan's name, price an amount per interval, date a formatted date and time."
+  },
+  "supporter.state.pending": {
+    "defaultMessage": "En attente de paiement",
+    "description": "State of a subscription: started, not paid yet."
+  },
+  "supporter.state.active": {
+    "defaultMessage": "Active",
+    "description": "State of a subscription: paid."
+  },
+  "supporter.state.canceling": {
+    "defaultMessage": "Résiliée à la fin de la période",
+    "description": "State of a subscription: cancelled at the end of the period."
+  },
+  "supporter.state.past_due": {
+    "defaultMessage": "Paiement échoué",
+    "description": "State of a subscription: a payment failed recently."
+  },
+  "supporter.state.lapsed": {
+    "defaultMessage": "Suspendue, paiement en retard",
+    "description": "State of a subscription: a payment failed long ago, the benefits are paused."
+  },
+  "supporter.state.expired": {
+    "defaultMessage": "Terminée",
+    "description": "State of a subscription: ended."
+  },
+  "supporter.state.revoked": {
+    "defaultMessage": "Remboursée",
+    "description": "State of a subscription: refunded."
+  },
+  "supporter.state.abandoned": {
+    "defaultMessage": "Non finalisée",
+    "description": "State of a subscription: ended before its first payment."
+  },
+  "supporter.note.pending": {
+    "defaultMessage": "Le paiement n’est pas encore terminé. Passez à la page de paiement pour finaliser la souscription.",
+    "description": "Note on a subscription that waits for its first payment."
+  },
+  "supporter.note.canceling": {
+    "defaultMessage": "Votre souscription se termine à la fin de la période, et les avantages restent acquis jusque-là. Reprenez-la pour la conserver.",
+    "description": "Note on a cancelled subscription."
+  },
+  "supporter.note.past_due": {
+    "defaultMessage": "Un paiement a échoué. Mettez à jour votre moyen de paiement avant la fin des avantages.",
+    "description": "Note on a subscription whose payment failed recently."
+  },
+  "supporter.note.lapsed": {
+    "defaultMessage": "Les avantages sont suspendus car un paiement est en retard. Mettez à jour votre moyen de paiement, ou résiliez la souscription.",
+    "description": "Note on a subscription whose payment failed long ago."
+  },
+  "supporter.continue_checkout": {
+    "defaultMessage": "Continuer vers le paiement",
+    "description": "Button that goes to the payment page of a subscription waiting for payment."
+  },
+  "supporter.resume": {
+    "defaultMessage": "Reprendre la souscription",
+    "description": "Button that withdraws the cancellation of a subscription."
+  },
+  "supporter.unschedule": {
+    "defaultMessage": "Annuler le changement programmé",
+    "description": "Button that withdraws a scheduled change of plan."
+  },
+  "supporter.portal": {
+    "defaultMessage": "Moyens de paiement et factures",
+    "description": "Button that opens the payment provider's page of payment methods and invoices."
+  },
+  "supporter.portal.failed": {
+    "defaultMessage": "Impossible d’ouvrir la page des moyens de paiement : {reason}",
+    "description": "Why the payment provider's page could not open."
+  },
+  "supporter.command.failed": {
+    "defaultMessage": "Impossible de modifier la souscription : {reason}",
+    "description": "Why a change of the subscription failed."
+  },
+  "supporter.cancel_subscription": {
+    "defaultMessage": "Résilier la souscription",
+    "description": "Button that cancels the subscription at the end of the period."
+  },
+  "supporter.cancel_subscription.title": {
+    "defaultMessage": "Résilier {plan} ?",
+    "description": "Title of the dialog that confirms cancelling. plan is the plan's name."
+  },
+  "supporter.cancel_subscription.description": {
+    "defaultMessage": "La souscription se termine à la fin de la période payée, et les avantages restent acquis jusque-là. Aucun autre paiement n’est effectué. Vous pouvez la reprendre avant la fin de la période.",
+    "description": "What cancelling does."
+  },
+  "supporter.keep": {
+    "defaultMessage": "Conserver la souscription",
+    "description": "Button that closes the cancel dialog and keeps the subscription."
+  },
+  "supporter.subscription.changed": {
+    "defaultMessage": "Formule modifiée.",
+    "description": "Announced when the plan was changed."
+  },
+  "supporter.subscription.canceled": {
+    "defaultMessage": "Souscription résiliée à la fin de la période.",
+    "description": "Announced when the subscription was cancelled."
+  },
+  "supporter.subscription.resumed": {
+    "defaultMessage": "Souscription reprise.",
+    "description": "Announced when the cancellation was withdrawn."
+  },
+  "supporter.subscription.unscheduled": {
+    "defaultMessage": "Changement programmé annulé.",
+    "description": "Announced when the scheduled change was withdrawn."
+  },
+  "supporter.change.title": {
+    "defaultMessage": "Changer de formule",
+    "description": "Heading of the section that changes the plan."
+  },
+  "supporter.change.description": {
+    "defaultMessage": "Une formule supérieure ou un paiement annuel commence une fois la différence pour le reste de la période réglée, ce qui est débité immédiatement. Une formule inférieure ou un paiement mensuel commence à la fin de la période.",
+    "description": "How changes of plan apply."
+  },
+  "supporter.change.price_kept": {
+    "defaultMessage": "Vous payez actuellement {price}, un ancien tarif. Après un changement, vous paierez le tarif actuel de la nouvelle formule, même si vous revenez à cette formule.",
+    "description": "Note that a change loses the lower price the user pays now. price is formatted money."
+  },
+  "supporter.change": {
+    "defaultMessage": "Changer de formule",
+    "description": "Button that changes the plan."
+  },
+  "supporter.change.confirm": {
+    "defaultMessage": "Passer à {plan} ?",
+    "description": "Title of the dialog that confirms a change. plan is the new plan's name."
+  },
+  "supporter.change.now": {
+    "defaultMessage": "La différence pour le reste de la période est débitée maintenant, et le changement commence une fois le paiement effectué.",
+    "description": "A change that applies at once."
+  },
+  "supporter.change.period_end": {
+    "defaultMessage": "Le changement commence à la fin de la période. D’ici là, vous conservez votre formule actuelle, et vous pouvez annuler le changement.",
+    "description": "A change that applies at the end of the period."
+  },
+  "supporter.change.rules": {
+    "defaultMessage": "Une formule supérieure ou un paiement annuel commence une fois la différence, débitée immédiatement, réglée ; une formule inférieure ou un paiement mensuel commence à la fin de la période.",
+    "description": "A change whose timing the page cannot tell."
+  },
+  "supporter.change.unchanged": {
+    "defaultMessage": "Choisissez une autre formule ou une autre périodicité de paiement pour changer.",
+    "description": "Why the change button is disabled."
+  },
+  "supporter.error.ineligible": {
+    "defaultMessage": "Votre compte ne peut pas souscrire.",
+    "description": "Problem: the user cannot subscribe."
+  },
+  "supporter.error.subscribed": {
+    "defaultMessage": "Vous avez déjà une souscription. Changez plutôt sa formule.",
+    "description": "Problem: the user has a subscription already."
+  },
+  "supporter.error.plan_unavailable": {
+    "defaultMessage": "Cette formule n’accepte pas de souscription pour le moment.",
+    "description": "Problem: the plan takes no subscriptions."
+  },
+  "supporter.error.state": {
+    "defaultMessage": "L’état de la souscription ne permet pas cette action pour le moment. Rechargez la page.",
+    "description": "Problem: the subscription's state does not allow the change."
+  },
+  "supporter.error.same_plan": {
+    "defaultMessage": "Il s’agit de votre formule et de votre périodicité de paiement actuelles.",
+    "description": "Problem: the change chose the current plan and interval."
+  },
+  "supporter.error.payment_failed": {
+    "defaultMessage": "Le paiement a échoué, votre formule n’a donc pas changé. Rien n’a été débité. Mettez à jour votre carte et réessayez. Une carte qui demande une authentification à chaque paiement ne peut pas régler un changement.",
+    "description": "Problem: the payment of the change failed; the page offers the way to update the card."
+  },
+  "supporter.error.payment_processing": {
+    "defaultMessage": "Le paiement est encore en cours de traitement, votre formule n’a donc pas encore changé. Elle changera si le paiement aboutit.",
+    "description": "Problem: the payment of the change has not settled."
+  },
+  "supporter.error.ended": {
+    "defaultMessage": "La souscription est terminée.",
+    "description": "Problem: the subscription has ended."
+  },
+  "supporter.listing.title": {
+    "defaultMessage": "Liste des soutiens",
+    "description": "Heading of the choice to be on the supporter list."
+  },
+  "supporter.listing.description": {
+    "defaultMessage": "La liste des soutiens affiche votre avatar, votre nom et votre identifiant sous votre formule, jamais un montant ni une date. Personne n’y figure tant qu’il ne l’a pas choisi, et votre choix prend fin avec votre souscription.",
+    "description": "What the supporter list shows of the user."
+  },
+  "supporter.listing.switch": {
+    "defaultMessage": "Me faire figurer dans la liste des soutiens",
+    "description": "Switch that lists the user on the supporter list."
+  },
+  "supporter.listing.listed": {
+    "defaultMessage": "Vous figurez dans la liste des soutiens.",
+    "description": "Announced when the user is listed."
+  },
+  "supporter.listing.unlisted": {
+    "defaultMessage": "Vous ne figurez plus dans la liste des soutiens.",
+    "description": "Announced when the user is taken off the list."
+  },
+  "supporter.listing.failed": {
+    "defaultMessage": "Impossible d’enregistrer le choix : {reason}",
+    "description": "Why the choice was not saved."
+  }
+}

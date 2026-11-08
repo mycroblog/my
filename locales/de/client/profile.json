@@ -1,0 +1,282 @@
+{
+  "profile.change_failed": {
+    "defaultMessage": "Deine Beziehung zum Konto konnte nicht geändert werden: {reason}",
+    "description": "Toast when following, blocking, muting or undoing one of them failed. {reason} is the error message."
+  },
+  "profile.confirm.block.action": {
+    "defaultMessage": "Blockieren",
+    "description": "Button of the dialog that blocks the account."
+  },
+  "profile.confirm.block.body": {
+    "defaultMessage": "Ihr folgt einander nicht mehr, und keiner von euch kann dem anderen folgen, bis du die Blockierung aufhebst.",
+    "description": "Text of the dialog that confirms blocking: what a block does."
+  },
+  "profile.confirm.block.title": {
+    "defaultMessage": "{name} blockieren?",
+    "description": "Title of the dialog that confirms blocking. {name} is the account's display name."
+  },
+  "profile.confirm.cancel": {
+    "defaultMessage": "Abbrechen",
+    "description": "Button of a confirmation dialog on a profile that closes it and changes nothing."
+  },
+  "profile.confirm.unblock.action": {
+    "defaultMessage": "Blockierung aufheben",
+    "description": "Button of the dialog that unblocks the account."
+  },
+  "profile.confirm.unblock.body": {
+    "defaultMessage": "Die Follows, die die Blockierung beendet hat, kommen nicht zurück.",
+    "description": "Text of the dialog that confirms unblocking."
+  },
+  "profile.confirm.unblock.title": {
+    "defaultMessage": "Blockierung von {name} aufheben?",
+    "description": "Title of the dialog that confirms unblocking. {name} is the account's display name."
+  },
+  "profile.confirm.unfollow.action": {
+    "defaultMessage": "Entfolgen",
+    "description": "Button of the dialog that unfollows the account."
+  },
+  "profile.confirm.unfollow.body": {
+    "defaultMessage": "Die Beiträge erscheinen nicht mehr in deiner Home-Timeline.",
+    "description": "Text of the dialog that confirms unfollowing."
+  },
+  "profile.confirm.unfollow.title": {
+    "defaultMessage": "{name} entfolgen?",
+    "description": "Title of the dialog that confirms unfollowing. {name} is the account's display name."
+  },
+  "profile.confirm.withdraw.action": {
+    "defaultMessage": "Anfrage zurückziehen",
+    "description": "Button of the dialog that withdraws the follow request."
+  },
+  "profile.confirm.withdraw.body": {
+    "defaultMessage": "Du kannst später eine neue Anfrage senden.",
+    "description": "Text of the dialog that confirms withdrawing a follow request."
+  },
+  "profile.confirm.withdraw.title": {
+    "defaultMessage": "Deine Folgeanfrage an {name} zurückziehen?",
+    "description": "Title of the dialog that confirms withdrawing a pending follow request. {name} is the account's display name."
+  },
+  "profile.done.blocked": {
+    "defaultMessage": "Du hast {name} blockiert.",
+    "description": "Announced to screen readers when blocking succeeded. {name} is the account's display name."
+  },
+  "profile.done.followed": {
+    "defaultMessage": "Du folgst jetzt {name}.",
+    "description": "Announced to screen readers when following succeeded. {name} is the account's display name."
+  },
+  "profile.done.muted": {
+    "defaultMessage": "Du hast {name} stummgeschaltet.",
+    "description": "Announced to screen readers when muting succeeded. {name} is the account's display name."
+  },
+  "profile.done.requested": {
+    "defaultMessage": "Folgeanfrage an {name} gesendet.",
+    "description": "Announced to screen readers when a follow request was sent. {name} is the account's display name."
+  },
+  "profile.done.subscribed": {
+    "defaultMessage": "Du wirst über neue Beiträge von {name} benachrichtigt.",
+    "description": "Announced to screen readers when turning on the notifications of an account's new posts succeeded. {name} is the account's display name."
+  },
+  "profile.done.unblocked": {
+    "defaultMessage": "Du hast die Blockierung von {name} aufgehoben.",
+    "description": "Announced to screen readers when unblocking succeeded. {name} is the account's display name."
+  },
+  "profile.done.unfollowed": {
+    "defaultMessage": "Du folgst {name} nicht mehr.",
+    "description": "Announced to screen readers when unfollowing or withdrawing a request succeeded. {name} is the account's display name."
+  },
+  "profile.done.unmuted": {
+    "defaultMessage": "Du hast die Stummschaltung von {name} aufgehoben.",
+    "description": "Announced to screen readers when unmuting succeeded. {name} is the account's display name."
+  },
+  "profile.done.unsubscribed": {
+    "defaultMessage": "Du wirst nicht mehr über neue Beiträge von {name} benachrichtigt.",
+    "description": "Announced to screen readers when turning off the notifications of an account's new posts succeeded. {name} is the account's display name."
+  },
+  "profile.edit": {
+    "defaultMessage": "Profil bearbeiten",
+    "description": "Link on the user's own profile to the settings where they edit it."
+  },
+  "profile.follow": {
+    "defaultMessage": "Folgen",
+    "description": "Button on a profile that follows the account."
+  },
+  "profile.follow.back": {
+    "defaultMessage": "Zurückfolgen",
+    "description": "Button on a profile of an account that follows the user, which follows it in turn."
+  },
+  "profile.follow.blocked": {
+    "defaultMessage": "Blockiert",
+    "description": "Button on a profile of an account the user blocks; pressing it offers to unblock."
+  },
+  "profile.follow.following": {
+    "defaultMessage": "Gefolgt",
+    "description": "Button on a profile of an account the user follows; pressing it offers to unfollow."
+  },
+  "profile.follow.pending_remote": {
+    "defaultMessage": "Warte darauf, dass {host} deine Folgeanfrage annimmt.",
+    "description": "Shown under the follow button of an account on another server while the user's follow request awaits that server's answer. {host} is the server's host name."
+  },
+  "profile.follow.federation_restricted": {
+    "defaultMessage": "Dieser Server folgt derzeit keinen Konten anderer Server.",
+    "description": "Shown in place of the follow button on the profile of an account of another server while this server does not follow other servers (federation direction 'Send only' or 'Off', ADR-0006)."
+  },
+  "profile.follow.request": {
+    "defaultMessage": "Folgen anfragen",
+    "description": "Button on a profile of an account that approves its followers: it sends a follow request."
+  },
+  "profile.follow.requested": {
+    "defaultMessage": "Angefragt",
+    "description": "Button on a profile while the user's follow request awaits approval; pressing it offers to withdraw the request."
+  },
+  "profile.followers.empty": {
+    "defaultMessage": "Noch keine Follower",
+    "description": "Shown instead of the list of followers when there are none."
+  },
+  "profile.followers.title": {
+    "defaultMessage": "Follower von {name}",
+    "description": "Heading and document title of the list of an account's followers. {name} is the account's display name."
+  },
+  "profile.followers_count": {
+    "defaultMessage": "{count, plural, one {# Follower} other {# Follower}}",
+    "description": "Link on a profile to the accounts that follow it, with their number."
+  },
+  "profile.following.empty": {
+    "defaultMessage": "Folgt noch niemandem",
+    "description": "Shown instead of the list of followed accounts when there are none."
+  },
+  "profile.following.title": {
+    "defaultMessage": "Konten, denen {name} folgt",
+    "description": "Heading and document title of the list of the accounts an account follows. {name} is the account's display name."
+  },
+  "profile.following_count": {
+    "defaultMessage": "{count, plural, one {# Gefolgte} other {# Gefolgte}}",
+    "description": "Link on a profile to the accounts it follows, with their number."
+  },
+  "profile.joined": {
+    "defaultMessage": "Beigetreten am {date}",
+    "description": "When the account was created, on its profile. {date} is the formatted date, for example 'October 1, 2026'."
+  },
+  "profile.badges": {
+    "defaultMessage": "Abzeichen",
+    "description": "Accessible name of the list of the role badges on a profile (ADR-0070)."
+  },
+  "profile.list.back": {
+    "defaultMessage": "Zurück zum Profil von {name}",
+    "description": "Link from a follow list to the account's profile. {name} is the account's display name."
+  },
+  "profile.list.load_more": {
+    "defaultMessage": "Mehr anzeigen",
+    "description": "Button at the end of a follow list that loads the next accounts."
+  },
+  "profile.list.load_more_failed": {
+    "defaultMessage": "Weitere Konten konnten nicht geladen werden: {reason}",
+    "description": "Shown and announced when the next page of a follow list failed to load. {reason} is the error message."
+  },
+  "profile.list.load_more.failed.heading": {
+    "defaultMessage": "Weitere Konten konnten nicht geladen werden",
+    "description": "Heading of the error shown at the end of a follow list when the next accounts failed to load, above the reason and the button to try again."
+  },
+  "profile.list.loading": {
+    "defaultMessage": "Konten werden geladen",
+    "description": "Visually hidden text that names the busy follow list while its first page loads."
+  },
+  "profile.list.retry": {
+    "defaultMessage": "Erneut versuchen",
+    "description": "Button at the end of a follow list after the next accounts failed to load."
+  },
+  "profile.menu.block": {
+    "defaultMessage": "Blockieren",
+    "description": "Menu item that asks to block the account of the profile."
+  },
+  "profile.menu.mute": {
+    "defaultMessage": "Stummschalten",
+    "description": "Menu item that mutes the account of the profile."
+  },
+  "profile.menu.unblock": {
+    "defaultMessage": "Blockierung aufheben",
+    "description": "Menu item that asks to unblock the account of the profile."
+  },
+  "profile.menu.unmute": {
+    "defaultMessage": "Stummschaltung aufheben",
+    "description": "Menu item that ends the mute of the account of the profile."
+  },
+  "profile.more": {
+    "defaultMessage": "Weitere Aktionen für {name}",
+    "description": "Accessible name of the menu button with mute and block on a profile. {name} is the account's display name."
+  },
+  "profile.not_found.body": {
+    "defaultMessage": "Kein Konto hat diese Adresse, oder es ist für dich nicht verfügbar.",
+    "description": "Text below the heading of a profile that was not found."
+  },
+  "profile.not_found.title": {
+    "defaultMessage": "Konto nicht gefunden",
+    "description": "Heading and document title of a profile address that names no account the user may see."
+  },
+  "profile.relationship_failed": {
+    "defaultMessage": "Es konnte nicht geladen werden, ob du diesem Konto folgst: {reason}",
+    "description": "Shown on a profile instead of the follow button when the relationship failed to load. {reason} is the error message."
+  },
+  "profile.remote.fetching": {
+    "defaultMessage": "Die neuesten Beiträge werden vom Ursprungsserver abgerufen.",
+    "description": "Shown above the posts of a profile of an account of another server while this server fetches its recent posts from that server; the posts are read again a few seconds later."
+  },
+  "profile.remote.notice": {
+    "defaultMessage": "Es werden nur die Beiträge angezeigt, die dieser Server empfangen hat.",
+    "description": "Shown above the posts of a profile of an account of another server, and in the empty state of its posts: this server lists only the posts it has received, which may not be all of them."
+  },
+  "profile.remote.original": {
+    "defaultMessage": "Auf {host} ansehen",
+    "description": "Link next to the notice above the posts of a profile of an account of another server, to its profile page on that server. {host} is that server's host name, for example 'mastodon.social'."
+  },
+  "profile.sign_in_to_follow": {
+    "defaultMessage": "Zum Folgen anmelden",
+    "description": "Link on a profile when nobody is signed in: it opens the sign-in page and comes back."
+  },
+  "profile.subscribe": {
+    "defaultMessage": "Über neue Beiträge benachrichtigen",
+    "description": "Name and tooltip of the bell toggle button on a profile: while it is on, each new post of the account is a notification. The name stays the same on and off."
+  },
+  "profile.subscribe.follow_first": {
+    "defaultMessage": "Folge diesem Konto, um über seine neuen Beiträge benachrichtigt zu werden.",
+    "description": "Shown under the turned-off bell button on the profile of an account of another server that the user does not follow: the user must follow it before its new posts can be notified."
+  },
+  "profile.tab.no_boosts": {
+    "defaultMessage": "Ohne Boosts",
+    "description": "Tab of a profile: only the posts the account wrote itself, without replies and boosts."
+  },
+  "profile.tab.posts": {
+    "defaultMessage": "Beiträge",
+    "description": "Tab of a profile: the account's posts and boosts, without its replies."
+  },
+  "profile.tab.replies": {
+    "defaultMessage": "Beiträge und Antworten",
+    "description": "Tab of a profile: the account's posts, boosts and replies."
+  },
+  "profile.tabs": {
+    "defaultMessage": "Beiträge von {name}",
+    "description": "Accessible name of the tab list that switches between the posts of a profile. {name} is the account's display name."
+  },
+  "profile.tag.bot": {
+    "defaultMessage": "Bot",
+    "description": "Label on a profile: the account is automated."
+  },
+  "profile.tag.follows_you": {
+    "defaultMessage": "Folgt dir",
+    "description": "Label on a profile: the account follows the user."
+  },
+  "profile.tag.locked": {
+    "defaultMessage": "Genehmigt Follower",
+    "description": "Label on a profile: the account approves each follow request."
+  },
+  "profile.tag.muted": {
+    "defaultMessage": "Stummgeschaltet",
+    "description": "Label on a profile: the user mutes the account."
+  },
+  "profile.tag.requested_you": {
+    "defaultMessage": "Möchte dir folgen",
+    "description": "Label on a profile: the account has asked to follow the user and awaits approval."
+  },
+  "profile.title": {
+    "defaultMessage": "Profil",
+    "description": "Heading and document title of the signed-in user's own profile page."
+  }
+}

@@ -1,0 +1,118 @@
+{
+  "admin.reports.category.legal": {
+    "defaultMessage": "Rechtswidriger Inhalt",
+    "description": "Category of a report, and of the reason of an account action: content against the law."
+  },
+  "admin.reports.category.other": {
+    "defaultMessage": "Etwas anderes",
+    "description": "Category of a report, and of the reason of an account action: other."
+  },
+  "admin.reports.category.spam": {
+    "defaultMessage": "Spam",
+    "description": "Category of a report, and of the reason of an account action: spam."
+  },
+  "admin.reports.category.violation": {
+    "defaultMessage": "Verstößt gegen die Serverregeln",
+    "description": "Category of a report, and of the reason of an account action: a rule violation."
+  },
+  "admin.reports.column.report": {
+    "defaultMessage": "Meldung",
+    "description": "Header of the column of the reports table that names the reported account and links to the report."
+  },
+  "admin.reports.column.waiting": {
+    "defaultMessage": "Wartezeit",
+    "description": "Header of the column of the open reports' queue with how long each report has waited since it was filed."
+  },
+  "admin.reports.empty.filtered": {
+    "defaultMessage": "Keine Meldungen entsprechen diesen Filtern",
+    "description": "Empty state of the report queue when a category or an assignee filter is chosen."
+  },
+  "admin.reports.empty.open": {
+    "defaultMessage": "Keine offenen Meldungen",
+    "description": "Empty state of the open reports."
+  },
+  "admin.reports.empty.open.description": {
+    "defaultMessage": "Meldungen von Personen auf diesem und auf anderen Servern erscheinen hier.",
+    "description": "Description of the empty state of the open reports."
+  },
+  "admin.reports.empty.resolved": {
+    "defaultMessage": "Keine erledigten Meldungen",
+    "description": "Empty state of the resolved reports."
+  },
+  "admin.reports.filter.assignee": {
+    "defaultMessage": "Zuständig",
+    "description": "Accessible name of the filter of the report queue by who handles the report."
+  },
+  "admin.reports.filter.assignee.all": {
+    "defaultMessage": "Alle",
+    "description": "Option of the assignee filter of the report queue that keeps every report."
+  },
+  "admin.reports.filter.assignee.me": {
+    "defaultMessage": "Mir zugewiesen",
+    "description": "Option of the assignee filter of the report queue: the reports the viewer handles."
+  },
+  "admin.reports.filter.assignee.none": {
+    "defaultMessage": "Nicht zugewiesen",
+    "description": "Option of the assignee filter of the report queue: the reports nobody handles."
+  },
+  "admin.reports.filter.category": {
+    "defaultMessage": "Kategorie",
+    "description": "Accessible name of the filter of the report queue by the report's category."
+  },
+  "admin.reports.filter.category.all": {
+    "defaultMessage": "Alle Kategorien",
+    "description": "Option of the category filter of the report queue that keeps every category."
+  },
+  "admin.reports.filter.label": {
+    "defaultMessage": "Meldungen",
+    "description": "Accessible name of the tabs of the report queue."
+  },
+  "admin.reports.filter.open": {
+    "defaultMessage": "Offen",
+    "description": "Tab of the reports that await the moderators, and that state of a report."
+  },
+  "admin.reports.filter.order": {
+    "defaultMessage": "Reihenfolge",
+    "description": "Accessible name of the choice of the order of the report queue."
+  },
+  "admin.reports.filter.order.newest": {
+    "defaultMessage": "Neueste zuerst",
+    "description": "Order of the report queue: the most recently filed report first."
+  },
+  "admin.reports.filter.order.oldest": {
+    "defaultMessage": "Älteste zuerst",
+    "description": "Order of the report queue: the report that has waited longest first."
+  },
+  "admin.reports.filter.resolved": {
+    "defaultMessage": "Erledigt",
+    "description": "Tab of the handled reports, and that state of a report."
+  },
+  "admin.reports.outcome.actioned": {
+    "defaultMessage": "Maßnahme ergriffen",
+    "description": "Outcome of a report: a moderator took an action on the target."
+  },
+  "admin.reports.outcome.dismissed": {
+    "defaultMessage": "Keine Maßnahme",
+    "description": "Outcome of a report: there was nothing to act on."
+  },
+  "admin.reports.summary": {
+    "defaultMessage": "Meldungen von Konten und Beiträgen an die Moderation und ihre Bearbeitung.",
+    "description": "Description of the report queue in the administration menu of the settings."
+  },
+  "admin.reports.title": {
+    "defaultMessage": "Meldungen",
+    "description": "Heading and title of the report queue."
+  },
+  "admin.reports.wait.days": {
+    "defaultMessage": "{count, plural, one {Wartet seit # Tag} other {Wartet seit # Tagen}}",
+    "description": "Badge of an item of a queue (a report): how long it has waited, in whole days."
+  },
+  "admin.reports.wait.hours": {
+    "defaultMessage": "{count, plural, one {Wartet seit # Std.} other {Wartet seit # Std.}}",
+    "description": "Badge of an item of a queue (a report): how long it has waited, in whole hours."
+  },
+  "admin.reports.wait.minutes": {
+    "defaultMessage": "{count, plural, one {Wartet seit # Min.} other {Wartet seit # Min.}}",
+    "description": "Badge of an item of a queue (a report): how long it has waited, in whole minutes."
+  }
+}

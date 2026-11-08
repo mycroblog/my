@@ -1,0 +1,130 @@
+{
+  "search.description": {
+    "defaultMessage": "Gib @benutzername@server oder die Adresse eines Profils ein, auf diesem oder einem anderen Server.",
+    "description": "Help text under the search field for a signed-in user, who can find accounts on any server."
+  },
+  "search.description_signed_out": {
+    "defaultMessage": "Gib @benutzername@server oder die Adresse eines Profils ein. Es werden nur Konten gefunden, die dieser Server bereits kennt.",
+    "description": "Help text under the search field while nobody is signed in: the server does not fetch unknown accounts from other servers."
+  },
+  "search.description_known_only": {
+    "defaultMessage": "Gib @benutzername@server oder die Adresse eines Profils ein. Dieser Server sucht derzeit keine Konten anderer Server, daher werden nur Konten gefunden, die er bereits kennt.",
+    "description": "Help text of the account search field while this server does not look up accounts of other servers (federation direction 'Send only' or 'Off', ADR-0006)."
+  },
+  "search.failed": {
+    "defaultMessage": "Die Kontosuche ist fehlgeschlagen: {reason}",
+    "description": "Error under the search field when the search failed for another reason. {reason} is the localized reason."
+  },
+  "search.label": {
+    "defaultMessage": "Handle oder URL",
+    "description": "Label of the search field, which takes an account's handle (@username@server) or the address of its profile."
+  },
+  "search.not_found": {
+    "defaultMessage": "Kein Konto gefunden. Prüfe das Handle oder die Adresse.",
+    "description": "Error under the search field when neither this server nor the account's server knows the account."
+  },
+  "search.not_found_signed_out": {
+    "defaultMessage": "Dieser Server kennt das Konto nicht. Melde dich an, um es auf seinem eigenen Server nachzuschlagen.",
+    "description": "Error under the search field when nobody is signed in and this server does not know the account."
+  },
+  "search.not_found_known_only": {
+    "defaultMessage": "Dieser Server kennt das Konto nicht und sucht derzeit keine Konten anderer Server.",
+    "description": "Error of the account search when this server does not know the account and does not look up accounts of other servers (federation direction 'Send only' or 'Off', ADR-0006)."
+  },
+  "search.rate_limited": {
+    "defaultMessage": "Zu viele Suchanfragen. Versuche es in einigen Minuten erneut.",
+    "description": "Error under the search field when the server limits how often the user can look up accounts on other servers."
+  },
+  "search.required": {
+    "defaultMessage": "Gib ein Handle oder eine URL ein.",
+    "description": "Error under the search field when it is sent empty."
+  },
+  "search.sign_in": {
+    "defaultMessage": "Melde dich an, um Konten auf anderen Servern zu finden",
+    "description": "Link on the search page while nobody is signed in; it signs in and comes back to the search."
+  },
+  "search.submit": {
+    "defaultMessage": "Suchen",
+    "description": "Button that sends the search for an account."
+  },
+  "search.title": {
+    "defaultMessage": "Suche",
+    "description": "Heading and document title of the page that finds an account by its handle or URL."
+  },
+  "search.results": {
+    "defaultMessage": "Konten",
+    "description": "Heading of the accounts found by name while their count is not known yet."
+  },
+  "search.results.title": {
+    "defaultMessage": "Konten ({count})",
+    "description": "Heading of the accounts found by name, with their count."
+  },
+  "search.results.count": {
+    "defaultMessage": "{count, plural, =0 {Keine Konten gefunden} one {# Konto gefunden} other {# Konten gefunden}}",
+    "description": "Read by screen readers when the accounts found by name change."
+  },
+  "search.results.none": {
+    "defaultMessage": "Kein Konto gefunden. Für jemanden auf einem anderen Server gib @benutzer@host ein.",
+    "description": "Shown when no account matches the typed name."
+  },
+  "search.results.failed": {
+    "defaultMessage": "Die Konten konnten nicht durchsucht werden: {reason}",
+    "description": "Shown when the search by name fails. {reason} is the error."
+  },
+  "search.tabs": {
+    "defaultMessage": "Wonach suchen",
+    "description": "Label of the tabs of the search page, on a server with the search of posts: accounts or posts."
+  },
+  "search.tabs.accounts": {
+    "defaultMessage": "Konten",
+    "description": "Tab of the search page that finds accounts."
+  },
+  "search.tabs.posts": {
+    "defaultMessage": "Beiträge",
+    "description": "Tab of the search page that finds posts by their words."
+  },
+  "search.posts.label": {
+    "defaultMessage": "Suchbegriffe",
+    "description": "Label of the field that takes the words of the search of posts."
+  },
+  "search.posts.description": {
+    "defaultMessage": "Findet die Beiträge, die alle diese Wörter enthalten, die neuesten zuerst.",
+    "description": "Help text under the field of the search of posts."
+  },
+  "search.posts.required": {
+    "defaultMessage": "Gib die Suchbegriffe ein.",
+    "description": "Error under the field of the search of posts when it is sent empty."
+  },
+  "search.posts.submit": {
+    "defaultMessage": "Beiträge suchen",
+    "description": "Button that sends the search of posts."
+  },
+  "search.posts.results": {
+    "defaultMessage": "Beiträge",
+    "description": "Heading of the posts that the search found, and the name of their feed."
+  },
+  "search.posts.results.count": {
+    "defaultMessage": "{count, plural, =0 {Keine Beiträge gefunden} one {# Beitrag bisher gefunden} other {# Beiträge bisher gefunden}}",
+    "description": "Read by screen readers when the search of posts has an answer. More posts may follow."
+  },
+  "search.posts.empty.heading": {
+    "defaultMessage": "Keine Beiträge gefunden",
+    "description": "Heading of the empty state of the search of posts."
+  },
+  "search.posts.empty.description": {
+    "defaultMessage": "{scope, select, public {Die Suche dieses Servers findet öffentliche Beiträge, nur von Konten, die das erlauben. Wer einen Beitrag verfasst, kann das in ihren Profileinstellungen abschalten.} local {Die Suche dieses Servers findet Beiträge mit der Sichtbarkeit „Dieser Server“, nur von Konten, die das erlauben. Wer einen Beitrag verfasst, kann das in ihren Profileinstellungen abschalten.} other {Die Suche dieses Servers findet öffentliche Beiträge und Beiträge mit der Sichtbarkeit „Dieser Server“, nur von Konten, die das erlauben. Wer einen Beitrag verfasst, kann das in ihren Profileinstellungen abschalten.}}",
+    "description": "Empty state of the search of posts: which posts can be found on this server and that authors can opt out. {scope} is the visibilities this server's post search covers: public, local, or public_local."
+  },
+  "search.posts.failed.heading": {
+    "defaultMessage": "Die Beitragssuche ist fehlgeschlagen",
+    "description": "Heading of the error of the search of posts."
+  },
+  "search.posts.rate_limited.heading": {
+    "defaultMessage": "Zu viele Suchanfragen",
+    "description": "Heading of the error of the search of posts when the server limits how often the user can search."
+  },
+  "search.posts.rate_limited.reason": {
+    "defaultMessage": "Die Suche läuft von selbst erneut, sobald das Limit es zulässt.",
+    "description": "What happens after the server limited how often the user can search posts."
+  }
+}

@@ -26,7 +26,7 @@ func TestEnvLocales(t *testing.T) {
 		{"empty LC_ALL is skipped", map[string]string{"LC_ALL": "", "LC_MESSAGES": "ja_JP@euro", "LANG": "en_US"}, []string{"ja-JP"}},
 		{"C", map[string]string{"LANG": "C.UTF-8"}, nil},
 		{"POSIX ignores LANGUAGE", map[string]string{"LANG": "POSIX", "LANGUAGE": "ja"}, nil},
-		{"LANGUAGE first", map[string]string{"LANG": "en_US.UTF-8", "LANGUAGE": "fr:ja_JP::x y"}, []string{"fr", "ja-JP", "en-US"}},
+		{"LANGUAGE first", map[string]string{"LANG": "en_US.UTF-8", "LANGUAGE": "it:ja_JP::x y"}, []string{"it", "ja-JP", "en-US"}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -48,8 +48,8 @@ func TestBundleEnvLocale(t *testing.T) {
 	}{
 		{nil, SourceLocale},
 		{map[string]string{"LANG": "ja_JP.UTF-8"}, "ja"},
-		{map[string]string{"LANG": "fr_FR.UTF-8"}, SourceLocale},
-		{map[string]string{"LANG": "en_US.UTF-8", "LANGUAGE": "fr:ja"}, "ja"},
+		{map[string]string{"LANG": "it_IT.UTF-8"}, SourceLocale},
+		{map[string]string{"LANG": "en_US.UTF-8", "LANGUAGE": "it:ja"}, "ja"},
 	}
 	for _, tt := range tests {
 		if got := b.EnvLocale(envOf(tt.env)); got != tt.want {

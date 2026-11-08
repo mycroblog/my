@@ -1,0 +1,234 @@
+{
+  "admin.accounts.created_at": {
+    "defaultMessage": "Beigetreten",
+    "description": "Term of an account: when the account was made."
+  },
+  "admin.accounts.empty": {
+    "defaultMessage": "Noch keine Konten",
+    "description": "Heading of the empty search without conditions."
+  },
+  "admin.accounts.empty.filtered": {
+    "defaultMessage": "Keine passenden Konten",
+    "description": "Heading when no account matches the search."
+  },
+  "admin.accounts.empty.filtered.description": {
+    "defaultMessage": "Ändere die Bedingungen und suche erneut.",
+    "description": "Description when no account matches the search."
+  },
+  "admin.accounts.empty.so_far": {
+    "defaultMessage": "Bisher keine passenden Konten",
+    "description": "Heading when the accounts searched so far match none, and more remain."
+  },
+  "admin.accounts.empty.so_far.description": {
+    "defaultMessage": "Der Server durchsucht die Konten Stück für Stück. Suche weiter, um den Rest zu prüfen.",
+    "description": "Description when the accounts searched so far match none, and more remain."
+  },
+  "admin.accounts.empty.so_far.more": {
+    "defaultMessage": "Weitersuchen",
+    "description": "Button that searches the next part of the accounts."
+  },
+  "admin.accounts.origin": {
+    "defaultMessage": "Server",
+    "description": "Term of an account in the admin screens: the server it belongs to."
+  },
+  "admin.accounts.origin.local": {
+    "defaultMessage": "Dieser Server",
+    "description": "Where an account is: on this server; also an option of the where select."
+  },
+  "admin.accounts.origin.remote": {
+    "defaultMessage": "Andere Server",
+    "description": "Option of the where select: the accounts of other servers."
+  },
+  "admin.accounts.registration": {
+    "defaultMessage": "Registrierung",
+    "description": "Term of a local account: where its registration stands."
+  },
+  "admin.accounts.registration.approved": {
+    "defaultMessage": "Genehmigt",
+    "description": "Registration state of a local account."
+  },
+  "admin.accounts.registration.pending": {
+    "defaultMessage": "Wartet auf Genehmigung",
+    "description": "Registration state of a local account."
+  },
+  "admin.accounts.registration.rejected": {
+    "defaultMessage": "Abgelehnt",
+    "description": "Registration state of a local account."
+  },
+  "admin.accounts.restriction.federation": {
+    "defaultMessage": "Es wird nichts zugestellt oder empfangen",
+    "description": "A restriction of an account by its actions."
+  },
+  "admin.accounts.restriction.interact": {
+    "defaultMessage": "Folgen, Favorisieren, Boosten und Abstimmen nicht möglich",
+    "description": "A restriction of an account by its actions."
+  },
+  "admin.accounts.restriction.login": {
+    "defaultMessage": "Anmelden und API-Nutzung nicht möglich",
+    "description": "A restriction of an account by its actions."
+  },
+  "admin.accounts.restriction.media_sensitive": {
+    "defaultMessage": "Medien werden als sensibel angezeigt",
+    "description": "A restriction of an account by its actions."
+  },
+  "admin.accounts.restriction.post": {
+    "defaultMessage": "Beiträge verfassen, Antworten, Boosten und Bearbeiten nicht möglich",
+    "description": "A restriction of an account by its actions."
+  },
+  "admin.accounts.restriction.profile_view": {
+    "defaultMessage": "Profil und Beiträge sind ausgeblendet",
+    "description": "A restriction of an account by its actions."
+  },
+  "admin.accounts.restriction.public_discovery": {
+    "defaultMessage": "Beiträge erscheinen nicht in den öffentlichen Timelines und der Suche",
+    "description": "A restriction of an account by its actions."
+  },
+  "admin.accounts.restriction.unsolicited_reach": {
+    "defaultMessage": "Benachrichtigungen gehen nur an Follower",
+    "description": "A restriction of an account by its actions."
+  },
+  "admin.accounts.restriction.visibility_ceiling_private": {
+    "defaultMessage": "Beiträge sind nur für Follower sichtbar",
+    "description": "A restriction of an account by its actions."
+  },
+  "admin.accounts.results.failed": {
+    "defaultMessage": "Die Konten konnten nicht durchsucht werden",
+    "description": "Heading when the search of the accounts failed."
+  },
+  "admin.accounts.results.loading": {
+    "defaultMessage": "Konten werden geladen",
+    "description": "Label of the spinner while the accounts load."
+  },
+  "admin.accounts.results.more_failed": {
+    "defaultMessage": "Weitere Konten konnten nicht geladen werden",
+    "description": "Message when the next page of the accounts failed to load."
+  },
+  "admin.accounts.results.retry": {
+    "defaultMessage": "Erneut versuchen",
+    "description": "Button that runs a failed search of the accounts again."
+  },
+  "admin.accounts.results.title": {
+    "defaultMessage": "Ergebnisse",
+    "description": "Heading of the region of the accounts screen with the accounts found."
+  },
+  "admin.accounts.search.contact": {
+    "defaultMessage": "E-Mail oder IP-Adresse",
+    "description": "Label of the select of searching the local accounts by their email address, email domain or an IP address."
+  },
+  "admin.accounts.search.contact.description": {
+    "defaultMessage": "Durchsucht die Konten dieses Servers nach Angaben, die nur Moderatoren sehen. Die Ergebnisse zeigen sie nicht an.",
+    "description": "Help under the email or IP address select."
+  },
+  "admin.accounts.search.contact.email": {
+    "defaultMessage": "E-Mail-Adresse",
+    "description": "Option of the email or IP address select, and label of its field: the primary email address of an account."
+  },
+  "admin.accounts.search.contact.email_domain": {
+    "defaultMessage": "E-Mail-Domain",
+    "description": "Option of the email or IP address select, and label of its field: the domain of the email addresses (example.com)."
+  },
+  "admin.accounts.search.contact.invalid": {
+    "defaultMessage": "Gib eine E-Mail-Adresse ein, z. B. name@example.com.",
+    "description": "Error of the email address search field when it is not an email address."
+  },
+  "admin.accounts.search.contact.ip": {
+    "defaultMessage": "IP-Adresse",
+    "description": "Option of the email or IP address select, and label of its field: an IP address the account registered or signed in from."
+  },
+  "admin.accounts.search.contact.none": {
+    "defaultMessage": "Nicht danach suchen",
+    "description": "Option of the email or IP address select that searches by none of them."
+  },
+  "admin.accounts.search.contact.required": {
+    "defaultMessage": "Gib einen Suchbegriff ein oder wähle, nicht danach zu suchen.",
+    "description": "Error of the email or IP address field when it is empty."
+  },
+  "admin.accounts.search.domain": {
+    "defaultMessage": "Server",
+    "description": "Label of the search field of the domain of the server of an account."
+  },
+  "admin.accounts.search.domain.description": {
+    "defaultMessage": "Die Domain eines anderen Servers, z. B. example.com.",
+    "description": "Help under the server search field."
+  },
+  "admin.accounts.search.origin": {
+    "defaultMessage": "Wo",
+    "description": "Label of the select of whether the accounts are on this server or on others."
+  },
+  "admin.accounts.search.origin.any": {
+    "defaultMessage": "Beliebiger Server",
+    "description": "Option of the where select that keeps every account."
+  },
+  "admin.accounts.search.state": {
+    "defaultMessage": "Status",
+    "description": "Label of the select of the state of the accounts searched."
+  },
+  "admin.accounts.search.state.any": {
+    "defaultMessage": "Beliebiger Status",
+    "description": "Option of the state select that keeps every account."
+  },
+  "admin.accounts.search.submit": {
+    "defaultMessage": "Suchen",
+    "description": "Button that searches the accounts."
+  },
+  "admin.accounts.search.title": {
+    "defaultMessage": "Suche",
+    "description": "Heading of the region of the accounts screen with the search form."
+  },
+  "admin.accounts.search.username": {
+    "defaultMessage": "Benutzername",
+    "description": "Label of the search field of the username of an account."
+  },
+  "admin.accounts.search.username.description": {
+    "defaultMessage": "Konten, deren Benutzername so beginnt. Ein Handle (@name@domain) schränkt auch den Server ein.",
+    "description": "Help under the username search field."
+  },
+  "admin.accounts.state": {
+    "defaultMessage": "Status",
+    "description": "Term of an account in the admin screens: its state."
+  },
+  "admin.accounts.state.active": {
+    "defaultMessage": "Aktiv",
+    "description": "State of an account: in use, without restrictions of its state."
+  },
+  "admin.accounts.state.deleted": {
+    "defaultMessage": "Gelöscht",
+    "description": "State of an account: deleted here or on its server."
+  },
+  "admin.accounts.state.disabled": {
+    "defaultMessage": "Anmeldung deaktiviert",
+    "description": "State of an account: a disable-login action is in effect."
+  },
+  "admin.accounts.state.limited": {
+    "defaultMessage": "Eingeschränkt",
+    "description": "State of an account: a limit action is in effect."
+  },
+  "admin.accounts.state.pending": {
+    "defaultMessage": "Wartet auf Genehmigung",
+    "description": "State of an account: its registration awaits approval."
+  },
+  "admin.accounts.state.rejected": {
+    "defaultMessage": "Abgelehnt",
+    "description": "State of an account: its registration was rejected."
+  },
+  "admin.accounts.state.suspended": {
+    "defaultMessage": "Gesperrt",
+    "description": "State of an account: a suspension or ban is in effect."
+  },
+  "admin.accounts.summary": {
+    "defaultMessage": "Durchsuche die Konten dieses und anderer Server und verhänge oder hebe Moderationsmaßnahmen für sie auf.",
+    "description": "Description of the link to the accounts screen in the administration menu."
+  },
+  "admin.accounts.title": {
+    "defaultMessage": "Konten",
+    "description": "Title of the admin screen that searches the local and remote accounts, and of its link in the administration menu."
+  },
+  "admin.accounts.column.account": {
+    "defaultMessage": "Konto",
+    "description": "Header of the column of the accounts table that names the account and links to it."
+  },
+  "admin.accounts.state.deactivated": {
+    "defaultMessage": "Deaktiviert",
+    "description": "State of an account: its owner deactivated it, and it is deleted 30 days later unless they come back. Moderators can still act on it and read its reports."
+  }
+}

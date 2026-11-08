@@ -440,5 +440,174 @@
       "avoid": ["\\b[Vv]ideos?\\b"],
       "note": "A video, written with the accent as Brazilian Portuguese does."
     }
+  ],
+  "de": [
+    {
+      "use": "du",
+      "avoid": ["(?<=[\\p{Ll},] )(?:Sie|Ihnen|Ihr|Ihre|Ihren|Ihrem|Ihrer|Ihres)(?![\\p{L}_])", "(?<![\\p{L}/_-])Ihnen(?![\\p{L}_])"],
+      "note": "Address the user as du (lower case), never the formal Sie and its forms."
+    },
+    {
+      "use": "Beitrag",
+      "avoid": ["(?<![\\p{L}/_-])[Pp]osts?(?![\\p{L}_])", "(?<![\\p{L}/_-])[Tt]röts?(?![\\p{L}_])", "(?<![\\p{L}/_-])[Tt]oots?(?![\\p{L}_])", "(?<![\\p{L}/_-])[Tt]weets?(?![\\p{L}_])"],
+      "note": "A post (einen Beitrag verfassen, veröffentlichen)."
+    },
+    {
+      "use": "boosten / Boost",
+      "avoid": ["(?<![\\p{L}/_-])[Rr]eblog", "(?<![\\p{L}/_-])[Rr]etweet", "(?<![\\p{L}/_-])[Rr]etröt"],
+      "note": "Boosting a post (geboostet). Teilen is the Share action, never a boost."
+    },
+    {
+      "use": "Favorit / favorisieren",
+      "avoid": ["(?<![\\p{L}/_-])[Ll]ikes?(?![\\p{L}_])", "(?<![\\p{L}/_-])[Gg]efällt mir(?![\\p{L}_])"],
+      "note": "A favourite: als Favorit markieren, favorisieren."
+    },
+    {
+      "use": "Lesezeichen",
+      "avoid": ["(?<![\\p{L}/_-])[Bb]ookmarks?(?![\\p{L}_])"],
+      "note": "A bookmark."
+    },
+    {
+      "use": "anmelden / Anmeldung",
+      "avoid": ["(?<![\\p{L}/_-])[Ee]inloggen(?![\\p{L}_])", "(?<![\\p{L}/_-])[Ee]ingeloggt(?![\\p{L}_])", "(?<![\\p{L}/_-])[Ll]ogin(?![\\p{L}_])", "(?<![\\p{L}/_-])[Ss]ign[ -]in(?![\\p{L}_])"],
+      "note": "Starting a session. \"Login provider\", the name of the admin feature, is Anmeldeanbieter."
+    },
+    {
+      "use": "abmelden",
+      "avoid": ["(?<![\\p{L}/_-])[Aa]usloggen(?![\\p{L}_])", "(?<![\\p{L}/_-])[Ll]ogout(?![\\p{L}_])"],
+      "note": "Ending a session."
+    },
+    {
+      "use": "stummschalten",
+      "avoid": ["(?<![\\p{L}/_-])[Mm]uten(?![\\p{L}_])", "(?<![\\p{L}/_-])[Gg]emutet(?![\\p{L}_])", "(?<![\\p{L}/_-])[Mm]ute(?![\\p{L}_])"],
+      "note": "Muting an account or a word."
+    },
+    {
+      "use": "melden / Meldung",
+      "avoid": ["(?<![\\p{L}/_-])[Rr]eporten(?![\\p{L}_])", "(?<![\\p{L}/_-])[Rr]eports?(?![\\p{L}_])"],
+      "note": "Reporting an account or a post to the moderators."
+    },
+    {
+      "use": "Inhaltswarnung",
+      "avoid": ["(?<![\\p{L}/_-])[Cc]ontent[ -][Ww]arnung(?![\\p{L}_])", "(?<![\\p{L}/_-])[Ii]nhaltshinweis"],
+      "note": "A content warning (CW)."
+    },
+    {
+      "use": "sperren / Sperrung",
+      "avoid": ["(?<![\\p{L}/_-])[Ss]uspendier"],
+      "note": "Suspending an account or a server. Limiting is einschränken; banning is ausschließen (Ausschluss)."
+    },
+    {
+      "use": "ausschließen / Ausschluss",
+      "avoid": ["(?<![\\p{L}/_-])[Bb]annen(?![\\p{L}_])", "(?<![\\p{L}/_-])[Gg]ebannt(?![\\p{L}_])", "(?<![\\p{L}/_-])[Bb]ann(?![\\p{L}_])"],
+      "note": "Banning an account: the moderation action that removes it from the server."
+    },
+    {
+      "use": "Einstellungen",
+      "avoid": ["(?<![\\p{L}/_-])[Ss]ettings(?![\\p{L}_])"],
+      "note": "The settings of an account or an instance."
+    },
+    {
+      "use": "E-Mail",
+      "avoid": ["(?<![\\p{L}/_-])[Ee]mails?(?![\\p{L}_])", "(?<![\\p{L}/_-])eMails?(?![\\p{L}_])", "(?<![\\p{L}/_-])[Mm]ails?(?![\\p{L}_.])"],
+      "note": "An email, and E-Mail-Adresse."
+    },
+    {
+      "use": "Unterstützer",
+      "avoid": ["(?<![\\p{L}/_-])[Ss]upporter", "(?<![\\p{L}/_-])[Ss]ponsor", "(?<![\\p{L}/_-])[Gg]önner"],
+      "note": "A supporter who pays for the instance; a supporter plan is an Unterstützungsplan."
+    },
+    {
+      "use": "Mobilgerät",
+      "avoid": ["(?<![\\p{L}/_-])[Hh]andys?(?![\\p{L}_])", "(?<![\\p{L}/_-])[Tt]elefon"],
+      "note": "A narrow screen where the bottom tab bar is the navigation (\"phone\" in en)."
+    }
+  ],
+  "fr": [
+    {
+      "use": "vous",
+      "avoid": ["(?<![\\p{L}/_-])[Tt]u(?![\\p{L}_])", "(?<![\\p{L}/_-])[Tt]oi(?![\\p{L}_])", "(?<![\\p{L}/_-])[Tt]es(?![\\p{L}_])", "(?<![\\p{L}/_-])[Tt]a(?![\\p{L}_])"],
+      "note": "Address the user as vous, never tu and its forms."
+    },
+    {
+      "use": "publication",
+      "avoid": ["(?<![\\p{L}/_-])[Pp]osts?(?![\\p{L}_])", "(?<![\\p{L}/_-])[Pp]ouets?(?![\\p{L}_])", "(?<![\\p{L}/_-])[Tt]oots?(?![\\p{L}_])", "(?<![\\p{L}/_-])[Tt]weets?(?![\\p{L}_])"],
+      "note": "A post (publier, une publication)."
+    },
+    {
+      "use": "booster / boost",
+      "avoid": ["(?<![\\p{L}/_-])[Rr]eblog", "(?<![\\p{L}/_-])[Rr]etweet", "(?<![\\p{L}/_-])[Rr]epartag"],
+      "note": "Boosting a post (boosté). Partager is the Share action, never a boost."
+    },
+    {
+      "use": "favori",
+      "avoid": ["(?<![\\p{L}/_-])[Ll]ikes?(?![\\p{L}_])", "(?<![\\p{L}/_-])[Jj]’aime(?![\\p{L}_])"],
+      "note": "A favourite: ajouter aux favoris, retirer des favoris."
+    },
+    {
+      "use": "marque-page",
+      "avoid": ["(?<![\\p{L}/_-])[Bb]ookmarks?(?![\\p{L}_])", "(?<![\\p{L}/_-])[Ss]ignets?(?![\\p{L}_])"],
+      "note": "A bookmark (marque-pages in the plural)."
+    },
+    {
+      "use": "se connecter / connexion",
+      "avoid": ["(?<![\\p{L}/_-])[Ll]ogin(?![\\p{L}_])", "(?<![\\p{L}/_-])[Ss]ign[ -]in(?![\\p{L}_])", "(?<![\\p{L}/_-])[Ss]’identifier(?![\\p{L}_])"],
+      "note": "Starting a session. \"Login provider\", the name of the admin feature, is fournisseur de connexion."
+    },
+    {
+      "use": "se déconnecter / déconnexion",
+      "avoid": ["(?<![\\p{L}/_-])[Ll]ogout(?![\\p{L}_])"],
+      "note": "Ending a session."
+    },
+    {
+      "use": "abonné",
+      "avoid": ["(?<![\\p{L}/_-])[Ff]ollowers?(?![\\p{L}_])", "(?<![\\p{L}/_-])[Ss]uiveu(?:r|rs|se|ses)(?![\\p{L}_])"],
+      "note": "Following an account is suivre; a follower is an abonné, the accounts a user follows are abonnements."
+    },
+    {
+      "use": "mettre en sourdine",
+      "avoid": ["(?<![\\p{L}/_-])[Mm]uter(?![\\p{L}_])", "(?<![\\p{L}/_-])[Mm]uté", "(?<![\\p{L}/_-])[Mm]ute(?![\\p{L}_])"],
+      "note": "Muting an account or a word (en sourdine). Masquer is the Hide action."
+    },
+    {
+      "use": "signaler / signalement",
+      "avoid": ["(?<![\\p{L}/_-])[Rr]eporter(?![\\p{L}_])", "(?<![\\p{L}/_-])[Rr]eports?(?![\\p{L}_])", "(?<![\\p{L}/_-])[Dd]énonc"],
+      "note": "Reporting an account or a post to the moderators."
+    },
+    {
+      "use": "avertissement de contenu",
+      "avoid": ["(?<![\\p{L}/_-])[Aa]lerte de contenu(?![\\p{L}_])", "(?<![\\p{L}/_-])[Cc]ontent warning(?![\\p{L}_])"],
+      "note": "A content warning (CW)."
+    },
+    {
+      "use": "bannir / bannissement",
+      "avoid": ["(?<![\\p{L}/_-])[Bb]an(?![\\p{L}_])"],
+      "note": "Banning an account: the moderation action that removes it from the server. Suspending is suspendre; limiting is limiter."
+    },
+    {
+      "use": "paramètres",
+      "avoid": ["(?<![\\p{L}/_-])[Rr]églages(?![\\p{L}_])", "(?<![\\p{L}/_-])[Ss]ettings(?![\\p{L}_])"],
+      "note": "The settings of an account or an instance."
+    },
+    {
+      "use": "e-mail",
+      "avoid": ["(?<![\\p{L}/_-])[Cc]ourriels?(?![\\p{L}_])", "(?<![\\p{L}/_-])[Ee]mails?(?![\\p{L}_])", "(?<![\\p{L}/_-])[Mm]ails?(?![\\p{L}_.])"],
+      "note": "An email, and adresse e-mail."
+    },
+    {
+      "use": "soutien",
+      "avoid": ["(?<![\\p{L}/_-])[Ss]upporters?(?![\\p{L}_])", "(?<![\\p{L}/_-])[Ss]ponsors?(?![\\p{L}_])", "(?<![\\p{L}/_-])[Mm]écènes?(?![\\p{L}_])"],
+      "note": "A supporter who pays for the instance; a supporter plan is a formule de soutien (never abonnement, which is following)."
+    },
+    {
+      "use": "mobile",
+      "avoid": ["(?<![\\p{L}/_-])[Tt]éléphones?(?![\\p{L}_])", "(?<![\\p{L}/_-])[Pp]ortables?(?![\\p{L}_])"],
+      "note": "A narrow screen where the bottom tab bar is the navigation (\"phone\" in en)."
+    },
+    {
+      "use": "’",
+      "avoid": ["\\p{L}'\\p{L}"],
+      "note": "The French apostrophe is ’ (U+2019), never the ASCII ' (which ICU MessageFormat may also read as a quote)."
+    }
   ]
 }

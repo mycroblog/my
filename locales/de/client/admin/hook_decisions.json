@@ -1,0 +1,246 @@
+{
+  "admin.hook_decisions.cancelled": {
+    "defaultMessage": "Aufgehoben",
+    "description": "State of a decision in the list of decisions: a moderator cancelled it."
+  },
+  "admin.hook_decisions.column.decided_at": {
+    "defaultMessage": "Entschieden",
+    "description": "Column of the list of decisions: when the review answered."
+  },
+  "admin.hook_decisions.column.hook": {
+    "defaultMessage": "Prüfung",
+    "description": "Column of the tables of the automated reviews screen: which external review."
+  },
+  "admin.hook_decisions.column.mode": {
+    "defaultMessage": "Modus",
+    "description": "Column of the tables of the automated reviews screen: off, observe, or enforce."
+  },
+  "admin.hook_decisions.column.outcome": {
+    "defaultMessage": "Ergebnis",
+    "description": "Column of the list of decisions: the verdict, or the kind of failure."
+  },
+  "admin.hook_decisions.column.outcomes": {
+    "defaultMessage": "Entscheidungen",
+    "description": "Column of the table of external reviews: the counts of decisions per outcome."
+  },
+  "admin.hook_decisions.column.subject": {
+    "defaultMessage": "Gegenstand",
+    "description": "Column of the list of decisions: what identifies the post, follow, sign-up, or file."
+  },
+  "admin.hook_decisions.empty": {
+    "defaultMessage": "Nichts wurde gestoppt",
+    "description": "Empty list of decisions: no external review stopped anything or failed."
+  },
+  "admin.hook_decisions.filter.all": {
+    "defaultMessage": "Alle Prüfungen",
+    "description": "Option of the select that keeps the decisions of one external review: every review."
+  },
+  "admin.hook_decisions.filter.label": {
+    "defaultMessage": "Prüfung",
+    "description": "Accessible name of the select that keeps the decisions of one external review."
+  },
+  "admin.hook_decisions.hook.inbound_follow": {
+    "defaultMessage": "Follow-Anfragen von anderen Servern",
+    "description": "Name of the external review of follows that arrive from other servers."
+  },
+  "admin.hook_decisions.hook.inbound_status": {
+    "defaultMessage": "Beiträge von anderen Servern",
+    "description": "Name of the external review of posts that arrive from other servers."
+  },
+  "admin.hook_decisions.hook.local_status": {
+    "defaultMessage": "Lokale Beiträge",
+    "description": "Name of the external review of posts by accounts of this server."
+  },
+  "admin.hook_decisions.hook.inbound_actor": {
+    "defaultMessage": "Profile von anderen Servern",
+    "description": "Name of the external review of the profiles of accounts on other servers."
+  },
+  "admin.hook_decisions.hook.local_profile": {
+    "defaultMessage": "Lokale Profile",
+    "description": "Name of the external review of the profiles of accounts of this server."
+  },
+  "admin.hook_decisions.hook.media_check": {
+    "defaultMessage": "Hochgeladene Medien",
+    "description": "Name of the external review of uploaded media."
+  },
+  "admin.hook_decisions.hook.signup_check": {
+    "defaultMessage": "Registrierungen",
+    "description": "Name of the external review of sign-ups."
+  },
+  "admin.hook_decisions.account": {
+    "defaultMessage": "Konto",
+    "description": "Term of a decision: the account its subject belongs to, such as the author of the post or the account that signed up."
+  },
+  "admin.hook_decisions.latency": {
+    "defaultMessage": "Wartezeit",
+    "description": "Term of a decision: how long the call of the review took."
+  },
+  "admin.hook_decisions.latency.value": {
+    "defaultMessage": "{value} ms",
+    "description": "Value of how long the call of the review took, in milliseconds."
+  },
+  "admin.hook_decisions.list.title": {
+    "defaultMessage": "Entscheidungen",
+    "description": "Heading of the list of decisions on the automated reviews screen, and the caption of its table."
+  },
+  "admin.hook_decisions.menu": {
+    "defaultMessage": "Was die externen Prüfungen gestoppt oder nicht prüfen konnten.",
+    "description": "Summary of the automated reviews screen in the moderation menu."
+  },
+  "admin.hook_decisions.mode.enforce": {
+    "defaultMessage": "Durchsetzen",
+    "description": "Mode of an external review: it acts on the verdict."
+  },
+  "admin.hook_decisions.mode.observe": {
+    "defaultMessage": "Beobachten",
+    "description": "Mode of an external review: it records the verdict and acts on nothing."
+  },
+  "admin.hook_decisions.mode.off": {
+    "defaultMessage": "Aus",
+    "description": "Mode of an external review: it calls nothing."
+  },
+  "admin.hook_decisions.not_configured": {
+    "defaultMessage": "Nicht eingerichtet",
+    "description": "Mode cell of an external review that has no plugin on this server: it calls nothing."
+  },
+  "admin.hook_decisions.note": {
+    "defaultMessage": "Hinweis der Prüfung",
+    "description": "Term of a decision: the short plain-text note the review left for moderators."
+  },
+  "admin.hook_decisions.pages": {
+    "defaultMessage": "Seiten der automatischen Prüfungen",
+    "description": "Accessible name of the navigation between the pages of the automated reviews screen: the decisions and the appeals of refused posts."
+  },
+  "admin.hook_decisions.pages.appeals": {
+    "defaultMessage": "Einsprüche gegen abgelehnte Beiträge",
+    "description": "Link of the navigation of the automated reviews screen to the page of the authors' appeals of refused local posts."
+  },
+  "admin.hook_decisions.pages.decisions": {
+    "defaultMessage": "Entscheidungen",
+    "description": "Link of the navigation of the automated reviews screen to its first page: the counts per review and the list of decisions."
+  },
+  "admin.hook_decisions.outcome.allow": {
+    "defaultMessage": "Zugelassen",
+    "description": "Outcome of a decision: the review let it through."
+  },
+  "admin.hook_decisions.outcome.breaker_open": {
+    "defaultMessage": "Nach Fehlern übersprungen",
+    "description": "Outcome of a decision: the server skipped the review after repeated failures. A failure, not a verdict."
+  },
+  "admin.hook_decisions.outcome.drop": {
+    "defaultMessage": "Verworfen",
+    "description": "Outcome of a decision: the review stopped it and nothing is stored."
+  },
+  "admin.hook_decisions.outcome.error": {
+    "defaultMessage": "Fehlgeschlagen",
+    "description": "Outcome of a decision: the call of the review failed. A failure, not a verdict."
+  },
+  "admin.hook_decisions.outcome.flag": {
+    "defaultMessage": "Gemeldet",
+    "description": "Outcome of a decision: the review let it through and files a report."
+  },
+  "admin.hook_decisions.outcome.invalid": {
+    "defaultMessage": "Ungültige Antwort",
+    "description": "Outcome of a decision: the answer of the review was outside its vocabulary. A failure, not a verdict."
+  },
+  "admin.hook_decisions.outcome.mark_sensitive": {
+    "defaultMessage": "Als sensibel markiert",
+    "description": "Outcome of a decision: the review let it through and its attachments show as sensitive."
+  },
+  "admin.hook_decisions.outcome.reject": {
+    "defaultMessage": "Abgelehnt",
+    "description": "Outcome of a decision: the review refused it."
+  },
+  "admin.hook_decisions.outcome.require_approval": {
+    "defaultMessage": "Zur Freigabe zurückgehalten",
+    "description": "Outcome of a decision: the review holds a sign-up for approval."
+  },
+  "admin.hook_decisions.outcome.timeout": {
+    "defaultMessage": "Zeitüberschreitung",
+    "description": "Outcome of a decision: the call of the review ran past its deadline. A failure, not a verdict."
+  },
+  "admin.hook_decisions.overridden": {
+    "defaultMessage": "Entscheidung von {hook} aufgehoben: {outcome}.",
+    "description": "Status message after a moderator cancelled a decision."
+  },
+  "admin.hook_decisions.overridden_at": {
+    "defaultMessage": "Aufgehoben",
+    "description": "Term of a decision: when a moderator cancelled it."
+  },
+  "admin.hook_decisions.restorable_until": {
+    "defaultMessage": "Kann wiederhergestellt werden bis",
+    "description": "Term of a dropped post: until when cancelling the decision takes the post in again."
+  },
+  "admin.hook_decisions.restorable_gone": {
+    "defaultMessage": "Die empfangene Kopie ist nicht mehr vorhanden. Das Aufheben wird daher nur vermerkt und stellt nichts wieder her.",
+    "description": "Shown on a dropped post whose received copy is gone: cancelling cannot bring it back."
+  },
+  "admin.hook_decisions.override": {
+    "defaultMessage": "Entscheidung aufheben",
+    "description": "Button of a row of the list of decisions: cancels the decision."
+  },
+  "admin.hook_decisions.override_action": {
+    "defaultMessage": "Entscheidung von {hook}, {outcome}, vom {date} aufheben",
+    "description": "Accessible name of the button that cancels a decision. {hook} names the review, {outcome} the outcome, and {date} when it decided."
+  },
+  "admin.hook_decisions.override_failed": {
+    "defaultMessage": "Die Entscheidung konnte nicht aufgehoben werden: {reason}",
+    "description": "Toast when cancelling a decision failed. {reason} says why."
+  },
+  "admin.hook_decisions.reason": {
+    "defaultMessage": "Ursachencode",
+    "description": "Term of a decision: the coded reason the review gave."
+  },
+  "admin.hook_decisions.reason.spam": {
+    "defaultMessage": "Spam",
+    "description": "Coded reason an external review gave for its verdict: spam."
+  },
+  "admin.hook_decisions.reason.harassment": {
+    "defaultMessage": "Belästigung",
+    "description": "Coded reason an external review gave for its verdict: harassment."
+  },
+  "admin.hook_decisions.reason.sexual": {
+    "defaultMessage": "Sexuelle Inhalte",
+    "description": "Coded reason an external review gave for its verdict: sexual content."
+  },
+  "admin.hook_decisions.reason.violence": {
+    "defaultMessage": "Gewalt",
+    "description": "Coded reason an external review gave for its verdict: violence."
+  },
+  "admin.hook_decisions.reason.illegal": {
+    "defaultMessage": "Illegale Inhalte",
+    "description": "Coded reason an external review gave for its verdict: illegal content."
+  },
+  "admin.hook_decisions.reason.malware": {
+    "defaultMessage": "Schadsoftware",
+    "description": "Coded reason an external review gave for its verdict: malware."
+  },
+  "admin.hook_decisions.reason.other": {
+    "defaultMessage": "Sonstiges",
+    "description": "Coded reason an external review gave for its verdict: a reason none of the other codes names."
+  },
+  "admin.hook_decisions.summary.count": {
+    "defaultMessage": "{count, plural, one {# Entscheidung} other {# Entscheidungen}}, durchschnittlich {average} ms, höchstens {max} ms",
+    "description": "Value of a count of decisions, with how long the calls took in milliseconds."
+  },
+  "admin.hook_decisions.summary.none": {
+    "defaultMessage": "Keine Entscheidungen",
+    "description": "Cell of the table of external reviews: a review that made no decisions in the period."
+  },
+  "admin.hook_decisions.summary.outcome": {
+    "defaultMessage": "{outcome} ({mode})",
+    "description": "Term of a count of decisions. {outcome} is what the review answered; {mode} is the mode it ran in."
+  },
+  "admin.hook_decisions.summary.period": {
+    "defaultMessage": "Anzahl und Wartezeiten der letzten 7 Tage.",
+    "description": "Note above the table of external reviews: the period the numbers cover."
+  },
+  "admin.hook_decisions.summary.title": {
+    "defaultMessage": "Prüfungen",
+    "description": "Heading of the section of the automated reviews screen with one row per external review."
+  },
+  "admin.hook_decisions.title": {
+    "defaultMessage": "Automatische Prüfungen",
+    "description": "Heading and menu entry of the moderation screen that lists what the external reviews of submissions said."
+  }
+}

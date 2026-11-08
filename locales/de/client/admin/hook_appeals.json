@@ -1,0 +1,106 @@
+{
+  "admin.hook_appeals.already_decided": {
+    "defaultMessage": "Eine andere Moderatorin oder ein anderer Moderator hat über diesen Einspruch bereits entschieden. Die Entscheidung gilt.",
+    "description": "Status message when another moderator decided the appeal of a refused post first."
+  },
+  "admin.hook_appeals.cancel": {
+    "defaultMessage": "Abbrechen",
+    "description": "Button of the confirmation of a decision on an appeal of a refused post: closes it without deciding."
+  },
+  "admin.hook_appeals.column.account": {
+    "defaultMessage": "Autor",
+    "description": "Column of the list of appeals of refused posts: the account that tried to post and appealed."
+  },
+  "admin.hook_appeals.column.state": {
+    "defaultMessage": "Status",
+    "description": "Column of the list of appeals of refused posts: awaiting review, upheld, or overturned."
+  },
+  "admin.hook_appeals.comment": {
+    "defaultMessage": "Kommentar",
+    "description": "Term of an appeal of a refused post: what the author added for the moderators."
+  },
+  "admin.hook_appeals.confirm_overturn.description": {
+    "defaultMessage": "Damit wird die Entscheidung aufgehoben und die Prüfung der Beiträge dieses Kontos beendet. Der abgelehnte Beitrag wird nicht wiederhergestellt: Die Person verfasst ihn erneut. Die Entscheidung kann später nicht mehr geändert werden.",
+    "description": "Description of the confirmation of overturning an appeal of a refused post."
+  },
+  "admin.hook_appeals.confirm_overturn.title": {
+    "defaultMessage": "Die Ablehnung aufheben?",
+    "description": "Title of the confirmation of overturning an appeal of a refused post, which cancels the automated review's decision."
+  },
+  "admin.hook_appeals.confirm_uphold.description": {
+    "defaultMessage": "Der Beitrag bleibt abgelehnt, und die Beiträge dieses Kontos werden weiterhin wie bisher geprüft. Die Entscheidung kann später nicht mehr geändert werden.",
+    "description": "Description of the confirmation of upholding an appeal of a refused post."
+  },
+  "admin.hook_appeals.confirm_uphold.title": {
+    "defaultMessage": "Die Ablehnung bestätigen?",
+    "description": "Title of the confirmation of upholding an appeal of a refused post, which keeps the automated review's decision."
+  },
+  "admin.hook_appeals.decide_failed": {
+    "defaultMessage": "Die Entscheidung konnte nicht gespeichert werden: {reason}",
+    "description": "Error in the confirmation when deciding an appeal of a refused post failed. {reason} says why."
+  },
+  "admin.hook_appeals.empty": {
+    "defaultMessage": "Keine Einsprüche warten auf Prüfung",
+    "description": "Empty list of appeals of refused posts that await a moderator."
+  },
+  "admin.hook_appeals.empty_all": {
+    "defaultMessage": "Noch keine Einsprüche",
+    "description": "Empty list of every appeal of a refused post."
+  },
+  "admin.hook_appeals.filter.all": {
+    "defaultMessage": "Alle Einsprüche",
+    "description": "Option of the select of the appeals of refused posts: every appeal, decided or not."
+  },
+  "admin.hook_appeals.filter.label": {
+    "defaultMessage": "Einsprüche nach Status",
+    "description": "Accessible name of the select that keeps the appeals of refused posts that await review, or shows every one."
+  },
+  "admin.hook_appeals.filter.pending": {
+    "defaultMessage": "Wartet auf Prüfung",
+    "description": "Option of the select of the appeals of refused posts: those that await a moderator."
+  },
+  "admin.hook_appeals.none": {
+    "defaultMessage": "Keine",
+    "description": "Value of the text or comment of an appeal of a refused post that has none."
+  },
+  "admin.hook_appeals.overturn": {
+    "defaultMessage": "Aufheben",
+    "description": "Button of a pending appeal of a refused post that opens the confirmation of overturning it, and the confirmation's button that overturns it."
+  },
+  "admin.hook_appeals.overturned": {
+    "defaultMessage": "Ablehnung aufgehoben. Die Entscheidung ist zurückgenommen, und die Beiträge dieses Kontos werden nicht mehr geprüft.",
+    "description": "Status message after a moderator overturned an appeal of a refused post."
+  },
+  "admin.hook_appeals.state.overturned": {
+    "defaultMessage": "Aufgehoben",
+    "description": "State of an appeal of a refused post whose decision a moderator cancelled."
+  },
+  "admin.hook_appeals.state.pending": {
+    "defaultMessage": "Wartet auf Prüfung",
+    "description": "State of an appeal of a refused post that awaits a moderator."
+  },
+  "admin.hook_appeals.state.upheld": {
+    "defaultMessage": "Bestätigt",
+    "description": "State of an appeal of a refused post whose decision a moderator kept."
+  },
+  "admin.hook_appeals.status_text": {
+    "defaultMessage": "Text des Beitrags",
+    "description": "Term of an appeal of a refused post: the text the author tried to post."
+  },
+  "admin.hook_appeals.submitted_at": {
+    "defaultMessage": "Gesendet",
+    "description": "Term of an appeal of a refused post: when the author sent it."
+  },
+  "admin.hook_appeals.title": {
+    "defaultMessage": "Einsprüche gegen abgelehnte Beiträge",
+    "description": "Heading of the section of the automated reviews screen with the authors' appeals of posts the review refused, and the caption of its table."
+  },
+  "admin.hook_appeals.upheld": {
+    "defaultMessage": "Ablehnung bestätigt. Der Beitrag bleibt abgelehnt.",
+    "description": "Status message after a moderator upheld an appeal of a refused post."
+  },
+  "admin.hook_appeals.uphold": {
+    "defaultMessage": "Bestätigen",
+    "description": "Button of a pending appeal of a refused post that opens the confirmation of upholding it, and the confirmation's button that upholds it."
+  }
+}

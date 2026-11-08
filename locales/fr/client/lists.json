@@ -1,0 +1,294 @@
+{
+  "lists.title": {
+    "defaultMessage": "Listes",
+    "description": "Heading and document title of the page of the user's lists, and its item in the main navigation."
+  },
+  "lists.list.title": {
+    "defaultMessage": "Vos listes",
+    "description": "Heading of the region of the user's lists on the lists page."
+  },
+  "lists.count": {
+    "defaultMessage": "{count, plural, one {# liste} other {# listes}} sur {max}",
+    "description": "Read for the count beside the heading of the user's lists, drawn as '3 / 50'. {count} is the number of lists, {max} the most a user may have."
+  },
+  "lists.empty": {
+    "defaultMessage": "Aucune liste pour le moment",
+    "description": "Heading of the empty list of the user's lists."
+  },
+  "lists.empty.description": {
+    "defaultMessage": "Placez des personnes que vous suivez dans une liste pour lire leurs publications à part de votre fil d’accueil. Vous seul voyez vos listes.",
+    "description": "Text of the empty list of the user's lists, above the button that creates one."
+  },
+  "lists.limit": {
+    "defaultMessage": "Vous pouvez avoir jusqu’à {max} listes. Supprimez une liste que vous n’utilisez plus pour en créer une autre.",
+    "description": "Shown in place of the button that creates a list, and in the add-to-list dialog, when the user has the most lists. {max} is that number."
+  },
+  "lists.create": {
+    "defaultMessage": "Créer une liste",
+    "description": "Button that opens the form that creates a list, and the title of that form."
+  },
+  "lists.create.submit": {
+    "defaultMessage": "Créer",
+    "description": "Button that sends the form that creates a list."
+  },
+  "lists.created": {
+    "defaultMessage": "{name} créée.",
+    "description": "Shown above the user's lists after creating one. {name} is the new list's name."
+  },
+  "lists.name": {
+    "defaultMessage": "Nom",
+    "description": "Label of the field with a list's name."
+  },
+  "lists.name.description": {
+    "defaultMessage": "Vous seul voyez vos listes, et personne n’est informé que vous l’avez ajouté à l’une d’elles.",
+    "description": "Description under the field with a list's name."
+  },
+  "lists.name.required": {
+    "defaultMessage": "Saisissez un nom.",
+    "description": "Error of the empty name field of a list."
+  },
+  "lists.name.too_long": {
+    "defaultMessage": "Un nom peut compter jusqu’à {max} caractères.",
+    "description": "Error of a list's name that is too long. {max} is the most characters."
+  },
+  "lists.name.invalid": {
+    "defaultMessage": "Un nom doit tenir sur une seule ligne.",
+    "description": "Error of a list's name with line breaks or other control characters."
+  },
+  "lists.save_failed": {
+    "defaultMessage": "Impossible d’enregistrer la liste. {reason}",
+    "description": "Error in the form that creates or renames a list. {reason} says why."
+  },
+  "lists.cancel": {
+    "defaultMessage": "Annuler",
+    "description": "Button that closes the form that creates or renames a list without saving."
+  },
+  "lists.member_count": {
+    "defaultMessage": "{count, plural, one {# membre} other {# membres}}",
+    "description": "The number of members of a list, in its row on the lists page and on the list's page."
+  },
+  "lists.list_action": {
+    "defaultMessage": "{action} : {name}",
+    "description": "Accessible name of a button in a row of the user's lists. {action} is the button's visible text (for example 'Rename'), {name} the list's name."
+  },
+  "lists.rename": {
+    "defaultMessage": "Renommer",
+    "description": "Button in a row of the user's lists that opens the form that renames the list."
+  },
+  "lists.rename.title": {
+    "defaultMessage": "Renommer {name}",
+    "description": "Title of the form that renames a list. {name} is the list's name."
+  },
+  "lists.rename.submit": {
+    "defaultMessage": "Enregistrer",
+    "description": "Button that saves a list's new name."
+  },
+  "lists.renamed": {
+    "defaultMessage": "La liste est renommée en {name}.",
+    "description": "Read after a list is renamed. {name} is its new name."
+  },
+  "lists.delete": {
+    "defaultMessage": "Supprimer",
+    "description": "Button in a row of the user's lists that deletes the list after asking, and the button of that dialog that does it."
+  },
+  "lists.delete.title": {
+    "defaultMessage": "Supprimer {name} ?",
+    "description": "Title of the dialog that asks before a list is deleted. {name} is the list's name."
+  },
+  "lists.delete.description": {
+    "defaultMessage": "La liste et ses membres sont supprimés. Vous continuez de suivre tous ses membres.",
+    "description": "Text of the dialog that asks before a list is deleted."
+  },
+  "lists.delete.cancel": {
+    "defaultMessage": "Annuler",
+    "description": "Button that closes the dialog that asks before a list is deleted, keeping the list."
+  },
+  "lists.deleted": {
+    "defaultMessage": "{name} supprimée.",
+    "description": "Read after a list is deleted. {name} is the list's name."
+  },
+  "lists.delete_failed": {
+    "defaultMessage": "Impossible de supprimer {name}. {reason}",
+    "description": "Toast when a list could not be deleted. {name} is the list's name, {reason} says why."
+  },
+  "lists.retry": {
+    "defaultMessage": "Réessayer",
+    "description": "Button that loads the members of a list, or the user's lists in the add-to-list dialog, again after they failed."
+  },
+  "lists.manage": {
+    "defaultMessage": "Gérer les listes",
+    "description": "Link from a list's page to the page of the user's lists."
+  },
+  "lists.members.manage": {
+    "defaultMessage": "Gérer les membres",
+    "description": "Button in a row of the user's lists that shows or hides the list's members, and the button of the empty state of a list's page without members."
+  },
+  "lists.members.title": {
+    "defaultMessage": "Membres de {name}",
+    "description": "Heading of the region of a list's members. {name} is the list's name."
+  },
+  "lists.members.count": {
+    "defaultMessage": "{count, plural, one {# membre} other {# membres}} sur {max}",
+    "description": "Read for the count beside the heading of a list's members, drawn as '12 / 1,000'. {count} is the number of members, {max} the most a list may have."
+  },
+  "lists.members.search": {
+    "defaultMessage": "Rechercher parmi les personnes que vous suivez",
+    "description": "Label of the field that searches the accounts the user follows, to add one to a list."
+  },
+  "lists.members.search.description": {
+    "defaultMessage": "Par nom ou identifiant. Seules les personnes qui ont accepté votre demande d’abonnement peuvent figurer dans une liste.",
+    "description": "Description under the field that searches the accounts the user follows."
+  },
+  "lists.members.searching": {
+    "defaultMessage": "Recherche en cours",
+    "description": "Accessible name of the spinner while the accounts the user follows are searched."
+  },
+  "lists.members.search_failed": {
+    "defaultMessage": "Impossible de lancer la recherche. {reason}",
+    "description": "Shown when the search of the accounts the user follows failed. {reason} says why."
+  },
+  "lists.members.no_match": {
+    "defaultMessage": "Aucune personne que vous suivez ne correspond. Seules les personnes que vous suivez, et qui ont accepté votre demande, peuvent être trouvées ici.",
+    "description": "Shown when the search of the accounts the user follows found none."
+  },
+  "lists.members.results": {
+    "defaultMessage": "Personnes que vous suivez",
+    "description": "Accessible name of the results of the search of the accounts the user follows."
+  },
+  "lists.members.add": {
+    "defaultMessage": "Ajouter",
+    "description": "Button of a search result that adds the account to the list."
+  },
+  "lists.members.add_of": {
+    "defaultMessage": "Ajouter {name}",
+    "description": "Accessible name of the button that adds an account to a list. {name} is the account's display name."
+  },
+  "lists.members.added_mark": {
+    "defaultMessage": "Ajouté",
+    "description": "Mark of a search result that is already in the list, in place of the button that adds it."
+  },
+  "lists.members.added": {
+    "defaultMessage": "{name} ajouté à {list}.",
+    "description": "Read after an account is added to a list. {name} is the account's display name, {list} the list's name."
+  },
+  "lists.members.add_failed": {
+    "defaultMessage": "Impossible d’ajouter. {reason}",
+    "description": "Shown beside a search result that could not be added to the list. {reason} says why."
+  },
+  "lists.members.not_followed": {
+    "defaultMessage": "Vous ne pouvez ajouter que des personnes que vous suivez, une fois qu’elles ont accepté votre demande.",
+    "description": "Shown when an account that the user does not follow could not be added to a list."
+  },
+  "lists.members.limit": {
+    "defaultMessage": "Une liste peut compter jusqu’à {max} membres.",
+    "description": "Shown when a list has the most members, so that no one more can be added. {max} is that number."
+  },
+  "lists.members.loading": {
+    "defaultMessage": "Chargement des membres",
+    "description": "Accessible name of the spinner while a list's members load."
+  },
+  "lists.members.failed": {
+    "defaultMessage": "Impossible de charger les membres",
+    "description": "Heading of the error when a list's members could not load."
+  },
+  "lists.members.empty": {
+    "defaultMessage": "Personne n’est encore dans cette liste. Recherchez ci-dessus parmi les personnes que vous suivez.",
+    "description": "Shown in place of the members of a list without members."
+  },
+  "lists.members.list": {
+    "defaultMessage": "Membres",
+    "description": "Accessible name of the list of a list's members."
+  },
+  "lists.members.remove": {
+    "defaultMessage": "Retirer",
+    "description": "Button of a member that takes the account out of the list."
+  },
+  "lists.members.remove_of": {
+    "defaultMessage": "Retirer {name}",
+    "description": "Accessible name of the button that takes an account out of a list. {name} is the account's display name."
+  },
+  "lists.members.removed": {
+    "defaultMessage": "{name} retiré de {list}.",
+    "description": "Read after an account is taken out of a list. {name} is the account's display name, {list} the list's name."
+  },
+  "lists.members.remove_failed": {
+    "defaultMessage": "Impossible de retirer le membre. {reason}",
+    "description": "Shown above a list's members when one could not be removed. {reason} says why."
+  },
+  "lists.members.more": {
+    "defaultMessage": "Afficher plus",
+    "description": "Button that loads more members of a list."
+  },
+  "lists.members.more_failed": {
+    "defaultMessage": "Impossible de charger plus de membres. {reason}",
+    "description": "Shown under a list's members when the next ones could not load. {reason} says why."
+  },
+  "lists.timeline.empty.heading": {
+    "defaultMessage": "Personne n’est encore dans cette liste",
+    "description": "Heading shown on a list's page in place of the posts while the list has no members."
+  },
+  "lists.timeline.empty.description": {
+    "defaultMessage": "Ajoutez des personnes que vous suivez, et leurs publications apparaîtront ici.",
+    "description": "Text under the heading shown on the page of a list without members."
+  },
+  "lists.not_found.title": {
+    "defaultMessage": "Liste introuvable",
+    "description": "Heading of the page of a list that does not exist or is not the user's."
+  },
+  "lists.not_found.body": {
+    "defaultMessage": "Cette liste n’existe pas, ou elle n’est pas à vous.",
+    "description": "Text of the page of a list that does not exist or is not the user's."
+  },
+  "lists.not_found.link": {
+    "defaultMessage": "Aller à vos listes",
+    "description": "Link from the page of a list that was not found to the page of the user's lists."
+  },
+  "lists.add_to_list.open": {
+    "defaultMessage": "Ajouter à une liste",
+    "description": "Item of the menu of a followed account's profile that opens the dialog that puts the account in the user's lists."
+  },
+  "lists.add_to_list.title": {
+    "defaultMessage": "Ajouter {name} à des listes",
+    "description": "Title of the dialog that puts an account in the user's lists. {name} is the account's display name."
+  },
+  "lists.add_to_list.close": {
+    "defaultMessage": "Fermer",
+    "description": "Accessible name of the button that closes the add-to-list dialog."
+  },
+  "lists.add_to_list.lists": {
+    "defaultMessage": "Vos listes",
+    "description": "Accessible name of the checkboxes of the user's lists in the add-to-list dialog."
+  },
+  "lists.add_to_list.manage": {
+    "defaultMessage": "Gérer les listes",
+    "description": "Link from the add-to-list dialog to the page of the user's lists."
+  },
+  "lists.add_to_list.loading": {
+    "defaultMessage": "Chargement de vos listes",
+    "description": "Accessible name of the spinner while the add-to-list dialog loads the user's lists."
+  },
+  "lists.add_to_list.load_failed": {
+    "defaultMessage": "Impossible de charger vos listes",
+    "description": "Heading of the error when the add-to-list dialog could not load the user's lists."
+  },
+  "lists.add_to_list.none": {
+    "defaultMessage": "Vous n’avez pas encore de liste. Créez-en une sur la page des listes, puis ajoutez-y des personnes ici.",
+    "description": "Text of the add-to-list dialog while the user has no lists."
+  },
+  "lists.add_to_list.saving": {
+    "defaultMessage": "Enregistrement…",
+    "description": "Shown under a list's checkbox in the add-to-list dialog while its change is saved."
+  },
+  "lists.add_to_list.added": {
+    "defaultMessage": "Ajouté à {list}",
+    "description": "Read after the account of the add-to-list dialog is put in a list. {list} is the list's name."
+  },
+  "lists.add_to_list.removed": {
+    "defaultMessage": "Retiré de {list}",
+    "description": "Read after the account of the add-to-list dialog is taken out of a list. {list} is the list's name."
+  },
+  "lists.add_to_list.failed": {
+    "defaultMessage": "Impossible de modifier la liste. {reason}",
+    "description": "Shown under a list's checkbox in the add-to-list dialog when the change failed. {reason} says why."
+  }
+}

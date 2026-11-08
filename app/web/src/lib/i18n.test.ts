@@ -13,12 +13,14 @@ import {
 
 describe("locales", () => {
   test("has a catalog for the source locale, the translations and the pseudo-locales", () => {
-    expect(supportedLocales).toEqual(["ar-XB", "en", "en-XA", "es", "ja", "pt-BR", "zh-CN", "zh-TW"]);
+    expect(supportedLocales).toEqual(["ar-XB", "de", "en", "en-XA", "es", "fr", "ja", "pt-BR", "zh-CN", "zh-TW"]);
   });
 
   test.each([
     ["ja-JP", ["ja-JP", "ja", "en"]],
     ["es-419", ["es-419", "es", "en"]],
+    ["de-CH", ["de-CH", "de", "en"]],
+    ["fr-CA", ["fr-CA", "fr", "en"]],
     ["zh", ["zh", "zh-CN", "en"]],
     ["zh-CN", ["zh-CN", "en"]],
     ["zh-Hans-SG", ["zh-Hans-SG", "zh-Hans", "zh-CN", "en"]],
@@ -57,7 +59,16 @@ describe("locales", () => {
     ["es-MX", "es"],
     ["es-419", "es"],
     ["ES-ar", "es"],
-    ["fr", "en"],
+    ["de", "de"],
+    ["de-DE", "de"],
+    ["de-AT", "de"],
+    ["de-CH", "de"],
+    ["fr", "fr"],
+    ["fr-FR", "fr"],
+    ["fr-CA", "fr"],
+    ["fr-BE", "fr"],
+    ["FR-ch", "fr"],
+    ["it", "en"],
     ["", "en"],
   ])("resolves %j to %s", (requested, locale) => {
     expect(resolveLocale(requested)).toBe(locale);
@@ -114,8 +125,19 @@ describe("loadI18n", () => {
     expect(messages["client:shell.nav.home"]).not.toBe(en["shell.nav.home"]?.defaultMessage);
   });
 
+  test("loads German and French for the tags that resolve to them", async () => {
+    for (const [requested, want] of [
+      ["de-AT", "de"],
+      ["fr-CA", "fr"],
+    ]) {
+      const { locale, messages } = await loadI18n(requested as string);
+      expect(locale).toBe(want);
+      expect(messages["client:shell.nav.home"]).not.toBe(en["shell.nav.home"]?.defaultMessage);
+    }
+  });
+
   test("uses the source locale for an unsupported locale", async () => {
-    const { locale, messages } = await loadI18n("fr-FR");
+    const { locale, messages } = await loadI18n("it-IT");
     expect(locale).toBe("en");
     expect(messages["client:shell.nav.home"]).toBe(en["shell.nav.home"]?.defaultMessage);
   });

@@ -1,0 +1,14 @@
+{
+  "admin.moderation.none.description": {
+    "defaultMessage": "Deine Rollen enthalten keine der Berechtigungen, die die Moderationsbereiche brauchen. Administratoren können sie dir geben.",
+    "description": "Description on the moderation page of a user whose roles grant none of the moderation screens' permissions."
+  },
+  "admin.moderation.none.heading": {
+    "defaultMessage": "Keine Moderationsbereiche für deine Rollen",
+    "description": "Heading on the moderation page of a user whose roles grant none of the moderation screens' permissions."
+  },
+  "admin.moderation.title": {
+    "defaultMessage": "Moderation",
+    "description": "Heading of the links to the moderation screens (reports, appeals, accounts, registrations, sign-up blocks, domain actions, remote servers, audit log) on the settings page and title of their page, shown only to users with a moderation permission."
+  }
+}

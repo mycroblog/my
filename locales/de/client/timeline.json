@@ -1,0 +1,194 @@
+{
+  "timeline.boosted_by": {
+    "defaultMessage": "{name} hat geboostet",
+    "description": "Line above a post in a timeline that someone else shared (boosted). {name} is the display name of the account that boosted it."
+  },
+  "timeline.content_warning.toggle": {
+    "defaultMessage": "Inhalt anzeigen",
+    "description": "Button next to a post's content warning that shows or hides the post behind it. The same text is used while the post is shown."
+  },
+  "timeline.empty.account.heading": {
+    "defaultMessage": "Noch keine Beiträge",
+    "description": "Shown instead of the posts of a profile's tab when it has none."
+  },
+  "timeline.empty.bookmarks.description": {
+    "defaultMessage": "Beiträge, für die du ein Lesezeichen setzt, erscheinen hier. Nur du siehst deine Lesezeichen.",
+    "description": "Text under the heading of the empty list of bookmarks."
+  },
+  "timeline.empty.bookmarks.heading": {
+    "defaultMessage": "Noch keine Lesezeichen",
+    "description": "Heading shown instead of posts when the user has bookmarked none."
+  },
+  "timeline.empty.home.action": {
+    "defaultMessage": "Lokale Timeline durchsuchen",
+    "description": "Link from the empty home timeline to the local timeline, where the user can find people to follow."
+  },
+  "timeline.empty.home.search": {
+    "defaultMessage": "Personen zum Folgen finden",
+    "description": "Link from the empty home timeline to the search, where the user can find people to follow, on a server that does not offer the local timeline."
+  },
+  "timeline.empty.home.description": {
+    "defaultMessage": "Deine Beiträge und die Beiträge der Personen, denen du folgst, erscheinen hier.",
+    "description": "Text under the heading of the empty home timeline."
+  },
+  "timeline.empty.home.heading": {
+    "defaultMessage": "Deine Startseite ist leer",
+    "description": "Heading shown instead of posts when the home timeline has none."
+  },
+  "timeline.empty.list.description": {
+    "defaultMessage": "Beiträge und Boosts der Personen in dieser Liste erscheinen hier.",
+    "description": "Text under the heading of the timeline of a list whose members have not posted yet."
+  },
+  "timeline.empty.list.heading": {
+    "defaultMessage": "Noch keine Beiträge",
+    "description": "Heading shown instead of posts when a list with members has none in its timeline."
+  },
+  "timeline.empty.local.description": {
+    "defaultMessage": "Öffentliche Beiträge der Personen auf diesem Server erscheinen hier.",
+    "description": "Text under the heading of the empty local timeline."
+  },
+  "timeline.empty.local.heading": {
+    "defaultMessage": "Noch keine Beiträge",
+    "description": "Heading shown instead of posts when the local timeline has none."
+  },
+  "timeline.empty.public.description": {
+    "defaultMessage": "Öffentliche Beiträge von Personen auf diesem und auf den Servern, die dieser kennt, erscheinen hier.",
+    "description": "Text under the heading of the empty federated timeline."
+  },
+  "timeline.empty.public.heading": {
+    "defaultMessage": "Noch keine Beiträge",
+    "description": "Heading shown instead of posts when the federated timeline has none."
+  },
+  "timeline.empty.tag.description": {
+    "defaultMessage": "Öffentliche Beiträge mit #{tag} erscheinen hier.",
+    "description": "Text under the heading of an empty hashtag timeline. {tag} is the hashtag without the #."
+  },
+  "timeline.empty.tag.heading": {
+    "defaultMessage": "Keine Beiträge mit #{tag}",
+    "description": "Heading shown instead of posts when no post has the hashtag. {tag} is the hashtag without the #."
+  },
+  "timeline.keyboard_hint": {
+    "defaultMessage": "In der Timeline wechselst du mit Bild-ab und Bild-auf zwischen Beiträgen.",
+    "description": "Hint for screen reader users before a timeline, about the keys that move from post to post."
+  },
+  "timeline.load_more": {
+    "defaultMessage": "Weitere Beiträge laden",
+    "description": "Button at the end of a timeline that loads older posts."
+  },
+  "timeline.load_more.failed": {
+    "defaultMessage": "Weitere Beiträge konnten nicht geladen werden: {reason}",
+    "description": "Message, read out and shown at the end of a timeline, when older posts failed to load. {reason} is the error message, a full sentence."
+  },
+  "timeline.loading": {
+    "defaultMessage": "Beiträge werden geladen",
+    "description": "Visually hidden text that names the busy region while posts load: the first page of a timeline, or a post page."
+  },
+  "timeline.media.no_description": {
+    "defaultMessage": "Keine Beschreibung",
+    "description": "Name of a picture of a post whose author gave no description (alternative text), read by screen readers and shown under the picture in the viewer; it is not drawn on the thumbnail."
+  },
+  "timeline.media.reveal": {
+    "defaultMessage": "Sensible Medien anzeigen",
+    "description": "Toggle button over the pictures of a post that the author marked sensitive; it shows or hides them."
+  },
+  "timeline.media.more": {
+    "defaultMessage": "+{count, number}",
+    "description": "Mark in the corner of the pictures of a remote post that had more attachments than the four this server keeps; it links to the original post. {count} is the number of attachments left out."
+  },
+  "timeline.media.more.label": {
+    "defaultMessage": "+{count, number} weitere – Originalbeitrag ansehen",
+    "description": "Accessible name of the mark of a remote post's left-out attachments, a link that opens the original post on its server. It must contain the text of timeline.media.more. {count} is the number of attachments left out."
+  },
+  "timeline.media.audio.play": {
+    "defaultMessage": "Wiedergeben",
+    "description": "Accessible name of the play button of the audio player of a post's audio attachment."
+  },
+  "timeline.media.audio.pause": {
+    "defaultMessage": "Pausieren",
+    "description": "Accessible name of the pause button of the audio player of a post's audio attachment, shown while the audio plays."
+  },
+  "timeline.media.audio.seek": {
+    "defaultMessage": "Position im Audio",
+    "description": "Accessible name of the seek slider of the audio player of a post's audio attachment; arrow keys move the playback position."
+  },
+  "timeline.media.viewer.title": {
+    "defaultMessage": "Bild {position, number} von {count, number}",
+    "description": "Heading of the image viewer, the dialog that shows a picture of a post at its original size when it is pressed. {position} is the place of the picture among the post's pictures, from 1; {count} is how many there are."
+  },
+  "timeline.media.viewer.close": {
+    "defaultMessage": "Schließen",
+    "description": "Accessible name of the × button that closes the image viewer."
+  },
+  "timeline.media.viewer.previous": {
+    "defaultMessage": "Vorheriges Bild",
+    "description": "Accessible name of the icon button of the image viewer that shows the post's picture before the current one."
+  },
+  "timeline.media.viewer.next": {
+    "defaultMessage": "Nächstes Bild",
+    "description": "Accessible name of the icon button of the image viewer that shows the post's next picture."
+  },
+  "timeline.media.viewer.position": {
+    "defaultMessage": "{position, number} / {count, number}",
+    "description": "Position of the picture shown in the image viewer among the post's pictures, between its previous and next buttons. {position} is the place of the picture, from 1; {count} is how many there are."
+  },
+  "timeline.media.viewer.alt_text": {
+    "defaultMessage": "Beschreibung",
+    "description": "Accessible name of the note button of the image viewer that shows or hides the picture's description (alt text) over the picture. The button exists only for a picture that has a description."
+  },
+  "timeline.card.author": {
+    "defaultMessage": "Von {author}",
+    "description": "Line under the description of a link card naming the author of the linked page. {author} is the author's name as the page gives it, or the verified account (timeline.card.account)."
+  },
+  "timeline.card.author_published": {
+    "defaultMessage": "Von {author} · {date}",
+    "description": "Line under the description of a link card naming the author of the linked page and when it was published. {author} is the author's name; {date} is the formatted date."
+  },
+  "timeline.card.published": {
+    "defaultMessage": "Veröffentlicht am {date}",
+    "description": "Line under the description of a link card saying when the linked page was published. {date} is the formatted date."
+  },
+  "timeline.card.account": {
+    "defaultMessage": "{name} ({handle})",
+    "description": "The verified author of a linked page as an account: {name} is the display name, {handle} the handle such as @alice@example.com."
+  },
+  "timeline.card.failed": {
+    "defaultMessage": "Die Vorschau dieses Links konnte nicht angezeigt werden.",
+    "description": "Shown in place of the card of a link in a post when it failed to render."
+  },
+  "timeline.new_posts": {
+    "defaultMessage": "{count, plural, one {# neuer Beitrag} other {# neue Beiträge}}",
+    "description": "Button above the home timeline when new posts have arrived; pressing it shows them at the top. Screen readers also read it out when the count changes."
+  },
+  "timeline.new_posts.failed": {
+    "defaultMessage": "Die neuen Beiträge konnten nicht geladen werden: {reason}",
+    "description": "Message read out when pressing the new posts button failed to load them. {reason} is the error message, a full sentence."
+  },
+  "timeline.offline.home": {
+    "defaultMessage": "Du bist offline. Das sind die Beiträge von {time}.",
+    "description": "Notice above the home timeline while the device is offline or the server cannot be reached: the posts shown are the ones loaded last, kept on this device. {time} is the date and time they were loaded, already formatted."
+  },
+  "timeline.retry": {
+    "defaultMessage": "Erneut versuchen",
+    "description": "Button at the end of a timeline that tries again to load older posts after a failure."
+  },
+  "timeline.signed_out.description": {
+    "defaultMessage": "Melde dich an, um die Beiträge der Personen zu lesen, denen du folgst.",
+    "description": "Description of the sign-in state that the home page shows when nobody is signed in, under its heading and above the link to sign in."
+  },
+  "timeline.signed_out.heading": {
+    "defaultMessage": "Du bist nicht angemeldet",
+    "description": "Heading on the home page when nobody is signed in, shown instead of the home timeline."
+  },
+  "timeline.empty.quotes.heading": {
+    "defaultMessage": "Noch keine Zitate",
+    "description": "Heading of the empty list of the posts that quote one of the user's posts."
+  },
+  "timeline.empty.quotes.description": {
+    "defaultMessage": "Beiträge, die diesen Beitrag zitieren, erscheinen hier.",
+    "description": "Description of the empty list of the posts that quote one of the user's posts."
+  },
+  "timeline.load_more.failed.heading": {
+    "defaultMessage": "Weitere Beiträge konnten nicht geladen werden",
+    "description": "Heading of the error shown at the end of a timeline when older posts failed to load, above the reason and the button to try again."
+  }
+}

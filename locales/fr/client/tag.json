@@ -1,0 +1,6 @@
+{
+  "tag.title": {
+    "defaultMessage": "#{tag}",
+    "description": "Heading and document title of the page with the posts of one hashtag. {tag} is the hashtag without the #, for example 'cats'."
+  }
+}

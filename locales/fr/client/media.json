@@ -1,0 +1,14 @@
+{
+  "media.loading": {
+    "defaultMessage": "Chargement du média",
+    "description": "Accessible name of the progress while a picture of a post loads in the image viewer, and the words read while an audio attachment loads after Play."
+  },
+  "media.failed": {
+    "defaultMessage": "Impossible de charger ce média.",
+    "description": "Shown over a picture or an audio attachment of a post that could not load."
+  },
+  "media.reload": {
+    "defaultMessage": "Réessayer",
+    "description": "Button over a picture or an audio attachment of a post that could not load: it loads it again."
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "admin.role.title": {
+    "defaultMessage": "Rôle",
+    "description": "Title of the page of one role."
+  },
+  "admin.role.back": {
+    "defaultMessage": "Tous les rôles",
+    "description": "Link from the page of a role, or of a new one, back to the list of roles."
+  },
+  "admin.role.facts": {
+    "defaultMessage": "À propos de ce rôle",
+    "description": "Heading of the region of a role's page with its key, position, permissions and badge."
+  },
+  "admin.role.holders": {
+    "defaultMessage": "Les rôles s’attribuent et se retirent depuis la page d’administration d’un compte.",
+    "description": "Text on a role's page above the link to the account search, where the role is granted."
+  },
+  "admin.role.edit.title": {
+    "defaultMessage": "Modifier le rôle",
+    "description": "Heading of the form of a role's page that changes its position, permissions and badge."
+  },
+  "admin.role.delete.title": {
+    "defaultMessage": "Supprimer le rôle",
+    "description": "Heading of the region of a role's page that deletes it."
+  },
+  "admin.role.gone": {
+    "defaultMessage": "Ce rôle n’existe plus.",
+    "description": "Text on the page of a role that was deleted while the page was open."
+  }
+}

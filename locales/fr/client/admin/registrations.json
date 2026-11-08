@@ -1,0 +1,146 @@
+{
+  "admin.registrations.account_gone": {
+    "defaultMessage": "Un compte supprimé",
+    "description": "Heading of a registration on the registrations admin screen, and the applicant in its sentences, when the user's account no longer exists."
+  },
+  "admin.registrations.already_approved": {
+    "defaultMessage": "{applicant} a déjà été approuvé par un autre modérateur. Cette décision est maintenue.",
+    "description": "Status after a moderator decided a registration that another moderator had approved first; nothing changed. {applicant} is the applicant's @username."
+  },
+  "admin.registrations.already_rejected": {
+    "defaultMessage": "{applicant} a déjà été refusé par un autre modérateur. Cette décision est maintenue.",
+    "description": "Status after a moderator decided a registration that another moderator had rejected first; nothing changed. {applicant} is the applicant's @username."
+  },
+  "admin.registrations.approve": {
+    "defaultMessage": "Approuver",
+    "description": "Button of a pending registration that opens the confirmation of approving it, and the button of that confirmation that approves it."
+  },
+  "admin.registrations.approve_applicant": {
+    "defaultMessage": "Approuver {applicant}",
+    "description": "Accessible name of the approve button of a pending registration. {applicant} is the applicant's @username."
+  },
+  "admin.registrations.approved": {
+    "defaultMessage": "{applicant} est approuvé et peut se connecter.",
+    "description": "Status after a moderator approved a registration. {applicant} is the applicant's @username."
+  },
+  "admin.registrations.cancel": {
+    "defaultMessage": "Annuler",
+    "description": "Button of the confirmation of approving or rejecting a registration that closes it without deciding."
+  },
+  "admin.registrations.characters_left": {
+    "defaultMessage": "{count, plural, one {# caractère restant} other {# caractères restants}}",
+    "description": "Character count under the note of a registration decision while the text is within the limit."
+  },
+  "admin.registrations.characters_over": {
+    "defaultMessage": "{count, plural, one {# caractère en trop} other {# caractères en trop}}",
+    "description": "Character count under the note of a registration decision when the text is longer than the limit."
+  },
+  "admin.registrations.confirm_approve.description": {
+    "defaultMessage": "{applicant} pourra se connecter et commencer à publier. La décision ne pourra plus être modifiée ensuite.",
+    "description": "Text of the confirmation before approving a registration. {applicant} is the applicant's @username."
+  },
+  "admin.registrations.confirm_approve.title": {
+    "defaultMessage": "Approuver {applicant} ?",
+    "description": "Title of the confirmation before approving a registration. {applicant} is the applicant's @username."
+  },
+  "admin.registrations.confirm_reject.description": {
+    "defaultMessage": "{applicant} ne pourra pas se connecter. La décision ne pourra plus être modifiée ensuite.",
+    "description": "Text of the confirmation before rejecting a registration. {applicant} is the applicant's @username."
+  },
+  "admin.registrations.confirm_reject.title": {
+    "defaultMessage": "Refuser {applicant} ?",
+    "description": "Title of the confirmation before rejecting a registration. {applicant} is the applicant's @username."
+  },
+  "admin.registrations.decide_failed": {
+    "defaultMessage": "Impossible d’enregistrer la décision : {reason}",
+    "description": "Error in the confirmation of approving or rejecting a registration when the request failed. {reason} is why."
+  },
+  "admin.registrations.email": {
+    "defaultMessage": "E-mail",
+    "description": "Term of a pending registration's email address."
+  },
+  "admin.registrations.email.none": {
+    "defaultMessage": "Aucun",
+    "description": "Value of a pending registration's email address when the user has none."
+  },
+  "admin.registrations.email_verified": {
+    "defaultMessage": "E-mail confirmé",
+    "description": "Term of whether the applicant confirmed their email address."
+  },
+  "admin.registrations.email_verified.no": {
+    "defaultMessage": "Non confirmé",
+    "description": "Value when the applicant has not confirmed their email address."
+  },
+  "admin.registrations.email_verified.yes": {
+    "defaultMessage": "Confirmé",
+    "description": "Value when the applicant confirmed their email address."
+  },
+  "admin.registrations.empty": {
+    "defaultMessage": "Aucune inscription en attente d’approbation",
+    "description": "Heading of the registrations admin screen when no registration awaits a decision."
+  },
+  "admin.registrations.empty.description": {
+    "defaultMessage": "Les nouvelles inscriptions apparaissent ici tant que les inscriptions doivent être approuvées.",
+    "description": "Text under the heading of the empty registrations admin screen."
+  },
+  "admin.registrations.invite": {
+    "defaultMessage": "Invitation",
+    "description": "Term of whether the applicant signed up with an invite."
+  },
+  "admin.registrations.invite.none": {
+    "defaultMessage": "Aucune",
+    "description": "Value when the applicant signed up without an invite."
+  },
+  "admin.registrations.invite.used": {
+    "defaultMessage": "Inscrit avec une invitation",
+    "description": "Value when the applicant signed up with an invite."
+  },
+  "admin.registrations.note": {
+    "defaultMessage": "Note pour les modérateurs",
+    "description": "Label of the optional note in the confirmation of approving or rejecting a registration."
+  },
+  "admin.registrations.note.description": {
+    "defaultMessage": "Facultatif. Seuls les modérateurs la voient.",
+    "description": "Hint under the note of a registration decision."
+  },
+  "admin.registrations.note.too_long": {
+    "defaultMessage": "Utilisez au maximum {max, number} caractères",
+    "description": "Error under the note of a registration decision when it is too long. {max} is the limit."
+  },
+  "admin.registrations.reason": {
+    "defaultMessage": "Raison de l’inscription",
+    "description": "Term of the reason the applicant gave for joining."
+  },
+  "admin.registrations.reason.none": {
+    "defaultMessage": "Aucune raison indiquée",
+    "description": "Value when the applicant gave no reason for joining."
+  },
+  "admin.registrations.reject": {
+    "defaultMessage": "Refuser",
+    "description": "Button of a pending registration that opens the confirmation of rejecting it, and the button of that confirmation that rejects it."
+  },
+  "admin.registrations.reject_applicant": {
+    "defaultMessage": "Refuser {applicant}",
+    "description": "Accessible name of the reject button of a pending registration. {applicant} is the applicant's @username."
+  },
+  "admin.registrations.rejected": {
+    "defaultMessage": "{applicant} est refusé.",
+    "description": "Status after a moderator rejected a registration. {applicant} is the applicant's @username."
+  },
+  "admin.registrations.submitted_at": {
+    "defaultMessage": "Inscrit le",
+    "description": "Term of when the applicant signed up."
+  },
+  "admin.registrations.summary": {
+    "defaultMessage": "Les inscriptions en attente d’approbation, à approuver ou à refuser.",
+    "description": "Description of the registration review screen in the administration menu."
+  },
+  "admin.registrations.title": {
+    "defaultMessage": "Inscriptions",
+    "description": "Title of the admin screen that lists the registrations awaiting approval."
+  },
+  "admin.registrations.column.applicant": {
+    "defaultMessage": "Candidat",
+    "description": "Header of the column of the registrations table that names the applicant."
+  }
+}

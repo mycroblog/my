@@ -151,7 +151,7 @@ func TestSignUpTakesTheBrowserLocale(t *testing.T) {
 	for i, tc := range []struct{ acceptLanguage, want string }{
 		{"ja-JP,ja;q=0.9,en;q=0.8", "ja"},
 		{"en-US,en;q=0.9", "en"},
-		{"fr-FR, de;q=0.5", ""},
+		{"it-IT, nl;q=0.5", ""},
 		{"", ""},
 	} {
 		b := newBrowser(t, h)

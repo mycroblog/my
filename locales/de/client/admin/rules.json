@@ -1,0 +1,158 @@
+{
+  "admin.rules.add": {
+    "defaultMessage": "Regel hinzufügen",
+    "description": "Button that adds a new rule after the others."
+  },
+  "admin.rules.add_failed": {
+    "defaultMessage": "Die Regel konnte nicht hinzugefügt werden: {reason}",
+    "description": "Error when adding a rule failed. {reason} is why."
+  },
+  "admin.rules.added": {
+    "defaultMessage": "Regel „{rule}“ hinzugefügt. Das Audit-Log hält die Änderung fest.",
+    "description": "Toast after a rule was added, on the page of the new rule. {rule} is its text."
+  },
+  "admin.rules.cancel": {
+    "defaultMessage": "Abbrechen",
+    "description": "Button that closes the confirmation of retiring a rule without retiring it."
+  },
+  "admin.rules.change_failed": {
+    "defaultMessage": "Die Regel konnte nicht geändert werden: {reason}",
+    "description": "Error when changing, moving or retiring a rule failed. {reason} is why."
+  },
+  "admin.rules.description": {
+    "defaultMessage": "Die Info-Seite und das Meldeformular zeigen die Regeln. Jede Regel hat einen einzeiligen Text und einen optionalen Hinweis, einmal in einer beliebigen Sprache verfasst: Alle sehen sie unverändert, egal in welcher Sprache ihre App läuft. Eine zurückgezogene Regel gilt nicht mehr, die Meldungen, die sich auf sie berufen, behalten sie aber.",
+    "description": "Description of the rules screen."
+  },
+  "admin.rules.edit.title": {
+    "defaultMessage": "Regel bearbeiten",
+    "description": "Heading of the form of a rule's page that changes its text and hint."
+  },
+  "admin.rules.empty": {
+    "defaultMessage": "Noch keine Regeln",
+    "description": "Heading of the empty list of rules."
+  },
+  "admin.rules.empty.description": {
+    "defaultMessage": "Füge mit „Regel hinzufügen“ die Regeln hinzu, denen Personen zustimmen.",
+    "description": "Description of the empty list of the rules in effect."
+  },
+  "admin.rules.hint": {
+    "defaultMessage": "Hinweis",
+    "description": "Label of the optional hint of a rule."
+  },
+  "admin.rules.list.title": {
+    "defaultMessage": "Geltende Regeln",
+    "description": "Heading and caption of the list of the rules in effect."
+  },
+  "admin.rules.move_down": {
+    "defaultMessage": "Nach unten",
+    "description": "Button that moves a rule one place down."
+  },
+  "admin.rules.move_down_rule": {
+    "defaultMessage": "Nach unten: {rule}",
+    "description": "Accessible name of the button that moves a rule down. {rule} is its text."
+  },
+  "admin.rules.move_up": {
+    "defaultMessage": "Nach oben",
+    "description": "Button that moves a rule one place up."
+  },
+  "admin.rules.move_up_rule": {
+    "defaultMessage": "Nach oben: {rule}",
+    "description": "Accessible name of the button that moves a rule up. {rule} is its text."
+  },
+  "admin.rules.moved": {
+    "defaultMessage": "„{rule}“ an Position {position} verschoben.",
+    "description": "Status after a rule was moved. {rule} is its text; {position} its new place, from 1."
+  },
+  "admin.rules.new.title": {
+    "defaultMessage": "Regel hinzufügen",
+    "description": "Title of the page of a new rule, and the link to it from the list of rules."
+  },
+  "admin.rules.no_text": {
+    "defaultMessage": "Gib die Regel ein.",
+    "description": "Error of a rule's text left empty or blank."
+  },
+  "admin.rules.retire": {
+    "defaultMessage": "Zurückziehen",
+    "description": "Button that retires a rule, and the confirm button of its dialog."
+  },
+  "admin.rules.retire.description": {
+    "defaultMessage": "Die Regel verschwindet dauerhaft aus der Liste der Regeln. Meldungen, die sich auf sie berufen, behalten sie.",
+    "description": "Description of the dialog that confirms retiring a rule."
+  },
+  "admin.rules.retire.title": {
+    "defaultMessage": "„{rule}“ zurückziehen?",
+    "description": "Question of the dialog that confirms retiring a rule. {rule} is its text."
+  },
+  "admin.rules.retired": {
+    "defaultMessage": "„{rule}“ zurückgezogen.",
+    "description": "Status after a rule was retired. {rule} is its text."
+  },
+  "admin.rules.save": {
+    "defaultMessage": "Speichern",
+    "description": "Button that saves a rule's text and hint on its page."
+  },
+  "admin.rules.summary": {
+    "defaultMessage": "Die Regeln, denen Personen zustimmen und auf die sich Meldungen berufen.",
+    "description": "Description of the rules screen in the administration menu."
+  },
+  "admin.rules.text": {
+    "defaultMessage": "Regel",
+    "description": "Label of the text of a rule."
+  },
+  "admin.rules.text.description": {
+    "defaultMessage": "Eine Zeile mit höchstens {max} Zeichen.",
+    "description": "Help of the text of a rule. {max} is the limit."
+  },
+  "admin.rules.title": {
+    "defaultMessage": "Regeln",
+    "description": "Title of the rules screen, in the administration menu and as its heading."
+  },
+  "admin.rules.too_long": {
+    "defaultMessage": "Verwende höchstens {max} Zeichen.",
+    "description": "Error of a text or hint of a rule longer than its limit. {max} is the limit."
+  },
+  "admin.rules.updated": {
+    "defaultMessage": "„{rule}“ gespeichert. Das Audit-Log hält die Änderung fest.",
+    "description": "Status after a rule's texts were saved. {rule} is its text."
+  },
+  "admin.rules.filter.label": {
+    "defaultMessage": "Anzuzeigende Regeln",
+    "description": "Accessible name of the filter of the list of rules: the rules in effect or the retired ones."
+  },
+  "admin.rules.filter.active": {
+    "defaultMessage": "Geltend",
+    "description": "Option of the filter of the list of rules, and the state of a rule in effect on its page."
+  },
+  "admin.rules.filter.retired": {
+    "defaultMessage": "Zurückgezogen",
+    "description": "Option of the filter of the list of rules, and the state of a retired rule on its page."
+  },
+  "admin.rules.retired.title": {
+    "defaultMessage": "Zurückgezogene Regeln",
+    "description": "Heading and caption of the list of the retired rules."
+  },
+  "admin.rules.retired.empty": {
+    "defaultMessage": "Keine zurückgezogenen Regeln",
+    "description": "Heading of the empty list of retired rules."
+  },
+  "admin.rules.retired.empty.description": {
+    "defaultMessage": "Eine zurückgezogene Regel erscheint hier, und die Meldungen, die sich auf sie berufen, behalten sie.",
+    "description": "Description of the empty list of retired rules."
+  },
+  "admin.rules.place": {
+    "defaultMessage": "Position",
+    "description": "Header of the column of a rule's place among the rules in effect, from 1, and the term of it on a rule's page."
+  },
+  "admin.rules.revised_at": {
+    "defaultMessage": "Zuletzt geändert",
+    "description": "Header of the column of when a rule's text or hint last changed, and the term of it on a rule's page."
+  },
+  "admin.rules.retired_at": {
+    "defaultMessage": "Zurückgezogen",
+    "description": "Header of the column of when a rule was retired, and the term of it on a rule's page."
+  },
+  "admin.rules.new.description": {
+    "defaultMessage": "Die Regel wird nach den anderen hinzugefügt. Du kannst sie in der Liste der Regeln verschieben.",
+    "description": "Text at the top of the page of a new rule."
+  }
+}

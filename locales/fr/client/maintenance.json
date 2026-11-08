@@ -1,0 +1,26 @@
+{
+  "maintenance.body": {
+    "defaultMessage": "Le serveur est en maintenance. Vous restez connecté, et l’application reviendra d’elle-même à la fin de la maintenance.",
+    "description": "Text below the heading of the screen shown in place of the app while the server is under maintenance. The app tries again by itself and returns to the page the user was on."
+  },
+  "maintenance.reload": {
+    "defaultMessage": "Recharger",
+    "description": "Button on the maintenance screen: asks the server again at once and, when the maintenance has ended, reloads the page."
+  },
+  "maintenance.status_page": {
+    "defaultMessage": "Voir la page d’état",
+    "description": "Link on the maintenance screen to the instance's status page, which another service hosts."
+  },
+  "maintenance.still": {
+    "defaultMessage": "Le serveur est toujours en maintenance.",
+    "description": "Announced to assistive technology after the user pressed Reload on the maintenance screen and the server still answered that it is under maintenance."
+  },
+  "maintenance.title": {
+    "defaultMessage": "En maintenance",
+    "description": "Heading of the screen shown in place of the app while the server is under maintenance; also the page name in the browser tab."
+  },
+  "maintenance.until": {
+    "defaultMessage": "Fin prévue : {time}",
+    "description": "When the maintenance is expected to end, on the maintenance screen. {time} is a date and time in the user's locale and time zone."
+  }
+}

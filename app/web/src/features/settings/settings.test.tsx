@@ -535,7 +535,7 @@ describe("following the browser", () => {
   });
 
   test("a user who follows it sees the browser's first supported language, and it is saved", async () => {
-    stubBrowserLanguages(["fr-FR", "ja-JP", "en"]);
+    stubBrowserLanguages(["it-IT", "ja-JP", "en"]);
     const prefs = preferencesServer({ locale: "en", locale_follows_browser: true });
     await renderApp({ path: "/settings/preferences" });
 
@@ -547,7 +547,7 @@ describe("following the browser", () => {
   });
 
   test("a browser whose languages the app does not have falls back to the server's language", async () => {
-    stubBrowserLanguages(["fr-FR", "de"]);
+    stubBrowserLanguages(["it-IT", "nl"]);
     document.documentElement.dataset["instanceLocale"] = "ja";
     const prefs = preferencesServer({ locale: "en", locale_follows_browser: true });
     await renderApp({ path: "/settings/preferences" });

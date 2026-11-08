@@ -1,0 +1,338 @@
+{
+  "admin.custom_emojis.title": {
+    "defaultMessage": "Eigene Emoji",
+    "description": "Heading of the custom emoji screen, and its link in the administration menu."
+  },
+  "admin.custom_emojis.summary": {
+    "defaultMessage": "Registriere die eigenen Emoji dieses Servers und deaktiviere die anderer Server.",
+    "description": "Description of the custom emoji screen in the administration menu of the settings."
+  },
+  "admin.custom_emojis.new.title": {
+    "defaultMessage": "Eigenes Emoji registrieren",
+    "description": "Heading of the form that registers a custom emoji of this server."
+  },
+  "admin.custom_emojis.image": {
+    "defaultMessage": "Bild",
+    "description": "Label of the image of a custom emoji, in the form and in an emoji's details."
+  },
+  "admin.custom_emojis.image.description": {
+    "defaultMessage": "PNG, GIF oder WebP, höchstens 1.024 Pixel pro Seite. Es wird mit höchstens 256 Pixeln angezeigt; ein animiertes PNG zeigt nur sein erstes Bild.",
+    "description": "Help of the image of a new custom emoji."
+  },
+  "admin.custom_emojis.image.choose": {
+    "defaultMessage": "Bild auswählen",
+    "description": "Button that opens the file chooser for the image of a new custom emoji."
+  },
+  "admin.custom_emojis.image.chosen": {
+    "defaultMessage": "Ausgewählt: {name}",
+    "description": "The image file chosen for a new custom emoji. {name} is the file name."
+  },
+  "admin.custom_emojis.image.large_hint": {
+    "defaultMessage": "Dieses Bild ist größer als 100 KB. Manche Server (GoToSocial standardmäßig) zeigen so große eigene Emoji nicht an.",
+    "description": "Note under a chosen custom emoji image larger than 100 KB; it can still be registered."
+  },
+  "admin.custom_emojis.image.required": {
+    "defaultMessage": "Wähle ein Bild aus.",
+    "description": "Error of the custom emoji form submitted without an image."
+  },
+  "admin.custom_emojis.image_failed": {
+    "defaultMessage": "Der Server konnte das Bild nicht verarbeiten.",
+    "description": "Reason of a failed registration or image replacement when the server could not process the uploaded image."
+  },
+  "admin.custom_emojis.shortcode": {
+    "defaultMessage": "Kürzel",
+    "description": "Label of the shortcode of a new custom emoji: the name people type between colons."
+  },
+  "admin.custom_emojis.shortcode.description": {
+    "defaultMessage": "2 bis 30 Buchstaben (A bis Z), Ziffern und Unterstriche; Groß- und Kleinschreibung zählt. Man tippt es zwischen Doppelpunkten, etwa :blobcat:. Es lässt sich später nicht ändern.",
+    "description": "Help of the shortcode of a new custom emoji. :blobcat: is an example (not translated)."
+  },
+  "admin.custom_emojis.shortcode.invalid": {
+    "defaultMessage": "Verwende 2 bis 30 Buchstaben (A bis Z), Ziffern und Unterstriche.",
+    "description": "Error of a shortcode that is empty or breaks the rules."
+  },
+  "admin.custom_emojis.category": {
+    "defaultMessage": "Kategorie",
+    "description": "Label of the category that groups a custom emoji in the picker."
+  },
+  "admin.custom_emojis.category.description": {
+    "defaultMessage": "Gruppiert die Emoji in der Auswahl. Optional, bis zu {max} Zeichen.",
+    "description": "Help of the category of a custom emoji. {max} is the most characters."
+  },
+  "admin.custom_emojis.aliases": {
+    "defaultMessage": "Weitere Namen",
+    "description": "Label of the other names that the picker's search finds a custom emoji by."
+  },
+  "admin.custom_emojis.aliases.description": {
+    "defaultMessage": "Namen, unter denen die Suche der Auswahl das Emoji ebenfalls findet, getrennt durch Leerzeichen oder Kommas; bis zu {max}, jeweils wie ein Kürzel.",
+    "description": "Help of the other names of a custom emoji. {max} is the most names."
+  },
+  "admin.custom_emojis.aliases.too_many": {
+    "defaultMessage": "Bis zu {max} weitere Namen.",
+    "description": "Error of more other names than allowed. {max} is the most names."
+  },
+  "admin.custom_emojis.visible_in_picker": {
+    "defaultMessage": "In der Auswahl anzeigen",
+    "description": "Checkbox of whether the picker offers a custom emoji."
+  },
+  "admin.custom_emojis.visible_in_picker.description": {
+    "defaultMessage": "Ein in der Auswahl ausgeblendetes Emoji lässt sich weiterhin als :shortcode: tippen.",
+    "description": "Help of the checkbox of whether the picker offers a custom emoji. :shortcode: is not translated."
+  },
+  "admin.custom_emojis.created_by": {
+    "defaultMessage": "Erstellt von",
+    "description": "Term of the description list of a local custom emoji: the account of the user who made it."
+  },
+  "admin.custom_emojis.created_by.deleted": {
+    "defaultMessage": "Einem gelöschten Konto",
+    "description": "Value of 'Made by' for a custom emoji whose creator's account is deleted."
+  },
+  "admin.custom_emojis.created_by.none": {
+    "defaultMessage": "Der Befehlszeile",
+    "description": "Value of 'Made by' for a custom emoji registered with the my command, not by a user."
+  },
+  "admin.custom_emojis.pages.pending": {
+    "defaultMessage": "{count, plural, one {# Anfrage wartet auf Prüfung} other {# Anfragen warten auf Prüfung}}",
+    "description": "Visually hidden words of the badge on the link to the requests page: the number of requests that await review."
+  },
+  "admin.custom_emojis.pages.pending_more": {
+    "defaultMessage": "{count, plural, one {Mehr als # Anfrage wartet auf Prüfung} other {Mehr als # Anfragen warten auf Prüfung}}",
+    "description": "Visually hidden words of the badge on the link to the requests page when there are more pending requests than the first page holds."
+  },
+  "admin.custom_emojis.submit": {
+    "defaultMessage": "Registrieren",
+    "description": "Button that registers a new custom emoji."
+  },
+  "admin.custom_emojis.create_failed": {
+    "defaultMessage": "Das eigene Emoji konnte nicht registriert werden: {reason}",
+    "description": "Error under the form when registering a custom emoji failed. {reason} is the localized reason."
+  },
+  "admin.custom_emojis.list.title": {
+    "defaultMessage": "Registrierte eigene Emoji",
+    "description": "Heading of the list of custom emoji."
+  },
+  "admin.custom_emojis.remote_add": {
+    "defaultMessage": "Emoji anderer Server kommen mit ihren Beiträgen. Kopiere eines, um es auf diesem Server zu verwenden.",
+    "description": "Shown in place of the button that registers an emoji, while the list shows the emoji of other servers."
+  },
+  "admin.custom_emojis.filter.label": {
+    "defaultMessage": "Server",
+    "description": "Accessible name of the select in the toolbar of the custom emoji list that chooses the emoji of this server or of other servers."
+  },
+  "admin.custom_emojis.filter.local": {
+    "defaultMessage": "Dieser Server",
+    "description": "Tab of the custom emoji registered on this server."
+  },
+  "admin.custom_emojis.filter.remote": {
+    "defaultMessage": "Andere Server",
+    "description": "Tab of the custom emoji that came from posts and profiles of other servers."
+  },
+  "admin.custom_emojis.search.label": {
+    "defaultMessage": "Eigene Emoji suchen",
+    "description": "Accessible name of the search form of the custom emoji list."
+  },
+  "admin.custom_emojis.search.shortcode": {
+    "defaultMessage": "Kürzel enthält",
+    "description": "Label of the search field of the custom emoji list: text that the shortcode contains."
+  },
+  "admin.custom_emojis.search.domain": {
+    "defaultMessage": "Domain",
+    "description": "Label of the search field of another server's domain in the custom emoji list."
+  },
+  "admin.custom_emojis.search.submit": {
+    "defaultMessage": "Suchen",
+    "description": "Button of the search form of the custom emoji list."
+  },
+  "admin.custom_emojis.search.clear": {
+    "defaultMessage": "Alle anzeigen",
+    "description": "Button that clears the search of the custom emoji list."
+  },
+  "admin.custom_emojis.empty.local": {
+    "defaultMessage": "Noch keine eigenen Emoji",
+    "description": "Heading of the custom emoji list of this server when none is registered."
+  },
+  "admin.custom_emojis.empty.local.description": {
+    "defaultMessage": "Hier registrierte Emoji erscheinen in der Auswahl des Beitragsformulars und des Profils.",
+    "description": "Description of the empty custom emoji list of this server."
+  },
+  "admin.custom_emojis.empty.remote": {
+    "defaultMessage": "Keine eigenen Emoji anderer Server",
+    "description": "Heading of the custom emoji list of other servers when none has been seen."
+  },
+  "admin.custom_emojis.empty.search": {
+    "defaultMessage": "Keine eigenen Emoji passen zur Suche",
+    "description": "Heading of the custom emoji list when the search finds nothing."
+  },
+  "admin.custom_emojis.domain": {
+    "defaultMessage": "Server",
+    "description": "Term in a remote custom emoji's details: the domain it came from."
+  },
+  "admin.custom_emojis.state": {
+    "defaultMessage": "Status",
+    "description": "Term in a custom emoji's details: enabled or disabled."
+  },
+  "admin.custom_emojis.state.enabled": {
+    "defaultMessage": "Aktiviert",
+    "description": "State of a custom emoji that is shown."
+  },
+  "admin.custom_emojis.state.disabled": {
+    "defaultMessage": "Deaktiviert: wird als Text angezeigt",
+    "description": "State of a custom emoji that is shown nowhere: its :shortcode: stays text."
+  },
+  "admin.custom_emojis.picker": {
+    "defaultMessage": "Auswahl",
+    "description": "Term in a custom emoji's details: whether the picker offers it."
+  },
+  "admin.custom_emojis.picker.shown": {
+    "defaultMessage": "Angezeigt",
+    "description": "Value of the picker term: the picker offers the emoji."
+  },
+  "admin.custom_emojis.picker.hidden": {
+    "defaultMessage": "Ausgeblendet",
+    "description": "Value of the picker term: the picker does not offer the emoji."
+  },
+  "admin.custom_emojis.none": {
+    "defaultMessage": "Keine",
+    "description": "Value of a custom emoji's category or other names when it has none."
+  },
+  "admin.custom_emojis.no_image": {
+    "defaultMessage": "Nicht angezeigt (die Medien seines Servers werden abgelehnt)",
+    "description": "Value of a remote custom emoji's image when the server does not show it, because a domain action rejects the media of its server."
+  },
+  "admin.custom_emojis.updated_at": {
+    "defaultMessage": "Bild gesetzt",
+    "description": "Term in a custom emoji's details: when its current image was set."
+  },
+  "admin.custom_emojis.save": {
+    "defaultMessage": "Speichern",
+    "description": "Button that saves the settings of a custom emoji."
+  },
+  "admin.custom_emojis.cancel": {
+    "defaultMessage": "Abbrechen",
+    "description": "Button that closes a dialog of a custom emoji without changing it."
+  },
+  "admin.custom_emojis.updated": {
+    "defaultMessage": "{emoji} ist gespeichert.",
+    "description": "Status after saving the settings of a custom emoji. {emoji} is the emoji's :shortcode: (with @domain for another server's), not translated."
+  },
+  "admin.custom_emojis.change_failed": {
+    "defaultMessage": "Das eigene Emoji konnte nicht geändert werden: {reason}",
+    "description": "Error when changing, replacing the image of, or deleting a custom emoji failed. {reason} is the localized reason."
+  },
+  "admin.custom_emojis.replace_image": {
+    "defaultMessage": "Bild ersetzen",
+    "description": "Button of a custom emoji that chooses a new image file for it."
+  },
+  "admin.custom_emojis.image_replaced": {
+    "defaultMessage": "Das Bild von {emoji} ist ersetzt. Andere Server rufen es erneut ab.",
+    "description": "Status after replacing the image of a custom emoji. {emoji} is the emoji's :shortcode: (with @domain for another server's), not translated."
+  },
+  "admin.custom_emojis.delete": {
+    "defaultMessage": "Löschen",
+    "description": "Button of a custom emoji that deletes it, and the confirm button of its dialog."
+  },
+  "admin.custom_emojis.delete_emoji": {
+    "defaultMessage": "{emoji} löschen",
+    "description": "Accessible name of the delete button of a custom emoji. {emoji} is the emoji's :shortcode: (with @domain for another server's), not translated."
+  },
+  "admin.custom_emojis.delete.title": {
+    "defaultMessage": "{emoji} löschen?",
+    "description": "Title of the dialog that confirms deleting a custom emoji. {emoji} is the emoji's :shortcode: (with @domain for another server's), not translated."
+  },
+  "admin.custom_emojis.delete.description": {
+    "defaultMessage": "Beiträge und Profile, die es verwenden, zeigen {emoji} als Text. Ein neues Emoji mit demselben Kürzel ist ein anderes Emoji und erscheint dort nicht. Das lässt sich nicht rückgängig machen.",
+    "description": "Body of the dialog that confirms deleting a custom emoji. {emoji} is the emoji's :shortcode: (with @domain for another server's), not translated."
+  },
+  "admin.custom_emojis.deleted": {
+    "defaultMessage": "{emoji} ist gelöscht.",
+    "description": "Status after deleting a custom emoji. {emoji} is the emoji's :shortcode: (with @domain for another server's), not translated."
+  },
+  "admin.custom_emojis.detail.copy": {
+    "defaultMessage": "Auf diesen Server kopieren",
+    "description": "Title of the region of a remote emoji's page that copies it into an emoji of this server."
+  },
+  "admin.custom_emojis.copy.description": {
+    "defaultMessage": "Dieser Server ruft das Bild ab und registriert es als eigenes Emoji, das in der Auswahl erscheint. Das Bild wird auf höchstens 256 Pixel verkleinert.",
+    "description": "Body of the dialog that copies another server's custom emoji."
+  },
+  "admin.custom_emojis.copy.submit": {
+    "defaultMessage": "Kopieren",
+    "description": "Confirm button of the dialog that copies another server's custom emoji."
+  },
+  "admin.custom_emojis.disable": {
+    "defaultMessage": "Deaktivieren",
+    "description": "Button of another server's custom emoji that stops showing it."
+  },
+  "admin.custom_emojis.disable_emoji": {
+    "defaultMessage": "{emoji} deaktivieren",
+    "description": "Accessible name of the disable button of a custom emoji. {emoji} is the emoji's :shortcode: (with @domain for another server's), not translated."
+  },
+  "admin.custom_emojis.enable": {
+    "defaultMessage": "Aktivieren",
+    "description": "Button of another server's custom emoji that shows it again."
+  },
+  "admin.custom_emojis.enable_emoji": {
+    "defaultMessage": "{emoji} aktivieren",
+    "description": "Accessible name of the enable button of a custom emoji. {emoji} is the emoji's :shortcode: (with @domain for another server's), not translated."
+  },
+  "admin.custom_emojis.disabled_status": {
+    "defaultMessage": "{emoji} ist deaktiviert.",
+    "description": "Status after disabling a custom emoji. {emoji} is the emoji's :shortcode: (with @domain for another server's), not translated."
+  },
+  "admin.custom_emojis.enabled_status": {
+    "defaultMessage": "{emoji} ist aktiviert.",
+    "description": "Status after enabling a custom emoji. {emoji} is the emoji's :shortcode: (with @domain for another server's), not translated."
+  },
+  "admin.custom_emojis.pages": {
+    "defaultMessage": "Seiten der eigenen Emoji",
+    "description": "Name of the local navigation between the pages of the custom emoji screen."
+  },
+  "admin.custom_emojis.pages.emoji": {
+    "defaultMessage": "Emoji",
+    "description": "Link of the local navigation to the list of custom emoji."
+  },
+  "admin.custom_emojis.pages.requests": {
+    "defaultMessage": "Anfragen",
+    "description": "Link of the local navigation to the requests for custom emoji."
+  },
+  "admin.custom_emojis.column.emoji": {
+    "defaultMessage": "Emoji",
+    "description": "Column header of the emoji: its image and :shortcode:, a link to its page."
+  },
+  "admin.custom_emojis.created_at": {
+    "defaultMessage": "Registriert",
+    "description": "Term of when the emoji was registered on this server, or first seen from its server."
+  },
+  "admin.custom_emojis.back": {
+    "defaultMessage": "Alle eigenen Emoji",
+    "description": "Link from an emoji's page and the registration form back to the list of custom emoji."
+  },
+  "admin.custom_emojis.detail.title": {
+    "defaultMessage": "Details des eigenen Emojis",
+    "description": "Heading and title of the page of one custom emoji."
+  },
+  "admin.custom_emojis.detail.about": {
+    "defaultMessage": "Über dieses Emoji",
+    "description": "Title of the region of an emoji's page with its image, :shortcode: and facts."
+  },
+  "admin.custom_emojis.detail.settings": {
+    "defaultMessage": "Einstellungen",
+    "description": "Title of the region of a local emoji's page with the form of its category, other names and picker visibility."
+  },
+  "admin.custom_emojis.detail.image": {
+    "defaultMessage": "Bild",
+    "description": "Title of the region of a local emoji's page that replaces its image."
+  },
+  "admin.custom_emojis.detail.state": {
+    "defaultMessage": "Aktivieren oder deaktivieren",
+    "description": "Title of the region of an emoji's page that enables or disables it."
+  },
+  "admin.custom_emojis.detail.state.description": {
+    "defaultMessage": "Ein deaktiviertes Emoji erscheint nirgends, weder in Beiträgen, Profilen, der Föderation noch in der Auswahl: Sein :shortcode: wird als Text angezeigt.",
+    "description": "Description of the region that enables or disables an emoji."
+  },
+  "admin.custom_emojis.detail.delete": {
+    "defaultMessage": "Dieses Emoji löschen",
+    "description": "Title of the region of a local emoji's page that deletes it."
+  }
+}

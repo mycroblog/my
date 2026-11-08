@@ -1,0 +1,374 @@
+{
+  "admin.signup_blocks.add_failed": {
+    "defaultMessage": "Impossible d’ajouter le blocage : {reason}",
+    "description": "Error under the form of a new sign-up block when the server refused it. {reason} is why."
+  },
+  "admin.signup_blocks.added": {
+    "defaultMessage": "{severity} est en vigueur pour {kind} {value}.",
+    "description": "Status after a new sign-up block took effect. {severity} is its effect, such as Refuse; {kind} is its kind, such as Email domain; {value} what it matches."
+  },
+  "admin.signup_blocks.characters_left": {
+    "defaultMessage": "{count, plural, one {# caractère restant} other {# caractères restants}}",
+    "description": "Character count under the comment of a sign-up block while the text is within the limit."
+  },
+  "admin.signup_blocks.characters_over": {
+    "defaultMessage": "{count, plural, one {# caractère en trop} other {# caractères en trop}}",
+    "description": "Character count under the comment of a sign-up block when the text is longer than the limit."
+  },
+  "admin.signup_blocks.comment": {
+    "defaultMessage": "Commentaire",
+    "description": "Label of the moderators' comment of a sign-up block, and its term in the list."
+  },
+  "admin.signup_blocks.comment.description": {
+    "defaultMessage": "Visible uniquement par les modérateurs.",
+    "description": "Help text under the comment of a new sign-up block."
+  },
+  "admin.signup_blocks.created_at": {
+    "defaultMessage": "Ajouté le",
+    "description": "Term of when a sign-up block was added."
+  },
+  "admin.signup_blocks.duration": {
+    "defaultMessage": "Durée",
+    "description": "Label of the duration of a new sign-up block."
+  },
+  "admin.signup_blocks.duration.days": {
+    "defaultMessage": "{count, plural, one {# jour} other {# jours}}",
+    "description": "An option of the duration of a sign-up block, in days."
+  },
+  "admin.signup_blocks.duration.description": {
+    "defaultMessage": "Le blocage prend fin de lui-même après ce délai.",
+    "description": "Help text under the duration of a new sign-up block."
+  },
+  "admin.signup_blocks.duration.indefinite": {
+    "defaultMessage": "Jusqu’à la levée",
+    "description": "The option of a sign-up block that lasts until it is lifted, and the end of such a block in the list."
+  },
+  "admin.signup_blocks.empty.active": {
+    "defaultMessage": "Aucun blocage d’inscription en vigueur",
+    "description": "Heading of the empty list of sign-up blocks in effect."
+  },
+  "admin.signup_blocks.empty.active.description": {
+    "defaultMessage": "Les blocages d’inscription apparaissent ici jusqu’à leur fin ou leur levée.",
+    "description": "Text of the empty list of sign-up blocks in effect."
+  },
+  "admin.signup_blocks.empty.all": {
+    "defaultMessage": "Aucun blocage d’inscription pour le moment",
+    "description": "Heading of the empty list of every sign-up block."
+  },
+  "admin.signup_blocks.expires_at": {
+    "defaultMessage": "Fin",
+    "description": "Term of when a sign-up block ends."
+  },
+  "admin.signup_blocks.filter.active": {
+    "defaultMessage": "En vigueur",
+    "description": "Tab of the sign-up blocks in effect."
+  },
+  "admin.signup_blocks.filter.all": {
+    "defaultMessage": "Tous",
+    "description": "Tab of every sign-up block, ended ones included."
+  },
+  "admin.signup_blocks.filter.label": {
+    "defaultMessage": "Blocages à afficher",
+    "description": "Accessible name of the tabs that filter the list of sign-up blocks."
+  },
+  "admin.signup_blocks.import.comment.description": {
+    "defaultMessage": "Visible uniquement par les modérateurs. Chaque blocage de la liste reçoit ce commentaire.",
+    "description": "Help text under the comment of an import of a list of sign-up blocks."
+  },
+  "admin.signup_blocks.import.description": {
+    "defaultMessage": "Ajoutez un blocage pour chaque valeur d’une liste, par exemple une liste publique de domaines d’e-mail jetables. Chaque blocage reçoit le même type, le même effet, la même durée et le même commentaire.",
+    "description": "Text at the top of the section that imports a list of sign-up blocks."
+  },
+  "admin.signup_blocks.import.done": {
+    "defaultMessage": "{added, plural, =0 {Aucun blocage n’a été ajouté} one {# blocage a été ajouté} other {# blocages ont été ajoutés}} : {kind}, {severity}. {skipped, plural, =0 {Aucune ligne n’a été ignorée.} one {# ligne a été ignorée.} other {# lignes ont été ignorées.}}",
+    "description": "Status after an import of a list of sign-up blocks. {added} is the number of blocks added; {skipped} the number of lines skipped; {kind} the kind of the list, such as Email domain; {severity} the effect, such as Refuse."
+  },
+  "admin.signup_blocks.import.failed": {
+    "defaultMessage": "Impossible d’ajouter les blocages : {reason}",
+    "description": "Error under the import form of sign-up blocks when the server refused the list. {reason} is why."
+  },
+  "admin.signup_blocks.import.file": {
+    "defaultMessage": "Choisir un fichier texte",
+    "description": "Button that opens the file picker to read a list of sign-up blocks from a text or CSV file."
+  },
+  "admin.signup_blocks.import.file.description": {
+    "defaultMessage": "Un fichier texte ou CSV. Son contenu remplace la liste ci-dessus.",
+    "description": "Help text next to the button that reads a list of sign-up blocks from a file."
+  },
+  "admin.signup_blocks.import.file.failed": {
+    "defaultMessage": "Impossible de lire {name}. Choisissez de nouveau le fichier.",
+    "description": "Error when the browser could not read the chosen file of a list of sign-up blocks. {name} is the file name."
+  },
+  "admin.signup_blocks.import.file.read": {
+    "defaultMessage": "{name} lu : {count, plural, one {# valeur} other {# valeurs}}.",
+    "description": "Status after the chosen file of a list of sign-up blocks was read into the list. {name} is the file name; {count} the number of values in it."
+  },
+  "admin.signup_blocks.import.file.too_large": {
+    "defaultMessage": "{name} dépasse {max, number} Mo. Découpez la liste en fichiers plus petits.",
+    "description": "Error when the chosen file of a list of sign-up blocks is too large to send. {name} is the file name; {max} the limit in megabytes."
+  },
+  "admin.signup_blocks.import.list": {
+    "defaultMessage": "Liste",
+    "description": "Label of the text area of a list of sign-up block values."
+  },
+  "admin.signup_blocks.import.list.description": {
+    "defaultMessage": "Une valeur par ligne, {max, number} au maximum. Dans une ligne CSV, le premier champ est la valeur. Les lignes vides et celles qui commencent par # sont ignorées.",
+    "description": "Help text under the list of an import of sign-up blocks. {max} is the most values one import holds."
+  },
+  "admin.signup_blocks.import.list.required": {
+    "defaultMessage": "Saisissez au moins une valeur, ou choisissez un fichier",
+    "description": "Error under the list of an import of sign-up blocks when it has no value."
+  },
+  "admin.signup_blocks.import.list.too_large": {
+    "defaultMessage": "La liste dépasse {max, number} Mo. Découpez-la en listes plus petites",
+    "description": "Error under the list of an import of sign-up blocks when it has too many bytes to send. {max} is the limit in megabytes."
+  },
+  "admin.signup_blocks.import.list.too_many": {
+    "defaultMessage": "La liste contient {count, number} valeurs. Saisissez-en {max, number} au maximum et ajoutez le reste dans un autre import",
+    "description": "Error under the list of an import of sign-up blocks when it has more values than one import holds. {count} is how many it has; {max} the limit."
+  },
+  "admin.signup_blocks.import.reason.already_blocked": {
+    "defaultMessage": "Déjà bloqué",
+    "description": "Why a line of an imported list of sign-up blocks was not added: a block in effect with an effect at least as strong covers it."
+  },
+  "admin.signup_blocks.import.reason.duplicate": {
+    "defaultMessage": "Identique à une ligne précédente",
+    "description": "Why a line of an imported list of sign-up blocks was not added: an earlier line has the same value."
+  },
+  "admin.signup_blocks.import.reason.invalid": {
+    "defaultMessage": "Valeur non valide pour ce type",
+    "description": "Why a line of an imported list of sign-up blocks was not added: the value is not a valid domain, email address or IP range."
+  },
+  "admin.signup_blocks.import.skipped.line": {
+    "defaultMessage": "Ligne",
+    "description": "Column header of the line number of a skipped line of an imported list of sign-up blocks."
+  },
+  "admin.signup_blocks.import.skipped.line_number": {
+    "defaultMessage": "{line, number}",
+    "description": "The line number of a skipped line of an imported list of sign-up blocks, in its table."
+  },
+  "admin.signup_blocks.import.skipped.lines": {
+    "defaultMessage": "{count, plural, one {# ligne} other {# lignes}}",
+    "description": "The number of skipped lines of an imported list of sign-up blocks for one reason."
+  },
+  "admin.signup_blocks.import.skipped.reason": {
+    "defaultMessage": "Raison",
+    "description": "Column header of why a line of an imported list of sign-up blocks was skipped."
+  },
+  "admin.signup_blocks.import.skipped.show_all": {
+    "defaultMessage": "Afficher {count, plural, one {la # ligne} other {les # lignes}}",
+    "description": "Button that shows every skipped line of an imported list of sign-up blocks. {count} is how many there are."
+  },
+  "admin.signup_blocks.import.skipped.shown": {
+    "defaultMessage": "Les {shown, number} premières lignes sur {count, number} sont affichées.",
+    "description": "Text above the button that shows every skipped line of an imported list of sign-up blocks."
+  },
+  "admin.signup_blocks.import.skipped.title": {
+    "defaultMessage": "Lignes non ajoutées",
+    "description": "Heading of the lines of an imported list of sign-up blocks that were skipped, and the name of their table."
+  },
+  "admin.signup_blocks.import.skipped.value": {
+    "defaultMessage": "Valeur",
+    "description": "Column header of the value of a skipped line of an imported list of sign-up blocks."
+  },
+  "admin.signup_blocks.import.submit": {
+    "defaultMessage": "Ajouter les blocages",
+    "description": "Submit button of the import of a list of sign-up blocks."
+  },
+  "admin.signup_blocks.import.title": {
+    "defaultMessage": "Ajouter depuis une liste",
+    "description": "Heading of the section that imports a list of sign-up blocks at once."
+  },
+  "admin.signup_blocks.kind": {
+    "defaultMessage": "Correspondance par",
+    "description": "Label of the choice of what a sign-up block matches (email domain, email address, IP range), and the term of that in a listed block."
+  },
+  "admin.signup_blocks.kind.email_domain": {
+    "defaultMessage": "Domaine d’e-mail",
+    "description": "A kind of sign-up block: the domain of the email address, with its subdomains."
+  },
+  "admin.signup_blocks.kind.email_domain.description": {
+    "defaultMessage": "Les inscriptions avec une adresse e-mail de ce domaine ou de ses sous-domaines, par exemple un service d’e-mail jetable.",
+    "description": "Help text of the email domain kind of a new sign-up block."
+  },
+  "admin.signup_blocks.kind.email_hash": {
+    "defaultMessage": "Adresse e-mail",
+    "description": "A kind of sign-up block: one email address, kept as a hash."
+  },
+  "admin.signup_blocks.kind.email_hash.description": {
+    "defaultMessage": "Les inscriptions avec une adresse e-mail donnée. Seule son empreinte est conservée.",
+    "description": "Help text of the email address kind of a new sign-up block."
+  },
+  "admin.signup_blocks.kind.ip_range": {
+    "defaultMessage": "Plage d’adresses IP",
+    "description": "A kind of sign-up block: the client addresses in a CIDR range."
+  },
+  "admin.signup_blocks.kind.ip_range.description": {
+    "defaultMessage": "Les inscriptions depuis une adresse IP ou une plage d’adresses IP.",
+    "description": "Help text of the IP range kind of a new sign-up block."
+  },
+  "admin.signup_blocks.lift": {
+    "defaultMessage": "Lever",
+    "description": "Button that lifts a sign-up block."
+  },
+  "admin.signup_blocks.lift_failed": {
+    "defaultMessage": "Impossible de lever le blocage : {reason}",
+    "description": "Toast when lifting a sign-up block failed. {reason} is why."
+  },
+  "admin.signup_blocks.lifted": {
+    "defaultMessage": "Le blocage de {kind} {value} est levé.",
+    "description": "Status after a sign-up block was lifted. {kind} is its kind, such as Email domain; {value} what it matches."
+  },
+  "admin.signup_blocks.lifted_at": {
+    "defaultMessage": "Levé le",
+    "description": "Term of when a sign-up block was lifted."
+  },
+  "admin.signup_blocks.list.title": {
+    "defaultMessage": "Blocages",
+    "description": "Heading of the section with the list of sign-up blocks."
+  },
+  "admin.signup_blocks.new.title": {
+    "defaultMessage": "Ajouter un blocage",
+    "description": "Button on the list of sign-up blocks that opens the form of a new one, and the heading of that page."
+  },
+  "admin.signup_blocks.severity": {
+    "defaultMessage": "Effet",
+    "description": "Label of the choice of what a sign-up block does, and the term of that in a listed block."
+  },
+  "admin.signup_blocks.severity.reject": {
+    "defaultMessage": "Refuser",
+    "description": "A severity of sign-up block: the sign-up is refused."
+  },
+  "admin.signup_blocks.severity.reject.description": {
+    "defaultMessage": "L’inscription est refusée. La page n’en indique pas la raison.",
+    "description": "Help text of the refuse severity of a new sign-up block."
+  },
+  "admin.signup_blocks.severity.require_approval": {
+    "defaultMessage": "Exiger une approbation",
+    "description": "A severity of sign-up block: the registration waits for a moderator."
+  },
+  "admin.signup_blocks.severity.require_approval.description": {
+    "defaultMessage": "L’inscription attend l’approbation d’un modérateur, quel que soit le mode d’inscription.",
+    "description": "Help text of the require approval severity of a new sign-up block."
+  },
+  "admin.signup_blocks.severity.required": {
+    "defaultMessage": "Choisissez un effet",
+    "description": "Error under the effect of a new sign-up block when none is chosen."
+  },
+  "admin.signup_blocks.source": {
+    "defaultMessage": "Origine",
+    "description": "Term of how a sign-up block was added: on its own or with a ban."
+  },
+  "admin.signup_blocks.source.ban": {
+    "defaultMessage": "Avec un bannissement",
+    "description": "A sign-up block made from a ban of an account."
+  },
+  "admin.signup_blocks.source.manual": {
+    "defaultMessage": "Ajouté séparément",
+    "description": "A sign-up block added from this screen or the command line."
+  },
+  "admin.signup_blocks.state": {
+    "defaultMessage": "État",
+    "description": "Term of the state of a sign-up block in the list."
+  },
+  "admin.signup_blocks.state.active": {
+    "defaultMessage": "En vigueur",
+    "description": "State of a sign-up block in effect."
+  },
+  "admin.signup_blocks.state.expired": {
+    "defaultMessage": "Terminé",
+    "description": "State of a sign-up block that ended at its end date."
+  },
+  "admin.signup_blocks.state.lifted": {
+    "defaultMessage": "Levé",
+    "description": "State of a sign-up block a moderator lifted."
+  },
+  "admin.signup_blocks.submit": {
+    "defaultMessage": "Ajouter le blocage",
+    "description": "Submit button of the form of a new sign-up block."
+  },
+  "admin.signup_blocks.summary": {
+    "defaultMessage": "Les domaines d’e-mail, adresses e-mail et plages d’adresses IP dont les inscriptions sont refusées ou doivent être approuvées.",
+    "description": "Description of the sign-up blocks screen in the administration menu."
+  },
+  "admin.signup_blocks.title": {
+    "defaultMessage": "Blocages d’inscription",
+    "description": "Heading of the screen of the blocks on sign-ups by email domain, email address or IP range, and its link in the administration menu."
+  },
+  "admin.signup_blocks.too_long": {
+    "defaultMessage": "Saisissez {max, number} caractères au maximum",
+    "description": "Error under the comment of a sign-up block when it is too long. {max} is the limit."
+  },
+  "admin.signup_blocks.value.email_domain": {
+    "defaultMessage": "Domaine",
+    "description": "Label of the value field of a new sign-up block on an email domain."
+  },
+  "admin.signup_blocks.value.email_domain.description": {
+    "defaultMessage": "Par exemple mail.example. Un domaine en caractères non latins peut être saisi tel quel.",
+    "description": "Help text under the domain field of a new sign-up block on an email domain."
+  },
+  "admin.signup_blocks.value.email_domain.required": {
+    "defaultMessage": "Saisissez un domaine",
+    "description": "Error under the domain field of a new sign-up block when it is empty."
+  },
+  "admin.signup_blocks.value.email_hash": {
+    "defaultMessage": "Adresse e-mail",
+    "description": "Label of the value field of a new sign-up block on one email address."
+  },
+  "admin.signup_blocks.value.email_hash.description": {
+    "defaultMessage": "Une adresse e-mail, ou son SHA-256 en hexadécimal. La casse et la partie de la partie locale à partir d’un + sont ignorées.",
+    "description": "Help text under the email address field of a new sign-up block."
+  },
+  "admin.signup_blocks.value.email_hash.required": {
+    "defaultMessage": "Saisissez une adresse e-mail",
+    "description": "Error under the email address field of a new sign-up block when it is empty."
+  },
+  "admin.signup_blocks.value.ip_range": {
+    "defaultMessage": "Adresse IP ou plage",
+    "description": "Label of the value field of a new sign-up block on an IP range."
+  },
+  "admin.signup_blocks.value.ip_range.description": {
+    "defaultMessage": "Une plage CIDR comme 192.0.2.0/24 ou 2001:db8::/32, ou une seule adresse IP.",
+    "description": "Help text under the IP range field of a new sign-up block."
+  },
+  "admin.signup_blocks.value.ip_range.required": {
+    "defaultMessage": "Saisissez une adresse IP ou une plage",
+    "description": "Error under the IP range field of a new sign-up block when it is empty."
+  },
+  "admin.signup_blocks.column.value": {
+    "defaultMessage": "Bloqué",
+    "description": "Header of the column of the sign-up blocks table that holds what the block matches."
+  },
+  "admin.signup_blocks.pages": {
+    "defaultMessage": "Pages des blocages d’inscription",
+    "description": "Accessible name of the navigation between the pages of the sign-up blocks screen: the list and the import from a list."
+  },
+  "admin.signup_blocks.new.form": {
+    "defaultMessage": "Le blocage",
+    "description": "Heading of the form on the page of a new sign-up block."
+  },
+  "admin.signup_blocks.back": {
+    "defaultMessage": "Retour aux blocages d’inscription",
+    "description": "Link under the heading of a page of one sign-up block, or of the form of a new one, to the list of sign-up blocks."
+  },
+  "admin.signup_blocks.detail.title": {
+    "defaultMessage": "Blocage d’inscription",
+    "description": "Title of the page of one sign-up block, before the block has loaded or when the viewer may not see it."
+  },
+  "admin.signup_blocks.detail.heading": {
+    "defaultMessage": "Blocage de {kind} {value}",
+    "description": "Heading of the page of one sign-up block. {kind} is the kind, such as Email domain; {value} what it matches."
+  },
+  "admin.signup_blocks.detail.details": {
+    "defaultMessage": "Détails",
+    "description": "Heading of the region of a sign-up block's page with what it matches, its effect, and its comment."
+  },
+  "admin.signup_blocks.detail.no_comment": {
+    "defaultMessage": "Aucun",
+    "description": "The comment of a sign-up block that has none."
+  },
+  "admin.signup_blocks.lift.description": {
+    "defaultMessage": "Les inscriptions que le blocage empêchait sont de nouveau autorisées dès maintenant. Son enregistrement reste, indiqué comme levé.",
+    "description": "Help text under the button that lifts a sign-up block."
+  }
+}

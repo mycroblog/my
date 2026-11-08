@@ -1,0 +1,254 @@
+{
+  "admin.announcements.announcement_title": {
+    "defaultMessage": "Titel",
+    "description": "Label of the field of an announcement's title."
+  },
+  "admin.announcements.announcement_title.description": {
+    "defaultMessage": "Reiner Text, die Überschrift in der Liste, in den Benachrichtigungen und in der Seitenspalte. {count, plural, one {# Zeichen übrig} other {# Zeichen übrig}}",
+    "description": "Description of the field of an announcement's title. {count} is how many characters may still be added, out of 100."
+  },
+  "admin.announcements.back": {
+    "defaultMessage": "Zurück zu den Ankündigungen",
+    "description": "Link from the page of an announcement, or the page that writes one, back to the list of announcements."
+  },
+  "admin.announcements.cancel": {
+    "defaultMessage": "Abbrechen",
+    "description": "Button that leaves the dialog that withdraws an announcement without changing anything."
+  },
+  "admin.announcements.change_failed": {
+    "defaultMessage": "Die Ankündigung konnte nicht geändert werden: {reason}",
+    "description": "Error after a change of an announcement failed. {reason} is why."
+  },
+  "admin.announcements.column.announcement": {
+    "defaultMessage": "Ankündigung",
+    "description": "Column header of the table of announcements: the title of each, a link to its page."
+  },
+  "admin.announcements.column.period": {
+    "defaultMessage": "Wird angezeigt",
+    "description": "Column header of the table of announcements: when each shows."
+  },
+  "admin.announcements.create_draft": {
+    "defaultMessage": "Als Entwurf speichern",
+    "description": "Button that writes a new announcement as a draft."
+  },
+  "admin.announcements.create_failed": {
+    "defaultMessage": "Die Ankündigung konnte nicht verfasst werden: {reason}",
+    "description": "Error after writing an announcement failed. {reason} is why."
+  },
+  "admin.announcements.create_published": {
+    "defaultMessage": "Ankündigung veröffentlichen",
+    "description": "Button that writes a new announcement and publishes it."
+  },
+  "admin.announcements.created_at": {
+    "defaultMessage": "Verfasst",
+    "description": "Term of when an announcement was written."
+  },
+  "admin.announcements.description": {
+    "defaultMessage": "Ankündigungen werden allen auf diesem Server angezeigt. Sie werden benachrichtigt, wenn du eine veröffentlichst oder wenn ihre Anzeigezeit beginnt, je nachdem, was später ist. Das Audit-Log protokolliert jede Änderung.",
+    "description": "Description at the top of the admin screen of the announcements."
+  },
+  "admin.announcements.detail.title": {
+    "defaultMessage": "Ankündigung",
+    "description": "Title of the page of one announcement in the admin screens."
+  },
+  "admin.announcements.duration": {
+    "defaultMessage": "Anzeigen für",
+    "description": "Label of how long a new announcement shows."
+  },
+  "admin.announcements.duration.description": {
+    "defaultMessage": "Ab dem Verfassen. Danach wird sie nicht mehr angezeigt.",
+    "description": "Description of how long a new announcement shows."
+  },
+  "admin.announcements.edit.description": {
+    "defaultMessage": "Wenn du eine veröffentlichte Ankündigung änderst, wird niemand erneut benachrichtigt.",
+    "description": "Note on the region of an announcement's page that edits its title and text."
+  },
+  "admin.announcements.edit.title": {
+    "defaultMessage": "Ankündigung bearbeiten",
+    "description": "Heading of the region of an announcement's page that edits its title and text."
+  },
+  "admin.announcements.empty": {
+    "defaultMessage": "Keine Ankündigungen",
+    "description": "Heading of the table of every announcement when there are none."
+  },
+  "admin.announcements.empty.description": {
+    "defaultMessage": "Ankündigungen, die du verfasst, erscheinen hier.",
+    "description": "Description of the table of every announcement when there are none."
+  },
+  "admin.announcements.empty.filtered": {
+    "defaultMessage": "Keine Ankündigungen in dieser Liste",
+    "description": "Heading of the table of announcements when none is in the selected state."
+  },
+  "admin.announcements.ends_at": {
+    "defaultMessage": "Wird angezeigt bis",
+    "description": "Term of when an announcement stops showing."
+  },
+  "admin.announcements.filter.all": {
+    "defaultMessage": "Alle Ankündigungen",
+    "description": "Filter of the announcements: every one, in any state."
+  },
+  "admin.announcements.filter.draft": {
+    "defaultMessage": "Entwürfe",
+    "description": "Filter of the announcements: the drafts."
+  },
+  "admin.announcements.filter.ended": {
+    "defaultMessage": "Beendet",
+    "description": "Filter of the announcements: the published ones whose time to show has ended."
+  },
+  "admin.announcements.filter.label": {
+    "defaultMessage": "Ankündigungen nach Status",
+    "description": "Accessible name of the list that selects which announcements the table shows."
+  },
+  "admin.announcements.filter.scheduled": {
+    "defaultMessage": "Geplant",
+    "description": "Filter of the announcements: the published ones whose time to show has not started yet."
+  },
+  "admin.announcements.filter.showing": {
+    "defaultMessage": "Wird angezeigt",
+    "description": "Filter of the announcements: the published ones everyone sees now."
+  },
+  "admin.announcements.filter.withdrawn": {
+    "defaultMessage": "Zurückgezogen",
+    "description": "Filter of the announcements: the withdrawn ones."
+  },
+  "admin.announcements.new.title": {
+    "defaultMessage": "Ankündigung verfassen",
+    "description": "Title of the page that writes a new announcement, and of the link to it from the list."
+  },
+  "admin.announcements.period.from": {
+    "defaultMessage": "Ab {date}",
+    "description": "When an announcement starts to show, in the table of announcements. {date} is a date and time."
+  },
+  "admin.announcements.period.on_publication": {
+    "defaultMessage": "Ab der Veröffentlichung",
+    "description": "When a draft announcement will start to show: as soon as it is published."
+  },
+  "admin.announcements.period.until": {
+    "defaultMessage": "Bis {date}",
+    "description": "When an announcement stops showing, in the table of announcements. {date} is a date and time."
+  },
+  "admin.announcements.phase.draft": {
+    "defaultMessage": "Entwurf",
+    "description": "State of an announcement that is a draft, which only the administrators see."
+  },
+  "admin.announcements.phase.ended": {
+    "defaultMessage": "Beendet",
+    "description": "State of a published announcement whose time to show has ended."
+  },
+  "admin.announcements.phase.scheduled": {
+    "defaultMessage": "Geplant",
+    "description": "State of a published announcement whose time to show has not started yet."
+  },
+  "admin.announcements.phase.showing": {
+    "defaultMessage": "Wird angezeigt",
+    "description": "State of a published announcement that everyone sees now."
+  },
+  "admin.announcements.phase.withdrawn": {
+    "defaultMessage": "Zurückgezogen",
+    "description": "State of an announcement withdrawn for good."
+  },
+  "admin.announcements.preview": {
+    "defaultMessage": "So sehen es alle",
+    "description": "Heading of the region of an announcement's page with its title and text as the users see them."
+  },
+  "admin.announcements.preview.description": {
+    "defaultMessage": "Titel und Text, wie sie allen auf diesem Server angezeigt werden.",
+    "description": "Description of the region of an announcement's page with its title and text as the users see them."
+  },
+  "admin.announcements.publish": {
+    "defaultMessage": "Veröffentlichen",
+    "description": "Button on the page of a draft announcement that publishes it."
+  },
+  "admin.announcements.publish_now": {
+    "defaultMessage": "Sofort veröffentlichen",
+    "description": "Checkbox that publishes a new announcement at once."
+  },
+  "admin.announcements.publish_now.description": {
+    "defaultMessage": "Ohne diese Option bleibt die Ankündigung ein Entwurf, den nur die Administration sieht.",
+    "description": "Description of the checkbox that publishes a new announcement at once."
+  },
+  "admin.announcements.published_at": {
+    "defaultMessage": "Veröffentlicht",
+    "description": "Term of when an announcement was published."
+  },
+  "admin.announcements.published_one": {
+    "defaultMessage": "{announcement} veröffentlicht. Das Audit-Log protokolliert die Änderung.",
+    "description": "Status after a draft announcement was published. {announcement} is the first line of its text."
+  },
+  "admin.announcements.revised_at": {
+    "defaultMessage": "Zuletzt geändert",
+    "description": "Term of when the title, the text or the time to show of an announcement last changed."
+  },
+  "admin.announcements.save": {
+    "defaultMessage": "Speichern",
+    "description": "Button that saves the text of an announcement."
+  },
+  "admin.announcements.starts_at": {
+    "defaultMessage": "Wird angezeigt ab",
+    "description": "Term of when an announcement starts to show."
+  },
+  "admin.announcements.state": {
+    "defaultMessage": "Status",
+    "description": "Term and column header of where an announcement is in its life (draft, scheduled, showing, ended, withdrawn)."
+  },
+  "admin.announcements.summary": {
+    "defaultMessage": "Informiere alle auf diesem Server über Wartungen und Änderungen.",
+    "description": "Description of the announcements screen in the administration menu."
+  },
+  "admin.announcements.text": {
+    "defaultMessage": "Text",
+    "description": "Label of the text of an announcement."
+  },
+  "admin.announcements.text.description": {
+    "defaultMessage": "Markdown: Absätze, Hervorhebungen, Listen, Zitate, Code und Links. Rohes HTML wird entfernt.",
+    "description": "Description of the text field of an announcement: which Markdown it takes."
+  },
+  "admin.announcements.text_required": {
+    "defaultMessage": "Verfasse die Ankündigung.",
+    "description": "Error of an announcement without text."
+  },
+  "admin.announcements.title": {
+    "defaultMessage": "Ankündigungen",
+    "description": "Title of the announcements screen, in the administration menu and as its heading."
+  },
+  "admin.announcements.title_required": {
+    "defaultMessage": "Gib der Ankündigung einen Titel.",
+    "description": "Error of the field of an announcement's title when it is empty."
+  },
+  "admin.announcements.too_long": {
+    "defaultMessage": "Verwende höchstens {max} Zeichen.",
+    "description": "Error of the text of an announcement longer than its limit. {max} is the limit."
+  },
+  "admin.announcements.until_withdrawn": {
+    "defaultMessage": "Bis zum Zurückziehen",
+    "description": "Choice of an announcement that shows until it is withdrawn, and the end of such an announcement."
+  },
+  "admin.announcements.updated": {
+    "defaultMessage": "{announcement} geändert. Das Audit-Log protokolliert die Änderung.",
+    "description": "Status after the text of an announcement was changed. {announcement} is the first line of its new text."
+  },
+  "admin.announcements.withdraw": {
+    "defaultMessage": "Zurückziehen",
+    "description": "Button that withdraws an announcement, and the confirming button of its dialog."
+  },
+  "admin.announcements.withdraw.description": {
+    "defaultMessage": "Niemand sieht die Ankündigung wieder, und sie kann nicht mehr veröffentlicht oder geändert werden.",
+    "description": "Description of the dialog that confirms withdrawing an announcement."
+  },
+  "admin.announcements.withdraw.section": {
+    "defaultMessage": "Ankündigung zurückziehen",
+    "description": "Heading of the region of an announcement's page that withdraws it for good."
+  },
+  "admin.announcements.withdraw.title": {
+    "defaultMessage": "{announcement} zurückziehen?",
+    "description": "Title of the dialog that confirms withdrawing an announcement. {announcement} is the first line of its text."
+  },
+  "admin.announcements.withdrawn": {
+    "defaultMessage": "{announcement} zurückgezogen. Das Audit-Log protokolliert die Änderung.",
+    "description": "Status after an announcement was withdrawn. {announcement} is the first line of its text."
+  },
+  "admin.announcements.withdrawn.description": {
+    "defaultMessage": "Eine zurückgezogene Ankündigung kann nicht mehr veröffentlicht oder geändert werden.",
+    "description": "Note on the page of a withdrawn announcement."
+  }
+}

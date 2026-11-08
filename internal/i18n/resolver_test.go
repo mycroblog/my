@@ -34,12 +34,12 @@ func TestResolverLocale(t *testing.T) {
 		{"nothing", "", "", "", "en"},
 		{"user setting wins", "ja", "en", "en", "ja"},
 		{"user setting wins over the instance default", "en", "", "ja", "en"},
-		{"accept-language", "", "fr;q=0.9, ja-JP;q=0.8, en;q=0.1", "", "ja"},
+		{"accept-language", "", "it;q=0.9, ja-JP;q=0.8, en;q=0.1", "", "ja"},
 		{"accept-language before instance default", "", "en-GB", "ja", "en"},
 		{"instance default without accept-language", "", "", "ja", "ja"},
-		{"unsupported accept-language uses instance default", "", "fr, de", "ja", "ja"},
-		{"unsupported user setting is skipped", "fr-CA", "", "ja", "ja"},
-		{"unsupported instance default falls back to en", "", "fr", "de", "en"},
+		{"unsupported accept-language uses instance default", "", "it, nl", "ja", "ja"},
+		{"unsupported user setting is skipped", "it-CH", "", "ja", "ja"},
+		{"unsupported instance default falls back to en", "", "it", "nl", "en"},
 		{"malformed values are skipped", "!!", "*, ja_jp", "en", "ja"},
 		{"malformed instance default falls back to en", "", "", "!!", "en"},
 		{"pseudo-locales are not selectable by default", "en-XA", "", "ja", "en"},
@@ -55,6 +55,12 @@ func TestResolverLocale(t *testing.T) {
 		{"pt resolves to pt-BR", "", "pt, en;q=0.5", "", "pt-BR"},
 		{"pt-PT resolves to pt-BR", "", "pt-PT", "", "pt-BR"},
 		{"pt-PT user setting", "pt-PT", "ja", "", "pt-BR"},
+		{"de", "", "de", "", "de"},
+		{"de-AT resolves to de", "", "de-AT, en;q=0.5", "", "de"},
+		{"de-CH user setting", "de-CH", "ja", "", "de"},
+		{"fr", "", "fr", "", "fr"},
+		{"fr-CA resolves to fr", "", "fr-CA, en;q=0.5", "", "fr"},
+		{"fr-BE user setting", "fr-BE", "ja", "", "fr"},
 		{"zh-TW", "", "zh-TW", "", "zh-TW"},
 		{"zh-HK resolves to zh-TW", "", "zh-HK, ja;q=0.5", "", "zh-TW"},
 		{"zh-MO resolves to zh-TW", "", "zh-MO", "", "zh-TW"},
@@ -124,14 +130,16 @@ func TestResolverRequestedLocale(t *testing.T) {
 		{"unknown region of a catalog", "", "ja-XX", "", "ja", "ja-XX"},
 		{"case and separators are canonical", "", "ja_jp", "", "ja", "ja-JP"},
 		{"language without region", "", "ja", "", "ja", "ja"},
-		{"first matching tag decides", "", "fr-CA, en-GB;q=0.5", "", "en", "en-GB"},
+		{"first matching tag decides", "", "it-CH, en-GB;q=0.5", "", "en", "en-GB"},
 		{"user setting with region", "ja-JP", "en", "", "ja", "ja-JP"},
-		{"instance default with region", "", "fr", "ja-JP", "ja", "ja-JP"},
-		{"nothing matches", "", "fr-CA", "de", "en", "en"},
+		{"instance default with region", "", "it", "ja-JP", "ja", "ja-JP"},
+		{"nothing matches", "", "it-CH", "nl", "en", "en"},
 		{"Simplified Chinese with a script", "", "zh-Hans-CN", "", "zh-CN", "zh-Hans-CN"},
 		{"Traditional Chinese with a script", "", "zh-Hant-TW", "", "zh-TW", "zh-Hant-TW"},
 		{"Spanish with a region", "", "es-ES", "", "es", "es-ES"},
 		{"European Portuguese", "", "pt-PT", "", "pt-BR", "pt-PT"},
+		{"German with a region", "", "de-DE", "", "de", "de-DE"},
+		{"Canadian French", "", "fr-CA", "", "fr", "fr-CA"},
 	}
 	for _, tt := range tests {
 		r := &Resolver{
@@ -165,7 +173,7 @@ func TestResolverUserLocalizer(t *testing.T) {
 	r := &Resolver{Bundle: load(t), InstanceDefault: func(context.Context) string { return "ja" }}
 	req := httptest.NewRequest(http.MethodGet, "/", nil)
 	req.Header.Set("Accept-Language", "en")
-	for user, want := range map[string]string{"ja": "ja", "": "en", "zh-Hant-TW": "zh-TW", "es-AR": "es", "pt": "pt-BR", "fr": "en", "!!": "en"} {
+	for user, want := range map[string]string{"ja": "ja", "": "en", "zh-Hant-TW": "zh-TW", "es-AR": "es", "pt": "pt-BR", "de-AT": "de", "fr-CA": "fr", "it": "en", "!!": "en"} {
 		if got := r.UserLocalizer(req, user).Locale(); got != want {
 			t.Errorf("UserLocalizer(Accept-Language en, user %q) = %q, want %q", user, got, want)
 		}
@@ -181,8 +189,8 @@ func TestResolverAcceptedLocale(t *testing.T) {
 		{"ja", "ja"},
 		{"ja-JP,en;q=0.5", "ja"},
 		{"en-US", "en"},
-		{"fr;q=0.9, ja;q=0.8, en;q=0.1", "ja"},
-		{"fr, de", ""},
+		{"it;q=0.9, ja;q=0.8, en;q=0.1", "ja"},
+		{"it, nl", ""},
 		{"", ""},
 		{"*", ""},
 	}
