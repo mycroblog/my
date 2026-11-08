@@ -62,9 +62,10 @@ export default defineConfig({
       lastUpdated: false,
       // The groups and order of docs/README.md (src/sidebar.ts), with the client API reference after the guides.
       sidebar: docsSidebar({ Developers: [apiReferenceSidebar] }),
-      // The Markdown form of each page in its head (src/route-middleware.ts), and the landing page's hero buttons,
-      // which name documents by their repository path (src/routeData.ts).
-      routeMiddleware: ["./src/route-middleware.ts", "./src/routeData.ts"],
+      // The Markdown form of each page in its head (src/route-middleware.ts), the landing page's hero buttons, which
+      // name documents by their repository path (src/routeData.ts), and what the head tells search engines: noindex,
+      // canonical and hreflang links (src/indexing.ts).
+      routeMiddleware: ["./src/route-middleware.ts", "./src/routeData.ts", "./src/indexing.ts"],
       // A broken link or #anchor between pages fails the build; the validator cannot see the generated reference. A
       // translated page links the pages of its locale, which may be the English page in its place (a fallback page).
       plugins: [

@@ -103,6 +103,18 @@ export function versionOptions(): VersionOption[] {
   return options;
 }
 
+/**
+ * Whether search engines index the version being built: /latest/ once a release exists, /next/ before the first one
+ * (while /latest/ redirects to it), and never a Preview of a pull request (DOCS_SITE_PREVIEW=1, set by
+ * `scripts/docs-site.sh build-preview`). Every other page carries noindex (src/indexing.ts).
+ */
+export function indexedVersion(): boolean {
+  if (process.env["DOCS_SITE_PREVIEW"] === "1") {
+    return false;
+  }
+  return currentVersion === (versions.latest === undefined ? "next" : "latest");
+}
+
 /** Whether the version being built is a minor version whose support ended (every page then carries the banner). */
 export function supportEnded(): boolean {
   return versions.versions.some((version) => version.minor === currentVersion && version.status === "ended");
