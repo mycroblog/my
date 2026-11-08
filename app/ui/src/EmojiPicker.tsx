@@ -261,12 +261,21 @@ const picker = tv({
  * colons around it. The names and keywords of the emoji are compared in the same form.
  */
 export function normalizeEmojiSearch(text: string): string {
-  return text
+  const form = text
     .normalize("NFKC")
     .toLowerCase()
     .replace(/[ァ-ヶ]/gu, (katakana) => String.fromCodePoint((katakana.codePointAt(0) ?? 0) - 0x60))
-    .trim()
-    .replace(/^:+|:+$/gu, "");
+    .trim();
+  // The colons are cut by index, not by /:+$/, which takes quadratic time on a text of many colons not at its end.
+  let start = 0;
+  let end = form.length;
+  while (start < end && form[start] === ":") {
+    start++;
+  }
+  while (end > start && form[end - 1] === ":") {
+    end--;
+  }
+  return form.slice(start, end);
 }
 
 type SearchForms = { emoji: string | undefined; name: string; keywords: readonly string[] };
