@@ -11,10 +11,25 @@ export type Catalogs = Record<string, Record<string, Record<string, { defaultMes
 const SOURCE = "en";
 const PSEUDO = new Set(["en-XA", "ar-XB"]);
 
-/** Same overrides as parentLocales in internal/i18n: Traditional Chinese never falls back to zh. */
-const PARENTS: Record<string, string> = { "zh-Hant": "", "zh-HK": "zh-Hant", "zh-MO": "zh-Hant", "zh-TW": "zh-Hant" };
+/**
+ * Same overrides as parentLocales in internal/i18n (ADR-0009 §2): each Chinese and Portuguese tag reaches the one
+ * catalog locale of its language and script, and a catalog locale with a region ends its chain before en.
+ */
+const PARENTS: Record<string, string> = {
+  zh: "zh-CN",
+  "zh-SG": "zh-CN",
+  "zh-Hans": "zh-CN",
+  "zh-CN": "",
+  "zh-Hant": "zh-TW",
+  "zh-HK": "zh-TW",
+  "zh-MO": "zh-TW",
+  "zh-TW": "",
+  pt: "pt-BR",
+  "pt-PT": "pt-BR",
+  "pt-BR": "",
+};
 
-/** zh-Hant-TW -> zh-Hant -> en, ja-JP -> ja -> en (ADR-0009 §2). */
+/** zh-Hant-TW -> zh-Hant -> zh-TW -> en, ja-JP -> ja -> en (ADR-0009 §2). */
 export function fallbackChain(locale: string): string[] {
   const chain: string[] = [];
   for (let l = locale; l !== "";) {
