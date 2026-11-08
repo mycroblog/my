@@ -1,0 +1,34 @@
+{
+  "admin.hook_decision.appeal_only": {
+    "defaultMessage": "Una publicación local rechazada no se anula aquí. Su autor puede apelarla, y al aceptar la apelación se anula la decisión.",
+    "description": "Shown in the cancellation region of a refusal of a local post: it goes through the author's appeal instead."
+  },
+  "admin.hook_decision.back": {
+    "defaultMessage": "Volver a las revisiones automáticas",
+    "description": "Link from a decision's page back to the list of decisions."
+  },
+  "admin.hook_decision.cancel.description": {
+    "defaultMessage": "La anulación surte efecto de inmediato y deshace lo que hizo la revisión donde es posible.",
+    "description": "Hint above the button that cancels a decision on its page."
+  },
+  "admin.hook_decision.cancel.title": {
+    "defaultMessage": "Anulación",
+    "description": "Heading of the region of a decision's page where a moderator cancels it."
+  },
+  "admin.hook_decision.cancelled": {
+    "defaultMessage": "Un moderador anuló esta decisión.",
+    "description": "Shown in the cancellation region of a decision that is cancelled; the facts above say when."
+  },
+  "admin.hook_decision.facts.title": {
+    "defaultMessage": "Decisión",
+    "description": "Heading of the region of a decision's page with what the review decided and on what."
+  },
+  "admin.hook_decision.no_effect": {
+    "defaultMessage": "Esta decisión no tuvo efecto, así que no hay nada que anular.",
+    "description": "Shown in the cancellation region of a decision made in observe mode or that failed: there is no button."
+  },
+  "admin.hook_decision.title": {
+    "defaultMessage": "Decisión de una revisión automática",
+    "description": "Heading of the page of one decision of an external review."
+  }
+}

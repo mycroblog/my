@@ -1,0 +1,12 @@
+{
+  "docs.translation.notice": "Esta página es una traducción automática de la página en inglés, que es la versión de referencia.",
+  "docs.translation.english": "Leer la página en inglés",
+  "docs.translation.legal": "Esta página es una traducción automática de una plantilla de un texto legal. Pide a un experto legal que revise el texto que publiques antes de usarlo.",
+  "docs.translation.stale": "La página en inglés ha cambiado desde que se tradujeron estas secciones:",
+  "docs.translation.untranslated": "Estas secciones aún no están traducidas y se muestran en inglés:",
+  "docs.version.ended": "El soporte de {{version}} ha finalizado.",
+  "docs.version.latest": "Leer esta página en la última versión",
+  "docs.version.label": "Versión de la documentación",
+  "docs.llms.lead": "Para LLM y agentes de programación:",
+  "docs.llms.page": "esta página en Markdown"
+}

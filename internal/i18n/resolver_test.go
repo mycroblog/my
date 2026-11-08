@@ -48,6 +48,9 @@ func TestResolverLocale(t *testing.T) {
 		{"zh-Hans resolves to zh-CN", "", "zh-Hans", "", "zh-CN"},
 		{"zh-Hans with a region resolves to zh-CN", "", "zh-Hans-SG", "", "zh-CN"},
 		{"zh-CN user setting", "zh-CN", "ja", "", "zh-CN"},
+		{"es", "", "es", "", "es"},
+		{"es-419 resolves to es", "", "es-419, en;q=0.5", "", "es"},
+		{"es-MX user setting", "es-MX", "ja", "", "es"},
 		{"zh-TW", "", "zh-TW", "", "zh-TW"},
 		{"zh-HK resolves to zh-TW", "", "zh-HK, ja;q=0.5", "", "zh-TW"},
 		{"zh-MO resolves to zh-TW", "", "zh-MO", "", "zh-TW"},
@@ -123,6 +126,7 @@ func TestResolverRequestedLocale(t *testing.T) {
 		{"nothing matches", "", "fr-CA", "de", "en", "en"},
 		{"Simplified Chinese with a script", "", "zh-Hans-CN", "", "zh-CN", "zh-Hans-CN"},
 		{"Traditional Chinese with a script", "", "zh-Hant-TW", "", "zh-TW", "zh-Hant-TW"},
+		{"Spanish with a region", "", "es-ES", "", "es", "es-ES"},
 	}
 	for _, tt := range tests {
 		r := &Resolver{
@@ -156,7 +160,7 @@ func TestResolverUserLocalizer(t *testing.T) {
 	r := &Resolver{Bundle: load(t), InstanceDefault: func(context.Context) string { return "ja" }}
 	req := httptest.NewRequest(http.MethodGet, "/", nil)
 	req.Header.Set("Accept-Language", "en")
-	for user, want := range map[string]string{"ja": "ja", "": "en", "zh-Hant-TW": "zh-TW", "fr": "en", "!!": "en"} {
+	for user, want := range map[string]string{"ja": "ja", "": "en", "zh-Hant-TW": "zh-TW", "es-AR": "es", "fr": "en", "!!": "en"} {
 		if got := r.UserLocalizer(req, user).Locale(); got != want {
 			t.Errorf("UserLocalizer(Accept-Language en, user %q) = %q, want %q", user, got, want)
 		}

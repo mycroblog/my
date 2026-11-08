@@ -1,0 +1,42 @@
+{
+  "admin.hook_appeal.account.admin": {
+    "defaultMessage": "Abrir la cuenta en los paneles de administración",
+    "description": "Link from the page of an appeal of a refused post to the admin page of its author's account."
+  },
+  "admin.hook_appeal.appeal.title": {
+    "defaultMessage": "Apelación",
+    "description": "Heading of the region of an appeal's page with its state, its author, and what they sent."
+  },
+  "admin.hook_appeal.back": {
+    "defaultMessage": "Volver a las apelaciones de publicaciones rechazadas",
+    "description": "Link from an appeal's page back to the list of appeals of refused posts."
+  },
+  "admin.hook_appeal.decision.open": {
+    "defaultMessage": "Abrir la decisión",
+    "description": "Link from an appeal's page to the page of the decision it appeals."
+  },
+  "admin.hook_appeal.decision.title": {
+    "defaultMessage": "Decisión de la revisión",
+    "description": "Heading of the region of an appeal's page with the decision of the external review that the author appeals."
+  },
+  "admin.hook_appeal.review.decided_at": {
+    "defaultMessage": "Decidida",
+    "description": "Term of a decided appeal of a refused post: when a moderator decided it."
+  },
+  "admin.hook_appeal.review.description": {
+    "defaultMessage": "Desestimar mantiene la decisión. Aceptar la anula y deja de revisar las publicaciones de esta cuenta. En ambos casos se informa a la persona autora.",
+    "description": "Hint above the buttons that uphold or overturn an appeal of a refused post."
+  },
+  "admin.hook_appeal.review.result": {
+    "defaultMessage": "Resultado",
+    "description": "Term of a decided appeal of a refused post: whether it was upheld or overturned."
+  },
+  "admin.hook_appeal.review.title": {
+    "defaultMessage": "Revisión del moderador",
+    "description": "Heading of the region of an appeal's page where a moderator upholds or overturns it."
+  },
+  "admin.hook_appeal.title": {
+    "defaultMessage": "Apelación de una publicación rechazada",
+    "description": "Heading of the page of one author's appeal of a local post that an external review refused."
+  }
+}

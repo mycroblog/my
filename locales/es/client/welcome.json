@@ -1,0 +1,46 @@
+{
+  "welcome.title": {
+    "defaultMessage": "Te damos la bienvenida",
+    "description": "Title of the welcome page shown after sign-up, in the browser tab."
+  },
+  "welcome.heading": {
+    "defaultMessage": "Te damos la bienvenida a {server}",
+    "description": "Heading of the welcome page after sign-up. {server} is the name of the server."
+  },
+  "welcome.lead": {
+    "defaultMessage": "Configura lo básico de tu perfil y elige a quién seguir en tu cronología de inicio.",
+    "description": "The line under the welcome heading that says what comes next."
+  },
+  "welcome.basics": {
+    "defaultMessage": "Datos básicos del perfil",
+    "description": "Heading of the section with the avatar and the display name on the welcome page."
+  },
+  "welcome.basics.description": {
+    "defaultMessage": "Puedes cambiarlos y añadir una biografía más tarde en la configuración del perfil.",
+    "description": "Note under the heading of the profile basics on the welcome page."
+  },
+  "welcome.avatar.choose": {
+    "defaultMessage": "Elegir un avatar",
+    "description": "Button that opens the file picker for the avatar on the welcome page."
+  },
+  "welcome.avatar.remove": {
+    "defaultMessage": "Quitar el avatar",
+    "description": "Button that removes the chosen avatar on the welcome page."
+  },
+  "welcome.display_name": {
+    "defaultMessage": "Nombre para mostrar",
+    "description": "Label of the display name field on the welcome page."
+  },
+  "welcome.display_name.description": {
+    "defaultMessage": "El nombre que ve la gente. Déjalo vacío para mostrar tu nombre de usuario, {username}.",
+    "description": "Help text of the display name field on the welcome page. {username} is the user's username."
+  },
+  "welcome.continue": {
+    "defaultMessage": "Continuar",
+    "description": "Primary button of the welcome page: saves the profile basics and opens the home timeline."
+  },
+  "welcome.later": {
+    "defaultMessage": "Más tarde",
+    "description": "Link on the welcome page that opens the home timeline without saving."
+  }
+}

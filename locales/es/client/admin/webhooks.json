@@ -1,0 +1,366 @@
+{
+  "admin.webhooks.cancel": {
+    "defaultMessage": "Cancelar",
+    "description": "Button that closes a dialog of a webhook without changing it."
+  },
+  "admin.webhooks.change_failed": {
+    "defaultMessage": "No se pudo cambiar el webhook: {reason}",
+    "description": "Error of a change of a webhook. {reason} is the server's reason."
+  },
+  "admin.webhooks.created": {
+    "defaultMessage": "Se configuró {name}.",
+    "description": "Status after setting up a webhook. {name} is its description or host name."
+  },
+  "admin.webhooks.delete": {
+    "defaultMessage": "Eliminar",
+    "description": "Button that deletes a webhook, and the confirming button of its dialog."
+  },
+  "admin.webhooks.delete.description": {
+    "defaultMessage": "Ya no recibe nada y sus envíos dejan de aparecer en la lista. Esto no se puede deshacer.",
+    "description": "Description of the dialog that confirms deleting a webhook."
+  },
+  "admin.webhooks.delete.title": {
+    "defaultMessage": "¿Eliminar {name}?",
+    "description": "Title of the dialog that confirms deleting a webhook."
+  },
+  "admin.webhooks.deleted": {
+    "defaultMessage": "Se eliminó {name}.",
+    "description": "Status after deleting a webhook."
+  },
+  "admin.webhooks.deliveries.attempts.count": {
+    "defaultMessage": "{count, plural, one {# vez} other {# veces}}",
+    "description": "How many times a delivery was sent."
+  },
+  "admin.webhooks.deliveries.created_at": {
+    "defaultMessage": "Creado",
+    "description": "Term in a delivery's details: when the message was made."
+  },
+  "admin.webhooks.deliveries.description": {
+    "defaultMessage": "Los mensajes de los últimos 14 días, de más reciente a más antiguo. Uno fallido se reintenta 8 veces durante unas 27 horas.",
+    "description": "Description of the deliveries of a webhook."
+  },
+  "admin.webhooks.deliveries.empty": {
+    "defaultMessage": "No hay envíos en los últimos 14 días",
+    "description": "Heading of the empty list of a webhook's deliveries."
+  },
+  "admin.webhooks.deliveries.outcome.connection_error": {
+    "defaultMessage": "No se pudo conectar",
+    "description": "Outcome of an attempt whose connection failed."
+  },
+  "admin.webhooks.deliveries.outcome.forbidden_destination": {
+    "defaultMessage": "Destino no permitido",
+    "description": "Outcome of an attempt to a URL that the server may not reach (a private address not allowed in the configuration)."
+  },
+  "admin.webhooks.deliveries.outcome.http_error": {
+    "defaultMessage": "Respuesta de error",
+    "description": "Outcome of an attempt that got another answer than 2xx, a redirect included."
+  },
+  "admin.webhooks.deliveries.outcome.succeeded": {
+    "defaultMessage": "Correcto",
+    "description": "Outcome of an attempt that got a 2xx answer."
+  },
+  "admin.webhooks.deliveries.outcome.timeout": {
+    "defaultMessage": "Sin respuesta a tiempo",
+    "description": "Outcome of an attempt without an answer within 15 seconds."
+  },
+  "admin.webhooks.deliveries.redeliver": {
+    "defaultMessage": "Enviar de nuevo",
+    "description": "Button that sends a delivery of a webhook again."
+  },
+  "admin.webhooks.deliveries.redeliver_failed": {
+    "defaultMessage": "No se pudo volver a enviar el mensaje: {reason}",
+    "description": "Error of sending a delivery again. {reason} is the server's reason."
+  },
+  "admin.webhooks.deliveries.redeliver_of": {
+    "defaultMessage": "{action}: {event} {id}",
+    "description": "Accessible name of the button that sends a delivery again: it starts with the button's visible text, so that the visible label is in the name. {action} is the button's visible text ('Send again'), {event} the event's name and {id} the message ID."
+  },
+  "admin.webhooks.deliveries.redelivered": {
+    "defaultMessage": "El envío vuelve a estar en camino.",
+    "description": "Status after sending a delivery of a webhook again."
+  },
+  "admin.webhooks.deliveries.status": {
+    "defaultMessage": "Resultado",
+    "description": "Term in a delivery's details: whether it succeeded."
+  },
+  "admin.webhooks.deliveries.status.failing": {
+    "defaultMessage": "Fallando",
+    "description": "Result of a delivery whose every attempt failed so far."
+  },
+  "admin.webhooks.deliveries.status.pending": {
+    "defaultMessage": "Todavía no enviado",
+    "description": "Result of a delivery not sent yet."
+  },
+  "admin.webhooks.deliveries.status.succeeded": {
+    "defaultMessage": "Correcto",
+    "description": "Result of a delivery that an attempt succeeded."
+  },
+  "admin.webhooks.deliveries.status_code": {
+    "defaultMessage": "HTTP {code}",
+    "description": "The status code of an answer to a delivery attempt. {code} is a number such as 500."
+  },
+  "admin.webhooks.deliveries.title": {
+    "defaultMessage": "Envíos",
+    "description": "Heading of the deliveries of a webhook on its page."
+  },
+  "admin.webhooks.description": {
+    "defaultMessage": "Descripción",
+    "description": "Label of the description of a webhook: what it is for."
+  },
+  "admin.webhooks.description.description": {
+    "defaultMessage": "Para qué sirve el webhook, de hasta {max} caracteres. Las listas y el registro de auditoría lo nombran así.",
+    "description": "Help of the description of a webhook. {max} is the most characters."
+  },
+  "admin.webhooks.details.title": {
+    "defaultMessage": "Configuración",
+    "description": "Heading of the settings of a webhook on its page."
+  },
+  "admin.webhooks.disable": {
+    "defaultMessage": "Desactivar",
+    "description": "Button that disables a webhook."
+  },
+  "admin.webhooks.disabled_status": {
+    "defaultMessage": "Se desactivó {name}.",
+    "description": "Status after disabling a webhook."
+  },
+  "admin.webhooks.empty": {
+    "defaultMessage": "Todavía no hay webhooks",
+    "description": "Heading of the empty list of webhooks."
+  },
+  "admin.webhooks.empty.description": {
+    "defaultMessage": "Un webhook envía los eventos que elijas a una URL, como una herramienta de chat o de automatización.",
+    "description": "Description of the empty list of webhooks."
+  },
+  "admin.webhooks.enable": {
+    "defaultMessage": "Activar",
+    "description": "Button that enables a webhook."
+  },
+  "admin.webhooks.enabled_status": {
+    "defaultMessage": "Se activó {name}.",
+    "description": "Status after enabling a webhook."
+  },
+  "admin.webhooks.event.account_created": {
+    "defaultMessage": "Se crea una cuenta",
+    "description": "Name of a webhook event: a registration was approved and the account can be used."
+  },
+  "admin.webhooks.event.account_updated": {
+    "defaultMessage": "Se cambia un perfil",
+    "description": "Name of a webhook event: a local account changed its profile."
+  },
+  "admin.webhooks.event.appeal_created": {
+    "defaultMessage": "Se apela una acción",
+    "description": "Name of a webhook event: a user appealed a moderation action."
+  },
+  "admin.webhooks.event.custom_emoji_created": {
+    "defaultMessage": "Se añade un emoji personalizado",
+    "description": "Name of a webhook event: an administrator added a custom emoji."
+  },
+  "admin.webhooks.event.custom_emoji_deleted": {
+    "defaultMessage": "Se elimina un emoji personalizado",
+    "description": "Name of a webhook event: an administrator deleted a custom emoji."
+  },
+  "admin.webhooks.event.custom_emoji_updated": {
+    "defaultMessage": "Se cambia un emoji personalizado",
+    "description": "Name of a webhook event: an administrator changed a custom emoji."
+  },
+  "admin.webhooks.event.domain_moderation_action_created": {
+    "defaultMessage": "Se aplica una acción sobre un dominio",
+    "description": "Name of a webhook event: a moderation action on a domain was issued."
+  },
+  "admin.webhooks.event.domain_moderation_action_lifted": {
+    "defaultMessage": "Se levanta una acción sobre un dominio",
+    "description": "Name of a webhook event: a moderation action on a domain was lifted."
+  },
+  "admin.webhooks.event.error_group_created": {
+    "defaultMessage": "Se informa de un error nuevo",
+    "description": "Name of a webhook event: the server or the web client reported an error of a new kind."
+  },
+  "admin.webhooks.event.error_group_regressed": {
+    "defaultMessage": "Vuelve a ocurrir un error resuelto",
+    "description": "Name of a webhook event: an error that an administrator marked resolved happened again with a newer version of the server."
+  },
+  "admin.webhooks.event.moderation_action_created": {
+    "defaultMessage": "Se aplica una acción a una cuenta",
+    "description": "Name of a webhook event: a moderation action on an account was issued."
+  },
+  "admin.webhooks.event.moderation_action_lifted": {
+    "defaultMessage": "Se levanta una acción sobre una cuenta",
+    "description": "Name of a webhook event: a moderation action on an account was lifted."
+  },
+  "admin.webhooks.event.registration_pending": {
+    "defaultMessage": "Un registro espera aprobación",
+    "description": "Name of a webhook event: a registration awaits a moderator."
+  },
+  "admin.webhooks.event.report_created": {
+    "defaultMessage": "Se presenta una denuncia",
+    "description": "Name of a webhook event: a report was filed, locally or from another server."
+  },
+  "admin.webhooks.event.report_reopened": {
+    "defaultMessage": "Se reabre una denuncia",
+    "description": "Name of a webhook event: a resolved report was reopened."
+  },
+  "admin.webhooks.event.report_resolved": {
+    "defaultMessage": "Se resuelve una denuncia",
+    "description": "Name of a webhook event: a report was resolved."
+  },
+  "admin.webhooks.event.status_created": {
+    "defaultMessage": "Se publica una publicación pública",
+    "description": "Name of a webhook event: a local user published a public post."
+  },
+  "admin.webhooks.event.webhook_test": {
+    "defaultMessage": "Mensaje de prueba",
+    "description": "Name of a webhook event: the test message sent from the webhooks screen."
+  },
+  "admin.webhooks.events": {
+    "defaultMessage": "Eventos",
+    "description": "Label of the group of events that a webhook subscribes to, and term of them in its details."
+  },
+  "admin.webhooks.events.description": {
+    "defaultMessage": "Elige al menos uno. Cada evento requiere, además de gestionar webhooks, el permiso de su tipo.",
+    "description": "Help of the events of a webhook."
+  },
+  "admin.webhooks.events.separator": {
+    "defaultMessage": ", ",
+    "description": "What separates the events of a webhook in its details."
+  },
+  "admin.webhooks.failure": {
+    "defaultMessage": "Fallos",
+    "description": "Term in a webhook's details: the attempts that failed since the last success."
+  },
+  "admin.webhooks.failure.count": {
+    "defaultMessage": "{count, plural, one {# intento fallido} other {# intentos fallidos}}",
+    "description": "How many attempts of a webhook failed since its last success."
+  },
+  "admin.webhooks.failure.since": {
+    "defaultMessage": "desde",
+    "description": "Text before the time of the first failed attempt of a webhook since its last success."
+  },
+  "admin.webhooks.list.title": {
+    "defaultMessage": "Webhooks de este servidor",
+    "description": "Heading of the list of the webhooks."
+  },
+  "admin.webhooks.manage.title": {
+    "defaultMessage": "Estado, prueba y secreto",
+    "description": "Heading of the section of a webhook's page that enables, disables, tests, gives a new secret to or deletes it."
+  },
+  "admin.webhooks.missing_permissions": {
+    "defaultMessage": "Permisos que faltan: {permissions}",
+    "description": "Line under the refusal of a webhook's events: the permissions the user lacks. {permissions} is a list of permission names such as manage_accounts."
+  },
+  "admin.webhooks.new.title": {
+    "defaultMessage": "Añadir un webhook",
+    "description": "Heading of the page with the form that sets up a webhook, and the link to it."
+  },
+  "admin.webhooks.open": {
+    "defaultMessage": "Abrir el webhook",
+    "description": "Link from the secret of a new webhook to the webhook's page."
+  },
+  "admin.webhooks.reason.admin": {
+    "defaultMessage": "por un miembro del personal",
+    "description": "Why a webhook has its state: a staff member set it."
+  },
+  "admin.webhooks.reason.failing": {
+    "defaultMessage": "(los envíos siguieron fallando)",
+    "description": "Why the server disabled a webhook: its deliveries kept failing for 72 hours and 20 attempts."
+  },
+  "admin.webhooks.reason.gone": {
+    "defaultMessage": "(el destino respondió que ya no existe)",
+    "description": "Why the server disabled a webhook: its endpoint answered 410 Gone."
+  },
+  "admin.webhooks.rotate": {
+    "defaultMessage": "Nuevo secreto",
+    "description": "Button that gives a webhook a new secret, and the confirming button of its dialog."
+  },
+  "admin.webhooks.rotate.description": {
+    "defaultMessage": "El nuevo secreto firma desde ahora todos los mensajes. Durante 24 horas, el secreto anterior también los firma, para que quien recibe pueda cambiar al nuevo.",
+    "description": "Description of the dialog that confirms giving a webhook a new secret."
+  },
+  "admin.webhooks.rotate.title": {
+    "defaultMessage": "¿Crear un nuevo secreto para {name}?",
+    "description": "Title of the dialog that confirms giving a webhook a new secret."
+  },
+  "admin.webhooks.rotated": {
+    "defaultMessage": "{name} tiene un secreto nuevo.",
+    "description": "Status after giving a webhook a new secret."
+  },
+  "admin.webhooks.save": {
+    "defaultMessage": "Guardar",
+    "description": "Button that saves the changes of a webhook."
+  },
+  "admin.webhooks.save_failed": {
+    "defaultMessage": "No se pudo guardar el webhook: {reason}",
+    "description": "Error of a webhook form that the server refused for another reason than a field. {reason} is the server's reason."
+  },
+  "admin.webhooks.secret.copied": {
+    "defaultMessage": "Se copió el secreto.",
+    "description": "Toast after copying the secret of a webhook."
+  },
+  "admin.webhooks.secret.copy": {
+    "defaultMessage": "Copiar el secreto",
+    "description": "Button that copies the secret of a webhook to the clipboard."
+  },
+  "admin.webhooks.secret.copy_failed": {
+    "defaultMessage": "No se pudo copiar el secreto. Selecciónalo y cópialo tú.",
+    "description": "Toast when the browser refused to copy the secret of a webhook."
+  },
+  "admin.webhooks.secret.notice": {
+    "defaultMessage": "Cópialo ahora en quien recibe: no se vuelve a mostrar. Quien recibe comprueba con él la firma de cada mensaje (Standard Webhooks).",
+    "description": "Note under the secret of a webhook, which is shown only once."
+  },
+  "admin.webhooks.secret.title": {
+    "defaultMessage": "Secreto de {name}",
+    "description": "Heading of the secret shown once after setting up a webhook or giving it a new secret. {name} is its description or host name."
+  },
+  "admin.webhooks.state": {
+    "defaultMessage": "Estado",
+    "description": "Term in a webhook's details: enabled or disabled."
+  },
+  "admin.webhooks.state.disabled": {
+    "defaultMessage": "Desactivado",
+    "description": "State of a webhook that receives nothing."
+  },
+  "admin.webhooks.state.enabled": {
+    "defaultMessage": "Activado",
+    "description": "State of a webhook that receives messages."
+  },
+  "admin.webhooks.submit": {
+    "defaultMessage": "Configurar",
+    "description": "Button that sets up a new webhook."
+  },
+  "admin.webhooks.summary": {
+    "defaultMessage": "Envía lo que pasa en este servidor a otros servicios, firmado.",
+    "description": "Description of the webhooks screen in the administration menu of the settings."
+  },
+  "admin.webhooks.test": {
+    "defaultMessage": "Enviar una prueba",
+    "description": "Button that sends a test message to a webhook."
+  },
+  "admin.webhooks.tested": {
+    "defaultMessage": "Un mensaje de prueba para {name} está en camino. Sus envíos muestran cómo ha ido.",
+    "description": "Status after sending a test message to a webhook."
+  },
+  "admin.webhooks.title": {
+    "defaultMessage": "Webhooks",
+    "description": "Heading of the webhooks screen, and its link in the administration menu."
+  },
+  "admin.webhooks.updated": {
+    "defaultMessage": "Se guardó {name}.",
+    "description": "Status after changing a webhook."
+  },
+  "admin.webhooks.updated_at": {
+    "defaultMessage": "Cambiado",
+    "description": "Term in a webhook's details: when its URL, description or events last changed."
+  },
+  "admin.webhooks.url": {
+    "defaultMessage": "URL",
+    "description": "Label of the URL that a webhook posts its messages to."
+  },
+  "admin.webhooks.url.description": {
+    "defaultMessage": "Dónde se envían los mensajes, una URL https. Un destino en la red propia de este servidor funciona solo si el operador lo permite en la configuración.",
+    "description": "Help of the URL of a webhook."
+  },
+  "admin.webhooks.webhook": {
+    "defaultMessage": "Webhook",
+    "description": "Column of the list of webhooks: its description or host name, linking to its page."
+  }
+}

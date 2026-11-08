@@ -1,0 +1,6 @@
+{
+  "health.unavailable": {
+    "defaultMessage": "El servidor aún no está listo para aceptar solicitudes.",
+    "description": "Body of the readiness check response (HTTP 503) while a dependency such as the database is unavailable."
+  }
+}

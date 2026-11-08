@@ -13,11 +13,12 @@ import {
 
 describe("locales", () => {
   test("has a catalog for the source locale, the translations and the pseudo-locales", () => {
-    expect(supportedLocales).toEqual(["ar-XB", "en", "en-XA", "ja", "zh-CN", "zh-TW"]);
+    expect(supportedLocales).toEqual(["ar-XB", "en", "en-XA", "es", "ja", "zh-CN", "zh-TW"]);
   });
 
   test.each([
     ["ja-JP", ["ja-JP", "ja", "en"]],
+    ["es-419", ["es-419", "es", "en"]],
     ["zh", ["zh", "zh-CN", "en"]],
     ["zh-CN", ["zh-CN", "en"]],
     ["zh-Hans-SG", ["zh-Hans-SG", "zh-Hans", "zh-CN", "en"]],
@@ -46,6 +47,11 @@ describe("locales", () => {
     ["zh-Hant-HK", "zh-TW"],
     ["zh-HK", "zh-TW"],
     ["zh-MO", "zh-TW"],
+    ["es", "es"],
+    ["es-ES", "es"],
+    ["es-MX", "es"],
+    ["es-419", "es"],
+    ["ES-ar", "es"],
     ["fr", "en"],
     ["", "en"],
   ])("resolves %j to %s", (requested, locale) => {
@@ -88,6 +94,12 @@ describe("loadI18n", () => {
   test("loads Traditional Chinese for a tag that resolves to it", async () => {
     const { locale, messages } = await loadI18n("zh-Hant-HK");
     expect(locale).toBe("zh-TW");
+    expect(messages["client:shell.nav.home"]).not.toBe(en["shell.nav.home"]?.defaultMessage);
+  });
+
+  test("loads Spanish for a tag that resolves to it", async () => {
+    const { locale, messages } = await loadI18n("es-419");
+    expect(locale).toBe("es");
     expect(messages["client:shell.nav.home"]).not.toBe(en["shell.nav.home"]?.defaultMessage);
   });
 

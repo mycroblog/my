@@ -1,0 +1,22 @@
+{
+  "admin.mode.back": {
+    "defaultMessage": "Volver a la app",
+    "description": "Link at the foot of the admin and moderation menu that leaves the mode and returns to the app."
+  },
+  "admin.mode.menu": {
+    "defaultMessage": "Menú de administración",
+    "description": "Name of the button below the md width that opens the admin and moderation menu in a sheet, and the sheet's title."
+  },
+  "admin.mode.overview": {
+    "defaultMessage": "Resumen",
+    "description": "Item at the head of a group of the admin and moderation menu that opens the group's page with the links to its screens."
+  },
+  "admin.mode.summary": {
+    "defaultMessage": "Las pantallas de moderación y administración del servidor, aparte de la app.",
+    "description": "Description of the settings page's entry into the admin and moderation mode."
+  },
+  "admin.mode.title": {
+    "defaultMessage": "Administración y moderación",
+    "description": "Name of the admin and moderation mode: the settings page's entry, the menu's landmark and the top bar's title below the md width."
+  }
+}

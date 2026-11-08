@@ -2,7 +2,7 @@
 // Typed translator over FormatJS intl-messageformat, the TypeScript counterpart of
 // internal/i18n. Keys and argument types come from the generated MessageArgs, so an
 // unknown key or a wrong argument is a compile-time error (see types.test.ts).
-import { IntlMessageFormat } from "intl-messageformat";
+import { type Formatters, IntlMessageFormat } from "intl-messageformat";
 import type { MessageArgs, MessageKey } from "./messages.gen";
 
 /** locale -> namespace -> key -> { defaultMessage } (the FormatJS JSON catalog shape). */
@@ -49,6 +49,40 @@ export function fallbackChain(locale: string): string[] {
 /** Pseudo-locales are formatted with the source locale's CLDR rules. */
 export const formattingLocale = (locale: string): string => (PSEUDO.has(locale) ? SOURCE : locale);
 
+/** One formatter per constructor and arguments, as FormatJS's default formatters keep them. */
+function memoized<A extends unknown[], T>(make: (...args: A) => T): (...args: A) => T {
+  const cache = new Map<string, T>();
+  return (...args) => {
+    const key = JSON.stringify(args);
+    let value = cache.get(key);
+    if (value === undefined) {
+      value = make(...args);
+      cache.set(key, value);
+    }
+    return value;
+  };
+}
+
+/**
+ * The formatters of every message. Numbers group their digits from four digits on in every locale (useGrouping
+ * "always"), as internal/i18n formats them: its engine does not apply CLDR's minimumGroupingDigits, which keeps
+ * 1234 ungrouped in es, pl and pt-PT, and the server's and the clients' text must match (ADR-0009 §1).
+ */
+const formatters: Formatters = {
+  getNumberFormat: memoized(
+    (locales?: string | string[], opts?: Intl.NumberFormatOptions) =>
+      new Intl.NumberFormat(locales, { useGrouping: "always", ...opts }),
+  ),
+  getDateTimeFormat: memoized(
+    (...args: ConstructorParameters<typeof Intl.DateTimeFormat>) => new Intl.DateTimeFormat(...args),
+  ),
+  getPluralRules: memoized((...args: ConstructorParameters<typeof Intl.PluralRules>) => new Intl.PluralRules(...args)),
+};
+
+/** Compiles message for locale with the formatters that match internal/i18n. */
+export const compileMessage = (message: string, locale: string): IntlMessageFormat =>
+  new IntlMessageFormat(message, formattingLocale(locale), undefined, { formatters });
+
 type ArgsParam<K extends MessageKey> = keyof MessageArgs[K] extends never ? [] : [args: MessageArgs[K]];
 
 export type Translate = <K extends MessageKey>(key: K, ...args: ArgsParam<K>) => string;
@@ -64,7 +98,7 @@ export function createTranslator(catalogs: Catalogs, locale: string): Translate 
       const cacheKey = `${loc}\u0000${key}`;
       let mf = cache.get(cacheKey);
       if (!mf) {
-        mf = new IntlMessageFormat(source, formattingLocale(loc));
+        mf = compileMessage(source, loc);
         cache.set(cacheKey, mf);
       }
       return String(mf.format(args as Parameters<IntlMessageFormat["format"]>[0]));

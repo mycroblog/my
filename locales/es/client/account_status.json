@@ -1,0 +1,194 @@
+{
+  "account_status.active.empty": {
+    "defaultMessage": "No hay acciones vigentes en tu cuenta",
+    "description": "Shown when no moderation action is in effect on the user's account."
+  },
+  "account_status.active.empty.description": {
+    "defaultMessage": "Si los moderadores toman una acción sobre tu cuenta, aparecerá aquí con su motivo y la fecha en que termina.",
+    "description": "Under the heading shown when no moderation action is in effect on the user's account."
+  },
+  "account_status.active.title": {
+    "defaultMessage": "Acciones vigentes",
+    "description": "Heading of the account status page's region with the moderation actions in effect now."
+  },
+  "account_status.appeal.cancel": {
+    "defaultMessage": "Cancelar",
+    "description": "Button that closes the appeal dialog without appealing."
+  },
+  "account_status.appeal.characters_left": {
+    "defaultMessage": "{count, plural, one {Queda # carácter} other {Quedan # caracteres}}",
+    "description": "Character count of the appeal field. {count} is the number of characters left."
+  },
+  "account_status.appeal.characters_over": {
+    "defaultMessage": "{count, plural, one {Sobra # carácter} other {Sobran # caracteres}}",
+    "description": "Character count of the appeal field when it is over the limit. {count} is the number of characters too many."
+  },
+  "account_status.appeal.closed": {
+    "defaultMessage": "El plazo para apelar esta acción terminó el {date}.",
+    "description": "Shown instead of the appeal button when the time to appeal a moderation action has passed. {date} is a formatted date and time."
+  },
+  "account_status.appeal.confirm.description": {
+    "defaultMessage": "Los moderadores revisarán de nuevo «{kind}» del {date} y te comunicarán su decisión en una notificación. Solo puedes apelar una acción una vez y no podrás cambiar la apelación después de enviarla.",
+    "description": "Description of the dialog that appeals a moderation action. {kind} is what the action does, as the server names it; {date} is when it was taken, a formatted date and time."
+  },
+  "account_status.appeal.confirm.title": {
+    "defaultMessage": "¿Apelar esta acción?",
+    "description": "Question that titles the dialog that appeals a moderation action."
+  },
+  "account_status.appeal.decided_at": {
+    "defaultMessage": "Resuelta",
+    "description": "Term of the user's appeal of a moderation action: when the moderators decided it."
+  },
+  "account_status.appeal.decision_reason": {
+    "defaultMessage": "Explicación de la decisión",
+    "description": "Term of the user's appeal of a moderation action: the moderators' explanation of their decision."
+  },
+  "account_status.appeal.failed": {
+    "defaultMessage": "No se pudo enviar la apelación: {reason}",
+    "description": "In the appeal dialog when sending the appeal failed. {reason} is why, from the server."
+  },
+  "account_status.appeal.open": {
+    "defaultMessage": "Apelar",
+    "description": "Button that opens the appeal of a moderation action."
+  },
+  "account_status.appeal.open_of": {
+    "defaultMessage": "Apelar la acción del {date}",
+    "description": "Accessible name of the button that opens the appeal of a moderation action. {date} is when the action was taken, a formatted date and time."
+  },
+  "account_status.appeal.send": {
+    "defaultMessage": "Enviar apelación",
+    "description": "Button in the appeal dialog that sends the appeal."
+  },
+  "account_status.appeal.sent": {
+    "defaultMessage": "Apelaste «{kind}». Los moderadores te comunicarán su decisión en una notificación.",
+    "description": "Status shown after the user appealed a moderation action. {kind} is what the action does, as the server names it."
+  },
+  "account_status.appeal.state.overturned": {
+    "defaultMessage": "Acción revocada",
+    "description": "State of an appeal after which the moderators lifted the action."
+  },
+  "account_status.appeal.state.pending": {
+    "defaultMessage": "En revisión",
+    "description": "State of an appeal that awaits the moderators' decision."
+  },
+  "account_status.appeal.state.upheld": {
+    "defaultMessage": "Acción mantenida",
+    "description": "State of an appeal after which the moderators kept the action."
+  },
+  "account_status.appeal.submitted_at": {
+    "defaultMessage": "Enviada",
+    "description": "Term of the user's appeal of a moderation action: when the user sent it."
+  },
+  "account_status.appeal.text": {
+    "defaultMessage": "Tu apelación",
+    "description": "Term of the user's appeal of a moderation action: what the user wrote."
+  },
+  "account_status.appeal.text.description": {
+    "defaultMessage": "Escribe lo que los moderadores deben saber. Verán lo que escribas aquí.",
+    "description": "Help text under the field of an appeal."
+  },
+  "account_status.appeal.text.label": {
+    "defaultMessage": "¿Por qué deberían los moderadores reconsiderarla?",
+    "description": "Label of the field where the user writes why the moderators should reconsider an action."
+  },
+  "account_status.appeal.text.required": {
+    "defaultMessage": "Escribe por qué los moderadores deberían reconsiderar la acción",
+    "description": "Error of the appeal field when it is empty or has white space only."
+  },
+  "account_status.appeal.text.too_long": {
+    "defaultMessage": "Usa como máximo {max, number} caracteres",
+    "description": "Error of the appeal field when it has too many characters. {max} is the limit."
+  },
+  "account_status.appeal.title": {
+    "defaultMessage": "Apelación",
+    "description": "Heading of the appeal part of a moderation action on the user's account."
+  },
+  "account_status.appeal.unavailable": {
+    "defaultMessage": "Esta acción no se puede apelar.",
+    "description": "Shown instead of the appeal button when a moderation action cannot be appealed."
+  },
+  "account_status.appeal.until": {
+    "defaultMessage": "{days, plural, one {Puedes apelar una vez, en un plazo de # día (hasta el {date}).} other {Puedes apelar una vez, en un plazo de # días (hasta el {date}).}}",
+    "description": "Above the button that appeals a moderation action. {days} is the time left to appeal, rounded up to whole days; {date} is the deadline, a formatted date and time. The server's status page says the same without the date."
+  },
+  "account_status.ends_in": {
+    "defaultMessage": "{days, plural, one {Termina en # día} other {Termina en # días}}",
+    "description": "Under a moderation action in effect on the user's account: when it ends. {days} is the time left, rounded up to whole days. The server's status page says the same."
+  },
+  "account_status.until_lifted": {
+    "defaultMessage": "Dura hasta que un moderador la levante",
+    "description": "Under a moderation action in effect on the user's account that has no end date. The server's status page says the same."
+  },
+  "account_status.no_end": {
+    "defaultMessage": "Esta acción no tiene fecha de fin",
+    "description": "Under a moderation action in effect on the user's account whose kind does not last for a time, such as a warning: says that the missing end date is not an omission."
+  },
+  "account_status.expires_at": {
+    "defaultMessage": "Termina",
+    "description": "Term of a moderation action on the user's account: when it ends."
+  },
+  "account_status.expires_at.none": {
+    "defaultMessage": "Al levantarse",
+    "description": "Value of the end of a moderation action that lasts until a moderator lifts it."
+  },
+  "account_status.issued_at": {
+    "defaultMessage": "Aplicada",
+    "description": "Term of a moderation action on the user's account: when it was taken."
+  },
+  "account_status.lifted_at": {
+    "defaultMessage": "Levantada",
+    "description": "Term of a moderation action on the user's account: when a moderator lifted it."
+  },
+  "account_status.more": {
+    "defaultMessage": "Mostrar más",
+    "description": "Button under a list of moderation actions that loads more of them."
+  },
+  "account_status.past.empty": {
+    "defaultMessage": "No hay acciones anteriores",
+    "description": "Shown when no moderation action on the user's account has ended."
+  },
+  "account_status.past.title": {
+    "defaultMessage": "Acciones anteriores",
+    "description": "Heading of the account status page's region with the moderation actions that ended (expired or lifted)."
+  },
+  "account_status.posts.loading": {
+    "defaultMessage": "Cargando la publicación",
+    "description": "Accessible label of the spinner while a post that a moderation action acted on loads."
+  },
+  "account_status.posts.missing": {
+    "defaultMessage": "Esta publicación se eliminó o no se puede mostrar.",
+    "description": "In place of a post that a moderation action acted on and that cannot be shown, such as a deleted one."
+  },
+  "account_status.posts.title": {
+    "defaultMessage": "Publicaciones",
+    "description": "Heading of the posts that a moderation action on posts acted on."
+  },
+  "account_status.public_reason": {
+    "defaultMessage": "Explicación de los moderadores",
+    "description": "Term of a moderation action on the user's account: the moderators' explanation to the user."
+  },
+  "account_status.public_reason.none": {
+    "defaultMessage": "No se dio ninguna",
+    "description": "Value of the moderators' explanation of an action when they gave none."
+  },
+  "account_status.reason_category": {
+    "defaultMessage": "Motivo",
+    "description": "Term of a moderation action on the user's account: the kind of reason the moderators gave."
+  },
+  "account_status.state.active": {
+    "defaultMessage": "Vigente",
+    "description": "State of a moderation action that is in effect now."
+  },
+  "account_status.state.expired": {
+    "defaultMessage": "Terminada",
+    "description": "State of a moderation action that ended at its end time."
+  },
+  "account_status.state.lifted": {
+    "defaultMessage": "Levantada",
+    "description": "State of a moderation action that a moderator lifted."
+  },
+  "account_status.title": {
+    "defaultMessage": "Estado de la cuenta",
+    "description": "Heading and document title of the account status page, and its entry in the list of settings pages."
+  }
+}

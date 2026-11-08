@@ -1,0 +1,38 @@
+{
+  "admin.instances.empty": {
+    "defaultMessage": "No hay servidores con envíos fallidos",
+    "description": "Heading of the remote servers screen when no server has failed deliveries."
+  },
+  "admin.instances.empty.description": {
+    "defaultMessage": "Los servidores que no aparecen en la lista reciben todos los envíos.",
+    "description": "Text under the heading of the empty remote servers screen."
+  },
+  "admin.instances.filter.all": {
+    "defaultMessage": "Todos",
+    "description": "Tab of the remote servers screen that shows every listed server."
+  },
+  "admin.instances.filter.available": {
+    "defaultMessage": "Enviando",
+    "description": "Tab of the remote servers screen that shows the servers that get every delivery, though some deliveries failed."
+  },
+  "admin.instances.filter.label": {
+    "defaultMessage": "Estado del servidor",
+    "description": "Accessible name of the tabs that filter the remote servers by state."
+  },
+  "admin.instances.filter.unavailable": {
+    "defaultMessage": "En pausa",
+    "description": "Tab of the remote servers screen that shows the servers whose deliveries are paused."
+  },
+  "admin.instances.summary": {
+    "defaultMessage": "Servidores a los que no llegaron los envíos, y motivo por el que los envíos a algunos están en pausa.",
+    "description": "Description of the remote servers screen in the administration menu of the settings."
+  },
+  "admin.instances.title": {
+    "defaultMessage": "Servidores remotos",
+    "description": "Heading of the screen of the remote servers that deliveries failed to reach, and its link in the administration menu."
+  },
+  "admin.instances.column.server": {
+    "defaultMessage": "Servidor",
+    "description": "Header of the column of the remote servers table that names the server and links to it."
+  }
+}

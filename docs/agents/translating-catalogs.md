@@ -2,7 +2,7 @@
 
 How an agent translates the message catalogs of `locales/` into a locale other than `en` and `ja`, and keeps it
 current. Policy background: [ADR-0009](../adr/0009-internationalization.md) §1, §2 and §8. `en` is the source locale;
-the maintainer updates `ja` in the same change as `en`. The other locales (`zh-CN`, `zh-TW`, and the languages of the
+the maintainer updates `ja` in the same change as `en`. The other locales (`zh-CN`, `zh-TW`, `es`, and the languages of the
 "Languages" milestone after it) are machine translations that an agent writes in runs started by hand.
 
 ## What is translated

@@ -1,0 +1,66 @@
+{
+  "supporters.about.title": {
+    "defaultMessage": "Mecenas",
+    "description": "Heading of the supporter section of the about page."
+  },
+  "supporters.about.description": {
+    "defaultMessage": "Los usuarios de este servidor pueden apoyarlo con estos planes.",
+    "description": "Explanation of the supporter plans on the about page."
+  },
+  "supporters.about.subscribe": {
+    "defaultMessage": "Ver los planes y suscribirse",
+    "description": "Link from the about page to the page of the supporter plans."
+  },
+  "supporters.about.list": {
+    "defaultMessage": "Ver la lista de mecenas",
+    "description": "Link from the about page to the supporter list."
+  },
+  "supporters.list.title": {
+    "defaultMessage": "Mecenas de {instance}",
+    "description": "Heading of the supporter list page. instance is the server's name."
+  },
+  "supporters.list.description": {
+    "defaultMessage": "Los miembros de los planes que decidieron aparecer, por plan.",
+    "description": "Explanation of the supporter list."
+  },
+  "supporters.list.empty": {
+    "defaultMessage": "Aún no aparece nadie.",
+    "description": "Shown when nobody is listed."
+  },
+  "supporters.list.hidden": {
+    "defaultMessage": "Este servidor no publica una lista de mecenas.",
+    "description": "Shown when the server does not publish the supporter list."
+  },
+  "supporters.list.about": {
+    "defaultMessage": "Acerca de este servidor",
+    "description": "Link back to the about page."
+  },
+  "supporters.list.signed_in_only": {
+    "defaultMessage": "Solo los usuarios con sesión iniciada pueden leer la lista de mecenas.",
+    "description": "Shown to visitors without a session when only signed-in users may read the list."
+  },
+  "supporters.list.sign_in": {
+    "defaultMessage": "Iniciar sesión",
+    "description": "Link to sign in to read the supporter list."
+  },
+  "supporters.list.loading": {
+    "defaultMessage": "Cargando la lista de mecenas",
+    "description": "Label of the spinner while the list loads."
+  },
+  "supporters.list.failed": {
+    "defaultMessage": "No se pudo cargar la lista de mecenas",
+    "description": "Heading when the list could not load."
+  },
+  "supporters.list.retry": {
+    "defaultMessage": "Reintentar",
+    "description": "Button that loads the list again."
+  },
+  "supporters.list.more": {
+    "defaultMessage": "Mostrar más",
+    "description": "Button that loads more of the list."
+  },
+  "supporters.list.more_failed": {
+    "defaultMessage": "No se pudieron cargar más mecenas",
+    "description": "Heading when more of the list could not load."
+  }
+}

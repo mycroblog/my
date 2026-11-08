@@ -1,0 +1,34 @@
+{
+  "admin.refetch.title": {
+    "defaultMessage": "Volver a descargar publicaciones",
+    "description": "Heading of the region of a remote account's or server's moderation page that fetches its stored posts again from their server."
+  },
+  "admin.refetch.button": {
+    "defaultMessage": "Volver a descargar publicaciones",
+    "description": "Button that asks the server to fetch the stored posts of a remote account or server again from their server."
+  },
+  "admin.refetch.account.description": {
+    "defaultMessage": "Vuelve a descargar desde su servidor las publicaciones guardadas más recientes de esta cuenta, hasta 1000, y registra sus ediciones, recuentos de encuestas y eliminaciones. Las publicaciones se descargan en segundo plano, un lote cada minuto.",
+    "description": "Description under the button that refetches the posts of a remote account."
+  },
+  "admin.refetch.domain.description": {
+    "defaultMessage": "Vuelve a descargar las publicaciones guardadas de las cuentas de este servidor, las 20 más recientes de cada cuenta y hasta 1000 en total, y registra sus ediciones, recuentos de encuestas y eliminaciones. Las publicaciones se descargan en segundo plano, un lote cada minuto.",
+    "description": "Description under the button that refetches the posts of the accounts of a remote server."
+  },
+  "admin.refetch.queued": {
+    "defaultMessage": "La nueva descarga está solicitada y registrada en el registro de auditoría. Las publicaciones cambian a medida que se descargan.",
+    "description": "Status message after a moderator asked to refetch the posts of a remote account or server."
+  },
+  "admin.refetch.post.button": {
+    "defaultMessage": "Volver a descargar la publicación del {date}",
+    "description": "Button under a reported remote post that fetches it again from its server. {date} is when the post was published, already formatted."
+  },
+  "admin.refetch.post.queued": {
+    "defaultMessage": "La nueva descarga de la publicación está solicitada y registrada en el registro de auditoría.",
+    "description": "Status message after a moderator asked to refetch one remote post."
+  },
+  "admin.refetch.failed": {
+    "defaultMessage": "No se pudo solicitar la nueva descarga: {reason}",
+    "description": "Toast when asking to refetch remote posts failed. {reason} is the server's explanation."
+  }
+}

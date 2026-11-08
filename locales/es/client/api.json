@@ -1,0 +1,14 @@
+{
+  "api.error.network": {
+    "defaultMessage": "No se pudo conectar con el servidor. Revisa tu conexión e inténtalo de nuevo.",
+    "description": "Error message when a request to the server got no answer (offline, or the server is down)."
+  },
+  "api.error.offline": {
+    "defaultMessage": "Estás sin conexión, así que no se puede llegar al servidor. Conéctate a internet e inténtalo de nuevo.",
+    "description": "Error message when a request failed because the device has no network connection. Shown as the reason why something could not load or be sent."
+  },
+  "api.error.status": {
+    "defaultMessage": "El servidor no pudo atender la solicitud (error {status}). Inténtalo de nuevo más tarde.",
+    "description": "Error message when the server failed without describing the problem. {status} is the HTTP status code, for example 502."
+  }
+}

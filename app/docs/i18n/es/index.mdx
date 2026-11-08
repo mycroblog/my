@@ -1,0 +1,148 @@
+---
+# source: 0579b8a800fd
+title: mycroblog
+description: Un microblog para el fediverso que empieza pequeño y crece con tu comunidad.
+template: splash
+hero:
+  tagline: |
+    <p><strong>mycroblog</strong>: un microblog para el fediverso que empieza pequeño y crece con tu comunidad.</p>
+    <p><code>my</code>, el servidor de mycroblog, habla ActivityPub y está escrito en Go. Empieza en una máquina pequeña o en un contenedor que escala a cero con SQLite. Cuando tu comunidad crezca, pasa a PostgreSQL, una cola de trabajos, un broker de flujos y procesos web y de trabajo separados: el mismo código, los mismos datos.</p>
+  image:
+    light: ../../assets/wordmark-light.svg
+    dark: ../../assets/wordmark-dark.svg
+    alt: mycroblog
+  actions:
+    # A document is named by its repository path; src/routeData.ts makes it the page's URL under the base path.
+    - text: Poner en marcha un servidor
+      link: docs/operations/overview.md
+      icon: right-arrow
+      variant: primary
+    - text: Código fuente en GitHub
+      link: https://github.com/mycroblog/my
+      icon: github
+      variant: minimal
+---
+
+{/* SPDX-License-Identifier: AGPL-3.0-only */}
+
+import { Card, CardGrid } from "@astrojs/starlight/components";
+import DocLinks from "../../components/DocLinks.astro";
+import Screenshot from "../../components/Screenshot.astro";
+
+<Screenshot
+  name="home"
+  alt="La cronología de inicio de mycroblog: una publicación que cita dos fotos de un lago y una puesta de sol, con reacciones con emoji personalizados, y después una publicación en japonés sobre pan, junto a la navegación, las últimas notificaciones y la información del servidor."
+  eager
+/>
+
+## Qué hace
+
+<CardGrid>
+  <Card title="Empieza pequeño, escala después" icon="rocket">
+    Un solo binario y SQLite en una VM de 5 $, o un contenedor que escala a cero. Crece hacia PostgreSQL, Cloud Tasks,
+    Valkey, Pub/Sub o SNS, S3 o GCS detrás de una CDN, y tantos procesos web y de trabajo como necesites.
+  </Card>
+  <Card title="Federa" icon="random">
+    Los seguimientos, las publicaciones, las citas y las reacciones con emoji personalizados viajan hacia y desde Mastodon,
+    Misskey, GoToSocial y más. La visibilidad «Este servidor» mantiene una publicación dentro de tu servidor y de tus
+    seguidores.
+  </Card>
+  <Card title="Mecenas y cuentas abiertas" icon="heart">
+    Planes de apoyo mediante Stripe o PAY.JP que otorgan roles, insignias y el derecho a añadir emoji personalizados.
+    Registra lo que cuesta el servidor, importa automáticamente las facturas de AWS y Google Cloud, y publica los costos y
+    los ingresos para tu comunidad.
+  </Card>
+  <Card title="Salas de voz" icon="comment">
+    Salas de audio en directo para las personas de tu servidor, con anfitriones, oradores, invitaciones y reacciones.
+    Punto a punto para las salas pequeñas, LiveKit o Sora para las grandes.
+  </Card>
+  <Card title="Una aplicación web para todos" icon="laptop">
+    Una aplicación web instalable con notificaciones push y llaves de acceso, traducida desde el primer día.
+  </Card>
+  <Card title="Moderación integrada" icon="approve-check-circle">
+    Denuncias con apelaciones, bloqueos de dominios, un registro de auditoría y ganchos de decisión que permiten que tu
+    propio programa revise publicaciones y registros antes de aceptarlos.
+  </Card>
+  <Card title="Amplíalo" icon="puzzle">
+    Complementos sobre un protocolo versionado, webhooks del servidor, aplicaciones OAuth y bibliotecas de cliente y de
+    bots para Go y TypeScript. La traducción de publicaciones funciona mediante un complemento de tu elección.
+  </Card>
+</CardGrid>
+
+## Míralo en acción
+
+<CardGrid>
+  <Screenshot
+    name="post"
+    caption="Federa"
+    alt="Una publicación que cita una publicación de otro servidor con dos fotos, con sus respuestas, impulsos, favoritos y reacciones con emoji personalizados."
+  />
+  <Screenshot
+    name="supporters"
+    caption="Mecenas y cuentas abiertas"
+    alt="La página de mecenas de un servidor: los miembros de cada plan de apoyo, Coffee y A whole loaf of sourdough every month, con sus avatares."
+  />
+  <Screenshot
+    name="voice-room"
+    caption="Salas de voz"
+    alt="Una sala de voz en directo, Sunday baking club, abierta desde hace 47 minutos: el anfitrión, un coanfitrión y dos oradores en el escenario, y cuatro oyentes, uno de ellos con la mano levantada."
+  />
+  <Screenshot
+    name="reports"
+    caption="Moderación integrada"
+    alt="La cola de denuncias de los moderadores: cinco denuncias abiertas con su categoría, quién las presentó, quién las gestiona y cuánto llevan esperando."
+  />
+</CardGrid>
+
+## Documentación
+
+<CardGrid>
+  <DocLinks
+    title="Poner en marcha un servidor"
+    icon="setting"
+    links={[
+      { path: "docs/operations/overview.md", label: "Visión general de un servidor de mycroblog" },
+      { path: "docs/operations/running.md", label: "Ejecutar el servidor" },
+      { path: "docs/operations/deploy-docker-compose.md", label: "Desplegar con Docker Compose" },
+      { path: "docs/operations/deploy-cloud-run.md", label: "Desplegar en Cloud Run" },
+      { path: "docs/operations/production-checklist.md", label: "Lista de comprobación para producción" },
+    ]}
+  />
+  <DocLinks
+    title="Usar mycroblog"
+    icon="open-book"
+    links={[
+      { path: "docs/guide/signing-in.md", label: "Registrarse e iniciar sesión" },
+      { path: "docs/guide/posting.md", label: "Publicar y elegir quién ve una publicación" },
+      { path: "docs/guide/following.md", label: "Seguir a personas y leer cronologías" },
+      { path: "docs/guide/voice-chat.md", label: "Chat de voz" },
+    ]}
+  />
+  <DocLinks
+    title="Construir sobre mycroblog"
+    icon="pencil"
+    links={[
+      { path: "docs/developers/client-api.md", label: "La API de cliente" },
+      { path: "api/openapi.yaml", label: "Referencia de la API" },
+      { path: "docs/developers/libraries.md", label: "Bibliotecas de cliente" },
+    ]}
+  />
+  <DocLinks
+    title="Referencia"
+    icon="list-format"
+    links={[
+      { path: "docs/reference/configuration.md", label: "Referencia de configuración" },
+      { path: "docs/reference/cli.md", label: "Referencia de comandos" },
+      { path: "docs/reference/jobs.md", label: "Trabajos" },
+    ]}
+  />
+</CardGrid>
+
+**Estado: en desarrollo, antes de la primera versión (v0).** Es posible que los datos no sobrevivan a una actualización
+antes de `v0.1.0`: puede ser necesario volver a crear la base de datos. A partir de `v0.1.0`, toda actualización entre
+versiones conserva tus datos.
+
+## Licencia
+
+`my` es software libre bajo la Licencia Pública General de Affero de GNU, versión 3 únicamente (AGPL-3.0-only). Las
+bibliotecas de cliente de su API están bajo la Licencia MIT.

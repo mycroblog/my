@@ -13,6 +13,15 @@ describe("createTranslator", () => {
     expect(createTranslator(catalogs, "ar-XB")("server:errors.not_found")).toStartWith("‮");
   });
 
+  test("groups four-digit numbers in every locale, as internal/i18n does", () => {
+    expect(createTranslator(catalogs, "en")("server:config.errors", { count: 1234 })).toBe(
+      "Found 1,234 configuration errors.",
+    );
+    expect(createTranslator(catalogs, "es")("server:config.errors", { count: 1234 })).toBe(
+      "Se encontraron 1.234 errores de configuración.",
+    );
+  });
+
   test("falls back along the locale chain to en", () => {
     expect(createTranslator(catalogs, "ja-JP")("server:errors.not_found")).toBe("指定されたリソースが見つかりません。");
     expect(createTranslator(catalogs, "fr")("server:config.missing", { name: "MY_DATABASE" })).toBe(
