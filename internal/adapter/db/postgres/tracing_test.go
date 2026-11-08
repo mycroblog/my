@@ -5,6 +5,8 @@ package postgres
 import (
 	"testing"
 
+	"github.com/mycroblog/my/internal/adapter/db/postgres/accountgen"
+
 	"github.com/mycroblog/my/internal/app/kernel"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/pkg/testkit"
@@ -19,7 +21,7 @@ func TestTracing(t *testing.T) {
 	db.SetTracer(tr)
 	ctx, parent := tr.Start(t.Context(), kernel.SpanSpec{Name: "POST /api/v1/statuses"}, kernel.Attrs{})
 	if err := db.Tx(ctx, func(tx uow.Tx) error {
-		q, err := db.queries(tx)
+		q, err := probeQueries(db, tx)
 		if err != nil {
 			return err
 		}
@@ -27,7 +29,7 @@ func TestTracing(t *testing.T) {
 	}); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := db.reader().CountLocalAccounts(ctx); err != nil {
+	if _, err := accountgen.New(db.Reader()).CountLocalAccounts(ctx); err != nil {
 		t.Fatal(err)
 	}
 	parent.End("")

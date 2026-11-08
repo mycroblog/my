@@ -49,14 +49,14 @@ func (s *ProjectionStore) Rows(ctx context.Context, tx uow.Tx, table string, off
 	q := fmt.Sprintf("SELECT %s FROM %s ORDER BY %s LIMIT $1 OFFSET $2", list, quote(table), list)
 	rows, err := pgTx.Query(ctx, q, limit, offset)
 	if err != nil {
-		return nil, nil, wrap(err, "read "+table)
+		return nil, nil, Wrap(err, "read "+table)
 	}
 	defer rows.Close()
 	var out [][]any
 	for rows.Next() {
 		values, err := rows.Values()
 		if err != nil {
-			return nil, nil, wrap(err, "read "+table)
+			return nil, nil, Wrap(err, "read "+table)
 		}
 		for i, v := range values {
 			switch x := v.(type) {
@@ -70,7 +70,7 @@ func (s *ProjectionStore) Rows(ctx context.Context, tx uow.Tx, table string, off
 		out = append(out, values)
 	}
 	if err := rows.Err(); err != nil {
-		return nil, nil, wrap(err, "read "+table)
+		return nil, nil, Wrap(err, "read "+table)
 	}
 	return cols, out, nil
 }
@@ -114,7 +114,7 @@ func execRows(ctx context.Context, tx pgx.Tx, q string, rows [][]any, what strin
 	for _, r := range rows {
 		tag, err := tx.Exec(ctx, q, r...)
 		if err != nil {
-			return total, wrap(err, what)
+			return total, Wrap(err, what)
 		}
 		total += tag.RowsAffected()
 	}
@@ -147,11 +147,11 @@ func (s *ProjectionStore) tableColumns(ctx context.Context, tx pgx.Tx, table str
 	rows, err := tx.Query(ctx, `SELECT column_name::text FROM information_schema.columns
 WHERE table_schema = current_schema() AND table_name = $1 ORDER BY ordinal_position`, table)
 	if err != nil {
-		return nil, wrap(err, "read the columns of "+table)
+		return nil, Wrap(err, "read the columns of "+table)
 	}
 	cols, err = pgx.CollectRows(rows, pgx.RowTo[string])
 	if err != nil {
-		return nil, wrap(err, "read the columns of "+table)
+		return nil, Wrap(err, "read the columns of "+table)
 	}
 	if len(cols) == 0 {
 		return nil, fmt.Errorf("postgres: table %q does not exist", table)

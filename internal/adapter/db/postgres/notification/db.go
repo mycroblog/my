@@ -1,0 +1,28 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+
+// Package notification implements the ports of the notification module on PostgreSQL: its repositories run the
+// queries of package notificationgen in the database and the transactions of package postgres.
+package notification
+
+import (
+	"github.com/mycroblog/my/internal/adapter/db/postgres"
+	"github.com/mycroblog/my/internal/adapter/db/postgres/notificationgen"
+	"github.com/mycroblog/my/internal/app/uow"
+)
+
+// moduleDB is the database with the queries of this module.
+type moduleDB struct{ *postgres.DB }
+
+// queries returns the module's queries bound to the transaction behind tx, which must be a
+// transaction of d's database.
+func (d *moduleDB) queries(tx uow.Tx) (*notificationgen.Queries, error) {
+	pgTx, err := d.PgxTx(tx)
+	if err != nil {
+		return nil, err
+	}
+	return notificationgen.New(pgTx), nil
+}
+
+// reader returns the module's queries for reads outside transactions, or in the transaction of a
+// copy that in made.
+func (d *moduleDB) reader() *notificationgen.Queries { return notificationgen.New(d.Reader()) }
