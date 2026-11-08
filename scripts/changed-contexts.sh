@@ -322,7 +322,7 @@ classify() {
   esac
   case "$path" in
     # Files no check reads.
-    LICENSE | .git-blame-ignore-revs | .claude/* | .github/*)
+    LICENSE | .gitignore | .git-blame-ignore-revs | .claude/* | .github/*)
       known=1
       ;;
   esac
