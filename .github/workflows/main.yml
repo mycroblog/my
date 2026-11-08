@@ -24,16 +24,18 @@ env:
 
 jobs:
   go-cache:
-    # The Go module, build, and golangci-lint cache that .github/actions/setup-go restores in ci.yml,
-    # postgres-contract.yml, stream-contract.yml, mail-integration.yml, voice-contract.yml, and blob-contract.yml. It is built from empty directories once a day (the date is in the
-    # key) and for each new Go or go.sum, so it holds one build's worth of entries instead of growing with every push.
-    # It holds exactly what the jobs that restore it read, built one after another with their settings (setup-go sets
-    # CGO_ENABLED=0 in both): the modules, the builds of the packages and the Go tools (go:warm), the test binaries
-    # (server-test), go vet's results (server-static), agentkit's, pkg/mykit's, and pkg/mybot's builds with their integration tests (repo), and golangci-lint's analysis (the lint
-    # job of pull requests). It checks nothing: golangci-lint does not fail on issues here. Of the modules it holds the
-    # downloaded zips alone, which restore in a tenth of the time of the extracted tree: go extracts the ones a build
-    # needs from them, offline.
+    # The Go module, build, test result, and golangci-lint cache that .github/actions/setup-go restores in ci.yml and
+    # the contract workflows (ADR-0079 §7). Every push restores this week's cache, runs the Go tests so that their
+    # results are cached (a merge group then runs only the tests whose packages or files changed since), adds the
+    # builds, vet's results, and golangci-lint's analysis, saves it under a key of its own, and deletes the Go caches
+    # it replaces, so that one stays (the repository holds 10 GB of caches). A new week starts from empty, which keeps
+    # it to a week of entries. The test run's failure does not fail the job: main is already merged, and the merge
+    # queue checked it; the job warns instead. Everything runs with the settings of the jobs that restore it
+    # (setup-go sets CGO_ENABLED=0 and GOWORK=off; go:test runs as server-test runs it).
     runs-on: ubuntu-latest
+    permissions:
+      actions: write
+      contents: read
     steps:
       - name: Check out
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -42,51 +44,67 @@ jobs:
         id: go
         with:
           restore: false
+      - name: Pick the keys
+        id: keys
+        env:
+          SUMS: ${{ steps.go.outputs.sums }}
+        run: |
+          week="$(date -u +%G%V)"
+          echo "prefix=${SUMS}w${week}-" >> "$GITHUB_OUTPUT"
+          echo "key=${SUMS}w${week}-${GITHUB_RUN_ID}" >> "$GITHUB_OUTPUT"
       # The paths must equal those of .github/actions/setup-go: they are part of the cache's version.
-      - name: Look up the Go cache
-        id: lookup
+      - name: Restore this week's Go cache
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: |
             ~/go/pkg/mod/cache/download
             ~/.cache/go-build
             ~/.cache/golangci-lint
-          key: ${{ steps.go.outputs.key }}
-          lookup-only: true
+          key: ${{ steps.keys.outputs.key }}
+          restore-keys: ${{ steps.keys.outputs.prefix }}
       - name: Set up go-task
-        if: steps.lookup.outputs.cache-hit != 'true'
         uses: ./.github/actions/setup-task
       - name: Install golangci-lint
-        if: steps.lookup.outputs.cache-hit != 'true'
         uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
         with:
           version: v${{ steps.go.outputs.golangci-lint }}
           install-only: true
       - name: Build the packages and the Go tools
-        if: steps.lookup.outputs.cache-hit != 'true'
         run: scripts/task.sh go:warm agentkit:warm mykit:warm
-      - name: Build the test binaries
-        if: steps.lookup.outputs.cache-hit != 'true'
-        run: go test -run '^$' ./...
+      # As server-test runs it, so that the results match what a merge group looks up.
+      - name: go:test (for the test result cache)
+        env:
+          TEST_VALKEY_REQUIRED: "1"
+        run: |
+          if ! scripts/task.sh go:test; then
+            echo "::warning::go test failed on main; the failed packages' results are not cached."
+            echo "go test failed on main at $GITHUB_SHA: the merge queue passed this commit, so look for a flaky test." >> "$GITHUB_STEP_SUMMARY"
+          fi
       - name: Run go vet
-        if: steps.lookup.outputs.cache-hit != 'true'
         run: |
           go vet ./...
           (cd tools/agentkit && go vet ./...)
       - name: Run golangci-lint for its cache
-        if: steps.lookup.outputs.cache-hit != 'true'
         run: |
           golangci-lint run --issues-exit-code=0 ./...
           (cd tools/agentkit && golangci-lint run --issues-exit-code=0 ./...)
       - name: Save the Go cache
-        if: steps.lookup.outputs.cache-hit != 'true'
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: |
             ~/go/pkg/mod/cache/download
             ~/.cache/go-build
             ~/.cache/golangci-lint
-          key: ${{ steps.go.outputs.key }}
+          key: ${{ steps.keys.outputs.key }}
+      - name: Delete the Go caches this one replaces
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          OS_PREFIX: ${{ steps.go.outputs.os }}
+          KEY: ${{ steps.keys.outputs.key }}
+        run: |
+          gh cache list --ref refs/heads/main --key "$OS_PREFIX" --limit 100 --json id,key \
+            --jq ".[] | select(.key != \"$KEY\") | .id" | xargs -r -n 1 gh cache delete
 
   bun-cache:
     # The Bun package cache that .github/actions/setup-bun restores in ci.yml, and of web-e2e.yml's build, keyed by

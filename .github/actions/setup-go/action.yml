@@ -13,6 +13,12 @@ outputs:
   key:
     description: The key of today's cache for this Go and these go.sum files.
     value: ${{ steps.key.outputs.key }}
+  sums:
+    description: The prefix of the keys of the caches for this Go and these go.sum files.
+    value: ${{ steps.key.outputs.sums }}
+  os:
+    description: The prefix of every key of the Go cache on this runner OS.
+    value: ${{ steps.key.outputs.os }}
   golangci-lint:
     description: The golangci-lint version of .tool-versions, for golangci/golangci-lint-action (`v` + this).
     value: ${{ steps.key.outputs.golangci-lint }}
