@@ -41,6 +41,7 @@ expect "the tasks of go, which web calls (go:bin)" "go web agentkit" tasks/go.ym
 expect "the tasks of the emoji tables, which no check runs" "agentkit" tasks/emoji.yml
 expect "the web E2E workflow" "agentkit" .github/workflows/web-e2e.yml
 expect "the Nightly" "agentkit" .github/workflows/nightly.yml
+expect "the ignore list of git, which no check reads" "agentkit" .gitignore
 expect "the tasks of web and the web E2E workflow (no tofu, docker, shell, or schema)" "docs go i18n mail api ui web agentkit mykit site" tasks/web.yml .github/workflows/web-e2e.yml
 
 # The documentation site: app/docs selects site and no client context.
