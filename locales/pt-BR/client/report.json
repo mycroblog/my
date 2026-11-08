@@ -1,0 +1,182 @@
+{
+  "report.back": {
+    "defaultMessage": "Voltar",
+    "description": "Button that goes back to the previous step of the report dialog, keeping the answers."
+  },
+  "report.category.heading": {
+    "defaultMessage": "Por que você está denunciando esta conta?",
+    "description": "Heading of the first step of the report dialog, which also names the group of reasons."
+  },
+  "report.category.legal": {
+    "defaultMessage": "Conteúdo ilegal",
+    "description": "Reason of a report: the account posts content that is against the law."
+  },
+  "report.category.legal.description": {
+    "defaultMessage": "Conteúdo que você acredita ser contra a lei.",
+    "description": "Explanation of the illegal content reason of a report."
+  },
+  "report.category.other": {
+    "defaultMessage": "Outro motivo",
+    "description": "Reason of a report that is none of the others."
+  },
+  "report.category.other.description": {
+    "defaultMessage": "Conte aos moderadores no comentário.",
+    "description": "Explanation of the other reason of a report."
+  },
+  "report.category.required": {
+    "defaultMessage": "Escolha um motivo.",
+    "description": "Error under the reasons of a report when the user went on without choosing one."
+  },
+  "report.category.spam": {
+    "defaultMessage": "Spam",
+    "description": "Reason of a report: the account posts spam or unwanted promotion."
+  },
+  "report.category.spam.description": {
+    "defaultMessage": "Anúncios, links indesejados ou a mesma publicação repetida várias vezes.",
+    "description": "Explanation of the spam reason of a report."
+  },
+  "report.category.violation": {
+    "defaultMessage": "Viola as regras do servidor",
+    "description": "Reason of a report: the account breaks the rules of this server. The next step lists the rules."
+  },
+  "report.category.violation.description": {
+    "defaultMessage": "Você escolhe as regras na próxima etapa.",
+    "description": "Explanation of the rule violation reason of a report."
+  },
+  "report.close": {
+    "defaultMessage": "Fechar",
+    "description": "Accessible name of the × button of the report dialog. Nothing is sent."
+  },
+  "report.comment.characters_left": {
+    "defaultMessage": "{count, plural, one {Resta # caractere} other {Restam # caracteres}}",
+    "description": "Character count under the comment of a report while the text is within the limit."
+  },
+  "report.comment.characters_over": {
+    "defaultMessage": "{count, plural, one {# caractere a mais} other {# caracteres a mais}}",
+    "description": "Character count under the comment of a report when the text is longer than the limit."
+  },
+  "report.comment.description": {
+    "defaultMessage": "Opcional. Só os moderadores o leem.",
+    "description": "Hint under the comment field of a report: the reported account never sees it."
+  },
+  "report.comment.heading": {
+    "defaultMessage": "Mais alguma coisa que os moderadores devam saber?",
+    "description": "Heading of the last step of the report dialog, with the comment and, for another server's account, forwarding."
+  },
+  "report.comment.label": {
+    "defaultMessage": "Comentário",
+    "description": "Label of the comment field of a report."
+  },
+  "report.comment.too_long": {
+    "defaultMessage": "Reduza o comentário para {max, number} caracteres ou menos.",
+    "description": "Error under the comment of a report that is longer than the limit. {max} is a number."
+  },
+  "report.done": {
+    "defaultMessage": "Concluir",
+    "description": "Button that closes the report dialog after the report was sent."
+  },
+  "report.failed": {
+    "defaultMessage": "Não foi possível enviar a denúncia: {reason}",
+    "description": "Error in the report dialog when sending the report failed; the answers are kept. {reason} is the error message, a full sentence."
+  },
+  "report.forward": {
+    "defaultMessage": "Enviar a denúncia também para {domain}",
+    "description": "Checkbox in the report dialog for an account of another server. {domain} is that server's domain."
+  },
+  "report.forward.description": {
+    "defaultMessage": "Os moderadores de {domain} recebem uma cópia sem o seu nome.",
+    "description": "Explanation under the checkbox that forwards a report to the account's server. {domain} is that server's domain."
+  },
+  "report.next": {
+    "defaultMessage": "Avançar",
+    "description": "Button that goes on to the next step of the report dialog."
+  },
+  "report.open": {
+    "defaultMessage": "Denunciar",
+    "description": "Menu item on another account's post or profile that opens the dialog to report the account to the moderators."
+  },
+  "report.posts.content_warning": {
+    "defaultMessage": "Aviso de conteúdo: {text}",
+    "description": "Shown instead of the text of a post with a content warning in the report dialog. {text} is the warning the author wrote."
+  },
+  "report.posts.description": {
+    "defaultMessage": "Escolha as publicações que os moderadores devem analisar. Você também pode denunciar a conta sem elas.",
+    "description": "Hint under the heading of the posts step of the report dialog."
+  },
+  "report.posts.empty": {
+    "defaultMessage": "Esta conta não tem publicações que você possa escolher.",
+    "description": "Shown in the posts step of the report dialog when the account has no posts the user can see."
+  },
+  "report.posts.failed": {
+    "defaultMessage": "Não foi possível carregar as publicações",
+    "description": "Heading of the error in the posts step of the report dialog when its posts did not load."
+  },
+  "report.posts.heading": {
+    "defaultMessage": "Quais publicações você está denunciando?",
+    "description": "Heading of the step of the report dialog that lists the account's posts; it also names the group of posts."
+  },
+  "report.posts.item": {
+    "defaultMessage": "Publicação de {date}",
+    "description": "Label of the checkbox of one post in the report dialog. {date} is the date and time of the post. The post's text follows as the description."
+  },
+  "report.posts.loading": {
+    "defaultMessage": "Carregando publicações",
+    "description": "Accessible name of the spinner while the report dialog loads the account's posts."
+  },
+  "report.posts.media": {
+    "defaultMessage": "{count, plural, one {# anexo} other {# anexos}}",
+    "description": "Shown for a post in the report dialog that has media attachments."
+  },
+  "report.posts.retry": {
+    "defaultMessage": "Tentar novamente",
+    "description": "Button that loads the posts of the report dialog again after a failure."
+  },
+  "report.rules.description": {
+    "defaultMessage": "Escolha todas as regras que se aplicam.",
+    "description": "Hint under the heading of the rules step of the report dialog."
+  },
+  "report.rules.heading": {
+    "defaultMessage": "Quais regras ela viola?",
+    "description": "Heading of the step of the report dialog that lists the server rules; it also names the group of rules."
+  },
+  "report.rules.required": {
+    "defaultMessage": "Escolha pelo menos uma regra.",
+    "description": "Error in the rules step of the report dialog when the user went on without choosing a rule."
+  },
+  "report.sent.body": {
+    "defaultMessage": "Os moderadores vão analisá-la. A conta não é informada de quem denunciou.",
+    "description": "Text of the report dialog after the report was sent."
+  },
+  "report.sent.forwarded": {
+    "defaultMessage": "Uma cópia sem o seu nome vai para {domain}.",
+    "description": "Text of the report dialog after a report that is forwarded to the account's server was sent. {domain} is that server's domain."
+  },
+  "report.sent.heading": {
+    "defaultMessage": "Denúncia enviada",
+    "description": "Heading of the report dialog after the report was sent."
+  },
+  "report.step": {
+    "defaultMessage": "Etapa {current, number} de {total, number}",
+    "description": "Shown above the heading of each step of the report dialog. {current} and {total} are numbers; the total depends on the chosen reason."
+  },
+  "report.submit": {
+    "defaultMessage": "Enviar denúncia",
+    "description": "Button on the last step of the report dialog that sends the report to the moderators."
+  },
+  "report.title": {
+    "defaultMessage": "Denunciar {name}",
+    "description": "Title of the dialog that reports an account to the moderators. {name} is the account's display name."
+  },
+  "report.title_room": {
+    "defaultMessage": "Denunciar a sala {room}",
+    "description": "Title of the dialog that reports a voice chat room to the moderators. {room} is the room's name."
+  },
+  "report.room.category.heading": {
+    "defaultMessage": "Por que você está denunciando esta sala?",
+    "description": "Heading of the first step of the dialog that reports a voice chat room, which also names the group of reasons."
+  },
+  "report.room.target": {
+    "defaultMessage": "A denúncia é sobre esta sala e seu anfitrião, {name}.",
+    "description": "Text above the reasons of the dialog that reports a voice chat room. {name} is the host's display name."
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "admin.publication.save": {
+    "defaultMessage": "Salvar a divulgação",
+    "description": "Button that saves the publication settings on the costs screen."
+  },
+  "admin.publication.save_failed": {
+    "defaultMessage": "Não foi possível salvar a divulgação: {reason}",
+    "description": "Shown beside the save button when the publication settings could not be saved; reason is the server's localized reason."
+  },
+  "admin.publication.saved": {
+    "defaultMessage": "Divulgação salva.",
+    "description": "Shown beside the save button after the publication settings are saved."
+  },
+  "admin.publication.unchanged": {
+    "defaultMessage": "Nada mudou.",
+    "description": "Shown beside the save button of the publication settings when nothing was changed."
+  }
+}

@@ -215,7 +215,7 @@ type Cases = {
   /** Standalone messages covering the shared-subset syntax. */
   syntax: { locale: string; message: string; args: Record<string, Value> }[];
 };
-export const GOLDEN_LOCALES = [SOURCE, "ja", "zh-CN", "zh-TW", "es", "en-XA", "ar-XB"];
+export const GOLDEN_LOCALES = [SOURCE, "ja", "zh-CN", "zh-TW", "es", "pt-BR", "en-XA", "ar-XB"];
 /** Locales with non-trivial CLDR plural rules or number formats, for the drift test. */
 const CLDR_LOCALES = [
   "en",
@@ -234,6 +234,8 @@ const CLDR_LOCALES = [
   "hi",
   "es",
   "es-419",
+  "pt",
+  "pt-BR",
 ];
 const CLDR_NUMBERS = [0, 1, 2, 3, 5, 11, 21, 22, 101, 1000000, 1.5];
 

@@ -1,0 +1,126 @@
+{
+  "admin.documents.body": {
+    "defaultMessage": "Texto",
+    "description": "Label of the text area of a document."
+  },
+  "admin.documents.body.description": {
+    "defaultMessage": "Escreva em Markdown: títulos (#), listas (-), links ([texto](URL)) e ênfase (**negrito**). Cada quebra de linha começa uma nova linha. Escreva uma vez, em qualquer idioma: todos leem o mesmo texto, seja qual for o idioma do aplicativo. Salve vazio para remover o texto.",
+    "description": "Description of the text area of a document: the Markdown it takes, that one text serves every language, and how to remove the text."
+  },
+  "admin.documents.characters_left": {
+    "defaultMessage": "{count, plural, one {# caractere restante} other {# caracteres restantes}}",
+    "description": "Character count under the text area of a document."
+  },
+  "admin.documents.characters_over": {
+    "defaultMessage": "{count, plural, one {# caractere a mais} other {# caracteres a mais}}",
+    "description": "Character count under the text area of a document when the text is too long."
+  },
+  "admin.documents.confirm_remove.cancel": {
+    "defaultMessage": "Cancelar",
+    "description": "Button of the dialog that keeps a document in a language."
+  },
+  "admin.documents.confirm_remove.confirm": {
+    "defaultMessage": "Remover",
+    "description": "Button of the dialog that removes a document in a language."
+  },
+  "admin.documents.confirm_remove.description": {
+    "defaultMessage": "A página e seus links ficam ocultos até que o texto seja escrito novamente.",
+    "description": "Description of the question before removing a document's text."
+  },
+  "admin.documents.confirm_remove.privacy_policy": {
+    "defaultMessage": "Remover a política de privacidade?",
+    "description": "Title of the question before removing the privacy policy."
+  },
+  "admin.documents.confirm_remove.terms": {
+    "defaultMessage": "Remover os termos de serviço?",
+    "description": "Title of the question before removing the terms of service."
+  },
+  "admin.documents.privacy_policy": {
+    "defaultMessage": "Política de privacidade",
+    "description": "Heading of the section of the privacy policy on the terms and policies screen."
+  },
+  "admin.documents.removed": {
+    "defaultMessage": "O texto foi removido. O registro de auditoria guarda a alteração.",
+    "description": "Status after a document's text was removed."
+  },
+  "admin.documents.save": {
+    "defaultMessage": "Salvar",
+    "description": "Button that saves the text of a document in the selected language."
+  },
+  "admin.documents.save_failed": {
+    "defaultMessage": "Não foi possível salvar o texto: {reason}",
+    "description": "Error under a document's form when saving failed."
+  },
+  "admin.documents.saved": {
+    "defaultMessage": "O texto foi salvo. O registro de auditoria guarda a alteração.",
+    "description": "Status after a document's text was saved."
+  },
+  "admin.documents.saved_at": {
+    "defaultMessage": "Última vez salvo",
+    "description": "Term of when the text of a document was last saved, on the terms and policies screen."
+  },
+  "admin.documents.saved_at.never": {
+    "defaultMessage": "Ainda não escrito, então a página e seus links ficam ocultos",
+    "description": "Value of the last save of a document that has no text."
+  },
+  "admin.documents.summary": {
+    "defaultMessage": "Os termos de serviço e a política de privacidade que qualquer pessoa pode ler e com os quais as pessoas concordam ao se cadastrar.",
+    "description": "Description of the terms and policies screen in the admin menu."
+  },
+  "admin.documents.terms": {
+    "defaultMessage": "Termos de serviço",
+    "description": "Heading of the section of the terms of service on the terms and policies screen."
+  },
+  "admin.documents.title": {
+    "defaultMessage": "Termos e políticas",
+    "description": "Title and heading of the admin screen where administrators write the terms of service and the privacy policy, and its link in the admin menu."
+  },
+  "admin.documents.too_long": {
+    "defaultMessage": "Use no máximo {max, number} caracteres",
+    "description": "Error of the text area of a document when the text is too long."
+  },
+  "admin.documents.unsaved.description": {
+    "defaultMessage": "Suas alterações neste texto serão perdidas.",
+    "description": "Body of the dialog that asks before leaving the terms and policies screen with unsaved texts."
+  },
+  "admin.documents.unsaved.leave": {
+    "defaultMessage": "Descartar alterações",
+    "description": "Button that leaves the terms and policies screen, losing the unsaved texts."
+  },
+  "admin.documents.unsaved.stay": {
+    "defaultMessage": "Continuar editando",
+    "description": "Button that stays on the terms and policies screen with the unsaved texts."
+  },
+  "admin.documents.unsaved.title": {
+    "defaultMessage": "Sair sem salvar o texto?",
+    "description": "Title of the dialog that asks before leaving the terms and policies screen with unsaved texts."
+  },
+  "admin.documents.view_privacy_policy": {
+    "defaultMessage": "Abrir a página da política de privacidade",
+    "description": "Link from the terms and policies screen to the public page of the privacy policy."
+  },
+  "admin.documents.commerce_disclosure": {
+    "defaultMessage": "Informações comerciais",
+    "description": "Heading of the section of the terms and policies screen where administrators write the commerce disclosures of the supporter plans (ADR-0072 §13)."
+  },
+  "admin.documents.commerce_disclosure.description": {
+    "defaultMessage": "O que a lei do seu país exige que um vendedor divulgue, como a 特定商取引法に基づく表記 no Japão. É publicado em /about/commerce, e as telas de apoio levam a ele. O servidor não verifica nem garante que ele cumpra a lei: confira você mesmo o que a lei exige.",
+    "description": "Description of the commerce disclosures on the terms and policies screen: what they are, where they are published, and that the software does not guarantee their legal correctness."
+  },
+  "admin.documents.view_commerce_disclosure": {
+    "defaultMessage": "Abrir a página de informações comerciais",
+    "description": "Link from the terms and policies screen to the public page of the commerce disclosures."
+  },
+  "admin.documents.confirm_remove.commerce_disclosure": {
+    "defaultMessage": "Remover as informações comerciais?",
+    "description": "Title of the confirmation before saving the commerce disclosures empty, which removes them."
+  },
+  "admin.documents.view_terms": {
+    "defaultMessage": "Abrir a página dos termos de serviço",
+    "description": "Link from the terms and policies screen to the public page of the terms of service."
+  },
+  "admin.documents.pages": {
+    "defaultMessage": "Páginas de termos e políticas",
+    "description": "Name of the navigation of the pages of the terms and policies screen, one per document, under its heading."
+  }
+}

@@ -69,7 +69,7 @@ func TestAdminClosureExportHTML(t *testing.T) {
 	nginx := readFile(t, filepath.Join(dir, "nginx.conf"))
 	for _, want := range []string{
 		"server_name social.example;", "location ^~ /ap/ { return 410; }", "location ^~ /@ { return 410; }",
-		"location = /.well-known/webfinger { return 410; }", `"~*^ja(-|,|;|$)" /ja.html;`, `location ~ ^/(index|ja|en|es|zh-CN|zh-TW)\.html$ {`,
+		"location = /.well-known/webfinger { return 410; }", `"~*^ja(-|,|;|$)" /ja.html;`, `location ~ ^/(index|ja|en|es|pt-BR|zh-CN|zh-TW)\.html$ {`,
 		"error_page 410 $closure_page;",
 	} {
 		if !strings.Contains(nginx, want) {

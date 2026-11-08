@@ -1,0 +1,10 @@
+{
+  "admin.home.none.description": {
+    "defaultMessage": "Suas funções não concedem nenhuma das permissões de que as telas de administração do servidor precisam. Um administrador pode concedê-las.",
+    "description": "Description on the server administration page of a user whose roles grant none of the server administration screens' permissions."
+  },
+  "admin.home.none.heading": {
+    "defaultMessage": "Nenhuma tela de administração do servidor para as suas funções",
+    "description": "Heading on the server administration page of a user whose roles grant none of the server administration screens' permissions."
+  }
+}

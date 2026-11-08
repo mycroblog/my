@@ -1,0 +1,546 @@
+{
+  "admin.account.action.deleted": {
+    "defaultMessage": "A conta foi excluída.",
+    "description": "Text instead of the action form for a deleted account."
+  },
+  "admin.account.action.issued": {
+    "defaultMessage": "Ação aplicada ({kind}).",
+    "description": "Status after an action was taken on an account; kind is its kind."
+  },
+  "admin.account.action.posts": {
+    "defaultMessage": "Para agir sobre publicações, aplique a ação a partir de uma denúncia sobre elas.",
+    "description": "Help above the form of an action on an account's page."
+  },
+  "admin.account.action.post.chosen": {
+    "defaultMessage": "Excluir publicações ou marcá-las como sensíveis age sobre esta publicação.",
+    "description": "Help under the post that an account's moderation page starts from, above the form of an action."
+  },
+  "admin.account.action.post.failed": {
+    "defaultMessage": "Não foi possível carregar a publicação: {reason} Para agir sobre publicações, aplique a ação a partir de uma denúncia sobre elas.",
+    "description": "Help above the form of an action when the post that an account's moderation page starts from failed to load or is gone. {reason} is the error message."
+  },
+  "admin.account.action.post.label": {
+    "defaultMessage": "A publicação de onde você veio",
+    "description": "Accessible name of the post that an account's moderation page starts from."
+  },
+  "admin.account.action.post.loading": {
+    "defaultMessage": "Carregando a publicação…",
+    "description": "Help above the form of an action while the post that an account's moderation page starts from loads."
+  },
+  "admin.account.action.post.remote": {
+    "defaultMessage": "Uma conta de outro servidor não recebe ação sobre uma única publicação.",
+    "description": "Help under the post that an account's moderation page starts from, for an account of another server."
+  },
+  "admin.account.action.title": {
+    "defaultMessage": "Aplicar ação",
+    "description": "Heading of the region of an account's admin page with the form of a new action."
+  },
+  "admin.account.actions.confirm_lift.description": {
+    "defaultMessage": "As restrições terminam agora. As outras ações sobre a conta continuam em vigor, e as publicações excluídas e as sessões encerradas permanecem como estão.",
+    "description": "Description of the confirmation of lifting an account action."
+  },
+  "admin.account.actions.confirm_lift.title": {
+    "defaultMessage": "Revogar {kind} em {handle}?",
+    "description": "Title of the confirmation of lifting an account action; handle is the account's @handle."
+  },
+  "admin.account.actions.issuer": {
+    "defaultMessage": "Aplicada por",
+    "description": "Term of an account action: who took it."
+  },
+  "admin.account.actions.issuer.cli": {
+    "defaultMessage": "Linha de comando",
+    "description": "Who took an account action: a moderator on the command line."
+  },
+  "admin.account.actions.lift": {
+    "defaultMessage": "Revogar",
+    "description": "Button that lifts a moderation action on an account, and the confirmation's button."
+  },
+  "admin.account.actions.lift_action": {
+    "defaultMessage": "Revogar {kind}, aplicada em {date}",
+    "description": "Accessible name of the button that lifts an account action; kind is the kind, date when it was taken."
+  },
+  "admin.account.actions.lift_failed": {
+    "defaultMessage": "Não foi possível revogar a ação: {reason}",
+    "description": "Error in the lift confirmation; reason is the server's localized message."
+  },
+  "admin.account.actions.lift_reason": {
+    "defaultMessage": "Motivo da revogação",
+    "description": "Label of the optional reason of lifting an account action, and term of it in the list."
+  },
+  "admin.account.actions.lift_reason.description": {
+    "defaultMessage": "Opcional. Fica guardado com a ação para os moderadores.",
+    "description": "Help under the reason of lifting an account action."
+  },
+  "admin.account.actions.lifted": {
+    "defaultMessage": "A ação {kind} foi revogada.",
+    "description": "Status after an account action was lifted; kind is its kind."
+  },
+  "admin.account.actions.lifted_at": {
+    "defaultMessage": "Revogada em",
+    "description": "Term of an account action: when it was lifted."
+  },
+  "admin.account.actions.notified": {
+    "defaultMessage": "Conta avisada",
+    "description": "Term of an account action: whether the account was told."
+  },
+  "admin.account.actions.notified.no": {
+    "defaultMessage": "Não",
+    "description": "The account was not told of the action."
+  },
+  "admin.account.actions.notified.yes": {
+    "defaultMessage": "Sim",
+    "description": "The account was told of the action."
+  },
+  "admin.account.actions.title": {
+    "defaultMessage": "Ações sobre a conta",
+    "description": "Heading of the region of an account's admin page with the moderation actions on it."
+  },
+  "admin.account.audit": {
+    "defaultMessage": "Mostrar as operações da conta no registro de auditoria",
+    "description": "Link from an account's admin page to the audit log filtered to it."
+  },
+  "admin.account.back": {
+    "defaultMessage": "Voltar às contas",
+    "description": "Link from an account's admin page to the account search."
+  },
+  "admin.account.email.none": {
+    "defaultMessage": "Sem endereço de e-mail",
+    "description": "A local account has no email address."
+  },
+  "admin.account.email_verified": {
+    "defaultMessage": "E-mail",
+    "description": "Term of a local account: whether its email address is verified."
+  },
+  "admin.account.email_verified.no": {
+    "defaultMessage": "Não verificado",
+    "description": "The email address of an account is not verified."
+  },
+  "admin.account.email_verified.yes": {
+    "defaultMessage": "Verificado",
+    "description": "The email address of an account is verified."
+  },
+  "admin.account.private.description": {
+    "defaultMessage": "Mostrados só quando você pede. Cada vez fica registrada no registro de auditoria.",
+    "description": "Text next to the button that shows the email and IP addresses."
+  },
+  "admin.account.private.email": {
+    "defaultMessage": "Endereço de e-mail",
+    "description": "Term of the private data: the primary email address."
+  },
+  "admin.account.private.failed": {
+    "defaultMessage": "Não foi possível mostrar o e-mail e os endereços IP: {reason}",
+    "description": "Toast when showing the email and IP addresses failed; reason is the server's localized message."
+  },
+  "admin.account.private.ip": {
+    "defaultMessage": "Endereço IP",
+    "description": "Term of a sign-in: the IP address."
+  },
+  "admin.account.private.registration_ip": {
+    "defaultMessage": "Cadastrado a partir de",
+    "description": "Term of the private data: the IP address the account registered from."
+  },
+  "admin.account.private.reveal": {
+    "defaultMessage": "Mostrar e-mail e endereços IP",
+    "description": "Button that shows the email address and IP addresses of a local account."
+  },
+  "admin.account.private.same_ip": {
+    "defaultMessage": "Outras contas nos mesmos endereços IP",
+    "description": "Heading of the list of other accounts that used the same IP addresses."
+  },
+  "admin.account.private.same_ip.none": {
+    "defaultMessage": "Nenhuma outra conta usou estes endereços IP.",
+    "description": "Text when no other account used the same IP addresses."
+  },
+  "admin.account.private.search_email_domain": {
+    "defaultMessage": "Buscar as contas com e-mail em {domain}",
+    "description": "Link to the account search by an email domain; domain is the domain."
+  },
+  "admin.account.private.search_ip": {
+    "defaultMessage": "Buscar as contas de {ip}",
+    "description": "Link to the account search by an IP address; ip is the address."
+  },
+  "admin.account.private.shown": {
+    "defaultMessage": "E-mail e endereços IP mostrados. Isso foi registrado no registro de auditoria.",
+    "description": "Status after the email and IP addresses were shown."
+  },
+  "admin.account.private.sign_ins": {
+    "defaultMessage": "Logins recentes",
+    "description": "Heading of the list of the newest sign-ins of an account."
+  },
+  "admin.account.private.sign_ins.none": {
+    "defaultMessage": "Nenhum login é mantido.",
+    "description": "Text when no sign-ins are kept."
+  },
+  "admin.account.private.signed_in_at": {
+    "defaultMessage": "Entrou em",
+    "description": "Term of a sign-in: when."
+  },
+  "admin.account.private.title": {
+    "defaultMessage": "E-mail e endereços IP",
+    "description": "Heading of the region of a local account's admin page with its email address and IP addresses."
+  },
+  "admin.account.private.unknown": {
+    "defaultMessage": "Desconhecido",
+    "description": "An IP address, User-Agent or registration origin that is not kept."
+  },
+  "admin.account.private.user_agent": {
+    "defaultMessage": "Navegador ou app",
+    "description": "Term of a sign-in: the User-Agent it came with."
+  },
+  "admin.account.profile": {
+    "defaultMessage": "Abrir o perfil",
+    "description": "Link from an account's admin page to its profile."
+  },
+  "admin.account.registration.decision_note": {
+    "defaultMessage": "Observação sobre a decisão",
+    "description": "Label of the note a moderator wrote when deciding on the account's registration."
+  },
+  "admin.account.registration.invite": {
+    "defaultMessage": "Convite",
+    "description": "Term of a local account: whether it registered with an invite."
+  },
+  "admin.account.registration.invite.none": {
+    "defaultMessage": "Nenhum",
+    "description": "Value of the invite term: no invite."
+  },
+  "admin.account.registration.invite.used": {
+    "defaultMessage": "Cadastrado com um convite",
+    "description": "Value of the invite term: registered with one."
+  },
+  "admin.account.registration.reason": {
+    "defaultMessage": "Motivo para entrar",
+    "description": "Term of a local account: why the applicant wanted to join."
+  },
+  "admin.account.registration.state_changed_at": {
+    "defaultMessage": "Cadastro decidido em",
+    "description": "Term of a local account: when its registration entered its state."
+  },
+  "admin.account.registration.submitted_at": {
+    "defaultMessage": "Solicitado em",
+    "description": "Term of a local account: when its registration was submitted."
+  },
+  "admin.account.reports.empty": {
+    "defaultMessage": "Nenhuma denúncia sobre esta conta",
+    "description": "Heading when an account has no reports."
+  },
+  "admin.account.reports.item": {
+    "defaultMessage": "Denúncia de {date}",
+    "description": "Heading of a report on an account; date is when it was filed."
+  },
+  "admin.account.reports.title": {
+    "defaultMessage": "Denúncias sobre a conta",
+    "description": "Heading of the region of an account's admin page with the reports on it."
+  },
+  "admin.account.restrictions.none": {
+    "defaultMessage": "As ações sobre a conta não restringem nada agora.",
+    "description": "Text when an account has no restrictions."
+  },
+  "admin.account.restrictions.title": {
+    "defaultMessage": "Restrições",
+    "description": "Heading of the region of an account's admin page with what its actions take away now."
+  },
+  "admin.account.roles": {
+    "defaultMessage": "Funções",
+    "description": "Term of a local account: the roles of its user."
+  },
+  "admin.account.roles.confirm_grant.description": {
+    "defaultMessage": "O usuário da conta recebe as permissões da função a partir da próxima requisição. Você pode revogá-la depois.",
+    "description": "Description of the confirmation of granting a role."
+  },
+  "admin.account.roles.confirm_grant.title": {
+    "defaultMessage": "Conceder {role} a {handle}?",
+    "description": "Title of the confirmation of granting a role; role is its key, handle the account's @handle."
+  },
+  "admin.account.roles.confirm_revoke.description": {
+    "defaultMessage": "O usuário da conta perde as permissões da função a partir da próxima requisição. Você pode concedê-la de novo depois.",
+    "description": "Description of the confirmation of revoking a role other than admin."
+  },
+  "admin.account.roles.confirm_revoke.description_admin": {
+    "defaultMessage": "O usuário da conta perde todas as permissões de administrador a partir da próxima requisição. O servidor mantém pelo menos um administrador, então a função não pode ser revogada do único que a tem.",
+    "description": "Description of the confirmation of revoking the admin role."
+  },
+  "admin.account.roles.confirm_revoke.title": {
+    "defaultMessage": "Revogar {role} de {handle}?",
+    "description": "Title of the confirmation of revoking a role; role is its key, handle the account's @handle."
+  },
+  "admin.account.roles.description": {
+    "defaultMessage": "As funções dão ao usuário da conta as permissões das telas de administração. Você pode conceder e revogar as funções iguais ou inferiores à sua função mais alta. O registro de auditoria guarda cada mudança.",
+    "description": "Text at the top of the roles region of a local account's admin page."
+  },
+  "admin.account.roles.empty": {
+    "defaultMessage": "Este servidor não tem funções",
+    "description": "Heading when the instance has no roles at all."
+  },
+  "admin.account.roles.failed": {
+    "defaultMessage": "Não foi possível alterar a função: {reason}",
+    "description": "Error in the confirmation of a role change; reason is the server's localized message."
+  },
+  "admin.account.roles.failed.last_admin": {
+    "defaultMessage": "Não foi possível revogar a função: esta conta é a única de administrador deste servidor. Conceda a função de administrador a outra conta primeiro.",
+    "description": "Error in the confirmation of revoking admin that the server refused because the account is the only admin."
+  },
+  "admin.account.roles.failed.outranked": {
+    "defaultMessage": "Não foi possível alterar a função: ela está acima da sua função mais alta ou tem permissões que você não tem. Você só pode conceder e revogar funções iguais ou inferiores à sua função mais alta, e só pode conceder funções cujas permissões você tem todas.",
+    "description": "Error in the confirmation of a role change that the server refused because the role is above the viewer's highest role."
+  },
+  "admin.account.roles.grant": {
+    "defaultMessage": "Conceder",
+    "description": "Button that grants a role to an account, and the confirmation's button."
+  },
+  "admin.account.roles.grant_role": {
+    "defaultMessage": "Conceder {role}",
+    "description": "Accessible name of the button that grants a role; role is its key."
+  },
+  "admin.account.roles.granted": {
+    "defaultMessage": "{role} foi concedida a {handle}. O registro de auditoria guarda a mudança.",
+    "description": "Status after a role was granted; role is its key, handle the account's @handle."
+  },
+  "admin.account.roles.held": {
+    "defaultMessage": "Esta conta",
+    "description": "Term of a role in an account's roles region: whether the account's user holds the role."
+  },
+  "admin.account.roles.held.no": {
+    "defaultMessage": "Não tem a função",
+    "description": "The account's user does not hold the role."
+  },
+  "admin.account.roles.held.yes": {
+    "defaultMessage": "Tem a função",
+    "description": "The account's user holds the role."
+  },
+  "admin.account.roles.load_failed": {
+    "defaultMessage": "Não foi possível carregar as funções",
+    "description": "Heading of the error when the roles of an account could not be loaded."
+  },
+  "admin.account.roles.loading": {
+    "defaultMessage": "Carregando as funções",
+    "description": "Accessible name of the spinner while the roles of an account load."
+  },
+  "admin.account.roles.missing_permissions": {
+    "defaultMessage": "Você não pode conceder esta função: ela exige permissões que você não tem ({permissions}).",
+    "description": "Why a role has no grant button: the viewer lacks some of the role's permissions; permissions lists them, comma separated."
+  },
+  "admin.account.roles.none": {
+    "defaultMessage": "Nenhuma",
+    "description": "A local account's user has no roles."
+  },
+  "admin.account.roles.outranked": {
+    "defaultMessage": "Esta função está acima da sua função mais alta, {role}, então você não pode concedê-la nem revogá-la.",
+    "description": "Why a role has no grant or revoke button; role is the key of the viewer's highest role."
+  },
+  "admin.account.roles.permissions": {
+    "defaultMessage": "Permissões",
+    "description": "Term of a role: the permissions it grants."
+  },
+  "admin.account.roles.permissions.none": {
+    "defaultMessage": "Nenhuma",
+    "description": "A role grants no permissions."
+  },
+  "admin.account.roles.retry": {
+    "defaultMessage": "Tentar de novo",
+    "description": "Button that loads the roles of an account again after a failure."
+  },
+  "admin.account.roles.revoke": {
+    "defaultMessage": "Revogar",
+    "description": "Button that revokes a role from an account, and the confirmation's button."
+  },
+  "admin.account.roles.revoke_role": {
+    "defaultMessage": "Revogar {role}",
+    "description": "Accessible name of the button that revokes a role; role is its key."
+  },
+  "admin.account.roles.revoked": {
+    "defaultMessage": "{role} foi revogada de {handle}. O registro de auditoria guarda a mudança.",
+    "description": "Status after a role was revoked; role is its key, handle the account's @handle."
+  },
+  "admin.account.roles.title": {
+    "defaultMessage": "Funções",
+    "description": "Heading of the region of a local account's admin page where a user with manage_roles grants and revokes its roles."
+  },
+  "admin.account.summary.title": {
+    "defaultMessage": "Conta",
+    "description": "Heading of the region of an account's admin page with the account itself."
+  },
+  "admin.account.title": {
+    "defaultMessage": "Conta",
+    "description": "Title of an account's admin page."
+  },
+  "admin.account.two_factor.title": {
+    "defaultMessage": "Autenticação em dois fatores",
+    "description": "Heading of the region of a local account's admin page about its two-factor authentication."
+  },
+  "admin.account.two_factor.on": {
+    "defaultMessage": "Ativada: para entrar, é preciso um código de um app autenticador.",
+    "description": "Text while the account's user has two-factor authentication."
+  },
+  "admin.account.two_factor.off": {
+    "defaultMessage": "Desativada.",
+    "description": "Text while the account's user has no two-factor authentication."
+  },
+  "admin.account.two_factor.remove": {
+    "defaultMessage": "Remover a autenticação em dois fatores",
+    "description": "Button (and the confirmation's button) that removes the two-factor authentication of the account."
+  },
+  "admin.account.two_factor.remove.description": {
+    "defaultMessage": "Para um usuário que perdeu o app autenticador e os códigos de recuperação. Antes, confirme que o pedido vem do dono da conta. A remoção fica registrada no registro de auditoria.",
+    "description": "Explanation above the button that removes the two-factor authentication of an account."
+  },
+  "admin.account.two_factor.confirm.title": {
+    "defaultMessage": "Remover a autenticação em dois fatores de {handle}?",
+    "description": "Title of the confirmation of removing the two-factor authentication. {handle} is the account's handle."
+  },
+  "admin.account.two_factor.confirm.description": {
+    "defaultMessage": "O usuário vai entrar só com a senha até configurá-la de novo. Esta ação não pode ser desfeita.",
+    "description": "Body of the confirmation of removing the two-factor authentication."
+  },
+  "admin.account.two_factor.removed": {
+    "defaultMessage": "A autenticação em dois fatores de {handle} foi removida.",
+    "description": "Status message after removing the two-factor authentication of the account {handle}."
+  },
+  "admin.account.two_factor.failed": {
+    "defaultMessage": "Não foi possível remover a autenticação em dois fatores: {reason}",
+    "description": "Error in the confirmation when the removal failed. {reason} is the server's explanation."
+  },
+  "admin.account.password_reset.title": {
+    "defaultMessage": "Redefinição de senha",
+    "description": "Heading of the region of a local account's admin page about issuing a password reset link."
+  },
+  "admin.account.password_reset.description": {
+    "defaultMessage": "Gera um link que define uma nova senha para este usuário, para você entregar a ele quando o e-mail não chega. O link funciona uma vez, por uma hora. Quem tiver o link pode definir a senha: confirme por outro canal quem está pedindo e entregue o link só ao dono da conta. A geração fica registrada no registro de auditoria.",
+    "description": "Explanation above the button that issues a password reset link for an account."
+  },
+  "admin.account.password_reset.issue": {
+    "defaultMessage": "Gerar link de redefinição de senha",
+    "description": "Button (and the confirmation's button) that issues a password reset link for the account."
+  },
+  "admin.account.password_reset.confirm.title": {
+    "defaultMessage": "Gerar um link de redefinição de senha para {handle}?",
+    "description": "Title of the confirmation of issuing a password reset link. {handle} is the account's handle."
+  },
+  "admin.account.password_reset.confirm.description": {
+    "defaultMessage": "O link é mostrado só uma vez, aqui. Ele não muda a senha até alguém abri-lo e definir uma nova.",
+    "description": "Body of the confirmation of issuing a password reset link."
+  },
+  "admin.account.password_reset.issued": {
+    "defaultMessage": "Link de redefinição de senha gerado para {handle}.",
+    "description": "Status message after issuing a password reset link for the account {handle}."
+  },
+  "admin.account.password_reset.failed": {
+    "defaultMessage": "Não foi possível gerar o link: {reason}",
+    "description": "Error in the confirmation when issuing the link failed. {reason} is the server's explanation."
+  },
+  "admin.account.password_reset.link": {
+    "defaultMessage": "Link de redefinição de senha",
+    "description": "Label of the password reset link that was just issued."
+  },
+  "admin.account.password_reset.link.notice": {
+    "defaultMessage": "Este link não será mostrado de novo. Ele funciona uma vez, até {expiresAt}.",
+    "description": "Note under the label of the issued link. {expiresAt} is the formatted date and time when the link stops working."
+  },
+  "admin.account.password_reset.copy": {
+    "defaultMessage": "Copiar link",
+    "description": "Button that copies the issued password reset link to the clipboard."
+  },
+  "admin.account.password_reset.copied": {
+    "defaultMessage": "Link de redefinição de senha copiado.",
+    "description": "Toast after copying the password reset link."
+  },
+  "admin.account.password_reset.copy_failed": {
+    "defaultMessage": "Não foi possível copiar o link.",
+    "description": "Toast when copying the password reset link failed."
+  },
+  "admin.account.email_suppression.title": {
+    "defaultMessage": "Entrega de e-mail",
+    "description": "Heading of the region of a local account's admin page about the suppression of its email address (emails no longer reach it)."
+  },
+  "admin.account.email_suppression.hard_bounce": {
+    "defaultMessage": "Os e-mails não chegam a este endereço: um e-mail enviado a ele voltou. O servidor não envia nada a ele, exceto um e-mail de verificação que o usuário pedir.",
+    "description": "Text while the account's primary address is suppressed after a hard bounce."
+  },
+  "admin.account.email_suppression.complaint": {
+    "defaultMessage": "O destinatário marcou um e-mail como spam. O servidor não envia mais e-mails de notificação, mas continua enviando os necessários para entrar e manter a conta segura.",
+    "description": "Text while the account's primary address is suppressed after a spam complaint."
+  },
+  "admin.account.email_suppression.since": {
+    "defaultMessage": "Desde {since}",
+    "description": "When the suppression started. {since} is a formatted date and time."
+  },
+  "admin.account.email_suppression.lift": {
+    "defaultMessage": "Revogar o bloqueio de envio",
+    "description": "Button (and the confirmation's button) that lifts the email suppression of the account."
+  },
+  "admin.account.email_suppression.lift.description": {
+    "defaultMessage": "Use depois que o usuário corrigir a caixa de e-mail. Se o endereço falhar de novo, ele será bloqueado de novo. A revogação fica registrada no registro de auditoria.",
+    "description": "Explanation above the button that lifts the email suppression. The lift is recorded in the audit log."
+  },
+  "admin.account.email_suppression.confirm.title": {
+    "defaultMessage": "Revogar o bloqueio de envio de e-mail de {handle}?",
+    "description": "Title of the confirmation of lifting the email suppression. {handle} is the account's handle."
+  },
+  "admin.account.email_suppression.confirm.description": {
+    "defaultMessage": "O servidor voltará a enviar e-mails para este endereço.",
+    "description": "Body of the confirmation of lifting the email suppression."
+  },
+  "admin.account.email_suppression.lifted": {
+    "defaultMessage": "O bloqueio de envio de e-mail de {handle} foi revogado.",
+    "description": "Status message after lifting the email suppression of the account {handle}."
+  },
+  "admin.account.email_suppression.failed": {
+    "defaultMessage": "Não foi possível revogar o bloqueio: {reason}",
+    "description": "Error in the confirmation when the lift failed. {reason} is the server's explanation."
+  },
+  "admin.account.password_reset.login_providers_only": {
+    "defaultMessage": "Este link não funciona agora: este servidor permite entrar só pelos provedores de login. Ele só funciona se essa restrição terminar antes de o link expirar.",
+    "description": "Under a password reset link issued while the instance limits sign-in to login providers."
+  },
+  "admin.account.registration.invited_by": {
+    "defaultMessage": "Convidado por",
+    "description": "Term of a local account that registered with an invite: who created the invite."
+  },
+  "admin.account.pages": {
+    "defaultMessage": "Páginas da conta",
+    "description": "Accessible name of the navigation between the pages of an account's moderation screen."
+  },
+  "admin.account.pages.review": {
+    "defaultMessage": "Análise",
+    "description": "Link of the navigation of an account's pages to its review page, with its summary, the form of an action and the evidence."
+  },
+  "admin.account.pages.actions": {
+    "defaultMessage": "Ações",
+    "description": "Link of the navigation of an account's pages to the list of every moderation action on it."
+  },
+  "admin.account.pages.manage": {
+    "defaultMessage": "Gerenciamento",
+    "description": "Link of the navigation of an account's pages to the management of a local account: roles, sign-in recovery, email and IP addresses."
+  },
+  "admin.account.manage.title": {
+    "defaultMessage": "Gerenciamento da conta",
+    "description": "Title of the page of a local account with its roles, sign-in recovery, and email and IP addresses."
+  },
+  "admin.account.manage.remote": {
+    "defaultMessage": "Nada a gerenciar em uma conta de outro servidor",
+    "description": "Heading on the management page of a remote account, which has none of its regions."
+  },
+  "admin.account.manage.remote.description": {
+    "defaultMessage": "Funções, recuperação de login e endereços de e-mail e IP são para os usuários deste servidor.",
+    "description": "Text under the heading on the management page of a remote account."
+  },
+  "admin.account.actions.all": {
+    "defaultMessage": "Todas as ações sobre a conta",
+    "description": "Link under the newest actions on an account's review page to the list of every action on it."
+  },
+  "admin.account.actions.column.kind": {
+    "defaultMessage": "Ação",
+    "description": "Header of the column of the table of an account's actions with the kind of each, linking to its page."
+  },
+  "admin.account.action_page.title": {
+    "defaultMessage": "Detalhes da ação",
+    "description": "Title of the page of one moderation action on an account."
+  },
+  "admin.account.action_page.back": {
+    "defaultMessage": "Voltar às ações",
+    "description": "Link from the page of one action to the list of the actions on its account."
+  },
+  "admin.account.reports.cap": {
+    "defaultMessage": "{count, plural, one {A denúncia mais recente sobre a conta.} other {As # denúncias mais recentes sobre a conta.}}",
+    "description": "Text above the reports on an account's review page: the API gives only the newest ones; count is how many at most."
+  }
+}

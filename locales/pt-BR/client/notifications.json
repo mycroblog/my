@@ -1,0 +1,450 @@
+{
+  "notifications.appeal.overturned": {
+    "defaultMessage": "Seu recurso foi revertido, e a ação foi revogada.",
+    "description": "In an appeal_decided notification: the moderators granted the user's appeal and lifted the action."
+  },
+  "notifications.appeal.upheld": {
+    "defaultMessage": "Seu recurso não foi aceito, e a ação permanece.",
+    "description": "In an appeal_decided notification: the moderators kept the action that the user appealed."
+  },
+  "notifications.all": {
+    "defaultMessage": "Todas as notificações",
+    "description": "Link from the panel of notifications in the side column to the notifications page."
+  },
+  "notifications.empty.all": {
+    "defaultMessage": "Nenhuma notificação ainda",
+    "description": "Heading shown on the notifications page, and text of the panel of notifications in the side column, when the user has no notifications."
+  },
+  "notifications.empty.description": {
+    "defaultMessage": "Quando alguém seguir você, mencionar você ou reagir às suas publicações, aparecerá aqui.",
+    "description": "Text under the heading of an empty notifications page."
+  },
+  "notifications.empty.filtered": {
+    "defaultMessage": "Nenhuma notificação deste tipo",
+    "description": "Heading shown on the notifications page when no notification matches the selected type filter."
+  },
+  "notifications.failed": {
+    "defaultMessage": "Não foi possível carregar as notificações",
+    "description": "Heading of the error that replaces the list of notifications when it failed to load; the reason follows."
+  },
+  "notifications.filter.all": {
+    "defaultMessage": "Todas",
+    "description": "Tab on the notifications page that shows notifications of every type."
+  },
+  "notifications.filter.boosts": {
+    "defaultMessage": "Impulsos",
+    "description": "Tab on the notifications page that shows only boosts of the user's posts."
+  },
+  "notifications.filter.favourites": {
+    "defaultMessage": "Favoritos",
+    "description": "Tab on the notifications page that shows only favourites of the user's posts."
+  },
+  "notifications.filter.follows": {
+    "defaultMessage": "Novos seguidores",
+    "description": "Tab on the notifications page that shows only new followers, follow requests and accepted follow requests."
+  },
+  "notifications.filter.label": {
+    "defaultMessage": "Tipos de notificação",
+    "description": "Accessible name of the tab list that filters the notifications by type."
+  },
+  "notifications.filter.mentions": {
+    "defaultMessage": "Menções",
+    "description": "Tab on the notifications page that shows only posts that mention the user."
+  },
+  "notifications.filter.posts": {
+    "defaultMessage": "Novas publicações",
+    "description": "Tab on the notifications page that shows only the new posts of the accounts whose new posts the user chose to be notified of."
+  },
+  "notifications.group.boost": {
+    "defaultMessage": "{name} e mais {count, plural, one {# pessoa} other {# pessoas}} impulsionaram sua publicação",
+    "description": "Notification sentence for several boosts of one of the user's posts, grouped in one row. {name} is the display name of the newest account that boosted it; {count} is the number of the other accounts that did (1 or more)."
+  },
+  "notifications.group.favourite": {
+    "defaultMessage": "{name} e mais {count, plural, one {# pessoa} other {# pessoas}} favoritaram sua publicação",
+    "description": "Notification sentence for several favourites of one of the user's posts, grouped in one row. {name} is the display name of the newest account that favourited it; {count} is the number of the other accounts that did (1 or more)."
+  },
+  "notifications.link.account_status": {
+    "defaultMessage": "Ver o status da sua conta",
+    "description": "Link in a moderation notice notification to the page with the moderation actions on the user's account."
+  },
+  "notifications.link.appeal": {
+    "defaultMessage": "Abrir o recurso",
+    "description": "Link in a moderator's notification of a new appeal to the appeal's admin page."
+  },
+  "notifications.link.followers": {
+    "defaultMessage": "Ver seus seguidores",
+    "description": "Link in a notification of follows ended by a suspension to the user's list of followers."
+  },
+  "notifications.link.following": {
+    "defaultMessage": "Ver as contas que você segue",
+    "description": "Link in a notification of follows ended by a suspension to the list of accounts the user follows."
+  },
+  "notifications.link.registrations": {
+    "defaultMessage": "Analisar cadastros",
+    "description": "Link in a moderator's notification of a new sign-up to the registration review screen."
+  },
+  "notifications.link.report": {
+    "defaultMessage": "Abrir a denúncia",
+    "description": "Link in a moderator's notification of a new report to the report's admin page."
+  },
+  "notifications.link.webhooks": {
+    "defaultMessage": "Abrir os webhooks",
+    "description": "Link in an administrator's notification of a disabled webhook to the webhooks screen."
+  },
+  "notifications.link.custom_emoji_requests": {
+    "defaultMessage": "Analisar as solicitações",
+    "description": "Link in an administrator's notification of a custom emoji request to the requests tab of the custom emoji screen."
+  },
+  "notifications.link.own_custom_emojis": {
+    "defaultMessage": "Abrir seus emojis personalizados",
+    "description": "Link in the notification of a decided custom emoji request to the user's custom emoji page."
+  },
+  "notifications.load_more": {
+    "defaultMessage": "Carregar mais notificações",
+    "description": "Button at the end of the notifications that loads older ones."
+  },
+  "notifications.loading": {
+    "defaultMessage": "Carregando notificações",
+    "description": "Visually hidden text that names the busy list of notifications while its first page loads."
+  },
+  "notifications.moderation.action": {
+    "defaultMessage": "{kind}: {category}",
+    "description": "In a moderation notice notification: what the action on the user's account does ({kind}, e.g. 'Suspension') and the reason category ({category}, e.g. 'Spam'), both already translated by the server."
+  },
+  "notifications.moderation.until": {
+    "defaultMessage": "Até {date}",
+    "description": "In a moderation notice notification: when the action on the user's account ends by itself; {date} is a formatted date and time."
+  },
+  "notifications.post.content_warning": {
+    "defaultMessage": "Aviso de conteúdo: {summary}",
+    "description": "A notification's link to the post it is about, when the post is behind its author's content warning: the warning only. {summary} is the warning's text."
+  },
+  "notifications.post.open": {
+    "defaultMessage": "Abrir publicação",
+    "description": "A notification's link to the post it is about, when the post has no text to quote (pictures only)."
+  },
+  "notifications.report_resolved.account": {
+    "defaultMessage": "Sua denúncia sobre {name} foi resolvida",
+    "description": "Notification sentence: the moderators resolved the user's report; {name} is the reported account's name, a link to its profile."
+  },
+  "notifications.retry": {
+    "defaultMessage": "Tentar novamente",
+    "description": "Button that loads the notifications again after they failed to load."
+  },
+  "notifications.severed.account": {
+    "defaultMessage": "Os moderadores suspenderam {name}. Você perdeu {followers, plural, one {# seguidor} other {# seguidores}} e {following, plural, one {# conta que você seguia} other {# contas que você seguia}}.",
+    "description": "Notification sentence: the moderators of this server suspended a remote account, which ended the follows between it and the user in both directions; they are not restored when the suspension ends. {name} is the display name of the suspended account. {followers} is the number of the suspended accounts that followed the user, {following} the number of those that the user followed (either may be 0)."
+  },
+  "notifications.severed.domain": {
+    "defaultMessage": "Os moderadores suspenderam {domain}. Você perdeu {followers, plural, one {# seguidor} other {# seguidores}} e {following, plural, one {# conta que você seguia} other {# contas que você seguia}} lá.",
+    "description": "Notification sentence: the moderators of this server suspended another server, which ended the follows between its accounts and the user in both directions; they are not restored when the suspension ends. {domain} is the server's domain name. {followers} is the number of the suspended accounts that followed the user, {following} the number of those that the user followed (either may be 0)."
+  },
+  "notifications.signed_out": {
+    "defaultMessage": "Entre para ver suas notificações.",
+    "description": "Description of the sign-in state that the notifications page shows when nobody is signed in, under its heading and above the link to sign in."
+  },
+  "notifications.title": {
+    "defaultMessage": "Notificações",
+    "description": "Heading and document title of the notifications page."
+  },
+  "notifications.type.admin_account_moved": {
+    "defaultMessage": "Uma conta limitada pelos moderadores migrou para outra conta",
+    "description": "Notification sentence to a moderator: an account that the moderators limit moved to another account, which does not get the limit."
+  },
+  "notifications.type.admin_appeal": {
+    "defaultMessage": "Um novo recurso aguarda os moderadores",
+    "description": "Notification sentence to a moderator: a user appealed a moderation action on their account."
+  },
+  "notifications.type.admin_report": {
+    "defaultMessage": "Uma nova denúncia aguarda os moderadores",
+    "description": "Notification sentence to a moderator: someone reported an account that had no open report."
+  },
+  "notifications.type.admin_sign_up": {
+    "defaultMessage": "{name} se cadastrou e aguarda aprovação",
+    "description": "Notification sentence to a moderator. {name} is the display name, or the username, of a new user whose registration waits for a moderator's approval."
+  },
+  "notifications.type.admin_webhook_disabled": {
+    "defaultMessage": "O servidor desativou um webhook que continuava falhando",
+    "description": "Notification sentence to an administrator: the server disabled a webhook whose endpoint kept failing or answered that it is gone."
+  },
+  "notifications.type.admin_custom_emoji_request": {
+    "defaultMessage": "Uma solicitação de emoji personalizado aguarda análise",
+    "description": "Notification sentence to an administrator when the request it is about is no longer known."
+  },
+  "notifications.type.custom_emoji_request_decided": {
+    "defaultMessage": "Um administrador analisou sua solicitação de emoji personalizado",
+    "description": "Notification sentence of a decided custom emoji request when the request is no longer known."
+  },
+  "notifications.custom_emoji_request.submitted.create": {
+    "defaultMessage": "Um usuário solicitou o emoji personalizado {emoji}",
+    "description": "Notification sentence to an administrator: a user requested a new custom emoji. {emoji} is its :shortcode:."
+  },
+  "notifications.custom_emoji_request.submitted.image": {
+    "defaultMessage": "Um usuário solicitou uma nova imagem do emoji personalizado {emoji}",
+    "description": "Notification sentence to an administrator: a user requested a new image of a custom emoji they made. {emoji} is its :shortcode:."
+  },
+  "notifications.custom_emoji_request.approved.create": {
+    "defaultMessage": "Seu emoji personalizado {emoji} foi aprovado",
+    "description": "Notification sentence: an administrator approved the user's request for a new custom emoji. {emoji} is its :shortcode:."
+  },
+  "notifications.custom_emoji_request.approved.image": {
+    "defaultMessage": "A nova imagem do seu emoji personalizado {emoji} foi aprovada",
+    "description": "Notification sentence: an administrator approved the user's request for a new image of their custom emoji. {emoji} is its :shortcode:."
+  },
+  "notifications.custom_emoji_request.rejected.create": {
+    "defaultMessage": "Sua solicitação do emoji personalizado {emoji} foi recusada",
+    "description": "Notification sentence: an administrator rejected the user's request for a new custom emoji. {emoji} is its :shortcode:."
+  },
+  "notifications.custom_emoji_request.rejected.image": {
+    "defaultMessage": "Sua solicitação de uma nova imagem de {emoji} foi recusada",
+    "description": "Notification sentence: an administrator rejected the user's request for a new image of their custom emoji. {emoji} is its :shortcode:."
+  },
+  "notifications.type.status": {
+    "defaultMessage": "{name} publicou",
+    "description": "Notification sentence. {name} is the display name of an account that the user subscribes to, which made the new post that the notification shows."
+  },
+  "notifications.type.announcement": {
+    "defaultMessage": "Os administradores publicaram um anúncio",
+    "description": "Notification sentence to every user: the administrators of the server published an announcement, which the notification shows by its title."
+  },
+  "notifications.type.auto_delete_limit": {
+    "defaultMessage": "O limite máximo do servidor para guardar publicações passará a valer para as suas publicações",
+    "description": "Notification sentence: the server's maximum of the automatic deletion of old posts now applies to the user's posts, and after a grace period it deletes the posts that the user's own settings keep. The settings of the automatic deletion show which posts will go."
+  },
+  "notifications.type.supporter_payment_failed": {
+    "defaultMessage": "Um pagamento do seu plano de apoio falhou",
+    "description": "Notification sentence: a payment for the user's supporter plan failed and the grace period began."
+  },
+  "notifications.type.supporter_subscription_ended": {
+    "defaultMessage": "Seu plano de apoio terminou",
+    "description": "Notification sentence: the user's supporter subscription ended, and the plan's benefits with it."
+  },
+  "notifications.type.supporter_plan_retired": {
+    "defaultMessage": "Os administradores retiraram seu plano de apoio",
+    "description": "Notification sentence: the administrators retired the user's supporter plan."
+  },
+  "notifications.supporter.grace": {
+    "defaultMessage": "Você mantém os benefícios do plano até {date}. Eles terminam se nenhum pagamento for concluído até lá.",
+    "description": "In the notification of a failed payment for a supporter plan, while the payment is still overdue: when the grace period ends; {date} is a formatted date and time."
+  },
+  "notifications.supporter.ended": {
+    "defaultMessage": "{reason, select, lapsed {Nenhum pagamento foi concluído em 7 dias após uma falha de pagamento, ou a assinatura foi pausada.} reversed {Um pagamento foi reembolsado por completo ou contestado.} plan_retired {Os administradores retiraram o plano.} account_suspended {Sua conta foi suspensa.} account_closed {Sua conta foi excluída.} staff {Um administrador cancelou a assinatura.} other {A assinatura foi cancelada.}}",
+    "description": "In the notification of an ended supporter subscription: why it ended. {reason} is the reason code (not shown); each branch says one reason."
+  },
+  "notifications.supporter.retired": {
+    "defaultMessage": "Sua assinatura não será renovada. Você mantém os benefícios do plano até o fim do período pago, a menos que haja um pagamento em atraso.",
+    "description": "In the notification of a retired supporter plan: what happens to the user's subscription."
+  },
+  "notifications.link.supporter_payment": {
+    "defaultMessage": "Atualizar a forma de pagamento",
+    "description": "Link in the notification of a failed payment for a supporter plan to the supporter page, where the user fixes the payment method. Not shown in the mobile app."
+  },
+  "notifications.link.supporter": {
+    "defaultMessage": "Abrir seu plano de apoio",
+    "description": "Link in the notification of an ended supporter subscription or a retired plan to the supporter page. Not shown in the mobile app."
+  },
+  "notifications.custom_emoji_request.reason": {
+    "defaultMessage": "Motivo do administrador:",
+    "description": "Label before the reason of a rejected custom emoji request in its notification."
+  },
+  "notifications.type.account_moved": {
+    "defaultMessage": "{name} migrou para outra conta",
+    "description": "Notification sentence. {name} is the display name of an account that the user followed, which moved to another account."
+  },
+  "notifications.type.appeal_decided": {
+    "defaultMessage": "Os moderadores decidiram seu recurso",
+    "description": "Notification sentence: the moderators upheld or overturned the user's appeal of a moderation action on their account."
+  },
+  "notifications.type.boost": {
+    "defaultMessage": "{name} impulsionou sua publicação",
+    "description": "Notification sentence. {name} is the display name of the account that boosted the user's post."
+  },
+  "notifications.type.favourite": {
+    "defaultMessage": "{name} favoritou sua publicação",
+    "description": "Notification sentence. {name} is the display name of the account that favourited the user's post."
+  },
+  "notifications.type.follow": {
+    "defaultMessage": "{name} seguiu você",
+    "description": "Notification sentence. {name} is the display name of the new follower."
+  },
+  "notifications.type.follow_accepted": {
+    "defaultMessage": "{name} aceitou seu pedido para seguir",
+    "description": "Notification sentence. {name} is the display name of the account that accepted the user's follow request."
+  },
+  "notifications.type.follow_request": {
+    "defaultMessage": "{name} pediu para seguir você",
+    "description": "Notification sentence. {name} is the display name of the account that asked to follow the user."
+  },
+  "notifications.type.mention": {
+    "defaultMessage": "{name} mencionou você",
+    "description": "Notification sentence. {name} is the display name of the author of a post that mentions the user."
+  },
+  "notifications.type.moderation_notice": {
+    "defaultMessage": "Os moderadores deste servidor enviaram um aviso a você",
+    "description": "Notification sentence: a notice to the user from the moderators of the server."
+  },
+  "notifications.type.poll_closed": {
+    "defaultMessage": "Uma enquete em que você votou terminou",
+    "description": "Notification sentence: a poll that the user created or voted in has closed."
+  },
+  "notifications.type.quote": {
+    "defaultMessage": "{name} citou sua publicação",
+    "description": "Notification sentence. {name} is the display name of the account that quoted the user's post in a post of its own, which the notification shows."
+  },
+  "notifications.type.reaction": {
+    "defaultMessage": "{name} reagiu à sua publicação com {emoji}",
+    "description": "Notification sentence. {name} is the display name of the account that reacted to the user's post with an emoji; {emoji} is the emoji, or the :shortcode: of a custom emoji."
+  },
+  "notifications.type.relationships_severed": {
+    "defaultMessage": "Uma suspensão pelos moderadores encerrou alguns dos seus vínculos de seguir",
+    "description": "Notification sentence when the details of the suspension are no longer available: the moderators of this server suspended a server or an account, which ended follows between it and the user."
+  },
+  "notifications.type.report_resolved": {
+    "defaultMessage": "Uma denúncia que você fez foi resolvida",
+    "description": "Notification sentence: the moderators of the server resolved a report that the user filed. It never says how."
+  },
+  "notifications.unread": {
+    "defaultMessage": "Não lidas:",
+    "description": "Read by screen readers before the sentence of a notification that was new when the page opened."
+  },
+  "notifications.unread_count": {
+    "defaultMessage": "{count, plural, one {# não lida} other {# não lidas}}",
+    "description": "The number of unread notifications on the badge of the navigation item, for example '3 unread'."
+  },
+  "notifications.account_moved.followed": {
+    "defaultMessage": "Você segue {target} agora.",
+    "description": "Under the notification that an account the user followed moved: the user follows the new account instead. {target} is the new account's handle."
+  },
+  "notifications.account_moved.requested": {
+    "defaultMessage": "Seu pedido para seguir {target} aguarda aprovação.",
+    "description": "Under the notification that an account the user followed moved: the new account is locked, so the user's follow awaits its approval. {target} is the new account's handle."
+  },
+  "notifications.account_moved.blocking": {
+    "defaultMessage": "Você não seguiu {target}, porque você bloqueou essa conta.",
+    "description": "Under the notification that an account the user followed moved: the user blocks the new account, so did not follow it. {target} is its handle."
+  },
+  "notifications.account_moved.blocked_by": {
+    "defaultMessage": "Você não seguiu {target}, porque essa conta bloqueou você.",
+    "description": "Under the notification that an account the user followed moved: the new account blocks the user, so the user did not follow it. {target} is its handle."
+  },
+  "notifications.account_moved.domain_muted": {
+    "defaultMessage": "Você não seguiu {target}, porque você silenciou o servidor dela.",
+    "description": "Under the notification that an account the user followed moved: the user mutes the new account's server, so did not follow it. {target} is the handle."
+  },
+  "notifications.account_moved.target": {
+    "defaultMessage": "Abrir {target}",
+    "description": "Link from the notification that an account moved to the new account's profile. {target} is its handle."
+  },
+  "notifications.type.service_closure": {
+    "defaultMessage": "Os administradores anunciaram que este servidor será encerrado",
+    "description": "Notification sentence to every user: the administrators announced the closure of the server."
+  },
+  "notifications.type.service_closure_rescheduled": {
+    "defaultMessage": "Os administradores mudaram a data de encerramento deste servidor",
+    "description": "Notification sentence to every user: the administrators changed the dates of the announced closure of the server."
+  },
+  "notifications.type.service_closure_withdrawn": {
+    "defaultMessage": "Os administradores cancelaram o encerramento deste servidor",
+    "description": "Notification sentence to every user: the administrators withdrew the announced closure; the server goes on."
+  },
+  "notifications.type.admin_service_closure_due": {
+    "defaultMessage": "A data de encerramento passou: encerre o servidor",
+    "description": "Notification sentence to an administrator who may close the server: the closing date of the announced closure has passed, and the server closes only when an administrator closes it."
+  },
+  "notifications.type.admin_error_group": {
+    "defaultMessage": "Um novo erro foi relatado, ou um erro resolvido ocorreu de novo",
+    "description": "Notification sentence to an administrator who manages the errors: the server or the web client reported an error of a new kind, or an error that was marked resolved happened again."
+  },
+  "notifications.type.supporter_service_closure": {
+    "defaultMessage": "Sua assinatura de apoiador foi cancelada porque este servidor será encerrado",
+    "description": "Notification sentence: the announced closure of the server cancels the user's supporter subscription at the end of its period."
+  },
+  "notifications.type.voice_room_started": {
+    "defaultMessage": "{name} iniciou uma sala de chat de voz",
+    "description": "Notification sentence. {name} is the display name of an account that the user follows, which opened a voice chat room that the user may join."
+  },
+  "notifications.type.voice_room_invited": {
+    "defaultMessage": "{name} convidou você para uma sala de chat de voz",
+    "description": "Notification sentence. {name} is the display name of the host or a co-host of a voice chat room, who invited the user to it."
+  },
+  "notifications.link.voice_room": {
+    "defaultMessage": "Abrir a sala",
+    "description": "Link in a voice chat notification to the page of the room."
+  },
+  "notifications.type.admin_error_group_created": {
+    "defaultMessage": "Um novo erro foi relatado",
+    "description": "Notification sentence to an administrator who manages the errors: the server or the web client reported an error of a new kind."
+  },
+  "notifications.type.admin_error_group_regressed": {
+    "defaultMessage": "Um erro resolvido ocorreu de novo",
+    "description": "Notification sentence to an administrator who manages the errors: an error that was marked resolved happened again on another version."
+  },
+  "notifications.type.admin_error_group_others": {
+    "defaultMessage": "Mais erros novos ou recorrentes foram relatados nesta hora",
+    "description": "Notification sentence to an administrator who manages the errors: more errors than the server notifies of one by one in an hour were reported."
+  },
+  "notifications.link.error_group": {
+    "defaultMessage": "Abrir o erro",
+    "description": "Link of an admin_error_group notification to the page of the error group."
+  },
+  "notifications.link.errors": {
+    "defaultMessage": "Abrir os erros",
+    "description": "Link of an admin_error_group notification about more groups to the list of error groups."
+  },
+  "notifications.signed_out.heading": {
+    "defaultMessage": "Você não está conectado",
+    "description": "Heading of the sign-in state that the notifications page shows, instead of the notifications, when nobody is signed in."
+  },
+  "notifications.mention.reply": {
+    "defaultMessage": "Responder",
+    "description": "Button in the row of a mention notification that opens the form to reply to the post that mentioned the user."
+  },
+  "notifications.announcement.titled": {
+    "defaultMessage": "Anúncio: {title}",
+    "description": "Notification sentence to every user: the administrators of the server published an announcement. {title} is its title, a link that opens it."
+  },
+  "notifications.link.announcement": {
+    "defaultMessage": "Abrir o anúncio",
+    "description": "Link from a notification of an announcement without a title to the announcement on the list page."
+  },
+  "notifications.link.hook_decisions": {
+    "defaultMessage": "Abrir as análises automáticas",
+    "description": "Link in a notification to the page of decisions of the external review of submissions."
+  },
+  "notifications.link.hook_appeals": {
+    "defaultMessage": "Abrir o recurso",
+    "description": "Link of an admin_hook_appeal notification to the page of the appeal of a refused post that awaits review."
+  },
+  "notifications.type.admin_hook_failing": {
+    "defaultMessage": "As chamadas de uma análise externa continuam falhando",
+    "description": "Notification sentence to a moderator: calls of the external review of submissions keep failing, so submissions go through unreviewed or wait."
+  },
+  "notifications.type.admin_hook_appeal": {
+    "defaultMessage": "Um usuário contestou uma publicação que a análise automática recusou",
+    "description": "Notification to a moderator: a user appealed a post that the server's automated review refused, and the appeal awaits review. Names neither the user nor the post."
+  },
+  "notifications.type.hook_appeal_decided": {
+    "defaultMessage": "Os moderadores analisaram seu recurso de uma publicação recusada",
+    "description": "Notification: the moderators upheld or overturned the user's appeal of a post that the automated review refused; shown when the appeal is no longer available to say which."
+  },
+  "notifications.type.hook_appeal_upheld": {
+    "defaultMessage": "Os moderadores mantiveram a recusa da sua publicação. Ela continua sem ser publicada.",
+    "description": "Notification: a moderator reviewed the user's appeal of a post that the automated review refused, and kept the refusal."
+  },
+  "notifications.type.hook_appeal_overturned": {
+    "defaultMessage": "Os moderadores cancelaram a recusa da sua publicação. Você pode publicá-la de novo.",
+    "description": "Notification: a moderator overturned the automated review's refusal of the user's post. The post is not restored; the user posts it again, and their posts are no longer reviewed."
+  },
+  "notifications.unknown": {
+    "defaultMessage": "Você tem uma nova notificação.",
+    "description": "Sentence of a notification whose type this version of the web client does not know yet."
+  },
+  "notifications.auto_delete_limit.detail": {
+    "defaultMessage": "A partir de {date}, suas publicações com mais de {days, plural, one {# dia} other {# dias}} serão excluídas, exceto as que este servidor deixa você manter. Até lá, valem suas próprias configurações.",
+    "description": "In the notification that the server's maximum of the automatic deletion binds the user: {date} is the formatted date it starts to delete their posts, {days} the most days a post is kept."
+  },
+  "notifications.link.auto_delete": {
+    "defaultMessage": "Ver quais publicações serão excluídas",
+    "description": "Link in the notification of the server's maximum of the automatic deletion to the settings of the automatic deletion, which preview what goes."
+  }
+}

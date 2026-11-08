@@ -1,0 +1,150 @@
+{
+  "admin.appeal.account": {
+    "defaultMessage": "Conta",
+    "description": "Term of the account that appealed, which the action is on."
+  },
+  "admin.appeal.account.admin": {
+    "defaultMessage": "Abrir a conta nas telas de administração",
+    "description": "Link from an appeal's page to the admin page of the account that appealed."
+  },
+  "admin.appeal.action.kind": {
+    "defaultMessage": "Ação",
+    "description": "Term of the kind of the moderation action on an appeal's page."
+  },
+  "admin.appeal.action.lifted_at": {
+    "defaultMessage": "Revogada",
+    "description": "Term of when the action was lifted."
+  },
+  "admin.appeal.action.report": {
+    "defaultMessage": "Abrir a denúncia",
+    "description": "Link from an appeal's page to the report the action follows from."
+  },
+  "admin.appeal.action.title": {
+    "defaultMessage": "Ação de moderação",
+    "description": "Heading of the region of an appeal's page with the action it is of."
+  },
+  "admin.appeal.action_state": {
+    "defaultMessage": "Estado da ação",
+    "description": "Term of the state of the action an appeal is of, in the list of appeals."
+  },
+  "admin.appeal.already_decided": {
+    "defaultMessage": "Outro moderador já analisou este recurso. Essa decisão continua valendo.",
+    "description": "Status when a moderator decided an appeal that another moderator had decided the other way first."
+  },
+  "admin.appeal.appeal.title": {
+    "defaultMessage": "Recurso",
+    "description": "Heading of the region of an appeal's page with what the user wrote."
+  },
+  "admin.appeal.back": {
+    "defaultMessage": "Voltar para recursos",
+    "description": "Link from an appeal's page to the list of appeals."
+  },
+  "admin.appeal.cancel": {
+    "defaultMessage": "Cancelar",
+    "description": "Button of the confirmation of a decision on an appeal that closes it without deciding."
+  },
+  "admin.appeal.confirm_overturn.description": {
+    "defaultMessage": "A ação “{kind}” será revogada agora. As publicações excluídas continuam excluídas. A decisão não poderá ser alterada depois.",
+    "description": "Text of the confirmation before overturning an appeal. {kind} is the kind of the action."
+  },
+  "admin.appeal.confirm_overturn.description_ban": {
+    "defaultMessage": "O banimento será revogado agora e a conta deixará de ser excluída. A decisão não poderá ser alterada depois.",
+    "description": "Text of the confirmation before overturning the appeal of a ban."
+  },
+  "admin.appeal.confirm_overturn.title": {
+    "defaultMessage": "Reverter este recurso?",
+    "description": "Title of the confirmation before overturning an appeal."
+  },
+  "admin.appeal.confirm_uphold.description": {
+    "defaultMessage": "A ação “{kind}” continua. A decisão não poderá ser alterada depois.",
+    "description": "Text of the confirmation before upholding an appeal. {kind} is the kind of the action."
+  },
+  "admin.appeal.confirm_uphold.title": {
+    "defaultMessage": "Manter este recurso?",
+    "description": "Title of the confirmation before upholding an appeal."
+  },
+  "admin.appeal.decide_failed": {
+    "defaultMessage": "Não foi possível salvar a decisão: {reason}",
+    "description": "Error in the confirmation of a decision on an appeal when the request failed. {reason} is why."
+  },
+  "admin.appeal.decided_at": {
+    "defaultMessage": "Analisado em",
+    "description": "Term of when a moderator decided an appeal."
+  },
+  "admin.appeal.decided_by": {
+    "defaultMessage": "Analisado por",
+    "description": "Term of the moderator who decided an appeal."
+  },
+  "admin.appeal.decided_by.cli": {
+    "defaultMessage": "A linha de comando",
+    "description": "Value of who decided an appeal when it was decided from the command line."
+  },
+  "admin.appeal.decision": {
+    "defaultMessage": "Decisão",
+    "description": "Term of the decision on an appeal."
+  },
+  "admin.appeal.decision.description": {
+    "defaultMessage": "Manter preserva a ação. Reverter a revoga. O usuário é informado da decisão, com a sua explicação.",
+    "description": "Text above the uphold and overturn buttons of a pending appeal."
+  },
+  "admin.appeal.decision.title": {
+    "defaultMessage": "Análise",
+    "description": "Heading of the region of an appeal's page where it is decided."
+  },
+  "admin.appeal.decision_reason": {
+    "defaultMessage": "Explicação para o usuário",
+    "description": "Term of the explanation of a decision that the user was shown."
+  },
+  "admin.appeal.none": {
+    "defaultMessage": "Nenhuma",
+    "description": "Value of a moderator's text on an appeal's page when there is none."
+  },
+  "admin.appeal.overturn": {
+    "defaultMessage": "Reverter",
+    "description": "Button of a pending appeal that opens the confirmation of overturning it, and the confirmation's button that overturns it."
+  },
+  "admin.appeal.overturned": {
+    "defaultMessage": "O recurso foi revertido e a ação foi revogada.",
+    "description": "Status after a moderator overturned an appeal, which lifted its action."
+  },
+  "admin.appeal.overturned_ended": {
+    "defaultMessage": "O recurso foi revertido. A ação já tinha terminado.",
+    "description": "Status after a moderator overturned an appeal whose action had already ended or been lifted."
+  },
+  "admin.appeal.reason": {
+    "defaultMessage": "Explicação para o usuário",
+    "description": "Label of the optional explanation in the confirmation of a decision on an appeal."
+  },
+  "admin.appeal.reason.description": {
+    "defaultMessage": "Opcional. O usuário que apresentou o recurso a vê junto com a decisão.",
+    "description": "Hint under the explanation of a decision on an appeal."
+  },
+  "admin.appeal.reason.too_long": {
+    "defaultMessage": "Use no máximo {max, number} caracteres",
+    "description": "Error under the explanation of a decision on an appeal when it is too long. {max} is the limit."
+  },
+  "admin.appeal.state": {
+    "defaultMessage": "Estado",
+    "description": "Term of an appeal's state."
+  },
+  "admin.appeal.submitted_at": {
+    "defaultMessage": "Recurso enviado em",
+    "description": "Term of when the user appealed."
+  },
+  "admin.appeal.text": {
+    "defaultMessage": "O que o usuário escreveu",
+    "description": "Term of the text of an appeal, written by the user."
+  },
+  "admin.appeal.title": {
+    "defaultMessage": "Recurso",
+    "description": "Heading of the page of one appeal of a moderation action."
+  },
+  "admin.appeal.upheld": {
+    "defaultMessage": "O recurso foi mantido. A ação continua.",
+    "description": "Status after a moderator upheld an appeal."
+  },
+  "admin.appeal.uphold": {
+    "defaultMessage": "Manter",
+    "description": "Button of a pending appeal that opens the confirmation of upholding it, and the confirmation's button that upholds it."
+  }
+}

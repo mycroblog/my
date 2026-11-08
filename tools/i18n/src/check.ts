@@ -16,7 +16,8 @@
 //          (use ":", ";", "()" and "、"); in Simplified Chinese, an ASCII comma, semicolon, colon, question mark or
 //          parenthesis next to a Han character, corner brackets 「」『』, or kana; in Traditional Chinese, the same ASCII
 //          punctuation, curly quotation marks “”‘’ (use 「」『』), kana, or a character only Simplified Chinese writes;
-//          in Spanish, a question mark without its opening "¿", or ASCII double quotation marks (use «…»)
+//          in Spanish, a question mark without its opening "¿", or ASCII double quotation marks (use «…»); in
+//          Portuguese, ASCII double quotation marks (use “…”)
 //   error: a variant the glossary (tools/i18n/glossary.json, G21) bans in the locale's text, in any namespace
 //   warn:  untranslated key (falls back to en at runtime)
 //   warn:  translation drops a source argument (sometimes legitimate)
@@ -94,7 +95,16 @@ function copyStyleFindings(locale: string, text: string): string[] {
   if (isSimplifiedChinese(locale)) out.push(...simplifiedChineseFindings(text));
   if (isTraditionalChinese(locale)) out.push(...traditionalChineseFindings(text));
   if (new Intl.Locale(locale).language === "es") out.push(...spanishFindings(text));
+  if (new Intl.Locale(locale).language === "pt") out.push(...portugueseFindings(text));
   return out;
+}
+
+/** The punctuation rules of Brazilian Portuguese (web-client/16-look-states-and-wording.md G20). */
+function portugueseFindings(text: string): string[] {
+  if (!text.includes('"')) return [];
+  return [
+    'use "“…”" (and "‘…’" inside them) as quotation marks in Portuguese, not ASCII double quotation marks (web-client/16-look-states-and-wording.md G20)',
+  ];
 }
 
 /** The punctuation rules of Spanish (web-client/16-look-states-and-wording.md G20). */

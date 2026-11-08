@@ -1,0 +1,82 @@
+{
+  "income.title": {
+    "defaultMessage": "Receita",
+    "description": "Heading of the section of the income from the supporter plans on the finances page, the public page of the running costs, and the costs screen."
+  },
+  "income.public.no_balance": {
+    "defaultMessage": "O saldo não é publicado, porque este servidor não publica seus custos.",
+    "description": "Note in the income section of the public page of the running costs when the server publishes its income but not its costs, so the balance is not published."
+  },
+  "income.loading": {
+    "defaultMessage": "Carregando a receita",
+    "description": "Accessible name of the progress indicator while the income totals load."
+  },
+  "income.failed": {
+    "defaultMessage": "Não foi possível carregar a receita",
+    "description": "Heading shown in place of the income totals when they could not be loaded."
+  },
+  "income.retry": {
+    "defaultMessage": "Tentar de novo",
+    "description": "Button that tries again to load the income totals after a failure."
+  },
+  "income.totals.caption": {
+    "defaultMessage": "Receita por {granularity}, {basis}",
+    "description": "Accessible caption of the table of the income totals: the chosen period kind and the way payments are counted."
+  },
+  "income.totals.gross": {
+    "defaultMessage": "Bruta",
+    "description": "Column header and term of what the supporters paid before the payment provider's fees, on the costs screen only."
+  },
+  "income.totals.fee": {
+    "defaultMessage": "Taxas",
+    "description": "Column header and term of the payment provider's fees, on the costs screen only."
+  },
+  "income.totals.net": {
+    "defaultMessage": "Receita após as taxas",
+    "description": "Column header and term of the income after the payment provider's fees and the refunds."
+  },
+  "income.totals.balance": {
+    "defaultMessage": "Saldo",
+    "description": "Column header of the balance: the income less the costs of the same period and currency."
+  },
+  "income.plans.title": {
+    "defaultMessage": "Membros de cada plano",
+    "description": "Heading of the number of members of each supporter plan now, next to the income totals."
+  },
+  "income.plans.description": {
+    "defaultMessage": "Os membros de agora, não de cada período. Os valores de cada plano não são mostrados.",
+    "description": "Explanation of the number of members of each supporter plan next to the income totals."
+  },
+  "income.plans.empty": {
+    "defaultMessage": "Nenhum plano tem membros.",
+    "description": "What the list of the members of each plan says when no plan has members."
+  },
+  "income.plans.members": {
+    "defaultMessage": "{count, plural, one {# membro} other {# membros}}",
+    "description": "The number of members of a supporter plan now."
+  },
+  "income.rules.title": {
+    "defaultMessage": "Como a receita é contada",
+    "description": "Heading of the rules that date and place the payments in the income totals."
+  },
+  "income.rules.net": {
+    "defaultMessage": "A receita é o que os apoiadores pagaram, menos as taxas do provedor de pagamento. Um reembolso ou uma contestação de pagamento é descontado no período em que acontece.",
+    "description": "Rule of the income totals: what the income is."
+  },
+  "income.rules.provider": {
+    "defaultMessage": "{provider} data seus pagamentos no fuso horário {timeZone}.",
+    "description": "Rule of the income totals: the time zone in which a payment provider (such as stripe) dates its money movements (UTC, Asia/Tokyo)."
+  },
+  "income.rules.amortized": {
+    "defaultMessage": "Um pagamento de mais de {days} dias, como um plano anual, é repartido por dia entre os dias que ele cobre. O reembolso dele desconta os dias anteriores no dia do reembolso e cancela os dias seguintes. Os outros pagamentos contam nas suas datas.",
+    "description": "Rule of the spread income totals. {days} is the number of days a payment must cover to be spread, such as 31."
+  },
+  "income.rules.cash": {
+    "defaultMessage": "Todo pagamento, reembolso e taxa conta na sua data.",
+    "description": "Rule of the income totals on the payment date."
+  },
+  "income.rules.balance": {
+    "defaultMessage": "O saldo é a receita menos os custos de cada moeda, ambos contados do mesmo jeito. As moedas nunca são convertidas.",
+    "description": "Rule of the income totals: what the balance is."
+  }
+}

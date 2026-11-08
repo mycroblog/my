@@ -1,0 +1,30 @@
+{
+  "admin.role.title": {
+    "defaultMessage": "Função",
+    "description": "Title of the page of one role."
+  },
+  "admin.role.back": {
+    "defaultMessage": "Todas as funções",
+    "description": "Link from the page of a role, or of a new one, back to the list of roles."
+  },
+  "admin.role.facts": {
+    "defaultMessage": "Sobre esta função",
+    "description": "Heading of the region of a role's page with its key, position, permissions and badge."
+  },
+  "admin.role.holders": {
+    "defaultMessage": "As funções são concedidas e revogadas na página de administração de uma conta.",
+    "description": "Text on a role's page above the link to the account search, where the role is granted."
+  },
+  "admin.role.edit.title": {
+    "defaultMessage": "Editar a função",
+    "description": "Heading of the form of a role's page that changes its position, permissions and badge."
+  },
+  "admin.role.delete.title": {
+    "defaultMessage": "Excluir a função",
+    "description": "Heading of the region of a role's page that deletes it."
+  },
+  "admin.role.gone": {
+    "defaultMessage": "Esta função não existe mais.",
+    "description": "Text on the page of a role that was deleted while the page was open."
+  }
+}

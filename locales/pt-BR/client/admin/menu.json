@@ -1,0 +1,38 @@
+{
+  "admin.menu.open_reports": {
+    "defaultMessage": "{count, plural, one {# denúncia em aberto} other {# denúncias em aberto}}",
+    "description": "Badge of the reports item of the administration menu: how many reports are open."
+  },
+  "admin.menu.pending_appeals": {
+    "defaultMessage": "{count, plural, one {# aguarda uma decisão} other {# aguardam uma decisão}}",
+    "description": "Badge of the appeals item of the administration menu: how many appeals of moderation actions await a decision."
+  },
+  "admin.menu.pending_registrations": {
+    "defaultMessage": "{count, plural, one {# aguarda aprovação} other {# aguardam aprovação}}",
+    "description": "Badge of the registrations item of the administration menu: how many registrations await approval."
+  },
+  "admin.menu.title": {
+    "defaultMessage": "Administração",
+    "description": "Heading of the links to the server administration screens (settings, documents, failed jobs) on the settings page and title of their page, shown only to users with a server administration permission."
+  },
+  "admin.menu.group.accounts": {
+    "defaultMessage": "Contas e cadastros",
+    "description": "Heading of a group of the admin and moderation menu: the accounts, the registrations, the blocked sign-ups and the invites."
+  },
+  "admin.menu.group.federation": {
+    "defaultMessage": "Federação",
+    "description": "Heading of a group of the admin and moderation menu: the actions on other servers and the list of other servers."
+  },
+  "admin.menu.group.connections": {
+    "defaultMessage": "Conexões",
+    "description": "Heading of a group of the admin and moderation menu: the relays, the webhooks, the login providers and the OAuth apps of the server."
+  },
+  "admin.menu.group.funding": {
+    "defaultMessage": "Financiamento",
+    "description": "Heading of a group of the admin and moderation menu: the finances and the supporters."
+  },
+  "admin.menu.group.operations": {
+    "defaultMessage": "Operação",
+    "description": "Heading of a group of the admin and moderation menu: the roles, the background jobs, the errors and closing the service."
+  }
+}

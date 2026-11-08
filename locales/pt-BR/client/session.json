@@ -1,0 +1,30 @@
+{
+  "session.account.failed": {
+    "defaultMessage": "Não foi possível carregar sua conta",
+    "description": "Heading of the error in the account section of the settings when the signed-in account failed to load; the reason follows."
+  },
+  "session.account.retry": {
+    "defaultMessage": "Tentar novamente",
+    "description": "Button that loads the signed-in account again after it failed to load."
+  },
+  "session.account.title": {
+    "defaultMessage": "Conta",
+    "description": "Heading of the section of the settings page about the signed-in account."
+  },
+  "session.sign_in": {
+    "defaultMessage": "Entrar",
+    "description": "Link in the account section of the settings page that opens the sign-in page."
+  },
+  "session.sign_out": {
+    "defaultMessage": "Sair",
+    "description": "Button that signs the user out of the app in every tab."
+  },
+  "session.sign_out.failed": {
+    "defaultMessage": "Você saiu aqui, mas não foi possível alcançar o servidor. Sua sessão pode voltar quando você recarregar a página.",
+    "description": "Notice after signing out when the server could not be told; the browser may still hold the session."
+  },
+  "session.signed_out": {
+    "defaultMessage": "Você não está conectado.",
+    "description": "Text in the account section of the settings page when nobody is signed in."
+  }
+}

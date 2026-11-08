@@ -1,0 +1,242 @@
+{
+  "custom_emojis.title": {
+    "defaultMessage": "Seus emojis personalizados",
+    "description": "Title of the settings page of the custom emoji that the user requests and made."
+  },
+  "custom_emojis.description": {
+    "defaultMessage": "Suas funções permitem que você adicione emojis personalizados a este servidor. Um administrador analisa cada solicitação antes de o emoji aparecer em qualquer lugar. Você pode alterar e excluir os emojis que criou enquanto suas funções permitirem. Seu limite conta as solicitações que você envia a cada mês, então excluir um emoji não libera uma vaga.",
+    "description": "Explanation at the top of the user's custom emoji page (ADR-0070)."
+  },
+  "custom_emojis.new.title": {
+    "defaultMessage": "Solicitar um emoji personalizado",
+    "description": "Heading of the region of the form that requests a new custom emoji."
+  },
+  "custom_emojis.usage.label": {
+    "defaultMessage": "Criados neste mês",
+    "description": "Label of the meter of how many custom emoji the user requested this month (UTC) against their monthly limit."
+  },
+  "custom_emojis.usage.value": {
+    "defaultMessage": "{full, select, true {{used, number} de {limit, number}, limite atingido{pending, plural, =0 {} other {, # deles pendentes}}} other {{used, number} de {limit, number}{pending, plural, =0 {} other {, # deles pendentes}}}}",
+    "description": "The value of the meter of the requests to create a custom emoji that the user submitted this month (UTC). {used} counts the approved and pending ones; {pending} is how many of them are pending; {limit} is how many they may submit in a month; {full} is true when they reached it."
+  },
+  "custom_emojis.usage.unlimited": {
+    "defaultMessage": "{used, plural, one {Você solicitou # emoji personalizado neste mês} other {Você solicitou # emojis personalizados neste mês}}{pending, plural, =0 {} other {, # deles pendentes}}. Suas funções não definem limite.",
+    "description": "How many custom emoji the user requested this month (UTC) when their roles set no limit. {used} counts the approved and pending requests to create one; {pending} is how many of them are pending."
+  },
+  "custom_emojis.usage.resets": {
+    "defaultMessage": "Reinicia em {date}",
+    "description": "When the count of the monthly custom emoji limit resets, under its meter. {date} is the formatted date and time in the viewer's time zone, for example 'November 1, 2026 at 9:00 AM'."
+  },
+  "custom_emojis.image": {
+    "defaultMessage": "Imagem",
+    "description": "Label of the image of a requested custom emoji."
+  },
+  "custom_emojis.image.description": {
+    "defaultMessage": "PNG, GIF ou WebP, com no máximo 1.024 pixels em cada lado. Ela é exibida em até 256 pixels; um PNG animado mostra só o primeiro quadro.",
+    "description": "Rules of the image of a requested custom emoji."
+  },
+  "custom_emojis.image.choose": {
+    "defaultMessage": "Escolher uma imagem",
+    "description": "Button that opens the file picker for the image of a requested custom emoji."
+  },
+  "custom_emojis.image.chosen": {
+    "defaultMessage": "Escolhida: {name}",
+    "description": "The chosen image file. {name} is its file name."
+  },
+  "custom_emojis.image.large_hint": {
+    "defaultMessage": "Esta imagem tem mais de 100 KB. Alguns servidores (o GoToSocial, por padrão) não exibem emojis personalizados tão grandes.",
+    "description": "Hint for an image of a requested custom emoji larger than 100 KB."
+  },
+  "custom_emojis.image.required": {
+    "defaultMessage": "Escolha uma imagem.",
+    "description": "Error of a request without an image."
+  },
+  "custom_emojis.image_failed": {
+    "defaultMessage": "O servidor não conseguiu processar a imagem.",
+    "description": "Error when the server could not process the uploaded image of a custom emoji request."
+  },
+  "custom_emojis.shortcode": {
+    "defaultMessage": "Código curto",
+    "description": "Label of the shortcode of a requested custom emoji."
+  },
+  "custom_emojis.shortcode.description": {
+    "defaultMessage": "De 2 a 30 letras (A a Z), dígitos e sublinhados; maiúsculas contam. As pessoas o digitam entre dois-pontos, como :blobcat:. Não pode ser alterado depois.",
+    "description": "Rules of the shortcode of a requested custom emoji."
+  },
+  "custom_emojis.shortcode.invalid": {
+    "defaultMessage": "Use de 2 a 30 letras (A a Z), dígitos e sublinhados.",
+    "description": "Error of a shortcode that breaks the rules."
+  },
+  "custom_emojis.submit": {
+    "defaultMessage": "Solicitar",
+    "description": "Button that sends a request for a new custom emoji."
+  },
+  "custom_emojis.requested": {
+    "defaultMessage": "{emoji} foi solicitado. Um administrador vai analisá-lo.",
+    "description": "Status after requesting a custom emoji. {emoji} is its :shortcode:."
+  },
+  "custom_emojis.request_failed": {
+    "defaultMessage": "Não foi possível enviar a solicitação: {reason}",
+    "description": "Error of a custom emoji request that failed. {reason} is the server's explanation, such as a taken shortcode or a reached limit."
+  },
+  "custom_emojis.requests.title": {
+    "defaultMessage": "Suas solicitações",
+    "description": "Heading of the region of the user's custom emoji requests."
+  },
+  "custom_emojis.requests.empty": {
+    "defaultMessage": "Nenhuma solicitação ainda",
+    "description": "Empty state of the user's custom emoji requests."
+  },
+  "custom_emojis.withdraw": {
+    "defaultMessage": "Retirar",
+    "description": "Button that withdraws a pending custom emoji request."
+  },
+  "custom_emojis.withdraw_request": {
+    "defaultMessage": "Retirar a solicitação de {emoji}",
+    "description": "Accessible name of the button that withdraws a pending custom emoji request. {emoji} is the :shortcode: of the requested emoji."
+  },
+  "custom_emojis.withdrawn": {
+    "defaultMessage": "A solicitação de {emoji} foi retirada.",
+    "description": "Status after withdrawing a custom emoji request."
+  },
+  "custom_emojis.withdraw_failed": {
+    "defaultMessage": "Não foi possível retirar a solicitação: {reason}",
+    "description": "Error after withdrawing a custom emoji request failed. {reason} is the server's explanation."
+  },
+  "custom_emojis.list.title": {
+    "defaultMessage": "Emojis personalizados que você criou",
+    "description": "Heading of the region of the custom emoji that the user made."
+  },
+  "custom_emojis.empty": {
+    "defaultMessage": "Você ainda não criou nenhum emoji personalizado",
+    "description": "Empty state of the custom emoji that the user made."
+  },
+  "custom_emojis.empty.description": {
+    "defaultMessage": "Uma solicitação aprovada aparece aqui.",
+    "description": "Description of the empty state of the custom emoji that the user made."
+  },
+  "custom_emojis.state": {
+    "defaultMessage": "Estado",
+    "description": "Term of the description list of the user's custom emoji: whether it is shown."
+  },
+  "custom_emojis.state.enabled": {
+    "defaultMessage": "Ativado",
+    "description": "State of an enabled custom emoji."
+  },
+  "custom_emojis.state.disabled": {
+    "defaultMessage": "Desativado por um administrador: exibido como texto",
+    "description": "State of a custom emoji that an administrator disabled."
+  },
+  "custom_emojis.picker": {
+    "defaultMessage": "Seletor",
+    "description": "Term of the description list of the user's custom emoji: whether the picker offers it."
+  },
+  "custom_emojis.picker.shown": {
+    "defaultMessage": "Exibido",
+    "description": "The picker offers the emoji."
+  },
+  "custom_emojis.picker.hidden": {
+    "defaultMessage": "Oculto",
+    "description": "The picker does not offer the emoji."
+  },
+  "custom_emojis.category": {
+    "defaultMessage": "Categoria",
+    "description": "Label of the category of a custom emoji."
+  },
+  "custom_emojis.category.description": {
+    "defaultMessage": "Agrupa os emojis no seletor. Opcional, até {max} caracteres.",
+    "description": "Description of the category of a custom emoji. {max} is the limit."
+  },
+  "custom_emojis.aliases": {
+    "defaultMessage": "Outros nomes",
+    "description": "Label of the other names of a custom emoji."
+  },
+  "custom_emojis.aliases.description": {
+    "defaultMessage": "Nomes pelos quais a busca do seletor também encontra o emoji, separados por espaços ou vírgulas; até {max}, cada um como um código curto.",
+    "description": "Description of the other names of a custom emoji. {max} is the limit."
+  },
+  "custom_emojis.aliases.too_many": {
+    "defaultMessage": "Até {max} outros nomes.",
+    "description": "Error of too many other names."
+  },
+  "custom_emojis.visible_in_picker": {
+    "defaultMessage": "Exibir no seletor",
+    "description": "Checkbox: whether the picker offers the emoji."
+  },
+  "custom_emojis.visible_in_picker.description": {
+    "defaultMessage": "Um emoji oculto do seletor ainda pode ser digitado como :shortcode:.",
+    "description": "Description of the checkbox of the picker."
+  },
+  "custom_emojis.none": {
+    "defaultMessage": "Nenhum",
+    "description": "Value of an empty category or empty other names."
+  },
+  "custom_emojis.updated_at": {
+    "defaultMessage": "Imagem definida em",
+    "description": "Term of the description list of the user's custom emoji: when its current image was set."
+  },
+  "custom_emojis.edit": {
+    "defaultMessage": "Editar",
+    "description": "Button that opens the dialog of the settings of the user's custom emoji."
+  },
+  "custom_emojis.edit_emoji": {
+    "defaultMessage": "Editar {emoji}",
+    "description": "Accessible name of the edit button. {emoji} is the emoji's :shortcode:."
+  },
+  "custom_emojis.edit.title": {
+    "defaultMessage": "Editar {emoji}",
+    "description": "Title of the dialog of the settings of the user's custom emoji."
+  },
+  "custom_emojis.edit.close": {
+    "defaultMessage": "Fechar",
+    "description": "Close button of the edit dialog."
+  },
+  "custom_emojis.save": {
+    "defaultMessage": "Salvar",
+    "description": "Button that saves the settings of the user's custom emoji."
+  },
+  "custom_emojis.cancel": {
+    "defaultMessage": "Cancelar",
+    "description": "Button that closes a dialog of the user's custom emoji."
+  },
+  "custom_emojis.updated": {
+    "defaultMessage": "{emoji} foi salvo.",
+    "description": "Status after saving the settings of the user's custom emoji."
+  },
+  "custom_emojis.request_image": {
+    "defaultMessage": "Solicitar uma nova imagem",
+    "description": "Button that picks a new image of the user's custom emoji and requests it."
+  },
+  "custom_emojis.request_image_of": {
+    "defaultMessage": "Solicitar uma nova imagem de {emoji}",
+    "description": "Accessible name of the button that requests a new image. {emoji} is the emoji's :shortcode:."
+  },
+  "custom_emojis.image_requested": {
+    "defaultMessage": "Uma nova imagem de {emoji} foi solicitada. Um administrador vai analisá-la; até lá, o emoji mantém a imagem atual.",
+    "description": "Status after requesting a new image of the user's custom emoji."
+  },
+  "custom_emojis.delete": {
+    "defaultMessage": "Excluir",
+    "description": "Button that deletes the user's custom emoji, and the confirm button of its dialog."
+  },
+  "custom_emojis.delete_emoji": {
+    "defaultMessage": "Excluir {emoji}",
+    "description": "Accessible name of the delete button. {emoji} is the emoji's :shortcode:."
+  },
+  "custom_emojis.delete.title": {
+    "defaultMessage": "Excluir {emoji}?",
+    "description": "Title of the dialog that confirms deleting the user's custom emoji."
+  },
+  "custom_emojis.delete.description": {
+    "defaultMessage": "As publicações e os perfis que o usam passam a mostrar {emoji} como texto, e ele deixa de contar no seu limite. Isto não pode ser desfeito.",
+    "description": "Description of the dialog that confirms deleting the user's custom emoji."
+  },
+  "custom_emojis.deleted": {
+    "defaultMessage": "{emoji} foi excluído.",
+    "description": "Status after deleting the user's custom emoji."
+  },
+  "custom_emojis.change_failed": {
+    "defaultMessage": "Não foi possível alterar o emoji personalizado: {reason}",
+    "description": "Error after a change of the user's custom emoji failed. {reason} is the server's explanation."
+  }
+}

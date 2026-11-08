@@ -1,0 +1,170 @@
+{
+  "admin.translation.browser": {
+    "defaultMessage": "Permitir a tradução integrada do navegador",
+    "description": "Checkbox that enables the translation built into the reader's browser."
+  },
+  "admin.translation.browser.description": {
+    "defaultMessage": "Traduzida no navegador de quem lê, quando ele tem este recurso, em qualquer visibilidade. Nada vai para este servidor nem para um provedor, e não conta nos limites.",
+    "description": "Explains the browser's built-in translation."
+  },
+  "admin.translation.limits.description": {
+    "defaultMessage": "Com 0, nada é enviado a um provedor. Não existe valor ilimitado: informe um número grande. Acima de um limite, o leitor é avisado e nenhum provedor é chamado.",
+    "description": "Explains the monthly limits of translation."
+  },
+  "admin.translation.limits.server": {
+    "defaultMessage": "Caracteres por mês para todo o servidor",
+    "description": "Label of the monthly limit of characters of the whole server."
+  },
+  "admin.translation.limits.title": {
+    "defaultMessage": "Limites e retenção",
+    "description": "Heading of the section with the monthly limits of translation and how long translations are kept."
+  },
+  "admin.translation.limits.user": {
+    "defaultMessage": "Caracteres por usuário por mês",
+    "description": "Label of the monthly limit of characters of one user."
+  },
+  "admin.translation.move_down": {
+    "defaultMessage": "Mover para baixo",
+    "description": "Button that moves a translation provider later in the order of priority."
+  },
+  "admin.translation.move_down_provider": {
+    "defaultMessage": "Mover para baixo: {provider}",
+    "description": "Accessible name of the button that moves a translation provider later in the order: the button's text, then the provider."
+  },
+  "admin.translation.move_up": {
+    "defaultMessage": "Mover para cima",
+    "description": "Button that moves a translation provider earlier in the order of priority."
+  },
+  "admin.translation.move_up_provider": {
+    "defaultMessage": "Mover para cima: {provider}",
+    "description": "Accessible name of the button that moves a translation provider earlier in the order: the button's text, then the provider."
+  },
+  "admin.translation.number.invalid": {
+    "defaultMessage": "Informe um número inteiro de {min} a {max}.",
+    "description": "Error of a number field of the translation settings."
+  },
+  "admin.translation.number.range": {
+    "defaultMessage": "Um número inteiro de {min} a {max}.",
+    "description": "Hint of a number field of the translation settings."
+  },
+  "admin.translation.providers.none.description": {
+    "defaultMessage": "Um provedor precisa ser adicionado antes à implantação do servidor, com suas chaves na configuração. As chaves nunca aparecem nesta tela.",
+    "description": "Explains how a translation provider gets to the server."
+  },
+  "admin.translation.providers.none.heading": {
+    "defaultMessage": "Nenhum provedor no lado do servidor neste servidor",
+    "description": "Heading shown when the server has no translation provider to enable."
+  },
+  "admin.translation.providers.privacy": {
+    "defaultMessage": "Atualize sua política de privacidade antes de ativar um provedor no lado do servidor. Quando alguém pede uma tradução, o texto da publicação vai para o provedor, inclusive o das publicações visíveis só neste servidor, e o texto enviado a um provedor não pode ser recolhido.",
+    "description": "Warning at the top of the translation providers: the privacy policy must change first."
+  },
+  "admin.translation.providers.privacy.link": {
+    "defaultMessage": "Abrir os termos e políticas",
+    "description": "Link from the warning about the privacy policy to the screen of the documents."
+  },
+  "admin.translation.providers.title": {
+    "defaultMessage": "Provedores",
+    "description": "Heading of the section that enables translation providers."
+  },
+  "admin.translation.reports": {
+    "defaultMessage": "Enviar denúncias aos provedores",
+    "description": "Checkbox that lets moderators translate reports with the server-side providers."
+  },
+  "admin.translation.reports.description": {
+    "defaultMessage": "Assim, os moderadores podem traduzir as publicações de uma denúncia e o comentário de quem denunciou com os provedores acima. Cada provedor continua recebendo apenas as visibilidades marcadas para ele, e um comentário conta como uma publicação para seguidores. A tradução do comentário não é guardada, e os caracteres contam apenas no limite do servidor. A tradução integrada do navegador funciona nas denúncias de qualquer modo.",
+    "description": "Explains what sending reports to the translation providers does."
+  },
+  "admin.translation.retention": {
+    "defaultMessage": "Dias para guardar uma tradução",
+    "description": "Label of how many days a translation is kept."
+  },
+  "admin.translation.save": {
+    "defaultMessage": "Salvar as configurações de tradução",
+    "description": "Button that saves the translation settings."
+  },
+  "admin.translation.save_failed": {
+    "defaultMessage": "Não foi possível salvar as configurações de tradução: {reason}",
+    "description": "Shown beside the save button when the translation settings could not be saved; reason is the server's localized reason."
+  },
+  "admin.translation.saved": {
+    "defaultMessage": "As configurações de tradução foram salvas.",
+    "description": "Shown beside the save button after the translation settings are saved."
+  },
+  "admin.translation.settings.loading": {
+    "defaultMessage": "Carregando as configurações de tradução",
+    "description": "Label of the spinner shown while the translation settings load."
+  },
+  "admin.translation.summary": {
+    "defaultMessage": "Escolha quem traduz as publicações, o que cada provedor pode receber e os limites mensais.",
+    "description": "What the translation screen is for, in the menu of server administration."
+  },
+  "admin.translation.title": {
+    "defaultMessage": "Tradução",
+    "description": "Heading and menu entry of the screen with the settings of the translation of posts."
+  },
+  "admin.translation.unchanged": {
+    "defaultMessage": "Nada para salvar.",
+    "description": "Shown beside the save button of the translation settings when nothing was changed."
+  },
+  "admin.translation.use.characters": {
+    "defaultMessage": "Caracteres enviados ({month})",
+    "description": "Label of the number of characters sent to translation providers in a month. {month} is the month and year."
+  },
+  "admin.translation.use.description": {
+    "defaultMessage": "Os caracteres são contados em meses UTC, sem as marcas que representam menções e links. Cada chamada a um provedor conta, inclusive as que falham, então o total pode diferir do que um provedor cobra.",
+    "description": "Explains the number of characters sent to translation providers."
+  },
+  "admin.translation.use.failed": {
+    "defaultMessage": "Não foi possível carregar o uso deste mês",
+    "description": "Heading of the failure of loading the use of translation."
+  },
+  "admin.translation.use.hit_rate": {
+    "defaultMessage": "Taxa de acertos do cache",
+    "description": "Label of the share of translation requests answered from a kept translation."
+  },
+  "admin.translation.use.hit_rate.none": {
+    "defaultMessage": "Nenhuma requisição ainda",
+    "description": "Shown as the cache hit rate before any translation request this month."
+  },
+  "admin.translation.use.loading": {
+    "defaultMessage": "Carregando o uso deste mês",
+    "description": "Label of the spinner of the section with the use of translation."
+  },
+  "admin.translation.use.retry": {
+    "defaultMessage": "Tentar novamente",
+    "description": "Button that loads the use of translation again."
+  },
+  "admin.translation.use.title": {
+    "defaultMessage": "Este mês",
+    "description": "Heading of the section with how translation was used in the current month."
+  },
+  "admin.translation.visibilities": {
+    "defaultMessage": "O que {provider} pode receber",
+    "description": "Legend of the visibilities of the posts that a translation provider may receive."
+  },
+  "admin.translation.visibilities.description": {
+    "defaultMessage": "Permita Seguidores e Pessoas mencionadas apenas se a sua política de privacidade disser isso.",
+    "description": "Warning under the visibilities that a translation provider may receive."
+  },
+  "admin.translation.visibility.direct": {
+    "defaultMessage": "Pessoas mencionadas",
+    "description": "Checkbox: a translation provider may receive posts of this visibility, named as in the visibility picker."
+  },
+  "admin.translation.visibility.local": {
+    "defaultMessage": "Este servidor",
+    "description": "Checkbox: a translation provider may receive posts of this visibility, named as in the visibility picker."
+  },
+  "admin.translation.visibility.private": {
+    "defaultMessage": "Seguidores",
+    "description": "Checkbox: a translation provider may receive posts of this visibility, named as in the visibility picker."
+  },
+  "admin.translation.visibility.public": {
+    "defaultMessage": "Pública",
+    "description": "Checkbox: a translation provider may receive posts of this visibility, named as in the visibility picker."
+  },
+  "admin.translation.visibility.unlisted": {
+    "defaultMessage": "Não listada",
+    "description": "Checkbox: a translation provider may receive posts of this visibility, named as in the visibility picker."
+  }
+}

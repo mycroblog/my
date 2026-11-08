@@ -1,0 +1,166 @@
+{
+  "admin.theme.bounds.default": {
+    "defaultMessage": "Padrão: {value}",
+    "description": "Description of a token field without bounds (font family, shadow, easing). {value} is the default (not translated)."
+  },
+  "admin.theme.bounds.duration": {
+    "defaultMessage": "Padrão: {value}. ms ou s, de {min}ms a {max}ms.",
+    "description": "Description of a duration token field."
+  },
+  "admin.theme.bounds.length": {
+    "defaultMessage": "Padrão: {value}. 0 ou rem / px, de {min}rem a {max}rem.",
+    "description": "Description of a length token field. {value} is the default, {min} and {max} numbers (not translated)."
+  },
+  "admin.theme.bounds.number": {
+    "defaultMessage": "Padrão: {value}. Um número de {min} a {max}.",
+    "description": "Description of a number token field (line height)."
+  },
+  "admin.theme.color.dark": {
+    "defaultMessage": "Escuro",
+    "description": "Visible label of the field of a color token's value in the dark theme, after the token name that only assistive technology reads (\"color-accent Dark\")."
+  },
+  "admin.theme.color.default": {
+    "defaultMessage": "Padrão: {value}",
+    "description": "Description of a color field. {value} is the default color (not translated)."
+  },
+  "admin.theme.color.light": {
+    "defaultMessage": "Claro",
+    "description": "Visible label of the field of a color token's value in the light theme, after the token name that only assistive technology reads (\"color-accent Light\")."
+  },
+  "admin.theme.colors.description": {
+    "defaultMessage": "Cada cor tem um valor para o tema claro e outro para o escuro, em #rrggbb, ou #rrggbbaa para uma cor cujo padrão tem alfa. O texto e os controles precisam manter contraste suficiente com os fundos em que estão (WCAG 2.2 AA), então mudar uma cor pode exigir mudar outra.",
+    "description": "Description of the colors section of the theme screen."
+  },
+  "admin.theme.colors.title": {
+    "defaultMessage": "Cores",
+    "description": "Heading of the section of the color tokens on the theme screen."
+  },
+  "admin.theme.contrast.failing_dark": {
+    "defaultMessage": "{fg} sobre {bg} tem contraste de {ratio}:1 no tema escuro; é preciso {minimum}:1.",
+    "description": "A color pair below its minimum contrast in the dark theme. {fg} and {bg} are token names, {ratio} and {minimum} numbers (not translated)."
+  },
+  "admin.theme.contrast.failing_light": {
+    "defaultMessage": "{fg} sobre {bg} tem contraste de {ratio}:1 no tema claro; é preciso {minimum}:1.",
+    "description": "A color pair below its minimum contrast in the light theme. {fg} and {bg} are token names, {ratio} and {minimum} numbers (not translated)."
+  },
+  "admin.theme.contrast.ok": {
+    "defaultMessage": "Toda cor de texto e de controle tem contraste suficiente com seus fundos nos dois temas (WCAG 2.2 AA).",
+    "description": "Shown when every contrast pair of the theme meets its minimum."
+  },
+  "admin.theme.contrast.title": {
+    "defaultMessage": "Contraste",
+    "description": "Heading of the section that lists the color pairs below their minimum contrast on the theme screen."
+  },
+  "admin.theme.css.description": {
+    "defaultMessage": "O CSS é adicionado depois dos tokens e vale para todas as páginas. Ele roda sob a Content Security Policy do app, então só pode usar imagens e fontes deste servidor. O servidor não confere o resultado: contraste, layout, indicadores de foco e idiomas escritos da direita para a esquerda são responsabilidade sua, e os nomes de classe e a estrutura das páginas podem mudar a cada atualização. Prefira os tokens acima, que permanecem estáveis.",
+    "description": "Description of the custom CSS field: what the server does not guarantee."
+  },
+  "admin.theme.css.label": {
+    "defaultMessage": "CSS personalizado",
+    "description": "Label of the custom CSS text area."
+  },
+  "admin.theme.css.title": {
+    "defaultMessage": "CSS personalizado",
+    "description": "Heading of the custom CSS section of the theme screen."
+  },
+  "admin.theme.description": {
+    "defaultMessage": "O tema vale para o app web de todos os visitantes e para a página de login e outras páginas do servidor, nos temas claro e escuro. As páginas já abertas mantêm a aparência até serem carregadas de novo, e um tema salvo pode levar alguns minutos para chegar a todos. Deixe um campo vazio para manter o padrão.",
+    "description": "Introduction of the theme screen."
+  },
+  "admin.theme.error.css_invalid": {
+    "defaultMessage": "O CSS personalizado não é um texto válido.",
+    "description": "Reason a theme is refused: the custom CSS is not UTF-8 or contains NUL."
+  },
+  "admin.theme.error.css_too_long": {
+    "defaultMessage": "O CSS personalizado pode ter no máximo {max} bytes.",
+    "description": "Reason a theme is refused: the custom CSS is too long. {max} is a number of bytes."
+  },
+  "admin.theme.error.duplicate_token": {
+    "defaultMessage": "{token} foi informado duas vezes.",
+    "description": "Reason a theme is refused: the token appears twice."
+  },
+  "admin.theme.error.invalid_dark": {
+    "defaultMessage": "{token} no tema escuro não é uma cor válida.",
+    "description": "Reason a theme is refused: the dark value of a color token is not #rrggbb."
+  },
+  "admin.theme.error.invalid_light": {
+    "defaultMessage": "{token} no tema claro não é uma cor válida.",
+    "description": "Reason a theme is refused: the light value of a color token is not #rrggbb."
+  },
+  "admin.theme.error.invalid_value": {
+    "defaultMessage": "{token} não tem um valor válido.",
+    "description": "Reason a theme is refused: a non-color token's value has the wrong form."
+  },
+  "admin.theme.error.out_of_range": {
+    "defaultMessage": "{token} deve ficar entre {min} e {max}.",
+    "description": "Reason a theme is refused: a value is outside its bounds. {min} and {max} are numbers, rem for lengths and ms for durations (not translated)."
+  },
+  "admin.theme.error.unknown_token": {
+    "defaultMessage": "{token} não pode ser alterado.",
+    "description": "Reason a theme is refused: the token is not overridable. {token} is a token name (not translated)."
+  },
+  "admin.theme.preview.button": {
+    "defaultMessage": "Botão principal",
+    "description": "Sample primary button text in the theme preview."
+  },
+  "admin.theme.preview.danger": {
+    "defaultMessage": "Uma mensagem de erro",
+    "description": "Sample error text in the theme preview."
+  },
+  "admin.theme.preview.description": {
+    "defaultMessage": "Os tokens como digitados, no tema em que esta página é exibida. O CSS personalizado não aparece na prévia.",
+    "description": "Description of the theme preview."
+  },
+  "admin.theme.preview.heading": {
+    "defaultMessage": "Uma publicação na linha do tempo",
+    "description": "Sample heading in the theme preview."
+  },
+  "admin.theme.preview.link": {
+    "defaultMessage": "Um link",
+    "description": "Sample link text in the theme preview."
+  },
+  "admin.theme.preview.muted": {
+    "defaultMessage": "Texto secundário: horários, identificadores e dicas",
+    "description": "Sample secondary text in the theme preview."
+  },
+  "admin.theme.preview.text": {
+    "defaultMessage": "O texto do corpo é lido assim.",
+    "description": "Sample body text in the theme preview."
+  },
+  "admin.theme.preview.title": {
+    "defaultMessage": "Prévia",
+    "description": "Heading of the preview of the theme being edited."
+  },
+  "admin.theme.save": {
+    "defaultMessage": "Salvar tema",
+    "description": "Button that saves the theme."
+  },
+  "admin.theme.save_failed": {
+    "defaultMessage": "Não foi possível salvar o tema: {reason}",
+    "description": "Error when saving the theme failed for another reason. {reason} is the localized cause."
+  },
+  "admin.theme.save_refused": {
+    "defaultMessage": "O tema não foi salvo:",
+    "description": "Lead-in of the list of reasons the server refused the theme."
+  },
+  "admin.theme.saved": {
+    "defaultMessage": "Tema salvo. Os visitantes o recebem ao carregar uma página, em alguns minutos.",
+    "description": "Status after the theme was saved."
+  },
+  "admin.theme.summary": {
+    "defaultMessage": "Cores, tipografia, espaçamento e CSS personalizado do app web para todos",
+    "description": "Description of the theme screen's link in the admin menu."
+  },
+  "admin.theme.title": {
+    "defaultMessage": "Tema",
+    "description": "Title of the admin screen that sets the instance theme (design token overrides and custom CSS), and its link in the admin menu."
+  },
+  "admin.theme.tokens.description": {
+    "defaultMessage": "Fontes, tamanhos de texto e alturas de linha, o passo de espaçamento, raios dos cantos, sombras (elevação), e a duração e a suavização do movimento. Valores fora dos limites de um token não são salvos; o servidor não confere como o app fica com eles.",
+    "description": "Description of the section of the non-color tokens on the theme screen."
+  },
+  "admin.theme.tokens.title": {
+    "defaultMessage": "Tipografia, espaçamento e movimento",
+    "description": "Heading of the section of the tokens other than colors on the theme screen."
+  }
+}

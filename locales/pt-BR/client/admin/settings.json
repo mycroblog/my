@@ -1,0 +1,1282 @@
+{
+  "admin.settings.audience.everyone": {
+    "defaultMessage": "Todos",
+    "description": "Choice of who may read something: everyone, visitors included."
+  },
+  "admin.settings.audience.off": {
+    "defaultMessage": "Ninguém",
+    "description": "Choice of who may read something: nobody."
+  },
+  "admin.settings.audience.signed_in": {
+    "defaultMessage": "Usuários conectados",
+    "description": "Choice of who may read something: the server's signed-in users."
+  },
+  "admin.settings.characters_left": {
+    "defaultMessage": "{count, plural, one {# caractere restante} other {# caracteres restantes}}",
+    "description": "Character count under a text of the server settings and the rules while the text is within its limit."
+  },
+  "admin.settings.characters_over": {
+    "defaultMessage": "{count, plural, one {# caractere a mais} other {# caracteres a mais}}",
+    "description": "Character count under a text of the server settings and the rules when the text is over its limit."
+  },
+  "admin.settings.contact.account": {
+    "defaultMessage": "Conta de contato",
+    "description": "Label of the field of the username of the account to contact about the server."
+  },
+  "admin.settings.contact.account.description": {
+    "defaultMessage": "O nome de usuário de uma conta deste servidor, como admin.",
+    "description": "Help under the field of the contact account: what to type in it."
+  },
+  "admin.settings.contact.description": {
+    "defaultMessage": "Como as pessoas falam com quem administra este servidor, e a imagem que o representa. A página “Sobre”, a página que recebe os visitantes e outros servidores (NodeInfo) as mostram. Deixe um campo vazio para não mostrar nada.",
+    "description": "Explanation above the fields of the server's contact and thumbnail on the server settings screen."
+  },
+  "admin.settings.contact.email": {
+    "defaultMessage": "E-mail de contato",
+    "description": "Label of the field of the email address to contact about the server."
+  },
+  "admin.settings.contact.email.description": {
+    "defaultMessage": "Todos podem vê-lo, conectados ou não.",
+    "description": "Help under the field of the contact email address: who can see it."
+  },
+  "admin.settings.contact.email.invalid": {
+    "defaultMessage": "Informe um e-mail como admin@example.com.",
+    "description": "Error under the field of the contact email address when it is not an email address."
+  },
+  "admin.settings.contact.thumbnail": {
+    "defaultMessage": "Miniatura",
+    "description": "Heading of the part of the form with the image that represents the server."
+  },
+  "admin.settings.contact.thumbnail.alt": {
+    "defaultMessage": "Descrição da imagem",
+    "description": "Label of the alt text of the server's thumbnail."
+  },
+  "admin.settings.contact.thumbnail.choose": {
+    "defaultMessage": "Escolher uma imagem",
+    "description": "Button that opens the file picker to choose the server's thumbnail."
+  },
+  "admin.settings.contact.thumbnail.description": {
+    "defaultMessage": "Uma imagem larga, como 1600 × 900 pixels, no topo da página “Sobre” e da página que recebe os visitantes.",
+    "description": "Help about the server's thumbnail: where it shows and what size suits it."
+  },
+  "admin.settings.contact.thumbnail.failed": {
+    "defaultMessage": "O servidor não conseguiu processar esta imagem. Tente outra.",
+    "description": "Error when the chosen thumbnail could not be processed."
+  },
+  "admin.settings.contact.thumbnail.remove": {
+    "defaultMessage": "Remover a imagem",
+    "description": "Button that removes the server's thumbnail when the form is saved."
+  },
+  "admin.settings.contact.title": {
+    "defaultMessage": "Contato e miniatura",
+    "description": "Heading of the section of the server's contact and thumbnail on the server settings screen."
+  },
+  "admin.settings.descriptions.description": {
+    "defaultMessage": "A descrição curta é um parágrafo que a página “Sobre” e outros apps mostram ao lado do nome do servidor; a descrição completa diz mais na página “Sobre”. Escreva-as uma vez, em qualquer idioma: todos as veem como estão, seja qual for o idioma do app.",
+    "description": "Description of the server's descriptions."
+  },
+  "admin.settings.descriptions.full": {
+    "defaultMessage": "Descrição",
+    "description": "Label of the server's full description."
+  },
+  "admin.settings.descriptions.short": {
+    "defaultMessage": "Descrição curta",
+    "description": "Label of the server's short description."
+  },
+  "admin.settings.descriptions.title": {
+    "defaultMessage": "Descrições",
+    "description": "Heading of the section of the server's descriptions on the server settings screen."
+  },
+  "admin.settings.domain_actions.comments": {
+    "defaultMessage": "Quem pode ler os comentários públicos",
+    "description": "Label of the radio buttons of who may read the public comments of the domain actions."
+  },
+  "admin.settings.domain_actions.comments.everyone": {
+    "defaultMessage": "Todos que podem ler a lista veem os comentários.",
+    "description": "Description of showing the comments of the domain actions to everyone."
+  },
+  "admin.settings.finance.title": {
+    "defaultMessage": "Custos de funcionamento",
+    "description": "Heading of the section of the publication of the running costs in the server settings."
+  },
+  "admin.settings.finance.description": {
+    "defaultMessage": "A página “Sobre” e a API podem publicar os totais dos custos registrados na tela Custos. Os nomes e as anotações dos itens e os pagamentos individuais nunca são publicados.",
+    "description": "Explanation of the publication of the running costs in the server settings."
+  },
+  "admin.settings.finance.visibility": {
+    "defaultMessage": "O que publicar",
+    "description": "Label of the radio buttons of how much of the running costs the server publishes."
+  },
+  "admin.settings.finance.private": {
+    "defaultMessage": "Nada",
+    "description": "Choice of not publishing the running costs."
+  },
+  "admin.settings.finance.private.description": {
+    "defaultMessage": "Só quem gerencia os custos os vê.",
+    "description": "Description of not publishing the running costs."
+  },
+  "admin.settings.finance.totals": {
+    "defaultMessage": "Totais",
+    "description": "Choice of publishing the totals of the running costs only."
+  },
+  "admin.settings.finance.totals.description": {
+    "defaultMessage": "Todos veem o total de cada moeda por semana, mês e ano.",
+    "description": "Description of publishing the totals of the running costs only."
+  },
+  "admin.settings.finance.breakdown": {
+    "defaultMessage": "Totais e detalhamento",
+    "description": "Choice of publishing the running costs with their breakdown by provider and category."
+  },
+  "admin.settings.finance.breakdown.description": {
+    "defaultMessage": "Todos veem também os totais por provedor e categoria. Isso revela quais provedores, como serviços de nuvem, mantêm este servidor.",
+    "description": "Description of publishing the running costs with their breakdown, which reveals the providers that run the server."
+  },
+  "admin.settings.finance.viewer.description": {
+    "defaultMessage": "Quem tem funções que permitem ler as finanças vê os totais e o detalhamento por provedor e categoria na página de finanças, seja o que for que esteja publicado. Escolha o que mais essas pessoas veem.",
+    "description": "Introduction of the settings of what the holders of the view_finance permission see, in the costs section of the server settings."
+  },
+  "admin.settings.finance.viewer.item_names": {
+    "defaultMessage": "Mostrar os nomes dos itens",
+    "description": "Checkbox of the server setting finance_viewer_item_names."
+  },
+  "admin.settings.finance.viewer.item_names.description": {
+    "defaultMessage": "Os nomes dos custos registrados e dos serviços das cobranças importadas, com seus valores.",
+    "description": "Description of the checkbox of the server setting finance_viewer_item_names."
+  },
+  "admin.settings.finance.viewer.item_memos": {
+    "defaultMessage": "Mostrar as anotações dos itens",
+    "description": "Checkbox of the server setting finance_viewer_item_memos."
+  },
+  "admin.settings.finance.viewer.item_memos.description": {
+    "defaultMessage": "As anotações dos custos registrados, com seus valores. As anotações podem conter observações só para os operadores.",
+    "description": "Description of the checkbox of the server setting finance_viewer_item_memos."
+  },
+  "admin.settings.finance.viewer.income": {
+    "defaultMessage": "Receita",
+    "description": "Label of the choice of the server setting finance_viewer_income: how much of the income the holders of view_finance see."
+  },
+  "admin.settings.finance.viewer.income.totals": {
+    "defaultMessage": "Só os totais",
+    "description": "Choice of showing the totals of the income only to the holders of view_finance."
+  },
+  "admin.settings.finance.viewer.income.totals.description": {
+    "defaultMessage": "O total de cada moeda por semana, mês e ano.",
+    "description": "Description of showing the totals of the income only."
+  },
+  "admin.settings.finance.viewer.income.plans": {
+    "defaultMessage": "Totais e membros de cada plano",
+    "description": "Choice of showing the totals of the income and the number of members of each plan to the holders of view_finance."
+  },
+  "admin.settings.finance.viewer.income.plans.description": {
+    "defaultMessage": "Também quantos membros cada plano tem, nunca seus valores nem quem são.",
+    "description": "Description of showing the number of members of each plan too."
+  },
+  "admin.settings.income.title": {
+    "defaultMessage": "Receita",
+    "description": "Heading of the section of the publication of the income in the server settings."
+  },
+  "admin.settings.income.description": {
+    "defaultMessage": "A página “Sobre” e a API podem publicar a receita dos planos de apoio, depois das taxas do provedor de pagamento e dos reembolsos. Quem pagou, quanto cada pessoa pagou, os valores de cada plano e as taxas nunca são publicados. Quando os custos e a receita são publicados, o saldo também é publicado.",
+    "description": "Explanation of the publication of the income in the server settings."
+  },
+  "admin.settings.income.visibility": {
+    "defaultMessage": "O que publicar",
+    "description": "Label of the radio buttons of how much of the income the server publishes."
+  },
+  "admin.settings.income.private": {
+    "defaultMessage": "Nada",
+    "description": "Choice of not publishing the income."
+  },
+  "admin.settings.income.private.description": {
+    "defaultMessage": "Só quem gerencia ou pode ler as finanças a vê.",
+    "description": "Description of not publishing the income."
+  },
+  "admin.settings.income.totals": {
+    "defaultMessage": "Totais",
+    "description": "Choice of publishing the totals of the income only."
+  },
+  "admin.settings.income.totals.description": {
+    "defaultMessage": "Todos veem a receita de cada moeda por semana, mês e ano.",
+    "description": "Description of publishing the totals of the income only."
+  },
+  "admin.settings.income.plans": {
+    "defaultMessage": "Totais e membros de cada plano",
+    "description": "Choice of publishing the totals of the income and the number of members of each plan."
+  },
+  "admin.settings.income.plans.description": {
+    "defaultMessage": "Todos veem também quantos membros cada plano tem agora, nunca seus valores. Em um plano com poucos membros, as pessoas podem adivinhar quem são.",
+    "description": "Description of publishing the number of members of each plan too, which may let people guess the members of a small plan."
+  },
+  "admin.settings.supporter_list.title": {
+    "defaultMessage": "Lista de apoiadores",
+    "description": "Heading of the section of the supporter list in the server settings."
+  },
+  "admin.settings.supporter_list.description": {
+    "defaultMessage": "A lista de apoiadores em /about/supporters mostra, por plano, os membros que escolheram aparecer: apenas avatar, nome e identificador, nunca valores nem datas. Os mecanismos de busca são sempre instruídos a não indexá-la.",
+    "description": "Explanation of the supporter list setting."
+  },
+  "admin.settings.supporter_list.visibility": {
+    "defaultMessage": "Quem pode ler a lista de apoiadores",
+    "description": "Label of the choice of who may read the supporter list."
+  },
+  "admin.settings.supporter_list.off": {
+    "defaultMessage": "Ninguém",
+    "description": "Choice: nobody may read the supporter list."
+  },
+  "admin.settings.supporter_list.off.description": {
+    "defaultMessage": "A lista não é publicada, e a página “Sobre” não aponta para ela.",
+    "description": "Description of not publishing the supporter list."
+  },
+  "admin.settings.supporter_list.everyone": {
+    "defaultMessage": "Todos",
+    "description": "Choice: everyone may read the supporter list."
+  },
+  "admin.settings.supporter_list.everyone.description": {
+    "defaultMessage": "Qualquer pessoa pode ler a lista, conectada ou não.",
+    "description": "Description of publishing the supporter list to everyone."
+  },
+  "admin.settings.supporter_list.signed_in": {
+    "defaultMessage": "Usuários conectados",
+    "description": "Choice: only signed-in users may read the supporter list."
+  },
+  "admin.settings.supporter_list.signed_in.description": {
+    "defaultMessage": "Só quem está conectado a este servidor pode ler a lista.",
+    "description": "Description of publishing the supporter list to signed-in users only."
+  },
+  "admin.settings.crawlers.title": {
+    "defaultMessage": "Mecanismos de busca e IA",
+    "description": "Heading of the section of the server settings about search engines and AI crawlers."
+  },
+  "admin.settings.crawlers.description": {
+    "defaultMessage": "O que o servidor declara a mecanismos de busca e rastreadores de IA. Até que sejam configurados, o servidor nega ambos. O servidor gera o robots.txt a partir destas configurações e de uma lista incluída de rastreadores de IA conhecidos, e as declara em todas as páginas. Cada conta pode negar mais para as próprias páginas, nunca menos.",
+    "description": "Explanation of the section of the server settings about search engines and AI crawlers."
+  },
+  "admin.settings.crawlers.search": {
+    "defaultMessage": "Mecanismos de busca",
+    "description": "Label of the radio group of whether search engines may index the server's pages (search_indexing)."
+  },
+  "admin.settings.crawlers.search.allow": {
+    "defaultMessage": "Permitir indexação",
+    "description": "Choice that lets search engines index the pages of the accounts that allow it."
+  },
+  "admin.settings.crawlers.search.allow.description": {
+    "defaultMessage": "Os mecanismos de busca podem indexar os perfis e as publicações públicas das contas que permitem. As outras páginas ficam fora do índice.",
+    "description": "Description of letting search engines index pages."
+  },
+  "admin.settings.crawlers.search.deny": {
+    "defaultMessage": "Negar indexação",
+    "description": "Choice that asks search engines not to index any page."
+  },
+  "admin.settings.crawlers.search.deny.description": {
+    "defaultMessage": "Toda página pede aos mecanismos de busca que não a indexem (noindex). As prévias de link continuam funcionando.",
+    "description": "Description of asking search engines not to index any page."
+  },
+  "admin.settings.crawlers.indexable_default": {
+    "defaultMessage": "Novas contas permitem a indexação em buscas",
+    "description": "Label of the checkbox of whether new accounts allow search indexing (indexable_default)."
+  },
+  "admin.settings.crawlers.indexable_default.description": {
+    "defaultMessage": "A configuração com que as contas criadas daqui em diante começam. As contas existentes mantêm a própria escolha.",
+    "description": "Help text of the indexable default checkbox."
+  },
+  "admin.settings.crawlers.ai": {
+    "defaultMessage": "IA",
+    "description": "Label of the radio group of what the server states to AI crawlers (ai_usage)."
+  },
+  "admin.settings.crawlers.ai.allow": {
+    "defaultMessage": "Permitir",
+    "description": "Choice that reserves nothing against AI."
+  },
+  "admin.settings.crawlers.ai.allow.description": {
+    "defaultMessage": "O servidor não reserva nada contra a IA. As contas ainda podem negá-la para as próprias páginas.",
+    "description": "Description of reserving nothing against AI."
+  },
+  "admin.settings.crawlers.ai.deny_training": {
+    "defaultMessage": "Negar treinamento",
+    "description": "Choice that denies the training of AI models only."
+  },
+  "admin.settings.crawlers.ai.deny_training.description": {
+    "defaultMessage": "Os rastreadores que coletam dados para treinar modelos de IA são negados. Busca por IA e assistentes que as pessoas pedem para ler uma página não são.",
+    "description": "Description of denying the training of AI models only."
+  },
+  "admin.settings.crawlers.ai.deny": {
+    "defaultMessage": "Negar treinamento e uso",
+    "description": "Choice that denies both the training and the use by AI."
+  },
+  "admin.settings.crawlers.ai.deny.description": {
+    "defaultMessage": "Os rastreadores de IA são negados, incluindo busca por IA, assistentes e agentes que as pessoas pedem para ler uma página.",
+    "description": "Description of denying both the training and the use by AI."
+  },
+  "admin.settings.crawlers.security_contact": {
+    "defaultMessage": "Contato de segurança",
+    "description": "Label of the field of the address to report vulnerabilities to (security_contact)."
+  },
+  "admin.settings.crawlers.security_contact.description": {
+    "defaultMessage": "Onde relatar vulnerabilidades: um endereço https: ou mailto:, como mailto:security@example.com. O servidor serve /.well-known/security.txt apenas enquanto este campo estiver definido.",
+    "description": "Help text of the security contact field."
+  },
+  "admin.settings.domain_actions.comments.off": {
+    "defaultMessage": "Os comentários não são mostrados.",
+    "description": "Description of not showing the comments of the domain actions."
+  },
+  "admin.settings.domain_actions.comments.signed_in": {
+    "defaultMessage": "Os usuários conectados que podem ler a lista veem os comentários.",
+    "description": "Description of showing the comments of the domain actions to signed-in users."
+  },
+  "admin.settings.domain_actions.description": {
+    "defaultMessage": "A página “Sobre” e a API podem listar os servidores que este servidor limita ou suspende, com os comentários públicos das ações.",
+    "description": "Explanation of the publication of the domain actions."
+  },
+  "admin.settings.domain_actions.list": {
+    "defaultMessage": "Quem pode ler a lista",
+    "description": "Label of the radio buttons of who may read the list of domain actions."
+  },
+  "admin.settings.domain_actions.list.everyone": {
+    "defaultMessage": "Qualquer pessoa vê a lista, sem entrar.",
+    "description": "Description of publishing the list of domain actions to everyone."
+  },
+  "admin.settings.domain_actions.list.off": {
+    "defaultMessage": "A lista não é publicada.",
+    "description": "Description of not publishing the list of domain actions."
+  },
+  "admin.settings.domain_actions.list.signed_in": {
+    "defaultMessage": "Só os usuários conectados a este servidor veem a lista.",
+    "description": "Description of publishing the list of domain actions to signed-in users."
+  },
+  "admin.settings.domain_actions.title": {
+    "defaultMessage": "Servidores limitados e suspensos",
+    "description": "Heading of the section of the publication of the domain actions."
+  },
+  "admin.settings.duration.days": {
+    "defaultMessage": "{count, plural, one {# dia} other {# dias}}",
+    "description": "A length of time in days."
+  },
+  "admin.settings.duration.hours": {
+    "defaultMessage": "{count, plural, one {# hora} other {# horas}}",
+    "description": "A length of time in hours."
+  },
+  "admin.settings.duration.seconds": {
+    "defaultMessage": "{count, plural, one {# segundo} other {# segundos}}",
+    "description": "A length of time in seconds."
+  },
+  "admin.settings.federation.authorized_fetch": {
+    "defaultMessage": "Exigir requisições assinadas (authorized fetch)",
+    "description": "Checkbox of the authorized fetch setting."
+  },
+  "admin.settings.federation.authorized_fetch.description": {
+    "defaultMessage": "Os outros servidores então leem publicações e coleções só com uma assinatura verificada, para que servidores suspensos não possam lê-las. Alguns softwares deixam de conseguir lê-las.",
+    "description": "Description of the authorized fetch checkbox."
+  },
+  "admin.settings.federation.link_cards": {
+    "defaultMessage": "Mostrar cartões de links nas publicações",
+    "description": "Checkbox of the link_cards setting: whether posts show the cards (title, description, image) of the pages they link to."
+  },
+  "admin.settings.federation.link_cards.description": {
+    "defaultMessage": "O servidor busca a página do primeiro link de cada publicação, seja quem for que possa vê-la, e mostra o título, a descrição e a imagem abaixo dela. Os sites vinculados sabem quando o link foi publicado, mas não por quem.",
+    "description": "Description of the link cards checkbox."
+  },
+  "admin.settings.federation.link_cards_ignore_robots_txt": {
+    "defaultMessage": "Buscar cartões de links sem verificar o robots.txt",
+    "description": "Checkbox of the link_cards_ignore_robots_txt setting: whether the fetches of link cards skip the robots.txt of the linked sites."
+  },
+  "admin.settings.federation.link_cards_ignore_robots_txt.description": {
+    "defaultMessage": "Os sites vinculados deixam de poder recusar os cartões com o robots.txt, e o servidor continua se identificando como my-linkcard. As diretivas de robôs da própria página e os domínios de cartões de link continuam valendo. Ative só quando faltarem muitos cartões.",
+    "description": "Description of the checkbox that makes the fetches of link cards skip robots.txt. my-linkcard is the crawler's name in robots.txt and is not translated."
+  },
+  "admin.settings.federation.mode": {
+    "defaultMessage": "Direção da federação",
+    "description": "Label of the radio buttons of the federation direction setting (federation_mode, ADR-0006): which way posts flow between this server and other servers."
+  },
+  "admin.settings.federation.mode.description": {
+    "defaultMessage": "Em que sentido publicações, seguidores e reações fluem entre este servidor e os outros. A mudança vale na hora.",
+    "description": "Description of the federation direction radio buttons."
+  },
+  "admin.settings.federation.mode.both": {
+    "defaultMessage": "Nos dois sentidos",
+    "description": "Federation direction choice: send to and receive from other servers (the default)."
+  },
+  "admin.settings.federation.mode.both.description": {
+    "defaultMessage": "Os usuários seguem e leem contas de outros servidores, e este servidor entrega suas publicações aos seguidores de lá.",
+    "description": "Description of the federation direction choice 'Both ways'."
+  },
+  "admin.settings.federation.mode.inbound": {
+    "defaultMessage": "Só receber",
+    "description": "Federation direction choice: only receive from other servers."
+  },
+  "admin.settings.federation.mode.inbound.description": {
+    "defaultMessage": "Os usuários seguem e leem contas de outros servidores, mas as publicações, os perfis e as reações deste servidor não saem, e os pedidos de seguir vindos de outros servidores são recusados.",
+    "description": "Description of the federation direction choice 'Receive only'."
+  },
+  "admin.settings.federation.mode.outbound": {
+    "defaultMessage": "Só enviar",
+    "description": "Federation direction choice: only send to other servers."
+  },
+  "admin.settings.federation.mode.outbound.description": {
+    "defaultMessage": "As contas de outros servidores podem seguir os usuários daqui e receber suas publicações, mas as publicações e as reações de outros servidores não são recebidas, e os usuários não podem seguir nem procurar contas de outros servidores.",
+    "description": "Description of the federation direction choice 'Send only'."
+  },
+  "admin.settings.federation.mode.off": {
+    "defaultMessage": "Desativada",
+    "description": "Federation direction choice: no federation at all."
+  },
+  "admin.settings.federation.mode.off.description": {
+    "defaultMessage": "Nada é enviado a outros servidores e nada é recebido deles. Este servidor funciona sozinho.",
+    "description": "Description of the federation direction choice 'Off'."
+  },
+  "admin.settings.federation.narrow.title": {
+    "defaultMessage": "Mudar a direção da federação para “{mode}”?",
+    "description": "Title of the confirmation before saving a federation direction that stops something from flowing. {mode} is the chosen direction, such as 'Receive only'."
+  },
+  "admin.settings.federation.narrow.description": {
+    "defaultMessage": "Mudar de “{from}” para “{to}” vale assim que for salvo:",
+    "description": "First sentence of the confirmation before narrowing the federation direction, followed by a list of what changes. {from} and {to} are the saved and the chosen directions."
+  },
+  "admin.settings.federation.narrow.sending": {
+    "defaultMessage": "As publicações, os perfis e as reações deste servidor deixam de chegar a outros servidores. Os seguidores de lá continuam, mas não recebem nada, e o que for publicado nesse meio-tempo não é entregue depois.",
+    "description": "Item of the list in the confirmation before narrowing the federation direction, when the new direction stops sending to other servers."
+  },
+  "admin.settings.federation.narrow.receiving": {
+    "defaultMessage": "As publicações e as reações de outros servidores deixam de entrar, e os usuários não podem mais seguir nem procurar contas de outros servidores. Os seguimentos de contas remotas continuam, mas deixam de ser atualizados.",
+    "description": "Item of the list in the confirmation before narrowing the federation direction, when the new direction stops receiving from other servers."
+  },
+  "admin.settings.federation.narrow.deletions": {
+    "defaultMessage": "As publicações e contas excluídas enquanto a federação está desativada não são excluídas em outros servidores: as cópias de lá permanecem.",
+    "description": "Item of the list in the confirmation before turning federation off."
+  },
+  "admin.settings.federation.narrow.relations": {
+    "defaultMessage": "Os seguimentos com outros servidores, as publicações recebidas e os registros de entrega são mantidos, e nada é enviado para encerrar os seguimentos.",
+    "description": "Last item of the list in the confirmation before narrowing the federation direction."
+  },
+  "admin.settings.federation.narrow.widen": {
+    "defaultMessage": "Ampliar a direção de novo mais tarde retoma o fluxo a partir de então.",
+    "description": "Note under the list in the confirmation before narrowing the federation direction."
+  },
+  "admin.settings.federation.narrow.cancel": {
+    "defaultMessage": "Cancelar",
+    "description": "Button that closes the confirmation before narrowing the federation direction without saving."
+  },
+  "admin.settings.federation.narrow.confirm": {
+    "defaultMessage": "Mudar e salvar",
+    "description": "Button that saves the settings with the narrower federation direction."
+  },
+  "admin.settings.federation.title": {
+    "defaultMessage": "Federação",
+    "description": "Heading of the section of the federation settings."
+  },
+  "admin.settings.language.default": {
+    "defaultMessage": "Idioma padrão",
+    "description": "Label of the select of the server's default language."
+  },
+  "admin.settings.language.description": {
+    "defaultMessage": "O idioma das novas contas e dos visitantes cujo idioma o app não tem.",
+    "description": "Help of the server's default language."
+  },
+  "admin.settings.language.title": {
+    "defaultMessage": "Idioma",
+    "description": "Heading of the section of the server's default language."
+  },
+  "admin.settings.name.blank": {
+    "defaultMessage": "Informe um nome com letras ou deixe o campo vazio.",
+    "description": "Error of a field of the server's name that holds only spaces."
+  },
+  "admin.settings.name.description": {
+    "defaultMessage": "As pessoas veem o nome no lugar do domínio {domain} onde o app nomeia este servidor: a barra lateral, a aba do navegador, as páginas de login, e-mails e prévias de link. Escreva-o uma vez, em qualquer idioma: todos veem o mesmo nome, seja qual for o idioma do app. Sem um nome, o domínio aparece. Identificadores e links sempre usam o domínio.",
+    "description": "Explanation above the fields of the server's name on the server settings screen. {domain} is the server's domain name."
+  },
+  "admin.settings.name.field": {
+    "defaultMessage": "Nome",
+    "description": "Label of the server's name."
+  },
+  "admin.settings.name.title": {
+    "defaultMessage": "Nome",
+    "description": "Heading of the section of the server's name on the server settings screen."
+  },
+  "admin.settings.name.too_long": {
+    "defaultMessage": "Use no máximo {max} caracteres.",
+    "description": "Error of a field of the server's name whose text is longer than its limit. {max} is the limit."
+  },
+  "admin.settings.policies.save": {
+    "defaultMessage": "Salvar as configurações",
+    "description": "Button that saves the registration, language, timeline, federation and domain action settings together."
+  },
+  "admin.settings.policies.save_failed": {
+    "defaultMessage": "Não foi possível salvar as configurações; nada foi alterado: {reason}",
+    "description": "Error when saving the server's settings failed. {reason} is the server's localized reason, which names the setting at fault."
+  },
+  "admin.settings.policies.saved": {
+    "defaultMessage": "Configurações salvas. Elas valem na hora, e o registro de auditoria guarda cada alteração.",
+    "description": "Status after the server's settings were saved."
+  },
+  "admin.settings.policies.unchanged": {
+    "defaultMessage": "As configurações já estão salvas.",
+    "description": "Status after pressing the save button of the settings without changing one."
+  },
+  "admin.settings.registration.approval": {
+    "defaultMessage": "Com aprovação",
+    "description": "Registration mode approval."
+  },
+  "admin.settings.registration.approval.description": {
+    "defaultMessage": "Qualquer pessoa pode se cadastrar com um motivo; a conta funciona quando um moderador a aprova. Quem se cadastra com um convite é aprovado na hora.",
+    "description": "Description of the registration mode approval: a usable invite skips the review."
+  },
+  "admin.settings.registration.closed": {
+    "defaultMessage": "Ninguém",
+    "description": "Registration mode closed."
+  },
+  "admin.settings.registration.closed.description": {
+    "defaultMessage": "Ninguém pode se cadastrar; os administradores criam contas pela linha de comando.",
+    "description": "Description of the registration mode closed."
+  },
+  "admin.settings.registration.description": {
+    "defaultMessage": "Os moderadores analisam os cadastros que aguardam aprovação e criam os convites nas telas de moderação.",
+    "description": "Help of the registration mode: where the sign-ups and the invites are handled."
+  },
+  "admin.settings.registration.invite": {
+    "defaultMessage": "Com convite",
+    "description": "Registration mode invite."
+  },
+  "admin.settings.registration.invite.description": {
+    "defaultMessage": "Só quem tem um código de convite pode se cadastrar.",
+    "description": "Description of the registration mode invite."
+  },
+  "admin.settings.registration.mode": {
+    "defaultMessage": "Quem pode se cadastrar",
+    "description": "Label of the radio buttons of the registration mode."
+  },
+  "admin.settings.registration.open": {
+    "defaultMessage": "Qualquer pessoa",
+    "description": "Registration mode open."
+  },
+  "admin.settings.registration.open.description": {
+    "defaultMessage": "Qualquer pessoa pode se cadastrar e usar a conta na hora.",
+    "description": "Description of the registration mode open."
+  },
+  "admin.settings.registration.title": {
+    "defaultMessage": "Cadastro",
+    "description": "Heading of the section of who may sign up on the server settings screen."
+  },
+  "admin.settings.single_user.title": {
+    "defaultMessage": "Servidor de uma pessoa",
+    "description": "Heading of the section of the instance setting single_user (ADR-0152) on the registration page of the server settings: the server of its operator alone."
+  },
+  "admin.settings.single_user.description": {
+    "defaultMessage": "Um servidor de uma só pessoa, o seu próprio lar no fediverso. Enquanto estiver ativado, ninguém pode se cadastrar, e o servidor oferece apenas a linha do tempo Início entre as suas linhas do tempo: as linhas do tempo local e federada, convites, a análise de cadastros, a lista de bloqueio de cadastros e as contas sugeridas ficam ocultas, e as novas publicações não podem ser para “Este servidor”. Os visitantes veem seu perfil na página inicial. Ativá-lo ou desativá-lo não exclui nada.",
+    "description": "Help of the section of the one-person server: what the mode hides and that it deletes nothing. “This server” is the name of the visibility local (client:compose.visibility.local)."
+  },
+  "admin.settings.single_user.label": {
+    "defaultMessage": "Tornar este um servidor de uma pessoa",
+    "description": "Label of the checkbox of the instance setting single_user."
+  },
+  "admin.settings.single_user.label.description": {
+    "defaultMessage": "Só pode ser ativado enquanto o servidor tem exatamente uma conta local. Contas que aguardam aprovação, estão desativadas ou suspensas contam também; aquelas cujo cadastro foi rejeitado não contam. Pode ser desativado a qualquer momento.",
+    "description": "Description of the checkbox of the one-person server: the condition of exactly one local account, which accounts count, and that it can always be turned off."
+  },
+  "admin.settings.single_user.refused": {
+    "defaultMessage": "{reason} {detail}",
+    "description": "The reason why the server refused to turn the one-person server on, put inside client:admin.settings.policies.save_failed. {reason} is the server's localized sentence that a one-person server can have only one local account, {detail} its localized sentence of how many local accounts the server has. Keep the space between the sentences as the language separates sentences."
+  },
+  "admin.settings.remote_media.all": {
+    "defaultMessage": "Tudo",
+    "description": "Remote media policy all."
+  },
+  "admin.settings.remote_media.all.description": {
+    "defaultMessage": "Manter cópias de todos os arquivos pelo tempo abaixo.",
+    "description": "Description of the remote media policy all."
+  },
+  "admin.settings.remote_media.avatars": {
+    "defaultMessage": "Avatares e cabeçalhos",
+    "description": "Remote media policy avatars."
+  },
+  "admin.settings.remote_media.avatars.description": {
+    "defaultMessage": "Manter cópias de avatares, cabeçalhos e emoji personalizados pelo tempo abaixo.",
+    "description": "Description of the remote media policy avatars."
+  },
+  "admin.settings.remote_media.none": {
+    "defaultMessage": "Não manter nada",
+    "description": "Remote media policy none."
+  },
+  "admin.settings.remote_media.none.description": {
+    "defaultMessage": "O proxy de mídia repassa cada arquivo do servidor de origem a cada vez.",
+    "description": "Description of the remote media policy none."
+  },
+  "admin.settings.remote_media.policy": {
+    "defaultMessage": "Cópias de mídia de outros servidores",
+    "description": "Label of the radio buttons of the remote media policy."
+  },
+  "admin.settings.remote_media.ttl": {
+    "defaultMessage": "Por quanto tempo manter a mídia de outros servidores",
+    "description": "Label of the select of the remote media cache time."
+  },
+  "admin.settings.remote_media.ttl.description": {
+    "defaultMessage": "Os navegadores e a CDN também mantêm os arquivos por esse tempo.",
+    "description": "Help of the remote media cache time."
+  },
+  "admin.settings.summary": {
+    "defaultMessage": "O nome e as descrições do servidor, quem pode se cadastrar, o idioma padrão, as linhas do tempo e a federação.",
+    "description": "Description of the server settings screen in the administration menu."
+  },
+  "admin.settings.timelines.federated": {
+    "defaultMessage": "Linha do tempo federada",
+    "description": "Label of the radio group that chooses who may read the federated timeline."
+  },
+  "admin.settings.timelines.federated.description": {
+    "defaultMessage": "As publicações públicas que chegam a este servidor, inclusive de outros servidores. Quem pode lê-la?",
+    "description": "Description of the radio group that chooses who may read the federated timeline."
+  },
+  "admin.settings.timelines.access.everyone": {
+    "defaultMessage": "Todos",
+    "description": "Choice of who may read a public timeline: everyone, visitors who are not signed in included."
+  },
+  "admin.settings.timelines.access.everyone.description": {
+    "defaultMessage": "Os visitantes que não entraram também podem lê-la, e a página inicial mostra uma amostra da linha do tempo local.",
+    "description": "Description of the choice that lets everyone read a public timeline."
+  },
+  "admin.settings.timelines.access.signed_in": {
+    "defaultMessage": "Usuários conectados",
+    "description": "Choice of who may read a public timeline: only the users signed in to this server."
+  },
+  "admin.settings.timelines.access.signed_in.description": {
+    "defaultMessage": "Só os usuários conectados a este servidor podem lê-la. Os visitantes são convidados a entrar.",
+    "description": "Description of the choice that lets only signed-in users read a public timeline."
+  },
+  "admin.settings.timelines.access.off": {
+    "defaultMessage": "Ninguém",
+    "description": "Choice of who may read a public timeline: nobody, the timeline is off."
+  },
+  "admin.settings.timelines.access.off.description": {
+    "defaultMessage": "A linha do tempo está desativada e não é oferecida a ninguém.",
+    "description": "Description of the choice that turns a public timeline off."
+  },
+  "admin.settings.timelines.local": {
+    "defaultMessage": "Linha do tempo local",
+    "description": "Label of the radio group that chooses who may read the local timeline."
+  },
+  "admin.settings.timelines.local.description": {
+    "defaultMessage": "As publicações públicas das contas deste servidor. Quem pode lê-la?",
+    "description": "Description of the radio group that chooses who may read the local timeline."
+  },
+  "admin.settings.timelines.title": {
+    "defaultMessage": "Linhas do tempo",
+    "description": "Heading of the section of the public timelines on the server settings screen."
+  },
+  "admin.settings.posts.title": {
+    "defaultMessage": "Publicações",
+    "description": "Heading of the section of the server settings about posts."
+  },
+  "admin.settings.posts.require_media_description": {
+    "defaultMessage": "Exigir uma descrição em toda imagem",
+    "description": "Checkbox of the instance setting require_media_description: whether every image attached to a post needs an alternative text."
+  },
+  "admin.settings.posts.require_media_description.description": {
+    "defaultMessage": "Publicações e edições com uma imagem sem descrição (texto alternativo) são recusadas, para que quem não enxerga as imagens possa acompanhar todas as publicações.",
+    "description": "Description of the checkbox that requires a description of every image."
+  },
+  "admin.settings.title": {
+    "defaultMessage": "Configurações do servidor",
+    "description": "Title of the server settings screen (the server's name), in the administration menu and as its heading."
+  },
+  "admin.settings.oauth_apps.title": {
+    "defaultMessage": "Apps",
+    "description": "Heading of the section of how apps may register on the server settings screen."
+  },
+  "admin.settings.oauth_apps.description": {
+    "defaultMessage": "Por quais caminhos os apps podem obter um ID de cliente. Com todos desativados, só os apps do próprio servidor funcionam. Desativar um não desativa os apps já registrados.",
+    "description": "Explains the section of how apps may register."
+  },
+  "admin.settings.oauth_apps.user": {
+    "defaultMessage": "Usuários registram apps",
+    "description": "Checkbox of letting signed-in users register apps."
+  },
+  "admin.settings.oauth_apps.user.description": {
+    "defaultMessage": "Os usuários conectados registram apps em suas configurações, para bots e scripts próprios.",
+    "description": "Description of the checkbox of letting users register apps."
+  },
+  "admin.settings.oauth_apps.metadata_document": {
+    "defaultMessage": "Client ID Metadata Documents",
+    "description": "Checkbox of accepting apps whose client ID is the URL of a metadata document."
+  },
+  "admin.settings.oauth_apps.metadata_document.description": {
+    "defaultMessage": "Os apps usam como ID de cliente a URL de um documento de metadados que eles hospedam. O servidor busca o documento.",
+    "description": "Description of the checkbox of accepting metadata document apps."
+  },
+  "admin.settings.oauth_apps.dynamic": {
+    "defaultMessage": "Registro dinâmico de clientes",
+    "description": "Checkbox of letting apps register themselves."
+  },
+  "admin.settings.oauth_apps.dynamic.description": {
+    "defaultMessage": "Os apps se registram sozinhos, sem entrar (RFC 7591), para ferramentas que não podem usar um documento de metadados.",
+    "description": "Description of the checkbox of dynamic client registration."
+  },
+  "admin.settings.voice.title": {
+    "defaultMessage": "Chat de voz",
+    "description": "Heading of the voice chat section of the server settings."
+  },
+  "admin.settings.voice.starters": {
+    "defaultMessage": "Quem pode iniciar salas",
+    "description": "Label of the choice of who may start voice chat rooms."
+  },
+  "admin.settings.voice.starters.everyone": {
+    "defaultMessage": "Todos neste servidor",
+    "description": "Choice of who may start voice chat rooms: every local user."
+  },
+  "admin.settings.voice.starters.everyone.description": {
+    "defaultMessage": "Todo usuário conectado deste servidor pode iniciar uma sala.",
+    "description": "Explanation of the choice that every local user may start voice chat rooms."
+  },
+  "admin.settings.voice.starters.permitted": {
+    "defaultMessage": "Só quem tem a permissão",
+    "description": "Choice of who may start voice chat rooms: the holders of the permission."
+  },
+  "admin.settings.voice.starters.permitted.description": {
+    "defaultMessage": "Só quem tem funções com a permissão de iniciar salas de chat de voz pode iniciar uma.",
+    "description": "Explanation of the choice that only the holders of the permission may start voice chat rooms."
+  },
+  "admin.settings.voice.public_summary": {
+    "defaultMessage": "Mostrar um resumo das salas aos visitantes",
+    "description": "Checkbox of whether the summary of a voice chat room shows to people who are not signed in."
+  },
+  "admin.settings.voice.public_summary.description": {
+    "defaultMessage": "Para uma sala aberta a todos neste servidor, quem não está conectado e quem está em outros servidores vê seu nome, descrição, anfitrião e se está aberta, inclusive nas prévias de link. Essas pessoas nunca veem quem está nela.",
+    "description": "Explanation of the checkbox that shows the summary of voice chat rooms to visitors."
+  },
+  "admin.settings.voice.retention": {
+    "defaultMessage": "Dias para manter os registros dos participantes",
+    "description": "Label of the field of how many days the records of the participants of a voice chat room are kept."
+  },
+  "admin.settings.voice.retention.description": {
+    "defaultMessage": "Por quanto tempo depois do fim de uma sala o servidor guarda quem entrou, saiu, falou e foi removido: de {min} a {max} dias. Os registros de uma sala denunciada ficam enquanto a denúncia durar.",
+    "description": "Description of the field of how many days the records of the participants of voice chat rooms are kept. {min} and {max} are the bounds."
+  },
+  "admin.settings.voice.retention.invalid": {
+    "defaultMessage": "Informe um número inteiro de dias de {min} a {max}.",
+    "description": "Error of the field of how many days the records of voice chat participants are kept."
+  },
+  "admin.settings.invites.title": {
+    "defaultMessage": "Convites dos membros",
+    "description": "Heading of the section of the invites that members create on the server settings screen."
+  },
+  "admin.settings.invites.description": {
+    "defaultMessage": "Os membros criam convites próprios na página de configurações deles. Os limites valem só para os convites deles, não para os convites dos moderadores, e reduzir um limite não altera os convites que já existem.",
+    "description": "Help of the section of member invites on the server settings screen."
+  },
+  "admin.settings.invites.creators": {
+    "defaultMessage": "Quem pode criar convites",
+    "description": "Label of the choice of who may create invites of their own."
+  },
+  "admin.settings.invites.creators.everyone": {
+    "defaultMessage": "Todos neste servidor",
+    "description": "Choice of who may create invites: every local user."
+  },
+  "admin.settings.invites.creators.everyone.description": {
+    "defaultMessage": "Todo usuário conectado deste servidor que não esteja suspenso nem limitado pode criar convites. Enquanto os cadastros exigem aprovação, quem eles convidam pula a análise, então isso permite que todo usuário aprove novas contas.",
+    "description": "Explanation of the choice that every local user may create invites, with its effect in the approval registration mode."
+  },
+  "admin.settings.invites.creators.permitted": {
+    "defaultMessage": "Só quem tem a permissão",
+    "description": "Choice of who may create invites: the holders of the permission."
+  },
+  "admin.settings.invites.creators.permitted.description": {
+    "defaultMessage": "Só quem tem funções com a permissão de criar convites pode criá-los.",
+    "description": "Explanation of the choice that only the holders of the permission create_invites may create invites."
+  },
+  "admin.settings.invites.max_active": {
+    "defaultMessage": "Convites utilizáveis por pessoa",
+    "description": "Label of the field of how many usable invites one member may hold at once."
+  },
+  "admin.settings.invites.max_active.description": {
+    "defaultMessage": "Quantos convites utilizáveis uma pessoa pode ter ao mesmo tempo: de {min} a {max}. Com 0, ninguém cria convites.",
+    "description": "Description of the field of how many usable invites one member may hold. {min} and {max} are the bounds."
+  },
+  "admin.settings.invites.max_uses": {
+    "defaultMessage": "Cadastros por convite",
+    "description": "Label of the field of how many people may sign up with one invite a member creates."
+  },
+  "admin.settings.invites.max_uses.description": {
+    "defaultMessage": "O máximo de pessoas que podem se cadastrar com um convite: de {min} a {max}.",
+    "description": "Description of the field of how many sign-ups one member invite may allow. {min} and {max} are the bounds."
+  },
+  "admin.settings.invites.number.invalid": {
+    "defaultMessage": "Informe um número inteiro de {min} a {max}.",
+    "description": "Error of a field of the member invites that holds a number out of its bounds."
+  },
+  "admin.settings.invites.max_expires_in": {
+    "defaultMessage": "Maior prazo de validade de um convite",
+    "description": "Label of the choice of how long one invite that a member creates may work at most."
+  },
+  "admin.settings.invites.max_expires_in.description": {
+    "defaultMessage": "Os membros escolhem por quanto tempo cada convite vale, até este limite.",
+    "description": "Description of the choice of how long a member invite may work at most."
+  },
+  "admin.settings.landing.title": {
+    "defaultMessage": "Página inicial",
+    "description": "Heading of the section of the server settings about what the landing page (the root address, for people who are not signed in) shows."
+  },
+  "admin.settings.landing.description": {
+    "defaultMessage": "O que a página no endereço deste servidor mostra a quem não entrou, além do nome, da descrição e das regras.",
+    "description": "Explanation of the landing page section of the server settings."
+  },
+  "admin.settings.landing.counts": {
+    "defaultMessage": "Mostrar os números do servidor",
+    "description": "Checkbox of whether the landing page shows how many members the server has, its public posts of the last 7 days, and since when it runs."
+  },
+  "admin.settings.landing.counts.description": {
+    "defaultMessage": "Quantos membros o servidor tem, quantas publicações públicas eles fizeram em cada um dos últimos 7 dias e desde quando o servidor funciona. Só as publicações públicas contam, e os números são atualizados a cada poucos minutos.",
+    "description": "Explanation of the checkbox that shows the numbers of the server on the landing page."
+  },
+  "admin.settings.featured.title": {
+    "defaultMessage": "Contas sugeridas",
+    "description": "Heading of the section of the server settings about the accounts suggested to follow."
+  },
+  "admin.settings.featured.description": {
+    "defaultMessage": "Os usuários novos e os que voltam veem sugestões de pessoas para seguir: primeiro as contas abaixo, nesta ordem, depois as pessoas deste servidor que publicaram recentemente. Quem desativou ser sugerido fica de fora.",
+    "description": "Note of the suggested accounts section of the server settings."
+  },
+  "admin.settings.featured.accounts": {
+    "defaultMessage": "Contas a sugerir primeiro",
+    "description": "Label of the field with the usernames of the accounts that the suggestions show first."
+  },
+  "admin.settings.featured.accounts.description": {
+    "defaultMessage": "Nomes de usuário de até 20 contas deste servidor, separados por espaços.",
+    "description": "Help text of the field of the accounts that the suggestions show first."
+  },
+  "admin.settings.hooks.description": {
+    "defaultMessage": "Uma análise só roda quando o operador do servidor configurou o plugin dela. De Desativada para Aplicar, passe por Observar, para ler antes o que uma análise bloquearia.",
+    "description": "Explanation of the section of the server settings about the external reviews."
+  },
+  "admin.settings.hooks.failure.pass": {
+    "defaultMessage": "Deixar passar",
+    "description": "Choice of what happens when an external review fails."
+  },
+  "admin.settings.hooks.failure.pass.description": {
+    "defaultMessage": "O item é aceito sem análise. Spam pode entrar enquanto a análise está fora do ar.",
+    "description": "Description of letting a submission through when its external review fails."
+  },
+  "admin.settings.hooks.failure.require_approval": {
+    "defaultMessage": "Reter para aprovação",
+    "description": "Choice of what happens when the external review of sign-ups fails."
+  },
+  "admin.settings.hooks.failure.require_approval.description": {
+    "defaultMessage": "O cadastro aguarda um moderador.",
+    "description": "Description of holding a sign-up for approval when its external review fails."
+  },
+  "admin.settings.hooks.failure.retry": {
+    "defaultMessage": "Tentar novamente",
+    "description": "Choice of what happens when an external review fails."
+  },
+  "admin.settings.hooks.failure.retry.description": {
+    "defaultMessage": "O trabalho roda de novo, o que, para publicações e seguimentos, também retém tudo o que vem depois do mesmo remetente, exclusões inclusive, por até cerca de 4 horas.",
+    "description": "Description of retrying when an external review fails."
+  },
+  "admin.settings.hooks.inbound_follow.mode": {
+    "defaultMessage": "Seguimentos de outros servidores",
+    "description": "Label of the choice of the mode of the external review of this kind of submission."
+  },
+  "admin.settings.hooks.inbound_follow.on_failure": {
+    "defaultMessage": "Seguimentos de outros servidores: quando a análise falha",
+    "description": "Label of the choice of what happens when this external review fails while it enforces."
+  },
+  "admin.settings.hooks.inbound_status.mode": {
+    "defaultMessage": "Publicações de outros servidores",
+    "description": "Label of the choice of the mode of the external review of this kind of submission."
+  },
+  "admin.settings.hooks.inbound_status.on_failure": {
+    "defaultMessage": "Publicações de outros servidores: quando a análise falha",
+    "description": "Label of the choice of what happens when this external review fails while it enforces."
+  },
+  "admin.settings.hooks.local_status.account_age": {
+    "defaultMessage": "Analisar as publicações de contas com menos de (dias)",
+    "description": "Label of the number of days after its creation that an account's posts go to the external review of local posts."
+  },
+  "admin.settings.hooks.local_status.account_age.description": {
+    "defaultMessage": "De {min} a {max} dias; 0 analisa as publicações de todas as contas. Publicações privadas e diretas nunca são enviadas, nem as de uma conta cujo recurso um moderador aceitou.",
+    "description": "Description of the number of days an account's posts go to the external review. {min} and {max} are the bounds."
+  },
+  "admin.settings.hooks.local_profile.account_age": {
+    "defaultMessage": "Analisar os perfis de contas com menos de (dias)",
+    "description": "Label of the number of days after its creation that an account's profile changes go to the external review of local profiles."
+  },
+  "admin.settings.hooks.local_profile.account_age.description": {
+    "defaultMessage": "De {min} a {max} dias; 0 analisa os perfis de todas as contas.",
+    "description": "Description of the number of days an account's profile changes go to the external review. {min} and {max} are the bounds."
+  },
+  "admin.settings.hooks.inbound_status.unfollowed_direct": {
+    "defaultMessage": "Analisar também publicações diretas de autores que ninguém aqui segue",
+    "description": "Label of the setting that sends direct posts from unfollowed authors to the external review."
+  },
+  "admin.settings.hooks.inbound_status.unfollowed_direct.description": {
+    "defaultMessage": "Uma publicação direta é privada para as pessoas que ela menciona. Desativado, as de autores que ninguém aqui segue chegam ao destinatário sem análise; ativado, o texto delas vai para a análise externa.",
+    "description": "Help of the setting that sends direct posts from unfollowed authors to the external review."
+  },
+  "admin.settings.hooks.local_status.mode": {
+    "defaultMessage": "Publicações locais",
+    "description": "Label of the choice of the mode of the external review of this kind of submission."
+  },
+  "admin.settings.hooks.inbound_actor.mode": {
+    "defaultMessage": "Perfis de outros servidores",
+    "description": "Label of the choice of the mode of the external review of this kind of submission."
+  },
+  "admin.settings.hooks.inbound_actor.on_failure": {
+    "defaultMessage": "Perfis de outros servidores: quando a análise falha",
+    "description": "Label of the choice of what happens when this external review fails while it enforces."
+  },
+  "admin.settings.hooks.local_profile.mode": {
+    "defaultMessage": "Perfis locais",
+    "description": "Label of the choice of the mode of the external review of this kind of submission."
+  },
+  "admin.settings.hooks.media_check.mode": {
+    "defaultMessage": "Mídia enviada",
+    "description": "Label of the choice of the mode of the external review of this kind of submission."
+  },
+  "admin.settings.hooks.media_check.on_failure": {
+    "defaultMessage": "Mídia enviada: quando a análise falha",
+    "description": "Label of the choice of what happens when this external review fails while it enforces."
+  },
+  "admin.settings.hooks.mode.enforce": {
+    "defaultMessage": "Aplicar",
+    "description": "Choice of the mode of an external review."
+  },
+  "admin.settings.hooks.mode.enforce.description": {
+    "defaultMessage": "Age de acordo com o veredito.",
+    "description": "Description of the Enforce mode of an external review."
+  },
+  "admin.settings.hooks.mode.observe": {
+    "defaultMessage": "Observar",
+    "description": "Choice of the mode of an external review."
+  },
+  "admin.settings.hooks.mode.observe.description": {
+    "defaultMessage": "Registra o veredito e não age sobre nada.",
+    "description": "Description of the Observe mode of an external review."
+  },
+  "admin.settings.hooks.mode.off": {
+    "defaultMessage": "Desativada",
+    "description": "Choice of the mode of an external review."
+  },
+  "admin.settings.hooks.mode.off.description": {
+    "defaultMessage": "Não chama nada.",
+    "description": "Description of the Off mode of an external review."
+  },
+  "admin.settings.hooks.retention": {
+    "defaultMessage": "Manter decisões por (dias)",
+    "description": "Label of the number of days the records of the decisions of the external reviews stay."
+  },
+  "admin.settings.hooks.retention.description": {
+    "defaultMessage": "De {min} a {max} dias. Uma decisão fica por mais tempo enquanto uma marca de sensível depende dela, uma retenção preserva a conta ou o autor ainda pode contestá-la.",
+    "description": "Description of the number of days the records of decisions stay. {min} and {max} are the bounds."
+  },
+  "admin.settings.hooks.retention.invalid": {
+    "defaultMessage": "Informe um número inteiro de dias de {min} a {max}.",
+    "description": "Error of the number of days the records of decisions stay: not a whole number within {min} and {max}."
+  },
+  "admin.settings.hooks.signup_check.mode": {
+    "defaultMessage": "Cadastros",
+    "description": "Label of the choice of the mode of the external review of this kind of submission."
+  },
+  "admin.settings.hooks.signup_check.on_failure": {
+    "defaultMessage": "Cadastros: quando a análise falha",
+    "description": "Label of the choice of what happens when this external review fails while it enforces."
+  },
+  "admin.settings.hooks.signup_check.reject": {
+    "defaultMessage": "Cadastros: deixar a análise recusá-los",
+    "description": "Label of the checkbox that lets the external review of sign-ups refuse a sign-up."
+  },
+  "admin.settings.hooks.signup_check.reject.description": {
+    "defaultMessage": "Quando a análise aplica e responde rejeitar, o candidato vê uma mensagem fixa de que o servidor não pode aceitar o cadastro. Enquanto isto estiver desativado, essa resposta só é registrada e o cadastro segue.",
+    "description": "Help text of the checkbox that lets the external review of sign-ups refuse a sign-up."
+  },
+  "admin.settings.hooks.title": {
+    "defaultMessage": "Análise externa",
+    "description": "Heading of the section of the server settings about the external reviews of submissions."
+  },
+  "admin.settings.login_providers_only.confirm.affected": {
+    "defaultMessage": "{count, plural, =0 {Todo usuário ativo tem um provedor de login vinculado.} one {# usuário ativo não tem provedor de login vinculado e não conseguiria entrar quando suas sessões terminarem.} other {# usuários ativos não têm provedor de login vinculado e não conseguiriam entrar quando suas sessões terminarem.}}",
+    "description": "In the confirmation dialog: how many active users have no link to an enabled login provider."
+  },
+  "admin.settings.login_providers_only.confirm.cancel": {
+    "defaultMessage": "Cancelar",
+    "description": "Button in the confirmation dialog that keeps the form as it is."
+  },
+  "admin.settings.login_providers_only.confirm.confirm": {
+    "defaultMessage": "Limitar o login",
+    "description": "Button in the confirmation dialog that saves the limit."
+  },
+  "admin.settings.login_providers_only.confirm.failed": {
+    "defaultMessage": "Não foi possível ler quantos usuários não conseguiriam mais entrar. Quem não tem um provedor de login vinculado não consegue entrar quando suas sessões terminarem.",
+    "description": "In the confirmation dialog when the count of affected users could not be read."
+  },
+  "admin.settings.login_providers_only.confirm.loading": {
+    "defaultMessage": "Contando os usuários que não conseguiriam mais entrar…",
+    "description": "In the confirmation dialog while the count of affected users loads."
+  },
+  "admin.settings.login_providers_only.confirm.no_provider": {
+    "defaultMessage": "Nenhum provedor de login está ativado, então nada muda agora. O limite começa quando um for ativado.",
+    "description": "In the confirmation dialog when no login provider is enabled."
+  },
+  "admin.settings.login_providers_only.confirm.recovery": {
+    "defaultMessage": "Para desfazer, desative aqui ou execute “my instance set login_providers_only false” no servidor.",
+    "description": "In the confirmation dialog: how to undo the limit."
+  },
+  "admin.settings.login_providers_only.confirm.self": {
+    "defaultMessage": "Você é um deles. Vincule um provedor de login em Contas vinculadas antes que suas sessões terminem.",
+    "description": "In the confirmation dialog when the administrator who confirms has no link to an enabled login provider."
+  },
+  "admin.settings.login_providers_only.confirm.sessions": {
+    "defaultMessage": "As sessões e os apps conectados continuam funcionando, e os usuários podem vincular um provedor durante elas.",
+    "description": "In the confirmation dialog: what keeps working."
+  },
+  "admin.settings.login_providers_only.confirm.stops": {
+    "defaultMessage": "Senhas e passkeys deixam de permitir login, e as senhas não podem mais ser usadas para se cadastrar nem ser redefinidas.",
+    "description": "In the confirmation dialog: what stops."
+  },
+  "admin.settings.login_providers_only.confirm.title": {
+    "defaultMessage": "Limitar o login aos provedores de login?",
+    "description": "Title of the dialog that confirms limiting sign-in to login providers."
+  },
+  "admin.settings.login_providers_only.description": {
+    "defaultMessage": "Enquanto pelo menos um provedor de login estiver ativado, senhas e passkeys deixam de permitir login, e as senhas não podem mais ser usadas para se cadastrar nem ser redefinidas. Sem nenhum provedor ativado, isto não se aplica.",
+    "description": "Description of the checkbox that limits sign-in and registration to login providers."
+  },
+  "admin.settings.login_providers_only.label": {
+    "defaultMessage": "Permitir login e cadastro só por provedores de login",
+    "description": "Checkbox in the registration section of the server settings: limits sign-in and registration to login providers."
+  },
+  "admin.settings.search.title": {
+    "defaultMessage": "Busca de publicações",
+    "description": "Heading of the section of the server settings about the search of posts, shown only on a server with a search engine."
+  },
+  "admin.settings.search.description": {
+    "defaultMessage": "Quais publicações quem está conectado a este servidor pode encontrar pelas palavras. Só as contas que permitem entram, e publicações não listadas, só para seguidores e diretas nunca entram. O que o servidor declara aos mecanismos de busca é outra configuração.",
+    "description": "Explanation of the section of the server settings about the search of posts."
+  },
+  "admin.settings.search.visibilities": {
+    "defaultMessage": "Publicações incluídas",
+    "description": "Label of the radio group of which posts the search covers (search_visibilities)."
+  },
+  "admin.settings.search.visibilities.description": {
+    "defaultMessage": "Remover um tipo de publicação tira as publicações dele da busca. Adicionar um encontra só as publicações novas dele: as mais antigas não são encontradas até você reconstruir o índice (“my search rebuild --keep” no servidor).",
+    "description": "Help text of which posts the search covers: narrowing takes effect, widening reaches older posts only after a rebuild."
+  },
+  "admin.settings.search.public": {
+    "defaultMessage": "Publicações públicas",
+    "description": "Choice of search_visibilities: public posts only."
+  },
+  "admin.settings.search.public.description": {
+    "defaultMessage": "Publicações públicas deste servidor e das contas de outros servidores que ele conhece.",
+    "description": "Description of covering public posts."
+  },
+  "admin.settings.search.local": {
+    "defaultMessage": "Publicações para este servidor",
+    "description": "Choice of search_visibilities: posts with the visibility 'This server' only."
+  },
+  "admin.settings.search.local.description": {
+    "defaultMessage": "Publicações com a visibilidade “Este servidor”, e nenhuma pública. As contas que já permitem a busca não são consultadas de novo, então avise seus usuários antes.",
+    "description": "Description of covering posts with the visibility 'This server' only."
+  },
+  "admin.settings.search.public_local": {
+    "defaultMessage": "Ambas",
+    "description": "Choice of search_visibilities: public posts and posts with the visibility 'This server'."
+  },
+  "admin.settings.search.public_local.description": {
+    "defaultMessage": "Publicações públicas e publicações com a visibilidade “Este servidor”. As contas que já permitem a busca não são consultadas de novo, então avise seus usuários antes.",
+    "description": "Description of covering public posts and posts with the visibility 'This server'."
+  },
+  "admin.settings.pages": {
+    "defaultMessage": "Páginas de configurações do servidor",
+    "description": "Name of the navigation of the pages of the server settings screen, under its heading."
+  },
+  "admin.settings.page.general": {
+    "defaultMessage": "Geral",
+    "description": "Link to the page of the server settings with the server's name, descriptions, contact and thumbnail."
+  },
+  "admin.settings.page.branding": {
+    "defaultMessage": "Ícone e logo",
+    "description": "Link to the page of the server settings with the server's icon and logos."
+  },
+  "admin.settings.page.registration": {
+    "defaultMessage": "Cadastro",
+    "description": "Link to the page of the server settings with who may sign up, the members' invites and the registration of apps."
+  },
+  "admin.settings.page.content": {
+    "defaultMessage": "Conteúdo",
+    "description": "Link to the page of the server settings with the default language, the public timelines, the posts, the landing page and the featured accounts."
+  },
+  "admin.settings.page.federation": {
+    "defaultMessage": "Federação",
+    "description": "Link to the page of the server settings with the federation, the list of domain actions and the external review."
+  },
+  "admin.settings.page.discovery": {
+    "defaultMessage": "Busca e rastreadores",
+    "description": "Link to the page of the server settings with what the server states to search engines and AI, and the post search."
+  },
+  "admin.settings.page.voice": {
+    "defaultMessage": "Chat de voz",
+    "description": "Link to the page of the server settings with the voice chat settings."
+  },
+  "admin.settings.general.save": {
+    "defaultMessage": "Salvar",
+    "description": "Button that saves the name, the descriptions, the contact and the thumbnail of the server together."
+  },
+  "admin.settings.general.saved": {
+    "defaultMessage": "Salvo. O registro de auditoria guarda a alteração.",
+    "description": "Result beside the save button of the general page of the server settings after a save."
+  },
+  "admin.settings.general.unchanged": {
+    "defaultMessage": "Tudo nesta página já está salvo.",
+    "description": "Result beside the save button of the general page of the server settings when nothing changed."
+  },
+  "admin.settings.general.save_failed": {
+    "defaultMessage": "Não foi possível salvar: {reason}",
+    "description": "Result beside the save button of the general page of the server settings when the save failed; the reason follows."
+  },
+  "admin.settings.voice.unavailable": {
+    "defaultMessage": "Este servidor não oferece chat de voz, então não há nada para configurar aqui.",
+    "description": "Text of the voice chat page of the server settings while the server does not offer voice chat."
+  },
+  "admin.settings.page.auto_delete": {
+    "defaultMessage": "Exclusão de publicações",
+    "description": "Link to the page of the server settings with the default and the maximum of the automatic deletion of old posts."
+  },
+  "admin.settings.auto_delete.number.invalid": {
+    "defaultMessage": "Informe um número inteiro de {min} a {max}.",
+    "description": "Error under a number field of the automatic deletion settings when its value is not a whole number in range."
+  },
+  "admin.settings.auto_delete.default.title": {
+    "defaultMessage": "Padrão para novas contas",
+    "description": "Heading of the section of the server's default policy of the automatic deletion of old posts."
+  },
+  "admin.settings.auto_delete.default.description": {
+    "defaultMessage": "Cada nova conta começa com estas configurações como suas e pode alterá-las. Alterá-las não muda as contas existentes.",
+    "description": "Help of the section of the server's default policy of the automatic deletion: it is copied at sign-up."
+  },
+  "admin.settings.auto_delete.default.enabled": {
+    "defaultMessage": "Excluir publicações antigas automaticamente",
+    "description": "Checkbox of the server's default: new accounts start with the automatic deletion turned on."
+  },
+  "admin.settings.auto_delete.default.age": {
+    "defaultMessage": "Excluir publicações com mais de (dias)",
+    "description": "Label of the number field of the default age in days after which posts are deleted."
+  },
+  "admin.settings.auto_delete.days.description": {
+    "defaultMessage": "Contados a partir de quando cada publicação foi publicada: de {min} a {max} dias.",
+    "description": "Help of the default age of the automatic deletion. {min} and {max} are the bounds."
+  },
+  "admin.settings.auto_delete.default.keep": {
+    "defaultMessage": "Manter estas publicações",
+    "description": "Label of the group of the exceptions of the server's default policy."
+  },
+  "admin.settings.auto_delete.default.visibilities": {
+    "defaultMessage": "Manter publicações com estas visibilidades",
+    "description": "Label of the group of the visibilities that the server's default policy keeps."
+  },
+  "admin.settings.auto_delete.default.min_boosts": {
+    "defaultMessage": "Manter publicações impulsionadas pelo menos (vezes)",
+    "description": "Label of the number field of the default threshold of boosts that keeps a post."
+  },
+  "admin.settings.auto_delete.default.min_favourites": {
+    "defaultMessage": "Manter publicações favoritadas pelo menos (vezes)",
+    "description": "Label of the number field of the default threshold of favourites that keeps a post."
+  },
+  "admin.settings.auto_delete.threshold.description": {
+    "defaultMessage": "0 não mantém nenhuma publicação por isso. De {min} a {max}.",
+    "description": "Help of a threshold of the server's default policy. {min} and {max} are the bounds."
+  },
+  "admin.settings.auto_delete.pinned": {
+    "defaultMessage": "Fixadas no perfil",
+    "description": "Exception of the automatic deletion in the server settings: posts pinned to the profile."
+  },
+  "admin.settings.auto_delete.bookmarked": {
+    "defaultMessage": "Salvas pelo autor",
+    "description": "Exception of the automatic deletion in the server settings: posts the author bookmarked."
+  },
+  "admin.settings.auto_delete.favourited": {
+    "defaultMessage": "Favoritadas pelo autor",
+    "description": "Exception of the automatic deletion in the server settings: posts the author favourited."
+  },
+  "admin.settings.auto_delete.media": {
+    "defaultMessage": "Com imagens ou outras mídias",
+    "description": "Exception of the automatic deletion in the server settings: posts with media attachments."
+  },
+  "admin.settings.auto_delete.polls": {
+    "defaultMessage": "Com uma enquete",
+    "description": "Exception of the automatic deletion in the server settings: posts with a poll."
+  },
+  "admin.settings.auto_delete.max.title": {
+    "defaultMessage": "Máximo",
+    "description": "Heading of the section of the server's maximum of how long local posts are kept."
+  },
+  "admin.settings.auto_delete.max.description": {
+    "defaultMessage": "Enquanto o máximo está ativado, toda conta local exclui suas publicações no máximo este número de dias depois de publicadas e não pode desativar a exclusão automática. As contas cujas funções têm a permissão de manter publicações por mais tempo ficam isentas. A página “Sobre” mostra o máximo.",
+    "description": "Help of the section of the server's maximum of the automatic deletion."
+  },
+  "admin.settings.auto_delete.max.age": {
+    "defaultMessage": "Manter publicações no máximo (dias)",
+    "description": "Label of the number field of the server's maximum in days."
+  },
+  "admin.settings.auto_delete.max.age.description": {
+    "defaultMessage": "0 não define máximo. Até {max} dias.",
+    "description": "Help of the maximum's days. {max} is the upper bound; {min} is 0 and not shown."
+  },
+  "admin.settings.auto_delete.max.allow": {
+    "defaultMessage": "Exceções permitidas sob o máximo",
+    "description": "Label of the group of the exceptions that the maximum lets accounts keep posts by."
+  },
+  "admin.settings.auto_delete.max.allow.description": {
+    "defaultMessage": "Uma exceção marcada pode manter uma publicação além do máximo, enquanto ela se aplicar.",
+    "description": "Help of the group of the exceptions allowed under the maximum."
+  },
+  "admin.settings.auto_delete.max.allow.visibilities": {
+    "defaultMessage": "Manter publicações por sua visibilidade",
+    "description": "Allowance of the maximum: posts may be kept by their visibility."
+  },
+  "admin.settings.auto_delete.max.allow.thresholds": {
+    "defaultMessage": "Manter publicações com muitos impulsos ou favoritos",
+    "description": "Allowance of the maximum: posts may be kept by their numbers of boosts and favourites."
+  },
+  "admin.settings.auto_delete.max.kept_pins": {
+    "defaultMessage": "Fixadas mantidas sob o máximo",
+    "description": "Label of the number field of how many of an account's pins keep posts under the maximum."
+  },
+  "admin.settings.auto_delete.max.kept_pins.description": {
+    "defaultMessage": "As fixadas mais recentemente primeiro: de {min} a {max}. {max} mantém todas as publicações fixadas.",
+    "description": "Help of the number of pins kept under the maximum. {min} and {max} are the bounds; {max} is the most pins of an account."
+  },
+  "admin.settings.auto_delete.grace": {
+    "defaultMessage": "Período de carência (dias)",
+    "description": "Label of the number field of the grace period of an account newly bound by the maximum."
+  },
+  "admin.settings.auto_delete.grace.description": {
+    "defaultMessage": "Por quanto tempo uma conta que o máximo passa a atingir mantém as próprias configurações depois de ser avisada: de {min} a {max} dias. Alterá-lo não muda as datas já informadas.",
+    "description": "Help of the grace period of the maximum. {min} and {max} are the bounds."
+  },
+  "admin.settings.auto_delete.confirm.title_on": {
+    "defaultMessage": "Manter publicações no máximo {days, plural, one {# dia} other {# dias}}?",
+    "description": "Title of the dialog that asks before turning the maximum of the automatic deletion on. {days} is the maximum."
+  },
+  "admin.settings.auto_delete.confirm.title_stricter": {
+    "defaultMessage": "Tornar o máximo mais rígido, em {days, plural, one {# dia} other {# dias}}?",
+    "description": "Title of the dialog that asks before lowering the maximum or allowing fewer exceptions or pins. {days} is the maximum."
+  },
+  "admin.settings.auto_delete.confirm.notify": {
+    "defaultMessage": "Em até uma hora, toda conta local cujas configurações mantêm publicações por mais tempo é notificada, no app e por e-mail.",
+    "description": "In the dialog before turning on or tightening the maximum: who is notified and how."
+  },
+  "admin.settings.auto_delete.confirm.grace": {
+    "defaultMessage": "{days, plural, =0 {As publicações delas começam a seguir o máximo imediatamente.} one {As publicações delas começam a seguir o máximo # dia após o aviso.} other {As publicações delas começam a seguir o máximo # dias após o aviso.}}",
+    "description": "In the dialog before turning on or tightening the maximum: when the posts of the notified accounts start to go. {days} is the grace period."
+  },
+  "admin.settings.auto_delete.confirm.permanent": {
+    "defaultMessage": "As publicações excluídas não podem ser restauradas, nem aqui nem nos servidores para onde foram enviadas.",
+    "description": "In the dialog before turning on or tightening the maximum: deletions are permanent."
+  },
+  "admin.settings.auto_delete.confirm.exempt": {
+    "defaultMessage": "As contas com a permissão de manter publicações por mais tempo não são afetadas. Uma conta que alterar suas configurações para dentro do máximo antes disso mantém as próprias configurações.",
+    "description": "Note in the dialog before turning on or tightening the maximum."
+  },
+  "admin.settings.auto_delete.confirm.cancel": {
+    "defaultMessage": "Cancelar",
+    "description": "Button that closes the dialog without saving the maximum."
+  },
+  "admin.settings.auto_delete.confirm.confirm": {
+    "defaultMessage": "Salvar e notificar",
+    "description": "Button that saves the stricter maximum, which notifies the bound accounts."
+  }
+}

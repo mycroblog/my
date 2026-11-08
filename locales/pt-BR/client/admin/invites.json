@@ -1,0 +1,170 @@
+{
+  "admin.invites.copied": {
+    "defaultMessage": "O link do convite {code} foi copiado.",
+    "description": "Toast after an invite's link was copied. {code} is its code."
+  },
+  "admin.invites.copy": {
+    "defaultMessage": "Copiar link",
+    "description": "Button that copies an invite's sign-up link."
+  },
+  "admin.invites.copy_failed": {
+    "defaultMessage": "Não foi possível copiar o link.",
+    "description": "Toast when copying an invite's link failed."
+  },
+  "admin.invites.copy_invite": {
+    "defaultMessage": "{action}: {code}",
+    "description": "Accessible name of the copy button of an invite: it starts with the button's visible text, so that the visible label is in the name. {action} is the button's visible text ('Copy link') and {code} the invite's code."
+  },
+  "admin.invites.create": {
+    "defaultMessage": "Criar o convite",
+    "description": "Button that creates an invite."
+  },
+  "admin.invites.create_failed": {
+    "defaultMessage": "Não foi possível criar o convite: {reason}",
+    "description": "Error when creating an invite failed. {reason} is why."
+  },
+  "admin.invites.created": {
+    "defaultMessage": "O convite {code} foi criado.",
+    "description": "Status after an invite was created. {code} is its code."
+  },
+  "admin.invites.duration.minutes": {
+    "defaultMessage": "{count, plural, one {# minuto} other {# minutos}}",
+    "description": "An option of how long an invite works, in minutes."
+  },
+  "admin.invites.empty": {
+    "defaultMessage": "Nenhum convite ainda",
+    "description": "Heading of the empty list of invites."
+  },
+  "admin.invites.empty.description": {
+    "defaultMessage": "Crie um com o formulário acima.",
+    "description": "Description of the empty list of invites."
+  },
+  "admin.invites.expires_at": {
+    "defaultMessage": "Expira",
+    "description": "Term of when an invite expires."
+  },
+  "admin.invites.expires_in": {
+    "defaultMessage": "Expira após",
+    "description": "Label of the select of how long an invite works."
+  },
+  "admin.invites.link": {
+    "defaultMessage": "Envie este link às pessoas que você convidar:",
+    "description": "Text before the sign-up link of a new invite."
+  },
+  "admin.invites.list.title": {
+    "defaultMessage": "Convites",
+    "description": "Heading of the list of invites."
+  },
+  "admin.invites.max_uses": {
+    "defaultMessage": "Número de cadastros",
+    "description": "Label of the select of how many sign-ups an invite allows."
+  },
+  "admin.invites.max_uses.description": {
+    "defaultMessage": "Quantas pessoas podem se cadastrar com o código.",
+    "description": "Help of the number of sign-ups of an invite."
+  },
+  "admin.invites.mode_notice": {
+    "defaultMessage": "O servidor não aceita novas contas agora, então os convites não permitem cadastro. Um administrador muda quem pode se cadastrar na página Cadastro das configurações do servidor.",
+    "description": "Notice on the invites screen when the registration mode is closed: invites work in the open, approval, and invite modes."
+  },
+  "admin.invites.never": {
+    "defaultMessage": "Nunca",
+    "description": "An invite that never expires: an option and a value."
+  },
+  "admin.invites.new.title": {
+    "defaultMessage": "Criar um convite",
+    "description": "Button on the list of invites that opens the form of a new one, and the heading of that page."
+  },
+  "admin.invites.revoke": {
+    "defaultMessage": "Revogar",
+    "description": "Button that revokes an invite."
+  },
+  "admin.invites.revoke_failed": {
+    "defaultMessage": "Não foi possível revogar o convite: {reason}",
+    "description": "Toast when revoking an invite failed. {reason} is why."
+  },
+  "admin.invites.revoke_invite": {
+    "defaultMessage": "Revogar o convite {code}, criado em {date}",
+    "description": "Accessible name of the revoke button of an invite. {code} is its code; {date} when it was created, formatted."
+  },
+  "admin.invites.revoked": {
+    "defaultMessage": "O convite {code} foi revogado. Ninguém mais pode se cadastrar com ele.",
+    "description": "Status after an invite was revoked. {code} is its code."
+  },
+  "admin.invites.state": {
+    "defaultMessage": "Estado",
+    "description": "Term of an invite's state."
+  },
+  "admin.invites.state.exhausted": {
+    "defaultMessage": "Esgotado",
+    "description": "State of an invite used as many times as it allows."
+  },
+  "admin.invites.state.expired": {
+    "defaultMessage": "Expirado",
+    "description": "State of an expired invite."
+  },
+  "admin.invites.state.revoked": {
+    "defaultMessage": "Revogado",
+    "description": "State of a revoked invite."
+  },
+  "admin.invites.state.usable": {
+    "defaultMessage": "Utilizável",
+    "description": "State of an invite that people may sign up with."
+  },
+  "admin.invites.state.creator_ineligible": {
+    "defaultMessage": "Quem convidou não pode mais convidar",
+    "description": "State of an invite that a member created who may no longer create invites (their permission ended, or their account is restricted or deleted). It works again when they may."
+  },
+  "admin.invites.summary": {
+    "defaultMessage": "Códigos que permitem às pessoas se cadastrar, criados pelos moderadores e por membros.",
+    "description": "Description of the invites screen in the moderation menu."
+  },
+  "admin.invites.title": {
+    "defaultMessage": "Convites",
+    "description": "Title of the invites screen, in the moderation menu and as its heading."
+  },
+  "admin.invites.unlimited": {
+    "defaultMessage": "Sem limite",
+    "description": "Option of an invite that any number of people may use."
+  },
+  "admin.invites.used.limited": {
+    "defaultMessage": "{uses, number} de {max, number} se cadastraram",
+    "description": "How many people signed up with an invite, and how many it allows, under the invite's state. {uses} is the number; {max} the limit."
+  },
+  "admin.invites.used.unlimited": {
+    "defaultMessage": "{uses, number} se cadastraram (sem limite)",
+    "description": "How many people signed up with an invite without a limit, under the invite's state. {uses} is the number."
+  },
+  "admin.invites.uses": {
+    "defaultMessage": "{count, plural, one {# pessoa} other {# pessoas}}",
+    "description": "An option of the number of sign-ups of an invite."
+  },
+  "admin.invites.column.invite": {
+    "defaultMessage": "Código do convite",
+    "description": "Header of the column of the invites table that holds the invite's code."
+  },
+  "admin.invites.created_by.cli": {
+    "defaultMessage": "Linha de comando",
+    "description": "Who created an invite: an administrator with the command line."
+  },
+  "admin.invites.created_by.deleted": {
+    "defaultMessage": "Conta excluída",
+    "description": "Who created an invite: a user whose account no longer exists."
+  },
+  "admin.invites.creator_kind.staff": {
+    "defaultMessage": "Convite de moderador",
+    "description": "Kind of an invite created on the moderation screen or with the command line, which no limit applies to."
+  },
+  "admin.invites.creator_kind.member": {
+    "defaultMessage": "Convite de membro",
+    "description": "Kind of an invite that a member created on their settings page, which works only while they may create invites."
+  },
+  "admin.invites.new.form": {
+    "defaultMessage": "O convite",
+    "description": "Heading of the form on the page of a new invite."
+  },
+  "admin.invites.back": {
+    "defaultMessage": "Voltar aos convites",
+    "description": "Link under the heading of the page of a new invite to the list of invites."
+  }
+}

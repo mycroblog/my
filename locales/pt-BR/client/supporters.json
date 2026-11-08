@@ -1,0 +1,66 @@
+{
+  "supporters.about.title": {
+    "defaultMessage": "Apoiadores",
+    "description": "Heading of the supporter section of the about page."
+  },
+  "supporters.about.description": {
+    "defaultMessage": "Os usuários deste servidor podem apoiá-lo com estes planos.",
+    "description": "Explanation of the supporter plans on the about page."
+  },
+  "supporters.about.subscribe": {
+    "defaultMessage": "Ver os planos e assinar",
+    "description": "Link from the about page to the page of the supporter plans."
+  },
+  "supporters.about.list": {
+    "defaultMessage": "Ver a lista de apoiadores",
+    "description": "Link from the about page to the supporter list."
+  },
+  "supporters.list.title": {
+    "defaultMessage": "Apoiadores de {instance}",
+    "description": "Heading of the supporter list page. instance is the server's name."
+  },
+  "supporters.list.description": {
+    "defaultMessage": "Os membros dos planos que escolheram aparecer na lista, por plano.",
+    "description": "Explanation of the supporter list."
+  },
+  "supporters.list.empty": {
+    "defaultMessage": "Ninguém aparece na lista ainda.",
+    "description": "Shown when nobody is listed."
+  },
+  "supporters.list.hidden": {
+    "defaultMessage": "Este servidor não publica uma lista de apoiadores.",
+    "description": "Shown when the server does not publish the supporter list."
+  },
+  "supporters.list.about": {
+    "defaultMessage": "Sobre este servidor",
+    "description": "Link back to the about page."
+  },
+  "supporters.list.signed_in_only": {
+    "defaultMessage": "Somente usuários que entraram podem ler a lista de apoiadores.",
+    "description": "Shown to visitors without a session when only signed-in users may read the list."
+  },
+  "supporters.list.sign_in": {
+    "defaultMessage": "Entrar",
+    "description": "Link to sign in to read the supporter list."
+  },
+  "supporters.list.loading": {
+    "defaultMessage": "Carregando a lista de apoiadores…",
+    "description": "Label of the spinner while the list loads."
+  },
+  "supporters.list.failed": {
+    "defaultMessage": "Não foi possível carregar a lista de apoiadores",
+    "description": "Heading when the list could not load."
+  },
+  "supporters.list.retry": {
+    "defaultMessage": "Tentar novamente",
+    "description": "Button that loads the list again."
+  },
+  "supporters.list.more": {
+    "defaultMessage": "Mostrar mais",
+    "description": "Button that loads more of the list."
+  },
+  "supporters.list.more_failed": {
+    "defaultMessage": "Não foi possível carregar mais apoiadores",
+    "description": "Heading when more of the list could not load."
+  }
+}

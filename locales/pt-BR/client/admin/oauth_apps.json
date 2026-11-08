@@ -1,0 +1,218 @@
+{
+  "admin.oauth_apps.cancel": {
+    "defaultMessage": "Cancelar",
+    "description": "Button that closes a dialog of the OAuth apps screen without changing anything."
+  },
+  "admin.oauth_apps.change_failed": {
+    "defaultMessage": "Não foi possível alterar o app: {reason}",
+    "description": "Error of disabling or enabling an app, or of denying or allowing a host. {reason} says why."
+  },
+  "admin.oauth_apps.column.app": {
+    "defaultMessage": "App",
+    "description": "Column header of the app's name."
+  },
+  "admin.oauth_apps.column.created": {
+    "defaultMessage": "Registrado",
+    "description": "Column header of when an app was registered."
+  },
+  "admin.oauth_apps.column.registration": {
+    "defaultMessage": "Registrado por",
+    "description": "Column header of the registration route."
+  },
+  "admin.oauth_apps.confidential": {
+    "defaultMessage": "Tem segredo",
+    "description": "An app that is a confidential client."
+  },
+  "admin.oauth_apps.deny_host": {
+    "defaultMessage": "Negar host",
+    "description": "Button on an app that denies the host of its metadata document."
+  },
+  "admin.oauth_apps.deny_host_of": {
+    "defaultMessage": "Negar host: {host}",
+    "description": "Accessible name of the button that denies the host of an app's metadata document. {host} is the host name."
+  },
+  "admin.oauth_apps.disable": {
+    "defaultMessage": "Desativar",
+    "description": "Button that disables an app, and the confirming button of its dialog."
+  },
+  "admin.oauth_apps.disable.description": {
+    "defaultMessage": "Todos os tokens do app são revogados de uma vez, e seus logins, trocas de token e renovações são recusados. Os tokens revogados continuam revogados quando você ativar o app de novo: as pessoas precisam entrar outra vez.",
+    "description": "Description of the dialog that confirms disabling an app."
+  },
+  "admin.oauth_apps.disable.title": {
+    "defaultMessage": "Desativar {name}?",
+    "description": "Title of the dialog that confirms disabling an app. {name} is the app's name."
+  },
+  "admin.oauth_apps.disable_app": {
+    "defaultMessage": "Desativar {name}",
+    "description": "Accessible name of the button that disables an app. {name} is the app's name."
+  },
+  "admin.oauth_apps.disabled": {
+    "defaultMessage": "Desativado",
+    "description": "Marks an app that an administrator disabled."
+  },
+  "admin.oauth_apps.disabled_done": {
+    "defaultMessage": "{name} foi desativado, e seus tokens foram revogados.",
+    "description": "Status after disabling an app. {name} is the app's name."
+  },
+  "admin.oauth_apps.empty": {
+    "defaultMessage": "Nenhum app",
+    "description": "Heading of the empty list of OAuth apps."
+  },
+  "admin.oauth_apps.empty.description": {
+    "defaultMessage": "Nenhum app foi registrado por esta via.",
+    "description": "Description of the empty list of OAuth apps."
+  },
+  "admin.oauth_apps.enable": {
+    "defaultMessage": "Ativar",
+    "description": "Button that lifts the disablement of an app."
+  },
+  "admin.oauth_apps.enable_app": {
+    "defaultMessage": "Ativar {name}",
+    "description": "Accessible name of the button that lifts the disablement of an app. {name} is the app's name."
+  },
+  "admin.oauth_apps.enabled_done": {
+    "defaultMessage": "{name} foi ativado.",
+    "description": "Status after enabling an app. {name} is the app's name."
+  },
+  "admin.oauth_apps.filter.all": {
+    "defaultMessage": "Todas as vias",
+    "description": "Choice of the filter that keeps every app."
+  },
+  "admin.oauth_apps.filter.label": {
+    "defaultMessage": "Registrado por",
+    "description": "Label of the filter that keeps the apps of one registration route."
+  },
+  "admin.oauth_apps.first_party_note": {
+    "defaultMessage": "Não pode ser desativado",
+    "description": "Says that the server's own app has no disable button."
+  },
+  "admin.oauth_apps.hosts.allow": {
+    "defaultMessage": "Permitir",
+    "description": "Button that lifts the denial of a host."
+  },
+  "admin.oauth_apps.hosts.allow_host": {
+    "defaultMessage": "Permitir o host {host}",
+    "description": "Accessible name of the button that lifts the denial of a host. {host} is the host name."
+  },
+  "admin.oauth_apps.hosts.allowed_done": {
+    "defaultMessage": "{host} foi permitido novamente.",
+    "description": "Status after lifting the denial of a host. {host} is the host name."
+  },
+  "admin.oauth_apps.hosts.column.denied": {
+    "defaultMessage": "Negado",
+    "description": "Column header of when a host was denied."
+  },
+  "admin.oauth_apps.hosts.column.host": {
+    "defaultMessage": "Host",
+    "description": "Column header of a denied host."
+  },
+  "admin.oauth_apps.hosts.denied_done": {
+    "defaultMessage": "{host} foi negado, e os tokens de seus apps foram revogados.",
+    "description": "Status after denying a host. {host} is the host name."
+  },
+  "admin.oauth_apps.hosts.deny": {
+    "defaultMessage": "Negar",
+    "description": "Confirming button of the dialog that denies a host."
+  },
+  "admin.oauth_apps.hosts.deny.description": {
+    "defaultMessage": "A partir de agora, nenhum URL de ID de cliente do host é buscado ou aceito. Os tokens dos apps do host são revogados de uma vez e continuam revogados quando você permitir o host de novo.",
+    "description": "Description of the dialog that confirms denying a host."
+  },
+  "admin.oauth_apps.hosts.deny.title": {
+    "defaultMessage": "Negar {host}?",
+    "description": "Title of the dialog that confirms denying a host. {host} is the host name."
+  },
+  "admin.oauth_apps.hosts.deny_new": {
+    "defaultMessage": "Negar um host",
+    "description": "Button that opens the dialog that denies a host by its name."
+  },
+  "admin.oauth_apps.hosts.deny_new.title": {
+    "defaultMessage": "Negar um host",
+    "description": "Title of the dialog that denies a host by its name."
+  },
+  "admin.oauth_apps.hosts.description": {
+    "defaultMessage": "Nenhum URL de ID de cliente de um host negado é buscado ou aceito, e os apps desse host não conseguem entrar.",
+    "description": "Explains the list of denied hosts."
+  },
+  "admin.oauth_apps.hosts.empty": {
+    "defaultMessage": "Nenhum host negado",
+    "description": "Heading of the empty list of denied hosts."
+  },
+  "admin.oauth_apps.hosts.empty.description": {
+    "defaultMessage": "Negue um host para barrar os apps que usam os documentos de metadados dele.",
+    "description": "Description of the empty list of denied hosts."
+  },
+  "admin.oauth_apps.hosts.host": {
+    "defaultMessage": "Nome do host",
+    "description": "Label of the field of the host to deny."
+  },
+  "admin.oauth_apps.hosts.host.description": {
+    "defaultMessage": "O host dos URLs de ID de cliente, como app.example, sem esquema, porta ou caminho.",
+    "description": "Description of the field of the host to deny."
+  },
+  "admin.oauth_apps.hosts.title": {
+    "defaultMessage": "Hosts negados",
+    "description": "Heading of the list of denied hosts, and its table caption."
+  },
+  "admin.oauth_apps.list.description": {
+    "defaultMessage": "Todos os apps que não foram excluídos, do mais novo ao mais antigo. Desativar um app revoga seus tokens de uma vez e recusa seus logins até você ativá-lo de novo.",
+    "description": "Explains the list of OAuth apps."
+  },
+  "admin.oauth_apps.list.title": {
+    "defaultMessage": "Apps",
+    "description": "Heading of the list of OAuth apps, and its table caption."
+  },
+  "admin.oauth_apps.owner": {
+    "defaultMessage": "Registrado por {handle}",
+    "description": "Who registered an app. {handle} is the handle of the user's account."
+  },
+  "admin.oauth_apps.owner.deleted": {
+    "defaultMessage": "Registrado por uma conta excluída",
+    "description": "Who registered an app, when the account of the user who did is gone."
+  },
+  "admin.oauth_apps.pages": {
+    "defaultMessage": "Páginas de apps OAuth",
+    "description": "Name of the local navigation between the pages of the OAuth apps screen."
+  },
+  "admin.oauth_apps.pages.apps": {
+    "defaultMessage": "Apps",
+    "description": "Link of the local navigation to the list of apps."
+  },
+  "admin.oauth_apps.pages.hosts": {
+    "defaultMessage": "Hosts negados",
+    "description": "Link of the local navigation to the denied hosts of app metadata documents."
+  },
+  "admin.oauth_apps.public": {
+    "defaultMessage": "Sem segredo",
+    "description": "An app that is a public client."
+  },
+  "admin.oauth_apps.registration.dynamic": {
+    "defaultMessage": "Registro dinâmico",
+    "description": "Registration route of an app that registered itself (RFC 7591)."
+  },
+  "admin.oauth_apps.registration.first_party": {
+    "defaultMessage": "Este servidor",
+    "description": "Registration route of the server's own apps."
+  },
+  "admin.oauth_apps.registration.metadata_document": {
+    "defaultMessage": "Documento de metadados",
+    "description": "Registration route of an app whose client ID is the URL of its metadata document."
+  },
+  "admin.oauth_apps.registration.user": {
+    "defaultMessage": "Um usuário",
+    "description": "Registration route of an app that a signed-in user registered."
+  },
+  "admin.oauth_apps.scope": {
+    "defaultMessage": "O máximo que pode ser concedido: {scope}",
+    "description": "Under an app's name: the scopes it may be granted at most. {scope} is the space-separated scopes."
+  },
+  "admin.oauth_apps.summary": {
+    "defaultMessage": "Veja todos os apps que podem entrar neste servidor, desative um e negue hosts de documentos de metadados de apps.",
+    "description": "Description of the OAuth apps screen in the administration menu."
+  },
+  "admin.oauth_apps.title": {
+    "defaultMessage": "Apps OAuth",
+    "description": "Heading of the OAuth apps screen, and its link in the administration menu."
+  }
+}
