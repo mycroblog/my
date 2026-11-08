@@ -78,3 +78,5 @@ func TestHour(t *testing.T) {
 		t.Errorf("Hour = %v, want %v", got, want)
 	}
 }
+
+// A line for the measurement of #2524 on an unmerged branch.
