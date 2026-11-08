@@ -1,0 +1,22 @@
+{
+  "local.disabled.body": {
+    "defaultMessage": "Dieser Server zeigt die öffentlichen Beiträge seiner Konten nicht in einer gemeinsamen Timeline an.",
+    "description": "Text below the heading of the local timeline's page when the server's operators have turned that timeline off."
+  },
+  "local.disabled.title": {
+    "defaultMessage": "Die lokale Timeline ist ausgeschaltet",
+    "description": "Heading and document title of the local timeline's page when the server's operators have turned that timeline off."
+  },
+  "local.sign_in_required.body": {
+    "defaultMessage": "Melde dich an, um die öffentlichen Beiträge der Konten dieses Servers zu lesen.",
+    "description": "Description of the sign-in state on the local timeline's page for visitors who are not signed in, under its heading and above the link to sign in."
+  },
+  "local.sign_in_required.title": {
+    "defaultMessage": "Die lokale Timeline ist nur für angemeldete Personen",
+    "description": "Heading of the sign-in state on the local timeline's page for visitors who are not signed in, when the server shows that timeline only to signed-in users."
+  },
+  "local.title": {
+    "defaultMessage": "Lokale Timeline",
+    "description": "Heading and document title of the page with the public posts of this server's accounts."
+  }
+}

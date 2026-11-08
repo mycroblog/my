@@ -1,0 +1,242 @@
+{
+  "shell.about.domain": {
+    "defaultMessage": "Les comptes d’ici se terminent par @{domain}.",
+    "description": "In the side column about this server: the domain of the handles of local accounts, for example 'Accounts here end with @example.com.'."
+  },
+  "shell.about.more": {
+    "defaultMessage": "En savoir plus sur ce serveur",
+    "description": "Link to the server's information page: in the side column about this server, in the menu sheet, and on the landing page."
+  },
+  "shell.about.title": {
+    "defaultMessage": "À propos de ce serveur",
+    "description": "Heading of the side column, shown on wide screens, that tells about the server the user is on."
+  },
+  "shell.document_title": {
+    "defaultMessage": "{page} – {instance}",
+    "description": "The browser tab title: the heading of the current page, then the server's name."
+  },
+  "shell.error.closed.heading": {
+    "defaultMessage": "Ce serveur a fermé",
+    "description": "Heading of the error that replaces a page's content when the server refused the request because the service has closed (a 403 service-closed); the server's reason follows."
+  },
+  "shell.error.forbidden.heading": {
+    "defaultMessage": "Vous n’avez pas l’autorisation de voir cette page",
+    "description": "Heading of the error that replaces a page's content when the server refused the user (a 403); the server's reason follows."
+  },
+  "shell.error.network.heading": {
+    "defaultMessage": "Impossible de se connecter au serveur",
+    "description": "Heading of the error that replaces a page's content when the page got no answer from the server (offline, or the server is down)."
+  },
+  "shell.error.not_found.heading": {
+    "defaultMessage": "Ce que cette page affiche est introuvable",
+    "description": "Heading of the error that replaces a page's content when the server found nothing to show (a 404); the server's reason follows."
+  },
+  "shell.error.reload": {
+    "defaultMessage": "Réessayer",
+    "description": "Button that loads the failed page again."
+  },
+  "shell.error.server.heading": {
+    "defaultMessage": "Impossible de charger cette page",
+    "description": "Heading of the error that replaces a page's content when the server failed to answer its request; the server's reason follows."
+  },
+  "shell.error.title": {
+    "defaultMessage": "Une erreur s’est produite",
+    "description": "Heading of the page shown when a screen failed to load or broke."
+  },
+  "shell.error.unexpected.heading": {
+    "defaultMessage": "Cette page n’a pas pu être affichée",
+    "description": "Heading of the error that replaces a page's content when the page itself broke (not a failed request)."
+  },
+  "shell.error.unexpected.reason": {
+    "defaultMessage": "Réessayez, ou revenez plus tard.",
+    "description": "Text under the heading of a page's error when the page itself broke."
+  },
+  "shell.link.new_tab": {
+    "defaultMessage": "(s’ouvre dans un nouvel onglet)",
+    "description": "Text that only assistive technology reads, after the name of every link that opens in a new browser tab (a link that leaves the app: another site, the source code, the server's terms). Keep the brackets so that it reads apart from the link's name."
+  },
+  "shell.loading": {
+    "defaultMessage": "Chargement",
+    "description": "Accessible name of the progress indicator shown while a page loads."
+  },
+  "shell.menu.close": {
+    "defaultMessage": "Fermer",
+    "description": "Accessible name of the × button that closes the navigation menu's sheet."
+  },
+  "shell.menu.title": {
+    "defaultMessage": "Menu",
+    "description": "Heading and accessible name of the sheet that the tab bar's menu button opens on phones, with the navigation items that are not in the tab bar."
+  },
+  "shell.nav.about": {
+    "defaultMessage": "À propos",
+    "description": "Navigation item, shown while nobody is signed in, that opens the page about this server. Keep it short: it is shown under an icon in the bottom tab bar of phones and in the side rail of tablets."
+  },
+  "shell.nav.admin": {
+    "defaultMessage": "Administration",
+    "description": "Navigation item to the server administration screens, shown only to users whose roles have a server administration permission."
+  },
+  "shell.nav.finance": {
+    "defaultMessage": "Finances",
+    "description": "Navigation item to the finances page, shown only to users whose roles have the view_finance permission."
+  },
+  "shell.nav.bookmarks": {
+    "defaultMessage": "Marque-pages",
+    "description": "Navigation item that opens the list of the posts the user bookmarked. Keep it short: it is shown under an icon in the side rail of tablets and in the menu sheet of phones."
+  },
+  "shell.nav.home": {
+    "defaultMessage": "Accueil",
+    "description": "Navigation item that opens the home timeline. Keep it short: it is shown under an icon in a bottom tab bar."
+  },
+  "shell.nav.label": {
+    "defaultMessage": "Principal",
+    "description": "Accessible name of the main navigation (the tab bar on phones, the side rail on larger screens)."
+  },
+  "shell.nav.landing": {
+    "defaultMessage": "Page d’accueil de ce serveur",
+    "description": "Description read after the name of the link that shows the server's name (above the desktop sidebar, in the side column about this server, in the menu sheet) and opens the root address: the landing page for visitors, the home timeline for signed-in users."
+  },
+  "shell.nav.local": {
+    "defaultMessage": "Local",
+    "description": "Navigation item that opens the local timeline (posts of this server's accounts). Keep it short: it is shown under an icon in the bottom tab bar of phones and in the side rail of tablets."
+  },
+  "shell.nav.menu": {
+    "defaultMessage": "Menu",
+    "description": "Button of the bottom tab bar on phones that opens a sheet with the rest of the navigation (profile, settings). Keep it short: it is shown under an icon in a bar of five items on a 320 px screen."
+  },
+  "shell.nav.menu_pending": {
+    "defaultMessage": "Menu, {count, plural, one {# en attente de modération} other {# en attente de modération}}",
+    "description": "Accessible name of the phone tab bar's Menu button while things await the moderators in the moderation, which the menu leads to; starts with the visible label."
+  },
+  "shell.nav.moderation": {
+    "defaultMessage": "Modération",
+    "description": "Navigation item to the moderation screens, shown only to users whose roles have a moderation permission."
+  },
+  "shell.nav.moderation_pending": {
+    "defaultMessage": "Modération, {count, plural, one {# en attente} other {# en attente}}",
+    "description": "Accessible name of the navigation item to the moderation screens while open reports, registrations or appeals wait for the moderators; starts with the visible label."
+  },
+  "shell.nav.notifications": {
+    "defaultMessage": "Notifications",
+    "description": "Navigation item that opens the notifications. Keep it short: it is shown under an icon in a bottom tab bar."
+  },
+  "shell.nav.notifications_unread": {
+    "defaultMessage": "Notifications, {count, plural, one {# non lue} other {# non lues}}",
+    "description": "Accessible name of the navigation item that opens the notifications while some are unread. Start it with the text of shell.nav.notifications, which is shown. {count} is the number of unread notifications."
+  },
+  "shell.nav.profile": {
+    "defaultMessage": "Profil",
+    "description": "Navigation item that opens the user's own profile. Keep it short: it is shown under an icon in the side rail of tablets and in the menu sheet of phones."
+  },
+  "shell.nav.public": {
+    "defaultMessage": "Fédéré",
+    "description": "Navigation item that opens the federated timeline (public posts of this server and of other servers). Keep it short: it is shown under an icon in the bottom tab bar of phones and in the side rail of tablets."
+  },
+  "shell.nav.search": {
+    "defaultMessage": "Recherche",
+    "description": "Navigation item that opens the account search. Keep it short: it is shown under an icon in a bottom tab bar."
+  },
+  "shell.nav.settings": {
+    "defaultMessage": "Paramètres",
+    "description": "Navigation item that opens the settings. Keep it short: it is shown under an icon in the side rail of tablets and in the menu sheet of phones."
+  },
+  "shell.nav.sign_in": {
+    "defaultMessage": "Se connecter",
+    "description": "Navigation item, shown while nobody is signed in, that opens the sign-in page and comes back to the current page. Keep it short: it is shown under an icon in the bottom tab bar of phones and in the side rail of tablets."
+  },
+  "shell.nav.sign_up": {
+    "defaultMessage": "S’inscrire",
+    "description": "Navigation item, shown while nobody is signed in and the server takes new accounts, that opens the server's registration page. Keep it short: it is shown under an icon in the side rail of tablets and in the menu sheet of phones."
+  },
+  "shell.nav.viewer": {
+    "defaultMessage": "Le compte avec lequel vous êtes connecté",
+    "description": "Description read after the name of the link at the bottom of the desktop sidebar that shows the signed-in account (avatar, display name, handle) and opens its profile."
+  },
+  "shell.not_found.body": {
+    "defaultMessage": "Il n’y a aucune page à cette adresse.",
+    "description": "Text on the page shown for an address that the web client has no page for."
+  },
+  "shell.not_found.home": {
+    "defaultMessage": "Aller au fil d’accueil",
+    "description": "Link, for a signed-in user, on a page with nothing to show (an address with no page, an account that is not there, a timeline the server turned off) that opens the home timeline."
+  },
+  "shell.not_found.landing": {
+    "defaultMessage": "Aller à la page d’accueil",
+    "description": "Link, for a visitor who is not signed in, on a page with nothing to show (an address with no page, an account that is not there, a timeline the server turned off) that opens the server's landing page at the root address."
+  },
+  "shell.sign_in_required.sign_in": {
+    "defaultMessage": "Se connecter",
+    "description": "Link of the sign-in state, shown on a page that needs a session while nobody is signed in (the home timeline, the notifications, a timeline the server keeps for signed-in users), that opens the sign-in page and comes back to that page afterwards."
+  },
+  "shell.not_found.title": {
+    "defaultMessage": "Page introuvable",
+    "description": "Heading of the page shown for an address that the web client has no page for."
+  },
+  "shell.offline": {
+    "defaultMessage": "Vous êtes hors ligne. Ce qui n’a pas pu être chargé le sera de nouveau lorsque vous serez de retour en ligne.",
+    "description": "Text of the bar at the top of the app while the device is offline or the server cannot be reached. Screen readers announce it when it appears."
+  },
+  "shell.rate_limited": {
+    "defaultMessage": "Trop de requêtes ont été envoyées au serveur. Ce qui n’a pas pu être chargé le sera de nouveau à {time}.",
+    "description": "Text of the bar at the top of the app while the server's rate limit refuses requests (HTTP 429). {time} is the time of day the app loads again, with seconds (for example 12:34:56). Screen readers announce it when it appears."
+  },
+  "shell.status_page": {
+    "defaultMessage": "Consulter l’état du serveur",
+    "description": "Link after the offline text of the bar at the top of the app, to the server's status page on another site, where the operators tell of outages and maintenance. The link leaves the app."
+  },
+  "shell.skip_to_main": {
+    "defaultMessage": "Aller au contenu principal",
+    "description": "Link at the very start of every page, visible when focused, that moves keyboard focus past the navigation."
+  },
+  "shell.startup_error.body": {
+    "defaultMessage": "Le serveur a envoyé des paramètres que l’application ne peut pas lire. Rechargez la page ; si le problème persiste, prévenez l’administrateur du serveur.",
+    "description": "Text shown instead of the app when its runtime configuration from the server is missing or invalid."
+  },
+  "shell.startup_error.title": {
+    "defaultMessage": "L’application n’a pas pu démarrer",
+    "description": "Heading shown instead of the app when its runtime configuration from the server is missing or invalid."
+  },
+  "shell.toast.dismiss": {
+    "defaultMessage": "Fermer",
+    "description": "Accessible name of the × button that closes a toast message."
+  },
+  "shell.toast.region": {
+    "defaultMessage": "Messages",
+    "description": "Accessible name of the area where short status messages (toasts) appear, such as 'Post published'."
+  },
+  "shell.update.apply": {
+    "defaultMessage": "Mettre à jour",
+    "description": "Button in the message about a new version of the app; pressing it reloads the page into the new version."
+  },
+  "shell.update.available": {
+    "defaultMessage": "Une nouvelle version de l’application est disponible.",
+    "description": "Message shown when a new version of the web app has been downloaded and waits until the user applies it."
+  },
+  "shell.update.required": {
+    "defaultMessage": "L’application a changé et doit être mise à jour pour continuer à fonctionner.",
+    "description": "Message shown when the running version of the web app no longer works with the server; its button reloads the page. The page also reloads by itself as soon as the user would lose nothing."
+  },
+  "shell.save.saving": {
+    "defaultMessage": "Enregistrement…",
+    "description": "Shown next to a setting that saves as soon as it changes, while its change is being saved."
+  },
+  "shell.save.saved": {
+    "defaultMessage": "Enregistré",
+    "description": "Shown next to a setting that saves as soon as it changes, once its change is saved."
+  },
+  "shell.save.failed": {
+    "defaultMessage": "Non enregistré",
+    "description": "Shown next to a setting that saves as soon as it changes, when its change could not be saved; the setting shows why under it."
+  },
+  "shell.notice.dismiss": {
+    "defaultMessage": "Fermer",
+    "description": "Name and tooltip of the button that closes a notice of a change made elsewhere, such as the host turning the microphone off in a voice chat call."
+  },
+  "shell.back": {
+    "defaultMessage": "Retour",
+    "description": "Icon button before the heading of a page that is not an item of the navigation (a post, a follow list); it goes back to the previous page, or to the home page when the page was opened directly. Shown as its tooltip too."
+  },
+  "shell.nav.announcements_unread": {
+    "defaultMessage": "Annonces, {count, plural, one {# non lue} other {# non lues}}",
+    "description": "Accessible name of the navigation item of the announcements while some are unread. {count} is how many; the visible label comes first."
+  }
+}

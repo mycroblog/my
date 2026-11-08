@@ -1,0 +1,22 @@
+{
+  "documents.commerce_disclosure": {
+    "defaultMessage": "Angaben zum Handelsrecht",
+    "description": "Link to the server's page of the commerce disclosures of its supporter plans, and the heading of that page."
+  },
+  "documents.label": {
+    "defaultMessage": "Bedingungen und Richtlinien",
+    "description": "Accessible name of the links to the server's terms of service and privacy policy (in the third column, the menu, the settings, and the sign-in page), and the heading of their section in the settings."
+  },
+  "documents.privacy_policy": {
+    "defaultMessage": "Datenschutzerklärung",
+    "description": "Link to the server's public page of its privacy policy."
+  },
+  "documents.revised": {
+    "defaultMessage": "Zuletzt überarbeitet am {date}",
+    "description": "When the current revision of a document (terms of service, privacy policy, commerce disclosures) was recorded, above its text; {date} is a formatted date."
+  },
+  "documents.terms": {
+    "defaultMessage": "Nutzungsbedingungen",
+    "description": "Link to the server's public page of its terms of service."
+  }
+}

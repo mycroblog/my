@@ -1,0 +1,242 @@
+{
+  "admin.relays.activities": {
+    "defaultMessage": "{count, plural, one {# activité} other {# activités}}",
+    "description": "How many activities a relay brought in."
+  },
+  "admin.relays.actor": {
+    "defaultMessage": "Acteur du relais",
+    "description": "Term in a relay's details: the actor of the relay, once it accepted the server."
+  },
+  "admin.relays.back": {
+    "defaultMessage": "Retour aux relais",
+    "description": "Link from the page of one relay, or of the form that joins one, back to the list."
+  },
+  "admin.relays.cancel": {
+    "defaultMessage": "Annuler",
+    "description": "Button that closes the dialog of a relay without changing it."
+  },
+  "admin.relays.change_failed": {
+    "defaultMessage": "Impossible de modifier le relais : {reason}",
+    "description": "Error of leaving, joining again or deleting a relay. {reason} says why."
+  },
+  "admin.relays.create_failed": {
+    "defaultMessage": "Impossible de rejoindre le relais : {reason}",
+    "description": "Error of the form that registers a relay, for another reason than its URL. {reason} says why."
+  },
+  "admin.relays.delete": {
+    "defaultMessage": "Supprimer",
+    "description": "Button that deletes the registration of a relay, and the confirming button of its dialog."
+  },
+  "admin.relays.delete.description": {
+    "defaultMessage": "Son enregistrement est supprimé. Les publications déjà envoyées au relais continuent de recevoir leurs mises à jour et leurs suppressions. Cette action est irréversible.",
+    "description": "Description of the dialog that confirms deleting a relay."
+  },
+  "admin.relays.delete.title": {
+    "defaultMessage": "Supprimer {name} ?",
+    "description": "Title of the dialog that confirms deleting a relay. {name} is the host name of its URL."
+  },
+  "admin.relays.delete_relay": {
+    "defaultMessage": "Supprimer {name}",
+    "description": "Accessible name of the button that deletes a relay. {name} is the host name of its URL."
+  },
+  "admin.relays.deleted": {
+    "defaultMessage": "{name} est supprimé.",
+    "description": "Status after deleting a relay."
+  },
+  "admin.relays.detail.title": {
+    "defaultMessage": "Relais",
+    "description": "Heading of the page of one relay."
+  },
+  "admin.relays.domain_suspended": {
+    "defaultMessage": "Une mesure sur le domaine suspend le serveur de ce relais : rien ne lui est envoyé et rien n’en est reçu tant qu’elle s’applique.",
+    "description": "Warning on a relay whose host a domain action suspends."
+  },
+  "admin.relays.domain_suspended.short": {
+    "defaultMessage": "Suspendu par une mesure sur le domaine",
+    "description": "Short warning in the list on a relay whose host a domain action suspends."
+  },
+  "admin.relays.dropped": {
+    "defaultMessage": "Écarté au-delà de la limite, dernières 24 heures",
+    "description": "Term in a relay's details: the activities it brought in during the last 24 hours that were dropped over the hourly limit."
+  },
+  "admin.relays.empty": {
+    "defaultMessage": "Aucun relais pour le moment",
+    "description": "Heading of the empty list of relays."
+  },
+  "admin.relays.empty.description": {
+    "defaultMessage": "Un relais transmet les publications publiques entre les serveurs qui le rejoignent, ce qui alimente le fil fédéré d’un petit serveur.",
+    "description": "Description of the empty list of relays."
+  },
+  "admin.relays.follow": {
+    "defaultMessage": "Rejoindre à nouveau",
+    "description": "Button that asks to join again a relay that was left or rejected the server."
+  },
+  "admin.relays.follow_relay": {
+    "defaultMessage": "Rejoindre à nouveau : {name}",
+    "description": "Accessible name of the button that joins a relay again. {name} is the host name of its URL."
+  },
+  "admin.relays.followed": {
+    "defaultMessage": "Le serveur a demandé à rejoindre {name} à nouveau.",
+    "description": "Status after asking to join a relay again."
+  },
+  "admin.relays.inbox": {
+    "defaultMessage": "Boîte de réception",
+    "description": "Term in a relay's details: the inbox the server sends to."
+  },
+  "admin.relays.list.title": {
+    "defaultMessage": "Relais de ce serveur",
+    "description": "Heading of the list of the relays."
+  },
+  "admin.relays.membership.joined": {
+    "defaultMessage": "Tant que le serveur est membre du relais ou demande à l’être, il lui envoie ses publications publiques. Quittez le relais pour arrêter ; un relais quitté peut être rejoint à nouveau ou supprimé.",
+    "description": "Help of the membership of a relay that the server joined or asked to join."
+  },
+  "admin.relays.membership.left": {
+    "defaultMessage": "Le serveur n’envoie rien à ce relais et n’en reçoit rien. Rejoignez-le à nouveau ou supprimez son enregistrement.",
+    "description": "Help of the membership of a relay that the server left or that rejected it."
+  },
+  "admin.relays.membership.title": {
+    "defaultMessage": "Adhésion",
+    "description": "Heading of the section of a relay's page that leaves it, joins it again or deletes it."
+  },
+  "admin.relays.new.description": {
+    "defaultMessage": "Les publications publiques de ce serveur vont à chaque relais qu’il rejoint, qui les transmet aux autres serveurs du relais. Les publications d’autres visibilités ne sont jamais envoyées.",
+    "description": "Description of the form that registers and joins a relay."
+  },
+  "admin.relays.new.title": {
+    "defaultMessage": "Rejoindre un relais",
+    "description": "Heading of the form that registers and joins a relay."
+  },
+  "admin.relays.not_found": {
+    "defaultMessage": "Ce relais n’est pas enregistré",
+    "description": "Heading of the page of a relay that the server does not have, such as a deleted one."
+  },
+  "admin.relays.not_found.description": {
+    "defaultMessage": "Il a peut-être été supprimé. Les relais de ce serveur se trouvent sur l’écran des relais.",
+    "description": "Description of the page of a relay that the server does not have."
+  },
+  "admin.relays.problem.domain_suspended": {
+    "defaultMessage": "Le serveur du relais est suspendu par une mesure sur le domaine.",
+    "description": "Why a relay was refused: a domain action suspends its host."
+  },
+  "admin.relays.problem.exists": {
+    "defaultMessage": "Un relais avec cette URL est déjà enregistré.",
+    "description": "Why a relay was refused: one with the same URL is registered."
+  },
+  "admin.relays.problem.not_actor": {
+    "defaultMessage": "L’URL ne renvoie pas l’acteur d’un relais avec une boîte de réception.",
+    "description": "Why a LitePub relay was refused: its URL serves no actor with an inbox."
+  },
+  "admin.relays.problem.state": {
+    "defaultMessage": "Le relais n’est pas dans un état qui le permet : quittez un relais avant de le supprimer, et ne rejoignez à nouveau que celui qui a été quitté ou qui a rejeté le serveur.",
+    "description": "Why an operation on a relay was refused: its state does not allow it."
+  },
+  "admin.relays.problem.url": {
+    "defaultMessage": "Saisissez une URL https d’au plus 2048 octets.",
+    "description": "Why a relay was refused: its URL is not an https URL of at most 2048 bytes."
+  },
+  "admin.relays.protocol": {
+    "defaultMessage": "Protocole",
+    "description": "Label of how a relay is joined (Mastodon or LitePub), and term of it in a relay's details."
+  },
+  "admin.relays.protocol.auto": {
+    "defaultMessage": "Détecter automatiquement",
+    "description": "Choice of the protocol of a new relay: the server picks LitePub when the URL serves an actor, else Mastodon."
+  },
+  "admin.relays.protocol.description": {
+    "defaultMessage": "La détection automatique choisit LitePub quand l’URL renvoie un acteur, et Mastodon sinon.",
+    "description": "Help of the protocol of a new relay."
+  },
+  "admin.relays.protocol.litepub": {
+    "defaultMessage": "LitePub",
+    "description": "Protocol of a relay: joined at its actor, as Pleroma and Akkoma do."
+  },
+  "admin.relays.protocol.mastodon": {
+    "defaultMessage": "Mastodon",
+    "description": "Protocol of a relay: joined at its inbox, as Mastodon and Misskey do."
+  },
+  "admin.relays.receive": {
+    "defaultMessage": "Recevoir les publications du relais",
+    "description": "Checkbox of a new relay: whether to take in the public posts it relays."
+  },
+  "admin.relays.receive.description": {
+    "defaultMessage": "Les publications publiques qu’il relaie apparaissent dans les fils fédéré et de hashtags, et sont conservées peu de temps. Sans cette option, le serveur ne fait qu’envoyer.",
+    "description": "Help of the checkbox that takes in the posts of a new relay."
+  },
+  "admin.relays.receive.no": {
+    "defaultMessage": "Envoi uniquement",
+    "description": "Value of whether a relay is received: the server only sends to it."
+  },
+  "admin.relays.receive.term": {
+    "defaultMessage": "Réception",
+    "description": "Term in a relay's details: whether the server takes in the posts it relays."
+  },
+  "admin.relays.receive.yes": {
+    "defaultMessage": "Reçoit les publications qu’il relaie",
+    "description": "Value of whether a relay is received: the server takes in the posts it relays."
+  },
+  "admin.relays.relay": {
+    "defaultMessage": "Relais",
+    "description": "Column of the list of relays: the host name of the relay, linking to its page."
+  },
+  "admin.relays.state": {
+    "defaultMessage": "État",
+    "description": "Term in a relay's details: where its membership stands."
+  },
+  "admin.relays.state.accepted": {
+    "defaultMessage": "Rejoint",
+    "description": "State of a relay that accepted the server."
+  },
+  "admin.relays.state.left": {
+    "defaultMessage": "Quitté",
+    "description": "State of a relay that the server left."
+  },
+  "admin.relays.state.pending": {
+    "defaultMessage": "En attente de la réponse du relais",
+    "description": "State of a relay that the server asked to join and that has not answered."
+  },
+  "admin.relays.state.rejected": {
+    "defaultMessage": "Rejeté par le relais",
+    "description": "State of a relay that rejected the server or ended its membership."
+  },
+  "admin.relays.state_changed_at": {
+    "defaultMessage": "État depuis le",
+    "description": "Column of the list of relays: when the relay's state last changed."
+  },
+  "admin.relays.submit": {
+    "defaultMessage": "Rejoindre",
+    "description": "Button that registers and joins a relay."
+  },
+  "admin.relays.summary": {
+    "defaultMessage": "Rejoignez des relais de fédération pour échanger des publications publiques avec davantage de serveurs.",
+    "description": "Description of the relays screen in the administration menu of the settings."
+  },
+  "admin.relays.taken": {
+    "defaultMessage": "Reçu, dernières 24 heures",
+    "description": "Term in a relay's details: the activities it brought in during the last 24 hours that were taken in."
+  },
+  "admin.relays.title": {
+    "defaultMessage": "Relais",
+    "description": "Heading of the relays screen, and its link in the administration menu."
+  },
+  "admin.relays.unfollow": {
+    "defaultMessage": "Quitter",
+    "description": "Button that leaves a relay that the server joined or asked to join."
+  },
+  "admin.relays.unfollow_relay": {
+    "defaultMessage": "Quitter {name}",
+    "description": "Accessible name of the button that leaves a relay. {name} is the host name of its URL."
+  },
+  "admin.relays.unfollowed": {
+    "defaultMessage": "Le serveur a quitté {name}.",
+    "description": "Status after leaving a relay."
+  },
+  "admin.relays.url": {
+    "defaultMessage": "URL",
+    "description": "Label of the URL of a new relay, its inbox or its actor, and term of it in a relay's details."
+  },
+  "admin.relays.url.description": {
+    "defaultMessage": "La boîte de réception du relais pour Mastodon ou son acteur pour LitePub, une URL https.",
+    "description": "Help of the URL of a new relay."
+  }
+}

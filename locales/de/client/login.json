@@ -1,0 +1,26 @@
+{
+  "login.failed.denied": {
+    "defaultMessage": "Die Anmeldung wurde auf dem Bildschirm des Servers abgebrochen.",
+    "description": "Why signing in failed: the user declined on the server's authorization screen."
+  },
+  "login.failed.invalid_state": {
+    "defaultMessage": "Diese Anmeldung wurde nicht in diesem Tab gestartet oder ist bereits abgeschlossen. Beginne von vorn.",
+    "description": "Why signing in failed: the answer from the server does not belong to a sign-in that this browser tab started."
+  },
+  "login.failed.rejected": {
+    "defaultMessage": "Der Server hat die Anmeldung nicht akzeptiert. Beginne von vorn.",
+    "description": "Why signing in failed: the server refused to finish it (for example, it took too long)."
+  },
+  "login.failed.try_again": {
+    "defaultMessage": "Erneut anmelden",
+    "description": "Link from the failed sign-in page back to the sign-in page."
+  },
+  "login.failed.title": {
+    "defaultMessage": "Anmeldung nicht möglich",
+    "description": "Heading and document title of the page shown when signing in failed on the way back from the server's sign-in screen."
+  },
+  "login.title": {
+    "defaultMessage": "Anmelden",
+    "description": "Document title and the busy indicator's label of /login, which starts signing in at once and sends the browser to the server's sign-in screen."
+  }
+}

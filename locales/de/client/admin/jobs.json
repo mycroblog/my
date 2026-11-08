@@ -1,0 +1,214 @@
+{
+  "admin.jobs.attempts": {
+    "defaultMessage": "Versuche",
+    "description": "Term in a job's details: how many times the job ran."
+  },
+  "admin.jobs.back": {
+    "defaultMessage": "Zurück zur Jobliste",
+    "description": "Link from the page of one job back to the job list."
+  },
+  "admin.jobs.column.type": {
+    "defaultMessage": "Typ",
+    "description": "Column header of the job list, and term in a job's details: the job type, such as federation.deliver."
+  },
+  "admin.jobs.created_at": {
+    "defaultMessage": "Erstellt",
+    "description": "Term in a job's details: when the job was enqueued first."
+  },
+  "admin.jobs.detail.details": {
+    "defaultMessage": "Details",
+    "description": "Heading of the section of a job's page with its type, creation time, worker, lease and keys, and its last error."
+  },
+  "admin.jobs.detail_title": {
+    "defaultMessage": "Job",
+    "description": "Title and heading of the page of one job of the job queue."
+  },
+  "admin.jobs.empty": {
+    "defaultMessage": "Keine Jobs",
+    "description": "Heading of the job list when no job is in the selected state."
+  },
+  "admin.jobs.empty.dead": {
+    "defaultMessage": "Keine fehlgeschlagenen Jobs",
+    "description": "Heading of the job list of failed jobs when no job failed for good."
+  },
+  "admin.jobs.failed_at": {
+    "defaultMessage": "Fehlgeschlagen",
+    "description": "Term in a failed job's details: when the job failed for good."
+  },
+  "admin.jobs.filter.label": {
+    "defaultMessage": "Jobstatus",
+    "description": "Accessible name of the select of the job list that filters the jobs by state."
+  },
+  "admin.jobs.filter.pending": {
+    "defaultMessage": "Ausstehend",
+    "description": "Tab of the jobs screen with the jobs not done yet: waiting, running and retrying."
+  },
+  "admin.jobs.history.attempt": {
+    "defaultMessage": "Versuch {number, number}: {outcome}",
+    "description": "Heading of one record of a job's attempt history. {number} is the number of the run, from 1, formatted; {outcome} is admin.jobs.outcome.retry or admin.jobs.outcome.dead."
+  },
+  "admin.jobs.history.empty": {
+    "defaultMessage": "Keine fehlgeschlagenen Versuche aufgezeichnet",
+    "description": "Heading of a job's attempt history when no failed run is recorded."
+  },
+  "admin.jobs.history.empty.description": {
+    "defaultMessage": "Erfolgreiche Durchläufe werden nicht aufgezeichnet, und die Einträge werden nach einer Weile gelöscht.",
+    "description": "Description of an empty attempt history: why a job may have no records."
+  },
+  "admin.jobs.history.error": {
+    "defaultMessage": "Fehler",
+    "description": "Term in a record of a job's attempt: why the run failed."
+  },
+  "admin.jobs.history.failed": {
+    "defaultMessage": "Die Versuche konnten nicht geladen werden",
+    "description": "Heading in place of a job's attempt history when it failed to load."
+  },
+  "admin.jobs.history.finished_at": {
+    "defaultMessage": "Beendet",
+    "description": "Term in a record of a job's attempt: when the run ended."
+  },
+  "admin.jobs.history.heading": {
+    "defaultMessage": "Versuchsverlauf",
+    "description": "Heading of the section of a job's page with the records of its runs that did not succeed."
+  },
+  "admin.jobs.history.loading": {
+    "defaultMessage": "Versuche werden geladen",
+    "description": "Accessible name of the spinner while the records of a job's attempts load."
+  },
+  "admin.jobs.history.more_failed": {
+    "defaultMessage": "Weitere Versuche konnten nicht geladen werden",
+    "description": "Message under a job's attempt history when its next page failed to load."
+  },
+  "admin.jobs.history.retry": {
+    "defaultMessage": "Erneut versuchen",
+    "description": "Button that loads a job's attempt history again after it failed to load."
+  },
+  "admin.jobs.history.started_at": {
+    "defaultMessage": "Gestartet",
+    "description": "Term in a record of a job's attempt: when the run started."
+  },
+  "admin.jobs.idempotency_key": {
+    "defaultMessage": "Idempotenzschlüssel",
+    "description": "Term in a job's details: the key that keeps the job from being enqueued twice."
+  },
+  "admin.jobs.last_error": {
+    "defaultMessage": "Letzter Fehler",
+    "description": "Term in a job's details: why the job's last run failed."
+  },
+  "admin.jobs.list.caption": {
+    "defaultMessage": "Jobs: {filter}",
+    "description": "Visually hidden caption of the job table. {filter} is the selected state filter, such as admin.jobs.state.dead."
+  },
+  "admin.jobs.locked_until": {
+    "defaultMessage": "Lease endet",
+    "description": "Term in a running job's details: when the worker's hold on it ends, after which another worker may run it."
+  },
+  "admin.jobs.ordering_key": {
+    "defaultMessage": "Reihenfolgeschlüssel",
+    "description": "Term in a job's details: the key that runs the jobs with the same key one after another."
+  },
+  "admin.jobs.outcome.dead": {
+    "defaultMessage": "endgültig fehlgeschlagen",
+    "description": "Outcome of the failed run that made a job fail for good, in the heading of its record."
+  },
+  "admin.jobs.outcome.retry": {
+    "defaultMessage": "wird wiederholt",
+    "description": "Outcome of a failed run of a job that runs again, in the heading of its record."
+  },
+  "admin.jobs.page.list": {
+    "defaultMessage": "Jobliste",
+    "description": "Link of the local navigation of the jobs screen to the table of the jobs of one state; also the title of that page."
+  },
+  "admin.jobs.page.queue": {
+    "defaultMessage": "Zustand der Warteschlange",
+    "description": "Link of the local navigation of the jobs screen to its first page: the state of the job queue."
+  },
+  "admin.jobs.pages": {
+    "defaultMessage": "Seiten der Jobs",
+    "description": "Name of the local navigation between the pages of the jobs screen (the queue's state and the job list)."
+  },
+  "admin.jobs.payload": {
+    "defaultMessage": "Payload",
+    "description": "Term in a job's details: the job's input data, as JSON."
+  },
+  "admin.jobs.queue.adapter": {
+    "defaultMessage": "Warteschlange",
+    "description": "Term in the queue's details: the kind of job queue the server runs, such as db or cloudtasks."
+  },
+  "admin.jobs.queue.by_state": {
+    "defaultMessage": "Jobs nach Status",
+    "description": "Accessible name of the tiles of the jobs screen: the longest wait and the count of the jobs of each state."
+  },
+  "admin.jobs.queue.by_type": {
+    "defaultMessage": "Jobs nach Typ",
+    "description": "Accessible name of the list of the counts of the jobs of each job type."
+  },
+  "admin.jobs.queue.heading": {
+    "defaultMessage": "Warteschlange",
+    "description": "Heading of the region of the jobs screen with the counts of the jobs of the queue."
+  },
+  "admin.jobs.queue.no_listing": {
+    "defaultMessage": "Diese Warteschlange kann ihre wartenden, laufenden und wiederholten Jobs nicht auflisten: Den Rückstand findest du in den Metriken der Plattform. Fehlgeschlagene Jobs und der Verlauf ihrer Versuche werden aufgelistet.",
+    "description": "Note of the queue region when the queue (Cloud Tasks) cannot list its pending jobs."
+  },
+  "admin.jobs.retried": {
+    "defaultMessage": "Der Job {type} ist für einen erneuten Lauf eingereiht.",
+    "description": "Announcement after an operator ran a failed job again. {type} is the job type, such as federation.deliver."
+  },
+  "admin.jobs.retry_failed": {
+    "defaultMessage": "Der Job konnte nicht erneut ausgeführt werden: {reason}",
+    "description": "Error toast when a failed job could not be run again. {reason} is the server's localized reason."
+  },
+  "admin.jobs.retry_job": {
+    "defaultMessage": "Erneut ausführen: {type}, fehlgeschlagen {date}",
+    "description": "Accessible name of the run-again button of a failed job, which names the job. {type} is the job type; {date} is when it failed, formatted."
+  },
+  "admin.jobs.run_again": {
+    "defaultMessage": "Erneut ausführen",
+    "description": "Button of a failed job that runs it again."
+  },
+  "admin.jobs.run_at": {
+    "defaultMessage": "Fällig",
+    "description": "Term in a job's details: when a pending job is due to run."
+  },
+  "admin.jobs.state": {
+    "defaultMessage": "Status",
+    "description": "Term in a job's details: its state, such as waiting or failed."
+  },
+  "admin.jobs.state.dead": {
+    "defaultMessage": "Fehlgeschlagen",
+    "description": "State of a job that failed for good; also a tab and a count."
+  },
+  "admin.jobs.state.queued": {
+    "defaultMessage": "Wartend",
+    "description": "State of a job that has not run yet; also a tab and a count."
+  },
+  "admin.jobs.state.retrying": {
+    "defaultMessage": "Wird wiederholt",
+    "description": "State of a job that ran, failed, and waits to run again; also a tab and a count."
+  },
+  "admin.jobs.state.running": {
+    "defaultMessage": "Läuft",
+    "description": "State of a job that a worker runs now; also a tab and a count."
+  },
+  "admin.jobs.summary": {
+    "defaultMessage": "Hintergrundjobs, die warten, laufen, wiederholt werden oder fehlgeschlagen sind, warum sie fehlgeschlagen sind, und das erneute Ausführen fehlgeschlagener Jobs.",
+    "description": "Description of the jobs screen in the administration menu of the settings."
+  },
+  "admin.jobs.title": {
+    "defaultMessage": "Jobs",
+    "description": "Heading of the admin screen of the background job queue (waiting, running, retrying and failed jobs), and its link in the administration menu."
+  },
+  "admin.jobs.unlisted": {
+    "defaultMessage": "Diese Warteschlange kann diese Jobs nicht auflisten",
+    "description": "Heading in place of the list of pending jobs when the queue (Cloud Tasks) cannot list them."
+  },
+  "admin.jobs.unlisted.description": {
+    "defaultMessage": "Den Rückstand findest du in den Metriken der Plattform. Fehlgeschlagene Jobs stehen unter „Fehlgeschlagen“.",
+    "description": "Description in place of the list of pending jobs when the queue cannot list them."
+  },
+  "admin.jobs.worker": {
+    "defaultMessage": "Worker",
+    "description": "Term in a job's or an attempt's details: the name of the worker that runs or ran it."
+  }
+}

@@ -1,0 +1,50 @@
+{
+  "closure.announced.export": {
+    "defaultMessage": "Exporter vos données",
+    "description": "Link in the notice of the server's closure to the page where the user asks for an archive of their data and downloads it."
+  },
+  "closure.announced.export_until": {
+    "defaultMessage": "Après la fermeture, vous pourrez encore vous connecter et exporter vos données jusqu’au {date}.",
+    "description": "Detail line of the notice of the server's closure: until when the user may sign in and export their data after the closure. {date} is a date in the user's locale and time zone."
+  },
+  "closure.announced.headline": {
+    "defaultMessage": "{instance} fermera le {date}.",
+    "description": "Headline of the notice kept at the top of every screen while the server's closure is announced. {instance} is the server's name; {date} is the closing date in the user's locale and time zone."
+  },
+  "closure.announced.move": {
+    "defaultMessage": "Vous pouvez aussi déplacer votre compte vers un autre serveur avant la fermeture ; vos abonnés sur d’autres serveurs vous y suivront.",
+    "description": "Detail line of the notice of the server's closure: the user can move their account to another server (an ActivityPub Move) before the closure."
+  },
+  "closure.label": {
+    "defaultMessage": "Avis de fermeture du serveur",
+    "description": "Accessible name of the region that holds the notice of the server's closure, in the list of landmarks."
+  },
+  "closure.message_from": {
+    "defaultMessage": "Message des administrateurs :",
+    "description": "Label before the operators' own message in the notice of the server's closure and on the closed screen."
+  },
+  "closure.closed.body": {
+    "defaultMessage": "{instance} a fermé le {date}. Tout le reste est désactivé. Vous pouvez encore vous connecter pour récupérer vos données jusqu’au {until}.",
+    "description": "Text on the screen shown to a signed-in user after the server has closed. {instance} is the server's name; {date} is when it closed and {until} the end of the export period, both in the user's locale and time zone."
+  },
+  "closure.closed.headline": {
+    "defaultMessage": "{instance} a fermé.",
+    "description": "Headline of the notice kept at the top of every screen, for a visitor who is not signed in, after the server has closed. {instance} is the server's name."
+  },
+  "closure.closed.sign_in": {
+    "defaultMessage": "Connectez-vous pour exporter vos données jusqu’au {until}.",
+    "description": "Detail line of the notice for a visitor who is not signed in after the server has closed. {until} is the end of the export period in the user's locale and time zone."
+  },
+  "closure.closed.sign_out": {
+    "defaultMessage": "Se déconnecter",
+    "description": "Button on the screen of a closed server that signs the user out."
+  },
+  "closure.closed.title": {
+    "defaultMessage": "Ce serveur a fermé",
+    "description": "Heading of the screen shown to a signed-in user after the server has closed; also the page name in the browser tab."
+  },
+  "closure.closed.loading": {
+    "defaultMessage": "Chargement de vos exports de données",
+    "description": "Accessible name of the loading indicator on the screen of a closed server while the list of data exports loads."
+  }
+}

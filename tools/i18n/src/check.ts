@@ -17,7 +17,9 @@
 //          parenthesis next to a Han character, corner brackets 「」『』, or kana; in Traditional Chinese, the same ASCII
 //          punctuation, curly quotation marks “”‘’ (use 「」『』), kana, or a character only Simplified Chinese writes;
 //          in Spanish, a question mark without its opening "¿", or ASCII double quotation marks (use «…»); in
-//          Portuguese, ASCII double quotation marks (use “…”)
+//          Portuguese, ASCII double quotation marks (use “…”); in German, ASCII double quotation marks (use „…“); in
+//          French, ASCII double quotation marks (use « … »), ":", ";" or "?" without the narrow no-break space before
+//          it, or « » without the narrow no-break space inside them
 //   error: a variant the glossary (tools/i18n/glossary.json, G21) bans in the locale's text, in any namespace
 //   warn:  untranslated key (falls back to en at runtime)
 //   warn:  translation drops a source argument (sometimes legitimate)
@@ -96,6 +98,40 @@ function copyStyleFindings(locale: string, text: string): string[] {
   if (isTraditionalChinese(locale)) out.push(...traditionalChineseFindings(text));
   if (new Intl.Locale(locale).language === "es") out.push(...spanishFindings(text));
   if (new Intl.Locale(locale).language === "pt") out.push(...portugueseFindings(text));
+  if (new Intl.Locale(locale).language === "de") out.push(...germanFindings(text));
+  if (new Intl.Locale(locale).language === "fr") out.push(...frenchFindings(text));
+  return out;
+}
+
+/** The punctuation rules of German (web-client/16-look-states-and-wording.md G20). */
+function germanFindings(text: string): string[] {
+  if (!text.includes('"')) return [];
+  return [
+    'use "„…“" (and "‚…‘" inside them) as quotation marks in German, not ASCII double quotation marks (web-client/16-look-states-and-wording.md G20)',
+  ];
+}
+
+/** A narrow no-break space (U+202F), which French puts before ":", ";", "?" and inside « ». */
+const NNBSP = "\u202F";
+/** ";" or "?" without a narrow no-break space before it, and ":" followed by a space or the end ("https://" stays). */
+const FR_UNSPACED = new RegExp(`(?:^|[^${NNBSP}])(?:[;?]|:(?=\\s|$))`, "mu");
+const FR_GUILLEMETS = new RegExp(`«(?!${NNBSP})|(?<!${NNBSP})»`, "u");
+
+/** The punctuation rules of French (web-client/16-look-states-and-wording.md G20). */
+function frenchFindings(text: string): string[] {
+  const out: string[] = [];
+  if (text.includes('"'))
+    out.push(
+      'use "« … »" as quotation marks in French, not ASCII double quotation marks (web-client/16-look-states-and-wording.md G20)',
+    );
+  if (FR_UNSPACED.test(text))
+    out.push(
+      'put a narrow no-break space (U+202F) before ":", ";" and "?" in French (web-client/16-look-states-and-wording.md G20)',
+    );
+  if (FR_GUILLEMETS.test(text))
+    out.push(
+      "put a narrow no-break space (U+202F) inside « » in French (web-client/16-look-states-and-wording.md G20)",
+    );
   return out;
 }
 

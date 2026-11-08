@@ -1,0 +1,130 @@
+{
+  "search.description": {
+    "defaultMessage": "Saisissez @utilisateur@serveur ou l’adresse d’un profil, sur ce serveur ou un autre.",
+    "description": "Help text under the search field for a signed-in user, who can find accounts on any server."
+  },
+  "search.description_signed_out": {
+    "defaultMessage": "Saisissez @utilisateur@serveur ou l’adresse d’un profil. Seuls les comptes que ce serveur connaît déjà sont trouvés.",
+    "description": "Help text under the search field while nobody is signed in: the server does not fetch unknown accounts from other servers."
+  },
+  "search.description_known_only": {
+    "defaultMessage": "Saisissez @utilisateur@serveur ou l’adresse d’un profil. Ce serveur ne recherche pas actuellement les comptes d’autres serveurs, donc seuls les comptes qu’il connaît déjà sont trouvés.",
+    "description": "Help text of the account search field while this server does not look up accounts of other servers (federation direction 'Send only' or 'Off', ADR-0006)."
+  },
+  "search.failed": {
+    "defaultMessage": "Impossible de rechercher des comptes : {reason}",
+    "description": "Error under the search field when the search failed for another reason. {reason} is the localized reason."
+  },
+  "search.label": {
+    "defaultMessage": "Identifiant ou URL",
+    "description": "Label of the search field, which takes an account's handle (@username@server) or the address of its profile."
+  },
+  "search.not_found": {
+    "defaultMessage": "Aucun compte trouvé. Vérifiez l’identifiant ou l’adresse.",
+    "description": "Error under the search field when neither this server nor the account's server knows the account."
+  },
+  "search.not_found_signed_out": {
+    "defaultMessage": "Ce serveur ne connaît pas ce compte. Connectez-vous pour le rechercher sur son propre serveur.",
+    "description": "Error under the search field when nobody is signed in and this server does not know the account."
+  },
+  "search.not_found_known_only": {
+    "defaultMessage": "Ce serveur ne connaît pas ce compte et ne recherche pas actuellement les comptes d’autres serveurs.",
+    "description": "Error of the account search when this server does not know the account and does not look up accounts of other servers (federation direction 'Send only' or 'Off', ADR-0006)."
+  },
+  "search.rate_limited": {
+    "defaultMessage": "Trop de recherches. Réessayez dans quelques minutes.",
+    "description": "Error under the search field when the server limits how often the user can look up accounts on other servers."
+  },
+  "search.required": {
+    "defaultMessage": "Saisissez un identifiant ou une URL.",
+    "description": "Error under the search field when it is sent empty."
+  },
+  "search.sign_in": {
+    "defaultMessage": "Connectez-vous pour trouver des comptes sur d’autres serveurs",
+    "description": "Link on the search page while nobody is signed in; it signs in and comes back to the search."
+  },
+  "search.submit": {
+    "defaultMessage": "Rechercher",
+    "description": "Button that sends the search for an account."
+  },
+  "search.title": {
+    "defaultMessage": "Recherche",
+    "description": "Heading and document title of the page that finds an account by its handle or URL."
+  },
+  "search.results": {
+    "defaultMessage": "Comptes",
+    "description": "Heading of the accounts found by name while their count is not known yet."
+  },
+  "search.results.title": {
+    "defaultMessage": "Comptes ({count})",
+    "description": "Heading of the accounts found by name, with their count."
+  },
+  "search.results.count": {
+    "defaultMessage": "{count, plural, =0 {Aucun compte trouvé} one {# compte trouvé} other {# comptes trouvés}}",
+    "description": "Read by screen readers when the accounts found by name change."
+  },
+  "search.results.none": {
+    "defaultMessage": "Aucun compte trouvé. Pour une personne sur un autre serveur, saisissez @utilisateur@hôte.",
+    "description": "Shown when no account matches the typed name."
+  },
+  "search.results.failed": {
+    "defaultMessage": "Impossible de rechercher les comptes : {reason}",
+    "description": "Shown when the search by name fails. {reason} is the error."
+  },
+  "search.tabs": {
+    "defaultMessage": "Objet de la recherche",
+    "description": "Label of the tabs of the search page, on a server with the search of posts: accounts or posts."
+  },
+  "search.tabs.accounts": {
+    "defaultMessage": "Comptes",
+    "description": "Tab of the search page that finds accounts."
+  },
+  "search.tabs.posts": {
+    "defaultMessage": "Publications",
+    "description": "Tab of the search page that finds posts by their words."
+  },
+  "search.posts.label": {
+    "defaultMessage": "Mots à rechercher",
+    "description": "Label of the field that takes the words of the search of posts."
+  },
+  "search.posts.description": {
+    "defaultMessage": "Trouve les publications qui contiennent tous ces mots, des plus récentes aux plus anciennes.",
+    "description": "Help text under the field of the search of posts."
+  },
+  "search.posts.required": {
+    "defaultMessage": "Saisissez les mots à rechercher.",
+    "description": "Error under the field of the search of posts when it is sent empty."
+  },
+  "search.posts.submit": {
+    "defaultMessage": "Rechercher des publications",
+    "description": "Button that sends the search of posts."
+  },
+  "search.posts.results": {
+    "defaultMessage": "Publications",
+    "description": "Heading of the posts that the search found, and the name of their feed."
+  },
+  "search.posts.results.count": {
+    "defaultMessage": "{count, plural, =0 {Aucune publication trouvée} one {# publication trouvée pour l’instant} other {# publications trouvées pour l’instant}}",
+    "description": "Read by screen readers when the search of posts has an answer. More posts may follow."
+  },
+  "search.posts.empty.heading": {
+    "defaultMessage": "Aucune publication trouvée",
+    "description": "Heading of the empty state of the search of posts."
+  },
+  "search.posts.empty.description": {
+    "defaultMessage": "{scope, select, public {La recherche de ce serveur trouve les publications publiques, uniquement celles des comptes qui l’autorisent. Les auteurs peuvent la refuser dans les paramètres de leur profil.} local {La recherche de ce serveur trouve les publications de visibilité « Ce serveur », uniquement celles des comptes qui l’autorisent. Les auteurs peuvent la refuser dans les paramètres de leur profil.} other {La recherche de ce serveur trouve les publications publiques et celles de visibilité « Ce serveur », uniquement celles des comptes qui l’autorisent. Les auteurs peuvent la refuser dans les paramètres de leur profil.}}",
+    "description": "Empty state of the search of posts: which posts can be found on this server and that authors can opt out. {scope} is the visibilities this server's post search covers: public, local, or public_local."
+  },
+  "search.posts.failed.heading": {
+    "defaultMessage": "Impossible de rechercher les publications",
+    "description": "Heading of the error of the search of posts."
+  },
+  "search.posts.rate_limited.heading": {
+    "defaultMessage": "Trop de recherches",
+    "description": "Heading of the error of the search of posts when the server limits how often the user can search."
+  },
+  "search.posts.rate_limited.reason": {
+    "defaultMessage": "La recherche reprendra d’elle-même dès que la limite le permettra.",
+    "description": "What happens after the server limited how often the user can search posts."
+  }
+}

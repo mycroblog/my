@@ -1,0 +1,12 @@
+{
+  "docs.translation.notice": "Diese Seite ist eine maschinelle Übersetzung der englischen Seite, die maßgeblich ist.",
+  "docs.translation.english": "Englische Seite lesen",
+  "docs.translation.legal": "Diese Seite ist eine maschinelle Übersetzung einer Vorlage für einen Rechtstext. Lass den Text, den du veröffentlichst, vor der Verwendung von einer rechtskundigen Person prüfen.",
+  "docs.translation.stale": "Die englische Seite hat sich geändert, seit diese Abschnitte übersetzt wurden:",
+  "docs.translation.untranslated": "Diese Abschnitte sind noch nicht übersetzt und werden auf Englisch angezeigt:",
+  "docs.version.ended": "Die Unterstützung für {{version}} ist beendet.",
+  "docs.version.latest": "Diese Seite in der neuesten Version lesen",
+  "docs.version.label": "Version der Dokumentation",
+  "docs.llms.lead": "Für LLMs und Coding-Agenten:",
+  "docs.llms.page": "diese Seite als Markdown"
+}

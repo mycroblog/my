@@ -1,0 +1,238 @@
+{
+  "account_move.aliases.add.description": {
+    "defaultMessage": "Un identifiant tel que @nom@example.com, ou l’adresse du compte. Vous pouvez avoir jusqu’à {max} alias.",
+    "description": "Help text of the field for the account to add as an alias. {max} is the most aliases a user can have."
+  },
+  "account_move.aliases.add.field": {
+    "defaultMessage": "Compte à migrer",
+    "description": "Label of the field for the account to add as an alias."
+  },
+  "account_move.aliases.add.required": {
+    "defaultMessage": "Saisissez un identifiant ou une adresse.",
+    "description": "Error of the alias field when it is empty."
+  },
+  "account_move.aliases.add.submit": {
+    "defaultMessage": "Ajouter l’alias",
+    "description": "Button that adds an alias."
+  },
+  "account_move.aliases.add.title": {
+    "defaultMessage": "Ajouter un alias",
+    "description": "Button above the list of aliases that opens the form that adds one, and the heading of that form."
+  },
+  "account_move.aliases.add_failed": {
+    "defaultMessage": "Impossible d’ajouter l’alias : {reason}",
+    "description": "Error next to the form that adds an alias. {reason} is the server's explanation."
+  },
+  "account_move.aliases.added": {
+    "defaultMessage": "Alias {name} ajouté.",
+    "description": "Status message after an alias is added. {name} is the alias's handle or address."
+  },
+  "account_move.aliases.description": {
+    "defaultMessage": "Un alias désigne un compte depuis lequel vous migrez. Ajoutez-le ici avant que ce compte ne transfère ses abonnés vers vous. Un alias seul ne change rien.",
+    "description": "Explains what an alias is, below the heading of the aliases page."
+  },
+  "account_move.aliases.empty": {
+    "defaultMessage": "Vous n’avez aucun alias.",
+    "description": "Text of the list of aliases when the user has none."
+  },
+  "account_move.aliases.item.since": {
+    "defaultMessage": "Ajouté le {date}",
+    "description": "Under an alias: when the user added it. {date} is a date in the user's locale and time zone."
+  },
+  "account_move.aliases.limit": {
+    "defaultMessage": "Vous avez {max} alias, le maximum possible. Supprimez-en un pour en ajouter un autre.",
+    "description": "Replaces the form that adds an alias when the user has the most aliases. {max} is that number."
+  },
+  "account_move.aliases.list.title": {
+    "defaultMessage": "Vos alias",
+    "description": "Heading of the section that lists the user's aliases."
+  },
+  "account_move.aliases.move_link": {
+    "defaultMessage": "Migrer votre compte vers un autre compte",
+    "description": "Link from the aliases page to the page that moves the account."
+  },
+  "account_move.aliases.remove": {
+    "defaultMessage": "Supprimer",
+    "description": "Button that removes an alias."
+  },
+  "account_move.aliases.remove_failed": {
+    "defaultMessage": "Impossible de supprimer l’alias : {reason}",
+    "description": "Error under the list of aliases when removing one failed. {reason} is the server's explanation."
+  },
+  "account_move.aliases.remove_of": {
+    "defaultMessage": "Supprimer l’alias {name}",
+    "description": "Accessible name of the button that removes an alias. {name} is the alias's handle or address."
+  },
+  "account_move.aliases.removed": {
+    "defaultMessage": "Alias {name} supprimé.",
+    "description": "Status message after an alias is removed. {name} is the alias's handle or address."
+  },
+  "account_move.aliases.title": {
+    "defaultMessage": "Alias",
+    "description": "Heading and menu entry of the settings page of the account's aliases."
+  },
+  "account_move.cancel.close": {
+    "defaultMessage": "Conserver la migration",
+    "description": "Button in the dialog that closes it without cancelling the move."
+  },
+  "account_move.cancel.confirm": {
+    "defaultMessage": "Annuler la migration",
+    "description": "Button in the dialog that cancels the move."
+  },
+  "account_move.cancel.description": {
+    "defaultMessage": "Ce compte pourra de nouveau publier et suivre, et les autres serveurs en seront informés. Les abonnés déjà migrés restent avec {handle}. Vous ne pourrez pas migrer de nouveau pendant 30 jours après la migration.",
+    "description": "Description of the dialog that cancels the move. {handle} is the new account's handle."
+  },
+  "account_move.cancel.done": {
+    "defaultMessage": "La migration est annulée.",
+    "description": "Status message after the move was cancelled."
+  },
+  "account_move.cancel.failed": {
+    "defaultMessage": "Impossible d’annuler la migration : {reason}",
+    "description": "Error in the dialog that cancels the move. {reason} is the server's explanation."
+  },
+  "account_move.cancel.open": {
+    "defaultMessage": "Annuler la migration…",
+    "description": "Button that opens the dialog that cancels the move of the account."
+  },
+  "account_move.cancel.title": {
+    "defaultMessage": "Annuler la migration ?",
+    "description": "Title of the dialog that asks the user to confirm cancelling the move."
+  },
+  "account_move.closure.move": {
+    "defaultMessage": "Migrer votre compte",
+    "description": "Link in the notice of the server's closure to the page that moves the account."
+  },
+  "account_move.move.confirm.cancel": {
+    "defaultMessage": "Annuler",
+    "description": "Button in the dialog that closes it without moving the account."
+  },
+  "account_move.move.confirm.description": {
+    "defaultMessage": "Saisissez votre mot de passe pour confirmer. Vos abonnés suivront {handle}, et ce compte indiquera qu’il a migré. Vous ne pourrez pas migrer de nouveau pendant 30 jours.",
+    "description": "Description of the dialog that moves the account. {handle} is the new account's handle."
+  },
+  "account_move.move.confirm.description_passkey": {
+    "defaultMessage": "Votre navigateur demandera l’une de vos clés d’accès pour confirmer. Vos abonnés suivront {handle}, et ce compte indiquera qu’il a migré. Vous ne pourrez pas migrer de nouveau pendant 30 jours.",
+    "description": "Description of the dialog that moves the account of a user who has no password. {handle} is the new account's handle."
+  },
+  "account_move.move.confirm.export": {
+    "defaultMessage": "Exporter vos abonnements, blocages, comptes en sourdine et marque-pages en fichiers CSV",
+    "description": "Link in the dialog that moves the account to the page that exports the user's lists as CSV files, to import them into the new account."
+  },
+  "account_move.move.confirm.moves": {
+    "defaultMessage": "Ce qui migre",
+    "description": "Heading in the dialog that moves the account, above what moves to the new account."
+  },
+  "account_move.move.confirm.moves.followers": {
+    "defaultMessage": "Vos abonnés",
+    "description": "Item in the dialog that moves the account: the followers move to the new account."
+  },
+  "account_move.move.confirm.stays": {
+    "defaultMessage": "Ce qui reste ici",
+    "description": "Heading in the dialog that moves the account, above what stays with this account."
+  },
+  "account_move.move.confirm.stays.items": {
+    "defaultMessage": "Vos publications, les comptes que vous suivez, vos blocages, vos comptes en sourdine et vos marque-pages",
+    "description": "Item in the dialog that moves the account: what does not move to the new account."
+  },
+  "account_move.move.confirm.submit": {
+    "defaultMessage": "Migrer le compte",
+    "description": "Button in the dialog that moves the account."
+  },
+  "account_move.move.confirm.title": {
+    "defaultMessage": "Migrer vers {handle} ?",
+    "description": "Title of the dialog that asks the user to confirm moving the account. {handle} is the new account's handle."
+  },
+  "account_move.move.description": {
+    "defaultMessage": "Migrez ce compte vers un autre compte, sur ce serveur ou sur un autre. Vos abonnés suivront le nouveau compte, et ce compte indiquera qu’il a migré.",
+    "description": "Explains what moving the account does, below the heading of the move page."
+  },
+  "account_move.move.done": {
+    "defaultMessage": "Votre compte a migré vers {handle}.",
+    "description": "Status message after the account moved. {handle} is the new account's handle."
+  },
+  "account_move.move.failed": {
+    "defaultMessage": "Impossible de migrer le compte : {reason}",
+    "description": "Error in the dialog that moves the account when it failed. {reason} is the server's explanation."
+  },
+  "account_move.move.form.title": {
+    "defaultMessage": "Choisir le nouveau compte",
+    "description": "Heading of the section with the form that names the account to move to."
+  },
+  "account_move.move.lookup_failed": {
+    "defaultMessage": "Ce compte est introuvable : {reason}",
+    "description": "Error next to the form that names the account to move to. {reason} is the server's explanation."
+  },
+  "account_move.move.password.field": {
+    "defaultMessage": "Mot de passe",
+    "description": "Label of the password field in the dialog that moves the account."
+  },
+  "account_move.move.password.required": {
+    "defaultMessage": "Saisissez votre mot de passe.",
+    "description": "Error of the password field in the dialog that moves the account."
+  },
+  "account_move.move.prerequisite": {
+    "defaultMessage": "Commencez par ajouter ce compte comme alias du nouveau compte, dans les paramètres de ce dernier. L’adresse de ce compte est {url}.",
+    "description": "Tells the user to set this account as an alias of the new account before moving. {url} is this account's address."
+  },
+  "account_move.move.target.description": {
+    "defaultMessage": "Un identifiant tel que @nom@example.com, ou l’adresse du compte.",
+    "description": "Help text of the field for the account to move to."
+  },
+  "account_move.move.target.field": {
+    "defaultMessage": "Nouveau compte",
+    "description": "Label of the field for the account to move to."
+  },
+  "account_move.move.target.required": {
+    "defaultMessage": "Saisissez un identifiant ou une adresse.",
+    "description": "Error of the field for the account to move to when it is empty."
+  },
+  "account_move.move.target.submit": {
+    "defaultMessage": "Continuer",
+    "description": "Button that looks up the account to move to and opens the confirmation."
+  },
+  "account_move.move.title": {
+    "defaultMessage": "Migrer le compte",
+    "description": "Heading and menu entry of the settings page that moves the account to another account."
+  },
+  "account_move.move.wrong_password": {
+    "defaultMessage": "Le mot de passe est incorrect.",
+    "description": "Error in the dialog that moves the account when the password is wrong."
+  },
+  "account_move.moved.description": {
+    "defaultMessage": "Ce compte a migré vers {handle}. Ses abonnés suivent le nouveau compte. Vous pouvez toujours vous connecter, lire, exporter vos données et supprimer le compte, mais vous ne pouvez plus publier, booster, réagir, suivre ni voter.",
+    "description": "Explains the state of an account that has moved. {handle} is the new account's handle."
+  },
+  "account_move.moved.target": {
+    "defaultMessage": "Ouvrir {handle}",
+    "description": "Link from the move page to the new account's profile. {handle} is the new account's handle."
+  },
+  "account_move.moved.title": {
+    "defaultMessage": "Votre compte a migré",
+    "description": "Heading of the section of the move page for an account that has moved."
+  },
+  "account_move.profile.manage": {
+    "defaultMessage": "Gérer la migration",
+    "description": "Link on the profile of the user's own moved account to the page that shows and cancels the move."
+  },
+  "account_move.profile.moved": {
+    "defaultMessage": "{name} a migré vers {target}.",
+    "description": "Note on the profile of an account that moved. {name} is its name; {target} is a link to the new account, with its handle."
+  },
+  "account_move.profile.moved_self": {
+    "defaultMessage": "Vous avez migré vers {target}.",
+    "description": "Note on the profile of the signed-in user's own account after it moved. {target} is a link to the new account, with its handle."
+  },
+  "account_move.move.confirm.description_external": {
+    "defaultMessage": "Vos abonnés suivront {handle}, et ce compte indiquera qu’il a migré. Vous ne pourrez pas migrer de nouveau pendant 30 jours.",
+    "description": "Description of the dialog that moves the account of a user who confirmed by signing in again at a linked service (an external login provider). {handle} is the new account's handle."
+  },
+  "account_move.aliases.count": {
+    "defaultMessage": "{count, plural, one {# alias} other {# alias}}",
+    "description": "Read for the count beside the heading of the list of aliases. {count} is the number of aliases."
+  },
+  "account_move.aliases.empty.description": {
+    "defaultMessage": "Ajoutez le compte depuis lequel vous migrez avant qu’il ne transfère ses abonnés vers vous.",
+    "description": "Text of the empty list of aliases, above the button that adds one."
+  }
+}

@@ -1,0 +1,194 @@
+{
+  "account_status.active.empty": {
+    "defaultMessage": "Keine Maßnahmen gegen dein Konto in Kraft",
+    "description": "Shown when no moderation action is in effect on the user's account."
+  },
+  "account_status.active.empty.description": {
+    "defaultMessage": "Wenn die Moderation eine Maßnahme gegen dein Konto ergreift, erscheint sie hier mit ihrem Grund und dem Zeitpunkt, an dem sie endet.",
+    "description": "Under the heading shown when no moderation action is in effect on the user's account."
+  },
+  "account_status.active.title": {
+    "defaultMessage": "Maßnahmen in Kraft",
+    "description": "Heading of the account status page's region with the moderation actions in effect now."
+  },
+  "account_status.appeal.cancel": {
+    "defaultMessage": "Abbrechen",
+    "description": "Button that closes the appeal dialog without appealing."
+  },
+  "account_status.appeal.characters_left": {
+    "defaultMessage": "{count, plural, one {# Zeichen übrig} other {# Zeichen übrig}}",
+    "description": "Character count of the appeal field. {count} is the number of characters left."
+  },
+  "account_status.appeal.characters_over": {
+    "defaultMessage": "{count, plural, one {# Zeichen zu viel} other {# Zeichen zu viel}}",
+    "description": "Character count of the appeal field when it is over the limit. {count} is the number of characters too many."
+  },
+  "account_status.appeal.closed": {
+    "defaultMessage": "Die Frist für einen Einspruch gegen diese Maßnahme endete am {date}.",
+    "description": "Shown instead of the appeal button when the time to appeal a moderation action has passed. {date} is a formatted date and time."
+  },
+  "account_status.appeal.confirm.description": {
+    "defaultMessage": "Die Moderation prüft „{kind}“ vom {date} erneut und teilt dir ihre Entscheidung in einer Benachrichtigung mit. Du kannst gegen eine Maßnahme nur einmal Einspruch einlegen und den Einspruch nach dem Absenden nicht mehr ändern.",
+    "description": "Description of the dialog that appeals a moderation action. {kind} is what the action does, as the server names it; {date} is when it was taken, a formatted date and time."
+  },
+  "account_status.appeal.confirm.title": {
+    "defaultMessage": "Einspruch gegen diese Maßnahme einlegen?",
+    "description": "Question that titles the dialog that appeals a moderation action."
+  },
+  "account_status.appeal.decided_at": {
+    "defaultMessage": "Entschieden",
+    "description": "Term of the user's appeal of a moderation action: when the moderators decided it."
+  },
+  "account_status.appeal.decision_reason": {
+    "defaultMessage": "Begründung der Entscheidung",
+    "description": "Term of the user's appeal of a moderation action: the moderators' explanation of their decision."
+  },
+  "account_status.appeal.failed": {
+    "defaultMessage": "Der Einspruch konnte nicht gesendet werden: {reason}",
+    "description": "In the appeal dialog when sending the appeal failed. {reason} is why, from the server."
+  },
+  "account_status.appeal.open": {
+    "defaultMessage": "Einspruch einlegen",
+    "description": "Button that opens the appeal of a moderation action."
+  },
+  "account_status.appeal.open_of": {
+    "defaultMessage": "Einspruch gegen die Maßnahme vom {date} einlegen",
+    "description": "Accessible name of the button that opens the appeal of a moderation action. {date} is when the action was taken, a formatted date and time."
+  },
+  "account_status.appeal.send": {
+    "defaultMessage": "Einspruch senden",
+    "description": "Button in the appeal dialog that sends the appeal."
+  },
+  "account_status.appeal.sent": {
+    "defaultMessage": "Du hast Einspruch gegen „{kind}“ eingelegt. Die Moderation teilt dir ihre Entscheidung in einer Benachrichtigung mit.",
+    "description": "Status shown after the user appealed a moderation action. {kind} is what the action does, as the server names it."
+  },
+  "account_status.appeal.state.overturned": {
+    "defaultMessage": "Maßnahme aufgehoben",
+    "description": "State of an appeal after which the moderators lifted the action."
+  },
+  "account_status.appeal.state.pending": {
+    "defaultMessage": "In Prüfung",
+    "description": "State of an appeal that awaits the moderators' decision."
+  },
+  "account_status.appeal.state.upheld": {
+    "defaultMessage": "Maßnahme bestätigt",
+    "description": "State of an appeal after which the moderators kept the action."
+  },
+  "account_status.appeal.submitted_at": {
+    "defaultMessage": "Gesendet",
+    "description": "Term of the user's appeal of a moderation action: when the user sent it."
+  },
+  "account_status.appeal.text": {
+    "defaultMessage": "Dein Einspruch",
+    "description": "Term of the user's appeal of a moderation action: what the user wrote."
+  },
+  "account_status.appeal.text.description": {
+    "defaultMessage": "Schreibe, was die Moderation wissen sollte. Sie sieht, was du hier schreibst.",
+    "description": "Help text under the field of an appeal."
+  },
+  "account_status.appeal.text.label": {
+    "defaultMessage": "Warum sollte die Moderation die Maßnahme überdenken?",
+    "description": "Label of the field where the user writes why the moderators should reconsider an action."
+  },
+  "account_status.appeal.text.required": {
+    "defaultMessage": "Gib an, warum die Moderation die Maßnahme überdenken sollte",
+    "description": "Error of the appeal field when it is empty or has white space only."
+  },
+  "account_status.appeal.text.too_long": {
+    "defaultMessage": "Verwende höchstens {max, number} Zeichen",
+    "description": "Error of the appeal field when it has too many characters. {max} is the limit."
+  },
+  "account_status.appeal.title": {
+    "defaultMessage": "Einspruch",
+    "description": "Heading of the appeal part of a moderation action on the user's account."
+  },
+  "account_status.appeal.unavailable": {
+    "defaultMessage": "Gegen diese Maßnahme ist kein Einspruch möglich.",
+    "description": "Shown instead of the appeal button when a moderation action cannot be appealed."
+  },
+  "account_status.appeal.until": {
+    "defaultMessage": "{days, plural, one {Du kannst einmal Einspruch einlegen, innerhalb von # Tag (bis {date}).} other {Du kannst einmal Einspruch einlegen, innerhalb von # Tagen (bis {date}).}}",
+    "description": "Above the button that appeals a moderation action. {days} is the time left to appeal, rounded up to whole days; {date} is the deadline, a formatted date and time. The server's status page says the same without the date."
+  },
+  "account_status.ends_in": {
+    "defaultMessage": "{days, plural, one {Endet in # Tag} other {Endet in # Tagen}}",
+    "description": "Under a moderation action in effect on the user's account: when it ends. {days} is the time left, rounded up to whole days. The server's status page says the same."
+  },
+  "account_status.until_lifted": {
+    "defaultMessage": "Gilt, bis die Moderation sie aufhebt",
+    "description": "Under a moderation action in effect on the user's account that has no end date. The server's status page says the same."
+  },
+  "account_status.no_end": {
+    "defaultMessage": "Diese Maßnahme hat kein Enddatum",
+    "description": "Under a moderation action in effect on the user's account whose kind does not last for a time, such as a warning: says that the missing end date is not an omission."
+  },
+  "account_status.expires_at": {
+    "defaultMessage": "Endet",
+    "description": "Term of a moderation action on the user's account: when it ends."
+  },
+  "account_status.expires_at.none": {
+    "defaultMessage": "Bei Aufhebung",
+    "description": "Value of the end of a moderation action that lasts until a moderator lifts it."
+  },
+  "account_status.issued_at": {
+    "defaultMessage": "Ergriffen",
+    "description": "Term of a moderation action on the user's account: when it was taken."
+  },
+  "account_status.lifted_at": {
+    "defaultMessage": "Aufgehoben",
+    "description": "Term of a moderation action on the user's account: when a moderator lifted it."
+  },
+  "account_status.more": {
+    "defaultMessage": "Mehr anzeigen",
+    "description": "Button under a list of moderation actions that loads more of them."
+  },
+  "account_status.past.empty": {
+    "defaultMessage": "Keine vergangenen Maßnahmen",
+    "description": "Shown when no moderation action on the user's account has ended."
+  },
+  "account_status.past.title": {
+    "defaultMessage": "Vergangene Maßnahmen",
+    "description": "Heading of the account status page's region with the moderation actions that ended (expired or lifted)."
+  },
+  "account_status.posts.loading": {
+    "defaultMessage": "Beitrag wird geladen",
+    "description": "Accessible label of the spinner while a post that a moderation action acted on loads."
+  },
+  "account_status.posts.missing": {
+    "defaultMessage": "Dieser Beitrag ist gelöscht oder kann nicht angezeigt werden.",
+    "description": "In place of a post that a moderation action acted on and that cannot be shown, such as a deleted one."
+  },
+  "account_status.posts.title": {
+    "defaultMessage": "Beiträge",
+    "description": "Heading of the posts that a moderation action on posts acted on."
+  },
+  "account_status.public_reason": {
+    "defaultMessage": "Erklärung der Moderation",
+    "description": "Term of a moderation action on the user's account: the moderators' explanation to the user."
+  },
+  "account_status.public_reason.none": {
+    "defaultMessage": "Keine angegeben",
+    "description": "Value of the moderators' explanation of an action when they gave none."
+  },
+  "account_status.reason_category": {
+    "defaultMessage": "Grund",
+    "description": "Term of a moderation action on the user's account: the kind of reason the moderators gave."
+  },
+  "account_status.state.active": {
+    "defaultMessage": "In Kraft",
+    "description": "State of a moderation action that is in effect now."
+  },
+  "account_status.state.expired": {
+    "defaultMessage": "Beendet",
+    "description": "State of a moderation action that ended at its end time."
+  },
+  "account_status.state.lifted": {
+    "defaultMessage": "Aufgehoben",
+    "description": "State of a moderation action that a moderator lifted."
+  },
+  "account_status.title": {
+    "defaultMessage": "Kontostatus",
+    "description": "Heading and document title of the account status page, and its entry in the list of settings pages."
+  }
+}

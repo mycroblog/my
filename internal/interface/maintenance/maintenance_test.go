@@ -168,7 +168,7 @@ func TestPageLocales(t *testing.T) {
 	for _, tt := range []struct{ lang, root, title, until string }{
 		{"en", `<html lang="en" dir="ltr">`, "Under maintenance", "Expected to end"},
 		{"ja", `<html lang="ja" dir="ltr">`, "メンテナンス中", "終了予定"},
-		{"fr", `<html lang="en" dir="ltr">`, "Under maintenance", "Expected to end"},
+		{"it", `<html lang="en" dir="ltr">`, "Under maintenance", "Expected to end"},
 	} {
 		w := serve(h, http.MethodGet, "/", map[string]string{"Accept-Language": tt.lang})
 		body := w.Body.String()

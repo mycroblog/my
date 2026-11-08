@@ -1,0 +1,18 @@
+{
+  "admin.publication.save": {
+    "defaultMessage": "Veröffentlichung speichern",
+    "description": "Button that saves the publication settings on the costs screen."
+  },
+  "admin.publication.save_failed": {
+    "defaultMessage": "Die Veröffentlichung konnte nicht gespeichert werden: {reason}",
+    "description": "Shown beside the save button when the publication settings could not be saved; reason is the server's localized reason."
+  },
+  "admin.publication.saved": {
+    "defaultMessage": "Veröffentlichung gespeichert.",
+    "description": "Shown beside the save button after the publication settings are saved."
+  },
+  "admin.publication.unchanged": {
+    "defaultMessage": "Nichts geändert.",
+    "description": "Shown beside the save button of the publication settings when nothing was changed."
+  }
+}

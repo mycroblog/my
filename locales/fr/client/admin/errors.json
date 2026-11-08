@@ -1,0 +1,358 @@
+{
+  "admin.errors.action_failed": {
+    "defaultMessage": "Impossible de modifier l’erreur : {reason}",
+    "description": "Toast when resolving, muting or unmuting an error group failed. {reason} is why."
+  },
+  "admin.errors.actor.cli": {
+    "defaultMessage": "La ligne de commande",
+    "description": "Who changed an error group's state: an operator with the server's command line tool."
+  },
+  "admin.errors.actor.system": {
+    "defaultMessage": "Le serveur",
+    "description": "Who changed an error group's state: the server itself, when a resolved group happened again."
+  },
+  "admin.errors.actor.user": {
+    "defaultMessage": "Un administrateur",
+    "description": "Who changed an error group's state: an administrator in the app."
+  },
+  "admin.errors.back": {
+    "defaultMessage": "Toutes les erreurs",
+    "description": "Link from the page of one error group back to the list."
+  },
+  "admin.errors.column.counts": {
+    "defaultMessage": "Occurrences",
+    "description": "Header of the column of the error groups table with how many times each happened in the last 24 hours and 7 days."
+  },
+  "admin.errors.column.error": {
+    "defaultMessage": "Erreur",
+    "description": "Header of the column of the error groups table that names the error (its type, where it happened, and its message) and links to its page."
+  },
+  "admin.errors.copied": {
+    "defaultMessage": "Copié",
+    "description": "Toast after a request ID or a trace ID was copied to the clipboard."
+  },
+  "admin.errors.copy": {
+    "defaultMessage": "Copier",
+    "description": "Button that copies a request ID or a trace ID to the clipboard."
+  },
+  "admin.errors.copy_failed": {
+    "defaultMessage": "Impossible de copier. Sélectionnez le texte et copiez-le.",
+    "description": "Toast when copying a request ID or a trace ID to the clipboard failed."
+  },
+  "admin.errors.copy_request_id": {
+    "defaultMessage": "Copier l’identifiant de requête",
+    "description": "Accessible name of the button that copies the request ID of an error's latest occurrence."
+  },
+  "admin.errors.copy_trace_id": {
+    "defaultMessage": "Copier l’identifiant de trace",
+    "description": "Accessible name of the button that copies the trace ID of an error's latest occurrence."
+  },
+  "admin.errors.count": {
+    "defaultMessage": "{count, plural, one {# fois} other {# fois}}",
+    "description": "How many times an error happened. {count} is the number of occurrences."
+  },
+  "admin.errors.count_24h": {
+    "defaultMessage": "Dernières 24 heures",
+    "description": "Term in an error group's details: how many times it happened in the last 24 hours."
+  },
+  "admin.errors.count_24h.value": {
+    "defaultMessage": "{count, plural, one {# fois en 24 heures} other {# fois en 24 heures}}",
+    "description": "Cell of the error groups table: how many times the group happened in the last 24 hours. {count} is the number."
+  },
+  "admin.errors.count_7d": {
+    "defaultMessage": "7 derniers jours",
+    "description": "Term in an error group's details: how many times it happened in the last 7 days."
+  },
+  "admin.errors.count_7d.value": {
+    "defaultMessage": "{count, plural, one {# fois en 7 jours} other {# fois en 7 jours}}",
+    "description": "Cell of the error groups table: how many times the group happened in the last 7 days. {count} is the number."
+  },
+  "admin.errors.description": {
+    "defaultMessage": "Chaque groupe rassemble les erreurs d’un même type. Marquez un groupe comme résolu une fois l’erreur corrigée : il se rouvre si elle se produit sur une autre version. Mettez un groupe en sourdine pour arrêter ses notifications.",
+    "description": "Hint above the list of error groups: what a group is, and what resolving and muting do."
+  },
+  "admin.errors.detail_title": {
+    "defaultMessage": "Erreur",
+    "description": "Heading of the page of one error group."
+  },
+  "admin.errors.details": {
+    "defaultMessage": "À propos de cette erreur",
+    "description": "Heading of the section of an error group's page with what the group is."
+  },
+  "admin.errors.empty": {
+    "defaultMessage": "Aucune erreur ouverte",
+    "description": "Heading of the list of error groups when no group is open, with no other filter."
+  },
+  "admin.errors.empty.description": {
+    "defaultMessage": "Les erreurs signalées par le serveur ou le client web apparaissent ici.",
+    "description": "Description of an empty list of error groups."
+  },
+  "admin.errors.empty.filtered": {
+    "defaultMessage": "Aucune erreur ne correspond à ces filtres",
+    "description": "Heading of the list of error groups when no group matches the selected filters."
+  },
+  "admin.errors.event.muted": {
+    "defaultMessage": "Mise en sourdine",
+    "description": "Change in an error group's history: it was muted."
+  },
+  "admin.errors.event.regressed": {
+    "defaultMessage": "Survenue de nouveau",
+    "description": "Change in an error group's history: a resolved group happened again on another version."
+  },
+  "admin.errors.event.resolved": {
+    "defaultMessage": "Résolue",
+    "description": "Change in an error group's history: it was resolved."
+  },
+  "admin.errors.event.unmuted": {
+    "defaultMessage": "Sourdine retirée",
+    "description": "Change in an error group's history: it was unmuted."
+  },
+  "admin.errors.event.with_version": {
+    "defaultMessage": "{change} (version {version})",
+    "description": "Change in an error group's history with the version it names. {change} is the change, such as admin.errors.event.resolved; {version} is the version of the server."
+  },
+  "admin.errors.filter.all_sources": {
+    "defaultMessage": "Serveur et client web",
+    "description": "Option of the source filter of the error groups: errors of both sources."
+  },
+  "admin.errors.filter.all_states": {
+    "defaultMessage": "Tous les états",
+    "description": "Option of the state filter of the error groups: groups in every state."
+  },
+  "admin.errors.filter.source": {
+    "defaultMessage": "Source",
+    "description": "Accessible name of the menu that filters the error groups by what reported them."
+  },
+  "admin.errors.filter.state": {
+    "defaultMessage": "État",
+    "description": "Accessible name of the menu that filters the error groups by state."
+  },
+  "admin.errors.fingerprint": {
+    "defaultMessage": "Empreinte",
+    "description": "Term in an error group's details: the fingerprint that groups the errors, also found in the logs."
+  },
+  "admin.errors.first_seen": {
+    "defaultMessage": "Première occurrence",
+    "description": "Term and column header: when, and on which version, the error group happened first."
+  },
+  "admin.errors.history": {
+    "defaultMessage": "Historique",
+    "description": "Heading of the section of an error group's page with the changes of its state, and the caption of its table."
+  },
+  "admin.errors.history.at": {
+    "defaultMessage": "Quand",
+    "description": "Column header of an error group's history: when it changed."
+  },
+  "admin.errors.history.by": {
+    "defaultMessage": "Par",
+    "description": "Column header of an error group's history: who made the change."
+  },
+  "admin.errors.history.change": {
+    "defaultMessage": "Changement",
+    "description": "Column header of an error group's history: what changed."
+  },
+  "admin.errors.history.empty": {
+    "defaultMessage": "L’état n’a pas changé",
+    "description": "Heading of the history of an error group whose state never changed."
+  },
+  "admin.errors.hourly": {
+    "defaultMessage": "Occurrences par heure",
+    "description": "Heading of the section of an error group's page with its occurrences of each hour, and the caption of its table."
+  },
+  "admin.errors.hourly.all": {
+    "defaultMessage": "Toutes les heures avec des occurrences",
+    "description": "Heading of the table of every hour in the last 90 days in which an error group occurred, under the chart of the last hours."
+  },
+  "admin.errors.hourly.chart": {
+    "defaultMessage": "Occurrences par heure, {hours, number} dernières heures",
+    "description": "Title of the bar chart of an error group's occurrences in each of the last hours."
+  },
+  "admin.errors.hourly.chart.none": {
+    "defaultMessage": "Aucune occurrence au cours des {hours, number} dernières heures.",
+    "description": "Summary under the chart of an error group's occurrences per hour when none happened."
+  },
+  "admin.errors.hourly.chart.summary": {
+    "defaultMessage": "{total, plural, one {# occurrence} other {# occurrences}} au cours des {hours, number} dernières heures, {peak, number} au maximum en une heure ({peakAt}) ; {latest, number} durant l’heure en cours.",
+    "description": "Summary under the chart of an error group's occurrences per hour: the total, the busiest hour, and the current hour. peakAt is a formatted date and hour."
+  },
+  "admin.errors.hourly.count": {
+    "defaultMessage": "Occurrences",
+    "description": "Column header of the hourly counts: how many times the error happened in the hour."
+  },
+  "admin.errors.hourly.description": {
+    "defaultMessage": "Les heures qui ont compté au moins une occurrence au cours des 90 derniers jours, des plus récentes aux plus anciennes, un jour par page. Les heures sont dans votre fuseau horaire.",
+    "description": "Hint above the hourly counts of an error group."
+  },
+  "admin.errors.hourly.empty": {
+    "defaultMessage": "Aucune occurrence au cours des 90 derniers jours",
+    "description": "Heading of the hourly counts of an error group that did not happen in the last 90 days."
+  },
+  "admin.errors.hourly.hour": {
+    "defaultMessage": "Heure",
+    "description": "Column header of the hourly counts: the start of the hour."
+  },
+  "admin.errors.hourly.version": {
+    "defaultMessage": "Dernière version",
+    "description": "Column header of the hourly counts: the version of the server of the last occurrence of the hour."
+  },
+  "admin.errors.kind": {
+    "defaultMessage": "Genre",
+    "description": "Term in an error group's details: whether the errors are crashes or errors."
+  },
+  "admin.errors.kind.error": {
+    "defaultMessage": "Erreur",
+    "description": "Kind of an error group: an error that was returned or caught."
+  },
+  "admin.errors.kind.panic": {
+    "defaultMessage": "Plantage",
+    "description": "Kind of an error group: a panic of the server or an uncaught error of the web client."
+  },
+  "admin.errors.last_seen": {
+    "defaultMessage": "Dernière occurrence",
+    "description": "Term and column header: when, and on which version, the error group happened last."
+  },
+  "admin.errors.list": {
+    "defaultMessage": "Groupes d’erreurs",
+    "description": "Caption of the table of error groups (visually hidden)."
+  },
+  "admin.errors.message": {
+    "defaultMessage": "Message",
+    "description": "Term in an error group's details and its latest occurrence: the error's message, with personal data removed."
+  },
+  "admin.errors.mute": {
+    "defaultMessage": "Mettre en sourdine",
+    "description": "Button that mutes an error group."
+  },
+  "admin.errors.mute.description": {
+    "defaultMessage": "Elle reste comptabilisée, mais n’envoie ni notification ni événement webhook tant que la sourdine n’est pas retirée.",
+    "description": "Hint under the button that mutes an error group: what muting does."
+  },
+  "admin.errors.muted": {
+    "defaultMessage": "L’erreur est en sourdine.",
+    "description": "Status message after an administrator muted an error group."
+  },
+  "admin.errors.resolve": {
+    "defaultMessage": "Marquer comme résolue",
+    "description": "Button that marks an error group fixed."
+  },
+  "admin.errors.resolve.description": {
+    "defaultMessage": "Si elle se reproduit sur une autre version, elle se rouvre et notifie de nouveau.",
+    "description": "Hint under the button that resolves an error group: what happens if it comes back."
+  },
+  "admin.errors.resolved": {
+    "defaultMessage": "L’erreur est résolue.",
+    "description": "Status message after an administrator resolved an error group."
+  },
+  "admin.errors.resolved_version": {
+    "defaultMessage": "Résolue sur la version",
+    "description": "Term in a resolved error group's state: the version of the server that the group was resolved with."
+  },
+  "admin.errors.sample": {
+    "defaultMessage": "Dernière occurrence",
+    "description": "Heading of the section of an error group's page with its latest occurrence."
+  },
+  "admin.errors.sample.description": {
+    "defaultMessage": "Les données personnelles sont supprimées. Recherchez l’identifiant de requête dans les journaux pour retrouver ce qui s’est passé autour.",
+    "description": "Hint of the latest occurrence of an error group: the text is scrubbed, and the request ID finds it in the logs."
+  },
+  "admin.errors.sample.none": {
+    "defaultMessage": "Aucune occurrence n’est conservée pour ce groupe.",
+    "description": "Text of the latest occurrence section when the server kept none."
+  },
+  "admin.errors.sample.none_id": {
+    "defaultMessage": "Aucun",
+    "description": "Value of the request ID or the trace ID of an occurrence that had none."
+  },
+  "admin.errors.sample.occurred_at": {
+    "defaultMessage": "Quand",
+    "description": "Term in the latest occurrence of an error group: when it happened."
+  },
+  "admin.errors.sample.request_id": {
+    "defaultMessage": "Identifiant de requête",
+    "description": "Term in the latest occurrence of an error group: the request ID, to search the logs for."
+  },
+  "admin.errors.sample.role": {
+    "defaultMessage": "Rôle du processus",
+    "description": "Term in the latest occurrence of an error group: the role of the server process that reported it (all, web, worker, or stream)."
+  },
+  "admin.errors.sample.stack": {
+    "defaultMessage": "Pile d’appels",
+    "description": "Term in the latest occurrence of an error group: its stack trace."
+  },
+  "admin.errors.sample.trace_id": {
+    "defaultMessage": "Identifiant de trace",
+    "description": "Term in the latest occurrence of an error group: the trace ID, to find the trace."
+  },
+  "admin.errors.sample.type": {
+    "defaultMessage": "Types",
+    "description": "Term in the latest occurrence of an error group: the chain of the types of the error, outermost first."
+  },
+  "admin.errors.sample.version": {
+    "defaultMessage": "Version",
+    "description": "Term in the latest occurrence of an error group: the version of the server."
+  },
+  "admin.errors.source": {
+    "defaultMessage": "Source",
+    "description": "Term and column header: what reported the errors of a group, the server or the web client."
+  },
+  "admin.errors.source.server": {
+    "defaultMessage": "Serveur",
+    "description": "Source of an error group: the server reported the errors."
+  },
+  "admin.errors.source.web": {
+    "defaultMessage": "Client web",
+    "description": "Source of an error group: the web client in people's browsers reported the errors."
+  },
+  "admin.errors.state": {
+    "defaultMessage": "État",
+    "description": "Term and column header: the state of an error group (open, resolved, or muted); also the heading of the state section of a group's page."
+  },
+  "admin.errors.state.muted": {
+    "defaultMessage": "En sourdine",
+    "description": "State of an error group: it notifies nobody until it is unmuted; also an option of the state filter."
+  },
+  "admin.errors.state.open": {
+    "defaultMessage": "Ouverte",
+    "description": "State of an error group: new, unmuted, or happened again after it was resolved; also an option of the state filter."
+  },
+  "admin.errors.state.resolved": {
+    "defaultMessage": "Résolue",
+    "description": "State of an error group: an administrator marked it fixed; also an option of the state filter."
+  },
+  "admin.errors.state_since": {
+    "defaultMessage": "Depuis",
+    "description": "Term in an error group's state: when the group entered its state."
+  },
+  "admin.errors.summary": {
+    "defaultMessage": "Les erreurs signalées par le serveur et le client web, regroupées, avec leur résolution et leur mise en sourdine.",
+    "description": "Description of the errors screen in the administration menu of the settings."
+  },
+  "admin.errors.title": {
+    "defaultMessage": "Erreurs",
+    "description": "Heading of the admin screen of the error groups that the server and the web client report, and its link in the administration menu."
+  },
+  "admin.errors.type": {
+    "defaultMessage": "Type",
+    "description": "Term in an error group's details: the type of the error (a Go type or the name of a JavaScript error)."
+  },
+  "admin.errors.unmute": {
+    "defaultMessage": "Retirer la sourdine",
+    "description": "Button that unmutes a muted error group."
+  },
+  "admin.errors.unmute.description": {
+    "defaultMessage": "Le groupe se rouvre et notifie les nouvelles occurrences.",
+    "description": "Hint under the button that unmutes an error group."
+  },
+  "admin.errors.unmuted": {
+    "defaultMessage": "La sourdine de l’erreur est retirée.",
+    "description": "Status message after an administrator unmuted an error group."
+  },
+  "admin.errors.version": {
+    "defaultMessage": "Version {version}",
+    "description": "The version of the server that an error happened on. {version} is the version, such as 0.3.1."
+  },
+  "admin.errors.where": {
+    "defaultMessage": "Où",
+    "description": "Term in an error group's details: where the errors happened (an HTTP route, a job type, a background task, or a page of the web client)."
+  }
+}

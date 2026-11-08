@@ -1,0 +1,54 @@
+{
+  "admin.appeals.empty.decided": {
+    "defaultMessage": "Noch keine Einsprüche geprüft",
+    "description": "Heading of the appeals screen's reviewed tab when it is empty."
+  },
+  "admin.appeals.empty.pending": {
+    "defaultMessage": "Keine Einsprüche warten auf Prüfung",
+    "description": "Heading of the appeals screen's pending tab when it is empty."
+  },
+  "admin.appeals.empty.pending.description": {
+    "defaultMessage": "Einsprüche, die Personen gegen Maßnahmen gegen ihr Konto einlegen, erscheinen hier.",
+    "description": "Text under the heading of the empty pending tab of the appeals screen."
+  },
+  "admin.appeals.filter.decided": {
+    "defaultMessage": "Geprüft",
+    "description": "Tab of the appeals that were upheld or overturned."
+  },
+  "admin.appeals.filter.label": {
+    "defaultMessage": "Einsprüche nach Status",
+    "description": "Accessible name of the tabs of the appeals admin screen."
+  },
+  "admin.appeals.filter.pending": {
+    "defaultMessage": "Wartet auf Prüfung",
+    "description": "Tab of the appeals that await a decision."
+  },
+  "admin.appeals.of": {
+    "defaultMessage": "Einspruch gegen {kind}",
+    "description": "Heading of an appeal in the list, a link to its page. {kind} is the kind of the moderation action, such as Suspend."
+  },
+  "admin.appeals.state.overturned": {
+    "defaultMessage": "Aufgehoben",
+    "description": "State of an appeal whose action the moderators lifted."
+  },
+  "admin.appeals.state.pending": {
+    "defaultMessage": "Wartet auf Prüfung",
+    "description": "State of an appeal that awaits a decision."
+  },
+  "admin.appeals.state.upheld": {
+    "defaultMessage": "Bestätigt",
+    "description": "State of an appeal whose action the moderators kept."
+  },
+  "admin.appeals.summary": {
+    "defaultMessage": "Einsprüche gegen Moderationsmaßnahmen prüfen und bestätigen oder aufheben.",
+    "description": "Description of the appeals screen in the admin menu."
+  },
+  "admin.appeals.title": {
+    "defaultMessage": "Einsprüche",
+    "description": "Heading of the admin screen of the appeals of moderation actions, and its link in the admin menu."
+  },
+  "admin.appeals.column.appeal": {
+    "defaultMessage": "Einspruch",
+    "description": "Header of the column of the appeals table that names the appeal and links to it."
+  }
+}

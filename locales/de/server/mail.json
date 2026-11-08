@@ -1,0 +1,426 @@
+{
+  "mail.action.open_notifications": {
+    "defaultMessage": "Benachrichtigungen öffnen",
+    "description": "Label of the link in an email that opens the notifications of the web client."
+  },
+  "mail.action.set_new_password": {
+    "defaultMessage": "Neues Passwort festlegen",
+    "description": "Label of the link in an email that sets a new password."
+  },
+  "mail.admin_account_moved.body": {
+    "defaultMessage": "Ein Konto, das die Moderatoren von {instance} einschränken, ist auf ein anderes Konto umgezogen. Das Konto, auf das es umgezogen ist, erhält die Einschränkung nicht.",
+    "description": "Paragraph of the email to a moderator about an account with a limit that moved to another account. It never names the accounts. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.admin_account_moved.subject": {
+    "defaultMessage": "Ein auf {instance} eingeschränktes Konto ist auf ein anderes Konto umgezogen",
+    "description": "Subject of the email to a moderator who chose to get moderator notifications by email: an account that the moderators limit moved to another account. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.admin_appeal.body": {
+    "defaultMessage": "Ein Nutzer von {instance} hat gegen eine Moderationsmaßnahme Einspruch eingelegt, und der Einspruch wartet auf die Moderatoren.",
+    "description": "Paragraph of the email to a moderator about a new appeal. It never names the user or the action. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.admin_appeal.subject": {
+    "defaultMessage": "Ein neuer Einspruch wartet auf die Moderatoren von {instance}",
+    "description": "Subject of the email to a moderator who chose to get moderator notifications by email: a user appealed a moderation action on their account. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.admin_custom_emoji_request.body": {
+    "defaultMessage": "Ein Nutzer von {instance} hat ein eigenes Emoji oder ein neues Bild dafür angefragt, und die Anfrage wartet auf Prüfung.",
+    "description": "Paragraph of the email to an administrator about a new custom emoji request. It never names the user or the emoji. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.admin_custom_emoji_request.subject": {
+    "defaultMessage": "Eine Anfrage für ein eigenes Emoji wartet auf Prüfung auf {instance}",
+    "description": "Subject of the email to an administrator who chose to get moderator notifications by email: a user requested a custom emoji or a new image of one. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.admin_report.body": {
+    "defaultMessage": "Eine neue Meldung wartet auf die Moderatoren von {instance}.",
+    "description": "Paragraph of the email to a moderator about a new report. It never names the report or the accounts. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.admin_report.subject": {
+    "defaultMessage": "Eine neue Meldung wartet auf die Moderatoren von {instance}",
+    "description": "Subject of the email to a moderator who chose to get moderator notifications by email: someone reported an account that had no open report. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.admin_service_closure_due.body": {
+    "defaultMessage": "Das Schließungsdatum von {instance} ist erreicht. Der Server schließt nicht von selbst: Schließe ihn in der Administration oder mit my admin closure close.",
+    "description": "Paragraph of the email to an administrator: the closing date of the announced closure has passed, and an administrator closes the server. {instance} is the server's display name, or its domain name when it has none. Keep the command my admin closure close as it is."
+  },
+  "mail.admin_service_closure_due.subject": {
+    "defaultMessage": "Das Schließungsdatum von {instance} ist erreicht",
+    "description": "Subject of the email to an administrator who chose to get moderator notifications by email: the closing date of the announced closure of the server has passed. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.admin_error_group.body": {
+    "defaultMessage": "Der Server oder der Webclient von {instance} hat einen neuen Fehler gemeldet, oder ein als behoben markierter Fehler ist erneut aufgetreten. Sieh dir die Fehler in der Administration an.",
+    "description": "Paragraph of the email to an administrator who manages the errors. It never names the error or a user. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.admin_error_group.subject": {
+    "defaultMessage": "Auf {instance} wurden Fehler gemeldet",
+    "description": "Subject of the email to an administrator who chose to get moderator notifications by email: a new error, or a resolved error that happened again. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.admin_sign_up.body": {
+    "defaultMessage": "Ein neuer Nutzer hat sich auf {instance} registriert und wartet auf Genehmigung.",
+    "description": "Paragraph of the email to a moderator about a sign-up that awaits approval. It never names the user. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.admin_sign_up.subject": {
+    "defaultMessage": "Eine neue Registrierung wartet auf Genehmigung auf {instance}",
+    "description": "Subject of the email to a moderator who chose to get moderator notifications by email: a new user signed up and waits for a moderator to approve the registration. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.admin_webhook_disabled.body": {
+    "defaultMessage": "Der Server {instance} hat einen seiner Webhooks ausgeschaltet: Sein Endpunkt schlug wiederholt fehl oder antwortete, dass es ihn nicht mehr gibt.",
+    "description": "First paragraph of the email to an administrator about a webhook endpoint that the server turned off. It never names the endpoint or its URL. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.admin_webhook_disabled.detail": {
+    "defaultMessage": "Öffne deine Benachrichtigungen, um zu sehen, welcher es ist, und schalte ihn wieder ein, sobald der Endpunkt funktioniert.",
+    "description": "Second paragraph of the email to an administrator about a webhook endpoint that the server turned off, before the link to the notifications."
+  },
+  "mail.admin_webhook_disabled.subject": {
+    "defaultMessage": "Ein Webhook von {instance} wurde ausgeschaltet",
+    "description": "Subject of the email to an administrator who chose to get moderator notifications by email: the server turned off a webhook endpoint that kept failing or answered that it is gone. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.password_changed.body": {
+    "defaultMessage": "Das Passwort deines Kontos auf {instance} wurde geändert, und deine anderen Sitzungen und Apps wurden abgemeldet.",
+    "description": "First paragraph of the email that tells a user their password was changed. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.password_changed.detail": {
+    "defaultMessage": "Wenn du es nicht geändert hast, kennt jemand anderes möglicherweise dein Passwort. Lege sofort ein neues fest.",
+    "description": "Second paragraph of the email that tells a user their password was changed, before the link that asks for a password reset link."
+  },
+  "mail.password_changed.subject": {
+    "defaultMessage": "Dein Passwort für {instance} wurde geändert",
+    "description": "Subject of the email that tells a user their password was changed. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.password_removed.body": {
+    "defaultMessage": "Das Passwort deines Kontos auf {instance} wurde entfernt, und deine anderen Sitzungen und Apps wurden abgemeldet. Ab jetzt meldest du dich mit deinen Passkeys an.",
+    "description": "First paragraph of the email that tells a user their password was removed, so that only their passkeys sign in. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.password_removed.detail": {
+    "defaultMessage": "Wenn du es nicht entfernt hast, ist möglicherweise jemand anderes in deinem Konto angemeldet. Lege sofort ein neues Passwort fest.",
+    "description": "Second paragraph of the email that tells a user their password was removed, before the link that asks for a password reset link, which sets a new password."
+  },
+  "mail.password_removed.subject": {
+    "defaultMessage": "Dein Passwort für {instance} wurde entfernt",
+    "description": "Subject of the email that tells a user their password was removed, so that only their passkeys sign in. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.password_reset.body": {
+    "defaultMessage": "Jemand hat darum gebeten, das Passwort deines Kontos auf {instance} zurückzusetzen.",
+    "description": "First paragraph of the email with a password reset link. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.password_reset.detail": {
+    "defaultMessage": "{minutes, plural, one {Der Link funktioniert # Minute lang, einmalig.} other {Der Link funktioniert # Minuten lang, einmalig.}}",
+    "description": "Second paragraph of the email with a password reset link: how long the link works. {minutes} is the number of minutes."
+  },
+  "mail.password_reset.reason": {
+    "defaultMessage": "Du erhältst diese E-Mail, weil jemand darum gebeten hat, dein Passwort bei {host} zurückzusetzen. Wenn du es nicht warst, ignoriere diese E-Mail; dein Passwort bleibt, wie es ist.",
+    "description": "Sentence of the signature of the email with a password reset link: why it comes. {host} is the server's domain name."
+  },
+  "mail.password_reset.subject": {
+    "defaultMessage": "Passwort für {instance} zurücksetzen",
+    "description": "Subject of the email with a password reset link. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.reason.account": {
+    "defaultMessage": "Du erhältst diese E-Mail, weil diese Adresse zu deinem Konto auf {instance} gehört.",
+    "description": "Sentence of the signature of an email about the security of a user's account: why it comes. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.reason.supporter": {
+    "defaultMessage": "Du erhältst diese E-Mail, weil du einen Unterstützungsplan auf {instance} abonnierst oder abonniert hast.",
+    "description": "Sentence of the signature of an email about a user's supporter plan: why it comes. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.service_closure.action_export": {
+    "defaultMessage": "Deine Daten exportieren",
+    "description": "Label of the button of a service closure email that opens the page where the user exports their data."
+  },
+  "mail.service_closure.export": {
+    "defaultMessage": "Du kannst dich bis zum {exportUntil} anmelden und deine Daten exportieren. Danach löschen die Administratoren die Daten des Servers.",
+    "description": "Paragraph of a service closure email during the notice: until when the user may export their data. {exportUntil} is the deadline of the export as YYYY-MM-DD HH:MM followed by the user's time zone in parentheses, such as 2026-12-01 09:00 (Asia/Tokyo)."
+  },
+  "mail.service_closure.message": {
+    "defaultMessage": "Nachricht der Administratoren: {message}",
+    "description": "Paragraph of a service closure email: the message that the administrators wrote with the announcement. {message} is their text, written in any language."
+  },
+  "mail.service_closure.move": {
+    "defaultMessage": "Vor dem Schließungsdatum kannst du dein Konto in den Kontoeinstellungen auch auf einen anderen Server umziehen, damit deine Follower dir dort folgen.",
+    "description": "Paragraph of a service closure email during the notice: the user may move their account (ActivityPub Move) to another server before the closing date."
+  },
+  "mail.service_closure.reason": {
+    "defaultMessage": "Du erhältst diese E-Mail, weil diese Adresse zu deinem Konto auf {instance} gehört, dessen Schließung deine Daten betrifft. Diese E-Mails lassen sich nicht ausschalten.",
+    "description": "Sentence of the signature of a service closure email: why it comes, and that the user cannot unsubscribe from it. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.service_closure_announced.body": {
+    "defaultMessage": "Die Administratoren von {instance} haben angekündigt, dass der Server am {closesAt} schließt. Ab dann kannst du dich nur noch anmelden, um deine Daten zu exportieren.",
+    "description": "First paragraph of the email of the service closure to every user with a verified address: the announcement of the closure. {instance} is the server's display name, or its domain name when it has none. {closesAt} is the closing date as YYYY-MM-DD HH:MM followed by the user's time zone in parentheses, such as 2026-12-01 09:00 (Asia/Tokyo)."
+  },
+  "mail.service_closure_announced.subject": {
+    "defaultMessage": "{instance} schließt am {closesAt}",
+    "description": "Subject of the email of the service closure to every user with a verified address: the administrators announced that the server closes. {instance} is the server's display name, or its domain name when it has none. {closesAt} is the closing date as YYYY-MM-DD HH:MM followed by the user's time zone in parentheses, such as 2026-12-01 09:00 (Asia/Tokyo)."
+  },
+  "mail.service_closure_closed.body": {
+    "defaultMessage": "{instance} ist geschlossen. Bis zum {exportUntil} kannst du dich noch anmelden und deine Daten exportieren; nichts anderes funktioniert mehr.",
+    "description": "First paragraph of the email of the service closure to every user with a verified address: the server has closed, and the user may still export their data. {instance} is the server's display name, or its domain name when it has none. {exportUntil} is the deadline of the export as YYYY-MM-DD HH:MM followed by the user's time zone in parentheses, such as 2026-12-01 09:00 (Asia/Tokyo)."
+  },
+  "mail.service_closure_closed.detail": {
+    "defaultMessage": "Danach löschen die Administratoren die Daten des Servers, und sie lassen sich nicht wiederherstellen.",
+    "description": "Second paragraph of the email of the closed server: what happens after the deadline of the export."
+  },
+  "mail.service_closure_closed.subject": {
+    "defaultMessage": "{instance} ist geschlossen",
+    "description": "Subject of the email of the service closure to every user with a verified address: the server has closed. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.service_closure_day_before.body": {
+    "defaultMessage": "{instance} schließt innerhalb eines Tages, am {closesAt}. Das ist die letzte Erinnerung vor dem Schließungsdatum.",
+    "description": "First paragraph of the reminder email of the service closure to every user with a verified address, a day before the closing date. {instance} is the server's display name, or its domain name when it has none. {closesAt} is the closing date as YYYY-MM-DD HH:MM followed by the user's time zone in parentheses, such as 2026-12-01 09:00 (Asia/Tokyo)."
+  },
+  "mail.service_closure_day_before.subject": {
+    "defaultMessage": "{instance} schließt innerhalb eines Tages, am {closesAt}",
+    "description": "Subject of the reminder email of the service closure to every user with a verified address, a day before the closing date. {instance} is the server's display name, or its domain name when it has none. {closesAt} is the closing date as YYYY-MM-DD HH:MM followed by the user's time zone in parentheses, such as 2026-12-01 09:00 (Asia/Tokyo)."
+  },
+  "mail.service_closure_export_week_before.body": {
+    "defaultMessage": "Du kannst deine Daten von {instance} bis zum {exportUntil} exportieren, in einer Woche.",
+    "description": "First paragraph of the reminder email of the service closure to every user with a verified address, a week before the deadline of the export. {instance} is the server's display name, or its domain name when it has none. {exportUntil} is the deadline of the export as YYYY-MM-DD HH:MM followed by the user's time zone in parentheses, such as 2026-12-01 09:00 (Asia/Tokyo)."
+  },
+  "mail.service_closure_export_week_before.subject": {
+    "defaultMessage": "Noch eine Woche, um deine Daten von {instance} zu exportieren",
+    "description": "Subject of the reminder email of the service closure to every user with a verified address, a week before the deadline of the export after the server closed. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.service_closure_rescheduled.body": {
+    "defaultMessage": "Die Administratoren von {instance} haben die Daten der Schließung geändert: Der Server schließt jetzt am {closesAt}.",
+    "description": "First paragraph of the email of the service closure to every user with a verified address: the dates of the announced closure changed. {instance} is the server's display name, or its domain name when it has none. {closesAt} is the closing date as YYYY-MM-DD HH:MM followed by the user's time zone in parentheses, such as 2026-12-01 09:00 (Asia/Tokyo)."
+  },
+  "mail.service_closure_rescheduled.subject": {
+    "defaultMessage": "{instance} schließt jetzt am {closesAt}",
+    "description": "Subject of the email of the service closure to every user with a verified address: the administrators changed the dates of the announced closure. {instance} is the server's display name, or its domain name when it has none. {closesAt} is the closing date as YYYY-MM-DD HH:MM followed by the user's time zone in parentheses, such as 2026-12-01 09:00 (Asia/Tokyo)."
+  },
+  "mail.service_closure_week_before.body": {
+    "defaultMessage": "{instance} schließt in einer Woche, am {closesAt}. Exportiere deine Daten, bevor du den Zugriff darauf verlierst.",
+    "description": "First paragraph of the reminder email of the service closure to every user with a verified address, a week before the closing date. {instance} is the server's display name, or its domain name when it has none. {closesAt} is the closing date as YYYY-MM-DD HH:MM followed by the user's time zone in parentheses, such as 2026-12-01 09:00 (Asia/Tokyo)."
+  },
+  "mail.service_closure_week_before.subject": {
+    "defaultMessage": "Eine Woche, bis {instance} am {closesAt} schließt",
+    "description": "Subject of the reminder email of the service closure to every user with a verified address, a week before the closing date. {instance} is the server's display name, or its domain name when it has none. {closesAt} is the closing date as YYYY-MM-DD HH:MM followed by the user's time zone in parentheses, such as 2026-12-01 09:00 (Asia/Tokyo)."
+  },
+  "mail.service_closure_withdrawn.body": {
+    "defaultMessage": "Die Administratoren von {instance} haben die angekündigte Schließung zurückgezogen. Der Server läuft wie bisher weiter, und du musst nichts tun.",
+    "description": "Paragraph of the email of the service closure to every user with a verified address: the announced closure is withdrawn. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.service_closure_withdrawn.subject": {
+    "defaultMessage": "{instance} schließt nicht",
+    "description": "Subject of the email of the service closure to every user with a verified address: the administrators withdrew the announced closure. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.signature.contact": {
+    "defaultMessage": "Kontakt: {email}",
+    "description": "Line of the signature at the end of every email with the instance's contact address. {email} is the address."
+  },
+  "mail.signature.unsubscribe": {
+    "defaultMessage": "Diese E-Mails abbestellen: {url}",
+    "description": "Last line of the signature of a notification email with its one-click unsubscribe link. {url} is the link."
+  },
+  "mail.supporter_payment_failed.action": {
+    "defaultMessage": "Zahlungsmethode aktualisieren",
+    "description": "Label of the link in the email about a failed payment that opens the supporter page, where the payment method is fixed."
+  },
+  "mail.supporter_payment_failed.body": {
+    "defaultMessage": "Eine Zahlung für deinen Unterstützungsplan „{plan}“ auf {instance} ist fehlgeschlagen.",
+    "description": "First paragraph of the email to a subscriber whose payment for a supporter plan failed. {instance} is the server's display name, or its domain name when it has none. {plan} is the plan's name, written by the administrators."
+  },
+  "mail.supporter_payment_failed.detail": {
+    "defaultMessage": "Du behältst die Vorteile des Plans bis zum {endsAt} (UTC). Wenn bis dahin keine Zahlung gelingt, enden sie.",
+    "description": "Second paragraph of the email to a subscriber whose payment for a supporter plan failed, before the link to the supporter page. {endsAt} is the end of the grace period as YYYY-MM-DD HH:MM in UTC."
+  },
+  "mail.supporter_payment_failed.subject": {
+    "defaultMessage": "Eine Zahlung für deinen Unterstützungsplan auf {instance} ist fehlgeschlagen",
+    "description": "Subject of the email to a subscriber whose payment for a supporter plan failed. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.supporter_plan_retired.body": {
+    "defaultMessage": "Die Administratoren von {instance} haben den Unterstützungsplan „{plan}“, den du abonnierst, eingestellt.",
+    "description": "First paragraph of the email to a subscriber whose supporter plan the administrators retired. {instance} is the server's display name, or its domain name when it has none. {plan} is the plan's name, written by the administrators."
+  },
+  "mail.supporter_plan_retired.detail": {
+    "defaultMessage": "Dein Abo ist gekündigt und verlängert sich nicht. Du behältst die Vorteile des Plans bis zum Ende des bezahlten Zeitraums, es sei denn, eine Zahlung ist überfällig.",
+    "description": "Second paragraph of the email to a subscriber whose supporter plan the administrators retired."
+  },
+  "mail.supporter_plan_retired.subject": {
+    "defaultMessage": "Dein Unterstützungsplan auf {instance} wurde eingestellt",
+    "description": "Subject of the email to a subscriber whose supporter plan the administrators retired. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.supporter_service_closure.body": {
+    "defaultMessage": "Die Administratoren von {instance} haben angekündigt, dass der Server schließt, wodurch dein Abo des Unterstützungsplans „{plan}“ gekündigt wird.",
+    "description": "First paragraph of the email to a subscriber whose supporter subscription the announced closure of the server cancels at the end of its period. {instance} is the server's display name, or its domain name when it has none. {plan} is the plan's name, written by the administrators."
+  },
+  "mail.supporter_service_closure.detail": {
+    "defaultMessage": "Dein Abo verlängert sich nicht. Du behältst die Vorteile des Plans bis zum Ende des bezahlten Zeitraums, es sei denn, eine Zahlung ist überfällig.",
+    "description": "Second paragraph of the email to a subscriber whose supporter subscription the announced closure of the server cancels."
+  },
+  "mail.supporter_service_closure.subject": {
+    "defaultMessage": "Dein Unterstützer-Abo auf {instance} endet mit der Schließung des Servers",
+    "description": "Subject of the email to a subscriber whose supporter subscription the announced closure of the server cancels. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.supporter_subscription_ended.body": {
+    "defaultMessage": "Dein Unterstützungsplan „{plan}“ auf {instance} ist beendet, und mit ihm seine Vorteile. {reason, select, lapsed {Innerhalb von 7 Tagen nach einer fehlgeschlagenen Zahlung gelang keine Zahlung, oder das Abo wurde pausiert.} reversed {Eine Zahlung wurde vollständig erstattet oder zurückgebucht.} plan_retired {Die Administratoren haben den Plan eingestellt.} account_suspended {Dein Konto wurde gesperrt.} staff {Ein Administrator hat das Abo gekündigt.} other {Das Abo wurde gekündigt.}}",
+    "description": "Paragraph of the email to a subscriber whose supporter subscription ended. {instance} is the server's display name, or its domain name when it has none. {plan} is the plan's name, written by the administrators; {reason} the reason code (not shown), each branch saying why."
+  },
+  "mail.supporter_subscription_ended.subject": {
+    "defaultMessage": "Dein Unterstützungsplan auf {instance} ist beendet",
+    "description": "Subject of the email to a subscriber whose supporter subscription ended: a payment kept failing, a payment was refunded, the plan was retired, or it was canceled. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.verify_email.action": {
+    "defaultMessage": "E-Mail-Adresse bestätigen",
+    "description": "Label of the link in the email that confirms a new account's email address."
+  },
+  "mail.verify_email.body": {
+    "defaultMessage": "Willkommen auf {instance}.",
+    "description": "First paragraph of the email that confirms a new account's email address. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.verify_email.detail": {
+    "defaultMessage": "{hours, plural, one {Der Link funktioniert # Stunde lang.} other {Der Link funktioniert # Stunden lang.}}",
+    "description": "Second paragraph of the email that confirms a new account's email address: how long the link works. {hours} is the number of hours."
+  },
+  "mail.verify_email.reason": {
+    "defaultMessage": "Du erhältst diese E-Mail, weil diese Adresse bei {host} für eine Registrierung verwendet wurde. Wenn du dich nicht registriert hast, ignoriere diese E-Mail.",
+    "description": "Sentence of the signature of the email that confirms a new account's email address: why it comes. {host} is the server's domain name."
+  },
+  "mail.verify_email.subject": {
+    "defaultMessage": "E-Mail-Adresse für {instance} bestätigen",
+    "description": "Subject of the email that confirms a new account's email address. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.reason.notification": {
+    "defaultMessage": "Du erhältst diese E-Mail, weil E-Mail für „{group}“ in deinen Benachrichtigungseinstellungen aktiviert ist. Dort kannst du sie ausschalten.",
+    "description": "Sentence of the signature of a notification email: why it comes. {group} is the name of the kind of notification, as the notification settings name it (such as Mentions)."
+  },
+  "mail.notification.body": {
+    "defaultMessage": "Du hast auf {instance} eine Benachrichtigung, die du noch nicht gelesen hast.",
+    "description": "Paragraph of the email of a notification that stayed unread for 15 minutes, below the subject that tells what happened. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.action.open_notification": {
+    "defaultMessage": "Öffnen",
+    "description": "Label of the link in the email of a notification that opens the page of the notification in the web client: the post, the profile, or the notifications."
+  },
+  "mail.group.mention": {
+    "defaultMessage": "Erwähnungen",
+    "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
+  },
+  "mail.group.follow": {
+    "defaultMessage": "Neue Follower",
+    "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
+  },
+  "mail.group.follow_request": {
+    "defaultMessage": "Folgeanfragen",
+    "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
+  },
+  "mail.group.follow_accepted": {
+    "defaultMessage": "Angenommene Folgeanfragen",
+    "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
+  },
+  "mail.group.boost": {
+    "defaultMessage": "Boosts",
+    "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
+  },
+  "mail.group.favourite": {
+    "defaultMessage": "Favoriten",
+    "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
+  },
+  "mail.group.reaction": {
+    "defaultMessage": "Emoji-Reaktionen",
+    "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
+  },
+  "mail.group.quote": {
+    "defaultMessage": "Zitate",
+    "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
+  },
+  "mail.group.poll_closed": {
+    "defaultMessage": "Beendete Umfragen",
+    "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
+  },
+  "mail.group.account_moved": {
+    "defaultMessage": "Umzüge von Konten, denen du folgst",
+    "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
+  },
+  "mail.group.voice": {
+    "defaultMessage": "Sprachchats",
+    "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
+  },
+  "mail.group.admin_report": {
+    "defaultMessage": "Neue Meldungen",
+    "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
+  },
+  "mail.group.admin_sign_up": {
+    "defaultMessage": "Registrierungen, die auf Genehmigung warten",
+    "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
+  },
+  "mail.group.admin_appeal": {
+    "defaultMessage": "Neue Einsprüche",
+    "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
+  },
+  "mail.group.admin_webhook_disabled": {
+    "defaultMessage": "Deaktivierte Webhooks",
+    "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
+  },
+  "mail.group.admin_custom_emoji_request": {
+    "defaultMessage": "Anfragen für eigene Emoji",
+    "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
+  },
+  "mail.group.admin_account_moved": {
+    "defaultMessage": "Umzüge eingeschränkter Konten",
+    "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
+  },
+  "mail.group.admin_service_closure_due": {
+    "defaultMessage": "Schließungsdatum erreicht",
+    "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
+  },
+  "mail.group.admin_error_group": {
+    "defaultMessage": "Neue und wiederkehrende Fehler",
+    "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
+  },
+  "mail.group.moderation": {
+    "defaultMessage": "Hinweise der Moderatoren",
+    "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
+  },
+  "mail.group.auto_delete_limit": {
+    "defaultMessage": "Hinweise zur automatischen Löschung von Beiträgen",
+    "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page: the notices that the server's maximum of the automatic deletion of old posts applies to the user's posts. Matches the row of the web client's notification settings."
+  },
+  "mail.auto_delete_limit.detail": {
+    "defaultMessage": "Bis dahin gelten deine eigenen Einstellungen. Die Einstellungen der automatischen Löschung zeigen, welche deiner Beiträge gelöscht werden, und du kannst sie innerhalb der Höchstdauer des Servers ändern. Gelöschte Beiträge lassen sich nicht wiederherstellen.",
+    "description": "Second paragraph of the email that tells a local user that the server's maximum of the automatic deletion of old posts will apply to their posts; the first paragraph is the notification itself, with the days. The button below opens the user's settings of the automatic deletion."
+  },
+  "mail.action.sign_in": {
+    "defaultMessage": "Anmelden",
+    "description": "Label of the link in an email that opens the sign-in page."
+  },
+  "mail.account_deactivated.subject": {
+    "defaultMessage": "Dein Konto auf {instance} ist deaktiviert",
+    "description": "Subject of the one email that tells a user their account is deactivated. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.account_deactivated.body": {
+    "defaultMessage": "Dein Konto auf {instance} ist deaktiviert. Es wird am {date} gelöscht, sofern du es nicht vorher reaktivierst.",
+    "description": "First paragraph of the email that tells a user their account is deactivated. {instance} is the server's display name, or its domain name when it has none. {date} is the date and time of the deletion with its time zone, such as 2026-12-03 09:00 (UTC)."
+  },
+  "mail.account_deactivated.detail": {
+    "defaultMessage": "Melde dich an, um es zu reaktivieren. Wir schreiben dir vor der Löschung nicht noch einmal dazu. Wenn du das nicht selbst getan hast, melde dich an, reaktiviere das Konto und ändere dein Passwort.",
+    "description": "Second paragraph of the email that tells a user their account is deactivated: how to undo it, that no more email comes, and what to do when it was not them."
+  },
+  "mail.admin_hook_failing.body": {
+    "defaultMessage": "Aufrufe einer externen Prüfung auf dem Server {instance} schlagen wiederholt fehl. Bis sie wieder funktioniert, richtet sich das Geprüfte nach ihrem Ausfallverhalten: Standardmäßig geht es ungeprüft durch.",
+    "description": "First paragraph of the email to a moderator about an external review that keeps failing. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.admin_hook_failing.detail": {
+    "defaultMessage": "Öffne deine Benachrichtigungen und sieh dir die automatischen Prüfungen an, um zu erfahren, was fehlgeschlagen ist.",
+    "description": "Second paragraph of the email to a moderator about an external review that keeps failing, before the link to the notifications."
+  },
+  "mail.admin_hook_failing.subject": {
+    "defaultMessage": "Eine externe Prüfung von {instance} schlägt wiederholt fehl",
+    "description": "Subject of the email to a moderator who gets moderator notifications by email: calls of the external review of submissions keep failing. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.admin_hook_appeal.body": {
+    "defaultMessage": "Ein Nutzer von {instance} hat Einspruch gegen einen Beitrag eingelegt, den die automatische Prüfung abgelehnt hat, und der Einspruch wartet auf die Moderatoren.",
+    "description": "Paragraph of the email to a moderator about a new appeal of a post that the automated review refused. It never names the user or the post. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.admin_hook_appeal.subject": {
+    "defaultMessage": "Ein Einspruch gegen einen abgelehnten Beitrag wartet auf die Moderatoren von {instance}",
+    "description": "Subject of the email to a moderator who chose to get moderator notifications by email: a user appealed a post that the automated review refused. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.group.admin_hook_failing": {
+    "defaultMessage": "Fehlschlagende externe Prüfungen",
+    "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
+  },
+  "mail.group.admin_hook_appeal": {
+    "defaultMessage": "Einsprüche gegen abgelehnte Beiträge",
+    "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
+  }
+}

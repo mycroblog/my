@@ -1,0 +1,30 @@
+{
+  "finance.title": {
+    "defaultMessage": "Finances",
+    "description": "Heading and document title of the finances page, where the holders of the view_finance permission read the server's costs."
+  },
+  "finance.description": {
+    "defaultMessage": "Les coûts de fonctionnement de ce serveur, totalisés à partir des enregistrements des administrateurs, avec leur répartition par prestataire et par catégorie, ainsi que ses revenus issus de ses soutiens et le solde. Les montants en devises différentes sont totalisés séparément et jamais convertis. Les paiements des personnes ne sont pas affichés.",
+    "description": "Introduction of the finances page."
+  },
+  "finance.items_shown": {
+    "defaultMessage": "{shown, select, both {Ce serveur affiche les noms et les mémos des postes.} names {Ce serveur affiche les noms des postes, mais pas leurs mémos.} memos {Ce serveur affiche les mémos des postes, mais pas leurs noms.} other {Ce serveur n’affiche ni les noms ni les mémos des postes.}}",
+    "description": "What the finances page shows of the cost items, by the server settings finance_viewer_item_names and finance_viewer_item_memos: both, names, memos, or none."
+  },
+  "finance.costs.title": {
+    "defaultMessage": "Coûts",
+    "description": "Heading of the section of the totals of the costs on the finances page."
+  },
+  "finance.loading": {
+    "defaultMessage": "Chargement des finances",
+    "description": "Accessible name of the progress indicator while the totals load on the finances page."
+  },
+  "finance.failed": {
+    "defaultMessage": "Impossible de charger les finances",
+    "description": "Heading shown in place of the totals on the finances page when they could not be loaded."
+  },
+  "finance.retry": {
+    "defaultMessage": "Réessayer",
+    "description": "Button that tries again to load the totals of the finances page after a failure."
+  }
+}

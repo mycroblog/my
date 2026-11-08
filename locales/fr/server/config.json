@@ -1,0 +1,22 @@
+{
+  "config.errors": {
+    "defaultMessage": "{count, plural, one {# erreur de configuration détectée.} other {# erreurs de configuration détectées.}}",
+    "description": "Summary printed before the list of configuration problems when the server refuses to start."
+  },
+  "config.invalid": {
+    "defaultMessage": "Le paramètre {name} a une valeur non valide.",
+    "description": "A configuration value failed validation at startup. {name} is the environment variable or config file key, e.g. MY_DATABASE."
+  },
+  "config.missing": {
+    "defaultMessage": "Le paramètre obligatoire {name} n’est pas défini.",
+    "description": "A required configuration value is absent at startup. {name} is the environment variable or config file key, e.g. MY_DATABASE_URL."
+  },
+  "config.readiness.errors": {
+    "defaultMessage": "{count, plural, one {# paramètre n’est pas prêt pour la production.} other {# paramètres ne sont pas prêts pour la production.}}",
+    "description": "Summary printed by `my config check` before the list of settings that are valid but break or weaken a production instance, such as a key-encryption key that is not random. The command fails on them."
+  },
+  "config.readiness.warnings": {
+    "defaultMessage": "{count, plural, one {# avertissement sur l’exécution en production.} other {# avertissements sur l’exécution en production.}}",
+    "description": "Summary printed by `my config check` before the list of settings and instance settings that are usual in development and may be deliberate in production, such as mail = none. The command still succeeds."
+  }
+}

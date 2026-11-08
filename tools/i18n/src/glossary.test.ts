@@ -24,5 +24,5 @@ test("a banned variant is a finding, the preferred term is not", () => {
 
 test("a locale only matches its own entries", () => {
   expect(glossaryFindings(glossary, "en", "サインイン")).toHaveLength(0);
-  expect(glossaryFindings(glossary, "fr", "Log in")).toHaveLength(0);
+  expect(glossaryFindings(glossary, "it", "Log in")).toHaveLength(0);
 });

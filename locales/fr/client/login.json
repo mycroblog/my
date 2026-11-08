@@ -1,0 +1,26 @@
+{
+  "login.failed.denied": {
+    "defaultMessage": "La connexion a été annulée sur l’écran du serveur.",
+    "description": "Why signing in failed: the user declined on the server's authorization screen."
+  },
+  "login.failed.invalid_state": {
+    "defaultMessage": "Cette connexion n’a pas été lancée dans cet onglet, ou elle est déjà terminée. Recommencez.",
+    "description": "Why signing in failed: the answer from the server does not belong to a sign-in that this browser tab started."
+  },
+  "login.failed.rejected": {
+    "defaultMessage": "Le serveur a refusé la connexion. Recommencez.",
+    "description": "Why signing in failed: the server refused to finish it (for example, it took too long)."
+  },
+  "login.failed.try_again": {
+    "defaultMessage": "Se reconnecter",
+    "description": "Link from the failed sign-in page back to the sign-in page."
+  },
+  "login.failed.title": {
+    "defaultMessage": "Connexion impossible",
+    "description": "Heading and document title of the page shown when signing in failed on the way back from the server's sign-in screen."
+  },
+  "login.title": {
+    "defaultMessage": "Connexion",
+    "description": "Document title and the busy indicator's label of /login, which starts signing in at once and sends the browser to the server's sign-in screen."
+  }
+}

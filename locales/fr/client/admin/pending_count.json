@@ -1,0 +1,6 @@
+{
+  "admin.pending_count": {
+    "defaultMessage": "{count, plural, one {# en attente} other {# en attente}}",
+    "description": "Badge of the navigation's moderation item: how many open reports, registrations and appeals await the moderators."
+  }
+}

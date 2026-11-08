@@ -1,0 +1,26 @@
+{
+  "admin.list.more": {
+    "defaultMessage": "Mehr anzeigen",
+    "description": "Button under a list of an admin screen that loads more of it."
+  },
+  "admin.list.filters": {
+    "defaultMessage": "Filter",
+    "description": "Accessible name of the row of filters above a list of an admin screen."
+  },
+  "admin.list.pages": {
+    "defaultMessage": "Seiten",
+    "description": "Accessible name of the previous / next navigation under a list of an admin screen."
+  },
+  "admin.list.previous": {
+    "defaultMessage": "Zurück",
+    "description": "Button under a list of an admin screen that shows the previous page."
+  },
+  "admin.list.next": {
+    "defaultMessage": "Weiter",
+    "description": "Button under a list of an admin screen that shows the next page, loading it if needed."
+  },
+  "admin.list.column.actions": {
+    "defaultMessage": "Aktionen",
+    "description": "Header of the column of an admin table that holds the buttons of a row; visually hidden."
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "admin.home.none.description": {
+    "defaultMessage": "Deine Rollen enthalten keine der Berechtigungen, die die Verwaltungsseiten des Servers benötigen. Eine Administratorin oder ein Administrator kann sie dir erteilen.",
+    "description": "Description on the server administration page of a user whose roles grant none of the server administration screens' permissions."
+  },
+  "admin.home.none.heading": {
+    "defaultMessage": "Keine Verwaltungsseiten für deine Rollen",
+    "description": "Heading on the server administration page of a user whose roles grant none of the server administration screens' permissions."
+  }
+}

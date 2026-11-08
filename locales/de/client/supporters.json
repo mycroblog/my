@@ -1,0 +1,66 @@
+{
+  "supporters.about.title": {
+    "defaultMessage": "Unterstützer",
+    "description": "Heading of the supporter section of the about page."
+  },
+  "supporters.about.description": {
+    "defaultMessage": "Personen auf diesem Server können ihn mit diesen Plänen unterstützen.",
+    "description": "Explanation of the supporter plans on the about page."
+  },
+  "supporters.about.subscribe": {
+    "defaultMessage": "Pläne ansehen und abonnieren",
+    "description": "Link from the about page to the page of the supporter plans."
+  },
+  "supporters.about.list": {
+    "defaultMessage": "Unterstützerliste ansehen",
+    "description": "Link from the about page to the supporter list."
+  },
+  "supporters.list.title": {
+    "defaultMessage": "Unterstützer von {instance}",
+    "description": "Heading of the supporter list page. instance is the server's name."
+  },
+  "supporters.list.description": {
+    "defaultMessage": "Die Mitglieder der Pläne, die sich auflisten lassen, nach Plan sortiert.",
+    "description": "Explanation of the supporter list."
+  },
+  "supporters.list.empty": {
+    "defaultMessage": "Noch niemand ist aufgelistet.",
+    "description": "Shown when nobody is listed."
+  },
+  "supporters.list.hidden": {
+    "defaultMessage": "Dieser Server veröffentlicht keine Unterstützerliste.",
+    "description": "Shown when the server does not publish the supporter list."
+  },
+  "supporters.list.about": {
+    "defaultMessage": "Über diesen Server",
+    "description": "Link back to the about page."
+  },
+  "supporters.list.signed_in_only": {
+    "defaultMessage": "Nur angemeldete Personen können die Unterstützerliste lesen.",
+    "description": "Shown to visitors without a session when only signed-in users may read the list."
+  },
+  "supporters.list.sign_in": {
+    "defaultMessage": "Anmelden",
+    "description": "Link to sign in to read the supporter list."
+  },
+  "supporters.list.loading": {
+    "defaultMessage": "Unterstützerliste wird geladen",
+    "description": "Label of the spinner while the list loads."
+  },
+  "supporters.list.failed": {
+    "defaultMessage": "Die Unterstützerliste konnte nicht geladen werden",
+    "description": "Heading when the list could not load."
+  },
+  "supporters.list.retry": {
+    "defaultMessage": "Erneut versuchen",
+    "description": "Button that loads the list again."
+  },
+  "supporters.list.more": {
+    "defaultMessage": "Mehr anzeigen",
+    "description": "Button that loads more of the list."
+  },
+  "supporters.list.more_failed": {
+    "defaultMessage": "Weitere Unterstützer konnten nicht geladen werden",
+    "description": "Heading when more of the list could not load."
+  }
+}

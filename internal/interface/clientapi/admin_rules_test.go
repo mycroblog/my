@@ -217,8 +217,8 @@ func TestManageInstanceRules(t *testing.T) {
 	want2 := []clientapi.InstanceRule{{Id: spam.Id, Text: "No spam"}, {Id: kind.Id, Text: "とても親切に"}}
 	for _, header := range []map[string]string{
 		{"Accept-Language": "ja-JP"},
-		{"Accept-Language": "fr", "Authorization": "Bearer read"}, // alice's locale is ja
-		{"Accept-Language": "fr"},
+		{"Accept-Language": "it", "Authorization": "Bearer read"}, // alice's locale is ja
+		{"Accept-Language": "it"},
 	} {
 		if got := instanceRules(header); !reflect.DeepEqual(got, want2) {
 			t.Errorf("rules for %v = %+v, want %+v", header, got, want2)

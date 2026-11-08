@@ -1,0 +1,18 @@
+{
+  "deactivated.title": {
+    "defaultMessage": "Votre compte est désactivé",
+    "description": "Title of the page after a user deactivated their account."
+  },
+  "deactivated.deletion": {
+    "defaultMessage": "Il sera supprimé le {date}.",
+    "description": "The date of the deletion on the page after a user deactivated their account. {date} is a formatted date and time."
+  },
+  "deactivated.description": {
+    "defaultMessage": "Connectez-vous avant cette date pour le réactiver. D’ici là, il est masqué pour tout le monde et rien ne l’atteint.",
+    "description": "What to do after deactivating the account."
+  },
+  "deactivated.sign_in": {
+    "defaultMessage": "Se connecter",
+    "description": "Link to the sign-in page on the page after a user deactivated their account."
+  }
+}

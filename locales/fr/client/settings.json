@@ -1,0 +1,2810 @@
+{
+  "settings.account.delete.cancel": {
+    "defaultMessage": "Annuler",
+    "description": "Button in the dialog that closes it without deleting the account."
+  },
+  "settings.account.delete.confirm": {
+    "defaultMessage": "Supprimer le compte",
+    "description": "Button in the dialog that deletes the user's account."
+  },
+  "settings.account.delete.confirm.description": {
+    "defaultMessage": "Saisissez votre mot de passe pour confirmer. Votre compte est supprimé immédiatement et vous êtes déconnecté. Cette action est irréversible.",
+    "description": "Description of the dialog that deletes the user's account."
+  },
+  "settings.account.delete.confirm.description_passkey": {
+    "defaultMessage": "Votre navigateur demande l’une de vos clés d’accès pour confirmer. Votre compte est supprimé immédiatement et vous êtes déconnecté. Cette action est irréversible.",
+    "description": "Description of the dialog that deletes the account of a user who has no password: pressing the delete button opens the browser's passkey prompt, which confirms the deletion."
+  },
+  "settings.account.delete.confirm.title": {
+    "defaultMessage": "Supprimer votre compte ?",
+    "description": "Title of the dialog that asks the user to confirm deleting their account."
+  },
+  "settings.account.delete.description": {
+    "defaultMessage": "Votre compte, vos publications et votre profil disparaissent immédiatement, et les autres serveurs sont invités à supprimer leurs copies. Cette action est irréversible et votre nom d’utilisateur ne pourra plus être utilisé. Téléchargez d’abord vos données si vous souhaitez les conserver.",
+    "description": "Explains what deleting the account does, above the button that starts it."
+  },
+  "settings.account.delete.open": {
+    "defaultMessage": "Supprimer le compte…",
+    "description": "Button that opens the dialog that deletes the user's account."
+  },
+  "settings.account.delete.password": {
+    "defaultMessage": "Mot de passe",
+    "description": "Label of the field in which the user types their password to confirm deleting the account."
+  },
+  "settings.account.delete.password.required": {
+    "defaultMessage": "Saisissez votre mot de passe.",
+    "description": "Error under the password field when the user confirms the deletion without typing the password."
+  },
+  "settings.account.delete.title": {
+    "defaultMessage": "Supprimer votre compte",
+    "description": "Heading of the section of the account page about deleting the account."
+  },
+  "settings.account.delete.wrong_password": {
+    "defaultMessage": "Le mot de passe est incorrect.",
+    "description": "Error in the deletion dialog when the password the user typed is not their current password."
+  },
+  "settings.account.export.description": {
+    "defaultMessage": "Obtenez une archive ZIP de vos publications au format ActivityStreams, de votre profil, des mesures de modération appliquées à votre compte, ainsi que de vos abonnements, blocages, sourdines et marque-pages sous forme de fichiers CSV. Sa préparation prend un moment, et vous pouvez la télécharger pendant 7 jours.",
+    "description": "Explains the archive of the user's data, above the button that asks for one."
+  },
+  "settings.account.export.download": {
+    "defaultMessage": "Télécharger",
+    "description": "Button that downloads an archive of the user's data."
+  },
+  "settings.account.export.download_of": {
+    "defaultMessage": "Télécharger l’archive du {date}",
+    "description": "Accessible name of the button that downloads one archive. {date} is when the user asked for it, a formatted date and time."
+  },
+  "settings.account.export.empty": {
+    "defaultMessage": "Vous n’avez aucune archive",
+    "description": "Shown when the user has no archive of their data."
+  },
+  "settings.account.export.expires_at": {
+    "defaultMessage": "Disponible jusqu’au",
+    "description": "Label of the date until which an archive of the user's data can be downloaded."
+  },
+  "settings.account.export.item": {
+    "defaultMessage": "Archive du {date}",
+    "description": "Heading of one archive of the user's data. {date} is when the user asked for it, a formatted date and time."
+  },
+  "settings.account.export.request": {
+    "defaultMessage": "Préparer une archive",
+    "description": "Button that asks the server to prepare an archive of the user's data."
+  },
+  "settings.account.export.requested": {
+    "defaultMessage": "L’archive est en cours de préparation. Elle apparaîtra ci-dessous quand elle sera prête.",
+    "description": "Announced after the user asked for an archive of their data."
+  },
+  "settings.account.export.size": {
+    "defaultMessage": "Taille",
+    "description": "Label of the file size of an archive of the user's data."
+  },
+  "settings.account.export.state": {
+    "defaultMessage": "État",
+    "description": "Label of the state of an archive of the user's data (being prepared, ready, failed)."
+  },
+  "settings.account.export.state.failed": {
+    "defaultMessage": "Échec. Préparez-en une autre.",
+    "description": "State of an archive of the user's data that the server could not prepare; the user can ask for another."
+  },
+  "settings.account.export.state.pending": {
+    "defaultMessage": "En préparation",
+    "description": "State of an archive of the user's data that the server is still preparing."
+  },
+  "settings.account.export.state.ready": {
+    "defaultMessage": "Prête",
+    "description": "State of an archive of the user's data that can be downloaded."
+  },
+  "settings.account.export.title": {
+    "defaultMessage": "Télécharger vos données",
+    "description": "Heading of the section of the account page about archives of the user's data."
+  },
+  "settings.account.title": {
+    "defaultMessage": "Archive et suppression",
+    "description": "Heading and document title of the settings page about the user's own account: the archives of their data and deleting the account."
+  },
+  "settings.autoplay.description": {
+    "defaultMessage": "Activée, les images animées (GIF) et les émojis bougent d’eux-mêmes ; désactivée, une publication ou un profil ne bouge que lorsque vous le survolez, que vous le parcourez au clavier ou après que vous l’avez touché, jusqu’à ce que vous le touchiez à nouveau. Dans les deux cas, ils restent immobiles quand votre appareil demande de réduire les animations. Conservé sur ce navigateur.",
+    "description": "Help text of the switch that turns the autoplay of animated images on or off."
+  },
+  "settings.autoplay.label": {
+    "defaultMessage": "Lire les animations automatiquement",
+    "description": "Label of the switch on the preferences page that turns the autoplay of animated images on or off."
+  },
+  "settings.back": {
+    "defaultMessage": "Retour aux paramètres",
+    "description": "Link under the heading of a settings page that opens the list of settings pages."
+  },
+  "settings.blocks.empty": {
+    "defaultMessage": "Vous n’avez bloqué personne",
+    "description": "Shown when the user blocks no account."
+  },
+  "settings.blocks.title": {
+    "defaultMessage": "Comptes bloqués",
+    "description": "Heading and document title of the settings page with the blocked accounts."
+  },
+  "settings.blocks.unblock": {
+    "defaultMessage": "Débloquer",
+    "description": "Button that unblocks an account."
+  },
+  "settings.blocks.unblocked": {
+    "defaultMessage": "Vous avez débloqué {name}.",
+    "description": "Announced after an account was unblocked. {name} is the account's display name."
+  },
+  "settings.default_post_language.description": {
+    "defaultMessage": "Les nouvelles publications démarrent dans cette langue. Vous pouvez toujours en choisir une pour chaque publication.",
+    "description": "Help text of the default post language select."
+  },
+  "settings.default_post_language.label": {
+    "defaultMessage": "Langue par défaut de vos publications",
+    "description": "Label of the select of the language new posts start with."
+  },
+  "settings.default_visibility.description": {
+    "defaultMessage": "Vous pouvez toujours choisir pour chaque publication.",
+    "description": "Help text of the default visibility radio group."
+  },
+  "settings.default_visibility.label": {
+    "defaultMessage": "Qui voit vos publications par défaut",
+    "description": "Label of the radio group of the visibility new posts start with."
+  },
+  "settings.follow_requests.accept": {
+    "defaultMessage": "Accepter",
+    "description": "Button that accepts a follow request."
+  },
+  "settings.follow_requests.accepted": {
+    "defaultMessage": "{name} vous suit désormais.",
+    "description": "Announced after a follow request was accepted. {name} is the account's display name."
+  },
+  "settings.follow_requests.empty": {
+    "defaultMessage": "Aucune demande d’abonnement",
+    "description": "Shown when no follow request awaits approval."
+  },
+  "settings.follow_requests.reject": {
+    "defaultMessage": "Rejeter",
+    "description": "Button that rejects a follow request."
+  },
+  "settings.follow_requests.rejected": {
+    "defaultMessage": "Vous avez rejeté la demande d’abonnement de {name}.",
+    "description": "Announced after a follow request was rejected. {name} is the account's display name."
+  },
+  "settings.follow_requests.title": {
+    "defaultMessage": "Demandes d’abonnement",
+    "description": "Heading and document title of the settings page with the follow requests awaiting approval."
+  },
+  "settings.follow_requests.waiting": {
+    "defaultMessage": "{count, plural, one {# en attente} other {# en attente}}",
+    "description": "Badge of the settings menu's Follow requests item: how many follow requests await the user's approval. The item's name is its label followed by this."
+  },
+  "settings.import_export.export.description": {
+    "defaultMessage": "Téléchargez des fichiers CSV au format utilisé par Mastodon. Mastodon et les autres serveurs qui lisent ce format peuvent les importer.",
+    "description": "Explains the CSV files the user can download, above the list of them."
+  },
+  "settings.import_export.export.download": {
+    "defaultMessage": "Télécharger",
+    "description": "Button that downloads one CSV file."
+  },
+  "settings.import_export.export.download_of": {
+    "defaultMessage": "Télécharger {kind} en CSV",
+    "description": "Accessible name of the button that downloads one CSV file. {kind} is the name of the list, e.g. Blocked accounts."
+  },
+  "settings.import_export.export.title": {
+    "defaultMessage": "Exporter",
+    "description": "Heading of the section of the import and export page that downloads CSV files."
+  },
+  "settings.import_export.history.empty": {
+    "defaultMessage": "Vous n’avez aucun import",
+    "description": "Shown when the user has no recent import."
+  },
+  "settings.import_export.history.failed": {
+    "defaultMessage": "Impossible à importer",
+    "description": "Label of the number of entries of an import that could not be carried out, e.g. accounts that no longer exist."
+  },
+  "settings.import_export.history.item": {
+    "defaultMessage": "{kind}, {date}",
+    "description": "Heading of one import in the list. {kind} is the name of the list, e.g. Follows; {date} is when the import started, a formatted date and time."
+  },
+  "settings.import_export.history.mode": {
+    "defaultMessage": "Méthode",
+    "description": "Label of how an import was done (merge or overwrite)."
+  },
+  "settings.import_export.history.progress": {
+    "defaultMessage": "Progression",
+    "description": "Label of how many entries of an import are done."
+  },
+  "settings.import_export.history.progress_value": {
+    "defaultMessage": "{processed, number} sur {total, number}",
+    "description": "How many entries of an import are done. {processed} and {total} are numbers."
+  },
+  "settings.import_export.history.state": {
+    "defaultMessage": "État",
+    "description": "Label of the state of an import (in progress, finished)."
+  },
+  "settings.import_export.history.state.finished": {
+    "defaultMessage": "Terminé",
+    "description": "State of an import that the server has carried out."
+  },
+  "settings.import_export.history.state.in_progress": {
+    "defaultMessage": "En cours",
+    "description": "State of an import that the server is still carrying out."
+  },
+  "settings.import_export.history.title": {
+    "defaultMessage": "Imports récents",
+    "description": "Heading of the list of the user's latest imports on the import and export page."
+  },
+  "settings.import_export.import.choose": {
+    "defaultMessage": "Choisir un fichier CSV",
+    "description": "Button that opens the file picker to choose the CSV file to import."
+  },
+  "settings.import_export.import.chosen": {
+    "defaultMessage": "Fichier choisi : {name}",
+    "description": "Shows the name of the CSV file the user chose to import. {name} is the file name."
+  },
+  "settings.import_export.import.description": {
+    "defaultMessage": "Importez un fichier CSV exporté depuis Mastodon ou depuis ce serveur. Les comptes et les publications des autres serveurs sont recherchés en arrière-plan, ce qui peut prendre un moment.",
+    "description": "Explains importing a CSV file, above the form."
+  },
+  "settings.import_export.import.file": {
+    "defaultMessage": "Fichier CSV",
+    "description": "Heading of the part of the import form where the user chooses the file."
+  },
+  "settings.import_export.import.file_too_large": {
+    "defaultMessage": "Le fichier est trop volumineux pour être importé. Découpez-le en fichiers plus petits.",
+    "description": "Error in the import form when the chosen CSV file is larger than the server accepts."
+  },
+  "settings.import_export.import.file_unreadable": {
+    "defaultMessage": "Le fichier est illisible. Choisissez-le à nouveau.",
+    "description": "Error in the import form when the browser could not read the chosen file."
+  },
+  "settings.import_export.import.kind": {
+    "defaultMessage": "Ce qu’il faut importer",
+    "description": "Label of the radio group that chooses the kind of CSV file to import (follows, blocked accounts, muted accounts, bookmarks)."
+  },
+  "settings.import_export.import.mode": {
+    "defaultMessage": "Mode d’import",
+    "description": "Label of the radio group that chooses whether the import merges with or overwrites what the user has."
+  },
+  "settings.import_export.import.mode.merge": {
+    "defaultMessage": "Fusionner",
+    "description": "Option of an import that keeps what the user has and adds what the file lists."
+  },
+  "settings.import_export.import.mode.merge.description": {
+    "defaultMessage": "Conserve ce que vous avez et ajoute ce que le fichier liste.",
+    "description": "Description of the merge option of an import."
+  },
+  "settings.import_export.import.mode.overwrite": {
+    "defaultMessage": "Remplacer",
+    "description": "Option of an import that makes the user's list exactly what the file lists."
+  },
+  "settings.import_export.import.mode.overwrite.description": {
+    "defaultMessage": "Reproduit exactement ce que le fichier liste. Tout ce que le fichier ne liste pas est retiré.",
+    "description": "Description of the overwrite option of an import."
+  },
+  "settings.import_export.import.no_file": {
+    "defaultMessage": "Aucun fichier choisi",
+    "description": "Shown in the import form before the user chooses a CSV file."
+  },
+  "settings.import_export.import.preview": {
+    "defaultMessage": "Vérifier le fichier",
+    "description": "Button that asks the server what importing the chosen file would do, without importing it."
+  },
+  "settings.import_export.import.preview.entries": {
+    "defaultMessage": "Entrées du fichier",
+    "description": "Label of the number of accounts or posts that the file to import lists."
+  },
+  "settings.import_export.import.preview.present": {
+    "defaultMessage": "Déjà dans votre liste",
+    "description": "Label of the number of entries of the file to import that the user already has."
+  },
+  "settings.import_export.import.preview.removals": {
+    "defaultMessage": "À retirer",
+    "description": "Label of the number of accounts or posts that an overwrite removes because the file does not list them."
+  },
+  "settings.import_export.import.preview.skip.duplicate": {
+    "defaultMessage": "Répète une ligne précédente",
+    "description": "Why a line of the file to import is skipped: an earlier line names the same account or post."
+  },
+  "settings.import_export.import.preview.skip.invalid": {
+    "defaultMessage": "Ni une adresse de compte ni une URL de publication",
+    "description": "Why a line of the file to import is skipped: it names no account (user@domain) or post URL."
+  },
+  "settings.import_export.import.preview.skipped": {
+    "defaultMessage": "Lignes ignorées",
+    "description": "Heading of the list of lines of the file that the import skips."
+  },
+  "settings.import_export.import.preview.skipped_line": {
+    "defaultMessage": "Ligne {line, number} : {value}",
+    "description": "One line of the file that the import skips. {line} is the line number, {value} the line as written."
+  },
+  "settings.import_export.import.preview.title": {
+    "defaultMessage": "Ce que fait l’import",
+    "description": "Heading of the result of checking the file to import."
+  },
+  "settings.import_export.import.start": {
+    "defaultMessage": "Lancer l’import",
+    "description": "Button that starts importing the checked file."
+  },
+  "settings.import_export.import.started": {
+    "defaultMessage": "L’import a démarré avec {total, plural, one {# entrée} other {# entrées}}. Sa progression apparaît ci-dessous.",
+    "description": "Announced after the user started an import. {total} is the number of accounts or posts to add or remove."
+  },
+  "settings.import_export.import.title": {
+    "defaultMessage": "Importer",
+    "description": "Heading of the section of the import and export page that imports a CSV file."
+  },
+  "settings.import_export.kind.blocks": {
+    "defaultMessage": "Comptes bloqués",
+    "description": "Name of the list of accounts the user blocks, as one kind of CSV file to export or import."
+  },
+  "settings.import_export.kind.bookmarks": {
+    "defaultMessage": "Marque-pages",
+    "description": "Name of the list of posts the user bookmarked, as one kind of CSV file to export or import."
+  },
+  "settings.import_export.kind.following": {
+    "defaultMessage": "Abonnements",
+    "description": "Name of the list of accounts the user follows, as one kind of CSV file to export or import."
+  },
+  "settings.import_export.kind.mutes": {
+    "defaultMessage": "Comptes en sourdine",
+    "description": "Name of the list of accounts the user mutes, as one kind of CSV file to export or import."
+  },
+  "settings.import_export.title": {
+    "defaultMessage": "Import et export",
+    "description": "Heading and document title of the settings page for exporting and importing the user's follows, blocks, mutes, and bookmarks as CSV files."
+  },
+  "settings.link_card_size.label": {
+    "defaultMessage": "Cartes de lien",
+    "description": "Label of the radio group that chooses the size of the cards of the links in posts."
+  },
+  "settings.link_card_size.large": {
+    "defaultMessage": "Grandes",
+    "description": "Option of the link card size: the image is above the text."
+  },
+  "settings.link_card_size.large.description": {
+    "defaultMessage": "L’image se place au-dessus du texte.",
+    "description": "Help text of the large option of the link card size."
+  },
+  "settings.link_card_size.small": {
+    "defaultMessage": "Petites",
+    "description": "Option of the link card size: a square image is beside the text."
+  },
+  "settings.link_card_size.small.description": {
+    "defaultMessage": "Une image carrée se place à côté du texte, pour que les publications prennent moins de place.",
+    "description": "Help text of the small option of the link card size."
+  },
+  "settings.list.action": {
+    "defaultMessage": "{action} : {name}",
+    "description": "Accessible name of a button in a list of accounts. {action} is the button's visible text (for example 'Unblock'), {name} the account's display name."
+  },
+  "settings.list.more": {
+    "defaultMessage": "Afficher plus",
+    "description": "Button under a list of accounts in the settings that loads more of them."
+  },
+  "settings.locale.description": {
+    "defaultMessage": "L’application bascule immédiatement dans cette langue.",
+    "description": "Help text of the display language select."
+  },
+  "settings.locale.follow_browser": {
+    "defaultMessage": "Suivre ce navigateur ({language})",
+    "description": "Option of the display language select: follow the browser's language. language is the language it shows now, in that language."
+  },
+  "settings.locale.follow_browser_description": {
+    "defaultMessage": "Utilise la langue du navigateur, ou celle de ce serveur lorsque l’application n’y est pas disponible.",
+    "description": "Description of the option that follows the browser's language."
+  },
+  "settings.locale.machine_translated": {
+    "defaultMessage": "Traduit automatiquement",
+    "description": "Description of a language in the display language select whose text is a machine translation (every language but English and Japanese)."
+  },
+  "settings.locale.label": {
+    "defaultMessage": "Langue d’affichage",
+    "description": "Label of the select of the language the app is shown in."
+  },
+  "settings.menu.title": {
+    "defaultMessage": "Pages des paramètres",
+    "description": "Heading of the list of links to the pages of the settings."
+  },
+  "settings.menu.status_page": {
+    "defaultMessage": "État du serveur",
+    "description": "Link under the settings menu to the server's status page on another site, where the operators tell of outages and maintenance. The link leaves the app."
+  },
+  "settings.mutes.empty": {
+    "defaultMessage": "Vous n’avez mis personne en sourdine",
+    "description": "Shown when the user mutes no account."
+  },
+  "settings.mutes.notifications": {
+    "defaultMessage": "Notifications également masquées",
+    "description": "Under a muted account whose mute also hides its notifications."
+  },
+  "settings.mutes.title": {
+    "defaultMessage": "Comptes en sourdine",
+    "description": "Heading and document title of the settings page with the muted accounts."
+  },
+  "settings.mutes.unmute": {
+    "defaultMessage": "Réactiver le son",
+    "description": "Button that unmutes an account."
+  },
+  "settings.mutes.unmuted": {
+    "defaultMessage": "Vous n’avez plus {name} en sourdine.",
+    "description": "Announced after an account was unmuted. {name} is the account's display name."
+  },
+  "settings.mutes.until": {
+    "defaultMessage": "Jusqu’au {date}",
+    "description": "When a mute ends, under the muted account. {date} is a formatted date and time."
+  },
+  "settings.navigation.description": {
+    "defaultMessage": "Choisissez les éléments de la navigation et leur ordre. Sur mobile, {count, plural, one {le premier élément affiché est dans} other {les # premiers éléments affichés sont dans}} la barre d’onglets et les autres dans le menu. Les paramètres sont toujours affichés. Conservé sur ce navigateur.",
+    "description": "Help text of the navigation section. {count} is how many shown items the bottom tab bar of phones holds (5); the name of the Settings item is shell.nav.settings."
+  },
+  "settings.navigation.hidden": {
+    "defaultMessage": "Masqués",
+    "description": "Help text under an item of the navigation section whose checkbox is off: it is not in the navigation."
+  },
+  "settings.navigation.in_menu": {
+    "defaultMessage": "Dans le menu sur mobile",
+    "description": "Help text under an item of the navigation section: the item is shown in the menu (the sheet opened by the Menu button) on phones, and in the side rail on larger screens."
+  },
+  "settings.navigation.in_tab_bar": {
+    "defaultMessage": "Dans la barre d’onglets sur mobile",
+    "description": "Help text under an item of the navigation section: the item is shown in the bottom tab bar on phones."
+  },
+  "settings.navigation.move_down": {
+    "defaultMessage": "Descendre {name}",
+    "description": "Accessible name and tooltip of the icon button that moves an item of the navigation one place down (later). {name} is the item's label (shell.nav.*)."
+  },
+  "settings.navigation.move_up": {
+    "defaultMessage": "Monter {name}",
+    "description": "Accessible name and tooltip of the icon button that moves an item of the navigation one place up (earlier). {name} is the item's label (shell.nav.*)."
+  },
+  "settings.navigation.moved": {
+    "defaultMessage": "{name} déplacé en position {position, number} sur {count, number}",
+    "description": "Announced to screen readers after an item of the navigation moved. {name} is the item's label, {position} its new place counted from 1, {count} the number of items."
+  },
+  "settings.navigation.preview": {
+    "defaultMessage": "Barre d’onglets sur mobile",
+    "description": "Caption under the preview of the bottom tab bar of phones in the navigation section: the icons and labels of the items it holds, then Menu (shell.nav.menu)."
+  },
+  "settings.navigation.reset": {
+    "defaultMessage": "Rétablir par défaut",
+    "description": "Button of the navigation section that puts back the default items and order."
+  },
+  "settings.navigation.reset_done": {
+    "defaultMessage": "Navigation par défaut rétablie",
+    "description": "Announced to screen readers after the navigation went back to the default items and order."
+  },
+  "settings.navigation.title": {
+    "defaultMessage": "Navigation",
+    "description": "Heading of the section of the preferences page where the user chooses the items of the navigation and their order."
+  },
+  "settings.navigation.unavailable": {
+    "defaultMessage": "Non proposé par ce serveur",
+    "description": "Help text under the local or federated timeline item of the navigation section when this server has turned that timeline off, so it does not show whatever is chosen."
+  },
+  "settings.notifications.group.status": {
+    "defaultMessage": "Nouvelles publications",
+    "description": "Row of the notification settings table: a new post of an account whose new posts the user chose to be notified of."
+  },
+  "settings.preferences.autosave": {
+    "defaultMessage": "Les modifications sont enregistrées dès que vous les faites.",
+    "description": "Text at the top of the preferences page."
+  },
+  "settings.preferences.display.title": {
+    "defaultMessage": "Affichage",
+    "description": "Heading of the section of the preferences page with the display language, the time zone, the color theme and the autoplay of animations."
+  },
+  "settings.preferences.display.description": {
+    "defaultMessage": "La langue, le fuseau horaire et les cartes de lien sont enregistrés dans votre compte ; le thème et les animations sont conservés sur ce navigateur.",
+    "description": "Description under the display section of the preferences page: where each of its settings is saved."
+  },
+  "settings.preferences.posting.title": {
+    "defaultMessage": "Nouvelles publications",
+    "description": "Heading of the section of the preferences page with what new posts start with: the visibility, who may quote, the language, and whether every attachment needs a description."
+  },
+  "settings.preferences.posting.description": {
+    "defaultMessage": "Les nouvelles publications démarrent avec ces choix, que vous pouvez modifier dans chaque publication. Enregistré dans votre compte.",
+    "description": "Description under the section of the preferences page with what new posts start with."
+  },
+  "settings.preferences.timeline.title": {
+    "defaultMessage": "Fils",
+    "description": "Heading of the section of the preferences page with the languages of the timelines and the automatic insertion of new posts."
+  },
+  "settings.preferences.timeline.description": {
+    "defaultMessage": "Quelles publications les fils affichent, et comment les nouvelles arrivent. Enregistré dans votre compte.",
+    "description": "Description under the timelines section of the preferences page."
+  },
+  "settings.preferences.title": {
+    "defaultMessage": "Affichage, publication et fils",
+    "description": "Heading and document title of the settings page with the display (language, time zone, theme), the navigation, the defaults of new posts and the timelines."
+  },
+  "settings.profile.avatar": {
+    "defaultMessage": "Avatar",
+    "description": "Heading of the part of the profile form for the user's profile picture."
+  },
+  "settings.profile.bot": {
+    "defaultMessage": "Ce compte est un bot",
+    "description": "Checkbox of the profile form: the account is automated."
+  },
+  "settings.profile.bot.description": {
+    "defaultMessage": "Le compte publie automatiquement, et les autres voient qu’il n’est peut-être pas surveillé.",
+    "description": "Help text of the 'This is a bot' checkbox."
+  },
+  "settings.profile.crawlers": {
+    "defaultMessage": "Moteurs de recherche et IA",
+    "description": "Heading of the part of the profile form about search engines and AI."
+  },
+  "settings.profile.indexable": {
+    "defaultMessage": "{scope, select, none {Autoriser les moteurs de recherche à indexer mon profil et mes publications publiques} public {Afficher mon profil et mes publications publiques dans la recherche} local {Afficher mon profil et mes publications publiques dans les moteurs de recherche, et mes publications pour ce serveur dans sa recherche} other {Afficher mon profil, mes publications publiques et mes publications pour ce serveur dans la recherche}}",
+    "description": "Label of the checkbox that lets the profile and posts appear in search. {scope} is what this server's post search covers: none (the server has no post search), public, local, or public_local."
+  },
+  "settings.profile.indexable.description": {
+    "defaultMessage": "{scope, select, none {Lorsque le serveur l’autorise, les moteurs de recherche peuvent les indexer. Les autres serveurs qui respectent ce choix le voient aussi. Cela ne change pas la façon dont on trouve votre compte par son nom.} public {La recherche de publications de ce serveur peut trouver vos publications publiques. Lorsque le serveur l’autorise, les moteurs de recherche peuvent indexer votre profil et vos publications publiques. Les autres serveurs qui respectent ce choix le voient aussi.} local {La recherche de publications de ce serveur peut trouver vos publications de visibilité « Ce serveur », pas vos publications publiques. Lorsque le serveur l’autorise, les moteurs de recherche peuvent indexer votre profil et vos publications publiques. Les autres serveurs qui respectent ce choix le voient aussi.} other {La recherche de publications de ce serveur peut trouver vos publications publiques et vos publications de visibilité « Ce serveur ». Lorsque le serveur l’autorise, les moteurs de recherche peuvent indexer votre profil et vos publications publiques. Les autres serveurs qui respectent ce choix le voient aussi.}}",
+    "description": "Help text of the indexable checkbox. Only a server with a post search speaks of this server's search; on the others (none) it must not read as if it affected the search by name. {scope} as in settings.profile.indexable."
+  },
+  "settings.profile.indexable.server_denies": {
+    "defaultMessage": "Ce serveur demande aux moteurs de recherche de n’indexer aucune page, ils n’indexent donc pas la vôtre même si vous l’autorisez.",
+    "description": "Note shown when the server denies search engines, so the user's choice does not reach them."
+  },
+  "settings.profile.ai_opt_out": {
+    "defaultMessage": "Refuser l’entraînement et l’utilisation par l’IA",
+    "description": "Label of the checkbox that denies AI training on and use of the user's pages."
+  },
+  "settings.profile.ai_opt_out.description": {
+    "defaultMessage": "Les pages de votre profil et de vos publications sur ce serveur demandent à l’IA de ne pas s’en servir pour s’entraîner ni de les utiliser. Les fichiers multimédias et les copies de vos publications sur d’autres serveurs ne portent pas cette demande.",
+    "description": "Help text of the AI opt-out checkbox, with its limits."
+  },
+  "settings.profile.ai_opt_out.server_denies": {
+    "defaultMessage": "{usage, select, deny_training {Ce serveur refuse déjà l’entraînement de l’IA sur toutes les pages ; cela refuse aussi l’utilisation par la recherche et les assistants IA.} other {Ce serveur refuse déjà l’entraînement et l’utilisation par l’IA sur toutes les pages.}}",
+    "description": "Note shown when the server already denies AI training (deny_training) or both training and use (deny)."
+  },
+  "settings.profile.characters_left": {
+    "defaultMessage": "{count, plural, one {# caractère restant} other {# caractères restants}}",
+    "description": "Character count under the bio field while the text is within the limit."
+  },
+  "settings.profile.characters_over": {
+    "defaultMessage": "{count, plural, one {# caractère en trop} other {# caractères en trop}}",
+    "description": "Character count under the bio field when the text is longer than the limit."
+  },
+  "settings.profile.display_name": {
+    "defaultMessage": "Nom affiché",
+    "description": "Label of the display name field of the profile form."
+  },
+  "settings.profile.display_name.description": {
+    "defaultMessage": "Jusqu’à {max} caractères. Laissez vide pour afficher votre nom d’utilisateur.",
+    "description": "Help text of the display name field. {max} is the character limit, for example 30."
+  },
+  "settings.profile.field": {
+    "defaultMessage": "Champ {number}",
+    "description": "Caption of one field of the profile form. {number} is its position, starting at 1."
+  },
+  "settings.profile.field.name": {
+    "defaultMessage": "Libellé",
+    "description": "Label of the name part of a profile field."
+  },
+  "settings.profile.field.name_required": {
+    "defaultMessage": "Donnez un libellé à ce champ.",
+    "description": "Error of a profile field that has content but no label."
+  },
+  "settings.profile.field.remove": {
+    "defaultMessage": "Supprimer le champ {number}",
+    "description": "Button that removes one field from the profile form. {number} is its position, starting at 1."
+  },
+  "settings.profile.field.value": {
+    "defaultMessage": "Contenu",
+    "description": "Label of the value part of a profile field."
+  },
+  "settings.profile.fields": {
+    "defaultMessage": "Champs",
+    "description": "Heading of the part of the profile form with the label and content pairs shown on the profile."
+  },
+  "settings.profile.fields.add": {
+    "defaultMessage": "Ajouter un champ",
+    "description": "Button that adds an empty field to the profile form."
+  },
+  "settings.profile.fields.description": {
+    "defaultMessage": "Jusqu’à {max} paires libellé-contenu, affichées sur votre profil. Les liens dans le contenu fonctionnent.",
+    "description": "Help text of the profile fields. {max} is how many fields a profile can have, for example 4."
+  },
+  "settings.profile.header": {
+    "defaultMessage": "Image d’en-tête",
+    "description": "Heading of the part of the profile form for the wide image at the top of the profile."
+  },
+  "settings.profile.image.choose": {
+    "defaultMessage": "Choisir une image",
+    "description": "Button that opens the file picker to choose a new avatar or header image."
+  },
+  "settings.profile.image.failed": {
+    "defaultMessage": "Le serveur n’a pas pu traiter cette image. Essayez-en une autre.",
+    "description": "Error under an avatar or header image whose upload failed during processing."
+  },
+  "settings.profile.image.remove": {
+    "defaultMessage": "Supprimer l’image",
+    "description": "Button that removes the avatar or header image when the profile is saved."
+  },
+  "settings.profile.locked": {
+    "defaultMessage": "Approuver les abonnés",
+    "description": "Checkbox of the profile form: follow requests need the user's approval."
+  },
+  "settings.profile.locked.description": {
+    "defaultMessage": "Les personnes doivent demander à vous suivre, et vous choisissez qui accepter.",
+    "description": "Help text of the 'Approve followers' checkbox."
+  },
+  "settings.profile.note": {
+    "defaultMessage": "Bio",
+    "description": "Label of the profile text field of the profile form."
+  },
+  "settings.profile.save": {
+    "defaultMessage": "Enregistrer le profil",
+    "description": "Submit button of the profile form."
+  },
+  "settings.profile.saved": {
+    "defaultMessage": "Votre profil est enregistré.",
+    "description": "Notification after the profile was saved."
+  },
+  "settings.profile.title": {
+    "defaultMessage": "Profil",
+    "description": "Heading and document title of the settings page that edits the user's profile."
+  },
+  "settings.badges.title": {
+    "defaultMessage": "Badges et liste des soutiens",
+    "description": "Heading and document title of the settings page that chooses the role badges the profile shows and whether the user is on the supporter list."
+  },
+  "settings.badges.none": {
+    "defaultMessage": "Vous n’avez aucun badge à afficher sur votre profil. Les badges accompagnent les rôles que l’équipe vous attribue.",
+    "description": "Shown in the badges section when none of the user's roles has a badge."
+  },
+  "settings.profile.too_long": {
+    "defaultMessage": "Utilisez au plus {max} caractères.",
+    "description": "Error of a profile field whose text is longer than its limit. {max} is the limit."
+  },
+  "settings.profile.unsaved.description": {
+    "defaultMessage": "Vos modifications du profil seront perdues.",
+    "description": "Body of the dialog shown when the user leaves the profile settings with unsaved changes: what happens if they leave."
+  },
+  "settings.profile.unsaved.leave": {
+    "defaultMessage": "Abandonner les modifications",
+    "description": "Button of the unsaved-changes dialog that leaves the profile settings and drops the changes."
+  },
+  "settings.profile.unsaved.stay": {
+    "defaultMessage": "Continuer la modification",
+    "description": "Button of the unsaved-changes dialog that stays on the profile settings with the changes kept."
+  },
+  "settings.profile.unsaved.title": {
+    "defaultMessage": "Quitter sans enregistrer votre profil ?",
+    "description": "Title (a question) of the dialog shown when the user leaves the profile settings with changes that are not saved."
+  },
+  "settings.push.denied": {
+    "defaultMessage": "Les notifications sont bloquées pour ce site. Pour activer les notifications push, autorisez-les dans les paramètres du navigateur pour ce site.",
+    "description": "Shown in the push notification settings when the user blocked notifications for this site in the browser."
+  },
+  "settings.push.enable": {
+    "defaultMessage": "Me notifier sur cet appareil",
+    "description": "Label of the switch that turns on Web Push notifications for this browser and signed-in session."
+  },
+  "settings.push.enable.description": {
+    "defaultMessage": "Les nouvelles notifications s’affichent sur cet appareil même lorsque l’application est fermée. Choisissez lesquelles dans la colonne Push des tableaux ci-dessous.",
+    "description": "Description of the switch that turns on Web Push on this device: what it does, and that its kinds are chosen in the Push column of the tables."
+  },
+  "settings.push.failed": {
+    "defaultMessage": "Impossible de configurer les notifications push sur cet appareil. Réessayez plus tard.",
+    "description": "Error shown when the browser failed to subscribe to push notifications."
+  },
+  "settings.push.not_allowed": {
+    "defaultMessage": "Les notifications push sont désactivées, car le navigateur n’a pas autorisé les notifications.",
+    "description": "Error shown when the user did not allow notifications in the browser's permission prompt after turning on push notifications."
+  },
+  "settings.push.title": {
+    "defaultMessage": "Notifications push",
+    "description": "Heading of the section of the notification settings about Web Push notifications on this device."
+  },
+  "settings.push.unsupported": {
+    "defaultMessage": "Ce navigateur ne peut pas recevoir de notifications push. Sur iPhone et iPad, ajoutez ce site à l’écran d’accueil et ouvrez-le depuis celui-ci.",
+    "description": "Shown in the push notification settings when the browser has no Push API."
+  },
+  "settings.push_prompt.choose_types": {
+    "defaultMessage": "Choisir les types",
+    "description": "Action of the toast after the prompt on the notifications page turned on push notifications: opens the notification settings, where the types pushed are chosen."
+  },
+  "settings.push_prompt.close": {
+    "defaultMessage": "Fermer",
+    "description": "Button of the prompt at the top of the notifications page: closes it without turning on push notifications. It does not come back."
+  },
+  "settings.push_prompt.description": {
+    "defaultMessage": "Les notifications parviennent à cet appareil même lorsque l’application est fermée. Vous pourrez aussi les activer plus tard dans les paramètres de notification.",
+    "description": "Text of the prompt at the top of the notifications page, offering to turn on push notifications. Says where to do it after closing the prompt."
+  },
+  "settings.push_prompt.enable": {
+    "defaultMessage": "Activer",
+    "description": "Button of the prompt at the top of the notifications page: turns on push notifications on this device. The browser may ask for permission."
+  },
+  "settings.push_prompt.enabled": {
+    "defaultMessage": "Les notifications push sont activées sur cet appareil.",
+    "description": "Toast after the prompt on the notifications page turned on push notifications."
+  },
+  "settings.push_prompt.title": {
+    "defaultMessage": "Recevoir des notifications sur cet appareil",
+    "description": "Heading of the prompt at the top of the notifications page, offering to turn on push notifications on this device."
+  },
+  "settings.require_media_description.description": {
+    "defaultMessage": "Avant de publier, le formulaire demande une description (texte alternatif) pour chaque image, vidéo ou fichier audio qui n’en a pas, afin que les personnes qui ne peuvent ni voir ni entendre puissent suivre vos publications.",
+    "description": "Help text of the switch that asks for a description of every attachment."
+  },
+  "settings.require_media_description.label": {
+    "defaultMessage": "Me demander une description pour chaque pièce jointe",
+    "description": "Label of the switch that makes the post form ask for an alternative text of every attached file before posting."
+  },
+  "settings.saved": {
+    "defaultMessage": "Enregistré",
+    "description": "Announced to screen readers after a preference was saved; preferences save as soon as they change."
+  },
+  "settings.theme.dark": {
+    "defaultMessage": "Sombre",
+    "description": "Option of the color theme radio group: always the dark theme."
+  },
+  "settings.theme.description": {
+    "defaultMessage": "S’applique immédiatement et est conservé sur ce navigateur.",
+    "description": "Help text of the color theme radio group on the preferences page."
+  },
+  "settings.theme.label": {
+    "defaultMessage": "Thème",
+    "description": "Label of the radio group that chooses the app's color theme, on the preferences page."
+  },
+  "settings.theme.light": {
+    "defaultMessage": "Clair",
+    "description": "Option of the color theme radio group: always the light theme."
+  },
+  "settings.theme.system": {
+    "defaultMessage": "Suivre le système",
+    "description": "Option of the color theme radio group: follow the device's light or dark setting."
+  },
+  "settings.time_zone.device_differs": {
+    "defaultMessage": "Cet appareil est dans un autre fuseau horaire : {zone}.",
+    "description": "Note under the time zone select when the chosen zone is not the time zone of the device in use. {zone} is that device zone as the select names it, like (UTC+09:00) Japan Standard Time."
+  },
+  "settings.time_zone.description": {
+    "defaultMessage": "Les dates et les heures sont affichées dans ce fuseau horaire.",
+    "description": "Help text of the time zone select."
+  },
+  "settings.time_zone.follow_browser": {
+    "defaultMessage": "Suivre ce navigateur ({zone})",
+    "description": "Option of the time zone select: follow the browser's time zone. zone is that zone's name."
+  },
+  "settings.time_zone.follow_browser_description": {
+    "defaultMessage": "Les dates sont affichées dans le fuseau horaire du navigateur.",
+    "description": "Description of the option that follows the browser's time zone."
+  },
+  "settings.time_zone.label": {
+    "defaultMessage": "Fuseau horaire",
+    "description": "Label of the select of the user's time zone."
+  },
+  "settings.time_zone.offset": {
+    "defaultMessage": "UTC{offset}",
+    "description": "Option of the time zone select for a zone that has no name, only its difference from UTC. {offset} is like +05:00 or −05:00."
+  },
+  "settings.time_zone.option": {
+    "defaultMessage": "(UTC{offset}) {name}",
+    "description": "Option of the time zone select. {offset} is the zone's difference from UTC, like +09:00 or −05:00; {name} is the zone's name in the display language, like Japan Standard Time."
+  },
+  "settings.time_zone.use_device": {
+    "defaultMessage": "Utiliser le fuseau horaire de cet appareil",
+    "description": "Button under the time zone select that changes the setting to the time zone of the device in use; shown only when they differ."
+  },
+  "settings.timeline_auto_insert.description": {
+    "defaultMessage": "Les nouvelles publications apparaissent d’elles-mêmes en haut de votre fil d’accueil, et la publication que vous lisez reste en place. Tant que le focus ou une sélection de texte se trouve dans le fil, elles attendent derrière le bouton « nouvelles publications ».",
+    "description": "Help text of the switch that inserts new posts into the home timeline on their own."
+  },
+  "settings.timeline_auto_insert.label": {
+    "defaultMessage": "Afficher automatiquement les nouvelles publications",
+    "description": "Label of the switch that makes the home timeline insert new posts on their own instead of waiting behind a button."
+  },
+  "settings.timeline_languages.description": {
+    "defaultMessage": "Les fils affichent les publications dans les langues que vous cochez. N’en cochez aucune pour voir toutes les langues.",
+    "description": "Help text of the timeline languages."
+  },
+  "settings.timeline_languages.label": {
+    "defaultMessage": "Langues de vos fils",
+    "description": "Caption of the group of checkboxes of the languages timelines show."
+  },
+  "settings.title": {
+    "defaultMessage": "Paramètres",
+    "description": "Heading and document title of the settings page."
+  },
+  "settings.two_factor.title": {
+    "defaultMessage": "Authentification à deux facteurs",
+    "description": "Heading and document title of the settings page of two-factor authentication with an authenticator app, and its item in the settings menu."
+  },
+  "settings.auto_delete.title": {
+    "defaultMessage": "Supprimer les anciennes publications",
+    "description": "Heading and document title of the settings page of the automatic deletion of the user's own old posts, and its item in the settings menu."
+  },
+  "settings.auto_delete.description": {
+    "defaultMessage": "Lorsqu’une de vos publications dépasse l’ancienneté que vous choisissez, elle est supprimée ici et sur les serveurs auxquels elle a été envoyée, comme si vous l’aviez supprimée vous-même. Les publications supprimées ne peuvent pas être restaurées. Vos boosts ne sont pas supprimés.",
+    "description": "Explanation at the top of the automatic deletion settings page."
+  },
+  "settings.auto_delete.enabled": {
+    "defaultMessage": "Supprimer automatiquement les anciennes publications",
+    "description": "Label of the switch that turns the automatic deletion of old posts on."
+  },
+  "settings.auto_delete.enabled.description": {
+    "defaultMessage": "Le serveur vérifie toutes les heures et supprime au plus 100 publications à chaque fois ; de nombreuses anciennes publications mettent donc plusieurs heures à disparaître.",
+    "description": "Help of the switch of the automatic deletion of old posts."
+  },
+  "settings.auto_delete.age": {
+    "defaultMessage": "Supprimer les publications de plus de",
+    "description": "Label of the select of the age after which posts are deleted."
+  },
+  "settings.auto_delete.age.description": {
+    "defaultMessage": "Compté à partir de la date de publication de chacune.",
+    "description": "Help of the select of the age after which posts are deleted."
+  },
+  "settings.auto_delete.age.days": {
+    "defaultMessage": "{count, plural, one {# jour} other {# jours}}",
+    "description": "An age of posts in days, an option of the select of the age after which posts are deleted."
+  },
+  "settings.auto_delete.keep": {
+    "defaultMessage": "Conserver ces publications",
+    "description": "Legend of the checkboxes of the exceptions that keep posts from the automatic deletion."
+  },
+  "settings.auto_delete.keep.description": {
+    "defaultMessage": "Les publications qui correspondent à un élément coché ne sont jamais supprimées automatiquement.",
+    "description": "Help of the exceptions that keep posts from the automatic deletion."
+  },
+  "settings.auto_delete.keep.pinned": {
+    "defaultMessage": "Épinglées sur votre profil",
+    "description": "Exception of the automatic deletion: posts pinned to the profile."
+  },
+  "settings.auto_delete.keep.bookmarked": {
+    "defaultMessage": "Ajoutées par vous aux marque-pages",
+    "description": "Exception of the automatic deletion: posts the user bookmarked."
+  },
+  "settings.auto_delete.keep.favourited": {
+    "defaultMessage": "Ajoutées par vous aux favoris",
+    "description": "Exception of the automatic deletion: posts the user favourited."
+  },
+  "settings.auto_delete.keep.media": {
+    "defaultMessage": "Avec des images ou d’autres médias",
+    "description": "Exception of the automatic deletion: posts with media attachments."
+  },
+  "settings.auto_delete.keep.polls": {
+    "defaultMessage": "Avec un sondage",
+    "description": "Exception of the automatic deletion: posts with a poll."
+  },
+  "settings.auto_delete.visibilities": {
+    "defaultMessage": "Conserver les publications avec ces visibilités",
+    "description": "Legend of the checkboxes of the visibilities whose posts the automatic deletion keeps."
+  },
+  "settings.auto_delete.visibilities.description": {
+    "defaultMessage": "Les publications dont la visibilité est cochée ne sont jamais supprimées automatiquement.",
+    "description": "Help of the visibilities whose posts the automatic deletion keeps."
+  },
+  "settings.auto_delete.min_boosts": {
+    "defaultMessage": "Conserver les publications boostées au moins",
+    "description": "Label of the select of the number of boosts that keeps a post from the automatic deletion."
+  },
+  "settings.auto_delete.min_favourites": {
+    "defaultMessage": "Conserver les publications mises en favori au moins",
+    "description": "Label of the select of the number of favourites that keeps a post from the automatic deletion."
+  },
+  "settings.auto_delete.threshold.off": {
+    "defaultMessage": "Ne pas conserver de publications pour ce critère",
+    "description": "Option of the boosts or favourites threshold of the automatic deletion that keeps no post for it."
+  },
+  "settings.auto_delete.threshold.count": {
+    "defaultMessage": "{count, plural, one {# fois} other {# fois}}",
+    "description": "Option of the boosts or favourites threshold of the automatic deletion: a number of boosts or favourites."
+  },
+  "settings.auto_delete.save": {
+    "defaultMessage": "Enregistrer",
+    "description": "Button that saves the automatic deletion settings."
+  },
+  "settings.auto_delete.saved_on": {
+    "defaultMessage": "Enregistré. Les publications de plus de {days, plural, one {# jour} other {# jours}} seront supprimées, sauf celles que vous conservez.",
+    "description": "Status after the automatic deletion settings were saved turned on."
+  },
+  "settings.auto_delete.saved_off": {
+    "defaultMessage": "Enregistré. Vos publications ne sont pas supprimées automatiquement.",
+    "description": "Status after the automatic deletion settings were saved turned off."
+  },
+  "settings.auto_delete.save_failed": {
+    "defaultMessage": "Impossible d’enregistrer les paramètres : {reason}",
+    "description": "Error after saving the automatic deletion settings failed. {reason} is the localized reason."
+  },
+  "settings.auto_delete.unsaved.title": {
+    "defaultMessage": "Quitter sans enregistrer ?",
+    "description": "Title of the dialog that asks before leaving the automatic deletion settings with unsaved changes."
+  },
+  "settings.auto_delete.unsaved.description": {
+    "defaultMessage": "Vos modifications de la suppression automatique seront perdues.",
+    "description": "Description of the dialog that asks before leaving the automatic deletion settings with unsaved changes."
+  },
+  "settings.auto_delete.unsaved.leave": {
+    "defaultMessage": "Abandonner les modifications",
+    "description": "Button that leaves the automatic deletion settings without saving."
+  },
+  "settings.auto_delete.unsaved.stay": {
+    "defaultMessage": "Continuer la modification",
+    "description": "Button that stays on the automatic deletion settings."
+  },
+  "settings.two_factor.status.title": {
+    "defaultMessage": "État actuel",
+    "description": "Heading of the region of the two-factor authentication page that says whether it is on."
+  },
+  "settings.two_factor.status": {
+    "defaultMessage": "Authentification à deux facteurs",
+    "description": "Term of the description list: whether two-factor authentication is on."
+  },
+  "settings.two_factor.status.on": {
+    "defaultMessage": "Activée",
+    "description": "Value of the two-factor authentication term while it is on."
+  },
+  "settings.two_factor.status.off": {
+    "defaultMessage": "Désactivée. La connexion ne demande que votre mot de passe.",
+    "description": "Text of the two-factor authentication page while it is off."
+  },
+  "settings.two_factor.enrolled_at": {
+    "defaultMessage": "Activée le",
+    "description": "Term of the description list: when two-factor authentication was turned on; the value is a date and time."
+  },
+  "settings.two_factor.recovery_codes.remaining": {
+    "defaultMessage": "Codes de récupération non utilisés",
+    "description": "Term of the description list: how many recovery codes are left; the value is a number."
+  },
+  "settings.two_factor.setup.title": {
+    "defaultMessage": "Configurer une application d’authentification",
+    "description": "Heading of the region that enrolls an authenticator app while two-factor authentication is off."
+  },
+  "settings.two_factor.setup.description": {
+    "defaultMessage": "Ajoutez ce compte à une application d’authentification sur votre mobile. Ensuite, la connexion demande aussi le code à six chiffres que l’application affiche.",
+    "description": "Explanation above the button that starts setting up an authenticator app."
+  },
+  "settings.two_factor.setup.start": {
+    "defaultMessage": "Configurer",
+    "description": "Button that generates a new secret to add to an authenticator app."
+  },
+  "settings.two_factor.setup.step.scan": {
+    "defaultMessage": "Scannez le code QR avec votre application d’authentification, ou saisissez-y la clé ci-dessous.",
+    "description": "First step of setting up an authenticator app."
+  },
+  "settings.two_factor.setup.step.confirm": {
+    "defaultMessage": "Saisissez le code à six chiffres affiché par l’application pour activer l’authentification à deux facteurs.",
+    "description": "Second step of setting up an authenticator app."
+  },
+  "settings.two_factor.setup.qr_code": {
+    "defaultMessage": "Code QR pour votre application d’authentification",
+    "description": "Accessible name of the QR code image that holds the secret for the authenticator app."
+  },
+  "settings.two_factor.setup.secret": {
+    "defaultMessage": "Clé",
+    "description": "Label of the secret shown as text, for typing it into an authenticator app instead of scanning the QR code."
+  },
+  "settings.two_factor.setup.code.description": {
+    "defaultMessage": "Le code à six chiffres que l’application affiche en ce moment.",
+    "description": "Help under the code field that confirms the setup of an authenticator app."
+  },
+  "settings.two_factor.setup.submit": {
+    "defaultMessage": "Activer",
+    "description": "Button that turns two-factor authentication on with the code of the app."
+  },
+  "settings.two_factor.setup.expired": {
+    "defaultMessage": "La configuration a pris trop de temps. Recommencez.",
+    "description": "Error when the setup of an authenticator app expired (after 15 minutes) before its code was entered."
+  },
+  "settings.two_factor.code": {
+    "defaultMessage": "Code d’authentification",
+    "description": "Label of the field for a code of the authenticator app or a recovery code."
+  },
+  "settings.two_factor.code.description": {
+    "defaultMessage": "Un code de votre application d’authentification, ou l’un de vos codes de récupération.",
+    "description": "Help under the code field that confirms replacing the recovery codes or turning two-factor authentication off."
+  },
+  "settings.two_factor.code.required": {
+    "defaultMessage": "Saisissez le code.",
+    "description": "Error of an empty code field."
+  },
+  "settings.two_factor.code.invalid": {
+    "defaultMessage": "Le code est incorrect ou a déjà été utilisé.",
+    "description": "Error of the code field when the server refused the code."
+  },
+  "settings.two_factor.state_changed": {
+    "defaultMessage": "L’authentification à deux facteurs a été modifiée ailleurs. La page affiche maintenant son état actuel.",
+    "description": "Error when two-factor authentication was turned on or off in another tab or device meanwhile."
+  },
+  "settings.two_factor.rate_limited": {
+    "defaultMessage": "Trop de codes incorrects : {reason}",
+    "description": "Error after too many wrong codes. {reason} is the server's explanation of when to try again."
+  },
+  "settings.two_factor.failed": {
+    "defaultMessage": "Impossible de modifier l’authentification à deux facteurs : {reason}",
+    "description": "Error when a change of two-factor authentication failed. {reason} is the server's explanation."
+  },
+  "settings.two_factor.enabled": {
+    "defaultMessage": "L’authentification à deux facteurs est activée.",
+    "description": "Status message after turning two-factor authentication on."
+  },
+  "settings.two_factor.disabled": {
+    "defaultMessage": "L’authentification à deux facteurs est désactivée.",
+    "description": "Status message after turning two-factor authentication off."
+  },
+  "settings.two_factor.recovery_codes.title": {
+    "defaultMessage": "Codes de récupération",
+    "description": "Heading of the region that replaces the recovery codes."
+  },
+  "settings.two_factor.recovery_codes.description": {
+    "defaultMessage": "Si vous perdez votre application d’authentification, connectez-vous avec un code de récupération. Chaque code ne fonctionne qu’une fois. De nouveaux codes remplacent les anciens, qui cessent de fonctionner.",
+    "description": "Explanation of the recovery codes above the form that replaces them."
+  },
+  "settings.two_factor.recovery_codes.replace": {
+    "defaultMessage": "Remplacer les codes de récupération",
+    "description": "Button that replaces the recovery codes with new ones."
+  },
+  "settings.two_factor.recovery_codes.replaced": {
+    "defaultMessage": "De nouveaux codes de récupération sont prêts. Les anciens ne fonctionnent plus.",
+    "description": "Status message after replacing the recovery codes."
+  },
+  "settings.two_factor.recovery_codes.new.title": {
+    "defaultMessage": "Enregistrez vos codes de récupération",
+    "description": "Heading of the list of new recovery codes, which is shown only once."
+  },
+  "settings.two_factor.recovery_codes.new.description": {
+    "defaultMessage": "Conservez ces codes en lieu sûr, par exemple dans un gestionnaire de mots de passe. Ils ne sont affichés que maintenant. Chacun vous connecte une fois sans l’application.",
+    "description": "Text above the list of new recovery codes."
+  },
+  "settings.two_factor.disable.title": {
+    "defaultMessage": "Désactiver l’authentification à deux facteurs",
+    "description": "Heading of the region that turns two-factor authentication off."
+  },
+  "settings.two_factor.disable.description": {
+    "defaultMessage": "La connexion ne demandera plus que votre mot de passe. Saisissez un code pour confirmer.",
+    "description": "Explanation above the form that turns two-factor authentication off."
+  },
+  "settings.two_factor.disable.submit": {
+    "defaultMessage": "Désactiver",
+    "description": "Button that turns two-factor authentication off."
+  },
+  "settings.passkeys.title": {
+    "defaultMessage": "Clés d’accès",
+    "description": "Title of the settings page of passkeys (WebAuthn credentials that sign in instead of the password), and its entry in the settings menu."
+  },
+  "settings.passkeys.description": {
+    "defaultMessage": "Une clé d’accès vous connecte avec l’empreinte digitale, le visage ou le code PIN qui déverrouille votre appareil ou votre gestionnaire de mots de passe, au lieu de votre mot de passe. Si l’authentification à deux facteurs est activée, la connexion demande toujours son code. Une fois que vous avez une clé d’accès, vous pouvez supprimer votre mot de passe sur la page du mot de passe.",
+    "description": "Explanation at the top of the passkeys settings page."
+  },
+  "settings.passkeys.add.title": {
+    "defaultMessage": "Ajouter une clé d’accès",
+    "description": "Button above the list of passkeys that opens the form that adds one, and the heading of that form."
+  },
+  "settings.passkeys.add.description": {
+    "defaultMessage": "Donnez un nom à la clé d’accès pour pouvoir la distinguer, et saisissez votre mot de passe pour confirmer. Votre navigateur vous demande ensuite où l’enregistrer.",
+    "description": "Explanation of the form that adds a passkey."
+  },
+  "settings.passkeys.add.description_passkey": {
+    "defaultMessage": "Donnez un nom à la clé d’accès pour pouvoir la distinguer. Votre navigateur demande l’une de vos clés d’accès pour confirmer, puis où enregistrer la nouvelle.",
+    "description": "Explanation of the form that adds a passkey for a user who has no password: an existing passkey confirms adding the new one."
+  },
+  "settings.passkeys.name": {
+    "defaultMessage": "Nom",
+    "description": "Label of the field for the name of a new passkey."
+  },
+  "settings.passkeys.name.description": {
+    "defaultMessage": "Par exemple l’appareil ou le gestionnaire de mots de passe qui la conserve.",
+    "description": "Hint under the field for the name of a new passkey."
+  },
+  "settings.passkeys.name.required": {
+    "defaultMessage": "Saisissez un nom.",
+    "description": "Error of the empty name field of a new passkey."
+  },
+  "settings.passkeys.password": {
+    "defaultMessage": "Mot de passe actuel",
+    "description": "Label of the password field that confirms adding a passkey."
+  },
+  "settings.passkeys.password.description": {
+    "defaultMessage": "Ajouter un moyen de connexion exige votre mot de passe.",
+    "description": "Hint under the password field that confirms adding a passkey."
+  },
+  "settings.passkeys.password.required": {
+    "defaultMessage": "Saisissez votre mot de passe.",
+    "description": "Error of the empty password field when adding a passkey."
+  },
+  "settings.passkeys.add.submit": {
+    "defaultMessage": "Ajouter la clé d’accès",
+    "description": "Button that adds a passkey: it checks the password and opens the browser's prompt."
+  },
+  "settings.passkeys.add.wrong_password": {
+    "defaultMessage": "Le mot de passe est incorrect.",
+    "description": "Error of the password field when the server refused the password that confirms adding a passkey."
+  },
+  "settings.passkeys.add.cancelled": {
+    "defaultMessage": "Aucune clé d’accès n’a été ajoutée : la fenêtre du navigateur a été fermée ou a expiré. Réessayez.",
+    "description": "Alert when the user dismissed the browser's passkey prompt or it timed out."
+  },
+  "settings.passkeys.add.exists": {
+    "defaultMessage": "Cet appareil ou ce gestionnaire de mots de passe a déjà une clé d’accès pour votre compte.",
+    "description": "Alert when the authenticator already holds a passkey of the account."
+  },
+  "settings.passkeys.add.unavailable": {
+    "defaultMessage": "Le navigateur n’a pas pu créer de clé d’accès pour ce site.",
+    "description": "Alert when the browser refused to create a passkey for another reason (unsupported, or the site's address does not allow it)."
+  },
+  "settings.passkeys.add.invalid": {
+    "defaultMessage": "La clé d’accès n’a pas pu être vérifiée. Réessayez avec un autre appareil ou gestionnaire de mots de passe.",
+    "description": "Alert when the server could not verify the new passkey (for example, the device has no screen lock)."
+  },
+  "settings.passkeys.add.expired": {
+    "defaultMessage": "L’ajout de la clé d’accès a pris trop de temps. Réessayez.",
+    "description": "Alert when the passkey was created after the registration expired (5 minutes)."
+  },
+  "settings.passkeys.add.too_many": {
+    "defaultMessage": "Vous avez atteint le nombre maximal de clés d’accès. Supprimez-en une d’abord.",
+    "description": "Alert when the user already has the most passkeys allowed (20)."
+  },
+  "settings.passkeys.add.rate_limited": {
+    "defaultMessage": "Trop de mots de passe incorrects : {reason}",
+    "description": "Alert when too many wrong passwords were entered to add a passkey. {reason} is the server's message, which says when to try again."
+  },
+  "settings.passkeys.add.failed": {
+    "defaultMessage": "Impossible d’ajouter la clé d’accès : {reason}",
+    "description": "Alert when adding a passkey failed for another reason. {reason} is the error's message."
+  },
+  "settings.passkeys.added": {
+    "defaultMessage": "La clé d’accès « {name} » a été ajoutée.",
+    "description": "Status after a passkey was added. {name} is the name the user gave it."
+  },
+  "settings.passkeys.unsupported": {
+    "defaultMessage": "Ce navigateur ne peut pas créer de clés d’accès. Ouvrez cette page dans un navigateur qui les prend en charge pour en ajouter une.",
+    "description": "Note instead of the form that adds a passkey, in a browser without passkey support."
+  },
+  "settings.passkeys.list.title": {
+    "defaultMessage": "Vos clés d’accès",
+    "description": "Heading of the list of the user's passkeys."
+  },
+  "settings.passkeys.empty": {
+    "defaultMessage": "Aucune clé d’accès pour le moment",
+    "description": "Empty state of the list of the user's passkeys."
+  },
+  "settings.passkeys.added_at": {
+    "defaultMessage": "Ajoutée le {date}",
+    "description": "When a passkey was added, under its name. {date} is a formatted date and time."
+  },
+  "settings.passkeys.remove": {
+    "defaultMessage": "Supprimer",
+    "description": "Button that removes a passkey, and the confirm button of its dialog."
+  },
+  "settings.passkeys.remove.title": {
+    "defaultMessage": "Supprimer la clé d’accès « {name} » ?",
+    "description": "Title of the dialog that confirms removing a passkey. {name} is its name."
+  },
+  "settings.passkeys.remove.description": {
+    "defaultMessage": "Vous ne pourrez plus vous connecter avec elle. Supprimez-la aussi de votre appareil ou de votre gestionnaire de mots de passe.",
+    "description": "Explanation in the dialog that confirms removing a passkey."
+  },
+  "settings.passkeys.remove.cancel": {
+    "defaultMessage": "Annuler",
+    "description": "Button that closes the dialog without removing the passkey."
+  },
+  "settings.passkeys.remove.failed": {
+    "defaultMessage": "Impossible de supprimer la clé d’accès : {reason}",
+    "description": "Alert in the dialog when removing a passkey failed. {reason} is the error's message."
+  },
+  "settings.passkeys.removed": {
+    "defaultMessage": "La clé d’accès « {name} » a été supprimée.",
+    "description": "Announcement after a passkey was removed. {name} is its name."
+  },
+  "settings.password.title": {
+    "defaultMessage": "Mot de passe",
+    "description": "Title of the settings page that changes the password, and its entry in the settings menu."
+  },
+  "settings.password.description": {
+    "defaultMessage": "Changer le mot de passe vous déconnecte de tous les autres navigateurs et applications. Vos clés d’accès et l’authentification à deux facteurs restent inchangées.",
+    "description": "Text at the top of the settings page that changes the password."
+  },
+  "settings.password.change.title": {
+    "defaultMessage": "Changer le mot de passe",
+    "description": "Heading of the form that changes the password with the current one, on the password settings page."
+  },
+  "settings.password.current": {
+    "defaultMessage": "Mot de passe actuel",
+    "description": "Label of the field of the current password, which confirms a password change."
+  },
+  "settings.password.current.required": {
+    "defaultMessage": "Saisissez votre mot de passe actuel.",
+    "description": "Error of the empty current password field when changing the password."
+  },
+  "settings.password.wrong_password": {
+    "defaultMessage": "Le mot de passe est incorrect.",
+    "description": "Error of the current password field when the server refused it."
+  },
+  "settings.password.new": {
+    "defaultMessage": "Nouveau mot de passe",
+    "description": "Label of the field of the new password."
+  },
+  "settings.password.new.description": {
+    "defaultMessage": "De {min, number} à {max, number} caractères.",
+    "description": "Hint under the new password field. {min} and {max} are the allowed lengths in characters."
+  },
+  "settings.password.new.invalid": {
+    "defaultMessage": "Utilisez de {min, number} à {max, number} caractères.",
+    "description": "Error of the new password field when it is empty, too short, or too long. {min} and {max} are the allowed lengths in characters."
+  },
+  "settings.password.submit": {
+    "defaultMessage": "Changer le mot de passe",
+    "description": "Button that changes the password."
+  },
+  "settings.password.changed": {
+    "defaultMessage": "Votre mot de passe est changé. Les autres navigateurs et applications sont déconnectés.",
+    "description": "Status after the password was changed."
+  },
+  "settings.password.rate_limited": {
+    "defaultMessage": "Trop de mots de passe incorrects : {reason}",
+    "description": "Alert when too many wrong current passwords were entered to change the password. {reason} is the server's message, which says when to try again."
+  },
+  "settings.password.failed": {
+    "defaultMessage": "Impossible de changer le mot de passe : {reason}",
+    "description": "Alert when changing the password failed for another reason. {reason} is the error's message."
+  },
+  "settings.password.remove.title": {
+    "defaultMessage": "Supprimer le mot de passe",
+    "description": "Heading of the section that removes the password, so that only passkeys sign in, on the password settings page."
+  },
+  "settings.password.remove.description": {
+    "defaultMessage": "Connectez-vous uniquement avec vos clés d’accès. L’une de vos clés d’accès confirme la suppression, et vous êtes déconnecté de tous les autres navigateurs et applications. Vous pouvez définir à nouveau un mot de passe sur cette page ou avec un lien de réinitialisation.",
+    "description": "Explanation of the section that removes the password."
+  },
+  "settings.password.remove.no_passkey": {
+    "defaultMessage": "Ajoutez une clé d’accès avant de supprimer le mot de passe, afin de pouvoir toujours vous connecter.",
+    "description": "Note instead of the button that removes the password, for a user who has no passkey."
+  },
+  "settings.password.remove.open": {
+    "defaultMessage": "Supprimer le mot de passe…",
+    "description": "Button that opens the dialog that removes the password."
+  },
+  "settings.password.remove.confirm.title": {
+    "defaultMessage": "Supprimer votre mot de passe ?",
+    "description": "Title of the dialog that confirms removing the password."
+  },
+  "settings.password.remove.confirm.description": {
+    "defaultMessage": "Désormais, vous vous connecterez uniquement avec vos clés d’accès. Votre navigateur en demande une pour confirmer.",
+    "description": "Description of the dialog that removes the password: the confirm button opens the browser's passkey prompt."
+  },
+  "settings.password.remove.confirm": {
+    "defaultMessage": "Supprimer le mot de passe",
+    "description": "Button in the dialog that removes the password after the browser's passkey prompt."
+  },
+  "settings.password.remove.cancel": {
+    "defaultMessage": "Annuler",
+    "description": "Button that closes the dialog without removing the password."
+  },
+  "settings.password.removed": {
+    "defaultMessage": "Votre mot de passe est supprimé. Connectez-vous désormais avec vos clés d’accès. Les autres navigateurs et applications sont déconnectés.",
+    "description": "Status after the password was removed."
+  },
+  "settings.password.remove.failed": {
+    "defaultMessage": "Impossible de supprimer le mot de passe : {reason}",
+    "description": "Alert in the dialog when removing the password failed. {reason} is the error's message."
+  },
+  "settings.password.set.title": {
+    "defaultMessage": "Définir un mot de passe",
+    "description": "Heading of the form that sets a password for a user who removed theirs and signs in with passkeys only."
+  },
+  "settings.password.set.description": {
+    "defaultMessage": "Vous vous connectez avec vos clés d’accès. Définissez un mot de passe pour pouvoir aussi vous connecter avec votre adresse e-mail et votre mot de passe. Votre navigateur demande l’une de vos clés d’accès pour confirmer, et vous êtes déconnecté de tous les autres navigateurs et applications.",
+    "description": "Explanation of the form that sets a password for a user who has none."
+  },
+  "settings.password.set.submit": {
+    "defaultMessage": "Définir le mot de passe",
+    "description": "Button that sets a password after the browser's passkey prompt, for a user who has none."
+  },
+  "settings.password.set.done": {
+    "defaultMessage": "Votre mot de passe est défini. Les autres navigateurs et applications sont déconnectés.",
+    "description": "Status after a user who had no password set one."
+  },
+  "settings.password.passkeys_unsupported": {
+    "defaultMessage": "Ce navigateur ne peut pas utiliser les clés d’accès, qui servent à confirmer cette action. Ouvrez cette page dans un navigateur qui les prend en charge.",
+    "description": "Note instead of a form or button of the password page that a passkey confirms (removing or setting the password), in a browser without passkey support."
+  },
+  "settings.passkey_confirmation.cancelled": {
+    "defaultMessage": "Votre clé d’accès n’a pas été utilisée : la fenêtre du navigateur a été fermée ou a expiré. Réessayez.",
+    "description": "Alert when the user dismissed the browser's passkey prompt that confirms an operation (deleting the account, setting or removing the password, adding a passkey), or it timed out."
+  },
+  "settings.passkey_confirmation.unavailable": {
+    "defaultMessage": "Le navigateur n’a pas pu utiliser de clé d’accès pour ce site.",
+    "description": "Alert when the browser refused the passkey prompt that confirms an operation for another reason (unsupported, or the site's address)."
+  },
+  "settings.passkey_confirmation.invalid": {
+    "defaultMessage": "La clé d’accès n’a pas pu être vérifiée. Utilisez une clé d’accès de ce compte.",
+    "description": "Alert when the server did not accept the passkey that confirms an operation (another account's passkey, a removed one, or one that does not verify)."
+  },
+  "settings.passkey_confirmation.expired": {
+    "defaultMessage": "La confirmation avec la clé d’accès a pris trop de temps. Réessayez.",
+    "description": "Alert when the passkey that confirms an operation was given after the confirmation expired (5 minutes)."
+  },
+  "settings.profile.display_name.emoji": {
+    "defaultMessage": "Ajouter un émoji au nom affiché",
+    "description": "Accessible name and tooltip of the button that opens the custom emoji picker for the display name."
+  },
+  "settings.profile.note.emoji": {
+    "defaultMessage": "Ajouter un émoji à la bio",
+    "description": "Accessible name and tooltip of the button that opens the custom emoji picker for the bio."
+  },
+  "settings.profile.badges": {
+    "defaultMessage": "Badges",
+    "description": "Heading of the section of the badges settings page that chooses which role badges the profile shows (ADR-0070)."
+  },
+  "settings.profile.badges.description": {
+    "defaultMessage": "Choisissez les badges de vos rôles à afficher sur votre profil. Un badge reste masqué tant que vous ne l’affichez pas, et n’apparaît que sur votre profil.",
+    "description": "Explanation of the badges section."
+  },
+  "settings.profile.badges.shown": {
+    "defaultMessage": "{badge} est affiché sur votre profil.",
+    "description": "Announced when a badge is shown. {badge} is the badge's name, which the staff wrote."
+  },
+  "settings.profile.badges.hidden": {
+    "defaultMessage": "{badge} n’est plus affiché sur votre profil.",
+    "description": "Announced when a badge is hidden. {badge} is the badge's name, which the staff wrote."
+  },
+  "settings.profile.badges.failed": {
+    "defaultMessage": "Impossible de modifier le badge : {reason}",
+    "description": "Error under a badge's switch when the change was not saved. {reason} is the localized reason."
+  },
+  "settings.domain_mutes.title": {
+    "defaultMessage": "Domaines en sourdine",
+    "description": "Heading and document title of the settings page with the domains the user mutes."
+  },
+  "settings.domain_mutes.description": {
+    "defaultMessage": "Mettre un domaine en sourdine masque les publications de ses comptes, et de ceux de ses sous-domaines, dans vos fils autres que l’accueil, leurs boosts dans votre fil d’accueil, et leurs notifications. Les comptes que vous suivez restent dans votre fil d’accueil. Vous seul êtes concerné, et le serveur n’en est pas informé.",
+    "description": "Explains what muting a domain does, at the top of the muted domains page."
+  },
+  "settings.domain_mutes.new.title": {
+    "defaultMessage": "Mettre un domaine en sourdine",
+    "description": "Button above the list of muted domains that opens the form that mutes one, and the heading of that form."
+  },
+  "settings.domain_mutes.list.title": {
+    "defaultMessage": "Domaines que vous mettez en sourdine",
+    "description": "Heading of the section of the muted domains page that lists them."
+  },
+  "settings.domain_mutes.domain": {
+    "defaultMessage": "Domaine",
+    "description": "Label of the field for the domain to mute."
+  },
+  "settings.domain_mutes.domain.description": {
+    "defaultMessage": "Le domaine du serveur, par exemple mastodon.example. Ses sous-domaines sont aussi mis en sourdine.",
+    "description": "Help under the field for the domain to mute."
+  },
+  "settings.domain_mutes.domain.required": {
+    "defaultMessage": "Saisissez un domaine.",
+    "description": "Error under the domain field when the user mutes without entering a domain."
+  },
+  "settings.domain_mutes.mute": {
+    "defaultMessage": "Mettre en sourdine",
+    "description": "Button that mutes the domain entered in the field."
+  },
+  "settings.domain_mutes.mute_failed": {
+    "defaultMessage": "Impossible de mettre le domaine en sourdine : {reason}",
+    "description": "Shown under the form when muting a domain fails. {reason} is the server's explanation."
+  },
+  "settings.domain_mutes.muted": {
+    "defaultMessage": "Vous avez mis {domain} en sourdine.",
+    "description": "Shown under the form after a domain was muted. {domain} is the domain."
+  },
+  "settings.domain_mutes.empty": {
+    "defaultMessage": "Vous n’avez mis aucun domaine en sourdine",
+    "description": "Shown when the user mutes no domain."
+  },
+  "settings.domain_mutes.since": {
+    "defaultMessage": "En sourdine depuis le {date}",
+    "description": "When the domain was muted, under a muted domain. {date} is a formatted date and time."
+  },
+  "settings.domain_mutes.unmute": {
+    "defaultMessage": "Réactiver le son",
+    "description": "Button that unmutes a domain."
+  },
+  "settings.domain_mutes.unmuted": {
+    "defaultMessage": "Vous n’avez plus {domain} en sourdine.",
+    "description": "Announced after a domain was unmuted. {domain} is the domain."
+  },
+  "settings.import_export.kind.domain_mutes": {
+    "defaultMessage": "Domaines en sourdine",
+    "description": "Name of the list of domains the user mutes, as one kind of CSV file to export or import."
+  },
+  "settings.default_quote_policy.label": {
+    "defaultMessage": "Qui peut citer vos nouvelles publications",
+    "description": "Label of the setting of who may quote the user's new posts."
+  },
+  "settings.default_quote_policy.description": {
+    "defaultMessage": "Vous pouvez aussi le choisir pour chaque publication.",
+    "description": "Description of the setting of who may quote the user's new posts."
+  },
+  "settings.apps.title": {
+    "defaultMessage": "Vos applications",
+    "description": "Title of the settings page where the user registers OAuth apps of their own, and its entry in the settings menu."
+  },
+  "settings.apps.description": {
+    "defaultMessage": "Enregistrez vos propres applications, comme un bot, un script ou un client, et obtenez ce dont elles ont besoin pour utiliser votre compte. Les autres personnes autorisent une application que vous enregistrez comme n’importe quelle application que ce serveur n’a pas vérifiée.",
+    "description": "Explanation at the top of the development settings page."
+  },
+  "settings.apps.new.title": {
+    "defaultMessage": "Enregistrer une application",
+    "description": "Heading of the form that registers an OAuth app on the development settings page."
+  },
+  "settings.apps.name": {
+    "defaultMessage": "Nom",
+    "description": "Label of the name field of an OAuth app."
+  },
+  "settings.apps.name.description": {
+    "defaultMessage": "Affiché aux personnes qui autorisent l’application. Jusqu’à {max} caractères.",
+    "description": "Description of the name field of an OAuth app. {max} is the most characters."
+  },
+  "settings.apps.name.required": {
+    "defaultMessage": "Saisissez un nom pour l’application.",
+    "description": "Error when the name of an OAuth app is empty."
+  },
+  "settings.apps.website": {
+    "defaultMessage": "Site web",
+    "description": "Label of the optional website field of an OAuth app."
+  },
+  "settings.apps.website.description": {
+    "defaultMessage": "Facultatif. La page d’accueil de l’application, commençant par https:// ou http://.",
+    "description": "Description of the website field of an OAuth app."
+  },
+  "settings.apps.redirect_uris": {
+    "defaultMessage": "URI de redirection",
+    "description": "Label of the field of the redirect URIs of an OAuth app."
+  },
+  "settings.apps.redirect_uris.description": {
+    "defaultMessage": "Une par ligne, jusqu’à {max}. Une URL https, un schéma d’application comme com.example.app:/callback, ou une URL de bouclage comme http://127.0.0.1/callback.",
+    "description": "Description of the redirect URIs field of an OAuth app. {max} is the most URIs."
+  },
+  "settings.apps.redirect_uris.required": {
+    "defaultMessage": "Saisissez au moins une URI de redirection.",
+    "description": "Error when the redirect URIs of an OAuth app are empty."
+  },
+  "settings.apps.scope": {
+    "defaultMessage": "Scopes",
+    "description": "Label of the field of the scopes of an OAuth app."
+  },
+  "settings.apps.scope.description": {
+    "defaultMessage": "Le maximum que l’application peut demander, séparé par des espaces, par exemple « read write ». Les scopes d’administration et de soutien ne sont pas disponibles pour les applications.",
+    "description": "Description of the scopes field of an OAuth app."
+  },
+  "settings.apps.scope.required": {
+    "defaultMessage": "Saisissez au moins un scope.",
+    "description": "Error when the scopes of an OAuth app are empty."
+  },
+  "settings.apps.client_type": {
+    "defaultMessage": "Type",
+    "description": "Legend of the choice between a public and a confidential OAuth app."
+  },
+  "settings.apps.client_type.public": {
+    "defaultMessage": "Public",
+    "description": "Choice of a public OAuth app."
+  },
+  "settings.apps.client_type.public.description": {
+    "defaultMessage": "Sans secret. Pour une application monopage, mobile ou en ligne de commande.",
+    "description": "Description of the choice of a public OAuth app."
+  },
+  "settings.apps.client_type.confidential": {
+    "defaultMessage": "Confidentiel",
+    "description": "Choice of a confidential OAuth app."
+  },
+  "settings.apps.client_type.confidential.description": {
+    "defaultMessage": "Possède un secret affiché une seule fois. Pour un bot ou une application qui s’exécute sur un serveur.",
+    "description": "Description of the choice of a confidential OAuth app."
+  },
+  "settings.apps.register": {
+    "defaultMessage": "Enregistrer l’application",
+    "description": "Button that registers an OAuth app."
+  },
+  "settings.apps.register_failed": {
+    "defaultMessage": "L’application n’a pas été enregistrée : {reason}",
+    "description": "Alert when registering an OAuth app failed. {reason} is the server's explanation."
+  },
+  "settings.apps.registered": {
+    "defaultMessage": "L’application « {name} » a été enregistrée.",
+    "description": "Status after an OAuth app was registered. {name} is the app's name."
+  },
+  "settings.apps.list.title": {
+    "defaultMessage": "Vos applications",
+    "description": "Heading of the list of the user's OAuth apps."
+  },
+  "settings.apps.empty": {
+    "defaultMessage": "Aucune application pour le moment",
+    "description": "Empty state of the list of the user's OAuth apps."
+  },
+  "settings.apps.client_id": {
+    "defaultMessage": "ID client",
+    "description": "Label of the client ID of an OAuth app."
+  },
+  "settings.apps.type.public": {
+    "defaultMessage": "Application publique",
+    "description": "Label of a public OAuth app in the list."
+  },
+  "settings.apps.type.confidential": {
+    "defaultMessage": "Application confidentielle",
+    "description": "Label of a confidential OAuth app in the list."
+  },
+  "settings.apps.created_at": {
+    "defaultMessage": "Enregistrée le {date}",
+    "description": "When an OAuth app was registered. {date} is a date and time."
+  },
+  "settings.apps.disabled": {
+    "defaultMessage": "Un administrateur a désactivé cette application. Elle ne peut être ni autorisée ni utilisée.",
+    "description": "Note on an OAuth app that an administrator disabled."
+  },
+  "settings.apps.edit": {
+    "defaultMessage": "Modifier",
+    "description": "Button that opens the dialog to change an OAuth app."
+  },
+  "settings.apps.edit.title": {
+    "defaultMessage": "Modifier {name}",
+    "description": "Title of the dialog that changes an OAuth app. {name} is the app's name."
+  },
+  "settings.apps.edit.description": {
+    "defaultMessage": "Les jetons que l’application détient déjà continuent de fonctionner avec les scopes qui leur ont été accordés.",
+    "description": "Note in the dialog that changes an OAuth app."
+  },
+  "settings.apps.edit.close": {
+    "defaultMessage": "Fermer",
+    "description": "Label of the close button of the dialogs of the development settings."
+  },
+  "settings.apps.cancel": {
+    "defaultMessage": "Annuler",
+    "description": "Button that closes a dialog of the development settings without changing anything."
+  },
+  "settings.apps.save": {
+    "defaultMessage": "Enregistrer",
+    "description": "Button that saves the changes to an OAuth app."
+  },
+  "settings.apps.save_failed": {
+    "defaultMessage": "L’application n’a pas été enregistrée : {reason}",
+    "description": "Alert when saving an OAuth app failed. {reason} is the server's explanation."
+  },
+  "settings.apps.saved": {
+    "defaultMessage": "L’application « {name} » a été enregistrée.",
+    "description": "Announcement after an OAuth app was saved. {name} is the app's name."
+  },
+  "settings.apps.delete": {
+    "defaultMessage": "Supprimer",
+    "description": "Button that deletes an OAuth app."
+  },
+  "settings.apps.delete.title": {
+    "defaultMessage": "Supprimer {name} ?",
+    "description": "Title of the dialog that confirms deleting an OAuth app. {name} is the app's name."
+  },
+  "settings.apps.delete.description": {
+    "defaultMessage": "L’application est supprimée définitivement, et tous ses jetons cessent de fonctionner, y compris pour les autres personnes qui l’ont autorisée. Cette action est irréversible.",
+    "description": "Explanation in the dialog that confirms deleting an OAuth app."
+  },
+  "settings.apps.delete.failed": {
+    "defaultMessage": "L’application n’a pas été supprimée : {reason}",
+    "description": "Alert when deleting an OAuth app failed. {reason} is the server's explanation."
+  },
+  "settings.apps.deleted": {
+    "defaultMessage": "L’application « {name} » a été supprimée.",
+    "description": "Announcement after an OAuth app was deleted. {name} is the app's name."
+  },
+  "settings.apps.rotate": {
+    "defaultMessage": "Nouveau secret",
+    "description": "Button that gives a confidential OAuth app a new secret."
+  },
+  "settings.apps.rotate.title": {
+    "defaultMessage": "Donner un nouveau secret à {name} ?",
+    "description": "Title of the dialog that confirms a new secret for an OAuth app. {name} is the app's name."
+  },
+  "settings.apps.rotate.description": {
+    "defaultMessage": "L’ancien secret cesse de fonctionner immédiatement, l’application ne peut donc plus renouveler ses jetons tant que vous ne lui avez pas donné le nouveau. Le nouveau secret n’est affiché qu’une fois.",
+    "description": "Explanation in the dialog that confirms a new secret for an OAuth app."
+  },
+  "settings.apps.rotate.failed": {
+    "defaultMessage": "Le secret n’a pas été remplacé : {reason}",
+    "description": "Alert when giving an OAuth app a new secret failed. {reason} is the server's explanation."
+  },
+  "settings.apps.token": {
+    "defaultMessage": "Émettre un jeton",
+    "description": "Button that opens the dialog to issue tokens of an OAuth app to the user."
+  },
+  "settings.apps.token.title": {
+    "defaultMessage": "Émettre un jeton pour {name}",
+    "description": "Title of the dialog that issues tokens of an OAuth app to the user. {name} is the app's name."
+  },
+  "settings.apps.token.description": {
+    "defaultMessage": "Émet un jeton d’accès et un jeton de renouvellement de cette application pour votre propre compte, pour un bot ou un script. Quiconque les détient peut agir en votre nom dans les limites des scopes : gardez-les secrets.",
+    "description": "Explanation in the dialog that issues tokens of an OAuth app to the user."
+  },
+  "settings.apps.token.scope": {
+    "defaultMessage": "Scopes",
+    "description": "Label of the scopes field of the dialog that issues tokens."
+  },
+  "settings.apps.token.scope.description": {
+    "defaultMessage": "Séparés par des espaces, parmi les scopes de l’application. Laissez vide pour tous les inclure.",
+    "description": "Description of the scopes field of the dialog that issues tokens."
+  },
+  "settings.apps.token.submit": {
+    "defaultMessage": "Émettre le jeton",
+    "description": "Button that issues tokens of an OAuth app."
+  },
+  "settings.apps.token.failed": {
+    "defaultMessage": "Le jeton n’a pas été émis : {reason}",
+    "description": "Alert when issuing tokens failed. {reason} is the server's explanation."
+  },
+  "settings.apps.token.result.title": {
+    "defaultMessage": "Jetons de {name}",
+    "description": "Title of the dialog that shows the tokens that were issued. {name} is the app's name."
+  },
+  "settings.apps.token.result.notice": {
+    "defaultMessage": "Ces jetons ne sont affichés que maintenant. Copiez-les et conservez-les en lieu sûr ; ils ne pourront plus être affichés.",
+    "description": "Notice that issued tokens are shown once."
+  },
+  "settings.apps.token.result.expires": {
+    "defaultMessage": "Le jeton d’accès dure {minutes, plural, one {# minute} other {# minutes}}. Renouvelez-le avec le jeton de renouvellement, qui remplace les deux.",
+    "description": "Explanation of the lifetime of the issued access token. {minutes} is the number of minutes."
+  },
+  "settings.apps.token.access": {
+    "defaultMessage": "Jeton d’accès",
+    "description": "Label of the issued access token."
+  },
+  "settings.apps.token.refresh": {
+    "defaultMessage": "Jeton de renouvellement",
+    "description": "Label of the issued refresh token."
+  },
+  "settings.apps.token.granted_scope": {
+    "defaultMessage": "Scopes : {scope}",
+    "description": "The scopes of the issued tokens. {scope} is a list of scopes."
+  },
+  "settings.apps.secret.title": {
+    "defaultMessage": "Secret client de {name}",
+    "description": "Heading of the notice that shows the secret of an OAuth app once. {name} is the app's name."
+  },
+  "settings.apps.secret.notice": {
+    "defaultMessage": "C’est la seule fois que le secret est affiché. Copiez-le maintenant et conservez-le en lieu sûr ; si vous le perdez, donnez un nouveau secret à l’application.",
+    "description": "Notice that the secret of an OAuth app is shown once."
+  },
+  "settings.apps.secret.public": {
+    "defaultMessage": "L’application « {name} » n’a pas de secret. Son ID client est affiché ci-dessous.",
+    "description": "Notice after a public OAuth app was registered. {name} is the app's name."
+  },
+  "settings.apps.secret.client_secret": {
+    "defaultMessage": "Secret client",
+    "description": "Label of the secret of an OAuth app."
+  },
+  "settings.apps.copy": {
+    "defaultMessage": "Copier",
+    "description": "Button that copies a value to the clipboard."
+  },
+  "settings.apps.copy.label": {
+    "defaultMessage": "Copier : {name}",
+    "description": "Accessible name of a button that copies a value. {name} is the value's label."
+  },
+  "settings.apps.copied": {
+    "defaultMessage": "Copié dans le presse-papiers.",
+    "description": "Toast after a value was copied."
+  },
+  "settings.apps.copy_failed": {
+    "defaultMessage": "Impossible de copier. Sélectionnez le texte et copiez-le vous-même.",
+    "description": "Toast when copying a value failed."
+  },
+  "settings.apps.done": {
+    "defaultMessage": "Terminé",
+    "description": "Button that closes the dialog that showed the issued tokens."
+  },
+  "settings.authorized_apps.title": {
+    "defaultMessage": "Applications autorisées",
+    "description": "Title of the settings page that lists the apps the user authorized, and its entry in the settings menu."
+  },
+  "settings.authorized_apps.description": {
+    "defaultMessage": "Ces applications peuvent agir sur votre compte. Révoquez une application pour l’arrêter immédiatement ; elle devra redemander votre autorisation pour retrouver l’accès. Le nom d’une application est ce qu’elle dit d’elle-même. La dernière utilisation n’est enregistrée qu’à l’heure près.",
+    "description": "Explanation at the top of the authorized apps settings page."
+  },
+  "settings.authorized_apps.empty": {
+    "defaultMessage": "Aucune application autorisée",
+    "description": "Empty state of the list of authorized apps."
+  },
+  "settings.authorized_apps.origin.first_party": {
+    "defaultMessage": "Application propre à ce serveur",
+    "description": "Where an authorized app comes from: the web client of this server."
+  },
+  "settings.authorized_apps.origin.user": {
+    "defaultMessage": "Enregistrée par @{username}",
+    "description": "Where an authorized app comes from: a user registered it. {username} is the user's name without the at sign."
+  },
+  "settings.authorized_apps.origin.metadata_document": {
+    "defaultMessage": "Provenance : {host}",
+    "description": "Where an authorized app comes from: it is described by a document at a web address. {host} is the host name of that address."
+  },
+  "settings.authorized_apps.origin.dynamic": {
+    "defaultMessage": "Enregistrée par l’application elle-même",
+    "description": "Where an authorized app comes from: it registered itself and nobody vouches for it."
+  },
+  "settings.authorized_apps.unverified": {
+    "defaultMessage": "Ce serveur n’a pas vérifié cette application.",
+    "description": "Note on every authorized app that is not this server's own: the name and logo are the app's own claims."
+  },
+  "settings.authorized_apps.scope": {
+    "defaultMessage": "Accès accordé",
+    "description": "Label of the scopes (permissions) the user granted to an authorized app."
+  },
+  "settings.authorized_apps.authorized_at": {
+    "defaultMessage": "Première autorisation",
+    "description": "Label of when the user first authorized an app."
+  },
+  "settings.authorized_apps.last_used": {
+    "defaultMessage": "Dernière utilisation",
+    "description": "Label of when an authorized app last made a request."
+  },
+  "settings.authorized_apps.last_used.at": {
+    "defaultMessage": "{date} (à l’heure près)",
+    "description": "When an app was last used. {date} is a date with the hour only, because the server records the time to the hour."
+  },
+  "settings.authorized_apps.last_used.never": {
+    "defaultMessage": "Aucune utilisation enregistrée",
+    "description": "Shown instead of the last use of an authorized app when no use was recorded."
+  },
+  "settings.authorized_apps.revoke": {
+    "defaultMessage": "Révoquer",
+    "description": "Button that revokes an authorized app."
+  },
+  "settings.authorized_apps.revoke.title": {
+    "defaultMessage": "Révoquer « {name} » ?",
+    "description": "Title of the dialog that confirms revoking an authorized app. {name} is the app's name."
+  },
+  "settings.authorized_apps.revoke.description": {
+    "defaultMessage": "L’application perd immédiatement l’accès à votre compte. Pour l’utiliser de nouveau, vous devrez l’autoriser à nouveau.",
+    "description": "Explanation in the dialog that confirms revoking an authorized app."
+  },
+  "settings.authorized_apps.revoke.description_first_party": {
+    "defaultMessage": "C’est l’application web que vous utilisez. La révoquer vous déconnecte de tous les navigateurs, y compris celui-ci. Vous devrez vous reconnecter.",
+    "description": "Warning in the dialog that confirms revoking the server's own web app."
+  },
+  "settings.authorized_apps.revoke.cancel": {
+    "defaultMessage": "Annuler",
+    "description": "Button that closes the dialog without revoking the app."
+  },
+  "settings.authorized_apps.revoke.failed": {
+    "defaultMessage": "Impossible de révoquer l’application : {reason}",
+    "description": "Alert in the dialog when revoking an authorized app failed. {reason} is the error's message."
+  },
+  "settings.authorized_apps.revoked": {
+    "defaultMessage": "« {name} » a été révoquée.",
+    "description": "Announcement after an authorized app was revoked. {name} is its name."
+  },
+  "settings.sessions.title": {
+    "defaultMessage": "Navigateurs connectés",
+    "description": "Title of the settings page that lists the browsers signed in to the user's account, and its menu item."
+  },
+  "settings.sessions.description": {
+    "defaultMessage": "Ces navigateurs sont connectés à votre compte. L’adresse IP est celle d’où chacun s’est connecté, pas celle d’où il se trouve maintenant, et la dernière utilisation n’est enregistrée qu’à l’heure près.",
+    "description": "Explanation at the top of the signed-in browsers settings page."
+  },
+  "settings.sessions.unknown_sign_in": {
+    "defaultMessage": "Vous n’en reconnaissez pas un ? Le déconnecter ne change ni votre mot de passe ni les applications que vous avez autorisées ; vérifiez donc aussi {password} et {apps}.",
+    "description": "Advice below the list of signed-in browsers, for a sign-in the user does not recognize. {password} and {apps} are links named after those settings pages."
+  },
+  "settings.sessions.current": {
+    "defaultMessage": "Ce navigateur",
+    "description": "Badge on the row of the browser the user is using, in the list of signed-in browsers."
+  },
+  "settings.sessions.name.browser_on_os": {
+    "defaultMessage": "{browser} sur {os}",
+    "description": "Name of a row in the list of signed-in browsers: a browser and an operating system, such as 'Chrome on Windows'."
+  },
+  "settings.sessions.name.unknown": {
+    "defaultMessage": "Navigateur inconnu",
+    "description": "Name of a row in the list of signed-in browsers when its User-Agent was not recorded or was erased."
+  },
+  "settings.sessions.ip": {
+    "defaultMessage": "Adresse IP à la connexion",
+    "description": "Label of the IP address a browser signed in from, in the list of signed-in browsers."
+  },
+  "settings.sessions.ip.unknown": {
+    "defaultMessage": "Inconnue",
+    "description": "Value of the IP address of a browser when it was not recorded or was erased."
+  },
+  "settings.sessions.signed_in_at": {
+    "defaultMessage": "Connecté le",
+    "description": "Label of when a browser signed in, in the list of signed-in browsers."
+  },
+  "settings.sessions.last_used": {
+    "defaultMessage": "Dernière utilisation",
+    "description": "Label of when a browser was last used, in the list of signed-in browsers."
+  },
+  "settings.sessions.last_used.at": {
+    "defaultMessage": "{date} (à l’heure près)",
+    "description": "When a browser was last used; the date is exact to the hour."
+  },
+  "settings.sessions.last_used.never": {
+    "defaultMessage": "Aucune utilisation enregistrée",
+    "description": "Shown when no use of a browser was recorded."
+  },
+  "settings.sessions.revoke": {
+    "defaultMessage": "Déconnecter",
+    "description": "Button that signs out one browser from the list of signed-in browsers, and the confirming button of its dialog."
+  },
+  "settings.sessions.revoke.title": {
+    "defaultMessage": "Déconnecter ce navigateur ?",
+    "description": "Title of the dialog that confirms signing out a browser from the list."
+  },
+  "settings.sessions.revoke.description": {
+    "defaultMessage": "Il cesse de fonctionner immédiatement et devra se reconnecter. Votre mot de passe et les applications que vous avez autorisées ne changent pas.",
+    "description": "Description in the dialog that confirms signing out a browser from the list."
+  },
+  "settings.sessions.revoke.cancel": {
+    "defaultMessage": "Annuler",
+    "description": "Button that closes a dialog on the signed-in browsers page without signing out."
+  },
+  "settings.sessions.revoke.failed": {
+    "defaultMessage": "Impossible de déconnecter le navigateur : {reason}",
+    "description": "Error in the dialog when signing out a browser failed. reason is the localized error."
+  },
+  "settings.sessions.revoke_others": {
+    "defaultMessage": "Déconnecter tous les autres navigateurs",
+    "description": "Button that signs out every browser but the current one, and the confirming button of its dialog."
+  },
+  "settings.sessions.revoke_others.title": {
+    "defaultMessage": "Déconnecter tous les autres navigateurs ?",
+    "description": "Title of the dialog that confirms signing out every browser but the current one."
+  },
+  "settings.sessions.revoke_others.description": {
+    "defaultMessage": "Ils cessent de fonctionner immédiatement et devront se reconnecter. Ce navigateur reste connecté. Votre mot de passe et les applications que vous avez autorisées ne changent pas.",
+    "description": "Description in the dialog that confirms signing out every other browser."
+  },
+  "settings.sessions.revoke_others.failed": {
+    "defaultMessage": "Impossible de déconnecter les autres navigateurs : {reason}",
+    "description": "Error in the dialog when signing out the other browsers failed. reason is the localized error."
+  },
+  "settings.sessions.revoked": {
+    "defaultMessage": "Le navigateur est déconnecté.",
+    "description": "Announcement after a browser was signed out."
+  },
+  "settings.sessions.others_revoked": {
+    "defaultMessage": "Les autres navigateurs sont déconnectés.",
+    "description": "Announcement after every other browser was signed out."
+  },
+  "settings.email_suppression.title": {
+    "defaultMessage": "Envoi des e-mails",
+    "description": "Heading of the section of the notification settings that says emails do not reach the user's address; shown only while the address is suppressed."
+  },
+  "settings.email_suppression.hard_bounce": {
+    "defaultMessage": "Les e-mails n’arrivent pas à votre adresse : un e-mail envoyé à celle-ci a été rejeté, le serveur ne vous envoie donc rien, pas même les notifications ni l’e-mail de réinitialisation du mot de passe.",
+    "description": "Text of that section after a hard bounce: nothing reaches the address."
+  },
+  "settings.email_suppression.complaint": {
+    "defaultMessage": "Un e-mail de ce serveur a été signalé comme spam, les e-mails de notification ne sont donc plus envoyés à votre adresse. Les e-mails nécessaires à la connexion sont toujours envoyés.",
+    "description": "Text of that section after a spam complaint: notification emails are not sent."
+  },
+  "settings.email_suppression.since": {
+    "defaultMessage": "Depuis le {since}",
+    "description": "When the suppression started. {since} is a formatted date and time."
+  },
+  "settings.email_suppression.hard_bounce.action": {
+    "defaultMessage": "Quand votre boîte aux lettres fonctionne, demandez à nouveau l’e-mail de vérification. Vérifier l’adresse permet au serveur de lui envoyer de nouveau des e-mails et supprime cet avis.",
+    "description": "What to do after a hard bounce: fix the mailbox, then ask for the verification email again."
+  },
+  "settings.email_suppression.verification.send": {
+    "defaultMessage": "Envoyer l’e-mail de vérification",
+    "description": "Button in the notice that emails do not reach the user's address after a hard bounce: sends a new verification email to the address."
+  },
+  "settings.email_suppression.verification.sent": {
+    "defaultMessage": "Nous avons envoyé un e-mail de vérification. Ouvrez son lien pour vérifier votre adresse.",
+    "description": "Shown next to that button, and read out, after the verification email was sent."
+  },
+  "settings.email_suppression.verification.failed": {
+    "defaultMessage": "Impossible d’envoyer l’e-mail de vérification : {reason} Réessayez.",
+    "description": "Alert next to that button when the email could not be sent. {reason} is the server's explanation."
+  },
+  "settings.email_suppression.verification.rate_limited": {
+    "defaultMessage": "Vous avez demandé l’e-mail de vérification trop de fois. Réessayez plus tard.",
+    "description": "Alert next to that button when the user asked for the email too often (at most 3 an hour) and the server named no time."
+  },
+  "settings.email_suppression.verification.rate_limited_until": {
+    "defaultMessage": "Vous avez demandé l’e-mail de vérification trop de fois. Vous pourrez le redemander à {time}.",
+    "description": "Alert next to that button when the user asked for the email too often (at most 3 an hour). {time} is a formatted time of day."
+  },
+  "settings.linked_accounts.title": {
+    "defaultMessage": "Comptes associés",
+    "description": "Title of the settings page of linked accounts (accounts at sign-in services, such as an OpenID Connect provider, that the server's administrators set up), and its entry in the settings menu."
+  },
+  "settings.linked_accounts.description": {
+    "defaultMessage": "Les comptes de ces services vous connectent à la place de votre mot de passe et confirment les modifications de votre compte. En associer un ne partage jamais vos publications avec le service.",
+    "description": "Description at the top of the settings page of linked accounts (accounts at sign-in services, such as an OpenID Connect provider, that the server's administrators set up)."
+  },
+  "settings.linked_accounts.list.title": {
+    "defaultMessage": "Vos comptes associés",
+    "description": "Heading of the list of the user's linked accounts on the settings page of linked accounts (accounts at sign-in services, such as an OpenID Connect provider, that the server's administrators set up)."
+  },
+  "settings.linked_accounts.empty": {
+    "defaultMessage": "Vous n’avez associé aucun compte.",
+    "description": "Empty state of the list of linked accounts."
+  },
+  "settings.linked_accounts.linked_at": {
+    "defaultMessage": "Associé le {date}",
+    "description": "When an account was linked, under the service's name. {date} is a formatted date and time."
+  },
+  "settings.linked_accounts.unavailable": {
+    "defaultMessage": "Ce service est désactivé pour le moment : le compte ne vous connecte pas.",
+    "description": "Note under a linked account whose service the administrators turned off."
+  },
+  "settings.linked_accounts.unlink": {
+    "defaultMessage": "Dissocier",
+    "description": "Button of a linked account that unlinks it, after a dialog."
+  },
+  "settings.linked_accounts.unlink.title": {
+    "defaultMessage": "Dissocier votre compte {provider} ?",
+    "description": "Title of the dialog that confirms unlinking an account. {provider} is the service's name as the administrators wrote it."
+  },
+  "settings.linked_accounts.unlink.description": {
+    "defaultMessage": "Vous ne pourrez plus vous connecter avec ce compte. Vous pourrez l’associer à nouveau plus tard.",
+    "description": "Description of the dialog that confirms unlinking an account."
+  },
+  "settings.linked_accounts.unlink.cancel": {
+    "defaultMessage": "Annuler",
+    "description": "Button that closes the dialog that confirms unlinking an account, without unlinking it."
+  },
+  "settings.linked_accounts.unlink.last": {
+    "defaultMessage": "C’est votre dernier moyen de connexion. Définissez d’abord un mot de passe, ajoutez une clé d’accès ou associez un autre compte.",
+    "description": "Error in the dialog that unlinks an account when the account is the user's last way to sign in."
+  },
+  "settings.linked_accounts.unlink.failed": {
+    "defaultMessage": "Impossible de dissocier le compte : {reason}",
+    "description": "Error in the dialog that unlinks an account. {reason} is the server's or the network's reason."
+  },
+  "settings.linked_accounts.unlinked": {
+    "defaultMessage": "Votre compte {provider} est dissocié.",
+    "description": "Announcement after an account was unlinked. {provider} is the service's name."
+  },
+  "settings.linked_accounts.add.title": {
+    "defaultMessage": "Associer un compte",
+    "description": "Button above the list of linked accounts that opens the sign-in services to link an account at, and the heading of that panel."
+  },
+  "settings.linked_accounts.add.description": {
+    "defaultMessage": "Vous vous connectez sur le service, qui vous ramène ensuite ici. Un compte associé à quelqu’un d’autre sur ce serveur ne peut pas être associé.",
+    "description": "Description of the section that links an account."
+  },
+  "settings.linked_accounts.add.none": {
+    "defaultMessage": "Aucun service ne permet d’associer un compte.",
+    "description": "Note in the section that links an account when the server has no service that allows linking, or the user linked every one."
+  },
+  "settings.linked_accounts.link": {
+    "defaultMessage": "Associer {provider}",
+    "description": "Button that starts linking an account at a service. {provider} is the service's name as the administrators wrote it."
+  },
+  "settings.linked_accounts.link.title": {
+    "defaultMessage": "Associer votre compte {provider}",
+    "description": "Title of the dialog that confirms linking an account. {provider} is the service's name."
+  },
+  "settings.linked_accounts.link.description": {
+    "defaultMessage": "Saisissez votre mot de passe pour continuer vers {provider}.",
+    "description": "Description of the dialog that links an account, for a user with a password. {provider} is the service's name."
+  },
+  "settings.linked_accounts.link.description_passkey": {
+    "defaultMessage": "Votre navigateur demande l’une de vos clés d’accès, puis vous continuez vers {provider}.",
+    "description": "Description of the dialog that links an account, for a user without a password who has passkeys. {provider} is the service's name."
+  },
+  "settings.linked_accounts.link.description_external": {
+    "defaultMessage": "Vous vous êtes reconnecté avec un compte associé. Continuez vers {provider}.",
+    "description": "Description of the dialog that links an account, once the user confirmed with another linked account. {provider} is the service's name."
+  },
+  "settings.linked_accounts.link.password": {
+    "defaultMessage": "Mot de passe actuel",
+    "description": "Label of the password field in the dialog that links an account."
+  },
+  "settings.linked_accounts.link.password.required": {
+    "defaultMessage": "Saisissez votre mot de passe.",
+    "description": "Error of the empty password field in the dialog that links an account."
+  },
+  "settings.linked_accounts.link.wrong_password": {
+    "defaultMessage": "Le mot de passe est incorrect.",
+    "description": "Error in the dialog that links an account when the password is wrong."
+  },
+  "settings.linked_accounts.link.continue": {
+    "defaultMessage": "Continuer",
+    "description": "Button of the dialog that links an account: it leaves for the service."
+  },
+  "settings.linked_accounts.link.cancel": {
+    "defaultMessage": "Annuler",
+    "description": "Button that closes the dialog that links an account."
+  },
+  "settings.linked_accounts.link.failed": {
+    "defaultMessage": "Impossible de démarrer l’association : {reason}",
+    "description": "Error in the dialog that links an account. {reason} is the server's or the network's reason."
+  },
+  "settings.linked_accounts.linked": {
+    "defaultMessage": "Votre compte {provider} est associé.",
+    "description": "Status at the top of the page after the service sent the user back with the account linked. {provider} is the service's name."
+  },
+  "settings.linked_accounts.failed.linked_elsewhere": {
+    "defaultMessage": "Ce compte est associé à un autre utilisateur de ce serveur.",
+    "description": "Alert when the account the user signed in with at the service is linked to another user already."
+  },
+  "settings.linked_accounts.failed.already_linked": {
+    "defaultMessage": "Vous avez déjà associé un compte de ce service.",
+    "description": "Alert when the user links an account at a service where they already have one linked."
+  },
+  "settings.linked_accounts.failed.denied": {
+    "defaultMessage": "Ce service n’accepte pas le compte avec lequel vous vous êtes connecté.",
+    "description": "Alert when the account at the service does not meet the conditions that the administrators set (such as an organization)."
+  },
+  "settings.linked_accounts.failed.unavailable": {
+    "defaultMessage": "Ce service n’est pas disponible.",
+    "description": "Alert when the service is turned off or no longer allows linking."
+  },
+  "settings.linked_accounts.failed.expired": {
+    "defaultMessage": "L’association a pris trop de temps. Réessayez.",
+    "description": "Alert when the link expired before the service sent the user back."
+  },
+  "settings.linked_accounts.failed.rate_limited": {
+    "defaultMessage": "Trop de tentatives. Réessayez plus tard.",
+    "description": "Alert when the user tried too many times."
+  },
+  "settings.linked_accounts.failed.failed": {
+    "defaultMessage": "Le service n’a pas terminé la connexion. Réessayez.",
+    "description": "Alert when the user cancelled at the service, or the service answered an error."
+  },
+  "settings.external_confirmation.description": {
+    "defaultMessage": "Confirmez que c’est bien vous en vous reconnectant avec un compte associé.",
+    "description": "Text above the buttons that confirm an operation (such as deleting the account) by signing in again at a linked service, for a user without a password and passkeys."
+  },
+  "settings.external_confirmation.start": {
+    "defaultMessage": "Se reconnecter avec {provider}",
+    "description": "Button that leaves for a linked service to confirm an operation. {provider} is the service's name as the administrators wrote it."
+  },
+  "settings.external_confirmation.confirmed": {
+    "defaultMessage": "Vous vous êtes reconnecté avec {provider}. Terminez dans les 10 minutes.",
+    "description": "Note once the user confirmed an operation at a linked service and came back. {provider} is the service's name."
+  },
+  "settings.external_confirmation.start_failed": {
+    "defaultMessage": "Impossible de démarrer la confirmation : {reason}",
+    "description": "Alert when starting a confirmation with a linked service failed. {reason} is the server's or the network's reason."
+  },
+  "settings.external_confirmation.failed.mismatch": {
+    "defaultMessage": "Vous vous êtes connecté avec un compte qui n’est pas associé au vôtre. Réessayez avec votre compte associé.",
+    "description": "Alert when the user confirmed at the service with another account than the linked one."
+  },
+  "settings.external_confirmation.failed.expired": {
+    "defaultMessage": "La confirmation a pris trop de temps ou a déjà été utilisée. Réessayez.",
+    "description": "Alert when the confirmation with a linked service expired (10 minutes) or was used."
+  },
+  "settings.external_confirmation.failed.rate_limited": {
+    "defaultMessage": "Trop de tentatives. Réessayez plus tard.",
+    "description": "Alert when the user failed to confirm too many times."
+  },
+  "settings.external_confirmation.failed.unavailable": {
+    "defaultMessage": "Ce service n’est pas disponible.",
+    "description": "Alert when the linked service is turned off."
+  },
+  "settings.external_confirmation.failed.denied": {
+    "defaultMessage": "Ce service n’accepte pas le compte avec lequel vous vous êtes connecté.",
+    "description": "Alert when the account at the service does not meet the administrators' conditions."
+  },
+  "settings.external_confirmation.failed.failed": {
+    "defaultMessage": "Le service n’a pas confirmé la connexion. Réessayez.",
+    "description": "Alert when the user cancelled at the service, the service answered an error, or it did not ask the user to sign in again."
+  },
+  "settings.account.delete.confirm.description_external": {
+    "defaultMessage": "Votre compte est supprimé immédiatement et vous êtes déconnecté. Cette action est irréversible.",
+    "description": "Description of the dialog that deletes the account of a user who confirmed by signing in again at a linked service."
+  },
+  "settings.invites.title": {
+    "defaultMessage": "Vos invitations",
+    "description": "Title of the settings page of the invites that the user created, and its item in the settings menu."
+  },
+  "settings.invites.description": {
+    "defaultMessage": "Invitez des personnes que vous connaissez sur ce serveur. Chaque invitation a un lien qui permet à quelques personnes de s’inscrire pendant un certain temps. Tant que le serveur approuve les inscriptions manuellement, les personnes que vous invitez évitent l’attente.",
+    "description": "Explanation at the top of the user's invites page."
+  },
+  "settings.invites.new.title": {
+    "defaultMessage": "Créer une invitation",
+    "description": "Heading of the region of the form of a new invite on the user's invites page."
+  },
+  "settings.invites.not_allowed": {
+    "defaultMessage": "Vous ne pouvez pas créer d’invitations pour le moment. Vous pouvez toujours copier les liens de vos invitations utilisables et les révoquer.",
+    "description": "Shown instead of the form of a new invite when the user may not create invites: the server or their roles do not let them, their account is restricted, or the server takes no new accounts."
+  },
+  "settings.invites.usage": {
+    "defaultMessage": "Vous avez {usable, number} invitations utilisables sur {max, number}.",
+    "description": "How many usable invites the user holds, and how many the server lets one person hold at once."
+  },
+  "settings.invites.full": {
+    "defaultMessage": "Vous avez autant d’invitations utilisables que permis. Révoquez-en une, ou attendez qu’une expire ou soit épuisée, pour en créer une autre.",
+    "description": "Shown above the form of a new invite when the user already holds as many usable invites as the server allows."
+  },
+  "settings.invites.max_uses": {
+    "defaultMessage": "Inscriptions",
+    "description": "Label of the choice of how many people may sign up with a new invite."
+  },
+  "settings.invites.max_uses.description": {
+    "defaultMessage": "Combien de personnes peuvent s’inscrire avec l’invitation, jusqu’à {max, number}.",
+    "description": "Help of the number of sign-ups of a new invite. {max} is the most the server allows."
+  },
+  "settings.invites.uses": {
+    "defaultMessage": "{count, plural, one {# personne} other {# personnes}}",
+    "description": "An option of the number of sign-ups of a new invite."
+  },
+  "settings.invites.expires_in": {
+    "defaultMessage": "Valable pendant",
+    "description": "Label of the choice of how long a new invite works."
+  },
+  "settings.invites.expires_in.description": {
+    "defaultMessage": "L’invitation cesse de fonctionner après ce délai, au plus {max}.",
+    "description": "Help of how long a new invite works. {max} is the longest time the server allows, formatted like the options (for example \"30 days\")."
+  },
+  "settings.invites.duration.minutes": {
+    "defaultMessage": "{count, plural, one {# minute} other {# minutes}}",
+    "description": "An option of how long an invite works, in minutes."
+  },
+  "settings.invites.duration.hours": {
+    "defaultMessage": "{count, plural, one {# heure} other {# heures}}",
+    "description": "An option of how long an invite works, in hours."
+  },
+  "settings.invites.duration.days": {
+    "defaultMessage": "{count, plural, one {# jour} other {# jours}}",
+    "description": "An option of how long an invite works, in days."
+  },
+  "settings.invites.create": {
+    "defaultMessage": "Créer l’invitation",
+    "description": "Button that creates a new invite on the user's invites page."
+  },
+  "settings.invites.create_failed": {
+    "defaultMessage": "Impossible de créer l’invitation : {reason}",
+    "description": "Error when creating an invite failed. {reason} is the server's reason."
+  },
+  "settings.invites.created": {
+    "defaultMessage": "Invitation {code} créée.",
+    "description": "Status after the user created an invite. {code} is its code."
+  },
+  "settings.invites.link": {
+    "defaultMessage": "Envoyez ce lien aux personnes que vous invitez :",
+    "description": "Text before the sign-up link of a new invite."
+  },
+  "settings.invites.list.title": {
+    "defaultMessage": "Invitations que vous avez créées",
+    "description": "Heading of the list of the user's invites."
+  },
+  "settings.invites.empty": {
+    "defaultMessage": "Aucune invitation pour le moment",
+    "description": "Heading of the empty list of the user's invites."
+  },
+  "settings.invites.empty.description": {
+    "defaultMessage": "Les invitations que vous créez sont listées ici avec la façon dont elles ont été utilisées.",
+    "description": "Description of the empty list of the user's invites."
+  },
+  "settings.invites.state": {
+    "defaultMessage": "État",
+    "description": "Term of an invite in the user's list: what it allows now."
+  },
+  "settings.invites.state.usable": {
+    "defaultMessage": "Utilisable",
+    "description": "State of an invite that people may sign up with."
+  },
+  "settings.invites.state.revoked": {
+    "defaultMessage": "Révoquée",
+    "description": "State of an invite that was revoked."
+  },
+  "settings.invites.state.expired": {
+    "defaultMessage": "Expirée",
+    "description": "State of an invite whose time ran out."
+  },
+  "settings.invites.state.exhausted": {
+    "defaultMessage": "Épuisée",
+    "description": "State of an invite that as many people signed up with as it allows."
+  },
+  "settings.invites.state.creator_ineligible": {
+    "defaultMessage": "Inutilisable tant que vous ne pouvez pas inviter",
+    "description": "State of the user's invite while the user may not create invites (their permission ended, or their account is restricted). It works again when they may."
+  },
+  "settings.invites.used": {
+    "defaultMessage": "Inscrits",
+    "description": "Term of an invite in the user's list: how many people signed up with it."
+  },
+  "settings.invites.used.value": {
+    "defaultMessage": "{uses, number} sur {max, number}",
+    "description": "How many people signed up with an invite, and how many it allows."
+  },
+  "settings.invites.expires_at": {
+    "defaultMessage": "Expire le",
+    "description": "Term of an invite in the user's list: when it stops working."
+  },
+  "settings.invites.created_at": {
+    "defaultMessage": "Créée le",
+    "description": "Term of an invite in the user's list: when it was created."
+  },
+  "settings.invites.copy": {
+    "defaultMessage": "Copier le lien",
+    "description": "Button that copies the sign-up link of an invite."
+  },
+  "settings.invites.copy_invite": {
+    "defaultMessage": "{action} : {code}",
+    "description": "Accessible name of the copy button of an invite: it starts with the button's visible text, so that the visible label is in the name. {action} is the button's visible text ('Copy link') and {code} the invite's code."
+  },
+  "settings.invites.copied": {
+    "defaultMessage": "Lien de l’invitation {code} copié.",
+    "description": "Toast after an invite's link was copied. {code} is its code."
+  },
+  "settings.invites.copy_failed": {
+    "defaultMessage": "Impossible de copier le lien. Sélectionnez-le et copiez-le vous-même.",
+    "description": "Toast when copying an invite's link failed."
+  },
+  "settings.invites.revoke": {
+    "defaultMessage": "Révoquer",
+    "description": "Button that revokes an invite at once."
+  },
+  "settings.invites.revoke_invite": {
+    "defaultMessage": "Révoquer l’invitation {code}, créée le {date}",
+    "description": "Accessible name of the revoke button of an invite. {code} is its code; {date} when it was created, formatted."
+  },
+  "settings.invites.revoked": {
+    "defaultMessage": "Invitation {code} révoquée. Les personnes qui se sont inscrites avec elle gardent leur compte.",
+    "description": "Status after the user revoked an invite. {code} is its code."
+  },
+  "settings.invites.revoke_failed": {
+    "defaultMessage": "Impossible de révoquer l’invitation : {reason}",
+    "description": "Toast when revoking an invite failed. {reason} is the server's reason."
+  },
+  "settings.notifications.title": {
+    "defaultMessage": "Notifications",
+    "description": "Title of the settings page of notifications (which notifications arrive in the app, by push, by email, and with a sound), and its entry in the settings menu."
+  },
+  "settings.notifications.table.description": {
+    "defaultMessage": "Choisissez comment chaque type de notification vous parvient, ou toute une colonne avec sa case Tout. Un type désactivé dans l’application n’est pas créé, il n’arrive donc ni par push, ni par e-mail, ni par un son ; les notifications que vous avez déjà restent.",
+    "description": "Help text above the tables of the notification settings: a row or a whole column (its All box), and turning a kind off in the app stops it everywhere."
+  },
+  "settings.notifications.section.ordinary": {
+    "defaultMessage": "Des autres personnes",
+    "description": "Heading of the table of the notifications about what other users did (mentions, follows, boosts...)."
+  },
+  "settings.notifications.section.moderator": {
+    "defaultMessage": "Pour les modérateurs",
+    "description": "Heading of the table of the notifications for moderators (reports, sign-ups, appeals...); shown only to users with those permissions."
+  },
+  "settings.notifications.section.instance": {
+    "defaultMessage": "De ce serveur",
+    "description": "Heading of the table of the server's notices to the user (moderation decisions, the closure of the server, the supporter plan)."
+  },
+  "settings.notifications.column.type": {
+    "defaultMessage": "Notification",
+    "description": "Header of the first column of the notification settings tables, which names the kind of notification of each row."
+  },
+  "settings.notifications.column.all": {
+    "defaultMessage": "Tout : {channel}, {section}",
+    "description": "Accessible name of a checkbox of the All row of a notification settings table, which turns every cell of its column on or off at once. Starts with the row header (settings.notifications.column.all.short). {channel} is the column (In the app, Push, Email, Sound); {section} is the table's heading."
+  },
+  "settings.notifications.column.all.short": {
+    "defaultMessage": "Tout",
+    "description": "Row header of the first row of a notification settings table, whose checkboxes turn a whole column on or off."
+  },
+  "settings.notifications.row.in_app_off": {
+    "defaultMessage": "Désactivé dans l’application, donc n’arrive d’aucune autre façon.",
+    "description": "Note under the name of a row of the notification settings table whose in-app cell is off, which is why its other cells cannot be changed."
+  },
+  "settings.notifications.row.always_on": {
+    "defaultMessage": "Toujours activé : {channels}.",
+    "description": "Note under the name of a row of the notification settings table with cells that cannot be turned off. {channels} is a list of the column names (In the app, Email)."
+  },
+  "settings.notifications.channel.in_app": {
+    "defaultMessage": "Dans l’application",
+    "description": "Column header of the notification settings tables: whether the notifications are created and shown in the app."
+  },
+  "settings.notifications.channel.push": {
+    "defaultMessage": "Push",
+    "description": "Column header of the notification settings tables: whether the notifications are pushed to this device (Web Push)."
+  },
+  "settings.notifications.channel.email": {
+    "defaultMessage": "E-mail",
+    "description": "Column header of the notification settings tables: whether the notifications are sent by email."
+  },
+  "settings.notifications.channel.sound": {
+    "defaultMessage": "Son",
+    "description": "Column header of the notification settings tables: whether this device plays a sound when the notifications arrive while the app is open."
+  },
+  "settings.notifications.cell": {
+    "defaultMessage": "{type} : {channel}",
+    "description": "Accessible name of a checkbox of the notification settings tables. {type} is the row (a kind of notification), {channel} the column (In the app, Push, Email, Sound)."
+  },
+  "settings.notifications.group.mention": {
+    "defaultMessage": "Mentions",
+    "description": "Row of the notification settings table: a post mentions the user."
+  },
+  "settings.notifications.group.follow": {
+    "defaultMessage": "Nouveaux abonnés",
+    "description": "Row of the notification settings table: someone followed the user."
+  },
+  "settings.notifications.group.follow_request": {
+    "defaultMessage": "Demandes d’abonnement",
+    "description": "Row of the notification settings table: someone asked to follow the user."
+  },
+  "settings.notifications.group.follow_accepted": {
+    "defaultMessage": "Demandes d’abonnement acceptées",
+    "description": "Row of the notification settings table: someone accepted the user's follow request."
+  },
+  "settings.notifications.group.boost": {
+    "defaultMessage": "Boosts",
+    "description": "Row of the notification settings table: someone boosted the user's post."
+  },
+  "settings.notifications.group.favourite": {
+    "defaultMessage": "Favoris",
+    "description": "Row of the notification settings table: someone favourited the user's post."
+  },
+  "settings.notifications.group.reaction": {
+    "defaultMessage": "Réactions par émoji",
+    "description": "Row of the notification settings table: someone reacted to the user's post with an emoji."
+  },
+  "settings.notifications.group.quote": {
+    "defaultMessage": "Citations",
+    "description": "Row of the notification settings table: someone quoted the user's post."
+  },
+  "settings.notifications.group.poll_closed": {
+    "defaultMessage": "Sondages terminés",
+    "description": "Row of the notification settings table: a poll the user made or voted in ended."
+  },
+  "settings.notifications.group.account_moved": {
+    "defaultMessage": "Déménagement des comptes que vous suivez",
+    "description": "Row of the notification settings table: an account the user followed moved to another account."
+  },
+  "settings.notifications.group.voice": {
+    "defaultMessage": "Chats vocaux",
+    "description": "Row of the notification settings table: an account the user follows opened a voice chat room, or the user was invited to one."
+  },
+  "settings.notifications.group.admin_report": {
+    "defaultMessage": "Signalements",
+    "description": "Row of the notification settings table: (moderators) an account was reported."
+  },
+  "settings.notifications.group.admin_sign_up": {
+    "defaultMessage": "Inscriptions en attente d’approbation",
+    "description": "Row of the notification settings table: (moderators) a registration awaits approval."
+  },
+  "settings.notifications.group.admin_appeal": {
+    "defaultMessage": "Contestations",
+    "description": "Row of the notification settings table: (moderators) a user appealed a moderation action."
+  },
+  "settings.notifications.group.admin_webhook_disabled": {
+    "defaultMessage": "Webhooks désactivés",
+    "description": "Row of the notification settings table: (administrators) the server disabled a webhook that kept failing."
+  },
+  "settings.notifications.group.admin_custom_emoji_request": {
+    "defaultMessage": "Demandes d’émojis personnalisés",
+    "description": "Row of the notification settings table: (administrators) a user requested a custom emoji."
+  },
+  "settings.notifications.group.admin_account_moved": {
+    "defaultMessage": "Déménagement de comptes limités",
+    "description": "Row of the notification settings table: (moderators) an account the moderators limit moved to another account."
+  },
+  "settings.notifications.group.admin_service_closure_due": {
+    "defaultMessage": "Date de fermeture atteinte",
+    "description": "Row of the notification settings table: (administrators) the announced closing date of the server has passed."
+  },
+  "settings.notifications.group.admin_error_group": {
+    "defaultMessage": "Erreurs du serveur",
+    "description": "Row of the notification settings table: (administrators) a new server error, or one that happened again."
+  },
+  "settings.notifications.group.moderation": {
+    "defaultMessage": "Avis des modérateurs",
+    "description": "Row of the notification settings table: notices and decisions of the moderators about the user's account, appeals, reports and custom emoji requests, and follows ended by a suspension."
+  },
+  "settings.notifications.group.service_closure": {
+    "defaultMessage": "Fermeture de ce serveur",
+    "description": "Row of the notification settings table: the closure of the service was announced, rescheduled or withdrawn."
+  },
+  "settings.notifications.group.supporter": {
+    "defaultMessage": "Votre formule de soutien",
+    "description": "Row of the notification settings table: a failed payment for the user's supporter plan, its end, and its retirement. Not shown in the mobile app."
+  },
+  "settings.notifications.group.announcement": {
+    "defaultMessage": "Annonces",
+    "description": "Row of the notification settings table: a new announcement of the server's administrators to every user."
+  },
+  "settings.notifications.group.auto_delete_limit": {
+    "defaultMessage": "Suppression automatique des publications",
+    "description": "Row of the notification settings table: the notices that the server's maximum of the automatic deletion of old posts will apply to the user's posts."
+  },
+  "settings.notifications.sound.title": {
+    "defaultMessage": "Son de notification",
+    "description": "Heading of the section of the notification settings about the sound this device plays for new notifications."
+  },
+  "settings.notifications.sound.enable": {
+    "defaultMessage": "Jouer un son pour les nouvelles notifications",
+    "description": "Label of the switch that turns the notification sound on for this device."
+  },
+  "settings.notifications.sound.enable.description": {
+    "defaultMessage": "Sur cet appareil, tant que l’application est ouverte. Choisissez les types dans la colonne Son des tableaux ci-dessous.",
+    "description": "Help text of the switch of the notification sound; the Sound column appears in the tables while it is on."
+  },
+  "settings.notifications.sound.play": {
+    "defaultMessage": "Jouer le son",
+    "description": "Button that plays the notification sound once, which also lets the browser play it later."
+  },
+  "settings.notifications.sound.blocked": {
+    "defaultMessage": "Le navigateur n’a pas joué le son. Autorisez ce site à jouer du son dans les paramètres du navigateur, puis réessayez.",
+    "description": "Error shown when the browser refused to play the notification sound after the user pressed the button."
+  },
+  "settings.menu.group.profile": {
+    "defaultMessage": "Profil et communauté",
+    "description": "Heading of a group of the settings menu: the profile, the badges, the user's custom emoji, invites and supporter plans."
+  },
+  "settings.menu.group.display": {
+    "defaultMessage": "Affichage et notifications",
+    "description": "Heading of a group of the settings menu: how the app shows things and posts, the notifications, and the voice chat history."
+  },
+  "settings.menu.group.relationships": {
+    "defaultMessage": "Relations",
+    "description": "Heading of a group of the settings menu: follow requests, blocked and muted accounts, and muted domains."
+  },
+  "settings.menu.group.security": {
+    "defaultMessage": "Sécurité",
+    "description": "Heading of a group of the settings menu: the password, two-factor authentication, passkeys and linked accounts."
+  },
+  "settings.menu.group.apps": {
+    "defaultMessage": "Applications",
+    "description": "Heading of a group of the settings menu: the apps the user authorized and the apps they registered."
+  },
+  "settings.menu.group.account": {
+    "defaultMessage": "Compte et données",
+    "description": "Heading of a group of the settings menu: the account's status, aliases and move, import and export, deleting old posts, the archive and deleting the account."
+  },
+  "settings.profile.preview": {
+    "defaultMessage": "Aperçu",
+    "description": "Heading of the section of the profile settings that shows the profile as it is being edited."
+  },
+  "settings.profile.preview.description": {
+    "defaultMessage": "Votre profil tel que les autres le verront une fois enregistré. Les liens et les mentions sont créés à l’enregistrement.",
+    "description": "Description under the preview of the profile settings."
+  },
+  "settings.profile.identity": {
+    "defaultMessage": "Nom et bio",
+    "description": "Heading of the section of the profile settings with the display name and the bio (settings.profile.display_name, settings.profile.note)."
+  },
+  "settings.profile.account_kind": {
+    "defaultMessage": "Abonnés et bots",
+    "description": "Heading of the section of the profile settings with whether follow requests need approval and whether the account is a bot."
+  },
+  "settings.profile.save_failed": {
+    "defaultMessage": "Impossible d’enregistrer le profil : {reason}",
+    "description": "Error beside the save button of the profile settings when the server refused the save. {reason} is the server's reason."
+  },
+  "settings.auto_delete.policy": {
+    "defaultMessage": "Suppression automatique",
+    "description": "Heading of the section of the auto-delete settings with turning it on and the age of the posts it deletes."
+  },
+  "settings.auto_delete.reactions": {
+    "defaultMessage": "Publications avec beaucoup de réactions",
+    "description": "Heading of the section of the auto-delete settings with the boost and favourite counts above which posts are kept."
+  },
+  "settings.auto_delete.preview": {
+    "defaultMessage": "Publications que ces conditions suppriment",
+    "description": "Heading of the section of the auto-delete settings with how many posts the conditions above would delete now, before saving."
+  },
+  "settings.auto_delete.preview.description": {
+    "defaultMessage": "Comptées maintenant d’après les conditions ci-dessus, avant que vous les enregistriez et que la suppression automatique soit activée ou non.",
+    "description": "Help of the estimate of the posts that the automatic deletion would delete."
+  },
+  "settings.auto_delete.preview.count": {
+    "defaultMessage": "Publications à supprimer maintenant",
+    "description": "Label of the number of posts that the conditions of the automatic deletion would delete now."
+  },
+  "settings.auto_delete.preview.value": {
+    "defaultMessage": "{more, select, true {{count, number}+} other {{count, number}}}",
+    "description": "The number of posts that the automatic deletion would delete now; with more, the count stopped at its limit and there are more."
+  },
+  "settings.auto_delete.preview.counting": {
+    "defaultMessage": "Comptage…",
+    "description": "Value of the estimate of the automatic deletion while the server counts the posts."
+  },
+  "settings.auto_delete.preview.examples": {
+    "defaultMessage": "Les plus anciennes",
+    "description": "Heading of the list of example posts that the automatic deletion would delete, oldest first."
+  },
+  "settings.auto_delete.preview.example": {
+    "defaultMessage": "Publication à supprimer",
+    "description": "Accessible name of the box of an example post that the automatic deletion would delete."
+  },
+  "settings.auto_delete.preview.failed": {
+    "defaultMessage": "Impossible de compter les publications : {reason}",
+    "description": "Error in place of the estimate of the automatic deletion. {reason} is the localized reason."
+  },
+  "settings.security.title": {
+    "defaultMessage": "Sécurité",
+    "description": "Heading of the section of the settings page that sums up how the account signs in and is protected."
+  },
+  "settings.security.description": {
+    "defaultMessage": "Comment vous vous connectez, et ce qui protège votre compte. Ouvrez un élément pour le modifier.",
+    "description": "Description under the security section of the settings page."
+  },
+  "settings.security.count": {
+    "defaultMessage": "{count, plural, one {# ajoutée} other {# ajoutées}}",
+    "description": "Badge of a row of the security section of the settings page: how many passkeys or linked accounts the user has (at least one)."
+  },
+  "settings.security.none": {
+    "defaultMessage": "Aucune",
+    "description": "Badge of a row of the security section of the settings page: the user has no password, passkey or linked account."
+  },
+  "settings.security.password.set": {
+    "defaultMessage": "Défini",
+    "description": "Badge of the password row of the security section of the settings page: the user has a password."
+  },
+  "settings.security.on": {
+    "defaultMessage": "Activée",
+    "description": "Badge of the two-factor authentication row of the security section of the settings page: it is on."
+  },
+  "settings.security.off": {
+    "defaultMessage": "Désactivée",
+    "description": "Badge of the two-factor authentication row of the security section of the settings page: it is off, which the warning tone suggests turning on."
+  },
+  "settings.profile.discovery": {
+    "defaultMessage": "Découverte",
+    "description": "Heading of the section of the profile settings about being suggested to others and found by name."
+  },
+  "settings.profile.discoverable": {
+    "defaultMessage": "Suggérer mon compte et permettre de le trouver par une partie de son nom",
+    "description": "Label of the checkbox that lets the account appear in the suggestions and in the search by part of its name."
+  },
+  "settings.profile.discoverable.description": {
+    "defaultMessage": "Les personnes de ce serveur voient votre compte parmi les suggestions d’abonnement et le trouvent par une partie de votre nom. Si cette option est désactivée, elles peuvent toujours vous trouver par votre nom d’utilisateur complet, et vos abonnés vous retrouvent.",
+    "description": "Help text of the discoverable checkbox."
+  },
+  "settings.list.cancel": {
+    "defaultMessage": "Annuler",
+    "description": "Button that closes the panel that adds to a settings list without adding."
+  },
+  "settings.passkeys.count": {
+    "defaultMessage": "{count, plural, one {# clé d’accès} other {# clés d’accès}}",
+    "description": "Read for the count beside the heading of the list of passkeys. {count} is the number of passkeys."
+  },
+  "settings.passkeys.empty.description": {
+    "defaultMessage": "Ajoutez-en une pour vous connecter sans saisir votre mot de passe.",
+    "description": "Text of the empty list of passkeys, above the button that adds one."
+  },
+  "settings.domain_mutes.count": {
+    "defaultMessage": "{count, plural, one {# domaine en sourdine} other {# domaines en sourdine}}",
+    "description": "Read for the count beside the heading of the list of muted domains. {count} is the number of domains."
+  },
+  "settings.domain_mutes.count_at_least": {
+    "defaultMessage": "{count, plural, one {Au moins # domaine en sourdine} other {Au moins # domaines en sourdine}}",
+    "description": "Read for the count beside the heading of the list of muted domains while more of them can be loaded. {count} is the number loaded."
+  },
+  "settings.domain_mutes.empty.description": {
+    "defaultMessage": "Mettez-en un en sourdine pour garder ses publications hors de vos fils.",
+    "description": "Text of the empty list of muted domains, above the button that mutes one."
+  },
+  "settings.domain_mutes.unmute_failed": {
+    "defaultMessage": "Impossible de réactiver le son de {domain} : {reason}",
+    "description": "Error above the list of muted domains when unmuting one failed. {domain} is the domain; {reason} is the server's explanation."
+  },
+  "settings.linked_accounts.count": {
+    "defaultMessage": "{count, plural, one {# compte associé} other {# comptes associés}}",
+    "description": "Read for the count beside the heading of the list of linked accounts. {count} is the number of accounts."
+  },
+  "settings.linked_accounts.empty.description": {
+    "defaultMessage": "Associez-en un pour vous connecter avec ce service.",
+    "description": "Text of the empty list of linked accounts, above the button that links one."
+  },
+  "settings.linked_accounts.login_providers_only": {
+    "defaultMessage": "Ce serveur n’autorise la connexion que par ses fournisseurs de connexion. Sans compte associé ici, vous ne pourrez plus vous reconnecter une fois vos sessions terminées.",
+    "description": "On the linked accounts page while the instance limits sign-in to login providers."
+  },
+  "settings.notifications.row.no_email": {
+    "defaultMessage": "Non envoyé par e-mail.",
+    "description": "Note under the name of a row of the notification settings that has no email cell: the server's announcements are never emailed."
+  },
+  "settings.passkeys.login_providers_only": {
+    "defaultMessage": "Ce serveur n’autorise la connexion que par ses fournisseurs de connexion, une clé d’accès ne peut donc pas être ajoutée ici. Les clés d’accès que vous avez continuent de confirmer les modifications de votre compte.",
+    "description": "On the passkeys settings page, in place of the add button, while the instance limits sign-in to login providers."
+  },
+  "settings.password.login_providers_only": {
+    "defaultMessage": "Ce serveur n’autorise la connexion que par ses fournisseurs de connexion, un mot de passe ne peut donc pas être défini ni modifié ici. Votre mot de passe continue de confirmer les modifications de votre compte.",
+    "description": "On the password settings page while the instance limits sign-in to login providers."
+  },
+  "settings.account.deactivate.title": {
+    "defaultMessage": "Désactiver votre compte",
+    "description": "Heading of the part of the account page that deactivates the user's account."
+  },
+  "settings.account.deactivate.description": {
+    "defaultMessage": "Prenez du recul sans rien perdre : pendant 30 jours, votre profil et vos publications sont masqués à tout le monde. Connectez-vous dans ces 30 jours pour le réactiver, et vos publications, abonnements et abonnés sont tels que vous les avez laissés. Passé ce délai, votre compte est supprimé.",
+    "description": "What deactivating the account does."
+  },
+  "settings.account.deactivate.effects": {
+    "defaultMessage": "Tant qu’il est désactivé, rien ne vous parvient : les mentions et les messages directs sont perdus, et les nouveaux abonnés sont refusés. D’autres serveurs peuvent afficher votre compte comme suspendu. Vous êtes déconnecté partout, et les applications doivent être autorisées à nouveau.",
+    "description": "What the user gives up while the account is deactivated, including that other servers may show it as suspended."
+  },
+  "settings.account.deactivate.open": {
+    "defaultMessage": "Désactiver le compte…",
+    "description": "Button that opens the dialog that deactivates the user's account."
+  },
+  "settings.account.deactivate.confirm.title": {
+    "defaultMessage": "Désactiver votre compte ?",
+    "description": "Title of the dialog that deactivates the user's account."
+  },
+  "settings.account.deactivate.confirm.deletion": {
+    "defaultMessage": "Il sera supprimé le {date}, sauf si vous vous connectez et le réactivez avant.",
+    "description": "Sentence of the deactivation dialog with the date of the deletion. {date} is a formatted date and time."
+  },
+  "settings.account.deactivate.confirm.password": {
+    "defaultMessage": "Saisissez votre mot de passe pour confirmer.",
+    "description": "Asks for the password in the deactivation dialog."
+  },
+  "settings.account.deactivate.confirm.passkey": {
+    "defaultMessage": "Votre clé d’accès confirme cette action.",
+    "description": "Tells that a passkey confirms the deactivation."
+  },
+  "settings.account.deactivate.confirm.external": {
+    "defaultMessage": "La connexion à votre compte associé confirme cette action.",
+    "description": "Tells that the sign-in at a linked provider confirms the deactivation."
+  },
+  "settings.account.deactivate.confirm.code": {
+    "defaultMessage": "Saisissez un code de votre application d’authentification, ou un code de récupération, pour confirmer.",
+    "description": "Asks for a code of the second factor in the deactivation dialog."
+  },
+  "settings.account.deactivate.password": {
+    "defaultMessage": "Mot de passe actuel",
+    "description": "Label of the field with the password in the deactivation dialog."
+  },
+  "settings.account.deactivate.password.required": {
+    "defaultMessage": "Saisissez votre mot de passe.",
+    "description": "Error of the empty password field in the deactivation dialog."
+  },
+  "settings.account.deactivate.code": {
+    "defaultMessage": "Code d’authentification",
+    "description": "Label of the field with the code in the deactivation dialog."
+  },
+  "settings.account.deactivate.code.required": {
+    "defaultMessage": "Saisissez le code.",
+    "description": "Error of the empty code field in the deactivation dialog."
+  },
+  "settings.account.deactivate.use_code": {
+    "defaultMessage": "Utiliser plutôt un code d’authentification",
+    "description": "Button in the deactivation dialog that confirms with a code in place of the password or the passkey."
+  },
+  "settings.account.deactivate.use_sign_in": {
+    "defaultMessage": "Confirmer autrement",
+    "description": "Button in the deactivation dialog that goes back from the code to the password, the passkey, or the linked account."
+  },
+  "settings.account.deactivate.confirm": {
+    "defaultMessage": "Désactiver",
+    "description": "Button of the dialog that deactivates the account."
+  },
+  "settings.account.deactivate.cancel": {
+    "defaultMessage": "Garder mon compte actif",
+    "description": "Button that closes the deactivation dialog without deactivating."
+  },
+  "settings.account.deactivate.wrong_password": {
+    "defaultMessage": "Le mot de passe est incorrect.",
+    "description": "Error in the deactivation dialog."
+  },
+  "settings.account.deactivate.wrong_code": {
+    "defaultMessage": "Le code est incorrect.",
+    "description": "Error in the deactivation dialog."
+  },
+  "settings.account.deactivate.refused.login_restricted": {
+    "defaultMessage": "Une mesure de modération empêche ce compte de se connecter, il ne peut donc pas être désactivé.",
+    "description": "Why the account cannot be deactivated."
+  },
+  "settings.account.deactivate.refused.deletion_scheduled": {
+    "defaultMessage": "Ce compte attend d’être supprimé, il ne peut donc pas être désactivé.",
+    "description": "Why the account cannot be deactivated."
+  },
+  "settings.account.deactivate.refused.already_deactivated": {
+    "defaultMessage": "Ce compte est désactivé.",
+    "description": "Why the account cannot be deactivated."
+  },
+  "settings.account.deactivate.refused.moved": {
+    "defaultMessage": "Ce compte a déménagé vers un autre compte, il ne peut donc pas être désactivé.",
+    "description": "Why the account cannot be deactivated."
+  },
+  "settings.account.deactivate.refused.registration_pending": {
+    "defaultMessage": "Votre inscription attend d’être examinée, ce compte ne peut donc pas être désactivé.",
+    "description": "Why the account cannot be deactivated."
+  },
+  "settings.account.deactivate.refused.paid_subscription": {
+    "defaultMessage": "Votre formule de soutien est toujours en cours. Résiliez-la d’abord ; vous pourrez désactiver votre compte une fois qu’elle sera terminée.",
+    "description": "Why the account cannot be deactivated, followed by a link to the subscription."
+  },
+  "settings.account.deactivate.refused.subscription_link": {
+    "defaultMessage": "Gérer votre formule",
+    "description": "Link from the refused deactivation to the page of the supporter subscription."
+  },
+  "settings.account.deactivate.refused.recently_reactivated": {
+    "defaultMessage": "Vous avez réactivé ce compte récemment. Vous pourrez le désactiver à nouveau à partir du {date}.",
+    "description": "Why the account cannot be deactivated. {date} is a formatted date and time, 24 hours after the reactivation."
+  },
+  "settings.account.deactivate.refused.last_administrator": {
+    "defaultMessage": "C’est le seul compte administrateur qui peut se connecter, il ne peut donc pas être désactivé. Nommez d’abord quelqu’un d’autre administrateur.",
+    "description": "Why the account cannot be deactivated."
+  },
+  "settings.notifications.group.admin_hook_failing": {
+    "defaultMessage": "Examens externes en échec",
+    "description": "Row of the notification settings table: (moderators) calls of an external review keep failing."
+  },
+  "settings.notifications.group.admin_hook_appeal": {
+    "defaultMessage": "Contestations de publications refusées",
+    "description": "Row of the notification settings table: (moderators) a user appealed a post that the automated review refused."
+  },
+  "settings.auto_delete.limit.title": {
+    "defaultMessage": "Limite de ce serveur",
+    "description": "Heading of the section of the automatic deletion settings that explains the server's maximum of how long posts are kept, shown while it applies to the user."
+  },
+  "settings.auto_delete.limit.description": {
+    "defaultMessage": "Sur ce serveur, les publications sont supprimées au plus {days, plural, one {# jour} other {# jours}} après leur publication. La suppression automatique reste activée, et seules les exceptions que ce serveur autorise peuvent conserver des publications plus longtemps.",
+    "description": "Explanation of the server's maximum of the automatic deletion. {days} is the most days a post is kept."
+  },
+  "settings.auto_delete.limit.allowed": {
+    "defaultMessage": "Ce que ce serveur vous laisse conserver",
+    "description": "Heading of the list of the exceptions that the server's maximum of the automatic deletion allows."
+  },
+  "settings.auto_delete.limit.allowed.none": {
+    "defaultMessage": "Rien. Toute publication plus ancienne que la limite est supprimée.",
+    "description": "In place of the list of allowed exceptions when the server's maximum allows none."
+  },
+  "settings.auto_delete.limit.allowed.visibilities": {
+    "defaultMessage": "Les publications avec les visibilités que vous choisissez",
+    "description": "Item of the list of exceptions the server's maximum allows: keeping posts by their visibility."
+  },
+  "settings.auto_delete.limit.allowed.thresholds": {
+    "defaultMessage": "Les publications avec beaucoup de boosts ou de favoris",
+    "description": "Item of the list of exceptions the server's maximum allows: keeping posts by their numbers of boosts and favourites."
+  },
+  "settings.auto_delete.limit.pins": {
+    "defaultMessage": "Épinglées sur votre profil, {count, plural, one {seulement la plus récemment épinglée} other {les # plus récemment épinglées}}",
+    "description": "The exception of pinned posts when the server's maximum keeps only the newest pins. {count} is how many pins keep posts."
+  },
+  "settings.auto_delete.limit.not_allowed": {
+    "defaultMessage": "La limite de ce serveur ne l’autorise pas.",
+    "description": "Note under an exception of the automatic deletion that the server's maximum does not allow, which cannot be turned on."
+  },
+  "settings.auto_delete.limit.enabled_locked": {
+    "defaultMessage": "La limite de ce serveur maintient la suppression automatique activée. Le serveur vérifie toutes les heures et supprime au plus 100 publications à chaque fois.",
+    "description": "Help of the checkbox that turns the automatic deletion on, while the server's maximum keeps it on."
+  },
+  "settings.auto_delete.limit.age": {
+    "defaultMessage": "Compté à partir de la date de publication de chacune. Au plus {days, plural, one {# jour} other {# jours}} sur ce serveur.",
+    "description": "Help of the select of the age after which posts are deleted, while the server's maximum applies. {days} is the maximum."
+  },
+  "settings.auto_delete.limit.error.enabled": {
+    "defaultMessage": "La limite de ce serveur maintient la suppression automatique activée. Activez-la pour enregistrer.",
+    "description": "Error under the checkbox of the automatic deletion when it is off while the server's maximum applies."
+  },
+  "settings.auto_delete.limit.error.age": {
+    "defaultMessage": "Ce serveur conserve les publications au plus {days, plural, one {# jour} other {# jours}}. Choisissez une ancienneté plus courte pour enregistrer.",
+    "description": "Error under the select of the age when it is longer than the server's maximum. {days} is the maximum."
+  },
+  "settings.auto_delete.limit.error.exception": {
+    "defaultMessage": "La limite de ce serveur ne l’autorise pas. Désactivez-le pour enregistrer.",
+    "description": "Error under an exception of the automatic deletion that is on while the server's maximum does not allow it."
+  },
+  "settings.auto_delete.limit.bound.dated": {
+    "defaultMessage": "À partir du {date}, la limite de ce serveur décide quelles publications sont supprimées.",
+    "description": "Headline of the notice that the server's maximum binds the user after a grace period. {date} is the formatted date it starts."
+  },
+  "settings.auto_delete.limit.bound.soon": {
+    "defaultMessage": "Bientôt, la limite de ce serveur décidera quelles publications sont supprimées.",
+    "description": "Headline of the notice that the server's maximum binds the user, before the server has said from when."
+  },
+  "settings.auto_delete.limit.bound.effective": {
+    "defaultMessage": "D’ici là, vos paramètres ci-dessous s’appliquent. Ensuite, les publications de plus de {days, plural, one {# jour} other {# jours}} sont supprimées, sauf :",
+    "description": "In the notice that the server's maximum binds the user: what deletes their posts after the grace period, before the list of what it keeps. {days} is the age."
+  },
+  "settings.auto_delete.limit.bound.keeps_none": {
+    "defaultMessage": "Rien n’est conservé.",
+    "description": "In place of the list of what the effective policy keeps when it keeps nothing."
+  },
+  "settings.auto_delete.limit.keeps.visibilities": {
+    "defaultMessage": "Les publications avec ces visibilités : {visibilities}",
+    "description": "Item of the list of what the effective policy keeps: posts with these visibilities. {visibilities} is a list of visibility names."
+  },
+  "settings.auto_delete.limit.keeps.min_boosts": {
+    "defaultMessage": "Les publications boostées au moins {count, plural, one {# fois} other {# fois}}",
+    "description": "Item of the list of what the effective policy keeps: posts with at least this many boosts."
+  },
+  "settings.auto_delete.limit.keeps.min_favourites": {
+    "defaultMessage": "Les publications mises en favori au moins {count, plural, one {# fois} other {# fois}}",
+    "description": "Item of the list of what the effective policy keeps: posts with at least this many favourites."
+  },
+  "settings.auto_delete.limit.bound.count": {
+    "defaultMessage": "Publications concernées à ce moment",
+    "description": "Label of the number of posts that the server's maximum deletes once it applies to the user, counted now."
+  },
+  "settings.auto_delete.limit.bound.fix": {
+    "defaultMessage": "Pour continuer à décider vous-même, modifiez les paramètres ci-dessous pour respecter la limite, puis enregistrez-les.",
+    "description": "In the notice that the server's maximum binds the user: how to stop it from overriding their settings."
+  },
+  "settings.auto_delete.preview.description.limited": {
+    "defaultMessage": "Comptées maintenant d’après les conditions ci-dessus dans la limite de ce serveur, avant que vous les enregistriez.",
+    "description": "Help of the estimate of the posts that the automatic deletion would delete, while the server's maximum applies."
+  },
+  "settings.auto_delete.limit.pins.note": {
+    "defaultMessage": "Ce serveur ne conserve que {count, plural, one {votre publication la plus récemment épinglée} other {vos # publications les plus récemment épinglées}}.",
+    "description": "Note under the exception of pinned posts when the server's maximum keeps only the newest pins. {count} is how many."
+  }
+}

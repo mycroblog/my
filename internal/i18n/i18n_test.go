@@ -45,8 +45,13 @@ func TestAccessors(t *testing.T) {
 		{"pt-BR", func(l *Localizer) string { return l.ServerConfigErrors(1) }, "Foi encontrado 1 erro de configuração."},
 		{"pt-BR", func(l *Localizer) string { return l.ServerConfigErrors(1234) }, "Foram encontrados 1.234 erros de configuração."},
 		{"pt-PT", func(l *Localizer) string { return l.ServerErrorsNotFound() }, "O recurso solicitado não foi encontrado."},
+		{"de", func(l *Localizer) string { return l.ServerConfigErrors(1234) }, "1.234 Konfigurationsfehler gefunden."},
+		{"de-CH", func(l *Localizer) string { return l.ServerErrorsNotFound() }, "Die angeforderte Ressource wurde nicht gefunden."},
+		{"fr", func(l *Localizer) string { return l.ServerConfigErrors(0) }, "0 erreur de configuration détectée."},
+		{"fr", func(l *Localizer) string { return l.ServerConfigErrors(1234) }, "1\u202f234 erreurs de configuration détectées."},
+		{"fr-CA", func(l *Localizer) string { return l.ServerErrorsNotFound() }, "La ressource demandée est introuvable."},
 		// Locales without a catalog fall back to en.
-		{"fr", func(l *Localizer) string { return l.ServerErrorsNotFound() }, "The requested resource was not found."},
+		{"it", func(l *Localizer) string { return l.ServerErrorsNotFound() }, "The requested resource was not found."},
 		{"ja-JP", func(l *Localizer) string { return l.ServerErrorsNotFound() }, "指定されたリソースが見つかりません。"},
 	}
 	for _, tt := range tests {
@@ -57,10 +62,10 @@ func TestAccessors(t *testing.T) {
 }
 
 func TestLocales(t *testing.T) {
-	if got, want := load(t).Locales(), []string{"en", "es", "ja", "pt-BR", "zh-CN", "zh-TW"}; !slices.Equal(got, want) {
+	if got, want := load(t).Locales(), []string{"de", "en", "es", "fr", "ja", "pt-BR", "zh-CN", "zh-TW"}; !slices.Equal(got, want) {
 		t.Errorf("Locales() = %v, want %v", got, want)
 	}
-	if got, want := load(t, WithPseudoLocales()).Locales(), []string{"ar-XB", "en", "en-XA", "es", "ja", "pt-BR", "zh-CN", "zh-TW"}; !slices.Equal(got, want) {
+	if got, want := load(t, WithPseudoLocales()).Locales(), []string{"ar-XB", "de", "en", "en-XA", "es", "fr", "ja", "pt-BR", "zh-CN", "zh-TW"}; !slices.Equal(got, want) {
 		t.Errorf("Locales() with pseudo-locales = %v, want %v", got, want)
 	}
 }
@@ -211,7 +216,7 @@ func ExampleResolver_Locale() {
 		panic(err)
 	}
 	r := &Resolver{Bundle: b, InstanceDefault: func(context.Context) string { return "en" }}
-	for _, header := range []string{"ja-JP,ja;q=0.9,en;q=0.8", "fr-CA, de;q=0.5"} {
+	for _, header := range []string{"ja-JP,ja;q=0.9,en;q=0.8", "it-CH, nl;q=0.5"} {
 		l := r.Localizer(context.Background(), header)
 		fmt.Println(l.Locale(), l.Direction(), strings.TrimSpace(l.ServerConfigErrors(2)))
 	}

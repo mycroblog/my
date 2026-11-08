@@ -1,0 +1,26 @@
+{
+  "closure.closed_on": {
+    "defaultMessage": "Date de fermeture",
+    "description": "Label of the server's closing date (closes_at, ADR-0088), shown in UTC next to it on the static closure page."
+  },
+  "closure.description": {
+    "defaultMessage": "{server} a fermé et n’est plus en service. Ses comptes et ses publications ont disparu, et leurs données ne peuvent plus être exportées. Merci de l’avoir utilisé.",
+    "description": "Explanation under the heading of the static closure page (my admin closure export-html). {server} is the server's name, or its host name."
+  },
+  "closure.document_title": {
+    "defaultMessage": "Fermé – {server}",
+    "description": "<title> of the static closure page. {server} is the server's name, or its host name."
+  },
+  "closure.notice": {
+    "defaultMessage": "Message des administrateurs",
+    "description": "Heading over the administrators' message of the closure announcement on the static closure page."
+  },
+  "closure.status_page": {
+    "defaultMessage": "Consulter l’état du service",
+    "description": "Text of the link to the instance's status page (status_page_url) on the static closure page."
+  },
+  "closure.title": {
+    "defaultMessage": "Ce serveur a fermé",
+    "description": "Heading of the static closure page that the server's domain serves after the closure of the service (ADR-0088 §6)."
+  }
+}

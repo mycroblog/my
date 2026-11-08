@@ -1,0 +1,10 @@
+{
+  "admin.home.none.description": {
+    "defaultMessage": "Vos rôles n’accordent aucune des permissions nécessaires aux écrans d’administration du serveur. Un administrateur peut vous les accorder.",
+    "description": "Description on the server administration page of a user whose roles grant none of the server administration screens' permissions."
+  },
+  "admin.home.none.heading": {
+    "defaultMessage": "Aucun écran d’administration du serveur pour vos rôles",
+    "description": "Heading on the server administration page of a user whose roles grant none of the server administration screens' permissions."
+  }
+}

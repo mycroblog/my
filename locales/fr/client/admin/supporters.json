@@ -1,0 +1,662 @@
+{
+  "admin.supporters.title": {
+    "defaultMessage": "Soutiens",
+    "description": "Title of the supporters screen (manage_supporters) and of its entry in the administration menu."
+  },
+  "admin.supporters.summary": {
+    "defaultMessage": "Activez le programme de soutien, configurez ses formules et consultez les souscriptions.",
+    "description": "Description of the supporters screen in the administration menu."
+  },
+  "admin.supporters.program.title": {
+    "defaultMessage": "Programme de soutien",
+    "description": "Heading of the section of the supporters screen about the program."
+  },
+  "admin.supporters.program.description": {
+    "defaultMessage": "Les utilisateurs souscrivent à une formule et détiennent son rôle tant qu’ils paient. Le programme est désactivé jusqu’à ce que vous l’activiez, et requiert un prestataire de paiement dans la configuration du serveur et un serveur qui envoie des e-mails.",
+    "description": "Explanation of the supporter program on the supporters screen."
+  },
+  "admin.supporters.program.provider": {
+    "defaultMessage": "Prestataire de paiement du programme",
+    "description": "Term of the payment provider that the program was enabled with."
+  },
+  "admin.supporters.program.configured_provider": {
+    "defaultMessage": "Prestataire de paiement configuré",
+    "description": "Term of the payment provider of the server's configuration."
+  },
+  "admin.supporters.program.none": {
+    "defaultMessage": "Aucun",
+    "description": "Value of a payment provider term when there is none."
+  },
+  "admin.supporters.program.live_subscriptions": {
+    "defaultMessage": "Souscriptions en cours",
+    "description": "Term of the count of the subscriptions that have not ended."
+  },
+  "admin.supporters.program.subscription_count": {
+    "defaultMessage": "{count, plural, one {# souscription} other {# souscriptions}}",
+    "description": "A number of subscriptions."
+  },
+  "admin.supporters.program.changed_at": {
+    "defaultMessage": "Dernière activation ou désactivation",
+    "description": "Term of when the program was last enabled or disabled."
+  },
+  "admin.supporters.program.never": {
+    "defaultMessage": "Jamais",
+    "description": "Value of the last change of the program when it never changed."
+  },
+  "admin.supporters.program.switch": {
+    "defaultMessage": "Activer le programme de soutien",
+    "description": "Label of the checkbox of the program's form that enables or disables the supporter program."
+  },
+  "admin.supporters.program.switch.description": {
+    "defaultMessage": "La désactivation est refusée tant que des souscriptions sont en cours : retirez d’abord les formules et attendez la fin de leurs souscriptions.",
+    "description": "Description of the checkbox that enables or disables the supporter program."
+  },
+  "admin.supporters.program.failed": {
+    "defaultMessage": "Impossible d’enregistrer : {reason}",
+    "description": "Shown beside the save button of the program's form when the program or the supporter list's setting could not be saved, with the server's reason."
+  },
+  "admin.supporters.warning.no_provider": {
+    "defaultMessage": "Aucun prestataire de paiement n’est configuré, le programme ne peut donc pas être activé.",
+    "description": "Warning of the program screen: no payment provider in the configuration."
+  },
+  "admin.supporters.warning.no_email": {
+    "defaultMessage": "Le serveur n’envoie pas d’e-mails, personne ne peut donc vérifier une adresse pour souscrire.",
+    "description": "Warning of the program screen: the server sends no email."
+  },
+  "admin.supporters.warning.provider_mismatch": {
+    "defaultMessage": "Le prestataire de paiement configuré n’est pas celui avec lequel le programme a été activé. Les nouvelles souscriptions et les changements sont refusés tant que vous ne l’avez pas désactivé puis réactivé ; les souscripteurs doivent alors souscrire de nouveau.",
+    "description": "Warning of the program screen: the configured provider differs from the program's."
+  },
+  "admin.supporters.warning.no_commerce_disclosure": {
+    "defaultMessage": "Le serveur ne publie aucune mention commerciale.",
+    "description": "Warning of the program screen: the commerce disclosures text is empty."
+  },
+  "admin.supporters.warning.no_commerce_disclosure.link": {
+    "defaultMessage": "Rédigez-les dans les conditions et politiques",
+    "description": "Link from the warning to the terms and policies screen."
+  },
+  "admin.supporters.payment.title": {
+    "defaultMessage": "Prestataire de paiement",
+    "description": "Heading of the section of the payment provider's state on the supporters screen."
+  },
+  "admin.supporters.payment.description": {
+    "defaultMessage": "Le prestataire de paiement de la configuration du serveur : son mode, les envois de webhooks qu’il effectue, et le rapprochement qui relit ses souscriptions et mouvements d’argent toutes les quelques heures.",
+    "description": "Description of the payment provider section."
+  },
+  "admin.supporters.payment.provider": {
+    "defaultMessage": "Prestataire",
+    "description": "Term of the payment provider's name."
+  },
+  "admin.supporters.payment.mode": {
+    "defaultMessage": "Mode",
+    "description": "Term of the payment provider's mode (test or live)."
+  },
+  "admin.supporters.payment.mode.test": {
+    "defaultMessage": "Test : rien n’est facturé",
+    "description": "Value of the mode for test credentials."
+  },
+  "admin.supporters.payment.mode.live": {
+    "defaultMessage": "Production",
+    "description": "Value of the mode for live credentials."
+  },
+  "admin.supporters.payment.time_zone": {
+    "defaultMessage": "Fuseau horaire des rapports",
+    "description": "Term of the time zone in which the provider's income is dated."
+  },
+  "admin.supporters.payment.last_webhook": {
+    "defaultMessage": "Dernier webhook",
+    "description": "Term of when the newest webhook delivery was received."
+  },
+  "admin.supporters.payment.no_webhook": {
+    "defaultMessage": "Aucun au cours des 45 derniers jours",
+    "description": "Value of the last webhook when no delivery is recorded (deliveries are kept 45 days)."
+  },
+  "admin.supporters.payment.last_reconcile": {
+    "defaultMessage": "Dernier rapprochement",
+    "description": "Term of the last reconciliation attempt with its outcome."
+  },
+  "admin.supporters.payment.never": {
+    "defaultMessage": "Jamais",
+    "description": "Value of the last reconciliation before the first."
+  },
+  "admin.supporters.payment.outcome.succeeded": {
+    "defaultMessage": "Réussi",
+    "description": "Outcome of a reconciliation that succeeded."
+  },
+  "admin.supporters.payment.outcome.partial": {
+    "defaultMessage": "Partiel : une suite prend le relais",
+    "description": "Outcome of a reconciliation that used its request cap; a continuation goes on."
+  },
+  "admin.supporters.payment.outcome.failed": {
+    "defaultMessage": "Échec",
+    "description": "Outcome of a reconciliation that failed."
+  },
+  "admin.supporters.payment.requests": {
+    "defaultMessage": "Requêtes au prestataire",
+    "description": "Term of the requests the last reconciliation sent."
+  },
+  "admin.supporters.payment.checked": {
+    "defaultMessage": "Souscriptions relues",
+    "description": "Term of the subscriptions the last reconciliation read again."
+  },
+  "admin.supporters.payment.corrected": {
+    "defaultMessage": "Souscriptions corrigées",
+    "description": "Term of the subscriptions whose state the last reconciliation changed."
+  },
+  "admin.supporters.payment.error.request_cap": {
+    "defaultMessage": "Il a utilisé les payments_reconcile_max_requests requêtes d’une exécution, et une suite prend le relais dans une minute. Si cela arrive à la plupart des exécutions, augmentez payments_reconcile_max_requests ou allongez payments_reconcile_interval.",
+    "description": "How to fix a reconciliation that stopped at its request cap."
+  },
+  "admin.supporters.payment.error.permission": {
+    "defaultMessage": "Le prestataire a refusé la clé d’API : elle est incorrecte ou manque de permissions. Vérifiez la clé secrète dans l’environnement du serveur et les permissions d’une clé restreinte, puis redéployez.",
+    "description": "How to fix a reconciliation refused for the API key."
+  },
+  "admin.supporters.payment.error.not_found": {
+    "defaultMessage": "Le prestataire n’a pas trouvé un élément demandé par le serveur. Vérifiez que la clé appartient au compte utilisé jusqu’ici par le serveur, et que ses produits et ses prix ne sont pas supprimés dans le tableau de bord du prestataire.",
+    "description": "How to fix a reconciliation that failed for a missing object."
+  },
+  "admin.supporters.payment.error.invalid_request": {
+    "defaultMessage": "Le prestataire a refusé une requête du serveur. Cherchez la requête dans le journal du serveur et dans le tableau de bord du prestataire ; si cela persiste, signalez-le aux développeurs de mycroblog.",
+    "description": "How to fix a reconciliation that failed for an invalid request."
+  },
+  "admin.supporters.payment.error.throttled": {
+    "defaultMessage": "Le prestataire a limité les requêtes du serveur. Le prochain rapprochement réessaiera ; il n’y a rien à corriger, sauf si cela persiste.",
+    "description": "How to fix a reconciliation that was rate limited."
+  },
+  "admin.supporters.payment.error.unavailable": {
+    "defaultMessage": "Le prestataire était occupé ou injoignable. Le prochain rapprochement réessaiera ; si cela persiste, vérifiez le réseau du serveur et la page d’état du prestataire.",
+    "description": "How to fix a reconciliation that failed because the provider was unavailable."
+  },
+  "admin.supporters.payment.error.invalid_signature": {
+    "defaultMessage": "Une signature ne correspondait pas. Vérifiez que le secret de signature du webhook dans l’environnement du serveur est celui du point de terminaison enregistré chez le prestataire.",
+    "description": "How to fix a failure for an invalid signature."
+  },
+  "admin.supporters.payment.error.stale_signature": {
+    "defaultMessage": "L’heure d’une signature différait de plus de cinq minutes. Vérifiez que l’horloge du serveur est synchronisée.",
+    "description": "How to fix a failure for a stale signature."
+  },
+  "admin.supporters.payment.error.mode_mismatch": {
+    "defaultMessage": "Le mode de la clé d’API (test ou production) diffère de celui du prestataire. Utilisez la clé d’API et le secret de signature du webhook du même mode, puis redéployez.",
+    "description": "How to fix a failure for a mode mismatch."
+  },
+  "admin.supporters.payment.error.invalid_response": {
+    "defaultMessage": "Le prestataire a répondu sous une forme que le serveur ne peut pas lire. Le prochain rapprochement réessaiera ; si cela persiste, signalez-le aux développeurs de mycroblog.",
+    "description": "How to fix a failure for an unreadable response."
+  },
+  "admin.supporters.payment.warning.duplicate_charge": {
+    "defaultMessage": "Une seconde souscription issue d’un même paiement n’est pas encore annulée ni remboursée. Chaque rapprochement réessaie. La ligne du journal du serveur indique la souscription et la raison. Si la clé manque de permissions, donnez-lui celle d’écrire des remboursements ; sinon, remboursez le paiement dans le tableau de bord du prestataire.",
+    "description": "Warning of the payment provider section: a member paid twice and the server could not cancel and refund the second subscription."
+  },
+  "admin.supporters.payment.warning.no_webhook": {
+    "defaultMessage": "Aucun envoi de webhook n’est enregistré au cours des 45 derniers jours. Vérifiez que le point de terminaison du webhook est enregistré chez le prestataire avec l’URL de ce serveur et que son secret de signature est dans l’environnement du serveur.",
+    "description": "Warning of the payment provider section: no webhook delivery is recorded."
+  },
+  "admin.supporters.payment.warning.reconcile_corrected": {
+    "defaultMessage": "Le dernier rapprochement a corrigé des souscriptions que les webhooks auraient dû mettre à jour. Vérifiez l’URL du point de terminaison du webhook, ses événements et son secret de signature.",
+    "description": "Warning of the payment provider section: the last reconciliation corrected subscriptions."
+  },
+  "admin.supporters.payment.reconcile.description": {
+    "defaultMessage": "Le rapprochement relit dès maintenant les souscriptions et les mouvements d’argent auprès du prestataire, en plus du rapprochement périodique. Il peut s’exécuter une fois par heure (UTC), et le journal d’audit le consigne.",
+    "description": "Description of the button that reconciles with the payment provider now."
+  },
+  "admin.supporters.payment.reconcile.run": {
+    "defaultMessage": "Rapprocher maintenant",
+    "description": "Button that reconciles with the payment provider now."
+  },
+  "admin.supporters.payment.reconcile.queued": {
+    "defaultMessage": "Le rapprochement est en file d’attente. Son résultat apparaîtra ici une fois exécuté.",
+    "description": "Status message after queueing a reconciliation."
+  },
+  "admin.supporters.payment.reconcile.too_soon": {
+    "defaultMessage": "Un rapprochement a déjà été exécuté durant cette heure (UTC). Réessayez à l’heure suivante.",
+    "description": "Error of a reconciliation started again within the same UTC hour."
+  },
+  "admin.supporters.payment.reconcile.failed": {
+    "defaultMessage": "Impossible de lancer le rapprochement : {reason}",
+    "description": "Error of starting a reconciliation, with the server's reason."
+  },
+  "admin.supporters.new.title": {
+    "defaultMessage": "Créer une formule",
+    "description": "Link to the page that creates a plan, and the title of that page."
+  },
+  "admin.supporters.new.description": {
+    "defaultMessage": "Une formule donne à ses souscripteurs un rôle que personne ne détient encore, avec des permissions de membre uniquement, sous tous les rôles d’équipe. Un rang plus élevé correspond à une formule supérieure, qui doit inclure tout ce que comprennent les inférieures. Les prix sont créés chez le prestataire de paiement après l’enregistrement ; la formule accepte les souscriptions dès qu’ils sont prêts.",
+    "description": "Explanation of the form of a new plan."
+  },
+  "admin.supporters.new.submit": {
+    "defaultMessage": "Créer la formule",
+    "description": "Submit button of the form of a new plan."
+  },
+  "admin.supporters.plan.role": {
+    "defaultMessage": "Rôle",
+    "description": "Label of the role of a plan, and its term in the list."
+  },
+  "admin.supporters.plan.role.description": {
+    "defaultMessage": "La clé d’un rôle que personne ne détient. Elle ne pourra plus changer.",
+    "description": "Description of the role field of a new plan."
+  },
+  "admin.supporters.plan.role.required": {
+    "defaultMessage": "Saisissez la clé d’un rôle.",
+    "description": "Error of the role field of a new plan when it is empty."
+  },
+  "admin.supporters.plan.role_value": {
+    "defaultMessage": "{role} à la position {position}",
+    "description": "The role of a plan in the list: its key and position."
+  },
+  "admin.supporters.plan.role.no_permissions": {
+    "defaultMessage": "Aucune permission",
+    "description": "Value of the permissions of a plan's role when it has none."
+  },
+  "admin.supporters.plan.permissions": {
+    "defaultMessage": "Permissions du rôle",
+    "description": "Term of the permissions of a plan's role."
+  },
+  "admin.supporters.plan.name": {
+    "defaultMessage": "Nom",
+    "description": "Label of the name of a plan."
+  },
+  "admin.supporters.plan.name.invalid": {
+    "defaultMessage": "Saisissez un nom de 1 à {max} caractères sur une seule ligne.",
+    "description": "Error of the name of a plan."
+  },
+  "admin.supporters.plan.description": {
+    "defaultMessage": "Description",
+    "description": "Label of the description of a plan."
+  },
+  "admin.supporters.plan.description.description": {
+    "defaultMessage": "Texte brut, affiché avec la formule. Peut rester vide.",
+    "description": "Description of the description field of a plan."
+  },
+  "admin.supporters.plan.characters_left": {
+    "defaultMessage": "{count, plural, one {# caractère restant} other {# caractères restants}}",
+    "description": "Characters left in the description of a plan."
+  },
+  "admin.supporters.plan.characters_over": {
+    "defaultMessage": "{count, plural, one {# caractère en trop} other {# caractères en trop}}",
+    "description": "Characters over the limit in the description of a plan."
+  },
+  "admin.supporters.plan.amount": {
+    "defaultMessage": "Prix mensuel",
+    "description": "Label of the monthly price of a plan."
+  },
+  "admin.supporters.plan.amount.description": {
+    "defaultMessage": "Dans l’unité principale de la devise, par exemple 500 ou 4.99.",
+    "description": "Description of the monthly price field."
+  },
+  "admin.supporters.plan.amount.invalid": {
+    "defaultMessage": "Saisissez un montant tel que 500 ou 4.99.",
+    "description": "Error of the monthly price field."
+  },
+  "admin.supporters.plan.currency": {
+    "defaultMessage": "Devise",
+    "description": "Label of the currency of a new plan."
+  },
+  "admin.supporters.plan.currency.description": {
+    "defaultMessage": "Le code ISO 4217, par exemple JPY ou USD. Il ne pourra plus changer.",
+    "description": "Description of the currency field."
+  },
+  "admin.supporters.plan.currency.invalid": {
+    "defaultMessage": "Saisissez un code de trois lettres, par exemple JPY.",
+    "description": "Error of the currency field."
+  },
+  "admin.supporters.plan.discount": {
+    "defaultMessage": "Remise annuelle (%)",
+    "description": "Label of the discount of the yearly price."
+  },
+  "admin.supporters.plan.discount.description": {
+    "defaultMessage": "Le prix annuel est le prix mensuel × 12, moins ce pourcentage, arrondi à l’inférieur.",
+    "description": "Description of the yearly discount field."
+  },
+  "admin.supporters.plan.emoji_limit": {
+    "defaultMessage": "Limite d’émojis personnalisés (mensuelle)",
+    "description": "Label of the monthly custom emoji limit of a plan, and its term in the list."
+  },
+  "admin.supporters.plan.emoji_limit.description": {
+    "defaultMessage": "Combien d’émojis personnalisés les souscripteurs peuvent créer chaque mois (UTC) lorsque le rôle le leur permet.",
+    "description": "Description of the monthly custom emoji limit field."
+  },
+  "admin.supporters.plan.rank": {
+    "defaultMessage": "Rang",
+    "description": "Label of the rank of a plan, and its term in the list."
+  },
+  "admin.supporters.plan.rank.description": {
+    "defaultMessage": "Un rang plus élevé correspond à une formule supérieure ; chaque formule a le sien.",
+    "description": "Description of the rank field."
+  },
+  "admin.supporters.plan.role_position": {
+    "defaultMessage": "Position du rôle",
+    "description": "Label of the position of a plan's role in the dialog that changes the plan."
+  },
+  "admin.supporters.plan.role_position.description": {
+    "defaultMessage": "Sous tous les rôles d’équipe, et au-dessus du rôle de la formule inférieure.",
+    "description": "Description of the role position field."
+  },
+  "admin.supporters.plan.number.invalid": {
+    "defaultMessage": "Saisissez un nombre entier de 0 à {max}.",
+    "description": "Error of a number field of a plan."
+  },
+  "admin.supporters.plan.visibility": {
+    "defaultMessage": "Visibilité",
+    "description": "Label of the visibility of a plan."
+  },
+  "admin.supporters.plan.visibility.public": {
+    "defaultMessage": "Publique",
+    "description": "Visibility of a plan that takes new subscriptions."
+  },
+  "admin.supporters.plan.visibility.hidden": {
+    "defaultMessage": "Masquée",
+    "description": "Visibility of a plan that takes no new subscriptions; its subscriptions go on."
+  },
+  "admin.supporters.plan.save_failed": {
+    "defaultMessage": "Impossible d’enregistrer la formule : {reason}",
+    "description": "Error of saving a plan, with the server's reason."
+  },
+  "admin.supporters.plan.created": {
+    "defaultMessage": "Formule {name} créée. Le journal d’audit la consigne.",
+    "description": "Status message after creating a plan."
+  },
+  "admin.supporters.plan.updated": {
+    "defaultMessage": "Formule {name} enregistrée. Le journal d’audit la consigne.",
+    "description": "Status message after changing a plan."
+  },
+  "admin.supporters.plan.retired_done": {
+    "defaultMessage": "Formule {name} retirée. Ses souscriptions prennent fin à la fin de leur période.",
+    "description": "Status message after retiring a plan."
+  },
+  "admin.supporters.plan.change_failed": {
+    "defaultMessage": "Impossible de modifier la formule : {reason}",
+    "description": "Error of retiring a plan, with the server's reason."
+  },
+  "admin.supporters.plans.title": {
+    "defaultMessage": "Formules",
+    "description": "Caption of the table of plans."
+  },
+  "admin.supporters.plans.empty": {
+    "defaultMessage": "Aucune formule pour le moment",
+    "description": "Empty state of the list of plans."
+  },
+  "admin.supporters.plans.empty.description": {
+    "defaultMessage": "Créez-en une pour accepter des souscriptions.",
+    "description": "Description of the empty list of plans; the button that creates one is above the list."
+  },
+  "admin.supporters.plan.preparing": {
+    "defaultMessage": "Prix en préparation",
+    "description": "State of a plan whose prices the payment provider has not made yet; it takes no subscriptions until then."
+  },
+  "admin.supporters.plan.monthly": {
+    "defaultMessage": "Mensuel",
+    "description": "Term of the monthly price of a plan."
+  },
+  "admin.supporters.plan.yearly": {
+    "defaultMessage": "Annuel",
+    "description": "Term of the yearly price of a plan."
+  },
+  "admin.supporters.plan.yearly_value": {
+    "defaultMessage": "{amount} ({discount} % de remise)",
+    "description": "The yearly price of a plan and its discount in percent."
+  },
+  "admin.supporters.plan.members": {
+    "defaultMessage": "Membres",
+    "description": "Term of the count of the subscriptions of a plan that hold its role."
+  },
+  "admin.supporters.plan.retired_at": {
+    "defaultMessage": "Retirée le",
+    "description": "Term of when a plan was retired."
+  },
+  "admin.supporters.plan.edit.title": {
+    "defaultMessage": "Modifier la formule",
+    "description": "Heading of the section of a plan's page with the form that changes it."
+  },
+  "admin.supporters.plan.edit.description": {
+    "defaultMessage": "Un nouveau prix s’applique aux nouvelles souscriptions et aux changements de formule ; les souscripteurs actuels conservent le leur.",
+    "description": "Explanation in the dialog that changes a plan."
+  },
+  "admin.supporters.plan.retire": {
+    "defaultMessage": "Retirer",
+    "description": "Button that retires a plan on its page, and the confirm button of its dialog."
+  },
+  "admin.supporters.plan.retire.title": {
+    "defaultMessage": "Retirer {name} ?",
+    "description": "Title of the confirmation before retiring a plan."
+  },
+  "admin.supporters.plan.retire.description": {
+    "defaultMessage": "Cette action est irréversible. La formule n’accepte plus de souscriptions, et chacune de ses souscriptions prend fin à la fin de sa période (celle qui n’est pas encore payée prend fin immédiatement).",
+    "description": "Explanation in the confirmation before retiring a plan."
+  },
+  "admin.supporters.cancel": {
+    "defaultMessage": "Annuler",
+    "description": "Button that closes a dialog of the supporters screen, or leaves the page of a new plan, without doing anything."
+  },
+  "admin.supporters.save": {
+    "defaultMessage": "Enregistrer",
+    "description": "Submit button of the program's form and of the form that changes a plan."
+  },
+  "admin.supporters.subscriptions.title": {
+    "defaultMessage": "Souscriptions",
+    "description": "Caption of the table of subscriptions."
+  },
+  "admin.supporters.subscriptions.empty": {
+    "defaultMessage": "Aucune souscription",
+    "description": "Empty state of the list of subscriptions."
+  },
+  "admin.supporters.filter.plan": {
+    "defaultMessage": "Formule",
+    "description": "Label of the filter of the subscriptions by plan."
+  },
+  "admin.supporters.filter.any_plan": {
+    "defaultMessage": "Toutes les formules",
+    "description": "Choice of the plan filter that shows every plan."
+  },
+  "admin.supporters.filter.state": {
+    "defaultMessage": "État",
+    "description": "Label of the filter of the subscriptions by state."
+  },
+  "admin.supporters.filter.any_state": {
+    "defaultMessage": "Tous les états",
+    "description": "Choice of the state filter that shows every state."
+  },
+  "admin.supporters.state.pending": {
+    "defaultMessage": "Pas encore payée",
+    "description": "State of a subscription that has started and is not paid yet."
+  },
+  "admin.supporters.state.active": {
+    "defaultMessage": "Active",
+    "description": "State of a paid subscription."
+  },
+  "admin.supporters.state.canceling": {
+    "defaultMessage": "Se termine à la fin de la période",
+    "description": "State of a subscription canceled at the end of its period."
+  },
+  "admin.supporters.state.past_due": {
+    "defaultMessage": "Paiement échoué",
+    "description": "State of a subscription whose payment failed less than 7 days ago; it keeps its role."
+  },
+  "admin.supporters.state.lapsed": {
+    "defaultMessage": "Caduque",
+    "description": "State of a subscription whose payment failed more than 7 days ago, or paused; no role."
+  },
+  "admin.supporters.state.expired": {
+    "defaultMessage": "Terminée",
+    "description": "State of a subscription that ended."
+  },
+  "admin.supporters.state.revoked": {
+    "defaultMessage": "Remboursée ou contestée",
+    "description": "State of a subscription revoked by a full refund or a chargeback."
+  },
+  "admin.supporters.state.abandoned": {
+    "defaultMessage": "Abandonnée",
+    "description": "State of a subscription that ended before its first payment."
+  },
+  "admin.supporters.subscription.deleted_account": {
+    "defaultMessage": "Compte supprimé",
+    "description": "Heading of a subscription whose subscriber's account is erased."
+  },
+  "admin.supporters.subscription.state": {
+    "defaultMessage": "État",
+    "description": "Term of the state of a subscription."
+  },
+  "admin.supporters.subscription.account": {
+    "defaultMessage": "Compte",
+    "description": "Header of the account column in the table of supporter subscriptions."
+  },
+  "admin.supporters.subscription.plan": {
+    "defaultMessage": "Formule",
+    "description": "Term of the plan of a subscription."
+  },
+  "admin.supporters.subscription.price": {
+    "defaultMessage": "Prix",
+    "description": "Term of the price of a subscription."
+  },
+  "admin.supporters.subscription.per_month": {
+    "defaultMessage": "{amount} par mois",
+    "description": "Price of a monthly subscription."
+  },
+  "admin.supporters.subscription.per_year": {
+    "defaultMessage": "{amount} par an",
+    "description": "Price of a yearly subscription."
+  },
+  "admin.supporters.subscription.started_at": {
+    "defaultMessage": "Débutée le",
+    "description": "Term of when a subscription started."
+  },
+  "admin.supporters.subscription.period_ends_at": {
+    "defaultMessage": "Fin de la période",
+    "description": "Column header and term of the end of the current period of a subscription."
+  },
+  "admin.supporters.subscription.grace_ends_at": {
+    "defaultMessage": "Rôle conservé jusqu’au",
+    "description": "Term of the end of the grace period of a subscription whose payment failed."
+  },
+  "admin.supporters.subscription.scheduled": {
+    "defaultMessage": "Changement programmé",
+    "description": "Term of the change of a subscription that waits for the end of its period."
+  },
+  "admin.supporters.subscription.scheduled_month": {
+    "defaultMessage": "Vers un prix mensuel à la fin de la période",
+    "description": "A scheduled change to a monthly price."
+  },
+  "admin.supporters.subscription.scheduled_year": {
+    "defaultMessage": "Vers un prix annuel à la fin de la période",
+    "description": "A scheduled change to a yearly price."
+  },
+  "admin.supporters.subscription.cancel": {
+    "defaultMessage": "Terminer maintenant",
+    "description": "Button that ends a subscription at once on its page, and the confirm button of its dialog."
+  },
+  "admin.supporters.subscription.cancel.title": {
+    "defaultMessage": "Terminer maintenant la souscription de {name} ?",
+    "description": "Title of the confirmation before ending a subscription at once."
+  },
+  "admin.supporters.subscription.cancel.description": {
+    "defaultMessage": "Le rôle est retiré immédiatement et le prestataire de paiement cesse de facturer. Rien n’est remboursé, sauf un paiement pour une souscription encore en attente, qui n’a rien donné : remboursez chez le prestataire de paiement si nécessaire. Cette action est irréversible.",
+    "description": "Explanation in the confirmation before ending a subscription at once."
+  },
+  "admin.supporters.subscription.canceled": {
+    "defaultMessage": "Souscription à {plan} terminée. Le journal d’audit la consigne.",
+    "description": "Status message after ending a subscription at once."
+  },
+  "admin.supporters.subscription.cancel_failed": {
+    "defaultMessage": "Impossible de terminer la souscription : {reason}",
+    "description": "Error of ending a subscription, with the server's reason."
+  },
+  "admin.supporters.list_visibility": {
+    "defaultMessage": "{visibility, select, everyone {Tout le monde peut lire la liste des soutiens.} signed_in {Les utilisateurs connectés peuvent lire la liste des soutiens.} other {Personne ne peut lire la liste des soutiens.}}",
+    "description": "Who may read the supporter list, on the supporters screen, by the server setting supporter_list_visibility (off, signed_in, or everyone); shown to viewers who may not change the server settings."
+  },
+  "admin.supporters.pages": {
+    "defaultMessage": "Pages des soutiens",
+    "description": "Name of the navigation between the pages of the supporters screen, under its heading."
+  },
+  "admin.supporters.pages.program": {
+    "defaultMessage": "Programme",
+    "description": "Link to the first page of the supporters screen: the program and the payment provider."
+  },
+  "admin.supporters.pages.plans": {
+    "defaultMessage": "Formules",
+    "description": "Link to the page of the supporters screen with the plans."
+  },
+  "admin.supporters.pages.subscriptions": {
+    "defaultMessage": "Souscriptions",
+    "description": "Link to the page of the supporters screen with the subscriptions."
+  },
+  "admin.supporters.plans.page_title": {
+    "defaultMessage": "Formules de soutien",
+    "description": "Title of the page of the supporters screen with the list of plans."
+  },
+  "admin.supporters.subscriptions.page_title": {
+    "defaultMessage": "Souscriptions de soutien",
+    "description": "Title of the page of the supporters screen with the list of subscriptions."
+  },
+  "admin.supporters.plan.page_title": {
+    "defaultMessage": "Formule de soutien",
+    "description": "Title of the page of one supporter plan."
+  },
+  "admin.supporters.plan.back": {
+    "defaultMessage": "Retour aux formules",
+    "description": "Link from the page of one plan, or of a new plan, to the list of plans."
+  },
+  "admin.supporters.subscription.page_title": {
+    "defaultMessage": "Souscription de soutien",
+    "description": "Title of the page of one subscription."
+  },
+  "admin.supporters.subscription.back": {
+    "defaultMessage": "Retour aux souscriptions",
+    "description": "Link from the page of one subscription to the list of subscriptions."
+  },
+  "admin.supporters.program.saved": {
+    "defaultMessage": "Enregistré. Le journal d’audit consigne chaque changement.",
+    "description": "Shown beside the save button of the program's form after it is saved."
+  },
+  "admin.supporters.program.unchanged": {
+    "defaultMessage": "Rien n’a changé.",
+    "description": "Shown beside the save button of the program's form when it is saved without a change."
+  },
+  "admin.supporters.plan.unchanged": {
+    "defaultMessage": "Rien n’a changé.",
+    "description": "Shown beside the save button of a plan's form when it is saved without a change."
+  },
+  "admin.supporters.plan.state": {
+    "defaultMessage": "État",
+    "description": "Column header and term of the state of a plan: in effect, preparing its prices, hidden or retired."
+  },
+  "admin.supporters.plan.state.in_effect": {
+    "defaultMessage": "En vigueur",
+    "description": "State of a plan that takes subscriptions, and the choice of the plans' filter for the plans that are not retired."
+  },
+  "admin.supporters.plan.state.hidden": {
+    "defaultMessage": "En vigueur, masquée",
+    "description": "State of a plan that takes subscriptions but is not listed to users."
+  },
+  "admin.supporters.plan.state.retired": {
+    "defaultMessage": "Retirée",
+    "description": "State of a retired plan, and the choice of the plans' filter for the retired plans."
+  },
+  "admin.supporters.plan.created_at": {
+    "defaultMessage": "Créée le",
+    "description": "Column header and term of when a plan was created."
+  },
+  "admin.supporters.plans.none_in_state": {
+    "defaultMessage": "Aucune formule dans cet état",
+    "description": "Shown instead of the list of plans when the filter leaves none."
+  },
+  "admin.supporters.plan.preparing.description": {
+    "defaultMessage": "Le prestataire de paiement crée les prix. La formule accepte les souscriptions dès qu’ils sont prêts.",
+    "description": "Shown on the page of a plan whose prices the payment provider has not made yet."
+  },
+  "admin.supporters.plan.retired_note": {
+    "defaultMessage": "Cette formule est retirée : elle n’accepte plus de souscriptions et ne peut plus être modifiée.",
+    "description": "Shown on the page of a retired plan."
+  },
+  "admin.supporters.plan.retire.section": {
+    "defaultMessage": "Retirer la formule",
+    "description": "Heading of the section of a plan's page that retires it."
+  },
+  "admin.supporters.subscription.end.section": {
+    "defaultMessage": "Terminer la souscription",
+    "description": "Heading of the section of a subscription's page that ends it at once."
+  },
+  "admin.supporters.subscription.no_period": {
+    "defaultMessage": "Aucune",
+    "description": "Shown for the end of the period of a subscription that has no paid period yet."
+  }
+}

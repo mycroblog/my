@@ -1,0 +1,126 @@
+{
+  "admin.overview.awaiting.open_reports": {
+    "defaultMessage": "Signalements ouverts",
+    "description": "Name of the tile of the moderation overview with how many reports are open; the tile links to the report queue."
+  },
+  "admin.overview.awaiting.pending_appeals": {
+    "defaultMessage": "Contestations en attente de décision",
+    "description": "Name of the tile of the moderation overview with how many appeals of moderation actions await a decision; the tile links to the appeals."
+  },
+  "admin.overview.awaiting.pending_registrations": {
+    "defaultMessage": "Inscriptions en attente d’approbation",
+    "description": "Name of the tile of the moderation overview with how many registrations await approval; the tile links to the registrations."
+  },
+  "admin.overview.awaiting.report_wait": {
+    "defaultMessage": "Plus longue attente d’un signalement",
+    "description": "Name of the tile of the moderation overview with how long the oldest open report has waited; the tile links to the report queue, oldest first."
+  },
+  "admin.overview.awaiting.report_wait.days": {
+    "defaultMessage": "{count, plural, one {# jour} other {# jours}}",
+    "description": "Value of the longest report wait tile: whole days."
+  },
+  "admin.overview.awaiting.report_wait.hours": {
+    "defaultMessage": "{count, plural, one {# h} other {# h}}",
+    "description": "Value of the longest report wait tile: whole hours."
+  },
+  "admin.overview.awaiting.report_wait.minutes": {
+    "defaultMessage": "{count, plural, one {# min} other {# min}}",
+    "description": "Value of the longest report wait tile: whole minutes."
+  },
+  "admin.overview.awaiting.report_wait.none": {
+    "defaultMessage": "Aucune attente",
+    "description": "Value of the longest report wait tile when no report is open."
+  },
+  "admin.overview.awaiting.report_wait.status": {
+    "defaultMessage": "Longue attente",
+    "description": "Word beside a warning icon on the longest report wait tile when the oldest open report has waited a day or more."
+  },
+  "admin.overview.awaiting.status": {
+    "defaultMessage": "En attente",
+    "description": "Word beside a warning icon on a tile of the moderation overview whose queue has items waiting."
+  },
+  "admin.overview.awaiting.title": {
+    "defaultMessage": "En attente de vous",
+    "description": "Heading of the region of the moderation overview with a tile for each queue: open reports, registrations, appeals."
+  },
+  "admin.overview.awaiting.unavailable": {
+    "defaultMessage": "Impossible de charger les compteurs. Ouvrez une file depuis le menu.",
+    "description": "Shown in the region of the moderation overview when the counts of the queues could not be loaded."
+  },
+  "admin.overview.first_reports.all": {
+    "defaultMessage": "Ouvrir la file des signalements",
+    "description": "Link under the reports to handle first on the moderation overview, to the whole report queue."
+  },
+  "admin.overview.first_reports.description": {
+    "defaultMessage": "D’abord les signalements juridiques, puis ceux qui attendent depuis le plus longtemps.",
+    "description": "Note under the heading of the reports to handle first on the moderation overview: how they are ordered."
+  },
+  "admin.overview.first_reports.title": {
+    "defaultMessage": "Signalements à traiter en premier",
+    "description": "Heading of the region of the moderation overview with the open reports to handle first, each with its category, its wait and who handles it."
+  },
+  "admin.overview.first_reports.unavailable": {
+    "defaultMessage": "Impossible de charger les signalements.",
+    "description": "Shown in the reports to handle first on the moderation overview when the reports could not be loaded."
+  },
+  "admin.overview.health.failed_jobs": {
+    "defaultMessage": "Tâches en échec",
+    "description": "Name of the tile of the administration overview with how many jobs failed for good; the tile links to the failed jobs."
+  },
+  "admin.overview.health.failed_jobs.status": {
+    "defaultMessage": "À relancer",
+    "description": "Word beside a warning icon on the failed jobs tile when some jobs failed."
+  },
+  "admin.overview.health.job_wait": {
+    "defaultMessage": "Plus longue attente d’une tâche",
+    "description": "Name of the tile of the administration overview with how long the job queue has kept its oldest due job waiting."
+  },
+  "admin.overview.health.job_wait.days": {
+    "defaultMessage": "{count, plural, one {# jour} other {# jours}}",
+    "description": "Value of the longest job wait tile: whole days."
+  },
+  "admin.overview.health.job_wait.hours": {
+    "defaultMessage": "{count, plural, one {# h} other {# h}}",
+    "description": "Value of the longest job wait tile: whole hours."
+  },
+  "admin.overview.health.job_wait.minutes": {
+    "defaultMessage": "{count, plural, one {# min} other {# min}}",
+    "description": "Value of the longest job wait tile: whole minutes."
+  },
+  "admin.overview.health.job_wait.none": {
+    "defaultMessage": "Aucune attente",
+    "description": "Value of the longest job wait tile when no due job waits."
+  },
+  "admin.overview.health.job_wait.status": {
+    "defaultMessage": "Engorgé",
+    "description": "Word beside a warning icon on the longest job wait tile when jobs wait 15 minutes or more."
+  },
+  "admin.overview.health.none": {
+    "defaultMessage": "Vos rôles ne surveillent rien de ce que cette vue d’ensemble affiche. Ouvrez un écran depuis le menu.",
+    "description": "Shown on the administration overview to a user whose roles allow administration screens but neither the job queue nor the errors."
+  },
+  "admin.overview.health.open_errors": {
+    "defaultMessage": "Erreurs ouvertes",
+    "description": "Name of the tile of the administration overview with how many error groups are open; the tile links to the errors."
+  },
+  "admin.overview.health.open_errors.more": {
+    "defaultMessage": "{count, number}+",
+    "description": "Value of the open errors tile when there are more groups than the first page: the page's count and a plus."
+  },
+  "admin.overview.health.open_errors.status": {
+    "defaultMessage": "À examiner",
+    "description": "Word beside a warning icon on the open errors tile when some groups are open."
+  },
+  "admin.overview.health.title": {
+    "defaultMessage": "Santé du serveur",
+    "description": "Heading of the region of the administration overview with tiles for the failed jobs, the job wait and the open errors."
+  },
+  "admin.overview.value.loading": {
+    "defaultMessage": "Chargement",
+    "description": "Value of a tile of an overview while its number loads."
+  },
+  "admin.overview.value.unavailable": {
+    "defaultMessage": "Non chargé",
+    "description": "Value of a tile of an overview whose number could not be loaded."
+  }
+}

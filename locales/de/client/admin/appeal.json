@@ -1,0 +1,150 @@
+{
+  "admin.appeal.account": {
+    "defaultMessage": "Konto",
+    "description": "Term of the account that appealed, which the action is on."
+  },
+  "admin.appeal.account.admin": {
+    "defaultMessage": "Konto in der Verwaltung öffnen",
+    "description": "Link from an appeal's page to the admin page of the account that appealed."
+  },
+  "admin.appeal.action.kind": {
+    "defaultMessage": "Maßnahme",
+    "description": "Term of the kind of the moderation action on an appeal's page."
+  },
+  "admin.appeal.action.lifted_at": {
+    "defaultMessage": "Aufgehoben",
+    "description": "Term of when the action was lifted."
+  },
+  "admin.appeal.action.report": {
+    "defaultMessage": "Meldung öffnen",
+    "description": "Link from an appeal's page to the report the action follows from."
+  },
+  "admin.appeal.action.title": {
+    "defaultMessage": "Moderationsmaßnahme",
+    "description": "Heading of the region of an appeal's page with the action it is of."
+  },
+  "admin.appeal.action_state": {
+    "defaultMessage": "Status der Maßnahme",
+    "description": "Term of the state of the action an appeal is of, in the list of appeals."
+  },
+  "admin.appeal.already_decided": {
+    "defaultMessage": "Jemand aus der Moderation hat diesen Einspruch bereits geprüft. Diese Entscheidung gilt.",
+    "description": "Status when a moderator decided an appeal that another moderator had decided the other way first."
+  },
+  "admin.appeal.appeal.title": {
+    "defaultMessage": "Einspruch",
+    "description": "Heading of the region of an appeal's page with what the user wrote."
+  },
+  "admin.appeal.back": {
+    "defaultMessage": "Zurück zu den Einsprüchen",
+    "description": "Link from an appeal's page to the list of appeals."
+  },
+  "admin.appeal.cancel": {
+    "defaultMessage": "Abbrechen",
+    "description": "Button of the confirmation of a decision on an appeal that closes it without deciding."
+  },
+  "admin.appeal.confirm_overturn.description": {
+    "defaultMessage": "Die Maßnahme „{kind}“ wird jetzt aufgehoben. Gelöschte Beiträge bleiben gelöscht. Die Entscheidung lässt sich danach nicht mehr ändern.",
+    "description": "Text of the confirmation before overturning an appeal. {kind} is the kind of the action."
+  },
+  "admin.appeal.confirm_overturn.description_ban": {
+    "defaultMessage": "Der Ausschluss wird jetzt aufgehoben und das Konto ist nicht mehr gelöscht. Die Entscheidung lässt sich danach nicht mehr ändern.",
+    "description": "Text of the confirmation before overturning the appeal of a ban."
+  },
+  "admin.appeal.confirm_overturn.title": {
+    "defaultMessage": "Maßnahme aufheben?",
+    "description": "Title of the confirmation before overturning an appeal."
+  },
+  "admin.appeal.confirm_uphold.description": {
+    "defaultMessage": "Die Maßnahme „{kind}“ bleibt bestehen. Die Entscheidung lässt sich danach nicht mehr ändern.",
+    "description": "Text of the confirmation before upholding an appeal. {kind} is the kind of the action."
+  },
+  "admin.appeal.confirm_uphold.title": {
+    "defaultMessage": "Maßnahme bestätigen?",
+    "description": "Title of the confirmation before upholding an appeal."
+  },
+  "admin.appeal.decide_failed": {
+    "defaultMessage": "Die Entscheidung konnte nicht gespeichert werden: {reason}",
+    "description": "Error in the confirmation of a decision on an appeal when the request failed. {reason} is why."
+  },
+  "admin.appeal.decided_at": {
+    "defaultMessage": "Geprüft",
+    "description": "Term of when a moderator decided an appeal."
+  },
+  "admin.appeal.decided_by": {
+    "defaultMessage": "Geprüft von",
+    "description": "Term of the moderator who decided an appeal."
+  },
+  "admin.appeal.decided_by.cli": {
+    "defaultMessage": "Die Befehlszeile",
+    "description": "Value of who decided an appeal when it was decided from the command line."
+  },
+  "admin.appeal.decision": {
+    "defaultMessage": "Entscheidung",
+    "description": "Term of the decision on an appeal."
+  },
+  "admin.appeal.decision.description": {
+    "defaultMessage": "Bestätigen lässt die Maßnahme bestehen. Aufheben hebt sie auf. Die Person erfährt die Entscheidung samt deiner Erklärung.",
+    "description": "Text above the uphold and overturn buttons of a pending appeal."
+  },
+  "admin.appeal.decision.title": {
+    "defaultMessage": "Prüfung",
+    "description": "Heading of the region of an appeal's page where it is decided."
+  },
+  "admin.appeal.decision_reason": {
+    "defaultMessage": "Erklärung an die Person",
+    "description": "Term of the explanation of a decision that the user was shown."
+  },
+  "admin.appeal.none": {
+    "defaultMessage": "Keine",
+    "description": "Value of a moderator's text on an appeal's page when there is none."
+  },
+  "admin.appeal.overturn": {
+    "defaultMessage": "Aufheben",
+    "description": "Button of a pending appeal that opens the confirmation of overturning it, and the confirmation's button that overturns it."
+  },
+  "admin.appeal.overturned": {
+    "defaultMessage": "Die Maßnahme ist aufgehoben.",
+    "description": "Status after a moderator overturned an appeal, which lifted its action."
+  },
+  "admin.appeal.overturned_ended": {
+    "defaultMessage": "Die Maßnahme ist aufgehoben. Sie war bereits beendet.",
+    "description": "Status after a moderator overturned an appeal whose action had already ended or been lifted."
+  },
+  "admin.appeal.reason": {
+    "defaultMessage": "Erklärung an die Person",
+    "description": "Label of the optional explanation in the confirmation of a decision on an appeal."
+  },
+  "admin.appeal.reason.description": {
+    "defaultMessage": "Optional. Die Person, die Einspruch erhoben hat, sieht sie zusammen mit der Entscheidung.",
+    "description": "Hint under the explanation of a decision on an appeal."
+  },
+  "admin.appeal.reason.too_long": {
+    "defaultMessage": "Maximal {max, number} Zeichen",
+    "description": "Error under the explanation of a decision on an appeal when it is too long. {max} is the limit."
+  },
+  "admin.appeal.state": {
+    "defaultMessage": "Status",
+    "description": "Term of an appeal's state."
+  },
+  "admin.appeal.submitted_at": {
+    "defaultMessage": "Eingereicht",
+    "description": "Term of when the user appealed."
+  },
+  "admin.appeal.text": {
+    "defaultMessage": "Was die Person geschrieben hat",
+    "description": "Term of the text of an appeal, written by the user."
+  },
+  "admin.appeal.title": {
+    "defaultMessage": "Einspruch",
+    "description": "Heading of the page of one appeal of a moderation action."
+  },
+  "admin.appeal.upheld": {
+    "defaultMessage": "Die Maßnahme ist bestätigt und bleibt bestehen.",
+    "description": "Status after a moderator upheld an appeal."
+  },
+  "admin.appeal.uphold": {
+    "defaultMessage": "Bestätigen",
+    "description": "Button of a pending appeal that opens the confirmation of upholding it, and the confirmation's button that upholds it."
+  }
+}

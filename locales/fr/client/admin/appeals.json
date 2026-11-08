@@ -1,0 +1,54 @@
+{
+  "admin.appeals.empty.decided": {
+    "defaultMessage": "Aucune contestation n’a encore été examinée",
+    "description": "Heading of the appeals screen's reviewed tab when it is empty."
+  },
+  "admin.appeals.empty.pending": {
+    "defaultMessage": "Aucune contestation en attente d’examen",
+    "description": "Heading of the appeals screen's pending tab when it is empty."
+  },
+  "admin.appeals.empty.pending.description": {
+    "defaultMessage": "Les contestations que les utilisateurs font des mesures prises sur leur compte apparaissent ici.",
+    "description": "Text under the heading of the empty pending tab of the appeals screen."
+  },
+  "admin.appeals.filter.decided": {
+    "defaultMessage": "Examinées",
+    "description": "Tab of the appeals that were upheld or overturned."
+  },
+  "admin.appeals.filter.label": {
+    "defaultMessage": "Contestations par état",
+    "description": "Accessible name of the tabs of the appeals admin screen."
+  },
+  "admin.appeals.filter.pending": {
+    "defaultMessage": "En attente d’examen",
+    "description": "Tab of the appeals that await a decision."
+  },
+  "admin.appeals.of": {
+    "defaultMessage": "Contestation de {kind}",
+    "description": "Heading of an appeal in the list, a link to its page. {kind} is the kind of the moderation action, such as Suspend."
+  },
+  "admin.appeals.state.overturned": {
+    "defaultMessage": "Mesure levée",
+    "description": "State of an appeal whose action the moderators lifted."
+  },
+  "admin.appeals.state.pending": {
+    "defaultMessage": "En attente d’examen",
+    "description": "State of an appeal that awaits a decision."
+  },
+  "admin.appeals.state.upheld": {
+    "defaultMessage": "Mesure maintenue",
+    "description": "State of an appeal whose action the moderators kept."
+  },
+  "admin.appeals.summary": {
+    "defaultMessage": "Examinez les contestations des mesures de modération et maintenez-les ou levez-les.",
+    "description": "Description of the appeals screen in the admin menu."
+  },
+  "admin.appeals.title": {
+    "defaultMessage": "Contestations",
+    "description": "Heading of the admin screen of the appeals of moderation actions, and its link in the admin menu."
+  },
+  "admin.appeals.column.appeal": {
+    "defaultMessage": "Contestation",
+    "description": "Header of the column of the appeals table that names the appeal and links to it."
+  }
+}

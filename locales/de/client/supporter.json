@@ -1,0 +1,386 @@
+{
+  "supporter.title": {
+    "defaultMessage": "Unterstützungspläne",
+    "description": "Title of the user's page of the supporter plans, and its entry in the settings menu."
+  },
+  "supporter.app": {
+    "defaultMessage": "Diese Seite ist in der App nicht verfügbar.",
+    "description": "Shown in the mobile app instead of the supporter plans page."
+  },
+  "supporter.disabled": {
+    "defaultMessage": "Dieser Server bietet keine Unterstützungspläne an.",
+    "description": "Shown when the server offers no supporter plans."
+  },
+  "supporter.loading": {
+    "defaultMessage": "Unterstützungspläne werden geladen",
+    "description": "Label of the spinner while the supporter plans load."
+  },
+  "supporter.failed": {
+    "defaultMessage": "Die Unterstützungspläne konnten nicht geladen werden",
+    "description": "Heading when the supporter plans could not load."
+  },
+  "supporter.retry": {
+    "defaultMessage": "Erneut versuchen",
+    "description": "Button that loads the supporter plans again."
+  },
+  "supporter.return.canceled": {
+    "defaultMessage": "Du hast die Zahlungsseite verlassen. Es wurde nichts abgebucht.",
+    "description": "Shown when the user left the payment page without paying."
+  },
+  "supporter.return.confirming": {
+    "defaultMessage": "Deine Zahlung wird beim Zahlungsanbieter bestätigt. Das dauert einige Sekunden.",
+    "description": "Shown after the payment page returned, while the server waits for the payment provider's confirmation."
+  },
+  "supporter.return.started": {
+    "defaultMessage": "Danke für deine Unterstützung. Dein Abo ist bestätigt.",
+    "description": "Shown after the payment page returned and the subscription is confirmed."
+  },
+  "supporter.plans.title": {
+    "defaultMessage": "Plan wählen",
+    "description": "Heading of the list of supporter plans to choose from."
+  },
+  "supporter.plans.description": {
+    "defaultMessage": "Ein Plan unterstützt den Betrieb dieses Servers. Ein höherer Plan enthält alles aus den niedrigeren. Du kannst jeweils nur einen Plan abonnieren.",
+    "description": "Explanation above the supporter plans."
+  },
+  "supporter.plans.empty": {
+    "defaultMessage": "Derzeit nimmt kein Plan Abos an.",
+    "description": "Shown when no supporter plan takes subscriptions now."
+  },
+  "supporter.plans.plan": {
+    "defaultMessage": "Plan",
+    "description": "Label of the radio group of the plans."
+  },
+  "supporter.plans.interval": {
+    "defaultMessage": "Zahlung",
+    "description": "Label of the radio group of monthly or yearly payment."
+  },
+  "supporter.plans.prices": {
+    "defaultMessage": "{monthly} oder {yearly}",
+    "description": "The monthly and the yearly prices of a plan. monthly and yearly are amounts per interval."
+  },
+  "supporter.per_month": {
+    "defaultMessage": "{amount} pro Monat",
+    "description": "An amount paid every month. amount is formatted money."
+  },
+  "supporter.per_year": {
+    "defaultMessage": "{amount} pro Jahr",
+    "description": "An amount paid every year. amount is formatted money."
+  },
+  "supporter.interval.month": {
+    "defaultMessage": "Monatlich",
+    "description": "Choice: pay every month."
+  },
+  "supporter.interval.year": {
+    "defaultMessage": "Jährlich",
+    "description": "Choice: pay every year."
+  },
+  "supporter.ineligible.not_local": {
+    "defaultMessage": "Nur Nutzer dieses Servers können abonnieren.",
+    "description": "Why the user cannot subscribe: the account is not of this server."
+  },
+  "supporter.ineligible.email_unverified": {
+    "defaultMessage": "Um zu abonnieren, bestätige zuerst deine E-Mail-Adresse über den Link in der E-Mail, die der Server dir gesendet hat.",
+    "description": "Why the user cannot subscribe: their primary email address is not verified."
+  },
+  "supporter.ineligible.restricted": {
+    "defaultMessage": "Dein Konto kann nicht abonnieren, solange es gesperrt ist oder gelöscht wird.",
+    "description": "Why the user cannot subscribe: the account is suspended or being deleted."
+  },
+  "supporter.subscribe": {
+    "defaultMessage": "Abonnieren",
+    "description": "Button that opens the final confirmation of a subscription."
+  },
+  "supporter.confirm.title": {
+    "defaultMessage": "{plan} abonnieren?",
+    "description": "Title of the final confirmation before the payment page. plan is the plan's name."
+  },
+  "supporter.confirm.description": {
+    "defaultMessage": "Prüfe die Bedingungen unten. Deine Zahlungsdaten gibst du auf der Seite des Zahlungsanbieters ein, nicht auf diesem Server.",
+    "description": "Explanation in the final confirmation before the payment page."
+  },
+  "supporter.confirm.plan": {
+    "defaultMessage": "Plan",
+    "description": "Term: the plan in the final confirmation."
+  },
+  "supporter.confirm.amount": {
+    "defaultMessage": "Betrag",
+    "description": "Term: the amount in the final confirmation."
+  },
+  "supporter.confirm.amount.value": {
+    "defaultMessage": "{price}, bei jeder Verlängerung gleich",
+    "description": "The amount of the subscription. price is an amount per interval."
+  },
+  "supporter.confirm.payments": {
+    "defaultMessage": "Zahlungen",
+    "description": "Term: when the payments are made."
+  },
+  "supporter.confirm.payments.value": {
+    "defaultMessage": "{interval, select, year {Jetzt, dann jedes Jahr} other {Jetzt, dann jeden Monat}}",
+    "description": "When the payments of a subscription are made."
+  },
+  "supporter.confirm.benefits": {
+    "defaultMessage": "Vorteile",
+    "description": "Term: when the benefits start."
+  },
+  "supporter.confirm.benefits.value": {
+    "defaultMessage": "Beginnen, sobald die Zahlung bestätigt ist",
+    "description": "When the benefits of a plan start."
+  },
+  "supporter.confirm.cancel": {
+    "defaultMessage": "Kündigung",
+    "description": "Term: how to cancel."
+  },
+  "supporter.confirm.cancel.value": {
+    "defaultMessage": "Kündige jederzeit auf dieser Seite. Die Vorteile bleiben bis zum Ende des bezahlten Zeitraums, und es werden keine weiteren Zahlungen abgebucht.",
+    "description": "How to cancel a subscription and what it does."
+  },
+  "supporter.confirm.go": {
+    "defaultMessage": "Zur Zahlung",
+    "description": "Button that goes to the payment provider's page."
+  },
+  "supporter.confirm.failed": {
+    "defaultMessage": "Die Zahlungsseite konnte nicht geöffnet werden: {reason}",
+    "description": "Why the payment page could not open."
+  },
+  "supporter.commerce": {
+    "defaultMessage": "Händlerangaben",
+    "description": "Link to the server's page of commerce disclosures."
+  },
+  "supporter.cancel": {
+    "defaultMessage": "Abbrechen",
+    "description": "Button that closes a dialog of the supporter plans without doing anything."
+  },
+  "supporter.subscription.title": {
+    "defaultMessage": "Dein Abo",
+    "description": "Heading of the user's subscription."
+  },
+  "supporter.subscription.plan": {
+    "defaultMessage": "Plan",
+    "description": "Term: the plan of the subscription."
+  },
+  "supporter.subscription.state": {
+    "defaultMessage": "Status",
+    "description": "Term: the state of the subscription."
+  },
+  "supporter.subscription.price": {
+    "defaultMessage": "Preis",
+    "description": "Term: what the subscription renews at."
+  },
+  "supporter.subscription.renews_at": {
+    "defaultMessage": "Verlängert sich am",
+    "description": "Term: when the subscription renews."
+  },
+  "supporter.subscription.ends_at": {
+    "defaultMessage": "Endet am",
+    "description": "Term: when a cancelled subscription ends."
+  },
+  "supporter.subscription.grace_ends_at": {
+    "defaultMessage": "Vorteile enden am",
+    "description": "Term: when a subscription whose payment failed loses its benefits."
+  },
+  "supporter.subscription.scheduled": {
+    "defaultMessage": "Geplante Änderung",
+    "description": "Term: a change that waits for the end of the period."
+  },
+  "supporter.subscription.scheduled.value": {
+    "defaultMessage": "Zu {plan} für {price} am {date}",
+    "description": "The scheduled change. plan is the new plan's name, price an amount per interval, date a formatted date and time."
+  },
+  "supporter.state.pending": {
+    "defaultMessage": "Wartet auf Zahlung",
+    "description": "State of a subscription: started, not paid yet."
+  },
+  "supporter.state.active": {
+    "defaultMessage": "Aktiv",
+    "description": "State of a subscription: paid."
+  },
+  "supporter.state.canceling": {
+    "defaultMessage": "Zum Ende des Zeitraums gekündigt",
+    "description": "State of a subscription: cancelled at the end of the period."
+  },
+  "supporter.state.past_due": {
+    "defaultMessage": "Zahlung fehlgeschlagen",
+    "description": "State of a subscription: a payment failed recently."
+  },
+  "supporter.state.lapsed": {
+    "defaultMessage": "Pausiert, Zahlung überfällig",
+    "description": "State of a subscription: a payment failed long ago, the benefits are paused."
+  },
+  "supporter.state.expired": {
+    "defaultMessage": "Beendet",
+    "description": "State of a subscription: ended."
+  },
+  "supporter.state.revoked": {
+    "defaultMessage": "Erstattet",
+    "description": "State of a subscription: refunded."
+  },
+  "supporter.state.abandoned": {
+    "defaultMessage": "Nicht abgeschlossen",
+    "description": "State of a subscription: ended before its first payment."
+  },
+  "supporter.note.pending": {
+    "defaultMessage": "Die Zahlung ist noch nicht abgeschlossen. Gehe zur Zahlungsseite, um das Abo abzuschließen.",
+    "description": "Note on a subscription that waits for its first payment."
+  },
+  "supporter.note.canceling": {
+    "defaultMessage": "Dein Abo endet zum Ende des Zeitraums, und die Vorteile bleiben bis dahin. Setze es fort, um es zu behalten.",
+    "description": "Note on a cancelled subscription."
+  },
+  "supporter.note.past_due": {
+    "defaultMessage": "Eine Zahlung ist fehlgeschlagen. Aktualisiere deine Zahlungsmethode, bevor die Vorteile enden.",
+    "description": "Note on a subscription whose payment failed recently."
+  },
+  "supporter.note.lapsed": {
+    "defaultMessage": "Die Vorteile sind pausiert, weil eine Zahlung überfällig ist. Aktualisiere deine Zahlungsmethode oder kündige das Abo.",
+    "description": "Note on a subscription whose payment failed long ago."
+  },
+  "supporter.continue_checkout": {
+    "defaultMessage": "Weiter zur Zahlung",
+    "description": "Button that goes to the payment page of a subscription waiting for payment."
+  },
+  "supporter.resume": {
+    "defaultMessage": "Abo fortsetzen",
+    "description": "Button that withdraws the cancellation of a subscription."
+  },
+  "supporter.unschedule": {
+    "defaultMessage": "Geplante Änderung zurückziehen",
+    "description": "Button that withdraws a scheduled change of plan."
+  },
+  "supporter.portal": {
+    "defaultMessage": "Zahlungsmethoden und Rechnungen",
+    "description": "Button that opens the payment provider's page of payment methods and invoices."
+  },
+  "supporter.portal.failed": {
+    "defaultMessage": "Die Seite der Zahlungsmethoden konnte nicht geöffnet werden: {reason}",
+    "description": "Why the payment provider's page could not open."
+  },
+  "supporter.command.failed": {
+    "defaultMessage": "Das Abo konnte nicht geändert werden: {reason}",
+    "description": "Why a change of the subscription failed."
+  },
+  "supporter.cancel_subscription": {
+    "defaultMessage": "Abo kündigen",
+    "description": "Button that cancels the subscription at the end of the period."
+  },
+  "supporter.cancel_subscription.title": {
+    "defaultMessage": "{plan} kündigen?",
+    "description": "Title of the dialog that confirms cancelling. plan is the plan's name."
+  },
+  "supporter.cancel_subscription.description": {
+    "defaultMessage": "Das Abo endet zum Ende des bezahlten Zeitraums, und die Vorteile bleiben bis dahin. Es werden keine weiteren Zahlungen abgebucht. Du kannst es vor Ende des Zeitraums fortsetzen.",
+    "description": "What cancelling does."
+  },
+  "supporter.keep": {
+    "defaultMessage": "Abo behalten",
+    "description": "Button that closes the cancel dialog and keeps the subscription."
+  },
+  "supporter.subscription.changed": {
+    "defaultMessage": "Plan geändert.",
+    "description": "Announced when the plan was changed."
+  },
+  "supporter.subscription.canceled": {
+    "defaultMessage": "Abo zum Ende des Zeitraums gekündigt.",
+    "description": "Announced when the subscription was cancelled."
+  },
+  "supporter.subscription.resumed": {
+    "defaultMessage": "Abo fortgesetzt.",
+    "description": "Announced when the cancellation was withdrawn."
+  },
+  "supporter.subscription.unscheduled": {
+    "defaultMessage": "Geplante Änderung zurückgezogen.",
+    "description": "Announced when the scheduled change was withdrawn."
+  },
+  "supporter.change.title": {
+    "defaultMessage": "Plan ändern",
+    "description": "Heading of the section that changes the plan."
+  },
+  "supporter.change.description": {
+    "defaultMessage": "Ein höherer Plan oder eine jährliche Zahlung beginnt, sobald die Differenz für den Rest des Zeitraums bezahlt ist, die sofort abgebucht wird. Ein niedrigerer Plan oder eine monatliche Zahlung beginnt zum Ende des Zeitraums.",
+    "description": "How changes of plan apply."
+  },
+  "supporter.change.price_kept": {
+    "defaultMessage": "Du zahlst jetzt {price}, einen früheren Preis. Nach einer Änderung zahlst du den aktuellen Preis des neuen Plans, auch wenn du zu diesem Plan zurückkehrst.",
+    "description": "Note that a change loses the lower price the user pays now. price is formatted money."
+  },
+  "supporter.change": {
+    "defaultMessage": "Plan ändern",
+    "description": "Button that changes the plan."
+  },
+  "supporter.change.confirm": {
+    "defaultMessage": "Zu {plan} wechseln?",
+    "description": "Title of the dialog that confirms a change. plan is the new plan's name."
+  },
+  "supporter.change.now": {
+    "defaultMessage": "Die Differenz für den Rest des Zeitraums wird jetzt abgebucht, und die Änderung beginnt, sobald sie bezahlt ist.",
+    "description": "A change that applies at once."
+  },
+  "supporter.change.period_end": {
+    "defaultMessage": "Die Änderung beginnt zum Ende des Zeitraums. Bis dahin behältst du deinen aktuellen Plan und kannst die Änderung zurückziehen.",
+    "description": "A change that applies at the end of the period."
+  },
+  "supporter.change.rules": {
+    "defaultMessage": "Ein höherer Plan oder eine jährliche Zahlung beginnt, sobald die sofort abgebuchte Differenz bezahlt ist; ein niedrigerer Plan oder eine monatliche Zahlung beginnt zum Ende des Zeitraums.",
+    "description": "A change whose timing the page cannot tell."
+  },
+  "supporter.change.unchanged": {
+    "defaultMessage": "Wähle einen anderen Plan oder ein anderes Zahlungsintervall, um zu ändern.",
+    "description": "Why the change button is disabled."
+  },
+  "supporter.error.ineligible": {
+    "defaultMessage": "Dein Konto kann nicht abonnieren.",
+    "description": "Problem: the user cannot subscribe."
+  },
+  "supporter.error.subscribed": {
+    "defaultMessage": "Du hast bereits ein Abo. Ändere stattdessen den Plan.",
+    "description": "Problem: the user has a subscription already."
+  },
+  "supporter.error.plan_unavailable": {
+    "defaultMessage": "Dieser Plan nimmt derzeit keine Abos an.",
+    "description": "Problem: the plan takes no subscriptions."
+  },
+  "supporter.error.state": {
+    "defaultMessage": "Der Status des Abos erlaubt das derzeit nicht. Lade die Seite neu.",
+    "description": "Problem: the subscription's state does not allow the change."
+  },
+  "supporter.error.same_plan": {
+    "defaultMessage": "Das ist dein aktueller Plan mit dem aktuellen Zahlungsintervall.",
+    "description": "Problem: the change chose the current plan and interval."
+  },
+  "supporter.error.payment_failed": {
+    "defaultMessage": "Die Zahlung ist fehlgeschlagen, daher hat sich dein Plan nicht geändert. Es wurde nichts abgebucht. Aktualisiere deine Karte und versuche es erneut. Eine Karte, die bei jeder Zahlung eine Authentifizierung verlangt, kann eine Änderung nicht bezahlen.",
+    "description": "Problem: the payment of the change failed; the page offers the way to update the card."
+  },
+  "supporter.error.payment_processing": {
+    "defaultMessage": "Die Zahlung wird noch verarbeitet, daher hat sich dein Plan noch nicht geändert. Er ändert sich, wenn die Zahlung erfolgreich ist.",
+    "description": "Problem: the payment of the change has not settled."
+  },
+  "supporter.error.ended": {
+    "defaultMessage": "Das Abo ist beendet.",
+    "description": "Problem: the subscription has ended."
+  },
+  "supporter.listing.title": {
+    "defaultMessage": "Unterstützerliste",
+    "description": "Heading of the choice to be on the supporter list."
+  },
+  "supporter.listing.description": {
+    "defaultMessage": "Die Unterstützerliste zeigt unter deinem Plan deinen Avatar, deinen Namen und dein Handle, nie einen Betrag oder ein Datum. Niemand wird aufgeführt, bis er oder sie es wählt, und deine Wahl endet mit deinem Abo.",
+    "description": "What the supporter list shows of the user."
+  },
+  "supporter.listing.switch": {
+    "defaultMessage": "Mich in der Unterstützerliste aufführen",
+    "description": "Switch that lists the user on the supporter list."
+  },
+  "supporter.listing.listed": {
+    "defaultMessage": "Du stehst in der Unterstützerliste.",
+    "description": "Announced when the user is listed."
+  },
+  "supporter.listing.unlisted": {
+    "defaultMessage": "Du stehst nicht mehr in der Unterstützerliste.",
+    "description": "Announced when the user is taken off the list."
+  },
+  "supporter.listing.failed": {
+    "defaultMessage": "Die Auswahl konnte nicht gespeichert werden: {reason}",
+    "description": "Why the choice was not saved."
+  }
+}

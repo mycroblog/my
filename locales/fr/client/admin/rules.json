@@ -1,0 +1,158 @@
+{
+  "admin.rules.add": {
+    "defaultMessage": "Ajouter la règle",
+    "description": "Button that adds a new rule after the others."
+  },
+  "admin.rules.add_failed": {
+    "defaultMessage": "Impossible d’ajouter la règle : {reason}",
+    "description": "Error when adding a rule failed. {reason} is why."
+  },
+  "admin.rules.added": {
+    "defaultMessage": "Règle « {rule} » ajoutée. Le journal d’audit consigne le changement.",
+    "description": "Toast after a rule was added, on the page of the new rule. {rule} is its text."
+  },
+  "admin.rules.cancel": {
+    "defaultMessage": "Annuler",
+    "description": "Button that closes the confirmation of retiring a rule without retiring it."
+  },
+  "admin.rules.change_failed": {
+    "defaultMessage": "Impossible de modifier la règle : {reason}",
+    "description": "Error when changing, moving or retiring a rule failed. {reason} is why."
+  },
+  "admin.rules.description": {
+    "defaultMessage": "La page À propos et le formulaire de signalement affichent les règles. Chaque règle a un texte d’une ligne et une précision facultative, rédigés une seule fois dans la langue de votre choix : tout le monde les voit telles quelles, quelle que soit la langue de son application. Une règle retirée quitte les règles en vigueur, et les signalements qui la citent la conservent.",
+    "description": "Description of the rules screen."
+  },
+  "admin.rules.edit.title": {
+    "defaultMessage": "Modifier la règle",
+    "description": "Heading of the form of a rule's page that changes its text and hint."
+  },
+  "admin.rules.empty": {
+    "defaultMessage": "Aucune règle pour le moment",
+    "description": "Heading of the empty list of rules."
+  },
+  "admin.rules.empty.description": {
+    "defaultMessage": "Ajoutez les règles que les gens acceptent avec « Ajouter une règle ».",
+    "description": "Description of the empty list of the rules in effect."
+  },
+  "admin.rules.hint": {
+    "defaultMessage": "Précision",
+    "description": "Label of the optional hint of a rule."
+  },
+  "admin.rules.list.title": {
+    "defaultMessage": "Règles en vigueur",
+    "description": "Heading and caption of the list of the rules in effect."
+  },
+  "admin.rules.move_down": {
+    "defaultMessage": "Descendre",
+    "description": "Button that moves a rule one place down."
+  },
+  "admin.rules.move_down_rule": {
+    "defaultMessage": "Descendre : {rule}",
+    "description": "Accessible name of the button that moves a rule down. {rule} is its text."
+  },
+  "admin.rules.move_up": {
+    "defaultMessage": "Monter",
+    "description": "Button that moves a rule one place up."
+  },
+  "admin.rules.move_up_rule": {
+    "defaultMessage": "Monter : {rule}",
+    "description": "Accessible name of the button that moves a rule up. {rule} is its text."
+  },
+  "admin.rules.moved": {
+    "defaultMessage": "« {rule} » déplacée à la position {position}.",
+    "description": "Status after a rule was moved. {rule} is its text; {position} its new place, from 1."
+  },
+  "admin.rules.new.title": {
+    "defaultMessage": "Ajouter une règle",
+    "description": "Title of the page of a new rule, and the link to it from the list of rules."
+  },
+  "admin.rules.no_text": {
+    "defaultMessage": "Saisissez la règle.",
+    "description": "Error of a rule's text left empty or blank."
+  },
+  "admin.rules.retire": {
+    "defaultMessage": "Retirer",
+    "description": "Button that retires a rule, and the confirm button of its dialog."
+  },
+  "admin.rules.retire.description": {
+    "defaultMessage": "La règle quitte définitivement la liste des règles. Les signalements qui la citent la conservent.",
+    "description": "Description of the dialog that confirms retiring a rule."
+  },
+  "admin.rules.retire.title": {
+    "defaultMessage": "Retirer « {rule} » ?",
+    "description": "Question of the dialog that confirms retiring a rule. {rule} is its text."
+  },
+  "admin.rules.retired": {
+    "defaultMessage": "« {rule} » retirée.",
+    "description": "Status after a rule was retired. {rule} is its text."
+  },
+  "admin.rules.save": {
+    "defaultMessage": "Enregistrer",
+    "description": "Button that saves a rule's text and hint on its page."
+  },
+  "admin.rules.summary": {
+    "defaultMessage": "Les règles que les gens acceptent et que les signalements citent.",
+    "description": "Description of the rules screen in the administration menu."
+  },
+  "admin.rules.text": {
+    "defaultMessage": "Règle",
+    "description": "Label of the text of a rule."
+  },
+  "admin.rules.text.description": {
+    "defaultMessage": "Une ligne de {max} caractères au maximum.",
+    "description": "Help of the text of a rule. {max} is the limit."
+  },
+  "admin.rules.title": {
+    "defaultMessage": "Règles",
+    "description": "Title of the rules screen, in the administration menu and as its heading."
+  },
+  "admin.rules.too_long": {
+    "defaultMessage": "{max} caractères au maximum.",
+    "description": "Error of a text or hint of a rule longer than its limit. {max} is the limit."
+  },
+  "admin.rules.updated": {
+    "defaultMessage": "« {rule} » enregistrée. Le journal d’audit consigne le changement.",
+    "description": "Status after a rule's texts were saved. {rule} is its text."
+  },
+  "admin.rules.filter.label": {
+    "defaultMessage": "Règles à afficher",
+    "description": "Accessible name of the filter of the list of rules: the rules in effect or the retired ones."
+  },
+  "admin.rules.filter.active": {
+    "defaultMessage": "En vigueur",
+    "description": "Option of the filter of the list of rules, and the state of a rule in effect on its page."
+  },
+  "admin.rules.filter.retired": {
+    "defaultMessage": "Retirées",
+    "description": "Option of the filter of the list of rules, and the state of a retired rule on its page."
+  },
+  "admin.rules.retired.title": {
+    "defaultMessage": "Règles retirées",
+    "description": "Heading and caption of the list of the retired rules."
+  },
+  "admin.rules.retired.empty": {
+    "defaultMessage": "Aucune règle retirée",
+    "description": "Heading of the empty list of retired rules."
+  },
+  "admin.rules.retired.empty.description": {
+    "defaultMessage": "Une règle retirée apparaît ici, et les signalements qui la citent la conservent.",
+    "description": "Description of the empty list of retired rules."
+  },
+  "admin.rules.place": {
+    "defaultMessage": "Position",
+    "description": "Header of the column of a rule's place among the rules in effect, from 1, and the term of it on a rule's page."
+  },
+  "admin.rules.revised_at": {
+    "defaultMessage": "Dernière modification",
+    "description": "Header of the column of when a rule's text or hint last changed, and the term of it on a rule's page."
+  },
+  "admin.rules.retired_at": {
+    "defaultMessage": "Retirée le",
+    "description": "Header of the column of when a rule was retired, and the term of it on a rule's page."
+  },
+  "admin.rules.new.description": {
+    "defaultMessage": "La règle est ajoutée après les autres. Vous pouvez la déplacer dans la liste des règles.",
+    "description": "Text at the top of the page of a new rule."
+  }
+}

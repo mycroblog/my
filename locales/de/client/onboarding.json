@@ -1,0 +1,78 @@
+{
+  "onboarding.checklist": {
+    "defaultMessage": "Erste Schritte",
+    "description": "Heading of the checklist of first steps on the home timeline of a new user."
+  },
+  "onboarding.progress": {
+    "defaultMessage": "Erledigte Schritte",
+    "description": "Label of the progress bar of the first steps."
+  },
+  "onboarding.progress.value": {
+    "defaultMessage": "{done} von {total} erledigt",
+    "description": "How many of the first steps are done, next to the progress bar."
+  },
+  "onboarding.step.profile": {
+    "defaultMessage": "Profil einrichten",
+    "description": "First step of the checklist: set an avatar or a display name."
+  },
+  "onboarding.step.follow": {
+    "defaultMessage": "Jemandem folgen",
+    "description": "Second step of the checklist: follow an account."
+  },
+  "onboarding.step.post": {
+    "defaultMessage": "Ersten Beitrag verfassen",
+    "description": "Third step of the checklist: write a post."
+  },
+  "onboarding.done": {
+    "defaultMessage": "Erledigt",
+    "description": "Badge of a step of the checklist that is done."
+  },
+  "onboarding.todo": {
+    "defaultMessage": "Offen",
+    "description": "Badge of a step of the checklist that is not done yet."
+  },
+  "onboarding.action.profile": {
+    "defaultMessage": "Profil bearbeiten",
+    "description": "Link of the profile step to the profile settings."
+  },
+  "onboarding.action.follow": {
+    "defaultMessage": "Vorschläge ansehen",
+    "description": "Link of the follow step to the suggested accounts below."
+  },
+  "onboarding.action.search": {
+    "defaultMessage": "Personen finden",
+    "description": "Link of the follow step to the account search, when there are no suggestions."
+  },
+  "onboarding.action.post": {
+    "defaultMessage": "Beitrag verfassen",
+    "description": "Button of the post step that opens the post form."
+  },
+  "onboarding.dismiss": {
+    "defaultMessage": "Diese Schritte ausblenden",
+    "description": "Button that closes the checklist of first steps on this browser."
+  },
+  "onboarding.suggestions": {
+    "defaultMessage": "Vorgeschlagene Konten",
+    "description": "Heading of the accounts suggested to follow on the home timeline."
+  },
+  "onboarding.suggestions.more": {
+    "defaultMessage": "Weitere Personen finden",
+    "description": "Link under the suggested accounts to the account search."
+  },
+  "onboarding.suggestions.failed": {
+    "defaultMessage": "Vorschläge konnten nicht geladen werden",
+    "description": "Heading of the error shown when the suggested accounts fail to load, above the reason and the button to try again."
+  },
+  "onboarding.suggestions.retry": {
+    "defaultMessage": "Erneut versuchen",
+    "description": "Button that loads the suggested accounts again."
+  },
+  "onboarding.reason.featured": {
+    "defaultMessage": "Vom Server empfohlen",
+    "description": "Badge of a suggested account that the administrators feature."
+  },
+  "onboarding.reason.recently_active": {
+    "defaultMessage": "Hat kürzlich einen Beitrag verfasst",
+    "description": "Badge of a suggested account that posted recently."
+  }
+}

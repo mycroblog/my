@@ -1,0 +1,54 @@
+{
+  "preview.about_title": {
+    "defaultMessage": "Über {instance}",
+    "description": "Title of the link preview (og:title and the page title) of the instance's information page (/about). {instance} is the instance name."
+  },
+  "preview.document_title": {
+    "defaultMessage": "{document} | {instance}",
+    "description": "Title of the link preview (og:title and the page title) of the page of one of the instance's documents (/about/terms, /about/privacy, /about/commerce). {document} is the document's name (preview.document.*), {instance} the instance name."
+  },
+  "preview.document.terms": {
+    "defaultMessage": "Nutzungsbedingungen",
+    "description": "Name of the instance's terms of service in the link preview of their page (/about/terms)."
+  },
+  "preview.document.privacy_policy": {
+    "defaultMessage": "Datenschutzerklärung",
+    "description": "Name of the instance's privacy policy in the link preview of its page (/about/privacy)."
+  },
+  "preview.document.commerce_disclosure": {
+    "defaultMessage": "Angaben zum Handel",
+    "description": "Name of the instance's commerce disclosures of its supporter plans in the link preview of their page (/about/commerce)."
+  },
+  "preview.document.link_card_crawler": {
+    "defaultMessage": "Link-Karten-Crawler",
+    "description": "Name of the page that tells site operators about the crawler that fetches the links in posts, in the link preview of that page (/about/crawler)."
+  },
+  "preview.avatar_alt": {
+    "defaultMessage": "Profilbild von {name}",
+    "description": "Alt text of a profile's avatar in a link preview (og:image:alt) when the avatar is the preview image. {name} is the display name, or the username when there is none."
+  },
+  "preview.builtin_image_alt": {
+    "defaultMessage": "Eine Sprechblase mit drei Punkten auf einem blauen Farbverlauf",
+    "description": "Alt text of the built-in preview image in a link preview (og:image:alt), for profiles and posts without images on an instance without its own preview image. The image is a white speech bubble with three dots on a blue gradient."
+  },
+  "preview.default_image_alt": {
+    "defaultMessage": "Bild von {instance}",
+    "description": "Alt text of the instance's preview image in a link preview (og:image:alt), for profiles and posts without images, when the preview_image_alt text is not set. {instance} is the instance name."
+  },
+  "preview.header_alt": {
+    "defaultMessage": "Titelbild von {name}",
+    "description": "Alt text of a profile's header image in a link preview (og:image:alt) when the header is the preview image. {name} is the display name, or the username when there is none."
+  },
+  "preview.title": {
+    "defaultMessage": "{name} (@{handle})",
+    "description": "Title of the link preview (og:title and the page title) of a profile or a post. {name} is the display name, or the username when there is none; {handle} is username@domain."
+  },
+  "preview.voice_room_open": {
+    "defaultMessage": "{room} – ein Sprachchat von {host}, jetzt geöffnet",
+    "description": "Title of the link preview (og:title and the page title) of a voice chat room that is open, shown only when the instance shows the summaries of its rooms. {room} is the room's name; {host} is the display name of the host, or the username when there is none."
+  },
+  "preview.voice_room_ended": {
+    "defaultMessage": "{room} – dieser Sprachchat ist beendet",
+    "description": "Title of the link preview (og:title and the page title) of a voice chat room that has ended, shown only when the instance shows the summaries of its rooms. {room} is the room's name."
+  }
+}

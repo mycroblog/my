@@ -1,0 +1,22 @@
+{
+  "local.disabled.body": {
+    "defaultMessage": "Ce serveur n’affiche pas les publications publiques de ses comptes dans un fil unique.",
+    "description": "Text below the heading of the local timeline's page when the server's operators have turned that timeline off."
+  },
+  "local.disabled.title": {
+    "defaultMessage": "Le fil local est désactivé",
+    "description": "Heading and document title of the local timeline's page when the server's operators have turned that timeline off."
+  },
+  "local.sign_in_required.body": {
+    "defaultMessage": "Connectez-vous pour lire les publications publiques des comptes de ce serveur.",
+    "description": "Description of the sign-in state on the local timeline's page for visitors who are not signed in, under its heading and above the link to sign in."
+  },
+  "local.sign_in_required.title": {
+    "defaultMessage": "Le fil local est réservé aux personnes connectées",
+    "description": "Heading of the sign-in state on the local timeline's page for visitors who are not signed in, when the server shows that timeline only to signed-in users."
+  },
+  "local.title": {
+    "defaultMessage": "Fil local",
+    "description": "Heading and document title of the page with the public posts of this server's accounts."
+  }
+}

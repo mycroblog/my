@@ -1,0 +1,166 @@
+{
+  "push.account_moved": {
+    "defaultMessage": "{name} ist auf ein anderes Konto umgezogen",
+    "description": "Web Push notification. {name} is the display name, or the @handle, of an account that the user followed, which moved to another account."
+  },
+  "push.admin_account_moved": {
+    "defaultMessage": "Ein Konto, das die Moderatoren von {instance} einschränken, ist auf ein anderes Konto umgezogen",
+    "description": "Web Push notification to a moderator: an account that the moderators limit moved to another account, which does not get the limit. It never names the accounts. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "push.admin_appeal": {
+    "defaultMessage": "Ein neuer Einspruch wartet auf die Moderatoren von {instance}",
+    "description": "Web Push notification to a moderator: a user appealed a moderation action. It never names the user. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "push.admin_custom_emoji_request": {
+    "defaultMessage": "Eine Anfrage für ein eigenes Emoji wartet auf Prüfung auf {instance}",
+    "description": "Web Push notification to an administrator: a user requested a custom emoji or a new image of one. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "push.admin_report": {
+    "defaultMessage": "Eine neue Meldung wartet auf die Moderatoren von {instance}",
+    "description": "Web Push notification to a moderator: someone reported an account that had no open report. It never names the accounts. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "push.admin_sign_up": {
+    "defaultMessage": "Eine neue Registrierung wartet auf Genehmigung auf {instance}",
+    "description": "Web Push notification to a moderator: a new user signed up and waits for approval. It never names the user. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "push.admin_webhook_disabled": {
+    "defaultMessage": "Ein Webhook von {instance} wurde ausgeschaltet",
+    "description": "Web Push notification to an administrator: the server turned off a webhook endpoint that kept failing or answered that it is gone. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "push.announcement": {
+    "defaultMessage": "Ankündigung von {instance}: {title}",
+    "description": "Web Push notification of a new announcement of the server to every local user. {title} is the announcement's title, as the administrators wrote it. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "push.auto_delete_limit": {
+    "defaultMessage": "{instance}: Beiträge, die älter sind als {days, plural, one {# Tag} other {# Tage}}, werden {daysLeft, plural, =0 {ab sofort} one {in # Tag} other {in # Tagen}} automatisch gelöscht",
+    "description": "Web Push notification, and the subject of its email, telling a local user that the server's maximum of the automatic deletion of old posts now applies to their posts. {days} is the most days after its publication that a post is kept; {daysLeft} is the days of the grace period until the maximum applies (0 when it applies at once). {instance} is the server's display name, or its domain name when it has none."
+  },
+  "push.appeal_decided": {
+    "defaultMessage": "Die Moderatoren von {instance} haben über deinen Einspruch entschieden",
+    "description": "Web Push notification: the moderators upheld or overturned the user's appeal. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "push.custom_emoji_request_decided": {
+    "defaultMessage": "Die Administratoren von {instance} haben deine Anfrage für ein eigenes Emoji geprüft",
+    "description": "Web Push notification: an administrator approved or rejected the user's request for a custom emoji or a new image of one. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "push.boost": {
+    "defaultMessage": "{name} hat deinen Beitrag geboostet",
+    "description": "Web Push notification. {name} is the display name, or the @handle, of the account that boosted the user's post."
+  },
+  "push.favourite": {
+    "defaultMessage": "{name} hat deinen Beitrag favorisiert",
+    "description": "Web Push notification. {name} is the display name, or the @handle, of the account that favourited the user's post."
+  },
+  "push.follow": {
+    "defaultMessage": "{name} folgt dir jetzt",
+    "description": "Web Push notification. {name} is the display name, or the @handle, of the account that followed the user."
+  },
+  "push.follow_accepted": {
+    "defaultMessage": "{name} hat deine Folgeanfrage angenommen",
+    "description": "Web Push notification. {name} is the display name, or the @handle, of the account that accepted the user's follow request."
+  },
+  "push.follow_request": {
+    "defaultMessage": "{name} möchte dir folgen",
+    "description": "Web Push notification. {name} is the display name, or the @handle, of the account that asked to follow the user."
+  },
+  "push.mention": {
+    "defaultMessage": "{name} hat dich erwähnt",
+    "description": "Web Push notification. {name} is the display name, or the @handle, of the account that wrote a post that mentions the user."
+  },
+  "push.moderation_notice": {
+    "defaultMessage": "Die Moderatoren von {instance} haben dir einen Hinweis gesendet",
+    "description": "Web Push notification: a notice to the user from the moderators. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "push.other": {
+    "defaultMessage": "Du hast eine neue Benachrichtigung auf {instance}",
+    "description": "Web Push notification of a kind without its own sentence. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "push.poll_closed": {
+    "defaultMessage": "Eine Umfrage, an der du teilgenommen hast, ist beendet",
+    "description": "Web Push notification: a poll that the user created or voted in has ended."
+  },
+  "push.quote": {
+    "defaultMessage": "{name} hat deinen Beitrag zitiert",
+    "description": "Web Push notification. {name} is the display name, or the @handle, of the account that quoted the user's post in a post of its own."
+  },
+  "push.reaction": {
+    "defaultMessage": "{name} hat auf deinen Beitrag reagiert",
+    "description": "Web Push notification. {name} is the display name, or the @handle, of the account that reacted to the user's post with an emoji."
+  },
+  "push.relationships_severed": {
+    "defaultMessage": "Eine Sperrung durch die Moderatoren von {instance} hat einige deiner Follows beendet",
+    "description": "Web Push notification: the moderators suspended a server or an account, which ended follows between it and the user. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "push.report_resolved": {
+    "defaultMessage": "Eine Meldung, die du auf {instance} gesendet hast, wurde bearbeitet",
+    "description": "Web Push notification: the moderators resolved a report that the user filed. It never says how. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "push.status": {
+    "defaultMessage": "{name} hat etwas veröffentlicht",
+    "description": "Web Push notification. {name} is the display name, or the @handle, of an account that the user subscribes to, which made a new post."
+  },
+  "push.supporter_payment_failed": {
+    "defaultMessage": "Eine Zahlung für deinen Unterstützungsplan auf {instance} ist fehlgeschlagen",
+    "description": "Web Push notification: a payment for the user's supporter plan failed. It never says where to pay (the app shows no way to pay). {instance} is the server's display name, or its domain name when it has none."
+  },
+  "push.supporter_plan_retired": {
+    "defaultMessage": "Dein Unterstützungsplan auf {instance} wurde eingestellt",
+    "description": "Web Push notification: the administrators retired the user's supporter plan, whose subscription ends with its period. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "push.supporter_subscription_ended": {
+    "defaultMessage": "Dein Unterstützungsplan auf {instance} ist beendet",
+    "description": "Web Push notification: the user's supporter subscription ended (a payment kept failing, a refund, a retired plan, or a cancellation). {instance} is the server's display name, or its domain name when it has none."
+  },
+  "push.service_closure_announced": {
+    "defaultMessage": "{instance} schließt: Exportiere deine Daten, bevor es so weit ist",
+    "description": "Web Push notification to every user: the administrators announced that the server closes on a date. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "push.service_closure_rescheduled": {
+    "defaultMessage": "Das Schließungsdatum von {instance} hat sich geändert",
+    "description": "Web Push notification to every user: the administrators changed the dates of the announced closure of the server. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "push.service_closure_withdrawn": {
+    "defaultMessage": "{instance} schließt nicht: Die Schließung wurde zurückgezogen",
+    "description": "Web Push notification to every user: the administrators withdrew the announced closure of the server, which goes on. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "push.admin_service_closure_due": {
+    "defaultMessage": "Das Schließungsdatum von {instance} ist erreicht: Schließe den Server",
+    "description": "Web Push notification to an administrator who may close the server: the closing date of the announced closure has passed, and the server closes only when an administrator closes it. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "push.admin_error_group.created": {
+    "defaultMessage": "Auf {instance} wurde ein neuer Fehler gemeldet",
+    "description": "Web Push notification to an administrator who manages the errors: the server or the web client reported an error of a new kind. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "push.admin_error_group.regressed": {
+    "defaultMessage": "Ein behobener Fehler ist auf {instance} erneut aufgetreten",
+    "description": "Web Push notification to an administrator who manages the errors: an error that an administrator marked resolved happened again with a newer version of the server. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "push.admin_error_group.others": {
+    "defaultMessage": "Auf {instance} wurden weitere Fehler gemeldet",
+    "description": "Web Push notification to an administrator who manages the errors: more new or recurring errors happened in this hour than are notified one by one, and they are counted in one notification. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "push.admin_hook_failing": {
+    "defaultMessage": "Eine externe Prüfung von {instance} schlägt wiederholt fehl",
+    "description": "Web Push notification to a moderator: calls of the external review of submissions keep failing. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "push.admin_hook_appeal": {
+    "defaultMessage": "Gegen einen abgelehnten Beitrag wurde bei den Moderatoren von {instance} Einspruch eingelegt",
+    "description": "Web Push notification to a moderator: a user appealed a post that the server's automated review refused, and the appeal awaits review. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "push.hook_appeal_decided": {
+    "defaultMessage": "Die Moderatoren von {instance} haben deinen Einspruch gegen einen abgelehnten Beitrag geprüft",
+    "description": "Web Push notification: the moderators upheld or overturned the user's appeal of a post that the automated review refused. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "push.supporter_service_closure": {
+    "defaultMessage": "Dein Unterstützer-Abo auf {instance} endet mit der Schließung des Servers",
+    "description": "Web Push notification: the announced closure of the server cancels the user's supporter subscription at the end of its period. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "push.voice_room_started": {
+    "defaultMessage": "{name} hat einen Sprachchat-Raum gestartet",
+    "description": "Web Push notification: an account that the user follows opened a voice chat room that the user may join. {name} is the display name, or the @handle, of the host."
+  },
+  "push.voice_room_invited": {
+    "defaultMessage": "{name} hat dich in einen Sprachchat-Raum eingeladen",
+    "description": "Web Push notification: the host or a co-host of a voice chat room invited the user to it. {name} is the display name, or the @handle, of the account that invited the user."
+  }
+}

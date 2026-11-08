@@ -1,0 +1,218 @@
+{
+  "admin.oauth_apps.cancel": {
+    "defaultMessage": "Annuler",
+    "description": "Button that closes a dialog of the OAuth apps screen without changing anything."
+  },
+  "admin.oauth_apps.change_failed": {
+    "defaultMessage": "Impossible de modifier l’application : {reason}",
+    "description": "Error of disabling or enabling an app, or of denying or allowing a host. {reason} says why."
+  },
+  "admin.oauth_apps.column.app": {
+    "defaultMessage": "Application",
+    "description": "Column header of the app's name."
+  },
+  "admin.oauth_apps.column.created": {
+    "defaultMessage": "Enregistrée le",
+    "description": "Column header of when an app was registered."
+  },
+  "admin.oauth_apps.column.registration": {
+    "defaultMessage": "Enregistrée par",
+    "description": "Column header of the registration route."
+  },
+  "admin.oauth_apps.confidential": {
+    "defaultMessage": "Avec secret",
+    "description": "An app that is a confidential client."
+  },
+  "admin.oauth_apps.deny_host": {
+    "defaultMessage": "Refuser l’hôte",
+    "description": "Button on an app that denies the host of its metadata document."
+  },
+  "admin.oauth_apps.deny_host_of": {
+    "defaultMessage": "Refuser l’hôte : {host}",
+    "description": "Accessible name of the button that denies the host of an app's metadata document. {host} is the host name."
+  },
+  "admin.oauth_apps.disable": {
+    "defaultMessage": "Désactiver",
+    "description": "Button that disables an app, and the confirming button of its dialog."
+  },
+  "admin.oauth_apps.disable.description": {
+    "defaultMessage": "Tous les jetons de l’application sont révoqués immédiatement, et ses connexions, échanges de jetons et renouvellements sont refusés. Les jetons révoqués le restent lorsque vous réactivez l’application : les personnes doivent se reconnecter.",
+    "description": "Description of the dialog that confirms disabling an app."
+  },
+  "admin.oauth_apps.disable.title": {
+    "defaultMessage": "Désactiver {name} ?",
+    "description": "Title of the dialog that confirms disabling an app. {name} is the app's name."
+  },
+  "admin.oauth_apps.disable_app": {
+    "defaultMessage": "Désactiver {name}",
+    "description": "Accessible name of the button that disables an app. {name} is the app's name."
+  },
+  "admin.oauth_apps.disabled": {
+    "defaultMessage": "Désactivée",
+    "description": "Marks an app that an administrator disabled."
+  },
+  "admin.oauth_apps.disabled_done": {
+    "defaultMessage": "{name} est désactivée, et ses jetons sont révoqués.",
+    "description": "Status after disabling an app. {name} is the app's name."
+  },
+  "admin.oauth_apps.empty": {
+    "defaultMessage": "Aucune application",
+    "description": "Heading of the empty list of OAuth apps."
+  },
+  "admin.oauth_apps.empty.description": {
+    "defaultMessage": "Aucune application n’est enregistrée par cette voie.",
+    "description": "Description of the empty list of OAuth apps."
+  },
+  "admin.oauth_apps.enable": {
+    "defaultMessage": "Activer",
+    "description": "Button that lifts the disablement of an app."
+  },
+  "admin.oauth_apps.enable_app": {
+    "defaultMessage": "Activer {name}",
+    "description": "Accessible name of the button that lifts the disablement of an app. {name} is the app's name."
+  },
+  "admin.oauth_apps.enabled_done": {
+    "defaultMessage": "{name} est activée.",
+    "description": "Status after enabling an app. {name} is the app's name."
+  },
+  "admin.oauth_apps.filter.all": {
+    "defaultMessage": "Toutes les voies",
+    "description": "Choice of the filter that keeps every app."
+  },
+  "admin.oauth_apps.filter.label": {
+    "defaultMessage": "Enregistrée par",
+    "description": "Label of the filter that keeps the apps of one registration route."
+  },
+  "admin.oauth_apps.first_party_note": {
+    "defaultMessage": "Ne peut pas être désactivée",
+    "description": "Says that the server's own app has no disable button."
+  },
+  "admin.oauth_apps.hosts.allow": {
+    "defaultMessage": "Autoriser",
+    "description": "Button that lifts the denial of a host."
+  },
+  "admin.oauth_apps.hosts.allow_host": {
+    "defaultMessage": "Autoriser l’hôte {host}",
+    "description": "Accessible name of the button that lifts the denial of a host. {host} is the host name."
+  },
+  "admin.oauth_apps.hosts.allowed_done": {
+    "defaultMessage": "{host} est de nouveau autorisé.",
+    "description": "Status after lifting the denial of a host. {host} is the host name."
+  },
+  "admin.oauth_apps.hosts.column.denied": {
+    "defaultMessage": "Refusé le",
+    "description": "Column header of when a host was denied."
+  },
+  "admin.oauth_apps.hosts.column.host": {
+    "defaultMessage": "Hôte",
+    "description": "Column header of a denied host."
+  },
+  "admin.oauth_apps.hosts.denied_done": {
+    "defaultMessage": "{host} est refusé, et les jetons de ses applications sont révoqués.",
+    "description": "Status after denying a host. {host} is the host name."
+  },
+  "admin.oauth_apps.hosts.deny": {
+    "defaultMessage": "Refuser",
+    "description": "Confirming button of the dialog that denies a host."
+  },
+  "admin.oauth_apps.hosts.deny.description": {
+    "defaultMessage": "Désormais, aucune URL d’identifiant client de cet hôte n’est récupérée ni acceptée. Les jetons des applications de l’hôte sont révoqués immédiatement, et ils le restent lorsque vous autorisez de nouveau l’hôte.",
+    "description": "Description of the dialog that confirms denying a host."
+  },
+  "admin.oauth_apps.hosts.deny.title": {
+    "defaultMessage": "Refuser {host} ?",
+    "description": "Title of the dialog that confirms denying a host. {host} is the host name."
+  },
+  "admin.oauth_apps.hosts.deny_new": {
+    "defaultMessage": "Refuser un hôte",
+    "description": "Button that opens the dialog that denies a host by its name."
+  },
+  "admin.oauth_apps.hosts.deny_new.title": {
+    "defaultMessage": "Refuser un hôte",
+    "description": "Title of the dialog that denies a host by its name."
+  },
+  "admin.oauth_apps.hosts.description": {
+    "defaultMessage": "Aucune URL d’identifiant client d’un hôte refusé n’est récupérée ni acceptée, et les applications de cet hôte ne peuvent pas se connecter.",
+    "description": "Explains the list of denied hosts."
+  },
+  "admin.oauth_apps.hosts.empty": {
+    "defaultMessage": "Aucun hôte refusé",
+    "description": "Heading of the empty list of denied hosts."
+  },
+  "admin.oauth_apps.hosts.empty.description": {
+    "defaultMessage": "Refusez un hôte pour bloquer les applications qui utilisent ses documents de métadonnées.",
+    "description": "Description of the empty list of denied hosts."
+  },
+  "admin.oauth_apps.hosts.host": {
+    "defaultMessage": "Nom d’hôte",
+    "description": "Label of the field of the host to deny."
+  },
+  "admin.oauth_apps.hosts.host.description": {
+    "defaultMessage": "L’hôte des URL d’identifiant client, par exemple app.example, sans schéma, port ni chemin.",
+    "description": "Description of the field of the host to deny."
+  },
+  "admin.oauth_apps.hosts.title": {
+    "defaultMessage": "Hôtes refusés",
+    "description": "Heading of the list of denied hosts, and its table caption."
+  },
+  "admin.oauth_apps.list.description": {
+    "defaultMessage": "Toutes les applications non supprimées, des plus récentes aux plus anciennes. Désactiver une application révoque ses jetons immédiatement et refuse ses connexions jusqu’à sa réactivation.",
+    "description": "Explains the list of OAuth apps."
+  },
+  "admin.oauth_apps.list.title": {
+    "defaultMessage": "Applications",
+    "description": "Heading of the list of OAuth apps, and its table caption."
+  },
+  "admin.oauth_apps.owner": {
+    "defaultMessage": "Enregistrée par {handle}",
+    "description": "Who registered an app. {handle} is the handle of the user's account."
+  },
+  "admin.oauth_apps.owner.deleted": {
+    "defaultMessage": "Enregistrée par un compte supprimé",
+    "description": "Who registered an app, when the account of the user who did is gone."
+  },
+  "admin.oauth_apps.pages": {
+    "defaultMessage": "Pages des applications OAuth",
+    "description": "Name of the local navigation between the pages of the OAuth apps screen."
+  },
+  "admin.oauth_apps.pages.apps": {
+    "defaultMessage": "Applications",
+    "description": "Link of the local navigation to the list of apps."
+  },
+  "admin.oauth_apps.pages.hosts": {
+    "defaultMessage": "Hôtes refusés",
+    "description": "Link of the local navigation to the denied hosts of app metadata documents."
+  },
+  "admin.oauth_apps.public": {
+    "defaultMessage": "Sans secret",
+    "description": "An app that is a public client."
+  },
+  "admin.oauth_apps.registration.dynamic": {
+    "defaultMessage": "Enregistrement dynamique",
+    "description": "Registration route of an app that registered itself (RFC 7591)."
+  },
+  "admin.oauth_apps.registration.first_party": {
+    "defaultMessage": "Ce serveur",
+    "description": "Registration route of the server's own apps."
+  },
+  "admin.oauth_apps.registration.metadata_document": {
+    "defaultMessage": "Document de métadonnées",
+    "description": "Registration route of an app whose client ID is the URL of its metadata document."
+  },
+  "admin.oauth_apps.registration.user": {
+    "defaultMessage": "Un utilisateur",
+    "description": "Registration route of an app that a signed-in user registered."
+  },
+  "admin.oauth_apps.scope": {
+    "defaultMessage": "Maximum accordable : {scope}",
+    "description": "Under an app's name: the scopes it may be granted at most. {scope} is the space-separated scopes."
+  },
+  "admin.oauth_apps.summary": {
+    "defaultMessage": "Consultez toutes les applications qui peuvent se connecter à ce serveur, désactivez-en une et refusez des hôtes de documents de métadonnées d’applications.",
+    "description": "Description of the OAuth apps screen in the administration menu."
+  },
+  "admin.oauth_apps.title": {
+    "defaultMessage": "Applications OAuth",
+    "description": "Heading of the OAuth apps screen, and its link in the administration menu."
+  }
+}

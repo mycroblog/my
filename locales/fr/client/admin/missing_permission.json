@@ -1,0 +1,10 @@
+{
+  "admin.missing_permission.description": {
+    "defaultMessage": "Vos rôles n’ont pas la permission {permission}. Demandez-la à un administrateur de ce serveur.",
+    "description": "Text of an admin screen for a user whose roles lack its permission. {permission} is the permission's code, such as manage_jobs."
+  },
+  "admin.missing_permission.heading": {
+    "defaultMessage": "Vous ne pouvez pas utiliser cet écran",
+    "description": "Heading of an admin screen for a user whose roles lack its permission."
+  }
+}

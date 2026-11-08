@@ -1,0 +1,634 @@
+{
+  "admin.audit_log.action.account_action_issued": {
+    "defaultMessage": "Maßnahme gegen ein Konto ergriffen",
+    "description": "Heading of an audit log entry: a moderator took an action (a suspension, a limit…) on an account."
+  },
+  "admin.audit_log.action.account_action_lifted": {
+    "defaultMessage": "Maßnahme gegen ein Konto aufgehoben",
+    "description": "Heading of an audit log entry: a moderator lifted an action on an account."
+  },
+  "admin.audit_log.action.account_deletion_canceled": {
+    "defaultMessage": "Kontolöschung abgebrochen",
+    "description": "Heading of an audit log entry: overturning a user's appeal of a ban cancelled the scheduled deletion of their account."
+  },
+  "admin.audit_log.action.announcement_created": {
+    "defaultMessage": "Ankündigung verfasst",
+    "description": "Kind of an audited operation: an administrator wrote an announcement."
+  },
+  "admin.audit_log.action.announcement_published": {
+    "defaultMessage": "Ankündigung veröffentlicht",
+    "description": "Kind of an audited operation: an administrator published an announcement."
+  },
+  "admin.audit_log.action.announcement_updated": {
+    "defaultMessage": "Ankündigung geändert",
+    "description": "Kind of an audited operation: an administrator changed the text or window of an announcement."
+  },
+  "admin.audit_log.action.announcement_withdrawn": {
+    "defaultMessage": "Ankündigung zurückgezogen",
+    "description": "Kind of an audited operation: an administrator withdrew an announcement."
+  },
+  "admin.audit_log.action.appeal_overturned": {
+    "defaultMessage": "Einspruch: Maßnahme aufgehoben",
+    "description": "Heading of an audit log entry: a moderator granted a user's appeal and lifted the action it appealed."
+  },
+  "admin.audit_log.action.appeal_upheld": {
+    "defaultMessage": "Einspruch: Maßnahme bestätigt",
+    "description": "Heading of an audit log entry: a moderator rejected a user's appeal and kept the action it appealed."
+  },
+  "admin.audit_log.action.domain_action_issued": {
+    "defaultMessage": "Maßnahme gegen eine Domain ergriffen",
+    "description": "Heading of an audit log entry: a moderator took an action on a remote domain."
+  },
+  "admin.audit_log.action.domain_action_lifted": {
+    "defaultMessage": "Maßnahme gegen eine Domain aufgehoben",
+    "description": "Heading of an audit log entry: a moderator lifted an action on a remote domain."
+  },
+  "admin.audit_log.action.registration_approved": {
+    "defaultMessage": "Registrierung genehmigt",
+    "description": "Heading of an audit log entry: a moderator approved a sign-up."
+  },
+  "admin.audit_log.action.registration_rejected": {
+    "defaultMessage": "Registrierung abgelehnt",
+    "description": "Heading of an audit log entry: a moderator rejected a sign-up."
+  },
+  "admin.audit_log.action.relay_accepted": {
+    "defaultMessage": "Relay hat den Server akzeptiert",
+    "description": "Kind of an audited operation: a relay accepted the server's request to join it."
+  },
+  "admin.audit_log.action.relay_added": {
+    "defaultMessage": "Relay registriert",
+    "description": "Kind of an audited operation: an administrator registered a relay and asked to join it."
+  },
+  "admin.audit_log.action.relay_followed": {
+    "defaultMessage": "Relay erneut beigetreten",
+    "description": "Kind of an audited operation: an administrator asked to join a relay again that was left or rejected the server."
+  },
+  "admin.audit_log.action.relay_rejected": {
+    "defaultMessage": "Relay hat den Server abgelehnt",
+    "description": "Kind of an audited operation: a relay rejected the server's request to join it, or ended its membership."
+  },
+  "admin.audit_log.action.status_refetch_queued": {
+    "defaultMessage": "Erneuter Abruf eines Beitrags angefordert",
+    "description": "Kind of an audited operation: a moderator asked to fetch a remote post again from its server."
+  },
+  "admin.audit_log.action.account_statuses_refetch_queued": {
+    "defaultMessage": "Erneuter Abruf der Beiträge eines Kontos angefordert",
+    "description": "Kind of an audited operation: a moderator asked to fetch the stored posts of a remote account again from its server."
+  },
+  "admin.audit_log.action.domain_statuses_refetch_queued": {
+    "defaultMessage": "Erneuter Abruf der Beiträge eines Servers angefordert",
+    "description": "Kind of an audited operation: a moderator asked to fetch the stored posts of the accounts of a remote server again."
+  },
+  "admin.audit_log.action.billing_import_queued": {
+    "defaultMessage": "Abrechnungsimport gestartet",
+    "description": "Kind of an audited operation: an administrator started an import of a cloud provider's usage charges (AWS, Google Cloud) now, besides the daily one."
+  },
+  "admin.audit_log.action.relay_removed": {
+    "defaultMessage": "Relay gelöscht",
+    "description": "Kind of an audited operation: an administrator deleted the registration of a relay."
+  },
+  "admin.audit_log.action.relay_unfollowed": {
+    "defaultMessage": "Relay verlassen",
+    "description": "Kind of an audited operation: an administrator left a relay."
+  },
+  "admin.audit_log.action.report_assigned": {
+    "defaultMessage": "Meldung zugewiesen",
+    "description": "Heading of an audit log entry: a report was assigned to a moderator."
+  },
+  "admin.audit_log.action.report_note_added": {
+    "defaultMessage": "Notiz zu einer Meldung hinzugefügt",
+    "description": "Heading of an audit log entry: a moderator wrote an internal note on a report."
+  },
+  "admin.audit_log.action.report_forwarded": {
+    "defaultMessage": "Meldung weitergeleitet",
+    "description": "Heading of an audit log entry: a moderator forwarded a report to the server of the reported account."
+  },
+  "admin.audit_log.action.report_reopened": {
+    "defaultMessage": "Meldung wieder geöffnet",
+    "description": "Heading of an audit log entry: a moderator reopened a resolved report."
+  },
+  "admin.audit_log.action.report_resolved": {
+    "defaultMessage": "Meldung erledigt",
+    "description": "Heading of an audit log entry: a moderator resolved a report."
+  },
+  "admin.audit_log.action.report_unassigned": {
+    "defaultMessage": "Zuweisung einer Meldung aufgehoben",
+    "description": "Heading of an audit log entry: a report was left without an assigned moderator."
+  },
+  "admin.audit_log.action.revealed_private_data": {
+    "defaultMessage": "Private Daten angezeigt",
+    "description": "Heading of an audit log entry: a moderator was shown the email address and the IP addresses of a local account."
+  },
+  "admin.audit_log.action.role_created": {
+    "defaultMessage": "Rolle erstellt",
+    "description": "Heading of an audit log entry: an administrator created a role."
+  },
+  "admin.audit_log.action.role_deleted": {
+    "defaultMessage": "Rolle gelöscht",
+    "description": "Heading of an audit log entry: an administrator deleted a role."
+  },
+  "admin.audit_log.action.role_granted": {
+    "defaultMessage": "Rolle vergeben",
+    "description": "Heading of an audit log entry: an administrator granted a role to a user."
+  },
+  "admin.audit_log.action.role_revoked": {
+    "defaultMessage": "Rolle widerrufen",
+    "description": "Heading of an audit log entry: an administrator revoked a role from a user."
+  },
+  "admin.audit_log.action.role_updated": {
+    "defaultMessage": "Rolle geändert",
+    "description": "Heading of an audit log entry: an administrator changed the position or the permissions of a role."
+  },
+  "admin.audit_log.action.rule_added": {
+    "defaultMessage": "Regel hinzugefügt",
+    "description": "Heading of an audit log entry: an administrator added a server rule."
+  },
+  "admin.audit_log.action.rule_moved": {
+    "defaultMessage": "Regel verschoben",
+    "description": "Heading of an audit log entry: an administrator moved a server rule in the list."
+  },
+  "admin.audit_log.action.rule_retired": {
+    "defaultMessage": "Regel zurückgezogen",
+    "description": "Heading of an audit log entry: an administrator retired a server rule."
+  },
+  "admin.audit_log.action.rule_revised": {
+    "defaultMessage": "Regel überarbeitet",
+    "description": "Heading of an audit log entry: an administrator revised a server rule."
+  },
+  "admin.audit_log.action.setting_changed": {
+    "defaultMessage": "Einstellung geändert",
+    "description": "Heading of an audit log entry: an administrator changed an instance setting."
+  },
+  "admin.audit_log.action.signup_block_added": {
+    "defaultMessage": "Registrierungssperre hinzugefügt",
+    "description": "Heading of an audit log entry: a moderator added a block on sign-ups by email domain, email address, or IP range."
+  },
+  "admin.audit_log.action.signup_block_lifted": {
+    "defaultMessage": "Registrierungssperre aufgehoben",
+    "description": "Heading of an audit log entry: a moderator lifted a block on sign-ups."
+  },
+  "admin.audit_log.action.two_factor_disabled": {
+    "defaultMessage": "Zwei-Faktor-Authentifizierung entfernt",
+    "description": "Heading of an audit log entry: an administrator removed the two-factor authentication of a local account."
+  },
+  "admin.audit_log.action.account_moved": {
+    "defaultMessage": "Eingeschränktes Konto umgezogen",
+    "description": "Heading of an audit log entry: a local account that moderation limits moved to another local account, which does not inherit the limit; a moderator decides whether to limit the target."
+  },
+  "admin.audit_log.action.password_reset_link_issued": {
+    "defaultMessage": "Link zum Zurücksetzen des Passworts erstellt",
+    "description": "Heading of an audit log entry: an administrator issued a password reset link for the user of a local account."
+  },
+  "admin.audit_log.action.email_suppression_lifted": {
+    "defaultMessage": "E-Mail-Sperre aufgehoben",
+    "description": "Heading of an audit log entry: a moderator lifted the suppression of the primary email address of a local account, so that emails are sent to it again."
+  },
+  "admin.audit_log.action.text_changed": {
+    "defaultMessage": "Text geändert",
+    "description": "Heading of an audit log entry: an administrator changed an instance text (such as the terms) in one language."
+  },
+  "admin.audit_log.action.webhook_created": {
+    "defaultMessage": "Webhook eingerichtet",
+    "description": "Kind of an audited operation: an administrator set up a webhook."
+  },
+  "admin.audit_log.action.webhook_deleted": {
+    "defaultMessage": "Webhook gelöscht",
+    "description": "Kind of an audited operation: an administrator deleted a webhook."
+  },
+  "admin.audit_log.action.webhook_disabled": {
+    "defaultMessage": "Webhook deaktiviert",
+    "description": "Kind of an audited operation: an administrator, or the server after failures, disabled a webhook."
+  },
+  "admin.audit_log.action.webhook_enabled": {
+    "defaultMessage": "Webhook aktiviert",
+    "description": "Kind of an audited operation: an administrator enabled a webhook."
+  },
+  "admin.audit_log.action.webhook_secret_rotated": {
+    "defaultMessage": "Webhook-Geheimnis erneuert",
+    "description": "Kind of an audited operation: an administrator gave a webhook a new secret."
+  },
+  "admin.audit_log.action.invite_created": {
+    "defaultMessage": "Einladung erstellt",
+    "description": "Kind of an audited operation: a moderator or an administrator created an invite code."
+  },
+  "admin.audit_log.action.invite_revoked": {
+    "defaultMessage": "Einladung widerrufen",
+    "description": "Kind of an audited operation: a moderator or an administrator revoked an invite code."
+  },
+  "admin.audit_log.action.webhook_updated": {
+    "defaultMessage": "Webhook geändert",
+    "description": "Kind of an audited operation: an administrator changed the URL, description or events of a webhook."
+  },
+  "admin.audit_log.actor": {
+    "defaultMessage": "Von",
+    "description": "Term in an audit log entry: who performed the operation."
+  },
+  "admin.audit_log.actor.cli": {
+    "defaultMessage": "Befehlszeile",
+    "description": "Who performed an audited operation: the server operator with the my command line, as no user."
+  },
+  "admin.audit_log.actor.deleted_user": {
+    "defaultMessage": "Ein gelöschtes Konto",
+    "description": "Who performed an audited operation, when the account of that moderator or administrator is gone."
+  },
+  "admin.audit_log.actor.remote": {
+    "defaultMessage": "Ein anderer Server",
+    "description": "Who performed an audited operation: another server of the federation."
+  },
+  "admin.audit_log.actor.system": {
+    "defaultMessage": "Dieser Server",
+    "description": "Who performed an audited operation: the server itself, automatically."
+  },
+  "admin.audit_log.empty": {
+    "defaultMessage": "Noch keine Vorgänge",
+    "description": "Heading of the audit log when nothing has been recorded."
+  },
+  "admin.audit_log.empty.description": {
+    "defaultMessage": "Was die Moderation und die Administration auf diesem Server tun, wird hier aufgelistet.",
+    "description": "Text of the empty audit log."
+  },
+  "admin.audit_log.empty.filtered": {
+    "defaultMessage": "Keine Vorgänge entsprechen den Filtern",
+    "description": "Heading of the audit log when no operation matches the chosen filters."
+  },
+  "admin.audit_log.empty.filtered.description": {
+    "defaultMessage": "Wähle andere Filter oder setze sie zurück, um alle Vorgänge zu sehen.",
+    "description": "Text of the audit log when no operation matches the chosen filters."
+  },
+  "admin.audit_log.every_actor": {
+    "defaultMessage": "Vorgänge aller Personen anzeigen",
+    "description": "Link in an audit log entry, while the log is filtered by its actor, that lets go of that filter."
+  },
+  "admin.audit_log.every_target": {
+    "defaultMessage": "Vorgänge zu allen Zielen anzeigen",
+    "description": "Link in an audit log entry, while the log is filtered by its target, that lets go of that filter."
+  },
+  "admin.audit_log.filter.action": {
+    "defaultMessage": "Vorgang",
+    "description": "Label of the select that keeps one kind of operation in the audit log."
+  },
+  "admin.audit_log.filter.action.all": {
+    "defaultMessage": "Alle Vorgänge",
+    "description": "Option of the operation select of the audit log that keeps every kind of operation."
+  },
+  "admin.audit_log.filter.actor": {
+    "defaultMessage": "Vorgänge von",
+    "description": "Term of the audit log filter that keeps the operations of one moderator or administrator; their name follows."
+  },
+  "admin.audit_log.filter.actor.clear": {
+    "defaultMessage": "Alle Personen anzeigen",
+    "description": "Link next to the account the audit log is filtered by that lets go of that filter."
+  },
+  "admin.audit_log.filter.actor.unknown": {
+    "defaultMessage": "Das ausgewählte Konto",
+    "description": "Shown in place of the name of the account the audit log is filtered by, when no loaded entry shows that account."
+  },
+  "admin.audit_log.filter.clear": {
+    "defaultMessage": "Filter zurücksetzen",
+    "description": "Link that shows the whole audit log again, without any filter."
+  },
+  "admin.audit_log.filter.target": {
+    "defaultMessage": "Vorgänge zu",
+    "description": "Term of the audit log filter that keeps the operations on one target; the target follows."
+  },
+  "admin.audit_log.filter.target.clear": {
+    "defaultMessage": "Alle Ziele anzeigen",
+    "description": "Link next to the target the audit log is filtered by that lets go of that filter."
+  },
+  "admin.audit_log.filter.target_kind": {
+    "defaultMessage": "Ziel",
+    "description": "Label of the select that keeps the operations on one kind of target (an account, a domain, a report…) in the audit log."
+  },
+  "admin.audit_log.filter.target_kind.all": {
+    "defaultMessage": "Alle Ziele",
+    "description": "Option of the target select of the audit log that keeps every kind of target."
+  },
+  "admin.audit_log.filter.title": {
+    "defaultMessage": "Filter",
+    "description": "Heading of the filters of the audit log."
+  },
+  "admin.audit_log.list.title": {
+    "defaultMessage": "Vorgänge",
+    "description": "Heading of the list of operations in the audit log, newest first."
+  },
+  "admin.audit_log.more_failed": {
+    "defaultMessage": "Weitere Vorgänge konnten nicht geladen werden",
+    "description": "Shown under the loaded part of the audit log when its next page failed to load; the reason follows, and the show more button tries again."
+  },
+  "admin.audit_log.occurred_at": {
+    "defaultMessage": "Wann",
+    "description": "Term in an audit log entry: when the operation happened."
+  },
+  "admin.audit_log.only_actor": {
+    "defaultMessage": "Nur Vorgänge von {name} anzeigen",
+    "description": "Link in an audit log entry that keeps only the operations of its actor. {name} is the actor’s display name."
+  },
+  "admin.audit_log.only_target": {
+    "defaultMessage": "Nur Vorgänge zu {target} anzeigen",
+    "description": "Link in an audit log entry that keeps only the operations on its target. {target} is the target’s name, such as @alice or a domain."
+  },
+  "admin.audit_log.summary": {
+    "defaultMessage": "Wer in der Administration was und wann getan hat.",
+    "description": "Description of the audit log screen in the administration menu."
+  },
+  "admin.audit_log.target_kind.account": {
+    "defaultMessage": "Konto",
+    "description": "A kind of target of audited operations, also the term of the target in an entry."
+  },
+  "admin.audit_log.target_kind.appeal": {
+    "defaultMessage": "Einspruch",
+    "description": "A kind of target of audited operations, also the term of the target in an entry."
+  },
+  "admin.audit_log.target_kind.domain": {
+    "defaultMessage": "Domain",
+    "description": "A kind of target of audited operations, also the term of the target in an entry."
+  },
+  "admin.audit_log.target_kind.relay": {
+    "defaultMessage": "Relay",
+    "description": "Kind of target of an audited operation: a federation relay, shown by its URL."
+  },
+  "admin.audit_log.target_kind.billing_source": {
+    "defaultMessage": "Abrechnungsquelle",
+    "description": "Kind of target of an audited operation: a cloud provider whose usage charges are imported into the costs, shown by its name (AWS, Google Cloud)."
+  },
+  "admin.audit_log.target_kind.report": {
+    "defaultMessage": "Meldung",
+    "description": "A kind of target of audited operations, also the term of the target in an entry. The entry names the reported account."
+  },
+  "admin.audit_log.target_kind.role": {
+    "defaultMessage": "Rolle",
+    "description": "A kind of target of audited operations, also the term of the target in an entry."
+  },
+  "admin.audit_log.target_kind.rule": {
+    "defaultMessage": "Regel",
+    "description": "A kind of target of audited operations (a server rule), also the term of the target in an entry."
+  },
+  "admin.audit_log.target_kind.setting": {
+    "defaultMessage": "Einstellung",
+    "description": "A kind of target of audited operations (an instance setting or text), also the term of the target in an entry."
+  },
+  "admin.audit_log.target_kind.signup_block": {
+    "defaultMessage": "Registrierungssperre",
+    "description": "A kind of target of audited operations (a blocked e-mail domain or IP range for sign-ups), also the term of the target in an entry."
+  },
+  "admin.audit_log.target_kind.status": {
+    "defaultMessage": "Beitrag",
+    "description": "A kind of target of audited operations, also the term of the target in an entry."
+  },
+  "admin.audit_log.target_kind.user": {
+    "defaultMessage": "Registrierung",
+    "description": "A kind of target of audited operations (a user whose sign-up was reviewed), also the term of the target in an entry."
+  },
+  "admin.audit_log.target_kind.webhook": {
+    "defaultMessage": "Webhook",
+    "description": "Kind of target of an audited operation: a webhook, shown by its description and host name."
+  },
+  "admin.audit_log.target_kind.invite": {
+    "defaultMessage": "Einladung",
+    "description": "Kind of target of an audited operation: an invite, shown by the first characters of its code."
+  },
+  "admin.audit_log.title": {
+    "defaultMessage": "Audit-Log",
+    "description": "Heading of the admin screen that lists what moderators and administrators did."
+  },
+  "admin.audit_log.action.custom_emoji_created": {
+    "defaultMessage": "Eigenes Emoji registriert",
+    "description": "Kind of an audited operation: an administrator registered a custom emoji of this server."
+  },
+  "admin.audit_log.action.custom_emoji_image_replaced": {
+    "defaultMessage": "Bild eines eigenen Emojis ersetzt",
+    "description": "Kind of an audited operation: an administrator replaced the image of a custom emoji."
+  },
+  "admin.audit_log.action.custom_emoji_copied": {
+    "defaultMessage": "Eigenes Emoji von einem anderen Server kopiert",
+    "description": "Kind of an audited operation: an administrator copied another server's custom emoji into a new emoji of this server."
+  },
+  "admin.audit_log.action.custom_emoji_updated": {
+    "defaultMessage": "Eigenes Emoji geändert",
+    "description": "Kind of an audited operation: an administrator changed the category, other names, or place in the picker of a custom emoji."
+  },
+  "admin.audit_log.action.custom_emoji_enabled": {
+    "defaultMessage": "Eigenes Emoji aktiviert",
+    "description": "Kind of an audited operation: an administrator enabled a custom emoji, which is shown again."
+  },
+  "admin.audit_log.action.custom_emoji_disabled": {
+    "defaultMessage": "Eigenes Emoji deaktiviert",
+    "description": "Kind of an audited operation: an administrator disabled a custom emoji, which is shown nowhere."
+  },
+  "admin.audit_log.action.custom_emoji_deleted": {
+    "defaultMessage": "Eigenes Emoji gelöscht",
+    "description": "Kind of an audited operation: an administrator deleted a custom emoji of this server."
+  },
+  "admin.audit_log.target_kind.announcement": {
+    "defaultMessage": "Ankündigung",
+    "description": "Kind of target of an audited operation: an announcement, shown by the first line of its text."
+  },
+  "admin.audit_log.target_kind.custom_emoji": {
+    "defaultMessage": "Eigenes Emoji",
+    "description": "Kind of target of an audited operation: a custom emoji, shown as :shortcode:."
+  },
+  "admin.audit_log.action.cost_item_created": {
+    "defaultMessage": "Kosten erfasst",
+    "description": "Kind of an audited operation: an administrator recorded a cost of the instance."
+  },
+  "admin.audit_log.action.cost_item_relabeled": {
+    "defaultMessage": "Kosten geändert",
+    "description": "Kind of an audited operation: an administrator changed the name, provider, category, or memo of a cost."
+  },
+  "admin.audit_log.action.cost_item_price_revised": {
+    "defaultMessage": "Kostenpreis geändert",
+    "description": "Kind of an audited operation: an administrator changed the price of a cost from a date on."
+  },
+  "admin.audit_log.action.cost_item_end_changed": {
+    "defaultMessage": "Kostenende geändert",
+    "description": "Kind of an audited operation: an administrator set or removed the end of a regular cost."
+  },
+  "admin.audit_log.action.cost_item_deleted": {
+    "defaultMessage": "Kosten gelöscht",
+    "description": "Kind of an audited operation: an administrator removed a cost recorded by mistake from every period."
+  },
+  "admin.audit_log.target_kind.cost_item": {
+    "defaultMessage": "Kosten",
+    "description": "Kind of target of an audited operation: a cost of the instance, shown by its name."
+  },
+  "admin.audit_log.action.supporter_program_enabled": {
+    "defaultMessage": "Unterstützerprogramm aktiviert",
+    "description": "Kind of an audited operation: an administrator enabled the supporter program."
+  },
+  "admin.audit_log.action.supporter_program_disabled": {
+    "defaultMessage": "Unterstützerprogramm deaktiviert",
+    "description": "Kind of an audited operation: an administrator disabled the supporter program."
+  },
+  "admin.audit_log.action.supporter_plan_created": {
+    "defaultMessage": "Unterstützungsplan erstellt",
+    "description": "Kind of an audited operation: an administrator created a supporter plan."
+  },
+  "admin.audit_log.action.supporter_plan_revised": {
+    "defaultMessage": "Unterstützungsplan geändert",
+    "description": "Kind of an audited operation: an administrator changed the terms of a supporter plan or its role."
+  },
+  "admin.audit_log.action.supporter_plan_retired": {
+    "defaultMessage": "Unterstützungsplan zurückgezogen",
+    "description": "Kind of an audited operation: an administrator retired a supporter plan."
+  },
+  "admin.audit_log.action.supporter_subscription_ended": {
+    "defaultMessage": "Abo beendet",
+    "description": "Kind of an audited operation: an administrator ended a subscription to a supporter plan at once, without a refund."
+  },
+  "admin.audit_log.target_kind.supporter_program": {
+    "defaultMessage": "Unterstützerprogramm",
+    "description": "Kind of target of an audited operation: the supporter program, shown by its payment provider."
+  },
+  "admin.audit_log.target_kind.supporter_plan": {
+    "defaultMessage": "Unterstützungsplan",
+    "description": "Kind of target of an audited operation: a supporter plan, shown by its name."
+  },
+  "admin.audit_log.target_kind.supporter_subscription": {
+    "defaultMessage": "Abo",
+    "description": "Kind of target of an audited operation: a subscription to a supporter plan, shown by the plan's name and the subscriber's handle."
+  },
+  "admin.audit_log.action.custom_emoji_request_submitted": {
+    "defaultMessage": "Eigenes Emoji beantragt",
+    "description": "Kind of an audited operation: a holder of create_custom_emojis requested a custom emoji or a new image of one they made."
+  },
+  "admin.audit_log.action.custom_emoji_request_withdrawn": {
+    "defaultMessage": "Antrag auf ein eigenes Emoji zurückgezogen",
+    "description": "Kind of an audited operation: the requester withdrew a pending custom emoji request."
+  },
+  "admin.audit_log.action.custom_emoji_request_approved": {
+    "defaultMessage": "Antrag auf ein eigenes Emoji genehmigt",
+    "description": "Kind of an audited operation: an administrator approved a custom emoji request, which made the emoji or gave it the new image."
+  },
+  "admin.audit_log.action.custom_emoji_request_rejected": {
+    "defaultMessage": "Antrag auf ein eigenes Emoji abgelehnt",
+    "description": "Kind of an audited operation: an administrator rejected a custom emoji request."
+  },
+  "admin.audit_log.action.hook_decision_applied": {
+    "defaultMessage": "Automatische Prüfung angewendet",
+    "description": "Heading of an audit log entry: the server acted on the verdict of an external review and left state: a sensitive mark, a filed report, or a sign-up held for approval."
+  },
+  "admin.audit_log.action.hook_decision_overridden": {
+    "defaultMessage": "Automatische Prüfung aufgehoben",
+    "description": "Heading of an audit log entry: a moderator cancelled a decision of an external review."
+  },
+  "admin.audit_log.action.hook_appeal_upheld": {
+    "defaultMessage": "Einspruch gegen einen abgelehnten Beitrag: Ablehnung bestätigt",
+    "description": "Heading of an audit log entry: a moderator upheld a user's appeal of a post that the automated review refused, so the refusal stays."
+  },
+  "admin.audit_log.target_kind.custom_emoji_request": {
+    "defaultMessage": "Antrag auf ein eigenes Emoji",
+    "description": "Kind of target of an audited operation: a request for a custom emoji or a new image of one, shown as the :shortcode: of the emoji."
+  },
+  "admin.audit_log.action.payment_reconcile_queued": {
+    "defaultMessage": "Abgleich mit dem Zahlungsanbieter gestartet",
+    "description": "Kind of an audited operation: an administrator started a reconciliation with the payment provider of the supporter program (Stripe) now, besides the periodic one."
+  },
+  "admin.audit_log.target_kind.payment_provider": {
+    "defaultMessage": "Zahlungsanbieter",
+    "description": "Kind of target of an audited operation: the payment provider of the supporter program, shown by its name (stripe)."
+  },
+  "admin.audit_log.action.oauth_client_disabled": {
+    "defaultMessage": "OAuth-App deaktiviert",
+    "description": "Kind of an audited operation: an administrator disabled an OAuth client, which revoked all its tokens."
+  },
+  "admin.audit_log.action.oauth_client_enabled": {
+    "defaultMessage": "OAuth-App wieder aktiviert",
+    "description": "Kind of an audited operation: an administrator lifted the disablement of an OAuth client."
+  },
+  "admin.audit_log.action.oauth_client_host_denied": {
+    "defaultMessage": "Host einer OAuth-App gesperrt",
+    "description": "Kind of an audited operation: an administrator denied the client metadata documents of a host, which revoked the tokens of its clients."
+  },
+  "admin.audit_log.action.oauth_client_host_allowed": {
+    "defaultMessage": "Host einer OAuth-App zugelassen",
+    "description": "Kind of an audited operation: an administrator lifted the denial of a host of client metadata documents."
+  },
+  "admin.audit_log.action.service_closure_announced": {
+    "defaultMessage": "Einstellung des Dienstes angekündigt",
+    "description": "Kind of an audited operation: an administrator announced the closure of the service or changed its dates."
+  },
+  "admin.audit_log.action.service_closure_withdrawn": {
+    "defaultMessage": "Einstellung des Dienstes zurückgenommen",
+    "description": "Kind of an audited operation: an administrator withdrew the announcement of the closure of the service."
+  },
+  "admin.audit_log.action.service_closure_closed": {
+    "defaultMessage": "Dienst eingestellt",
+    "description": "Kind of an audited operation: an administrator closed the server for good (the closure of the service)."
+  },
+  "admin.audit_log.action.service_closure_delivery_completed": {
+    "defaultMessage": "Zustellung zur Einstellung abgeschlossen",
+    "description": "Kind of an audited operation: the server recorded that the Delete of every local account, sent at the closure of the service, was delivered."
+  },
+  "admin.audit_log.action.voice_room_ended": {
+    "defaultMessage": "Sprachchat-Raum beendet",
+    "description": "Kind of an audited operation: a moderator ended an open voice chat room."
+  },
+  "admin.audit_log.action.login_provider_created": {
+    "defaultMessage": "Anmeldeanbieter hinzugefügt",
+    "description": "Kind of an audited operation: an administrator set up an external login provider."
+  },
+  "admin.audit_log.action.login_provider_updated": {
+    "defaultMessage": "Anmeldeanbieter geändert",
+    "description": "Kind of an audited operation: the settings of an external login provider changed."
+  },
+  "admin.audit_log.action.login_provider_deleted": {
+    "defaultMessage": "Anmeldeanbieter gelöscht",
+    "description": "Kind of an audited operation: an external login provider was deleted."
+  },
+  "admin.audit_log.action.login_provider_enabled": {
+    "defaultMessage": "Anmeldeanbieter aktiviert",
+    "description": "Kind of an audited operation: an external login provider was enabled."
+  },
+  "admin.audit_log.action.login_provider_disabled": {
+    "defaultMessage": "Anmeldeanbieter deaktiviert",
+    "description": "Kind of an audited operation: an external login provider was disabled."
+  },
+  "admin.audit_log.action.login_provider_secret_rotated": {
+    "defaultMessage": "Geheimnis des Anmeldeanbieters ersetzt",
+    "description": "Kind of an audited operation: an external login provider got a new client secret."
+  },
+  "admin.audit_log.target_kind.oauth_client": {
+    "defaultMessage": "OAuth-App",
+    "description": "Kind of target of an audited operation: an OAuth client, shown by its name and client_id."
+  },
+  "admin.audit_log.target_kind.oauth_client_host": {
+    "defaultMessage": "Host einer OAuth-App",
+    "description": "Kind of target of an audited operation: a host whose client metadata documents were denied, shown by the host name."
+  },
+  "admin.audit_log.target_kind.instance": {
+    "defaultMessage": "Server",
+    "description": "Kind of target of an audited operation: the instance itself, for the closure of the service, shown as service_closure."
+  },
+  "admin.audit_log.target_kind.voice_room": {
+    "defaultMessage": "Sprachchat-Raum",
+    "description": "Kind of target of an audited operation: a voice chat room, shown by its ID."
+  },
+  "admin.audit_log.action.link_card_domain_fetch_stopped": {
+    "defaultMessage": "Abruf von Linkvorschauen gestoppt",
+    "description": "Kind of an audited operation: an administrator set a rule by which the link card crawler fetches nothing from a domain."
+  },
+  "admin.audit_log.action.link_card_domain_images_stopped": {
+    "defaultMessage": "Bilder von Linkvorschauen gestoppt",
+    "description": "Kind of an audited operation: an administrator set a rule by which the link card crawler fetches no images from a domain."
+  },
+  "admin.audit_log.action.instance_marked_available": {
+    "defaultMessage": "Server als erreichbar markiert",
+    "description": "Kind of an audited operation: an operator cleared the delivery failures of a remote server, so that deliveries to it resume."
+  },
+  "admin.audit_log.action.link_card_domain_rule_removed": {
+    "defaultMessage": "Regel für Linkvorschauen entfernt",
+    "description": "Kind of an audited operation: an administrator removed the rule of the link card crawler on a domain."
+  },
+  "admin.audit_log.target_kind.hook_decision": {
+    "defaultMessage": "Automatische Prüfung",
+    "description": "Filter of the audit log, and the kind of what an entry acted on: a decision of an external review of submissions."
+  },
+  "admin.audit_log.target_kind.link_card_domain": {
+    "defaultMessage": "Domain für Linkvorschauen",
+    "description": "Kind of target of an audited operation: a domain with a rule of the link card crawler."
+  },
+  "admin.audit_log.target_kind.login_provider": {
+    "defaultMessage": "Anmeldeanbieter",
+    "description": "Kind of target of an audited operation: an external identity provider that users sign in with, shown by its display name."
+  }
+}

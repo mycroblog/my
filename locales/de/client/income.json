@@ -1,0 +1,82 @@
+{
+  "income.title": {
+    "defaultMessage": "Einnahmen",
+    "description": "Heading of the section of the income from the supporter plans on the finances page, the public page of the running costs, and the costs screen."
+  },
+  "income.public.no_balance": {
+    "defaultMessage": "Die Bilanz wird nicht veröffentlicht, da dieser Server seine Kosten nicht veröffentlicht.",
+    "description": "Note in the income section of the public page of the running costs when the server publishes its income but not its costs, so the balance is not published."
+  },
+  "income.loading": {
+    "defaultMessage": "Einnahmen werden geladen",
+    "description": "Accessible name of the progress indicator while the income totals load."
+  },
+  "income.failed": {
+    "defaultMessage": "Die Einnahmen konnten nicht geladen werden",
+    "description": "Heading shown in place of the income totals when they could not be loaded."
+  },
+  "income.retry": {
+    "defaultMessage": "Erneut versuchen",
+    "description": "Button that tries again to load the income totals after a failure."
+  },
+  "income.totals.caption": {
+    "defaultMessage": "Einnahmen nach {granularity}, {basis}",
+    "description": "Accessible caption of the table of the income totals: the chosen period kind and the way payments are counted."
+  },
+  "income.totals.gross": {
+    "defaultMessage": "Brutto",
+    "description": "Column header and term of what the supporters paid before the payment provider's fees, on the costs screen only."
+  },
+  "income.totals.fee": {
+    "defaultMessage": "Gebühren",
+    "description": "Column header and term of the payment provider's fees, on the costs screen only."
+  },
+  "income.totals.net": {
+    "defaultMessage": "Einnahmen nach Gebühren",
+    "description": "Column header and term of the income after the payment provider's fees and the refunds."
+  },
+  "income.totals.balance": {
+    "defaultMessage": "Bilanz",
+    "description": "Column header of the balance: the income less the costs of the same period and currency."
+  },
+  "income.plans.title": {
+    "defaultMessage": "Mitglieder jedes Plans",
+    "description": "Heading of the number of members of each supporter plan now, next to the income totals."
+  },
+  "income.plans.description": {
+    "defaultMessage": "Die derzeitigen Mitglieder, nicht je Zeitraum. Die Beträge jedes Plans werden nicht angezeigt.",
+    "description": "Explanation of the number of members of each supporter plan next to the income totals."
+  },
+  "income.plans.empty": {
+    "defaultMessage": "Kein Plan hat Mitglieder.",
+    "description": "What the list of the members of each plan says when no plan has members."
+  },
+  "income.plans.members": {
+    "defaultMessage": "{count, plural, one {# Mitglied} other {# Mitglieder}}",
+    "description": "The number of members of a supporter plan now."
+  },
+  "income.rules.title": {
+    "defaultMessage": "Wie die Einnahmen gezählt werden",
+    "description": "Heading of the rules that date and place the payments in the income totals."
+  },
+  "income.rules.net": {
+    "defaultMessage": "Die Einnahmen sind das, was die Unterstützer gezahlt haben, abzüglich der Gebühren des Zahlungsanbieters. Eine Rückerstattung oder Rückbuchung wird in dem Zeitraum abgezogen, in dem sie stattfindet.",
+    "description": "Rule of the income totals: what the income is."
+  },
+  "income.rules.provider": {
+    "defaultMessage": "{provider} datiert seine Zahlungen in der Zeitzone {timeZone}.",
+    "description": "Rule of the income totals: the time zone in which a payment provider (such as stripe) dates its money movements (UTC, Asia/Tokyo)."
+  },
+  "income.rules.amortized": {
+    "defaultMessage": "Eine Zahlung für mehr als {days} Tage, etwa ein Jahresplan, wird tageweise auf die Tage verteilt, für die sie gilt. Ihre Rückerstattung zieht die Tage davor am Tag der Rückerstattung ab und storniert die Tage danach. Andere Zahlungen zählen an ihrem Datum.",
+    "description": "Rule of the spread income totals. {days} is the number of days a payment must cover to be spread, such as 31."
+  },
+  "income.rules.cash": {
+    "defaultMessage": "Jede Zahlung, Rückerstattung und Gebühr zählt an ihrem Datum.",
+    "description": "Rule of the income totals on the payment date."
+  },
+  "income.rules.balance": {
+    "defaultMessage": "Die Bilanz sind die Einnahmen abzüglich der Kosten jeder Währung, beide auf dieselbe Weise gezählt. Währungen werden nie umgerechnet.",
+    "description": "Rule of the income totals: what the balance is."
+  }
+}

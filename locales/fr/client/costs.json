@@ -1,0 +1,238 @@
+{
+  "costs.basis": {
+    "defaultMessage": "Mode de comptage des paiements",
+    "description": "Label of the choice between spreading long payments over the days they cover and counting each payment on its date, on the costs screen and the public costs page."
+  },
+  "costs.basis.amortized": {
+    "defaultMessage": "Étalé sur la période payée",
+    "description": "Choice of counting a payment for more than a month (a yearly domain) by day over the days it pays for, on the costs screen and the public costs page. The default."
+  },
+  "costs.basis.amortized.description": {
+    "defaultMessage": "Montre ce que coûte un mois ou une semaine : un paiement annuel est compté jour par jour jusqu’au suivant.",
+    "description": "Explanation of the spread choice on the costs screen and the public costs page."
+  },
+  "costs.basis.cash": {
+    "defaultMessage": "À la date de paiement",
+    "description": "Choice of counting each payment on the date it is paid, on the costs screen and the public costs page."
+  },
+  "costs.basis.cash.description": {
+    "defaultMessage": "Montre ce qui a été payé et quand : comparez-le à vos relevés.",
+    "description": "Explanation of the payment-date choice on the costs screen and the public costs page."
+  },
+  "costs.granularity": {
+    "defaultMessage": "Période",
+    "description": "Accessible name of the tabs that choose weeks, months, or years for the totals on the costs screen and the public costs page."
+  },
+  "costs.granularity.week": {
+    "defaultMessage": "Semaines",
+    "description": "Tab of the totals by ISO week on the costs screen and the public costs page."
+  },
+  "costs.granularity.month": {
+    "defaultMessage": "Mois",
+    "description": "Tab of the totals by calendar month on the costs screen and the public costs page."
+  },
+  "costs.granularity.year": {
+    "defaultMessage": "Années",
+    "description": "Tab of the totals by calendar year on the costs screen and the public costs page."
+  },
+  "costs.totals.caption": {
+    "defaultMessage": "Totaux par {granularity}, {basis}",
+    "description": "Accessible caption of the table of totals on the costs screen and the public costs page: the chosen period kind and the way payments are counted."
+  },
+  "costs.totals.period": {
+    "defaultMessage": "Période",
+    "description": "Column header of the period in the table of totals on the costs screen and the public costs page."
+  },
+  "costs.totals.total": {
+    "defaultMessage": "Total",
+    "description": "Column header of the total in the table of totals on the costs screen and the public costs page."
+  },
+  "costs.totals.none": {
+    "defaultMessage": "Rien",
+    "description": "Total of a period without any cost on the costs screen and the public costs page."
+  },
+  "costs.totals.plus": {
+    "defaultMessage": "{sum} + {amount}",
+    "description": "Totals in different currencies, which are never converted, put together on the costs screen and the public costs page: an amount added to the amounts before it."
+  },
+  "costs.totals.estimated": {
+    "defaultMessage": "Inclut des estimations",
+    "description": "Badge of a period whose total includes imported charges that the cloud provider has not closed yet and may still change, on the costs screen and the public costs page."
+  },
+  "costs.period.week": {
+    "defaultMessage": "{range} ({week})",
+    "description": "A week of the totals on the costs screen and the public costs page: its dates and its ISO week number such as 2026-W17."
+  },
+  "costs.breakdown.title": {
+    "defaultMessage": "Détail de {period}",
+    "description": "Heading of the breakdown of the current period by provider and category on the costs screen and the public costs page."
+  },
+  "costs.breakdown.empty": {
+    "defaultMessage": "Aucun coût sur cette période.",
+    "description": "What the breakdown says for a period without costs on the costs screen and the public costs page."
+  },
+  "costs.items.title": {
+    "defaultMessage": "Postes de {period}",
+    "description": "Heading of the list of the cost items and imported services of the current period on the finances page. {period} is the period's name, such as October 2026."
+  },
+  "costs.items.empty": {
+    "defaultMessage": "Aucun poste n’a de coût sur cette période.",
+    "description": "What the list of the items of the current period says when no item has a cost in it."
+  },
+  "costs.rules.title": {
+    "defaultMessage": "Comment les périodes sont comptées",
+    "description": "Heading of the rules that cut the periods of the totals on the costs screen and the public costs page."
+  },
+  "costs.rules.dates": {
+    "defaultMessage": "Les coûts sont datés au jour calendaire, comme sur le relevé, sans fuseau horaire : les totaux sont les mêmes pour tout le monde.",
+    "description": "Rule of the totals on the costs screen and the public costs page: dates without time zones."
+  },
+  "costs.rules.week_start": {
+    "defaultMessage": "Les semaines vont du lundi au dimanche (ISO 8601). Une semaine à cheval sur le nouvel an est répartie entre les deux années.",
+    "description": "Rule of the totals on the costs screen and the public costs page: the first day of a week."
+  },
+  "costs.rules.amortized": {
+    "defaultMessage": "Un paiement couvrant plus d’un mois est étalé jour par jour de sa date jusqu’à la veille du paiement suivant, avec un arrondi pour que les jours totalisent le montant payé. Les autres paiements comptent à leur date.",
+    "description": "Rule of the spread totals on the costs screen and the public costs page."
+  },
+  "costs.rules.cash": {
+    "defaultMessage": "Chaque paiement compte à sa date de paiement.",
+    "description": "Rule of the payment-date totals on the costs screen and the public costs page."
+  },
+  "costs.rules.currencies": {
+    "defaultMessage": "Chaque devise est totalisée séparément et jamais convertie.",
+    "description": "Rule of the totals on the costs screen and the public costs page: currencies."
+  },
+  "costs.rules.source": {
+    "defaultMessage": "{provider} facture par mois dans le fuseau horaire {timeZone} ; ses frais sont étalés jour par jour sur chaque mois de facturation.",
+    "description": "Rule of the totals on the costs screen and the public costs page: the time zone of an imported cloud provider's billing months (UTC, America/Los_Angeles)."
+  },
+  "costs.rules.estimated": {
+    "defaultMessage": "Un mois que son fournisseur n’a pas clôturé est une estimation et peut encore changer.",
+    "description": "Rule of the totals on the costs screen and the public costs page: estimates of imported charges."
+  },
+  "costs.public.title": {
+    "defaultMessage": "Coûts de fonctionnement de {instance}",
+    "description": "Heading and document title of the public page of the server's running costs. {instance} is the name of this server."
+  },
+  "costs.public.description": {
+    "defaultMessage": "Ce que coûte le fonctionnement de ce serveur et ce que lui apportent ses soutiens, dans la mesure où il les publie. Les montants en devises différentes sont totalisés séparément et jamais convertis. Les paiements de chaque personne ne sont pas affichés.",
+    "description": "Introduction of the public page of the server's running costs and income."
+  },
+  "costs.public.totals_only": {
+    "defaultMessage": "Ce serveur publie uniquement les totaux, pas leur utilisation.",
+    "description": "Note on the public page of the running costs when the server publishes the totals without their breakdown."
+  },
+  "costs.public.hidden": {
+    "defaultMessage": "Ce serveur ne publie ni ses coûts de fonctionnement ni ses revenus.",
+    "description": "What the public page of the running costs says when the server publishes neither its costs nor its income."
+  },
+  "costs.public.costs": {
+    "defaultMessage": "Coûts",
+    "description": "Heading of the section of the costs on the public page of the running costs."
+  },
+  "costs.public.about": {
+    "defaultMessage": "À propos de ce serveur",
+    "description": "Link from the public page of the running costs, when the server publishes nothing, back to the server's information page."
+  },
+  "costs.public.loading": {
+    "defaultMessage": "Chargement des coûts de fonctionnement",
+    "description": "Accessible name of the progress indicator while the totals of the running costs load on their public page."
+  },
+  "costs.public.failed": {
+    "defaultMessage": "Impossible de charger les coûts de fonctionnement",
+    "description": "Heading shown in place of the totals of the running costs when they could not be loaded."
+  },
+  "costs.public.retry": {
+    "defaultMessage": "Réessayer",
+    "description": "Button that tries again to load the totals of the running costs after a failure."
+  },
+  "costs.category": {
+    "defaultMessage": "Catégorie",
+    "description": "Label of the category of a cost on the costs screen and the public costs page."
+  },
+  "costs.category.compute": {
+    "defaultMessage": "Serveurs",
+    "description": "Category of a cost: compute, the servers or functions that run the instance."
+  },
+  "costs.category.database": {
+    "defaultMessage": "Base de données",
+    "description": "Category of a cost: the database."
+  },
+  "costs.category.storage": {
+    "defaultMessage": "Stockage",
+    "description": "Category of a cost: storage of media and backups."
+  },
+  "costs.category.network": {
+    "defaultMessage": "Réseau",
+    "description": "Category of a cost: network, CDN, and data transfer."
+  },
+  "costs.category.domain": {
+    "defaultMessage": "Domaine",
+    "description": "Category of a cost: domain registration and renewal."
+  },
+  "costs.category.email": {
+    "defaultMessage": "E-mail",
+    "description": "Category of a cost: sending email."
+  },
+  "costs.category.software": {
+    "defaultMessage": "Logiciels",
+    "description": "Category of a cost: software and services."
+  },
+  "costs.category.other": {
+    "defaultMessage": "Autre",
+    "description": "Category of a cost: anything else, and taxes."
+  },
+  "costs.overview.label": {
+    "defaultMessage": "{period} en un coup d’œil",
+    "description": "Accessible name of the tiles of the current period's costs, income and balance. period is the name of the period, such as October 2026."
+  },
+  "costs.overview.costs": {
+    "defaultMessage": "{granularity, select, week {Coûts de la semaine} year {Coûts de l’année} other {Coûts du mois}}",
+    "description": "Name of the tile of the costs of the current period."
+  },
+  "costs.overview.income": {
+    "defaultMessage": "{granularity, select, week {Revenus de la semaine} year {Revenus de l’année} other {Revenus du mois}}",
+    "description": "Name of the tile of the income after fees of the current period."
+  },
+  "costs.overview.balance": {
+    "defaultMessage": "{granularity, select, week {Solde de la semaine} year {Solde de l’année} other {Solde du mois}}",
+    "description": "Name of the tile of the income less the costs of the current period."
+  },
+  "costs.overview.balance.short": {
+    "defaultMessage": "Non couvert",
+    "description": "Word beside a warning icon on the balance tile when the income does not cover the costs of the period."
+  },
+  "costs.overview.since": {
+    "defaultMessage": "{granularity, select, week {par rapport à la semaine dernière} year {par rapport à l’an dernier} other {par rapport au mois dernier}}",
+    "description": "After the change of a tile of the costs: the period it is measured against."
+  },
+  "costs.chart.title": {
+    "defaultMessage": "{shown, select, costs {Coûts} income {Revenus} other {Coûts et revenus}} par {granularity, select, week {semaine} year {année} other {mois}}",
+    "description": "Title of the bar chart of the costs and the income of each period. shown is costs, income, or both."
+  },
+  "costs.chart.summary.both": {
+    "defaultMessage": "{period} : coûts {costs}, revenus {income}. Les coûts ont été les plus élevés en {peakPeriod} ({peak}).",
+    "description": "Summary under the chart of the costs and the income: the current period's costs and income, and the period with the highest costs. Amounts are formatted."
+  },
+  "costs.chart.summary.costs": {
+    "defaultMessage": "{period} : coûts {costs}. Les coûts ont été les plus élevés en {peakPeriod} ({peak}).",
+    "description": "Summary under the chart of the costs alone: the current period's costs and the period with the highest costs."
+  },
+  "costs.chart.summary.income": {
+    "defaultMessage": "{period} : revenus {income}.",
+    "description": "Summary under the chart of the income alone: the current period's income after fees."
+  },
+  "costs.chart.estimated_period": {
+    "defaultMessage": "{period} (estimation)",
+    "description": "A period under the axis and in the table of the costs chart whose costs include estimates."
+  },
+  "costs.chart.empty": {
+    "defaultMessage": "Aucune période à afficher.",
+    "description": "Shown instead of the costs chart when it has no period."
+  },
+  "costs.breakdown.other": {
+    "defaultMessage": "Autre",
+    "description": "The part of the breakdown of a period's costs that adds up the providers after the three largest."
+  }
+}

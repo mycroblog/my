@@ -180,7 +180,7 @@ func TestSignUpTakesTheBrowserLocale(t *testing.T) {
 	tests := []struct{ username, acceptLanguage, want string }{
 		{"alice", "ja-JP,ja;q=0.9,en;q=0.8", "ja"},
 		{"bob", "en-US,en;q=0.9", "en"},
-		{"carol", "fr-FR,de;q=0.5", "ja"},
+		{"carol", "it-IT,nl;q=0.5", "ja"},
 		{"dave", "", "ja"},
 	}
 	for _, tt := range tests {

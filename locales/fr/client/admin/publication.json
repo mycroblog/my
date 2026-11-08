@@ -1,0 +1,18 @@
+{
+  "admin.publication.save": {
+    "defaultMessage": "Enregistrer les paramètres de publication",
+    "description": "Button that saves the publication settings on the costs screen."
+  },
+  "admin.publication.save_failed": {
+    "defaultMessage": "Impossible d’enregistrer les paramètres de publication : {reason}",
+    "description": "Shown beside the save button when the publication settings could not be saved; reason is the server's localized reason."
+  },
+  "admin.publication.saved": {
+    "defaultMessage": "Paramètres de publication enregistrés.",
+    "description": "Shown beside the save button after the publication settings are saved."
+  },
+  "admin.publication.unchanged": {
+    "defaultMessage": "Aucun changement.",
+    "description": "Shown beside the save button of the publication settings when nothing was changed."
+  }
+}

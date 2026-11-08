@@ -23,11 +23,17 @@ describe("createTranslator", () => {
     expect(createTranslator(catalogs, "pt-BR")("server:config.errors", { count: 1234 })).toBe(
       "Foram encontrados 1.234 erros de configuração.",
     );
+    expect(createTranslator(catalogs, "de")("server:config.errors", { count: 1234 })).toBe(
+      "1.234 Konfigurationsfehler gefunden.",
+    );
+    expect(createTranslator(catalogs, "fr")("server:config.errors", { count: 1234 })).toBe(
+      "1\u202f234 erreurs de configuration détectées.",
+    );
   });
 
   test("falls back along the locale chain to en", () => {
     expect(createTranslator(catalogs, "ja-JP")("server:errors.not_found")).toBe("指定されたリソースが見つかりません。");
-    expect(createTranslator(catalogs, "fr")("server:config.missing", { name: "MY_DATABASE" })).toBe(
+    expect(createTranslator(catalogs, "it")("server:config.missing", { name: "MY_DATABASE" })).toBe(
       "The required setting MY_DATABASE is not set.",
     );
   });
