@@ -19,7 +19,6 @@ import (
 
 	appaccount "github.com/mycroblog/my/internal/app/account"
 	"github.com/mycroblog/my/internal/app/uow"
-	"github.com/mycroblog/my/internal/domain/account"
 )
 
 // keyAccounts stores one fetched remote actor and its first key. The methods ResolvePublicKey
@@ -30,8 +29,8 @@ type keyAccounts struct {
 	delay time.Duration
 
 	mu    sync.Mutex
-	actor *account.Account
-	key   *account.Key
+	actor *appaccount.Account
+	key   *appaccount.Key
 }
 
 func (a *keyAccounts) CurrentKey(ctx context.Context, keyID string) (appaccount.Key, error) {
@@ -65,9 +64,9 @@ func (a *keyAccounts) UpsertRemoteActor(ctx context.Context, _ uow.Tx, in appacc
 	}
 	a.mu.Lock()
 	defer a.mu.Unlock()
-	a.actor = &account.Account{ID: "remote-1", URI: in.URI, Domain: in.Domain}
-	a.key = &account.Key{
-		AccountID: a.actor.ID, KeyID: in.Keys[0].KeyID, Algorithm: account.KeyRSASHA256,
+	a.actor = &appaccount.Account{ID: "remote-1", URI: in.URI, Domain: in.Domain}
+	a.key = &appaccount.Key{
+		AccountID: a.actor.ID, KeyID: in.Keys[0].KeyID,
 		PublicKeyPEM: string(pem.EncodeToMemory(&pem.Block{Type: "PUBLIC KEY", Bytes: der})),
 	}
 	return *a.actor, nil
@@ -82,7 +81,7 @@ func (a *keyAccounts) FindByID(ctx context.Context, id string) (appaccount.Actor
 	if a.actor == nil || a.actor.ID != id {
 		return appaccount.Actor{}, appaccount.ErrNotFound
 	}
-	return appaccount.Actor{Account: *a.actor, Keys: []account.Key{*a.key}}, nil
+	return appaccount.Actor{Account: *a.actor, Keys: []appaccount.Key{*a.key}}, nil
 }
 
 func (a *keyAccounts) RecordRemoteFetchFailure(context.Context, string) error { return nil }
