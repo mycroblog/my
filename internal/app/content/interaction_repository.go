@@ -136,6 +136,11 @@ type InteractionRepository interface {
 	FindReactionByURI(ctx context.Context, uri string) (content.Reaction, error)
 	// ListAccountStatusReactions returns the reactions of an account to a status, oldest first.
 	ListAccountStatusReactions(ctx context.Context, accountID, statusID string) ([]content.Reaction, error)
+	// FindAccountInteractions returns what accountID did with each of statusIDs, by status ID: its
+	// favourite, boost edge, bookmark, pin, and reactions, as FindFavourite, FindBoostEdge,
+	// FindBookmark, FindPin, and ListAccountStatusReactions return them of one status, with one
+	// query per kind whatever the number of statuses.
+	FindAccountInteractions(ctx context.Context, accountID string, statusIDs []string) (AccountInteractions, error)
 	// ListStatusReactions returns the reactions to a status newest first, only those with the
 	// emoji whose key is emojiKey unless it is "": those with an ID below before ("" starts at
 	// the newest), at most limit of them.
@@ -143,11 +148,17 @@ type InteractionRepository interface {
 	// ListReactionCounts returns the counts of the reactions to a status, the largest first
 	// (ties by key), at most limit of them.
 	ListReactionCounts(ctx context.Context, statusID string, limit int) ([]content.ReactionCount, error)
+	// ListReactionCountsOf returns the reaction counts of each of statusIDs that has some, by
+	// status ID, as ListReactionCounts returns those of one, with one query.
+	ListReactionCountsOf(ctx context.Context, statusIDs []string, limit int) (map[string][]content.ReactionCount, error)
 	// ListAllReactionCounts returns status_reaction_counts ordered by status and key, for
 	// verifying it.
 	ListAllReactionCounts(ctx context.Context) ([]content.ReactionCount, error)
 
 	FindBoost(ctx context.Context, id string) (content.Boost, error)
+	// FindBoosts returns the boosts of ids that exist, by ID, as FindBoost returns one, with one
+	// query.
+	FindBoosts(ctx context.Context, ids []string) (map[string]content.Boost, error)
 	FindBoostByURI(ctx context.Context, uri string) (content.Boost, error)
 	FindBoostRetraction(ctx context.Context, boostID string) (content.BoostRetraction, error)
 	// FindBoostRetractionTx is FindBoostRetraction inside tx.
@@ -163,4 +174,14 @@ type InteractionRepository interface {
 	ListFavourites(ctx context.Context, accountID, before string, limit int) ([]content.Favourite, error)
 	ListBookmarks(ctx context.Context, accountID, before string, limit int) ([]content.Bookmark, error)
 	ListPins(ctx context.Context, accountID string) ([]content.Pin, error)
+}
+
+// AccountInteractions are what one account did with many statuses, by status ID
+// (InteractionRepository.FindAccountInteractions).
+type AccountInteractions struct {
+	Favourites map[string]content.Favourite
+	BoostEdges map[string]content.BoostEdge
+	Bookmarks  map[string]content.Bookmark
+	Pins       map[string]content.Pin
+	Reactions  map[string][]content.Reaction
 }

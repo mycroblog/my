@@ -308,6 +308,11 @@ type StatusHead struct {
 	LastRevisedAt int64
 }
 
+type StatusLinkCard struct {
+	StatusID string
+	Url      string
+}
+
 type StatusMentionIndex struct {
 	AccountID string
 	StatusID  string

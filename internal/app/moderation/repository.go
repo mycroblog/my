@@ -87,6 +87,11 @@ type Repository interface {
 	// DomainRestrictionsInEffect returns the distinct restrictions in effect at now of any of
 	// the domains, in restriction order.
 	DomainRestrictionsInEffect(ctx context.Context, domains []string, now time.Time) ([]moderation.Restriction, error)
+	// AccountRestrictionsInEffectOf and DomainRestrictionsInEffectOf return those restrictions of
+	// many accounts and of many domains, by account and by domain (one domain at a time, not any of
+	// them), each in restriction order, with one query whatever their number.
+	AccountRestrictionsInEffectOf(ctx context.Context, accountIDs []string, now time.Time) (map[string][]moderation.Restriction, error)
+	DomainRestrictionsInEffectOf(ctx context.Context, domains []string, now time.Time) (map[string][]moderation.Restriction, error)
 	// FindReport returns a report with its statuses.
 	FindReport(ctx context.Context, id string) (moderation.Report, error)
 	// FindReportByURI returns the report of a received Flag with its statuses.

@@ -74,6 +74,9 @@ func linkCardStatusURLs(t *testing.T, h LinkCardHarness) {
 	if u, err := h.Cards.StatusLinkCardURL(ctx, testkit.NamedID("s1")); err != nil || u != "https://b.example/" {
 		t.Errorf("StatusLinkCardURL = %q, %v, want the replaced URL", u, err)
 	}
+	if got, err := h.Cards.StatusLinkCardURLs(ctx, []string{testkit.NamedID("s1"), testkit.NamedID("none")}); err != nil || len(got) != 1 || got[testkit.NamedID("s1")] != "https://b.example/" {
+		t.Errorf("StatusLinkCardURLs = %v, %v; want the URL of s1 alone, as StatusLinkCardURL", got, err)
+	}
 	linkCardTx(t, h, func(ctx context.Context, tx uow.Tx) error {
 		if err := h.Cards.DeleteStatusLinkCard(ctx, tx, testkit.NamedID("s1")); err != nil {
 			return err
@@ -110,6 +113,9 @@ func linkCardUpserts(t *testing.T, h LinkCardHarness) {
 	if got, err := h.Cards.FindLinkCard(ctx, full.URL); err != nil || !reflect.DeepEqual(got, full) {
 		t.Errorf("FindLinkCard = %+v, %v\nwant %+v", got, err, full)
 	}
+	if got, err := h.Cards.FindLinkCards(ctx, []string{full.URL, "https://none.example/"}); err != nil || len(got) != 1 || !reflect.DeepEqual(got[full.URL], full) {
+		t.Errorf("FindLinkCards = %+v, %v; want the card alone, as FindLinkCard", got, err)
+	}
 	bare := content.LinkCard{URL: full.URL, CardURL: full.URL, Title: "New", SiteName: "news.example", FetchedAt: at.Add(time.Hour)}
 	linkCardTx(t, h, func(ctx context.Context, tx uow.Tx) error { return h.Cards.UpsertLinkCard(ctx, tx, bare) })
 	if got, err := h.Cards.FindLinkCard(ctx, full.URL); err != nil || !reflect.DeepEqual(got, bare) {
@@ -143,6 +149,9 @@ func linkCardImages(t *testing.T, h LinkCardHarness) {
 	})
 	if got, err := h.Cards.FindLinkCardMedia(ctx, m.MediaID); err != nil || got != m {
 		t.Errorf("FindLinkCardMedia = %+v, %v", got, err)
+	}
+	if got, err := h.Cards.FindLinkCardMedias(ctx, []string{m.MediaID, testkit.NamedID("none")}); err != nil || len(got) != 1 || got[m.MediaID] != m {
+		t.Errorf("FindLinkCardMedias = %+v, %v; want the media alone, as FindLinkCardMedia", got, err)
 	}
 	f, err := h.Media.FindMediaFile(ctx, m.MediaID)
 	if err != nil || f.Origin != content.MediaOriginRemote || f.OwnerAccountID != "" || !f.CreatedAt.Equal(at) {

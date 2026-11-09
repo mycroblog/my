@@ -296,6 +296,13 @@ func moderationLocalAccountActions(t *testing.T, e *moderationEnv) {
 		if err != nil || got != content {
 			t.Errorf("%s: content restrictions = %+v, %v; want %+v", when, got, err, content)
 		}
+		if b, ok := e.accounts.Content().(interface {
+			RestrictionsOf(ctx context.Context, ids []string) (map[string]appcontent.Restrictions, error)
+		}); !ok {
+			t.Error("the content policy cannot read many accounts' restrictions at once")
+		} else if all, err := b.RestrictionsOf(ctx, []string{e.local}); err != nil || all[e.local] != content {
+			t.Errorf("%s: content restrictions of many = %+v, %v; want %+v as of one", when, all, err, content)
+		}
 	}
 	issue := func(kind moderation.ActionKind, d time.Duration) moderation.Action {
 		t.Helper()

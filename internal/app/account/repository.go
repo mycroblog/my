@@ -112,6 +112,9 @@ type Repository interface {
 	// query per part whatever the number of ids. An ID without an account, or without a part,
 	// has no entry in that part's map.
 	FindActorParts(ctx context.Context, ids []string) (ActorParts, error)
+	// FindAccounts returns the accounts of ids that exist, by ID, as FindAccount returns one, with
+	// one query.
+	FindAccounts(ctx context.Context, ids []string) (map[string]account.Account, error)
 	// AccountsOnDomain returns inside tx, in ID order, the accounts among ids that are on domain
 	// or one of its subdomains.
 	AccountsOnDomain(ctx context.Context, tx uow.Tx, domain string, ids []string) ([]string, error)

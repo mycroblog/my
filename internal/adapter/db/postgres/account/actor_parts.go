@@ -122,3 +122,19 @@ func (r *Repository) currentProfiles(ctx context.Context, q *accountgen.Queries,
 	}
 	return nil
 }
+
+// FindAccounts implements account.Repository.
+func (r *Repository) FindAccounts(ctx context.Context, ids []string) (map[string]account.Account, error) {
+	out := map[string]account.Account{}
+	if len(ids) == 0 {
+		return out, nil
+	}
+	rows, err := r.db.reader().ListAccountsByIDs(ctx, ids)
+	if err != nil {
+		return nil, postgres.Wrap(err, "list accounts")
+	}
+	for _, row := range rows {
+		out[row.ID] = accountFrom(row)
+	}
+	return out, nil
+}

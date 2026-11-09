@@ -169,9 +169,17 @@ func postingRepoSensitivity(t *testing.T, r *postingRepo) {
 	action1, action2, decision := r.IDs.NewID(), r.IDs.NewID(), r.IDs.NewID()
 	overridden := func(want map[string]bool) {
 		t.Helper()
+		ids := make([]string, 0, len(want))
 		for id, w := range want {
 			if got, err := r.H.Statuses.SensitivityOverridden(ctx, id); err != nil || got != w {
 				t.Errorf("SensitivityOverridden(%s) = %t, %v; want %t", id, got, err, w)
+			}
+			ids = append(ids, id)
+		}
+		all, err := r.H.Statuses.SensitivitiesOverridden(ctx, ids)
+		for id, w := range want {
+			if err != nil || all[id] != w {
+				t.Errorf("SensitivitiesOverridden[%s] = %t, %v; want %t as SensitivityOverridden", id, all[id], err, w)
 			}
 		}
 	}

@@ -69,6 +69,12 @@ type LinkCardRepository interface {
 	DeleteStatusLinkCard(ctx context.Context, tx uow.Tx, statusID string) error
 	// StatusLinkCardURL returns the URL whose card a status shows.
 	StatusLinkCardURL(ctx context.Context, statusID string) (string, error)
+	// StatusLinkCardURLs, FindLinkCards, and FindLinkCardMedias return those of many statuses, URLs,
+	// and media at once, by status ID, URL, and media ID, as the reads of one return them, with
+	// one query each.
+	StatusLinkCardURLs(ctx context.Context, statusIDs []string) (map[string]string, error)
+	FindLinkCards(ctx context.Context, urls []string) (map[string]content.LinkCard, error)
+	FindLinkCardMedias(ctx context.Context, mediaIDs []string) (map[string]content.LinkCardMedia, error)
 	// FindLinkCard returns the card of a normalized URL.
 	FindLinkCard(ctx context.Context, url string) (content.LinkCard, error)
 	// FindLinkCardTx reads as FindLinkCard does, in tx.

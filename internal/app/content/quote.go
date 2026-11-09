@@ -48,6 +48,12 @@ type QuoteRepository interface {
 	InsertQuote(ctx context.Context, tx uow.Tx, q content.Quote) (bool, error)
 	// FindQuote returns the quote of a status, ErrNotFound when it quotes nothing.
 	FindQuote(ctx context.Context, statusID string) (content.Quote, error)
+	// FindQuotes, FindQuoteStates, and FindQuotePolicies return the quotes, their states, and
+	// the quote policies of the statuses of statusIDs that have them, by status ID, as FindQuote,
+	// FindQuoteState, and FindQuotePolicy return those of one, with one query each.
+	FindQuotes(ctx context.Context, statusIDs []string) (map[string]content.Quote, error)
+	FindQuoteStates(ctx context.Context, statusIDs []string) (map[string]content.QuoteState, error)
+	FindQuotePolicies(ctx context.Context, statusIDs []string) (map[string]content.StatusQuotePolicy, error)
 	// FindQuoteTx reads as FindQuote does, in tx.
 	FindQuoteTx(ctx context.Context, tx uow.Tx, statusID string) (content.Quote, error)
 	// ListQuotesAfter returns up to limit quotes whose status ID is above after ("" for the
