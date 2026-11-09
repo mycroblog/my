@@ -1,6 +1,6 @@
 # ADR-0161: イベント（ローカルの利用者の集まりの予定・日程の調整・場所・出欠・リマインダー・通話のルーム）
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-11-09
 - Deciders: @rosylilly
 - Issue: #2599, #2600
