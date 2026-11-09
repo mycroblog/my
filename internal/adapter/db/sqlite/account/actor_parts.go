@@ -209,3 +209,23 @@ func (r *Repository) FindLifecycleStates(ctx context.Context, ids []string) (map
 	}
 	return out, nil
 }
+
+// FindAccountsByURIs implements account.Repository.
+func (r *Repository) FindAccountsByURIs(ctx context.Context, uris []string) (map[string]account.Account, error) {
+	out := map[string]account.Account{}
+	if len(uris) == 0 {
+		return out, nil
+	}
+	list, err := sqlite.JSONList(uris)
+	if err != nil {
+		return nil, err
+	}
+	rows, err := r.db.reader().ListAccountsByURIs(ctx, list)
+	if err != nil {
+		return nil, sqlite.Wrap(err, "list accounts by URI")
+	}
+	for _, row := range rows {
+		out[row.Uri] = accountFrom(row)
+	}
+	return out, nil
+}
