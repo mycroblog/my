@@ -619,7 +619,7 @@ ADR-0005 の方針（既定はキャッシュしない）に従います。
 
 ## 10. コレクションとオブジェクトの GET
 
-連合の向きが `publish` を通さないとき、投稿・`/activity`・ブーストの `Announce`・コレクション（outbox・followers・following・featured）・カスタム絵文字・引用の承認の GET は `404` です（`410` にしません）。ローカルの Actor・インスタンス Actor・WebFinger・host-meta・NodeInfo の扱いは [§14.2](#142-入口ごとの振る舞い) にあります。
+連合の向きが `publish` を通さないとき、投稿・`/activity`・ブーストの `Announce`・コレクション（outbox・followers・following・featured・会話）・カスタム絵文字・引用の承認の GET は `404` です（`410` にしません）。ローカルの Actor・インスタンス Actor・WebFinger・host-meta・NodeInfo の扱いは [§14.2](#142-入口ごとの振る舞い) にあります。
 
 削除されたローカルの Actor（`deleted` を記録した時点から、消去の後も）の GET は、だれにでも `410 Gone` と `Tombstone`（`id` は Actor の URI）です。WebFinger（`acct:`・Actor の `id`・プロフィールの URL のどれでも）と `/@{username}` への ActivityPub の要求も `410` です（ADR-0018 §12）。`Delete` を受け損ねたサーバーが消えたと分かるためです。`deleted` より前の状態は変わりません（凍結中は最小の文書、それ以外の有効でない Actor は `404`）。存在しないユーザーとリモートの Actor も `404` です。HTML を求める要求は、削除された投稿と同じく `404` です。削除された Actor のコレクションと inbox は `404` です。連合の向きが `off` なら、削除されていても `404` です（§14.2）。サービスの終了の配送中も、削除済みの Actor は `410` です。
 
@@ -651,6 +651,11 @@ ADR-0005 の方針（既定はキャッシュしない）に従います。
   - followers / following は、承認済みのフォローの相手の Actor の `id` を、新しいフォロー順に 40 件ずつ返します。有効でないアカウントは省き、`totalItems` はフォローの件数です。
   - featured は、ピン留めした投稿のうち未ログインで閲覧できるもの（`public` / `unlisted`）の `Note` を `orderedItems` に並べます。featured-tags は空の `Collection` です。
   - 埋め込む文書は `@context` を持たないので、outbox のページと featured の `@context` は §7.4 の文書と同じもの（`federation.LDContext`）で、埋め込む文書の語を定義します。それ以外は ActivityStreams だけです。
+- 会話のコレクション `GET /ap/contexts/{uuid}`（[ADR-0154](../adr/0154-conversations.md) §9）は、ほかのコレクションと違い、要求した相手によって内容が変わります。
+  - このサーバーが作った、併合されていない会話のスレッドの、削除されていない投稿の IRI（ローカルは `id`、リモートは `uri`）を、古い順に 40 件ずつ `OrderedCollectionPage` に並べます（`?page=true`、次は `?min_id={カーソル}&page=true`）。`totalItems` と `attributedTo` は載せません。
+  - 項目ごとに、閲覧者を署名者のドメインとして `content.CanView`（`ContextObjectFetch`）を当て、見られない項目は省きます（ページは詰めない）。リモートの投稿は、未ログインの閲覧者として見られるもの（`public` / `unlisted`）だけです。
+  - 併合されたローカルの会話の IRI は、併合先がローカルの会話ならその IRI へ `308`、そうでなければ 404 です。リモートの IRI を持つ会話と存在しない会話は 404、どの項目も見られない会話は空のコレクションです。
+  - 署名の無い要求への応答（Authorized Fetch が無効なとき）は `public, max-age=60`、署名のある要求への応答は `private, no-store` です。Authorized Fetch の表ではコレクションとして扱います。
 - Authorized Fetch（FR-408、S）はインスタンス設定 `authorized_fetch`（既定 `false`、[data-model §4.9](data-model/04-tables/09-instance.md#49-instance)）で有効にします。設定はリクエストごとに読むので、変更はすぐに効きます。
   有効なときは、検証できる署名の無い GET（署名なし・検証できない・未ログインとして扱う署名者）に次のように答えます。
 
