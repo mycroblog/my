@@ -4,6 +4,7 @@ package hooktest
 
 import (
 	"errors"
+	"reflect"
 	"slices"
 	"testing"
 	"time"
@@ -379,6 +380,12 @@ func hookAppealContract(t *testing.T, newHarness func(t *testing.T) HookHarness,
 		}
 		if _, err := h.Repository.AppealOfDecision(t.Context(), ids.NewID()); !errors.Is(err, apphook.ErrAppealNotFound) {
 			t.Errorf("a decision with no appeal: %v", err)
+		}
+		if one, err := h.Repository.Appeal(t.Context(), a.ID); err != nil {
+			t.Fatal(err)
+		} else if byID, err := h.Repository.AppealsByID(t.Context(), []string{a.ID, ids.NewID()}); err != nil ||
+			!reflect.DeepEqual(byID, map[string]hook.AppealRecord{a.ID: one}) {
+			t.Errorf("AppealsByID = %+v, %v; want only %+v as Appeal reads it", byID, err, one)
 		}
 		pending, err := h.Repository.ListAppeals(t.Context(), apphook.AppealQuery{Pending: true, Limit: 10})
 		if err != nil || len(pending) != 1 {

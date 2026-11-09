@@ -76,6 +76,36 @@ func (p *moderatorProjector) notifyErrorGroup(ctx context.Context, tx uow.Tx, ch
 
 // ErrorGroupOthers returns how many new and regressed groups the admin_error_group of n folds:
 // the notices of its hour beyond the cap, 0 for any other notification.
+// ErrorGroupOthersOf returns ErrorGroupOthers of each of ns that tells of other error groups, by
+// notification ID, reading the notices of their hours together.
+func (s *Service) ErrorGroupOthersOf(ctx context.Context, ns []notification.Notification) (map[string]int64, error) {
+	var hours []time.Time
+	for _, n := range ns {
+		if n.Type == notification.TypeAdminErrorGroup && n.ErrorGroupChange == notification.ErrorGroupOthers {
+			hours = append(hours, n.ErrorGroupHour.UTC())
+		}
+	}
+	out := map[string]int64{}
+	if len(hours) == 0 {
+		return out, nil
+	}
+	notices, err := s.d.Repository.ErrorGroupNoticesOf(ctx, hours)
+	if err != nil {
+		return nil, fmt.Errorf("notification: the error group notices of %d hours: %w", len(hours), err)
+	}
+	// Matched by the instant, whatever the precision and location each side reads the hour with.
+	byHour := make(map[int64]int64, len(notices))
+	for h, count := range notices {
+		byHour[h.UnixMilli()] = count
+	}
+	for _, n := range ns {
+		if n.Type == notification.TypeAdminErrorGroup && n.ErrorGroupChange == notification.ErrorGroupOthers {
+			out[n.ID] = max(byHour[n.ErrorGroupHour.UnixMilli()]-notification.ErrorGroupHourlyCap, 0)
+		}
+	}
+	return out, nil
+}
+
 func (s *Service) ErrorGroupOthers(ctx context.Context, n notification.Notification) (int64, error) {
 	if n.Type != notification.TypeAdminErrorGroup || n.ErrorGroupChange != notification.ErrorGroupOthers {
 		return 0, nil

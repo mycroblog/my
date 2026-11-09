@@ -11,6 +11,40 @@ import (
 	"context"
 )
 
+const listCustomEmojisByIDs = `-- name: ListCustomEmojisByIDs :many
+SELECT id, shortcode, domain, uri, created_by_user_id, created_at FROM custom_emojis WHERE id IN (SELECT value FROM json_each(CAST(?1 AS TEXT))) ORDER BY id
+`
+
+func (q *Queries) ListCustomEmojisByIDs(ctx context.Context, ids string) ([]CustomEmoji, error) {
+	rows, err := q.db.QueryContext(ctx, listCustomEmojisByIDs, ids)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []CustomEmoji{}
+	for rows.Next() {
+		var i CustomEmoji
+		if err := rows.Scan(
+			&i.ID,
+			&i.Shortcode,
+			&i.Domain,
+			&i.Uri,
+			&i.CreatedByUserID,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listStatusCountersOf = `-- name: ListStatusCountersOf :many
 SELECT status_id, replies_count, boosts_count, favourites_count FROM status_counters WHERE status_id IN (SELECT value FROM json_each(CAST(?1 AS TEXT))) ORDER BY status_id
 `

@@ -30,7 +30,12 @@ func (r *Repository) reportForward(ctx context.Context, reportID string) (*moder
 		return nil, sqlite.Wrap(err, "read report forward")
 	}
 	row := rows[0]
+	return reportForwardFrom(row), nil
+}
+
+// reportForwardFrom returns the forward of row.
+func reportForwardFrom(row moderationgen.ReportForward) *moderation.ReportForward {
 	return &moderation.ReportForward{
 		ID: row.ID, ReportID: row.ReportID, Comment: row.Comment, ForwardedByUserID: row.ForwardedByUserID.String, ForwardedAt: sqlite.FromMillis(row.ForwardedAt),
-	}, nil
+	}
 }

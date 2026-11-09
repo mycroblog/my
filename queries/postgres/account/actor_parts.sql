@@ -37,3 +37,10 @@ WHERE account_id = ANY(sqlc.arg(ids)::uuid[]) ORDER BY account_id, id;
 
 -- name: ListLifecycleStatesByIDs :many
 SELECT account_id, state, since, deletion_due_at FROM account_lifecycle_states WHERE account_id = ANY(sqlc.arg(ids)::uuid[]) ORDER BY account_id;
+
+-- name: ListLocalAccountsByUsers :many
+SELECT account_id, user_id, username, username_normalized FROM local_accounts WHERE user_id = ANY(sqlc.arg(user_ids)::uuid[]) ORDER BY user_id;
+
+-- name: ListAccountMovesByIDs :many
+SELECT id, account_id, target_account_id, initiated_by, activity_uri, occurred_at
+FROM account_moves WHERE id = ANY(sqlc.arg(ids)::uuid[]) ORDER BY id;

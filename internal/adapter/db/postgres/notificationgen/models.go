@@ -10,6 +10,11 @@ import (
 	"time"
 )
 
+type ErrorGroupNoticeHour struct {
+	HourStart time.Time
+	Notices   int64
+}
+
 type Notification struct {
 	ID                      string
 	RecipientAccountID      string

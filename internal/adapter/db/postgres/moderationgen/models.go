@@ -95,6 +95,13 @@ type ReportForward struct {
 	ForwardedAt       time.Time
 }
 
+type ReportHookOrigin struct {
+	ReportID       string
+	HookDecisionID string
+	Hook           string
+	ReasonCode     string
+}
+
 type ReportNote struct {
 	ID           string
 	ReportID     string
@@ -118,12 +125,28 @@ type ReportResolution struct {
 	ResolvedAt       time.Time
 }
 
+type ReportRuleCitation struct {
+	ReportID string
+	RuleID   string
+}
+
 type ReportState struct {
 	ReportID       string
 	State          string
 	Outcome        *string
 	AssigneeUserID *string
 	Since          time.Time
+}
+
+type ReportStatus struct {
+	ReportID string
+	StatusID string
+}
+
+type ReportVoiceRoom struct {
+	ReportID   string
+	RoomID     string
+	RevisionID string
 }
 
 type SignupBlock struct {

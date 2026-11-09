@@ -52,6 +52,9 @@ type ReaderDeps struct {
 type Reader struct {
 	d   ReaderDeps
 	aud audience
+	// reactionEmoji are the custom emoji of the reactions that a page read beforehand
+	// (Reader.page); nil outside a page.
+	reactionEmoji map[string]*ReactionCustomEmoji
 }
 
 // NewReader returns a Reader on d.

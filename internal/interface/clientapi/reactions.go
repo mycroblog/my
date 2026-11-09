@@ -4,7 +4,6 @@ package clientapi
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	appaccount "github.com/mycroblog/my/internal/app/account"
@@ -47,28 +46,41 @@ func newStatusReactions(in []appcontent.ReactionView, signedIn bool) []StatusRea
 	return out
 }
 
-// reactionEmojiOf presents the emoji of a reaction notification, nil for another type or when
-// the emoji cannot be read.
-func (s *Server) reactionEmojiOf(ctx context.Context, n notification.Notification) (*ReactionEmoji, error) {
+// reactionEmojiOf presents the emoji of a reaction notification from the custom emoji read for the
+// page (reactionEmojis), nil for another type or when its custom emoji is gone.
+func (s *Server) reactionEmojiOf(n notification.Notification, custom map[string]appcontent.EmojiView) *ReactionEmoji {
 	if n.Type != notification.TypeReaction {
-		return nil, nil
+		return nil
 	}
 	if n.ReactionCustomEmojiID == "" {
-		return &ReactionEmoji{Name: n.ReactionEmoji}, nil
+		return &ReactionEmoji{Name: n.ReactionEmoji}
 	}
-	if s.o.StatusReader == nil {
-		return nil, nil
-	}
-	v, err := s.o.StatusReader.ReactionEmoji(ctx, appcontent.ReactionEmoji{CustomEmojiID: n.ReactionCustomEmojiID})
-	if errors.Is(err, appcontent.ErrNotFound) {
-		// The emoji was deleted (a local one) or purged (a remote one, ADR-0051 §1).
-		return nil, nil
-	}
-	if err != nil {
-		return nil, fmt.Errorf("clientapi: the emoji of notification %s: %w", n.ID, err)
+	// A custom emoji that was deleted (a local one) or purged (a remote one, ADR-0051 §1) is not
+	// in custom.
+	v, ok := custom[appcontent.ReactionEmoji{CustomEmojiID: n.ReactionCustomEmojiID}.Key()]
+	if !ok {
+		return nil
 	}
 	e := newReactionEmoji(v)
-	return &e, nil
+	return &e
+}
+
+// reactionEmojis reads the custom emoji of the reaction notifications of ns together, by key.
+func (s *Server) reactionEmojis(ctx context.Context, ns []notification.Notification) (map[string]appcontent.EmojiView, error) {
+	var emojis []appcontent.ReactionEmoji
+	for _, n := range ns {
+		if n.Type == notification.TypeReaction && n.ReactionCustomEmojiID != "" {
+			emojis = append(emojis, appcontent.ReactionEmoji{CustomEmojiID: n.ReactionCustomEmojiID})
+		}
+	}
+	if len(emojis) == 0 || s.o.StatusReader == nil {
+		return nil, nil
+	}
+	out, err := s.o.StatusReader.ReactionEmojis(ctx, emojis)
+	if err != nil {
+		return nil, fmt.Errorf("clientapi: the emoji of the reaction notifications: %w", err)
+	}
+	return out, nil
 }
 
 // ListStatusReactions serves GET /api/v1/statuses/{id}/reactions.

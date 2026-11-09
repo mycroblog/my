@@ -54,6 +54,9 @@ type AnnouncementRepository interface {
 
 	// FindAnnouncement returns the announcement with its current revision and state.
 	FindAnnouncement(ctx context.Context, id string) (instance.Announcement, error)
+	// FindAnnouncements returns the announcements of ids that exist, by ID, as FindAnnouncement
+	// returns one, with one query.
+	FindAnnouncements(ctx context.Context, ids []string) (map[string]instance.Announcement, error)
 	// ListAnnouncements returns every announcement, newest first; only the published ones when
 	// publishedOnly is set.
 	ListAnnouncements(ctx context.Context, publishedOnly bool) ([]instance.Announcement, error)
@@ -568,6 +571,31 @@ func (s *Service) PastAnnouncement(ctx context.Context, userID, id string) (Read
 
 // ShownAnnouncement returns the announcement id as the user userID sees it, and false when the
 // users do not see it now (a draft, a withdrawn one, one outside its window, or an unknown ID).
+// ShownAnnouncementsByID returns the announcements of ids that the user userID is shown, by ID,
+// as ShownAnnouncement returns one, reading them together.
+func (s *Service) ShownAnnouncementsByID(ctx context.Context, userID string, ids []string) (map[string]ReaderAnnouncement, error) {
+	found, err := s.d.Repository.FindAnnouncements(ctx, ids)
+	if err != nil {
+		return nil, err
+	}
+	now := s.d.Clock.Now()
+	var shown []instance.Announcement
+	for id, a := range found {
+		if a.ShowsAt(now) {
+			shown = append(shown, found[id])
+		}
+	}
+	list, err := s.forReader(ctx, userID, shown)
+	if err != nil {
+		return nil, err
+	}
+	out := make(map[string]ReaderAnnouncement, len(list))
+	for _, a := range list {
+		out[a.ID] = a
+	}
+	return out, nil
+}
+
 func (s *Service) ShownAnnouncement(ctx context.Context, userID, id string) (ReaderAnnouncement, bool, error) {
 	return s.readerAnnouncement(ctx, userID, id, instance.Announcement.ShowsAt)
 }

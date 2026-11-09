@@ -79,6 +79,41 @@ func (q *Queries) ListAccountKeysOfAccounts(ctx context.Context, ids string) ([]
 	return items, nil
 }
 
+const listAccountMovesByIDs = `-- name: ListAccountMovesByIDs :many
+SELECT id, account_id, target_account_id, initiated_by, activity_uri, occurred_at
+FROM account_moves WHERE id IN (SELECT value FROM json_each(CAST(?1 AS TEXT))) ORDER BY id
+`
+
+func (q *Queries) ListAccountMovesByIDs(ctx context.Context, ids string) ([]AccountMove, error) {
+	rows, err := q.db.QueryContext(ctx, listAccountMovesByIDs, ids)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []AccountMove{}
+	for rows.Next() {
+		var i AccountMove
+		if err := rows.Scan(
+			&i.ID,
+			&i.AccountID,
+			&i.TargetAccountID,
+			&i.InitiatedBy,
+			&i.ActivityUri,
+			&i.OccurredAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listAccountsByIDs = `-- name: ListAccountsByIDs :many
 
 
@@ -200,6 +235,38 @@ SELECT account_id, user_id, username, username_normalized FROM local_accounts WH
 
 func (q *Queries) ListLocalAccountsByIDs(ctx context.Context, ids string) ([]LocalAccount, error) {
 	rows, err := q.db.QueryContext(ctx, listLocalAccountsByIDs, ids)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []LocalAccount{}
+	for rows.Next() {
+		var i LocalAccount
+		if err := rows.Scan(
+			&i.AccountID,
+			&i.UserID,
+			&i.Username,
+			&i.UsernameNormalized,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listLocalAccountsByUsers = `-- name: ListLocalAccountsByUsers :many
+SELECT account_id, user_id, username, username_normalized FROM local_accounts WHERE user_id IN (SELECT value FROM json_each(CAST(?1 AS TEXT))) ORDER BY user_id
+`
+
+func (q *Queries) ListLocalAccountsByUsers(ctx context.Context, userIds string) ([]LocalAccount, error) {
+	rows, err := q.db.QueryContext(ctx, listLocalAccountsByUsers, userIds)
 	if err != nil {
 		return nil, err
 	}

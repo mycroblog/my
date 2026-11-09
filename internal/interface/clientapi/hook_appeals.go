@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"slices"
 	"time"
 
 	appcontent "github.com/mycroblog/my/internal/app/content"
@@ -163,23 +164,34 @@ func (s *Server) notifiedHookAppeals(ctx context.Context, accountID string, ns [
 	if s.o.HookAppeals == nil {
 		return out, nil
 	}
+	var ids []string
 	for _, n := range ns {
-		if n.Type != notification.TypeHookAppealDecided || n.HookAppealID == "" {
-			continue
+		if n.Type == notification.TypeHookAppealDecided && n.HookAppealID != "" && !slices.Contains(ids, n.HookAppealID) {
+			ids = append(ids, n.HookAppealID)
 		}
-		if _, ok := out[n.HookAppealID]; ok {
-			continue
-		}
-		a, err := s.o.HookAppeals.OwnAppealByID(ctx, accountID, n.HookAppealID)
-		switch {
-		case errors.Is(err, apphook.ErrAppealNotFound):
-			continue
-		case err != nil:
-			return nil, fmt.Errorf("clientapi: the appeal of notification %s: %w", n.ID, err)
-		}
-		out[n.HookAppealID] = newOwnHookAppeal(a)
+	}
+	if len(ids) == 0 {
+		return out, nil
+	}
+	var recs map[string]hook.AppealRecord
+	var err error
+	if b, ok := s.o.HookAppeals.(hookAppealBatch); ok {
+		recs, err = b.OwnAppealsByID(ctx, accountID, ids)
+	} else {
+		recs, err = byOne(ids, func(id string) (hook.AppealRecord, error) { return s.o.HookAppeals.OwnAppealByID(ctx, accountID, id) }, apphook.ErrAppealNotFound)
+	}
+	if err != nil {
+		return nil, fmt.Errorf("clientapi: the appeals of the notifications: %w", err)
+	}
+	for id, a := range recs {
+		out[id] = newOwnHookAppeal(a)
 	}
 	return out, nil
+}
+
+// hookAppealBatch is a HookAppeals that reads many appeals at once, as *apphook.Service does.
+type hookAppealBatch interface {
+	OwnAppealsByID(ctx context.Context, accountID string, ids []string) (map[string]hook.AppealRecord, error)
 }
 
 func newAdminHookAppeal(r hook.AppealRecord) AdminHookAppeal {

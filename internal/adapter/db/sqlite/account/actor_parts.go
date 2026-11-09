@@ -149,3 +149,43 @@ func (r *Repository) FindAccounts(ctx context.Context, ids []string) (map[string
 	}
 	return out, nil
 }
+
+// FindLocalAccountsByUsers implements account.Repository.
+func (r *Repository) FindLocalAccountsByUsers(ctx context.Context, userIDs []string) (map[string]account.LocalAccount, error) {
+	out := map[string]account.LocalAccount{}
+	if len(userIDs) == 0 {
+		return out, nil
+	}
+	list, err := sqlite.JSONList(userIDs)
+	if err != nil {
+		return nil, err
+	}
+	rows, err := r.db.reader().ListLocalAccountsByUsers(ctx, list)
+	if err != nil {
+		return nil, sqlite.Wrap(err, "list local accounts of users")
+	}
+	for _, row := range rows {
+		out[row.UserID] = account.LocalAccount(row)
+	}
+	return out, nil
+}
+
+// FindMoves implements account.Repository.
+func (r *Repository) FindMoves(ctx context.Context, ids []string) (map[string]account.Move, error) {
+	out := map[string]account.Move{}
+	if len(ids) == 0 {
+		return out, nil
+	}
+	list, err := sqlite.JSONList(ids)
+	if err != nil {
+		return nil, err
+	}
+	rows, err := r.db.reader().ListAccountMovesByIDs(ctx, list)
+	if err != nil {
+		return nil, sqlite.Wrap(err, "list account moves")
+	}
+	for _, row := range rows {
+		out[row.ID] = moveFrom(row)
+	}
+	return out, nil
+}

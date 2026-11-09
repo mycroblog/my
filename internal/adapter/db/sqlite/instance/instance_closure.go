@@ -120,10 +120,15 @@ func (r *Repository) FindClosureEvent(ctx context.Context, id string) (instance.
 	if err != nil {
 		return instance.ClosureEvent{}, sqlite.NotFound(err, appinstance.ErrNotFound, "service closure event")
 	}
+	return closureEventFrom(row), nil
+}
+
+// closureEventFrom returns the event of row with its schedule.
+func closureEventFrom(row instancegen.GetServiceClosureEventRow) instance.ClosureEvent {
 	return instance.ClosureEvent{
 		ID: row.ID, Kind: instance.ClosureEventKind(row.Kind), ByUserID: row.ChangedByUserID.String, OccurredAt: sqlite.FromMillis(row.OccurredAt),
 		Schedule: instance.ClosureSchedule{
 			ClosesAt: sqlite.FromNullTime(row.ClosesAt), ExportUntil: sqlite.FromNullTime(row.ExportUntil), Message: row.Message.String,
 		},
-	}, nil
+	}
 }

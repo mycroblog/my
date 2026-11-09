@@ -4,7 +4,6 @@ package clientapi
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	appmoderation "github.com/mycroblog/my/internal/app/moderation"
@@ -94,21 +93,15 @@ func (s *Server) ListOwnModerationActions(ctx context.Context, req ListOwnModera
 // by ID; an action that no longer exists is left out. nil OwnModeration reads none.
 func (s *Server) noticeActions(ctx context.Context, accountID string, actionIDs []string) (map[string]ModerationAction, error) {
 	out := map[string]ModerationAction{}
-	if s.o.OwnModeration == nil {
+	if s.o.OwnModeration == nil || len(actionIDs) == 0 {
 		return out, nil
 	}
+	views, err := s.ownActionsByID(ctx, accountID, actionIDs)
+	if err != nil {
+		return nil, fmt.Errorf("clientapi: the moderation actions of the notices to %s: %w", accountID, err)
+	}
 	l := s.Localizer(ctx)
-	for _, id := range actionIDs {
-		if _, ok := out[id]; ok {
-			continue
-		}
-		v, err := s.o.OwnModeration.OwnAction(ctx, accountID, id)
-		switch {
-		case errors.Is(err, appmoderation.ErrNotFound):
-			continue
-		case err != nil:
-			return nil, fmt.Errorf("clientapi: the moderation action %s of a notice to %s: %w", id, accountID, err)
-		}
+	for id, v := range views {
 		out[id] = newModerationAction(l, v)
 	}
 	return out, nil

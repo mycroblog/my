@@ -293,6 +293,22 @@ func (r *Repository) Appeal(ctx context.Context, id string) (hook.AppealRecord, 
 	return hookAppealRecord(row), nil
 }
 
+// AppealsByID implements apphook.Repository.
+func (r *Repository) AppealsByID(ctx context.Context, ids []string) (map[string]hook.AppealRecord, error) {
+	out := map[string]hook.AppealRecord{}
+	if len(ids) == 0 {
+		return out, nil
+	}
+	rows, err := r.db.reader().ListHookDecisionAppealsByIDs(ctx, ids)
+	if err != nil {
+		return nil, postgres.Wrap(err, "list hook decision appeals by ID")
+	}
+	for _, row := range rows {
+		out[row.AppealID] = hookAppealRecord(hookgen.GetHookDecisionAppealRow(row))
+	}
+	return out, nil
+}
+
 // AppealOfDecision implements apphook.Repository.
 func (r *Repository) AppealOfDecision(ctx context.Context, decisionID string) (hook.AppealRecord, error) {
 	row, err := r.db.reader().GetHookDecisionAppealOfDecision(ctx, decisionID)

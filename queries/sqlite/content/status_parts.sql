@@ -16,3 +16,6 @@ SELECT status_id, replies_count, boosts_count, favourites_count FROM status_coun
 -- ListStatusesMentioning returns the statuses among ids that mention account_id.
 -- name: ListStatusesMentioning :many
 SELECT DISTINCT status_id FROM status_mention_index WHERE account_id = sqlc.arg(account_id) AND status_id IN (SELECT value FROM json_each(CAST(sqlc.arg(ids) AS TEXT))) ORDER BY status_id;
+
+-- name: ListCustomEmojisByIDs :many
+SELECT id, shortcode, domain, uri, created_by_user_id, created_at FROM custom_emojis WHERE id IN (SELECT value FROM json_each(CAST(sqlc.arg(ids) AS TEXT))) ORDER BY id;

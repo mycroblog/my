@@ -34,6 +34,9 @@ type Repository interface {
 	AddErrorGroupNotice(ctx context.Context, tx uow.Tx, hour time.Time) (int64, error)
 	// ErrorGroupNotices returns the admin_error_group notices of the hour that starts at hour.
 	ErrorGroupNotices(ctx context.Context, hour time.Time) (int64, error)
+	// ErrorGroupNoticesOf returns the notices of each of hours that has some, by the hour in UTC,
+	// as ErrorGroupNotices returns those of one, with one query.
+	ErrorGroupNoticesOf(ctx context.Context, hours []time.Time) (map[time.Time]int64, error)
 	// DeleteErrorGroupNoticesBefore deletes the notices of the hours that start before before, in
 	// one statement outside any transaction, and returns how many hours it deleted.
 	DeleteErrorGroupNoticesBefore(ctx context.Context, before time.Time) (int64, error)

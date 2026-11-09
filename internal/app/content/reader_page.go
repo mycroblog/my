@@ -157,6 +157,17 @@ func (r *Reader) page(ctx context.Context, viewer Viewer, ids []string) (*Reader
 			return nil, err
 		}
 	}
+	// The custom emoji of the reactions, which each status's reactions show.
+	var emojiIDs []string
+	for _, counts := range interactions.counts {
+		for _, c := range counts {
+			emojiIDs = append(emojiIDs, c.Emoji.CustomEmojiID)
+		}
+	}
+	p.reactionEmoji = map[string]*ReactionCustomEmoji{}
+	if err := (emojiCache{r: &p, seen: p.reactionEmoji}).load(ctx, emojiIDs); err != nil {
+		return nil, err
+	}
 	if r.d.Media != nil {
 		var mediaIDs []string
 		for _, rev := range page.revisions {

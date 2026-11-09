@@ -408,11 +408,7 @@ func (r *Repository) reportFrom(ctx context.Context, row moderationgen.Report) (
 	if err != nil {
 		return moderation.Report{}, err
 	}
-	return moderation.Report{
-		ID: row.ID, URI: postgres.FromNullString(row.Uri), ReporterAccountID: row.ReporterAccountID, TargetAccountID: row.TargetAccountID,
-		Category: moderation.Category(row.Category), Comment: row.Comment, Forwarded: row.Forwarded,
-		FiledAt: postgres.UTC(row.FiledAt), StatusIDs: ids, RuleIDs: rules, VoiceRoom: room, HookOrigin: origin, Forward: forward,
-	}, nil
+	return reportOf(row, ids, rules, room, origin, forward), nil
 }
 
 // FindReport implements moderation.Repository.
@@ -670,4 +666,13 @@ func domainActionKindStrings(kinds []moderation.DomainActionKind) []string {
 		out[i] = string(k)
 	}
 	return out
+}
+
+// reportOf returns the report of row with its parts.
+func reportOf(row moderationgen.Report, ids, rules []string, room *moderation.ReportVoiceRoom, origin *moderation.ReportHookOrigin, forward *moderation.ReportForward) moderation.Report {
+	return moderation.Report{
+		ID: row.ID, URI: postgres.FromNullString(row.Uri), ReporterAccountID: row.ReporterAccountID, TargetAccountID: row.TargetAccountID,
+		Category: moderation.Category(row.Category), Comment: row.Comment, Forwarded: row.Forwarded,
+		FiledAt: postgres.UTC(row.FiledAt), StatusIDs: ids, RuleIDs: rules, VoiceRoom: room, HookOrigin: origin, Forward: forward,
+	}
 }

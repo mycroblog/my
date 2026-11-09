@@ -120,10 +120,15 @@ func (r *Repository) FindClosureEvent(ctx context.Context, id string) (instance.
 	if err != nil {
 		return instance.ClosureEvent{}, postgres.NotFound(err, appinstance.ErrNotFound, "service closure event")
 	}
+	return closureEventFrom(row), nil
+}
+
+// closureEventFrom returns the event of row with its schedule.
+func closureEventFrom(row instancegen.GetServiceClosureEventRow) instance.ClosureEvent {
 	return instance.ClosureEvent{
 		ID: row.ID, Kind: instance.ClosureEventKind(row.Kind), ByUserID: postgres.FromNullString(row.ChangedByUserID), OccurredAt: postgres.UTC(row.OccurredAt),
 		Schedule: instance.ClosureSchedule{
 			ClosesAt: postgres.FromNullTime(row.ClosesAt), ExportUntil: postgres.FromNullTime(row.ExportUntil), Message: postgres.FromNullString(row.Message),
 		},
-	}, nil
+	}
 }

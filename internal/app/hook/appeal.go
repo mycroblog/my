@@ -132,6 +132,21 @@ func (s *Service) OwnAppealByID(ctx context.Context, accountID, appealID string)
 	return rec, nil
 }
 
+// OwnAppealsByID returns, by ID, the author's appeals among ids, as OwnAppealByID returns one, with
+// one query; an appeal that is missing or not the author's is left out.
+func (s *Service) OwnAppealsByID(ctx context.Context, accountID string, ids []string) (map[string]hook.AppealRecord, error) {
+	recs, err := s.d.Repository.AppealsByID(ctx, ids)
+	if err != nil {
+		return nil, err
+	}
+	for id, rec := range recs {
+		if rec.Appeal.AccountID != accountID {
+			delete(recs, id)
+		}
+	}
+	return recs, nil
+}
+
 // AppealDeadline returns the last moment an author can appeal a decision made at decidedAt, with
 // the current appeal_window_days.
 func (s *Service) AppealDeadline(ctx context.Context, decidedAt time.Time) (time.Time, error) {

@@ -42,11 +42,16 @@ func (r *Repository) FindSeverance(ctx context.Context, accountID, id string) (m
 	if err != nil {
 		return moderation.SeveranceRecord{}, postgres.NotFound(err, appmoderation.ErrNotFound, "relationship severance "+id)
 	}
+	return severanceFrom(row), nil
+}
+
+// severanceFrom returns the severance of row with what it severed.
+func severanceFrom(row moderationgen.GetRelationshipSeveranceRow) moderation.SeveranceRecord {
 	return moderation.SeveranceRecord{
 		Severance: moderation.Severance{
 			ID: row.ID, DomainActionID: postgres.FromNullString(row.DomainActionID), ActionID: postgres.FromNullString(row.ActionID), AccountID: row.AccountID,
 			FollowersLost: int(row.FollowersLost), FollowingLost: int(row.FollowingLost), OccurredAt: postgres.UTC(row.OccurredAt),
 		},
 		Domain: postgres.FromNullString(row.TargetDomain), TargetAccountID: postgres.FromNullString(row.TargetAccountID),
-	}, nil
+	}
 }

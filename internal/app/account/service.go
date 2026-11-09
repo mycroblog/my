@@ -974,6 +974,12 @@ func ValidateUsername(username string) error { return account.ValidateUsername(u
 
 // LocalAccountOfUser returns the local account a user logs in as. It fails with ErrNotFound
 // when the user has none.
+// LocalAccountsOfUsers returns the local accounts of the users of userIDs that have one, by user
+// ID, as LocalAccountOfUser returns one, with one query.
+func (s *Service) LocalAccountsOfUsers(ctx context.Context, userIDs []string) (map[string]account.LocalAccount, error) {
+	return s.d.Repository.FindLocalAccountsByUsers(ctx, userIDs)
+}
+
 func (s *Service) LocalAccountOfUser(ctx context.Context, userID string) (account.LocalAccount, error) {
 	return s.d.Repository.FindLocalAccountByUser(ctx, userID)
 }

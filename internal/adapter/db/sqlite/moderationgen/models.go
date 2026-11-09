@@ -95,6 +95,13 @@ type ReportForward struct {
 	ForwardedAt       int64
 }
 
+type ReportHookOrigin struct {
+	ReportID       string
+	HookDecisionID string
+	Hook           string
+	ReasonCode     string
+}
+
 type ReportNote struct {
 	ID           string
 	ReportID     string
@@ -118,12 +125,28 @@ type ReportResolution struct {
 	ResolvedAt       int64
 }
 
+type ReportRuleCitation struct {
+	ReportID string
+	RuleID   string
+}
+
 type ReportState struct {
 	ReportID       string
 	State          string
 	Outcome        sql.NullString
 	AssigneeUserID sql.NullString
 	Since          int64
+}
+
+type ReportStatus struct {
+	ReportID string
+	StatusID string
+}
+
+type ReportVoiceRoom struct {
+	ReportID   string
+	RoomID     string
+	RevisionID string
 }
 
 type SignupBlock struct {

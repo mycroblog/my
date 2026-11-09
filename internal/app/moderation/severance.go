@@ -52,6 +52,9 @@ type SeveranceRepository interface {
 	// FindSeverance returns a severance of accountID with what its action suspended; one of
 	// another account is ErrNotFound.
 	FindSeverance(ctx context.Context, accountID, id string) (moderation.SeveranceRecord, error)
+	// FindSeverances returns the severances of ids of accountID that exist, by ID, as FindSeverance
+	// returns one, with one query.
+	FindSeverances(ctx context.Context, accountID string, ids []string) (map[string]moderation.SeveranceRecord, error)
 }
 
 // Follows is the part of the graph module's public API that cuts follows. *appgraph.Service
@@ -235,6 +238,12 @@ func (s *Service) handleSeverDomain(ctx context.Context, j queue.Job) queue.Resu
 
 // SeveranceOf returns a severance of accountID with what its action suspended, for the
 // relationships_severed notification; one of another account fails with ErrNotFound.
+// SeverancesOf returns the severances of ids of accountID, by ID, as SeveranceOf returns one, with
+// one query.
+func (s *Service) SeverancesOf(ctx context.Context, accountID string, ids []string) (map[string]SeveranceRecord, error) {
+	return s.d.Repository.FindSeverances(ctx, accountID, ids)
+}
+
 func (s *Service) SeveranceOf(ctx context.Context, accountID, id string) (SeveranceRecord, error) {
 	return s.d.Repository.FindSeverance(ctx, accountID, id)
 }

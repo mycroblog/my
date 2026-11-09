@@ -120,6 +120,18 @@ LEFT JOIN hook_decision_appeal_decisions r ON r.appeal_id = a.id
 LEFT JOIN hook_decision_overrides o ON o.decision_id = d.id
 WHERE a.id = ?;
 
+-- The appeals of ids that exist, as GetHookDecisionAppeal reads one.
+-- name: ListHookDecisionAppealsByIDs :many
+SELECT a.id AS appeal_id, a.decision_id AS appeal_decision_id, a.account_id AS appeal_account_id, a.status_text, a.comment, a.submitted_at,
+  r.decision AS review, r.decided_by_user_id AS reviewed_by_user_id, r.decided_at AS reviewed_at,
+  d.id, d.hook, d.subject_key, d.account_id, d.mode, d.outcome, d.reason_code, d.note, d.latency_ms, d.decided_at,
+  o.decision_id AS overridden_decision_id, o.overridden_by_user_id, o.overridden_at
+FROM hook_decision_appeals a
+JOIN hook_decisions d ON d.id = a.decision_id
+LEFT JOIN hook_decision_appeal_decisions r ON r.appeal_id = a.id
+LEFT JOIN hook_decision_overrides o ON o.decision_id = d.id
+WHERE a.id IN (SELECT value FROM json_each(CAST(sqlc.arg(ids) AS TEXT)));
+
 -- name: GetHookDecisionAppealOfDecision :one
 SELECT a.id AS appeal_id, a.decision_id AS appeal_decision_id, a.account_id AS appeal_account_id, a.status_text, a.comment, a.submitted_at,
   r.decision AS review, r.decided_by_user_id AS reviewed_by_user_id, r.decided_at AS reviewed_at,

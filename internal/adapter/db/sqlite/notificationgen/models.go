@@ -10,6 +10,11 @@ import (
 	"database/sql"
 )
 
+type ErrorGroupNoticeHour struct {
+	HourStart int64
+	Notices   int64
+}
+
 type Notification struct {
 	ID                      string
 	RecipientAccountID      string
