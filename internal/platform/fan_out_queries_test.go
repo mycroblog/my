@@ -18,12 +18,11 @@ import (
 	"github.com/mycroblog/my/pkg/testkit"
 )
 
-// fanOutQueries counts the database round trips that the delivery fan-out of one public post by
-// alice makes to resolve its recipients, and the deliveries it makes: alice has n remote
-// followers on n/5 servers and mentions 3 remote accounts on other servers. The writes of the
-// deliveries and their jobs, one each per delivery, are left out. Every query is one round trip
-// (one call in pg_stat_statements).
-func fanOutQueries(t *testing.T, n int) (queries, deliveries int) {
+// fanOutQueries counts the database round trips of the delivery fan-out of one public post by
+// alice, and the deliveries it makes: alice has n remote followers on servers and mentions 3
+// remote accounts on other servers. Every query is one round trip (one call in
+// pg_stat_statements).
+func fanOutQueries(t *testing.T, n, servers int) (queries, deliveries int) {
 	t.Helper()
 	tracer := testkit.NewTracer()
 	c := newStatusesClientWith(t, nil, platform.AppOptions{Tracer: tracer}, "alice")
@@ -45,7 +44,7 @@ func fanOutQueries(t *testing.T, n int) (queries, deliveries int) {
 		return a.ID
 	}
 	for i := range n {
-		id := remote(fmt.Sprintf("f%d", i), fmt.Sprintf("s%d.example", i%(n/5)))
+		id := remote(fmt.Sprintf("f%d", i), fmt.Sprintf("s%d.example", i%servers))
 		if err := c.app.Graph.ReceiveFollow(ctx, appgraph.ReceiveFollowInput{URI: fmt.Sprintf("https://x.example/follows/%d", i), FollowerID: id, FolloweeID: c.ids["alice"]}); err != nil {
 			t.Fatalf("ReceiveFollow: %v", err)
 		}
@@ -58,7 +57,7 @@ func fanOutQueries(t *testing.T, n int) (queries, deliveries int) {
 	total := func() int {
 		count := 0
 		for _, sp := range tracer.Spans() {
-			if op := sp.Attrs["db.operation.name"]; op != "" && !writes[op] {
+			if sp.Attrs["db.operation.name"] != "" {
 				count++
 			}
 		}
@@ -100,9 +99,6 @@ func fanOutQueries(t *testing.T, n int) (queries, deliveries int) {
 	return queries, deliveries
 }
 
-// writes are the operations of the deliveries that a fan-out batch records, one per delivery.
-var writes = map[string]bool{"InsertDelivery": true, "InsertJob": true}
-
 // mustJobs returns the jobs of jobType waiting in the queue of c.
 func mustJobs(t *testing.T, c *statusesClient, jobType string) []queue.PendingJob {
 	t.Helper()
@@ -115,14 +111,15 @@ func mustJobs(t *testing.T, c *statusesClient, jobType string) []queue.PendingJo
 
 // TestFanOutQueries checks that the round trips of the fan-out of a post do not grow with its
 // recipients and their servers: the inboxes, the relations of the mentioned accounts, and the
-// suspensions and health of the servers are read together.
+// suspensions and health of the servers are read together, and the deliveries and their jobs are
+// written together.
 func TestFanOutQueries(t *testing.T) {
 	t.Parallel()
-	smallQ, smallD := fanOutQueries(t, 20)
-	largeQ, largeD := fanOutQueries(t, 100)
-	t.Logf("%d queries for 20 followers on 4 servers (%d deliveries), %d for 100 on 20 (%d)", smallQ, smallD, largeQ, largeD)
-	if smallD != 4+3 || largeD != 20+3 {
-		t.Errorf("deliveries = %d and %d, want one per shared inbox: 7 and 23", smallD, largeD)
+	smallQ, smallD := fanOutQueries(t, 20, 4)
+	largeQ, largeD := fanOutQueries(t, 100, 100)
+	t.Logf("%d queries for 20 followers on 4 servers (%d deliveries), %d for 100 on 100 (%d)", smallQ, smallD, largeQ, largeD)
+	if smallD != 4+3 || largeD != 100+3 {
+		t.Errorf("deliveries = %d and %d, want one per shared inbox: 7 and 103", smallD, largeD)
 	}
 	if largeQ > smallQ {
 		t.Errorf("%d queries for 100 followers, more than the %d for 20", largeQ, smallQ)

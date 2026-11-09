@@ -7,6 +7,7 @@ package db
 import (
 	"context"
 	"database/sql"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"time"
@@ -42,21 +43,35 @@ func fromMillis(ms int64) time.Time { return time.UnixMilli(ms).UTC() }
 
 func nullString(s string) sql.NullString { return sql.NullString{String: s, Valid: s != ""} }
 
-func (s sqliteStore) insertJob(ctx context.Context, tx uow.Tx, j queue.Job) error {
+// sqliteJob is a job as InsertJobs reads it from its JSON array.
+type sqliteJob struct {
+	ID             string `json:"id"`
+	Type           string `json:"type"`
+	Payload        string `json:"payload"` // hex
+	IdempotencyKey string `json:"idempotency_key,omitempty"`
+	OrderingKey    string `json:"ordering_key,omitempty"`
+	TraceParent    string `json:"trace_parent,omitempty"`
+	RunAt          int64  `json:"run_at"`
+	CreatedAt      int64  `json:"created_at"`
+}
+
+func (s sqliteStore) insertJobs(ctx context.Context, tx uow.Tx, jobs []queue.Job) error {
 	q, err := s.queries(tx)
 	if err != nil {
 		return err
 	}
-	return q.InsertJob(ctx, sqlitequeue.InsertJobParams{
-		ID:             j.ID,
-		Type:           j.Type,
-		Payload:        j.Payload,
-		IdempotencyKey: nullString(j.IdempotencyKey),
-		OrderingKey:    nullString(j.OrderingKey),
-		TraceParent:    nullString(j.TraceParent),
-		RunAt:          millis(j.RunAt),
-		CreatedAt:      millis(j.CreatedAt),
-	})
+	rows := make([]sqliteJob, len(jobs))
+	for i, j := range jobs {
+		rows[i] = sqliteJob{
+			ID: j.ID, Type: j.Type, Payload: hex.EncodeToString(j.Payload), IdempotencyKey: j.IdempotencyKey,
+			OrderingKey: j.OrderingKey, TraceParent: j.TraceParent, RunAt: millis(j.RunAt), CreatedAt: millis(j.CreatedAt),
+		}
+	}
+	list, err := json.Marshal(rows)
+	if err != nil {
+		return err
+	}
+	return q.InsertJobs(ctx, string(list))
 }
 
 func (s sqliteStore) claim(ctx context.Context, tx uow.Tx, worker string, now, until time.Time) (queue.Job, bool, error) {

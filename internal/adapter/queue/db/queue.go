@@ -46,7 +46,8 @@ func (o Options) check() {
 
 // store runs the dialect's queries inside a transaction of the dialect's UnitOfWork.
 type store interface {
-	insertJob(ctx context.Context, tx uow.Tx, j queue.Job) error
+	// insertJobs inserts jobs with one statement; a job whose idempotency key is taken is skipped.
+	insertJobs(ctx context.Context, tx uow.Tx, jobs []queue.Job) error
 	claim(ctx context.Context, tx uow.Tx, worker string, now, until time.Time) (queue.Job, bool, error)
 	claimOfTypes(ctx context.Context, tx uow.Tx, types []string, worker string, now, until time.Time) (queue.Job, bool, error)
 	deleteClaimed(ctx context.Context, tx uow.Tx, id, worker string, attempt int) (int64, error)
@@ -198,11 +199,13 @@ func (q *Queue) EnqueueTx(ctx context.Context, tx uow.Tx, jobs ...queue.NewJob) 
 	return tx.Emit(ctx, wakeAfterCommit{owner: q, wakes: wakesOf(built)})
 }
 
+// insert inserts jobs with one statement.
 func (q *Queue) insert(ctx context.Context, tx uow.Tx, jobs []queue.Job) error {
-	for _, j := range jobs {
-		if err := q.st.insertJob(ctx, tx, j); err != nil {
-			return fmt.Errorf("queue/db: enqueue %s: %w", j.Type, err)
-		}
+	if len(jobs) == 0 {
+		return nil
+	}
+	if err := q.st.insertJobs(ctx, tx, jobs); err != nil {
+		return fmt.Errorf("queue/db: enqueue %d jobs of %s: %w", len(jobs), jobs[0].Type, err)
 	}
 	return nil
 }

@@ -37,6 +37,9 @@ type Repository interface {
 	// InsertDelivery adds an inbox to an outbound activity unless it has it, and reports whether
 	// it did.
 	InsertDelivery(ctx context.Context, tx uow.Tx, d federation.Delivery) (bool, error)
+	// InsertDeliveries inserts ds with one statement, as InsertDelivery inserts each, and
+	// returns the IDs of those it inserted.
+	InsertDeliveries(ctx context.Context, tx uow.Tx, ds []federation.Delivery) (map[string]bool, error)
 	// UpsertInstanceHealth replaces the health of a remote server; only this module's
 	// projector of delivery results writes it.
 	UpsertInstanceHealth(ctx context.Context, tx uow.Tx, h federation.InstanceHealth) error

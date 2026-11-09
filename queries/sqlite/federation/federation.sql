@@ -103,6 +103,16 @@ INSERT INTO deliveries (id, outbound_activity_id, inbox_url, domain, created_at)
 VALUES (@id, @outbound_activity_id, @inbox_url, @domain, @created_at)
 ON CONFLICT (outbound_activity_id, inbox_url) DO NOTHING;
 
+-- InsertDeliveries inserts the deliveries of a JSON array, one row per element, as InsertDelivery
+-- inserts one, and returns the IDs of those it inserted. WHERE true keeps ON CONFLICT from
+-- reading as a join constraint.
+-- name: InsertDeliveries :many
+INSERT INTO deliveries (id, outbound_activity_id, inbox_url, domain, created_at)
+SELECT value ->> '$.id', value ->> '$.outbound_activity_id', value ->> '$.inbox_url', value ->> '$.domain', value ->> '$.created_at'
+FROM json_each(CAST(sqlc.arg(deliveries) AS TEXT)) WHERE true
+ON CONFLICT (outbound_activity_id, inbox_url) DO NOTHING
+RETURNING id;
+
 -- name: GetDelivery :one
 SELECT id, outbound_activity_id, inbox_url, domain, created_at FROM deliveries WHERE id = @id;
 

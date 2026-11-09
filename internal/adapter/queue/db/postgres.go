@@ -64,21 +64,19 @@ func int32Of(n int) int32 {
 	return int32(n)
 }
 
-func (s postgresStore) insertJob(ctx context.Context, tx uow.Tx, j queue.Job) error {
+func (s postgresStore) insertJobs(ctx context.Context, tx uow.Tx, jobs []queue.Job) error {
 	q, err := s.queries(tx)
 	if err != nil {
 		return err
 	}
-	return q.InsertJob(ctx, postgresqueue.InsertJobParams{
-		ID:             j.ID,
-		Type:           j.Type,
-		Payload:        j.Payload,
-		IdempotencyKey: optional(j.IdempotencyKey),
-		OrderingKey:    optional(j.OrderingKey),
-		TraceParent:    optional(j.TraceParent),
-		RunAt:          j.RunAt,
-		CreatedAt:      j.CreatedAt,
-	})
+	var arg postgresqueue.InsertJobsParams
+	for _, j := range jobs {
+		arg.Ids, arg.Types, arg.Payloads = append(arg.Ids, j.ID), append(arg.Types, j.Type), append(arg.Payloads, j.Payload)
+		arg.IdempotencyKeys, arg.OrderingKeys = append(arg.IdempotencyKeys, j.IdempotencyKey), append(arg.OrderingKeys, j.OrderingKey)
+		arg.TraceParents = append(arg.TraceParents, j.TraceParent)
+		arg.RunAts, arg.CreatedAts = append(arg.RunAts, j.RunAt), append(arg.CreatedAts, j.CreatedAt)
+	}
+	return q.InsertJobs(ctx, arg)
 }
 
 func (s postgresStore) claim(ctx context.Context, tx uow.Tx, worker string, now, until time.Time) (queue.Job, bool, error) {
