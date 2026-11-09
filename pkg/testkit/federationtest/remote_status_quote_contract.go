@@ -54,6 +54,13 @@ func remoteStatusRepoQuotes(t *testing.T, r *remoteStatusRepo) {
 	if _, err := r.h.Quotes.FindQuote(ctx, r.ids.NewID()); !errors.Is(err, appcontent.ErrNotFound) {
 		t.Errorf("FindQuote(a status quoting nothing) = %v, want ErrNotFound", err)
 	}
+	ids := []string{r.ids.NewID()}
+	for _, q := range append(slices.Clone(quotes), other) {
+		ids = append(ids, q.StatusID)
+	}
+	if got, err := r.h.Quotes.FindQuotes(ctx, ids); err != nil || len(got) != len(quotes)+1 || got[quotes[0].StatusID] != quotes[0] || got[other.StatusID] != other {
+		t.Errorf("FindQuotes = %+v, %v; want each quote, as FindQuote", got, err)
+	}
 	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
 		if got, err := r.h.Quotes.FindQuoteTx(ctx, tx, other.StatusID); err != nil || got != other {
 			t.Errorf("FindQuoteTx = %+v, %v; want %+v", got, err, other)
@@ -93,6 +100,16 @@ func remoteStatusRepoQuotes(t *testing.T, r *remoteStatusRepo) {
 		}
 		return nil
 	})
+	stateOf, err := r.h.Quotes.FindQuoteStates(ctx, ids)
+	if err != nil {
+		t.Fatalf("FindQuoteStates = %v", err)
+	}
+	for _, id := range ids {
+		want, err := r.h.Quotes.FindQuoteState(ctx, id)
+		if got, ok := stateOf[id]; ok != (err == nil) || ok && got != want {
+			t.Errorf("FindQuoteStates[%s] = %+v (%t), want %+v (%v) as FindQuoteState", id, got, ok, want, err)
+		}
+	}
 
 	// The policies.
 	policy := content.StatusQuotePolicy{StatusID: quotes[0].StatusID, Policy: content.QuotePolicyFollowers, UpdatedAt: r.clock.Now()}
@@ -104,6 +121,10 @@ func remoteStatusRepoQuotes(t *testing.T, r *remoteStatusRepo) {
 		r.tx(t, func(ctx context.Context, tx uow.Tx) error { return r.h.Quotes.UpsertQuotePolicy(ctx, tx, policy) })
 		if got, err := r.h.Quotes.FindQuotePolicy(ctx, policy.StatusID); err != nil || got.Policy != p || !got.UpdatedAt.Equal(policy.UpdatedAt) {
 			t.Errorf("FindQuotePolicy after the upsert of %s = %+v, %v", p, got, err)
+		}
+		if got, err := r.h.Quotes.FindQuotePolicies(ctx, []string{policy.StatusID, other.StatusID}); err != nil || len(got) != 1 ||
+			got[policy.StatusID].Policy != p || !got[policy.StatusID].UpdatedAt.Equal(policy.UpdatedAt) {
+			t.Errorf("FindQuotePolicies after the upsert of %s = %+v, %v; want the policy alone, as FindQuotePolicy", p, got, err)
 		}
 	}
 	r.tx(t, func(ctx context.Context, tx uow.Tx) error {

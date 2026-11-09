@@ -140,6 +140,9 @@ type Repository interface {
 	// FindStatuses returns the statuses of ids that exist, by ID, as FindStatus returns one, with
 	// one query whatever the number of ids.
 	FindStatuses(ctx context.Context, ids []string) (map[string]content.Status, error)
+	// FindStatusesByURIs returns the statuses of uris that exist, by URI, as FindStatusByURI
+	// returns one, with one query whatever the number of URIs.
+	FindStatusesByURIs(ctx context.Context, uris []string) (map[string]content.Status, error)
 	// FindCurrentRevisions returns the current revisions of the statuses of ids that have one,
 	// by status ID, as FindCurrentRevision returns one, with one query per part of a revision
 	// whatever the number of ids.
@@ -192,6 +195,9 @@ type Repository interface {
 	FindCountersOf(ctx context.Context, statusIDs []string) (map[string]content.Counters, error)
 	// SensitivityOverridden reports whether an action shows a status as sensitive.
 	SensitivityOverridden(ctx context.Context, statusID string) (bool, error)
+	// SensitivitiesOverridden returns the statuses among statusIDs that moderation marked
+	// sensitive, as SensitivityOverridden tells of one, with one query.
+	SensitivitiesOverridden(ctx context.Context, statusIDs []string) (map[string]bool, error)
 	// FindPostCounter returns the post counter of an account; ErrNotFound means it has no
 	// statuses.
 	FindPostCounter(ctx context.Context, accountID string) (content.PostCounter, error)
@@ -234,6 +240,9 @@ type Repository interface {
 	// FindPollTallies returns the tallies of a poll ordered by position; a poll without an
 	// observation has none.
 	FindPollTallies(ctx context.Context, pollID string) ([]content.PollTally, error)
+	// FindPollTalliesOf returns the tallies of each of pollIDs that has some, by poll ID, as
+	// FindPollTallies returns those of one, with one query.
+	FindPollTalliesOf(ctx context.Context, pollIDs []string) (map[string][]content.PollTally, error)
 
 	// Votes in polls (FR-112).
 
@@ -242,6 +251,9 @@ type Repository interface {
 	InsertPollVote(ctx context.Context, tx uow.Tx, v content.PollVote) (bool, error)
 	// ListPollVotes returns the votes of accountID in pollID ordered by position.
 	ListPollVotes(ctx context.Context, pollID, accountID string) ([]content.PollVote, error)
+	// ListPollVotesIn returns accountID's votes in each of pollIDs where it voted, by poll ID, as
+	// ListPollVotes returns those of one, with one query.
+	ListPollVotesIn(ctx context.Context, pollIDs []string, accountID string) (map[string][]content.PollVote, error)
 	// ListPollVotesTx is ListPollVotes in tx.
 	ListPollVotesTx(ctx context.Context, tx uow.Tx, pollID, accountID string) ([]content.PollVote, error)
 	// PollStatusID returns the ID of the status whose revision has the poll.

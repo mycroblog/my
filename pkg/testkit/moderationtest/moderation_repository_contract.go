@@ -318,6 +318,11 @@ func modRepoAccountRestrictions(t *testing.T, r *modRepo) {
 		if !slices.Equal(got, want) {
 			t.Errorf("%s: AccountRestrictionsInEffectTx = %v; want %v", name, got, want)
 		}
+		other := r.ids.NewID()
+		of, err := r.h.Moderation.AccountRestrictionsInEffectOf(ctx, []string{account, other}, at)
+		if err != nil || !slices.Equal(of[account], want) || len(of[other]) != 0 {
+			t.Errorf("%s: AccountRestrictionsInEffectOf = %v, %v; want %v of the account alone", name, of, err, want)
+		}
 	}
 	now := r.clock.Now()
 	inEffect("now", now, moderation.RestrictLogin, moderation.RestrictPost, moderation.RestrictPublicDiscovery)
@@ -405,6 +410,23 @@ func modRepoDomainRestrictions(t *testing.T, r *modRepo) {
 		})
 		if !slices.Equal(got, want) {
 			t.Errorf("%s: DomainRestrictionsInEffectTx = %v; want %v", name, got, want)
+		}
+		// By domain: the union over the domains is what DomainRestrictionsInEffect finds of all.
+		of, err := r.h.Moderation.DomainRestrictionsInEffectOf(ctx, domains, at)
+		if err != nil {
+			t.Fatalf("%s: DomainRestrictionsInEffectOf = %v", name, err)
+		}
+		var union []moderation.Restriction
+		for _, d := range domains {
+			one, err := r.h.Moderation.DomainRestrictionsInEffect(ctx, []string{d}, at)
+			if err != nil || !slices.Equal(of[d], one) && (len(of[d]) != 0 || len(one) != 0) {
+				t.Errorf("%s: DomainRestrictionsInEffectOf[%s] = %v, want %v (%v) as DomainRestrictionsInEffect", name, d, of[d], one, err)
+			}
+			union = append(union, of[d]...)
+		}
+		slices.Sort(union)
+		if union = slices.Compact(union); !slices.Equal(union, want) && (len(union) != 0 || len(want) != 0) {
+			t.Errorf("%s: the union of DomainRestrictionsInEffectOf = %v; want %v", name, union, want)
 		}
 	}
 	inEffect("a subdomain and its parents", []string{"sub.bad.example", "bad.example", "example"}, now,

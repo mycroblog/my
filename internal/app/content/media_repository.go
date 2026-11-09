@@ -102,6 +102,10 @@ type MediaRepository interface {
 	ListCurrentCustomEmojis(ctx context.Context, ids []string) ([]content.CurrentCustomEmoji, error)
 
 	FindMediaFile(ctx context.Context, id string) (content.MediaFile, error)
+	// FindMediaParts reads what FindMediaFile, FindUploadedMedia, FindRemoteMedia,
+	// ListProcessingResults, FindFocus, and FindDescription read of one file, of many files at
+	// once, with one query per part.
+	FindMediaParts(ctx context.Context, ids []string) (MediaParts, error)
 	// FindRemoteMedia returns the remote subtype of a media file; an upload is not found.
 	FindRemoteMedia(ctx context.Context, mediaID string) (content.RemoteMedia, error)
 	// ListRemoteMedia returns the remote subtype of each media file with an ID in ids, ordered
@@ -161,4 +165,15 @@ type MediaTxReads interface {
 	ListReadyVariantsTx(ctx context.Context, tx uow.Tx, ids []string) ([]FileVariant, error)
 	ListRemoteMediaTx(ctx context.Context, tx uow.Tx, ids []string) ([]content.RemoteMedia, error)
 	ListCurrentCustomEmojisTx(ctx context.Context, tx uow.Tx, ids []string) ([]content.CurrentCustomEmoji, error)
+}
+
+// MediaParts are the parts of many media files, by media ID (MediaRepository.FindMediaParts).
+// Results are all the processing results of a file, oldest first.
+type MediaParts struct {
+	Files        map[string]content.MediaFile
+	Uploads      map[string]content.UploadedMedia
+	Remotes      map[string]content.RemoteMedia
+	Results      map[string][]content.MediaProcessingResult
+	Focus        map[string]content.MediaFocus
+	Descriptions map[string]content.MediaDescription
 }

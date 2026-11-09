@@ -109,6 +109,9 @@ func contentInteractionRepoBoosts(t *testing.T, r *contentInteractionRepo) {
 	if _, err := r.repo.FindBoost(ctx, r.id()); !errors.Is(err, appcontent.ErrNotFound) {
 		t.Errorf("FindBoost(unknown) = %v, want ErrNotFound", err)
 	}
+	if got, err := r.repo.FindBoosts(ctx, []string{b.ID, r.id()}); err != nil || len(got) != 1 || got[b.ID] != b {
+		t.Errorf("FindBoosts = %+v, %v; want %+v alone, as FindBoost", got, err, b)
+	}
 	if _, err := r.repo.FindBoostRetraction(ctx, b.ID); !errors.Is(err, appcontent.ErrNotFound) {
 		t.Errorf("FindBoostRetraction before the retraction = %v, want ErrNotFound", err)
 	}
@@ -170,6 +173,9 @@ func contentInteractionRepoBoostEdges(t *testing.T, r *contentInteractionRepo) {
 	}
 	if _, err := r.repo.FindBoostEdge(ctx, r.id(), s.ID); !errors.Is(err, appcontent.ErrNotFound) {
 		t.Errorf("FindBoostEdge(no boost) = %v, want ErrNotFound", err)
+	}
+	if got, err := r.repo.FindAccountInteractions(ctx, local, []string{s.ID, r.id()}); err != nil || len(got.BoostEdges) != 1 || got.BoostEdges[s.ID] != edge {
+		t.Errorf("FindAccountInteractions: boost edges = %+v, %v; want %+v alone, as FindBoostEdge", got.BoostEdges, err, edge)
 	}
 
 	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
@@ -308,6 +314,24 @@ func contentInteractionRepoFavourites(t *testing.T, r *contentInteractionRepo) {
 	if _, err := r.repo.FindBookmark(ctx, r.id(), statuses[1].ID); !errors.Is(err, appcontent.ErrNotFound) {
 		t.Errorf("FindBookmark(another account) = %v, want ErrNotFound", err)
 	}
+	ids := []string{r.id()}
+	for _, st := range statuses {
+		ids = append(ids, st.ID)
+	}
+	if got, err := r.repo.FindAccountInteractions(ctx, account, ids); err != nil {
+		t.Errorf("FindAccountInteractions = %v", err)
+	} else {
+		for _, st := range statuses {
+			f, ferr := r.repo.FindFavourite(ctx, account, st.ID)
+			if g, ok := got.Favourites[st.ID]; ok != (ferr == nil) || ok && g != f {
+				t.Errorf("FindAccountInteractions: favourite on %s = %+v (%t), want %+v (%v) as FindFavourite", st.ID, g, ok, f, ferr)
+			}
+			m, merr := r.repo.FindBookmark(ctx, account, st.ID)
+			if g, ok := got.Bookmarks[st.ID]; ok != (merr == nil) || ok && g != m {
+				t.Errorf("FindAccountInteractions: bookmark on %s = %+v (%t), want %+v (%v) as FindBookmark", st.ID, g, ok, m, merr)
+			}
+		}
+	}
 	var pagedFavs []content.Favourite
 	var pagedMarks []content.Bookmark
 	before, beforeMark := "", ""
@@ -406,6 +430,13 @@ func contentInteractionRepoPins(t *testing.T, r *contentInteractionRepo) {
 	}
 	if _, err := r.repo.FindPin(ctx, r.id(), pins[0].StatusID); !errors.Is(err, appcontent.ErrNotFound) {
 		t.Errorf("FindPin(another account) = %v, want ErrNotFound", err)
+	}
+	pinned := make([]string, 0, len(pins)+1)
+	for _, p := range pins {
+		pinned = append(pinned, p.StatusID)
+	}
+	if got, err := r.repo.FindAccountInteractions(ctx, account, append(pinned, r.id())); err != nil || len(got.Pins) != len(pins) || got.Pins[pins[0].StatusID] != pins[0] {
+		t.Errorf("FindAccountInteractions: pins = %+v, %v; want the %d pins, as FindPin", got.Pins, err, len(pins))
 	}
 	listed, err := r.repo.ListPins(ctx, account)
 	slices.Reverse(pins)
@@ -561,6 +592,21 @@ func contentInteractionRepoReactions(t *testing.T, r *contentInteractionRepo) {
 	}
 	if counts, err := r.repo.ListReactionCounts(ctx, s.ID, 1); err != nil || len(counts) != 1 {
 		t.Errorf("ListReactionCounts(limit 1) = %+v, %v", counts, err)
+	}
+	other := r.status(t)
+	for _, limit := range []int{10, 1} {
+		single, err := r.repo.ListReactionCounts(ctx, s.ID, limit)
+		if err != nil {
+			t.Fatal(err)
+		}
+		got, err := r.repo.ListReactionCountsOf(ctx, []string{s.ID, other.ID}, limit)
+		if err != nil || !reflect.DeepEqual(got[s.ID], single) || len(got[other.ID]) != 0 {
+			t.Errorf("ListReactionCountsOf(limit %d) = %+v, %v; want %+v of the status alone, as ListReactionCounts", limit, got, err, single)
+		}
+	}
+	if got, err := r.repo.FindAccountInteractions(ctx, alice, []string{s.ID, other.ID}); err != nil ||
+		!reflect.DeepEqual(got.Reactions[s.ID], []content.Reaction{aliceHeart, aliceStar}) || len(got.Reactions[other.ID]) != 0 {
+		t.Errorf("FindAccountInteractions: reactions = %+v, %v; want alice's two, oldest first, as ListAccountStatusReactions", got.Reactions, err)
 	}
 
 	// A deleted status gains no count; a rebuild leaves it out too.

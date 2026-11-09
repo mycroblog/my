@@ -373,6 +373,9 @@ func statusStores(t *testing.T, e *StatusEnv) {
 			t.Errorf("%s = %+v, %v; want %+v", name, got, err, s)
 		}
 	}
+	if got, err := e.H.Statuses.FindStatusesByURIs(ctx, []string{s.URI, "https://remote.example/notes/missing"}); err != nil || len(got) != 1 || !reflect.DeepEqual(got[s.URI], s) {
+		t.Errorf("FindStatusesByURIs = %+v, %v; want the status alone, as FindStatusByURI finds it", got, err)
+	}
 	missing := e.IDs.NewID()
 	if got, err := e.H.Statuses.FindStatuses(ctx, []string{s.ID, missing, s.ID}); err != nil || len(got) != 1 || !reflect.DeepEqual(got[s.ID], s) {
 		t.Errorf("FindStatuses = %+v, %v; want the status alone, as FindStatus finds it", got, err)
@@ -1130,6 +1133,36 @@ func statusReadsCurrentRevisions(t *testing.T, e *StatusEnv) {
 		t.Errorf("FindCurrentRevisions[the remote status] = %+v, %v; want its poll and remote source", got[polled.ID], err)
 	}
 	sameCurrentRevisions(t, e, polled.ID, plain.ID, edited.ID)
+
+	// The poll's tallies and a voter's votes, as the reads of one poll find them.
+	voter := e.IDs.NewID()
+	tallies := []content.PollTally{{PollID: rev.Poll.ID, Position: 0, Votes: 2}, {PollID: rev.Poll.ID, Position: 1, Votes: 1}}
+	err := e.H.UnitOfWork.Tx(t.Context(), func(tx uow.Tx) error {
+		if err := e.H.Statuses.ReplacePollTallies(t.Context(), tx, rev.Poll.ID, tallies); err != nil {
+			return err
+		}
+		for _, pos := range []int{1, 0} {
+			v := content.PollVote{ID: e.IDs.NewID(), PollID: rev.Poll.ID, AccountID: voter, Position: pos, VotedAt: e.Clock.Now()}
+			if _, err := e.H.Statuses.InsertPollVote(t.Context(), tx, v); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatalf("tallies and votes = %v", err)
+	}
+	other := e.IDs.NewID()
+	wantTallies, err := e.H.Statuses.FindPollTallies(t.Context(), rev.Poll.ID)
+	if got, gerr := e.H.Statuses.FindPollTalliesOf(t.Context(), []string{rev.Poll.ID, other}); err != nil || gerr != nil ||
+		len(wantTallies) != 2 || !reflect.DeepEqual(got[rev.Poll.ID], wantTallies) || len(got[other]) != 0 {
+		t.Errorf("FindPollTalliesOf = %+v, %v; want %+v (%v) as FindPollTallies", got, gerr, wantTallies, err)
+	}
+	wantVotes, err := e.H.Statuses.ListPollVotes(t.Context(), rev.Poll.ID, voter)
+	if got, gerr := e.H.Statuses.ListPollVotesIn(t.Context(), []string{rev.Poll.ID, other}, voter); err != nil || gerr != nil ||
+		len(wantVotes) != 2 || !reflect.DeepEqual(got[rev.Poll.ID], wantVotes) || len(got[other]) != 0 {
+		t.Errorf("ListPollVotesIn = %+v, %v; want %+v (%v) as ListPollVotes", got, gerr, wantVotes, err)
+	}
 	if got, err := e.H.Statuses.FindCurrentRevisions(t.Context(), nil); err != nil || len(got) != 0 {
 		t.Errorf("FindCurrentRevisions(nil) = %+v, %v; want none", got, err)
 	}

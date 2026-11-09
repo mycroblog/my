@@ -551,6 +551,20 @@ func (s *Service) CountKnownSharedInboxes(ctx context.Context) (int, error) {
 
 // AccountDomain returns the domain of an account (account.LocalDomain for a local one). It
 // fails with ErrNotFound when there is none.
+// AccountDomains returns the domains of the accounts of ids that exist, by ID, as AccountDomain
+// returns one, with one query.
+func (s *Service) AccountDomains(ctx context.Context, ids []string) (map[string]string, error) {
+	accounts, err := s.d.Repository.FindAccounts(ctx, ids)
+	if err != nil {
+		return nil, err
+	}
+	out := make(map[string]string, len(accounts))
+	for id, a := range accounts {
+		out[id] = a.Domain
+	}
+	return out, nil
+}
+
 func (s *Service) AccountDomain(ctx context.Context, id string) (string, error) {
 	a, err := s.d.Repository.FindAccount(ctx, id)
 	if err != nil {

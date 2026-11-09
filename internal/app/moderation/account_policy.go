@@ -66,6 +66,67 @@ func (p *AccountPolicy) Restrictions(ctx context.Context, accountID string) ([]m
 	return slices.Compact(rs), nil
 }
 
+// accountDomainBatch is an AccountDomains that finds the domains of many accounts at once, as
+// *appaccount.Service does.
+type accountDomainBatch interface {
+	AccountDomains(ctx context.Context, ids []string) (map[string]string, error)
+}
+
+// RestrictionsOf returns the restrictions in effect on each of accountIDs, by account, as
+// Restrictions returns those of one, reading the accounts' own restrictions, their domains, and
+// the restrictions of those domains and their parents with one query each.
+func (p *AccountPolicy) RestrictionsOf(ctx context.Context, accountIDs []string) (map[string][]moderation.Restriction, error) {
+	out := make(map[string][]moderation.Restriction, len(accountIDs))
+	if len(accountIDs) == 0 {
+		return out, nil
+	}
+	now := p.clock.Now()
+	own, err := p.repo.AccountRestrictionsInEffectOf(ctx, accountIDs, now)
+	if err != nil {
+		return nil, err
+	}
+	domainOf := map[string]string{}
+	if b, ok := p.accounts.(accountDomainBatch); ok {
+		if domainOf, err = b.AccountDomains(ctx, accountIDs); err != nil {
+			return nil, err
+		}
+	} else {
+		for _, id := range accountIDs {
+			d, err := p.accounts.AccountDomain(ctx, id)
+			switch {
+			case errors.Is(err, appaccount.ErrNotFound):
+			case err != nil:
+				return nil, err
+			default:
+				domainOf[id] = d
+			}
+		}
+	}
+	var domains []string
+	for _, d := range domainOf {
+		for _, dd := range moderation.DomainAndParents(d) {
+			if !slices.Contains(domains, dd) {
+				domains = append(domains, dd)
+			}
+		}
+	}
+	byDomain, err := p.repo.DomainRestrictionsInEffectOf(ctx, domains, now)
+	if err != nil {
+		return nil, err
+	}
+	for _, id := range accountIDs {
+		rs := slices.Clone(own[id])
+		if d, ok := domainOf[id]; ok {
+			for _, dd := range moderation.DomainAndParents(d) {
+				rs = append(rs, byDomain[dd]...)
+			}
+		}
+		slices.Sort(rs)
+		out[id] = slices.Compact(rs)
+	}
+	return out, nil
+}
+
 func (p *AccountPolicy) has(ctx context.Context, accountID string, r moderation.Restriction) (bool, error) {
 	rs, err := p.Restrictions(ctx, accountID)
 	return slices.Contains(rs, r), err
@@ -130,6 +191,25 @@ func (c contentPolicy) Restrictions(ctx context.Context, accountID string) (appc
 	if err != nil {
 		return appcontent.Restrictions{}, err
 	}
+	return contentRestrictions(rs), nil
+}
+
+// RestrictionsOf returns the content restrictions of many accounts, by account, as Restrictions
+// returns those of one (AccountPolicy.RestrictionsOf).
+func (c contentPolicy) RestrictionsOf(ctx context.Context, accountIDs []string) (map[string]appcontent.Restrictions, error) {
+	all, err := c.p.RestrictionsOf(ctx, accountIDs)
+	if err != nil {
+		return nil, err
+	}
+	out := make(map[string]appcontent.Restrictions, len(all))
+	for id, rs := range all {
+		out[id] = contentRestrictions(rs)
+	}
+	return out, nil
+}
+
+// contentRestrictions are the restrictions that the content module applies, of those in effect.
+func contentRestrictions(rs []moderation.Restriction) appcontent.Restrictions {
 	return appcontent.Restrictions{
 		Post:           slices.Contains(rs, moderation.RestrictPost),
 		Interact:       slices.Contains(rs, moderation.RestrictInteract),
@@ -139,5 +219,5 @@ func (c contentPolicy) Restrictions(ctx context.Context, accountID string) (appc
 			VisibilityCeilingPrivate: slices.Contains(rs, moderation.RestrictVisibilityCeilingPrivate),
 			PublicDiscovery:          slices.Contains(rs, moderation.RestrictPublicDiscovery),
 		},
-	}, nil
+	}
 }

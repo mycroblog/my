@@ -36,20 +36,19 @@ func (r *Reader) Views(ctx context.Context, viewer Viewer, ids []string) ([]Stat
 	return out, nil
 }
 
-// Boosts returns the boosts of ids, in their order; missing ones are left out. It does not
+// Boosts returns the boosts of ids, in their order, read together; missing ones are left out. It does not
 // decide who may see them: the timeline module lists only the boosts that the viewer may see,
 // and Views decides about the boosted statuses.
 func (r *Reader) Boosts(ctx context.Context, ids []string) ([]content.Boost, error) {
+	found, err := r.d.Interactions.FindBoosts(ctx, ids)
+	if err != nil {
+		return nil, err
+	}
 	out := make([]content.Boost, 0, len(ids))
 	for _, id := range ids {
-		b, err := r.d.Interactions.FindBoost(ctx, id)
-		if errors.Is(err, ErrNotFound) {
-			continue
+		if b, ok := found[id]; ok {
+			out = append(out, b)
 		}
-		if err != nil {
-			return nil, err
-		}
-		out = append(out, b)
 	}
 	return out, nil
 }
