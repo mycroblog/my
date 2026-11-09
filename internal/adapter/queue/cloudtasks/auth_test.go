@@ -31,8 +31,10 @@ func TestAuthenticator(t *testing.T) {
 			JWKSURI: identitytest.FakeOIDCIssuer + "/jwks", Issuers: []string{identitytest.FakeOIDCIssuer},
 		})
 	}
+	// The shape of the ID token Google issues for a service account: the URL as the only aud, and
+	// the service account's unique ID as both sub and azp.
 	valid := map[string]any{
-		"iss": identitytest.FakeOIDCIssuer, "aud": jobsURL, "sub": "1234567890",
+		"iss": identitytest.FakeOIDCIssuer, "aud": jobsURL, "sub": "114662897223618897051", "azp": "114662897223618897051",
 		"email": serviceAccount, "email_verified": true,
 		"iat": now.Add(-time.Minute).Unix(), "exp": now.Add(time.Hour).Unix(),
 	}
@@ -56,6 +58,9 @@ func TestAuthenticator(t *testing.T) {
 	if err := newAuth("").Authenticate(t.Context(), sign(with("email_verified", "true")), jobsURL); err != nil {
 		t.Errorf(`Authenticate(email_verified "true") = %v, want nil`, err)
 	}
+	if err := newAuth("").Authenticate(t.Context(), sign(with("azp", nil)), jobsURL); err != nil {
+		t.Errorf("Authenticate(no azp) = %v, want nil", err)
+	}
 
 	for name, token := range map[string]string{
 		"signature":           identitytest.SignFakeIDToken(t, "RS256", "tasks", other, valid),
@@ -63,6 +68,7 @@ func TestAuthenticator(t *testing.T) {
 		"alg none":            identitytest.SignFakeIDToken(t, "none", "", nil, valid),
 		"iss":                 sign(with("iss", "https://accounts.example")),
 		"aud":                 sign(with("aud", "https://my.example/_internal/tick")),
+		"several audiences":   sign(with("aud", []string{jobsURL, "https://other.example"})),
 		"email":               sign(with("email", "someone@my-project.iam.gserviceaccount.com")),
 		"no email":            sign(with("email", nil)),
 		"email_verified":      sign(with("email_verified", false)),

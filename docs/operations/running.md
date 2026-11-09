@@ -507,7 +507,7 @@ With `queue = cloudtasks` the jobs stay in the database (`database = postgres`),
   `queue_cloudtasks_audience`, when set). Each tick enqueues the periodic jobs whose period came, once for the whole instance (the periods are claimed in the KV,
   so `kv` must be `db` or `valkey`), and signals again the jobs that have been due for over 2 minutes without running, which recovers a lost signal.
 - `/_internal/jobs` and `/_internal/tick` are served by the processes with `role = all` or `worker`, and accept only a token signed by Google for
-  `queue_cloudtasks_service_account` with a verified email, whose audience is `queue_cloudtasks_audience` or, by default, the URL called. Any other request is a `401`.
+  `queue_cloudtasks_service_account` with a verified email, whose only audience is `queue_cloudtasks_audience` or, by default, the URL called. Any other request is a `401`.
 - A delivery runs one job, for at most the 5-minute lease. Keep `queue_cloudtasks_dispatch_deadline` (default 10 minutes) and the request timeout of
   the Cloud Run service longer than that.
 - The server's own service account needs `roles/cloudtasks.enqueuer` on the queue and `roles/iam.serviceAccountUser` on `queue_cloudtasks_service_account`.

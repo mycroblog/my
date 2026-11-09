@@ -130,9 +130,16 @@ func matching(keys []jwk, h header) []jwk {
 }
 
 // checkClaims checks the claims of a token whose signature verified (OpenID Connect Core 1.0
-// §3.1.3.7 steps 2, 3, 4, 5, 9, 10, 11, and 13). Without withNonce, it skips the nonce
-// (step 11): the token of a service account answers no authentication request.
-func checkClaims(payload []byte, issuer string, check appidentity.IDTokenCheck, now time.Time, withNonce bool) (appidentity.IDToken, error) {
+// §3.1.3.7 steps 2, 3, 4, 5, 9, 10, 11, and 13). signIn says that the token answers an
+// authentication request of this server as the OAuth client check.ClientID.
+//
+// Without signIn, the token is the ID token of a service account that a platform service sends
+// (the OIDC token of a Cloud Tasks or Cloud Scheduler HTTP target), whose audience is the URL it
+// calls. It skips the nonce (step 11), which answers no request, and the authorized party (step
+// 5): Google puts the service account's unique ID in azp, which is not the audience. It needs
+// the audience to be the only one instead, so that a token issued to several parties cannot be
+// replayed by another of them.
+func checkClaims(payload []byte, issuer string, check appidentity.IDTokenCheck, now time.Time, signIn bool) (appidentity.IDToken, error) {
 	var all map[string]json.RawMessage
 	if err := json.Unmarshal(payload, &all); err != nil {
 		return appidentity.IDToken{}, fmt.Errorf("payload: %w", err)
@@ -156,8 +163,11 @@ func checkClaims(payload []byte, issuer string, check appidentity.IDTokenCheck, 
 	if !slices.Contains(aud, check.ClientID) {
 		return appidentity.IDToken{}, fmt.Errorf("aud %q does not have the client", aud)
 	}
-	if (len(aud) > 1 || c.Azp != "") && c.Azp != check.ClientID {
+	switch {
+	case signIn && (len(aud) > 1 || c.Azp != "") && c.Azp != check.ClientID:
 		return appidentity.IDToken{}, fmt.Errorf("azp %q is not the client", c.Azp)
+	case !signIn && len(aud) > 1:
+		return appidentity.IDToken{}, fmt.Errorf("aud %q has other audiences", aud)
 	}
 	exp, err := seconds("exp", c.Exp)
 	if err != nil {
@@ -173,7 +183,7 @@ func checkClaims(payload []byte, issuer string, check appidentity.IDTokenCheck, 
 	if iat.After(now.Add(ClockSkew)) {
 		return appidentity.IDToken{}, fmt.Errorf("the token is issued in the future at %s", iat)
 	}
-	if withNonce && c.Nonce != check.Nonce {
+	if signIn && c.Nonce != check.Nonce {
 		return appidentity.IDToken{}, errors.New("the nonce does not match")
 	}
 	var authTime time.Time
