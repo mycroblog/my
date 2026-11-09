@@ -8,6 +8,7 @@
 | `feed_direct_recipients` | `entry_id`, `recipient_account_id` | PK `(recipient_account_id, entry_id)`、インデックス `(entry_id)`。`direct` 投稿の宛先（現在版のメンション） | 投稿・版・削除 |
 | `feed_tag_entries` | `tag_id`, `entry_id`, `author_account_id`, `visibility`, `is_local`, `revised_at`（現在版の `revised_at`） | PK `(tag_id, entry_id)`、インデックス `(entry_id)`、部分インデックス `(tag_id, revised_at) WHERE visibility IN ('public','local','unlisted')`（`tag_usage.last_used_at`）。現在版のタグ。公開範囲は不変なので非正規化してよい（FR-203） | 投稿・版・削除 |
 | `tag_usage` | `tag_id`, `statuses_count`（`bigint`、1 以上）, `last_used_at` | PK `(tag_id)`。タグごとの `public` / `local` / `unlisted` の投稿の数と、それらの `feed_tag_entries.revised_at` の最大。ハッシュタグの前方一致の検索（FR-119, FR-306, ADR-0092 §1） | 投稿・版・削除（`feed_tag_entries` と同じ更新） |
+| `feed_tag_follows` | `account_id`, `tag_id`, `followed_at` | PK `(account_id, tag_id)`、インデックス `(tag_id)`（消去）。現在値。利用者がフォローしたハッシュタグ（1 人 100 まで、ADR-0013 §27） | 利用者のコマンドが書く（投影ではない） |
 | `feed_follow_edges` | `follower_account_id`, `followee_account_id`, `show_boosts` | PK `(follower_account_id, followee_account_id)`。`active` のフォローだけ | フォロー（自動承認）・承認・終了、フォローごとの設定。インデックス `(followee_account_id)` |
 | `feed_exclusions` | `viewer_account_id`, `target_account_id`, `reason`（`enum(block, blocked_by, mute)`）, `expires_at`（NULL 可。ミュートの期限） | PK `(viewer_account_id, target_account_id, reason)` | ブロック（両方向の 2 行）・ブロックの解除・ミュート・ミュートの解除。インデックス `(target_account_id)` |
 | `feed_domain_mutes` | `viewer_account_id`, `domain` | PK `(viewer_account_id, domain)`。サブドメインにも効く（FR-304） | ドメインのミュート・解除 |
@@ -28,6 +29,8 @@
   本人による無効化（`deactivated`）でも `profile_view` の行を持ち、`reactivated` でそのとき効いている処分の制限に置き換えます（§5.6）。処分の変化は、無効化の間もこの行を残します。
 - `feed_author_restrictions` / `feed_domain_restrictions` の処分による行は、`moderation` のイベント `moderation.account_restrictions_changed` / `moderation.domain_restrictions_changed` から作ります。
   イベントは処分と解除のたびに、その後に有効な制限（制限ごとに最も遅い期限）を載せるので、projector はそのアカウント・ドメインの 3 つの制限を、載っているものは書き、載っていないものは消します。
+- `feed_tag_follows` は投影ではなく利用者の操作の記録で、`timeline` のコマンドが書きます。`timeline.RebuildProjections` は空にしません。フォローの解除は行を消し、履歴を持ちません（ADR-0020 規約 5）。
+  上限は 1 人 100 タグで、数は挿入の後に数えるので、フォロー済みのタグをフォローし直しても上限で断られません。アカウントの消去（§8）で本人の行を消します。
 - 将来 fan-out-on-write に切り替える場合も、`home_feed`（閲覧者 × エントリ）をこのモジュールの投影として追加するだけで済みます（ADR-0013）。
 
 #### リスト
