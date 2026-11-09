@@ -3,6 +3,7 @@
 package activitypub
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"net/url"
@@ -171,13 +172,17 @@ func (h *Handler) follows(r *http.Request, a appaccount.Actor, name, id string, 
 	if err != nil {
 		return orderedCollection{}, err
 	}
+	ids := make([]string, len(edges))
+	for i, e := range edges {
+		ids[i] = other(e)
+	}
+	actors, err := h.findAccounts(ctx, ids)
+	if err != nil {
+		return orderedCollection{}, err
+	}
 	items := []any{}
-	for _, e := range edges {
-		actor, err := h.o.Accounts.FindByID(ctx, other(e))
-		if err != nil && !errors.Is(err, appaccount.ErrNotFound) {
-			return orderedCollection{}, err
-		}
-		if err == nil && actor.Lifecycle.Active() {
+	for _, id := range ids {
+		if actor, ok := actors[id]; ok && actor.Lifecycle.Active() {
 			items = append(items, actor.Account.URI)
 		}
 	}
@@ -200,4 +205,29 @@ func (h *Handler) featured(r *http.Request, a appaccount.Actor, id string) (orde
 		items = append(items, n)
 	}
 	return orderedCollection{ID: id, Type: "OrderedCollection", TotalItems: int64(len(items)), OrderedItems: &items}, nil
+}
+
+// accountBatch is an Accounts that reads many accounts at once, as *appaccount.Service does.
+type accountBatch interface {
+	FindByIDs(ctx context.Context, ids []string) (map[string]appaccount.Actor, error)
+}
+
+// findAccounts returns the accounts of ids that exist, by ID: together when Accounts can, one by
+// one otherwise.
+func (h *Handler) findAccounts(ctx context.Context, ids []string) (map[string]appaccount.Actor, error) {
+	if b, ok := h.o.Accounts.(accountBatch); ok {
+		return b.FindByIDs(ctx, ids)
+	}
+	out := make(map[string]appaccount.Actor, len(ids))
+	for _, id := range ids {
+		a, err := h.o.Accounts.FindByID(ctx, id)
+		switch {
+		case errors.Is(err, appaccount.ErrNotFound):
+		case err != nil:
+			return nil, err
+		default:
+			out[id] = a
+		}
+	}
+	return out, nil
 }

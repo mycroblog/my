@@ -408,7 +408,9 @@ func (r *Reader) presentWith(ctx context.Context, viewer Viewer, st content.Stat
 			}
 		}
 	}
-	parts, err := r.Parts(ctx, rev)
+	// A view presents no Emoji tags (a client reads the custom emoji of a page together), so it
+	// reads the parts without them.
+	parts, err := r.viewParts(ctx, rev)
 	if err != nil {
 		return StatusView{}, err
 	}
@@ -470,6 +472,22 @@ func (r *Reader) forcedSensitive(ctx context.Context, st content.Status) (bool, 
 // that present it to a viewer decide that first. ActivityPub documents of local statuses are
 // built from it (federation.md §7.4).
 func (r *Reader) Parts(ctx context.Context, rev content.Revision) (RevisionParts, error) {
+	out, err := r.viewParts(ctx, rev)
+	if err != nil {
+		return RevisionParts{}, err
+	}
+	if out.Emojis, err = r.EmojiTags(ctx, rev.EmojiIDs); err != nil {
+		return RevisionParts{}, err
+	}
+	if out.Poll, err = r.poll(ctx, rev, ""); err != nil {
+		return RevisionParts{}, err
+	}
+	return out, nil
+}
+
+// viewParts resolves the attachments, mentioned accounts, and hashtags of rev, the parts of
+// Parts that a StatusView presents.
+func (r *Reader) viewParts(ctx context.Context, rev content.Revision) (RevisionParts, error) {
 	var out RevisionParts
 	var err error
 	if out.Attachments, err = r.attachments(ctx, rev.Attachments); err != nil {
@@ -491,12 +509,6 @@ func (r *Reader) Parts(ctx context.Context, rev content.Revision) (RevisionParts
 			return RevisionParts{}, err
 		}
 		out.Tags = append(out.Tags, tag)
-	}
-	if out.Emojis, err = r.EmojiTags(ctx, rev.EmojiIDs); err != nil {
-		return RevisionParts{}, err
-	}
-	if out.Poll, err = r.poll(ctx, rev, ""); err != nil {
-		return RevisionParts{}, err
 	}
 	return out, nil
 }
