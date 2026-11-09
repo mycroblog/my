@@ -115,6 +115,9 @@ type Repository interface {
 	// FindAccounts returns the accounts of ids that exist, by ID, as FindAccount returns one, with
 	// one query.
 	FindAccounts(ctx context.Context, ids []string) (map[string]account.Account, error)
+	// FindLifecycleStates returns the lifecycle states of the accounts of ids that have one, by
+	// account, as FindLifecycleState returns one, with one query.
+	FindLifecycleStates(ctx context.Context, ids []string) (map[string]account.LifecycleState, error)
 	// FindLocalAccountsByUsers returns the local accounts of the users of userIDs that have one, by
 	// user ID, as FindLocalAccountByUser returns one, with one query.
 	FindLocalAccountsByUsers(ctx context.Context, userIDs []string) (map[string]account.LocalAccount, error)
@@ -190,6 +193,9 @@ type TxReads interface {
 	FindHandleOfTx(ctx context.Context, tx uow.Tx, accountID string) (account.Handle, error)
 	FindCurrentProfileTx(ctx context.Context, tx uow.Tx, accountID string) (account.ProfileRevision, error)
 	FindLifecycleStateTx(ctx context.Context, tx uow.Tx, accountID string) (account.LifecycleState, error)
+	// FindAccountsTx and FindLifecycleStatesTx are FindAccounts and FindLifecycleStates inside tx.
+	FindAccountsTx(ctx context.Context, tx uow.Tx, ids []string) (map[string]account.Account, error)
+	FindLifecycleStatesTx(ctx context.Context, tx uow.Tx, ids []string) (map[string]account.LifecycleState, error)
 	ListKeysTx(ctx context.Context, tx uow.Tx, accountID string) ([]account.Key, error)
 	ListRemoteProfileURLsTx(ctx context.Context, tx uow.Tx, accountIDs []string) (map[string]string, error)
 	CountLocalAccountsTx(ctx context.Context, tx uow.Tx) (int, error)

@@ -177,6 +177,39 @@ func (q *Queries) DomainExcluded(ctx context.Context, arg DomainExcludedParams) 
 	return exists, err
 }
 
+const domainsExcludedAmong = `-- name: DomainsExcludedAmong :many
+SELECT DISTINCT dx.viewer_account_id FROM notification_domain_exclusions dx
+WHERE dx.viewer_account_id = ANY($1::uuid[])
+  AND (dx.domain = $2::text OR right($2::text, length(dx.domain) + 1) = '.' || dx.domain)
+`
+
+type DomainsExcludedAmongParams struct {
+	ViewerAccountIds []string
+	Domain           string
+}
+
+// DomainsExcludedAmong returns the viewers among viewer_account_ids that exclude the domain or one
+// of its parents, as DomainExcluded checks one.
+func (q *Queries) DomainsExcludedAmong(ctx context.Context, arg DomainsExcludedAmongParams) ([]string, error) {
+	rows, err := q.db.Query(ctx, domainsExcludedAmong, arg.ViewerAccountIds, arg.Domain)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []string{}
+	for rows.Next() {
+		var viewer_account_id string
+		if err := rows.Scan(&viewer_account_id); err != nil {
+			return nil, err
+		}
+		items = append(items, viewer_account_id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getErrorGroupNotices = `-- name: GetErrorGroupNotices :one
 SELECT COALESCE((SELECT notices FROM error_group_notice_hours WHERE hour_start = $1), 0)::bigint
 `
@@ -371,6 +404,99 @@ func (q *Queries) InsertNotificationDomainExclusion(ctx context.Context, arg Ins
 	return err
 }
 
+const insertNotificationsFor = `-- name: InsertNotificationsFor :many
+INSERT INTO notifications (id, recipient_account_id, type, source_account_id, source_domain, status_id, moderation_action_id, report_id, subject_user_id, severance_id, appeal_id, custom_emoji_request_id, supporter_subscription_id, reaction_emoji, reaction_custom_emoji_id, account_move_id, account_move_outcome, service_closure_event_id, service_closure_change, voice_room_id, error_group_change, error_group_id, error_group_hour, announcement_id, hook_appeal_id, auto_delete_limit_notice_id, dedupe_key, created_at)
+SELECT unnest($1::uuid[]), unnest($2::uuid[]), $3::text,
+  $4::uuid, $5::text, $6::uuid, $7::uuid, $8::uuid, $9::uuid, $10::uuid, $11::uuid, $12::uuid, $13::uuid, $14::text, $15::uuid, $16::uuid, $17::text, $18::uuid, $19::text, $20::uuid, $21::text, $22::uuid, $23::timestamptz, $24::uuid, $25::uuid, $26::uuid,
+  $27::text, $28::timestamptz
+ON CONFLICT (recipient_account_id, dedupe_key) DO NOTHING
+RETURNING recipient_account_id
+`
+
+type InsertNotificationsForParams struct {
+	Ids                     []string
+	RecipientAccountIds     []string
+	Type                    string
+	SourceAccountID         *string
+	SourceDomain            *string
+	StatusID                *string
+	ModerationActionID      *string
+	ReportID                *string
+	SubjectUserID           *string
+	SeveranceID             *string
+	AppealID                *string
+	CustomEmojiRequestID    *string
+	SupporterSubscriptionID *string
+	ReactionEmoji           *string
+	ReactionCustomEmojiID   *string
+	AccountMoveID           *string
+	AccountMoveOutcome      *string
+	ServiceClosureEventID   *string
+	ServiceClosureChange    *string
+	VoiceRoomID             *string
+	ErrorGroupChange        *string
+	ErrorGroupID            *string
+	ErrorGroupHour          *time.Time
+	AnnouncementID          *string
+	HookAppealID            *string
+	AutoDeleteLimitNoticeID *string
+	DedupeKey               string
+	CreatedAt               time.Time
+}
+
+// InsertNotificationsFor inserts one notification for each recipient of the arrays, of one length
+// (the unnests of a select list advance together), with the ID at the same index and every other
+// column the same, as InsertNotification inserts one, and returns the recipients it inserted
+// one for.
+func (q *Queries) InsertNotificationsFor(ctx context.Context, arg InsertNotificationsForParams) ([]string, error) {
+	rows, err := q.db.Query(ctx, insertNotificationsFor,
+		arg.Ids,
+		arg.RecipientAccountIds,
+		arg.Type,
+		arg.SourceAccountID,
+		arg.SourceDomain,
+		arg.StatusID,
+		arg.ModerationActionID,
+		arg.ReportID,
+		arg.SubjectUserID,
+		arg.SeveranceID,
+		arg.AppealID,
+		arg.CustomEmojiRequestID,
+		arg.SupporterSubscriptionID,
+		arg.ReactionEmoji,
+		arg.ReactionCustomEmojiID,
+		arg.AccountMoveID,
+		arg.AccountMoveOutcome,
+		arg.ServiceClosureEventID,
+		arg.ServiceClosureChange,
+		arg.VoiceRoomID,
+		arg.ErrorGroupChange,
+		arg.ErrorGroupID,
+		arg.ErrorGroupHour,
+		arg.AnnouncementID,
+		arg.HookAppealID,
+		arg.AutoDeleteLimitNoticeID,
+		arg.DedupeKey,
+		arg.CreatedAt,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []string{}
+	for rows.Next() {
+		var recipient_account_id string
+		if err := rows.Scan(&recipient_account_id); err != nil {
+			return nil, err
+		}
+		items = append(items, recipient_account_id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listNotificationSettings = `-- name: ListNotificationSettings :many
 SELECT account_id, notification_group, channel, enabled, updated_at FROM notification_settings
 WHERE account_id = $1 ORDER BY notification_group, channel
@@ -379,6 +505,37 @@ WHERE account_id = $1 ORDER BY notification_group, channel
 // ListNotificationSettings returns the channels a local account chose (FR-210).
 func (q *Queries) ListNotificationSettings(ctx context.Context, accountID string) ([]NotificationSetting, error) {
 	rows, err := q.db.Query(ctx, listNotificationSettings, accountID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []NotificationSetting{}
+	for rows.Next() {
+		var i NotificationSetting
+		if err := rows.Scan(
+			&i.AccountID,
+			&i.NotificationGroup,
+			&i.Channel,
+			&i.Enabled,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listNotificationSettingsOf = `-- name: ListNotificationSettingsOf :many
+SELECT account_id, notification_group, channel, enabled, updated_at FROM notification_settings
+WHERE account_id = ANY($1::uuid[]) ORDER BY account_id, notification_group, channel
+`
+
+func (q *Queries) ListNotificationSettingsOf(ctx context.Context, accountIds []string) ([]NotificationSetting, error) {
+	rows, err := q.db.Query(ctx, listNotificationSettingsOf, accountIds)
 	if err != nil {
 		return nil, err
 	}

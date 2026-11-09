@@ -33,3 +33,11 @@ FROM mutes
 WHERE account_id = sqlc.arg(account_id) AND target_account_id = ANY(sqlc.arg(targets)::uuid[])
   AND (expires_at IS NULL OR expires_at > sqlc.arg(now)::timestamptz)
 ORDER BY target_account_id;
+
+-- The mutes of the accounts among targets of account_id, as GetActiveMute reads one.
+-- name: ListActiveMutesTo :many
+SELECT account_id, target_account_id, hide_notifications, expires_at, created_at
+FROM mutes
+WHERE target_account_id = sqlc.arg(account_id) AND account_id = ANY(sqlc.arg(targets)::uuid[])
+  AND (expires_at IS NULL OR expires_at > sqlc.arg(now)::timestamptz)
+ORDER BY account_id;

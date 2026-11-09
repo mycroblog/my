@@ -103,3 +103,27 @@ func (r *Repository) pushSubscription(ctx context.Context, row notificationgen.P
 		KeyP256DH: row.KeyP256dh, KeyAuth: row.KeyAuth, Alerts: alerts, CreatedAt: sqlite.FromMillis(row.CreatedAt), UpdatedAt: sqlite.FromMillis(row.UpdatedAt),
 	}, nil
 }
+
+// PushSubscriptionIDsOf implements notification.PushRepository.
+func (r *Repository) PushSubscriptionIDsOf(ctx context.Context, tx uow.Tx, accountIDs []string, t notification.Type) (map[string][]string, error) {
+	out := make(map[string][]string, len(accountIDs))
+	if len(accountIDs) == 0 {
+		return out, nil
+	}
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return nil, err
+	}
+	list, err := sqlite.JSONList(accountIDs)
+	if err != nil {
+		return nil, err
+	}
+	rows, err := q.ListPushSubscriptionIDsForAlertOf(ctx, notificationgen.ListPushSubscriptionIDsForAlertOfParams{AccountIds: list, NotificationType: string(t)})
+	if err != nil {
+		return nil, sqlite.Wrap(err, "list push subscriptions")
+	}
+	for _, row := range rows {
+		out[row.AccountID] = append(out[row.AccountID], row.ID)
+	}
+	return out, nil
+}

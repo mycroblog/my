@@ -189,3 +189,23 @@ func (r *Repository) FindMoves(ctx context.Context, ids []string) (map[string]ac
 	}
 	return out, nil
 }
+
+// FindLifecycleStates implements account.Repository.
+func (r *Repository) FindLifecycleStates(ctx context.Context, ids []string) (map[string]account.LifecycleState, error) {
+	out := map[string]account.LifecycleState{}
+	if len(ids) == 0 {
+		return out, nil
+	}
+	list, err := sqlite.JSONList(ids)
+	if err != nil {
+		return nil, err
+	}
+	rows, err := r.db.reader().ListLifecycleStatesByIDs(ctx, list)
+	if err != nil {
+		return nil, sqlite.Wrap(err, "list lifecycle states")
+	}
+	for _, row := range rows {
+		out[row.AccountID] = lifecycleState(row)
+	}
+	return out, nil
+}

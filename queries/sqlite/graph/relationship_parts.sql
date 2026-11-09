@@ -33,3 +33,11 @@ FROM mutes
 WHERE account_id = sqlc.arg(account_id) AND target_account_id IN (SELECT value FROM json_each(CAST(sqlc.arg(targets) AS TEXT)))
   AND (expires_at IS NULL OR expires_at > CAST(sqlc.arg(now) AS INTEGER))
 ORDER BY target_account_id;
+
+-- The mutes of the accounts among targets of account_id, as GetActiveMute reads one.
+-- name: ListActiveMutesTo :many
+SELECT account_id, target_account_id, hide_notifications, expires_at, created_at
+FROM mutes
+WHERE target_account_id = sqlc.arg(account_id) AND account_id IN (SELECT value FROM json_each(CAST(sqlc.arg(targets) AS TEXT)))
+  AND (expires_at IS NULL OR expires_at > CAST(sqlc.arg(now) AS INTEGER))
+ORDER BY account_id;

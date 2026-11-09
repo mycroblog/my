@@ -9,6 +9,7 @@ import (
 	"crypto/x509"
 	"errors"
 	"fmt"
+	"slices"
 	"time"
 
 	"github.com/mycroblog/my/internal/app/kernel"
@@ -658,6 +659,31 @@ func (s *Service) IsLocal(ctx context.Context, tx uow.Tx, id string) (bool, erro
 		return false, err
 	}
 	return a.IsLocal(), nil
+}
+
+// NotifiableAmong reports, inside tx, which of ids are local accounts that their owners did not
+// deactivate, as IsLocal and DeactivatedTx report one, with one query each.
+func (s *Service) NotifiableAmong(ctx context.Context, tx uow.Tx, ids []string) (map[string]bool, error) {
+	accounts, err := s.d.Repository.FindAccountsTx(ctx, tx, ids)
+	if err != nil {
+		return nil, err
+	}
+	var local []string
+	for _, id := range ids {
+		if a, ok := accounts[id]; ok && a.IsLocal() && !slices.Contains(local, id) {
+			local = append(local, id)
+		}
+	}
+	states, err := s.d.Repository.FindLifecycleStatesTx(ctx, tx, local)
+	if err != nil {
+		return nil, err
+	}
+	out := make(map[string]bool, len(local))
+	for _, id := range local {
+		st, ok := states[id]
+		out[id] = !ok || !st.Deactivated()
+	}
+	return out, nil
 }
 
 // DomainOf returns, inside tx, the domain of a remote account: account.LocalDomain ("") for a

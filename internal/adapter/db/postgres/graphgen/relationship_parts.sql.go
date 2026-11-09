@@ -52,6 +52,47 @@ func (q *Queries) ListActiveMutesOf(ctx context.Context, arg ListActiveMutesOfPa
 	return items, nil
 }
 
+const listActiveMutesTo = `-- name: ListActiveMutesTo :many
+SELECT account_id, target_account_id, hide_notifications, expires_at, created_at
+FROM mutes
+WHERE target_account_id = $1 AND account_id = ANY($2::uuid[])
+  AND (expires_at IS NULL OR expires_at > $3::timestamptz)
+ORDER BY account_id
+`
+
+type ListActiveMutesToParams struct {
+	AccountID string
+	Targets   []string
+	Now       time.Time
+}
+
+// The mutes of the accounts among targets of account_id, as GetActiveMute reads one.
+func (q *Queries) ListActiveMutesTo(ctx context.Context, arg ListActiveMutesToParams) ([]Mute, error) {
+	rows, err := q.db.Query(ctx, listActiveMutesTo, arg.AccountID, arg.Targets, arg.Now)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Mute{}
+	for rows.Next() {
+		var i Mute
+		if err := rows.Scan(
+			&i.AccountID,
+			&i.TargetAccountID,
+			&i.HideNotifications,
+			&i.ExpiresAt,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listBlockEdgesFrom = `-- name: ListBlockEdgesFrom :many
 SELECT blocker_account_id, blocked_account_id, block_id
 FROM block_edges WHERE blocker_account_id = $1 AND blocked_account_id = ANY($2::uuid[])

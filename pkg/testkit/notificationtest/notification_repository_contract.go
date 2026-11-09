@@ -5,6 +5,7 @@ package notificationtest
 import (
 	"context"
 	"errors"
+	"maps"
 	"reflect"
 	"slices"
 	"sync"
@@ -40,6 +41,7 @@ func NotificationContract(t *testing.T, newHarness NotificationFactory) {
 		{"HidesDismissedExcludedAndDeleted", notificationRepoHides},
 		{"AdvancesTheReadMarker", notificationRepoReadMarker},
 		{"ReplacesSettings", notificationRepoSettings},
+		{"InsertsForManyRecipients", notificationRepoInsertsFor},
 		{"CountsErrorGroupNotices", notificationRepoErrorGroupNotices},
 		{"EmptiesTheProjections", notificationRepoRebuild},
 		{"KeepsSubscriptions", notificationRepoSubscriptions},
@@ -350,6 +352,16 @@ func notificationRepoHides(t *testing.T, r *notificationRepo) {
 			t.Errorf("DomainExcluded(%s) = %v, want %v", domain, got, want)
 		}
 	}
+	for domain, want := range map[string]bool{"muted.example": true, "a.b.muted.example": true, "notmuted.example": false} {
+		var got map[string]bool
+		r.tx(t, func(ctx context.Context, tx uow.Tx) (err error) {
+			got, err = r.repo.DomainExcludedAmong(ctx, tx, []string{alice, r.ids.NewID()}, domain)
+			return err
+		})
+		if got[alice] != want || len(got) > 1 {
+			t.Errorf("DomainExcludedAmong(%s) = %v, want alice %v alone, as DomainExcluded", domain, got, want)
+		}
+	}
 
 	// The mute expires; the block and the domain mute go when deleted.
 	r.clock.Advance(2 * time.Hour)
@@ -445,6 +457,14 @@ func notificationRepoSettings(t *testing.T, r *notificationRepo) {
 	})
 	if !reflect.DeepEqual(inTx, want) {
 		t.Errorf("NotificationSettingsTx = %+v, want %+v", inTx, want)
+	}
+	var of map[string][]notification.Setting
+	r.tx(t, func(ctx context.Context, tx uow.Tx) (err error) {
+		of, err = r.repo.NotificationSettingsOfTx(ctx, tx, []string{alice, bob, r.ids.NewID()})
+		return err
+	})
+	if !reflect.DeepEqual(of[alice], want) || len(of[bob]) != 1 || !of[bob][0].Enabled || len(of) != 2 {
+		t.Errorf("NotificationSettingsOfTx = %+v; want those of alice and bob, as NotificationSettingsTx", of)
 	}
 	if got, err := r.repo.NotificationSettings(t.Context(), bob); err != nil || len(got) != 1 || !got[0].Enabled {
 		t.Errorf("NotificationSettings of bob = %+v, %v", got, err)
@@ -710,5 +730,59 @@ func notificationRepoSubscriptionRequests(t *testing.T, r *notificationRepo) {
 	}
 	if ok, err := r.repo.SubscriptionRequested(ctx, alice, bob); err != nil || ok {
 		t.Errorf("SubscriptionRequested after the delete = %v, %v; want false", ok, err)
+	}
+}
+
+// notificationRepoInsertsFor checks that InsertNotificationsFor inserts for each recipient the
+// notification that InsertNotification inserts, and skips the recipients who have one with its
+// dedupe key.
+func notificationRepoInsertsFor(t *testing.T, r *notificationRepo) {
+	alice, bob, carol, dave := r.ids.NewID(), r.ids.NewID(), r.ids.NewID(), r.ids.NewID()
+	n := notification.Notification{
+		Type: notification.TypeMention, SourceAccountID: r.ids.NewID(), SourceDomain: "remote.example", StatusID: r.ids.NewID(),
+		DedupeKey: "mention:" + r.ids.NewID(), CreatedAt: r.clock.Now(),
+	}
+	insertFor := func(recipients ...string) (map[string]bool, []string) {
+		t.Helper()
+		ids := make([]string, len(recipients))
+		for i := range ids {
+			ids[i] = r.ids.NewID()
+		}
+		var got map[string]bool
+		r.tx(t, func(ctx context.Context, tx uow.Tx) (err error) {
+			got, err = r.repo.InsertNotificationsFor(ctx, tx, n, ids, recipients)
+			return err
+		})
+		return got, ids
+	}
+	got, ids := insertFor(alice, bob)
+	if !maps.Equal(got, map[string]bool{alice: true, bob: true}) {
+		t.Errorf("InsertNotificationsFor(alice, bob) = %v, want both", got)
+	}
+	// The single insert of the same notification, to compare with.
+	one := n
+	one.RecipientAccountID = dave
+	one, _ = r.insert(t, one)
+	read := func(id string) (n notification.Notification) {
+		t.Helper()
+		r.tx(t, func(ctx context.Context, tx uow.Tx) (err error) {
+			n, err = r.repo.Notification(ctx, tx, id)
+			return err
+		})
+		return n
+	}
+	want := read(one.ID)
+	for i, recipient := range []string{alice, bob} {
+		got := read(ids[i])
+		want.ID, want.RecipientAccountID = ids[i], recipient
+		if !reflect.DeepEqual(got, want) {
+			t.Errorf("Notification(%s) = %+v; want %+v, as InsertNotification inserts it", ids[i], got, want)
+		}
+	}
+	if got, _ := insertFor(alice, carol); !maps.Equal(got, map[string]bool{carol: true}) {
+		t.Errorf("InsertNotificationsFor(alice again, carol) = %v, want carol alone", got)
+	}
+	if got, _ := insertFor(); len(got) != 0 {
+		t.Errorf("InsertNotificationsFor(nobody) = %v", got)
 	}
 }

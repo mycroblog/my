@@ -9,6 +9,7 @@ import (
 	"github.com/mycroblog/my/internal/adapter/db/sqlite"
 	"github.com/mycroblog/my/internal/adapter/db/sqlite/graphgen"
 	appgraph "github.com/mycroblog/my/internal/app/graph"
+	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/graph"
 )
 
@@ -80,6 +81,53 @@ func (r *Repository) FindRelationshipParts(ctx context.Context, accountID string
 	for _, row := range mutes {
 		m := muteFrom(row)
 		out.Mutes[m.TargetAccountID] = m
+	}
+	return out, nil
+}
+
+// NotificationRelationsTx implements graph.Repository: one query per part, inside tx.
+func (r *Repository) NotificationRelationsTx(ctx context.Context, tx uow.Tx, sourceID string, recipientIDs []string, now time.Time) (appgraph.NotificationRelations, error) {
+	out := appgraph.NotificationRelations{Blocked: map[string]bool{}, Mutes: map[string]graph.Mute{}, Follows: map[string]graph.Edge{}}
+	if len(recipientIDs) == 0 {
+		return out, nil
+	}
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return out, err
+	}
+	targets, err := sqlite.JSONList(recipientIDs)
+	if err != nil {
+		return out, err
+	}
+	blocking, err := q.ListBlockEdgesFrom(ctx, graphgen.ListBlockEdgesFromParams{AccountID: sourceID, Targets: targets})
+	if err != nil {
+		return out, sqlite.Wrap(err, "list block edges from "+sourceID)
+	}
+	for _, row := range blocking {
+		out.Blocked[row.BlockedAccountID] = true
+	}
+	blockedBy, err := q.ListBlockEdgesTo(ctx, graphgen.ListBlockEdgesToParams{AccountID: sourceID, Targets: targets})
+	if err != nil {
+		return out, sqlite.Wrap(err, "list block edges to "+sourceID)
+	}
+	for _, row := range blockedBy {
+		out.Blocked[row.BlockerAccountID] = true
+	}
+	mutes, err := q.ListActiveMutesTo(ctx, graphgen.ListActiveMutesToParams{AccountID: sourceID, Targets: targets, Now: sqlite.ToMillis(now)})
+	if err != nil {
+		return out, sqlite.Wrap(err, "list mutes of "+sourceID)
+	}
+	for _, row := range mutes {
+		m := muteFrom(row)
+		out.Mutes[m.AccountID] = m
+	}
+	followers, err := q.ListFollowEdgesTo(ctx, graphgen.ListFollowEdgesToParams{AccountID: sourceID, Targets: targets})
+	if err != nil {
+		return out, sqlite.Wrap(err, "list follow edges to "+sourceID)
+	}
+	for _, row := range followers {
+		e := edgeFrom(row)
+		out.Follows[e.FollowerAccountID] = e
 	}
 	return out, nil
 }

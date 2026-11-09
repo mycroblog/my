@@ -5,6 +5,7 @@ package identitytest
 import (
 	"context"
 	"errors"
+	"maps"
 	"reflect"
 	"slices"
 	"testing"
@@ -364,6 +365,28 @@ func accountRepoActorParts(t *testing.T, r *identityRepo) {
 	if got, err := r.h.Accounts.FindAccounts(ctx, []string{alice, bob, unknown}); err != nil || len(got) != 2 || got[alice] != parts.Accounts[alice] {
 		t.Errorf("FindAccounts = %+v, %v; want alice and bob, as FindAccount", got, err)
 	}
+	states, err := r.h.Accounts.FindLifecycleStates(ctx, []string{alice, bob, unknown})
+	if err != nil {
+		t.Errorf("FindLifecycleStates = %v", err)
+	}
+	for _, id := range []string{alice, bob, unknown} {
+		got, ok := states[id]
+		want, err := r.h.Accounts.FindLifecycleState(ctx, id)
+		if (err == nil) != ok || ok && got != want {
+			t.Errorf("FindLifecycleStates[%s] = %+v (%t); want %+v (%v), as FindLifecycleState", id, got, ok, want, err)
+		}
+	}
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+		accounts, err := r.h.Accounts.FindAccountsTx(ctx, tx, []string{alice, bob, unknown})
+		if err == nil && (len(accounts) != 2 || accounts[alice] != parts.Accounts[alice]) {
+			t.Errorf("FindAccountsTx = %+v; want alice and bob, as FindAccounts", accounts)
+		}
+		inTx, err2 := r.h.Accounts.FindLifecycleStatesTx(ctx, tx, []string{alice, bob, unknown})
+		if err2 == nil && !maps.Equal(inTx, states) {
+			t.Errorf("FindLifecycleStatesTx = %+v; want %+v, as FindLifecycleStates", inTx, states)
+		}
+		return errors.Join(err, err2)
+	})
 	if empty, err := r.h.Accounts.FindActorParts(ctx, nil); err != nil || len(empty.Accounts) != 0 {
 		t.Errorf("FindActorParts(nil) = %+v, %v; want nothing", empty, err)
 	}

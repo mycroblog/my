@@ -38,6 +38,9 @@ type PushRepository interface {
 	// PushSubscriptionIDs returns inside tx the subscriptions of the account that take
 	// notifications of type t, in order.
 	PushSubscriptionIDs(ctx context.Context, tx uow.Tx, accountID string, t notification.Type) ([]string, error)
+	// PushSubscriptionIDsOf returns inside tx the subscriptions of each of accountIDs that take
+	// notifications of type t, by account, in order, with one query.
+	PushSubscriptionIDsOf(ctx context.Context, tx uow.Tx, accountIDs []string, t notification.Type) (map[string][]string, error)
 	// FindPushSubscription returns a subscription by ID, and FindPushSubscriptionOfFamily the
 	// subscription of a token family. They fail with an error wrapping ErrNotFound when there is
 	// none.
@@ -213,6 +216,41 @@ func (p *Pusher) enqueueWith(ctx context.Context, tx uow.Tx, n notification.Noti
 			return err
 		}
 		jobs = append(jobs, queue.NewJob{Type: JobPush, Payload: payload, IdempotencyKey: JobPush + ":" + n.ID + ":" + id})
+	}
+	return p.Outbox.EnqueueTx(ctx, tx, jobs...)
+}
+
+// enqueueAll enqueues the messages of ns, notifications of one type, as enqueueWith enqueues
+// those of each, reading the subscriptions of their recipients together and enqueueing every
+// message with one EnqueueTx.
+func (p *Pusher) enqueueAll(ctx context.Context, tx uow.Tx, ns []notification.Notification, complete func(*pushJob)) error {
+	if p == nil || p.Repository == nil || p.Outbox == nil || len(ns) == 0 {
+		return nil
+	}
+	recipients := make([]string, len(ns))
+	for i, n := range ns {
+		recipients[i] = n.RecipientAccountID
+	}
+	subs, err := p.Repository.PushSubscriptionIDsOf(ctx, tx, recipients, ns[0].Type)
+	if err != nil {
+		return err
+	}
+	var jobs []queue.NewJob
+	for _, n := range ns {
+		for _, id := range subs[n.RecipientAccountID] {
+			job := jobOf(n, id)
+			if complete != nil {
+				complete(&job)
+			}
+			payload, err := json.Marshal(job)
+			if err != nil {
+				return err
+			}
+			jobs = append(jobs, queue.NewJob{Type: JobPush, Payload: payload, IdempotencyKey: JobPush + ":" + n.ID + ":" + id})
+		}
+	}
+	if len(jobs) == 0 {
+		return nil
 	}
 	return p.Outbox.EnqueueTx(ctx, tx, jobs...)
 }

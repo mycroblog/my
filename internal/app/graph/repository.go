@@ -173,6 +173,11 @@ type Repository interface {
 	// RelationsAmong returns the relations of accountID with the accounts among ids, with the
 	// mutes that have not expired at now.
 	RelationsAmong(ctx context.Context, accountID string, ids []string, now time.Time) (RelationsAmong, error)
+	// NotificationRelationsTx reads inside tx, of sourceID and each of recipientIDs, what
+	// HidesNotifications and Follows read of one recipient: the blocks between them either way,
+	// the recipient's mute of the source that has not expired at now, and the recipient's follow
+	// edge to the source, with one query per part.
+	NotificationRelationsTx(ctx context.Context, tx uow.Tx, sourceID string, recipientIDs []string, now time.Time) (NotificationRelations, error)
 }
 
 // RelationsAmong are the relations of one account with some others, each list in ID order: the
@@ -181,6 +186,15 @@ type Repository interface {
 type RelationsAmong struct {
 	Blocked, BlockedBy, Muted, Following []string
 	Counters                             []graph.Counters
+}
+
+// NotificationRelations are the relations of the recipients of a notification with its source,
+// by recipient (Repository.NotificationRelationsTx): whether a block stands between them either
+// way, the recipient's mute of the source, and the recipient's follow edge to the source.
+type NotificationRelations struct {
+	Blocked map[string]bool
+	Mutes   map[string]graph.Mute
+	Follows map[string]graph.Edge
 }
 
 // MuteCursor is the position of a mute in a list of mutes: its creation and target account.

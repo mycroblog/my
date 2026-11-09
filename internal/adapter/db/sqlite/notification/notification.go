@@ -4,6 +4,8 @@ package notification
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"strings"
 	"time"
 
@@ -315,4 +317,101 @@ func typeSet(types []notification.Type) string {
 		set += string(t) + ","
 	}
 	return set
+}
+
+// InsertNotificationsFor implements notification.Repository.
+func (r *Repository) InsertNotificationsFor(ctx context.Context, tx uow.Tx, n notification.Notification, ids, recipients []string) (map[string]bool, error) {
+	out := make(map[string]bool, len(recipients))
+	if len(recipients) == 0 {
+		return out, nil
+	}
+	if len(ids) != len(recipients) {
+		return nil, fmt.Errorf("insert notifications: %d IDs for %d recipients", len(ids), len(recipients))
+	}
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return nil, err
+	}
+	type row struct {
+		ID        string `json:"id"`
+		Recipient string `json:"recipient"`
+	}
+	rows := make([]row, len(ids))
+	for i, id := range ids {
+		rows[i] = row{ID: id, Recipient: recipients[i]}
+	}
+	list, err := json.Marshal(rows)
+	if err != nil {
+		return nil, err
+	}
+	arg := notificationgen.InsertNotificationsForParams{
+		Type:            string(n.Type),
+		SourceAccountID: sqlite.ToNullString(n.SourceAccountID), SourceDomain: sqlite.ToNullString(n.SourceDomain), StatusID: sqlite.ToNullString(n.StatusID),
+		ModerationActionID: sqlite.ToNullString(n.ModerationActionID), ReportID: sqlite.ToNullString(n.ReportID),
+		SubjectUserID: sqlite.ToNullString(n.SubjectUserID), SeveranceID: sqlite.ToNullString(n.SeveranceID), AppealID: sqlite.ToNullString(n.AppealID),
+		CustomEmojiRequestID: sqlite.ToNullString(n.CustomEmojiRequestID), SupporterSubscriptionID: sqlite.ToNullString(n.SupporterSubscriptionID),
+		ReactionEmoji: sqlite.ToNullString(n.ReactionEmoji), ReactionCustomEmojiID: sqlite.ToNullString(n.ReactionCustomEmojiID),
+		AccountMoveID: sqlite.ToNullString(n.AccountMoveID), AccountMoveOutcome: sqlite.ToNullString(string(n.AccountMoveOutcome)),
+		ServiceClosureEventID: sqlite.ToNullString(n.ServiceClosureEventID), ServiceClosureChange: sqlite.ToNullString(string(n.ServiceClosureChange)), VoiceRoomID: sqlite.ToNullString(n.VoiceRoomID),
+		ErrorGroupChange: sqlite.ToNullString(string(n.ErrorGroupChange)), ErrorGroupID: sqlite.ToNullString(n.ErrorGroupID), ErrorGroupHour: sqlite.ToNullTime(n.ErrorGroupHour),
+		AnnouncementID: sqlite.ToNullString(n.AnnouncementID), HookAppealID: sqlite.ToNullString(n.HookAppealID),
+		AutoDeleteLimitNoticeID: sqlite.ToNullString(n.AutoDeleteLimitNoticeID), DedupeKey: n.DedupeKey, CreatedAt: sqlite.ToMillis(n.CreatedAt),
+		Recipients: string(list),
+	}
+	inserted, err := q.InsertNotificationsFor(ctx, arg)
+	if err != nil {
+		return nil, sqlite.Wrap(err, "insert notifications")
+	}
+	for _, id := range inserted {
+		out[id] = true
+	}
+	return out, nil
+}
+
+// DomainExcludedAmong implements notification.Repository.
+func (r *Repository) DomainExcludedAmong(ctx context.Context, tx uow.Tx, viewerAccountIDs []string, domain string) (map[string]bool, error) {
+	out := make(map[string]bool, len(viewerAccountIDs))
+	if len(viewerAccountIDs) == 0 {
+		return out, nil
+	}
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return nil, err
+	}
+	list, err := sqlite.JSONList(viewerAccountIDs)
+	if err != nil {
+		return nil, err
+	}
+	ids, err := q.DomainsExcludedAmong(ctx, notificationgen.DomainsExcludedAmongParams{ViewerAccountIds: list, Domain: domain})
+	if err != nil {
+		return nil, sqlite.Wrap(err, "check notification domain exclusions")
+	}
+	for _, id := range ids {
+		out[id] = true
+	}
+	return out, nil
+}
+
+// NotificationSettingsOfTx implements notification.Repository.
+func (r *Repository) NotificationSettingsOfTx(ctx context.Context, tx uow.Tx, accountIDs []string) (map[string][]notification.Setting, error) {
+	out := make(map[string][]notification.Setting, len(accountIDs))
+	if len(accountIDs) == 0 {
+		return out, nil
+	}
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return nil, err
+	}
+	list, err := sqlite.JSONList(accountIDs)
+	if err != nil {
+		return nil, err
+	}
+	all, err := notificationSettings(q.ListNotificationSettingsOf(ctx, list))
+	if err != nil {
+		return nil, err
+	}
+	for _, st := range all {
+		out[st.AccountID] = append(out[st.AccountID], st)
+	}
+	return out, nil
 }

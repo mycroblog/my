@@ -4,6 +4,8 @@ package notification
 
 import (
 	"context"
+	"fmt"
+	"slices"
 	"time"
 
 	appcontent "github.com/mycroblog/my/internal/app/content"
@@ -359,16 +361,10 @@ type projector struct {
 }
 
 func (p *projector) mentions(ctx context.Context, tx uow.Tx, statusID, authorID string, mentioned []string, at time.Time) error {
-	for _, id := range mentioned {
-		err := p.notify(ctx, tx, notification.Notification{
-			RecipientAccountID: id, SourceAccountID: authorID, Type: notification.TypeMention, StatusID: statusID,
-			DedupeKey: notification.MentionKey(statusID), CreatedAt: at,
-		})
-		if err != nil {
-			return err
-		}
-	}
-	return nil
+	return p.notifyAll(ctx, tx, notification.Notification{
+		SourceAccountID: authorID, Type: notification.TypeMention, StatusID: statusID,
+		DedupeKey: notification.MentionKey(statusID), CreatedAt: at,
+	}, mentioned)
 }
 
 // pollClosed notifies the author of a poll that has ended, without a source, and each voter,
@@ -383,19 +379,10 @@ func (p *projector) pollClosed(ctx context.Context, tx uow.Tx, ev appcontent.Pol
 	if err != nil {
 		return err
 	}
-	for _, id := range ev.VoterAccountIDs {
-		if id == st.AuthorAccountID {
-			continue
-		}
-		err := p.notify(ctx, tx, notification.Notification{
-			RecipientAccountID: id, SourceAccountID: st.AuthorAccountID, Type: notification.TypePollClosed, StatusID: st.ID,
-			DedupeKey: key, CreatedAt: at,
-		})
-		if err != nil {
-			return err
-		}
-	}
-	return nil
+	// The author is the source of the voters' notifications, which leaves the author out of them.
+	return p.notifyAll(ctx, tx, notification.Notification{
+		SourceAccountID: st.AuthorAccountID, Type: notification.TypePollClosed, StatusID: st.ID, DedupeKey: key, CreatedAt: at,
+	}, ev.VoterAccountIDs)
 }
 
 // quote notifies the local author of the status quoted of the quote quoting.
@@ -481,6 +468,121 @@ func (p *projector) notifyWith(ctx context.Context, tx uow.Tx, n notification.No
 		return err
 	}
 	return p.d.Email.enqueueWith(ctx, tx, n, choices, complete)
+}
+
+// notifiableBatch is an Accounts that reads many recipients at once, as *appaccount.Service does.
+type notifiableBatch interface {
+	NotifiableAmong(ctx context.Context, tx uow.Tx, ids []string) (map[string]bool, error)
+}
+
+// relationBatch is a Relationships that reads many recipients at once, as *appgraph.Service does.
+type relationBatch interface {
+	NotificationRelations(ctx context.Context, tx uow.Tx, recipientIDs []string, sourceID string) (map[string]appgraph.NotificationRelation, error)
+}
+
+// notifyAll notifies each of recipients of n, a notification that differs between them only by
+// its ID and recipient, as notify notifies each, with a number of queries that does not grow with
+// recipients: it reads the recipients' accounts, their relations with the source, their domain
+// exclusions, and their settings together, the source's reach restriction and domain once, and
+// inserts the notifications and enqueues their messages with one statement each. Without the
+// batch reads of Accounts and Relationships it notifies them one by one.
+func (p *projector) notifyAll(ctx context.Context, tx uow.Tx, n notification.Notification, recipients []string) error {
+	accounts, okA := p.d.Accounts.(notifiableBatch)
+	relations, okR := p.d.Relationships.(relationBatch)
+	if !okA || !okR {
+		for _, id := range recipients {
+			one := n
+			one.RecipientAccountID = id
+			if err := p.notify(ctx, tx, one); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+	var ids []string
+	for _, id := range recipients {
+		if id != n.SourceAccountID && !slices.Contains(ids, id) {
+			ids = append(ids, id)
+		}
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	notifiable, err := accounts.NotifiableAmong(ctx, tx, ids)
+	if err != nil {
+		return err
+	}
+	ids = slices.DeleteFunc(ids, func(id string) bool { return !notifiable[id] })
+	if n.SourceAccountID != "" && len(ids) > 0 {
+		rels, err := relations.NotificationRelations(ctx, tx, ids, n.SourceAccountID)
+		if err != nil {
+			return err
+		}
+		ids = slices.DeleteFunc(ids, func(id string) bool { return rels[id].Hidden })
+		if n.Type != notification.TypeAccountMoved && p.d.Reach != nil && len(ids) > 0 {
+			restricted, err := p.d.Reach.UnsolicitedReachRestrictedTx(ctx, tx, n.SourceAccountID)
+			if err != nil {
+				return err
+			}
+			if restricted {
+				ids = slices.DeleteFunc(ids, func(id string) bool { return !rels[id].Follows })
+			}
+		}
+		if len(ids) == 0 {
+			return nil
+		}
+		if n.SourceDomain, err = p.d.Accounts.DomainOf(ctx, tx, n.SourceAccountID); err != nil {
+			return err
+		}
+		if n.SourceDomain != "" {
+			excluded, err := p.d.Repository.DomainExcludedAmong(ctx, tx, ids, n.SourceDomain)
+			if err != nil {
+				return err
+			}
+			ids = slices.DeleteFunc(ids, func(id string) bool { return excluded[id] })
+		}
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	saved, err := p.d.Repository.NotificationSettingsOfTx(ctx, tx, ids)
+	if err != nil {
+		return fmt.Errorf("notification: the settings of %d recipients: %w", len(ids), err)
+	}
+	choices := make(map[string]notification.Choices, len(ids))
+	var kept, newIDs []string
+	for _, id := range ids {
+		c := notification.NewChoices(saved[id])
+		if !c.TypeEnabled(n.Type, notification.ChannelInApp) {
+			continue // turned off in the app: not created, so delivered nowhere (ADR-0086 §10)
+		}
+		one := n
+		one.ID, one.RecipientAccountID = p.d.IDs.NewID(), id
+		if err := one.Validate(); err != nil {
+			return err
+		}
+		choices[id] = c
+		kept, newIDs = append(kept, id), append(newIDs, one.ID)
+	}
+	if len(kept) == 0 {
+		return nil
+	}
+	inserted, err := p.d.Repository.InsertNotificationsFor(ctx, tx, n, newIDs, kept)
+	if err != nil {
+		return err
+	}
+	var created []notification.Notification
+	for i, id := range kept {
+		if inserted[id] {
+			one := n
+			one.ID, one.RecipientAccountID = newIDs[i], id
+			created = append(created, one)
+		}
+	}
+	if err := p.d.Push.enqueueAll(ctx, tx, created, nil); err != nil {
+		return err
+	}
+	return p.d.Email.enqueueAll(ctx, tx, created, choices, nil)
 }
 
 // reaches reports whether sourceID may notify recipientID: always, unless the source has
