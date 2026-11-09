@@ -15,6 +15,9 @@ permissions:
 env:
   # Use exactly the Go version from .tool-versions; never auto-download another toolchain.
   GOTOOLCHAIN: local
+  # The runner is thrown away with every container on it, so testcontainers-go's reaper (Ryuk) has nothing to clean up,
+  # and a reaper that is slow to start fails every test of a package.
+  TESTCONTAINERS_RYUK_DISABLED: "true"
 
 jobs:
   search-contract:
