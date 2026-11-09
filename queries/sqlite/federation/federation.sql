@@ -388,3 +388,8 @@ INSERT INTO outbound_activity_documents (outbound_activity_id, document, built_a
 SELECT value ->> '$.id', unhex(value ->> '$.document'), CAST(sqlc.arg(built_at) AS INTEGER)
 FROM json_each(CAST(sqlc.arg(documents) AS TEXT)) WHERE true
 ON CONFLICT (outbound_activity_id) DO NOTHING;
+
+-- ListReceivedActivities is GetReceivedActivity of many activities, a JSON array.
+-- name: ListReceivedActivities :many
+SELECT activity_uri, actor_uri, type, signature_scheme, trust, received_at FROM received_activities
+WHERE activity_uri IN (SELECT value FROM json_each(CAST(sqlc.arg(activity_uris) AS TEXT)));

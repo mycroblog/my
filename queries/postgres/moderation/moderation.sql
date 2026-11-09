@@ -318,3 +318,9 @@ WHERE target_account_id = sqlc.arg(target_account_id)::uuid AND id <> sqlc.arg(r
 -- CountModerationActionsOfTarget counts the actions on an account, ended ones included.
 -- name: CountModerationActionsOfTarget :one
 SELECT COUNT(*) FROM moderation_actions WHERE target_account_id = $1;
+
+-- ListAccountRestrictionRowsOf is ListAccountRestrictionRows of many accounts.
+-- name: ListAccountRestrictionRowsOf :many
+SELECT account_id, restriction, source_action_id, effective_until
+FROM account_restrictions WHERE account_id = ANY(sqlc.arg(account_ids)::uuid[])
+ORDER BY account_id, restriction, source_action_id;

@@ -1887,6 +1887,32 @@ func (q *Queries) UpsertFeedExclusion(ctx context.Context, arg UpsertFeedExclusi
 	return err
 }
 
+const upsertFeedExclusions = `-- name: UpsertFeedExclusions :exec
+INSERT INTO feed_exclusions (viewer_account_id, target_account_id, reason, expires_at)
+SELECT unnest($1::uuid[]), unnest($2::uuid[]), unnest($3::text[]),
+  NULLIF(unnest($4::text[]), '')::timestamptz
+ON CONFLICT (viewer_account_id, target_account_id, reason) DO UPDATE SET expires_at = excluded.expires_at
+`
+
+type UpsertFeedExclusionsParams struct {
+	ViewerAccountIds []string
+	TargetAccountIds []string
+	Reasons          []string
+	ExpiresAts       []string
+}
+
+// UpsertFeedExclusions is UpsertFeedExclusion of many exclusions (the unnests of a select list
+// advance together; an empty expiry is none).
+func (q *Queries) UpsertFeedExclusions(ctx context.Context, arg UpsertFeedExclusionsParams) error {
+	_, err := q.db.Exec(ctx, upsertFeedExclusions,
+		arg.ViewerAccountIds,
+		arg.TargetAccountIds,
+		arg.Reasons,
+		arg.ExpiresAts,
+	)
+	return err
+}
+
 const upsertFeedFollowEdge = `-- name: UpsertFeedFollowEdge :exec
 INSERT INTO feed_follow_edges (follower_account_id, followee_account_id, show_boosts) VALUES ($1, $2, $3)
 ON CONFLICT (follower_account_id, followee_account_id) DO UPDATE SET show_boosts = excluded.show_boosts

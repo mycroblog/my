@@ -53,6 +53,30 @@ func (r *Repository) FindReceivedActivity(ctx context.Context, activityURI feder
 	}, nil
 }
 
+// FindReceivedActivities implements federation.InboxRepository.
+func (r *Repository) FindReceivedActivities(ctx context.Context, activityURIs []federation.IRI) (map[federation.IRI]federation.ReceivedActivity, error) {
+	out := make(map[federation.IRI]federation.ReceivedActivity, len(activityURIs))
+	if len(activityURIs) == 0 {
+		return out, nil
+	}
+	uris := make([]string, len(activityURIs))
+	for i, u := range activityURIs {
+		uris[i] = string(u)
+	}
+	list := uris
+	rows, err := r.db.reader().ListReceivedActivities(ctx, list)
+	if err != nil {
+		return nil, postgres.Wrap(err, "list received activities")
+	}
+	for _, row := range rows {
+		out[federation.IRI(row.ActivityUri)] = federation.ReceivedActivity{
+			ActivityURI: federation.IRI(row.ActivityUri), ActorURI: federation.IRI(row.ActorUri), Type: row.Type,
+			Scheme: row.SignatureScheme, Trust: federation.Trust(row.Trust), ReceivedAt: postgres.UTC(row.ReceivedAt),
+		}
+	}
+	return out, nil
+}
+
 // FindReceivedDocument implements federation.InboxRepository.
 func (r *Repository) FindReceivedDocument(ctx context.Context, activityURI federation.IRI) ([]byte, error) {
 	doc, err := r.db.reader().GetReceivedActivityDocument(ctx, string(activityURI))

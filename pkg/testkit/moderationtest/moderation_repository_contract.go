@@ -351,6 +351,15 @@ func modRepoAccountRestrictions(t *testing.T, r *modRepo) {
 	if !reflect.DeepEqual(sortRows(got), sortRows(rows[:4])) {
 		t.Errorf("AccountRestrictionRows = %+v, want %+v", got, rows[:4])
 	}
+	var of map[string][]moderation.RestrictionRow
+	stranger := r.ids.NewID()
+	r.tx(t, func(ctx context.Context, tx uow.Tx) (err error) {
+		of, err = r.h.Moderation.AccountRestrictionRowsOf(ctx, tx, []string{account, stranger})
+		return err
+	})
+	if !reflect.DeepEqual(sortRows(of[account]), sortRows(rows[:4])) || len(of[stranger]) != 0 {
+		t.Errorf("AccountRestrictionRowsOf = %+v, want %+v of the account alone, as AccountRestrictionRows", of, rows[:4])
+	}
 
 	// The expired rows go in batches, the earliest end first, and only when they ended.
 	var deleted []moderation.RestrictionRow

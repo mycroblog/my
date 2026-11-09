@@ -7,8 +7,8 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"slices"
 
-	appaccount "github.com/mycroblog/my/internal/app/account"
 	appmoderation "github.com/mycroblog/my/internal/app/moderation"
 	"github.com/mycroblog/my/internal/domain/identity"
 	"github.com/mycroblog/my/internal/domain/moderation"
@@ -43,7 +43,16 @@ func (s *Server) newAdminAppealsWith(ctx context.Context, reads presentReads, vs
 	if err != nil {
 		return nil, err
 	}
-	moderators := map[string]string{}
+	var deciders []string
+	for _, v := range vs {
+		if d := v.Decision; d != nil {
+			deciders = append(deciders, d.DecidedByUserID)
+		}
+	}
+	moderators, err := moderatorAccounts(ctx, reads, deciders)
+	if err != nil {
+		return nil, err
+	}
 	out := make([]AdminAppeal, 0, len(vs))
 	for i, v := range vs {
 		a := v.Appeal
@@ -57,11 +66,7 @@ func (s *Server) newAdminAppealsWith(ctx context.Context, reads presentReads, vs
 			if d.PublicReason != "" {
 				item.DecisionReason = &d.PublicReason
 			}
-			id, err := moderatorAccount(ctx, reads, moderators, d.DecidedByUserID)
-			if err != nil {
-				return nil, err
-			}
-			if id != "" {
+			if id := moderators[d.DecidedByUserID]; id != "" {
 				item.DecidedByAccountId = &id
 			}
 		}
@@ -70,18 +75,27 @@ func (s *Server) newAdminAppealsWith(ctx context.Context, reads presentReads, vs
 	return out, nil
 }
 
-// moderatorAccount returns the local account of the moderator userID, "" for none, through
-// seen, which keeps the accounts already read.
-func moderatorAccount(ctx context.Context, reads presentReads, seen map[string]string, userID string) (string, error) {
-	if id, ok := seen[userID]; ok || userID == "" {
-		return id, nil
+// moderatorAccounts returns the local accounts of the moderators userIDs, by user, with one read
+// of all of them; a user without one, and "", are left out.
+func moderatorAccounts(ctx context.Context, reads presentReads, userIDs []string) (map[string]string, error) {
+	var unique []string
+	for _, u := range userIDs {
+		if u != "" && !slices.Contains(unique, u) {
+			unique = append(unique, u)
+		}
 	}
-	la, err := reads.LocalAccountOfUser(ctx, userID)
-	if err != nil && !errors.Is(err, appaccount.ErrNotFound) {
-		return "", fmt.Errorf("clientapi: the account of user %s: %w", userID, err)
+	out := make(map[string]string, len(unique))
+	if len(unique) == 0 {
+		return out, nil
 	}
-	seen[userID] = la.AccountID
-	return la.AccountID, nil
+	locals, err := reads.LocalAccountsOfUsers(ctx, unique)
+	if err != nil {
+		return nil, fmt.Errorf("clientapi: the accounts of %d moderators: %w", len(unique), err)
+	}
+	for u, la := range locals {
+		out[u] = la.AccountID
+	}
+	return out, nil
 }
 
 // appealResponse presents one appeal.

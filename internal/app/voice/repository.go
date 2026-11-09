@@ -258,6 +258,9 @@ type Repository interface {
 	// FindParticipant returns the participation of an account that has not ended; ErrNotFound
 	// when the account is in no room.
 	FindParticipant(ctx context.Context, tx uow.Tx, accountID string) (Participant, error)
+	// ParticipantsAmong reports, inside tx, which of accountIDs are participants of a room, as
+	// FindParticipant finds one.
+	ParticipantsAmong(ctx context.Context, tx uow.Tx, accountIDs []string) (map[string]bool, error)
 	// FindParticipationEnd returns the end of a participation; ErrNotFound for one that has
 	// not ended.
 	FindParticipationEnd(ctx context.Context, tx uow.Tx, participationID string) (ParticipationEnd, error)

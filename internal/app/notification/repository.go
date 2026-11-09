@@ -73,6 +73,10 @@ type Repository interface {
 	// UpsertExclusion inserts an exclusion, or replaces the expiry of the one with the same
 	// viewer, target, and reason.
 	UpsertExclusion(ctx context.Context, tx uow.Tx, x notification.Exclusion) error
+	// UpsertExclusions is UpsertExclusion of each of xs, with one statement.
+	UpsertExclusions(ctx context.Context, tx uow.Tx, xs []notification.Exclusion) error
+	// DeleteExclusionsOf is DeleteExclusion of the pairs (viewerIDs[i], targetIDs[i]) for reason.
+	DeleteExclusionsOf(ctx context.Context, tx uow.Tx, viewerIDs, targetIDs []string, reason notification.ExclusionReason) error
 	// DeleteExclusion deletes the exclusion of the viewer, target, and reason, if any.
 	DeleteExclusion(ctx context.Context, tx uow.Tx, viewerAccountID, targetAccountID string, reason notification.ExclusionReason) error
 	// InsertDomainExclusion records that the viewer mutes a domain and its subdomains, which

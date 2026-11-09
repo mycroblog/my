@@ -248,6 +248,8 @@ type Repository interface {
 	DeleteFollowEdges(ctx context.Context, tx uow.Tx, followerIDs, followeeIDs []string) error
 	// UpsertExclusion stores x, replacing the expiry of the same exclusion.
 	UpsertExclusion(ctx context.Context, tx uow.Tx, x Exclusion) error
+	// UpsertExclusions is UpsertExclusion of each of xs, with one statement.
+	UpsertExclusions(ctx context.Context, tx uow.Tx, xs []Exclusion) error
 	DeleteExclusion(ctx context.Context, tx uow.Tx, viewerAccountID, targetAccountID string, reason timeline.ExclusionReason) error
 	// InsertDomainMute stores m; storing it again changes nothing.
 	InsertDomainMute(ctx context.Context, tx uow.Tx, m DomainMute) error

@@ -531,3 +531,10 @@ DELETE FROM feed_tag_entries WHERE entry_id IN (SELECT value FROM json_each(CAST
 
 -- name: DeleteFeedEntriesOfStatuses :exec
 DELETE FROM feed_entries WHERE status_id IN (SELECT value FROM json_each(CAST(sqlc.arg(status_ids) AS TEXT)));
+
+-- UpsertFeedExclusions is UpsertFeedExclusion of many exclusions, a JSON array.
+-- name: UpsertFeedExclusions :exec
+INSERT INTO feed_exclusions (viewer_account_id, target_account_id, reason, expires_at)
+SELECT value ->> '$.viewer', value ->> '$.target', value ->> '$.reason', value ->> '$.expires_at'
+FROM json_each(CAST(sqlc.arg(exclusions) AS TEXT)) WHERE true
+ON CONFLICT (viewer_account_id, target_account_id, reason) DO UPDATE SET expires_at = excluded.expires_at;

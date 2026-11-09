@@ -384,6 +384,30 @@ func registerExclusionProjectors(r *uow.Projectors, repo Repository) {
 			ViewerAccountID: m.AccountID, TargetAccountID: m.TargetAccountID, Reason: notification.ExcludedMute, ExpiresAt: m.ExpiresAt,
 		})
 	})
+	r.Register(appgraph.EventBlocksCreated, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
+		var xs []notification.Exclusion
+		for _, b := range e.(appgraph.BlocksCreated).Blocks {
+			xs = append(xs, blockExclusions(b.Block.BlockerAccountID, b.Block.BlockedAccountID)...)
+		}
+		return repo.UpsertExclusions(ctx, tx, xs)
+	})
+	r.Register(appgraph.EventMutesCreated, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
+		// As the projector of Muted: a mute that hides notifications excludes, another does not.
+		var xs []notification.Exclusion
+		var viewers, targets []string
+		for _, mu := range e.(appgraph.MutesCreated).Mutes {
+			m := mu.Mute
+			if m.HideNotifications {
+				xs = append(xs, notification.Exclusion{ViewerAccountID: m.AccountID, TargetAccountID: m.TargetAccountID, Reason: notification.ExcludedMute, ExpiresAt: m.ExpiresAt})
+			} else {
+				viewers, targets = append(viewers, m.AccountID), append(targets, m.TargetAccountID)
+			}
+		}
+		if err := repo.DeleteExclusionsOf(ctx, tx, viewers, targets, notification.ExcludedMute); err != nil {
+			return err
+		}
+		return repo.UpsertExclusions(ctx, tx, xs)
+	})
 	r.Register(appgraph.EventUnmuted, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
 		ev := e.(appgraph.Unmuted)
 		return repo.DeleteExclusion(ctx, tx, ev.AccountID, ev.TargetAccountID, notification.ExcludedMute)

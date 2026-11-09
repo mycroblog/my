@@ -157,6 +157,22 @@ func (q *Queries) DeleteNotificationExclusion(ctx context.Context, arg DeleteNot
 	return err
 }
 
+const deleteNotificationExclusionsOf = `-- name: DeleteNotificationExclusionsOf :exec
+DELETE FROM notification_exclusions WHERE reason = $1 AND (viewer_account_id, target_account_id) IN (
+  SELECT unnest($2::uuid[]), unnest($3::uuid[]))
+`
+
+type DeleteNotificationExclusionsOfParams struct {
+	Reason           string
+	ViewerAccountIds []string
+	TargetAccountIds []string
+}
+
+func (q *Queries) DeleteNotificationExclusionsOf(ctx context.Context, arg DeleteNotificationExclusionsOfParams) error {
+	_, err := q.db.Exec(ctx, deleteNotificationExclusionsOf, arg.Reason, arg.ViewerAccountIds, arg.TargetAccountIds)
+	return err
+}
+
 const domainExcluded = `-- name: DomainExcluded :one
 SELECT EXISTS (SELECT 1 FROM notification_domain_exclusions dx
   WHERE dx.viewer_account_id = $1
@@ -934,6 +950,33 @@ func (q *Queries) UpsertNotificationExclusion(ctx context.Context, arg UpsertNot
 		arg.TargetAccountID,
 		arg.Reason,
 		arg.ExpiresAt,
+	)
+	return err
+}
+
+const upsertNotificationExclusions = `-- name: UpsertNotificationExclusions :exec
+INSERT INTO notification_exclusions (viewer_account_id, target_account_id, reason, expires_at)
+SELECT unnest($1::uuid[]), unnest($2::uuid[]), unnest($3::text[]),
+  NULLIF(unnest($4::text[]), '')::timestamptz
+ON CONFLICT (viewer_account_id, target_account_id, reason) DO UPDATE SET expires_at = excluded.expires_at
+`
+
+type UpsertNotificationExclusionsParams struct {
+	ViewerAccountIds []string
+	TargetAccountIds []string
+	Reasons          []string
+	ExpiresAts       []string
+}
+
+// UpsertNotificationExclusions and DeleteNotificationExclusionsOf are UpsertNotificationExclusion
+// and DeleteNotificationExclusion of many pairs (the unnests of a select list advance together; an
+// empty expiry is none).
+func (q *Queries) UpsertNotificationExclusions(ctx context.Context, arg UpsertNotificationExclusionsParams) error {
+	_, err := q.db.Exec(ctx, upsertNotificationExclusions,
+		arg.ViewerAccountIds,
+		arg.TargetAccountIds,
+		arg.Reasons,
+		arg.ExpiresAts,
 	)
 	return err
 }

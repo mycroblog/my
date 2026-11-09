@@ -97,6 +97,20 @@ func (p *AccountPolicy) SuspendedTx(ctx context.Context, tx uow.Tx, accountID st
 	return moderation.FederationSuspended(rows, p.clock.Now()), nil
 }
 
+// SuspendedAmongTx is SuspendedTx of each of ids, by account, with one query.
+func (p *AccountPolicy) SuspendedAmongTx(ctx context.Context, tx uow.Tx, ids []string) (map[string]bool, error) {
+	rows, err := p.repo.AccountRestrictionRowsOf(ctx, tx, ids)
+	if err != nil {
+		return nil, err
+	}
+	now := p.clock.Now()
+	out := make(map[string]bool, len(ids))
+	for _, id := range ids {
+		out[id] = moderation.FederationSuspended(rows[id], now)
+	}
+	return out, nil
+}
+
 // AccountEffectsTx returns inside tx the restrictions that an account's own actions have in effect
 // at the policy's now, each with its end, as moderation.account_restrictions_changed carries them.
 func (p *AccountPolicy) AccountEffectsTx(ctx context.Context, tx uow.Tx, accountID string) ([]Effect, error) {

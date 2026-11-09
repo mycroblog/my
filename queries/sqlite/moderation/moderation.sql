@@ -309,3 +309,9 @@ WHERE target_account_id = sqlc.arg(target_account_id) AND id <> sqlc.arg(report_
 -- CountModerationActionsOfTarget counts the actions on an account, ended ones included.
 -- name: CountModerationActionsOfTarget :one
 SELECT COUNT(*) FROM moderation_actions WHERE target_account_id = ?;
+
+-- ListAccountRestrictionRowsOf is ListAccountRestrictionRows of many accounts, a JSON array.
+-- name: ListAccountRestrictionRowsOf :many
+SELECT account_id, restriction, source_action_id, effective_until
+FROM account_restrictions WHERE account_id IN (SELECT value FROM json_each(CAST(sqlc.arg(account_ids) AS TEXT)))
+ORDER BY account_id, restriction, source_action_id;

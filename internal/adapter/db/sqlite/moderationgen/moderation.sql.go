@@ -939,6 +939,41 @@ func (q *Queries) ListAccountRestrictionRows(ctx context.Context, accountID stri
 	return items, nil
 }
 
+const listAccountRestrictionRowsOf = `-- name: ListAccountRestrictionRowsOf :many
+SELECT account_id, restriction, source_action_id, effective_until
+FROM account_restrictions WHERE account_id IN (SELECT value FROM json_each(CAST(?1 AS TEXT)))
+ORDER BY account_id, restriction, source_action_id
+`
+
+// ListAccountRestrictionRowsOf is ListAccountRestrictionRows of many accounts, a JSON array.
+func (q *Queries) ListAccountRestrictionRowsOf(ctx context.Context, accountIds string) ([]AccountRestriction, error) {
+	rows, err := q.db.QueryContext(ctx, listAccountRestrictionRowsOf, accountIds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []AccountRestriction{}
+	for rows.Next() {
+		var i AccountRestriction
+		if err := rows.Scan(
+			&i.AccountID,
+			&i.Restriction,
+			&i.SourceActionID,
+			&i.EffectiveUntil,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listAccountRestrictionsInEffect = `-- name: ListAccountRestrictionsInEffect :many
 SELECT DISTINCT restriction FROM account_restrictions
 WHERE account_id = ?1

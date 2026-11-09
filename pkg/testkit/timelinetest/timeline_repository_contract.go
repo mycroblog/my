@@ -834,6 +834,13 @@ func timelineRepoEndMany(t *testing.T, r *timelineRepo) {
 		}
 		return errors.Join(r.repo.DeleteFollowEdges(ctx, tx, nil, nil), r.repo.DeleteListMembersOfFollows(ctx, tx, nil, nil))
 	})
+	soon := r.clock.Now().Add(time.Hour).Truncate(time.Millisecond).UTC()
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+		return errors.Join(r.repo.UpsertExclusions(ctx, tx, []apptimeline.Exclusion{
+			{ViewerAccountID: owner.id, TargetAccountID: c.id, Reason: timeline.ExcludedBlock},
+			{ViewerAccountID: c.id, TargetAccountID: owner.id, Reason: timeline.ExcludedMute, ExpiresAt: &soon},
+		}), r.repo.UpsertExclusions(ctx, tx, nil))
+	})
 	snap, err := r.repo.Snapshot(ctx)
 	if err != nil {
 		t.Fatal(err)
@@ -843,6 +850,11 @@ func timelineRepoEndMany(t *testing.T, r *timelineRepo) {
 	}
 	if got, err := r.repo.AllListMembers(ctx); err != nil || len(got) != 1 || got[0].MemberAccountID != b.id {
 		t.Errorf("AllListMembers after DeleteListMembersOfFollows = %+v, %v; want b's membership", got, err)
+	}
+	if len(snap.Exclusions) != 2 || !slices.ContainsFunc(snap.Exclusions, func(x apptimeline.Exclusion) bool {
+		return x.ViewerAccountID == c.id && x.Reason == timeline.ExcludedMute && x.ExpiresAt != nil && x.ExpiresAt.Equal(soon)
+	}) {
+		t.Errorf("exclusions after UpsertExclusions = %+v; want the block and the mute with its expiry", snap.Exclusions)
 	}
 }
 

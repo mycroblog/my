@@ -54,6 +54,8 @@ type Repository interface {
 	// do nothing.
 	LockPair(ctx context.Context, tx uow.Tx, accountA, accountB string) error
 	InsertBlock(ctx context.Context, tx uow.Tx, b graph.Block) error
+	// InsertBlocks is InsertBlock of each of bs, which share their CreatedAt, with one statement.
+	InsertBlocks(ctx context.Context, tx uow.Tx, bs []graph.Block) error
 	// InsertBlockRetraction fails with ErrAlreadyRecorded when the block is already retracted.
 	InsertBlockRetraction(ctx context.Context, tx uow.Tx, r graph.BlockRetraction) error
 	// Block returns a block by ID.
@@ -61,6 +63,12 @@ type Repository interface {
 	// BlockByURI returns the block with an activity URI and its retraction, if any.
 	BlockByURI(ctx context.Context, tx uow.Tx, uri string) (graph.BlockHistory, error)
 	UpsertMute(ctx context.Context, tx uow.Tx, m graph.Mute) error
+	// UpsertMutes is UpsertMute of each of ms, which share their target and CreatedAt, with one
+	// statement.
+	UpsertMutes(ctx context.Context, tx uow.Tx, ms []graph.Mute) error
+	// ActiveMutesOfTargetTx returns, inside tx, the mutes of targetID by those of accountIDs that
+	// have not expired at now, by account, as Mute reads one.
+	ActiveMutesOfTargetTx(ctx context.Context, tx uow.Tx, targetID string, accountIDs []string, now time.Time) (map[string]graph.Mute, error)
 	// DeleteMute deletes accountID's mute of targetAccountID and reports whether there was one.
 	DeleteMute(ctx context.Context, tx uow.Tx, accountID, targetAccountID string) (bool, error)
 	// DeleteExpiredMutes deletes at most limit mutes that have expired at now and returns them.
@@ -144,6 +152,9 @@ type Repository interface {
 	BlockEdge(ctx context.Context, tx uow.Tx, blockerAccountID, blockedAccountID string) (graph.BlockEdge, error)
 	// InsertBlockEdge inserts an edge and reports false, writing nothing, when the pair already has one.
 	InsertBlockEdge(ctx context.Context, tx uow.Tx, e graph.BlockEdge) (bool, error)
+	// InsertBlockEdges is InsertBlockEdge of the edge of each of bs, and returns how many it
+	// inserted.
+	InsertBlockEdges(ctx context.Context, tx uow.Tx, bs []graph.Block) (int, error)
 	// DeleteBlockEdge deletes the pair's edge when it belongs to blockID.
 	DeleteBlockEdge(ctx context.Context, tx uow.Tx, blockerAccountID, blockedAccountID, blockID string) error
 	DeleteAllBlockEdges(ctx context.Context, tx uow.Tx) error
@@ -184,6 +195,9 @@ type Repository interface {
 	// ListFollowers returns the edges into followeeAccountID in state, newest follow first,
 	// starting after the follow ID before ("" for the newest) and returning at most limit edges.
 	ListFollowers(ctx context.Context, followeeAccountID string, state graph.State, before string, limit int) ([]graph.Edge, error)
+	// ListFollowEdgesFromAmong returns the edges into accountID from those of followerIDs that
+	// have one, in follower order, with one query.
+	ListFollowEdgesFromAmong(ctx context.Context, accountID string, followerIDs []string) ([]graph.Edge, error)
 	// ListFolloweesAmong returns the accounts among accountIDs that an edge in state goes into,
 	// each once, with one query.
 	ListFolloweesAmong(ctx context.Context, accountIDs []string, state graph.State) ([]string, error)

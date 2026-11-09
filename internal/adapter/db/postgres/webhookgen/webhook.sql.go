@@ -154,6 +154,30 @@ func (q *Queries) GetWebhookSend(ctx context.Context, id string) (GetWebhookSend
 	return i, err
 }
 
+const insertWebhookDeliveries = `-- name: InsertWebhookDeliveries :exec
+INSERT INTO webhook_deliveries (id, message_id, endpoint_id, created_at)
+SELECT unnest($1::uuid[]), $2::uuid, unnest($3::uuid[]), $4::timestamptz
+`
+
+type InsertWebhookDeliveriesParams struct {
+	Ids         []string
+	MessageID   string
+	EndpointIds []string
+	CreatedAt   time.Time
+}
+
+// InsertWebhookDeliveries is InsertWebhookDelivery of the deliveries of one message to many
+// endpoints (the unnests of a select list advance together).
+func (q *Queries) InsertWebhookDeliveries(ctx context.Context, arg InsertWebhookDeliveriesParams) error {
+	_, err := q.db.Exec(ctx, insertWebhookDeliveries,
+		arg.Ids,
+		arg.MessageID,
+		arg.EndpointIds,
+		arg.CreatedAt,
+	)
+	return err
+}
+
 const insertWebhookDelivery = `-- name: InsertWebhookDelivery :exec
 INSERT INTO webhook_deliveries (id, message_id, endpoint_id, created_at) VALUES ($1, $2, $3, $4)
 `

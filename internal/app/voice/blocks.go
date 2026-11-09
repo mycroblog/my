@@ -32,6 +32,37 @@ func (s *Service) registerBlockProjector(r *uow.Projectors) {
 	})
 }
 
+// registerBlocksProjector subscribes the rooms to graph.blocks_created, as registerBlockProjector
+// to each of its blocks, with one read of the participants among their accounts.
+func (s *Service) registerBlocksProjector(r *uow.Projectors) {
+	r.Register(graph.EventBlocksCreated, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
+		bs := e.(graph.BlocksCreated).Blocks
+		var ids []string
+		for _, b := range bs {
+			ids = append(ids, b.Block.BlockerAccountID, b.Block.BlockedAccountID)
+		}
+		in, err := s.d.Repository.ParticipantsAmong(ctx, tx, ids)
+		if err != nil || len(in) == 0 {
+			return err
+		}
+		var jobs []queue.NewJob
+		for _, b := range bs {
+			if !in[b.Block.BlockerAccountID] && !in[b.Block.BlockedAccountID] {
+				continue
+			}
+			payload, err := json.Marshal(blockPayload{Blocker: b.Block.BlockerAccountID, Blocked: b.Block.BlockedAccountID})
+			if err != nil {
+				return err
+			}
+			jobs = append(jobs, queue.NewJob{Type: JobCheckBlock, Payload: payload, IdempotencyKey: JobCheckBlock + ":" + b.Block.ID})
+		}
+		if len(jobs) == 0 {
+			return nil
+		}
+		return s.d.Outbox.EnqueueTx(ctx, tx, jobs...)
+	})
+}
+
 // enqueueCheckBlock enqueues JobCheckBlock in tx when blocker or blocked is a participant. The
 // other one may be joining the same room in a transaction that tx does not see yet: the job
 // reads the participants after the block committed, and a join that commits after the job

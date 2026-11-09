@@ -1347,6 +1347,39 @@ func (q *Queries) ListOutboundActivitiesOfObject(ctx context.Context, arg ListOu
 	return items, nil
 }
 
+const listReceivedActivities = `-- name: ListReceivedActivities :many
+SELECT activity_uri, actor_uri, type, signature_scheme, trust, received_at FROM received_activities
+WHERE activity_uri = ANY($1::text[])
+`
+
+// ListReceivedActivities is GetReceivedActivity of many activities.
+func (q *Queries) ListReceivedActivities(ctx context.Context, activityUris []string) ([]ReceivedActivity, error) {
+	rows, err := q.db.Query(ctx, listReceivedActivities, activityUris)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ReceivedActivity{}
+	for rows.Next() {
+		var i ReceivedActivity
+		if err := rows.Scan(
+			&i.ActivityUri,
+			&i.ActorUri,
+			&i.Type,
+			&i.SignatureScheme,
+			&i.Trust,
+			&i.ReceivedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listSupersededStatusCreates = `-- name: ListSupersededStatusCreates :many
 SELECT c.id FROM outbound_activities d
 JOIN outbound_activities c ON c.object_type = 'status' AND c.type = 'Create' AND c.object_id = d.object_id

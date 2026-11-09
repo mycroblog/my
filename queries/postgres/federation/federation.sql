@@ -389,3 +389,8 @@ WHERE id IN (
 INSERT INTO outbound_activity_documents (outbound_activity_id, document, built_at)
 SELECT unnest(sqlc.arg(outbound_activity_ids)::uuid[]), unnest(sqlc.arg(documents)::bytea[]), sqlc.arg(built_at)::timestamptz
 ON CONFLICT (outbound_activity_id) DO NOTHING;
+
+-- ListReceivedActivities is GetReceivedActivity of many activities.
+-- name: ListReceivedActivities :many
+SELECT activity_uri, actor_uri, type, signature_scheme, trust, received_at FROM received_activities
+WHERE activity_uri = ANY(sqlc.arg(activity_uris)::text[]);

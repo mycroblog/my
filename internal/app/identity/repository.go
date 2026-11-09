@@ -46,6 +46,8 @@ type Repository interface {
 	FindUserIDByEmail(ctx context.Context, normalized string) (string, error)
 	// ListUserRoles returns the roles a user holds, highest position first.
 	ListUserRoles(ctx context.Context, userID string) ([]identity.Role, error)
+	// ListUserRolesOf is ListUserRoles of each of userIDs, by user, with one query.
+	ListUserRolesOf(ctx context.Context, userIDs []string) (map[string][]identity.Role, error)
 	// FindCurrentPasswordCredential returns the newest password credential of a user unless it
 	// has a removal; ErrNotFound when the user has no password.
 	FindCurrentPasswordCredential(ctx context.Context, userID string) (identity.PasswordCredential, error)

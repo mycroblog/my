@@ -371,6 +371,9 @@ func voiceParticipants(t *testing.T, e *voiceEnv) {
 	if got, err := e.h.Voice.FindParticipant(t.Context(), nil, bob); err != nil || !reflect.DeepEqual(got, want[2]) || !got.Cohost() {
 		t.Errorf("FindParticipant(bob) = %+v, %v; want %+v", got, err, want[2])
 	}
+	if got, err := e.h.Voice.ParticipantsAmong(t.Context(), nil, []string{alice, bob, e.ids.NewID()}); err != nil || len(got) != 2 || !got[alice] || !got[bob] {
+		t.Errorf("ParticipantsAmong(alice, bob, a stranger) = %v, %v; want alice and bob, as FindParticipant", got, err)
+	}
 
 	e.hand(t, pb, voice.HandGranted)
 	e.role(t, pb, voice.RoleSpeaker, host)

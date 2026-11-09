@@ -157,6 +157,21 @@ func (q *Queries) DeleteNotificationExclusion(ctx context.Context, arg DeleteNot
 	return err
 }
 
+const deleteNotificationExclusionsOf = `-- name: DeleteNotificationExclusionsOf :exec
+DELETE FROM notification_exclusions WHERE reason = CAST(?1 AS TEXT) AND (viewer_account_id, target_account_id) IN (
+  SELECT value ->> '$.a', value ->> '$.b' FROM json_each(CAST(?2 AS TEXT)))
+`
+
+type DeleteNotificationExclusionsOfParams struct {
+	Reason string
+	Pairs  string
+}
+
+func (q *Queries) DeleteNotificationExclusionsOf(ctx context.Context, arg DeleteNotificationExclusionsOfParams) error {
+	_, err := q.db.ExecContext(ctx, deleteNotificationExclusionsOf, arg.Reason, arg.Pairs)
+	return err
+}
+
 const domainExcluded = `-- name: DomainExcluded :one
 SELECT EXISTS (SELECT 1 FROM notification_domain_exclusions dx
   WHERE dx.viewer_account_id = ?1
@@ -946,6 +961,20 @@ func (q *Queries) UpsertNotificationExclusion(ctx context.Context, arg UpsertNot
 		arg.Reason,
 		arg.ExpiresAt,
 	)
+	return err
+}
+
+const upsertNotificationExclusions = `-- name: UpsertNotificationExclusions :exec
+INSERT INTO notification_exclusions (viewer_account_id, target_account_id, reason, expires_at)
+SELECT value ->> '$.viewer', value ->> '$.target', value ->> '$.reason', value ->> '$.expires_at'
+FROM json_each(CAST(?1 AS TEXT)) WHERE true
+ON CONFLICT (viewer_account_id, target_account_id, reason) DO UPDATE SET expires_at = excluded.expires_at
+`
+
+// UpsertNotificationExclusions and DeleteNotificationExclusionsOf are UpsertNotificationExclusion
+// and DeleteNotificationExclusion of many pairs, JSON arrays.
+func (q *Queries) UpsertNotificationExclusions(ctx context.Context, exclusions string) error {
+	_, err := q.db.ExecContext(ctx, upsertNotificationExclusions, exclusions)
 	return err
 }
 
