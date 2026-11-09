@@ -59,19 +59,14 @@ func inboundMentionQueries(t *testing.T, n int) map[string]int {
 	return out
 }
 
-// mentionWrites are the writes of the mentions of a status, one per mention, which #2695 batches.
-var mentionWrites = map[string]bool{"InsertStatusMention": true, "InsertStatusRevisionMention": true}
-
 // TestInboundMentionQueries checks that taking in a post that mentions local accounts makes a
-// number of round trips that does not grow with its mentions, but for their writes.
+// number of round trips that does not grow with its mentions.
 func TestInboundMentionQueries(t *testing.T) {
 	t.Parallel()
 	count := func(byOp map[string]int) int {
 		n := 0
-		for op, c := range byOp {
-			if !mentionWrites[op] {
-				n += c
-			}
+		for _, c := range byOp {
+			n += c
 		}
 		return n
 	}

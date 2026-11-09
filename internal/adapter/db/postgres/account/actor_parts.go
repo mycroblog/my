@@ -202,3 +202,23 @@ func (r *Repository) FindAccountsByURIs(ctx context.Context, uris []string) (map
 	}
 	return out, nil
 }
+
+// FindHandles implements account.Repository.
+func (r *Repository) FindHandles(ctx context.Context, names []appaccount.HandleName) (map[appaccount.HandleName]account.Handle, error) {
+	out := map[appaccount.HandleName]account.Handle{}
+	if len(names) == 0 {
+		return out, nil
+	}
+	var users, domains []string
+	for _, n := range names {
+		users, domains = append(users, n.UsernameNormalized), append(domains, n.Domain)
+	}
+	rows, err := r.db.reader().ListAccountHandlesByNames(ctx, accountgen.ListAccountHandlesByNamesParams{Usernames: users, Domains: domains})
+	if err != nil {
+		return nil, postgres.Wrap(err, "list account handles")
+	}
+	for _, row := range rows {
+		out[appaccount.HandleName{UsernameNormalized: row.UsernameNormalized, Domain: row.Domain}] = account.Handle(row)
+	}
+	return out, nil
+}

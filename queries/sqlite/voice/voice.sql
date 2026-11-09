@@ -123,6 +123,15 @@ SELECT account_id, room_id, participation_id, role, cohost_change_id, hand_raise
 WHERE room_id = ?
 ORDER BY participation_id;
 
+-- The participants of the rooms of room_ids, as ListVoiceRoomParticipants lists those of one.
+-- name: ListVoiceRoomParticipantsOf :many
+SELECT account_id, room_id, participation_id, role, cohost_change_id, hand_raised FROM voice_room_participants
+WHERE room_id IN (SELECT value FROM json_each(CAST(sqlc.arg(room_ids) AS TEXT)))
+ORDER BY room_id, participation_id;
+
+-- name: ListVoiceRoomHostGraces :many
+SELECT room_id, ends_at FROM voice_room_host_graces WHERE room_id IN (SELECT value FROM json_each(CAST(sqlc.arg(room_ids) AS TEXT)));
+
 -- name: GetVoiceRoomParticipant :one
 SELECT account_id, room_id, participation_id, role, cohost_change_id, hand_raised FROM voice_room_participants
 WHERE account_id = ?;

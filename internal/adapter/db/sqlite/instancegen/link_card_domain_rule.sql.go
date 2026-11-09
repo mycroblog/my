@@ -76,6 +76,41 @@ func (q *Queries) ListLinkCardDomainModes(ctx context.Context, domains string) (
 	return items, nil
 }
 
+const listLinkCardDomainModesOf = `-- name: ListLinkCardDomainModesOf :many
+SELECT DISTINCT domain, mode FROM link_card_domain_rules
+WHERE domain IN (SELECT value FROM json_each(CAST(?1 AS TEXT)))
+ORDER BY domain, mode
+`
+
+type ListLinkCardDomainModesOfRow struct {
+	Domain string
+	Mode   string
+}
+
+// The modes of the rules of each of the domains, as ListLinkCardDomainModes reads those of all.
+func (q *Queries) ListLinkCardDomainModesOf(ctx context.Context, domains string) ([]ListLinkCardDomainModesOfRow, error) {
+	rows, err := q.db.QueryContext(ctx, listLinkCardDomainModesOf, domains)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListLinkCardDomainModesOfRow{}
+	for rows.Next() {
+		var i ListLinkCardDomainModesOfRow
+		if err := rows.Scan(&i.Domain, &i.Mode); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listLinkCardDomainRules = `-- name: ListLinkCardDomainRules :many
 SELECT domain, mode, note, updated_at FROM link_card_domain_rules ORDER BY domain
 `

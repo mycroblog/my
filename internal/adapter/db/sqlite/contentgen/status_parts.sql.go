@@ -11,6 +11,37 @@ import (
 	"context"
 )
 
+const insertStatusMentions = `-- name: InsertStatusMentions :exec
+INSERT INTO status_mention_index (account_id, status_id)
+SELECT value, CAST(?1 AS TEXT) FROM json_each(CAST(?2 AS TEXT)) WHERE true
+ON CONFLICT (account_id, status_id) DO NOTHING
+`
+
+type InsertStatusMentionsParams struct {
+	StatusID   string
+	AccountIds string
+}
+
+func (q *Queries) InsertStatusMentions(ctx context.Context, arg InsertStatusMentionsParams) error {
+	_, err := q.db.ExecContext(ctx, insertStatusMentions, arg.StatusID, arg.AccountIds)
+	return err
+}
+
+const insertStatusRevisionMentions = `-- name: InsertStatusRevisionMentions :exec
+INSERT INTO status_revision_mentions (revision_id, account_id)
+SELECT CAST(?1 AS TEXT), value FROM json_each(CAST(?2 AS TEXT))
+`
+
+type InsertStatusRevisionMentionsParams struct {
+	RevisionID string
+	AccountIds string
+}
+
+func (q *Queries) InsertStatusRevisionMentions(ctx context.Context, arg InsertStatusRevisionMentionsParams) error {
+	_, err := q.db.ExecContext(ctx, insertStatusRevisionMentions, arg.RevisionID, arg.AccountIds)
+	return err
+}
+
 const listAccountsMentionedIn = `-- name: ListAccountsMentionedIn :many
 SELECT DISTINCT account_id FROM status_mention_index WHERE status_id = ?1 AND account_id IN (SELECT value FROM json_each(CAST(?2 AS TEXT))) ORDER BY account_id
 `

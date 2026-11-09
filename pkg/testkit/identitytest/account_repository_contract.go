@@ -130,6 +130,11 @@ func accountRepoAccounts(t *testing.T, r *identityRepo) {
 	if _, err := r.h.Accounts.FindHandle(ctx, "alfred", "other.example"); !errors.Is(err, appaccount.ErrNotFound) {
 		t.Errorf("FindHandle(another domain) = %v, want ErrNotFound", err)
 	}
+	known, other := appaccount.HandleName{UsernameNormalized: "alfred", Domain: "remote.example"}, appaccount.HandleName{UsernameNormalized: "alfred", Domain: "other.example"}
+	want, _ := r.h.Accounts.FindHandle(ctx, "alfred", "remote.example")
+	if got, err := r.h.Accounts.FindHandles(ctx, []appaccount.HandleName{known, other}); err != nil || len(got) != 1 || got[known] != want {
+		t.Errorf("FindHandles = %+v, %v; want %+v alone, as FindHandle", got, err, want)
+	}
 	// A handle moves with an upsert, and the projection is rebuilt from nothing.
 	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
 		return r.h.Accounts.UpsertHandle(ctx, tx, account.Handle{AccountID: id, Username: "Alfie", UsernameNormalized: "alfie", Domain: "remote.example"})

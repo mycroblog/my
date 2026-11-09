@@ -4,6 +4,7 @@ package account
 
 import (
 	"context"
+	"encoding/json"
 
 	"github.com/mycroblog/my/internal/adapter/db/sqlite"
 	"github.com/mycroblog/my/internal/adapter/db/sqlite/accountgen"
@@ -226,6 +227,34 @@ func (r *Repository) FindAccountsByURIs(ctx context.Context, uris []string) (map
 	}
 	for _, row := range rows {
 		out[row.Uri] = accountFrom(row)
+	}
+	return out, nil
+}
+
+// FindHandles implements account.Repository.
+func (r *Repository) FindHandles(ctx context.Context, names []appaccount.HandleName) (map[appaccount.HandleName]account.Handle, error) {
+	out := map[appaccount.HandleName]account.Handle{}
+	if len(names) == 0 {
+		return out, nil
+	}
+	type pair struct {
+		U string `json:"u"`
+		D string `json:"d"`
+	}
+	pairs := make([]pair, len(names))
+	for i, n := range names {
+		pairs[i] = pair{U: n.UsernameNormalized, D: n.Domain}
+	}
+	list, err := json.Marshal(pairs)
+	if err != nil {
+		return nil, err
+	}
+	rows, err := r.db.reader().ListAccountHandlesByNames(ctx, string(list))
+	if err != nil {
+		return nil, sqlite.Wrap(err, "list account handles")
+	}
+	for _, row := range rows {
+		out[appaccount.HandleName{UsernameNormalized: row.UsernameNormalized, Domain: row.Domain}] = account.Handle(row)
 	}
 	return out, nil
 }

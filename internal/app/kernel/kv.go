@@ -45,3 +45,9 @@ type KeyValueStore interface {
 	// it was about to remove. A limit <= 0 removes nothing.
 	DeleteExpired(ctx context.Context, limit int) (int64, error)
 }
+
+// KeyValueBatch is a KeyValueStore that reads many entries of a namespace in one round trip.
+type KeyValueBatch interface {
+	// GetMany returns the values of the live entries among keys, by key, as Get returns each.
+	GetMany(ctx context.Context, namespace string, keys []string) (map[string][]byte, error)
+}

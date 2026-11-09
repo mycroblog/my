@@ -310,6 +310,17 @@ func instanceRepoLinkCards(t *testing.T, r *instanceRepo) {
 			t.Errorf("LinkCardDomainModes(%v) = %v, %v; want %v", q.domains, got, err, q.want)
 		}
 	}
+	// The modes of each domain, as those of the domain alone.
+	of, err := r.i.LinkCardDomainModesOf(ctx, []string{"a.example", "b.example", "c.example", "d.example"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, d := range []string{"a.example", "b.example", "c.example", "d.example"} {
+		one, err := r.i.LinkCardDomainModes(ctx, []string{d})
+		if err != nil || !slices.Equal(of[d], one) {
+			t.Errorf("LinkCardDomainModesOf[%s] = %v; want %v, as LinkCardDomainModes (%v)", d, of[d], one, err)
+		}
+	}
 	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
 		deleted, err := r.i.DeleteLinkCardDomainRule(ctx, tx, "b.example")
 		if err != nil {

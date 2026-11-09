@@ -30,6 +30,9 @@ type LinkCardDomainRepository interface {
 	ListLinkCardDomainRules(ctx context.Context) ([]instance.LinkCardDomainRule, error)
 	// LinkCardDomainModes returns the modes of the rules of the domains.
 	LinkCardDomainModes(ctx context.Context, domains []string) ([]instance.LinkCardDomainMode, error)
+	// LinkCardDomainModesOf returns the modes of the rules of each of domains that has some, by
+	// domain, with one query.
+	LinkCardDomainModesOf(ctx context.Context, domains []string) (map[string][]instance.LinkCardDomainMode, error)
 }
 
 // LinkCardDomainRules returns every rule of the link card crawler, by domain.
@@ -125,4 +128,33 @@ func (s *Service) LinkCardCrawl(ctx context.Context, host string) (instance.Link
 		return instance.LinkCardCrawl{}, fmt.Errorf("read the link card rules of %s: %w", host, err)
 	}
 	return instance.LinkCardCrawlOf(modes), nil
+}
+
+// LinkCardCrawls returns LinkCardCrawl of each of hosts, by host, reading the rules of the hosts and
+// their parents with one query.
+func (s *Service) LinkCardCrawls(ctx context.Context, hosts []string) (map[string]instance.LinkCardCrawl, error) {
+	var all []string
+	for _, h := range hosts {
+		for _, d := range appmoderation.DomainAndParents(h) {
+			if !slices.Contains(all, d) {
+				all = append(all, d)
+			}
+		}
+	}
+	out := make(map[string]instance.LinkCardCrawl, len(hosts))
+	if len(all) == 0 {
+		return out, nil
+	}
+	of, err := s.d.Repository.LinkCardDomainModesOf(ctx, all)
+	if err != nil {
+		return nil, fmt.Errorf("read the link card rules of %d hosts: %w", len(hosts), err)
+	}
+	for _, h := range hosts {
+		var modes []instance.LinkCardDomainMode
+		for _, d := range appmoderation.DomainAndParents(h) {
+			modes = append(modes, of[d]...)
+		}
+		out[h] = instance.LinkCardCrawlOf(modes)
+	}
+	return out, nil
 }

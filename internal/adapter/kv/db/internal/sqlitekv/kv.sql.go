@@ -116,6 +116,45 @@ func (q *Queries) IncrEntry(ctx context.Context, arg IncrEntryParams) ([]byte, e
 	return value, err
 }
 
+const listEntries = `-- name: ListEntries :many
+SELECT key, value FROM kv_entries
+WHERE namespace = ?1 AND key IN (SELECT value FROM json_each(CAST(?2 AS TEXT))) AND (expires_at IS NULL OR expires_at > ?3)
+`
+
+type ListEntriesParams struct {
+	Namespace string
+	Keys      string
+	Now       sql.NullInt64
+}
+
+type ListEntriesRow struct {
+	Key   string
+	Value []byte
+}
+
+func (q *Queries) ListEntries(ctx context.Context, arg ListEntriesParams) ([]ListEntriesRow, error) {
+	rows, err := q.db.QueryContext(ctx, listEntries, arg.Namespace, arg.Keys, arg.Now)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListEntriesRow{}
+	for rows.Next() {
+		var i ListEntriesRow
+		if err := rows.Scan(&i.Key, &i.Value); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const setEntry = `-- name: SetEntry :exec
 INSERT INTO kv_entries (namespace, key, value, expires_at) VALUES (?1, ?2, ?3, ?4)
 ON CONFLICT (namespace, key) DO UPDATE SET value = excluded.value, expires_at = excluded.expires_at
