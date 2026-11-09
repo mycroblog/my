@@ -174,6 +174,20 @@ func (p *AccountPolicy) ProfileHidden(ctx context.Context, accountID string) (bo
 	return p.has(ctx, accountID, moderation.RestrictProfileView)
 }
 
+// ProfileHiddenOf reports, by account, whether moderation hides the profile of each of accountIDs,
+// as ProfileHidden reports one, with the queries of RestrictionsOf.
+func (p *AccountPolicy) ProfileHiddenOf(ctx context.Context, accountIDs []string) (map[string]bool, error) {
+	all, err := p.RestrictionsOf(ctx, accountIDs)
+	if err != nil {
+		return nil, err
+	}
+	out := make(map[string]bool, len(accountIDs))
+	for _, id := range accountIDs {
+		out[id] = slices.Contains(all[id], moderation.RestrictProfileView)
+	}
+	return out, nil
+}
+
 // UnsolicitedReachRestricted reports whether an account's notifications reach only the accounts
 // that follow it (the unsolicited_reach restriction: limit, or a limited domain).
 func (p *AccountPolicy) UnsolicitedReachRestricted(ctx context.Context, accountID string) (bool, error) {

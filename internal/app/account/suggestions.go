@@ -38,6 +38,9 @@ const (
 type Suggestion struct {
 	AccountID string
 	Source    SuggestionSource
+	// Actor is the account as Accounts.FindByID reads it, so that a presenter need not read it
+	// again.
+	Actor Actor
 }
 
 // SuggestionDeps are the dependencies of Suggestions. The composition root passes the instance,
@@ -118,6 +121,16 @@ func (s *Suggestions) Suggest(ctx context.Context, viewerID string, limit int) (
 	if err != nil {
 		return nil, err
 	}
+	var kept []string
+	for _, c := range cands {
+		if r := rels[c.AccountID]; !r.Hidden && !r.Following {
+			kept = append(kept, c.AccountID)
+		}
+	}
+	actors, err := s.d.Accounts.FindByIDs(ctx, kept)
+	if err != nil {
+		return nil, err
+	}
 	out := make([]Suggestion, 0, limit)
 	for _, c := range cands {
 		if len(out) == limit {
@@ -126,11 +139,8 @@ func (s *Suggestions) Suggest(ctx context.Context, viewerID string, limit int) (
 		if r := rels[c.AccountID]; r.Hidden || r.Following {
 			continue
 		}
-		ok, err := s.suggestable(ctx, c.AccountID)
-		if err != nil {
-			return nil, err
-		}
-		if ok {
+		if a, ok := actors[c.AccountID]; ok && suggestable(a) {
+			c.Actor = a
 			out = append(out, c)
 		}
 	}
@@ -138,14 +148,7 @@ func (s *Suggestions) Suggest(ctx context.Context, viewerID string, limit int) (
 }
 
 // suggestable reports whether an account is a discoverable, active local account of a person.
-func (s *Suggestions) suggestable(ctx context.Context, id string) (bool, error) {
-	a, err := s.d.Accounts.FindByID(ctx, id)
-	if errors.Is(err, ErrNotFound) {
-		return false, nil
-	}
-	if err != nil {
-		return false, err
-	}
+func suggestable(a Actor) bool {
 	return a.Local != nil && !a.IsInstanceActor() && a.Lifecycle.Active() &&
-		a.Profile != nil && a.Profile.Discoverable, nil
+		a.Profile != nil && a.Profile.Discoverable
 }

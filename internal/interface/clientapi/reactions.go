@@ -100,12 +100,16 @@ func (s *Server) ListStatusReactions(ctx context.Context, req ListStatusReaction
 	reactions, last := trim(page.Reactions, q.limit)
 	var actors []appaccount.Actor
 	var kept []appcontent.ReactedView
+	reactors := make([]string, len(reactions))
+	for i, r := range reactions {
+		reactors[i] = r.Reaction.AccountID
+	}
+	presentable, err := s.presentableAmong(ctx, v, reactors, true)
+	if err != nil {
+		return nil, err
+	}
 	for _, r := range reactions {
-		a, ok, err := s.presentableByID(ctx, v, r.Reaction.AccountID, true)
-		if err != nil {
-			return nil, err
-		}
-		if ok {
+		if a, ok := presentable[r.Reaction.AccountID]; ok {
 			actors = append(actors, a)
 			kept = append(kept, r)
 		}

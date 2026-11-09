@@ -173,30 +173,33 @@ func (s *Server) GetRelationships(ctx context.Context, req GetRelationshipsReque
 	if len(req.Params.Id) > 40 {
 		return GetRelationshipsdefaultApplicationProblemPlusJSONResponse(s.invalidParameterResponse(ctx, "id")), nil
 	}
-	out := []Relationship{}
-	var seen []string
+	var ids []string
 	for _, id := range req.Params.Id {
-		id = knownID(id)
-		if slices.Contains(seen, id) {
-			continue
+		if id = knownID(id); !slices.Contains(ids, id) {
+			ids = append(ids, id)
 		}
-		seen = append(seen, id)
-		_, ok, err := s.visibleAccount(ctx, &v, id)
-		if err != nil {
-			return nil, err
+	}
+	visible, err := s.presentableAmong(ctx, &v, ids, true)
+	if err != nil {
+		return nil, err
+	}
+	var shown []string
+	for _, id := range ids {
+		if _, ok := visible[id]; ok {
+			shown = append(shown, id)
 		}
-		if !ok {
-			continue
-		}
-		r, err := s.o.Graph.Relationship(ctx, v.AccountID, id)
-		if err != nil {
-			return nil, err
-		}
-		notify, err := s.subscribed(ctx, v.AccountID, id)
-		if err != nil {
-			return nil, err
-		}
-		out = append(out, newRelationship(v.Scope, r, notify))
+	}
+	rels, err := s.relationships(ctx, v.AccountID, shown)
+	if err != nil {
+		return nil, err
+	}
+	notify, err := s.subscribedAmong(ctx, v.AccountID, shown)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]Relationship, 0, len(shown))
+	for _, id := range shown {
+		out = append(out, newRelationship(v.Scope, rels[id], notify[id]))
 	}
 	cache := cacheNoStore
 	return GetRelationships200JSONResponse{Body: RelationshipList{Items: out}, Headers: GetRelationships200ResponseHeaders{CacheControl: &cache}}, nil

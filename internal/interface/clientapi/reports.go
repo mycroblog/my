@@ -150,23 +150,13 @@ func (s *Server) newReports(ctx context.Context, viewer Viewer, recs []moderatio
 	if err != nil {
 		return nil, fmt.Errorf("clientapi: the targets of the reports: %w", err)
 	}
-	exists := map[string]bool{}
+	shown, err := s.presentableOf(ctx, &viewer, found, targets, true)
+	if err != nil {
+		return nil, fmt.Errorf("clientapi: the targets of the reports: %w", err)
+	}
 	var actors []appaccount.Actor
-	for _, rec := range recs {
-		id := rec.Report.TargetAccountID
-		if _, ok := exists[id]; ok {
-			continue
-		}
-		a, ok := found[id]
-		exists[id] = ok
-		if !ok {
-			continue
-		}
-		shown, err := s.presentable(ctx, a, &viewer, true)
-		if err != nil {
-			return nil, fmt.Errorf("clientapi: the target %s of report %s: %w", id, rec.Report.ID, err)
-		}
-		if shown {
+	for _, id := range targets {
+		if a, ok := shown[id]; ok {
 			actors = append(actors, a)
 		}
 	}
@@ -180,7 +170,7 @@ func (s *Server) newReports(ctx context.Context, viewer Viewer, recs []moderatio
 	}
 	out := make([]Report, 0, len(recs))
 	for _, rec := range recs {
-		if exists[rec.Report.TargetAccountID] {
+		if _, ok := found[rec.Report.TargetAccountID]; ok {
 			out = append(out, newReport(rec, byID[rec.Report.TargetAccountID]))
 		}
 	}
