@@ -186,3 +186,19 @@ func (r *Repository) FindLifecycleStates(ctx context.Context, ids []string) (map
 	}
 	return out, nil
 }
+
+// FindAccountsByURIs implements account.Repository.
+func (r *Repository) FindAccountsByURIs(ctx context.Context, uris []string) (map[string]account.Account, error) {
+	out := map[string]account.Account{}
+	if len(uris) == 0 {
+		return out, nil
+	}
+	rows, err := r.db.reader().ListAccountsByURIs(ctx, uris)
+	if err != nil {
+		return nil, postgres.Wrap(err, "list accounts by URI")
+	}
+	for _, row := range rows {
+		out[row.Uri] = accountFrom(row)
+	}
+	return out, nil
+}
