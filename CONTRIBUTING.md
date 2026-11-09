@@ -279,8 +279,9 @@ assets with the origin of `VITE_DEV_ORIGIN` (default `http://localhost:5173`, th
 - With `-dev-vite-origin`, the shell is never cached (`no-store`) and the CSP is a development one that allows that
   origin's scripts and WebSocket and the `<style>` elements Vite injects. To see the app under the production CSP
   (`script-src 'self'` without a nonce), use a binary built by `scripts/task.sh go:bin`.
-- The runtime configuration's `apiOrigin` is `http://{host}` only in development and when `MY_WEB_ORIGIN` is the
-  `http` origin of `host` (such as `http://localhost:8080`).
+- The runtime configuration's `apiOrigin` is the origin of `MY_WEB_ORIGIN` when that is on `host` (such as
+  `https://my.localhost`, or `http://localhost:8080`), and `https://{host}` otherwise; with `-dev-vite-origin` and
+  no `MY_WEB_ORIGIN` on `host`, it is `http://{host}`.
 - The voice chat works with `voice = p2p` on `https://my.localhost`: browsers allow the microphone only on `localhost`
   or over HTTPS, and browsers on this machine connect to each other without a STUN server.
 
