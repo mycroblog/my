@@ -660,6 +660,21 @@ func (s *Service) ProfileIndexable(ctx context.Context, id string) (bool, error)
 	return actor.Profile != nil && actor.Profile.Indexable, nil
 }
 
+// ProfilesIndexable reports ProfileIndexable of each of ids, by account, with one query per part
+// of an actor.
+func (s *Service) ProfilesIndexable(ctx context.Context, ids []string) (map[string]bool, error) {
+	actors, err := s.FindByIDs(ctx, ids)
+	if err != nil {
+		return nil, err
+	}
+	out := make(map[string]bool, len(ids))
+	for _, id := range ids {
+		a, ok := actors[id]
+		out[id] = ok && a.Profile != nil && a.Profile.Indexable
+	}
+	return out, nil
+}
+
 // AccountIDsOnDomain returns up to limit IDs of the accounts on domain or one of its subdomains in
 // order, after the ID after ("" for the first page).
 func (s *Service) AccountIDsOnDomain(ctx context.Context, domain, after string, limit int) ([]string, error) {

@@ -192,9 +192,16 @@ func (s *Service) current(ctx context.Context, statusID string) (Document, strin
 	if err != nil {
 		return Document{}, "", false, err
 	}
+	doc, ok := s.documentOf(st, rev, indexable, author, covered)
+	return doc, rev.ID, ok, nil
+}
+
+// documentOf returns the document of a live status at its current revision rev, by an author
+// whose state is indexable and author, and whether it qualifies under covered.
+func (s *Service) documentOf(st appcontent.Status, rev appcontent.Revision, indexable bool, author appcontent.AuthorRestrictions, covered []Visibility) (Document, bool) {
 	v, ok := Eligible(Candidate{Visibility: st.Visibility, Indexable: indexable, Author: author}, covered)
 	if !ok {
-		return Document{}, "", false, nil
+		return Document{}, false
 	}
 	language := rev.Language
 	if language == "und" {
@@ -203,7 +210,7 @@ func (s *Service) current(ctx context.Context, statusID string) (Document, strin
 	return Document{
 		StatusID: st.ID, AuthorID: st.AuthorAccountID, Visibility: v, Language: language,
 		PublishedAt: st.PublishedAt, Text: s.documentText(rev),
-	}, rev.ID, true, nil
+	}, true
 }
 
 // documentText is what the search looks in: the content warning, the body, and the alternative texts
@@ -251,6 +258,78 @@ func (s *Service) syncStatus(ctx context.Context, statusID string) error {
 		}
 	}
 	return fmt.Errorf("search: status %s kept changing while it was synced", statusID)
+}
+
+// syncStatusesOf syncs the statuses of ids, all by one author whose state is indexable and author,
+// as syncStatus syncs each, reading the statuses and their revisions together before and after
+// the writes. A status that changed in between is synced again on its own by syncStatus.
+func (s *Service) syncStatusesOf(ctx context.Context, ids []string, indexable bool, author appcontent.AuthorRestrictions) error {
+	b, ok := s.d.Statuses.(statusBatch)
+	if !ok {
+		for _, id := range ids {
+			if err := s.syncStatus(ctx, id); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+	covered, err := s.Visibilities(ctx)
+	if err != nil {
+		return err
+	}
+	read := func() (map[string]Document, map[string]string, error) {
+		live, err := b.LiveStatuses(ctx, ids)
+		if err != nil {
+			return nil, nil, err
+		}
+		revs, err := b.CurrentRevisions(ctx, ids)
+		if err != nil {
+			return nil, nil, err
+		}
+		docs, revisions := map[string]Document{}, map[string]string{}
+		for _, id := range ids {
+			st, ok := live[id]
+			rev, hasRev := revs[id]
+			if !ok || !hasRev {
+				continue
+			}
+			if doc, ok := s.documentOf(st, rev, indexable, author, covered); ok {
+				docs[id], revisions[id] = doc, rev.ID
+			}
+		}
+		return docs, revisions, nil
+	}
+	docs, revisions, err := read()
+	if err != nil {
+		return err
+	}
+	for _, id := range ids {
+		doc, ok := docs[id]
+		if !ok {
+			if err := s.call(ctx, func(ctx context.Context) error { return s.d.Index.Remove(ctx, id) }); err != nil {
+				return err
+			}
+			continue
+		}
+		if err := s.call(ctx, func(ctx context.Context) error { return s.d.Index.Replace(ctx, doc) }); err != nil {
+			return err
+		}
+	}
+	after, revisionsAfter, err := read()
+	if err != nil {
+		return err
+	}
+	for _, id := range ids {
+		doc, ok := docs[id]
+		now, okAfter := after[id]
+		if ok == okAfter && (!ok || revisionsAfter[id] == revisions[id] && now.Visibility == doc.Visibility) {
+			continue
+		}
+		if err := s.syncStatus(ctx, id); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // call runs one call of the backend with its deadline.
