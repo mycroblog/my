@@ -157,6 +157,10 @@ type Repository interface {
 	// FindMute returns accountID's mute of targetAccountID; ErrNotFound means none, or one that
 	// has expired at now.
 	FindMute(ctx context.Context, accountID, targetAccountID string, now time.Time) (graph.Mute, error)
+	// FindRelationshipParts reads, of accountID and each of targetIDs, what FindEdge (both ways),
+	// FindPreferences of the edge out of accountID, FindBlockEdge (both ways), and FindMute read
+	// of one pair, with one query per part whatever the number of targets.
+	FindRelationshipParts(ctx context.Context, accountID string, targetIDs []string, now time.Time) (RelationshipParts, error)
 	// ListMutes returns accountID's mutes that have not expired at now, newest first by creation
 	// and then target account ID, starting after before (the zero cursor for the newest) and
 	// returning at most limit mutes.
@@ -189,4 +193,15 @@ type MuteCursor struct {
 // MuteCursorOf returns the position of m, to continue a list after it.
 func MuteCursorOf(m graph.Mute) MuteCursor {
 	return MuteCursor{CreatedAt: m.CreatedAt, TargetAccountID: m.TargetAccountID}
+}
+
+// RelationshipParts are the parts of the relationships of one account with others, by the other
+// account's ID (Repository.FindRelationshipParts). Preferences are by follow ID.
+type RelationshipParts struct {
+	Following   map[string]graph.Edge
+	FollowedBy  map[string]graph.Edge
+	Preferences map[string]graph.Preferences
+	Blocking    map[string]graph.BlockEdge
+	BlockedBy   map[string]graph.BlockEdge
+	Mutes       map[string]graph.Mute
 }

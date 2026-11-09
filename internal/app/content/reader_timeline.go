@@ -18,7 +18,7 @@ import (
 // deletion or a new block shows none of them. It reads the statuses and their authors once for
 // the page (Reader.page), and decides and presents each status as View does.
 func (r *Reader) Views(ctx context.Context, viewer Viewer, ids []string) ([]StatusView, error) {
-	page, err := r.page(ctx, ids)
+	page, err := r.page(ctx, viewer, ids)
 	if err != nil {
 		return nil, err
 	}

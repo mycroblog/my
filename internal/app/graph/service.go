@@ -392,7 +392,81 @@ func (s *Service) changePreferencesIn(ctx context.Context, tx uow.Tx, edge graph
 
 // Relationship returns the follow, block, and mute relationship between accountID and targetID.
 func (s *Service) Relationship(ctx context.Context, accountID, targetID string) (Relationship, error) {
-	repo := s.d.Repository
+	return relationshipOf(ctx, repoRelationshipReads{s.d.Repository}, accountID, targetID, s.d.Clock.Now())
+}
+
+// Relationships returns the relationship of accountID with each of targetIDs, by target, as
+// Relationship returns one, with one query per part whatever the number of targets
+// (Repository.FindRelationshipParts).
+func (s *Service) Relationships(ctx context.Context, accountID string, targetIDs []string) (map[string]Relationship, error) {
+	out := make(map[string]Relationship, len(targetIDs))
+	if len(targetIDs) == 0 {
+		return out, nil
+	}
+	now := s.d.Clock.Now()
+	parts, err := s.d.Repository.FindRelationshipParts(ctx, accountID, targetIDs, now)
+	if err != nil {
+		return nil, err
+	}
+	for _, id := range targetIDs {
+		if out[id], err = relationshipOf(ctx, partRelationshipReads(parts), accountID, id, now); err != nil {
+			return nil, err
+		}
+	}
+	return out, nil
+}
+
+// relationshipReads are the reads of a relationship: the repository's, or those of the parts
+// that FindRelationshipParts read.
+type relationshipReads interface {
+	FindEdge(ctx context.Context, followerAccountID, followeeAccountID string) (graph.Edge, error)
+	FindPreferences(ctx context.Context, followID string) (graph.Preferences, error)
+	FindBlockEdge(ctx context.Context, blockerAccountID, blockedAccountID string) (graph.BlockEdge, error)
+	FindMute(ctx context.Context, accountID, targetAccountID string, now time.Time) (graph.Mute, error)
+}
+
+type repoRelationshipReads struct{ Repository }
+
+// partRelationshipReads answers the reads of the relationships of one account from their parts; a
+// pair that has no part fails with ErrNotFound, as a read of one pair does.
+type partRelationshipReads RelationshipParts
+
+func (p partRelationshipReads) FindEdge(_ context.Context, follower, followee string) (graph.Edge, error) {
+	if e, ok := p.Following[followee]; ok && e.FollowerAccountID == follower {
+		return e, nil
+	}
+	if e, ok := p.FollowedBy[follower]; ok && e.FolloweeAccountID == followee {
+		return e, nil
+	}
+	return graph.Edge{}, fmt.Errorf("follow edge %s -> %s: %w", follower, followee, ErrNotFound)
+}
+
+func (p partRelationshipReads) FindPreferences(_ context.Context, followID string) (graph.Preferences, error) {
+	if pr, ok := p.Preferences[followID]; ok {
+		return pr, nil
+	}
+	return graph.Preferences{}, fmt.Errorf("follow preferences %s: %w", followID, ErrNotFound)
+}
+
+func (p partRelationshipReads) FindBlockEdge(_ context.Context, blocker, blocked string) (graph.BlockEdge, error) {
+	if e, ok := p.Blocking[blocked]; ok && e.BlockerAccountID == blocker {
+		return e, nil
+	}
+	if e, ok := p.BlockedBy[blocker]; ok && e.BlockedAccountID == blocked {
+		return e, nil
+	}
+	return graph.BlockEdge{}, fmt.Errorf("block edge %s -> %s: %w", blocker, blocked, ErrNotFound)
+}
+
+func (p partRelationshipReads) FindMute(_ context.Context, accountID, target string, _ time.Time) (graph.Mute, error) {
+	if m, ok := p.Mutes[target]; ok && m.AccountID == accountID {
+		return m, nil
+	}
+	return graph.Mute{}, fmt.Errorf("mute %s -> %s: %w", accountID, target, ErrNotFound)
+}
+
+// relationshipOf builds the relationship of accountID with targetID through repo, at now.
+func relationshipOf(ctx context.Context, repo relationshipReads, accountID, targetID string, now time.Time) (Relationship, error) {
 	out := Relationship{AccountID: accountID, TargetAccountID: targetID, Following: graph.StateNone, FollowedBy: graph.StateNone}
 	out.ShowBoosts = graph.DefaultPreferences("").ShowBoosts
 
@@ -423,7 +497,7 @@ func (s *Service) Relationship(ctx context.Context, accountID, targetID string) 
 	if out.BlockedBy, err = found(repo.FindBlockEdge(ctx, targetID, accountID)); err != nil {
 		return Relationship{}, err
 	}
-	m, err := repo.FindMute(ctx, accountID, targetID, s.d.Clock.Now())
+	m, err := repo.FindMute(ctx, accountID, targetID, now)
 	switch {
 	case err == nil:
 		out.Muting, out.MutingNotifications = true, m.HideNotifications

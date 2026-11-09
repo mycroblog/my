@@ -48,6 +48,7 @@ func StatusRepositoryContract(t *testing.T, newHarness StatusFactory) {
 		{"RejectsRemoteLocalStatuses", statusRejectsRemoteLocal},
 		{"ReportsMissingRows", statusReportsMissing},
 		{"RevisesStatuses", statusRevises},
+		{"ReadsTheCurrentRevisionsOfManyStatuses", statusReadsCurrentRevisions},
 		{"DeletesStatuses", statusDeletes},
 		{"LinksReplies", statusLinksReplies},
 		{"CountsPosts", statusCountsPosts},
@@ -394,6 +395,7 @@ func statusStores(t *testing.T, e *StatusEnv) {
 			t.Errorf("%s = %+v, %v;\nwant %+v", name, got, err, rev)
 		}
 	}
+	sameCurrentRevisions(t, e, s.ID)
 	heads, err := e.H.Statuses.ListHeads(ctx)
 	if want := []content.Head{content.HeadOf(rev)}; err != nil || !reflect.DeepEqual(heads, want) {
 		t.Errorf("ListHeads = %+v, %v; want %+v", heads, err, want)
@@ -616,6 +618,7 @@ func statusRevises(t *testing.T, e *StatusEnv) {
 	if got, err := e.H.Statuses.FindCurrentRevision(ctx, s.ID); err != nil || got.ID != newer.ID {
 		t.Errorf("current revision = %s, %v; want seq 5 %s", got.ID, err, newer.ID)
 	}
+	sameCurrentRevisions(t, e, s.ID)
 	revs, err := e.H.Statuses.ListRevisions(ctx, s.ID)
 	if err != nil || len(revs) != 4 || revs[0].ID != first.ID || revs[1].ID != rev.ID || revs[3].ID != newer.ID {
 		t.Errorf("ListRevisions = %+v, %v; want seq 1, 2, 4, 5", revs, err)
@@ -659,6 +662,9 @@ func statusDeletes(t *testing.T, e *StatusEnv) {
 		if got, err := find(); err != nil || got != d {
 			t.Errorf("%s = %+v, %v; want %+v", name, got, err, d)
 		}
+	}
+	if got, err := e.H.Statuses.FindDeletions(ctx, []string{s.ID, kept.ID}); err != nil || len(got) != 1 || got[s.ID] != d {
+		t.Errorf("FindDeletions = %+v, %v; want the deletion of the deleted status alone, as FindDeletion", got, err)
 	}
 	if _, err := e.remove(t, s); !errors.Is(err, appcontent.ErrAlreadyDeleted) {
 		t.Errorf("second delete = %v, want ErrAlreadyDeleted", err)
@@ -944,6 +950,9 @@ func statusEnsuresTags(t *testing.T, e *StatusEnv) {
 	if got, err := e.H.Statuses.FindTag(ctx, first.ID); err != nil || got != first {
 		t.Errorf("FindTag = %+v, %v; want %+v", got, err, first)
 	}
+	if got, err := e.H.Statuses.FindTags(ctx, []string{first.ID, e.IDs.NewID()}); err != nil || len(got) != 1 || got[first.ID] != first {
+		t.Errorf("FindTags = %+v, %v; want %+v alone, as FindTag", got, err, first)
+	}
 }
 
 // statusProjectionEqualsRebuild runs random sequences of creations, revisions, and deletions
@@ -1064,4 +1073,64 @@ func snapshotStatusProjections(t *testing.T, repo appcontent.Repository) statusP
 		t.Fatalf("ListLocalPostCounters = %v", err)
 	}
 	return p
+}
+
+// sameCurrentRevisions checks that FindCurrentRevisions, which reads the current revisions of many
+// statuses together, finds each of ids's as FindCurrentRevision finds it, and leaves out a status
+// that does not exist.
+func sameCurrentRevisions(t *testing.T, e *StatusEnv, ids ...string) {
+	t.Helper()
+	ctx := t.Context()
+	missing := e.IDs.NewID()
+	got, err := e.H.Statuses.FindCurrentRevisions(ctx, append(slices.Clone(ids), missing))
+	if err != nil {
+		t.Fatalf("FindCurrentRevisions = %v", err)
+	}
+	for _, id := range ids {
+		want, err := e.H.Statuses.FindCurrentRevision(ctx, id)
+		if err != nil || !reflect.DeepEqual(got[id], want) {
+			t.Errorf("FindCurrentRevisions[%s] = %+v;\nwant %+v (%v)", id, got[id], want, err)
+		}
+	}
+	if rev, ok := got[missing]; ok {
+		t.Errorf("FindCurrentRevisions[a missing status] = %+v, want none", rev)
+	}
+}
+
+// statusReadsCurrentRevisions reads the current revisions of statuses of every kind together: a
+// remote one with a poll and the source of its remote document, a plain one, and an edited one.
+func statusReadsCurrentRevisions(t *testing.T, e *StatusEnv) {
+	author := e.IDs.NewID()
+	polled := e.NewStatus(author, content.VisibilityPublic)
+	polled.IsLocal = false
+	polled.URI = "https://remote.example/notes/" + polled.ID
+	rev := e.FirstRevision(polled)
+	closes := polled.PublishedAt.Add(time.Hour)
+	rev.Poll = &content.Poll{ID: e.IDs.NewID(), Multiple: true, ClosesAt: &closes,
+		Options: []content.PollOption{{Position: 0, Title: "yes"}, {Position: 1, Title: "no"}}}
+	rev.Remote = &content.RemoteRevisionSource{ActivityURI: "https://remote.example/activities/1", HTMLPolicyVersion: 2, OmittedAttachments: 1}
+	if err := e.Create(t, polled, nil, rev); err != nil {
+		t.Fatalf("create the remote status = %v", err)
+	}
+	plain := e.NewStatus(author, content.VisibilityPublic)
+	if err := e.Create(t, plain, nil, e.FirstRevision(plain)); err != nil {
+		t.Fatalf("create = %v", err)
+	}
+	edited := e.NewStatus(author, content.VisibilityPublic)
+	if err := e.Create(t, edited, nil, e.FirstRevision(edited)); err != nil {
+		t.Fatalf("create = %v", err)
+	}
+	next := e.FirstRevision(edited)
+	next.ID, next.Seq, next.SpoilerText = e.IDs.NewID(), 2, "edited"
+	if err := e.InsertRevision(t, next); err != nil {
+		t.Fatalf("revise = %v", err)
+	}
+	if got, err := e.H.Statuses.FindCurrentRevisions(t.Context(), []string{polled.ID}); err != nil ||
+		got[polled.ID].Poll == nil || len(got[polled.ID].Poll.Options) != 2 || got[polled.ID].Remote == nil {
+		t.Errorf("FindCurrentRevisions[the remote status] = %+v, %v; want its poll and remote source", got[polled.ID], err)
+	}
+	sameCurrentRevisions(t, e, polled.ID, plain.ID, edited.ID)
+	if got, err := e.H.Statuses.FindCurrentRevisions(t.Context(), nil); err != nil || len(got) != 0 {
+		t.Errorf("FindCurrentRevisions(nil) = %+v, %v; want none", got, err)
+	}
 }

@@ -43,6 +43,7 @@ func BlockRepositoryContract(t *testing.T, newHarness FollowFactory) {
 		{"DeletesExpiredMutesInBatches", blockRepoDeleteExpired},
 		{"KeepsDomainMutes", blockRepoDomainMutes},
 		{"ListsRelationsAmongAccounts", blockRepoRelations},
+		{"ReadsTheRelationshipPartsOfManyAccounts", blockRepoRelationshipParts},
 		{"LockPairSerializesAPair", blockRepoLockPair},
 	}
 	for _, tc := range cases {
@@ -654,5 +655,81 @@ func blockRepoLockPair(t *testing.T, r *blockRepo) {
 		if n != 1 {
 			t.Errorf("round %d: %d blocks of the pair, want 1", round, n)
 		}
+	}
+}
+
+// blockRepoRelationshipParts reads the relationships of one account with several others at once:
+// follows both ways in either state with the preferences of the one out, blocks both ways, a mute
+// in force and an expired one, and an account with none; each part is what the read of one pair
+// finds.
+func blockRepoRelationshipParts(t *testing.T, r *blockRepo) {
+	ctx := t.Context()
+	ids := r.accounts(5)
+	me, bob, carol, dave, erin := ids[0], ids[1], ids[2], ids[3], ids[4]
+	now := r.clock.Now()
+	past := now.Add(-time.Hour)
+	edges := []graph.Edge{
+		{FollowerAccountID: me, FolloweeAccountID: bob, FollowID: r.ids.NewID(), State: graph.StateActive, Since: now},
+		{FollowerAccountID: me, FolloweeAccountID: carol, FollowID: r.ids.NewID(), State: graph.StatePending, Since: now},
+		{FollowerAccountID: bob, FolloweeAccountID: me, FollowID: r.ids.NewID(), State: graph.StateActive, Since: now},
+		{FollowerAccountID: carol, FolloweeAccountID: bob, FollowID: r.ids.NewID(), State: graph.StateActive, Since: now}, // not mine
+	}
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+		for _, e := range edges {
+			if _, err := r.repo.InsertEdge(ctx, tx, e); err != nil {
+				return err
+			}
+		}
+		return r.repo.UpsertPreferences(ctx, tx, graph.Preferences{FollowID: edges[0].FollowID, ShowBoosts: false})
+	})
+	r.block(t, me, carol)
+	r.block(t, dave, me)
+	r.mute(t, graph.Mute{AccountID: me, TargetAccountID: bob, HideNotifications: true, CreatedAt: now})
+	r.mute(t, graph.Mute{AccountID: me, TargetAccountID: dave, ExpiresAt: &past, CreatedAt: past.Add(-time.Hour)})
+
+	parts, err := r.repo.FindRelationshipParts(ctx, me, []string{bob, carol, dave, erin}, now)
+	if err != nil {
+		t.Fatalf("FindRelationshipParts = %v", err)
+	}
+	for _, other := range []string{bob, carol, dave, erin} {
+		check := func(part string, got any, ok bool, want any, err error) {
+			t.Helper()
+			switch {
+			case errors.Is(err, appgraph.ErrNotFound):
+				if ok {
+					t.Errorf("FindRelationshipParts: %s with %s = %+v, want none", part, other, got)
+				}
+			case err != nil:
+				t.Fatal(err)
+			case !ok || !reflect.DeepEqual(got, want):
+				t.Errorf("FindRelationshipParts: %s with %s = %+v (%t), want %+v", part, other, got, ok, want)
+			}
+		}
+		e, ok := parts.Following[other]
+		want, err := r.repo.FindEdge(ctx, me, other)
+		check("follow out", e, ok, want, err)
+		if err == nil {
+			p, ok := parts.Preferences[want.FollowID]
+			wantP, err := r.repo.FindPreferences(ctx, want.FollowID)
+			check("preferences", p, ok, wantP, err)
+		}
+		e, ok = parts.FollowedBy[other]
+		want, err = r.repo.FindEdge(ctx, other, me)
+		check("follow in", e, ok, want, err)
+		b, ok := parts.Blocking[other]
+		wantB, err := r.repo.FindBlockEdge(ctx, me, other)
+		check("block out", b, ok, wantB, err)
+		b, ok = parts.BlockedBy[other]
+		wantB, err = r.repo.FindBlockEdge(ctx, other, me)
+		check("block in", b, ok, wantB, err)
+		m, ok := parts.Mutes[other]
+		wantM, err := r.repo.FindMute(ctx, me, other, now)
+		check("mute", m, ok, wantM, err)
+	}
+	if _, ok := parts.Mutes[dave]; ok {
+		t.Errorf("FindRelationshipParts: the expired mute of dave is in force")
+	}
+	if empty, err := r.repo.FindRelationshipParts(ctx, me, nil, now); err != nil || len(empty.Following) != 0 {
+		t.Errorf("FindRelationshipParts(none) = %+v, %v; want nothing", empty, err)
 	}
 }

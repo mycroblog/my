@@ -219,6 +219,10 @@ func contentInteractionRepoCounters(t *testing.T, r *contentInteractionRepo) {
 	if _, err := r.h.Statuses.FindCounters(ctx, gone.ID); !errors.Is(err, appcontent.ErrNotFound) {
 		t.Errorf("FindCounters(deleted) = %v, want ErrNotFound", err)
 	}
+	if got, err := r.h.Statuses.FindCountersOf(ctx, []string{s.ID, gone.ID}); err != nil || len(got) != 1 ||
+		got[s.ID].BoostsCount != 1 || got[s.ID].FavouritesCount != 3 {
+		t.Errorf("FindCountersOf = %+v, %v; want the counters of the live status alone, as FindCounters", got, err)
+	}
 	localPosts := func() int64 {
 		t.Helper()
 		all, err := r.h.Statuses.ListLocalPostCounters(ctx)
@@ -246,6 +250,9 @@ func contentInteractionRepoCounters(t *testing.T, r *contentInteractionRepo) {
 	}{{mentioned, true}, {account, false}} {
 		if got, err := r.repo.Mentioned(ctx, s.ID, tc.account); err != nil || got != tc.want {
 			t.Errorf("Mentioned = %v, %v; want %v", got, err, tc.want)
+		}
+		if got, err := r.repo.MentionedIn(ctx, []string{s.ID, gone.ID}, tc.account); err != nil || got[s.ID] != tc.want || got[gone.ID] {
+			t.Errorf("MentionedIn = %v, %v; want %v of the status alone, as Mentioned", got, err, tc.want)
 		}
 	}
 }
