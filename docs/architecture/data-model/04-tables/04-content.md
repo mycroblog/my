@@ -4,7 +4,7 @@
 
 | テーブル | 分類 | カラム | 制約 |
 | --- | --- | --- | --- |
-| `statuses` | リソース | `id`, `uri`, `url`（NULL 可。リモートの投稿の表示用 URL だけを持ち、ローカルの投稿の表示用 URL は読むときに作る。ADR-0018）, `author_account_id`, `is_local`（`bool`）, `visibility`（`enum(public, local, unlisted, private, direct)`）, `in_reply_to_uri`（NULL 可）, `conversation_uri`（NULL 可）, `published_at` | 一意 `(uri)`。インデックス `(author_account_id, id)`, `(in_reply_to_uri)`, `(conversation_uri, id)`。CHECK `visibility <> 'local' OR is_local` |
+| `statuses` | リソース | `id`, `uri`, `url`（NULL 可。リモートの投稿の表示用 URL だけを持ち、ローカルの投稿の表示用 URL は読むときに作る。ADR-0018）, `author_account_id`, `is_local`（`bool`）, `visibility`（`enum(public, local, unlisted, private, direct)`）, `in_reply_to_uri`（NULL 可）, `published_at` | 一意 `(uri)`。インデックス `(author_account_id, id)`, `(in_reply_to_uri)`。CHECK `visibility <> 'local' OR is_local` |
 | `local_statuses` | リソース（部分型） | `status_id`（PK）, `author_account_id`, `oauth_client_id`（NULL 可。`oauth_clients.id`）, `idempotency_key`（NULL 可） | 一意 `(author_account_id, idempotency_key)` |
 | `status_revisions` | イベント（版） | `id`, `status_id`, `seq`（`int`、1 始まり）, `spoiler_text`, `sensitive`（`bool`）, `language`（`lang`）, `revised_at` | 一意 `(status_id, seq)` |
 | `status_revision_bodies` | イベント（版の子） | `revision_id`, `language`（`lang`）, `content_html` | PK `(revision_id, language)`。AP の `contentMap` を正規化したもの。`content` だけのものは版の `language` で 1 行（NFR-I18N-5） |
@@ -25,6 +25,21 @@
   取得し直した投稿は新しい `id` の行になり、後でまた消えることがあるので、1 つの URI が `retention` の削除を複数持てます。tombstone になる削除は URI ごとに 1 つです（部分一意）。URI で削除を引くときは tombstone を優先し、無ければ最新の `retention` の削除を返します。
   `retention` の削除しか無い URI への `Delete` は、未知のオブジェクトへの `Delete` として `remote_object_tombstones` を残します。
 
+#### 会話【リソース】と併合【イベント】
+
+| テーブル | 分類 | カラム | 制約 |
+| --- | --- | --- | --- |
+| `conversations` | リソース | `id`, `uri`（会話の IRI。リモートが宣言したもの、またはこのサーバーが作った `https://{host}/ap/contexts/{id}`）, `is_local`（`bool`。IRI をこのサーバーが作ったか） | 一意 `(uri)` |
+| `status_conversations` | 現在値 | `status_id`（PK）, `conversation_id` | インデックス `(conversation_id, status_id)`。投稿が今属する会話。併合で併合先に移る |
+| `conversation_merges` | イベント | `merged_conversation_id`（PK）, `into_conversation_id`, `status_id`（併合のきっかけの投稿。行の参照は持たない）, `merged_at` | インデックス `(into_conversation_id)`。併合された会話は 1 度だけ併合される |
+
+- 保存したどの投稿も、`status_conversations` にちょうど 1 行を持ちます。投稿を記録したトランザクションで、[ADR-0154](../../../adr/0154-conversations.md) §2 の順に会話を決めます: リモートの投稿が宣言した `context`（無ければ `conversation`）の会話、既知の親の会話、新しい会話。
+  このサーバーの会話の IRI を宣言したリモートの投稿は、宣言を使いません。
+- 返信のつながりが 2 つの会話を同じスレッドと示したら（親が既知の投稿を保存したとき、または先に届いていた返信の親を保存したとき）、子の側の会話を親の側の会話へ併合します（ADR-0154 §3）。
+  同じトランザクションで `conversation_merges` を記録し、`status_conversations` の行を併合先へ移し、`content.conversation_merged` を発行します。会話の投影とスレッドのミュートは、このイベントで行を併合先へ移します。
+- 併合された会話の ID と `uri` は、`conversation_merges` を併合先へたどって引きます（上限 32 回）。併合するのは、どちらも併合されていない会話どうしだけです。
+- 会話の行は、投稿が消えても残します。`status_conversations` の行は、投稿の行と一緒に物理削除します。
+
 #### 投稿の投影
 
 | テーブル | カラム | 制約 / 用途 |
@@ -40,7 +55,7 @@
 - 投稿の投影は **削除されていない投稿だけ** を対象にします。削除イベントを記録したトランザクションで、その投稿の `status_heads`・`status_mention_index`・`status_counters`・`status_reply_links`（返信としての行と、親としての行の両方）を消します。削除された投稿への遅れた版は投影に反映しません。
 - `status_reply_links` は、返信と親の両方が既知で、どちらも削除されていないときに 1 行です。返信が先に届いた場合は、親の投稿のトランザクションで `statuses (in_reply_to_uri)` から返信を引いてつなぎます。
 - 投稿の作成・編集・削除の projector は、投影を読む前に投稿のキーでトランザクションを直列化します（`Repository.LockStatusKeys`）。
-  作成と削除は投稿の `uri` と `in_reply_to_uri`、編集と削除は投稿の `id` をキーにし、キーを決まった順に取ります。
+  作成と削除は投稿の `uri` と `in_reply_to_uri`（作成は加えて、宣言された会話の IRI と、関わる会話の ID）、編集と削除は投稿の `id` をキーにし、キーを決まった順に取ります。
   PostgreSQL は READ COMMITTED なので、トランザクションスコープのアドバイザリロックを取ります。SQLite は書き込みトランザクションが `BEGIN IMMEDIATE` で直列なので何もしません。
   これが無いと、同時に作られた親と返信が互いを見落としてつながらず、削除と同時の編集が削除済みの投稿の `status_heads`・`status_mention_index` を作り直します。
 - `replies_count` は、つながった返信のうち公開範囲が `public` / `local` / `unlisted` のものを数えます。`private` / `direct` の返信は、件数からも存在が分からないように数えません。
@@ -67,7 +82,7 @@
 - **文字数**: 本文と CW の文字数（Unicode のコードポイント数）の合計が、インスタンス設定 `max_status_length` 以下でなければなりません。設定はコマンドごとに `instance` の公開 API から読みます。
 - **公開範囲**: 要求された公開範囲を、`RestrictionPolicy` が返す上限で切り詰めて `statuses.visibility` に記録します（§5.4）。`post` の制限があれば投稿と編集を拒否します。削除は制限されません。
 - **言語**: 要求が無ければ利用者設定の `default_post_language`、それも無ければ `und` です。
-- **返信**: 返信先は、投稿者が `CanView` で見られる削除されていない投稿だけです。見られない・存在しない・削除済みは同じエラーにします。`conversation_uri` は返信先のものを引き継ぎ、返信でない投稿は自分の `uri` です。
+- **返信**: 返信先は、投稿者が `CanView` で見られる削除されていない投稿だけです。見られない・存在しない・削除済みは同じエラーにします。会話は返信先のものを引き継ぎ、返信でない投稿は新しい会話を作ります（ADR-0154 §2）。
 - **冪等キー**: `Idempotency-Key` を受け取ったら `local_statuses (author_account_id, idempotency_key)` で同じ作者の投稿を引き、あればそれを返します。同時に届いた再送は一意制約で 1 つだけが成功し、残りは成功した投稿を返します。削除済みの投稿のキーはエラーにします。
 - **編集**: 現在版の `seq + 1` で新しい版を作ります（FR-109）。公開範囲・作者・返信先は変わりません。
 - **削除**: `status_deletions`（`origin = author`）を記録し、同じトランザクションで投影から外します。
@@ -87,7 +102,7 @@
 ローカル投稿と同じドメインイベント（`content.status_created` / `content.status_revised` / `content.status_deleted`）を発行するので、投稿の投影・`feed_*`・メンションの通知は同じ projector で更新されます。
 
 - **投稿の行**: `id` は `published` の時刻の UUIDv7（§1.3）、`is_local` は偽です。公開範囲は宛先から決め（`local` にはならない）、`url` は表示用 URL が `id` と異なるときだけ持ちます。
-  `conversation_uri` は、返信でなければ自分の `uri`、既知の親への返信なら親の `conversation_uri`、親が未知の返信なら NULL（スレッドが分からない）です。
+  会話は、宣言した `context`（無ければ `conversation`）、既知の親の会話、新しい会話の順で決め、親の会話と違えば親の側へ併合します（上の「会話」）。
 - **版**: 本文は言語ごとにサニタイズして `status_revision_bodies` に保存し、版の `language` は文書の最初の言語です（`contentMap` も `content` も無ければ `und` の空の本文 1 行）。CW はプレーンテキスト、`remote_status_revisions` に版を運んだアクティビティとサニタイザのポリシーの版を記録します。
   メンションは `Mention` のタグと宛先のローカルの Actor で、未知のリモートの Actor は 1 つの投稿につき 5 件・合計 10 秒まで取得します。ハッシュタグは `tags` を正規化した名前で引き（無ければ作り）、添付は 4 件まで `remote_media` に宣言値を記録し、それを超えた添付の数を `remote_status_revisions.omitted_attachment_count` に記録します（クライアントは「+N」と元の投稿へのリンクを出す）。
 - **編集**: `updated`（無ければ `published`）が現在版の `revised_at` より新しいときだけ、`seq + 1` の版を作ります。古い `Update` と同じ `Update` の再処理は版を作りません。
@@ -102,7 +117,7 @@
 
 1 時間ごとの消去ジョブ `content.purge_remote_statuses` が、保持期間を過ぎたリモートの投稿を消します（[ADR-0006](../../../adr/0006-federation-protocol-scope.md)、FR-803）。
 
-- 対象は、公開からインスタンス設定 `remote_status_retention_days`（既定 90 日）を過ぎ、ローカルからの参照が無いリモートの投稿です。参照は、削除されていないローカルの返信、削除されていないローカルの投稿を含むスレッド（同じ `conversation_uri`）、取り消されていないローカルのブースト、お気に入り、ブックマーク、ピン留め、その投稿についての通知です。
+- 対象は、公開からインスタンス設定 `remote_status_retention_days`（既定 90 日）を過ぎ、ローカルからの参照が無いリモートの投稿です。参照は、削除されていないローカルの返信、削除されていないローカルの投稿を含むスレッド（同じ会話）、取り消されていないローカルのブースト、お気に入り、ブックマーク、ピン留め、その投稿についての通知です。
   通知は `notification` の公開 API（`StatusNotified`）で、同じトランザクションの中で調べます。
 - インスタンス設定 `remote_status_max_retention_days`（既定は上限なし）を設定すると、公開からその期間を過ぎたリモートの投稿は、参照があっても対象です。
 - 通報か投稿単位の処分が指す投稿（`report_statuses`・`moderation_action_statuses`）と、効いている保全（§4.3）のある作者の投稿は、最大の期間を過ぎても対象にしません（ADR-0058）。判定は `moderation` の公開 API（`StatusRetained`）で行い、その記録が消えた後の回で対象になります。

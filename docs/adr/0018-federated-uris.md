@@ -25,6 +25,7 @@ AP の `id` には UUIDv7 だけを使い、`/ap/` 名前空間に置く。人�
 | その他のアクティビティ（Follow / Like / Announce / Block / Undo / Update / Delete / Accept / Reject / Flag） | `https://{host}/ap/activities/{uuid}` | `https://social.example.org/ap/activities/0192f3c1-…` |
 | カスタム絵文字（ADR-0051） | `https://{host}/ap/emojis/{uuid}` | — |
 | 引用の承認（ADR-0069 §1） | `https://{host}/ap/quote_authorizations/{uuid}` | — |
+| 会話（`context`。ADR-0154） | `https://{host}/ap/contexts/{uuid}`（`{uuid}` は会話の ID） | `https://social.example.org/ap/contexts/0192f3b0-2c3d-7e4f-8a00-112233445566` |
 | プロフィール（HTML、`url`） | `https://{host}/@{username}` | `https://social.example.org/@alice` |
 | 投稿（HTML、`url`） | `https://{host}/@{username}/status/{uuid}`（§8） | `https://social.example.org/@alice/status/0192f3b0-2c3d-7e4f-8a00-112233445566` |
 | ハッシュタグ（HTML、`Hashtag.href`） | `https://{host}/tags/{name}` | `https://social.example.org/tags/fediverse` |
@@ -175,6 +176,14 @@ AP の `id` には UUIDv7 だけを使い、`/ap/` 名前空間に置く。人�
 `/ap/activities/{uuid}` は、公開・未収載のブーストの `Announce` だけを、保存している事実から配信する。残りの活動・`/ap/objects/{id}/quote_request`・`{object}/replies`・`/likes`・`/shares` は `404` で、広告もしない。規則は federation.md §10 に書く。
 
 §1 の一覧は「id の形」として残り、そこに配信の約束はない。後からルートを足しても id は変わらない。
+
+### 17. 会話の IRI
+
+このサーバーが作る会話の IRI は `https://{host}/ap/contexts/{uuid}` で、ローカルの投稿の Note の `context` と `conversation` に載せる（ADR-0154 §4・§5）。
+
+- 識別子だけで配信しない（`GET` は `404`。§16）。後から FEP-7888 のコレクションとして配信しても、IRI は変わらない。
+- 一度送った形は変えない（ADR-0023 §9）。併合された会話の IRI も、併合先の会話を指し続ける。
+- 受信した文書中のこの形の IRI は、`parseLocalURI` が接頭辞 `/ap/contexts/` と `kernel.ValidID` でパースする。リモートの投稿がこの IRI を宣言しても、その宣言は使わない（ADR-0154 §2）。
 
 ## 経緯
 

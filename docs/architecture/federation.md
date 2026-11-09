@@ -236,6 +236,7 @@ ActivityPub の配送は順序を保証しません。ハンドラは、どの�
 | `url` | 文字列・`Link`・配列のどれでもよい。`text/html` の最初のものを表示用 URL にする |
 | 時刻 | `published` / `updated` は RFC 3339 として読み、未来の時刻は現在時刻に丸める。投稿の `id`（UUIDv7）は `published` から作る（#71） |
 | 投票 | `Question` の `oneOf` / `anyOf`（各 `name` と `replies.totalItems`）、`endTime`、`votersCount`（FR-112）。変換しない投稿の `name` は、投票への回答の選択肢の題として読む（§3.4） |
+| 会話 | `context`（FEP-7888。`https` の IRI だけ。文字列・`Link` の `href`・埋め込みの `id`）、無ければ `conversation`（`ostatus:conversation`。`https` か `tag:` の URI）を、投稿が宣言した会話の識別子として読む。どちらも取得しない。このサーバーの会話の IRI（`/ap/contexts/{uuid}`）は読み捨てる（[ADR-0154](../adr/0154-conversations.md) §2） |
 | 返信の一覧 | 投稿の `replies` はコレクションへの参照（IRI か埋め込み）として読む。`Collection` / `OrderedCollection` / `CollectionPage` / `OrderedCollectionPage` は、`items`（順序付きなら `orderedItems`）を 100 件まで、`first` と `next` をページへの参照として読む（Mastodon は最初のページを埋め込む） |
 | 方言 | Misskey の `_misskey_content`（MFM の原文）・`_misskey_summary` は使わず、`content` / `summary` を使う。引用（FR-114、[ADR-0069](../adr/0069-quote-posts.md) §2）は、FEP-044f の `quote`・`_misskey_quote`・`quoteUrl`・`quoteURL`・`quoteUri`・`rel` が `_misskey_quote` の IRI の FEP-e232 の `Link`（`mediaType` が AS2 の JSON-LD）の順に最初の 1 つを読む。`quote` なら形式は `fep_044f` で `quoteAuthorization` も読み、それ以外は `legacy`。`QuoteAuthorization` の文書は `attributedTo`・`interactingObject`・`interactionTarget` を読む。本文の `quote-inline` のフォールバックはそのまま残す。投稿の `interactionPolicy.canQuote` は `automaticApproval` と `manualApproval` を合わせて、`Public` があれば `public`、作者の followers があれば `followers`、それ以外は `nobody` として読み、無ければ方針なしとする。`isCat` などの未知のプロパティは無視する |
 | 未知のプロパティ | 無視する（[AS2 Core §5](https://www.w3.org/TR/activitystreams-core/#extensibility)）。原本は `received_activity_documents` に短期間残る |
@@ -314,13 +315,14 @@ ActivityPub の配送は順序を保証しません。ハンドラは、どの�
 - 取り込み範囲は ADR-0006 に従います（ローカルのアカウントとの関係がある投稿と、参加中のリレーが運んだ `public` の投稿。ADR-0006）。判定は `federation.StatusHandlers`（`internal/app/federation`）が、受信ごとに次の順で行います。
   1. 保存済みのアカウントのうち、投稿がメンションする・宛先に含めるローカルのアカウント（`active` なもの）がある
   2. 作者に承認済みのフォロワーがいる（リモートの Actor のフォロワーはローカルのアカウントだけ。`graph` の `ActiveFollowerIDs`）
-  3. 返信先がローカルの投稿か、返信先の `conversation_uri` に削除されていないローカルの投稿がある
+  3. 返信先がローカルの投稿か、返信先の会話に削除されていないローカルの投稿がある（投稿が宣言した会話では判定しない。ADR-0154 §2）
   4. 参加中のリレーが運んだ（`relay_id` の付いた）`public` の投稿（§13）
   - どれにも当てはまらない `Create` は `ErrDropActivity` で捨て、受信の記録だけが残ります（`info` のログ）。未知のリモートの Actor へのメンションは、範囲に入ると決まってから取得します。
 - 書き込む行とメンション・ハッシュタグ・カスタム絵文字・添付・投票の扱いは [data-model §4.4 のリモート投稿のコマンド](data-model/04-tables/04-content.md#リモート投稿のコマンド) にあります。コントラクトテストは `federationtest.RemoteStatusContract` で、主要実装のフィクスチャの `Note` を取り込みます。
 - 返信先は受信時に 1 段だけ非同期（`federation.fetch_object`、ペイロードに残りの深さ）で取得し、スレッドの祖先と返信の一覧は利用者がスレッドを開いたときに深さ 20・件数 100 まで取得します。
   - **取得した投稿**: 取得した文書が投稿で、`attributedTo` があり、そのオリジンが投稿の `id` と同じで、作者を解決でき（未知なら取得）、作者が有効なリモートのアカウントで、URI に削除（`status_deletions` の tombstone）も `remote_object_tombstones` も無いときだけ、`content.IngestRemoteStatus`（`activity_uri` は NULL）で取り込みます。取り込み範囲の判定はしません（受信した投稿の返信先・利用者が開いたスレッド・検索で解決した投稿・フォローされている人がブーストした投稿は ADR-0006 の範囲、利用者が開いたプロフィールの outbox の最初のページの公開投稿は ADR-0006 の範囲です）。`Announce` の対象・`fetch_object`・`fetch_outbox`・`Resolver` は、この取り込み（`StatusHandlers.fetched`）を共有します。`Announce` の対象と検索で解決した投稿は、受信した投稿と同じく返信先を 1 段だけ取得します。
-  - **受信時**: 取り込んだ返信の親が未知（`conversation_uri` が NULL）でリモートなら、取り込みのトランザクションで `federation.fetch_object`（祖先 0）を `queue.Outbox` に投入します。取得した親の親は取得しません。
+  - **受信時**: 取り込んだ返信の親が未知でリモートなら、取り込みのトランザクションで `federation.fetch_object`（祖先 0）を `queue.Outbox` に投入します。取得した親の親は取得しません。
+  - **会話の併合**（ADR-0154 §3）: 受信・取得のどちらで取り込んだ投稿も、宣言・既知の親・新しい会話の順で会話に入り、親の会話と違えば親の側へ併合します。親が後から届いたときは、その親を取り込むトランザクションで、先に届いていた返信の会話を親の側へ併合します。どの順で届いても、返信のつながりのある投稿は 1 つの会話になります。
   - **引用先**（ADR-0069 §2）: 引用のある投稿を取り込む・編集を受けるトランザクションで、`federation.verify_quote` を `queue.Outbox` に投入します（ペイロードは投稿の `uri`、`quoteAuthorization` の `authorization`、引用先を取得するかの `fetch`。冪等キーは `verify_quote:<ペイロードの SHA-256>`）。
     `fetch` は inbox で受けた投稿だけが真で、取得した投稿（返信先・スレッド・リレー・outbox）の引用先は、保存済みでなければ取得しません（引用は 1 段）。ジョブは次を行います。
     1. 引用先が未保存のリモートの投稿で `fetch` が真なら、§6.3 の取得した投稿として取り込む。
@@ -503,10 +505,11 @@ ActivityPub の配送は順序を保証しません。ハンドラは、どの�
     ローカルの投稿とプロフィールの絵文字は、保存のときに原文の `:shortcode:` から有効なローカルの絵文字だけを版に記録したものです（data-model §4.4）。リアクション（ADR-0051）も同じ形を使います（`federation.EmojiTag`）。
 - 引用（FR-114、ADR-0069 §3）は、引用元の作者が外していなければ、`quote` と同じ IRI の `_misskey_quote`・`quoteUrl`・`quoteUri`、承認されていれば `quoteAuthorization` を付け、本文（`content` と `contentMap` のどの言語も）の前に `<p class="quote-inline">RE: <a href="{引用先の表示用 URL}">…</a></p>` を置きます（Mastodon と同じ形）。
   どの投稿にも `interactionPolicy.canQuote.automaticApproval` を付けます。配送・投稿の GET・outbox・featured は同じ組み立てを通るので、同じ投稿の `Note` はどこでも同じ形です。`public` / `unlisted` の投稿は引用の許可に従って `Public`・作者の followers・作者自身のどれか、`private` / `direct` / `local` は作者自身です。手で承認することはないので `manualApproval` は付けません。
+- 会話（[ADR-0154](../adr/0154-conversations.md) §5）は、投稿の会話（併合されていれば併合先）の IRI を `context` に、同じ値を `conversation` に載せます。Mastodon は受信で `conversation` だけを読むためです。IRI が `https` でない会話（Mastodon の `tag:` の URI）は `conversation` だけを載せます。併合のためだけの `Update` は送りません。
 - 投票のある投稿は `Question` です（FR-112）。単一選択は `oneOf`、複数選択は `anyOf` に、選択肢ごとの `Note`（`name` は題、`replies` は `totalItems` だけの `Collection`）を載せ、`endTime`（締め切り）、締め切った後は `closed`（`endTime` と同じ時刻）、`votersCount`（`toot:votersCount`）を付けます。
   票数は文書を組み立てる時点の集計で、作者が締め切りまで票数を隠す投票では締め切りまで 0 です。編集されていない投稿の票数の `Update` は `updated` を持たず、受け取ったサーバーは投稿を編集済みにしません（Mastodon は投票だけの更新として扱う）。
 - Note は `federation.notes`（`internal/app/federation`）の 1 か所で組み立て、配送（`Create` / `Update` の `object`）とオブジェクトの GET（§10）が同じものを使います。版のメディア・メンション先・ハッシュタグ・カスタム絵文字は `content.Reader.Parts` で引きます。
-- `@context` は AS2・security・Mastodon 拡張（`toot:`。`Emoji` は `toot:Emoji`）と、引用の語彙（FEP-044f の `quote`・`quoteAuthorization`・`QuoteRequest`・`QuoteAuthorization`、GoToSocial の `interactionPolicy`・`canQuote`・`automaticApproval`・`interactingObject`・`interactionTarget`、Misskey の `_misskey_quote`、`quoteUrl`、Fedibird の `quoteUri`）です（`federation.LDContext`）。配送では `proof` のために data integrity の文脈を足します（§7.3）。
+- `@context` は AS2・security・Mastodon 拡張（`toot:`。`Emoji` は `toot:Emoji`）と、引用の語彙（FEP-044f の `quote`・`quoteAuthorization`・`QuoteRequest`・`QuoteAuthorization`、GoToSocial の `interactionPolicy`・`canQuote`・`automaticApproval`・`interactingObject`・`interactionTarget`、Misskey の `_misskey_quote`、`quoteUrl`、Fedibird の `quoteUri`）と、会話の `conversation`（`ostatus:conversation`）です（`federation.LDContext`）。配送では `proof` のために data integrity の文脈を足します（§7.3）。
 - ローカルの Actor の文書と、それを埋め込む `Update` の `@context` は、security の後に Controlled Identifiers（`https://www.w3.org/ns/cid/v1`）を足したものです（`federation.ActorLDContext`）。`assertionMethod` に Ed25519 の鍵を `Multikey`（`id` は `{actor}#ed25519-key`、`controller` は Actor、`publicKeyMultibase` は base58btc の `z6Mk…`）で載せます（FEP-521a）。RSA の鍵は `publicKey` に載せます。
 - ローカルの Actor の文書は、別名（`account_aliases`、ADR-0089）があれば `alsoKnownAs`（Actor の `id` の配列）に載せます。AS2 の文脈が定義する語なので `@context` は変えません。凍結中の文書（§11.1）には載せません。
 

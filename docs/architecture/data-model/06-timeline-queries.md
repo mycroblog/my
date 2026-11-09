@@ -42,7 +42,7 @@ LIMIT :limit + 1
 - 使うインデックス: `feed_entries (author_account_id, id)`、`feed_follow_edges (follower_account_id, followee_account_id)`、`feed_exclusions` の PK。
 - フォローしている相手の投稿は、`public` / `local` / `unlisted` / `private` のどれでも表示できます（閲覧者はフォロワーかつローカル）。自分の投稿とブーストも表示します。
 - ブーストは、ブーストした人と元投稿の作者（`original_author_account_id`）の両方について、ブロック・ミュート・制限で除外します。閲覧者がミュートしたドメイン（`feed_domain_mutes`）の投稿のブーストも除外しますが、フォローしているそのドメインのアカウントの投稿は除外しません（§4.5）。
-- フォローしていない相手からの `direct` 投稿（自分宛て）は、ホームではなく会話一覧で `feed_direct_recipients (recipient_account_id, entry_id)` から読みます。
+- フォローしていない相手からの `direct` 投稿（自分宛て）は、ホームではなくダイレクトメッセージの一覧（§6.4）で読みます。
 - **読み取り窓**: `:window_floor` は「基準時刻 − 窓」の UUIDv7 の下限です（§1.3）。基準時刻は現在時刻で、カーソルがあればカーソルの `id` の時刻です。
   窓の既定値は 7 日（`timeline.HomeWindow`）です。ページが埋まらなければ、窓を 4 倍（`timeline.HomeWindowGrowth`）に広げて読み直すことを 3 回（`timeline.HomeWindowWidenings`）まで行い、それでも埋まらなければ下限なしで読みます。
 
@@ -80,5 +80,12 @@ ORDER BY e.id DESC LIMIT :limit + 1;
   `direct` は本人なら全部、それ以外は自分宛てのもの（`feed_direct_recipients`）だけです。ブーストは、元投稿の作者を閲覧者が除外している・元投稿の作者やそのドメインに `profile_view` がある・元投稿の作者のドメインを閲覧者がミュートしているものを除きます。
   返信を除くときは `NOT is_reply`、ブーストを除くときは `kind = 'post'` で絞ります。言語フィルタは掛けません（プロフィールは作者のすべての言語を見せる）。
   ピン留めした投稿は `timeline` ではなく `content` が `status_pins` から読み、投稿ごとに `canView`（`ContextStatus`）を適用します。
-- **スレッド（FR-106）**: `statuses (conversation_uri, id)` で一括取得し、行ごとに `canView` を適用します。親子関係は `status_reply_links` を使います。
+- **スレッド（FR-106）**: 起点の投稿の会話の投稿を `status_conversations (conversation_id, status_id)` で一括取得し、行ごとに `canView` を適用します。祖先と子孫は `status_reply_links` でたどり、返信のつながりの無い投稿は出しません（[ADR-0154](../../adr/0154-conversations.md) §1）。
 - **投稿の全文検索（FR-309）**: 候補はこの節のクエリではなく検索エンジンが返す投稿の ID で、`feed_entries` を読みません。投稿ごとに `canView`（`ContextSearch`）を適用し、ブロック・ミュートと制限はホームと同じ `feed_exclusions` と `feed_*_restrictions`、閲覧者がミュートしたドメインは作者のドメインとその親を `feed_domain_mutes` と照らして除外します（フォローしている相手も除外します。[ADR-0149](../../adr/0149-full-text-search.md) §8）。
+
+### 6.4 ダイレクトメッセージ
+
+- 一覧は、閲覧者が送った・受け取った `direct` の投稿を、会話（`status_conversations` の `conversation_id`）ごとにまとめたものです。フォローしているかによりません。UI の名前は `en` で「Direct messages」、`ja` で「DM」です（[ADR-0154](../../adr/0154-conversations.md) §6）。
+- 一覧の投影は `timeline` モジュールが持ち、会話の ID を鍵にします。宛先は `feed_direct_recipients (recipient_account_id, entry_id)` から得ます。
+- `content.conversation_merged` を受けたら、併合された会話の行を併合先へ移し、既読の境界と非表示の境界は 2 つのうち新しい方を残します。併合された会話の ID を指す要求には、併合先の会話で答えます。
+- 行ごとの `canView`・ブロック・ミュート・作者の制限はホームと同じです。表とクエリの詳細は一覧の実装で決めます。
