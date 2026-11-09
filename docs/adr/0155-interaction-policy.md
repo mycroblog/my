@@ -1,19 +1,19 @@
 # ADR-0155: 交流の許可（返信・ブースト・引用を誰ができるか）と承認
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-11-09
 - Deciders: @rosylilly
 - Issue: #2555
 
 ## Decision（決定）
 
-**推奨案: 投稿の作者は、返信・ブースト・引用のそれぞれについて「自動で認める相手」と「承認して認める相手」を選びます。許可は 1 つの表で種類ごとに持ち、連合では GoToSocial の `interactionPolicy`（`canReply` / `canAnnounce` / `canQuote`）と、`ReplyRequest` / `AnnounceRequest` / `QuoteRequest` への `Accept` / `Reject` で伝えます。許可を読まないサーバーから届いた許可外の返信は保存しますが、スレッドに出さず、通知もしません。**
+**投稿の作者は、返信・ブースト・引用のそれぞれについて「自動で認める相手」と「承認して認める相手」を選びます。許可は 1 つの表で種類ごとに持ち、連合では GoToSocial の `interactionPolicy`（`canReply` / `canAnnounce` / `canQuote`）と、`ReplyRequest` / `AnnounceRequest` / `QuoteRequest` への `Accept` / `Reject` で伝えます。許可を読まないサーバーから届いた許可外の返信は保存しますが、スレッドに出さず、通知もしません。**
 
 許可の判定（§3）と承認の手順（§6〜§8）は、どちらも `v0.1.0` に入れます。引用の表示と引用の方言は [ADR-0069](0069-quote-posts.md) が持ち、誰が引用できるかと引用の承認の手順はこの ADR が持ちます。
 
 次は Decider が決めた点です: 依頼・答え・状態・承認の表を引用も含めて種類によらないものにする（§8）、承認の要るリモートの投稿への返信・ブーストは保留にして作者にだけ承認待ちとして見せ、`Accept` の後に配送する（§7）、新しい利用者の既定値（§5）、`followers` の相手にメンションした人を含める（§2）、利用者の既定値を `identity` の別の表に置く（§4）、`v0.1.0` で取り消せる承認は引用だけにする（§8）。
 
-この推奨案が覆るのは、FEP の段階で返信・ブーストの許可の語彙が GoToSocial と別のものに決まり、Mastodon がそちらを採ったときです（§12）。
+この決定が覆るのは、FEP の段階で返信・ブーストの許可の語彙が GoToSocial と別のものに決まり、Mastodon がそちらを採ったときです（§12）。
 
 ### 1. 種類
 
