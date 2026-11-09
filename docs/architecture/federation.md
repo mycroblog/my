@@ -203,7 +203,7 @@ ActivityPub の配送は順序を保証しません。ハンドラは、どの�
 | `Like` | ローカルの投稿 | `_misskey_reaction`、無ければ `content` が `EmojiReact` と同じ規則で絵文字なら `content.RecordRemoteReaction`（Misskey のリアクション、FEP-c0e0）。それ以外は `content.RecordRemoteFavourite`（お気に入り）。主体が閲覧できない投稿（`ContextObjectFetch`）は捨てる |
 | `Block` | ローカルの Actor | `graph.ReceiveBlock`。両方向のフォローを終了し、相手の投稿を閲覧者から隠す（`feed_exclusions`）。対象がローカルの利用者の Actor でなければ捨てる |
 | `Flag` | ローカルの Actor / 投稿 | `moderation.FileRemoteReport`（`reports.uri`）。送信者のドメインに `report_intake` の制限があれば捨てる。通報の対象は `object` の最初のローカルの Actor、無ければ最初のローカルの投稿の作者で、その作者の投稿を `report_statuses` に残す。ローカルの対象が無ければ捨てる |
-| `Add` / `Remove` | 主体の `featured` | `StatusHandlers.FeaturedChanged`。`target` が、保存した主体の Actor の文書が宣言する `featured` と一致し、主体と同じオリジンなら、ジョブ `federation.fetch_featured` を投入してピン留めの一覧を取得し直す（§6.2）。`object` は読まない。署名者が主体であることは §3.2 で確かめてあるので、主体がコレクションの持ち主になる。ほかの `target`（主体のほかのコレクション・別のオリジン・`target` なし）と、ほかの人の `featured` への `Add` / `Remove` は捨てる |
+| `Add` / `Remove` | 主体の `featured` | `StatusHandlers.FeaturedChanged`。`target` が、保存した主体の Actor の文書が宣言する `featured` と一致し、主体と同じオリジンなら、ジョブ `federation.fetch_featured` と、主体が `featuredTags` を宣言していれば `federation.fetch_featured_tags` を投入して、ピン留めと注目のハッシュタグの一覧を取得し直す（§6.2。Mastodon は注目のハッシュタグの変化を `featured` への `Hashtag` の `Add` で送る）。`object` は読まない。署名者が主体であることは §3.2 で確かめてあるので、主体がコレクションの持ち主になる。ほかの `target`（主体のほかのコレクション・別のオリジン・`target` なし）と、ほかの人の `featured` への `Add` / `Remove` は捨てる |
 | `Move` | 主体自身（`object` が `actor`。FEP-7628 の push mode） | `federation.RegisterMoveHandler`（ADR-0089）。次をすべて満たすときだけ処理し、満たさなければ理由を `info` のログとメトリクス `my.move.activities`（`my.outcome`）に残して完了にする: `object` が主体である（`not_own_actor`。移転先が送る pull mode は受けない）、`target` があって主体と異なる（`same_account`）、`target` をキャッシュを使わずに取り直せて（`RemoteActors.RefreshActor`。§6.2 と同じく保存する）その `id` が `target` である（`target_unavailable`）、その `alsoKnownAs` に主体がある（`alias_missing`。ローカルの `target` はその別名 `account_aliases` で確かめる（`account.Service.HasAlias`））、`target` が `movedTo` を持たず、このサーバーでも移転済みでない（`target_moved`。連鎖をたどらない）、主体・`target` のアカウントにもドメインにも `suspend` の処分が無い（`suspended`）。通ったら `account.RecordRemoteMove` が `account_moves`（`initiated_by = remote`、`activity_uri` は `Move`）と `account_move_states` に記録する（`recorded`）。同じ移転先への `Move` は何も増やさず（`duplicate`）、別の移転先への `Move` は前の移転から 7 日以内なら捨てる（`too_soon`）。`account.moved` を購読する `graph` がジョブ `graph.migrate_follows` でローカルの関係を移す（下） |
 | 未知の型 | — | ログとメトリクスに残して完了にする |
 
@@ -236,6 +236,7 @@ ActivityPub の配送は順序を保証しません。ハンドラは、どの�
 | `url` | 文字列・`Link`・配列のどれでもよい。`text/html` の最初のものを表示用 URL にする |
 | 時刻 | `published` / `updated` は RFC 3339 として読み、未来の時刻は現在時刻に丸める。投稿の `id`（UUIDv7）は `published` から作る（#71） |
 | 投票 | `Question` の `oneOf` / `anyOf`（各 `name` と `replies.totalItems`）、`endTime`、`votersCount`（FR-112）。変換しない投稿の `name` は、投票への回答の選択肢の題として読む（§3.4） |
+| 会話 | `context`（FEP-7888。`https` の IRI だけ。文字列・`Link` の `href`・埋め込みの `id`）、無ければ `conversation`（`ostatus:conversation`。`https` か `tag:` の URI）を、投稿が宣言した会話の識別子として読む。どちらも取得しない。このサーバーの会話の IRI（`/ap/contexts/{uuid}`）は読み捨てる（[ADR-0154](../adr/0154-conversations.md) §2） |
 | 返信の一覧 | 投稿の `replies` はコレクションへの参照（IRI か埋め込み）として読む。`Collection` / `OrderedCollection` / `CollectionPage` / `OrderedCollectionPage` は、`items`（順序付きなら `orderedItems`）を 100 件まで、`first` と `next` をページへの参照として読む（Mastodon は最初のページを埋め込む） |
 | 方言 | Misskey の `_misskey_content`（MFM の原文）・`_misskey_summary` は使わず、`content` / `summary` を使う。引用（FR-114、[ADR-0069](../adr/0069-quote-posts.md) §2）は、FEP-044f の `quote`・`_misskey_quote`・`quoteUrl`・`quoteURL`・`quoteUri`・`rel` が `_misskey_quote` の IRI の FEP-e232 の `Link`（`mediaType` が AS2 の JSON-LD）の順に最初の 1 つを読む。`quote` なら形式は `fep_044f` で `quoteAuthorization` も読み、それ以外は `legacy`。`QuoteAuthorization` の文書は `attributedTo`・`interactingObject`・`interactionTarget` を読む。本文の `quote-inline` のフォールバックはそのまま残す。投稿の `interactionPolicy.canQuote` は `automaticApproval` と `manualApproval` を合わせて、`Public` があれば `public`、作者の followers があれば `followers`、それ以外は `nobody` として読み、無ければ方針なしとする。`isCat` などの未知のプロパティは無視する |
 | 未知のプロパティ | 無視する（[AS2 Core §5](https://www.w3.org/TR/activitystreams-core/#extensibility)）。原本は `received_activity_documents` に短期間残る |
@@ -301,6 +302,9 @@ ActivityPub の配送は順序を保証しません。ハンドラは、どの�
   - ジョブ（`StatusHandlers`）は、実行時にもアカウントの条件（有効なリモート・`federation` の制限なし・同じオリジンの `featured`）を確かめ直し、コレクションの項目か、無ければ `first` のページ（同じオリジンのものだけ。2 ページ目はたどらない）を読みます。
   - 項目の順に、埋め込みなら `attributedTo` がそのアカウントで宛先に `as:Public` を含む投稿、IRI ならアカウントと同じオリジンの投稿を 5 件（`FeaturedMaxPosts`）まで選び、保存済みでなければ §6.3 の outbox と同じく取得した投稿として取り込みます（返信先は取得しない）。1 回の文書はコレクション・ページ・投稿の合わせて 7 件（`FeaturedMaxDocuments`）までです。
   - 選んだ投稿で `content.Interactions.ReplaceRemotePins` がそのアカウントの `status_pins` を置き換えます（コレクションの順、新しいピン留めが先）。空のコレクションと `featured` を宣言しなくなった文書はピン留めを消し、コレクションが取得できなければピン留めを残してジョブを完了にします。ストアの失敗は `Retry` です。
+  - 注目のハッシュタグ（`featuredTags`、[ADR-0006](../adr/0006-federation-protocol-scope.md) §17）: 同じ保存のときに、文書が Actor と同じオリジンの `featuredTags` を宣言していれば、ジョブ `federation.fetch_featured_tags`（冪等キー `fetch_featured_tags:<account_id>`）を投入します。
+    ジョブはコレクションの項目か `first` のページ（同じオリジンのものだけ。2 ページ目はたどらない）から `Hashtag` の名前を 10 件まで読み、そのアカウントの注目のハッシュタグを置き換えます。空のコレクションと `featuredTags` を宣言しなくなった文書は消し、取得できなければ残して完了にします。
+    数と最後の使用は、ローカルと同じく、このサーバーが知るそのアカウントの `public` / `unlisted` の投稿から数えます。
   - `GET /api/v1/accounts/{id}/statuses?pinned=true` はローカルと同じく `status_pins` を返すので、リモートのアカウントのプロフィールの先頭にも固定した投稿が出ます。コントラクトテストは `federationtest.RemoteStatusContract` で、Mastodon・Misskey・GoToSocial の `featured.json` を取り込みます。
 - 判定フック `inbound.actor`（ADR-0147 §2）: Actor の文書を保存するとき（初めての取得・取り直し・Actor 自身の `Update`）、トランザクションの前に `account.ReviewRemoteProfile` が保存するとおりにサニタイズしたプロフィール（表示名・自己紹介・項目と、アイコンとヘッダーの URL）とそのダイジェストを求め、今の版のダイジェスト（`remote_profile_revisions.profile_digest`）と違うときだけフックに尋ねます。対象のキーは `<Actor の URI>#<ダイジェストの 16 進>` です。
   - `enforce` の `drop` は、既知の Actor では `RemoteActorInput.KeepProfile` で表示名・自己紹介・項目・アイコン・ヘッダーとそのカスタム絵文字を前の版のまま残し、スナップショット（inbox などのエンドポイント）・鍵・ハンドルと、`locked`・`bot`・`discoverable`・`indexable` は保存します。鍵とエンドポイントを捨てると署名の検証と配送が壊れ、`locked` と `indexable` はフォローの仕方と索引への同意を表すからです。初めての取得では、フォローとメンションの解決に行が要るので `drop` を `flag` として扱います。
@@ -314,13 +318,14 @@ ActivityPub の配送は順序を保証しません。ハンドラは、どの�
 - 取り込み範囲は ADR-0006 に従います（ローカルのアカウントとの関係がある投稿と、参加中のリレーが運んだ `public` の投稿。ADR-0006）。判定は `federation.StatusHandlers`（`internal/app/federation`）が、受信ごとに次の順で行います。
   1. 保存済みのアカウントのうち、投稿がメンションする・宛先に含めるローカルのアカウント（`active` なもの）がある
   2. 作者に承認済みのフォロワーがいる（リモートの Actor のフォロワーはローカルのアカウントだけ。`graph` の `ActiveFollowerIDs`）
-  3. 返信先がローカルの投稿か、返信先の `conversation_uri` に削除されていないローカルの投稿がある
+  3. 返信先がローカルの投稿か、返信先の会話に削除されていないローカルの投稿がある（投稿が宣言した会話では判定しない。ADR-0154 §2）
   4. 参加中のリレーが運んだ（`relay_id` の付いた）`public` の投稿（§13）
   - どれにも当てはまらない `Create` は `ErrDropActivity` で捨て、受信の記録だけが残ります（`info` のログ）。未知のリモートの Actor へのメンションは、範囲に入ると決まってから取得します。
 - 書き込む行とメンション・ハッシュタグ・カスタム絵文字・添付・投票の扱いは [data-model §4.4 のリモート投稿のコマンド](data-model/04-tables/04-content.md#リモート投稿のコマンド) にあります。コントラクトテストは `federationtest.RemoteStatusContract` で、主要実装のフィクスチャの `Note` を取り込みます。
 - 返信先は受信時に 1 段だけ非同期（`federation.fetch_object`、ペイロードに残りの深さ）で取得し、スレッドの祖先と返信の一覧は利用者がスレッドを開いたときに深さ 20・件数 100 まで取得します。
   - **取得した投稿**: 取得した文書が投稿で、`attributedTo` があり、そのオリジンが投稿の `id` と同じで、作者を解決でき（未知なら取得）、作者が有効なリモートのアカウントで、URI に削除（`status_deletions` の tombstone）も `remote_object_tombstones` も無いときだけ、`content.IngestRemoteStatus`（`activity_uri` は NULL）で取り込みます。取り込み範囲の判定はしません（受信した投稿の返信先・利用者が開いたスレッド・検索で解決した投稿・フォローされている人がブーストした投稿は ADR-0006 の範囲、利用者が開いたプロフィールの outbox の最初のページの公開投稿は ADR-0006 の範囲です）。`Announce` の対象・`fetch_object`・`fetch_outbox`・`Resolver` は、この取り込み（`StatusHandlers.fetched`）を共有します。`Announce` の対象と検索で解決した投稿は、受信した投稿と同じく返信先を 1 段だけ取得します。
-  - **受信時**: 取り込んだ返信の親が未知（`conversation_uri` が NULL）でリモートなら、取り込みのトランザクションで `federation.fetch_object`（祖先 0）を `queue.Outbox` に投入します。取得した親の親は取得しません。
+  - **受信時**: 取り込んだ返信の親が未知でリモートなら、取り込みのトランザクションで `federation.fetch_object`（祖先 0）を `queue.Outbox` に投入します。取得した親の親は取得しません。
+  - **会話の併合**（ADR-0154 §3）: 受信・取得のどちらで取り込んだ投稿も、宣言・既知の親・新しい会話の順で会話に入り、親の会話と違えば親の側へ併合します。親が後から届いたときは、その親を取り込むトランザクションで、先に届いていた返信の会話を親の側へ併合します。どの順で届いても、返信のつながりのある投稿は 1 つの会話になります。
   - **引用先**（ADR-0069 §2）: 引用のある投稿を取り込む・編集を受けるトランザクションで、`federation.verify_quote` を `queue.Outbox` に投入します（ペイロードは投稿の `uri`、`quoteAuthorization` の `authorization`、引用先を取得するかの `fetch`。冪等キーは `verify_quote:<ペイロードの SHA-256>`）。
     `fetch` は inbox で受けた投稿だけが真で、取得した投稿（返信先・スレッド・リレー・outbox）の引用先は、保存済みでなければ取得しません（引用は 1 段）。ジョブは次を行います。
     1. 引用先が未保存のリモートの投稿で `fetch` が真なら、§6.3 の取得した投稿として取り込む。
@@ -503,10 +508,11 @@ ActivityPub の配送は順序を保証しません。ハンドラは、どの�
     ローカルの投稿とプロフィールの絵文字は、保存のときに原文の `:shortcode:` から有効なローカルの絵文字だけを版に記録したものです（data-model §4.4）。リアクション（ADR-0051）も同じ形を使います（`federation.EmojiTag`）。
 - 引用（FR-114、ADR-0069 §3）は、引用元の作者が外していなければ、`quote` と同じ IRI の `_misskey_quote`・`quoteUrl`・`quoteUri`、承認されていれば `quoteAuthorization` を付け、本文（`content` と `contentMap` のどの言語も）の前に `<p class="quote-inline">RE: <a href="{引用先の表示用 URL}">…</a></p>` を置きます（Mastodon と同じ形）。
   どの投稿にも `interactionPolicy.canQuote.automaticApproval` を付けます（交流の許可は [ADR-0155](../adr/0155-interaction-policy.md)）。配送・投稿の GET・outbox・featured は同じ組み立てを通るので、同じ投稿の `Note` はどこでも同じ形です。`public` / `unlisted` の投稿は引用の許可に従って `Public`・作者の followers・作者自身のどれか、`private` / `direct` / `local` は作者自身です。手で承認することはないので `manualApproval` は付けません。
+- 会話（[ADR-0154](../adr/0154-conversations.md) §5）は、投稿の会話（併合されていれば併合先）の IRI を `context` に、同じ値を `conversation` に載せます。Mastodon は受信で `conversation` だけを読むためです。IRI が `https` でない会話（Mastodon の `tag:` の URI）は `conversation` だけを載せます。併合のためだけの `Update` は送りません。
 - 投票のある投稿は `Question` です（FR-112）。単一選択は `oneOf`、複数選択は `anyOf` に、選択肢ごとの `Note`（`name` は題、`replies` は `totalItems` だけの `Collection`）を載せ、`endTime`（締め切り）、締め切った後は `closed`（`endTime` と同じ時刻）、`votersCount`（`toot:votersCount`）を付けます。
   票数は文書を組み立てる時点の集計で、作者が締め切りまで票数を隠す投票では締め切りまで 0 です。編集されていない投稿の票数の `Update` は `updated` を持たず、受け取ったサーバーは投稿を編集済みにしません（Mastodon は投票だけの更新として扱う）。
 - Note は `federation.notes`（`internal/app/federation`）の 1 か所で組み立て、配送（`Create` / `Update` の `object`）とオブジェクトの GET（§10）が同じものを使います。版のメディア・メンション先・ハッシュタグ・カスタム絵文字は `content.Reader.Parts` で引きます。
-- `@context` は AS2・security・Mastodon 拡張（`toot:`。`Emoji` は `toot:Emoji`）と、引用の語彙（FEP-044f の `quote`・`quoteAuthorization`・`QuoteRequest`・`QuoteAuthorization`、GoToSocial の `interactionPolicy`・`canQuote`・`automaticApproval`・`interactingObject`・`interactionTarget`、Misskey の `_misskey_quote`、`quoteUrl`、Fedibird の `quoteUri`）です（`federation.LDContext`）。配送では `proof` のために data integrity の文脈を足します（§7.3）。
+- `@context` は AS2・security・Mastodon 拡張（`toot:`。`Emoji` は `toot:Emoji`）と、引用の語彙（FEP-044f の `quote`・`quoteAuthorization`・`QuoteRequest`・`QuoteAuthorization`、GoToSocial の `interactionPolicy`・`canQuote`・`automaticApproval`・`interactingObject`・`interactionTarget`、Misskey の `_misskey_quote`、`quoteUrl`、Fedibird の `quoteUri`）と、会話の `conversation`（`ostatus:conversation`）です（`federation.LDContext`）。配送では `proof` のために data integrity の文脈を足します（§7.3）。
 - ローカルの Actor の文書と、それを埋め込む `Update` の `@context` は、security の後に Controlled Identifiers（`https://www.w3.org/ns/cid/v1`）を足したものです（`federation.ActorLDContext`）。`assertionMethod` に Ed25519 の鍵を `Multikey`（`id` は `{actor}#ed25519-key`、`controller` は Actor、`publicKeyMultibase` は base58btc の `z6Mk…`）で載せます（FEP-521a）。RSA の鍵は `publicKey` に載せます。
 - ローカルの Actor の文書は、別名（`account_aliases`、ADR-0089）があれば `alsoKnownAs`（Actor の `id` の配列）に載せます。AS2 の文脈が定義する語なので `@context` は変えません。凍結中の文書（§11.1）には載せません。
 
@@ -616,7 +622,7 @@ ADR-0005 の方針（既定はキャッシュしない）に従います。
 
 ## 10. コレクションとオブジェクトの GET
 
-連合の向きが `publish` を通さないとき、投稿・`/activity`・ブーストの `Announce`・コレクション（outbox・followers・following・featured）・カスタム絵文字・引用の承認の GET は `404` です（`410` にしません）。ローカルの Actor・インスタンス Actor・WebFinger・host-meta・NodeInfo の扱いは [§14.2](#142-入口ごとの振る舞い) にあります。
+連合の向きが `publish` を通さないとき、投稿・`/activity`・ブーストの `Announce`・コレクション（outbox・followers・following・featured・会話）・カスタム絵文字・引用の承認の GET は `404` です（`410` にしません）。ローカルの Actor・インスタンス Actor・WebFinger・host-meta・NodeInfo の扱いは [§14.2](#142-入口ごとの振る舞い) にあります。
 
 削除されたローカルの Actor（`deleted` を記録した時点から、消去の後も）の GET は、だれにでも `410 Gone` と `Tombstone`（`id` は Actor の URI）です。WebFinger（`acct:`・Actor の `id`・プロフィールの URL のどれでも）と `/@{username}` への ActivityPub の要求も `410` です（ADR-0018 §12）。`Delete` を受け損ねたサーバーが消えたと分かるためです。`deleted` より前の状態は変わりません（凍結中は最小の文書、それ以外の有効でない Actor は `404`）。存在しないユーザーとリモートの Actor も `404` です。HTML を求める要求は、削除された投稿と同じく `404` です。削除された Actor のコレクションと inbox は `404` です。連合の向きが `off` なら、削除されていても `404` です（§14.2）。サービスの終了の配送中も、削除済みの Actor は `410` です。
 
@@ -646,8 +652,13 @@ ADR-0005 の方針（既定はキャッシュしない）に従います。
 - コレクションはだれにも同じ内容を返します。outbox・followers・following は `totalItems` と最初のページ（`?page=true`）へのリンクを持つ `OrderedCollection` で、ページ（`OrderedCollectionPage`）は `partOf` と次のページ（`?max_id={カーソル}&page=true`）を持ちます（Mastodon と同じ形）。
   - outbox は、未ログインの閲覧者がプロフィールで見られる投稿（`public` / `unlisted`）の `Create` を、新しい順に 20 件ずつ返します。ブーストは載せません。`totalItems` は削除されていない投稿の数です（Mastodon と同じ）。
   - followers / following は、承認済みのフォローの相手の Actor の `id` を、新しいフォロー順に 40 件ずつ返します。有効でないアカウントは省き、`totalItems` はフォローの件数です。
-  - featured は、ピン留めした投稿のうち未ログインで閲覧できるもの（`public` / `unlisted`）の `Note` を `orderedItems` に並べます。featured-tags は空の `Collection` です。
+  - featured は、ピン留めした投稿のうち未ログインで閲覧できるもの（`public` / `unlisted`）の `Note` を `orderedItems` に並べます。featured-tags は、持ち主が選んだ注目のハッシュタグ（10 件まで、持ち主の順）の `Hashtag`（`name` は `#` 付きの名前、`href` はそのプロフィールのタグの URL）を `items` に並べる `Collection` で、`totalItems` はその数です（ADR-0006 §17。Mastodon と同じ形）。
   - 埋め込む文書は `@context` を持たないので、outbox のページと featured の `@context` は §7.4 の文書と同じもの（`federation.LDContext`）で、埋め込む文書の語を定義します。それ以外は ActivityStreams だけです。
+- 会話のコレクション `GET /ap/contexts/{uuid}`（[ADR-0154](../adr/0154-conversations.md) §9）は、ほかのコレクションと違い、要求した相手によって内容が変わります。
+  - このサーバーが作った、併合されていない会話のスレッドの、削除されていない投稿の IRI（ローカルは `id`、リモートは `uri`）を、古い順に 40 件ずつ `OrderedCollectionPage` に並べます（`?page=true`、次は `?min_id={カーソル}&page=true`）。`totalItems` と `attributedTo` は載せません。
+  - 項目ごとに、閲覧者を署名者のドメインとして `content.CanView`（`ContextObjectFetch`）を当て、見られない項目は省きます（ページは詰めない）。リモートの投稿は、未ログインの閲覧者として見られるもの（`public` / `unlisted`）だけです。
+  - 併合されたローカルの会話の IRI は、併合先がローカルの会話ならその IRI へ `308`、そうでなければ 404 です。リモートの IRI を持つ会話と存在しない会話は 404、どの項目も見られない会話は空のコレクションです。
+  - 署名の無い要求への応答（Authorized Fetch が無効なとき）は `public, max-age=60`、署名のある要求への応答は `private, no-store` です。Authorized Fetch の表ではコレクションとして扱います。
 - Authorized Fetch（FR-408、S）はインスタンス設定 `authorized_fetch`（既定 `false`、[data-model §4.9](data-model/04-tables/09-instance.md#49-instance)）で有効にします。設定はリクエストごとに読むので、変更はすぐに効きます。
   有効なときは、検証できる署名の無い GET（署名なし・検証できない・未ログインとして扱う署名者）に次のように答えます。
 

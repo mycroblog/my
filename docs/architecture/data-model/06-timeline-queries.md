@@ -42,9 +42,32 @@ LIMIT :limit + 1
 - 使うインデックス: `feed_entries (author_account_id, id)`、`feed_follow_edges (follower_account_id, followee_account_id)`、`feed_exclusions` の PK。
 - フォローしている相手の投稿は、`public` / `local` / `unlisted` / `private` のどれでも表示できます（閲覧者はフォロワーかつローカル）。自分の投稿とブーストも表示します。
 - ブーストは、ブーストした人と元投稿の作者（`original_author_account_id`）の両方について、ブロック・ミュート・制限で除外します。閲覧者がミュートしたドメイン（`feed_domain_mutes`）の投稿のブーストも除外しますが、フォローしているそのドメインのアカウントの投稿は除外しません（§4.5）。
-- フォローしていない相手からの `direct` 投稿（自分宛て）は、ホームではなく会話一覧で `feed_direct_recipients (recipient_account_id, entry_id)` から読みます。
+- フォローしていない相手からの `direct` 投稿（自分宛て）は、ホームではなくダイレクトメッセージの一覧（§6.4）で読みます。
 - **読み取り窓**: `:window_floor` は「基準時刻 − 窓」の UUIDv7 の下限です（§1.3）。基準時刻は現在時刻で、カーソルがあればカーソルの `id` の時刻です。
   窓の既定値は 7 日（`timeline.HomeWindow`）です。ページが埋まらなければ、窓を 4 倍（`timeline.HomeWindowGrowth`）に広げて読み直すことを 3 回（`timeline.HomeWindowWidenings`）まで行い、それでも埋まらなければ下限なしで読みます。
+
+- **フォローしたハッシュタグ**（ADR-0013 §24〜§28）: ホームは、上のフォローの側の枝に、フォローしたハッシュタグの枝を足して `id` で合わせます。
+  ハッシュタグの枝は、`feed_tag_follows` の閲覧者のタグごとに `feed_tag_entries (tag_id, entry_id)` の範囲を同じカーソルと読み取り窓で読み、`feed_entries` と結合します。
+
+  ```sql
+  SELECT e.* FROM feed_entries e
+  JOIN feed_tag_entries t ON t.entry_id = e.id
+  WHERE t.tag_id IN (SELECT tag_id FROM feed_tag_follows WHERE account_id = :viewer)
+    AND t.visibility IN ('public', 'local')
+    AND t.entry_id < :cursor AND t.entry_id >= :window_floor
+    AND e.kind = 'post'
+    AND e.author_account_id <> :viewer
+    AND NOT EXISTS (SELECT 1 FROM feed_follow_edges f
+          WHERE f.follower_account_id = :viewer AND f.followee_account_id = e.author_account_id)
+    AND /* 作者の public_discovery・visibility_ceiling_private・profile_view、ドメインの public_discovery・profile_view（§6.3 のハッシュタグと同じ） */
+    AND /* 閲覧者のブロック・ミュート（feed_exclusions）、ドメインのミュート（feed_domain_mutes）、言語フィルタ（ホームと同じ） */
+  ```
+
+  - 作者をフォローしている投稿と自分の投稿はフォローの側の枝だけが返すので、2 つの枝は重なりません。同じ投稿が複数のフォローしたタグを持つときは `id` で 1 行にします（`DISTINCT`、または枝を `UNION` で合わせる）。
+  - 2 つの枝をそれぞれ `ORDER BY id DESC LIMIT :limit + 1` で読み、`id` の大きい順に合わせて `:limit + 1` 件に切ります。読み取り窓を広げるとき（上の読み取り窓）は、両方の枝を同じ窓で読み直します。
+  - 使うインデックス: `feed_tag_follows` の PK、`feed_tag_entries (tag_id, entry_id)` の PK、`feed_entries` の PK。
+  - ハッシュタグの枝からだけ入った行には、合ったフォロー中のタグを付けて返します（ADR-0013 §28）。ストリームの新着の判定（`HomeEntry`）も同じ 2 つの枝を読みます。
+  - 計測（PostgreSQL と SQLite の `EXPLAIN`、フォロー 1,000・タグ 100・賑やかなタグ）は、実装のタスクで書き足します。
 
 - **リスト（FR-211）**: ホームと同じ条件（読み取り窓・`show_boosts`・`direct` の宛先・ブロックとミュート・`profile_view`・ドメインのミュート・言語）を、作者（投稿者またはブーストした人）をそのリストのメンバーに限って当てます。
   作者の集合は `list_members` を `feed_follow_edges` と結合した `IN (SELECT member_account_id … WHERE list_id = :list AND owner_account_id = :viewer)` で、閲覧者自身の投稿とブーストは入れません（`e.author_account_id <> :viewer`）。
@@ -80,5 +103,12 @@ ORDER BY e.id DESC LIMIT :limit + 1;
   `direct` は本人なら全部、それ以外は自分宛てのもの（`feed_direct_recipients`）だけです。ブーストは、元投稿の作者を閲覧者が除外している・元投稿の作者やそのドメインに `profile_view` がある・元投稿の作者のドメインを閲覧者がミュートしているものを除きます。
   返信を除くときは `NOT is_reply`、ブーストを除くときは `kind = 'post'` で絞ります。言語フィルタは掛けません（プロフィールは作者のすべての言語を見せる）。
   ピン留めした投稿は `timeline` ではなく `content` が `status_pins` から読み、投稿ごとに `canView`（`ContextStatus`）を適用します。
-- **スレッド（FR-106）**: `statuses (conversation_uri, id)` で一括取得し、行ごとに `canView` を適用します。親子関係は `status_reply_links` を使います。
+- **スレッド（FR-106）**: 起点の投稿の会話の投稿を `status_conversations (conversation_id, status_id)` で一括取得し、行ごとに `canView` を適用します。祖先と子孫は `status_reply_links` でたどり、返信のつながりの無い投稿は出しません（[ADR-0154](../../adr/0154-conversations.md) §1）。
 - **投稿の全文検索（FR-309）**: 候補はこの節のクエリではなく検索エンジンが返す投稿の ID で、`feed_entries` を読みません。投稿ごとに `canView`（`ContextSearch`）を適用し、ブロック・ミュートと制限はホームと同じ `feed_exclusions` と `feed_*_restrictions`、閲覧者がミュートしたドメインは作者のドメインとその親を `feed_domain_mutes` と照らして除外します（フォローしている相手も除外します。[ADR-0149](../../adr/0149-full-text-search.md) §8）。
+
+### 6.4 ダイレクトメッセージ
+
+- 一覧は、閲覧者が送った・受け取った `direct` の投稿を、会話（`status_conversations` の `conversation_id`）ごとにまとめたものです。フォローしているかによりません。UI の名前は `en` で「Direct messages」、`ja` で「DM」です（[ADR-0154](../../adr/0154-conversations.md) §6）。
+- 一覧の投影は `timeline` モジュールが持ち、会話の ID を鍵にします。宛先は `feed_direct_recipients (recipient_account_id, entry_id)` から得ます。
+- `content.conversation_merged` を受けたら、併合された会話の行を併合先へ移し、既読の境界と非表示の境界は 2 つのうち新しい方を残します。併合された会話の ID を指す要求には、併合先の会話で答えます。
+- 行ごとの `canView`・ブロック・ミュート・作者の制限はホームと同じです。表とクエリの詳細は一覧の実装で決めます。

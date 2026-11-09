@@ -249,7 +249,7 @@ describe("after the server refuses", () => {
     await user.click(await within(post).findByRole("button", { name: "Translate" }));
 
     expect(await within(post).findByText("EN Bonjour tout le monde")).toBeInTheDocument();
-    expect(within(post).getByText("Machine translated by your browser (Google Chrome)")).toBeInTheDocument();
+    expect(within(post).getByText(/Translated from French\s+Your browser \(Google Chrome\)/)).toBeInTheDocument();
     expect(within(post).queryByRole("alert")).not.toBeInTheDocument();
     expect(requests).toHaveLength(1);
     expect(pairs).toEqual([["fr", "en"]]);
@@ -395,8 +395,13 @@ describe("the translation", () => {
 
     await user.click(await within(post).findByRole("button", { name: "Translate" }));
 
-    expect(await within(post).findByText("Machine translated by your browser (Google Chrome)")).toBeInTheDocument();
+    expect(
+      await within(post).findByText(/Translated from French\s+Your browser \(Google Chrome\)/),
+    ).toBeInTheDocument();
     expect(within(post).getByRole("button", { name: "Show original" })).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText("Machine translated by your browser (Google Chrome)")).toBeInTheDocument();
+    });
   });
 
   test("says only that it was the browser when the browser gives no name that is known", async () => {
@@ -408,7 +413,7 @@ describe("the translation", () => {
 
     await user.click(await within(post).findByRole("button", { name: "Translate" }));
 
-    expect(await within(post).findByText("Machine translated by your browser")).toBeInTheDocument();
+    expect(await within(post).findByText(/Translated from French\s+Your browser\s*$/)).toBeInTheDocument();
   });
 
   test("translates the content warning and the poll, and goes back to the original", async () => {

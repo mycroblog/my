@@ -174,44 +174,76 @@ describe("the action", () => {
 });
 
 describe("the translation", () => {
-  test("replaces the text in place under a line that names the provider, keeps the focus, says so, and goes back to the original without another request", async () => {
+  test("replaces the text in place with a line after it that says from which language and by whom, keeps the focus, says so, and goes back to the original without another request", async () => {
     signedIn();
     const requests = serve(french);
     const { user } = await renderApp({ path: pathOf(french) });
 
     const post = await openedPost();
-    const button = await within(post).findByRole("button", { name: "Translate" });
-    await user.click(button);
+    const toggle = await within(post).findByRole("button", { name: "Translate" });
+    expect(toggle).toHaveAttribute("aria-pressed", "false");
+    await user.click(toggle);
 
     // The body says its own language and direction.
     const body = await findUserText(post, translated);
     expect(body).toHaveAttribute("lang", "en");
     expect(within(post).queryByText(original)).not.toBeInTheDocument();
 
-    // A machine translation says so, above the text and in the article's description, with a link to the provider.
+    // The line after the text says what happened and by whom, in the article's description, with a link to the
+    // provider and the way back.
     const link = within(post).getByRole("link", { name: /Fake Translate/ });
     expect(link).toHaveAttribute("href", "https://translate.example/");
-    expect(post).toHaveAccessibleDescription(expect.stringContaining("Machine translated by Fake Translate"));
+    expect(post).toHaveAccessibleDescription(expect.stringContaining("Translated from French Fake Translate"));
+    expect(body.compareDocumentPosition(link) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     await waitFor(() => {
       expect(announcer()).toHaveTextContent("Machine translated by Fake Translate");
     });
 
-    // The same button, with the focus on it, says the way back.
-    expect(button).toHaveFocus();
-    expect(button).toHaveAccessibleName("Show original");
-    await user.click(button);
+    // The toggle keeps the focus and its name, and is pressed while the translation shows.
+    expect(toggle).toHaveFocus();
+    expect(toggle).toHaveAccessibleName("Translate");
+    expect(toggle).toHaveAttribute("aria-pressed", "true");
+
+    // The line's way back goes to the original, and the focus to the toggle, since the line goes away.
+    await user.click(within(post).getByRole("button", { name: "Show original" }));
     expect(await within(post).findByText(original)).toBeVisible();
-    expect(within(post).queryByText(/Machine translated/)).not.toBeInTheDocument();
-    expect(button).toHaveFocus();
-    expect(button).toHaveAccessibleName("Translate");
+    expect(within(post).queryByText(/Translated from/)).not.toBeInTheDocument();
+    expect(toggle).toHaveFocus();
+    expect(toggle).toHaveAttribute("aria-pressed", "false");
     await waitFor(() => {
       expect(announcer()).toHaveTextContent("Showing the original post.");
     });
 
-    // Asking again shows what the page already has.
-    await user.click(button);
+    // Asking again shows what the page already has, and the toggle goes back too.
+    await user.click(toggle);
     await within(post).findByText(translated);
     expect(requests).toHaveLength(1);
+    await user.click(toggle);
+    expect(await within(post).findByText(original)).toBeVisible();
+  });
+
+  test("is in the menu of more actions too, where a narrow card keeps it, and the focus goes back to the menu's button", async () => {
+    signedIn();
+    serve(french);
+    const { user } = await renderApp({ path: pathOf(french) });
+
+    const post = await openedPost();
+    const more = await within(post).findByRole("button", { name: "More actions" });
+    await user.click(more);
+    await user.click(await screen.findByRole("menuitem", { name: "Translate" }));
+    await findUserText(post, translated);
+
+    await user.click(more);
+    expect(await screen.findByRole("menuitem", { name: "Show original" })).toBeVisible();
+    await user.keyboard("{Escape}");
+
+    // In a narrow card the toggle is not there to take the focus back from the line.
+    const toggle = within(post).getByRole("button", { name: "Translate" });
+    // jsdom has no layout: say what a browser would say of a toggle that `display: none` hides.
+    Object.defineProperty(toggle, "checkVisibility", { value: () => false });
+    await user.click(within(post).getByRole("button", { name: "Show original" }));
+    expect(await within(post).findByText(original)).toBeVisible();
+    expect(more).toHaveFocus();
   });
 
   test("does not call the author's own words a machine translation", async () => {
@@ -240,7 +272,10 @@ describe("the translation", () => {
 
     const post = await openedPost();
     await user.click(await within(post).findByRole("button", { name: "Translate" }));
-    await within(post).findByText("Machine translated by Fake Translate");
+    await findUserText(post, translated);
+    expect(post).toHaveAccessibleDescription(
+      expect.stringContaining("Translated from French Fake Translate Show original"),
+    );
     expect(within(post).queryByRole("link", { name: /Fake Translate/ })).not.toBeInTheDocument();
     // Decorative: the sentence names what it shows.
     const logos = within(post)
@@ -272,7 +307,7 @@ describe("the translation", () => {
 
     expect(await findUserText(post, "Careful")).toHaveAttribute("lang", "en");
     // The line that says what this is stays outside the closed warning.
-    expect(within(post).getByText(/Machine translated by/)).toBeVisible();
+    expect(within(post).getByText(/Translated from French/)).toBeVisible();
 
     await user.click(within(post).getByRole("button", { name: "Show content" }));
     expect(within(post).getByText("Bleu")).toBeVisible();
@@ -396,7 +431,7 @@ describe("a failure", () => {
     expect(within(post).queryByRole("alert")).not.toBeInTheDocument();
   });
 
-  test("while it is on its way, the button keeps its focus and takes no second press", async () => {
+  test("while it is on its way, the line says so, and the toggle keeps its focus and takes no second press", async () => {
     signedIn();
     const requests = serve(french, {
       respond: async () => {
@@ -407,11 +442,11 @@ describe("a failure", () => {
     const { user } = await renderApp({ path: pathOf(french) });
 
     const post = await openedPost();
-    const button = await within(post).findByRole("button", { name: "Translate" });
-    await user.click(button);
-    expect(button).toHaveAccessibleName("Translating…");
-    expect(button).toHaveFocus();
-    await user.click(button);
+    const toggle = await within(post).findByRole("button", { name: "Translate" });
+    await user.click(toggle);
+    expect(within(post).getByText("Translating…")).toBeVisible();
+    expect(toggle).toHaveFocus();
+    await user.click(toggle);
 
     await within(post).findByText(translated);
     expect(requests).toHaveLength(1);

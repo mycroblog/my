@@ -21,7 +21,7 @@ const parts = tv({
     time: "text-fg-muted no-underline data-hovered:text-fg-muted data-hovered:underline data-focus-visible:underline",
     avatar: "block rounded-full",
     origin: "ms-auto min-w-0 text-sm font-normal text-fg-muted data-hovered:text-fg",
-    note: "mb-2 flex min-w-0 items-center gap-x-1.5 text-sm wrap-anywhere text-fg-muted [&>svg]:size-4 [&>svg]:shrink-0",
+    note: "mt-2 flex min-w-0 items-center gap-x-1.5 text-sm wrap-anywhere text-fg-muted [&>svg]:size-4 [&>svg]:shrink-0",
     noteLogo: "h-4 w-auto",
   },
   variants: {
@@ -139,8 +139,9 @@ export type PostCardNoteProps = {
 };
 
 /**
- * One line over the text of a post that says the text is not as its author posted it (a machine translation), for the
- * top of the content slot, where it is part of the article's description. It stays outside a content warning.
+ * One line right after the text of a post that says the text is not as its author posted it (a machine translation),
+ * with what the reader can do about it, at the end of the content slot, where it is part of the article's
+ * description. It stays outside a content warning.
  */
 export function PostCardNote({ logo, children }: PostCardNoteProps) {
   const { note, noteLogo } = parts();
@@ -150,6 +151,22 @@ export function PostCardNote({ logo, children }: PostCardNoteProps) {
       {logo !== undefined && <img src={logo} alt="" className={noteLogo()} />}
       <span>{children}</span>
     </p>
+  );
+}
+
+/** The middle dot between the parts of a note; punctuation, not words. */
+const noteSeparator = "\u00b7";
+
+/**
+ * The dot between the parts of a `PostCardNote` ("Translated from French · Fake Translate · Show original"). A screen
+ * reader leaves it out and keeps the parts apart by the spaces around it.
+ */
+export function PostCardNoteSeparator() {
+  return (
+    <>
+      {" "}
+      <span aria-hidden="true">{noteSeparator}</span>{" "}
+    </>
   );
 }
 

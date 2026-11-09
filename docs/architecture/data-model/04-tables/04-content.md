@@ -4,7 +4,7 @@
 
 | テーブル | 分類 | カラム | 制約 |
 | --- | --- | --- | --- |
-| `statuses` | リソース | `id`, `uri`, `url`（NULL 可。リモートの投稿の表示用 URL だけを持ち、ローカルの投稿の表示用 URL は読むときに作る。ADR-0018）, `author_account_id`, `is_local`（`bool`）, `visibility`（`enum(public, local, unlisted, private, direct)`）, `in_reply_to_uri`（NULL 可）, `conversation_uri`（NULL 可）, `published_at` | 一意 `(uri)`。インデックス `(author_account_id, id)`, `(in_reply_to_uri)`, `(conversation_uri, id)`。CHECK `visibility <> 'local' OR is_local` |
+| `statuses` | リソース | `id`, `uri`, `url`（NULL 可。リモートの投稿の表示用 URL だけを持ち、ローカルの投稿の表示用 URL は読むときに作る。ADR-0018）, `author_account_id`, `is_local`（`bool`）, `visibility`（`enum(public, local, unlisted, private, direct)`）, `in_reply_to_uri`（NULL 可）, `published_at` | 一意 `(uri)`。インデックス `(author_account_id, id)`, `(in_reply_to_uri)`。CHECK `visibility <> 'local' OR is_local` |
 | `local_statuses` | リソース（部分型） | `status_id`（PK）, `author_account_id`, `oauth_client_id`（NULL 可。`oauth_clients.id`）, `idempotency_key`（NULL 可） | 一意 `(author_account_id, idempotency_key)` |
 | `status_revisions` | イベント（版） | `id`, `status_id`, `seq`（`int`、1 始まり）, `spoiler_text`, `sensitive`（`bool`）, `language`（`lang`）, `revised_at` | 一意 `(status_id, seq)` |
 | `status_revision_bodies` | イベント（版の子） | `revision_id`, `language`（`lang`）, `content_html` | PK `(revision_id, language)`。AP の `contentMap` を正規化したもの。`content` だけのものは版の `language` で 1 行（NFR-I18N-5） |
@@ -25,6 +25,21 @@
   取得し直した投稿は新しい `id` の行になり、後でまた消えることがあるので、1 つの URI が `retention` の削除を複数持てます。tombstone になる削除は URI ごとに 1 つです（部分一意）。URI で削除を引くときは tombstone を優先し、無ければ最新の `retention` の削除を返します。
   `retention` の削除しか無い URI への `Delete` は、未知のオブジェクトへの `Delete` として `remote_object_tombstones` を残します。
 
+#### 会話【リソース】と併合【イベント】
+
+| テーブル | 分類 | カラム | 制約 |
+| --- | --- | --- | --- |
+| `conversations` | リソース | `id`, `uri`（会話の IRI。リモートが宣言したもの、またはこのサーバーが作った `https://{host}/ap/contexts/{id}`）, `is_local`（`bool`。IRI をこのサーバーが作ったか） | 一意 `(uri)` |
+| `status_conversations` | 現在値 | `status_id`（PK）, `conversation_id` | インデックス `(conversation_id, status_id)`。投稿が今属する会話。併合で併合先に移る |
+| `conversation_merges` | イベント | `merged_conversation_id`（PK）, `into_conversation_id`, `status_id`（併合のきっかけの投稿。行の参照は持たない）, `merged_at` | インデックス `(into_conversation_id)`。併合された会話は 1 度だけ併合される |
+
+- 保存したどの投稿も、`status_conversations` にちょうど 1 行を持ちます。投稿を記録したトランザクションで、[ADR-0154](../../../adr/0154-conversations.md) §2 の順に会話を決めます: リモートの投稿が宣言した `context`（無ければ `conversation`）の会話、既知の親の会話、新しい会話。
+  このサーバーの会話の IRI を宣言したリモートの投稿は、宣言を使いません。
+- 返信のつながりが 2 つの会話を同じスレッドと示したら（親が既知の投稿を保存したとき、または先に届いていた返信の親を保存したとき）、子の側の会話を親の側の会話へ併合します（ADR-0154 §3）。
+  同じトランザクションで `conversation_merges` を記録し、`status_conversations` の行を併合先へ移し、`content.conversation_merged` を発行します。会話の投影とスレッドのミュートは、このイベントで行を併合先へ移します。
+- 併合された会話の ID と `uri` は、`conversation_merges` を併合先へたどって引きます（上限 32 回）。併合するのは、どちらも併合されていない会話どうしだけです。
+- 会話の行は、投稿が消えても残します。`status_conversations` の行は、投稿の行と一緒に物理削除します。
+
 #### 投稿の投影
 
 | テーブル | カラム | 制約 / 用途 |
@@ -40,7 +55,7 @@
 - 投稿の投影は **削除されていない投稿だけ** を対象にします。削除イベントを記録したトランザクションで、その投稿の `status_heads`・`status_mention_index`・`status_counters`・`status_reply_links`（返信としての行と、親としての行の両方）を消します。削除された投稿への遅れた版は投影に反映しません。
 - `status_reply_links` は、返信と親の両方が既知で、どちらも削除されていないときに 1 行です。返信が先に届いた場合は、親の投稿のトランザクションで `statuses (in_reply_to_uri)` から返信を引いてつなぎます。
 - 投稿の作成・編集・削除の projector は、投影を読む前に投稿のキーでトランザクションを直列化します（`Repository.LockStatusKeys`）。
-  作成と削除は投稿の `uri` と `in_reply_to_uri`、編集と削除は投稿の `id` をキーにし、キーを決まった順に取ります。
+  作成と削除は投稿の `uri` と `in_reply_to_uri`（作成は加えて、宣言された会話の IRI と、関わる会話の ID）、編集と削除は投稿の `id` をキーにし、キーを決まった順に取ります。
   PostgreSQL は READ COMMITTED なので、トランザクションスコープのアドバイザリロックを取ります。SQLite は書き込みトランザクションが `BEGIN IMMEDIATE` で直列なので何もしません。
   これが無いと、同時に作られた親と返信が互いを見落としてつながらず、削除と同時の編集が削除済みの投稿の `status_heads`・`status_mention_index` を作り直します。
 - `replies_count` は、つながった返信のうち公開範囲が `public` / `local` / `unlisted` のものを数えます。`private` / `direct` の返信は、件数からも存在が分からないように数えません。
@@ -67,7 +82,7 @@
 - **文字数**: 本文と CW の文字数（Unicode のコードポイント数）の合計が、インスタンス設定 `max_status_length` 以下でなければなりません。設定はコマンドごとに `instance` の公開 API から読みます。
 - **公開範囲**: 要求された公開範囲を、`RestrictionPolicy` が返す上限で切り詰めて `statuses.visibility` に記録します（§5.4）。`post` の制限があれば投稿と編集を拒否します。削除は制限されません。
 - **言語**: 要求が無ければ利用者設定の `default_post_language`、それも無ければ `und` です。
-- **返信**: 返信先は、投稿者が `CanView` で見られる削除されていない投稿だけです。見られない・存在しない・削除済みは同じエラーにします。`conversation_uri` は返信先のものを引き継ぎ、返信でない投稿は自分の `uri` です。
+- **返信**: 返信先は、投稿者が `CanView` で見られる削除されていない投稿だけです。見られない・存在しない・削除済みは同じエラーにします。会話は返信先のものを引き継ぎ、返信でない投稿は新しい会話を作ります（ADR-0154 §2）。
 - **冪等キー**: `Idempotency-Key` を受け取ったら `local_statuses (author_account_id, idempotency_key)` で同じ作者の投稿を引き、あればそれを返します。同時に届いた再送は一意制約で 1 つだけが成功し、残りは成功した投稿を返します。削除済みの投稿のキーはエラーにします。
 - **編集**: 現在版の `seq + 1` で新しい版を作ります（FR-109）。公開範囲・作者・返信先は変わりません。
 - **削除**: `status_deletions`（`origin = author`）を記録し、同じトランザクションで投影から外します。
@@ -87,7 +102,7 @@
 ローカル投稿と同じドメインイベント（`content.status_created` / `content.status_revised` / `content.status_deleted`）を発行するので、投稿の投影・`feed_*`・メンションの通知は同じ projector で更新されます。
 
 - **投稿の行**: `id` は `published` の時刻の UUIDv7（§1.3）、`is_local` は偽です。公開範囲は宛先から決め（`local` にはならない）、`url` は表示用 URL が `id` と異なるときだけ持ちます。
-  `conversation_uri` は、返信でなければ自分の `uri`、既知の親への返信なら親の `conversation_uri`、親が未知の返信なら NULL（スレッドが分からない）です。
+  会話は、宣言した `context`（無ければ `conversation`）、既知の親の会話、新しい会話の順で決め、親の会話と違えば親の側へ併合します（上の「会話」）。
 - **版**: 本文は言語ごとにサニタイズして `status_revision_bodies` に保存し、版の `language` は文書の最初の言語です（`contentMap` も `content` も無ければ `und` の空の本文 1 行）。CW はプレーンテキスト、`remote_status_revisions` に版を運んだアクティビティとサニタイザのポリシーの版を記録します。
   メンションは `Mention` のタグと宛先のローカルの Actor で、未知のリモートの Actor は 1 つの投稿につき 5 件・合計 10 秒まで取得します。ハッシュタグは `tags` を正規化した名前で引き（無ければ作り）、添付は 4 件まで `remote_media` に宣言値を記録し、それを超えた添付の数を `remote_status_revisions.omitted_attachment_count` に記録します（クライアントは「+N」と元の投稿へのリンクを出す）。
 - **編集**: `updated`（無ければ `published`）が現在版の `revised_at` より新しいときだけ、`seq + 1` の版を作ります。古い `Update` と同じ `Update` の再処理は版を作りません。
@@ -102,7 +117,7 @@
 
 1 時間ごとの消去ジョブ `content.purge_remote_statuses` が、保持期間を過ぎたリモートの投稿を消します（[ADR-0006](../../../adr/0006-federation-protocol-scope.md)、FR-803）。
 
-- 対象は、公開からインスタンス設定 `remote_status_retention_days`（既定 90 日）を過ぎ、ローカルからの参照が無いリモートの投稿です。参照は、削除されていないローカルの返信、削除されていないローカルの投稿を含むスレッド（同じ `conversation_uri`）、取り消されていないローカルのブースト、お気に入り、ブックマーク、ピン留め、その投稿についての通知です。
+- 対象は、公開からインスタンス設定 `remote_status_retention_days`（既定 90 日）を過ぎ、ローカルからの参照が無いリモートの投稿です。参照は、削除されていないローカルの返信、削除されていないローカルの投稿を含むスレッド（同じ会話）、取り消されていないローカルのブースト、お気に入り、ブックマーク、ピン留め、その投稿についての通知です。
   通知は `notification` の公開 API（`StatusNotified`）で、同じトランザクションの中で調べます。
 - インスタンス設定 `remote_status_max_retention_days`（既定は上限なし）を設定すると、公開からその期間を過ぎたリモートの投稿は、参照があっても対象です。
 - 通報か投稿単位の処分が指す投稿（`report_statuses`・`moderation_action_statuses`）と、効いている保全（§4.3）のある作者の投稿は、最大の期間を過ぎても対象にしません（ADR-0058）。判定は `moderation` の公開 API（`StatusRetained`）で行い、その記録が消えた後の回で対象になります。
@@ -142,6 +157,30 @@
 - 1 トランザクションで消すのは 20 件まで、1 回の実行で 1 アカウント 100 件までです。どの投稿も `Delete` を連合先へ送るので、古い投稿の多い設定は数時間に分けて消し、配送の量を抑えます（ADR-0004）。
 - `active` でないアカウント（無効化・削除予定・削除済み）の投稿は消しません。ブーストは投稿ではないので対象外です。
 - 保存していない設定が今消す投稿の数（`POST /preferences/auto_delete/preview`）は、上限が効くアカウントでは送られた設定の実効の設定で数え、ジョブと同じ SQL を 1 つの短い読み取りのトランザクションで 1,001 件まで読んで数えます（1,000 件で止め、超えたことを返す）。設定の有効・無効は数に関係しません。古い 3 件を例として返します。
+
+#### 下書きと予約投稿
+
+ローカルの利用者は、投稿の下書きをサーバーに保存し、すぐ公開するか、決めた時刻に公開します（[ADR-0156](../../../adr/0156-drafts-and-scheduled-posts.md)）。下書きは本人だけが読み書きし、連合しません。記事の下書きは、`drafts` を指す記事の子テーブルを足したものです（部分型）。
+
+| テーブル | 分類 | カラム | 制約 |
+| --- | --- | --- | --- |
+| `drafts` | リソース | `id`, `account_id`, `created_at` | インデックス `(account_id, id)` |
+| `draft_contents` | 現在値 | `draft_id`（PK）, `source_text`, `spoiler_text`, `sensitive`（`bool`）, `language`（`lang`、NULL 可 = 利用者設定の既定）, `visibility`（`enum`）, `in_reply_to_status_id`（NULL 可）, `quoted_status_id`（NULL 可）, `quote_policy`（`enum(public, followers, nobody)`）, `updated_at` | 保存のたびに置き換える。`updated_at` は API の ETag の元 |
+| `draft_attachments` | 現在値 | `draft_id`, `position`（`int`、0〜3）, `media_id`, `description`（`text`、NULL 可） | PK `(draft_id, position)`。インデックス `(media_id)`（未添付の掃除） |
+| `draft_polls` | 現在値 | `draft_id`（PK）, `multiple`（`bool`）, `hide_totals`（`bool`）, `duration_seconds`（`int`、300〜2592000） | 締め切りは公開のときに決める |
+| `draft_poll_options` | 現在値 | `draft_id`, `position`, `title` | PK `(draft_id, position)` |
+| `draft_schedules` | リソース | `id`, `draft_id`, `publish_at`, `created_at` | インデックス `(draft_id, id)` |
+| `draft_schedule_outcomes` | イベント | `schedule_id`（PK）, `outcome`（`enum(published, failed, cancelled)`）, `failure_reason`（`enum`、NULL 可）, `occurred_at` | CHECK `(outcome = 'failed') = (failure_reason IS NOT NULL)` |
+| `scheduled_drafts` | 投影 | `draft_id`（PK）, `schedule_id`, `account_id`, `publish_at` | 一意 `(schedule_id)`。インデックス `(account_id, publish_at)`。結果の行の無い `draft_schedules` から作り直せる |
+
+- 下書きの中身は履歴を使わないので現在値です（ADR-0020 規約 5）。予約は 1 回ごとのリソースで、取り消し・時刻の変更（取り消しと新しい予約）・公開・失敗は結果のイベントです。
+- 保存（`PUT`）は中身の行を 1 つのトランザクションで置き換えます。添付は本人の `uploaded_media` だけで、`ready` でなくてもよく（公開のときに確かめる）、代替テキストは行に写します。
+- 予約は、予約と `scheduled_drafts` の行を記録するトランザクションで、`publish_at` に動くジョブ `content.publish_scheduled_draft`（冪等キーは予約の ID）を outbox に入れます。
+  ジョブは `scheduled_drafts` がその予約を指すときだけ、すぐの投稿と同じ `content.Service.Create` で公開します。冪等キーは下書きの ID から作り（`local_statuses (author_account_id, idempotency_key)`）、同じトランザクションで `published` を記録して下書きの行をすべて消します。
+  処分・返信先や引用先が見られない・検査や外部の審査で断られたときは、`failed` と理由を記録して `scheduled_drafts` から外し、通知 `scheduled_status_failed` を作ります。下書きは残ります。
+- 投稿の `id`・`published_at` は公開のときに作ります。自動削除の日数もそこから数えます。
+- 上限はインスタンス設定 `max_drafts`（予約の無い下書き）・`max_scheduled_posts`・`max_scheduled_posts_per_day`（`publish_at` の UTC の日）で、`scheduled_drafts` と `drafts` を数えます。予約できる時刻は `scheduled_post_min_lead_minutes`（既定 5 分）から `scheduled_post_max_lead_days`（既定 366 日）先までです。
+- `media.purge_unattached` は `draft_attachments` が参照するファイルを添付として数えます。下書きを消すと参照が外れ、次の実行で消えます。アカウントの消去は下書きの行をすべて消します。
 
 #### ブースト
 
@@ -256,7 +295,7 @@
 - `width` / `height` は EXIF の向きを適用した元画像の寸法（動画は回転を適用した表示の寸法、音声は NULL）です（処理し直しても元の寸法を写す）。`media_variants` の寸法は各版の実寸です。
 - 未添付のアップロードを読めるのも、説明（`media_descriptions`）と焦点（`media_focus`）を変えられるのも、アップロードした本人だけです。
   版が添付したあとは説明を版の `status_revision_attachments.description` で持つので、ファイル単体の説明・焦点は変えられません（投稿を編集して直す）。
-- 未添付のアップロード（どの版からも参照されず、`account_profile_revisions` のアバター・ヘッダーにも使われていない `media_files`）は、
+- 未添付のアップロード（どの版からも下書き（`draft_attachments`）からも参照されず、`account_profile_revisions` のアバター・ヘッダーにも使われていない `media_files`）は、
   作成から `media_unattached_retention`（既定 24 時間）後に、1 時間ごとの消去ジョブ `media.purge_unattached` が行と Blob ごと削除します（FR-803）。
   アバター・ヘッダーの参照は `account` モジュール、インスタンスのプレビュー画像（`preview_image`、§4.9）の参照は `instance` モジュールの公開 API で問い合わせます。削除は同じトランザクションで添付の有無を再検査します。
   行を消すトランザクションで Blob のキーを `media_blob_deletions` に記録し、そのあと Blob を消すので、Blob の削除に失敗してもキーが残り、次の実行が消し直します。

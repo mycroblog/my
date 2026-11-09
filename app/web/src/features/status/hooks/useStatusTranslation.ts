@@ -26,11 +26,27 @@ import {
 import type { StatusView } from "./useStatusView";
 import { useTranslator } from "./useTranslator";
 
+/** The control that translates a post or goes back to the original, wherever the card puts it. */
+export type TranslationAction = {
+  /**
+   * The words of a text button and of a menu item: "Translate", while it works "Translating…" or the progress of the
+   * browser's model, and "Show original" while the translation shows.
+   */
+  label: string;
+  isPending: boolean;
+  /** Whether the translation shows: the state of a toggle. */
+  isShown: boolean;
+  /** Translates, or goes back to the original; nothing while a translation is on its way. */
+  onPress: () => void;
+};
+
 export type StatusTranslationView = {
-  /** The button that translates the post or goes back to the original; null when it has no use here. */
-  action: { label: string; isPending: boolean; onPress: () => void } | null;
+  /** The control that translates the post or goes back to the original; null when it has no use here. */
+  action: TranslationAction | null;
   /** The translation to show in place of the original; null shows the original. */
   shown: TranslatedPost | null;
+  /** What the line under the text says while a translation is on its way; null otherwise. */
+  progress: string | null;
   /** Why the last try gave no translation. The original stays. */
   failure: string | null;
 };
@@ -124,6 +140,7 @@ export function useStatusTranslation(status: Status, enabled: boolean, report?: 
   const failed = translate.isError && translate.variables.version === version;
 
   const onPress = () => {
+    if (isPending) return;
     if (shown !== null) {
       setShownVersion(null);
       notice.inPlace(t("client:status.translation.original_shown"));
@@ -135,15 +152,16 @@ export function useStatusTranslation(status: Status, enabled: boolean, report?: 
     }
   };
   const offered = enabled && translator !== null && !isInLanguage(post.language, target);
-  let label = t("client:status.translation.action");
-  if (shown !== null) label = t("client:status.translation.show_original");
-  else if (isPending && downloaded !== null) {
-    label = t("client:status.translation.downloading", { progress: downloaded });
-  } else if (isPending) label = t("client:status.translation.pending");
+  let progress: string | null = null;
+  if (isPending && downloaded !== null) progress = t("client:status.translation.downloading", { progress: downloaded });
+  else if (isPending) progress = t("client:status.translation.pending");
+  const label =
+    shown === null ? (progress ?? t("client:status.translation.action")) : t("client:status.translation.show_original");
   return {
     // A translation on show keeps its way back, even if the server stopped offering it since.
-    action: offered || shown !== null ? { label, isPending, onPress } : null,
+    action: offered || shown !== null ? { label, isPending, isShown: shown !== null, onPress } : null,
     shown,
+    progress,
     failure: failed && shown === null ? failureText(translate.error, t) : null,
   };
 }
