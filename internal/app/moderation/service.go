@@ -613,13 +613,31 @@ func (s *Service) IssueAccountAction(ctx context.Context, in AccountActionInput)
 // transaction: each must be a status of the target that is not deleted.
 func (s *Service) actionStatuses(ctx context.Context, a moderation.Action) ([]appcontent.Status, error) {
 	out := make([]appcontent.Status, 0, len(a.StatusIDs))
+	b, ok := s.d.Statuses.(statusesBatch)
+	if !ok {
+		for _, id := range a.StatusIDs {
+			p, err := s.d.Statuses.Find(ctx, id)
+			switch {
+			case errors.Is(err, appcontent.ErrNotFound):
+				return nil, fmt.Errorf("%w: no status %s", ErrInvalidStatusReference, id)
+			case err != nil:
+				return nil, err
+			case p.Status.AuthorAccountID != a.TargetAccountID:
+				return nil, fmt.Errorf("%w: status %s is of another account", ErrInvalidStatusReference, id)
+			}
+			out = append(out, p.Status)
+		}
+		return out, nil
+	}
+	posts, err := b.FindMany(ctx, a.StatusIDs)
+	if err != nil {
+		return nil, err
+	}
 	for _, id := range a.StatusIDs {
-		p, err := s.d.Statuses.Find(ctx, id)
+		p, found := posts[id]
 		switch {
-		case errors.Is(err, appcontent.ErrNotFound):
+		case !found:
 			return nil, fmt.Errorf("%w: no status %s", ErrInvalidStatusReference, id)
-		case err != nil:
-			return nil, err
 		case p.Status.AuthorAccountID != a.TargetAccountID:
 			return nil, fmt.Errorf("%w: status %s is of another account", ErrInvalidStatusReference, id)
 		}
@@ -628,17 +646,35 @@ func (s *Service) actionStatuses(ctx context.Context, a moderation.Action) ([]ap
 	return out, nil
 }
 
+// statusesBatch is a Statuses that reads and changes many statuses at once, as
+// *appcontent.Service does.
+type statusesBatch interface {
+	FindMany(ctx context.Context, ids []string) (map[string]appcontent.Post, error)
+	DeleteManyByModeration(ctx context.Context, tx uow.Tx, sts []appcontent.Status, actionID string, at time.Time) error
+	MarkManySensitiveByModeration(ctx context.Context, tx uow.Tx, statusIDs []string, actionID string) error
+}
+
 // carryOut records inside tx the effects of a beyond its restrictions (data-model §5.2): the
 // deletion or the sensitivity of its statuses, and the scheduled deletion of a banned account.
 func (s *Service) carryOut(ctx context.Context, tx uow.Tx, a moderation.Action, statuses []appcontent.Status) error {
 	switch a.Kind {
 	case moderation.ActionDeleteStatuses:
+		if b, ok := s.d.Statuses.(statusesBatch); ok {
+			return b.DeleteManyByModeration(ctx, tx, statuses, a.ID, a.IssuedAt)
+		}
 		for _, st := range statuses {
 			if err := s.d.Statuses.DeleteByModeration(ctx, tx, st, a.ID, a.IssuedAt); err != nil {
 				return err
 			}
 		}
 	case moderation.ActionMarkStatusesSensitive:
+		if b, ok := s.d.Statuses.(statusesBatch); ok {
+			ids := make([]string, len(statuses))
+			for i, st := range statuses {
+				ids[i] = st.ID
+			}
+			return b.MarkManySensitiveByModeration(ctx, tx, ids, a.ID)
+		}
 		for _, st := range statuses {
 			if err := s.d.Statuses.MarkSensitiveByModeration(ctx, tx, st.ID, a.ID); err != nil {
 				return err

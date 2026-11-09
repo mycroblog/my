@@ -31,3 +31,18 @@ ON CONFLICT (account_id, status_id) DO NOTHING;
 -- name: InsertStatusRevisionMentions :exec
 INSERT INTO status_revision_mentions (revision_id, account_id)
 SELECT CAST(sqlc.arg(revision_id) AS TEXT), value FROM json_each(CAST(sqlc.arg(account_ids) AS TEXT));
+
+-- InsertStatusDeletions records the deletions of many statuses by one moderation action, a JSON
+-- array, as InsertStatusDeletion records one.
+-- name: InsertStatusDeletions :exec
+INSERT INTO status_deletions (status_id, uri, author_account_id, origin, moderation_action_id, deleted_at)
+SELECT value ->> '$.status_id', value ->> '$.uri', value ->> '$.author_account_id',
+  CAST(sqlc.arg(origin) AS TEXT), CAST(sqlc.narg(moderation_action_id) AS TEXT), CAST(sqlc.arg(deleted_at) AS INTEGER)
+FROM json_each(CAST(sqlc.arg(deletions) AS TEXT));
+
+-- InsertStatusSensitivityOverrides is InsertStatusSensitivityOverride of many statuses, a JSON
+-- array; WHERE true keeps ON CONFLICT from reading as a join constraint.
+-- name: InsertStatusSensitivityOverrides :exec
+INSERT INTO status_sensitivity_overrides (status_id, source_kind, source_id)
+SELECT value, 'action', CAST(sqlc.arg(source_id) AS TEXT) FROM json_each(CAST(sqlc.arg(status_ids) AS TEXT)) WHERE true
+ON CONFLICT (status_id, source_kind, source_id) DO NOTHING;

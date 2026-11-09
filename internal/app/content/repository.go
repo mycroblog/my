@@ -46,6 +46,9 @@ type Repository interface {
 	// InsertDeletion records the deletion of a status. A status or URI that is already deleted
 	// fails with ErrAlreadyDeleted.
 	InsertDeletion(ctx context.Context, tx uow.Tx, d content.Deletion) error
+	// InsertDeletions is InsertDeletion of ds, which share their origin, moderation action, and
+	// time, with one statement.
+	InsertDeletions(ctx context.Context, tx uow.Tx, ds []content.Deletion) error
 	// EnsureTag inserts t unless a tag with its NameNormalized exists, and returns the stored tag.
 	EnsureTag(ctx context.Context, tx uow.Tx, t content.Tag) (content.Tag, error)
 
@@ -90,6 +93,8 @@ type Repository interface {
 	// sensitive (status_sensitivity_overrides); recording it again does nothing. A status can have
 	// rows of several sources, and each source ends only its own.
 	InsertSensitivityOverride(ctx context.Context, tx uow.Tx, statusID, actionID string) error
+	// InsertSensitivityOverrides is InsertSensitivityOverride of each of statusIDs.
+	InsertSensitivityOverrides(ctx context.Context, tx uow.Tx, statusIDs []string, actionID string) error
 	// DeleteSensitivityOverridesOf deletes the overrides of a lifted action.
 	DeleteSensitivityOverridesOf(ctx context.Context, tx uow.Tx, actionID string) error
 	// InsertSensitivityOverrideOfHookDecision records that a mark_sensitive decision of a hook shows a

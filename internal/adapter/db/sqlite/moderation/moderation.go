@@ -42,12 +42,14 @@ func (r *Repository) InsertAction(ctx context.Context, tx uow.Tx, a moderation.A
 	if err != nil {
 		return sqlite.Wrap(err, "insert moderation action")
 	}
-	for _, id := range a.StatusIDs {
-		if err := q.InsertModerationActionStatus(ctx, moderationgen.InsertModerationActionStatusParams{ActionID: a.ID, StatusID: id}); err != nil {
-			return sqlite.Wrap(err, "insert moderation action status")
-		}
+	if len(a.StatusIDs) == 0 {
+		return nil
 	}
-	return nil
+	list, err := sqlite.JSONList(a.StatusIDs)
+	if err != nil {
+		return err
+	}
+	return sqlite.Wrap(q.InsertModerationActionStatuses(ctx, moderationgen.InsertModerationActionStatusesParams{ActionID: a.ID, StatusIds: list}), "insert moderation action statuses")
 }
 
 // actionStatusIDs returns the statuses of an action on statuses, nil for none.
@@ -175,14 +177,22 @@ func (r *Repository) InsertReport(ctx context.Context, tx uow.Tx, rep moderation
 	if err != nil || n == 0 {
 		return false, sqlite.Wrap(err, "insert report")
 	}
-	for _, id := range rep.StatusIDs {
-		if err := q.InsertReportStatus(ctx, moderationgen.InsertReportStatusParams{ReportID: rep.ID, StatusID: id}); err != nil {
-			return false, sqlite.Wrap(err, "insert report status")
+	if len(rep.StatusIDs) > 0 {
+		list, err := sqlite.JSONList(rep.StatusIDs)
+		if err != nil {
+			return false, err
+		}
+		if err := q.InsertReportStatuses(ctx, moderationgen.InsertReportStatusesParams{ReportID: rep.ID, StatusIds: list}); err != nil {
+			return false, sqlite.Wrap(err, "insert report statuses")
 		}
 	}
-	for _, id := range rep.RuleIDs {
-		if err := q.InsertReportRuleCitation(ctx, moderationgen.InsertReportRuleCitationParams{ReportID: rep.ID, RuleID: id}); err != nil {
-			return false, sqlite.Wrap(err, "insert report rule citation")
+	if len(rep.RuleIDs) > 0 {
+		list, err := sqlite.JSONList(rep.RuleIDs)
+		if err != nil {
+			return false, err
+		}
+		if err := q.InsertReportRuleCitations(ctx, moderationgen.InsertReportRuleCitationsParams{ReportID: rep.ID, RuleIds: list}); err != nil {
+			return false, sqlite.Wrap(err, "insert report rule citations")
 		}
 	}
 	if v := rep.VoiceRoom; v != nil {

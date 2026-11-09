@@ -110,12 +110,14 @@ INSERT INTO reports (id, uri, reporter_account_id, target_account_id, category, 
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 ON CONFLICT (uri) DO NOTHING;
 
--- name: InsertReportStatus :exec
-INSERT INTO report_statuses (report_id, status_id) VALUES ($1, $2)
+-- name: InsertReportStatuses :exec
+INSERT INTO report_statuses (report_id, status_id)
+SELECT sqlc.arg(report_id)::uuid, unnest(sqlc.arg(status_ids)::uuid[])
 ON CONFLICT (report_id, status_id) DO NOTHING;
 
--- name: InsertReportRuleCitation :exec
-INSERT INTO report_rule_citations (report_id, rule_id) VALUES ($1, $2)
+-- name: InsertReportRuleCitations :exec
+INSERT INTO report_rule_citations (report_id, rule_id)
+SELECT sqlc.arg(report_id)::uuid, unnest(sqlc.arg(rule_ids)::uuid[])
 ON CONFLICT (report_id, rule_id) DO NOTHING;
 
 -- name: UpsertReportState :exec

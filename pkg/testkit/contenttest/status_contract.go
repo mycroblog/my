@@ -50,6 +50,7 @@ func StatusRepositoryContract(t *testing.T, newHarness StatusFactory) {
 		{"RevisesStatuses", statusRevises},
 		{"ReadsTheCurrentRevisionsOfManyStatuses", statusReadsCurrentRevisions},
 		{"DeletesStatuses", statusDeletes},
+		{"DeletesManyStatuses", statusDeletesMany},
 		{"LinksReplies", statusLinksReplies},
 		{"CountsPosts", statusCountsPosts},
 		{"CountsLocalPosts", statusCountsLocalPosts},
@@ -643,6 +644,41 @@ func statusRevises(t *testing.T, e *StatusEnv) {
 	wg.Wait()
 	if heads, err := e.H.Statuses.ListHeads(ctx); err != nil || len(heads) != 1 || heads[0].Seq != 5+writers {
 		t.Errorf("after %d concurrent revisions: heads = %+v, %v; want seq %d", writers, heads, err, 5+writers)
+	}
+}
+
+// statusDeletesMany records the deletions of many statuses by one action with one statement,
+// each found as InsertDeletion records one, and fails as it does on a deleted status.
+func statusDeletesMany(t *testing.T, e *StatusEnv) {
+	ctx := t.Context()
+	author := e.IDs.NewID()
+	var sts []content.Status
+	for range 3 {
+		st := e.NewStatus(author, content.VisibilityPublic)
+		e.mustCreate(t, st)
+		sts = append(sts, st)
+	}
+	e.Clock.Advance(time.Millisecond)
+	action := e.IDs.NewID()
+	var ds []content.Deletion
+	for _, st := range sts[:2] {
+		ds = append(ds, content.Deletion{StatusID: st.ID, URI: st.URI, AuthorAccountID: author, Origin: content.DeletedByModeration, ModerationActionID: action, DeletedAt: e.Clock.Now()})
+	}
+	if err := e.H.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+		return errors.Join(e.H.Statuses.InsertDeletions(ctx, tx, ds), e.H.Statuses.InsertDeletions(ctx, tx, nil))
+	}); err != nil {
+		t.Fatalf("InsertDeletions = %v", err)
+	}
+	got, err := e.H.Statuses.FindDeletions(ctx, []string{sts[0].ID, sts[1].ID, sts[2].ID})
+	if err != nil || len(got) != 2 || got[sts[0].ID] != ds[0] || got[sts[1].ID] != ds[1] {
+		t.Errorf("FindDeletions after InsertDeletions = %+v, %v; want %+v", got, err, ds)
+	}
+	err = e.H.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+		again := ds[0]
+		return e.H.Statuses.InsertDeletions(ctx, tx, []content.Deletion{again})
+	})
+	if !errors.Is(err, appcontent.ErrAlreadyDeleted) {
+		t.Errorf("InsertDeletions of a deleted status = %v, want ErrAlreadyDeleted", err)
 	}
 }
 

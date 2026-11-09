@@ -130,6 +130,21 @@ func (m moderationStatuses) MarkSensitiveByModeration(ctx context.Context, tx uo
 	return m.a.Content.MarkSensitiveByModeration(ctx, tx, statusID, actionID)
 }
 
+// FindMany implements the batch read of the moderation module.
+func (m moderationStatuses) FindMany(ctx context.Context, ids []string) (map[string]content.Post, error) {
+	return m.a.Content.FindMany(ctx, ids)
+}
+
+// DeleteManyByModeration implements the batch deletion of the moderation module.
+func (m moderationStatuses) DeleteManyByModeration(ctx context.Context, tx uow.Tx, sts []content.Status, actionID string, at time.Time) error {
+	return m.a.Content.DeleteManyByModeration(ctx, tx, sts, actionID, at)
+}
+
+// MarkManySensitiveByModeration implements the batch mark of the moderation module.
+func (m moderationStatuses) MarkManySensitiveByModeration(ctx context.Context, tx uow.Tx, statusIDs []string, actionID string) error {
+	return m.a.Content.MarkManySensitiveByModeration(ctx, tx, statusIDs, actionID)
+}
+
 func (m moderationStatuses) ClearSensitivityOf(ctx context.Context, tx uow.Tx, actionID string) error {
 	return m.a.Content.ClearSensitivityOf(ctx, tx, actionID)
 }

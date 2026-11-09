@@ -45,6 +45,76 @@ type LocalReportDeps struct {
 // reads the content and instance modules, which are set up after this module.
 type LocalReports struct{ d LocalReportDeps }
 
+// visibleBatch is a ReportedStatuses that decides many statuses at once, as *appcontent.Reader
+// does.
+type visibleBatch interface {
+	VisibleAmong(ctx context.Context, viewer appcontent.Viewer, ids []string) (map[string]appcontent.Status, error)
+}
+
+// rulesBatch is a CitableRules that checks many rules at once, as *appinstance.Service does.
+type rulesBatch interface {
+	RulesInEffect(ctx context.Context, ids []string) (map[string]bool, error)
+}
+
+// checkStatuses fails with a ReportFieldError of status_ids unless the reporter may see each of
+// r's statuses and each is of the target: with one read when Statuses can, one by one otherwise.
+func (s *LocalReports) checkStatuses(ctx context.Context, viewer appcontent.Viewer, r moderation.Report) error {
+	if b, ok := s.d.Statuses.(visibleBatch); ok {
+		visible, err := b.VisibleAmong(ctx, viewer, r.StatusIDs)
+		if err != nil {
+			return err
+		}
+		for _, id := range r.StatusIDs {
+			if st, found := visible[id]; !found || st.AuthorAccountID != r.TargetAccountID {
+				return &ReportFieldError{Field: "status_ids"}
+			}
+		}
+		return nil
+	}
+	for _, id := range r.StatusIDs {
+		st, err := s.d.Statuses.Visible(ctx, viewer, id)
+		switch {
+		case errors.Is(err, appcontent.ErrNotFound):
+			return &ReportFieldError{Field: "status_ids"}
+		case err != nil:
+			return err
+		case st.AuthorAccountID != r.TargetAccountID:
+			return &ReportFieldError{Field: "status_ids"}
+		}
+	}
+	return nil
+}
+
+// checkRules fails with a ReportFieldError of rule_ids unless each of ids is a rule in effect:
+// with one read when Rules can, one by one otherwise.
+func (s *LocalReports) checkRules(ctx context.Context, ids []string) error {
+	if len(ids) == 0 {
+		return nil
+	}
+	if b, ok := s.d.Rules.(rulesBatch); ok {
+		inEffect, err := b.RulesInEffect(ctx, ids)
+		if err != nil {
+			return err
+		}
+		for _, id := range ids {
+			if !inEffect[id] {
+				return &ReportFieldError{Field: "rule_ids"}
+			}
+		}
+		return nil
+	}
+	for _, id := range ids {
+		ok, err := s.d.Rules.RuleInEffect(ctx, id)
+		if err != nil {
+			return err
+		}
+		if !ok {
+			return &ReportFieldError{Field: "rule_ids"}
+		}
+	}
+	return nil
+}
+
 // NewLocalReports returns LocalReports on d.
 func NewLocalReports(d LocalReportDeps) *LocalReports { return &LocalReports{d: d} }
 
@@ -129,25 +199,11 @@ func (s *LocalReports) File(ctx context.Context, in LocalReportInput) (moderatio
 	}
 	r.Forwarded = in.Forward && !target.Account.IsLocal() && r.VoiceRoom == nil
 	viewer := appcontent.Viewer{Kind: appcontent.ViewerLocal, AccountID: in.ReporterAccountID}
-	for _, id := range r.StatusIDs {
-		st, err := s.d.Statuses.Visible(ctx, viewer, id)
-		switch {
-		case errors.Is(err, appcontent.ErrNotFound):
-			return moderation.Report{}, &ReportFieldError{Field: "status_ids"}
-		case err != nil:
-			return moderation.Report{}, err
-		case st.AuthorAccountID != r.TargetAccountID:
-			return moderation.Report{}, &ReportFieldError{Field: "status_ids"}
-		}
+	if err := s.checkStatuses(ctx, viewer, r); err != nil {
+		return moderation.Report{}, err
 	}
-	for _, id := range r.RuleIDs {
-		ok, err := s.d.Rules.RuleInEffect(ctx, id)
-		if err != nil {
-			return moderation.Report{}, err
-		}
-		if !ok {
-			return moderation.Report{}, &ReportFieldError{Field: "rule_ids"}
-		}
+	if err := s.checkRules(ctx, r.RuleIDs); err != nil {
+		return moderation.Report{}, err
 	}
 	repo := s.d.Repository
 	err = s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {

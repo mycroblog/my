@@ -227,6 +227,18 @@ func postingRepoSensitivity(t *testing.T, r *postingRepo) {
 	overridden(map[string]bool{gone: false, b.ID: true})
 	r.tx(t, func(ctx context.Context, tx uow.Tx) error { return r.H.Statuses.DeleteAllSensitivityOverrides(ctx, tx) })
 	overridden(map[string]bool{b.ID: false})
+
+	// Many statuses marked by one action at once, as InsertSensitivityOverride marks each, again
+	// doing nothing; the action's end clears them all.
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+		return errors.Join(r.H.Statuses.InsertSensitivityOverrides(ctx, tx, []string{a.ID, b.ID}, action1),
+			r.H.Statuses.InsertSensitivityOverrides(ctx, tx, []string{a.ID}, action1), r.H.Statuses.InsertSensitivityOverrides(ctx, tx, nil, action1))
+	})
+	overridden(map[string]bool{a.ID: true, b.ID: true})
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+		return r.H.Statuses.DeleteSensitivityOverridesOf(ctx, tx, action1)
+	})
+	overridden(map[string]bool{a.ID: false, b.ID: false})
 }
 
 func postingRepoLocalPosts(t *testing.T, r *postingRepo) {

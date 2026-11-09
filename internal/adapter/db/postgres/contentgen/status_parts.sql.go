@@ -9,7 +9,37 @@ package contentgen
 
 import (
 	"context"
+	"time"
 )
+
+const insertStatusDeletions = `-- name: InsertStatusDeletions :exec
+INSERT INTO status_deletions (status_id, uri, author_account_id, origin, moderation_action_id, deleted_at)
+SELECT unnest($1::uuid[]), unnest($2::text[]), unnest($3::uuid[]),
+  $4::text, $5::uuid, $6::timestamptz
+`
+
+type InsertStatusDeletionsParams struct {
+	StatusIds          []string
+	Uris               []string
+	AuthorAccountIds   []string
+	Origin             string
+	ModerationActionID *string
+	DeletedAt          time.Time
+}
+
+// InsertStatusDeletions records the deletions of many statuses by one moderation action, as
+// InsertStatusDeletion records one (the unnests of a select list advance together).
+func (q *Queries) InsertStatusDeletions(ctx context.Context, arg InsertStatusDeletionsParams) error {
+	_, err := q.db.Exec(ctx, insertStatusDeletions,
+		arg.StatusIds,
+		arg.Uris,
+		arg.AuthorAccountIds,
+		arg.Origin,
+		arg.ModerationActionID,
+		arg.DeletedAt,
+	)
+	return err
+}
 
 const insertStatusMentions = `-- name: InsertStatusMentions :exec
 INSERT INTO status_mention_index (account_id, status_id)
@@ -39,6 +69,23 @@ type InsertStatusRevisionMentionsParams struct {
 
 func (q *Queries) InsertStatusRevisionMentions(ctx context.Context, arg InsertStatusRevisionMentionsParams) error {
 	_, err := q.db.Exec(ctx, insertStatusRevisionMentions, arg.RevisionID, arg.AccountIds)
+	return err
+}
+
+const insertStatusSensitivityOverrides = `-- name: InsertStatusSensitivityOverrides :exec
+INSERT INTO status_sensitivity_overrides (status_id, source_kind, source_id)
+SELECT unnest($1::uuid[]), 'action', $2::uuid
+ON CONFLICT (status_id, source_kind, source_id) DO NOTHING
+`
+
+type InsertStatusSensitivityOverridesParams struct {
+	StatusIds []string
+	SourceID  string
+}
+
+// InsertStatusSensitivityOverrides is InsertStatusSensitivityOverride of many statuses.
+func (q *Queries) InsertStatusSensitivityOverrides(ctx context.Context, arg InsertStatusSensitivityOverridesParams) error {
+	_, err := q.db.Exec(ctx, insertStatusSensitivityOverrides, arg.StatusIds, arg.SourceID)
 	return err
 }
 

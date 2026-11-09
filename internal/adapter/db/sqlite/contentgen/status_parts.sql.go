@@ -9,7 +9,34 @@ package contentgen
 
 import (
 	"context"
+	"database/sql"
 )
+
+const insertStatusDeletions = `-- name: InsertStatusDeletions :exec
+INSERT INTO status_deletions (status_id, uri, author_account_id, origin, moderation_action_id, deleted_at)
+SELECT value ->> '$.status_id', value ->> '$.uri', value ->> '$.author_account_id',
+  CAST(?1 AS TEXT), CAST(?2 AS TEXT), CAST(?3 AS INTEGER)
+FROM json_each(CAST(?4 AS TEXT))
+`
+
+type InsertStatusDeletionsParams struct {
+	Origin             string
+	ModerationActionID sql.NullString
+	DeletedAt          int64
+	Deletions          string
+}
+
+// InsertStatusDeletions records the deletions of many statuses by one moderation action, a JSON
+// array, as InsertStatusDeletion records one.
+func (q *Queries) InsertStatusDeletions(ctx context.Context, arg InsertStatusDeletionsParams) error {
+	_, err := q.db.ExecContext(ctx, insertStatusDeletions,
+		arg.Origin,
+		arg.ModerationActionID,
+		arg.DeletedAt,
+		arg.Deletions,
+	)
+	return err
+}
 
 const insertStatusMentions = `-- name: InsertStatusMentions :exec
 INSERT INTO status_mention_index (account_id, status_id)
@@ -39,6 +66,24 @@ type InsertStatusRevisionMentionsParams struct {
 
 func (q *Queries) InsertStatusRevisionMentions(ctx context.Context, arg InsertStatusRevisionMentionsParams) error {
 	_, err := q.db.ExecContext(ctx, insertStatusRevisionMentions, arg.RevisionID, arg.AccountIds)
+	return err
+}
+
+const insertStatusSensitivityOverrides = `-- name: InsertStatusSensitivityOverrides :exec
+INSERT INTO status_sensitivity_overrides (status_id, source_kind, source_id)
+SELECT value, 'action', CAST(?1 AS TEXT) FROM json_each(CAST(?2 AS TEXT)) WHERE true
+ON CONFLICT (status_id, source_kind, source_id) DO NOTHING
+`
+
+type InsertStatusSensitivityOverridesParams struct {
+	SourceID  string
+	StatusIds string
+}
+
+// InsertStatusSensitivityOverrides is InsertStatusSensitivityOverride of many statuses, a JSON
+// array; WHERE true keeps ON CONFLICT from reading as a join constraint.
+func (q *Queries) InsertStatusSensitivityOverrides(ctx context.Context, arg InsertStatusSensitivityOverridesParams) error {
+	_, err := q.db.ExecContext(ctx, insertStatusSensitivityOverrides, arg.SourceID, arg.StatusIds)
 	return err
 }
 
