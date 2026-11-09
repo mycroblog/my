@@ -52,6 +52,44 @@ func (q *Queries) ListAccountReactionsOn(ctx context.Context, arg ListAccountRea
 	return items, nil
 }
 
+const listBookmarksOfAccountsOn = `-- name: ListBookmarksOfAccountsOn :many
+SELECT account_id, status_id, created_at, id FROM bookmarks
+WHERE account_id IN (SELECT value FROM json_each(CAST(?1 AS TEXT))) AND status_id IN (SELECT value FROM json_each(CAST(?2 AS TEXT))) ORDER BY account_id, status_id
+`
+
+type ListBookmarksOfAccountsOnParams struct {
+	AccountIds string
+	StatusIds  string
+}
+
+func (q *Queries) ListBookmarksOfAccountsOn(ctx context.Context, arg ListBookmarksOfAccountsOnParams) ([]Bookmark, error) {
+	rows, err := q.db.QueryContext(ctx, listBookmarksOfAccountsOn, arg.AccountIds, arg.StatusIds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Bookmark{}
+	for rows.Next() {
+		var i Bookmark
+		if err := rows.Scan(
+			&i.AccountID,
+			&i.StatusID,
+			&i.CreatedAt,
+			&i.ID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listBookmarksOn = `-- name: ListBookmarksOn :many
 SELECT account_id, status_id, created_at, id FROM bookmarks
 WHERE account_id = ?1 AND status_id IN (SELECT value FROM json_each(CAST(?2 AS TEXT))) ORDER BY status_id
@@ -77,6 +115,39 @@ func (q *Queries) ListBookmarksOn(ctx context.Context, arg ListBookmarksOnParams
 			&i.CreatedAt,
 			&i.ID,
 		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listBoostEdgesOfAccountsOn = `-- name: ListBoostEdgesOfAccountsOn :many
+SELECT booster_account_id, status_id, boost_id FROM boost_edges
+WHERE booster_account_id IN (SELECT value FROM json_each(CAST(?1 AS TEXT))) AND status_id IN (SELECT value FROM json_each(CAST(?2 AS TEXT))) ORDER BY booster_account_id, status_id
+`
+
+type ListBoostEdgesOfAccountsOnParams struct {
+	AccountIds string
+	StatusIds  string
+}
+
+func (q *Queries) ListBoostEdgesOfAccountsOn(ctx context.Context, arg ListBoostEdgesOfAccountsOnParams) ([]BoostEdge, error) {
+	rows, err := q.db.QueryContext(ctx, listBoostEdgesOfAccountsOn, arg.AccountIds, arg.StatusIds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []BoostEdge{}
+	for rows.Next() {
+		var i BoostEdge
+		if err := rows.Scan(&i.BoosterAccountID, &i.StatusID, &i.BoostID); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -159,6 +230,48 @@ func (q *Queries) ListBoostsByIDs(ctx context.Context, ids string) ([]Boost, err
 	return items, nil
 }
 
+const listFavouritesOfAccountsOn = `-- name: ListFavouritesOfAccountsOn :many
+
+SELECT account_id, status_id, uri, created_at, id FROM favourites
+WHERE account_id IN (SELECT value FROM json_each(CAST(?1 AS TEXT))) AND status_id IN (SELECT value FROM json_each(CAST(?2 AS TEXT))) ORDER BY account_id, status_id
+`
+
+type ListFavouritesOfAccountsOnParams struct {
+	AccountIds string
+	StatusIds  string
+}
+
+// What many accounts did with many statuses, for presenting one status to many viewers, each as
+// the query of one account above reads it (account_ids and status_ids are JSON arrays).
+func (q *Queries) ListFavouritesOfAccountsOn(ctx context.Context, arg ListFavouritesOfAccountsOnParams) ([]Favourite, error) {
+	rows, err := q.db.QueryContext(ctx, listFavouritesOfAccountsOn, arg.AccountIds, arg.StatusIds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Favourite{}
+	for rows.Next() {
+		var i Favourite
+		if err := rows.Scan(
+			&i.AccountID,
+			&i.StatusID,
+			&i.Uri,
+			&i.CreatedAt,
+			&i.ID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listFavouritesOn = `-- name: ListFavouritesOn :many
 
 
@@ -204,6 +317,38 @@ func (q *Queries) ListFavouritesOn(ctx context.Context, arg ListFavouritesOnPara
 	return items, nil
 }
 
+const listMentionsOfAccountsIn = `-- name: ListMentionsOfAccountsIn :many
+SELECT DISTINCT account_id, status_id FROM status_mention_index WHERE account_id IN (SELECT value FROM json_each(CAST(?1 AS TEXT))) AND status_id IN (SELECT value FROM json_each(CAST(?2 AS TEXT))) ORDER BY account_id, status_id
+`
+
+type ListMentionsOfAccountsInParams struct {
+	AccountIds string
+	StatusIds  string
+}
+
+func (q *Queries) ListMentionsOfAccountsIn(ctx context.Context, arg ListMentionsOfAccountsInParams) ([]StatusMentionIndex, error) {
+	rows, err := q.db.QueryContext(ctx, listMentionsOfAccountsIn, arg.AccountIds, arg.StatusIds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []StatusMentionIndex{}
+	for rows.Next() {
+		var i StatusMentionIndex
+		if err := rows.Scan(&i.AccountID, &i.StatusID); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listReactionCountsOf = `-- name: ListReactionCountsOf :many
 SELECT c.status_id, c.emoji_key, c.custom_emoji_id, c.count FROM status_reaction_counts c
 WHERE c.status_id IN (SELECT value FROM json_each(CAST(?1 AS TEXT)))
@@ -236,6 +381,86 @@ func (q *Queries) ListReactionCountsOf(ctx context.Context, arg ListReactionCoun
 			&i.EmojiKey,
 			&i.CustomEmojiID,
 			&i.Count,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listReactionsOfAccountsOn = `-- name: ListReactionsOfAccountsOn :many
+SELECT id, account_id, status_id, emoji_key, custom_emoji_id, uri, created_at FROM reactions
+WHERE account_id IN (SELECT value FROM json_each(CAST(?1 AS TEXT))) AND status_id IN (SELECT value FROM json_each(CAST(?2 AS TEXT))) ORDER BY account_id, status_id, id
+`
+
+type ListReactionsOfAccountsOnParams struct {
+	AccountIds string
+	StatusIds  string
+}
+
+func (q *Queries) ListReactionsOfAccountsOn(ctx context.Context, arg ListReactionsOfAccountsOnParams) ([]Reaction, error) {
+	rows, err := q.db.QueryContext(ctx, listReactionsOfAccountsOn, arg.AccountIds, arg.StatusIds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Reaction{}
+	for rows.Next() {
+		var i Reaction
+		if err := rows.Scan(
+			&i.ID,
+			&i.AccountID,
+			&i.StatusID,
+			&i.EmojiKey,
+			&i.CustomEmojiID,
+			&i.Uri,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listStatusPinsOfAccountsOn = `-- name: ListStatusPinsOfAccountsOn :many
+SELECT account_id, status_id, slot, created_at, id FROM status_pins
+WHERE account_id IN (SELECT value FROM json_each(CAST(?1 AS TEXT))) AND status_id IN (SELECT value FROM json_each(CAST(?2 AS TEXT))) ORDER BY account_id, status_id
+`
+
+type ListStatusPinsOfAccountsOnParams struct {
+	AccountIds string
+	StatusIds  string
+}
+
+func (q *Queries) ListStatusPinsOfAccountsOn(ctx context.Context, arg ListStatusPinsOfAccountsOnParams) ([]StatusPin, error) {
+	rows, err := q.db.QueryContext(ctx, listStatusPinsOfAccountsOn, arg.AccountIds, arg.StatusIds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []StatusPin{}
+	for rows.Next() {
+		var i StatusPin
+		if err := rows.Scan(
+			&i.AccountID,
+			&i.StatusID,
+			&i.Slot,
+			&i.CreatedAt,
+			&i.ID,
 		); err != nil {
 			return nil, err
 		}

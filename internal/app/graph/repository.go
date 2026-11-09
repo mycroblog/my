@@ -223,6 +223,11 @@ type Repository interface {
 	// FindPreferences of the edge out of accountID, FindBlockEdge (both ways), and FindMute read
 	// of one pair, with one query per part whatever the number of targets.
 	FindRelationshipParts(ctx context.Context, accountID string, targetIDs []string, now time.Time) (RelationshipParts, error)
+	// FindPreferencesOf is FindPreferences of each follow of followIDs that has them, by follow.
+	FindPreferencesOf(ctx context.Context, followIDs []string) (map[string]graph.Preferences, error)
+	// FindMutesOn returns the mutes of targetID by those of accountIDs that have not expired at
+	// now, by account, as FindMute reads one.
+	FindMutesOn(ctx context.Context, targetID string, accountIDs []string, now time.Time) (map[string]graph.Mute, error)
 	// ListMutes returns accountID's mutes that have not expired at now, newest first by creation
 	// and then target account ID, starting after before (the zero cursor for the newest) and
 	// returning at most limit mutes.

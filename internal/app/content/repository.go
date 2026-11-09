@@ -265,6 +265,9 @@ type Repository interface {
 	// ListPollVotesIn returns accountID's votes in each of pollIDs where it voted, by poll ID, as
 	// ListPollVotes returns those of one, with one query.
 	ListPollVotesIn(ctx context.Context, pollIDs []string, accountID string) (map[string][]content.PollVote, error)
+	// ListPollVotesOfAccountsIn is ListPollVotesIn of each of accountIDs, by account, with one
+	// query.
+	ListPollVotesOfAccountsIn(ctx context.Context, pollIDs, accountIDs []string) (map[string]map[string][]content.PollVote, error)
 	// ListPollVotesTx is ListPollVotes in tx.
 	ListPollVotesTx(ctx context.Context, tx uow.Tx, pollID, accountID string) ([]content.PollVote, error)
 	// PollStatusID returns the ID of the status whose revision has the poll.

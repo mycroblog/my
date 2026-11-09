@@ -325,6 +325,11 @@ type Repository interface {
 	// MutedDomains returns those of domains that the viewer mutes. A mute covers its subdomains,
 	// so a caller passes a domain and its parents.
 	MutedDomains(ctx context.Context, viewerAccountID string, domains []string) ([]string, error)
+	// MutedDomainsOf is MutedDomains of each of viewers, by viewer, with one query.
+	MutedDomainsOf(ctx context.Context, viewers, domains []string) (map[string][]string, error)
+	// FactsOfViewers is Facts of fq for each of viewers, by viewer: the restrictions read once,
+	// and the follows, exclusions, and direct entries of all the viewers with one query each.
+	FactsOfViewers(ctx context.Context, viewers []string, fq FactsQuery) (map[string]Facts, error)
 	// TagUsageOf returns the usage of the tags among tagIDs that have one, ordered by tag ID.
 	TagUsageOf(ctx context.Context, tagIDs []string) ([]TagUsage, error)
 
