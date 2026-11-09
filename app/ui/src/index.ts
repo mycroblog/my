@@ -428,6 +428,7 @@ export {
   PostCardNameLink,
   PostCardNote,
   type PostCardNoteProps,
+  PostCardNoteSeparator,
   PostCardOrigin,
   PostCardTimeLink,
   type PostCardAuthorLinkProps,

@@ -71,8 +71,11 @@ versions are on its "Edit history" page. "Delete" removes the post for everyone,
 For a post by another person, the same menu offers to follow, mute, block, or report its author, and "Direct message".
 Your bookmarks are listed on the "Bookmarks" page; only you see them.
 
-When the server offers translation, or your browser can translate, "Translate" appears under posts in other languages.
-If the server sends the text of posts to a translation service, the visibility picker tells you for which choices.
+When the server offers translation, or your browser can translate, posts in other languages have "Translate" among
+their actions, and in the "More actions" menu, which holds it when the post is too narrow for one more button. While a
+post shows its translation, a line under the text says which language it was translated from and by whom, with "Show
+original" to go back. If the server sends the text of posts to a translation service, the visibility picker tells you
+for which choices.
 
 ## Deleting old posts automatically
 

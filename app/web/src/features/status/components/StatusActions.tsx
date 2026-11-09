@@ -11,6 +11,7 @@ import {
   IconButtonLink,
   IconToggleButton,
   type IconToggleButtonProps,
+  LanguageIcon,
   Menu,
   MenuItem,
   MenuSeparator,
@@ -31,6 +32,7 @@ import { ReportDialog } from "../../report";
 import type { ReactionEmoji, Status } from "../api/status";
 import { useAuthorActions } from "../hooks/useAuthorActions";
 import { type RelationToggle, useStatusActions } from "../hooks/useStatusActions";
+import type { TranslationAction } from "../hooks/useStatusTranslation";
 import { EditStatusDialog } from "./EditStatusDialog";
 import { QuotePolicyDialog } from "./QuotePolicyDialog";
 
@@ -43,6 +45,12 @@ export type StatusActionsProps = {
    * the reply button, which writes one. Left out on that page itself.
    */
   repliesHref?: string | undefined;
+  /** The translation of the post (useStatusTranslation); null or left out when the card offers none. */
+  translation?: TranslationAction | null;
+  /** The `id` of the toggle that translates, where the focus goes back from the line under the text. */
+  translateId?: string | undefined;
+  /** The `id` of the button of the "More actions" menu, where the focus goes back in a card too narrow for the toggle. */
+  moreId?: string | undefined;
 };
 
 /** The emoji of a reaction picked in the picker: a Unicode emoji, or a custom emoji of this server. */
@@ -63,7 +71,14 @@ function reactionEmojiOf(choice: ReactionChoice): ReactionEmoji {
  * instance sends nothing out (ADR-0006), quoting is not offered and a note at the end of the bar, which also
  * describes the reply, boost and favourite, says that the actions do not reach that server.
  */
-export function StatusActions({ status, onDeleted, repliesHref }: StatusActionsProps) {
+export function StatusActions({
+  status,
+  onDeleted,
+  repliesHref,
+  translation = null,
+  translateId,
+  moreId,
+}: StatusActionsProps) {
   const t = useT();
   const staysLocalId = useId();
   const actions = useStatusActions(status);
@@ -141,11 +156,35 @@ export function StatusActions({ status, onDeleted, repliesHref }: StatusActionsP
         tone="accent"
         icon={(on) => <BookmarkIcon filled={on} />}
       />
+      {translation !== null && (
+        // Pressed while the translation shows. A card too narrow for one more button keeps it in the menu only
+        // (web-client §13); the line under the text says that it is translating.
+        <IconToggleButton
+          {...(translateId !== undefined && { id: translateId })}
+          label={t("client:status.translation.action")}
+          tone="accent"
+          collapsible
+          isSelected={translation.isShown}
+          onChange={translation.onPress}
+        >
+          <LanguageIcon />
+        </IconToggleButton>
+      )}
       <MenuTrigger onOpenChange={setIsMenuOpen}>
-        <IconButton variant="subtle" size="toolbar" label={t("client:status.action.more")}>
+        <IconButton
+          {...(moreId !== undefined && { id: moreId })}
+          variant="subtle"
+          size="toolbar"
+          label={t("client:status.action.more")}
+        >
           <MoreIcon />
         </IconButton>
         <Menu aria-label={t("client:status.action.more")} placement="bottom end">
+          {translation !== null && (
+            <MenuItem onAction={translation.onPress} isDisabled={translation.isPending}>
+              {translation.label}
+            </MenuItem>
+          )}
           <MenuItem onAction={actions.copyLink}>{t("client:status.action.copy_link")}</MenuItem>
           {actions.canEdit && (
             <MenuItem

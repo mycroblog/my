@@ -38,6 +38,8 @@ export type TranslatedBy =
 export type TranslatedPost = {
   /** The language of the translation (BCP 47). */
   language: string;
+  /** The language it was translated from (BCP 47), which a provider may have detected; `und` when not known. */
+  sourceLanguage: string;
   body: TranslatedBody;
   /** The content warning in plain text; empty when the post has none. */
   contentWarning: string;
@@ -66,6 +68,7 @@ function translatedPost(answer: components["schemas"]["StatusTranslation"]): Tra
   const { provider } = answer;
   return {
     language: answer.language,
+    sourceLanguage: answer.source_language,
     // `content` is sanitized HTML (api/openapi.yaml, StatusTranslation.content).
     body: { kind: "html", html: serverSanitizedHtml(answer.content) },
     contentWarning: answer.spoiler_text,
@@ -108,6 +111,8 @@ export async function translateReportedOnServer(
 export type TranslatedComment = {
   /** The language of the translation (BCP 47). */
   language: string;
+  /** The language it was translated from (BCP 47), which was detected; `und` when not known. */
+  sourceLanguage: string;
   /** The comment in plain text. */
   text: string;
   by: TranslatedBy;
@@ -130,7 +135,12 @@ export async function translateReportCommentOnServer(
     body: { target_language: targetLanguage },
   });
   if (data === undefined) throw new ApiError(error);
-  return { language: data.language, text: data.comment, by: translatedBy(data.provider) };
+  return {
+    language: data.language,
+    sourceLanguage: data.source_language,
+    text: data.comment,
+    by: translatedBy(data.provider),
+  };
 }
 
 /**

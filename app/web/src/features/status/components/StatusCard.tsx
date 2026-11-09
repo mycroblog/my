@@ -5,7 +5,6 @@ import {
   ContentWarning,
   EmojiText,
   Hint,
-  InlineError,
   LanguageIcon,
   LinkCard,
   MediaGrid,
@@ -21,7 +20,7 @@ import {
   Stack,
   Text,
 } from "@my/ui";
-import type { Ref } from "react";
+import { type Ref, useEffect, useId, useRef } from "react";
 import { ErrorBoundary } from "react-error-boundary";
 import { useIntl } from "react-intl";
 import { useBoundaryErrorReport } from "../../../lib/errorReporting";
@@ -84,8 +83,32 @@ export function StatusCard({
   const intl = useIntl();
   const view = useStatusView(status);
   const translation = useStatusTranslation(status, withActions || report !== undefined, report);
-  const { shown } = translation;
+  const { shown, action } = translation;
   const text = translatedView(view, shown);
+  // Where the focus goes once the controls of the translation have changed: the line or the button that replaced the
+  // other, or the toggle of the actions row (or, in a narrow card, the button of the menu that holds it).
+  const baseId = useId();
+  const translateToggle = `${baseId}-translate`;
+  const moreActions = `${baseId}-more`;
+  const showOriginal = `${baseId}-original`;
+  const translateButton = `${baseId}-translate-button`;
+  // Set by the press, read once the translation has come or gone: the press itself cannot focus what it shows.
+  const focusNextRef = useRef<"line" | "button" | "row" | null>(null);
+  useEffect(() => {
+    const next = focusNextRef.current;
+    if (next === null || (next === "line") !== (shown !== null)) return;
+    focusNextRef.current = null;
+    if (next === "line") {
+      document.getElementById(showOriginal)?.focus();
+    } else if (next === "button") {
+      document.getElementById(translateButton)?.focus();
+    } else {
+      // A narrow card hides the toggle (display: none), which then cannot take the focus.
+      const toggle = document.getElementById(translateToggle);
+      const shownToggle = toggle !== null && (typeof toggle.checkVisibility !== "function" || toggle.checkVisibility());
+      (shownToggle ? toggle : document.getElementById(moreActions))?.focus();
+    }
+  }, [shown, showOriginal, translateButton, translateToggle, moreActions]);
   const viewerLabels = useMediaViewerLabels();
   const audioLabels = useAudioPlayerLabels();
   const reportBoundaryError = useBoundaryErrorReport();
@@ -155,23 +178,36 @@ export function StatusCard({
     view.historyPath === null ? null : (
       <PostCardTimeLink href={view.historyPath}>{t("client:status.edited")}</PostCardTimeLink>
     );
-  // One button in one place, which only changes its words, so that the focus stays on it.
-  const translate = translation.action !== null && (
+  // Right after the text: the line about the translation, and on a card without the actions row (a moderator's), the
+  // button that translates in its place until a translation shows (web-client §13).
+  const translationLine = action !== null && (
     <>
-      <Button
-        variant="subtle"
-        size="toolbar"
-        isPending={translation.action.isPending}
-        onPress={translation.action.onPress}
-      >
-        <LanguageIcon />
-        {translation.action.label}
-      </Button>
-      {translation.failure !== null && (
-        <InlineError as="span" alert>
-          {translation.failure}
-        </InlineError>
+      {!withActions && shown === null && (
+        <Button
+          id={translateButton}
+          variant="subtle"
+          size="toolbar"
+          isPending={action.isPending}
+          onPress={() => {
+            action.onPress();
+            focusNextRef.current = "line";
+          }}
+        >
+          <LanguageIcon />
+          {action.label}
+        </Button>
       )}
+      <StatusTranslationNote
+        shown={shown}
+        // The button says it itself on a card without the actions row.
+        progress={withActions ? translation.progress : null}
+        failure={translation.failure}
+        onShowOriginal={() => {
+          action.onPress();
+          focusNextRef.current = withActions ? "row" : "button";
+        }}
+        showOriginalId={showOriginal}
+      />
     </>
   );
   const time =
@@ -206,19 +242,10 @@ export function StatusCard({
               <Text numeric>{t("client:status.focused.favourites", { count: view.counts.favourites })}</Text>
             )}
             {edited}
-            {translate}
           </>
         ),
       })}
-      {...(variant === "compact" &&
-        (edited !== null || translate !== false) && {
-          details: (
-            <>
-              {edited}
-              {translate}
-            </>
-          ),
-        })}
+      {...(variant === "compact" && edited !== null && { details: edited })}
       {...(pinned && {
         // Part of the article's name, so that a reader of the feed hears it before the author.
         context: <PostCardContext kind="pin">{t("client:status.pin.label")}</PostCardContext>,
@@ -257,8 +284,6 @@ export function StatusCard({
       visibility={view.visibility}
       content={
         <>
-          {/* Above the text and outside the warning, so that nothing translated is read without it. */}
-          {shown !== null && <StatusTranslationNote by={shown.by} />}
           {text.contentWarning === null ? (
             body
           ) : (
@@ -273,6 +298,8 @@ export function StatusCard({
               {quote}
             </ContentWarning>
           )}
+          {/* After the text, outside the warning, before the poll and the media. */}
+          {translationLine}
         </>
       }
       {...(text.contentWarning === null &&
@@ -296,6 +323,9 @@ export function StatusCard({
             {withActions && (
               <StatusActions
                 status={status}
+                translation={action}
+                translateId={translateToggle}
+                moreId={moreActions}
                 {...(onDeleted !== undefined && { onDeleted })}
                 // The focused post's replies are below it on its own page.
                 {...(variant === "compact" && { repliesHref: view.path })}
