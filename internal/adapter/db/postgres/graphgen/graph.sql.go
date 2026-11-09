@@ -500,6 +500,39 @@ func (q *Queries) ListFollowHistories(ctx context.Context) ([]ListFollowHistorie
 	return items, nil
 }
 
+const listFolloweesAmong = `-- name: ListFolloweesAmong :many
+SELECT DISTINCT followee_account_id FROM follow_edges
+WHERE followee_account_id = ANY($1::uuid[]) AND state = $2
+ORDER BY followee_account_id
+`
+
+type ListFolloweesAmongParams struct {
+	AccountIds []string
+	State      string
+}
+
+// ListFolloweesAmong returns the accounts among account_ids with an edge into them in one state,
+// each once: those of a batch with an active follower (FolloweesAmong).
+func (q *Queries) ListFolloweesAmong(ctx context.Context, arg ListFolloweesAmongParams) ([]string, error) {
+	rows, err := q.db.Query(ctx, listFolloweesAmong, arg.AccountIds, arg.State)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []string{}
+	for rows.Next() {
+		var followee_account_id string
+		if err := rows.Scan(&followee_account_id); err != nil {
+			return nil, err
+		}
+		items = append(items, followee_account_id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listFollowersPage = `-- name: ListFollowersPage :many
 SELECT follower_account_id, followee_account_id, follow_id, state, since
 FROM follow_edges
