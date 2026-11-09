@@ -438,6 +438,57 @@ func (q *Queries) GetDelivery(ctx context.Context, id string) (Delivery, error) 
 	return i, err
 }
 
+const getDeliveryContext = `-- name: GetDeliveryContext :one
+SELECT d.id, d.outbound_activity_id, d.inbox_url, d.domain, d.created_at,
+  a.activity_uri, a.type, a.actor_account_id, a.object_type, a.object_id, a.created_at AS activity_created_at,
+  doc.document, h.state AS health_state
+FROM deliveries d
+JOIN outbound_activities a ON a.id = d.outbound_activity_id
+LEFT JOIN outbound_activity_documents doc ON doc.outbound_activity_id = a.id
+LEFT JOIN instance_health h ON h.domain = d.domain
+WHERE d.id = $1::uuid
+`
+
+type GetDeliveryContextRow struct {
+	ID                 string
+	OutboundActivityID string
+	InboxUrl           string
+	Domain             string
+	CreatedAt          time.Time
+	ActivityUri        string
+	Type               string
+	ActorAccountID     string
+	ObjectType         string
+	ObjectID           string
+	ActivityCreatedAt  time.Time
+	Document           []byte
+	HealthState        *string
+}
+
+// GetDeliveryContext returns a delivery with its activity, the activity's document (NULL for
+// none), and the health state of the delivery's server (NULL for a server without a row), as
+// GetDelivery, GetOutboundActivity, GetOutboundActivityDocument, and GetInstanceHealth read them.
+func (q *Queries) GetDeliveryContext(ctx context.Context, id string) (GetDeliveryContextRow, error) {
+	row := q.db.QueryRow(ctx, getDeliveryContext, id)
+	var i GetDeliveryContextRow
+	err := row.Scan(
+		&i.ID,
+		&i.OutboundActivityID,
+		&i.InboxUrl,
+		&i.Domain,
+		&i.CreatedAt,
+		&i.ActivityUri,
+		&i.Type,
+		&i.ActorAccountID,
+		&i.ObjectType,
+		&i.ObjectID,
+		&i.ActivityCreatedAt,
+		&i.Document,
+		&i.HealthState,
+	)
+	return i, err
+}
+
 const getInstanceHealth = `-- name: GetInstanceHealth :one
 SELECT domain, state, since, failure_days, last_failure_day FROM instance_health WHERE domain = $1
 `

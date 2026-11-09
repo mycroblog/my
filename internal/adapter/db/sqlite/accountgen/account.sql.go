@@ -632,6 +632,57 @@ func (q *Queries) ListAccountKeys(ctx context.Context, accountID string) ([]Acco
 	return items, nil
 }
 
+const listAccountKeysWithPrivate = `-- name: ListAccountKeysWithPrivate :many
+SELECT k.id, k.account_id, k.key_id, k.algorithm, k.public_key_pem, k.fingerprint, k.created_at, p.private_key_enc
+FROM account_keys k LEFT JOIN local_account_private_keys p ON p.account_key_id = k.id
+WHERE k.account_id = ? ORDER BY k.id
+`
+
+type ListAccountKeysWithPrivateRow struct {
+	ID            string
+	AccountID     string
+	KeyID         string
+	Algorithm     string
+	PublicKeyPem  string
+	Fingerprint   []byte
+	CreatedAt     int64
+	PrivateKeyEnc []byte
+}
+
+// The keys of an account, as ListAccountKeys reads them, with their sealed private keys (NULL
+// for a key without one), as GetLocalAccountPrivateKey reads each.
+func (q *Queries) ListAccountKeysWithPrivate(ctx context.Context, accountID string) ([]ListAccountKeysWithPrivateRow, error) {
+	rows, err := q.db.QueryContext(ctx, listAccountKeysWithPrivate, accountID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListAccountKeysWithPrivateRow{}
+	for rows.Next() {
+		var i ListAccountKeysWithPrivateRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.AccountID,
+			&i.KeyID,
+			&i.Algorithm,
+			&i.PublicKeyPem,
+			&i.Fingerprint,
+			&i.CreatedAt,
+			&i.PrivateKeyEnc,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listAccountsOnDomain = `-- name: ListAccountsOnDomain :many
 SELECT id FROM accounts
 WHERE id IN (SELECT value FROM json_each(?1))

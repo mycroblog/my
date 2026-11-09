@@ -168,6 +168,9 @@ type Repository interface {
 	FindRemoteHeads(ctx context.Context, accountIDs []string) (map[string]account.RemoteHead, error)
 	// ListKeys returns an account's public keys, oldest first.
 	ListKeys(ctx context.Context, accountID string) ([]account.Key, error)
+	// ListKeysWithSealed returns the keys of an account as ListKeys does, each with its sealed
+	// private key as FindSealedPrivateKey reads it (nil for a key without one), with one query.
+	ListKeysWithSealed(ctx context.Context, accountID string) ([]KeyWithSealed, error)
 	// FindSealedPrivateKey returns the sealed private key of a local actor's key.
 	FindSealedPrivateKey(ctx context.Context, accountKeyID string) ([]byte, error)
 	// IsMediaReferenced reports whether any profile revision uses a media file as its avatar
@@ -215,6 +218,12 @@ type ActorParts struct {
 	Profiles  map[string]account.ProfileRevision
 	Keys      map[string][]account.Key
 	Lifecycle map[string]account.LifecycleState
+}
+
+// KeyWithSealed is a key with its sealed private key, nil for a key without one.
+type KeyWithSealed struct {
+	Key    account.Key
+	Sealed []byte
 }
 
 // HandleName names a handle by its normalized username and its domain (account.LocalDomain for a
