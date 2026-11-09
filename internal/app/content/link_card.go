@@ -121,6 +121,19 @@ type LinkCardDomains interface {
 	ImagesStopped(ctx context.Context, host string) (bool, error)
 }
 
+// HostRule is what LinkCardDomains reports of one host.
+type HostRule struct {
+	Suspended, RejectsMedia, FetchStopped, ImagesStopped bool
+}
+
+// hostRuleBatch is a LinkCardDomains that answers about many hosts at once, as the composition
+// root's does.
+type hostRuleBatch interface {
+	// HostRules returns the rule of each of hosts, by host, as the four reads of LinkCardDomains
+	// answer for each.
+	HostRules(ctx context.Context, hosts []string) (map[string]HostRule, error)
+}
+
 // LinkCardCreators verifies the fediverse:creator of a page (ADR-0062 §5). The federation
 // module's RemoteActors implements it.
 type LinkCardCreators interface {

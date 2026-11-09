@@ -11,6 +11,7 @@ import (
 	"github.com/mycroblog/my/internal/app/content"
 	"github.com/mycroblog/my/internal/app/federation"
 	"github.com/mycroblog/my/internal/app/queue"
+	"github.com/mycroblog/my/internal/domain/moderation"
 	"github.com/mycroblog/my/internal/platform/config"
 )
 
@@ -91,6 +92,46 @@ func (d linkCardDomains) ImagesStopped(ctx context.Context, host string) (bool, 
 	}
 	crawl, err := d.a.Instance.LinkCardCrawl(ctx, h)
 	return crawl.NoImages, err
+}
+
+// HostRules implements the batch read of content.LinkCardDomains: the restrictions of the hosts and
+// their parents with one query, and the crawler rules with another; a host that is not canonical
+// is refused nothing, as each read answers.
+func (d linkCardDomains) HostRules(ctx context.Context, hosts []string) (map[string]content.HostRule, error) {
+	canonical := map[string]string{}
+	var all []string
+	for _, h := range hosts {
+		c, err := federation.CanonicalHost(h)
+		if err != nil {
+			continue
+		}
+		canonical[h] = c
+		if !slices.Contains(all, c) {
+			all = append(all, c)
+		}
+	}
+	restrictions, err := d.a.ModerationPolicy.DomainRestrictionsAmong(ctx, all)
+	if err != nil {
+		return nil, err
+	}
+	crawls, err := d.a.Instance.LinkCardCrawls(ctx, all)
+	if err != nil {
+		return nil, err
+	}
+	out := make(map[string]content.HostRule, len(hosts))
+	for _, h := range hosts {
+		c, ok := canonical[h]
+		if !ok {
+			out[h] = content.HostRule{}
+			continue
+		}
+		rs := restrictions[c]
+		out[h] = content.HostRule{
+			Suspended: slices.Contains(rs, moderation.RestrictFederation), RejectsMedia: slices.Contains(rs, moderation.RestrictMediaFetch),
+			FetchStopped: crawls[c].NoFetch, ImagesStopped: crawls[c].NoImages,
+		}
+	}
+	return out, nil
 }
 
 // linkCardCreators verifies the fediverse:creator of pages with the remote actors.

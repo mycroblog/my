@@ -6,12 +6,14 @@ import (
 	"bytes"
 	"fmt"
 	"log/slog"
+	"net/http"
 	"reflect"
 	"testing"
 	"time"
 
 	appcontent "github.com/mycroblog/my/internal/app/content"
 	domcontent "github.com/mycroblog/my/internal/domain/content"
+	"github.com/mycroblog/my/internal/interface/clientapi"
 	"github.com/mycroblog/my/internal/interface/clientapi/apitest"
 	"github.com/mycroblog/my/internal/platform"
 	"github.com/mycroblog/my/pkg/testkit"
@@ -19,7 +21,7 @@ import (
 
 // timelineQueries counts the database round trips of one request of each timeline, on a page of
 // size statuses: posts by two authors, each with a mention and a hashtag, with replies, quotes,
-// polls, and pictures among them, and boosts, read by a signed-in viewer who follows both authors. Every query is one round trip, on
+// polls, pictures, and link cards to sites of their own among them, and boosts, read by a signed-in viewer who follows both authors. Every query is one round trip, on
 // SQLite as on PostgreSQL (one call in pg_stat_statements).
 func timelineQueries(t *testing.T, size int) map[string]int {
 	t.Helper()
@@ -32,8 +34,16 @@ func timelineQueries(t *testing.T, size int) map[string]int {
 func timelineScene(t *testing.T, size int) (map[string]int, sceneOf) {
 	t.Helper()
 	tracer := testkit.NewTracer()
+	// Each post with a link links to a site of its own, with an image of its own.
+	png := testkit.FixturePNG(64, 48, false)
+	web := &pageWeb{hits: map[string]int{}, pages: map[string]webPage{}}
+	for i := range size {
+		site := fmt.Sprintf("https://site%d.example", i)
+		web.pages[site+"/p"] = webPage{http.StatusOK, "text/html", cardPage(fmt.Sprintf("Site %d", i), "/i.png")}
+		web.pages[site+"/i.png"] = webPage{http.StatusOK, "image/png", png}
+	}
 	cfg := loadConfig(t, map[string]string{"MY_DATABASE_URL": newDatabase(t, true), "MY_WEB_ORIGIN": webOrigin})
-	app, err := platform.NewApp(t.Context(), cfg, platform.AppOptions{Logger: slog.New(slog.DiscardHandler), Tracer: tracer})
+	app, err := platform.NewApp(t.Context(), cfg, platform.AppOptions{Logger: slog.New(slog.DiscardHandler), Tracer: tracer, HTTPClient: web})
 	if err != nil {
 		t.Fatalf("NewApp: %v", err)
 	}
@@ -69,12 +79,16 @@ func timelineScene(t *testing.T, size int) (map[string]int, sceneOf) {
 			}
 			app.Media.Process(t.Context(), m.File.ID, "")
 			in.Media = []appcontent.MediaInput{{MediaID: m.File.ID}}
+		case i%2 == 0:
+			// A link card, on a host of its own.
+			in.Text += fmt.Sprintf(" https://site%d.example/p", i)
 		}
 		p, err := app.Content.Create(t.Context(), in)
 		if err != nil {
 			t.Fatalf("Create(%d): %v", i, err)
 		}
 		posts = append(posts, p.Status.ID)
+		fetchLinkCard(t, app, p.Status.ID)
 	}
 
 	// A query's span is named after its operation (SELECT, BEGIN, ...) and carries it as an
@@ -96,6 +110,9 @@ func timelineScene(t *testing.T, size int) (map[string]int, sceneOf) {
 		out[path] = queries() - before
 		if len(page.Items) < size*3/4 {
 			t.Fatalf("%s has %d statuses, want most of the %d", path, len(page.Items), size)
+		}
+		if cards := countCards(page.Items); cards == 0 {
+			t.Fatalf("%s shows no link card", path)
 		}
 		if path == "/timelines/home" {
 			for _, st := range page.Items {
@@ -159,4 +176,18 @@ func TestTimelineViewsAreThoseOfOneStatus(t *testing.T) {
 			}
 		}
 	}
+}
+
+// countCards counts the statuses of items that show a link card, boosted ones included.
+func countCards(items []clientapi.Status) int {
+	n := 0
+	for _, st := range items {
+		if st.Boost != nil {
+			st = *st.Boost
+		}
+		if st.Card != nil && st.Card.Image != nil {
+			n++
+		}
+	}
+	return n
 }

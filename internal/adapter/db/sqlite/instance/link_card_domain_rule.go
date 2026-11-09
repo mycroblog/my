@@ -83,3 +83,23 @@ func (r *Repository) LinkCardDomainModes(ctx context.Context, domains []string) 
 	}
 	return out, nil
 }
+
+// LinkCardDomainModesOf implements appinstance.Repository.
+func (r *Repository) LinkCardDomainModesOf(ctx context.Context, domains []string) (map[string][]instance.LinkCardDomainMode, error) {
+	out := map[string][]instance.LinkCardDomainMode{}
+	if len(domains) == 0 {
+		return out, nil
+	}
+	list, err := sqlite.JSONList(domains)
+	if err != nil {
+		return nil, err
+	}
+	rows, err := r.db.reader().ListLinkCardDomainModesOf(ctx, list)
+	if err != nil {
+		return nil, sqlite.Wrap(err, "list link card domain modes")
+	}
+	for _, row := range rows {
+		out[row.Domain] = append(out[row.Domain], instance.LinkCardDomainMode(row.Mode))
+	}
+	return out, nil
+}
