@@ -275,10 +275,20 @@ func New(o Options) *Handler {
 	h := &Handler{o: o, pages: map[string]*template.Template{}, cop: http.NewCrossOriginProtection()}
 	for _, name := range []string{pageSignIn, pageTwoFactor, pageSignedIn, pageError, pageSignUp, pageStatus, pageVerifyEmail, pageVerified, pageAuthorize,
 		pageForgotPassword, pageResetPassword, pagePasswordReset, pageMailUnsubscribe, pageMailUnsubscribed, pageAccountDeleted} {
-		h.pages[name] = template.Must(template.ParseFS(templateFS, "templates/layout.html", "templates/human_check.html", "templates/external_logins.html", "templates/"+name+".html"))
+		h.pages[name] = template.Must(template.New(name).Funcs(pageFuncs).ParseFS(templateFS, "templates/layout.html", "templates/human_check.html", "templates/external_logins.html", "templates/"+name+".html"))
 	}
 	h.cop.SetDenyHandler(http.HandlerFunc(h.crossOrigin))
 	return h
+}
+
+// pageFuncs are the functions of the page templates. emailOff and emailOn write the comments around
+// the body that keep Cloudflare's Email Address Obfuscation from rewriting the addresses the pages
+// show ("we sent the email to alice@example.com") into "[email protected]": its script that would
+// restore them is not allowed by the Content-Security-Policy. html/template drops the comments of
+// the templates themselves, so they come from functions.
+var pageFuncs = template.FuncMap{
+	"emailOff": func() template.HTML { return "<!--email_off-->" },
+	"emailOn":  func() template.HTML { return "<!--/email_off-->" },
 }
 
 // Router registers handlers for http.ServeMux patterns.
