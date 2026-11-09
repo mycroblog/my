@@ -160,6 +160,20 @@ SELECT v.account_id::uuid AS account_id,
   ), false)::boolean AS speak_granted
 FROM (SELECT unnest(sqlc.arg(account_ids)::uuid[]) AS account_id) v;
 
+-- ListVoiceRoomFactsOfViewer returns, for each room of room_ids, what ListVoiceRoomViewerFacts
+-- returns of the account.
+-- name: ListVoiceRoomFactsOfViewer :many
+SELECT v.room_id::uuid AS room_id,
+  EXISTS (SELECT 1 FROM voice_room_bans b WHERE b.room_id = v.room_id AND b.account_id = sqlc.arg(account_id)::uuid) AS banned,
+  EXISTS (SELECT 1 FROM voice_room_invitations i WHERE i.room_id = v.room_id AND i.invitee_account_id = sqlc.arg(account_id)::uuid
+    AND NOT EXISTS (SELECT 1 FROM voice_room_invitation_revocations x WHERE x.invitation_id = i.id)) AS invited,
+  COALESCE((
+    SELECT g.change = 'granted' FROM voice_room_speak_grants g
+    WHERE g.room_id = v.room_id AND g.account_id = sqlc.arg(account_id)::uuid
+    ORDER BY g.id DESC LIMIT 1
+  ), false)::boolean AS speak_granted
+FROM (SELECT unnest(sqlc.arg(room_ids)::uuid[]) AS room_id) v;
+
 -- name: IsVoiceRoomBanned :one
 SELECT EXISTS (SELECT 1 FROM voice_room_bans WHERE room_id = $1 AND account_id = $2) AS banned;
 

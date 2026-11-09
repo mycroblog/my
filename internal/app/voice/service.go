@@ -586,6 +586,105 @@ func (s *Service) factsAmong(ctx context.Context, v RoomView, ids []string) (map
 	return viewers, facts, nil
 }
 
+// visibleAmongRooms reports, by room, whether accountID sees each room of views, as visible
+// reports one, reading the viewer's member facts once and its relations with the rooms together.
+func (s *Service) visibleAmongRooms(ctx context.Context, accountID string, views []RoomView) (map[string]bool, error) {
+	viewer, m, err := s.viewer(ctx, accountID)
+	if err != nil {
+		return nil, err
+	}
+	facts, err := s.factsInRooms(ctx, views, viewer, m)
+	if err != nil {
+		return nil, err
+	}
+	out := make(map[string]bool, len(views))
+	for _, v := range views {
+		out[v.ID] = voice.CanSee(policyRoom(v), viewer, facts[v.ID])
+	}
+	return out, nil
+}
+
+// factsInRooms returns, by room, the facts of viewer with each room of views, as facts returns
+// those of one, with a number of queries that does not grow with views.
+func (s *Service) factsInRooms(ctx context.Context, views []RoomView, viewer voice.Viewer, m Member) (map[string]voice.Facts, error) {
+	out := make(map[string]voice.Facts, len(views))
+	me := viewer.AccountID
+	// The rooms whose facts depend on the viewer: those it does not host.
+	var rooms []RoomView
+	var keepers, hosts, roomIDs []string
+	for _, v := range views {
+		out[v.ID] = voice.Facts{Limited: m.Limited}
+		if me == "" || me == v.Head.HostAccountID {
+			continue
+		}
+		rooms, roomIDs = append(rooms, v), append(roomIDs, v.ID)
+		if !slices.Contains(hosts, v.Head.HostAccountID) {
+			hosts = append(hosts, v.Head.HostAccountID)
+		}
+		for _, k := range keepersOf(v) {
+			if k != me && !slices.Contains(keepers, k) {
+				keepers = append(keepers, k)
+			}
+		}
+	}
+	if len(rooms) == 0 {
+		return out, nil
+	}
+	blocked, err := s.d.Relations.BlockedAmong(ctx, me, keepers)
+	if err != nil {
+		return nil, err
+	}
+	own, err := s.d.Repository.ViewerFactsInRooms(ctx, nil, me, roomIDs)
+	if err != nil {
+		return nil, err
+	}
+	followsHost, err := s.d.Relations.Following(ctx, me, hosts)
+	if err != nil {
+		return nil, err
+	}
+	followedBy := make(map[string]bool, len(hosts))
+	if b, ok := s.d.Relations.(followerBatch); ok {
+		if followedBy, err = b.FollowersAmong(ctx, me, hosts); err != nil {
+			return nil, err
+		}
+	} else {
+		for _, h := range hosts {
+			if followedBy[h], err = s.d.Relations.Follows(ctx, h, me); err != nil {
+				return nil, err
+			}
+		}
+	}
+	for _, v := range rooms {
+		f := out[v.ID]
+		for _, p := range v.Participants {
+			if p.AccountID == me {
+				f.Participant, f.Cohost = true, p.Cohost()
+			}
+		}
+		if slices.ContainsFunc(keepersOf(v), func(k string) bool { return k != me && blocked[k] }) {
+			f.Blocked = true
+		} else {
+			o := own[v.ID]
+			f.Banned, f.Invited, f.SpeakGranted = o.Banned, o.Invited, o.SpeakGranted
+			f.FollowsHost, f.FollowedByHost = followsHost[v.Head.HostAccountID], followedBy[v.Head.HostAccountID]
+		}
+		out[v.ID] = f
+	}
+	return out, nil
+}
+
+// keepersOf returns the host and the co-hosts of a room, whom a block with a viewer hides the
+// room from.
+func keepersOf(v RoomView) []string {
+	out := []string{v.Head.HostAccountID}
+	for _, p := range v.Participants {
+		if p.Cohost() && p.AccountID != v.Head.HostAccountID {
+			out = append(out, p.AccountID)
+		}
+	}
+	return out
+}
+
 // visible reports whether an account sees a room.
 func (s *Service) visible(ctx context.Context, v RoomView, accountID string) (bool, error) {
 	viewer, m, err := s.viewer(ctx, accountID)
