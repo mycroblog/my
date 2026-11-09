@@ -474,6 +474,30 @@ func (r *Repository) ViewerFacts(ctx context.Context, tx uow.Tx, roomID string, 
 	return out, nil
 }
 
+// ViewerFactsInRooms implements appvoice.Repository.
+func (r *Repository) ViewerFactsInRooms(ctx context.Context, tx uow.Tx, accountID string, roomIDs []string) (map[string]appvoice.ViewerFacts, error) {
+	out := make(map[string]appvoice.ViewerFacts, len(roomIDs))
+	if len(roomIDs) == 0 {
+		return out, nil
+	}
+	q, err := r.q(tx)
+	if err != nil {
+		return nil, err
+	}
+	list, err := sqlite.JSONList(roomIDs)
+	if err != nil {
+		return nil, err
+	}
+	rows, err := q.ListVoiceRoomFactsOfViewer(ctx, voicegen.ListVoiceRoomFactsOfViewerParams{AccountID: accountID, RoomIds: list})
+	if err != nil {
+		return nil, sqlite.Wrap(err, "list voice room facts of a viewer")
+	}
+	for _, row := range rows {
+		out[row.RoomID] = appvoice.ViewerFacts{Banned: row.Banned, Invited: row.Invited, SpeakGranted: row.SpeakGranted != 0}
+	}
+	return out, nil
+}
+
 // RefreshHead implements appvoice.Repository.
 func (r *Repository) RefreshHead(ctx context.Context, tx uow.Tx, roomID string) error {
 	q, err := r.db.queries(tx)

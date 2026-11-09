@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -120,31 +121,27 @@ func (s *Server) newVoiceRooms(ctx context.Context, views []appvoice.RoomView) (
 // newVoiceRoomsMarked presents rooms with the block marks blocked, or the marks of the viewer
 // read now when blocked is nil.
 func (s *Server) newVoiceRoomsMarked(ctx context.Context, views []appvoice.RoomView, blocked map[string]bool) ([]VoiceRoom, error) {
-	ids := map[string]bool{}
-	var actors []appaccount.Actor
-	read := func(id string) error {
-		if ids[id] {
-			return nil
+	// The hosts and participants of the rooms, in order, each once, read together.
+	var ids []string
+	add := func(id string) {
+		if !slices.Contains(ids, id) {
+			ids = append(ids, id)
 		}
-		ids[id] = true
-		a, err := s.o.Accounts.FindByID(ctx, id)
-		if errors.Is(err, appaccount.ErrNotFound) {
-			return nil
-		}
-		if err != nil {
-			return err
-		}
-		actors = append(actors, a)
-		return nil
 	}
 	for _, v := range views {
-		if err := read(v.Head.HostAccountID); err != nil {
-			return nil, err
-		}
+		add(v.Head.HostAccountID)
 		for _, p := range v.Participants {
-			if err := read(p.AccountID); err != nil {
-				return nil, err
-			}
+			add(p.AccountID)
+		}
+	}
+	found, err := s.o.Accounts.FindByIDs(ctx, ids)
+	if err != nil {
+		return nil, err
+	}
+	var actors []appaccount.Actor
+	for _, id := range ids {
+		if a, ok := found[id]; ok {
+			actors = append(actors, a)
 		}
 	}
 	accounts, err := s.newAccounts(ctx, actors)

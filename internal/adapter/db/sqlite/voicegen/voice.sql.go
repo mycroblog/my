@@ -849,6 +849,61 @@ func (q *Queries) ListOpenVoiceRooms(ctx context.Context, tag string) ([]ListOpe
 	return items, nil
 }
 
+const listVoiceRoomFactsOfViewer = `-- name: ListVoiceRoomFactsOfViewer :many
+SELECT CAST(v.value AS TEXT) AS room_id,
+  EXISTS (SELECT 1 FROM voice_room_bans b WHERE b.room_id = v.value AND b.account_id = ?1) AS banned,
+  EXISTS (SELECT 1 FROM voice_room_invitations i WHERE i.room_id = v.value AND i.invitee_account_id = ?1
+    AND NOT EXISTS (SELECT 1 FROM voice_room_invitation_revocations x WHERE x.invitation_id = i.id)) AS invited,
+  CAST(COALESCE((
+    SELECT g.change = 'granted' FROM voice_room_speak_grants g
+    WHERE g.room_id = v.value AND g.account_id = ?1
+    ORDER BY g.id DESC LIMIT 1
+  ), 0) AS INTEGER) AS speak_granted
+FROM json_each(CAST(?2 AS TEXT)) v
+`
+
+type ListVoiceRoomFactsOfViewerParams struct {
+	AccountID string
+	RoomIds   string
+}
+
+type ListVoiceRoomFactsOfViewerRow struct {
+	RoomID       string
+	Banned       bool
+	Invited      bool
+	SpeakGranted int64
+}
+
+// ListVoiceRoomFactsOfViewer returns, for each room of a JSON array, what
+// ListVoiceRoomViewerFacts returns of the account.
+func (q *Queries) ListVoiceRoomFactsOfViewer(ctx context.Context, arg ListVoiceRoomFactsOfViewerParams) ([]ListVoiceRoomFactsOfViewerRow, error) {
+	rows, err := q.db.QueryContext(ctx, listVoiceRoomFactsOfViewer, arg.AccountID, arg.RoomIds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListVoiceRoomFactsOfViewerRow{}
+	for rows.Next() {
+		var i ListVoiceRoomFactsOfViewerRow
+		if err := rows.Scan(
+			&i.RoomID,
+			&i.Banned,
+			&i.Invited,
+			&i.SpeakGranted,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listVoiceRoomInvitations = `-- name: ListVoiceRoomInvitations :many
 SELECT i.id, i.room_id, i.invitee_account_id, i.role, i.invited_by_account_id, i.invited_at
 FROM voice_room_invitations i

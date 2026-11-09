@@ -267,6 +267,9 @@ type Repository interface {
 	// ViewerFacts reads, of each of accountIDs, what Banned, FindInvitation (one not revoked), and
 	// SpeakGranted read of one account in the room, with one query.
 	ViewerFacts(ctx context.Context, tx uow.Tx, roomID string, accountIDs []string) (map[string]ViewerFacts, error)
+	// ViewerFactsInRooms reads what ViewerFacts reads of accountID in each of roomIDs, by room, with
+	// one query.
+	ViewerFactsInRooms(ctx context.Context, tx uow.Tx, accountID string, roomIDs []string) (map[string]ViewerFacts, error)
 }
 
 // ProjectionRepository derives the projections of the voice module (data-model §9) from the

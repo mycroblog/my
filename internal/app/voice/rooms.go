@@ -192,25 +192,37 @@ func (s *Service) List(ctx context.Context, accountID string, q ListQuery) ([]Li
 	if err != nil {
 		return nil, false, err
 	}
-	var out []ListedRoom
+	var views []RoomView
 	for _, r := range open {
 		if err := s.evaluate(ctx, r.ID, false); err != nil {
 			return nil, false, err
 		}
-		v, err := s.visibleRoom(ctx, accountID, r.ID)
+		v, err := s.view(ctx, r.ID)
 		switch {
 		case errors.Is(err, ErrNotFound):
 			continue
 		case err != nil:
 			return nil, false, err
 		}
-		if v.Head.State != voice.StateOpen {
+		if v.Head.State == voice.StateOpen {
+			views = append(views, v)
+		}
+	}
+	// Who sees which room, and how the viewer relates to their hosts and speakers, read together.
+	sees, err := s.visibleAmongRooms(ctx, accountID, views)
+	if err != nil {
+		return nil, false, err
+	}
+	keys, err := s.listKeys(ctx, accountID, views)
+	if err != nil {
+		return nil, false, err
+	}
+	var out []ListedRoom
+	for _, v := range views {
+		if !sees[v.ID] {
 			continue
 		}
-		key, err := s.listKey(ctx, accountID, v)
-		if err != nil {
-			return nil, false, err
-		}
+		key := keys[v.ID]
 		if q.After != nil && !q.After.before(key) {
 			continue
 		}
@@ -231,21 +243,39 @@ func (s *Service) List(ctx context.Context, accountID string, q ListQuery) ([]Li
 	return out, false, nil
 }
 
-// listKey returns the position of a room in the list of accountID.
-func (s *Service) listKey(ctx context.Context, accountID string, v RoomView) (ListKey, error) {
-	ids := []string{v.Head.HostAccountID}
-	for _, p := range v.Participants {
-		if p.Role == voice.RoleSpeaker && p.AccountID != v.Head.HostAccountID {
-			ids = append(ids, p.AccountID)
+// listKeys returns the position of each room of views in the list of accountID, by room: whether
+// the viewer follows its host or a speaker, with one read of the viewer's follows for every room.
+func (s *Service) listKeys(ctx context.Context, accountID string, views []RoomView) (map[string]ListKey, error) {
+	idsOf := map[string][]string{}
+	var all []string
+	for _, v := range views {
+		ids := []string{v.Head.HostAccountID}
+		for _, p := range v.Participants {
+			if p.Role == voice.RoleSpeaker && p.AccountID != v.Head.HostAccountID {
+				ids = append(ids, p.AccountID)
+			}
+		}
+		ids = slices.DeleteFunc(ids, func(id string) bool { return id == accountID })
+		idsOf[v.ID] = ids
+		for _, id := range ids {
+			if !slices.Contains(all, id) {
+				all = append(all, id)
+			}
 		}
 	}
-	ids = slices.DeleteFunc(ids, func(id string) bool { return id == accountID })
-	following, err := s.d.Relations.Following(ctx, accountID, ids)
-	if err != nil {
-		return ListKey{}, err
+	following := map[string]bool{}
+	if len(all) > 0 {
+		var err error
+		if following, err = s.d.Relations.Following(ctx, accountID, all); err != nil {
+			return nil, err
+		}
 	}
-	followed := slices.ContainsFunc(ids, func(id string) bool { return following[id] })
-	return ListKey{Followed: followed, Participants: len(v.Participants), RoomID: v.ID}, nil
+	out := make(map[string]ListKey, len(views))
+	for _, v := range views {
+		followed := slices.ContainsFunc(idsOf[v.ID], func(id string) bool { return following[id] })
+		out[v.ID] = ListKey{Followed: followed, Participants: len(v.Participants), RoomID: v.ID}
+	}
+	return out, nil
 }
 
 // hostRoom returns a room that accountID hosts, after evaluating its expiry: ErrNotFound when

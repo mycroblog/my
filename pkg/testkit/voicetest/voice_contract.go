@@ -545,6 +545,10 @@ func voiceInvitations(t *testing.T, e *voiceEnv) {
 	if facts, err := e.h.Voice.ViewerFacts(ctx, nil, other.ID, []string{alice}); err != nil || facts[alice] != (appvoice.ViewerFacts{}) {
 		t.Errorf("ViewerFacts in the other room = %+v, %v; want none", facts, err)
 	}
+	if inRooms, err := e.h.Voice.ViewerFactsInRooms(ctx, nil, alice, []string{room.ID, other.ID}); err != nil ||
+		inRooms[room.ID] != facts[alice] || inRooms[other.ID] != (appvoice.ViewerFacts{}) {
+		t.Errorf("ViewerFactsInRooms = %+v, %v; want %+v in the room, as ViewerFacts", inRooms, err, facts[alice])
+	}
 }
 
 func voiceEnd(t *testing.T, e *voiceEnv) {
