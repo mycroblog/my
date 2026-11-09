@@ -35,6 +35,11 @@ name: Release
 # minor version exists (`-f version=v0.0.0-test.2 -f previous=v0.0.0-test.1`). A pre-release before v0.1.0 that drops
 # a column or a table on purpose passes `allow_destructive`, so that the upgrade applies the schema with
 # -allow-destructive as its operators will; its notes must say so.
+#
+# In an emergency, a pre-release may skip the slow suite (`skip_slow_suite`), when a failure that has nothing to do with
+# the release holds it up: the gate then calls the suite with `scope: none`, which runs no job, and the release is
+# tagged without the gate. A version that is not a pre-release refuses it. The run's summary and the draft's notes say
+# that the suite was skipped.
 
 on:
   workflow_dispatch:
@@ -49,6 +54,10 @@ on:
         default: ""
       allow_destructive:
         description: "Pre-releases before v0.1.0 only: the upgrade test applies the schema with -allow-destructive, as the notes tell operators to."
+        type: boolean
+        default: false
+      skip_slow_suite:
+        description: "Pre-releases only, for an emergency: release without the slow suite (not even upgrade and restore-drill). The notes say so."
         type: boolean
         default: false
 
@@ -81,6 +90,7 @@ jobs:
           VERSION: ${{ inputs.version }}
           PREVIOUS: ${{ inputs.previous }}
           ALLOW_DESTRUCTIVE: ${{ inputs.allow_destructive }}
+          SKIP_SLOW_SUITE: ${{ inputs.skip_slow_suite }}
           REF: ${{ github.ref }}
         run: |
           if ! [[ "$VERSION" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-[0-9A-Za-z]+(\.[0-9A-Za-z]+)*)?$ ]]; then
@@ -99,6 +109,10 @@ jobs:
             echo "::error::allow_destructive is for pre-releases before v0.1.0 only: from v0.1.0 an upgrade keeps every column and table."
             exit 1
           fi
+          if [ "$SKIP_SLOW_SUITE" = true ] && [[ "$VERSION" != *-* ]]; then
+            echo "::error::skip_slow_suite is for pre-releases only: $VERSION is released only after the slow suite passes."
+            exit 1
+          fi
           for tag in "$VERSION" "pkg/mykit/$VERSION" "pkg/mybot/$VERSION"; do
             if gh api "repos/$GH_REPO/git/ref/tags/$tag" > /dev/null 2>&1; then
               echo "::error::The tag $tag already exists."
@@ -109,6 +123,7 @@ jobs:
   # Looks for a successful run of the whole slow suite on the commit: a full Nightly (titled `Nightly`, which ran every
   # job or skipped them after a full run passed on the same commit), a Nightly of the suite alone (`Nightly
   # (slow-suite)`), or slow-suite.yml run by hand with scope all. A run on another commit or of other jobs never counts.
+  # With skip_slow_suite (a pre-release, checked by validate), it looks for nothing and the suite runs no job.
   gate:
     needs: validate
     runs-on: ubuntu-latest
@@ -123,7 +138,14 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
           SHA: ${{ github.sha }}
+          SKIP_SLOW_SUITE: ${{ inputs.skip_slow_suite }}
         run: |
+          if [ "$SKIP_SLOW_SUITE" = true ]; then
+            echo "scope=none" >> "$GITHUB_OUTPUT"
+            echo "::warning::skip_slow_suite: the slow suite does not run, and $SHA is released without the gate."
+            echo "**The slow suite is skipped (skip_slow_suite):** $SHA is released without the gate." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
           run="$(gh api "repos/$GH_REPO/actions/runs?head_sha=$SHA&status=success&per_page=100" --jq '
             [.workflow_runs[]
               | select((.path == ".github/workflows/nightly.yml" and (.display_title == "Nightly" or .display_title == "Nightly (slow-suite)"))
@@ -491,8 +513,9 @@ jobs:
           echo "Image: \`ghcr.io/mycroblog/my@$DIGEST\`" >> "$GITHUB_STEP_SUMMARY"
 
   release-notes-image:
-    # Writes the image in the draft's notes, in the form operators pin. It runs after the prose, which replaces the body,
-    # and leaves a published release alone. A failure stops nothing: the digest is still on the draft as image-digest.txt.
+    # Writes the image in the draft's notes, in the form operators pin, after a section that says the slow suite was
+    # skipped when it was (skip_slow_suite). It runs after the prose, which replaces the body, and leaves a published
+    # release alone. A failure stops nothing: the digest is still on the draft as image-digest.txt.
     needs: [validate, image, image-attest, release-notes-edit]
     if: ${{ !cancelled() && needs.image-attest.result == 'success' }}
     runs-on: ubuntu-latest
@@ -506,13 +529,18 @@ jobs:
           GH_REPO: ${{ github.repository }}
           DIGEST: ${{ needs.image.outputs.digest }}
           VERSION: ${{ inputs.version }}
+          SKIP_SLOW_SUITE: ${{ inputs.skip_slow_suite }}
         run: |
           if [ "$(gh release view "$VERSION" --json isDraft --jq .isDraft)" != true ]; then
             echo "The release is published: its notes stay as they are." | tee -a "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
-          # A rerun of the image job makes a new digest: everything from the heading on is this job's own.
-          gh release view "$VERSION" --json body --jq .body | sed '/^## Container image$/,$d' > "$RUNNER_TEMP/notes.md"
+          # A rerun of the image job makes a new digest: everything from the first of the two headings on is this job's own.
+          gh release view "$VERSION" --json body --jq .body |
+            sed '/^## \(Not gated by the slow suite\|Container image\)$/,$d' > "$RUNNER_TEMP/notes.md"
+          if [ "$SKIP_SLOW_SUITE" = true ]; then
+            printf '## Not gated by the slow suite\n\nThis pre-release was made in an emergency without the slow suite: the full E2E, the live federation test, the contracts on real services, the upgrade test, and the restore drill did not run on it.\n\n' >> "$RUNNER_TEMP/notes.md"
+          fi
           printf '## Container image\n\n```\nghcr.io/mycroblog/my:%s@%s\n```\n' "${VERSION#v}" "$DIGEST" >> "$RUNNER_TEMP/notes.md"
           gh release edit "$VERSION" --notes-file "$RUNNER_TEMP/notes.md"
 
