@@ -1166,6 +1166,39 @@ func (q *Queries) ListInstanceHealth(ctx context.Context, arg ListInstanceHealth
 	return items, nil
 }
 
+const listInstanceHealthOf = `-- name: ListInstanceHealthOf :many
+SELECT domain, state FROM instance_health WHERE domain IN (SELECT value FROM json_each(CAST(?1 AS TEXT)))
+`
+
+type ListInstanceHealthOfRow struct {
+	Domain string
+	State  string
+}
+
+// The health of the servers of domains that have a row, as GetInstanceHealth reads one.
+func (q *Queries) ListInstanceHealthOf(ctx context.Context, domains string) ([]ListInstanceHealthOfRow, error) {
+	rows, err := q.db.QueryContext(ctx, listInstanceHealthOf, domains)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListInstanceHealthOfRow{}
+	for rows.Next() {
+		var i ListInstanceHealthOfRow
+		if err := rows.Scan(&i.Domain, &i.State); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listOutboundActivitiesOfObject = `-- name: ListOutboundActivitiesOfObject :many
 SELECT id, activity_uri, type, actor_account_id, object_type, object_id, created_at
 FROM outbound_activities WHERE object_type = ?1 AND object_id = ?2 ORDER BY id

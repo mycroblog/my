@@ -148,3 +148,26 @@ func (r *Repository) InstanceState(ctx context.Context, domain string) (federati
 	}
 	return federation.InstanceState(row.State), nil
 }
+
+// InstanceStatesOf implements appfederation.Repository.
+func (r *Repository) InstanceStatesOf(ctx context.Context, domains []string) (map[string]federation.InstanceState, error) {
+	out := make(map[string]federation.InstanceState, len(domains))
+	if len(domains) == 0 {
+		return out, nil
+	}
+	list, err := sqlite.JSONList(domains)
+	if err != nil {
+		return nil, err
+	}
+	rows, err := r.db.reader().ListInstanceHealthOf(ctx, list)
+	if err != nil {
+		return nil, sqlite.Wrap(err, "list instance health")
+	}
+	for _, d := range domains {
+		out[d] = federation.InstanceAvailable
+	}
+	for _, row := range rows {
+		out[row.Domain] = federation.InstanceState(row.State)
+	}
+	return out, nil
+}

@@ -48,6 +48,11 @@ ON CONFLICT (account_id) DO UPDATE SET
 SELECT account_id, snapshot_id, inbox_url, shared_inbox_url, last_fetched_at, consecutive_fetch_failures
 FROM remote_account_heads WHERE account_id = @account_id;
 
+-- The heads of the remote actors of account_ids that have one, as GetRemoteAccountHead reads one.
+-- name: ListRemoteAccountHeadsByIDs :many
+SELECT account_id, snapshot_id, inbox_url, shared_inbox_url, last_fetched_at, consecutive_fetch_failures
+FROM remote_account_heads WHERE account_id IN (SELECT value FROM json_each(CAST(sqlc.arg(account_ids) AS TEXT)));
+
 -- ListStaleRemoteAccountHeads returns the actors fetched before @fetched_before, the least
 -- recently fetched first, after the cursor (@after_fetched_at, @after_account_id), for the
 -- periodic refresh.

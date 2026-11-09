@@ -160,6 +160,10 @@ func (e *moderationEnv) checkDomain(t *testing.T, domain string, suspended, medi
 		want bool
 	}{
 		{"FederationSuspended", func() (bool, error) { return e.policy.FederationSuspended(ctx, domain) }, suspended},
+		{"FederationSuspendedAmong", func() (bool, error) {
+			among, err := e.policy.FederationSuspendedAmong(ctx, []string{domain, "unrelated.example"})
+			return among[domain], err
+		}, suspended},
 		{"RejectsMedia", func() (bool, error) { return e.policy.RejectsMedia(ctx, domain) }, media},
 		{"RejectsReports", func() (bool, error) { return e.policy.RejectsReports(ctx, domain) }, reports},
 	} {

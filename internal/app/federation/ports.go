@@ -51,6 +51,9 @@ type Repository interface {
 	// InstanceState returns the health state of a remote server; a server without a row is
 	// available.
 	InstanceState(ctx context.Context, domain string) (federation.InstanceState, error)
+	// InstanceStatesOf returns the health states of the servers of domains, by domain, as
+	// InstanceState returns one, with one query.
+	InstanceStatesOf(ctx context.Context, domains []string) (map[string]federation.InstanceState, error)
 
 	// InsertDeliveryAttempt records one attempt of a delivery.
 	InsertDeliveryAttempt(ctx context.Context, tx uow.Tx, a federation.DeliveryAttempt) error

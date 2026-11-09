@@ -215,6 +215,10 @@ ON CONFLICT (domain) DO UPDATE SET
 -- name: GetInstanceHealth :one
 SELECT domain, state, since, failure_days, last_failure_day FROM instance_health WHERE domain = @domain;
 
+-- The health of the servers of domains that have a row, as GetInstanceHealth reads one.
+-- name: ListInstanceHealthOf :many
+SELECT domain, state FROM instance_health WHERE domain = ANY(sqlc.arg(domains)::text[]);
+
 -- ListUnavailableInstances returns the servers that are not delivery targets, in domain order
 -- after @after_domain.
 -- name: ListUnavailableInstances :many

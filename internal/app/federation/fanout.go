@@ -720,26 +720,37 @@ func (f *FanOut) resolve(ctx context.Context, act federation.OutboundActivity, s
 // without being among the accounts that a delivery pushes it to.
 func (f *FanOut) resolveIn(ctx context.Context, act federation.OutboundActivity, s subject, accountIDs []string, followers bool, view appcontent.ViewContext) ([]target, error) {
 	judged := act.Type != federation.ActivityDelete && act.ObjectKind != federation.OutboundAccount && act.ObjectKind != federation.OutboundMove
-	var out []target
+	var ids []string
 	for _, id := range accountIDs {
-		if id == s.actorID {
-			continue
+		if id != s.actorID {
+			ids = append(ids, id)
 		}
-		inbox, err := f.d.Accounts.RemoteInbox(ctx, id)
-		if errors.Is(err, appaccount.ErrNotFound) {
-			continue // a local account, or a remote one never fetched
+	}
+	// A local account, or a remote one never fetched, has no inbox.
+	inboxes, err := f.remoteInboxes(ctx, ids)
+	if err != nil {
+		return nil, err
+	}
+	var rels map[string]appcontent.Relation
+	if judged && !followers {
+		var remote []string
+		for _, id := range ids {
+			if _, ok := inboxes[id]; ok && !slices.Contains(remote, id) {
+				remote = append(remote, id)
+			}
 		}
-		if err != nil {
+		if rels, err = f.relationsWith(ctx, s.actorID, remote); err != nil {
 			return nil, err
 		}
-		if judged {
-			ok, err := f.admits(ctx, s, id, followers, view)
-			if err != nil {
-				return nil, err
-			}
-			if !ok {
-				continue
-			}
+	}
+	var out []target
+	for _, id := range ids {
+		inbox, ok := inboxes[id]
+		if !ok {
+			continue
+		}
+		if judged && !f.admits(s, id, followers, rels[id], view) {
+			continue
 		}
 		t, ok := targetOf(federation.InboxFor(federation.IRI(inbox.InboxURL), federation.IRI(inbox.SharedInboxURL)))
 		if ok && !slices.Contains(out, t) {
@@ -750,28 +761,95 @@ func (f *FanOut) resolveIn(ctx context.Context, act federation.OutboundActivity,
 }
 
 // admits reports whether content.CanView lets the remote account recipient see the object in
-// the context view (ContextDelivery but for the voters of a poll). An active follower is not blocked by either side: a block ends the follows
-// between the two accounts in its transaction (data-model §2.1). Any other recipient's
-// relationship with the actor is read from the graph module.
-func (f *FanOut) admits(ctx context.Context, s subject, recipient string, follower bool, view appcontent.ViewContext) (bool, error) {
-	rel := appcontent.Relation{Mentioned: slices.Contains(s.mentioned, recipient)}
+// the context view (ContextDelivery but for the voters of a poll). An active follower is not
+// blocked by either side: a block ends the follows between the two accounts in its transaction
+// (data-model §2.1). Any other recipient's relationship with the actor is rel, which
+// relationsWith read from the graph module.
+func (f *FanOut) admits(s subject, recipient string, follower bool, rel appcontent.Relation, view appcontent.ViewContext) bool {
 	if follower {
-		rel.Follow = appcontent.FollowActive
-	} else {
-		r, err := f.d.Graph.Relationship(ctx, recipient, s.actorID)
-		if err != nil {
-			return false, err
-		}
-		switch {
-		case r.ActivelyFollowing():
-			rel.Follow = appcontent.FollowActive
-		case r.RequestedFollow():
-			rel.Follow = appcontent.FollowPending
-		}
-		rel.Blocking, rel.BlockedBy = r.Blocking, r.BlockedBy
+		rel = appcontent.Relation{Follow: appcontent.FollowActive}
 	}
+	rel.Mentioned = slices.Contains(s.mentioned, recipient)
 	viewer := appcontent.Viewer{Kind: appcontent.ViewerRemote, AccountID: recipient}
-	return appcontent.CanView(view, viewer, s.facts, s.restrictions, rel), nil
+	return appcontent.CanView(view, viewer, s.facts, s.restrictions, rel)
+}
+
+// relationBatch is a Graph that reads the relationships of an account with many at once, as
+// *appgraph.Service does.
+type relationBatch interface {
+	Relationships(ctx context.Context, accountID string, targetIDs []string) (map[string]appgraph.Relationship, error)
+}
+
+// relationsWith returns the relations of each of recipients with the actor, by recipient, as
+// content.CanView takes them: whether the recipient follows the actor or asked to, and the blocks
+// between them. It reads them together when Graph can, as the actor's relationships with the
+// recipients seen from the actor's side, and one by one otherwise.
+func (f *FanOut) relationsWith(ctx context.Context, actorID string, recipients []string) (map[string]appcontent.Relation, error) {
+	out := make(map[string]appcontent.Relation, len(recipients))
+	if len(recipients) == 0 {
+		return out, nil
+	}
+	if b, ok := f.d.Graph.(relationBatch); ok {
+		rs, err := b.Relationships(ctx, actorID, recipients)
+		if err != nil {
+			return nil, err
+		}
+		for _, id := range recipients {
+			r := rs[id]
+			// The mirror of the recipient's relationship with the actor.
+			out[id] = relationOf(appgraph.Relationship{Following: r.FollowedBy, Blocking: r.BlockedBy, BlockedBy: r.Blocking})
+		}
+		return out, nil
+	}
+	for _, id := range recipients {
+		r, err := f.d.Graph.Relationship(ctx, id, actorID)
+		if err != nil {
+			return nil, err
+		}
+		out[id] = relationOf(r)
+	}
+	return out, nil
+}
+
+// relationOf is the relation of an account with a target, from its relationship with the target.
+func relationOf(r appgraph.Relationship) appcontent.Relation {
+	var rel appcontent.Relation
+	switch {
+	case r.ActivelyFollowing():
+		rel.Follow = appcontent.FollowActive
+	case r.RequestedFollow():
+		rel.Follow = appcontent.FollowPending
+	}
+	rel.Blocking, rel.BlockedBy = r.Blocking, r.BlockedBy
+	return rel
+}
+
+// inboxBatch is an Accounts that reads many inboxes at once, as *appaccount.Service does.
+type inboxBatch interface {
+	RemoteInboxes(ctx context.Context, accountIDs []string) (map[string]appaccount.RemoteInbox, error)
+}
+
+// remoteInboxes returns the inboxes of the remote accounts of ids that have one: together when
+// Accounts can, one by one otherwise.
+func (f *FanOut) remoteInboxes(ctx context.Context, ids []string) (map[string]appaccount.RemoteInbox, error) {
+	if len(ids) == 0 {
+		return map[string]appaccount.RemoteInbox{}, nil
+	}
+	if b, ok := f.d.Accounts.(inboxBatch); ok {
+		return b.RemoteInboxes(ctx, ids)
+	}
+	out := make(map[string]appaccount.RemoteInbox, len(ids))
+	for _, id := range ids {
+		inbox, err := f.d.Accounts.RemoteInbox(ctx, id)
+		switch {
+		case errors.Is(err, appaccount.ErrNotFound):
+		case err != nil:
+			return nil, err
+		default:
+			out[id] = inbox
+		}
+	}
+	return out, nil
 }
 
 // targetOf returns the target of an inbox, false when the inbox is not an https IRI with a host.
@@ -783,27 +861,54 @@ func targetOf(inbox federation.IRI) (target, bool) {
 	return target{inbox: inbox, domain: host}, true
 }
 
-// deliverable drops the targets on servers that do not get activities of type t.
+// deliverable drops the targets on servers that do not get activities of type t, reading the
+// suspensions and the health of the targets' servers together.
 func (f *FanOut) deliverable(ctx context.Context, t federation.ActivityType, targets []target) ([]target, error) {
-	statuses := map[string]bool{}
+	var domains []string
+	for _, tg := range targets {
+		if !slices.Contains(domains, tg.domain) {
+			domains = append(domains, tg.domain)
+		}
+	}
+	if len(domains) == 0 {
+		return nil, nil
+	}
+	suspended, err := f.suspendedAmong(ctx, domains)
+	if err != nil {
+		return nil, err
+	}
+	states, err := f.d.Repository.InstanceStatesOf(ctx, domains)
+	if err != nil {
+		return nil, err
+	}
 	var out []target
 	for _, tg := range targets {
-		ok, seen := statuses[tg.domain]
-		if !seen {
-			var st federation.DomainStatus
-			var err error
-			if st.Suspended, err = f.d.Domains.FederationSuspended(ctx, tg.domain); err != nil {
-				return nil, err
-			}
-			if st.State, err = f.d.Repository.InstanceState(ctx, tg.domain); err != nil {
-				return nil, err
-			}
-			ok = federation.Deliverable(t, st)
-			statuses[tg.domain] = ok
-		}
-		if ok {
+		if federation.Deliverable(t, federation.DomainStatus{Suspended: suspended[tg.domain], State: states[tg.domain]}) {
 			out = append(out, tg)
 		}
+	}
+	return out, nil
+}
+
+// suspensionBatch is a DomainPolicy that reads many domains at once, as
+// *appmoderation.FederationPolicy does.
+type suspensionBatch interface {
+	FederationSuspendedAmong(ctx context.Context, domains []string) (map[string]bool, error)
+}
+
+// suspendedAmong reports, by domain, whether each of domains is suspended: together when Domains
+// can, one by one otherwise.
+func (f *FanOut) suspendedAmong(ctx context.Context, domains []string) (map[string]bool, error) {
+	if b, ok := f.d.Domains.(suspensionBatch); ok {
+		return b.FederationSuspendedAmong(ctx, domains)
+	}
+	out := make(map[string]bool, len(domains))
+	for _, d := range domains {
+		suspended, err := f.d.Domains.FederationSuspended(ctx, d)
+		if err != nil {
+			return nil, err
+		}
+		out[d] = suspended
 	}
 	return out, nil
 }
