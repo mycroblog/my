@@ -114,6 +114,30 @@ type Repository interface {
 	DeleteEdgesOfFollows(ctx context.Context, tx uow.Tx, edges []graph.Edge) (int, error)
 	// AddManyCounters is AddCounters of the deltas of many accounts, by account.
 	AddManyCounters(ctx context.Context, tx uow.Tx, deltas map[string]CounterDelta) error
+
+	// The writes and reads that start many follows at once (the migration of a moved account's
+	// followers), each as those of one follow do for every follow it names, with one statement.
+
+	// InsertFollows is InsertFollow of each of fs.
+	InsertFollows(ctx context.Context, tx uow.Tx, fs []graph.Follow) error
+	// UpsertManyPreferences is UpsertPreferences of each of ps.
+	UpsertManyPreferences(ctx context.Context, tx uow.Tx, ps []graph.Preferences) error
+	// InsertAutoAcceptances is InsertAcceptance of an automatic acceptance at at of each follow
+	// of followIDs; it fails with ErrAlreadyRecorded when one is accepted.
+	InsertAutoAcceptances(ctx context.Context, tx uow.Tx, followIDs []string, at time.Time) error
+	// InsertEdges is InsertEdge of each of es, and returns how many it inserted.
+	InsertEdges(ctx context.Context, tx uow.Tx, es []graph.Edge) (int, error)
+	// PreferencesOf is Preferences of each follow of followIDs that has them, by follow.
+	PreferencesOf(ctx context.Context, tx uow.Tx, followIDs []string) (map[string]graph.Preferences, error)
+	// DomainMutersAmong returns those of accountIDs that mute any of domains, as MutesAnyDomain
+	// tells of one.
+	DomainMutersAmong(ctx context.Context, accountIDs, domains []string) (map[string]bool, error)
+	// BlockEdgesWithTx reads inside tx the blocks between accountID and each of others: by other,
+	// whether accountID blocks it (blocking) and whether it blocks accountID (blockedBy).
+	BlockEdgesWithTx(ctx context.Context, tx uow.Tx, accountID string, others []string) (blocking, blockedBy map[string]bool, err error)
+	// NotificationRelationsFromTx is NotificationRelationsTx of one recipient and many sources,
+	// by source.
+	NotificationRelationsFromTx(ctx context.Context, tx uow.Tx, recipientID string, sourceIDs []string, now time.Time) (NotificationRelations, error)
 	UpsertCounters(ctx context.Context, tx uow.Tx, c graph.Counters) error
 	DeleteAllCounters(ctx context.Context, tx uow.Tx) error
 	// BlockEdge returns the edge from blocker to blocked.

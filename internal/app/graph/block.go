@@ -252,6 +252,22 @@ func (s *Service) NotificationRelations(ctx context.Context, tx uow.Tx, recipien
 	return out, nil
 }
 
+// NotificationRelationsFrom is NotificationRelations of one recipient and many sources, by
+// source, with one query per part.
+func (s *Service) NotificationRelationsFrom(ctx context.Context, tx uow.Tx, recipientID string, sourceIDs []string) (map[string]NotificationRelation, error) {
+	parts, err := s.d.Repository.NotificationRelationsFromTx(ctx, tx, recipientID, sourceIDs, s.d.Clock.Now())
+	if err != nil {
+		return nil, err
+	}
+	out := make(map[string]NotificationRelation, len(sourceIDs))
+	for _, id := range sourceIDs {
+		m, muted := parts.Mutes[id]
+		e, follows := parts.Follows[id]
+		out[id] = NotificationRelation{Hidden: parts.Blocked[id] || muted && m.HideNotifications, Follows: follows && e.State == graph.StateActive}
+	}
+	return out, nil
+}
+
 // FollowRequested reports, inside tx, whether followerID's follow of followeeID awaits approval.
 // The notification module reads it to keep a subscription asked for with a follow of a remote
 // account until the follow is accepted.

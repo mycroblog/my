@@ -34,7 +34,8 @@ type Repository interface {
 	// the recipients it inserted one for.
 	InsertNotificationsFor(ctx context.Context, tx uow.Tx, n notification.Notification, ids, recipients []string) (map[string]bool, error)
 	// InsertNotificationsForEach is InsertNotificationsFor of ns, which differ by their ID,
-	// recipient, severance, and dedupe key, and share every other field with ns[0].
+	// recipient, source, source domain, severance, dedupe key, and time, and share every other
+	// field with ns[0]; it returns, by ID, those it inserted.
 	InsertNotificationsForEach(ctx context.Context, tx uow.Tx, ns []notification.Notification) (map[string]bool, error)
 	// AddErrorGroupNotice adds one admin_error_group notice to the hour that starts at hour, in
 	// tx, and returns the hour's notices with it; concurrent transactions each add theirs.

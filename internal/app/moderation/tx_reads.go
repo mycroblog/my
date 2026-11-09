@@ -107,6 +107,64 @@ func (p *AccountPolicy) AccountEffectsTx(ctx context.Context, tx uow.Tx, account
 	return moderation.Merge(rows, p.clock.Now()), nil
 }
 
+// accountDomainsBatch is an AccountDomains that finds the domains of many accounts at once, as
+// *appaccount.Service does.
+type accountDomainsBatch interface {
+	AccountDomainsTx(ctx context.Context, tx uow.Tx, ids []string) (map[string]string, error)
+}
+
+// UnsolicitedReachRestrictedAmongTx is UnsolicitedReachRestrictedTx of each of ids, by account,
+// with one query for the accounts' restrictions, one for their domains, and one for the
+// restrictions of the domains; without the batch read of the domains it reads them one by one.
+func (p *AccountPolicy) UnsolicitedReachRestrictedAmongTx(ctx context.Context, tx uow.Tx, ids []string) (map[string]bool, error) {
+	out := make(map[string]bool, len(ids))
+	b, ok := p.accounts.(accountDomainsBatch)
+	if !ok {
+		for _, id := range ids {
+			restricted, err := p.UnsolicitedReachRestrictedTx(ctx, tx, id)
+			if err != nil {
+				return nil, err
+			}
+			out[id] = restricted
+		}
+		return out, nil
+	}
+	if len(ids) == 0 {
+		return out, nil
+	}
+	now := p.clock.Now()
+	own, err := p.repo.AccountRestrictionsInEffectOfTx(ctx, tx, ids, now)
+	if err != nil {
+		return nil, err
+	}
+	domains, err := b.AccountDomainsTx(ctx, tx, ids)
+	if err != nil {
+		return nil, err
+	}
+	var all []string
+	for _, d := range domains {
+		for _, dd := range moderation.DomainAndParents(d) {
+			if !slices.Contains(all, dd) {
+				all = append(all, dd)
+			}
+		}
+	}
+	ofDomains, err := p.repo.DomainRestrictionsInEffectOfTx(ctx, tx, all, now)
+	if err != nil {
+		return nil, err
+	}
+	for _, id := range ids {
+		rs := own[id]
+		if d, found := domains[id]; found {
+			for _, dd := range moderation.DomainAndParents(d) {
+				rs = append(rs, ofDomains[dd]...)
+			}
+		}
+		out[id] = slices.Contains(rs, moderation.RestrictUnsolicitedReach)
+	}
+	return out, nil
+}
+
 // UnsolicitedReachRestrictedTx is UnsolicitedReachRestricted inside tx.
 func (p *AccountPolicy) UnsolicitedReachRestrictedTx(ctx context.Context, tx uow.Tx, accountID string) (bool, error) {
 	now := p.clock.Now()

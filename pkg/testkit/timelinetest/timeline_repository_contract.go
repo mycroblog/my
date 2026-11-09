@@ -800,9 +800,15 @@ func timelineRepoLists(t *testing.T, r *timelineRepo) {
 func timelineRepoEndMany(t *testing.T, r *timelineRepo) {
 	ctx := t.Context()
 	owner, a, b, c := r.local(), r.local(), r.local(), r.local()
-	r.follow(t, owner, a, true)
-	r.follow(t, owner, b, true)
-	r.follow(t, c, owner, true)
+	// Many edges upserted together, as UpsertFollowEdge upserts each: inserted, then replaced.
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+		return errors.Join(
+			r.repo.UpsertFollowEdges(ctx, tx, []apptimeline.FollowEdge{
+				{FollowerAccountID: owner.id, FolloweeAccountID: a.id}, {FollowerAccountID: owner.id, FolloweeAccountID: b.id}, {FollowerAccountID: c.id, FolloweeAccountID: owner.id, ShowBoosts: true},
+			}),
+			r.repo.UpsertFollowEdges(ctx, tx, []apptimeline.FollowEdge{{FollowerAccountID: owner.id, FolloweeAccountID: a.id, ShowBoosts: true}, {FollowerAccountID: owner.id, FolloweeAccountID: b.id, ShowBoosts: true}}),
+			r.repo.UpsertFollowEdges(ctx, tx, nil))
+	})
 	l := apptimeline.List{ID: r.ids.NewID(), OwnerAccountID: owner.id, Name: "Friends", CreatedAt: r.clock.Now()}
 	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
 		if err := r.repo.InsertList(ctx, tx, l); err != nil {

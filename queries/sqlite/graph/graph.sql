@@ -186,3 +186,27 @@ FROM follow_edges
 WHERE (follower_account_id, followee_account_id) IN (SELECT value ->> '$.a', value ->> '$.b' FROM json_each(CAST(sqlc.arg(pairs) AS TEXT)))
    OR (followee_account_id, follower_account_id) IN (SELECT value ->> '$.a', value ->> '$.b' FROM json_each(CAST(sqlc.arg(pairs) AS TEXT)))
 ORDER BY follower_account_id, followee_account_id;
+
+-- The statements that start many follows at once (the migration of a moved account's followers),
+-- each as the statement of one follow above does for every follow it names. The lists are JSON
+-- arrays; WHERE true keeps ON CONFLICT from reading as a join constraint.
+
+-- name: InsertFollows :exec
+INSERT INTO follows (id, uri, follower_account_id, followee_account_id, requested_at)
+SELECT value ->> '$.id', value ->> '$.uri', value ->> '$.follower_account_id', value ->> '$.followee_account_id', value ->> '$.requested_at'
+FROM json_each(CAST(sqlc.arg(follows) AS TEXT));
+
+-- name: UpsertManyFollowPreferences :exec
+INSERT INTO follow_preferences (follow_id, show_boosts)
+SELECT value ->> '$.follow_id', value ->> '$.show_boosts' FROM json_each(CAST(sqlc.arg(preferences) AS TEXT)) WHERE true
+ON CONFLICT (follow_id) DO UPDATE SET show_boosts = excluded.show_boosts;
+
+-- name: InsertAutoFollowAcceptances :exec
+INSERT INTO follow_acceptances (follow_id, accepted_by, activity_uri, accepted_at)
+SELECT value, CAST(sqlc.arg(accepted_by) AS TEXT), NULL, CAST(sqlc.arg(accepted_at) AS INTEGER) FROM json_each(CAST(sqlc.arg(follow_ids) AS TEXT));
+
+-- name: InsertFollowEdges :execrows
+INSERT INTO follow_edges (follower_account_id, followee_account_id, follow_id, state, since)
+SELECT value ->> '$.follower_account_id', value ->> '$.followee_account_id', value ->> '$.follow_id', value ->> '$.state', value ->> '$.since'
+FROM json_each(CAST(sqlc.arg(edges) AS TEXT)) WHERE true
+ON CONFLICT (follower_account_id, followee_account_id) DO NOTHING;

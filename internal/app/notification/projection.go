@@ -162,6 +162,38 @@ func RegisterProjectors(r *uow.Projectors, d ProjectorDeps) {
 			DedupeKey: notification.FollowKey(notification.TypeFollowRequest, f.ID), CreatedAt: f.RequestedAt,
 		})
 	})
+	r.Register(appgraph.EventFollowsCreated, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
+		ev := e.(appgraph.FollowsCreated)
+		// As the projectors of Followed and FollowRequested notify each followee, grouped by
+		// followee and type.
+		groups := map[[2]string][]notification.Notification{}
+		var keys [][2]string
+		add := func(n notification.Notification) {
+			k := [2]string{n.RecipientAccountID, string(n.Type)}
+			if _, ok := groups[k]; !ok {
+				keys = append(keys, k)
+			}
+			groups[k] = append(groups[k], n)
+		}
+		for _, f := range ev.Followed {
+			add(notification.Notification{
+				RecipientAccountID: f.Follow.FolloweeAccountID, SourceAccountID: f.Follow.FollowerAccountID, Type: notification.TypeFollow,
+				DedupeKey: notification.FollowKey(notification.TypeFollow, f.Follow.ID), CreatedAt: f.Acceptance.AcceptedAt,
+			})
+		}
+		for _, f := range ev.Requested {
+			add(notification.Notification{
+				RecipientAccountID: f.Follow.FolloweeAccountID, SourceAccountID: f.Follow.FollowerAccountID, Type: notification.TypeFollowRequest,
+				DedupeKey: notification.FollowKey(notification.TypeFollowRequest, f.Follow.ID), CreatedAt: f.Follow.RequestedAt,
+			})
+		}
+		for _, k := range keys {
+			if err := p.notifyFromMany(ctx, tx, groups[k]); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
 	r.Register(appgraph.EventFollowAccepted, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
 		ev := e.(appgraph.FollowAccepted)
 		f := ev.Follow
@@ -249,6 +281,33 @@ func RegisterProjectors(r *uow.Projectors, d ProjectorDeps) {
 			AccountMoveID: ev.MoveID, AccountMoveOutcome: notification.MoveOutcome(ev.Outcome),
 			DedupeKey: notification.AccountMovedKey(ev.MoveID), CreatedAt: ev.At,
 		})
+	})
+	r.Register(appgraph.EventFollowsMigrated, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
+		// As the projector of FollowMigrated notifies each follower, with one notifyAll per
+		// outcome, the notifications of one outcome differing only by their recipient.
+		byOutcome := map[appgraph.MigrationOutcome][]string{}
+		var outcomes []appgraph.MigrationOutcome
+		var first appgraph.FollowMigrated
+		for i, m := range e.(appgraph.FollowsMigrated).Migrations {
+			if i == 0 {
+				first = m
+			}
+			if _, ok := byOutcome[m.Outcome]; !ok {
+				outcomes = append(outcomes, m.Outcome)
+			}
+			byOutcome[m.Outcome] = append(byOutcome[m.Outcome], m.AccountID)
+		}
+		for _, o := range outcomes {
+			n := notification.Notification{
+				SourceAccountID: first.SourceAccountID, Type: notification.TypeAccountMoved,
+				AccountMoveID: first.MoveID, AccountMoveOutcome: notification.MoveOutcome(o),
+				DedupeKey: notification.AccountMovedKey(first.MoveID), CreatedAt: first.At,
+			}
+			if err := p.notifyAll(ctx, tx, n, byOutcome[o]); err != nil {
+				return err
+			}
+		}
+		return nil
 	})
 	r.Register(appmoderation.EventRelationshipsSevered, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
 		sv := e.(appmoderation.RelationshipsSevered).Severance
@@ -655,11 +714,126 @@ func (p *projector) notifyEach(ctx context.Context, tx uow.Tx, ns []notification
 	if err != nil {
 		return err
 	}
-	created := slices.DeleteFunc(kept, func(n notification.Notification) bool { return !inserted[n.RecipientAccountID] })
+	created := slices.DeleteFunc(kept, func(n notification.Notification) bool { return !inserted[n.ID] })
 	if err := p.d.Push.enqueueAll(ctx, tx, created, nil); err != nil {
 		return err
 	}
 	return p.d.Email.enqueueAll(ctx, tx, created, choices, nil)
+}
+
+// relationFromBatch is a Relationships that reads the relations of one recipient with many
+// sources at once, as *appgraph.Service does.
+type relationFromBatch interface {
+	NotificationRelationsFrom(ctx context.Context, tx uow.Tx, recipientID string, sourceIDs []string) (map[string]appgraph.NotificationRelation, error)
+}
+
+// reachBatch is a ReachPolicy that reads the reach restriction of many sources at once, as
+// *appmoderation.AccountPolicy does.
+type reachBatch interface {
+	UnsolicitedReachRestrictedAmongTx(ctx context.Context, tx uow.Tx, ids []string) (map[string]bool, error)
+}
+
+// domainsBatch is an Accounts that reads the domains of many accounts at once, as
+// *appaccount.Service does.
+type domainsBatch interface {
+	AccountDomainsTx(ctx context.Context, tx uow.Tx, ids []string) (map[string]string, error)
+}
+
+// notifyFromMany notifies the one recipient of ns, notifications of one type that differ by
+// their ID, source, dedupe key, and time, as notify notifies each, with a number of queries that
+// does not grow with them: it reads the recipient once, its relations with the sources, their
+// reach restrictions, and their domains together, the recipient's exclusion of each distinct
+// domain, and inserts the notifications and enqueues their messages with one statement each.
+// Without the batch reads it notifies them one by one.
+func (p *projector) notifyFromMany(ctx context.Context, tx uow.Tx, ns []notification.Notification) error {
+	accounts, okA := p.d.Accounts.(notifiableBatch)
+	relations, okR := p.d.Relationships.(relationFromBatch)
+	domains, okD := p.d.Accounts.(domainsBatch)
+	reach, okReach := p.d.Reach.(reachBatch)
+	if !okA || !okR || !okD || (p.d.Reach != nil && !okReach) {
+		for _, n := range ns {
+			if err := p.notify(ctx, tx, n); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+	ns = slices.DeleteFunc(slices.Clone(ns), func(n notification.Notification) bool { return n.RecipientAccountID == n.SourceAccountID })
+	if len(ns) == 0 {
+		return nil
+	}
+	recipient := ns[0].RecipientAccountID
+	notifiable, err := accounts.NotifiableAmong(ctx, tx, []string{recipient})
+	if err != nil || !notifiable[recipient] {
+		return err
+	}
+	var sources []string
+	for _, n := range ns {
+		if n.SourceAccountID != "" && !slices.Contains(sources, n.SourceAccountID) {
+			sources = append(sources, n.SourceAccountID)
+		}
+	}
+	if len(sources) > 0 {
+		rels, err := relations.NotificationRelationsFrom(ctx, tx, recipient, sources)
+		if err != nil {
+			return err
+		}
+		ns = slices.DeleteFunc(ns, func(n notification.Notification) bool {
+			return n.SourceAccountID != "" && rels[n.SourceAccountID].Hidden
+		})
+		if p.d.Reach != nil && ns[0].Type != notification.TypeAccountMoved && len(ns) > 0 {
+			restricted, err := reach.UnsolicitedReachRestrictedAmongTx(ctx, tx, sources)
+			if err != nil {
+				return err
+			}
+			ns = slices.DeleteFunc(ns, func(n notification.Notification) bool {
+				return n.SourceAccountID != "" && restricted[n.SourceAccountID] && !rels[n.SourceAccountID].Follows
+			})
+		}
+		if len(ns) == 0 {
+			return nil
+		}
+		ds, err := domains.AccountDomainsTx(ctx, tx, sources)
+		if err != nil {
+			return err
+		}
+		excluded := map[string]bool{}
+		for i := range ns {
+			d := ds[ns[i].SourceAccountID]
+			ns[i].SourceDomain = d
+			if _, seen := excluded[d]; d != "" && !seen {
+				if excluded[d], err = p.d.Repository.DomainExcluded(ctx, tx, recipient, d); err != nil {
+					return err
+				}
+			}
+		}
+		ns = slices.DeleteFunc(ns, func(n notification.Notification) bool { return excluded[n.SourceDomain] })
+	}
+	if len(ns) == 0 {
+		return nil
+	}
+	choices, err := choicesTx(ctx, p.d.Repository, tx, recipient)
+	if err != nil {
+		return err
+	}
+	if !choices.TypeEnabled(ns[0].Type, notification.ChannelInApp) {
+		return nil // turned off in the app: not created, so delivered nowhere (ADR-0086 §10)
+	}
+	for i := range ns {
+		ns[i].ID = p.d.IDs.NewID()
+		if err := ns[i].Validate(); err != nil {
+			return err
+		}
+	}
+	inserted, err := p.d.Repository.InsertNotificationsForEach(ctx, tx, ns)
+	if err != nil {
+		return err
+	}
+	created := slices.DeleteFunc(ns, func(n notification.Notification) bool { return !inserted[n.ID] })
+	if err := p.d.Push.enqueueAll(ctx, tx, created, nil); err != nil {
+		return err
+	}
+	return p.d.Email.enqueueAll(ctx, tx, created, map[string]notification.Choices{recipient: choices}, nil)
 }
 
 // reaches reports whether sourceID may notify recipientID: always, unless the source has

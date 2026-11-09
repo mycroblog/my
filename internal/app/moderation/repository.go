@@ -186,6 +186,8 @@ type DomainActionQuery struct {
 type TxReads interface {
 	AccountRestrictionsInEffectTx(ctx context.Context, tx uow.Tx, accountID string, now time.Time) ([]moderation.Restriction, error)
 	DomainRestrictionsInEffectTx(ctx context.Context, tx uow.Tx, domains []string, now time.Time) ([]moderation.Restriction, error)
+	AccountRestrictionsInEffectOfTx(ctx context.Context, tx uow.Tx, accountIDs []string, now time.Time) (map[string][]moderation.Restriction, error)
+	DomainRestrictionsInEffectOfTx(ctx context.Context, tx uow.Tx, domains []string, now time.Time) (map[string][]moderation.Restriction, error)
 	FindReportTx(ctx context.Context, tx uow.Tx, id string) (moderation.Report, error)
 	FindReportStatusTx(ctx context.Context, tx uow.Tx, reportID string) (moderation.ReportStatus, error)
 	FindActionRecordTx(ctx context.Context, tx uow.Tx, id string) (moderation.ActionRecord, error)

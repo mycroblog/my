@@ -4,6 +4,7 @@ package notification
 
 import (
 	"context"
+	"slices"
 
 	appcontent "github.com/mycroblog/my/internal/app/content"
 	appgraph "github.com/mycroblog/my/internal/app/graph"
@@ -27,6 +28,18 @@ func RegisterCommitHooks(r *uow.Projectors, pub stream.Publisher) {
 	})
 	r.OnCommit(appgraph.EventFollowRequested, func(_ context.Context, e uow.Event) {
 		signal(e.(appgraph.FollowRequested).Follow.FolloweeAccountID)
+	})
+	r.OnCommit(appgraph.EventFollowsCreated, func(_ context.Context, e uow.Event) {
+		ev := e.(appgraph.FollowsCreated)
+		var ids []string
+		for _, f := range ev.Followed {
+			ids = append(ids, f.Follow.FolloweeAccountID)
+		}
+		for _, f := range ev.Requested {
+			ids = append(ids, f.Follow.FolloweeAccountID)
+		}
+		slices.Sort(ids)
+		signal(slices.Compact(ids)...)
 	})
 	r.OnCommit(appgraph.EventFollowAccepted, func(_ context.Context, e uow.Event) {
 		signal(e.(appgraph.FollowAccepted).Follow.FollowerAccountID)

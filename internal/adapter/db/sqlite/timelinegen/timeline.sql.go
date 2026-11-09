@@ -1919,6 +1919,20 @@ func (q *Queries) UpsertFeedFollowEdge(ctx context.Context, arg UpsertFeedFollow
 	return err
 }
 
+const upsertFeedFollowEdges = `-- name: UpsertFeedFollowEdges :exec
+INSERT INTO feed_follow_edges (follower_account_id, followee_account_id, show_boosts)
+SELECT value ->> '$.follower_account_id', value ->> '$.followee_account_id', value ->> '$.show_boosts'
+FROM json_each(CAST(?1 AS TEXT)) WHERE true
+ON CONFLICT (follower_account_id, followee_account_id) DO UPDATE SET show_boosts = excluded.show_boosts
+`
+
+// UpsertFeedFollowEdges is UpsertFeedFollowEdge of many edges, a JSON array; WHERE true keeps
+// ON CONFLICT from reading as a join constraint.
+func (q *Queries) UpsertFeedFollowEdges(ctx context.Context, edges string) error {
+	_, err := q.db.ExecContext(ctx, upsertFeedFollowEdges, edges)
+	return err
+}
+
 const upsertListName = `-- name: UpsertListName :exec
 INSERT INTO list_names (list_id, name) VALUES (?, ?)
 ON CONFLICT (list_id) DO UPDATE SET name = excluded.name

@@ -6,6 +6,7 @@ import (
 	"cmp"
 	"context"
 	"errors"
+	"maps"
 	"reflect"
 	"slices"
 	"sync"
@@ -44,6 +45,7 @@ func BlockRepositoryContract(t *testing.T, newHarness FollowFactory) {
 		{"KeepsDomainMutes", blockRepoDomainMutes},
 		{"ListsRelationsAmongAccounts", blockRepoRelations},
 		{"ReadsTheRelationshipPartsOfManyAccounts", blockRepoRelationshipParts},
+		{"ReadsTheBlocksAndNotificationRelationsOfOneWithMany", blockRepoOneWithMany},
 		{"LockPairSerializesAPair", blockRepoLockPair},
 	}
 	for _, tc := range cases {
@@ -558,6 +560,16 @@ func blockRepoDomainMutes(t *testing.T, r *blockRepo) {
 			t.Errorf("MutesAnyDomain(%v) = %v, %v; want %v", tc.domains, got, err, tc.want)
 		}
 	}
+	// DomainMutersAmong tells of many accounts what MutesAnyDomain tells of one.
+	stranger := r.ids.NewID()
+	for _, tc := range []struct {
+		domains []string
+		want    map[string]bool
+	}{{[]string{"x.example", "b.example"}, map[string]bool{alice: true}}, {[]string{"a.example"}, map[string]bool{alice: true, bob: true}}, {[]string{"x.example"}, map[string]bool{}}, {nil, map[string]bool{}}} {
+		if got, err := r.repo.DomainMutersAmong(ctx, []string{alice, bob, stranger}, tc.domains); err != nil || !maps.Equal(got, tc.want) {
+			t.Errorf("DomainMutersAmong(%v) = %v, %v; want %v", tc.domains, got, err, tc.want)
+		}
+	}
 
 	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
 		for i, want := range []bool{true, false} {
@@ -662,6 +674,52 @@ func blockRepoLockPair(t *testing.T, r *blockRepo) {
 // follows both ways in either state with the preferences of the one out, blocks both ways, a mute
 // in force and an expired one, and an account with none; each part is what the read of one pair
 // finds.
+// blockRepoOneWithMany reads, in a transaction, the blocks of one account with many others by
+// direction, and its notification relations with many sources, as NotificationRelationsTx reads
+// those of many recipients with one source.
+func blockRepoOneWithMany(t *testing.T, r *blockRepo) {
+	ids := r.accounts(5)
+	me, bob, carol, dave, erin := ids[0], ids[1], ids[2], ids[3], ids[4]
+	now := r.clock.Now()
+	r.block(t, me, carol)
+	r.block(t, dave, me)
+	r.mute(t, graph.Mute{AccountID: me, TargetAccountID: bob, HideNotifications: true, CreatedAt: now})
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+		_, err := r.repo.InsertEdge(ctx, tx, graph.Edge{FollowerAccountID: me, FolloweeAccountID: erin, FollowID: r.ids.NewID(), State: graph.StateActive, Since: now})
+		return err
+	})
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+		blocking, blockedBy, err := r.repo.BlockEdgesWithTx(ctx, tx, me, []string{bob, carol, dave, erin})
+		if err != nil || !maps.Equal(blocking, map[string]bool{carol: true}) || !maps.Equal(blockedBy, map[string]bool{dave: true}) {
+			t.Errorf("BlockEdgesWithTx = %v, %v, %v; want carol blocked, by dave", blocking, blockedBy, err)
+		}
+		got, err := r.repo.NotificationRelationsFromTx(ctx, tx, me, []string{bob, carol, dave, erin}, now)
+		if err != nil {
+			return err
+		}
+		if !maps.Equal(got.Blocked, map[string]bool{carol: true, dave: true}) {
+			t.Errorf("NotificationRelationsFromTx blocked = %v, want carol and dave", got.Blocked)
+		}
+		if len(got.Mutes) != 1 || !got.Mutes[bob].HideNotifications {
+			t.Errorf("NotificationRelationsFromTx mutes = %+v, want my mute of bob", got.Mutes)
+		}
+		if len(got.Follows) != 1 || got.Follows[erin].State != graph.StateActive {
+			t.Errorf("NotificationRelationsFromTx follows = %+v, want my follow of erin", got.Follows)
+		}
+		// One source seen from the other side reads as NotificationRelationsTx reads it.
+		for _, source := range []string{bob, carol, dave, erin} {
+			one, err := r.repo.NotificationRelationsTx(ctx, tx, source, []string{me}, now)
+			if err != nil {
+				return err
+			}
+			if one.Blocked[me] != got.Blocked[source] || one.Mutes[me] != got.Mutes[source] || one.Follows[me] != got.Follows[source] {
+				t.Errorf("the relations of me with %s = %+v, want %+v as NotificationRelationsTx reads them", source, got, one)
+			}
+		}
+		return nil
+	})
+}
+
 func blockRepoRelationshipParts(t *testing.T, r *blockRepo) {
 	ctx := t.Context()
 	ids := r.accounts(5)

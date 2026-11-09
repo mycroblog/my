@@ -508,3 +508,11 @@ UPDATE tag_usage SET
   statuses_count = statuses_count + (SELECT CAST(value ->> '$.n' AS INTEGER) FROM json_each(CAST(sqlc.arg(usage) AS TEXT)) WHERE value ->> '$.tag_id' = tag_usage.tag_id),
   last_used_at = (SELECT max(f.revised_at) FROM feed_tag_entries f WHERE f.tag_id = tag_usage.tag_id AND f.visibility IN ('public', 'local', 'unlisted'))
 WHERE tag_id IN (SELECT value ->> '$.tag_id' FROM json_each(CAST(sqlc.arg(usage) AS TEXT)));
+
+-- UpsertFeedFollowEdges is UpsertFeedFollowEdge of many edges, a JSON array; WHERE true keeps
+-- ON CONFLICT from reading as a join constraint.
+-- name: UpsertFeedFollowEdges :exec
+INSERT INTO feed_follow_edges (follower_account_id, followee_account_id, show_boosts)
+SELECT value ->> '$.follower_account_id', value ->> '$.followee_account_id', value ->> '$.show_boosts'
+FROM json_each(CAST(sqlc.arg(edges) AS TEXT)) WHERE true
+ON CONFLICT (follower_account_id, followee_account_id) DO UPDATE SET show_boosts = excluded.show_boosts;

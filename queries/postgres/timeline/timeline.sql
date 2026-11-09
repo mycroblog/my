@@ -502,3 +502,10 @@ UPDATE tag_usage t SET statuses_count = t.statuses_count + d.delta,
   last_used_at = (SELECT max(f.revised_at) FROM feed_tag_entries f WHERE f.tag_id = t.tag_id AND f.visibility IN ('public', 'local', 'unlisted'))
 FROM (SELECT unnest(sqlc.arg(tag_ids)::uuid[]) AS tag_id, unnest(sqlc.arg(deltas)::bigint[]) AS delta) d
 WHERE t.tag_id = d.tag_id;
+
+-- UpsertFeedFollowEdges is UpsertFeedFollowEdge of many edges (the unnests of a select list
+-- advance together).
+-- name: UpsertFeedFollowEdges :exec
+INSERT INTO feed_follow_edges (follower_account_id, followee_account_id, show_boosts)
+SELECT unnest(sqlc.arg(follower_ids)::uuid[]), unnest(sqlc.arg(followee_ids)::uuid[]), unnest(sqlc.arg(show_boosts)::boolean[])
+ON CONFLICT (follower_account_id, followee_account_id) DO UPDATE SET show_boosts = excluded.show_boosts;
