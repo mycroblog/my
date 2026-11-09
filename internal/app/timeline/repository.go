@@ -302,6 +302,9 @@ type Repository interface {
 	// Timelines (data-model §6), newest first, at most Limit entries each.
 
 	ListHome(ctx context.Context, q HomeQuery) ([]Entry, error)
+	// FeedFollowersAmong returns the accounts among followerIDs whose home timelines follow
+	// followeeID (feed_follow_edges), with one query.
+	FeedFollowersAmong(ctx context.Context, followeeID string, followerIDs []string) (map[string]bool, error)
 	ListLocal(ctx context.Context, q LocalQuery) ([]Entry, error)
 	ListPublic(ctx context.Context, q PublicQuery) ([]Entry, error)
 	ListTag(ctx context.Context, q TagQuery) ([]Entry, error)

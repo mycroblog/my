@@ -318,6 +318,26 @@ func (r *Repository) DeleteProjection(ctx context.Context, tx uow.Tx) error {
 	return nil
 }
 
+// FeedFollowersAmong implements apptimeline.Repository.
+func (r *Repository) FeedFollowersAmong(ctx context.Context, followeeID string, followerIDs []string) (map[string]bool, error) {
+	out := map[string]bool{}
+	if len(followerIDs) == 0 {
+		return out, nil
+	}
+	list, err := sqlite.JSONList(followerIDs)
+	if err != nil {
+		return nil, err
+	}
+	ids, err := r.db.reader().ListFeedFollowersAmong(ctx, timelinegen.ListFeedFollowersAmongParams{Followee: followeeID, FollowerIds: list})
+	if err != nil {
+		return nil, sqlite.Wrap(err, "list feed followers")
+	}
+	for _, id := range ids {
+		out[id] = true
+	}
+	return out, nil
+}
+
 // ListHome implements timeline.Repository.
 func (r *Repository) ListHome(ctx context.Context, hq apptimeline.HomeQuery) ([]apptimeline.Entry, error) {
 	all, langs, err := languages(hq.Languages)

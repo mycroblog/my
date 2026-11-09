@@ -86,6 +86,36 @@ func (p *FederationPolicy) FederationSuspendedAmong(ctx context.Context, domains
 	return out, nil
 }
 
+// DomainRestrictionsAmong returns DomainRestrictions of each of domains, by domain, reading the
+// restrictions of the domains and their parents with one query.
+func (p *FederationPolicy) DomainRestrictionsAmong(ctx context.Context, domains []string) (map[string][]moderation.Restriction, error) {
+	var all []string
+	for _, d := range domains {
+		for _, dd := range moderation.DomainAndParents(d) {
+			if !slices.Contains(all, dd) {
+				all = append(all, dd)
+			}
+		}
+	}
+	out := make(map[string][]moderation.Restriction, len(domains))
+	if len(all) == 0 {
+		return out, nil
+	}
+	of, err := p.repo.DomainRestrictionsInEffectOf(ctx, all, p.clock.Now())
+	if err != nil {
+		return nil, err
+	}
+	for _, d := range domains {
+		var rs []moderation.Restriction
+		for _, dd := range moderation.DomainAndParents(d) {
+			rs = append(rs, of[dd]...)
+		}
+		slices.Sort(rs)
+		out[d] = slices.Compact(rs)
+	}
+	return out, nil
+}
+
 // AccountFederationSuspended reports whether an account has the federation restriction
 // (suspend, ban): a remote account's activities are dropped.
 func (p *FederationPolicy) AccountFederationSuspended(ctx context.Context, accountID string) (bool, error) {

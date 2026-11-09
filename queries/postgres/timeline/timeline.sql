@@ -134,6 +134,11 @@ SELECT viewer_account_id, domain FROM feed_domain_mutes ORDER BY viewer_account_
 -- ListHomeEntries is the home timeline (FR-201) of a viewer: the posts of the viewer and of the
 -- accounts the viewer follows, their boosts unless the follow hides them, and the viewer's own
 -- boosts, within the read window (id >= window_floor).
+-- The accounts among follower_ids whose home timelines follow the followee.
+-- name: ListFeedFollowersAmong :many
+SELECT follower_account_id FROM feed_follow_edges
+WHERE followee_account_id = sqlc.arg(followee) AND follower_account_id = ANY(sqlc.arg(follower_ids)::uuid[]);
+
 -- name: ListHomeEntries :many
 SELECT e.id, e.kind, e.status_id, e.author_account_id, e.author_domain, e.original_author_account_id,
   e.original_author_domain, e.visibility, e.is_local, e.language, e.revision_seq, e.is_reply

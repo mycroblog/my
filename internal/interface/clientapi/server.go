@@ -388,6 +388,11 @@ type Server struct {
 	o Options
 	// streams counts the open streams.
 	streams kernel.UpDownCounter
+	// home decides which user streams of the process check a new home entry.
+	home *homeGate
+	// monitor checks the tokens of the open streams of the process on every heartbeat; nil
+	// leaves each stream to check its own.
+	monitor *streamMonitor
 }
 
 var _ StrictServerInterface = (*Server)(nil)
@@ -412,7 +417,15 @@ func New(o Options) *Server {
 	if o.Authenticator == nil {
 		o.Authenticator = noTokens{}
 	}
-	return &Server{o: o, streams: kernel.MeterOrNop(o.Meter).UpDownCounter(StreamConnections)}
+	s := &Server{o: o, streams: kernel.MeterOrNop(o.Meter).UpDownCounter(StreamConnections), home: newHomeGate()}
+	if b, ok := o.Authenticator.(bearerBatch); ok {
+		every := o.StreamHeartbeat
+		if every <= 0 {
+			every = DefaultStreamHeartbeat
+		}
+		s.monitor = newStreamMonitor(s, b, every)
+	}
+	return s
 }
 
 // Router registers handlers for http.ServeMux patterns.

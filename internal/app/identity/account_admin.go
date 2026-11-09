@@ -232,13 +232,18 @@ scan:
 		if err != nil {
 			return nil, "", err
 		}
+		ids := make([]string, len(cs))
+		for i, c := range cs {
+			ids[i] = c.accountID
+		}
+		matched, err := s.matchAll(ctx, ids, q)
+		if err != nil {
+			return nil, "", err
+		}
 		for _, c := range cs {
 			scanned++
 			before = c.key
-			a, ok, err := s.match(ctx, c.accountID, q)
-			if err != nil {
-				return nil, "", err
-			}
+			a, ok := matched[c.accountID]
 			if ok {
 				if items = append(items, found{c.key, a}); len(items) > limit {
 					break scan
@@ -381,47 +386,111 @@ func (s *AccountAdmin) users(list func(ctx context.Context, before string, limit
 		if err != nil {
 			return nil, err
 		}
+		locals, err := s.d.Accounts.LocalAccountsOfUsers(ctx, ids)
+		if err != nil {
+			return nil, err
+		}
 		out := make([]candidate, len(ids))
 		for i, id := range ids {
-			la, err := s.d.Accounts.LocalAccountOfUser(ctx, id)
-			if err != nil && !errors.Is(err, account.ErrNotFound) {
-				return nil, err
-			}
-			out[i] = candidate{key: id, accountID: la.AccountID}
+			out[i] = candidate{key: id, accountID: locals[id].AccountID}
 		}
 		return out, nil
 	}
 }
 
-// match returns the account accountID and whether it meets the conditions of q that its source
-// does not check.
-func (s *AccountAdmin) match(ctx context.Context, accountID string, q AccountSearch) (AdminAccount, bool, error) {
-	if accountID == "" {
-		return AdminAccount{}, false, nil
+// matchAll returns, by account, those of ids that exist and meet the conditions of q that their
+// source does not check, reading the accounts, their restrictions, and the registration states
+// of their users together.
+func (s *AccountAdmin) matchAll(ctx context.Context, ids []string, q AccountSearch) (map[string]AdminAccount, error) {
+	var unique []string
+	for _, id := range ids {
+		if id != "" && !slices.Contains(unique, id) {
+			unique = append(unique, id)
+		}
 	}
-	actor, err := s.d.Accounts.FindByID(ctx, accountID)
-	switch {
-	case errors.Is(err, account.ErrNotFound):
-		return AdminAccount{}, false, nil
-	case err != nil:
-		return AdminAccount{}, false, err
-	case actor.IsInstanceActor():
-		return AdminAccount{}, false, nil
-	}
-	local := actor.Account.IsLocal()
-	switch {
-	case q.Origin == account.OriginLocal && !local, q.Origin == account.OriginRemote && local:
-		return AdminAccount{}, false, nil
-	case q.Domain != "" && actor.Account.Domain != account.NormalizeDomain(q.Domain):
-		return AdminAccount{}, false, nil
-	case q.Username != "" && !strings.HasPrefix(username(actor), account.NormalizeUsername(q.Username)):
-		return AdminAccount{}, false, nil
-	}
-	a, err := s.present(ctx, actor)
+	actors, err := s.d.Accounts.FindByIDs(ctx, unique)
 	if err != nil {
-		return AdminAccount{}, false, err
+		return nil, err
 	}
-	return a, q.State == "" || a.State == q.State, nil
+	var kept []account.Actor
+	for _, id := range unique {
+		actor, ok := actors[id]
+		if !ok || actor.IsInstanceActor() {
+			continue
+		}
+		local := actor.Account.IsLocal()
+		switch {
+		case q.Origin == account.OriginLocal && !local, q.Origin == account.OriginRemote && local:
+			continue
+		case q.Domain != "" && actor.Account.Domain != account.NormalizeDomain(q.Domain):
+			continue
+		case q.Username != "" && !strings.HasPrefix(username(actor), account.NormalizeUsername(q.Username)):
+			continue
+		}
+		kept = append(kept, actor)
+	}
+	presented, err := s.presentAll(ctx, kept)
+	if err != nil {
+		return nil, err
+	}
+	out := make(map[string]AdminAccount, len(presented))
+	for _, a := range presented {
+		if q.State == "" || a.State == q.State {
+			out[a.Actor.Account.ID] = a
+		}
+	}
+	return out, nil
+}
+
+// ownRestrictionBatch is an AccountRestrictions that reads those of many accounts at once, as
+// *appmoderation.AccountPolicy does.
+type ownRestrictionBatch interface {
+	OwnRestrictionsOf(ctx context.Context, accountIDs []string) (map[string][]appmoderation.Restriction, error)
+}
+
+// presentAll returns the accounts of actors with their states as present returns each, reading
+// their restrictions and registration states together.
+func (s *AccountAdmin) presentAll(ctx context.Context, actors []account.Actor) ([]AdminAccount, error) {
+	ids := make([]string, len(actors))
+	var users []string
+	for i, a := range actors {
+		ids[i] = a.Account.ID
+		if a.Local != nil && a.Local.UserID != "" {
+			users = append(users, a.Local.UserID)
+		}
+	}
+	restrictions := make(map[string][]appmoderation.Restriction, len(ids))
+	if b, ok := s.d.Restrictions.(ownRestrictionBatch); ok && len(ids) > 0 {
+		var err error
+		if restrictions, err = b.OwnRestrictionsOf(ctx, ids); err != nil {
+			return nil, fmt.Errorf("identity: restrictions of %d accounts: %w", len(ids), err)
+		}
+	} else {
+		for _, id := range ids {
+			rs, err := s.d.Restrictions.OwnRestrictions(ctx, id)
+			if err != nil {
+				return nil, fmt.Errorf("identity: restrictions of %s: %w", id, err)
+			}
+			restrictions[id] = rs
+		}
+	}
+	states, err := s.d.Repository.FindRegistrationStates(ctx, users)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]AdminAccount, len(actors))
+	for i, a := range actors {
+		item := AdminAccount{Actor: a, Restrictions: restrictions[a.Account.ID]}
+		if a.Local != nil && a.Local.UserID != "" {
+			item.UserID = a.Local.UserID
+			if st, ok := states[item.UserID]; ok {
+				item.Registration = &st
+			}
+		}
+		item.State = adminState(item)
+		out[i] = item
+	}
+	return out, nil
 }
 
 // username returns the normalized username of an account's handle, "" without one.
@@ -616,22 +685,23 @@ func (s *AccountAdmin) sameIP(ctx context.Context, userID string, d PrivateData)
 			return nil, err
 		}
 		group := SameIPAccounts{IP: ip, Accounts: []AdminAccount{}}
-		for _, id := range ids {
-			if id == userID || len(group.Accounts) == MaxSameIPAccounts {
-				continue
+		others := slices.DeleteFunc(ids, func(id string) bool { return id == userID })
+		locals, err := s.d.Accounts.LocalAccountsOfUsers(ctx, others)
+		if err != nil {
+			return nil, err
+		}
+		accountIDs := make([]string, 0, len(others))
+		for _, id := range others {
+			if la, ok := locals[id]; ok {
+				accountIDs = append(accountIDs, la.AccountID)
 			}
-			la, err := s.d.Accounts.LocalAccountOfUser(ctx, id)
-			switch {
-			case errors.Is(err, account.ErrNotFound):
-				continue
-			case err != nil:
-				return nil, err
-			}
-			a, ok, err := s.match(ctx, la.AccountID, AccountSearch{})
-			if err != nil {
-				return nil, err
-			}
-			if ok {
+		}
+		matched, err := s.matchAll(ctx, accountIDs, AccountSearch{})
+		if err != nil {
+			return nil, err
+		}
+		for _, id := range accountIDs {
+			if a, ok := matched[id]; ok && len(group.Accounts) < MaxSameIPAccounts {
 				group.Accounts = append(group.Accounts, a)
 			}
 		}

@@ -36,6 +36,9 @@ type RegistrationRepository interface {
 	// has no decision or the decision has no note.
 	RegistrationDecisionNote(ctx context.Context, applicationID string) (string, error)
 	FindRegistrationState(ctx context.Context, userID string) (identity.UserRegistrationState, error)
+	// FindRegistrationStates returns the registration states of the users of userIDs that have
+	// one, by user, as FindRegistrationState returns each, with one query.
+	FindRegistrationStates(ctx context.Context, userIDs []string) (map[string]identity.UserRegistrationState, error)
 	// ListRegistrations returns the users in a registration state with their applications,
 	// longest in the state first, after the position after (all of them for the zero
 	// position), at most limit of them.
@@ -77,6 +80,9 @@ type RegistrationRepository interface {
 	InsertEmailVerification(ctx context.Context, tx uow.Tx, v identity.EmailVerification) error
 	// FindPrimaryEmail returns a user's primary email address and whether it is verified.
 	FindPrimaryEmail(ctx context.Context, userID string) (identity.EmailAddress, bool, error)
+	// PrimaryEmailsVerified returns, of the users among userIDs that have a primary address,
+	// whether it is verified, by user, with one query.
+	PrimaryEmailsVerified(ctx context.Context, userIDs []string) (map[string]bool, error)
 }
 
 // RegistrationPosition is the place of a registration in ListRegistrations: the time it
@@ -761,10 +767,17 @@ func (s *Service) ListRegistrationsAfter(ctx context.Context, state identity.Reg
 	if err != nil {
 		return nil, err
 	}
+	users := make([]string, len(entries))
+	for i, e := range entries {
+		users[i] = e.Application.UserID
+	}
+	locals, err := s.d.Accounts.LocalAccountsOfUsers(ctx, users)
+	if err != nil {
+		return nil, err
+	}
 	for i := range entries {
-		if entries[i].AccountID, entries[i].Username, err = s.localAccountOf(ctx, entries[i].Application.UserID); err != nil {
-			return nil, err
-		}
+		la := locals[entries[i].Application.UserID]
+		entries[i].AccountID, entries[i].Username = la.AccountID, la.Username
 	}
 	return entries, nil
 }

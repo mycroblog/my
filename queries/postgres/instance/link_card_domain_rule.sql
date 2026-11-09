@@ -21,3 +21,9 @@ SELECT domain, mode, note, updated_at FROM link_card_domain_rules ORDER BY domai
 SELECT DISTINCT mode FROM link_card_domain_rules
 WHERE domain = ANY(sqlc.arg(domains)::text[])
 ORDER BY mode;
+
+-- The modes of the rules of each of the domains, as ListLinkCardDomainModes reads those of all.
+-- name: ListLinkCardDomainModesOf :many
+SELECT DISTINCT domain, mode FROM link_card_domain_rules
+WHERE domain = ANY(sqlc.arg(domains)::text[])
+ORDER BY domain, mode;

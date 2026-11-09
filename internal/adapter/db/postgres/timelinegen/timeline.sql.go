@@ -999,8 +999,46 @@ func (q *Queries) ListFeedFollowedAmong(ctx context.Context, arg ListFeedFollowe
 	return items, nil
 }
 
-const listHomeEntries = `-- name: ListHomeEntries :many
+const listFeedFollowersAmong = `-- name: ListFeedFollowersAmong :many
 
+SELECT follower_account_id FROM feed_follow_edges
+WHERE followee_account_id = $1 AND follower_account_id = ANY($2::uuid[])
+`
+
+type ListFeedFollowersAmongParams struct {
+	Followee    string
+	FollowerIds []string
+}
+
+// Timelines (data-model 6) ----------------------------------------------------------------------
+// before = ” starts at the newest entry. A language filter applies when all_languages is 0:
+// entries in an undetermined language ('und') always pass. A restriction or mute applies while
+// its end is NULL or after now. A domain restriction also covers the subdomains of its domain.
+// ListHomeEntries is the home timeline (FR-201) of a viewer: the posts of the viewer and of the
+// accounts the viewer follows, their boosts unless the follow hides them, and the viewer's own
+// boosts, within the read window (id >= window_floor).
+// The accounts among follower_ids whose home timelines follow the followee.
+func (q *Queries) ListFeedFollowersAmong(ctx context.Context, arg ListFeedFollowersAmongParams) ([]string, error) {
+	rows, err := q.db.Query(ctx, listFeedFollowersAmong, arg.Followee, arg.FollowerIds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []string{}
+	for rows.Next() {
+		var follower_account_id string
+		if err := rows.Scan(&follower_account_id); err != nil {
+			return nil, err
+		}
+		items = append(items, follower_account_id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listHomeEntries = `-- name: ListHomeEntries :many
 SELECT e.id, e.kind, e.status_id, e.author_account_id, e.author_domain, e.original_author_account_id,
   e.original_author_domain, e.visibility, e.is_local, e.language, e.revision_seq, e.is_reply
 FROM feed_entries e
@@ -1049,13 +1087,6 @@ type ListHomeEntriesParams struct {
 	PageLimit    int32
 }
 
-// Timelines (data-model 6) ----------------------------------------------------------------------
-// before = ” starts at the newest entry. A language filter applies when all_languages is 0:
-// entries in an undetermined language ('und') always pass. A restriction or mute applies while
-// its end is NULL or after now. A domain restriction also covers the subdomains of its domain.
-// ListHomeEntries is the home timeline (FR-201) of a viewer: the posts of the viewer and of the
-// accounts the viewer follows, their boosts unless the follow hides them, and the viewer's own
-// boosts, within the read window (id >= window_floor).
 func (q *Queries) ListHomeEntries(ctx context.Context, arg ListHomeEntriesParams) ([]FeedEntry, error) {
 	rows, err := q.db.Query(ctx, listHomeEntries,
 		arg.Viewer,

@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"slices"
 
 	appaccount "github.com/mycroblog/my/internal/app/account"
 	appcontent "github.com/mycroblog/my/internal/app/content"
@@ -110,29 +111,36 @@ func (s *Server) userAccounts(ctx context.Context, userIDs []string) (map[string
 // userAccountsWith is userAccounts through reads.
 func (s *Server) userAccountsWith(ctx context.Context, reads presentReads, userIDs []string) (map[string]Account, error) {
 	out := map[string]Account{}
+	var unique []string
+	for _, u := range userIDs {
+		if u != "" && !slices.Contains(unique, u) {
+			unique = append(unique, u)
+		}
+	}
+	locals, err := reads.LocalAccountsOfUsers(ctx, unique)
+	if err != nil {
+		return nil, fmt.Errorf("clientapi: the accounts of %d users: %w", len(unique), err)
+	}
+	ids := make([]string, 0, len(locals))
+	for _, u := range unique {
+		if la, ok := locals[u]; ok {
+			ids = append(ids, la.AccountID)
+		}
+	}
+	found, err := reads.FindByIDs(ctx, ids)
+	if err != nil {
+		return nil, fmt.Errorf("clientapi: the accounts of %d users: %w", len(unique), err)
+	}
 	var actors []appaccount.Actor
 	var users []string
-	seen := map[string]bool{}
-	for _, u := range userIDs {
-		if u == "" || seen[u] {
+	for _, u := range unique {
+		la, ok := locals[u]
+		if !ok {
 			continue
 		}
-		seen[u] = true
-		la, err := reads.LocalAccountOfUser(ctx, u)
-		if errors.Is(err, appaccount.ErrNotFound) {
-			continue
+		if a, ok := found[la.AccountID]; ok && !a.Deleted() {
+			actors, users = append(actors, a), append(users, u)
 		}
-		if err != nil {
-			return nil, fmt.Errorf("clientapi: the account of user %s: %w", u, err)
-		}
-		a, err := reads.FindByID(ctx, la.AccountID)
-		if errors.Is(err, appaccount.ErrNotFound) || err == nil && a.Deleted() {
-			continue
-		}
-		if err != nil {
-			return nil, fmt.Errorf("clientapi: account %s: %w", la.AccountID, err)
-		}
-		actors, users = append(actors, a), append(users, u)
 	}
 	presented, err := s.newAccountsWith(ctx, reads, actors)
 	if err != nil {

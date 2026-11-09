@@ -397,6 +397,19 @@ func (s *Server) RetireSupporterPlan(ctx context.Context, req RetireSupporterPla
 }
 
 func (s *Server) newAdminSupporterSubscription(ctx context.Context, sv appsupporters.SubscriptionView) (AdminSupporterSubscription, error) {
+	u, ok, err := s.o.Supporters.Subscriber(ctx, sv.UserID)
+	if err != nil {
+		return AdminSupporterSubscription{}, fmt.Errorf("clientapi: the subscriber of %s: %w", sv.ID, err)
+	}
+	subscribers := map[string]appsupporters.User{}
+	if ok {
+		subscribers[sv.UserID] = u
+	}
+	return newAdminSupporterSubscriptionOf(sv, subscribers), nil
+}
+
+// newAdminSupporterSubscriptionOf presents sv with its subscriber among subscribers, by user.
+func newAdminSupporterSubscriptionOf(sv appsupporters.SubscriptionView, subscribers map[string]appsupporters.User) AdminSupporterSubscription {
 	cur := sv.Current
 	out := AdminSupporterSubscription{
 		Id: sv.ID, State: SupporterSubscriptionState(cur.State), PlanId: cur.PlanID, PlanName: sv.Plan.Revision.Name,
@@ -417,12 +430,33 @@ func (s *Server) newAdminSupporterSubscription(ctx context.Context, sv appsuppor
 		id, interval := sp.PlanID, SupporterInterval(sp.Interval)
 		out.ScheduledPlanId, out.ScheduledInterval = &id, &interval
 	}
-	u, ok, err := s.o.Supporters.Subscriber(ctx, sv.UserID)
-	if err != nil {
-		return AdminSupporterSubscription{}, fmt.Errorf("clientapi: the subscriber of %s: %w", sv.ID, err)
-	}
-	if ok {
+	if u, ok := subscribers[sv.UserID]; ok {
 		out.AccountId, out.Username = &u.AccountID, new(strings.TrimPrefix(u.Handle, "@"))
+	}
+	return out
+}
+
+// subscriberBatch is a Supporters that reads the accounts of many subscribers at once, as
+// *appsupporters.Service does.
+type subscriberBatch interface {
+	SubscriberAccounts(ctx context.Context, userIDs []string) (map[string]appsupporters.User, error)
+}
+
+// subscriberAccounts returns the subscribers of userIDs that have a local account, by user:
+// together when Supporters can, one by one otherwise.
+func (s *Server) subscriberAccounts(ctx context.Context, userIDs []string) (map[string]appsupporters.User, error) {
+	if b, ok := s.o.Supporters.(subscriberBatch); ok {
+		return b.SubscriberAccounts(ctx, userIDs)
+	}
+	out := make(map[string]appsupporters.User, len(userIDs))
+	for _, id := range userIDs {
+		u, ok, err := s.o.Supporters.Subscriber(ctx, id)
+		if err != nil {
+			return nil, err
+		}
+		if ok {
+			out[id] = u
+		}
 	}
 	return out, nil
 }
@@ -456,12 +490,16 @@ func (s *Server) ListSupporterSubscriptions(ctx context.Context, req ListSupport
 	}
 	subs, last := trim(subs, q.limit)
 	page := AdminSupporterSubscriptionPage{Items: make([]AdminSupporterSubscription, 0, len(subs))}
+	users := make([]string, len(subs))
+	for i, sv := range subs {
+		users[i] = sv.UserID
+	}
+	subscribers, err := s.subscriberAccounts(ctx, users)
+	if err != nil {
+		return nil, fmt.Errorf("clientapi: the subscribers: %w", err)
+	}
 	for _, sv := range subs {
-		item, err := s.newAdminSupporterSubscription(ctx, sv)
-		if err != nil {
-			return nil, err
-		}
-		page.Items = append(page.Items, item)
+		page.Items = append(page.Items, newAdminSupporterSubscriptionOf(sv, subscribers))
 	}
 	if last >= 0 {
 		page.NextCursor = encodeCursor(subs[last].ID)
