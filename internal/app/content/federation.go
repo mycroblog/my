@@ -192,6 +192,61 @@ func (s *Service) ObjectStatus(ctx context.Context, id string) (Status, Revision
 	return st, rev, true, err
 }
 
+// LiveStatuses returns the statuses of ids that exist and are not deleted, by ID, as ObjectStatus
+// finds them, with one query each for the statuses and their deletions.
+func (s *Service) LiveStatuses(ctx context.Context, ids []string) (map[string]Status, error) {
+	statuses, err := s.d.Repository.FindStatuses(ctx, ids)
+	if err != nil {
+		return nil, err
+	}
+	deletions, err := s.d.Repository.FindDeletions(ctx, ids)
+	if err != nil {
+		return nil, err
+	}
+	for id := range deletions {
+		delete(statuses, id)
+	}
+	return statuses, nil
+}
+
+// CurrentRevisions returns the current revisions of the statuses of ids that have one, by status,
+// as ObjectStatus reads that of a live status, with one query.
+func (s *Service) CurrentRevisions(ctx context.Context, ids []string) (map[string]Revision, error) {
+	return s.d.Repository.FindCurrentRevisions(ctx, ids)
+}
+
+// AuthorRestrictionsOf returns AuthorRestrictions of each of accountIDs, by account, reading the
+// restrictions together when the policy can and the accounts with one query per part.
+func (s *Service) AuthorRestrictionsOf(ctx context.Context, accountIDs []string) (map[string]AuthorRestrictions, error) {
+	rs := make(map[string]Restrictions, len(accountIDs))
+	if b, ok := s.d.Restrictions.(restrictionBatch); ok {
+		var err error
+		if rs, err = b.RestrictionsOf(ctx, accountIDs); err != nil {
+			return nil, err
+		}
+	} else {
+		for _, id := range accountIDs {
+			r, err := s.d.Restrictions.Restrictions(ctx, id)
+			if err != nil {
+				return nil, err
+			}
+			rs[id] = r
+		}
+	}
+	authors, err := s.d.Accounts.FindByIDs(ctx, accountIDs)
+	if err != nil {
+		return nil, err
+	}
+	out := make(map[string]AuthorRestrictions, len(accountIDs))
+	for _, id := range accountIDs {
+		r := rs[id].Author
+		author, ok := authors[id]
+		r.ProfileView = r.ProfileView || !ok || !author.Lifecycle.Active()
+		out[id] = r
+	}
+	return out, nil
+}
+
 // PostCount returns the number of statuses of an account that are not deleted, as its outbox
 // reports it.
 func (s *Service) PostCount(ctx context.Context, accountID string) (int64, error) {
