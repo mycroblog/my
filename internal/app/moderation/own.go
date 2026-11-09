@@ -5,6 +5,7 @@ package moderation
 import (
 	"context"
 	"fmt"
+	"slices"
 	"time"
 
 	"github.com/mycroblog/my/internal/app/kernel"
@@ -89,6 +90,30 @@ func (s *Service) OwnActions(ctx context.Context, accountID string, f OwnActionF
 
 // OwnAction returns an action on accountID as the account sees it; an unknown action, or one
 // on another account, fails with ErrNotFound.
+// OwnActionsByID returns the actions of ids on accountID, by ID, as OwnAction returns one, reading
+// them together; one on another account or missing is left out.
+func (s *Service) OwnActionsByID(ctx context.Context, accountID string, ids []string) (map[string]TargetActionView, error) {
+	records, err := s.d.Repository.FindActionRecords(ctx, ids)
+	if err != nil {
+		return nil, err
+	}
+	var own []moderation.ActionRecord
+	for _, id := range ids {
+		if r, ok := records[id]; ok && r.Action.TargetAccountID == accountID && !slices.ContainsFunc(own, func(o moderation.ActionRecord) bool { return o.Action.ID == id }) {
+			own = append(own, r)
+		}
+	}
+	vs, err := s.targetViews(ctx, own, kernel.Normalize(s.d.Clock.Now()))
+	if err != nil {
+		return nil, err
+	}
+	out := make(map[string]TargetActionView, len(vs))
+	for i, v := range vs {
+		out[own[i].Action.ID] = v
+	}
+	return out, nil
+}
+
 func (s *Service) OwnAction(ctx context.Context, accountID, actionID string) (TargetActionView, error) {
 	r, err := s.d.Repository.FindActionRecord(ctx, actionID)
 	if err != nil {

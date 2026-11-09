@@ -34,11 +34,16 @@ func (r *Repository) FindSeverance(ctx context.Context, accountID, id string) (m
 	if err != nil {
 		return moderation.SeveranceRecord{}, sqlite.NotFound(err, appmoderation.ErrNotFound, "relationship severance "+id)
 	}
+	return severanceFrom(row), nil
+}
+
+// severanceFrom returns the severance of row with what it severed.
+func severanceFrom(row moderationgen.GetRelationshipSeveranceRow) moderation.SeveranceRecord {
 	return moderation.SeveranceRecord{
 		Severance: moderation.Severance{
 			ID: row.ID, DomainActionID: row.DomainActionID.String, ActionID: row.ActionID.String, AccountID: row.AccountID,
 			FollowersLost: int(row.FollowersLost), FollowingLost: int(row.FollowingLost), OccurredAt: sqlite.FromMillis(row.OccurredAt),
 		},
 		Domain: row.TargetDomain.String, TargetAccountID: row.TargetAccountID.String,
-	}, nil
+	}
 }

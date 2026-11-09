@@ -475,6 +475,10 @@ func instanceRepoAnnouncements(t *testing.T, r *instanceRepo) {
 	}
 	_, err := r.i.FindAnnouncement(ctx, r.ids.NewID())
 	wantNotFound(t, "FindAnnouncement(unknown)", err)
+	if got, err := r.i.FindAnnouncements(ctx, []string{showing.ID, withdrawn.ID, r.ids.NewID()}); err != nil ||
+		!reflect.DeepEqual(got, map[string]instance.Announcement{showing.ID: showing, withdrawn.ID: withdrawn}) {
+		t.Errorf("FindAnnouncements = %+v, %v; want the two that exist", got, err)
+	}
 	ids := func(as []instance.Announcement) []string {
 		var out []string
 		for _, a := range as {
@@ -585,6 +589,10 @@ func instanceRepoClosure(t *testing.T, r *instanceRepo) {
 	}
 	_, err = r.i.FindClosureEvent(ctx, r.ids.NewID())
 	wantNotFound(t, "FindClosureEvent(unknown)", err)
+	if got, err := r.i.FindClosureEvents(ctx, []string{announced.ID, closed.ID, r.ids.NewID()}); err != nil || len(got) != 2 ||
+		!sameClosureEvent(got[announced.ID], announced) || !sameClosureEvent(got[closed.ID], closed) {
+		t.Errorf("FindClosureEvents = %+v, %v; want the two that exist", got, err)
+	}
 	r.tx(t, func(ctx context.Context, tx uow.Tx) error { return r.i.DeleteClosureHead(ctx, tx) })
 	_, err = r.i.CurrentClosure(ctx)
 	wantNotFound(t, "CurrentClosure after DeleteClosureHead", err)

@@ -115,6 +115,9 @@ type Repository interface {
 	// FindAccounts returns the accounts of ids that exist, by ID, as FindAccount returns one, with
 	// one query.
 	FindAccounts(ctx context.Context, ids []string) (map[string]account.Account, error)
+	// FindLocalAccountsByUsers returns the local accounts of the users of userIDs that have one, by
+	// user ID, as FindLocalAccountByUser returns one, with one query.
+	FindLocalAccountsByUsers(ctx context.Context, userIDs []string) (map[string]account.LocalAccount, error)
 	// AccountsOnDomain returns inside tx, in ID order, the accounts among ids that are on domain
 	// or one of its subdomains.
 	AccountsOnDomain(ctx context.Context, tx uow.Tx, domain string, ids []string) ([]string, error)

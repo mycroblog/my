@@ -53,6 +53,9 @@ type StatusReader interface {
 	Bookmarks(ctx context.Context, viewer appcontent.Viewer, before string, limit int) (appcontent.BookmarkPage, error)
 	Reactions(ctx context.Context, viewer appcontent.Viewer, statusID, emoji, before string, limit int) (appcontent.ReactedPage, error)
 	ReactionEmoji(ctx context.Context, e appcontent.ReactionEmoji) (appcontent.EmojiView, error)
+	// ReactionEmojis returns many reactions' emoji, by key, as ReactionEmoji returns one, reading
+	// the custom emoji together; one whose custom emoji is gone is left out.
+	ReactionEmojis(ctx context.Context, emojis []appcontent.ReactionEmoji) (map[string]appcontent.EmojiView, error)
 	Quotes(ctx context.Context, viewer appcontent.Viewer, statusID, before string, limit int) (appcontent.QuotesPage, error)
 }
 

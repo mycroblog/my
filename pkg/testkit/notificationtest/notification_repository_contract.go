@@ -492,6 +492,17 @@ func notificationRepoErrorGroupNotices(t *testing.T, r *notificationRepo) {
 			t.Errorf("ErrorGroupNotices(%v) = %d, %v; want %d", at, got, err, want)
 		}
 	}
+	if got, err := r.repo.ErrorGroupNoticesOf(ctx, []time.Time{hour, next, next.Add(time.Hour)}); err != nil {
+		t.Errorf("ErrorGroupNoticesOf = %v", err)
+	} else {
+		byMilli := map[int64]int64{}
+		for at, c := range got {
+			byMilli[at.UnixMilli()] = c
+		}
+		if want := map[int64]int64{hour.UnixMilli(): n, next.UnixMilli(): 1}; !reflect.DeepEqual(byMilli, want) {
+			t.Errorf("ErrorGroupNoticesOf = %v (by millisecond); want %v", byMilli, want)
+		}
+	}
 	if d, err := r.repo.DeleteErrorGroupNoticesBefore(ctx, next); err != nil || d != 1 {
 		t.Errorf("DeleteErrorGroupNoticesBefore(the next hour) = %d, %v; want 1", d, err)
 	}

@@ -5,6 +5,7 @@ package notificationtest
 import (
 	"context"
 	"errors"
+	"reflect"
 	"testing"
 	"time"
 
@@ -123,6 +124,18 @@ func severanceRepoRecords(t *testing.T, r *severanceRepo) {
 	}
 	if _, err := r.h.Moderation.FindSeverance(ctx, alice, r.ids.NewID()); !errors.Is(err, appmoderation.ErrNotFound) {
 		t.Errorf("FindSeverance(unknown) = %v, want ErrNotFound", err)
+	}
+	byAlice, err := r.h.Moderation.FindSeverances(ctx, alice, []string{ofAction.ID, ofDomain.ID, r.ids.NewID()})
+	if err != nil || len(byAlice) != 2 {
+		t.Errorf("FindSeverances(alice) = %+v, %v; want the two of alice", byAlice, err)
+	}
+	for _, id := range []string{ofAction.ID, ofDomain.ID} {
+		if one, err := r.h.Moderation.FindSeverance(ctx, alice, id); err != nil || !reflect.DeepEqual(byAlice[id], one) {
+			t.Errorf("FindSeverances(alice)[%s] = %+v; want %+v as FindSeverance reads it (%v)", id, byAlice[id], one, err)
+		}
+	}
+	if got, err := r.h.Moderation.FindSeverances(ctx, bob, []string{ofAction.ID}); err != nil || len(got) != 0 {
+		t.Errorf("FindSeverances(bob, alice's) = %+v, %v; want none", got, err)
 	}
 }
 

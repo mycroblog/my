@@ -782,6 +782,90 @@ func (q *Queries) ListHookDecisionAppeals(ctx context.Context, arg ListHookDecis
 	return items, nil
 }
 
+const listHookDecisionAppealsByIDs = `-- name: ListHookDecisionAppealsByIDs :many
+SELECT a.id AS appeal_id, a.decision_id AS appeal_decision_id, a.account_id AS appeal_account_id, a.status_text, a.comment, a.submitted_at,
+  r.decision AS review, r.decided_by_user_id AS reviewed_by_user_id, r.decided_at AS reviewed_at,
+  d.id, d.hook, d.subject_key, d.account_id, d.mode, d.outcome, d.reason_code, d.note, d.latency_ms, d.decided_at,
+  o.decision_id AS overridden_decision_id, o.overridden_by_user_id, o.overridden_at
+FROM hook_decision_appeals a
+JOIN hook_decisions d ON d.id = a.decision_id
+LEFT JOIN hook_decision_appeal_decisions r ON r.appeal_id = a.id
+LEFT JOIN hook_decision_overrides o ON o.decision_id = d.id
+WHERE a.id IN (SELECT value FROM json_each(CAST(?1 AS TEXT)))
+`
+
+type ListHookDecisionAppealsByIDsRow struct {
+	AppealID             string
+	AppealDecisionID     string
+	AppealAccountID      string
+	StatusText           string
+	Comment              string
+	SubmittedAt          int64
+	Review               sql.NullString
+	ReviewedByUserID     sql.NullString
+	ReviewedAt           sql.NullInt64
+	ID                   string
+	Hook                 string
+	SubjectKey           string
+	AccountID            sql.NullString
+	Mode                 string
+	Outcome              string
+	ReasonCode           string
+	Note                 string
+	LatencyMs            int64
+	DecidedAt            int64
+	OverriddenDecisionID sql.NullString
+	OverriddenByUserID   sql.NullString
+	OverriddenAt         sql.NullInt64
+}
+
+// The appeals of ids that exist, as GetHookDecisionAppeal reads one.
+func (q *Queries) ListHookDecisionAppealsByIDs(ctx context.Context, ids string) ([]ListHookDecisionAppealsByIDsRow, error) {
+	rows, err := q.db.QueryContext(ctx, listHookDecisionAppealsByIDs, ids)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListHookDecisionAppealsByIDsRow{}
+	for rows.Next() {
+		var i ListHookDecisionAppealsByIDsRow
+		if err := rows.Scan(
+			&i.AppealID,
+			&i.AppealDecisionID,
+			&i.AppealAccountID,
+			&i.StatusText,
+			&i.Comment,
+			&i.SubmittedAt,
+			&i.Review,
+			&i.ReviewedByUserID,
+			&i.ReviewedAt,
+			&i.ID,
+			&i.Hook,
+			&i.SubjectKey,
+			&i.AccountID,
+			&i.Mode,
+			&i.Outcome,
+			&i.ReasonCode,
+			&i.Note,
+			&i.LatencyMs,
+			&i.DecidedAt,
+			&i.OverriddenDecisionID,
+			&i.OverriddenByUserID,
+			&i.OverriddenAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listHookDecisionIDsOfAccount = `-- name: ListHookDecisionIDsOfAccount :many
 SELECT id FROM hook_decisions WHERE account_id = ? ORDER BY id LIMIT ?
 `

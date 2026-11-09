@@ -268,6 +268,9 @@ func emojiRepoLookups(t *testing.T, r *emojiRepo) {
 	if got, err := statuses.FindCustomEmoji(ctx, local.ID); err != nil || got != local {
 		t.Errorf("FindCustomEmoji = %+v, %v; want %+v", got, err, local)
 	}
+	if got, err := statuses.FindCustomEmojis(ctx, []string{local.ID, "01890a5d-0000-7000-8000-000000000000"}); err != nil || len(got) != 1 || got[local.ID] != local {
+		t.Errorf("FindCustomEmojis = %+v, %v; want %+v alone, as FindCustomEmoji", got, err, local)
+	}
 	if got, err := statuses.FindCustomEmojiByShortcode(ctx, "local", ""); err != nil || got != local {
 		t.Errorf("FindCustomEmojiByShortcode = %+v, %v; want %+v", got, err, local)
 	}

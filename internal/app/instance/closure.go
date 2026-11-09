@@ -33,6 +33,9 @@ type ClosureRepository interface {
 	CurrentClosure(ctx context.Context) (instance.Closure, error)
 	// FindClosureEvent returns an event with its schedule, ErrNotFound when there is none.
 	FindClosureEvent(ctx context.Context, id string) (instance.ClosureEvent, error)
+	// FindClosureEvents returns the service closure events of ids that exist, by ID, as
+	// FindClosureEvent returns one, with one query.
+	FindClosureEvents(ctx context.Context, ids []string) (map[string]instance.ClosureEvent, error)
 }
 
 // EventClosureRecorded is the event type of ClosureRecorded.
@@ -355,6 +358,12 @@ func (s *Service) SubscribingAllowed(ctx context.Context) (bool, error) {
 
 // ClosureEvent returns a service closure event with its schedule, for the notifications that
 // tell of it. It fails with ErrNotFound when there is none.
+// ClosureEvents returns the events of ids that exist, by ID, as ClosureEvent returns one, with one
+// query.
+func (s *Service) ClosureEvents(ctx context.Context, ids []string) (map[string]instance.ClosureEvent, error) {
+	return s.d.Repository.FindClosureEvents(ctx, ids)
+}
+
 func (s *Service) ClosureEvent(ctx context.Context, id string) (instance.ClosureEvent, error) {
 	return s.d.Repository.FindClosureEvent(ctx, id)
 }

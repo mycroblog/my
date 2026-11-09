@@ -297,6 +297,8 @@ type Repository interface {
 	AppealTx(ctx context.Context, tx uow.Tx, id string) (hook.AppealRecord, error)
 	// Appeal returns an appeal with its decision and review; it fails with ErrAppealNotFound.
 	Appeal(ctx context.Context, id string) (hook.AppealRecord, error)
+	// AppealsByID returns the appeals of ids that exist, by ID, as Appeal returns one, with one query.
+	AppealsByID(ctx context.Context, ids []string) (map[string]hook.AppealRecord, error)
 	// AppealOfDecision returns the appeal of a decision; it fails with ErrAppealNotFound.
 	AppealOfDecision(ctx context.Context, decisionID string) (hook.AppealRecord, error)
 	// ListAppeals returns the appeals that q selects, newest first.

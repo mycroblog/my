@@ -214,6 +214,11 @@ func modRepoActions(t *testing.T, r *modRepo) {
 	if rec, err := r.h.Moderation.FindActionRecord(ctx, a.ID); err != nil || rec.Lift == nil || *rec.Lift != l {
 		t.Errorf("FindActionRecord after the lift = %+v, %v; want the lift %+v", rec, err, l)
 	}
+	if recs, err := r.h.Moderation.FindActionRecords(ctx, []string{a.ID, r.ids.NewID()}); err != nil || len(recs) != 1 {
+		t.Errorf("FindActionRecords = %+v, %v; want only the action", recs, err)
+	} else if one, _ := r.h.Moderation.FindActionRecord(ctx, a.ID); !reflect.DeepEqual(recs[a.ID], one) {
+		t.Errorf("FindActionRecords[a] = %+v; want %+v as FindActionRecord reads it", recs[a.ID], one)
+	}
 	err = r.txErr(t, func(ctx context.Context, tx uow.Tx) error {
 		return r.h.Moderation.InsertActionLift(ctx, tx, moderation.Lift{ActionID: a.ID, LiftedAt: r.clock.Now()})
 	})
@@ -477,6 +482,28 @@ func modRepoReports(t *testing.T, r *modRepo) {
 	}
 	if got, err := r.h.Moderation.FindReport(ctx, local.ID); err != nil || !sameReport(got, local) {
 		t.Errorf("FindReport(local) = %+v, %v; want %+v", got, err, local)
+	}
+	if got, err := r.h.Moderation.FindReports(ctx, []string{remote.ID, local.ID, r.ids.NewID()}); err != nil || len(got) != 2 ||
+		!sameReport(got[remote.ID], remote) || !sameReport(got[local.ID], local) {
+		t.Errorf("FindReports = %+v, %v; want the remote and the local report", got, err)
+	}
+	reportStatuses, err := r.h.Moderation.FindReportStatuses(ctx, []string{remote.ID, local.ID, r.ids.NewID()})
+	if err != nil {
+		t.Errorf("FindReportStatuses = %v", err)
+	}
+	for _, id := range []string{remote.ID, local.ID} {
+		one, err := r.h.Moderation.FindReportStatus(ctx, id)
+		got, ok := reportStatuses[id]
+		switch {
+		case errors.Is(err, appmoderation.ErrNotFound):
+			if ok {
+				t.Errorf("FindReportStatuses[%s] = %+v; want none, as FindReportStatus finds none", id, got)
+			}
+		case err != nil:
+			t.Errorf("FindReportStatus(%s) = %v", id, err)
+		case !ok || !reflect.DeepEqual(got, one):
+			t.Errorf("FindReportStatuses[%s] = %+v; want %+v as FindReportStatus reads it", id, got, one)
+		}
 	}
 	if got, err := r.h.Moderation.FindReportByURI(ctx, remote.URI); err != nil || !sameReport(got, remote) {
 		t.Errorf("FindReportByURI = %+v, %v; want %+v", got, err, remote)

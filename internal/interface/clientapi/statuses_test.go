@@ -148,6 +148,14 @@ func (f *fakeStatuses) ReactionEmoji(_ context.Context, e appcontent.ReactionEmo
 	return appcontent.EmojiView{Emoji: e, Custom: &sampleCustomEmoji}, nil
 }
 
+func (f *fakeStatuses) ReactionEmojis(ctx context.Context, emojis []appcontent.ReactionEmoji) (map[string]appcontent.EmojiView, error) {
+	out := map[string]appcontent.EmojiView{}
+	for _, e := range emojis {
+		out[e.Key()], _ = f.ReactionEmoji(ctx, e)
+	}
+	return out, nil
+}
+
 // sampleCustomEmoji is a custom emoji of another server.
 var sampleCustomEmoji = appcontent.ReactionCustomEmoji{
 	ID: "01890a5d-ac96-774b-bcce-b302099a9200", Shortcode: "blobcat", Domain: "misskey.example",

@@ -89,3 +89,23 @@ func (r *InteractionRepository) MentionedIn(ctx context.Context, statusIDs []str
 	}
 	return out, nil
 }
+
+// FindCustomEmojis implements content.Repository.
+func (r *StatusRepository) FindCustomEmojis(ctx context.Context, ids []string) (map[string]content.CustomEmoji, error) {
+	out := map[string]content.CustomEmoji{}
+	if len(ids) == 0 {
+		return out, nil
+	}
+	list, err := sqlite.JSONList(ids)
+	if err != nil {
+		return nil, err
+	}
+	rows, err := r.db.reader().ListCustomEmojisByIDs(ctx, list)
+	if err != nil {
+		return nil, sqlite.Wrap(err, "list custom emoji")
+	}
+	for _, row := range rows {
+		out[row.ID] = customEmojiFrom(row)
+	}
+	return out, nil
+}

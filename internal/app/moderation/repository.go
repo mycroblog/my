@@ -94,9 +94,15 @@ type Repository interface {
 	DomainRestrictionsInEffectOf(ctx context.Context, domains []string, now time.Time) (map[string][]moderation.Restriction, error)
 	// FindReport returns a report with its statuses.
 	FindReport(ctx context.Context, id string) (moderation.Report, error)
+	// FindReports returns the reports of ids that exist, by ID, as FindReport returns one, with one
+	// query per part.
+	FindReports(ctx context.Context, ids []string) (map[string]moderation.Report, error)
 	// FindReportByURI returns the report of a received Flag with its statuses.
 	FindReportByURI(ctx context.Context, uri string) (moderation.Report, error)
 	FindReportStatus(ctx context.Context, reportID string) (moderation.ReportStatus, error)
+	// FindReportStatuses returns the statuses of the reports of reportIDs that have one, by report
+	// ID, as FindReportStatus returns one, with one query.
+	FindReportStatuses(ctx context.Context, reportIDs []string) (map[string]moderation.ReportStatus, error)
 	// CountReports counts the reports in a state.
 	CountReports(ctx context.Context, state moderation.ReportState) (int64, error)
 	// OldestReportFiledAt returns when the oldest report in a state was filed; it fails with
@@ -114,6 +120,9 @@ type Repository interface {
 	ListReportsByReporter(ctx context.Context, reporterAccountID, before string, limit int) ([]moderation.ReportRecord, error)
 	// FindActionRecord returns an action on an account with its lift.
 	FindActionRecord(ctx context.Context, id string) (moderation.ActionRecord, error)
+	// FindActionRecords returns the actions of ids that exist, by ID, as FindActionRecord returns
+	// one, with one query per part.
+	FindActionRecords(ctx context.Context, ids []string) (map[string]moderation.ActionRecord, error)
 	// ListActions returns up to limit actions on accounts with their lifts, newest first: those
 	// on q.AccountID (every account when empty), only those in effect at q.InEffectAt when it
 	// is set, whose ID is below q.Before (from the newest when empty).

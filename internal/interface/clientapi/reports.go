@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"slices"
 	"time"
 
 	appaccount "github.com/mycroblog/my/internal/app/account"
@@ -139,6 +140,16 @@ func (s *Server) ListOwnReports(ctx context.Context, req ListOwnReportsRequestOb
 // target that is not presentable to them (suspended, deleted, or blocking them) is left out of a
 // report that stays listed. A report whose target account no longer exists is left out.
 func (s *Server) newReports(ctx context.Context, viewer Viewer, recs []moderation.ReportRecord) ([]Report, error) {
+	var targets []string
+	for _, rec := range recs {
+		if id := rec.Report.TargetAccountID; !slices.Contains(targets, id) {
+			targets = append(targets, id)
+		}
+	}
+	found, err := s.o.Accounts.FindByIDs(ctx, targets)
+	if err != nil {
+		return nil, fmt.Errorf("clientapi: the targets of the reports: %w", err)
+	}
 	exists := map[string]bool{}
 	var actors []appaccount.Actor
 	for _, rec := range recs {
@@ -146,15 +157,11 @@ func (s *Server) newReports(ctx context.Context, viewer Viewer, recs []moderatio
 		if _, ok := exists[id]; ok {
 			continue
 		}
-		a, err := s.o.Accounts.FindByID(ctx, id)
-		switch {
-		case errors.Is(err, appaccount.ErrNotFound):
-			exists[id] = false
+		a, ok := found[id]
+		exists[id] = ok
+		if !ok {
 			continue
-		case err != nil:
-			return nil, fmt.Errorf("clientapi: the target %s of report %s: %w", id, rec.Report.ID, err)
 		}
-		exists[id] = true
 		shown, err := s.presentable(ctx, a, &viewer, true)
 		if err != nil {
 			return nil, fmt.Errorf("clientapi: the target %s of report %s: %w", id, rec.Report.ID, err)

@@ -54,6 +54,16 @@ func (m *memory) Appeal(ctx context.Context, id string) (hook.AppealRecord, erro
 	return m.AppealTx(ctx, nil, id)
 }
 
+func (m *memory) AppealsByID(_ context.Context, ids []string) (map[string]hook.AppealRecord, error) {
+	out := map[string]hook.AppealRecord{}
+	for _, id := range ids {
+		if a, ok := m.appeals[id]; ok {
+			out[id] = m.appealRecord(a)
+		}
+	}
+	return out, nil
+}
+
 func (m *memory) AppealOfDecision(_ context.Context, decisionID string) (hook.AppealRecord, error) {
 	for _, a := range m.appeals {
 		if a.DecisionID == decisionID {

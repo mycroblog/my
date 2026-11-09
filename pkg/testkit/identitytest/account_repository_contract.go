@@ -286,7 +286,8 @@ func accountRepoKeys(t *testing.T, r *identityRepo) {
 // unknown IDs among them, and finds each part as the reads of one account find it.
 func accountRepoActorParts(t *testing.T, r *identityRepo) {
 	ctx := t.Context()
-	alice := r.localAccount(t, r.user(t), "alice")
+	aliceUser := r.user(t)
+	alice := r.localAccount(t, aliceUser, "alice")
 	bob := r.remoteAccount(t, "remote.example", "bob")
 	carol := r.remoteAccount(t, "remote.example", "") // no handle, profile, key, or state
 	r.profile(t, alice, 1, "First")
@@ -355,6 +356,13 @@ func accountRepoActorParts(t *testing.T, r *identityRepo) {
 	}
 	if len(parts.Keys[alice]) != 2 {
 		t.Errorf("FindActorParts: keys of alice = %+v, want two", parts.Keys[alice])
+	}
+	want, err := r.h.Accounts.FindLocalAccountByUser(ctx, aliceUser)
+	if got, gerr := r.h.Accounts.FindLocalAccountsByUsers(ctx, []string{aliceUser, r.ids.NewID()}); err != nil || gerr != nil || len(got) != 1 || got[aliceUser] != want {
+		t.Errorf("FindLocalAccountsByUsers = %+v, %v; want %+v (%v) alone, as FindLocalAccountByUser", got, gerr, want, err)
+	}
+	if got, err := r.h.Accounts.FindAccounts(ctx, []string{alice, bob, unknown}); err != nil || len(got) != 2 || got[alice] != parts.Accounts[alice] {
+		t.Errorf("FindAccounts = %+v, %v; want alice and bob, as FindAccount", got, err)
 	}
 	if empty, err := r.h.Accounts.FindActorParts(ctx, nil); err != nil || len(empty.Accounts) != 0 {
 		t.Errorf("FindActorParts(nil) = %+v, %v; want nothing", empty, err)

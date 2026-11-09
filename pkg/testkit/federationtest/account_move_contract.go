@@ -5,6 +5,7 @@ package federationtest
 import (
 	"context"
 	"errors"
+	"reflect"
 	"slices"
 	"strings"
 	"testing"
@@ -111,6 +112,10 @@ func moveRepoMoves(t *testing.T, r *moveRepo) {
 	}
 	if _, err := r.h.Accounts.FindMove(ctx, r.ids.NewID()); !errors.Is(err, appaccount.ErrNotFound) {
 		t.Errorf("FindMove(unknown) = %v, want ErrNotFound", err)
+	}
+	if got, err := r.h.Accounts.FindMoves(ctx, []string{first.ID, second.ID, self.ID, r.ids.NewID()}); err != nil ||
+		!reflect.DeepEqual(got, map[string]account.Move{first.ID: first, second.ID: second, self.ID: self}) {
+		t.Errorf("FindMoves = %+v, %v; want the three moves as FindMove reads them", got, err)
 	}
 	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
 		if got, err := r.h.Accounts.FindMoveTx(ctx, tx, second.ID); err != nil || got != second {

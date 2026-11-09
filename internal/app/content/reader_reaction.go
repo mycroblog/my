@@ -5,6 +5,7 @@ package content
 import (
 	"context"
 	"errors"
+	"slices"
 	"strings"
 
 	"github.com/mycroblog/my/internal/domain/content"
@@ -146,7 +147,10 @@ func (r *Reader) reactions(ctx context.Context, st content.Status, accountID str
 			mine[re.Emoji.Key()] = true
 		}
 	}
-	emojis := emojiCache{r: r, seen: map[string]*ReactionCustomEmoji{}}
+	emojis := emojiCache{r: r, seen: r.reactionEmoji}
+	if emojis.seen == nil {
+		emojis.seen = map[string]*ReactionCustomEmoji{}
+	}
 	out := make([]ReactionView, 0, len(counts))
 	for _, c := range counts {
 		v, err := emojis.view(ctx, c.Emoji)
@@ -192,6 +196,69 @@ func (c emojiCache) view(ctx context.Context, e content.ReactionEmoji) (EmojiVie
 	}
 	c.seen[e.CustomEmojiID] = v
 	return EmojiView{Emoji: e, Custom: v}, nil
+}
+
+// load reads the custom emoji of ids that the cache has not seen, together: their rows and their
+// images (MediaService.CustomEmojis). An emoji that does not exist is not recorded, so that view
+// fails with ErrNotFound for it as it does alone.
+func (c emojiCache) load(ctx context.Context, ids []string) error {
+	var unknown []string
+	for _, id := range ids {
+		if _, ok := c.seen[id]; !ok && id != "" && !slices.Contains(unknown, id) {
+			unknown = append(unknown, id)
+		}
+	}
+	if len(unknown) == 0 {
+		return nil
+	}
+	emojis, err := c.r.d.Statuses.FindCustomEmojis(ctx, unknown)
+	if err != nil {
+		return err
+	}
+	images := map[string]CustomEmojiView{}
+	if c.r.d.Media != nil && len(emojis) > 0 {
+		found := make([]string, 0, len(emojis))
+		for id := range emojis {
+			found = append(found, id)
+		}
+		if images, err = c.r.d.Media.CustomEmojis(ctx, found); err != nil {
+			return err
+		}
+	}
+	for id, emoji := range emojis {
+		v := &ReactionCustomEmoji{ID: emoji.ID, Shortcode: emoji.Shortcode, Domain: emoji.Domain}
+		if img, ok := images[id]; ok {
+			v.Image = &img
+		}
+		c.seen[id] = v
+	}
+	return nil
+}
+
+// ReactionEmojis returns the emoji of many reactions with what a client shows of them, as
+// ReactionEmoji returns one, by their keys (content.ReactionEmoji.Key); one whose custom emoji is
+// gone is left out. It reads the custom emoji together.
+func (r *Reader) ReactionEmojis(ctx context.Context, emojis []content.ReactionEmoji) (map[string]EmojiView, error) {
+	cache := emojiCache{r: r, seen: map[string]*ReactionCustomEmoji{}}
+	ids := make([]string, 0, len(emojis))
+	for _, e := range emojis {
+		ids = append(ids, e.CustomEmojiID)
+	}
+	if err := cache.load(ctx, ids); err != nil {
+		return nil, err
+	}
+	out := make(map[string]EmojiView, len(emojis))
+	for _, e := range emojis {
+		v, err := cache.view(ctx, e)
+		if errors.Is(err, ErrNotFound) {
+			continue
+		}
+		if err != nil {
+			return nil, err
+		}
+		out[e.Key()] = v
+	}
+	return out, nil
 }
 
 // ReactionEmoji returns the emoji of a reaction with what a client shows of it, for the
