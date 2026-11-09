@@ -372,6 +372,13 @@ func statusStores(t *testing.T, e *StatusEnv) {
 			t.Errorf("%s = %+v, %v; want %+v", name, got, err, s)
 		}
 	}
+	missing := e.IDs.NewID()
+	if got, err := e.H.Statuses.FindStatuses(ctx, []string{s.ID, missing, s.ID}); err != nil || len(got) != 1 || !reflect.DeepEqual(got[s.ID], s) {
+		t.Errorf("FindStatuses = %+v, %v; want the status alone, as FindStatus finds it", got, err)
+	}
+	if got, err := e.H.Statuses.FindStatuses(ctx, nil); err != nil || len(got) != 0 {
+		t.Errorf("FindStatuses(nil) = %+v, %v; want none", got, err)
+	}
 	if got, err := e.H.Statuses.FindLocalStatus(ctx, s.ID); err != nil || got != local {
 		t.Errorf("FindLocalStatus = %+v, %v; want %+v", got, err, local)
 	}

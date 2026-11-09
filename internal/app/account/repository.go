@@ -107,6 +107,11 @@ type Repository interface {
 	AnyAccountOnDomain(ctx context.Context, domain string, ids []string) (bool, error)
 	// ExistingAccountIDs returns, in ID order, the accounts among ids that exist.
 	ExistingAccountIDs(ctx context.Context, ids []string) ([]string, error)
+	// FindActorParts reads the parts of the actors of ids that FindAccount, FindLocalAccount,
+	// FindHandleOf, FindCurrentProfile, ListKeys, and FindLifecycleState read of one, with one
+	// query per part whatever the number of ids. An ID without an account, or without a part,
+	// has no entry in that part's map.
+	FindActorParts(ctx context.Context, ids []string) (ActorParts, error)
 	// AccountsOnDomain returns inside tx, in ID order, the accounts among ids that are on domain
 	// or one of its subdomains.
 	AccountsOnDomain(ctx context.Context, tx uow.Tx, domain string, ids []string) ([]string, error)
@@ -179,4 +184,14 @@ type TxReads interface {
 	ListKeysTx(ctx context.Context, tx uow.Tx, accountID string) ([]account.Key, error)
 	ListRemoteProfileURLsTx(ctx context.Context, tx uow.Tx, accountIDs []string) (map[string]string, error)
 	CountLocalAccountsTx(ctx context.Context, tx uow.Tx) (int, error)
+}
+
+// ActorParts are the parts of many actors, by account ID (Repository.FindActorParts).
+type ActorParts struct {
+	Accounts  map[string]account.Account
+	Locals    map[string]account.LocalAccount
+	Handles   map[string]account.Handle
+	Profiles  map[string]account.ProfileRevision
+	Keys      map[string][]account.Key
+	Lifecycle map[string]account.LifecycleState
 }

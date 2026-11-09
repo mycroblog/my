@@ -515,6 +515,22 @@ func (r *StatusRepository) FindStatus(ctx context.Context, id string) (content.S
 	return statusFrom(row), nil
 }
 
+// FindStatuses implements content.Repository.
+func (r *StatusRepository) FindStatuses(ctx context.Context, ids []string) (map[string]content.Status, error) {
+	out := make(map[string]content.Status, len(ids))
+	if len(ids) == 0 {
+		return out, nil
+	}
+	rows, err := r.db.reader().ListStatusesByIDs(ctx, ids)
+	if err != nil {
+		return nil, postgres.Wrap(err, "list statuses")
+	}
+	for _, row := range rows {
+		out[row.ID] = statusFrom(row)
+	}
+	return out, nil
+}
+
 // FindStatusByURI implements content.Repository.
 func (r *StatusRepository) FindStatusByURI(ctx context.Context, uri string) (content.Status, error) {
 	row, err := r.db.reader().GetStatusByURI(ctx, uri)

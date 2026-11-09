@@ -81,6 +81,12 @@ type AccountProfileField struct {
 	ValueHtml  string
 }
 
+type AccountProfileFieldSource struct {
+	RevisionID  string
+	Position    int32
+	ValueSource string
+}
+
 type AccountProfileRevision struct {
 	ID            string
 	AccountID     string
@@ -95,6 +101,16 @@ type AccountProfileRevision struct {
 	AvatarMediaID *string
 	HeaderMediaID *string
 	RevisedAt     time.Time
+}
+
+type AccountProfileRevisionEmoji struct {
+	RevisionID string
+	EmojiID    string
+}
+
+type AccountProfileRevisionSource struct {
+	RevisionID string
+	NoteSource string
 }
 
 type AccountSearchTerm struct {

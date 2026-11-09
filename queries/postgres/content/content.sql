@@ -258,6 +258,11 @@ LIMIT sqlc.arg(page_limit);
 SELECT id, uri, url, author_account_id, is_local, visibility, in_reply_to_uri, conversation_uri, published_at
 FROM statuses WHERE id = $1;
 
+-- ListStatusesByIDs reads what GetStatus reads, of many statuses at once.
+-- name: ListStatusesByIDs :many
+SELECT id, uri, url, author_account_id, is_local, visibility, in_reply_to_uri, conversation_uri, published_at
+FROM statuses WHERE id = ANY(sqlc.arg(ids)::uuid[]) ORDER BY id;
+
 -- name: GetStatusByURI :one
 SELECT id, uri, url, author_account_id, is_local, visibility, in_reply_to_uri, conversation_uri, published_at
 FROM statuses WHERE uri = $1;
