@@ -103,6 +103,9 @@ type Repository interface {
 	Account(ctx context.Context, tx uow.Tx, id string) (account.Account, error)
 	// FindAccountByURI returns the account with an ActivityPub id.
 	FindAccountByURI(ctx context.Context, uri string) (account.Account, error)
+	// FindAccountsByURIs returns the accounts of uris that exist, by URI, as FindAccountByURI
+	// returns one, with one query.
+	FindAccountsByURIs(ctx context.Context, uris []string) (map[string]account.Account, error)
 	// AnyAccountOnDomain reports whether one of the accounts ids is on domain.
 	AnyAccountOnDomain(ctx context.Context, domain string, ids []string) (bool, error)
 	// ExistingAccountIDs returns, in ID order, the accounts among ids that exist.
