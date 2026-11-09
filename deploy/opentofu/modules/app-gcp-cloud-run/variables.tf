@@ -318,7 +318,7 @@ variable "console_enabled" {
 }
 
 variable "deletion_protection" {
-  description = "Refuses to delete the service and the jobs."
+  description = "Refuses to delete the service and the migration job. The console job is never protected, so console_enabled can turn it off."
   type        = bool
   default     = true
   nullable    = false

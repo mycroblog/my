@@ -670,14 +670,15 @@ resource "google_cloud_run_v2_service" "worker" {
 
 # The one-off jobs share everything with the service except the command, so one block makes both: the migration job,
 # which always exists, and the console, which exists while console_enabled is on. An execution overrides the arguments;
-# the ones here change nothing if someone starts the job by hand.
+# the ones here change nothing if someone starts the job by hand. The console exists to be turned off again, so deletion
+# protection never holds it: kept in the state, it would refuse the apply that turns console_enabled off.
 resource "google_cloud_run_v2_job" "one_off" {
   for_each = local.jobs
 
   project             = var.project_id
   location            = var.region
   name                = "${var.name}-${each.key}"
-  deletion_protection = var.deletion_protection
+  deletion_protection = each.key == "console" ? false : var.deletion_protection
 
   template {
     task_count  = 1
