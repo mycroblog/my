@@ -225,6 +225,24 @@ func (r *Repository) InsertDelivery(ctx context.Context, tx uow.Tx, d webhook.De
 	}), "insert webhook delivery")
 }
 
+// InsertDeliveries implements appwebhook.Repository.
+func (r *Repository) InsertDeliveries(ctx context.Context, tx uow.Tx, ds []webhook.Delivery) error {
+	if len(ds) == 0 {
+		return nil
+	}
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return err
+	}
+	ids, endpoints := make([]string, len(ds)), make([]string, len(ds))
+	for i, d := range ds {
+		ids[i], endpoints[i] = d.ID, d.EndpointID
+	}
+	return postgres.Wrap(q.InsertWebhookDeliveries(ctx, webhookgen.InsertWebhookDeliveriesParams{
+		Ids: ids, MessageID: ds[0].MessageID, EndpointIds: endpoints, CreatedAt: ds[0].CreatedAt,
+	}), "insert webhook deliveries")
+}
+
 // FindSend implements appwebhook.Repository.
 func (r *Repository) FindSend(ctx context.Context, deliveryID string) (appwebhook.Send, error) {
 	row, err := r.db.reader().GetWebhookSend(ctx, deliveryID)

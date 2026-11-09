@@ -145,3 +145,10 @@ DELETE FROM webhook_messages WHERE id IN (SELECT value FROM json_each(CAST(sqlc.
 -- name: ListExistingWebhookEndpointIDs :many
 SELECT endpoint_id FROM webhook_endpoint_heads WHERE endpoint_id IN (SELECT value FROM json_each(CAST(sqlc.arg(ids) AS TEXT))) AND state <> 'deleted'
 ORDER BY endpoint_id;
+
+-- InsertWebhookDeliveries is InsertWebhookDelivery of the deliveries of one message to many
+-- endpoints, a JSON array of {"a": id, "b": endpoint}.
+-- name: InsertWebhookDeliveries :exec
+INSERT INTO webhook_deliveries (id, message_id, endpoint_id, created_at)
+SELECT value ->> '$.a', CAST(sqlc.arg(message_id) AS TEXT), value ->> '$.b', CAST(sqlc.arg(created_at) AS INTEGER)
+FROM json_each(CAST(sqlc.arg(deliveries) AS TEXT));
