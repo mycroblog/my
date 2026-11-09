@@ -142,3 +142,46 @@ func (s *Server) blockersOf(ctx context.Context, accountID string, ids []string)
 	}
 	return out, nil
 }
+
+// relationships returns the relationships of accountID with ids, by target: together when Graph
+// can, one by one otherwise.
+func (s *Server) relationships(ctx context.Context, accountID string, ids []string) (map[string]appgraph.Relationship, error) {
+	if b, ok := s.o.Graph.(relationshipBatch); ok {
+		return b.Relationships(ctx, accountID, ids)
+	}
+	out := make(map[string]appgraph.Relationship, len(ids))
+	for _, id := range ids {
+		r, err := s.o.Graph.Relationship(ctx, accountID, id)
+		if err != nil {
+			return nil, err
+		}
+		out[id] = r
+	}
+	return out, nil
+}
+
+// subscriptionBatch is a Subscriptions that reads many targets at once, as
+// *appnotification.Subscriptions does.
+type subscriptionBatch interface {
+	SubscribedAmong(ctx context.Context, accountID string, targetIDs []string) (map[string]bool, error)
+}
+
+// subscribedAmong returns the targets among ids that accountID subscribes to: together when
+// Subscriptions can, one by one otherwise.
+func (s *Server) subscribedAmong(ctx context.Context, accountID string, ids []string) (map[string]bool, error) {
+	out := make(map[string]bool, len(ids))
+	if s.o.Subscriptions == nil || len(ids) == 0 {
+		return out, nil
+	}
+	if b, ok := s.o.Subscriptions.(subscriptionBatch); ok {
+		return b.SubscribedAmong(ctx, accountID, ids)
+	}
+	for _, id := range ids {
+		ok, err := s.o.Subscriptions.Subscribed(ctx, accountID, id)
+		if err != nil {
+			return nil, err
+		}
+		out[id] = ok
+	}
+	return out, nil
+}

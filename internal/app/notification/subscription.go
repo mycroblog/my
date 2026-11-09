@@ -35,6 +35,9 @@ type SubscriptionRepository interface {
 	CountSubscriptions(ctx context.Context, tx uow.Tx, accountID string) (int64, error)
 	// Subscribed reports whether the account subscribes to the target.
 	Subscribed(ctx context.Context, accountID, targetAccountID string) (bool, error)
+	// SubscribedAmong returns the targets among targetIDs that the account subscribes to, with one
+	// query.
+	SubscribedAmong(ctx context.Context, accountID string, targetIDs []string) (map[string]bool, error)
 	// HasSubscribers reports whether any account subscribes to the target.
 	HasSubscribers(ctx context.Context, tx uow.Tx, targetAccountID string) (bool, error)
 	// ListSubscriptions returns at most limit of the account's subscriptions, newest first,
@@ -219,6 +222,12 @@ func deleteSubscription(ctx context.Context, repo SubscriptionRepository, tx uow
 // acceptance of a follow does not count.
 func (s *Subscriptions) Subscribed(ctx context.Context, accountID, targetID string) (bool, error) {
 	return s.d.Repository.Subscribed(ctx, accountID, targetID)
+}
+
+// SubscribedAmong returns the targets among targetIDs that accountID subscribes to, as Subscribed
+// reports one, with one query.
+func (s *Subscriptions) SubscribedAmong(ctx context.Context, accountID string, targetIDs []string) (map[string]bool, error) {
+	return s.d.Repository.SubscribedAmong(ctx, accountID, targetIDs)
 }
 
 // List returns a page of accountID's subscriptions, newest first.

@@ -5,6 +5,8 @@ package platform_test
 import (
 	"fmt"
 	"net/http"
+	"net/url"
+	"strings"
 	"testing"
 
 	"github.com/mycroblog/my/internal/interface/clientapi"
@@ -15,7 +17,7 @@ import (
 // accountListQueries counts the database round trips of one request of each account list of bob, by
 // name,
 // with n accounts on it: n accounts follow bob, react to his post, and are followed and muted by
-// him. Every query is one round trip (one call in pg_stat_statements).
+// him, and bob reads his relationships with them. Every query is one round trip (one call in pg_stat_statements).
 func accountListQueries(t *testing.T, n int) map[string]int {
 	t.Helper()
 	tracer := testkit.NewTracer()
@@ -52,7 +54,10 @@ func accountListQueries(t *testing.T, n int) map[string]int {
 	out := map[string]int{}
 	count := func(name, path string, page any, items func() int) {
 		before := queries()
-		if res := c.do("bob", http.MethodGet, fmt.Sprintf("%s?limit=%d", path, n), nil, page); res.StatusCode != http.StatusOK {
+		if !strings.Contains(path, "?") {
+			path += fmt.Sprintf("?limit=%d", n)
+		}
+		if res := c.do("bob", http.MethodGet, path, nil, page); res.StatusCode != http.StatusOK {
 			t.Fatalf("GET %s = %d", path, res.StatusCode)
 		}
 		out[name] = queries() - before
@@ -67,6 +72,12 @@ func accountListQueries(t *testing.T, n int) map[string]int {
 	count("following", "/accounts/"+c.ids["bob"]+"/following", &following, func() int { return len(following.Items) })
 	count("reactions", "/statuses/"+reacted.Id+"/reactions", &reactions, func() int { return len(reactions.Items) })
 	count("mutes", "/mutes", &mutes, func() int { return len(mutes.Items) })
+	var rels clientapi.RelationshipList
+	q := url.Values{}
+	for _, u := range users[1:] {
+		q.Add("id", c.ids[u])
+	}
+	count("relationships", "/accounts/relationships?"+q.Encode(), &rels, func() int { return len(rels.Items) })
 	return out
 }
 

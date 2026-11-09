@@ -13,6 +13,10 @@ DELETE FROM post_subscriptions WHERE account_id = $1 AND target_account_id = $2;
 -- name: PostSubscriptionExists :one
 SELECT EXISTS (SELECT 1 FROM post_subscriptions WHERE account_id = $1 AND target_account_id = $2);
 
+-- The targets among target_ids that the account subscribes to.
+-- name: ListSubscribedTargets :many
+SELECT target_account_id FROM post_subscriptions WHERE account_id = sqlc.arg(account_id) AND target_account_id = ANY(sqlc.arg(target_ids)::uuid[]);
+
 -- name: CountPostSubscriptions :one
 SELECT COUNT(*) FROM post_subscriptions WHERE account_id = $1;
 

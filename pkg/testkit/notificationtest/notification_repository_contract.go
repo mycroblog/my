@@ -614,6 +614,15 @@ func notificationRepoSubscriptions(t *testing.T, r *notificationRepo) {
 	if ok, err := r.repo.Subscribed(ctx, targets[1], alice); err != nil || ok {
 		t.Errorf("Subscribed the other way = %v, %v; want false", ok, err)
 	}
+	if got, err := r.repo.SubscribedAmong(ctx, alice, append(slices.Clone(targets), alice)); err != nil || len(got) != len(targets) {
+		t.Errorf("SubscribedAmong = %v, %v; want the %d targets", got, err, len(targets))
+	} else {
+		for _, id := range targets {
+			if !got[id] {
+				t.Errorf("SubscribedAmong leaves out %s", id)
+			}
+		}
+	}
 
 	// Newest first, and by target in descending order at the same time.
 	tied := []string{targets[0], targets[1]}

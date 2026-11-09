@@ -52,6 +52,22 @@ func (r *Repository) Subscribed(ctx context.Context, accountID, targetAccountID 
 	return ok, postgres.Wrap(err, "check post subscription")
 }
 
+// SubscribedAmong implements notification.SubscriptionRepository.
+func (r *Repository) SubscribedAmong(ctx context.Context, accountID string, targetIDs []string) (map[string]bool, error) {
+	out := map[string]bool{}
+	if len(targetIDs) == 0 {
+		return out, nil
+	}
+	ids, err := r.db.reader().ListSubscribedTargets(ctx, notificationgen.ListSubscribedTargetsParams{AccountID: accountID, TargetIds: targetIDs})
+	if err != nil {
+		return nil, postgres.Wrap(err, "list subscribed targets")
+	}
+	for _, id := range ids {
+		out[id] = true
+	}
+	return out, nil
+}
+
 // HasSubscribers implements notification.SubscriptionRepository.
 func (r *Repository) HasSubscribers(ctx context.Context, tx uow.Tx, targetAccountID string) (bool, error) {
 	q, err := r.db.queries(tx)
