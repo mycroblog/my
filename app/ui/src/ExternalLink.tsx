@@ -37,8 +37,17 @@ export function externalRel(rel?: string): string {
   return [...tokens].join(" ");
 }
 
-/** The gap between the name and the icon, when the link has the icon. */
-const externalLink = tv({ variants: { icon: { true: "gap-1", false: "" } } });
+/**
+ * The space between the name and the icon, when the link has the icon: the gap of a flex link, and a margin in an
+ * inline one, which has no gap.
+ */
+const externalLink = tv({
+  variants: { icon: { true: "", false: "" }, inline: { true: "", false: "" } },
+  compoundVariants: [
+    { icon: true, inline: false, class: "gap-1" },
+    { icon: true, inline: true, class: "[&>svg]:ms-1" },
+  ],
+});
 
 export type ExternalLinkProps = Omit<LinkProps, "target" | "children" | "href"> & {
   href: string;
@@ -73,7 +82,9 @@ export function ExternalLink({
       // eslint-disable-next-line restrict/syntax -- the one link that opens in a new tab (web-client/README.md Y12)
       target="_blank"
       rel={externalRel(rel)}
-      className={composeRenderProps(className, (className) => externalLink({ icon, className }))}
+      className={composeRenderProps(className, (className) =>
+        externalLink({ icon, inline: (props.variant ?? "inline") === "inline", className }),
+      )}
     >
       {children}
       {hiddenText !== undefined && <VisuallyHidden>{hiddenText}</VisuallyHidden>}

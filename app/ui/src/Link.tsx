@@ -11,7 +11,10 @@ const link = tv({
     // Each variant sizes the link's icon, which sets no size of its own (web-client/16-look-states-and-wording.md G11).
     variant: {
       /** A link inside running text: always underlined, so color is not the only cue (WCAG 1.4.1). */
-      inline: "underline data-hovered:decoration-2 [&>svg]:size-4 [&>svg]:shrink-0",
+      // Its icon stays in the line (the base styles make an SVG a block, which would break the line around it),
+      // aligned with the text.
+      inline:
+        "underline data-hovered:decoration-2 [&>svg]:inline [&>svg]:size-4 [&>svg]:shrink-0 [&>svg]:align-[-0.125em]",
       /** A link on its own ("show more", a link to another site): a 44 px target on coarse pointers. */
       standalone:
         "inline-flex min-h-6 items-center font-medium no-underline data-hovered:underline pointer-coarse:min-h-11 [&>svg]:size-4 [&>svg]:shrink-0",
