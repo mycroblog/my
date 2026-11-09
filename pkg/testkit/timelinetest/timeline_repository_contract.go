@@ -6,6 +6,7 @@ import (
 	"cmp"
 	"context"
 	"errors"
+	"maps"
 	"reflect"
 	"slices"
 	"testing"
@@ -319,6 +320,13 @@ func timelineRepoHome(t *testing.T, r *timelineRepo) {
 	r.follow(t, viewer, followed, true)
 	r.follow(t, viewer, quiet, false)
 	r.follow(t, viewer, far, true)
+	// The followers of followed among some accounts: the edges of the feed, whatever show_boosts.
+	if got, err := r.repo.FeedFollowersAmong(ctx, followed.id, []string{viewer.id, stranger.id, quiet.id}); err != nil || !maps.Equal(got, map[string]bool{viewer.id: true}) {
+		t.Errorf("FeedFollowersAmong(followed) = %v, %v; want the viewer alone", got, err)
+	}
+	if got, err := r.repo.FeedFollowersAmong(ctx, quiet.id, []string{viewer.id}); err != nil || !got[viewer.id] {
+		t.Errorf("FeedFollowersAmong(quiet) = %v, %v; want the viewer", got, err)
+	}
 
 	own := r.post(t, viewer, appcontent.VisibilityPrivate, entryOpts{})
 	fromFollowed := r.post(t, followed, appcontent.VisibilityUnlisted, entryOpts{})

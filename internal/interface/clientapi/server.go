@@ -388,6 +388,8 @@ type Server struct {
 	o Options
 	// streams counts the open streams.
 	streams kernel.UpDownCounter
+	// home decides which user streams of the process check a new home entry.
+	home *homeGate
 }
 
 var _ StrictServerInterface = (*Server)(nil)
@@ -412,7 +414,7 @@ func New(o Options) *Server {
 	if o.Authenticator == nil {
 		o.Authenticator = noTokens{}
 	}
-	return &Server{o: o, streams: kernel.MeterOrNop(o.Meter).UpDownCounter(StreamConnections)}
+	return &Server{o: o, streams: kernel.MeterOrNop(o.Meter).UpDownCounter(StreamConnections), home: newHomeGate()}
 }
 
 // Router registers handlers for http.ServeMux patterns.

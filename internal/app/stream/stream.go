@@ -86,6 +86,9 @@ type Event struct {
 	// EntryID is the ID of the new timeline entry (KindHomeEntry, KindPublicEntry): a status ID
 	// for a post, a boost ID for a boost.
 	EntryID string
+	// AuthorAccountID is the account of a KindHomeEntry entry: the author of the post, or the
+	// booster. "" for a signal of a process that did not send it, which every stream checks.
+	AuthorAccountID string
 	// OnLocal and OnFederated name the public timelines that may list the post of a
 	// KindPublicEntry signal; at least one is set.
 	OnLocal     bool

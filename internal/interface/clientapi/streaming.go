@@ -93,6 +93,7 @@ func (s *Server) serveStreaming(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer sub.Close()
+	defer s.home.register(v.AccountID)()
 
 	home, err := s.timelineQuery(ctx, &v, nil, nil, true)
 	if err != nil {
@@ -231,6 +232,11 @@ type streamState struct {
 func (st *streamState) handle(ctx context.Context, e stream.Event) error {
 	switch e.Kind {
 	case stream.KindHomeEntry:
+		// The streams of the accounts whose home timelines cannot list the entry skip it.
+		batch, _ := st.s.o.HomeEntries.(homeAudienceBatch)
+		if !st.s.home.mayList(ctx, batch, e, st.viewer.AccountID) {
+			return nil
+		}
 		return st.homeEntry(ctx, e.EntryID)
 	case stream.KindNotifications:
 		return st.notifications(ctx)
