@@ -284,6 +284,9 @@ func contentInteractionRepoCounters(t *testing.T, r *contentInteractionRepo) {
 		if got, err := r.repo.MentionedIn(ctx, []string{s.ID, gone.ID}, tc.account); err != nil || got[s.ID] != tc.want || got[gone.ID] {
 			t.Errorf("MentionedIn = %v, %v; want %v of the status alone, as Mentioned", got, err, tc.want)
 		}
+		if got, err := r.repo.MentionsOfAccountsIn(ctx, []string{s.ID, gone.ID}, []string{tc.account}); err != nil || got[tc.account][s.ID] != tc.want || got[tc.account][gone.ID] {
+			t.Errorf("MentionsOfAccountsIn = %v, %v; want %v of the status alone, as Mentioned", got, err, tc.want)
+		}
 	}
 	if got, err := r.repo.MentionedAmong(ctx, s.ID, []string{mentioned, account}); err != nil || !maps.Equal(got, map[string]bool{mentioned: true}) {
 		t.Errorf("MentionedAmong = %v, %v; want the mentioned account alone, as Mentioned", got, err)
@@ -344,6 +347,12 @@ func contentInteractionRepoFavourites(t *testing.T, r *contentInteractionRepo) {
 	ids := []string{r.id()}
 	for _, st := range statuses {
 		ids = append(ids, st.ID)
+	}
+	// The interactions of many accounts, each as FindAccountInteractions reads them of one.
+	if many, err := r.repo.FindInteractionsOfAccounts(ctx, []string{account, r.id()}, ids); err != nil {
+		t.Errorf("FindInteractionsOfAccounts = %v", err)
+	} else if one, err := r.repo.FindAccountInteractions(ctx, account, ids); err != nil || !reflect.DeepEqual(many[account], one) {
+		t.Errorf("FindInteractionsOfAccounts[%s] = %+v, want %+v (%v) as FindAccountInteractions", account, many[account], one, err)
 	}
 	if got, err := r.repo.FindAccountInteractions(ctx, account, ids); err != nil {
 		t.Errorf("FindAccountInteractions = %v", err)

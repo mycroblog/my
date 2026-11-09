@@ -39,3 +39,29 @@ ORDER BY c.status_id, c.count DESC, c.emoji_key;
 -- name: ListBoostsByIDs :many
 SELECT id, uri, booster_account_id, status_id, visibility, is_local, boosted_at FROM boosts
 WHERE id = ANY(sqlc.arg(ids)::uuid[]) ORDER BY id;
+
+-- What many accounts did with many statuses, for presenting one status to many viewers, each as
+-- the query of one account above reads it (account_ids and status_ids are arrays).
+
+-- name: ListFavouritesOfAccountsOn :many
+SELECT account_id, status_id, uri, created_at, id FROM favourites
+WHERE account_id = ANY(sqlc.arg(account_ids)::uuid[]) AND status_id = ANY(sqlc.arg(status_ids)::uuid[]) ORDER BY account_id, status_id;
+
+-- name: ListBoostEdgesOfAccountsOn :many
+SELECT booster_account_id, status_id, boost_id FROM boost_edges
+WHERE booster_account_id = ANY(sqlc.arg(account_ids)::uuid[]) AND status_id = ANY(sqlc.arg(status_ids)::uuid[]) ORDER BY booster_account_id, status_id;
+
+-- name: ListBookmarksOfAccountsOn :many
+SELECT account_id, status_id, created_at, id FROM bookmarks
+WHERE account_id = ANY(sqlc.arg(account_ids)::uuid[]) AND status_id = ANY(sqlc.arg(status_ids)::uuid[]) ORDER BY account_id, status_id;
+
+-- name: ListStatusPinsOfAccountsOn :many
+SELECT account_id, status_id, slot, created_at, id FROM status_pins
+WHERE account_id = ANY(sqlc.arg(account_ids)::uuid[]) AND status_id = ANY(sqlc.arg(status_ids)::uuid[]) ORDER BY account_id, status_id;
+
+-- name: ListReactionsOfAccountsOn :many
+SELECT id, account_id, status_id, emoji_key, custom_emoji_id, uri, created_at FROM reactions
+WHERE account_id = ANY(sqlc.arg(account_ids)::uuid[]) AND status_id = ANY(sqlc.arg(status_ids)::uuid[]) ORDER BY account_id, status_id, id;
+
+-- name: ListMentionsOfAccountsIn :many
+SELECT DISTINCT account_id, status_id FROM status_mention_index WHERE account_id = ANY(sqlc.arg(account_ids)::uuid[]) AND status_id = ANY(sqlc.arg(status_ids)::uuid[]) ORDER BY account_id, status_id;

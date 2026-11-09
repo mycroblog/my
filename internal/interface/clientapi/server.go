@@ -393,6 +393,9 @@ type Server struct {
 	// monitor checks the tokens of the open streams of the process on every heartbeat; nil
 	// leaves each stream to check its own.
 	monitor *streamMonitor
+	// public shares the decision and the presentation of a new entry between the streams of the
+	// public timelines of the process.
+	public *publicDispatch
 }
 
 var _ StrictServerInterface = (*Server)(nil)
@@ -417,7 +420,7 @@ func New(o Options) *Server {
 	if o.Authenticator == nil {
 		o.Authenticator = noTokens{}
 	}
-	s := &Server{o: o, streams: kernel.MeterOrNop(o.Meter).UpDownCounter(StreamConnections), home: newHomeGate()}
+	s := &Server{o: o, streams: kernel.MeterOrNop(o.Meter).UpDownCounter(StreamConnections), home: newHomeGate(), public: newPublicDispatch()}
 	if b, ok := o.Authenticator.(bearerBatch); ok {
 		every := o.StreamHeartbeat
 		if every <= 0 {

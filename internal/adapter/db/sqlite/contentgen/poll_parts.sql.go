@@ -83,6 +83,47 @@ func (q *Queries) ListPollVotesOfAccountIn(ctx context.Context, arg ListPollVote
 	return items, nil
 }
 
+const listPollVotesOfAccountsIn = `-- name: ListPollVotesOfAccountsIn :many
+SELECT id, poll_id, account_id, position, uri, voted_at FROM poll_votes
+WHERE account_id IN (SELECT value FROM json_each(CAST(?1 AS TEXT))) AND poll_id IN (SELECT value FROM json_each(CAST(?2 AS TEXT))) ORDER BY account_id, poll_id, position
+`
+
+type ListPollVotesOfAccountsInParams struct {
+	AccountIds string
+	PollIds    string
+}
+
+// ListPollVotesOfAccountsIn is ListPollVotesOfAccountIn of many accounts.
+func (q *Queries) ListPollVotesOfAccountsIn(ctx context.Context, arg ListPollVotesOfAccountsInParams) ([]PollVote, error) {
+	rows, err := q.db.QueryContext(ctx, listPollVotesOfAccountsIn, arg.AccountIds, arg.PollIds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []PollVote{}
+	for rows.Next() {
+		var i PollVote
+		if err := rows.Scan(
+			&i.ID,
+			&i.PollID,
+			&i.AccountID,
+			&i.Position,
+			&i.Uri,
+			&i.VotedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listStatusesSensitivityOverridden = `-- name: ListStatusesSensitivityOverridden :many
 
 

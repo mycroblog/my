@@ -532,6 +532,26 @@ DELETE FROM feed_tag_entries WHERE entry_id IN (SELECT value FROM json_each(CAST
 -- name: DeleteFeedEntriesOfStatuses :exec
 DELETE FROM feed_entries WHERE status_id IN (SELECT value FROM json_each(CAST(sqlc.arg(status_ids) AS TEXT)));
 
+-- The facts of many viewers, each as the query of one viewer above reads it, for deciding one new
+-- entry for many streams at once.
+
+-- name: ListFeedFollowedAmongOf :many
+SELECT follower_account_id, followee_account_id FROM feed_follow_edges
+WHERE follower_account_id IN (SELECT value FROM json_each(CAST(sqlc.arg(viewers) AS TEXT))) AND followee_account_id IN (SELECT value FROM json_each(CAST(sqlc.arg(account_ids) AS TEXT)));
+
+-- name: ListFeedExclusionsAmongOf :many
+SELECT viewer_account_id, target_account_id, reason FROM feed_exclusions
+WHERE viewer_account_id IN (SELECT value FROM json_each(CAST(sqlc.arg(viewers) AS TEXT))) AND (expires_at IS NULL OR expires_at > CAST(sqlc.arg(now) AS INTEGER))
+  AND target_account_id IN (SELECT value FROM json_each(CAST(sqlc.arg(account_ids) AS TEXT)));
+
+-- name: ListFeedDomainMutesAmongOf :many
+SELECT viewer_account_id, domain FROM feed_domain_mutes
+WHERE viewer_account_id IN (SELECT value FROM json_each(CAST(sqlc.arg(viewers) AS TEXT))) AND domain IN (SELECT value FROM json_each(CAST(sqlc.arg(domains) AS TEXT)));
+
+-- name: ListFeedDirectEntriesAmongOf :many
+SELECT recipient_account_id, entry_id FROM feed_direct_recipients
+WHERE recipient_account_id IN (SELECT value FROM json_each(CAST(sqlc.arg(viewers) AS TEXT))) AND entry_id IN (SELECT value FROM json_each(CAST(sqlc.arg(entry_ids) AS TEXT)));
+
 -- UpsertFeedExclusions is UpsertFeedExclusion of many exclusions, a JSON array.
 -- name: UpsertFeedExclusions :exec
 INSERT INTO feed_exclusions (viewer_account_id, target_account_id, reason, expires_at)

@@ -635,6 +635,29 @@ func timelineRepoFacts(t *testing.T, r *timelineRepo) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	// The facts of many viewers, each as Facts reads it of one.
+	stranger := r.local()
+	many, err := r.repo.FactsOfViewers(ctx, []string{viewer.id, stranger.id}, q)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, v := range []string{viewer.id, stranger.id} {
+		one := q
+		one.ViewerAccountID = v
+		want, err := r.repo.Facts(ctx, one)
+		if err != nil {
+			t.Fatal(err)
+		}
+		got := many[v]
+		for _, m := range []map[string][]timeline.ExclusionReason{got.Exclusions, want.Exclusions} {
+			for k := range m {
+				slices.Sort(m[k])
+			}
+		}
+		if !reflect.DeepEqual(got, want) {
+			t.Errorf("FactsOfViewers[%s] = %+v, want %+v as Facts", v, got, want)
+		}
+	}
 	slices.Sort(f.Exclusions[muted.id])
 	if !reflect.DeepEqual(f.Followed, map[string]bool{followed.id: true}) ||
 		!reflect.DeepEqual(f.Exclusions, map[string][]timeline.ExclusionReason{muted.id: {timeline.ExcludedBlock, timeline.ExcludedMute}}) ||
@@ -659,6 +682,10 @@ func timelineRepoFacts(t *testing.T, r *timelineRepo) {
 		t.Errorf("Facts after DeleteExclusion = %+v, %v", f.Exclusions, err)
 	}
 
+	if of, err := r.repo.MutedDomainsOf(ctx, []string{viewer.id, muted.id}, []string{"a." + timelineRepoRemote, timelineRepoRemote, "example"}); err != nil ||
+		!reflect.DeepEqual(of, map[string][]string{viewer.id: {timelineRepoRemote}}) {
+		t.Errorf("MutedDomainsOf = %v, %v; want the viewer's %v alone, as MutedDomains", of, err, timelineRepoRemote)
+	}
 	got, err := r.repo.MutedDomains(ctx, viewer.id, []string{"a." + timelineRepoRemote, timelineRepoRemote, "example"})
 	if err != nil || !slices.Equal(got, []string{timelineRepoRemote}) {
 		t.Errorf("MutedDomains = %v, %v; want %v", got, err, []string{timelineRepoRemote})

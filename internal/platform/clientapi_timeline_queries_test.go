@@ -12,6 +12,7 @@ import (
 	"time"
 
 	appcontent "github.com/mycroblog/my/internal/app/content"
+	"github.com/mycroblog/my/internal/app/identity"
 	domcontent "github.com/mycroblog/my/internal/domain/content"
 	"github.com/mycroblog/my/internal/interface/clientapi"
 	"github.com/mycroblog/my/internal/interface/clientapi/apitest"
@@ -190,4 +191,39 @@ func countCards(items []clientapi.Status) int {
 		}
 	}
 	return n
+}
+
+// TestViewsForAreThoseOfEachViewer checks that ViewsFor, which presents a page to many viewers
+// with the shared parts read once, presents it to each of them exactly as Views does: bob, who
+// follows the authors and interacted with nothing, and a stranger.
+func TestViewsForAreThoseOfEachViewer(t *testing.T) {
+	t.Parallel()
+	_, scene := timelineScene(t, 30)
+	stranger, err := scene.app.Identity.RegisterLocalUser(t.Context(), identity.RegisterInput{Username: "stranger", Password: "correct horse battery staple"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	viewers := []appcontent.Viewer{
+		{Kind: domcontent.ViewerLocal, AccountID: scene.viewer.accountID},
+		{Kind: domcontent.ViewerLocal, AccountID: stranger.AccountID},
+	}
+	// bob favourites and bookmarks a status, and votes in no poll: his parts differ from the stranger's.
+	if len(scene.ids) > 0 {
+		if _, err := scene.app.Interactions.Favourite(t.Context(), scene.viewer.accountID, scene.ids[0]); err != nil {
+			t.Fatal(err)
+		}
+	}
+	got, err := scene.app.Statuses.ViewsFor(t.Context(), viewers, scene.ids)
+	if err != nil {
+		t.Fatalf("ViewsFor: %v", err)
+	}
+	for _, v := range viewers {
+		want, err := scene.app.Statuses.Views(t.Context(), v, scene.ids)
+		if err != nil {
+			t.Fatalf("Views(%s): %v", v.AccountID, err)
+		}
+		if !reflect.DeepEqual(got[v.AccountID], want) {
+			t.Errorf("ViewsFor(%s) differs from Views:\nfor  %+v\nview %+v", v.AccountID, got[v.AccountID], want)
+		}
+	}
 }

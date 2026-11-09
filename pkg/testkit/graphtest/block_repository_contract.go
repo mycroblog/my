@@ -689,6 +689,14 @@ func blockRepoOneWithMany(t *testing.T, r *blockRepo) {
 		_, err := r.repo.InsertEdge(ctx, tx, graph.Edge{FollowerAccountID: me, FolloweeAccountID: erin, FollowID: r.ids.NewID(), State: graph.StateActive, Since: now})
 		return err
 	})
+	// The mutes of one target by many accounts, and the preferences of many follows, outside a
+	// transaction.
+	if got, err := r.repo.FindMutesOn(t.Context(), bob, []string{me, carol}, now); err != nil || len(got) != 1 || !got[me].HideNotifications {
+		t.Errorf("FindMutesOn(bob) = %+v, %v; want my mute", got, err)
+	}
+	if got, err := r.repo.FindPreferencesOf(t.Context(), []string{r.ids.NewID()}); err != nil || len(got) != 0 {
+		t.Errorf("FindPreferencesOf(unknown) = %+v, %v; want none", got, err)
+	}
 	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
 		blocking, blockedBy, err := r.repo.BlockEdgesWithTx(ctx, tx, me, []string{bob, carol, dave, erin})
 		if err != nil || !maps.Equal(blocking, map[string]bool{carol: true}) || !maps.Equal(blockedBy, map[string]bool{dave: true}) {

@@ -154,6 +154,11 @@ type InteractionRepository interface {
 	// FindBookmark, FindPin, and ListAccountStatusReactions return them of one status, with one
 	// query per kind whatever the number of statuses.
 	FindAccountInteractions(ctx context.Context, accountID string, statusIDs []string) (AccountInteractions, error)
+	// FindInteractionsOfAccounts is FindAccountInteractions of each of accountIDs, by account,
+	// with one query per kind.
+	FindInteractionsOfAccounts(ctx context.Context, accountIDs, statusIDs []string) (map[string]AccountInteractions, error)
+	// MentionsOfAccountsIn is MentionedIn of each of accountIDs, by account, with one query.
+	MentionsOfAccountsIn(ctx context.Context, statusIDs, accountIDs []string) (map[string]map[string]bool, error)
 	// ListStatusReactions returns the reactions to a status newest first, only those with the
 	// emoji whose key is emojiKey unless it is "": those with an ID below before ("" starts at
 	// the newest), at most limit of them.

@@ -1261,6 +1261,10 @@ func statusReadsCurrentRevisions(t *testing.T, e *StatusEnv) {
 		len(wantVotes) != 2 || !reflect.DeepEqual(got[rev.Poll.ID], wantVotes) || len(got[other]) != 0 {
 		t.Errorf("ListPollVotesIn = %+v, %v; want %+v (%v) as ListPollVotes", got, gerr, wantVotes, err)
 	}
+	if got, gerr := e.H.Statuses.ListPollVotesOfAccountsIn(t.Context(), []string{rev.Poll.ID, other}, []string{voter, other}); gerr != nil ||
+		!reflect.DeepEqual(got[voter][rev.Poll.ID], wantVotes) || len(got[voter][other]) != 0 || len(got[other]) != 0 {
+		t.Errorf("ListPollVotesOfAccountsIn = %+v, %v; want the voter's %+v alone, as ListPollVotes", got, gerr, wantVotes)
+	}
 	if got, err := e.H.Statuses.FindCurrentRevisions(t.Context(), nil); err != nil || len(got) != 0 {
 		t.Errorf("FindCurrentRevisions(nil) = %+v, %v; want none", got, err)
 	}
