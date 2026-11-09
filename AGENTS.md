@@ -168,6 +168,8 @@ These come from Accepted ADRs and are binding.
   (AWS, Google Cloud) live in adapters and use the SDK's own HTTP client, and adapters that call a configured address (LiveKit, plugins, translation
   providers, search backends) take a dedicated `*http.Client` from `internal/platform` that follows no redirects, as `internal/adapter/voice/livekit` does
   ([ADR-0146](docs/adr/0146-plugin-protocol.md) §7). A URL such a service returns is not operator-configured, and fetching one goes through `kernel.HTTPClient`.
+  A list the operator configures by URL but a third party hosts (a subscribed blocklist, [ADR-0159](docs/adr/0159-federation-allowlist-and-blocklist-subscriptions.md) §4)
+  goes through `kernel.HTTPClient` too: the third party decides what the URL serves and where it redirects.
 - Visibility checks go through the single domain policy function; never re-implement them in API or federation code.
   Levels are `public` / `local` / `unlisted` / `private` / `direct`; `local` is never federated beyond the author's followers ([ADR-0017](docs/adr/0017-visibility-local.md)).
 - **i18n**: never hard-code user-facing strings or date/number formats. Add ICU messages to `locales/en` *and* `locales/ja`,

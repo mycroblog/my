@@ -45,9 +45,20 @@ export const Inline: Story = {
     </p>
   ),
   play: async ({ canvas }) => {
-    await expect(
-      canvas.getByRole("link", { name: "the rules of remote.example (opens in a new tab)" }),
-    ).toHaveAttribute("rel", "noopener noreferrer nofollow ugc");
+    const link = canvas.getByRole("link", { name: "the rules of remote.example (opens in a new tab)" });
+    await expect(link).toHaveAttribute("rel", "noopener noreferrer nofollow ugc");
+    // The icon stays in the line of the text instead of breaking it (the base styles make an SVG a block): the period
+    // after the link is on the icon's line.
+    const icon = link.querySelector("svg");
+    await expect(icon).not.toBeNull();
+    await expect(getComputedStyle(icon as SVGElement).display).toBe("inline");
+    const period = document.createRange();
+    period.selectNodeContents(link.nextSibling as Node);
+    const line = period.getBoundingClientRect();
+    const middle =
+      (icon as SVGElement).getBoundingClientRect().top + (icon as SVGElement).getBoundingClientRect().height / 2;
+    await expect(middle).toBeGreaterThan(line.top);
+    await expect(middle).toBeLessThan(line.bottom);
   },
 };
 

@@ -5,6 +5,7 @@
 // the button; it never replaces its name. Lint (restrict/icons) rejects an icon-only Button or ToggleButton outside a
 // TooltipTrigger, so a feature builds one from these.
 import type { ReactNode } from "react";
+import { composeRenderProps } from "react-aria-components";
 import { Button, ButtonLink, type ButtonLinkProps, type ButtonProps } from "./Button";
 import { ToggleButton, type ToggleButtonProps } from "./ToggleButton";
 import { Tooltip, type TooltipProps, TooltipTrigger } from "./Tooltip";
@@ -70,16 +71,36 @@ export type IconToggleButtonProps = Omit<ToggleButtonProps, "aria-label" | "aria
      * that the name contains the visible text (WCAG 2.5.3). The tooltip keeps `label`. Without it, the name is `label`.
      */
     countedLabel?: string | undefined;
+    /**
+     * Left out of a container narrower than `@sm` (a narrow `PostCard`), for an action that a menu beside it also
+     * holds, so that a row of actions fits: `display: none`, so that it takes neither room nor the focus. It needs an
+     * `@container` around it, as `PostCard` is; without one it is always left out.
+     */
+    collapsible?: boolean;
   };
 
 /**
  * A `ToggleButton` that shows only an icon (and a count), named by `label` (with the count it shows, `countedLabel`)
  * and its tooltip. The name stays the same in both states ("Favourite"); the icon's shape and `aria-pressed` tell the state.
  */
-export function IconToggleButton({ label, countedLabel, children, tooltipPlacement, ...props }: IconToggleButtonProps) {
+export function IconToggleButton({
+  label,
+  countedLabel,
+  children,
+  tooltipPlacement,
+  collapsible = false,
+  className,
+  ...props
+}: IconToggleButtonProps) {
   return (
     <TooltipTrigger>
-      <ToggleButton {...props} aria-label={countedLabel ?? label}>
+      <ToggleButton
+        {...props}
+        aria-label={countedLabel ?? label}
+        className={composeRenderProps(className, (className) =>
+          collapsible ? ["hidden @sm:inline-flex", className].filter(Boolean).join(" ") : (className ?? ""),
+        )}
+      >
         {children}
       </ToggleButton>
       <Tooltip {...(tooltipPlacement !== undefined && { placement: tooltipPlacement })}>{label}</Tooltip>

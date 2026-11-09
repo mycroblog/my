@@ -13,6 +13,7 @@
 
 すべての外部 HTTP（連合の取得・配送、WebFinger、メディアプロキシ、リンクプレビュー、Web Push 送信）は `kernel.HTTPClient` ポートを通す。
 `net/http` の `http.DefaultClient` を直接使うことは lint（`forbidigo`）で禁止する。
+運営者が URL を設定する取得でも、その URL を第三者のサーバーが置くもの（購読するドメインのブロックリスト、[ADR-0159](0159-federation-allowlist-and-blocklist-subscriptions.md) §4）は `kernel.HTTPClient` を通す。返す中身とリダイレクト先を第三者が決められるからである。
 
 **拒否するアドレス**（出典: [IANA IPv4 / IPv6 Special-Purpose Address Registry](https://www.iana.org/assignments/iana-ipv4-special-registry/)、2026-10-16 確認）。
 実装は「`netip.Addr.IsGlobalUnicast()` が真」かつ「下表のどれにも含まれない」場合だけ許可する許可リスト方式とし、表は `netip.Prefix` の定数として持つ。

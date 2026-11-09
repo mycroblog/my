@@ -427,6 +427,7 @@ export async function translateInBrowser(
   if (texts.length === 0) {
     return {
       language: post.language,
+      sourceLanguage: post.language,
       body: { kind: "html", html },
       contentWarning: post.spoiler_text,
       altTexts: Object.fromEntries(described.map(({ id, description }) => [id, description])),
@@ -446,6 +447,7 @@ export async function translateInBrowser(
   await translateAll(texts, { sourceLanguage: source, targetLanguage: target }, onDownload);
   return {
     language: target,
+    sourceLanguage: source,
     body: { kind: "nodes", nodes: restoreParts(body) },
     contentWarning: restoredText(warning),
     altTexts: Object.fromEntries(described.map(({ id, text }) => [id, restoredText(text)])),
@@ -464,9 +466,14 @@ export async function translateTextInBrowser(
   onDownload: (loaded: number) => void,
 ): Promise<TranslatedComment> {
   const masked = maskInline([text]);
-  if (!sendable(masked)) return { language: "und", text, by: { kind: "author" } };
+  if (!sendable(masked)) return { language: "und", sourceLanguage: "und", text, by: { kind: "author" } };
   const source = await detectLanguage(masked.fragment.replaceAll(markerPattern, ""), onDownload);
   if (isInLanguage(source, target)) throw new BrowserTranslationError("same_language");
   await translateAll([masked], { sourceLanguage: source, targetLanguage: target }, onDownload);
-  return { language: target, text: restoredText(masked), by: { kind: "browser", name: browserName() } };
+  return {
+    language: target,
+    sourceLanguage: source,
+    text: restoredText(masked),
+    by: { kind: "browser", name: browserName() },
+  };
 }

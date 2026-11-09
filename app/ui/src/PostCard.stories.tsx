@@ -392,13 +392,13 @@ export const WithOrigin: Story = {
   },
 };
 
-/** A text that is not as its author posted it says so over the text, as part of the article's description. */
+/** A text that is not as its author posted it says so right after the text, as part of the article's description. */
 export const WithNote: Story = {
   args: {
     content: (
       <>
-        <PostCardNote>Machine translated by Fake Translate</PostCardNote>
         <PostContent html={serverSanitizedHtml("<p>Hello everyone</p>")} lang="en" />
+        <PostCardNote>Machine translated by Fake Translate</PostCardNote>
       </>
     ),
   },
