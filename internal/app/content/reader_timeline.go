@@ -15,11 +15,16 @@ import (
 
 // Views returns the statuses of ids as viewer sees them, in the order of ids. Statuses that
 // are missing, deleted, or hidden from the viewer are left out, so that a page read before a
-// deletion or a new block shows none of them.
+// deletion or a new block shows none of them. It reads the statuses and their authors once for
+// the page (Reader.page), and decides and presents each status as View does.
 func (r *Reader) Views(ctx context.Context, viewer Viewer, ids []string) ([]StatusView, error) {
+	page, err := r.page(ctx, ids)
+	if err != nil {
+		return nil, err
+	}
 	out := make([]StatusView, 0, len(ids))
 	for _, id := range ids {
-		v, err := r.View(ctx, viewer, id)
+		v, err := page.View(ctx, viewer, id)
 		if errors.Is(err, ErrNotFound) {
 			continue
 		}

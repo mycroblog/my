@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"slices"
 
 	appaccount "github.com/mycroblog/my/internal/app/account"
 	appcontent "github.com/mycroblog/my/internal/app/content"
@@ -69,7 +70,7 @@ func (s *Server) statuses(ctx context.Context, viewer appcontent.Viewer, items [
 		return nil, err
 	}
 	boosts := map[string]content.Boost{}
-	// The boosters, read once each; nil for one that no longer exists.
+	// The boosters, read together; nil for one that no longer exists.
 	boosters := map[string]*appaccount.Actor{}
 	var found []appaccount.Actor
 	if len(boostIDs) > 0 {
@@ -77,20 +78,23 @@ func (s *Server) statuses(ctx context.Context, viewer appcontent.Viewer, items [
 		if err != nil {
 			return nil, err
 		}
+		var ids []string
 		for _, b := range bs {
 			boosts[b.ID] = b
-			if _, ok := boosters[b.BoosterAccountID]; ok {
-				continue
+			if !slices.Contains(ids, b.BoosterAccountID) {
+				ids = append(ids, b.BoosterAccountID)
 			}
-			a, err := s.o.Accounts.FindByID(ctx, b.BoosterAccountID)
-			switch {
-			case err == nil:
-				boosters[b.BoosterAccountID] = &a
+		}
+		actors, err := s.o.Accounts.FindByIDs(ctx, ids)
+		if err != nil {
+			return nil, err
+		}
+		for _, id := range ids {
+			if a, ok := actors[id]; ok {
+				boosters[id] = &a
 				found = append(found, a)
-			case errors.Is(err, appaccount.ErrNotFound):
-				boosters[b.BoosterAccountID] = nil
-			default:
-				return nil, err
+			} else {
+				boosters[id] = nil
 			}
 		}
 	}

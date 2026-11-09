@@ -482,6 +482,28 @@ func (s *Service) FindByID(ctx context.Context, id string) (Actor, error) {
 	return s.actor(ctx, a)
 }
 
+// FindByIDs returns the accounts of ids that exist, by ID, as FindByID returns one: with one
+// query per part of an actor whatever the number of ids (Repository.FindActorParts).
+func (s *Service) FindByIDs(ctx context.Context, ids []string) (map[string]Actor, error) {
+	out := make(map[string]Actor, len(ids))
+	if len(ids) == 0 {
+		return out, nil
+	}
+	parts, err := s.d.Repository.FindActorParts(ctx, ids)
+	if err != nil {
+		return nil, err
+	}
+	reads := partReads(parts)
+	for id, a := range parts.Accounts {
+		actor, err := actorOf(ctx, reads, a)
+		if err != nil {
+			return nil, err
+		}
+		out[id] = actor
+	}
+	return out, nil
+}
+
 // ExistingIDs returns, in ID order, the accounts among ids that exist, in one lookup.
 func (s *Service) ExistingIDs(ctx context.Context, ids []string) ([]string, error) {
 	return s.d.Repository.ExistingAccountIDs(ctx, ids)
@@ -662,6 +684,41 @@ type actorReads interface {
 	FindCurrentProfile(ctx context.Context, accountID string) (account.ProfileRevision, error)
 	ListKeys(ctx context.Context, accountID string) ([]account.Key, error)
 	FindLifecycleState(ctx context.Context, accountID string) (account.LifecycleState, error)
+}
+
+// partReads reads an actor's parts from those that FindActorParts read; a part that is not there
+// fails with ErrNotFound, as a read of one account does.
+type partReads ActorParts
+
+func (p partReads) FindLocalAccount(_ context.Context, accountID string) (account.LocalAccount, error) {
+	return partOf(p.Locals, accountID, "local account")
+}
+
+func (p partReads) FindHandleOf(_ context.Context, accountID string) (account.Handle, error) {
+	return partOf(p.Handles, accountID, "handle")
+}
+
+func (p partReads) FindCurrentProfile(_ context.Context, accountID string) (account.ProfileRevision, error) {
+	return partOf(p.Profiles, accountID, "profile")
+}
+
+func (p partReads) ListKeys(_ context.Context, accountID string) ([]account.Key, error) {
+	if keys := p.Keys[accountID]; keys != nil {
+		return keys, nil
+	}
+	return []account.Key{}, nil // as the repository's ListKeys of an account without keys
+}
+
+func (p partReads) FindLifecycleState(_ context.Context, accountID string) (account.LifecycleState, error) {
+	return partOf(p.Lifecycle, accountID, "lifecycle state")
+}
+
+func partOf[T any](m map[string]T, accountID, what string) (T, error) {
+	v, ok := m[accountID]
+	if !ok {
+		return v, fmt.Errorf("%s of %s: %w", what, accountID, ErrNotFound)
+	}
+	return v, nil
 }
 
 // txReads reads an actor's parts in a transaction.

@@ -6,7 +6,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"slices"
 
 	"github.com/jackc/pgx/v5"
 
@@ -590,7 +589,28 @@ func currentProfile(ctx context.Context, q *accountgen.Queries, accountID string
 	if err != nil {
 		return account.ProfileRevision{}, postgres.Wrap(err, "list profile revision emoji")
 	}
-	rev := account.ProfileRevision{
+	rev := profileParts(profileRow(row), fields, emojis)
+	note, err := q.GetProfileRevisionSource(ctx, row.ID)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return rev, nil
+	}
+	if err != nil {
+		return account.ProfileRevision{}, postgres.Wrap(err, "get profile revision source")
+	}
+	sources, err := q.ListProfileFieldSources(ctx, row.ID)
+	if err != nil {
+		return account.ProfileRevision{}, postgres.Wrap(err, "list profile field sources")
+	}
+	byPosition := make(map[int]string, len(sources))
+	for _, s := range sources {
+		byPosition[int(s.Position)] = s.ValueSource
+	}
+	return profileSource(rev, note, byPosition), nil
+}
+
+// profileRow returns the revision of row, without its fields, custom emoji, and source.
+func profileRow(row accountgen.AccountProfileRevision) account.ProfileRevision {
+	return account.ProfileRevision{
 		ID:            row.ID,
 		AccountID:     row.AccountID,
 		Seq:           int(row.Seq),
@@ -605,30 +625,27 @@ func currentProfile(ctx context.Context, q *accountgen.Queries, accountID string
 		HeaderMediaID: postgres.FromNullString(row.HeaderMediaID),
 		RevisedAt:     postgres.UTC(row.RevisedAt),
 	}
+}
+
+// profileParts returns rev with the fields and the custom emoji of its revision.
+func profileParts(rev account.ProfileRevision, fields []accountgen.AccountProfileField, emojis []string) account.ProfileRevision {
 	for _, f := range fields {
 		rev.Fields = append(rev.Fields, account.ProfileField{Position: int(f.Position), Name: f.Name, ValueHTML: f.ValueHtml})
 	}
 	if len(emojis) > 0 {
 		rev.EmojiIDs = emojis
 	}
-	note, err := q.GetProfileRevisionSource(ctx, row.ID)
-	if errors.Is(err, pgx.ErrNoRows) {
-		return rev, nil
-	}
-	if err != nil {
-		return account.ProfileRevision{}, postgres.Wrap(err, "get profile revision source")
-	}
-	sources, err := q.ListProfileFieldSources(ctx, row.ID)
-	if err != nil {
-		return account.ProfileRevision{}, postgres.Wrap(err, "list profile field sources")
-	}
+	return rev
+}
+
+// profileSource returns rev, a local account's revision, with its source: the note and the source
+// of each field by its position ("" for a field without one).
+func profileSource(rev account.ProfileRevision, note string, byPosition map[int]string) account.ProfileRevision {
 	rev.Source = &account.ProfileSource{Note: note, FieldValues: make([]string, len(rev.Fields))}
-	for _, s := range sources {
-		if i := slices.IndexFunc(rev.Fields, func(f account.ProfileField) bool { return f.Position == int(s.Position) }); i >= 0 {
-			rev.Source.FieldValues[i] = s.ValueSource
-		}
+	for i, f := range rev.Fields {
+		rev.Source.FieldValues[i] = byPosition[f.Position]
 	}
-	return rev, nil
+	return rev
 }
 
 // FindLifecycleState implements account.Repository.
@@ -648,10 +665,7 @@ func (r *Repository) ListKeys(ctx context.Context, accountID string) ([]account.
 	}
 	out := make([]account.Key, len(rows))
 	for i, row := range rows {
-		out[i] = account.Key{
-			ID: row.ID, AccountID: row.AccountID, KeyID: row.KeyID, Algorithm: account.KeyAlgorithm(row.Algorithm),
-			PublicKeyPEM: row.PublicKeyPem, Fingerprint: row.Fingerprint, CreatedAt: postgres.UTC(row.CreatedAt),
-		}
+		out[i] = keyFrom(row)
 	}
 	return out, nil
 }

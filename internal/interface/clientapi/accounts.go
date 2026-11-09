@@ -21,6 +21,9 @@ type Accounts interface {
 	// FindByID returns the actor with an account ID, failing with appaccount.ErrNotFound when
 	// there is none.
 	FindByID(ctx context.Context, id string) (appaccount.Actor, error)
+	// FindByIDs returns the actors of the account IDs that exist, by ID, with one query per part
+	// of an actor whatever the number of IDs.
+	FindByIDs(ctx context.Context, ids []string) (map[string]appaccount.Actor, error)
 	// FindByHandle returns the actor with a handle (domain is account.LocalDomain for local
 	// accounts), failing with appaccount.ErrNotFound when there is none.
 	FindByHandle(ctx context.Context, username, domain string) (appaccount.Actor, error)

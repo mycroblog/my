@@ -1381,6 +1381,42 @@ func (q *Queries) ListStatusRevisions(ctx context.Context, statusID string) ([]S
 	return items, nil
 }
 
+const listStatusesByIDs = `-- name: ListStatusesByIDs :many
+SELECT id, uri, url, author_account_id, is_local, visibility, in_reply_to_uri, conversation_uri, published_at
+FROM statuses WHERE id = ANY($1::uuid[]) ORDER BY id
+`
+
+// ListStatusesByIDs reads what GetStatus reads, of many statuses at once.
+func (q *Queries) ListStatusesByIDs(ctx context.Context, ids []string) ([]Status, error) {
+	rows, err := q.db.Query(ctx, listStatusesByIDs, ids)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Status{}
+	for rows.Next() {
+		var i Status
+		if err := rows.Scan(
+			&i.ID,
+			&i.Uri,
+			&i.Url,
+			&i.AuthorAccountID,
+			&i.IsLocal,
+			&i.Visibility,
+			&i.InReplyToUri,
+			&i.ConversationUri,
+			&i.PublishedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listTagsByPrefix = `-- name: ListTagsByPrefix :many
 SELECT id, name, name_normalized, created_at FROM tags
 WHERE name_normalized >= $1::text AND name_normalized < $2::text

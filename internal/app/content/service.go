@@ -98,6 +98,9 @@ const UndeterminedLanguage = "und"
 // *appaccount.Service implements it.
 type Accounts interface {
 	FindByID(ctx context.Context, id string) (appaccount.Actor, error)
+	// FindByIDs returns the accounts of ids that exist, by ID, as FindByID returns one, with one
+	// query per part of an actor whatever the number of ids.
+	FindByIDs(ctx context.Context, ids []string) (map[string]appaccount.Actor, error)
 	FindByHandle(ctx context.Context, username, domain string) (appaccount.Actor, error)
 }
 
