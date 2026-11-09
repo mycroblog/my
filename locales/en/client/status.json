@@ -351,6 +351,14 @@
     "defaultMessage": "Not a machine translation: this is the author's own text.",
     "description": "Line above a post after the reader asked for a translation and the server answered with the words the author wrote, so nothing was machine translated."
   },
+  "status.translation.browser": {
+    "defaultMessage": "Your browser ({browser})",
+    "description": "On the line under a translated post: who translated it, the reader's own browser. {browser} is the browser's product name."
+  },
+  "status.translation.browser_unnamed": {
+    "defaultMessage": "Your browser",
+    "description": "On the line under a translated post: who translated it, the reader's own browser, whose name is not known."
+  },
   "status.translation.browser_failed": {
     "defaultMessage": "Your browser couldn't translate this post. Try again.",
     "description": "Next to the translate button: the translator built into the browser failed, or lost a mention or a link of the post on the way. The original stays in view."
@@ -377,15 +385,15 @@
   },
   "status.translation.by": {
     "defaultMessage": "Machine translated by {provider}",
-    "description": "Line above a translated post, and what a screen reader hears when the translation appears. {provider} is the name of the translation service."
+    "description": "What a screen reader hears when a translation by a translation service appears. {provider} is the name of the translation service."
   },
   "status.translation.by_browser": {
     "defaultMessage": "Machine translated by your browser ({browser})",
-    "description": "Line above a post that the reader's own browser translated, and what a screen reader hears when the translation appears. {browser} is the browser's product name."
+    "description": "What a screen reader hears when the reader's own browser translated a post. {browser} is the browser's product name."
   },
   "status.translation.by_browser_unnamed": {
     "defaultMessage": "Machine translated by your browser",
-    "description": "Line above a post that the reader's own browser translated, for a browser whose name is not known, and what a screen reader hears when the translation appears."
+    "description": "What a screen reader hears when the reader's own browser translated a post, for a browser whose name is not known."
   },
   "status.translation.downloading": {
     "defaultMessage": "Downloading the translation model… {progress, number, ::percent}",
@@ -399,9 +407,17 @@
     "defaultMessage": "This post couldn't be translated: {reason}",
     "description": "Next to the translate button: the request failed for another reason, such as no connection. {reason} is the localized reason."
   },
+  "status.translation.from": {
+    "defaultMessage": "Translated from {language}",
+    "description": "Start of the line under a translated post: what happened. {language} is the name of the language the post was written in, in the UI's language (\"English\")."
+  },
   "status.translation.limit": {
     "defaultMessage": "The monthly translation limit has been reached, so this post wasn't translated. You can translate again next month.",
     "description": "Next to the translate button: the limit of the reader or of the server on translated characters is used up until the next month. The original stays in view."
+  },
+  "status.translation.machine": {
+    "defaultMessage": "Machine translated",
+    "description": "Start of the line under a translated post when the language it was written in is not known."
   },
   "status.translation.original_shown": {
     "defaultMessage": "Showing the original post.",

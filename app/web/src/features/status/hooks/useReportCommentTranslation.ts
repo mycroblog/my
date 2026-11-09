@@ -9,15 +9,17 @@ import { useState } from "react";
 import { useIntl } from "react-intl";
 import { useT } from "../../../lib/i18n";
 import type { CommentTranslator, TranslatedComment } from "../api/translation";
-import { failureText, translatedByText } from "./useStatusTranslation";
+import { failureText, translatedByText, type TranslationAction } from "./useStatusTranslation";
 import { useReportCommentTranslator } from "./useTranslator";
 
 export type ReportCommentTranslationView = {
   /** The button that translates the comment or goes back to the original; null when nothing can translate it. */
-  action: { label: string; isPending: boolean; onPress: () => void } | null;
+  action: TranslationAction | null;
   /** The translation to show in place of the comment; null shows the comment. */
   shown: TranslatedComment | null;
   /** Why the last try gave no translation. The comment stays. */
+  /** What the line under the text says while a translation is on its way; null otherwise. */
+  progress: string | null;
   failure: string | null;
 };
 
@@ -53,6 +55,7 @@ export function useReportCommentTranslation(report: string, comment: string): Re
   const failed = translate.isError && translate.variables.key === key;
 
   const onPress = () => {
+    if (isPending) return;
     if (shown !== null) {
       setIsShown(false);
       notice.inPlace(t("client:status.translation.original_shown"));
@@ -63,14 +66,15 @@ export function useReportCommentTranslation(report: string, comment: string): Re
       translate.mutate({ translator, key });
     }
   };
-  let label = t("client:status.translation.action");
-  if (shown !== null) label = t("client:status.translation.show_original");
-  else if (isPending && downloaded !== null) {
-    label = t("client:status.translation.downloading", { progress: downloaded });
-  } else if (isPending) label = t("client:status.translation.pending");
+  let progress: string | null = null;
+  if (isPending && downloaded !== null) progress = t("client:status.translation.downloading", { progress: downloaded });
+  else if (isPending) progress = t("client:status.translation.pending");
+  const label =
+    shown === null ? (progress ?? t("client:status.translation.action")) : t("client:status.translation.show_original");
   return {
-    action: translator !== null || shown !== null ? { label, isPending, onPress } : null,
+    action: translator !== null || shown !== null ? { label, isPending, isShown: shown !== null, onPress } : null,
     shown,
+    progress,
     failure: failed && shown === null ? failureText(translate.error, t) : null,
   };
 }
