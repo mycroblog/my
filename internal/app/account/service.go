@@ -527,6 +527,21 @@ func (s *Service) RemoteInbox(ctx context.Context, accountID string) (RemoteInbo
 	return RemoteInbox{InboxURL: h.InboxURL, SharedInboxURL: h.SharedInboxURL}, nil
 }
 
+// RemoteInboxes returns the inboxes of the remote accounts of accountIDs, by account, as
+// RemoteInbox returns one, with one query; a local account, or a remote one never fetched, is
+// left out.
+func (s *Service) RemoteInboxes(ctx context.Context, accountIDs []string) (map[string]RemoteInbox, error) {
+	heads, err := s.d.Repository.FindRemoteHeads(ctx, accountIDs)
+	if err != nil {
+		return nil, err
+	}
+	out := make(map[string]RemoteInbox, len(heads))
+	for id, h := range heads {
+		out[id] = RemoteInbox{InboxURL: h.InboxURL, SharedInboxURL: h.SharedInboxURL}
+	}
+	return out, nil
+}
+
 // RemoteInboxTx is RemoteInbox inside tx.
 func (s *Service) RemoteInboxTx(ctx context.Context, tx uow.Tx, accountID string) (RemoteInbox, error) {
 	h, err := s.d.Repository.FindRemoteHeadTx(ctx, tx, accountID)

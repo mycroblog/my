@@ -5,6 +5,7 @@ package federationtest
 import (
 	"context"
 	"errors"
+	"maps"
 	"reflect"
 	"slices"
 	"testing"
@@ -252,6 +253,11 @@ func fedRepoHealth(t *testing.T, r *fedRepo) {
 	}
 	if got, err := r.h.Federation.InstanceState(ctx, "c.example"); err != nil || got != federation.InstanceUnavailable {
 		t.Errorf("InstanceState(unavailable) = %q, %v", got, err)
+	}
+	states := map[string]federation.InstanceState{"a.example": federation.InstanceAvailable, "b.example": federation.InstanceAvailable,
+		"c.example": federation.InstanceUnavailable, "unknown.example": federation.InstanceAvailable}
+	if got, err := r.h.Federation.InstanceStatesOf(ctx, []string{"a.example", "b.example", "c.example", "unknown.example"}); err != nil || !maps.Equal(got, states) {
+		t.Errorf("InstanceStatesOf = %v, %v; want %v", got, err, states)
 	}
 	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
 		if got, err := r.h.Federation.LockInstanceHealth(ctx, tx, "c.example"); err != nil || got != down {

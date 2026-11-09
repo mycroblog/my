@@ -548,6 +548,42 @@ func (q *Queries) ListRemoteAccountHeads(ctx context.Context) ([]RemoteAccountHe
 	return items, nil
 }
 
+const listRemoteAccountHeadsByIDs = `-- name: ListRemoteAccountHeadsByIDs :many
+SELECT account_id, snapshot_id, inbox_url, shared_inbox_url, last_fetched_at, consecutive_fetch_failures
+FROM remote_account_heads WHERE account_id IN (SELECT value FROM json_each(CAST(?1 AS TEXT)))
+`
+
+// The heads of the remote actors of account_ids that have one, as GetRemoteAccountHead reads one.
+func (q *Queries) ListRemoteAccountHeadsByIDs(ctx context.Context, accountIds string) ([]RemoteAccountHead, error) {
+	rows, err := q.db.QueryContext(ctx, listRemoteAccountHeadsByIDs, accountIds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []RemoteAccountHead{}
+	for rows.Next() {
+		var i RemoteAccountHead
+		if err := rows.Scan(
+			&i.AccountID,
+			&i.SnapshotID,
+			&i.InboxUrl,
+			&i.SharedInboxUrl,
+			&i.LastFetchedAt,
+			&i.ConsecutiveFetchFailures,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listRemoteProfileURLs = `-- name: ListRemoteProfileURLs :many
 SELECT h.account_id, s.profile_url FROM remote_account_heads h
 JOIN remote_account_snapshots s ON s.id = h.snapshot_id

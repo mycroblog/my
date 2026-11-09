@@ -205,6 +205,10 @@ func remoteActorRepoHeads(t *testing.T, r *remoteActorRepo) {
 	if _, err := r.h.Accounts.FindRemoteHead(ctx, unfetched.ID); !errors.Is(err, appaccount.ErrNotFound) {
 		t.Errorf("FindRemoteHead without a head = %v, want ErrNotFound", err)
 	}
+	if got, err := r.h.Accounts.FindRemoteHeads(ctx, []string{accounts[0].ID, accounts[2].ID, unfetched.ID}); err != nil || len(got) != 2 ||
+		!sameRemoteHead(got[accounts[0].ID], heads[0]) || !sameRemoteHead(got[accounts[2].ID], heads[2]) {
+		t.Errorf("FindRemoteHeads = %+v, %v; want the heads of a and c only", got, err)
+	}
 
 	// A failed fetch of b counts in its head and moves its last fetch after the others.
 	failedAt := r.clock.Now()

@@ -36,6 +36,26 @@ func (r *Repository) FindRemoteHead(ctx context.Context, accountID string) (acco
 	return remoteHeadFrom(row), nil
 }
 
+// FindRemoteHeads implements appaccount.Repository.
+func (r *Repository) FindRemoteHeads(ctx context.Context, accountIDs []string) (map[string]account.RemoteHead, error) {
+	out := map[string]account.RemoteHead{}
+	if len(accountIDs) == 0 {
+		return out, nil
+	}
+	list, err := sqlite.JSONList(accountIDs)
+	if err != nil {
+		return nil, err
+	}
+	rows, err := r.db.reader().ListRemoteAccountHeadsByIDs(ctx, list)
+	if err != nil {
+		return nil, sqlite.Wrap(err, "list remote heads")
+	}
+	for _, row := range rows {
+		out[row.AccountID] = remoteHeadFrom(row)
+	}
+	return out, nil
+}
+
 func keyFrom(row accountgen.AccountKey) account.Key {
 	return account.Key{
 		ID: row.ID, AccountID: row.AccountID, KeyID: row.KeyID, Algorithm: account.KeyAlgorithm(row.Algorithm),

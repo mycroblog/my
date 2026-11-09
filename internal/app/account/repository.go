@@ -154,6 +154,9 @@ type Repository interface {
 	// FindRemoteHead returns the head of a remote actor; ErrNotFound means the account is local
 	// or has never been fetched.
 	FindRemoteHead(ctx context.Context, accountID string) (account.RemoteHead, error)
+	// FindRemoteHeads returns the heads of the remote actors of accountIDs that have one, by
+	// account, as FindRemoteHead returns one, with one query.
+	FindRemoteHeads(ctx context.Context, accountIDs []string) (map[string]account.RemoteHead, error)
 	// ListKeys returns an account's public keys, oldest first.
 	ListKeys(ctx context.Context, accountID string) ([]account.Key, error)
 	// FindSealedPrivateKey returns the sealed private key of a local actor's key.
