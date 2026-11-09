@@ -459,7 +459,7 @@ func TestBrokenManifest(t *testing.T) {
 }
 
 func TestDevViteOrigin(t *testing.T) {
-	_, mux := newHandler(t, web.Options{DevViteOrigin: "http://localhost:5173", Host: "localhost:8080"})
+	h, mux := newHandler(t, web.Options{DevViteOrigin: "http://localhost:5173", Host: "localhost:8080"})
 	rec := get(mux, "/", nil)
 	body := rec.Body.String()
 	for _, want := range []string{
@@ -479,6 +479,9 @@ func TestDevViteOrigin(t *testing.T) {
 	}
 	if rec.Header().Get("Cache-Control") != "no-store" {
 		t.Errorf("dev shell Cache-Control = %q, want no-store", rec.Header().Get("Cache-Control"))
+	}
+	if got, want := h.Stylesheet(), "http://localhost:5173/src/server-pages.css"; got != want {
+		t.Errorf("dev Stylesheet() = %q, want %q, the server pages' stylesheet on the dev server", got, want)
 	}
 	for _, bad := range []string{"localhost:5173/", "ftp://localhost", "localhost:5173", "http://user@localhost:5173"} {
 		if _, err := web.New(web.Options{Host: "localhost:8080", Build: fakeBuild(), DevViteOrigin: bad}); err == nil {

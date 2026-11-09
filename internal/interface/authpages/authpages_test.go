@@ -312,6 +312,28 @@ func TestRightToLeftLocale(t *testing.T) {
 	}
 }
 
+// A stylesheet of another origin, the Vite dev server's, and its images are allowed by the pages' CSP.
+func TestPagesAllowTheStylesheetOrigin(t *testing.T) {
+	b, err := i18n.Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, tt := range []struct{ stylesheet, want string }{
+		{"http://localhost:5173/src/server-pages.css", "style-src 'self' http://localhost:5173; img-src 'self' http://localhost:5173;"},
+		{"/assets/x.css", "style-src 'self'; img-src 'self';"},
+	} {
+		m := mux{http.NewServeMux()}
+		authpages.New(authpages.Options{Identity: newFakeIdentity(), Locales: &i18n.Resolver{Bundle: b}, Stylesheet: tt.stylesheet}).Register(m)
+		w := newBrowser(t, m).do(http.MethodGet, authpages.PathSignIn, nil, nil)
+		if csp := w.Header().Get("Content-Security-Policy"); !strings.Contains(csp, tt.want) {
+			t.Errorf("stylesheet %s: CSP = %q, want %q", tt.stylesheet, csp, tt.want)
+		}
+		if body := w.Body.String(); !strings.Contains(body, `href="`+tt.stylesheet+`"`) {
+			t.Errorf("stylesheet %s: page lacks the link:\n%s", tt.stylesheet, body)
+		}
+	}
+}
+
 // The instance theme's stylesheet follows the pages' own stylesheet (ADR-0059).
 func TestPagesLoadTheThemeStylesheet(t *testing.T) {
 	b, err := i18n.Load()
