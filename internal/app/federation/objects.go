@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/url"
+	"slices"
 	"strings"
 	"time"
 
@@ -431,9 +432,13 @@ func (o *Objects) Outbox(ctx context.Context, accountID, before string) (OutboxP
 		return OutboxPage{}, err
 	}
 	out := OutboxPage{Items: []federation.ActivityDocument{}, Next: page.Next}
+	notes, parts, err := o.pageNotes(ctx, views)
+	if err != nil {
+		return OutboxPage{}, err
+	}
 	for _, v := range views {
 		actor := federation.IRI(v.Author.Account.URI)
-		note, err := o.viewNote(ctx, v)
+		note, err := o.viewNote(ctx, notes, v, parts[v.Status.ID])
 		if err != nil {
 			return OutboxPage{}, err
 		}
@@ -450,8 +455,12 @@ func (o *Objects) Featured(ctx context.Context, accountID string) ([]federation.
 		return nil, err
 	}
 	out := []federation.NoteDocument{}
+	notes, parts, err := o.pageNotes(ctx, views)
+	if err != nil {
+		return nil, err
+	}
 	for _, v := range views {
-		note, err := o.viewNote(ctx, v)
+		note, err := o.viewNote(ctx, notes, v, parts[v.Status.ID])
 		if err != nil {
 			return nil, err
 		}
@@ -461,27 +470,110 @@ func (o *Objects) Featured(ctx context.Context, accountID string) ([]federation.
 }
 
 // viewNote returns the Note of a status as an anonymous visitor sees it, from the parts that the
-// reader resolved. The reader showed the status to an anonymous visitor, so it is public or
-// unlisted and its effective visibility is its own (a ceiling would have made it followers-only):
-// no mention is left out of tag (ADR-0017 is about local statuses). Like every Note, it says what
-// the status quotes and who may quote it.
-func (o *Objects) viewNote(ctx context.Context, v appcontent.StatusView) (federation.NoteDocument, error) {
-	parts, err := o.viewParts(ctx, v)
-	if err != nil {
-		return federation.NoteDocument{}, err
-	}
+// reader resolved and parts, those of pageParts. The reader showed the status to an anonymous
+// visitor, so it is public or unlisted and its effective visibility is its own (a ceiling would
+// have made it followers-only): no mention is left out of tag (ADR-0017 is about local statuses).
+// Like every Note, it says what the status quotes and who may quote it, through notes.
+func (o *Objects) viewNote(ctx context.Context, notes notes, v appcontent.StatusView, parts appcontent.RevisionParts) (federation.NoteDocument, error) {
 	note := statusNote(v.Status, v.Revision, v.Author, v.Status.Visibility, parts,
 		updatedOf(v.Revision), o.d.Host, o.d.AccountDomain)
-	return o.notes.withQuotes(ctx, note, v.Status, v.Author, v.Status.Visibility)
+	return notes.withQuotes(ctx, note, v.Status, v.Author, v.Status.Visibility)
 }
 
-// viewParts returns the parts of the Note of a status from those the reader resolved, with the
-// custom emoji of its revision.
-func (o *Objects) viewParts(ctx context.Context, v appcontent.StatusView) (appcontent.RevisionParts, error) {
-	parts := appcontent.RevisionParts{Attachments: v.Attachments, Mentions: v.Mentions, Tags: v.Tags, Poll: v.Poll}
-	var err error
-	parts.Emojis, err = o.d.Reader.EmojiTags(ctx, v.Revision.EmojiIDs)
-	return parts, err
+// pageNotes returns the notes that build the Notes of views, with the quotes of views read
+// together when Quotes can (appcontent.Service.NoteQuotesOf), and the parts of their Notes by
+// status (pageParts).
+func (o *Objects) pageNotes(ctx context.Context, views []appcontent.StatusView) (notes, map[string]appcontent.RevisionParts, error) {
+	parts, err := o.pageParts(ctx, views)
+	if err != nil {
+		return notes{}, nil, err
+	}
+	n := o.notes
+	b, ok := n.quotes.(noteQuoteBatch)
+	if !ok || len(views) == 0 {
+		return n, parts, nil
+	}
+	ids := make([]string, len(views))
+	for i, v := range views {
+		ids[i] = v.Status.ID
+	}
+	q, err := b.NoteQuotesOf(ctx, ids)
+	if err != nil {
+		return notes{}, nil, err
+	}
+	n.quotes = &pageNoteQuotes{NoteQuotes: n.quotes, page: ids, read: q}
+	return n, parts, nil
+}
+
+// pageParts returns, by status, the parts of the Notes of views from those the reader resolved,
+// with the custom emoji of their revisions read together: each status gets the tags of its own
+// emoji, in the order that EmojiTags returns them.
+func (o *Objects) pageParts(ctx context.Context, views []appcontent.StatusView) (map[string]appcontent.RevisionParts, error) {
+	var ids []string
+	for _, v := range views {
+		ids = append(ids, v.Revision.EmojiIDs...)
+	}
+	var tags []appcontent.EmojiTag
+	if len(ids) > 0 {
+		var err error
+		if tags, err = o.d.Reader.EmojiTags(ctx, ids); err != nil {
+			return nil, err
+		}
+	}
+	out := make(map[string]appcontent.RevisionParts, len(views))
+	for _, v := range views {
+		parts := appcontent.RevisionParts{Attachments: v.Attachments, Mentions: v.Mentions, Tags: v.Tags, Poll: v.Poll}
+		for _, t := range tags {
+			if slices.Contains(v.Revision.EmojiIDs, t.ID) {
+				parts.Emojis = append(parts.Emojis, t)
+			}
+		}
+		out[v.Status.ID] = parts
+	}
+	return out, nil
+}
+
+// noteQuoteBatch is a NoteQuotes that reads the quotes of many statuses at once, as
+// *appcontent.Service does.
+type noteQuoteBatch interface {
+	NoteQuotesOf(ctx context.Context, statusIDs []string) (appcontent.NoteQuotes, error)
+}
+
+// pageNoteQuotes answers the quote reads of the statuses of a page from what NoteQuotesOf read
+// for them, and every other read from NoteQuotes.
+type pageNoteQuotes struct {
+	NoteQuotes
+	page []string
+	read appcontent.NoteQuotes
+}
+
+func (p *pageNoteQuotes) FindQuote(ctx context.Context, statusID string) (appcontent.Quote, appcontent.QuoteState, error) {
+	if !slices.Contains(p.page, statusID) {
+		return p.NoteQuotes.FindQuote(ctx, statusID)
+	}
+	q, ok := p.read.Quotes[statusID]
+	if !ok {
+		return appcontent.Quote{}, appcontent.QuoteState{}, fmt.Errorf("quote of %s: %w", statusID, appcontent.ErrNotFound)
+	}
+	return q, p.read.States[statusID], nil
+}
+
+func (p *pageNoteQuotes) FindQuotePolicy(ctx context.Context, statusID string) (appcontent.StatusQuotePolicy, error) {
+	if !slices.Contains(p.page, statusID) {
+		return p.NoteQuotes.FindQuotePolicy(ctx, statusID)
+	}
+	pol, ok := p.read.Policies[statusID]
+	if !ok {
+		return appcontent.StatusQuotePolicy{}, fmt.Errorf("quote policy of %s: %w", statusID, appcontent.ErrNotFound)
+	}
+	return pol, nil
+}
+
+func (p *pageNoteQuotes) FederatedQuotePage(ctx context.Context, uri string) (string, bool, error) {
+	if l, ok := p.read.Links[uri]; ok {
+		return l.Page, l.OK, nil
+	}
+	return p.NoteQuotes.FederatedQuotePage(ctx, uri)
 }
 
 // updatedOf returns when an edited status was last revised, zero for one never edited.

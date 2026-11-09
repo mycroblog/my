@@ -234,24 +234,112 @@ func (s *Service) FindQuotePolicy(ctx context.Context, statusID string) (content
 func (s *Service) FederatedQuotePage(ctx context.Context, uri string) (string, bool, error) {
 	st, err := s.d.Repository.FindStatusByURI(ctx, uri)
 	if errors.Is(err, ErrNotFound) {
-		return uri, !strings.HasPrefix(uri, "https://"+s.d.Host+"/"), nil
+		page, ok := s.federatedQuotePage(uri, nil, appaccount.Actor{})
+		return page, ok, nil
 	}
 	if err != nil {
 		return "", false, err
 	}
-	if st.Visibility == content.VisibilityLocal {
-		return "", false, nil
-	}
 	var author appaccount.Actor
-	if st.IsLocal {
+	if st.IsLocal && st.Visibility != content.VisibilityLocal {
 		if author, err = s.d.Accounts.FindByID(ctx, st.AuthorAccountID); err != nil && !errors.Is(err, appaccount.ErrNotFound) {
 			return "", false, err
 		}
 	}
-	if page := StatusPageURL(s.d.Host, st, author); page != "" {
-		return page, true, nil
+	page, ok := s.federatedQuotePage(uri, &st, author)
+	return page, ok, nil
+}
+
+// federatedQuotePage is FederatedQuotePage of uri from the status stored at it (nil for none) and
+// its local author.
+func (s *Service) federatedQuotePage(uri string, st *content.Status, author appaccount.Actor) (string, bool) {
+	if st == nil {
+		return uri, !strings.HasPrefix(uri, "https://"+s.d.Host+"/")
 	}
-	return uri, true, nil
+	if st.Visibility == content.VisibilityLocal {
+		return "", false
+	}
+	if page := StatusPageURL(s.d.Host, *st, author); page != "" {
+		return page, true
+	}
+	return uri, true
+}
+
+// FederatedQuoteLink is what FederatedQuotePage returns for one quoted status.
+type FederatedQuoteLink struct {
+	Page string
+	OK   bool
+}
+
+// NoteQuotes are the quotes of statuses as FindQuote, FindQuotePolicy, and FederatedQuotePage
+// read them one by one: Quotes and States by quoting status, Policies by status, and Links by
+// quoted URI. A status missing from a map has none.
+type NoteQuotes struct {
+	Quotes   map[string]content.Quote
+	States   map[string]content.QuoteState
+	Policies map[string]content.StatusQuotePolicy
+	Links    map[string]FederatedQuoteLink
+}
+
+// NoteQuotesOf reads what the Notes of statusIDs say of quotes, as FindQuote, FindQuotePolicy,
+// and FederatedQuotePage read it for one status, with a number of queries that does not grow with
+// statusIDs.
+func (s *Service) NoteQuotesOf(ctx context.Context, statusIDs []string) (NoteQuotes, error) {
+	out := NoteQuotes{Quotes: map[string]content.Quote{}, States: map[string]content.QuoteState{},
+		Policies: map[string]content.StatusQuotePolicy{}, Links: map[string]FederatedQuoteLink{}}
+	if s.d.Quotes == nil || len(statusIDs) == 0 {
+		return out, nil
+	}
+	var err error
+	if out.Quotes, err = s.d.Quotes.FindQuotes(ctx, statusIDs); err != nil {
+		return NoteQuotes{}, err
+	}
+	if out.Policies, err = s.d.Quotes.FindQuotePolicies(ctx, statusIDs); err != nil {
+		return NoteQuotes{}, err
+	}
+	quoting := make([]string, 0, len(out.Quotes))
+	var uris []string
+	for id, q := range out.Quotes {
+		quoting = append(quoting, id)
+		if !slices.Contains(uris, q.QuotedURI) {
+			uris = append(uris, q.QuotedURI)
+		}
+	}
+	states, err := s.d.Quotes.FindQuoteStates(ctx, quoting)
+	if err != nil {
+		return NoteQuotes{}, err
+	}
+	for id, q := range out.Quotes {
+		st, ok := states[id]
+		if !ok {
+			st = content.InitialQuoteState(q)
+		}
+		out.States[id] = st
+	}
+	quoted, err := s.d.Repository.FindStatusesByURIs(ctx, uris)
+	if err != nil {
+		return NoteQuotes{}, err
+	}
+	var authors []string
+	for _, st := range quoted {
+		if st.IsLocal && st.Visibility != content.VisibilityLocal && !slices.Contains(authors, st.AuthorAccountID) {
+			authors = append(authors, st.AuthorAccountID)
+		}
+	}
+	actors, err := s.d.Accounts.FindByIDs(ctx, authors)
+	if err != nil {
+		return NoteQuotes{}, err
+	}
+	for _, uri := range uris {
+		var link FederatedQuoteLink
+		if st, ok := quoted[uri]; ok {
+			link.Page, link.OK = s.federatedQuotePage(uri, &st, actors[st.AuthorAccountID])
+		} else {
+			link.Page, link.OK = s.federatedQuotePage(uri, nil, appaccount.Actor{})
+		}
+		out.Links[uri] = link
+	}
+	return out, nil
 }
 
 // RejectQuote records that the quoted author's server refused the quote of the live status
