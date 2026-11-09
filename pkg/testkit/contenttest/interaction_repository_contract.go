@@ -5,6 +5,7 @@ package contenttest
 import (
 	"context"
 	"errors"
+	"maps"
 	"reflect"
 	"slices"
 	"sync"
@@ -260,6 +261,9 @@ func contentInteractionRepoCounters(t *testing.T, r *contentInteractionRepo) {
 		if got, err := r.repo.MentionedIn(ctx, []string{s.ID, gone.ID}, tc.account); err != nil || got[s.ID] != tc.want || got[gone.ID] {
 			t.Errorf("MentionedIn = %v, %v; want %v of the status alone, as Mentioned", got, err, tc.want)
 		}
+	}
+	if got, err := r.repo.MentionedAmong(ctx, s.ID, []string{mentioned, account}); err != nil || !maps.Equal(got, map[string]bool{mentioned: true}) {
+		t.Errorf("MentionedAmong = %v, %v; want the mentioned account alone, as Mentioned", got, err)
 	}
 }
 

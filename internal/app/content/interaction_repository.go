@@ -81,6 +81,9 @@ type InteractionRepository interface {
 	// MentionedIn returns the statuses among statusIDs that mention accountID, as Mentioned tells of
 	// one, with one query whatever the number of statuses.
 	MentionedIn(ctx context.Context, statusIDs []string, accountID string) (map[string]bool, error)
+	// MentionedAmong returns the accounts among accountIDs that statusID mentions, as Mentioned
+	// tells of each, with one query.
+	MentionedAmong(ctx context.Context, statusID string, accountIDs []string) (map[string]bool, error)
 
 	// Current values. Each insert does nothing when the account already has the row for the
 	// status and reports whether it inserted; each delete reports whether there was a row.

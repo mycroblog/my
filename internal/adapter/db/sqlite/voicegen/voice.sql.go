@@ -967,6 +967,62 @@ func (q *Queries) ListVoiceRoomRevisionHashtags(ctx context.Context, revisionIds
 	return items, nil
 }
 
+const listVoiceRoomViewerFacts = `-- name: ListVoiceRoomViewerFacts :many
+SELECT CAST(v.value AS TEXT) AS account_id,
+  EXISTS (SELECT 1 FROM voice_room_bans b WHERE b.room_id = ?1 AND b.account_id = v.value) AS banned,
+  EXISTS (SELECT 1 FROM voice_room_invitations i WHERE i.room_id = ?1 AND i.invitee_account_id = v.value
+    AND NOT EXISTS (SELECT 1 FROM voice_room_invitation_revocations x WHERE x.invitation_id = i.id)) AS invited,
+  CAST(COALESCE((
+    SELECT g.change = 'granted' FROM voice_room_speak_grants g
+    WHERE g.room_id = ?1 AND g.account_id = v.value
+    ORDER BY g.id DESC LIMIT 1
+  ), 0) AS INTEGER) AS speak_granted
+FROM json_each(CAST(?2 AS TEXT)) v
+`
+
+type ListVoiceRoomViewerFactsParams struct {
+	RoomID     string
+	AccountIds string
+}
+
+type ListVoiceRoomViewerFactsRow struct {
+	AccountID    string
+	Banned       bool
+	Invited      bool
+	SpeakGranted int64
+}
+
+// ListVoiceRoomViewerFacts returns, for each account of a JSON array, what IsVoiceRoomBanned,
+// GetVoiceRoomInvitation (an invitation that is not revoked), and IsVoiceRoomSpeakGranted read of
+// the account in the room.
+func (q *Queries) ListVoiceRoomViewerFacts(ctx context.Context, arg ListVoiceRoomViewerFactsParams) ([]ListVoiceRoomViewerFactsRow, error) {
+	rows, err := q.db.QueryContext(ctx, listVoiceRoomViewerFacts, arg.RoomID, arg.AccountIds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListVoiceRoomViewerFactsRow{}
+	for rows.Next() {
+		var i ListVoiceRoomViewerFactsRow
+		if err := rows.Scan(
+			&i.AccountID,
+			&i.Banned,
+			&i.Invited,
+			&i.SpeakGranted,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const rebuildVoiceRoomHeads = `-- name: RebuildVoiceRoomHeads :exec
 INSERT INTO voice_room_heads (room_id, revision_id, host_account_id, state, participants_count)
 SELECT r.id,

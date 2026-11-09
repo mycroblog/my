@@ -144,6 +144,21 @@ WHERE i.room_id = ? AND i.id > ?
 ORDER BY i.id
 LIMIT ?;
 
+-- ListVoiceRoomViewerFacts returns, for each account of a JSON array, what IsVoiceRoomBanned,
+-- GetVoiceRoomInvitation (an invitation that is not revoked), and IsVoiceRoomSpeakGranted read of
+-- the account in the room.
+-- name: ListVoiceRoomViewerFacts :many
+SELECT CAST(v.value AS TEXT) AS account_id,
+  EXISTS (SELECT 1 FROM voice_room_bans b WHERE b.room_id = sqlc.arg(room_id) AND b.account_id = v.value) AS banned,
+  EXISTS (SELECT 1 FROM voice_room_invitations i WHERE i.room_id = sqlc.arg(room_id) AND i.invitee_account_id = v.value
+    AND NOT EXISTS (SELECT 1 FROM voice_room_invitation_revocations x WHERE x.invitation_id = i.id)) AS invited,
+  CAST(COALESCE((
+    SELECT g.change = 'granted' FROM voice_room_speak_grants g
+    WHERE g.room_id = sqlc.arg(room_id) AND g.account_id = v.value
+    ORDER BY g.id DESC LIMIT 1
+  ), 0) AS INTEGER) AS speak_granted
+FROM json_each(CAST(sqlc.arg(account_ids) AS TEXT)) v;
+
 -- name: IsVoiceRoomBanned :one
 SELECT CAST(EXISTS (SELECT 1 FROM voice_room_bans WHERE room_id = ? AND account_id = ?) AS INTEGER) AS banned;
 

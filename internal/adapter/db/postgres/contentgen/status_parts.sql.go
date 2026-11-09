@@ -11,6 +11,35 @@ import (
 	"context"
 )
 
+const listAccountsMentionedIn = `-- name: ListAccountsMentionedIn :many
+SELECT DISTINCT account_id FROM status_mention_index WHERE status_id = $1 AND account_id = ANY($2::uuid[]) ORDER BY account_id
+`
+
+type ListAccountsMentionedInParams struct {
+	StatusID   string
+	AccountIds []string
+}
+
+func (q *Queries) ListAccountsMentionedIn(ctx context.Context, arg ListAccountsMentionedInParams) ([]string, error) {
+	rows, err := q.db.Query(ctx, listAccountsMentionedIn, arg.StatusID, arg.AccountIds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []string{}
+	for rows.Next() {
+		var account_id string
+		if err := rows.Scan(&account_id); err != nil {
+			return nil, err
+		}
+		items = append(items, account_id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listCustomEmojisByIDs = `-- name: ListCustomEmojisByIDs :many
 SELECT id, shortcode, domain, uri, created_by_user_id, created_at FROM custom_emojis WHERE id = ANY($1::uuid[]) ORDER BY id
 `

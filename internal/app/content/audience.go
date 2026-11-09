@@ -6,8 +6,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 
 	appaccount "github.com/mycroblog/my/internal/app/account"
+	appgraph "github.com/mycroblog/my/internal/app/graph"
 	"github.com/mycroblog/my/internal/domain/content"
 )
 
@@ -108,4 +110,84 @@ func (a audience) visibleStatus(ctx context.Context, viewer content.Viewer, stat
 		return content.Status{}, appaccount.Actor{}, fmt.Errorf("status %s: %w", statusID, ErrNotFound)
 	}
 	return st, author, nil
+}
+
+// visibleToLocal reports, by account, whether each of the local accounts of viewerIDs may see
+// statusID, as visibleStatus decides for one viewer, reading the status, its author, and the
+// author's restrictions once and the viewers' relations with the author together when
+// Relationships can. A missing or deleted status is visible to none.
+func (a audience) visibleToLocal(ctx context.Context, statusID string, viewerIDs []string) (map[string]bool, error) {
+	out := make(map[string]bool, len(viewerIDs))
+	st, err := a.live(ctx, statusID)
+	if errors.Is(err, ErrNotFound) {
+		return out, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	r, err := a.restrictions.Restrictions(ctx, st.AuthorAccountID)
+	if err != nil {
+		return nil, err
+	}
+	restrictions := r.Author
+	author, err := a.accounts.FindByID(ctx, st.AuthorAccountID)
+	switch {
+	case errors.Is(err, appaccount.ErrNotFound):
+		restrictions.ProfileView = true
+	case err != nil:
+		return nil, err
+	default:
+		restrictions.ProfileView = restrictions.ProfileView || !author.Lifecycle.Active()
+	}
+	var others []string
+	for _, id := range viewerIDs {
+		if id != "" && id != st.AuthorAccountID && !slices.Contains(others, id) {
+			others = append(others, id)
+		}
+	}
+	rels := map[string]content.Relation{}
+	if len(others) > 0 {
+		mentioned, err := a.interactions.MentionedAmong(ctx, st.ID, others)
+		if err != nil {
+			return nil, err
+		}
+		if b, ok := a.relationships.(relationshipBatch); ok {
+			// The author's relationships with the viewers, seen from the viewers' side.
+			rs, err := b.Relationships(ctx, st.AuthorAccountID, others)
+			if err != nil {
+				return nil, err
+			}
+			for _, id := range others {
+				m := rs[id]
+				rels[id] = relationFrom(appgraph.Relationship{Following: m.FollowedBy, Blocking: m.BlockedBy, BlockedBy: m.Blocking}, mentioned[id])
+			}
+		} else {
+			for _, id := range others {
+				rel, err := a.relationships.Relationship(ctx, id, st.AuthorAccountID)
+				if err != nil {
+					return nil, err
+				}
+				rels[id] = relationFrom(rel, mentioned[id])
+			}
+		}
+	}
+	facts := content.StatusFacts{AuthorAccountID: st.AuthorAccountID, AuthorIsLocal: st.IsLocal, Visibility: st.Visibility}
+	for _, id := range viewerIDs {
+		viewer := content.Viewer{Kind: content.ViewerLocal, AccountID: id}
+		out[id] = content.CanView(content.ContextStatus, viewer, facts, restrictions, rels[id])
+	}
+	return out, nil
+}
+
+// relationFrom is the relation of a viewer with an author, from the viewer's relationship with the
+// author and whether the status mentions the viewer.
+func relationFrom(r appgraph.Relationship, mentioned bool) content.Relation {
+	rel := content.Relation{Blocking: r.Blocking, BlockedBy: r.BlockedBy, Mentioned: mentioned}
+	switch {
+	case r.ActivelyFollowing():
+		rel.Follow = content.FollowActive
+	case r.RequestedFollow():
+		rel.Follow = content.FollowPending
+	}
+	return rel
 }
