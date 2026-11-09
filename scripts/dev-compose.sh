@@ -3,7 +3,7 @@
 # The commands of the services of the root compose.yaml that run in the development image (the stage `dev` of the
 # Dockerfile), from the checkout mounted at /src (CONTRIBUTING.md, "Local development"). They start as root and do their
 # work as the owner of the checkout, so that what they write there and in the volumes belongs to the developer:
-#   prepare  make the mount points of the node_modules volumes in the checkout (Docker would create them owned by
+#   prepare  check that scripts/dev-cert.sh has made the HTTPS certificate of Caddy, make the mount points of the node_modules volumes in the checkout (Docker would create them owned by
 #            root), and the certificates of Mailpit (scripts/mailpit-cert.sh, in .tmp/mailpit), which it copies to the
 #            volume mounted at /certs for Mailpit
 #   my       build `my` with GO_TAGS, apply the schema, and serve with the scripts from the Vite dev server
@@ -45,6 +45,11 @@ own() {
 
 case "${1:-}" in
 prepare)
+	if [ ! -f .tmp/dev-certs/my.localhost.pem ] || [ ! -f .tmp/dev-certs/my.localhost-key.pem ]; then
+		echo "dev-compose: no HTTPS certificate for my.localhost in .tmp/dev-certs; create it once with" \
+			"scripts/task.sh docker:dev-cert (mkcert), then run docker compose up again" >&2
+		exit 1
+	fi
 	for dir in "${node_modules[@]}"; do
 		as_owner mkdir -p "$dir/node_modules"
 	done

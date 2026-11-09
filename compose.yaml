@@ -4,13 +4,15 @@
 # server, and every service `my` talks to, configured to use them all. To deploy an instance, use deploy/docker. The
 # project is named my-dev, so it never collides with a deployment named my.
 #
-#   docker compose up                 start everything; open http://localhost:8080 (MY_DEV_PORT)
+#   scripts/task.sh docker:dev-cert   once: the HTTPS certificate of my.localhost from mkcert (scripts/dev-cert.sh)
+#   docker compose up                 start everything; open https://my.localhost
 #   docker compose restart my         build the Go code again and restart the server (no automatic reload)
 #   docker compose exec my my ...     run a command of `my` against the server's database
 #   docker compose down               stop; the data stays in the volumes
 #   docker compose down -v            stop and remove the data
 #
-# The web UIs, all on 127.0.0.1: Mailpit :8025, Grafana :3000, Prometheus :9090, Jaeger :16686, Meilisearch :7700,
+# Caddy is the way in: https://my.localhost (http redirects to it) and https://vite.my.localhost:5173 for the scripts
+# of the client. The web UIs of the other services, all on 127.0.0.1: Mailpit :8025, Grafana :3000, Prometheus :9090, Jaeger :16686, Meilisearch :7700,
 # LibreTranslate :5000. Each host port is a variable below; put the variables in .env (never committed) next to this
 # file.
 #
@@ -77,12 +79,14 @@ services:
     command: ["scripts/dev-compose.sh", "my"]
     environment:
       GO_TAGS: ${GO_TAGS:-}
-      VITE_ORIGIN: http://localhost:5173
+      VITE_ORIGIN: &vite-origin https://vite.my.localhost:5173
       MY_PROFILE: development
-      MY_HOST: localhost:${MY_DEV_PORT:-8080}
-      # The http origin of localhost: browsers allow the microphone of the voice chat on it.
-      MY_WEB_ORIGIN: http://localhost:${MY_DEV_PORT:-8080}
+      # Through Caddy only. MY_DEV_HOST takes the port too when MY_DEV_HTTPS_PORT is not 443 (my.localhost:8443).
+      MY_HOST: ${MY_DEV_HOST:-my.localhost}
+      MY_WEB_ORIGIN: https://${MY_DEV_HOST:-my.localhost}
       MY_LISTEN: :8080
+      # Caddy, from the network of the project; its X-Forwarded-For gives the browser's address.
+      MY_TRUSTED_PROXIES: 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16
       # 32 bytes, base64; changing it makes the keys in the database unreadable.
       MY_KEK: bXktZGV2LWNvbXBvc2Uta2VrLW5vdC1hLXNlY3JldCE=
       MY_DATABASE: postgres
@@ -109,8 +113,6 @@ services:
       MY_TRACES_EXPORTER: otlp
       MY_TRACES_SAMPLE_RATIO: "1"
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
-    ports:
-      - "127.0.0.1:${MY_DEV_PORT:-8080}:8080"
     healthcheck:
       test: ["CMD", "curl", "-fsS", "-o", "/dev/null", "http://127.0.0.1:8080/readyz"]
       interval: 5s
@@ -119,21 +121,43 @@ services:
       start_period: 10m
     restart: unless-stopped
 
-  # The Vite dev server of app/web, always on http://localhost:5173: `my serve -dev-vite-origin` loads the client from
-  # it, with HMR. Its port is fixed, since the browser connects to it for HMR.
+  # The Vite dev server of app/web, behind Caddy at https://vite.my.localhost:5173: `my serve -dev-vite-origin` loads
+  # the client from it, with HMR. Its port is fixed, since the HMR client connects to the dev server's own port.
   vite:
     <<: *dev
     depends_on:
       prepare:
         condition: service_completed_successfully
     command: ["scripts/dev-compose.sh", "vite"]
-    ports:
-      - "127.0.0.1:5173:5173"
+    environment:
+      # The origin of the asset URLs that Vite writes (server.origin of app/web/vite.config.ts).
+      VITE_DEV_ORIGIN: *vite-origin
     healthcheck:
       test: ["CMD", "curl", "-fsS", "-o", "/dev/null", "http://127.0.0.1:5173/@vite/client"]
       interval: 5s
       timeout: 5s
       start_period: 5m
+    restart: unless-stopped
+
+  # Caddy (Apache-2.0), the way in from the browser (deploy/dev/Caddyfile), with the certificate of
+  # scripts/dev-cert.sh, which prepare requires.
+  caddy:
+    # The image of deploy/docker/compose.caddy.yaml.
+    image: caddy:2.10.2-alpine@sha256:4c6e91c6ed0e2fa03efd5b44747b625fec79bc9cd06ac5235a779726618e530d
+    depends_on:
+      prepare:
+        condition: service_completed_successfully
+    environment:
+      MY_DEV_HOST: ${MY_DEV_HOST:-my.localhost}
+    volumes:
+      - ./deploy/dev/Caddyfile:/etc/caddy/Caddyfile:ro
+      # The checkout, for the certificate in .tmp/dev-certs: a bind of that directory itself would make Docker create
+      # it, owned by root, before scripts/dev-cert.sh has run.
+      - .:/src:ro
+    ports:
+      - "127.0.0.1:${MY_DEV_HTTP_PORT:-80}:80"
+      - "127.0.0.1:${MY_DEV_HTTPS_PORT:-443}:443"
+      - "127.0.0.1:5173:5173"
     restart: unless-stopped
 
   postgres:

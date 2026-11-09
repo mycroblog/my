@@ -785,11 +785,11 @@ entries:
     notes:
       - "deploy/docker/example.env is generated from the config schema (`scripts/task.sh go:config-docs`). The KEK stays out of it: .env reaches the containers whole through env_file, so the key is the file secrets/kek, mounted as a secret."
   - name: dev-compose
-    paths: ["compose.yaml", "deploy/dev/**", "scripts/dev-compose.sh"]
+    paths: ["compose.yaml", "deploy/dev/**", "scripts/dev-compose.sh", "scripts/dev-cert.sh"]
     docs: ["CONTRIBUTING.md#local-development", "CONTRIBUTING.md#emails"]
     checks: [docker, shell]
     notes:
-      - "Development only, under the project my-dev: `docker compose up` runs `my` and Vite from the checkout in the stage dev of the Dockerfile (scripts/dev-compose.sh, as the owner of the checkout) and every service the server uses, all configured in compose.yaml. The tests, the demo server, the E2E tests, and L4 never use it; `scripts/task.sh db:up`, `scripts/task.sh docker:mailpit`, and .github/actions/start-mailpit start postgres and mailpit alone with --no-deps, so a change must keep those two services startable without the others and without the dev image."
+      - "Development only, under the project my-dev: `docker compose up` serves https://my.localhost through Caddy (the certificate of scripts/dev-cert.sh, which prepare requires) and runs `my` and Vite from the checkout in the stage dev of the Dockerfile (scripts/dev-compose.sh, as the owner of the checkout) and every service the server uses, all configured in compose.yaml. The tests, the demo server, the E2E tests, and L4 never use it; `scripts/task.sh db:up`, `scripts/task.sh docker:mailpit`, and .github/actions/start-mailpit start postgres and mailpit alone with --no-deps, so a change must keep those two services startable without the others and without the dev image."
       - "A setting added to the server that one of these services can serve belongs in the environment of the service my; a third-party image is pinned by tag and digest, the same as the tests' image where one exists."
   - name: tofu
     paths: ["deploy/opentofu/**", "scripts/tofu-*", "tasks/tofu.yml", "docs/operations/deploy-cloud-run.md"]
