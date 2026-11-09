@@ -79,3 +79,68 @@ func TestMigrateQueries(t *testing.T) {
 		t.Errorf("a page of the migration makes %d queries for 8 followers, more than the %d for 2", large, small)
 	}
 }
+
+// migrateBlocksQueries counts the round trips of the blocks phase and of the mutes phase of the
+// migration of alice, who moved to bob, with n local accounts that block her and n that mute her.
+func migrateBlocksQueries(t *testing.T, n int) (blocks, mutes int) {
+	t.Helper()
+	tracer := testkit.NewTracer()
+	names := []string{"alice", "bob"}
+	for i := range n {
+		names = append(names, fmt.Sprintf("blocker%d", i), fmt.Sprintf("muter%d", i))
+	}
+	c := newStatusesClientWith(t, nil, platform.AppOptions{Tracer: tracer}, names...)
+	ctx := t.Context()
+	alice, bob := c.ids["alice"], c.ids["bob"]
+	for i := range n {
+		blocker, muter := c.ids[fmt.Sprintf("blocker%d", i)], c.ids[fmt.Sprintf("muter%d", i)]
+		if _, err := c.app.Graph.Follow(ctx, blocker, bob); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := c.app.Graph.Block(ctx, blocker, alice); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := c.app.Graph.Mute(ctx, muter, alice, appgraph.MuteInput{HideNotifications: i%2 == 0}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	move, err := c.app.Accounts.RecordLocalMove(ctx, appaccount.LocalMoveInput{AccountID: alice, TargetAccountID: bob})
+	if err != nil {
+		t.Fatal(err)
+	}
+	run := func(phase appgraph.MigrationPhase) int {
+		t.Helper()
+		was := ops(tracer)
+		if _, _, err := c.app.Graph.MigrateStep(ctx, appgraph.MigrationStep{MoveID: move.ID, SourceAccountID: alice, TargetAccountID: bob, Phase: phase}); err != nil {
+			t.Fatalf("MigrateStep(%s): %v", phase, err)
+		}
+		count, names := opsSince(tracer, was)
+		t.Logf("the %s phase with %d accounts: %d queries: %v", phase, n, count, names)
+		return count
+	}
+	blocks, mutes = run(appgraph.MigrateBlocksPhase), run(appgraph.MigrateMutesPhase)
+	for i := range n {
+		blocker, muter := c.ids[fmt.Sprintf("blocker%d", i)], c.ids[fmt.Sprintf("muter%d", i)]
+		if r, err := c.app.Graph.Relationship(ctx, blocker, bob); err != nil || !r.Blocking || r.Following != graph.StateNone {
+			t.Errorf("blocker%d and bob = %+v, %v; want a block and no follow", i, r, err)
+		}
+		if r, err := c.app.Graph.Relationship(ctx, muter, bob); err != nil || !r.Muting {
+			t.Errorf("muter%d and bob = %+v, %v; want a mute", i, r, err)
+		}
+	}
+	return blocks, mutes
+}
+
+// TestMigrateBlocksQueries checks that the round trips of a page of the blocks and of the mutes
+// phases of a migration do not grow with their accounts.
+func TestMigrateBlocksQueries(t *testing.T) {
+	t.Parallel()
+	smallB, smallM := migrateBlocksQueries(t, 2)
+	largeB, largeM := migrateBlocksQueries(t, 6)
+	if largeB > smallB {
+		t.Errorf("a page of the blocks phase makes %d queries for 6 blockers, more than the %d for 2", largeB, smallB)
+	}
+	if largeM > smallM {
+		t.Errorf("a page of the mutes phase makes %d queries for 6 muters, more than the %d for 2", largeM, smallM)
+	}
+}

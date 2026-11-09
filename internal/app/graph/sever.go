@@ -104,6 +104,11 @@ func (s *Service) CounterpartsOf(ctx context.Context, tx uow.Tx, ids []string) (
 // that does not grow with them, and one FollowsTerminated tells the projectors. A follow between
 // two accounts that are both keys of others ends once and counts for both.
 func (s *Service) SeverAmong(ctx context.Context, tx uow.Tx, others map[string][]string, dir SeverDirection, announce bool, now time.Time) (map[string]Severed, error) {
+	return s.endAmong(ctx, tx, others, dir, graph.TerminatedModeration, announce, now)
+}
+
+// endAmong is SeverAmong with the reason of the ends.
+func (s *Service) endAmong(ctx context.Context, tx uow.Tx, others map[string][]string, dir SeverDirection, reason graph.TerminationReason, announce bool, now time.Time) (map[string]Severed, error) {
 	out := map[string]Severed{}
 	var as, bs []string
 	for _, account := range slices.Sorted(maps.Keys(others)) {
@@ -155,7 +160,7 @@ func (s *Service) SeverAmong(ctx context.Context, tx uow.Tx, others map[string][
 		ids = append(ids, f.ID)
 		ev.Terminations = append(ev.Terminations, FollowTerminated{
 			Follow: f, PreviousState: e.State, Unannounced: !announce,
-			Termination: graph.Termination{FollowID: f.ID, Reason: graph.TerminatedModeration, TerminatedAt: now},
+			Termination: graph.Termination{FollowID: f.ID, Reason: reason, TerminatedAt: now},
 		})
 		if e.State != graph.StateActive {
 			continue
@@ -174,7 +179,7 @@ func (s *Service) SeverAmong(ctx context.Context, tx uow.Tx, others map[string][
 	if len(ids) == 0 {
 		return out, nil
 	}
-	if err := repo.InsertTerminations(ctx, tx, ids, graph.TerminatedModeration, now); err != nil {
+	if err := repo.InsertTerminations(ctx, tx, ids, reason, now); err != nil {
 		return nil, err
 	}
 	return out, tx.Emit(ctx, ev)

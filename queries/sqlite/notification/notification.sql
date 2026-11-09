@@ -217,3 +217,15 @@ WHERE account_id = ? ORDER BY notification_group, channel;
 -- name: UpsertNotificationSetting :exec
 INSERT INTO notification_settings (account_id, notification_group, channel, enabled, updated_at) VALUES (?, ?, ?, ?, ?)
 ON CONFLICT (account_id, notification_group, channel) DO UPDATE SET enabled = excluded.enabled, updated_at = excluded.updated_at;
+
+-- UpsertNotificationExclusions and DeleteNotificationExclusionsOf are UpsertNotificationExclusion
+-- and DeleteNotificationExclusion of many pairs, JSON arrays.
+-- name: UpsertNotificationExclusions :exec
+INSERT INTO notification_exclusions (viewer_account_id, target_account_id, reason, expires_at)
+SELECT value ->> '$.viewer', value ->> '$.target', value ->> '$.reason', value ->> '$.expires_at'
+FROM json_each(CAST(sqlc.arg(exclusions) AS TEXT)) WHERE true
+ON CONFLICT (viewer_account_id, target_account_id, reason) DO UPDATE SET expires_at = excluded.expires_at;
+
+-- name: DeleteNotificationExclusionsOf :exec
+DELETE FROM notification_exclusions WHERE reason = CAST(sqlc.arg(reason) AS TEXT) AND (viewer_account_id, target_account_id) IN (
+  SELECT value ->> '$.a', value ->> '$.b' FROM json_each(CAST(sqlc.arg(pairs) AS TEXT)));

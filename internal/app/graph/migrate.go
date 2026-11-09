@@ -218,11 +218,12 @@ func (s *Service) MigrateStep(ctx context.Context, st MigrationStep) (next Migra
 		if err != nil {
 			return MigrationStep{}, false, err
 		}
-		for _, e := range edges {
-			if err := s.migrateBlock(ctx, st, e.BlockerAccountID); err != nil {
-				return MigrationStep{}, false, err
-			}
-			last = e.BlockID
+		blockers := make([]string, len(edges))
+		for i, e := range edges {
+			blockers[i], last = e.BlockerAccountID, e.BlockID
+		}
+		if err := s.migrateBlocks(ctx, st, blockers); err != nil {
+			return MigrationStep{}, false, err
 		}
 		n = len(edges)
 	case MigrateMutesPhase:
@@ -231,10 +232,10 @@ func (s *Service) MigrateStep(ctx context.Context, st MigrationStep) (next Migra
 			return MigrationStep{}, false, err
 		}
 		for _, m := range mutes {
-			if err := s.migrateMute(ctx, st, m); err != nil {
-				return MigrationStep{}, false, err
-			}
 			last = m.AccountID
+		}
+		if err := s.migrateMutes(ctx, st, mutes); err != nil {
+			return MigrationStep{}, false, err
 		}
 		n = len(mutes)
 	default:
@@ -457,48 +458,118 @@ func (s *Service) migrateFollowers(ctx context.Context, st MigrationStep, target
 	})
 }
 
-// migrateBlock makes blockerID, which blocks the source, block the target too.
-func (s *Service) migrateBlock(ctx context.Context, st MigrationStep, blockerID string) error {
-	if _, ok, err := s.migratingAccount(ctx, st, blockerID); err != nil || !ok {
-		return err
-	}
-	b := graph.Block{ID: s.d.IDs.NewID(), BlockerAccountID: blockerID, BlockedAccountID: st.TargetAccountID, CreatedAt: kernel.Normalize(s.d.Clock.Now())}
-	b.URI = graph.BlockURI(s.d.Host, b.ID)
-	if err := b.Validate(); err != nil {
-		return err
-	}
-	return s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error { return s.blockIn(ctx, tx, b) })
-}
-
-// migrateMute makes the account of m, which mutes the source, mute the target with the same
-// settings and expiry, unless it already mutes the target.
-func (s *Service) migrateMute(ctx context.Context, st MigrationStep, m graph.Mute) error {
-	if _, ok, err := s.migratingAccount(ctx, st, m.AccountID); err != nil || !ok {
+// migrateBlocks makes each of blockerIDs, which block the source, block the target too, together:
+// the blocks of a page are inserted, their follows with the target ended (as blockIn ends them),
+// and one BlocksCreated tells the projectors, with a number of statements that does not grow with
+// them. A blocker that blocks the target already is left as it is.
+func (s *Service) migrateBlocks(ctx context.Context, st MigrationStep, blockerIDs []string) error {
+	blockers, err := s.migratingAccounts(ctx, st, blockerIDs)
+	if err != nil || len(blockers) == 0 {
 		return err
 	}
 	now := kernel.Normalize(s.d.Clock.Now())
-	mute := graph.Mute{
-		AccountID: m.AccountID, TargetAccountID: st.TargetAccountID, HideNotifications: m.HideNotifications,
-		ExpiresAt: m.ExpiresAt, CreatedAt: now,
-	}
-	if err := mute.Validate(); err != nil {
-		if errors.Is(err, graph.ErrMuteExpiry) {
-			return nil // the mute of the source expired meanwhile
+	fresh := make(map[string]graph.Block, len(blockers))
+	for _, id := range blockers {
+		b := graph.Block{ID: s.d.IDs.NewID(), BlockerAccountID: id, BlockedAccountID: st.TargetAccountID, CreatedAt: now}
+		b.URI = graph.BlockURI(s.d.Host, b.ID)
+		if err := b.Validate(); err != nil {
+			return err
 		}
-		return err
+		fresh[id] = b
 	}
 	repo := s.d.Repository
 	return s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
-		switch _, err := repo.Mute(ctx, tx, m.AccountID, st.TargetAccountID, now); {
-		case err == nil:
-			return nil // the account already mutes the target: its own settings stay
-		case !errors.Is(err, ErrNotFound):
+		targets := make([]string, len(blockers))
+		for i := range blockers {
+			targets[i] = st.TargetAccountID
+		}
+		if err := repo.LockPairs(ctx, tx, blockers, targets); err != nil {
 			return err
 		}
-		if err := repo.UpsertMute(ctx, tx, mute); err != nil {
+		_, blocking, err := repo.BlockEdgesWithTx(ctx, tx, st.TargetAccountID, blockers)
+		if err != nil {
 			return err
 		}
-		return tx.Emit(ctx, Muted{Mute: mute})
+		var bs []graph.Block
+		ev := BlocksCreated{}
+		others := map[string][]string{}
+		for _, id := range blockers {
+			if blocking[id] {
+				continue // the account blocks the target already
+			}
+			bs = append(bs, fresh[id])
+			ev.Blocks = append(ev.Blocks, Blocked{Block: fresh[id]})
+			others[id] = []string{st.TargetAccountID}
+		}
+		if len(bs) == 0 {
+			return nil
+		}
+		if err := repo.InsertBlocks(ctx, tx, bs); err != nil {
+			return err
+		}
+		if _, err := s.endAmong(ctx, tx, others, SeverBoth, graph.TerminatedBlocked, true, now); err != nil {
+			return err
+		}
+		return tx.Emit(ctx, ev)
+	})
+}
+
+// migrateMutes makes the account of each of ms, which mutes the source, mute the target with the
+// same settings and expiry, unless it already mutes the target, together: one statement inserts
+// the mutes of a page and one MutesCreated tells the projectors.
+func (s *Service) migrateMutes(ctx context.Context, st MigrationStep, ms []graph.Mute) error {
+	ids := make([]string, len(ms))
+	for i, m := range ms {
+		ids[i] = m.AccountID
+	}
+	muters, err := s.migratingAccounts(ctx, st, ids)
+	if err != nil || len(muters) == 0 {
+		return err
+	}
+	now := kernel.Normalize(s.d.Clock.Now())
+	var fresh []graph.Mute
+	for _, m := range ms {
+		if !slices.Contains(muters, m.AccountID) {
+			continue
+		}
+		mute := graph.Mute{
+			AccountID: m.AccountID, TargetAccountID: st.TargetAccountID, HideNotifications: m.HideNotifications,
+			ExpiresAt: m.ExpiresAt, CreatedAt: now,
+		}
+		if err := mute.Validate(); err != nil {
+			if errors.Is(err, graph.ErrMuteExpiry) {
+				continue // the mute of the source expired meanwhile
+			}
+			return err
+		}
+		fresh = append(fresh, mute)
+	}
+	if len(fresh) == 0 {
+		return nil
+	}
+	repo := s.d.Repository
+	return s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+		accounts := make([]string, len(fresh))
+		for i, m := range fresh {
+			accounts[i] = m.AccountID
+		}
+		had, err := repo.ActiveMutesOfTargetTx(ctx, tx, st.TargetAccountID, accounts, now)
+		if err != nil {
+			return err
+		}
+		// An account that already mutes the target keeps its own settings.
+		fresh = slices.DeleteFunc(fresh, func(m graph.Mute) bool { _, ok := had[m.AccountID]; return ok })
+		if len(fresh) == 0 {
+			return nil
+		}
+		if err := repo.UpsertMutes(ctx, tx, fresh); err != nil {
+			return err
+		}
+		ev := MutesCreated{Mutes: make([]Muted, len(fresh))}
+		for i, m := range fresh {
+			ev.Mutes[i] = Muted{Mute: m}
+		}
+		return tx.Emit(ctx, ev)
 	})
 }
 

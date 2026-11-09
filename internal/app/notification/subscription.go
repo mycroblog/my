@@ -308,6 +308,17 @@ func registerSubscriptionProjectors(r *uow.Projectors, d ProjectorDeps) {
 		}
 		return repo.DeleteSubscriptions(ctx, tx, subFollowers, subFollowees)
 	})
+	r.Register(appgraph.EventBlocksCreated, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
+		// The subscriptions between each blocker and the blocked, both ways.
+		var as, bs []string
+		for _, b := range e.(appgraph.BlocksCreated).Blocks {
+			as, bs = append(as, b.Block.BlockerAccountID, b.Block.BlockedAccountID), append(bs, b.Block.BlockedAccountID, b.Block.BlockerAccountID)
+		}
+		if err := repo.DeleteSubscriptions(ctx, tx, as, bs); err != nil {
+			return err
+		}
+		return repo.DeleteSubscriptionRequests(ctx, tx, as, bs)
+	})
 	r.Register(appgraph.EventBlocked, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
 		b := e.(appgraph.Blocked).Block
 		if err := deleteSubscription(ctx, repo, tx, b.BlockerAccountID, b.BlockedAccountID); err != nil {

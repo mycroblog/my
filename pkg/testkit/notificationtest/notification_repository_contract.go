@@ -48,6 +48,7 @@ func NotificationContract(t *testing.T, newHarness NotificationFactory) {
 		{"KeepsSubscriptionRequests", notificationRepoSubscriptionRequests},
 		{"DeletesManySubscriptions", notificationRepoDeleteMany},
 		{"InsertsEachForManyRecipients", notificationRepoInsertsForEach},
+		{"UpsertsAndDeletesManyExclusions", notificationRepoManyExclusions},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -384,6 +385,31 @@ func notificationRepoHides(t *testing.T, r *notificationRepo) {
 	}
 	if has, err := r.statusHasNotifications(t, r.ids.NewID()); err != nil || has {
 		t.Errorf("StatusHasNotifications(another status) = %v, %v; want false", has, err)
+	}
+}
+
+// notificationRepoManyExclusions upserts and deletes many exclusions at once, which hide their
+// targets' notifications as UpsertExclusion and DeleteExclusion do.
+func notificationRepoManyExclusions(t *testing.T, r *notificationRepo) {
+	alice, bob, carol := r.ids.NewID(), r.ids.NewID(), r.ids.NewID()
+	r.notify(t, alice, notification.TypeFollow, bob)
+	r.notify(t, alice, notification.TypeFollow, carol)
+	visible := func() int { return len(r.list(t, alice, nil, appnotification.Hidden{}, "", 10)) }
+	soon := r.clock.Now().Add(time.Hour)
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+		return errors.Join(r.repo.UpsertExclusions(ctx, tx, []notification.Exclusion{
+			{ViewerAccountID: alice, TargetAccountID: bob, Reason: notification.ExcludedBlock},
+			{ViewerAccountID: alice, TargetAccountID: carol, Reason: notification.ExcludedMute, ExpiresAt: &soon},
+		}), r.repo.UpsertExclusions(ctx, tx, nil))
+	})
+	if n := visible(); n != 0 {
+		t.Errorf("notifications with the exclusions = %d, want none", n)
+	}
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+		return errors.Join(r.repo.DeleteExclusionsOf(ctx, tx, []string{alice, alice}, []string{carol, bob}, notification.ExcludedMute), r.repo.DeleteExclusionsOf(ctx, tx, nil, nil, notification.ExcludedMute))
+	})
+	if n := visible(); n != 1 {
+		t.Errorf("notifications after DeleteExclusionsOf of the mutes = %d, want carol's (bob's is a block)", n)
 	}
 }
 

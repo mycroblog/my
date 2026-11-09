@@ -173,3 +173,25 @@ SELECT pg_advisory_xact_lock(hashtextextended(k, 0)) FROM unnest(sqlc.arg(pair_k
 SELECT DISTINCT account_id FROM account_domain_mutes
 WHERE account_id = ANY(sqlc.arg(account_ids)::uuid[]) AND domain = ANY(sqlc.arg(domains)::text[])
 ORDER BY account_id;
+
+-- The blocks and mutes of a page of a migration (the unnests of a select list advance together),
+-- each as the statement of one above does for every row it names.
+
+-- name: InsertBlocks :exec
+INSERT INTO blocks (id, uri, blocker_account_id, blocked_account_id, created_at)
+SELECT unnest(sqlc.arg(ids)::uuid[]), unnest(sqlc.arg(uris)::text[]), unnest(sqlc.arg(blocker_account_ids)::uuid[]),
+  unnest(sqlc.arg(blocked_account_ids)::uuid[]), sqlc.arg(created_at)::timestamptz;
+
+-- name: InsertBlockEdges :execrows
+INSERT INTO block_edges (blocker_account_id, blocked_account_id, block_id)
+SELECT unnest(sqlc.arg(blocker_account_ids)::uuid[]), unnest(sqlc.arg(blocked_account_ids)::uuid[]), unnest(sqlc.arg(block_ids)::uuid[])
+ON CONFLICT (blocker_account_id, blocked_account_id) DO NOTHING;
+
+-- name: UpsertMutes :exec
+INSERT INTO mutes (account_id, target_account_id, hide_notifications, expires_at, created_at)
+SELECT unnest(sqlc.arg(account_ids)::uuid[]), sqlc.arg(target_account_id)::uuid, unnest(sqlc.arg(hide_notifications)::boolean[]),
+  NULLIF(unnest(sqlc.arg(expires_ats)::text[]), '')::timestamptz, sqlc.arg(created_at)::timestamptz
+ON CONFLICT (account_id, target_account_id) DO UPDATE SET
+  hide_notifications = excluded.hide_notifications,
+  expires_at = excluded.expires_at,
+  created_at = excluded.created_at;
