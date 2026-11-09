@@ -3,6 +3,7 @@
 package kernel
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -96,8 +97,20 @@ type ErrorEvent struct {
 }
 
 // NewErrorEvent returns the KindError event of err at where. Its stack is the one that WithStack
-// recorded in err's chain, or the caller's.
+// recorded in err's chain, or the caller's, starting with the caller.
 func NewErrorEvent(err error, where string) ErrorEvent {
+	return newErrorEvent(err, where, 1)
+}
+
+// NewErrorEventSkip is NewErrorEvent for a helper that reports for its caller: the stack it takes
+// leaves out skip more functions above the caller, so that 1 starts it with the helper's caller.
+// Error Reporting and the fingerprint read the first frames, which would otherwise be the
+// helper's for every error it reports.
+func NewErrorEventSkip(err error, where string, skip int) ErrorEvent {
+	return newErrorEvent(err, where, 1+skip)
+}
+
+func newErrorEvent(err error, where string, skip int) ErrorEvent {
 	ev := ErrorEvent{Source: ErrorSourceServer, Kind: ErrorKindError, Where: where}
 	if err == nil {
 		return ev
@@ -106,9 +119,29 @@ func NewErrorEvent(err error, where string) ErrorEvent {
 	if s, ok := errors.AsType[*stackError](err); ok {
 		ev.Stack = string(s.stack)
 	} else {
-		ev.Stack = string(debug.Stack())
+		ev.Stack = string(callerStack(skip + 1))
 	}
 	return ev
+}
+
+// callerStack returns debug.Stack() from the caller of the function that calls it, leaving out
+// skip more functions: debug.Stack's own frame and callerStack's are always left out.
+func callerStack(skip int) []byte {
+	return dropFrames(debug.Stack(), skip+2)
+}
+
+// dropFrames returns a debug.Stack() stack without its first n frames, each a line with the
+// function and a line with its file. A stack with fewer frames comes back as it is.
+func dropFrames(stack []byte, n int) []byte {
+	lines := bytes.SplitAfter(stack, []byte("\n"))
+	if len(lines) < 1+2*n {
+		return stack
+	}
+	out := append([]byte(nil), lines[0]...) // goroutine N [running]:
+	for _, l := range lines[1+2*n:] {
+		out = append(out, l...)
+	}
+	return out
 }
 
 // PanicEvent returns the KindPanic event of the panic value p, with stack (debug.Stack() taken
@@ -166,18 +199,29 @@ func typeName(v any) string {
 	return reflect.TypeOf(v).String()
 }
 
-// WithStack returns err with the stack of the call, which NewErrorEvent then reports instead of
-// the stack of the place that reports it. Use it at a boundary where the error loses its origin,
-// such as the return of an adapter. It returns nil for nil and err itself when err's chain
-// already has a stack; the error's text and errors.Is / errors.As are unchanged.
+// WithStack returns err with the stack of the call, starting with its caller, which NewErrorEvent
+// then reports instead of the stack of the place that reports it. Use it at a boundary where the
+// error loses its origin, such as the return of an adapter. It returns nil for nil and err itself
+// when err's chain already has a stack; the error's text and errors.Is / errors.As are unchanged.
 func WithStack(err error) error {
+	return withStack(err, 1)
+}
+
+// WithStackSkip is WithStack for a helper that wraps the errors of its callers, such as the
+// adapters' Wrap: the stack leaves out skip more functions above the caller, so that 1 starts it
+// with the helper's caller rather than with the helper, which every error would share.
+func WithStackSkip(err error, skip int) error {
+	return withStack(err, 1+skip)
+}
+
+func withStack(err error, skip int) error {
 	if err == nil {
 		return nil
 	}
 	if _, ok := errors.AsType[*stackError](err); ok {
 		return err
 	}
-	return &stackError{err: err, stack: debug.Stack()}
+	return &stackError{err: err, stack: callerStack(skip + 1)}
 }
 
 // stackError is the wrapper of WithStack.

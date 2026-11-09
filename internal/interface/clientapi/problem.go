@@ -171,7 +171,7 @@ func (s *Server) responseError(w http.ResponseWriter, r *http.Request, err error
 	}
 	s.o.Logger.ErrorContext(r.Context(), "client api handler failed", slog.Any("error", err))
 	if s.o.ErrorReporter != nil {
-		s.o.ErrorReporter.Report(r.Context(), kernel.NewErrorEvent(err, "")) // the reporter names the route
+		s.o.ErrorReporter.Report(r.Context(), kernel.NewErrorEventSkip(err, "", 1)) // the reporter names the route; the stack starts with the caller
 	}
 	l := s.localizer(r)
 	s.writeProblem(w, r, http.StatusInternalServerError, ProblemTypeBlank, l.ServerErrorsInternal(), "")

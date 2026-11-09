@@ -21,7 +21,8 @@ ADR-0055 §16（span に `RecordError` とエラーの文字列を出さない�
   - `Kind`: `panic` / `error`
   - `Type`: エラーの型の連鎖（`errors.Unwrap` でたどった Go の型名。例 `*fmt.wrapError > *pgconn.PgError`）と、panic の値の型
   - `Message`: エラーの文字列（§3 で除去してから外へ出す）
-  - `Stack`: panic は `debug.Stack()`。エラーは報告した地点のスタック。境界（アダプタの戻り値など）で `kernel.WithStack(err)` を使うと、作った地点のスタックを持たせられる
+  - `Stack`: panic は `debug.Stack()`。エラーは報告した地点のスタック。境界（アダプタの戻り値など）で `kernel.WithStack(err)` を使うと、作った地点のスタックを持たせられる。DB のアダプタの `Wrap`・`NotFound` は、それを呼んだリポジトリのメソッドから始まるスタックを付ける（`kernel.WithStackSkip`）。
+    取ったスタックは、取る仕組み自身（`debug.Stack`・`NewErrorEvent`・`WithStack`）のフレームを含めず、呼び出し元から始める。面のエラーをまとめて報告するヘルパー（`activitypub` の `report`、クライアント API の `responseError` など）は `kernel.NewErrorEventSkip` で自分も除き、ヘルパーを呼んだ地点から始める。Error Reporting も §1 の指紋もスタックの先頭を読むので、先頭が報告の仕組みだと起きた場所の違うエラーが 1 つのグループに入る
   - `Where`: 起きた場所の有限の名前。HTTP は `my.surface` と `http.route`（パターン）、ジョブは `my.job.type`、goroutine は起動したときの名前（例 `stream.valkey.subscribe`）
   - 相関: `request_id`・`job_id`・`attempt`・`trace_id`・`span_id`（ADR-0055 §18）
   - 版と役割: `service.version`・`my.role`・設定 `errors_environment`（既定 `production`）
@@ -174,6 +175,8 @@ ADR-0055 §16（span に `RecordError` とエラーの文字列を出さない�
 - OTel の例外は LogRecord の属性として記録し（`exception.*`）、span の例外の規約は Deprecated（[Exceptions in logs](https://opentelemetry.io/docs/specs/semconv/exceptions/exceptions-logs/)）。`otlploghttp` は v0.23.0 で v0.x の間は破壊的な変更がありうる。`Record.SetErr` は `exception.message` を `err.Error()` から作り、BatchProcessor はあふれると古いものから上書きし捨てた数を数えにくい。
 - ブラウザ: React 19 の `onUncaughtError` の既定は `reportError`、`onCaughtError` は `console.error` だけ（[createRoot](https://react.dev/reference/react-dom/client/createRoot)）。`sendBeacon` はヘッダーを付けられず、keepalive の本文は同じ fetch group で合計 64 KiB まで（[Beacon](https://w3c.github.io/beacon/)、[Fetch](https://fetch.spec.whatwg.org/)）。
 - 他の実装: Misskey は設定 `sentryForBackend`・`sentryForFrontend` で Sentry へ直接送り、Mastodon と GoToSocial は OTLP のトレースだけでエラーの報告はない。
+
+Cloud Run の実機の確認（#1449）で、Error Reporting が 47 件の出来事を、報告するヘルパーのフレーム（`activitypub` の `report`）を場所とする 1 つのグループにまとめていた。中身は起きた場所の違う DB のエラーだった。DB のアダプタはスタックを付けず、スタックは報告した地点で取られ、取る仕組みとヘルパーのフレームから始まっていた。スタックを起きた場所から始めることにした（§1、#2659）。
 
 ## 採らなかった案
 
