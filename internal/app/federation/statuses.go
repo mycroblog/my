@@ -513,19 +513,21 @@ type postMentions struct {
 // addresses, federation.md §4) among the stored accounts.
 func (h *StatusHandlers) mentions(ctx context.Context, obj *federation.Object, followers federation.IRI) (*postMentions, error) {
 	m := &postMentions{}
-	for _, iri := range obj.MentionedIRIs(followers, h.isLocal) {
+	iris := obj.MentionedIRIs(followers, h.isLocal)
+	found, err := h.accountsByURI(ctx, iris)
+	if err != nil {
+		return nil, err
+	}
+	for _, iri := range iris {
 		if len(m.accountIDs)+len(m.unknown) == MaxMentions {
 			break
 		}
-		a, err := h.d.Accounts.FindByURI(ctx, string(iri))
-		switch {
-		case errors.Is(err, appaccount.ErrNotFound):
+		a, ok := found[string(iri)]
+		if !ok {
 			if !h.isLocal(iri) {
 				m.unknown = append(m.unknown, iri)
 			}
 			continue
-		case err != nil:
-			return nil, err
 		}
 		if a.Account.IsLocal() {
 			if !a.Lifecycle.Active() {
@@ -540,6 +542,36 @@ func (h *StatusHandlers) mentions(ctx context.Context, obj *federation.Object, f
 		m.accountIDs = append(m.accountIDs, a.Account.ID)
 	}
 	return m, nil
+}
+
+// uriBatch is an Accounts that reads many accounts by URI at once, as *appaccount.Service does.
+type uriBatch interface {
+	FindByURIs(ctx context.Context, uris []string) (map[string]appaccount.Actor, error)
+}
+
+// accountsByURI returns the stored actors of iris, by IRI: together when Accounts can, one by one
+// otherwise. It reads every IRI: the IRIs that mentions skips (a deactivated or unknown local
+// account) do not count towards MaxMentions.
+func (h *StatusHandlers) accountsByURI(ctx context.Context, iris []federation.IRI) (map[string]appaccount.Actor, error) {
+	uris := make([]string, len(iris))
+	for i, iri := range iris {
+		uris[i] = string(iri)
+	}
+	if b, ok := h.d.Accounts.(uriBatch); ok {
+		return b.FindByURIs(ctx, uris)
+	}
+	out := make(map[string]appaccount.Actor, len(uris))
+	for _, uri := range uris {
+		a, err := h.d.Accounts.FindByURI(ctx, uri)
+		switch {
+		case errors.Is(err, appaccount.ErrNotFound):
+		case err != nil:
+			return nil, err
+		default:
+			out[uri] = a
+		}
+	}
+	return out, nil
 }
 
 // resolveMentions fetches the remote actors of m that are not stored, at most

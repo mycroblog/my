@@ -118,6 +118,9 @@ func accountRepoAccounts(t *testing.T, r *identityRepo) {
 	if _, err := r.h.Accounts.FindAccountByURI(ctx, "https://remote.example/users/nobody"); !errors.Is(err, appaccount.ErrNotFound) {
 		t.Errorf("FindAccountByURI(unknown) = %v, want ErrNotFound", err)
 	}
+	if got, err := r.h.Accounts.FindAccountsByURIs(ctx, []string{a.URI, "https://remote.example/users/nobody"}); err != nil || len(got) != 1 || got[a.URI] != a {
+		t.Errorf("FindAccountsByURIs = %+v, %v; want %+v alone, as FindAccountByURI", got, err, a)
+	}
 	if h, err := r.h.Accounts.FindHandle(ctx, "alfred", "remote.example"); err != nil || h.AccountID != id {
 		t.Errorf("FindHandle = %+v, %v", h, err)
 	}

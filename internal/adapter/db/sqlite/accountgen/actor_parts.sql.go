@@ -153,6 +153,40 @@ func (q *Queries) ListAccountsByIDs(ctx context.Context, ids string) ([]Account,
 	return items, nil
 }
 
+const listAccountsByURIs = `-- name: ListAccountsByURIs :many
+SELECT id, uri, domain, actor_type, created_at FROM accounts WHERE uri IN (SELECT value FROM json_each(CAST(?1 AS TEXT)))
+`
+
+// The accounts of uris that exist, as GetAccountByURI reads one.
+func (q *Queries) ListAccountsByURIs(ctx context.Context, uris string) ([]Account, error) {
+	rows, err := q.db.QueryContext(ctx, listAccountsByURIs, uris)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Account{}
+	for rows.Next() {
+		var i Account
+		if err := rows.Scan(
+			&i.ID,
+			&i.Uri,
+			&i.Domain,
+			&i.ActorType,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listCurrentProfileRevisions = `-- name: ListCurrentProfileRevisions :many
 SELECT r.id, r.account_id, r.seq, r.display_name, r.note_html, r.locked, r.bot, r.discoverable, r.indexable, r.ai_opt_out,
   r.avatar_media_id, r.header_media_id, r.revised_at

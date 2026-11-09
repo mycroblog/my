@@ -608,6 +608,30 @@ func (s *Service) FindByURI(ctx context.Context, uri string) (Actor, error) {
 	return s.actor(ctx, a)
 }
 
+// FindByURIs returns the actors of uris that exist, by URI, as FindByURI returns one, with one
+// query per part of an actor whatever the number of uris.
+func (s *Service) FindByURIs(ctx context.Context, uris []string) (map[string]Actor, error) {
+	accounts, err := s.d.Repository.FindAccountsByURIs(ctx, uris)
+	if err != nil {
+		return nil, err
+	}
+	ids := make([]string, 0, len(accounts))
+	for _, a := range accounts {
+		ids = append(ids, a.ID)
+	}
+	actors, err := s.FindByIDs(ctx, ids)
+	if err != nil {
+		return nil, err
+	}
+	out := make(map[string]Actor, len(accounts))
+	for uri, a := range accounts {
+		if act, ok := actors[a.ID]; ok {
+			out[uri] = act
+		}
+	}
+	return out, nil
+}
+
 // AnyOnDomain reports whether one of the accounts ids is on domain, for judging what the
 // servers of a domain may see (docs/architecture/visibility.md §1).
 func (s *Service) AnyOnDomain(ctx context.Context, domain string, ids []string) (bool, error) {
