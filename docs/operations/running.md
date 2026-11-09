@@ -319,7 +319,7 @@ The setting `traces_exporter` (default `none`) exports distributed traces. Its r
 | HTTP request (server) | `<method> <http.route>` (`<method>` for a request that did not reach a route) | `http.request.method`, `http.route`, `http.response.status_code`, `my.surface`. A 5xx is a failure |
 | Job execution (consumer) | The job type (`my.job.type`) | `my.job.type`, `my.job.attempt`, `my.outcome`. Each retry is a separate span |
 | Transaction | `my.db.transaction` | `db.system.name`. Each retry is a separate span |
-| Query (client) | The sqlc query name (such as `InsertJob`; otherwise the first word of the SQL, such as `BEGIN`) | `db.system.name`, `db.operation.name` |
+| Query (client) | The sqlc query name (such as `InsertJobs`; otherwise the first word of the SQL, such as `BEGIN`) | `db.system.name`, `db.operation.name` |
 | Delivery (`my.delivery`) | `my.delivery` | `activity.type`, `my.outcome` |
 | Outgoing HTTP (client) | `<method>` | `http.request.method`, `server.address` (the destination host name only), `http.response.status_code`. A 4xx or 5xx is a failure |
 

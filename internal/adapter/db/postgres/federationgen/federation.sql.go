@@ -600,6 +600,51 @@ func (q *Queries) InsertClosureDelete(ctx context.Context, arg InsertClosureDele
 	return result.RowsAffected(), nil
 }
 
+const insertDeliveries = `-- name: InsertDeliveries :many
+INSERT INTO deliveries (id, outbound_activity_id, inbox_url, domain, created_at)
+SELECT unnest($1::uuid[]), unnest($2::uuid[]), unnest($3::text[]),
+  unnest($4::text[]), unnest($5::timestamptz[])
+ON CONFLICT (outbound_activity_id, inbox_url) DO NOTHING
+RETURNING id
+`
+
+type InsertDeliveriesParams struct {
+	Ids                 []string
+	OutboundActivityIds []string
+	InboxUrls           []string
+	Domains             []string
+	CreatedAts          []time.Time
+}
+
+// InsertDeliveries inserts the deliveries of the arrays, of one length, one row per index (the
+// unnests of a select list advance together), as InsertDelivery inserts one, and returns the IDs
+// of those it inserted.
+func (q *Queries) InsertDeliveries(ctx context.Context, arg InsertDeliveriesParams) ([]string, error) {
+	rows, err := q.db.Query(ctx, insertDeliveries,
+		arg.Ids,
+		arg.OutboundActivityIds,
+		arg.InboxUrls,
+		arg.Domains,
+		arg.CreatedAts,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []string{}
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		items = append(items, id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const insertDelivery = `-- name: InsertDelivery :execrows
 INSERT INTO deliveries (id, outbound_activity_id, inbox_url, domain, created_at)
 VALUES ($1, $2, $3, $4, $5)

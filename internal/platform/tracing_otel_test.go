@@ -87,7 +87,7 @@ func TestTracesFromHTTPToJobs(t *testing.T) {
 	inTrace := func(traceID, name string) bool {
 		return slices.ContainsFunc(spans, func(s otlptest.Span) bool { return s.TraceID == traceID && s.Name == name })
 	}
-	if !inTrace(trusted.TraceID, "InsertJob") || !inTrace(trusted.TraceID, "my.db.transaction") {
+	if !inTrace(trusted.TraceID, "InsertJobs") || !inTrace(trusted.TraceID, "my.db.transaction") {
 		t.Error("the request's trace lacks its enqueue's transaction and query")
 	}
 	if !inTrace(job.TraceID, "DeleteClaimedJob") {

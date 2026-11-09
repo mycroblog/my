@@ -103,6 +103,16 @@ INSERT INTO deliveries (id, outbound_activity_id, inbox_url, domain, created_at)
 VALUES (@id, @outbound_activity_id, @inbox_url, @domain, @created_at)
 ON CONFLICT (outbound_activity_id, inbox_url) DO NOTHING;
 
+-- InsertDeliveries inserts the deliveries of the arrays, of one length, one row per index (the
+-- unnests of a select list advance together), as InsertDelivery inserts one, and returns the IDs
+-- of those it inserted.
+-- name: InsertDeliveries :many
+INSERT INTO deliveries (id, outbound_activity_id, inbox_url, domain, created_at)
+SELECT unnest(sqlc.arg(ids)::uuid[]), unnest(sqlc.arg(outbound_activity_ids)::uuid[]), unnest(sqlc.arg(inbox_urls)::text[]),
+  unnest(sqlc.arg(domains)::text[]), unnest(sqlc.arg(created_ats)::timestamptz[])
+ON CONFLICT (outbound_activity_id, inbox_url) DO NOTHING
+RETURNING id;
+
 -- name: GetDelivery :one
 SELECT id, outbound_activity_id, inbox_url, domain, created_at FROM deliveries WHERE id = sqlc.arg(id)::uuid;
 

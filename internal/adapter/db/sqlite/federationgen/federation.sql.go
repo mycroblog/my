@@ -607,6 +607,40 @@ func (q *Queries) InsertClosureDelete(ctx context.Context, arg InsertClosureDele
 	return result.RowsAffected()
 }
 
+const insertDeliveries = `-- name: InsertDeliveries :many
+INSERT INTO deliveries (id, outbound_activity_id, inbox_url, domain, created_at)
+SELECT value ->> '$.id', value ->> '$.outbound_activity_id', value ->> '$.inbox_url', value ->> '$.domain', value ->> '$.created_at'
+FROM json_each(CAST(?1 AS TEXT)) WHERE true
+ON CONFLICT (outbound_activity_id, inbox_url) DO NOTHING
+RETURNING id
+`
+
+// InsertDeliveries inserts the deliveries of a JSON array, one row per element, as InsertDelivery
+// inserts one, and returns the IDs of those it inserted. WHERE true keeps ON CONFLICT from
+// reading as a join constraint.
+func (q *Queries) InsertDeliveries(ctx context.Context, deliveries string) ([]string, error) {
+	rows, err := q.db.QueryContext(ctx, insertDeliveries, deliveries)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []string{}
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		items = append(items, id)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const insertDelivery = `-- name: InsertDelivery :execrows
 INSERT INTO deliveries (id, outbound_activity_id, inbox_url, domain, created_at)
 VALUES (?1, ?2, ?3, ?4, ?5)
