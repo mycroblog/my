@@ -74,15 +74,9 @@ func trim[T any](items []T, limit int) ([]T, int) {
 // presentAccounts presents the accounts with ids in order, leaving out those that are gone
 // or not presentable (presentable with blockCheck).
 func (s *Server) presentAccounts(ctx context.Context, viewer *Viewer, ids []string, blockCheck bool) ([]Account, error) {
-	var actors []appaccount.Actor
-	for _, id := range ids {
-		a, ok, err := s.presentableByID(ctx, viewer, id, blockCheck)
-		if err != nil {
-			return nil, err
-		}
-		if ok {
-			actors = append(actors, a)
-		}
+	actors, err := s.presentableActors(ctx, viewer, ids, blockCheck)
+	if err != nil {
+		return nil, err
 	}
 	return s.newAccounts(ctx, actors)
 }
@@ -264,12 +258,16 @@ func (s *Server) ListMutes(ctx context.Context, req ListMutesRequestObject) (Lis
 	page := MutePage{Items: []MutedAccount{}}
 	var actors []appaccount.Actor
 	var shown []graph.Mute
+	targets := make([]string, len(mutes))
+	for i, m := range mutes {
+		targets[i] = m.TargetAccountID
+	}
+	presentable, err := s.presentableAmong(ctx, &v, targets, false)
+	if err != nil {
+		return nil, err
+	}
 	for _, m := range mutes {
-		a, ok, err := s.presentableByID(ctx, &v, m.TargetAccountID, false)
-		if err != nil {
-			return nil, err
-		}
-		if ok {
+		if a, ok := presentable[m.TargetAccountID]; ok {
 			actors, shown = append(actors, a), append(shown, m)
 		}
 	}

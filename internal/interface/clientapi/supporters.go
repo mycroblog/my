@@ -478,15 +478,21 @@ func (s *Server) ListInstanceSupporters(ctx context.Context, req ListInstanceSup
 	}
 	var actors []appaccount.Actor
 	var planIDs []string
+	var members []string
+	for _, m := range list.Members {
+		if m.AccountID != "" {
+			members = append(members, m.AccountID)
+		}
+	}
+	visible, err := s.presentableAmong(ctx, viewer, members, true)
+	if err != nil {
+		return nil, err
+	}
 	for _, m := range list.Members {
 		if m.AccountID == "" {
 			continue
 		}
-		a, ok, err := s.visibleAccount(ctx, viewer, m.AccountID)
-		if err != nil {
-			return nil, err
-		}
-		if ok {
+		if a, ok := visible[m.AccountID]; ok {
 			actors, planIDs = append(actors, a), append(planIDs, m.PlanID)
 		}
 	}
