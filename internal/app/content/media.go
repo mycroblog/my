@@ -629,7 +629,7 @@ func (s *MediaService) images(ctx context.Context, reads mediaReads, refs []Imag
 			if img, ok := s.image(byID[ref.MediaID]); ok && f.OwnerAccountID == ref.AccountID {
 				out[ref] = img
 			}
-		} else if !slices.Contains(rest, ref.MediaID) {
+		} else if ref.MediaID != "" && !slices.Contains(rest, ref.MediaID) {
 			rest = append(rest, ref.MediaID)
 		}
 	}
