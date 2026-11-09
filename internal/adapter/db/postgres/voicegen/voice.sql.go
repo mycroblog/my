@@ -998,6 +998,31 @@ func (q *Queries) ListVoiceRoomParticipants(ctx context.Context, roomID string) 
 	return items, nil
 }
 
+const listVoiceRoomParticipantsAmong = `-- name: ListVoiceRoomParticipantsAmong :many
+SELECT account_id FROM voice_room_participants WHERE account_id = ANY($1::uuid[]) ORDER BY account_id
+`
+
+// ListVoiceRoomParticipantsAmong returns the participants among account_ids.
+func (q *Queries) ListVoiceRoomParticipantsAmong(ctx context.Context, accountIds []string) ([]string, error) {
+	rows, err := q.db.Query(ctx, listVoiceRoomParticipantsAmong, accountIds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []string{}
+	for rows.Next() {
+		var account_id string
+		if err := rows.Scan(&account_id); err != nil {
+			return nil, err
+		}
+		items = append(items, account_id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listVoiceRoomParticipantsOf = `-- name: ListVoiceRoomParticipantsOf :many
 SELECT account_id, room_id, participation_id, role, cohost_change_id, hand_raised FROM voice_room_participants
 WHERE room_id = ANY($1::uuid[])

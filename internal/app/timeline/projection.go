@@ -179,6 +179,21 @@ func RegisterProjectors(r *uow.Projectors, repo Repository, moderated ModeratedE
 			ViewerAccountID: m.AccountID, TargetAccountID: m.TargetAccountID, Reason: timeline.ExcludedMute, ExpiresAt: m.ExpiresAt,
 		})
 	})
+	r.Register(appgraph.EventBlocksCreated, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
+		var xs []Exclusion
+		for _, b := range e.(appgraph.BlocksCreated).Blocks {
+			xs = append(xs, blockExclusions(b.Block.BlockerAccountID, b.Block.BlockedAccountID)...)
+		}
+		return repo.UpsertExclusions(ctx, tx, xs)
+	})
+	r.Register(appgraph.EventMutesCreated, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
+		var xs []Exclusion
+		for _, mu := range e.(appgraph.MutesCreated).Mutes {
+			m := mu.Mute
+			xs = append(xs, Exclusion{ViewerAccountID: m.AccountID, TargetAccountID: m.TargetAccountID, Reason: timeline.ExcludedMute, ExpiresAt: m.ExpiresAt})
+		}
+		return repo.UpsertExclusions(ctx, tx, xs)
+	})
 	r.Register(appgraph.EventUnmuted, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
 		ev := e.(appgraph.Unmuted)
 		return repo.DeleteExclusion(ctx, tx, ev.AccountID, ev.TargetAccountID, timeline.ExcludedMute)

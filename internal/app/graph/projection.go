@@ -139,6 +139,21 @@ func RegisterProjectors(r *uow.Projectors, repo Repository) {
 		}
 		return nil
 	})
+	r.Register(EventBlocksCreated, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
+		ev := e.(BlocksCreated)
+		bs := make([]graph.Block, len(ev.Blocks))
+		for i, b := range ev.Blocks {
+			bs[i] = b.Block
+		}
+		inserted, err := repo.InsertBlockEdges(ctx, tx, bs)
+		if err != nil {
+			return err
+		}
+		if inserted != len(bs) {
+			return uow.MarkRetryable(errBlockEdgeExists)
+		}
+		return nil
+	})
 	r.Register(EventUnblocked, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
 		b := e.(Unblocked).Block
 		return repo.DeleteBlockEdge(ctx, tx, b.BlockerAccountID, b.BlockedAccountID, b.ID)

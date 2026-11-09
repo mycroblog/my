@@ -51,6 +51,32 @@ func RegisterBlockProjectors(r *uow.Projectors, d RecorderDeps) {
 			CreatedAt: ev.Block.CreatedAt,
 		}, "")
 	})
+	r.Register(appgraph.EventBlocksCreated, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
+		ev, ok := e.(appgraph.BlocksCreated)
+		if !ok {
+			return nil
+		}
+		var ids []string
+		for _, b := range ev.Blocks {
+			ids = append(ids, b.Block.BlockerAccountID, b.Block.BlockedAccountID)
+		}
+		local, err := rec.localAmong(ctx, tx, ids)
+		if err != nil {
+			return err
+		}
+		// As federates decides of each: the Block of a local account's block of a remote one.
+		var as []federation.OutboundActivity
+		for _, b := range ev.Blocks {
+			if local[b.Block.BlockerAccountID] && !local[b.Block.BlockedAccountID] {
+				as = append(as, federation.OutboundActivity{
+					ActivityURI: federation.IRI(b.Block.URI), Type: federation.ActivityBlock,
+					ActorAccountID: b.Block.BlockerAccountID, ObjectKind: federation.OutboundBlock, ObjectID: b.Block.ID,
+					CreatedAt: b.Block.CreatedAt,
+				})
+			}
+		}
+		return rec.recordAll(ctx, tx, as)
+	})
 	r.Register(appgraph.EventUnblocked, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
 		ev, ok := e.(appgraph.Unblocked)
 		if !ok {

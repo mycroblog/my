@@ -290,3 +290,7 @@ SELECT p.account_id, p.room_id, p.id,
 FROM voice_room_participations p
 WHERE NOT EXISTS (SELECT 1 FROM voice_room_participation_ends e WHERE e.participation_id = p.id)
   AND NOT EXISTS (SELECT 1 FROM voice_room_endings x WHERE x.room_id = p.room_id);
+
+-- ListVoiceRoomParticipantsAmong returns the participants among account_ids, a JSON array.
+-- name: ListVoiceRoomParticipantsAmong :many
+SELECT account_id FROM voice_room_participants WHERE account_id IN (SELECT value FROM json_each(CAST(sqlc.arg(account_ids) AS TEXT))) ORDER BY account_id;

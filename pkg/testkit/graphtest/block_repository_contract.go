@@ -46,6 +46,7 @@ func BlockRepositoryContract(t *testing.T, newHarness FollowFactory) {
 		{"ListsRelationsAmongAccounts", blockRepoRelations},
 		{"ReadsTheRelationshipPartsOfManyAccounts", blockRepoRelationshipParts},
 		{"ReadsTheBlocksAndNotificationRelationsOfOneWithMany", blockRepoOneWithMany},
+		{"WritesManyBlocksAndMutes", blockRepoWritesMany},
 		{"LockPairSerializesAPair", blockRepoLockPair},
 	}
 	for _, tc := range cases {
@@ -723,6 +724,61 @@ func blockRepoOneWithMany(t *testing.T, r *blockRepo) {
 			if one.Blocked[me] != got.Blocked[source] || one.Mutes[me] != got.Mutes[source] || one.Follows[me] != got.Follows[source] {
 				t.Errorf("the relations of me with %s = %+v, want %+v as NotificationRelationsTx reads them", source, got, one)
 			}
+		}
+		return nil
+	})
+}
+
+// blockRepoWritesMany inserts many blocks and their edges, and upserts many mutes of one target,
+// each read as the writes of one record it.
+func blockRepoWritesMany(t *testing.T, r *blockRepo) {
+	ids := r.accounts(4)
+	target, a, b, c := ids[0], ids[1], ids[2], ids[3]
+	now := r.clock.Now()
+	var bs []graph.Block
+	for _, blocker := range []string{a, b} {
+		id := r.ids.NewID()
+		bs = append(bs, graph.Block{ID: id, URI: graph.BlockURI(testkit.ContractHost, id), BlockerAccountID: blocker, BlockedAccountID: target, CreatedAt: now})
+	}
+	later := now.Add(time.Hour)
+	ms := []graph.Mute{
+		{AccountID: a, TargetAccountID: target, HideNotifications: true, CreatedAt: now},
+		{AccountID: c, TargetAccountID: target, ExpiresAt: &later, CreatedAt: now},
+	}
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+		if err := errors.Join(r.repo.InsertBlocks(ctx, tx, bs), r.repo.InsertBlocks(ctx, tx, nil)); err != nil {
+			return err
+		}
+		if n, err := r.repo.InsertBlockEdges(ctx, tx, bs); err != nil || n != 2 {
+			t.Errorf("InsertBlockEdges = %d, %v; want 2", n, err)
+		}
+		if n, err := r.repo.InsertBlockEdges(ctx, tx, bs[:1]); err != nil || n != 0 {
+			t.Errorf("InsertBlockEdges of a pair with an edge = %d, %v; want 0", n, err)
+		}
+		for _, want := range bs {
+			if got, err := r.repo.Block(ctx, tx, want.ID); err != nil || got.URI != want.URI || got.BlockerAccountID != want.BlockerAccountID || !got.CreatedAt.Equal(now) {
+				t.Errorf("Block(%s) = %+v, %v; want %+v", want.ID, got, err, want)
+			}
+			if e, err := r.repo.BlockEdge(ctx, tx, want.BlockerAccountID, target); err != nil || e.BlockID != want.ID {
+				t.Errorf("BlockEdge(%s) = %+v, %v", want.BlockerAccountID, e, err)
+			}
+		}
+		if err := errors.Join(r.repo.UpsertMutes(ctx, tx, ms), r.repo.UpsertMutes(ctx, tx, nil)); err != nil {
+			return err
+		}
+		got, err := r.repo.ActiveMutesOfTargetTx(ctx, tx, target, []string{a, b, c}, now)
+		if err != nil || len(got) != 2 {
+			t.Errorf("ActiveMutesOfTargetTx = %+v, %v; want the mutes of a and c", got, err)
+		}
+		for _, want := range ms {
+			one, err := r.repo.Mute(ctx, tx, want.AccountID, target, now)
+			if err != nil || one.HideNotifications != want.HideNotifications || (one.ExpiresAt == nil) != (want.ExpiresAt == nil) ||
+				(want.ExpiresAt != nil && !one.ExpiresAt.Equal(*want.ExpiresAt)) || !reflect.DeepEqual(got[want.AccountID], one) {
+				t.Errorf("the mute of %s = %+v / %+v, %v; want %+v", want.AccountID, one, got[want.AccountID], err, want)
+			}
+		}
+		if got, err := r.repo.ActiveMutesOfTargetTx(ctx, tx, target, []string{c}, later.Add(time.Second)); err != nil || len(got) != 0 {
+			t.Errorf("ActiveMutesOfTargetTx after the expiry = %+v, %v; want none", got, err)
 		}
 		return nil
 	})

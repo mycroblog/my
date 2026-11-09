@@ -163,3 +163,27 @@ SELECT DISTINCT account_id FROM account_domain_mutes
 WHERE account_id IN (SELECT value FROM json_each(CAST(sqlc.arg(account_ids) AS TEXT)))
   AND domain IN (SELECT value FROM json_each(CAST(sqlc.arg(domains) AS TEXT)))
 ORDER BY account_id;
+
+-- The blocks and mutes of a page of a migration, each as the statement of one above does for every
+-- row it names. The lists are JSON arrays; WHERE true keeps ON CONFLICT from reading as a join
+-- constraint.
+
+-- name: InsertBlocks :exec
+INSERT INTO blocks (id, uri, blocker_account_id, blocked_account_id, created_at)
+SELECT value ->> '$.id', value ->> '$.uri', value ->> '$.blocker', value ->> '$.blocked', CAST(sqlc.arg(created_at) AS INTEGER)
+FROM json_each(CAST(sqlc.arg(blocks) AS TEXT));
+
+-- name: InsertBlockEdges :execrows
+INSERT INTO block_edges (blocker_account_id, blocked_account_id, block_id)
+SELECT value ->> '$.blocker', value ->> '$.blocked', value ->> '$.id' FROM json_each(CAST(sqlc.arg(blocks) AS TEXT)) WHERE true
+ON CONFLICT (blocker_account_id, blocked_account_id) DO NOTHING;
+
+-- name: UpsertMutes :exec
+INSERT INTO mutes (account_id, target_account_id, hide_notifications, expires_at, created_at)
+SELECT value ->> '$.account_id', CAST(sqlc.arg(target_account_id) AS TEXT), value ->> '$.hide_notifications', value ->> '$.expires_at',
+  CAST(sqlc.arg(created_at) AS INTEGER)
+FROM json_each(CAST(sqlc.arg(mutes) AS TEXT)) WHERE true
+ON CONFLICT (account_id, target_account_id) DO UPDATE SET
+  hide_notifications = excluded.hide_notifications,
+  expires_at = excluded.expires_at,
+  created_at = excluded.created_at;

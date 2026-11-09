@@ -305,6 +305,20 @@ func (q *Queries) InsertBlockEdge(ctx context.Context, arg InsertBlockEdgeParams
 	return result.RowsAffected()
 }
 
+const insertBlockEdges = `-- name: InsertBlockEdges :execrows
+INSERT INTO block_edges (blocker_account_id, blocked_account_id, block_id)
+SELECT value ->> '$.blocker', value ->> '$.blocked', value ->> '$.id' FROM json_each(CAST(?1 AS TEXT)) WHERE true
+ON CONFLICT (blocker_account_id, blocked_account_id) DO NOTHING
+`
+
+func (q *Queries) InsertBlockEdges(ctx context.Context, blocks string) (int64, error) {
+	result, err := q.db.ExecContext(ctx, insertBlockEdges, blocks)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
 const insertBlockRetraction = `-- name: InsertBlockRetraction :exec
 INSERT INTO block_retractions (block_id, retracted_at) VALUES (?, ?)
 `
@@ -316,6 +330,26 @@ type InsertBlockRetractionParams struct {
 
 func (q *Queries) InsertBlockRetraction(ctx context.Context, arg InsertBlockRetractionParams) error {
 	_, err := q.db.ExecContext(ctx, insertBlockRetraction, arg.BlockID, arg.RetractedAt)
+	return err
+}
+
+const insertBlocks = `-- name: InsertBlocks :exec
+
+INSERT INTO blocks (id, uri, blocker_account_id, blocked_account_id, created_at)
+SELECT value ->> '$.id', value ->> '$.uri', value ->> '$.blocker', value ->> '$.blocked', CAST(?1 AS INTEGER)
+FROM json_each(CAST(?2 AS TEXT))
+`
+
+type InsertBlocksParams struct {
+	CreatedAt int64
+	Blocks    string
+}
+
+// The blocks and mutes of a page of a migration, each as the statement of one above does for every
+// row it names. The lists are JSON arrays; WHERE true keeps ON CONFLICT from reading as a join
+// constraint.
+func (q *Queries) InsertBlocks(ctx context.Context, arg InsertBlocksParams) error {
+	_, err := q.db.ExecContext(ctx, insertBlocks, arg.CreatedAt, arg.Blocks)
 	return err
 }
 
@@ -752,5 +786,27 @@ func (q *Queries) UpsertMute(ctx context.Context, arg UpsertMuteParams) error {
 		arg.ExpiresAt,
 		arg.CreatedAt,
 	)
+	return err
+}
+
+const upsertMutes = `-- name: UpsertMutes :exec
+INSERT INTO mutes (account_id, target_account_id, hide_notifications, expires_at, created_at)
+SELECT value ->> '$.account_id', CAST(?1 AS TEXT), value ->> '$.hide_notifications', value ->> '$.expires_at',
+  CAST(?2 AS INTEGER)
+FROM json_each(CAST(?3 AS TEXT)) WHERE true
+ON CONFLICT (account_id, target_account_id) DO UPDATE SET
+  hide_notifications = excluded.hide_notifications,
+  expires_at = excluded.expires_at,
+  created_at = excluded.created_at
+`
+
+type UpsertMutesParams struct {
+	TargetAccountID string
+	CreatedAt       int64
+	Mutes           string
+}
+
+func (q *Queries) UpsertMutes(ctx context.Context, arg UpsertMutesParams) error {
+	_, err := q.db.ExecContext(ctx, upsertMutes, arg.TargetAccountID, arg.CreatedAt, arg.Mutes)
 	return err
 }

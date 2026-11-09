@@ -536,3 +536,10 @@ WHERE viewer_account_id IN (SELECT value FROM json_each(CAST(sqlc.arg(viewers) A
 -- name: ListFeedDirectEntriesAmongOf :many
 SELECT recipient_account_id, entry_id FROM feed_direct_recipients
 WHERE recipient_account_id IN (SELECT value FROM json_each(CAST(sqlc.arg(viewers) AS TEXT))) AND entry_id IN (SELECT value FROM json_each(CAST(sqlc.arg(entry_ids) AS TEXT)));
+
+-- UpsertFeedExclusions is UpsertFeedExclusion of many exclusions, a JSON array.
+-- name: UpsertFeedExclusions :exec
+INSERT INTO feed_exclusions (viewer_account_id, target_account_id, reason, expires_at)
+SELECT value ->> '$.viewer', value ->> '$.target', value ->> '$.reason', value ->> '$.expires_at'
+FROM json_each(CAST(sqlc.arg(exclusions) AS TEXT)) WHERE true
+ON CONFLICT (viewer_account_id, target_account_id, reason) DO UPDATE SET expires_at = excluded.expires_at;

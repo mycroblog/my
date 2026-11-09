@@ -529,3 +529,11 @@ WHERE viewer_account_id = ANY(sqlc.arg(viewers)::uuid[]) AND domain = ANY(sqlc.a
 -- name: ListFeedDirectEntriesAmongOf :many
 SELECT recipient_account_id, entry_id FROM feed_direct_recipients
 WHERE recipient_account_id = ANY(sqlc.arg(viewers)::uuid[]) AND entry_id = ANY(sqlc.arg(entry_ids)::uuid[]);
+
+-- UpsertFeedExclusions is UpsertFeedExclusion of many exclusions (the unnests of a select list
+-- advance together; an empty expiry is none).
+-- name: UpsertFeedExclusions :exec
+INSERT INTO feed_exclusions (viewer_account_id, target_account_id, reason, expires_at)
+SELECT unnest(sqlc.arg(viewer_account_ids)::uuid[]), unnest(sqlc.arg(target_account_ids)::uuid[]), unnest(sqlc.arg(reasons)::text[]),
+  NULLIF(unnest(sqlc.arg(expires_ats)::text[]), '')::timestamptz
+ON CONFLICT (viewer_account_id, target_account_id, reason) DO UPDATE SET expires_at = excluded.expires_at;
