@@ -654,6 +654,16 @@ func (q *Queries) LockAccountPair(ctx context.Context, pairKey string) error {
 	return err
 }
 
+const lockAccountPairs = `-- name: LockAccountPairs :exec
+SELECT pg_advisory_xact_lock(hashtextextended(k, 0)) FROM unnest($1::text[]) AS k ORDER BY k
+`
+
+// LockAccountPairs is LockAccountPair of many pairs, in the order of their keys.
+func (q *Queries) LockAccountPairs(ctx context.Context, pairKeys []string) error {
+	_, err := q.db.Exec(ctx, lockAccountPairs, pairKeys)
+	return err
+}
+
 const mutesAnyDomain = `-- name: MutesAnyDomain :one
 SELECT EXISTS (
   SELECT 1 FROM account_domain_mutes

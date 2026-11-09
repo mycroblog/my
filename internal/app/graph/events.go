@@ -37,6 +37,7 @@ const (
 	EventFollowAccepted           = "graph.follow_accepted"
 	EventFollowRejected           = "graph.follow_rejected"
 	EventFollowTerminated         = "graph.follow_terminated"
+	EventFollowsTerminated        = "graph.follows_terminated"
 	EventFollowResent             = "graph.follow_resent"
 	EventFollowPreferencesChanged = "graph.follow_preferences_changed"
 	EventBlocked                  = "graph.blocked"
@@ -141,6 +142,17 @@ type FollowTerminated struct {
 
 // EventType implements uow.Event.
 func (FollowTerminated) EventType() string { return EventFollowTerminated }
+
+// FollowsTerminated is FollowTerminated of many follows that one command ends together (a
+// severance, Service.SeverDirected), emitted once for all of them. A module that projects
+// FollowTerminated projects it too, as it projects each of Terminations, with a number of
+// statements that does not grow with them.
+type FollowsTerminated struct {
+	Terminations []FollowTerminated
+}
+
+// EventType implements uow.Event.
+func (FollowsTerminated) EventType() string { return EventFollowsTerminated }
 
 // FollowResent is emitted when a remote follower sends a Follow again for an active follow.
 type FollowResent struct {

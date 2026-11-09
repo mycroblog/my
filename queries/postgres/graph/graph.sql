@@ -133,3 +133,31 @@ ON CONFLICT (uri) DO NOTHING;
 -- name: GetFollowByResendURI :one
 SELECT f.id, f.uri, f.follower_account_id, f.followee_account_id, f.requested_at
 FROM follow_resends r JOIN follows f ON f.id = r.follow_id WHERE r.uri = $1;
+
+-- The statements that end many follows at once (Repository.EndFollows), each as the statement of
+-- one follow above does for every follow it names. The unnests of a select list advance together.
+
+-- name: ListFollowsByIDs :many
+SELECT id, uri, follower_account_id, followee_account_id, requested_at FROM follows
+WHERE id = ANY(sqlc.arg(ids)::uuid[]) ORDER BY id;
+
+-- name: InsertFollowTerminations :exec
+INSERT INTO follow_terminations (follow_id, reason, terminated_at)
+SELECT unnest(sqlc.arg(follow_ids)::uuid[]), sqlc.arg(reason), sqlc.arg(terminated_at);
+
+-- name: DeleteFollowEdgesOfFollows :execrows
+DELETE FROM follow_edges WHERE (follow_id, state) IN (
+  SELECT unnest(sqlc.arg(follow_ids)::uuid[]), unnest(sqlc.arg(states)::text[]));
+
+-- AddToManyFollowCounters is AddToFollowCounters of many accounts; it returns those that had a
+-- row, and AddFollowCounters creates the others. An upsert would check the counts of the row it
+-- proposes, below zero, before it adds them.
+-- name: AddToManyFollowCounters :many
+UPDATE follow_counters c SET followers_count = c.followers_count + d.followers_delta, following_count = c.following_count + d.following_delta
+FROM (SELECT unnest(sqlc.arg(account_ids)::uuid[]) AS account_id, unnest(sqlc.arg(followers_deltas)::bigint[]) AS followers_delta,
+  unnest(sqlc.arg(following_deltas)::bigint[]) AS following_delta) d
+WHERE c.account_id = d.account_id
+RETURNING c.account_id;
+
+-- name: DeleteZeroFollowCountersOf :exec
+DELETE FROM follow_counters WHERE account_id = ANY(sqlc.arg(account_ids)::uuid[]) AND followers_count = 0 AND following_count = 0;

@@ -700,6 +700,25 @@ func (s *Service) IsLocal(ctx context.Context, tx uow.Tx, id string) (bool, erro
 	return a.IsLocal(), nil
 }
 
+// LocalAmong reports, inside tx, which of ids are local accounts, as IsLocal reports one, with
+// one query.
+func (s *Service) LocalAmong(ctx context.Context, tx uow.Tx, ids []string) (map[string]bool, error) {
+	out := make(map[string]bool, len(ids))
+	if len(ids) == 0 {
+		return out, nil
+	}
+	accounts, err := s.d.Repository.FindAccountsTx(ctx, tx, ids)
+	if err != nil {
+		return nil, err
+	}
+	for id, a := range accounts {
+		if a.IsLocal() {
+			out[id] = true
+		}
+	}
+	return out, nil
+}
+
 // NotifiableAmong reports, inside tx, which of ids are local accounts that their owners did not
 // deactivate, as IsLocal and DeactivatedTx report one, with one query each.
 func (s *Service) NotifiableAmong(ctx context.Context, tx uow.Tx, ids []string) (map[string]bool, error) {

@@ -179,6 +179,11 @@ func (m moderationFollows) SeverByModeration(ctx context.Context, tx uow.Tx, acc
 	return m.a.Graph.SeverByModeration(ctx, tx, accountID, others, announce, now)
 }
 
+// SeverEach implements moderation.Follows.
+func (m moderationFollows) SeverEach(ctx context.Context, tx uow.Tx, accountID string, others []string, dir graph.SeverDirection, announce bool, now time.Time) (map[string]graph.Severed, error) {
+	return m.a.Graph.SeverEach(ctx, tx, accountID, others, dir, announce, now)
+}
+
 // moderationEmails gives the moderation module the identity module, which is built after it
 // because it reads the moderation restrictions, for the sign-up block that a ban makes of the
 // banned user's email address.

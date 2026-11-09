@@ -103,3 +103,49 @@ func (q *Queries) InsertRelationshipSeverance(ctx context.Context, arg InsertRel
 	}
 	return result.RowsAffected()
 }
+
+const insertRelationshipSeverances = `-- name: InsertRelationshipSeverances :many
+INSERT INTO relationship_severances (id, domain_action_id, action_id, account_id, followers_lost, following_lost, occurred_at)
+SELECT value ->> '$.id', CAST(?1 AS TEXT), CAST(?2 AS TEXT), value ->> '$.account_id',
+  value ->> '$.followers_lost', value ->> '$.following_lost', CAST(?3 AS INTEGER)
+FROM json_each(CAST(?4 AS TEXT)) WHERE true
+ON CONFLICT DO NOTHING
+RETURNING account_id
+`
+
+type InsertRelationshipSeverancesParams struct {
+	DomainActionID sql.NullString
+	ActionID       sql.NullString
+	OccurredAt     int64
+	Severances     string
+}
+
+// InsertRelationshipSeverances is InsertRelationshipSeverance of the accounts of one action, a
+// JSON array; it returns the accounts it inserted.
+func (q *Queries) InsertRelationshipSeverances(ctx context.Context, arg InsertRelationshipSeverancesParams) ([]string, error) {
+	rows, err := q.db.QueryContext(ctx, insertRelationshipSeverances,
+		arg.DomainActionID,
+		arg.ActionID,
+		arg.OccurredAt,
+		arg.Severances,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []string{}
+	for rows.Next() {
+		var account_id string
+		if err := rows.Scan(&account_id); err != nil {
+			return nil, err
+		}
+		items = append(items, account_id)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}

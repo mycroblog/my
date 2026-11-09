@@ -68,6 +68,13 @@ WHERE (uri, actor_uri) IN (
 INSERT INTO outbound_activities (id, activity_uri, type, actor_account_id, object_type, object_id, created_at)
 VALUES (@id, @activity_uri, @type, @actor_account_id, @object_type, @object_id, @created_at);
 
+-- InsertOutboundActivities is InsertOutboundActivity of many activities, a JSON array.
+-- name: InsertOutboundActivities :exec
+INSERT INTO outbound_activities (id, activity_uri, type, actor_account_id, object_type, object_id, created_at)
+SELECT value ->> '$.id', value ->> '$.activity_uri', value ->> '$.type', value ->> '$.actor_account_id',
+  value ->> '$.object_type', value ->> '$.object_id', value ->> '$.created_at'
+FROM json_each(CAST(sqlc.arg(activities) AS TEXT));
+
 -- name: GetOutboundActivity :one
 SELECT id, activity_uri, type, actor_account_id, object_type, object_id, created_at
 FROM outbound_activities WHERE id = @id;

@@ -5,6 +5,7 @@ package federationtest
 import (
 	"context"
 	"errors"
+	"fmt"
 	"maps"
 	"reflect"
 	"slices"
@@ -34,6 +35,7 @@ func FederationRepositoryContract(t *testing.T, newHarness FederationFactory) {
 		run  func(t *testing.T, r *fedRepo)
 	}{
 		{"FindsAndListsOutboundActivities", fedRepoOutboundActivities},
+		{"InsertsManyOutboundActivities", fedRepoManyOutboundActivities},
 		{"KeepsTheFirstDocument", fedRepoDocuments},
 		{"AddsAnInboxOnceAndPagesDeliveries", fedRepoDeliveries},
 		{"ListsTheAttemptsOfADelivery", fedRepoAttempts},
@@ -142,6 +144,28 @@ func fedRepoOutboundActivities(t *testing.T, r *fedRepo) {
 	}
 	if got, err := r.h.Federation.ListOutboundActivitiesOf(t.Context(), federation.OutboundFollow, status); err != nil || len(got) != 0 {
 		t.Errorf("ListOutboundActivitiesOf(another kind) = %+v, %v; want none", got, err)
+	}
+}
+
+// fedRepoManyOutboundActivities inserts many activities with one statement, each found as
+// InsertOutboundActivity records one.
+func fedRepoManyOutboundActivities(t *testing.T, r *fedRepo) {
+	var as []federation.OutboundActivity
+	for i, typ := range []federation.ActivityType{federation.ActivityUndo, federation.ActivityReject} {
+		id := r.ids.NewID()
+		as = append(as, federation.OutboundActivity{
+			ID: id, ActivityURI: federation.IRI("https://" + testkit.ContractHost + "/ap/activities/" + id), Type: typ,
+			ActorAccountID: testkit.NamedID(fmt.Sprintf("actor %d", i)), ObjectKind: federation.OutboundFollow, ObjectID: testkit.NamedID(fmt.Sprintf("follow %d", i)),
+			CreatedAt: r.clock.Now(),
+		})
+	}
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+		return errors.Join(r.h.Federation.InsertOutboundActivities(ctx, tx, as), r.h.Federation.InsertOutboundActivities(ctx, tx, nil))
+	})
+	for _, a := range as {
+		if got, err := r.h.Federation.FindOutboundActivity(t.Context(), a.ID); err != nil || got != a {
+			t.Errorf("FindOutboundActivity(%s) = %+v, %v; want %+v", a.ID, got, err, a)
+		}
 	}
 }
 

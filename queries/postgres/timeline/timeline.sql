@@ -482,3 +482,13 @@ WHERE e.author_account_id IN (
   AND (sqlc.arg(all_languages)::boolean OR e.language = 'und' OR e.language = ANY(sqlc.arg(languages)::text[]))
 ORDER BY e.id DESC
 LIMIT sqlc.arg(page_limit);
+
+-- DeleteFeedFollowEdges and DeleteListMembersOfFollows are DeleteFeedFollowEdge and
+-- DeleteListMembersOfFollow of many pairs (the unnests of a select list advance together).
+-- name: DeleteFeedFollowEdges :exec
+DELETE FROM feed_follow_edges WHERE (follower_account_id, followee_account_id) IN (
+  SELECT unnest(sqlc.arg(follower_ids)::uuid[]), unnest(sqlc.arg(followee_ids)::uuid[]));
+
+-- name: DeleteListMembersOfFollows :exec
+DELETE FROM list_members WHERE (owner_account_id, member_account_id) IN (
+  SELECT unnest(sqlc.arg(follower_ids)::uuid[]), unnest(sqlc.arg(followee_ids)::uuid[]));

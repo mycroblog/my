@@ -162,3 +162,7 @@ LIMIT sqlc.arg(page_limit);
 -- other modules' projections.
 -- name: ListAllDomainMutes :many
 SELECT account_id, domain, created_at FROM account_domain_mutes ORDER BY account_id, domain;
+
+-- LockAccountPairs is LockAccountPair of many pairs, in the order of their keys.
+-- name: LockAccountPairs :exec
+SELECT pg_advisory_xact_lock(hashtextextended(k, 0)) FROM unnest(sqlc.arg(pair_keys)::text[]) AS k ORDER BY k;

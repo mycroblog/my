@@ -40,6 +40,7 @@ func FollowRepositoryContract(t *testing.T, newHarness FollowFactory) {
 		{"KeepsOneEdgePerPair", graphFollowRepoEdges},
 		{"PagesFollowersAndFollowing", graphFollowRepoPages},
 		{"KeepsCounters", graphFollowRepoCounters},
+		{"EndsManyFollows", graphFollowRepoEndMany},
 		{"ListsHistoriesAndRebuilds", graphFollowRepoHistories},
 		{"InsertsOneEdgeUnderConcurrency", graphFollowRepoConcurrentEdges},
 	}
@@ -331,6 +332,85 @@ func graphFollowRepoPages(t *testing.T, r *graphFollowRepo) {
 	}
 	if page, err := r.repo.ListFollowing(ctx, star, graph.StatePending, "", 10); err != nil || len(page) != 0 {
 		t.Errorf("ListFollowing(pending) = %+v, %v; want none", page, err)
+	}
+}
+
+// graphFollowRepoEndMany ends many follows with the writes of a batch, as the writes of one
+// follow end each: their follows found by ID, their terminations recorded once, their edges
+// deleted only in the state given, and the counters of many accounts added, from zero and gone
+// at zero.
+func graphFollowRepoEndMany(t *testing.T, r *graphFollowRepo) {
+	ctx := t.Context()
+	ids := r.accounts(4)
+	star, fans := ids[0], ids[1:]
+	var follows []graph.Follow
+	for _, fan := range fans {
+		follows = append(follows, r.follow(t, fan, star, graph.StateActive))
+	}
+	pending := r.follow(t, star, fans[0], graph.StatePending)
+	all := append(append([]graph.Follow{}, follows...), pending)
+	byID := make([]string, len(all))
+	for i, f := range all {
+		byID[i] = f.ID
+	}
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+		if err := r.repo.LockPairs(ctx, tx, star, fans); err != nil {
+			return err
+		}
+		got, err := r.repo.FollowsByIDs(ctx, tx, append(byID, r.ids.NewID()))
+		if err != nil {
+			return err
+		}
+		if len(got) != len(all) {
+			t.Errorf("FollowsByIDs = %d follows, want the %d that exist", len(got), len(all))
+		}
+		for _, f := range all {
+			if one, err := r.repo.Follow(ctx, tx, f.ID); err != nil || got[f.ID] != one {
+				t.Errorf("FollowsByIDs[%s] = %+v, want %+v as Follow finds it (%v)", f.ID, got[f.ID], one, err)
+			}
+		}
+		return r.repo.InsertTerminations(ctx, tx, byID, graph.TerminatedModeration, r.clock.Now())
+	})
+	err := r.uow.Tx(ctx, func(tx uow.Tx) error {
+		return r.repo.InsertTerminations(ctx, tx, byID[:1], graph.TerminatedModeration, r.clock.Now())
+	})
+	if !errors.Is(err, appgraph.ErrAlreadyRecorded) {
+		t.Errorf("InsertTerminations of an ended follow = %v, want ErrAlreadyRecorded", err)
+	}
+	fresh := r.ids.NewID()
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+		// The active edges and the pending one, and one named in a state it is not in.
+		edges := []graph.Edge{{FollowID: pending.ID, State: graph.StateActive}}
+		deleted, err := r.repo.DeleteEdgesOfFollows(ctx, tx, edges)
+		if err != nil || deleted != 0 {
+			t.Errorf("DeleteEdgesOfFollows in another state = %d, %v; want none", deleted, err)
+		}
+		edges = []graph.Edge{{FollowID: pending.ID, State: graph.StatePending}}
+		for _, f := range follows {
+			edges = append(edges, graph.Edge{FollowerAccountID: f.FollowerAccountID, FolloweeAccountID: f.FolloweeAccountID, FollowID: f.ID, State: graph.StateActive})
+		}
+		if deleted, err = r.repo.DeleteEdgesOfFollows(ctx, tx, edges); err != nil || deleted != len(edges) {
+			t.Errorf("DeleteEdgesOfFollows = %d, %v; want %d", deleted, err, len(edges))
+		}
+		deltas := map[string]appgraph.CounterDelta{star: {Followers: -3}, fresh: {Followers: 2, Following: 1}}
+		for _, fan := range fans {
+			deltas[fan] = appgraph.CounterDelta{Following: -1}
+		}
+		return r.repo.AddManyCounters(ctx, tx, deltas)
+	})
+	if edges, err := r.repo.ListEdges(ctx); err != nil || len(edges) != 0 {
+		t.Errorf("ListEdges after DeleteEdgesOfFollows = %+v, %v; want none", edges, err)
+	}
+	for _, id := range ids {
+		if _, err := r.repo.FindCounters(ctx, id); !errors.Is(err, appgraph.ErrNotFound) {
+			t.Errorf("FindCounters(%s) after AddManyCounters = %v, want none at zero", id, err)
+		}
+	}
+	if got, err := r.repo.FindCounters(ctx, fresh); err != nil || got != (graph.Counters{AccountID: fresh, FollowersCount: 2, FollowingCount: 1}) {
+		t.Errorf("FindCounters of an account without a row after AddManyCounters = %+v, %v; want them from zero", got, err)
+	}
+	if n, err := r.repo.CountFollowers(ctx, star, graph.StateActive); err != nil || n != 0 {
+		t.Errorf("CountFollowers after the end = %d, %v", n, err)
 	}
 }
 

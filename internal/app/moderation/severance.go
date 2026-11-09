@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"slices"
 	"time"
 
 	appaccount "github.com/mycroblog/my/internal/app/account"
@@ -42,11 +43,26 @@ type RelationshipsSevered struct{ Severance Severance }
 // EventType implements uow.Event.
 func (RelationshipsSevered) EventType() string { return EventRelationshipsSevered }
 
+// EventManyRelationshipsSevered follows the relationship_severances rows of one action that one
+// statement inserted, in its transaction.
+const EventManyRelationshipsSevered = "moderation.many_relationships_severed"
+
+// ManyRelationshipsSevered is RelationshipsSevered of the local accounts of one action, emitted
+// once for all of them; a module that projects RelationshipsSevered projects it too, as it
+// projects each of Severances.
+type ManyRelationshipsSevered struct{ Severances []Severance }
+
+// EventType implements uow.Event.
+func (ManyRelationshipsSevered) EventType() string { return EventManyRelationshipsSevered }
+
 // SeveranceRepository is the part of Repository that records severances.
 type SeveranceRepository interface {
 	// InsertSeverance inserts a severance and reports whether it did: a severance of an account
 	// whose action already has one for it inserts nothing.
 	InsertSeverance(ctx context.Context, tx uow.Tx, s moderation.Severance) (bool, error)
+	// InsertSeverances is InsertSeverance of the severances of one action, which share its
+	// action and time, with one statement; it returns the accounts it inserted one for.
+	InsertSeverances(ctx context.Context, tx uow.Tx, ss []moderation.Severance) (map[string]bool, error)
 	// EraseSeverancesOf deletes the severances of an account.
 	EraseSeverancesOf(ctx context.Context, tx uow.Tx, accountID string) error
 	// FindSeverance returns a severance of accountID with what its action suspended; one of
@@ -62,6 +78,7 @@ type SeveranceRepository interface {
 type Follows interface {
 	Counterparts(ctx context.Context, tx uow.Tx, accountID string) ([]string, error)
 	SeverByModeration(ctx context.Context, tx uow.Tx, accountID string, others []string, announce bool, now time.Time) (appgraph.Severed, error)
+	SeverEach(ctx context.Context, tx uow.Tx, accountID string, others []string, dir appgraph.SeverDirection, announce bool, now time.Time) (map[string]appgraph.Severed, error)
 }
 
 // Directory is the part of the account module's public API that finds the accounts that a
@@ -106,16 +123,35 @@ func (s *Service) severAccountIn(ctx context.Context, tx uow.Tx, a moderation.Ac
 	if err != nil {
 		return err
 	}
-	for _, local := range locals {
-		severed, err := s.d.Follows.SeverByModeration(ctx, tx, local, []string{a.TargetAccountID}, true, now)
-		if err != nil {
-			return err
-		}
-		if _, err := s.recordSeverance(ctx, tx, Severance{ActionID: a.ID, AccountID: local}, severed, now); err != nil {
-			return err
-		}
+	// The follows with all the local accounts end together, on the target's side.
+	lost, err := s.d.Follows.SeverEach(ctx, tx, a.TargetAccountID, locals, appgraph.SeverBoth, true, now)
+	if err != nil {
+		return err
 	}
-	return nil
+	var svs []Severance
+	for _, local := range locals {
+		severed := lost[local].Reversed()
+		if !severed.Lost() {
+			continue
+		}
+		sv := Severance{ID: s.d.IDs.NewID(), ActionID: a.ID, AccountID: local, FollowersLost: severed.Followers, FollowingLost: severed.Following, OccurredAt: now}
+		if err := sv.Validate(); err != nil {
+			return err
+		}
+		svs = append(svs, sv)
+	}
+	if len(svs) == 0 {
+		return nil
+	}
+	created, err := s.d.Repository.InsertSeverances(ctx, tx, svs)
+	if err != nil {
+		return err
+	}
+	svs = slices.DeleteFunc(svs, func(sv Severance) bool { return !created[sv.AccountID] })
+	if len(svs) == 0 {
+		return nil
+	}
+	return tx.Emit(ctx, ManyRelationshipsSevered{Severances: svs})
 }
 
 // recordSeverance inserts sv with the counts of severed, unless the account lost no active

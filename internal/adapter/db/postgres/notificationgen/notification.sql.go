@@ -497,6 +497,97 @@ func (q *Queries) InsertNotificationsFor(ctx context.Context, arg InsertNotifica
 	return items, nil
 }
 
+const insertNotificationsForEach = `-- name: InsertNotificationsForEach :many
+INSERT INTO notifications (id, recipient_account_id, type, source_account_id, source_domain, status_id, moderation_action_id, report_id, subject_user_id, severance_id, appeal_id, custom_emoji_request_id, supporter_subscription_id, reaction_emoji, reaction_custom_emoji_id, account_move_id, account_move_outcome, service_closure_event_id, service_closure_change, voice_room_id, error_group_change, error_group_id, error_group_hour, announcement_id, hook_appeal_id, auto_delete_limit_notice_id, dedupe_key, created_at)
+SELECT unnest($1::uuid[]), unnest($2::uuid[]), $3::text,
+  $4::uuid, $5::text, $6::uuid, $7::uuid, $8::uuid, $9::uuid, unnest($10::uuid[]), $11::uuid, $12::uuid, $13::uuid, $14::text, $15::uuid, $16::uuid, $17::text, $18::uuid, $19::text, $20::uuid, $21::text, $22::uuid, $23::timestamptz, $24::uuid, $25::uuid, $26::uuid,
+  unnest($27::text[]), $28::timestamptz
+ON CONFLICT (recipient_account_id, dedupe_key) DO NOTHING
+RETURNING recipient_account_id
+`
+
+type InsertNotificationsForEachParams struct {
+	Ids                     []string
+	RecipientAccountIds     []string
+	Type                    string
+	SourceAccountID         *string
+	SourceDomain            *string
+	StatusID                *string
+	ModerationActionID      *string
+	ReportID                *string
+	SubjectUserID           *string
+	SeveranceIds            []string
+	AppealID                *string
+	CustomEmojiRequestID    *string
+	SupporterSubscriptionID *string
+	ReactionEmoji           *string
+	ReactionCustomEmojiID   *string
+	AccountMoveID           *string
+	AccountMoveOutcome      *string
+	ServiceClosureEventID   *string
+	ServiceClosureChange    *string
+	VoiceRoomID             *string
+	ErrorGroupChange        *string
+	ErrorGroupID            *string
+	ErrorGroupHour          *time.Time
+	AnnouncementID          *string
+	HookAppealID            *string
+	AutoDeleteLimitNoticeID *string
+	DedupeKeys              []string
+	CreatedAt               time.Time
+}
+
+// InsertNotificationsForEach is InsertNotificationsFor whose rows differ by their severance and
+// dedupe key too (the unnests of a select list advance together).
+func (q *Queries) InsertNotificationsForEach(ctx context.Context, arg InsertNotificationsForEachParams) ([]string, error) {
+	rows, err := q.db.Query(ctx, insertNotificationsForEach,
+		arg.Ids,
+		arg.RecipientAccountIds,
+		arg.Type,
+		arg.SourceAccountID,
+		arg.SourceDomain,
+		arg.StatusID,
+		arg.ModerationActionID,
+		arg.ReportID,
+		arg.SubjectUserID,
+		arg.SeveranceIds,
+		arg.AppealID,
+		arg.CustomEmojiRequestID,
+		arg.SupporterSubscriptionID,
+		arg.ReactionEmoji,
+		arg.ReactionCustomEmojiID,
+		arg.AccountMoveID,
+		arg.AccountMoveOutcome,
+		arg.ServiceClosureEventID,
+		arg.ServiceClosureChange,
+		arg.VoiceRoomID,
+		arg.ErrorGroupChange,
+		arg.ErrorGroupID,
+		arg.ErrorGroupHour,
+		arg.AnnouncementID,
+		arg.HookAppealID,
+		arg.AutoDeleteLimitNoticeID,
+		arg.DedupeKeys,
+		arg.CreatedAt,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []string{}
+	for rows.Next() {
+		var recipient_account_id string
+		if err := rows.Scan(&recipient_account_id); err != nil {
+			return nil, err
+		}
+		items = append(items, recipient_account_id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listNotificationSettings = `-- name: ListNotificationSettings :many
 SELECT account_id, notification_group, channel, enabled, updated_at FROM notification_settings
 WHERE account_id = $1 ORDER BY notification_group, channel

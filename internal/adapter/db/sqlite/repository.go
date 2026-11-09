@@ -175,3 +175,21 @@ func JSONList(s []string) (string, error) {
 	}
 	return string(b), nil
 }
+
+// JSONPairs encodes the pairs (a[i], b[i]) as the JSON array of {"a": ..., "b": ...} that the
+// queries of many pairs read with json_each.
+func JSONPairs(a, b []string) (string, error) {
+	type pair struct {
+		A string `json:"a"`
+		B string `json:"b"`
+	}
+	pairs := make([]pair, len(a))
+	for i := range a {
+		pairs[i] = pair{A: a[i], B: b[i]}
+	}
+	out, err := json.Marshal(pairs)
+	if err != nil {
+		return "", Wrap(err, "encode a list of pairs")
+	}
+	return string(out), nil
+}

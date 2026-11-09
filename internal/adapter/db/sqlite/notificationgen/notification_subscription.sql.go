@@ -70,6 +70,28 @@ func (q *Queries) DeletePostSubscriptionRequest(ctx context.Context, arg DeleteP
 	return result.RowsAffected()
 }
 
+const deletePostSubscriptionRequests = `-- name: DeletePostSubscriptionRequests :exec
+DELETE FROM post_subscription_requests WHERE (account_id, target_account_id) IN (
+  SELECT value ->> '$.a', value ->> '$.b' FROM json_each(CAST(?1 AS TEXT)))
+`
+
+// DeletePostSubscriptionRequests and DeletePostSubscriptions are DeletePostSubscriptionRequest
+// and DeletePostSubscription of many pairs, a JSON array of {"a": account, "b": target}.
+func (q *Queries) DeletePostSubscriptionRequests(ctx context.Context, pairs string) error {
+	_, err := q.db.ExecContext(ctx, deletePostSubscriptionRequests, pairs)
+	return err
+}
+
+const deletePostSubscriptions = `-- name: DeletePostSubscriptions :exec
+DELETE FROM post_subscriptions WHERE (account_id, target_account_id) IN (
+  SELECT value ->> '$.a', value ->> '$.b' FROM json_each(CAST(?1 AS TEXT)))
+`
+
+func (q *Queries) DeletePostSubscriptions(ctx context.Context, pairs string) error {
+	_, err := q.db.ExecContext(ctx, deletePostSubscriptions, pairs)
+	return err
+}
+
 const hasPostSubscribers = `-- name: HasPostSubscribers :one
 SELECT EXISTS (SELECT 1 FROM post_subscriptions WHERE target_account_id = ?)
 `

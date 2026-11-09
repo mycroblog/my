@@ -485,3 +485,13 @@ WHERE e.author_account_id IN (
   AND (CAST(sqlc.arg(all_languages) AS INTEGER) = 1 OR e.language = 'und' OR e.language IN (SELECT value FROM json_each(CAST(sqlc.arg(languages) AS TEXT))))
 ORDER BY e.id DESC
 LIMIT sqlc.arg(page_limit);
+
+-- DeleteFeedFollowEdges and DeleteListMembersOfFollows are DeleteFeedFollowEdge and
+-- DeleteListMembersOfFollow of many pairs, a JSON array of {"a": follower, "b": followee}.
+-- name: DeleteFeedFollowEdges :exec
+DELETE FROM feed_follow_edges WHERE (follower_account_id, followee_account_id) IN (
+  SELECT value ->> '$.a', value ->> '$.b' FROM json_each(CAST(sqlc.arg(pairs) AS TEXT)));
+
+-- name: DeleteListMembersOfFollows :exec
+DELETE FROM list_members WHERE (owner_account_id, member_account_id) IN (
+  SELECT value ->> '$.a', value ->> '$.b' FROM json_each(CAST(sqlc.arg(pairs) AS TEXT)));

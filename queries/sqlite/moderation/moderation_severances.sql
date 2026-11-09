@@ -9,6 +9,16 @@ INSERT INTO relationship_severances (id, domain_action_id, action_id, account_id
 VALUES (?, ?, ?, ?, ?, ?, ?)
 ON CONFLICT DO NOTHING;
 
+-- InsertRelationshipSeverances is InsertRelationshipSeverance of the accounts of one action, a
+-- JSON array; it returns the accounts it inserted.
+-- name: InsertRelationshipSeverances :many
+INSERT INTO relationship_severances (id, domain_action_id, action_id, account_id, followers_lost, following_lost, occurred_at)
+SELECT value ->> '$.id', CAST(sqlc.narg(domain_action_id) AS TEXT), CAST(sqlc.narg(action_id) AS TEXT), value ->> '$.account_id',
+  value ->> '$.followers_lost', value ->> '$.following_lost', CAST(sqlc.arg(occurred_at) AS INTEGER)
+FROM json_each(CAST(sqlc.arg(severances) AS TEXT)) WHERE true
+ON CONFLICT DO NOTHING
+RETURNING account_id;
+
 -- GetRelationshipSeverance returns a severance of an account with the domain or the account that
 -- its action suspended.
 -- name: GetRelationshipSeverance :one

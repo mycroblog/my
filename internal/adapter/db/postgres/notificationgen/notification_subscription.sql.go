@@ -71,6 +71,38 @@ func (q *Queries) DeletePostSubscriptionRequest(ctx context.Context, arg DeleteP
 	return result.RowsAffected(), nil
 }
 
+const deletePostSubscriptionRequests = `-- name: DeletePostSubscriptionRequests :exec
+DELETE FROM post_subscription_requests WHERE (account_id, target_account_id) IN (
+  SELECT unnest($1::uuid[]), unnest($2::uuid[]))
+`
+
+type DeletePostSubscriptionRequestsParams struct {
+	AccountIds []string
+	TargetIds  []string
+}
+
+// DeletePostSubscriptionRequests and DeletePostSubscriptions are DeletePostSubscriptionRequest
+// and DeletePostSubscription of many pairs (the unnests of a select list advance together).
+func (q *Queries) DeletePostSubscriptionRequests(ctx context.Context, arg DeletePostSubscriptionRequestsParams) error {
+	_, err := q.db.Exec(ctx, deletePostSubscriptionRequests, arg.AccountIds, arg.TargetIds)
+	return err
+}
+
+const deletePostSubscriptions = `-- name: DeletePostSubscriptions :exec
+DELETE FROM post_subscriptions WHERE (account_id, target_account_id) IN (
+  SELECT unnest($1::uuid[]), unnest($2::uuid[]))
+`
+
+type DeletePostSubscriptionsParams struct {
+	AccountIds []string
+	TargetIds  []string
+}
+
+func (q *Queries) DeletePostSubscriptions(ctx context.Context, arg DeletePostSubscriptionsParams) error {
+	_, err := q.db.Exec(ctx, deletePostSubscriptions, arg.AccountIds, arg.TargetIds)
+	return err
+}
+
 const hasPostSubscribers = `-- name: HasPostSubscribers :one
 SELECT EXISTS (SELECT 1 FROM post_subscriptions WHERE target_account_id = $1)
 `

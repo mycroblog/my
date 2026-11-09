@@ -746,6 +746,19 @@ func (q *Queries) InsertInstanceNodeinfoObservation(ctx context.Context, arg Ins
 	return err
 }
 
+const insertOutboundActivities = `-- name: InsertOutboundActivities :exec
+INSERT INTO outbound_activities (id, activity_uri, type, actor_account_id, object_type, object_id, created_at)
+SELECT value ->> '$.id', value ->> '$.activity_uri', value ->> '$.type', value ->> '$.actor_account_id',
+  value ->> '$.object_type', value ->> '$.object_id', value ->> '$.created_at'
+FROM json_each(CAST(?1 AS TEXT))
+`
+
+// InsertOutboundActivities is InsertOutboundActivity of many activities, a JSON array.
+func (q *Queries) InsertOutboundActivities(ctx context.Context, activities string) error {
+	_, err := q.db.ExecContext(ctx, insertOutboundActivities, activities)
+	return err
+}
+
 const insertOutboundActivity = `-- name: InsertOutboundActivity :exec
 INSERT INTO outbound_activities (id, activity_uri, type, actor_account_id, object_type, object_id, created_at)
 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)

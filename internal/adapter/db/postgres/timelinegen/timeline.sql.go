@@ -246,6 +246,23 @@ func (q *Queries) DeleteFeedFollowEdge(ctx context.Context, arg DeleteFeedFollow
 	return err
 }
 
+const deleteFeedFollowEdges = `-- name: DeleteFeedFollowEdges :exec
+DELETE FROM feed_follow_edges WHERE (follower_account_id, followee_account_id) IN (
+  SELECT unnest($1::uuid[]), unnest($2::uuid[]))
+`
+
+type DeleteFeedFollowEdgesParams struct {
+	FollowerIds []string
+	FolloweeIds []string
+}
+
+// DeleteFeedFollowEdges and DeleteListMembersOfFollows are DeleteFeedFollowEdge and
+// DeleteListMembersOfFollow of many pairs (the unnests of a select list advance together).
+func (q *Queries) DeleteFeedFollowEdges(ctx context.Context, arg DeleteFeedFollowEdgesParams) error {
+	_, err := q.db.Exec(ctx, deleteFeedFollowEdges, arg.FollowerIds, arg.FolloweeIds)
+	return err
+}
+
 const deleteFeedTagEntries = `-- name: DeleteFeedTagEntries :exec
 DELETE FROM feed_tag_entries WHERE entry_id = $1
 `
@@ -291,6 +308,21 @@ type DeleteListMembersOfFollowParams struct {
 // follower.
 func (q *Queries) DeleteListMembersOfFollow(ctx context.Context, arg DeleteListMembersOfFollowParams) error {
 	_, err := q.db.Exec(ctx, deleteListMembersOfFollow, arg.OwnerAccountID, arg.MemberAccountID)
+	return err
+}
+
+const deleteListMembersOfFollows = `-- name: DeleteListMembersOfFollows :exec
+DELETE FROM list_members WHERE (owner_account_id, member_account_id) IN (
+  SELECT unnest($1::uuid[]), unnest($2::uuid[]))
+`
+
+type DeleteListMembersOfFollowsParams struct {
+	FollowerIds []string
+	FolloweeIds []string
+}
+
+func (q *Queries) DeleteListMembersOfFollows(ctx context.Context, arg DeleteListMembersOfFollowsParams) error {
+	_, err := q.db.Exec(ctx, deleteListMembersOfFollows, arg.FollowerIds, arg.FolloweeIds)
 	return err
 }
 

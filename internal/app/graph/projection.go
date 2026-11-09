@@ -79,6 +79,31 @@ func RegisterProjectors(r *uow.Projectors, repo Repository) {
 		}
 		return countFollow(ctx, tx, repo, f, -1)
 	})
+	r.Register(EventFollowsTerminated, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
+		ts := e.(FollowsTerminated).Terminations
+		edges := make([]graph.Edge, len(ts))
+		deltas := map[string]CounterDelta{}
+		for i, t := range ts {
+			f := t.Follow
+			edges[i] = graph.Edge{FollowerAccountID: f.FollowerAccountID, FolloweeAccountID: f.FolloweeAccountID, FollowID: f.ID, State: t.PreviousState}
+			if t.PreviousState == graph.StateActive {
+				d := deltas[f.FollowerAccountID]
+				d.Following--
+				deltas[f.FollowerAccountID] = d
+				d = deltas[f.FolloweeAccountID]
+				d.Followers--
+				deltas[f.FolloweeAccountID] = d
+			}
+		}
+		deleted, err := repo.DeleteEdgesOfFollows(ctx, tx, edges)
+		if err != nil {
+			return err
+		}
+		if deleted != len(edges) {
+			return uow.MarkRetryable(errEdgeChanged)
+		}
+		return repo.AddManyCounters(ctx, tx, deltas)
+	})
 	r.Register(EventBlocked, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
 		inserted, err := repo.InsertBlockEdge(ctx, tx, graph.EdgeOf(e.(Blocked).Block))
 		if err != nil {

@@ -68,6 +68,14 @@ WHERE (uri, actor_uri) IN (
 INSERT INTO outbound_activities (id, activity_uri, type, actor_account_id, object_type, object_id, created_at)
 VALUES (@id, @activity_uri, @type, @actor_account_id, @object_type, @object_id, @created_at);
 
+-- InsertOutboundActivities is InsertOutboundActivity of many activities (the unnests of a select
+-- list advance together).
+-- name: InsertOutboundActivities :exec
+INSERT INTO outbound_activities (id, activity_uri, type, actor_account_id, object_type, object_id, created_at)
+SELECT unnest(sqlc.arg(ids)::uuid[]), unnest(sqlc.arg(activity_uris)::text[]), unnest(sqlc.arg(types)::text[]),
+  unnest(sqlc.arg(actor_account_ids)::uuid[]), unnest(sqlc.arg(object_types)::text[]), unnest(sqlc.arg(object_ids)::uuid[]),
+  unnest(sqlc.arg(created_ats)::timestamptz[]);
+
 -- name: GetOutboundActivity :one
 SELECT id, activity_uri, type, actor_account_id, object_type, object_id, created_at
 FROM outbound_activities WHERE id = sqlc.arg(id)::uuid;

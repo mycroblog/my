@@ -33,6 +33,9 @@ type Repository interface {
 	// the same index of ids and its recipient, as InsertNotification inserts each, and returns
 	// the recipients it inserted one for.
 	InsertNotificationsFor(ctx context.Context, tx uow.Tx, n notification.Notification, ids, recipients []string) (map[string]bool, error)
+	// InsertNotificationsForEach is InsertNotificationsFor of ns, which differ by their ID,
+	// recipient, severance, and dedupe key, and share every other field with ns[0].
+	InsertNotificationsForEach(ctx context.Context, tx uow.Tx, ns []notification.Notification) (map[string]bool, error)
 	// AddErrorGroupNotice adds one admin_error_group notice to the hour that starts at hour, in
 	// tx, and returns the hour's notices with it; concurrent transactions each add theirs.
 	AddErrorGroupNotice(ctx context.Context, tx uow.Tx, hour time.Time) (int64, error)

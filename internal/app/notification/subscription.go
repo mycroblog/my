@@ -31,6 +31,8 @@ type SubscriptionRepository interface {
 	InsertSubscription(ctx context.Context, tx uow.Tx, s notification.Subscription) (bool, error)
 	// DeleteSubscription deletes the subscription, if any, and reports whether there was one.
 	DeleteSubscription(ctx context.Context, tx uow.Tx, accountID, targetAccountID string) (bool, error)
+	// DeleteSubscriptions is DeleteSubscription of the pairs (accountIDs[i], targetIDs[i]).
+	DeleteSubscriptions(ctx context.Context, tx uow.Tx, accountIDs, targetIDs []string) error
 	// CountSubscriptions counts the account's subscriptions.
 	CountSubscriptions(ctx context.Context, tx uow.Tx, accountID string) (int64, error)
 	// Subscribed reports whether the account subscribes to the target.
@@ -53,6 +55,9 @@ type SubscriptionRepository interface {
 	InsertSubscriptionRequest(ctx context.Context, tx uow.Tx, r notification.SubscriptionRequest) error
 	// DeleteSubscriptionRequest deletes the request, if any, and reports whether there was one.
 	DeleteSubscriptionRequest(ctx context.Context, tx uow.Tx, accountID, targetAccountID string) (bool, error)
+	// DeleteSubscriptionRequests is DeleteSubscriptionRequest of the pairs (accountIDs[i],
+	// targetIDs[i]).
+	DeleteSubscriptionRequests(ctx context.Context, tx uow.Tx, accountIDs, targetIDs []string) error
 	// SubscriptionRequested reports whether the account asked for a subscription to the target
 	// that awaits the acceptance of its follow.
 	SubscriptionRequested(ctx context.Context, accountID, targetAccountID string) (bool, error)
@@ -281,6 +286,27 @@ func registerSubscriptionProjectors(r *uow.Projectors, d ProjectorDeps) {
 		}
 		_, err = repo.DeleteSubscription(ctx, tx, f.FollowerAccountID, f.FolloweeAccountID)
 		return err
+	})
+	r.Register(appgraph.EventFollowsTerminated, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
+		ts := e.(appgraph.FollowsTerminated).Terminations
+		followers, followees := make([]string, len(ts)), make([]string, len(ts))
+		for i, t := range ts {
+			followers[i], followees[i] = t.Follow.FollowerAccountID, t.Follow.FolloweeAccountID
+		}
+		if err := repo.DeleteSubscriptionRequests(ctx, tx, followers, followees); err != nil {
+			return err
+		}
+		local, err := localAmong(ctx, tx, d.Accounts, followees)
+		if err != nil {
+			return err
+		}
+		var subFollowers, subFollowees []string
+		for i, followee := range followees {
+			if !local[followee] {
+				subFollowers, subFollowees = append(subFollowers, followers[i]), append(subFollowees, followee)
+			}
+		}
+		return repo.DeleteSubscriptions(ctx, tx, subFollowers, subFollowees)
 	})
 	r.Register(appgraph.EventBlocked, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
 		b := e.(appgraph.Blocked).Block

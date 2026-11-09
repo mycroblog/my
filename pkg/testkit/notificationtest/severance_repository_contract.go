@@ -5,6 +5,7 @@ package notificationtest
 import (
 	"context"
 	"errors"
+	"maps"
 	"reflect"
 	"testing"
 	"time"
@@ -29,6 +30,7 @@ func SeveranceContract(t *testing.T, newHarness SeveranceFactory) {
 		run  func(t *testing.T, r *severanceRepo)
 	}{
 		{"RecordsSeverancesOnce", severanceRepoRecords},
+		{"RecordsManySeverancesOnce", severanceRepoRecordsMany},
 		{"ErasesTheSeverancesOfAnAccount", severanceRepoErases},
 		{"ListsTheEdgesOfAnAccount", severanceRepoEdges},
 	}
@@ -136,6 +138,45 @@ func severanceRepoRecords(t *testing.T, r *severanceRepo) {
 	}
 	if got, err := r.h.Moderation.FindSeverances(ctx, bob, []string{ofAction.ID}); err != nil || len(got) != 0 {
 		t.Errorf("FindSeverances(bob, alice's) = %+v, %v; want none", got, err)
+	}
+}
+
+// severanceRepoRecordsMany records the severances of one action together, as InsertSeverance
+// records each, and skips the accounts that the action has one for.
+func severanceRepoRecordsMany(t *testing.T, r *severanceRepo) {
+	ctx := t.Context()
+	alice, bob, carol, remote := r.ids.NewID(), r.ids.NewID(), r.ids.NewID(), r.ids.NewID()
+	for _, a := range []struct{ action, domain string }{{action: r.suspend(t, remote).ID}, {domain: r.suspendDomain(t, "suspended.example").ID}} {
+		r.clock.Advance(time.Second)
+		of := func(account string, followers, following int) moderation.Severance {
+			return moderation.Severance{ID: r.ids.NewID(), ActionID: a.action, DomainActionID: a.domain, AccountID: account, FollowersLost: followers, FollowingLost: following, OccurredAt: r.clock.Now()}
+		}
+		many := func(ss ...moderation.Severance) map[string]bool {
+			t.Helper()
+			var got map[string]bool
+			r.tx(t, func(ctx context.Context, tx uow.Tx) (err error) {
+				got, err = r.h.Moderation.InsertSeverances(ctx, tx, ss)
+				return err
+			})
+			return got
+		}
+		first, second := of(alice, 1, 2), of(bob, 0, 3)
+		if got := many(first, second); !maps.Equal(got, map[string]bool{alice: true, bob: true}) {
+			t.Errorf("InsertSeverances(alice, bob) = %v, want both", got)
+		}
+		if got := many(of(alice, 5, 5), of(carol, 1, 0)); !maps.Equal(got, map[string]bool{carol: true}) {
+			t.Errorf("InsertSeverances(alice again, carol) = %v, want carol alone", got)
+		}
+		if got := many(); len(got) != 0 {
+			t.Errorf("InsertSeverances() = %v", got)
+		}
+		for _, want := range []moderation.Severance{first, second} {
+			got, err := r.h.Moderation.FindSeverance(ctx, want.AccountID, want.ID)
+			if err != nil || got.ID != want.ID || got.ActionID != want.ActionID || got.DomainActionID != want.DomainActionID ||
+				got.FollowersLost != want.FollowersLost || got.FollowingLost != want.FollowingLost || !got.OccurredAt.Equal(want.OccurredAt) {
+				t.Errorf("FindSeverance(%s) = %+v, %v; want %+v", want.ID, got, err, want)
+			}
+		}
 	}
 }
 

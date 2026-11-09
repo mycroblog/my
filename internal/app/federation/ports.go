@@ -28,6 +28,8 @@ var ErrNotFound = errors.New("federation: not found")
 type Repository interface {
 	// InsertOutboundActivity records an outbound activity.
 	InsertOutboundActivity(ctx context.Context, tx uow.Tx, a federation.OutboundActivity) error
+	// InsertOutboundActivities is InsertOutboundActivity of many activities, with one statement.
+	InsertOutboundActivities(ctx context.Context, tx uow.Tx, as []federation.OutboundActivity) error
 	// InsertOutboundDocument stores the body of an outbound activity unless it has one, and
 	// reports whether it did: the first body stays.
 	InsertOutboundDocument(ctx context.Context, tx uow.Tx, outboundActivityID string, document []byte, builtAt time.Time) (bool, error)

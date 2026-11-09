@@ -103,3 +103,51 @@ func (q *Queries) InsertRelationshipSeverance(ctx context.Context, arg InsertRel
 	}
 	return result.RowsAffected(), nil
 }
+
+const insertRelationshipSeverances = `-- name: InsertRelationshipSeverances :many
+INSERT INTO relationship_severances (id, domain_action_id, action_id, account_id, followers_lost, following_lost, occurred_at)
+SELECT unnest($1::uuid[]), $2::uuid, $3::uuid, unnest($4::uuid[]),
+  unnest($5::int[]), unnest($6::int[]), $7::timestamptz
+ON CONFLICT DO NOTHING
+RETURNING account_id
+`
+
+type InsertRelationshipSeverancesParams struct {
+	Ids            []string
+	DomainActionID *string
+	ActionID       *string
+	AccountIds     []string
+	FollowersLost  []int32
+	FollowingLost  []int32
+	OccurredAt     time.Time
+}
+
+// InsertRelationshipSeverances is InsertRelationshipSeverance of the accounts of one action (the
+// unnests of a select list advance together); it returns the accounts it inserted.
+func (q *Queries) InsertRelationshipSeverances(ctx context.Context, arg InsertRelationshipSeverancesParams) ([]string, error) {
+	rows, err := q.db.Query(ctx, insertRelationshipSeverances,
+		arg.Ids,
+		arg.DomainActionID,
+		arg.ActionID,
+		arg.AccountIds,
+		arg.FollowersLost,
+		arg.FollowingLost,
+		arg.OccurredAt,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []string{}
+	for rows.Next() {
+		var account_id string
+		if err := rows.Scan(&account_id); err != nil {
+			return nil, err
+		}
+		items = append(items, account_id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
