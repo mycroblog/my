@@ -129,6 +129,11 @@ func roleRepoGrants(t *testing.T, r *identityRepo) {
 	if roles, err := r.h.Identity.ListUserRoles(ctx, alice); err != nil || len(roles) != 2 || roles[0] != admin || roles[1] != mod {
 		t.Errorf("ListUserRoles = %+v, %v; want boss then mod", roles, err)
 	}
+	carol := r.user(t)
+	if of, err := r.h.Identity.ListUserRolesOf(ctx, []string{alice, bob, carol}); err != nil || len(of) != 2 ||
+		!slices.Equal(of[alice], []identity.Role{admin, mod}) || !slices.Equal(of[bob], []identity.Role{mod}) || len(of[carol]) != 0 {
+		t.Errorf("ListUserRolesOf = %+v, %v; want alice's boss then mod and bob's mod, as ListUserRoles", of, err)
+	}
 	holders := []string{alice, bob}
 	slices.Sort(holders)
 	if got, err := r.h.Identity.ListRoleHolderIDs(ctx, mod.ID); err != nil || !slices.Equal(got, holders) {

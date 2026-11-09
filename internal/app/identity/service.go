@@ -135,6 +135,9 @@ type Deps struct {
 	// keeps its user from creating invites and its invites from working (ADR-0106 §14, §16); nil
 	// restricts nobody.
 	InviterRestricted func(ctx context.Context, accountID string) (bool, error)
+	// InviterRestrictedAmong is InviterRestricted of many accounts, by account; nil reads them
+	// one by one through InviterRestricted.
+	InviterRestrictedAmong func(ctx context.Context, accountIDs []string) (map[string]bool, error)
 	// Mailer sends verification emails, password reset emails, and the notices of password
 	// changes from the jobs that RegisterMailJobs registers; nil sends none and issues no
 	// verification tokens.
@@ -411,6 +414,34 @@ func (s *Service) Permissions(ctx context.Context, userID string) ([]identity.Pe
 		if granted[p] {
 			out = append(out, p)
 		}
+	}
+	return out, nil
+}
+
+// permissionsOf is Permissions of each of userIDs, by user, with one read of their roles and
+// one read of each distinct role.
+func (s *Service) permissionsOf(ctx context.Context, userIDs []string) (map[string]map[identity.Permission]bool, error) {
+	roles, err := s.d.Repository.ListUserRolesOf(ctx, userIDs)
+	if err != nil {
+		return nil, err
+	}
+	perms := map[string][]identity.Permission{}
+	out := make(map[string]map[identity.Permission]bool, len(userIDs))
+	for _, u := range userIDs {
+		granted := map[identity.Permission]bool{}
+		for _, r := range roles[u] {
+			ps, ok := perms[r.Key]
+			if !ok {
+				if _, ps, err = s.d.Repository.FindRole(ctx, r.Key); err != nil {
+					return nil, err
+				}
+				perms[r.Key] = ps
+			}
+			for _, p := range ps {
+				granted[p] = true
+			}
+		}
+		out[u] = granted
 	}
 	return out, nil
 }

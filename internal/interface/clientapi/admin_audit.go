@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 	"unicode/utf8"
 
 	appaccount "github.com/mycroblog/my/internal/app/account"
@@ -99,31 +100,29 @@ func (s *Server) newAuditEntries(ctx context.Context, entries []moderation.Audit
 	}
 	accountOf := map[string]string{} // user ID -> account ID; "" when gone
 	var order []appaccount.Actor
-	for _, e := range entries {
-		u := e.ActorUserID
-		if _, seen := accountOf[u]; seen || u == "" {
-			continue
+	if s.o.UserAccounts != nil {
+		users := make([]string, len(entries))
+		for i, e := range entries {
+			users[i] = e.ActorUserID
 		}
-		accountOf[u] = ""
-		if s.o.UserAccounts == nil {
-			continue
+		if accountOf, err = moderatorAccounts(ctx, s.reads(), users); err != nil {
+			return nil, err
 		}
-		la, err := s.o.UserAccounts.LocalAccountOfUser(ctx, u)
-		if errors.Is(err, appaccount.ErrNotFound) {
-			continue
+		var ids []string
+		for _, u := range users {
+			if id := accountOf[u]; id != "" && !slices.Contains(ids, id) {
+				ids = append(ids, id)
+			}
 		}
+		found, err := s.reads().FindByIDs(ctx, ids)
 		if err != nil {
-			return nil, fmt.Errorf("clientapi: the account of user %s: %w", u, err)
+			return nil, fmt.Errorf("clientapi: the accounts of the audit log: %w", err)
 		}
-		accountOf[u] = la.AccountID
-		a, err := s.o.Accounts.FindByID(ctx, la.AccountID)
-		if errors.Is(err, appaccount.ErrNotFound) {
-			continue
+		for _, id := range ids {
+			if a, ok := found[id]; ok {
+				order = append(order, a)
+			}
 		}
-		if err != nil {
-			return nil, fmt.Errorf("clientapi: account %s of the audit log: %w", la.AccountID, err)
-		}
-		order = append(order, a)
 	}
 	presented, err := s.newAccounts(ctx, order)
 	if err != nil {

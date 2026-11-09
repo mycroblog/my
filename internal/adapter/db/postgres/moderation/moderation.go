@@ -652,12 +652,23 @@ func (r *Repository) ListActions(ctx context.Context, q appmoderation.ActionQuer
 	if err != nil {
 		return nil, postgres.Wrap(err, "list moderation actions")
 	}
+	ids := make([]string, len(rows))
+	for i, row := range rows {
+		ids[i] = row.ID
+	}
+	list := ids
+	statuses, err := r.db.reader().ListModerationActionStatusIDsOf(ctx, list)
+	if err != nil {
+		return nil, postgres.Wrap(err, "list moderation action statuses")
+	}
+	statusesOf := map[string][]string{}
+	for _, st := range statuses {
+		statusesOf[st.ActionID] = append(statusesOf[st.ActionID], st.StatusID)
+	}
 	out := make([]moderation.ActionRecord, len(rows))
 	for i, row := range rows {
 		out[i] = actionRecordFrom(row)
-		if out[i].Action.StatusIDs, err = actionStatusIDs(ctx, r.db.reader(), row.ID); err != nil {
-			return nil, err
-		}
+		out[i].Action.StatusIDs = statusesOf[row.ID]
 	}
 	return out, nil
 }

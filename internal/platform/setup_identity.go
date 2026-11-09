@@ -110,7 +110,7 @@ func (a *App) setUpIdentity(cfg *config.Config, repo identity.Repository) error 
 		// Members create invites as the instance settings let them (ADR-0106 §14, §15), read per
 		// operation, while moderation neither suspends nor limits them (§1, §3).
 		MemberInvites:     a.memberInviteSettings,
-		InviterRestricted: a.inviterRestricted,
+		InviterRestricted: a.inviterRestricted, InviterRestrictedAmong: a.inviterRestrictedAmong,
 		// mail = none delivers nothing, so a moderator's approval stands in for verification (FR-002).
 		RequireEmailVerification: cfg.Mail != "none",
 		// Users ask for password reset links by email only when the mailer delivers it (FR-002).

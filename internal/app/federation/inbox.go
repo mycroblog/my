@@ -77,6 +77,9 @@ type InboxRepository interface {
 	InsertReceivedDocument(ctx context.Context, tx uow.Tx, activityURI federation.IRI, document []byte) error
 
 	FindReceivedActivity(ctx context.Context, activityURI federation.IRI) (federation.ReceivedActivity, error)
+	// FindReceivedActivities is FindReceivedActivity of each of activityURIs that exists, by
+	// URI, with one query.
+	FindReceivedActivities(ctx context.Context, activityURIs []federation.IRI) (map[federation.IRI]federation.ReceivedActivity, error)
 	FindReceivedDocument(ctx context.Context, activityURI federation.IRI) ([]byte, error)
 	// KeptReceivedActivityTx returns a received activity inside tx while its document is kept: it
 	// fails with ErrNotFound when the activity or its document is gone.
