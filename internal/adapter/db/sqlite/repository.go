@@ -15,6 +15,7 @@ import (
 	sqlite3 "modernc.org/sqlite/lib"
 
 	"github.com/mycroblog/my/internal/adapter/telemetry/dbtrace"
+	"github.com/mycroblog/my/internal/app/kernel"
 	"github.com/mycroblog/my/internal/app/uow"
 )
 
@@ -89,20 +90,22 @@ func BoolToInt(b bool) int64 {
 	return 0
 }
 
-// Wrap prefixes err with the adapter and what failed; it returns nil for a nil err.
+// Wrap prefixes err with the adapter and what failed, with the stack of the repository method that
+// called it (kernel.WithStackSkip), so that a reported database error starts where it left the
+// adapter rather than where it was reported; it returns nil for a nil err.
 func Wrap(err error, what string) error {
 	if err == nil {
 		return nil
 	}
-	return fmt.Errorf("sqlite: %s: %w", what, err)
+	return kernel.WithStackSkip(fmt.Errorf("sqlite: %s: %w", what, err), 1)
 }
 
-// NotFound maps sql.ErrNoRows to notFoundErr and wraps every other error with what.
+// NotFound maps sql.ErrNoRows to notFoundErr and wraps every other error with what, as Wrap does.
 func NotFound(err error, notFoundErr error, what string) error {
 	if errors.Is(err, sql.ErrNoRows) {
 		return fmt.Errorf("%s: %w", what, notFoundErr)
 	}
-	return fmt.Errorf("sqlite: %s: %w", what, err)
+	return kernel.WithStackSkip(fmt.Errorf("sqlite: %s: %w", what, err), 1)
 }
 
 // IsUniqueViolation reports whether err is a UNIQUE or PRIMARY KEY violation on the given

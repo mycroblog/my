@@ -12,6 +12,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 
+	"github.com/mycroblog/my/internal/app/kernel"
 	"github.com/mycroblog/my/internal/app/uow"
 )
 
@@ -98,20 +99,22 @@ func ToInt32(n int, what string) (int32, error) {
 	return int32(n), nil
 }
 
-// Wrap prefixes err with the adapter and what failed; it returns nil for a nil err.
+// Wrap prefixes err with the adapter and what failed, with the stack of the repository method that
+// called it (kernel.WithStackSkip), so that a reported database error starts where it left the
+// adapter rather than where it was reported; it returns nil for a nil err.
 func Wrap(err error, what string) error {
 	if err == nil {
 		return nil
 	}
-	return fmt.Errorf("postgres: %s: %w", what, err)
+	return kernel.WithStackSkip(fmt.Errorf("postgres: %s: %w", what, err), 1)
 }
 
-// NotFound maps pgx.ErrNoRows to notFoundErr and wraps every other error with what.
+// NotFound maps pgx.ErrNoRows to notFoundErr and wraps every other error with what, as Wrap does.
 func NotFound(err error, notFoundErr error, what string) error {
 	if errors.Is(err, pgx.ErrNoRows) {
 		return fmt.Errorf("%s: %w", what, notFoundErr)
 	}
-	return fmt.Errorf("postgres: %s: %w", what, err)
+	return kernel.WithStackSkip(fmt.Errorf("postgres: %s: %w", what, err), 1)
 }
 
 // IsUniqueViolation reports whether err is a unique_violation (23505) of the named index or constraint.

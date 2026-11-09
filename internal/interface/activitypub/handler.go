@@ -313,7 +313,7 @@ func (h *Handler) fail(w http.ResponseWriter, r *http.Request, err error) {
 // report reports err, the cause of a 500 answer, to the operator (ADR-0103 §2); the reporter
 // names the route.
 func (h *Handler) report(ctx context.Context, err error) {
-	h.o.Errors.Report(ctx, kernel.NewErrorEvent(err, ""))
+	h.o.Errors.Report(ctx, kernel.NewErrorEventSkip(err, "", 1)) // the stack starts with report's caller
 }
 
 // visible reports whether an actor may be presented: only active local actors are.

@@ -440,7 +440,7 @@ func (h *Handler) renderError(w http.ResponseWriter, r *http.Request, status int
 
 func (h *Handler) internalError(w http.ResponseWriter, r *http.Request, err error) {
 	h.o.Logger.ErrorContext(r.Context(), "auth page failed", slog.Any("error", err))
-	h.o.Errors.Report(r.Context(), kernel.NewErrorEvent(err, "")) // the reporter names the route
+	h.o.Errors.Report(r.Context(), kernel.NewErrorEventSkip(err, "", 1)) // the reporter names the route; the stack starts with the caller
 	h.renderError(w, r, http.StatusInternalServerError, (*i18n.Localizer).ServerErrorsInternal)
 }
 
