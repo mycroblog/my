@@ -17,7 +17,9 @@ const profileHeader = tv({
     root: "@container flex flex-col",
     // The avatar overlaps the header image; the actions start below it, a gap apart, rather than touching it.
     top: "flex flex-wrap items-start justify-between gap-3 px-4",
-    actions: "pt-3",
+    // The actions are items of the wrapping row themselves, so that the buttons sit at its end and a `fullRow` line
+    // (a hint about the follow) takes a row of its own below the avatar; the first, the buttons, keeps the gap.
+    actions: "contents *:first:mt-3",
     avatar: "-mt-10 ring-4 ring-surface",
     body: "mt-3 flex flex-col gap-3 px-4",
     identity: "min-w-0 wrap-anywhere",
@@ -44,7 +46,10 @@ export type ProfileHeaderProps = {
   avatarSeed?: string | undefined;
   /** The account's name, for the avatar's fallback letter. */
   name: string;
-  /** The relationship buttons, at the end of the avatar's row. */
+  /**
+   * The relationship buttons, at the end of the avatar's row. Its elements are items of that wrapping row: the first
+   * sits at the row's end, and a `Box fullRow` after it is a line of its own below the avatar.
+   */
   actions?: ReactNode;
   /** The page heading around the name (the route's level-one heading). */
   heading: ReactNode;
