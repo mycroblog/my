@@ -191,6 +191,17 @@ func fedRepoDocuments(t *testing.T, r *fedRepo) {
 	if got, err := r.h.Federation.FindOutboundDocument(t.Context(), a.ID); err != nil || string(got) != string(first) {
 		t.Errorf("FindOutboundDocument = %s, %v; want the first document", got, err)
 	}
+	// The documents of many activities together, the first of each kept, bytes as they are.
+	b, c := r.activity(t, federation.ActivityDelete, federation.OutboundStatus, testkit.NamedID("b")), r.activity(t, federation.ActivityDelete, federation.OutboundStatus, testkit.NamedID("c"))
+	docs := map[string][]byte{a.ID: []byte(`{"id":"not kept"}`), b.ID: []byte("{\"id\":\"b\",\"x\":\"\u00e9\"}"), c.ID: {0x7b, 0x7d}}
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+		return errors.Join(r.h.Federation.InsertOutboundDocuments(ctx, tx, docs, r.clock.Now()), r.h.Federation.InsertOutboundDocuments(ctx, tx, nil, r.clock.Now()))
+	})
+	for id, want := range map[string][]byte{a.ID: first, b.ID: docs[b.ID], c.ID: docs[c.ID]} {
+		if got, err := r.h.Federation.FindOutboundDocument(t.Context(), id); err != nil || string(got) != string(want) {
+			t.Errorf("FindOutboundDocument(%s) after InsertOutboundDocuments = %q, %v; want %q", id, got, err, want)
+		}
+	}
 }
 
 // fedRepoDeliveryContext reads a delivery with its activity, document, and server's health, as

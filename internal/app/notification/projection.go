@@ -404,6 +404,14 @@ func registerDeletedStatusProjector(r *uow.Projectors, repo Repository) {
 	r.Register(appcontent.EventStatusDeleted, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
 		return recordDeletedStatus(ctx, tx, repo, e.(appcontent.StatusDeleted).Deletion.StatusID)
 	})
+	r.Register(appcontent.EventStatusesDeleted, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
+		ds := e.(appcontent.StatusesDeleted).Deletions
+		ids := make([]string, len(ds))
+		for i, d := range ds {
+			ids[i] = d.Deletion.StatusID
+		}
+		return repo.RecordDeletedStatuses(ctx, tx, ids)
+	})
 }
 
 // recordDeletedStatus records a deleted status in notification_deleted_statuses when a

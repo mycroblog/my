@@ -509,3 +509,18 @@ WHERE t.tag_id = d.tag_id;
 INSERT INTO feed_follow_edges (follower_account_id, followee_account_id, show_boosts)
 SELECT unnest(sqlc.arg(follower_ids)::uuid[]), unnest(sqlc.arg(followee_ids)::uuid[]), unnest(sqlc.arg(show_boosts)::boolean[])
 ON CONFLICT (follower_account_id, followee_account_id) DO UPDATE SET show_boosts = excluded.show_boosts;
+
+-- The rows of the entries of many deleted statuses, each statement as the one of one entry above
+-- does for every entry it names.
+
+-- name: DeleteFeedDirectRecipientsOf :exec
+DELETE FROM feed_direct_recipients WHERE entry_id = ANY(sqlc.arg(entry_ids)::uuid[]);
+
+-- name: ListCountedFeedTagIDsOf :many
+SELECT tag_id FROM feed_tag_entries WHERE entry_id = ANY(sqlc.arg(entry_ids)::uuid[]) AND visibility IN ('public', 'local', 'unlisted') ORDER BY tag_id;
+
+-- name: DeleteFeedTagEntriesOf :exec
+DELETE FROM feed_tag_entries WHERE entry_id = ANY(sqlc.arg(entry_ids)::uuid[]);
+
+-- name: DeleteFeedEntriesOfStatuses :exec
+DELETE FROM feed_entries WHERE status_id = ANY(sqlc.arg(status_ids)::uuid[]);

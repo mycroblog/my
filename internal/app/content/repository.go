@@ -76,22 +76,33 @@ type Repository interface {
 	UpsertReplyLink(ctx context.Context, tx uow.Tx, l content.ReplyLink) error
 	// ReplyLink returns the link from a reply to its parent.
 	ReplyLink(ctx context.Context, tx uow.Tx, statusID string) (content.ReplyLink, error)
+	// ReplyLinksOf is ReplyLink of each of statusIDs that has one, by status.
+	ReplyLinksOf(ctx context.Context, tx uow.Tx, statusIDs []string) (map[string]content.ReplyLink, error)
 	// InsertCounters inserts the counters of a status unless it has them.
 	InsertCounters(ctx context.Context, tx uow.Tx, c content.Counters) error
 	// AddReplies adds delta to the replies count of a status that has counters.
 	AddReplies(ctx context.Context, tx uow.Tx, statusID string, delta int64) error
+	// AddManyReplies is AddReplies of each status of deltas, with one statement.
+	AddManyReplies(ctx context.Context, tx uow.Tx, deltas map[string]int64) error
 	// AddPost counts one more status of an account, published at publishedAt.
 	AddPost(ctx context.Context, tx uow.Tx, accountID string, publishedAt time.Time) error
 	// RemovePost counts one status of an account less. It runs after the deletion is inserted
 	// and takes LastStatusAt again from the account's statuses that are not deleted; the
 	// counter goes away with the last of them.
 	RemovePost(ctx context.Context, tx uow.Tx, accountID string) error
+	// RemovePosts is RemovePost n times.
+	RemovePosts(ctx context.Context, tx uow.Tx, accountID string, n int64) error
+	// SubtractLocalPostsOf is AddLocalPosts of -removed[id] for each account id.
+	SubtractLocalPostsOf(ctx context.Context, tx uow.Tx, removed map[string]int64) error
 	// AddLocalPosts adds delta to the local posts of an account (local_post_counters); the
 	// counter goes away when it reaches zero.
 	AddLocalPosts(ctx context.Context, tx uow.Tx, accountID string, delta int64) error
 	// DeleteStatusProjections removes a status from every status projection: its head, its
 	// mentions, its counters, its link to its parent, and the links of its replies to it.
 	DeleteStatusProjections(ctx context.Context, tx uow.Tx, statusID string) error
+	// DeleteStatusProjectionsOf is DeleteStatusProjections of each of statusIDs, with one
+	// statement per projection.
+	DeleteStatusProjectionsOf(ctx context.Context, tx uow.Tx, statusIDs []string) error
 	// InsertSensitivityOverride records that a mark_statuses_sensitive action shows a status as
 	// sensitive (status_sensitivity_overrides); recording it again does nothing. A status can have
 	// rows of several sources, and each source ends only its own.

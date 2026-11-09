@@ -882,6 +882,25 @@ func (q *Queries) InsertOutboundActivityDocument(ctx context.Context, arg Insert
 	return result.RowsAffected(), nil
 }
 
+const insertOutboundActivityDocuments = `-- name: InsertOutboundActivityDocuments :exec
+INSERT INTO outbound_activity_documents (outbound_activity_id, document, built_at)
+SELECT unnest($1::uuid[]), unnest($2::bytea[]), $3::timestamptz
+ON CONFLICT (outbound_activity_id) DO NOTHING
+`
+
+type InsertOutboundActivityDocumentsParams struct {
+	OutboundActivityIds []string
+	Documents           [][]byte
+	BuiltAt             time.Time
+}
+
+// InsertOutboundActivityDocuments is InsertOutboundActivityDocument of many activities (the
+// unnests of a select list advance together).
+func (q *Queries) InsertOutboundActivityDocuments(ctx context.Context, arg InsertOutboundActivityDocumentsParams) error {
+	_, err := q.db.Exec(ctx, insertOutboundActivityDocuments, arg.OutboundActivityIds, arg.Documents, arg.BuiltAt)
+	return err
+}
+
 const insertOutboundFanOutCompletion = `-- name: InsertOutboundFanOutCompletion :exec
 INSERT INTO outbound_fanout_completions (outbound_activity_id, completed_at)
 VALUES ($1, $2)

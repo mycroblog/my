@@ -92,12 +92,39 @@ func (q *Queries) DeleteStatusTranslationAttachments(ctx context.Context, transl
 	return err
 }
 
+const deleteStatusTranslationAttachmentsOf = `-- name: DeleteStatusTranslationAttachmentsOf :exec
+DELETE FROM status_translation_attachments WHERE translation_id = ANY($1::uuid[])
+`
+
+func (q *Queries) DeleteStatusTranslationAttachmentsOf(ctx context.Context, translationIds []string) error {
+	_, err := q.db.Exec(ctx, deleteStatusTranslationAttachmentsOf, translationIds)
+	return err
+}
+
 const deleteStatusTranslationPollOptions = `-- name: DeleteStatusTranslationPollOptions :exec
 DELETE FROM status_translation_poll_options WHERE translation_id = $1
 `
 
 func (q *Queries) DeleteStatusTranslationPollOptions(ctx context.Context, translationID string) error {
 	_, err := q.db.Exec(ctx, deleteStatusTranslationPollOptions, translationID)
+	return err
+}
+
+const deleteStatusTranslationPollOptionsOf = `-- name: DeleteStatusTranslationPollOptionsOf :exec
+DELETE FROM status_translation_poll_options WHERE translation_id = ANY($1::uuid[])
+`
+
+func (q *Queries) DeleteStatusTranslationPollOptionsOf(ctx context.Context, translationIds []string) error {
+	_, err := q.db.Exec(ctx, deleteStatusTranslationPollOptionsOf, translationIds)
+	return err
+}
+
+const deleteStatusTranslationsByIDs = `-- name: DeleteStatusTranslationsByIDs :exec
+DELETE FROM status_translations WHERE id = ANY($1::uuid[])
+`
+
+func (q *Queries) DeleteStatusTranslationsByIDs(ctx context.Context, translationIds []string) error {
+	_, err := q.db.Exec(ctx, deleteStatusTranslationsByIDs, translationIds)
 	return err
 }
 
@@ -331,6 +358,33 @@ SELECT id FROM status_translations WHERE status_id = $1 ORDER BY id
 
 func (q *Queries) ListStatusTranslationIDs(ctx context.Context, statusID string) ([]string, error) {
 	rows, err := q.db.Query(ctx, listStatusTranslationIDs, statusID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []string{}
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		items = append(items, id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listStatusTranslationIDsOf = `-- name: ListStatusTranslationIDsOf :many
+
+SELECT id FROM status_translations WHERE status_id = ANY($1::uuid[]) ORDER BY id
+`
+
+// The translations of many statuses, and the rows of many translations, each statement as the one
+// of one above does for every one it names.
+func (q *Queries) ListStatusTranslationIDsOf(ctx context.Context, statusIds []string) ([]string, error) {
+	rows, err := q.db.Query(ctx, listStatusTranslationIDsOf, statusIds)
 	if err != nil {
 		return nil, err
 	}

@@ -98,6 +98,39 @@ func (r *Repository) DeleteStatusEntries(ctx context.Context, tx uow.Tx, statusI
 	return sqlite.Wrap(q.DeleteFeedEntriesOfStatus(ctx, statusID), "delete feed entries of a status")
 }
 
+// DeleteStatusEntriesOf implements timeline.Repository.
+func (r *Repository) DeleteStatusEntriesOf(ctx context.Context, tx uow.Tx, statusIDs []string) error {
+	if len(statusIDs) == 0 {
+		return nil
+	}
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return err
+	}
+	list, err := sqlite.JSONList(statusIDs)
+	if err != nil {
+		return err
+	}
+	if err := q.DeleteFeedDirectRecipientsOf(ctx, list); err != nil {
+		return sqlite.Wrap(err, "delete feed direct recipients")
+	}
+	used, err := q.ListCountedFeedTagIDsOf(ctx, list)
+	if err != nil {
+		return sqlite.Wrap(err, "list the counted tags of feed entries")
+	}
+	if err := q.DeleteFeedTagEntriesOf(ctx, list); err != nil {
+		return sqlite.Wrap(err, "delete feed tag entries")
+	}
+	deltas := make(map[string]int64, len(used))
+	for _, id := range used {
+		deltas[id]--
+	}
+	if err := applyTagUsage(ctx, q, deltas); err != nil {
+		return err
+	}
+	return sqlite.Wrap(q.DeleteFeedEntriesOfStatuses(ctx, list), "delete feed entries of statuses")
+}
+
 func deleteEntryChildren(ctx context.Context, q *timelinegen.Queries, entryID string) error {
 	if err := q.DeleteFeedDirectRecipients(ctx, entryID); err != nil {
 		return sqlite.Wrap(err, "delete feed direct recipients")

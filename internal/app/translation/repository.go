@@ -73,6 +73,8 @@ type Repository interface {
 	FindTranslations(ctx context.Context, revisionID, targetLanguage string) ([]Stored, error)
 	// DeleteStatusTranslations deletes the translations of a status with their child rows.
 	DeleteStatusTranslations(ctx context.Context, tx uow.Tx, statusID string) error
+	// DeleteStatusTranslationsOf is DeleteStatusTranslations of each of statusIDs.
+	DeleteStatusTranslationsOf(ctx context.Context, tx uow.Tx, statusIDs []string) error
 	// ListExpiredTranslations returns up to limit translations created before createdBefore,
 	// oldest first.
 	ListExpiredTranslations(ctx context.Context, createdBefore time.Time, limit int) ([]string, error)

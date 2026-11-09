@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	appcontent "github.com/mycroblog/my/internal/app/content"
+	appfederation "github.com/mycroblog/my/internal/app/federation"
 	appmoderation "github.com/mycroblog/my/internal/app/moderation"
 	"github.com/mycroblog/my/internal/domain/moderation"
 	"github.com/mycroblog/my/internal/platform"
@@ -45,7 +46,14 @@ func moderationStatusesQueries(t *testing.T, n int) (report, mark, del int) {
 		return count
 	}
 	mark = issue(moderation.ActionMarkStatusesSensitive)
+	fanOuts := len(mustJobs(t, c, appfederation.JobFanOut))
 	del = issue(moderation.ActionDeleteStatuses)
+	if got := len(mustJobs(t, c, appfederation.JobFanOut)) - fanOuts; got != n {
+		t.Errorf("the deletion enqueued %d fan-outs, want the Delete of each of the %d statuses", got, n)
+	}
+	if got, err := c.app.Content.PostCount(ctx, c.ids["bob"]); err != nil || got != 0 {
+		t.Errorf("bob's posts after the deletion = %d, %v; want none", got, err)
+	}
 	for _, id := range ids {
 		if _, err := c.app.Statuses.View(ctx, appcontent.Viewer{Kind: appcontent.ViewerLocal, AccountID: c.ids["alice"]}, id); err == nil {
 			t.Errorf("status %s after the action is still visible", id)
@@ -55,18 +63,20 @@ func moderationStatusesQueries(t *testing.T, n int) (report, mark, del int) {
 }
 
 // TestModerationStatusesQueries checks that the round trips of a report and of an action on
-// statuses do not grow with the statuses they name: they are read, checked, and recorded
-// together. The deletion of each status is still projected one by one.
+// statuses do not grow with the statuses they name: they are read, checked, recorded, and their
+// deletions projected together.
 func TestModerationStatusesQueries(t *testing.T) {
 	t.Parallel()
 	smallReport, smallMark, smallDel := moderationStatusesQueries(t, 2)
 	largeReport, largeMark, largeDel := moderationStatusesQueries(t, 5)
-	t.Logf("delete_statuses: %d queries for 2 statuses, %d for 5", smallDel, largeDel)
 	if largeReport > smallReport {
 		t.Errorf("a report makes %d queries for 5 statuses, more than the %d for 2", largeReport, smallReport)
 	}
 	if largeMark > smallMark {
 		t.Errorf("an action makes %d queries for 5 statuses, more than the %d for 2", largeMark, smallMark)
+	}
+	if largeDel > smallDel {
+		t.Errorf("a deletion makes %d queries for 5 statuses, more than the %d for 2", largeDel, smallDel)
 	}
 }
 

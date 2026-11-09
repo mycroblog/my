@@ -382,3 +382,10 @@ WHERE id IN (
     AND EXISTS (SELECT 1 FROM instance_availability_events n WHERE n.domain = e.domain AND n.id > e.id)
   ORDER BY e.id LIMIT @batch_limit
 );
+
+-- InsertOutboundActivityDocuments is InsertOutboundActivityDocument of many activities (the
+-- unnests of a select list advance together).
+-- name: InsertOutboundActivityDocuments :exec
+INSERT INTO outbound_activity_documents (outbound_activity_id, document, built_at)
+SELECT unnest(sqlc.arg(outbound_activity_ids)::uuid[]), unnest(sqlc.arg(documents)::bytea[]), sqlc.arg(built_at)::timestamptz
+ON CONFLICT (outbound_activity_id) DO NOTHING;

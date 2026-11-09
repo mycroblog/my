@@ -51,6 +51,8 @@ type InteractionRepository interface {
 	DeleteBoostEdge(ctx context.Context, tx uow.Tx, e content.BoostEdge) (bool, error)
 	// DeleteStatusBoostEdges removes the edges of every boost of a status.
 	DeleteStatusBoostEdges(ctx context.Context, tx uow.Tx, statusID string) error
+	// DeleteStatusBoostEdgesOf is DeleteStatusBoostEdges of each of statusIDs, with one statement.
+	DeleteStatusBoostEdgesOf(ctx context.Context, tx uow.Tx, statusIDs []string) error
 	// RebuildBoostEdges empties boost_edges and derives it again from the boosts that are not
 	// retracted, of statuses that are not deleted (data-model §9).
 	RebuildBoostEdges(ctx context.Context, tx uow.Tx) error
@@ -62,6 +64,12 @@ type InteractionRepository interface {
 	// ListLocalStatusBoosters returns the local accounts that boost a status in boost_edges,
 	// ordered by ID.
 	ListLocalStatusBoosters(ctx context.Context, tx uow.Tx, statusID string) ([]string, error)
+	// ListLocalStatusBoostersOf is ListLocalStatusBoosters of each of statusIDs, together: a
+	// booster of several of them comes once for each.
+	ListLocalStatusBoostersOf(ctx context.Context, tx uow.Tx, statusIDs []string) ([]string, error)
+	// SubtractLocalPostsOf is AddLocalPosts of -removed[id] for each account id, with one
+	// statement per step.
+	SubtractLocalPostsOf(ctx context.Context, tx uow.Tx, removed map[string]int64) error
 
 	// status_counters, shared with the status projectors (Repository.RebuildCounters counts
 	// the boosts and favourites by the same rules).
@@ -129,6 +137,8 @@ type InteractionRepository interface {
 	AddReactions(ctx context.Context, tx uow.Tx, statusID string, emoji content.ReactionEmoji, delta int64) error
 	// DeleteStatusReactionCounts removes the counts of a status.
 	DeleteStatusReactionCounts(ctx context.Context, tx uow.Tx, statusID string) error
+	// DeleteStatusReactionCountsOf is DeleteStatusReactionCounts of each of statusIDs.
+	DeleteStatusReactionCountsOf(ctx context.Context, tx uow.Tx, statusIDs []string) error
 	// RebuildReactionCounts empties status_reaction_counts and derives it again from the
 	// reactions to statuses that are not deleted (data-model §9).
 	RebuildReactionCounts(ctx context.Context, tx uow.Tx) error

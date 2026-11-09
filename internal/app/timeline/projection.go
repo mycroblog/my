@@ -78,6 +78,14 @@ func RegisterProjectors(r *uow.Projectors, repo Repository, moderated ModeratedE
 	r.Register(appcontent.EventStatusDeleted, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
 		return repo.DeleteStatusEntries(ctx, tx, e.(appcontent.StatusDeleted).Status.ID)
 	})
+	r.Register(appcontent.EventStatusesDeleted, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
+		ds := e.(appcontent.StatusesDeleted).Deletions
+		ids := make([]string, len(ds))
+		for i, d := range ds {
+			ids[i] = d.Status.ID
+		}
+		return repo.DeleteStatusEntriesOf(ctx, tx, ids)
+	})
 	r.Register(appcontent.EventBoosted, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
 		ev := e.(appcontent.Boosted)
 		b := ev.Boost

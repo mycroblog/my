@@ -117,22 +117,50 @@ func (r *Repository) ListExpiredTranslations(ctx context.Context, createdBefore 
 
 // DeleteTranslations implements translation.Repository.
 func (r *Repository) DeleteTranslations(ctx context.Context, tx uow.Tx, ids []string) error {
+	if len(ids) == 0 {
+		return nil
+	}
 	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
-	for _, id := range ids {
-		if err := q.DeleteStatusTranslationAttachments(ctx, id); err != nil {
-			return sqlite.Wrap(err, "delete status translation attachments")
-		}
-		if err := q.DeleteStatusTranslationPollOptions(ctx, id); err != nil {
-			return sqlite.Wrap(err, "delete status translation poll options")
-		}
-		if err := q.DeleteStatusTranslation(ctx, id); err != nil {
-			return sqlite.Wrap(err, "delete status translation")
+	list, err := sqlite.JSONList(ids)
+	if err != nil {
+		return err
+	}
+	for _, step := range []struct {
+		what string
+		fn   func(context.Context, string) error
+	}{
+		{"delete status translation attachments", q.DeleteStatusTranslationAttachmentsOf},
+		{"delete status translation poll options", q.DeleteStatusTranslationPollOptionsOf},
+		{"delete status translations", q.DeleteStatusTranslationsByIDs},
+	} {
+		if err := step.fn(ctx, list); err != nil {
+			return sqlite.Wrap(err, step.what)
 		}
 	}
 	return nil
+}
+
+// DeleteStatusTranslationsOf implements translation.Repository.
+func (r *Repository) DeleteStatusTranslationsOf(ctx context.Context, tx uow.Tx, statusIDs []string) error {
+	if len(statusIDs) == 0 {
+		return nil
+	}
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return err
+	}
+	list, err := sqlite.JSONList(statusIDs)
+	if err != nil {
+		return err
+	}
+	ids, err := q.ListStatusTranslationIDsOf(ctx, list)
+	if err != nil {
+		return sqlite.Wrap(err, "list status translation ids")
+	}
+	return r.DeleteTranslations(ctx, tx, ids)
 }
 
 // AddUsageWithin implements translation.Repository.

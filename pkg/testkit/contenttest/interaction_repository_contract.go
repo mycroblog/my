@@ -200,9 +200,18 @@ func contentInteractionRepoBoostEdges(t *testing.T, r *contentInteractionRepo) {
 	if want := []content.BoostEdge{edge}; err != nil || !reflect.DeepEqual(edges, want) {
 		t.Errorf("ListBoostEdges after the rebuild = %+v, %v; want %+v (not %s)", edges, err, want, gb.ID)
 	}
-	r.tx(t, func(ctx context.Context, tx uow.Tx) error { return r.repo.DeleteStatusBoostEdges(ctx, tx, s.ID) })
+	// The local boosters of many statuses, a booster of several once for each, and the edges of
+	// many statuses deleted together.
+	other := r.status(t)
+	r.boost(t, local, other, true)
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+		if got, err := r.repo.ListLocalStatusBoostersOf(ctx, tx, []string{s.ID, other.ID, r.id()}); err != nil || !slices.Equal(got, []string{local, local}) {
+			t.Errorf("ListLocalStatusBoostersOf = %v, %v; want the local booster once for each status", got, err)
+		}
+		return errors.Join(r.repo.DeleteStatusBoostEdgesOf(ctx, tx, []string{s.ID, other.ID}), r.repo.DeleteStatusBoostEdgesOf(ctx, tx, nil))
+	})
 	if edges, err := r.repo.ListBoostEdges(ctx); err != nil || len(edges) != 0 {
-		t.Errorf("ListBoostEdges after DeleteStatusBoostEdges = %+v, %v; want none", edges, err)
+		t.Errorf("ListBoostEdges after DeleteStatusBoostEdgesOf = %+v, %v; want none", edges, err)
 	}
 }
 
@@ -249,6 +258,20 @@ func contentInteractionRepoCounters(t *testing.T, r *contentInteractionRepo) {
 	r.tx(t, func(ctx context.Context, tx uow.Tx) error { return r.repo.AddLocalPosts(ctx, tx, account, -2) })
 	if n := localPosts(); n != -1 {
 		t.Errorf("local posts at zero = %d, want no counter", n)
+	}
+	// Many accounts at once, as AddLocalPosts of a negative delta does for each.
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error { return r.repo.AddLocalPosts(ctx, tx, account, 3) })
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+		return errors.Join(r.repo.SubtractLocalPostsOf(ctx, tx, map[string]int64{account: 1, r.id(): 1}), r.repo.SubtractLocalPostsOf(ctx, tx, nil))
+	})
+	if n := localPosts(); n != 2 {
+		t.Errorf("local posts after SubtractLocalPostsOf = %d, want 2", n)
+	}
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+		return r.repo.SubtractLocalPostsOf(ctx, tx, map[string]int64{account: 2})
+	})
+	if n := localPosts(); n != -1 {
+		t.Errorf("local posts after SubtractLocalPostsOf to zero = %d, want no counter", n)
 	}
 
 	for _, tc := range []struct {
@@ -639,6 +662,12 @@ func contentInteractionRepoReactions(t *testing.T, r *contentInteractionRepo) {
 	want = []content.ReactionCount{{StatusID: s.ID, Emoji: heart, Count: 1}}
 	if all, err := r.repo.ListAllReactionCounts(ctx); err != nil || !reflect.DeepEqual(all, want) {
 		t.Errorf("ListAllReactionCounts = %+v, %v; want %+v (none of %s)", all, err, want, goneHeart.StatusID)
+	}
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+		return r.repo.DeleteStatusReactionCountsOf(ctx, tx, []string{s.ID})
+	})
+	if all, err := r.repo.ListAllReactionCounts(ctx); err != nil || len(all) != 0 {
+		t.Errorf("reaction counts after DeleteStatusReactionCountsOf = %+v, %v; want none", all, err)
 	}
 	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
 		if err := r.repo.DeleteStatusReactionCounts(ctx, tx, s.ID); err != nil {

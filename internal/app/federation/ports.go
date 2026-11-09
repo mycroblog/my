@@ -30,6 +30,9 @@ type Repository interface {
 	InsertOutboundActivity(ctx context.Context, tx uow.Tx, a federation.OutboundActivity) error
 	// InsertOutboundActivities is InsertOutboundActivity of many activities, with one statement.
 	InsertOutboundActivities(ctx context.Context, tx uow.Tx, as []federation.OutboundActivity) error
+	// InsertOutboundDocuments is InsertOutboundDocument of the document of each activity of
+	// documents, by activity, with one statement.
+	InsertOutboundDocuments(ctx context.Context, tx uow.Tx, documents map[string][]byte, builtAt time.Time) error
 	// InsertOutboundDocument stores the body of an outbound activity unless it has one, and
 	// reports whether it did: the first body stays.
 	InsertOutboundDocument(ctx context.Context, tx uow.Tx, outboundActivityID string, document []byte, builtAt time.Time) (bool, error)

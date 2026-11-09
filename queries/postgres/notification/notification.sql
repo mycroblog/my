@@ -213,3 +213,8 @@ WHERE account_id = $1 ORDER BY notification_group, channel;
 -- name: UpsertNotificationSetting :exec
 INSERT INTO notification_settings (account_id, notification_group, channel, enabled, updated_at) VALUES ($1, $2, $3, $4, $5)
 ON CONFLICT (account_id, notification_group, channel) DO UPDATE SET enabled = excluded.enabled, updated_at = excluded.updated_at;
+
+-- InsertNotificationDeletedStatuses is InsertNotificationDeletedStatus of many statuses.
+-- name: InsertNotificationDeletedStatuses :exec
+INSERT INTO notification_deleted_statuses (status_id) SELECT unnest(sqlc.arg(status_ids)::uuid[])
+ON CONFLICT (status_id) DO NOTHING;

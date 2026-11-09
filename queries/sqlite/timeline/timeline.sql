@@ -516,3 +516,18 @@ INSERT INTO feed_follow_edges (follower_account_id, followee_account_id, show_bo
 SELECT value ->> '$.follower_account_id', value ->> '$.followee_account_id', value ->> '$.show_boosts'
 FROM json_each(CAST(sqlc.arg(edges) AS TEXT)) WHERE true
 ON CONFLICT (follower_account_id, followee_account_id) DO UPDATE SET show_boosts = excluded.show_boosts;
+
+-- The rows of the entries of many deleted statuses, each statement as the one of one entry above
+-- does for every entry it names. The lists are JSON arrays.
+
+-- name: DeleteFeedDirectRecipientsOf :exec
+DELETE FROM feed_direct_recipients WHERE entry_id IN (SELECT value FROM json_each(CAST(sqlc.arg(entry_ids) AS TEXT)));
+
+-- name: ListCountedFeedTagIDsOf :many
+SELECT tag_id FROM feed_tag_entries WHERE entry_id IN (SELECT value FROM json_each(CAST(sqlc.arg(entry_ids) AS TEXT))) AND visibility IN ('public', 'local', 'unlisted') ORDER BY tag_id;
+
+-- name: DeleteFeedTagEntriesOf :exec
+DELETE FROM feed_tag_entries WHERE entry_id IN (SELECT value FROM json_each(CAST(sqlc.arg(entry_ids) AS TEXT)));
+
+-- name: DeleteFeedEntriesOfStatuses :exec
+DELETE FROM feed_entries WHERE status_id IN (SELECT value FROM json_each(CAST(sqlc.arg(status_ids) AS TEXT)));

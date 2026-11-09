@@ -380,3 +380,11 @@ WHERE id IN (
     AND EXISTS (SELECT 1 FROM instance_availability_events n WHERE n.domain = e.domain AND n.id > e.id)
   ORDER BY e.id LIMIT @batch_limit
 );
+
+-- InsertOutboundActivityDocuments is InsertOutboundActivityDocument of many activities, a JSON
+-- array whose documents are hex; WHERE true keeps ON CONFLICT from reading as a join constraint.
+-- name: InsertOutboundActivityDocuments :exec
+INSERT INTO outbound_activity_documents (outbound_activity_id, document, built_at)
+SELECT value ->> '$.id', unhex(value ->> '$.document'), CAST(sqlc.arg(built_at) AS INTEGER)
+FROM json_each(CAST(sqlc.arg(documents) AS TEXT)) WHERE true
+ON CONFLICT (outbound_activity_id) DO NOTHING;

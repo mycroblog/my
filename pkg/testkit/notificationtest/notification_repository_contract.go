@@ -48,6 +48,7 @@ func NotificationContract(t *testing.T, newHarness NotificationFactory) {
 		{"KeepsSubscriptionRequests", notificationRepoSubscriptionRequests},
 		{"DeletesManySubscriptions", notificationRepoDeleteMany},
 		{"InsertsEachForManyRecipients", notificationRepoInsertsForEach},
+		{"RecordsManyDeletedStatuses", notificationRepoDeletedStatuses},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -384,6 +385,26 @@ func notificationRepoHides(t *testing.T, r *notificationRepo) {
 	}
 	if has, err := r.statusHasNotifications(t, r.ids.NewID()); err != nil || has {
 		t.Errorf("StatusHasNotifications(another status) = %v, %v; want false", has, err)
+	}
+}
+
+// notificationRepoDeletedStatuses records the deleted statuses of many at once, those that a
+// notification is about, which hides their notifications as InsertDeletedStatus does.
+func notificationRepoDeletedStatuses(t *testing.T, r *notificationRepo) {
+	alice, bob := r.ids.NewID(), r.ids.NewID()
+	kept, gone := r.ids.NewID(), r.ids.NewID()
+	r.insert(t, notification.Notification{RecipientAccountID: alice, Type: notification.TypeFavourite, SourceAccountID: bob, StatusID: kept})
+	r.insert(t, notification.Notification{RecipientAccountID: alice, Type: notification.TypeFavourite, SourceAccountID: bob, StatusID: gone})
+	visible := func() int { return len(r.list(t, alice, nil, appnotification.Hidden{}, "", 10)) }
+	if n := visible(); n != 2 {
+		t.Fatalf("notifications = %d, want 2", n)
+	}
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+		return errors.Join(r.repo.RecordDeletedStatuses(ctx, tx, []string{gone, r.ids.NewID()}), r.repo.RecordDeletedStatuses(ctx, tx, []string{gone}),
+			r.repo.RecordDeletedStatuses(ctx, tx, nil))
+	})
+	if n := visible(); n != 1 {
+		t.Errorf("notifications after RecordDeletedStatuses = %d, want the one of the live status", n)
 	}
 }
 

@@ -29,8 +29,8 @@ func (s *Service) DeleteByModeration(ctx context.Context, tx uow.Tx, st Status, 
 	return tx.Emit(ctx, StatusDeleted{Deletion: d, Status: st})
 }
 
-// DeleteManyByModeration is DeleteByModeration of sts, with one insert of their deletions; each
-// still emits its StatusDeleted.
+// DeleteManyByModeration is DeleteByModeration of sts, with one insert of their deletions and one
+// StatusesDeleted for all of them.
 func (s *Service) DeleteManyByModeration(ctx context.Context, tx uow.Tx, sts []Status, actionID string, at time.Time) error {
 	ds := make([]content.Deletion, len(sts))
 	for i, st := range sts {
@@ -42,12 +42,11 @@ func (s *Service) DeleteManyByModeration(ctx context.Context, tx uow.Tx, sts []S
 	if err := s.d.Repository.InsertDeletions(ctx, tx, ds); err != nil {
 		return err
 	}
+	ev := StatusesDeleted{Deletions: make([]StatusDeleted, len(sts))}
 	for i, st := range sts {
-		if err := tx.Emit(ctx, StatusDeleted{Deletion: ds[i], Status: st}); err != nil {
-			return err
-		}
+		ev.Deletions[i] = StatusDeleted{Deletion: ds[i], Status: st}
 	}
-	return nil
+	return tx.Emit(ctx, ev)
 }
 
 // MarkManySensitiveByModeration is MarkSensitiveByModeration of each of statusIDs, with one

@@ -371,6 +371,18 @@ func (q *Queries) InsertNotificationDeletedStatus(ctx context.Context, statusID 
 	return err
 }
 
+const insertNotificationDeletedStatuses = `-- name: InsertNotificationDeletedStatuses :exec
+INSERT INTO notification_deleted_statuses (status_id) SELECT value FROM json_each(CAST(?1 AS TEXT)) WHERE true
+ON CONFLICT (status_id) DO NOTHING
+`
+
+// InsertNotificationDeletedStatuses is InsertNotificationDeletedStatus of many statuses, a JSON
+// array; WHERE true keeps ON CONFLICT from reading as a join constraint.
+func (q *Queries) InsertNotificationDeletedStatuses(ctx context.Context, statusIds string) error {
+	_, err := q.db.ExecContext(ctx, insertNotificationDeletedStatuses, statusIds)
+	return err
+}
+
 const insertNotificationDismissal = `-- name: InsertNotificationDismissal :execrows
 INSERT INTO notification_dismissals (notification_id, dismissed_at) VALUES (?, ?)
 ON CONFLICT (notification_id) DO NOTHING

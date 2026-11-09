@@ -106,6 +106,35 @@ func TranslationRepositoryContract(t *testing.T, newHarness func(t *testing.T) T
 			t.Errorf("FindTranslations = %d rows, want 2", len(got))
 		}
 	})
+	t.Run("DeletesTheTranslationsOfManyStatuses", func(t *testing.T) {
+		t.Parallel()
+		h := newHarness(t)
+		insert(t, h, full)
+		second := full
+		second.ID, second.StatusID, second.RevisionID = translationID(5), translationID(102), translationID(205)
+		insert(t, h, second)
+		kept := full
+		kept.ID, kept.StatusID, kept.RevisionID = translationID(4), translationID(101), translationID(204)
+		insert(t, h, kept)
+		for range 2 { // deleting again changes nothing, as a repeated job does
+			tx(t, h, func(ctx context.Context, tx uow.Tx) error {
+				return errors.Join(h.Repository.DeleteStatusTranslationsOf(ctx, tx, []string{full.StatusID, second.StatusID}), h.Repository.DeleteStatusTranslationsOf(ctx, tx, nil))
+			})
+		}
+		for _, rev := range []string{full.RevisionID, second.RevisionID} {
+			if got := find(t, h, rev, "ja"); len(got) != 0 {
+				t.Errorf("FindTranslations of a deleted status = %+v", got)
+			}
+		}
+		if got := find(t, h, kept.RevisionID, "ja"); len(got) != 1 {
+			t.Errorf("FindTranslations of the other status = %+v", got)
+		}
+		// The child rows went too: the same IDs store new ones.
+		tx(t, h, func(ctx context.Context, tx uow.Tx) error {
+			_, err := h.Repository.InsertTranslation(ctx, tx, full)
+			return err
+		})
+	})
 	t.Run("DeletesTheTranslationsOfAStatus", func(t *testing.T) {
 		t.Parallel()
 		h := newHarness(t)

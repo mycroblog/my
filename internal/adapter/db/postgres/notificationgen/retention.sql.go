@@ -11,6 +11,32 @@ import (
 	"context"
 )
 
+const notifiedStatusesAmong = `-- name: NotifiedStatusesAmong :many
+SELECT DISTINCT status_id FROM notifications WHERE status_id = ANY($1::uuid[]) ORDER BY status_id
+`
+
+// NotifiedStatusesAmong returns the statuses among status_ids that a notification is about, as
+// StatusHasNotifications tells of one.
+func (q *Queries) NotifiedStatusesAmong(ctx context.Context, statusIds []string) ([]*string, error) {
+	rows, err := q.db.Query(ctx, notifiedStatusesAmong, statusIds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []*string{}
+	for rows.Next() {
+		var status_id *string
+		if err := rows.Scan(&status_id); err != nil {
+			return nil, err
+		}
+		items = append(items, status_id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const statusHasNotifications = `-- name: StatusHasNotifications :one
 
 
