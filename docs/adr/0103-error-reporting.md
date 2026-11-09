@@ -192,10 +192,10 @@ ADR-0055 §16（span に `RecordError` とエラーの文字列を出さない�
   - 指紋は関数名から作るので、関数の名前の変更やリファクタリングで別のグループになる。
   - Sentry の envelope のクライアントを自前で保守する。Sentry・GlitchTip・Datadog の取り込みの違いは、spike の模擬のサーバーでの契約テストと、利用する運営者の確認に頼る。
   - Cloud Error Reporting のグループ（指紋を指定できない）と DB のグループ（§1 の指紋）は、同じエラーを別の単位でまとめることがある。
-- 後続: Cloud Run の実機で、§3 の引数を `(...)` にしたスタックを Error Reporting が読み、グループにすることを確かめる（#1449）。
+- Cloud Run の実機（`v0.1.0-rc.5`）で、§4 (1) の行を Error Reporting が読むことを確かめた（#1449）。`@type`・`severity`・`serviceContext`（service `my` とその版）を読み、`goroutine N [running]:` の見出しと引数を `(...)` にしたフレームのスタックを解析し、メッセージが違っても同じスタックの行を 1 つのグループにする。新しいグループは通知される。
+- 後続: 報告した場所で取ったスタックは報告する側の関数から始まり、起きた場所の違うエラーが Error Reporting でもアプリ内の指紋でも同じグループに入る。スタックを起きた場所から取るようにする（#2659）。Error Reporting は `context.httpRequest` がないと応答コードを `0` と表示するので、HTTP のエラーの行に足す（#2660）。
 
 ## Open Questions / 要検証
 
-- 引数を `(...)` にしたスタックを Cloud Error Reporting が読むか（#1449 で Cloud Run の実機で確かめる）
 - Datadog の Sentry 用の DSN の提供の段階（preview か GA か）、Sentry の `fingerprint` とタグ `error.fingerprint` のどちらがグルーピングに効くか、ログの取り込みの料金が別にかかるか
 - GlitchTip の通知が「新しい issue」「再発」だけを対象にできるか（しきい値の通知だけか）
