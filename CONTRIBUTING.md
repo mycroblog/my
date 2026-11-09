@@ -86,8 +86,8 @@ deploys an instance is in `deploy/docker/`, see [Docker Compose files](docs/oper
 
 ```sh
 scripts/task.sh docker:dev-cert   # once: the HTTPS certificate of my.localhost (needs mkcert, see below)
-docker compose up -d              # the first start builds the development image and downloads the Go modules, npm
-                                  # packages, and translation models, which takes minutes
+docker compose up -d --wait       # returns once https://my.localhost works; the first start builds the development
+                                  # image and downloads the Go modules, npm packages, and translation models (minutes)
 docker compose logs -f my         # follow the server's log
 ```
 
@@ -96,7 +96,7 @@ so no hosts file entry is needed. The server runs with `profile = development` a
 
 | Service | What the server uses it for | On this machine |
 | --- | --- | --- |
-| `caddy` | The way in: the server and Vite over HTTPS, and `http://my.localhost` redirected to HTTPS | `:443` (`MY_DEV_HTTPS_PORT`), `:80` (`MY_DEV_HTTP_PORT`), `:5173` |
+| `caddy` | The way in: the server and Vite over HTTPS, and `http://my.localhost` redirected to HTTPS; it starts once both are healthy | `:443` (`MY_DEV_HTTPS_PORT`), `:80` (`MY_DEV_HTTP_PORT`), `:5173` |
 | `my` | `my serve` built from the working tree, with the scripts from Vite | `https://my.localhost`, through Caddy only |
 | `vite` | The Vite dev server of `app/web`, with HMR | `https://vite.my.localhost:5173`, through Caddy only |
 | `postgres` | The database (`database = postgres`) | `localhost:5432`, user and password `my` (`PG_PORT`) |

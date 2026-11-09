@@ -5,7 +5,7 @@
 # project is named my-dev, so it never collides with a deployment named my.
 #
 #   scripts/task.sh docker:dev-cert   once: the HTTPS certificate of my.localhost from mkcert (scripts/dev-cert.sh)
-#   docker compose up                 start everything; open https://my.localhost
+#   docker compose up -d --wait       start everything and return once https://my.localhost works
 #   docker compose restart my         build the Go code again and restart the server (no automatic reload)
 #   docker compose exec my my ...     run a command of `my` against the server's database
 #   docker compose down               stop; the data stays in the volumes
@@ -140,13 +140,18 @@ services:
     restart: unless-stopped
 
   # Caddy (Apache-2.0), the way in from the browser (deploy/dev/Caddyfile), with the certificate of
-  # scripts/dev-cert.sh, which prepare requires.
+  # scripts/dev-cert.sh, which prepare requires. It starts once my and Vite are healthy, so that the browser never
+  # gets a 502 from a server that is still building, and `docker compose up --wait` returns when the site works.
   caddy:
     # The image of deploy/docker/compose.caddy.yaml.
     image: caddy:2.10.2-alpine@sha256:4c6e91c6ed0e2fa03efd5b44747b625fec79bc9cd06ac5235a779726618e530d
     depends_on:
       prepare:
         condition: service_completed_successfully
+      my:
+        condition: service_healthy
+      vite:
+        condition: service_healthy
     environment:
       MY_DEV_HOST: ${MY_DEV_HOST:-my.localhost}
     volumes:
