@@ -187,6 +187,26 @@ func fedRepoDeliveries(t *testing.T, r *fedRepo) {
 		return err
 	})
 
+	// Many deliveries at once: those of the inboxes the activity has, a second time or twice in
+	// the batch, are not inserted.
+	batch := r.activity(t, federation.ActivityCreate, federation.OutboundStatus, testkit.NamedID("a third status"))
+	had := r.delivery(t, batch.ID, "a.example")
+	newOf := func(host string) federation.Delivery {
+		return federation.Delivery{ID: r.ids.NewID(), OutboundActivityID: batch.ID, InboxURL: federation.IRI("https://" + host + "/inbox"), Domain: host, CreatedAt: r.clock.Now()}
+	}
+	d, e, hadAgain, dAgain := newOf("d.example"), newOf("e.example"), newOf("a.example"), newOf("d.example")
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+		got, err := r.h.Federation.InsertDeliveries(ctx, tx, []federation.Delivery{d, hadAgain, e, dAgain})
+		if err == nil && !maps.Equal(got, map[string]bool{d.ID: true, e.ID: true}) {
+			t.Errorf("InsertDeliveries = %v; want the new inboxes d and e only", got)
+		}
+		return err
+	})
+	if got, err := r.h.Federation.ListDeliveries(t.Context(), batch.ID, "", 10); err != nil || len(got) != 3 ||
+		!slices.Contains(got, had) || !slices.Contains(got, d) || !slices.Contains(got, e) {
+		t.Errorf("ListDeliveries of the batch = %+v, %v; want the first and the two new ones", got, err)
+	}
+
 	first, err := r.h.Federation.ListDeliveries(t.Context(), a.ID, "", 2)
 	if err != nil || !slices.Equal(first, want[:2]) {
 		t.Errorf("ListDeliveries(first page) = %+v, %v; want %+v", first, err, want[:2])

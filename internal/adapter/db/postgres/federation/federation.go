@@ -66,6 +66,36 @@ func (r *Repository) InsertDelivery(ctx context.Context, tx uow.Tx, d federation
 	return n == 1, postgres.Wrap(err, "insert delivery")
 }
 
+// InsertDeliveries implements federation.Repository.
+func (r *Repository) InsertDeliveries(ctx context.Context, tx uow.Tx, ds []federation.Delivery) (map[string]bool, error) {
+	out := make(map[string]bool, len(ds))
+	if len(ds) == 0 {
+		return out, nil
+	}
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return nil, err
+	}
+	ids := make([]string, len(ds))
+	activities := make([]string, len(ds))
+	inboxes := make([]string, len(ds))
+	domains := make([]string, len(ds))
+	at := make([]time.Time, len(ds))
+	for i, d := range ds {
+		ids[i], activities[i], inboxes[i], domains[i], at[i] = d.ID, d.OutboundActivityID, string(d.InboxURL), d.Domain, d.CreatedAt
+	}
+	inserted, err := q.InsertDeliveries(ctx, federationgen.InsertDeliveriesParams{
+		Ids: ids, OutboundActivityIds: activities, InboxUrls: inboxes, Domains: domains, CreatedAts: at,
+	})
+	if err != nil {
+		return nil, postgres.Wrap(err, "insert deliveries")
+	}
+	for _, id := range inserted {
+		out[id] = true
+	}
+	return out, nil
+}
+
 // UpsertInstanceHealth implements federation.Repository.
 func (r *Repository) UpsertInstanceHealth(ctx context.Context, tx uow.Tx, h federation.InstanceHealth) error {
 	q, err := r.db.queries(tx)

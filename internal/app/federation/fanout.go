@@ -246,13 +246,14 @@ func (f *FanOut) Run(ctx context.Context, p fanOutPayload) error {
 				return err
 			}
 		}
+		inserted, err := f.d.Repository.InsertDeliveries(ctx, tx, deliveries)
+		if err != nil {
+			return err
+		}
 		var jobs []queue.NewJob
 		for _, d := range deliveries {
-			inserted, err := f.d.Repository.InsertDelivery(ctx, tx, d)
-			if err != nil {
-				return err
-			}
-			if !inserted {
+			// A delivery that a run before this one recorded has its job already.
+			if !inserted[d.ID] {
 				continue
 			}
 			j, err := deliverJob(act, d)
