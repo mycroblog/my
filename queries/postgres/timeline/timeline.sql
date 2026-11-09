@@ -492,3 +492,10 @@ DELETE FROM feed_follow_edges WHERE (follower_account_id, followee_account_id) I
 -- name: DeleteListMembersOfFollows :exec
 DELETE FROM list_members WHERE (owner_account_id, member_account_id) IN (
   SELECT unnest(sqlc.arg(follower_ids)::uuid[]), unnest(sqlc.arg(followee_ids)::uuid[]));
+
+-- UpsertFeedFollowEdges is UpsertFeedFollowEdge of many edges (the unnests of a select list
+-- advance together).
+-- name: UpsertFeedFollowEdges :exec
+INSERT INTO feed_follow_edges (follower_account_id, followee_account_id, show_boosts)
+SELECT unnest(sqlc.arg(follower_ids)::uuid[]), unnest(sqlc.arg(followee_ids)::uuid[]), unnest(sqlc.arg(show_boosts)::boolean[])
+ON CONFLICT (follower_account_id, followee_account_id) DO UPDATE SET show_boosts = excluded.show_boosts;

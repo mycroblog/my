@@ -238,6 +238,8 @@ type Repository interface {
 	ReplaceTags(ctx context.Context, tx uow.Tx, e Entry, tagIDs []string, revisedAt time.Time) error
 	// UpsertFollowEdge stores e, replacing the pair's edge.
 	UpsertFollowEdge(ctx context.Context, tx uow.Tx, e FollowEdge) error
+	// UpsertFollowEdges is UpsertFollowEdge of each of es.
+	UpsertFollowEdges(ctx context.Context, tx uow.Tx, es []FollowEdge) error
 	DeleteFollowEdge(ctx context.Context, tx uow.Tx, followerAccountID, followeeAccountID string) error
 	// DeleteFollowEdges is DeleteFollowEdge of the pairs (followerIDs[i], followeeIDs[i]).
 	DeleteFollowEdges(ctx context.Context, tx uow.Tx, followerIDs, followeeIDs []string) error

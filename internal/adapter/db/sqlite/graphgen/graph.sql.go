@@ -273,6 +273,22 @@ func (q *Queries) GetFollowPreferences(ctx context.Context, followID string) (Fo
 	return i, err
 }
 
+const insertAutoFollowAcceptances = `-- name: InsertAutoFollowAcceptances :exec
+INSERT INTO follow_acceptances (follow_id, accepted_by, activity_uri, accepted_at)
+SELECT value, CAST(?1 AS TEXT), NULL, CAST(?2 AS INTEGER) FROM json_each(CAST(?3 AS TEXT))
+`
+
+type InsertAutoFollowAcceptancesParams struct {
+	AcceptedBy string
+	AcceptedAt int64
+	FollowIds  string
+}
+
+func (q *Queries) InsertAutoFollowAcceptances(ctx context.Context, arg InsertAutoFollowAcceptancesParams) error {
+	_, err := q.db.ExecContext(ctx, insertAutoFollowAcceptances, arg.AcceptedBy, arg.AcceptedAt, arg.FollowIds)
+	return err
+}
+
 const insertFollow = `-- name: InsertFollow :exec
 
 INSERT INTO follows (id, uri, follower_account_id, followee_account_id, requested_at) VALUES (?, ?, ?, ?, ?)
@@ -341,6 +357,21 @@ func (q *Queries) InsertFollowEdge(ctx context.Context, arg InsertFollowEdgePara
 		arg.State,
 		arg.Since,
 	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
+const insertFollowEdges = `-- name: InsertFollowEdges :execrows
+INSERT INTO follow_edges (follower_account_id, followee_account_id, follow_id, state, since)
+SELECT value ->> '$.follower_account_id', value ->> '$.followee_account_id', value ->> '$.follow_id', value ->> '$.state', value ->> '$.since'
+FROM json_each(CAST(?1 AS TEXT)) WHERE true
+ON CONFLICT (follower_account_id, followee_account_id) DO NOTHING
+`
+
+func (q *Queries) InsertFollowEdges(ctx context.Context, edges string) (int64, error) {
+	result, err := q.db.ExecContext(ctx, insertFollowEdges, edges)
 	if err != nil {
 		return 0, err
 	}
@@ -416,6 +447,21 @@ type InsertFollowTerminationsParams struct {
 
 func (q *Queries) InsertFollowTerminations(ctx context.Context, arg InsertFollowTerminationsParams) error {
 	_, err := q.db.ExecContext(ctx, insertFollowTerminations, arg.Reason, arg.TerminatedAt, arg.FollowIds)
+	return err
+}
+
+const insertFollows = `-- name: InsertFollows :exec
+
+INSERT INTO follows (id, uri, follower_account_id, followee_account_id, requested_at)
+SELECT value ->> '$.id', value ->> '$.uri', value ->> '$.follower_account_id', value ->> '$.followee_account_id', value ->> '$.requested_at'
+FROM json_each(CAST(?1 AS TEXT))
+`
+
+// The statements that start many follows at once (the migration of a moved account's followers),
+// each as the statement of one follow above does for every follow it names. The lists are JSON
+// arrays; WHERE true keeps ON CONFLICT from reading as a join constraint.
+func (q *Queries) InsertFollows(ctx context.Context, follows string) error {
+	_, err := q.db.ExecContext(ctx, insertFollows, follows)
 	return err
 }
 
@@ -864,5 +910,16 @@ type UpsertFollowPreferencesParams struct {
 
 func (q *Queries) UpsertFollowPreferences(ctx context.Context, arg UpsertFollowPreferencesParams) error {
 	_, err := q.db.ExecContext(ctx, upsertFollowPreferences, arg.FollowID, arg.ShowBoosts)
+	return err
+}
+
+const upsertManyFollowPreferences = `-- name: UpsertManyFollowPreferences :exec
+INSERT INTO follow_preferences (follow_id, show_boosts)
+SELECT value ->> '$.follow_id', value ->> '$.show_boosts' FROM json_each(CAST(?1 AS TEXT)) WHERE true
+ON CONFLICT (follow_id) DO UPDATE SET show_boosts = excluded.show_boosts
+`
+
+func (q *Queries) UpsertManyFollowPreferences(ctx context.Context, preferences string) error {
+	_, err := q.db.ExecContext(ctx, upsertManyFollowPreferences, preferences)
 	return err
 }

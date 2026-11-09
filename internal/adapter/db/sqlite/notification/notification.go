@@ -380,22 +380,26 @@ func (r *Repository) InsertNotificationsForEach(ctx context.Context, tx uow.Tx, 
 		return nil, err
 	}
 	type row struct {
-		ID          string `json:"id"`
-		Recipient   string `json:"recipient"`
-		SeveranceID string `json:"severance_id"`
-		DedupeKey   string `json:"dedupe_key"`
+		ID              string `json:"id"`
+		Recipient       string `json:"recipient"`
+		SeveranceID     string `json:"severance_id"`
+		DedupeKey       string `json:"dedupe_key"`
+		SourceAccountID string `json:"source_account_id"`
+		SourceDomain    string `json:"source_domain"`
+		CreatedAt       int64  `json:"created_at"`
 	}
 	rows := make([]row, len(ns))
 	for i, m := range ns {
-		rows[i] = row{ID: m.ID, Recipient: m.RecipientAccountID, SeveranceID: m.SeveranceID, DedupeKey: m.DedupeKey}
+		rows[i] = row{ID: m.ID, Recipient: m.RecipientAccountID, SeveranceID: m.SeveranceID, DedupeKey: m.DedupeKey,
+			SourceAccountID: m.SourceAccountID, SourceDomain: m.SourceDomain, CreatedAt: sqlite.ToMillis(m.CreatedAt)}
 	}
 	list, err := json.Marshal(rows)
 	if err != nil {
 		return nil, err
 	}
 	arg := notificationgen.InsertNotificationsForEachParams{
-		Type:            string(n.Type),
-		SourceAccountID: sqlite.ToNullString(n.SourceAccountID), SourceDomain: sqlite.ToNullString(n.SourceDomain), StatusID: sqlite.ToNullString(n.StatusID),
+		Type:               string(n.Type),
+		StatusID:           sqlite.ToNullString(n.StatusID),
 		ModerationActionID: sqlite.ToNullString(n.ModerationActionID), ReportID: sqlite.ToNullString(n.ReportID),
 		SubjectUserID: sqlite.ToNullString(n.SubjectUserID), AppealID: sqlite.ToNullString(n.AppealID),
 		CustomEmojiRequestID: sqlite.ToNullString(n.CustomEmojiRequestID), SupporterSubscriptionID: sqlite.ToNullString(n.SupporterSubscriptionID),
@@ -404,8 +408,8 @@ func (r *Repository) InsertNotificationsForEach(ctx context.Context, tx uow.Tx, 
 		ServiceClosureEventID: sqlite.ToNullString(n.ServiceClosureEventID), ServiceClosureChange: sqlite.ToNullString(string(n.ServiceClosureChange)), VoiceRoomID: sqlite.ToNullString(n.VoiceRoomID),
 		ErrorGroupChange: sqlite.ToNullString(string(n.ErrorGroupChange)), ErrorGroupID: sqlite.ToNullString(n.ErrorGroupID), ErrorGroupHour: sqlite.ToNullTime(n.ErrorGroupHour),
 		AnnouncementID: sqlite.ToNullString(n.AnnouncementID), HookAppealID: sqlite.ToNullString(n.HookAppealID),
-		AutoDeleteLimitNoticeID: sqlite.ToNullString(n.AutoDeleteLimitNoticeID), CreatedAt: sqlite.ToMillis(n.CreatedAt),
-		Recipients: string(list),
+		AutoDeleteLimitNoticeID: sqlite.ToNullString(n.AutoDeleteLimitNoticeID),
+		Recipients:              string(list),
 	}
 	inserted, err := q.InsertNotificationsForEach(ctx, arg)
 	if err != nil {

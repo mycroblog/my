@@ -38,6 +38,7 @@ const (
 	EventFollowRejected           = "graph.follow_rejected"
 	EventFollowTerminated         = "graph.follow_terminated"
 	EventFollowsTerminated        = "graph.follows_terminated"
+	EventFollowsCreated           = "graph.follows_created"
 	EventFollowResent             = "graph.follow_resent"
 	EventFollowPreferencesChanged = "graph.follow_preferences_changed"
 	EventBlocked                  = "graph.blocked"
@@ -142,6 +143,18 @@ type FollowTerminated struct {
 
 // EventType implements uow.Event.
 func (FollowTerminated) EventType() string { return EventFollowTerminated }
+
+// FollowsCreated is Followed and FollowRequested of many follows that one command starts
+// together (the migration of a moved account's followers), emitted once for all of them. A
+// module that projects Followed or FollowRequested projects it too, as it projects each of
+// Followed and Requested, with a number of statements that does not grow with them.
+type FollowsCreated struct {
+	Followed  []Followed
+	Requested []FollowRequested
+}
+
+// EventType implements uow.Event.
+func (FollowsCreated) EventType() string { return EventFollowsCreated }
 
 // FollowsTerminated is FollowTerminated of many follows that one command ends together (a
 // severance, Service.SeverDirected), emitted once for all of them. A module that projects

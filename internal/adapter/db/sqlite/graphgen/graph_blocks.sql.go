@@ -131,6 +131,43 @@ func (q *Queries) DeleteMute(ctx context.Context, arg DeleteMuteParams) (int64, 
 	return result.RowsAffected()
 }
 
+const domainMutersAmong = `-- name: DomainMutersAmong :many
+SELECT DISTINCT account_id FROM account_domain_mutes
+WHERE account_id IN (SELECT value FROM json_each(CAST(?1 AS TEXT)))
+  AND domain IN (SELECT value FROM json_each(CAST(?2 AS TEXT)))
+ORDER BY account_id
+`
+
+type DomainMutersAmongParams struct {
+	AccountIds string
+	Domains    string
+}
+
+// DomainMutersAmong returns the accounts among account_ids that mute any of domains (both JSON
+// arrays), as MutesAnyDomain checks one.
+func (q *Queries) DomainMutersAmong(ctx context.Context, arg DomainMutersAmongParams) ([]string, error) {
+	rows, err := q.db.QueryContext(ctx, domainMutersAmong, arg.AccountIds, arg.Domains)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []string{}
+	for rows.Next() {
+		var account_id string
+		if err := rows.Scan(&account_id); err != nil {
+			return nil, err
+		}
+		items = append(items, account_id)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getActiveMute = `-- name: GetActiveMute :one
 SELECT account_id, target_account_id, hide_notifications, expires_at, created_at
 FROM mutes

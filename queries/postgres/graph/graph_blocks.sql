@@ -166,3 +166,10 @@ SELECT account_id, domain, created_at FROM account_domain_mutes ORDER BY account
 -- LockAccountPairs is LockAccountPair of many pairs, in the order of their keys.
 -- name: LockAccountPairs :exec
 SELECT pg_advisory_xact_lock(hashtextextended(k, 0)) FROM unnest(sqlc.arg(pair_keys)::text[]) AS k ORDER BY k;
+
+-- DomainMutersAmong returns the accounts among account_ids that mute any of domains, as
+-- MutesAnyDomain checks one.
+-- name: DomainMutersAmong :many
+SELECT DISTINCT account_id FROM account_domain_mutes
+WHERE account_id = ANY(sqlc.arg(account_ids)::uuid[]) AND domain = ANY(sqlc.arg(domains)::text[])
+ORDER BY account_id;

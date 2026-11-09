@@ -495,3 +495,11 @@ DELETE FROM feed_follow_edges WHERE (follower_account_id, followee_account_id) I
 -- name: DeleteListMembersOfFollows :exec
 DELETE FROM list_members WHERE (owner_account_id, member_account_id) IN (
   SELECT value ->> '$.a', value ->> '$.b' FROM json_each(CAST(sqlc.arg(pairs) AS TEXT)));
+
+-- UpsertFeedFollowEdges is UpsertFeedFollowEdge of many edges, a JSON array; WHERE true keeps
+-- ON CONFLICT from reading as a join constraint.
+-- name: UpsertFeedFollowEdges :exec
+INSERT INTO feed_follow_edges (follower_account_id, followee_account_id, show_boosts)
+SELECT value ->> '$.follower_account_id', value ->> '$.followee_account_id', value ->> '$.show_boosts'
+FROM json_each(CAST(sqlc.arg(edges) AS TEXT)) WHERE true
+ON CONFLICT (follower_account_id, followee_account_id) DO UPDATE SET show_boosts = excluded.show_boosts;

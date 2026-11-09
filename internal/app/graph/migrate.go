@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"slices"
 	"time"
 
 	appaccount "github.com/mycroblog/my/internal/app/account"
@@ -30,9 +31,10 @@ import (
 //   - A local account that mutes the source mutes the target too, with the same handling of
 //     notifications and expiry, unless it already mutes the target.
 //
-// Each account is one short transaction, and each step is safe to run again: a follower that
-// moved no longer follows the source, a block or mute that exists is kept, and the notification
-// has one dedupe key per move.
+// The followers of a page move together in one short transaction, whose statements do not grow
+// with them, and each blocking or muting account is one short transaction. Each step is safe to
+// run again: a follower that moved no longer follows the source, a block or mute that exists is
+// kept, and the notification has one dedupe key per move.
 
 const (
 	// JobMigrateFollows migrates one page of the relationships of a moved account; its payload
@@ -45,8 +47,12 @@ const (
 	MigratePageInterval = 10 * time.Second
 )
 
-// EventFollowMigrated follows the migration of each local follower of a moved account.
-const EventFollowMigrated = "graph.follow_migrated"
+// EventFollowMigrated follows the migration of each local follower of a moved account, and
+// EventFollowsMigrated that of a page of them.
+const (
+	EventFollowMigrated  = "graph.follow_migrated"
+	EventFollowsMigrated = "graph.follows_migrated"
+)
 
 // MigrationOutcome is what became of a local account's follow of an account that moved.
 type MigrationOutcome string
@@ -81,6 +87,13 @@ type FollowMigrated struct {
 
 // EventType implements uow.Event.
 func (FollowMigrated) EventType() string { return EventFollowMigrated }
+
+// FollowsMigrated is FollowMigrated of the followers of a page of a migration, emitted once for
+// all of them; a module that projects FollowMigrated projects it too, as each of Migrations.
+type FollowsMigrated struct{ Migrations []FollowMigrated }
+
+// EventType implements uow.Event.
+func (FollowsMigrated) EventType() string { return EventFollowsMigrated }
 
 // MigrationPhase is the relationships that a step of a migration walks.
 type MigrationPhase string
@@ -192,11 +205,12 @@ func (s *Service) MigrateStep(ctx context.Context, st MigrationStep) (next Migra
 		if err != nil {
 			return MigrationStep{}, false, err
 		}
-		for _, e := range edges {
-			if err := s.migrateFollower(ctx, st, target, e.FollowerAccountID); err != nil {
-				return MigrationStep{}, false, err
-			}
-			last = e.FollowID
+		followers := make([]string, len(edges))
+		for i, e := range edges {
+			followers[i], last = e.FollowerAccountID, e.FollowID
+		}
+		if err := s.migrateFollowers(ctx, st, target, followers); err != nil {
+			return MigrationStep{}, false, err
 		}
 		n = len(edges)
 	case MigrateBlocksPhase:
@@ -258,112 +272,189 @@ func (s *Service) migratingAccount(ctx context.Context, st MigrationStep, id str
 	return a, a.Account.IsLocal(), nil
 }
 
-// migrateFollower moves followerID's active follow of the source to the target, or leaves it in
-// place when the follower blocks the target, is blocked by it, or mutes its domain, and emits
-// FollowMigrated.
-func (s *Service) migrateFollower(ctx context.Context, st MigrationStep, target appaccount.Actor, followerID string) error {
-	if _, ok, err := s.migratingAccount(ctx, st, followerID); err != nil || !ok {
+// actorsBatch is an Accounts that reads many accounts at once, as *appaccount.Service does.
+type actorsBatch interface {
+	FindByIDs(ctx context.Context, ids []string) (map[string]appaccount.Actor, error)
+}
+
+// migratingAccounts returns those of ids that the migration moves (migratingAccount): with one
+// read of the accounts when Accounts can, one by one otherwise.
+func (s *Service) migratingAccounts(ctx context.Context, st MigrationStep, ids []string) ([]string, error) {
+	var out []string
+	b, ok := s.d.Accounts.(actorsBatch)
+	if !ok {
+		for _, id := range ids {
+			_, moves, err := s.migratingAccount(ctx, st, id)
+			if err != nil {
+				return nil, err
+			}
+			if moves {
+				out = append(out, id)
+			}
+		}
+		return out, nil
+	}
+	actors, err := b.FindByIDs(ctx, ids)
+	if err != nil {
+		return nil, err
+	}
+	for _, id := range ids {
+		if a, found := actors[id]; found && id != st.TargetAccountID && a.Lifecycle.Active() && a.Account.IsLocal() && !slices.Contains(out, id) {
+			out = append(out, id)
+		}
+	}
+	return out, nil
+}
+
+// migrateFollowers is migrateFollower of each of followerIDs, together: one transaction, whose
+// statements do not grow with them, moves the follows of all of them, and one FollowsCreated,
+// one FollowsTerminated, and one FollowsMigrated tell the projectors.
+func (s *Service) migrateFollowers(ctx context.Context, st MigrationStep, target appaccount.Actor, followerIDs []string) error {
+	followers, err := s.migratingAccounts(ctx, st, followerIDs)
+	if err != nil || len(followers) == 0 {
 		return err
 	}
-	domainMuted := false
+	repo := s.d.Repository
+	domainMuted := map[string]bool{}
 	if !target.Account.IsLocal() {
-		var err error
-		if domainMuted, err = s.MutesDomain(ctx, followerID, target.Account.Domain); err != nil {
+		if domainMuted, err = repo.DomainMutersAmong(ctx, followers, graph.MutedDomains(target.Account.Domain)); err != nil {
 			return err
 		}
 	}
 	locked := !target.Account.IsLocal() || (target.Profile != nil && target.Profile.Locked)
 	now := kernel.Normalize(s.d.Clock.Now())
-	f := graph.Follow{ID: s.d.IDs.NewID(), FollowerAccountID: followerID, FolloweeAccountID: st.TargetAccountID, RequestedAt: now}
-	f.URI = graph.FollowURI(s.d.Host, f.ID)
-	repo := s.d.Repository
+	newFollows := make(map[string]graph.Follow, len(followers))
+	for _, id := range followers {
+		f := graph.Follow{ID: s.d.IDs.NewID(), FollowerAccountID: id, FolloweeAccountID: st.TargetAccountID, RequestedAt: now}
+		f.URI = graph.FollowURI(s.d.Host, f.ID)
+		newFollows[id] = f
+	}
 	return s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
-		ev := FollowMigrated{
-			AccountID: followerID, SourceAccountID: st.SourceAccountID, TargetAccountID: st.TargetAccountID, MoveID: st.MoveID, At: now,
+		pairs := make([]string, 0, 2*len(followers))
+		others := make([]string, 0, 2*len(followers))
+		for _, id := range followers {
+			pairs, others = append(pairs, id, id), append(others, st.SourceAccountID, st.TargetAccountID)
 		}
-		if err := repo.LockPair(ctx, tx, followerID, st.SourceAccountID); err != nil {
+		if err := repo.LockPairs(ctx, tx, pairs, others); err != nil {
 			return err
 		}
-		if err := repo.LockPair(ctx, tx, followerID, st.TargetAccountID); err != nil {
-			return err
-		}
-		edge, from, err := s.liveFollow(ctx, tx, followerID, st.SourceAccountID)
-		if errors.Is(err, ErrNotFound) || (err == nil && edge.State != graph.StateActive) {
-			return nil // the follow ended, or was migrated, meanwhile
-		}
+		edges, err := repo.ListEdgesBetween(ctx, tx, pairs, others)
 		if err != nil {
 			return err
 		}
-		if ev.Outcome, err = s.keepsFollow(ctx, tx, followerID, st.TargetAccountID, domainMuted); err != nil {
+		from, to := map[string]graph.Edge{}, map[string]graph.Edge{}
+		var fromIDs []string
+		for _, e := range edges {
+			switch e.FolloweeAccountID {
+			case st.SourceAccountID:
+				if e.State == graph.StateActive {
+					from[e.FollowerAccountID] = e
+					fromIDs = append(fromIDs, e.FollowID)
+				}
+			case st.TargetAccountID:
+				to[e.FollowerAccountID] = e
+			}
+		}
+		if len(from) == 0 {
+			return nil // the follows ended, or were migrated, meanwhile
+		}
+		fromFollows, err := repo.FollowsByIDs(ctx, tx, fromIDs)
+		if err != nil {
 			return err
 		}
-		if ev.Outcome != "" {
-			return tx.Emit(ctx, ev)
+		prefs, err := repo.PreferencesOf(ctx, tx, fromIDs)
+		if err != nil {
+			return err
 		}
-		switch to, err := repo.Edge(ctx, tx, followerID, st.TargetAccountID); {
-		case err == nil:
-			ev.Outcome = MigrationFollowed
-			if to.State != graph.StateActive {
-				ev.Outcome = MigrationRequested
+		blocking, blockedBy, err := repo.BlockEdgesWithTx(ctx, tx, st.TargetAccountID, followers)
+		if err != nil {
+			return err
+		}
+		var (
+			created     FollowsCreated
+			ended       FollowsTerminated
+			migrated    FollowsMigrated
+			inserted    []graph.Follow
+			insertedPrf []graph.Preferences
+			accepted    []string
+			endedIDs    []string
+		)
+		for _, id := range followers {
+			e, live := from[id]
+			fromFollow, ok := fromFollows[e.FollowID]
+			if !live || !ok {
+				continue
 			}
-		case errors.Is(err, ErrNotFound):
-			if ev.Outcome, err = s.followTargetIn(ctx, tx, f, from, locked); err != nil {
+			ev := FollowMigrated{AccountID: id, SourceAccountID: st.SourceAccountID, TargetAccountID: st.TargetAccountID, MoveID: st.MoveID, At: now}
+			switch {
+			case blockedBy[id]: // the follower blocks the target
+				ev.Outcome = MigrationBlocking
+			case blocking[id]: // the target blocks the follower
+				ev.Outcome = MigrationBlockedBy
+			case domainMuted[id]:
+				ev.Outcome = MigrationDomainMuted
+			}
+			if ev.Outcome != "" {
+				migrated.Migrations = append(migrated.Migrations, ev)
+				continue
+			}
+			if toEdge, ok := to[id]; ok {
+				ev.Outcome = MigrationFollowed
+				if toEdge.State != graph.StateActive {
+					ev.Outcome = MigrationRequested
+				}
+			} else {
+				f := newFollows[id]
+				p, ok := prefs[fromFollow.ID]
+				if !ok {
+					p = graph.DefaultPreferences(f.ID)
+				}
+				p.FollowID = f.ID
+				inserted, insertedPrf = append(inserted, f), append(insertedPrf, p)
+				if locked {
+					ev.Outcome = MigrationRequested
+					created.Requested = append(created.Requested, FollowRequested{Follow: f, Preferences: p})
+				} else {
+					ev.Outcome = MigrationFollowed
+					accepted = append(accepted, f.ID)
+					a := graph.Acceptance{FollowID: f.ID, AcceptedBy: graph.AcceptedByAuto, AcceptedAt: f.RequestedAt}
+					created.Followed = append(created.Followed, Followed{Follow: f, Acceptance: a, Preferences: p})
+				}
+			}
+			endedIDs = append(endedIDs, fromFollow.ID)
+			ended.Terminations = append(ended.Terminations, FollowTerminated{
+				Follow: fromFollow, PreviousState: graph.StateActive,
+				Termination: graph.Termination{FollowID: fromFollow.ID, Reason: graph.TerminatedMoved, TerminatedAt: now},
+			})
+			migrated.Migrations = append(migrated.Migrations, ev)
+		}
+		if len(inserted) > 0 {
+			if err := repo.InsertFollows(ctx, tx, inserted); err != nil {
 				return err
 			}
-		default:
-			return err
+			if err := repo.UpsertManyPreferences(ctx, tx, insertedPrf); err != nil {
+				return err
+			}
+			if err := repo.InsertAutoAcceptances(ctx, tx, accepted, now); err != nil {
+				return err
+			}
+			if err := tx.Emit(ctx, created); err != nil {
+				return err
+			}
 		}
-		term := FollowTerminated{Termination: graph.Termination{Reason: graph.TerminatedMoved, TerminatedAt: now}}
-		if _, err := s.endIn(ctx, tx, term, followerID, st.SourceAccountID, false); err != nil {
-			return err
+		if len(endedIDs) > 0 {
+			if err := repo.InsertTerminations(ctx, tx, endedIDs, graph.TerminatedMoved, now); err != nil {
+				return err
+			}
+			if err := tx.Emit(ctx, ended); err != nil {
+				return err
+			}
 		}
-		return tx.Emit(ctx, ev)
+		if len(migrated.Migrations) == 0 {
+			return nil
+		}
+		return tx.Emit(ctx, migrated)
 	})
-}
-
-// keepsFollow returns why followerID does not follow targetID in place of the source, "" when
-// it does.
-func (s *Service) keepsFollow(ctx context.Context, tx uow.Tx, followerID, targetID string, domainMuted bool) (MigrationOutcome, error) {
-	blocking, err := found(s.d.Repository.BlockEdge(ctx, tx, followerID, targetID))
-	if err != nil || blocking {
-		return MigrationBlocking, err
-	}
-	blockedBy, err := found(s.d.Repository.BlockEdge(ctx, tx, targetID, followerID))
-	if err != nil || blockedBy {
-		return MigrationBlockedBy, err
-	}
-	if domainMuted {
-		return MigrationDomainMuted, nil
-	}
-	return "", nil
-}
-
-// followTargetIn records f, the follow of the target in place of the follow from, with from's
-// preferences: pending when the target is remote or locked, active at once otherwise.
-func (s *Service) followTargetIn(ctx context.Context, tx uow.Tx, f, from graph.Follow, locked bool) (MigrationOutcome, error) {
-	repo := s.d.Repository
-	prefs, err := repo.Preferences(ctx, tx, from.ID)
-	switch {
-	case errors.Is(err, ErrNotFound):
-		prefs = graph.DefaultPreferences(f.ID)
-	case err != nil:
-		return "", err
-	}
-	prefs.FollowID = f.ID
-	if err := repo.InsertFollow(ctx, tx, f); err != nil {
-		return "", err
-	}
-	if err := repo.UpsertPreferences(ctx, tx, prefs); err != nil {
-		return "", err
-	}
-	if locked {
-		return MigrationRequested, tx.Emit(ctx, FollowRequested{Follow: f, Preferences: prefs})
-	}
-	a := graph.Acceptance{FollowID: f.ID, AcceptedBy: graph.AcceptedByAuto, AcceptedAt: f.RequestedAt}
-	if err := repo.InsertAcceptance(ctx, tx, a); err != nil {
-		return "", err
-	}
-	return MigrationFollowed, tx.Emit(ctx, Followed{Follow: f, Acceptance: a, Preferences: prefs})
 }
 
 // migrateBlock makes blockerID, which blocks the source, block the target too.

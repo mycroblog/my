@@ -598,6 +598,19 @@ func (s *Service) AccountDomainTx(ctx context.Context, tx uow.Tx, id string) (st
 	return a.Domain, nil
 }
 
+// AccountDomainsTx is AccountDomainTx of each of ids that exists, by account, with one query.
+func (s *Service) AccountDomainsTx(ctx context.Context, tx uow.Tx, ids []string) (map[string]string, error) {
+	accounts, err := s.d.Repository.FindAccountsTx(ctx, tx, ids)
+	if err != nil {
+		return nil, err
+	}
+	out := make(map[string]string, len(accounts))
+	for id, a := range accounts {
+		out[id] = a.Domain
+	}
+	return out, nil
+}
+
 // FindByURI returns the actor with an ActivityPub id, local or remote. It fails with
 // ErrNotFound when there is none.
 func (s *Service) FindByURI(ctx context.Context, uri string) (Actor, error) {

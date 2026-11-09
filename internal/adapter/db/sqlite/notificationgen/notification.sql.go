@@ -505,17 +505,15 @@ func (q *Queries) InsertNotificationsFor(ctx context.Context, arg InsertNotifica
 const insertNotificationsForEach = `-- name: InsertNotificationsForEach :many
 INSERT INTO notifications (id, recipient_account_id, type, source_account_id, source_domain, status_id, moderation_action_id, report_id, subject_user_id, severance_id, appeal_id, custom_emoji_request_id, supporter_subscription_id, reaction_emoji, reaction_custom_emoji_id, account_move_id, account_move_outcome, service_closure_event_id, service_closure_change, voice_room_id, error_group_change, error_group_id, error_group_hour, announcement_id, hook_appeal_id, auto_delete_limit_notice_id, dedupe_key, created_at)
 SELECT value ->> '$.id', value ->> '$.recipient', CAST(?1 AS TEXT),
-  CAST(?2 AS TEXT), CAST(?3 AS TEXT), CAST(?4 AS TEXT), CAST(?5 AS TEXT), CAST(?6 AS TEXT), CAST(?7 AS TEXT), value ->> '$.severance_id', CAST(?8 AS TEXT), CAST(?9 AS TEXT), CAST(?10 AS TEXT), CAST(?11 AS TEXT), CAST(?12 AS TEXT), CAST(?13 AS TEXT), CAST(?14 AS TEXT), CAST(?15 AS TEXT), CAST(?16 AS TEXT), CAST(?17 AS TEXT), CAST(?18 AS TEXT), CAST(?19 AS TEXT), CAST(?20 AS INTEGER), CAST(?21 AS TEXT), CAST(?22 AS TEXT), CAST(?23 AS TEXT),
-  value ->> '$.dedupe_key', CAST(?24 AS INTEGER)
-FROM json_each(CAST(?25 AS TEXT)) WHERE true
+  NULLIF(value ->> '$.source_account_id', ''), NULLIF(value ->> '$.source_domain', ''), CAST(?2 AS TEXT), CAST(?3 AS TEXT), CAST(?4 AS TEXT), CAST(?5 AS TEXT), NULLIF(value ->> '$.severance_id', ''), CAST(?6 AS TEXT), CAST(?7 AS TEXT), CAST(?8 AS TEXT), CAST(?9 AS TEXT), CAST(?10 AS TEXT), CAST(?11 AS TEXT), CAST(?12 AS TEXT), CAST(?13 AS TEXT), CAST(?14 AS TEXT), CAST(?15 AS TEXT), CAST(?16 AS TEXT), CAST(?17 AS TEXT), CAST(?18 AS INTEGER), CAST(?19 AS TEXT), CAST(?20 AS TEXT), CAST(?21 AS TEXT),
+  value ->> '$.dedupe_key', value ->> '$.created_at'
+FROM json_each(CAST(?22 AS TEXT)) WHERE true
 ON CONFLICT (recipient_account_id, dedupe_key) DO NOTHING
-RETURNING recipient_account_id
+RETURNING id
 `
 
 type InsertNotificationsForEachParams struct {
 	Type                    string
-	SourceAccountID         sql.NullString
-	SourceDomain            sql.NullString
 	StatusID                sql.NullString
 	ModerationActionID      sql.NullString
 	ReportID                sql.NullString
@@ -536,17 +534,15 @@ type InsertNotificationsForEachParams struct {
 	AnnouncementID          sql.NullString
 	HookAppealID            sql.NullString
 	AutoDeleteLimitNoticeID sql.NullString
-	CreatedAt               int64
 	Recipients              string
 }
 
-// InsertNotificationsForEach is InsertNotificationsFor whose rows differ by their severance and
-// dedupe key too.
+// InsertNotificationsForEach is InsertNotificationsFor whose rows differ by their source, its
+// domain, severance, dedupe key, and time too, an empty source, domain, or severance standing
+// for none. It returns the IDs it inserted.
 func (q *Queries) InsertNotificationsForEach(ctx context.Context, arg InsertNotificationsForEachParams) ([]string, error) {
 	rows, err := q.db.QueryContext(ctx, insertNotificationsForEach,
 		arg.Type,
-		arg.SourceAccountID,
-		arg.SourceDomain,
 		arg.StatusID,
 		arg.ModerationActionID,
 		arg.ReportID,
@@ -567,7 +563,6 @@ func (q *Queries) InsertNotificationsForEach(ctx context.Context, arg InsertNoti
 		arg.AnnouncementID,
 		arg.HookAppealID,
 		arg.AutoDeleteLimitNoticeID,
-		arg.CreatedAt,
 		arg.Recipients,
 	)
 	if err != nil {
@@ -576,11 +571,11 @@ func (q *Queries) InsertNotificationsForEach(ctx context.Context, arg InsertNoti
 	defer rows.Close()
 	items := []string{}
 	for rows.Next() {
-		var recipient_account_id string
-		if err := rows.Scan(&recipient_account_id); err != nil {
+		var id string
+		if err := rows.Scan(&id); err != nil {
 			return nil, err
 		}
-		items = append(items, recipient_account_id)
+		items = append(items, id)
 	}
 	if err := rows.Close(); err != nil {
 		return nil, err
