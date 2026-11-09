@@ -5,6 +5,7 @@ package content
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
@@ -101,12 +102,22 @@ func (r *StatusRepository) InsertRevision(ctx context.Context, tx uow.Tx, rev co
 			return sqlite.Wrap(err, "insert status revision source")
 		}
 	}
-	for _, a := range rev.Attachments {
-		err := q.InsertStatusRevisionAttachment(ctx, contentgen.InsertStatusRevisionAttachmentParams{
-			RevisionID: rev.ID, Position: int64(a.Position), MediaID: a.MediaID, Description: sqlite.ToNullString(a.Description),
-		})
+	if len(rev.Attachments) > 0 {
+		type row struct {
+			Position    int    `json:"position"`
+			MediaID     string `json:"media_id"`
+			Description string `json:"description"`
+		}
+		rows := make([]row, len(rev.Attachments))
+		for i, a := range rev.Attachments {
+			rows[i] = row{Position: a.Position, MediaID: a.MediaID, Description: a.Description}
+		}
+		list, err := json.Marshal(rows)
 		if err != nil {
-			return sqlite.Wrap(err, "insert status revision attachment")
+			return err
+		}
+		if err := q.InsertStatusRevisionAttachments(ctx, contentgen.InsertStatusRevisionAttachmentsParams{RevisionID: rev.ID, Attachments: string(list)}); err != nil {
+			return sqlite.Wrap(err, "insert status revision attachments")
 		}
 	}
 	if len(rev.MentionedAccountIDs) > 0 {
@@ -118,13 +129,21 @@ func (r *StatusRepository) InsertRevision(ctx context.Context, tx uow.Tx, rev co
 			return sqlite.Wrap(err, "insert status revision mentions")
 		}
 	}
-	for _, id := range rev.TagIDs {
-		if err := q.InsertStatusRevisionTag(ctx, contentgen.InsertStatusRevisionTagParams{RevisionID: rev.ID, TagID: id}); err != nil {
-			return sqlite.Wrap(err, "insert status revision tag")
+	if len(rev.TagIDs) > 0 {
+		list, err := sqlite.JSONList(rev.TagIDs)
+		if err != nil {
+			return err
+		}
+		if err := q.InsertStatusRevisionTags(ctx, contentgen.InsertStatusRevisionTagsParams{RevisionID: rev.ID, TagIds: list}); err != nil {
+			return sqlite.Wrap(err, "insert status revision tags")
 		}
 	}
-	for _, id := range rev.EmojiIDs {
-		if err := q.InsertStatusRevisionEmoji(ctx, contentgen.InsertStatusRevisionEmojiParams{RevisionID: rev.ID, EmojiID: id}); err != nil {
+	if len(rev.EmojiIDs) > 0 {
+		list, err := sqlite.JSONList(rev.EmojiIDs)
+		if err != nil {
+			return err
+		}
+		if err := q.InsertStatusRevisionEmojis(ctx, contentgen.InsertStatusRevisionEmojisParams{RevisionID: rev.ID, EmojiIds: list}); err != nil {
 			return sqlite.Wrap(err, "insert status revision emoji")
 		}
 	}
@@ -168,6 +187,48 @@ func (r *StatusRepository) EnsureTag(ctx context.Context, tx uow.Tx, t content.T
 		return content.Tag{}, sqlite.Wrap(err, "get tag")
 	}
 	return tagFrom(row), nil
+}
+
+// EnsureTags implements content.Repository.
+func (r *StatusRepository) EnsureTags(ctx context.Context, tx uow.Tx, tags []content.Tag) (map[string]content.Tag, error) {
+	out := make(map[string]content.Tag, len(tags))
+	if len(tags) == 0 {
+		return out, nil
+	}
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return nil, err
+	}
+	type row struct {
+		ID             string `json:"id"`
+		Name           string `json:"name"`
+		NameNormalized string `json:"name_normalized"`
+	}
+	rows := make([]row, len(tags))
+	names := make([]string, len(tags))
+	for i, t := range tags {
+		rows[i], names[i] = row{ID: t.ID, Name: t.Name, NameNormalized: t.NameNormalized}, t.NameNormalized
+	}
+	list, err := json.Marshal(rows)
+	if err != nil {
+		return nil, err
+	}
+	if err := q.InsertTagsIfAbsent(ctx, contentgen.InsertTagsIfAbsentParams{CreatedAt: sqlite.ToMillis(tags[0].CreatedAt), Tags: string(list)}); err != nil {
+		return nil, sqlite.Wrap(err, "insert tags")
+	}
+	nameList, err := sqlite.JSONList(names)
+	if err != nil {
+		return nil, err
+	}
+	found, err := q.ListTagsByNames(ctx, nameList)
+	if err != nil {
+		return nil, sqlite.Wrap(err, "list tags by names")
+	}
+	for _, f := range found {
+		t := tagFrom(f)
+		out[t.NameNormalized] = t
+	}
+	return out, nil
 }
 
 // Head implements content.Repository.

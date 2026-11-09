@@ -91,6 +91,8 @@ type Repository interface {
 
 	InsertMessage(ctx context.Context, tx uow.Tx, m webhook.Message) error
 	InsertDelivery(ctx context.Context, tx uow.Tx, d webhook.Delivery) error
+	// InsertDeliveries is InsertDelivery of the deliveries of one message, with one statement.
+	InsertDeliveries(ctx context.Context, tx uow.Tx, ds []webhook.Delivery) error
 	// FindSend returns what sending a delivery needs; it fails with ErrNotFound for an unknown
 	// delivery (also one past its retention).
 	FindSend(ctx context.Context, deliveryID string) (Send, error)

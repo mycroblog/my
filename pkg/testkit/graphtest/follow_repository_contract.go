@@ -350,6 +350,19 @@ func graphFollowRepoPages(t *testing.T, r *graphFollowRepo) {
 	if got, err := r.repo.ListFolloweesAmong(ctx, nil, graph.StateActive); err != nil || len(got) != 0 {
 		t.Errorf("ListFolloweesAmong(none) = %v, %v; want none", got, err)
 	}
+	// The edges into star from some accounts, active and pending, in follower order.
+	from, err := r.repo.ListFollowEdgesFromAmong(ctx, star, append([]string{stranger}, fans...))
+	if err != nil || len(from) != len(fans) {
+		t.Fatalf("ListFollowEdgesFromAmong(star, fans) = %+v, %v; want an edge of each fan", from, err)
+	}
+	for _, e := range from {
+		if e.FolloweeAccountID != star || e.State != graph.StateActive || !slices.Contains(fans, e.FollowerAccountID) {
+			t.Errorf("ListFollowEdgesFromAmong edge %+v, want a fan's active edge into star", e)
+		}
+	}
+	if got, err := r.repo.ListFollowEdgesFromAmong(ctx, star, nil); err != nil || len(got) != 0 {
+		t.Errorf("ListFollowEdgesFromAmong(none) = %v, %v; want none", got, err)
+	}
 }
 
 // graphFollowRepoEndMany ends many follows with the writes of a batch, as the writes of one

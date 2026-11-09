@@ -403,6 +403,19 @@ func (r *Repository) ListFollowers(ctx context.Context, followeeAccountID string
 	return edgesFrom(rows), nil
 }
 
+// ListFollowEdgesFromAmong implements graph.Repository.
+func (r *Repository) ListFollowEdgesFromAmong(ctx context.Context, accountID string, followerIDs []string) ([]graph.Edge, error) {
+	if len(followerIDs) == 0 {
+		return nil, nil
+	}
+	targets := followerIDs
+	rows, err := r.db.reader().ListFollowEdgesTo(ctx, graphgen.ListFollowEdgesToParams{AccountID: accountID, Targets: targets})
+	if err != nil {
+		return nil, postgres.Wrap(err, "list follow edges to "+accountID)
+	}
+	return edgesFrom(rows), nil
+}
+
 // ListFolloweesAmong implements graph.Repository.
 func (r *Repository) ListFolloweesAmong(ctx context.Context, accountIDs []string, state graph.State) ([]string, error) {
 	if len(accountIDs) == 0 {

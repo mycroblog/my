@@ -250,6 +250,30 @@ func (r *Repository) AccountRestrictionRows(ctx context.Context, tx uow.Tx, acco
 	return out, nil
 }
 
+// AccountRestrictionRowsOf implements moderation.Repository.
+func (r *Repository) AccountRestrictionRowsOf(ctx context.Context, tx uow.Tx, accountIDs []string) (map[string][]moderation.RestrictionRow, error) {
+	out := make(map[string][]moderation.RestrictionRow, len(accountIDs))
+	if len(accountIDs) == 0 {
+		return out, nil
+	}
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return nil, err
+	}
+	ids, err := sqlite.JSONList(accountIDs)
+	if err != nil {
+		return nil, err
+	}
+	rows, err := q.ListAccountRestrictionRowsOf(ctx, ids)
+	if err != nil {
+		return nil, sqlite.Wrap(err, "list account restrictions of accounts")
+	}
+	for _, row := range rows {
+		out[row.AccountID] = append(out[row.AccountID], restrictionRowsFrom(row.AccountID, row.Restriction, row.SourceActionID, row.EffectiveUntil))
+	}
+	return out, nil
+}
+
 // DeleteExpiredAccountRestrictions implements moderation.Repository.
 func (r *Repository) DeleteExpiredAccountRestrictions(ctx context.Context, tx uow.Tx, now time.Time, limit int) ([]moderation.RestrictionRow, error) {
 	q, err := r.db.queries(tx)

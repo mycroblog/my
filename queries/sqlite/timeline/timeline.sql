@@ -27,16 +27,8 @@ DELETE FROM feed_entries WHERE id = ?;
 -- name: DeleteFeedEntriesOfStatus :exec
 DELETE FROM feed_entries WHERE status_id = ?;
 
--- name: InsertFeedDirectRecipient :exec
-INSERT INTO feed_direct_recipients (entry_id, recipient_account_id) VALUES (?, ?)
-ON CONFLICT DO NOTHING;
-
 -- name: DeleteFeedDirectRecipients :exec
 DELETE FROM feed_direct_recipients WHERE entry_id = ?;
-
--- name: InsertFeedTagEntry :exec
-INSERT INTO feed_tag_entries (tag_id, entry_id, author_account_id, visibility, is_local, revised_at) VALUES (?, ?, ?, ?, ?, ?)
-ON CONFLICT DO NOTHING;
 
 -- name: DeleteFeedTagEntries :exec
 DELETE FROM feed_tag_entries WHERE entry_id = ?;
@@ -351,22 +343,6 @@ WHERE recipient_account_id = sqlc.arg(viewer) AND entry_id IN (SELECT value FROM
 -- name: ListCountedFeedTagIDs :many
 SELECT tag_id FROM feed_tag_entries WHERE entry_id = ? AND visibility IN ('public', 'local', 'unlisted') ORDER BY tag_id;
 
--- AddTagUsage adds n posts to the usage of a tag, which a post that counts carries.
--- name: AddTagUsage :exec
-INSERT INTO tag_usage (tag_id, statuses_count, last_used_at)
-VALUES (CAST(sqlc.arg(tag_id) AS TEXT), CAST(sqlc.arg(n) AS INTEGER), (SELECT max(f.revised_at) FROM feed_tag_entries f WHERE f.tag_id = CAST(sqlc.arg(tag_id) AS TEXT) AND f.visibility IN ('public', 'local', 'unlisted')))
-ON CONFLICT (tag_id) DO UPDATE SET statuses_count = tag_usage.statuses_count + excluded.statuses_count, last_used_at = excluded.last_used_at;
-
--- DeleteDrainedTagUsage deletes the usage of a tag that n posts fewer would leave at zero.
--- name: DeleteDrainedTagUsage :exec
-DELETE FROM tag_usage WHERE tag_id = CAST(sqlc.arg(tag_id) AS TEXT) AND statuses_count <= CAST(sqlc.arg(n) AS INTEGER);
-
--- AdjustTagUsage adds delta (which may be zero or negative) posts to the usage of a tag that has
--- a row and that a post that counts still carries, and reads its last_used_at again.
--- name: AdjustTagUsage :exec
-UPDATE tag_usage SET statuses_count = statuses_count + CAST(sqlc.arg(delta) AS INTEGER), last_used_at = (SELECT max(f.revised_at) FROM feed_tag_entries f WHERE f.tag_id = CAST(sqlc.arg(tag_id) AS TEXT) AND f.visibility IN ('public', 'local', 'unlisted'))
-WHERE tag_id = CAST(sqlc.arg(tag_id) AS TEXT);
-
 -- ListTagUsageOf returns the usage of the tags among ids that have a row.
 -- name: ListTagUsageOf :many
 SELECT tag_id, statuses_count, last_used_at FROM tag_usage WHERE tag_id IN (sqlc.slice(ids)) ORDER BY tag_id;
@@ -495,6 +471,43 @@ DELETE FROM feed_follow_edges WHERE (follower_account_id, followee_account_id) I
 -- name: DeleteListMembersOfFollows :exec
 DELETE FROM list_members WHERE (owner_account_id, member_account_id) IN (
   SELECT value ->> '$.a', value ->> '$.b' FROM json_each(CAST(sqlc.arg(pairs) AS TEXT)));
+
+-- The rows of an entry's direct recipients and tag entries, and the tag usage that they change,
+-- written with one statement each; the lists are JSON arrays, and WHERE true keeps ON CONFLICT
+-- from reading as a join constraint. Tag usage: AddManyTagUsage adds n posts to the usage of each
+-- tag; DeleteManyDrainedTagUsage deletes the usage of each tag that n posts fewer would leave at
+-- zero; AdjustManyTagUsage adds n (zero or negative) posts to each tag that has a row, and reads
+-- its last_used_at again.
+
+-- name: InsertFeedDirectRecipients :exec
+INSERT INTO feed_direct_recipients (entry_id, recipient_account_id)
+SELECT CAST(sqlc.arg(entry_id) AS TEXT), value FROM json_each(CAST(sqlc.arg(recipient_account_ids) AS TEXT)) WHERE true
+ON CONFLICT DO NOTHING;
+
+-- name: InsertFeedTagEntries :exec
+INSERT INTO feed_tag_entries (tag_id, entry_id, author_account_id, visibility, is_local, revised_at)
+SELECT value, CAST(sqlc.arg(entry_id) AS TEXT), CAST(sqlc.arg(author_account_id) AS TEXT), CAST(sqlc.arg(visibility) AS TEXT),
+  CAST(sqlc.arg(is_local) AS INTEGER), CAST(sqlc.arg(revised_at) AS INTEGER)
+FROM json_each(CAST(sqlc.arg(tag_ids) AS TEXT)) WHERE true
+ON CONFLICT DO NOTHING;
+
+-- name: AddManyTagUsage :exec
+INSERT INTO tag_usage (tag_id, statuses_count, last_used_at)
+SELECT value ->> '$.tag_id', value ->> '$.n',
+  (SELECT max(f.revised_at) FROM feed_tag_entries f WHERE f.tag_id = value ->> '$.tag_id' AND f.visibility IN ('public', 'local', 'unlisted'))
+FROM json_each(CAST(sqlc.arg(usage) AS TEXT)) WHERE true
+ON CONFLICT (tag_id) DO UPDATE SET statuses_count = tag_usage.statuses_count + excluded.statuses_count, last_used_at = excluded.last_used_at;
+
+-- name: DeleteManyDrainedTagUsage :exec
+DELETE FROM tag_usage WHERE EXISTS (
+  SELECT 1 FROM json_each(CAST(sqlc.arg(usage) AS TEXT))
+  WHERE value ->> '$.tag_id' = tag_usage.tag_id AND tag_usage.statuses_count <= CAST(value ->> '$.n' AS INTEGER));
+
+-- name: AdjustManyTagUsage :exec
+UPDATE tag_usage SET
+  statuses_count = statuses_count + (SELECT CAST(value ->> '$.n' AS INTEGER) FROM json_each(CAST(sqlc.arg(usage) AS TEXT)) WHERE value ->> '$.tag_id' = tag_usage.tag_id),
+  last_used_at = (SELECT max(f.revised_at) FROM feed_tag_entries f WHERE f.tag_id = tag_usage.tag_id AND f.visibility IN ('public', 'local', 'unlisted'))
+WHERE tag_id IN (SELECT value ->> '$.tag_id' FROM json_each(CAST(sqlc.arg(usage) AS TEXT)));
 
 -- UpsertFeedFollowEdges is UpsertFeedFollowEdge of many edges, a JSON array; WHERE true keeps
 -- ON CONFLICT from reading as a join constraint.

@@ -58,6 +58,8 @@ type Repository interface {
 	DeleteAccountRestrictionsOf(ctx context.Context, tx uow.Tx, actionID string) error
 	// AccountRestrictionRows returns every row of an account, expired ones included.
 	AccountRestrictionRows(ctx context.Context, tx uow.Tx, accountID string) ([]moderation.RestrictionRow, error)
+	// AccountRestrictionRowsOf is AccountRestrictionRows of each of accountIDs, by account.
+	AccountRestrictionRowsOf(ctx context.Context, tx uow.Tx, accountIDs []string) (map[string][]moderation.RestrictionRow, error)
 	// DeleteExpiredAccountRestrictions deletes at most limit rows of any account that have
 	// expired at now, the earliest expired first, and returns them.
 	DeleteExpiredAccountRestrictions(ctx context.Context, tx uow.Tx, now time.Time, limit int) ([]moderation.RestrictionRow, error)
