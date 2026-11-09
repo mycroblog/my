@@ -66,7 +66,21 @@ func (l *LinkCards) page(ctx context.Context, revisions map[string]content.Revis
 	}
 	p.d.Repository = repo
 	if l.d.Domains != nil {
-		p.d.Domains = &pageCardDomains{LinkCardDomains: l.d.Domains, answers: map[[2]string]bool{}}
+		domains := &pageCardDomains{LinkCardDomains: l.d.Domains, answers: map[[2]string]bool{}}
+		// The hosts of the cards and of their images, answered together when Domains can.
+		if b, ok := l.d.Domains.(hostRuleBatch); ok {
+			var hosts []string
+			for _, c := range repo.cards {
+				hosts = append(hosts, uniqueHosts(c.URL, c.CardURL)...)
+			}
+			for _, m := range repo.media {
+				hosts = append(hosts, uniqueHosts(m.RemoteURL)...)
+			}
+			if err := domains.load(ctx, b, hosts); err != nil {
+				return nil, err
+			}
+		}
+		p.d.Domains = domains
 	}
 	return &p, nil
 }
@@ -138,6 +152,33 @@ func (p *pageCardDomains) ask(ctx context.Context, question, host string, read f
 	p.answers[key] = v
 	p.mu.Unlock()
 	return v, nil
+}
+
+// load answers every question about hosts with one batch read.
+func (p *pageCardDomains) load(ctx context.Context, b hostRuleBatch, hosts []string) error {
+	var unique []string
+	for _, h := range hosts {
+		if !slices.Contains(unique, h) {
+			unique = append(unique, h)
+		}
+	}
+	if len(unique) == 0 {
+		return nil
+	}
+	rules, err := b.HostRules(ctx, unique)
+	if err != nil {
+		return err
+	}
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	for _, h := range unique {
+		r := rules[h]
+		p.answers[[2]string{"suspended", h}] = r.Suspended
+		p.answers[[2]string{"media", h}] = r.RejectsMedia
+		p.answers[[2]string{"fetch", h}] = r.FetchStopped
+		p.answers[[2]string{"images", h}] = r.ImagesStopped
+	}
+	return nil
 }
 
 func (p *pageCardDomains) FederationSuspended(ctx context.Context, host string) (bool, error) {

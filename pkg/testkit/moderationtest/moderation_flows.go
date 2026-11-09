@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -165,6 +166,10 @@ func (e *moderationEnv) checkDomain(t *testing.T, domain string, suspended, medi
 			return among[domain], err
 		}, suspended},
 		{"RejectsMedia", func() (bool, error) { return e.policy.RejectsMedia(ctx, domain) }, media},
+		{"RejectsMedia among", func() (bool, error) {
+			among, err := e.policy.DomainRestrictionsAmong(ctx, []string{domain, "unrelated.example"})
+			return slices.Contains(among[domain], moderation.RestrictMediaFetch), err
+		}, media},
 		{"RejectsReports", func() (bool, error) { return e.policy.RejectsReports(ctx, domain) }, reports},
 	} {
 		got, err := c.f()
