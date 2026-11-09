@@ -68,6 +68,7 @@
 | FR-915 絵文字の作成の権限と承認制 | S | `role_permissions`（`create_custom_emojis`）, `custom_emojis`（`created_by_user_id`）, `custom_emoji_requests`, `custom_emoji_request_outcomes`, `custom_emoji_pending_requests`, `audit_log_entries`, `notifications`（`admin_custom_emoji_request`, `custom_emoji_request_decided`） |
 | FR-916 会計の閲覧の権限 | S | `role_permissions`（`view_finance`）, `instance_settings`（`finance_viewer_item_names`, `finance_viewer_item_memos`, `finance_viewer_income`）と FR-902 の集計（読み取りのときに計算する） |
 | FR-917 収入の記録と公開 | S | §4.12 の `income_movements` と、`instance_settings`（`income_visibility`）。集計は読み取りのときに計算する |
+| FR-918 チップ | S | §4.13 のチップの表（`supporter_tip_changes` から `supporter_open_tips`）と、§4.12 の `income_movements.source`（ADR-0162） |
 | FR-923 ルームの設定 | M | §4.14 の `voice_rooms`, `voice_room_revisions`, `voice_room_revision_hashtags`, `voice_room_heads` |
 | FR-924 参加と発話 | M | `voice_room_participations`, `voice_room_participation_ends`, `voice_room_role_changes`, `voice_room_speak_grants`, `voice_room_hand_raises`, `voice_room_participants` |
 | FR-925・FR-926 ホストと共同ホスト、ホストの退出と切断 | M | `voice_room_host_changes`, `voice_room_cohost_changes`, `voice_room_host_graces`, `voice_room_endings`, `voice_room_heads` |
