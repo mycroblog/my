@@ -93,6 +93,22 @@ type Repository interface {
 	// AddCounters adds the deltas to an account's counters, creating the row from zero, and
 	// deletes the row when both counters reach zero: no row means zero.
 	AddCounters(ctx context.Context, tx uow.Tx, accountID string, followersDelta, followingDelta int64) error
+
+	// The writes that end many follows at once (Service.SeverDirected), each as the write of one
+	// follow above does for every follow it names, with one statement.
+
+	// LockPairs is LockPair of accountID with each of others.
+	LockPairs(ctx context.Context, tx uow.Tx, accountID string, others []string) error
+	// FollowsByIDs returns the follows of ids that exist, by ID, as Follow returns one.
+	FollowsByIDs(ctx context.Context, tx uow.Tx, ids []string) (map[string]graph.Follow, error)
+	// InsertTerminations records the ends of the follows of followIDs with one reason and time.
+	// It fails with ErrAlreadyRecorded when one of them has ended.
+	InsertTerminations(ctx context.Context, tx uow.Tx, followIDs []string, reason graph.TerminationReason, at time.Time) error
+	// DeleteEdgesOfFollows deletes the edge of each follow of edges, when it is in the state of
+	// the edge given, and returns how many it deleted.
+	DeleteEdgesOfFollows(ctx context.Context, tx uow.Tx, edges []graph.Edge) (int, error)
+	// AddManyCounters is AddCounters of the deltas of many accounts, by account.
+	AddManyCounters(ctx context.Context, tx uow.Tx, deltas map[string]CounterDelta) error
 	UpsertCounters(ctx context.Context, tx uow.Tx, c graph.Counters) error
 	DeleteAllCounters(ctx context.Context, tx uow.Tx) error
 	// BlockEdge returns the edge from blocker to blocked.
@@ -221,4 +237,9 @@ type RelationshipParts struct {
 	Blocking    map[string]graph.BlockEdge
 	BlockedBy   map[string]graph.BlockEdge
 	Mutes       map[string]graph.Mute
+}
+
+// CounterDelta is what Repository.AddManyCounters adds to the counters of one account.
+type CounterDelta struct {
+	Followers, Following int64
 }

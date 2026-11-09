@@ -46,6 +46,8 @@ func NotificationContract(t *testing.T, newHarness NotificationFactory) {
 		{"EmptiesTheProjections", notificationRepoRebuild},
 		{"KeepsSubscriptions", notificationRepoSubscriptions},
 		{"KeepsSubscriptionRequests", notificationRepoSubscriptionRequests},
+		{"DeletesManySubscriptions", notificationRepoDeleteMany},
+		{"InsertsEachForManyRecipients", notificationRepoInsertsForEach},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -730,6 +732,85 @@ func notificationRepoSubscriptionRequests(t *testing.T, r *notificationRepo) {
 	}
 	if ok, err := r.repo.SubscriptionRequested(ctx, alice, bob); err != nil || ok {
 		t.Errorf("SubscriptionRequested after the delete = %v, %v; want false", ok, err)
+	}
+}
+
+// notificationRepoDeleteMany deletes the subscriptions and the requests of many pairs together,
+// as DeleteSubscription and DeleteSubscriptionRequest delete those of one, and nothing else.
+func notificationRepoDeleteMany(t *testing.T, r *notificationRepo) {
+	ctx := t.Context()
+	alice, bob, carol := r.ids.NewID(), r.ids.NewID(), r.ids.NewID()
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+		var errs []error
+		for _, p := range [][2]string{{alice, bob}, {alice, carol}, {bob, carol}} {
+			_, err := r.repo.InsertSubscription(ctx, tx, notification.Subscription{AccountID: p[0], TargetAccountID: p[1], CreatedAt: r.clock.Now()})
+			errs = append(errs, err, r.repo.InsertSubscriptionRequest(ctx, tx, notification.SubscriptionRequest{AccountID: p[0], TargetAccountID: p[1], CreatedAt: r.clock.Now()}))
+		}
+		return errors.Join(errs...)
+	})
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+		return errors.Join(
+			r.repo.DeleteSubscriptions(ctx, tx, []string{alice, bob}, []string{bob, carol}),
+			r.repo.DeleteSubscriptionRequests(ctx, tx, []string{alice, bob}, []string{bob, carol}),
+			r.repo.DeleteSubscriptions(ctx, tx, nil, nil), r.repo.DeleteSubscriptionRequests(ctx, tx, nil, nil))
+	})
+	for _, c := range []struct {
+		account, target string
+		want            bool
+	}{{alice, bob, false}, {bob, carol, false}, {alice, carol, true}} {
+		if ok, err := r.repo.Subscribed(ctx, c.account, c.target); err != nil || ok != c.want {
+			t.Errorf("Subscribed(%s, %s) after DeleteSubscriptions = %v, %v; want %v", c.account, c.target, ok, err, c.want)
+		}
+		if ok, err := r.repo.SubscriptionRequested(ctx, c.account, c.target); err != nil || ok != c.want {
+			t.Errorf("SubscriptionRequested(%s, %s) after DeleteSubscriptionRequests = %v, %v; want %v", c.account, c.target, ok, err, c.want)
+		}
+	}
+}
+
+// notificationRepoInsertsForEach checks that InsertNotificationsForEach inserts each notification
+// as InsertNotification inserts it, and skips the recipients who have one with its dedupe key.
+func notificationRepoInsertsForEach(t *testing.T, r *notificationRepo) {
+	alice, bob, dave := r.ids.NewID(), r.ids.NewID(), r.ids.NewID()
+	of := func(recipient string) notification.Notification {
+		sv := r.ids.NewID()
+		return notification.Notification{
+			ID: r.ids.NewID(), RecipientAccountID: recipient, Type: notification.TypeRelationshipsSevered, SeveranceID: sv,
+			DedupeKey: notification.RelationshipsSeveredKey(sv), CreatedAt: r.clock.Now(),
+		}
+	}
+	ns := []notification.Notification{of(alice), of(bob)}
+	var got map[string]bool
+	r.tx(t, func(ctx context.Context, tx uow.Tx) (err error) {
+		got, err = r.repo.InsertNotificationsForEach(ctx, tx, ns)
+		return err
+	})
+	if !maps.Equal(got, map[string]bool{alice: true, bob: true}) {
+		t.Errorf("InsertNotificationsForEach(alice, bob) = %v, want both", got)
+	}
+	read := func(id string) (n notification.Notification) {
+		t.Helper()
+		r.tx(t, func(ctx context.Context, tx uow.Tx) (err error) {
+			n, err = r.repo.Notification(ctx, tx, id)
+			return err
+		})
+		return n
+	}
+	one, _ := r.insert(t, of(dave))
+	want := read(one.ID)
+	for _, n := range ns {
+		want.ID, want.RecipientAccountID, want.SeveranceID, want.DedupeKey = n.ID, n.RecipientAccountID, n.SeveranceID, n.DedupeKey
+		if got := read(n.ID); !reflect.DeepEqual(got, want) {
+			t.Errorf("Notification(%s) = %+v; want %+v, as InsertNotification inserts it", n.ID, got, want)
+		}
+	}
+	again := ns[0]
+	again.ID = r.ids.NewID()
+	r.tx(t, func(ctx context.Context, tx uow.Tx) (err error) {
+		got, err = r.repo.InsertNotificationsForEach(ctx, tx, []notification.Notification{again})
+		return err
+	})
+	if len(got) != 0 {
+		t.Errorf("InsertNotificationsForEach of a dedupe key again = %v, want none", got)
 	}
 }
 

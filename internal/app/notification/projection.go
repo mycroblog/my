@@ -257,6 +257,17 @@ func RegisterProjectors(r *uow.Projectors, d ProjectorDeps) {
 			DedupeKey: notification.RelationshipsSeveredKey(sv.ID), CreatedAt: sv.OccurredAt,
 		})
 	})
+	r.Register(appmoderation.EventManyRelationshipsSevered, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
+		svs := e.(appmoderation.ManyRelationshipsSevered).Severances
+		ns := make([]notification.Notification, len(svs))
+		for i, sv := range svs {
+			ns[i] = notification.Notification{
+				RecipientAccountID: sv.AccountID, Type: notification.TypeRelationshipsSevered, SeveranceID: sv.ID,
+				DedupeKey: notification.RelationshipsSeveredKey(sv.ID), CreatedAt: sv.OccurredAt,
+			}
+		}
+		return p.notifyEach(ctx, tx, ns)
+	})
 	r.Register(appmoderation.EventAppealDecided, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
 		ev := e.(appmoderation.AppealDecided)
 		return p.notify(ctx, tx, notification.Notification{
@@ -579,6 +590,72 @@ func (p *projector) notifyAll(ctx context.Context, tx uow.Tx, n notification.Not
 			created = append(created, one)
 		}
 	}
+	if err := p.d.Push.enqueueAll(ctx, tx, created, nil); err != nil {
+		return err
+	}
+	return p.d.Email.enqueueAll(ctx, tx, created, choices, nil)
+}
+
+// notifyEach notifies each of ns, notifications without a source that differ only by their ID,
+// recipient, severance, and dedupe key, as notify notifies each, with a number of queries that
+// does not grow with them: it reads the recipients' accounts and settings together and inserts
+// the notifications and enqueues their messages with one statement each. Without the batch read
+// of Accounts it notifies them one by one.
+func (p *projector) notifyEach(ctx context.Context, tx uow.Tx, ns []notification.Notification) error {
+	accounts, ok := p.d.Accounts.(notifiableBatch)
+	if !ok {
+		for _, n := range ns {
+			if err := p.notify(ctx, tx, n); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+	if len(ns) == 0 {
+		return nil
+	}
+	ids := make([]string, len(ns))
+	for i, n := range ns {
+		ids[i] = n.RecipientAccountID
+	}
+	notifiable, err := accounts.NotifiableAmong(ctx, tx, ids)
+	if err != nil {
+		return err
+	}
+	ns = slices.DeleteFunc(slices.Clone(ns), func(n notification.Notification) bool { return !notifiable[n.RecipientAccountID] })
+	if len(ns) == 0 {
+		return nil
+	}
+	ids = ids[:0]
+	for _, n := range ns {
+		ids = append(ids, n.RecipientAccountID)
+	}
+	saved, err := p.d.Repository.NotificationSettingsOfTx(ctx, tx, ids)
+	if err != nil {
+		return fmt.Errorf("notification: the settings of %d recipients: %w", len(ids), err)
+	}
+	choices := make(map[string]notification.Choices, len(ns))
+	var kept []notification.Notification
+	for _, n := range ns {
+		c := notification.NewChoices(saved[n.RecipientAccountID])
+		if !c.TypeEnabled(n.Type, notification.ChannelInApp) {
+			continue // turned off in the app: not created, so delivered nowhere (ADR-0086 §10)
+		}
+		n.ID = p.d.IDs.NewID()
+		if err := n.Validate(); err != nil {
+			return err
+		}
+		choices[n.RecipientAccountID] = c
+		kept = append(kept, n)
+	}
+	if len(kept) == 0 {
+		return nil
+	}
+	inserted, err := p.d.Repository.InsertNotificationsForEach(ctx, tx, kept)
+	if err != nil {
+		return err
+	}
+	created := slices.DeleteFunc(kept, func(n notification.Notification) bool { return !inserted[n.RecipientAccountID] })
 	if err := p.d.Push.enqueueAll(ctx, tx, created, nil); err != nil {
 		return err
 	}

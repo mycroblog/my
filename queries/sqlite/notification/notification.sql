@@ -22,6 +22,17 @@ FROM json_each(CAST(sqlc.arg(recipients) AS TEXT)) WHERE true
 ON CONFLICT (recipient_account_id, dedupe_key) DO NOTHING
 RETURNING recipient_account_id;
 
+-- InsertNotificationsForEach is InsertNotificationsFor whose rows differ by their severance and
+-- dedupe key too.
+-- name: InsertNotificationsForEach :many
+INSERT INTO notifications (id, recipient_account_id, type, source_account_id, source_domain, status_id, moderation_action_id, report_id, subject_user_id, severance_id, appeal_id, custom_emoji_request_id, supporter_subscription_id, reaction_emoji, reaction_custom_emoji_id, account_move_id, account_move_outcome, service_closure_event_id, service_closure_change, voice_room_id, error_group_change, error_group_id, error_group_hour, announcement_id, hook_appeal_id, auto_delete_limit_notice_id, dedupe_key, created_at)
+SELECT value ->> '$.id', value ->> '$.recipient', CAST(sqlc.arg(type) AS TEXT),
+  CAST(sqlc.narg(source_account_id) AS TEXT), CAST(sqlc.narg(source_domain) AS TEXT), CAST(sqlc.narg(status_id) AS TEXT), CAST(sqlc.narg(moderation_action_id) AS TEXT), CAST(sqlc.narg(report_id) AS TEXT), CAST(sqlc.narg(subject_user_id) AS TEXT), value ->> '$.severance_id', CAST(sqlc.narg(appeal_id) AS TEXT), CAST(sqlc.narg(custom_emoji_request_id) AS TEXT), CAST(sqlc.narg(supporter_subscription_id) AS TEXT), CAST(sqlc.narg(reaction_emoji) AS TEXT), CAST(sqlc.narg(reaction_custom_emoji_id) AS TEXT), CAST(sqlc.narg(account_move_id) AS TEXT), CAST(sqlc.narg(account_move_outcome) AS TEXT), CAST(sqlc.narg(service_closure_event_id) AS TEXT), CAST(sqlc.narg(service_closure_change) AS TEXT), CAST(sqlc.narg(voice_room_id) AS TEXT), CAST(sqlc.narg(error_group_change) AS TEXT), CAST(sqlc.narg(error_group_id) AS TEXT), CAST(sqlc.narg(error_group_hour) AS INTEGER), CAST(sqlc.narg(announcement_id) AS TEXT), CAST(sqlc.narg(hook_appeal_id) AS TEXT), CAST(sqlc.narg(auto_delete_limit_notice_id) AS TEXT),
+  value ->> '$.dedupe_key', CAST(sqlc.arg(created_at) AS INTEGER)
+FROM json_each(CAST(sqlc.arg(recipients) AS TEXT)) WHERE true
+ON CONFLICT (recipient_account_id, dedupe_key) DO NOTHING
+RETURNING recipient_account_id;
+
 -- DomainsExcludedAmong returns the viewers among a JSON array that exclude the domain or one of
 -- its parents, as DomainExcluded checks one.
 -- name: DomainsExcludedAmong :many

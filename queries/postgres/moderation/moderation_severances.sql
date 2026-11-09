@@ -9,6 +9,15 @@ INSERT INTO relationship_severances (id, domain_action_id, action_id, account_id
 VALUES ($1, $2, $3, $4, $5, $6, $7)
 ON CONFLICT DO NOTHING;
 
+-- InsertRelationshipSeverances is InsertRelationshipSeverance of the accounts of one action (the
+-- unnests of a select list advance together); it returns the accounts it inserted.
+-- name: InsertRelationshipSeverances :many
+INSERT INTO relationship_severances (id, domain_action_id, action_id, account_id, followers_lost, following_lost, occurred_at)
+SELECT unnest(sqlc.arg(ids)::uuid[]), sqlc.narg(domain_action_id)::uuid, sqlc.narg(action_id)::uuid, unnest(sqlc.arg(account_ids)::uuid[]),
+  unnest(sqlc.arg(followers_lost)::int[]), unnest(sqlc.arg(following_lost)::int[]), sqlc.arg(occurred_at)::timestamptz
+ON CONFLICT DO NOTHING
+RETURNING account_id;
+
 -- GetRelationshipSeverance returns a severance of an account with the domain or the account that
 -- its action suspended.
 -- name: GetRelationshipSeverance :one

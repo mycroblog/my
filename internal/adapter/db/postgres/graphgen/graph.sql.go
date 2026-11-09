@@ -51,6 +51,43 @@ func (q *Queries) AddToFollowCounters(ctx context.Context, arg AddToFollowCounte
 	return result.RowsAffected(), nil
 }
 
+const addToManyFollowCounters = `-- name: AddToManyFollowCounters :many
+UPDATE follow_counters c SET followers_count = c.followers_count + d.followers_delta, following_count = c.following_count + d.following_delta
+FROM (SELECT unnest($1::uuid[]) AS account_id, unnest($2::bigint[]) AS followers_delta,
+  unnest($3::bigint[]) AS following_delta) d
+WHERE c.account_id = d.account_id
+RETURNING c.account_id
+`
+
+type AddToManyFollowCountersParams struct {
+	AccountIds      []string
+	FollowersDeltas []int64
+	FollowingDeltas []int64
+}
+
+// AddToManyFollowCounters is AddToFollowCounters of many accounts; it returns those that had a
+// row, and AddFollowCounters creates the others. An upsert would check the counts of the row it
+// proposes, below zero, before it adds them.
+func (q *Queries) AddToManyFollowCounters(ctx context.Context, arg AddToManyFollowCountersParams) ([]string, error) {
+	rows, err := q.db.Query(ctx, addToManyFollowCounters, arg.AccountIds, arg.FollowersDeltas, arg.FollowingDeltas)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []string{}
+	for rows.Next() {
+		var account_id string
+		if err := rows.Scan(&account_id); err != nil {
+			return nil, err
+		}
+		items = append(items, account_id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const countFollowersInState = `-- name: CountFollowersInState :one
 SELECT count(*) FROM follow_edges
 WHERE followee_account_id = $1 AND state = $2
@@ -112,12 +149,39 @@ func (q *Queries) DeleteFollowEdge(ctx context.Context, arg DeleteFollowEdgePara
 	return result.RowsAffected(), nil
 }
 
+const deleteFollowEdgesOfFollows = `-- name: DeleteFollowEdgesOfFollows :execrows
+DELETE FROM follow_edges WHERE (follow_id, state) IN (
+  SELECT unnest($1::uuid[]), unnest($2::text[]))
+`
+
+type DeleteFollowEdgesOfFollowsParams struct {
+	FollowIds []string
+	States    []string
+}
+
+func (q *Queries) DeleteFollowEdgesOfFollows(ctx context.Context, arg DeleteFollowEdgesOfFollowsParams) (int64, error) {
+	result, err := q.db.Exec(ctx, deleteFollowEdgesOfFollows, arg.FollowIds, arg.States)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
 const deleteZeroFollowCounters = `-- name: DeleteZeroFollowCounters :exec
 DELETE FROM follow_counters WHERE account_id = $1 AND followers_count = 0 AND following_count = 0
 `
 
 func (q *Queries) DeleteZeroFollowCounters(ctx context.Context, accountID string) error {
 	_, err := q.db.Exec(ctx, deleteZeroFollowCounters, accountID)
+	return err
+}
+
+const deleteZeroFollowCountersOf = `-- name: DeleteZeroFollowCountersOf :exec
+DELETE FROM follow_counters WHERE account_id = ANY($1::uuid[]) AND followers_count = 0 AND following_count = 0
+`
+
+func (q *Queries) DeleteZeroFollowCountersOf(ctx context.Context, accountIds []string) error {
+	_, err := q.db.Exec(ctx, deleteZeroFollowCountersOf, accountIds)
 	return err
 }
 
@@ -345,6 +409,22 @@ type InsertFollowTerminationParams struct {
 
 func (q *Queries) InsertFollowTermination(ctx context.Context, arg InsertFollowTerminationParams) error {
 	_, err := q.db.Exec(ctx, insertFollowTermination, arg.FollowID, arg.Reason, arg.TerminatedAt)
+	return err
+}
+
+const insertFollowTerminations = `-- name: InsertFollowTerminations :exec
+INSERT INTO follow_terminations (follow_id, reason, terminated_at)
+SELECT unnest($1::uuid[]), $2, $3
+`
+
+type InsertFollowTerminationsParams struct {
+	FollowIds    []string
+	Reason       string
+	TerminatedAt time.Time
+}
+
+func (q *Queries) InsertFollowTerminations(ctx context.Context, arg InsertFollowTerminationsParams) error {
+	_, err := q.db.Exec(ctx, insertFollowTerminations, arg.FollowIds, arg.Reason, arg.TerminatedAt)
 	return err
 }
 
@@ -620,6 +700,40 @@ func (q *Queries) ListFollowingPage(ctx context.Context, arg ListFollowingPagePa
 			&i.FollowID,
 			&i.State,
 			&i.Since,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listFollowsByIDs = `-- name: ListFollowsByIDs :many
+
+SELECT id, uri, follower_account_id, followee_account_id, requested_at FROM follows
+WHERE id = ANY($1::uuid[]) ORDER BY id
+`
+
+// The statements that end many follows at once (Repository.EndFollows), each as the statement of
+// one follow above does for every follow it names. The unnests of a select list advance together.
+func (q *Queries) ListFollowsByIDs(ctx context.Context, ids []string) ([]Follow, error) {
+	rows, err := q.db.Query(ctx, listFollowsByIDs, ids)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Follow{}
+	for rows.Next() {
+		var i Follow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Uri,
+			&i.FollowerAccountID,
+			&i.FolloweeAccountID,
+			&i.RequestedAt,
 		); err != nil {
 			return nil, err
 		}

@@ -127,6 +127,18 @@ func RegisterProjectors(r *uow.Projectors, repo Repository, moderated ModeratedE
 		}
 		return repo.DeleteFollowEdge(ctx, tx, ev.Follow.FollowerAccountID, ev.Follow.FolloweeAccountID)
 	})
+	r.Register(appgraph.EventFollowsTerminated, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
+		var followers, followees []string
+		for _, t := range e.(appgraph.FollowsTerminated).Terminations {
+			if t.WasActive() {
+				followers, followees = append(followers, t.Follow.FollowerAccountID), append(followees, t.Follow.FolloweeAccountID)
+			}
+		}
+		if err := repo.DeleteListMembersOfFollows(ctx, tx, followers, followees); err != nil {
+			return err
+		}
+		return repo.DeleteFollowEdges(ctx, tx, followers, followees)
+	})
 	r.Register(appgraph.EventFollowPreferencesChanged, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
 		ev := e.(appgraph.FollowPreferencesChanged)
 		if !ev.Active() {

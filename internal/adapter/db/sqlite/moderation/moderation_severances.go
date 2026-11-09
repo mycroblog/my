@@ -4,6 +4,7 @@ package moderation
 
 import (
 	"context"
+	"encoding/json"
 
 	"github.com/mycroblog/my/internal/adapter/db/sqlite"
 	"github.com/mycroblog/my/internal/adapter/db/sqlite/moderationgen"
@@ -26,6 +27,43 @@ func (r *Repository) InsertSeverance(ctx context.Context, tx uow.Tx, s moderatio
 		return false, sqlite.Wrap(err, "insert relationship severance")
 	}
 	return n > 0, nil
+}
+
+// InsertSeverances implements moderation.SeveranceRepository.
+func (r *Repository) InsertSeverances(ctx context.Context, tx uow.Tx, ss []moderation.Severance) (map[string]bool, error) {
+	out := make(map[string]bool, len(ss))
+	if len(ss) == 0 {
+		return out, nil
+	}
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return nil, err
+	}
+	type row struct {
+		ID            string `json:"id"`
+		AccountID     string `json:"account_id"`
+		FollowersLost int    `json:"followers_lost"`
+		FollowingLost int    `json:"following_lost"`
+	}
+	rows := make([]row, len(ss))
+	for i, s := range ss {
+		rows[i] = row{ID: s.ID, AccountID: s.AccountID, FollowersLost: s.FollowersLost, FollowingLost: s.FollowingLost}
+	}
+	list, err := json.Marshal(rows)
+	if err != nil {
+		return nil, err
+	}
+	inserted, err := q.InsertRelationshipSeverances(ctx, moderationgen.InsertRelationshipSeverancesParams{
+		DomainActionID: sqlite.ToNullString(ss[0].DomainActionID), ActionID: sqlite.ToNullString(ss[0].ActionID),
+		OccurredAt: sqlite.ToMillis(ss[0].OccurredAt), Severances: string(list),
+	})
+	if err != nil {
+		return nil, sqlite.Wrap(err, "insert relationship severances")
+	}
+	for _, id := range inserted {
+		out[id] = true
+	}
+	return out, nil
 }
 
 // FindSeverance implements moderation.SeveranceRepository.

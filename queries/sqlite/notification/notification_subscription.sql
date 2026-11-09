@@ -59,3 +59,13 @@ DELETE FROM post_subscription_requests WHERE account_id = ? AND target_account_i
 
 -- name: PostSubscriptionRequestExists :one
 SELECT EXISTS (SELECT 1 FROM post_subscription_requests WHERE account_id = ? AND target_account_id = ?);
+
+-- DeletePostSubscriptionRequests and DeletePostSubscriptions are DeletePostSubscriptionRequest
+-- and DeletePostSubscription of many pairs, a JSON array of {"a": account, "b": target}.
+-- name: DeletePostSubscriptionRequests :exec
+DELETE FROM post_subscription_requests WHERE (account_id, target_account_id) IN (
+  SELECT value ->> '$.a', value ->> '$.b' FROM json_each(CAST(sqlc.arg(pairs) AS TEXT)));
+
+-- name: DeletePostSubscriptions :exec
+DELETE FROM post_subscriptions WHERE (account_id, target_account_id) IN (
+  SELECT value ->> '$.a', value ->> '$.b' FROM json_each(CAST(sqlc.arg(pairs) AS TEXT)));

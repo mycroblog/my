@@ -750,6 +750,38 @@ func (q *Queries) InsertInstanceNodeinfoObservation(ctx context.Context, arg Ins
 	return err
 }
 
+const insertOutboundActivities = `-- name: InsertOutboundActivities :exec
+INSERT INTO outbound_activities (id, activity_uri, type, actor_account_id, object_type, object_id, created_at)
+SELECT unnest($1::uuid[]), unnest($2::text[]), unnest($3::text[]),
+  unnest($4::uuid[]), unnest($5::text[]), unnest($6::uuid[]),
+  unnest($7::timestamptz[])
+`
+
+type InsertOutboundActivitiesParams struct {
+	Ids             []string
+	ActivityUris    []string
+	Types           []string
+	ActorAccountIds []string
+	ObjectTypes     []string
+	ObjectIds       []string
+	CreatedAts      []time.Time
+}
+
+// InsertOutboundActivities is InsertOutboundActivity of many activities (the unnests of a select
+// list advance together).
+func (q *Queries) InsertOutboundActivities(ctx context.Context, arg InsertOutboundActivitiesParams) error {
+	_, err := q.db.Exec(ctx, insertOutboundActivities,
+		arg.Ids,
+		arg.ActivityUris,
+		arg.Types,
+		arg.ActorAccountIds,
+		arg.ObjectTypes,
+		arg.ObjectIds,
+		arg.CreatedAts,
+	)
+	return err
+}
+
 const insertOutboundActivity = `-- name: InsertOutboundActivity :exec
 INSERT INTO outbound_activities (id, activity_uri, type, actor_account_id, object_type, object_id, created_at)
 VALUES ($1, $2, $3, $4, $5, $6, $7)

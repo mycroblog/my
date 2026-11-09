@@ -21,6 +21,16 @@ SELECT unnest(sqlc.arg(ids)::uuid[]), unnest(sqlc.arg(recipient_account_ids)::uu
 ON CONFLICT (recipient_account_id, dedupe_key) DO NOTHING
 RETURNING recipient_account_id;
 
+-- InsertNotificationsForEach is InsertNotificationsFor whose rows differ by their severance and
+-- dedupe key too (the unnests of a select list advance together).
+-- name: InsertNotificationsForEach :many
+INSERT INTO notifications (id, recipient_account_id, type, source_account_id, source_domain, status_id, moderation_action_id, report_id, subject_user_id, severance_id, appeal_id, custom_emoji_request_id, supporter_subscription_id, reaction_emoji, reaction_custom_emoji_id, account_move_id, account_move_outcome, service_closure_event_id, service_closure_change, voice_room_id, error_group_change, error_group_id, error_group_hour, announcement_id, hook_appeal_id, auto_delete_limit_notice_id, dedupe_key, created_at)
+SELECT unnest(sqlc.arg(ids)::uuid[]), unnest(sqlc.arg(recipient_account_ids)::uuid[]), sqlc.arg(type)::text,
+  sqlc.narg(source_account_id)::uuid, sqlc.narg(source_domain)::text, sqlc.narg(status_id)::uuid, sqlc.narg(moderation_action_id)::uuid, sqlc.narg(report_id)::uuid, sqlc.narg(subject_user_id)::uuid, unnest(sqlc.arg(severance_ids)::uuid[]), sqlc.narg(appeal_id)::uuid, sqlc.narg(custom_emoji_request_id)::uuid, sqlc.narg(supporter_subscription_id)::uuid, sqlc.narg(reaction_emoji)::text, sqlc.narg(reaction_custom_emoji_id)::uuid, sqlc.narg(account_move_id)::uuid, sqlc.narg(account_move_outcome)::text, sqlc.narg(service_closure_event_id)::uuid, sqlc.narg(service_closure_change)::text, sqlc.narg(voice_room_id)::uuid, sqlc.narg(error_group_change)::text, sqlc.narg(error_group_id)::uuid, sqlc.narg(error_group_hour)::timestamptz, sqlc.narg(announcement_id)::uuid, sqlc.narg(hook_appeal_id)::uuid, sqlc.narg(auto_delete_limit_notice_id)::uuid,
+  unnest(sqlc.arg(dedupe_keys)::text[]), sqlc.arg(created_at)::timestamptz
+ON CONFLICT (recipient_account_id, dedupe_key) DO NOTHING
+RETURNING recipient_account_id;
+
 -- DomainsExcludedAmong returns the viewers among viewer_account_ids that exclude the domain or one
 -- of its parents, as DomainExcluded checks one.
 -- name: DomainsExcludedAmong :many

@@ -502,6 +502,95 @@ func (q *Queries) InsertNotificationsFor(ctx context.Context, arg InsertNotifica
 	return items, nil
 }
 
+const insertNotificationsForEach = `-- name: InsertNotificationsForEach :many
+INSERT INTO notifications (id, recipient_account_id, type, source_account_id, source_domain, status_id, moderation_action_id, report_id, subject_user_id, severance_id, appeal_id, custom_emoji_request_id, supporter_subscription_id, reaction_emoji, reaction_custom_emoji_id, account_move_id, account_move_outcome, service_closure_event_id, service_closure_change, voice_room_id, error_group_change, error_group_id, error_group_hour, announcement_id, hook_appeal_id, auto_delete_limit_notice_id, dedupe_key, created_at)
+SELECT value ->> '$.id', value ->> '$.recipient', CAST(?1 AS TEXT),
+  CAST(?2 AS TEXT), CAST(?3 AS TEXT), CAST(?4 AS TEXT), CAST(?5 AS TEXT), CAST(?6 AS TEXT), CAST(?7 AS TEXT), value ->> '$.severance_id', CAST(?8 AS TEXT), CAST(?9 AS TEXT), CAST(?10 AS TEXT), CAST(?11 AS TEXT), CAST(?12 AS TEXT), CAST(?13 AS TEXT), CAST(?14 AS TEXT), CAST(?15 AS TEXT), CAST(?16 AS TEXT), CAST(?17 AS TEXT), CAST(?18 AS TEXT), CAST(?19 AS TEXT), CAST(?20 AS INTEGER), CAST(?21 AS TEXT), CAST(?22 AS TEXT), CAST(?23 AS TEXT),
+  value ->> '$.dedupe_key', CAST(?24 AS INTEGER)
+FROM json_each(CAST(?25 AS TEXT)) WHERE true
+ON CONFLICT (recipient_account_id, dedupe_key) DO NOTHING
+RETURNING recipient_account_id
+`
+
+type InsertNotificationsForEachParams struct {
+	Type                    string
+	SourceAccountID         sql.NullString
+	SourceDomain            sql.NullString
+	StatusID                sql.NullString
+	ModerationActionID      sql.NullString
+	ReportID                sql.NullString
+	SubjectUserID           sql.NullString
+	AppealID                sql.NullString
+	CustomEmojiRequestID    sql.NullString
+	SupporterSubscriptionID sql.NullString
+	ReactionEmoji           sql.NullString
+	ReactionCustomEmojiID   sql.NullString
+	AccountMoveID           sql.NullString
+	AccountMoveOutcome      sql.NullString
+	ServiceClosureEventID   sql.NullString
+	ServiceClosureChange    sql.NullString
+	VoiceRoomID             sql.NullString
+	ErrorGroupChange        sql.NullString
+	ErrorGroupID            sql.NullString
+	ErrorGroupHour          sql.NullInt64
+	AnnouncementID          sql.NullString
+	HookAppealID            sql.NullString
+	AutoDeleteLimitNoticeID sql.NullString
+	CreatedAt               int64
+	Recipients              string
+}
+
+// InsertNotificationsForEach is InsertNotificationsFor whose rows differ by their severance and
+// dedupe key too.
+func (q *Queries) InsertNotificationsForEach(ctx context.Context, arg InsertNotificationsForEachParams) ([]string, error) {
+	rows, err := q.db.QueryContext(ctx, insertNotificationsForEach,
+		arg.Type,
+		arg.SourceAccountID,
+		arg.SourceDomain,
+		arg.StatusID,
+		arg.ModerationActionID,
+		arg.ReportID,
+		arg.SubjectUserID,
+		arg.AppealID,
+		arg.CustomEmojiRequestID,
+		arg.SupporterSubscriptionID,
+		arg.ReactionEmoji,
+		arg.ReactionCustomEmojiID,
+		arg.AccountMoveID,
+		arg.AccountMoveOutcome,
+		arg.ServiceClosureEventID,
+		arg.ServiceClosureChange,
+		arg.VoiceRoomID,
+		arg.ErrorGroupChange,
+		arg.ErrorGroupID,
+		arg.ErrorGroupHour,
+		arg.AnnouncementID,
+		arg.HookAppealID,
+		arg.AutoDeleteLimitNoticeID,
+		arg.CreatedAt,
+		arg.Recipients,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []string{}
+	for rows.Next() {
+		var recipient_account_id string
+		if err := rows.Scan(&recipient_account_id); err != nil {
+			return nil, err
+		}
+		items = append(items, recipient_account_id)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listNotificationSettings = `-- name: ListNotificationSettings :many
 SELECT account_id, notification_group, channel, enabled, updated_at FROM notification_settings
 WHERE account_id = ? ORDER BY notification_group, channel

@@ -140,3 +140,32 @@ ON CONFLICT (uri) DO NOTHING;
 -- name: GetFollowByResendURI :one
 SELECT f.id, f.uri, f.follower_account_id, f.followee_account_id, f.requested_at
 FROM follow_resends r JOIN follows f ON f.id = r.follow_id WHERE r.uri = ?;
+
+-- The statements that end many follows at once (Repository.EndFollows), each as the statement of
+-- one follow above does for every follow it names. The lists are JSON arrays; WHERE true keeps
+-- ON CONFLICT from reading as a join constraint.
+
+-- name: ListFollowsByIDs :many
+SELECT id, uri, follower_account_id, followee_account_id, requested_at FROM follows
+WHERE id IN (SELECT value FROM json_each(CAST(sqlc.arg(ids) AS TEXT))) ORDER BY id;
+
+-- name: InsertFollowTerminations :exec
+INSERT INTO follow_terminations (follow_id, reason, terminated_at)
+SELECT value, CAST(sqlc.arg(reason) AS TEXT), CAST(sqlc.arg(terminated_at) AS INTEGER) FROM json_each(CAST(sqlc.arg(follow_ids) AS TEXT)) WHERE true;
+
+-- name: DeleteFollowEdgesOfFollows :execrows
+DELETE FROM follow_edges WHERE (follow_id, state) IN (
+  SELECT value ->> '$.follow_id', value ->> '$.state' FROM json_each(CAST(sqlc.arg(edges) AS TEXT)));
+
+-- AddToManyFollowCounters is AddToFollowCounters of many accounts, a JSON array; it returns those
+-- that had a row, and AddFollowCounters creates the others. An upsert would check the counts of
+-- the row it proposes, below zero, before it adds them.
+-- name: AddToManyFollowCounters :many
+UPDATE follow_counters SET
+  followers_count = followers_count + (SELECT CAST(value ->> '$.followers' AS INTEGER) FROM json_each(CAST(sqlc.arg(deltas) AS TEXT)) WHERE value ->> '$.account_id' = follow_counters.account_id),
+  following_count = following_count + (SELECT CAST(value ->> '$.following' AS INTEGER) FROM json_each(CAST(sqlc.arg(deltas) AS TEXT)) WHERE value ->> '$.account_id' = follow_counters.account_id)
+WHERE account_id IN (SELECT value ->> '$.account_id' FROM json_each(CAST(sqlc.arg(deltas) AS TEXT)))
+RETURNING account_id;
+
+-- name: DeleteZeroFollowCountersOf :exec
+DELETE FROM follow_counters WHERE account_id IN (SELECT value FROM json_each(CAST(sqlc.arg(account_ids) AS TEXT))) AND followers_count = 0 AND following_count = 0;

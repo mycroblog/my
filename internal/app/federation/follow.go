@@ -27,6 +27,12 @@ type LocalityReader interface {
 	IsLocal(ctx context.Context, tx uow.Tx, accountID string) (bool, error)
 }
 
+// localityBatch is a LocalityReader that tells the local accounts among many at once, as
+// *appaccount.Service does.
+type localityBatch interface {
+	LocalAmong(ctx context.Context, tx uow.Tx, ids []string) (map[string]bool, error)
+}
+
 // FollowReader reads a follow by ID; *appgraph.Service implements it.
 type FollowReader interface {
 	FindFollow(ctx context.Context, id string) (appgraph.FollowRecord, error)
@@ -64,16 +70,7 @@ func registerFollowProjectors(r *uow.Projectors, rec recorder) {
 	// send records the activity t about f; followURI is the Follow that an Accept answers
 	// when it is not f's own.
 	send := func(ctx context.Context, tx uow.Tx, t federation.ActivityType, f appgraph.FollowRecord, at time.Time, followURI string) error {
-		a := federation.OutboundActivity{
-			Type: t, ActorAccountID: f.FolloweeAccountID, ObjectKind: federation.OutboundFollow, ObjectID: f.ID, CreatedAt: at,
-		}
-		switch t {
-		case federation.ActivityFollow:
-			a.ActivityURI, a.ActorAccountID = federation.IRI(f.URI), f.FollowerAccountID
-		case federation.ActivityUndo:
-			a.ActorAccountID = f.FollowerAccountID
-		}
-		return rec.recordWith(ctx, tx, a, fanOutPayload{FollowURI: followURI})
+		return rec.recordWith(ctx, tx, followActivity(t, f, at), fanOutPayload{FollowURI: followURI})
 	}
 	// requested sends the Follow of a local follower of a remote account.
 	requested := func(ctx context.Context, tx uow.Tx, f appgraph.FollowRecord) error {
@@ -139,23 +136,91 @@ func registerFollowProjectors(r *uow.Projectors, rec recorder) {
 		if !ok || ev.Unannounced {
 			return nil
 		}
-		at := ev.Termination.TerminatedAt
-		switch ev.Termination.Reason {
-		case appgraph.TerminatedRemovedByFollowee:
-			return answered(ctx, tx, federation.ActivityReject, ev.Follow, at)
-		case appgraph.TerminatedUnfollowed, appgraph.TerminatedBlocked, appgraph.TerminatedModeration, appgraph.TerminatedMoved:
-			followerLocal, followeeLocal, err := sides(ctx, tx, ev.Follow)
-			switch {
-			case err != nil:
-				return err
-			case followerLocal && !followeeLocal:
-				return send(ctx, tx, federation.ActivityUndo, ev.Follow, at, "")
-			case !followerLocal && followeeLocal && ev.Termination.Reason == appgraph.TerminatedModeration:
-				return send(ctx, tx, federation.ActivityReject, ev.Follow, at, "")
-			}
+		if !announcedEnd(ev) {
+			return nil
+		}
+		followerLocal, followeeLocal, err := sides(ctx, tx, ev.Follow)
+		if err != nil {
+			return err
+		}
+		if t, ok := terminationActivity(ev, followerLocal, followeeLocal); ok {
+			return send(ctx, tx, t, ev.Follow, ev.Termination.TerminatedAt, "")
 		}
 		return nil
 	})
+	r.Register(appgraph.EventFollowsTerminated, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
+		ev, ok := e.(appgraph.FollowsTerminated)
+		if !ok {
+			return nil
+		}
+		var ids []string
+		for _, t := range ev.Terminations {
+			if announcedEnd(t) {
+				ids = append(ids, t.Follow.FollowerAccountID, t.Follow.FolloweeAccountID)
+			}
+		}
+		if len(ids) == 0 {
+			return nil
+		}
+		local, err := rec.localAmong(ctx, tx, ids)
+		if err != nil {
+			return err
+		}
+		var as []federation.OutboundActivity
+		for _, t := range ev.Terminations {
+			if typ, ok := terminationActivity(t, local[t.Follow.FollowerAccountID], local[t.Follow.FolloweeAccountID]); ok {
+				as = append(as, followActivity(typ, t.Follow, t.Termination.TerminatedAt))
+			}
+		}
+		return rec.recordAll(ctx, tx, as)
+	})
+}
+
+// followActivity is the activity t about f: the follower's Follow (named by the follow's URI) and
+// Undo, the followee's Accept and Reject.
+func followActivity(t federation.ActivityType, f appgraph.FollowRecord, at time.Time) federation.OutboundActivity {
+	a := federation.OutboundActivity{
+		Type: t, ActorAccountID: f.FolloweeAccountID, ObjectKind: federation.OutboundFollow, ObjectID: f.ID, CreatedAt: at,
+	}
+	switch t {
+	case federation.ActivityFollow:
+		a.ActivityURI, a.ActorAccountID = federation.IRI(f.URI), f.FollowerAccountID
+	case federation.ActivityUndo:
+		a.ActorAccountID = f.FollowerAccountID
+	}
+	return a
+}
+
+// announcedEnd reports whether the end of a follow may send an activity (terminationActivity),
+// before the sides of the follow are read.
+func announcedEnd(ev appgraph.FollowTerminated) bool {
+	switch ev.Termination.Reason {
+	case appgraph.TerminatedRemovedByFollowee, appgraph.TerminatedUnfollowed, appgraph.TerminatedBlocked, appgraph.TerminatedModeration, appgraph.TerminatedMoved:
+		return !ev.Unannounced
+	}
+	return false
+}
+
+// terminationActivity returns the activity that the end of a follow sends, with the sides of the
+// follow that are local: a Reject of a remote follower that the local followee removed or that
+// moderation ended, an Undo of a local follower's follow of a remote account that it, a block,
+// moderation, or a move ended; ok is false for none (and for an Unannounced end).
+func terminationActivity(ev appgraph.FollowTerminated, followerLocal, followeeLocal bool) (t federation.ActivityType, ok bool) {
+	if ev.Unannounced {
+		return "", false
+	}
+	switch ev.Termination.Reason {
+	case appgraph.TerminatedRemovedByFollowee:
+		return federation.ActivityReject, !followerLocal && followeeLocal
+	case appgraph.TerminatedUnfollowed, appgraph.TerminatedBlocked, appgraph.TerminatedModeration, appgraph.TerminatedMoved:
+		switch {
+		case followerLocal && !followeeLocal:
+			return federation.ActivityUndo, true
+		case !followerLocal && followeeLocal && ev.Termination.Reason == appgraph.TerminatedModeration:
+			return federation.ActivityReject, true
+		}
+	}
+	return "", false
 }
 
 // followSubject loads the follow of a Follow, Accept, Reject, or Undo Follow and its other

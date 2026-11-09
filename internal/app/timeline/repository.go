@@ -239,6 +239,8 @@ type Repository interface {
 	// UpsertFollowEdge stores e, replacing the pair's edge.
 	UpsertFollowEdge(ctx context.Context, tx uow.Tx, e FollowEdge) error
 	DeleteFollowEdge(ctx context.Context, tx uow.Tx, followerAccountID, followeeAccountID string) error
+	// DeleteFollowEdges is DeleteFollowEdge of the pairs (followerIDs[i], followeeIDs[i]).
+	DeleteFollowEdges(ctx context.Context, tx uow.Tx, followerIDs, followeeIDs []string) error
 	// UpsertExclusion stores x, replacing the expiry of the same exclusion.
 	UpsertExclusion(ctx context.Context, tx uow.Tx, x Exclusion) error
 	DeleteExclusion(ctx context.Context, tx uow.Tx, viewerAccountID, targetAccountID string, reason timeline.ExclusionReason) error
@@ -283,6 +285,9 @@ type Repository interface {
 	CountListMembers(ctx context.Context, tx uow.Tx, listID string) (int, error)
 	// DeleteListMembersOfFollow takes memberAccountID out of every list of ownerAccountID.
 	DeleteListMembersOfFollow(ctx context.Context, tx uow.Tx, ownerAccountID, memberAccountID string) error
+	// DeleteListMembersOfFollows is DeleteListMembersOfFollow of the pairs (followerIDs[i],
+	// followeeIDs[i]).
+	DeleteListMembersOfFollows(ctx context.Context, tx uow.Tx, followerIDs, followeeIDs []string) error
 	// DeleteListMembersWithoutFollow takes out of every list each member that its owner does not
 	// actively follow (feed_follow_edges), for a rebuild.
 	DeleteListMembersWithoutFollow(ctx context.Context, tx uow.Tx) error

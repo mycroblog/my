@@ -247,6 +247,18 @@ func (q *Queries) DeleteFeedFollowEdge(ctx context.Context, arg DeleteFeedFollow
 	return err
 }
 
+const deleteFeedFollowEdges = `-- name: DeleteFeedFollowEdges :exec
+DELETE FROM feed_follow_edges WHERE (follower_account_id, followee_account_id) IN (
+  SELECT value ->> '$.a', value ->> '$.b' FROM json_each(CAST(?1 AS TEXT)))
+`
+
+// DeleteFeedFollowEdges and DeleteListMembersOfFollows are DeleteFeedFollowEdge and
+// DeleteListMembersOfFollow of many pairs, a JSON array of {"a": follower, "b": followee}.
+func (q *Queries) DeleteFeedFollowEdges(ctx context.Context, pairs string) error {
+	_, err := q.db.ExecContext(ctx, deleteFeedFollowEdges, pairs)
+	return err
+}
+
 const deleteFeedTagEntries = `-- name: DeleteFeedTagEntries :exec
 DELETE FROM feed_tag_entries WHERE entry_id = ?
 `
@@ -292,6 +304,16 @@ type DeleteListMembersOfFollowParams struct {
 // follower.
 func (q *Queries) DeleteListMembersOfFollow(ctx context.Context, arg DeleteListMembersOfFollowParams) error {
 	_, err := q.db.ExecContext(ctx, deleteListMembersOfFollow, arg.OwnerAccountID, arg.MemberAccountID)
+	return err
+}
+
+const deleteListMembersOfFollows = `-- name: DeleteListMembersOfFollows :exec
+DELETE FROM list_members WHERE (owner_account_id, member_account_id) IN (
+  SELECT value ->> '$.a', value ->> '$.b' FROM json_each(CAST(?1 AS TEXT)))
+`
+
+func (q *Queries) DeleteListMembersOfFollows(ctx context.Context, pairs string) error {
+	_, err := q.db.ExecContext(ctx, deleteListMembersOfFollows, pairs)
 	return err
 }
 

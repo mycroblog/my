@@ -335,8 +335,48 @@ func (r recorder) recordWith(ctx context.Context, tx uow.Tx, a federation.Outbou
 	return r.enqueue(ctx, tx, a, p)
 }
 
-// insert gives a its ID, unless it has one, and its URI, and inserts it in tx.
-func (r recorder) insert(ctx context.Context, tx uow.Tx, a federation.OutboundActivity) (federation.OutboundActivity, error) {
+// recordAll is recordWith of many activities, each with an empty payload, with one statement
+// for the activities and one for their jobs.
+func (r recorder) recordAll(ctx context.Context, tx uow.Tx, as []federation.OutboundActivity) error {
+	if len(as) == 0 {
+		return nil
+	}
+	jobs := make([]queue.NewJob, len(as))
+	for i, a := range as {
+		a, err := r.prepare(a)
+		if err != nil {
+			return err
+		}
+		as[i] = a
+		if jobs[i], err = (fanOutPayload{OutboundActivityID: a.ID}).job(a); err != nil {
+			return err
+		}
+	}
+	if err := r.d.Repository.InsertOutboundActivities(ctx, tx, as); err != nil {
+		return fmt.Errorf("record %d outbound activities: %w", len(as), err)
+	}
+	return r.d.Outbox.EnqueueTx(ctx, tx, jobs...)
+}
+
+// localAmong reports, inside tx, which of ids are local accounts: with one read when Accounts
+// can, one by one otherwise.
+func (r recorder) localAmong(ctx context.Context, tx uow.Tx, ids []string) (map[string]bool, error) {
+	if b, ok := r.d.Accounts.(localityBatch); ok {
+		return b.LocalAmong(ctx, tx, ids)
+	}
+	out := make(map[string]bool, len(ids))
+	for _, id := range ids {
+		local, err := r.d.Accounts.IsLocal(ctx, tx, id)
+		if err != nil {
+			return nil, err
+		}
+		out[id] = local
+	}
+	return out, nil
+}
+
+// prepare gives a its ID, unless it has one, and its URI, and validates it.
+func (r recorder) prepare(a federation.OutboundActivity) (federation.OutboundActivity, error) {
 	if a.ID == "" {
 		a.ID = r.d.IDs.NewID()
 	}
@@ -344,7 +384,13 @@ func (r recorder) insert(ctx context.Context, tx uow.Tx, a federation.OutboundAc
 		a.ActivityURI = federation.IRI(appcontent.ActivityURI(r.d.Host, a.ID))
 	}
 	a.CreatedAt = kernel.Normalize(a.CreatedAt)
-	if err := a.Validate(); err != nil {
+	return a, a.Validate()
+}
+
+// insert gives a its ID, unless it has one, and its URI, and inserts it in tx.
+func (r recorder) insert(ctx context.Context, tx uow.Tx, a federation.OutboundActivity) (federation.OutboundActivity, error) {
+	a, err := r.prepare(a)
+	if err != nil {
 		return federation.OutboundActivity{}, err
 	}
 	if err := r.d.Repository.InsertOutboundActivity(ctx, tx, a); err != nil {

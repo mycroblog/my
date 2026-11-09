@@ -43,6 +43,7 @@ func TimelineContract(t *testing.T, newHarness TimelineFactory) {
 		{"FiltersLanguagesAndPages", timelineRepoLanguagesAndPages},
 		{"AnswersFactsAndMutedDomains", timelineRepoFacts},
 		{"KeepsListsAndMembers", timelineRepoLists},
+		{"EndsManyFollows", timelineRepoEndMany},
 		{"ListsTheListTimeline", timelineRepoListTimeline},
 		{"EmptiesTheProjectionsForARebuild", timelineRepoRebuild},
 	}
@@ -791,6 +792,47 @@ func timelineRepoLists(t *testing.T, r *timelineRepo) {
 	})
 	if _, err := r.repo.List(ctx, first.ID); !errors.Is(err, apptimeline.ErrNotFound) {
 		t.Errorf("List after DeleteList = %v, want ErrNotFound", err)
+	}
+}
+
+// timelineRepoEndMany deletes the edges and the list memberships of many follows together, as
+// DeleteFollowEdge and DeleteListMembersOfFollow delete those of one, and nothing else.
+func timelineRepoEndMany(t *testing.T, r *timelineRepo) {
+	ctx := t.Context()
+	owner, a, b, c := r.local(), r.local(), r.local(), r.local()
+	r.follow(t, owner, a, true)
+	r.follow(t, owner, b, true)
+	r.follow(t, c, owner, true)
+	l := apptimeline.List{ID: r.ids.NewID(), OwnerAccountID: owner.id, Name: "Friends", CreatedAt: r.clock.Now()}
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+		if err := r.repo.InsertList(ctx, tx, l); err != nil {
+			return err
+		}
+		for _, m := range []timelineAuthor{a, b} {
+			if _, err := r.repo.InsertListMember(ctx, tx, apptimeline.ListMember{ListID: l.ID, MemberAccountID: m.id, OwnerAccountID: owner.id, AddedAt: r.clock.Now()}); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+		if err := r.repo.DeleteListMembersOfFollows(ctx, tx, []string{owner.id, c.id}, []string{a.id, owner.id}); err != nil {
+			return err
+		}
+		if err := r.repo.DeleteFollowEdges(ctx, tx, []string{owner.id, c.id}, []string{a.id, owner.id}); err != nil {
+			return err
+		}
+		return errors.Join(r.repo.DeleteFollowEdges(ctx, tx, nil, nil), r.repo.DeleteListMembersOfFollows(ctx, tx, nil, nil))
+	})
+	snap, err := r.repo.Snapshot(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(snap.FollowEdges, []apptimeline.FollowEdge{{FollowerAccountID: owner.id, FolloweeAccountID: b.id, ShowBoosts: true}}) {
+		t.Errorf("follow edges after DeleteFollowEdges = %+v; want owner's of b alone", snap.FollowEdges)
+	}
+	if got, err := r.repo.AllListMembers(ctx); err != nil || len(got) != 1 || got[0].MemberAccountID != b.id {
+		t.Errorf("AllListMembers after DeleteListMembersOfFollows = %+v, %v; want b's membership", got, err)
 	}
 }
 
