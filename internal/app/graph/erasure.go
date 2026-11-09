@@ -4,6 +4,8 @@ package graph
 
 import (
 	"context"
+	"fmt"
+	"time"
 
 	appaccount "github.com/mycroblog/my/internal/app/account"
 	"github.com/mycroblog/my/internal/app/kernel"
@@ -56,23 +58,8 @@ func (e *Eraser) EraseAccountData(ctx context.Context, t appaccount.ErasureTarge
 		if err != nil {
 			return err
 		}
-		for _, edge := range edges {
-			f, err := e.repo.Follow(ctx, tx, edge.FollowID)
-			if err != nil {
-				return err
-			}
-			ev := FollowTerminated{
-				Follow:        f,
-				Termination:   graph.Termination{FollowID: edge.FollowID, Reason: graph.TerminatedAccountDeleted, TerminatedAt: now},
-				PreviousState: edge.State,
-				Unannounced:   true,
-			}
-			if err := e.repo.InsertTermination(ctx, tx, ev.Termination); err != nil {
-				return err
-			}
-			if err := tx.Emit(ctx, ev); err != nil {
-				return err
-			}
+		if err := e.endAll(ctx, tx, edges, now); err != nil {
+			return err
 		}
 		follows, err := e.erasure.EraseFollowsOf(ctx, tx, t.AccountID, limit)
 		if err != nil {
@@ -93,4 +80,38 @@ func (e *Eraser) EraseAccountData(ctx context.Context, t appaccount.ErasureTarge
 		return e.erasure.EraseCountersOf(ctx, tx, t.AccountID)
 	})
 	return appaccount.ErasureStep{Done: done}, err
+}
+
+// endAll ends the live follows of edges with the reason account_deleted, telling no server,
+// together: one read of their follows, one insert of their terminations, and one
+// FollowsTerminated.
+func (e *Eraser) endAll(ctx context.Context, tx uow.Tx, edges []graph.Edge, now time.Time) error {
+	if len(edges) == 0 {
+		return nil
+	}
+	ids := make([]string, len(edges))
+	for i, edge := range edges {
+		ids[i] = edge.FollowID
+	}
+	follows, err := e.repo.FollowsByIDs(ctx, tx, ids)
+	if err != nil {
+		return err
+	}
+	ev := FollowsTerminated{Terminations: make([]FollowTerminated, len(edges))}
+	for i, edge := range edges {
+		f, ok := follows[edge.FollowID]
+		if !ok {
+			return fmt.Errorf("follow %s of a live edge: %w", edge.FollowID, ErrNotFound)
+		}
+		ev.Terminations[i] = FollowTerminated{
+			Follow:        f,
+			Termination:   graph.Termination{FollowID: edge.FollowID, Reason: graph.TerminatedAccountDeleted, TerminatedAt: now},
+			PreviousState: edge.State,
+			Unannounced:   true,
+		}
+	}
+	if err := e.repo.InsertTerminations(ctx, tx, ids, graph.TerminatedAccountDeleted, now); err != nil {
+		return err
+	}
+	return tx.Emit(ctx, ev)
 }
