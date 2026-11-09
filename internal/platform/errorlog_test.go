@@ -95,6 +95,40 @@ func TestErrorLogLine(t *testing.T) {
 	if _, ok := got["request_id"]; ok {
 		t.Error("request_id written without a request")
 	}
+	if _, ok := got["context"]; ok {
+		t.Error("context.httpRequest written for a job")
+	}
+}
+
+// The line of a server error of a request has context.httpRequest, where Error Reporting reads the
+// method, the URL (the route, never the path), and the status; a web client's error reported
+// through a request has none, as that request is not where it happened.
+func TestErrorLogLineOfARequest(t *testing.T) {
+	t.Parallel()
+	var buf bytes.Buffer
+	r := NewErrorReporter("1.2.3", "web", "production", nil, nil)
+	r.AddSink(NewErrorLogSink(NewLogger(&buf, slog.LevelInfo)))
+	ctx := context.WithValue(context.Background(), requestRouteKey{}, &requestRoute{route: "/ap/objects/{id}", surface: "activitypub", method: "GET"})
+	r.Report(ctx, kernel.NewErrorEvent(errors.New("list account keys: context deadline exceeded"), ""))
+	var got map[string]any
+	if err := json.Unmarshal(buf.Bytes(), &got); err != nil {
+		t.Fatalf("%v:\n%s", err, buf.String())
+	}
+	c, _ := got["context"].(map[string]any)
+	req, _ := c["httpRequest"].(map[string]any)
+	if req["method"] != "GET" || req["url"] != "/ap/objects/{id}" || req["responseStatusCode"] != float64(500) {
+		t.Errorf("context.httpRequest = %v", got["context"])
+	}
+	if got["my.error.where"] != "activitypub GET /ap/objects/{id}" {
+		t.Errorf("my.error.where = %v", got["my.error.where"])
+	}
+
+	buf.Reset()
+	web := kernel.ErrorEvent{Source: kernel.ErrorSourceWeb, Kind: kernel.ErrorKindError, Type: "TypeError", Message: "x"}
+	r.Report(ctx, web)
+	if strings.Contains(buf.String(), "httpRequest") {
+		t.Errorf("a web client's error has context.httpRequest:\n%s", buf.String())
+	}
 }
 
 func TestErrorLogLineFatal(t *testing.T) {

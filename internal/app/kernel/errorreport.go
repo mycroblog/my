@@ -80,6 +80,14 @@ type ErrorEvent struct {
 	// empty; the client API sets the one of a web event, which its stack cannot give.
 	Fingerprint string
 
+	// The HTTP request of a server error reported for one, which the reporter fills when it
+	// names the place from the request: its method, its route pattern (never the path, which
+	// can hold IDs), and the status answered, 500, as every place that reports a request's
+	// error answers.
+	HTTPMethod string
+	HTTPRoute  string
+	HTTPStatus int
+
 	// Correlation with the logs and the traces (ADR-0055 §18); the reporter fills RequestID,
 	// TraceID, and SpanID from ctx when they are empty.
 	RequestID string

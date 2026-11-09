@@ -71,6 +71,7 @@ The line is in the form Google Cloud Error Reporting reads: on Cloud Run, the re
 | `my.error.where` | Where it happened: `<surface> <method> <route>` for a request (such as `client_api GET /api/v1/statuses/{id}`), the job type for a job, the task name for a background task, `startup` for a failure to start |
 | `my.role`, `deployment.environment.name` | The `role` of the process and `errors_environment` |
 | `request_id`, `job_id`, `attempt`, `trace_id`, `span_id` | The IDs to find the request or job lines of the same error, when it has them |
+| `context.httpRequest` | For an error of a request: `method`, `url` (the route, such as `/api/v1/statuses/{id}`, never the path the client asked for), and `responseStatusCode`, the status answered (500) |
 | `message` | Last on the line: `<type>: <message>`, a newline, and the Go stack |
 
 Before a report leaves the process, the message has URLs, email addresses, `@user@host` handles, IP addresses, UUIDs and ULIDs, and numbers of 10 digits or more replaced with `<url>`, `<email>`, `<acct>`, `<ip>`, `<id>` and `<n>`, and is cut to 1 KiB.

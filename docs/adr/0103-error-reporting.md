@@ -24,6 +24,7 @@ ADR-0055 §16（span に `RecordError` とエラーの文字列を出さない�
   - `Stack`: panic は `debug.Stack()`。エラーは報告した地点のスタック。境界（アダプタの戻り値など）で `kernel.WithStack(err)` を使うと、作った地点のスタックを持たせられる
   - `Where`: 起きた場所の有限の名前。HTTP は `my.surface` と `http.route`（パターン）、ジョブは `my.job.type`、goroutine は起動したときの名前（例 `stream.valkey.subscribe`）
   - 相関: `request_id`・`job_id`・`attempt`・`trace_id`・`span_id`（ADR-0055 §18）
+  - HTTP の要求: サーバーのエラーを要求の中で報告し、報告の仕組みが `Where` を要求から付けたときだけ、その method・ルートのパターン（パスではない）・返した状態（報告する地点はどれも 500 を返す）
   - 版と役割: `service.version`・`my.role`・設定 `errors_environment`（既定 `production`）
 - 指紋（fingerprint）: `Source`・`Where`・`Type` の最後の型・スタックのうち本リポジトリ（`github.com/mycroblog/my/`）の関数名の上位 5 つ（行番号は含めない）から SHA-256 を作り、16 進の先頭 32 文字にする。
   本リポジトリの関数がスタックにないときは、§3 で正規化した `Message` を代わりに使う。行番号を含めないので、無関係な行の追加では指紋が変わらない
@@ -60,11 +61,13 @@ ADR-0055 §16（span に `RecordError` とエラーの文字列を出さない�
  "serviceContext":{"service":"my","version":"<service.version>"},
  "my.error.fingerprint":"…","my.error.source":"server","my.error.kind":"panic","my.error.where":"client_api GET /api/v1/statuses/{id}",
  "request_id":"…","trace_id":"…","span_id":"…",
+ "context":{"httpRequest":{"method":"GET","url":"/api/v1/statuses/{id}","responseStatusCode":500}},
  "message":"<Type>: <除去した Message>\ngoroutine 1 [running]:\ngithub.com/mycroblog/my/internal/app/status.(*Service).Get(...)\n\tgithub.com/mycroblog/my/internal/app/status/get.go:42 +0x32\n…"}
 ```
 
 - `message` は Google の Go のライブラリと同じく、ヘッダーとスタックを改行 1 つでつなぐ。短いフィールドを前に、`message` を最後に置く（CloudWatch Logs の異常検知が行の先頭 1,500 文字だけを見るため）
-- `serviceContext.version` には版だけを入れる（service と版の組はグループの数の上限に効く）。`context.httpRequest`・`context.user` は個人情報になるので出さない。
+- `serviceContext.version` には版だけを入れる（service と版の組はグループの数の上限に効く）。
+- `context.httpRequest` は要求のエラーの行だけに置き、`method`・`url`・`responseStatusCode` だけを入れる。`url` は要求のパスではなくルートのパターン（`Where` と同じ）にして、ID や個人情報を出さない。これがないと Error Reporting は応答コードを `0` と表示する。`context.user` は個人情報になるので出さない。
   `logging.googleapis.com/trace` の形（`projects/<id>/traces/<trace_id>`）は ADR-0055 §18 の未決の点と同じくデプロイのテンプレートで決める
 - Error Reporting は `jsonPayload` の全フィールドからスタックを探すので、ほかのログの行にはスタックを書かない
 - すべてのログの行に、slog の `ReplaceAttr` で Cloud Logging の `severity` を足す（`DEBUG`・`INFO`・`WARN`→`WARNING`・`ERROR`、`ERROR` より上→`CRITICAL`）。
@@ -174,6 +177,8 @@ ADR-0055 §16（span に `RecordError` とエラーの文字列を出さない�
 - OTel の例外は LogRecord の属性として記録し（`exception.*`）、span の例外の規約は Deprecated（[Exceptions in logs](https://opentelemetry.io/docs/specs/semconv/exceptions/exceptions-logs/)）。`otlploghttp` は v0.23.0 で v0.x の間は破壊的な変更がありうる。`Record.SetErr` は `exception.message` を `err.Error()` から作り、BatchProcessor はあふれると古いものから上書きし捨てた数を数えにくい。
 - ブラウザ: React 19 の `onUncaughtError` の既定は `reportError`、`onCaughtError` は `console.error` だけ（[createRoot](https://react.dev/reference/react-dom/client/createRoot)）。`sendBeacon` はヘッダーを付けられず、keepalive の本文は同じ fetch group で合計 64 KiB まで（[Beacon](https://w3c.github.io/beacon/)、[Fetch](https://fetch.spec.whatwg.org/)）。
 - 他の実装: Misskey は設定 `sentryForBackend`・`sentryForFrontend` で Sentry へ直接送り、Mastodon と GoToSocial は OTLP のトレースだけでエラーの報告はない。
+
+Cloud Run の実機の確認（#1449）で、Error Reporting が行に `context.httpRequest` がないために応答コードを `0` と表示した。要求のパスは個人情報を含みうるので出さないとしていたが、決定者は、ルートのパターン・method・状態だけを `context.httpRequest` に置くことにした（§4 (1)、#2660）。
 
 ## 採らなかった案
 

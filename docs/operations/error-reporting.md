@@ -34,6 +34,7 @@ Its fields, and what scrubbing does to them, are in [Running the server](running
 - `my.error.fingerprint` is the same for every occurrence of the same error. Search or group by it.
 - `my.error.where` says where it happened, for example `client_api GET /api/v1/statuses/{id}`.
 - `request_id`, `job_id`, `trace_id`, and `span_id` find the other lines of the same request or job.
+- The line of an error of a request has `context.httpRequest`: the method, the route as the URL (`/api/v1/statuses/{id}`, never the path the client asked for), and the status answered. Error Reporting shows them on the group and can filter by them.
 - `message` is last on the line: the error type and message, a newline, and the Go stack.
 
 No other line carries a stack.
