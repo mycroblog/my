@@ -1,13 +1,13 @@
 # ADR-0162: チップ（1 回の支払い）の受け付けと記録
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-11-09
 - Deciders: @rosylilly
 - Issue: #2612, #2611
 
 ## Decision（決定）
 
-§1〜§8 は決定者が決めたことである。§9 以降は推奨案で、spike #2611 の[調査報告](https://github.com/mycroblog/my/issues/2611)と今のコードから形を決めた。
+§1〜§19 はどれも決定者が決めたことである。§9 以降の形は、spike #2611 の[調査報告](https://github.com/mycroblog/my/issues/2611)と今のコードから決めた。
 
 チップ（FR-918）は、サポーターの機能（ADR-0072）が有効で決済の事業者が設定されたサーバーで、ローカルの利用者がサーバーの運営に 1 回だけ払うお礼である。
 加入（ADR-0072）と同じモジュール `supporters` が持ち、事業者とのやりとりは `PaymentProvider`（ADR-0074）を広げて通し、収入は `income_movements`（ADR-0067）に載る。
@@ -60,7 +60,7 @@
 - `income_movements` に出どころの列 `source`（`subscription`・`one_time`・`unknown`）を足し、チップを `my` の外で受けた支払いと見分ける（ADR-0067 §18）。
 - 収入の行は今と同じく利用者を持たない（ADR-0067 §12）。値の決め方は §16。
 
-### 9. ポート（推奨案）
+### 9. ポート
 
 ADR-0074 §1 の `PaymentProvider` は加入の形のまま変えず、1 回の支払いを任意のインターフェースとして `internal/app/supporters` に足す（§9 の `PageServer` と同じ形）。adapter がこれを実装しているかが、チップを受けられるかの報告になる。
 
@@ -108,7 +108,7 @@ type OneTimeResult struct {
 - `my` はチップの返金の操作を持たない。運営者は事業者のダッシュボードで返金し、返金はお金の動きとして記録される（§15）。
 - **契約テスト**: `pkg/testkit.PaymentProviderContract` に、`OneTimePayments` を実装する adapter だけが通す項目を足す: 作成の URL のホスト、支払い・期限切れ・`ExpireOneTimeCheckout` と支払いの行き違い、全額の返金、一部の返金、チャージバック、その取り消し（ある事業者だけ）、返金・チャージバック・取り消しの `MoneyMovement.Payment` が支払いのものと等しいこと、`OneTimeLimits` と範囲の外の金額の `invalid_request`。fake・`stripe`・`payjp` の adapter が通す。
 
-### 10. Stripe adapter（推奨案）
+### 10. Stripe adapter
 
 - `StartOneTimeCheckout`: `mode=payment`、`payment_method_types=["card"]`、`line_items` に `price_data`（`currency`・`unit_amount`・`product_data.name` に `Description`）を 1 つ、`client_reference_id` と `metadata.my_tip_id` と `payment_intent_data.metadata.my_tip_id` に `LocalID`、`customer_email`、`locale`、`success_url`（`?checkout={CHECKOUT_SESSION_ID}`）、`cancel_url`、`expires_at` は 1 時間後（Stripe は 30 分〜24 時間）。`submit_type` は付けない。`Idempotency-Key` は `Key`。
   Price も Product も作らない（`EnsurePlan` は要らない）。
@@ -117,7 +117,7 @@ type OneTimeResult struct {
 - `OneTimeLimits`: 下限は `currency.go` の最低額の表（1 回の支払いも同じ表、[Supported currencies](https://docs.stripe.com/currencies#minimum-and-maximum-charge-amounts)）。上限は Stripe の 1 回の上限（8 桁、要検証）。
 - お金の動き: 今の `movement` は、invoice に結び付かない charge を `Subscription` なしの `payment` にしている。そこに `Payment` として PaymentIntent を入れる。返金と dispute は元の charge の PaymentIntent を受け継ぐ。新しい webhook のイベントは要らない（ADR-0074 §3 の一覧で足りる）。
 
-### 11. PAY.JP adapter: v2 で 1 回の支払い（推奨案）
+### 11. PAY.JP adapter: v2 で 1 回の支払い
 
 - 同じ adapter `internal/adapter/payment/payjp` の中に v2 のクライアントを足す（`https://api.pay.jp/v2`、同じ秘密鍵。認証と本文の形は v2 の文書に合わせる。要検証）。v1 のクライアントと要求の速さの上限（ADR-0074 §10）を分け合う。
 - `StartOneTimeCheckout`: `POST /v2/checkout/sessions`（`mode: payment`、`line_items` に `price_data`（JPY）、`client_reference_id` と `metadata.my_tip_id`、`payment_flow_data.metadata.my_tip_id`、`customer_email`、`payment_method_types` はカード、`success_url`・`cancel_url`、`expires_at` は 1 時間後、`locale`）に `Idempotency-Key`。返る `url` のホストを ADR-0074 §7 と同じく確かめる（ホストの名前は要検証）。
@@ -130,7 +130,7 @@ type OneTimeResult struct {
 - **webhook**: ADR-0074 §12 の同じ経路 `POST /payments/webhooks/payjp` で受け、`ParseWebhook` が v1 と v2 の通知を本文の形とオブジェクトの種類で見分ける。v2 は `data` がリソースそのもの。v2 の種類の写し: `checkout.session.completed`・`.expired` は 1 回の支払いの画面、`payment_flow.succeeded`・`refund.*`・`dispute.created` は `money`、ほかは `ignored`。
   1 つのエンドポイントに v1 と v2 の両方が届くか、トークンが同じかは要検証で、分かれるなら経路とトークンの設定を 1 つ足す（Open Questions）。
 
-### 12. チップの記録（データモデル、ADR-0020。推奨案）
+### 12. チップの記録（データモデル、ADR-0020）
 
 `supporters` が持つ。
 
@@ -149,7 +149,7 @@ type OneTimeResult struct {
 - `supporter_open_tips` は同期の投影で、記録から作り直せる（`my projection verify`）。
 - お金の額（総額・手数料・net）はここに持たない。ADR-0067 の `income_movements` が持つ。
 
-### 13. 支払いの開始と「支払いは 1 回まで」（推奨案）
+### 13. 支払いの開始と「支払いは 1 回まで」
 
 1. 利用者が候補の金額を選び、確認の画面（§19）を経て `POST` する。サーバーは §7 の条件、チップが有効なこと、金額が今の候補にあること、レート制限を確かめる。
 2. 開いているチップ（`supporter_open_tips`）があれば、まずそれを `ExpireOneTimeCheckout` で失効させる。失効の時に支払い済みなら、支払いとして記録し、新しい画面を作らずに完了のページへ送る（2 つのタブから 2 回払わないため）。失効できなければ開始を失敗にする。
@@ -157,7 +157,7 @@ type OneTimeResult struct {
 4. 戻ったページは `GET` でチップの状態を読み、まだ `open` なら `supporters.sync_tip` を積んで取り直す（webhook を待たない）。`paid` になったらお礼を出す。
 5. 期限（1 時間）を過ぎた開いているチップは、5 分ごとの `supporters.sync_due`（ADR-0072）と同じジョブが取り直し、`expired` か `paid` にする。
 
-### 14. webhook と照合（推奨案）
+### 14. webhook と照合
 
 - ジョブ `supporters.apply_payment_event`（ADR-0074 §3）は、`Change.OneTimeCheckout` があれば `GetOneTimeCheckout` で読み、チップの記録に当てる（`SyncTip`）。加入の `SyncCheckout` には渡さない。
 - 加入の `SyncCheckout` が完了した画面のこちらの加入を見つけられないとき、今は何も残さずに捨てている（`internal/app/supporters/core.go` の `LockSubscription` の `ErrNotFound`）。警告のログを出すようにする。
@@ -165,7 +165,7 @@ type OneTimeResult struct {
 - PAY.JP v2 では、2 段めの後に、`charged_back` で `dispute_won` のないチップの dispute を読む（§11）。
 - 3 段め「お金の動き」は変えない。1 回の支払いの動きも `ListMoney` から入り、§15 と §16 に回る。
 
-### 15. 結果（推奨案）
+### 15. 結果
 
 - `paid`: `GetOneTimeCheckout` が `paid` を返したとき、`supporter_tip_payments` に書く。返った金額と通貨がチップの行と違えば記録はするが警告のログを出す。
 - `expired`: 期限切れか失効を事業者が答えたとき。
@@ -174,7 +174,7 @@ type OneTimeResult struct {
 - 結果はロールも状態も動かさない（特典がないため）。`manage_finance` の個々の動きの画面と、`manage_supporters` のチップの一覧に出すためにある。
 - `RecordMoney` は、今は加入を持たない動きを取り消しの判断の前に飛ばしている。`Payment` がチップの支払いに当たる動きを結果の判断に回すように変える。
 
-### 16. 収入の計上と公開（推奨案）
+### 16. 収入の計上と公開
 
 - `supporters` が `IncomeMovement` に `Source` を入れる: 加入がこちらの加入に当たれば `subscription`、`Payment` がこちらのチップの支払いに当たれば `one_time`、どちらでもなければ `unknown`（`my` の外の支払いと、加入に結び付かない手数料）。
   返金・チャージバック・取り消しは、元の支払いの行の `source` を受け継ぐ（`finance.RecordIncome` が元の行から写す）。チップの記録を消した後（§18）の返金も `one_time` になる。
@@ -182,7 +182,7 @@ type OneTimeResult struct {
 - `income_visibility = plans` と `view_finance` の人数（ADR-0067 §17）では、プランごとの行の後に「チップ」の行を、チップが有効なときだけ、人数なしで出す。合計にチップが含まれることを示すだけで、チップの額も人数も出さない（少ない人数から誰が払ったかが推測できるため）。
 - `manage_finance` の `/admin/finance` と `GET /admin/income_totals` は、期間ごとの net を `source` ごとにも出す。個々の動き（`GET /admin/income_movements`）は `source` を持ち、`one_time` の行は払った人のアカウントを出す（記録が残っている間。§18）。個々のチップはこの画面と API だけに出す。
 
-### 17. 権限・画面・API・計測（推奨案）
+### 17. 権限・画面・API・計測
 
 - 権限: チップの有効化と金額の候補は `manage_supporters`（ADR-0072 §2）。管理画面 `/admin/supporters` に「チップ」の区画を置き、§4 の案内と、事業者が `OneTimePayments` を実装していないときの理由を出す。
   有効化・候補の変更・無効化は監査ログ（ADR-0058）に `supporter_tips_enabled`・`supporter_tips_revised`・`supporter_tips_disabled` で残す。
@@ -195,13 +195,13 @@ type OneTimeResult struct {
 - **レート制限**（ADR-0019 §5 の表に足す。要検証: 運用で調整）: 開始の `POST` を利用者ごとに 5 回 / 時・20 回 / 日、サーバー全体で 100 回 / 時。超えた全体の制限は管理画面の支払いの状態にも出す。
 - **計測**: `my_supporter_tip_checkouts_total`（`my_outcome` は `started`・`rate_limited`・`paid`・`expired`）を出し、`docs/operations/` の計測値と警告の表に「開始の急増」と「支払いに至らない開始の多さ」の警告の例を載せる。
 
-### 18. アカウントの削除と消去（推奨案）
+### 18. アカウントの削除と消去
 
 - アカウントの削除（BAN の削除の予約を含む）では、開いているチップの画面を失効させる。
 - アカウントの消去（ADR-0020 規約 6）は、その利用者のチップの記録（`supporter_tips` と子の行、投影）を消す。収入の行は利用者を持たないので額と `source` だけが残り、集計は変わらない。data-model §8 の消去の表に足す。
 - 事業者の側には、チップの支払いと決済の画面に入れたメールが残る（事業者の記録で、`my` は消せない）。プライバシーポリシーの例文と運営者向けの docs に書く。
 
-### 19. 運営者の docs と確認の画面（推奨案）
+### 19. 運営者の docs と確認の画面
 
 - 確認の画面（`POST` の前）に、金額・1 回だけでいますぐ支払われること・見返りがないこと・特商法の表記（ADR-0072 §13）へのリンクを出す。
 - `docs/operations/supporters.md` にチップの節を足す: 有効にする手順、Stripe と PAY.JP の条件（§1・§4、spike #2611 の各事業者の項）、dispute の手数料、特商法の表記に足す事項（チップが何か・金額・支払いの時期・提供するものはないこと・返金の扱い）、消費税・所得税の扱いは税理士に確かめること。どれも法的な助言ではない情報として書く。
