@@ -93,8 +93,9 @@ const (
 // form may end up at: this site, Options.FormActionOrigins, and the consent page's redirect URI.
 // A page with the CAPTCHA widget adds the service's sources in widget (humancheck.go); the
 // others pass none. A page that loads the web build's script (scripts) allows this site's
-// scripts.
-func contentSecurityPolicy(formAction []string, widget kernel.HumanCheckCSP, scripts bool) string {
+// scripts. A stylesheet of another origin, a Vite dev server's (web.Handler.Stylesheet), adds
+// that origin (assets) to the stylesheets and images, since its CSS draws images from there.
+func contentSecurityPolicy(formAction []string, widget kernel.HumanCheckCSP, scripts bool, assets string) string {
 	var b strings.Builder
 	b.WriteString("default-src 'none'")
 	scriptSrc := slices.Clone(widget.ScriptSrc)
@@ -110,10 +111,24 @@ func contentSecurityPolicy(formAction []string, widget kernel.HumanCheckCSP, scr
 	if len(widget.ConnectSrc) > 0 {
 		b.WriteString("; connect-src " + strings.Join(widget.ConnectSrc, " "))
 	}
-	b.WriteString("; style-src " + strings.Join(append([]string{"'self'"}, widget.StyleSrc...), " "))
-	b.WriteString("; img-src 'self'; form-action " + strings.Join(append([]string{"'self'"}, formAction...), " "))
+	self := []string{"'self'"}
+	if assets != "" {
+		self = append(self, assets)
+	}
+	b.WriteString("; style-src " + strings.Join(append(slices.Clone(self), widget.StyleSrc...), " "))
+	b.WriteString("; img-src " + strings.Join(self, " ") + "; form-action " + strings.Join(append([]string{"'self'"}, formAction...), " "))
 	b.WriteString("; frame-ancestors 'none'; base-uri 'none'")
 	return b.String()
+}
+
+// stylesheetOrigin returns the origin of an absolute http or https stylesheet URL, or "" for a
+// path on this site.
+func stylesheetOrigin(stylesheet string) string {
+	u, err := url.Parse(stylesheet)
+	if err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Host == "" {
+		return ""
+	}
+	return u.Scheme + "://" + u.Host
 }
 
 // maxFormBytes bounds a form body; the largest are the registration form, whose reason field
@@ -397,7 +412,7 @@ func (h *Handler) render(w http.ResponseWriter, r *http.Request, status int, nam
 	if p.HumanCheck != nil {
 		widget = h.humanCheckCSP()
 	}
-	hd.Set("Content-Security-Policy", contentSecurityPolicy(append(slices.Clone(h.o.FormActionOrigins), p.formAction...), widget, p.Passkey != nil))
+	hd.Set("Content-Security-Policy", contentSecurityPolicy(append(slices.Clone(h.o.FormActionOrigins), p.formAction...), widget, p.Passkey != nil, stylesheetOrigin(h.o.Stylesheet)))
 	hd.Set("Cache-Control", "no-store")
 	hd.Add("Vary", "Accept-Language, Cookie")
 	if h.o.InstanceName != nil {

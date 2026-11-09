@@ -252,7 +252,8 @@ func New(o Options) (*Handler, error) {
 			return nil, err
 		}
 		h.o.DevViteOrigin = dev.String()
-		tags = entryTags{Script: h.o.DevViteOrigin + "/src/main.tsx"}
+		// Vite serves the stylesheet of the server-rendered pages as CSS to a <link> as well.
+		tags = entryTags{Script: h.o.DevViteOrigin + "/src/main.tsx", ServerPages: h.o.DevViteOrigin + "/" + serverPagesKey}
 		h.csp = withMediaOrigin(devContentSecurityPolicy(dev), mediaOrigin)
 		// The dev server setup is plain HTTP on localhost.
 		apiOrigin = "http://" + o.Host
@@ -612,7 +613,7 @@ func addVary(h http.Header, value string) {
 
 // Stylesheet returns the URL of the stylesheet that the build makes for the server-rendered
 // pages from the client's design tokens (app/web/src/server-pages.css, ADR-0090), or "" when the
-// build has none (no build, or a Vite dev server).
+// build has none. With a Vite dev server it is the file on that server, of another origin.
 func (h *Handler) Stylesheet() string { return h.tags.ServerPages }
 
 // PasskeySignInScript returns the URL of the module script that signs in with a passkey on the
