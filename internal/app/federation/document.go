@@ -36,6 +36,38 @@ type Relationships interface {
 	Relationship(ctx context.Context, accountID, targetID string) (appgraph.Relationship, error)
 }
 
+// followersBatch is a Relationships that reads the active followers of an account among many at
+// once, as *appgraph.Service does.
+type followersBatch interface {
+	ActiveFollowersAmong(ctx context.Context, accountID string, ids []string) (map[string]bool, error)
+}
+
+// followersAmong returns the remote accounts of mentions that actively follow authorID: with one
+// read when Relationships can, one by one otherwise.
+func (n notes) followersAmong(ctx context.Context, authorID string, mentions []appaccount.Actor) (map[string]bool, error) {
+	var remote []string
+	for _, m := range mentions {
+		if !m.Account.IsLocal() {
+			remote = append(remote, m.Account.ID)
+		}
+	}
+	if len(remote) == 0 {
+		return map[string]bool{}, nil
+	}
+	if b, ok := n.graph.(followersBatch); ok {
+		return b.ActiveFollowersAmong(ctx, authorID, remote)
+	}
+	out := make(map[string]bool, len(remote))
+	for _, id := range remote {
+		r, err := n.graph.Relationship(ctx, id, authorID)
+		if err != nil {
+			return nil, err
+		}
+		out[id] = r.ActivelyFollowing()
+	}
+	return out, nil
+}
+
 // notes builds the Note of a local status, the one place that the fan-out (the object of Create
 // and Update), object fetches (GET of the status's IRI), and the outbox and featured collections
 // build it (federation.md §7.4).
@@ -61,18 +93,15 @@ func (n notes) note(ctx context.Context, st appcontent.Status, rev appcontent.Re
 		return federation.NoteDocument{}, err
 	}
 	if vis == appcontent.VisibilityLocal {
+		follows, err := n.followersAmong(ctx, st.AuthorAccountID, parts.Mentions)
+		if err != nil {
+			return federation.NoteDocument{}, err
+		}
 		kept := parts.Mentions[:0:0]
 		for _, m := range parts.Mentions {
-			if !m.Account.IsLocal() {
-				r, err := n.graph.Relationship(ctx, m.Account.ID, st.AuthorAccountID)
-				if err != nil {
-					return federation.NoteDocument{}, err
-				}
-				if !r.ActivelyFollowing() {
-					continue
-				}
+			if m.Account.IsLocal() || follows[m.Account.ID] {
+				kept = append(kept, m)
 			}
-			kept = append(kept, m)
 		}
 		parts.Mentions = kept
 	}

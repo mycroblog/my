@@ -567,6 +567,19 @@ func (s *Service) ActiveFollowerIDs(ctx context.Context, accountID, before strin
 	return ids, next, nil
 }
 
+// ActiveFollowersAmong returns those of ids that actively follow accountID, as Relationship tells
+// of one (ActivelyFollowing), with one query.
+func (s *Service) ActiveFollowersAmong(ctx context.Context, accountID string, ids []string) (map[string]bool, error) {
+	out := make(map[string]bool, len(ids))
+	edges, err := s.d.Repository.ListFollowEdgesFromAmong(ctx, accountID, ids)
+	for _, e := range edges {
+		if e.State == graph.StateActive {
+			out[e.FollowerAccountID] = true
+		}
+	}
+	return out, err
+}
+
 // FollowedAmong returns those of accountIDs with an active follower, with one query: the stale
 // remote actors of a batch that local accounts still follow (federation's refresh of actors).
 func (s *Service) FollowedAmong(ctx context.Context, accountIDs []string) (map[string]bool, error) {
