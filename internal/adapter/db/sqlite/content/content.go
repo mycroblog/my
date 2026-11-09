@@ -109,10 +109,13 @@ func (r *StatusRepository) InsertRevision(ctx context.Context, tx uow.Tx, rev co
 			return sqlite.Wrap(err, "insert status revision attachment")
 		}
 	}
-	for _, id := range rev.MentionedAccountIDs {
-		err := q.InsertStatusRevisionMention(ctx, contentgen.InsertStatusRevisionMentionParams{RevisionID: rev.ID, AccountID: id})
+	if len(rev.MentionedAccountIDs) > 0 {
+		list, err := sqlite.JSONList(rev.MentionedAccountIDs)
 		if err != nil {
-			return sqlite.Wrap(err, "insert status revision mention")
+			return err
+		}
+		if err := q.InsertStatusRevisionMentions(ctx, contentgen.InsertStatusRevisionMentionsParams{RevisionID: rev.ID, AccountIds: list}); err != nil {
+			return sqlite.Wrap(err, "insert status revision mentions")
 		}
 	}
 	for _, id := range rev.TagIDs {
@@ -201,12 +204,14 @@ func (r *StatusRepository) ReplaceMentions(ctx context.Context, tx uow.Tx, statu
 	if err := q.DeleteStatusMentions(ctx, statusID); err != nil {
 		return sqlite.Wrap(err, "delete status mentions")
 	}
-	for _, id := range accountIDs {
-		if err := q.InsertStatusMention(ctx, contentgen.InsertStatusMentionParams{AccountID: id, StatusID: statusID}); err != nil {
-			return sqlite.Wrap(err, "insert status mention")
-		}
+	if len(accountIDs) == 0 {
+		return nil
 	}
-	return nil
+	list, err := sqlite.JSONList(accountIDs)
+	if err != nil {
+		return err
+	}
+	return sqlite.Wrap(q.InsertStatusMentions(ctx, contentgen.InsertStatusMentionsParams{StatusID: statusID, AccountIds: list}), "insert status mentions")
 }
 
 // LockStatusKeys implements content.Repository. It does nothing: write transactions begin with

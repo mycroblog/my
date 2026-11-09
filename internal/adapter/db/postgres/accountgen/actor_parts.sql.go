@@ -40,6 +40,44 @@ func (q *Queries) ListAccountHandlesByIDs(ctx context.Context, ids []string) ([]
 	return items, nil
 }
 
+const listAccountHandlesByNames = `-- name: ListAccountHandlesByNames :many
+SELECT h.account_id, h.username, h.username_normalized, h.domain FROM account_handles h
+JOIN (SELECT unnest($1::text[]) AS username_normalized, unnest($2::text[]) AS domain) n
+  ON n.username_normalized = h.username_normalized AND n.domain = h.domain
+`
+
+type ListAccountHandlesByNamesParams struct {
+	Usernames []string
+	Domains   []string
+}
+
+// The handles of the pairs of the arrays, one pair per index, as GetAccountHandleByName reads
+// one.
+func (q *Queries) ListAccountHandlesByNames(ctx context.Context, arg ListAccountHandlesByNamesParams) ([]AccountHandle, error) {
+	rows, err := q.db.Query(ctx, listAccountHandlesByNames, arg.Usernames, arg.Domains)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []AccountHandle{}
+	for rows.Next() {
+		var i AccountHandle
+		if err := rows.Scan(
+			&i.AccountID,
+			&i.Username,
+			&i.UsernameNormalized,
+			&i.Domain,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listAccountKeysOfAccounts = `-- name: ListAccountKeysOfAccounts :many
 SELECT id, account_id, key_id, algorithm, public_key_pem, fingerprint, created_at FROM account_keys
 WHERE account_id = ANY($1::uuid[]) ORDER BY account_id, id

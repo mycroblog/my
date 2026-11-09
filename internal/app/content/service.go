@@ -829,6 +829,9 @@ func (s *Service) render(ctx context.Context, parsed ParsedText) (string, []stri
 	var mentions []string
 	r := &mentionResolver{s: s}
 	defer r.close()
+	if err := r.preload(ctx, parsed.Mentions()); err != nil {
+		return "", nil, err
+	}
 	for _, h := range parsed.Mentions() {
 		target, id, ok, err := r.resolve(ctx, h)
 		if err != nil {

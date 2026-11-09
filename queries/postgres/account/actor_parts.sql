@@ -48,3 +48,10 @@ FROM account_moves WHERE id = ANY(sqlc.arg(ids)::uuid[]) ORDER BY id;
 -- The accounts of uris that exist, as GetAccountByURI reads one.
 -- name: ListAccountsByURIs :many
 SELECT id, uri, domain, actor_type, created_at FROM accounts WHERE uri = ANY(sqlc.arg(uris)::text[]);
+
+-- The handles of the pairs of the arrays, one pair per index, as GetAccountHandleByName reads
+-- one.
+-- name: ListAccountHandlesByNames :many
+SELECT h.account_id, h.username, h.username_normalized, h.domain FROM account_handles h
+JOIN (SELECT unnest(sqlc.arg(usernames)::text[]) AS username_normalized, unnest(sqlc.arg(domains)::text[]) AS domain) n
+  ON n.username_normalized = h.username_normalized AND n.domain = h.domain;

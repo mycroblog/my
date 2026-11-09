@@ -49,3 +49,9 @@ FROM account_moves WHERE id IN (SELECT value FROM json_each(CAST(sqlc.arg(ids) A
 -- The accounts of uris that exist, as GetAccountByURI reads one.
 -- name: ListAccountsByURIs :many
 SELECT id, uri, domain, actor_type, created_at FROM accounts WHERE uri IN (SELECT value FROM json_each(CAST(sqlc.arg(uris) AS TEXT)));
+
+-- The handles of a JSON array of {"u", "d"} pairs, as GetAccountHandleByName reads one.
+-- name: ListAccountHandlesByNames :many
+SELECT h.account_id, h.username, h.username_normalized, h.domain FROM account_handles h
+JOIN json_each(CAST(sqlc.arg(names) AS TEXT)) n
+  ON n.value ->> '$.u' = h.username_normalized AND n.value ->> '$.d' = h.domain;

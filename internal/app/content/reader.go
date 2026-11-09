@@ -503,15 +503,16 @@ func (r *Reader) viewParts(ctx context.Context, rev content.Revision) (RevisionP
 	if out.Attachments, err = r.attachments(ctx, rev.Attachments); err != nil {
 		return RevisionParts{}, err
 	}
-	for _, id := range rev.MentionedAccountIDs {
-		a, err := r.d.Accounts.FindByID(ctx, id)
-		if errors.Is(err, appaccount.ErrNotFound) {
-			continue
-		}
+	if len(rev.MentionedAccountIDs) > 0 {
+		mentioned, err := r.d.Accounts.FindByIDs(ctx, rev.MentionedAccountIDs)
 		if err != nil {
 			return RevisionParts{}, err
 		}
-		out.Mentions = append(out.Mentions, a)
+		for _, id := range rev.MentionedAccountIDs {
+			if a, ok := mentioned[id]; ok {
+				out.Mentions = append(out.Mentions, a)
+			}
+		}
 	}
 	for _, id := range rev.TagIDs {
 		tag, err := r.d.Statuses.FindTag(ctx, id)

@@ -748,6 +748,42 @@ func (s *Service) FindByHandle(ctx context.Context, username, domain string) (Ac
 	return s.FindByID(ctx, h.AccountID)
 }
 
+// HandleQuery is a handle as FindByHandle takes it: a username, and a domain (account.LocalDomain
+// for a local account), compared as FindByHandle compares them.
+type HandleQuery struct {
+	Username, Domain string
+}
+
+// FindByHandles returns the actors of the handles of queries that exist, by query, as
+// FindByHandle returns each, with one query for the handles and one per part of an actor.
+func (s *Service) FindByHandles(ctx context.Context, queries []HandleQuery) (map[HandleQuery]Actor, error) {
+	names := make([]HandleName, len(queries))
+	for i, q := range queries {
+		names[i] = HandleName{UsernameNormalized: account.NormalizeUsername(q.Username), Domain: account.NormalizeDomain(q.Domain)}
+	}
+	handles, err := s.d.Repository.FindHandles(ctx, names)
+	if err != nil {
+		return nil, err
+	}
+	var ids []string
+	for _, h := range handles {
+		ids = append(ids, h.AccountID)
+	}
+	actors, err := s.FindByIDs(ctx, ids)
+	if err != nil {
+		return nil, err
+	}
+	out := make(map[HandleQuery]Actor, len(queries))
+	for i, q := range queries {
+		if h, ok := handles[names[i]]; ok {
+			if a, ok := actors[h.AccountID]; ok {
+				out[q] = a
+			}
+		}
+	}
+	return out, nil
+}
+
 // InstanceActor returns the instance actor. It fails with ErrNotFound before EnsureInstanceActor.
 func (s *Service) InstanceActor(ctx context.Context) (Actor, error) {
 	a, err := s.d.Repository.FindInstanceActor(ctx)

@@ -27,6 +27,67 @@ type mentionResolver struct {
 	// budget bounds the resolutions of the text; nil until the first one.
 	budget context.Context
 	cancel context.CancelFunc
+	// asked are the handles read beforehand (preload), found those that exist, and urls the
+	// profile pages of the remote ones.
+	asked map[appaccount.HandleQuery]bool
+	found map[appaccount.HandleQuery]appaccount.Actor
+	urls  map[string]string
+}
+
+// handleBatch is an Accounts that reads many handles at once, as *appaccount.Service does.
+type handleBatch interface {
+	FindByHandles(ctx context.Context, queries []appaccount.HandleQuery) (map[appaccount.HandleQuery]appaccount.Actor, error)
+}
+
+// profileURLBatch is a RemoteMentions that reads many profile pages at once, as the platform's does.
+type profileURLBatch interface {
+	RemoteProfileURLs(ctx context.Context, accountIDs []string) (map[string]string, error)
+}
+
+// preload reads the stored accounts of every handle of a text together, and the profile pages of
+// the remote ones, when Accounts and RemoteMentions can; find and resolve then answer from them.
+func (r *mentionResolver) preload(ctx context.Context, handles []MentionHandle) error {
+	b, ok := r.s.d.Accounts.(handleBatch)
+	if !ok || len(handles) == 0 {
+		return nil
+	}
+	d := r.s.d
+	r.asked = map[appaccount.HandleQuery]bool{}
+	var queries []appaccount.HandleQuery
+	for _, h := range handles {
+		q := appaccount.HandleQuery{Username: h.Username, Domain: h.Domain}
+		if h.Domain == "" || h.Domain == strings.ToLower(d.AccountDomain) || h.Domain == strings.ToLower(d.Host) {
+			q.Domain = ""
+		}
+		if !r.asked[q] {
+			r.asked[q] = true
+			queries = append(queries, q)
+		}
+	}
+	var err error
+	if r.found, err = b.FindByHandles(ctx, queries); err != nil {
+		return err
+	}
+	if pb, ok := d.RemoteMentions.(profileURLBatch); ok {
+		var remote []string
+		for _, a := range r.found {
+			if !a.Account.IsLocal() {
+				remote = append(remote, a.Account.ID)
+			}
+		}
+		if len(remote) > 0 {
+			urls, err := pb.RemoteProfileURLs(ctx, remote)
+			if err != nil {
+				return err
+			}
+			// A remote account without a page reads as "", as RemoteProfileURL answers.
+			r.urls = make(map[string]string, len(remote))
+			for _, id := range remote {
+				r.urls[id] = urls[id]
+			}
+		}
+	}
+	return nil
 }
 
 func (r *mentionResolver) close() {
@@ -58,8 +119,8 @@ func (r *mentionResolver) resolve(ctx context.Context, h MentionHandle) (Mention
 	if !usable(a) || a.Account.IsLocal() {
 		return MentionTarget{}, "", false, nil
 	}
-	u := ""
-	if d.RemoteMentions != nil {
+	u, read := r.urls[a.Account.ID]
+	if d.RemoteMentions != nil && !read {
 		u, err = d.RemoteMentions.RemoteProfileURL(ctx, a.Account.ID)
 		if err != nil && !errors.Is(err, appaccount.ErrNotFound) {
 			return MentionTarget{}, "", false, err
@@ -70,6 +131,10 @@ func (r *mentionResolver) resolve(ctx context.Context, h MentionHandle) (Mention
 
 // find returns the stored account with a handle, and whether there is one.
 func (r *mentionResolver) find(ctx context.Context, username, domain string) (appaccount.Actor, bool, error) {
+	if q := (appaccount.HandleQuery{Username: username, Domain: domain}); r.asked[q] {
+		a, ok := r.found[q]
+		return a, ok, nil
+	}
 	a, err := r.s.d.Accounts.FindByHandle(ctx, username, domain)
 	if errors.Is(err, appaccount.ErrNotFound) {
 		return appaccount.Actor{}, false, nil
