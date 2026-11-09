@@ -9,6 +9,7 @@ package contentgen
 
 import (
 	"context"
+	"time"
 )
 
 const insertStatusMentions = `-- name: InsertStatusMentions :exec
@@ -27,6 +28,44 @@ func (q *Queries) InsertStatusMentions(ctx context.Context, arg InsertStatusMent
 	return err
 }
 
+const insertStatusRevisionAttachments = `-- name: InsertStatusRevisionAttachments :exec
+INSERT INTO status_revision_attachments (revision_id, position, media_id, description)
+SELECT $1::uuid, unnest($2::int[]), unnest($3::uuid[]),
+  NULLIF(unnest($4::text[]), '')
+`
+
+type InsertStatusRevisionAttachmentsParams struct {
+	RevisionID   string
+	Positions    []int32
+	MediaIds     []string
+	Descriptions []string
+}
+
+func (q *Queries) InsertStatusRevisionAttachments(ctx context.Context, arg InsertStatusRevisionAttachmentsParams) error {
+	_, err := q.db.Exec(ctx, insertStatusRevisionAttachments,
+		arg.RevisionID,
+		arg.Positions,
+		arg.MediaIds,
+		arg.Descriptions,
+	)
+	return err
+}
+
+const insertStatusRevisionEmojis = `-- name: InsertStatusRevisionEmojis :exec
+INSERT INTO status_revision_emojis (revision_id, emoji_id)
+SELECT $1::uuid, unnest($2::uuid[])
+`
+
+type InsertStatusRevisionEmojisParams struct {
+	RevisionID string
+	EmojiIds   []string
+}
+
+func (q *Queries) InsertStatusRevisionEmojis(ctx context.Context, arg InsertStatusRevisionEmojisParams) error {
+	_, err := q.db.Exec(ctx, insertStatusRevisionEmojis, arg.RevisionID, arg.EmojiIds)
+	return err
+}
+
 const insertStatusRevisionMentions = `-- name: InsertStatusRevisionMentions :exec
 INSERT INTO status_revision_mentions (revision_id, account_id)
 SELECT $1::uuid, unnest($2::uuid[])
@@ -39,6 +78,49 @@ type InsertStatusRevisionMentionsParams struct {
 
 func (q *Queries) InsertStatusRevisionMentions(ctx context.Context, arg InsertStatusRevisionMentionsParams) error {
 	_, err := q.db.Exec(ctx, insertStatusRevisionMentions, arg.RevisionID, arg.AccountIds)
+	return err
+}
+
+const insertStatusRevisionTags = `-- name: InsertStatusRevisionTags :exec
+
+INSERT INTO status_revision_tags (revision_id, tag_id)
+SELECT $1::uuid, unnest($2::uuid[])
+`
+
+type InsertStatusRevisionTagsParams struct {
+	RevisionID string
+	TagIds     []string
+}
+
+// The tags, emoji, and attachments of a revision, each with one statement as its mentions (the
+// unnests of a select list advance together).
+func (q *Queries) InsertStatusRevisionTags(ctx context.Context, arg InsertStatusRevisionTagsParams) error {
+	_, err := q.db.Exec(ctx, insertStatusRevisionTags, arg.RevisionID, arg.TagIds)
+	return err
+}
+
+const insertTagsIfAbsent = `-- name: InsertTagsIfAbsent :exec
+INSERT INTO tags (id, name, name_normalized, created_at)
+SELECT unnest($1::uuid[]), unnest($2::text[]), unnest($3::text[]), $4::timestamptz
+ON CONFLICT (name_normalized) DO NOTHING
+`
+
+type InsertTagsIfAbsentParams struct {
+	Ids             []string
+	Names           []string
+	NamesNormalized []string
+	CreatedAt       time.Time
+}
+
+// InsertTagsIfAbsent is InsertTagIfAbsent of many tags, and ListTagsByNames reads the tags of
+// many normalized names, as GetTagByName reads one.
+func (q *Queries) InsertTagsIfAbsent(ctx context.Context, arg InsertTagsIfAbsentParams) error {
+	_, err := q.db.Exec(ctx, insertTagsIfAbsent,
+		arg.Ids,
+		arg.Names,
+		arg.NamesNormalized,
+		arg.CreatedAt,
+	)
 	return err
 }
 
@@ -204,6 +286,35 @@ SELECT id, name, name_normalized, created_at FROM tags WHERE id = ANY($1::uuid[]
 
 func (q *Queries) ListTagsByIDs(ctx context.Context, ids []string) ([]Tag, error) {
 	rows, err := q.db.Query(ctx, listTagsByIDs, ids)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Tag{}
+	for rows.Next() {
+		var i Tag
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.NameNormalized,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listTagsByNames = `-- name: ListTagsByNames :many
+SELECT id, name, name_normalized, created_at FROM tags WHERE name_normalized = ANY($1::text[]) ORDER BY name_normalized
+`
+
+func (q *Queries) ListTagsByNames(ctx context.Context, namesNormalized []string) ([]Tag, error) {
+	rows, err := q.db.Query(ctx, listTagsByNames, namesNormalized)
 	if err != nil {
 		return nil, err
 	}

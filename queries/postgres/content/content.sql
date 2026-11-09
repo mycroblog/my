@@ -18,18 +18,6 @@ INSERT INTO status_revision_bodies (revision_id, language, content_html) VALUES 
 -- name: InsertStatusRevisionSource :exec
 INSERT INTO status_revision_sources (revision_id, source_text, source_format) VALUES ($1, $2, $3);
 
--- name: InsertStatusRevisionAttachment :exec
-INSERT INTO status_revision_attachments (revision_id, position, media_id, description) VALUES ($1, $2, $3, $4);
-
--- name: InsertStatusRevisionMention :exec
-INSERT INTO status_revision_mentions (revision_id, account_id) VALUES ($1, $2);
-
--- name: InsertStatusRevisionTag :exec
-INSERT INTO status_revision_tags (revision_id, tag_id) VALUES ($1, $2);
-
--- name: InsertStatusRevisionEmoji :exec
-INSERT INTO status_revision_emojis (revision_id, emoji_id) VALUES ($1, $2);
-
 -- name: InsertStatusDeletion :exec
 INSERT INTO status_deletions (status_id, uri, author_account_id, origin, moderation_action_id, deleted_at)
 VALUES ($1, $2, $3, $4, $5, $6);
