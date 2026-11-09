@@ -493,6 +493,33 @@ type refreshAllPayload struct {
 	AfterAccountID string `json:"after_account_id,omitempty"`
 }
 
+// followedAmong is a Followers that tells the actors of a batch with an active follower at once,
+// as graph.Service does.
+type followedAmong interface {
+	FollowedAmong(ctx context.Context, accountIDs []string) (map[string]bool, error)
+}
+
+// followed returns the actors of heads that local accounts follow: with one read when Followers
+// can, one by one otherwise.
+func (r *RemoteActors) followed(ctx context.Context, heads []appaccount.RemoteHead) (map[string]bool, error) {
+	ids := make([]string, len(heads))
+	for i, h := range heads {
+		ids[i] = h.AccountID
+	}
+	if b, ok := r.d.Followers.(followedAmong); ok {
+		return b.FollowedAmong(ctx, ids)
+	}
+	out := map[string]bool{}
+	for _, id := range ids {
+		followers, _, err := r.d.Followers.ActiveFollowerIDs(ctx, id, "", 1)
+		if err != nil {
+			return nil, err
+		}
+		out[id] = len(followers) > 0
+	}
+	return out, nil
+}
+
 // handleRefreshAll reads one batch of stale actors, enqueues a refresh of each one that local
 // accounts follow, and enqueues the next batch (federation.md §6.2, ADR-0006).
 func (r *RemoteActors) handleRefreshAll(ctx context.Context, j queue.Job) queue.Result {
@@ -510,13 +537,13 @@ func (r *RemoteActors) handleRefreshAll(ctx context.Context, j queue.Job) queue.
 	if err != nil {
 		return queue.Retry(0, err)
 	}
+	followed, err := r.followed(ctx, heads)
+	if err != nil {
+		return queue.Retry(0, err)
+	}
 	var jobs []queue.NewJob
 	for _, h := range heads {
-		followers, _, err := r.d.Followers.ActiveFollowerIDs(ctx, h.AccountID, "", 1)
-		if err != nil {
-			return queue.Retry(0, err)
-		}
-		if len(followers) > 0 {
+		if followed[h.AccountID] {
 			jobs = append(jobs, refreshJob(h.AccountID))
 		}
 	}

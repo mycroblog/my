@@ -403,6 +403,18 @@ func (r *Repository) ListFollowers(ctx context.Context, followeeAccountID string
 	return edgesFrom(rows), nil
 }
 
+// ListFolloweesAmong implements graph.Repository.
+func (r *Repository) ListFolloweesAmong(ctx context.Context, accountIDs []string, state graph.State) ([]string, error) {
+	if len(accountIDs) == 0 {
+		return nil, nil
+	}
+	rows, err := r.db.reader().ListFolloweesAmong(ctx, graphgen.ListFolloweesAmongParams{AccountIds: accountIDs, State: string(state)})
+	if err != nil {
+		return nil, postgres.Wrap(err, "list followees among accounts")
+	}
+	return rows, nil
+}
+
 // ListFollowing implements graph.Repository.
 func (r *Repository) ListFollowing(ctx context.Context, followerAccountID string, state graph.State, before string, limit int) ([]graph.Edge, error) {
 	n, err := postgres.ToInt32(limit, "page limit")
