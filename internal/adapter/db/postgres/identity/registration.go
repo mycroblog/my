@@ -108,6 +108,22 @@ func (r *Repository) FindRegistrationState(ctx context.Context, userID string) (
 	return identity.UserRegistrationState{UserID: row.UserID, State: identity.RegistrationState(row.State), Since: postgres.UTC(row.Since)}, nil
 }
 
+// FindRegistrationStates implements identity.Repository.
+func (r *Repository) FindRegistrationStates(ctx context.Context, userIDs []string) (map[string]identity.UserRegistrationState, error) {
+	out := map[string]identity.UserRegistrationState{}
+	if len(userIDs) == 0 {
+		return out, nil
+	}
+	rows, err := r.db.reader().ListRegistrationStatesOf(ctx, userIDs)
+	if err != nil {
+		return nil, postgres.Wrap(err, "list registration states")
+	}
+	for _, row := range rows {
+		out[row.UserID] = identity.UserRegistrationState{UserID: row.UserID, State: identity.RegistrationState(row.State), Since: postgres.UTC(row.Since)}
+	}
+	return out, nil
+}
+
 // ListRegistrations implements identity.Repository.
 func (r *Repository) ListRegistrations(ctx context.Context, state identity.RegistrationState, after appidentity.RegistrationPosition, limit int) ([]appidentity.RegistrationEntry, error) {
 	n, err := postgres.ToInt32(limit, "limit")

@@ -318,11 +318,21 @@ func (s *Service) Appeals(ctx context.Context, f AppealFilter, limit int) ([]App
 	if err != nil {
 		return nil, err
 	}
+	ids := make([]string, len(rs))
+	for i, r := range rs {
+		ids[i] = r.Appeal.ActionID
+	}
+	actions, err := s.d.Repository.FindActionRecords(ctx, ids)
+	if err != nil {
+		return nil, err
+	}
 	out := make([]AppealView, len(rs))
 	for i, r := range rs {
-		if out[i], err = s.appealView(ctx, r); err != nil {
-			return nil, err
+		a, ok := actions[r.Appeal.ActionID]
+		if !ok {
+			return nil, fmt.Errorf("moderation: the action of appeal %s: %w", r.Appeal.ID, ErrNotFound)
 		}
+		out[i] = AppealView{AppealRecord: r, Action: s.accountView(a)}
 	}
 	return out, nil
 }
