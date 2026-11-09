@@ -229,6 +229,9 @@ type Repository interface {
 	// DeleteStatusEntries deletes the entries of a status (its post and its boosts) with their
 	// direct recipients and tags, taking the tags out of tag_usage.
 	DeleteStatusEntries(ctx context.Context, tx uow.Tx, statusID string) error
+	// DeleteStatusEntriesOf is DeleteStatusEntries of each of statusIDs, with one statement per
+	// part.
+	DeleteStatusEntriesOf(ctx context.Context, tx uow.Tx, statusIDs []string) error
 	// ReplaceDirectRecipients makes accountIDs the direct recipients of an entry.
 	ReplaceDirectRecipients(ctx context.Context, tx uow.Tx, entryID string, accountIDs []string) error
 	// ReplaceTags makes tagIDs the tags of entry e, whose current revision is from revisedAt,

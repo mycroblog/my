@@ -156,6 +156,18 @@ func (q *Queries) DeleteFeedDirectRecipients(ctx context.Context, entryID string
 	return err
 }
 
+const deleteFeedDirectRecipientsOf = `-- name: DeleteFeedDirectRecipientsOf :exec
+
+DELETE FROM feed_direct_recipients WHERE entry_id = ANY($1::uuid[])
+`
+
+// The rows of the entries of many deleted statuses, each statement as the one of one entry above
+// does for every entry it names.
+func (q *Queries) DeleteFeedDirectRecipientsOf(ctx context.Context, entryIds []string) error {
+	_, err := q.db.Exec(ctx, deleteFeedDirectRecipientsOf, entryIds)
+	return err
+}
+
 const deleteFeedDomainMute = `-- name: DeleteFeedDomainMute :exec
 DELETE FROM feed_domain_mutes WHERE viewer_account_id = $1 AND domain = $2
 `
@@ -190,6 +202,15 @@ DELETE FROM feed_entries WHERE status_id = $1
 
 func (q *Queries) DeleteFeedEntriesOfStatus(ctx context.Context, statusID string) error {
 	_, err := q.db.Exec(ctx, deleteFeedEntriesOfStatus, statusID)
+	return err
+}
+
+const deleteFeedEntriesOfStatuses = `-- name: DeleteFeedEntriesOfStatuses :exec
+DELETE FROM feed_entries WHERE status_id = ANY($1::uuid[])
+`
+
+func (q *Queries) DeleteFeedEntriesOfStatuses(ctx context.Context, statusIds []string) error {
+	_, err := q.db.Exec(ctx, deleteFeedEntriesOfStatuses, statusIds)
 	return err
 }
 
@@ -254,6 +275,15 @@ DELETE FROM feed_tag_entries WHERE entry_id = $1
 
 func (q *Queries) DeleteFeedTagEntries(ctx context.Context, entryID string) error {
 	_, err := q.db.Exec(ctx, deleteFeedTagEntries, entryID)
+	return err
+}
+
+const deleteFeedTagEntriesOf = `-- name: DeleteFeedTagEntriesOf :exec
+DELETE FROM feed_tag_entries WHERE entry_id = ANY($1::uuid[])
+`
+
+func (q *Queries) DeleteFeedTagEntriesOf(ctx context.Context, entryIds []string) error {
+	_, err := q.db.Exec(ctx, deleteFeedTagEntriesOf, entryIds)
 	return err
 }
 
@@ -822,6 +852,30 @@ SELECT tag_id FROM feed_tag_entries WHERE entry_id = $1 AND visibility IN ('publ
 // ListCountedFeedTagIDs returns the tags of an entry that tag_usage counts.
 func (q *Queries) ListCountedFeedTagIDs(ctx context.Context, entryID string) ([]string, error) {
 	rows, err := q.db.Query(ctx, listCountedFeedTagIDs, entryID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []string{}
+	for rows.Next() {
+		var tag_id string
+		if err := rows.Scan(&tag_id); err != nil {
+			return nil, err
+		}
+		items = append(items, tag_id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listCountedFeedTagIDsOf = `-- name: ListCountedFeedTagIDsOf :many
+SELECT tag_id FROM feed_tag_entries WHERE entry_id = ANY($1::uuid[]) AND visibility IN ('public', 'local', 'unlisted') ORDER BY tag_id
+`
+
+func (q *Queries) ListCountedFeedTagIDsOf(ctx context.Context, entryIds []string) ([]string, error) {
+	rows, err := q.db.Query(ctx, listCountedFeedTagIDsOf, entryIds)
 	if err != nil {
 		return nil, err
 	}

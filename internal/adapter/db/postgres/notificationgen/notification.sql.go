@@ -384,6 +384,17 @@ func (q *Queries) InsertNotificationDeletedStatus(ctx context.Context, statusID 
 	return err
 }
 
+const insertNotificationDeletedStatuses = `-- name: InsertNotificationDeletedStatuses :exec
+INSERT INTO notification_deleted_statuses (status_id) SELECT unnest($1::uuid[])
+ON CONFLICT (status_id) DO NOTHING
+`
+
+// InsertNotificationDeletedStatuses is InsertNotificationDeletedStatus of many statuses.
+func (q *Queries) InsertNotificationDeletedStatuses(ctx context.Context, statusIds []string) error {
+	_, err := q.db.Exec(ctx, insertNotificationDeletedStatuses, statusIds)
+	return err
+}
+
 const insertNotificationDismissal = `-- name: InsertNotificationDismissal :execrows
 INSERT INTO notification_dismissals (notification_id, dismissed_at) VALUES ($1, $2)
 ON CONFLICT (notification_id) DO NOTHING

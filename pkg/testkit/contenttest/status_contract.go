@@ -314,6 +314,31 @@ func (e *StatusEnv) remove(t *testing.T, s content.Status) (content.Deletion, er
 	return d, err
 }
 
+// mustRemoveMany records the deletions of sts together and emits one StatusesDeleted, as a
+// moderation action on statuses does.
+func (e *StatusEnv) mustRemoveMany(t *testing.T, sts []content.Status) {
+	t.Helper()
+	e.Clock.Advance(time.Millisecond)
+	ev := appcontent.StatusesDeleted{}
+	ds := make([]content.Deletion, len(sts))
+	for i, s := range sts {
+		ds[i] = content.Deletion{
+			StatusID: s.ID, URI: s.URI, AuthorAccountID: s.AuthorAccountID, Origin: content.DeletedByModeration,
+			ModerationActionID: testkit.NamedID("action"), DeletedAt: e.Clock.Now(),
+		}
+		ev.Deletions = append(ev.Deletions, appcontent.StatusDeleted{Deletion: ds[i], Status: s})
+	}
+	err := e.H.UnitOfWork.Tx(t.Context(), func(tx uow.Tx) error {
+		if err := e.H.Statuses.InsertDeletions(t.Context(), tx, ds); err != nil {
+			return err
+		}
+		return tx.Emit(t.Context(), ev)
+	})
+	if err != nil {
+		t.Fatalf("delete %d statuses: %v", len(sts), err)
+	}
+}
+
 // MustRemove deletes s and fails t when it cannot.
 func (e *StatusEnv) MustRemove(t *testing.T, s content.Status) {
 	t.Helper()
@@ -1076,13 +1101,29 @@ func statusProjectionEqualsRebuild(t *testing.T, e *StatusEnv) {
 				if _, err := e.revise(t, s.ID, pickMentions()...); err != nil {
 					t.Fatalf("revise = %v", err)
 				}
-			default:
+			case op < 9 || rng.IntN(3) > 0:
 				s := created[rng.IntN(len(created))]
 				if !live[s.ID] {
 					continue
 				}
 				e.MustRemove(t, s)
 				live[s.ID] = false
+			default:
+				// Several statuses deleted together, as a moderation action deletes them.
+				var batch []content.Status
+				for range 2 {
+					s := created[rng.IntN(len(created))]
+					if live[s.ID] && !slices.ContainsFunc(batch, func(b content.Status) bool { return b.ID == s.ID }) {
+						batch = append(batch, s)
+					}
+				}
+				if len(batch) == 0 {
+					continue
+				}
+				e.mustRemoveMany(t, batch)
+				for _, s := range batch {
+					live[s.ID] = false
+				}
 			}
 		}
 		incremental := snapshotStatusProjections(t, e.H.Statuses)

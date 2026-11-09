@@ -218,6 +218,12 @@ WHERE account_id = ? ORDER BY notification_group, channel;
 INSERT INTO notification_settings (account_id, notification_group, channel, enabled, updated_at) VALUES (?, ?, ?, ?, ?)
 ON CONFLICT (account_id, notification_group, channel) DO UPDATE SET enabled = excluded.enabled, updated_at = excluded.updated_at;
 
+-- InsertNotificationDeletedStatuses is InsertNotificationDeletedStatus of many statuses, a JSON
+-- array; WHERE true keeps ON CONFLICT from reading as a join constraint.
+-- name: InsertNotificationDeletedStatuses :exec
+INSERT INTO notification_deleted_statuses (status_id) SELECT value FROM json_each(CAST(sqlc.arg(status_ids) AS TEXT)) WHERE true
+ON CONFLICT (status_id) DO NOTHING;
+
 -- UpsertNotificationExclusions and DeleteNotificationExclusionsOf are UpsertNotificationExclusion
 -- and DeleteNotificationExclusion of many pairs, JSON arrays.
 -- name: UpsertNotificationExclusions :exec

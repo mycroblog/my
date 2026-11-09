@@ -859,6 +859,25 @@ func (q *Queries) InsertOutboundActivityDocument(ctx context.Context, arg Insert
 	return result.RowsAffected()
 }
 
+const insertOutboundActivityDocuments = `-- name: InsertOutboundActivityDocuments :exec
+INSERT INTO outbound_activity_documents (outbound_activity_id, document, built_at)
+SELECT value ->> '$.id', unhex(value ->> '$.document'), CAST(?1 AS INTEGER)
+FROM json_each(CAST(?2 AS TEXT)) WHERE true
+ON CONFLICT (outbound_activity_id) DO NOTHING
+`
+
+type InsertOutboundActivityDocumentsParams struct {
+	BuiltAt   int64
+	Documents string
+}
+
+// InsertOutboundActivityDocuments is InsertOutboundActivityDocument of many activities, a JSON
+// array whose documents are hex; WHERE true keeps ON CONFLICT from reading as a join constraint.
+func (q *Queries) InsertOutboundActivityDocuments(ctx context.Context, arg InsertOutboundActivityDocumentsParams) error {
+	_, err := q.db.ExecContext(ctx, insertOutboundActivityDocuments, arg.BuiltAt, arg.Documents)
+	return err
+}
+
 const insertOutboundFanOutCompletion = `-- name: InsertOutboundFanOutCompletion :exec
 INSERT INTO outbound_fanout_completions (outbound_activity_id, completed_at)
 VALUES (?1, ?2)

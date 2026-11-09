@@ -86,6 +86,17 @@ func linkCardStatusURLs(t *testing.T, h LinkCardHarness) {
 	if _, err := h.Cards.StatusLinkCardURL(ctx, testkit.NamedID("s1")); !errors.Is(err, appcontent.ErrNotFound) {
 		t.Errorf("StatusLinkCardURL after the deletion: %v, want ErrNotFound", err)
 	}
+	// Many statuses' cards deleted together, as DeleteStatusLinkCard deletes each.
+	linkCardTx(t, h, func(ctx context.Context, tx uow.Tx) error {
+		return errors.Join(h.Cards.UpsertStatusLinkCard(ctx, tx, content.StatusLinkCard{StatusID: testkit.NamedID("s2"), URL: "https://a.example/"}),
+			h.Cards.UpsertStatusLinkCard(ctx, tx, content.StatusLinkCard{StatusID: testkit.NamedID("s3"), URL: "https://b.example/"}))
+	})
+	linkCardTx(t, h, func(ctx context.Context, tx uow.Tx) error {
+		return errors.Join(h.Cards.DeleteStatusLinkCardsOf(ctx, tx, []string{testkit.NamedID("s2"), testkit.NamedID("s3"), testkit.NamedID("none")}), h.Cards.DeleteStatusLinkCardsOf(ctx, tx, nil))
+	})
+	if got, err := h.Cards.StatusLinkCardURLs(ctx, []string{testkit.NamedID("s2"), testkit.NamedID("s3")}); err != nil || len(got) != 0 {
+		t.Errorf("StatusLinkCardURLs after DeleteStatusLinkCardsOf = %v, %v; want none", got, err)
+	}
 }
 
 func linkCardUpserts(t *testing.T, h LinkCardHarness) {

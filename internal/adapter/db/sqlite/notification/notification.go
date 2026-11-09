@@ -172,6 +172,39 @@ func (r *Repository) DomainExcluded(ctx context.Context, tx uow.Tx, viewerAccoun
 	return excluded, sqlite.Wrap(err, "check notification domain exclusion")
 }
 
+// RecordDeletedStatuses implements notification.Repository.
+func (r *Repository) RecordDeletedStatuses(ctx context.Context, tx uow.Tx, statusIDs []string) error {
+	if len(statusIDs) == 0 {
+		return nil
+	}
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return err
+	}
+	list, err := sqlite.JSONList(statusIDs)
+	if err != nil {
+		return err
+	}
+	rows, err := q.NotifiedStatusesAmong(ctx, list)
+	if err != nil {
+		return sqlite.Wrap(err, "list the notified statuses")
+	}
+	var notified []string
+	for _, id := range rows {
+		if id.Valid {
+			notified = append(notified, id.String)
+		}
+	}
+	if len(notified) == 0 {
+		return nil
+	}
+	notifiedList, err := sqlite.JSONList(notified)
+	if err != nil {
+		return err
+	}
+	return sqlite.Wrap(q.InsertNotificationDeletedStatuses(ctx, notifiedList), "insert notification deleted statuses")
+}
+
 // InsertDeletedStatus implements notification.Repository.
 func (r *Repository) InsertDeletedStatus(ctx context.Context, tx uow.Tx, statusID string) error {
 	q, err := r.db.queries(tx)

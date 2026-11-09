@@ -208,6 +208,55 @@ func RegisterOutboundProjectors(r *uow.Projectors, d RecorderDeps) {
 		}
 		return rec.enqueue(ctx, tx, act, fanOutPayload{})
 	})
+	r.Register(appcontent.EventStatusesDeleted, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
+		ev, ok := e.(appcontent.StatusesDeleted)
+		if !ok {
+			return nil
+		}
+		// The Delete of each local status, as StatusDeleted records one, with one statement for
+		// the activities, one for their documents, and one for their fan-outs.
+		var as []federation.OutboundActivity
+		var sts []appcontent.Status
+		for _, d := range ev.Deletions {
+			if d.Status.IsLocal && !d.ByAccountErasure() {
+				as = append(as, federation.OutboundActivity{
+					Type: federation.ActivityDelete, ActorAccountID: d.Status.AuthorAccountID,
+					ObjectKind: federation.OutboundStatus, ObjectID: d.Status.ID, CreatedAt: d.Deletion.DeletedAt,
+				})
+				sts = append(sts, d.Status)
+			}
+		}
+		if len(as) == 0 {
+			return nil
+		}
+		docs := make(map[string][]byte, len(as))
+		var builtAt time.Time
+		for i := range as {
+			a, err := rec.prepare(as[i])
+			if err != nil {
+				return err
+			}
+			as[i], builtAt = a, a.CreatedAt
+			if docs[a.ID], err = deleteDocument(a, d.Host, sts[i]); err != nil {
+				return err
+			}
+		}
+		if err := d.Repository.InsertOutboundActivities(ctx, tx, as); err != nil {
+			return fmt.Errorf("record %d Deletes: %w", len(as), err)
+		}
+		if err := d.Repository.InsertOutboundDocuments(ctx, tx, docs, builtAt); err != nil {
+			return err
+		}
+		jobs := make([]queue.NewJob, len(as))
+		for i, a := range as {
+			job, err := (fanOutPayload{OutboundActivityID: a.ID}).job(a)
+			if err != nil {
+				return err
+			}
+			jobs[i] = job
+		}
+		return rec.d.Outbox.EnqueueTx(ctx, tx, jobs...)
+	})
 	r.Register(appcontent.EventBoosted, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
 		ev, ok := e.(appcontent.Boosted)
 		if !ok || !ev.Boost.Federates() {

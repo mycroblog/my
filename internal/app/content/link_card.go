@@ -67,6 +67,8 @@ type LinkCardRepository interface {
 	UpsertStatusLinkCard(ctx context.Context, tx uow.Tx, l content.StatusLinkCard) error
 	// DeleteStatusLinkCard removes the card of a status; a status without one is not an error.
 	DeleteStatusLinkCard(ctx context.Context, tx uow.Tx, statusID string) error
+	// DeleteStatusLinkCardsOf is DeleteStatusLinkCard of each of statusIDs, with one statement.
+	DeleteStatusLinkCardsOf(ctx context.Context, tx uow.Tx, statusIDs []string) error
 	// StatusLinkCardURL returns the URL whose card a status shows.
 	StatusLinkCardURL(ctx context.Context, statusID string) (string, error)
 	// StatusLinkCardURLs, FindLinkCards, and FindLinkCardMedias return those of many statuses, URLs,
@@ -240,6 +242,18 @@ func (l *LinkCards) RegisterProjectors(r *uow.Projectors) {
 	r.Register(EventStatusDeleted, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
 		return l.d.Repository.DeleteStatusLinkCard(ctx, tx, e.(StatusDeleted).Status.ID)
 	})
+	r.Register(EventStatusesDeleted, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
+		return l.d.Repository.DeleteStatusLinkCardsOf(ctx, tx, deletedIDs(e.(StatusesDeleted).Deletions))
+	})
+}
+
+// deletedIDs returns the IDs of the statuses of ds.
+func deletedIDs(ds []StatusDeleted) []string {
+	ids := make([]string, len(ds))
+	for i, d := range ds {
+		ids[i] = d.Status.ID
+	}
+	return ids
 }
 
 func (l *LinkCards) project(ctx context.Context, tx uow.Tx, st content.Status, rev content.Revision) error {

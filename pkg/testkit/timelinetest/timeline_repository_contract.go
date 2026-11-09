@@ -303,13 +303,17 @@ func timelineRepoTagUsage(t *testing.T, r *timelineRepo) {
 		t.Errorf("the tags of the revised post = %v, want %v", secondTags, []string{tagC})
 	}
 
-	// Deleting the posts takes their tags out; a tag that drops to zero has no usage.
+	// Deleting the posts takes their tags out; a tag that drops to zero has no usage. The second
+	// goes with DeleteStatusEntriesOf, as DeleteStatusEntries deletes one status's entries.
 	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
 		if err := r.repo.DeleteEntry(ctx, tx, first.ID); err != nil {
 			return err
 		}
-		return r.repo.DeleteStatusEntries(ctx, tx, second.StatusID)
+		return errors.Join(r.repo.DeleteStatusEntriesOf(ctx, tx, []string{second.StatusID, r.ids.NewID()}), r.repo.DeleteStatusEntriesOf(ctx, tx, nil))
 	})
+	if snap, err := r.repo.Snapshot(ctx); err != nil || slices.ContainsFunc(snap.Entries, func(e apptimeline.Entry) bool { return e.StatusID == second.StatusID }) {
+		t.Errorf("entries after DeleteStatusEntriesOf = %+v, %v; want none of the second post", snap.Entries, err)
+	}
 	if got := usage(); len(got) != 0 {
 		t.Errorf("TagUsageOf after the deletions = %+v, want none", got)
 	}

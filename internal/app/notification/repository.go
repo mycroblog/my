@@ -93,6 +93,9 @@ type Repository interface {
 	// InsertDeletedStatus records that a status is deleted, so that the notifications about it
 	// are no longer visible. Recording it again changes nothing.
 	InsertDeletedStatus(ctx context.Context, tx uow.Tx, statusID string) error
+	// RecordDeletedStatuses is recordDeletedStatus of each of statusIDs: it inserts those that a
+	// notification is about, with one read and one insert.
+	RecordDeletedStatuses(ctx context.Context, tx uow.Tx, statusIDs []string) error
 	// DeleteAllExclusions (with the domain exclusions) and DeleteAllDeletedStatuses empty the
 	// projections, for a rebuild.
 	DeleteAllExclusions(ctx context.Context, tx uow.Tx) error

@@ -381,6 +381,14 @@ WHERE id IN (
   ORDER BY e.id LIMIT @batch_limit
 );
 
+-- InsertOutboundActivityDocuments is InsertOutboundActivityDocument of many activities, a JSON
+-- array whose documents are hex; WHERE true keeps ON CONFLICT from reading as a join constraint.
+-- name: InsertOutboundActivityDocuments :exec
+INSERT INTO outbound_activity_documents (outbound_activity_id, document, built_at)
+SELECT value ->> '$.id', unhex(value ->> '$.document'), CAST(sqlc.arg(built_at) AS INTEGER)
+FROM json_each(CAST(sqlc.arg(documents) AS TEXT)) WHERE true
+ON CONFLICT (outbound_activity_id) DO NOTHING;
+
 -- ListReceivedActivities is GetReceivedActivity of many activities, a JSON array.
 -- name: ListReceivedActivities :many
 SELECT activity_uri, actor_uri, type, signature_scheme, trust, received_at FROM received_activities

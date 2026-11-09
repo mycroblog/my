@@ -7,3 +7,8 @@
 -- StatusHasNotifications reports whether a notification is about the status.
 -- name: StatusHasNotifications :one
 SELECT EXISTS (SELECT 1 FROM notifications WHERE status_id = ?);
+
+-- NotifiedStatusesAmong returns the statuses among status_ids (a JSON array) that a notification
+-- is about, as StatusHasNotifications tells of one.
+-- name: NotifiedStatusesAmong :many
+SELECT DISTINCT status_id FROM notifications WHERE status_id IN (SELECT value FROM json_each(CAST(sqlc.arg(status_ids) AS TEXT))) ORDER BY status_id;

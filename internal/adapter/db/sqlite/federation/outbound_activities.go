@@ -4,12 +4,41 @@ package federation
 
 import (
 	"context"
+	"encoding/hex"
 	"encoding/json"
+	"maps"
+	"slices"
+	"time"
 
 	"github.com/mycroblog/my/internal/adapter/db/sqlite"
+	"github.com/mycroblog/my/internal/adapter/db/sqlite/federationgen"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/federation"
 )
+
+// InsertOutboundDocuments implements federation.Repository.
+func (r *Repository) InsertOutboundDocuments(ctx context.Context, tx uow.Tx, documents map[string][]byte, builtAt time.Time) error {
+	if len(documents) == 0 {
+		return nil
+	}
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return err
+	}
+	type row struct {
+		ID       string `json:"id"`
+		Document string `json:"document"`
+	}
+	rows := make([]row, 0, len(documents))
+	for _, id := range slices.Sorted(maps.Keys(documents)) {
+		rows = append(rows, row{ID: id, Document: hex.EncodeToString(documents[id])})
+	}
+	list, err := json.Marshal(rows)
+	if err != nil {
+		return err
+	}
+	return sqlite.Wrap(q.InsertOutboundActivityDocuments(ctx, federationgen.InsertOutboundActivityDocumentsParams{BuiltAt: sqlite.ToMillis(builtAt), Documents: string(list)}), "insert outbound activity documents")
+}
 
 // InsertOutboundActivities implements federation.Repository.
 func (r *Repository) InsertOutboundActivities(ctx context.Context, tx uow.Tx, as []federation.OutboundActivity) error {
