@@ -164,7 +164,7 @@
   ジョブは `scheduled_drafts` がその予約を指すときだけ、すぐの投稿と同じ `content.Service.Create` で公開します。冪等キーは下書きの ID から作り（`local_statuses (author_account_id, idempotency_key)`）、同じトランザクションで `published` を記録して下書きの行をすべて消します。
   処分・返信先や引用先が見られない・検査や外部の審査で断られたときは、`failed` と理由を記録して `scheduled_drafts` から外し、通知 `scheduled_status_failed` を作ります。下書きは残ります。
 - 投稿の `id`・`published_at` は公開のときに作ります。自動削除の日数もそこから数えます。
-- 上限はインスタンス設定 `max_drafts`（予約の無い下書き）・`max_scheduled_posts`・`max_scheduled_posts_per_day`（`publish_at` の UTC の日）で、`scheduled_drafts` と `drafts` を数えます。
+- 上限はインスタンス設定 `max_drafts`（予約の無い下書き）・`max_scheduled_posts`・`max_scheduled_posts_per_day`（`publish_at` の UTC の日）で、`scheduled_drafts` と `drafts` を数えます。予約できる時刻は `scheduled_post_min_lead_minutes`（既定 5 分）から `scheduled_post_max_lead_days`（既定 366 日）先までです。
 - `media.purge_unattached` は `draft_attachments` が参照するファイルを添付として数えます。下書きを消すと参照が外れ、次の実行で消えます。アカウントの消去は下書きの行をすべて消します。
 
 #### ブースト
