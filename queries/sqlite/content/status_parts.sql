@@ -46,3 +46,32 @@ FROM json_each(CAST(sqlc.arg(deletions) AS TEXT));
 INSERT INTO status_sensitivity_overrides (status_id, source_kind, source_id)
 SELECT value, 'action', CAST(sqlc.arg(source_id) AS TEXT) FROM json_each(CAST(sqlc.arg(status_ids) AS TEXT)) WHERE true
 ON CONFLICT (status_id, source_kind, source_id) DO NOTHING;
+
+-- The tags, emoji, and attachments of a revision, each with one statement as its mentions; the
+-- lists are JSON arrays.
+
+-- name: InsertStatusRevisionTags :exec
+INSERT INTO status_revision_tags (revision_id, tag_id)
+SELECT CAST(sqlc.arg(revision_id) AS TEXT), value FROM json_each(CAST(sqlc.arg(tag_ids) AS TEXT));
+
+-- name: InsertStatusRevisionEmojis :exec
+INSERT INTO status_revision_emojis (revision_id, emoji_id)
+SELECT CAST(sqlc.arg(revision_id) AS TEXT), value FROM json_each(CAST(sqlc.arg(emoji_ids) AS TEXT));
+
+-- name: InsertStatusRevisionAttachments :exec
+INSERT INTO status_revision_attachments (revision_id, position, media_id, description)
+SELECT CAST(sqlc.arg(revision_id) AS TEXT), value ->> '$.position', value ->> '$.media_id', NULLIF(value ->> '$.description', '')
+FROM json_each(CAST(sqlc.arg(attachments) AS TEXT));
+
+-- InsertTagsIfAbsent is InsertTagIfAbsent of many tags, a JSON array (WHERE true keeps ON CONFLICT
+-- from reading as a join constraint), and ListTagsByNames reads the tags of many normalized names,
+-- as GetTagByName reads one.
+-- name: InsertTagsIfAbsent :exec
+INSERT INTO tags (id, name, name_normalized, created_at)
+SELECT value ->> '$.id', value ->> '$.name', value ->> '$.name_normalized', CAST(sqlc.arg(created_at) AS INTEGER)
+FROM json_each(CAST(sqlc.arg(tags) AS TEXT)) WHERE true
+ON CONFLICT (name_normalized) DO NOTHING;
+
+-- name: ListTagsByNames :many
+SELECT id, name, name_normalized, created_at FROM tags
+WHERE name_normalized IN (SELECT value FROM json_each(CAST(sqlc.arg(names_normalized) AS TEXT))) ORDER BY name_normalized;

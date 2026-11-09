@@ -44,3 +44,29 @@ SELECT unnest(sqlc.arg(status_ids)::uuid[]), unnest(sqlc.arg(uris)::text[]), unn
 INSERT INTO status_sensitivity_overrides (status_id, source_kind, source_id)
 SELECT unnest(sqlc.arg(status_ids)::uuid[]), 'action', sqlc.arg(source_id)::uuid
 ON CONFLICT (status_id, source_kind, source_id) DO NOTHING;
+
+-- The tags, emoji, and attachments of a revision, each with one statement as its mentions (the
+-- unnests of a select list advance together).
+
+-- name: InsertStatusRevisionTags :exec
+INSERT INTO status_revision_tags (revision_id, tag_id)
+SELECT sqlc.arg(revision_id)::uuid, unnest(sqlc.arg(tag_ids)::uuid[]);
+
+-- name: InsertStatusRevisionEmojis :exec
+INSERT INTO status_revision_emojis (revision_id, emoji_id)
+SELECT sqlc.arg(revision_id)::uuid, unnest(sqlc.arg(emoji_ids)::uuid[]);
+
+-- name: InsertStatusRevisionAttachments :exec
+INSERT INTO status_revision_attachments (revision_id, position, media_id, description)
+SELECT sqlc.arg(revision_id)::uuid, unnest(sqlc.arg(positions)::int[]), unnest(sqlc.arg(media_ids)::uuid[]),
+  NULLIF(unnest(sqlc.arg(descriptions)::text[]), '');
+
+-- InsertTagsIfAbsent is InsertTagIfAbsent of many tags, and ListTagsByNames reads the tags of
+-- many normalized names, as GetTagByName reads one.
+-- name: InsertTagsIfAbsent :exec
+INSERT INTO tags (id, name, name_normalized, created_at)
+SELECT unnest(sqlc.arg(ids)::uuid[]), unnest(sqlc.arg(names)::text[]), unnest(sqlc.arg(names_normalized)::text[]), sqlc.arg(created_at)::timestamptz
+ON CONFLICT (name_normalized) DO NOTHING;
+
+-- name: ListTagsByNames :many
+SELECT id, name, name_normalized, created_at FROM tags WHERE name_normalized = ANY(sqlc.arg(names_normalized)::text[]) ORDER BY name_normalized;

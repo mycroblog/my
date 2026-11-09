@@ -54,6 +54,37 @@ func (q *Queries) InsertStatusMentions(ctx context.Context, arg InsertStatusMent
 	return err
 }
 
+const insertStatusRevisionAttachments = `-- name: InsertStatusRevisionAttachments :exec
+INSERT INTO status_revision_attachments (revision_id, position, media_id, description)
+SELECT CAST(?1 AS TEXT), value ->> '$.position', value ->> '$.media_id', NULLIF(value ->> '$.description', '')
+FROM json_each(CAST(?2 AS TEXT))
+`
+
+type InsertStatusRevisionAttachmentsParams struct {
+	RevisionID  string
+	Attachments string
+}
+
+func (q *Queries) InsertStatusRevisionAttachments(ctx context.Context, arg InsertStatusRevisionAttachmentsParams) error {
+	_, err := q.db.ExecContext(ctx, insertStatusRevisionAttachments, arg.RevisionID, arg.Attachments)
+	return err
+}
+
+const insertStatusRevisionEmojis = `-- name: InsertStatusRevisionEmojis :exec
+INSERT INTO status_revision_emojis (revision_id, emoji_id)
+SELECT CAST(?1 AS TEXT), value FROM json_each(CAST(?2 AS TEXT))
+`
+
+type InsertStatusRevisionEmojisParams struct {
+	RevisionID string
+	EmojiIds   string
+}
+
+func (q *Queries) InsertStatusRevisionEmojis(ctx context.Context, arg InsertStatusRevisionEmojisParams) error {
+	_, err := q.db.ExecContext(ctx, insertStatusRevisionEmojis, arg.RevisionID, arg.EmojiIds)
+	return err
+}
+
 const insertStatusRevisionMentions = `-- name: InsertStatusRevisionMentions :exec
 INSERT INTO status_revision_mentions (revision_id, account_id)
 SELECT CAST(?1 AS TEXT), value FROM json_each(CAST(?2 AS TEXT))
@@ -66,6 +97,24 @@ type InsertStatusRevisionMentionsParams struct {
 
 func (q *Queries) InsertStatusRevisionMentions(ctx context.Context, arg InsertStatusRevisionMentionsParams) error {
 	_, err := q.db.ExecContext(ctx, insertStatusRevisionMentions, arg.RevisionID, arg.AccountIds)
+	return err
+}
+
+const insertStatusRevisionTags = `-- name: InsertStatusRevisionTags :exec
+
+INSERT INTO status_revision_tags (revision_id, tag_id)
+SELECT CAST(?1 AS TEXT), value FROM json_each(CAST(?2 AS TEXT))
+`
+
+type InsertStatusRevisionTagsParams struct {
+	RevisionID string
+	TagIds     string
+}
+
+// The tags, emoji, and attachments of a revision, each with one statement as its mentions; the
+// lists are JSON arrays.
+func (q *Queries) InsertStatusRevisionTags(ctx context.Context, arg InsertStatusRevisionTagsParams) error {
+	_, err := q.db.ExecContext(ctx, insertStatusRevisionTags, arg.RevisionID, arg.TagIds)
 	return err
 }
 
@@ -84,6 +133,26 @@ type InsertStatusSensitivityOverridesParams struct {
 // array; WHERE true keeps ON CONFLICT from reading as a join constraint.
 func (q *Queries) InsertStatusSensitivityOverrides(ctx context.Context, arg InsertStatusSensitivityOverridesParams) error {
 	_, err := q.db.ExecContext(ctx, insertStatusSensitivityOverrides, arg.SourceID, arg.StatusIds)
+	return err
+}
+
+const insertTagsIfAbsent = `-- name: InsertTagsIfAbsent :exec
+INSERT INTO tags (id, name, name_normalized, created_at)
+SELECT value ->> '$.id', value ->> '$.name', value ->> '$.name_normalized', CAST(?1 AS INTEGER)
+FROM json_each(CAST(?2 AS TEXT)) WHERE true
+ON CONFLICT (name_normalized) DO NOTHING
+`
+
+type InsertTagsIfAbsentParams struct {
+	CreatedAt int64
+	Tags      string
+}
+
+// InsertTagsIfAbsent is InsertTagIfAbsent of many tags, a JSON array (WHERE true keeps ON CONFLICT
+// from reading as a join constraint), and ListTagsByNames reads the tags of many normalized names,
+// as GetTagByName reads one.
+func (q *Queries) InsertTagsIfAbsent(ctx context.Context, arg InsertTagsIfAbsentParams) error {
+	_, err := q.db.ExecContext(ctx, insertTagsIfAbsent, arg.CreatedAt, arg.Tags)
 	return err
 }
 
@@ -264,6 +333,39 @@ SELECT id, name, name_normalized, created_at FROM tags WHERE id IN (SELECT value
 
 func (q *Queries) ListTagsByIDs(ctx context.Context, ids string) ([]Tag, error) {
 	rows, err := q.db.QueryContext(ctx, listTagsByIDs, ids)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Tag{}
+	for rows.Next() {
+		var i Tag
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.NameNormalized,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listTagsByNames = `-- name: ListTagsByNames :many
+SELECT id, name, name_normalized, created_at FROM tags
+WHERE name_normalized IN (SELECT value FROM json_each(CAST(?1 AS TEXT))) ORDER BY name_normalized
+`
+
+func (q *Queries) ListTagsByNames(ctx context.Context, namesNormalized string) ([]Tag, error) {
+	rows, err := q.db.QueryContext(ctx, listTagsByNames, namesNormalized)
 	if err != nil {
 		return nil, err
 	}

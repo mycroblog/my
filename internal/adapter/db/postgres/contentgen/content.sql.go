@@ -658,27 +658,6 @@ func (q *Queries) InsertStatusRevision(ctx context.Context, arg InsertStatusRevi
 	return err
 }
 
-const insertStatusRevisionAttachment = `-- name: InsertStatusRevisionAttachment :exec
-INSERT INTO status_revision_attachments (revision_id, position, media_id, description) VALUES ($1, $2, $3, $4)
-`
-
-type InsertStatusRevisionAttachmentParams struct {
-	RevisionID  string
-	Position    int32
-	MediaID     string
-	Description *string
-}
-
-func (q *Queries) InsertStatusRevisionAttachment(ctx context.Context, arg InsertStatusRevisionAttachmentParams) error {
-	_, err := q.db.Exec(ctx, insertStatusRevisionAttachment,
-		arg.RevisionID,
-		arg.Position,
-		arg.MediaID,
-		arg.Description,
-	)
-	return err
-}
-
 const insertStatusRevisionBody = `-- name: InsertStatusRevisionBody :exec
 INSERT INTO status_revision_bodies (revision_id, language, content_html) VALUES ($1, $2, $3)
 `
@@ -694,34 +673,6 @@ func (q *Queries) InsertStatusRevisionBody(ctx context.Context, arg InsertStatus
 	return err
 }
 
-const insertStatusRevisionEmoji = `-- name: InsertStatusRevisionEmoji :exec
-INSERT INTO status_revision_emojis (revision_id, emoji_id) VALUES ($1, $2)
-`
-
-type InsertStatusRevisionEmojiParams struct {
-	RevisionID string
-	EmojiID    string
-}
-
-func (q *Queries) InsertStatusRevisionEmoji(ctx context.Context, arg InsertStatusRevisionEmojiParams) error {
-	_, err := q.db.Exec(ctx, insertStatusRevisionEmoji, arg.RevisionID, arg.EmojiID)
-	return err
-}
-
-const insertStatusRevisionMention = `-- name: InsertStatusRevisionMention :exec
-INSERT INTO status_revision_mentions (revision_id, account_id) VALUES ($1, $2)
-`
-
-type InsertStatusRevisionMentionParams struct {
-	RevisionID string
-	AccountID  string
-}
-
-func (q *Queries) InsertStatusRevisionMention(ctx context.Context, arg InsertStatusRevisionMentionParams) error {
-	_, err := q.db.Exec(ctx, insertStatusRevisionMention, arg.RevisionID, arg.AccountID)
-	return err
-}
-
 const insertStatusRevisionSource = `-- name: InsertStatusRevisionSource :exec
 INSERT INTO status_revision_sources (revision_id, source_text, source_format) VALUES ($1, $2, $3)
 `
@@ -734,20 +685,6 @@ type InsertStatusRevisionSourceParams struct {
 
 func (q *Queries) InsertStatusRevisionSource(ctx context.Context, arg InsertStatusRevisionSourceParams) error {
 	_, err := q.db.Exec(ctx, insertStatusRevisionSource, arg.RevisionID, arg.SourceText, arg.SourceFormat)
-	return err
-}
-
-const insertStatusRevisionTag = `-- name: InsertStatusRevisionTag :exec
-INSERT INTO status_revision_tags (revision_id, tag_id) VALUES ($1, $2)
-`
-
-type InsertStatusRevisionTagParams struct {
-	RevisionID string
-	TagID      string
-}
-
-func (q *Queries) InsertStatusRevisionTag(ctx context.Context, arg InsertStatusRevisionTagParams) error {
-	_, err := q.db.Exec(ctx, insertStatusRevisionTag, arg.RevisionID, arg.TagID)
 	return err
 }
 

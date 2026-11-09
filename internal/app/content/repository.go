@@ -51,6 +51,9 @@ type Repository interface {
 	InsertDeletions(ctx context.Context, tx uow.Tx, ds []content.Deletion) error
 	// EnsureTag inserts t unless a tag with its NameNormalized exists, and returns the stored tag.
 	EnsureTag(ctx context.Context, tx uow.Tx, t content.Tag) (content.Tag, error)
+	// EnsureTags is EnsureTag of each of tags, which share their CreatedAt, with one insert and one
+	// read; it returns the stored tags by NameNormalized.
+	EnsureTags(ctx context.Context, tx uow.Tx, tags []content.Tag) (map[string]content.Tag, error)
 
 	// Projections, written only by this module's projectors and rebuild.
 

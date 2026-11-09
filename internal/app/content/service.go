@@ -1001,13 +1001,20 @@ func (p preparedText) tags(ids kernel.IDGenerator, at time.Time) []content.Tag {
 
 // ensureTags stores the tags that do not exist yet and returns the IDs of all of them, sorted.
 func ensureTags(ctx context.Context, tx uow.Tx, repo Repository, tags []content.Tag) ([]string, error) {
-	var ids []string
+	if len(tags) == 0 {
+		return nil, nil
+	}
+	stored, err := repo.EnsureTags(ctx, tx, tags)
+	if err != nil {
+		return nil, err
+	}
+	ids := make([]string, 0, len(tags))
 	for _, t := range tags {
-		stored, err := repo.EnsureTag(ctx, tx, t)
-		if err != nil {
-			return nil, err
+		st, ok := stored[t.NameNormalized]
+		if !ok {
+			return nil, fmt.Errorf("tag %q after ensuring it: %w", t.NameNormalized, ErrNotFound)
 		}
-		ids = append(ids, stored.ID)
+		ids = append(ids, st.ID)
 	}
 	slices.Sort(ids)
 	return ids, nil

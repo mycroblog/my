@@ -113,16 +113,17 @@ func (r *StatusRepository) InsertRevision(ctx context.Context, tx uow.Tx, rev co
 			return postgres.Wrap(err, "insert status revision source")
 		}
 	}
-	for _, a := range rev.Attachments {
-		pos, err := postgres.ToInt32(a.Position, "attachment position")
-		if err != nil {
-			return err
+	if len(rev.Attachments) > 0 {
+		arg := contentgen.InsertStatusRevisionAttachmentsParams{RevisionID: rev.ID}
+		for _, a := range rev.Attachments {
+			pos, err := postgres.ToInt32(a.Position, "attachment position")
+			if err != nil {
+				return err
+			}
+			arg.Positions, arg.MediaIds, arg.Descriptions = append(arg.Positions, pos), append(arg.MediaIds, a.MediaID), append(arg.Descriptions, a.Description)
 		}
-		err = q.InsertStatusRevisionAttachment(ctx, contentgen.InsertStatusRevisionAttachmentParams{
-			RevisionID: rev.ID, Position: pos, MediaID: a.MediaID, Description: postgres.ToNullString(a.Description),
-		})
-		if err != nil {
-			return postgres.Wrap(err, "insert status revision attachment")
+		if err := q.InsertStatusRevisionAttachments(ctx, arg); err != nil {
+			return postgres.Wrap(err, "insert status revision attachments")
 		}
 	}
 	if len(rev.MentionedAccountIDs) > 0 {
@@ -131,13 +132,13 @@ func (r *StatusRepository) InsertRevision(ctx context.Context, tx uow.Tx, rev co
 			return postgres.Wrap(err, "insert status revision mentions")
 		}
 	}
-	for _, id := range rev.TagIDs {
-		if err := q.InsertStatusRevisionTag(ctx, contentgen.InsertStatusRevisionTagParams{RevisionID: rev.ID, TagID: id}); err != nil {
-			return postgres.Wrap(err, "insert status revision tag")
+	if len(rev.TagIDs) > 0 {
+		if err := q.InsertStatusRevisionTags(ctx, contentgen.InsertStatusRevisionTagsParams{RevisionID: rev.ID, TagIds: rev.TagIDs}); err != nil {
+			return postgres.Wrap(err, "insert status revision tags")
 		}
 	}
-	for _, id := range rev.EmojiIDs {
-		if err := q.InsertStatusRevisionEmoji(ctx, contentgen.InsertStatusRevisionEmojiParams{RevisionID: rev.ID, EmojiID: id}); err != nil {
+	if len(rev.EmojiIDs) > 0 {
+		if err := q.InsertStatusRevisionEmojis(ctx, contentgen.InsertStatusRevisionEmojisParams{RevisionID: rev.ID, EmojiIds: rev.EmojiIDs}); err != nil {
 			return postgres.Wrap(err, "insert status revision emoji")
 		}
 	}
@@ -203,6 +204,34 @@ func (r *StatusRepository) EnsureTag(ctx context.Context, tx uow.Tx, t content.T
 		return content.Tag{}, postgres.Wrap(err, "get tag")
 	}
 	return tagFrom(row), nil
+}
+
+// EnsureTags implements content.Repository.
+func (r *StatusRepository) EnsureTags(ctx context.Context, tx uow.Tx, tags []content.Tag) (map[string]content.Tag, error) {
+	out := make(map[string]content.Tag, len(tags))
+	if len(tags) == 0 {
+		return out, nil
+	}
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return nil, err
+	}
+	arg := contentgen.InsertTagsIfAbsentParams{CreatedAt: tags[0].CreatedAt}
+	for _, t := range tags {
+		arg.Ids, arg.Names, arg.NamesNormalized = append(arg.Ids, t.ID), append(arg.Names, t.Name), append(arg.NamesNormalized, t.NameNormalized)
+	}
+	if err := q.InsertTagsIfAbsent(ctx, arg); err != nil {
+		return nil, postgres.Wrap(err, "insert tags")
+	}
+	rows, err := q.ListTagsByNames(ctx, arg.NamesNormalized)
+	if err != nil {
+		return nil, postgres.Wrap(err, "list tags by names")
+	}
+	for _, row := range rows {
+		t := tagFrom(row)
+		out[t.NameNormalized] = t
+	}
+	return out, nil
 }
 
 // Head implements content.Repository.
