@@ -8,7 +8,7 @@
 | `local_statuses` | リソース（部分型） | `status_id`（PK）, `author_account_id`, `oauth_client_id`（NULL 可。`oauth_clients.id`）, `idempotency_key`（NULL 可） | 一意 `(author_account_id, idempotency_key)` |
 | `status_revisions` | イベント（版） | `id`, `status_id`, `seq`（`int`、1 始まり）, `spoiler_text`, `sensitive`（`bool`）, `language`（`lang`）, `revised_at` | 一意 `(status_id, seq)` |
 | `status_revision_bodies` | イベント（版の子） | `revision_id`, `language`（`lang`）, `content_html` | PK `(revision_id, language)`。AP の `contentMap` を正規化したもの。`content` だけのものは版の `language` で 1 行（NFR-I18N-5） |
-| `status_revision_sources` | イベント（部分型） | `revision_id`（PK）, `source_text`, `source_format`（`enum(text_plain)`） | ローカル投稿の入力ソース |
+| `status_revision_sources` | イベント（部分型） | `revision_id`（PK）, `source_text`, `source_format`（`enum(text_plain, text_markdown)`） | ローカル投稿の入力ソース。記事は `text_markdown` |
 | `status_revision_attachments` | イベント（版の子） | `revision_id`, `position`（`int`、0〜3）, `media_id`, `description`（`text`、NULL 可） | PK `(revision_id, position)`。代替テキストは版ごと（編集で直せる）。ローカルの投稿・編集が添付できるのは、投稿者の `uploaded_media` で最新の `media_processing_results` が `ready` のものだけ（content のユースケースが検査する）。インデックス `(media_id)` |
 | `status_revision_mentions` | イベント（版の子） | `revision_id`, `account_id` | PK `(revision_id, account_id)` |
 | `status_revision_tags` | イベント（版の子） | `revision_id`, `tag_id` | PK `(revision_id, tag_id)` |
@@ -139,7 +139,7 @@
 
 | テーブル | カラム | 制約 / インデックス |
 | --- | --- | --- |
-| `status_auto_delete_policies` | `account_id`, `enabled`（`bool`）, `min_age_days`（`int`、1〜3650）, `keep_pinned` / `keep_bookmarked` / `keep_favourited` / `keep_media` / `keep_polls`（`bool`）, `keep_min_boosts` / `keep_min_favourites`（`int`、0〜1,000,000。0 は閾値なし）, `updated_at` | PK `(account_id)`、部分インデックス `(account_id) WHERE enabled` |
+| `status_auto_delete_policies` | `account_id`, `enabled`（`bool`）, `min_age_days`（`int`、1〜3650）, `keep_pinned` / `keep_bookmarked` / `keep_favourited` / `keep_media` / `keep_polls` / `keep_articles`（`bool`）, `keep_min_boosts` / `keep_min_favourites`（`int`、0〜1,000,000。0 は閾値なし）, `updated_at` | PK `(account_id)`、部分インデックス `(account_id) WHERE enabled` |
 | `status_auto_delete_kept_visibilities` | `account_id`, `visibility`（`enum`） | PK `(account_id, visibility)` |
 | `status_auto_delete_limit_notices`【イベント】 | `id`, `account_id`, `max_age_days`（`int`、1〜3650。通知した上限）, `noticed_at`, `enforce_from`（`noticed_at` + 猶予） | インデックス `(account_id, id DESC)` |
 | `status_auto_delete_limits`【投影】 | `account_id`, `notice_id`, `max_age_days`, `enforce_from` | PK `(account_id)`。今上限に縛られているアカウントだけが行を持つ |
@@ -147,7 +147,7 @@
 - 行がなければ組み込みの既定の設定（無効、30 日、ピン留め・自分のブックマーク・自分のお気に入り・`direct` を残す）です。保存は設定全体の置き換えで、残す公開範囲の行も入れ替えます。
 - 新しいローカルのアカウントは、作られたトランザクションで、サーバーの既定（インスタンス設定 `auto_delete_default_*`）を自分の行として受け取ります（ADR-0151 §2）。`content` が `account.local_account_created` を同期で購読し、設定をトランザクションの中で読みます。インスタンスの Actor は行を持ちません。既定から来たことを記録する列は持たず、既定を後で変えても既存の行は変わりません。
 - 1 時間ごとのジョブ `content.auto_delete_statuses` が、有効な設定をアカウントの順に 20 件ずつ読み（続きはカーソル（アカウントの ID）を持った次のジョブ）、アカウントごとに、公開から `min_age_days` 日を過ぎた削除されていないローカルの投稿を古い順に消します。
-  例外は、ピン留め、本人のブックマーク・お気に入り、現在版の添付・投票、残す公開範囲、`status_counters` のブースト数・お気に入り数が閾値以上の投稿です。例外の判定は投稿を読む SQL の中で行うので、残る投稿は消す対象として読みません。
+  例外は、ピン留め、本人のブックマーク・お気に入り、現在版の添付・投票、記事（`keep_articles`）、残す公開範囲、`status_counters` のブースト数・お気に入り数が閾値以上の投稿です。例外の判定は投稿を読む SQL の中で行うので、残る投稿は消す対象として読みません。
   ローカルの投稿の `id` は公開日時の UUIDv7 なので、走査は `(author_account_id, id)` のインデックスを期限の UUIDv7 の下限で止めます。
 - 投稿ごとに `status_deletions`（`origin = auto_delete`）を記録して `content.status_deleted` を発行します。投影からの除外・通知・`Delete` の配送は本人の削除と同じで、行の物理削除も本人の削除と同じく消去ジョブ（§8）に任せます。
 - サーバーの上限（インスタンス設定 `auto_delete_max_age_days` が 1 以上、ADR-0151 §3〜§5）があるとき、`keep_posts_longer` を持たないアカウントは、保存した設定を上限で切った実効の設定（`content.EffectiveAutoDeletePolicy`。有効、日数は保存した日数と上限の短いほう、例外は許されたものだけで、ピン留めは新しい順に `auto_delete_max_kept_pins` 件）で消されます。
@@ -181,6 +181,30 @@
 - 投稿の `id`・`published_at` は公開のときに作ります。自動削除の日数もそこから数えます。
 - 上限はインスタンス設定 `max_drafts`（予約の無い下書き）・`max_scheduled_posts`・`max_scheduled_posts_per_day`（`publish_at` の UTC の日）で、`scheduled_drafts` と `drafts` を数えます。予約できる時刻は `scheduled_post_min_lead_minutes`（既定 5 分）から `scheduled_post_max_lead_days`（既定 366 日）先までです。
 - `media.purge_unattached` は `draft_attachments` が参照するファイルを添付として数えます。下書きを消すと参照が外れ、次の実行で消えます。アカウントの消去は下書きの行をすべて消します。
+
+#### 記事
+
+記事は、題・要約・カバー画像を持ち、本文を Markdown で書く投稿の一種です（[ADR-0160](../../../adr/0160-articles.md)）。投稿の行・版・投影・削除は投稿と同じで、記事であることを部分型のテーブルで表します。
+
+| テーブル | 分類 | カラム | 制約 |
+| --- | --- | --- | --- |
+| `status_articles` | リソース（部分型） | `status_id`（PK）, `author_account_id` | インデックス `(author_account_id, status_id)`（プロフィールの記事の一覧、記事だけのフィード） |
+| `status_revision_articles` | イベント（版の子） | `revision_id`（PK）, `title`（1〜200 文字。リモートは空も可）, `summary`（0〜500 文字、プレーンテキスト）, `summary_origin`（`enum(author, body)`） | 記事のすべての版が 1 行を持つ |
+| `status_revision_article_covers` | イベント（版の子） | `revision_id`（PK）, `media_id`, `description`（`text`、NULL 可） | インデックス `(media_id)` |
+| `status_revision_article_images` | イベント（版の子） | `revision_id`, `position`（`int`、0 始まり）, `media_id`, `description`（`text`、NULL 可） | PK `(revision_id, position)`。インデックス `(media_id)`。本文の中の画像で、インスタンス設定 `max_article_images` 件まで |
+| `draft_articles` | 現在値 | `draft_id`（PK）, `title`, `summary`, `cover_media_id`（NULL 可）, `cover_description`（`text`、NULL 可） | 記事の下書き。本文の Markdown は `draft_contents.source_text` |
+| `draft_article_tags` | 現在値 | `draft_id`, `position`, `name` | PK `(draft_id, position)`。エディタで付けたハッシュタグ（10 件まで） |
+| `draft_article_images` | 現在値 | `draft_id`, `media_id` | PK `(draft_id, media_id)`。インデックス `(media_id)`（未添付の掃除）。保存のたびに本文の参照から作り直す |
+
+- 投稿か記事かは作るときに決まり、編集で変わりません。記事の版は CW（`spoiler_text` は空）・添付・投票を持たず、本文の HTML は `status_revision_bodies`、Markdown の原文は `status_revision_sources`（`text_markdown`）に置きます。
+- ローカルの記事は `internal/app/content` が書いたときに 1 回だけ描画します（記事の描画のポートを `internal/adapter/markdown` が実装し、記事用の許可リストを通す）。
+  - 描画した HTML の UTF-8 のバイト数はインスタンス設定 `max_article_bytes`（既定かつ上限 100,000）以下で、題・要約は数えません。公開範囲に `direct` は選べず、記事は返信・引用になりません。
+  - 本文の画像は、書いた本人のアップロードで最新の `media_processing_results` が `ready` のものだけを `<img>` にして `status_revision_article_images` に記録し、それ以外の画像は代替テキストのリンクにします。
+  - 本文のメンションはリンクにするだけで、`status_revision_mentions` に記録しません（通知しない）。ハッシュタグはエディタで付けたものだけを `status_revision_tags` に記録し、本文の `#name` からは取りません。
+  - 要約が空なら、本文のテキストの先頭から 200 文字を文か語の切れ目で切ったものを `summary_origin = body` で置きます。
+- 権限: インスタンス設定 `article_authoring`（`enum(everyone, permission)`、既定 `everyone`）が `permission` なら、作成に権限 `create_articles` が要ります。編集と削除は限りません。
+- 受信した `Article` も記事として取り込みます（[federation.md §4](../../federation.md#4-as2-の正規化)）。本文の `img` は `remote_media`（`purpose = attachment`）に記録し、表示ではメディアプロキシの URL にします。
+- 記事の下書きは `drafts` に `draft_articles` の行を足したもので、予約（上の「下書きと予約投稿」）も同じに働きます。下書きを公開すると、記事の行も下書きの行と一緒に消えます。
 
 #### ブースト
 
@@ -295,7 +319,7 @@
 - `width` / `height` は EXIF の向きを適用した元画像の寸法（動画は回転を適用した表示の寸法、音声は NULL）です（処理し直しても元の寸法を写す）。`media_variants` の寸法は各版の実寸です。
 - 未添付のアップロードを読めるのも、説明（`media_descriptions`）と焦点（`media_focus`）を変えられるのも、アップロードした本人だけです。
   版が添付したあとは説明を版の `status_revision_attachments.description` で持つので、ファイル単体の説明・焦点は変えられません（投稿を編集して直す）。
-- 未添付のアップロード（どの版からも下書き（`draft_attachments`）からも参照されず、`account_profile_revisions` のアバター・ヘッダーにも使われていない `media_files`）は、
+- 未添付のアップロード（どの版からも下書き（`draft_attachments`・`draft_article_images`・`draft_articles.cover_media_id`）からも参照されず、`account_profile_revisions` のアバター・ヘッダーにも使われていない `media_files`）は、
   作成から `media_unattached_retention`（既定 24 時間）後に、1 時間ごとの消去ジョブ `media.purge_unattached` が行と Blob ごと削除します（FR-803）。
   アバター・ヘッダーの参照は `account` モジュール、インスタンスのプレビュー画像（`preview_image`、§4.9）の参照は `instance` モジュールの公開 API で問い合わせます。削除は同じトランザクションで添付の有無を再検査します。
   行を消すトランザクションで Blob のキーを `media_blob_deletions` に記録し、そのあと Blob を消すので、Blob の削除に失敗してもキーが残り、次の実行が消し直します。

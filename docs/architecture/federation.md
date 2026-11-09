@@ -189,7 +189,7 @@ ActivityPub の配送は順序を保証しません。ハンドラは、どの�
 | `Accept` | 自分が送った `Follow`（URI か埋め込み） | `graph.AcceptRemote`（`follow_acceptances`、`accepted_by = remote`）。`object` の `id` が主体をフォローされる側とするフォローに無ければ、埋め込みの `object.actor`（ローカル）と `actor`（相手）の承認待ち・承認済みのフォローで照合する。埋め込みが `Follow` 以外（GoToSocial の返信の承認など）なら捨てる |
 | `Reject` | 自分が送った `Follow`、または承認済みのフォロー | `graph.RejectRemote`。照合は `Accept` と同じ。承認待ちなら `follow_rejections`（`rejected_by = remote`）、承認済みなら `follow_terminations`（`removed_by_followee`） |
 | `Undo` | `Follow` / `Like` / `EmojiReact` / `Announce` / `Block` / `Accept` | 対象の取り消し。`Undo Follow` は `graph.TerminateRemote`（`unfollowed`）で、`object` の `id` が主体のフォローに無ければ、埋め込みの `object.object`（ローカル）とのフォローで照合する（Misskey の `Undo` は送った `Follow` と違う `id` を持つ）。`Undo Accept` は `graph.RejectRemote` でフォローの終了として扱う。`Undo Like` / `Undo EmojiReact` は、主体が作った同じ URI の `reactions`、`favourites` の順に引き、どちらにも無ければ埋め込みの `object` を `Like` / `EmojiReact` の行と同じ規則で振り分けて、リアクションなら主体のその投稿への同じ絵文字のリアクションを、お気に入りなら主体のその投稿へのお気に入りを消す（ADR-0051 §6）。対象が URI だけなら、主体が作った同じ URI の `follows` / `reactions` / `favourites` / `boosts` / `blocks` を順に引く |
-| `Create` | `Note` / `Question`。`Article` / `Page` / `Event` / `Image` / `Video` / `Audio` は変換して取り込む | 取り込み範囲（ADR-0006）に入れば `content.IngestRemoteStatus`。オブジェクトの `id` は `actor` と同じオリジンで、`attributedTo` は（あれば）`actor` でなければならない。保存済みの投稿は何もせず、削除済みの投稿は捨てる |
+| `Create` | `Note` / `Question` / `Article`（記事）。`Page` / `Event` / `Image` / `Video` / `Audio` は変換して取り込む | 取り込み範囲（ADR-0006）に入れば `content.IngestRemoteStatus`。オブジェクトの `id` は `actor` と同じオリジンで、`attributedTo` は（あれば）`actor` でなければならない。保存済みの投稿は何もせず、削除済みの投稿は捨てる |
 | `Create` | `name` を持ち、投票のあるローカルの投稿への返信の `Note`（投票への回答。Mastodon・Misskey・Pleroma（Akkoma）・GoToSocial が送る形） | `content.RecordRemotePollVote`（FR-112）。`name` が選択肢の題で、投稿としては取り込まない。同じ `Note` は 1 票で、締め切り後・無い選択肢・単一選択の 2 つ目の回答・主体が見られない投稿への回答は捨てる。投票のない投稿への返信は投稿として扱う |
 | `Update` | 投稿 | `content.ReviseRemoteStatus`（新しい版）。投稿の作者とアクティビティの主体が一致し、オリジンが同じであること（[ActivityPub §7.3](https://www.w3.org/TR/activitypub/#update-activity-inbox)）。未知の投稿は §3.3 のとおり `Create` として扱う |
 | `Update` | Actor（自分自身） | `RemoteActors.ReceiveActorUpdate`。オリジンが同じ埋め込みの文書で `account.UpsertRemoteActor`（内容が変わればプロフィールの版が増える）。その前に、プロフィールが変わっていれば判定フック `inbound.actor` に尋ねる（§6.2）。埋め込みが無い・`id` が主体と一致しなければ取得し直す。削除済みの Actor の `Update` は捨てる |
@@ -228,8 +228,9 @@ ActivityPub の配送は順序を保証しません。ハンドラは、どの�
 | 公開の宛先 | `https://www.w3.org/ns/activitystreams#Public`、`as:Public`、`Public` を同じ値として扱う（[ActivityPub §5.6](https://www.w3.org/TR/activitypub/#public-addressing)） |
 | 公開範囲 | `to` に公開 → `public`、`cc` に公開 → `unlisted`、作者の `followers` が `to` / `cc` に → `private`、それ以外 → `direct`。投稿に `to` も `cc` も無ければ、作者が署名した（`trust = signed`）`Create` / `Update` の宛先を使う。ほかの人が署名したアクティビティの宛先は使わない。リモートの投稿が `local` になることはない |
 | 本文 | `contentMap` の言語ごとに 1 行（`status_revision_bodies`）。`content` だけなら `contentMap` の最初の言語、なければ `und` の 1 行。言語タグは BCP 47 として正規化し、不正なら `und`（NFR-I18N-5） |
-| CW | `summary`（無ければ `summaryMap` の最初の値）をプレーンテキストにして `spoiler_text`。`sensitive` は `toot:sensitive` |
-| 変換する型 | `Article` / `Page` / `Event` / `Image` / `Video` / `Audio` は、`name` を太字の段落、`summary` を段落にし、`url` へのリンクを付けた本文にする（Mastodon の `CONVERTED_TYPES` と同じ） |
+| CW | 記事でない投稿の `summary`（無ければ `summaryMap` の最初の値）をプレーンテキストにして `spoiler_text`。`sensitive` は `toot:sensitive` |
+| 記事 | `Article` は記事として取り込む（[ADR-0160](../adr/0160-articles.md) §10）。`name`（無ければ `nameMap` の最初の値、どちらも無ければ空）を題、`summary`（無ければ `summaryMap` の最初の値）をプレーンテキストの要約にし、CW にしない。要約が空なら本文から作る。`content` / `contentMap` は記事用の許可リストでサニタイズする（§5）。`image` の最初の画像をカバーにする |
+| 変換する型 | `Page` / `Event` / `Image` / `Video` / `Audio` は、`name` を太字の段落、`summary` を段落にし、`url` へのリンクを付けた本文にする（Mastodon の `CONVERTED_TYPES` から `Article` を除いたもの） |
 | `tag` | `Mention`（`href` を Actor の IRI として解決）、`Hashtag`（`name` から `#` を除いて `tags`）、`Emoji`（`icon.url`、カスタム絵文字。`name` の前後の `:` を外した shortcode が 128 文字を超えるものと、同じ shortcode の 2 つ目以降は捨てる）。Actor の `tag` の `Emoji` も同じ規則で読み、プロフィールの版に結ぶ |
 | 宛先のメンション | `to` / `cc` に含まれるローカルの Actor は、`tag` に無くてもメンションとして記録する（`direct` / `private` の閲覧判定のため） |
 | `attachment` | `Document` / `Image` / `Video` / `Audio`。`url`（文字列か `Link`）、`mediaType`、`name`（代替テキスト）、`blurhash`、`focalPoint`、`width` / `height`。`href` だけの `Link` は添付として扱わない。4 件を超える分は捨て、その数だけを版に記録する（data-model §4.4） |
@@ -255,6 +256,8 @@ ActivityPub の配送は順序を保証しません。ハンドラは、どの�
   - `a` には `rel="nofollow noopener noreferrer"` と `target="_blank"` を付ける
   - `h1`〜`h6` は `<p><strong>…</strong></p>` に、許可外のブロック要素は `p` に変える。`<math>` は TeX の注釈があればそのテキストにする
 - ローカルの投稿の HTML は、サーバーがプレーンテキストから生成します（`internal/app/content` の `text.go`）。生成する要素と属性はこの許可リストの部分集合です。
+- 記事（[ADR-0160](../adr/0160-articles.md) §4）の本文は、記事用の許可リストを通します。上の要素に `hr` `h2`〜`h6` `img` `table` `thead` `tbody` `tr` `th` `td` を加え、`img[src alt width height loading]`・`th[align]`・`td[align]` を許します。`h1` は `h2` に下げます。
+  受信した記事の `img` は `remote_media` に記録し、クライアント API はメディアプロキシの URL に置き換えた HTML を返します（`max_article_images` 件を超えた分は代替テキストのリンク）。ローカルの記事は、書いた本人のアップロードだけを `<img>` にし、Markdown から描画した HTML をこの許可リストに通して保存します。
 - **Web クライアントの Trusted Types ポリシー `my-server-sanitized-html`（`@my/ui` の `PostContent`）に渡る HTML は、ローカルで生成したものか、このサニタイザを通したものだけです**（[web-client/README.md](web-client/README.md)）。
   クライアント API は、本文・プロフィール・補足情報の HTML を保存したサニタイズ済みの値からだけ返し、受信した文書の値をそのまま返す経路を持ちません。表示名・ユーザー名・投票の選択肢・代替テキストはプレーンテキストとして返します（タグを除く）。
 - カスタム絵文字の `:shortcode:` は HTML に `img` として埋め込まず、クライアントが絵文字の一覧から DOM 要素を差し込みます（ADR-0019 §2）。
@@ -509,6 +512,8 @@ ActivityPub の配送は順序を保証しません。ハンドラは、どの�
 - 引用（FR-114、ADR-0069 §3）は、引用元の作者が外していなければ、`quote` と同じ IRI の `_misskey_quote`・`quoteUrl`・`quoteUri`、承認されていれば `quoteAuthorization` を付け、本文（`content` と `contentMap` のどの言語も）の前に `<p class="quote-inline">RE: <a href="{引用先の表示用 URL}">…</a></p>` を置きます（Mastodon と同じ形）。
   どの投稿にも `interactionPolicy.canQuote.automaticApproval` を付けます（交流の許可は [ADR-0155](../adr/0155-interaction-policy.md)）。配送・投稿の GET・outbox・featured は同じ組み立てを通るので、同じ投稿の `Note` はどこでも同じ形です。`public` / `unlisted` の投稿は引用の許可に従って `Public`・作者の followers・作者自身のどれか、`private` / `direct` / `local` は作者自身です。手で承認することはないので `manualApproval` は付けません。
 - 会話（[ADR-0154](../adr/0154-conversations.md) §5）は、投稿の会話（併合されていれば併合先）の IRI を `context` に、同じ値を `conversation` に載せます。Mastodon は受信で `conversation` だけを読むためです。IRI が `https` でない会話（Mastodon の `tag:` の URI）は `conversation` だけを載せます。併合のためだけの `Update` は送りません。
+- 記事（[ADR-0160](../adr/0160-articles.md) §9）は `Article` です。`name`（題）・`summary`（要約。空なら本文から作ったもの）・`content` / `contentMap`・`source`（`content` に Markdown の原文、`mediaType` に `text/markdown`）・`url`・`sensitive`（常に付ける）・`image`（カバーの `Image`）を付けます。
+  `tag` は `Hashtag`（エディタで付けたもの）と `Emoji` だけで、`Mention` を載せず、メンション先を宛先に加えません。`attachment` は載せません。`Create` / `Update` / `Delete`・宛先・引用の許可は Note と同じ組み立てを通ります。
 - 投票のある投稿は `Question` です（FR-112）。単一選択は `oneOf`、複数選択は `anyOf` に、選択肢ごとの `Note`（`name` は題、`replies` は `totalItems` だけの `Collection`）を載せ、`endTime`（締め切り）、締め切った後は `closed`（`endTime` と同じ時刻）、`votersCount`（`toot:votersCount`）を付けます。
   票数は文書を組み立てる時点の集計で、作者が締め切りまで票数を隠す投票では締め切りまで 0 です。編集されていない投稿の票数の `Update` は `updated` を持たず、受け取ったサーバーは投稿を編集済みにしません（Mastodon は投票だけの更新として扱う）。
 - Note は `federation.notes`（`internal/app/federation`）の 1 か所で組み立て、配送（`Create` / `Update` の `object`）とオブジェクトの GET（§10）が同じものを使います。版のメディア・メンション先・ハッシュタグ・カスタム絵文字は `content.Reader.Parts` で引きます。
