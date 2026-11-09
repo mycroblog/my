@@ -1,6 +1,6 @@
 # ADR-0159: 許可したドメインだけと連合するモードと、ドメインのブロックリストの購読
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-11-09
 - Deciders: @rosylilly
 - Issue: #2579（タスク #2580・#2581・#2582）
@@ -9,7 +9,7 @@
 
 **許可したドメインは処分とは別のテーブルに持ち、インスタンス設定 `federation_scope` が `allowlist` のとき、許可の無いドメインを、ドメインの制限を判定する一か所で `suspend` と同じに扱う。他者が公開するブロックリストは、運営者が設定した URL でも `kernel.HTTPClient` で取得し、下書き（既定）と自動の 2 つのモードで購読する。自動のモードは人が下した処分に触れない。**
 
-§1〜§6 は decider の決定で、§7・§8 は推奨案です。覆る条件は §10 に書きます。
+§1〜§8 はどれも決定者の決定です。覆る条件は §10 に書きます。
 
 ### 1. 許可したドメインのテーブル（決定）
 
@@ -66,12 +66,12 @@
 - API は `/api/v1/admin/domain_allows` と `/api/v1/admin/domain_list_subscriptions`（どちらもタグ `admin-moderation`）。CLI は `my admin domain allow …` と `my admin domain subscription …`。
 - 採ったら、ADR-0058 §1 の画面と権限の表と §4 に行を足す。
 
-### 7. コードの置き場所（推奨案）
+### 7. コードの置き場所
 
 - テーブルとユースケースは `moderation` が持つ（`schema/03-moderation`、`internal/app/moderation`）。`federation_scope` の値は `instance` の設定にあり、`moderation.FederationPolicy` が `internal/app/instance` から読む。
 - 取得は `kernel.HTTPClient` を `internal/platform` から受け取る。リストの解析（CSV と平文）は今の CSV のインポートと同じ関数を使い、Mastodon の JSON はその行の形に変換してから同じ処理に渡す。
 
-### 8. 監査ログと webhook（推奨案）
+### 8. 監査ログと webhook
 
 - 監査ログ（ADR-0058 §7）: `target_kind` に `domain_allow`・`domain_list_subscription` を足し、`action` に `domain_allow_added` / `domain_allow_removed`、`domain_list_subscription_created` / `_updated` / `_deleted`、`domain_list_draft_accepted` / `_rejected`、`domain_list_fetch_queued` を足す。`federation_scope` の変更は今の `setting` の記録に乗る。
 - 自動のモードが発行・解除した処分は、今の `domain_action_issued` / `domain_action_lifted` を `actor_kind = system` で記録し、`source_event_id` から購読と取得を引ける。
