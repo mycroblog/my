@@ -1,32 +1,154 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 #
-# Development only: the services that a `go run ./cmd/my serve` on this machine talks to (CONTRIBUTING.md). To deploy an
-# instance, use deploy/docker. The project is named my-dev, so it never collides with a deployment named my.
+# Development only (CONTRIBUTING.md, "Local development"): `docker compose up` runs `my` from this checkout, the Vite dev
+# server, and every service `my` talks to, configured to use them all. To deploy an instance, use deploy/docker. The
+# project is named my-dev, so it never collides with a deployment named my.
 #
-#   scripts/task.sh db:up           PostgreSQL, with the databases of the tools    (localhost:5432, user and password my)
-#   scripts/task.sh docker:mailpit  Mailpit, with its certificate                  (SMTP on 127.0.0.1:1025, UI on :8025)
-#   docker compose down -v          remove them and their data
+#   docker compose up                 start everything; open http://localhost:8080 (MY_DEV_PORT)
+#   docker compose restart my         build the Go code again and restart the server (no automatic reload)
+#   docker compose exec my my ...     run a command of `my` against the server's database
+#   docker compose down               stop; the data stays in the volumes
+#   docker compose down -v            stop and remove the data
 #
-# Start the server with the settings of what you need:
+# The web UIs, all on 127.0.0.1: Mailpit :8025, Grafana :3000, Prometheus :9090, Jaeger :16686, Meilisearch :7700,
+# LibreTranslate :5000. Each host port is a variable below; put the variables in .env (never committed) next to this
+# file.
 #
-#   mail   MY_MAIL=smtp MY_MAIL_FROM=noreply@localhost MY_MAIL_SMTP_HOST=localhost MY_MAIL_SMTP_PORT=1025
-#          SSL_CERT_FILE=.tmp/mailpit/ca.pem
-#   voice  MY_VOICE=p2p, and MY_WEB_ORIGIN=http://localhost:8080 since browsers allow the microphone only on localhost or
-#          over HTTPS; browsers on this machine connect without a STUN server
+# `my` and Vite run in the stage `dev` of the Dockerfile, from the checkout mounted at /src, as the owner of the
+# checkout, with the Go caches and every node_modules in volumes of their own (scripts/dev-compose.sh). GO_TAGS sets the build tags of `my`,
+# such as e2e_fakes for the test build. The secrets below are fixed values for this machine only.
 #
-# Third-party images are pinned by tag and digest.
+# scripts/task.sh db:up and docker:mailpit start the services postgres and mailpit alone (--no-deps), for db:check and
+# the demo server. Third-party images are pinned by tag and digest.
 
 name: my-dev
 
+x-dev: &dev
+  build:
+    context: .
+    target: dev
+  image: my-dev:dev
+  init: true
+  volumes:
+    - .:/src
+    - go-build:/home/dev/.cache/go-build
+    - go-mod:/home/dev/go/pkg/mod
+    - bun-cache:/home/dev/.bun/install/cache
+    - node-modules-app:/src/app/node_modules
+    - node-modules-ui:/src/app/ui/node_modules
+    - node-modules-web:/src/app/web/node_modules
+    - node-modules-mail:/src/app/mail/node_modules
+    - node-modules-docs:/src/app/docs/node_modules
+    - node-modules-mykit:/src/pkg/mykit/ts/node_modules
+    - node-modules-mybot:/src/pkg/mybot/ts/node_modules
+    - node-modules-i18n:/src/tools/i18n/node_modules
+
 services:
+  # Makes the mount points of the node_modules volumes in the checkout, owned by its owner rather than by root, and the
+  # certificates of Mailpit (scripts/mailpit-cert.sh, in .tmp/mailpit), which it copies to Mailpit's volume.
+  prepare:
+    <<: *dev
+    volumes:
+      - .:/src
+      - mailpit-certs:/certs
+    command: ["scripts/dev-compose.sh", "prepare"]
+    restart: "no"
+
+  my:
+    <<: *dev
+    depends_on:
+      prepare:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
+      mailpit:
+        condition: service_started
+      garage-init:
+        condition: service_completed_successfully
+      meilisearch:
+        condition: service_healthy
+      # Translations fail until LibreTranslate has loaded its models (minutes on the first start); the server does not wait.
+      libretranslate:
+        condition: service_started
+      otel-collector:
+        condition: service_started
+      vite:
+        condition: service_started
+    command: ["scripts/dev-compose.sh", "my"]
+    environment:
+      GO_TAGS: ${GO_TAGS:-}
+      VITE_ORIGIN: http://localhost:5173
+      MY_PROFILE: development
+      MY_HOST: localhost:${MY_DEV_PORT:-8080}
+      # The http origin of localhost: browsers allow the microphone of the voice chat on it.
+      MY_WEB_ORIGIN: http://localhost:${MY_DEV_PORT:-8080}
+      MY_LISTEN: :8080
+      # 32 bytes, base64; changing it makes the keys in the database unreadable.
+      MY_KEK: bXktZGV2LWNvbXBvc2Uta2VrLW5vdC1hLXNlY3JldCE=
+      MY_DATABASE: postgres
+      MY_DATABASE_URL: postgres://my:my@postgres:5432/my?sslmode=disable
+      MY_MAIL: smtp
+      MY_MAIL_FROM: noreply@localhost
+      MY_MAIL_SMTP_HOST: mailpit
+      MY_MAIL_SMTP_PORT: "1025"
+      MY_BLOB: s3
+      MY_BLOB_S3_ENDPOINT: http://garage:3900
+      MY_BLOB_S3_REGION: garage
+      MY_BLOB_S3_BUCKET: &bucket my-media
+      MY_BLOB_S3_PATH_STYLE: "true"
+      MY_BLOB_S3_ACCESS_KEY_ID: &s3-key GK0000000000000000000000d1
+      MY_BLOB_S3_SECRET_ACCESS_KEY: &s3-secret 00000000000000000000000000000000000000000000000000000000000000d1
+      MY_SEARCH: meilisearch
+      MY_SEARCH_MEILISEARCH_URL: http://meilisearch:7700
+      MY_SEARCH_MEILISEARCH_API_KEY: &meili-key my-dev-meilisearch-master-key
+      # Registers the provider; an administrator enables it in the translation settings.
+      MY_TRANSLATOR_LIBRETRANSLATE_URL: http://libretranslate:5000
+      MY_VOICE: p2p
+      MY_METRICS_EXPORTER: prometheus
+      MY_METRICS_LISTEN: :9464
+      MY_TRACES_EXPORTER: otlp
+      MY_TRACES_SAMPLE_RATIO: "1"
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+    ports:
+      - "127.0.0.1:${MY_DEV_PORT:-8080}:8080"
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "-o", "/dev/null", "http://127.0.0.1:8080/readyz"]
+      interval: 5s
+      timeout: 5s
+      # The first build downloads the Go modules and compiles everything.
+      start_period: 10m
+    restart: unless-stopped
+
+  # The Vite dev server of app/web, always on http://localhost:5173: `my serve -dev-vite-origin` loads the client from
+  # it, with HMR. Its port is fixed, since the browser connects to it for HMR.
+  vite:
+    <<: *dev
+    depends_on:
+      prepare:
+        condition: service_completed_successfully
+    command: ["scripts/dev-compose.sh", "vite"]
+    ports:
+      - "127.0.0.1:5173:5173"
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "-o", "/dev/null", "http://127.0.0.1:5173/@vite/client"]
+      interval: 5s
+      timeout: 5s
+      start_period: 5m
+    restart: unless-stopped
+
   postgres:
-    # The variables are those of the task db:up, which also creates the databases of the tools.
+    # The variables are those of the task db:up. On the first start of the volume, deploy/dev/postgres-init.sh creates
+    # the dev databases of Atlas, my_dev and my_lint, and runs the bootstrap SQL of the schema on every database.
     container_name: ${PG_CONTAINER:-my-postgres}
     image: ${PG_IMAGE:-postgres:18-alpine@sha256:77f585114c32fbca283dc835b0596f4e52b51b4c6662d7810b2f4084f60a1873}
     environment:
       POSTGRES_USER: my
       POSTGRES_PASSWORD: my
       POSTGRES_DB: my
+    volumes:
+      - postgres:/var/lib/postgresql
+      - ./deploy/dev/postgres-init.sh:/docker-entrypoint-initdb.d/10-my.sh:ro
+      - ./schema/ddl/postgres.bootstrap.sql:/my/bootstrap.sql:ro
     ports:
       - "127.0.0.1:${PG_PORT:-5432}:5432"
     healthcheck:
@@ -34,6 +156,7 @@ services:
       interval: 2s
       timeout: 5s
       retries: 60
+    restart: unless-stopped
 
   # Mailpit (https://mailpit.axllent.org/, MIT): an SMTP server that keeps every message it receives and shows them in a
   # web UI, for mail = smtp without sending real email (CONTRIBUTING.md, "Emails"). It offers STARTTLS with the
@@ -42,6 +165,9 @@ services:
   mailpit:
     # The image of the integration tests (DefaultImage of pkg/testkit/mailpittest).
     image: axllent/mailpit:v1.31.4@sha256:b68349e3a014b90c5610bfb26b2ae36f3892d7b8cf25ee140c6c71c98d2fcf48
+    depends_on:
+      prepare:
+        condition: service_completed_successfully
     environment:
       MP_SMTP_TLS_CERT: /certs/server.pem
       MP_SMTP_TLS_KEY: /certs/server.key
@@ -50,8 +176,195 @@ services:
       # Keep the latest messages only.
       MP_MAX_MESSAGES: "500"
     volumes:
-      - ${MAILPIT_CERTS:-./.tmp/mailpit}:/certs:ro
+      # The volume that prepare fills; docker:mailpit and .github/actions/start-mailpit, which start Mailpit alone,
+      # give the directory of scripts/mailpit-cert.sh instead.
+      - ${MAILPIT_CERTS:-mailpit-certs}:/certs:ro
     ports:
       - "127.0.0.1:${MAILPIT_SMTP_PORT:-1025}:1025"
       - "127.0.0.1:${MAILPIT_UI_PORT:-8025}:8025"
     restart: unless-stopped
+
+  # Garage (https://garagehq.deuxfleurs.fr/, AGPL-3.0), the S3-compatible store of the media, one node as in
+  # deploy/docker/compose.s3.yaml. The server serves the media itself, so only the server reaches it.
+  garage:
+    # The image of the integration tests (DefaultImage of pkg/testkit/s3test).
+    image: dxflrs/garage:v2.1.0@sha256:4c9b34c113e61358466e83fd6e7d66e6d18657ede14b776eb78a93ee8da7cf6a
+    configs:
+      - source: garage
+        target: /etc/garage.toml
+    volumes:
+      - garage:/var/lib/garage
+    ports:
+      - "127.0.0.1:${GARAGE_S3_PORT:-3900}:3900"
+    healthcheck:
+      test: ["CMD", "/garage", "status"]
+      interval: 2s
+      timeout: 5s
+      retries: 60
+    restart: unless-stopped
+
+  # Prepares Garage on every `up`: the node's role, the key of the server, and its bucket, as in
+  # deploy/docker/compose.s3.yaml. The image of Garage has no shell, so this one calls its admin API.
+  garage-init:
+    image: alpine:3.22@sha256:2e0b81d60597f449baa56dc25d355367869d2dca4cd57e866f1e2b52af3eb55f
+    depends_on:
+      garage:
+        condition: service_healthy
+    environment:
+      ADMIN_TOKEN: my-dev-garage-admin-token
+      KEY_ID: *s3-key
+      SECRET_KEY: *s3-secret
+      BUCKET: *bucket
+    command:
+      - sh
+      - -euc
+      - |
+        call() {
+          wget -qO- --header "Authorization: Bearer $$ADMIN_TOKEN" --header 'Content-Type: application/json' \
+            $${2:+--post-data "$$2"} "http://garage:3903/v2/$$1"
+        }
+        if call GetClusterLayout | grep -qE '"version": *0\b'; then
+          node="$$(call GetClusterStatus | grep -oE '"id": *"[0-9a-f]{64}"' | head -n 1 | grep -oE '[0-9a-f]{64}')"
+          call UpdateClusterLayout "{\"roles\":[{\"id\":\"$$node\",\"zone\":\"dc1\",\"capacity\":1000000000,\"tags\":[]}]}" >/dev/null
+          call ApplyClusterLayout '{"version":1}' >/dev/null
+        fi
+        # Both fail on the later runs, when the key and the bucket exist; the last two calls then still have to pass.
+        call ImportKey "{\"accessKeyId\":\"$$KEY_ID\",\"secretAccessKey\":\"$$SECRET_KEY\",\"name\":\"my\"}" >/dev/null 2>&1 || true
+        call CreateBucket "{\"globalAlias\":\"$$BUCKET\"}" >/dev/null 2>&1 || true
+        id="$$(call "GetBucketInfo?globalAlias=$$BUCKET" | grep -oE '"id": *"[0-9a-f]{64}"' | head -n 1 | grep -oE '[0-9a-f]{64}')"
+        call AllowBucketKey "{\"bucketId\":\"$$id\",\"accessKeyId\":\"$$KEY_ID\",\"permissions\":{\"read\":true,\"write\":true,\"owner\":true}}" >/dev/null
+        echo "garage-init: bucket $$BUCKET is ready"
+    restart: "no"
+
+  # Meilisearch (https://www.meilisearch.com/, MIT), the full-text search of posts.
+  meilisearch:
+    # The image of the integration tests (DefaultImage of pkg/testkit/meilisearchtest).
+    image: getmeili/meilisearch:v1.56.1@sha256:b7ba431bf6f9b26cc86132798f3640964147a699cf23f026b74c6c05dbb1d60d
+    environment:
+      MEILI_MASTER_KEY: *meili-key
+      MEILI_ENV: development
+      MEILI_NO_ANALYTICS: "true"
+    volumes:
+      - meilisearch:/meili_data
+    ports:
+      - "127.0.0.1:${MEILISEARCH_PORT:-7700}:7700"
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "-o", "/dev/null", "http://127.0.0.1:7700/health"]
+      interval: 2s
+      timeout: 5s
+      retries: 60
+    restart: unless-stopped
+
+  # LibreTranslate (https://libretranslate.com/, AGPL-3.0), a translation provider, with English and Japanese only.
+  # The first start downloads their models into the volume.
+  libretranslate:
+    image: libretranslate/libretranslate:v1.9.6@sha256:1de2d7056bb8ad607a412f4563d9abe324ff632b43b5be9428bcc8e213aebb32
+    environment:
+      LT_LOAD_ONLY: en,ja
+      LT_UPDATE_MODELS: "true"
+    volumes:
+      - libretranslate:/home/libretranslate/.local
+    ports:
+      - "127.0.0.1:${LIBRETRANSLATE_PORT:-5000}:5000"
+    healthcheck:
+      test: ["CMD-SHELL", "./venv/bin/python scripts/healthcheck.py"]
+      interval: 10s
+      timeout: 5s
+      start_period: 10m
+    restart: unless-stopped
+
+  # The OpenTelemetry Collector (Apache-2.0): receives the traces of the server over OTLP and sends them to Jaeger.
+  otel-collector:
+    image: otel/opentelemetry-collector:0.165.0@sha256:34b24b740c3c88d3467740e8642a397c13898ef76d7295c5425164c482ed1b73
+    command: ["--config=/etc/otelcol/config.yaml"]
+    depends_on:
+      jaeger:
+        condition: service_started
+    volumes:
+      - ./deploy/dev/otel-collector.yaml:/etc/otelcol/config.yaml:ro
+    restart: unless-stopped
+
+  # Jaeger (Apache-2.0), the store and UI of the traces, in memory.
+  jaeger:
+    # Not later: Jaeger 2.21 removed the HTTP API under /api/ that the Jaeger data source of Grafana reads.
+    image: jaegertracing/jaeger:2.20.0@sha256:46a886260e04002d8f45e213fc39063fa11a50446048fdaa64786fc0840cb9f8
+    ports:
+      - "127.0.0.1:${JAEGER_UI_PORT:-16686}:16686"
+    restart: unless-stopped
+
+  # Prometheus (Apache-2.0) scrapes the metrics of the server and evaluates the alerting rules of deploy/monitoring.
+  prometheus:
+    # The image of docker:alert-rules.
+    image: prom/prometheus:v3.15.0@sha256:efd719c99d83b060d9daefdcf00360461adf279f45ef5391f8d111892118753e
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=15d
+    volumes:
+      - ./deploy/dev/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./deploy/monitoring/prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
+      - prometheus:/prometheus
+    ports:
+      - "127.0.0.1:${PROMETHEUS_PORT:-9090}:9090"
+    restart: unless-stopped
+
+  # Grafana (AGPL-3.0) with Prometheus and Jaeger as data sources and the dashboards of deploy/monitoring/grafana,
+  # open to anyone on this machine without signing in.
+  grafana:
+    image: grafana/grafana:13.2.5@sha256:9f7aa1e1e3246aade5792d35a738049f7f32f89cd51d1956cf426a4e86268a84
+    depends_on:
+      prometheus:
+        condition: service_started
+    environment:
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
+      GF_AUTH_DISABLE_LOGIN_FORM: "true"
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
+      GF_NEWS_NEWS_FEED_ENABLED: "false"
+    volumes:
+      - ./deploy/dev/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./deploy/monitoring/grafana:/var/lib/grafana/dashboards/my:ro
+      - grafana:/var/lib/grafana
+    ports:
+      - "127.0.0.1:${GRAFANA_PORT:-3000}:3000"
+    restart: unless-stopped
+
+configs:
+  garage:
+    content: |
+      metadata_dir = "/var/lib/garage/meta"
+      data_dir = "/var/lib/garage/data"
+      db_engine = "sqlite"
+      replication_factor = 1
+      rpc_bind_addr = "[::]:3901"
+      rpc_public_addr = "127.0.0.1:3901"
+      rpc_secret = "00000000000000000000000000000000000000000000000000000000000000d1"
+
+      [s3_api]
+      s3_region = "garage"
+      api_bind_addr = "[::]:3900"
+
+      [admin]
+      api_bind_addr = "[::]:3903"
+      admin_token = "my-dev-garage-admin-token"
+
+volumes:
+  postgres:
+  mailpit-certs:
+  garage:
+  meilisearch:
+  libretranslate:
+  prometheus:
+  grafana:
+  go-build:
+  go-mod:
+  bun-cache:
+  node-modules-app:
+  node-modules-ui:
+  node-modules-web:
+  node-modules-mail:
+  node-modules-docs:
+  node-modules-mykit:
+  node-modules-mybot:
+  node-modules-i18n:

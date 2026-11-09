@@ -12,12 +12,15 @@
 # The bun binary for the web stage, which runs on the build host's platform.
 FROM --platform=$BUILDPLATFORM oven/bun:1.4.4-slim@sha256:1846adf22496bd711036aae8be147e57bdebbaea2e5264e3e0b5af1db187d9a4 AS bun
 
+# Node.js, which runs Vite in the web stage and in the development image.
+FROM --platform=$BUILDPLATFORM node:26.12.1-trixie-slim@sha256:94816674c62774da0d099a947bf4613b9e1972a2733abd0d0cd80e795f8411d0 AS node
+
 # The web client (app/web), built as `scripts/task.sh web:build` does: Bun installs the packages and runs the
 # scripts, Vite runs on Node.js (ADR-0025). The output is the same for every platform, so it is built
 # once on the build host's platform. The build reads generated files that are not committed (ADR-0081):
 # the client pseudo-locales from tools/i18n and the theme token list of @my/ui are generated first, and
 # the Vite plugin generates the route tree.
-FROM --platform=$BUILDPLATFORM node:26.12.1-trixie-slim@sha256:94816674c62774da0d099a947bf4613b9e1972a2733abd0d0cd80e795f8411d0 AS web
+FROM node AS web
 # The SBOM of a released image covers this stage too: its npm packages reach the image only through the Go embed.
 ARG BUILDKIT_SBOM_SCAN_STAGE=true
 COPY --from=bun /usr/local/bin/bun /usr/local/bin/bun
@@ -46,8 +49,11 @@ RUN cd tools/i18n && bun run src/gen.ts --ts \
 FROM scratch AS web-dist
 COPY --from=web /src/app/web/dist /
 
+# The Go toolchain, of the build stage and the development image.
+FROM --platform=$BUILDPLATFORM golang:1.27.3-trixie@sha256:c65ecfe613b539ac74c62a4c3b2c27e8f8a6076384c8f27e8a3c0f3be17cc385 AS go
+
 # Cross-compiles on the build host's platform; Go needs no emulation for the target architecture.
-FROM --platform=$BUILDPLATFORM golang:1.27.3-trixie@sha256:c65ecfe613b539ac74c62a4c3b2c27e8f8a6076384c8f27e8a3c0f3be17cc385 AS build
+FROM go AS build
 ARG TARGETOS TARGETARCH
 # Version stamped into `my version` and NodeInfo.
 ARG VERSION=dev
@@ -71,6 +77,19 @@ RUN --mount=type=bind,target=. \
     GOOS=$TARGETOS GOARCH=$TARGETARCH go build -trimpath -tags "${GO_TAGS}" -ldflags "-s -w -X main.version=${VERSION}" -o /out/my ./cmd/my \
     && scripts/check-release-build.sh /out/my \
     && mkdir -p /out/data
+
+# The development image of the root compose.yaml (CONTRIBUTING.md): the Go toolchain with Bun and Node.js, which runs
+# `my` and the Vite dev server from the checkout that compose.yaml mounts at /src. It starts as root and
+# scripts/dev-compose.sh runs the work as the owner of the checkout, so that what it writes there stays the developer's.
+# The caches in HOME are named volumes.
+FROM go AS dev
+COPY --from=bun /usr/local/bin/bun /usr/local/bin/bun
+COPY --from=node /usr/local/bin/node /usr/local/bin/node
+ENV GOTOOLCHAIN=local GOWORK=off CGO_ENABLED=0 HOME=/home/dev \
+    GOCACHE=/home/dev/.cache/go-build GOMODCACHE=/home/dev/go/pkg/mod BUN_INSTALL_CACHE_DIR=/home/dev/.bun/install/cache \
+    PATH=/home/dev/bin:$PATH
+RUN mkdir -p /home/dev/.cache/go-build /home/dev/go/pkg/mod /home/dev/.bun/install/cache /home/dev/bin
+WORKDIR /src
 
 FROM gcr.io/distroless/static-debian13:nonroot@sha256:25ac8f0c3b2334a9eb05452266bd4697864a8c8ef0ef71e5e6480d7f92868329 AS app
 COPY --from=build /out/my /usr/local/bin/my

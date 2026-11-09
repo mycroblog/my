@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+# The Prometheus of the root compose.yaml: scrapes the server's metrics_listen and loads the alerting rules of
+# deploy/monitoring/prometheus, which expect the job name my.
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  - alerts.yml
+
+scrape_configs:
+  - job_name: my
+    static_configs:
+      - targets: ["my:9464"]

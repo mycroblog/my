@@ -52,6 +52,13 @@ promtool check rules alerts.yml
 promtool test rules alerts.test.yml
 ```
 
+### Grafana dashboard
+
+[`deploy/monitoring/grafana/my.json`](../../deploy/monitoring/grafana/my.json) is a Grafana dashboard of the same Prometheus metrics:
+the request rate, status codes, and latency; the job runs, the worker time of each job type, and the queue; deliveries, inbox activities,
+and remote servers; and the CPU and memory of each process. Import it in Grafana (**Dashboards** → **New** → **Import**) and pick your
+Prometheus data source; its **Job** variable selects the scrape job (`my` by default).
+
 ### Google Cloud (Cloud Run)
 
 With `metrics_exporter = none`, build the alerts from what Cloud Run and Cloud Logging already have:

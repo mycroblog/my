@@ -47,7 +47,7 @@ runs:
           echo "::error::$certs is on no mount of the job's container"
           exit 1
         fi
-        MAILPIT_CERTS="$host_certs" docker compose -f compose.yaml -f - up -d --wait mailpit <<EOF
+        MAILPIT_CERTS="$host_certs" docker compose -f compose.yaml -f - up -d --wait --no-deps mailpit <<EOF
         services:
           mailpit:
             network_mode: "container:$JOB_CONTAINER"

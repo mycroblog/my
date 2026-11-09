@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+# The dashboards of the Grafana of the root compose.yaml: those of deploy/monitoring/grafana, which compose.yaml mounts.
+apiVersion: 1
+
+providers:
+  - name: my
+    folder: my
+    type: file
+    allowUiUpdates: false
+    options:
+      path: /var/lib/grafana/dashboards/my

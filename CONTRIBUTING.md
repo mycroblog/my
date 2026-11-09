@@ -78,6 +78,55 @@ parallel on the same machine (TIME_WAIT keeps them for 60 seconds) used up the e
 `check`s at the same time. Do not widen the range under mirrored networking: when the OS picks a port outside the
 range WSL gave Linux, outgoing connections (`git`, `gh`, ...) time out.
 
+## Local development
+
+`docker compose up` in the checkout runs the server from your working tree and everything it talks to, with Docker
+alone (the root [`compose.yaml`](compose.yaml), the project `my-dev`, which never collides with a deployment; what
+deploys an instance is in `deploy/docker/`, see [Docker Compose files](docs/operations/running.md#docker-compose-files)):
+
+```sh
+docker compose up -d        # the first start builds the development image and downloads the Go modules, npm packages,
+                            # and translation models, which takes minutes
+docker compose logs -f my   # follow the server's log
+```
+
+Open `http://localhost:8080`. The server runs with `profile = development` and uses every service of the file:
+
+| Service | What the server uses it for | On this machine |
+| --- | --- | --- |
+| `my` | `my serve` built from the working tree, with the scripts from Vite | `http://localhost:8080` (`MY_DEV_PORT`) |
+| `vite` | The Vite dev server of `app/web`, with HMR | `http://localhost:5173` |
+| `postgres` | The database (`database = postgres`) | `localhost:5432`, user and password `my` (`PG_PORT`) |
+| `mailpit` | Every email (`mail = smtp`); see [Emails](#emails) | `http://127.0.0.1:8025` (`MAILPIT_UI_PORT`), SMTP on `:1025` |
+| `garage` | The media (`blob = s3`), in the bucket `my-media` | S3 on `127.0.0.1:3900` (`GARAGE_S3_PORT`) |
+| `meilisearch` | The full-text search of posts (`search = meilisearch`) | `http://127.0.0.1:7700` (`MEILISEARCH_PORT`) |
+| `libretranslate` | The translation provider `libretranslate`, English and Japanese | `http://127.0.0.1:5000` (`LIBRETRANSLATE_PORT`) |
+| `otel-collector`, `jaeger` | The traces of every request and job (`traces_exporter = otlp`) | Jaeger on `http://127.0.0.1:16686` (`JAEGER_UI_PORT`) |
+| `prometheus` | Scrapes the metrics (`metrics_exporter = prometheus`) and evaluates the [alerting rules](docs/operations/alerts.md) | `http://127.0.0.1:9090` (`PROMETHEUS_PORT`) |
+| `grafana` | The [dashboard](docs/operations/alerts.md#grafana-dashboard), without signing in | `http://127.0.0.1:3000` (`GRAFANA_PORT`) |
+
+- The database starts empty, with the schema applied. Create an administrator with
+  `docker compose exec my my admin create --email you@example.com --username you --password-link`, which prints a
+  link to set the password, or register on the sign-up page with the confirmation email in Mailpit.
+- Translation needs the provider enabled: turn LibreTranslate on in the translation settings of the administration, or
+  run `docker compose exec my my instance set translation_providers libretranslate`. Its first start downloads the
+  models, and translations fail until it answers.
+- The Go code is not reloaded: `docker compose restart my` builds it again and restarts the server. The web client
+  reloads through Vite as you edit it.
+- `GO_TAGS` builds the server with [build tags](docs/reference/build-tags.md), such as `GO_TAGS=e2e_fakes` for the
+  test build with the fake push service, payment provider, and search index.
+- Put the variables of the table and `GO_TAGS` in a `.env` file next to `compose.yaml`; it is never committed. A port
+  that another program uses must move there.
+- `my` and Vite run as the owner of the checkout in the stage `dev` of the `Dockerfile` (`scripts/dev-compose.sh`), so
+  the files they write in it are yours. The Go caches and every `node_modules` are volumes of their own, apart from
+  those of your machine.
+- `docker compose down` stops everything and keeps the data in the volumes; `docker compose down -v` removes it too.
+- The secrets in `compose.yaml` (the KEK, the keys of Garage and Meilisearch) are fixed values for development only.
+
+The tests, the demo server (`scripts/task.sh web:demo`), the E2E tests, and the L4 task tests do not use these services:
+they start what they need themselves, and `scripts/task.sh db:up` and `scripts/task.sh docker:mailpit` start the
+services `postgres` and `mailpit` alone.
+
 ## Workflow
 
 1. Pick a GitHub issue. `agent:ready` marks the issues with clear acceptance criteria that are ready to start.
@@ -208,24 +257,17 @@ binary. Its conventions are in [docs/architecture/web-client/README.md](docs/arc
   the Docker image embeds the same build. Pass [build tags](docs/reference/build-tags.md) in `GO_TAGS` to leave
   unused adapters out of the binary.
 
-During development, run the Vite dev server and pass its origin to `my serve`, then open `my serve` in the browser.
-Go serves the shell, the runtime configuration, the API, and ActivityPub as in production, and only the scripts come
-from Vite, with HMR.
-
-```sh
-scripts/task.sh db:apply                       # apply the schema to the SQLite my.db
-scripts/task.sh web:dev                        # the Vite dev server (always http://localhost:5173; generates first)
-MY_HOST=localhost:8080 MY_DATABASE_URL=my.db MY_KEK="$(openssl rand -base64 32)" \
-  go run ./cmd/my serve -dev-vite-origin http://localhost:5173   # in another terminal; open http://localhost:8080
-```
+During development, the server loads the scripts from the Vite dev server, with HMR: [Local development](#local-development)
+runs both. Go serves the shell, the runtime configuration, the API, and ActivityPub as in production, and only the
+scripts come from Vite (`my serve -dev-vite-origin http://localhost:5173`).
 
 - With `-dev-vite-origin`, the shell is never cached (`no-store`) and the CSP is a development one that allows that
   origin's scripts and WebSocket and the `<style>` elements Vite injects. To see the app under the production CSP
   (`script-src 'self'` without a nonce), use a binary built by `scripts/task.sh go:bin`.
 - The runtime configuration's `apiOrigin` is `http://{host}` only in development and when `MY_WEB_ORIGIN` is the
   `http` origin of `host` (such as `http://localhost:8080`).
-- To try the voice chat, add `MY_VOICE=p2p` and `MY_WEB_ORIGIN=http://localhost:8080`: browsers allow the microphone only
-  on `localhost` or over HTTPS, and browsers on this machine connect to each other without a STUN server.
+- The voice chat works with `voice = p2p` on `http://localhost:8080`: browsers allow the microphone only on `localhost`
+  or over HTTPS, and browsers on this machine connect to each other without a STUN server.
 
 To look at the screens with data in them, start the demo server: `scripts/task.sh web:demo` (needs Docker)
 starts the development Mailpit, builds the test build of `bin/my`, creates a fresh database under `.tmp/demo/`, and
@@ -348,16 +390,11 @@ shows it in a web UI (`http://127.0.0.1:8025`) and a REST API.
   (federation and the like). Use it only for development checks.
 - The image (`axllent/mailpit`) is pinned by tag and digest, the same as in the integration tests
   (the service `mailpit` of the root [`compose.yaml`](compose.yaml)).
+- The server of [Local development](#local-development) trusts the CA alongside the system roots, so it still reaches
+  servers outside.
 
-The root `compose.yaml` is for development: it holds the services for a server you run from a checkout, under the project
-`my-dev`, so it never collides with a deployment. What deploys an instance is in `deploy/docker/`
-([Docker Compose files](docs/operations/running.md#docker-compose-files)). Start Mailpit (`scripts/task.sh docker:mailpit`; stop it with
-`docker compose rm -sf mailpit`) and start the server with these settings.
-
-```sh
-MY_MAIL=smtp MY_MAIL_FROM=noreply@localhost MY_MAIL_SMTP_HOST=localhost MY_MAIL_SMTP_PORT=1025 \
-  SSL_CERT_FILE=.tmp/mailpit/ca.pem my serve
-```
+[Local development](#local-development) sends every email of the server to Mailpit. The demo server and the E2E tests
+use the same Mailpit, which `scripts/task.sh docker:mailpit` starts alone (stop it with `docker compose rm -sf mailpit`).
 
 Ask for a password reset (`/auth/forgot_password`) or register in `open` mode, and the email arrives in the
 Mailpit UI. Open the link of the email you opened in the UI in your browser.
