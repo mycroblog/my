@@ -13,37 +13,28 @@ import (
 	"strings"
 )
 
-const addTagUsage = `-- name: AddTagUsage :exec
+const addManyTagUsage = `-- name: AddManyTagUsage :exec
 INSERT INTO tag_usage (tag_id, statuses_count, last_used_at)
-VALUES (CAST(?1 AS TEXT), CAST(?2 AS INTEGER), (SELECT max(f.revised_at) FROM feed_tag_entries f WHERE f.tag_id = CAST(?1 AS TEXT) AND f.visibility IN ('public', 'local', 'unlisted')))
+SELECT value ->> '$.tag_id', value ->> '$.n',
+  (SELECT max(f.revised_at) FROM feed_tag_entries f WHERE f.tag_id = value ->> '$.tag_id' AND f.visibility IN ('public', 'local', 'unlisted'))
+FROM json_each(CAST(?1 AS TEXT)) WHERE true
 ON CONFLICT (tag_id) DO UPDATE SET statuses_count = tag_usage.statuses_count + excluded.statuses_count, last_used_at = excluded.last_used_at
 `
 
-type AddTagUsageParams struct {
-	TagID string
-	N     int64
-}
-
-// AddTagUsage adds n posts to the usage of a tag, which a post that counts carries.
-func (q *Queries) AddTagUsage(ctx context.Context, arg AddTagUsageParams) error {
-	_, err := q.db.ExecContext(ctx, addTagUsage, arg.TagID, arg.N)
+func (q *Queries) AddManyTagUsage(ctx context.Context, usage string) error {
+	_, err := q.db.ExecContext(ctx, addManyTagUsage, usage)
 	return err
 }
 
-const adjustTagUsage = `-- name: AdjustTagUsage :exec
-UPDATE tag_usage SET statuses_count = statuses_count + CAST(?1 AS INTEGER), last_used_at = (SELECT max(f.revised_at) FROM feed_tag_entries f WHERE f.tag_id = CAST(?2 AS TEXT) AND f.visibility IN ('public', 'local', 'unlisted'))
-WHERE tag_id = CAST(?2 AS TEXT)
+const adjustManyTagUsage = `-- name: AdjustManyTagUsage :exec
+UPDATE tag_usage SET
+  statuses_count = statuses_count + (SELECT CAST(value ->> '$.n' AS INTEGER) FROM json_each(CAST(?1 AS TEXT)) WHERE value ->> '$.tag_id' = tag_usage.tag_id),
+  last_used_at = (SELECT max(f.revised_at) FROM feed_tag_entries f WHERE f.tag_id = tag_usage.tag_id AND f.visibility IN ('public', 'local', 'unlisted'))
+WHERE tag_id IN (SELECT value ->> '$.tag_id' FROM json_each(CAST(?1 AS TEXT)))
 `
 
-type AdjustTagUsageParams struct {
-	Delta int64
-	TagID string
-}
-
-// AdjustTagUsage adds delta (which may be zero or negative) posts to the usage of a tag that has
-// a row and that a post that counts still carries, and reads its last_used_at again.
-func (q *Queries) AdjustTagUsage(ctx context.Context, arg AdjustTagUsageParams) error {
-	_, err := q.db.ExecContext(ctx, adjustTagUsage, arg.Delta, arg.TagID)
+func (q *Queries) AdjustManyTagUsage(ctx context.Context, usage string) error {
+	_, err := q.db.ExecContext(ctx, adjustManyTagUsage, usage)
 	return err
 }
 
@@ -131,21 +122,6 @@ DELETE FROM tag_usage
 
 func (q *Queries) DeleteAllTagUsage(ctx context.Context) error {
 	_, err := q.db.ExecContext(ctx, deleteAllTagUsage)
-	return err
-}
-
-const deleteDrainedTagUsage = `-- name: DeleteDrainedTagUsage :exec
-DELETE FROM tag_usage WHERE tag_id = CAST(?1 AS TEXT) AND statuses_count <= CAST(?2 AS INTEGER)
-`
-
-type DeleteDrainedTagUsageParams struct {
-	TagID string
-	N     int64
-}
-
-// DeleteDrainedTagUsage deletes the usage of a tag that n posts fewer would leave at zero.
-func (q *Queries) DeleteDrainedTagUsage(ctx context.Context, arg DeleteDrainedTagUsageParams) error {
-	_, err := q.db.ExecContext(ctx, deleteDrainedTagUsage, arg.TagID, arg.N)
 	return err
 }
 
@@ -348,6 +324,17 @@ func (q *Queries) DeleteListName(ctx context.Context, listID string) error {
 	return err
 }
 
+const deleteManyDrainedTagUsage = `-- name: DeleteManyDrainedTagUsage :exec
+DELETE FROM tag_usage WHERE EXISTS (
+  SELECT 1 FROM json_each(CAST(?1 AS TEXT))
+  WHERE value ->> '$.tag_id' = tag_usage.tag_id AND tag_usage.statuses_count <= CAST(value ->> '$.n' AS INTEGER))
+`
+
+func (q *Queries) DeleteManyDrainedTagUsage(ctx context.Context, usage string) error {
+	_, err := q.db.ExecContext(ctx, deleteManyDrainedTagUsage, usage)
+	return err
+}
+
 const feedFollowEdgeExists = `-- name: FeedFollowEdgeExists :one
 SELECT EXISTS (SELECT 1 FROM feed_follow_edges WHERE follower_account_id = ? AND followee_account_id = ?)
 `
@@ -418,18 +405,26 @@ func (q *Queries) GetList(ctx context.Context, id string) (GetListRow, error) {
 	return i, err
 }
 
-const insertFeedDirectRecipient = `-- name: InsertFeedDirectRecipient :exec
-INSERT INTO feed_direct_recipients (entry_id, recipient_account_id) VALUES (?, ?)
+const insertFeedDirectRecipients = `-- name: InsertFeedDirectRecipients :exec
+
+INSERT INTO feed_direct_recipients (entry_id, recipient_account_id)
+SELECT CAST(?1 AS TEXT), value FROM json_each(CAST(?2 AS TEXT)) WHERE true
 ON CONFLICT DO NOTHING
 `
 
-type InsertFeedDirectRecipientParams struct {
-	EntryID            string
-	RecipientAccountID string
+type InsertFeedDirectRecipientsParams struct {
+	EntryID             string
+	RecipientAccountIds string
 }
 
-func (q *Queries) InsertFeedDirectRecipient(ctx context.Context, arg InsertFeedDirectRecipientParams) error {
-	_, err := q.db.ExecContext(ctx, insertFeedDirectRecipient, arg.EntryID, arg.RecipientAccountID)
+// The rows of an entry's direct recipients and tag entries, and the tag usage that they change,
+// written with one statement each; the lists are JSON arrays, and WHERE true keeps ON CONFLICT
+// from reading as a join constraint. Tag usage: AddManyTagUsage adds n posts to the usage of each
+// tag; DeleteManyDrainedTagUsage deletes the usage of each tag that n posts fewer would leave at
+// zero; AdjustManyTagUsage adds n (zero or negative) posts to each tag that has a row, and reads
+// its last_used_at again.
+func (q *Queries) InsertFeedDirectRecipients(ctx context.Context, arg InsertFeedDirectRecipientsParams) error {
+	_, err := q.db.ExecContext(ctx, insertFeedDirectRecipients, arg.EntryID, arg.RecipientAccountIds)
 	return err
 }
 
@@ -497,28 +492,31 @@ func (q *Queries) InsertFeedEntry(ctx context.Context, arg InsertFeedEntryParams
 	return result.RowsAffected()
 }
 
-const insertFeedTagEntry = `-- name: InsertFeedTagEntry :exec
-INSERT INTO feed_tag_entries (tag_id, entry_id, author_account_id, visibility, is_local, revised_at) VALUES (?, ?, ?, ?, ?, ?)
+const insertFeedTagEntries = `-- name: InsertFeedTagEntries :exec
+INSERT INTO feed_tag_entries (tag_id, entry_id, author_account_id, visibility, is_local, revised_at)
+SELECT value, CAST(?1 AS TEXT), CAST(?2 AS TEXT), CAST(?3 AS TEXT),
+  CAST(?4 AS INTEGER), CAST(?5 AS INTEGER)
+FROM json_each(CAST(?6 AS TEXT)) WHERE true
 ON CONFLICT DO NOTHING
 `
 
-type InsertFeedTagEntryParams struct {
-	TagID           string
+type InsertFeedTagEntriesParams struct {
 	EntryID         string
 	AuthorAccountID string
 	Visibility      string
 	IsLocal         int64
 	RevisedAt       int64
+	TagIds          string
 }
 
-func (q *Queries) InsertFeedTagEntry(ctx context.Context, arg InsertFeedTagEntryParams) error {
-	_, err := q.db.ExecContext(ctx, insertFeedTagEntry,
-		arg.TagID,
+func (q *Queries) InsertFeedTagEntries(ctx context.Context, arg InsertFeedTagEntriesParams) error {
+	_, err := q.db.ExecContext(ctx, insertFeedTagEntries,
 		arg.EntryID,
 		arg.AuthorAccountID,
 		arg.Visibility,
 		arg.IsLocal,
 		arg.RevisedAt,
+		arg.TagIds,
 	)
 	return err
 }

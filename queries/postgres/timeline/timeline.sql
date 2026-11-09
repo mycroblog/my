@@ -27,16 +27,8 @@ DELETE FROM feed_entries WHERE id = $1;
 -- name: DeleteFeedEntriesOfStatus :exec
 DELETE FROM feed_entries WHERE status_id = $1;
 
--- name: InsertFeedDirectRecipient :exec
-INSERT INTO feed_direct_recipients (entry_id, recipient_account_id) VALUES ($1, $2)
-ON CONFLICT DO NOTHING;
-
 -- name: DeleteFeedDirectRecipients :exec
 DELETE FROM feed_direct_recipients WHERE entry_id = $1;
-
--- name: InsertFeedTagEntry :exec
-INSERT INTO feed_tag_entries (tag_id, entry_id, author_account_id, visibility, is_local, revised_at) VALUES ($1, $2, $3, $4, $5, $6)
-ON CONFLICT DO NOTHING;
 
 -- name: DeleteFeedTagEntries :exec
 DELETE FROM feed_tag_entries WHERE entry_id = $1;
@@ -348,22 +340,6 @@ WHERE recipient_account_id = sqlc.arg(viewer) AND entry_id = ANY(sqlc.arg(entry_
 -- name: ListCountedFeedTagIDs :many
 SELECT tag_id FROM feed_tag_entries WHERE entry_id = $1 AND visibility IN ('public', 'local', 'unlisted') ORDER BY tag_id;
 
--- AddTagUsage adds n posts to the usage of a tag, which a post that counts carries.
--- name: AddTagUsage :exec
-INSERT INTO tag_usage (tag_id, statuses_count, last_used_at)
-VALUES (sqlc.arg(tag_id)::uuid, sqlc.arg(n)::bigint, (SELECT max(f.revised_at) FROM feed_tag_entries f WHERE f.tag_id = sqlc.arg(tag_id)::uuid AND f.visibility IN ('public', 'local', 'unlisted')))
-ON CONFLICT (tag_id) DO UPDATE SET statuses_count = tag_usage.statuses_count + excluded.statuses_count, last_used_at = excluded.last_used_at;
-
--- DeleteDrainedTagUsage deletes the usage of a tag that n posts fewer would leave at zero.
--- name: DeleteDrainedTagUsage :exec
-DELETE FROM tag_usage WHERE tag_id = sqlc.arg(tag_id)::uuid AND statuses_count <= sqlc.arg(n)::bigint;
-
--- AdjustTagUsage adds delta (which may be zero or negative) posts to the usage of a tag that has
--- a row and that a post that counts still carries, and reads its last_used_at again.
--- name: AdjustTagUsage :exec
-UPDATE tag_usage SET statuses_count = statuses_count + sqlc.arg(delta)::bigint, last_used_at = (SELECT max(f.revised_at) FROM feed_tag_entries f WHERE f.tag_id = sqlc.arg(tag_id)::uuid AND f.visibility IN ('public', 'local', 'unlisted'))
-WHERE tag_id = sqlc.arg(tag_id)::uuid;
-
 -- ListTagUsageOf returns the usage of the tags among ids that have a row.
 -- name: ListTagUsageOf :many
 SELECT tag_id, statuses_count, last_used_at FROM tag_usage WHERE tag_id = ANY(sqlc.arg(ids)::uuid[]) ORDER BY tag_id;
@@ -492,3 +468,37 @@ DELETE FROM feed_follow_edges WHERE (follower_account_id, followee_account_id) I
 -- name: DeleteListMembersOfFollows :exec
 DELETE FROM list_members WHERE (owner_account_id, member_account_id) IN (
   SELECT unnest(sqlc.arg(follower_ids)::uuid[]), unnest(sqlc.arg(followee_ids)::uuid[]));
+
+-- The rows of an entry's direct recipients and tag entries, and the tag usage that they change,
+-- written with one statement each (the unnests of a select list advance together). Tag usage:
+-- AddManyTagUsage adds n posts to the usage of each tag; DeleteManyDrainedTagUsage deletes the
+-- usage of each tag that n posts fewer would leave at zero; AdjustManyTagUsage adds delta (which
+-- may be zero or negative) posts to each tag that has a row, and reads its last_used_at again.
+
+-- name: InsertFeedDirectRecipients :exec
+INSERT INTO feed_direct_recipients (entry_id, recipient_account_id)
+SELECT sqlc.arg(entry_id)::uuid, unnest(sqlc.arg(recipient_account_ids)::uuid[])
+ON CONFLICT DO NOTHING;
+
+-- name: InsertFeedTagEntries :exec
+INSERT INTO feed_tag_entries (tag_id, entry_id, author_account_id, visibility, is_local, revised_at)
+SELECT unnest(sqlc.arg(tag_ids)::uuid[]), sqlc.arg(entry_id)::uuid, sqlc.arg(author_account_id)::uuid, sqlc.arg(visibility)::text,
+  sqlc.arg(is_local)::boolean, sqlc.arg(revised_at)::timestamptz
+ON CONFLICT DO NOTHING;
+
+-- name: AddManyTagUsage :exec
+INSERT INTO tag_usage (tag_id, statuses_count, last_used_at)
+SELECT d.tag_id, d.n, (SELECT max(f.revised_at) FROM feed_tag_entries f WHERE f.tag_id = d.tag_id AND f.visibility IN ('public', 'local', 'unlisted'))
+FROM (SELECT unnest(sqlc.arg(tag_ids)::uuid[]) AS tag_id, unnest(sqlc.arg(ns)::bigint[]) AS n) d
+ON CONFLICT (tag_id) DO UPDATE SET statuses_count = tag_usage.statuses_count + excluded.statuses_count, last_used_at = excluded.last_used_at;
+
+-- name: DeleteManyDrainedTagUsage :exec
+DELETE FROM tag_usage t
+USING (SELECT unnest(sqlc.arg(tag_ids)::uuid[]) AS tag_id, unnest(sqlc.arg(ns)::bigint[]) AS n) d
+WHERE t.tag_id = d.tag_id AND t.statuses_count <= d.n;
+
+-- name: AdjustManyTagUsage :exec
+UPDATE tag_usage t SET statuses_count = t.statuses_count + d.delta,
+  last_used_at = (SELECT max(f.revised_at) FROM feed_tag_entries f WHERE f.tag_id = t.tag_id AND f.visibility IN ('public', 'local', 'unlisted'))
+FROM (SELECT unnest(sqlc.arg(tag_ids)::uuid[]) AS tag_id, unnest(sqlc.arg(deltas)::bigint[]) AS delta) d
+WHERE t.tag_id = d.tag_id;
