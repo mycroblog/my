@@ -9,6 +9,7 @@
 {{end}}{{with .ThemeStylesheet}}<link rel="stylesheet" href="{{.}}">
 {{end}}</head>
 <body>
+{{emailOff}}
 <main class="page">
 <header class="site-header">
 {{if .Logo}}<picture>
@@ -30,6 +31,7 @@
 </nav>
 {{end}}{{with .StatusPageURL}}<p class="footer-links"><a href="{{.}}" rel="noopener">{{$.L.ServerAuthStatusPageLink}}</a></p>
 {{end}}</footer>
-{{end}}</body>
+{{end}}{{emailOn}}
+</body>
 </html>
 {{end}}
