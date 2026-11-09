@@ -785,11 +785,12 @@ entries:
     notes:
       - "deploy/docker/example.env is generated from the config schema (`scripts/task.sh go:config-docs`). The KEK stays out of it: .env reaches the containers whole through env_file, so the key is the file secrets/kek, mounted as a secret."
   - name: dev-compose
-    paths: ["compose.yaml"]
-    docs: ["CONTRIBUTING.md#emails"]
-    checks: [docker]
+    paths: ["compose.yaml", "deploy/dev/**", "scripts/dev-compose.sh"]
+    docs: ["CONTRIBUTING.md#local-development", "CONTRIBUTING.md#emails"]
+    checks: [docker, shell]
     notes:
-      - "Development only, under the project my-dev: the PostgreSQL of `scripts/task.sh db:up` and the Mailpit of `scripts/task.sh docker:mailpit` and .github/actions/start-mailpit."
+      - "Development only, under the project my-dev: `docker compose up` runs `my` and Vite from the checkout in the stage dev of the Dockerfile (scripts/dev-compose.sh, as the owner of the checkout) and every service the server uses, all configured in compose.yaml. The tests, the demo server, the E2E tests, and L4 never use it; `scripts/task.sh db:up`, `scripts/task.sh docker:mailpit`, and .github/actions/start-mailpit start postgres and mailpit alone with --no-deps, so a change must keep those two services startable without the others and without the dev image."
+      - "A setting added to the server that one of these services can serve belongs in the environment of the service my; a third-party image is pinned by tag and digest, the same as the tests' image where one exists."
   - name: tofu
     paths: ["deploy/opentofu/**", "scripts/tofu-*", "tasks/tofu.yml", "docs/operations/deploy-cloud-run.md"]
     docs: ["deploy/opentofu/README.md", "docs/operations/deploy-cloud-run.md", "docs/architecture/deployment-targets.md#google-cloud"]
@@ -815,7 +816,7 @@ entries:
     userdocs: ["docs/operations/alerts.md"]
     checks: [docker, docs]
     notes:
-      - "The alerting rules use the metric names as Prometheus shows them (internal/platform/telemetry.go, internal/app/metrics, internal/adapter/telemetry); a renamed metric or label updates alerts.yml, alerts.test.yml, and docs/operations/alerts.md together. `scripts/task.sh docker:alert-rules` runs promtool on them."
+      - "The alerting rules use the metric names as Prometheus shows them (internal/platform/telemetry.go, internal/app/metrics, internal/adapter/telemetry); a renamed metric or label updates alerts.yml, alerts.test.yml, the dashboard grafana/my.json, and docs/operations/alerts.md together. `scripts/task.sh docker:alert-rules` runs promtool on them. The dashboard takes its Prometheus data source and job from its variables, so that operators import it as it is; the root compose.yaml provisions it."
   - name: federation-live
     paths: ["test/federation-live/**", "scripts/federation-live.sh"]
     docs: ["test/federation-live/README.md", "docs/architecture/federation.md#12-テスト"]

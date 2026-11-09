@@ -67,29 +67,18 @@ tasks:
   up:
     desc: Start the dev PostgreSQL container (database `my`, and `my_dev` and `my_lint` for Atlas, bootstrapped)
     silent: true
+    # The service alone (--no-deps): deploy/dev/postgres-init.sh creates and bootstraps the dev databases on a new volume.
     cmds:
       - >-
-        docker inspect {{.PG_CONTAINER}} >/dev/null 2>&1 ||
         PG_CONTAINER={{shellQuote .PG_CONTAINER}} PG_PORT={{shellQuote .PG_PORT}} PG_IMAGE={{shellQuote .PG_IMAGE}}
-        docker compose up -d postgres
-      - docker start {{.PG_CONTAINER}} >/dev/null
-      - for _ in $(seq 60); do docker exec {{.PG_CONTAINER}} pg_isready -q -U my -d my -h 127.0.0.1 && break; sleep 1; done
-      - |
-        for db in my_dev my_lint; do
-          docker exec {{.PG_CONTAINER}} psql -q -U my -d my -tAc "SELECT 1 FROM pg_database WHERE datname = '$db'" | grep -q 1 ||
-            docker exec {{.PG_CONTAINER}} createdb -U my $db || exit 1
-        done
-      # my schema apply runs the bootstrap SQL on `my` itself; Atlas's dev databases need it before Atlas runs.
-      - |
-        for db in my_dev my_lint; do
-          docker exec -i -e PGOPTIONS=--client-min-messages=warning {{.PG_CONTAINER}} psql -v ON_ERROR_STOP=1 -q -U my -d $db < schema/ddl/postgres.bootstrap.sql || exit 1
-        done
+        docker compose up -d --wait --no-deps postgres
       - echo "PostgreSQL is up in container {{.PG_CONTAINER}} on localhost:{{.PG_PORT}}"
 
   down:
     desc: Remove the dev PostgreSQL container and its data
     cmds:
-      - docker rm -fv {{.PG_CONTAINER}}
+      - PG_CONTAINER={{shellQuote .PG_CONTAINER}} docker compose rm -sf postgres
+      - docker volume rm -f my-dev_postgres
 
   my:
     desc: Build the working tree's my into bin/my-schema-apply for db:apply and db:diff (without the web client)
