@@ -132,3 +132,19 @@ func closureEventFrom(row instancegen.GetServiceClosureEventRow) instance.Closur
 		},
 	}
 }
+
+// FederationGate implements appinstance.ClosureRepository.
+func (r *Repository) FederationGate(ctx context.Context) (instance.Closure, bool, string, error) {
+	row, err := r.db.reader().GetFederationGate(ctx)
+	if err != nil {
+		return instance.Closure{}, false, "", sqlite.Wrap(err, "get the federation gate")
+	}
+	if !row.State.Valid || !row.AnnouncementEventID.Valid || !row.ChangedAt.Valid || !row.AnnouncedAt.Valid || !row.ClosesAt.Valid || !row.ExportUntil.Valid || !row.Message.Valid {
+		return instance.Closure{}, false, row.FederationMode, nil
+	}
+	return instance.Closure{
+		State: instance.ClosureState(row.State.String), AnnouncementID: row.AnnouncementEventID.String,
+		Schedule:    instance.ClosureSchedule{ClosesAt: sqlite.FromMillis(row.ClosesAt.Int64), ExportUntil: sqlite.FromMillis(row.ExportUntil.Int64), Message: row.Message.String},
+		AnnouncedAt: sqlite.FromMillis(row.AnnouncedAt.Int64), ChangedAt: sqlite.FromMillis(row.ChangedAt.Int64),
+	}, true, row.FederationMode, nil
+}

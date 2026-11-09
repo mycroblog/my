@@ -31,6 +31,9 @@ type ClosureRepository interface {
 
 	// CurrentClosure returns the closure that the head points at.
 	CurrentClosure(ctx context.Context) (instance.Closure, error)
+	// FederationGate returns the closure as CurrentClosure does (ok false without one) and the
+	// stored value of the setting federation_mode ("" when unset), with one query.
+	FederationGate(ctx context.Context) (c instance.Closure, ok bool, federationMode string, err error)
 	// FindClosureEvent returns an event with its schedule, ErrNotFound when there is none.
 	FindClosureEvent(ctx context.Context, id string) (instance.ClosureEvent, error)
 	// FindClosureEvents returns the service closure events of ids that exist, by ID, as
@@ -110,6 +113,23 @@ func (s *Service) Closure(ctx context.Context) (instance.Closure, error) {
 		return instance.Closure{}, nil
 	}
 	return c, err
+}
+
+// FederationGate returns the closure, as Closure does, and the setting federation_mode, as
+// FederationMode does, with one query: what a delivery asks before it sends.
+func (s *Service) FederationGate(ctx context.Context) (instance.Closure, instance.FederationMode, error) {
+	c, ok, mode, err := s.d.Repository.FederationGate(ctx)
+	if err != nil {
+		return instance.Closure{}, "", err
+	}
+	if !ok {
+		c = instance.Closure{}
+	}
+	var current []instance.CurrentSetting
+	if mode != "" {
+		current = []instance.CurrentSetting{{Key: instance.SettingFederationMode, Value: mode}}
+	}
+	return c, instance.NewSettings(current).FederationMode(), nil
 }
 
 // ClosureTx is Closure inside tx.

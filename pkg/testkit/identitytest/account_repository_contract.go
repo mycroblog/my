@@ -284,6 +284,20 @@ func accountRepoKeys(t *testing.T, r *identityRepo) {
 	if _, err := r.h.Accounts.FindSealedPrivateKey(ctx, rk.ID); !errors.Is(err, appaccount.ErrNotFound) {
 		t.Errorf("FindSealedPrivateKey of a remote key = %v, want ErrNotFound", err)
 	}
+	// The keys with their sealed private keys, as ListKeys and FindSealedPrivateKey read them.
+	withSealed, err := r.h.Accounts.ListKeysWithSealed(ctx, id)
+	if err != nil || len(withSealed) != 2 {
+		t.Fatalf("ListKeysWithSealed = %+v, %v; want the two keys", withSealed, err)
+	}
+	for i, k := range withSealed {
+		if k.Key.ID != got[i].ID || k.Key.KeyID != got[i].KeyID || k.Key.Algorithm != got[i].Algorithm || k.Key.PublicKeyPEM != got[i].PublicKeyPEM ||
+			!slices.Equal(k.Key.Fingerprint, got[i].Fingerprint) || !k.Key.CreatedAt.Equal(got[i].CreatedAt) || string(k.Sealed) != "sealed "+got[i].ID {
+			t.Errorf("ListKeysWithSealed[%d] = %+v; want %+v sealed", i, k, got[i])
+		}
+	}
+	if remoteKeys, err := r.h.Accounts.ListKeysWithSealed(ctx, remote); err != nil || len(remoteKeys) != 1 || remoteKeys[0].Key.ID != rk.ID || remoteKeys[0].Sealed != nil {
+		t.Errorf("ListKeysWithSealed(remote) = %+v, %v; want its key without a private key", remoteKeys, err)
+	}
 }
 
 // accountRepoActorParts reads the parts of several accounts at once, the duplicates and the

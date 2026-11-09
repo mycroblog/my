@@ -1001,6 +1001,11 @@ func (s *Service) PrivateKey(ctx context.Context, k account.Key) (crypto.Signer,
 	if err != nil {
 		return nil, err
 	}
+	return s.openPrivateKey(ctx, k, sealed)
+}
+
+// openPrivateKey opens the sealed private key of k.
+func (s *Service) openPrivateKey(ctx context.Context, k account.Key, sealed []byte) (crypto.Signer, error) {
 	der, err := s.d.Sealer.Open(ctx, sealed, PrivateKeyAAD(k.ID))
 	if err != nil {
 		return nil, fmt.Errorf("account: open private key %s: %w", k.KeyID, err)
@@ -1072,6 +1077,64 @@ func (s *Service) ProofKey(ctx context.Context, accountID string) (keyID string,
 		return "", nil, fmt.Errorf("account: proof key %s is a %T", newest.KeyID, signer)
 	}
 	return newest.KeyID, priv, nil
+}
+
+// ActorKeys are the keys a local actor signs its deliveries with, read together: the newest RSA
+// key, as SigningKey returns it, and the newest Ed25519 key, opened by Proof as ProofKey returns
+// it, so that a delivery that does not need it does not open it.
+type ActorKeys struct {
+	SigningKeyID string
+	Signer       crypto.Signer
+	// Proof opens the proof key; it fails with ErrNotFound when the actor has none.
+	Proof func(ctx context.Context) (keyID string, key ed25519.PrivateKey, err error)
+}
+
+// DeliveryKeys returns the keys of a local actor with one query, as SigningKey and ProofKey read
+// them. It fails as SigningKey does when the actor has no signing key.
+func (s *Service) DeliveryKeys(ctx context.Context, accountID string) (ActorKeys, error) {
+	keys, err := s.d.Repository.ListKeysWithSealed(ctx, accountID)
+	if err != nil {
+		return ActorKeys{}, err
+	}
+	newest := func(alg account.KeyAlgorithm) *KeyWithSealed {
+		var out *KeyWithSealed
+		for i := range keys {
+			k := &keys[i]
+			if k.Key.Algorithm == alg && (out == nil || k.Key.CreatedAt.After(out.Key.CreatedAt)) {
+				out = k
+			}
+		}
+		return out
+	}
+	open := func(ctx context.Context, k *KeyWithSealed) (crypto.Signer, error) {
+		if k.Sealed == nil {
+			return nil, fmt.Errorf("account: private key of %s: %w", k.Key.ID, ErrNotFound)
+		}
+		return s.openPrivateKey(ctx, k.Key, k.Sealed)
+	}
+	rsa := newest(account.KeyRSASHA256)
+	if rsa == nil {
+		return ActorKeys{}, fmt.Errorf("account: signing key of %s: %w", accountID, ErrNotFound)
+	}
+	signer, err := open(ctx, rsa)
+	if err != nil {
+		return ActorKeys{}, err
+	}
+	ed := newest(account.KeyEd25519)
+	return ActorKeys{SigningKeyID: rsa.Key.KeyID, Signer: signer, Proof: func(ctx context.Context) (string, ed25519.PrivateKey, error) {
+		if ed == nil {
+			return "", nil, fmt.Errorf("account: proof key of %s: %w", accountID, ErrNotFound)
+		}
+		signer, err := open(ctx, ed)
+		if err != nil {
+			return "", nil, err
+		}
+		priv, ok := signer.(ed25519.PrivateKey)
+		if !ok {
+			return "", nil, fmt.Errorf("account: proof key %s is a %T", ed.Key.KeyID, signer)
+		}
+		return ed.Key.KeyID, priv, nil
+	}}, nil
 }
 
 // ValidateUsername checks a new local username (account.ValidateUsername), so that other

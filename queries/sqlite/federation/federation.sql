@@ -113,6 +113,19 @@ FROM json_each(CAST(sqlc.arg(deliveries) AS TEXT)) WHERE true
 ON CONFLICT (outbound_activity_id, inbox_url) DO NOTHING
 RETURNING id;
 
+-- GetDeliveryContext returns a delivery with its activity, the activity's document (NULL for
+-- none), and the health state of the delivery's server (NULL for a server without a row), as
+-- GetDelivery, GetOutboundActivity, GetOutboundActivityDocument, and GetInstanceHealth read them.
+-- name: GetDeliveryContext :one
+SELECT d.id, d.outbound_activity_id, d.inbox_url, d.domain, d.created_at,
+  a.activity_uri, a.type, a.actor_account_id, a.object_type, a.object_id, a.created_at AS activity_created_at,
+  doc.document, h.state AS health_state
+FROM deliveries d
+JOIN outbound_activities a ON a.id = d.outbound_activity_id
+LEFT JOIN outbound_activity_documents doc ON doc.outbound_activity_id = a.id
+LEFT JOIN instance_health h ON h.domain = d.domain
+WHERE d.id = sqlc.arg(id);
+
 -- name: GetDelivery :one
 SELECT id, outbound_activity_id, inbox_url, domain, created_at FROM deliveries WHERE id = @id;
 

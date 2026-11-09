@@ -650,6 +650,25 @@ func (r *Repository) ListKeys(ctx context.Context, accountID string) ([]account.
 	return out, nil
 }
 
+// ListKeysWithSealed implements account.Repository.
+func (r *Repository) ListKeysWithSealed(ctx context.Context, accountID string) ([]appaccount.KeyWithSealed, error) {
+	rows, err := r.db.reader().ListAccountKeysWithPrivate(ctx, accountID)
+	if err != nil {
+		return nil, sqlite.Wrap(err, "list account keys")
+	}
+	out := make([]appaccount.KeyWithSealed, len(rows))
+	for i, row := range rows {
+		out[i] = appaccount.KeyWithSealed{
+			Key: keyFrom(accountgen.AccountKey{
+				ID: row.ID, AccountID: row.AccountID, KeyID: row.KeyID, Algorithm: row.Algorithm,
+				PublicKeyPem: row.PublicKeyPem, Fingerprint: row.Fingerprint, CreatedAt: row.CreatedAt,
+			}),
+			Sealed: row.PrivateKeyEnc,
+		}
+	}
+	return out, nil
+}
+
 // FindSealedPrivateKey implements account.Repository.
 func (r *Repository) FindSealedPrivateKey(ctx context.Context, accountKeyID string) ([]byte, error) {
 	sealed, err := r.db.reader().GetLocalAccountPrivateKey(ctx, accountKeyID)

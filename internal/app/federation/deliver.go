@@ -59,6 +59,34 @@ func (k AccountSigningKeys) SigningKey(ctx context.Context, accountID string) (S
 	return SigningKey{KeyID: id, PrivateKey: key}, nil
 }
 
+// DeliveryKeys implements the reading of both keys of an actor at once, when the account module
+// can (DeliveryKeys of *appaccount.Service).
+func (k AccountSigningKeys) DeliveryKeys(ctx context.Context, accountID string) (SigningKey, ProofOpener, error) {
+	b, ok := k.Accounts.(interface {
+		DeliveryKeys(ctx context.Context, accountID string) (appaccount.ActorKeys, error)
+	})
+	if !ok {
+		key, err := k.SigningKey(ctx, accountID)
+		if err != nil {
+			return SigningKey{}, nil, err
+		}
+		return key, func(context.Context) (ProofKey, error) {
+			return ProofKey{}, fmt.Errorf("proof key of %s: %w", accountID, appaccount.ErrNotFound)
+		}, nil
+	}
+	keys, err := b.DeliveryKeys(ctx, accountID)
+	if err != nil {
+		return SigningKey{}, nil, err
+	}
+	return SigningKey{KeyID: keys.SigningKeyID, PrivateKey: keys.Signer}, func(ctx context.Context) (ProofKey, error) {
+		id, key, err := keys.Proof(ctx)
+		if err != nil {
+			return ProofKey{}, err
+		}
+		return ProofKey{VerificationMethod: id, PrivateKey: key}, nil
+	}, nil
+}
+
 // ProofKey is the key that signs the integrity proofs of a local actor's activities (FEP-8b32):
 // its Ed25519 key and the IRI that its document publishes it under in assertionMethod.
 type ProofKey struct {
@@ -180,26 +208,21 @@ func (d *Deliverer) handle(ctx context.Context, j queue.Job) queue.Result {
 // is sent again only if its job runs again (at-least-once), which inboxes deduplicate by the
 // activity's id.
 func (d *Deliverer) Deliver(ctx context.Context, deliveryID string) queue.Result {
-	del, err := d.d.Repository.FindDelivery(ctx, deliveryID)
+	dc, err := d.d.Repository.FindDeliveryContext(ctx, deliveryID)
 	if errors.Is(err, ErrNotFound) {
 		return queue.Fail(err)
 	}
 	if err != nil {
 		return queue.Retry(0, err)
 	}
-	act, err := d.d.Repository.FindOutboundActivity(ctx, del.OutboundActivityID)
-	if errors.Is(err, ErrNotFound) {
-		return queue.Fail(err)
-	}
-	if err != nil {
-		return queue.Retry(0, err)
+	del, act := dc.Delivery, dc.Activity
+	// finish is d.finish with what the context read of the server's health.
+	finish := func(a federation.DeliveryAttempt, retryAfter time.Duration) queue.Result {
+		return d.finish(ctx, del, a, retryAfter, !dc.HealthRow)
 	}
 
-	var st federation.DomainStatus
+	st := federation.DomainStatus{State: dc.Health}
 	if st.Suspended, err = d.d.Domains.FederationSuspended(ctx, del.Domain); err != nil {
-		return queue.Retry(0, err)
-	}
-	if st.State, err = d.d.Repository.InstanceState(ctx, del.Domain); err != nil {
 		return queue.Retry(0, err)
 	}
 	if !federation.Deliverable(act.Type, st) {
@@ -207,32 +230,29 @@ func (d *Deliverer) Deliver(ctx context.Context, deliveryID string) queue.Result
 		if st.Suspended {
 			why = "domain suspended"
 		}
-		return d.finish(ctx, del, federation.DeliveryAttempt{Outcome: federation.DeliverySkipped, Error: why}, 0)
+		return finish(federation.DeliveryAttempt{Outcome: federation.DeliverySkipped, Error: why}, 0)
 	}
-	switch sends, err := d.sends(ctx, act); {
+	switch sends, err := d.sendsWith(ctx, act, dc.Document); {
 	case errors.Is(err, ErrNotFound):
 		return queue.Fail(err)
 	case err != nil:
 		return queue.Retry(0, err)
 	case !sends:
-		return d.finish(ctx, del, federation.DeliveryAttempt{Outcome: federation.DeliverySkipped, Error: "federation mode"}, 0)
+		return finish(federation.DeliveryAttempt{Outcome: federation.DeliverySkipped, Error: "federation mode"}, 0)
 	}
 
 	now := d.d.Clock.Now()
 	if !d.d.Breaker.Allows(del.Domain, now) {
-		return d.finish(ctx, del, federation.DeliveryAttempt{
+		return finish(federation.DeliveryAttempt{
 			Outcome: federation.DeliveryRetryableFailure, Error: "circuit breaker open",
 		}, 0)
 	}
 
-	document, err := d.d.Repository.FindOutboundDocument(ctx, act.ID)
-	if errors.Is(err, ErrNotFound) {
-		return queue.Fail(err)
+	document := dc.Document
+	if document == nil {
+		return queue.Fail(fmt.Errorf("outbound activity document %s: %w", act.ID, ErrNotFound))
 	}
-	if err != nil {
-		return queue.Retry(0, err)
-	}
-	key, err := d.d.Keys.SigningKey(ctx, act.ActorAccountID)
+	key, proof, err := d.keys(ctx, act.ActorAccountID)
 	if errors.Is(err, appaccount.ErrNotFound) {
 		// The actor is gone, or is not local: nothing can sign the activity.
 		return queue.Fail(err)
@@ -240,8 +260,7 @@ func (d *Deliverer) Deliver(ctx context.Context, deliveryID string) queue.Result
 	if err != nil {
 		return queue.Retry(0, err)
 	}
-
-	if document, err = d.sign(ctx, act, document, key); err != nil {
+	if document, err = d.sign(ctx, act, document, key, proof); err != nil {
 		return queue.Retry(0, err)
 	}
 
@@ -260,7 +279,7 @@ func (d *Deliverer) Deliver(ctx context.Context, deliveryID string) queue.Result
 		return queue.Retry(0, ctx.Err())
 	}
 	d.d.Breaker.Record(del.Domain, attempt.Outcome, d.d.Clock.Now())
-	return d.finish(ctx, del, attempt, retryAfter)
+	return finish(attempt, retryAfter)
 }
 
 // sign returns document with the linked data signature of key when it is the Create, Update, or
@@ -271,7 +290,7 @@ func (d *Deliverer) Deliver(ctx context.Context, deliveryID string) queue.Result
 // proof. The signature is created at the activity's time and is deterministic: every delivery
 // and retry of the activity sends the same bytes. A document that cannot be signed goes with its
 // proof instead, and a warning is logged.
-func (d *Deliverer) sign(ctx context.Context, act federation.OutboundActivity, document []byte, key SigningKey) ([]byte, error) {
+func (d *Deliverer) sign(ctx context.Context, act federation.OutboundActivity, document []byte, key SigningKey, proof ProofOpener) ([]byte, error) {
 	if d.d.LinkedData != nil && federation.SignsLinkedData(act, addressedTo(document)) {
 		signed, err := SignLinkedData(document, d.d.LinkedData, key, act.CreatedAt)
 		if err == nil {
@@ -279,7 +298,7 @@ func (d *Deliverer) sign(ctx context.Context, act federation.OutboundActivity, d
 		}
 		d.d.Logger.WarnContext(ctx, "delivery without a linked data signature", slog.String("outbound_activity_id", act.ID), slog.Any("error", err))
 	}
-	return d.withProof(ctx, act, document)
+	return d.withProof(ctx, act, document, proof)
 }
 
 // withProof returns document with the eddsa-jcs-2022 proof of the actor's Ed25519 key
@@ -288,7 +307,7 @@ func (d *Deliverer) sign(ctx context.Context, act federation.OutboundActivity, d
 // ProofKeys, when the actor has no Ed25519 key, and when the document carries a linked data
 // signature: a proof added after that signature would break it, so a document that has both
 // gets its proof where the signature is made, before it (FEP-8b32, Backward compatibility).
-func (d *Deliverer) withProof(ctx context.Context, act federation.OutboundActivity, document []byte) ([]byte, error) {
+func (d *Deliverer) withProof(ctx context.Context, act federation.OutboundActivity, document []byte, proof ProofOpener) ([]byte, error) {
 	if d.d.Proofs == nil {
 		return document, nil
 	}
@@ -298,7 +317,7 @@ func (d *Deliverer) withProof(ctx context.Context, act federation.OutboundActivi
 	if json.Unmarshal(document, &head) != nil || len(head.Signature) > 0 {
 		return document, nil
 	}
-	key, err := d.d.Proofs.ProofKey(ctx, act.ActorAccountID)
+	key, err := proof(ctx)
 	if errors.Is(err, appaccount.ErrNotFound) {
 		return document, nil
 	}
@@ -350,7 +369,7 @@ func (d *Deliverer) send(ctx context.Context, del federation.Delivery, document 
 
 // finish records a in one transaction with its event, so that the instance_health projector
 // sees it, and turns the outcome into the job's result.
-func (d *Deliverer) finish(ctx context.Context, del federation.Delivery, a federation.DeliveryAttempt, retryAfter time.Duration) queue.Result {
+func (d *Deliverer) finish(ctx context.Context, del federation.Delivery, a federation.DeliveryAttempt, retryAfter time.Duration, noHealthRow bool) queue.Result {
 	d.attempts.Add(ctx, 1, kernel.NewLabels(LabelOutcome, deliveryOutcome(a)))
 	a.ID = d.d.IDs.NewID()
 	a.DeliveryID = del.ID
@@ -362,7 +381,7 @@ func (d *Deliverer) finish(ctx context.Context, del federation.Delivery, a feder
 		if err := d.d.Repository.InsertDeliveryAttempt(ctx, tx, a); err != nil {
 			return err
 		}
-		return tx.Emit(ctx, DeliveryAttempted{Attempt: a, Domain: del.Domain})
+		return tx.Emit(ctx, DeliveryAttempted{Attempt: a, Domain: del.Domain, NoHealthRow: noHealthRow})
 	})
 	if err != nil {
 		d.d.Logger.WarnContext(ctx, "delivery attempt not recorded", slog.String("delivery_id", del.ID), slog.Any("error", err))
@@ -390,26 +409,73 @@ func (d *Deliverer) finish(ctx context.Context, del federation.Delivery, a feder
 // sends reports whether the federation mode at the time lets act go out (federation.Sends). The
 // Update of an actor tells its suspension by its stored document, which is marked suspended.
 // While the service closure delivers its Deletes, it alone decides (federation.ClosureSends).
-func (d *Deliverer) sends(ctx context.Context, act federation.OutboundActivity) (bool, error) {
-	switch closing, err := closureRetracts(ctx, d.d.Closure); {
+// ProofOpener opens the proof key of an activity's actor, failing with an error wrapping
+// appaccount.ErrNotFound when it has none.
+type ProofOpener func(ctx context.Context) (ProofKey, error)
+
+// deliveryKeys is a SigningKeys that reads the signing and the proof key of an actor together, as
+// AccountSigningKeys does on the account module.
+type deliveryKeys interface {
+	DeliveryKeys(ctx context.Context, accountID string) (SigningKey, ProofOpener, error)
+}
+
+// keys returns the signing key of an actor and the opener of its proof key: from one read when
+// Keys can, through Keys and Proofs otherwise.
+func (d *Deliverer) keys(ctx context.Context, accountID string) (SigningKey, ProofOpener, error) {
+	if b, ok := d.d.Keys.(deliveryKeys); ok {
+		return b.DeliveryKeys(ctx, accountID)
+	}
+	key, err := d.d.Keys.SigningKey(ctx, accountID)
+	if err != nil {
+		return SigningKey{}, nil, err
+	}
+	return key, func(ctx context.Context) (ProofKey, error) { return d.d.Proofs.ProofKey(ctx, accountID) }, nil
+}
+
+// deliveryGate is a ModeSettings that reads the closure and the mode together, as the composition
+// root's does.
+type deliveryGate interface {
+	// DeliveryGate returns whether the closure delivers its retractions alone (ClosureRetracts)
+	// and the federation mode (FederationMode), with one read.
+	DeliveryGate(ctx context.Context) (closing bool, mode federation.Mode, err error)
+}
+
+// sends reports whether act goes out under the service closure and the federation mode, looking
+// into document for a suspended actor's Update; it reads the closure and the mode together when
+// Modes can.
+func (d *Deliverer) sendsWith(ctx context.Context, act federation.OutboundActivity, document []byte) (bool, error) {
+	closing, mode, err := d.gate(ctx)
+	switch {
 	case err != nil:
 		return false, err
 	case closing:
 		return federation.ClosureSends(act), nil
 	}
-	mode, err := currentMode(ctx, d.d.Modes)
-	if err != nil {
-		return false, err
-	}
 	suspension := false
 	if act.ObjectKind == federation.OutboundAccount && act.Type == federation.ActivityUpdate && !federation.Sends(mode, act, false) {
-		document, err := d.d.Repository.FindOutboundDocument(ctx, act.ID)
-		if err != nil {
-			return false, err
+		if document == nil {
+			return false, fmt.Errorf("outbound activity document %s: %w", act.ID, ErrNotFound)
 		}
 		suspension = suspendedActorUpdate(document)
 	}
 	return federation.Sends(mode, act, suspension), nil
+}
+
+// gate reads whether the closure delivers its retractions alone and the federation mode.
+func (d *Deliverer) gate(ctx context.Context) (bool, federation.Mode, error) {
+	if g, ok := d.d.Modes.(deliveryGate); ok && d.d.Closure != nil {
+		closing, mode, err := g.DeliveryGate(ctx)
+		if err != nil {
+			return false, "", fmt.Errorf("read the federation mode and the service closure: %w", err)
+		}
+		return closing, mode, nil
+	}
+	closing, err := closureRetracts(ctx, d.d.Closure)
+	if err != nil || closing {
+		return closing, "", err
+	}
+	mode, err := currentMode(ctx, d.d.Modes)
+	return false, mode, err
 }
 
 // suspendedActorUpdate reports whether document is the Update of an actor marked suspended
