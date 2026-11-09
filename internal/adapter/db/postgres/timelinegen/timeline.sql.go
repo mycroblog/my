@@ -906,6 +906,41 @@ func (q *Queries) ListFeedDirectEntriesAmong(ctx context.Context, arg ListFeedDi
 	return items, nil
 }
 
+const listFeedDirectEntriesAmongOf = `-- name: ListFeedDirectEntriesAmongOf :many
+SELECT recipient_account_id, entry_id FROM feed_direct_recipients
+WHERE recipient_account_id = ANY($1::uuid[]) AND entry_id = ANY($2::uuid[])
+`
+
+type ListFeedDirectEntriesAmongOfParams struct {
+	Viewers  []string
+	EntryIds []string
+}
+
+type ListFeedDirectEntriesAmongOfRow struct {
+	RecipientAccountID string
+	EntryID            string
+}
+
+func (q *Queries) ListFeedDirectEntriesAmongOf(ctx context.Context, arg ListFeedDirectEntriesAmongOfParams) ([]ListFeedDirectEntriesAmongOfRow, error) {
+	rows, err := q.db.Query(ctx, listFeedDirectEntriesAmongOf, arg.Viewers, arg.EntryIds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListFeedDirectEntriesAmongOfRow{}
+	for rows.Next() {
+		var i ListFeedDirectEntriesAmongOfRow
+		if err := rows.Scan(&i.RecipientAccountID, &i.EntryID); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listFeedDomainMutesAmong = `-- name: ListFeedDomainMutesAmong :many
 SELECT domain FROM feed_domain_mutes
 WHERE viewer_account_id = $1 AND domain = ANY($2::text[])
@@ -929,6 +964,36 @@ func (q *Queries) ListFeedDomainMutesAmong(ctx context.Context, arg ListFeedDoma
 			return nil, err
 		}
 		items = append(items, domain)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listFeedDomainMutesAmongOf = `-- name: ListFeedDomainMutesAmongOf :many
+SELECT viewer_account_id, domain FROM feed_domain_mutes
+WHERE viewer_account_id = ANY($1::uuid[]) AND domain = ANY($2::text[])
+`
+
+type ListFeedDomainMutesAmongOfParams struct {
+	Viewers []string
+	Domains []string
+}
+
+func (q *Queries) ListFeedDomainMutesAmongOf(ctx context.Context, arg ListFeedDomainMutesAmongOfParams) ([]FeedDomainMute, error) {
+	rows, err := q.db.Query(ctx, listFeedDomainMutesAmongOf, arg.Viewers, arg.Domains)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []FeedDomainMute{}
+	for rows.Next() {
+		var i FeedDomainMute
+		if err := rows.Scan(&i.ViewerAccountID, &i.Domain); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
@@ -1009,6 +1074,44 @@ func (q *Queries) ListFeedExclusionsAmong(ctx context.Context, arg ListFeedExclu
 	return items, nil
 }
 
+const listFeedExclusionsAmongOf = `-- name: ListFeedExclusionsAmongOf :many
+SELECT viewer_account_id, target_account_id, reason FROM feed_exclusions
+WHERE viewer_account_id = ANY($1::uuid[]) AND (expires_at IS NULL OR expires_at > $2::timestamptz)
+  AND target_account_id = ANY($3::uuid[])
+`
+
+type ListFeedExclusionsAmongOfParams struct {
+	Viewers    []string
+	Now        time.Time
+	AccountIds []string
+}
+
+type ListFeedExclusionsAmongOfRow struct {
+	ViewerAccountID string
+	TargetAccountID string
+	Reason          string
+}
+
+func (q *Queries) ListFeedExclusionsAmongOf(ctx context.Context, arg ListFeedExclusionsAmongOfParams) ([]ListFeedExclusionsAmongOfRow, error) {
+	rows, err := q.db.Query(ctx, listFeedExclusionsAmongOf, arg.Viewers, arg.Now, arg.AccountIds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListFeedExclusionsAmongOfRow{}
+	for rows.Next() {
+		var i ListFeedExclusionsAmongOfRow
+		if err := rows.Scan(&i.ViewerAccountID, &i.TargetAccountID, &i.Reason); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listFeedFollowedAmong = `-- name: ListFeedFollowedAmong :many
 
 SELECT followee_account_id FROM feed_follow_edges
@@ -1034,6 +1137,44 @@ func (q *Queries) ListFeedFollowedAmong(ctx context.Context, arg ListFeedFollowe
 			return nil, err
 		}
 		items = append(items, followee_account_id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listFeedFollowedAmongOf = `-- name: ListFeedFollowedAmongOf :many
+
+SELECT follower_account_id, followee_account_id FROM feed_follow_edges
+WHERE follower_account_id = ANY($1::uuid[]) AND followee_account_id = ANY($2::uuid[])
+`
+
+type ListFeedFollowedAmongOfParams struct {
+	Viewers    []string
+	AccountIds []string
+}
+
+type ListFeedFollowedAmongOfRow struct {
+	FollowerAccountID string
+	FolloweeAccountID string
+}
+
+// The facts of many viewers, each as the query of one viewer above reads it, for deciding one new
+// entry for many streams at once.
+func (q *Queries) ListFeedFollowedAmongOf(ctx context.Context, arg ListFeedFollowedAmongOfParams) ([]ListFeedFollowedAmongOfRow, error) {
+	rows, err := q.db.Query(ctx, listFeedFollowedAmongOf, arg.Viewers, arg.AccountIds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListFeedFollowedAmongOfRow{}
+	for rows.Next() {
+		var i ListFeedFollowedAmongOfRow
+		if err := rows.Scan(&i.FollowerAccountID, &i.FolloweeAccountID); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err

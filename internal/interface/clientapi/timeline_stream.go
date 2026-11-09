@@ -89,6 +89,10 @@ func (s *Server) serveTimelineStream(w http.ResponseWriter, r *http.Request) {
 		streamState: streamState{s: s, w: w, rc: http.NewResponseController(w), viewer: v, home: q, sentEntries: newRecentIDs(streamRecentEntries)},
 		timeline:    tl.timeline,
 	}
+	if s.public != nil {
+		s.public.add(ts)
+		defer s.public.remove(ts)
+	}
 	alive := func(ctx context.Context) bool {
 		denied, err := s.timelineDenied(ctx, tl.access)
 		return err != nil || denied == nil // a failed read keeps the stream until the next heartbeat
@@ -108,6 +112,21 @@ type timelineStream struct {
 func (ts *timelineStream) handle(ctx context.Context, e stream.Event) error {
 	if e.Kind != stream.KindPublicEntry || ts.sentEntries.has(e.EntryID) {
 		return nil
+	}
+	if ts.s.public != nil {
+		statuses, ok, err := ts.s.public.statuses(ctx, ts.s, ts, e.EntryID)
+		if err != nil {
+			return err
+		}
+		if ok {
+			for _, status := range statuses {
+				if err := ts.event("update", status); err != nil {
+					return err
+				}
+			}
+			ts.sentEntries.add(e.EntryID)
+			return nil
+		}
 	}
 	viewer := localContentViewer(ts.viewer)
 	lookup := ts.s.o.PublicEntries.PublicEntry

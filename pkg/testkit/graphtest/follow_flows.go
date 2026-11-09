@@ -154,6 +154,17 @@ func sameRelationships(t *testing.T, e *followEnv, account, target string, rel a
 	if want, err := e.graph.Relationship(t.Context(), account, stranger); err != nil || !reflect.DeepEqual(got[stranger], want) {
 		t.Errorf("Relationships(%s)[%s] = %+v, want %+v (%v)", account, stranger, got[stranger], want, err)
 	}
+	// And RelationshipsWith, which reads the relationships of many accounts with one target.
+	with, err := e.graph.RelationshipsWith(t.Context(), target, []string{account, stranger})
+	if err != nil {
+		t.Fatalf("RelationshipsWith = %v", err)
+	}
+	if !reflect.DeepEqual(with[account], rel) {
+		t.Errorf("RelationshipsWith(%s)[%s] = %+v, want %+v as Relationship", target, account, with[account], rel)
+	}
+	if want, err := e.graph.Relationship(t.Context(), stranger, target); err != nil || !reflect.DeepEqual(with[stranger], want) {
+		t.Errorf("RelationshipsWith(%s)[%s] = %+v, want %+v (%v)", target, stranger, with[stranger], want, err)
+	}
 }
 
 func checkRelationship(t *testing.T, e *followEnv, account, target string, following, followedBy graph.State) {

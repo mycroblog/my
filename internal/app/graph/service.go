@@ -416,6 +416,71 @@ func (s *Service) Relationships(ctx context.Context, accountID string, targetIDs
 	return out, nil
 }
 
+// RelationshipsWith returns the relationship of each of accountIDs with targetID, by account, as
+// Relationship returns one, with one query per part: what Relationships reads of one account with
+// many targets, of many accounts with one target.
+func (s *Service) RelationshipsWith(ctx context.Context, targetID string, accountIDs []string) (map[string]Relationship, error) {
+	out := make(map[string]Relationship, len(accountIDs))
+	if len(accountIDs) == 0 {
+		return out, nil
+	}
+	now := s.d.Clock.Now()
+	parts, err := s.d.Repository.FindRelationshipParts(ctx, targetID, accountIDs, now)
+	if err != nil {
+		return nil, err
+	}
+	// The accounts' follows of the target and their mutes of it, which the target's parts lack.
+	var followIDs []string
+	for _, e := range parts.FollowedBy {
+		followIDs = append(followIDs, e.FollowID)
+	}
+	prefs, err := s.d.Repository.FindPreferencesOf(ctx, followIDs)
+	if err != nil {
+		return nil, err
+	}
+	mutes, err := s.d.Repository.FindMutesOn(ctx, targetID, accountIDs, now)
+	if err != nil {
+		return nil, err
+	}
+	reads := withRelationshipReads{parts: partRelationshipReads(parts), prefs: prefs, mutes: mutes}
+	for _, id := range accountIDs {
+		if out[id], err = relationshipOf(ctx, reads, id, targetID, now); err != nil {
+			return nil, err
+		}
+	}
+	return out, nil
+}
+
+// withRelationshipReads answers the reads of the relationships of many accounts with one target
+// from the target's parts, the preferences of the accounts' follows, and their mutes.
+type withRelationshipReads struct {
+	parts partRelationshipReads
+	prefs map[string]graph.Preferences
+	mutes map[string]graph.Mute
+}
+
+func (w withRelationshipReads) FindEdge(ctx context.Context, follower, followee string) (graph.Edge, error) {
+	return w.parts.FindEdge(ctx, follower, followee)
+}
+
+func (w withRelationshipReads) FindPreferences(ctx context.Context, followID string) (graph.Preferences, error) {
+	if p, ok := w.prefs[followID]; ok {
+		return p, nil
+	}
+	return w.parts.FindPreferences(ctx, followID)
+}
+
+func (w withRelationshipReads) FindBlockEdge(ctx context.Context, blocker, blocked string) (graph.BlockEdge, error) {
+	return w.parts.FindBlockEdge(ctx, blocker, blocked)
+}
+
+func (w withRelationshipReads) FindMute(ctx context.Context, accountID, target string, now time.Time) (graph.Mute, error) {
+	if m, ok := w.mutes[accountID]; ok && m.TargetAccountID == target {
+		return m, nil
+	}
+	return w.parts.FindMute(ctx, accountID, target, now)
+}
+
 // relationshipReads are the reads of a relationship: the repository's, or those of the parts
 // that FindRelationshipParts read.
 type relationshipReads interface {

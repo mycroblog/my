@@ -77,6 +77,44 @@ func (q *Queries) ListPollVotesOfAccountIn(ctx context.Context, arg ListPollVote
 	return items, nil
 }
 
+const listPollVotesOfAccountsIn = `-- name: ListPollVotesOfAccountsIn :many
+SELECT id, poll_id, account_id, position, uri, voted_at FROM poll_votes
+WHERE account_id = ANY($1::uuid[]) AND poll_id = ANY($2::uuid[]) ORDER BY account_id, poll_id, position
+`
+
+type ListPollVotesOfAccountsInParams struct {
+	AccountIds []string
+	PollIds    []string
+}
+
+// ListPollVotesOfAccountsIn is ListPollVotesOfAccountIn of many accounts.
+func (q *Queries) ListPollVotesOfAccountsIn(ctx context.Context, arg ListPollVotesOfAccountsInParams) ([]PollVote, error) {
+	rows, err := q.db.Query(ctx, listPollVotesOfAccountsIn, arg.AccountIds, arg.PollIds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []PollVote{}
+	for rows.Next() {
+		var i PollVote
+		if err := rows.Scan(
+			&i.ID,
+			&i.PollID,
+			&i.AccountID,
+			&i.Position,
+			&i.Uri,
+			&i.VotedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listStatusesSensitivityOverridden = `-- name: ListStatusesSensitivityOverridden :many
 
 

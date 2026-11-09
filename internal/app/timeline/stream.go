@@ -9,6 +9,7 @@ import (
 	appcontent "github.com/mycroblog/my/internal/app/content"
 	"github.com/mycroblog/my/internal/app/stream"
 	"github.com/mycroblog/my/internal/app/uow"
+	"github.com/mycroblog/my/internal/domain/timeline"
 )
 
 // RegisterCommitHooks signals every new home timeline entry to pub once the command that adds
@@ -116,4 +117,104 @@ func (s *Service) entry(ctx context.Context, vctx appcontent.ViewContext, viewer
 		return p.Entries[0], true, nil
 	}
 	return Entry{}, false, nil
+}
+
+// StreamViewer is a viewer of a stream of a public timeline with its timeline languages.
+type StreamViewer struct {
+	Viewer    appcontent.Viewer
+	Languages []string
+}
+
+// LocalEntryFor is LocalEntry of each of viewers, logged-in viewers, by viewer account, with a
+// number of queries that does not grow with the viewers: the entry is read once, and the facts
+// of all the viewers together.
+func (s *Service) LocalEntryFor(ctx context.Context, viewers []StreamViewer, id string) (map[string]Entry, error) {
+	return s.entryFor(ctx, appcontent.ContextLocalTimeline, viewers, id, false)
+}
+
+// PublicEntryFor is PublicEntry of each of viewers, as LocalEntryFor is of LocalEntry.
+func (s *Service) PublicEntryFor(ctx context.Context, viewers []StreamViewer, id string) (map[string]Entry, error) {
+	return s.entryFor(ctx, appcontent.ContextFederatedTimeline, viewers, id, true)
+}
+
+// entryFor decides the entry id for each of viewers as LocalEntry (public false) or PublicEntry
+// (public true) decides it for one: the rows that the timeline lists for no viewer, then for each
+// viewer the conditions of its own listing, which the SQL of one viewer applies (its exclusions,
+// its muted domains on the federated timeline, its languages), and CanView over its facts.
+func (s *Service) entryFor(ctx context.Context, vctx appcontent.ViewContext, viewers []StreamViewer, id string, public bool) (map[string]Entry, error) {
+	out := make(map[string]Entry, len(viewers))
+	for _, v := range viewers {
+		if !loggedIn(v.Viewer) {
+			return nil, ErrLoginRequired
+		}
+	}
+	if len(viewers) == 0 {
+		return out, nil
+	}
+	w := s.window(appcontent.Viewer{Kind: appcontent.ViewerAnonymous}, Query{Limit: MaxLimit})
+	var rows []Entry
+	var err error
+	if public {
+		rows, err = s.d.Repository.ListPublic(ctx, PublicQuery{Window: w, Floor: id})
+	} else {
+		rows, err = s.d.Repository.ListLocal(ctx, LocalQuery{Window: w, IncludeLocal: true, Floor: id})
+	}
+	if err != nil {
+		return nil, err
+	}
+	i := slices.IndexFunc(rows, func(e Entry) bool { return e.ID == id })
+	if i < 0 {
+		if len(rows) < w.Limit {
+			return out, nil // no viewer's timeline lists it
+		}
+		// More entries than one read came after it: a viewer's own exclusions could bring it in,
+		// so each viewer decides alone, as LocalEntry and PublicEntry do.
+		for _, v := range viewers {
+			lookup := s.LocalEntry
+			if public {
+				lookup = s.PublicEntry
+			}
+			e, ok, err := lookup(ctx, v.Viewer, id, Query{Languages: v.Languages})
+			if err != nil {
+				return nil, err
+			}
+			if ok {
+				out[v.Viewer.AccountID] = e
+			}
+		}
+		return out, nil
+	}
+	e := rows[i]
+	ids := make([]string, len(viewers))
+	for k, v := range viewers {
+		ids[k] = v.Viewer.AccountID
+	}
+	fq := FactsQuery{Now: w.Now, AccountIDs: uniq([]string{e.AuthorAccountID, e.OriginalAuthorAccountID})}
+	fq.Domains = uniq(append(timeline.DomainAndParents(e.AuthorDomain), timeline.DomainAndParents(e.OriginalAuthorDomain)...))
+	if e.Visibility == appcontent.VisibilityDirect {
+		fq.EntryIDs = []string{e.ID}
+	}
+	facts, err := s.d.Repository.FactsOfViewers(ctx, ids, fq)
+	if err != nil {
+		return nil, err
+	}
+	muted := map[string][]string{}
+	if public && e.AuthorDomain != "" {
+		if muted, err = s.d.Repository.MutedDomainsOf(ctx, ids, timeline.DomainAndParents(e.AuthorDomain)); err != nil {
+			return nil, err
+		}
+	}
+	for _, v := range viewers {
+		f := facts[v.Viewer.AccountID]
+		if len(f.Exclusions[e.AuthorAccountID]) > 0 || len(muted[v.Viewer.AccountID]) > 0 {
+			continue // the viewer's listing leaves it out
+		}
+		if len(v.Languages) > 0 && e.Language != "und" && !slices.Contains(v.Languages, e.Language) {
+			continue
+		}
+		if f.canView(vctx, v.Viewer, e) {
+			out[v.Viewer.AccountID] = e
+		}
+	}
+	return out, nil
 }
