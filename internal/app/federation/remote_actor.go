@@ -33,7 +33,8 @@ const (
 	RefreshActorsEvery = time.Hour
 	// RefreshActorsBatch is the number of stale actors one JobRefreshActors reads.
 	RefreshActorsBatch = 200
-	// KeyResolveTimeout bounds resolving a key for an inbound signature (federation.md §3.1).
+	// KeyResolveTimeout bounds fetching the actor of an unknown key for an inbound signature
+	// (federation.md §3.1); storing it is not cut.
 	KeyResolveTimeout = 5 * time.Second
 )
 
@@ -87,6 +88,8 @@ type RemoteActorsDeps struct {
 	// Batch is the number of stale actors one JobRefreshActors reads; 0 means
 	// RefreshActorsBatch.
 	Batch int
+	// KeyResolveTimeout bounds the fetch of ResolvePublicKey; 0 means KeyResolveTimeout.
+	KeyResolveTimeout time.Duration
 }
 
 // RemoteActors fetches remote actors and keeps them in the account module (federation.md
@@ -160,7 +163,14 @@ func (r *RemoteActors) Resolve(ctx context.Context, uri string) (appaccount.Acto
 // actor) and stores it. When the stored actor's server answers 410 Gone, the actor is marked
 // deleted; another failure is counted in the actor's head.
 func (r *RemoteActors) Refresh(ctx context.Context, uri string) (appaccount.Actor, error) {
-	actor, raw, err := r.fetchActor(ctx, uri)
+	return r.refreshWithin(ctx, ctx, uri)
+}
+
+// refreshWithin is Refresh with the fetch bound by fetchCtx and everything else, the storing
+// included, by ctx: a deadline meant for the remote server never cuts a transaction or the reads
+// after it.
+func (r *RemoteActors) refreshWithin(ctx, fetchCtx context.Context, uri string) (appaccount.Actor, error) {
+	actor, raw, err := r.fetchActor(fetchCtx, uri)
 	if err != nil {
 		r.recordFailure(ctx, uri, err)
 		return appaccount.Actor{}, err
@@ -371,7 +381,8 @@ func (r *RemoteActors) refreshIfStale(ctx context.Context, accountID string) {
 // ResolvePublicKey implements PublicKeyResolver: the current key of keyID from account_keys,
 // or the key of the fetched owner when it is unknown or refresh is set (ADR-0006). A stored
 // key of an actor fetched RemoteActorTTL ago is used and the actor refreshed asynchronously.
-// Fetching gives up after KeyResolveTimeout.
+// Fetching gives up after KeyResolveTimeout, and the key is then unavailable (503, which the
+// sender retries); storing the fetched actor runs with ctx alone.
 func (r *RemoteActors) ResolvePublicKey(ctx context.Context, keyID string, refresh bool) (PublicKey, error) {
 	kid, err := CanonicalIRI(keyID)
 	if err != nil {
@@ -390,11 +401,18 @@ func (r *RemoteActors) ResolvePublicKey(ctx context.Context, keyID string, refre
 			return PublicKey{}, err
 		}
 	}
-	fetchCtx, cancel := context.WithTimeout(ctx, KeyResolveTimeout)
+	timeout := r.d.KeyResolveTimeout
+	if timeout <= 0 {
+		timeout = KeyResolveTimeout
+	}
+	fetchCtx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
-	owner, err := r.Refresh(fetchCtx, string(kid))
+	owner, err := r.refreshWithin(ctx, fetchCtx, string(kid))
 	switch {
-	case errors.Is(err, ErrFetchUnavailable):
+	case err == nil:
+	// A server that did not answer within the timeout, while the request itself goes on, is
+	// unavailable now, whatever the fetch made of the cut.
+	case errors.Is(err, ErrFetchUnavailable), ctx.Err() == nil && fetchCtx.Err() != nil:
 		return PublicKey{}, fmt.Errorf("%w: %w", ErrPublicKeyUnavailable, err)
 	case isFetchError(err):
 		return PublicKey{}, fmt.Errorf("%w: %w", ErrPublicKeyNotFound, err)
