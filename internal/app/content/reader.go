@@ -179,6 +179,30 @@ func (r *Reader) Visible(ctx context.Context, viewer Viewer, statusID string) (c
 	return st, err
 }
 
+// VisibleAmong is Visible of each of ids, by ID, reading the statuses and their authors once
+// (Reader.page); those that viewer may not see, missing or deleted, are left out.
+func (r *Reader) VisibleAmong(ctx context.Context, viewer Viewer, ids []string) (map[string]content.Status, error) {
+	out := make(map[string]content.Status, len(ids))
+	if len(ids) == 0 {
+		return out, nil
+	}
+	page, err := r.page(ctx, viewer, ids)
+	if err != nil {
+		return nil, err
+	}
+	for _, id := range ids {
+		st, _, err := page.aud.visibleStatus(ctx, viewer, id)
+		if errors.Is(err, ErrNotFound) {
+			continue
+		}
+		if err != nil {
+			return nil, err
+		}
+		out[id] = st
+	}
+	return out, nil
+}
+
 // VisibleToLocal reports, by account, whether each of the local accounts of viewerIDs may see
 // statusID, as Visible decides for one, with a number of queries that does not grow with
 // viewerIDs.

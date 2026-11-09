@@ -32,6 +32,19 @@ ON CONFLICT (account_id, status_id) DO NOTHING;
 INSERT INTO status_revision_mentions (revision_id, account_id)
 SELECT sqlc.arg(revision_id)::uuid, unnest(sqlc.arg(account_ids)::uuid[]);
 
+-- InsertStatusDeletions records the deletions of many statuses by one moderation action, as
+-- InsertStatusDeletion records one (the unnests of a select list advance together).
+-- name: InsertStatusDeletions :exec
+INSERT INTO status_deletions (status_id, uri, author_account_id, origin, moderation_action_id, deleted_at)
+SELECT unnest(sqlc.arg(status_ids)::uuid[]), unnest(sqlc.arg(uris)::text[]), unnest(sqlc.arg(author_account_ids)::uuid[]),
+  sqlc.arg(origin)::text, sqlc.narg(moderation_action_id)::uuid, sqlc.arg(deleted_at)::timestamptz;
+
+-- InsertStatusSensitivityOverrides is InsertStatusSensitivityOverride of many statuses.
+-- name: InsertStatusSensitivityOverrides :exec
+INSERT INTO status_sensitivity_overrides (status_id, source_kind, source_id)
+SELECT unnest(sqlc.arg(status_ids)::uuid[]), 'action', sqlc.arg(source_id)::uuid
+ON CONFLICT (status_id, source_kind, source_id) DO NOTHING;
+
 -- The tags, emoji, and attachments of a revision, each with one statement as its mentions (the
 -- unnests of a select list advance together).
 

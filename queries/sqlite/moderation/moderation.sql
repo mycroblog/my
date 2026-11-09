@@ -102,12 +102,14 @@ INSERT INTO reports (id, uri, reporter_account_id, target_account_id, category, 
 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 ON CONFLICT (uri) DO NOTHING;
 
--- name: InsertReportStatus :exec
-INSERT INTO report_statuses (report_id, status_id) VALUES (?, ?)
+-- name: InsertReportStatuses :exec
+INSERT INTO report_statuses (report_id, status_id)
+SELECT CAST(sqlc.arg(report_id) AS TEXT), value FROM json_each(CAST(sqlc.arg(status_ids) AS TEXT)) WHERE true
 ON CONFLICT (report_id, status_id) DO NOTHING;
 
--- name: InsertReportRuleCitation :exec
-INSERT INTO report_rule_citations (report_id, rule_id) VALUES (?, ?)
+-- name: InsertReportRuleCitations :exec
+INSERT INTO report_rule_citations (report_id, rule_id)
+SELECT CAST(sqlc.arg(report_id) AS TEXT), value FROM json_each(CAST(sqlc.arg(rule_ids) AS TEXT)) WHERE true
 ON CONFLICT (report_id, rule_id) DO NOTHING;
 
 -- name: UpsertReportState :exec

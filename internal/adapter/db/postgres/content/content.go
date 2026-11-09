@@ -165,6 +165,28 @@ func (r *StatusRepository) InsertDeletion(ctx context.Context, tx uow.Tx, d cont
 	return postgres.Wrap(err, "insert status deletion")
 }
 
+// InsertDeletions implements content.Repository.
+func (r *StatusRepository) InsertDeletions(ctx context.Context, tx uow.Tx, ds []content.Deletion) error {
+	if len(ds) == 0 {
+		return nil
+	}
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return err
+	}
+	arg := contentgen.InsertStatusDeletionsParams{
+		Origin: string(ds[0].Origin), ModerationActionID: postgres.ToNullString(ds[0].ModerationActionID), DeletedAt: ds[0].DeletedAt,
+	}
+	for _, d := range ds {
+		arg.StatusIds, arg.Uris, arg.AuthorAccountIds = append(arg.StatusIds, d.StatusID), append(arg.Uris, d.URI), append(arg.AuthorAccountIds, d.AuthorAccountID)
+	}
+	err = q.InsertStatusDeletions(ctx, arg)
+	if postgres.IsUniqueViolation(err, "status_deletions_pkey") || postgres.IsUniqueViolation(err, "status_deletions_tombstone_uri") {
+		return fmt.Errorf("delete %d statuses: %w", len(ds), appcontent.ErrAlreadyDeleted)
+	}
+	return postgres.Wrap(err, "insert status deletions")
+}
+
 // EnsureTag implements content.Repository.
 func (r *StatusRepository) EnsureTag(ctx context.Context, tx uow.Tx, t content.Tag) (content.Tag, error) {
 	q, err := r.db.queries(tx)

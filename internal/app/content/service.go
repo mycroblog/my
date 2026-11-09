@@ -686,6 +686,34 @@ func (s *Service) Find(ctx context.Context, statusID string) (Post, error) {
 	return Post{Status: st, Revision: rev}, nil
 }
 
+// FindMany is Find of each of ids, by ID, with one query for the statuses and one for their
+// current revisions; the missing and deleted ones are left out.
+func (s *Service) FindMany(ctx context.Context, ids []string) (map[string]Post, error) {
+	out := make(map[string]Post, len(ids))
+	if len(ids) == 0 {
+		return out, nil
+	}
+	sts, err := s.d.Repository.FindStatuses(ctx, ids)
+	if err != nil {
+		return nil, err
+	}
+	revs, err := s.d.Repository.FindCurrentRevisions(ctx, ids)
+	if err != nil {
+		return nil, err
+	}
+	for id, st := range sts {
+		if rev, ok := revs[id]; ok {
+			out[id] = Post{Status: st, Revision: rev}
+		}
+	}
+	return out, nil
+}
+
+// FindStatuses is FindStatus of each of ids that exists, by ID, with one query.
+func (s *Service) FindStatuses(ctx context.Context, ids []string) (map[string]Status, error) {
+	return s.d.Repository.FindStatuses(ctx, ids)
+}
+
 // Revisions returns the revisions of a status, oldest first, without their children: the edit
 // history (FR-109). Like Find, it does not decide who may see them.
 func (s *Service) Revisions(ctx context.Context, statusID string) ([]content.Revision, error) {

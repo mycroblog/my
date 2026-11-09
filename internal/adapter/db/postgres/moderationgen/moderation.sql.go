@@ -845,33 +845,35 @@ func (q *Queries) InsertReportResolution(ctx context.Context, arg InsertReportRe
 	return err
 }
 
-const insertReportRuleCitation = `-- name: InsertReportRuleCitation :exec
-INSERT INTO report_rule_citations (report_id, rule_id) VALUES ($1, $2)
+const insertReportRuleCitations = `-- name: InsertReportRuleCitations :exec
+INSERT INTO report_rule_citations (report_id, rule_id)
+SELECT $1::uuid, unnest($2::uuid[])
 ON CONFLICT (report_id, rule_id) DO NOTHING
 `
 
-type InsertReportRuleCitationParams struct {
+type InsertReportRuleCitationsParams struct {
 	ReportID string
-	RuleID   string
+	RuleIds  []string
 }
 
-func (q *Queries) InsertReportRuleCitation(ctx context.Context, arg InsertReportRuleCitationParams) error {
-	_, err := q.db.Exec(ctx, insertReportRuleCitation, arg.ReportID, arg.RuleID)
+func (q *Queries) InsertReportRuleCitations(ctx context.Context, arg InsertReportRuleCitationsParams) error {
+	_, err := q.db.Exec(ctx, insertReportRuleCitations, arg.ReportID, arg.RuleIds)
 	return err
 }
 
-const insertReportStatus = `-- name: InsertReportStatus :exec
-INSERT INTO report_statuses (report_id, status_id) VALUES ($1, $2)
+const insertReportStatuses = `-- name: InsertReportStatuses :exec
+INSERT INTO report_statuses (report_id, status_id)
+SELECT $1::uuid, unnest($2::uuid[])
 ON CONFLICT (report_id, status_id) DO NOTHING
 `
 
-type InsertReportStatusParams struct {
-	ReportID string
-	StatusID string
+type InsertReportStatusesParams struct {
+	ReportID  string
+	StatusIds []string
 }
 
-func (q *Queries) InsertReportStatus(ctx context.Context, arg InsertReportStatusParams) error {
-	_, err := q.db.Exec(ctx, insertReportStatus, arg.ReportID, arg.StatusID)
+func (q *Queries) InsertReportStatuses(ctx context.Context, arg InsertReportStatusesParams) error {
+	_, err := q.db.Exec(ctx, insertReportStatuses, arg.ReportID, arg.StatusIds)
 	return err
 }
 

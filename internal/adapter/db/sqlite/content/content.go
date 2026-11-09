@@ -170,6 +170,37 @@ func (r *StatusRepository) InsertDeletion(ctx context.Context, tx uow.Tx, d cont
 	return sqlite.Wrap(err, "insert status deletion")
 }
 
+// InsertDeletions implements content.Repository.
+func (r *StatusRepository) InsertDeletions(ctx context.Context, tx uow.Tx, ds []content.Deletion) error {
+	if len(ds) == 0 {
+		return nil
+	}
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return err
+	}
+	type row struct {
+		StatusID        string `json:"status_id"`
+		URI             string `json:"uri"`
+		AuthorAccountID string `json:"author_account_id"`
+	}
+	rows := make([]row, len(ds))
+	for i, d := range ds {
+		rows[i] = row{StatusID: d.StatusID, URI: d.URI, AuthorAccountID: d.AuthorAccountID}
+	}
+	list, err := json.Marshal(rows)
+	if err != nil {
+		return err
+	}
+	err = q.InsertStatusDeletions(ctx, contentgen.InsertStatusDeletionsParams{
+		Origin: string(ds[0].Origin), ModerationActionID: sqlite.ToNullString(ds[0].ModerationActionID), DeletedAt: sqlite.ToMillis(ds[0].DeletedAt), Deletions: string(list),
+	})
+	if sqlite.IsUniqueViolation(err, "status_deletions.status_id") || sqlite.IsUniqueViolation(err, "status_deletions.uri") {
+		return fmt.Errorf("delete %d statuses: %w", len(ds), appcontent.ErrAlreadyDeleted)
+	}
+	return sqlite.Wrap(err, "insert status deletions")
+}
+
 // EnsureTag implements content.Repository.
 func (r *StatusRepository) EnsureTag(ctx context.Context, tx uow.Tx, t content.Tag) (content.Tag, error) {
 	q, err := r.db.queries(tx)

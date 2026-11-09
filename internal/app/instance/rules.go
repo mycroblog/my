@@ -361,6 +361,24 @@ func (s *Service) Rule(ctx context.Context, id string) (instance.Rule, error) {
 
 // RuleInEffect reports whether id is a rule in effect: one that exists and is not retired, which
 // a new report may cite.
+// RulesInEffect is RuleInEffect of each of ids, by ID, with one read of the rules in effect.
+func (s *Service) RulesInEffect(ctx context.Context, ids []string) (map[string]bool, error) {
+	out := make(map[string]bool, len(ids))
+	if len(ids) == 0 {
+		return out, nil
+	}
+	rules, err := s.d.Repository.ListRules(ctx, false)
+	if err != nil {
+		return nil, err
+	}
+	for _, r := range rules {
+		if slices.Contains(ids, r.ID) && !r.Retired() {
+			out[r.ID] = true
+		}
+	}
+	return out, nil
+}
+
 func (s *Service) RuleInEffect(ctx context.Context, id string) (bool, error) {
 	r, err := s.d.Repository.FindRule(ctx, id)
 	if errors.Is(err, ErrNotFound) {
