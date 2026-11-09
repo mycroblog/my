@@ -46,6 +46,29 @@ LIMIT :limit + 1
 - **読み取り窓**: `:window_floor` は「基準時刻 − 窓」の UUIDv7 の下限です（§1.3）。基準時刻は現在時刻で、カーソルがあればカーソルの `id` の時刻です。
   窓の既定値は 7 日（`timeline.HomeWindow`）です。ページが埋まらなければ、窓を 4 倍（`timeline.HomeWindowGrowth`）に広げて読み直すことを 3 回（`timeline.HomeWindowWidenings`）まで行い、それでも埋まらなければ下限なしで読みます。
 
+- **フォローしたハッシュタグ**（ADR-0013 §24〜§28）: ホームは、上のフォローの側の枝に、フォローしたハッシュタグの枝を足して `id` で合わせます。
+  ハッシュタグの枝は、`feed_tag_follows` の閲覧者のタグごとに `feed_tag_entries (tag_id, entry_id)` の範囲を同じカーソルと読み取り窓で読み、`feed_entries` と結合します。
+
+  ```sql
+  SELECT e.* FROM feed_entries e
+  JOIN feed_tag_entries t ON t.entry_id = e.id
+  WHERE t.tag_id IN (SELECT tag_id FROM feed_tag_follows WHERE account_id = :viewer)
+    AND t.visibility IN ('public', 'local')
+    AND t.entry_id < :cursor AND t.entry_id >= :window_floor
+    AND e.kind = 'post'
+    AND e.author_account_id <> :viewer
+    AND NOT EXISTS (SELECT 1 FROM feed_follow_edges f
+          WHERE f.follower_account_id = :viewer AND f.followee_account_id = e.author_account_id)
+    AND /* 作者の public_discovery・visibility_ceiling_private・profile_view、ドメインの public_discovery・profile_view（§6.3 のハッシュタグと同じ） */
+    AND /* 閲覧者のブロック・ミュート（feed_exclusions）、ドメインのミュート（feed_domain_mutes）、言語フィルタ（ホームと同じ） */
+  ```
+
+  - 作者をフォローしている投稿と自分の投稿はフォローの側の枝だけが返すので、2 つの枝は重なりません。同じ投稿が複数のフォローしたタグを持つときは `id` で 1 行にします（`DISTINCT`、または枝を `UNION` で合わせる）。
+  - 2 つの枝をそれぞれ `ORDER BY id DESC LIMIT :limit + 1` で読み、`id` の大きい順に合わせて `:limit + 1` 件に切ります。読み取り窓を広げるとき（上の読み取り窓）は、両方の枝を同じ窓で読み直します。
+  - 使うインデックス: `feed_tag_follows` の PK、`feed_tag_entries (tag_id, entry_id)` の PK、`feed_entries` の PK。
+  - ハッシュタグの枝からだけ入った行には、合ったフォロー中のタグを付けて返します（ADR-0013 §28）。ストリームの新着の判定（`HomeEntry`）も同じ 2 つの枝を読みます。
+  - 計測（PostgreSQL と SQLite の `EXPLAIN`、フォロー 1,000・タグ 100・賑やかなタグ）は、実装のタスクで書き足します。
+
 - **リスト（FR-211）**: ホームと同じ条件（読み取り窓・`show_boosts`・`direct` の宛先・ブロックとミュート・`profile_view`・ドメインのミュート・言語）を、作者（投稿者またはブーストした人）をそのリストのメンバーに限って当てます。
   作者の集合は `list_members` を `feed_follow_edges` と結合した `IN (SELECT member_account_id … WHERE list_id = :list AND owner_account_id = :viewer)` で、閲覧者自身の投稿とブーストは入れません（`e.author_account_id <> :viewer`）。
   リストの持ち主でない閲覧者には、クエリの前にリストが無いものとして答えます。
