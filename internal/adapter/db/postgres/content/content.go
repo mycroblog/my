@@ -125,10 +125,10 @@ func (r *StatusRepository) InsertRevision(ctx context.Context, tx uow.Tx, rev co
 			return postgres.Wrap(err, "insert status revision attachment")
 		}
 	}
-	for _, id := range rev.MentionedAccountIDs {
-		err := q.InsertStatusRevisionMention(ctx, contentgen.InsertStatusRevisionMentionParams{RevisionID: rev.ID, AccountID: id})
+	if len(rev.MentionedAccountIDs) > 0 {
+		err := q.InsertStatusRevisionMentions(ctx, contentgen.InsertStatusRevisionMentionsParams{RevisionID: rev.ID, AccountIds: rev.MentionedAccountIDs})
 		if err != nil {
-			return postgres.Wrap(err, "insert status revision mention")
+			return postgres.Wrap(err, "insert status revision mentions")
 		}
 	}
 	for _, id := range rev.TagIDs {
@@ -221,12 +221,10 @@ func (r *StatusRepository) ReplaceMentions(ctx context.Context, tx uow.Tx, statu
 	if err := q.DeleteStatusMentions(ctx, statusID); err != nil {
 		return postgres.Wrap(err, "delete status mentions")
 	}
-	for _, id := range accountIDs {
-		if err := q.InsertStatusMention(ctx, contentgen.InsertStatusMentionParams{AccountID: id, StatusID: statusID}); err != nil {
-			return postgres.Wrap(err, "insert status mention")
-		}
+	if len(accountIDs) == 0 {
+		return nil
 	}
-	return nil
+	return postgres.Wrap(q.InsertStatusMentions(ctx, contentgen.InsertStatusMentionsParams{AccountIds: accountIDs, StatusID: statusID}), "insert status mentions")
 }
 
 // LockStatusKeys implements content.Repository with transaction-scoped advisory locks.

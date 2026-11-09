@@ -37,6 +37,7 @@ func FederationRepositoryContract(t *testing.T, newHarness FederationFactory) {
 		{"FindsAndListsOutboundActivities", fedRepoOutboundActivities},
 		{"InsertsManyOutboundActivities", fedRepoManyOutboundActivities},
 		{"KeepsTheFirstDocument", fedRepoDocuments},
+		{"FindsTheContextOfADelivery", fedRepoDeliveryContext},
 		{"AddsAnInboxOnceAndPagesDeliveries", fedRepoDeliveries},
 		{"ListsTheAttemptsOfADelivery", fedRepoAttempts},
 		{"ReplacesReadsAndListsTheHealthOfServers", fedRepoHealth},
@@ -189,6 +190,36 @@ func fedRepoDocuments(t *testing.T, r *fedRepo) {
 	}
 	if got, err := r.h.Federation.FindOutboundDocument(t.Context(), a.ID); err != nil || string(got) != string(first) {
 		t.Errorf("FindOutboundDocument = %s, %v; want the first document", got, err)
+	}
+}
+
+// fedRepoDeliveryContext reads a delivery with its activity, document, and server's health, as
+// the reads of each find them, without a document or a health row as with them.
+func fedRepoDeliveryContext(t *testing.T, r *fedRepo) {
+	ctx := t.Context()
+	a := r.activity(t, federation.ActivityCreate, federation.OutboundStatus, testkit.NamedID("status"))
+	d := r.delivery(t, a.ID, "a.example")
+	want := func(name string, doc []byte, health federation.InstanceState, row bool) {
+		t.Helper()
+		got, err := r.h.Federation.FindDeliveryContext(ctx, d.ID)
+		del, derr := r.h.Federation.FindDelivery(ctx, d.ID)
+		if err != nil || derr != nil || got.Delivery != del || got.Activity != a || string(got.Document) != string(doc) ||
+			(doc == nil) != (got.Document == nil) || got.Health != health || got.HealthRow != row {
+			t.Errorf("FindDeliveryContext %s = %+v, %v; want %+v of %+v, document %s, health %q (row %v)", name, got, errors.Join(err, derr), del, a, doc, health, row)
+		}
+	}
+	want("without a document or health", nil, federation.InstanceAvailable, false)
+	doc := []byte(`{"id":"doc"}`)
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+		_, err := r.h.Federation.InsertOutboundDocument(ctx, tx, a.ID, doc, r.clock.Now())
+		return err
+	})
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+		return r.h.Federation.UpsertInstanceHealth(ctx, tx, federation.InstanceHealth{Domain: "a.example", State: federation.InstanceUnavailable, Since: r.clock.Now(), FailureDays: 7})
+	})
+	want("with both", doc, federation.InstanceUnavailable, true)
+	if _, err := r.h.Federation.FindDeliveryContext(ctx, testkit.NamedID("unknown")); !errors.Is(err, appfederation.ErrNotFound) {
+		t.Errorf("FindDeliveryContext(unknown) = %v, want ErrNotFound", err)
 	}
 }
 

@@ -215,6 +215,9 @@ func (l liveness) expired(participationID string) bool {
 
 // read reads the liveness of participants.
 func (h *Heartbeats) read(ctx context.Context, participants []Participant) (liveness, error) {
+	if b, ok := h.kv.(kernel.KeyValueBatch); ok {
+		return h.readMany(ctx, b, participants)
+	}
 	l := liveness{session: make(map[string]string, len(participants)), raw: make(map[string]string, len(participants)), alive: make(map[string]bool, len(participants))}
 	for _, p := range participants {
 		raw, err := h.raw(ctx, p.ParticipationID)
@@ -231,6 +234,45 @@ func (h *Heartbeats) read(ctx context.Context, participants []Participant) (live
 			return liveness{}, err
 		}
 		l.session[p.ParticipationID], l.alive[p.ParticipationID] = s, ok
+	}
+	return l, nil
+}
+
+// readMany is read with the batch reads of the store: the sessions of the participations with
+// one read, then the heartbeats of those sessions with another.
+func (h *Heartbeats) readMany(ctx context.Context, b kernel.KeyValueBatch, participants []Participant) (liveness, error) {
+	l := liveness{session: make(map[string]string, len(participants)), raw: make(map[string]string, len(participants)), alive: make(map[string]bool, len(participants))}
+	if len(participants) == 0 {
+		return l, nil
+	}
+	ids := make([]string, len(participants))
+	for i, p := range participants {
+		ids[i] = p.ParticipationID
+	}
+	raws, err := b.GetMany(ctx, kvSessions, ids)
+	if err != nil {
+		return liveness{}, err
+	}
+	var sessions []string
+	for _, id := range ids {
+		raw := string(raws[id])
+		l.raw[id] = raw
+		if raw == sessionEnding {
+			raw = ""
+		}
+		l.session[id] = raw
+		if raw != "" {
+			sessions = append(sessions, raw)
+		}
+	}
+	beats, err := b.GetMany(ctx, kvHeartbeats, sessions)
+	if err != nil {
+		return liveness{}, err
+	}
+	for _, id := range ids {
+		if s := l.session[id]; s != "" {
+			_, l.alive[id] = beats[s]
+		}
 	}
 	return l, nil
 }

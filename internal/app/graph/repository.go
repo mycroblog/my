@@ -184,6 +184,9 @@ type Repository interface {
 	// ListFollowers returns the edges into followeeAccountID in state, newest follow first,
 	// starting after the follow ID before ("" for the newest) and returning at most limit edges.
 	ListFollowers(ctx context.Context, followeeAccountID string, state graph.State, before string, limit int) ([]graph.Edge, error)
+	// ListFolloweesAmong returns the accounts among accountIDs that an edge in state goes into,
+	// each once, with one query.
+	ListFolloweesAmong(ctx context.Context, accountIDs []string, state graph.State) ([]string, error)
 	// ListFollowing is ListFollowers for the edges out of followerAccountID.
 	ListFollowing(ctx context.Context, followerAccountID string, state graph.State, before string, limit int) ([]graph.Edge, error)
 	FindBlockEdge(ctx context.Context, blockerAccountID, blockedAccountID string) (graph.BlockEdge, error)

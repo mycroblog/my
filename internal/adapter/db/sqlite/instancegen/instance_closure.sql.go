@@ -55,6 +55,46 @@ func (q *Queries) GetCurrentServiceClosure(ctx context.Context) (GetCurrentServi
 	return i, err
 }
 
+const getFederationGate = `-- name: GetFederationGate :one
+SELECT CAST(COALESCE((SELECT st.value FROM instance_settings st WHERE st.key = 'federation_mode'), '') AS TEXT) AS federation_mode,
+  h.state, h.announcement_event_id, e.occurred_at AS changed_at, a.occurred_at AS announced_at, s.closes_at, s.export_until, s.message
+FROM (SELECT 1 AS one) one
+LEFT JOIN service_closure_heads h ON h.id = 1
+LEFT JOIN service_closure_events e ON e.id = h.event_id
+LEFT JOIN service_closure_events a ON a.id = h.announcement_event_id
+LEFT JOIN service_closure_schedules s ON s.event_id = h.announcement_event_id
+`
+
+type GetFederationGateRow struct {
+	FederationMode      string
+	State               sql.NullString
+	AnnouncementEventID sql.NullString
+	ChangedAt           sql.NullInt64
+	AnnouncedAt         sql.NullInt64
+	ClosesAt            sql.NullInt64
+	ExportUntil         sql.NullInt64
+	Message             sql.NullString
+}
+
+// GetFederationGate returns the setting federation_mode (” when unset) and the closure of the
+// service as GetCurrentServiceClosure reads it (NULL columns without one), with one query, for
+// the deliveries that ask both.
+func (q *Queries) GetFederationGate(ctx context.Context) (GetFederationGateRow, error) {
+	row := q.db.QueryRowContext(ctx, getFederationGate)
+	var i GetFederationGateRow
+	err := row.Scan(
+		&i.FederationMode,
+		&i.State,
+		&i.AnnouncementEventID,
+		&i.ChangedAt,
+		&i.AnnouncedAt,
+		&i.ClosesAt,
+		&i.ExportUntil,
+		&i.Message,
+	)
+	return i, err
+}
+
 const getServiceClosureEvent = `-- name: GetServiceClosureEvent :one
 SELECT e.id, e.kind, e.changed_by_user_id, e.occurred_at, s.closes_at, s.export_until, s.message
 FROM service_closure_events e

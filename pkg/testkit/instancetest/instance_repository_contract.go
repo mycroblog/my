@@ -564,6 +564,18 @@ func instanceRepoClosure(t *testing.T, r *instanceRepo) {
 	ctx := t.Context()
 	_, err := r.i.CurrentClosure(ctx)
 	wantNotFound(t, "CurrentClosure before an announcement", err)
+	gate := func(name string, want instance.Closure, ok bool, mode string) {
+		t.Helper()
+		if got, gok, gmode, err := r.i.FederationGate(ctx); err != nil || gok != ok || gmode != mode || (ok && got != want) {
+			t.Errorf("FederationGate %s = %+v, %v, %q, %v; want %+v, %v, %q", name, got, gok, gmode, err, want, ok, mode)
+		}
+	}
+	gate("before an announcement or a mode", instance.Closure{}, false, "")
+	rev := instance.SettingRevision{ID: r.ids.NewID(), Key: instance.SettingFederationMode, Value: "outbound", RevisedByUserID: testkit.NamedID("admin"), RevisedAt: r.now()}
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+		return errors.Join(r.i.InsertSettingRevision(ctx, tx, rev), r.i.UpsertCurrentSetting(ctx, tx, instance.CurrentSetting{Key: rev.Key, RevisionID: rev.ID, Value: rev.Value}))
+	})
+	gate("with a mode alone", instance.Closure{}, false, "outbound")
 	announced := instance.ClosureEvent{ID: r.ids.NewID(), Kind: instance.ClosureEventAnnounced, ByUserID: testkit.NamedID("admin"), OccurredAt: r.now(),
 		Schedule: instance.ClosureSchedule{ClosesAt: r.clock.Now().Add(30 * 24 * time.Hour), ExportUntil: r.clock.Now().Add(60 * 24 * time.Hour), Message: "Thank you"}}
 	closed := instance.ClosureEvent{ID: r.ids.NewID(), Kind: instance.ClosureEventClosed, OccurredAt: r.now()}
@@ -575,6 +587,7 @@ func instanceRepoClosure(t *testing.T, r *instanceRepo) {
 	if got, err := r.i.CurrentClosure(ctx); err != nil || got != want {
 		t.Errorf("CurrentClosure = %+v, %v; want %+v", got, err, want)
 	}
+	gate("with a closure and a mode", want, true, "outbound")
 	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
 		return errors.Join(r.i.InsertClosureEvent(ctx, tx, closed),
 			r.i.UpsertClosureHead(ctx, tx, instance.ClosureHead{State: instance.ClosureClosed, EventID: closed.ID, AnnouncementID: announced.ID}))

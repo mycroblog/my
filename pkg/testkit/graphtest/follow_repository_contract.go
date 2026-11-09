@@ -334,6 +334,22 @@ func graphFollowRepoPages(t *testing.T, r *graphFollowRepo) {
 	if page, err := r.repo.ListFollowing(ctx, star, graph.StatePending, "", 10); err != nil || len(page) != 0 {
 		t.Errorf("ListFollowing(pending) = %+v, %v; want none", page, err)
 	}
+	// The accounts among some with an edge into them in a state, each once: star with its five
+	// active followers, and each fan with star, but not a stranger or star's pending requests.
+	stranger := r.ids.NewID()
+	among := append([]string{stranger, star, star}, fans...)
+	got, err := r.repo.ListFolloweesAmong(ctx, among, graph.StateActive)
+	want := append([]string{star}, fans...)
+	slices.Sort(want)
+	if err != nil || !slices.Equal(got, want) {
+		t.Errorf("ListFolloweesAmong(active) = %v, %v; want star and its fans once each, sorted: %v", got, err, want)
+	}
+	if got, err := r.repo.ListFolloweesAmong(ctx, among, graph.StatePending); err != nil || !slices.Equal(got, []string{star}) {
+		t.Errorf("ListFolloweesAmong(pending) = %v, %v; want star", got, err)
+	}
+	if got, err := r.repo.ListFolloweesAmong(ctx, nil, graph.StateActive); err != nil || len(got) != 0 {
+		t.Errorf("ListFolloweesAmong(none) = %v, %v; want none", got, err)
+	}
 }
 
 // graphFollowRepoEndMany ends many follows with the writes of a batch, as the writes of one

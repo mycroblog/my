@@ -56,6 +56,11 @@ type Repository interface {
 	// InstanceState returns the health state of a remote server; a server without a row is
 	// available.
 	InstanceState(ctx context.Context, domain string) (federation.InstanceState, error)
+	// FindDeliveryContext returns a delivery with its activity, the activity's document, and the
+	// health of its server, as FindDelivery, FindOutboundActivity, FindOutboundDocument, and
+	// InstanceState read them, with one query. It fails with ErrNotFound for an unknown delivery
+	// or activity.
+	FindDeliveryContext(ctx context.Context, id string) (DeliveryContext, error)
 	// InstanceStatesOf returns the health states of the servers of domains, by domain, as
 	// InstanceState returns one, with one query.
 	InstanceStatesOf(ctx context.Context, domains []string) (map[string]federation.InstanceState, error)
@@ -182,4 +187,16 @@ type NoAccountRestrictions struct{}
 // AccountFederationSuspended implements AccountPolicy.
 func (NoAccountRestrictions) AccountFederationSuspended(context.Context, string) (bool, error) {
 	return false, nil
+}
+
+// DeliveryContext is what a delivery attempt reads of its delivery (Repository.FindDeliveryContext).
+type DeliveryContext struct {
+	Delivery federation.Delivery
+	Activity federation.OutboundActivity
+	// Document is the activity's document, nil when it has none.
+	Document []byte
+	// Health is the state of the delivery's server, InstanceAvailable without a row; HealthRow
+	// reports that the server has one.
+	Health    federation.InstanceState
+	HealthRow bool
 }

@@ -132,3 +132,19 @@ func closureEventFrom(row instancegen.GetServiceClosureEventRow) instance.Closur
 		},
 	}
 }
+
+// FederationGate implements appinstance.ClosureRepository.
+func (r *Repository) FederationGate(ctx context.Context) (instance.Closure, bool, string, error) {
+	row, err := r.db.reader().GetFederationGate(ctx)
+	if err != nil {
+		return instance.Closure{}, false, "", postgres.Wrap(err, "get the federation gate")
+	}
+	if row.State == nil || row.AnnouncementEventID == nil || row.ChangedAt == nil || row.AnnouncedAt == nil || row.ClosesAt == nil || row.ExportUntil == nil || row.Message == nil {
+		return instance.Closure{}, false, row.FederationMode, nil
+	}
+	return instance.Closure{
+		State: instance.ClosureState(*row.State), AnnouncementID: *row.AnnouncementEventID,
+		Schedule:    instance.ClosureSchedule{ClosesAt: postgres.UTC(*row.ClosesAt), ExportUntil: postgres.UTC(*row.ExportUntil), Message: *row.Message},
+		AnnouncedAt: postgres.UTC(*row.AnnouncedAt), ChangedAt: postgres.UTC(*row.ChangedAt),
+	}, true, row.FederationMode, nil
+}

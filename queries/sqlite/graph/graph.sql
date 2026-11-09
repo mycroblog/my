@@ -105,6 +105,13 @@ SELECT account_id, followers_count, following_count FROM follow_counters WHERE a
 SELECT count(*) FROM follow_edges
 WHERE followee_account_id = sqlc.arg(account_id) AND state = sqlc.arg(state);
 
+-- ListFolloweesAmong returns the accounts among account_ids (a JSON array) with an edge into them
+-- in one state, each once: those of a batch with an active follower (FolloweesAmong).
+-- name: ListFolloweesAmong :many
+SELECT DISTINCT followee_account_id FROM follow_edges
+WHERE followee_account_id IN (SELECT value FROM json_each(CAST(sqlc.arg(account_ids) AS TEXT))) AND state = sqlc.arg(state)
+ORDER BY followee_account_id;
+
 -- ListFollowersPage pages the edges into an account in one state, newest follow first; an empty
 -- before starts at the newest.
 -- name: ListFollowersPage :many
