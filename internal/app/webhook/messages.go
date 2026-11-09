@@ -326,17 +326,18 @@ func (s *Service) send(ctx context.Context, tx uow.Tx, t webhook.EventType, data
 		return webhook.Delivery{}, err
 	}
 	var last webhook.Delivery
+	ds := make([]webhook.Delivery, 0, len(endpoints))
 	jobs := make([]queue.NewJob, 0, len(endpoints))
 	for _, id := range endpoints {
 		last = webhook.Delivery{ID: s.d.IDs.NewID(), MessageID: m.ID, EndpointID: id, CreatedAt: now}
-		if err := s.d.Repository.InsertDelivery(ctx, tx, last); err != nil {
-			return webhook.Delivery{}, err
-		}
 		job, err := deliverJob(last.ID, "")
 		if err != nil {
 			return webhook.Delivery{}, err
 		}
-		jobs = append(jobs, job)
+		ds, jobs = append(ds, last), append(jobs, job)
+	}
+	if err := s.d.Repository.InsertDeliveries(ctx, tx, ds); err != nil {
+		return webhook.Delivery{}, err
 	}
 	return last, s.d.Outbox.EnqueueTx(ctx, tx, jobs...)
 }

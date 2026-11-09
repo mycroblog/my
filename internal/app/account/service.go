@@ -919,6 +919,12 @@ func (s *Service) FindByIDTx(ctx context.Context, tx uow.Tx, id string) (Actor, 
 	return actorOf(ctx, txReads{repo: s.d.Repository, tx: tx}, a)
 }
 
+// LifecycleStatesTx returns, inside tx, the lifecycle states of those of ids that have one, by
+// account, with one query: what DeletedTx and DeactivatedTx read of each.
+func (s *Service) LifecycleStatesTx(ctx context.Context, tx uow.Tx, ids []string) (map[string]account.LifecycleState, error) {
+	return s.d.Repository.FindLifecycleStatesTx(ctx, tx, ids)
+}
+
 // DeletedTx reports, inside tx, whether an account is deleted (account.StateDeleted); an account
 // without lifecycle events is not.
 func (s *Service) DeletedTx(ctx context.Context, tx uow.Tx, id string) (bool, error) {

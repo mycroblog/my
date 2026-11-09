@@ -31,6 +31,7 @@ func WebhookRepositoryContract(t *testing.T, newHarness WebhookFactory) {
 		{"ListsTheEnabledSubscribers", webhookRepoSubscribers},
 		{"ListsSecretsNewestFirst", webhookRepoSecrets},
 		{"RecordsDeliveriesAndAttempts", webhookRepoDeliveries},
+		{"InsertsTheDeliveriesOfAMessage", webhookRepoManyDeliveries},
 		{"CountsARunOfFailures", webhookRepoFailures},
 		{"DeletesOldMessages", webhookRepoPurge},
 		{"RebuildsTheProjections", webhookRepoRebuild},
@@ -224,6 +225,27 @@ func webhookRepoSecrets(t *testing.T, r *webhookRepo) {
 	all, err := r.h.Webhooks.Secrets(t.Context(), e.EndpointID, 10)
 	if err != nil || len(all) != 3 || all[2].ID != e.SecretID {
 		t.Errorf("Secrets(10) = %d secrets, %v; want 3 ending with the first", len(all), err)
+	}
+}
+
+// webhookRepoManyDeliveries inserts the deliveries of one message to many endpoints together,
+// each found as one that InsertDelivery inserted.
+func webhookRepoManyDeliveries(t *testing.T, r *webhookRepo) {
+	e := r.endpoint(t, webhook.StateEnabled, webhook.EventReportCreated)
+	other := r.endpoint(t, webhook.StateEnabled, webhook.EventReportCreated)
+	// The deliveries of one message to many endpoints, inserted together, are found as one is.
+	m := webhook.Message{ID: r.ids.NewID(), EventType: webhook.EventReportCreated, Body: []byte(`{"type":"report.created"}`), CreatedAt: r.clock.Now()}
+	many := []webhook.Delivery{
+		{ID: r.ids.NewID(), MessageID: m.ID, EndpointID: e.EndpointID, CreatedAt: r.clock.Now()},
+		{ID: r.ids.NewID(), MessageID: m.ID, EndpointID: other.EndpointID, CreatedAt: r.clock.Now()},
+	}
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+		return errors.Join(r.h.Webhooks.InsertMessage(ctx, tx, m), r.h.Webhooks.InsertDeliveries(ctx, tx, many), r.h.Webhooks.InsertDeliveries(ctx, tx, nil))
+	})
+	for _, d := range many {
+		if send, err := r.h.Webhooks.FindSend(t.Context(), d.ID); err != nil || send.Delivery.ID != d.ID || send.Delivery.EndpointID != d.EndpointID || send.Message.ID != m.ID {
+			t.Errorf("FindSend(%s) after InsertDeliveries = %+v, %v", d.ID, send, err)
+		}
 	}
 }
 
