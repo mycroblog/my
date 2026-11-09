@@ -1,6 +1,6 @@
 # ADR-0160: 記事（Markdown の長い投稿）を投稿の一種として持つ
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-11-09
 - Deciders: @rosylilly
 - Issue: #2590
