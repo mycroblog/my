@@ -11,6 +11,8 @@ run-name: ${{ inputs.jobs && inputs.jobs != 'all' && format('Nightly ({0})', inp
 # by hand always runs (`gh workflow run nightly.yml`, with `-f jobs=l4`, `-f jobs=demo-e2e`, `-f jobs=slow-suite`, or
 # `-f jobs=image-scan` for one of them). The scan of the published images runs every night, whether or not main moved.
 # The report job files the failures of a full run on main as an issue (scripts/nightly-report.sh).
+# When the slow suite passes on main, the nightly-image jobs publish the image of that commit as
+# ghcr.io/mycroblog/my:nightly (ADR-0010 §5), with no git tag and no GitHub Release.
 
 on:
   schedule:
@@ -89,7 +91,7 @@ jobs:
   # passes again (scripts/nightly-report.sh). It also lists the E2E tests that passed only on a retry. A partial run
   # by hand, a run on another branch, and a run that a newer one cancelled report nothing.
   report:
-    needs: [changes, slow-suite, demo-e2e]
+    needs: [changes, slow-suite, demo-e2e, nightly-image, nightly-image-check, nightly-image-attest, nightly-image-tag]
     if: ${{ always() && needs.changes.outputs.run == 'true' && (inputs.jobs == '' || inputs.jobs == 'all') && github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-latest
     permissions:
@@ -144,6 +146,170 @@ jobs:
             scripts/release-image.sh scan --fail "ghcr.io/mycroblog/my:$tag" || status=1
           done
           exit "$status"
+
+  # The image of the commit whose slow suite passed, built and checked as a release's is (release.yml: both platforms,
+  # SBOM, no cache, check-release-build.sh, a provenance attestation) and tagged `nightly` alone (ADR-0010 §5): no
+  # sha-<commit> tag, so a build is pinned by its digest, and no git tag or GitHub Release. Its version is a
+  # pseudo-version after the latest release tag (scripts/release-image.sh nightly-version), which `my version` and
+  # NodeInfo report. An older nightly image stays as an untagged version: nothing deletes it, as a deletion of
+  # untagged versions by age would also take the per-platform manifests of the release images.
+  nightly-image:
+    needs: slow-suite
+    if: needs.slow-suite.result == 'success' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      digest: ${{ steps.build.outputs.digest }}
+      version: ${{ steps.metadata.outputs.version }}
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # The tags, for the latest release that the version follows.
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Read the version, the labels, and the annotations
+        id: metadata
+        env:
+          SHA: ${{ github.sha }}
+        run: |
+          latest="$(git describe --tags --abbrev=0 --match 'v[0-9]*' HEAD 2>/dev/null || true)"
+          time="$(TZ=UTC git show -s --format=%cd --date=format-local:%Y%m%d%H%M%S HEAD)"
+          version="$(scripts/release-image.sh nightly-version "$latest" "$SHA" "$time")"
+          meta="$(scripts/release-image.sh metadata "$version" "$SHA" "$(git show -s --format=%cI HEAD)" "$SHA")"
+          {
+            echo "version=$version"
+            echo "labels<<EOF"
+            echo "$meta"
+            echo "EOF"
+            echo "annotations<<EOF"
+            sed 's/^/index,manifest:/' <<<"$meta"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+      # BuildKit is pinned too: the driver's default is a moving tag.
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+        with:
+          driver-opts: image=moby/buildkit:v0.34.1@sha256:99368f3e46177c6405b9740e4461d91cee004128daeecca78d4ceac50ec1da5c
+      - name: Log in to ghcr.io
+        uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+      - name: Build and push by digest
+        id: build
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        env:
+          DOCKER_BUILD_RECORD_UPLOAD: "false"
+        with:
+          context: .
+          target: app
+          platforms: linux/amd64,linux/arm64
+          build-args: VERSION=${{ steps.metadata.outputs.version }}
+          no-cache: true
+          sbom: true
+          provenance: false
+          labels: ${{ steps.metadata.outputs.labels }}
+          annotations: ${{ steps.metadata.outputs.annotations }}
+          outputs: type=image,name=ghcr.io/mycroblog/my,push-by-digest=true,name-canonical=true,push=true
+
+  nightly-image-check:
+    # On a runner of each platform, so that the binary really runs, and with no write permission.
+    needs: nightly-image
+    strategy:
+      matrix:
+        include:
+          - platform: linux/amd64
+            runner: ubuntu-latest
+          - platform: linux/arm64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      # For `go version -m` in scripts/check-release-build.sh.
+      - name: Set up Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: .tool-versions
+          cache: false
+      - name: Log in to ghcr.io
+        uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+      - name: Check the binary of the image
+        env:
+          DIGEST: ${{ needs.nightly-image.outputs.digest }}
+          PLATFORM: ${{ matrix.platform }}
+          VERSION: ${{ needs.nightly-image.outputs.version }}
+        run: scripts/release-image.sh check "$DIGEST" "$PLATFORM" "$VERSION" | tee -a "$GITHUB_STEP_SUMMARY"
+
+  nightly-image-attest:
+    # As release.yml's image-attest: kept in the repository's attestations, not pushed to ghcr.io (ADR-0010 §8).
+    needs: [nightly-image, nightly-image-check]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      attestations: write
+      contents: read
+      id-token: write
+    steps:
+      - name: Attest the provenance
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          subject-name: ghcr.io/mycroblog/my
+          subject-digest: ${{ needs.nightly-image.outputs.digest }}
+          push-to-registry: false
+          # A storage record needs one more permission (artifact-metadata: write) and nothing here reads it.
+          create-storage-record: false
+
+  # Moves `nightly` to the checked and attested digest, the last step, so that the tag never names an image that failed
+  # a check.
+  nightly-image-tag:
+    needs: [nightly-image, nightly-image-attest]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Log in to ghcr.io
+        uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+      - name: Tag the image nightly
+        env:
+          DIGEST: ${{ needs.nightly-image.outputs.digest }}
+          VERSION: ${{ needs.nightly-image.outputs.version }}
+          SHA: ${{ github.sha }}
+        run: |
+          scripts/release-image.sh tag "$DIGEST" nightly | tee -a "$GITHUB_STEP_SUMMARY"
+          {
+            echo
+            echo "Version \`$VERSION\` of $SHA. To pin this build:"
+            echo
+            echo '```'
+            echo "ghcr.io/mycroblog/my:nightly@$DIGEST"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
 
   # The web E2E of the demo server (app/web/e2e/demo-*.spec.ts, the project `demo-chromium`, ADR-0015 §8): the demo
   # scenario signs in, a second run of the seed adds nothing, a password reset arrives in Mailpit, and a reply reaches

@@ -142,6 +142,7 @@ The server image is `ghcr.io/mycroblog/my`, public, for `linux/amd64` and `linux
 | `0.1.0` | That version, for good | Naming a version |
 | `0.1` | The latest patch of `v0.1` | Docker Compose, which applies the schema on every `up` |
 | `0.1.0-rc.1` | That prerelease | Trying a release before it comes out |
+| `nightly` | The latest commit of `main` that passed the nightly tests, moved every night it changes | Trying changes before a prerelease, on an instance you can throw away |
 
 There is no `latest` and no `0`: both would cross a minor version, and each upgrade to a new minor version has to go [through the previous one](database.md#skipping-releases). Name a version in every command; `docker pull ghcr.io/mycroblog/my` alone fails with `manifest unknown`.
 A patch release can need `my schema apply` and `my db upgrade` too, so outside Docker Compose follow [Upgrading](database.md#upgrading) for each version. In production, pin the digest that the release's notes give:
@@ -149,6 +150,13 @@ A patch release can need `my schema apply` and `my db upgrade` too, so outside D
 ```text
 ghcr.io/mycroblog/my:0.1.0@sha256:...
 ```
+
+**`nightly` has no upgrade path.** Upgrades are promised only between released versions: from one `nightly` image to
+the next, or from `nightly` to a release, the schema and the data steps of `my db upgrade` can change in ways that no
+release goes through, so expect to recreate its database. Never run it in production. `my version` prints which commit it is, as in
+`v0.1.0-rc.5.0.20261109182600.g7a789720a1b2`: a version after the latest release (`v0.1.0-rc.5`), the commit's time in UTC, and the
+first 12 characters of the commit after `g`. To keep one build, pin its digest (`ghcr.io/mycroblog/my:nightly@sha256:...`): an older build loses
+the tag but stays pullable by its digest.
 
 Where to run it:
 
@@ -168,7 +176,8 @@ gh attestation verify oci://ghcr.io/mycroblog/my@sha256:... -R mycroblog/my \
 docker buildx imagetools inspect ghcr.io/mycroblog/my@sha256:... --format '{{ json .SBOM }}'
 ```
 
-The first command fails unless the image was built by the release workflow of this repository. It prints the commit, which is the commit of the version's tag; the image's label `org.opencontainers.image.revision` names the same one.
+The first command fails unless the image was built by the release workflow of this repository. For a `nightly` image, verify it with
+`--signer-workflow mycroblog/my/.github/workflows/nightly.yml` instead. It prints the commit, which is the commit of the version's tag; the image's label `org.opencontainers.image.revision` names the same one.
 
 ## Publish the source code (AGPL-3.0)
 

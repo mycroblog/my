@@ -3,7 +3,7 @@
 - Status: Accepted
 - Date: 2026-10-16
 - Deciders: @rosylilly
-- Issue: #11, #2022
+- Issue: #11, #2022, #2653
 
 ## Decision（決定）
 
@@ -62,11 +62,14 @@ Docker の構成は次のとおり。
 
 ### 5. `main` のビルド
 
-**`v0.1.0` の時点では公開しない**（`edge` も `sha-<commit>` も作らない）。
+**Nightly のスローな検査が通った commit を、タグ `nightly` だけで公開する。** git のタグも GitHub Release も作らない。
 
-- メンテナはリリースの版だけを動かす（ADR-0023 §4）ので要らない。試す人には rc がある。rc は同じ関門を通り、`release.yml` は手で何度でも動かせる。
-- スローな検査を通っていない `main` の頭をレジストリに置かない。
-- 覆す条件: rc の頻度では足りないと試す人が言ったら、Nightly のスローな検査が通った commit から `edge` と `sha-<commit>` を作り、`sha-` を 30 日で消す。Nightly はその commit を検査しているので、関門の位置はそこが正しい。
+- 関門は Nightly である。`nightly.yml` の `slow-suite` が `main` で通ったときだけ、そのジョブの後にそのコミットのイメージを作る。Nightly はそのコミットを検査しているので、関門の位置はそこが正しい。スローな検査を通っていない `main` の頭はレジストリに置かない。
+- 作り方はリリースと同じにする（両プラットフォーム、SBOM、キャッシュなし、`check-release-build.sh`、来歴の証明。§7・§8）。タグ `nightly` は検査と証明の後に最後に動かすので、検査に落ちたイメージを指さない。
+- タグは `nightly` だけで、毎晩動く。`sha-<commit>` は作らない。版のタグの一覧の邪魔になるからである。特定のビルドは digest で固定する（`nightly@sha256:...`）。古いビルドは未タグの版として残り、digest で pull できる。§6 のとおり、未タグの版は消さない。
+- 版の文字列は、Go の pseudo-version にならい、直前のリリースのタグの後に並ぶものにする。pre-release の後なら `v0.1.0-rc.5.0.<YYYYMMDDhhmmss>.g<commit の 12 文字>`、リリースの後なら次のパッチの `v0.1.4-0.<...>.g<...>` である。`my version` と NodeInfo がどのコミットかを示す。
+- **更新の保証はない。** ADR-0023 の保証はリリースの版の間だけで、`nightly` から次の `nightly`、`nightly` からリリースへの更新は保証しない。`main` の途中では `my db upgrade` の手順が入れ替わり、`v0.1.0` の前は破壊的なスキーマの変更もありうる。試すこととステージングのためのイメージで、本番では使わず、データベースを作り直す前提である。運営者向けの文書にそう書く。
+- メンテナのインスタンスはリリースの版だけを動かす（ADR-0023 §4）。
 
 ### 6. 不変性と保持
 
@@ -147,6 +150,8 @@ M5（エピック #30）で `ghcr.io/mycroblog/my` のイメージが要り、§
 
 判断の元にした事実（2026-11-03 に確認）: GHCR の新しいパッケージは非公開が既定で、公開イメージは匿名で pull でき、保存と転送は現在無料（[Billing](https://docs.github.com/en/billing/managing-billing-for-github-packages/about-billing-for-github-packages)）。5,000 回を超えてダウンロードされた公開の版は API で消せない（[REST](https://docs.github.com/en/rest/packages/packages)）。`published` は下書きからの公開で発火し pre-release も含む（[Events](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows)）。buildx の SBOM は既定で最後のステージだけを調べる（[SBOM](https://docs.docker.com/build/metadata/attestations/sbom/)）。Immutable releases は公開した Release のタグとアセットを固定する（[Immutable releases](https://docs.github.com/en/code-security/supply-chain-security/understanding-your-software-supply-chain/immutable-releases)）。2026 年 3 月に `trivy-action` のタグの 76/77 が書き換えられ、Aqua は commit SHA への固定だけが確実と述べた（[Aqua](https://www.aquasec.com/blog/trivy-supply-chain-attack-what-you-need-to-know)）。
 
+`v0.1.0` の rc の間に、リリースと関係のない理由で関門が落ちて rc が出せず、変更を試す手段が rc だけでは足りなかった。決定者が、Nightly の検査が通ったコミットを `nightly` のタグで公開すると決めた（§5）。`sha-<commit>` は作らず、更新は保証しない。
+
 rc のリリースで、証明を push したために `sha256-<digest>` のタグが版のタグの間に並んだ。決定者が、証明をレジストリに push しないと決めた（§8）。
 
 ## 採らなかった案
@@ -156,7 +161,10 @@ rc のリリースで、証明を push したために `sha256-<digest>` のタ�
 - `release.yml` で不変のタグ `0.1.0`、公開時に動くタグ: 動くタグだけ守れるが、ノートより先に `0.1.0` が見え、やり直しで既存のタグとの扱いが要る。§11 の移り先である。
 - イメージを先に作りスローな検査がそれを試す: 検査したものそのものを出せるが、検査の組み直しが大きく、失敗した候補がレジストリに残り、E2E の多くはイメージを使わない。
 - `latest`（`0` の有無を問わず）: 試すだけの人には最短でタグなしのツールも動く。つまずきは一度のエラーで済むのに対し、作った場合の最悪は運用中のインスタンスの停止である。
-- `edge`: 変更をすぐ試せて次のリリースへも上がれるが、`v0.1.0` の時点で試す人は rc で足りる。足すのはいつでもできる。
+- `main` のビルドを公開しない: rc で足りるとしていたが、リリースの間が開くと変更を試す手段がなかった。
+- タグ `edge`: 慣習の名前だが、決定者が中身の出どころ（Nightly）がそのまま分かる `nightly` を選んだ。
+- `sha-<commit>` のタグを作り 30 日で消す: コミットでビルドを選べるが、毎晩タグが増えて版のタグの一覧の邪魔になる。digest の固定で足りる。
+- 古い `nightly` のビルドを日数で消す: 未タグの版を日数で消すと、リリースのイメージのプラットフォームごとのマニフェストも消えうる（§6）。
 - 証明をレジストリにも push する（`push-to-registry: true`）: レジストリだけを読む道具（cosign・入場制御）からも証明が見つかる。しかし GHCR では digest ごとにタグ `sha256-<digest>` が増えて版のタグの一覧が読みにくくなり、文書の確認の手順（`gh attestation verify`）は使わない。
 - cosign: `cosign verify` は広く知られ `gh` なしで確かめられ、1 ステップで足せる。入場制御で読めないと分かれば足す。
 - バイナリの添付: 単一の静的バイナリで費用は小さく VM でも動くが、需要が出てから足す。
