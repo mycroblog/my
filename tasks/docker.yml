@@ -79,6 +79,11 @@ tasks:
     cmds:
       - scripts/restore-drill.sh {{.DIALECTS}}
 
+  dev-cert:
+    desc: Create the HTTPS certificate of my.localhost for the root compose.yaml with mkcert (mkcert.exe under WSL), trusted by this machine's browsers
+    cmds:
+      - scripts/dev-cert.sh
+
   mailpit:
     desc: Create the certificate of the development Mailpit and start it alone (the root compose.yaml; SMTP on 127.0.0.1:1025, UI on http://127.0.0.1:8025)
     cmds:

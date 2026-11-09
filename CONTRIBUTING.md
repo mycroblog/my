@@ -85,17 +85,20 @@ alone (the root [`compose.yaml`](compose.yaml), the project `my-dev`, which neve
 deploys an instance is in `deploy/docker/`, see [Docker Compose files](docs/operations/running.md#docker-compose-files)):
 
 ```sh
-docker compose up -d        # the first start builds the development image and downloads the Go modules, npm packages,
-                            # and translation models, which takes minutes
-docker compose logs -f my   # follow the server's log
+scripts/task.sh docker:dev-cert   # once: the HTTPS certificate of my.localhost (needs mkcert, see below)
+docker compose up -d --wait       # returns once https://my.localhost works; the first start builds the development
+                                  # image and downloads the Go modules, npm packages, and translation models (minutes)
+docker compose logs -f my         # follow the server's log
 ```
 
-Open `http://localhost:8080`. The server runs with `profile = development` and uses every service of the file:
+Open `https://my.localhost`. Browsers resolve `my.localhost` and every other name under `.localhost` to this machine,
+so no hosts file entry is needed. The server runs with `profile = development` and uses every service of the file:
 
 | Service | What the server uses it for | On this machine |
 | --- | --- | --- |
-| `my` | `my serve` built from the working tree, with the scripts from Vite | `http://localhost:8080` (`MY_DEV_PORT`) |
-| `vite` | The Vite dev server of `app/web`, with HMR | `http://localhost:5173` |
+| `caddy` | The way in: the server and Vite over HTTPS, and `http://my.localhost` redirected to HTTPS; it starts once both are healthy | `:443` (`MY_DEV_HTTPS_PORT`), `:80` (`MY_DEV_HTTP_PORT`), `:5173` |
+| `my` | `my serve` built from the working tree, with the scripts from Vite | `https://my.localhost`, through Caddy only |
+| `vite` | The Vite dev server of `app/web`, with HMR | `https://vite.my.localhost:5173`, through Caddy only |
 | `postgres` | The database (`database = postgres`) | `localhost:5432`, user and password `my` (`PG_PORT`) |
 | `mailpit` | Every email (`mail = smtp`); see [Emails](#emails) | `http://127.0.0.1:8025` (`MAILPIT_UI_PORT`), SMTP on `:1025` |
 | `garage` | The media (`blob = s3`), in the bucket `my-media` | S3 on `127.0.0.1:3900` (`GARAGE_S3_PORT`) |
@@ -105,6 +108,17 @@ Open `http://localhost:8080`. The server runs with `profile = development` and u
 | `prometheus` | Scrapes the metrics (`metrics_exporter = prometheus`) and evaluates the [alerting rules](docs/operations/alerts.md) | `http://127.0.0.1:9090` (`PROMETHEUS_PORT`) |
 | `grafana` | The [dashboard](docs/operations/alerts.md#grafana-dashboard), without signing in | `http://127.0.0.1:3000` (`GRAFANA_PORT`) |
 
+- `scripts/task.sh docker:dev-cert` (`scripts/dev-cert.sh`) makes one certificate for `my.localhost` and
+  `*.my.localhost` in `.tmp/dev-certs` with [mkcert](https://github.com/FiloSottile/mkcert), whose `mkcert -install`
+  makes the browsers on this machine trust its local CA. Under WSL it runs `mkcert.exe`, the Windows build
+  (`winget install FiloSottile.mkcert`), so that the browsers on Windows trust it; on Linux and macOS it runs `mkcert`
+  (`brew install mkcert`, or your distribution's package). Without the certificate, `docker compose up` stops and
+  says so. It is valid for about two years; the task makes a new one when it expires within 30 days.
+- Ports 80, 443, and 5173 of `127.0.0.1` must be free. When 80 or 443 is taken, move it with `MY_DEV_HTTP_PORT` or
+  `MY_DEV_HTTPS_PORT` and set `MY_DEV_HOST` to the host with that port (`MY_DEV_HOST=my.localhost:8443`); Vite stays on
+  5173, the port its HMR client connects to.
+- The server's host is recorded in its database, so a database made with another host (an earlier
+  `MY_DEV_HOST`, say) needs `docker compose down -v` before the server starts again.
 - The database starts empty, with the schema applied. Create an administrator with
   `docker compose exec my my admin create --email you@example.com --username you --password-link`, which prints a
   link to set the password, or register on the sign-up page with the confirmation email in Mailpit.
@@ -259,14 +273,16 @@ binary. Its conventions are in [docs/architecture/web-client/README.md](docs/arc
 
 During development, the server loads the scripts from the Vite dev server, with HMR: [Local development](#local-development)
 runs both. Go serves the shell, the runtime configuration, the API, and ActivityPub as in production, and only the
-scripts come from Vite (`my serve -dev-vite-origin http://localhost:5173`).
+scripts come from Vite (`my serve -dev-vite-origin https://vite.my.localhost:5173`). Vite writes the URLs of its
+assets with the origin of `VITE_DEV_ORIGIN` (default `http://localhost:5173`, the port `scripts/task.sh web:dev` serves).
 
 - With `-dev-vite-origin`, the shell is never cached (`no-store`) and the CSP is a development one that allows that
   origin's scripts and WebSocket and the `<style>` elements Vite injects. To see the app under the production CSP
   (`script-src 'self'` without a nonce), use a binary built by `scripts/task.sh go:bin`.
-- The runtime configuration's `apiOrigin` is `http://{host}` only in development and when `MY_WEB_ORIGIN` is the
-  `http` origin of `host` (such as `http://localhost:8080`).
-- The voice chat works with `voice = p2p` on `http://localhost:8080`: browsers allow the microphone only on `localhost`
+- The runtime configuration's `apiOrigin` is the origin of `MY_WEB_ORIGIN` when that is on `host` (such as
+  `https://my.localhost`, or `http://localhost:8080`), and `https://{host}` otherwise; with `-dev-vite-origin` and
+  no `MY_WEB_ORIGIN` on `host`, it is `http://{host}`.
+- The voice chat works with `voice = p2p` on `https://my.localhost`: browsers allow the microphone only on `localhost`
   or over HTTPS, and browsers on this machine connect to each other without a STUN server.
 
 To look at the screens with data in them, start the demo server: `scripts/task.sh web:demo` (needs Docker)

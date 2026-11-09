@@ -58,11 +58,12 @@ export default defineConfig({
     ],
   },
   server: {
-    // `my serve -dev-vite-origin http://localhost:5173` loads the client from here (CONTRIBUTING.md),
-    // so the URLs of assets must point at this server, not at the page's origin.
+    // `my serve -dev-vite-origin` loads the client from here (CONTRIBUTING.md), so the URLs of assets
+    // must point at this server, not at the page's origin: VITE_DEV_ORIGIN when a proxy is in front of
+    // it (the root compose.yaml's https://vite.my.localhost:5173).
     port: 5173,
     strictPort: true,
-    origin: "http://localhost:5173",
+    origin: process.env["VITE_DEV_ORIGIN"] ?? "http://localhost:5173",
     // The client workspace (app/), and the source of @mycroblog/mykit outside it.
     fs: { allow: [searchForWorkspaceRoot(process.cwd()), mykitSource] },
   },

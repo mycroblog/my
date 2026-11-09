@@ -231,7 +231,7 @@ func New(o Options) (*Handler, error) {
 	}
 
 	var tags entryTags
-	apiOrigin, err := serverOrigin(o.Host, o.WebOrigin)
+	apiOrigin, onHost, err := serverOrigin(o.Host, o.WebOrigin)
 	if err != nil {
 		return nil, err
 	}
@@ -255,8 +255,11 @@ func New(o Options) (*Handler, error) {
 		// Vite serves the stylesheet of the server-rendered pages as CSS to a <link> as well.
 		tags = entryTags{Script: h.o.DevViteOrigin + "/src/main.tsx", ServerPages: h.o.DevViteOrigin + "/" + serverPagesKey}
 		h.csp = withMediaOrigin(devContentSecurityPolicy(dev), mediaOrigin)
-		// The dev server setup is plain HTTP on localhost.
-		apiOrigin = "http://" + o.Host
+		// A dev server setup is plain HTTP on localhost, unless web_origin names the origin on the host, such as
+		// https://my.localhost behind a TLS proxy.
+		if !onHost {
+			apiOrigin = "http://" + o.Host
+		}
 	} else {
 		tags, err = readEntry(o.Build)
 		if errors.Is(err, errNoBuild) {
@@ -285,19 +288,19 @@ func New(o Options) (*Handler, error) {
 }
 
 // serverOrigin returns the origin at which the server serves the shell and the client API: webOrigin
-// when it is on host, https://host otherwise. An origin on another host is a client served elsewhere
+// when it is on host (onHost), https://host otherwise. An origin on another host is a client served elsewhere
 // (a development server, say), which says nothing about the server's own scheme.
-func serverOrigin(host, webOrigin string) (string, error) {
+func serverOrigin(host, webOrigin string) (origin string, onHost bool, err error) {
 	if webOrigin != "" {
 		u, err := url.Parse(webOrigin)
 		if err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Host == "" {
-			return "", fmt.Errorf("web: web origin %q is not an http(s) origin", webOrigin)
+			return "", false, fmt.Errorf("web: web origin %q is not an http(s) origin", webOrigin)
 		}
 		if strings.EqualFold(u.Host, host) {
-			return u.Scheme + "://" + host, nil
+			return u.Scheme + "://" + host, true, nil
 		}
 	}
-	return "https://" + host, nil
+	return "https://" + host, false, nil
 }
 
 // instanceLocale returns the instance's current default locale.

@@ -458,6 +458,17 @@ func TestBrokenManifest(t *testing.T) {
 	}
 }
 
+// Behind a TLS proxy, a dev server setup with web_origin on the host calls the API at that https origin.
+func TestDevViteOriginBehindHTTPS(t *testing.T) {
+	_, mux := newHandler(t, web.Options{
+		DevViteOrigin: "https://vite.my.localhost:5173", Host: "my.localhost", WebOrigin: "https://my.localhost",
+	})
+	body := get(mux, "/", nil).Body.String()
+	if !strings.Contains(body, `"apiOrigin":"https://my.localhost"`) {
+		t.Errorf("dev shell behind https lacks the https apiOrigin:\n%s", body)
+	}
+}
+
 func TestDevViteOrigin(t *testing.T) {
 	h, mux := newHandler(t, web.Options{DevViteOrigin: "http://localhost:5173", Host: "localhost:8080"})
 	rec := get(mux, "/", nil)

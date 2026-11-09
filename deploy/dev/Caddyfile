@@ -1,0 +1,30 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+# The Caddy of the root compose.yaml: the only way in from the browser. It serves https://my.localhost (the server) and
+# https://vite.my.localhost:5173 (the Vite dev server, which the server's pages load their scripts from) with the
+# certificate of scripts/dev-cert.sh, and sends http://my.localhost to https. MY_DEV_HOST is the server's host, with
+# the port when it is not 443.
+{
+	# The certificate comes from mkcert; Caddy issues none and never redirects by itself.
+	auto_https off
+	admin off
+}
+
+(certificate) {
+	tls /src/.tmp/dev-certs/my.localhost.pem /src/.tmp/dev-certs/my.localhost-key.pem
+}
+
+http://my.localhost {
+	redir https://{$MY_DEV_HOST}{uri} permanent
+}
+
+https://my.localhost {
+	import certificate
+	reverse_proxy my:8080
+}
+
+# The port is the one the browser uses, so that Vite's HMR client, which connects to the port of the dev server,
+# reaches it through Caddy.
+https://vite.my.localhost:5173 {
+	import certificate
+	reverse_proxy vite:5173
+}
