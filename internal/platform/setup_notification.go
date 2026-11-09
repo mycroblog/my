@@ -74,6 +74,11 @@ func (p subscribedPosts) StatusVisible(ctx context.Context, accountID, statusID 
 	return pushAudience(p).StatusVisible(ctx, accountID, statusID)
 }
 
+// StatusVisibleTo decides StatusVisible for many accounts with the content module's batch read.
+func (p subscribedPosts) StatusVisibleTo(ctx context.Context, accountIDs []string, statusID string) (map[string]bool, error) {
+	return p.a.Statuses.VisibleToLocal(ctx, statusID, accountIDs)
+}
+
 // AuthorOf implements notification.Posts.
 func (p subscribedPosts) AuthorOf(ctx context.Context, uri string) (string, error) {
 	st, err := p.a.Content.FindStatusByURI(ctx, uri)

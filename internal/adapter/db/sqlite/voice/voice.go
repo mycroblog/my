@@ -450,6 +450,30 @@ func (r *Repository) SpeakGranted(ctx context.Context, tx uow.Tx, roomID, accoun
 	return granted != 0, sqlite.Wrap(err, "find voice room speak grant")
 }
 
+// ViewerFacts implements appvoice.Repository.
+func (r *Repository) ViewerFacts(ctx context.Context, tx uow.Tx, roomID string, accountIDs []string) (map[string]appvoice.ViewerFacts, error) {
+	out := make(map[string]appvoice.ViewerFacts, len(accountIDs))
+	if len(accountIDs) == 0 {
+		return out, nil
+	}
+	q, err := r.q(tx)
+	if err != nil {
+		return nil, err
+	}
+	list, err := sqlite.JSONList(accountIDs)
+	if err != nil {
+		return nil, err
+	}
+	rows, err := q.ListVoiceRoomViewerFacts(ctx, voicegen.ListVoiceRoomViewerFactsParams{RoomID: roomID, AccountIds: list})
+	if err != nil {
+		return nil, sqlite.Wrap(err, "list voice room viewer facts")
+	}
+	for _, row := range rows {
+		out[row.AccountID] = appvoice.ViewerFacts{Banned: row.Banned, Invited: row.Invited, SpeakGranted: row.SpeakGranted != 0}
+	}
+	return out, nil
+}
+
 // RefreshHead implements appvoice.Repository.
 func (r *Repository) RefreshHead(ctx context.Context, tx uow.Tx, roomID string) error {
 	q, err := r.db.queries(tx)

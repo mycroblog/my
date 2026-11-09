@@ -18,6 +18,7 @@ import (
 	"github.com/mycroblog/my/internal/app/queue"
 	"github.com/mycroblog/my/internal/app/uow"
 	appvoice "github.com/mycroblog/my/internal/app/voice"
+	"github.com/mycroblog/my/internal/domain/graph"
 	"github.com/mycroblog/my/internal/domain/identity"
 	"github.com/mycroblog/my/internal/domain/instance"
 	"github.com/mycroblog/my/internal/domain/moderation"
@@ -207,6 +208,35 @@ func (m voiceMembers) Member(ctx context.Context, accountID string) (appvoice.Me
 	return appvoice.Member{Local: true, Active: !act.Deleted() && !act.Lifecycle.Deactivated() && !suspended, Limited: limited, MayStart: mayStart}, nil
 }
 
+// SightOf returns Member of each of ids without MayStart, reading the accounts and their
+// restrictions together.
+func (m voiceMembers) SightOf(ctx context.Context, ids []string) (map[string]appvoice.Member, error) {
+	actors, err := m.a.Accounts.FindByIDs(ctx, ids)
+	if err != nil {
+		return nil, err
+	}
+	var local []string
+	for _, id := range ids {
+		if act, ok := actors[id]; ok && act.Account.IsLocal() && act.Local != nil && !act.IsInstanceActor() && !slices.Contains(local, id) {
+			local = append(local, id)
+		}
+	}
+	out := make(map[string]appvoice.Member, len(ids))
+	if len(local) == 0 {
+		return out, nil
+	}
+	restrictions, err := m.a.AccountPolicy.RestrictionsOf(ctx, local)
+	if err != nil {
+		return nil, err
+	}
+	for _, id := range local {
+		act, rs := actors[id], restrictions[id]
+		suspended, limited := slices.Contains(rs, moderation.RestrictFederation), slices.Contains(rs, moderation.RestrictUnsolicitedReach)
+		out[id] = appvoice.Member{Local: true, Active: !act.Deleted() && !act.Lifecycle.Deactivated() && !suspended, Limited: limited}
+	}
+	return out, nil
+}
+
 func (m voiceMembers) EveryoneStarts(ctx context.Context) (bool, error) {
 	s, err := m.a.Instance.Settings(ctx)
 	if err != nil {
@@ -278,20 +308,31 @@ func (r voiceRelations) LocalFollowers(ctx context.Context, accountID, before st
 	if err != nil {
 		return nil, "", err
 	}
+	actors, err := r.a.Accounts.FindByIDs(ctx, ids)
+	if err != nil {
+		return nil, "", err
+	}
 	local := make([]string, 0, len(ids))
 	for _, id := range ids {
-		act, err := r.a.Accounts.FindByID(ctx, id)
-		if errors.Is(err, account.ErrNotFound) {
-			continue
-		}
-		if err != nil {
-			return nil, "", err
-		}
-		if act.Account.IsLocal() && act.Local != nil {
+		if act, ok := actors[id]; ok && act.Account.IsLocal() && act.Local != nil {
 			local = append(local, id)
 		}
 	}
 	return local, next, nil
+}
+
+// FollowersAmong returns which of ids actively follow accountID, with the graph module's batch
+// read of relationships.
+func (r voiceRelations) FollowersAmong(ctx context.Context, accountID string, ids []string) (map[string]bool, error) {
+	rs, err := r.a.Graph.Relationships(ctx, accountID, ids)
+	if err != nil {
+		return nil, err
+	}
+	out := make(map[string]bool, len(ids))
+	for _, id := range ids {
+		out[id] = rs[id].FollowedBy == graph.StateActive
+	}
+	return out, nil
 }
 
 func (r voiceRelations) Following(ctx context.Context, accountID string, ids []string) (map[string]bool, error) {

@@ -264,6 +264,9 @@ type Repository interface {
 	Banned(ctx context.Context, tx uow.Tx, roomID, accountID string) (bool, error)
 	// SpeakGranted reports whether the newest speak grant of an account in a room is granted.
 	SpeakGranted(ctx context.Context, tx uow.Tx, roomID, accountID string) (bool, error)
+	// ViewerFacts reads, of each of accountIDs, what Banned, FindInvitation (one not revoked), and
+	// SpeakGranted read of one account in the room, with one query.
+	ViewerFacts(ctx context.Context, tx uow.Tx, roomID string, accountIDs []string) (map[string]ViewerFacts, error)
 }
 
 // ProjectionRepository derives the projections of the voice module (data-model §9) from the
@@ -283,4 +286,10 @@ type ProjectionRepository interface {
 	// RebuildProjections empties voice_room_heads and voice_room_participants and derives
 	// both again from every event.
 	RebuildProjections(ctx context.Context, tx uow.Tx) error
+}
+
+// ViewerFacts are what the room's own records say of an account (Repository.ViewerFacts): banned,
+// invited by an invitation not revoked, and granted the right to speak.
+type ViewerFacts struct {
+	Banned, Invited, SpeakGranted bool
 }

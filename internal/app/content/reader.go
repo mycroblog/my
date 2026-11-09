@@ -179,6 +179,13 @@ func (r *Reader) Visible(ctx context.Context, viewer Viewer, statusID string) (c
 	return st, err
 }
 
+// VisibleToLocal reports, by account, whether each of the local accounts of viewerIDs may see
+// statusID, as Visible decides for one, with a number of queries that does not grow with
+// viewerIDs.
+func (r *Reader) VisibleToLocal(ctx context.Context, statusID string, viewerIDs []string) (map[string]bool, error) {
+	return r.aud.visibleToLocal(ctx, statusID, viewerIDs)
+}
+
 // ReadableStatus is a status that a viewer may see, for a module that works on its text.
 type ReadableStatus struct {
 	Status content.Status
