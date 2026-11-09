@@ -39,6 +39,9 @@ UPDATE user_registration_states SET state = $1, since = $2 WHERE user_id = $3 AN
 -- name: GetRegistrationState :one
 SELECT user_id, state, since FROM user_registration_states WHERE user_id = $1;
 
+-- name: ListRegistrationStatesOf :many
+SELECT user_id, state, since FROM user_registration_states WHERE user_id = ANY(sqlc.arg(user_ids)::uuid[]);
+
 -- name: ListRegistrationsInState :many
 SELECT s.user_id, s.since, a.id AS application_id, a.reason, a.invite_id, a.submitted_at,
   COALESCE(e.address, '') AS email,

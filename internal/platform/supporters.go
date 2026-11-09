@@ -128,6 +128,20 @@ func (u supporterUsers) AccountIDs(ctx context.Context, userIDs []string) (map[s
 }
 
 // SupporterUser implements supporters.Users.
+// SupporterAccounts implements the batch read of the supporters' accounts: their local accounts,
+// read together.
+func (u supporterUsers) SupporterAccounts(ctx context.Context, userIDs []string) (map[string]supporters.User, error) {
+	locals, err := u.a.Accounts.LocalAccountsOfUsers(ctx, userIDs)
+	if err != nil {
+		return nil, err
+	}
+	out := make(map[string]supporters.User, len(locals))
+	for id, la := range locals {
+		out[id] = supporters.User{ID: id, AccountID: la.AccountID, Handle: "@" + la.Username}
+	}
+	return out, nil
+}
+
 func (u supporterUsers) SupporterUser(ctx context.Context, userID string) (supporters.User, error) {
 	la, err := u.a.Accounts.LocalAccountOfUser(ctx, userID)
 	if errors.Is(err, account.ErrNotFound) {

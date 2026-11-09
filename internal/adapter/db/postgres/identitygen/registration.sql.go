@@ -523,6 +523,30 @@ func (q *Queries) ListMemberInvitesByCreator(ctx context.Context, arg ListMember
 	return items, nil
 }
 
+const listRegistrationStatesOf = `-- name: ListRegistrationStatesOf :many
+SELECT user_id, state, since FROM user_registration_states WHERE user_id = ANY($1::uuid[])
+`
+
+func (q *Queries) ListRegistrationStatesOf(ctx context.Context, userIds []string) ([]UserRegistrationState, error) {
+	rows, err := q.db.Query(ctx, listRegistrationStatesOf, userIds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []UserRegistrationState{}
+	for rows.Next() {
+		var i UserRegistrationState
+		if err := rows.Scan(&i.UserID, &i.State, &i.Since); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listRegistrationsInState = `-- name: ListRegistrationsInState :many
 SELECT s.user_id, s.since, a.id AS application_id, a.reason, a.invite_id, a.submitted_at,
   COALESCE(e.address, '') AS email,
