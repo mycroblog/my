@@ -174,7 +174,7 @@
 | テーブル | 分類 | カラム | 制約 |
 | --- | --- | --- | --- |
 | `status_articles` | リソース（部分型） | `status_id`（PK）, `author_account_id` | インデックス `(author_account_id, status_id)`（プロフィールの記事の一覧、記事だけのフィード） |
-| `status_revision_articles` | イベント（版の子） | `revision_id`（PK）, `title`（1〜200 文字。リモートは空も可）, `summary`（0〜500 文字、プレーンテキスト）, `summary_origin`（`enum(author, body)`）, `reading_time_seconds`（`int`） | 記事のすべての版が 1 行を持つ |
+| `status_revision_articles` | イベント（版の子） | `revision_id`（PK）, `title`（1〜200 文字。リモートは空も可）, `summary`（0〜500 文字、プレーンテキスト）, `summary_origin`（`enum(author, body)`） | 記事のすべての版が 1 行を持つ |
 | `status_revision_article_covers` | イベント（版の子） | `revision_id`（PK）, `media_id`, `description`（`text`、NULL 可） | インデックス `(media_id)` |
 | `status_revision_article_images` | イベント（版の子） | `revision_id`, `position`（`int`、0 始まり）, `media_id`, `description`（`text`、NULL 可） | PK `(revision_id, position)`。インデックス `(media_id)`。本文の中の画像で、インスタンス設定 `max_article_images` 件まで |
 | `draft_articles` | 現在値 | `draft_id`（PK）, `title`, `summary`, `cover_media_id`（NULL 可）, `cover_description`（`text`、NULL 可） | 記事の下書き。本文の Markdown は `draft_contents.source_text` |
@@ -186,7 +186,7 @@
   - 描画した HTML の UTF-8 のバイト数はインスタンス設定 `max_article_bytes`（既定かつ上限 100,000）以下で、題・要約は数えません。公開範囲に `direct` は選べず、記事は返信・引用になりません。
   - 本文の画像は、書いた本人のアップロードで最新の `media_processing_results` が `ready` のものだけを `<img>` にして `status_revision_article_images` に記録し、それ以外の画像は代替テキストのリンクにします。
   - 本文のメンションはリンクにするだけで、`status_revision_mentions` に記録しません（通知しない）。ハッシュタグはエディタで付けたものだけを `status_revision_tags` に記録し、本文の `#name` からは取りません。
-  - 要約が空なら、本文のテキストの先頭から 200 文字を文か語の切れ目で切ったものを `summary_origin = body` で置きます。`reading_time_seconds` は本文のテキストから数えます。
+  - 要約が空なら、本文のテキストの先頭から 200 文字を文か語の切れ目で切ったものを `summary_origin = body` で置きます。
 - 権限: インスタンス設定 `article_authoring`（`enum(everyone, permission)`、既定 `everyone`）が `permission` なら、作成に権限 `create_articles` が要ります。編集と削除は限りません。
 - 受信した `Article` も記事として取り込みます（[federation.md §4](../../federation.md#4-as2-の正規化)）。本文の `img` は `remote_media`（`purpose = attachment`）に記録し、表示ではメディアプロキシの URL にします。
 - 記事の下書きは `drafts` に `draft_articles` の行を足したもので、予約（上の「下書きと予約投稿」）も同じに働きます。下書きを公開すると、記事の行も下書きの行と一緒に消えます。
