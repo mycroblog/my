@@ -93,6 +93,7 @@ func (s *Server) serveStreaming(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer sub.Close()
+	defer s.home.register(v.AccountID)()
 
 	home, err := s.timelineQuery(ctx, &v, nil, nil, true)
 	if err != nil {
@@ -168,18 +169,30 @@ func (s *Server) runStream(w http.ResponseWriter, r *http.Request, st *streamSta
 	}
 	ticker := time.NewTicker(heartbeat)
 	defer ticker.Stop()
+	// The process checks the tokens of all its streams at once (streamMonitor) when it can; a
+	// stream checks its own otherwise.
+	var ended <-chan struct{}
+	if s.monitor != nil {
+		c := s.monitor.add(token)
+		defer s.monitor.remove(c)
+		ended = c.ended
+	}
 	for {
 		select {
 		case <-ctx.Done():
 			return
 		case <-sub.Done():
 			return
+		case <-ended:
+			return // revoked, expired, the account became unusable, or the server was closed
 		case <-ticker.C:
-			if _, err := s.o.Authenticator.AuthenticateBearer(ctx, token); err != nil {
-				return // revoked, expired, or the account became unusable
-			}
-			if s.streamClosed(ctx) {
-				return // the server was closed (ADR-0088 §2)
+			if s.monitor == nil {
+				if _, err := s.o.Authenticator.AuthenticateBearer(ctx, token); err != nil {
+					return // revoked, expired, or the account became unusable
+				}
+				if s.streamClosed(ctx) {
+					return // the server was closed (ADR-0088 §2)
+				}
 			}
 			if alive != nil && !alive(ctx) {
 				return
@@ -231,6 +244,11 @@ type streamState struct {
 func (st *streamState) handle(ctx context.Context, e stream.Event) error {
 	switch e.Kind {
 	case stream.KindHomeEntry:
+		// The streams of the accounts whose home timelines cannot list the entry skip it.
+		batch, _ := st.s.o.HomeEntries.(homeAudienceBatch)
+		if !st.s.home.mayList(ctx, batch, e, st.viewer.AccountID) {
+			return nil
+		}
 		return st.homeEntry(ctx, e.EntryID)
 	case stream.KindNotifications:
 		return st.notifications(ctx)

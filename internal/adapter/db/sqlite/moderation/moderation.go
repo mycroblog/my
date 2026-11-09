@@ -440,11 +440,13 @@ func (r *Repository) ListReportsOf(ctx context.Context, targetAccountID string) 
 	if err != nil {
 		return nil, sqlite.Wrap(err, "list reports")
 	}
+	reports, err := r.reportsWithParts(ctx, rows)
+	if err != nil {
+		return nil, err
+	}
 	out := make([]moderation.Report, len(rows))
 	for i, row := range rows {
-		if out[i], err = r.reportFrom(ctx, row); err != nil {
-			return nil, err
-		}
+		out[i] = reports[row.ID]
 	}
 	return out, nil
 }
@@ -509,27 +511,30 @@ func (r *Repository) ListReports(ctx context.Context, q appmoderation.ReportQuer
 	if err != nil {
 		return nil, sqlite.Wrap(err, "list reports")
 	}
-	out := make([]moderation.ReportRecord, len(rows))
-	for i, row := range rows {
-		if out[i], err = r.reportRecordFrom(ctx, row); err != nil {
-			return nil, err
-		}
-	}
-	return out, nil
+	return r.reportRecordsFrom(ctx, rows)
 }
 
-// reportRecordFrom reads the statuses and rules of the report of row.
-func (r *Repository) reportRecordFrom(ctx context.Context, row moderationgen.ListReportsRow) (moderation.ReportRecord, error) {
-	rep, err := r.reportFrom(ctx, moderationgen.Report{
-		ID: row.ID, Uri: row.Uri, ReporterAccountID: row.ReporterAccountID, TargetAccountID: row.TargetAccountID,
-		Category: row.Category, Comment: row.Comment, Forwarded: row.Forwarded, FiledAt: row.FiledAt,
-	})
-	if err != nil {
-		return moderation.ReportRecord{}, err
+// reportRecordsFrom returns the reports of rows with their parts and their states, reading each
+// part of all of them with one query (reportsWithParts).
+func (r *Repository) reportRecordsFrom(ctx context.Context, rows []moderationgen.ListReportsRow) ([]moderation.ReportRecord, error) {
+	reports := make([]moderationgen.Report, len(rows))
+	for i, row := range rows {
+		reports[i] = moderationgen.Report{
+			ID: row.ID, Uri: row.Uri, ReporterAccountID: row.ReporterAccountID, TargetAccountID: row.TargetAccountID,
+			Category: row.Category, Comment: row.Comment, Forwarded: row.Forwarded, FiledAt: row.FiledAt,
+		}
 	}
-	return moderation.ReportRecord{Report: rep, Status: reportStatusFrom(moderationgen.ReportState{
-		ReportID: row.ID, State: row.State, Outcome: row.Outcome, AssigneeUserID: row.AssigneeUserID, Since: row.Since,
-	})}, nil
+	parts, err := r.reportsWithParts(ctx, reports)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]moderation.ReportRecord, len(rows))
+	for i, row := range rows {
+		out[i] = moderation.ReportRecord{Report: parts[row.ID], Status: reportStatusFrom(moderationgen.ReportState{
+			ReportID: row.ID, State: row.State, Outcome: row.Outcome, AssigneeUserID: row.AssigneeUserID, Since: row.Since,
+		})}
+	}
+	return out, nil
 }
 
 // ListReportsByReporter implements moderation.Repository.
@@ -540,13 +545,11 @@ func (r *Repository) ListReportsByReporter(ctx context.Context, reporterAccountI
 	if err != nil {
 		return nil, sqlite.Wrap(err, "list reports by reporter")
 	}
-	out := make([]moderation.ReportRecord, len(rows))
+	records := make([]moderationgen.ListReportsRow, len(rows))
 	for i, row := range rows {
-		if out[i], err = r.reportRecordFrom(ctx, moderationgen.ListReportsRow(row)); err != nil {
-			return nil, err
-		}
+		records[i] = moderationgen.ListReportsRow(row)
 	}
-	return out, nil
+	return r.reportRecordsFrom(ctx, records)
 }
 
 func domainActionRecordFrom(row moderationgen.ListDomainModerationActionsRow) moderation.DomainActionRecord {

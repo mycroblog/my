@@ -4,6 +4,7 @@ package timeline
 
 import (
 	"context"
+	"slices"
 
 	appcontent "github.com/mycroblog/my/internal/app/content"
 	"github.com/mycroblog/my/internal/app/stream"
@@ -12,20 +13,22 @@ import (
 
 // RegisterCommitHooks signals every new home timeline entry to pub once the command that adds
 // it commits (FR-207): a status as posted (content.status_created) and a boost
-// (content.boosted). The signal carries only the entry ID; each stream asks HomeEntry whether
-// its viewer's home timeline lists the entry. A status that the public timelines may list,
+// (content.boosted). The signal carries the entry ID and the account of the entry, the author or
+// the booster; the streams ask HomeAudience which of their viewers' home timelines may list it,
+// and HomeEntry whether each of those lists it. A status that the public timelines may list,
 // local or remote, also signals a public timeline entry (ADR-0013 §20), whose streams ask
 // LocalEntry or PublicEntry.
 func RegisterCommitHooks(r *uow.Projectors, pub stream.Publisher) {
 	r.OnCommit(appcontent.EventStatusCreated, func(_ context.Context, e uow.Event) {
 		st := e.(appcontent.StatusCreated).Status
-		pub.Publish(stream.Event{Kind: stream.KindHomeEntry, EntryID: st.ID})
+		pub.Publish(stream.Event{Kind: stream.KindHomeEntry, EntryID: st.ID, AuthorAccountID: st.AuthorAccountID})
 		if onLocal, onFederated := publicTimelines(st.IsLocal, st.Visibility); onLocal || onFederated {
 			pub.Publish(stream.Event{Kind: stream.KindPublicEntry, EntryID: st.ID, OnLocal: onLocal, OnFederated: onFederated})
 		}
 	})
 	r.OnCommit(appcontent.EventBoosted, func(_ context.Context, e uow.Event) {
-		pub.Publish(stream.Event{Kind: stream.KindHomeEntry, EntryID: e.(appcontent.Boosted).Boost.ID})
+		b := e.(appcontent.Boosted).Boost
+		pub.Publish(stream.Event{Kind: stream.KindHomeEntry, EntryID: b.ID, AuthorAccountID: b.BoosterAccountID})
 	})
 }
 
@@ -53,6 +56,20 @@ func (s *Service) HomeEntry(ctx context.Context, viewer appcontent.Viewer, id st
 		return Entry{}, false, err
 	}
 	return s.entry(ctx, appcontent.ContextHome, viewer, w, id, rows)
+}
+
+// HomeAudience returns which of accountIDs may have in their home timelines an entry of the
+// account authorID (a post by it, or a boost by it): authorID itself and the accounts whose home
+// timelines follow it, with one query. HomeEntry decides for each of them.
+func (s *Service) HomeAudience(ctx context.Context, authorID string, accountIDs []string) (map[string]bool, error) {
+	out, err := s.d.Repository.FeedFollowersAmong(ctx, authorID, accountIDs)
+	if err != nil {
+		return nil, err
+	}
+	if slices.Contains(accountIDs, authorID) {
+		out[authorID] = true
+	}
+	return out, nil
 }
 
 // LocalEntry returns the entry id when the local timeline of a logged-in viewer lists it, as

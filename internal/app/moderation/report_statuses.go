@@ -19,6 +19,12 @@ type Evidence interface {
 	Review(ctx context.Context, statusID string) (appcontent.ReviewedStatus, error)
 }
 
+// evidenceBatch is an Evidence that reviews many statuses at once, as *appcontent.Reader does.
+type evidenceBatch interface {
+	// Reviews returns the statuses of ids that are not gone, in order, as Review returns each.
+	Reviews(ctx context.Context, statusIDs []string) ([]appcontent.ReviewedStatus, error)
+}
+
 // ReportStatuses returns the statuses that a report points at (report_statuses), in the order
 // of its StatusIDs, for the moderators who handle it (FR-710, NFR-MOD-4). They are presented
 // whatever their visibility and also when their author deleted them, because the report keeps
@@ -33,6 +39,9 @@ func (s *Service) ReportStatuses(ctx context.Context, reportID string) ([]appcon
 	}
 	if s.d.Evidence == nil {
 		return nil, nil
+	}
+	if b, ok := s.d.Evidence.(evidenceBatch); ok {
+		return b.Reviews(ctx, r.StatusIDs)
 	}
 	out := make([]appcontent.ReviewedStatus, 0, len(r.StatusIDs))
 	for _, id := range r.StatusIDs {

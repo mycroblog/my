@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"slices"
 	"time"
 
 	appaccount "github.com/mycroblog/my/internal/app/account"
@@ -236,34 +237,34 @@ func (s *Server) newAdminReports(ctx context.Context, recs []moderation.ReportRe
 
 // newAdminReportsWith is newAdminReports through reads.
 func (s *Server) newAdminReportsWith(ctx context.Context, reads presentReads, recs []moderation.ReportRecord) ([]AdminReport, error) {
-	actors := map[string]appaccount.Actor{}
-	var order []appaccount.Actor
-	assignees := map[string]string{}
+	var ids, users []string
 	for _, rec := range recs {
 		for _, id := range []string{rec.Report.ReporterAccountID, rec.Report.TargetAccountID} {
-			if _, ok := actors[id]; ok {
-				continue
+			if !slices.Contains(ids, id) {
+				ids = append(ids, id)
 			}
-			a, err := reads.FindByID(ctx, id)
-			if errors.Is(err, appaccount.ErrNotFound) {
-				continue
-			}
-			if err != nil {
-				return nil, fmt.Errorf("clientapi: account %s of a report: %w", id, err)
-			}
-			actors[id] = a
+		}
+		if u := rec.Status.AssigneeUserID; u != "" && !slices.Contains(users, u) {
+			users = append(users, u)
+		}
+	}
+	actors, err := reads.FindByIDs(ctx, ids)
+	if err != nil {
+		return nil, fmt.Errorf("clientapi: the accounts of the reports: %w", err)
+	}
+	var order []appaccount.Actor
+	for _, id := range ids {
+		if a, ok := actors[id]; ok {
 			order = append(order, a)
 		}
-		if u := rec.Status.AssigneeUserID; u != "" {
-			if _, ok := assignees[u]; ok {
-				continue
-			}
-			la, err := reads.LocalAccountOfUser(ctx, u)
-			if err != nil && !errors.Is(err, appaccount.ErrNotFound) {
-				return nil, fmt.Errorf("clientapi: the account of user %s: %w", u, err)
-			}
-			assignees[u] = la.AccountID
-		}
+	}
+	locals, err := reads.LocalAccountsOfUsers(ctx, users)
+	if err != nil {
+		return nil, fmt.Errorf("clientapi: the accounts of the assignees: %w", err)
+	}
+	assignees := make(map[string]string, len(users))
+	for _, u := range users {
+		assignees[u] = locals[u].AccountID
 	}
 	presented, err := s.newAccountsWith(ctx, reads, order)
 	if err != nil {

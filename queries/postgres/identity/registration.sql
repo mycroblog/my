@@ -4,6 +4,13 @@
 INSERT INTO user_email_verifications (email_address_id, verified_at) VALUES ($1, $2)
 ON CONFLICT (email_address_id) DO NOTHING;
 
+-- The users among user_ids with a primary address, and whether it is verified, as
+-- GetPrimaryEmail reads them of one.
+-- name: ListPrimaryEmailVerifications :many
+SELECT p.user_id, EXISTS (SELECT 1 FROM user_email_verifications v WHERE v.email_address_id = p.email_address_id) AS verified
+FROM user_primary_emails p
+WHERE p.user_id = ANY(sqlc.arg(user_ids)::uuid[]);
+
 -- name: GetPrimaryEmail :one
 SELECT e.id, e.user_id, e.address, e.address_normalized, e.added_at,
   EXISTS (SELECT 1 FROM user_email_verifications v WHERE v.email_address_id = e.id) AS verified
@@ -38,6 +45,9 @@ UPDATE user_registration_states SET state = $1, since = $2 WHERE user_id = $3 AN
 
 -- name: GetRegistrationState :one
 SELECT user_id, state, since FROM user_registration_states WHERE user_id = $1;
+
+-- name: ListRegistrationStatesOf :many
+SELECT user_id, state, since FROM user_registration_states WHERE user_id = ANY(sqlc.arg(user_ids)::uuid[]);
 
 -- name: ListRegistrationsInState :many
 SELECT s.user_id, s.since, a.id AS application_id, a.reason, a.invite_id, a.submitted_at,

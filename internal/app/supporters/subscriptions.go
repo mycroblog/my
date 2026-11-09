@@ -88,21 +88,55 @@ type SubscriptionView struct {
 
 // view returns a subscription with its plan and prices.
 func (s *Service) view(ctx context.Context, rec SubscriptionRecord) (SubscriptionView, error) {
+	return viewWith(ctx, &catalogReads{repo: s.d.Repository}, rec)
+}
+
+// catalogReads reads plans and prices, each once when its maps are set.
+type catalogReads struct {
+	repo   Repository
+	plans  map[string]PlanRecord
+	prices map[string]Price
+}
+
+func (c *catalogReads) plan(ctx context.Context, id string) (PlanRecord, error) {
+	if p, ok := c.plans[id]; ok {
+		return p, nil
+	}
+	p, err := c.repo.FindPlan(ctx, nil, id)
+	if err == nil && c.plans != nil {
+		c.plans[id] = p
+	}
+	return p, err
+}
+
+func (c *catalogReads) price(ctx context.Context, id string) (Price, error) {
+	if p, ok := c.prices[id]; ok {
+		return p, nil
+	}
+	p, err := c.repo.FindPrice(ctx, nil, id)
+	if err == nil && c.prices != nil {
+		c.prices[id] = p
+	}
+	return p, err
+}
+
+// viewWith is view through reads.
+func viewWith(ctx context.Context, reads *catalogReads, rec SubscriptionRecord) (SubscriptionView, error) {
 	v := SubscriptionView{SubscriptionRecord: rec}
 	var err error
-	if v.Plan, err = s.d.Repository.FindPlan(ctx, nil, rec.Current.PlanID); err != nil {
+	if v.Plan, err = reads.plan(ctx, rec.Current.PlanID); err != nil {
 		return SubscriptionView{}, err
 	}
-	if v.Price, err = s.d.Repository.FindPrice(ctx, nil, rec.Current.PriceID); err != nil {
+	if v.Price, err = reads.price(ctx, rec.Current.PriceID); err != nil {
 		return SubscriptionView{}, err
 	}
 	if sc := rec.Current.Scheduled; sc != nil {
-		p, err := s.d.Repository.FindPrice(ctx, nil, sc.PriceID)
+		p, err := reads.price(ctx, sc.PriceID)
 		if err != nil {
 			return SubscriptionView{}, err
 		}
 		v.ScheduledPrice = &p
-		plan, err := s.d.Repository.FindPlan(ctx, nil, p.PlanID)
+		plan, err := reads.plan(ctx, p.PlanID)
 		if err != nil {
 			return SubscriptionView{}, err
 		}
@@ -596,9 +630,11 @@ func (s *Service) Subscriptions(ctx context.Context, f SubscriptionFilter) ([]Su
 	if err != nil {
 		return nil, err
 	}
+	// The plans and prices of a page are few: each is read once.
+	reads := &catalogReads{repo: s.d.Repository, plans: map[string]PlanRecord{}, prices: map[string]Price{}}
 	out := make([]SubscriptionView, len(recs))
 	for i, r := range recs {
-		if out[i], err = s.view(ctx, r); err != nil {
+		if out[i], err = viewWith(ctx, reads, r); err != nil {
 			return nil, err
 		}
 	}
@@ -827,6 +863,34 @@ func RebuildProjections(ctx context.Context, u uow.UnitOfWork, repo Repository) 
 
 // Subscriber returns the subscriber of a subscription for the administrators, and false for an
 // erased account (ADR-0072 §10: "削除されたアカウント").
+// accountUsers is a Users that reads the local accounts of many users at once, as the composition
+// root's does.
+type accountUsers interface {
+	// SupporterAccounts returns the users of userIDs that have a local account, by user, with
+	// their ID, AccountID, and Handle alone.
+	SupporterAccounts(ctx context.Context, userIDs []string) (map[string]User, error)
+}
+
+// SubscriberAccounts returns, by user, the local accounts of the subscribers of userIDs as
+// Subscriber returns them, with their ID, AccountID, and Handle alone: what the administrators'
+// lists show. A user without a local account is left out.
+func (s *Service) SubscriberAccounts(ctx context.Context, userIDs []string) (map[string]User, error) {
+	if b, ok := s.d.Users.(accountUsers); ok {
+		return b.SupporterAccounts(ctx, userIDs)
+	}
+	out := make(map[string]User, len(userIDs))
+	for _, id := range userIDs {
+		u, ok, err := s.Subscriber(ctx, id)
+		if err != nil {
+			return nil, err
+		}
+		if ok {
+			out[id] = User{ID: u.ID, AccountID: u.AccountID, Handle: u.Handle}
+		}
+	}
+	return out, nil
+}
+
 func (s *Service) Subscriber(ctx context.Context, userID string) (User, bool, error) {
 	u, err := s.d.Users.SupporterUser(ctx, userID)
 	if errors.Is(err, ErrNotFound) {

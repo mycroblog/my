@@ -11,6 +11,7 @@ import (
 func TestSignalRoundTrips(t *testing.T) {
 	for _, e := range []Event{
 		{Kind: KindHomeEntry, EntryID: "0199f0a8-0000-7000-8000-000000000001"},
+		{Kind: KindHomeEntry, EntryID: "0199f0a8-0000-7000-8000-000000000001", AuthorAccountID: "0199f0a8-0000-7000-8000-000000000002"},
 		{Kind: KindNotifications, AccountID: "0199f0a8-0000-7000-8000-000000000002"},
 		{Kind: KindAnnouncement, AnnouncementID: "0199f0a8-0000-7000-8000-000000000003"},
 		{Kind: KindPublicEntry, EntryID: "0199f0a8-0000-7000-8000-000000000004", OnLocal: true, OnFederated: true},

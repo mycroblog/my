@@ -97,6 +97,25 @@ func (r *Repository) FindReports(ctx context.Context, ids []string) (map[string]
 	if err != nil {
 		return nil, sqlite.Wrap(err, "list reports")
 	}
+	return r.reportsWithParts(ctx, rows)
+}
+
+// reportsWithParts returns the reports of rows with their parts, by ID, reading each part of all
+// of them with one query, as reportFrom reads those of one.
+func (r *Repository) reportsWithParts(ctx context.Context, rows []moderationgen.Report) (map[string]moderation.Report, error) {
+	out := make(map[string]moderation.Report, len(rows))
+	if len(rows) == 0 {
+		return out, nil
+	}
+	ids := make([]string, len(rows))
+	for i, row := range rows {
+		ids[i] = row.ID
+	}
+	list, err := sqlite.JSONList(ids)
+	if err != nil {
+		return nil, err
+	}
+	q := r.db.reader()
 	statusRows, err := q.ListReportStatusIDsOf(ctx, list)
 	if err != nil {
 		return nil, sqlite.Wrap(err, "list report statuses")
@@ -144,7 +163,8 @@ func (r *Repository) FindReports(ctx context.Context, ids []string) (map[string]
 		}
 	}
 	for _, row := range rows {
-		out[row.ID] = reportOf(row, statusesOf[row.ID], rulesOf[row.ID], roomOf[row.ID], originOf[row.ID], forwardOf[row.ID])
+		// A report without statuses or rules has empty lists, as the queries of one return them.
+		out[row.ID] = reportOf(row, append([]string{}, statusesOf[row.ID]...), append([]string{}, rulesOf[row.ID]...), roomOf[row.ID], originOf[row.ID], forwardOf[row.ID])
 	}
 	return out, nil
 }

@@ -168,6 +168,20 @@ func (p *AccountPolicy) InteractionRestricted(ctx context.Context, accountID str
 	return p.has(ctx, accountID, moderation.RestrictInteract)
 }
 
+// LoginRestrictedAmong reports, by account, LoginRestricted of each of accountIDs, with the
+// queries of RestrictionsOf.
+func (p *AccountPolicy) LoginRestrictedAmong(ctx context.Context, accountIDs []string) (map[string]bool, error) {
+	all, err := p.RestrictionsOf(ctx, accountIDs)
+	if err != nil {
+		return nil, err
+	}
+	out := make(map[string]bool, len(accountIDs))
+	for _, id := range accountIDs {
+		out[id] = slices.Contains(all[id], moderation.RestrictLogin)
+	}
+	return out, nil
+}
+
 // ProfileHidden reports whether an account's profile is shown to nobody but itself and the
 // moderators (the profile_view restriction: suspend, or a suspended domain).
 func (p *AccountPolicy) ProfileHidden(ctx context.Context, accountID string) (bool, error) {

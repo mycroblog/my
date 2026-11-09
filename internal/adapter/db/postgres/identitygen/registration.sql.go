@@ -523,6 +523,63 @@ func (q *Queries) ListMemberInvitesByCreator(ctx context.Context, arg ListMember
 	return items, nil
 }
 
+const listPrimaryEmailVerifications = `-- name: ListPrimaryEmailVerifications :many
+SELECT p.user_id, EXISTS (SELECT 1 FROM user_email_verifications v WHERE v.email_address_id = p.email_address_id) AS verified
+FROM user_primary_emails p
+WHERE p.user_id = ANY($1::uuid[])
+`
+
+type ListPrimaryEmailVerificationsRow struct {
+	UserID   string
+	Verified bool
+}
+
+// The users among user_ids with a primary address, and whether it is verified, as
+// GetPrimaryEmail reads them of one.
+func (q *Queries) ListPrimaryEmailVerifications(ctx context.Context, userIds []string) ([]ListPrimaryEmailVerificationsRow, error) {
+	rows, err := q.db.Query(ctx, listPrimaryEmailVerifications, userIds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListPrimaryEmailVerificationsRow{}
+	for rows.Next() {
+		var i ListPrimaryEmailVerificationsRow
+		if err := rows.Scan(&i.UserID, &i.Verified); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listRegistrationStatesOf = `-- name: ListRegistrationStatesOf :many
+SELECT user_id, state, since FROM user_registration_states WHERE user_id = ANY($1::uuid[])
+`
+
+func (q *Queries) ListRegistrationStatesOf(ctx context.Context, userIds []string) ([]UserRegistrationState, error) {
+	rows, err := q.db.Query(ctx, listRegistrationStatesOf, userIds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []UserRegistrationState{}
+	for rows.Next() {
+		var i UserRegistrationState
+		if err := rows.Scan(&i.UserID, &i.State, &i.Since); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listRegistrationsInState = `-- name: ListRegistrationsInState :many
 SELECT s.user_id, s.since, a.id AS application_id, a.reason, a.invite_id, a.submitted_at,
   COALESCE(e.address, '') AS email,

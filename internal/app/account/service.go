@@ -945,6 +945,32 @@ func (s *Service) UserLifecycle(ctx context.Context, userID string) (account.Lif
 	return st, err
 }
 
+// UserLifecycles returns UserLifecycle of each of userIDs that has a local account, by user, with
+// one query for the accounts and one for their states.
+func (s *Service) UserLifecycles(ctx context.Context, userIDs []string) (map[string]account.LifecycleState, error) {
+	locals, err := s.d.Repository.FindLocalAccountsByUsers(ctx, userIDs)
+	if err != nil {
+		return nil, err
+	}
+	ids := make([]string, 0, len(locals))
+	for _, la := range locals {
+		ids = append(ids, la.AccountID)
+	}
+	states, err := s.d.Repository.FindLifecycleStates(ctx, ids)
+	if err != nil {
+		return nil, err
+	}
+	out := make(map[string]account.LifecycleState, len(locals))
+	for user, la := range locals {
+		st, ok := states[la.AccountID]
+		if !ok {
+			st = account.InitialLifecycleState(la.AccountID)
+		}
+		out[user] = st
+	}
+	return out, nil
+}
+
 // UserLifecycleTx is UserLifecycle read in tx, with a lock where the database takes one.
 func (s *Service) UserLifecycleTx(ctx context.Context, tx uow.Tx, userID string) (account.LifecycleState, error) {
 	la, err := s.d.Repository.FindLocalAccountByUserTx(ctx, tx, userID)
