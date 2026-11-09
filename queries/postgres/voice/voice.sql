@@ -296,3 +296,7 @@ WHERE NOT EXISTS (SELECT 1 FROM voice_room_participation_ends e WHERE e.particip
 -- the opening of rooms), so that the commands of one room serialize under READ COMMITTED.
 -- name: LockVoice :exec
 SELECT pg_advisory_xact_lock(hashtextextended(sqlc.arg(lock_key)::text, 0));
+
+-- ListVoiceRoomParticipantsAmong returns the participants among account_ids.
+-- name: ListVoiceRoomParticipantsAmong :many
+SELECT account_id FROM voice_room_participants WHERE account_id = ANY(sqlc.arg(account_ids)::uuid[]) ORDER BY account_id;

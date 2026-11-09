@@ -335,6 +335,7 @@ func (s *Service) RegisterJobs(reg *queue.JobHandlerRegistry, sched *queue.Sched
 // in the transaction of its event, and the job applies the change after the commit.
 func (s *Service) RegisterEligibilityProjectors(r *uow.Projectors) {
 	s.registerBlockProjector(r)
+	s.registerBlocksProjector(r)
 	r.Register(moderation.EventAccountSuspensionChanged, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
 		ev := e.(moderation.AccountSuspensionChanged)
 		if !ev.Suspended {

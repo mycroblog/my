@@ -1903,6 +1903,19 @@ func (q *Queries) UpsertFeedExclusion(ctx context.Context, arg UpsertFeedExclusi
 	return err
 }
 
+const upsertFeedExclusions = `-- name: UpsertFeedExclusions :exec
+INSERT INTO feed_exclusions (viewer_account_id, target_account_id, reason, expires_at)
+SELECT value ->> '$.viewer', value ->> '$.target', value ->> '$.reason', value ->> '$.expires_at'
+FROM json_each(CAST(?1 AS TEXT)) WHERE true
+ON CONFLICT (viewer_account_id, target_account_id, reason) DO UPDATE SET expires_at = excluded.expires_at
+`
+
+// UpsertFeedExclusions is UpsertFeedExclusion of many exclusions, a JSON array.
+func (q *Queries) UpsertFeedExclusions(ctx context.Context, exclusions string) error {
+	_, err := q.db.ExecContext(ctx, upsertFeedExclusions, exclusions)
+	return err
+}
+
 const upsertFeedFollowEdge = `-- name: UpsertFeedFollowEdge :exec
 INSERT INTO feed_follow_edges (follower_account_id, followee_account_id, show_boosts) VALUES (?, ?, ?)
 ON CONFLICT (follower_account_id, followee_account_id) DO UPDATE SET show_boosts = excluded.show_boosts

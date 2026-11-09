@@ -516,3 +516,10 @@ INSERT INTO feed_follow_edges (follower_account_id, followee_account_id, show_bo
 SELECT value ->> '$.follower_account_id', value ->> '$.followee_account_id', value ->> '$.show_boosts'
 FROM json_each(CAST(sqlc.arg(edges) AS TEXT)) WHERE true
 ON CONFLICT (follower_account_id, followee_account_id) DO UPDATE SET show_boosts = excluded.show_boosts;
+
+-- UpsertFeedExclusions is UpsertFeedExclusion of many exclusions, a JSON array.
+-- name: UpsertFeedExclusions :exec
+INSERT INTO feed_exclusions (viewer_account_id, target_account_id, reason, expires_at)
+SELECT value ->> '$.viewer', value ->> '$.target', value ->> '$.reason', value ->> '$.expires_at'
+FROM json_each(CAST(sqlc.arg(exclusions) AS TEXT)) WHERE true
+ON CONFLICT (viewer_account_id, target_account_id, reason) DO UPDATE SET expires_at = excluded.expires_at;
