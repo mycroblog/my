@@ -57,7 +57,8 @@ content.EffectiveVisibility(original Visibility, author AuthorRestrictions) Visi
 | --- | --- | --- |
 | 単体の取得 | 未ログイン・ローカル | なし |
 | プロフィール | 未ログイン・ローカル | なし |
-| ホーム | ローカル | 自分の投稿と、承認済みでフォローしている作者の投稿だけ。フォローしていない相手からの `direct` は会話一覧で扱う |
+| ホーム | ローカル | 自分の投稿と、承認済みでフォローしている作者の投稿だけ。フォローしていない相手からの `direct` はダイレクトメッセージの一覧で扱う |
+| ダイレクトメッセージ | ローカル | `direct` だけ。フォローの有無によらない。会話（ADR-0154）ごとにまとめ、フォローしていない相手からの `direct` もここで読む |
 | ローカル | 未ログイン・ローカル | 作者がローカル、`public` / `local`、作者に `public_discovery` がない |
 | 連合 | 未ログイン・ローカル | `public`、作者に `public_discovery` がない |
 | ハッシュタグ | 未ログイン・ローカル | `public` / `local`、作者に `public_discovery` がない |
