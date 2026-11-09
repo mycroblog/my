@@ -22,13 +22,16 @@ type ServiceTokenCheck struct {
 	SigningAlgs []string
 	// Issuers are the accepted values of iss.
 	Issuers []string
-	// Audience must be an audience of the token, and its authorized party when it has several.
+	// Audience must be the token's only audience. Its authorized party (azp) is not checked:
+	// Google sets it to the unique ID of the service account, not to the audience.
 	Audience string
 }
 
 // VerifyServiceToken verifies the signature of the compact JWS raw with a key of the JWKS at
-// check.JWKSURI and checks iss, sub, aud, azp, exp, and iat (OpenID Connect Core 1.0 §3.1.3.7
-// steps 2, 3, 4, 5, 9, and 10), and returns the claims. Like VerifyIDToken, it fetches the JWKS
+// check.JWKSURI and checks iss, sub, aud, exp, and iat (OpenID Connect Core 1.0 §3.1.3.7
+// steps 2, 3, 4, 9, and 10), and returns the claims. It does not check azp (step 5), which is
+// for a token issued to this server as an OAuth client; the caller checks who the service
+// account is, from email. Like VerifyIDToken, it fetches the JWKS
 // again for a key ID it does not list at most once every appidentity.OIDCJWKSRefetchInterval. It
 // fails with an error wrapping appidentity.ErrInvalidIDToken when the token does not verify, and
 // with another error when the JWKS cannot be fetched or read.
