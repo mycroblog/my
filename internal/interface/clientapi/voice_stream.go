@@ -7,6 +7,7 @@ import (
 	"errors"
 	"log/slog"
 	"net/http"
+	"reflect"
 	"strconv"
 	"time"
 
@@ -169,7 +170,7 @@ func (s *Server) serveVoiceStream(w http.ResponseWriter, r *http.Request) {
 			if err != nil || !current {
 				return // another stream of the session opened
 			}
-			if done, err := vs.state(ctx, time.Now()); done || err != nil {
+			if done, err := vs.stateIfChanged(ctx, time.Now()); done || err != nil {
 				vs.fail(ctx, err)
 				return
 			}
@@ -216,6 +217,8 @@ type voiceStream struct {
 	lastState time.Time
 	blocked   map[string]bool
 	listed    map[string]bool
+	// sent is the state of the last state event, which a heartbeat does not send again.
+	sent *appvoice.StreamState
 	// sentMessages holds the IDs of the messages recently sent, which a cross-process broker
 	// may deliver twice; renewed is when the claim of the stream on its session was renewed.
 	sentMessages *recentIDs
@@ -236,6 +239,24 @@ func (vs *voiceStream) state(ctx context.Context, notBefore time.Time) (done boo
 	if err != nil {
 		return false, err
 	}
+	return vs.send(ctx, state)
+}
+
+// stateIfChanged is state for a heartbeat: a room whose state is the one of the last state event
+// is not presented and sent again, since nothing a participant sees in it changed.
+func (vs *voiceStream) stateIfChanged(ctx context.Context, notBefore time.Time) (done bool, err error) {
+	state, err := vs.rooms.StreamState(ctx, vs.st, notBefore)
+	if err != nil {
+		return false, err
+	}
+	if state.End == "" && vs.sent != nil && reflect.DeepEqual(*vs.sent, state) {
+		return false, nil
+	}
+	return vs.send(ctx, state)
+}
+
+// send sends state: the room as the viewer sees it, or the end of the stream.
+func (vs *voiceStream) send(ctx context.Context, state appvoice.StreamState) (done bool, err error) {
 	vs.lastState = time.Now()
 	if state.End != "" {
 		return true, vs.event(string(state.End), VoiceStreamEnd{Reason: VoiceStreamEndReason(state.Reason)})
@@ -253,7 +274,11 @@ func (vs *voiceStream) state(ctx context.Context, notBefore time.Time) (done boo
 			room.Participants[i].Session = &session
 		}
 	}
-	return false, vs.event("state", room)
+	if err := vs.event("state", room); err != nil {
+		return false, err
+	}
+	vs.sent = &state
+	return false, nil
 }
 
 // handle sends what a signal of the room means for the session.
