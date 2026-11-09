@@ -382,3 +382,8 @@ WHERE id IN (
     AND EXISTS (SELECT 1 FROM instance_availability_events n WHERE n.domain = e.domain AND n.id > e.id)
   ORDER BY e.id LIMIT @batch_limit
 );
+
+-- ListReceivedActivities is GetReceivedActivity of many activities.
+-- name: ListReceivedActivities :many
+SELECT activity_uri, actor_uri, type, signature_scheme, trust, received_at FROM received_activities
+WHERE activity_uri = ANY(sqlc.arg(activity_uris)::text[]);

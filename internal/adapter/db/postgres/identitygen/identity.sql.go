@@ -330,6 +330,47 @@ func (q *Queries) ListUserRoles(ctx context.Context, userID string) ([]Role, err
 	return items, nil
 }
 
+const listUserRolesOf = `-- name: ListUserRolesOf :many
+SELECT ur.user_id, r.id, r.key, r.position, r.created_at FROM user_roles ur
+JOIN roles r ON r.id = ur.role_id
+WHERE ur.user_id = ANY($1::uuid[]) ORDER BY ur.user_id, r.position DESC, r.key
+`
+
+type ListUserRolesOfRow struct {
+	UserID    string
+	ID        string
+	Key       string
+	Position  int32
+	CreatedAt time.Time
+}
+
+// ListUserRolesOf is ListUserRoles of many users, with the user of each role.
+func (q *Queries) ListUserRolesOf(ctx context.Context, userIds []string) ([]ListUserRolesOfRow, error) {
+	rows, err := q.db.Query(ctx, listUserRolesOf, userIds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListUserRolesOfRow{}
+	for rows.Next() {
+		var i ListUserRolesOfRow
+		if err := rows.Scan(
+			&i.UserID,
+			&i.ID,
+			&i.Key,
+			&i.Position,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const lockUserSignInMethods = `-- name: LockUserSignInMethods :exec
 SELECT pg_advisory_xact_lock(hashtextextended($1::text, 0))
 `

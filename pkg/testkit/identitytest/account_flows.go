@@ -956,6 +956,11 @@ func accountCreatesAdmin(t *testing.T, e *AccountEnv) {
 	if none, err := e.H.Identity.ListUserRoles(ctx, plain); err != nil || len(none) != 0 {
 		t.Errorf("roles of a registered user = %+v, %v; want none", none, err)
 	}
+	// The roles of many users together, as ListUserRoles reads each.
+	if of, err := e.H.Identity.ListUserRolesOf(ctx, []string{reg.User.ID, second.User.ID, plain}); err != nil || len(of) != 2 ||
+		!reflect.DeepEqual(of[reg.User.ID], roles) || !reflect.DeepEqual(of[second.User.ID], again) || len(of[plain]) != 0 {
+		t.Errorf("ListUserRolesOf = %+v, %v; want the admin role of both admins, as ListUserRoles", of, err)
+	}
 	if ok, err := e.Identity.HasPermission(ctx, plain, identity.PermManageJobs); err != nil || ok {
 		t.Errorf("HasPermission(plain, manage_jobs) = %v, %v; want false", ok, err)
 	}

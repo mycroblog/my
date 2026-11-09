@@ -68,3 +68,9 @@ SELECT DISTINCT ur.user_id FROM user_roles ur
 JOIN role_permissions rp ON rp.role_id = ur.role_id
 WHERE rp.permission = $1
 ORDER BY ur.user_id;
+
+-- ListUserRolesOf is ListUserRoles of many users, with the user of each role.
+-- name: ListUserRolesOf :many
+SELECT ur.user_id, r.id, r.key, r.position, r.created_at FROM user_roles ur
+JOIN roles r ON r.id = ur.role_id
+WHERE ur.user_id = ANY(sqlc.arg(user_ids)::uuid[]) ORDER BY ur.user_id, r.position DESC, r.key;

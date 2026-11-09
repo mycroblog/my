@@ -380,3 +380,8 @@ WHERE id IN (
     AND EXISTS (SELECT 1 FROM instance_availability_events n WHERE n.domain = e.domain AND n.id > e.id)
   ORDER BY e.id LIMIT @batch_limit
 );
+
+-- ListReceivedActivities is GetReceivedActivity of many activities, a JSON array.
+-- name: ListReceivedActivities :many
+SELECT activity_uri, actor_uri, type, signature_scheme, trust, received_at FROM received_activities
+WHERE activity_uri IN (SELECT value FROM json_each(CAST(sqlc.arg(activity_uris) AS TEXT)));

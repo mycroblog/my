@@ -8,6 +8,7 @@ import (
 	"encoding/base32"
 	"errors"
 	"fmt"
+	"slices"
 	"time"
 
 	"github.com/mycroblog/my/internal/app/account"
@@ -149,34 +150,142 @@ func (s *Service) ListInvites(ctx context.Context, before string, limit int) ([]
 // each usable invite of a member once per creator.
 func (s *Service) setInviteStates(ctx context.Context, list []InviteStatus) error {
 	now := s.d.Clock.Now()
-	var settings *MemberInviteSettings
-	eligible := map[string]bool{}
+	var creators []string
 	for i := range list {
 		list[i].State = list[i].StateAt(now)
-		if list[i].State != InviteUsable || list[i].CreatorKind != identity.InviteByMember {
-			continue
+		if list[i].State == InviteUsable && list[i].CreatorKind == identity.InviteByMember && list[i].CreatedByUserID != "" &&
+			!slices.Contains(creators, list[i].CreatedByUserID) {
+			creators = append(creators, list[i].CreatedByUserID)
 		}
-		if settings == nil {
-			st, err := s.memberInviteSettings(ctx)
-			if err != nil {
-				return err
-			}
-			settings = &st
+	}
+	eligible := map[string]bool{}
+	if len(creators) > 0 {
+		settings, err := s.memberInviteSettings(ctx)
+		if err != nil {
+			return err
 		}
-		creator := list[i].CreatedByUserID
-		ok, seen := eligible[creator]
-		if !seen {
-			var err error
-			if ok, err = s.creatorEligible(ctx, list[i].Invite, *settings); err != nil {
-				return err
-			}
-			eligible[creator] = ok
+		facts, err := s.inviterFactsOf(ctx, creators, identity.RegistrationOpen, settings)
+		if err != nil {
+			return err
 		}
-		if !ok {
+		for u, f := range facts {
+			eligible[u] = identity.MayCreateInvites(f)
+		}
+	}
+	for i := range list {
+		if list[i].State == InviteUsable && list[i].CreatorKind == identity.InviteByMember && !eligible[list[i].CreatedByUserID] {
 			list[i].State = InviteCreatorIneligible
 		}
 	}
 	return nil
+}
+
+// inviterFactsOf is inviterFacts of each of userIDs, by user, with one read of each part of all
+// of them: their permissions, registration states, lifecycles, and restrictions.
+func (s *Service) inviterFactsOf(ctx context.Context, userIDs []string, mode identity.RegistrationMode, settings MemberInviteSettings) (map[string]identity.InviterFacts, error) {
+	out := make(map[string]identity.InviterFacts, len(userIDs))
+	perms, err := s.permissionsOf(ctx, userIDs)
+	if err != nil {
+		return nil, err
+	}
+	var candidates []string
+	for _, u := range userIDs {
+		f := identity.InviterFacts{Mode: mode, EveryoneInvites: settings.Everyone, HasPermission: perms[u][identity.PermCreateInvites]}
+		out[u] = f
+		if f.EveryoneInvites || f.HasPermission {
+			candidates = append(candidates, u)
+		}
+	}
+	if len(candidates) == 0 {
+		return out, nil
+	}
+	// A user without a registration state was created with the CLI and is approved.
+	states, err := s.d.Repository.FindRegistrationStates(ctx, candidates)
+	if err != nil {
+		return nil, err
+	}
+	for _, u := range candidates {
+		f := out[u]
+		st, ok := states[u]
+		f.Approved = !ok || st.State == identity.RegistrationApproved
+		f.Active = s.d.Accounts == nil
+		out[u] = f
+	}
+	if s.d.Accounts == nil {
+		return out, nil
+	}
+	lives, err := s.d.Accounts.UserLifecycles(ctx, candidates)
+	if err != nil {
+		return nil, err
+	}
+	var accounts []string
+	for _, u := range candidates {
+		if l, ok := lives[u]; ok {
+			accounts = append(accounts, l.AccountID)
+		}
+	}
+	login, err := s.loginRestrictedAmong(ctx, accounts)
+	if err != nil {
+		return nil, err
+	}
+	inviter, err := s.inviterRestrictedAmong(ctx, accounts)
+	if err != nil {
+		return nil, err
+	}
+	for _, u := range candidates {
+		l, ok := lives[u]
+		if !ok {
+			continue
+		}
+		f := out[u]
+		f.Active = l.Active()
+		f.Restricted = login[l.AccountID] || inviter[l.AccountID]
+		out[u] = f
+	}
+	return out, nil
+}
+
+// loginRestrictedAmong is loginRestricted of each of accountIDs: together when the policy can,
+// one by one otherwise.
+func (s *Service) loginRestrictedAmong(ctx context.Context, accountIDs []string) (map[string]bool, error) {
+	out := make(map[string]bool, len(accountIDs))
+	if len(accountIDs) == 0 || s.d.Logins == nil {
+		return out, nil
+	}
+	if b, ok := s.d.Logins.(loginBatch); ok {
+		return b.LoginRestrictedAmong(ctx, accountIDs)
+	}
+	for _, id := range accountIDs {
+		r, err := s.loginRestricted(ctx, id)
+		if err != nil {
+			return nil, err
+		}
+		out[id] = r
+	}
+	return out, nil
+}
+
+// inviterRestrictedAmong is InviterRestricted of each of accountIDs: together when
+// InviterRestrictedAmong is set, one by one otherwise; nobody without InviterRestricted.
+func (s *Service) inviterRestrictedAmong(ctx context.Context, accountIDs []string) (map[string]bool, error) {
+	out := make(map[string]bool, len(accountIDs))
+	if len(accountIDs) == 0 {
+		return out, nil
+	}
+	if s.d.InviterRestrictedAmong != nil {
+		return s.d.InviterRestrictedAmong(ctx, accountIDs)
+	}
+	if s.d.InviterRestricted == nil {
+		return out, nil
+	}
+	for _, id := range accountIDs {
+		r, err := s.d.InviterRestricted(ctx, id)
+		if err != nil {
+			return nil, err
+		}
+		out[id] = r
+	}
+	return out, nil
 }
 
 // InviteState is what an invite allows now.

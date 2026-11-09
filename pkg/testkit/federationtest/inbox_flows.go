@@ -401,6 +401,10 @@ func inboxRecordsOnce(t *testing.T, e *inboxEnv) {
 	if a != want {
 		t.Errorf("received activity = %+v, want %+v", a, want)
 	}
+	if many, err := e.h.Inbox.FindReceivedActivities(ctx, []federation.IRI{federation.IRI(id), federation.IRI(id + "/missing")}); err != nil || len(many) != 1 ||
+		!many[federation.IRI(id)].ReceivedAt.Equal(want.ReceivedAt) || many[federation.IRI(id)].Type != want.Type || many[federation.IRI(id)].ActorURI != want.ActorURI {
+		t.Errorf("FindReceivedActivities = %+v, %v; want the one received, as FindReceivedActivity", many, err)
+	}
 	doc, err := e.h.Inbox.FindReceivedDocument(ctx, federation.IRI(id))
 	if err != nil {
 		t.Fatalf("FindReceivedDocument: %v", err)
