@@ -176,6 +176,41 @@ func (s *Store) Get(ctx context.Context, namespace, key string) ([]byte, error) 
 	return []byte(v), nil
 }
 
+// GetMany implements kernel.KeyValueBatch: the reads of Get, sent in one round trip.
+func (s *Store) GetMany(ctx context.Context, namespace string, keys []string) (map[string][]byte, error) {
+	out := map[string][]byte{}
+	if len(keys) == 0 {
+		return out, nil
+	}
+	cmds := make(valkeygo.Commands, len(keys))
+	for i, key := range keys {
+		cmds[i] = s.client.B().Hmget().Key(s.key(namespace, key)).Field("v", "e").Build()
+	}
+	now := s.clock.Now().UnixMilli()
+	for i, res := range s.client.DoMulti(ctx, cmds...) {
+		fields, err := res.ToArray()
+		if err != nil {
+			return nil, fmt.Errorf("kv/valkey: get %s/%s: %w", namespace, keys[i], err)
+		}
+		if len(fields) != 2 || fields[0].IsNil() || fields[1].IsNil() {
+			continue
+		}
+		e, err := fields[1].AsInt64()
+		if err != nil {
+			return nil, fmt.Errorf("kv/valkey: get %s/%s: expiry: %w", namespace, keys[i], err)
+		}
+		if e != 0 && e <= now {
+			continue
+		}
+		v, err := fields[0].ToString()
+		if err != nil {
+			return nil, fmt.Errorf("kv/valkey: get %s/%s: %w", namespace, keys[i], err)
+		}
+		out[keys[i]] = []byte(v)
+	}
+	return out, nil
+}
+
 // Set implements kernel.KeyValueStore.
 func (s *Store) Set(ctx context.Context, namespace, key string, value []byte, ttl time.Duration) error {
 	expiresAt, ttlMillis := s.expiry(ttl)

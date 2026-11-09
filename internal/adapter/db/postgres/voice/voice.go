@@ -381,6 +381,46 @@ func (r *Repository) Participants(ctx context.Context, tx uow.Tx, roomID string)
 	return out, nil
 }
 
+// ParticipantsOfRooms implements appvoice.Repository.
+func (r *Repository) ParticipantsOfRooms(ctx context.Context, tx uow.Tx, roomIDs []string) (map[string][]appvoice.Participant, error) {
+	out := make(map[string][]appvoice.Participant, len(roomIDs))
+	if len(roomIDs) == 0 {
+		return out, nil
+	}
+	q, err := r.q(tx)
+	if err != nil {
+		return nil, err
+	}
+	rows, err := q.ListVoiceRoomParticipantsOf(ctx, roomIDs)
+	if err != nil {
+		return nil, postgres.Wrap(err, "list voice room participants")
+	}
+	for _, row := range rows {
+		out[row.RoomID] = append(out[row.RoomID], voiceParticipant(row))
+	}
+	return out, nil
+}
+
+// HostGraces implements appvoice.Repository.
+func (r *Repository) HostGraces(ctx context.Context, tx uow.Tx, roomIDs []string) (map[string]appvoice.HostGrace, error) {
+	out := make(map[string]appvoice.HostGrace, len(roomIDs))
+	if len(roomIDs) == 0 {
+		return out, nil
+	}
+	q, err := r.q(tx)
+	if err != nil {
+		return nil, err
+	}
+	rows, err := q.ListVoiceRoomHostGraces(ctx, roomIDs)
+	if err != nil {
+		return nil, postgres.Wrap(err, "list voice room host graces")
+	}
+	for _, row := range rows {
+		out[row.RoomID] = appvoice.HostGrace{RoomID: row.RoomID, EndsAt: postgres.UTC(row.EndsAt)}
+	}
+	return out, nil
+}
+
 // FindParticipant implements appvoice.Repository.
 func (r *Repository) FindParticipant(ctx context.Context, tx uow.Tx, accountID string) (appvoice.Participant, error) {
 	q, err := r.q(tx)

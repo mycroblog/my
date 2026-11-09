@@ -47,6 +47,22 @@ func (s postgresStore) get(ctx context.Context, tx uow.Tx, namespace, key string
 	return v, err == nil, err
 }
 
+func (s postgresStore) getMany(ctx context.Context, tx uow.Tx, namespace string, keys []string, now time.Time) (map[string][]byte, error) {
+	q, err := s.queries(tx)
+	if err != nil {
+		return nil, err
+	}
+	rows, err := q.ListEntries(ctx, postgreskv.ListEntriesParams{Namespace: namespace, Keys: keys, Now: now})
+	if err != nil {
+		return nil, err
+	}
+	out := make(map[string][]byte, len(rows))
+	for _, r := range rows {
+		out[r.Key] = r.Value
+	}
+	return out, nil
+}
+
 func (s postgresStore) set(ctx context.Context, tx uow.Tx, namespace, key string, value []byte, expiresAt *time.Time) error {
 	q, err := s.queries(tx)
 	if err != nil {

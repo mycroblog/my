@@ -71,7 +71,7 @@ func voiceQueries(t *testing.T, n int) (room, list int) {
 }
 
 // TestVoiceQueries checks that presenting a room makes a number of round trips that does not grow
-// with its participants.
+// with its participants, and listing the rooms one that does not grow with the open rooms.
 func TestVoiceQueries(t *testing.T) {
 	t.Parallel()
 	smallRoom, smallList := voiceQueries(t, 3)
@@ -79,5 +79,8 @@ func TestVoiceQueries(t *testing.T) {
 	t.Logf("room: %d queries for 4 participants, %d for 11; list: %d queries for 4 rooms, %d for 11", smallRoom, largeRoom, smallList, largeList)
 	if largeRoom > smallRoom {
 		t.Errorf("%d queries to present a room of 11, more than the %d for 4", largeRoom, smallRoom)
+	}
+	if largeList > smallList {
+		t.Errorf("%d queries to list 11 rooms, more than the %d for 4", largeList, smallList)
 	}
 }

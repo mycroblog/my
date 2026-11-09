@@ -237,6 +237,9 @@ type Repository interface {
 	DeleteHostGrace(ctx context.Context, tx uow.Tx, roomID string) (bool, error)
 	// FindHostGrace returns the grace of a room; ErrNotFound without one.
 	FindHostGrace(ctx context.Context, tx uow.Tx, roomID string) (HostGrace, error)
+	// HostGraces returns the host graces of the rooms of roomIDs that have one, by room, with one
+	// query.
+	HostGraces(ctx context.Context, tx uow.Tx, roomIDs []string) (map[string]HostGrace, error)
 
 	// FindRoom returns a room with its head, its current revision, and its ending; ErrNotFound
 	// for an unknown room.
@@ -249,6 +252,9 @@ type Repository interface {
 	HostedRooms(ctx context.Context, tx uow.Tx, accountID, beforeID string, limit int) ([]RoomRecord, error)
 	// Participants returns the participants of a room in the order they joined.
 	Participants(ctx context.Context, tx uow.Tx, roomID string) ([]Participant, error)
+	// ParticipantsOfRooms returns the participants of each of roomIDs, by room, as Participants
+	// returns those of one, with one query.
+	ParticipantsOfRooms(ctx context.Context, tx uow.Tx, roomIDs []string) (map[string][]Participant, error)
 	// FindParticipant returns the participation of an account that has not ended; ErrNotFound
 	// when the account is in no room.
 	FindParticipant(ctx context.Context, tx uow.Tx, accountID string) (Participant, error)

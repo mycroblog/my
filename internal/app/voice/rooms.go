@@ -192,21 +192,9 @@ func (s *Service) List(ctx context.Context, accountID string, q ListQuery) ([]Li
 	if err != nil {
 		return nil, false, err
 	}
-	var views []RoomView
-	for _, r := range open {
-		if err := s.evaluate(ctx, r.ID, false); err != nil {
-			return nil, false, err
-		}
-		v, err := s.view(ctx, r.ID)
-		switch {
-		case errors.Is(err, ErrNotFound):
-			continue
-		case err != nil:
-			return nil, false, err
-		}
-		if v.Head.State == voice.StateOpen {
-			views = append(views, v)
-		}
+	views, err := s.evaluatedViews(ctx, open)
+	if err != nil {
+		return nil, false, err
 	}
 	// Who sees which room, and how the viewer relates to their hosts and speakers, read together.
 	sees, err := s.visibleAmongRooms(ctx, accountID, views)
@@ -241,6 +229,66 @@ func (s *Service) List(ctx context.Context, accountID string, q ListQuery) ([]Li
 		return out[:q.Limit], true, nil
 	}
 	return out, false, nil
+}
+
+// evaluatedViews returns the views of the rooms of open that are still open once their expiry is
+// evaluated, as evaluate and view would leave them one by one. It reads the participants, the
+// heartbeats, and the host graces of every room together, and evaluates on its own, then views
+// again, only a room that the evaluation would change.
+func (s *Service) evaluatedViews(ctx context.Context, open []RoomRecord) ([]RoomView, error) {
+	ids := make([]string, len(open))
+	for i, r := range open {
+		ids[i] = r.ID
+	}
+	participants, err := s.d.Repository.ParticipantsOfRooms(ctx, nil, ids)
+	if err != nil {
+		return nil, err
+	}
+	var all []Participant
+	for _, id := range ids {
+		all = append(all, participants[id]...)
+	}
+	live, err := s.d.Heartbeats.read(ctx, all)
+	if err != nil {
+		return nil, err
+	}
+	graces, err := s.d.Repository.HostGraces(ctx, nil, ids)
+	if err != nil {
+		return nil, err
+	}
+	var out []RoomView
+	for _, r := range open {
+		v := RoomView{RoomRecord: r, Participants: participants[r.ID]}
+		if r.Head.State == voice.StateOpen && evaluationChanges(v, live, graces) {
+			if err := s.evaluate(ctx, r.ID, false); err != nil {
+				return nil, err
+			}
+			switch v, err = s.view(ctx, r.ID); {
+			case errors.Is(err, ErrNotFound):
+				continue
+			case err != nil:
+				return nil, err
+			}
+		}
+		if v.Head.State == voice.StateOpen {
+			out = append(out, v)
+		}
+	}
+	return out, nil
+}
+
+// evaluationChanges reports whether evaluate, without a sweep, would change the open room of v,
+// from the liveness of its participants and the host graces read: a room with nobody, a host
+// who is in no participation, a participation whose session expired, or a host in its grace.
+func evaluationChanges(v RoomView, live liveness, graces map[string]HostGrace) bool {
+	host := v.Head.HostAccountID
+	if len(v.Participants) == 0 || !slices.ContainsFunc(v.Participants, func(p Participant) bool { return p.AccountID == host }) {
+		return true
+	}
+	if _, inGrace := graces[v.ID]; inGrace {
+		return true
+	}
+	return slices.ContainsFunc(v.Participants, func(p Participant) bool { return live.expired(p.ParticipationID) })
 }
 
 // listKeys returns the position of each room of views in the list of accountID, by room: whether

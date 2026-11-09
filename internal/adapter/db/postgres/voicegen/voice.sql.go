@@ -897,6 +897,30 @@ func (q *Queries) ListVoiceRoomFactsOfViewer(ctx context.Context, arg ListVoiceR
 	return items, nil
 }
 
+const listVoiceRoomHostGraces = `-- name: ListVoiceRoomHostGraces :many
+SELECT room_id, ends_at FROM voice_room_host_graces WHERE room_id = ANY($1::uuid[])
+`
+
+func (q *Queries) ListVoiceRoomHostGraces(ctx context.Context, roomIds []string) ([]VoiceRoomHostGrace, error) {
+	rows, err := q.db.Query(ctx, listVoiceRoomHostGraces, roomIds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []VoiceRoomHostGrace{}
+	for rows.Next() {
+		var i VoiceRoomHostGrace
+		if err := rows.Scan(&i.RoomID, &i.EndsAt); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listVoiceRoomInvitations = `-- name: ListVoiceRoomInvitations :many
 SELECT i.id, i.room_id, i.invitee_account_id, i.role, i.invited_by_account_id, i.invited_at
 FROM voice_room_invitations i
@@ -949,6 +973,40 @@ ORDER BY participation_id
 
 func (q *Queries) ListVoiceRoomParticipants(ctx context.Context, roomID string) ([]VoiceRoomParticipant, error) {
 	rows, err := q.db.Query(ctx, listVoiceRoomParticipants, roomID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []VoiceRoomParticipant{}
+	for rows.Next() {
+		var i VoiceRoomParticipant
+		if err := rows.Scan(
+			&i.AccountID,
+			&i.RoomID,
+			&i.ParticipationID,
+			&i.Role,
+			&i.CohostChangeID,
+			&i.HandRaised,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listVoiceRoomParticipantsOf = `-- name: ListVoiceRoomParticipantsOf :many
+SELECT account_id, room_id, participation_id, role, cohost_change_id, hand_raised FROM voice_room_participants
+WHERE room_id = ANY($1::uuid[])
+ORDER BY room_id, participation_id
+`
+
+// The participants of the rooms of room_ids, as ListVoiceRoomParticipants lists those of one.
+func (q *Queries) ListVoiceRoomParticipantsOf(ctx context.Context, roomIds []string) ([]VoiceRoomParticipant, error) {
+	rows, err := q.db.Query(ctx, listVoiceRoomParticipantsOf, roomIds)
 	if err != nil {
 		return nil, err
 	}

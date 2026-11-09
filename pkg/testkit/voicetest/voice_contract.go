@@ -596,6 +596,10 @@ func voiceGrace(t *testing.T, e *voiceEnv) {
 		if got, err := e.h.Voice.FindHostGrace(ctx, nil, room.ID); err != nil || !got.EndsAt.Equal(g.EndsAt) || got.RoomID != room.ID {
 			t.Errorf("FindHostGrace = %+v, %v; want %+v", got, err, g)
 		}
+		if got, err := e.h.Voice.HostGraces(ctx, nil, []string{room.ID, e.ids.NewID()}); err != nil || len(got) != 1 ||
+			!got[room.ID].EndsAt.Equal(g.EndsAt) || got[room.ID].RoomID != room.ID {
+			t.Errorf("HostGraces = %+v, %v; want %+v alone, as FindHostGrace", got, err, g)
+		}
 	}
 	for i, want := range []bool{true, false} {
 		var deleted bool
