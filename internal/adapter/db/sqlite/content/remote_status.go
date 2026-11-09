@@ -42,37 +42,6 @@ func insertRemoteRevisionParts(ctx context.Context, q *contentgen.Queries, rev c
 	return nil
 }
 
-// findRemoteRevisionParts reads the poll and the remote subtype of rev.
-func findRemoteRevisionParts(ctx context.Context, q *contentgen.Queries, rev *content.Revision) error {
-	poll, err := q.GetPollByRevision(ctx, rev.ID)
-	switch {
-	case errors.Is(err, sql.ErrNoRows):
-	case err != nil:
-		return sqlite.Wrap(err, "get poll")
-	default:
-		p := &content.Poll{ID: poll.ID, Multiple: poll.Multiple != 0, HideTotals: poll.HideTotals != 0, ClosesAt: sqlite.FromNullMillis(poll.ClosesAt)}
-		options, err := q.ListPollOptions(ctx, poll.ID)
-		if err != nil {
-			return sqlite.Wrap(err, "list poll options")
-		}
-		for _, o := range options {
-			p.Options = append(p.Options, content.PollOption{Position: int(o.Position), Title: o.Title})
-		}
-		rev.Poll = p
-	}
-	remote, err := q.GetRemoteStatusRevision(ctx, rev.ID)
-	switch {
-	case errors.Is(err, sql.ErrNoRows):
-	case err != nil:
-		return sqlite.Wrap(err, "get remote status revision")
-	default:
-		rev.Remote = &content.RemoteRevisionSource{ActivityURI: remote.ActivityUri.String, HTMLPolicyVersion: int(remote.HtmlPolicyVersion),
-			OmittedAttachments: int(remote.OmittedAttachmentCount),
-		}
-	}
-	return nil
-}
-
 // LocalStatusInConversation implements content.Repository.
 func (r *StatusRepository) LocalStatusInConversation(ctx context.Context, conversationURI string) (bool, error) {
 	if conversationURI == "" {

@@ -595,13 +595,9 @@ func findRevision(ctx context.Context, q *contentgen.Queries, id string) (conten
 	if err != nil {
 		return content.Revision{}, postgres.NotFound(err, appcontent.ErrNotFound, "status revision "+id)
 	}
-	rev := revisionFrom(row)
-	bodies, err := q.ListStatusRevisionBodies(ctx, id)
-	if err != nil {
+	rr := revisionRows{row: row}
+	if rr.bodies, err = q.ListStatusRevisionBodies(ctx, id); err != nil {
 		return content.Revision{}, postgres.Wrap(err, "list status revision bodies")
-	}
-	for _, b := range bodies {
-		rev.Bodies = append(rev.Bodies, content.Body{Language: b.Language, ContentHTML: b.ContentHtml})
 	}
 	src, err := q.GetStatusRevisionSource(ctx, id)
 	switch {
@@ -609,27 +605,84 @@ func findRevision(ctx context.Context, q *contentgen.Queries, id string) (conten
 	case err != nil:
 		return content.Revision{}, postgres.Wrap(err, "get status revision source")
 	default:
-		rev.Source = &content.Source{Text: src.SourceText, Format: content.SourceFormat(src.SourceFormat)}
+		rr.source = &src
 	}
-	attachments, err := q.ListStatusRevisionAttachments(ctx, id)
-	if err != nil {
+	if rr.attachments, err = q.ListStatusRevisionAttachments(ctx, id); err != nil {
 		return content.Revision{}, postgres.Wrap(err, "list status revision attachments")
 	}
-	for _, a := range attachments {
+	if rr.mentions, err = q.ListStatusRevisionMentions(ctx, id); err != nil {
+		return content.Revision{}, postgres.Wrap(err, "list status revision mentions")
+	}
+	if rr.tags, err = q.ListStatusRevisionTags(ctx, id); err != nil {
+		return content.Revision{}, postgres.Wrap(err, "list status revision tags")
+	}
+	if rr.emojis, err = q.ListStatusRevisionEmojis(ctx, id); err != nil {
+		return content.Revision{}, postgres.Wrap(err, "list status revision emoji")
+	}
+	poll, err := q.GetPollByRevision(ctx, id)
+	switch {
+	case errors.Is(err, pgx.ErrNoRows):
+	case err != nil:
+		return content.Revision{}, postgres.Wrap(err, "get poll")
+	default:
+		rr.poll = &poll
+		if rr.options, err = q.ListPollOptions(ctx, poll.ID); err != nil {
+			return content.Revision{}, postgres.Wrap(err, "list poll options")
+		}
+	}
+	remote, err := q.GetRemoteStatusRevision(ctx, id)
+	switch {
+	case errors.Is(err, pgx.ErrNoRows):
+	case err != nil:
+		return content.Revision{}, postgres.Wrap(err, "get remote status revision")
+	default:
+		rr.remote = &remote
+	}
+	return rr.revision(), nil
+}
+
+// revisionRows are the rows of a revision and its parts, read for one revision (findRevision) or
+// for many together (FindCurrentRevisions); revision builds the revision from them alike.
+type revisionRows struct {
+	row                    contentgen.StatusRevision
+	bodies                 []contentgen.StatusRevisionBody
+	source                 *contentgen.StatusRevisionSource
+	attachments            []contentgen.StatusRevisionAttachment
+	mentions, tags, emojis []string
+	poll                   *contentgen.Poll
+	options                []contentgen.PollOption
+	remote                 *contentgen.RemoteStatusRevision
+}
+
+func (rr revisionRows) revision() content.Revision {
+	rev := revisionFrom(rr.row)
+	for _, b := range rr.bodies {
+		rev.Bodies = append(rev.Bodies, content.Body{Language: b.Language, ContentHTML: b.ContentHtml})
+	}
+	if src := rr.source; src != nil {
+		rev.Source = &content.Source{Text: src.SourceText, Format: content.SourceFormat(src.SourceFormat)}
+	}
+	for _, a := range rr.attachments {
 		rev.Attachments = append(rev.Attachments, content.Attachment{
 			Position: int(a.Position), MediaID: a.MediaID, Description: postgres.FromNullString(a.Description),
 		})
 	}
-	if rev.MentionedAccountIDs, err = nonEmpty(q.ListStatusRevisionMentions(ctx, id)); err != nil {
-		return content.Revision{}, postgres.Wrap(err, "list status revision mentions")
+	rev.MentionedAccountIDs, _ = nonEmpty(rr.mentions, nil)
+	rev.TagIDs, _ = nonEmpty(rr.tags, nil)
+	rev.EmojiIDs, _ = nonEmpty(rr.emojis, nil)
+	if rr.poll != nil {
+		p := &content.Poll{ID: rr.poll.ID, Multiple: rr.poll.Multiple, HideTotals: rr.poll.HideTotals, ClosesAt: postgres.UTCPtr(rr.poll.ClosesAt)}
+		for _, o := range rr.options {
+			p.Options = append(p.Options, content.PollOption{Position: int(o.Position), Title: o.Title})
+		}
+		rev.Poll = p
 	}
-	if rev.TagIDs, err = nonEmpty(q.ListStatusRevisionTags(ctx, id)); err != nil {
-		return content.Revision{}, postgres.Wrap(err, "list status revision tags")
+	if rr.remote != nil {
+		rev.Remote = &content.RemoteRevisionSource{ActivityURI: postgres.FromNullString(rr.remote.ActivityUri), HTMLPolicyVersion: int(rr.remote.HtmlPolicyVersion),
+			OmittedAttachments: int(rr.remote.OmittedAttachmentCount),
+		}
 	}
-	if rev.EmojiIDs, err = nonEmpty(q.ListStatusRevisionEmojis(ctx, id)); err != nil {
-		return content.Revision{}, postgres.Wrap(err, "list status revision emoji")
-	}
-	return rev, findRemoteRevisionParts(ctx, q, &rev)
+	return rev
 }
 
 // nonEmpty turns an empty list into nil, as the domain leaves absent children nil.

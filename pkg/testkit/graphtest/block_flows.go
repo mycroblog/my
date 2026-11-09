@@ -113,6 +113,7 @@ func checkBlocks(t *testing.T, e *followEnv, account, target string, blocking, b
 	if err != nil {
 		t.Fatalf("Relationship = %v", err)
 	}
+	sameRelationships(t, e, account, target, rel)
 	if rel.Blocking != blocking || rel.BlockedBy != blockedBy {
 		t.Errorf("Relationship(%s, %s) = blocking %v, blocked by %v; want %v, %v",
 			account, target, rel.Blocking, rel.BlockedBy, blocking, blockedBy)
@@ -421,6 +422,7 @@ func checkMute(t *testing.T, e *followEnv, account, target string, muting, notif
 	if err != nil {
 		t.Fatalf("Relationship = %v", err)
 	}
+	sameRelationships(t, e, account, target, rel)
 	if rel.Muting != muting || rel.MutingNotifications != notifications {
 		t.Errorf("Relationship(%s, %s) = muting %v (notifications %v); want %v (%v)",
 			account, target, rel.Muting, rel.MutingNotifications, muting, notifications)

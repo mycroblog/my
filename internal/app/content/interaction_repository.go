@@ -78,6 +78,9 @@ type InteractionRepository interface {
 	// Mentioned reports whether the current revision of a status mentions an account
 	// (status_mention_index), for the visibility check.
 	Mentioned(ctx context.Context, statusID, accountID string) (bool, error)
+	// MentionedIn returns the statuses among statusIDs that mention accountID, as Mentioned tells of
+	// one, with one query whatever the number of statuses.
+	MentionedIn(ctx context.Context, statusIDs []string, accountID string) (map[string]bool, error)
 
 	// Current values. Each insert does nothing when the account already has the row for the
 	// status and reports whether it inserted; each delete reports whether there was a row.

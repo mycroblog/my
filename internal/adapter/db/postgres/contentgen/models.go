@@ -383,10 +383,25 @@ type StatusRevisionBody struct {
 	ContentHtml string
 }
 
+type StatusRevisionEmoji struct {
+	RevisionID string
+	EmojiID    string
+}
+
+type StatusRevisionMention struct {
+	RevisionID string
+	AccountID  string
+}
+
 type StatusRevisionSource struct {
 	RevisionID   string
 	SourceText   string
 	SourceFormat string
+}
+
+type StatusRevisionTag struct {
+	RevisionID string
+	TagID      string
 }
 
 type Tag struct {

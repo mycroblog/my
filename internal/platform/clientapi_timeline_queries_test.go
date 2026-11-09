@@ -65,10 +65,11 @@ func timelineQueries(t *testing.T, size int) map[string]int {
 }
 
 // maxQueriesPerStatus bounds the round trips that one more status of a page adds. The page reads
-// its statuses and their authors together; what each status reads of its own (its revision, its
-// relations to the viewer, its counters, ...) is still read status by status, and is what this
-// allows.
-const maxQueriesPerStatus = 40
+// its statuses, their revisions, deletions, counters, and hashtags, the accounts of their authors
+// and mentions, and the viewer's relationships with the authors together; what each status still
+// reads of its own (its reactions, the viewer's favourite, boost, and bookmark, its quote, card,
+// and poll, its author's restrictions) is what this allows.
+const maxQueriesPerStatus = 12
 
 // TestTimelineQueries checks how the round trips of a timeline grow with its page.
 func TestTimelineQueries(t *testing.T) {

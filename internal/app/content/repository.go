@@ -140,6 +140,10 @@ type Repository interface {
 	// FindStatuses returns the statuses of ids that exist, by ID, as FindStatus returns one, with
 	// one query whatever the number of ids.
 	FindStatuses(ctx context.Context, ids []string) (map[string]content.Status, error)
+	// FindCurrentRevisions returns the current revisions of the statuses of ids that have one,
+	// by status ID, as FindCurrentRevision returns one, with one query per part of a revision
+	// whatever the number of ids.
+	FindCurrentRevisions(ctx context.Context, statusIDs []string) (map[string]content.Revision, error)
 	// ListSearchableStatusIDs returns up to limit IDs of the public and local statuses of the server
 	// in ID order after the ID after ("" for the first page), deleted ones included.
 	ListSearchableStatusIDs(ctx context.Context, after string, limit int) ([]string, error)
@@ -163,12 +167,17 @@ type Repository interface {
 	// (the edit history, FR-109).
 	ListRevisions(ctx context.Context, statusID string) ([]content.Revision, error)
 	FindDeletion(ctx context.Context, statusID string) (content.Deletion, error)
+	// FindDeletions returns the deletions of the statuses of ids that are deleted, by status ID,
+	// as FindDeletion returns one, with one query whatever the number of ids.
+	FindDeletions(ctx context.Context, statusIDs []string) (map[string]content.Deletion, error)
 	// FindDeletionByURI returns the tombstone of a URI.
 	FindDeletionByURI(ctx context.Context, uri string) (content.Deletion, error)
 	// FindDeletionByURITx is FindDeletionByURI inside tx.
 	FindDeletionByURITx(ctx context.Context, tx uow.Tx, uri string) (content.Deletion, error)
 	FindTagByName(ctx context.Context, nameNormalized string) (content.Tag, error)
 	FindTag(ctx context.Context, id string) (content.Tag, error)
+	// FindTags returns the tags of ids that exist, by ID, as FindTag returns one, with one query.
+	FindTags(ctx context.Context, ids []string) (map[string]content.Tag, error)
 	// ListTagsByPrefix returns up to limit tags whose NameNormalized is at least low and less
 	// than high, compared byte by byte, in that order (the prefix search of hashtags, ADR-0092 §1).
 	ListTagsByPrefix(ctx context.Context, low, high string, limit int) ([]content.Tag, error)
@@ -178,6 +187,9 @@ type Repository interface {
 	// deleted, newest first, by ID, whose ID is below before ("" for the first page).
 	ListLiveRemoteStatusIDs(ctx context.Context, authorAccountID, before string, limit int) ([]string, error)
 	FindCounters(ctx context.Context, statusID string) (content.Counters, error)
+	// FindCountersOf returns the counters of the statuses of ids that have them, by status ID, as
+	// FindCounters returns one, with one query whatever the number of ids.
+	FindCountersOf(ctx context.Context, statusIDs []string) (map[string]content.Counters, error)
 	// SensitivityOverridden reports whether an action shows a status as sensitive.
 	SensitivityOverridden(ctx context.Context, statusID string) (bool, error)
 	// FindPostCounter returns the post counter of an account; ErrNotFound means it has no
