@@ -191,7 +191,7 @@ Mastodon 4.x、Misskey、GoToSocial、Akkoma（Pleroma 系）。余力があれ�
   `target` は、保存した Actor の文書が宣言する `featured`（Actor と同じオリジン）と一致しなければならず、送り主が Actor であることは inbox の署名の検証（federation.md §3.2）で確かめる。それ以外の `Add` / `Remove` は捨てる。
   冪等キーにより、そのアカウントのジョブが完了するまで次のジョブは投入されないので、続けて届いた通知で取得は重ならない。
 
-- **注目のハッシュタグ（`featuredTags`）**（推奨案。決定者の確認を待つ）: プロフィールに、持ち主がよく使うハッシュタグを並べる。ピン留めと同じく、Actor と一緒に同期する。
+- **注目のハッシュタグ（`featuredTags`）**: プロフィールに、持ち主がよく使うハッシュタグを並べる。ピン留めと同じく、Actor と一緒に同期する。
   - ローカル: 1 人 10 件まで、持ち主が選んで順を決める（Mastodon の `FeaturedTag::LIMIT` と同じ）。超える追加は `422`。タグごとに投稿の数と最後に使った時刻を出し、どちらも作者の `public` / `unlisted` の投稿から数える（Mastodon の `distributable_visibility` と同じ）。`private` / `direct` / `local` の投稿は、数から投稿の存在が漏れるので数えない。
   - 送信: Actor の `featuredTags` が指す `{actor}/featured-tags`（ADR-0018）を、`Hashtag`（`name` は `#` 付きの名前、`href` はそのプロフィールのタグの URL）を持ち主の順に並べる `Collection` にする（federation.md §10）。注目のハッシュタグが変わったら、プロフィールの変更と同じく Actor の `Update` を配送する。
   - 受信: Actor の文書を保存するとき（上のピン留めと同じきっかけ）に、文書が Actor と同じオリジンの `featuredTags` を宣言していれば、ジョブ `federation.fetch_featured_tags`（冪等キー `fetch_featured_tags:<account_id>`）を投入する。
@@ -429,7 +429,7 @@ federation-live（2026-10-22、[#983](https://github.com/mycroblog/my/issues/983
 
 ## Open Questions / 要検証
 
-- 注目のハッシュタグ（§17）の細部（10 件・`public` / `unlisted` で数える・Actor の `Update` で知らせる・リモートを手元の投稿で数える）は推奨案で、決定者の確認を待つ。Mastodon の `Add` の `Hashtag` の送信先（`featured`）と、リモートの数の数え方は要検証。
+- Mastodon が注目のハッシュタグの `Add` の `Hashtag` を送る先（`featured`）と、リモートの注目のハッシュタグの数の数え方（§17）。
 - Akkoma の RFC 9421 の受信と送信の対応状況。
 - 署名の記憶の TTL 7 日の妥当性。
 - 同期の Actor 取得の所要時間（Cloud Run のコールドスタートを含む）の計測。
