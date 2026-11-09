@@ -16,7 +16,47 @@ import (
 )
 
 // LockPairs implements graph.Repository: SQLite's write transactions already serialize.
-func (r *Repository) LockPairs(context.Context, uow.Tx, string, []string) error { return nil }
+func (r *Repository) LockPairs(context.Context, uow.Tx, []string, []string) error { return nil }
+
+// ListEdgesOfAccounts implements graph.Repository.
+func (r *Repository) ListEdgesOfAccounts(ctx context.Context, tx uow.Tx, ids []string) ([]graph.Edge, error) {
+	if len(ids) == 0 {
+		return nil, nil
+	}
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return nil, err
+	}
+	list, err := sqlite.JSONList(ids)
+	if err != nil {
+		return nil, err
+	}
+	rows, err := q.ListFollowEdgesOfAccounts(ctx, list)
+	if err != nil {
+		return nil, sqlite.Wrap(err, "list follow edges of accounts")
+	}
+	return edgesFrom(rows), nil
+}
+
+// ListEdgesBetween implements graph.Repository.
+func (r *Repository) ListEdgesBetween(ctx context.Context, tx uow.Tx, as, bs []string) ([]graph.Edge, error) {
+	if len(as) == 0 {
+		return nil, nil
+	}
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return nil, err
+	}
+	pairs, err := sqlite.JSONPairs(as, bs)
+	if err != nil {
+		return nil, err
+	}
+	rows, err := q.ListFollowEdgesBetween(ctx, pairs)
+	if err != nil {
+		return nil, sqlite.Wrap(err, "list follow edges between accounts")
+	}
+	return edgesFrom(rows), nil
+}
 
 // FollowsByIDs implements graph.Repository.
 func (r *Repository) FollowsByIDs(ctx context.Context, tx uow.Tx, ids []string) (map[string]graph.Follow, error) {

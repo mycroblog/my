@@ -97,8 +97,13 @@ type Repository interface {
 	// The writes that end many follows at once (Service.SeverDirected), each as the write of one
 	// follow above does for every follow it names, with one statement.
 
-	// LockPairs is LockPair of accountID with each of others.
-	LockPairs(ctx context.Context, tx uow.Tx, accountID string, others []string) error
+	// LockPairs is LockPair of each pair (as[i], bs[i]).
+	LockPairs(ctx context.Context, tx uow.Tx, as, bs []string) error
+	// ListEdgesOfAccounts is ListEdgesOf of each of ids, each edge once.
+	ListEdgesOfAccounts(ctx context.Context, tx uow.Tx, ids []string) ([]graph.Edge, error)
+	// ListEdgesBetween returns the edges between as[i] and bs[i], in either direction, ordered by
+	// follower and followee.
+	ListEdgesBetween(ctx context.Context, tx uow.Tx, as, bs []string) ([]graph.Edge, error)
 	// FollowsByIDs returns the follows of ids that exist, by ID, as Follow returns one.
 	FollowsByIDs(ctx context.Context, tx uow.Tx, ids []string) (map[string]graph.Follow, error)
 	// InsertTerminations records the ends of the follows of followIDs with one reason and time.

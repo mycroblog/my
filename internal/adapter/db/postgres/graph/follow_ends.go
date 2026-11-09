@@ -15,23 +15,55 @@ import (
 )
 
 // LockPairs implements graph.Repository: the locks of LockPair, in the order of their keys.
-func (r *Repository) LockPairs(ctx context.Context, tx uow.Tx, accountID string, others []string) error {
-	if len(others) == 0 {
+func (r *Repository) LockPairs(ctx context.Context, tx uow.Tx, as, bs []string) error {
+	if len(as) == 0 {
 		return nil
 	}
 	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
-	keys := make([]string, len(others))
-	for i, other := range others {
-		a, b := accountID, other
+	keys := make([]string, len(as))
+	for i := range as {
+		a, b := as[i], bs[i]
 		if b < a {
 			a, b = b, a
 		}
 		keys[i] = "graph:" + a + ":" + b
 	}
 	return postgres.Wrap(q.LockAccountPairs(ctx, keys), "lock account pairs")
+}
+
+// ListEdgesOfAccounts implements graph.Repository.
+func (r *Repository) ListEdgesOfAccounts(ctx context.Context, tx uow.Tx, ids []string) ([]graph.Edge, error) {
+	if len(ids) == 0 {
+		return nil, nil
+	}
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return nil, err
+	}
+	rows, err := q.ListFollowEdgesOfAccounts(ctx, ids)
+	if err != nil {
+		return nil, postgres.Wrap(err, "list follow edges of accounts")
+	}
+	return edgesFrom(rows), nil
+}
+
+// ListEdgesBetween implements graph.Repository.
+func (r *Repository) ListEdgesBetween(ctx context.Context, tx uow.Tx, as, bs []string) ([]graph.Edge, error) {
+	if len(as) == 0 {
+		return nil, nil
+	}
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return nil, err
+	}
+	rows, err := q.ListFollowEdgesBetween(ctx, graphgen.ListFollowEdgesBetweenParams{AIds: as, BIds: bs})
+	if err != nil {
+		return nil, postgres.Wrap(err, "list follow edges between accounts")
+	}
+	return edgesFrom(rows), nil
 }
 
 // FollowsByIDs implements graph.Repository.

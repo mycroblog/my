@@ -179,9 +179,14 @@ func (m moderationFollows) SeverByModeration(ctx context.Context, tx uow.Tx, acc
 	return m.a.Graph.SeverByModeration(ctx, tx, accountID, others, announce, now)
 }
 
-// SeverEach implements moderation.Follows.
-func (m moderationFollows) SeverEach(ctx context.Context, tx uow.Tx, accountID string, others []string, dir graph.SeverDirection, announce bool, now time.Time) (map[string]graph.Severed, error) {
-	return m.a.Graph.SeverEach(ctx, tx, accountID, others, dir, announce, now)
+// CounterpartsOf implements moderation.Follows.
+func (m moderationFollows) CounterpartsOf(ctx context.Context, tx uow.Tx, ids []string) (map[string][]string, error) {
+	return m.a.Graph.CounterpartsOf(ctx, tx, ids)
+}
+
+// SeverAmong implements moderation.Follows.
+func (m moderationFollows) SeverAmong(ctx context.Context, tx uow.Tx, others map[string][]string, dir graph.SeverDirection, announce bool, now time.Time) (map[string]graph.Severed, error) {
+	return m.a.Graph.SeverAmong(ctx, tx, others, dir, announce, now)
 }
 
 // moderationEmails gives the moderation module the identity module, which is built after it

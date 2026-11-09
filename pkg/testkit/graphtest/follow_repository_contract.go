@@ -370,8 +370,21 @@ func graphFollowRepoEndMany(t *testing.T, r *graphFollowRepo) {
 		byID[i] = f.ID
 	}
 	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
-		if err := r.repo.LockPairs(ctx, tx, star, fans); err != nil {
+		if err := r.repo.LockPairs(ctx, tx, []string{star, star, star}, fans); err != nil {
 			return err
+		}
+		// The edges of many accounts, each once, as ListEdgesOf reads those of one; and the edges
+		// between the pairs named, in either direction.
+		of, err := r.repo.ListEdgesOfAccounts(ctx, tx, []string{star, fans[0], r.ids.NewID()})
+		if want, werr := r.repo.ListEdgesOf(ctx, tx, star); err != nil || werr != nil || !reflect.DeepEqual(of, want) {
+			t.Errorf("ListEdgesOfAccounts(star, a fan of it) = %+v, %v; want star's edges once each, %+v", of, err, want)
+		}
+		between, err := r.repo.ListEdgesBetween(ctx, tx, []string{fans[0], star}, []string{star, fans[1]})
+		if err != nil || len(between) != 3 {
+			t.Errorf("ListEdgesBetween(fan 0 and star, star and fan 1) = %+v, %v; want the three edges of the two pairs", between, err)
+		}
+		if got, err := r.repo.ListEdgesBetween(ctx, tx, []string{fans[0]}, []string{fans[1]}); err != nil || len(got) != 0 {
+			t.Errorf("ListEdgesBetween(two fans) = %+v, %v; want none", got, err)
 		}
 		got, err := r.repo.FollowsByIDs(ctx, tx, append(byID, r.ids.NewID()))
 		if err != nil {
