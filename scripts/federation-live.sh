@@ -180,8 +180,6 @@ mastodon_tokens="$("${compose[@]}" exec -T mastodon-web bin/rails runner '
 	admin = Doorkeeper::Application.create!(name: "federation-live-admin", redirect_uri: "urn:ietf:wg:oauth:2.0:oob", scopes: "admin:read")
 	token = Doorkeeper::AccessToken.create!(application: admin, resource_owner_id: Account.find_local!("mod").user.id, scopes: "admin:read")
 	puts "token_mod=#{token.plaintext_token}"
-	# Mastodon joins the relay (TestRelay); Sidekiq sends the Follow, and the relay accepts it at once.
-	Relay.create!(inbox_url: "https://relay.test/inbox").enable!
 ')"
 mastodon_token() { sed -n "s/^token_$1=//p" <<<"$mastodon_tokens"; }
 mastodon_token_bob="$(mastodon_token bob)"
@@ -201,6 +199,15 @@ export FEDERATION_LIVE_SIGNER_ACTOR FEDERATION_LIVE_SIGNER_INBOX
 "${compose[@]}" up -d --no-deps --quiet-pull proxy
 wait_ready my.test /readyz
 wait_ready mastodon.test /health
+
+# Mastodon joins the relay (TestRelay) only once the proxy is back: the relay sends its Accept at once and gives up
+# after a few seconds, and a relay that stays pending makes Mastodon reject everything it forwards.
+"${compose[@]}" exec -T mastodon-web bin/rails runner '
+	relay = Relay.create!(inbox_url: "https://relay.test/inbox")
+	relay.enable!
+	60.times { break if relay.reload.accepted?; sleep 1 }
+	abort "the relay is #{relay.state}" unless relay.accepted?
+' >/dev/null || fail "Mastodon did not join the relay: its Follow was not accepted"
 
 gts=(exec -T gotosocial /gotosocial/gotosocial admin account)
 for user in carol erin arrive leave; do
