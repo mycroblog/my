@@ -120,5 +120,8 @@ func (a *App) setUpAccountSearch(repo account.Repository) {
 		DomainSuspended: func(ctx context.Context, domain string) (bool, error) {
 			return a.ModerationPolicy.FederationSuspended(ctx, domain)
 		},
+		DomainsSuspended: func(ctx context.Context, domains []string) (map[string]bool, error) {
+			return a.ModerationPolicy.FederationSuspendedAmong(ctx, domains)
+		},
 	})
 }

@@ -50,6 +50,9 @@ type SearchDeps struct {
 	// DomainSuspended reports whether a domain, or a parent of it, is suspended. Nil suspends
 	// none.
 	DomainSuspended func(ctx context.Context, domain string) (bool, error)
+	// DomainsSuspended is DomainSuspended of many domains, by domain, with one read; nil reads
+	// them one by one through DomainSuspended.
+	DomainsSuspended func(ctx context.Context, domains []string) (map[string]bool, error)
 }
 
 // PrefixSearch is the prefix search of accounts.
@@ -127,15 +130,21 @@ func (s *PrefixSearch) Search(ctx context.Context, viewerID, q string, limit int
 	}
 
 	suspended := map[string]bool{}
-	if s.d.DomainSuspended != nil {
-		for _, c := range cands {
-			if c.local {
-				continue
-			}
-			if _, seen := suspended[c.domain]; seen {
-				continue
-			}
-			if suspended[c.domain], err = s.d.DomainSuspended(ctx, c.domain); err != nil {
+	var domains []string
+	for _, c := range cands {
+		if !c.local && !slices.Contains(domains, c.domain) {
+			domains = append(domains, c.domain)
+		}
+	}
+	switch {
+	case len(domains) == 0:
+	case s.d.DomainsSuspended != nil:
+		if suspended, err = s.d.DomainsSuspended(ctx, domains); err != nil {
+			return nil, err
+		}
+	case s.d.DomainSuspended != nil:
+		for _, d := range domains {
+			if suspended[d], err = s.d.DomainSuspended(ctx, d); err != nil {
 				return nil, err
 			}
 		}
