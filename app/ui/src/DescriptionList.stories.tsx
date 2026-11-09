@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { DescriptionItem, DescriptionList } from "./DescriptionList";
+import { Stack } from "./Stack";
 
 const meta = {
   title: "Display/DescriptionList",
@@ -45,4 +46,13 @@ export const LongValues: Story = {
       </>
     ),
   },
+};
+
+/** In a start-aligned stack (a list above a button), the list still fills the width and keeps its columns. */
+export const InStartAlignedStack: Story = {
+  render: (args) => (
+    <Stack align="start" gap="4">
+      <DescriptionList {...args} />
+    </Stack>
+  ),
 };
