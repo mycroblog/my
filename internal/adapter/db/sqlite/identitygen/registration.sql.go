@@ -529,6 +529,42 @@ func (q *Queries) ListMemberInvitesByCreator(ctx context.Context, arg ListMember
 	return items, nil
 }
 
+const listPrimaryEmailVerifications = `-- name: ListPrimaryEmailVerifications :many
+SELECT p.user_id, EXISTS (SELECT 1 FROM user_email_verifications v WHERE v.email_address_id = p.email_address_id) AS verified
+FROM user_primary_emails p
+WHERE p.user_id IN (SELECT value FROM json_each(CAST(?1 AS TEXT)))
+`
+
+type ListPrimaryEmailVerificationsRow struct {
+	UserID   string
+	Verified bool
+}
+
+// The users among user_ids with a primary address, and whether it is verified, as
+// GetPrimaryEmail reads them of one.
+func (q *Queries) ListPrimaryEmailVerifications(ctx context.Context, userIds string) ([]ListPrimaryEmailVerificationsRow, error) {
+	rows, err := q.db.QueryContext(ctx, listPrimaryEmailVerifications, userIds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListPrimaryEmailVerificationsRow{}
+	for rows.Next() {
+		var i ListPrimaryEmailVerificationsRow
+		if err := rows.Scan(&i.UserID, &i.Verified); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listRegistrationStatesOf = `-- name: ListRegistrationStatesOf :many
 SELECT user_id, state, since FROM user_registration_states WHERE user_id IN (SELECT value FROM json_each(CAST(?1 AS TEXT)))
 `

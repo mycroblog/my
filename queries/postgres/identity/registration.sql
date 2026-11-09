@@ -4,6 +4,13 @@
 INSERT INTO user_email_verifications (email_address_id, verified_at) VALUES ($1, $2)
 ON CONFLICT (email_address_id) DO NOTHING;
 
+-- The users among user_ids with a primary address, and whether it is verified, as
+-- GetPrimaryEmail reads them of one.
+-- name: ListPrimaryEmailVerifications :many
+SELECT p.user_id, EXISTS (SELECT 1 FROM user_email_verifications v WHERE v.email_address_id = p.email_address_id) AS verified
+FROM user_primary_emails p
+WHERE p.user_id = ANY(sqlc.arg(user_ids)::uuid[]);
+
 -- name: GetPrimaryEmail :one
 SELECT e.id, e.user_id, e.address, e.address_normalized, e.added_at,
   EXISTS (SELECT 1 FROM user_email_verifications v WHERE v.email_address_id = e.id) AS verified

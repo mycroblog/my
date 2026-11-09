@@ -128,6 +128,26 @@ func (r *Repository) FindRegistrationStates(ctx context.Context, userIDs []strin
 	return out, nil
 }
 
+// PrimaryEmailsVerified implements identity.Repository.
+func (r *Repository) PrimaryEmailsVerified(ctx context.Context, userIDs []string) (map[string]bool, error) {
+	out := map[string]bool{}
+	if len(userIDs) == 0 {
+		return out, nil
+	}
+	list, err := sqlite.JSONList(userIDs)
+	if err != nil {
+		return nil, err
+	}
+	rows, err := r.db.reader().ListPrimaryEmailVerifications(ctx, list)
+	if err != nil {
+		return nil, sqlite.Wrap(err, "list primary email verifications")
+	}
+	for _, row := range rows {
+		out[row.UserID] = row.Verified
+	}
+	return out, nil
+}
+
 // ListRegistrations implements identity.Repository.
 func (r *Repository) ListRegistrations(ctx context.Context, state identity.RegistrationState, after appidentity.RegistrationPosition, limit int) ([]appidentity.RegistrationEntry, error) {
 	rows, err := r.db.reader().ListRegistrationsInState(ctx, identitygen.ListRegistrationsInStateParams{

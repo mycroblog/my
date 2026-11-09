@@ -78,8 +78,6 @@ type GetAccessTokenByAccessHashRow struct {
 	ClientDeleted      bool
 }
 
-// AccessTokenByAccessHash returns a token, whether it has a revocation, and whether its client is disabled
-// or deleted (ADR-0090 section 1).
 func (q *Queries) GetAccessTokenByAccessHash(ctx context.Context, accessTokenHash []byte) (GetAccessTokenByAccessHashRow, error) {
 	row := q.db.QueryRowContext(ctx, getAccessTokenByAccessHash, accessTokenHash)
 	var i GetAccessTokenByAccessHashRow
@@ -571,6 +569,77 @@ func (q *Queries) LiftOAuthClientHostDenials(ctx context.Context, arg LiftOAuthC
 	return result.RowsAffected()
 }
 
+const listAccessTokensByAccessHashes = `-- name: ListAccessTokensByAccessHashes :many
+SELECT t.id, t.family_id, t.oauth_client_id, t.user_id, t.access_token_hash, t.refresh_token_hash, t.scope,
+  t.rotated_from_token_id, t.issued_at, t.expires_at, t.refresh_expires_at,
+  EXISTS (SELECT 1 FROM oauth_token_revocations r WHERE r.token_id = t.id) AS revoked,
+  EXISTS (
+    SELECT 1 FROM oauth_client_disablements d
+    WHERE d.oauth_client_id = t.oauth_client_id AND NOT EXISTS (SELECT 1 FROM oauth_client_disablement_lifts l WHERE l.disablement_id = d.id)
+  ) AS client_disabled,
+  EXISTS (SELECT 1 FROM oauth_client_deletions x WHERE x.oauth_client_id = t.oauth_client_id) AS client_deleted
+FROM oauth_access_tokens t
+WHERE t.access_token_hash IN (SELECT unhex(value) FROM json_each(CAST(?1 AS TEXT)))
+`
+
+type ListAccessTokensByAccessHashesRow struct {
+	ID                 string
+	FamilyID           string
+	OauthClientID      string
+	UserID             string
+	AccessTokenHash    []byte
+	RefreshTokenHash   []byte
+	Scope              string
+	RotatedFromTokenID sql.NullString
+	IssuedAt           int64
+	ExpiresAt          int64
+	RefreshExpiresAt   sql.NullInt64
+	Revoked            bool
+	ClientDisabled     bool
+	ClientDeleted      bool
+}
+
+// AccessTokenByAccessHash returns a token, whether it has a revocation, and whether its client is disabled
+// or deleted (ADR-0090 section 1).
+// The tokens of the access hashes of hashes (hex in SQLite), as GetAccessTokenByAccessHash reads one.
+func (q *Queries) ListAccessTokensByAccessHashes(ctx context.Context, hashes string) ([]ListAccessTokensByAccessHashesRow, error) {
+	rows, err := q.db.QueryContext(ctx, listAccessTokensByAccessHashes, hashes)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListAccessTokensByAccessHashesRow{}
+	for rows.Next() {
+		var i ListAccessTokensByAccessHashesRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.FamilyID,
+			&i.OauthClientID,
+			&i.UserID,
+			&i.AccessTokenHash,
+			&i.RefreshTokenHash,
+			&i.Scope,
+			&i.RotatedFromTokenID,
+			&i.IssuedAt,
+			&i.ExpiresAt,
+			&i.RefreshExpiresAt,
+			&i.Revoked,
+			&i.ClientDisabled,
+			&i.ClientDeleted,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listAuthorizedAppTokens = `-- name: ListAuthorizedAppTokens :many
 SELECT t.family_id, t.scope AS token_scope,
   CAST((SELECT min(f.issued_at) FROM oauth_access_tokens f WHERE f.family_id = t.family_id) AS INTEGER) AS authorized_at,
@@ -830,6 +899,34 @@ func (q *Queries) ListOAuthClientHostDenials(ctx context.Context, arg ListOAuthC
 			return nil, err
 		}
 		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listOAuthClientIDsAmong = `-- name: ListOAuthClientIDsAmong :many
+SELECT id FROM oauth_clients WHERE id IN (SELECT value FROM json_each(CAST(?1 AS TEXT)))
+`
+
+// The clients among ids that exist.
+func (q *Queries) ListOAuthClientIDsAmong(ctx context.Context, ids string) ([]string, error) {
+	rows, err := q.db.QueryContext(ctx, listOAuthClientIDsAmong, ids)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []string{}
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		items = append(items, id)
 	}
 	if err := rows.Close(); err != nil {
 		return nil, err

@@ -169,18 +169,30 @@ func (s *Server) runStream(w http.ResponseWriter, r *http.Request, st *streamSta
 	}
 	ticker := time.NewTicker(heartbeat)
 	defer ticker.Stop()
+	// The process checks the tokens of all its streams at once (streamMonitor) when it can; a
+	// stream checks its own otherwise.
+	var ended <-chan struct{}
+	if s.monitor != nil {
+		c := s.monitor.add(token)
+		defer s.monitor.remove(c)
+		ended = c.ended
+	}
 	for {
 		select {
 		case <-ctx.Done():
 			return
 		case <-sub.Done():
 			return
+		case <-ended:
+			return // revoked, expired, the account became unusable, or the server was closed
 		case <-ticker.C:
-			if _, err := s.o.Authenticator.AuthenticateBearer(ctx, token); err != nil {
-				return // revoked, expired, or the account became unusable
-			}
-			if s.streamClosed(ctx) {
-				return // the server was closed (ADR-0088 §2)
+			if s.monitor == nil {
+				if _, err := s.o.Authenticator.AuthenticateBearer(ctx, token); err != nil {
+					return // revoked, expired, or the account became unusable
+				}
+				if s.streamClosed(ctx) {
+					return // the server was closed (ADR-0088 §2)
+				}
 			}
 			if alive != nil && !alive(ctx) {
 				return

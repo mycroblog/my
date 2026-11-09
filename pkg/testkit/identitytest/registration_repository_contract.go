@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"maps"
 	"slices"
 	"strings"
 	"sync"
@@ -221,6 +222,9 @@ func registrationRepoEmails(t *testing.T, r *identityRepo) {
 	}
 	if _, _, err := r.h.Identity.FindPrimaryEmail(ctx, bob); !errors.Is(err, appidentity.ErrNotFound) {
 		t.Errorf("FindPrimaryEmail(without one) = %v, want ErrNotFound", err)
+	}
+	if got, err := r.h.Identity.PrimaryEmailsVerified(ctx, []string{alice, bob}); err != nil || !maps.Equal(got, map[string]bool{alice: true}) {
+		t.Errorf("PrimaryEmailsVerified = %v, %v; want alice verified, bob without one", got, err)
 	}
 }
 

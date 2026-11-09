@@ -80,6 +80,9 @@ type RegistrationRepository interface {
 	InsertEmailVerification(ctx context.Context, tx uow.Tx, v identity.EmailVerification) error
 	// FindPrimaryEmail returns a user's primary email address and whether it is verified.
 	FindPrimaryEmail(ctx context.Context, userID string) (identity.EmailAddress, bool, error)
+	// PrimaryEmailsVerified returns, of the users among userIDs that have a primary address,
+	// whether it is verified, by user, with one query.
+	PrimaryEmailsVerified(ctx context.Context, userIDs []string) (map[string]bool, error)
 }
 
 // RegistrationPosition is the place of a registration in ListRegistrations: the time it

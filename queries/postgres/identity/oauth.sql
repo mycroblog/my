@@ -82,6 +82,23 @@ INSERT INTO oauth_access_tokens (
 
 -- AccessTokenByAccessHash returns a token, whether it has a revocation, and whether its client is disabled
 -- or deleted (ADR-0090 section 1).
+-- The tokens of the access hashes of hashes (hex in SQLite), as GetAccessTokenByAccessHash reads one.
+-- name: ListAccessTokensByAccessHashes :many
+SELECT t.id, t.family_id, t.oauth_client_id, t.user_id, t.access_token_hash, t.refresh_token_hash, t.scope,
+  t.rotated_from_token_id, t.issued_at, t.expires_at, t.refresh_expires_at,
+  EXISTS (SELECT 1 FROM oauth_token_revocations r WHERE r.token_id = t.id) AS revoked,
+  EXISTS (
+    SELECT 1 FROM oauth_client_disablements d
+    WHERE d.oauth_client_id = t.oauth_client_id AND NOT EXISTS (SELECT 1 FROM oauth_client_disablement_lifts l WHERE l.disablement_id = d.id)
+  ) AS client_disabled,
+  EXISTS (SELECT 1 FROM oauth_client_deletions x WHERE x.oauth_client_id = t.oauth_client_id) AS client_deleted
+FROM oauth_access_tokens t
+WHERE t.access_token_hash = ANY(sqlc.arg(hashes)::bytea[]);
+
+-- The clients among ids that exist.
+-- name: ListOAuthClientIDsAmong :many
+SELECT id FROM oauth_clients WHERE id = ANY(sqlc.arg(ids)::uuid[]);
+
 -- name: GetAccessTokenByAccessHash :one
 SELECT t.id, t.family_id, t.oauth_client_id, t.user_id, t.access_token_hash, t.refresh_token_hash, t.scope,
   t.rotated_from_token_id, t.issued_at, t.expires_at, t.refresh_expires_at,
