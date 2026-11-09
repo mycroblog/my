@@ -158,6 +158,30 @@
 - `active` でないアカウント（無効化・削除予定・削除済み）の投稿は消しません。ブーストは投稿ではないので対象外です。
 - 保存していない設定が今消す投稿の数（`POST /preferences/auto_delete/preview`）は、上限が効くアカウントでは送られた設定の実効の設定で数え、ジョブと同じ SQL を 1 つの短い読み取りのトランザクションで 1,001 件まで読んで数えます（1,000 件で止め、超えたことを返す）。設定の有効・無効は数に関係しません。古い 3 件を例として返します。
 
+#### 下書きと予約投稿
+
+ローカルの利用者は、投稿の下書きをサーバーに保存し、すぐ公開するか、決めた時刻に公開します（[ADR-0156](../../../adr/0156-drafts-and-scheduled-posts.md)）。下書きは本人だけが読み書きし、連合しません。記事の下書きは、`drafts` を指す記事の子テーブルを足したものです（部分型）。
+
+| テーブル | 分類 | カラム | 制約 |
+| --- | --- | --- | --- |
+| `drafts` | リソース | `id`, `account_id`, `created_at` | インデックス `(account_id, id)` |
+| `draft_contents` | 現在値 | `draft_id`（PK）, `source_text`, `spoiler_text`, `sensitive`（`bool`）, `language`（`lang`、NULL 可 = 利用者設定の既定）, `visibility`（`enum`）, `in_reply_to_status_id`（NULL 可）, `quoted_status_id`（NULL 可）, `quote_policy`（`enum(public, followers, nobody)`）, `updated_at` | 保存のたびに置き換える。`updated_at` は API の ETag の元 |
+| `draft_attachments` | 現在値 | `draft_id`, `position`（`int`、0〜3）, `media_id`, `description`（`text`、NULL 可） | PK `(draft_id, position)`。インデックス `(media_id)`（未添付の掃除） |
+| `draft_polls` | 現在値 | `draft_id`（PK）, `multiple`（`bool`）, `hide_totals`（`bool`）, `duration_seconds`（`int`、300〜2592000） | 締め切りは公開のときに決める |
+| `draft_poll_options` | 現在値 | `draft_id`, `position`, `title` | PK `(draft_id, position)` |
+| `draft_schedules` | リソース | `id`, `draft_id`, `publish_at`, `created_at` | インデックス `(draft_id, id)` |
+| `draft_schedule_outcomes` | イベント | `schedule_id`（PK）, `outcome`（`enum(published, failed, cancelled)`）, `failure_reason`（`enum`、NULL 可）, `occurred_at` | CHECK `(outcome = 'failed') = (failure_reason IS NOT NULL)` |
+| `scheduled_drafts` | 投影 | `draft_id`（PK）, `schedule_id`, `account_id`, `publish_at` | 一意 `(schedule_id)`。インデックス `(account_id, publish_at)`。結果の行の無い `draft_schedules` から作り直せる |
+
+- 下書きの中身は履歴を使わないので現在値です（ADR-0020 規約 5）。予約は 1 回ごとのリソースで、取り消し・時刻の変更（取り消しと新しい予約）・公開・失敗は結果のイベントです。
+- 保存（`PUT`）は中身の行を 1 つのトランザクションで置き換えます。添付は本人の `uploaded_media` だけで、`ready` でなくてもよく（公開のときに確かめる）、代替テキストは行に写します。
+- 予約は、予約と `scheduled_drafts` の行を記録するトランザクションで、`publish_at` に動くジョブ `content.publish_scheduled_draft`（冪等キーは予約の ID）を outbox に入れます。
+  ジョブは `scheduled_drafts` がその予約を指すときだけ、すぐの投稿と同じ `content.Service.Create` で公開します。冪等キーは下書きの ID から作り（`local_statuses (author_account_id, idempotency_key)`）、同じトランザクションで `published` を記録して下書きの行をすべて消します。
+  処分・返信先や引用先が見られない・検査や外部の審査で断られたときは、`failed` と理由を記録して `scheduled_drafts` から外し、通知 `scheduled_status_failed` を作ります。下書きは残ります。
+- 投稿の `id`・`published_at` は公開のときに作ります。自動削除の日数もそこから数えます。
+- 上限はインスタンス設定 `max_drafts`（予約の無い下書き）・`max_scheduled_posts`・`max_scheduled_posts_per_day`（`publish_at` の UTC の日）で、`scheduled_drafts` と `drafts` を数えます。予約できる時刻は `scheduled_post_min_lead_minutes`（既定 5 分）から `scheduled_post_max_lead_days`（既定 366 日）先までです。
+- `media.purge_unattached` は `draft_attachments` が参照するファイルを添付として数えます。下書きを消すと参照が外れ、次の実行で消えます。アカウントの消去は下書きの行をすべて消します。
+
 #### ブースト
 
 | テーブル | 分類 | カラム | 制約 |
@@ -270,7 +294,7 @@
 - `width` / `height` は EXIF の向きを適用した元画像の寸法（動画は回転を適用した表示の寸法、音声は NULL）です（処理し直しても元の寸法を写す）。`media_variants` の寸法は各版の実寸です。
 - 未添付のアップロードを読めるのも、説明（`media_descriptions`）と焦点（`media_focus`）を変えられるのも、アップロードした本人だけです。
   版が添付したあとは説明を版の `status_revision_attachments.description` で持つので、ファイル単体の説明・焦点は変えられません（投稿を編集して直す）。
-- 未添付のアップロード（どの版からも参照されず、`account_profile_revisions` のアバター・ヘッダーにも使われていない `media_files`）は、
+- 未添付のアップロード（どの版からも下書き（`draft_attachments`）からも参照されず、`account_profile_revisions` のアバター・ヘッダーにも使われていない `media_files`）は、
   作成から `media_unattached_retention`（既定 24 時間）後に、1 時間ごとの消去ジョブ `media.purge_unattached` が行と Blob ごと削除します（FR-803）。
   アバター・ヘッダーの参照は `account` モジュール、インスタンスのプレビュー画像（`preview_image`、§4.9）の参照は `instance` モジュールの公開 API で問い合わせます。削除は同じトランザクションで添付の有無を再検査します。
   行を消すトランザクションで Blob のキーを `media_blob_deletions` に記録し、そのあと Blob を消すので、Blob の削除に失敗してもキーが残り、次の実行が消し直します。
