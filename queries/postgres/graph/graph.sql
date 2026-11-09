@@ -183,3 +183,27 @@ FROM follow_edges
 WHERE (follower_account_id, followee_account_id) IN (SELECT unnest(sqlc.arg(a_ids)::uuid[]), unnest(sqlc.arg(b_ids)::uuid[]))
    OR (followee_account_id, follower_account_id) IN (SELECT unnest(sqlc.arg(a_ids)::uuid[]), unnest(sqlc.arg(b_ids)::uuid[]))
 ORDER BY follower_account_id, followee_account_id;
+
+-- The statements that start many follows at once (the migration of a moved account's followers),
+-- each as the statement of one follow above does for every follow it names (the unnests of a
+-- select list advance together).
+
+-- name: InsertFollows :exec
+INSERT INTO follows (id, uri, follower_account_id, followee_account_id, requested_at)
+SELECT unnest(sqlc.arg(ids)::uuid[]), unnest(sqlc.arg(uris)::text[]), unnest(sqlc.arg(follower_account_ids)::uuid[]),
+  unnest(sqlc.arg(followee_account_ids)::uuid[]), unnest(sqlc.arg(requested_ats)::timestamptz[]);
+
+-- name: UpsertManyFollowPreferences :exec
+INSERT INTO follow_preferences (follow_id, show_boosts)
+SELECT unnest(sqlc.arg(follow_ids)::uuid[]), unnest(sqlc.arg(show_boosts)::boolean[])
+ON CONFLICT (follow_id) DO UPDATE SET show_boosts = excluded.show_boosts;
+
+-- name: InsertAutoFollowAcceptances :exec
+INSERT INTO follow_acceptances (follow_id, accepted_by, activity_uri, accepted_at)
+SELECT unnest(sqlc.arg(follow_ids)::uuid[]), sqlc.arg(accepted_by), NULL, sqlc.arg(accepted_at);
+
+-- name: InsertFollowEdges :execrows
+INSERT INTO follow_edges (follower_account_id, followee_account_id, follow_id, state, since)
+SELECT unnest(sqlc.arg(follower_account_ids)::uuid[]), unnest(sqlc.arg(followee_account_ids)::uuid[]), unnest(sqlc.arg(follow_ids)::uuid[]),
+  unnest(sqlc.arg(states)::text[]), unnest(sqlc.arg(sinces)::timestamptz[])
+ON CONFLICT (follower_account_id, followee_account_id) DO NOTHING;

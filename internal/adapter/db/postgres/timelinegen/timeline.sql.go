@@ -1839,6 +1839,25 @@ func (q *Queries) UpsertFeedFollowEdge(ctx context.Context, arg UpsertFeedFollow
 	return err
 }
 
+const upsertFeedFollowEdges = `-- name: UpsertFeedFollowEdges :exec
+INSERT INTO feed_follow_edges (follower_account_id, followee_account_id, show_boosts)
+SELECT unnest($1::uuid[]), unnest($2::uuid[]), unnest($3::boolean[])
+ON CONFLICT (follower_account_id, followee_account_id) DO UPDATE SET show_boosts = excluded.show_boosts
+`
+
+type UpsertFeedFollowEdgesParams struct {
+	FollowerIds []string
+	FolloweeIds []string
+	ShowBoosts  []bool
+}
+
+// UpsertFeedFollowEdges is UpsertFeedFollowEdge of many edges (the unnests of a select list
+// advance together).
+func (q *Queries) UpsertFeedFollowEdges(ctx context.Context, arg UpsertFeedFollowEdgesParams) error {
+	_, err := q.db.Exec(ctx, upsertFeedFollowEdges, arg.FollowerIds, arg.FolloweeIds, arg.ShowBoosts)
+	return err
+}
+
 const upsertListName = `-- name: UpsertListName :exec
 INSERT INTO list_names (list_id, name) VALUES ($1, $2)
 ON CONFLICT (list_id) DO UPDATE SET name = excluded.name

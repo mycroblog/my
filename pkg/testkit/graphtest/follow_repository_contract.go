@@ -41,6 +41,7 @@ func FollowRepositoryContract(t *testing.T, newHarness FollowFactory) {
 		{"PagesFollowersAndFollowing", graphFollowRepoPages},
 		{"KeepsCounters", graphFollowRepoCounters},
 		{"EndsManyFollows", graphFollowRepoEndMany},
+		{"StartsManyFollows", graphFollowRepoStartMany},
 		{"ListsHistoriesAndRebuilds", graphFollowRepoHistories},
 		{"InsertsOneEdgeUnderConcurrency", graphFollowRepoConcurrentEdges},
 	}
@@ -440,6 +441,75 @@ func graphFollowRepoEndMany(t *testing.T, r *graphFollowRepo) {
 	}
 	if n, err := r.repo.CountFollowers(ctx, star, graph.StateActive); err != nil || n != 0 {
 		t.Errorf("CountFollowers after the end = %d, %v", n, err)
+	}
+}
+
+// graphFollowRepoStartMany starts many follows with the writes of a batch, each read back as the
+// writes of one follow record it.
+func graphFollowRepoStartMany(t *testing.T, r *graphFollowRepo) {
+	ids := r.accounts(3)
+	star, fans := ids[0], ids[1:]
+	now := r.clock.Now()
+	var fs []graph.Follow
+	var ps []graph.Preferences
+	for i, fan := range fans {
+		id := r.ids.NewID()
+		fs = append(fs, graph.Follow{ID: id, URI: graph.FollowURI(testkit.ContractHost, id), FollowerAccountID: fan, FolloweeAccountID: star, RequestedAt: now})
+		ps = append(ps, graph.Preferences{FollowID: id, ShowBoosts: i == 0})
+	}
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+		if err := r.repo.InsertFollows(ctx, tx, fs); err != nil {
+			return err
+		}
+		if err := r.repo.UpsertManyPreferences(ctx, tx, ps); err != nil {
+			return err
+		}
+		if err := r.repo.InsertAutoAcceptances(ctx, tx, []string{fs[0].ID}, now); err != nil {
+			return err
+		}
+		edges := []graph.Edge{graph.ActiveEdge(fs[0], graph.Acceptance{FollowID: fs[0].ID, AcceptedBy: graph.AcceptedByAuto, AcceptedAt: now}), graph.PendingEdge(fs[1])}
+		if n, err := r.repo.InsertEdges(ctx, tx, edges); err != nil || n != 2 {
+			t.Errorf("InsertEdges = %d, %v; want 2", n, err)
+		}
+		if n, err := r.repo.InsertEdges(ctx, tx, edges[:1]); err != nil || n != 0 {
+			t.Errorf("InsertEdges of a pair with an edge = %d, %v; want 0", n, err)
+		}
+		got, err := r.repo.PreferencesOf(ctx, tx, []string{fs[0].ID, fs[1].ID, r.ids.NewID()})
+		if err != nil {
+			return err
+		}
+		for i, f := range fs {
+			one, err := r.repo.Follow(ctx, tx, f.ID)
+			if err != nil || one.URI != f.URI || one.FollowerAccountID != f.FollowerAccountID || one.FolloweeAccountID != star || !one.RequestedAt.Equal(now) {
+				t.Errorf("Follow(%s) after InsertFollows = %+v, %v; want %+v", f.ID, one, err, f)
+			}
+			if p, err := r.repo.Preferences(ctx, tx, f.ID); err != nil || p != ps[i] || got[f.ID] != ps[i] {
+				t.Errorf("the preferences of %s = %+v / %+v, %v; want %+v", f.ID, p, got[f.ID], err, ps[i])
+			}
+		}
+		if len(got) != 2 {
+			t.Errorf("PreferencesOf = %+v, want the two that exist", got)
+		}
+		return nil
+	})
+	err := r.uow.Tx(t.Context(), func(tx uow.Tx) error {
+		return r.repo.InsertAutoAcceptances(t.Context(), tx, []string{fs[0].ID}, now)
+	})
+	if !errors.Is(err, appgraph.ErrAlreadyRecorded) {
+		t.Errorf("InsertAutoAcceptances of an accepted follow = %v, want ErrAlreadyRecorded", err)
+	}
+	edges, err := r.repo.ListEdges(t.Context())
+	if err != nil || len(edges) != 2 {
+		t.Fatalf("ListEdges = %+v, %v; want the two", edges, err)
+	}
+	for _, e := range edges {
+		want := graph.StatePending
+		if e.FollowID == fs[0].ID {
+			want = graph.StateActive
+		}
+		if e.State != want || !e.Since.Equal(now) || e.FolloweeAccountID != star {
+			t.Errorf("edge %+v, want %s since %v", e, want, now)
+		}
 	}
 }
 

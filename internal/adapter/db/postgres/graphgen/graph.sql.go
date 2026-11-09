@@ -282,6 +282,22 @@ func (q *Queries) GetFollowPreferences(ctx context.Context, followID string) (Fo
 	return i, err
 }
 
+const insertAutoFollowAcceptances = `-- name: InsertAutoFollowAcceptances :exec
+INSERT INTO follow_acceptances (follow_id, accepted_by, activity_uri, accepted_at)
+SELECT unnest($1::uuid[]), $2, NULL, $3
+`
+
+type InsertAutoFollowAcceptancesParams struct {
+	FollowIds  []string
+	AcceptedBy string
+	AcceptedAt time.Time
+}
+
+func (q *Queries) InsertAutoFollowAcceptances(ctx context.Context, arg InsertAutoFollowAcceptancesParams) error {
+	_, err := q.db.Exec(ctx, insertAutoFollowAcceptances, arg.FollowIds, arg.AcceptedBy, arg.AcceptedAt)
+	return err
+}
+
 const insertFollow = `-- name: InsertFollow :exec
 
 INSERT INTO follows (id, uri, follower_account_id, followee_account_id, requested_at) VALUES ($1, $2, $3, $4, $5)
@@ -349,6 +365,35 @@ func (q *Queries) InsertFollowEdge(ctx context.Context, arg InsertFollowEdgePara
 		arg.FollowID,
 		arg.State,
 		arg.Since,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
+const insertFollowEdges = `-- name: InsertFollowEdges :execrows
+INSERT INTO follow_edges (follower_account_id, followee_account_id, follow_id, state, since)
+SELECT unnest($1::uuid[]), unnest($2::uuid[]), unnest($3::uuid[]),
+  unnest($4::text[]), unnest($5::timestamptz[])
+ON CONFLICT (follower_account_id, followee_account_id) DO NOTHING
+`
+
+type InsertFollowEdgesParams struct {
+	FollowerAccountIds []string
+	FolloweeAccountIds []string
+	FollowIds          []string
+	States             []string
+	Sinces             []time.Time
+}
+
+func (q *Queries) InsertFollowEdges(ctx context.Context, arg InsertFollowEdgesParams) (int64, error) {
+	result, err := q.db.Exec(ctx, insertFollowEdges,
+		arg.FollowerAccountIds,
+		arg.FolloweeAccountIds,
+		arg.FollowIds,
+		arg.States,
+		arg.Sinces,
 	)
 	if err != nil {
 		return 0, err
@@ -425,6 +470,35 @@ type InsertFollowTerminationsParams struct {
 
 func (q *Queries) InsertFollowTerminations(ctx context.Context, arg InsertFollowTerminationsParams) error {
 	_, err := q.db.Exec(ctx, insertFollowTerminations, arg.FollowIds, arg.Reason, arg.TerminatedAt)
+	return err
+}
+
+const insertFollows = `-- name: InsertFollows :exec
+
+INSERT INTO follows (id, uri, follower_account_id, followee_account_id, requested_at)
+SELECT unnest($1::uuid[]), unnest($2::text[]), unnest($3::uuid[]),
+  unnest($4::uuid[]), unnest($5::timestamptz[])
+`
+
+type InsertFollowsParams struct {
+	Ids                []string
+	Uris               []string
+	FollowerAccountIds []string
+	FolloweeAccountIds []string
+	RequestedAts       []time.Time
+}
+
+// The statements that start many follows at once (the migration of a moved account's followers),
+// each as the statement of one follow above does for every follow it names (the unnests of a
+// select list advance together).
+func (q *Queries) InsertFollows(ctx context.Context, arg InsertFollowsParams) error {
+	_, err := q.db.Exec(ctx, insertFollows,
+		arg.Ids,
+		arg.Uris,
+		arg.FollowerAccountIds,
+		arg.FolloweeAccountIds,
+		arg.RequestedAts,
+	)
 	return err
 }
 
@@ -880,5 +954,21 @@ type UpsertFollowPreferencesParams struct {
 
 func (q *Queries) UpsertFollowPreferences(ctx context.Context, arg UpsertFollowPreferencesParams) error {
 	_, err := q.db.Exec(ctx, upsertFollowPreferences, arg.FollowID, arg.ShowBoosts)
+	return err
+}
+
+const upsertManyFollowPreferences = `-- name: UpsertManyFollowPreferences :exec
+INSERT INTO follow_preferences (follow_id, show_boosts)
+SELECT unnest($1::uuid[]), unnest($2::boolean[])
+ON CONFLICT (follow_id) DO UPDATE SET show_boosts = excluded.show_boosts
+`
+
+type UpsertManyFollowPreferencesParams struct {
+	FollowIds  []string
+	ShowBoosts []bool
+}
+
+func (q *Queries) UpsertManyFollowPreferences(ctx context.Context, arg UpsertManyFollowPreferencesParams) error {
+	_, err := q.db.Exec(ctx, upsertManyFollowPreferences, arg.FollowIds, arg.ShowBoosts)
 	return err
 }

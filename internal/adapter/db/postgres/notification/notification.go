@@ -372,8 +372,8 @@ func (r *Repository) InsertNotificationsForEach(ctx context.Context, tx uow.Tx, 
 		return nil, err
 	}
 	arg := notificationgen.InsertNotificationsForEachParams{
-		Type:            string(n.Type),
-		SourceAccountID: postgres.ToNullString(n.SourceAccountID), SourceDomain: postgres.ToNullString(n.SourceDomain), StatusID: postgres.ToNullString(n.StatusID),
+		Type:               string(n.Type),
+		StatusID:           postgres.ToNullString(n.StatusID),
 		ModerationActionID: postgres.ToNullString(n.ModerationActionID), ReportID: postgres.ToNullString(n.ReportID),
 		SubjectUserID: postgres.ToNullString(n.SubjectUserID), AppealID: postgres.ToNullString(n.AppealID),
 		CustomEmojiRequestID: postgres.ToNullString(n.CustomEmojiRequestID), SupporterSubscriptionID: postgres.ToNullString(n.SupporterSubscriptionID),
@@ -382,11 +382,13 @@ func (r *Repository) InsertNotificationsForEach(ctx context.Context, tx uow.Tx, 
 		ServiceClosureEventID: postgres.ToNullString(n.ServiceClosureEventID), ServiceClosureChange: postgres.ToNullString(string(n.ServiceClosureChange)), VoiceRoomID: postgres.ToNullString(n.VoiceRoomID),
 		ErrorGroupChange: postgres.ToNullString(string(n.ErrorGroupChange)), ErrorGroupID: postgres.ToNullString(n.ErrorGroupID), ErrorGroupHour: postgres.ToNullTime(n.ErrorGroupHour),
 		AnnouncementID: postgres.ToNullString(n.AnnouncementID), HookAppealID: postgres.ToNullString(n.HookAppealID),
-		AutoDeleteLimitNoticeID: postgres.ToNullString(n.AutoDeleteLimitNoticeID), CreatedAt: n.CreatedAt,
+		AutoDeleteLimitNoticeID: postgres.ToNullString(n.AutoDeleteLimitNoticeID),
 	}
 	for _, m := range ns {
 		arg.Ids, arg.RecipientAccountIds = append(arg.Ids, m.ID), append(arg.RecipientAccountIds, m.RecipientAccountID)
 		arg.SeveranceIds, arg.DedupeKeys = append(arg.SeveranceIds, m.SeveranceID), append(arg.DedupeKeys, m.DedupeKey)
+		arg.SourceAccountIds, arg.SourceDomains = append(arg.SourceAccountIds, m.SourceAccountID), append(arg.SourceDomains, m.SourceDomain)
+		arg.CreatedAts = append(arg.CreatedAts, m.CreatedAt)
 	}
 	inserted, err := q.InsertNotificationsForEach(ctx, arg)
 	if err != nil {

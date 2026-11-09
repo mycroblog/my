@@ -784,7 +784,7 @@ func notificationRepoInsertsForEach(t *testing.T, r *notificationRepo) {
 		got, err = r.repo.InsertNotificationsForEach(ctx, tx, ns)
 		return err
 	})
-	if !maps.Equal(got, map[string]bool{alice: true, bob: true}) {
+	if !maps.Equal(got, map[string]bool{ns[0].ID: true, ns[1].ID: true}) {
 		t.Errorf("InsertNotificationsForEach(alice, bob) = %v, want both", got)
 	}
 	read := func(id string) (n notification.Notification) {
@@ -811,6 +811,35 @@ func notificationRepoInsertsForEach(t *testing.T, r *notificationRepo) {
 	})
 	if len(got) != 0 {
 		t.Errorf("InsertNotificationsForEach of a dedupe key again = %v, want none", got)
+	}
+
+	// Rows of one recipient that differ by their source, its domain, and their time, without a
+	// severance.
+	carol := r.ids.NewID()
+	follow := func(source, domain string, at time.Time) notification.Notification {
+		id := r.ids.NewID()
+		return notification.Notification{
+			ID: id, RecipientAccountID: carol, Type: notification.TypeFollow, SourceAccountID: source, SourceDomain: domain,
+			DedupeKey: notification.FollowKey(notification.TypeFollow, r.ids.NewID()), CreatedAt: at,
+		}
+	}
+	follows := []notification.Notification{follow(r.ids.NewID(), "", r.clock.Now()), follow(r.ids.NewID(), "remote.example", r.clock.Now().Add(time.Second))}
+	r.tx(t, func(ctx context.Context, tx uow.Tx) (err error) {
+		got, err = r.repo.InsertNotificationsForEach(ctx, tx, follows)
+		return err
+	})
+	if !maps.Equal(got, map[string]bool{follows[0].ID: true, follows[1].ID: true}) {
+		t.Errorf("InsertNotificationsForEach(two follows of carol) = %v, want both", got)
+	}
+	for _, n := range follows {
+		one := n
+		one.ID, one.RecipientAccountID, one.DedupeKey = r.ids.NewID(), r.ids.NewID(), "follow:"+r.ids.NewID()
+		single, _ := r.insert(t, one)
+		want := read(single.ID)
+		want.ID, want.RecipientAccountID, want.DedupeKey = n.ID, n.RecipientAccountID, n.DedupeKey
+		if got := read(n.ID); !reflect.DeepEqual(got, want) {
+			t.Errorf("Notification(%s) = %+v; want %+v, as InsertNotification inserts it", n.ID, got, want)
+		}
 	}
 }
 

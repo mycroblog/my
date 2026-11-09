@@ -155,3 +155,11 @@ LIMIT sqlc.arg(page_limit);
 -- other modules' projections.
 -- name: ListAllDomainMutes :many
 SELECT account_id, domain, created_at FROM account_domain_mutes ORDER BY account_id, domain;
+
+-- DomainMutersAmong returns the accounts among account_ids that mute any of domains (both JSON
+-- arrays), as MutesAnyDomain checks one.
+-- name: DomainMutersAmong :many
+SELECT DISTINCT account_id FROM account_domain_mutes
+WHERE account_id IN (SELECT value FROM json_each(CAST(sqlc.arg(account_ids) AS TEXT)))
+  AND domain IN (SELECT value FROM json_each(CAST(sqlc.arg(domains) AS TEXT)))
+ORDER BY account_id;

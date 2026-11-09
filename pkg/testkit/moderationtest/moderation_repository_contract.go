@@ -328,6 +328,13 @@ func modRepoAccountRestrictions(t *testing.T, r *modRepo) {
 		if err != nil || !slices.Equal(of[account], want) || len(of[other]) != 0 {
 			t.Errorf("%s: AccountRestrictionsInEffectOf = %v, %v; want %v of the account alone", name, of, err, want)
 		}
+		r.tx(t, func(ctx context.Context, tx uow.Tx) (err error) {
+			of, err = r.h.Moderation.AccountRestrictionsInEffectOfTx(ctx, tx, []string{account, other}, at)
+			return err
+		})
+		if !slices.Equal(of[account], want) || len(of[other]) != 0 {
+			t.Errorf("%s: AccountRestrictionsInEffectOfTx = %v; want %v of the account alone", name, of, want)
+		}
 	}
 	now := r.clock.Now()
 	inEffect("now", now, moderation.RestrictLogin, moderation.RestrictPost, moderation.RestrictPublicDiscovery)
@@ -420,6 +427,14 @@ func modRepoDomainRestrictions(t *testing.T, r *modRepo) {
 		of, err := r.h.Moderation.DomainRestrictionsInEffectOf(ctx, domains, at)
 		if err != nil {
 			t.Fatalf("%s: DomainRestrictionsInEffectOf = %v", name, err)
+		}
+		var ofTx map[string][]moderation.Restriction
+		r.tx(t, func(ctx context.Context, tx uow.Tx) (err error) {
+			ofTx, err = r.h.Moderation.DomainRestrictionsInEffectOfTx(ctx, tx, domains, at)
+			return err
+		})
+		if !reflect.DeepEqual(ofTx, of) {
+			t.Errorf("%s: DomainRestrictionsInEffectOfTx = %v, want %v as DomainRestrictionsInEffectOf", name, ofTx, of)
 		}
 		var union []moderation.Restriction
 		for _, d := range domains {

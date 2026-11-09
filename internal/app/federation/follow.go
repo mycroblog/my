@@ -110,6 +110,44 @@ func registerFollowProjectors(r *uow.Projectors, rec recorder) {
 		}
 		return requested(ctx, tx, ev.Follow)
 	})
+	r.Register(appgraph.EventFollowsCreated, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
+		ev, ok := e.(appgraph.FollowsCreated)
+		if !ok {
+			return nil
+		}
+		var ids []string
+		for _, f := range ev.Followed {
+			ids = append(ids, f.Follow.FollowerAccountID, f.Follow.FolloweeAccountID)
+		}
+		for _, f := range ev.Requested {
+			ids = append(ids, f.Follow.FollowerAccountID, f.Follow.FolloweeAccountID)
+		}
+		if len(ids) == 0 {
+			return nil
+		}
+		local, err := rec.localAmong(ctx, tx, ids)
+		if err != nil {
+			return err
+		}
+		// As requested and answered do for each: a Follow of a local follower of a remote
+		// account, and an Accept of a remote follower that a local account took at once.
+		var as []federation.OutboundActivity
+		follow := func(f appgraph.FollowRecord) {
+			if local[f.FollowerAccountID] && !local[f.FolloweeAccountID] {
+				as = append(as, followActivity(federation.ActivityFollow, f, f.RequestedAt))
+			}
+		}
+		for _, f := range ev.Followed {
+			follow(f.Follow)
+			if !local[f.Follow.FollowerAccountID] && local[f.Follow.FolloweeAccountID] {
+				as = append(as, followActivity(federation.ActivityAccept, f.Follow, f.Acceptance.AcceptedAt))
+			}
+		}
+		for _, f := range ev.Requested {
+			follow(f.Follow)
+		}
+		return rec.recordAll(ctx, tx, as)
+	})
 	r.Register(appgraph.EventFollowAccepted, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
 		ev, ok := e.(appgraph.FollowAccepted)
 		if !ok || ev.Acceptance.AcceptedBy == appgraph.AcceptedByRemote {

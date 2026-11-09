@@ -109,6 +109,13 @@ func RegisterProjectors(r *uow.Projectors, repo Repository, moderated ModeratedE
 			FollowerAccountID: ev.Follow.FollowerAccountID, FolloweeAccountID: ev.Follow.FolloweeAccountID, ShowBoosts: ev.Preferences.ShowBoosts,
 		})
 	})
+	r.Register(appgraph.EventFollowsCreated, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
+		var es []FollowEdge
+		for _, f := range e.(appgraph.FollowsCreated).Followed {
+			es = append(es, FollowEdge{FollowerAccountID: f.Follow.FollowerAccountID, FolloweeAccountID: f.Follow.FolloweeAccountID, ShowBoosts: f.Preferences.ShowBoosts})
+		}
+		return repo.UpsertFollowEdges(ctx, tx, es)
+	})
 	r.Register(appgraph.EventFollowAccepted, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
 		ev := e.(appgraph.FollowAccepted)
 		return repo.UpsertFollowEdge(ctx, tx, FollowEdge{
