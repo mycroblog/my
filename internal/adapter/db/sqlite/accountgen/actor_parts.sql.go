@@ -43,6 +43,41 @@ func (q *Queries) ListAccountHandlesByIDs(ctx context.Context, ids string) ([]Ac
 	return items, nil
 }
 
+const listAccountHandlesByNames = `-- name: ListAccountHandlesByNames :many
+SELECT h.account_id, h.username, h.username_normalized, h.domain FROM account_handles h
+JOIN json_each(CAST(?1 AS TEXT)) n
+  ON n.value ->> '$.u' = h.username_normalized AND n.value ->> '$.d' = h.domain
+`
+
+// The handles of a JSON array of {"u", "d"} pairs, as GetAccountHandleByName reads one.
+func (q *Queries) ListAccountHandlesByNames(ctx context.Context, names string) ([]AccountHandle, error) {
+	rows, err := q.db.QueryContext(ctx, listAccountHandlesByNames, names)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []AccountHandle{}
+	for rows.Next() {
+		var i AccountHandle
+		if err := rows.Scan(
+			&i.AccountID,
+			&i.Username,
+			&i.UsernameNormalized,
+			&i.Domain,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listAccountKeysOfAccounts = `-- name: ListAccountKeysOfAccounts :many
 SELECT id, account_id, key_id, algorithm, public_key_pem, fingerprint, created_at FROM account_keys
 WHERE account_id IN (SELECT value FROM json_each(CAST(?1 AS TEXT))) ORDER BY account_id, id

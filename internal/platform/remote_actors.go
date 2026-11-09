@@ -91,3 +91,8 @@ func (m remoteMentions) ResolveHandle(ctx context.Context, username, domain stri
 func (m remoteMentions) RemoteProfileURL(ctx context.Context, accountID string) (string, error) {
 	return m.a.Accounts.RemoteProfileURL(ctx, accountID)
 }
+
+// RemoteProfileURLs reads the profile pages of many remote accounts at once.
+func (m remoteMentions) RemoteProfileURLs(ctx context.Context, accountIDs []string) (map[string]string, error) {
+	return m.a.Accounts.RemoteProfileURLs(ctx, accountIDs)
+}

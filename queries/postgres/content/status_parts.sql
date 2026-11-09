@@ -22,3 +22,12 @@ SELECT DISTINCT account_id FROM status_mention_index WHERE status_id = sqlc.arg(
 
 -- name: ListCustomEmojisByIDs :many
 SELECT id, shortcode, domain, uri, created_by_user_id, created_at FROM custom_emojis WHERE id = ANY(sqlc.arg(ids)::uuid[]) ORDER BY id;
+
+-- name: InsertStatusMentions :exec
+INSERT INTO status_mention_index (account_id, status_id)
+SELECT unnest(sqlc.arg(account_ids)::uuid[]), sqlc.arg(status_id)::uuid
+ON CONFLICT (account_id, status_id) DO NOTHING;
+
+-- name: InsertStatusRevisionMentions :exec
+INSERT INTO status_revision_mentions (revision_id, account_id)
+SELECT sqlc.arg(revision_id)::uuid, unnest(sqlc.arg(account_ids)::uuid[]);

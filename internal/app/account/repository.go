@@ -118,6 +118,9 @@ type Repository interface {
 	// FindAccounts returns the accounts of ids that exist, by ID, as FindAccount returns one, with
 	// one query.
 	FindAccounts(ctx context.Context, ids []string) (map[string]account.Account, error)
+	// FindHandles returns the handles of names that exist, by name, as FindHandle returns each,
+	// with one query.
+	FindHandles(ctx context.Context, names []HandleName) (map[HandleName]account.Handle, error)
 	// FindLifecycleStates returns the lifecycle states of the accounts of ids that have one, by
 	// account, as FindLifecycleState returns one, with one query.
 	FindLifecycleStates(ctx context.Context, ids []string) (map[string]account.LifecycleState, error)
@@ -212,4 +215,11 @@ type ActorParts struct {
 	Profiles  map[string]account.ProfileRevision
 	Keys      map[string][]account.Key
 	Lifecycle map[string]account.LifecycleState
+}
+
+// HandleName names a handle by its normalized username and its domain (account.LocalDomain for a
+// local account), as FindHandle takes it.
+type HandleName struct {
+	UsernameNormalized string
+	Domain             string
 }

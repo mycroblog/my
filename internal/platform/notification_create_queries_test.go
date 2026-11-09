@@ -206,3 +206,22 @@ func TestVoiceStartedNotificationQueries(t *testing.T) {
 		t.Errorf("%d queries to tell 25 followers, more than the %d for 5", large, small)
 	}
 }
+
+// TestMentionQueries checks that posting a status that mentions local accounts makes a number of
+// round trips that does not grow with its mentions: the handles are resolved, the mentions written,
+// and their accounts notified together.
+func TestMentionQueries(t *testing.T) {
+	t.Parallel()
+	total := func(byOp map[string]int) int {
+		n := 0
+		for _, c := range byOp {
+			n += c
+		}
+		return n
+	}
+	small, large := total(mentionQueries(t, 5)), total(mentionQueries(t, 15))
+	t.Logf("%d queries to post with 5 mentions, %d with 15", small, large)
+	if large > small {
+		t.Errorf("%d queries to post with 15 mentions, more than the %d with 5", large, small)
+	}
+}
