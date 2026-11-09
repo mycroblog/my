@@ -514,12 +514,18 @@ func (r *Reader) viewParts(ctx context.Context, rev content.Revision) (RevisionP
 			}
 		}
 	}
-	for _, id := range rev.TagIDs {
-		tag, err := r.d.Statuses.FindTag(ctx, id)
+	if len(rev.TagIDs) > 0 {
+		tags, err := r.d.Statuses.FindTags(ctx, rev.TagIDs)
 		if err != nil {
 			return RevisionParts{}, err
 		}
-		out.Tags = append(out.Tags, tag)
+		for _, id := range rev.TagIDs {
+			tag, ok := tags[id]
+			if !ok {
+				return RevisionParts{}, fmt.Errorf("tag %s of revision %s: %w", id, rev.ID, ErrNotFound)
+			}
+			out.Tags = append(out.Tags, tag)
+		}
 	}
 	return out, nil
 }

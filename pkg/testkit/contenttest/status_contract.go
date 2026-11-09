@@ -956,6 +956,27 @@ func statusEnsuresTags(t *testing.T, e *StatusEnv) {
 	if got, err := e.H.Statuses.FindTags(ctx, []string{first.ID, e.IDs.NewID()}); err != nil || len(got) != 1 || got[first.ID] != first {
 		t.Errorf("FindTags = %+v, %v; want %+v alone, as FindTag", got, err, first)
 	}
+	// Many tags together, as EnsureTag ensures each: the existing one is kept with its first
+	// spelling, the new ones are stored.
+	e.Clock.Advance(time.Second)
+	tags := []content.Tag{
+		{ID: e.IDs.NewID(), Name: "GOLANG", NameNormalized: "golang", CreatedAt: e.Clock.Now()},
+		{ID: e.IDs.NewID(), Name: "Rust", NameNormalized: "rust", CreatedAt: e.Clock.Now()},
+		{ID: e.IDs.NewID(), Name: "zig", NameNormalized: "zig", CreatedAt: e.Clock.Now()},
+	}
+	var got map[string]content.Tag
+	if err := e.H.UnitOfWork.Tx(ctx, func(tx uow.Tx) (err error) {
+		got, err = e.H.Statuses.EnsureTags(ctx, tx, tags)
+		return err
+	}); err != nil {
+		t.Fatalf("EnsureTags = %v", err)
+	}
+	if len(got) != 3 || got["golang"] != first || got["rust"].ID != tags[1].ID || got["rust"].Name != "Rust" || got["zig"].ID != tags[2].ID {
+		t.Errorf("EnsureTags = %+v; want the first golang and the new rust and zig", got)
+	}
+	if one, err := e.H.Statuses.FindTagByName(ctx, "rust"); err != nil || one != got["rust"] {
+		t.Errorf("FindTagByName(rust) = %+v, %v; want %+v", one, err, got["rust"])
+	}
 }
 
 // statusProjectionEqualsRebuild runs random sequences of creations, revisions, and deletions

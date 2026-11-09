@@ -5,6 +5,7 @@ package content
 import (
 	"context"
 	"fmt"
+	"maps"
 	"slices"
 	"sync"
 
@@ -292,6 +293,29 @@ func (p *pageStatuses) FindCounters(ctx context.Context, statusID string) (conte
 		return c, err
 	}
 	return p.Repository.FindCounters(ctx, statusID)
+}
+
+// FindTags returns the hashtags of the page's statuses as they were read, and reads the others
+// together.
+func (p *pageStatuses) FindTags(ctx context.Context, ids []string) (map[string]content.Tag, error) {
+	out := make(map[string]content.Tag, len(ids))
+	var missing []string
+	for _, id := range ids {
+		if tag, ok := p.tags[id]; ok {
+			out[id] = tag
+		} else {
+			missing = append(missing, id)
+		}
+	}
+	if len(missing) == 0 {
+		return out, nil
+	}
+	read, err := p.Repository.FindTags(ctx, missing)
+	if err != nil {
+		return nil, err
+	}
+	maps.Copy(out, read)
+	return out, nil
 }
 
 // FindTag returns a hashtag of the page's statuses as it was read, and reads any other.
