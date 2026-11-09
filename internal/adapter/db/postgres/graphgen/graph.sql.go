@@ -483,6 +483,47 @@ func (q *Queries) ListFollowEdges(ctx context.Context) ([]FollowEdge, error) {
 	return items, nil
 }
 
+const listFollowEdgesBetween = `-- name: ListFollowEdgesBetween :many
+SELECT follower_account_id, followee_account_id, follow_id, state, since
+FROM follow_edges
+WHERE (follower_account_id, followee_account_id) IN (SELECT unnest($1::uuid[]), unnest($2::uuid[]))
+   OR (followee_account_id, follower_account_id) IN (SELECT unnest($1::uuid[]), unnest($2::uuid[]))
+ORDER BY follower_account_id, followee_account_id
+`
+
+type ListFollowEdgesBetweenParams struct {
+	AIds []string
+	BIds []string
+}
+
+// ListFollowEdgesBetween returns the edges between a_ids[i] and b_ids[i], in either direction
+// (the unnests of a select list advance together).
+func (q *Queries) ListFollowEdgesBetween(ctx context.Context, arg ListFollowEdgesBetweenParams) ([]FollowEdge, error) {
+	rows, err := q.db.Query(ctx, listFollowEdgesBetween, arg.AIds, arg.BIds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []FollowEdge{}
+	for rows.Next() {
+		var i FollowEdge
+		if err := rows.Scan(
+			&i.FollowerAccountID,
+			&i.FolloweeAccountID,
+			&i.FollowID,
+			&i.State,
+			&i.Since,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listFollowEdgesOf = `-- name: ListFollowEdgesOf :many
 SELECT follower_account_id, followee_account_id, follow_id, state, since
 FROM follow_edges WHERE follower_account_id = $1 OR followee_account_id = $1
@@ -493,6 +534,39 @@ ORDER BY follower_account_id, followee_account_id
 // by follower and followee.
 func (q *Queries) ListFollowEdgesOf(ctx context.Context, accountID string) ([]FollowEdge, error) {
 	rows, err := q.db.Query(ctx, listFollowEdgesOf, accountID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []FollowEdge{}
+	for rows.Next() {
+		var i FollowEdge
+		if err := rows.Scan(
+			&i.FollowerAccountID,
+			&i.FolloweeAccountID,
+			&i.FollowID,
+			&i.State,
+			&i.Since,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listFollowEdgesOfAccounts = `-- name: ListFollowEdgesOfAccounts :many
+SELECT follower_account_id, followee_account_id, follow_id, state, since
+FROM follow_edges WHERE follower_account_id = ANY($1::uuid[]) OR followee_account_id = ANY($1::uuid[])
+ORDER BY follower_account_id, followee_account_id
+`
+
+// ListFollowEdgesOfAccounts is ListFollowEdgesOf of many accounts, each edge once.
+func (q *Queries) ListFollowEdgesOfAccounts(ctx context.Context, accountIds []string) ([]FollowEdge, error) {
+	rows, err := q.db.Query(ctx, listFollowEdgesOfAccounts, accountIds)
 	if err != nil {
 		return nil, err
 	}

@@ -162,3 +162,20 @@ RETURNING account_id;
 
 -- name: DeleteZeroFollowCountersOf :exec
 DELETE FROM follow_counters WHERE account_id IN (SELECT value FROM json_each(CAST(sqlc.arg(account_ids) AS TEXT))) AND followers_count = 0 AND following_count = 0;
+
+-- ListFollowEdgesOfAccounts is ListFollowEdgesOf of many accounts, each edge once.
+-- name: ListFollowEdgesOfAccounts :many
+SELECT follower_account_id, followee_account_id, follow_id, state, since
+FROM follow_edges
+WHERE follower_account_id IN (SELECT value FROM json_each(CAST(sqlc.arg(account_ids) AS TEXT)))
+   OR followee_account_id IN (SELECT value FROM json_each(CAST(sqlc.arg(account_ids) AS TEXT)))
+ORDER BY follower_account_id, followee_account_id;
+
+-- ListFollowEdgesBetween returns the edges between the accounts of each pair, a JSON array of
+-- {"a": ..., "b": ...}, in either direction.
+-- name: ListFollowEdgesBetween :many
+SELECT follower_account_id, followee_account_id, follow_id, state, since
+FROM follow_edges
+WHERE (follower_account_id, followee_account_id) IN (SELECT value ->> '$.a', value ->> '$.b' FROM json_each(CAST(sqlc.arg(pairs) AS TEXT)))
+   OR (followee_account_id, follower_account_id) IN (SELECT value ->> '$.a', value ->> '$.b' FROM json_each(CAST(sqlc.arg(pairs) AS TEXT)))
+ORDER BY follower_account_id, followee_account_id;

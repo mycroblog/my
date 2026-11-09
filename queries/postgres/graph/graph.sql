@@ -161,3 +161,18 @@ RETURNING c.account_id;
 
 -- name: DeleteZeroFollowCountersOf :exec
 DELETE FROM follow_counters WHERE account_id = ANY(sqlc.arg(account_ids)::uuid[]) AND followers_count = 0 AND following_count = 0;
+
+-- ListFollowEdgesOfAccounts is ListFollowEdgesOf of many accounts, each edge once.
+-- name: ListFollowEdgesOfAccounts :many
+SELECT follower_account_id, followee_account_id, follow_id, state, since
+FROM follow_edges WHERE follower_account_id = ANY(sqlc.arg(account_ids)::uuid[]) OR followee_account_id = ANY(sqlc.arg(account_ids)::uuid[])
+ORDER BY follower_account_id, followee_account_id;
+
+-- ListFollowEdgesBetween returns the edges between a_ids[i] and b_ids[i], in either direction
+-- (the unnests of a select list advance together).
+-- name: ListFollowEdgesBetween :many
+SELECT follower_account_id, followee_account_id, follow_id, state, since
+FROM follow_edges
+WHERE (follower_account_id, followee_account_id) IN (SELECT unnest(sqlc.arg(a_ids)::uuid[]), unnest(sqlc.arg(b_ids)::uuid[]))
+   OR (followee_account_id, follower_account_id) IN (SELECT unnest(sqlc.arg(a_ids)::uuid[]), unnest(sqlc.arg(b_ids)::uuid[]))
+ORDER BY follower_account_id, followee_account_id;

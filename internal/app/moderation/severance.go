@@ -78,7 +78,8 @@ type SeveranceRepository interface {
 type Follows interface {
 	Counterparts(ctx context.Context, tx uow.Tx, accountID string) ([]string, error)
 	SeverByModeration(ctx context.Context, tx uow.Tx, accountID string, others []string, announce bool, now time.Time) (appgraph.Severed, error)
-	SeverEach(ctx context.Context, tx uow.Tx, accountID string, others []string, dir appgraph.SeverDirection, announce bool, now time.Time) (map[string]appgraph.Severed, error)
+	CounterpartsOf(ctx context.Context, tx uow.Tx, ids []string) (map[string][]string, error)
+	SeverAmong(ctx context.Context, tx uow.Tx, others map[string][]string, dir appgraph.SeverDirection, announce bool, now time.Time) (map[string]appgraph.Severed, error)
 }
 
 // Directory is the part of the account module's public API that finds the accounts that a
@@ -123,52 +124,48 @@ func (s *Service) severAccountIn(ctx context.Context, tx uow.Tx, a moderation.Ac
 	if err != nil {
 		return err
 	}
-	// The follows with all the local accounts end together, on the target's side.
-	lost, err := s.d.Follows.SeverEach(ctx, tx, a.TargetAccountID, locals, appgraph.SeverBoth, true, now)
+	// The follows with all the local accounts end together.
+	others := make(map[string][]string, len(locals))
+	for _, local := range locals {
+		others[local] = []string{a.TargetAccountID}
+	}
+	lost, err := s.d.Follows.SeverAmong(ctx, tx, others, appgraph.SeverBoth, true, now)
 	if err != nil {
 		return err
 	}
+	_, err = s.recordSeverances(ctx, tx, Severance{ActionID: a.ID}, locals, lost, now)
+	return err
+}
+
+// recordSeverances inserts, for each of locals that lost an active follow, the severance base
+// of its action with what it lost, and emits ManyRelationshipsSevered of the new ones; it returns
+// how many are new.
+func (s *Service) recordSeverances(ctx context.Context, tx uow.Tx, base Severance, locals []string, lost map[string]appgraph.Severed, now time.Time) (int, error) {
 	var svs []Severance
 	for _, local := range locals {
-		severed := lost[local].Reversed()
+		severed := lost[local]
 		if !severed.Lost() {
 			continue
 		}
-		sv := Severance{ID: s.d.IDs.NewID(), ActionID: a.ID, AccountID: local, FollowersLost: severed.Followers, FollowingLost: severed.Following, OccurredAt: now}
+		sv := base
+		sv.ID, sv.AccountID, sv.FollowersLost, sv.FollowingLost, sv.OccurredAt = s.d.IDs.NewID(), local, severed.Followers, severed.Following, now
 		if err := sv.Validate(); err != nil {
-			return err
+			return 0, err
 		}
 		svs = append(svs, sv)
 	}
 	if len(svs) == 0 {
-		return nil
+		return 0, nil
 	}
 	created, err := s.d.Repository.InsertSeverances(ctx, tx, svs)
 	if err != nil {
-		return err
+		return 0, err
 	}
 	svs = slices.DeleteFunc(svs, func(sv Severance) bool { return !created[sv.AccountID] })
 	if len(svs) == 0 {
-		return nil
+		return 0, nil
 	}
-	return tx.Emit(ctx, ManyRelationshipsSevered{Severances: svs})
-}
-
-// recordSeverance inserts sv with the counts of severed, unless the account lost no active
-// follow, and emits RelationshipsSevered when it is new; created reports a new one.
-func (s *Service) recordSeverance(ctx context.Context, tx uow.Tx, sv Severance, severed appgraph.Severed, now time.Time) (created bool, err error) {
-	if !severed.Lost() {
-		return false, nil
-	}
-	sv.ID, sv.FollowersLost, sv.FollowingLost, sv.OccurredAt = s.d.IDs.NewID(), severed.Followers, severed.Following, now
-	if err := sv.Validate(); err != nil {
-		return false, err
-	}
-	created, err = s.d.Repository.InsertSeverance(ctx, tx, sv)
-	if err != nil || !created {
-		return false, err
-	}
-	return true, tx.Emit(ctx, RelationshipsSevered{Severance: sv})
+	return len(svs), tx.Emit(ctx, ManyRelationshipsSevered{Severances: svs})
 }
 
 // SeverDomain cuts the follows between the local accounts and the accounts of the domain that the
@@ -204,21 +201,14 @@ func (s *Service) severDomain(ctx context.Context, domainActionID string, record
 		Size: s.d.FanOutSize,
 		Page: queue.PageByLastKey(s.d.Directory.LocalAccountIDs),
 		Handle: func(ctx context.Context, locals []string) error {
-			for _, local := range locals {
-				var created bool
-				err := s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
-					var err error
-					created, err = s.severDomainOf(ctx, tx, a, local)
-					return err
-				})
-				if err != nil {
-					return err
-				}
-				if created {
-					*recorded++
-				}
-			}
-			return nil
+			var created int
+			err := s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+				var err error
+				created, err = s.severDomainOf(ctx, tx, a, locals)
+				return err
+			})
+			*recorded += created
+			return err
 		},
 		Enqueue: func(ctx context.Context, steps []queue.FanOutStep) error {
 			jobs := make([]queue.NewJob, 0, len(steps))
@@ -235,22 +225,40 @@ func (s *Service) severDomain(ctx context.Context, domainActionID string, record
 	return run(fan)
 }
 
-// severDomainOf cuts, inside tx, the follows between the local account and the accounts of the
-// suspended domain of a, and records its severance; created reports a new one.
-func (s *Service) severDomainOf(ctx context.Context, tx uow.Tx, a moderation.DomainAction, local string) (created bool, err error) {
-	others, err := s.d.Follows.Counterparts(ctx, tx, local)
-	if err != nil || len(others) == 0 {
-		return false, err
+// severDomainOf cuts, inside tx, the follows between the local accounts and the accounts of the
+// suspended domain of a, and records their severances, all together; it returns how many
+// severances are new.
+func (s *Service) severDomainOf(ctx context.Context, tx uow.Tx, a moderation.DomainAction, locals []string) (int, error) {
+	counterparts, err := s.d.Follows.CounterpartsOf(ctx, tx, locals)
+	if err != nil {
+		return 0, err
 	}
-	if others, err = s.d.Directory.AccountsOnDomain(ctx, tx, a.Domain, others); err != nil || len(others) == 0 {
-		return false, err
+	var all []string
+	for _, local := range locals {
+		all = append(all, counterparts[local]...)
+	}
+	if len(all) == 0 {
+		return 0, nil
+	}
+	slices.Sort(all)
+	onDomain, err := s.d.Directory.AccountsOnDomain(ctx, tx, a.Domain, slices.Compact(all))
+	if err != nil || len(onDomain) == 0 {
+		return 0, err
+	}
+	others := make(map[string][]string, len(locals))
+	for _, local := range locals {
+		for _, other := range counterparts[local] {
+			if slices.Contains(onDomain, other) {
+				others[local] = append(others[local], other)
+			}
+		}
 	}
 	now := kernel.Normalize(s.d.Clock.Now())
-	severed, err := s.d.Follows.SeverByModeration(ctx, tx, local, others, false, now)
+	lost, err := s.d.Follows.SeverAmong(ctx, tx, others, appgraph.SeverBoth, false, now)
 	if err != nil {
-		return false, err
+		return 0, err
 	}
-	return s.recordSeverance(ctx, tx, Severance{DomainActionID: a.ID, AccountID: local}, severed, now)
+	return s.recordSeverances(ctx, tx, Severance{DomainActionID: a.ID}, locals, lost, now)
 }
 
 // handleSeverDomain runs JobSeverDomain.

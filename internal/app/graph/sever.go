@@ -4,6 +4,7 @@ package graph
 
 import (
 	"context"
+	"maps"
 	"slices"
 	"time"
 
@@ -69,39 +70,71 @@ var SeverBoth = SeverDirection{Followers: true, Following: true}
 
 // SeverDirected is SeverByModeration of the follows in the direction dir only.
 func (s *Service) SeverDirected(ctx context.Context, tx uow.Tx, accountID string, others []string, dir SeverDirection, announce bool, now time.Time) (Severed, error) {
-	each, err := s.SeverEach(ctx, tx, accountID, others, dir, announce, now)
-	var out Severed
-	for _, sv := range each {
-		out.Followers += sv.Followers
-		out.Following += sv.Following
-	}
-	return out, err
+	lost, err := s.SeverAmong(ctx, tx, map[string][]string{accountID: others}, dir, announce, now)
+	return lost[accountID], err
 }
 
-// SeverEach is SeverDirected that returns what accountID lost with each of others, by other:
-// the follows with all of them end together, with a number of statements that does not grow
-// with them, and one FollowsTerminated tells the projectors.
-func (s *Service) SeverEach(ctx context.Context, tx uow.Tx, accountID string, others []string, dir SeverDirection, announce bool, now time.Time) (map[string]Severed, error) {
-	out := map[string]Severed{}
-	others = slices.DeleteFunc(slices.Compact(slices.Sorted(slices.Values(others))), func(id string) bool { return id == accountID })
-	if len(others) == 0 {
-		return out, nil
-	}
-	repo := s.d.Repository
-	if err := repo.LockPairs(ctx, tx, accountID, others); err != nil {
-		return nil, err
-	}
-	edges, err := repo.ListEdgesOf(ctx, tx, accountID)
+// CounterpartsOf is Counterparts of each of ids, by account, with one query.
+func (s *Service) CounterpartsOf(ctx context.Context, tx uow.Tx, ids []string) (map[string][]string, error) {
+	edges, err := s.d.Repository.ListEdgesOfAccounts(ctx, tx, ids)
 	if err != nil {
 		return nil, err
 	}
+	out := make(map[string][]string, len(ids))
+	for _, id := range ids {
+		out[id] = []string{}
+	}
+	for _, e := range edges {
+		if _, ok := out[e.FollowerAccountID]; ok {
+			out[e.FollowerAccountID] = append(out[e.FollowerAccountID], e.FolloweeAccountID)
+		}
+		if _, ok := out[e.FolloweeAccountID]; ok {
+			out[e.FolloweeAccountID] = append(out[e.FolloweeAccountID], e.FollowerAccountID)
+		}
+	}
+	for id, others := range out {
+		slices.Sort(others)
+		out[id] = slices.Compact(others)
+	}
+	return out, nil
+}
+
+// SeverAmong is SeverDirected of each account of others with its others, by account, in dir as
+// seen from the account: the follows of all the pairs end together, with a number of statements
+// that does not grow with them, and one FollowsTerminated tells the projectors. A follow between
+// two accounts that are both keys of others ends once and counts for both.
+func (s *Service) SeverAmong(ctx context.Context, tx uow.Tx, others map[string][]string, dir SeverDirection, announce bool, now time.Time) (map[string]Severed, error) {
+	out := map[string]Severed{}
+	var as, bs []string
+	for _, account := range slices.Sorted(maps.Keys(others)) {
+		for _, other := range slices.Compact(slices.Sorted(slices.Values(others[account]))) {
+			if other != account {
+				as, bs = append(as, account), append(bs, other)
+			}
+		}
+	}
+	if len(as) == 0 {
+		return out, nil
+	}
+	repo := s.d.Repository
+	if err := repo.LockPairs(ctx, tx, as, bs); err != nil {
+		return nil, err
+	}
+	edges, err := repo.ListEdgesBetween(ctx, tx, as, bs)
+	if err != nil {
+		return nil, err
+	}
+	named := make(map[[2]string]bool, len(as))
+	for i := range as {
+		named[[2]string{as[i], bs[i]}] = true
+	}
+	// An edge ends when one of its accounts names the other in a direction of dir: as a follower
+	// (Following) or as a followee (Followers).
 	var ending []graph.Edge
 	var ids []string
 	for _, e := range edges {
-		follower, followee := e.FollowerAccountID == accountID, e.FolloweeAccountID == accountID
-		switch {
-		case follower && dir.Following && slices.Contains(others, e.FolloweeAccountID),
-			followee && dir.Followers && slices.Contains(others, e.FollowerAccountID):
+		if (dir.Following && named[[2]string{e.FollowerAccountID, e.FolloweeAccountID}]) ||
+			(dir.Followers && named[[2]string{e.FolloweeAccountID, e.FollowerAccountID}]) {
 			ending, ids = append(ending, e), append(ids, e.FollowID)
 		}
 	}
@@ -127,13 +160,14 @@ func (s *Service) SeverEach(ctx context.Context, tx uow.Tx, accountID string, ot
 		if e.State != graph.StateActive {
 			continue
 		}
-		if e.FolloweeAccountID == accountID {
+		if _, ok := others[e.FollowerAccountID]; ok && dir.Following && named[[2]string{e.FollowerAccountID, e.FolloweeAccountID}] {
 			sv := out[e.FollowerAccountID]
-			sv.Followers++
-			out[e.FollowerAccountID] = sv
-		} else {
-			sv := out[e.FolloweeAccountID]
 			sv.Following++
+			out[e.FollowerAccountID] = sv
+		}
+		if _, ok := others[e.FolloweeAccountID]; ok && dir.Followers && named[[2]string{e.FolloweeAccountID, e.FollowerAccountID}] {
+			sv := out[e.FolloweeAccountID]
+			sv.Followers++
 			out[e.FolloweeAccountID] = sv
 		}
 	}
@@ -145,7 +179,3 @@ func (s *Service) SeverEach(ctx context.Context, tx uow.Tx, accountID string, ot
 	}
 	return out, tx.Emit(ctx, ev)
 }
-
-// Reversed is what the other account lost: its followers are the follows that the account lost
-// of it, and the other way round.
-func (s Severed) Reversed() Severed { return Severed{Followers: s.Following, Following: s.Followers} }
