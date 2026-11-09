@@ -172,6 +172,30 @@ func TestFingerprint(t *testing.T) {
 	}
 }
 
+//go:noinline
+func failListKeys() error { return kernel.WithStack(errors.New("context deadline exceeded")) }
+
+//go:noinline
+func failGetProfile() error { return kernel.WithStack(errors.New("context deadline exceeded")) }
+
+// Errors with the stack of where they came from, reported at the same place, fall into one group
+// per origin: the reporting place's frames no longer come first and make them one.
+func TestFingerprintOfErrorsFromDifferentOrigins(t *testing.T) {
+	t.Parallel()
+	event := func(err error) kernel.ErrorEvent {
+		ev := kernel.NewErrorEvent(err, "activitypub GET /ap/objects/{id}")
+		scrubEvent(&ev)
+		return ev
+	}
+	keys, profile := event(failListKeys()), event(failGetProfile())
+	if fingerprint(keys) == fingerprint(profile) {
+		t.Error("errors from two functions share a fingerprint")
+	}
+	if fingerprint(keys) != fingerprint(event(failListKeys())) {
+		t.Error("two errors from the same function differ in fingerprint")
+	}
+}
+
 func TestExportLimiter(t *testing.T) {
 	t.Parallel()
 	clock := &stepClock{now: time.Date(2026, 10, 1, 0, 0, 0, 0, time.UTC)}

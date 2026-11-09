@@ -36,6 +36,7 @@ Its fields, and what scrubbing does to them, are in [Running the server](running
 - `request_id`, `job_id`, `trace_id`, and `span_id` find the other lines of the same request or job.
 - The line of an error of a request has `context.httpRequest`: the method, the route as the URL (`/api/v1/statuses/{id}`, never the path the client asked for), and the status answered. Error Reporting shows them on the group and can filter by them.
 - `message` is last on the line: the error type and message, a newline, and the Go stack.
+- The stack starts where the error came from, not where it was reported: for a database error, the server function that ran the query. Errors from different places therefore fall into different groups, in Error Reporting and in the administration screen alike.
 
 No other line carries a stack.
 
