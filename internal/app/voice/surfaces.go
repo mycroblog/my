@@ -185,13 +185,13 @@ func (s *Service) notifyStartedBatch(ctx context.Context, p notifyStartedPayload
 	if v.Head.State != voice.StateOpen || v.Head.HostAccountID != p.Host {
 		return nil
 	}
+	sees, err := s.seesOpenedAmong(ctx, v, p.Visibility, ids)
+	if err != nil {
+		return err
+	}
 	var to []string
 	for _, id := range ids {
-		ok, err := s.seesOpened(ctx, v, p.Visibility, id)
-		if err != nil {
-			return err
-		}
-		if ok {
+		if sees[id] {
 			to = append(to, id)
 		}
 	}
@@ -202,6 +202,9 @@ func (s *Service) notifyStartedBatch(ctx context.Context, p notifyStartedPayload
 		if rec.Head.State != voice.StateOpen {
 			return nil
 		}
+		if b, ok := s.d.Notifier.(startedBatch); ok {
+			return b.RoomStartedAllTx(ctx, tx, p.Room, p.Host, to, p.At)
+		}
 		for _, id := range to {
 			if err := s.d.Notifier.RoomStartedTx(ctx, tx, p.Room, p.Host, id, p.At); err != nil {
 				return err
@@ -211,25 +214,31 @@ func (s *Service) notifyStartedBatch(ctx context.Context, p notifyStartedPayload
 	})
 }
 
-// seesOpened reports whether accountID sees the room of v now and would have seen it with the
-// visibility opened.
-func (s *Service) seesOpened(ctx context.Context, v RoomView, opened voice.Visibility, accountID string) (bool, error) {
-	viewer, m, err := s.viewer(ctx, accountID)
+// startedBatch is a Notifier that tells many recipients at once, as the notification module's
+// does.
+type startedBatch interface {
+	RoomStartedAllTx(ctx context.Context, tx uow.Tx, roomID, hostID string, recipientIDs []string, at time.Time) error
+}
+
+// seesOpenedAmong reports, by account, whether each of ids sees the room of v now and would have
+// seen it with the visibility opened, reading their facts together (factsAmong). The facts are
+// those of now; only the visibility is the one the room opened with, so that a widening after the
+// opening notifies nobody more (ADR-0100 §8) and a narrowing narrows it.
+func (s *Service) seesOpenedAmong(ctx context.Context, v RoomView, opened voice.Visibility, ids []string) (map[string]bool, error) {
+	viewers, facts, err := s.factsAmong(ctx, v, ids)
 	if err != nil {
-		return false, err
+		return nil, err
 	}
-	f, err := s.facts(ctx, v, viewer, m)
-	if err != nil {
-		return false, err
+	out := make(map[string]bool, len(ids))
+	for _, id := range ids {
+		room := policyRoom(v)
+		if !voice.CanSee(room, viewers[id], facts[id]) {
+			continue
+		}
+		room.Visibility = opened
+		out[id] = voice.CanSee(room, viewers[id], facts[id])
 	}
-	room := policyRoom(v)
-	if !voice.CanSee(room, viewer, f) {
-		return false, nil
-	}
-	// The facts are those of now; only the visibility is the one the room opened with, so that a
-	// widening after the opening notifies nobody more (ADR-0100 §8) and a narrowing narrows it.
-	room.Visibility = opened
-	return voice.CanSee(room, viewer, f), nil
+	return out, nil
 }
 
 // ProfileRoom returns the open room where accountID is the host or a speaker, when viewerID

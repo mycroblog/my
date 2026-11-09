@@ -531,6 +531,20 @@ func voiceInvitations(t *testing.T, e *voiceEnv) {
 	if !granted() {
 		t.Error("not granted after a new grant")
 	}
+	// What the room's own records say of alice and of an account it knows nothing of, together.
+	facts, err := e.h.Voice.ViewerFacts(ctx, nil, room.ID, []string{alice, host})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := (appvoice.ViewerFacts{Banned: banned(room.ID), Invited: false, SpeakGranted: granted()}); facts[alice] != want {
+		t.Errorf("ViewerFacts of alice = %+v, want %+v, as Banned, FindInvitation, and SpeakGranted", facts[alice], want)
+	}
+	if facts[host] != (appvoice.ViewerFacts{}) {
+		t.Errorf("ViewerFacts of the host = %+v, want none", facts[host])
+	}
+	if facts, err := e.h.Voice.ViewerFacts(ctx, nil, other.ID, []string{alice}); err != nil || facts[alice] != (appvoice.ViewerFacts{}) {
+		t.Errorf("ViewerFacts in the other room = %+v, %v; want none", facts, err)
+	}
 }
 
 func voiceEnd(t *testing.T, e *voiceEnv) {

@@ -109,3 +109,23 @@ func (r *StatusRepository) FindCustomEmojis(ctx context.Context, ids []string) (
 	}
 	return out, nil
 }
+
+// MentionedAmong implements content.InteractionRepository.
+func (r *InteractionRepository) MentionedAmong(ctx context.Context, statusID string, accountIDs []string) (map[string]bool, error) {
+	out := map[string]bool{}
+	if len(accountIDs) == 0 {
+		return out, nil
+	}
+	list, err := sqlite.JSONList(accountIDs)
+	if err != nil {
+		return nil, err
+	}
+	rows, err := r.db.reader().ListAccountsMentionedIn(ctx, contentgen.ListAccountsMentionedInParams{StatusID: statusID, AccountIds: list})
+	if err != nil {
+		return nil, sqlite.Wrap(err, "list accounts mentioned in "+statusID)
+	}
+	for _, row := range rows {
+		out[row] = true
+	}
+	return out, nil
+}

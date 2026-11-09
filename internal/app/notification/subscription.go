@@ -432,18 +432,42 @@ func (n *postNotifier) enqueue(ctx context.Context, job postJob, steps []queue.F
 	return n.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error { return n.d.Projectors.PostJobs.EnqueueTx(ctx, tx, jobs...) })
 }
 
-// notifyBatch notifies, in one transaction, those of ids who may see the post.
+// postsBatch is a Posts that decides for many accounts at once, as the platform's does.
+type postsBatch interface {
+	// StatusVisibleTo reports, by account, StatusVisible of each of accountIDs.
+	StatusVisibleTo(ctx context.Context, accountIDs []string, statusID string) (map[string]bool, error)
+}
+
+// notifyBatch notifies, in one transaction, those of ids who may see the post, deciding who may
+// see it together when Posts can.
 func (n *postNotifier) notifyBatch(ctx context.Context, job postJob, ids []string) error {
-	var to []string
+	var candidates []string
 	for _, id := range ids {
-		if slices.Contains(job.MentionedAccountIDs, id) {
-			continue
+		if !slices.Contains(job.MentionedAccountIDs, id) {
+			candidates = append(candidates, id)
 		}
-		visible, err := n.d.Posts.StatusVisible(ctx, id, job.StatusID)
-		if err != nil {
+	}
+	if len(candidates) == 0 {
+		return nil
+	}
+	visible := map[string]bool{}
+	if b, ok := n.d.Posts.(postsBatch); ok {
+		var err error
+		if visible, err = b.StatusVisibleTo(ctx, candidates, job.StatusID); err != nil {
 			return err
 		}
-		if visible {
+	} else {
+		for _, id := range candidates {
+			ok, err := n.d.Posts.StatusVisible(ctx, id, job.StatusID)
+			if err != nil {
+				return err
+			}
+			visible[id] = ok
+		}
+	}
+	var to []string
+	for _, id := range candidates {
+		if visible[id] {
 			to = append(to, id)
 		}
 	}
@@ -451,15 +475,9 @@ func (n *postNotifier) notifyBatch(ctx context.Context, job postJob, ids []strin
 		return nil
 	}
 	return n.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
-		for _, id := range to {
-			err := n.p.notify(ctx, tx, notification.Notification{
-				RecipientAccountID: id, SourceAccountID: job.AuthorAccountID, Type: notification.TypeStatus,
-				StatusID: job.StatusID, DedupeKey: notification.StatusKey(job.StatusID), CreatedAt: job.At,
-			})
-			if err != nil {
-				return err
-			}
-		}
-		return nil
+		return n.p.notifyAll(ctx, tx, notification.Notification{
+			SourceAccountID: job.AuthorAccountID, Type: notification.TypeStatus,
+			StatusID: job.StatusID, DedupeKey: notification.StatusKey(job.StatusID), CreatedAt: job.At,
+		}, to)
 	})
 }

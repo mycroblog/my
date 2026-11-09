@@ -145,6 +145,21 @@ WHERE i.room_id = sqlc.arg(room_id) AND i.id::text > sqlc.arg(id)::text
 ORDER BY i.id
 LIMIT sqlc.arg(row_limit);
 
+-- ListVoiceRoomViewerFacts returns, for each of account_ids, what IsVoiceRoomBanned,
+-- GetVoiceRoomInvitation (an invitation that is not revoked), and IsVoiceRoomSpeakGranted read of
+-- the account in the room.
+-- name: ListVoiceRoomViewerFacts :many
+SELECT v.account_id::uuid AS account_id,
+  EXISTS (SELECT 1 FROM voice_room_bans b WHERE b.room_id = sqlc.arg(room_id)::uuid AND b.account_id = v.account_id) AS banned,
+  EXISTS (SELECT 1 FROM voice_room_invitations i WHERE i.room_id = sqlc.arg(room_id)::uuid AND i.invitee_account_id = v.account_id
+    AND NOT EXISTS (SELECT 1 FROM voice_room_invitation_revocations x WHERE x.invitation_id = i.id)) AS invited,
+  COALESCE((
+    SELECT g.change = 'granted' FROM voice_room_speak_grants g
+    WHERE g.room_id = sqlc.arg(room_id)::uuid AND g.account_id = v.account_id
+    ORDER BY g.id DESC LIMIT 1
+  ), false)::boolean AS speak_granted
+FROM (SELECT unnest(sqlc.arg(account_ids)::uuid[]) AS account_id) v;
+
 -- name: IsVoiceRoomBanned :one
 SELECT EXISTS (SELECT 1 FROM voice_room_bans WHERE room_id = $1 AND account_id = $2) AS banned;
 
