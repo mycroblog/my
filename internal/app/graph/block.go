@@ -226,6 +226,32 @@ func (s *Service) Follows(ctx context.Context, tx uow.Tx, followerID, followeeID
 	return e.State == graph.StateActive, nil
 }
 
+// NotificationRelation is what HidesNotifications and Follows report of one recipient of a
+// notification and its source.
+type NotificationRelation struct {
+	// Hidden is HidesNotifications: a block between them, or the recipient's mute of the source
+	// with hide_notifications.
+	Hidden bool
+	// Follows is Follows: the recipient actively follows the source.
+	Follows bool
+}
+
+// NotificationRelations reports, inside tx, HidesNotifications and Follows of each of
+// recipientIDs with sourceID, by recipient, with one query per part whatever their number.
+func (s *Service) NotificationRelations(ctx context.Context, tx uow.Tx, recipientIDs []string, sourceID string) (map[string]NotificationRelation, error) {
+	parts, err := s.d.Repository.NotificationRelationsTx(ctx, tx, sourceID, recipientIDs, s.d.Clock.Now())
+	if err != nil {
+		return nil, err
+	}
+	out := make(map[string]NotificationRelation, len(recipientIDs))
+	for _, id := range recipientIDs {
+		m, muted := parts.Mutes[id]
+		e, follows := parts.Follows[id]
+		out[id] = NotificationRelation{Hidden: parts.Blocked[id] || muted && m.HideNotifications, Follows: follows && e.State == graph.StateActive}
+	}
+	return out, nil
+}
+
 // FollowRequested reports, inside tx, whether followerID's follow of followeeID awaits approval.
 // The notification module reads it to keep a subscription asked for with a follow of a remote
 // account until the follow is accepted.

@@ -29,6 +29,10 @@ type Repository interface {
 	// InsertNotification inserts a notification and reports false, writing nothing, when the
 	// recipient already has one with the same dedupe key.
 	InsertNotification(ctx context.Context, tx uow.Tx, n notification.Notification) (bool, error)
+	// InsertNotificationsFor inserts with one statement, for each of recipients, n with the ID at
+	// the same index of ids and its recipient, as InsertNotification inserts each, and returns
+	// the recipients it inserted one for.
+	InsertNotificationsFor(ctx context.Context, tx uow.Tx, n notification.Notification, ids, recipients []string) (map[string]bool, error)
 	// AddErrorGroupNotice adds one admin_error_group notice to the hour that starts at hour, in
 	// tx, and returns the hour's notices with it; concurrent transactions each add theirs.
 	AddErrorGroupNotice(ctx context.Context, tx uow.Tx, hour time.Time) (int64, error)
@@ -54,6 +58,9 @@ type Repository interface {
 	// NotificationSettingsTx returns inside tx the settings that the account chose, in order of
 	// group and channel.
 	NotificationSettingsTx(ctx context.Context, tx uow.Tx, accountID string) ([]notification.Setting, error)
+	// NotificationSettingsOfTx returns inside tx the saved settings of each of accountIDs that has
+	// some, by account, as NotificationSettingsTx returns those of one, with one query.
+	NotificationSettingsOfTx(ctx context.Context, tx uow.Tx, accountIDs []string) (map[string][]notification.Setting, error)
 	// NotificationSettings is NotificationSettingsTx outside any transaction.
 	NotificationSettings(ctx context.Context, accountID string) ([]notification.Setting, error)
 
@@ -72,6 +79,9 @@ type Repository interface {
 	// DomainExcluded reports whether an exclusion of the viewer covers domain: the domain itself
 	// or one of its parent domains.
 	DomainExcluded(ctx context.Context, tx uow.Tx, viewerAccountID, domain string) (bool, error)
+	// DomainExcludedAmong returns the viewers among viewerAccountIDs for whom DomainExcluded is
+	// true, with one query.
+	DomainExcludedAmong(ctx context.Context, tx uow.Tx, viewerAccountIDs []string, domain string) (map[string]bool, error)
 	// InsertDeletedStatus records that a status is deleted, so that the notifications about it
 	// are no longer visible. Recording it again changes nothing.
 	InsertDeletedStatus(ctx context.Context, tx uow.Tx, statusID string) error

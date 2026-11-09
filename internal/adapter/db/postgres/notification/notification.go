@@ -4,6 +4,7 @@ package notification
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/mycroblog/my/internal/adapter/db/postgres"
@@ -318,4 +319,83 @@ func idList(ids []string) []string {
 		return []string{}
 	}
 	return ids
+}
+
+// InsertNotificationsFor implements notification.Repository.
+func (r *Repository) InsertNotificationsFor(ctx context.Context, tx uow.Tx, n notification.Notification, ids, recipients []string) (map[string]bool, error) {
+	out := make(map[string]bool, len(recipients))
+	if len(recipients) == 0 {
+		return out, nil
+	}
+	if len(ids) != len(recipients) {
+		return nil, fmt.Errorf("insert notifications: %d IDs for %d recipients", len(ids), len(recipients))
+	}
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return nil, err
+	}
+	arg := notificationgen.InsertNotificationsForParams{
+		Type:            string(n.Type),
+		SourceAccountID: postgres.ToNullString(n.SourceAccountID), SourceDomain: postgres.ToNullString(n.SourceDomain), StatusID: postgres.ToNullString(n.StatusID),
+		ModerationActionID: postgres.ToNullString(n.ModerationActionID), ReportID: postgres.ToNullString(n.ReportID),
+		SubjectUserID: postgres.ToNullString(n.SubjectUserID), SeveranceID: postgres.ToNullString(n.SeveranceID), AppealID: postgres.ToNullString(n.AppealID),
+		CustomEmojiRequestID: postgres.ToNullString(n.CustomEmojiRequestID), SupporterSubscriptionID: postgres.ToNullString(n.SupporterSubscriptionID),
+		ReactionEmoji: postgres.ToNullString(n.ReactionEmoji), ReactionCustomEmojiID: postgres.ToNullString(n.ReactionCustomEmojiID),
+		AccountMoveID: postgres.ToNullString(n.AccountMoveID), AccountMoveOutcome: postgres.ToNullString(string(n.AccountMoveOutcome)),
+		ServiceClosureEventID: postgres.ToNullString(n.ServiceClosureEventID), ServiceClosureChange: postgres.ToNullString(string(n.ServiceClosureChange)), VoiceRoomID: postgres.ToNullString(n.VoiceRoomID),
+		ErrorGroupChange: postgres.ToNullString(string(n.ErrorGroupChange)), ErrorGroupID: postgres.ToNullString(n.ErrorGroupID), ErrorGroupHour: postgres.ToNullTime(n.ErrorGroupHour),
+		AnnouncementID: postgres.ToNullString(n.AnnouncementID), HookAppealID: postgres.ToNullString(n.HookAppealID),
+		AutoDeleteLimitNoticeID: postgres.ToNullString(n.AutoDeleteLimitNoticeID), DedupeKey: n.DedupeKey, CreatedAt: n.CreatedAt,
+	}
+	for i, id := range ids {
+		arg.Ids, arg.RecipientAccountIds = append(arg.Ids, id), append(arg.RecipientAccountIds, recipients[i])
+	}
+	inserted, err := q.InsertNotificationsFor(ctx, arg)
+	if err != nil {
+		return nil, postgres.Wrap(err, "insert notifications")
+	}
+	for _, id := range inserted {
+		out[id] = true
+	}
+	return out, nil
+}
+
+// DomainExcludedAmong implements notification.Repository.
+func (r *Repository) DomainExcludedAmong(ctx context.Context, tx uow.Tx, viewerAccountIDs []string, domain string) (map[string]bool, error) {
+	out := make(map[string]bool, len(viewerAccountIDs))
+	if len(viewerAccountIDs) == 0 {
+		return out, nil
+	}
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return nil, err
+	}
+	ids, err := q.DomainsExcludedAmong(ctx, notificationgen.DomainsExcludedAmongParams{ViewerAccountIds: viewerAccountIDs, Domain: domain})
+	if err != nil {
+		return nil, postgres.Wrap(err, "check notification domain exclusions")
+	}
+	for _, id := range ids {
+		out[id] = true
+	}
+	return out, nil
+}
+
+// NotificationSettingsOfTx implements notification.Repository.
+func (r *Repository) NotificationSettingsOfTx(ctx context.Context, tx uow.Tx, accountIDs []string) (map[string][]notification.Setting, error) {
+	out := make(map[string][]notification.Setting, len(accountIDs))
+	if len(accountIDs) == 0 {
+		return out, nil
+	}
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return nil, err
+	}
+	all, err := notificationSettings(q.ListNotificationSettingsOf(ctx, accountIDs))
+	if err != nil {
+		return nil, err
+	}
+	for _, st := range all {
+		out[st.AccountID] = append(out[st.AccountID], st)
+	}
+	return out, nil
 }

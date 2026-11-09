@@ -40,6 +40,14 @@ JOIN push_subscription_alerts a ON a.subscription_id = s.id
 WHERE s.account_id = sqlc.arg(account_id) AND a.notification_type = sqlc.arg(notification_type)
 ORDER BY s.id;
 
+-- The subscriptions of the accounts that take notifications of a type, as
+-- ListPushSubscriptionIDsForAlert lists those of one, by account.
+-- name: ListPushSubscriptionIDsForAlertOf :many
+SELECT s.account_id, s.id FROM push_subscriptions s
+JOIN push_subscription_alerts a ON a.subscription_id = s.id
+WHERE s.account_id IN (SELECT value FROM json_each(CAST(sqlc.arg(account_ids) AS TEXT))) AND a.notification_type = sqlc.arg(notification_type)
+ORDER BY s.account_id, s.id;
+
 -- name: DeletePushSubscriptionAlerts :exec
 DELETE FROM push_subscription_alerts WHERE subscription_id = ?;
 

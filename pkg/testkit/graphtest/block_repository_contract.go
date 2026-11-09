@@ -686,6 +686,7 @@ func blockRepoRelationshipParts(t *testing.T, r *blockRepo) {
 	r.block(t, dave, me)
 	r.mute(t, graph.Mute{AccountID: me, TargetAccountID: bob, HideNotifications: true, CreatedAt: now})
 	r.mute(t, graph.Mute{AccountID: me, TargetAccountID: dave, ExpiresAt: &past, CreatedAt: past.Add(-time.Hour)})
+	r.mute(t, graph.Mute{AccountID: bob, TargetAccountID: me, HideNotifications: true, CreatedAt: now})
 
 	parts, err := r.repo.FindRelationshipParts(ctx, me, []string{bob, carol, dave, erin}, now)
 	if err != nil {
@@ -731,5 +732,32 @@ func blockRepoRelationshipParts(t *testing.T, r *blockRepo) {
 	}
 	if empty, err := r.repo.FindRelationshipParts(ctx, me, nil, now); err != nil || len(empty.Following) != 0 {
 		t.Errorf("FindRelationshipParts(none) = %+v, %v; want nothing", empty, err)
+	}
+
+	// The relations of the recipients of a notification from me, read in a transaction.
+	var rels appgraph.NotificationRelations
+	r.tx(t, func(ctx context.Context, tx uow.Tx) (err error) {
+		rels, err = r.repo.NotificationRelationsTx(ctx, tx, me, []string{bob, carol, dave, erin}, now)
+		return err
+	})
+	for _, other := range []string{bob, carol, dave, erin} {
+		_, out := r.repo.FindBlockEdge(ctx, me, other)
+		_, in := r.repo.FindBlockEdge(ctx, other, me)
+		if blocked := out == nil || in == nil; rels.Blocked[other] != blocked {
+			t.Errorf("NotificationRelationsTx: blocked with %s = %v, want %v", other, rels.Blocked[other], blocked)
+		}
+		m, ok := rels.Mutes[other]
+		wantM, err := r.repo.FindMute(ctx, other, me, now)
+		if (err == nil) != ok || ok && !reflect.DeepEqual(m, wantM) {
+			t.Errorf("NotificationRelationsTx: mute of %s = %+v (%t), want %+v (%v)", other, m, ok, wantM, err)
+		}
+		e, ok := rels.Follows[other]
+		wantE, err := r.repo.FindEdge(ctx, other, me)
+		if (err == nil) != ok || ok && e != wantE {
+			t.Errorf("NotificationRelationsTx: follow of %s = %+v (%t), want %+v (%v)", other, e, ok, wantE, err)
+		}
+	}
+	if !rels.Blocked[carol] || !rels.Blocked[dave] || rels.Mutes[bob].AccountID != bob || rels.Follows[bob].State != graph.StateActive {
+		t.Errorf("NotificationRelationsTx = %+v; want carol and dave blocked, bob muting and following me", rels)
 	}
 }

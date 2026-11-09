@@ -9,6 +9,29 @@ INSERT INTO notifications (id, recipient_account_id, type, source_account_id, so
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28)
 ON CONFLICT (recipient_account_id, dedupe_key) DO NOTHING;
 
+-- InsertNotificationsFor inserts one notification for each recipient of the arrays, of one length
+-- (the unnests of a select list advance together), with the ID at the same index and every other
+-- column the same, as InsertNotification inserts one, and returns the recipients it inserted
+-- one for.
+-- name: InsertNotificationsFor :many
+INSERT INTO notifications (id, recipient_account_id, type, source_account_id, source_domain, status_id, moderation_action_id, report_id, subject_user_id, severance_id, appeal_id, custom_emoji_request_id, supporter_subscription_id, reaction_emoji, reaction_custom_emoji_id, account_move_id, account_move_outcome, service_closure_event_id, service_closure_change, voice_room_id, error_group_change, error_group_id, error_group_hour, announcement_id, hook_appeal_id, auto_delete_limit_notice_id, dedupe_key, created_at)
+SELECT unnest(sqlc.arg(ids)::uuid[]), unnest(sqlc.arg(recipient_account_ids)::uuid[]), sqlc.arg(type)::text,
+  sqlc.narg(source_account_id)::uuid, sqlc.narg(source_domain)::text, sqlc.narg(status_id)::uuid, sqlc.narg(moderation_action_id)::uuid, sqlc.narg(report_id)::uuid, sqlc.narg(subject_user_id)::uuid, sqlc.narg(severance_id)::uuid, sqlc.narg(appeal_id)::uuid, sqlc.narg(custom_emoji_request_id)::uuid, sqlc.narg(supporter_subscription_id)::uuid, sqlc.narg(reaction_emoji)::text, sqlc.narg(reaction_custom_emoji_id)::uuid, sqlc.narg(account_move_id)::uuid, sqlc.narg(account_move_outcome)::text, sqlc.narg(service_closure_event_id)::uuid, sqlc.narg(service_closure_change)::text, sqlc.narg(voice_room_id)::uuid, sqlc.narg(error_group_change)::text, sqlc.narg(error_group_id)::uuid, sqlc.narg(error_group_hour)::timestamptz, sqlc.narg(announcement_id)::uuid, sqlc.narg(hook_appeal_id)::uuid, sqlc.narg(auto_delete_limit_notice_id)::uuid,
+  sqlc.arg(dedupe_key)::text, sqlc.arg(created_at)::timestamptz
+ON CONFLICT (recipient_account_id, dedupe_key) DO NOTHING
+RETURNING recipient_account_id;
+
+-- DomainsExcludedAmong returns the viewers among viewer_account_ids that exclude the domain or one
+-- of its parents, as DomainExcluded checks one.
+-- name: DomainsExcludedAmong :many
+SELECT DISTINCT dx.viewer_account_id FROM notification_domain_exclusions dx
+WHERE dx.viewer_account_id = ANY(sqlc.arg(viewer_account_ids)::uuid[])
+  AND (dx.domain = sqlc.arg(domain)::text OR right(sqlc.arg(domain)::text, length(dx.domain) + 1) = '.' || dx.domain);
+
+-- name: ListNotificationSettingsOf :many
+SELECT account_id, notification_group, channel, enabled, updated_at FROM notification_settings
+WHERE account_id = ANY(sqlc.arg(account_ids)::uuid[]) ORDER BY account_id, notification_group, channel;
+
 -- name: GetNotification :one
 SELECT id, recipient_account_id, type, source_account_id, source_domain, status_id, moderation_action_id, report_id, subject_user_id, severance_id, appeal_id, custom_emoji_request_id, supporter_subscription_id, reaction_emoji, reaction_custom_emoji_id, account_move_id, account_move_outcome, service_closure_event_id, service_closure_change, voice_room_id, error_group_change, error_group_id, error_group_hour, announcement_id, hook_appeal_id, auto_delete_limit_notice_id, dedupe_key, created_at
 FROM notifications WHERE id = $1;

@@ -238,3 +238,45 @@ func (q *Queries) ListPushSubscriptionIDsForAlert(ctx context.Context, arg ListP
 	}
 	return items, nil
 }
+
+const listPushSubscriptionIDsForAlertOf = `-- name: ListPushSubscriptionIDsForAlertOf :many
+SELECT s.account_id, s.id FROM push_subscriptions s
+JOIN push_subscription_alerts a ON a.subscription_id = s.id
+WHERE s.account_id IN (SELECT value FROM json_each(CAST(?1 AS TEXT))) AND a.notification_type = ?2
+ORDER BY s.account_id, s.id
+`
+
+type ListPushSubscriptionIDsForAlertOfParams struct {
+	AccountIds       string
+	NotificationType string
+}
+
+type ListPushSubscriptionIDsForAlertOfRow struct {
+	AccountID string
+	ID        string
+}
+
+// The subscriptions of the accounts that take notifications of a type, as
+// ListPushSubscriptionIDsForAlert lists those of one, by account.
+func (q *Queries) ListPushSubscriptionIDsForAlertOf(ctx context.Context, arg ListPushSubscriptionIDsForAlertOfParams) ([]ListPushSubscriptionIDsForAlertOfRow, error) {
+	rows, err := q.db.QueryContext(ctx, listPushSubscriptionIDsForAlertOf, arg.AccountIds, arg.NotificationType)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListPushSubscriptionIDsForAlertOfRow{}
+	for rows.Next() {
+		var i ListPushSubscriptionIDsForAlertOfRow
+		if err := rows.Scan(&i.AccountID, &i.ID); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
