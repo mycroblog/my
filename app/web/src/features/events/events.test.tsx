@@ -211,6 +211,8 @@ describe("the editor of an event", () => {
     );
     const { user } = await renderApp({ path: "/events/new" });
     expect(await screen.findByRole("heading", { level: 1, name: "New event" })).toBeInTheDocument();
+    // The editor starts in the user's time zone setting (Tokyo), whatever the zone of the machine the test runs on.
+    expect(await screen.findAllByText("In the time zone of Tokyo")).toHaveLength(2);
     await user.type(screen.getByRole("textbox", { name: /^Title/u }), "Night picnic");
 
     // A start without an end is refused before anything is sent.

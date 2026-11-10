@@ -87,19 +87,24 @@ function isEventUrl(url: string): boolean {
   }
 }
 
-/** The draft of a new event in the user's time zone, or of `event` as it is. */
-function draftOf(event: Event | undefined, zone: string): EventDraft {
+/**
+ * What the form keeps: the draft, whose time zone is undefined while it follows the user's time zone setting (a new
+ * event before the user picks one), so that a setting that loads after the form opened still applies.
+ */
+type StoredDraft = Omit<EventDraft, "timeZone"> & { timeZone: string | undefined };
+
+/** The draft of a new event, following the user's time zone, or of `event` as it is. */
+function draftOf(event: Event | undefined): StoredDraft {
   const physical = event?.places.find((place) => place.kind === "physical");
   const link = event?.places.find((place) => place.kind === "url");
-  const timeZone = event?.time_zone ?? zone;
   const scheduled = event !== undefined && event.state !== "unscheduled";
   return {
     title: event?.title ?? "",
     description: event?.description ?? "",
     visibility: event?.visibility ?? "public",
-    timeZone,
-    startsAt: scheduled ? toZonedInput(event.starts_at, timeZone) : "",
-    endsAt: scheduled ? toZonedInput(event.ends_at, timeZone) : "",
+    timeZone: event?.time_zone,
+    startsAt: scheduled ? toZonedInput(event.starts_at, event.time_zone) : "",
+    endsAt: scheduled ? toZonedInput(event.ends_at, event.time_zone) : "",
     placeDisclosure: event?.place_disclosure ?? "approved",
     capacity: event === undefined || event.capacity === 0 ? "" : String(event.capacity),
     physical: {
@@ -167,10 +172,13 @@ export function useEventForm(event?: Event): EventForm {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const failed = useEventFailureMessage();
+  // The user's time zone setting, else the browser's: a new event starts in it until the user picks another.
   const { timeZone } = useDisplaySettings();
-  const [draft, setDraft] = useState<EventDraft>(() =>
-    draftOf(event, timeZone ?? new Intl.DateTimeFormat().resolvedOptions().timeZone),
-  );
+  const [stored, setStored] = useState<StoredDraft>(() => draftOf(event));
+  const draft: EventDraft = {
+    ...stored,
+    timeZone: stored.timeZone ?? timeZone ?? new Intl.DateTimeFormat().resolvedOptions().timeZone,
+  };
   const [errors, setErrors] = useState<EventFieldErrors>({});
   const create = useMutation({
     ...createEventMutation(api),
@@ -252,13 +260,13 @@ export function useEventForm(event?: Event): EventForm {
     mode: event === undefined ? "new" : "edit",
     draft,
     change: (change) => {
-      setDraft((previous) => ({ ...previous, ...change }));
+      setStored((previous) => ({ ...previous, ...change }));
     },
     changePhysical: (change) => {
-      setDraft((previous) => ({ ...previous, physical: { ...previous.physical, ...change } }));
+      setStored((previous) => ({ ...previous, physical: { ...previous.physical, ...change } }));
     },
     changeLink: (change) => {
-      setDraft((previous) => ({ ...previous, link: { ...previous.link, ...change } }));
+      setStored((previous) => ({ ...previous, link: { ...previous.link, ...change } }));
     },
     canChangeVisibility: event === undefined || event.viewer.organizer,
     unscheduled,
