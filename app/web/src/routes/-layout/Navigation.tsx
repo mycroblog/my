@@ -28,7 +28,7 @@
 // Lists (`/lists`, the user's lists and a list's timeline under it) comes after Announcements.
 // While open reports, registrations or appeals await the moderators (FR-712), Moderation shows
 // their number as a badge the same way ("Moderation, 3 pending"), and so does the tab bar's Menu button, which
-// leads there ("Menu, 3 pending in moderation"): the count is in the names and drawn as digits, never shown by
+// leads there ("Menu, 3 pending in moderation"; "Menu, 3 new" while the sheet's other items count too): the count is in the names and drawn as digits, never shown by
 // color alone (WCAG 1.4.1). Administration has no count.
 //
 // The local and federated timelines appear only while the instance serves them (FR-202). An item the server does
@@ -496,14 +496,18 @@ function NavigationMenu({ items, current, badgeOf, firstStaff }: NavigationMenuP
   const t = useT();
   const [isOpen, setIsOpen] = useCloseOnNavigation();
   const pending = items.reduce((sum, item) => sum + (badgeOf(item.section)?.count ?? 0), 0);
+  // The count is what awaits the moderators only while no other item of the sheet has one.
+  const moderationOnly = items.every((item) => item.section === "/moderation" || badgeOf(item.section) === undefined);
   return (
     <AppNavMenu
       label={t("client:shell.nav.menu")}
       {...(pending > 0 && {
         badge: {
           count: pending,
-          label: t("client:admin.pending_count", { count: pending }),
-          name: t("client:shell.nav.menu_pending", { count: pending }),
+          label: t(moderationOnly ? "client:admin.pending_count" : "client:shell.nav.menu_new_count", {
+            count: pending,
+          }),
+          name: t(moderationOnly ? "client:shell.nav.menu_pending" : "client:shell.nav.menu_new", { count: pending }),
         },
       })}
       isOpen={isOpen}
