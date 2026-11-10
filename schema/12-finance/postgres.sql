@@ -165,7 +165,8 @@ CREATE TABLE imported_cost_heads (
 -- its record is kept; no row holds a user. source tells a movement of our subscriptions
 -- (subscription) and of our tips (one_time, ADR-0162) from one of neither (unknown: a payment
 -- taken outside my, a fee of no subscription); a refund, a chargeback, or a reversal has the
--- source of its payment.
+-- source of its payment. The rows recorded before the column default to unknown, and the data
+-- upgrade step finance.income_sources gives them their source.
 CREATE TABLE income_movements (
   id uuid NOT NULL PRIMARY KEY,
   provider text NOT NULL CHECK (provider IN ('stripe', 'payjp', 'fake')),
@@ -174,7 +175,7 @@ CREATE TABLE income_movements (
   parent_movement_id uuid,
   subscription_id uuid,
   tip_id uuid,
-  source text NOT NULL CHECK (source IN ('subscription', 'one_time', 'unknown')),
+  source text NOT NULL DEFAULT 'unknown' CHECK (source IN ('subscription', 'one_time', 'unknown')),
   occurred_at timestamptz NOT NULL,
   occurred_on date NOT NULL,
   covers_starts_on date,
