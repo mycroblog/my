@@ -3,7 +3,9 @@
 // events that the user sees (GET /events, also those an account organizes for its profile), a few of them for the
 // third column, one event (GET /events/{id}, which leaves out the places that the user does not see), its attendees,
 // its invitations (for the organizers), and the writes: creating and changing an event, cancelling it, answering it,
-// approving an attendee, inviting, and naming co-organizers. Its `.ics` file (GET /events/{id}/calendar.ics) needs
+// approving an attendee, inviting, and naming co-organizers; and the date poll of an event that has no date yet: its
+// candidate dates with their counts, who answered one, answering, and (for the organizers) adding, withdrawing, and
+// confirming a candidate. Its `.ics` file (GET /events/{id}/calendar.ics) needs
 // the user's token, so it is fetched and saved as a file instead of linked.
 import { infiniteQueryOptions, type QueryClient } from "@tanstack/react-query";
 import type { components } from "@mycroblog/mykit";
@@ -25,6 +27,12 @@ export type EventPlaceKind = Schemas["EventPlaceKind"];
 export type EventUpdate = Schemas["EventUpdate"];
 export type EventVisibility = Schemas["EventVisibility"];
 export type EventCancelReason = Schemas["EventCancelReason"];
+export type EventCandidate = Schemas["EventCandidate"];
+export type EventCandidateCreate = Schemas["EventCandidateCreate"];
+export type EventBallot = Schemas["EventBallot"];
+export type EventVote = Schemas["EventVote"];
+export type EventRoomUnavailableReason = Schemas["EventRoomUnavailableReason"];
+export type VoiceRoomSpeakers = Schemas["VoiceRoomSpeakers"];
 
 /** The visibilities of an event, from the widest, in the order of the form. */
 export const eventVisibilities = [
@@ -41,6 +49,9 @@ export const eventPlaceDisclosures = ["approved", "viewers"] as const satisfies 
 /** The answers to an event, in the order of the buttons. */
 export const eventAnswers = ["going", "maybe", "declined"] as const satisfies readonly EventAnswer[];
 
+/** The answers to a candidate date, in the order of the table's columns and of the choices. */
+export const eventVotes = ["yes", "maybe", "no"] as const satisfies readonly EventVote[];
+
 /**
  * The limits of an event's settings, as the server checks them (internal/domain/gathering, ADR-0161 §5, §6): the
  * title in grapheme clusters (and in code points, `titleCodePoints`), the other texts in code points, the length of an
@@ -56,6 +67,7 @@ export const eventLimits = {
   capacity: 10_000,
   coorganizers: 3,
   cancelNote: 500,
+  candidates: 20,
   duration: 7 * 24 * 60 * 60_000,
 } as const;
 
@@ -147,6 +159,87 @@ export function eventInvitationsQueryOptions(api: Api, id: string) {
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (page) => page.next_cursor,
   });
+}
+
+/** The candidate dates of an event's date poll, the earliest first, with their counts and the user's answers. */
+export function eventCandidatesQueryOptions(api: Api, id: string) {
+  return {
+    ...api.query.queryOptions("get", "/events/{id}/candidates", { params: { path: { id } } }),
+    retry: shellQueryRetry,
+  };
+}
+
+/** Who answered a candidate date and how, a page at a time. */
+export function eventBallotsQueryOptions(api: Api, id: string, candidateId: string) {
+  return infiniteQueryOptions({
+    queryKey: ["get", "/events/{id}/candidates/{candidate_id}/votes", { id, candidateId }, "pages"] as const,
+    queryFn: async ({ pageParam, signal }) => {
+      const query = pageParam === undefined ? { limit: pageSize } : { limit: pageSize, cursor: pageParam };
+      const { data, error } = await api.fetch.GET("/events/{id}/candidates/{candidate_id}/votes", {
+        params: { path: { id, candidate_id: candidateId }, query },
+        signal,
+      });
+      if (data === undefined) throw new ApiError(error);
+      return data;
+    },
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (page) => page.next_cursor,
+  });
+}
+
+/** Answers a candidate date (PUT /events/{id}/candidates/{candidate_id}/vote). */
+export function voteMutation(api: Api, id: string) {
+  return {
+    mutationKey: ["put", "/events/{id}/candidates/{candidate_id}/vote", id] as const,
+    mutationFn: async ({ candidateId, vote }: { candidateId: string; vote: EventVote }): Promise<EventCandidate> => {
+      const { data, error } = await api.fetch.PUT("/events/{id}/candidates/{candidate_id}/vote", {
+        params: { path: { id, candidate_id: candidateId } },
+        body: { vote },
+      });
+      if (data === undefined) throw new ApiError(error);
+      return data;
+    },
+  };
+}
+
+/** Adds a candidate date to the poll (POST /events/{id}/candidates), by an organizer. */
+export function addCandidateMutation(api: Api, id: string) {
+  return {
+    mutationKey: ["post", "/events/{id}/candidates", id] as const,
+    mutationFn: async (body: EventCandidateCreate): Promise<EventCandidate> => {
+      const { data, error } = await api.fetch.POST("/events/{id}/candidates", { params: { path: { id } }, body });
+      if (data === undefined) throw new ApiError(error);
+      return data;
+    },
+  };
+}
+
+/** Withdraws a candidate date of the poll (DELETE /events/{id}/candidates/{candidate_id}), by an organizer. */
+export function withdrawCandidateMutation(api: Api, id: string) {
+  return {
+    mutationKey: ["delete", "/events/{id}/candidates/{candidate_id}", id] as const,
+    mutationFn: async (candidate: EventCandidate): Promise<EventCandidate> => {
+      const { error } = await api.fetch.DELETE("/events/{id}/candidates/{candidate_id}", {
+        params: { path: { id, candidate_id: candidate.id } },
+      });
+      if (error !== undefined) throw new ApiError(error);
+      return candidate;
+    },
+  };
+}
+
+/** Fixes the event's date to a candidate (POST /events/{id}/candidates/{candidate_id}/confirm), by an organizer. */
+export function confirmCandidateMutation(api: Api, id: string) {
+  return {
+    mutationKey: ["post", "/events/{id}/candidates/{candidate_id}/confirm", id] as const,
+    mutationFn: async (candidate: EventCandidate): Promise<Event> => {
+      const { data, error } = await api.fetch.POST("/events/{id}/candidates/{candidate_id}/confirm", {
+        params: { path: { id, candidate_id: candidate.id } },
+      });
+      if (data === undefined) throw new ApiError(error);
+      return data;
+    },
+  };
 }
 
 /** The local accounts whose names match `q`, for inviting and naming co-organizers; remote accounts are left out. */
@@ -305,6 +398,22 @@ export async function cacheApproval(api: Api, queryClient: QueryClient, id: stri
   await queryClient.invalidateQueries({ queryKey: eventAttendeesQueryOptions(api, id).queryKey });
 }
 
+/**
+ * Marks stale the candidates of an event and who answered them, after an answer, a new candidate, or a withdrawal,
+ * and the event too, whose earliest start and latest end follow its candidates.
+ */
+export async function cacheCandidates(api: Api, queryClient: QueryClient, id: string): Promise<void> {
+  await Promise.all([
+    queryClient.invalidateQueries({ queryKey: eventCandidatesQueryOptions(api, id).queryKey }),
+    queryClient.invalidateQueries({
+      predicate: (query) =>
+        query.queryKey[1] === "/events/{id}/candidates/{candidate_id}/votes" &&
+        (query.queryKey[2] as { id?: string } | undefined)?.id === id,
+    }),
+    queryClient.invalidateQueries({ queryKey: eventQueryOptions(api, id).queryKey }),
+  ]);
+}
+
 /** Marks stale the invitations of an event after one was sent or revoked. */
 export async function cacheInvitations(api: Api, queryClient: QueryClient, id: string): Promise<void> {
   await queryClient.invalidateQueries({ queryKey: eventInvitationsQueryOptions(api, id).queryKey });
@@ -316,6 +425,8 @@ export type EventFailure =
   | "full"
   | "closed"
   | "unscheduled"
+  | "scheduled"
+  | "last-candidate"
   | "not-eligible"
   | "voice-unavailable"
   | "already-invited"
@@ -339,6 +450,10 @@ export function eventFailure(error: unknown): EventFailure {
       return "closed";
     case "/api/v1/problems/event-unscheduled":
       return "unscheduled";
+    case "/api/v1/problems/event-scheduled":
+      return "scheduled";
+    case "/api/v1/problems/event-last-candidate":
+      return "last-candidate";
     case "/api/v1/problems/event-not-eligible":
       return "not-eligible";
     case "/api/v1/problems/event-voice-unavailable":

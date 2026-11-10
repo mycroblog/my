@@ -75,6 +75,8 @@ describe("automatic deletion of old posts", () => {
     expect(enabled).not.toBeChecked();
     expect(screen.getByRole("checkbox", { name: "Pinned to your profile" })).toBeChecked();
     expect(screen.getByRole("checkbox", { name: "With a poll" })).not.toBeChecked();
+    // Articles are kept unless the user turns that off.
+    expect(screen.getByRole("checkbox", { name: "Articles" })).toBeChecked();
     expect(screen.getByRole("group", { name: "Keep posts with these visibilities" })).toBeInTheDocument();
     expect(screen.getByRole("checkbox", { name: "Mentioned people" })).toBeChecked();
 
@@ -84,6 +86,7 @@ describe("automatic deletion of old posts", () => {
     await user.click(screen.getByRole("checkbox", { name: "With images or other media" }));
     await user.click(screen.getByRole("checkbox", { name: "Followers" }));
     await user.click(screen.getByRole("checkbox", { name: "Bookmarked by you" }));
+    await user.click(screen.getByRole("checkbox", { name: "Articles" }));
     await user.click(screen.getByRole("button", { name: /Keep posts boosted at least/ }));
     await user.click(await screen.findByRole("option", { name: "5 times" }));
     await user.click(screen.getByRole("button", { name: "Save" }));
@@ -98,6 +101,7 @@ describe("automatic deletion of old posts", () => {
         min_age_days: 14,
         keep_bookmarked: false,
         keep_media: true,
+        keep_articles: false,
         keep_visibilities: ["private", "direct"],
         keep_min_boosts: 5,
       },
@@ -229,6 +233,7 @@ const withinLimit: Schemas["AutoDeletePolicy"] = {
   ...autoDeletePolicyFixture,
   enabled: true,
   keep_favourited: false,
+  keep_articles: false,
   keep_visibilities: [],
 };
 
@@ -254,6 +259,10 @@ describe("automatic deletion under the server's maximum", () => {
     const media = screen.getByRole("checkbox", { name: "With images or other media" });
     expect(media).toBeDisabled();
     expect(media).toHaveAccessibleDescription("This server's limit doesn't allow this.");
+    const articles = screen.getByRole("checkbox", { name: "Articles" });
+    expect(articles).not.toBeChecked();
+    expect(articles).toBeDisabled();
+    expect(articles).toHaveAccessibleDescription("This server's limit doesn't allow this.");
     expect(screen.getByRole("checkbox", { name: "Pinned to your profile" })).toHaveAccessibleDescription(
       "This server keeps only your 3 most recently pinned posts.",
     );
@@ -271,7 +280,7 @@ describe("automatic deletion under the server's maximum", () => {
   });
 
   test("tells a bound user from when the maximum applies, how, and what goes then", async () => {
-    // The default policy is off and keeps favourites and direct posts, which the maximum does not allow.
+    // The default policy is off and keeps favourites, articles and direct posts, which the maximum does not allow.
     const api = limitedServer(autoDeletePolicyFixture, "2026-12-01T00:00:00Z");
     const { user } = await renderApp({ path: "/settings/auto-delete" });
     const limit = await screen.findByRole("region", { name: "This server's limit" });
@@ -295,6 +304,7 @@ describe("automatic deletion under the server's maximum", () => {
     expect(enabled).toBeEnabled();
     expect(enabled).toBeInvalid();
     expect(screen.getByRole("checkbox", { name: "Favourited by you" })).toBeInvalid();
+    expect(screen.getByRole("checkbox", { name: "Articles" })).toBeInvalid();
     expect(screen.getByRole("checkbox", { name: "Mentioned people" })).toBeInvalid();
     await user.click(screen.getByRole("button", { name: "Save" }));
     // The browser keeps the form from being sent and moves the focus to the first marked field.
@@ -306,6 +316,7 @@ describe("automatic deletion under the server's maximum", () => {
 
     await user.click(enabled);
     await user.click(screen.getByRole("checkbox", { name: "Favourited by you" }));
+    await user.click(screen.getByRole("checkbox", { name: "Articles" }));
     await user.click(screen.getByRole("checkbox", { name: "Mentioned people" }));
     // Once within the maximum, nothing is locked by the values beyond it any more.
     expect(screen.getByRole("checkbox", { name: "Favourited by you" })).toBeDisabled();

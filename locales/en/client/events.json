@@ -135,6 +135,174 @@
     "defaultMessage": "Couldn't save your answer: {reason}",
     "description": "Error of saving the user's answer. {reason} is why."
   },
+  "events.poll.title": {
+    "defaultMessage": "Date poll",
+    "description": "Heading of the date poll of an event that has no date yet."
+  },
+  "events.poll.description": {
+    "defaultMessage": "Answer each candidate date. Your name and answers show to everyone who sees the event.",
+    "description": "Description of the date poll of an event."
+  },
+  "events.poll.failed": {
+    "defaultMessage": "Couldn't load the candidate dates",
+    "description": "Heading of the error when the candidate dates of an event fail to load."
+  },
+  "events.poll.empty": {
+    "defaultMessage": "No candidate dates yet.",
+    "description": "Shown when an event's date poll has no candidate."
+  },
+  "events.poll.caption": {
+    "defaultMessage": "Candidate dates and their answers",
+    "description": "Accessible caption of the table of the candidate dates of an event."
+  },
+  "events.poll.date": {
+    "defaultMessage": "Date",
+    "description": "Column header of the dates of the candidates of an event's date poll."
+  },
+  "events.poll.count.yes": {
+    "defaultMessage": "Can go",
+    "description": "Column header of how many people can go on a candidate date."
+  },
+  "events.poll.count.maybe": {
+    "defaultMessage": "Maybe",
+    "description": "Column header of how many people may go on a candidate date."
+  },
+  "events.poll.count.no": {
+    "defaultMessage": "Can't go",
+    "description": "Column header of how many people cannot go on a candidate date."
+  },
+  "events.poll.your_answer": {
+    "defaultMessage": "Your answer",
+    "description": "Column header of the user's answers to the candidate dates."
+  },
+  "events.poll.your_answer_of": {
+    "defaultMessage": "Your answer for {date}",
+    "description": "Accessible name of the choices of the user's answer to one candidate date. date: the candidate's dates."
+  },
+  "events.poll.actions": {
+    "defaultMessage": "Actions",
+    "description": "Visually hidden column header of the buttons of each candidate date."
+  },
+  "events.poll.vote.yes": {
+    "defaultMessage": "Can go",
+    "description": "Choice and badge of an answer to a candidate date: the person can go."
+  },
+  "events.poll.vote.maybe": {
+    "defaultMessage": "Maybe",
+    "description": "Choice and badge of an answer to a candidate date: the person may go."
+  },
+  "events.poll.vote.no": {
+    "defaultMessage": "Can't go",
+    "description": "Choice and badge of an answer to a candidate date: the person cannot go."
+  },
+  "events.poll.vote_failed": {
+    "defaultMessage": "Couldn't save your answer: {reason}",
+    "description": "Error when an answer to a candidate date fails. reason: why."
+  },
+  "events.poll.ballots": {
+    "defaultMessage": "Who answered",
+    "description": "Button that lists who answered a candidate date, and the name of that list."
+  },
+  "events.poll.ballots_of": {
+    "defaultMessage": "Who answered {date}",
+    "description": "Accessible name of the button that lists who answered a candidate date. date: the candidate's dates."
+  },
+  "events.poll.ballots_title": {
+    "defaultMessage": "Who answered {date}",
+    "description": "Title of the dialog that lists who answered a candidate date. date: the candidate's dates."
+  },
+  "events.poll.close": {
+    "defaultMessage": "Close",
+    "description": "Accessible name of the button that closes the list of who answered a candidate date."
+  },
+  "events.poll.ballots_failed": {
+    "defaultMessage": "Couldn't load who answered",
+    "description": "Heading of the error when the answers to a candidate date fail to load."
+  },
+  "events.poll.ballots_empty": {
+    "defaultMessage": "Nobody has answered this date yet.",
+    "description": "Shown when nobody answered a candidate date."
+  },
+  "events.poll.ballots_more": {
+    "defaultMessage": "Show more",
+    "description": "Button that loads more of who answered a candidate date."
+  },
+  "events.poll.confirm": {
+    "defaultMessage": "Set this date",
+    "description": "Button with which an organizer fixes the event's date to a candidate."
+  },
+  "events.poll.confirm_of": {
+    "defaultMessage": "Set this date: {date}",
+    "description": "Accessible name of the button that fixes the event's date to a candidate. date: the candidate's dates."
+  },
+  "events.poll.confirm.title": {
+    "defaultMessage": "Set the date to {date}?",
+    "description": "Title of the confirmation of fixing the event's date to a candidate. date: the candidate's dates."
+  },
+  "events.poll.confirm.description": {
+    "defaultMessage": "The poll stops taking answers, and the people who answered it and the invited people are notified. You can still change the date in the editor later.",
+    "description": "Description of the confirmation of fixing the event's date to a candidate."
+  },
+  "events.poll.confirm.confirm": {
+    "defaultMessage": "Set date",
+    "description": "Confirm button of fixing the event's date to a candidate."
+  },
+  "events.poll.confirm.back": {
+    "defaultMessage": "Keep the poll",
+    "description": "Button that closes the confirmation of fixing the event's date without fixing it."
+  },
+  "events.poll.confirmed_notice": {
+    "defaultMessage": "The date is set to {date}.",
+    "description": "Announced after an organizer fixed the event's date to a candidate. date: the candidate's dates."
+  },
+  "events.poll.withdraw": {
+    "defaultMessage": "Withdraw",
+    "description": "Button with which an organizer withdraws a candidate date."
+  },
+  "events.poll.withdraw_of": {
+    "defaultMessage": "Withdraw: {date}",
+    "description": "Accessible name of the button that withdraws a candidate date. date: the candidate's dates."
+  },
+  "events.poll.withdraw.title": {
+    "defaultMessage": "Withdraw {date}?",
+    "description": "Title of the confirmation of withdrawing a candidate date. date: the candidate's dates."
+  },
+  "events.poll.withdraw.description": {
+    "defaultMessage": "The candidate and the answers to it are removed from the poll.",
+    "description": "Description of the confirmation of withdrawing a candidate date."
+  },
+  "events.poll.withdraw.confirm": {
+    "defaultMessage": "Withdraw",
+    "description": "Confirm button of withdrawing a candidate date."
+  },
+  "events.poll.withdraw.back": {
+    "defaultMessage": "Keep it",
+    "description": "Button that closes the confirmation of withdrawing a candidate date without withdrawing it."
+  },
+  "events.poll.withdrawn_notice": {
+    "defaultMessage": "Withdrew {date}.",
+    "description": "Announced after an organizer withdrew a candidate date. date: the candidate's dates."
+  },
+  "events.poll.withdraw_failed": {
+    "defaultMessage": "Couldn't withdraw the candidate: {reason}",
+    "description": "Error when withdrawing a candidate date fails. reason: why."
+  },
+  "events.poll.add_legend": {
+    "defaultMessage": "Add a candidate date",
+    "description": "Legend of the fields with which an organizer adds a candidate date."
+  },
+  "events.poll.add": {
+    "defaultMessage": "Add date",
+    "description": "Button that adds a candidate date to the poll."
+  },
+  "events.poll.added_notice": {
+    "defaultMessage": "Added {date}.",
+    "description": "Announced after an organizer added a candidate date. date: the candidate's dates."
+  },
+  "events.poll.add_failed": {
+    "defaultMessage": "Couldn't add the candidate: {reason}",
+    "description": "Error when adding a candidate date fails. reason: why."
+  },
   "events.calendar": {
     "defaultMessage": "Add to calendar (.ics)",
     "description": "Button that saves the event as an iCalendar file to import into the user's calendar."
@@ -242,6 +410,42 @@
   "events.place.voice.description": {
     "defaultMessage": "A voice chat room on this server opens when the event starts.",
     "description": "Text of the voice chat place of an event."
+  },
+  "events.place.voice.speakers": {
+    "defaultMessage": "Who can speak without asking: {speakers}",
+    "description": "Who may speak in the voice chat room of an event without asking. speakers: the choice, such as Followers of the host."
+  },
+  "events.place.voice.open": {
+    "defaultMessage": "The voice chat room is open.",
+    "description": "Text of the voice chat place of an event once its room opened."
+  },
+  "events.place.voice.join": {
+    "defaultMessage": "Join the voice chat room",
+    "description": "Link from an event to its voice chat room."
+  },
+  "events.place.voice.opening": {
+    "defaultMessage": "The voice chat room is opening…",
+    "description": "Text of the voice chat place of an event after its start, before its room opened."
+  },
+  "events.place.voice.cancelled": {
+    "defaultMessage": "The event was cancelled, so its voice chat room does not open.",
+    "description": "Text of the voice chat place of a cancelled event."
+  },
+  "events.place.voice.unavailable.disabled": {
+    "defaultMessage": "The voice chat room could not open because voice chat is off on this server.",
+    "description": "Why the voice chat room of an event did not open: voice chat is off."
+  },
+  "events.place.voice.unavailable.not_eligible": {
+    "defaultMessage": "The voice chat room could not open because the organizer can no longer open rooms.",
+    "description": "Why the voice chat room of an event did not open: the organizer may not host rooms."
+  },
+  "events.place.voice.unavailable.too_many_rooms": {
+    "defaultMessage": "The voice chat room could not open because this server has as many rooms open as it allows.",
+    "description": "Why the voice chat room of an event did not open: too many rooms were open."
+  },
+  "events.place.voice.unavailable.hosting_elsewhere": {
+    "defaultMessage": "The voice chat room could not open because the organizer was hosting another room.",
+    "description": "Why the voice chat room of an event did not open: the organizer hosted another room."
   },
   "events.place.map": {
     "defaultMessage": "Map",
@@ -507,6 +711,42 @@
     "defaultMessage": "The organizers are choosing the date among candidates. Entering a start and an end here sets the date and ends that choice.",
     "description": "Note in the editor of an event whose date poll has no date yet."
   },
+  "events.form.date_mode": {
+    "defaultMessage": "Date",
+    "description": "Label of the choice of how a new event's date is set."
+  },
+  "events.form.date_mode.fixed": {
+    "defaultMessage": "Set the date now",
+    "description": "Choice of a new event's date: the organizer sets it now."
+  },
+  "events.form.date_mode.poll": {
+    "defaultMessage": "Ask people to answer candidate dates",
+    "description": "Choice of a new event's date: a poll of candidate dates."
+  },
+  "events.form.candidates.description": {
+    "defaultMessage": "Up to {max} candidate dates. People who see the event answer each one, and you set the date on the event's page.",
+    "description": "Description of the candidate dates of a new event. max: the most candidates."
+  },
+  "events.form.candidate": {
+    "defaultMessage": "Candidate {number}",
+    "description": "Legend of the start and end of one candidate date. number: its place in the list."
+  },
+  "events.form.candidate.remove": {
+    "defaultMessage": "Remove",
+    "description": "Button that removes a candidate date from a new event."
+  },
+  "events.form.candidate.remove_of": {
+    "defaultMessage": "Remove candidate {number}",
+    "description": "Accessible name of the button that removes a candidate date. number: its place in the list."
+  },
+  "events.form.candidate.add": {
+    "defaultMessage": "Add a candidate date",
+    "description": "Button that adds a candidate date to a new event."
+  },
+  "events.form.candidate.duplicate": {
+    "defaultMessage": "This date is already a candidate.",
+    "description": "Error of a candidate date that repeats another."
+  },
   "events.form.time_zone": {
     "defaultMessage": "Time zone of the event",
     "description": "Label of the time zone of an event."
@@ -594,6 +834,18 @@
   "events.form.place_name.invalid": {
     "defaultMessage": "Enter a name of up to {max} characters on one line.",
     "description": "Error of the name of a place. {max} is the longest name."
+  },
+  "events.form.voice": {
+    "defaultMessage": "Voice chat room",
+    "description": "Checkbox that adds a voice chat room of this server to an event."
+  },
+  "events.form.voice.description": {
+    "defaultMessage": "A room on this server opens at the start, for the people who see the event.",
+    "description": "Description of the voice chat place of an event."
+  },
+  "events.form.voice.speakers": {
+    "defaultMessage": "Who can speak without asking",
+    "description": "Label of who may speak in the voice chat room of an event without asking."
   },
   "events.form.voice_kept": {
     "defaultMessage": "The voice chat room of the event stays as it is.",
@@ -686,6 +938,14 @@
   "events.error.unscheduled": {
     "defaultMessage": "The event has no date yet.",
     "description": "Reason of a write refused because the event has no date yet."
+  },
+  "events.error.scheduled": {
+    "defaultMessage": "The date of the event is already set.",
+    "description": "Reason of a write to a date poll refused because the date was set."
+  },
+  "events.error.last_candidate": {
+    "defaultMessage": "A poll keeps at least one candidate date.",
+    "description": "Reason of withdrawing the last candidate date refused."
   },
   "events.error.not_eligible": {
     "defaultMessage": "You can't create events on this server.",

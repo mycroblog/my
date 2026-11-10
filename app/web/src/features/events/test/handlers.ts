@@ -50,6 +50,9 @@ export const handlers = [
   http.get(`${apiBase}/events/:id/attendees`, ({ request }) =>
     withViewer(request, () => HttpResponse.json({ items: [] } satisfies Schemas["EventAttendeePage"])),
   ),
+  http.get(`${apiBase}/events/:id/candidates`, ({ request }) =>
+    withViewer(request, () => HttpResponse.json({ items: [] } satisfies Schemas["EventCandidateList"])),
+  ),
   http.get(`${apiBase}/events/:id/invitations`, ({ request }) =>
     withViewer(request, () => HttpResponse.json({ items: [] } satisfies Schemas["EventInvitationPage"])),
   ),

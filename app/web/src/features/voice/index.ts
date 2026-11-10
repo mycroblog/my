@@ -7,8 +7,10 @@
 // through this file only (web-client/README.md A3).
 export {
   voiceHistoryQueryOptions,
+  voiceRoomPath,
   voiceRoomQueryOptions,
   voiceRoomSummaryQueryOptions,
+  voiceRoomSpeakers,
   voiceRoomsQueryOptions,
 } from "./api/voice";
 export { ProfileVoiceRoom } from "./components/ProfileVoiceRoom";
@@ -21,4 +23,4 @@ export { TagVoiceRooms, VoiceRail, VoiceRoomList } from "./components/VoiceRooms
 export { VoiceRoomView } from "./components/VoiceRoomView";
 export { VoiceHistorySkeleton, VoiceRoomsSkeleton, VoiceStageSkeleton } from "./components/VoiceSkeletons";
 export { voiceEndReasonLabel } from "./hooks/useVoiceHistory";
-export { useVoiceAvailable } from "./hooks/useVoiceRooms";
+export { useCanStartVoiceRoom, useVoiceAvailable } from "./hooks/useVoiceRooms";

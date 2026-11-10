@@ -27,7 +27,8 @@ const thresholdChoices: readonly number[] = [0, 1, 2, 5, 10, 20, 50, 100];
 const visibilityOrder: readonly Visibility[] = ["public", "local", "unlisted", "private", "direct"];
 
 /** The boolean exceptions of a policy. */
-export type AutoDeleteFlag = "keep_pinned" | "keep_bookmarked" | "keep_favourited" | "keep_media" | "keep_polls";
+export type AutoDeleteFlag =
+  "keep_pinned" | "keep_bookmarked" | "keep_favourited" | "keep_media" | "keep_polls" | "keep_articles";
 
 /** Which allowance of the server maximum lets each boolean exception keep posts. */
 const flagAllowances = {
@@ -36,11 +37,12 @@ const flagAllowances = {
   keep_favourited: "allow_favourited",
   keep_media: "allow_media",
   keep_polls: "allow_polls",
+  keep_articles: "allow_articles",
 } as const satisfies Record<AutoDeleteFlag, keyof AutoDeleteServerLimit>;
 
 /** Whether the server maximum lets `flag` keep posts; true without a maximum. */
 export function flagAllowed(limit: AutoDeleteServerLimit | undefined, flag: AutoDeleteFlag): boolean {
-  return limit === undefined || limit[flagAllowances[flag]];
+  return limit === undefined || limit[flagAllowances[flag]] === true;
 }
 
 /**
@@ -93,6 +95,7 @@ function samePolicy(a: AutoDeletePolicy, b: AutoDeletePolicy): boolean {
     a.keep_favourited === b.keep_favourited &&
     a.keep_media === b.keep_media &&
     a.keep_polls === b.keep_polls &&
+    a.keep_articles === b.keep_articles &&
     a.keep_min_boosts === b.keep_min_boosts &&
     a.keep_min_favourites === b.keep_min_favourites &&
     a.keep_visibilities.length === b.keep_visibilities.length &&

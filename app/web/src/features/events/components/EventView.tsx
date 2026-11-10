@@ -2,7 +2,8 @@
 // The page of an event (`/events/{id}`, ADR-0161 §5–§9, §15; web-client/screens/event.md): its title is the page's
 // heading, then its state, its cancellation and the reason the organizer or a moderator gave, when it is (in the
 // viewer's time zone and in the event's own), who organizes it, adding it to the user's calendar, the user's answer,
-// where it is, what it is about, and who is going. Its organizers also approve attendees, change it, invite people,
+// the date poll while the date is not set (EventPoll), where it is (with the way into its voice chat room from the
+// start, EventVoicePlace), what it is about, and who is going. Its organizers also approve attendees, change it, invite people,
 // and (the organizer alone) name co-organizers and cancel it. A place that the user does not see never reaches the
 // client: the page names only its kind and that it shows to approved attendees. Links that leave the site say so.
 import {
@@ -46,6 +47,8 @@ import { EventCoorganizers, EventInvitations } from "./EventOrganizing";
 import { EventBadges, EventWhenText } from "./EventParts";
 import { OrganizedBy } from "./EventList";
 import { EventPageSkeleton } from "./EventSkeletons";
+import { EventPoll } from "./EventPoll";
+import { VoicePlace } from "./EventVoicePlace";
 
 export type EventViewProps = {
   id: string;
@@ -136,7 +139,8 @@ function EventDetails({ event, role, renderHeading }: EventDetailsProps) {
         <EventActions event={event} role={role} when={when} />
       </Stack>
       {event.state !== "cancelled" && <AnswerSection event={event} when={when} />}
-      <PlacesSection event={event} />
+      {event.state === "unscheduled" && <EventPoll event={event} organizes={organizes} />}
+      <PlacesSection event={event} when={when} />
       {event.description !== "" && <DescriptionSection description={event.description} />}
       <EventAttendees event={event} organizes={organizes} />
       {organizes && event.state !== "cancelled" && <EventInvitations event={event} />}
@@ -315,14 +319,14 @@ const hiddenPlaceLabels: Readonly<Record<EventPlaceKind, ClientMessageKey>> = {
 };
 
 /** Where the event is: the places the user sees, and the kinds of those shown only to approved attendees. */
-function PlacesSection({ event }: { event: Event }) {
+function PlacesSection({ event, when }: { event: Event; when: EventWhen }) {
   const t = useT();
   if (event.places.length === 0 && event.hidden_places.length === 0) return null;
   return (
     <Section title={t("client:events.place.title")}>
       <Stack gap="4">
         {event.places.map((place) => (
-          <Place key={place.kind} place={place} />
+          <Place key={place.kind} place={place} event={event} when={when} />
         ))}
         {event.hidden_places.map((kind) => (
           <Text as="p" key={kind} tone="muted">
@@ -361,7 +365,7 @@ function LeavingLink({ url, children }: { url: string; children: ReactNode }) {
   );
 }
 
-function Place({ place }: { place: EventPlace }) {
+function Place({ place, event, when }: { place: EventPlace; event: Event; when: EventWhen }) {
   const t = useT();
   switch (place.kind) {
     case "physical":
@@ -397,14 +401,7 @@ function Place({ place }: { place: EventPlace }) {
         </Stack>
       );
     case "voice":
-      return (
-        <Stack gap="1">
-          <Text as="p" size="sm" tone="muted">
-            {t("client:events.place.voice")}
-          </Text>
-          <Text as="p">{t("client:events.place.voice.description")}</Text>
-        </Stack>
-      );
+      return <VoicePlace place={place} event={event} when={when} />;
   }
 }
 

@@ -2,7 +2,8 @@
 // What the page of an event (`/events/{id}`, ADR-0161 §8, §9, §15) shows and does. A signed-in user who sees the event
 // gets it as the server shows it to that user (the places the user does not see never reach the client, only their
 // kinds), with the answer, the attendees, the `.ics` file, and for its organizers the approvals, the invitations,
-// the co-organizers (the organizer only), and the cancellation. A visitor who is not signed in learns that only the
+// the co-organizers (the organizer only), and the cancellation. An event with a voice chat place is asked for again at
+// its start, so that the way into its room shows once the room opens. A visitor who is not signed in learns that only the
 // local users take part, with the way to sign in; an event the user does not see is not found, as an unknown one.
 import { useNotice } from "@my/ui";
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -49,12 +50,38 @@ function roleOf(event: Event): EventRole {
   return "guest";
 }
 
+/** How often the page asks again whether the room of the voice place opened, from the start on. */
+const roomPollInterval = 10_000;
+/** How long after the start the page waits for the room before it stops asking (the room waits 30 minutes). */
+const roomPollWindow = 30 * 60_000;
+/** The longest wait before the start that the page sets at once; it asks again then and waits the rest. */
+const roomWaitCap = 60 * 60_000;
+
+/**
+ * When the page asks for the event again so that the entry to its voice chat room shows at the start (ADR-0161 §10):
+ * the start itself, then every few seconds until the room opened or could not, for as long as the room waits. Never
+ * for an event without a voice place, one with no date, or one cancelled.
+ */
+export function roomRefetchDelay(event: Event, now: number): number | false {
+  const voice = event.places.find((place) => place.kind === "voice");
+  if (voice === undefined || event.state !== "scheduled") return false;
+  if (voice.room_id !== undefined || voice.room_unavailable !== undefined) return false;
+  const start = Date.parse(event.starts_at);
+  if (now < start) return Math.min(start - now + 1_000, roomWaitCap);
+  return now - start < roomPollWindow ? roomPollInterval : false;
+}
+
 export function useEventPage(id: string): EventPage {
   const api = useApi();
   const session = useSessionStatus();
   const signedIn = session === "signed-in";
   // The loader has asked already: a refusal it got (a hidden or unknown event) is not asked again on mount.
-  const query = useQuery({ ...eventQueryOptions(api, id), enabled: signedIn, retryOnMount: false });
+  const query = useQuery({
+    ...eventQueryOptions(api, id),
+    enabled: signedIn,
+    retryOnMount: false,
+    refetchInterval: (q) => (q.state.data === undefined ? false : roomRefetchDelay(q.state.data, Date.now())),
+  });
   const failure = useLoadFailure(query);
   if (session === "unknown") return { status: "loading" };
   if (session === "signed-out") return { status: "signed-out" };

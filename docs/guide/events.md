@@ -22,12 +22,25 @@ everyone who can see the event reads. When the event has a capacity and it is fu
 "Add to calendar (.ics)" saves the event as a file to import into your calendar app. It holds only the places you can
 see.
 
+## Choosing a date together
+
+An event whose date is not set yet has a "Date poll": a table of the candidate dates, one row each, with how many
+people "Can go", answered "Maybe", and "Can't go". Choose your answer in each row under "Your answer"; it is saved at
+once, and you can change it until the date is set. Your name and answers show to everyone who can see the event, and
+"Who answered" lists them for a date. You can answer "Going" under "Your answer" for the event once its date is set.
+
+The organizer and the co-organizers add a date under "Add a candidate date", "Withdraw" one (a poll keeps at least
+one), and choose "Set this date" to fix the event's date. The poll then stops taking answers, and the people who
+answered it and the invited people are notified.
+
 ## Places
 
 An event can have a place to meet in person, an online link (a stream or a meeting on another site), and a voice chat
 room on this server. By default, the place in person and the online link are shown only to the attendees the
 organizers approve; until then the page says that the place is shown to approved attendees, and the place is not sent
-to your browser at all. A voice chat room is shown to everyone who can see the event, and opens when it starts.
+to your browser at all. A voice chat room is shown to everyone who can see the event, and opens when it starts:
+from then on, "Join the voice chat room" on the event's page opens the room, where you join the call. If the room
+could not open, the page says why.
 
 Links to maps, online meetings, and the links in a description open in a new tab and name the site they go to: they
 leave this server, which never checks them.
@@ -38,9 +51,12 @@ Choose "New event" on the list of events. The editor asks for:
 
 - **Title**, and an optional **Description** (plain text; its links become clickable).
 - **Time zone of the event**, **Starts**, and **Ends**. The times are those of the event's time zone, which starts as
-  yours. An event lasts at most 7 days and starts within a year.
+  yours. An event lasts at most 7 days and starts within a year. To let people choose the date, pick "Ask people to
+  answer candidate dates" and enter up to 20 candidates instead, each with its start and end.
 - **Places**: "Meet in person" (a name, an address, and an optional map link) and "Online link" (a name and a URL),
-  and **Who sees the place and the link**: "Only the attendees you approve" or "Everyone who sees the event".
+  and **Who sees the place and the link**: "Only the attendees you approve" or "Everyone who sees the event". When
+  voice chat is on and you can start rooms, "Voice chat room" opens a room for the event at its start, with **Who can
+  speak without asking**.
 - **Who sees the event**: everyone on this server, the organizer's followers, the people the organizer follows, mutual
   follows of the organizer, or only invited people. People you invite, and people who answered, always see it.
 - **Capacity**, how many people can answer "Going"; leave it empty for no limit.

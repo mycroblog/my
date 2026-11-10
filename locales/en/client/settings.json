@@ -927,6 +927,10 @@
     "defaultMessage": "With a poll",
     "description": "Exception of the automatic deletion: posts with a poll."
   },
+  "settings.auto_delete.keep.articles": {
+    "defaultMessage": "Articles",
+    "description": "Exception of the automatic deletion: articles, which are long posts with a title."
+  },
   "settings.auto_delete.visibilities": {
     "defaultMessage": "Keep posts with these visibilities",
     "description": "Legend of the checkboxes of the visibilities whose posts the automatic deletion keeps."

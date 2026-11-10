@@ -29,8 +29,8 @@ device, when a host removes you, or when you and the host or a co-host block eac
 
 - **Name**, and an optional **Icon** and **Description**.
 - **Hashtags**: the room shows on the pages of its hashtags.
-- **Who can see and join**: "Everyone on this server", "Followers of the host", "Mutual follows of the host", or "Only invited people".
-- **Who can speak without asking**: "Everyone who joins", "Followers of the host", "Mutual follows of the host", or "Only people the hosts let speak".
+- **Who can see and join**: "Everyone on this server", "Followers of the host", "People the host follows", "Mutual follows of the host", or "Only invited people".
+- **Who can speak without asking**: "Everyone who joins", "Followers of the host", "People the host follows", "Mutual follows of the host", or "Only people the hosts let speak".
 - **Post about the room**: a post with the link to the room, visible to everyone on this server or to your followers only.
   On a server of one person, the post about a room for everyone on this server is for your followers.
 
