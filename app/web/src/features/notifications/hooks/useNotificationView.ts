@@ -569,6 +569,9 @@ function linksOf(notification: Notification, ownAcct: string | null): Notificati
     case "boost_request":
     case "quote_request":
       return [{ href: "/settings/interaction-requests", label: "client:notifications.link.interaction_requests" }];
+    // The draft of a scheduled post that failed stays, with the failure, on the drafts page (ADR-0156 §8).
+    case "scheduled_status_failed":
+      return [{ href: "/drafts", label: "client:drafts.notification_link" }];
     case "relationships_severed":
       return ownAcct === null
         ? []

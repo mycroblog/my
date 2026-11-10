@@ -592,7 +592,7 @@ describe("the notifications page", () => {
       );
     });
 
-    test("a scheduled post that could not be published says why and when it was to be", async () => {
+    test("a scheduled post that could not be published says why and when it was to be, and leads to the drafts", async () => {
       server.use(resumableSession());
       markerServer({ last_read_id: "0192f0c4-7a8e-7000-8000-0000000000ff", unread_count: 0 });
       server.use(
@@ -621,6 +621,8 @@ describe("the notifications page", () => {
       expect(row).toHaveTextContent("The post it quotes is no longer available. It was scheduled for");
       expect(row).toHaveTextContent("The draft is kept, so you can fix it and schedule it again.");
       expect(within(row).getByText(/2026/, { selector: "time[datetime='2026-11-20T08:30:00Z']" })).toBeInTheDocument();
+      // The draft stays on the drafts page, with the failure.
+      expect(within(row).getByRole("link", { name: "Open your drafts" })).toHaveAttribute("href", "/drafts");
     });
 
     test("lead nowhere to pay in the Tauri app", async () => {
